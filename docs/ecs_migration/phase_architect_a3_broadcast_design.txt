@@ -1,0 +1,366 @@
+Phase 15E-final.LPENTITY.4-architect.A.3 - BroadcastService design
+==================================================================
+
+Scope: design a single broadcast service that subsumes
+  - CEntity::PacketView (hybrid since f76a3f1)
+  - CEntity::PacketAround (forwards to PacketView)
+  - NetworkService::BroadcastToView (legacy authoritative since 2caa410)
+  - NetworkService::Broadcast (range-based)
+  - NetworkService::BroadcastInMap
+
+After Phase E lands the new service, the legacy entry points are
+deleted. Inside Phase B-D the service is a thin facade that delegates
+to the existing implementations; in Phase E its body becomes the
+ViewerMap-backed implementation.
+
+Read first: phase_architect_a1_field_inventory.txt and
+phase_architect_a2_ownership_matrix.txt.
+
+
+======================================================================
+SECTION 1: PROBLEM STATEMENT
+======================================================================
+
+Current call surface:
+
+  Function                    | Source authority         | Range
+  ----------------------------|--------------------------|-------
+  CEntity::PacketView         | hybrid m_map_view +      | view
+                              | sectree (post-f76a3f1)   |
+  CEntity::PacketAround       | forwards to PacketView   | view
+  NetworkService::BroadcastToView | legacy GetViewersOf  | view
+  NetworkService::Broadcast   | sectree GetEntitiesInRange | range
+  NetworkService::BroadcastInMap | view<MapIndex,        | map
+                              | NetworkSession>          |
+
+Caller volume:
+  PacketView / PacketAround   : 42 occurrences across 15 files
+  NetworkService::Broadcast*  :  9 occurrences across  2 files
+
+Three different "view" delivery implementations exist; the result is
+that fixing one (e.g. f76a3f1 fixed PacketView) does not fix the others
+unless they happen to share the same backing query.
+
+Goal: ONE function per delivery semantic, ONE recipient resolution
+per semantic, ONE owner.
+
+
+======================================================================
+SECTION 2: PROPOSED INTERFACE
+======================================================================
+
+Namespace: ecs::BroadcastService
+Header:    SRC/Server/GameServer/ecs/services/BroadcastService.hpp
+
+Public API (4 functions):
+
+  // Send to every entity that sees `source` (per ViewerMap after
+  // Phase D; per current legacy authoritative range query before).
+  // Used by: MOVE packet, SYNC_POSITION packet, motion / animation
+  // packets, attack effects, chat to nearby, etc.
+  void ToViewers(
+      entt::registry& reg,
+      entt::entity source,
+      const void* packet,
+      std::size_t size,
+      entt::entity except = entt::null);
+
+  // Send to every entity within `range` of `source`. Sectree-backed.
+  // Used by: damage broadcasts, area effects, environment events.
+  // Distinct from ToViewers: range is decoupled from view; e.g. a
+  // 200-unit damage AoE is not a 5500-unit view broadcast.
+  void InRange(
+      entt::registry& reg,
+      entt::entity source,
+      int32_t range,
+      const void* packet,
+      std::size_t size,
+      entt::entity except = entt::null);
+
+  // Send to every entity on the same map as `mapIndex`.
+  // Used by: server announcements, weather events.
+  void InMap(
+      entt::registry& reg,
+      int32_t mapIndex,
+      const void* packet,
+      std::size_t size,
+      entt::entity except = entt::null);
+
+  // Send to a specific recipient. (Already covered by NetworkService::Send;
+  // included in the service for completeness so callers do not split
+  // between two namespaces.)
+  bool ToOne(
+      entt::registry& reg,
+      entt::entity recipient,
+      const void* packet,
+      std::size_t size);
+
+Notes:
+  - `except` parameter excludes one specific entity from delivery.
+    Common pattern: a moving character broadcasts MOVE to its viewers
+    but excludes self (self predicts locally).
+  - The `source` entity is automatically included in ToViewers if it
+    is a self-visible character (matches legacy PacketView semantic
+    via f(this) at end). The `except` parameter can override this.
+  - All functions accept a packet by const void* + size to keep the
+    interface kind-agnostic. Higher-level wrappers (per-packet-type
+    helpers) live next to packet definitions, not in BroadcastService.
+
+
+======================================================================
+SECTION 3: PRE-D IMPLEMENTATION (facade only)
+======================================================================
+
+While Phase D is in flight (event-driven VisibilitySystem not yet
+landed), the BroadcastService implementation forwards to the existing
+sectree-based queries used by the f76a3f1 hybrid:
+
+  ToViewers(reg, source, packet, size, except):
+    // Pre-D: range-based via sectree (matches f76a3f1 hybrid leg)
+    auto recipients = ecs::VisibilityService::GetViewersOf(reg, source);
+    for (auto recipient : recipients) {
+      if (recipient == source && except != source) ToOne(...);
+      if (recipient == except) continue;
+      ToOne(reg, recipient, packet, size);
+    }
+
+  InRange(reg, source, range, packet, size, except):
+    auto recipients = ecs::VisibilityService::GetEntitiesInRange(
+        reg, source, range);
+    for (auto recipient : recipients) {
+      if (recipient == except) continue;
+      ToOne(reg, recipient, packet, size);
+    }
+
+  InMap(reg, mapIndex, packet, size, except):
+    auto view = reg.view<ecs::MapIndex, ecs::NetworkSession>();
+    for (auto entity : view) {
+      if (entity == except) continue;
+      const auto& mi = view.get<ecs::MapIndex>(entity);
+      if (mi.value != mapIndex) continue;
+      ToOne(reg, entity, packet, size);
+    }
+
+  ToOne(reg, recipient, packet, size):
+    return ecs::NetworkService::Send(recipient, packet, size);
+
+This is the minimum-risk landing: BroadcastService exists with the
+same recipient set the f76a3f1 hybrid produced, just behind a single
+namespace. Existing call sites can migrate to BroadcastService one by
+one without behaviour change.
+
+
+======================================================================
+SECTION 4: POST-D IMPLEMENTATION (ViewerMap authoritative)
+======================================================================
+
+After Phase D adds the event-driven VisibilitySystem and ViewerMap
+becomes authoritative:
+
+  ToViewers(reg, source, packet, size, except):
+    // ViewerMap is the authoritative recipient set; updated
+    // event-driven by VisibilitySystem on PositionChanged.
+    auto* vm = reg.try_get<ecs::ViewerMap>(source);
+    if (!vm) return;
+    for (auto viewer : vm->viewers) {
+      if (viewer == except) continue;
+      ToOne(reg, viewer, packet, size);
+    }
+    if (except != source) {
+      // Self-include semantic preserved from PacketView legacy.
+      // ViewerMap is reverse only; self may or may not appear there
+      // depending on observer mode.
+      const auto* status = reg.try_get<ecs::StatusFlags>(source);
+      if (status && status->isObserverMode) {
+        ToOne(reg, source, packet, size);
+      } else if (vm->viewers.find(source) == vm->viewers.end()) {
+        ToOne(reg, source, packet, size);
+      }
+    }
+
+  InRange and InMap unchanged from pre-D (they do not depend on
+  ViewerMap; they query sectree / map components directly).
+
+The CHANGE between pre-D and post-D is only ToViewers. Once ViewerMap
+is event-driven and proven zero-drift, the sectree query disappears
+from ToViewers.
+
+
+======================================================================
+SECTION 5: CALLER MIGRATION (Phase E)
+======================================================================
+
+Phase E migrates every PacketView / PacketAround / NetworkService::*
+caller to BroadcastService.
+
+Migration patterns:
+
+  this->PacketView(packet, size)
+    -> ecs::BroadcastService::ToViewers(g_registry, EcsOf(this),
+                                         packet, size)
+
+  this->PacketView(packet, size, except)
+    -> ecs::BroadcastService::ToViewers(g_registry, EcsOf(this),
+                                         packet, size, EcsOf(except))
+
+  this->PacketAround(packet, size, except)
+    -> SAME as PacketView (PacketAround forwards in legacy)
+
+  ecs::NetworkService::BroadcastToView(reg, source, packet, size, exclude)
+    -> ecs::BroadcastService::ToViewers(reg, source, packet, size,
+                                         exclude ? source : entt::null)
+    (the legacy excludeSource bool maps to except = source when true)
+
+  ecs::NetworkService::Broadcast(reg, source, packet, size, range, exclude)
+    -> ecs::BroadcastService::InRange(reg, source, range, packet, size,
+                                       exclude ? source : entt::null)
+
+  ecs::NetworkService::BroadcastInMap(reg, mapIndex, packet, size)
+    -> ecs::BroadcastService::InMap(reg, mapIndex, packet, size)
+
+After every caller migrated:
+  - DELETE CEntity::PacketView definition + declaration
+  - DELETE CEntity::PacketAround definition + declaration
+  - DELETE FuncPacketAround / FuncPacketView local structs
+  - DELETE NetworkService::BroadcastToView, ::Broadcast, ::BroadcastInMap
+  - KEEP NetworkService::Send (per-recipient, used by ToOne)
+
+
+======================================================================
+SECTION 6: PERFORMANCE CHARACTERISTICS
+======================================================================
+
+Pre-D (range query per broadcast):
+  - One sectree neighbour iteration per broadcast call.
+  - Same as f76a3f1 hybrid (without the m_map_view union).
+  - Acceptable; current code already pays this cost.
+
+Post-D (ViewerMap iteration):
+  - One unordered_set iteration per broadcast call. Set size ≈ count
+    of nearby characters (typical 5-50, peak ~500 in busy events).
+  - O(N) per broadcast where N = active viewer count.
+  - The sectree neighbour iteration moves to the VisibilitySystem
+    update step (event-driven) and runs once per Position change,
+    not once per broadcast. Net win when broadcast count exceeds
+    movement count, which is typically the case (movement ~1Hz per
+    PC, broadcasts ~10-100Hz per PC at peak).
+
+Memory:
+  - ViewerMap is unordered_set<entt::entity>; ~32 bytes/entry.
+  - For 1000 entities each visible to 50 others: 50K entries * 32B
+    = 1.6MB peak. Acceptable.
+
+Cache:
+  - ToViewers reads ViewerMap from `reg.try_get` (O(1) lookup, hash
+    table). Iteration over unordered_set is cache-unfriendly; if
+    profiling indicates a hotspot, switch to flat_set or sorted
+    vector.
+
+
+======================================================================
+SECTION 7: BACKWARDS COMPATIBILITY DURING MIGRATION
+======================================================================
+
+The strict policy says no hybrid solutions. However Phase E is the
+caller migration phase, and the legacy CEntity::PacketView /
+PacketAround MUST stay live until every caller migrates. The
+compatibility window:
+
+  Phase E.1: BroadcastService implemented (forwards to existing
+             VisibilityService queries). Both APIs coexist.
+  Phase E.2-E.5: each call site migrates. Build clean after each.
+  Phase E.6: legacy entry points deleted. Build clean.
+
+During E.1-E.5, calls to legacy PacketView still work. The dedup /
+hybrid logic inside f76a3f1 stays. Only after E.6 does the simpler
+ViewerMap-based path (post-D) become the sole implementation.
+
+This is NOT a hybrid solution at the API level. The two APIs do not
+"fall back" to each other. They are separate code paths each with
+its own delivery semantic. We migrate sites one at a time and delete
+the old when no callers remain. Cleanup policy applied per-site.
+
+
+======================================================================
+SECTION 8: TESTABILITY
+======================================================================
+
+BroadcastService is straightforward to instrument:
+
+  - Per-call counters (debug build): ToViewers / InRange / InMap /
+    ToOne hit count, recipient set size distribution.
+  - Drift check during E.1: optional double-call mode that builds
+    the recipient set both ways (legacy m_map_view AND new
+    ViewerMap / sectree query) and logs deltas. Same shape as the
+    [BROADCAST_DRIFT] guard already in NetworkService::BroadcastToView
+    pre-2caa410. Removed in Phase G.
+  - Integration: WinTest two-client position sync MUST remain stable
+    across every E commit.
+
+Drift check pseudo-code:
+
+  void ToViewers_DriftCheck(reg, source, ...) {
+      auto legacy = ecs::VisibilityService::GetViewersOf(reg, source);  // sectree
+      auto native = ViewerMap.viewers; // ECS authoritative
+      auto symm_diff = symmetric_difference(legacy, native);
+      if (!symm_diff.empty())
+          LOG_WARN("[BROADCAST_DELIVERY_DRIFT] entity={} legacy_only={} ecs_only={}",
+                   ..., difference_size(legacy, native),
+                   difference_size(native, legacy));
+  }
+
+This guard is gated by AURIGA_LPENTITY_FIXUP_AUDIT for the duration
+of Phase E. If it fires, it means VisibilitySystem (Phase D) failed
+to keep ViewerMap in sync. The fix is at the source (Phase D), never
+a fallback in BroadcastService.
+
+
+======================================================================
+SECTION 9: HEADERS, INCLUDES, TYPES
+======================================================================
+
+File layout:
+
+  SRC/Server/GameServer/ecs/services/BroadcastService.hpp
+    namespace ecs::BroadcastService { 4 function declarations }
+
+  SRC/Server/GameServer/ecs/services/BroadcastService.cpp
+    Pre-D implementation (forwards to VisibilityService and
+    NetworkService::Send).
+    Post-D implementation: ToViewers reads ViewerMap directly.
+
+Dependencies (forward declarations + minimal includes):
+  #include <cstddef>
+  #include <cstdint>
+  #include <entt/entt.hpp>
+  // Forward declare (avoid pulling all components into the header):
+  namespace ecs { struct ViewerMap; struct MapIndex; }
+  // .cpp includes the components
+
+The header is small. No CHARACTER / LPENTITY references at all. This
+ensures the broadcast service is fully ECS-native and never reaches
+back into legacy.
+
+
+======================================================================
+SECTION 10: DELIVERABLES (Phase A.3)
+======================================================================
+
+  ✓ This document.
+
+  Phase E commits will reference this design and produce:
+
+    E.1: SRC/Server/GameServer/ecs/services/BroadcastService.hpp  (NEW)
+         SRC/Server/GameServer/ecs/services/BroadcastService.cpp  (NEW)
+         CMake automatically picks up via existing globbing.
+
+    E.2-E.5: per-caller migration commits (~8-10 commits).
+
+    E.6: legacy entry point deletion (1 commit) — the PacketView
+         hybrid band-aid (f76a3f1) deletes here.
+
+  Phase G removes the optional drift detector
+  [BROADCAST_DELIVERY_DRIFT].
+
+
+End of A.3 broadcast design.
