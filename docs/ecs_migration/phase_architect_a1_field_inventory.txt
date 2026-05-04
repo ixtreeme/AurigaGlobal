@@ -1,0 +1,505 @@
+Phase 15E-final.LPENTITY.4-architect.A.1 - Field-level inventory
+=================================================================
+
+Scope: catalog every direct read and write of the 10 legacy CHARACTER /
+CEntity fields enumerated in the desync audit (section 7.2). Output is
+the input for Phase A.2 (component ownership matrix) and Phases B and
+C (read / write migration).
+
+Methodology: ripgrep against SRC/Server/GameServer/ for each field
+name. Reads are sites that consume the value. Writes are sites that
+assign a value. Assignment chains (a = b = c) are counted under each
+target. Comments and audit-only references in EntityNetworkDispatchAudit
+are excluded; that TU deletes in Phase G.
+
+Build base: HEAD = 15afbfb (audit doc commit), branch ECS_+_BGFX.
+
+Conventions:
+  R     direct read of the field
+  W     direct write to the field
+  RW    read-modify-write (e.g. SET_BIT, ++)
+  *     site already mirrored to ECS via Sync*Write helpers introduced
+        in 4-fixup.1
+  !     site of historical drift discussed in earlier audit
+
+
+----------------------------------------------------------------------
+FIELD 1: m_pos  (PIXEL_POSITION, declared CEntity::m_pos at entity.h:71)
+----------------------------------------------------------------------
+
+Storage: PIXEL_POSITION (struct of int32_t x, y, z) in CEntity.
+
+Existing ECS component: ecs::Position (x, y, z) and ecs::PositionZ.
+Position is mirrored on every SetXYZ via SyncPositionComponents
+(declared in PositionSync.hpp).
+
+Direct reads (member access, not through getters):
+  entity.h:35           R  return m_pos.x  (GetX inline accessor)
+  entity.h:36           R  return m_pos.y  (GetY)
+  entity.h:37           R  return m_pos.z  (GetZ)
+  entity.h:38           R  return m_pos    (GetXYZ, returns reference)
+
+Indirect reads via getters: 188 occurrences across 31 files
+(grep "GetX()|GetY()|GetZ()" — the 188 callers transitively read m_pos).
+These are the migration surface for Phase B.1 — converting the getters
+to read from ECS Position eliminates all 188 indirect reads at once.
+
+Direct writes:
+  entity.cpp:32         W  m_pos.x = m_pos.y = m_pos.z = 0  (Initialize)
+  entity.h:40           W  inline SetXYZ(int, int, int) sets all three
+  entity.h:41           W  inline SetXYZ(const PIXEL_POSITION&) full set
+
+Indirect writes via SetXYZ: 13 sites (see file inventory below).
+Every SetXYZ caller for a CHARACTER is followed (post 4-fixup.2.d)
+by SyncPositionComponents which writes ECS Position. Dual-write
+contract is solid here.
+
+SetXYZ caller sites:
+  building.cpp:160                  W  building (not character)
+  building.cpp:856                  W  building
+  LostCastleDungeon.cpp:766         W  monster clone
+  LostCastleDungeon.cpp:1315        W  monster clone
+  ecs/services/SpatialService.cpp:204
+                                    W  generic InsertEntity (item / building / shop)
+  ecs/systems/InventorySystem.cpp:657
+                                    W  CItem::AddToGround
+  ecs/systems/MovementSystem.cpp:154
+                                    W  MirrorLegacyMovement (mid-move ECS->legacy)
+  ecs/systems/MovementSystem.cpp:561
+                                    W  CHARACTER::Sync (settled-position)
+  ecs/systems/PlayerRuntimeSystem.cpp:3868
+                                    W  CHARACTER::SetDetails (player load)
+  ecs/systems/SessionSystem.cpp:985
+                                    W  CHARACTER::Show (warp)
+  new_offlineshop_manager.cpp:710   W  offline shop entity
+
+Dual-write status: ✓ all character SetXYZ sites also call
+SyncPositionComponents (SyncPositionComponents itself writes Position
+and PositionZ).
+
+
+----------------------------------------------------------------------
+FIELD 2: m_posDest  (PIXEL_POSITION, char.h:1118)
+----------------------------------------------------------------------
+
+Storage: PIXEL_POSITION in CHARACTER (player / mob / stone subtype).
+
+Existing ECS component: ecs::MovementDestination (x, y).
+NOTE: ECS component is 2D only (no z). Legacy m_posDest.z is set but
+never read for z (movement is 2D in this game). z-component is
+effectively unused.
+
+Direct reads:
+  char.h:1068           R  GetCurrentDestX
+  char.h:1069           R  GetCurrentDestY
+  ecs/services/EntityNetworkDispatchAudit.cpp
+                        R  audit-only (deleted Phase G)
+  ecs/systems/AffectSystem.cpp:1671
+                        R  AFF_STUN comparison m_posDest != GetX/GetY
+  ecs/systems/MovementSystem.cpp:676
+                        R  Goto early-return guard
+  ecs/systems/MovementSystem.cpp:823
+                        R  CalculateMoveDuration distance calc
+  ecs/systems/MovementSystem.cpp:831
+                        R  trace log of NPC move
+  ecs/systems/MovementSystem.cpp:865-866
+                        R  SendMovePacket FUNC_WAIT branch
+  ecs/systems/NetworkSyncSystem.cpp:993, 996, 997, 1007
+                        R  EncodeInsertPacket pack snap (the symptom path)
+
+Direct writes (* = already calls SyncDestinationWrite/Clear):
+  ecs/systems/AffectSystem.cpp:1673-1674    *W  stun reset
+  ecs/systems/MovementSystem.cpp:575-576    *W  Sync (4-fixup post)
+  ecs/systems/MovementSystem.cpp:636-637    *W  Stop reset
+  ecs/systems/MovementSystem.cpp:688-689    W   Goto destination set
+                                                  (ECS write at line 612)
+  ecs/systems/PlayerRuntimeSystem.cpp:3711-3712 *W  MountVnum (4-fixup)
+  ecs/systems/PlayerRuntimeSystem.cpp:3876-3878 *W  SetDetails (post-bff8ffe)
+  ecs/systems/PlayerRuntimeSystem.cpp:4915      W  Initialize cleanup
+                                                  (entity null at this point)
+  ecs/systems/SessionSystem.cpp:992-993         *W  Show / warp
+
+Dual-write status: ✓ all character writes paired with ECS
+emplace_or_replace<MovementDestination> or remove<MovementDestination>
+via Sync*Write helpers (4-fixup.1).
+
+Drift history: this field caused the multi-second stale snap symptom
+that drove 21dc2df hotfix and bff8ffe Sync fix.
+
+
+----------------------------------------------------------------------
+FIELD 3: m_posStart  (PIXEL_POSITION, char.h:1119)
+----------------------------------------------------------------------
+
+Storage: PIXEL_POSITION in CHARACTER.
+
+Existing ECS component: NONE.
+Phase A.2 will introduce ecs::MovementOrigin or extend MovementState
+to include start position. Currently legacy-only.
+
+Direct reads:
+  ecs/systems/MovementSystem.cpp:823, 831
+                        R  CalculateMoveDuration distance calculation
+                            (used WITH m_posDest to compute fDist)
+
+Used internally only — no consumer outside MovementSystem.cpp.
+
+Direct writes:
+  ecs/systems/AffectSystem.cpp:1673-1674    W  stun reset (paired)
+  ecs/systems/MovementSystem.cpp:577-578    W  Sync (post bff8ffe)
+  ecs/systems/MovementSystem.cpp:636-637    W  Stop reset (paired)
+  ecs/systems/MovementSystem.cpp:820-821    W  CalculateMoveDuration
+                                                snapshot
+  ecs/systems/PlayerRuntimeSystem.cpp:3711-3712  W  MountVnum
+  ecs/systems/PlayerRuntimeSystem.cpp:3879-3881  W  SetDetails (post-bff8ffe)
+  ecs/systems/PlayerRuntimeSystem.cpp:4914  W  Initialize cleanup
+  ecs/systems/SessionSystem.cpp:996-998     W  Show / warp
+
+Dual-write status: ✗ no ECS component currently mirrors m_posStart.
+Used only within CalculateMoveDuration as fDist source. Phase A.2
+decides whether to add MovementOrigin or make CalculateMoveDuration
+take the start as a function arg (no persistent storage needed).
+
+
+----------------------------------------------------------------------
+FIELD 4: m_dwMoveStartTime  (uint32_t, char.h:1126)
+----------------------------------------------------------------------
+
+Storage: uint32_t in CHARACTER. Tick at which current move started.
+
+Existing ECS component: ecs::MovementState::moveStartTime (uint32_t).
+
+Direct reads:
+  char.h:1077           R  GetMoveStartTimeForAudit (audit-only,
+                                                     Phase G delete)
+  ecs/systems/NetworkSyncSystem.cpp:994
+                        R  EncodeInsertPacket iDur calc
+  ecs/systems/PointSystem.cpp:511
+                        R  GetMoveSpeed limit while moving check
+
+Direct writes:
+  ecs/systems/MovementSystem.cpp:833      *W  CalculateMoveDuration
+                                              (4-fixup.2.a: SyncTimingWrite)
+  ecs/systems/PlayerRuntimeSystem.cpp:5002  W  Initialize cleanup
+                                              (entity null, no-op effect)
+
+Dual-write status: ✓ Goto path syncs ECS via SyncTimingWrite
+(4-fixup.2.a). Initialize path is entity-null no-op.
+
+
+----------------------------------------------------------------------
+FIELD 5: m_dwMoveDuration  (uint32_t, char.h:1127)
+----------------------------------------------------------------------
+
+Storage: uint32_t in CHARACTER. Duration of current move in ms.
+
+Existing ECS component: ecs::MovementState::moveDuration (uint32_t).
+
+Direct reads:
+  char.h:1067           R  GetCurrentMoveDuration
+  ecs/systems/MovementSystem.cpp:831
+                        R  trace log
+  ecs/systems/MovementSystem.cpp:867
+                        R  SendMovePacket FUNC_WAIT branch
+  ecs/systems/NetworkSyncSystem.cpp:994
+                        R  EncodeInsertPacket iDur calc
+  ecs/systems/PointSystem.cpp:511
+                        R  GetMoveSpeed limit while moving check
+
+Direct writes:
+  ecs/systems/MovementSystem.cpp:827      *W  CalculateMoveDuration
+                                              (4-fixup.2.a)
+  ecs/systems/PlayerRuntimeSystem.cpp:5003  W  Initialize cleanup
+
+Dual-write status: ✓ same as m_dwMoveStartTime.
+
+
+----------------------------------------------------------------------
+FIELD 6: m_bNowWalking  (bool, char.h:1135)
+----------------------------------------------------------------------
+
+Storage: bool in CHARACTER.
+
+Existing ECS component: ecs::MovementState::isNowWalking (bool).
+
+Direct reads:
+  char.h:1049           R  IsWalking() inline composite
+                            (m_bNowWalking || GetStamina() <= 0)
+  char.h:1078           R  GetNowWalkingForAudit (audit-only)
+  ecs/systems/NetworkSyncSystem.cpp:1013
+                        R  EncodeInsertPacket walk packet branch
+  ecs/systems/NetworkSyncSystem.cpp:1024
+                        R  EncodeInsertPacket second walk packet branch
+  ecs/systems/MovementSystem.cpp:922, 942, 949
+                        R  SetNowWalking branches and broadcast
+
+Direct writes:
+  ecs/systems/MovementSystem.cpp:926      *W  SetNowWalking enable
+                                              (4-fixup.2.b: SyncWalkingWrite)
+  ecs/systems/MovementSystem.cpp:931      *W  SetNowWalking disable
+                                              (4-fixup.2.b)
+  ecs/systems/PlayerRuntimeSystem.cpp:5025  W  Initialize cleanup
+
+Dual-write status: ✓ SetNowWalking syncs ECS via SyncWalkingWrite.
+
+
+----------------------------------------------------------------------
+FIELD 7: m_bAddChrState  (uint8_t, char.h:1021)
+----------------------------------------------------------------------
+
+Storage: uint8_t bitfield in CHARACTER. Combines 4 state flags:
+  ADD_CHARACTER_STATE_DEAD     (1<<0)
+  ADD_CHARACTER_STATE_SPAWN    (1<<1)
+  ADD_CHARACTER_STATE_KILLER   (1<<2)
+  ADD_CHARACTER_STATE_PARTY    (1<<3)
+
+Existing ECS components: ecs::StatusFlags fields:
+  isDead          (bool : 1)
+  isSpawnState    (bool : 1)
+  isKillerMode    (bool : 1)
+  isPartyState    (bool : 1)
+
+Direct reads:
+  char.h:1079           R  GetAddChrStateForAudit (audit-only)
+  ecs/systems/CombatSystem.cpp:580, 600
+                        R  IsKillerMode check
+  ecs/systems/NetworkSyncSystem.cpp:990
+                        R  EncodeInsertPacket pack.bStateFlag = ...
+                            (the wire byte that drives client display)
+
+Direct writes (RW = SET_BIT/REMOVE_BIT, bit-level update):
+  ecs/systems/AffectSystem.cpp:2019, 2027   *RW  polymorph SPAWN bit
+                                                (4-fixup.2.f synced)
+  ecs/systems/CombatSystem.cpp:584, 586     *RW  KILLER bit (synced via
+                                                CombatSystem.cpp:589)
+  ecs/systems/MovementSystem.cpp:1007       *RW  POS_STANDING DEAD clear
+                                                (4-fixup.2.f sync at 938)
+  ecs/systems/MovementSystem.cpp:1011       *RW  POS_STANDING SPAWN clear
+                                                (4-fixup.2.f reverse drift)
+  ecs/systems/MovementSystem.cpp:1035       *RW  POS_DEAD set
+                                                (sync at 1041)
+  ecs/systems/PlayerRuntimeSystem.cpp:4978   W  Initialize full reset
+                                                (entity null no-op)
+  ecs/systems/SessionSystem.cpp:979, 1027   *RW  Show SPAWN bit
+                                                (sync via StatusFlags
+                                                writes line 980, 1029)
+  ecs/systems/SocialSystem.cpp:115, 117     *RW  PARTY bit (sync at 120)
+
+Dual-write status: ✓ for SPAWN, KILLER, DEAD, PARTY paths
+(4-fixup.2.f). One known transient drift documented:
+  CombatSystem.cpp:2419-2420 sets ECS isDead = true on kill but does
+  not set m_bAddChrState DEAD. The legacy DEAD bit is set later by
+  SetPosition(POS_DEAD) via the EvEntityDied event chain. Marked
+  acceptable in 4-fixup.2.f notes. Resolves automatically when this
+  field is removed in Phase G.
+
+
+----------------------------------------------------------------------
+FIELD 8: m_map_view  (ENTITY_MAP, entity.h:62)
+----------------------------------------------------------------------
+
+Storage: std::map<LPENTITY, int> in CEntity. Key = visible entity,
+value = view age (refreshed by UpdateSectree).
+
+Existing ECS components: ecs::ViewMap (set<entt::entity>),
+ecs::ViewerMap (reverse), ecs::ViewAgeMap (age generation).
+
+Direct reads (the broadcast / iteration surface):
+  entity.cpp:137 [post f76a3f1]
+                        R  PacketView legacy iteration (band-aid leg
+                            of hybrid)
+  entity_view.cpp:214, 216
+                        R  ViewCleanup loop
+  entity_view.cpp:237, 239
+                        R  ViewReencode loop
+  entity_view.cpp:258, 280
+                        R  ViewInsert / ViewRemove find
+  entity_view.cpp:285
+                        R  ViewRemove erase
+  entity_view.cpp:354, 356, 383, 385, 416, 418
+                        R  UpdateSectree age-out loops (3 paths)
+  ecs/systems/MountSystem.cpp:295
+                        R  mount system iteration of viewers
+  ecs/systems/PlayerRuntimeSystem.cpp:3721, 3723, 4319, 4321
+                        R  PR system iteration (MountVnum reencode +
+                            another path)
+  ecs/systems/SessionSystem.cpp:1038
+                        R  Session iteration (Show post-spawn)
+  ecs/systems/ItemSystem_LegacyBridge.cpp:4112
+                        R  item system iteration
+
+Direct writes:
+  entity.cpp:33         W  m_map_view.clear() in Initialize
+  entity_view.cpp:224   W  ViewCleanup clear
+  entity_view.cpp:266   W  ViewInsert insert
+  entity_view.cpp:285   W  ViewRemove erase
+  entity_view.cpp:364, 394, 427
+                        W  UpdateSectree age-out erase (3 paths)
+
+Dual-write status: ✓ writes mirrored to ECS ViewMap / ViewerMap via
+MirrorViewInsert / MirrorViewRemove / MirrorViewClear in
+entity_view.cpp:34-103. ECS mirror is a shadow; legacy is authoritative
+for broadcast (per f76a3f1 hybrid).
+
+Drift history: ValidateViewMapMirror reported steady missing_in_legacy=2
+delta. ECS mirror has spurious entries; legacy m_map_view has spurious
+gaps during idle windows. The desync symptom rooted in legacy gaps.
+
+
+----------------------------------------------------------------------
+FIELD 9: m_iViewAge  (int, entity.h:73)
+----------------------------------------------------------------------
+
+Storage: int in CEntity. Monotonic counter, incremented on every
+UpdateSectree. Used to detect stale m_map_view entries.
+
+Existing ECS component: NONE direct mapping. ECS uses ViewAgeMap (per
+viewer entity, generation counter) but the polling-age model is a
+legacy concept.
+
+Direct reads:
+  entity.h:33           R  GetViewAge accessor
+  entity_view.cpp:260, 266
+                        R  ViewInsert age stamp (refresh / new)
+  entity_view.cpp:359, 389, 422
+                        R  UpdateSectree age comparison (3 paths)
+
+Direct writes:
+  entity.cpp:31         W  Initialize zero
+  entity_view.cpp:343   RW  UpdateSectree increment
+
+Phase A decision: m_iViewAge has no event-driven analog. In the
+event-driven visibility model (Phase D), aging is replaced by direct
+range queries on PositionChanged events. The field is DELETED outright
+in Phase G; ViewAgeMap likewise.
+
+
+----------------------------------------------------------------------
+FIELD 10: m_pSectree  (LPSECTREE, entity.h:75)
+----------------------------------------------------------------------
+
+Storage: LPSECTREE pointer in CEntity. Cached pointer to current
+sectree placement.
+
+Existing ECS component: ecs::SectorPlacement (already populated by
+SyncSectorPlacement at every position change).
+
+Direct reads (via accessor only):
+  entity.h:43           R  GetSectree() inline accessor
+
+Indirect reads via GetSectree(): ~60 callers across the codebase
+(e.g. MovementSystem, AISystem, sectree boundary checks). Migration
+pattern: GetSectree() proxies into SectorPlacement / SpatialService
+in Phase B.
+
+Direct writes (via setter only):
+  entity.h:44           W  SetSectree inline setter
+  entity.cpp:35         W  Initialize nullptr
+
+SetSectree caller sites (need full grep to enumerate, expected ~5-10
+sites in sectree.cpp / entity_view.cpp).
+
+Dual-write status: ✓ SectorPlacement is updated by
+SpatialService::InsertEntity / SyncSectorPlacement on every position
+change. Legacy m_pSectree is also written by sectree->InsertEntity /
+RemoveEntity. Both kept in sync.
+
+
+======================================================================
+SUMMARY MATRIX
+======================================================================
+
+field            | rd surface       | wr surface | ECS twin              | dual-write
+-----------------|------------------|------------|-----------------------|------------
+m_pos            | 188 indirect via | entity.h   | Position +            | full ✓
+                 | GetX/Y/Z         | SetXYZ     | PositionZ             |
+m_posDest        | 12 sites + 188   | 9 sites    | MovementDestination   | full ✓
+                 | indirect getters |            |                       |
+m_posStart       | 2 sites (internal| 8 sites    | NONE (target:         | none ✗
+                 | to MovementSys)  |            | MovementOrigin or     |
+                 |                  |            | function arg)         |
+m_dwMoveStartTime| 3 sites          | 2 sites    | MovementState         | full ✓
+                 |                  |            | .moveStartTime        |
+m_dwMoveDuration | 5 sites          | 2 sites    | MovementState         | full ✓
+                 |                  |            | .moveDuration         |
+m_bNowWalking    | 5 sites          | 3 sites    | MovementState         | full ✓
+                 |                  |            | .isNowWalking         |
+m_bAddChrState   | 3 sites          | 9 RW sites | StatusFlags           | full ✓
+                 |                  |            | (isDead, isSpawnState,|  (1 known
+                 |                  |            | isKillerMode,         |  transient
+                 |                  |            | isPartyState)         |  deferred)
+m_map_view       | 18 sites         | 7 sites    | ViewMap (forward),    | mirror ✓
+                 |                  |            | ViewerMap (reverse)   |  (legacy
+                 |                  |            |                       |  authoritative)
+m_iViewAge       | 6 sites          | 2 sites    | NONE — DELETED        | n/a
+                 |                  |            | in Phase G (event-    |
+                 |                  |            | driven model)         |
+m_pSectree       | 1 inline +       | 1 inline + | SectorPlacement       | full ✓
+                 | ~60 indirect     | ~5-10 ind. |                       |
+
+
+======================================================================
+PHASE A.2 PRE-WORK NOTES
+======================================================================
+
+A.2 must answer for each field:
+  1. Does an ECS twin already exist?  (yes for 8/10, no for m_posStart
+     and m_iViewAge)
+  2. Is the legacy field's purpose semantically equivalent to the ECS
+     twin? (yes for 8, m_iViewAge becomes obsolete in event-driven,
+     m_posStart can fold into a function-local arg)
+  3. Which subsystem becomes the OWNER (component lifecycle holder)?
+     - Position / PositionZ — owned by SpatialService (already)
+     - MovementDestination — owned by MovementSystem
+     - MovementState — owned by MovementSystem
+     - StatusFlags — multiple writers; owner clarified per field
+       (StatusFlags itself stays composed, no single owner)
+     - ViewMap / ViewerMap — owned by VisibilitySystem (NEW in Phase D)
+     - SectorPlacement — owned by SpatialService (already)
+
+
+======================================================================
+PHASE A.2 PROVISIONAL OUTPUT (preview)
+======================================================================
+
+Each Phase B / C / D commit will reference exactly one field's
+read/write site list above. Cleanup policy: when the last reader of a
+legacy field migrates, the field becomes deletable; the deletion
+commit also removes any associated audit-only accessor (e.g.
+GetMoveStartTimeForAudit).
+
+Estimated commit count by phase:
+  Phase B (read migration):
+    m_pos (indirect)         1 commit (getter rewrite)
+    m_posDest                2 commits (direct + getters)
+    m_posStart               1 commit (CalculateMoveDuration only)
+    m_dwMoveStartTime        1 commit
+    m_dwMoveDuration         1 commit
+    m_bNowWalking            2 commits (split: settler + getter)
+    m_bAddChrState           3 commits (per readers group)
+    m_map_view               4 commits (split per major caller file)
+    m_pSectree               1 commit (getter rewrite)
+    Sub-total                ~16 commits
+
+  Phase C (write migration + dead body delete):
+    m_pos                    2 commits (SetXYZ + Initialize)
+    m_posDest                3 commits (per-site groups)
+    m_posStart               1 commit
+    m_dwMoveStartTime/Dur    1 commit
+    m_bNowWalking            1 commit
+    m_bAddChrState           3 commits
+    m_map_view               2 commits (write API replace)
+    m_iViewAge               1 commit (delete in Phase G strictly)
+    m_pSectree               1 commit
+    Sub-total                ~15 commits
+
+  Phase D (event-driven visibility): ~10 commits (per A.4)
+  Phase E (broadcast service): ~8 commits (per A.3)
+  Phase F (native dispatch): 4 commits
+  Phase G (cleanup):         10 commits (1 per field deletion + 1 audit
+                                          TU deletion + 1 doc update)
+
+Grand total: ~63 commits across phases A → G.
+
+
+End of A.1 inventory.
