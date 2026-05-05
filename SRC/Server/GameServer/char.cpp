@@ -10675,6 +10675,26 @@ static bool IsExpiringItem(const LPITEM& item)
 	return false;
 }
 
+#ifdef ENABLE_EXTRA_INVENTORY
+static bool HasMatchingExpiringExtraInventoryItem(LPCHARACTER ch, const LPITEM& item)
+{
+	if (!ch || !item)
+		return false;
+
+	for (int i = 0; i < EXTRA_INVENTORY_MAX_NUM; ++i)
+	{
+		LPITEM item2 = ch->GetExtraInventoryItem(i);
+		if (!item2 || !IsExpiringItem(item2))
+			continue;
+
+		if (item->GetVnum() == item2->GetVnum())
+			return true;
+	}
+
+	return false;
+}
+#endif
+
 static bool SortMyItems(const LPITEM& s1, const LPITEM& s2)
 {
 	// Sort By Name
@@ -10722,7 +10742,7 @@ void CHARACTER::EditMyInven()
 	LPITEM myitems;
 
 	//FIXING QUICKSLOT SYNC
-	std::map<uint32_t, uint8_t> mapOldPosition;
+	std::map<uint32_t, uint16_t> mapOldPosition;
 
 	//clear vector
 	v.clear();
@@ -10887,7 +10907,7 @@ void CHARACTER::EditMyExtraInven()
 	LPITEM myitems;
 
 	//FIXING QUICKSLOT SYNC
-	std::map<uint32_t, uint8_t> mapOldPosition;
+	std::map<uint32_t, uint16_t> mapOldPosition;
 
 	//clear vector
 	v.clear();
@@ -10963,8 +10983,9 @@ void CHARACTER::EditMyExtraInven()
 			//END
 
 			TItemTable* p = ITEM_MANAGER::instance().GetTable(item->GetVnum());
+			const bool hasMatchingExpiringItem = HasMatchingExpiringExtraInventoryItem(this, item);
 			// isn't same function !
-			if (p && p->dwFlags & ITEM_FLAG_STACKABLE && p->bType != ITEM_BLEND)
+			if (p && p->dwFlags & ITEM_FLAG_STACKABLE && p->bType != ITEM_BLEND && !hasMatchingExpiringItem)
 				newItem = AutoGiveItem(item->GetVnum(), item->GetCount(), -1, false
 #ifdef __HIGHLIGHT_SYSTEM__
 					, false
@@ -10973,6 +10994,38 @@ void CHARACTER::EditMyExtraInven()
 			//changed 
 			//AutoGiveItem(item->GetVnum(), item->GetCount(), -1, false); // create new item for stackable items
 
+			else if (hasMatchingExpiringItem)
+			{
+				int iEmptyCell = GetEmptyExtraInventory(item);
+				if (iEmptyCell == -1)
+				{
+					auto oldPosIt = mapOldPosition.find(item->GetID());
+					if (oldPosIt != mapOldPosition.end())
+					{
+						const TItemPos oldCell(EXTRA_INVENTORY, oldPosIt->second);
+						if (IsEmptyItemGrid(oldCell, item->GetSize()))
+							iEmptyCell = oldPosIt->second;
+					}
+				}
+
+				if (iEmptyCell != -1)
+				{
+					item->AddToCharacter(this, TItemPos(EXTRA_INVENTORY, iEmptyCell)
+#ifdef __HIGHLIGHT_SYSTEM__
+						, false
+#endif
+					);
+				}
+				else
+				{
+					sys_err("EditMyExtraInven: cannot find safe cell for item id %u vnum %u", item->GetID(), item->GetVnum());
+					AutoGiveItem(item, false
+#ifdef __HIGHLIGHT_SYSTEM__
+						, false
+#endif
+					);
+				}
+			}
 			else
 				AutoGiveItem(item, false
 #ifdef __HIGHLIGHT_SYSTEM__
