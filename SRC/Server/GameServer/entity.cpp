@@ -9,8 +9,6 @@
 #include "ecs/Registry.hpp"
 #include "ecs/components/dirty_components.hpp"
 #include "ecs/components/status_components.hpp"
-#include "ecs/components/transform_components.hpp"
-#include "ecs/services/SpatialService.hpp"
 
 #include <unordered_set>
 
@@ -48,66 +46,6 @@ void CEntity::Destroy()
 	}
 	ViewCleanup();
 	m_bIsDestroyed = true;
-}
-
-namespace {
-inline const ecs::Position* TryGetPositionFor(const CEntity* self)
-{
-	// Phase 15E-final.LPENTITY.4-architect.B.1.1:
-	// Resolve `self` to its ECS entity via SpatialService (the legitimate
-	// LPENTITY -> entt::entity boundary), then read the Position component.
-	// Returns nullptr when the entity has not yet been registered with ECS
-	// (bootstrap window between CEntity ctor and the subclass factory).
-	// In that window the legacy m_pos is also at its zero-init state,
-	// so callers that hit the nullptr branch see (0, 0, 0) - matching
-	// legacy behaviour bit-exactly.
-	if (!self)
-		return nullptr;
-	const entt::entity e = ecs::SpatialService::EntityFromLPENTITY(
-		const_cast<LPENTITY>(static_cast<const CEntity*>(self)));
-	if (e == entt::null || !g_registry.valid(e))
-		return nullptr;
-	return g_registry.try_get<ecs::Position>(e);
-}
-}
-
-int32_t CEntity::GetX() const
-{
-	if (const auto* pos = TryGetPositionFor(this))
-		return pos->x;
-	return 0;
-}
-
-int32_t CEntity::GetY() const
-{
-	if (const auto* pos = TryGetPositionFor(this))
-		return pos->y;
-	return 0;
-}
-
-int32_t CEntity::GetZ() const
-{
-	if (const auto* pos = TryGetPositionFor(this))
-		return pos->z;
-	return 0;
-}
-
-PIXEL_POSITION CEntity::GetXYZ() const
-{
-	PIXEL_POSITION result;
-	if (const auto* pos = TryGetPositionFor(this))
-	{
-		result.x = pos->x;
-		result.y = pos->y;
-		result.z = pos->z;
-	}
-	else
-	{
-		result.x = 0;
-		result.y = 0;
-		result.z = 0;
-	}
-	return result;
 }
 
 void CEntity::SetType(int type)

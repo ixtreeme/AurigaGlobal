@@ -28,28 +28,14 @@ class CEntity
 		void			ViewCleanup();
 		void			ViewInsert(LPENTITY entity, bool recursive = true);
 		void			ViewRemove(LPENTITY entity, bool recursive = true);
-		void			ViewReencode();	// ï¿½ï¿½ï¿½ï¿½ Entityï¿½ï¿½ ï¿½ï¿½Å¶ï¿½ï¿½ ï¿½Ù½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½.
+		void			ViewReencode();	// ÁÖÀ§ Entity¿¡ ÆÐÅ¶À» ´Ù½Ã º¸³½´Ù.
 
 		int				GetViewAge() const	{ return m_iViewAge;	}
 
-		// Phase 15E-final.LPENTITY.4-architect.B.1.1:
-		// GetX/Y/Z/GetXYZ now read the ECS Position component as the
-		// authoritative source. Per A.2 Â§2 m_pos row, A.2 Â§5 Step 2.
-		// Legacy m_pos remains written by SetXYZ (writes migrate in Phase C);
-		// dual-write via SyncPositionComponents keeps both stores in sync,
-		// so reads through this path return values identical to the prior
-		// inline `return m_pos.x` accessors.
-		// Bodies live in entity.cpp because the registry / SpatialService
-		// includes do not belong in a widely-included header.
-		// GetXYZ returns by value: the previous reference return cannot be
-		// safely produced from the registry (component pointers can move on
-		// other emplace operations), and all current callers either copy
-		// to a local PIXEL_POSITION or bind a const& to the returned
-		// temporary (lifetime extension applies, no dangling).
-		int32_t				GetX() const;
-		int32_t				GetY() const;
-		int32_t				GetZ() const;
-		PIXEL_POSITION		GetXYZ() const;
+		int32_t			GetX() const		{ return m_pos.x; }
+		int32_t			GetY() const		{ return m_pos.y; }
+		int32_t			GetZ() const		{ return m_pos.z; }
+		const PIXEL_POSITION &	GetXYZ() const		{ return m_pos; }
 
 		void			SetXYZ(int32_t x, int32_t y, int32_t z)		{ m_pos.x = x, m_pos.y = y, m_pos.z = z; }
 		void			SetXYZ(const PIXEL_POSITION & pos)	{ m_pos = pos; }
