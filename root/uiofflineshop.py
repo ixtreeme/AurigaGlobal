@@ -111,6 +111,13 @@ def NumberToString(num):
 	parts.insert(0,"%d"%num)
 	return '.'.join(parts)
 
+def GetShopDurationString(dur):
+	if dur == 0:
+		return getattr(localeinfo, "OFFLINESHOP_INFINITE_DURATION", "Infinite")
+
+	return GetDurationString(dur)
+
+
 def GetDurationString(dur):
 	days    = dur // (24 * 60)
 	hours   = (dur//60)%24
@@ -1409,7 +1416,7 @@ class ShopListElement(ui.Window):
 		text.SetParent(self.openShopButton)
 		text.SetPosition(358 , 2)
 		text.SetHorizontalAlignCenter()
-		text.SetText(GetDurationString(duration))
+		text.SetText(GetShopDurationString(duration))
 		text.Show()
 		
 		self.durationText = text
@@ -5538,12 +5545,7 @@ class NewOfflineShopBoard(ui.ScriptWindow):
 		days  = int(self.CreateShopDaysCountText.GetText())
 		hours = int(self.CreateShopHoursCountText.GetText())
 		
-		totaltime = days * 24 * 60
-		totaltime += hours * 60
-		
-		if totaltime > offlineshop.OFFLINESHOP_MAX_MINUTES or totaltime <= 0:
-			self.__PopupMessage(localeinfo.OFFLINESHOP_CREATE_SHOP_INVALID_DURATION)
-			return
+		totaltime = 0
 		
 		elements = self.CreateShopItemsTable.GetElementDict()
 		if not elements:
@@ -6372,7 +6374,7 @@ class NewOfflineShopBoard(ui.ScriptWindow):
 			name = name[name.find('@')+1:]
 
 		self.MyShopShopTitle.SetText(name + "  " + localeinfo.OFFLINESHOP_ITEMS_COUNT_TEXT%self.ShopOpenInfo["count"])
-		self.MyShopShopDuration.SetText(GetDurationString(self.ShopOpenInfo["duration"]))
+		self.MyShopShopDuration.SetText(GetShopDurationString(self.ShopOpenInfo["duration"]))
 
 
 
@@ -6466,7 +6468,7 @@ class NewOfflineShopBoard(ui.ScriptWindow):
 			name = name[name.find('@')+1:]
 		
 		self.OpenShopShopTitle.SetText(name+ "  " + localeinfo.OFFLINESHOP_ITEMS_COUNT_TEXT%self.ShopOpenInfo["count"])
-		self.OpenShopShopDuration.SetText(GetDurationString(duration))
+		self.OpenShopShopDuration.SetText(GetShopDurationString(duration))
 
 
 	def RefreshSearchHistoryPage(self):

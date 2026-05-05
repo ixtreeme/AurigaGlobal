@@ -325,7 +325,7 @@ namespace offlineshop
 			return false;
 
 		TShopCacheInfo sShop;
-		sShop.dwDuration = dwDuration;
+		sShop.dwDuration = 0;
 		strncpy(sShop.szName, szName, sizeof(sShop.szName));
 #ifdef KASMIR_PAKET_SYSTEM
 		sShop.dwKasmirNpc = dwKasmirNpc;
@@ -420,8 +420,13 @@ namespace offlineshop
 	{
 		CACHEITER it = m_shopsMap.begin();
 		for (; it != m_shopsMap.end(); ++it)
+		{
+			if (it->second.dwDuration == 0)
+				continue;
+
 			if(--it->second.dwDuration!=0 && it->second.dwDuration % 5 == 0)
 				UpdateDurationQuery(it->first, it->second);
+		}
 
 		//expired check
 		std::vector<uint32_t> vec;
@@ -457,7 +462,6 @@ namespace offlineshop
 			CShopCache::TShopCacheInfo& shop = it->second;
 
 			if (shop.dwDuration == 0) {
-				vec.push_back(it->first);
 				continue;
 			}
 

@@ -3,6 +3,7 @@ MAP_NAME_26	Pueblo Congelado
 CUBE_CATEGORY43	Efectos de armas
 MAP_NAME_369	Triton Dungeon
 CUBE_CATEGORY44	Efectos de armadura
+OFFLINESHOP_INFINITE_DURATION	Infinite
 CUBE_CATEGORY45	Mascota
 LELEKGOMB_EVENT	Soul Orb (Alternative drop)
 CUBE_CATEGORY46	MONTURAS

@@ -439,7 +439,7 @@ namespace offlineshop
 		SHOPMAP::iterator it = m_mapShops.insert(std::make_pair(pInfo->dwOwnerID, offlineshop::CShop())).first;
 		offlineshop::CShop& rShop = it->second;
 
-		rShop.SetDuration(pInfo->dwDuration);
+		rShop.SetDuration(0);
 		rShop.SetOwnerPID(pInfo->dwOwnerID);
 		rShop.SetName(pInfo->szName);
 #ifdef KASMIR_PAKET_SYSTEM
@@ -2170,7 +2170,7 @@ namespace offlineshop
 
 		
 
-		rShopInfo.dwDuration = MIN(rShopInfo.dwDuration , OFFLINESHOP_DURATION_MAX_MINUTES);
+		rShopInfo.dwDuration = 0;
 		SendShopCreateNewDBPacket(rShopInfo, vecItem);
 		
 #ifdef KASMIR_PAKET_SYSTEM

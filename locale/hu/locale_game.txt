@@ -1,6 +1,7 @@
 MAP_NAME_369	Triton Dungeon
 MAP_NAME_25	Télföld
 BELT	Öv
+OFFLINESHOP_INFINITE_DURATION	Végtelen
 POLYMORPH_AFFECT_TOOLTIP	Polymorph Marble	SNA
 AFFECTSHOWER_REMOVE_TEXT	|Eemoji/key_lclick|e - Click for remove affect
 AFFECT_REMOVE_QUESTION	Do you want to remove %s?

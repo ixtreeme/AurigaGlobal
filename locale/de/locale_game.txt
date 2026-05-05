@@ -1,6 +1,7 @@
 MAP_NAME_25	Winterland
 MIKI_EVENT	Santa Claus Event
 EASTER_EVENT	EASTER EVENT
+OFFLINESHOP_INFINITE_DURATION	Infinite
 LELEKGOMB_EVENT	Soul Orb (Alternative drop)
 KARI_EVENT	Christmas Event
 DUPLA_SZILI_EVENT	Double Metin Shard

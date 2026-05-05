@@ -1595,12 +1595,12 @@ class GameWindow(ui.ScriptWindow):
 		itemDropQuestionDialog.dropNumber = player.ITEM_MONEY
 		self.itemDropQuestionDialog = itemDropQuestionDialog
 
-	def __SendDestroyItemPacket(self, itemVNum, itemInvenType = player.INVENTORY):
+	def __SendDestroyItemPacket(self, itemSlotPos, itemInvenType = player.INVENTORY):
 		if uiprivateshopbuilder.IsBuildingPrivateShop():
 			chat.AppendChat(chat.CHAT_TYPE_INFO, localeinfo.DROP_ITEM_FAILURE_PRIVATE_SHOP)
 			return
 		
-		net.SendItemDestroyPacket(itemVNum, itemInvenType)
+		net.SendItemDestroyPacket(itemSlotPos, itemInvenType)
 
 	def RequestDestroyItem(self, answer):
 		if not self.itemDropQuestionDialog:
@@ -1610,9 +1610,9 @@ class GameWindow(ui.ScriptWindow):
 			dropType = self.itemDropQuestionDialog.dropType
 			dropNumber = self.itemDropQuestionDialog.dropNumber
 			if player.SLOT_TYPE_INVENTORY == dropType:
-				self.__SendDestroyItemPacket(dropNumber, dropType)
+				self.__SendDestroyItemPacket(dropNumber, player.INVENTORY)
 			elif app.ENABLE_EXTRA_INVENTORY and player.SLOT_TYPE_EXTRA_INVENTORY == dropType:
-				self.__SendDestroyItemPacket(dropNumber, 7)
+				self.__SendDestroyItemPacket(dropNumber, player.EXTRA_INVENTORY)
 		
 		self.itemDropQuestionDialog.Close()
 		self.itemDropQuestionDialog = None
