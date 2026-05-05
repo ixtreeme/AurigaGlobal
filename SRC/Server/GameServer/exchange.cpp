@@ -1013,12 +1013,12 @@ bool CExchange::Done()
 
 #ifdef ENABLE_EXTRA_INVENTORY
 		if (item->IsExtraItem()) {
-			m_pOwner->SyncQuickslot(QUICKSLOT_TYPE_ITEM_EXTRA, item->GetCell(), 255);
+			m_pOwner->SyncQuickslot(QUICKSLOT_TYPE_ITEM_EXTRA, item->GetCell(), QUICKSLOT_DELETE_POS);
 		} else {
-			m_pOwner->SyncQuickslot(QUICKSLOT_TYPE_ITEM, item->GetCell(), 255);
+			m_pOwner->SyncQuickslot(QUICKSLOT_TYPE_ITEM, item->GetCell(), QUICKSLOT_DELETE_POS);
 		}
 #else
-		m_pOwner->SyncQuickslot(QUICKSLOT_TYPE_ITEM, item->GetCell(), 255);
+		m_pOwner->SyncQuickslot(QUICKSLOT_TYPE_ITEM, item->GetCell(), QUICKSLOT_DELETE_POS);
 #endif
 
 		item->RemoveFromCharacter();

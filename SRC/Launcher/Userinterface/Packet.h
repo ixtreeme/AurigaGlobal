@@ -1165,7 +1165,7 @@ typedef struct SPacketCGMyShop
 typedef struct SPacketCGRefine
 {
 	uint8_t		header;
-	uint8_t		pos;
+	uint16_t		pos;
 	uint8_t		type;
 #ifdef ENABLE_FEATURES_REFINE_SYSTEM
 	uint8_t		lLow;
@@ -2638,7 +2638,7 @@ typedef struct SRefineTable
 typedef struct SPacketGCRefineInformation
 {
 	uint8_t			header;
-	uint8_t			pos;
+	uint16_t			pos;
 	TRefineTable	refine_table;
 } TPacketGCRefineInformation;
 
@@ -2646,7 +2646,7 @@ typedef struct SPacketGCRefineInformationNew
 {
 	uint8_t			header;
 	uint8_t			type;
-	uint8_t			pos;
+	uint16_t			pos;
 	TRefineTable	refine_table;
 } TPacketGCRefineInformationNew;
 

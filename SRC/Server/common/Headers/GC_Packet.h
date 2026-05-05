@@ -875,7 +875,7 @@ typedef struct SPacketGCRefineInformaion
 {
 	uint8_t	header;
 	uint8_t	type;
-	uint8_t	pos;
+	uint16_t	pos;
 	uint32_t	src_vnum;
 	uint32_t	result_vnum;
 	uint8_t	material_count;

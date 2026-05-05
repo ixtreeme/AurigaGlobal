@@ -9,7 +9,7 @@
 /////////////////////////////////////////////////////////////////////////////
 // QUICKSLOT HANDLING
 /////////////////////////////////////////////////////////////////////////////
-void CHARACTER::SyncQuickslot(uint8_t bType, uint8_t bOldPos, uint8_t bNewPos)
+void CHARACTER::SyncQuickslot(uint8_t bType, uint16_t bOldPos, uint16_t bNewPos)
 {
 	if (bOldPos == bNewPos)
 		return;
@@ -18,7 +18,7 @@ void CHARACTER::SyncQuickslot(uint8_t bType, uint8_t bOldPos, uint8_t bNewPos)
 	{
 		if (m_quickslot[i].type == bType && m_quickslot[i].pos == bOldPos)
 		{
-			if (bNewPos == 255)
+			if (bNewPos == QUICKSLOT_DELETE_POS)
 				DelQuickslot(i);
 			else
 			{
@@ -150,7 +150,7 @@ bool CHARACTER::SwapQuickslot(uint8_t a, uint8_t b)
 	return true;
 }
 
-void CHARACTER::ChainQuickslotItem(LPITEM pItem, uint8_t bType, uint8_t bOldPos)
+void CHARACTER::ChainQuickslotItem(LPITEM pItem, uint8_t bType, uint16_t bOldPos)
 {
 	if (pItem->IsDragonSoul())
 		return;

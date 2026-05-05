@@ -475,7 +475,7 @@ namespace quest
 			ITEM_MANAGER::CopyAllAttrTo(pItem, pkNewItem);
 			LogManager::instance().ItemLog(pChar, pkNewItem, "COPY SUCCESS", pkNewItem->GetName());
 
-			uint8_t bCell = pItem->GetCell();
+			uint16_t bCell = pItem->GetCell();
 
 			ITEM_MANAGER::instance().RemoveItem(pItem, "REMOVE (COPY SUCCESS)");
 

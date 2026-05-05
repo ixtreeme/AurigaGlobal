@@ -4799,7 +4799,7 @@ void CPythonNetworkStream::__TEST_SetSkillGroupFake(int iIndex)
 }
 
 #ifdef ENABLE_FEATURES_REFINE_SYSTEM
-bool CPythonNetworkStream::SendRefinePacket(uint8_t byPos, uint8_t byType, uint8_t lLow, uint8_t lMedium, uint8_t lExtra, uint8_t lTotal)
+bool CPythonNetworkStream::SendRefinePacket(uint16_t byPos, uint8_t byType, uint8_t lLow, uint8_t lMedium, uint8_t lExtra, uint8_t lTotal)
 {
 	TPacketCGRefine kRefinePacket;
 	kRefinePacket.header = HEADER_CG_REFINE;
@@ -4818,7 +4818,7 @@ bool CPythonNetworkStream::SendRefinePacket(uint8_t byPos, uint8_t byType, uint8
 	return true;
 }
 #else
-bool CPythonNetworkStream::SendRefinePacket(uint8_t byPos, uint8_t byType)
+bool CPythonNetworkStream::SendRefinePacket(uint16_t byPos, uint8_t byType)
 {
 	TPacketCGRefine kRefinePacket;
 	kRefinePacket.header = HEADER_CG_REFINE;

@@ -436,7 +436,7 @@ namespace quest
 	// REFINE_PICK
 	ALUA(_refine_pick)
 	{
-		uint8_t bCell = (uint8_t) lua_tonumber(L,-1);
+		uint16_t bCell = (uint16_t) lua_tonumber(L,-1);
 
 		CQuestManager& q = CQuestManager::instance();
 
@@ -452,7 +452,7 @@ namespace quest
 
 	ALUA(_fish_real_refine_rod)
 	{
-		uint8_t bCell = (uint8_t) lua_tonumber(L,-1);
+		uint16_t bCell = (uint16_t) lua_tonumber(L,-1);
 
 		CQuestManager& q = CQuestManager::instance();
 

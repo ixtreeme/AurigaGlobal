@@ -784,7 +784,7 @@ int RealRefineRod(LPCHARACTER ch, LPITEM item)
 		if (!pkNewItem)
 			return 4;
 
-		uint8_t bCell = rod->GetCell();
+		uint16_t bCell = rod->GetCell();
 		ITEM_MANAGER::instance().RemoveItem(rod, "REMOVE (REFINE FISH_ROD)");
 		pkNewItem->AddToCharacter(ch, TItemPos (INVENTORY, bCell));
 		LogManager::instance().ItemLog(ch, pkNewItem, "REFINE FISH_ROD SUCCESS", pkNewItem->GetName());
@@ -800,7 +800,7 @@ int RealRefineRod(LPCHARACTER ch, LPITEM item)
 		if (!pkNewItem)
 			return 3;
 		
-		uint8_t bCell = rod->GetCell();
+		uint16_t bCell = rod->GetCell();
 		ITEM_MANAGER::instance().RemoveItem(rod, "REMOVE (REFINE FISH_ROD)");
 		pkNewItem->AddToCharacter(ch, TItemPos(INVENTORY, bCell));
 		LogManager::instance().ItemLog(ch, pkNewItem, "REFINE FISH_ROD FAIL", pkNewItem->GetName());

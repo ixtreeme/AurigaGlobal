@@ -723,7 +723,7 @@ void CHARACTER::ClearItem()
 			item->RemoveFromCharacter();
 			M2_DESTROY_ITEM(item);
 
-			SyncQuickslot(QUICKSLOT_TYPE_ITEM, i, 255);
+			SyncQuickslot(QUICKSLOT_TYPE_ITEM, i, QUICKSLOT_DELETE_POS);
 		}
 	}
 	for (i = 0; i < DRAGON_SOUL_INVENTORY_MAX_NUM; ++i)
@@ -752,7 +752,7 @@ void CHARACTER::ClearItem()
 			item->RemoveFromCharacter();
 			M2_DESTROY_ITEM(item);
 
-			SyncQuickslot(QUICKSLOT_TYPE_ITEM_EXTRA, i, 255);
+			SyncQuickslot(QUICKSLOT_TYPE_ITEM_EXTRA, i, QUICKSLOT_DELETE_POS);
 		}
 	}
 #endif
@@ -964,7 +964,7 @@ bool CHARACTER::IsEmptyItemGrid(TItemPos Cell, uint8_t bSize, int iExceptionCell
 	{
 	case INVENTORY:
 	{
-		uint8_t bCell = Cell.cell;
+		uint16_t bCell = Cell.cell;
 
 		// bItemCell? 0? false?? ???? ?? + 1 ?? ????.
 		// ??? iExceptionCell? 1? ?? ????.
@@ -1614,7 +1614,7 @@ bool CHARACTER::DoRefine(LPITEM item, bool bMoneyOnly)
 			ITEM_MANAGER::CopyAllAttrTo(item, pkNewItem);
 			LogManager::instance().ItemLog(this, pkNewItem, "REFINE SUCCESS", pkNewItem->GetName());
 
-			uint8_t bCell = item->GetCell();
+			uint16_t bCell = item->GetCell();
 
 
 #ifdef ENABLE_BATTLE_PASS
@@ -1985,7 +1985,7 @@ bool CHARACTER::DoRefineWithScroll(LPITEM item)
 			ITEM_MANAGER::CopyAllAttrTo(item, pkNewItem);
 			LogManager::instance().ItemLog(this, pkNewItem, "REFINE SUCCESS", pkNewItem->GetName());
 
-			uint8_t bCell = item->GetCell();
+			uint16_t bCell = item->GetCell();
 
 
 #ifdef ENABLE_BATTLE_PASS
@@ -2113,7 +2113,7 @@ bool CHARACTER::DoRefineWithScroll(LPITEM item)
 			ITEM_MANAGER::CopyAllAttrTo(item, pkNewItem);
 			LogManager::instance().ItemLog(this, pkNewItem, "REFINE FAIL", pkNewItem->GetName());
 
-			uint8_t bCell = item->GetCell();
+			uint16_t bCell = item->GetCell();
 
 
 #ifdef ENABLE_BATTLE_PASS
@@ -2371,7 +2371,7 @@ bool CHARACTER::DoRefineWithScroll(LPITEM item)
 			ITEM_MANAGER::CopyAllAttrTo(item, pkNewItem);
 			LogManager::instance().ItemLog(this, pkNewItem, "REFINE SUCCESS", pkNewItem->GetName());
 
-			uint8_t bCell = item->GetCell();
+			uint16_t bCell = item->GetCell();
 
 
 #ifdef ENABLE_BATTLE_PASS
@@ -2499,7 +2499,7 @@ bool CHARACTER::DoRefineWithScroll(LPITEM item)
 			ITEM_MANAGER::CopyAllAttrTo(item, pkNewItem);
 			LogManager::instance().ItemLog(this, pkNewItem, "REFINE FAIL", pkNewItem->GetName());
 
-			uint8_t bCell = item->GetCell();
+			uint16_t bCell = item->GetCell();
 
 
 #ifdef ENABLE_BATTLE_PASS
@@ -2610,7 +2610,7 @@ bool CHARACTER::DoRefineItemSoul(LPITEM item)
 		LPITEM pkNewItem = ITEM_MANAGER::instance().CreateItem(resultVnum, 1, 0, false);
 		if (pkNewItem)
 		{
-			uint8_t bCell = item->GetCell();
+			uint16_t bCell = item->GetCell();
 			ChatPacket(CHAT_TYPE_COMMAND, "RefineSoulSuceeded");
 			ITEM_MANAGER::instance().RemoveItem(item, "REMOVE (REFINE SUCCESS)");
 
@@ -2633,7 +2633,7 @@ bool CHARACTER::DoRefineItemSoul(LPITEM item)
 #endif
 
 
-bool CHARACTER::RefineInformation(uint8_t bCell, uint8_t bType, int iAdditionalCell)
+bool CHARACTER::RefineInformation(uint16_t bCell, uint8_t bType, int iAdditionalCell)
 {
 	if (bCell > INVENTORY_MAX_NUM)
 		return false;
@@ -9182,13 +9182,13 @@ bool CHARACTER::DropItem(TItemPos Cell,
 		sys_log(0, "Razor93 LOG:: Called: Char_item.cpp line 8391 if (item->IsExtraItem()) { ");
 
 #endif
-		SyncQuickslot(QUICKSLOT_TYPE_ITEM_EXTRA, Cell.cell, 255);
+		SyncQuickslot(QUICKSLOT_TYPE_ITEM_EXTRA, Cell.cell, QUICKSLOT_DELETE_POS);
 	}
 	else {
-		SyncQuickslot(QUICKSLOT_TYPE_ITEM, Cell.cell, 255);
+		SyncQuickslot(QUICKSLOT_TYPE_ITEM, Cell.cell, QUICKSLOT_DELETE_POS);
 	}
 #else
-	SyncQuickslot(QUICKSLOT_TYPE_ITEM, Cell.cell, 255);
+	SyncQuickslot(QUICKSLOT_TYPE_ITEM, Cell.cell, QUICKSLOT_DELETE_POS);
 #endif
 
 	LPITEM pkItemToDrop;
@@ -10689,7 +10689,7 @@ bool CHARACTER::PickupItem(uint32_t dwVID)
 	return false;
 }
 
-bool CHARACTER::SwapItem(uint8_t bCell, uint8_t bDestCell)
+bool CHARACTER::SwapItem(uint16_t bCell, uint16_t bDestCell)
 {
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
 	ChatPacket(CHAT_TYPE_INFO, "char_item.cpp::bool bool CHARACTER::SwapItem ");//INGAME_DEBUG_RAZOR93
@@ -10744,7 +10744,7 @@ bool CHARACTER::SwapItem(uint8_t bCell, uint8_t bDestCell)
 	if (TItemPos(EQUIPMENT, item2->GetCell()).IsEquipPosition())
 	{
 		uint8_t bEquipCell = item2->GetCell() - INVENTORY_MAX_NUM;
-		uint8_t bInvenCell = item1->GetCell();
+		uint16_t bInvenCell = item1->GetCell();
 
 		// Âø¿ëÁßÀÎ ¾ÆÀÌÅÛÀ» ¹þÀ» ¼ö ÀÖ°í, Âø¿ë ¿¹Á¤ ¾ÆÀÌÅÛÀÌ Âø¿ë °¡´ÉÇÑ »óÅÂ¿©¾ß¸¸ ÁøÇà
 		if (item2->IsDragonSoul() || item2->GetType() == ITEM_BELT) // @fixme117
@@ -10774,8 +10774,8 @@ bool CHARACTER::SwapItem(uint8_t bCell, uint8_t bDestCell)
 	}
 	else
 	{
-		uint8_t bCell1 = item1->GetCell();
-		uint8_t bCell2 = item2->GetCell();
+		uint16_t bCell1 = item1->GetCell();
+		uint16_t bCell2 = item2->GetCell();
 
 		item1->RemoveFromCharacter();
 		item2->RemoveFromCharacter();
@@ -10989,7 +10989,7 @@ bool CHARACTER::EquipItem(LPITEM item, int iCandidateCell)
 		}
 		else
 		{
-			uint8_t bOldCell = item->GetCell();
+			uint16_t bOldCell = item->GetCell();
 
 			if (item->EquipTo(this, iWearCell))
 			{
@@ -13345,13 +13345,13 @@ bool CHARACTER::DestroyItem(TItemPos Cell)
 
 #ifdef ENABLE_EXTRA_INVENTORY
 	if (item->IsExtraItem()) {
-		SyncQuickslot(QUICKSLOT_TYPE_ITEM_EXTRA, Cell.cell, 255);
+		SyncQuickslot(QUICKSLOT_TYPE_ITEM_EXTRA, Cell.cell, QUICKSLOT_DELETE_POS);
 	}
 	else {
-		SyncQuickslot(QUICKSLOT_TYPE_ITEM, Cell.cell, 255);
+		SyncQuickslot(QUICKSLOT_TYPE_ITEM, Cell.cell, QUICKSLOT_DELETE_POS);
 	}
 #else
-	SyncQuickslot(QUICKSLOT_TYPE_ITEM, Cell.cell, 255);
+	SyncQuickslot(QUICKSLOT_TYPE_ITEM, Cell.cell, QUICKSLOT_DELETE_POS);
 #endif
 
 #ifdef ENABLE_BATTLE_PASS

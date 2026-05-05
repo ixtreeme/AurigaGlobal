@@ -1053,7 +1053,7 @@ ACMD(do_item_purge)
 			if ((item = ch->GetInventoryItem(i)))
 			{
 				ITEM_MANAGER::instance().RemoveItem(item, "PURGE");
-				ch->SyncQuickslot(QUICKSLOT_TYPE_ITEM, i, 255);
+				ch->SyncQuickslot(QUICKSLOT_TYPE_ITEM, i, QUICKSLOT_DELETE_POS);
 			}
 		}
 		for (i = 0; i < DRAGON_SOUL_INVENTORY_MAX_NUM; ++i)
@@ -1068,7 +1068,7 @@ ACMD(do_item_purge)
 		{
 			if ((item = ch->GetItem(TItemPos(EXTRA_INVENTORY, i)))) {
 				ITEM_MANAGER::instance().RemoveItem(item, "PURGE");
-				ch->SyncQuickslot(QUICKSLOT_TYPE_ITEM_EXTRA, i, 255);
+				ch->SyncQuickslot(QUICKSLOT_TYPE_ITEM_EXTRA, i, QUICKSLOT_DELETE_POS);
 			}
 		}
 #endif
@@ -1080,7 +1080,7 @@ ACMD(do_item_purge)
 			if ((item = ch->GetInventoryItem(i)))
 			{
 				ITEM_MANAGER::instance().RemoveItem(item, "PURGE");
-				ch->SyncQuickslot(QUICKSLOT_TYPE_ITEM, i, 255);
+				ch->SyncQuickslot(QUICKSLOT_TYPE_ITEM, i, QUICKSLOT_DELETE_POS);
 			}
 		}
 	}
@@ -1091,7 +1091,7 @@ ACMD(do_item_purge)
 			if ((item = ch->GetInventoryItem(INVENTORY_MAX_NUM + i)))
 			{
 				ITEM_MANAGER::instance().RemoveItem(item, "PURGE");
-				ch->SyncQuickslot(QUICKSLOT_TYPE_ITEM, INVENTORY_MAX_NUM + i, 255);
+				ch->SyncQuickslot(QUICKSLOT_TYPE_ITEM, INVENTORY_MAX_NUM + i, QUICKSLOT_DELETE_POS);
 			}
 		}
 	}
@@ -1112,7 +1112,7 @@ ACMD(do_item_purge)
 			if ((item = ch->GetInventoryItem(BELT_INVENTORY_SLOT_START + i)))
 			{
 				ITEM_MANAGER::instance().RemoveItem(item, "PURGE");
-				ch->SyncQuickslot(QUICKSLOT_TYPE_ITEM, BELT_INVENTORY_SLOT_START + i, 255);
+				ch->SyncQuickslot(QUICKSLOT_TYPE_ITEM, BELT_INVENTORY_SLOT_START + i, QUICKSLOT_DELETE_POS);
 			}
 		}
 	}
@@ -1123,7 +1123,7 @@ ACMD(do_item_purge)
 		{
 			if ((item = ch->GetItem(TItemPos(EXTRA_INVENTORY, i)))) {
 				ITEM_MANAGER::instance().RemoveItem(item, "PURGE");
-				ch->SyncQuickslot(QUICKSLOT_TYPE_ITEM_EXTRA, i, 255);
+				ch->SyncQuickslot(QUICKSLOT_TYPE_ITEM_EXTRA, i, QUICKSLOT_DELETE_POS);
 			}
 		}
 	}
@@ -1137,7 +1137,7 @@ ACMD(do_item_purge)
 		if ((item = ch->GetInventoryItem(i)))
 		{
 			ITEM_MANAGER::instance().RemoveItem(item, "PURGE");
-			ch->SyncQuickslot(QUICKSLOT_TYPE_ITEM, i, 255);
+			ch->SyncQuickslot(QUICKSLOT_TYPE_ITEM, i, QUICKSLOT_DELETE_POS);
 		}
 	}
 	for (i = 0; i < DRAGON_SOUL_INVENTORY_MAX_NUM; ++i)
@@ -1152,7 +1152,7 @@ ACMD(do_item_purge)
 	{
 		if ((item = ch->GetItem(TItemPos(EXTRA_INVENTORY, i)))) {
 			ITEM_MANAGER::instance().RemoveItem(item, "PURGE");
-			ch->SyncQuickslot(QUICKSLOT_TYPE_ITEM_EXTRA, i, 255);
+			ch->SyncQuickslot(QUICKSLOT_TYPE_ITEM_EXTRA, i, QUICKSLOT_DELETE_POS);
 		}
 	}
 #endif

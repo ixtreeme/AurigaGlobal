@@ -44,6 +44,7 @@ using namespace std::literals::chrono_literals;
 
 
 #define ENABLE_ANTI_CMD_FLOOD
+static const uint16_t QUICKSLOT_DELETE_POS = 0xffff;
 #define ENABLE_OPEN_SHOP_WITH_ARMOR
 enum eMountType { MOUNT_TYPE_NONE = 0, MOUNT_TYPE_NORMAL = 1, MOUNT_TYPE_COMBAT = 2, MOUNT_TYPE_MILITARY = 3 };
 eMountType GetMountLevelByVnum(uint32_t dwMountVnum, bool IsNew);
@@ -1217,12 +1218,12 @@ protected:
 
 	// Quickslot 관련
 public:
-	void			SyncQuickslot(uint8_t bType, uint8_t bOldPos, uint8_t bNewPos);
+	void			SyncQuickslot(uint8_t bType, uint16_t bOldPos, uint16_t bNewPos);
 	bool			GetQuickslot(uint8_t pos, TQuickslot** ppSlot);
 	bool			SetQuickslot(uint8_t pos, TQuickslot& rSlot);
 	bool			DelQuickslot(uint8_t pos);
 	bool			SwapQuickslot(uint8_t a, uint8_t b);
-	void			ChainQuickslotItem(LPITEM pItem, uint8_t bType, uint8_t bOldPos);
+	void			ChainQuickslotItem(LPITEM pItem, uint8_t bType, uint16_t bOldPos);
 #ifdef __ENABLE_NEW_OFFLINESHOP__
 public:
 	offlineshop::CShop* GetOfflineShop() { return m_pkOfflineShop; }
@@ -1513,7 +1514,7 @@ public:
 	// END_OF_ADD_MONSTER_REFINE
 
 	bool			DoRefineWithScroll(LPITEM item);
-	bool			RefineInformation(uint8_t bCell, uint8_t bType, int iAdditionalCell = -1);
+	bool			RefineInformation(uint16_t bCell, uint8_t bType, int iAdditionalCell = -1);
 
 	void			SetRefineMode(int iAdditionalCell = -1);
 	void			ClearRefineMode();
@@ -1541,7 +1542,7 @@ public:
 	// 착용중인 item을 벗을 수 있는 지 확인하고, 불가능 하다면 캐릭터에게 이유를 알려주는 함수
 	bool			CanUnequipNow(const LPITEM item, const TItemPos& srcCell = NPOS, const TItemPos& destCell = NPOS);
 
-	bool			SwapItem(uint8_t bCell, uint8_t bDestCell);
+	bool			SwapItem(uint16_t bCell, uint16_t bDestCell);
 
 	LPITEM			AutoGiveItem(uint32_t dwItemVnum,
 #ifdef ENABLE_NEW_STACK_LIMIT

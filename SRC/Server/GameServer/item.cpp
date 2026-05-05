@@ -447,13 +447,13 @@ bool CItem::SetCount(int count)
 				{
 #ifdef ENABLE_EXTRA_INVENTORY
 					if (IsExtraItem()) {
-						pOwner->SyncQuickslot(QUICKSLOT_TYPE_ITEM_EXTRA, wCell, 255);
+						pOwner->SyncQuickslot(QUICKSLOT_TYPE_ITEM_EXTRA, wCell, QUICKSLOT_DELETE_POS);
 					}
 					else {
-						pOwner->SyncQuickslot(QUICKSLOT_TYPE_ITEM, wCell, 255);
+						pOwner->SyncQuickslot(QUICKSLOT_TYPE_ITEM, wCell, QUICKSLOT_DELETE_POS);
 					}
 #else
-					pOwner->SyncQuickslot(QUICKSLOT_TYPE_ITEM, wCell, 255);
+					pOwner->SyncQuickslot(QUICKSLOT_TYPE_ITEM, wCell, QUICKSLOT_DELETE_POS);
 #endif
 				}
 			}
@@ -466,13 +466,13 @@ bool CItem::SetCount(int count)
 			{
 #ifdef ENABLE_EXTRA_INVENTORY
 				if (IsExtraItem()) {
-					m_pOwner->SyncQuickslot(QUICKSLOT_TYPE_ITEM_EXTRA, m_wCell, 255);
+					m_pOwner->SyncQuickslot(QUICKSLOT_TYPE_ITEM_EXTRA, m_wCell, QUICKSLOT_DELETE_POS);
 				}
 				else {
-					m_pOwner->SyncQuickslot(QUICKSLOT_TYPE_ITEM, m_wCell, 255);
+					m_pOwner->SyncQuickslot(QUICKSLOT_TYPE_ITEM, m_wCell, QUICKSLOT_DELETE_POS);
 				}
 #else
-				m_pOwner->SyncQuickslot(QUICKSLOT_TYPE_ITEM, m_wCell, 255);
+				m_pOwner->SyncQuickslot(QUICKSLOT_TYPE_ITEM, m_wCell, QUICKSLOT_DELETE_POS);
 #endif
 			}
 

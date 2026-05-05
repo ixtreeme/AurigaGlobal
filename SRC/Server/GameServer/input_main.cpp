@@ -2839,7 +2839,7 @@ void CInputMain::SafeboxCheckin(LPCHARACTER ch, const char * c_pData)
 	if (!pkItem->IsDragonSoul())
 #endif
 	{
-		ch->SyncQuickslot(QUICKSLOT_TYPE_ITEM, p->ItemPos.cell, 255);
+		ch->SyncQuickslot(QUICKSLOT_TYPE_ITEM, p->ItemPos.cell, QUICKSLOT_DELETE_POS);
 	}
 
 	pkSafebox->Add(p->bSafePos, pkItem);
@@ -3109,7 +3109,7 @@ void CInputMain::MountInventoryCheckin(LPCHARACTER ch, const char* c_pData)
 #else
 	if (!item->IsDragonSoul())
 #endif
-		ch->SyncQuickslot(QUICKSLOT_TYPE_ITEM, p->ItemPos.cell, 255);
+		ch->SyncQuickslot(QUICKSLOT_TYPE_ITEM, p->ItemPos.cell, QUICKSLOT_DELETE_POS);
 
 	// player item táblából biztosan kimenjen mentésben
 	ITEM_MANAGER::instance().FlushDelayedSave(item);

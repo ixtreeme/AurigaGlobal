@@ -375,9 +375,9 @@ class CPythonNetworkStream : public CNetworkStream, public CSingleton<CPythonNet
 
 		// Refine
 #ifdef ENABLE_FEATURES_REFINE_SYSTEM
-		bool SendRefinePacket(uint8_t byPos, uint8_t byType, uint8_t bLow, uint8_t bMedium, uint8_t bExtra, uint8_t bTotal);
+		bool SendRefinePacket(uint16_t byPos, uint8_t byType, uint8_t bLow, uint8_t bMedium, uint8_t bExtra, uint8_t bTotal);
 #else
-		bool SendRefinePacket(uint8_t byPos, uint8_t byType);
+		bool SendRefinePacket(uint16_t byPos, uint8_t byType);
 #endif
 		bool SendSelectItemPacket(uint32_t dwItemPos);
 

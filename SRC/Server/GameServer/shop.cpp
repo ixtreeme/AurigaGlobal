@@ -382,12 +382,12 @@ int64_t CShop::Buy(LPCHARACTER ch, uint8_t pos
 	{
 #ifdef ENABLE_EXTRA_INVENTORY
 		if (item->IsExtraItem()) {
-			m_pkPC->SyncQuickslot(QUICKSLOT_TYPE_ITEM_EXTRA, item->GetCell(), 255);
+			m_pkPC->SyncQuickslot(QUICKSLOT_TYPE_ITEM_EXTRA, item->GetCell(), QUICKSLOT_DELETE_POS);
 		} else {
-			m_pkPC->SyncQuickslot(QUICKSLOT_TYPE_ITEM, item->GetCell(), 255);
+			m_pkPC->SyncQuickslot(QUICKSLOT_TYPE_ITEM, item->GetCell(), QUICKSLOT_DELETE_POS);
 		}
 #else
-		m_pkPC->SyncQuickslot(QUICKSLOT_TYPE_ITEM, item->GetCell(), 255);
+		m_pkPC->SyncQuickslot(QUICKSLOT_TYPE_ITEM, item->GetCell(), QUICKSLOT_DELETE_POS);
 #endif
 
 		if (item->GetVnum() == 90008 || item->GetVnum() == 90009) // VCARD

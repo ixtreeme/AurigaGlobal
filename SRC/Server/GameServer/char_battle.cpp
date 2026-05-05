@@ -2236,7 +2236,7 @@ void CHARACTER::ItemDropPenalty(LPCHARACTER pkKiller)
 
 	if (bDropInventory) // Drop Inventory
 	{
-		std::vector<uint8_t> vec_bSlots;
+		std::vector<uint16_t> vec_bSlots;
 
 		for (i = 0; i < INVENTORY_MAX_NUM; ++i)
 			if (GetInventoryItem(i))
@@ -2259,7 +2259,7 @@ void CHARACTER::ItemDropPenalty(LPCHARACTER pkKiller)
 				if (IS_SET(pkItem->GetAntiFlag(), ITEM_ANTIFLAG_GIVE | ITEM_ANTIFLAG_PKDROP))
 					continue;
 
-				SyncQuickslot(QUICKSLOT_TYPE_ITEM, vec_bSlots[i], 255);
+				SyncQuickslot(QUICKSLOT_TYPE_ITEM, vec_bSlots[i], QUICKSLOT_DELETE_POS);
 				vec_item.emplace_back(pkItem->RemoveFromCharacter(), INVENTORY);
 			}
 		}
@@ -2297,7 +2297,7 @@ void CHARACTER::ItemDropPenalty(LPCHARACTER pkKiller)
 				if (IS_SET(pkItem->GetAntiFlag(), ITEM_ANTIFLAG_GIVE | ITEM_ANTIFLAG_PKDROP))
 					continue;
 
-				SyncQuickslot(QUICKSLOT_TYPE_ITEM, vec_bSlots[i], 255);
+				SyncQuickslot(QUICKSLOT_TYPE_ITEM, vec_bSlots[i], QUICKSLOT_DELETE_POS);
 				vec_item.emplace_back(pkItem->RemoveFromCharacter(), EQUIPMENT);
 			}
 		}
@@ -2311,7 +2311,7 @@ void CHARACTER::ItemDropPenalty(LPCHARACTER pkKiller)
 
 		if (pkItem && pkItem->GetVnum() == UNIQUE_ITEM_SKIP_ITEM_DROP_PENALTY)
 		{
-			SyncQuickslot(QUICKSLOT_TYPE_ITEM, WEAR_UNIQUE1, 255);
+			SyncQuickslot(QUICKSLOT_TYPE_ITEM, WEAR_UNIQUE1, QUICKSLOT_DELETE_POS);
 			vec_item.emplace_back(pkItem->RemoveFromCharacter(), EQUIPMENT);
 		}
 
@@ -2319,7 +2319,7 @@ void CHARACTER::ItemDropPenalty(LPCHARACTER pkKiller)
 
 		if (pkItem && pkItem->GetVnum() == UNIQUE_ITEM_SKIP_ITEM_DROP_PENALTY)
 		{
-			SyncQuickslot(QUICKSLOT_TYPE_ITEM, WEAR_UNIQUE2, 255);
+			SyncQuickslot(QUICKSLOT_TYPE_ITEM, WEAR_UNIQUE2, QUICKSLOT_DELETE_POS);
 			vec_item.emplace_back(pkItem->RemoveFromCharacter(), EQUIPMENT);
 		}
 	}

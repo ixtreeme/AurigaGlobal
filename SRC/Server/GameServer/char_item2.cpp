@@ -79,6 +79,6 @@ void CHARACTER::ItemDivision(TItemPos Cell)
 //		}
 //	}
 //	
-//	SyncQuickslot(QUICKSLOT_TYPE_ITEM, Cell.cell, 255);
+//	SyncQuickslot(QUICKSLOT_TYPE_ITEM, Cell.cell, QUICKSLOT_DELETE_POS);
 }
 

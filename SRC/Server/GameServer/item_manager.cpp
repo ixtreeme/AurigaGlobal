@@ -654,11 +654,11 @@ void ITEM_MANAGER::RemoveItem(LPITEM item, const char* c_pszReason)
 			{
 #ifdef ENABLE_EXTRA_INVENTORY
 				if (item->IsExtraItem())
-					o->SyncQuickslot(QUICKSLOT_TYPE_ITEM_EXTRA, item->GetCell(), 255);
+					o->SyncQuickslot(QUICKSLOT_TYPE_ITEM_EXTRA, item->GetCell(), QUICKSLOT_DELETE_POS);
 				else
-					o->SyncQuickslot(QUICKSLOT_TYPE_ITEM, item->GetCell(), 255);
+					o->SyncQuickslot(QUICKSLOT_TYPE_ITEM, item->GetCell(), QUICKSLOT_DELETE_POS);
 #else
-				o->SyncQuickslot(QUICKSLOT_TYPE_ITEM, item->GetCell(), 255);
+				o->SyncQuickslot(QUICKSLOT_TYPE_ITEM, item->GetCell(), QUICKSLOT_DELETE_POS);
 #endif
 			}
 
