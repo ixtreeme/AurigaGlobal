@@ -148,9 +148,27 @@ namespace
             return;
 
         LPCHARACTER ch = legacy->ptr;
-        if (ch->GetX() == position.x && ch->GetY() == position.y)
-            return;
 
+        // Phase 15E-final.LPENTITY.4-architect.B.1.1 fixup:
+        // The previous early-return guard compared ch->GetX/GetY against
+        // the freshly-advanced ECS `position`. Pre-B.1.1 GetX read legacy
+        // m_pos which lagged the registry by one mutation; the guard
+        // was meaningful and avoided redundant SetXYZ + UpdateSectree
+        // when both stores already agreed. After B.1.1 GetX reads the
+        // SAME ECS Position component that `position` references, so
+        // the guard always evaluated true and skipped UpdateSectree on
+        // every ECS movement tick. m_map_view stopped refreshing for
+        // moving characters and viewers stopped receiving visibility
+        // transitions for them - the regression user reported as
+        // "ket karakter nem latja a masik mozgasat".
+        //
+        // The body is cheap enough to run unconditionally:
+        // SetXYZ writes legacy m_pos (Phase C will remove that),
+        // SyncPositionComponents re-emplaces Position with the same
+        // values already in the component (no-op in practice),
+        // UpdateSectree is the one we need - it refreshes m_map_view
+        // and fires DispatchInsert / DispatchRemove for viewer
+        // transitions.
         ch->SetXYZ(position.x, position.y, ch->GetZ());
         ecs::SyncPositionComponents(reg, entity, ch->GetMapIndex(), position.x, position.y, ch->GetZ());
         ch->UpdateSectree();
