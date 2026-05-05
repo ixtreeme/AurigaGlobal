@@ -58,7 +58,7 @@ window = {
 					"x" : 121,
 					"y" : 7,
 				
-					"image" : "d:/ymir work/ui/pattern/titlebar_inv_refresh_baseframe.tga",
+					#"image" : "d:/ymir work/ui/pattern/titlebar_inv_refresh_baseframe.tga",
 				
 					"children" :
 					(
@@ -70,12 +70,12 @@ window = {
 							"x" : 11,
 							"y" : 3,
 				
-							"tooltip_text" : uiscriptlocale.INVENTORY_SPECIAL_SEPARATE,
+							#"tooltip_text" : uiscriptlocale.INVENTORY_SPECIAL_SEPARATE,
 				
-							"default_image" : "d:/ymir work/ui/game/inventory/refresh_small_button_01.sub",
-							"over_image" : "d:/ymir work/ui/game/inventory/refresh_small_button_02.sub",
-							"down_image" : "d:/ymir work/ui/game/inventory/refresh_small_button_03.sub",
-							"disable_image" : "d:/ymir work/ui/game/inventory/refresh_small_button_04.sub",
+							# "default_image" : "d:/ymir work/ui/game/inventory/refresh_small_button_01.sub",
+							# "over_image" : "d:/ymir work/ui/game/inventory/refresh_small_button_02.sub",
+							# "down_image" : "d:/ymir work/ui/game/inventory/refresh_small_button_03.sub",
+							# "disable_image" : "d:/ymir work/ui/game/inventory/refresh_small_button_04.sub",
 						},
 					),
 				},
