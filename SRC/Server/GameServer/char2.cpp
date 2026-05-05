@@ -37,6 +37,10 @@ void CHARACTER::ChatPacketNew(uint8_t type, uint32_t idx, const char * format, .
 	va_start(args, format);
 	int len = vsnprintf(chatbuf, sizeof(chatbuf), format, args);
 	va_end(args);
+	if (len < 0)
+		len = 0;
+	else if (len >= sizeof(chatbuf))
+		len = sizeof(chatbuf) - 1;
 
 	TPacketGCChatNew p;
 	p.header = HEADER_GC_CHAT_NEW;

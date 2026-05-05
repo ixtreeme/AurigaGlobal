@@ -652,6 +652,25 @@ bool CPythonNetworkStream::CheckPacket(TPacketHeader * pRetHeader)
 		return false;
 	}
 
+#ifdef TEXTS_IMPROVEMENT
+	if (header == HEADER_GC_CHAT_NEW)
+	{
+		TPacketGCChatNew chatHeader;
+		if (!Peek(sizeof(TPacketGCChatNew), &chatHeader))
+			return false;
+
+		if (chatHeader.size < sizeof(TPacketGCChatNew) || chatHeader.size > sizeof(TPacketGCChatNew) + 255)
+		{
+			TraceError("Invalid TPacketGCChatNew size: %u", chatHeader.size);
+			ClearRecvBuffer();
+			PostQuitMessage(0);
+			return false;
+		}
+
+		if (!Peek(chatHeader.size))
+			return false;
+	}
+#endif
 	// Code for dynamic size packet
 #ifdef __ENABLE_LARGE_DYNAMIC_PACKET__
 	if (PacketType.iPacketType == DYNAMIC_SIZE_PACKET)

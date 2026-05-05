@@ -5961,6 +5961,11 @@ bool CPythonNetworkStream::RecvChatPacketNew()
 		return false;
 	}
 
+	if (p.size < sizeof(p) || p.size > sizeof(p) + 255) {
+		TraceError("invalid TPacketGCChatNew size %u", p.size);
+		return false;
+	}
+
 	WORD size = p.size - sizeof(p);
 	char buf[256];
 
