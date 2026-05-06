@@ -990,18 +990,13 @@ bool CHARACTER::Show(int32_t lMapIndex, int32_t x, int32_t y, int32_t z, bool bS
     if (self != entt::null && g_registry.valid(self) && g_registry.all_of<ecs::TagPC>(self))
         ecs::Invariants::ValidatePCIdentity(g_registry, self, "show.after_position_sync");
 
-    m_posDest.x = x;
-    m_posDest.y = y;
-    m_posDest.z = z;
-
+    // Phase C.3: legacy m_posDest write removed. SyncDestinationClear
+    // drops ECS MovementDestination so subsequent INSERT packets emit
+    // current (warped) position via GetCurrentDestX/Y -> GetX/Y fallback.
     m_posStart.x = x;
     m_posStart.y = y;
     m_posStart.z = z;
 
-    // LPENTITY.4-fixup.2.d: warp / Show parks the character at the new
-    // position with no active movement. Clear ECS MovementDestination so
-    // any pre-warp move state is gone and native dispatch does not encode
-    // a phantom move on subsequent inserts.
     ecs::MovementSystem::SyncDestinationClear(GetEntityHandle());
 
     if (bChangeTree)

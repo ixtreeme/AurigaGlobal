@@ -3708,12 +3708,11 @@ void CHARACTER::MountVnum(uint32_t vnum)
     if (m_bIsObserver)
         return;
 
-    m_posDest.x = m_posStart.x = GetX();
-    m_posDest.y = m_posStart.y = GetY();
-
-    // LPENTITY.4-fixup.2.e: MountVnum re-encodes the character to all viewers
-    // after parking m_posDest at current position. Mirror the ECS side or
-    // native dispatch will encode a stale destination on the upcoming inserts.
+    // Phase C.3: legacy m_posDest write removed. SyncDestinationClear
+    // drops ECS MovementDestination so subsequent INSERT packets emit
+    // current position (GetX/Y fallback in GetCurrentDestX/Y).
+    m_posStart.x = GetX();
+    m_posStart.y = GetY();
     ecs::MovementSystem::SyncDestinationClear(AIHelpers::EcsOf(this));
 
     EncodeInsertPacket(this);
@@ -3869,14 +3868,10 @@ void CHARACTER::SetPlayerProto(const TPlayerTable* t)
     // SyncPositionComponents is the sole source.
     ecs::SyncPositionComponents(g_registry, GetEntityHandle(), t->lMapIndex, t->x, t->y, t->z);
 
-    // LPENTITY.4 sync drift fix: PlayerLoad must not leave m_posDest at the
-    // pre-init zero. EncodeInsertPacket compares m_posDest to current pos
-    // and may snap the packet x/y to m_posDest if the recorded move (also
-    // zero-init) is treated as "expired". Initialize m_posDest to the
-    // loaded position so subsequent INSERT packets agree with GetX/GetY.
-    m_posDest.x = t->x;
-    m_posDest.y = t->y;
-    m_posDest.z = t->z;
+    // Phase C.3: legacy m_posDest write removed. SyncDestinationClear
+    // drops ECS MovementDestination - GetCurrentDestX/Y now returns
+    // GetX/Y (the loaded position) so EncodeInsertPacket emits the
+    // correct values without legacy dest priming.
     m_posStart.x = t->x;
     m_posStart.y = t->y;
     m_posStart.z = t->z;
@@ -4912,8 +4907,10 @@ void CHARACTER::Initialize()
     m_pkRegen = nullptr;
     regen_id_ = 0;
     m_posRegen.x = m_posRegen.y = m_posRegen.z = 0;
+    // Phase C.3: legacy m_posDest zero-init removed (entity null at this
+    // Initialize point - ECS write would no-op anyway; new MovementDestination
+    // is absent until Goto/Move emplaces).
     m_posStart.x = m_posStart.y = 0;
-    m_posDest.x = m_posDest.y = 0;
     m_fRegenAngle = 0.0f;
 
     m_pkMobData = nullptr;

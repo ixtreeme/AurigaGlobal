@@ -587,8 +587,10 @@ bool CHARACTER::Sync(int32_t x, int32_t y)
 	// sync tracked the actual position; client B never received an updated
 	// MOVE packet beyond the original Goto, then a reencode/insert produced
 	// pack at m_posDest = old destination.
-	m_posDest.x = x;
-	m_posDest.y = y;
+	// Phase C.3: legacy m_posDest write removed. SyncDestinationClear
+	// removes ECS MovementDestination so GetCurrentDestX/Y falls back to
+	// GetX/GetY (current position via ECS Position) - same effective
+	// semantic as legacy m_posDest = current_pos.
 	m_posStart.x = x;
 	m_posStart.y = y;
 	ecs::MovementSystem::SyncDestinationClear(EcsEntityOf(this));
@@ -648,12 +650,12 @@ void CHARACTER::Stop()
 	if (!IsPC())
 		GotoState(m_stateIdle);
 
-	m_posDest.x = m_posStart.x = GetX();
-	m_posDest.y = m_posStart.y = GetY();
-
-	// LPENTITY.4-fixup.2.b: stop clears active movement; remove ECS
-	// MovementDestination and zero MovementState timing so native dispatch
-	// does not encode a phantom move on subsequent inserts.
+	// Phase C.3: legacy m_posDest write removed. SyncDestinationClear
+	// drops ECS MovementDestination so GetCurrentDestX/Y returns current
+	// position via the GetX/Y fallback - matches legacy "stop parks at
+	// current pos" semantic.
+	m_posStart.x = GetX();
+	m_posStart.y = GetY();
 	ecs::MovementSystem::SyncDestinationClear(EcsEntityOf(this));
 }
 
@@ -701,8 +703,11 @@ bool CHARACTER::Goto(int32_t x, int32_t y)
 		return false;
 	}
 
-	m_posDest.x = x;
-	m_posDest.y = y;
+	// Phase C.3: legacy m_posDest write removed; ECS MovementDestination
+	// emplaced here BEFORE CalculateMoveDuration so the duration calc
+	// (which reads dest via GetCurrentDestX/Y) sees the new value.
+	if (const entt::entity destEntity = EcsEntityOf(this); destEntity != entt::null && g_registry.valid(destEntity))
+		g_registry.emplace_or_replace<ecs::MovementDestination>(destEntity, x, y);
 
 	CalculateMoveDuration();
 
@@ -833,15 +838,22 @@ float CHARACTER::GetMoveSpeed() const
 
 void CHARACTER::CalculateMoveDuration()
 {
-	// Phase C.2: legacy m_dwMoveStartTime / m_dwMoveDuration writes removed.
-	// ECS MovementState is the sole source via SyncTimingWrite. m_posStart
-	// still legacy-written; folds into a function-local in Phase C
-	// (m_posStart no ECS twin per A.2 §2). m_posDest direct read also
-	// stays legacy until the m_posDest write migration commit.
-	m_posStart.x = GetX();
-	m_posStart.y = GetY();
+	// Phase C.2/C.3: legacy m_dwMoveStartTime / m_dwMoveDuration / m_posDest
+	// writes removed. ECS MovementState + MovementDestination are the sole
+	// sources. m_posStart still legacy-written; A.2 §2 m_posStart row says
+	// fold into a function-local. Done here.
+	const int32_t startX = GetX();
+	const int32_t startY = GetY();
+	const int32_t destX = GetCurrentDestX();
+	const int32_t destY = GetCurrentDestY();
 
-	const float fDist = DISTANCE_SQRT(m_posStart.x - m_posDest.x, m_posStart.y - m_posDest.y);
+	// Keep m_posStart in sync for now - audit accessor surface and
+	// CalculateMoveDuration internal callers may read it; deletes in
+	// Phase G with the field.
+	m_posStart.x = startX;
+	m_posStart.y = startY;
+
+	const float fDist = DISTANCE_SQRT(startX - destX, startY - destY);
 	const float motionSpeed = GetMoveMotionSpeed();
 	const uint32_t newDuration = CalculateDuration(GetLimitPoint(POINT_MOV_SPEED),
 		static_cast<int>((fDist / motionSpeed) * 1000.0f));
@@ -852,7 +864,7 @@ void CHARACTER::CalculateMoveDuration()
 	if (IsNPC())
 		LOG_TRACE("{}: GOTO: distance {:f}, spd {}, duration {}, motion speed {:f} pos {} {} -> {} {}",
 			GetName(), fDist, GetLimitPoint(POINT_MOV_SPEED), newDuration, motionSpeed,
-			m_posStart.x, m_posStart.y, m_posDest.x, m_posDest.y);
+			startX, startY, destX, destY);
 }
 
 // x y A��!�� AI? ?�U. (AI?? 1?Aִ?? 3o�� ?�� E�A??�� Sync ?1O�a�� 1��?AI? ?�U)

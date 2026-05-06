@@ -1671,13 +1671,15 @@ bool CHARACTER::AddAffect(uint32_t dwType, uint8_t bApplyOn, int32_t lApplyValue
 		// B.1.4: read via getter (ECS MovementDestination, fallback to GetX/Y).
 		if (GetCurrentDestX() != GetX() || GetCurrentDestY() != GetY())
 		{
-			m_posDest.x = m_posStart.x = GetX();
-			m_posDest.y = m_posStart.y = GetY();
+			// Phase C.3: legacy m_posDest write removed. m_posStart still
+			// legacy (folds into a function-local in C.5/refactor).
+			m_posStart.x = GetX();
+			m_posStart.y = GetY();
 			battle_end(this);
 
-			// LPENTITY.4-fixup.2.c: stun forces movement abort, mirror into
-			// ECS so native dispatch does not encode the pre-stun destination
-			// as an active move on subsequent viewer inserts.
+			// Stun forces movement abort. SyncDestinationClear removes ECS
+			// MovementDestination - GetCurrentDestX/Y falls back to GetX/Y
+			// (per B.1.4) so subsequent INSERT packets show current position.
 			ecs::MovementSystem::SyncDestinationClear(AIHelpers::EcsOf(this));
 
 			NetworkSyncSystem::BroadcastSyncPacket(g_registry, AIHelpers::EcsOf(this));

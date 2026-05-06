@@ -46,48 +46,12 @@ void CheckMovementDrift(entt::registry& reg, entt::entity source)
 
     const auto entityIdx = static_cast<uint32_t>(source);
 
-    // Phase C.2: timing + walking comparisons removed. Legacy
-    // m_dwMoveStartTime / m_dwMoveDuration / m_bNowWalking are no longer
-    // written by char paths after C.2; comparing them against ECS would
-    // log spurious drift on every sweep. Audit subset retained for the
-    // fields that have not yet write-flipped (m_posDest until C.3,
-    // m_bAddChrState until C.4).
-    const int32_t legacyDestX = ch->GetCurrentDestX();
-    const int32_t legacyDestY = ch->GetCurrentDestY();
+    // Phase C.2 removed timing + walking comparisons.
+    // Phase C.3 removed the m_posDest dest comparison: GetCurrentDestX/Y now
+    // reads ECS MovementDestination (with GetX/Y fallback) - same source as
+    // the comparison RHS, tautological.
+    // Audit retained for m_bAddChrState until C.4 write migration.
     const uint8_t legacyAddChrState = ch->GetAddChrStateForAudit();
-
-    if (const auto* dest = reg.try_get<ecs::MovementDestination>(source))
-    {
-        if (dest->x != legacyDestX || dest->y != legacyDestY)
-        {
-            LOG_WARN(
-                "[MOVEMENT_DRIFT] dest entity={} ecs=({},{}) legacy=({},{})",
-                entityIdx,
-                dest->x,
-                dest->y,
-                legacyDestX,
-                legacyDestY);
-        }
-    }
-    else
-    {
-        // ECS thinks no active movement, but legacy may still have a stale
-        // m_posDest != position. Phase C.2 removed the timing-based gate
-        // (legacy timing fields no longer maintained), so this branch only
-        // fires when legacy m_posDest disagrees with current position
-        // and ECS MovementDestination is absent - a possible-but-rare
-        // drift state until C.3 migrates m_posDest writes.
-        if (legacyDestX != ch->GetX() || legacyDestY != ch->GetY())
-        {
-            LOG_WARN(
-                "[MOVEMENT_DRIFT] dest entity={} ecs=absent legacy=({},{}) pos=({},{})",
-                entityIdx,
-                legacyDestX,
-                legacyDestY,
-                ch->GetX(),
-                ch->GetY());
-        }
-    }
 
     if (const auto* status = reg.try_get<ecs::StatusFlags>(source))
     {
