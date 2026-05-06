@@ -1,6 +1,8 @@
 #include "stdafx.h"
 #include "ecs/AIHelpers.hpp"
+#include "ecs/Registry.hpp"
 #include "ecs/systems/PlayerRuntimeSystem.hpp"
+#include "ecs/systems/VisibilitySystem.hpp"
 #include <Core/Logging.hpp>
 #include "constants.h"
 #include "config.h"
@@ -480,6 +482,11 @@ int main(int argc, char **argv)
 	Cube_init();
 	Blend_Item_init();
 	ani_init();
+
+	// Phase 15E-final.LPENTITY.4-architect.D.3: connect the
+	// VisibilitySystem PositionChangedEvent handler to the global
+	// dispatcher. Skeleton in D.3; D.4 fills in the diff handler.
+	ecs::VisibilitySystem::Init(g_registry);
 
 //#ifdef __NEWPET_SYSTEM__
 //	std::string temp_exp_line;
