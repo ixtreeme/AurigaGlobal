@@ -5000,8 +5000,11 @@ void CHARACTER::Initialize()
 
     m_pSkillLevels = nullptr;
 
-    m_dwMoveStartTime = 0;
-    m_dwMoveDuration = 0;
+    // Phase C.2: legacy m_dwMoveStartTime / m_dwMoveDuration zero-init
+    // removed. The ECS MovementState component is created by EntityFactory
+    // with default-zero timing fields when this CHARACTER is later attached
+    // to an ECS entity. m_entity is entt::null at this Initialize point so
+    // an ECS write here would be a no-op anyway.
 
     m_dwFlyTargetID = 0;
 
@@ -5023,7 +5026,9 @@ void CHARACTER::Initialize()
     m_kAttackLog.dwVID = 0;
     m_kAttackLog.dwTime = 0;
 
-    m_bNowWalking = m_bWalking = false;
+    // Phase C.2: legacy m_bNowWalking zero-init removed (ECS MovementState
+    // default-init handles isNowWalking=false). m_bWalking still legacy.
+    m_bWalking = false;
     ResetChangeAttackPositionTime();
 
     m_bDetailLog = false;

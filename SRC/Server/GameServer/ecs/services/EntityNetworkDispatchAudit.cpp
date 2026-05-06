@@ -46,11 +46,14 @@ void CheckMovementDrift(entt::registry& reg, entt::entity source)
 
     const auto entityIdx = static_cast<uint32_t>(source);
 
+    // Phase C.2: timing + walking comparisons removed. Legacy
+    // m_dwMoveStartTime / m_dwMoveDuration / m_bNowWalking are no longer
+    // written by char paths after C.2; comparing them against ECS would
+    // log spurious drift on every sweep. Audit subset retained for the
+    // fields that have not yet write-flipped (m_posDest until C.3,
+    // m_bAddChrState until C.4).
     const int32_t legacyDestX = ch->GetCurrentDestX();
     const int32_t legacyDestY = ch->GetCurrentDestY();
-    const uint32_t legacyDuration = ch->GetCurrentMoveDuration();
-    const uint32_t legacyStartTime = ch->GetMoveStartTimeForAudit();
-    const bool legacyNowWalking = ch->GetNowWalkingForAudit();
     const uint8_t legacyAddChrState = ch->GetAddChrStateForAudit();
 
     if (const auto* dest = reg.try_get<ecs::MovementDestination>(source))
@@ -69,45 +72,20 @@ void CheckMovementDrift(entt::registry& reg, entt::entity source)
     else
     {
         // ECS thinks no active movement, but legacy may still have a stale
-        // m_posDest != position. Only log when the legacy fields explicitly
-        // describe an active move (timing nonzero) - else this would fire on
-        // every idle character.
-        if (legacyStartTime != 0 || legacyDuration != 0)
-        {
-            if (legacyDestX != ch->GetX() || legacyDestY != ch->GetY())
-            {
-                LOG_WARN(
-                    "[MOVEMENT_DRIFT] dest entity={} ecs=absent legacy=({},{}) pos=({},{})",
-                    entityIdx,
-                    legacyDestX,
-                    legacyDestY,
-                    ch->GetX(),
-                    ch->GetY());
-            }
-        }
-    }
-
-    if (const auto* state = reg.try_get<ecs::MovementState>(source))
-    {
-        if (state->moveStartTime != legacyStartTime ||
-            state->moveDuration != legacyDuration)
+        // m_posDest != position. Phase C.2 removed the timing-based gate
+        // (legacy timing fields no longer maintained), so this branch only
+        // fires when legacy m_posDest disagrees with current position
+        // and ECS MovementDestination is absent - a possible-but-rare
+        // drift state until C.3 migrates m_posDest writes.
+        if (legacyDestX != ch->GetX() || legacyDestY != ch->GetY())
         {
             LOG_WARN(
-                "[MOVEMENT_DRIFT] timing entity={} ecs=(start={} dur={}) legacy=(start={} dur={})",
+                "[MOVEMENT_DRIFT] dest entity={} ecs=absent legacy=({},{}) pos=({},{})",
                 entityIdx,
-                state->moveStartTime,
-                state->moveDuration,
-                legacyStartTime,
-                legacyDuration);
-        }
-
-        if (state->isNowWalking != legacyNowWalking)
-        {
-            LOG_WARN(
-                "[MOVEMENT_DRIFT] walking entity={} ecs={} legacy={}",
-                entityIdx,
-                state->isNowWalking,
-                legacyNowWalking);
+                legacyDestX,
+                legacyDestY,
+                ch->GetX(),
+                ch->GetY());
         }
     }
 

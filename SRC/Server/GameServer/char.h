@@ -1094,11 +1094,11 @@ public:
 	uint32_t			GetLastMoveTime() const { return m_dwLastMoveTime; }
 	uint32_t			GetLastAttackTime() const { return m_dwLastAttackTime; }
 #ifdef AURIGA_LPENTITY_FIXUP_AUDIT
-	// LPENTITY.4-fixup.3: audit-only accessors used by
-	// ecs::EntityNetworkDispatchAudit::CheckMovementDrift to compare legacy
-	// fields against parallel ECS components. Removed in LPENTITY.6.
-	uint32_t			GetMoveStartTimeForAudit() const { return m_dwMoveStartTime; }
-	bool				GetNowWalkingForAudit() const { return m_bNowWalking; }
+	// Phase C.2: GetMoveStartTimeForAudit and GetNowWalkingForAudit
+	// removed (their consumers in CheckMovementDrift deleted with the
+	// timing+walking write migration; legacy fields no longer maintained).
+	// GetAddChrStateForAudit retained until Phase C.4 when m_bAddChrState
+	// writes migrate.
 	uint8_t				GetAddChrStateForAudit() const { return m_bAddChrState; }
 #endif
 

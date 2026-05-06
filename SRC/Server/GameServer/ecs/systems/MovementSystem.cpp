@@ -833,24 +833,26 @@ float CHARACTER::GetMoveSpeed() const
 
 void CHARACTER::CalculateMoveDuration()
 {
+	// Phase C.2: legacy m_dwMoveStartTime / m_dwMoveDuration writes removed.
+	// ECS MovementState is the sole source via SyncTimingWrite. m_posStart
+	// still legacy-written; folds into a function-local in Phase C
+	// (m_posStart no ECS twin per A.2 §2). m_posDest direct read also
+	// stays legacy until the m_posDest write migration commit.
 	m_posStart.x = GetX();
 	m_posStart.y = GetY();
 
-	float fDist = DISTANCE_SQRT(m_posStart.x - m_posDest.x, m_posStart.y - m_posDest.y);
+	const float fDist = DISTANCE_SQRT(m_posStart.x - m_posDest.x, m_posStart.y - m_posDest.y);
+	const float motionSpeed = GetMoveMotionSpeed();
+	const uint32_t newDuration = CalculateDuration(GetLimitPoint(POINT_MOV_SPEED),
+		static_cast<int>((fDist / motionSpeed) * 1000.0f));
+	const uint32_t newStartTime = get_dword_time();
 
-	float motionSpeed = GetMoveMotionSpeed();
-
-	m_dwMoveDuration = CalculateDuration(GetLimitPoint(POINT_MOV_SPEED),
-		(int)((fDist / motionSpeed) * 1000.0f));
+	ecs::MovementSystem::SyncTimingWrite(EcsEntityOf(this), newStartTime, newDuration);
 
 	if (IsNPC())
-		LOG_TRACE("{}: GOTO: distance {:f}, spd {}, duration {}, motion speed {:f} pos {} {} -> {} {}", GetName(), fDist, GetLimitPoint(POINT_MOV_SPEED), GetCurrentMoveDuration(), motionSpeed, m_posStart.x, m_posStart.y, m_posDest.x, m_posDest.y);
-
-	m_dwMoveStartTime = get_dword_time();
-
-	// LPENTITY.4-fixup.2.a: mirror legacy timing into ECS MovementState so
-	// EntityNetworkDispatch::SendCharacterInsert observes consistent state.
-	ecs::MovementSystem::SyncTimingWrite(EcsEntityOf(this), m_dwMoveStartTime, m_dwMoveDuration);
+		LOG_TRACE("{}: GOTO: distance {:f}, spd {}, duration {}, motion speed {:f} pos {} {} -> {} {}",
+			GetName(), fDist, GetLimitPoint(POINT_MOV_SPEED), newDuration, motionSpeed,
+			m_posStart.x, m_posStart.y, m_posDest.x, m_posDest.y);
 }
 
 // x y A��!�� AI? ?�U. (AI?? 1?Aִ?? 3o�� ?�� E�A??�� Sync ?1O�a�� 1��?AI? ?�U)
@@ -1069,34 +1071,28 @@ EVENTFUNC(save_event)
 
 void CHARACTER::SetNowWalking(bool bWalkFlag)
 {
-    if (m_bNowWalking != bWalkFlag)
+    // Phase C.2: legacy m_bNowWalking write removed. ECS
+    // MovementState.isNowWalking is the sole source via SyncWalkingWrite.
+    // Entry guard reads the ECS source via IsNowWalking().
+    if (IsNowWalking() != bWalkFlag)
     {
         if (bWalkFlag)
-        {
-            m_bNowWalking = true;
             m_dwWalkStartTime = get_dword_time();
-        }
-        else
-        {
-            m_bNowWalking = false;
-        }
 
-        // LPENTITY.4-fixup.2.b: mirror walk-mode toggle into ECS
-        // MovementState so native dispatch emits the correct WALKMODE.
-        ecs::MovementSystem::SyncWalkingWrite(EcsEntityOf(this), m_bNowWalking);
+        ecs::MovementSystem::SyncWalkingWrite(EcsEntityOf(this), bWalkFlag);
 
         {
             TPacketGCWalkMode p;
             p.vid = GetPacketVID();
             p.header = HEADER_GC_WALK_MODE;
-            p.mode = m_bNowWalking ? WALKMODE_WALK : WALKMODE_RUN;
+            p.mode = bWalkFlag ? WALKMODE_WALK : WALKMODE_RUN;
 
             PacketView(&p, sizeof(p));
         }
 
         if (IsNPC())
         {
-            if (m_bNowWalking)
+            if (bWalkFlag)
                 MonsterLog("�E�´U");
             else
                 MonsterLog("�ڴU");
