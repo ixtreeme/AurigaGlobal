@@ -152,7 +152,10 @@ bool SECTREE::InsertEntity(LPENTITY pkEnt)
 	if (pkCurTree)
 		pkCurTree->m_set_entity.erase(pkEnt);
 
-	pkEnt->SetSectree(this);
+	// Phase 15E-final.LPENTITY.4-architect.H.3:
+	// pkEnt->SetSectree(this) deleted - the legacy m_pSectree field is
+	// gone; the ECS SectorPlacement update below is the sole sectree
+	// reference for the entity.
 	//pkEnt->UpdateSectree();
 
 	// Phase 15E-final.LPENTITY.4-architect.H.2:
@@ -209,18 +212,13 @@ void SECTREE::RemoveEntity(LPENTITY pkEnt)
 	}
 	m_set_entity.erase(it);
 
-	pkEnt->SetSectree(nullptr);
-
-	// Phase 15E-final.LPENTITY.4-architect.H.2:
-	// Mirror the legacy m_pSectree clear into ECS by removing the
-	// SectorPlacement component. After this, GetSectree's ECS-first
-	// resolution returns nullptr (matches the legacy m_pSectree=nullptr
-	// state) without the H.1 fallback to the legacy field.
+	// Phase 15E-final.LPENTITY.4-architect.H.3:
+	// pkEnt->SetSectree(nullptr) deleted. The ECS SectorPlacement remove
+	// below is the sole "no longer in any sector" signal.
 	//
 	// reg.remove is idempotent - if the component is already gone (e.g.
-	// the caller is SpatialService::RemoveEntity which removes
-	// SectorPlacement explicitly at line 269) the second remove is a
-	// no-op.
+	// SpatialService::RemoveEntity removed SectorPlacement explicitly at
+	// line 269) the second remove is a no-op.
 	{
 		const entt::entity e = ecs::SpatialService::EntityFromLPENTITY(pkEnt);
 		if (e != entt::null && g_registry.valid(e))
