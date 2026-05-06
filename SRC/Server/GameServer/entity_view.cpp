@@ -112,6 +112,17 @@ void ValidateViewMapMirror(LPENTITY owner, const CEntity::ENTITY_MAP& legacyView
 	if (ownerE == entt::null || !g_registry.valid(ownerE))
 		return;
 
+	// Phase 15E-final.LPENTITY.4-architect.D.6:
+	// For characters, m_map_view is no longer maintained - the legacy
+	// CFuncViewInsert polling in UpdateSectree was disabled in D.6, and
+	// ViewCleanup / ViewReencode now read ECS ViewMap/ViewerMap directly.
+	// The dual-mirror invariant only holds for non-character entities;
+	// silencing the drift log here for characters avoids 30K-warning
+	// log floods that would otherwise stall the game thread (the same
+	// crash mode 261e74d guarded against).
+	if (owner && owner->IsType(ENTITY_CHARACTER))
+		return;
+
 	// LPENTITY.4-fixup-B + audit: O(N^2) validation gated and rate-limited
 	// per entity. Without throttling this fires once per ViewInsert refresh
 	// (hundreds per second per entity) - 35K log warnings in 30 seconds
@@ -211,6 +222,45 @@ void DispatchRemove(LPENTITY source, LPENTITY viewer, const char* context)
 
 void CEntity::ViewCleanup()
 {
+	// Phase 15E-final.LPENTITY.4-architect.D.6:
+	// For characters, m_map_view is no longer maintained (the legacy
+	// CFuncViewInsert poll in UpdateSectree was disabled in this same
+	// commit). Walk the ECS ViewerMap.viewers instead - that is the
+	// event-driven set of "who currently sees this character", kept
+	// current by the VisibilitySystem D.4 handler. For each viewer,
+	// emit the despawn packet via the legacy ViewRemove(this, false)
+	// (which dispatches the packet AND removes `this` from the viewer's
+	// m_map_view, in case the viewer is a non-character entity that
+	// still uses m_map_view).
+	if (IsType(ENTITY_CHARACTER))
+	{
+		const entt::entity selfE = EntityOf(this);
+		if (selfE != entt::null && g_registry.valid(selfE))
+		{
+			if (auto* viewerMap = g_registry.try_get<ecs::ViewerMap>(selfE))
+			{
+				// Snapshot - the loop body mutates ViewerMap via
+				// MirrorViewRemove inside ViewRemove.
+				const auto viewers = viewerMap->viewers;
+				for (const entt::entity viewerE : viewers)
+				{
+					if (viewerE == entt::null || !g_registry.valid(viewerE))
+						continue;
+					LPENTITY viewer = ecs::SpatialService::LPENTITYFromEntity(g_registry, viewerE);
+					if (!viewer)
+						continue;
+					viewer->ViewRemove(this, false);
+				}
+			}
+		}
+		MirrorViewClear(this);
+		// m_map_view may still hold stale entries from before D.6 - clear
+		// it so the legacy structure does not leak entries into post-Phase-D
+		// reads (PacketView f76a3f1 hybrid, ViewReencode, etc.).
+		m_map_view.clear();
+		return;
+	}
+
 	auto it = m_map_view.begin();
 
 	while (it != m_map_view.end())
@@ -233,6 +283,36 @@ void CEntity::ViewReencode()
 
 	DispatchRemove(this, this, "view.reencode.self");
 	DispatchInsert(this, this, "view.reencode.self");
+
+	// Phase 15E-final.LPENTITY.4-architect.D.6:
+	// For characters, walk the ECS ViewMap.visible (what this character
+	// currently sees) rather than the now-unmaintained m_map_view.
+	if (IsType(ENTITY_CHARACTER))
+	{
+		const entt::entity selfE = EntityOf(this);
+		if (selfE != entt::null && g_registry.valid(selfE))
+		{
+			if (auto* viewMap = g_registry.try_get<ecs::ViewMap>(selfE))
+			{
+				const auto visible = viewMap->visible; // snapshot
+				for (const entt::entity otherE : visible)
+				{
+					if (otherE == entt::null || !g_registry.valid(otherE))
+						continue;
+					LPENTITY other = ecs::SpatialService::LPENTITYFromEntity(g_registry, otherE);
+					if (!other)
+						continue;
+
+					DispatchRemove(this, other, "view.reencode.visible");
+					DispatchInsert(this, other, "view.reencode.visible");
+
+					if (!other->m_bIsObserver)
+						DispatchInsert(other, this, "view.reencode.reverse");
+				}
+			}
+		}
+		return;
+	}
 
 	auto it = m_map_view.begin();
 
@@ -339,6 +419,25 @@ void CEntity::UpdateSectree()
 
 		return;
 	}
+
+	// Phase 15E-final.LPENTITY.4-architect.D.6:
+	// Character visibility maintenance is now event-driven via the
+	// PositionChangedEvent + VisibilitySystem handler (D.4). The legacy
+	// polling loop here (++m_iViewAge; CFuncViewInsert; m_map_view stale
+	// cleanup) is the original f76a3f1 root cause: idle characters do
+	// not re-poll, so their m_map_view goes stale during their stillness
+	// window. Skipping the polling for characters delegates entirely to
+	// the event handler. m_map_view, m_iViewAge, and the ValidateViewMapMirror
+	// audit are all unmaintained for characters until Phase G deletes
+	// them outright.
+	//
+	// Items / buildings / offline shops still go through the legacy
+	// polling (their visibility-maintenance triggers are the spawn-time
+	// SpatialService::UpdateSectree calls in InventorySystem, building.cpp,
+	// new_offlineshop_manager.cpp - which produce the per-call full
+	// neighbour walk that those entity types need).
+	if (IsType(ENTITY_CHARACTER))
+		return;
 
 	++m_iViewAge;
 

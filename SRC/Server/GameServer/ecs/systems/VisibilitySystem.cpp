@@ -85,22 +85,43 @@ namespace {
         return result;
     }
 
-    // Bidirectional ViewMap/ViewerMap maintenance. The pair-invariant
-    // (Section 3 of the architect doc) is that B in A.viewers <=> A in
-    // B.visible. These helpers update both sides atomically before any
-    // packet is emitted.
+    // Bidirectional ViewMap/ViewerMap maintenance.
+    //
+    // Phase 15E-final.LPENTITY.4-architect.D.6:
+    // Visibility is symmetric for non-observer characters (A sees B <=> B
+    // sees A, A views B <=> B views A). When the handler fires for `self`
+    // moving and a viewer enters/leaves, we update all four ECS fields:
+    //
+    //   self.ViewerMap.viewers   += viewer  (viewer views self)
+    //   self.ViewMap.visible     += viewer  (self sees viewer)
+    //   viewer.ViewerMap.viewers += self    (self views viewer)
+    //   viewer.ViewMap.visible   += self    (viewer sees self)
+    //
+    // Pre-D.6 the helper updated only sides 1 and 4 - the other two were
+    // populated by the legacy CFuncViewInsert polling running in parallel
+    // (the per-entity UpdateSectree adds the entity to its own ViewMap).
+    // After D.6 stubs out that polling for characters, the helper must
+    // fill all four sides itself or GetVisibleEntities(self) and
+    // GetViewersOf(viewer) return empty for the just-formed visibility
+    // pair.
     void InsertBidirectional(entt::registry& reg, entt::entity self, entt::entity viewer)
     {
         reg.get_or_emplace<ecs::ViewerMap>(self).viewers.insert(viewer);
+        reg.get_or_emplace<ecs::ViewMap>(self).visible.insert(viewer);
+        reg.get_or_emplace<ecs::ViewerMap>(viewer).viewers.insert(self);
         reg.get_or_emplace<ecs::ViewMap>(viewer).visible.insert(self);
     }
 
     void RemoveBidirectional(entt::registry& reg, entt::entity self, entt::entity viewer)
     {
-        if (auto* viewerMap = reg.try_get<ecs::ViewerMap>(self))
-            viewerMap->viewers.erase(viewer);
-        if (auto* viewMap = reg.try_get<ecs::ViewMap>(viewer))
-            viewMap->visible.erase(self);
+        if (auto* selfViewer = reg.try_get<ecs::ViewerMap>(self))
+            selfViewer->viewers.erase(viewer);
+        if (auto* selfView = reg.try_get<ecs::ViewMap>(self))
+            selfView->visible.erase(viewer);
+        if (auto* viewerViewer = reg.try_get<ecs::ViewerMap>(viewer))
+            viewerViewer->viewers.erase(self);
+        if (auto* viewerView = reg.try_get<ecs::ViewMap>(viewer))
+            viewerView->visible.erase(self);
     }
 
     // Phase 15E-final.LPENTITY.4-architect.D.4 handler.
@@ -135,6 +156,17 @@ namespace {
         const auto oldViewers = ComputeViewersAt(reg, ev.entity, ev.oldMapIndex, ev.oldX, ev.oldY, kRange);
         const auto newViewers = ComputeViewersAt(reg, ev.entity, ev.newMapIndex, ev.newX, ev.newY, kRange);
 
+        // Phase 15E-final.LPENTITY.4-architect.D.6:
+        // Each viewer transition emits packets in BOTH directions
+        // (self -> viewer and viewer -> self). Pre-D.6 the legacy
+        // CFuncViewInsert polling running on self's own UpdateSectree
+        // emitted the viewer -> self direction; after D.6 stubs that
+        // polling, the handler is the sole source. The character
+        // add/remove protocol is idempotent under the legacy fallback
+        // path inside EntityNetworkDispatch (EncodeInsert/Remove just
+        // re-emit a packet), so duplicate wires are bandwidth, not
+        // correctness.
+
         // Leaving: in oldViewers, not in newViewers
         for (const entt::entity viewer : oldViewers) {
             if (newViewers.count(viewer))
@@ -143,6 +175,7 @@ namespace {
                 continue;
             RemoveBidirectional(reg, ev.entity, viewer);
             ecs::EntityNetworkDispatch::SendRemove(reg, ev.entity, viewer);
+            ecs::EntityNetworkDispatch::SendRemove(reg, viewer, ev.entity);
         }
 
         // Entering: in newViewers, not in oldViewers
@@ -153,6 +186,7 @@ namespace {
                 continue;
             InsertBidirectional(reg, ev.entity, viewer);
             ecs::EntityNetworkDispatch::SendInsert(reg, ev.entity, viewer);
+            ecs::EntityNetworkDispatch::SendInsert(reg, viewer, ev.entity);
         }
     }
 }
