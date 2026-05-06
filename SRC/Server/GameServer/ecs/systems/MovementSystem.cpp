@@ -945,6 +945,29 @@ uint32_t CHARACTER::GetCurrentMoveStartTime() const
 	return 0;
 }
 
+// Phase 15E-final.LPENTITY.4-architect.B.1.3:
+// Walk-mode read flip. IsNowWalking returns the pure ECS
+// MovementState.isNowWalking flag; IsWalking adds the stamina-exhaustion
+// fallback that legacy callers depend on (forced walk when stamina <= 0).
+//
+// Bootstrap returns false (state absent) - matches legacy m_bNowWalking
+// zero-init in CHARACTER::Initialize. Stamina path reads via GetStamina
+// which still pulls from legacy point storage.
+bool CHARACTER::IsNowWalking() const
+{
+	const entt::entity e = AIHelpers::EcsOf(const_cast<CHARACTER*>(this));
+	if (e == entt::null || !g_registry.valid(e))
+		return false;
+	if (const auto* state = g_registry.try_get<ecs::MovementState>(e))
+		return state->isNowWalking;
+	return false;
+}
+
+bool CHARACTER::IsWalking() const
+{
+	return IsNowWalking() || GetStamina() <= 0;
+}
+
 EVENTFUNC(save_event)
 {
 	char_event_info* info = dynamic_cast<char_event_info*>(event->info);

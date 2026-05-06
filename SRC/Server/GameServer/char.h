@@ -1046,7 +1046,15 @@ private:
 	bool	isInvincible;
 	bool	m_bFakePlayer = false;
 public:
-	bool			IsWalking() const { return m_bNowWalking || GetStamina() <= 0; }
+	// Phase 15E-final.LPENTITY.4-architect.B.1.3:
+	// IsWalking is the composite that includes the stamina-exhaustion
+	// fallback; IsNowWalking is the pure walk-mode flag (used by the
+	// HEADER_GC_WALK_MODE packet emission). Both read the ECS
+	// MovementState component as the authoritative source. Per A.2 §2
+	// m_bNowWalking row.
+	// Bodies in MovementSystem.cpp.
+	bool			IsWalking() const;
+	bool			IsNowWalking() const;
 	void			SetWalking(bool bWalkFlag) { m_bWalking = bWalkFlag; }
 	void			SetNowWalking(bool bWalkFlag);
 	void			ResetWalking() { SetNowWalking(m_bWalking); }

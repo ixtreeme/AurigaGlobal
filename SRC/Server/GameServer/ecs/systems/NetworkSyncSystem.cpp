@@ -1011,7 +1011,8 @@ void CHARACTER::EncodeInsertPacket(LPENTITY entity)
         TPacketGCWalkMode p;
         p.vid = GetPacketVID();
         p.header = HEADER_GC_WALK_MODE;
-        p.mode = m_bNowWalking ? WALKMODE_WALK : WALKMODE_RUN;
+        // B.1.3: read via IsNowWalking() -> ECS MovementState.isNowWalking.
+        p.mode = IsNowWalking() ? WALKMODE_WALK : WALKMODE_RUN;
 
         d->Packet(&p, sizeof(p));
     }
@@ -1022,7 +1023,8 @@ void CHARACTER::EncodeInsertPacket(LPENTITY entity)
             TPacketGCWalkMode p;
             p.vid = ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(ch));
             p.header = HEADER_GC_WALK_MODE;
-            p.mode = ch->m_bNowWalking ? WALKMODE_WALK : WALKMODE_RUN;
+            // B.1.3: read via IsNowWalking() on the viewer-side character.
+            p.mode = ch->IsNowWalking() ? WALKMODE_WALK : WALKMODE_RUN;
             GetDesc()->Packet(&p, sizeof(p));
         }
     }
