@@ -282,11 +282,36 @@ static bool DestroyItemEntityAndLegacy(entt::entity itemEntity, const char* reas
 
     LPITEM legacyItem = ResolveLegacyItemForDestruction(itemEntity);
     if (legacyItem) {
-        EntityFactory::DestroyItemEntity(g_registry, legacyItem);
+        // Phase 15E-final.LPENTITY.4-architect.D.6.fixup-5:
+        // Order matters. The legacy ITEM_MANAGER::RemoveItem path ultimately
+        // calls CItem::RemoveFromGround for ground items, which is the
+        // function that broadcasts SendRemove to every viewer in range via
+        // SpatialService::RemoveEntity. RemoveFromGround checks
+        // g_registry.valid(itemEntity) before calling SpatialService - if
+        // the ECS entity has already been destroyed it falls through to a
+        // bare GetSectree()->RemoveEntity(this), which removes the item
+        // from the sectree but emits NO SendRemove packets, leaving the
+        // item rendered on every peer's client until they relog or move
+        // out of range.
+        //
+        // Pre-fixup-5 the ECS destroy ran first, so RemoveFromGround
+        // always hit the silent legacy fallback. The user-visible symptom
+        // was Metin-stone-drop fragments and despawned ground items
+        // staying rendered on the map indefinitely.
+        //
+        // Fix: run the legacy RemoveItem first (which broadcasts the
+        // SendRemove burst while the ECS entity is still valid), then
+        // destroy the ECS entity. EntityFactory::DestroyItemEntity is
+        // idempotent enough - the legacy path also calls it internally
+        // via item_manager.cpp:741, so by the time we reach the explicit
+        // DestroyItemEntity call below, the ECS entity may already be
+        // gone. The code is defensive in either case.
         if (reason && *reason)
             ITEM_MANAGER::instance().RemoveItem(legacyItem, reason);
         else
             ITEM_MANAGER::instance().RemoveItem(legacyItem);
+        if (g_registry.valid(itemEntity))
+            EntityFactory::DestroyItemEntity(g_registry, legacyItem);
         return true;
     }
 
