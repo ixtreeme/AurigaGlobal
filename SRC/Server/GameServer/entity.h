@@ -28,14 +28,28 @@ class CEntity
 		void			ViewCleanup();
 		void			ViewInsert(LPENTITY entity, bool recursive = true);
 		void			ViewRemove(LPENTITY entity, bool recursive = true);
-		void			ViewReencode();	// ÁÖÀ§ Entity¿¡ ÆÐÅ¶À» ´Ù½Ã º¸³½´Ù.
+		void			ViewReencode();	// ï¿½ï¿½ï¿½ï¿½ Entityï¿½ï¿½ ï¿½ï¿½Å¶ï¿½ï¿½ ï¿½Ù½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½.
 
 		int				GetViewAge() const	{ return m_iViewAge;	}
 
-		int32_t			GetX() const		{ return m_pos.x; }
-		int32_t			GetY() const		{ return m_pos.y; }
-		int32_t			GetZ() const		{ return m_pos.z; }
-		const PIXEL_POSITION &	GetXYZ() const		{ return m_pos; }
+		// Phase 15E-final.LPENTITY.4-architect.B.1.1:
+		// GetX/Y/Z/GetXYZ now read the ECS Position component as the
+		// authoritative source. Per A.2 Â§2 m_pos row, A.2 Â§5 Step 2.
+		// Bodies live in entity.cpp because the registry / SpatialService
+		// includes do not belong in a widely-included header.
+		// GetXYZ returns by value: a reference into the registry would be
+		// unsafe across other emplace operations on the same entity.
+		// Existing callers either copy to a local PIXEL_POSITION or bind a
+		// const& to the returned temporary - lifetime extension applies, no
+		// dangling.
+		// The B.1.1.pre.1 [POSITION_READ_DRIFT] detector ran across one
+		// full WinTest session before this commit landed, verifying the
+		// dual-write contract. Any logged drift was fixed at the SetXYZ
+		// caller paired with SyncPositionComponents.
+		int32_t				GetX() const;
+		int32_t				GetY() const;
+		int32_t				GetZ() const;
+		PIXEL_POSITION		GetXYZ() const;
 
 		void			SetXYZ(int32_t x, int32_t y, int32_t z)		{ m_pos.x = x, m_pos.y = y, m_pos.z = z; }
 		void			SetXYZ(const PIXEL_POSITION & pos)	{ m_pos = pos; }
