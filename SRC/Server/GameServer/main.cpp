@@ -884,6 +884,9 @@ int idle()
 		// Re-enable after the ECS sync packet surface matches the legacy packet layout.
 		// NetworkSyncSystem_Update(g_registry, tick);
 		g_dispatcher.update();
+		// Phase 15E-final.LPENTITY.4-architect.D.5: drift detector self-throttles
+		// to one sweep per 5s. Body is a no-op outside AURIGA_LPENTITY_FIXUP_AUDIT.
+		ecs::VisibilitySystem::DriftSweep(g_registry);
 		// Phase 7 verification log - REMOVE IN PHASE 9
 		static uint32_t s_ecsdebug = 0;
 		if (++s_ecsdebug % 3000 == 0) {

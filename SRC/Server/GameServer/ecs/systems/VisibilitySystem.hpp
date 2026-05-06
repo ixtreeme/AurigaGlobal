@@ -17,4 +17,13 @@ namespace ecs::VisibilitySystem {
 void Init(entt::registry& reg);
 void Shutdown(entt::registry& reg);
 
+// Phase 15E-final.LPENTITY.4-architect.D.5:
+// Drift sweep. Iterates every character entity with a ViewerMap, computes
+// the sectree-truth viewer set at that entity's current Position, and
+// compares to the maintained ViewerMap mirror. Logs [VISIBILITY_DRIFT]
+// per drifting entity, rate-limited to one log per entity per 30s. Gated
+// by AURIGA_LPENTITY_FIXUP_AUDIT - no-op in release. Call from the main
+// tick loop; the function self-throttles to one full sweep per 5 seconds.
+void DriftSweep(entt::registry& reg);
+
 } // namespace ecs::VisibilitySystem
