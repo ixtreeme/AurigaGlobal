@@ -484,6 +484,30 @@ void CHARACTER_MANAGER::DestroyCharacter(LPCHARACTER ch, const char* file, size_
 	if (const entt::entity entity = ch->GetEntityHandle();
 		entity != entt::null && g_registry.valid(entity))
 	{
+		// Phase 15E-final.LPENTITY.4-architect.D.6.fixup-6:
+		// Run ViewCleanup explicitly while the ECS entity is still valid.
+		//
+		// CEntity::Destroy() (called from ~CHARACTER via M2_DELETE below)
+		// also calls ViewCleanup, but by that point EntityFactory::Destroy
+		// has already null-ed ch->GetEntityHandle() and reg.destroy()-ed
+		// the entity. The D.6 ViewCleanup char-branch resolves
+		// `EntityOf(this)` through `ch->GetEntityHandle()`, sees null, and
+		// silently skips the ViewerMap walk - so no SendRemove burst goes
+		// out to the dying character's peers.
+		//
+		// User-visible symptom: when a Metin stone (CHAR_TYPE_STONE mob) is
+		// killed, the death animation packet (HEADER_GC_DEAD) reaches the
+		// clients and starts the shatter animation, but the follow-up
+		// HEADER_GC_CHARACTER_DELETE packet is never sent because no
+		// SendRemove fired. The shattered fragments stay rendered on the
+		// map indefinitely.
+		//
+		// Fix: invoke ViewCleanup here, then EntityFactory::Destroy. The
+		// destructor's CEntity::Destroy will hit ViewCleanup again, but by
+		// then m_map_view is empty (legacy clear) and the ECS handle is
+		// null - both branches of the D.6 ViewCleanup are no-ops on the
+		// second pass.
+		ch->ViewCleanup();
 		EntityFactory::Destroy(g_registry, entity);
 	}
 
