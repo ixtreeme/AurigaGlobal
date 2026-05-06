@@ -167,6 +167,46 @@ namespace
         // emplaces Position / PositionZ / MapIndex / DirtyTag in one shot.
         // UpdateSectree refreshes m_map_view and dispatches viewer transitions.
         ecs::SyncPositionComponents(reg, entity, ch->GetMapIndex(), position.x, position.y, ch->GetZ());
+
+        // Phase 15E-final.LPENTITY.4-architect.D.6.fixup-3:
+        // Sectree boundary crossing for characters. Pre-D.6 the legacy
+        // CHARACTER::Sync handled this in the movement tick; D.6 stubbed
+        // CEntity::UpdateSectree for chars to disable polling, but that
+        // also disabled the side-effect that Sync used to perform.
+        //
+        // Without this fixup, when a character crosses a sectree boundary
+        // (every few hundred logical pixels), the m_pSectree legacy field
+        // stays pointing at the OLD sectree while ecs::Position has already
+        // moved to the new sectree. The next CHARACTER::Show call (e.g.
+        // backport, /warp, dungeon entry) compares m_pSectree to a fresh
+        // SECTREE_MANAGER lookup at the current pos and sees them differ -
+        // forces bChangeTree=true even when the spatial reality says
+        // bChangeTree=false. The bChangeTree=true branch then:
+        //   1. RemoveEntity from the stale m_pSectree (no-op because the
+        //      stale tree's m_set_entity does not actually contain this
+        //      character anymore)
+        //   2. ViewCleanup -> MirrorViewClear -> wipes the ECS ViewMap and
+        //      ViewerMap entirely, sending SendRemove to every current viewer
+        //   3. InsertEntity into the real sectree
+        //   4. fixup-1 spawn event re-builds ViewerMap
+        //
+        // Steps 2 and 4 produce the user-visible "map reload" effect: peers
+        // get a remove-then-insert burst, the player's ViewerMap is briefly
+        // empty during the gap, and any visibility query (next Show, next
+        // PacketView) inside that window sees an inconsistent set.
+        //
+        // The fix is to keep m_pSectree in sync with the ECS Position on
+        // every tick by re-inserting into the correct sectree as soon as the
+        // character crosses a boundary. SECTREE::InsertEntity automatically
+        // erases the entity from its previous sectree's m_set_entity and
+        // calls SetSectree(new_tree), so a single InsertEntity call on the
+        // correct tree is enough.
+        if (LPSECTREE new_tree = ecs::SectorAt(ch->GetMapIndex(), position.x, position.y);
+            new_tree && new_tree != ch->GetSectree())
+        {
+            new_tree->InsertEntity(ch);
+        }
+
         ch->UpdateSectree();
 
         ecs::SyncSectorPlacement(reg, entity, ch->GetMapIndex(), ch->GetX(), ch->GetY());
