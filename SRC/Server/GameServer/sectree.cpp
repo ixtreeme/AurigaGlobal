@@ -9,6 +9,9 @@
 #include "ecs/CharacterAccessors.hpp"
 #include "ecs/EntityFactory.hpp"
 #include "ecs/Registry.hpp"
+#include "ecs/SpatialHelpers.hpp"
+#include "ecs/components/spatial_components.hpp"
+#include "ecs/services/SpatialService.hpp"
 #include "ecs/systems/ItemSystem.hpp"
 #include "item.h"
 #include "item_manager.h"
@@ -152,6 +155,29 @@ bool SECTREE::InsertEntity(LPENTITY pkEnt)
 	pkEnt->SetSectree(this);
 	//pkEnt->UpdateSectree();
 
+	// Phase 15E-final.LPENTITY.4-architect.H.2:
+	// Mirror the legacy m_pSectree write into ECS SectorPlacement so the
+	// H.1 GetSectree ECS-resolution path always sees the right sector
+	// without relying on the dual-store maintenance running through
+	// SpatialService::InsertEntity. The seam matters because several
+	// callers reach SECTREE::InsertEntity directly (e.g. CHARACTER::Sync
+	// at MovementSystem.cpp:634, CHARACTER::Show at SessionSystem.cpp:1005)
+	// without an explicit SyncSectorPlacement call right after.
+	//
+	// Use pkEnt->GetMapIndex() rather than this->GetID() because SECTREEID
+	// only carries (sectorX, sectorY) - the mapIndex is owned by the
+	// SECTREE_MANAGER side, not stored on the SECTREE itself. The entity's
+	// legacy m_lMapIndex is set by every InsertEntity caller before this
+	// point (e.g. CHARACTER::Show line 934 SetMapIndex(lMapIndex)).
+	{
+		const entt::entity e = ecs::SpatialService::EntityFromLPENTITY(pkEnt);
+		if (e != entt::null && g_registry.valid(e))
+		{
+			ecs::SyncSectorPlacement(
+				g_registry, e, pkEnt->GetMapIndex(), pkEnt->GetX(), pkEnt->GetY());
+		}
+	}
+
 	m_set_entity.insert(pkEnt);
 
 	if (pkEnt->IsType(ENTITY_CHARACTER))
@@ -184,6 +210,22 @@ void SECTREE::RemoveEntity(LPENTITY pkEnt)
 	m_set_entity.erase(it);
 
 	pkEnt->SetSectree(nullptr);
+
+	// Phase 15E-final.LPENTITY.4-architect.H.2:
+	// Mirror the legacy m_pSectree clear into ECS by removing the
+	// SectorPlacement component. After this, GetSectree's ECS-first
+	// resolution returns nullptr (matches the legacy m_pSectree=nullptr
+	// state) without the H.1 fallback to the legacy field.
+	//
+	// reg.remove is idempotent - if the component is already gone (e.g.
+	// the caller is SpatialService::RemoveEntity which removes
+	// SectorPlacement explicitly at line 269) the second remove is a
+	// no-op.
+	{
+		const entt::entity e = ecs::SpatialService::EntityFromLPENTITY(pkEnt);
+		if (e != entt::null && g_registry.valid(e))
+			g_registry.remove<ecs::SectorPlacement>(e);
+	}
 
 	if (pkEnt->IsType(ENTITY_CHARACTER))
 	{
