@@ -1102,6 +1102,13 @@ public:
 	uint8_t				GetAddChrStateForAudit() const { return m_bAddChrState; }
 #endif
 
+	// Phase 15E-final.LPENTITY.4-architect.B.1.5:
+	// GetAddChrStateFlag composes the 4-bit bStateFlag byte from the ECS
+	// StatusFlags component (isDead, isSpawnState, isKillerMode,
+	// isPartyState). Per A.2 §2 m_bAddChrState row.
+	// Body in MovementSystem.cpp.
+	uint8_t				GetAddChrStateFlag() const;
+
 	void			SetLastAttacked(uint32_t time);	// ���������� ���ݹ��� �ð� �� ��ġ�� ������
 
 	bool			SetSyncOwner(LPCHARACTER ch, bool bRemoveFromList = true);

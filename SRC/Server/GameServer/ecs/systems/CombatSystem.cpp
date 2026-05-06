@@ -577,7 +577,8 @@ void CHARACTER::UpdateAlignment(uint32_t iAmount)
 
 void CHARACTER::SetKillerMode(bool isOn)
 {
-	if ((isOn ? ADD_CHARACTER_STATE_KILLER : 0) == IS_SET(m_bAddChrState, ADD_CHARACTER_STATE_KILLER))
+	// B.1.5: read via getter -> ECS StatusFlags.isKillerMode bit.
+	if ((isOn ? ADD_CHARACTER_STATE_KILLER : 0) == IS_SET(GetAddChrStateFlag(), ADD_CHARACTER_STATE_KILLER))
 		return;
 
 	if (isOn)
@@ -597,7 +598,8 @@ void CHARACTER::SetKillerMode(bool isOn)
 
 bool CHARACTER::IsKillerMode() const
 {
-	return IS_SET(m_bAddChrState, ADD_CHARACTER_STATE_KILLER);
+	// B.1.5: read via getter -> ECS StatusFlags.isKillerMode bit.
+	return IS_SET(GetAddChrStateFlag(), ADD_CHARACTER_STATE_KILLER);
 }
 
 void CHARACTER::UpdateKillerMode()

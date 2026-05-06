@@ -987,7 +987,8 @@ void CHARACTER::EncodeInsertPacket(LPENTITY entity)
     pack.dwAffectFlag[1] = m_afAffectFlag.bits[1];
 #endif
 
-    pack.bStateFlag = m_bAddChrState;
+    // B.1.5: read via getter -> ECS StatusFlags 4 bits.
+    pack.bStateFlag = GetAddChrStateFlag();
 
     int iDur = 0;
     // B.1.4: read m_posDest via getters (ECS MovementDestination, fallback to GetX/Y).
