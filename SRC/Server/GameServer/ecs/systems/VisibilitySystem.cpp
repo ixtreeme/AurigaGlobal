@@ -2,39 +2,157 @@
 
 #include "VisibilitySystem.hpp"
 
+#include "../../config.h"
+#include "../../sectree.h"
+#include "../../utils.h"
+#include "../AIHelpers.hpp"
 #include "../EventDispatcher.hpp"
+#include "../Registry.hpp"
+#include "../SpatialHelpers.hpp"
+#include "../components/spatial_components.hpp"
+#include "../components/transform_components.hpp"
+#include "../components/visibility_components.hpp"
 #include "../events.hpp"
+#include "../services/EntityNetworkDispatch.hpp"
 
 #include <Core/Logging.hpp>
+
+#include <unordered_set>
 
 namespace ecs::VisibilitySystem {
 
 namespace {
     bool g_initialized = false;
 
-    // Phase 15E-final.LPENTITY.4-architect.D.3 skeleton handler.
+    // Phase 15E-final.LPENTITY.4-architect.D.4:
+    // Sectree-based viewer-set computation at an arbitrary (mapIndex, x, y).
     //
-    // D.4 will replace this body with:
-    //   1. Compute oldViewers via sectree query at (oldX, oldY, oldMapIndex).
-    //   2. Compute newViewers via sectree query at (newX, newY, newMapIndex).
-    //   3. Symmetric-diff: leaving = oldViewers \ newViewers,
-    //                     entering = newViewers \ oldViewers.
-    //   4. For each leaving viewer: bidirectional ViewMap/ViewerMap erase
-    //      + EntityNetworkDispatch::SendRemove.
-    //   5. For each entering viewer: bidirectional ViewMap/ViewerMap insert
-    //      + EntityNetworkDispatch::SendInsert.
+    // Mirrors the structure of VisibilityService::GetEntitiesInRange but
+    // takes (mapIndex, x, y) directly rather than reading the source's
+    // current Position. Required because the handler must compute the
+    // OLD viewer set after Position has already been written to the new
+    // location.
     //
-    // Spawn case (oldMapIndex == 0): skip the leaving step (no prior
-    // viewers existed) and fall straight through to the entering step
-    // computed against the new position.
+    // mapIndex == 0 is the spawn/despawn sentinel (real maps start at 1).
+    // The handler treats it as "no prior viewers" by short-circuiting to
+    // an empty set.
+    std::unordered_set<entt::entity> ComputeViewersAt(
+        entt::registry& reg,
+        entt::entity self,
+        int32_t mapIndex,
+        int32_t x,
+        int32_t y,
+        int32_t range)
+    {
+        std::unordered_set<entt::entity> result;
+        if (mapIndex == 0)
+            return result;
+
+        LPSECTREE sectree = ecs::SectorAt(mapIndex, x, y);
+        if (!sectree)
+            return result;
+
+        struct Collector {
+            entt::registry& reg;
+            entt::entity self;
+            int32_t cx;
+            int32_t cy;
+            int32_t range;
+            std::unordered_set<entt::entity>& out;
+
+            void operator()(LPENTITY entity)
+            {
+                if (!entity || !entity->IsType(ENTITY_CHARACTER))
+                    return;
+
+                const auto e = AIHelpers::EcsOf(static_cast<LPCHARACTER>(entity));
+                if (e == entt::null || !reg.valid(e) || e == self)
+                    return;
+
+                const auto* pos = reg.try_get<ecs::Position>(e);
+                if (!pos)
+                    return;
+
+                if (DISTANCE_APPROX(pos->x - cx, pos->y - cy) > range)
+                    return;
+
+                out.insert(e);
+            }
+        } collector { reg, self, x, y, range, result };
+
+        sectree->ForEachAround(collector);
+        return result;
+    }
+
+    // Bidirectional ViewMap/ViewerMap maintenance. The pair-invariant
+    // (Section 3 of the architect doc) is that B in A.viewers <=> A in
+    // B.visible. These helpers update both sides atomically before any
+    // packet is emitted.
+    void InsertBidirectional(entt::registry& reg, entt::entity self, entt::entity viewer)
+    {
+        reg.get_or_emplace<ecs::ViewerMap>(self).viewers.insert(viewer);
+        reg.get_or_emplace<ecs::ViewMap>(viewer).visible.insert(self);
+    }
+
+    void RemoveBidirectional(entt::registry& reg, entt::entity self, entt::entity viewer)
+    {
+        if (auto* viewerMap = reg.try_get<ecs::ViewerMap>(self))
+            viewerMap->viewers.erase(viewer);
+        if (auto* viewMap = reg.try_get<ecs::ViewMap>(viewer))
+            viewMap->visible.erase(self);
+    }
+
+    // Phase 15E-final.LPENTITY.4-architect.D.4 handler.
     //
-    // For D.3 the handler is a no-op so we can validate that:
-    //  - The dispatcher accepts the connection at Init time.
-    //  - The trigger sites in D.2 fire without crashing.
-    //  - g_dispatcher.update() in main.cpp processes the queue cleanly.
+    // Runs IN PARALLEL with the legacy UpdateSectree polling: both paths
+    // maintain ViewMap/ViewerMap, both emit SendInsert/SendRemove. The
+    // server protocol is idempotent for character add/remove (the legacy
+    // path already calls these multiple times for the same VID under
+    // movement/Show/UpdateSectree overlap), so duplicate packets are not
+    // a correctness concern - just bandwidth. D.5 will quantify the
+    // overlap via a drift detector; D.6 will disable the legacy polling
+    // once D.5 reports zero divergence.
+    //
+    // Scope guard: only character entities. Items / buildings / shops
+    // continue to use the existing legacy InsertEntity/RemoveEntity
+    // recipient-broadcast machinery in SpatialService.cpp - their
+    // PositionChangedEvent (fired from D.2's SpatialService::InsertEntity
+    // trigger) is observed here but skipped.
     void OnPositionChanged(const ecs::PositionChangedEvent& ev)
     {
-        (void)ev;
+        auto& reg = g_registry;
+
+        if (ev.entity == entt::null || !reg.valid(ev.entity))
+            return;
+
+        const auto* kind = reg.try_get<ecs::SpatialKindTag>(ev.entity);
+        if (!kind || kind->kind != ecs::SpatialKind::Character)
+            return;
+
+        const int32_t kRange = VIEW_RANGE + VIEW_BONUS_RANGE;
+
+        const auto oldViewers = ComputeViewersAt(reg, ev.entity, ev.oldMapIndex, ev.oldX, ev.oldY, kRange);
+        const auto newViewers = ComputeViewersAt(reg, ev.entity, ev.newMapIndex, ev.newX, ev.newY, kRange);
+
+        // Leaving: in oldViewers, not in newViewers
+        for (const entt::entity viewer : oldViewers) {
+            if (newViewers.count(viewer))
+                continue;
+            if (viewer == entt::null || !reg.valid(viewer))
+                continue;
+            RemoveBidirectional(reg, ev.entity, viewer);
+            ecs::EntityNetworkDispatch::SendRemove(reg, ev.entity, viewer);
+        }
+
+        // Entering: in newViewers, not in oldViewers
+        for (const entt::entity viewer : newViewers) {
+            if (oldViewers.count(viewer))
+                continue;
+            if (viewer == entt::null || !reg.valid(viewer))
+                continue;
+            InsertBidirectional(reg, ev.entity, viewer);
+            ecs::EntityNetworkDispatch::SendInsert(reg, ev.entity, viewer);
+        }
     }
 }
 
@@ -47,7 +165,7 @@ void Init(entt::registry& /*reg*/)
         .connect<&OnPositionChanged>();
 
     g_initialized = true;
-    LOG_INFO("[VISIBILITY] Init: PositionChangedEvent handler connected (D.3 skeleton)");
+    LOG_INFO("[VISIBILITY] Init: PositionChangedEvent handler connected (D.4 diff handler)");
 }
 
 void Shutdown(entt::registry& /*reg*/)
