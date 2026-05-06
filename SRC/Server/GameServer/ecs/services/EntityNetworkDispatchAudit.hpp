@@ -30,6 +30,25 @@ void CheckMovementDrift(entt::registry& reg, entt::entity source);
 // from. Native packet does NOT get sent here; this is observation only.
 void CheckCharacterInsertParity(entt::registry& reg, entt::entity source);
 
+// LPENTITY.4-architect.B.1.1.pre: runtime sweep that verifies the dual-write
+// contract for Position. Iterates view<LegacyCharPtr, Position> and for each
+// pair compares legacy CHARACTER::GetX/GetY/GetZ (currently still reading
+// m_pos via the inline accessors) against the ECS Position component.
+// Logs [POSITION_READ_DRIFT] per entity with rate-limit (one log per
+// entity per 30 seconds) when the two sources disagree.
+//
+// Purpose: before the B.1.1 read-source flip lands (CEntity::GetX/Y/Z
+// switching from m_pos to ecs::Position), this sweep proves that every
+// SetXYZ caller paired with SyncPositionComponents keeps the two sources
+// in sync (invariant I1 from A.2 §6). Zero drift over a full WinTest
+// session is the gate for the actual flip commit.
+//
+// Called from the main loop periodic block in main.cpp at ~1Hz.
+// Disabled in pure-release builds (#ifdef AURIGA_LPENTITY_FIXUP_AUDIT).
+// Deletes in Phase G when m_pos is removed and the comparison becomes
+// a tautology (ECS == ECS).
+void CheckAllPositionDrift(entt::registry& reg);
+
 } // namespace ecs::EntityNetworkDispatchAudit
 
 #endif // AURIGA_LPENTITY_FIXUP_AUDIT

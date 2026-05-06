@@ -64,6 +64,9 @@
 #include "ecs/systems/AffectSystem.hpp"
 #include "ecs/systems/ActivitySystem.hpp"
 #include "ecs/systems/NetworkSyncSystem.hpp"
+#ifdef AURIGA_LPENTITY_FIXUP_AUDIT
+#include "ecs/services/EntityNetworkDispatchAudit.hpp"
+#endif
 #include <boost/bind.hpp>
 #ifdef __ENABLE_NEW_OFFLINESHOP__
 #include "new_offlineshop.h"
@@ -102,7 +105,7 @@
 #ifdef ENABLE_SWITCHBOT
 #include "new_switchbot.h"
 #endif
-//// À©µµ¿ì¿¡¼­ Å×½ºÆ®ÇÒ ¶§´Â Ç×»ó ¼­¹öÅ° Ã¼Å©
+//// ï¿½ï¿½ï¿½ï¿½ï¿½ì¿¡ï¿½ï¿½ ï¿½×½ï¿½Æ®ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½×»ï¿½ ï¿½ï¿½ï¿½ï¿½Å° Ã¼Å©
 #ifdef _WIN32
 	#define _USE_SERVER_KEY_
 #endif
@@ -139,7 +142,7 @@ extern void WriteVersion();
 //}
 //#endif
 
-// °ÔÀÓ°ú ¿¬°áµÇ´Â ¼ÒÄÏ
+// ï¿½ï¿½ï¿½Ó°ï¿½ ï¿½ï¿½ï¿½ï¿½Ç´ï¿½ ï¿½ï¿½ï¿½ï¿½
 volatile int	num_events_called = 0;
 int             max_bytes_written = 0;
 int             current_bytes_written = 0;
@@ -266,7 +269,7 @@ void heartbeat(LPHEART ht, int pulse)
 
 	t = get_dword_time();
 
-	// 1ÃÊ¸¶´Ù
+	// 1ï¿½Ê¸ï¿½ï¿½ï¿½
 	if (!(pulse % ht->passes_per_sec))
 	{
 		if (!g_bAuthServer)
@@ -318,14 +321,14 @@ void heartbeat(LPHEART ht, int pulse)
 	}
 
 	//
-	// 25 PPS(Pulse per second) ¶ó°í °¡Á¤ÇÒ ¶§
+	// 25 PPS(Pulse per second) ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½
 	//
 
-	// ¾à 1.16ÃÊ¸¶´Ù
+	// ï¿½ï¿½ 1.16ï¿½Ê¸ï¿½ï¿½ï¿½
 	if (!(pulse % (passes_per_sec + 4)))
 		CHARACTER_MANAGER::instance().ProcessDelayedSave();
 
-	//4ÃÊ ¸¶´Ù
+	//4ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
 #if defined (__FreeBSD__) && defined(__FILEMONITOR__)
 	if (!(pulse % (passes_per_sec * 5)))
 	{
@@ -333,7 +336,7 @@ void heartbeat(LPHEART ht, int pulse)
 	}
 #endif
 
-	// ¾à 5.08ÃÊ¸¶´Ù
+	// ï¿½ï¿½ 5.08ï¿½Ê¸ï¿½ï¿½ï¿½
 	if (!(pulse % (passes_per_sec * 5 + 2)))
 	{
 		ITEM_MANAGER::instance().Update();
@@ -887,6 +890,18 @@ int idle()
 			}
 			LOG_INFO("ECS registry: {} alive entities", ecsCount);
 		}
+
+#ifdef AURIGA_LPENTITY_FIXUP_AUDIT
+		// LPENTITY.4-architect.B.1.1.pre: periodic dual-write audit for
+		// Position. Runs at ~1Hz on the main loop tick. Logs
+		// [POSITION_READ_DRIFT] when legacy CHARACTER::GetX/Y/Z and ECS
+		// Position disagree. Zero output across a full WinTest is the
+		// gate for the actual B.1.1 read-source flip.
+		static uint32_t s_positionDriftSweep = 0;
+		if (++s_positionDriftSweep % 1000 == 0) {
+			ecs::EntityNetworkDispatchAudit::CheckAllPositionDrift(g_registry);
+		}
+#endif
 	}
 	db_clientdesc->Update(t);
 	s_dwProfiler[PROF_CHR_UPDATE] += (get_dword_time() - t);
@@ -949,7 +964,7 @@ int io_loop(LPFDWATCH fdw)
 	LPDESC	d;
 	int		num_events, event_idx;
 
-	DESC_MANAGER::instance().DestroyClosed(); // PHASE_CLOSEÀÎ Á¢¼ÓµéÀ» ²÷¾îÁØ´Ù.
+	DESC_MANAGER::instance().DestroyClosed(); // PHASE_CLOSEï¿½ï¿½ ï¿½ï¿½ï¿½Óµï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½Ø´ï¿½.
 	DESC_MANAGER::instance().TryConnect();
 
 	if ((num_events = fdwatch(fdw, nullptr)) < 0)
