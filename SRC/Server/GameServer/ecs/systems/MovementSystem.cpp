@@ -162,11 +162,10 @@ namespace
         // the first B.1.1 attempt (commits 9d27603 + fefce11, since reverted).
         //
         // Body now runs unconditionally on every ECS movement tick.
-        // SetXYZ writes legacy m_pos (Phase C will remove that),
-        // SyncPositionComponents re-emplaces the same Position values
-        // already in the component (no-op in practice),
-        // UpdateSectree is the work we actually need.
-        ch->SetXYZ(position.x, position.y, ch->GetZ());
+        // Phase C.1: legacy m_pos write via SetXYZ removed - ECS Position is
+        // the sole source of truth for character position. SyncPositionComponents
+        // emplaces Position / PositionZ / MapIndex / DirtyTag in one shot.
+        // UpdateSectree refreshes m_map_view and dispatches viewer transitions.
         ecs::SyncPositionComponents(reg, entity, ch->GetMapIndex(), position.x, position.y, ch->GetZ());
         ch->UpdateSectree();
 
@@ -573,7 +572,8 @@ bool CHARACTER::Sync(int32_t x, int32_t y)
 	}
 
 	SetRotationToXY(x, y);
-	SetXYZ(x, y, 0);
+	// Phase C.1: legacy m_pos write removed - SyncPositionComponents below
+	// emplaces ECS Position as the sole source of truth.
 	ecs::SyncPositionComponents(g_registry, EcsEntityOf(this), GetMapIndex(), x, y, GetZ());
 
 	// LPENTITY.4 sync drift fix: peer-sync overrides whatever destination the

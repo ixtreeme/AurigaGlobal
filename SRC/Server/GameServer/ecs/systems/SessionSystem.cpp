@@ -982,7 +982,8 @@ bool CHARACTER::Show(int32_t lMapIndex, int32_t x, int32_t y, int32_t z, bool bS
         m_afAffectFlag.Set(AFF_SPAWN);
     }
 
-    SetXYZ(x, y, z);
+    // Phase C.1: legacy m_pos write removed - ECS Position via
+    // SyncPositionComponents is the sole source.
     ecs::SyncPositionComponents(g_registry, GetEntityHandle(), lMapIndex, x, y, z);
     ecs::Invariants::ValidateCharacterTags(g_registry, self, "show.after_position_sync");
     ecs::Invariants::ValidateCommonIdentity(g_registry, self, "show.after_position_sync");

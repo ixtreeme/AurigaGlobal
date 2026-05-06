@@ -3865,7 +3865,8 @@ void CHARACTER::SetPlayerProto(const TPlayerTable* t)
 #endif
 
     SetMapIndex(t->lMapIndex);
-    SetXYZ(t->x, t->y, t->z);
+    // Phase C.1: legacy m_pos write removed - ECS Position via
+    // SyncPositionComponents is the sole source.
     ecs::SyncPositionComponents(g_registry, GetEntityHandle(), t->lMapIndex, t->x, t->y, t->z);
 
     // LPENTITY.4 sync drift fix: PlayerLoad must not leave m_posDest at the

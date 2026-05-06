@@ -64,9 +64,6 @@
 #include "ecs/systems/AffectSystem.hpp"
 #include "ecs/systems/ActivitySystem.hpp"
 #include "ecs/systems/NetworkSyncSystem.hpp"
-#ifdef AURIGA_LPENTITY_FIXUP_AUDIT
-#include "ecs/services/EntityNetworkDispatchAudit.hpp"
-#endif
 #include <boost/bind.hpp>
 #ifdef __ENABLE_NEW_OFFLINESHOP__
 #include "new_offlineshop.h"
@@ -891,17 +888,6 @@ int idle()
 			LOG_INFO("ECS registry: {} alive entities", ecsCount);
 		}
 
-#ifdef AURIGA_LPENTITY_FIXUP_AUDIT
-		// LPENTITY.4-architect.B.1.1.pre: periodic dual-write audit for
-		// Position. Runs at ~1Hz on the main loop tick. Logs
-		// [POSITION_READ_DRIFT] when legacy CHARACTER::GetX/Y/Z and ECS
-		// Position disagree. Zero output across a full WinTest is the
-		// gate for the actual B.1.1 read-source flip.
-		static uint32_t s_positionDriftSweep = 0;
-		if (++s_positionDriftSweep % 1000 == 0) {
-			ecs::EntityNetworkDispatchAudit::CheckAllPositionDrift(g_registry);
-		}
-#endif
 	}
 	db_clientdesc->Update(t);
 	s_dwProfiler[PROF_CHR_UPDATE] += (get_dword_time() - t);
