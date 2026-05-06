@@ -1044,6 +1044,38 @@ bool CHARACTER::Show(int32_t lMapIndex, int32_t x, int32_t y, int32_t z, bool bS
             g_registry.emplace_or_replace<ecs::ViewActiveTag>(e);
         ViewReencode();
         LOG_TRACE("      in same sectree");
+
+        // Phase 15E-final.LPENTITY.4-architect.D.6.fixup-2:
+        // Explicit spawn-shaped PositionChangedEvent for the intra-sectree
+        // Show path. This fires on:
+        //   * input_main.cpp Move handler backport (anti-cheat rubberband
+        //     when client moves too far from server's authoritative position)
+        //   * cmd_general.cpp /warp commands within the same sectree
+        //   * Other intra-sectree Show callers
+        //
+        // Without this, the SyncPositionComponents at line 987 is suppressed
+        // by the D.2 idempotent filter when MovementSystem::Show is called
+        // with the entity's CURRENT (GetX, GetY, GetZ) coordinates - which
+        // is exactly the backport pattern (input_main.cpp:2284). The D.4
+        // handler never runs, the ViewerMap is not refreshed, and the post
+        // D.6 ECS-only ViewerMap walk in PacketView produces stale recipient
+        // sets - manifesting as "the other character disappears after a
+        // backport" because the backport-source's ViewerMap was last filled
+        // at login and any peer that moved into range since then is missing.
+        //
+        // Spawn-shape (oldMapIndex=0) means the handler treats it as a fresh
+        // visibility computation: empty oldViewers, full newViewers from the
+        // sectree query at the current position. Idempotent SendInsert per
+        // viewer - the protocol tolerates duplicates (same as the legacy
+        // CFuncViewInsert refresh path used to before D.6).
+        if (e != entt::null && g_registry.valid(e))
+        {
+            g_dispatcher.trigger(ecs::PositionChangedEvent {
+                e,
+                0, 0, 0,
+                x, y, z,
+                0, lMapIndex });
+        }
     }
 
     // Phase C.4: legacy REMOVE_BIT(m_bAddChrState, SPAWN) removed.
