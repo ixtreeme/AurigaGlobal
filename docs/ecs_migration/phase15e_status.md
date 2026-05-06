@@ -1,6 +1,6 @@
 # Phase 15E-final.LPENTITY.4-architect — running status
 
-Updated through commit `3251616` (B.1.5 state flags).
+Updated through commit `7634caa` (C.4 m_bAddChrState write removal).
 
 ## Phase progress
 
@@ -18,6 +18,10 @@ Updated through commit `3251616` (B.1.5 state flags).
 | B.1.7 | m_map_view direct reads | DEFERRED | - | Per A.2 §5: m_map_view writes wait for VisibilitySystem (Phase D). Reads at the visibility-maintenance sites (ViewCleanup, UpdateSectree, ViewReencode) get rewritten as part of Phase D entirely. PacketView's m_map_view loop is part of the f76a3f1 band-aid scheduled for deletion in Phase D.8. |
 | B.1.8 | m_posStart | DEFERRED | - | Field has no current ECS twin per A.2 §2. Used only in CalculateMoveDuration body. A.2 §2 m_posStart row decision: "Convert CalculateMoveDuration to take start position as a function argument (or compute it inline from current Position at the moment Goto is called). No new ECS component needed." This is a Phase C refactor, not a Phase B read-flip. |
 | B.1.9 | m_iViewAge | DEFERRED | - | Per A.2 §5: "m_iViewAge migrates last, only after polling is replaced." Phase D removes UpdateSectree polling and m_iViewAge with it. |
+| C.1   | char-path m_pos write removal | DONE | 1251702 | SetXYZ removed from CHARACTER::Sync, SessionSystem::Show, PlayerRuntimeSystem::SetDetails; ECS Position via SyncPositionComponents is sole writer for character paths. CheckAllPositionDrift detector deleted. |
+| C.2   | timing + walking write removal | DONE | 9c95cac | m_dwMoveStartTime, m_dwMoveDuration, m_bNowWalking writes removed from CalculateMoveDuration, SetNowWalking, PlayerRuntimeSystem Initialize. SyncTimingWrite + SyncWalkingWrite are sole writers. CheckMovementDrift timing+walking subsections deleted. |
+| C.3   | m_posDest write removal | DONE | 912effa | m_posDest writes removed across CHARACTER::Sync/Stop/Goto, AffectSystem stun/shock, SessionSystem Show, PlayerRuntimeSystem SetDetails/MountVnum/Initialize. SyncDestinationWrite + SyncDestinationClear sole writers. m_posStart pulled into local in CalculateMoveDuration (B.1.8 refactor folded in). CheckMovementDrift dest subsection deleted. |
+| C.4   | m_bAddChrState write removal | DONE | 7634caa | 12 SET_BIT/REMOVE_BIT(m_bAddChrState, ...) sites removed across AffectSystem (polymorph SPAWN), CombatSystem (SetKillerMode), MovementSystem (SetPosition POS_STANDING/POS_DEAD), SessionSystem (Show SPAWN), SocialSystem (SetParty), PlayerRuntimeSystem (Initialize). StatusFlags 4 bits sole source. CheckMovementDrift state_flags subsection deleted - body now empty no-op shim until Phase G. GetAddChrStateForAudit removed; CheckCharacterInsertParity bStateFlag uses GetAddChrStateFlag on both sides. |
 
 ## Phase B effective end
 
@@ -69,32 +73,82 @@ változások fognak hiányozni ebben a részben amik szükségesek a
 másikból". Test gate at the end of the 5-commit B chunk, before
 proceeding to Phase C.
 
+## Phase C effective end
+
+Phase C migrated the writes for the 5 movement-related fields whose reads
+flipped in Phase B (m_pos, m_dwMoveStartTime/Duration, m_bNowWalking,
+m_posDest, m_bAddChrState). After C.1-C.4, every legacy character-write
+path that used to set one of these fields now goes through the ECS sync
+helpers (`SyncPositionComponents`, `SyncTimingWrite`, `SyncWalkingWrite`,
+`SyncDestinationWrite`, `SyncDestinationClear`) or directly emplaces the
+StatusFlags 4 bits.
+
+Field-by-field consequence:
+
+  - m_pos: char-path writes go via SyncPositionComponents (which still
+    mirrors to m_pos for non-char readers and Phase G deletion).
+  - m_posDest: ECS MovementDestination component is sole writer; legacy
+    m_posDest no longer maintained. Direct field reads at non-character
+    sites still work because the readers on those paths use the new
+    GetCurrentDestX/Y getters which fall back to GetX/Y when the ECS
+    component is absent (matches legacy m_posDest "settled at current"
+    semantic).
+  - m_dwMoveStartTime / m_dwMoveDuration: SyncTimingWrite is sole writer.
+  - m_bNowWalking: SyncWalkingWrite is sole writer.
+  - m_bAddChrState: 4 StatusFlags ECS bits are sole source; the
+    bStateFlag byte is now composed via GetAddChrStateFlag.
+
+Drift-detector consequence:
+
+  - CheckAllPositionDrift deleted (C.1).
+  - CheckMovementDrift body emptied progressively through C.2 (timing,
+    walking), C.3 (dest), C.4 (state_flags). Now an empty no-op shim;
+    deletes in Phase G.
+  - CheckCharacterInsertParity remains active. Each field comparison
+    after Phase C either sources both sides from ECS (tautological but
+    harmless) or compares the native pack against the still-mirrored
+    legacy field (catches Sync-helper regressions).
+
+## Acceptance gate per commit (Phase C)
+
+| Commit  | Builds clean | WinTest         | Architect doc ref |
+| ------- | ------------ | --------------- | ----------------- |
+| 1251702 | PASS         | DEFERRED        | A.2 §2 m_pos      |
+| 9c95cac | PASS         | DEFERRED        | A.2 §2 timing + walking |
+| 912effa | PASS         | DEFERRED        | A.2 §2 m_posDest  |
+| 7634caa | PASS         | DEFERRED        | A.2 §2 m_bAddChrState |
+
+WinTest deferred per user instruction (batch test at the end of a larger
+migration chunk).
+
 ## Next milestone
 
-WinTest the 5-commit Phase B chunk. Acceptance criteria:
+WinTest the combined Phase B + Phase C chunk. Acceptance criteria:
 
 1. Two-client position sync stable (the original desync symptom).
 2. Walk / run / mount / dash all visible on both clients.
 3. Map warp - new map mobs/stones visible.
-4. [POSITION_READ_DRIFT] count zero across the session
-   (the B.1.1.pre.1 detector verifies Phase B.1.1 dual-write is solid).
-5. [MOVEMENT_DRIFT] count zero (the existing audit detector continues
-   to verify all the flipped fields).
+4. Stun / dash dest reset, party flag toggle, killer-mode flag toggle,
+   spawn flag toggle on dead/standing all visible on both clients.
+5. [POSITION_READ_DRIFT] count zero across the session.
+6. [INSERT_PARITY] count zero (the parity detector continues to verify
+   the Sync-helper writes against the native packet builder).
 
-If any of (1)-(3) fails: investigate at source, do not band-aid. The
-B.1.1 first-attempt regression (MirrorLegacyMovement early-return)
-shows that asymmetric-source dependencies survive grep audits; the
-fix was a one-line guard removal in the same atomic commit. Same
-discipline applies if a new failure surfaces.
+If any of (1)-(4) fails: investigate at source. The Phase C migration
+removed dual-write at the legacy fields; if a regression appears it
+means a path is still reading the legacy field somewhere we missed
+during Phase B. Find that read site, convert it to the ECS getter.
 
-If (4) or (5) fail: one of the flipped fields has a SetXYZ caller
-that bypasses the dual-write (no SyncPositionComponents / no
-SyncTimingWrite / etc.). Find that site, fix at source.
+If (5) or (6) fail: a Sync-helper call site is missing. Find the legacy
+field write that should have a corresponding sync call.
 
 ## After WinTest passes
 
-Phase C begins (write migration). Per A.2 §5 Step 4-5: each field's
-writes redirect to ECS, then the legacy field becomes deletable.
-B.1.6, B.1.7, B.1.8, B.1.9 deferred fields handled in their
-respective phase windows (G for sectree, D for map_view + view_age,
-C for pos_start refactor).
+Phase D begins. Phase D rewrites the visibility machinery
+(VisibilitySystem - event-driven m_map_view replacement). Subsumes
+B.1.7 (m_map_view) and B.1.9 (m_iViewAge). The PacketView f76a3f1
+hybrid broadcast band-aid deletes here.
+
+Phase E (BroadcastService unification), Phase F (native character
+dispatch re-enable), Phase G (legacy field deletion + audit TU
+deletion) follow.
