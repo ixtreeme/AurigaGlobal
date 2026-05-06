@@ -1,6 +1,6 @@
 # Phase 15E-final.LPENTITY.4-architect — running status
 
-Updated through commit `85486e6` (D.5 VISIBILITY_DRIFT detector).
+Updated through commit `db68f73` (D.8 PacketView ECS ViewerMap walk; Phase D feature-complete).
 
 ## Phase progress
 
@@ -135,9 +135,9 @@ hybrid broadcast band-aid deletes in D.8.
 | D.3  | 136c6e3 | DONE | VisibilitySystem skeleton: Init/Shutdown public API, no-op OnPositionChanged. Wired into main.cpp boot. |
 | D.4  | 959319c | DONE | Diff-and-update handler: ComputeViewersAt (sectree query at arbitrary mapIndex+x+y), InsertBidirectional/RemoveBidirectional, leaving/entering loops emit SendInsert/SendRemove. Character-only scope guard. Runs IN PARALLEL with legacy UpdateSectree polling. |
 | D.5  | 85486e6 | DONE | DriftSweep: 5s-throttled sweep compares maintained ViewerMap to sectree truth; per-entity 30s log throttle. Logs [VISIBILITY_DRIFT]. AURIGA_LPENTITY_FIXUP_AUDIT-gated. Wired into main.cpp tick loop. |
-| D.6  | -      | GATED | Disable legacy UpdateSectree polling. **Depends on D.5 reporting zero drift in WinTest** - this is the hard gate before D.6 lands. |
-| D.7  | -      | PENDING | Remove m_iViewAge tracking + entity_view.cpp polling code. Depends on D.6. |
-| D.8  | -      | PENDING | Remove f76a3f1 hybrid PacketView band-aid. Depends on D.6. |
+| D.6  | 4200181 | DONE  | Disable legacy UpdateSectree polling for ENTITY_CHARACTER. Symmetric Insert/RemoveBidirectional updates all 4 ECS sides. Symmetric SendInsert/SendRemove emission. ViewCleanup + ViewReencode for chars walk ECS ViewerMap/ViewMap. ValidateViewMapMirror silenced for chars (m_map_view intentionally diverges). |
+| D.7  | -      | ABSORBED | After D.6 the `++m_iViewAge` line is unreachable for chars; the field still serves non-char polling. Full removal deferred to Phase G alongside the legacy field deletion (no separate Phase D commit). |
+| D.8  | db68f73 | DONE | PacketView body collapsed to ECS ViewerMap walk + self. Sectree-walk fallback retained for non-char sources whose ViewerMap is incomplete (theoretical - no current caller). f76a3f1 hybrid band-aid retired. |
 
 ## Next milestone (HARD GATE)
 
@@ -172,15 +172,17 @@ Position writer doesn't go through SyncPositionComponents. Inspect the
 
 ## After WinTest passes
 
-D.6: stub out CEntity::UpdateSectree polling body. The ECS handler
-becomes the sole writer of ViewMap/ViewerMap.
-
-D.7: delete m_iViewAge increments and ViewAgeMap tracking.
-
-D.8: collapse CEntity::PacketView's hybrid m_map_view + sectree-walk
-broadcast (f76a3f1) back to a single ToViewers call. This is the
-bridge to Phase E.
-
 Phase E (BroadcastService unification), Phase F (native character
 dispatch re-enable), Phase G (legacy field deletion + audit TU
-deletion) follow.
+deletion) follow. Phase D is feature-complete; the ECS ViewerMap is
+event-driven and authoritative for character visibility, and the
+f76a3f1 PacketView band-aid has retired.
+
+Phase D outcome inventory:
+  * Character visibility maintained event-driven via PositionChangedEvent.
+  * Both ViewMap and ViewerMap symmetric updates from a single move.
+  * Idle-character m_map_view staleness no longer matters (PacketView
+    walks ECS instead).
+  * Legacy m_map_view, m_iViewAge, ViewAgeMap remain for items / buildings
+    / shops, plus dormant on chars - all delete in Phase G.
+  * [VISIBILITY_DRIFT] detector active, gated by AURIGA_LPENTITY_FIXUP_AUDIT.
