@@ -10,6 +10,7 @@
 #include "ecs/components/dirty_components.hpp"
 #include "ecs/components/status_components.hpp"
 #include "ecs/components/transform_components.hpp"
+#include "ecs/components/visibility_components.hpp"
 #include "ecs/services/SpatialService.hpp"
 
 #include <unordered_set>
@@ -167,71 +168,84 @@ void CEntity::PacketView(const void * data, int bytes, LPENTITY except)
 	if (!GetSectree())
 		return;
 
-	// LPENTITY.4 sync drift fix: hybrid broadcast.
+	// Phase 15E-final.LPENTITY.4-architect.D.8:
 	//
-	// Original logic iterated only m_map_view (legacy snapshot updated by
-	// the periodic UpdateSectree). Two-client desync repro (chars at same
-	// server pos but visually apart on one client) traced back to viewers
-	// missing MOVE / SYNC_POSITION / effect packets because the broadcast
-	// source's m_map_view did not include them at the moment of broadcast.
-	// Causes: sectree boundary, asymmetric age-out, post-warp gap before
-	// the next UpdateSectree pass populated m_map_view.
+	// The hybrid f76a3f1 broadcast (m_map_view loop + sectree neighbour
+	// walk + dedup) was a band-aid for the original two-client desync
+	// root cause: idle characters never re-poll, so m_map_view goes stale
+	// during their stillness window. After Phase D.4-D.6 the ECS ViewerMap
+	// is event-driven and current at every tick - so the band-aid retires
+	// here. PacketView body is now a straight walk of ViewerMap.viewers
+	// plus self, exactly matching the architect doc Phase D.8 spec.
 	//
-	// New logic:
-	//   1. Send to every entity in m_map_view (legacy behaviour preserved).
-	//   2. Additionally walk the sectree neighbour list and send to any
-	//      character within VIEW_RANGE + VIEW_BONUS_RANGE that wasn't
-	//      already in m_map_view. Dedup via a small set so no recipient
-	//      gets the same packet twice.
-	//   3. Send to self last (matches the original f(make_pair(this, 0))
-	//      semantics).
-	//
-	// Recipients with no descriptor are skipped by FuncPacketAround. The
-	// extra sectree walk costs ~one sectree neighbour iteration per
-	// broadcast; cheap relative to packet construction and send.
-	std::unordered_set<LPENTITY> sent;
-	sent.reserve(m_map_view.size() + 16);
-
+	// For non-character source entities, ViewerMap may be incomplete
+	// (the legacy CFuncViewInsert path that fed it from chars' polling
+	// was disabled in D.6). PacketView is called only from char paths
+	// (FuncPacketView via PacketAround, MovementSystem broadcasts), so
+	// the practical recipient set is unaffected. If a future caller
+	// invokes PacketView on a non-char source and finds the ViewerMap
+	// empty, the fallback below catches it via a one-time sectree walk.
 	FuncPacketAround f(data, bytes, except);
+	std::unordered_set<LPENTITY> sent;
 
 	if (!m_bIsObserver)
 	{
-		for (const auto& entry : m_map_view)
+		const entt::entity selfE = ecs::SpatialService::EntityFromLPENTITY(this);
+		bool walkedViewerMap = false;
+
+		if (selfE != entt::null && g_registry.valid(selfE))
 		{
-			LPENTITY ent = entry.first;
-			if (!ent || ent == except)
-				continue;
-			if (sent.insert(ent).second)
-				f(ent);
+			if (auto* viewerMap = g_registry.try_get<ecs::ViewerMap>(selfE))
+			{
+				walkedViewerMap = true;
+				for (const entt::entity viewerE : viewerMap->viewers)
+				{
+					if (viewerE == entt::null || !g_registry.valid(viewerE))
+						continue;
+					LPENTITY viewer = ecs::SpatialService::LPENTITYFromEntity(g_registry, viewerE);
+					if (!viewer || viewer == except)
+						continue;
+					if (sent.insert(viewer).second)
+						f(viewer);
+				}
+			}
 		}
 
-		const int32_t range = VIEW_RANGE + VIEW_BONUS_RANGE;
-		const int32_t selfX = GetX();
-		const int32_t selfY = GetY();
-		struct RangeCollector {
-			LPENTITY self;
-			LPENTITY except;
-			int32_t selfX;
-			int32_t selfY;
-			int32_t range;
-			std::unordered_set<LPENTITY>& sent;
-			FuncPacketAround& f;
-			void operator()(LPENTITY ent)
-			{
-				if (!ent || ent == self || ent == except)
-					return;
-				if (!ent->IsType(ENTITY_CHARACTER))
-					return;
-				if (!ent->GetDesc())
-					return;
-				if (DISTANCE_APPROX(ent->GetX() - selfX, ent->GetY() - selfY) > range)
-					return;
-				if (sent.insert(ent).second)
-					f(ent);
-			}
-		} collector { this, except, selfX, selfY, range, sent, f };
+		// Fallback for non-character sources whose ViewerMap is incomplete
+		// (the path that pre-D.6 fed them from chars' UpdateSectree polling
+		// is gone; PacketView usage on non-chars is currently nil but the
+		// safety net guards against silent regressions). For chars whose
+		// ViewerMap was iterated above, this walk is skipped entirely.
+		if (!walkedViewerMap)
+		{
+			const int32_t range = VIEW_RANGE + VIEW_BONUS_RANGE;
+			const int32_t selfX = GetX();
+			const int32_t selfY = GetY();
+			struct RangeCollector {
+				LPENTITY self;
+				LPENTITY except;
+				int32_t selfX;
+				int32_t selfY;
+				int32_t range;
+				std::unordered_set<LPENTITY>& sent;
+				FuncPacketAround& f;
+				void operator()(LPENTITY ent)
+				{
+					if (!ent || ent == self || ent == except)
+						return;
+					if (!ent->IsType(ENTITY_CHARACTER))
+						return;
+					if (!ent->GetDesc())
+						return;
+					if (DISTANCE_APPROX(ent->GetX() - selfX, ent->GetY() - selfY) > range)
+						return;
+					if (sent.insert(ent).second)
+						f(ent);
+				}
+			} collector { this, except, selfX, selfY, range, sent, f };
 
-		GetSectree()->ForEachAround(collector);
+			GetSectree()->ForEachAround(collector);
+		}
 	}
 
 	if (sent.insert(this).second)
