@@ -222,16 +222,38 @@ void DispatchRemove(LPENTITY source, LPENTITY viewer, const char* context)
 
 void CEntity::ViewCleanup()
 {
-	// Phase 15E-final.LPENTITY.4-architect.D.6:
+	// Phase 15E-final.LPENTITY.4-architect.D.6 + fixup-7:
 	// For characters, m_map_view is no longer maintained (the legacy
-	// CFuncViewInsert poll in UpdateSectree was disabled in this same
-	// commit). Walk the ECS ViewerMap.viewers instead - that is the
-	// event-driven set of "who currently sees this character", kept
-	// current by the VisibilitySystem D.4 handler. For each viewer,
-	// emit the despawn packet via the legacy ViewRemove(this, false)
-	// (which dispatches the packet AND removes `this` from the viewer's
-	// m_map_view, in case the viewer is a non-character entity that
-	// still uses m_map_view).
+	// CFuncViewInsert poll in UpdateSectree was disabled in D.6). Walk
+	// the ECS ViewerMap.viewers instead - that is the event-driven set
+	// of "who currently sees this character", kept current by the
+	// VisibilitySystem D.4 handler.
+	//
+	// fixup-7: emit SendRemove DIRECTLY via EntityNetworkDispatch rather
+	// than going through the legacy CEntity::ViewRemove(this, false).
+	// CEntity::ViewRemove(entity) does:
+	//
+	//   const auto it = m_map_view.find(entity);
+	//   if (it == m_map_view.end()) return;   // <-- early-out
+	//   m_map_view.erase(it);
+	//   MirrorViewRemove(this, entity);
+	//   if (!entity->m_bIsObserver)
+	//       DispatchRemove(entity, this, "view.remove");   // <-- the SendRemove
+	//
+	// The early-out triggers whenever the viewer's legacy m_map_view does
+	// NOT contain `this`. After D.6 stubbed UpdateSectree polling for
+	// characters, every char viewer's m_map_view is frozen at whatever
+	// the spawn-time CFuncViewInsert filled - so any `self` that came
+	// into existence after the viewer's spawn is missing from
+	// viewer.m_map_view, the early-out fires, and DispatchRemove is
+	// silently skipped. The user-visible symptom: Metin stones spawned
+	// after a player logged in stay rendered on the player's client when
+	// killed (HEADER_GC_DEAD reaches the client and starts the shatter
+	// animation, but HEADER_GC_CHARACTER_DELETE never arrives).
+	//
+	// Direct SendRemove sidesteps the stale-mirror check entirely. The
+	// MirrorViewClear call below handles the ECS-side ViewMap/ViewerMap
+	// cleanup (both for self and for every reverse pair).
 	if (IsType(ENTITY_CHARACTER))
 	{
 		const entt::entity selfE = EntityOf(this);
@@ -240,16 +262,13 @@ void CEntity::ViewCleanup()
 			if (auto* viewerMap = g_registry.try_get<ecs::ViewerMap>(selfE))
 			{
 				// Snapshot - the loop body mutates ViewerMap via
-				// MirrorViewRemove inside ViewRemove.
+				// MirrorViewClear at the end.
 				const auto viewers = viewerMap->viewers;
 				for (const entt::entity viewerE : viewers)
 				{
 					if (viewerE == entt::null || !g_registry.valid(viewerE))
 						continue;
-					LPENTITY viewer = ecs::SpatialService::LPENTITYFromEntity(g_registry, viewerE);
-					if (!viewer)
-						continue;
-					viewer->ViewRemove(this, false);
+					ecs::EntityNetworkDispatch::SendRemove(g_registry, selfE, viewerE);
 				}
 			}
 		}
