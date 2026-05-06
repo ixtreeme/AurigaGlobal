@@ -1010,6 +1010,32 @@ bool CHARACTER::Show(int32_t lMapIndex, int32_t x, int32_t y, int32_t z, bool bS
             g_registry.emplace_or_replace<ecs::ViewActiveTag>(e);
 
         UpdateSectree();
+
+        // Phase 15E-final.LPENTITY.4-architect.D.6.fixup-1:
+        // Explicit spawn-shaped PositionChangedEvent for character entry to
+        // a sectree (login spawn, map warp, dungeon entry). The
+        // SyncPositionComponents call earlier in this function is suppressed
+        // by its idempotent filter when CharacterFactory pre-emplaced the
+        // ECS Position to the same coordinates the Show is being called with
+        // (which is the typical login flow). Without this trigger, the
+        // VisibilitySystem D.4 handler never sees the spawn, ViewerMap stays
+        // empty, and after D.6 the player is invisible to all peers and
+        // sees no one. Mirrors the spawn trigger SpatialService::InsertEntity
+        // emits for items / buildings / shops.
+        //
+        // The event is shaped as old==(0,0,0) and oldMapIndex==0 (real map
+        // indices start at 1) so the handler treats it as a fresh spawn -
+        // empty oldViewers, full newViewers from the sectree query. This
+        // produces the correct one-shot SendInsert burst to every nearby
+        // viewer (and the symmetric reverse direction added in D.6).
+        if (e != entt::null && g_registry.valid(e))
+        {
+            g_dispatcher.trigger(ecs::PositionChangedEvent {
+                e,
+                0, 0, 0,
+                x, y, z,
+                0, lMapIndex });
+        }
     }
     else
     {
