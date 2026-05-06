@@ -15,10 +15,16 @@ void OnMove(entt::entity e, bool isAttack = false);
 bool Goto(entt::entity e, int32_t x, int32_t y);
 void Stop(entt::entity e);
 
-// LPENTITY.4-fixup helpers: mirror legacy CHARACTER movement-field writes
-// onto the parallel ECS components (MovementDestination, MovementState).
-// Call these immediately next to the legacy field write so that
-// EntityNetworkDispatch::SendCharacterInsert observes consistent state.
+// ECS movement-state write helpers. After Phase 15E-final.LPENTITY.4-architect
+// C.2/C.3 these are the *sole* writers for movement destination and timing
+// state - the legacy CHARACTER fields (m_posDest, m_dwMoveStartTime,
+// m_dwMoveDuration, m_bNowWalking) are no longer maintained on character
+// paths, and EntityNetworkDispatch::SendCharacterInsert reads ECS components
+// directly. The helpers will keep this name through Phase G; the legacy
+// fields delete then.
+//
+// Each helper bundles a small group of related component writes so the
+// callsite stays a single line:
 //
 // SyncDestinationWrite: emplace_or_replace<MovementDestination>(e, x, y)
 // SyncDestinationClear: remove<MovementDestination>(e) and zero MovementState
