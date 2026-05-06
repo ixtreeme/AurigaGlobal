@@ -990,12 +990,15 @@ void CHARACTER::EncodeInsertPacket(LPENTITY entity)
     pack.bStateFlag = m_bAddChrState;
 
     int iDur = 0;
-    if (m_posDest.x != pack.x || m_posDest.y != pack.y) {
+    // B.1.4: read m_posDest via getters (ECS MovementDestination, fallback to GetX/Y).
+    const int32_t destX = GetCurrentDestX();
+    const int32_t destY = GetCurrentDestY();
+    if (destX != pack.x || destY != pack.y) {
         // B.1.2: read timing via getters (ECS MovementState).
         iDur = (GetCurrentMoveStartTime() + GetCurrentMoveDuration()) - get_dword_time();
         if (iDur <= 0) {
-            pack.x = m_posDest.x;
-            pack.y = m_posDest.y;
+            pack.x = destX;
+            pack.y = destY;
         }
     }
 
@@ -1005,7 +1008,8 @@ void CHARACTER::EncodeInsertPacket(LPENTITY entity)
 
     if (iDur) {
         TPacketGCMove pack;
-        EncodeMovePacket(pack, GetPacketVID(), FUNC_MOVE, 0, m_posDest.x, m_posDest.y, iDur, 0, (GetRotation() / 5));
+        // B.1.4: use the just-resolved destX/destY from above (ECS-sourced).
+        EncodeMovePacket(pack, GetPacketVID(), FUNC_MOVE, 0, destX, destY, iDur, 0, (GetRotation() / 5));
         d->Packet(&pack, sizeof(pack));
 
         TPacketGCWalkMode p;

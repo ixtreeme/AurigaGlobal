@@ -688,7 +688,8 @@ bool CHARACTER::Goto(int32_t x, int32_t y)
 #endif
 	}
 
-	if (m_posDest.x == x && m_posDest.y == y)
+	// B.1.4: read via getter (ECS MovementDestination, fallback to GetX/Y).
+	if (GetCurrentDestX() == x && GetCurrentDestY() == y)
 	{
 		if (!HasMoveState(this))
 		{
@@ -877,9 +878,9 @@ void CHARACTER::SendMovePacket(uint8_t bFunc, uint8_t bArg, uint32_t x, uint32_t
 
 	if (bFunc == FUNC_WAIT)
 	{
-		x = m_posDest.x;
-		y = m_posDest.y;
-		// B.1.2: read via getter so the source is ECS MovementState.
+		// B.1.4 + B.1.2: read via getters so the source is ECS.
+		x = GetCurrentDestX();
+		y = GetCurrentDestY();
 		dwDuration = GetCurrentMoveDuration();
 	}
 
@@ -966,6 +967,43 @@ bool CHARACTER::IsNowWalking() const
 bool CHARACTER::IsWalking() const
 {
 	return IsNowWalking() || GetStamina() <= 0;
+}
+
+// Phase 15E-final.LPENTITY.4-architect.B.1.4:
+// Destination read flip. GetCurrentDestX / GetCurrentDestY now read the
+// ECS MovementDestination component as the authoritative source.
+//
+// Semantic note: ecs::MovementDestination is present only when the entity
+// is actively moving (emplaced by Goto/Move, removed by Stop / arrival).
+// Legacy m_posDest is always populated - Stop and similar settle paths
+// set it to the current position. To preserve legacy parity, when the
+// ECS component is absent we return current position via GetX/GetY.
+// This matches what Stop() etc. used to do explicitly with m_posDest.
+//
+// Bootstrap (entity not yet ECS-registered): returns GetX/GetY which in
+// turn returns 0 (per B.1.1) - matches legacy m_posDest zero-init.
+//
+// Phase C will redirect writes; Phase G removes the legacy field.
+int32_t CHARACTER::GetCurrentDestX() const
+{
+	const entt::entity e = AIHelpers::EcsOf(const_cast<CHARACTER*>(this));
+	if (e != entt::null && g_registry.valid(e))
+	{
+		if (const auto* dest = g_registry.try_get<ecs::MovementDestination>(e))
+			return dest->x;
+	}
+	return GetX();
+}
+
+int32_t CHARACTER::GetCurrentDestY() const
+{
+	const entt::entity e = AIHelpers::EcsOf(const_cast<CHARACTER*>(this));
+	if (e != entt::null && g_registry.valid(e))
+	{
+		if (const auto* dest = g_registry.try_get<ecs::MovementDestination>(e))
+			return dest->y;
+	}
+	return GetY();
 }
 
 EVENTFUNC(save_event)

@@ -1080,8 +1080,16 @@ public:
 	// CalculateMoveDuration (Phase C will redirect).
 	uint32_t			GetCurrentMoveDuration() const;
 	uint32_t			GetCurrentMoveStartTime() const;
-	int32_t			GetCurrentDestX() const { return m_posDest.x; }
-	int32_t			GetCurrentDestY() const { return m_posDest.y; }
+	// Phase 15E-final.LPENTITY.4-architect.B.1.4:
+	// GetCurrentDestX / GetCurrentDestY now read the ECS
+	// MovementDestination component. Per A.2 §2 m_posDest row.
+	// When the component is absent (entity is not actively moving),
+	// returns current position via GetX/GetY. This preserves legacy
+	// semantic where m_posDest is set to current position by Stop()
+	// (and similar settle sites) when no move is active. Bodies in
+	// MovementSystem.cpp.
+	int32_t			GetCurrentDestX() const;
+	int32_t			GetCurrentDestY() const;
 	uint32_t			GetWalkStartTime() const { return m_dwWalkStartTime; }
 	uint32_t			GetLastMoveTime() const { return m_dwLastMoveTime; }
 	uint32_t			GetLastAttackTime() const { return m_dwLastAttackTime; }

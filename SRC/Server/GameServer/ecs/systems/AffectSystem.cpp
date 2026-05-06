@@ -1668,7 +1668,8 @@ bool CHARACTER::AddAffect(uint32_t dwType, uint8_t bApplyOn, int32_t lApplyValue
 
 	if (dwFlag == AFF_STUN)
 	{
-		if (m_posDest.x != GetX() || m_posDest.y != GetY())
+		// B.1.4: read via getter (ECS MovementDestination, fallback to GetX/Y).
+		if (GetCurrentDestX() != GetX() || GetCurrentDestY() != GetY())
 		{
 			m_posDest.x = m_posStart.x = GetX();
 			m_posDest.y = m_posStart.y = GetY();
