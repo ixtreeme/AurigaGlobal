@@ -1064,7 +1064,14 @@ public:
 	float			GetMoveSpeed() const;
 	void			CalculateMoveDuration();
 	void			SendMovePacket(uint8_t bFunc, uint8_t bArg, uint32_t x, uint32_t y, uint32_t dwDuration, uint32_t dwTime = 0, float iRot = -1.0f);
-	uint32_t			GetCurrentMoveDuration() const { return m_dwMoveDuration; }
+	// Phase 15E-final.LPENTITY.4-architect.B.1.2:
+	// GetCurrentMoveDuration / GetCurrentMoveStartTime now read the ECS
+	// MovementState component as the authoritative source. Per A.2 §2
+	// m_dwMoveStartTime / m_dwMoveDuration rows.
+	// Bodies in MovementSystem.cpp; legacy field still written by
+	// CalculateMoveDuration (Phase C will redirect).
+	uint32_t			GetCurrentMoveDuration() const;
+	uint32_t			GetCurrentMoveStartTime() const;
 	int32_t			GetCurrentDestX() const { return m_posDest.x; }
 	int32_t			GetCurrentDestY() const { return m_posDest.y; }
 	uint32_t			GetWalkStartTime() const { return m_dwWalkStartTime; }

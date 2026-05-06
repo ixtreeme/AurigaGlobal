@@ -991,7 +991,8 @@ void CHARACTER::EncodeInsertPacket(LPENTITY entity)
 
     int iDur = 0;
     if (m_posDest.x != pack.x || m_posDest.y != pack.y) {
-        iDur = (m_dwMoveStartTime + m_dwMoveDuration) - get_dword_time();
+        // B.1.2: read timing via getters (ECS MovementState).
+        iDur = (GetCurrentMoveStartTime() + GetCurrentMoveDuration()) - get_dword_time();
         if (iDur <= 0) {
             pack.x = m_posDest.x;
             pack.y = m_posDest.y;

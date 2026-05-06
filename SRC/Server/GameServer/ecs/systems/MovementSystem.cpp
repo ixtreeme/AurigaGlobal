@@ -843,7 +843,7 @@ void CHARACTER::CalculateMoveDuration()
 		(int)((fDist / motionSpeed) * 1000.0f));
 
 	if (IsNPC())
-		LOG_TRACE("{}: GOTO: distance {:f}, spd {}, duration {}, motion speed {:f} pos {} {} -> {} {}", GetName(), fDist, GetLimitPoint(POINT_MOV_SPEED), m_dwMoveDuration, motionSpeed, m_posStart.x, m_posStart.y, m_posDest.x, m_posDest.y);
+		LOG_TRACE("{}: GOTO: distance {:f}, spd {}, duration {}, motion speed {:f} pos {} {} -> {} {}", GetName(), fDist, GetLimitPoint(POINT_MOV_SPEED), GetCurrentMoveDuration(), motionSpeed, m_posStart.x, m_posStart.y, m_posDest.x, m_posDest.y);
 
 	m_dwMoveStartTime = get_dword_time();
 
@@ -879,7 +879,8 @@ void CHARACTER::SendMovePacket(uint8_t bFunc, uint8_t bArg, uint32_t x, uint32_t
 	{
 		x = m_posDest.x;
 		y = m_posDest.y;
-		dwDuration = m_dwMoveDuration;
+		// B.1.2: read via getter so the source is ECS MovementState.
+		dwDuration = GetCurrentMoveDuration();
 	}
 
 	if (iRot == -1.0f)
@@ -906,6 +907,42 @@ void CHARACTER::Motion(uint8_t motion, LPCHARACTER victim)
 	struct packet_motion pack_motion;
 	MotionPacketEncode(motion, victim, &pack_motion);
 	PacketAround(&pack_motion, sizeof(struct packet_motion));
+}
+
+// Phase 15E-final.LPENTITY.4-architect.B.1.2:
+// CHARACTER::GetCurrentMoveDuration / GetCurrentMoveStartTime now read the
+// ECS MovementState component as the authoritative source.
+//
+// Bootstrap (entity not yet ECS-registered, or MovementState absent):
+// returns 0. Matches legacy bootstrap value from CHARACTER::Initialize
+// (m_dwMoveStartTime / m_dwMoveDuration zero-init).
+//
+// Once the entity has been wired to ECS via AttachLegacyCharacter and the
+// MovementState component emplaced by EntityFactory, the getters return
+// the ECS values. Dual-write contract via the existing SyncTimingWrite
+// helper at MovementSystem::CalculateMoveDuration keeps ECS in lockstep
+// with legacy m_dwMoveStartTime / m_dwMoveDuration writes (Phase 4-fixup.2.a).
+//
+// Phase C will redirect writes; Phase G removes the legacy fields and the
+// audit-only GetMoveStartTimeForAudit accessor.
+uint32_t CHARACTER::GetCurrentMoveDuration() const
+{
+	const entt::entity e = AIHelpers::EcsOf(const_cast<CHARACTER*>(this));
+	if (e == entt::null || !g_registry.valid(e))
+		return 0;
+	if (const auto* state = g_registry.try_get<ecs::MovementState>(e))
+		return state->moveDuration;
+	return 0;
+}
+
+uint32_t CHARACTER::GetCurrentMoveStartTime() const
+{
+	const entt::entity e = AIHelpers::EcsOf(const_cast<CHARACTER*>(this));
+	if (e == entt::null || !g_registry.valid(e))
+		return 0;
+	if (const auto* state = g_registry.try_get<ecs::MovementState>(e))
+		return state->moveStartTime;
+	return 0;
 }
 
 EVENTFUNC(save_event)

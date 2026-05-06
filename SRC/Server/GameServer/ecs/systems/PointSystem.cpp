@@ -508,7 +508,8 @@ void CHARACTER::SetPoint(uint8_t type, int64_t val)
 	ecs::PointSystem::SyncInstantPointMirror(this, type, val);
 
 
-	if (type == POINT_MOV_SPEED && get_dword_time() < m_dwMoveStartTime + m_dwMoveDuration)
+	// B.1.2: read timing via getters (ECS MovementState).
+	if (type == POINT_MOV_SPEED && get_dword_time() < GetCurrentMoveStartTime() + GetCurrentMoveDuration())
 	{
 		CalculateMoveDuration();
 	}
@@ -633,7 +634,7 @@ void CHARACTER::PointChange(uint8_t type, int64_t amount, bool bAmount, bool bBr
 
 	case POINT_NEXT_EXP:
 		val = GetNextExp();
-		bAmount = false;	// 1«Á¶°Ç bAmount´Â false ?©3ß ÇN´U.
+		bAmount = false;	// 1ï¿½ï¿½ï¿½ï¿½ï¿½ bAmountï¿½ï¿½ false ?ï¿½3ï¿½ ï¿½Nï¿½U.
 		break;
 
 	case POINT_EXP:
@@ -641,7 +642,7 @@ void CHARACTER::PointChange(uint8_t type, int64_t amount, bool bAmount, bool bBr
 		uint32_t exp = GetExp();
 		uint32_t next_exp = GetNextExp();
 
-		// exp°! 0 AIÇI·Î °!Áö 3Eµµ·I ÇN´U
+		// expï¿½! 0 AIï¿½Iï¿½ï¿½ ï¿½!ï¿½ï¿½ 3Eï¿½ï¿½ï¿½I ï¿½Nï¿½U
 		if ((amount < 0) && (exp < (uint32_t)(-amount)))
 		{
 			LOG_TRACE("{} AMOUNT < 0 {}, CUR EXP: {}", GetName(), -amount, exp);
@@ -683,7 +684,7 @@ void CHARACTER::PointChange(uint8_t type, int64_t amount, bool bAmount, bool bBr
 			//#endif
 			uint32_t iExpBalance = 0;
 
-			// ·1o§ 3÷!
+			// ï¿½1oï¿½ 3ï¿½!
 			if (exp + amount >= next_exp)
 			{
 				iExpBalance = (exp + amount) - next_exp;
@@ -701,7 +702,7 @@ void CHARACTER::PointChange(uint8_t type, int64_t amount, bool bAmount, bool bBr
 			uint32_t q = uint32_t(next_exp / 4.0f);
 			int iLevStep = GetRealPoint(POINT_LEVEL_STEP);
 
-			// iLevStepAI 4 AI»óAI¸é ·1o§AI ?A¶ú3î3ß ÇI1Ç·Î ?©±â?! ?A 1ö 3o´Â °aAI´U.
+			// iLevStepAI 4 AIï¿½ï¿½AIï¿½ï¿½ ï¿½1oï¿½AI ?Aï¿½ï¿½3ï¿½3ï¿½ ï¿½I1Ç·ï¿½ ?ï¿½ï¿½ï¿½?! ?A 1ï¿½ 3oï¿½ï¿½ ï¿½aAIï¿½U.
 			if (iLevStep >= 4)
 			{
 				LOG_ERROR("{} LEVEL_STEP bigger than 4! ({})", GetName(), iLevStep);
@@ -843,16 +844,16 @@ void CHARACTER::PointChange(uint8_t type, int64_t amount, bool bAmount, bool bBr
 
 		if (val == 0)
 		{
-			// Stamina°! 3oA¸´I °EAÚ!
+			// Staminaï¿½! 3oAï¿½ï¿½I ï¿½EAï¿½!
 			SetNowWalking(true);
 		}
 		else if (prev_val == 0)
 		{
-			// 3o´o 1oA×1I3a°! »ý°aA¸´I AIAü ¸?µa o1±Í
+			// 3oï¿½o 1oAï¿½1I3aï¿½! ï¿½ï¿½ï¿½aAï¿½ï¿½I AIAï¿½ ï¿½?ï¿½a o1ï¿½ï¿½
 			ResetWalking();
 		}
 
-		if (amount < 0 && val != 0) // °¨1O´Â o¸3»Áö3E´Â´U.
+		if (amount < 0 && val != 0) // ï¿½ï¿½1Oï¿½ï¿½ oï¿½3ï¿½ï¿½ï¿½3Eï¿½Â´U.
 			return;
 	}
 	break;
@@ -862,7 +863,7 @@ void CHARACTER::PointChange(uint8_t type, int64_t amount, bool bAmount, bool bBr
 		SetPoint(type, GetPoint(type) + amount);
 
 		const int64_t base = GetRealPoint(POINT_MAX_HP);              // 20-30k
-		const int64_t flat = GetPoint(POINT_MAX_HP);                  // ékszerek stb. fix +HP (ettõl lesz 350k)
+		const int64_t flat = GetPoint(POINT_MAX_HP);                  // ï¿½kszerek stb. fix +HP (ettï¿½l lesz 350k)
 		const int64_t party = GetPoint(POINT_PARTY_TANKER_BONUS);
 		const int64_t pct = GetPoint(POINT_MAX_HP_PCT);              // +20
 
@@ -882,7 +883,7 @@ void CHARACTER::PointChange(uint8_t type, int64_t amount, bool bAmount, bool bBr
 		SetPoint(type, GetPoint(type) + amount);
 
 		//SetMaxSP(GetMaxSP() + amount);
-		// AÖ´ë Á¤1A·Â = (±âo» AÖ´ë Á¤1A·Â + Aß°!) * AÖ´ëÁ¤1A·Â%
+		// AÖ´ï¿½ ï¿½ï¿½1Aï¿½ï¿½ = (ï¿½ï¿½oï¿½ AÖ´ï¿½ ï¿½ï¿½1Aï¿½ï¿½ + Aß°!) * AÖ´ï¿½ï¿½ï¿½1Aï¿½ï¿½%
 		int64_t sp = GetRealPoint(POINT_MAX_SP);
 		int64_t add_sp = std::min((int64_t)800, sp * GetPoint(POINT_MAX_SP_PCT) / 100);
 		add_sp += GetPoint(POINT_MAX_SP);
@@ -1031,12 +1032,12 @@ void CHARACTER::PointChange(uint8_t type, int64_t amount, bool bAmount, bool bBr
 	case POINT_HP_RECOVERY:
 	case POINT_SP_RECOVERY:
 
-	case POINT_ATTBONUS_HUMAN:	// 42 AÎ°L?!°Ô °­ÇÔ
-	case POINT_ATTBONUS_ANIMAL:	// 43 µ?1°?!°Ô µY1IÁö % Áo°!
-	case POINT_ATTBONUS_ORC:		// 44 ?o±Í?!°Ô µY1IÁö % Áo°!
-	case POINT_ATTBONUS_MILGYO:	// 45 1?±3?!°Ô µY1IÁö % Áo°!
-	case POINT_ATTBONUS_UNDEAD:	// 46 1AA1?!°Ô µY1IÁö % Áo°!
-	case POINT_ATTBONUS_DEVIL:	// 47 ¸¶±Í(3Ç¸¶)?!°Ô µY1IÁö % Áo°!
+	case POINT_ATTBONUS_HUMAN:	// 42 AÎ°L?!ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
+	case POINT_ATTBONUS_ANIMAL:	// 43 ï¿½?1ï¿½?!ï¿½ï¿½ ï¿½Y1Iï¿½ï¿½ % ï¿½oï¿½!
+	case POINT_ATTBONUS_ORC:		// 44 ?oï¿½ï¿½?!ï¿½ï¿½ ï¿½Y1Iï¿½ï¿½ % ï¿½oï¿½!
+	case POINT_ATTBONUS_MILGYO:	// 45 1?ï¿½3?!ï¿½ï¿½ ï¿½Y1Iï¿½ï¿½ % ï¿½oï¿½!
+	case POINT_ATTBONUS_UNDEAD:	// 46 1AA1?!ï¿½ï¿½ ï¿½Y1Iï¿½ï¿½ % ï¿½oï¿½!
+	case POINT_ATTBONUS_DEVIL:	// 47 ï¿½ï¿½ï¿½ï¿½(3Ç¸ï¿½)?!ï¿½ï¿½ ï¿½Y1Iï¿½ï¿½ % ï¿½oï¿½!
 
 	case POINT_ATTBONUS_MONSTER:
 	case POINT_ATTBONUS_SURA:
@@ -1064,11 +1065,11 @@ void CHARACTER::PointChange(uint8_t type, int64_t amount, bool bAmount, bool bBr
 	case POINT_RESIST_PENETRATE:
 	case POINT_CURSE_PCT:
 
-	case POINT_STEAL_HP:		// 48 »ý¸í·Â Eí1ö
-	case POINT_STEAL_SP:		// 49 Á¤1A·Â Eí1ö
+	case POINT_STEAL_HP:		// 48 ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ Eï¿½1ï¿½
+	case POINT_STEAL_SP:		// 49 ï¿½ï¿½1Aï¿½ï¿½ Eï¿½1ï¿½
 
-	case POINT_MANA_BURN_PCT:	// 50 ¸¶3a 1o
-	case POINT_DAMAGE_SP_RECOVER:	// 51 °o°Ý´çÇO 1A Á¤1A·Â E¸o1 E®·ü
+	case POINT_MANA_BURN_PCT:	// 50 ï¿½ï¿½3a 1o
+	case POINT_DAMAGE_SP_RECOVER:	// 51 ï¿½oï¿½Ý´ï¿½ï¿½O 1A ï¿½ï¿½1Aï¿½ï¿½ Eï¿½o1 Eï¿½ï¿½ï¿½
 	case POINT_RESIST_NORMAL_DAMAGE:
 	case POINT_RESIST_SWORD:
 	case POINT_RESIST_TWOHAND:
@@ -1092,13 +1093,13 @@ void CHARACTER::PointChange(uint8_t type, int64_t amount, bool bAmount, bool bBr
 	case POINT_RESIST_ICE:
 	case POINT_RESIST_EARTH:
 	case POINT_RESIST_DARK:
-	case POINT_REFLECT_MELEE:	// 67 °o°Ý 1Ý»ç
-	case POINT_REFLECT_CURSE:	// 68 AúÁÖ 1Ý»ç
-	case POINT_POISON_REDUCE:	// 69 µ¶µY1IÁö °¨1O
+	case POINT_REFLECT_MELEE:	// 67 ï¿½oï¿½ï¿½ 1Ý»ï¿½
+	case POINT_REFLECT_CURSE:	// 68 Aï¿½ï¿½ï¿½ 1Ý»ï¿½
+	case POINT_POISON_REDUCE:	// 69 ï¿½ï¿½ï¿½Y1Iï¿½ï¿½ ï¿½ï¿½1O
 #ifdef ENABLE_WOLFMAN_CHARACTER
 	case POINT_BLEEDING_REDUCE:
 #endif
-	case POINT_KILL_SP_RECOVER:	// 70 Au 1O¸e1A MP E¸o1
+	case POINT_KILL_SP_RECOVER:	// 70 Au 1Oï¿½e1A MP Eï¿½o1
 	case POINT_KILL_HP_RECOVERY:	// 75
 	case POINT_HIT_HP_RECOVERY:
 	case POINT_HIT_SP_RECOVERY:
@@ -1416,7 +1417,7 @@ void CHARACTER::ApplyPoint(uint8_t bApplyType, int iVal)
 	case APPLY_SKILL:
 		// SKILL_DAMAGE_BONUS
 	{
-		// AÖ»óA§ onA® ±âÁOA¸·Î 8onA® vnum, 9onA® add, 15onA® change
+		// AÖ»ï¿½Aï¿½ onAï¿½ ï¿½ï¿½ï¿½OAï¿½ï¿½ï¿½ 8onAï¿½ vnum, 9onAï¿½ add, 15onAï¿½ change
 		// 00000000 00000000 00000000 00000000
 		// ^^^^^^^^  ^^^^^^^^^^^^^^^^^^^^^^^^^
 		// vnum     ^ add       change
@@ -1439,11 +1440,11 @@ void CHARACTER::ApplyPoint(uint8_t bApplyType, int iVal)
 	// END_OF_SKILL_DAMAGE_BONUS
 	break;
 
-	// NOTE: 3AAIAU?! AÇÇN AÖ´ëHP o¸3E1o3a Äu1oA® o¸»ó o¸3E1o°! ¶E°°Ao 1a1ÄA» »ç?ëÇI1Ç·Î
-	// ±×3É MAX_HP¸¸ °e»eÇI¸é Äu1oA® o¸»óAÇ °a?i 1®Á¦°! »ý±e. »ç1Ç ?o·! AIÂEAI ÇO¸®AuAI±âµµ ÇI°í..
-	// 1U2U °o1ÄAo ÇöAç AÖ´ë hp?Í o¸A— hpAÇ onA2A» ±¸ÇN µÚ 1U2? AÖ´ë hp¸¦ ±âÁOA¸·Î hp¸¦ o¸Á¤ÇN´U.
-	// ?o·! PointChange?!1­ ÇI´Â°Ô ÁÁA»°Í °°AoµY 13°e 1®Á¦·Î 3î·Á?ö1­ skip..
-	// SPµµ ¶E°°AI °e»eÇN´U.
+	// NOTE: 3AAIAU?! Aï¿½ï¿½N AÖ´ï¿½HP oï¿½3E1o3a ï¿½u1oAï¿½ oï¿½ï¿½ï¿½ oï¿½3E1oï¿½! ï¿½Eï¿½ï¿½Ao 1a1ï¿½Aï¿½ ï¿½ï¿½?ï¿½ï¿½I1Ç·ï¿½
+	// ï¿½ï¿½3ï¿½ MAX_HPï¿½ï¿½ ï¿½eï¿½eï¿½Iï¿½ï¿½ ï¿½u1oAï¿½ oï¿½ï¿½ï¿½Aï¿½ ï¿½a?i 1ï¿½ï¿½ï¿½ï¿½! ï¿½ï¿½ï¿½e. ï¿½ï¿½1ï¿½ ?oï¿½! AIï¿½EAI ï¿½Oï¿½ï¿½AuAIï¿½âµµ ï¿½Iï¿½ï¿½..
+	// 1U2U ï¿½o1ï¿½Ao ï¿½ï¿½Aï¿½ AÖ´ï¿½ hp?ï¿½ oï¿½Aï¿½ hpAï¿½ onA2Aï¿½ ï¿½ï¿½ï¿½N ï¿½ï¿½ 1U2? AÖ´ï¿½ hpï¿½ï¿½ ï¿½ï¿½ï¿½OAï¿½ï¿½ï¿½ hpï¿½ï¿½ oï¿½ï¿½ï¿½ï¿½Nï¿½U.
+	// ?oï¿½! PointChange?!1ï¿½ ï¿½Iï¿½Â°ï¿½ ï¿½ï¿½Aï¿½ï¿½ï¿½ ï¿½ï¿½Aoï¿½Y 13ï¿½e 1ï¿½ï¿½ï¿½ï¿½ï¿½ 3ï¿½ï¿½?ï¿½1ï¿½ skip..
+	// SPï¿½ï¿½ ï¿½Eï¿½ï¿½AI ï¿½eï¿½eï¿½Nï¿½U.
 	// Mantis : 101460			~ ity ~
 	case APPLY_MAX_HP:
 	case APPLY_MAX_HP_PCT:
@@ -1569,11 +1570,11 @@ void CHARACTER::ApplyPoint(uint8_t bApplyType, int iVal)
 #ifdef ENABLE_WOLFMAN_CHARACTER
 	case APPLY_RESIST_WOLFMAN:
 #endif
-	case APPLY_ENERGY:					// 82 ±â·Â
-	case APPLY_DEF_GRADE:				// 83 1a3î·Â. DEF_GRADE_BONUS´Â A¬¶ó?!1­ µÎ1e·Î o¸?©Áö´Â AÇµµµE 1ö±×(...)°! AÖ´U.
-	case APPLY_COSTUME_ATTR_BONUS:		// 84 ÄÚ1oA¬ 3AAIAU?! oUAo 1Ó1oÄ! o¸3E1o
-	case APPLY_MAGIC_ATTBONUS_PER:		// 85 ¸¶1ý °o°Ý·Â +x%
-	case APPLY_MELEE_MAGIC_ATTBONUS_PER:			// 86 ¸¶1ý + 1?¸® °o°Ý·Â +x%
+	case APPLY_ENERGY:					// 82 ï¿½ï¿½ï¿½
+	case APPLY_DEF_GRADE:				// 83 1a3ï¿½ï¿½. DEF_GRADE_BONUSï¿½ï¿½ Aï¿½ï¿½ï¿½?!1ï¿½ ï¿½ï¿½1eï¿½ï¿½ oï¿½?ï¿½ï¿½ï¿½ï¿½ï¿½ AÇµï¿½ï¿½E 1ï¿½ï¿½ï¿½(...)ï¿½! AÖ´U.
+	case APPLY_COSTUME_ATTR_BONUS:		// 84 ï¿½ï¿½1oAï¿½ 3AAIAU?! oUAo 1ï¿½1oï¿½! oï¿½3E1o
+	case APPLY_MAGIC_ATTBONUS_PER:		// 85 ï¿½ï¿½1ï¿½ ï¿½oï¿½Ý·ï¿½ +x%
+	case APPLY_MELEE_MAGIC_ATTBONUS_PER:			// 86 ï¿½ï¿½1ï¿½ + 1?ï¿½ï¿½ ï¿½oï¿½Ý·ï¿½ +x%
 #ifdef ENABLE_ACCE_SYSTEM
 	case APPLY_ACCEDRAIN_RATE:			//97
 #endif
