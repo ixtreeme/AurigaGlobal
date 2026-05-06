@@ -111,11 +111,8 @@ void CHARACTER::SetParty(LPPARTY pkParty)
 
     if (IsPC())
     {
-        if (m_pkParty)
-            SET_BIT(m_bAddChrState, ADD_CHARACTER_STATE_PARTY);
-        else
-            REMOVE_BIT(m_bAddChrState, ADD_CHARACTER_STATE_PARTY);
-
+        // Phase C.4: legacy SET_BIT/REMOVE_BIT(m_bAddChrState, PARTY) removed.
+        // ECS StatusFlags.isPartyState is the sole source.
         if (auto* status = g_registry.try_get<ecs::StatusFlags>(AIHelpers::EcsOf(this))) {
             status->isPartyState = (m_pkParty != nullptr);
             g_registry.emplace_or_replace<ecs::DirtyTag>(AIHelpers::EcsOf(this));

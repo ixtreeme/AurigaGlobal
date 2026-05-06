@@ -4973,7 +4973,9 @@ void CHARACTER::Initialize()
 
     m_dwLastAttackTime = get_dword_time() - 20000;
 
-    m_bAddChrState = 0;
+    // Phase C.4: legacy m_bAddChrState zero-init removed (entity null at
+    // this Initialize point - ECS StatusFlags created with default-zero
+    // bits when this CHARACTER is later attached to an ECS entity).
 #if defined(BL_OFFLINE_MESSAGE)
     dwLastOfflinePMTime = 0;
 #endif

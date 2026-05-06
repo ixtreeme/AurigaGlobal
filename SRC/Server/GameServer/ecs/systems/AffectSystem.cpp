@@ -2019,15 +2019,13 @@ void CHARACTER::SetPolymorph(uint32_t dwRaceNum, bool bMaintainStat)
 	LOG_INFO("POLYMORPH: {} race {} ", GetName(), dwRaceNum);
 	if (dwRaceNum != 0)
 		StopRiding();
-	SET_BIT(m_bAddChrState, ADD_CHARACTER_STATE_SPAWN);
-	// LPENTITY.4-fixup.2.f: mirror SPAWN bit into ECS StatusFlags so the
-	// native BuildCharacterInsert during ViewReencode emits the same
-	// bStateFlag byte as legacy.
+	// Phase C.4: legacy SET_BIT/REMOVE_BIT(m_bAddChrState, SPAWN) removed.
+	// ECS StatusFlags.isSpawnState is the sole source - GetAddChrStateFlag
+	// composes the wire-format byte from the bool fields.
 	if (auto* status = g_registry.try_get<ecs::StatusFlags>(AIHelpers::EcsOf(this)))
 		status->isSpawnState = true;
 	m_afAffectFlag.Set(AFF_SPAWN);
 	ViewReencode();
-	REMOVE_BIT(m_bAddChrState, ADD_CHARACTER_STATE_SPAWN);
 	if (auto* status = g_registry.try_get<ecs::StatusFlags>(AIHelpers::EcsOf(this)))
 		status->isSpawnState = false;
 	if (!bMaintainStat)

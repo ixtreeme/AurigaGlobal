@@ -976,7 +976,7 @@ bool CHARACTER::Show(int32_t lMapIndex, int32_t x, int32_t y, int32_t z, bool bS
 
     if (bShowSpawnMotion)
     {
-        SET_BIT(m_bAddChrState, ADD_CHARACTER_STATE_SPAWN);
+        // Phase C.4: legacy SET_BIT(m_bAddChrState, SPAWN) removed.
         if (auto* status = g_registry.try_get<ecs::StatusFlags>(GetEntityHandle()))
             status->isSpawnState = true;
         m_afAffectFlag.Set(AFF_SPAWN);
@@ -1020,7 +1020,7 @@ bool CHARACTER::Show(int32_t lMapIndex, int32_t x, int32_t y, int32_t z, bool bS
         LOG_TRACE("      in same sectree");
     }
 
-    REMOVE_BIT(m_bAddChrState, ADD_CHARACTER_STATE_SPAWN);
+    // Phase C.4: legacy REMOVE_BIT(m_bAddChrState, SPAWN) removed.
     if (auto* status = g_registry.try_get<ecs::StatusFlags>(GetEntityHandle())) {
         status->isSpawnState = false;
         g_registry.emplace_or_replace<ecs::DirtyTag>(GetEntityHandle());

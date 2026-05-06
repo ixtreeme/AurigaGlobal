@@ -28,56 +28,15 @@
 
 namespace ecs::EntityNetworkDispatchAudit {
 
-void CheckMovementDrift(entt::registry& reg, entt::entity source)
+void CheckMovementDrift(entt::registry& /*reg*/, entt::entity /*source*/)
 {
-    // Only inspect characters; non-characters do not have legacy CHARACTER
-    // shadow state.
-    const auto* kind = reg.try_get<ecs::SpatialKindTag>(source);
-    if (!kind || kind->kind != ecs::SpatialKind::Character)
-        return;
-
-    LPENTITY entity = ecs::LPENTITYFromEntity(reg, source);
-    if (!entity || !entity->IsType(ENTITY_CHARACTER))
-        return;
-
-    LPCHARACTER ch = static_cast<LPCHARACTER>(entity);
-    if (!ch)
-        return;
-
-    const auto entityIdx = static_cast<uint32_t>(source);
-
-    // Phase C.2 removed timing + walking comparisons.
-    // Phase C.3 removed the m_posDest dest comparison: GetCurrentDestX/Y now
-    // reads ECS MovementDestination (with GetX/Y fallback) - same source as
-    // the comparison RHS, tautological.
-    // Audit retained for m_bAddChrState until C.4 write migration.
-    const uint8_t legacyAddChrState = ch->GetAddChrStateForAudit();
-
-    if (const auto* status = reg.try_get<ecs::StatusFlags>(source))
-    {
-        const bool legacyDead = (legacyAddChrState & ADD_CHARACTER_STATE_DEAD) != 0;
-        const bool legacySpawn = (legacyAddChrState & ADD_CHARACTER_STATE_SPAWN) != 0;
-        const bool legacyKiller = (legacyAddChrState & ADD_CHARACTER_STATE_KILLER) != 0;
-        const bool legacyParty = (legacyAddChrState & ADD_CHARACTER_STATE_PARTY) != 0;
-
-        if (status->isDead != legacyDead ||
-            status->isSpawnState != legacySpawn ||
-            status->isKillerMode != legacyKiller ||
-            status->isPartyState != legacyParty)
-        {
-            LOG_WARN(
-                "[MOVEMENT_DRIFT] state_flags entity={} ecs=(dead={} spawn={} killer={} party={}) legacy=(dead={} spawn={} killer={} party={})",
-                entityIdx,
-                status->isDead,
-                status->isSpawnState,
-                status->isKillerMode,
-                status->isPartyState,
-                legacyDead,
-                legacySpawn,
-                legacyKiller,
-                legacyParty);
-        }
-    }
+    // Phase C.4: state_flags comparison removed. Legacy m_bAddChrState is
+    // no longer written by char paths after C.4; the ECS StatusFlags 4
+    // bits are the sole source. CheckMovementDrift body is now empty -
+    // function retained as a no-op shim because EntityNetworkDispatch.cpp
+    // SendInsert character branch still emits the call site under
+    // AURIGA_LPENTITY_FIXUP_AUDIT. The shim and the call site delete in
+    // Phase G alongside the legacy field declarations.
 }
 
 void CheckCharacterInsertParity(entt::registry& reg, entt::entity source)
@@ -125,10 +84,10 @@ void CheckCharacterInsertParity(entt::registry& reg, entt::entity source)
     if (nativePack.bAttackSpeed != ch->GetLimitPoint(POINT_ATT_SPEED))
         LOG_WARN("[INSERT_PARITY] bAttackSpeed entity={} native={} legacy={}", entityIdx, nativePack.bAttackSpeed, ch->GetLimitPoint(POINT_ATT_SPEED));
 
-    if (nativePack.bStateFlag != ch->GetAddChrStateForAudit())
+    if (nativePack.bStateFlag != ch->GetAddChrStateFlag())
         LOG_WARN("[INSERT_PARITY] bStateFlag entity={} native={} legacy={}", entityIdx,
             static_cast<int>(nativePack.bStateFlag),
-            static_cast<int>(ch->GetAddChrStateForAudit()));
+            static_cast<int>(ch->GetAddChrStateFlag()));
 
     // Native may snap pack.x/y to m_posDest if the move duration has
     // expired. Legacy applies the same logic. With movement state in sync

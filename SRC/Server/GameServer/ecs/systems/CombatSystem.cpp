@@ -577,14 +577,9 @@ void CHARACTER::UpdateAlignment(uint32_t iAmount)
 
 void CHARACTER::SetKillerMode(bool isOn)
 {
-	// B.1.5: read via getter -> ECS StatusFlags.isKillerMode bit.
+	// B.1.5 + C.4: read and write via ECS StatusFlags.isKillerMode.
 	if ((isOn ? ADD_CHARACTER_STATE_KILLER : 0) == IS_SET(GetAddChrStateFlag(), ADD_CHARACTER_STATE_KILLER))
 		return;
-
-	if (isOn)
-		SET_BIT(m_bAddChrState, ADD_CHARACTER_STATE_KILLER);
-	else
-		REMOVE_BIT(m_bAddChrState, ADD_CHARACTER_STATE_KILLER);
 
 	if (auto* status = g_registry.try_get<ecs::StatusFlags>(AIHelpers::EcsOf(this))) {
 		status->isKillerMode = isOn;

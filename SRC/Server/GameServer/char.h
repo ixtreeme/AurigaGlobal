@@ -1093,14 +1093,10 @@ public:
 	uint32_t			GetWalkStartTime() const { return m_dwWalkStartTime; }
 	uint32_t			GetLastMoveTime() const { return m_dwLastMoveTime; }
 	uint32_t			GetLastAttackTime() const { return m_dwLastAttackTime; }
-#ifdef AURIGA_LPENTITY_FIXUP_AUDIT
-	// Phase C.2: GetMoveStartTimeForAudit and GetNowWalkingForAudit
-	// removed (their consumers in CheckMovementDrift deleted with the
-	// timing+walking write migration; legacy fields no longer maintained).
-	// GetAddChrStateForAudit retained until Phase C.4 when m_bAddChrState
-	// writes migrate.
-	uint8_t				GetAddChrStateForAudit() const { return m_bAddChrState; }
-#endif
+// Phase C.4: GetAddChrStateForAudit removed. Its consumer in
+// CheckMovementDrift state_flags subsection deleted with the
+// m_bAddChrState write migration. CheckMovementDrift body is now empty;
+// shim deletes in Phase G alongside the legacy field declarations.
 
 	// Phase 15E-final.LPENTITY.4-architect.B.1.5:
 	// GetAddChrStateFlag composes the 4-bit bStateFlag byte from the ECS
