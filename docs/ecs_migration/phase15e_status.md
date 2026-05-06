@@ -1,6 +1,6 @@
 # Phase 15E-final.LPENTITY.4-architect — running status
 
-Updated through commit `db68f73` (D.8 PacketView ECS ViewerMap walk; Phase D feature-complete).
+Updated through commit `5d35f5b` (D.6 fixup-7; Phase D end-to-end WinTest pass).
 
 ## Phase progress
 
@@ -138,6 +138,29 @@ hybrid broadcast band-aid deletes in D.8.
 | D.6  | 4200181 | DONE  | Disable legacy UpdateSectree polling for ENTITY_CHARACTER. Symmetric Insert/RemoveBidirectional updates all 4 ECS sides. Symmetric SendInsert/SendRemove emission. ViewCleanup + ViewReencode for chars walk ECS ViewerMap/ViewMap. ValidateViewMapMirror silenced for chars (m_map_view intentionally diverges). |
 | D.7  | -      | ABSORBED | After D.6 the `++m_iViewAge` line is unreachable for chars; the field still serves non-char polling. Full removal deferred to Phase G alongside the legacy field deletion (no separate Phase D commit). |
 | D.8  | db68f73 | DONE | PacketView body collapsed to ECS ViewerMap walk + self. Sectree-walk fallback retained for non-char sources whose ViewerMap is incomplete (theoretical - no current caller). f76a3f1 hybrid band-aid retired. |
+
+## Phase D fixup series (post-WinTest landed during user verification)
+
+The Phase D landing exposed a sequence of latent failure modes that the
+drift detector did not catch. Each fixup was a targeted patch landed
+between WinTest sessions; together they make the Phase D ECS-authoritative
+visibility model work end-to-end.
+
+| Step    | Commit  | Symptom                                            | Fix |
+| ------- | ------- | -------------------------------------------------- | --- |
+| fixup-1 | 462647e | Two clients invisible to each other on login spawn | Explicit spawn-shaped PositionChangedEvent in CHARACTER::Show bChangeTree=true branch (CharacterFactory pre-emplaces Position to the same coords Show is called with, so the SyncPositionComponents idempotent filter suppresses the event). |
+| fixup-2 | ebee677 | Other character disappears after server backport on fast mount | Same explicit event in the bChangeTree=false (intra-sectree) branch, covering anti-cheat rubberband and intra-sectree warps. |
+| fixup-3 | 1500b59 | Map-reload effect on backport, peers visibly flicker | Sectree boundary crossing in MirrorLegacyMovement: the D.6 UpdateSectree stub disabled m_pSectree maintenance during cross-tile movement. The next Show call sees stale m_pSectree, hits bChangeTree=true, and fires a destructive ViewCleanup-then-rebuild sequence. Re-insert into the correct sectree on every Position write side-effect. |
+| fixup-4 | 07b5b86 | Metin fragments / dropped items / destroyed buildings stay rendered | VisibilityService::GetEntitiesInRange used PlayerRuntime::GetSectree which only resolves character entities. Replaced with SectorAt(mapIndex, x, y) reading ECS Position+MapIndex - works uniformly for all spatial kinds. |
+| fixup-5 | bfa5b0e | Item destroy timer fires but ground items stay rendered | Ordering bug: DestroyItemEntityAndLegacy destroyed the ECS entity before calling ITEM_MANAGER::RemoveItem, so RemoveFromGround's `g_registry.valid()` check fell to the silent legacy fallback. Inverted: legacy first, ECS second. |
+| fixup-6 | 81d5698 | Metin shatter animation freezes - corpse fragments stay | Same ordering bug in the character destroy path: CHARACTER_MANAGER::DestroyCharacter ran EntityFactory::Destroy first, which nulled the ECS handle before ~CEntity::Destroy could call ViewCleanup. Explicit ch->ViewCleanup() invocation while the ECS entity is still valid. |
+| fixup-7 | 5d35f5b | fixup-6 landed but Metin fragments still stay | The D.6 ViewCleanup char-branch internally called legacy viewer->ViewRemove(this, false), which guards on viewer.m_map_view.find(entity) - and post-D.6 every viewer's m_map_view is frozen at spawn time. Replaced the legacy call with a direct EntityNetworkDispatch::SendRemove that bypasses the stale-mirror check. ECS-side cleanup still goes through MirrorViewClear which iterates the authoritative ECS state. |
+
+The fixup series converges on a single architectural insight: post-D.6 the
+legacy m_map_view is a write-only stale store on character paths, and any
+read or guard on its content silently fails. Phase G will delete m_map_view
+outright; until then, every code path that reads or writes m_map_view on a
+character must either be migrated to ECS or treated as no-op fallback.
 
 ## Next milestone (HARD GATE)
 
