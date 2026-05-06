@@ -1,6 +1,6 @@
 # Phase 15E-final.LPENTITY.4-architect — running status
 
-Updated through commit `7634caa` (C.4 m_bAddChrState write removal).
+Updated through commit `85486e6` (D.5 VISIBILITY_DRIFT detector).
 
 ## Phase progress
 
@@ -121,9 +121,28 @@ Drift-detector consequence:
 WinTest deferred per user instruction (batch test at the end of a larger
 migration chunk).
 
-## Next milestone
+## Phase D progress (event-driven VisibilitySystem)
 
-WinTest the combined Phase B + Phase C chunk. Acceptance criteria:
+Phase D replaces the polling-based visibility machinery with an
+event-driven VisibilitySystem keyed on PositionChangedEvent. Subsumes
+B.1.7 (m_map_view) and B.1.9 (m_iViewAge). The PacketView f76a3f1
+hybrid broadcast band-aid deletes in D.8.
+
+| Step | Commit | Status | Notes |
+| ---- | ------ | ------ | ----- |
+| D.1  | d8eb598 | DONE | PositionChangedEvent struct in events.hpp; carries old + new (x, y, z, mapIndex). |
+| D.2  | 7ce28e9 | DONE | Triggers wired into SyncPositionComponents (idempotent-write filter) and SpatialService::InsertEntity (spawn case with oldMapIndex==0 sentinel). |
+| D.3  | 136c6e3 | DONE | VisibilitySystem skeleton: Init/Shutdown public API, no-op OnPositionChanged. Wired into main.cpp boot. |
+| D.4  | 959319c | DONE | Diff-and-update handler: ComputeViewersAt (sectree query at arbitrary mapIndex+x+y), InsertBidirectional/RemoveBidirectional, leaving/entering loops emit SendInsert/SendRemove. Character-only scope guard. Runs IN PARALLEL with legacy UpdateSectree polling. |
+| D.5  | 85486e6 | DONE | DriftSweep: 5s-throttled sweep compares maintained ViewerMap to sectree truth; per-entity 30s log throttle. Logs [VISIBILITY_DRIFT]. AURIGA_LPENTITY_FIXUP_AUDIT-gated. Wired into main.cpp tick loop. |
+| D.6  | -      | GATED | Disable legacy UpdateSectree polling. **Depends on D.5 reporting zero drift in WinTest** - this is the hard gate before D.6 lands. |
+| D.7  | -      | PENDING | Remove m_iViewAge tracking + entity_view.cpp polling code. Depends on D.6. |
+| D.8  | -      | PENDING | Remove f76a3f1 hybrid PacketView band-aid. Depends on D.6. |
+
+## Next milestone (HARD GATE)
+
+WinTest the combined Phase B + Phase C + Phase D-skeleton chunk before
+D.6 lands. Acceptance criteria:
 
 1. Two-client position sync stable (the original desync symptom).
 2. Walk / run / mount / dash all visible on both clients.
@@ -133,6 +152,10 @@ WinTest the combined Phase B + Phase C chunk. Acceptance criteria:
 5. [POSITION_READ_DRIFT] count zero across the session.
 6. [INSERT_PARITY] count zero (the parity detector continues to verify
    the Sync-helper writes against the native packet builder).
+7. [VISIBILITY_DRIFT] count zero across the session - this is the new
+   D.5 gate. Any non-zero count means the new event-driven handler
+   (D.4) and the legacy UpdateSectree polling diverge from the sectree
+   truth. D.6 must NOT land until the count is zero.
 
 If any of (1)-(4) fails: investigate at source. The Phase C migration
 removed dual-write at the legacy fields; if a regression appears it
@@ -142,12 +165,21 @@ during Phase B. Find that read site, convert it to the ECS getter.
 If (5) or (6) fail: a Sync-helper call site is missing. Find the legacy
 field write that should have a corresponding sync call.
 
+If (7) fails: the diff-handler's diff is missing some path, OR a
+Position writer doesn't go through SyncPositionComponents. Inspect the
+[VISIBILITY_DRIFT] entity to identify which side is wrong (only_in_mirror
+= stale entry not removed; only_in_truth = entry never inserted).
+
 ## After WinTest passes
 
-Phase D begins. Phase D rewrites the visibility machinery
-(VisibilitySystem - event-driven m_map_view replacement). Subsumes
-B.1.7 (m_map_view) and B.1.9 (m_iViewAge). The PacketView f76a3f1
-hybrid broadcast band-aid deletes here.
+D.6: stub out CEntity::UpdateSectree polling body. The ECS handler
+becomes the sole writer of ViewMap/ViewerMap.
+
+D.7: delete m_iViewAge increments and ViewAgeMap tracking.
+
+D.8: collapse CEntity::PacketView's hybrid m_map_view + sectree-walk
+broadcast (f76a3f1) back to a single ToViewers call. This is the
+bridge to Phase E.
 
 Phase E (BroadcastService unification), Phase F (native character
 dispatch re-enable), Phase G (legacy field deletion + audit TU
