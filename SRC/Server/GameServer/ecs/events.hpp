@@ -26,6 +26,32 @@ struct EvEntityMoved {
     int32_t newY { 0 };
 };
 
+// Phase 15E-final.LPENTITY.4-architect.D.1:
+// PositionChangedEvent fires whenever an entity's authoritative ECS Position
+// changes. Carries both the old and the new (x, y, z, mapIndex) so the
+// VisibilitySystem (Phase D.4) can run a symmetric-diff against the sectree
+// and incrementally maintain ViewMap / ViewerMap without polling.
+//
+// Map-warp case: oldMapIndex and newMapIndex differ; the handler treats
+// this as a full leave-old / enter-new visibility transition.
+//
+// Trigger sites (planned for D.2): SpatialService::InsertEntity,
+// SyncPositionComponents, MovementSystem update loop, MirrorLegacyMovement,
+// SetObserverMode (synthetic event with old==new but observer flag flipped).
+//
+// No subscribers in D.1 - event struct lands first so D.2 can compile.
+struct PositionChangedEvent {
+    entt::entity entity { entt::null };
+    int32_t      oldX { 0 };
+    int32_t      oldY { 0 };
+    int32_t      oldZ { 0 };
+    int32_t      newX { 0 };
+    int32_t      newY { 0 };
+    int32_t      newZ { 0 };
+    int32_t      oldMapIndex { 0 };
+    int32_t      newMapIndex { 0 };
+};
+
 struct EvItemPickup {
     entt::entity picker { entt::null };
     uint32_t itemVnum { 0 };
