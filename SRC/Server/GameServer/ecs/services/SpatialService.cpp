@@ -15,11 +15,13 @@
 #include "../AIHelpers.hpp"
 #include "../CBuildingRegistry.hpp"
 #include "../EntityInvariants.hpp"
+#include "../EventDispatcher.hpp"
 #include "../ItemRegistry.hpp"
 #include "../OfflineShopEntityRegistry.hpp"
 #include "../Registry.hpp"
 #include "../SpatialHelpers.hpp"
 #include "../VIDRegistry.hpp"
+#include "../events.hpp"
 #include "../components/identity_components.hpp"
 #include "../components/item_components.hpp"
 #include "../components/spatial_components.hpp"
@@ -209,6 +211,19 @@ bool InsertEntity(entt::registry& reg, entt::entity e, uint32_t mapIndex, int32_
     reg.emplace_or_replace<ecs::ViewActiveTag>(e);
     reg.emplace_or_replace<ecs::VisibilityDirty>(e);
     ecs::Invariants::ValidateSpatialCoverage(reg, e, "spatial.insert");
+
+    // Phase 15E-final.LPENTITY.4-architect.D.2: emit a spawn-shaped
+    // PositionChangedEvent so the VisibilitySystem (D.4) can compute the
+    // initial viewer set for this newly-inserted entity. Spawn case is
+    // signalled with old==(0,0,0) and oldMapIndex==0 (mapIndex 0 is never
+    // a real map - the index space starts at 1). No subscribers in D.2;
+    // the event is a no-op at runtime until D.3 wires up the handler.
+    g_dispatcher.trigger(ecs::PositionChangedEvent {
+        e,
+        0, 0, 0,
+        x, y, z,
+        0, static_cast<int32_t>(mapIndex) });
+
     return true;
 }
 
