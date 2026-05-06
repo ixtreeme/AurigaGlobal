@@ -10,6 +10,7 @@
 #include "../../sectree.h"
 #include "../../utils.h"
 #include "../AIHelpers.hpp"
+#include "../SpatialHelpers.hpp"
 #include "../components/session_components.hpp"
 #include "../components/status_components.hpp"
 #include "../components/transform_components.hpp"
@@ -32,9 +33,30 @@ inline std::vector<entt::entity> GetEntitiesInRange(entt::registry& reg, entt::e
     if (source == entt::null || !reg.valid(source))
         return result;
 
+    // Phase 15E-final.LPENTITY.4-architect.D.6.fixup-4:
+    // Sectree lookup via ECS Position + MapIndex instead of
+    // ecs::PlayerRuntime::GetSectree (which uses LegacyCharOf and only
+    // works for character entities). Building / item / shop entities
+    // are not characters - their LegacyCharPtr component is absent -
+    // so PlayerRuntime::GetSectree returns nullptr and this function
+    // returns an empty recipient set.
+    //
+    // This silently broke despawn broadcasts for Metin stone fragments,
+    // dropped items, destroyed buildings, and closed offline shops:
+    // SpatialService::RemoveEntity uses GetEntitiesInRange to compute
+    // who needs the SendRemove packet. With an empty result, no remove
+    // packet is emitted and the entity stays rendered on every viewer's
+    // client until they relog or move out of range.
+    //
+    // ECS Position + MapIndex are populated for every spatial entity
+    // type (chars, items, buildings, shops) by SpatialService::SyncSpatialComponents,
+    // so the sectree lookup via SectorAt works uniformly.
     const auto* sourcePos = reg.try_get<ecs::Position>(source);
-    LPSECTREE sectree = ecs::PlayerRuntime::GetSectree(source);
-    if (!sourcePos || !sectree)
+    const auto* sourceMap = reg.try_get<ecs::MapIndex>(source);
+    if (!sourcePos || !sourceMap)
+        return result;
+    LPSECTREE sectree = ecs::SectorAt(sourceMap->value, sourcePos->x, sourcePos->y);
+    if (!sectree)
         return result;
 
     struct Collector {
