@@ -7,7 +7,9 @@
 #include "utils.h"
 #include "ecs/AIHelpers.hpp"
 #include "ecs/Registry.hpp"
+#include "ecs/SpatialHelpers.hpp"
 #include "ecs/components/dirty_components.hpp"
+#include "ecs/components/spatial_components.hpp"
 #include "ecs/components/status_components.hpp"
 #include "ecs/components/transform_components.hpp"
 #include "ecs/components/visibility_components.hpp"
@@ -109,6 +111,42 @@ PIXEL_POSITION CEntity::GetXYZ() const
 		result.z = 0;
 	}
 	return result;
+}
+
+LPSECTREE CEntity::GetSectree() const
+{
+	// Phase 15E-final.LPENTITY.4-architect.H.1:
+	// Resolve through ECS SectorPlacement -> SECTREE_MANAGER lookup. The
+	// component is maintained by SyncSectorPlacement at every Position
+	// write site (SpatialService::InsertEntity, MovementSystem
+	// MirrorLegacyMovement, etc.) so it tracks the entity's actual sector
+	// without relying on the legacy m_pSectree pointer.
+	//
+	// Fallback to m_pSectree in three cases:
+	//   1. Bootstrap window: CEntity ctor runs before EntityFactory
+	//      registers the ECS entity. ECS lookup returns nullptr; legacy
+	//      m_pSectree is also nullptr at this point so the result is
+	//      bit-equivalent.
+	//   2. Despawn race: SECTREE::RemoveEntity nulls m_pSectree but the
+	//      ECS SectorPlacement has not been removed yet (or vice versa).
+	//      The legacy field is the more canonical "I am in some tree"
+	//      flag during that micro-window.
+	//   3. SyncSectorPlacement skipped: any code path that writes
+	//      m_pSectree without a paired SectorPlacement update. Phase H.2
+	//      audits and removes these; until then the fallback keeps
+	//      callers seeing what they used to see.
+	//
+	// Phase H.3 deletes m_pSectree outright. The fallback then collapses
+	// to a single ECS lookup.
+	const entt::entity e = ecs::SpatialService::EntityFromLPENTITY(
+		const_cast<LPENTITY>(static_cast<const CEntity*>(this)));
+	if (e == entt::null || !g_registry.valid(e))
+		return m_pSectree;
+
+	if (LPSECTREE ecsResult = ecs::SectorOf(g_registry, e))
+		return ecsResult;
+
+	return m_pSectree;
 }
 
 void CEntity::SetType(int type)

@@ -54,7 +54,18 @@ class CEntity
 		void			SetXYZ(int32_t x, int32_t y, int32_t z)		{ m_pos.x = x, m_pos.y = y, m_pos.z = z; }
 		void			SetXYZ(const PIXEL_POSITION & pos)	{ m_pos = pos; }
 
-		LPSECTREE		GetSectree() const			{ return m_pSectree;	}
+		// Phase 15E-final.LPENTITY.4-architect.H.1:
+		// GetSectree resolves through the ECS SectorPlacement component
+		// (looked up against SECTREE_MANAGER) so the legacy m_pSectree field
+		// is no longer the source of truth. Body lives in entity.cpp because
+		// the registry / SpatialHelpers includes do not belong in a widely
+		// included header. Bootstrap fallback returns m_pSectree when the
+		// ECS entity has not yet been registered (CEntity ctor before
+		// EntityFactory). Phase H.3 removes m_pSectree outright; until then
+		// the dual store stays consistent via D.6.fixup-3
+		// (MirrorLegacyMovement re-inserts on cross-sectree movement) and
+		// the legacy SECTREE::InsertEntity/RemoveEntity write paths.
+		LPSECTREE		GetSectree() const;
 		void			SetSectree(LPSECTREE tree)	{ m_pSectree = tree;	}
 
 		void			UpdateSectree();
