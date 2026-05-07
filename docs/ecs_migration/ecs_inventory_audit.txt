@@ -788,7 +788,303 @@ As of 7f3453a (2026-05-07):
 
 
 ====================================================================
-SECTION 8 - CROSS-REFERENCES
+SECTION 8 - LEGACY POINTER TYPEDEFS (LPCHARACTER / LPITEM / LPEVENT /
+            LPSECTREE / LPENTITY / LPDESC etc.)
+====================================================================
+
+The codebase carries several pointer typedefs that are aliases for raw
+legacy class pointers. They are NOT components; they are the *boundary*
+between the ECS world and the OOP world. Migrating away from them is a
+larger refactor than the per-field component sweep tracked in sections
+1-7. Status legend per typedef:
+
+  ALIVE-BOUNDARY  - typedef survives as the legacy<->ECS bridge; ECS code
+                    converts at the boundary via EcsOf / EntityFromLPENTITY
+  RETIRING        - one or more migration phases have removed it from
+                    specific subsystems but the typedef itself lives
+  PARALLEL        - ECS twin exists, both are written to keep mirrors
+  DELETION-PENDING - field/typedef is dormant on ECS-aware paths;
+                     deletion scheduled for a known phase
+
+Counts as of 7f3453a (rough lower bound; conditional builds may add):
+  LPCHARACTER   ~1827 occurrences
+  LPITEM         ~907 occurrences
+  LPDESC         ~366 occurrences
+  LPENTITY       ~241 occurrences
+  LPDUNGEON      ~208 occurrences
+  LPEVENT        ~202 occurrences
+  LPPARTY         ~98 occurrences
+  LPSECTREE       ~74 occurrences
+
+--------------------------------------------------------------------
+8.1 LPCHARACTER  =  CHARACTER*                            [ALIVE-BOUNDARY]
+--------------------------------------------------------------------
+The widest legacy surface in the codebase (~1800 occurrences). Every
+gameplay system that touched a player or mob originally took LPCHARACTER
+as parameter. ECS migration plan does NOT delete the typedef in the
+current LPENTITY.4 / Phase G scope.
+
+  ECS twin:                LegacyCharPtr component (identity_components.hpp)
+  Boundary helpers:        AIHelpers::EcsOf(LPCHARACTER) ->
+                           ch->GetEntityHandle()
+                           ecs::LegacyCharOf(entt::entity) ->
+                           reg.try_get<LegacyCharPtr>(e)->ptr
+  Migrated paths:          Most gameplay subsystem cores (Movement,
+                           Combat, Affect, Item, Skill, Visibility,
+                           Mount, Inventory, Network, Activity) accept
+                           entt::entity in their public ECS surface
+                           and only resolve to LPCHARACTER at the
+                           legacy-call seam
+  Remaining surface:       Quest engine, dungeon scripts, P2P sync,
+                           legacy event handlers (EVENTFUNC bodies),
+                           shop / safebox / mail / trade flows, AI FSM
+                           (disabled but still in source), party /
+                           guild manager bodies, anti-cheat code
+  Deletion scope:          NOT in LPENTITY.4 / Phase E-G. A separate
+                           future migration ("LPENTITY.5+") would
+                           convert remaining LPCHARACTER parameters to
+                           entt::entity and eventually delete the
+                           CHARACTER class outright (~6+ months of
+                           work on this codebase).
+  Phase docs:              phase0_character_method_definitions.txt
+                           phase15e_final_0_char_class_audit.txt
+                           phase15e_final_0_deletion_blockers.txt
+                           phase15e_final_0_deletion_roadmap.txt
+
+--------------------------------------------------------------------
+8.2 LPITEM  =  CItem*                                     [RETIRING]
+--------------------------------------------------------------------
+Item entity migration is significantly further along than character
+migration but ~907 occurrences remain across legacy subsystems.
+
+  ECS twin:                full item-entity component bundle
+                           (item_components.hpp + item_proto_components.hpp)
+  Boundary helpers:        ItemSystem::ItemEntityOf(LPITEM)
+                           ecs::SpatialService::EntityFromLPENTITY for
+                             ground items
+                           CItemRegistry::Find / FindByVID
+  Migrated paths:          ItemSystem.cpp facade is ECS-native:
+                           HasItem / EquipItem / UnequipItem /
+                           SetWearItem / DestroyItemEntity all take
+                           entt::entity. CItem ground item lifecycle
+                           (drop / pickup / destroy) ECS-driven post
+                           Phase D.6.fixup-5.
+  Remaining surface:       ItemSystem_LegacyBridge.cpp holds ~30+
+                           legacy CItem method bodies pending move.
+                           Inventory grid math (CGrid) still legacy.
+                           Item refining / DragonSoul / acce systems
+                           partially migrated.
+  Deletion scope:          NOT in current Phase G. CItem class
+                           survives until ItemSystem_LegacyBridge.cpp
+                           is fully drained.
+  Phase docs:              phase15e_33_legacy_item_engine_extraction.md
+                           phase15e_39_lpitem_remaining_audit.txt
+                           phase15e_65_*
+
+--------------------------------------------------------------------
+8.3 LPENTITY  =  CEntity*                                 [ALIVE-BOUNDARY]
+--------------------------------------------------------------------
+Base class pointer common to character / item / building / offline
+shop. Used as the spatial-system "any entity" parameter type. NOT
+deleted in current scope (LPENTITY.4 only removes duplicated *fields*
+on CEntity, not the typedef itself).
+
+  ECS twin:                entt::entity
+  Boundary helpers:        ecs::SpatialService::EntityFromLPENTITY
+                           ecs::SpatialService::LPENTITYFromEntity
+                           Per-kind dispatch in EntityNetworkDispatch
+  Migrated paths:          Spatial query API
+                           (VisibilityService::GetEntitiesInRange),
+                           visibility maintenance
+                           (VisibilitySystem D.4 handler), dispatch
+                           (EntityNetworkDispatch::SendInsert/Remove)
+  Remaining surface:       SECTREE::m_set_entity stores LPENTITY,
+                           CEntity::PacketView/PacketAround,
+                           CFuncViewInsert iterator (legacy polling
+                           for non-char entities)
+  Deletion scope:          Same as LPCHARACTER - separate future
+                           migration. CEntity class retains m_lpDesc
+                           (ECS-mirrored), m_iType (SpatialKindTag
+                           mirror), virtual EncodeInsertPacket /
+                           EncodeRemovePacket as the polymorphism
+                           hook for the per-kind dispatch.
+
+--------------------------------------------------------------------
+8.4 LPSECTREE  =  SECTREE*                                [PARALLEL]
+--------------------------------------------------------------------
+Sector quadtree pointer. The SECTREE class itself is the spatial
+index data structure (~6400-px cells) AND the static map data store
+(terrain attributes, ATTR_OBJECT regions, spawn config). ECS does
+not have a native spatial index, so SECTREE survives.
+
+  ECS twin:                SectorPlacement component
+                           (mapIndex + world coords; sectree-handle
+                            resolves through SECTREE_MANAGER::Get)
+  Boundary helpers:        ecs::SectorOf(reg, e) -> LPSECTREE
+                           ecs::SectorAt(mapIndex, x, y) -> LPSECTREE
+                           ecs::IsAttrAt(mapIndex, x, y, flag)
+  Migrated paths (Phase H):
+    H.1 - GetSectree() ECS read-flip
+    H.2 - SECTREE::Insert/RemoveEntity ECS mirror
+    H.3 - m_pSectree field deleted from CEntity (84a9721)
+  Remaining surface:       Direct SECTREE method calls
+                           (ForEachAround, IsAttr, InsertEntity,
+                           RemoveEntity, GetEventAttribute) survive -
+                           these are stateless data lookups.
+                           Methods called via ecs::SectorOf /
+                           ecs::SectorAt boundary helpers.
+  Deletion scope:          The typedef and class STAY (they back the
+                           spatial index). Phase G removes only the
+                           CEntity::m_pSectree pointer (DONE in H.3).
+                           A complete sectree replacement (custom
+                           ECS spatial index or external R-tree) is
+                           NOT planned - cost-vs-benefit is too high.
+
+--------------------------------------------------------------------
+8.5 LPEVENT  =  TEventInfo* (legacy event-timer handle)   [PARALLEL]
+--------------------------------------------------------------------
+Auriga's legacy event system (EVENTFUNC / event_create / event_cancel)
+runs ~155 EVENTFUNC handlers across the codebase. ~51 of those live
+inside ecs/systems/*.cpp (so the body is ECS-aware) but the timer
+machinery itself is legacy.
+
+  ECS twin:                NONE - the EnTT dispatcher (g_dispatcher)
+                           handles event-driven reactions, but the
+                           timer-based event scheduler is a separate
+                           subsystem. The two coexist.
+  Active EVENTFUNC handlers (samples):
+    movement/recovery:     dead_event, recovery_event, mining_event,
+                           recall_npc_event
+    combat:                stun_event, dot_event (poison/fire/bleed),
+                           pvp_check_event, point_warp_event
+    item:                  item_destroy_event, ownership_event,
+                           timer_based_on_wear_expire_event,
+                           real_time_expire_event,
+                           accessory_socket_expire_event
+    session:               save_event, ping_event, autoclose_event,
+                           login_wait_event, disconnect_event,
+                           battle_pass_stay_online_event_session
+    horse / pet:           horse_dead_event, horse_summon_event,
+                           pet_summon_event
+    quest / dungeon:       dungeon_event, easter_event,
+                           quest_run_event_by_vid
+    spawn / regen:         regen_event, npc_event_regen,
+                           spawn_event_after_warp
+    map / war:             war_timer_event, war_end_event,
+                           timed_event handlers
+  Migrated paths:          Most EVENTFUNC bodies that fire inside ecs/
+                           call into ECS systems and emit dispatcher
+                           events as side effects. The timer scheduling
+                           is still legacy.
+  Remaining surface:       The event_create / event_cancel /
+                           event_pulse machinery in src/Common/event.cpp
+                           and per-character m_pkXxxEvent fields on
+                           CHARACTER (~30+ such fields).
+  Deletion scope:          NOT in any current phase. Replacing the
+                           timer wheel with an ECS scheduling system
+                           would be its own multi-week migration. The
+                           dispatcher events (g_dispatcher) handle the
+                           reactive use cases; the timer events are
+                           periodic / delayed and need a different
+                           mechanism (most likely an ecs::TimerSystem
+                           with delay queues).
+  Phase docs:              phase10_event_audit.txt
+
+--------------------------------------------------------------------
+8.6 LPDESC  =  DESC*                                      [PARALLEL]
+--------------------------------------------------------------------
+Network descriptor pointer (one per connected client). Owned by
+DESC_MANAGER. ECS-side mirrored as NetworkSession.desc.
+
+  ECS twin:                NetworkSession component (session_components.hpp)
+  Boundary helpers:        ecs::PlayerRuntime::GetDesc(entity) ->
+                             ch->GetDesc() under the hood
+                           ch->BindDesc / GetDesc still on CEntity
+  Migrated paths:          Most ECS systems take entt::entity and
+                           resolve LPDESC at the network seam.
+                           NetworkSyncSystem packet builders accept
+                           entt::entity.
+  Remaining surface:       input_main.cpp packet handlers, anti-cheat
+                           checks, login flow, P2P sync, command
+                           handlers (cmd_*.cpp). All take LPDESC
+                           directly.
+  Deletion scope:          The DESC class survives indefinitely - it
+                           carries connection-local state (socket,
+                           buffers, handshake state) that is genuinely
+                           per-connection rather than per-entity.
+                           Migration target is "LPDESC parameters
+                           replaced with entt::entity at the gameplay
+                           boundary" - already largely complete.
+
+--------------------------------------------------------------------
+8.7 LPPARTY  =  CParty*                                   [ALIVE-BOUNDARY]
+--------------------------------------------------------------------
+Party object pointer. CParty class still owns party state (member list,
+leader, party-buff calculations). ~98 occurrences.
+
+  ECS twin:                PartyMembership / SocialRefs.party
+                           (social_components.hpp - DUAL state)
+  Status:                  CParty class stays; ECS only tracks the
+                           membership reference for fast queries.
+                           No deletion planned in any current phase.
+
+--------------------------------------------------------------------
+8.8 LPDUNGEON  =  CDungeon*                               [ALIVE-BOUNDARY]
+--------------------------------------------------------------------
+Dungeon instance pointer. CDungeon manages the per-instance state of
+running dungeons (timer, spawn waves, party reference, exit flow).
+~208 occurrences.
+
+  ECS twin:                DungeonMembership (social_components.hpp -
+                           DUAL state) - per-character "I am in
+                           dungeon X" reference. CDungeon itself stays.
+  Status:                  Dungeon scripting (OrcsDungeon, EasterDungeon,
+                           etc.) heavily uses LPCHARACTER + LPDUNGEON.
+                           Migration would require the per-script ECS
+                           rewrite. Not scheduled.
+
+--------------------------------------------------------------------
+8.9 OTHERS                                                [VARIOUS]
+--------------------------------------------------------------------
+  LPGUILD                  Searched but not found in current build
+                           (guild typedefs may be #define-conditional)
+  LPMARRIAGE               Marriage state - DUAL via MarriageState
+                           component
+  LPSAFEBOX / LPMALL       Safebox + mall - DUAL via SafeboxRef
+  LPEXCHANGE               Trade window - DUAL via ExchangeRef
+
+
+--------------------------------------------------------------------
+SUMMARY: TYPEDEF MIGRATION PLAN
+--------------------------------------------------------------------
+
+The current LPENTITY.4 architect plan + Phase E/F/G + Phase H all
+operate WITHIN the legacy typedef boundary. They migrate fields and
+behavior into ECS components/systems but do NOT delete the legacy
+classes or their pointer typedefs.
+
+A complete typedef-deletion migration is OUT OF SCOPE for the
+present roadmap. Rough sequence if it were attempted:
+
+  Step 1: drain ItemSystem_LegacyBridge.cpp  (Phase 15e tail)
+  Step 2: complete dungeon-script ECS rewrite
+  Step 3: migrate quest engine + EVENTFUNC bodies to entt::entity
+  Step 4: migrate input_main.cpp packet handlers off LPDESC params
+  Step 5: ~6 more month-scale phases per major typedef
+  Step 6: SECTREE replacement (or accept it as permanent infrastructure)
+
+Realistic estimate: ~6-12 months of focused work on top of the
+current Phase A-H roadmap to fully eliminate LPCHARACTER + LPITEM +
+LPENTITY + LPEVENT. LPSECTREE realistically stays.
+
+The current scope's ambition is "ECS authoritative for runtime
+state, legacy classes still hold method bodies". The user's earlier
+question about LPENTITY deletion (answered: ~3-6 months past Phase G)
+sets the same expectation for the broader typedef set.
+
+
+====================================================================
+SECTION 9 - CROSS-REFERENCES
 ====================================================================
 
 Architecture design docs:
