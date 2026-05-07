@@ -1,0 +1,833 @@
+Auriga-Global ECS Inventory Audit
+==================================
+
+Snapshot date: 2026-05-07
+Repository tip: 7f3453a (Phase 15E-final.LPENTITY.4-architect.H.fixup-8)
+
+Purpose: enumerate every ECS component, system, and service that has
+been migrated (or is being migrated) from the legacy CHARACTER /
+CEntity / CItem OOP design to the EnTT-backed ECS model. Status column
+classifies each entry; legend at the bottom of every section.
+
+This document supersedes the per-phase progress notes in:
+  - phase15e_status.md (Phase 15E-final running tracker)
+  - phase15e_final_lpentity_*_*.txt (per-phase landings)
+  - phase_architect_a*.txt (Phase A design docs)
+
+For per-step landing details, refer to the commit messages and the
+phase-specific docs above. This file is the authoritative cross-cut
+inventory.
+
+
+====================================================================
+SECTION 1 - ECS COMPONENTS
+====================================================================
+
+Layout: every component lives under SRC/Server/GameServer/ecs/components/.
+Status legend per component:
+  ECS    - ECS is the sole source of truth; no legacy mirror left
+  DUAL   - dual-write: ECS + legacy field still kept consistent
+  MIRROR - ECS is read-flipped from legacy at write sites; legacy is
+           still the canonical store
+  PARTIAL - some fields ECS-authoritative, others still legacy
+  STAGED - emplaced for use but not yet wired into legacy paths
+
+--------------------------------------------------------------------
+1.1 transform_components.hpp                              [ECS]
+--------------------------------------------------------------------
+  Position                  ECS    char-path m_pos deleted (Phase G slot;
+                                   currently dual-write to m_pos for non-
+                                   character entities only)
+  PositionZ                 ECS    z-cache, set by SyncPositionComponents
+  WarpPosition              ECS    set by CharacterFactory; legacy m_posWarp
+                                   still mirrored on write
+  ExitPosition              ECS    legacy m_posExit mirrored
+  RegenPosition             ECS    legacy m_posRegen mirrored
+  RotationComponent         ECS    sync-flipped from CHARACTER::SetRotation
+                                   (Phase B.1.x)
+  MapIndex                  ECS    char-path authoritative; legacy
+                                   m_lMapIndex still synced
+
+--------------------------------------------------------------------
+1.2 spatial_components.hpp                                [ECS]
+--------------------------------------------------------------------
+  SpatialEntity             ECS    tag - "entity participates in spatial
+                                   queries"
+  SpatialKind enum          ECS    discriminator: Character / Item /
+                                   Building / OfflineShop
+  SpatialKindTag            ECS    component wrapper around SpatialKind
+  PositionZ                 ECS    duplicate of transform - kept for
+                                   spatial-only entities
+  SectorPlacement           ECS    REPLACED CEntity::m_pSectree (Phase H.3)
+                                   - resolves through SECTREE_MANAGER::Get
+  ViewActiveTag             ECS    "in-sector and visible"
+  BuildingState             ECS    legacy CObject::m_data mirrored
+  OfflineShopState          ECS    new-offlineshop legacy mirrored
+
+--------------------------------------------------------------------
+1.3 visibility_components.hpp                             [ECS]
+--------------------------------------------------------------------
+  ViewMap                   ECS    "what this entity sees" - event-driven
+                                   via VisibilitySystem D.4 handler
+  ViewerMap                 ECS    "who sees this entity" - same handler
+  ViewAgeMap                LEGACY view-age tracking; still legacy-driven
+                                   for non-char entities; chars use ECS
+                                   ViewerMap directly (Phase D.6 stub)
+  VisibilityDirty           ECS    tag - re-evaluate visibility this tick
+
+--------------------------------------------------------------------
+1.4 movement_components.hpp                               [ECS]
+--------------------------------------------------------------------
+  MovementDestination       ECS    REPLACED CHARACTER::m_posDest (Phase C.3)
+  MovementState             ECS    moveStartTime + moveDuration +
+                                   isWalking + isNowWalking - all char-path
+                                   m_dwMoveStartTime / m_dwMoveDuration /
+                                   m_bNowWalking writes deleted (Phase C.2)
+  MovementSpeed             ECS    walk + run speed; legacy GetMoveSpeed
+                                   still computed
+  SyncState                 ECS    network-sync timing tracking
+
+--------------------------------------------------------------------
+1.5 status_components.hpp                                 [ECS]
+--------------------------------------------------------------------
+  AffectList                ECS    legacy m_list_pkAffect dual-write
+  StatusFlags               ECS    isDead / isSpawnState / isKillerMode /
+                                   isPartyState / isObserverMode -
+                                   REPLACED CHARACTER::m_bAddChrState
+                                   (Phase C.4)
+  PolymorphState            ECS    legacy polymorph fields mirrored
+  ImmunityFlags             ECS    immune flag bitmap
+  DeadTag                   ECS    tag - "is dead"
+  StunTag                   ECS    tag - "is stunned"
+  ObserverModeTag           ECS    tag - observer mode active
+  SafeZoneTag               ECS    tag - in safe zone
+  PoisonTag / BleedTag /
+    FireTag                 ECS    DOT-active tags
+
+--------------------------------------------------------------------
+1.6 vital_components.hpp                                  [ECS]
+--------------------------------------------------------------------
+  Health                    ECS    current + max HP
+  Mana                      ECS    current + max MP
+  Stamina                   ECS    current + max stamina
+  LevelComponent            ECS    legacy POINT_LEVEL is the canonical
+                                   accessor; ECS read-flipped
+  Experience                ECS    current + next-level threshold
+  CharacterPoints           ECS    POINT_* table (POINT_MAX_NUM entries)
+
+--------------------------------------------------------------------
+1.7 character_stats_components.hpp                        [DUAL]
+--------------------------------------------------------------------
+  CharacterStatsComponent   DUAL   POINT_* array; mirrored from
+                                   CHARACTER::m_points - PointSystem ECS
+                                   reads/writes both sides
+
+--------------------------------------------------------------------
+1.8 character_runtime_components.hpp                      [DUAL]
+--------------------------------------------------------------------
+  CharacterRuntimeFlagsComponent   per-character runtime flags (rotation,
+                          DUAL     gmLevel, instantFlag, attackTime,
+                                   etc.) - paired with CHARACTER::m_*
+                                   fields
+
+--------------------------------------------------------------------
+1.9 identity_components.hpp                               [ECS/DUAL mix]
+--------------------------------------------------------------------
+  VIDComponent              ECS    32-bit VID; CVIDRegistry indexes
+  CharacterType             ECS    PC / monster / stone / NPC / pet etc.
+  LegacyCharPtr             DUAL   raw LPCHARACTER pointer back to the
+                                   legacy CHARACTER instance - the
+                                   "bridge" component, deletes when the
+                                   legacy class deletes (post-LPENTITY.x)
+  PlayerID                  ECS    DB player ID
+  AccountID                 ECS    account ID
+  EmpireComponent           ECS    1/2/3 empire selector
+  RaceComponent             ECS    race / class
+  RaceState                 ECS    job + level data
+  PlayerName                ECS    persistent name string
+  GMLevel                   ECS    GM authority level
+  TagPC / TagNPC /
+    TagMonster / TagStone /
+    TagPet / TagMount /
+    TagHorse                ECS    discriminator tags
+
+--------------------------------------------------------------------
+1.10 inventory_components.hpp                             [PARTIAL]
+--------------------------------------------------------------------
+  EquipmentSlots            ECS    WEAR_* slot array of entt::entity
+                                   refs to item entities
+  InventoryGrid             DUAL   main inventory grid; CGrid mirror
+  MainInventoryRuntimeComponent    Phase 15E-final.39 migration -
+                          PARTIAL  ECS-side cache of inventory state;
+                                   legacy CHARACTER::m_pkInventory still
+                                   the canonical store
+  ExtraInventoryRuntimeComponent   Same pattern for extra inventory
+                          PARTIAL
+  CubeWindowComponent       PARTIAL  Cube window state (refining UI)
+  DragonSoulInventoryComponent     DragonSoul slots
+                          PARTIAL
+  DragonSoulRuntimeStateComponent  DragonSoul runtime activation flags
+                          PARTIAL
+  AttrTransferWindowComponent      Item-attribute transfer UI state
+                          PARTIAL
+  AcceWindowComponent       PARTIAL  Accessory upgrade UI state
+  SwitchbotRuntimeComponent PARTIAL  Auto-buyer/seller bot state
+  GoldAmount                ECS    legacy CHARACTER::m_iGold mirrored
+  QuickSlots                ECS    quickslot array (legacy quickslot
+                                   table mirrored)
+  SafeboxRef                ECS    safebox / mall reference
+
+--------------------------------------------------------------------
+1.11 item_components.hpp                                  [ECS]
+--------------------------------------------------------------------
+  ItemIdentity              ECS    item id + vnum + uid
+  ItemLocation              ECS    "where am I" - inventory / ground /
+                                   shop / mail / safebox
+  ItemGroundPosition        ECS    coordinates while dropped
+  ItemCount                 ECS    stack count
+  ItemPrototypeMeta         ECS    cached proto info (vnum, type, sub)
+  ItemOwner                 ECS    pickup-ownership window
+  ItemOwnershipDisplay      ECS    HEADER_GC_ITEM_OWNERSHIP packet state
+  ItemEquipped              ECS    "equipped on entity" link
+  ItemFlags                 ECS    flag bitmap (exchanging, locked, etc.)
+  ItemSockets               ECS    socket value array
+  ItemAttributes            ECS    norm + rare attribute slots
+  ItemLockedAttribute       ECS    locked-attribute lock state
+
+--------------------------------------------------------------------
+1.12 item_proto_components.hpp                            [ECS]
+--------------------------------------------------------------------
+  ItemProtoRef              ECS    static-data reference to TItemTable;
+                                   immutable per item-vnum
+
+--------------------------------------------------------------------
+1.13 ai_components.hpp                                    [PARTIAL]
+--------------------------------------------------------------------
+  AIFlags                   PARTIAL  AI behavior flags
+  AIState                   PARTIAL  current state machine state
+  GuardState                PARTIAL  guard NPC state
+  WarFlagState              PARTIAL  war map flag-carry state
+  AggroTable                PARTIAL  damage-aggro tracking
+  SpawnInfo                 PARTIAL  regen spawn metadata
+  MobDataRef                ECS    legacy mob_proto reference
+  FlyTargets                PARTIAL  flying-mob target queue
+  HorseAITag / StoneAITag   ECS    AI-type discriminator tags
+
+  AISystem itself is currently DISABLED in main.cpp (commented out by
+  Phase 11 migration window). Legacy CHARACTER FSM owns AI behavior.
+  Re-enables after Phase 11.
+
+--------------------------------------------------------------------
+1.14 combat_components.hpp                                [ECS]
+--------------------------------------------------------------------
+  CombatTarget              ECS    current attack target reference
+  CombatStats               ECS    AttackPower / Defense / etc.
+                                   (read-flipped from POINT_*)
+  AttackCooldown            ECS    next-attack tick
+  DamageMap                 ECS    damage-by-attacker tracking
+  CombatActiveTag           ECS    "in combat now"
+  InvincibleTag             ECS    GM/PvP invincibility
+
+--------------------------------------------------------------------
+1.15 social_components.hpp                                [DUAL]
+--------------------------------------------------------------------
+  SocialRefs                DUAL   handle pack: party / guild / dungeon /
+                                   marriage / shop / wedding map
+  ExchangeRef               DUAL   trade-window state pointer
+  PartyMembership           DUAL   LPPARTY mirror (party still legacy)
+  GuildMembership           DUAL   LPGUILD mirror
+  DungeonMembership         DUAL   LPDUNGEON mirror
+  MarriageState             DUAL   marriage state (other partner ID etc.)
+  ShopState                 DUAL   open private shop reference
+  WarpBlockState            DUAL   "cannot warp" reasons (in combat etc.)
+  MountState                DUAL   mountVnum + mountTime + flags
+
+--------------------------------------------------------------------
+1.16 pet_mount_components.hpp                             [PARTIAL]
+--------------------------------------------------------------------
+  PetComponent              PARTIAL  pet (NewPetSystem) state
+  MountComponent            PARTIAL  mount (legacy Mount) state
+
+--------------------------------------------------------------------
+1.17 quest_components.hpp                                 [DUAL]
+--------------------------------------------------------------------
+  QuestContext              DUAL   per-character quest state
+                                   (questmanager.cpp legacy mirrored)
+  RankPoints                ECS    PvP rank tracking
+  AlignBonuses              ECS    alignment-tier bonuses
+
+--------------------------------------------------------------------
+1.18 session_components.hpp                               [ECS/DUAL mix]
+--------------------------------------------------------------------
+  NetworkSession            ECS    DESC pointer + flags; LPDESC still
+                                   legacy-bound
+  LoginInfo                 ECS    pre-spawn login state
+  AntiFlood                 ECS    chat anti-spam tracking
+  DragonSoulState           ECS    refine-window state
+
+--------------------------------------------------------------------
+1.19 skill_components.hpp                                 [ECS]
+--------------------------------------------------------------------
+  SkillLevels               ECS    per-character skill level array
+  SkillCooldowns            ECS    per-skill next-ready tick
+  SkillDamageBonus          ECS    skill damage bonuses
+  SkillColor                ECS    cosmetic skill color
+
+--------------------------------------------------------------------
+1.20 appearance_components.hpp                            [ECS]
+--------------------------------------------------------------------
+  AppearancePartsComponent  ECS    body / hair / weapon / armor parts
+  ItemTitlePrefixCache      ECS    cached item title prefix string
+
+--------------------------------------------------------------------
+1.21 activity_components.hpp                              [ECS]
+--------------------------------------------------------------------
+  FishingState              ECS    fishing state (target fish, time)
+  FishingActiveTag          ECS    tag - currently fishing
+
+--------------------------------------------------------------------
+1.22 dirty_components.hpp                                 [ECS]
+--------------------------------------------------------------------
+  DirtyTag                  ECS    "needs network re-broadcast next tick"
+
+
+====================================================================
+SECTION 2 - ECS SYSTEMS
+====================================================================
+
+Layout: SRC/Server/GameServer/ecs/systems/. Status legend:
+  ECS-NATIVE - the system is the authoritative implementation; legacy
+               method bodies removed or thin shim
+  ECS-OWNED  - logic lives in ECS but legacy CHARACTER:: methods still
+               wrap and forward (Phase F bridge)
+  TICK       - per-tick update system that runs from main loop
+  EVENT      - reactive system (dispatcher listener)
+  DISABLED   - present in source but not wired (Phase 11+ re-enable)
+
+--------------------------------------------------------------------
+2.1 MovementSystem                              [ECS-NATIVE, TICK + EVENT]
+--------------------------------------------------------------------
+  Public API:
+    Show / WarpSet / ExitToSavedLocation
+    Move / OnMove / Goto / Stop
+    SyncDestinationWrite / SyncDestinationClear
+    SyncTimingWrite / SyncWalkingWrite
+    CalculateMoveDuration
+
+  Per-tick:
+    MovementSystem_Update - destination interpolation,
+    MirrorLegacyMovement (D.6.fixup-3 sectree maintenance)
+
+  Phase landings:
+    C.1 - char-path m_pos write removal
+    C.2 - timing + walking write removal
+    C.3 - m_posDest write removal
+    C.5 - Sync*Write helper doc cleanup
+
+--------------------------------------------------------------------
+2.2 VisibilitySystem                            [ECS-NATIVE, EVENT]
+--------------------------------------------------------------------
+  Public API:
+    Init / Shutdown (dispatcher wire-up)
+    DriftSweep (debug-only [VISIBILITY_DRIFT] check)
+
+  Event-driven model: PositionChangedEvent -> handler does symmetric
+  diff between old + new sectree-grid range queries, emits
+  SendInsert / SendRemove via EntityNetworkDispatch.
+
+  Phase landings:
+    D.1 - PositionChangedEvent struct
+    D.2 - trigger sites
+    D.3 - skeleton
+    D.4 - diff handler
+    D.5 - drift detector
+    D.6 - polling stub for char paths
+    D.7 - absorbed by D.6 (m_iViewAge dormant for chars)
+    D.8 - PacketView ECS ViewerMap walk
+
+  Active fixups (post-WinTest regressions):
+    D.6.fixup-1..7  spawn / backport / sectree-boundary / non-char
+                    despawn / item destroy / char destroy / ViewCleanup
+                    bypass
+    H.fixup-1..8    sectree boundary / PacketView self-heal /
+                    spawn-shape heal-only / backport peer GC_MOVE /
+                    ViewReencode peer-burst skip / MountVnum ECS
+                    broadcast / ViewReencode self-skip in intra-sectree
+                    Show / explicit self-resync
+
+--------------------------------------------------------------------
+2.3 PointSystem + PointRouter                    [ECS-NATIVE, TICK]
+--------------------------------------------------------------------
+  Public API:
+    Change / Get / GetMax / GetLimit / SetPoint
+    PointChange routing through PointRouter to legacy CHARACTER hooks
+
+  Phase landings:
+    Phase 15c (POINT_* migration) + 15e.60.* point-sync audit
+
+--------------------------------------------------------------------
+2.4 CombatSystem                                 [ECS-NATIVE, TICK + EVENT]
+--------------------------------------------------------------------
+  Public API:
+    Attack / Shoot / BeginFight / SetVictim
+    IsStun / SetKillerMode (Phase C.4)
+    CalculateDamage helpers
+
+  EvCharDead / EvEntityDamaged event triggers
+  Phase landings: Phase 15c partial -> 15e.x finalization
+
+--------------------------------------------------------------------
+2.5 AffectSystem                                 [ECS-NATIVE, TICK + EVENT]
+--------------------------------------------------------------------
+  Public API:
+    Apply Fire / Poison / Bleeding / generic affect operations
+    EvFireApplied / EvPoisonApplied / EvBleedingApplied events
+    Polymorph + flag bit migration (Phase C.4)
+
+--------------------------------------------------------------------
+2.6 InventorySystem                              [ECS-OWNED]
+--------------------------------------------------------------------
+  Public API:
+    SyncQuickslot / GetQuickslot / SetQuickslot / DelQuickslot
+    Inventory grid management (with legacy CGrid bridge)
+
+  Status: ECS hosts runtime state, legacy CGrid still drives slot math
+  in Phase 15e.39+ scope.
+
+--------------------------------------------------------------------
+2.7 ItemSystem                                   [ECS-OWNED + LEGACY BRIDGE]
+--------------------------------------------------------------------
+  Public API:
+    HasItem / EquipItem / UnequipItem / SetWearItem / DestroyItemEntity
+    DestroyItemEntityEcs (D.6.fixup-5 ordering fix)
+
+  Files split: ItemSystem.cpp is the ECS facade; ItemSystem_LegacyBridge.cpp
+  is a temporary bridge island holding legacy CItem method bodies that
+  cannot yet move.
+
+  Phase landings: 15e.33 (legacy item engine extraction), 15e.39+
+  (LPITEM remaining), 15e.65 (item write sync)
+
+--------------------------------------------------------------------
+2.8 SkillSystem                                  [ECS-NATIVE]
+--------------------------------------------------------------------
+  Public API:
+    SetSkillNextReadTime / SetSkillLevel / SetSkillGroup
+    LearnGrandMasterSkill / LearnSkillByBook
+    CanUseMobSkill
+
+--------------------------------------------------------------------
+2.9 NetworkSyncSystem                            [ECS-OWNED]
+--------------------------------------------------------------------
+  Public API:
+    UpdatePacket / MainCharacterPacket / PointsPacket
+    BuildCharAdditionalInfo / SendCharAdditionalInfo
+    BuildCharacterUpdatePacket / BroadcastSyncPacket
+    Effect broadcast helpers
+
+  Status: NetworkSyncSystem_Update is DISABLED per main.cpp comment
+  ("re-enable after the ECS sync packet surface matches legacy");
+  individual packet builders are wired through.
+
+--------------------------------------------------------------------
+2.10 PlayerRuntimeSystem                         [ECS-OWNED]
+--------------------------------------------------------------------
+  Public API:
+    IsPC / IsNPC / IsStone / IsMonster
+    IsObserverMode / CanWarp
+    GetX / GetY / GetZ / GetMapIndex / GetSectree (H.1 ECS-flip)
+    GetDesc / GetPacketVID / GetName
+
+  Phase landings: B.1.x read-flips, H.1-H.3 sectree migration
+
+--------------------------------------------------------------------
+2.11 SessionSystem                               [ECS-OWNED]
+--------------------------------------------------------------------
+  Public API:
+    CHARACTER::Show body (intra-sectree warp + spawn flow)
+    Character save / disconnect / login bookkeeping
+    Anti-flood, anti-cheat hooks
+
+  Phase landings: Phase 15c, then C.1/C.3/C.4 + D fixups
+
+--------------------------------------------------------------------
+2.12 SocialSystem                                [ECS-OWNED]
+--------------------------------------------------------------------
+  Public API:
+    SetParty / SetGuild / SetDungeon / Marriage flow
+    Phase C.4 m_bAddChrState write removal applied here
+
+--------------------------------------------------------------------
+2.13 ChatSystem                                  [ECS-NATIVE, EVENT]
+--------------------------------------------------------------------
+  Public API: Send (CHAT_TYPE_*), broadcast / region helpers
+
+--------------------------------------------------------------------
+2.14 StatSystem                                  [ECS-NATIVE]
+--------------------------------------------------------------------
+  Public API: stat-recomputation helpers (HP/MP max etc.)
+
+--------------------------------------------------------------------
+2.15 ActivitySystem                              [ECS-NATIVE, TICK + EVENT]
+--------------------------------------------------------------------
+  Public API:
+    StartFishing / StopFishing / CatchFishing
+    UpdateFishing per tick
+
+--------------------------------------------------------------------
+2.16 MountSystem                                 [ECS-OWNED]
+--------------------------------------------------------------------
+  Public API:
+    StartRiding / StopRiding / SetRider
+    HorseSummon / HorseDie / ReviveHorse
+    SyncMountState / SyncHorseRiding
+
+  Phase landings: H.fixup-6 (MountVnum ECS ViewerMap broadcast)
+
+--------------------------------------------------------------------
+2.17 QuestSystem                                 [ECS-OWNED]
+--------------------------------------------------------------------
+  Public API:
+    SetFlag / GetFlag (per-character quest state)
+    Forwards to legacy questmanager for execution
+
+--------------------------------------------------------------------
+2.18 DragonSoulSystem                            [ECS-NATIVE]
+--------------------------------------------------------------------
+  Public API:
+    Initialize / IsDeckActivated / ActivateDeck / DeactivateAll
+    OpenRefineWindow / CloseRefineWindow
+
+--------------------------------------------------------------------
+2.19 GayaSystem                                  [ECS-NATIVE]
+--------------------------------------------------------------------
+  Public API:
+    Load / CheckItemsFull / ClearMarket / InfoMarket
+    BuyItems / RefreshItemsMarket
+
+--------------------------------------------------------------------
+2.20 VitalRegenSystem                            [ECS-NATIVE, TICK]
+--------------------------------------------------------------------
+  Public API: VitalRegenSystem_Update per tick - HP/MP/SP regen
+
+--------------------------------------------------------------------
+2.21 AISystem                                    [DISABLED]
+--------------------------------------------------------------------
+  Public API: AISystem_Update per tick
+
+  Status: commented out in main.cpp tick loop. Legacy CHARACTER FSM
+  drives AI. Re-enables after Phase 11 (FSM removal).
+
+
+====================================================================
+SECTION 3 - ECS SERVICES
+====================================================================
+
+Layout: SRC/Server/GameServer/ecs/services/. Services are stateless
+helpers that bridge components to legacy systems or to the network.
+
+--------------------------------------------------------------------
+3.1 EntityNetworkDispatch                        [ECS-NATIVE]
+--------------------------------------------------------------------
+  Public API:
+    SendInsert / SendRemove (per-spatial-kind dispatch)
+    SendCharacterInsert / SendItemInsert / SendBuildingInsert /
+      SendShopInsert (and matching Remove variants)
+    BuildCharacterInsert (native packet builder)
+    BuildCharacterInsertForAudit (debug-only)
+
+  Status: native character dispatch landed. Legacy fallback
+  (sourceLegacy->EncodeInsertPacket) is still in the Character branch
+  pending Phase F re-enable; this is the 21dc2df hotfix scope.
+
+--------------------------------------------------------------------
+3.2 EntityNetworkDispatchAudit                   [DEBUG-ONLY]
+--------------------------------------------------------------------
+  Public API:
+    CheckMovementDrift (no-op shim post-C.4)
+    CheckCharacterInsertParity (active under AURIGA_LPENTITY_FIXUP_AUDIT)
+
+  Status: temporary file scheduled for deletion in Phase G alongside
+  the legacy fields it audits.
+
+--------------------------------------------------------------------
+3.3 SpatialService                               [ECS-NATIVE]
+--------------------------------------------------------------------
+  Public API:
+    InsertEntity / RemoveEntity / UpdateSectree
+    EntityFromLPENTITY / LPENTITYFromEntity (legacy <-> ECS bridge)
+    GetSectree (legacy field accessor; H.3 made GetSectree() ECS-resolved
+                via SectorOf in entity.cpp)
+    SyncSpatialComponents / SyncVIDFromLegacy
+    ClearVisibilityMirror
+    ForEachInMap
+
+--------------------------------------------------------------------
+3.4 VisibilityService                            [ECS-NATIVE]
+--------------------------------------------------------------------
+  Public API:
+    GetEntitiesInRange (D.6.fixup-4: ECS Position+MapIndex sectree lookup)
+    GetViewersOf / GetVisibleEntities
+    GetVisibleEntitiesNative / GetViewersOfNative (ECS-only variants)
+    OnPositionChanged / OnSpawn / OnRemove (Phase D placeholders)
+
+
+====================================================================
+SECTION 4 - ECS INFRASTRUCTURE (root level helpers)
+====================================================================
+
+  Registry / Registry.cpp           the global g_registry singleton +
+                                    EcsOf(LPCHARACTER) bridge
+  EntityFactory                     creates char / item / building /
+                                    shop entities with the right
+                                    component bundle
+  EventDispatcher / events.hpp      g_dispatcher + every event type
+                                    (PositionChangedEvent, EvEntityDied,
+                                    EvCharDead, EvAffectApplied, ...)
+  NetworkService                    BroadcastToView etc. (broadcast
+                                    helpers - Phase E unification target)
+  PositionSync.hpp                  SyncPositionComponents helper
+                                    (D.2 trigger site)
+  SpatialHelpers.hpp                SectorOf / SectorAt / IsAttrAt
+                                    (Phase H.1-H.3 sectree resolution
+                                    boundary)
+  CharacterAccessors.hpp            LegacyCharOf + TryGetRuntimeFlags
+  AIHelpers.hpp                     EcsOf overloads
+  VIDRegistry / CBuildingRegistry / ItemRegistry / OfflineShopEntityRegistry
+                                    cross-cut entity lookup tables
+  ItemInvariants.hpp                runtime invariant checks for items
+  EntityInvariants.hpp              runtime invariant checks for chars
+  PointSemantic.hpp                 POINT_* type metadata
+  quest_helpers.hpp                 quest-context helpers
+
+
+====================================================================
+SECTION 5 - MIGRATION STATUS BY DOMAIN
+====================================================================
+
+The migration is grouped into ten functional areas. Each area lists
+its current state and the major Phase docs that drove the work.
+
+--------------------------------------------------------------------
+5.1 Spatial / Position                                    [DONE]
+--------------------------------------------------------------------
+  Position, MapIndex, RotationComponent: char-paths ECS-authoritative.
+  m_pos field deleted in Phase G slot for chars (Phase C.1 + later
+  cleanups).
+  m_pSectree deleted (Phase H.3 - 84a9721).
+  Source: phase_architect_a*.txt, phase15e_status.md sections C / H.
+
+--------------------------------------------------------------------
+5.2 Movement / Destination / Walking                      [DONE]
+--------------------------------------------------------------------
+  MovementDestination + MovementState ECS-authoritative.
+  m_posDest, m_dwMoveStartTime/Duration, m_bNowWalking deleted on
+  char paths (Phase C.2-C.3).
+  Sync*Write helpers are the canonical writers.
+  Source: Phase C audit + phase15e_status.md.
+
+--------------------------------------------------------------------
+5.3 Visibility / View Tracking                            [ACTIVE]
+--------------------------------------------------------------------
+  ViewMap / ViewerMap event-driven via VisibilitySystem (Phase D).
+  m_map_view a write-only stale store on char paths (Phase D.6 stub).
+  PacketView walks ECS ViewerMap exclusively (Phase D.8).
+  Active fixups: D.6.fixup-1..7, H.fixup-1..8 (WinTest-driven
+  regression chain). The model is functional but still has rough
+  edges around fast-mount / backport / mount-state-change paths.
+  Source: phase_architect_a4_visibility_design.txt + phase15e_status.md
+
+--------------------------------------------------------------------
+5.4 Status Flags / Combat State                           [DONE]
+--------------------------------------------------------------------
+  StatusFlags (4 bits) replaces m_bAddChrState (Phase C.4).
+  isDead / isSpawnState / isKillerMode / isPartyState all ECS.
+  Source: Phase C.4 commit, phase15e_status.md
+
+--------------------------------------------------------------------
+5.5 Combat / Damage / Attack                              [DONE]
+--------------------------------------------------------------------
+  CombatSystem ECS-native. Events EvEntityDamaged / EvCharDead /
+  EvFireApplied / EvPoisonApplied / EvBleedingApplied wired.
+  Source: Phase 15c.x, post-15e refinements.
+
+--------------------------------------------------------------------
+5.6 Item / Inventory                                      [PARTIAL]
+--------------------------------------------------------------------
+  Item entity ECS-authoritative (item_components.hpp full set).
+  ItemSystem.cpp facade present, ItemSystem_LegacyBridge.cpp holds
+  remaining legacy CItem bodies that cannot yet move.
+  Inventory: ECS runtime cache + legacy CGrid still does slot math.
+  Phase landings: 15e.33 + 15e.39 + 15e.65 + D.6.fixup-5 ordering
+  Outstanding: ~30+ legacy CItem methods that still need migration
+
+--------------------------------------------------------------------
+5.7 Stats / Points / Vitals                               [DONE]
+--------------------------------------------------------------------
+  POINT_* CharacterStatsComponent + Health/Mana/Stamina ECS.
+  PointSystem + PointRouter handle hooks.
+  Source: Phase 15c.1 audits, phase15e_60_8 point router design.
+
+--------------------------------------------------------------------
+5.8 Skill                                                 [DONE]
+--------------------------------------------------------------------
+  SkillSystem ECS-native. SkillLevels / Cooldowns / DamageBonus / Color.
+
+--------------------------------------------------------------------
+5.9 Mount / Pet                                           [PARTIAL]
+--------------------------------------------------------------------
+  MountSystem ECS-owned. State sync via SyncMountState / SyncHorseRiding.
+  Phase H.fixup-6 fixed peer-broadcast on dismount.
+  Pet (NewPetSystem) still partial.
+
+--------------------------------------------------------------------
+5.10 Network / Broadcast                                  [PARTIAL]
+--------------------------------------------------------------------
+  EntityNetworkDispatch hosts native packet builders.
+  NetworkSyncSystem disabled for full update pulse pending Phase F.
+  PacketView native (Phase D.8).
+  BroadcastService unification scheduled for Phase E.
+
+
+====================================================================
+SECTION 6 - LEGACY FIELDS STILL IN PLACE
+====================================================================
+
+These CHARACTER / CEntity / CItem fields are still alive but with one
+of the following modes:
+  ALIVE-DUAL  - ECS + legacy both written; legacy reader still exists
+  DORMANT     - field exists, no longer written by ECS-aware paths
+                (deletes in Phase G)
+  CONVERGENT  - field exists, is the canonical store, ECS only mirrors
+
+--------------------------------------------------------------------
+6.1 CEntity                                               [class kept]
+--------------------------------------------------------------------
+  m_pos                     DORMANT  char-path writes deleted Phase C.1;
+                                     non-char entities still write
+  m_lMapIndex               ALIVE-DUAL  paired with ECS MapIndex
+  m_pSectree                DELETED  (Phase H.3 - 84a9721)
+  m_lpDesc                  CONVERGENT NetworkSession.desc mirrors
+  m_iType                   CONVERGENT SpatialKindTag mirrors
+  m_bIsObserver             ALIVE-DUAL  StatusFlags.isObserverMode mirrors
+  m_iViewAge                DORMANT  for char paths (Phase D.6 stub);
+                                     non-char paths still increment
+  m_map_view                DORMANT  for char paths; non-char paths
+                                     still maintained
+  m_bIsDestroyed            CONVERGENT no ECS twin needed
+
+--------------------------------------------------------------------
+6.2 CHARACTER                                             [class kept]
+--------------------------------------------------------------------
+  m_dwVID                   CONVERGENT VIDComponent mirrors
+  m_dwPlayerID              CONVERGENT PlayerID mirrors
+  m_dwPlayTime / m_iJob ... ALIVE-DUAL  per-stat mirrors via PointSystem
+  m_posDest                 DORMANT (Phase C.3)
+  m_posStart                DORMANT (folded into CalculateMoveDuration locals)
+  m_dwMoveStartTime         DORMANT (Phase C.2)
+  m_dwMoveDuration          DORMANT (Phase C.2)
+  m_bNowWalking             DORMANT (Phase C.2)
+  m_bAddChrState            DORMANT (Phase C.4)
+  m_dwMountVnum             ALIVE-DUAL paired with MountState
+  m_chRider / m_chHorse     ALIVE-DUAL paired with MountState refs
+  m_pkParty / m_pkGuild ... ALIVE-DUAL social handle mirrors
+  m_pkInventory             ALIVE-DUAL CGrid mirror in ECS InventoryGrid
+  m_aaItems / m_apoItems    ALIVE-DUAL EquipmentSlots ECS mirrors
+  m_iGold                   ALIVE-DUAL GoldAmount mirrors
+  m_iAlignment              ALIVE-DUAL CharacterRuntimeFlagsComponent
+  ...                       (~40+ remaining; full list in
+                            phase0_character_members.txt)
+
+--------------------------------------------------------------------
+6.3 CItem                                                 [class kept]
+--------------------------------------------------------------------
+  m_pProto                  CONVERGENT ItemProtoRef mirrors
+  m_dwID / m_dwVnum         CONVERGENT ItemIdentity mirrors
+  m_dwCount                 ALIVE-DUAL ItemCount mirrors
+  m_pOwner                  ALIVE-DUAL ItemOwner mirrors
+  m_pkSafebox               ALIVE-DUAL SafeboxRef mirrors
+  m_pkExchange              ALIVE-DUAL ExchangeRef mirrors
+  m_aAttr / m_aSocket       ALIVE-DUAL ItemAttributes / ItemSockets
+  ...                       (full list in phase15e_39_lpitem_remaining_audit.txt)
+
+
+====================================================================
+SECTION 7 - ACTIVE WORK / IN-FLIGHT MIGRATIONS
+====================================================================
+
+As of 7f3453a (2026-05-07):
+
+7.1 Phase D fixup chain (active visibility regression chase)
+    Status: WinTest in progress on H.fixup-8 (self-resync packet pair)
+    Tracker: phase15e_status.md "Phase D" section
+
+7.2 Phase E - BroadcastService unification
+    Status: design pending. Goal: collapse PacketAround / PacketView /
+    NetworkService::BroadcastToView into a single dispatch surface.
+    Tracker: phase_architect_a3_broadcast_design.txt
+
+7.3 Phase F - Native character dispatch re-enable
+    Status: pending. Goal: remove the 21dc2df hotfix legacy fallback
+    in EntityNetworkDispatch::SendInsert / SendRemove Character branch.
+    Tracker: phase15e_status.md "Phase F" section
+
+7.4 Phase G - Legacy field deletion + audit TU deletion
+    Status: pending. Sweeps DORMANT fields out of CEntity / CHARACTER /
+    CItem and deletes EntityNetworkDispatchAudit.
+    Tracker: phase15e_status.md "Phase G" section
+
+7.5 Item / Inventory completion (Phase 15e.x continuation)
+    Status: ItemSystem_LegacyBridge.cpp methods slowly migrating.
+    Tracker: phase15e_39_lpitem_remaining_audit.txt + phase15e_65_*
+
+7.6 AI system re-enable
+    Status: deferred. Pre-Phase 11 dependency on FSM removal.
+
+7.7 Pet system migration (NewPetSystem)
+    Status: design pending.
+
+
+====================================================================
+SECTION 8 - CROSS-REFERENCES
+====================================================================
+
+Architecture design docs:
+  phase_architect_a1_field_inventory.txt   - field-by-field inventory
+  phase_architect_a2_ownership_matrix.txt  - ECS twin ownership map
+  phase_architect_a3_broadcast_design.txt  - BroadcastService design
+  phase_architect_a4_visibility_design.txt - VisibilitySystem design
+
+Per-phase landing notes:
+  phase15e_final_lpentity_1_complete.txt
+  phase15e_final_lpentity_2_complete.txt
+  phase15e_final_lpentity_3_complete.txt
+  phase15e_final_lpentity_4_complete.txt
+  phase15e_final_lpentity_4_fixup_audit.txt
+  phase15e_final_lpentity_4_fixup_changes.txt
+  phase15e_final_lpentity_4_visibility_desync_audit.txt
+
+Running progress:
+  phase15e_status.md - the canonical tracker
+
+Legacy class teardown progress:
+  phase15e_final_0_char_class_audit.txt
+  phase15e_final_0_deletion_blockers.txt
+  phase15e_final_0_deletion_roadmap.txt
+  phase15e_quality_audit.txt
+
+Item-specific audits:
+  phase15e_33_legacy_item_engine_extraction.md
+  phase15e_39_lpitem_remaining_audit.txt
+  phase15e_65_*
+
+Pointer / VID / type-system audits:
+  phase15e_45_pointer_audit.txt
+  phase15_vid_audit.txt
+  phase15_vid_final_checkpoint.txt
+  phase16_5_primitive_audit.txt
+  phase17_string_audit.txt
+
+
+====================================================================
+END OF AUDIT
+====================================================================
