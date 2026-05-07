@@ -199,10 +199,30 @@ namespace
         // every tick by re-inserting into the correct sectree as soon as the
         // character crosses a boundary. SECTREE::InsertEntity automatically
         // erases the entity from its previous sectree's m_set_entity and
-        // calls SetSectree(new_tree), so a single InsertEntity call on the
+        // updates SectorPlacement, so a single InsertEntity call on the
         // correct tree is enough.
-        if (LPSECTREE new_tree = ecs::SectorAt(ch->GetMapIndex(), position.x, position.y);
-            new_tree && new_tree != ch->GetSectree())
+        //
+        // Phase 15E-final.LPENTITY.4-architect H fixup-1:
+        // Drop the `new_tree != ch->GetSectree()` short-circuit. Post-H
+        // GetSectree resolves through the ECS SectorPlacement which was
+        // last written by the SyncSectorPlacement call at the end of the
+        // previous tick - it can lag the new Position by exactly one
+        // SyncPositionComponents under interpolation. Under fast-mount
+        // movement that lag intermittently makes the comparison return
+        // "same tree" even though the entity has crossed a boundary, so
+        // InsertEntity skips and the entity stays referenced in the old
+        // SECTREE::m_set_entity. ComputeViewersAt running at the new
+        // position then walks the new sector grid that does not include
+        // the stale-membership entity, the diff handler emits a spurious
+        // SendRemove burst, and the moving character vanishes on every
+        // peer's client.
+        //
+        // SECTREE::InsertEntity is idempotent (the early-return at line
+        // 141 catches the same-tree case), so dropping the cached check
+        // costs one m_set_entity.find per tick per moving character with
+        // no behavioural change when the ECS sector cache happened to be
+        // current. The defensive call resolves the lag-window race.
+        if (LPSECTREE new_tree = ecs::SectorAt(ch->GetMapIndex(), position.x, position.y))
         {
             new_tree->InsertEntity(ch);
         }
