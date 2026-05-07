@@ -2283,7 +2283,24 @@ void CInputMain::Move(LPCHARACTER ch, const char * data)
 
 			ecs::MovementSystem::Show(AIHelpers::EcsOf(ch), ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)), ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(ch)), ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(ch)), ch->GetZ());
 			ecs::MovementSystem::Stop(AIHelpers::EcsOf(ch));
-			return;
+// Phase 15E-final.LPENTITY.4-architect H fixup-4:
+			// Anti-cheat backport early-returns BEFORE the line ~2385
+			// PacketAround(GC_MOVE) broadcast, so peers never receive
+			// a movement packet for the rejected client move.
+			// Pre-Phase D the m_map_view polling at the receiving
+			// peers next tick self-corrected via UpdateSectree.
+			// After D.6 stubbed that polling, the peer is left
+			// rendering whatever the last packet said - typically
+			// frozen at the post-stop position.
+			//
+			// Fix: emit SendMovePacket(FUNC_WAIT). The FUNC_WAIT
+			// branch pulls (x, y, duration) from GetCurrentDestX/Y
+			// and MoveDuration; after Stop() above they evaluate
+			// to the servers current position with duration 0 -
+			// halt at this position.
+			ch->SendMovePacket(FUNC_WAIT, 0, 0, 0, 0, 0, -1.0f);
+
+						return;
 		}
 #ifdef ENALBE_MOUNT_SECTREE_UPDATE_RAZOR93
 		if (true == ch->IsRiding())
