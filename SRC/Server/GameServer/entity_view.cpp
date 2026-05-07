@@ -322,8 +322,18 @@ void CEntity::ViewReencode()
 					if (!other)
 						continue;
 
-					DispatchRemove(this, other, "view.reencode.visible");
-					DispatchInsert(this, other, "view.reencode.visible");
+					// Phase 15E-final.LPENTITY.4-architect H fixup-5:
+					// Peer-direction respawn burst removed. The pre-fixup-5 body
+					// emitted DispatchRemove + DispatchInsert(this, other) which
+					// forced every peer client to despawn-then-respawn the moving
+					// character, resetting any in-progress movement animation
+					// render-side. Pre-Phase D the per-tick polling re-emitted
+					// GC_MOVE which papered over the reset; after D.6 stubbed
+					// the polling, peers got stuck rendering the post-reset
+					// idle pose. The DispatchInsert(other, this) reverse below
+					// stays - it refreshes the SELF client's render of the peer,
+					// which is the legitimate purpose of ViewReencode for the
+					// re-encoding character.
 
 					if (!other->m_bIsObserver)
 						DispatchInsert(other, this, "view.reencode.reverse");
