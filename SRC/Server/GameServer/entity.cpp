@@ -211,11 +211,64 @@ void CEntity::PacketView(const void * data, int bytes, LPENTITY except)
 
 	if (!m_bIsObserver)
 	{
+		// Phase 15E-final.LPENTITY.4-architect H fixup-2:
+		// Self-heal ViewerMap before the broadcast walk. The D.4 event
+		// handler is supposed to keep self.ViewerMap.viewers in sync with
+		// the sectree truth, but live WinTest after Phase H.1-H.3 + H
+		// fixup-1 still showed peers losing visibility under fast-mount
+		// movement ("ghost" symptom: char rendered on the moving client
+		// keeps moving, peer client shows it frozen). The diff handler
+		// must be missing some path - rather than chasing the exact gap,
+		// guarantee correctness here at the broadcast site.
+		//
+		// Walk the sectree neighbour grid at self's current position and
+		// add any character in range that is missing from the ViewerMap.
+		// This is "additive only" - no entity is removed - so it cannot
+		// race with a legitimate D.4 leaving transition. The cost is one
+		// sectree query per PacketView call on character sources (~9
+		// neighbour cells, range filter); cheap relative to packet
+		// construction and network send.
 		const entt::entity selfE = ecs::SpatialService::EntityFromLPENTITY(this);
 		bool walkedViewerMap = false;
 
 		if (selfE != entt::null && g_registry.valid(selfE))
 		{
+			// Self-heal: add missing nearby characters to the ViewerMap.
+			// Only run when the source is a character (other entity kinds
+			// hit the legacy fallback below).
+			if (const auto* kind = g_registry.try_get<ecs::SpatialKindTag>(selfE);
+				kind && kind->kind == ecs::SpatialKind::Character)
+			{
+				if (LPSECTREE sectree = ecs::SectorOf(g_registry, selfE))
+				{
+					const int32_t range = VIEW_RANGE + VIEW_BONUS_RANGE;
+					const int32_t selfX = GetX();
+					const int32_t selfY = GetY();
+					struct HealCollector {
+						entt::entity self;
+						int32_t selfX;
+						int32_t selfY;
+						int32_t range;
+						ecs::ViewerMap& selfViewerMap;
+						void operator()(LPENTITY ent)
+						{
+							if (!ent || !ent->IsType(ENTITY_CHARACTER))
+								return;
+							const entt::entity e = ecs::SpatialService::EntityFromLPENTITY(ent);
+							if (e == entt::null || !g_registry.valid(e) || e == self)
+								return;
+							if (DISTANCE_APPROX(ent->GetX() - selfX, ent->GetY() - selfY) > range)
+								return;
+							selfViewerMap.viewers.insert(e);
+							if (auto* otherView = g_registry.try_get<ecs::ViewMap>(e))
+								otherView->visible.insert(self);
+						}
+					} healer { selfE, selfX, selfY, range,
+						g_registry.get_or_emplace<ecs::ViewerMap>(selfE) };
+					sectree->ForEachAround(healer);
+				}
+			}
+
 			if (auto* viewerMap = g_registry.try_get<ecs::ViewerMap>(selfE))
 			{
 				walkedViewerMap = true;
