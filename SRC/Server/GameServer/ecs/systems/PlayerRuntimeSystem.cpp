@@ -8,6 +8,8 @@
 #include "../AIHelpers.hpp"
 #include "../CharacterAccessors.hpp"
 #include "ItemSystem.hpp"
+#include "../components/visibility_components.hpp"
+#include "../services/SpatialService.hpp"
 
 #include <algorithm>
 
@@ -3717,12 +3719,29 @@ void CHARACTER::MountVnum(uint32_t vnum)
 
     EncodeInsertPacket(this);
 
-    ENTITY_MAP::iterator it = m_map_view.begin();
-
-    while (it != m_map_view.end())
+    // Phase 15E-final.LPENTITY.4-architect H fixup-6:
+    // Replace stale m_map_view walk with ECS ViewerMap.viewers walk.
+    // Pre-D.6 the legacy CFuncViewInsert polling kept m_map_view in sync;
+    // after D.6 stubbed that polling for character paths, m_map_view is
+    // a frozen-at-spawn write-only store. The mount-state CharacterAdd
+    // re-broadcast at MountVnum change therefore reached zero peers,
+    // leaving every viewer's client rendering the stale (mount-on)
+    // state of the rider while the freshly spawned mount mob walked
+    // alongside as a duplicate.
+    if (e != entt::null && g_registry.valid(e))
     {
-        LPENTITY entity = (it++)->first;
-        EncodeInsertPacket(entity);
+        if (auto* viewerMap = g_registry.try_get<ecs::ViewerMap>(e))
+        {
+            const auto viewers = viewerMap->viewers;
+            for (const entt::entity viewerE : viewers)
+            {
+                if (viewerE == entt::null || !g_registry.valid(viewerE))
+                    continue;
+                LPENTITY viewer = ecs::SpatialService::LPENTITYFromEntity(g_registry, viewerE);
+                if (viewer)
+                    EncodeInsertPacket(viewer);
+            }
+        }
     }
 
     SetValidComboInterval(0);
