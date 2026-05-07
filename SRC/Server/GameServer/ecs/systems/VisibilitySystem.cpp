@@ -153,8 +153,50 @@ namespace {
 
         const int32_t kRange = VIEW_RANGE + VIEW_BONUS_RANGE;
 
-        const auto oldViewers = ComputeViewersAt(reg, ev.entity, ev.oldMapIndex, ev.oldX, ev.oldY, kRange);
         const auto newViewers = ComputeViewersAt(reg, ev.entity, ev.newMapIndex, ev.newX, ev.newY, kRange);
+
+        // Phase 15E-final.LPENTITY.4-architect H fixup-3:
+        // Spawn-shape sentinel (oldMapIndex==0) becomes "heal-only" mode.
+        //
+        // The fixup-1 / fixup-2 spawn triggers in CHARACTER::Show emit a
+        // PositionChangedEvent with old==(0,0,0,0) on every Show invocation
+        // (login spawn, map warp, dungeon entry, anti-cheat backport,
+        // intra-sectree /warp). Pre-fixup-3 that sentinel was processed as
+        // "fresh spawn - empty oldViewers, full newViewers, every newViewer
+        // entering" - so EVERY existing viewer received a duplicate
+        // SendInsert (CharacterAdd packet) on every Show.
+        //
+        // Symptom: the moving character's animation freezes on peer clients
+        // after the first stop-and-restart cycle. The peer client renders
+        // the CharacterAdd as a respawn at the indicated position and
+        // resets the moving state. If the next HEADER_GC_MOVE arrives
+        // before the peer's render unfreezes (which is "never" because
+        // the cycle repeats on every move command), the character looks
+        // stuck.
+        //
+        // Heal-only mode: snapshot the entity's CURRENT ViewerMap as the
+        // baseline instead of the empty oldViewers from oldMapIndex==0.
+        // - Viewers already known stay - no duplicate SendInsert.
+        // - Newly-seen viewers (in sectree truth, not in ViewerMap) get a
+        //   proper SendInsert + bidirectional state update.
+        // - Stale viewers (in ViewerMap, not in sectree truth) are NOT
+        //   removed by the spawn-shape - additive only. The next regular
+        //   move-driven PositionChangedEvent will catch them via the
+        //   normal leaving loop.
+        //
+        // Real spawns (login/warp) hit this path with an empty ViewerMap
+        // anyway, so they still emit SendInsert to every nearby peer -
+        // identical to fixup-1's original intent.
+        std::unordered_set<entt::entity> oldViewers;
+        const bool healOnly = (ev.oldMapIndex == 0);
+        if (healOnly) {
+            if (const auto* selfViewer = reg.try_get<ecs::ViewerMap>(ev.entity)) {
+                for (entt::entity v : selfViewer->viewers)
+                    oldViewers.insert(v);
+            }
+        } else {
+            oldViewers = ComputeViewersAt(reg, ev.entity, ev.oldMapIndex, ev.oldX, ev.oldY, kRange);
+        }
 
         // Phase 15E-final.LPENTITY.4-architect.D.6:
         // Each viewer transition emits packets in BOTH directions
@@ -167,15 +209,19 @@ namespace {
         // re-emit a packet), so duplicate wires are bandwidth, not
         // correctness.
 
-        // Leaving: in oldViewers, not in newViewers
-        for (const entt::entity viewer : oldViewers) {
-            if (newViewers.count(viewer))
-                continue;
-            if (viewer == entt::null || !reg.valid(viewer))
-                continue;
-            RemoveBidirectional(reg, ev.entity, viewer);
-            ecs::EntityNetworkDispatch::SendRemove(reg, ev.entity, viewer);
-            ecs::EntityNetworkDispatch::SendRemove(reg, viewer, ev.entity);
+        // Leaving: in oldViewers, not in newViewers.
+        // Skipped in heal-only mode (additive: never removes from
+        // ViewerMap on a spawn-shape event).
+        if (!healOnly) {
+            for (const entt::entity viewer : oldViewers) {
+                if (newViewers.count(viewer))
+                    continue;
+                if (viewer == entt::null || !reg.valid(viewer))
+                    continue;
+                RemoveBidirectional(reg, ev.entity, viewer);
+                ecs::EntityNetworkDispatch::SendRemove(reg, ev.entity, viewer);
+                ecs::EntityNetworkDispatch::SendRemove(reg, viewer, ev.entity);
+            }
         }
 
         // Entering: in newViewers, not in oldViewers
