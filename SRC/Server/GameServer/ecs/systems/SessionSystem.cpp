@@ -36,6 +36,7 @@
 #include "../VIDRegistry.hpp"
 #include "../Registry.hpp"
 #include "../events.hpp"
+#include "../services/EntityNetworkDispatch.hpp"
 #include "../components/appearance_components.hpp"
 #include "../components/dirty_components.hpp"
 #include "../components/inventory_components.hpp"
@@ -1062,6 +1063,27 @@ bool CHARACTER::Show(int32_t lMapIndex, int32_t x, int32_t y, int32_t z, bool bS
         //
         // ViewReencode remains used by polymorph / equipment-change /
         // arena-warp callers where a deliberate full re-encode is wanted.
+        //
+        // Phase 15E-final.LPENTITY.4-architect H fixup-8:
+        // Explicit self-resync packet pair. The fixup-7 ViewReencode skip
+        // also dropped the self-direction DispatchRemove(this, this) +
+        // DispatchInsert(this, this) emit which kept the moving client's
+        // own render in sync with the server's authoritative position.
+        // Without it, fast-mount client-side prediction overshoots the
+        // server during backport cycles and never receives a snap-back
+        // packet for itself - the moving client and its peers diverge
+        // randomly.
+        //
+        // Emit the self-resync directly here (NOT via ViewReencode, which
+        // also produces the unwanted DispatchInsert(other, this) burst).
+        // The packets travel only to the moving character's own client;
+        // peers are unaffected because PacketView's except-self filter
+        // applies to the source/viewer pair (here both are 	his).
+        if (e != entt::null && g_registry.valid(e))
+        {
+            ecs::EntityNetworkDispatch::SendRemove(g_registry, e, e);
+            ecs::EntityNetworkDispatch::SendInsert(g_registry, e, e);
+        }
         LOG_TRACE("      in same sectree");
 
         // Phase 15E-final.LPENTITY.4-architect.D.6.fixup-2:
