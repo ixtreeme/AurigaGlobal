@@ -1042,7 +1042,26 @@ bool CHARACTER::Show(int32_t lMapIndex, int32_t x, int32_t y, int32_t z, bool bS
         const entt::entity e = GetEntityHandle();
         if (e != entt::null && g_registry.valid(e))
             g_registry.emplace_or_replace<ecs::ViewActiveTag>(e);
-        ViewReencode();
+        // Phase 15E-final.LPENTITY.4-architect H fixup-7:
+        // ViewReencode() removed from intra-sectree Show. Pre-fixup-7
+        // ViewReencode emitted DispatchRemove(this,this)+DispatchInsert(this,this)
+        // forcing the SELF client to despawn-then-respawn its own character,
+        // and DispatchInsert(other,this) for every visible peer forcing the
+        // self client to respawn each peer at the packet position with idle
+        // pose. After the respawn, peer move packets that arrive in flight
+        // can fail to override the freshly-set idle render-state on the self
+        // client, leaving peers visually frozen on the backporting client
+        // (the symptom user reported as 'a backportos kliens egy backport
+        // utan nem latja a masik karakter mozgasat').
+        //
+        // The fixup-3 spawn event below already handles ViewerMap maintenance
+        // (heal-only mode: add missing peers, never remove existing). The
+        // fixup-2 PacketView self-heal further keeps the broadcast set in
+        // sync at every emit. Neither of those triggers a render-state reset,
+        // so peers continue animating cleanly through backport+resync.
+        //
+        // ViewReencode remains used by polymorph / equipment-change /
+        // arena-warp callers where a deliberate full re-encode is wanted.
         LOG_TRACE("      in same sectree");
 
         // Phase 15E-final.LPENTITY.4-architect.D.6.fixup-2:
