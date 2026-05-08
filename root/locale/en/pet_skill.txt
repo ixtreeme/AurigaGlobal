@@ -1,0 +1,12 @@
+1	Resistance (Warrior)	jijoong	PASSIVE	Resistance to Warrior attacks (passive)	0
+2	Resistance (Sura)	jijoong	PASSIVE	Resistance to Sura attacks (passive)	0
+3	Resistance (Ninja)	jijoong	PASSIVE	Resistance to Ninja attacks (passive)	0
+4	Resistance (Shaman)	jijoong	PASSIVE	Resistance to Shaman attacks (passive)	0
+5	Critical Damage (PvM)	banya	PASSIVE	Increases the critical damage dealt in PVM (passive)	0
+6	Strong against Metin	cheonryeong	PASSIVE	Increases damage dealt to Metin (passive)	0
+7	Strong against Boss	choehoenbimu	PASSIVE	Increases the damage dealt in Bosses (passive)	0
+8	Eagle Eyes	stealmp	PASSIVE	The Exp release rate is increases (passive)	0
+9	Yang Drop	gold_drop	PASSIVE	Yang drop rate is increased (passive)	0
+10	Attack / Magic Value	pacheon	PASSIVE	Attack value increased (passive)	0
+11	Block a. corporal	block	PASSIVE	Physical damage is blocked (passive)	0
+12	Ref. A. corporal	reflect_melee	PASSIVE	Damage taken is reflected back at the enemy (passive)	0

@@ -991,7 +991,7 @@ bool CHARACTER::Show(int32_t lMapIndex, int32_t x, int32_t y, int32_t z, bool bS
     if (self != entt::null && g_registry.valid(self) && g_registry.all_of<ecs::TagPC>(self))
         ecs::Invariants::ValidatePCIdentity(g_registry, self, "show.after_position_sync");
 
-    // Phase C.3: legacy m_posDest write removed. SyncDestinationClear
+    // Phase C.3: legacy destination field write removed. SyncDestinationClear
     // drops ECS MovementDestination so subsequent INSERT packets emit
     // current (warped) position via GetCurrentDestX/Y -> GetX/Y fallback.
     m_posStart.x = x;

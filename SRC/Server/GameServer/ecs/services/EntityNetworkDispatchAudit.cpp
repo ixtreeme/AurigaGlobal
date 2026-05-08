@@ -89,7 +89,7 @@ void CheckCharacterInsertParity(entt::registry& reg, entt::entity source)
             static_cast<int>(nativePack.bStateFlag),
             static_cast<int>(ch->GetAddChrStateFlag()));
 
-    // Native may snap pack.x/y to m_posDest if the move duration has
+    // Native may snap pack.x/y to the active destination if the move duration has
     // expired. Legacy applies the same logic. With movement state in sync
     // they produce identical x/y; mismatches here imply movement drift.
     if (nativePack.x != ch->GetX() && nativePack.x != ch->GetCurrentDestX())

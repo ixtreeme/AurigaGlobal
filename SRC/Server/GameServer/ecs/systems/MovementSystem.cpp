@@ -638,19 +638,19 @@ bool CHARACTER::Sync(int32_t x, int32_t y)
 
 	// LPENTITY.4 sync drift fix: peer-sync overrides whatever destination the
 	// previous Goto/Move had recorded. Without this, EncodeInsertPacket reads
-	// the stale m_posDest, sees (m_posDest != current pos) with iDur <= 0 (the
-	// recorded move expired), and snaps pack.x/y BACK to the stale m_posDest.
+	// the stale destination, sees (dest != current pos) with iDur <= 0 (the
+	// recorded move expired), and snaps pack.x/y BACK to the stale destination.
 	// New viewers entering range then render the character at the prior
 	// destination instead of the synced position. The two-client desync the
 	// user reported (chars adjacent on one client, far apart on another)
 	// reproduces from this exact divergence: client A saw the move complete,
 	// sync tracked the actual position; client B never received an updated
 	// MOVE packet beyond the original Goto, then a reencode/insert produced
-	// pack at m_posDest = old destination.
-	// Phase C.3: legacy m_posDest write removed. SyncDestinationClear
+	// pack at the old destination.
+	// Phase C.3: legacy destination field write removed. SyncDestinationClear
 	// removes ECS MovementDestination so GetCurrentDestX/Y falls back to
 	// GetX/GetY (current position via ECS Position) - same effective
-	// semantic as legacy m_posDest = current_pos.
+	// semantic as legacy destination = current_pos.
 	m_posStart.x = x;
 	m_posStart.y = y;
 	ecs::MovementSystem::SyncDestinationClear(EcsEntityOf(this));
@@ -710,7 +710,7 @@ void CHARACTER::Stop()
 	if (!IsPC())
 		GotoState(m_stateIdle);
 
-	// Phase C.3: legacy m_posDest write removed. SyncDestinationClear
+	// Phase C.3: legacy destination field write removed. SyncDestinationClear
 	// drops ECS MovementDestination so GetCurrentDestX/Y returns current
 	// position via the GetX/Y fallback - matches legacy "stop parks at
 	// current pos" semantic.
@@ -763,7 +763,7 @@ bool CHARACTER::Goto(int32_t x, int32_t y)
 		return false;
 	}
 
-	// Phase C.3: legacy m_posDest write removed; ECS MovementDestination
+	// Phase C.3: legacy destination field write removed; ECS MovementDestination
 	// emplaced here BEFORE CalculateMoveDuration so the duration calc
 	// (which reads dest via GetCurrentDestX/Y) sees the new value.
 	if (const entt::entity destEntity = EcsEntityOf(this); destEntity != entt::null && g_registry.valid(destEntity))
@@ -898,7 +898,7 @@ float CHARACTER::GetMoveSpeed() const
 
 void CHARACTER::CalculateMoveDuration()
 {
-	// Phase C.2/C.3: legacy m_dwMoveStartTime / m_dwMoveDuration / m_posDest
+	// Phase C.2/C.3: legacy m_dwMoveStartTime / m_dwMoveDuration / destination
 	// writes removed. ECS MovementState + MovementDestination are the sole
 	// sources. m_posStart still legacy-written; A.2 §2 m_posStart row says
 	// fold into a function-local. Done here.
@@ -1049,13 +1049,13 @@ bool CHARACTER::IsWalking() const
 //
 // Semantic note: ecs::MovementDestination is present only when the entity
 // is actively moving (emplaced by Goto/Move, removed by Stop / arrival).
-// Legacy m_posDest is always populated - Stop and similar settle paths
+// Legacy destination was always populated - Stop and similar settle paths
 // set it to the current position. To preserve legacy parity, when the
 // ECS component is absent we return current position via GetX/GetY.
-// This matches what Stop() etc. used to do explicitly with m_posDest.
+// This matches what Stop() etc. used to do explicitly with the destination field.
 //
 // Bootstrap (entity not yet ECS-registered): returns GetX/GetY which in
-// turn returns 0 (per B.1.1) - matches legacy m_posDest zero-init.
+// turn returns 0 (per B.1.1) - matches legacy destination zero-init.
 //
 // Phase C will redirect writes; Phase G removes the legacy field.
 int32_t CHARACTER::GetCurrentDestX() const

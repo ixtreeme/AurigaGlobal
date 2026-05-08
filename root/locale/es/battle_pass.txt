@@ -1,0 +1,10 @@
+1	Mata al jefe	Muertes restantes: %s	Monstruo: |cffff9d9d|H|h%s|h|r	Mata el |cffff9d9d|H|h%s|h|r por	completar la misión y gana	las recompensas para tu personaje.
+5	Usa el objeto	Objeto a usar: %s	Objeto: |cffff9d9d|H|h%s|h|r	Usa |cffff9d9d|H|h%s|h|r por completar	la misión y gana las recompensas	para tu personaje.
+6	Vende el artículo	Objeto para vender: %s	Objeto: |cffff9d9d|H|h%s|h|r	Vender |cffff9d9d|H|h%s|h|r por completar	la misión y gana las recompensas	para tu personaje.
+8	Mejora el objeto	Objeto para mejorar: %s	Objeto: |cffff9d9d|H|h%s|h|r	Mejora |cffff9d9d|H|h%s|h|r por completar	la misión y gana las recompensas	para tu personaje.
+9	Destruye tu objeto	Objeto para ser destruido: %s	Objeto: |cffff9d9d|H|h%s|h|r	Destruir |cffff9d9d|H|h%s|h|r por completar	la misión y gana las recompensas	para tu personaje.
+10	Recoger	Objeto para coleccionar: %s	Objeto: |cffff9d9d|H|h%s|h|r	Recoger |cffff9d9d|H|h%s|h|r por completar	la misión y gana las recompensas	para tu personaje.
+11	Freír el pescado	Pescado para Freír: %s	Friggi: Todas	Freír cualquier pescado para	completa la misión y gana	recompensas para tu personaje.
+12	Atrapa a los Piscis	Pescado para atrapar: %s	Atrapa: Todas	Atrapa cualquier pez para completar	la misión y ganar las recompensas	para tu personaje.
+14	Soltar yang	Yang para soltar: %s	Farma de: Todas	Suelta demasiado yang para completar el	misión y ganar recompensas	para tu personaje.
+15	Completar Calabozo	Calabozo para completar: %s	Calabozo: Todas	Completa 70 Calabozo para completar	la misión y recibir recompensas	para tu personaje.

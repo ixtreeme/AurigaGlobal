@@ -7,7 +7,7 @@
 namespace ecs::EntityNetworkDispatchAudit {
 
 // LPENTITY.4-fixup.3: runtime drift detector for movement state. Compares
-// legacy CHARACTER fields (m_posDest, m_dwMoveStartTime, m_dwMoveDuration,
+// legacy CHARACTER movement fields (m_dwMoveStartTime, m_dwMoveDuration,
 // m_bNowWalking, m_bAddChrState) against the parallel ECS components
 // (MovementDestination, MovementState, StatusFlags) read by native
 // EntityNetworkDispatch::SendCharacterInsert. Logs a [MOVEMENT_DRIFT]

@@ -1,0 +1,12 @@
+1	Odolnost (váleèník)	jijoong	PASSIVE	Odolnost vùèi útokùm váleèníka (pasivní)	0
+2	Odolnost (Sura)	jijoong	PASSIVE	Odolnost vùèi útokùm Sury (pasivní)	0
+3	Odolnost (ninja)	jijoong	PASSIVE	Odolnost vùèi útokùm ninjy (pasivní)	0
+4	Odolnost (šaman)	jijoong	PASSIVE	Odolnost vùèi útokùm šamana (pasivní)	0
+5	Kritické poškození (PvM)	banya	PASSIVE	Zvyšuje kritické poškození zpusobené v PVM (pasivní)	0
+6	Silný proti metinu	cheonryeong	PASSIVE	Zvyšuje poškození proti Metinu (pasivní)	0
+7	Silný proti šéfovi	choehoenbimu	PASSIVE	Zvyšuje poškození zpusobené Bossum (pasivní)	0
+8	Orlí oèi	stealmp	PASSIVE	Rychlost prijímání exp se zvyšuje (pasivní)	0
+9	Padání Yangù	gold_drop	PASSIVE	Je zvýšena èetnost padání Yangù (pasivní)	0
+10	Hodnota útoku / magie	pacheon	PASSIVE	Zvýšena hodnota útoku (pasivní)	0
+11	Blokovat a. desátník	block	PASSIVE	Fyzické poškození je blokováno (pasivní)	0
+12	Odražte fyzický útok	reflect_melee	PASSIVE	Poškození je odráženo zpìt na protivníka (pasivní)	0

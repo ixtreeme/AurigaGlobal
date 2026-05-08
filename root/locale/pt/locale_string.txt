@@ -1,0 +1,1456 @@
+1	Você precisa de %s pontos de status disponíveis.
+2	Você recebeu %s pontos de experiência.
+3	Você recebeu %s Gold.
+4	Você recebeu %s Gaya.
+5	Não possui nenhuma montaria.
+6	O Battle Pass já foi completado.
+7	Por favor entre em contato com alguém do staff com o erro : errBattlePass01.
+8	Já existe um Battle Pass ativo.
+9	Não pode usar isto em %s, somente em item zodiaco.
+10	Não pode usar isto em %s, somente em item normal.
+11	A preview do equipamento em duelo, já está bloqueado. 
+12	A preview do equipamento em duelo, foi bloqueado. 
+13	A preview do equipamento em duelo, já está desbloqueado.
+14	A preview do equipamento em duelo, foi desbloqueado. 
+15	Você trocou a cor da tua habilidade. 
+16	Não tem nenhuma troca disponível. 
+17	%s te desafiou para uma luta!
+18	A faixa de ombro pode ser craftada somente com outra faixa de ombro. 
+19	A faixa de ombro pode ser combinada somente com outra faixa de ombro.
+20	%s não pode ser mais melhorada.
+21	Os bonus do %s foram trocados.
+22	%s pode somente ser usado nas faixas de ombro.
+23	<Sistema Suporte> Você não possui espaços livre no inventáio.
+24	<Sistema Suporte> Você não pode fazer isto enquanto está negociando!
+25	<Sistema Suporte> Você recebeu o seu suporte!
+26	<Sistema Suporte> Erro na impostação dos valores.
+27	O efeito do %s acabou.
+28	O efeito do %s foi desativado.
+29	O efeito do %s foi ativado.
+30	<Susanoo System> %s não tem nenhum poder para ser ativada.
+31	<Susanoo System> %s foi ativada.
+32	<Susanoo System> %s foi desativada.
+33	<Susanoo System> o poder da %s está ao máximo.
+34	<Susanoo System> o poder da %s foi aumentado de %s%.
+35	<Susanoo System> o slot do %s não está vazio.
+36	<Anti Farm> Você pode alterar o status do drop somente na City.
+37	<Anti Farm> Você não possui algum tipo de drop slot livre para ativar o drop nesta conta.
+38	<Anti Farm> O drop nesta conta está ativo.
+39	<Anti Farm> O drop nesta conta está desativado.
+40	<Anti Farm> O drop nesta conta foi ativo.
+41	<Anti Farm> O drop nesta conta foi desativado.
+42	<Anti Farm> O pedido foi feito.
+43	<Anti Farm> O pedido será efetuado em %s segundos.
+44	<Anti Farm> Existe já um pedido em andamento. Por favor aguarde!
+45	Você precisa de um Pacote de Cashmere para abrir esta loja.
+46	O style do título escolhido não é válido.
+47	Você destruiu %s.
+48	Não pode usar o teleporter dentro do dungeon.
+49	Não pode usar o salva coordenada dentro do dungeon.
+50	Este nome já existe, escolhe outro!
+51	Tem que esperar ainda %s horas e %s minutos para conseguir aprender esta habilidade.
+52	O treinamento falhou. 
+53	Para melhorar uma habilidade do pet, precisa evocalo primeiro.
+54	O pet ainda não aprendeu esta habilidade.
+55	O pet não pode aprender a mesma habilidade mais de uma vez.
+56	A habilidade do seu pet atingiu o level: %s.
+57	O seu pet aprendeu uma nova habilidade.
+58	Esta habilidade atingiu o level máximo.
+59	O pet precisa ter o xp full para conseguir evoluir. 
+60	Você precisa de %s %s para continuar.
+61	O bonus do pet foi melhorado com sucesso.
+62	O bonus do pet faliu.
+63	Este bonus do pet não pode ser melhorado.
+64	Precisa evocar o pet pelo menos uma vez!
+65	Você aumentou a duração do seu pet.
+66	Pode usar somente nos pet.
+67	Mande o pet embora antes de alimentá-lo.
+68	O pet pode ter no máximo 1 ano, a menos que você use um Boccone Divino (permanente).
+69	O seu pet já tem duração infinita. 
+70	Pode remover somente o bonus da faixa de ombro.
+71	Esta faixa de ombro não contém bonus para remover.
+72	Os bonus da faixa de ombro foram removidos.
+73	Pode mudar somente o bonus de uma pedra Dragão.
+74	Você mudou o bonus da pedra Dragão!
+75	Pode mudar o bonus somente nas pedras miticas excelentes.
+76	Antes de mais nada, desative a Alquimia.
+77	Você bloqueou a experiência. 
+78	Você desbloqueou a experiência. 
+79	<Roda Bonus> Primeiro você precisa adicionar o traje do qual os bônus serão retirados. 
+80	<Transferimento Bonus> A Janela do Transferimento Bonus já está aberta.
+81	<Transferimento Bonus> Uma janela de outro sistema já está aberta. Feche aquela e abre novamente.
+82	<Transferimento Bonus> A Janela de Transferimento Bonus não está aberta.
+83	<Transferimento Bonus> Arraste o item na janela.
+84	<Transferimento Bonus> Os bonus foram transferidos para o Traje 1!
+85	<Transferimento Bonus> Para fazer isso, você deve primeiro colocar o Pergaminho de Transferência em seu slot.
+86	O segundo Traje, deve conter pelo menos 1 bonus.
+87	Este item contém já o máximo de bonus especial.
+88	Não pode obter duas vezes o mesmo bonus especial. 
+89	Este item não contém nenhum bonus especial para remover. 
+90	Você removeu um bonus especial.
+91	Precisa esperar ainda %s horas e %s minutos.
+92	Para melhorar as habilidades passivas, você deve estar pelo menos no level 90.
+93	Você deve primeiro aprender a habilidade principal 
+94	ao máximo antes de melhorar o boost da mesma. 
+95	%s Bloqueio TEST-SERVER: (%s%)
+96	%s Esquivar TEST-SERVER: (%s%)
+97	Pode usar esta tinta para cabelos até o level: %s
+98	Especie pescada: %s, %s.
+99	Em %s segundo(s) será possivel utilizar de novo a benção.
+100	Tempo restante: %s segundos.
+101	Você tem %s minutos de tempo. (Restam %s minutos)
+102	Você recebeu %s.
+103	%s segundos ao logout.
+104	%s consumados %s MP.
+105	A negociação com %s foi realizada com sucesso.
+106	%s te convidou para o grupo.
+107	%s não aceitou o convite.
+108	%s está offline.
+109	%s ganhou a luta!
+110	%s ganhou.
+111	Você precisa de : %s.
+112	Você nutriu o cavalo com %s.
+113	%s será teletransportado!
+114	A guilda %s não existe!
+115	A batalha contra %s começou!
+116	%s foi queimado.
+117	O minério de refines acabou e saiu do(a): %s.
+118	Você desafiou %s para uma luta.
+119	A guilda %s foi criada com sucesso.
+120	<Guilda> %s utilizou (MP: %s MP necessario: %s) a %s.
+121	<Guilda> Você doou %s pontos de EXP para a guilda.
+122	<Guilda> Você não conseguiu doar EXP.
+123	<Guilda> Você restaurou %s pontos Espirito do Dragão.
+124	<Guilda> %s recusou a guerra.
+125	<Guilda> A guilda: %s foi criada com sucesso.
+126	<Guilda> Não tem Gold suficiente.
+127	<Guilda> Você não tem permissão para escrever no quadro de avisos.
+128	<Guilda> Não consegue encontrar o jogador.
+129	<Guilda> A guilda foi forçada a se retirar. 
+130	<Guilda> A guilda não existe.
+131	<Guilda> Apenas o líder da guilda pode retirar o dinheiro da guilda.
+132	<Guilda> A criação da guilda falhou.
+133	<Guilda> Você não tem permissão para alterar o nível de uma habilidade.
+134	<Guilda> Você só pode usar habilidades durante uma guerra.
+135	<Guilda> O nome da guilda é inválido.
+136	<Guilda> Você não pode criar a guilda.
+137	<Guilda> Você tem que esperar %s horas antes de você poder aliar este jogador.
+138	<Guilda> Ele não pertence à guilda.
+139	<Guilda> Você não pode remover um membro da guilda.
+140	<Guilda> Você não pode convidar jogadores para entrar na guilda.
+141	<Guilda> Você não pode fazer um membro da guilda se tornar líder da guilda.
+142	<Guilda> Você não pode mudar a permissão dos membros da guilda.
+143	<Guilda> Você não pode mudar os titulos.
+144	<Guilda> Este poder pode ser usado somente pelo líder da guilda.
+145	<Guilda> O numero de membros são inferior a %s, você não pode declarar guerra.
+146	<Gilda> A guerra foi anulada.
+147	<Gilda> Durante a guerra não se obtém algum tipo de beneficio.
+148	<Gilda> Você não pode convidar jogadores que fazem parte de outro reino.
+149	<Gilda> Um líder não pode mais ser designado.
+150	<Gilda> Você não está autorizado a escolher um líder para a guilda.
+151	<Gilda> Você não tem Yang suficiente.
+152	<Gilda> Pontos aumentados para %s.
+153	<Gilda> A pontuação de %s é muito baixo para conseguir disputar uma guerra..
+154	<Gilda> Você apagou a mensagem.
+155	<Gilda> O jogador não se encontra no canal %s (canal: %s).
+156	<Gilda> Está offline.
+157	<Gilda> A guilda já está em guerra.
+158	<Gilda> Poucos membros para declarar guerra.
+159	<Gilda> A pontuação da guilda está muito baixa para conseguir declarar guerra.
+160	<Gilda> A guilda não tem fundos suficientes.
+161	<Gilda> Um jogador não pode ter mais de uma guilda.
+162	<Gilda> Você não tem permissão para convidar jogadores para a guilda.
+163	<Gilda> Você não pode convidar este jogador.
+164	<Gilda> Você não restaurou os pontos do Espírito do Dragão.
+165	<Gilda> Você não tem pontos suficientes de Espírito do Dragão (%s, %s).
+166	<Gilda> Duas guildas não podem ter o mesmo nome.
+167	<Gilda> A guilda entrou em estado de guerra.
+168	<Gilda> A guilda já está em guerra.
+169	<Gilda> A guilda está prestes a entrar em guerra.
+170	<Gilda> Quantidade errada.
+171	<Gilda> Este nome contém palavras proibidas.
+172	<Gilda> Sua guilda não tem ouro suficiente para lutar uma guerra de guilda.
+173	<Gilda> A experiência doada é maior do que a necessária.
+174	<Gilda> Você não está autorizado a mudar os titulos.
+175	<Gilda> Você não tem autorização para alterar o nome do posto.
+176	<Gilda> Você não possui uma licença para alterar a posição.
+177	<Gilda> A guilda atingiu o numero maximo de membros.
+178	<Gilda> Você ainda não pode usar as habilidades da guilda.
+179	<Gilda> Você pode criar uma nova guilda após %s dia(s).
+180	<Gilda> Você precisa esperar ainda %s dia(s) para recrutar.
+181	<Gilda> A guilda foi excluida, antes de %s dias, você não poderá criar outra.
+182	<Messenger> Você excluiu %s da lista de amigos.
+183	<Messenger> Você adicionou %s como amigo.
+184	<Messenger> Você não pode adicionar um GM na tua lista de amigos.
+185	<Dono do Armazém> Você está muito longe do nosso alcance.
+186	<Dono do Armazém> A antiga password está errada.
+187	<Dono do Armazém> Você não pode mover este objeto.
+188	<Dono do Armazém> Password errada.
+189	<Dono do Armazém> Você tem que esperar 10 segundos após abrir a loja.
+190	<Dono do Armazém> Você tem que esperar 10 segundos antes de reabrir o Armazém.
+191	<Dono do Armazém> Aguarde 10 segundos antes de reabrir.
+192	<Grupo> %s rejeitou o convite.
+193	<Grupo> Você se juntou ao grupo do(a) %s.
+194	<Grupo> A diferença máxima para grupo é de 30 level.
+195	<Grupo> Você pode enviar um convite para um não espectador.
+196	<Grupo> Você não pode convidar players de outro reino.
+197	<Grupo> Você não pode se auto excluir do grupo.
+198	<Grupo> Você não pode se privar do objetivo.
+199	<Grupo> Você não pode convidar outros jogadores.
+200	<Grupo> Você não pode entrar se o líder do grupo não estiver Online.
+201	<Grupo> Você não pode entrar no grupo.
+202	<Grupo> Ninguém pode sair do grupo neste mapa.
+203	<Grupo> Ninguém pode sair do grupo neste mapa.
+204	<Grupo> Você não pode deixar o grupo aqui.
+205	<Grupo> Você não pode excluir um mebro enquanto estiver em um dungeon.
+206	<Grupo> Somente o líder do grupo pode fazer.
+207	<Grupo> O líder do grupo não pode ser alterado.
+208	<Grupo> Para problemas de servidor você não pode fazer isso.
+209	<Grupo> Não foi encontrado.
+210	<Grupo> %s saiu do grupo.
+211	<Grupo> Somente o líder do grupo pode usar as habilidades.
+212	<Grupo> O grupo não pode responder.
+213	<Grupo> O grupo se separou.
+214	<Grupo> Você não pode agrupar com uma diferença superior a 30 levels.
+215	<Grupo> Você foi convidado para entrar no grupo.
+216	<Grupo> Você foi expulso do grupo.
+217	<Grupo> O caractere solicitado não pode ser encontrado.
+218	<Grupo> Somente o líder pode convidar outros jogadores.
+219	<Grupo> Você não pode chamar outros membros do grupo.
+220	<Grupo> O grupo está completo.
+221	Um novo round terá inicio em 10 segundos.
+222	O duelo começará em 10 segundos.
+223	Você será levado de volta para a City em 10 segundos.
+224	O tempo acabou, você será levado de volta para a City em 10 segundos.
+225	Escolhe um numero de 1 a 50.
+226	Você não pode ter mais que %s de Gold.
+227	Informações sobre o andamento de cada império.
+228	Você inseriu um valor incorreto.
+229	Você não pode adicionar jóias do mesmo tipo.
+230	Você não pode adicionar outras jóias!
+231	O seu level de habilidade está muito baixo. 
+232	Você não tem Gold suficiente.
+233	Você não possui os itens necessários.
+234	Espere %s segundo(s).
+235	Você não pode se levantar.
+236	Você já possui uma loja aberta, não pode abrir outra.
+237	Você não pode abrir uma loja enquanto está transformado.
+238	A construção falhou.
+239	O edificio não foi construído. 
+240	Você retornerá para a janela de login. Espere.
+241	O período de pagamento expira depois de %s minuto(s).
+242	Você não pode casar sem ter o anel do matrimonio.
+243	Porcentagem drop Item atual: %s%.
+244	Porcentagem drop Gold atual: %s%.
+245	Porcentagem drop x10 Gold atual: %s%.
+246	Porcentagem drop Exp atual: %s%.
+247	Você não possui experiência suficiente para ler o livro.
+248	O peixe desapareceu nas águas profundas.
+249	A vara de pesca recebeu os pontos máximo: %s. 
+250	A pontuação máxima foi alcançada.
+251	Para extrair os minerais, você precisa usar uma picareta.
+252	Você deve ter uma picareta.
+253	Seus pontos aumentaram. (%s/%s)
+254	Você não pode aprender o livro ainda. 
+255	Você participou da guerra entre guildas como espectador. 
+256	Você não pode usar o comércio neste modo.
+257	Dano adicional: %s.
+258	Fundos insuficientes.
+259	Fundos insuficientes. Atuale soma: %s necessaria: %s.
+260	Bênção recebida pelo monarca.
+261	Você não é o monarca.
+262	O meu corpo está cheio de ki.
+263	O treinamento está quase acabando.
+264	Sim, bem devagar mas sem parar.
+265	Esta habilidade não pode ser melhorada mais que isso.
+266	Comando não existe.
+267	Não está online.
+268	A guilda não existe.
+269	Você deve ter pelo menos %s de força.
+270	O local pertence a outro reino e não pode ser devolvido.
+271	Você não pertence a nenhuma giuilda.
+272	Como num sonho?
+273	Você pode avançar para o próximo nível de picareta com o lenhador.
+274	%s não possui Gold suficiente.
+275	Você não pode se transformar.
+276	Informação de progresso: morto(s) %s.
+277	Não pode trocar a isca.
+278	Você só precisa de uma vara de pescar.
+279	A vara de pescar atingiu o mais alto nível de treinamento.
+280	Agora pode ser melhorada, vá até o pescador.
+281	Coloca a isca no anzol!
+282	Você usou %s como isca.
+283	Os pontos da vara de pescar, foram aumentados: %s/%s
+284	O peixe não pode ser utilizado.
+285	Você não possui pontos disponiveis.
+286	Seus pontos disponiveis são insuficientes. 
+287	Você não possui SP suficiente.
+288	Você está muito perto.
+289	Você está muito longe.
+290	Você leu quase tudo.
+291	Você não pode fazer isso agora.
+292	Você não pode abrir uma loja porque possui outras janelas abertas.
+293	%s não pode negociar neste momento. 
+294	Você não pode abrir uma loja porque possui outras janelas abertas.
+295	Alguém entrou nesta conta. Você vai sair do jogo em 3 segundos.
+296	Você não pode abrir o Armazém porque possui outras janelas abertas.
+297	Não há outros slots de refinamento neste item.
+298	Você deve primeiro adicionar um slot através do Diamante.
+299	O oponente desconectou.
+300	O Duelo não pode começar.
+301	O Duelo começou.
+302	Um dos oponentes se desconectou.
+303	Você não pode usá-lo aqui.
+304	O treinamento foi um sucesso.
+305	Não pode ser melhorado(a).
+306	O level desta habilidade é muito alto.
+307	Não pode ler este livro.
+308	Não pode adicionar outros bonus.
+309	Não pode mais escavar.
+310	%s Não pode ser mais utilizado dentro do dungeon.
+311	Não pode ser substituído pelo mesmo penteado.
+312	Não pode utilizar as habilidades enquanto estiver transformado.
+313	Não pode melhorar suas habilidades enquanto estiver transformado.
+314	Não pode aumentar o status enquanto estiver transformado.
+315	Não pode trocar de item enquanto estiver transformado.
+316	Você terminou o treinamento. Vai até o Sinseon.
+317	Você não conseguiu se transformar.
+318	Você se sente pronto? A tecnologia é difícil de entender.
+319	Estou começando a entender as instruções lidas.
+320	Um treino duro? A única maneira de aprender a habilidade.
+321	O item deixado ao solo irá desaparecer em %s segundos.
+322	Não é possível melhorar o combo abaixo do level 30.
+323	Não é possível melhorar o combo abaixo do level 50.
+324	Não é possível melhorar mais o combo.
+325	Você tem que estar pelo menos no level %s.
+326	Você está para trocar o CHAR. Espere.
+327	Você limpou sua mente. O valor do bem e do mal aumenta em %s. 
+328	Não chamou o cavalo.
+329	O cavalo foi ressuscitado.
+330	Primeiro tem que descer da montaria.
+331	Você mandou embora o cavalo.
+332	Primeiro tem que evocar a montaria.
+333	Você não possui um cavalo.
+334	Seu cavalo está muito cansado.
+335	Seu cavalo está morto.
+336	Primeiro tem que descer do cavalo.
+337	Este acessório não pode mais ser equipado com pedras preciosas.
+338	Este item não pode ser equipado.
+339	Primeiro você precisa adicionar %s bonus normal. (%s/%s)
+340	Jóia adicionada com sucesso.
+341	Jóia quebrou e falhou.
+342	Digite todos os comandos.
+343	O subcomando do comando está incorreto.
+344	Neste lugar não pode fazer um fogueira.
+345	Muito, muito estável. Assim como este escritor. 
+346	Não pode fazer uma fogueira na água.
+347	A criação falhou.
+348	Não há limite para poções.
+349	Limite poções: %s.
+350	Você precisa de outros materiais para fazer a poção.
+351	Coloca uma isca para conseguir pescar.
+352	Você deve ter pelo menos %s destreza.
+353	Você não pode largar este item.
+354	Este item não tem bônus para alterar.
+355	Você não pode cavalgar enquanto estiver transformado.
+356	Você não pode fazer isso porque está morto.
+357	%s não tem outros slots disponíveis.
+358	O título da loja é inválido.
+359	Você não tem garrafas vazias.
+360	Este item não tem jóias para remover.
+361	Você já recebeu sua recompensa.
+362	O limite de uso foi excedido.
+363	Sintaxe: warp to <player name>
+364	Lembre-se de que você não pode usar poções especiais durante a batalha.
+365	%s não possui espaço livre no inventário.
+366	Você não tem espaço livre no inventário.
+367	O canal ao qual você está conectado não é o mesmo do player: %s - %s.
+368	%s está com o comércio bloqueado.
+369	%s já está negociando.
+370	%s tem pedidos de amizade bloqueados.
+371	O jogador não está online.
+372	Você não pode se teletransportar para aquele lugar.
+373	O baú explodiu... você perdeu pontos de vida.
+374	No Baú tinha: %s %s.
+375	No Baú tinha: %s.
+376	A fumaça verde que sai do baú, está envenenando seu corpo.
+377	A fumaça que sai do baú, respira com calma... lentamente...
+378	Do Baú saiu um monstro!
+379	A fumaça vermelha que sai do baú, está envenenando seu corpo.
+380	Do baú saiu um grupo de monstros!
+381	Você está muito longe da loja.
+382	Pode ser usado somente por Homens.
+383	Pode ser usado somente por Mulheres.
+384	Graças à bênção do Deus Dragão você não perdeu experiência.
+385	Você não tem espaço livre em seu inventário de cinto.
+386	O refinamento falhou.
+387	O refinamento foi bem-sucedido.
+388	Este monstro não pode ser evocado.
+389	A melhoria foi bem-sucedida.
+390	A melhoria falhou.
+391	Você não pode alterar os bônus, tem que esperar %s minuto(s) (restante: %s).
+392	Você alterou os bônus com sucesso.
+393	Você não entendeu o treinamento.
+394	Você entendeu o treinamento e recebeu 1 ponto de equitação.
+395	O baú estava vazio.
+396	Você não pode realizar a operação!
+397	Você falhou no treino! O espírito maligno te assombra.
+398	Você não pode treinar essa habilidade.
+399	Reset dos pontos de habilidade concretizado com sucesso..
+400	Você não pode zerar os pontos desta habilidade.
+401	O item: %s foi entregue.
+402	%s não é comercializável.
+403	Este item não é comercializável.
+404	Você deve ter pelo menos o level %s para poder fazer isso.
+405	Você não tem o level mínimo exigido.
+406	Você não pode abrir uma loja com um valor maior que %s Gold.
+407	Você não tem muito tempo para esperar.
+408	A chave parece estar errada.
+409	Você não tem a máscara das emoções.
+410	Não pode usar uma montaria com trajes de matrimonio.
+411	Você deve ter pelo menos o level %s para poder escrever no chat global.
+412	Você não perdeu nenhum ponto de experiência.
+413	Você não perdeu nenhum ponto de Honra.
+414	Sua chat foi bloqueada por %s minutos.
+415	Você será teletransportado para a última posição.
+416	%s não pode ser colocado à venda.
+417	%s não pode mais ser melhorado por meio %s.
+418	%s parece não funcionar aqui.
+419	%s não pode ser anexado a armas.
+420	%s não pode ser anexado a uma armadura.
+421	A habilidade atingiu o posto de Grande Mestre.
+422	Essa habilidade é de um level superior. Você não pode aprender.
+423	Essa habilidade não pode mais ser aprendida em livros.
+424	Esta habilidade não pode ser melhorada.
+425	O refinado só pode ser adicionado em pulseiras, colares, brincos.
+426	Você pode usá-lo / ou apenas de um host confirmado.
+427	Você não pode melhorar este item.
+428	Este acessório não possui outros slots para outros minerais refinados.
+429	Este livro é muito difícil de entender.
+430	Você já conhece essa habilidade perfeitamente.
+431	Você deve ter pelo menos o level %s para entender este livro.
+432	Você precisa do consentimento de %s.
+433	Você já está perto do local do local salvo. Não há necessidade de usá-lo.
+434	Você não está pronto para se mover, então não pode usar o pergaminho de retorno.
+435	Você ainda não consegue ler, tente novamente mais tarde.
+436	Você mudou a isca com %s.
+437	Você já está transformado.
+438	Sua guilda declarou guerra.
+439	Você não pode mais ler.
+440	A guerra acabou.
+441	Você não pode fazer isso porque já faz parte de um grupo.
+442	O efeito já existe.
+443	O peixe desapareceu.
+444	%s desapareceu sem deixar vestígios.
+445	Você não pode fazer isso com um jogador do mesmo sexo que você.
+446	Continue aprendendo...
+447	Oh, é a última página. Treinamento está quase terminando.
+448	Você logo estará saindo do mapa.
+449	Você não pode construir o edifício. Você não tem material suficiente.
+450	Este item tem algo errado com ele. (ref: staff str001)
+451	Este item tem algo errado com ele. (ref: staff str002)
+452	A montagem teve sucesso. 
+453	A montagem falhou.
+454	Você não tem %s (%s, %s) suficiente.
+455	O nome escolhido não é valido.
+456	O duelo foi cancelado.
+457	A ostra estava vazia. 
+458	Na ostra tinha: pedaço de pedra.
+459	Na ostra tinha: pérola branca.
+460	Na ostra tinha: pérola azul.
+461	Na ostra tinha: pérola vermelha.
+462	Este edificio é inexistente.
+463	Este player não existe.
+464	Muito bem! Continue insistindo.
+465	Você liberou o espírito maligno. Agora você pode ler outro livro.
+466	Você não pode alimentar um cavalo morto.
+467	Seu cavalo não está morto.
+468	Você deve ter pelo menos %s inteligência.
+469	Você pode fazer isso em %s segundos.
+470	A extração foi bem-sucedida.
+471	A extração falhou.
+472	A extração foi anulada.
+473	O chat foi bloqueado.
+474	O chat foi desbloqueado.
+475	Seu chat foi bloqueado por %s hora(s), %s minuto(s) e %s segundo(s).
+476	Seu chat foi bloqueado por %s hora(s) e %s segundo(s).
+477	Seu chat foi bloqueado por %s minuto(s) e %s segundo(s).
+478	Seu chat foi bloqueado por %s segundo(s).
+479	Você não pode ler agora. Tente mais tarde.
+480	Não tem mais lasca de pedra para remover.
+481	Você precisa de pele menos %s vitalidade.
+482	O login foi interrompido.
+483	Você está para alterar o personagem.
+484	Você precisar iniziar o autopatcher para jogar corretamente.
+485	Você não pode passar para jogadores de outro reino.
+486	Você não está em nenhum grupo.
+487	O teu grupo colaborou...você receberá um bônus de experiência.
+488	O líder não está online.
+489	Não pode usar aqui.
+490	Guerra de guilda em andamento:
+491	Não é possível usar esta tinta.
+492	Para completar o treinamento, você precisa ler ainda %s livros.
+493	<Guilda> Tente mais tarde.
+494	Está função está disponível somente nos proprios castelos.
+495	Este objeto não é para a tua raça.
+496	Este item só pode ser usado por outro sexo.
+497	Este recurso está disponível apenas para o monarca.
+498	Você só pode transferir jogadores de seu próprio reino.
+499	Não pode fazer porque %s está no CH%s e você está no CH%s.
+500	%s foi chamado.
+501	%s não está online ou não existe.
+502	Não pode melhorar o objeto enquanto estiver com loja/comercio/armazém aberto.
+503	Não pode abrir uma loja enquanto estiver usando uma armadura.
+504	A janela já está aberto. Tente relogar.
+505	Você não possui todos os materiais necessários.
+506	Antes abra a janela do craft.
+507	<Guilda> o líder adversário não está online.
+508	Você tem que esperar para poder usá-lo novamente.
+509	Este item não pode ser movido para o inventario de cinto.
+510	Tente mais tarde.
+511	<PvP> Você já tem um duelo em andamento.
+512	<PvP> %s recusou o duelo.
+513	<PvP> O oponente se desconectou, o duelo foi removido.
+514	<PvP> Você e o oponente receberão a aposta de volta, pois o duelo foi cancelado.
+515	<PvP> Você ganhou %s Gold mais a tua aposta inicial.
+516	<PvP> Esta função está bloqueada no duelo.
+517	<PvP> %s bloqueou esse recurso com seu oponente.
+518	<PvP> %s bloqueou o buff no duelo.
+519	Você não pode adicionar itens bloqueados.
+520	Você só pode absorver bônus de armaduras e armas.
+521	A melhoria foi bem-sucedida. Nova taxa de absorção: %s%.
+522	A criação foi um sucesso.
+523	A criação falhou.
+524	Você não tem Gaya o suficiente.
+525	Você precisa de %s %s.
+526	O corte foi bem sucedido.
+527	O corte falhou.
+528	Você não pode se teletransportar agora!
+529	As coordenadas x: %s, y: %s não existem.
+530	Você não pode salvar as coordenadas enquanto estiver no modo espectador.
+531	Você não pode salvar as coordenadas deste mapa.
+532	Voce ja esta cavalgando.
+533	Você não pode remover uma pedra durante o refinamento!
+534	Você removeu a %s com sucesso.
+535	Uma %s saiu da remoção de uma pedra.
+536	A remoção da pedra do dragão falhou.
+537	Não é possível remover a pedra do dragão.
+538	Você já usa esse tipo de pedra.
+539	Você não tem espaço livre suficiente em seu inventário especial.
+540	Você não pode reordenar o inventário enquanto outras janelas estiverem abertas.
+541	Você não pode vender um item equipado.
+542	Os dados são lançados para: %s
+543	%s jogou: %s
+544	%s jogou %s. (%s - %s)
+545	Você lançou %s. (%s - %s)
+546	<Informação> %s alcançou o level %s.
+547	A nação %s perdeu a batalha.
+548	%s terminou o battle pass %s.
+549	Faltam %s minuto(s) para a chegada dos monstros.
+550	Os monstros começaram a atacar o castelo.
+551	Os monstros estão avançando em direção ao castelo de %s.
+552	Eles vão atacar o castelo em 10 minutos.
+553	%s está na batalha pela chama.
+554	%s eles conseguiram passar.
+555	A partir de agora você tem 30 minutos para conquistar a chama.
+556	O tempo acabou e a chama desapareceu.
+557	A chama apareceu no território de %s.
+558	%s conquistou a chama.
+559	%s perdeu a guerra.
+560	%s conquistou todas as chamas.
+561	O monarca mudou os impostos.
+562	No futuro cada %s de uma venda vai para o tesouro do reino.
+563	A guilda %s declarou guerra a guilda %s.
+564	Em alguns momentos, acontecerá a guerra entre %s e %s.
+565	A guerra entre %s e %s começou.
+566	%s ganhou a guerra contra %s.
+567	A guerra entre %s e %s acabou em empate.
+568	A guerra entre %s e %s acabou.
+569	O monarca de %s é %s!
+570	O servidor encontrou um erro fatal e foi reiniciado automaticamente!
+571	Shutdown ativado, você será desconectado em 10 segundos.
+572	Você poderá se conectar normalmente após 5 minutos.
+573	O drop %s da guilda %s foi aumentado de %s%.
+574	O drop %s da guilda %s voltou a normalidade.
+575	O drop %s di %s foi aumentado de %s%.
+576	O drop %s di %s voltou a normalidade.
+577	Você está prestes a ser desconectado do servidor em %s segundo(s).
+578	O servidor será encerrado em %s segundo(s).
+579	Em 10 segundos a resposta será dada.
+580	A resposta correta é: O.
+581	A resposta correta é: X.
+582	Quem errou, será teleportado para fora em 5 segundos.
+583	Prepare-se para a próxima pergunta!
+584	Pergunta: 
+585	Vai no O para VERDADEIRO e no X para FALSO.
+586	Em breve você será levado de volta para a City.
+587	O monarca %s usou a bênção restaurando HP e MP para todos os habitantes do reino.
+588	O monarca %s usou seu poder para aumentar o ataque em 10% a todos os habitantes do reino.
+589	O monarca %s usou seu poder para aumentar a defesa em 10% a todos os habitantes do reino.
+590	Pontuação atual: Shinsoo (%s), Chunjo (%s), Jinno (%s).
+591	A energia do mal se concentra no altar central.
+592	Os monstros estão dando sinais de retirada.
+593	Os monstros começaram a recuar ... depois de um tempo você voltará para a City.
+594	O BOSS apareceu. Você tem 30 minutos para matá-lo.
+595	Você derrotou o BOSS e logo será teletransportado para a City.
+596	O BOSS se retirou, você logo será teletransportado para a City.
+597	Yonggari morre em %s segundos.
+598	Você tem %s segundos para destruir as estátuas.
+599	A luta contra Meley, Rainha dos dragões começou!
+600	A porta se abriu. Você tem disponível %s minuto(s).
+601	Parabéns você matou a Meley, Rainha dos dragões.
+602	Em %s minuto(s) e %s segundo(s).
+603	A masmorra não pode ser iniciada, entre em contato com o STAFF.
+604	%s pontos de foram devolvidos à guilda.
+605	O limite de tempo acabou, você logo será teletransportado para fora da masmorra.
+606	Para sua segurança, você será teletransportado para fora do mapa em %s segundo(s).
+607	Você não pode adicionar amigos enquanto tiver uma missão aberta.
+608	A pergunta %s é verdadeira.
+609	A pergunta %s é falsa.
+610	Numero total de perguntas: %s.
+611	Você não pode se teletransportar para aquela mapa.
+612	O ch ao qual você está conectado não é o mesmo que %s: %s - %s.
+613	Você enviou uma solicitação de teletransporte.
+614	%s já está perto de você.
+615	Você está online ha %s horas.
+616	Feche a conexão o mais rápido possível e faça uma pausa para cuidar da sua saúde.
+617	Você já está cansado do jogo.
+618	O teu tempo offline é %s hora(s) e %s minuto(s).
+619	O teu tempo online é %s hora(s) e %s minuto(s).
+620	Você não tem o suficiente %s.
+621	Você não pode exceder o limite de 100%.
+622	Você já incrementou uma vez.
+623	Você não pode extrair o tempo de uma Pedra do Dragão equipada.
+624	A extração do tempo falhou.
+625	A extração de tempo foi bem-sucedida.
+626	Você não tem espaço livre suficiente em seu inventário de alquimia.
+627	Esta pedra do dragão não pode mais ser melhorada.
+628	Esta pedra do dragão não é do mesmo tipo / classificação.
+629	A melhoria foi bem-sucedida.
+630	A melhoria falhou.
+631	Você não pode negociar enquanto tiver uma missão aberta.
+632	%s não pode receber convites porque tem uma missão aberta.
+633	<Guilda> A guilda atualmente está em guerra.
+634	<Guilda> A guilda atingiu o limite máximo de membros.
+635	Atualmente tem %s Gold na tesouraria do %s.
+636	O CH escolhido está offline.
+637	Pode haver batalhas em andamento.
+638	Se quiser pensar novamente, volte a falar com o Gurdião.
+639	O teu chat está bloqueado.
+640	<Administrador do Armazém> Este objeto não pode ser depositado.
+641	<Administrador do Armazém> Você não possui espaço livre no armazém.
+642	Você precisa de %s para conseguir.
+643	As pedras do dragão só podem ser encontradas no inventário de alquimia.
+644	Você não tem espaço livre suficiente em seu inventário de alquimia.
+645	Este item não é compatível com estoque especial.
+646	Este item não é compatível com o inventário de alquimia.
+647	Você não pode se teletransportar agora. Tente mais tarde.
+648	O grupo não pode ser dissolvido em uma masmorra.
+649	<Guilda> Você não pode remover um membro enquanto a guilda estiver em guerra.
+650	<Guilda> A guilda já atingiu o level máximo (%s).
+651	O servidor será encerrado em 10 minutos.
+652	<Biologo> Você tem que estar pelo menos no level %s para prosseguir.
+653	<Biologo> Você tem que esperar %s dia(s), %s hora(s), %s minuto(s), %s segundo(s) para fazer isso.
+654	<Biologo> Você não tem o item necessário para prosseguir.
+655	<Biologo> Você já terminou todas as missões.
+656	Você não pode vender um item bloqueado temporariamente.
+657	Você só pode pescar na água.
+658	Você irá trocar de CH em %s segundo(s).
+659	A janela do refinamento de faixa de ombro já está aberta.
+660	Primeiro você precisa fechar a janela de absorção da faixa de ombro.
+661	Primeiro você precisa fechar a janela de refinamento da faixa de ombro.
+662	Você só pode melhorar as faixa de ombro do mesmo level.
+663	Esta faixa de ombro já tem a taxa de absorção máxima (%s).
+664	Você ainda não está qualificado para usar a alquimia.
+665	%s não pode ser melhorado por %s.
+666	%s não pode ser melhorado(a).
+667	Este item não pode ser usado durante o duelo.
+668	Lojas não são permitidas nesta área.
+669	Você não pode usá-lo porque ainda não está qualificado para usar a alquimia.
+670	%s foi recarregada de %s segundo(s).
+671	A recarga de %s falhou.
+672	Este item não pode ser usado agora porque o parceiro(a) está duelando.
+673	O detector não encontrou nenhuma pedra metin.
+674	Você já atingiu o número máximo de pontos de carma (%s).
+675	%s só funciona nas armaduras e armas.
+676	%s não tem slot.
+677	Você adicionou um bônus especial.
+678	As pedras +3 não podem ser removidas via %s.
+679	A pedra não pode ser removida via %s.
+680	Você não pode remover um bônus bloqueado de um traje ou pedra do dragão.
+681	Só pode ser usado em talismãs.
+682	Só funciona em itens abaixo do level %s.
+683	Só pode ser usado em armas ou armaduras.
+684	Isso não pode ser usado em talismãs.
+685	Esta alma não está carregada o suficiente.
+686	Esta alma não tem nenhuma skill disponível.
+687	Você não pode remover o item do switchbot porque seu inventário está cheio.
+688	Você não pode usá-lo nesta área.
+689	Você não pode usar este item enquanto você tem uma missão aberta.
+690	Você não pode mover o objeto porque o switchbot está ativado.
+691	Este objeto não pode ser rodado pelo switchbot.
+692	Você não pode aumentar este item enquanto estiver com uma missão aberta.
+693	Você não pode usar roupas de casamento enquanto estiver cavalgando.
+694	O seu tipo de arma é diferente deste traje.
+695	Você não tem slots livres para usar este item.
+696	Você não pode usar este item porque não é casado.
+697	Você não pode abrir a janela de craft enquanto outras janelas estão abertas.
+698	O drop %s atual para os reinos são %s%.
+699	O drop %s atual para as guildas são %s%.
+700	O drop %s atual para os players são %s%.
+701	Não há mais membros online da guilda adversária.
+702	Se ninguém entrar em um minuto, a guerra acabará.
+703	O limite de tempo acabou. A guerra terminou empatada.
+704	O casamento acabou. Você será retirado do mapa.
+705	A guilda %s perdeu a bandeira do(a) %s.
+706	Um dos duelistas se desconectou.
+707	O duelo terminou devido a um problema desconhecido.
+708	O duelo acabou porque um dos oponentes está com problemas.
+709	%s (%s) : %s (%s)
+710	A guerra não pode começar neste momento.
+711	A guilda já tem um pedido de guerra pendente de resposta.
+712	<Biologo> Este item está em boa condição.
+713	<Biologo> Este item não está em boa condição.
+714	<Biologo> Parabéns, você completou a missão.
+715	Você não pode pegar o prêmio!
+716	Sintaxe correta: / channel (número ch)
+717	O CH inserido é inválido.
+718	Você já está no CH %s.
+719	Não pode andar naquele CH.
+720	Você não pode mudar o CH enquanto estiver em uma masmorra.
+721	Você não recebeu a recompensa nas últimas 24 horas, então esta será a recompensa.
+722	<PvP> Você não pode iniciar o duelo porque algo está errado com os Gold da aposta.
+723	Não há nenhum jogador com este nome online.
+724	Sintaxe correta: / monarch_tax (1-50)
+725	Sintaxe correta: /mmob (nome mostro)
+726	Este comando está disponível apenas em seu reino.
+727	No slot %s do inventario se encontra %s.
+728	No slot %s do inventario não se encontra nada.
+729	Você deve convocar o pet para prosseguir.
+730	Você não pode evoluir seu pet agora.
+731	Você não pode abrir o armazém enquanto estiver em um mapa de guerra / masmorra.
+732	Você não pode usar uma montaria enquanto estiver transformado.
+733	Nome %s, id %s.
+734	O sistema Gaya está desativado no momento.
+735	Você não pode abrir lojas enquanto estiver com outras janelas abertas (por exemplo, comércio)
+736	Este monstro não existe.
+737	Você teletransportou para as coordenadas: x(%s), y(%s).
+738	O item: %s não é valido.
+739	O item: %s não existe.
+740	Você não pode receber este item enquanto tiver uma missão aberta.
+741	Você não pode se transformar enquanto está cavalgando.
+742	Seu pet atingiu o level máximo.
+743	A habilidade do seu pet atingiu o level %s.
+744	A habilidade do seu pet está no level máximo.
+745	Seu pet aprendeu uma nova habilidade.
+746	Seu pet não pode aprender outras habilidades.
+747	Seu pet evoluiu para o level %s.
+748	Seu pet atingiu o level máximo de evolução.
+749	Você tem que esperar pelos outros %s segundo(s) antes de poder usar esta habilidade.
+750	Você só pode usar a habilidade quando seu HP estiver pelo menos a 20%.
+751	Você restaurou seu HP.
+752	Você se tornou invencível.
+753	Você removeu os efeitos negativos.
+754	O Switchbot parou porque você não tem mais roda bônus.
+755	O Switchbot parou porque você não tem Gold suficiente.
+756	Você alterou seu PIN.
+757	Flag: nome (%s), valor (%s).
+758	Flag: nome (%s), estado (%s), valor (%s).
+759	<Comercio> Erro desconhecido.
+760	<Guilda> Você ganhou %s Gold.
+761	<Guilda> Você perdeu %s YGold.
+762	Não há classificação registrada.
+763	<Sistema Suporte> Este nome já é existente. Escolhe outro nome!
+764	<Sistema Suporte> Você deve entrar em contato com seu suporte antes de alterar seu nome.
+765	<Sistema Suporte> Você alterou seu nome com sucesso.
+766	<Sistema Suporte> Você deve entrar em contato com seu suporte antes de alterar seu sexo.
+767	<Sistema Suporte> Você alterou seu sexo com sucesso.
+768	Você precisa de %s Gold.
+769	Você deu um nome para seu pet.
+770	Erro na impostação do nome.
+771	<Teleporter> Level %s minimo para prosseguir.
+772	<Teleporter> Level %s máximo para prosseguir.
+773	<Teleporter> Precisa ter pelo menos %s Gold para prosseguir.
+774	Você deve ser um administrador de jogo para usá-lo.
+775	O texto não é valido.
+776	Tente novamente em 5 segundos.
+777	Não existe nenhum battle pass com id: %s.
+778	Não existe nenhum battle pass com o nome: %s.
+779	Não existe nenhum prêmio para o battle pass %s.
+780	Não tem nenhum battle pass ativo.
+781	O buff id (%s) do %s foi bloqueado.
+782	Você não pode reordenar itens no inventario enquanto estiver com a janela da loja offline aberta.
+783	Itens com bônus congelados não podem ser absorvidos.
+784	Você não pode melhorar um item com um bônus congelado.
+785	Você não pode usar este item se não tiver um cinto equipado.
+786	Não pode usar este item se melhorar seu cinto.
+787	Você deve mandar seu pet embora antes de prosseguir.
+788	A duração do seu pet foi redefinida.
+789	Esta transportadora já contém pet.
+790	Você deve convocar seu pet pelo menos uma vez antes de colocá-lo na transportadora.
+791	Você não pode usá-lo neste item.
+792	O item deve ter pelo menos 5 bônus.
+793	Este item já tem um bônus congelado.
+794	Este item não tem bônus congelados.
+795	Este item não tem bônus bloqueado.
+796	Você já usa este tipo de pedra do dragão.
+797	Parabéns, você completou sua pesquisa com sucesso.
+798	Você não pode usar emoções enquanto está cavalgando.
+799	Você não pode usar emoções porque o parceiro está cavalgando.
+800	%s não está no mesmo mapa.
+801	%s é um PcBang.
+802	%s não é um PcBang.
+803	%s se encontra no CH %s, e você no CH %s.
+804	É necessário teletransporte.
+805	Você teletransportou para as coordenadas: mapa(%s), x(%s), y(%s).
+806	Você não pode deletar itens quando o seu suporte está ativo.
+807	Você não pode fazer isso porque seu pet foi evocado.
+808	Players total: %s. [Shinsoo(%s), Chunjo(%s), Jinno(%s), server(%s)]
+809	Você excedeu o limite do Gold, o Gold foi redefinido
+810	Bloco de chat obrigatório.
+811	O item não existe.
+812	Número atual de participantes: %s.
+813	Os vencedores foram registrados.
+814	Os vencedores não foram registrados.
+815	Você não pode abrir a janela de crafting porque há outras janelas abertas.
+816	Você não pode melhorar este item porque ele tem um bônus congelado.
+817	O craft falhou.
+818	O craft foi um sucesso.
+819	Você não possui todos material necessário.
+820	Ninguém está com o chat bloqueado.
+821	Você não pode se mover para essa área.
+822	A ombro pode ser craftada somente com outra ombro. 
+823	Você precisa %s para fazer isso.
+824	%s desafiou você para um duelo.
+825	Você não pode criar esta loja.
+826	Você não pode alterar o nome da loja.
+827	Impossível de fechar a loja.
+828	Impossível de abrir a loja.
+829	Impossível de abrir a sua loja.
+830	Impossível adicionar um item na loja.
+831	Você não pode comprar este item.
+832	Impossível remover o item.
+833	Impossível modificar o item.
+834	Você não pode remover o último item de uma loja. (você pode fechar a loja usando o botão Fechar).
+835	Impossível efetuar a pesquisa.
+836	Você pode realizar uma pesquisa a cada 15 segundos. (você ainda não pode pesquisar)
+837	Oferta criada com sucesso.
+838	Impossível fazer a oferta.
+839	Incapaz de aceitar a oferta.
+840	Incapaz de abrir sua loja de armazém.
+841	Incapaz de coletar este item.
+842	Impossível retirar o Gold do depósito.
+843	unused
+844	Você recebeu o item com sucesso.
+845	Incapaz de enviar lista de leilões.
+846	Incapaz de abrir o leilão.
+847	Incapaz de criar o leilão.
+848	Impossível de fazer a oferta.
+849	Impossível fazer agora.
+850	Não pode ser usado em talismãs.
+851	Você precisa de pelo menos %s pontos disponíveis.
+852	Você não pode cavalgar neste mapa.
+853	%s já contém um pet.
+854	Primeiro você tem que mandar o pet embora.
+855	O pet foi adicionado no %s.
+856	%s está vazio.
+857	Você removeu o pet do %s.
+858	Você deve chamar o pet pelo menos uma vez para fazer isso.
+859	Você não pode colocar neste acessório porque tem refinados infinitos .
+860	Você não pode colocar neste acessório porque tem refinados a tempo.
+861	A missão será desbloqueada quando você atingir o level %s.
+862	Você não tem nenhum Elixir do Pesquisador.
+863	Você não tem nenhum Elixir do Pesquisador+.
+864	O objeto não está em bom estado, o Biólogo não pode fazer nenhuma pesquisa.
+865	O objeto está em bom estado, o Biólogo inicia a pesquisa.
+866	Você não tem o item de que o biólogo precisa.
+867	Você já concluiu todas as missões do Biólogo.
+868	Você terminou a última missão do Biólogo, parabéns!
+869	A próxima missão do Biólogo será desbloqueada no level %s.
+870	O biólogo abençoou você com um ou mais bônus por completar a missão.
+871	O biólogo ainda não concluiu a pesquisa do último item entregue.
+872	No momento, você não tem missões do biólogo na qual possa alterar os bônus.
+873	O bônus foi alterado.
+874	O dinheiro tem que estar em números.
+875	A soma inserida não pode ser inferior a 0.
+876	A soma inserida excede o limite.
+877	Você não tem Gold suficiente.
+878	O oponente não possui essa quantidade de dinheiro no inventário.
+879	O dinheiro que o oponente tem no inventário mais o valor da aposta excede o limite Gold.
+880	O oponente não possui essa quantidade de dinheiro no inventário.
+881	Você agora está em um duelo.
+882	O oponente ja esta duelando.
+883	O oponente não possui essa quantidade de dinheiro no inventário.
+884	A preview do equipamento já está bloqueado.
+885	A exibição do equipamento foi bloqueada.
+886	A preview do equipamento já está desbloqueado.
+887	A exibição do equipamento foi desbloqueada.
+888	O oponente já tem um pedido de duelo em andamento. Tente novamente em %s segundo(s).
+889	%s está tentando desafiá-lo para um duelo, mas você já tem um pedido aberto.
+890	Apenas o líder da guilda pode fazer isso.
+891	Você deve ser casado para usar este item.
+892	Esta faixa de ombro não pode ser melhorada mais que isso.
+893	Este efeito já existe.
+894	Você não pode pescar aqui.
+895	Você precisa de uma vara para pescar.
+896	Foi fisgado %s.
+897	Algo foi fisgado, mas não está claro o quê.
+898	Você mudou a isca atual com %s.
+899	Você deve ter um slot livre em seu inventário para poder pescar.
+900	Este efeito já está em uso.
+901	%s foi desativado(a).
+902	Apenas o líder do grupo pode usá-lo.
+903	%s você recebeu %s.
+904	%s juntou-se ao fantástico mundo de Auriga-Global.
+905	Você tem que destruir todas as pedras de metin para remover.
+906	Invencibilidade para o Boss.
+907	Você tem que matar todos os monstros para tirar.
+908	Todos os membros do grupo agora podem atacar o boss.
+909	<Batalha Nave> SOS! O mastro do navio foi derrotado.
+910	<Batalha Nave> Todos os participantes serão teletransportados para fora!
+911	O líder da guilda %s tranferiu o comando da guilda `%s` a %s.
+912	O evento OX começou!
+913	Você pode falar com o sábio Uriel para participar.
+914	As inscrições para a OX foram encerradas!
+915	Nenhum outro competidor será aceito, só é possível atuar como espectador.
+916	O prêmio foi entregue ao vencedor!
+917	O evento OX acabou, você logo será levado de volta para a City.
+918	%s acabou de derrotar a Rainha Slime.
+919	O grupo do %s liberou a Torre do Nemere.
+920	%s liberou a Torre do Nemere.
+921	O grupo do %s derrotou o Beran-Setaou.
+922	%s derrotou o Beran-Setaou.
+923	O grupo que estava dentro do Templo do Dragão falhou. O tempo acabou.
+924	O Templo do Dragão está aberto novamente.
+925	A guilda %s venceu o %s colocado na liga de ouro.
+926	A guilda %s venceu o %s colocado na liga de prata.
+927	A guilda %s venceu o %s colocado na liga de bronze.
+928	O grupo do %s derrotou a Rainha Slime!
+929	%s acaba de derrotar a Rainha do Slime!
+930	Mate todos os demônios do mapa!
+931	As catacumbas serão fechadas por %s minutos a partir de agora.
+932	As catacumbas estão abertas novamente!
+933	O grupo do %s libertou as catacumbas do Azrael!
+934	O grupo do %s libertou o Templo Ochao!
+935	%s libertou o Templo Ochao!
+936	O grupo do %s libertou o Covo 3!
+937	%s libertou o Covo 3!
+938	O boss não é mais invencível.
+939	O boss apareceu, apenas o líder do grupo pode causar danos, desde que 
+940	sua vida chegue a pelo menos 70%.
+941	Porfavor entre em contato com o Staff com o referimento: rune020.
+942	Porfavor entre em contato com o Staff com o referimento: rune021.
+943	Porfavor entre em contato com o Staff com o referimento: rune022.
+944	Porfavor entre em contato com o Staff com o referimento: rune024.
+945	Porfavor entre em contato com o Staff com o referimento: rune025.
+946	O tempo acabou, infelizmente você falhou. Você será 
+947	teletransportado para fora das masmorra.
+948	Porfavor entre em contato com o Staff com o referimento: rune001.
+949	De agora em diante você tem %s minutos para matar todos os monstos 
+950	e as metin. As pedras metin não sofreram dano 
+951	enquanto tiver algum monstro vivo.
+952	Em 3 segundos você será teletransportado para o terceiro andar.
+953	Em 3 segundos você será teletransportado para o quarto andar.
+954	Para continuar causando danos no boss, você deve primeiro matar os monstros.
+955	Para continuar causando danos no boss, você deve primeiro destruir as metin.
+956	Em 3 segundos você será teletransportado para o último andar.
+957	De agora em diante você tem %s minutos para dropar 10 almas rúnicas.
+958	Somente o líder do grupo pode dropar.
+959	De agora em diante você tem %s minutos para matar o boss.
+960	Para fazer parecer, você deve primeiro matar todos os monstros e as metin.
+961	De agora em diante você tem %s minutos para completar este andar. Para fazer 
+962	o boss sofrer danos, você deve primeiro destruir as metin.
+963	Parabéns, você completou a masmorra!
+964	Em 30 segundos você será teletransportado para fora.
+965	Você matou o boss. Agora você tem que deixar a vida do próximo
+966	Boss pelo menos com 50%.
+967	Você destruiu a última estátua. Agora mate o boss.
+968	Você destruiu uma estátua, resta: %s para destruir.
+969	Você matou o boss. Agora, para fazer com que o próximo boss receba
+970	dano você deve primeiro destruir as estátuas com a Chave Divina.
+971	As chaves caem dos monstros.
+972	Você destruiu a última metin. Agora mate o boss.
+973	Você destruiu outra metin, resta: %s para destruir.
+974	Porfavor entre em contato com o Staff com o referimento: rune023.
+975	Você matou todos os monstros. Agora você tem que destruir as metin.
+976	Um de cada vez, encontre o primeiro metin desbloqueada.
+977	Porfavor entre em contato com o Staff com o referimento: rune002.
+978	Você destruiu outra metin, resta: %s para destruir.
+979	Você destruiu a última metin.
+980	Em 3 segundos você será teletransportado para o segundo andar.
+981	Porfavor entre em contato com o Staff com o referimento: rune003
+982	Porfavor entre em contato com o Staff com o referimento: rune004
+983	Porfavor entre em contato com o Staff com o referimento: rune005
+984	Você tem um minuto restante para restaurar a paz!
+985	Você tem %s minutos restantes para restaurar a paz!
+986	Você falhou, você será teletransportado para fora.
+987	Derrote o tenebroso Azrael para restaurar a paz!
+988	Parabéns, você trouxe paz!
+989	Em 10 segundos você será teletransportado para o Guardião da Cidade.
+990	De agora em diante você terá %s minutos
+991	para completar a masmorra!
+992	O tempo acabou, você será eliminado.
+993	Em breve você será levado para o próximo andar.
+994	Apenas o líder do grupo pode arrastar o objeto.
+995	Encontre o metin correto para subir para o próximo andar!
+996	O metin correto foi destruído!
+997	Em breve você será levado para o próximo andar.
+998	O metin destruído é falso.
+999	Encontre e mate os Tártaros corretos para continuar!
+1000	O Tártaro correto foi morto!
+1001	Arraste o item até o totem para continuar!
+1002	O Tártaro morto não é o correto.
+1003	Em breve você será levado para o próximo andar!
+1004	Mate o pequeno Charon para continuar!
+1005	Charon foi morto!
+1006	Em breve você será levado para o próximo andar!
+1007	Matem o tenebroso Azrael!
+1008	Você libertou as catacumbas do tenebroso Azrael!
+1009	Em 30 segundos, você será retirado.
+1010	Você matou o Rei Demônio,
+1011	em breve você subirá ao quarto andar.
+1012	Daqui a pouco vai aparecer uma Metin, aguarde...
+1013	Destrua o metin correto para subir.
+1014	Algo deu errado. Contate o Staff com o referimento: Beran001.
+1015	O metin correto foi destruído, você logo será teletransportado para o próximo andar.
+1016	Uma metin falsa desapareceu ...
+1017	Abra todos os selos para subir.
+1018	Você tem 20 minutos.
+1019	Você tem %s minutos para abrir todos os selos.
+1020	Tempo esgotado, você falhou na escalada.
+1021	Todos os selos foram abertos.
+1022	Em breve você será levado para o próximo andar!
+1023	Ainda há um selo para abrir.
+1024	Ainda há %s selos para abrir.
+1025	Mate o Rei Demônio Elite para libertar um dos lendários ferreiros.
+1026	Um dos lendários ferreiros foi libertado.
+1027	Em breve, você subirá ao sétimo andar.
+1028	Encontre o mapa correto para subir.
+1029	Você encontrou o mapa exato,
+1030	Em breve, você subirá ao oitavo andar.
+1031	Encontre a chave certa para subir.
+1032	O selo foi aberto
+1033	em breve você subirá ao nono andar.
+1034	Mate o Fantasma da Morte para completar a torre.
+1035	Em 30 segundos, você será teletransportado para fora da torre.
+1036	Para fazer o dano no Beran, destrua todos as Metin primeiro, mas se apresse ou ele te destruirá!
+1037	Você será retirado em 30 segundos.
+1038	O tempo acabou.
+1039	Você será retirado da masmorra.
+1040	O tempo acabou, infelizmente você falhou. Você será teletransportado
+1041	fora da masmorra.
+1042	Porfavor entre em contato com o Staff com o referimento: orchi001.
+1043	Volte para onde há pontes bloqueadas, uma delas desbloqueou.
+1044	Agora você deve destruir todas as metins da sombra.
+1045	Em 3 segundos você será teletransportado para a sala do boss.
+1046	Você precisa quebrar as metin para causar danos ao boss.
+1047	Agora use a chave dos Orcs verdes para destruir o selo dos Orcs.
+1048	Agora você tem que derrotar o Orc Chefe.
+1049	Use a Chave dos Orcs Negros para destruir a Fechadura do Destino.
+1050	Porfavor entre em contato com o Staff com o referimento: orchi002.
+1051	O boss pode ser atacado à partir de agora.
+1052	Metins restantes para destuir: %s.
+1053	Aviso: O Chefe Orc Reborn está zangado e seu dano aumentou.
+1054	Parabéns, você completou a masmorra!
+1055	Em 30 segundos você será teletransportado para fora.
+1056	De agora em diante, você terá %s minutos para concluir a masmorra.
+1057	Mate os monstros para dropar a Chave dos Orcs Verdes, para conseguir
+1058	destruir o Selo dos Orcs. Vá em direção ao centro do 
+1059	mapa e libera para liberar a ponte.
+1060	Derrote o poderoso Razador para completar a masmorra.
+1061	O level de todos os membros do grupo deve ser de pelo menos 120.
+1062	caso contrario, não posso deixar vocês continuarem.
+1063	Tempo restante: %s minuto(s).
+1064	%s libertou a Torre dos Demônios!
+1065	Seu tempo acabou. Dentro de 10 segundos
+1066	você será teletransportado para os portões da fortaleza.
+1067	Em 10 segundos, o grupo é teletransportado para Am Heh.
+1068	Parabéns, você limpou a Torre!
+1069	Missão: Aventure-se no ringue do Demônio
+1070	e emerge como um vencedor.
+1071	Missão: Encontrar a roda dourada e colocá-la na Stele Isfet.
+1072	Missão: Aventura, rodada dos demônios e
+1073	conquista a vitória.
+1074	Missão:Derrote Ignator, Guardião do Fogo.
+1075	Missão: Encontre as Pedras de Maat e insira-as em
+1076	7 Stele Isfet na ordem correta.
+1077	Se você errar a ordem, as pedras
+1078	irá desaparecer enquanto a Stele permanecerá.
+1079	Missão: Somente aqueles que não temem o calor escaldante,
+1080	conseguirá destruir o Metin do Purgatório.
+1081	Todos os demônios foram derrotados.
+1082	Fale com Am-heh para abrir um novo destino.
+1083	A Stele Isfet foi destruída.
+1084	Ignator, o Guardião do Fogo, foi morto.
+1085	Os selos foram destruídos.
+1086	A Metin do Purgatorio foi destruída.
+1087	O potente Razador foi destruído.
+1088	Todos os players serão teletransportados para fora do Purgatório em 30 segundos.
+1089	Mate todos os monstros para prosseguir.
+1090	Todos os monstros foram mortos.
+1091	Monstros restantes: %s.
+1092	Encontre a chave verdadeira Chave de Gelo matando monstros.
+1093	Esta Chave de Gelo era Falsa.
+1094	Você encontrou a verdadeira Chave de Gelo.
+1095	Outra onda de monstros foi gerada
+1096	no entanto, desta vez, eles estão acompanhados pelo Frost Lord e Szel.
+1097	Em breve você será levado para o próximo andar.
+1098	Encontre a Estrela Polar matando monstros.
+1099	Quando for encontrada, arraste em cima de uma %s Dados do Ártico para tentar abri-los.
+1100	NOTA: Cada Dado do Ártico tem sua própria chave.
+1101	NOTA: Se você tentar destruí-lo com a chave errada, a chave será destruída.
+1102	NOTA: Nesse caso, você terá que procurar outra chave.
+1103	Assim que todos os Dados do Ártico forem abertos, você pode continuar.
+1104	A Estrela Polar usada é a correta, o Dado Ártico foi aberto.
+1105	A Estrela Polar usada não é a correta e desapareceu.
+1106	Todos os Dados Árticos foram abertos.
+1107	A Metin do Gelo está no seu caminho. Destrua para continuar.
+1108	A Metin do Gelo foi destruída.
+1109	Destrua o Szel correto para continuar.
+1110	A sombra do Szel desapareceu.
+1111	Todas a sombras do Szel desapareceram. Mate o correto Szel para continuar.
+1112	Você matou o Szel correto.
+1113	A Chave Flor de Gelo era falsa.
+1114	Você encontrou a verdadeira Chave de Flor de Gelo.
+1115	Derrote o Pilar do Dragão do Norte para continuar.
+1116	O Leão de Gelo apareceu.
+1117	O líder do grupo deve falar com ele para continuar.
+1118	Fale com ele para continuar.
+1119	Derrote o grande Nemere para libertar a torre.
+1120	Você será teletransportado para fora da masmorra em 60 segundos.
+1121	O tempo acabou.
+1122	O grupo do %s libertou o navio da Hydra!
+1123	%s libertou as catacumbas de Azrael!
+1124	O grupo do %s libertou a Torre dos Demônios!
+1125	O tempo acabou, infelizmente você falhou. Você será teletransportado
+1126	para fora da masmorra.
+1127	Derrote o Barão das Aranha para dropar a Flauta de Aracnídea.
+1128	De agora em diante você terá %s minutos para completar a masmorra.
+1129	Você não pode fazer isso.
+1130	Use a Flauta de Aracnídea para invocar a Baronesa Aranha.
+1131	Para fazer o dano à Baronesa Aranha é necessário
+1132	destruir todos os ovos de aranha primeiro!
+1133	Porfavor entre em contato com o Staff com o referimento: spider001.
+1134	Você destruiu todos os ovos. Mate a Baronesa Aranha.
+1135	Porfavor entre em contato com o Staff com o referimento: spider002.
+1136	Parabéns, você trouxe paz!
+1137	Em 30 segundos você será teletransportado para fora.
+1138	Você destruiu o metin com sucesso!
+1139	Os monstros estão chegando !!
+1140	Mate todos!
+1141	%s Metin de novo!
+1142	Você destruiu todas as metin.
+1143	Pegue o frasco e colete algumas amostras de Melma das Melma que apareceu.
+1144	Agora coloque o frasco de Melma no Selo!!
+1145	O poder do mal se foi!
+1146	Você concluiu a Masmorra com sucesso!
+1147	Você será teletransportado em 30 segundos.
+1148	Fora da masmorra.
+1149	Destrua a metin para obter o frasco.
+1150	Resista aos slime!
+1151	Você matou todos os monstros!
+1152	Um selo acabou de aparecer!
+1153	vamos checar!
+1154	Prepare-se!
+1155	A Rainha está chegando!
+1156	!!!!! VOCÊ AINDA TEM %s MINUTOS!!!!!
+1157	Você está ficando sem tempo!
+1158	Você quase falhou!
+1159	Você será teletransportado para fora da masmorra!
+1160	destrua a pedra em 4 minutos!
+1161	caso contrário, você será teletransportado para fora da masmorra.
+1162	você continuará em segundos.
+1163	você falhou!
+1164	mate monstros para coletar pedaços de pergaminho, uma vez que você tenha as 4 peças
+1165	descriptografado o Selo Antigo!
+1166	Você tem todas as peças! Vá até o selo para decifrá-lo!
+1167	era um feitiço para invocar o Servo de Anúbis, mate-o!
+1168	você irá para o próximo andar em segundos.
+1169	Encontre e destrua a Pedra do Faraó correta em 20 minutos!
+1170	cuidado, algo forte está se escondendo dentro deles!
+1171	você destruiu a pedra certa!
+1172	Bastet está chegando!
+1173	Esta pedra era apenas a sombra!
+1174	esta pedra era apenas uma ilusão.
+1175	você irá para o próximo andar em segundos.
+1176	encontre uma saída deste labirinto!
+1177	no final, você terá que matar o verdadeiro Ra!
+1178	este era o verdadeiro Ra.
+1179	você será movido para o próximo andar em segundos.
+1180	este era um falso Ra!
+1181	estrua todas as efígies de Anúbi, mas cuidado, elas têm seu próprio mecanismo!
+1182	Você deve destruí-los na sequência exata!
+1183	este era o certo!
+1184	agora destrua a Pedra Ankh para obter outro item!
+1185	você deve destruir as outras efígies de Anúbi.
+1186	fantástico! Os monstros estão chegando! Um deles tem outro item!
+1187	você deve destruir as outras efígies de Anúbi.
+1188	ótimo, mas agora, tome cuidado !!!
+1189	o verdadeiro Anúbis está chegando!
+1190	você será teletransportado para o próximo andar em segundos.
+1191	destrua o Pillar do Wadjet para convocar o verdadeiro líder!
+1192	mate todos os monstros agora!
+1193	o feitiço se foi, você pode pegar a chave Ankh e arrastá-la para o pilar do Wadjet.
+1194	A Pedra da Esfinge aparecerá,
+1195	pode gerar monstros e chefes anteriores!
+1196	se você destruí-lo em 5 minutos, você evita atrair outros monstros!
+1197	--------------------------------------------------------------
+1198	o feitiço se foi, você pode pegar a chave Ankh e arrastá-la para o pilar do Wadjet.
+1199	você é muito lento, os monstros viram você!
+1200	eles estão vindo, mate todos eles!
+1201	O Pilar do Leste apareceu!
+1202	destrua-o em 3 minutos! Caso contrário, a masmorra será fechada.
+1203	A Esfinge não tem mais o poder de fazer mágica,
+1204	mate ela !!
+1205	você falhou!
+1206	A Esfinge foi protegida!
+1207	Você fez isso! Trabalho espetacular,
+1208	Receba sua recompensa,
+1209	A masmorra fechará automaticamente em 3 minutos.
+1210	O tempo acabou, infelizmente você falhou. Você será teletransportado
+1211	fora da masmorra.
+1212	Você destruiu uma Metin Ochao, %s ainda precisa ser destruída(o).
+1213	Você destruiu uma Metin Ochao, resta %s para destruir.
+1214	Você destruiu todas as Metin Ochao, parabéns.
+1215	Agora encontre o Forte Príncipe Ochao e mate-o!
+1216	Agora você tem que destruir as 4 Metin Ochao.
+1217	Parabéns, você trouxe paz!
+1218	Em 30 segundos você será teletransportado para fora.
+1219	De agora em diante, você terá %s minutos para concluir a masmorra.
+1220	Mate 100 monstros.
+1221	Vá para o centro do mapa para matar
+1222	o primeiro boss Príncipe Ochao.
+1223	Restam %s monstros para matar.
+1224	Resta um monstro para matar.
+1225	Parabéns, você trouxe paz à floresta!
+1226	Em 30 segundos você será teletransportado para fora.
+1227	O tempo acabou.
+1228	Em alguns segundos, você será teletransportado para fora.
+1229	SOS! O mastro quebrou e seu navio está afundando. Você agora será transportado para fora.
+1230	O portal apareceu! Você defendeu com sucesso o mastro, destrua o tesouro.
+1231	O grupo de %s libertou o navio da Hydra!
+1232	Onda 4: Enquanto defende o mastro, derrote a Hydra.
+1233	Você defendeu o mastro com sucesso. Muito bem! Prepare-se para a próxima onda.
+1234	Onda 3: Enquanto defende o mastro, derrote a Hydra.
+1235	Você defendeu o mastro com sucesso. Muito bem! Prepare-se para a próxima onda.
+1236	Onda 2: Enquanto defende o mastro, derrote a Hydra.
+1237	A defesa da nave começará em 1 minuto.
+1238	A primeira onda vai durar 150 seg. Defenda o mastro com todas as suas forças.
+1239	%s completou o calabouço das runas!
+1240	A pedra foi destruída, você logo irá subir para o próximo andar.
+1241	Você ainda precisa matar %s monstros para prosseguir.
+1242	O grupo %s derrotou Razador.
+1243	%s errotou Razador.
+1244	Você não pode mover itens no armazén, itens equipados.
+1245	Antes de alterar o nome, você precisa sair do grupo.
+1246	Você pode abrir um fogo a cada 60 segundos no máximo.
+1247	Você será desconectado em 3 segundos. Você usou um item durante uma missão aberta !!!
+1248	%s não tem espaço vazio suficiente.
+1249	<Grupo> %s aceitou o convite.
+1250	Você tem 40 minutos para completar a Torre dos Demônios.
+1251	O tempo acabou, você falhou.
+1252	Em 3 minutos, você será teletransportado para fora da sala.
+1253	Liberte a sala de Cristal do Beran-Setaou!
+1254	O dano do dragão e a regeneração de vida dele, são afetados pelas pedras Metin.
+1255	Parabéns, você liberou a sala!
+1256	%s liberou a sala do Dragão!
+1257	O grupo do %s liberou a sala do Dragão!
+1258	Parabéns, você libertou a torre do Nemere!
+1259	Esta era apenas a sombra do verdadeiro Szel.
+1260	Em 30 segundos, você será teletransportado para fora da Torre Nemere.
+1261	Em 30 segundos você será teletransportado para fora.
+1262	Esta peça é falsa e foi destruída. Procure a original.
+1263	Parabéns, você derrotou Razador.
+1264	Esta pedra Matt não é compatível com este selo.
+1265	O selo foi aberto.
+1266	Liberte a sala do Bagjanamu.
+1267	Jotun Thrym ocupou a sala, você deve matá-lo!
+1268	O grupo do %s trouxe paz à floresta!
+1269	%s trouxe paz à floresta!
+1270	O grupo do %s libertou a pirâmide!
+1271	%s libertou a pirâmide!
+1272	O grupo do %s libertou o território dos Orcs!
+1273	%s libertou o território dos Orcs!
+1274	Restam %s demônios para matar.
+1275	Algo deu errado. Contate o Staff com o referimento: Beran002.
+1276	O Dragão não é mais invencível.
+1277	Restam %s metin para destruir.
+1278	Resta uma metin para destruir.
+1279	Para causar danos ao Dragão, você deve primeiro destruir todas as Metin.
+1280	Em 30 segundos, você será teletransportado para fora das Catacumbas.
+1281	Ao matar monstros, você pode dropar a chave Crist. d. Alma, com a qual
+1282	você pode abrir a estátua de Kud para ir ao próximo andar.
+1283	O grupo de %s concluiu o Calabouço Rúnico!
+1284	<Gilda> A guilda perdeu %s pontos.
+1285	Você pode fazer isso a cada 10 segundos no máximo.
+1286	Você pode salvar uma posição a cada 10 segundos no máximo.
+1287	Você já está perto deste local.
+1288	Você não pode se teletransportar enquanto estiver em uma masmorra.
+1289	Caracteres especiais não são permitidos.
+1290	Você pode fazer isso a cada 30 segundos no máximo.
+1291	Ainda há %s pedras para destruir.
+1292	Este item só é compatível com estoque especial.
+1293	O traje de estola só pode ser confeccionado com outro traje de estola do mesmo tipo.
+1294	%s só pode ser usado em almas.
+1295	A chance de masmorra bonus foi alterada para: %s%.
+1296	Causa dano às estátuas de até %s% de seu HP!
+1297	Os Ovos de Dragão apareceram, você deve destruí-los.
+1298	As estátuas perderam sua invencibilidade.
+1299	O Idall, Guarda. d. dragões apareceram, você deve destruí-los.
+1300	Você tem 20 segundos para destruir as estátuas arrastando os anéis do dragão do fogo para cima delas.
+1301	O grupo %s limpou o covil Meley!
+1302	%s limpou o covil de Meley!
+1303	O evento de Natal começou.
+1304	O evento de Natal acabou.
+1305	O evento de natal está ativo.
+1306	Você só pode abri-lo quando o evento de natal estiver ativo.
+1307	Você tem que esperar!
+1308	Encontre a Bola de Neve Real e destrua-a!
+1309	Esta foi a verdadeira bola de neve, tome cuidado porque os monstros estão chegando!
+1310	Mate monstros até encontrar a chave certa.
+1311	Esta bola de neve era apenas uma ilusão.
+1312	Você encontrou a chave! Abra a Pedra Mágica do País das Maravilhas com esta chave.
+1313	Fale com o Papai Noel!
+1314	Este baú era apenas uma ilusão!
+1315	Agora você tem que matar todos os monstros.
+1316	Bem, agora encontre o baú real!
+1317	Os fantasmas do Papai Noel roubaram os presentes ... leve-os de volta!
+1318	Bem, agora, coloque-os na bolsa do Papai Noel!
+1319	Agora destrua todas as bolas de neve.
+1320	Esta foi a verdadeira bola de neve!
+1321	Bem, faltam mais %s presentes.
+1322	Bem, o último presente está faltando.
+1323	Este é agora o baú certo!
+1324	Agora você deve matar o Fantasma do Natal.
+1325	Bem, agora destrua a Pedra do Natal!
+1326	Você encontrou o primeiro item!
+1327	Agora mate o Fantasma do Natal para receber outro item.
+1328	Você encontrou o segundo item!
+1329	Agora destrua todas as pedras de Natal.
+1330	Muito bem, agora fale com o Papai Noel!
+1331	Muito bem, agora abra o Monumento Misterioso!
+1332	Muito bem, agora mate a árvore de Natal perversa!
+1333	O grupo %s limpou a vila congelada!
+1334	%s libertou a vila congelada!
+1335	Destrua todas as pedras de Winterland em 5 minutos, caso contrário
+1336	os próximos bosses que vierem serão muito mais fortes!
+1337	Atenção! O Feitiço da Neve e a Magia do Floco de Neve são
+1338	muito importante, então observe que você os tem em seu inventário!
+1339	Mate todos os monstros para prosseguir!
+1340	Agora abra a porta congelada arrastando o Snowflake Magic para ela.
+1341	Agora você deve matar o Demônio da Neve!
+1342	Agora destrua a primeira parte do Monumento Congelado
+1343	arrastando o feitiço de neve.
+1344	Atenção! O Feitiço da Neve é ??muito importante, então lembre-se de que você os tem em seu inventário!
+1345	Agora destrua a segunda parte do Monumento Congelado
+1346	arrastando o feitiço de neve.
+1347	Destrua todas as pedras Winterland para prosseguir!
+1348	Agora destrua a última parte do Monumento Congelado.
+1349	Encontre a Meia de Natal Real Roubada.
+1350	Esta meia de Natal roubada era uma ilusão.
+1351	Parabéns, a meia de Natal roubada certa foi encontrada!
+1352	Agora você deve usar o Tree Finder para continuar.
+1353	As árvores foram descobertas! Você tem que decorar todos eles!
+1354	Agora você deve matar o ajudante amaldiçoado do Papai Noel.
+1355	Use a Decoração de Natal para decorar uma das árvores!
+1356	Muito bem, agora você tem que matar o Fantasma do Papai Noel!
+1357	O grupo %s libertou a Terra no inverno!
+1358	%s libertou a Terra no inverno! 
+1359	Você precisa de Encanta Talismãs para adicionar o quinto bônus.
+1360	Você só pode atualizar itens abaixo do nível 90 neste ferreiro.
+2001	O ferreiro tem um ponto preto na testa?  
+2002	O NPC Soon está segurando um livro?  
+2003	A Espada da Lua Cheia +9 pode ser comprada de um NPC?  
+2004	O Peixe de Lótus Grelhado dá +25% de EXP por 30 minutos?  
+2005	O Comerciante Gaya está segurando um livro?  
+2006	O Auriga-Global é o melhor servidor?  
+2007	O Ampulheta Vermelha dá +10% de força contra meio-humanos?  
+2008	O Ampulheta Amarela dá +10% de força contra metins?  
+2009	Os acessórios de Cristal da Alma podem ser melhorados até +13?  
+2010	A NPC Thusa usa um grampo no cabelo?  
+2011	As armas de nível 75 podem ser melhoradas até +13?  
+2012	Existe um Orvalho Branco (permanente)?  
+2013	O Talismã de Fogo pode ser melhorado até +30?  
+2014	Existe uma poção que dá +15% de chance de sucesso no aprimoramento?  
+2015	O Talismã de Fogo +30 pode ser usado a partir do nível 70?  
+2016	É possível obter espinhas de peixe das pedras metin?  
+2017	O pescador usa um lenço roxo?  
+2018	O comerciante de armas tem cabelo loiro?  
+2019	Existe uma Pedra que dá +35% de Dano Médio?  
+2020	O tecido fino é usado para comprar ombreiras?  
+2021	A Pedra da Inteligência +5 dá +10 de inteligência?  
+2022	O Manny (permanente) pode ser melhorado até +9?  
+2023	O Elixir do Sol (permanente) pode ser comprado no Comerciante Gaya?  
+2024	Comprar algo de outro reino custa o dobro?  
+2025	É possível correr usando smoking?  
+2026	O Elixir da Lua (permanente) pode ser comprado no Comerciante Gaya?  
+2027	Toda a alquimia pode ser refinada com um único clique?  
+2028	São necessários 5 Elixires Arco-Íris para colorir perfeitamente uma habilidade?  
+2029	O Manto da Coragem atrai todos os mobs para você?  
+2030	O ferreiro segura o martelo com a mão esquerda?  
+2031	O Vendedor Geral feminino vende Voucher de Moedas do Dragão?  
+2032	O reino Shinsoo tem uma bandeira azul?  
+2033	O colar de cianita pode ser feito no NPC Uriel?  
+2034	O Biólogo exige um Livro de Maldição para a missão de nível 40?  
+2035	[SGM]Profiq Ninja ?  
+2036	O Hisztis é o promotor oficial do Auriga?  
+2037	A posição do personagem pode ser salva com a tecla F11?  
+2038	Devido ao bloqueio multifarm, se 3 clientes estiverem abertos, o 3º cliente não receberá drops?  
+2039	A Chave Torcida é necessária para entrar no Templo Ochao?  
+2040	O site correto do servidor é www.Auriga-Global.cc?  
+2041	Se 3 clientes estiverem abertos, todos os 3 clientes recebem drops?  
+2042	O NPC Uriel está usando botas?  
+2043	O Guarda da Cidade NPC tem barba marrom?  
+2044	O Capitão NPC segura a arma na mão esquerda?  
+2045	A Velha NPC tem os olhos abertos?  
+2046	O Comandante de Batalha NPC tem bigode?  
+2047	As armas de nível 65 em +9 dão +55% de força contra demônios?  
+2048	Não há Pescador NPC no Mapa2?  
+2049	É possível teleportar para os chefes clicando neles no mapa principal?  
+2050	O Escudo dos Três Imperadores pode ser melhorado até +9?  
+2051	%s entrou no Salão do Dragão!
+2052	O Dragão Azul está de volta!
+2053	[LEVEL UP]%s Atingiu o Nível 35 [Dungeon Desbloqueada] Ork Dungeon
+2054	[LEVEL UP]%s Atingiu o Nível 45 [Dungeon Desbloqueada] Slime Dungeon
+2055	[LEVEL UP]%s Atingiu o Nível 50 [Mapa Desbloqueado]: Ice Empire
+2056	[LEVEL UP]%s Atingiu o Nível 65 [Mapa Desbloqueado] Ice Cave
+2057	[LEVEL UP]%s Atingiu o Nível 75 [Dungeon Desbloqueada] Beran-Setaou
+2058	[LEVEL UP]%s Atingiu o Nível 85 [Mapa Desbloqueado]: Dark Forest
+2059	[LEVEL UP]%s Atingiu o Nível 90 [Dungeon Desbloqueada]: Ochao Dungeon
+2060	[LEVEL UP]%s Atingiu o Nível 100
+2061	[LEVEL UP]%s Atingiu o Nível 110
+2062	[LEVEL UP]%s Atingiu o nível 120
+2063	[LEVEL UP]%s  Atingiu o nível 130
+2064	[!!!!MAX LVL!!!!]%s Atingiu o nível 140. Parabéns da equipa Auriga!
+2065	Caixa Tesouro do Luar evento começou!
+2066	O evento Caixa Tesouro do Luar acabou!
+2067	O evento duplo Fragmento de Metin Rock começou.
+2068	O evento duplo Fragmento de Metin Rock terminou.
+2069	O evento de queda de MD terminou
+2070	O evento de queda de MD foi iniciado.
+2071	|cff00A8EB[ItemShop]|r |cffFFFFFFItemShop was update!|r
+2072	|cff00A8EB[ItemShop]|r |cffFFFFFFYou don't have enought dragon coin!|r
+2073	|cff00A8EB[ItemShop]|r |cffFFFFFFYou bought from game itemshop|r |cffF7BD48%sx%d|r |cffFFFFFFfor|e |cffF7BD48%d|r |cffFFFFFFCoins. You can get in on ItemShop Warehouse.|r
+2074	|cff00A8EB[ItemShop]|r |cffFFFFFFYou bought from game itemshop|r |cffF7BD48%s|r |cffFFFFFFfor|r |cffF7BD48%d|r |cffFFFFFFCoins. You can get in on ItemShop Warehouse.|r
+2075	|cff00A8EB[ItemShop]|r |cffFFFFFFYou cannot exceed the weekly purchase count. Max Count Per Week: %d|r
+2076	|cff00A8EB[ItemShop]|r |cffFFFFFFYou cannot exceed the monthly purchase count. Max Count Per Month: %d|r
+2077	[SYSTEM]You must be seat on the mount before using the mount costume!
+2078	Bonus event is active!
+2079	Bonus event is done
+2080	Double Boss Loot event is active!
+2081	Double Boss Loot event is done!
+2082	Double Metin Loot event is active
+2083	Double Metin Loot event is done
+2084	Double Mission Book event is active
+2085	Double Mission Book event is done
+2086	Dungeon Cooldown event is active!
+2087	Dungeon Cooldown event is done!
+2088	Dungeon Ticket event is active!
+2089	Dungeon Ticket event is done!
+2090	MoonLight event is active!
+2091	MoonLight event is done!
+2092	%s and her/his group killed Hydra!
+2093	%s killed the Hydra!
+2094	The NPC has appeared, talk to her to let you continue.
+2095	Kill the BOSS to free the NPC.
+2096	Kill the Great Hydra to complete the Dungeon.

@@ -17,7 +17,7 @@ void Stop(entt::entity e);
 
 // ECS movement-state write helpers. After Phase 15E-final.LPENTITY.4-architect
 // C.2/C.3 these are the *sole* writers for movement destination and timing
-// state - the legacy CHARACTER fields (m_posDest, m_dwMoveStartTime,
+// state - the legacy CHARACTER timing/walking fields (m_dwMoveStartTime,
 // m_dwMoveDuration, m_bNowWalking) are no longer maintained on character
 // paths, and EntityNetworkDispatch::SendCharacterInsert reads ECS components
 // directly. The helpers will keep this name through Phase G; the legacy

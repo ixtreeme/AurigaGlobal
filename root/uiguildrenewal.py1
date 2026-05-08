@@ -1,0 +1,709 @@
+import ui
+import net
+import player
+import mouseModule
+import uiToolTip
+import uipickmoney
+import localeinfo
+import chat
+import time
+import item
+
+try:
+	import guild
+except:
+	guild = None
+
+
+def _SafeMoneyStr(v):
+	try:
+		return localeinfo.NumberToMoneyString(long(v))
+	except:
+		try:
+			return str(int(v))
+		except:
+			return "0"
+
+
+def _ClampInt(v, lo, hi, defaultV):
+	try:
+		v = int(v)
+	except:
+		return defaultV
+	if v < lo:
+		return lo
+	if v > hi:
+		return hi
+	return v
+
+
+def _ItemNameByVnum(vnum):
+	try:
+		vnum = int(vnum)
+	except:
+		return "-"
+	if vnum <= 0:
+		return "-"
+	try:
+		item.SelectItem(vnum)
+		n = item.GetItemName()
+		return n if n else "-"
+	except:
+		return "-"
+
+
+class GuildRenewalTaxDialog(ui.ScriptWindow):
+	"""Ado kivetese ablak:
+	- NINCS vnum beiras
+	- A kovetkezo szint igeny targyai automatikusan ikon+nevkent megjelennek
+	- Darabszam / fo: gombbal allithato (PickMoneyDialog), igy nincs multi-caret bug
+	- Hatarido: csak nap (pl 10)
+	- 0 darab -> (0 0) megy a szerverre, tehat nem kerul bele az adokovetelmenybe
+	"""
+
+	def __init__(self, parentWnd):
+		ui.ScriptWindow.__init__(self)
+		self.parentWnd = parentWnd
+		self.isLoaded = False
+
+		self.reqVnums = [0, 0, 0, 0, 0]
+		self.countBtns = []
+		self.nameTexts = []
+		self.pickDlg = None
+		self.pickIndex = -1
+
+		self.__Load()
+
+	def __Load(self):
+		if self.isLoaded:
+			return
+
+		pyLoader = ui.PythonScriptLoader()
+		pyLoader.LoadScriptFile(self, "uiscript/guildrenewal_taxsetting.py")
+
+		self.board = self.GetChild("Board")
+		self.titleBar = self.GetChild("TitleBar")
+		self.titleBar.SetCloseEvent(ui.__mem_func__(self.Close))
+
+		self.daysEdit = self.GetChild("DaysValue")
+		self.yangEdit = self.GetChild("YangValue")
+
+		try:
+			self.daysEdit.SetNumberMode()
+			self.yangEdit.SetNumberMode()
+		except:
+			pass
+
+		self.itemSlots = self.GetChild("ReqItemSlots")
+
+		for i in xrange(5):
+			self.countBtns.append(self.GetChild("CountBtn%d" % i))
+			self.nameTexts.append(self.GetChild("NameText%d" % i))
+			self.countBtns[i].SetEvent(ui.__mem_func__(self.__OnClickCountBtn), i)
+
+		self.btnOK = self.GetChild("AcceptButton")
+		self.btnCancel = self.GetChild("CancelButton")
+		self.btnOK.SetEvent(ui.__mem_func__(self.__OnAccept))
+		self.btnCancel.SetEvent(ui.__mem_func__(self.Close))
+
+		self.isLoaded = True
+
+	def Open(self, reqItems, defaultYangPerMember=0, defaultDays=7):
+		# reqItems: [(vnum,count), ...] kovetkezo szint igeny
+		self.reqVnums = [0, 0, 0, 0, 0]
+		for i in xrange(5):
+			try:
+				vnum, _cnt = reqItems[i]
+			except:
+				vnum = 0
+			self.reqVnums[i] = int(vnum)
+
+		self.daysEdit.SetText(str(int(defaultDays)))
+		try:
+			self.yangEdit.SetText(str(long(defaultYangPerMember)))
+		except:
+			self.yangEdit.SetText("0")
+
+		for i in xrange(5):
+			v = int(self.reqVnums[i])
+			if v > 0:
+				self.itemSlots.SetItemSlot(i, v, 1)
+				self.nameTexts[i].SetText(_ItemNameByVnum(v))
+				self.countBtns[i].SetText("0")
+				try:
+					self.countBtns[i].Enable()
+				except:
+					pass
+			else:
+				self.itemSlots.ClearSlot(i)
+				self.nameTexts[i].SetText("-")
+				self.countBtns[i].SetText("-")
+				try:
+					self.countBtns[i].Disable()
+				except:
+					pass
+
+		self.itemSlots.RefreshSlot()
+
+		self.SetCenterPosition()
+		self.SetTop()
+		self.Show()
+
+	def Close(self):
+		if self.pickDlg:
+			self.pickDlg.Close()
+			self.pickDlg = None
+			self.pickIndex = -1
+		self.Hide()
+
+	def OnPressEscapeKey(self):
+		self.Close()
+		return True
+
+	def __OnClickCountBtn(self, idx):
+		try:
+			idx = int(idx)
+		except:
+			return
+		if idx < 0 or idx >= 5:
+			return
+		if int(self.reqVnums[idx]) <= 0:
+			return
+
+		if self.pickDlg:
+			self.pickDlg.Close()
+			self.pickDlg = None
+
+		self.pickIndex = idx
+
+		dlg = uipickmoney.PickMoneyDialog()
+		dlg.LoadDialog()
+		dlg.SetTitleName("Darabszam / fo")
+		dlg.SetAcceptEvent(ui.__mem_func__(self.__OnPickCountAccept))
+		dlg.Open(999999)
+		self.pickDlg = dlg
+
+	def __OnPickCountAccept(self, money):
+		if self.pickDlg:
+			self.pickDlg.Close()
+		self.pickDlg = None
+
+		try:
+			idx = int(self.pickIndex)
+		except:
+			idx = -1
+		self.pickIndex = -1
+
+		try:
+			c = int(money)
+		except:
+			c = 0
+		if c < 0:
+			c = 0
+
+		if 0 <= idx < 5:
+			self.countBtns[idx].SetText(str(c))
+
+	def __OnAccept(self):
+		days = _ClampInt(self.daysEdit.GetText().strip(), 1, 30, 7)
+
+		try:
+			perYang = long(self.yangEdit.GetText().strip())
+		except:
+			perYang = 0
+		if perYang < 0:
+			perYang = 0
+
+		epoch = time.time() + (days * 24 * 60 * 60)
+		dateStr = time.strftime("%Y.%m.%d", time.localtime(epoch))
+
+		cmd = "/gr_set_tax %s %d" % (dateStr, long(perYang))
+
+		for i in xrange(5):
+			v = int(self.reqVnums[i])
+			try:
+				c = int(self.countBtns[i].GetText())
+			except:
+				c = 0
+
+			# 0 db -> NEM kerul bele
+			if v <= 0 or c <= 0:
+				cmd += " 0 0"
+			else:
+				cmd += " %d %d" % (v, c)
+
+		net.SendChatPacket(cmd)
+		chat.AppendChat(chat.CHAT_TYPE_INFO, "Ado kovetelmeny elkuldve.")
+		self.Close()
+
+
+class GuildRenewalWindow(ui.ScriptWindow):
+	def __init__(self):
+		ui.ScriptWindow.__init__(self)
+		self.isLoaded = False
+
+		self.storageItems = {}   # slot -> (vnum,count)
+		self.storageYang = 0
+
+		self.reqItems = [(0, 0)] * 5
+		self.reqYang = 0
+
+		self.taxActive = 0
+		self.taxDeadlineRaw = 0
+		self.taxYang = 0
+		self.taxItems = [(0, 0)] * 5
+
+		self.guildLevel = 0
+		self.paidStatus = 0
+
+		self.contribMap = {}
+
+		self.moneyDialog = None
+		self.taxDialog = None
+
+		self.tooltipItem = uiToolTip.ItemToolTip()
+
+		self.__LoadWindow()
+
+	def __LoadWindow(self):
+		if self.isLoaded:
+			return
+
+		pyLoader = ui.PythonScriptLoader()
+		pyLoader.LoadScriptFile(self, "uiscript/guildrenewalwindow.py")
+
+		self.board = self.GetChild("Board")
+		self.titleBar = self.GetChild("TitleBar")
+		self.titleBar.SetCloseEvent(ui.__mem_func__(self.Close))
+
+		self.storageSlot = self.GetChild("StorageSlots")
+		self.reqSlot = self.GetChild("ReqSlots")
+		self.taxSlot = self.GetChild("TaxSlots")
+
+		self.txtLevel = self.GetChild("GuildLevelText")
+		self.txtPaid = self.GetChild("PaidStatusText")
+
+		self.txtStorageMoney = self.GetChild("StorageMoneyText")
+
+		self.txtReqYang = self.GetChild("ReqYangText")
+		self.txtReqYangTotal = self.GetChild("ReqYangTotalText")
+
+		self.txtTaxDeadline = self.GetChild("TaxDeadlineText")
+		self.txtTaxMoney = self.GetChild("TaxMoneyText")
+
+		self.taxNameTexts = []
+		self.taxCountTexts = []
+		for i in xrange(5):
+			self.taxNameTexts.append(self.GetChild("TaxNameText%d" % i))
+			self.taxCountTexts.append(self.GetChild("TaxCountText%d" % i))
+
+		self.btnDepositYang = self.GetChild("DepositYangButton")
+		self.btnPayTax = self.GetChild("PayTaxButton")
+		self.btnSetTax = self.GetChild("SetTaxButton")
+		self.btnLevelUp = self.GetChild("LevelUpButton")
+
+		self.btnDepositYang.SetEvent(ui.__mem_func__(self.__OnDepositYangButton))
+		self.btnPayTax.SetEvent(ui.__mem_func__(self.__OnPayTaxButton))
+		self.btnSetTax.SetEvent(ui.__mem_func__(self.__OnSetTaxButton))
+		self.btnLevelUp.SetEvent(ui.__mem_func__(self.__OnLevelUpButton))
+
+		self.contribList = self.GetChild("ContribList")
+		self.contribScroll = self.GetChild("ContribScroll")
+		self.contribList.SetScrollBar(self.contribScroll)
+
+		self.storageSlot.SetSelectEmptySlotEvent(ui.__mem_func__(self.__OnSelectEmptyStorageSlot))
+		self.storageSlot.SetSelectItemSlotEvent(ui.__mem_func__(self.__OnSelectStorageItemSlot))
+		self.storageSlot.SetOverInItemEvent(ui.__mem_func__(self.__OnOverInStorageItem))
+		self.storageSlot.SetOverOutItemEvent(ui.__mem_func__(self.__OnOverOutAnyItem))
+
+		self.reqSlot.SetOverInItemEvent(ui.__mem_func__(self.__OnOverInReqItem))
+		self.reqSlot.SetOverOutItemEvent(ui.__mem_func__(self.__OnOverOutAnyItem))
+		self.taxSlot.SetOverInItemEvent(ui.__mem_func__(self.__OnOverInTaxItem))
+		self.taxSlot.SetOverOutItemEvent(ui.__mem_func__(self.__OnOverOutAnyItem))
+
+		self.isLoaded = True
+		self.RefreshAll()
+		self.Hide()
+
+	def Open(self):
+		self.Show()
+		self.SetCenterPosition()
+		self.SetTop()
+
+	def Close(self):
+		if self.moneyDialog:
+			self.moneyDialog.Close()
+			self.moneyDialog = None
+		if self.taxDialog:
+			self.taxDialog.Close()
+			self.taxDialog = None
+
+		self.Hide()
+		self.__OnOverOutAnyItem()
+
+	def OnPressEscapeKey(self):
+		self.Close()
+		return True
+
+	# ---- server setters (ezeket a network parancsok hivjak) ----
+	def ClearData(self):
+		self.storageItems = {}
+		self.storageYang = 0
+		self.reqItems = [(0, 0)] * 5
+		self.reqYang = 0
+		self.taxActive = 0
+		self.taxDeadlineRaw = 0
+		self.taxYang = 0
+		self.taxItems = [(0, 0)] * 5
+		self.contribMap = {}
+		self.RefreshAll()
+
+	def Done(self):
+		self.RefreshAll()
+
+	def SetGuildLevel(self, level):
+		try:
+			self.guildLevel = int(level)
+		except:
+			self.guildLevel = 0
+		self.RefreshAll()
+
+	def SetPaidStatus(self, paid):
+		try:
+			self.paidStatus = 1 if int(paid) else 0
+		except:
+			self.paidStatus = 0
+		self.RefreshAll()
+
+	def SetStorageMoney(self, money):
+		try:
+			self.storageYang = long(money)
+		except:
+			self.storageYang = 0
+		self.RefreshAll()
+
+	def SetStorageSlot(self, slotIndex, vnum, count):
+		try:
+			slotIndex = int(slotIndex)
+			vnum = int(vnum)
+			count = int(count)
+		except:
+			return
+
+		if slotIndex < 0 or slotIndex >= 100:
+			return
+
+		if vnum <= 0 or count <= 0:
+			if slotIndex in self.storageItems:
+				del self.storageItems[slotIndex]
+		else:
+			self.storageItems[slotIndex] = (vnum, count)
+
+		self.RefreshAll()
+
+	def SetRequired(self, reqYang, items):
+		try:
+			self.reqYang = long(reqYang)
+		except:
+			self.reqYang = 0
+
+		tmp = []
+		for i in xrange(5):
+			try:
+				v, c = items[i]
+				tmp.append((int(v), int(c)))
+			except:
+				tmp.append((0, 0))
+		self.reqItems = tmp
+		self.RefreshAll()
+
+	def SetTax(self, deadline, taxYang, items, active=1):
+		self.taxActive = 1 if int(active) else 0
+		self.taxDeadlineRaw = deadline
+		try:
+			self.taxYang = long(taxYang)
+		except:
+			self.taxYang = 0
+
+		tmp = []
+		for i in xrange(5):
+			try:
+				v, c = items[i]
+				tmp.append((int(v), int(c)))
+			except:
+				tmp.append((0, 0))
+		self.taxItems = tmp
+		self.RefreshAll()
+
+	def SetContribution(self, name, paidMoney, paidItemTotal):
+		try:
+			n = str(name)
+		except:
+			n = "?"
+		try:
+			pm = long(paidMoney)
+		except:
+			pm = 0
+		try:
+			pi = int(paidItemTotal)
+		except:
+			pi = 0
+
+		self.contribMap[n] = (pm, pi)
+		self.RefreshAll()
+
+	# ---- helpers ----
+	def __IsLeader(self):
+		if not guild:
+			return True
+		try:
+			master = guild.GetGuildMasterName()
+		except:
+			return True
+
+		my = ""
+		try:
+			my = player.GetMainCharacterName()
+		except:
+			try:
+				my = player.GetName()
+			except:
+				my = ""
+		if not my:
+			return True
+		return (my == master)
+
+	def __FormatDeadline(self):
+		d = self.taxDeadlineRaw
+		try:
+			if isinstance(d, basestring):
+				return d
+		except:
+			pass
+		try:
+			epoch = int(d)
+		except:
+			return "-"
+		if epoch <= 0:
+			return "-"
+		try:
+			t = time.localtime(epoch)
+			return "%04d.%02d.%02d" % (t.tm_year, t.tm_mon, t.tm_mday)
+		except:
+			return str(epoch)
+
+	def __BuildStorageCountByVnum(self):
+		m = {}
+		for _slot, vc in self.storageItems.items():
+			try:
+				vnum, cnt = vc
+				vnum = int(vnum)
+				cnt = int(cnt)
+			except:
+				continue
+			if vnum <= 0 or cnt <= 0:
+				continue
+			m[vnum] = m.get(vnum, 0) + cnt
+		return m
+
+	# ---- UI refresh ----
+	def RefreshAll(self):
+		if not self.isLoaded:
+			return
+
+		self.txtLevel.SetText(str(self.guildLevel))
+		self.txtPaid.SetText("O" if self.paidStatus else "X")
+		self.txtStorageMoney.SetText(_SafeMoneyStr(self.storageYang))
+
+		stByV = self.__BuildStorageCountByVnum()
+
+		remainYang = self.reqYang - self.storageYang
+		if remainYang < 0:
+			remainYang = 0
+
+		self.txtReqYang.SetText(_SafeMoneyStr(remainYang))
+		self.txtReqYangTotal.SetText(_SafeMoneyStr(self.reqYang))
+
+		for i in xrange(100):
+			if i in self.storageItems:
+				vnum, cnt = self.storageItems[i]
+				self.storageSlot.SetItemSlot(i, int(vnum), int(cnt))
+			else:
+				self.storageSlot.ClearSlot(i)
+		self.storageSlot.RefreshSlot()
+
+		for i in xrange(5):
+			vnum, reqCnt = self.reqItems[i]
+			vnum = int(vnum)
+			reqCnt = int(reqCnt)
+			if vnum > 0 and reqCnt > 0:
+				have = stByV.get(vnum, 0)
+				rem = reqCnt - have
+				if rem < 0:
+					rem = 0
+				self.reqSlot.SetItemSlot(i, vnum, rem if rem > 0 else 0)
+			elif vnum > 0:
+				self.reqSlot.SetItemSlot(i, vnum, 0)
+			else:
+				self.reqSlot.ClearSlot(i)
+		self.reqSlot.RefreshSlot()
+
+		self.txtTaxDeadline.SetText(self.__FormatDeadline())
+		self.txtTaxMoney.SetText(_SafeMoneyStr(self.taxYang))
+
+		for i in xrange(5):
+			vnum, cnt = self.taxItems[i]
+			vnum = int(vnum)
+			cnt = int(cnt)
+			if self.taxActive and vnum > 0 and cnt > 0:
+				self.taxSlot.SetItemSlot(i, vnum, cnt)
+				self.taxNameTexts[i].SetText(_ItemNameByVnum(vnum))
+				self.taxCountTexts[i].SetText(str(cnt))
+			elif self.taxActive and vnum > 0:
+				self.taxSlot.SetItemSlot(i, vnum, 0)
+				self.taxNameTexts[i].SetText(_ItemNameByVnum(vnum))
+				self.taxCountTexts[i].SetText("0")
+			else:
+				self.taxSlot.ClearSlot(i)
+				self.taxNameTexts[i].SetText("-")
+				self.taxCountTexts[i].SetText("")
+		self.taxSlot.RefreshSlot()
+
+		try:
+			self.contribList.RemoveAllItems()
+		except:
+			pass
+
+		try:
+			keys = self.contribMap.keys()
+			keys.sort(key=lambda k: self.contribMap[k][0], reverse=True)
+		except:
+			keys = self.contribMap.keys()
+
+		for name in keys:
+			pm, pi = self.contribMap.get(name, (0, 0))
+			line = "%s | %s yang | %d item" % (name, _SafeMoneyStr(pm), int(pi))
+			try:
+				self.contribList.AppendItem(ui.ListBoxEx.Item(line))
+			except:
+				try:
+					self.contribList.AppendItem(ui.ListBoxExItem(line))
+				except:
+					pass
+
+		try:
+			self.contribList.SetBasePos(0)
+			self.contribScroll.SetPos(0.0)
+		except:
+			pass
+
+		if self.__IsLeader():
+			self.btnSetTax.Show()
+		else:
+			self.btnSetTax.Hide()
+
+	# ---- buttons ----
+	def __OnDepositYangButton(self):
+		if self.moneyDialog:
+			self.moneyDialog.Close()
+			self.moneyDialog = None
+
+		dlg = uipickmoney.PickMoneyDialog()
+		dlg.LoadDialog()
+		dlg.SetTitleName("Yang betetes")
+		dlg.SetAcceptEvent(ui.__mem_func__(self.__OnDepositYangAccept))
+		try:
+			dlg.Open(player.GetMoney())
+		except:
+			dlg.Open(999999999999)
+		self.moneyDialog = dlg
+
+	def __OnDepositYangAccept(self, money):
+		self.moneyDialog = None
+		try:
+			m = long(money)
+		except:
+			m = 0
+		if m <= 0:
+			return
+		net.SendChatPacket("/gr_deposit_yang %d" % m)
+
+	def __OnPayTaxButton(self):
+		net.SendChatPacket("/gr_pay_tax")
+
+	def __OnLevelUpButton(self):
+		net.SendChatPacket("/gr_levelup")
+
+	def __OnSetTaxButton(self):
+		if not self.__IsLeader():
+			chat.AppendChat(chat.CHAT_TYPE_INFO, "Csak a cehvezeto vethet ki adot.")
+			return
+
+		if self.taxDialog:
+			self.taxDialog.Close()
+			self.taxDialog = None
+
+		defaultDays = 7
+		defaultYang = self.taxYang if self.taxActive else 0
+
+		self.taxDialog = GuildRenewalTaxDialog(self)
+		self.taxDialog.Open(self.reqItems, defaultYangPerMember=defaultYang, defaultDays=defaultDays)
+
+	# ---- storage deposit ----
+	def __OnSelectEmptyStorageSlot(self, slotIndex):
+		if not mouseModule.mouseController.isAttached():
+			return
+
+		attType = mouseModule.mouseController.GetAttachedType()
+		attSlot = mouseModule.mouseController.GetAttachedSlotNumber()
+		attCount = mouseModule.mouseController.GetAttachedItemCount()
+
+		if attType != player.SLOT_TYPE_INVENTORY:
+			mouseModule.mouseController.DeattachObject()
+			chat.AppendChat(chat.CHAT_TYPE_INFO, "Csak inventorybol lehet betenni.")
+			return
+
+		if attCount <= 0:
+			try:
+				attCount = player.GetItemCount(attSlot)
+			except:
+				attCount = 1
+
+		mouseModule.mouseController.DeattachObject()
+		if attCount <= 0:
+			return
+
+		net.SendChatPacket("/gr_deposit_item %d %d" % (int(attSlot), int(attCount)))
+
+	def __OnSelectStorageItemSlot(self, slotIndex):
+		mouseModule.mouseController.DeattachObject()
+		chat.AppendChat(chat.CHAT_TYPE_INFO, "Ebbol a leltarbol kivenni nem lehet.")
+
+	# ---- tooltips ----
+	def __OnOverInStorageItem(self, slotIndex):
+		try:
+			vnum, _ = self.storageItems.get(int(slotIndex), (0, 0))
+		except:
+			vnum = 0
+		if vnum and self.tooltipItem:
+			self.tooltipItem.SetItemToolTip(int(vnum))
+
+	def __OnOverInReqItem(self, slotIndex):
+		idx = int(slotIndex)
+		if idx < 0 or idx >= 5:
+			return
+		vnum, _ = self.reqItems[idx]
+		if vnum and self.tooltipItem:
+			self.tooltipItem.SetItemToolTip(int(vnum))
+
+	def __OnOverInTaxItem(self, slotIndex):
+		idx = int(slotIndex)
+		if idx < 0 or idx >= 5:
+			return
+		vnum, _ = self.taxItems[idx]
+		if vnum and self.tooltipItem:
+			self.tooltipItem.SetItemToolTip(int(vnum))
+
+	def __OnOverOutAnyItem(self):
+		if self.tooltipItem:
+			self.tooltipItem.HideToolTip()

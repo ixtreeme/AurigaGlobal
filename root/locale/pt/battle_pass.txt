@@ -1,0 +1,10 @@
+1	Matar o Boss	Kills Remaining: %s	Monstro: |cffff9d9d|H|h%s|h|r	Matar o(a) |cffff9d9d|H|h%s|h|r para	complete a missão e ganhe	recompensas para o seu personagem.
+5	Use o objeto	Objeto para usar: %s	Objeto: |cffff9d9d|H|h%s|h|r	Use |cffff9d9d|H|h%s|h|r para	complete a missão e ganhe	recompensas para o seu personagem.
+6	Venda o Objeto	Objeto para vender: %s	Objeto: |cffff9d9d|H|h%s|h|r	Vender |cffff9d9d|H|h%s|h|r para	complete a missão e ganhe	recompensas para o seu personagem.
+8	Aprimore o objeto	Objeto para melhorar: %s	Objeto: |cffff9d9d|H|h%s|h|r	Aprimore |cffff9d9d|H|h%s|h|r para	complete a missão e ganhe	recompensas para o seu personagem.
+9	Destrua seu Objeto	Objeto a ser destruído: %s	Objeto: |cffff9d9d|H|h%s|h|r	Destrua |cffff9d9d|H|h%s|h|r para	complete a missão e ganhe	recompensas para o seu personagem.
+10	Colecione 	Objeto para colecionar: %s	Objeto: |cffff9d9d|H|h%s|h|r	Colecione |cffff9d9d|H|h%s|h|r para	complete a missão e ganhe	recompensas para o seu personagem.
+11	Frite o peixe	Peixe para fritar: %s	Fritar: Tudo	Frite qualquer peixe para	complete a missão e ganhe	recompensas para o seu personagem.
+12	Pegue os Peixes	Peixe para pescar: %s	Pescar: Tudo	Pegue qualquer peixe para	complete a missão e ganhe	recompensas para o seu personagem.
+14	Colete Gold	Gold para coletar: %s	Recolher a partir de: Tudo	Colete Gold para	complete a missão e ganhe	recompensas para o seu personagem.
+15	Masmorra completa 	Masmorra para completar: %s	Masmorra: Tudo	70 Masmorras completas para	complete a missão e ganhe	recompensas para o seu personagem.

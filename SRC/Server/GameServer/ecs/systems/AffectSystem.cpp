@@ -1671,7 +1671,7 @@ bool CHARACTER::AddAffect(uint32_t dwType, uint8_t bApplyOn, int32_t lApplyValue
 		// B.1.4: read via getter (ECS MovementDestination, fallback to GetX/Y).
 		if (GetCurrentDestX() != GetX() || GetCurrentDestY() != GetY())
 		{
-			// Phase C.3: legacy m_posDest write removed. m_posStart still
+			// Phase C.3: legacy destination field write removed. m_posStart still
 			// legacy (folds into a function-local in C.5/refactor).
 			m_posStart.x = GetX();
 			m_posStart.y = GetY();

@@ -3710,7 +3710,7 @@ void CHARACTER::MountVnum(uint32_t vnum)
     if (m_bIsObserver)
         return;
 
-    // Phase C.3: legacy m_posDest write removed. SyncDestinationClear
+    // Phase C.3: legacy destination field write removed. SyncDestinationClear
     // drops ECS MovementDestination so subsequent INSERT packets emit
     // current position (GetX/Y fallback in GetCurrentDestX/Y).
     m_posStart.x = GetX();
@@ -3887,7 +3887,7 @@ void CHARACTER::SetPlayerProto(const TPlayerTable* t)
     // SyncPositionComponents is the sole source.
     ecs::SyncPositionComponents(g_registry, GetEntityHandle(), t->lMapIndex, t->x, t->y, t->z);
 
-    // Phase C.3: legacy m_posDest write removed. SyncDestinationClear
+    // Phase C.3: legacy destination field write removed. SyncDestinationClear
     // drops ECS MovementDestination - GetCurrentDestX/Y now returns
     // GetX/Y (the loaded position) so EncodeInsertPacket emits the
     // correct values without legacy dest priming.
@@ -4926,7 +4926,7 @@ void CHARACTER::Initialize()
     m_pkRegen = nullptr;
     regen_id_ = 0;
     m_posRegen.x = m_posRegen.y = m_posRegen.z = 0;
-    // Phase C.3: legacy m_posDest zero-init removed (entity null at this
+    // Phase C.3: legacy destination zero-init removed (entity null at this
     // Initialize point - ECS write would no-op anyway; new MovementDestination
     // is absent until Goto/Move emplaces).
     m_posStart.x = m_posStart.y = 0;

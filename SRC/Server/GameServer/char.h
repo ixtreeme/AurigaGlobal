@@ -1082,10 +1082,10 @@ public:
 	uint32_t			GetCurrentMoveStartTime() const;
 	// Phase 15E-final.LPENTITY.4-architect.B.1.4:
 	// GetCurrentDestX / GetCurrentDestY now read the ECS
-	// MovementDestination component. Per A.2 §2 m_posDest row.
+	// MovementDestination component. Per A.2 movement destination row.
 	// When the component is absent (entity is not actively moving),
 	// returns current position via GetX/GetY. This preserves legacy
-	// semantic where m_posDest is set to current position by Stop()
+	// semantic where the destination is set to current position by Stop()
 	// (and similar settle sites) when no move is active. Bodies in
 	// MovementSystem.cpp.
 	int32_t			GetCurrentDestX() const;
@@ -1141,7 +1141,6 @@ protected:
 	LPCHARACTER		m_pkChrSyncOwner;
 	CHARACTER_LIST	m_kLst_pkChrSyncOwned;	// ���� SyncOwner�� �ڵ�
 
-	PIXEL_POSITION	m_posDest;
 	PIXEL_POSITION	m_posStart;
 	PIXEL_POSITION	m_posWarp;
 	int32_t			m_lWarpMapIndex;

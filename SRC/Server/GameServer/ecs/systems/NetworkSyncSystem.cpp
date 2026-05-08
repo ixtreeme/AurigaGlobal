@@ -991,7 +991,7 @@ void CHARACTER::EncodeInsertPacket(LPENTITY entity)
     pack.bStateFlag = GetAddChrStateFlag();
 
     int iDur = 0;
-    // B.1.4: read m_posDest via getters (ECS MovementDestination, fallback to GetX/Y).
+    // B.1.4: read destination via getters (ECS MovementDestination, fallback to GetX/Y).
     const int32_t destX = GetCurrentDestX();
     const int32_t destY = GetCurrentDestY();
     if (destX != pack.x || destY != pack.y) {
@@ -1289,4 +1289,3 @@ void CItem::UpdatePacket()
 
     ecs::ItemNetworkSystem::SendItemUpdate(g_registry, item);
 }
-

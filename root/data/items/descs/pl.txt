@@ -1,0 +1,1349 @@
+2858	Profiq Pepsi	+20 Metin, +20 Monster,+20 Boss,+10 PVM
+71057	Chest Stones	Ta skrzynia zawiera losowy kamien ducha +5.
+49021	Spirit Sword (inf)	Ten przedmiot jest dostepny tylko dla tych, ktorzy pelnia role Pomocnika.
+49022	Spirit Dagger (inf)	Ten przedmiot jest dostepny tylko dla tych, ktorzy pelnia role Pomocnika.
+49023	Spirit Bow (inf)	Ten przedmiot jest dostepny tylko dla tych, ktorzy pelnia role Pomocnika.
+49024	Spirit Glaive (inf)	Ten przedmiot jest dostepny tylko dla tych, ktorzy pelnia role Pomocnika.
+49025	Spirit Bell (inf)	Ten przedmiot jest dostepny tylko dla tych, ktorzy pelnia role Pomocnika.
+49026	Spirit Fan (inf)	Ten przedmiot jest dostepny tylko dla tych, ktorzy pelnia role Pomocnika.
+49027	Spirit Costume (F) (inf)	Ten przedmiot jest dostepny tylko dla tych, ktorzy pelnia role Pomocnika.
+49028	Spirit Costume (M) (inf)	Ten przedmiot jest dostepny tylko dla tych, ktorzy pelnia role Pomocnika.
+85112	Spirit Stole (inf)	Ten przedmiot jest dostepny tylko dla tych, ktorzy pelnia role Pomocnika.
+71056	Helper Scroll	Ten przedmiot jest dostepny tylko dla tych, ktorzy pelnia role Pomocnika.
+89001	Kupon	Kupon o warto ci 1 Smoczych Monet.
+89002	Kupon	Kupon o warto ci 2 Smoczych Monet.
+89003	Kupon	Kupon o warto ci 3 Smoczych Monet.
+70027	Mistyc Blessing scroll	Item refine prob 100%
+89004	Kupon	Kupon o warto ci 50 Smoczych Monet.
+30930	Ampoule with blood	Ampoule with your own blood. Its neccesary to have this ampoule when you enter Bloody cathedral.	Halloween event
+30931	Cathedral cross	Only item in the whole cathedral that wasnt desecrate by vampires.	Halloween event
+30932	Vampire amulet	Vampires always put part of their power into some stuff. This one is extremly powerfull.	Halloween event
+30933	Bottle with blood	The bottle contains a lot of blood. No one knows exactly where is the blood from.	Halloween event
+30934	Cathedral chest	Forgotten chest from Bloody cathedral. Look what is inside.	Halloween event
+55555	Ore Ticket	With this item you can buy ore from the blacksmith.
+89005	Kupon	Kupon o warto ci 100 Smoczych Monet.
+89006	Kupon	Kupon o warto ci 500 Smoczych Monet.
+89007	Kupon	Kupon o warto ci 1000 Smoczych Monet.
+50001	Item-Shop	Wewnatrz skrzyni znajduje sie:
+100000	Eliksir Czasu (M)	Nape nia czas trwania Smoczego Kamienia.
+100001	Eliksir Czasu ( )	Nape nia czas trwania Smoczego Kamienia.
+100002	Eliksir Czasu (D)	Nape nia czas trwania Smoczego Kamienia.
+100100	Smocze C gi	To przydatne narz dzie zwi ksza szanse na sukces podczas usuwania Smoczego Kamienia.
+100300	Zielona Smocza Fasola	Ta magiczna fasola zwi ksza poziom Smoczego Kamienia. Zabieg ten mo e si  jednak zako czy  niepowodzeniem.
+100400	Niebieska Smocza Fasola	Ta magiczna fasola zwi ksza szans  na pomy lne ulepszenie Smoczego Kamienia o jeden poziom.
+100500	R owa Smocza Fasola	Szansa na pomy lne ulepszenie Smoczego Kamienia o jeden poziom wzrasta o 10%.
+11901	Smoking	Elegancki garnitur - w sam raz na  lub.
+11902	Smoking	Elegancki garnitur - w sam raz na  lub.
+11903	Suknia  lubna	Specjalna suknia u ywana przez kobiety podczas  lubu.
+11904	Suknia  lubna	Specjalna suknia u ywana przez kobiety podczas  lubu.
+18900	Kamie  Czerw. P omienia	Zwi ksza bonusy twojego pasa.
+25040	Zw j B ogos awie stwa	Usuwa ryzyko zniszczenia przedmiotu podczas jego ulepszania. Je eli ulepszanie si  nie powiedzie, to jako   przedmiotu jest redukowana o 1 poziom.
+25041	Magiczny Kamie 	Bry a legendarnego metalu zapewniaj cego najlepsze wyniki podczas ulepszania przedmiot w. W ten spos b ulepszony przedmiot nie mo e ulec ani zniszczeniu ani pogorszeniu.
+25100	Zw j Kamienia Duszy	Zw j pozwala Ci wydoby  Kamie  Duszy z broni albo zbroi. Zostawia znak wydobycia.
+27600	Wysuszone Drzewo	Drzewo  ci te na ognisko.
+27610	Kula Rybaka	Ten magiczny marmur pokazuje informacje o z owionej rybie.
+27620	Rybie Wn trzno ci	Ksi  ka dostarczaj ca informacji o rybach.
+27803	Kara 	Popularna ryba,  yj ca z regu y w stawach.
+27804	Ryba Mandaryna	Smaczna ryba.
+27805	Du y Kara 	Du y, gruby Kara .
+27806	Karp	Du a, srebrna ryba.
+27807	 oso 	Ryba wracaj ca do domu podczas sezonu godowego.
+27808	Amur	Karp jedz cy z regu y traw .
+27809	Pstr g	Kuzyn  ososia.
+27810	W gorz	Ryba przypominaj ca w a. Charakteryzuje si  du   wytrzyma o ci .
+27811	T czowy Pstr g	Ryba o t czowym kolorze plec w.
+27812	Rzeczny Pstr g	Ryba  yj ca w rzekach.
+27813	Krasnopi rka	Ryba  yj ca w  awicach.
+27814	Oko 	Ryba, cz sto nazywana pogromc  jezior.
+27815	Tenchi	Rodzaj Kie pa  yj cy tylko w czystej wodzie.
+27816	Sum	Ryba posiadaj ca charakterystyczne d ugie "kocie" w sy
+27817	Piskorz	Zwinna ryba  yj ca z regu y w b otnistych wodach.
+27818	Ryba Lotosu	Du a ryba  yj ca w czystych wodach, ma z o on  diet .
+27819	S odka Ryba	Kuzyn gromadnika.  yje na brzegach i uj ciach.
+27820	Gromadnik	Ryba w wi kszo ci  apana poprzez  owienie w lodzie.
+27821	Shiri	Ryba o pi knym kszta cie i kolorze.
+27822	Lustrzany Karp	Udomowiony Karp.
+27823	Z oty Kara 	Rzadki, z oty Kara .
+27824	W og  w	S odkowodna ryba drapie na wyst puj ca w tropikach.
+27825	Skaber	Ryba wyst puj ca tylko w wodach p yn cych.
+27826	Krab Kr lewski	Ten gatunek kraba zwany jest ze wzgl du na sw j rozmiar krabem gigantem.
+27827	Rak Niebieski	Ten gatunek skorupiaka prowadzi nocny tryb  ycia, a dnie sp dza w swojej kryj wce.
+27833	Martwy Kara 	Martwy Kara .|Mo e by  upieczony nad ogniskiem.
+27834	Martwa Ryba Mandaryna	Martwa Ryba Mandaryna.|Mo e by  upieczona nad ogniskiem.
+27835	Martwy Du y Kara 	Martwy Du y Kara .|Mo e by  upieczony nad ogniskiem.
+27836	Martwy Karp	Martwy Karp.|Mo e by  upieczony nad ogniskiem.
+27837	Martwy  oso 	Martwy  oso .|Mo e by  upieczony nad ogniskiem.
+27838	Martwy Amur	Martwy Amur. |Mo e by  upieczony nad ogniskiem.
+27839	Martwy Pstr g	Martwy Pstr g.|Mo e by  upieczony nad ogniskiem.
+27840	Martwy W gorz	Martwy W gorz.|Mo e by  upieczony nad ogniskiem.
+27841	Martwy T czowy Pstr g	Martwy T czowy Pstr g.|Mo e by  upieczony nad ogniskiem.
+27842	Martwy Rzeczny Pstr g	Martwy Rzeczny Pstr g.|Mo e by  upieczony nad ogniskiem.
+27843	Martwa Krasnopi rka	Martwa Krasnopi rka.|Mo e by  upieczona nad ogniskiem.
+27844	Martwy Oko 	Martwy Oko .|Mo e by  upieczony nad ogniskiem.
+27845	Martwa Tenchi	Martwa Tenchi.|Mo e by  upieczona nad ogniskiem.
+27846	Martwy Sum	Martwy Sum.|Mo e by  upieczony nad ogniskiem.
+27847	Martwy Piskorz	Martwy Piskorz.|Mo e by  upieczony nad ogniskiem.
+27848	Martwa Ryba Lotosu	Martwa Ryba Lotosu.|Mo e by  upieczona nad ogniskiem.
+27849	Martwa S odka Ryba	Martwa S odka Ryba.|Mo e by  upieczona nad ogniskiem.
+27850	Martwy Gromadnik	Martwy Gromadnik.|Mo e by  upieczony nad ogniskiem.
+27851	Martwa Shiri	Martwa Shiri.|Mo e by  upieczona nad ogniskiem.
+27852	Martwy Lustrzany Karp	Martwy Lustrzany Karp.|Mo e by  upieczony nad ogniskiem.
+27853	Martwy Z oty Kara 	Martwy Z oty Kara .|Mo e by  upieczony nad ogniskiem.
+27854	Martwy W og  w	 wietnie nadaje si  do upieczenia nad ogniskiem.
+27855	Martwy Skaber	 wietnie nadaje si  do upieczenia nad ogniskiem.
+27856	Martwy Krab Kr lewski	 wietnie nadaje si  do upieczenia nad ogniskiem.
+27857	Martwy Rak Niebieski	 wietnie nadaje si  do upieczenia nad ogniskiem.
+27987	Ma  	Mi czak w  adnej muszli. W  rodku mo e znajdowa  si  cenna per a.
+27990	Kawa ek Kamienia	Z powodu ma ych wymiar w, przedmiot ten mo na bardzo  atwo transportowa . Ma wiele zastosowa .
+27992	Bia a Per a	Idealnie bia a per a. |Kobiety je kochaj .
+27993	Niebieska Per a	Niebieska per a. |Kobiety je kochaj .
+27994	Krwawa Per a	Krwawo-czerwona per a. |Kobiety je kochaj .
+30179	Kr ty Klucz	Ten magiczny klucz aktywuje portal do  wi tyni Smoka.
+30270	Od amek Smocz. Kamienia	Fragment tajemniczego Smoczego Kamienia
+30311	Klucz Kryszta u Duszy	Ten filigranowy klucz z niebieskim kryszta em duszy otwiera wrota do 2. poziomu Diabelskich Katakumb.
+30312	Upiorny Totem	Ta drewniana tabliczka z wyrze bionym grymasem s u y jako klucz do 6. poziomu Diabelskich Katakumb.
+30320	Zasuszona G owa	Ta zasuszona g owa demona otwiera piecz   2. poziomu Diabelskich Katakumb.
+30321	Zasuszona G owa	Ta zasuszona g owa demona otwiera piecz   2. poziomu Diabelskich Katakumb.
+30325	Paj czy Klucz	Otwiera wrota do kryj wki Baron wny.  amie si  po 24 godzinach. Mo e zosta  u yty wy  cznie przez przyw dc  grupy.
+30327	Paj czy Flet	Melodia tego instrumentu zwabia Baron wn  Paj k w.
+30329	Z ota Z batka	Aktywuje mechanizm ukryty w Steli Isfet.
+30330	Kamie  Maat	Maat jest bogini  sprawiedliwo ci i czuwa nad  adem i chaosem.
+30331	Mro ny Klucz	Klucz jest zimny jak l d. Otwiera dost p na trzecie pi tro Stra nicy Nemere. Mog  go u y  tylko Szamani.
+30332	Gwiazda P nocy	Piecz   z czystego lodu. Otwiera dost p na sz ste pi tro Stra nicy Nemere.
+30333	Klucz Lodowego Kwiatu	Lodowy klucz otwiera dost p na dziewi te pi tro Stra nicy Nemere.
+30341	Pier cie  Smoczego Ognia	Otacza ci  aura przepe niona energi . Pier cie  wykuty ze smoczego ognia zniszczy w mgnieniu oka statuy w Schronieniu Meley.
+30505	Szmaragdowa Ozdoba	Element do uszlachetniania twojej broni
+30506	Szafirowy Ozdobny N 	Narz dzie do uszlachetniania twojej broni
+30512	Czerwona Smocza Stal	Sk ra ze smoka jest bardzo lekka, elastyczna i prawie niezniszczalna. Mo na j  przerobi  jak metal i s u y do produkcji zbroi.
+30518	Z ota Prz dza	Magiczny zw j prz dzy z p ynnego z ota. Mo na go przerobi  dodaj c kamie  szlachetny na drogocenn  ozdob .
+30519	Z oty Hak	Zawiera czyste z oto i mo na go przerobi  dodaj c kamie  szlachetny na drogocenn  ozdob .
+30520	Z ota Spinka	Zawiera czyste z oto i mo na j  przerobi  dodaj c kamie  szlachetny na drogocenn  ozdob .
+30613	Kamie  Driad	W tym tajemniczym zielonkawym kamieniu jest zamkni ta dusz driady, drzewnego duszka. Driada ta zna zakl te s owa, kt re umo liwi  ci wst p do Erebu.
+30616	Dwutlenek Tytanu	Ten pryzmatyczny kryszta  s u y do uszlachetnienia przedmiotu wyposa enia.
+30617	Agat	Ten tajemniczo po yskuj cy kamyk s u y do uszlachetnienia przedmiotu wyposa enia.
+30618	Kamie  Ksi ycowy	Ten szlachetny kamie  w kszta cie  zy zawiera w sobie iskierk   wiat a ksi yca. S u y do uszlachetnienia przedmiotu wyposa enia.
+33031	Kwiat  ywio u	Klejnot w kszta cie kwiatu do ulepszenia talizman w  ywio owych.
+39001	Magiczny Kamie 	Kamie  ten daje ci najwi ksz  szans  podczas ulepszania przedmiot w. Przedmiot ten nie mo esz zosta  zniszczony ani pogorszony. Przedmiot ten jest zdatny do handlu.
+39007	Podr cznik Kowala	Ksi ga zawiera dusz  starego kowala. Je li jej u yjesz, zwi kszy to szans  na pomy lne ulepszenie przedmiotu. Przedmiot ten jest zdatny do handlu.
+39008	Zw j Egzorcyzmu	Uwalnia Ci  od kl twy z ego ducha, je li proces nauki si  nie powiedzie. Za pomoc  tego zwoju mo esz przeczyta  jeden dokument umiej tno ci dziennie. Przedmiot ten jest zdatny do handlu.
+39022	Zw j Boga Smok w	Zwi ksza szans  na ulepszenie przedmiotu o 10% i przedmiot nie ulega zniszczeniu gdy ulepszenie zawiedzie. W przypadku niepowodzenia, jako   przedmiotu jest redukowana o 1 poziom. Przedmiot ten jest zdatny do handlu.
+39027	Ksi ga Obr bki Kamienia	Usuwa zepsuty kamie  z kieszeni  eby zwolni  kiesze  przedmiotu. Przedmiot ten jest zdatny do handlu.
+39030	Rada Pustelnika	Podnosi szans  na pomy lne przeczytanie nast pnej Ksi gi Umiej tno ci (lub Kamienia Duchowego) na 250%. Przedmiot ten jest zdatny do handlu.
+39039	Eliksir S o ca (D)	Automatycznie regeneruje twoje P . Zawiera 7.000.000 P . Mo na nim handlowa .
+39042	Eliksir Ksi yca (D)	Automatycznie regeneruje twoje PE. Zawiera 15.000 PE. Mo na nim handlowa .
+39063	Reset Sklepu Gaya	Resetuj Sklep Gaya jeszcze przed up ywem 5 godzin i sprawd  nowe cenne przedmioty.
+39064	Rozszerzenie Sklepu Gaya	Dodaj do Sklepu Gaya kolejny slot na cenne oferty przedmiot w, rozpoczynaj c od pierwszego slotu w drugim rz dzie z lewej.
+40108	Tarczowe Ostrze+	Ten wizerunek zamieni tw j miecz na Halloween w pi   tarczow ! Daje ci min. jeden losowy bonus.
+40109	Tarczowy Sztylet+	Ten wizerunek zamieni tw j sztylet na Halloween w pi   tarczow ! Daje ci min. jeden losowy bonus.
+40110	Tarczowy  uk+	Ten wizerunek zamieni tw j  uk na Halloween w pi   tarczow ! Daje ci min. jeden losowy bonus.
+40111	Tarczowa Glewia+	Ten wizerunek zamieni tw j obur czny miecz na Halloween w pi   tarczow ! Daje ci min. jeden losowy bonus.
+40112	Tarczowy Dzwon+	Ten wizerunek zamieni tw j dzwon na Halloween w pi   tarczow ! Daje ci min. jeden losowy bonus.
+40113	Tarczowy Wachlarz+	Ten wizerunek zamieni tw j wachlarz na Halloween w pi   tarczow ! Daje ci min. jeden losowy bonus.
+40129	Ostrze Wodnika	Wizerunek broni, kt ry otula tw j miecz wytrzyma  , opalizuj c  na niebiesko wod .
+40130	Sztylet Wodnika	Wizerunek broni, kt ry otula tw j sztylet wytrzyma  , opalizuj c  na niebiesko wod .
+40131	 uk Wodnika	Wizerunek broni, kt ry otula tw j  uk wytrzyma  , opalizuj c  na niebiesko wod .
+40132	Glewia Wodnika	Wizerunek broni, kt ry otula tw j miecz dwur czny wytrzyma  , opalizuj c  na niebiesko wod .
+40133	Dzwon Wodnika	Wizerunek broni, kt ry otula tw j dzwon wytrzyma  , opalizuj c  na niebiesko wod .
+40134	Wachlarz Wodnika	Wizerunek broni, kt ry otula tw j wachlarz wytrzyma  , opalizuj c  na niebiesko wod .
+41029	Pustyn. Bojownik (bonus)	Wojenna szata dla m czyzn, pomaga stawi  czo o nieprzyjaznej dla ludzi pustyni. Daje ci min. jeden losowy bonus. Przedmiotem tym mo na handlowa .
+41030	P. Bojowniczka (bonus)	Wojenna szata dla kobiet, pomaga stawi  czo o nieprzyjaznej dla ludzi pustyni. Przedmiotem tym mo na handlowa .
+41117	Kostium Muszkietera	Ekstrawagancki kostium w stylu muszkieter w
+41118	Kostium Pokoj wki	Czarna sukienka z bia y fartuszkiem w stylu francuskiej pokoj wki
+41119	Str j Salsa	Obcis y, czarno-pomara czowy str j dla latynoameryka skich tancerzy
+41120	Sukienka Salsa	Obcis a czerwona suknia do ta ca z czarnymi r kawiczkami
+41121	Str j D entelmena	Elegancki str j dla pan w o dobrych manierach
+41122	Sukienka Koktajlowa	B  kitna sukienka ze wst  k  i pasuj cymi sanda ami
+41125	Dyniowy Smoking	Klasyczny i elegancki - w nieco nowej ods onie z okazji danego  wi ta.
+41126	Dyniowa Suknia	Klasyczna i elegancka - w nieco nowej ods onie z okazji danego  wi ta.
+41129	Kostium Muszkietera+	Ekstrawagancki kostium w stylu muszkieter w. Daje min. jeden dodatkowy bonus. Przedmiotem tym mo na handlowa .
+41130	Kostium Pokoj wki+	Czarna sukienka z bia y fartuszkiem w stylu francuskiej pokoj wki. Daje min. jeden dodatkowy bonus. Przedmiotem tym mo na handlowa .
+41131	Str j Salsa+	Obcis y, czarno-pomara czowy str j dla latynoameryka skich tancerzy. Daje min. jeden dodatkowy bonus. Przedmiotem tym mo na handlowa .
+41132	Sukienka Salsa+	Obcis a czerwona suknia do ta ca z czarnymi r kawiczkami. Daje min. jeden dodatkowy bonus. Przedmiotem tym mo na handlowa .
+41133	Str j D entelmena+	Elegancki str j dla pan w o dobrych manierach. Daje min. jeden dodatkowy bonus. Przedmiotem tym mo na handlowa .
+41134	Sukienka Koktajlowa+	B  kitna sukienka ze wst  k  i pasuj cymi sanda ami. Daje min. jeden dodatkowy bonus. Przedmiotem tym mo na handlowa .
+41135	Dyniowy Smoking (bonus)	Klasyczny i elegancki - w nieco nowej ods onie z okazji danego  wi ta. Nadaje twojej postaci losowy bonus.
+41136	Dyniowa Suknia (bonus)	Klasyczna i elegancka - w nieco nowej ods onie z okazji danego  wi ta. Nadaje twojej postaci losowy bonus.
+41307	Szata Kobry (m)	Szata o czarnym po ysku z symbolami w a
+41308	Szata Kobry (k)	Szata o czarnym po ysku z symbolami w a
+41309	Szata Kobry+ (m)	Szata o czarnym po ysku z symbolami w a. Daje ci min. jeden losowy bonus.
+41310	Szata Kobry+ (k)	Szata o czarnym po ysku z symbolami w a. Daje ci min. jeden losowy bonus.
+41311	Pustynny Bojownik(czar.)	Wojenna szata w kolorze czarnym dla m czyzn
+41312	Pust. Bojowniczka(czar.)	Wojenna szata w kolorze czarnym dla kobiet.
+41313	Pust. Bojownik+ (czar.)	Wojenna szata w kolorze czarnym dla m czyzn. Daje ci min. jeden losowy bonus. Przedmiotem tym mo na handlowa .
+41314	Pust.Bojowniczka+(czar.)	Wojenna szata w kolorze czarnym dla kobiet. Daje ci min. jeden losowy bonus.
+41315	Zbroja Azraela (m)	Stalowa zbroja s awnego Ksi cia Demon w
+41316	Zbroja Azraela (k)	Stalowa zbroja s awnego Ksi cia Demon w
+41317	Zbroja Azraela+ (m)	Stalowa zbroja s awnego Ksi cia Demon w. Daje ci min. jeden losowy bonus.
+41318	Zbroja Azraela+ (k)	Stalowa zbroja s awnego Ksi cia Demon w. Daje ci min. jeden losowy bonus.
+41324	Ksi ycowy Wojownik	Bojowa szata z ksi ycowym emblematem dla m czyzn
+41325	Ksi ycowa Wojowniczka	Bojowa szata z ksi ycowym emblematem dla kobiet
+41326	Ksi ycowy Wojownik+	Bojowa szata z ksi ycowym emblematem dla m czyzn. Daje ci min. jeden losowy bonus.
+41327	Ksi ycowa Wojowniczka+	Bojowa szata z ksi ycowym emblematem dla kobiet. Daje ci min. jeden losowy bonus.
+41528	Pustynny Ksi    (czerw.)	Szaty wojownika z czerwonego materia u - jak ula  dla przyw dc w!
+41529	Pustynny Ksi    (nieb.)	Szaty wojownika z niebieskiego materia u - jak ula  dla przyw dc w!
+45053	Fryzura Muszkietera	Zadbana kr tka fryzura w stylu muszkieter w
+45054	Czepek Pokoj wki	Jasna fryzura na pazia z czepkiem pokoj wki
+45055	Mini-Irokez	Luzacka kr tka fryzura w stylu irokeza
+45056	Kok Salsa	Elegancka fryzura z kokiem i czerwonym kwiatem
+45057	Kapelusz Bogarta	Klasyczny kapelusz filcowy w stylu Humphreya Bogarta.
+45065	Fryzura Muszkietera+	Zadbana kr tka fryzura w stylu muszkieter w. Daje min. jeden dodatkowy bonus. Przedmiotem tym mo na handlowa .
+45066	Czepek Pokoj wki+	Jasna fryzura na pazia z czepkiem pokoj wki. Daje min. jeden dodatkowy bonus. Przedmiotem tym mo na handlowa .
+45067	Mini-Irokez+	Luzacka kr tka fryzura w stylu irokeza. Daje min. jeden dodatkowy bonus. Przedmiotem tym mo na handlowa .
+45068	Kok Salsa+	Elegancka fryzura z kokiem i czerwonym kwiatem. Daje min. jeden dodatkowy bonus. Przedmiotem tym mo na handlowa .
+45069	Kapelusz Bogarta+	Klasyczny kapelusz filcowy w stylu Humphreya Bogarta. Daje min. jeden dodatkowy bonus. Przedmiotem tym mo na handlowa .
+45070	Kwiecista Fryzura+	S odka upleciona fryzura z kwiecistymi ozdobami. Daje min. jeden dodatkowy bonus. Przedmiotem tym mo na handlowa .
+45135	Fryzura Kobry (m)	Nakrycie g owy pasuj ce do szaty kobry
+45136	Fryzura Kobry (k)	Nakrycie g owy pasuj ce do szaty kobry
+45147	Czarny Turban (m)	Okrycie na g ow  z czarnej tkaniny dla m czyzn.
+45148	Czarny Turban (k)	Okrycie na g ow  z czarnej tkaniny dla kobiet.
+45149	Czarny Turban+ (m)	Okrycie na g ow  z czarnej tkaniny dla m czyzn. Daje ci min. jeden losowy bonus. Przedmiotem tym mo na handlowa .
+45150	Czarny Turban+ (k)	Okrycie na g ow  z czarnej tkaniny dla kobiet. Daje ci min. jeden losowy bonus.
+45151	He m Azraela (m)	Nakrycie g owy z grymasem s awnego Ksi cia Demon w
+45152	He m Azraela (k)	Nakrycie g owy z grymasem s awnego Ksi cia Demon w
+45153	He m Azraela+ (m)	Nakrycie g owy z grymasem s awnego Ksi cia Demon w. Daje ci min. jeden losowy bonus.
+45154	He m Azraela+ (k)	Nakrycie g owy z grymasem s awnego Ksi cia Demon w. Daje ci min. jeden losowy bonus.
+45160	Ksi ycowa Fryzura (m)	Spi te u g ry warkocze rasta, koloru bia o-czerwonego
+45161	Ksi ycowa Fryzura (k)	Spi te u g ry warkocze rasta, koloru bia o-czerwonego, z opask  na czo o
+45198	Br zowy Turban	Elegancki, br zowy turban z wytrzyma ego materia u - w sam raz dla wojownik w.
+45199	Bia y Turban	Elegancki, bia y turban z wytrzyma ego materia u - w sam raz dla wojownik w.
+45200	Br zowa Chusta	Br zowa chusta na g ow  z lekkiego materia u - w sam raz dla wojowniczek.
+45201	Bia a Chusta	Bia a chusta na g ow  z lekkiego materia u - w sam raz dla wojowniczek.
+45202	Br zowy Turban+	Elegancki, br zowy turban z wytrzyma ego materia u - w sam raz dla wojownik w. Daje ci min. jeden losowy bonus.
+45203	Bia y Turban+	Elegancki, bia y turban z wytrzyma ego materia u - w sam raz dla wojownik w. Daje ci min. jeden losowy bonus.
+45240	Br zowa Chusta+	Br zowa chusta na g ow  z lekkiego materia u - w sam raz dla wojowniczek. Daje przynajmniej jeden losowy bonus.
+45241	Zielona Chusta+	Zielona chusta na g ow  z lekkiego materia u - w sam raz dla wojowniczek. Daje przynajmniej jeden losowy bonus.
+50010	Skarpetka	Skarpetka zrobiona z ciep ej owczej we ny.
+50011	Szkat. Blasku Ksi yca	Osza amiaj ca dekoracja uwodz ca ludzi. Niesamowite rzeczy maj  miejsce, kiedy wystawi si  j  na oddzia ywanie promieni ksi yca.
+50053	Ksi ga Wojskowego Konia	Certyfikat na mistrzowsk  jazd  konn . |Pozwala na u ywanie umiej tno ci je dzieckich.
+50054	Siano	Wysuszone siano do karmienia konia.
+50055	Marchewka	Ulubione warzywo konia.
+50056	Czerwony  e -sze 	Duszony  e -sze . Tylko wojskowe konie jedz  Czerwony  e -sze .
+50070	Szkatu ka Wodza Ork w	Szkatu ka Wodza Ork w. Co  cennego znajduje si  w  rodku.
+50071	Szkatu ka Ezot. W adcy	Szkatu ka Ezoterycznego W adcy. Co  cennego znajduje si  w  rodku.
+50073	Szkat. Kr lowej Paj k w	Szkatu ka Kr lowej Paj k w. Co  cennego znajduje si  w  rodku.
+50076	Szkat. Pustynnego   wia	Szkatu ka Pustynnego   wia. Co  cennego znajduje si  w  rodku.
+50077	Szkat.Dziewi ciu Ogon w	Szkatu ka Dziewi ciu Ogon w. Co  cennego znajduje si  w  rodku.
+50078	Szkat.   tego Tygrysa	Szkatu ka Zjawy   tego Tygrysa. Co  cennego znajduje si  w  rodku.
+50079	Szkat. Ognistego Kr la	Szkatu ka Ognistego Kr la. Co  cennego znajduje si  w  rodku.
+50080	Szkat. Czerwonego Smoka	Szkatu ka Czerwonego Smoka. Co  cennego znajduje si  w  rodku.
+50082	Szkat. Umar ego Rozpruw.	Szkatu ka Umar ego Rozpruwacza. Co  cennego znajduje si  w  rodku.
+50084	Kamie  Otwarcia	Kamie  otacza aura przepe niona energi . Dzia a przeciw sile Magicznej Piecz ci.
+50097	Skrzynia Azraela	Pot ne demoniczne moce zamkn y t  skrzyni . Niew tpliwie zawiera ona bardzo cenne przedmioty.
+50187	Skrzynia Ucznia I	Tw j prezent powitalny zawiera podstawowe wyposa enie na rozpocz cia przyg d.
+50188	Skrzynia Ucznia II	Skrzyni  mo esz otworzy  dopiero po osi gni ciu poziomu 10.
+50189	Skrzynia Ucznia III	Skrzyni  mo esz otworzy  dopiero po osi gni ciu poziomu 20.
+50190	Skrzynia Eksperta I	Skrzyni  mo esz otworzy  dopiero po osi gni ciu poziomu 30.
+50191	Skrzynia Eksperta II	Skrzyni  mo esz otworzy  dopiero po osi gni ciu poziomu 40.
+50192	Skrzynia Eksperta III	Skrzyni  mo esz otworzy  dopiero po osi gni ciu poziomu 50.
+50193	Skrzynia Mistrza I	Skrzyni  mo esz otworzy  dopiero po osi gni ciu poziomu 60.
+50194	Skrzynia Mistrza II	Skrzyni  mo esz otworzy  dopiero po osi gni ciu poziomu 75.
+50195	Skrzynia Mistrza III	Skrzyni  mo esz otworzy  dopiero po osi gni ciu poziomu 100.
+50196	Skrzynia Arcymistrza	Skrzyni  mo esz otworzy  dopiero po osi gni ciu poziomu 120.
+50212	Skrzynia Ucznia I	Tw j prezent powitalny zawiera podstawowe wyposa enie na rozpocz cia przyg d.
+50213	Skrzynia Ucznia I	Tw j prezent powitalny zawiera podstawowe wyposa enie na rozpocz cia przyg d.
+50259	Cor Draconis (antyczne)	To kryszta owe smocze serce skrywa w sobie dusz , Smoczy Kamie .
+50266	Skrzynia Jotuna Thryma	Skrzynia Jotuna Thryma - jej ci ka k  dka wr y cenn  zawarto  .
+50270	Skrzynia Kr lowej Meley	Ta skrzynia zosta a wydobyta ze Schronienia Kr lowej Smok w Meley. Znajduje si  w niej prawdziwy kr lewski skarb. Przedmiot ten jest zdatny do handlu.
+50271	Skrzynia Sm. Stra nik w	Skrzynia ta zawiera kilka rzadkich, zaginionych od wiek w skarb w licznych smoczych stra nik w. Przedmiot ten jest zdatny do handlu.
+50301	Sztuka Wojny Sun Zi	Jedna z trzech Ksi g Strategii Wojennych. Pomy lne przeczytanie pozwoli na rozwini cie umiej tno ci Przyw dztwo. Po przeczytaniu Ksi ga znika.
+50302	Sztuka Wojny Wu Zi	Jedna z trzech Ksi g Strategii Wojennych. Pomy lne przeczytanie pozwala na rozwini cie umiej tno ci Przyw dztwo. Po przeczytaniu Ksi ga znika.
+50303	WeiLiao Zi	Jedna z trzech Ksi g Strategii Wojennych. Pomy lne przeczytanie pozwala na rozwini cie umiej tno ci Przyw dztwo. Po przeczytaniu Ksi ga znika.
+50307	Ksi ga Misji ( atwa)	Po u yciu otrzymasz jedn  dodatkow  misj  -  atw .
+50308	Ksi ga Misji (Normalna)	Po u yciu otrzymasz jedn  dodatkow  misj  - normaln .
+50309	Ksi ga Misji (Trudna)	Po u yciu otrzymasz jedn  dodatkow  misj  - trudn .
+50310	Ksi ga Misji (ekspert)	Po u yciu otrzymasz jedn  dodatkow  misj  - dla ekspert w.
+50314	Ksi ga Polimorfii	Pomy lne przeczytanie tej ksi gi pozwala na rozwini cie umiej tno ci transformacji. Ksi ga znika po przeczytaniu.
+50315	Zaaw. Ks. Polimorfii	Pomy lne przeczytanie tej Ksi gi pozwala na rozwini cie umiej tno ci Polimorfia. Po przeczytaniu Ksi  ka znika.
+50316	Mistrz. Ks. Polimorfii	Pomy lne przeczytanie tej Ksi gi pozwala na rozwini cie umiej tno ci Polimorfia. Po przeczytaniu Ksi  ka znika.
+50323	Skrzynia Ksi g: Riposta	Skrzynia ta zawiera losow  ksi g  umiej tno ci do nauki riposty.
+50324	Skrzynia Ksi g: Dopalacz	Skrzynia ta zawiera losow  ksi g  umiej tno ci do nauki dopalacza.
+50401	Instr. Trzystr. Ci cie	U yj ksi gi, aby opanowa  umiej tno   - Trzystronne Ci cie. Ksi ga znika po przeczytaniu.
+50402	Instr. Wir Miecza	U yj ksi gi, aby opanowa  umiej tno   - Wir Miecza. Ksi ga znika po przeczytaniu.
+50403	Instr. Berserk	U yj ksi gi, aby opanowa  umiej tno   - Berserk. Ksi ga znika po przeczytaniu.
+50404	Instr. Aura Miecza	U yj ksi gi, aby opanowa  umiej tno   - Aura Miecza. Ksi ga znika po przeczytaniu.
+50405	Instr. Szar a	U yj ksi gi, aby opanowa  umiej tno   - Szar a. Ksi ga znika po przeczytaniu.
+50406	Instr. Woli  ycia	U yj ksi gi, aby opanowa  umiej tno   - Wola  ycia. Ksi ga znika po przeczytaniu.
+50416	Instr. Duchowe Uderzenie	U yj ksi gi, aby opanowa  umiej tno   - Duchowe Uderzenie. Ksi ga znika po przeczytaniu.
+50417	Instr. Walni cie	U yj ksi gi, aby opanowa  umiej tno   - Walni cie. Ksi ga znika po przeczytaniu.
+50418	Instr. T pni cie	U yj ksi gi, aby opanowa  umiej tno   - T pni cie. Ksi ga znika po przeczytaniu.
+50419	Instr. Silne Cia o	U yj ksi gi, aby opanowa  umiej tno   - Silne Cia o. Ksi ga znika po przeczytaniu.
+50420	Instr. Uderzenie Miecza	U yj ksi gi, aby opanowa  umiej tno   - Uderzenie Miecza. Ksi ga znika po przeczytaniu.
+50421	Instr. Kr gu Mieczy	U yj ksi gi, aby opanowa  umiej tno   - Kr g Mieczy. Ksi ga znika po przeczytaniu.
+50431	Instr. Zasadzka	U yj ksi gi, aby opanowa  umiej tno   - Zasadzka. Ksi ga znika po przeczytaniu.
+50432	Instr. Szybki Atak	U yj ksi gi, aby opanowa  umiej tno   - Szybki Atak. Ksi ga znika po przeczytaniu.
+50433	Instr. Wiruj cy Sztylet	U yj ksi gi, aby opanowa  umiej tno   - Wiruj cy Sztylet. Ksi ga znika po przeczytaniu.
+50434	Instr. Krycie Si 	U yj ksi gi, aby opanowa  umiej tno   - Krycie Si . Ksi ga znika po przeczytaniu.
+50435	Instr. Truj ca Chmura	U yj ksi gi, aby opanowa  umiej tno   - Truj ca Chmura. Ksi ga znika po przeczytaniu.
+50436	Instr. Wolno Dzia .Tru.	U yj ksi gi, aby opanowa  umiej tno   - Wolno Dzia aj ca Trucizna. Ksi ga znika po przeczytaniu.
+50446	Instr. Powtarz. Strza 	U yj ksi gi, aby opanowa  umiej tno   - Powtarzalny Strza . Ksi ga znika po przeczytaniu.
+50447	Instr. Deszcz Strza 	U yj ksi gi, aby opanowa  umiej tno   - Deszcz Strza . Ksi ga znika po przeczytaniu.
+50448	Instr. Ognista Strza a	U yj ksi gi, aby opanowa  umiej tno   - Ognista Strza a. Ksi ga znika po przeczytaniu.
+50449	Instr. Bezszelest. Ch d	U yj ksi gi, aby opanowa  umiej tno   - Bezszelestny Ch d. Ksi ga znika po przeczytaniu.
+50450	Instr. Truj ca Strza a	U yj ksi gi, aby opanowa  umiej tno   - Truj ca Strza a. Ksi ga znika po przeczytaniu.
+50451	Instr. Iskrz ce Uderz.	U yj ksi gi, aby opanowa  umiej tno   - Iskrz ce Uderzenie. Ksi ga znika po przeczytaniu.
+50461	Instr. Uderzenie Palcem	U yj ksi gi, aby opanowa  umiej tno   - Uderzenie Palcem. Ksi ga znika po przeczytaniu.
+50462	Instr. Smoczy Wir	U yj ksi gi, aby opanowa  umiej tno   - Smoczy Wir. Ksi ga znika po przeczytaniu.
+50463	Instr. Czarowane Ostrze	U yj ksi gi, aby opanowa  umiej tno   - Czarowane Ostrze. Ksi ga znika po przeczytaniu.
+50464	Instr. Strach	U yj ksi gi, aby opanowa  umiej tno   - Strach. Ksi ga znika po przeczytaniu.
+50465	Instr. Czarowana Zbroja	U yj ksi gi, aby opanowa  umiej tno   - Czarowana Zbroja. Ksi ga znika po przeczytaniu.
+50466	Instr. Rozprosz. Magii	U yj ksi gi, aby opanowa  umiej tno   - Rozproszenie Magii. Ksi ga znika po przeczytaniu.
+50476	Instr. Mrocz. Uderzenie	U yj ksi gi, aby opanowa  umiej tno   - Mroczne Uderzenie. Ksi ga znika po przeczytaniu.
+50477	Instr. Ognist. Uderzenie	U yj ksi gi, aby opanowa  umiej tno   - Ogniste Uderzenie. Ksi ga znika po przeczytaniu.
+50478	Instr. Ognisty Duch	U yj ksi gi, aby opanowa  umiej tno   - Ognisty Duch. Ksi ga znika po przeczytaniu.
+50479	Instr. Mroczna Ochrona	U yj ksi gi, aby opanowa  umiej tno   - Mroczna Ochrona. Ksi ga znika po przeczytaniu.
+50480	Instr. Duchowy Cios	U yj ksi gi, aby opanowa  umiej tno   - Duchowy Cios. Ksi ga znika po przeczytaniu.
+50481	Instr. Mroczna Sfera	U yj ksi gi, aby opanowa  umiej tno   - Mroczna Sfera. Ksi ga znika po przeczytaniu.
+50491	Instr. Lataj cy Talizman	U yj ksi gi, aby opanowa  umiej tno   - Lataj cy Talizman. Ksi ga znika po przeczytaniu.
+50492	Instr. Strzelaj cy Smok	U yj ksi gi, aby opanowa  umiej tno   - Strzelaj cy Smok. Ksi ga znika po przeczytaniu.
+50493	Instr. Smoczy Skowyt	U yj ksi gi, aby opanowa  umiej tno   - Smoczy Skowyt. Ksi ga znika po przeczytaniu.
+50494	Instr. B ogos awie stwo	U yj ksi gi, aby opanowa  umiej tno   - B ogos awie stwo. Ksi ga znika po przeczytaniu.
+50495	Instr. Odbicie	U yj ksi gi, aby opanowa  umiej tno   - Odbicie. Ksi ga znika po przeczytaniu.
+50496	Instr. Pomoc Smoka	U yj ksi gi, aby opanowa  umiej tno   - Pomoc Smoka. Ksi ga znika po przeczytaniu.
+50506	Instr. B yskawiczny Rzut	U yj ksi gi, aby opanowa  umiej tno   - B yskawiczny Rzut. Ksi ga znika po przeczytaniu.
+50507	Instr. Przywo . B ysk.	U yj ksi gi, aby opanowa  umiej tno   - Przywo anie B yskawicy. Ksi ga znika po przeczytaniu.
+50508	Instr. Burzowy Szpon	U yj ksi gi, aby opanowa  umiej tno   - Burzowy Szpon. Ksi ga znika po przeczytaniu.
+50509	Instr. Leczenie	U yj ksi gi, aby opanowa  umiej tno   - Leczenie. Ksi ga znika po przeczytaniu.
+50510	Instr. Zwinno  	U yj ksi gi, aby opanowa  umiej tno   - Zwinno  . Ksi ga znika po przeczytaniu.
+50511	Instr. Podwy . Ataku	U yj ksi gi, aby opanowa  umiej tno   - Podwy szenie Ataku. Ksi ga znika po przeczytaniu.
+50513	Kamie  Duchowy	Legendarny kamie  u ywany do treningu wewn trznego.
+50516	Riposta: Wir Miecza	Ksi ga ta uczy ci  umiej tno ci redukuj cej obra enia od Wiru Miecza.
+50517	Riposta: Zasadzka	Ksi ga ta uczy ci  umiej tno ci redukuj cej obra enia od Zasadzki.
+50518	Riposta: Uderz. Palcem	Ksi ga ta uczy ci  umiej tno ci redukuj cej obra enia od Uderzenia Palcem.
+50519	Riposta: Strzel. Smok	Ksi ga ta uczy ci  umiej tno ci redukuj cej obra enia od Strzelaj cego Smoka.
+50520	Riposta: Duchowe Uderz.	Ksi ga ta uczy ci  umiej tno ci redukuj cej obra enia od Duchowego Uderzenia.
+50521	Riposta: Ognista Strza a	Ksi ga ta uczy ci  umiej tno ci redukuj cej obra enia od Ognistej Strza y.
+50522	Riposta: Mroczne Uderz.	Ksi ga ta uczy ci  umiej tno ci redukuj cej obra enia od Mrocznego Uderzenia.
+50523	Riposta: Przyw. B ysk.	Ksi ga ta uczy ci  umiej tno ci redukuj cej obra enia od Przywo ania B yskawicy.
+50560	Dopalacz: Wir Miecza	Ksi ga ta uczy ci  umiej tno ci wzmacniaj cej Wir Miecza.
+50561	Dopalacz: Zasadzka	Ksi ga ta uczy ci  umiej tno ci wzmacniaj cej Zasadzk .
+50562	Dopalacz: Uderz. Palcem	Ksi ga ta uczy ci  umiej tno ci wzmacniaj cej Uderzenie Palcem.
+50563	Dopalacz: Strzel. Smok	Ksi ga ta uczy ci  umiej tno ci wzmacniaj cej Strzelaj cego Smoka.
+50564	Dopalacz: Duchowe Uderz.	Ksi ga ta uczy ci  umiej tno ci wzmacniaj cej Duchowe Uderzenie.
+50565	Dopalacz: Ogni. Strza a	Ksi ga ta uczy ci  umiej tno ci wzmacniaj cej Ognist  Strza  .
+50566	Dopalacz: Mroczne Uderz.	Ksi ga ta uczy ci  umiej tno ci wzmacniaj cej Mroczne Uderzenie.
+50567	Dopalacz: Przyw. B ysk.	Ksi ga ta uczy ci  umiej tno ci wzmacniaj cej Przywo anie B yskawicy.
+50621	Diament	Najtwardszy klejnot - dodaje kiesze  w przedmiotach ekwipunku.
+50622	Bursztyn	 adny bursztyn.| Mo e by  przymocowany do akcesori w.
+50623	Skamienia e Drewno	Warto ciowe drewno obdarzaj ce wysok  stabilno ci  przedmioty bi uterii.
+50624	Mied 	Daj cy si  znakomicie formowa  szlachetny metal, z kt rego mo na wykonywa  bi uteri  lub monety. U ywany jest ponadto do produkcji Br zu.
+50625	Srebro	B yszcz cy metal szlachetny, wykorzystywany do produkcji bi uterii.
+50626	Z oto	Ciep o po yskuj cy metal szlachetny. By  jednym z pierwszych metali u ywanych przez cz owieka. Jeszcze do dzisiaj jest cenionym metalem u ywanym do wyrobu bi uterii.
+50627	Jadeit	Cenny minera , u ywany przez cz owieka ju  ponad 5000 lat. Cz sto wykorzystywany do wyrobu bi uterii.
+50628	Ebonit	Czarne, bardzo twarde drewno, nale  ce do jednego z najcenniejszych gatunk w drewna. Cz sto u ywane do produkcji bi uterii.
+50629	Per a	 agodnie po yskuj ca pi kno   z masy per owej. Cz sto u ywana jako ozdoba w bi uterii.
+50630	Bia e Z oto	Stabilny, bia o zabarwiony stop z ota. Nad wyraz lubiany i cz sto u ywany do wyrobu bi uterii.
+50631	Kryszta 	Nadzwyczaj twarde kamienie z krystalicznego kwarcu. Wyst puj  w r nych kolorach. Cz sto u ywane do produkcji bi uterii.
+50632	Ametyst	Popularny kwarc, wyst puj cy w r nych odcieniach fioletu. Bardzo ceniony w wyrobie bi uterii.
+50633	Niebia skie  zy	Skrystalizowany deszcz niebios. Niebia skie  zy mog  by  przymocowane do akcesori w z Niebia skich  ez.
+50926	Kamyki	Zbieraj Kamyki i daj je Handlarzowi Gaya, by uszlachetni  je w drogocenne Gaya.
+51001	Od amek Energii	Od amek kryszta u energii - z 30 sztuk mo na stworzy  kryszta  energii.
+51002	Kryszta  Energii	Kryszta  ten zwi ksza twoje bonusy na dwie godziny.
+52040	Dziki Lew	Piecz   ta przywo uje Dzikiego Lwa, kt ry podwy sza atak swojego je d ca o 30.
+53010	Leonidas	Za pomoc  tej piecz ci mo esz przywo a  lwa Leonidasa. Zwierzak daje ci | +15% atak w walki wr cz/magicznych | +1500 P .
+53011	Khan	Za pomoc  tej piecz ci mo esz przywo a  tygrysa Khana. Zwierzak daje ci | +15% atak w walki wr cz/magicznych | +1500 P .
+53012	Boczu 	Za pomoc  tej piecz ci mo esz przywo a  warchlaka Boczusia. Zwierzak daje ci | +15% atak w walki wr cz/magicznych | +1500 P .
+53013	Rufus	Za pomoc  tej piecz ci mo esz przywo a  wilka Rufusa. Zwierzak daje ci | +15% atak w walki wr cz/magicznych | +1500 P .
+53017	Feniks Jadeitu	Piecz   przywo uje uroczego Feniksa Jadeitu. Zwierzak daje ci | +15% do atak w walki wr cz/magicznych | +50% szansy na bonus PD
+53256	Bonsai	Piecz   ta przywo uje Bonsai, twojego ma ego wojownika.
+54043	Skrzynia Ucznia I	Tw j prezent powitalny zawiera podstawowe wyposa enie na rozpocz cia przyg d.
+55008	Pergamin Nazwy Zwierzaka	Przeci gnij pergamin na swojego zwierzaka, aby zmieni  jego nazw .
+55009	Skrzynia Ksi g Zwierza	Zawiera losowo wybran  Ksi g  Zwierza.
+55010	Odporno   (wojownik)	Ta umiej tno   zwierzaka podnosi twoj  odporno   na ataki wojownik w.
+55011	Odporno   (sura)	Ta umiej tno   zwierzaka podnosi twoj  odporno   na ataki sura.
+55012	Odporno   (ninja)	Ta umiej tno   zwierzaka podnosi twoj  odporno   na ataki ninja.
+55013	Odporno   (szaman)	Ta umiej tno   zwierzaka podnosi twoj  odporno   na ataki szaman w.
+55401	Jajo Ma piszona	Kliknij prawym przyciskiem myszki na to jajo, aby wyklu  z niego zwierzaka.
+55402	Jajo Paj ka	Kliknij prawym przyciskiem myszki na to jajo, aby wyklu  z niego zwierzaka.
+55403	Jajo Razadora	Kliknij prawym przyciskiem myszki na to jajo, aby wyklu  z niego zwierzaka.
+55404	Jajo Nemere	Kliknij prawym przyciskiem myszki na to jajo, aby wyklu  z niego zwierzaka.
+55405	Niebieskie Jajo Smoka	Kliknij prawym przyciskiem myszki na jajo, by wyklu  zwierzaka.
+55406	Czerwone Jajo Smoka	Kliknij prawym przyciskiem myszki na jajo, by wyklu  zwierzaka.
+55407	Jajo Mini-Azraela	Kliknij prawym przyciskiem myszki na jajo, by wyklu  zwierzaka.
+55408	Jajo Grubego Mini Kata	Kliknij prawym przyciskiem myszki na jajo, by wyklu  zwierzaka.
+55409	Jajo Baashido a	Kliknij prawym przyciskiem myszki na jajo, by wyklu  zwierzaka.
+55410	Jajo Nessie	Kliknij prawym przyciskiem myszki na jajo, by wyklu  zwierzaka.
+55411	Jajo Exedyara	Kliknij prawym przyciskiem myszki na jajo, by wyklu  zwierzaka.
+55701	Ma y Ma piszon	Przywo aj swojego zwierzaka za pomoc  PPM. Nast pnie naci nij klawisz "P", aby wy wietli  interfejs zwierzaka.
+55702	Ma y Paj k	Przywo aj swojego zwierzaka za pomoc  PPM. Nast pnie naci nij klawisz "P", aby wy wietli  interfejs zwierzaka.
+55703	Ma y Razador	Przywo aj swojego zwierzaka za pomoc  PPM. Nast pnie naci nij klawisz "P", aby wy wietli  interfejs zwierzaka.
+55704	Ma y Nemere	Przywo aj swojego zwierzaka za pomoc  PPM. Nast pnie naci nij klawisz "P", aby wy wietli  interfejs zwierzaka.
+55705	Ma y Smok	Przyzwij swojego zwierzaka prawym przyciskiem myszki. Naci nij nast pnie klawisz "P", aby wy wietli  IU zwierzaka.
+55706	Ma a Meley	Przyzwij swojego zwierzaka prawym przyciskiem myszki. Nast pnie naci nij klawisz "P", aby wy wietli  interfejs zwierzaka.
+55707	Mini Azrael	Przywo aj swojego zwierzaka prawym przyciskiem myszki. Nast pnie naci nij klawisz "P", aby wy wietli  interfejs zwierzaka.
+55708	Gruby Mini Kat	Przywo aj swojego zwierzaka prawym przyciskiem myszki. Nast pnie naci nij klawisz "P", aby wy wietli  interfejs zwierzaka.
+55709	Baashido 	Przyzwij swojego zwierzaka prawym przyciskiem myszki. Nast pnie naci nij klawisz "P", aby wy wietli  interfejs zwierzaka.
+55710	Nessie	Przywo aj swojego zwierzaka prawym przyciskiem myszki. Nast pnie naci nij klawisz "P", aby wy wietli  interfejs zwierzaka.
+55711	Wyl g Exedyara	Przywo aj swojego zwierzaka prawym przyciskiem myszki. Nast pnie naci nij klawisz "P", aby wy wietli  interfejs zwierzaka.
+70031	Broszura Szermierki	Ta broszura zawiera informacje o potencjale i s abo ciach ludzkiej anatomii.
+70038	Peleryna M stwa	Staro ytni wojownicy okazywali swoje m stwo poprzez noszenie kolorowych peleryn. By  to spos b na zwabienie wszystkich potwor w z okolicy.
+70039	Podr cznik Kowala	Ksi ga zawiera dusz  starego kowala. Je li jej u yjesz, zwi kszy to szans  na pomy lne ulepszenie przedmiotu.
+70063	Transformuj kostium	Usuwa bonus z jednego z twoich kostium w i dodaje nowe. Przy odrobinie szcz cia zmienia si  przy tym ilo   bonus w (do maks. 3).
+70064	Zaczaruj kostium	Usuwa bonus z jednego z twoich kostium w i dodaje nowe.
+70065	Transfer bonus w	Przenosi bonusy z jednego kostiumu na drugi. Jeden z tych kostium w ulega zniszczeniu.
+70102	Fasolka Zen	Zmniejsza przynale no   do z a|Zwi ksza przynale no   do dobra
+70104	Kula Polimorfii	Za pomoc  tej kuli mo esz zamieni  si  w potwora.
+70105	Kula Polimorfii	Za pomoc  tej kuli mo esz zamieni  si  w potwora.
+70106	Kula Polimorfii	Za pomoc  tej kuli mo esz zamieni  si  w potwora.
+70107	Kula Polimorfii	Za pomoc  tej kuli mo esz zamieni  si  w potwora.
+70201	Wybielacz	Przywraca oryginalny kolor w os w. Takie w osy mog  by  farbowane.
+70202	Bia a Farba Do W os w	Farbuje w osy na bia o.|Mo esz farbowa  w osy raz na 3 poziomy.
+70203	Blond Farba Do W os w	Farbuje w osy na blond.|Mo esz farbowa  w osy raz na 3 poziomy.
+70204	Czerw. Farba Do W os w	Farbuje w osy na czerwono.|Mo esz farbowa  w osy raz na 3 poziomy.
+70205	Br zowa Farba Do W os w	Farbuje w osy na br zowo.|Mo esz farbowa  w osy raz na 3 poziomy.
+70206	Czarna Farba Do W os w	Farbuje w osy na czarno.|Mo esz farbowa  w osy raz na 3 poziomy.
+70301	Pier cionek Zar czynowy	Pier cionek noszony przez kochank w.
+70302	Obr czka  lubna	Pier cionek noszony przez ma  e stwo.
+70602	Pergamin Duszy (100%)	Udoskonal za pomoc  tego pergaminu swoj  dusz  o jeden poziom.
+70603	Pergamin Duszy	Udoskonal za pomoc  tego pergaminu swoj  dusz  o maks. dwa poziomy. Pr ba mo e zako czy  si  jednak niepowodzeniem.
+71001	Zw j Egzorcyzmu	Uwalnia Ci  od kl twy z ego ducha. (Brak mo liwo ci przekazywania!)
+71002	Zw j Powrotu Statusu	Przedmiot ten umo liwia Ci ponowne wydanie twoich punkt w statusu. Tak wi c mo esz rozwija  posta  w inny spos b.
+71032	Zw j Boga Smok w	Zwi ksza szans  na ulepszenie przedmiotu o 10% i przedmiot nie ulega zniszczeniu gdy ulepszenie zawiedzie. W przypadku niepowodzenia, jako   przedmiotu jest redukowana o 1 poziom.
+71035	Eliksir Poszukiwacza	Poprawia jako   przedmiot w przeznaczonych do bada , co powoduje zwi kszenie szansy na ich przyj cie. Nie dotyczy misji na Yohara.
+71048	Zakl cie Modyfikacji	Zakl cie pozwala zmieni  p e  twojej postaci.
+71054	Olejek Wygnania	Przedmiot ten umo liwia przeniesienie postaci do innego Kr lestwa. Uwaga: za zmian  Kr lestwa pobierana jest op ata w wysoko ci 500 000 Yang.
+71055	Olejek Nazwy	Zmienia nazw  gracza.
+71075	Farba do W os w (Bia a)	Farbuje w osy na bia o.
+71076	Farba do W os w (Blond)	Farbuje w osy na blond.
+71077	Farba do W os w (Czerw.)	Farbuje w osy na czerwono.
+71078	Farba do W os w (Br z.)	Farbuje w osy na br zowo.
+71079	Farba do W os w (Czarna)	Farbuje w osy na czarno.
+71083	Ksi ga Obr bki Kamienia	Usuwa zepsuty kamie  z kieszeni  eby zwolni  kiesze  przedmiotu.
+71084	Zaczarowanie Przedmiotu	Usuwa bonusy z twojego przedmiotu, po czym dodaje nowe. Dotyczy tylko bonus w 1-5.
+71093	Kula Polimorfii	Za pomoc  tej kuli mo esz zamieni  si  w potwora.
+71094	Rada Pustelnika	Podnosi szans  na pomy lne przeczytanie nast pnej Ksi gi Umiej tno ci (lub Kamienia Duchowego) na 250%.
+71099	Pier cie  Zast pstwa	Pozwala liderowi gildii wyznaczy  swojego zast pce.
+71100	Zw j Zmiany Profesji	Przedmiot ten umo liwia wybranie innej profesji postaci.
+71103	Zw j Redystrybucji (WIT)	Ustawia Punkty Witalno ci na 1 i pozwala Ci ponownie rozda  punkty.
+71104	Zw j Redystrybucji (INT)	Ustawia Punkty Inteligencji na 1 i pozwala Ci ponownie rozda  punkty.
+71105	Zw j Redystrybucji (SI )	Ustawia Punkty Si y na 1 i pozwala Ci ponownie rozda  punkty.
+71106	Zw j Redystrybucji (ZR )	Resetuje twoje punkty Zr czno ci do 1 oraz pozwala na ich ponowne rozdanie.
+71107	Owoc  ycia	Zwi ksza Punkty Rangi o 2000 punkt w (czas regeneracji: 8 godzin).
+71123	Smocza  uska	Smocze  uski nale   do najtwardszych znanych materia  w.
+71124	Bia y Lew	Zwierz ta o bia ym futrze s  rzadko ci  i wiele kultur przypisuje im nadzwyczajne si y.
+71125	Dzik Wojenny	Okie znanie z ych duch w zwierz t wymaga nie lada kunsztu magicznego. Odpowiednio zadziwiaj cy jest rezultat.
+71126	Wilk Wojenny	Okie znanie z ych duch w zwierz t wymaga nie lada kunsztu magicznego. Odpowiednio zadziwiaj cy jest rezultat.
+71127	Szar uj cy Tygrys	Okie znanie z ych duch w zwierz t wymaga nie lada kunsztu magicznego. Odpowiednio zadziwiaj cy jest rezultat.
+71128	Waleczny Lew	Okie znanie z ych duch w zwierz t wymaga nie lada kunsztu magicznego. Odpowiednio zadziwiaj cy jest rezultat.
+71129	Smoczy Szpon	Widok tego strasznego szponu budzi wspomnienia...
+71137	Tygrys Bengalski (nieb.)	Czar tej piecz ci przywo uje twojego wierzchowca, majestatycznego Tygrysa Bengalskiego (niebieski). Zwi ksza otrzymywane punkty do wiadczenia o 30%.
+71138	Tygrys Bengalski (czer.)	Czar tej piecz ci przywo uje twojego wierzchowca, majestatycznego Tygrysa Bengalskiego (czerwony). Zwi ksza otrzymywane punkty do wiadczenia o 30%.
+71139	Tygrys Bengalski (z oty)	Czar tej piecz ci przywo uje twojego wierzchowca, majestatycznego Tygrysa Bengalskiego (z oty).
+71140	Tygrys Bengalski (ziel.)	Czar tej piecz ci przywo uje twojego wierzchowca, majestatycznego Tygrysa Bengalskiego (zielony). Zwi ksza otrzymywane punkty do wiadczenia o 30%.
+71141	Tygrys Bengalski (szary)	Czar tej piecz ci przywo uje twojego wierzchowca, majestatycznego Tygrysa Bengalskiego (szary). Zwi ksza otrzymywane punkty do wiadczenia o 30%.
+71142	Tygrys Bengalski (bia y)	Czar tej piecz ci przywo uje twojego wierzchowca, majestatycznego Tygrysa Bengalskiego (bia y). Zwi ksza otrzymywane punkty do wiadczenia o 30%.
+71149	Pier cie   mier. Mocy	Otrzymujesz na pewien czas: +30% PD, +20% szansy na obron  w walce z surami, +20% szansy na obron  w walce z szamanami, +20% szansy na obron  w walce z Likanami, +30% si y w walce z potworami, +10% maks. P  i +10% maks. PE.
+71151	Zielony Czar	Usuwa wszystkie bonusy w jednym z Twoich przedmiot w, po czym dodaje nowe. Mo na go u ywa  tylko przy broniach i zbrojach do poziomu 30. Niezdatny do handlu.
+71161	Equus Purpur	Piecz   do jednego z pi knych i nadzwyczaj rzadkich purpurowych koni. Zwi ksza szybko   ruchu o 60.
+71164	Kometek	Za pomoc  tej piecz ci mo esz przywo a  renifera Kometka. Zwi ksza szybko   ruchu o 60.
+71165	Polarny Drapie nik	Za pomoc  tej piecz ci mo esz przywo a  wojowniczego polarnego drapie nika. Zwi ksza szybko   ruchu o 60.
+71166	Pancerna Panda	Za pomoc  tej piecz ci mo esz przywo a  pancern  pand . Zwi ksza szybko   ruchu o 60.
+71171	Jednoro ec	Za pomoc  tej piecz ci mo esz przywo a  jednoro ca. Zwi ksza szybko   ruchu o 60.
+71172	Mara Senna	Za pomoc  tej piecz ci mo esz przywo a  mar  senn . Zwi ksza szybko   ruchu o 60.
+71176	Czarna Pantera	Piecz   ta przywo uje tajemnicz  czarn  panter . Zwi ksza szybko   ruchu o 30.
+71177	Leopard	Piecz   ta przywo uje dzielnego leoparda. Zwi ksza szybko   ruchu o 30.
+71182	Muffin (br zowy)	Za pomoc  tej piecz ci mo esz przywo a  Muffina, gro nego bojowego kurczaczka. Zwi ksza szybko   ruchu o 20.
+71183	Nugget (br zowy)	Za pomoc  tej piecz ci mo esz przywo a  Nuggeta, strasznego bojowego kurczaczka. Zwi ksza szybko   ruchu o 20.
+71184	Muffin (niebieski)	Za pomoc  tej piecz ci mo esz przywo a  Muffina, gro nego bojowego kurczaczka. Zwi ksza szybko   ruchu o 20.
+71185	Nugget (niebieski)	Za pomoc  tej piecz ci mo esz przywo a  Nuggeta, strasznego bojowego kurczaczka. Zwi ksza szybko   ruchu o 20.
+71186	Muffin (zielony)	Za pomoc  tej piecz ci mo esz przywo a  Muffina, gro nego bojowego kurczaczka. Zwi ksza szybko   ruchu o 20.
+71187	Nugget (zielony)	Za pomoc  tej piecz ci mo esz przywo a  Nuggeta, strasznego bojowego kurczaczka. Zwi ksza szybko   ruchu o 20.
+71192	Profesorek	Za pomoc  tej piecz ci mo esz przywo a  swojego zwierzaka "Profesorka". Zwi ksza szybko   ruchu 20 i otrzymywane punkty do wiadczenia o 30%.
+71193	B yskawiczny	Za pomoc  tej piecz ci mo esz przywo a  swojego zwierzaka "B yskawicznego". Zwi ksza szybko   ruchu 20 i otrzymywane punkty do wiadczenia o 30%.
+71197	Nugget (granatowy)	Za pomoc  tej piecz ci mo esz przywo a  Nuggeta, strasznego bojowego kurczaczka.
+71198	Muffin (r owy)	Za pomoc  tej piecz ci mo esz przywo a  Muffina, gro nego bojowego kurczaczka.
+71221	Smok Nirwana	Piecz   przywo uje twojego smoka Nirwana.
+71222	Smok Samsara	Piecz   przywo uje twojego smoka Samsara.
+71223	Manni	Piecz   przywo uje pot nego mamuta.
+71224	Manu	Piecz   przywo uje pot nego mamuta.
+71225	Spektralny Rumak	Piecz   przywo uje l ni cego wierzchowca.
+71226	Rumak Nocturnus	Piecz   przywo uje czarnego jak noc wierzchowca.
+71227	Mrok Ksi yca	Piecz   ta przywo uje ko cianego Rumaka Bojowego Mroku Ksi yca.
+71228	Srebrna Gwiazda	Piecz   ta przywo uje ko cianego Rumaka Bojowego Srebrnej Gwiazdy.
+71250	Bia y Sfinks	Piecz   ta przywo uje Twojego bia ego, lecz bynajmniej nie niewinnego wierzchowca.
+71251	Kamienny Sfinks	Piecz   ta przywo uje Twojego kamiennego i r wnie niewzruszonego wierzchowca.
+72301	Zw j B ogos awie stwa	Usuwa ryzyko zniszczenia przedmiotu podczas jego ulepszania. Je eli ulepszanie si  nie powiedzie, to jako   przedmiotu jest redukowana o 1 poziom.
+72309	Podr cznik Kowala	Ksi ga po  czona jest z dusz  starego kowala. Je li jej u yjesz, zwi kszy to szans  na pomy lne ulepszenie przedmiotu.
+72310	Zw j Egzorcyzmu	Uwalnia ci  od kl twy z ego ducha, je li nauka si  nie powiedzie. Za pomoc  tego zwoju mo esz przeczyta  w ci gu jednego dnia kolejny dokument umiej tno ci.
+72314	Zw j Boga Smok w	Usuwa ryzyko zniszczenia przedmiotu podczas jego ulepszania. Tylko jako   przedmiotu zostanie zmniejszona o 1 poziom. Ponadto zwi ksza si  prawdopodobie stwo pomy lnego ulepszenia o 10%.
+72319	Rozszerzenie Ekwip.	U yj tego przedmiotu, aby rozszerzy  sw j ekwipunek. Zdatny do handlu.
+72320	Rozszerzenie Ekwipunku	U yj tego przedmiotu, aby rozszerzy  sw j ekwipunek.
+72725	Eliksir S o ca (D)	Automatycznie regeneruje twoje P . Zawiera 7.000.000 P .
+72729	Eliksir Ksi yca (D)	Automatycznie regeneruje twoje PE. Zawiera 15.000 PE.
+73001	Modna Fryzura (czerw.)	Ulubiona fryzura samotnych wojownik w, wygl da  wietnie gdy wieje wiatr.
+73002	Modna Fryzura (jasna)	Ulubiona fryzura samotnych wojownik w, wygl da  wietnie gdy wieje wiatr.
+73003	Modna Fryzura (nieb.)	Ulubiona fryzura samotnych wojownik w, wygl da  wietnie gdy wieje wiatr.
+73004	Modna Fryzura (br z.)	Ulubiona fryzura samotnych wojownik w, wygl da  wietnie gdy wieje wiatr.
+73005	Chusta	Schludna fryzura zrobiona przy u yciu chusty do w os w.
+73006	Chusta	Schludna fryzura zrobiona przy u yciu chusty do w os w.
+73007	Chusta	Schludna fryzura zrobiona przy u yciu chusty do w os w.
+73008	Chusta	Schludna fryzura zrobiona przy u yciu chusty do w os w.
+73009	D ugie W osy (czar.)	Dobrze znana fryzura staro ytnych wojownik w.
+73010	D ugie W osy (czerw.)	Dobrze znana fryzura staro ytnych wojownik w.
+73011	D ugie W osy (br z.)	Dobrze znana fryzura staro ytnych wojownik w.
+73012	D ugie W osy (ziel.)	Dobrze znana fryzura staro ytnych wojownik w.
+73251	Kucyk (br z.)	Fryzura wygl daj ca jak ogonek kucyka.
+73252	Kucyk (ziel.)	Fryzura wygl daj ca jak ogonek kucyka.
+73253	Kucyk (nieb.)	Fryzura wygl daj ca jak ogonek kucyka.
+73254	Kucyk (jasny)	Fryzura wygl daj ca jak ogonek kucyka.
+73255	Kr tkie W osy (czerw.)	Bardzo naturalna fryzura z w osami do ramion.
+73256	Kr tkie W osy (br z.)	Bardzo naturalna fryzura z w osami do ramion.
+73257	Kr tkie W osy (blond)	Bardzo naturalna fryzura z w osami do ramion.
+73258	Kr tkie W osy (fiol.)	Bardzo naturalna fryzura z w osami do ramion.
+73259	Kr tkie (czerw.)	Praktyczna kr tka fryzura emanuj ca z owrog  aur .
+73260	Kr tkie (nieb.)	Praktyczna kr tka fryzura emanuj ca z owrog  aur .
+73261	Kr tkie (czar.)	Praktyczna kr tka fryzura emanuj ca z owrog  aur .
+73262	Kr tkie (blond)	Praktyczna kr tka fryzura emanuj ca z owrog  aur .
+73501	Spi te (jasne)	Kr tka fryzura noszona w wi kszo ci przez atlet w.
+73502	Spi te (br z.)	Kr tka fryzura noszona w wi kszo ci przez atlet w.
+73503	Spi te (blond)	Kr tka fryzura noszona w wi kszo ci przez atlet w.
+73504	Spi te (ziel.)	Kr tka fryzura noszona w wi kszo ci przez atlet w.
+73505	Charyzm. W osy (bia e)	Staro ytna fryzura okazuj ca silny indywidualny charakter.
+73506	Charyzm. W osy (czerw.)	Staro ytna fryzura okazuj ca silny indywidualny charakter.
+73507	Charyzm. W osy (czar.)	Staro ytna fryzura okazuj ca silny indywidualny charakter.
+73508	Charyzm. W osy (purp.)	Staro ytna fryzura okazuj ca silny indywidualny charakter.
+73509	Zawini te (bia e)	Stylowa ale t usto wygl daj ca fryzura zaczesana do ty u, anteny s  kluczowym akcentem tej fryzury.
+73510	Zawini te (nieb.)	Stylowa ale t usto wygl daj ca fryzura zaczesana do ty u, anteny s  kluczowym akcentem tej fryzury.
+73511	Zawini te (czar.)	Stylowa ale t usto wygl daj ca fryzura zaczesana do ty u, anteny s  kluczowym akcentem tej fryzury.
+73512	Zawini te (br z.)	Stylowa ale t usto wygl daj ca fryzura zaczesana do ty u, anteny s  kluczowym akcentem tej fryzury.
+73751	Spinka Motyl (br z.)	Spi ta u g ry fryzura wykorzystuj ca spink  w kszta cie motyla.
+73752	Spinka Motyl (czar.)	Spi ta u g ry fryzura wykorzystuj ca spink  w kszta cie motyla.
+73753	Spinka Motyl (nieb.)	Spi ta u g ry fryzura wykorzystuj ca spink  w kszta cie motyla.
+73754	Spinka Motyl (bia a)	Spi ta u g ry fryzura wykorzystuj ca spink  w kszta cie motyla.
+73755	P d ugie W osy (br z.)	Stylowa fryzura Szamana.
+73756	D ugie W osy (czar.)	Stylowa fryzura Szamana.
+73757	D ugie W osy (blond)	Elegancka, g adka fryzura.
+73758	D ugie W osy (fiol.)	Stylowa fryzura Szamana.
+73759	Dawna Fryzura (br z.)	Fryzura uk adana warstwami.
+73760	Dawna Fryzura (jasna)	D ugie w osy, tradycjonalna fryzura.
+73761	Dawna Fryzura (fiol.)	Fryzura uk adana warstwami.
+73762	Dawna Fryzura (czerw.)	Fryzura uk adana warstwami.
+74001	Dumna fryzura (czerw.)	Fryzura zapewniaj ca Ci charakterystyczny wygl d
+74002	Dumna fryzura (jasna)	Fryzura zapewniaj ca Ci charakterystyczny wygl d
+74003	Dumna Fryzura (nieb.)	Fryzura zapewniaj ca Ci charakterystyczny wygl d
+74004	Dumna Fryzura (br z.)	Fryzura zapewniaj ca Ci charakterystyczny wygl d
+74005	Chusta (czerw.)	Kr tkie br zowe w osy z czerwon  opask  na czo o.
+74006	Chusta (kratk.)	Kr tkie blond w osy z jasn  opask  na czo o.
+74007	Chusta (nieb.)	Kr tkie niebieskie w osy z br zow  opask  na czo o.
+74008	Chusta (ziel.)	Kr tkie zielone w osy z zielon  opask  na czo o.
+74009	D ugie W osy (czarne)	Fryzura zapewniaj ca Ci imponuj cy wygl d
+74010	D ugie W osy (czerw.)	Fryzura zapewniaj ca Ci imponuj cy wygl d
+74011	D ugie W osy (br zowe)	Fryzura zapewniaj ca Ci charakterystyczny wygl d
+74012	D ugie W osy (ziel.)	Fryzura zapewniaj ca Ci charakterystyczny wygl d
+74013	Afro Wojownika	Daje wojownikowi 1% bonusowych P . Zast puje obecn  fryzur  (czas trwania: 7 dni).
+74014	Afro Wojownika	Daje wojownikowi 1% bonusowych PE. Zast puje obecn  fryzur  (czas trwania: 7 dni).
+74015	He m Wojownika	Daje wojownikowi 1% bonusowych P . Zast puje obecn  fryzur  (czas trwania: 7 dni).
+74016	He m Wojownika	Daje wojownikowi 1% bonusowych PE. Zast puje obecn  fryzur  (czas trwania: 7 dni).
+74017	Fez Wojownika	Czerwone nakrycie g owy dla m skich wojownik w. (czas trwania: 7 dni)
+74018	Kefija Wojownika	Chusta na g ow  dla m skich wojownik w. (czas trwania: 7 dni)
+74019	Turban Wojownika	Nakrycie g owy ze szlachetnego materia u dla m skich wojownik w. (czas trwania: 7 dni)
+74020	Maska Dyni Wojownik (m)	Maska dla Wojownika. Atrybuty oraz czas trwania s  ustalane losowo. Zast puje obecn  fryzur .
+74251	Kucyk (br z.)	D ugi br zowy warkocz, bardzo popularny w r d kobiet
+74252	Kucyk (ziel.)	D ugi zielony warkocz, bardzo popularny w r d kobiet
+74253	Kucyk (niebieski)	D ugi niebieski warkocz, bardzo popularny w r d kobiet
+74254	Kucyk (kremowy)	D ugi jasny warkocz, bardzo popularny w r d kobiet
+74255	Kr tkie w osy (czerw.)	Odwa na i nieco ekstrawagancka fryzura
+74256	Kr tkie w osy (br z.)	Odwa na i nieco ekstrawagancka fryzura
+74257	Kr tkie w osy (jasne)	Odwa na i nieco ekstrawagancka fryzura
+74258	Kr tkie w osy (purp.)	Odwa na i nieco ekstrawagancka fryzura
+74259	Kr tkie (czerw.)	Postrz piona czerwona fryzura w stylu ninja
+74260	Kr t. Przyst. (b  k.)	Postrz piona niebieska fryzura w stylu ninja
+74261	Kr t. Przyst. (czar.)	Postrz piona czarna fryzura w stylu ninja
+74262	Kr t. Przyst. (blond)	Postrz piona blond fryzura w stylu ninja
+74263	Afro Ninja (k)	Daje  e skiemu ninja 1% bonusowych P . Zast puje obecn  fryzur  (czas trwania: 7 dni).
+74264	Afro Ninja (k)	Daje  e skiemu ninja 1% bonusowych PE. Zast puje obecn  fryzur  (czas trwania: 7 dni).
+74265	Kapelusz Ninja (k)	Daje  e skiemu ninja 1% bonusowych P . Zast puje obecn  fryzur  (czas trwania: 7 dni).
+74266	Kapelusz Ninja (k)	Daje  e skiemu ninja 1% bonusowych PE. Zast puje obecn  fryzur  (czas trwania: 7 dni).
+74267	Pustynna Maska Ninja (k)	Starannie wykonana chusta na g ow  dla  e skich ninja. (czas trwania: 7 dni)
+74268	Pustynny Szal Ninja (k)	Pustynny szal ze szlachetnego materia u dla  e skich ninja. (czas trwania: 7 dni)
+74269	Turban Ninja (k)	Turban dla  e skich ninja z bardzo cennego materia u. (czas trwania: 7 dni)
+74270	Maska Dyni Ninja (k)	Maska dla wojowniczki Ninja. Atrybuty oraz czas trwania s  ustalane losowo. Zast puje obecn  fryzur .
+74501	Sport. Przystrz. (bia e)	Kr tka wojskowa fryzura
+74502	Sport. Przystrz. (br z.)	Kr tka wojskowa fryzura
+74503	Sportowa (blond)	Kr tka wojskowa fryzura
+74504	Sport. Przystrz. (ziel.)	Kr tka wojskowa fryzura
+74505	Charyzm. W osy (bia e)	Fryzura ukazuj ca silny, indywidualny charakter
+74506	Charyzm. W osy (czerw.)	Fryzura ukazuj ca silny, indywidualny charakter
+74507	Charyzm. W osy (czar.)	Fryzura ukazuj ca silny, indywidualny charakter
+74508	Charyzm. W osy (fiol.)	Fryzura ukazuj ca silny, indywidualny charakter
+74509	Zawini te (bia e)	Staromodna fryzura z charakterystycznym warkoczem
+74510	Zawini te (b  k.)	Staromodna fryzura z charakterystycznym warkoczem
+74511	Zawini te (czar.)	Staromodna fryzura z charakterystycznym warkoczem
+74512	Zawini te (br z.)	Staromodna fryzura z charakterystycznym warkoczem (do +20% obra e  przeciwko Szamanom).
+74513	Afro Sura (m)	Daje m skiemu Sura 1% bonusowych P . Zast puje obecn  fryzur  (czas trwania: 7 dni).
+74514	Afro Sura (m)	Daje m skiemu Sura 1% bonusowych PE. Zast puje obecn  fryzur  (czas trwania: 7 dni).
+74515	He m Sura (m)	Daje m skiemu Sura 1% bonusowych P . Zast puje obecn  fryzur  (czas trwania: 7 dni).
+74516	He m Sura (m)	Daje m skiemu Sura 1% bonusowych PE. Zast puje obecn  fryzur  (czas trwania: 7 dni).
+74517	Fez Sura (m)	Czerwone nakrycie g owy dla m skich sura. (czas trwania: 7 dni)
+74518	Kefija Sura (m)	Chusta na g ow  dla m skich sura. (czas trwania: 7 dni)
+74519	Turban Sura (m)	Nakrycie g owy ze szlachetnego materia u dla m skich sura. (czas trwania: 7 dni)
+74520	Maska Dyni Sura (m)	Maska dla wojownika Sura. Atrybuty oraz czas trwania s  ustalane losowo. Zast puje obecn  fryzur .
+74521	Modna Fryzura (siwa)	Fryzura zapewniaj ca ci charakterystyczny wygl d
+74522	Chusta	Schludna fryzura zrobiona przy u yciu chusty do w os w.
+74523	D ugie W osy (blond)	Pi kna blond fryzura o imponuj cej obj to ci.
+74524	Modna Fryzura (z ota)	Z ocistobr zowe w osy zwi zane modn  opask .
+74525	Chusta (czarna)	Zmierzwiona fryzura zwi zana opask .
+74526	D ugie W osy (rubinowe)	Wspania e rubinowe w osy.
+74527	Kucyk (czerwony)	D ugie w osy zwi zane w kucyk.
+74528	W osy do Ramion (wodne)	Subtelna fryzura z niebiesk  opask .
+74529	W osy Kr tkie (br zowe)	Praktyczna fryzura, kt ra nadaje gro nego wygl du.
+74530	Kucyk (czerwony)	Czerwone d ugie w osy zwi zane w kucyk - popularna fryzura w r d kobiet.
+74531	W osy do Ramion (czarne)	Odwa na i nieco ekstrawagancka fryzura.
+74532	W osy Kr tkie (siwe)	Praktyczna kr tka fryzura emanuj ca z owrog  aur .
+74533	Sportowa Fryzura(czarna)	Kr tka wojskowa fryzura.
+74534	Fryzura Charyzma (blond)	Fryzura podkre laj ca indywidualny styl.
+74535	D ugi Kucyk (r owy)	Kucyk w dawnym stylu, kt ry niegdy  by  symbolem dobrobytu.
+74536	Sportowa Fryzura (fiol.)	Ekstrawagancka kr tka fryzura.
+74537	Fryzura Charyzma (blond)	Charyzmatyczna fryzura z d ugimi w osami.
+74538	D ugi Warkocz (kr l.)	Kucyk w dawnym stylu, kt ry niegdy  by  symbolem dobrobytu.
+74539	Elegancka Fryzura(fiol.)	Elegancka fryzura z zaczesanymi w osami do ty u.
+74540	W osy P d ugie (ciemne)	Elegancka fryzura dla szaman w.
+74541	Stara Fryzura (bia a)	D ugie w osy zaczesywane w stylu tradycjonalnym.
+74542	Elegancka Fryzura(czer.)	Fryzura spi ta u g ry spink  w kszta cie motyla.
+74543	W osy P d ugie (bia e)	Elegancka fryzura z prostymi w osami.
+74544	Stara Fryzura (czarna)	Kobieca fryzura z d ugimi pocieniowanymi w osami.
+74545	Warkocze Plem.+ (czerw.)	Warkocze przyozdobione czerwonymi drewnianymi pere kami, kt re symbolizuj  przynale no   do plemienia.
+74546	Warkocze Plem.+ (  te)	Warkocze przyozdobione   tymi drewnianymi pere kami, kt re symbolizuj  przynale no   do plemienia.
+74547	Warkocze Plem.+ (nieb.)	Warkocze przyozdobione niebieskimi drewnianymi pere kami, kt re symbolizuj  przynale no   do plemienia.
+74548	Warkocze Plem.+ (fiol.)	Warkocze przyozdobione fioletowymi drewnianymi pere kami, kt re symbolizuj  przynale no   do plemienia.
+74549	Warkocze Plem+ (zielone)	Warkocze przyozdobione zielonymi drewnianymi pere kami, kt re symbolizuj  przynale no   do plemienia.
+74550	Ochrona na Czo o+(z ota)	Ochrona na g ow  z tradycyjn  ozdob  na w osy
+74551	Ochrona na Czo o+ (czar)	Ochrona na g ow  z tradycyjn  ozdob  na w osy
+74552	Ochrona na Czo o+ (czer)	Ochrona na g ow  z tradycyjn  ozdob  na w osy
+74553	Ochrona na Czo o+ (nieb)	Ochrona na g ow  z tradycyjn  ozdob  na w osy
+74554	Ochrona na Czo o+(bia a)	Ochrona na g ow  z tradycyjn  ozdob  na w osy
+74555	Ochrona na G ow +(z ota)	Ochrona na g ow  z solidnymi ochronami na skronie i tradycyjn  ozdob  na w osy
+74556	Ochrona na G ow + (czar)	Ochrona na g ow  z solidnymi ochronami na skronie i tradycyjn  ozdob  na w osy
+74557	Ochrona na G ow +(czerw)	Ochrona na g ow  z solidnymi ochronami na skronie i tradycyjn  ozdob  na w osy
+74558	Ochrona na G ow + (nieb)	Ochrona na g ow  z solidnymi ochronami na skronie i tradycyjn  ozdob  na w osy
+74559	Ochrona na G ow + (ziel)	Ochrona na g ow  z solidnymi ochronami na skronie i tradycyjn  ozdob  na w osy
+74751	Spinka Motyl (br z.)	Spi ta u g ry fryzura ze spink  w kszta cie motyla
+74752	Spinka Motyl (czar.)	Spi ta u g ry fryzura ze spink  w kszta cie motyla
+74753	Spinka Motyl (b  k.)	Spi ta u g ry fryzura ze spink  w kszta cie motyla
+74754	Spinka Motyl (bia a)	Spi ta u g ry fryzura ze spink  w kszta cie motyla
+74755	 r. D ug. (br z.)	Elegancka fryzura dla szaman w
+74756	 r. D ug. (czar.)	Elegancka fryzura dla szaman w
+74757	 r. D ug. (blond)	Elegancka fryzura dla szaman w
+74758	 r. D ug. (fiol)	Elegancka fryzura dla szaman w
+74759	D ugie W osy (br z.)	Kobieca cieniowana fryzura
+74760	Dawna Fryzura (blond)	Kobieca cieniowana fryzura
+74761	D ugie w osy (fiol.)	Kobieca cieniowana fryzura
+74762	D ugie W osy (czerw.)	Kobieca cieniowana fryzura
+74763	Afro Szamanki	Daje Szamance 1% bonusowych P . Zast puje obecn  fryzur  (czas trwania: 7 dni).
+74764	Afro Szamanki	Daje Szamance 1% bonusowych PE. Zast puje obecn  fryzur  (czas trwania: 7 dni).
+74765	Kapelusz Szamanki	Daje Szamance 1% bonusowych P . Zast puje obecn  fryzur  (czas trwania: 7 dni).
+74766	Kapelusz Szamanki	Daje Szamance 1% bonusowych PE. Zast puje obecn  fryzur  (czas trwania: 7 dni).
+74767	Pustynna Maska Szamanki	Starannie wykonana chusta na g ow  dla  e skich szaman w. (czas trwania: 7 dni)
+74768	Pustynny Szal Szamanki	Pustynny szal ze szlachetnego materia u dla  e skich szaman w. (czas trwania: 7 dni)
+74769	Turban Szamanki	Turban dla  e skich szaman w z bardzo cennego materia u. (czas trwania: 7 dni)
+74770	Maska Dyni Szaman (k)	Maska dla Szamanki. Atrybuty oraz czas trwania s  ustalane losowo. Zast puje obecn  fryzur .
+75001	Modna Fryzura (czerwona)	Modna czerwona fryzura z pi kn  wst  k .
+75002	Modna Fryzura (jasna)	Modna jasna fryzura z pi kn  wst  k .
+75003	Modna Fryzura (nieb.)	Modna niebieska fryzura z pi kn  wst  k .
+75004	Modna fryzura (br zowa)	Modna br zowa fryzura z pi kn  wst  k .
+75005	Opaska (br zowe)	Zmierzwiona fryzura z opask  na czo o
+75006	Opaska (blond)	Zmierzwiona fryzura z opask  na czo o
+75007	Opaska (nieb.)	Zmierzwiona fryzura z opask  na czo o
+75008	Opaska (ziel.)	Zmierzwiona fryzura z opask .
+75009	W osy (czar.)	Wspania e czarne w osy, fryzura
+75010	W osy (czerw.)	Wspania e czerwone w osy
+75011	W osy (br z.)	Wspania e br zowe w osy
+75012	W osy (ziel.)	Wspania e zielone w osy
+75013	Afro Wojowniczki	Daje wojowniczce 1% bonusowych P . Zast puje obecn  fryzur  (czas trwania: 7 dni).
+75014	Afro Wojowniczki	Daje wojowniczce 1% bonusowych PE. Zast puje obecn  fryzur  (czas trwania: 7 dni).
+75015	Kapelusz Wojowniczki	Daje wojowniczce 1% bonusowych P . Zast puje obecn  fryzur  (czas trwania: 7 dni).
+75016	Kapelusz Wojowniczki	Daje wojowniczce 1% bonusowych PE. Zast puje obecn  fryzur  (czas trwania: 7 dni).
+75017	Pust. Maska Wojowniczki	Starannie wykonana chusta na g ow  dla  e skich wojownik w. (czas trwania: 7 dni)
+75018	Pust. Szal Wojowniczki	Pustynny szal ze szlachetnego materia u dla  e skich wojownik w. (czas trwania: 7 dni)
+75019	Turban Wojowniczki	Nakrycie g owy ze szlachetnego materia u dla  e skich wojownik w. (czas trwania: 7 dni)
+75020	Maska Dyni Wojownik (k)	Maska dla Wojowniczki. Atrybuty oraz czas trwania s  ustalane losowo. Zast puje obecn  fryzur .
+75201	Kucyk (br z.)	Fryzura z d ugim kucykiem
+75202	Kucyk (zielony)	Fryzura z d ugim kucykiem
+75203	Kucyk (nieb.)	Fryzura z d ugim kucykiem
+75204	Kucyk (jasny)	Fryzura z d ugim kucykiem
+75205	Chusta (czerw.)	Schludna fryzura z bia   opask  do w os w
+75206	Chusta (br z.)	Schludna fryzura z zielon  opask  do w os w
+75207	Chusta (jasna)	Schludna fryzura z jasn  opask  do w os w
+75208	Chusta (fiol.)	Schludna fryzura z czerwon  opask  do w os w
+75209	Kud ate W osy (czerw.)	Fryzura nadaj ca Ci mroczny wygl d
+75210	Kud ate W osy (nieb.)	Fryzura nadaj ca Ci mroczny wygl d
+75211	Kud ate W osy (czar.)	Fryzura nadaj ca Ci mroczny wygl d
+75212	Kud ate W osy (blond)	Fryzura nadaj ca Ci mroczny wygl d
+75213	Afro Ninja (m)	Daje m skiemu ninja 1% bonusowych P . Zast puje obecn  fryzur  (czas trwania: 7 dni).
+75214	Afro Ninja (m)	Daje m skiemu ninja 1% bonusowych PE. Zast puje obecn  fryzur  (czas trwania: 7 dni).
+75215	He m Ninja (m)	Daje m skiemu ninja 1% bonusowych P . Zast puje obecn  fryzur  (czas trwania: 7 dni).
+75216	He m Ninja (m)	Daje m skiemu ninja 1% bonusowych PE. Zast puje obecn  fryzur  (czas trwania: 7 dni).
+75217	Fez Ninja (m)	Czerwone nakrycie g owy dla m skich ninja. (czas trwania: 7 dni)
+75218	Kefija Ninja (m)	Chusta na g ow  dla m skich ninja. Chroni przed burzami piaskowymi. (czas trwania: 7 dni)
+75219	Turban Ninja (m)	Nakrycie g owy ze szlachetnego materia u dla m skich ninja. (czas trwania: 7 dni)
+75220	Maska Dyni Ninja (m)	Maska dla wojownika Ninja. Atrybuty oraz czas trwania s  ustalane losowo. Zast puje obecn  fryzur .
+75401	Spi te (jasne)	Ekstrawagancka fryzura - typowa dla kobiet sura
+75402	Spi te (br z.)	Ekstrawagancka fryzura - typowa dla kobiet sura
+75403	Spi te (blond)	Ekstrawagancka fryzura - typowa dla kobiet sura
+75404	Spi te (ziel.)	Ekstrawagancka fryzura - typowa dla kobiet sura
+75405	D ugie W osy (bia e)	D ugie, nieskazitelnie bia e w osy w ekstrawaganckim stylu
+75406	D ugie W osy (czerw.)	D ugie, czerwone w osy w ekstrawaganckim stylu
+75407	D ugie W osy (czar.)	D ugie, hebanowe w osy w ekstrawaganckim stylu
+75408	D ugie W osy (fiol.)	D ugie, fioletowe w osy w ekstrawaganckim stylu
+75409	D ugi Kucyk (bia y)	Fryzura z kucykiem
+75410	D ugi Kucyk (nieb.)	Fryzura z kucykiem
+75411	D ugi Kucyk (czar.)	Fryzura z kucykiem
+75412	D ugi Kucyk (br z.)	Fryzura z kucykiem
+75413	Afro Sura (k)	Daje  e skiemu Sura 1% bonusowych P . Zast puje obecn  fryzur  (czas trwania: 7 dni).
+75414	Afro Sura (k)	Daje  e skiemu Sura 1% bonusowych PE. Zast puje obecn  fryzur  (czas trwania: 7 dni).
+75415	Kapelusz Sura (k)	Daje  e skiemu Sura 1% bonusowych P . Zast puje obecn  fryzur  (czas trwania: 7 dni).
+75416	Kapelusz Sura (k)	Daje  e skiemu Sura 1% bonusowych PE. Zast puje obecn  fryzur  (czas trwania: 7 dni).
+75417	Pustynna Maska Sura (k)	Starannie wykonana chusta na g ow  dla  e skich sura. (czas trwania: 7 dni)
+75418	Pustynny Szal Sura (k)	Pustynny szal ze szlachetnego materia u dla  e skich sura. (czas trwania: 7 dni)
+75419	Turban Sura (k)	Nakrycie g owy ze szlachetnego materia u dla  e skich sura. (czas trwania: 7 dni)
+75420	Maska Dyni Sura (k)	Maska dla wojowniczki Sura. Atrybuty oraz czas trwania s  ustalane losowo. Zast puje obecn  fryzur .
+75601	Modnie  ci te (br z.)	Modnie przyci te w osy, zapewniaj ce szamanom mo liwo   wyra ania swojego usposobienia
+75602	Modnie  ci te (czar.)	Modnie przyci te w osy, zapewniaj ce szamanom mo liwo   wyra ania swojego usposobienia
+75603	Modnie  ci te (nieb.)	Modnie przyci te w osy, zapewniaj ce szamanom mo liwo   wyra ania swojego usposobienia
+75604	Modnie  ci te (jasne)	Modnie przyci te w osy zapewniaj  szamanom mo liwo   wyra ania swojego usposobienia
+75605	D ugie W osy (br zowe)	D ugie, br zowe w osy
+75606	D ugie W osy (czarne)	D ugie, czarne w osy
+75607	D ugie W osy (blond)	D ugie blond w osy
+75608	D ugie W osy (fiol.)	D ugie, fioletowe w osy
+75609	Dawna Fryzura (br z.)	Kiedy  ta br zowa wi zana fryzura by a tradycyjnym uczesaniem wojownik w
+75610	Dawna Fryzura (jasna)	Kiedy  ta jasna wi zana fryzura by a tradycyjnym uczesaniem wojownik w
+75611	Dawna Fryzura (fiol.)	Kiedy  ta fioletowa wi zana fryzura by a tradycyjnym uczesaniem wojownik w
+75612	Dawna Fryzura (czerw.)	Kiedy  ta czerwona wi zana fryzura by a tradycyjnym uczesaniem wojownik w
+75613	Afro Szamana	Daje szamanowi 1% bonusowych P . Zast puje obecn  fryzur  (czas trwania: 7 dni).
+75614	Afro Szamana	Daje szamanowi 1% bonusowych PE. Zast puje obecn  fryzur  (czas trwania: 7 dni).
+75615	He m Szamana	Daje szamanowi 1% bonusowych P . Zast puje obecn  fryzur  (czas trwania: 7 dni).
+75616	He m Szamana	Daje szamanowi 1% bonusowych PE. Zast puje obecn  fryzur  (czas trwania: 7 dni).
+75617	Fez Szamana	Czerwone nakrycie g owy dla m skich szaman w. (czas trwania: 7 dni)
+75618	Kefija Szamana	Chusta na g ow  dla m skich szaman w. Chroni przed burzami piaskowymi. (czas trwania: 7 dni)
+75619	Turban Szamana	Nakrycie g owy ze szlachetnego materia u dla m skich szaman w. (czas trwania: 7 dni)
+75620	Maska Dyni Szaman (m)	Maska dla Szamana. Atrybuty oraz czas trwania s  ustalane losowo. Zast puje obecn  fryzur .
+76001	Zw j Powrotu Statusu	Przedmiot ten umo liwia Ci ponowne wydanie Twoich punkt w statusu. Tak wi c mo esz rozwija  posta  w inny spos b. Niezdatny do handlu.
+76002	Zasuszona G owa	Ta zasuszona g owa demona otwiera piecz   3. poziomu Diabelskich Katakumb. Przedmiot ten jest niezdatny do handlu.
+76007	Peleryna M stwa	Staro ytni wojownicy okazywali swoje m stwo poprzez noszenie kolorowych peleryn. By  to spos b na zwabienie wszystkich potwor w z okolicy. Niezdatna do handlu.
+76016	Zw j B ogos awie stwa	Usuwa ryzyko zniszczenia przedmiotu podczas jego ulepszania. Je eli ulepszanie si  nie powiedzie, to jako   przedmiotu jest redukowana o 1 poziom. Przedmiot niezdatny do handlu.
+76023	Zielony Czar	Usuwa wszystkie bonusy w jednym z Twoich przedmiot w, po czym dodaje nowe. Mo na go u ywa  tylko przy broniach i zbrojach do poziomu 40. Przedmiot ze skrzyni poziom w, niezdatny do handlu.
+76025	Buty Wiatru	Dzieki temu przedmiotowi mozesz zmierzyc sie z lochami Swiatyni Ochao.
+79501	Ko czan	Ten ko czan zaopatrzy ciebie przez 24 godziny w niesko czon  ilo   strza . Obra enia nie malej  nawet podczas trafie  z odleg o ci.
+79502	Ko czan	Ten ko czan zaopatrzy ciebie przez 7 dni w niesko czon  ilo   strza . Obra enia nie malej  nawet podczas trafie  z odleg o ci.
+79503	Ko czan	Ten ko czan zaopatrzy ciebie w niesko czon  ilo   strza . Obra enia nie malej  nawet podczas trafie  z odleg o ci.
+79504	Ko czan	Ten ko czan zaopatrzy ciebie w niesko czon  ilo   strza . Obra enia nie malej  nawet podczas trafie  z odleg o ci.
+85001	Szarfa W adcy (prosta)	Szarfa ta absorbuje 1% bonus w wykorzystanej w tym celu broni lub zbroi.
+85002	Szarfa W adcy (dostojna)	Szarfa ta absorbuje 5% bonus w wykorzystanej w tym celu broni lub zbroi.
+85003	Szarfa W adcy (zacna)	Szarfa ta absorbuje 10% bonus w wykorzystanej w tym celu broni lub zbroi.
+85004	Szarfa W adcy (unikat.)	Szarfa ta absorbuje 11~25% bonus w wykorzystanej w tym celu broni lub zbroi.
+85005	Szarfa Mistrza (prosta)	Szarfa ta absorbuje 1% bonus w wykorzystanej w tym celu broni lub zbroi.
+85006	Szarfa Mistrza (dostoj.)	Szarfa ta absorbuje 5% bonus w wykorzystanej w tym celu broni lub zbroi.
+85007	Szarfa Mistrza (zacna)	Szarfa ta absorbuje 10% bonus w wykorzystanej w tym celu broni lub zbroi.
+85008	Szarfa Mistrza (unikat.)	Szarfa ta absorbuje 11~25% bonus w wykorzystanej w tym celu broni lub zbroi.
+85011	Szarfa Ksi cia (prosta)	Szarfa ta absorbuje 1% bonus w wykorzystanej w tym celu broni lub zbroi.
+85012	Szarfa Ksi cia (dost.)	Szarfa ta absorbuje 5% bonus w wykorzystanej w tym celu broni lub zbroi.
+85013	Szarfa Ksi cia (zacna)	Szarfa ta absorbuje 10% bonus w wykorzystanej w tym celu broni lub zbroi.
+85014	Szarfa Ksi cia (unikat.)	Szarfa ta absorbuje 11~25% bonus w wykorzystanej w tym celu broni lub zbroi.
+85015	Szarfa Kr la (prosta)	Szarfa ta absorbuje 1% bonus w wykorzystanej w tym celu broni lub zbroi.
+85016	Szarfa Kr la (dost.)	Szarfa ta absorbuje 5% bonus w wykorzystanej w tym celu broni lub zbroi.
+85017	Szarfa Kr la (zacna)	Szarfa ta absorbuje 10% bonus w wykorzystanej w tym celu broni lub zbroi.
+85018	Szarfa Kr la (unikat.)	Szarfa ta absorbuje 11~25% bonus w wykorzystanej w tym celu broni lub zbroi.
+85071	Szarfa Chou (prosta)	Szarfa ta absorbuje 1% bonus w wykorzystanej w tym celu broni lub zbroi.
+85072	Szarfa Chou (dostojna)	Szarfa ta absorbuje 5% bonus w wykorzystanej w tym celu broni lub zbroi.
+85073	Szarfa Chou (zacna)	Szarfa ta absorbuje 10% bonus w wykorzystanej w tym celu broni lub zbroi.
+85074	Szarfa Chou (unikat.)	Szarfa ta absorbuje 11~25% bonus w wykorzystanej w tym celu broni lub zbroi.
+85075	Szarfa Mao (prosta)	Szarfa ta absorbuje 1% bonus w wykorzystanej w tym celu broni lub zbroi.
+85076	Szarfa Mao (dostojna)	Szarfa ta absorbuje 5% bonus w wykorzystanej w tym celu broni lub zbroi.
+85077	Szarfa Mao (zacna)	Szarfa ta absorbuje 10% bonus w wykorzystanej w tym celu broni lub zbroi.
+85078	Szarfa Mao (unikat.)	Szarfa ta absorbuje 11~25% bonus w wykorzystanej w tym celu broni lub zbroi.
+85079	Szarfa Yu (prosta)	Szarfa ta absorbuje 1% bonus w wykorzystanej w tym celu broni lub zbroi.
+85080	Szarfa Yu (dostojna)	Szarfa ta absorbuje 5% bonus w wykorzystanej w tym celu broni lub zbroi.
+85081	Szarfa Yu (zacna)	Szarfa ta absorbuje 10% bonus w wykorzystanej w tym celu broni lub zbroi.
+85082	Szarfa Yu (unikat.)	Szarfa ta absorbuje 11~25% bonus w wykorzystanej w tym celu broni lub zbroi.
+90000	 wiadectwo Zmiany	U yj  wiadectwa zmiany, aby usun   bonusy z szarfy.
+10951	Bialy Zagiel	Ten przedmiot to przepustka na wyprawe Obrony Statku.
+10954	Krysztal Ognia	Za pomoca tego krysztalu mozesz kupic lub ulepszyc Talizman Ognia u NPC.
+10955	Krysztal Lodu	Za pomoca tego krysztalu mozesz kupic lub ulepszyc Talizman Lodu u NPC.
+10956	Krysztal Mroku	Za pomoca tego krysztalu mozesz kupic lub ulepszyc Talizman Mroku u NPC.
+10957	Krysztal Blyskawic	Za pomoca tego krysztalu mozesz kupic lub ulepszyc Talizman Blyskawic u NPC.
+10958	Krysztal Wiatru	Za pomoca tego krysztalu mozesz kupic lub ulepszyc Talizman Wiatru u NPC.
+10959	Krysztal Ziemi	Za pomoca tego krysztalu mozesz kupic lub ulepszyc Talizman Ziemi u NPC.
+10960	Skrzynia 1go miejsca w Zlotej Lidze	Nagroda za pierwsze miejsce w Zlotej Lidze.
+10961	Skrzynia 1go miejsca w Srebrnej Lidze	Nagroda za pierwsze miejsce w Srebrnej Lidze.
+10962	Skrzynia 1go miejsca w Brazowej Lidze	Nagroda za pierwsze miejsce w Brazowej Lidze.
+10963	Skrzynia 2go miejsca w Zlotej Lidze	Nagroda za drugie miejsce w Zlotej Lidze.
+10964	Skrzynia 2go miejsca w Srebrnej Lidze	Nagroda za drugie miejsce w Srebrnej Lidze.
+10965	Skrzynia 2go miejsca w Brazowej Lidze	Nagroda za drugie miejsce w Brazowej Lidze.
+10966	Skrzynia 3go miejsca w Zlotej Lidze	Nagroda za trzecie miejsce w Zlotej Lidze.
+10967	Skrzynia 3go miejsca w Srebrnej Lidze	Nagroda za trzecie miejsce w Srebrnej Lidze.
+10968	Skrzynia 3go miejsca w Brazowej Lidze	Nagroda za trzecie miejsce w Brazowej Lidze.
+18901	Kamien Czerw. Plomienia (Staly)	Wzmacnia bonusy pasa.	Czas trwania:permanentny
+27798	Krewetki Slodkowodne	Przyneta na rzadsze ryby.	Podnosi szanse na zlapanie rzadkiej ryby o 20%.
+27799	Rybie Osci	Osci martwej ryby.
+27800	Papka	Lekka i tania przyneta	Podnosi szanse na zlapanie rzadkiej ryby o 5%.
+27801	Worm	Popularna przyneta na ryby.	Podnosi szanse na zlapanie rzadkiej ryby o 8%.
+27802	Drobne Ryby	Przyneta wabiaca wieksze okazy.	Podnosi szanse na zlapanie rzadkiej ryby o 12%.
+27863	Grilowany Sandacz	Zjedz ta rybe aby otrzymac nastepujace bonusy:
+27864	Grilowany Ryba Mandaryna	Zjedz ta rybe aby otrzymac nastepujace bonusy:
+27865	Grilowany Duzy Sandacz	Zjedz ta rybe aby otrzymac nastepujace bonusy:
+27866	Grilowany Karp	Zjedz ta rybe aby otrzymac nastepujace bonusy:
+27867	Grilowany Losos	Zjedz ta rybe aby otrzymac nastepujace bonusy:
+27868	Grilowany Amur	Zjedz ta rybe aby otrzymac nastepujace bonusy:
+27869	Grilowany Pstrag	Zjedz ta rybe aby otrzymac nastepujace bonusy:
+27870	Grilowany Wegorz	Zjedz ta rybe aby otrzymac nastepujace bonusy:
+27871	Grilowany Teczowy Pstrag	Zjedz ta rybe aby otrzymac nastepujace bonusy:
+27872	Grilowany Rzeczny Pstrag	Zjedz ta rybe aby otrzymac nastepujace bonusy:
+27873	Grilowana Krasnopi rka	Zjedz ta rybe aby otrzymac nastepujace bonusy:
+27874	Grilowany Okon	Zjedz ta rybe aby otrzymac nastepujace bonusy:
+27875	Grilowany Tenchi	Zjedz ta rybe aby otrzymac nastepujace bonusy:
+27876	Grilowany Sum	Zjedz ta rybe aby otrzymac nastepujace bonusy:
+27877	Grilowany Skaber	Zjedz ta rybe aby otrzymac nastepujace bonusy:
+27878	Grilowana Ryba Lotosu	Zjedz ta rybe aby otrzymac nastepujace bonusy:
+27879	Grilowana Slodka Ryba	Zjedz ta rybe aby otrzymac nastepujace bonusy:
+27880	Grilowana Ryba Mandaryna	Zjedz ta rybe aby otrzymac nastepujace bonusy:
+27881	Grilowana Shiri	Zjedz ta rybe aby otrzymac nastepujace bonusy:
+27882	Grilowany Karp Lustrzany	Zjedz ta rybe aby otrzymac nastepujace bonusy:
+27883	Grilowany Zloty Karas	Zjedz ta rybe aby otrzymac nastepujace bonusy:
+27884	Grilowany Wezogl w	Zjedz ta rybe aby otrzymac nastepujace bonusy:
+27885	Grilowany Skaber	Zjedz ta rybe aby otrzymac nastepujace bonusy:
+27886	Grilowany Krab Kr lewski	Zjedz ta rybe aby otrzymac nastepujace bonusy:
+27887	Pieczony Rak Niebieski	Zjedz ta rybe aby otrzymac nastepujace bonusy:
+30002	Paproc Mroku	Moze zainteresowac biologa Chaegiraba.
+30003	Pierscien Chaegiraba	Moze zainteresowac biologa Chaegiraba.
+30004	Krysztal Kamienia Metin	Moze zainteresowac biologa Chaegiraba.
+30005	Oczyszczony Rdzen	Moze zainteresowac biologa Chaegiraba.
+30006	Zab Orka	Moze zainteresowac biologa Chaegiraba.
+30015	Pamiatka po Demonie	Moze zainteresowac biologa Chaegiraba.
+30047	Ksiega Klatw	Moze zainteresowac biologa Chaegiraba.
+30050	Matowy L d	Moze zainteresowac biologa Chaegiraba.
+30094	Mala Torba Yang	Mozesz w niej znalezc Yang, kliknij na nia PPM aby otworzyc. Znajdziesz tam od 5.000 do 15.000 yang.
+30095	Srednia Torba Yang	Mozesz w niej znalezc Yang, kliknij na nia PPM aby otworzyc. Znajdziesz tam od 10.000 do 1.200.00 yang.
+30096	Duza Torba Yang	Mozesz w niej znalezc Yang, kliknij na nia PPM aby otworzyc. Znajdziesz tam od 15.000 do 2.100.00 yang.
+30097	Mala Torba Yang	Mozesz w niej znalezc Yang, kliknij na nia PPM aby otworzyc. Znajdziesz tam od 5.000 do 15.000 yang.
+30098	Srednia Torba Yang	Mozesz w niej znalezc Yang, kliknij na nia PPM aby otworzyc. Znajdziesz tam od 10.000 do 1.200.00 yang.
+30099	Duza Torba Yang	Mozesz w niej znalezc Yang, kliknij na nia PPM aby otworzyc. Znajdziesz tam od 15.000 do 2.100.00 yang.
+30165	Konar Zelkova	Moze zainteresowac biologa Chaegiraba.
+30166	Certyfikat Tugyis	Moze zainteresowac biologa Chaegiraba.
+30167	CZerw. Konar Duchodrzewa	Moze zainteresowac biologa Chaegiraba.
+30168	Notatka Lidera	Moze zainteresowac biologa Chaegiraba.
+30251	Klejnot Zawisci	Moze zainteresowac biologa Chaegiraba.
+30252	Klejnot Madrosci	Moze zainteresowac biologa Chaegiraba.
+30255	Pergamin Ognia	Ten przedmiot jest potrzebny do ulepszenia Talizmanu Ognia.
+30256	Pergamin Blyskawic	Ten przedmiot jest potrzebny do ulepszenia Talizmanu Blyskawic.
+30257	Pergamin Ziemi	Ten przedmiot jest potrzebny do ulepszenia Talizmanu Ziemi.
+30258	Pergamin Lodu	Ten przedmiot jest potrzebny do ulepszenia Talizmanu Lodu.
+30259	Pergamin Wiatru	Ten przedmiot jest potrzebny do ulepszenia Talizmanu Wiatru.
+30260	Pergamin Mroku	Ten przedmiot jest potrzebny do ulepszenia Talizmanu Mroku.
+30271	Odlamek kamienia Metin	Ten przedmiot jest potrzebny do ulepszenia ekwipunku.
+30273	Mistyczny Certyfikat	Ten przedmiot jest potrzebny do ulepszenia ekwipunku.
+30274	Antyczny Certyfikat	Ten przedmiot jest potrzebny do ulepszenia ekwipunku.
+30275	Epicki Certyfikat	Ten przedmiot jest potrzebny do ulepszenia ekwipunku.
+30276	Legendarny Certyfikat	Ten przedmiot jest potrzebny do ulepszenia ekwipunku.
+30277	Krysztal Bog w	Mozesz wymienic 100 sztuk na jeden Krysztal Bog w+. Kliknij na nie PPM aby wymienic.
+30278	Krysztal Bog w+	Ten krysztal jest potrzebny do wzmocnien, ulepszen oraz kupowania r znych przedmiot w u NPC.
+30279	Krysztal Slonca	Mozesz wymienic 100 sztuk na jeden Krysztal Slonca+. Kliknij na nie PPM aby wymienic.
+30280	Krysztal Slonca+	Ten krysztal jest potrzebny do wzmocnien, ulepszen oraz kupowania r znych przedmiot w u NPC.
+30282	R g Razadora	Ten przedmiot to ulepszacz.
+30283	R g Nemere	Ten przedmiot to ulepszacz.
+30284	Bezduszny Kamien	Ten krysztal jest potrzebny do ulepszen oraz kupowania r znych przedmiot w u NPC.
+30516	Antyczny Epolet	Ten przedmiot to ulepszacz.
+30524	Ognisty Kamien	Ten przedmiot to ulepszacz.
+30525	Kamien Lodowego Plomienia	Ten przedmiot to ulepszacz.
+30587	Fioletowy Material	ITen przedmiot to ulepszacz.
+30602	Niebieski Barwnik	Ten przedmiot to ulepszacz.
+30610	Mithril	Ten przedmiot to ulepszacz.
+30612	Stabilne Sznury	Ten przedmiot to ulepszacz.
+30614	Czarny Barwnik	Ten przedmiot to ulepszacz.
+30615	Bialy Barwnik	Ten przedmiot to ulepszacz.
+30623	Pusta fiolka na szlam	Ten przedmiot jest uzywany na Wyprawie Szlamu, przeciagnij ja nad kaluze aby napelnic.
+30624	Fiolka ze szlamem	Ten przedmiot jest uzywany na Wyprawie Szlamu, przeciagnij ja na obelisk aby uzyc.
+30625	Fragment Menhiru Szlamu	Ten przedmiot to przepustka na Wyprawe Szlamu.
+30798	Krzyz Ankh	Ten przedmiot to przepustka na Wyprawe Piramid.
+30800	Fragment pergaminu 1	Ten przedmiot jest potrzebny na drugim pietrze Wyprawy Piramid.
+30801	Fragment pergaminu 2	Ten przedmiot jest potrzebny na drugim pietrze Wyprawy Piramid.
+30802	Fragment pergaminu 3	Ten przedmiot jest potrzebny na drugim pietrze Wyprawy Piramid.
+30803	Fragment pergaminu 4	Ten przedmiot jest potrzebny na drugim pietrze Wyprawy Piramid.
+30804	Pas Madrosci	Ten przedmiot jest potrzebny w trakcie Wyprawy Piramid.
+30805	Antyczny Klucz	Ten przedmiot jest potrzebny w trakcie Wyprawy Piramid.
+30806	Antyczna Skrzynia	Ten przedmiot jest potrzebny w trakcie Wyprawy Piramid.
+39015	Kamie? Kowala	With this stone it is possible to purchase an item from the blacksmith
+39048	Skrzynia Wojownika	Paczka zawiera przydatne ksiegi dla Wojownika.
+39050	Skrzynia Ninja	Paczka zawiera przydatne ksiegi dla Ninja.
+39052	Skrzynia Sury	Paczka zawiera przydatne ksiegi dla Sury.
+39054	Skrzynia Szamana	Paczka zawiera przydatne ksiegi dla Szamana.
+39065	Yang (20kk)	Zawiera 20kk Yang.
+39066	Yang (40kk)	Zawiera 40kk Yang.
+39067	Yang (70kk)	Zawiera 70kk Yang.
+39068	Yang (15kk)	Zawiera 15kk Yang.
+39069	Yang (10kk)	Zawiera 10kk Yang.
+39070	Yang (30kk)	Zawiera 30kk Yang.
+39071	Yang (5kk)	Zawiera 5kk Yang.
+39072	Yang (25kk)	Zawiera 25kk Yang.
+39073	Yang (35kk)	Zawiera 35kk Yang.
+39074	Yang (55kk)	Zawiera 55kk Yang.
+39075	Yang (50kk)	Zawiera 50kk Yang.
+39076	Yang (100kk)	Zawiera 100kk Yang.
+39077	Yang (150kk)	Zawiera 150kk Yang.
+39079	Yang (80kk)	Zawiera 80kk Yang.
+39080	Yang (130kk)	Zawiera 130kk Yang.
+39081	Yang (230kk)	Zawiera 230kk Yang.
+39082	Yang (120kk)	Zawiera 120kk Yang.
+39083	Yang (220kk)	Zawiera 220kk Yang.
+40004	Pierscien Eeka	Pierscien wykonany z tajemniczych material w, zapewnia potezne bonusy.
+40095	Wachlarz Mrocznego Zodiaku	Nakladka na bron kt ra moze byc zakupiona ze sklepu przepustki bojowej.
+40096	Dzwon Mrocznego Zodiaku	Nakladka na bron kt ra moze byc zakupiona ze sklepu przepustki bojowej.
+40097	Glewia Mrocznego Zodiaku	Nakladka na bron kt ra moze byc zakupiona ze sklepu przepustki bojowej.
+40098	Luk Mrocznego Zodiaku	Nakladka na bron kt ra moze byc zakupiona ze sklepu przepustki bojowej.
+40099	Sztylety Mrocznego Zodiaku	Nakladka na bron kt ra moze byc zakupiona ze sklepu przepustki bojowej.
+40100	Miecz Mrocznego Zodiaku	Nakladka na bron kt ra moze byc zakupiona ze sklepu przepustki bojowej.
+40143	Eliksir Badacza +	Ten przedmiot poprawia jakosc materialu oraz resetuje czas oczekiwania.
+40144	Eliksir Badacza	Ten przedmiot resetuje czas oczekiwania.
+40192	Kostium Mrocznego Zodiaku (f)	Kostium idealnie pasuje do broni Zodiaku.
+40193	Kostium Mrocznego Zodiaku (m)	Kostium idealnie pasuje do broni Zodiaku.
+40194	Kostium Mrocznego Zodiaku (f)	Kostium idealnie pasuje do broni Zodiaku.
+40195	Kostium Mrocznego Zodiaku (m)	Kostium idealnie pasuje do broni Zodiaku.
+40196	Kostium Mrocznego Zodiaku (m)	Kostium idealnie pasuje do broni Zodiaku.
+40197	Kostium Mrocznego Zodiaku (f)	Kostium idealnie pasuje do broni Zodiaku.
+40198	Kostium Mrocznego Zodiaku (m)	Kostium idealnie pasuje do broni Zodiaku.
+40199	Kostium Mrocznego Zodiaku (f)	Kostium idealnie pasuje do broni Zodiaku.
+45242	Czarne Warkocze + (m)	Specjalne warkocze Pasujace do Kostiumu Zodiaku.
+45243	Czarne Warkocze + (f)	Specjalne warkocze Pasujace do Kostiumu Zodiaku.
+46003	Ksiezycowy Bojownik (f)	Ten przedmiot moze byc ubrany tylko przez wspierajacego szamana.
+46004	Ksiezycowy Bojownik (m)	Ten przedmiot moze byc ubrany tylko przez wspierajacego szamana.
+46005	Zbroja Azraela (f)	Ten przedmiot moze byc ubrany tylko przez wspierajacego szamana.
+46006	Zbroja Azraela (m)	Ten przedmiot moze byc ubrany tylko przez wspierajacego szamana.
+46007	Pustynny Bojownik (f)	Ten przedmiot moze byc ubrany tylko przez wspierajacego szamana.
+46008	Pustynny Bojownik (m)	Ten przedmiot moze byc ubrany tylko przez wspierajacego szamana.
+46303	Helm Azraela (f)	Ten przedmiot moze byc ubrany tylko przez wspierajacego szamana.
+46304	Helm Azraela (m)	Ten przedmiot moze byc ubrany tylko przez wspierajacego szamana.
+46307	Kok Salsa	Ten przedmiot moze byc ubrany tylko przez wspierajacego szamana.
+46308	Mini Irokez	Ten przedmiot moze byc ubrany tylko przez wspierajacego szamana.
+46601	Zebaty Wachlarz	Ten przedmiot moze byc ubrany tylko przez wspierajacego szamana.
+46602	Zebaty Dzwon	Ten przedmiot moze byc ubrany tylko przez wspierajacego szamana.
+46603	Wachlarz Wodnika	Ten przedmiot moze byc ubrany tylko przez wspierajacego szamana.
+46604	Dzwon Wodnika	Ten przedmiot moze byc ubrany tylko przez wspierajacego szamana.
+46605	Cukierkowy Dzwon	Ten przedmiot moze byc ubrany tylko przez wspierajacego szamana.
+46606	Mrozny Wachlarz	Ten przedmiot moze byc ubrany tylko przez wspierajacego szamana.
+50063	Skrzyna Razadora	Ta skrzynia zostala znaleziona w Twierdzy Razadora. Zawiera prawdziwy skarb!
+50064	Skrzynia Nemere	Ta skrzynia zostala znaleziona w Straznicy Nemere. Zawiera prawdziwy skarb!
+50065	Skrzynia Lodowej Wr zki	Skrzynia Lodowej Wr zki. Ta skrzynia zawiera cos cennego.
+50066	Cenna Skrzynia	Ta skrzynia zawiera wartosciowe przedmioty w sobie.	Moze zawierac kostium szarfy, lub przedmioty jej dotyczace.
+50067	Codzienna Skrzynia	Ta skrzynia zawiera fantastyczne nagrody.
+50069	Skrzynia Wladcy Duch w Drzew	Ta skrzynia zawiera w sobie cos cennego.
+50072	Skrzynia Labiryntu Ork w	Ta skrzynia zawiera w sobie cos cennego.
+50074	Skrzynia Baron wny Pajak w	Ta skrzynia zawiera w sobie cos cennego.
+50075	Skrzynia Kr lowej Szlamu	Ta skrzynia zawiera w sobie cos cennego.
+50081	Skrzynia Wielkiego Ducha Drzew	Ta skrzynia zawiera w sobie cos cennego.
+50098	Skrzynia Berana Setaou	Ta skrzynia zostala znaleziona w Grocie Wygnanc w. Zawiera w sobie prawdziwy skarb.
+50099	Skrzynia Zywiol w	Ta skrzynia zawiera przedmioty potrzebne do ulepszania talizman w.
+50100	Skrzynia Haru	Skrzynia Haru. Ta skrzynia zawiera w sobie cos cennego.
+50101	Skrzynia Eiena	Skrzynia Eiena. Ta skrzynia zawiera w sobie cos cennego.
+50102	Skrzynia Buncho	Skrzynia Buncho. Ta skrzynia zawiera w sobie cos cennego.
+50138	Skrzynia Mahona	Skrzynia Mahona. Ta skrzynia zawiera w sobie cos cennego.
+50139	Skrzynia Bo	Skrzynia Bo. Ta skrzynia zawiera w sobie cos cennego.
+50140	Skrzynia Goo-Pae	Skrzynia Goo-Pae. Ta skrzynia zawiera w sobie cos cennego.
+50141	Skrzynia Chunonga	Skrzynia Chunonga. Ta skrzynia zawiera w sobie cos cennego.
+50142	Skrzynia Brutalnego Wodza	Skrzynia Brutalnego Wodza. Ta skrzynia zawiera w sobie cos cennego.
+50143	Skrzynia Umiejetnosci	Skrzynka zawiera podstawowe Ksiegi Umiejetnosci.
+50203	Skrzynia Hydry	Ta skrzynia zawiera w sobie cos cennego.
+50204	Skrzynia Ochao	Ta skrzynia zawiera w sobie cos cennego.
+50254	Skrzynia Mroku	Ciezka skrzynia skradziona Mrocznemu Narodowi.
+50285	Skrzynia Wladcy En-Tai	Zawiera w sobie wartosciowe przedmioty.
+50333	Ksiega Boskiej Mocy	Wzmacnia umiejetnosc pasywna. Ta ksiega mozesz podniesc umiejetnosc: Boska Sila.
+50334	Ksiega Dropu Yang	Wzmacnia umiejetnosc pasywna. Ta ksiega mozesz podniesc umiejetnosc: Drop Yang.
+50335	Ksiega Lowcy Potwor w	Wzmacnia umiejetnosc pasywna. Ta ksiega mozesz podniesc umiejetnosc: Lowca Potwor w.
+50336	Ksiega Sily Zyciowej	Wzmacnia umiejetnosc pasywna. Ta ksiega mozesz podniesc umiejetnosc: Sila Zyciowa.
+50525	Perfekcyjny Kamien Duszy	Ten przedmiot pozwala ulepszyc umiejetnosc bezposrednio z poziomu G do P. Kamien znika po uzyciu.
+50526	Kamien Duchowy Dopalacza	Ten legendary kamien pozwala ulepszac umiejetnosc Dopalacza od poziomu G. Znika po uzyciu
+50527	Kamien Duchowy Riposty	Ten legendary kamien pozwala ulepszac umiejetnosc Riposty od poziomu G. Znika po uzyciu
+50634	Krysztal Duszy	Krysztal czysty jak dusza. Moze byc wsadzony do bizuterii.
+50635	Rubin	Czerwony kamien z unikatowym wykonczeniem. Moze byc wsadzony do bizuterii.
+50636	Granat	Pomaranczowy kamien z unikatowym wykonczeniem. Moze byc wsadzony do bizuterii.
+50637	Szmaragd	Zielony kamien z unikatowym wykonczeniem. Moze byc wsadzony do bizuterii.
+50638	Szafir	Niebieski kamien z unikatowym wykonczeniem. Moze byc wsadzony do bizuterii.
+50639	Turmalin	Ten magiczny krysztal mieni sie we wszystkich kolorach teczy. Moze byc wsadzony do bizuterii.
+50640	Cyjanit	Czerwono-niebieski kamien w oryginalnym ksztalcie. Moze byc wsadzony do bizuterii.	Czas trwania: permanentny
+50672	Bursztyn (Permanent)	Czysty klejnot stworzony przez zastygniecie zywicy.	Czas trwania: permanentny
+50673	Skamieniale Drewno (Permanent)	Wartosciowe drewno, kt re wzmacnia bizuterie.	Czas trwania: permanentny
+50674	Miedz (Permanent)	Drogi metal, kt ry jest uzywany do wykonywania bizuterii lub monet. Jest tez wymagany do produkcji brazu.	Czas trwania: permanentny
+50675	Srebro (Permanent)	Polyskujacy metal, kt ry jest uzywany do wykonywania bizuterii lub monet. Moze byc tez przerobiony na akcesoria.	Czas trwania: permanentny
+50676	Zloto (Permanent)	Zloty metal, kt ry jest uzywany do wykonywania bizuterii lub monet. Moze byc tez przerobiony na akcesoria.	Czas trwania: permanentny
+50677	Jadeit (Permanent)	Wartosciowy mineral, kt ry jest w uzyciu od 5000 lat.  Moze byc przerobiony na akcesoria lub bizuterie.	Czas trwania: permanentny
+50678	Ebonit (Permanent)	To twarde, polyskliwe drewno jest bardzo wartosciowe. Moze byc tez przerobiony na akcesoria.	Czas trwania: permanentny
+50679	Perla (Permanent)	Uzywana do produkcji bizuterii oraz akcesori w.	Czas trwania: permanentny
+50680	Biale Zloto (Permanent)	Twardy, cenny stop zlota uzywany w jubilerstwie.	Czas trwania: permanentny
+50681	Krysztal (Permanent)	Twardy kamien wytworzony w trakcie krystalizacji kwarcu moze miec dowolny kolor. Czesto uzywany w produkcji bizuterii.	Czas trwania: permanentny
+50682	Ametyst (Permanent)	Popularny kwarc w r znych odcieniach purpury. Czesto uzywany w produkcji bizuterii.	Czas trwania: permanentny
+50683	Niebianska Lza (Permanent)	Skrystalizowana lza prosto z nieba. Czesto uzywany w produkcji bizuterii.	Czas trwania: permanentny
+50684	Krysztal Duszy (Permanent)	Krysztal czysty jak dusza. Moze byc wsadzony do bizuterii.	Czas trwania: permanentny
+50685	Rubit (Permanent)	Czerwony kamien z unikatowym wykonczeniem. Moze byc wsadzony do bizuterii.	Czas trwania: permanentny
+50686	Granat (Permanent)	Pomaranczowy kamien z unikatowym wykonczeniem. Moze byc wsadzony do bizuterii.	Czas trwania: permanentny
+50687	Szmaragd (Permanent)	Zielony kamien z unikatowym wykonczeniem. Moze byc wsadzony do bizuterii.	Czas trwania: permanentny
+50688	Szafir (Permanent)	Niebieski kamien z unikatowym wykonczeniem. Moze byc wsadzony do bizuterii.	Czas trwania: permanentny
+50689	Turmalin (Permanent)	Ten magiczny krysztal mieni sie we wszystkich kolorach teczy. Moze byc wsadzony do bizuterii.	Czas trwania: permanentny
+50690	Cyjanit (Permanent)	Czerwono-niebieski kamien w oryginalnym ksztalcie. Moze byc wsadzony do bizuterii.	Czas trwania: permanentny
+53025	Mlody Leopard	Ta pieczec przywoluje twojego slodkiego, malego leoparda.
+53026	Pieczec Leonidasa(15d)	Przy pomocy tej pieczeci mozesz przyzwac swojego Leonidasa na 15 dni.
+53027	Pieczec Leonidasa(30d)	Przy pomocy tej pieczeci mozesz przyzwac swojego Leonidasa na 30 dni.
+53028	Pieczec Leonidasa(Staly)	Przy pomocy tej pieczeci mozesz przyzwac swojego Stalego Leonidasa.
+53029	Pieczec Nogai (15d)	Przy pomocy tej pieczeci mozesz przyzwac swojego Nogai na 15 dni.
+53030	Pieczec Nogai (30d)	Przy pomocy tej pieczeci mozesz przyzwac swojego Nogai na 30 dni.
+53031	Pieczec Nogai (Staly)	Przy pomocy tej pieczeci mozesz przyzwac swojego Stalego Nogai.
+53248	Donnie (15d)	Przy pomocy tej pieczeci mozesz przyzwac swojego Donnie.
+53249	Donnie (30d)	Przy pomocy tej pieczeci mozesz przyzwac swojego Donnie.
+53250	Donnie (Staly)	Przy pomocy tej pieczeci mozesz przyzwac swojego Donnie.
+53251	Frank (15d)	Przy pomocy tej pieczeci mozesz przyzwac swojego Franka.
+53252	Frank (30d)	Przy pomocy tej pieczeci mozesz przyzwac swojego Franka.
+53253	Frank (Staly)	Przy pomocy tej pieczeci mozesz przyzwac swojego Franka.
+53263	Gryf	Przy pomocy tej pieczeci mozesz przyzwac swojego Gryfka.
+53264	Nogai	Przy pomocy tej pieczeci mozesz przyzwac swojego Nogai.
+53282	Wszystkowidzacy Ognisty Kociak	Przy pomocy tej pieczeci mozesz przyzwac swojego Wszystkowidzacego Kociaka.
+53283	Wszystkowidzacy Lodowy Kociak	Przy pomocy tej pieczeci mozesz przyzwac swojego Wszystkowidzacego Kociaka.
+55002	Klatka Transportowa	Wsadzajac tu swojego zwierzaka, mozesz nim handlowac.
+55003	Ksiega Mlodego Zwierza	Ta ksiazka jest potrzebna do rozwoju zwierzaka.
+55004	Ksiega Dzikiego Zwierza	Ta ksiazka jest potrzebna do rozwoju zwierzaka.
+55005	Ksiega Dzielnego Zwierza	Ta ksiazka jest potrzebna do rozwoju zwierzaka.
+55014	Ksiega Obrazen Krytycznych (PvM)	Po nauczeniu sie tej umiejetnosci, zwieksza obrazenia krytyczne.
+55015	Ksiega Silny przeciwko Metinom	Po nauczeniu sie tej umiejetnosci, zwieksza obrazenia w Metiny.
+55016	Ksiega Silny przeciwko Bossom	Po nauczeniu sie tej umiejetnosci, zwieksza obrazenia w Bossy.
+55017	Ksiega intuicji	Po nauczeniu sie tej umiejetnosci, zwieksza bonus DOS.
+55018	Ksiega Dropu Yang	Po nauczeniu sie tej umiejetnosci, zwieksza szanse na podw jna ilosc Yang.
+55019	Ksiega ataku fizycznego/magicznego	Po nauczeniu sie tej umiejetnosci, zwieksza atak fizyczny/magiczny.
+55020	Ksiega Blokady Book	Po nauczeniu sie tej umiejetnosci zwieksza szanse na blok ciosu.
+55021	Ksiega Odbicia	Po nauczeniu sie tej umiejetnosci zwieksza szanse na odbicie ciosu.
+56001	Mikstura Poprawy (5%)	Zwieksza szanse na pomyslne ulepszenie przedmiotu o 5%.	Jest r wniez waluta przy kupowaniu przedmiot w u kowala.
+56002	Mikstura Poprawy (10%)	Zwieksza szanse na pomyslne ulepszenie przedmiotu o 10%.	Jest r wniez waluta przy kupowaniu przedmiot w u kowala.
+56003	Mikstura Poprawy (15%)	Zwieksza szanse na pomyslne ulepszenie przedmiotu o 15%.	
+70058	Pierscien Mocy (15d)	Pierscien wykonany z tajemniczych material w, zapewnia specjalne bonusy na 15 dni.
+70059	Pierscien Mocy (30d)	Pierscien wykonany z tajemniczych material w, zapewnia specjalne bonusy na 30 dni.
+70060	Pierscien Mocy (Permanent)	Pierscien wykonany z tajemniczych material w, zapewnia specjalne bonusy na stale.
+70401	Zaczarowanie Kostiumu	Usuwa bonusy z jednego z twoich kostium w i dodaje nowe.
+70402	Specjalne Dodanie Kostiumu (5%)	Dodaje specjalne bonusy (maksymalnie 2) do jednego z twoich kostium w.
+70403	Specjalne Dodanie Kostiumu (10%)	Dodaje specjalne bonusy (maksymalnie 2) do jednego z twoich kostium w.
+70404	Usuniecie Specjalne Kostiumu	Usuwa jeden ze specjalnych bonus w z twojego kostiumu.
+70604	Zamrozenie Bonusu	Ten przedmiot pozwala zamrozic jeden z bonus w w twoim ekwipunku, tj. bedzie mial wieksza szanse na wylosowanie.
+70605	Ponowne Zamrozenie Bonusu	Ten przedmiot pozwala na zmiane zamrozonego bosusu.
+70606	Odmrozenie bonusu	Ten przedmiot pozwala na usuniecie zamrozonego bonusu.
+70610	Kupon Przepustki Bojowej	Ten przedmiot pozwala kupic przedmiot w Sklepie Przepustki Bojowej.
+70611	Przepustka Bojowa	Pozwala na aktywacje Przepustki Bojowej.
+70612	Drogocenny Diament	Mozna za nie kupic nakladki, fryzury i kostiumy u NPC.
+70613	Mikstura Pieknosci	Mozna za nie kupic nakladki na Zwierzaki i Wierzchowce u NPC.
+70614	Mikstura Pieknosci	Mozna za nie kupic nakladki na Zwierzaki i Wierzchowce u NPC.
+71025	Kamien Kowala	Pozwala na zakup przedmiot w u Kowala.
+71085	Wzmocnienie Przedmiotu	Dodaje maksymalna ilosc bonus w do twojego przedmiotu.
+71135	Pierscien P lksiezyca (7d)	Pierscien z grawerem w ksztalcie p lksiezyca.
+71136	Lizak Potegi (7d)	Lizak wytworzony z sekretnych skladnik w, zapewnia specjalne bonusy.
+71148	Pierscien Sily Woli (30d)	Pierscien wytworzony przy uzyciu tajemnych material w i receptury.
+71153	Mikstura Madrosci (1h)	B g Smok w obdarzy Cie: Kliknij PPM aby otrzymac bonus.
+71174	Przepustka Razadora	Dajac ta przepustke straznikowi, uzyskasz dostep do Twierdzy Czerwonego Smoka.
+71175	Przepustka Nemere	Dajac ta przepustke straznikowi, uzyskasz dostep do Straznicy Nemere.
+71188	Lizak Magii (15d)	Lizak wytworzony z sekretnych skladnik w, zapewnia specjalne bonusy.
+71203	Skrzynia Wojownika	Zawiera 10 sztuk losowych ksiag dla wojownika.
+71204	Skrzynia Ninja	Zawiera 10 sztuk losowych ksiag dla ninja.
+71205	Skrzynia Sury	Zawiera 10 sztuk losowych ksiag dla sury.
+71206	Skrzynia Szamana	Zawiera 10 sztuk losowych ksiag dla szamana.
+71229	Manu (30d)	Pieczec przywoluje poteznego mamuta.
+71231	Bialy Lew (30d)	Zwierzeta z bialym futrem sa ekstremalnie rzadkie w srodowisku naturalnym.
+71233	Spektralny Rumak (30d)	Pieczec przywoluje strasznego wierzchowca.
+71234	Lizak Magii (30d)	Lizak wytworzony z sekretnych skladnik w, zapewnia specjalne bonusy.
+71235	Lizak Magii (Staly)	Lizak wytworzony z sekretnych skladnik w, zapewnia specjalne bonusy.
+71252	Drake	Ten wierzchowiec moze byc zdobyty tylko ze Sklepu Przepustki Bitewnej.
+71253	Manu (Staly)	Pieczec przywoluje poteznego mamuta.
+71254	Bialy Lew (Staly)	AZwierzeta z bialym futrem sa ekstremalnie rzadkie w srodowisku naturalnym.
+71255	Spektralny Rumak (Staly)	Pieczec przywoluje strasznego wierzchowca.
+72001	Pierscien Doswiadczenia(1h)	B g Smok w obdarzy Cie: Kliknij PPM aby otrzymac bonus.
+72002	Pierscien Doswiadczenia(3h)	B g Smok w obdarzy Cie: Kliknij PPM aby otrzymac bonus.
+72006	Rekawica Zlodzieja(1h)	B g Smok w obdarzy Cie: Kliknij PPM aby otrzymac bonus.
+72013	Rybie Wnetrznosci(30m)	B g Smok w obdarzy Cie: Kliknij PPM aby otrzymac bonus.
+72014	Rybie Wnetrznosci(1h)	B g Smok w obdarzy Cie: Kliknij PPM aby otrzymac bonus.
+72015	Rybie Wnetrznosci(Staly)	B g Smok w obdarzy Cie: Kliknij PPM aby otrzymac bonus.
+72044	Ksiega Lidera(1h)	B g Smok w obdarzy Cie: Kliknij PPM aby otrzymac bonus.
+72726	Eliksir Slonca(E)	Automatycznie uzupelnia twoje PZ. Zawiera nieskonczona ilosc PZ.
+72730	Eliksir Ksiezyca(E)	Automatycznie uzupelnia twoje PE. Zawiera nieskonczona ilosc PE.
+80019	Delikatne Z lte Sukno	Mozna z niego wykonac Szarfe.
+80022	Delikatne Czerwone Sukno	Mozna z niego wykonac Szarfe.
+80023	Delikatne Blekitne Sukno	Mozna z niego wykonac Szarfe.
+80024	Delikatne Zielone Sukno	Mozna z niego wykonac Szarfe.
+80025	Delikatne Fioletowe Sukno	AMozna z niego wykonac Szarfe.
+80026	Delikatne Pomaranczowe Sukno	Mozna z niego wykonac Szarfe.
+80027	Delikatne Niebieskie Sukno	Mozna z niego wykonac Szarfe.
+84999	Zaczarowanie Kostiumu Szarfy	Remove bonuses from one of your stole costumes and apply new ones. The variables are random and are based on the grade of the stole.
+85019	Kostium Szarfy Wladcy (prosty)	Ten przedmiot to kostium szarfy, zapewnia dodatkowe bonusy Twojej postaci.
+85020	Kostium Szarfy Wladcy (zacny)	Ten przedmiot to kostium szarfy, zapewnia dodatkowe bonusy Twojej postaci.
+85021	Kostium Szarfy Wladcy (dostojny)	Ten przedmiot to kostium szarfy, zapewnia dodatkowe bonusy Twojej postaci.
+85022	Kostium Szarfy Wladcy (unikat.)	Ten przedmiot to kostium szarfy, zapewnia dodatkowe bonusy Twojej postaci.
+85023	Kostium Szarfy Wladcy (prosty)	Ten przedmiot to kostium szarfy, zapewnia dodatkowe bonusy Twojej postaci.
+85024	Kostium Szarfy Wladcy (zacny)	Ten przedmiot to kostium szarfy, zapewnia dodatkowe bonusy Twojej postaci.
+85025	Kostium Szarfy Wladcy (dostojny)	Ten przedmiot to kostium szarfy, zapewnia dodatkowe bonusy Twojej postaci.
+85026	Kostium Szarfy Wladcy (unikat.)	Ten przedmiot to kostium szarfy, zapewnia dodatkowe bonusy Twojej postaci.
+85027	Kostium Szarfy Wladcy (prosty)	Ten przedmiot to kostium szarfy, zapewnia dodatkowe bonusy Twojej postaci.
+85028	Kostium Szarfy Wladcy (zacny)	Ten przedmiot to kostium szarfy, zapewnia dodatkowe bonusy Twojej postaci.
+85029	Kostium Szarfy Wladcy (dostojny)	Ten przedmiot to kostium szarfy, zapewnia dodatkowe bonusy Twojej postaci.
+85030	Kostium Szarfy Wladcy (unikat.)	Ten przedmiot to kostium szarfy, zapewnia dodatkowe bonusy Twojej postaci.
+85031	Kostium Szarfy Wladcy (prosty)	Ten przedmiot to kostium szarfy, zapewnia dodatkowe bonusy Twojej postaci.
+85032	Kostium Szarfy Wladcy (zacny)	Ten przedmiot to kostium szarfy, zapewnia dodatkowe bonusy Twojej postaci.
+85033	Kostium Szarfy Wladcy (dostojny)	Ten przedmiot to kostium szarfy, zapewnia dodatkowe bonusy Twojej postaci.
+85034	Kostium Szarfy Wladcy (unikat.)	Ten przedmiot to kostium szarfy, zapewnia dodatkowe bonusy Twojej postaci.
+85035	Kostium Szarfy Wladcy (prosty)	Ten przedmiot to kostium szarfy, zapewnia dodatkowe bonusy Twojej postaci.
+85036	Kostium Szarfy Wladcy (zacny)	Ten przedmiot to kostium szarfy, zapewnia dodatkowe bonusy Twojej postaci.
+85037	Kostium Szarfy Wladcy (dostojny)	Ten przedmiot to kostium szarfy, zapewnia dodatkowe bonusy Twojej postaci.
+85038	Kostium Szarfy Wladcy (unikat.)	Ten przedmiot to kostium szarfy, zapewnia dodatkowe bonusy Twojej postaci.
+85039	Kostium Szarfy Wladcy (prosty)	Ten przedmiot to kostium szarfy, zapewnia dodatkowe bonusy Twojej postaci.
+85040	Kostium Szarfy Wladcy (zacny)	Ten przedmiot to kostium szarfy, zapewnia dodatkowe bonusy Twojej postaci.
+85041	Kostium Szarfy Wladcy (dostojny)	Ten przedmiot to kostium szarfy, zapewnia dodatkowe bonusy Twojej postaci.
+85042	Kostium Szarfy Wladcy (unikat.)	Ten przedmiot to kostium szarfy, zapewnia dodatkowe bonusy Twojej postaci.
+85043	Kostium Szarfy Wladcy (prosty)	Ten przedmiot to kostium szarfy, zapewnia dodatkowe bonusy Twojej postaci.
+85044	Kostium Szarfy Wladcy (zacny)	Ten przedmiot to kostium szarfy, zapewnia dodatkowe bonusy Twojej postaci.
+85045	Kostium Szarfy Wladcy (dostojny)	Ten przedmiot to kostium szarfy, zapewnia dodatkowe bonusy Twojej postaci.
+85046	Kostium Szarfy Wladcy (unikat.)	Ten przedmiot to kostium szarfy, zapewnia dodatkowe bonusy Twojej postaci.
+85047	Kostium Szarfy Yu (prosty)	Ten przedmiot to kostium szarfy, zapewnia dodatkowe bonusy Twojej postaci.
+85048	Kostium Szarfy Yu (zacny)	Ten przedmiot to kostium szarfy, zapewnia dodatkowe bonusy Twojej postaci.
+85049	Kostium Szarfy Yu (dostojny)	Ten przedmiot to kostium szarfy, zapewnia dodatkowe bonusy Twojej postaci.
+85050	Kostium Szarfy Yu (unikat.)	Ten przedmiot to kostium szarfy, zapewnia dodatkowe bonusy Twojej postaci.
+85051	Kostium Szarfy Mao (prosty)	Ten przedmiot to kostium szarfy, zapewnia dodatkowe bonusy Twojej postaci.
+85052	Kostium Szarfy Mao (zacny)	Ten przedmiot to kostium szarfy, zapewnia dodatkowe bonusy Twojej postaci.
+85053	Kostium Szarfy Mao (dostojny)	Ten przedmiot to kostium szarfy, zapewnia dodatkowe bonusy Twojej postaci.
+85054	Kostium Szarfy Mao (unikat.)	Ten przedmiot to kostium szarfy, zapewnia dodatkowe bonusy Twojej postaci.
+85055	Kostium Szarfy Wladcy (prosty)	Ten przedmiot to kostium szarfy, zapewnia dodatkowe bonusy Twojej postaci.
+85056	Kostium Szarfy Wladcy (zacny)	Ten przedmiot to kostium szarfy, zapewnia dodatkowe bonusy Twojej postaci.
+85057	Kostium Szarfy Wladcy (dostojny)	Ten przedmiot to kostium szarfy, zapewnia dodatkowe bonusy Twojej postaci.
+85058	Kostium Szarfy Wladcy (unikat.)	Ten przedmiot to kostium szarfy, zapewnia dodatkowe bonusy Twojej postaci.
+85059	Kostium Szarfy Ksiecia (prosty)	Ten przedmiot to kostium szarfy, zapewnia dodatkowe bonusy Twojej postaci.
+85060	Kostium Szarfy Ksiecia (zacny)	Ten przedmiot to kostium szarfy, zapewnia dodatkowe bonusy Twojej postaci.
+85061	Kostium Szarfy Ksiecia (dostojny)	Ten przedmiot to kostium szarfy, zapewnia dodatkowe bonusy Twojej postaci.
+85062	Kostium Szarfy Ksiecia (unikat.)	Ten przedmiot to kostium szarfy, zapewnia dodatkowe bonusy Twojej postaci.
+85063	Kostium Szarfy Mistrza (prosty)	Ten przedmiot to kostium szarfy, zapewnia dodatkowe bonusy Twojej postaci.
+85064	Kostium Szarfy Mistrza (zacny)	Ten przedmiot to kostium szarfy, zapewnia dodatkowe bonusy Twojej postaci.
+85065	Kostium Szarfy Mistrza (dostojny)	Ten przedmiot to kostium szarfy, zapewnia dodatkowe bonusy Twojej postaci.
+85066	Kostium Szarfy Mistrza (unikat.)	Ten przedmiot to kostium szarfy, zapewnia dodatkowe bonusy Twojej postaci.
+85067	Kostium Szarfy Chou (prosty)	Ten przedmiot to kostium szarfy, zapewnia dodatkowe bonusy Twojej postaci.
+85068	Kostium Szarfy Chou (zacny)	Ten przedmiot to kostium szarfy, zapewnia dodatkowe bonusy Twojej postaci.
+85069	Kostium Szarfy Chou (dostojny)	Ten przedmiot to kostium szarfy, zapewnia dodatkowe bonusy Twojej postaci.
+85070	Kostium Szarfy Chou (unikat.)	Ten przedmiot to kostium szarfy, zapewnia dodatkowe bonusy Twojej postaci.
+85083	Skrzydla Demona	Ten przedmiot to kostium szarfy, zapewnia dodatkowe bonusy Twojej postaci.
+86050	Wzmocnienie Talizmanu	Dodaje nowy bonus do twojego talizmanu (maksymalnie 4).
+86051	Zaczarowanie Talizmanu	Zmienia bonusy znajdujace sie w talizmanie.
+86052	Blogoslawienstwo Talizmanu	Legendarna kula, kt ra dodaje piaty bonus w talizmanie, jesli posiada on juz 4.
+86053	Odlamek Z ltej Perly	Mozesz wymienic 10 odlamk w na 1 Z lta Perle.	Nacisnij PPM aby polaczyc.
+86054	Odlamek Zielonej Perly	Mozesz wymienic 10 odlamk w na 1 Zielona Perle.	Nacisnij PPM aby polaczyc.
+86055	Odlamek Fioletowej Perly	Mozesz wymienic 10 odlamk w na 1 Fioletowa Perle.	Nacisnij PPM aby polaczyc.
+86056	Z lta Perla	Rzadka perla potrzebna do ewolucji peta.
+86057	Zielona Perla	Rzadka perla potrzebna do ewolucji peta.
+86058	Fioletowa Perla	Rzadka perla potrzebna do ewolucji peta.
+86060	Zaczarowanie Zodiaku	Usuwa bonusy z przedmiot w Zodiaku i dodaje nowe w tej samej ilosci.
+86062	Zaczarowanie Alchemii	Usuwa bonusy Smoczego Kamienia i dodaje nowe.
+86066	Odlamek Magicznego Kamienia	Mozesz wymienic je u kowala na Magiczny Kamien.
+86067	Szkic Talizmanu	Ten przedmiot jest potrzebny do ulepszenia talizmanu.
+86071	Przekaska Proteinowa (2d)	Dzieki temu przedmiotowi mozesz przedluzyc czas trwania lub wskrzesic zwierzaka. Bedzie mial nowy czas trwania: 2 dni.	Przenies na ikone zwierzaka zeby uzyc.
+86072	Przekaska Proteinowa (4d)	Dzieki temu przedmiotowi mozesz przedluzyc czas trwania lub wskrzesic zwierzaka. Bedzie mial nowy czas trwania: 4 dni.	Przenies na ikone zwierzaka zeby uzyc.
+86073	Przekaska Proteinowa (8d)	Dzieki temu przedmiotowi mozesz przedluzyc czas trwania lub wskrzesic zwierzaka. Bedzie mial nowy czas trwania: 8 dni.	Przenies na ikone zwierzaka zeby uzyc.
+86074	Boska Przekaska Proteinowa (Permanent)	Dzieki temu przedmiotowi mozesz przedluzyc czas trwania lub wskrzesic zwierzaka. Bedzie mial nowy czas trwania: staly.	Przenies na ikone zwierzaka zeby uzyc.
+86075	Spcjalna Przekaska	Dzieki temu mozesz zwiekszyc bonusy swojego peta.	Przenies na ikone zwierzaka zeby uzyc.
+86076	Zresetuj Zwierzaka	Dzieki temu mozesz zresetowac wybrana umiejetnosc zwierzaka. Aby uzyc musisz przywolac swojego zwierzaka.
+86077	Zresetuj Zwierzaka (S)	Dzieki temu mozesz zresetowac wszystkie umiejetnosci zwierzaka. Aby uzyc musisz przywolac swojego zwierzaka.
+86080	Usun Bonus Szarfy	Dzieki temu mozesz usunac bonusy swojej szarfy.	Przenies na szarfe aby uzyc.
+88001	Szarfa Wladcy Wspierajacego Szamana	Ten przedmiot moze byc ubrany tylko przez wspierajacego cie automatycznego szamana.
+88005	Czerwona Szarfa Wspierajacego Szamana	Ten przedmiot moze byc ubrany tylko przez wspierajacego cie automatycznego szamana.
+88009	Czarna Szarfa Wspierajacego Szamana	Ten przedmiot moze byc ubrany tylko przez wspierajacego cie automatycznego szamana.
+88010	Kostium Malpiszona (7d)	Ten przedmiot zmienia wyglad twojego zwierzaka na 7 dni.
+88011	Kostium Malpiszona (Staly)	Ten przedmiot zmienia wyglad twojego zwierzaka na stale.
+88012	Kostium Pajaka (7d)	Ten przedmiot zmienia wyglad twojego zwierzaka na 7 dni.
+88013	Kostium Pajaka (Staly)	Ten przedmiot zmienia wyglad twojego zwierzaka na stale.
+88014	Kostium Razadora (7d)	Ten przedmiot zmienia wyglad twojego zwierzaka na 7 dni.
+88015	Kostium Razadora (Staly)	Ten przedmiot zmienia wyglad twojego zwierzaka na stale.
+88016	Kostium Nemere (7d)	Ten przedmiot zmienia wyglad twojego zwierzaka na 7 dni.
+88017	Kostium Nemere (Staly)	Ten przedmiot zmienia wyglad twojego zwierzaka na stale.
+88018	Kostium Smoka (7d)	Ten przedmiot zmienia wyglad twojego zwierzaka na 7 dni.
+88019	Kostium Smoka (Staly)	Ten przedmiot zmienia wyglad twojego zwierzaka na stale.
+88020	Kostium Meley (7d)	Ten przedmiot zmienia wyglad twojego zwierzaka na 7 dni.
+88021	Kostium Meley (Staly)	Ten przedmiot zmienia wyglad twojego zwierzaka na stale.
+88022	Kostium Azraela (7d)	Ten przedmiot zmienia wyglad twojego zwierzaka na 7 dni.
+88023	Kostium Azraela (Staly)	Ten przedmiot zmienia wyglad twojego zwierzaka na stale.
+88024	Kostium Mini Grubego Kata (7d)	Ten przedmiot zmienia wyglad twojego zwierzaka na 7 dni.
+88025	Kostium Mini Grubego Kata (Staly)	Ten przedmiot zmienia wyglad twojego zwierzaka na stale.
+88026	Kostium Mini Baashido (7d)	Ten przedmiot zmienia wyglad twojego zwierzaka na 7 dni.
+88027	Kostium Mini Baashido (Staly)	Ten przedmiot zmienia wyglad twojego zwierzaka na stale.
+88028	Kostium Nessie (7d)	Ten przedmiot zmienia wyglad twojego zwierzaka na 7 dni.
+88029	Kostium Nessie (Staly)	Ten przedmiot zmienia wyglad twojego zwierzaka na stale.
+88030	Kostium Wylegu Exedyara (7d)	Ten przedmiot zmienia wyglad twojego zwierzaka na 7 dni.
+88031	Kostium Wylegu Exedyara (Staly)	Ten przedmiot zmienia wyglad twojego zwierzaka na stale.
+88035	Biala Szarfa Wspierajacego Szamana	Ten przedmiot moze byc ubrany tylko przez wspierajacego cie automatycznego szamana.
+88039	Szarfa Chou Wspierajacego Szamana	Ten przedmiot moze byc ubrany tylko przez wspierajacego cie automatycznego szamana.
+88110	Kostium Lwa (7d)	Ten przedmiot zmienia wyglad twojego wierzchowca na 7 dni.
+88111	Kostium Lwa (Staly)	Ten przedmiot zmienia wyglad twojego wierzchowca na stale.
+88112	Kostium Smoka (7d)	Ten przedmiot zmienia wyglad twojego wierzchowca na 7 dni.
+88113	Kostium Smoka (Staly)	Ten przedmiot zmienia wyglad twojego wierzchowca na stale.
+88114	Kostium Slonia (7d)	Ten przedmiot zmienia wyglad twojego wierzchowca na 7 dni.
+88115	Kostium Slonia (Staly)	Ten przedmiot zmienia wyglad twojego wierzchowca na stale.
+88116	Kostium Pandy (7d)	Ten przedmiot zmienia wyglad twojego wierzchowca na 7 dni.
+88117	Kostium Pandy (Staly)	Ten przedmiot zmienia wyglad twojego wierzchowca na stale.
+88210	Czarny Efekt Broni I (7d)	Ten przedmiot poprawia wyglad twojej postaci.
+88211	Czarny Efekt Broni I (Staly)	Ten przedmiot poprawia wyglad twojej postaci.
+88212	Czarny Efekt Zbroi I (7d)	Ten przedmiot poprawia wyglad twojej postaci.
+88213	Czarny Efekt Zbroi I (Staly)	Ten przedmiot poprawia wyglad twojej postaci.
+88214	R zowy Efekt Broni I (7d)	Ten przedmiot poprawia wyglad twojej postaci.
+88215	R zowy Efekt Broni I (Staly)	Ten przedmiot poprawia wyglad twojej postaci.
+88216	R zowy Efekt Zbroi I (7d)	Ten przedmiot poprawia wyglad twojej postaci.
+88217	R zowy Efekt Zbroi I (Staly)	Ten przedmiot poprawia wyglad twojej postaci.
+88218	Pomaranczowy Efekt Broni I (7d)	Ten przedmiot poprawia wyglad twojej postaci.
+88219	Pomaranczowy Efekt Broni I (Staly)	Ten przedmiot poprawia wyglad twojej postaci.
+88220	Pomaranczowy Efekt Zbroi I (7d)	Ten przedmiot poprawia wyglad twojej postaci.
+88221	Pomaranczowy Efekt Zbroi I (Staly)	Ten przedmiot poprawia wyglad twojej postaci.
+88222	Zielony Efekt Broni I (7d)	Ten przedmiot poprawia wyglad twojej postaci.
+88223	Zielony Efekt Broni I (Staly)	Ten przedmiot poprawia wyglad twojej postaci.
+88224	Zielony Efekt Zbroi I (7d)	Ten przedmiot poprawia wyglad twojej postaci.
+88225	Zielony Efekt Zbroi I (Staly)	Ten przedmiot poprawia wyglad twojej postaci.
+88226	Fioletowy Efekt Broni II (7d)	Ten przedmiot poprawia wyglad twojej postaci.
+88227	Fioletowy Efekt Broni II (Staly)	Ten przedmiot poprawia wyglad twojej postaci.
+88228	Fioletowy Efekt Zbroi II (7d)	Ten przedmiot poprawia wyglad twojej postaci.
+88229	Fioletowy Efekt Zbroi II (Staly)	Ten przedmiot poprawia wyglad twojej postaci.
+88230	Niebieski Efekt Broni II (7d)	Ten przedmiot poprawia wyglad twojej postaci.
+88231	Niebieski Efekt Broni II (Staly)	Ten przedmiot poprawia wyglad twojej postaci.
+88232	Niebieski Efekt Zbroi II (7d)	Ten przedmiot poprawia wyglad twojej postaci.
+88233	Niebieski Efekt Zbroi II (Staly)	Ten przedmiot poprawia wyglad twojej postaci.
+88234	R zowy Efekt Broni II (7d)	Ten przedmiot poprawia wyglad twojej postaci.
+88235	R zowy Efekt Broni II (Staly)	Ten przedmiot poprawia wyglad twojej postaci.
+88236	R zowy Efekt Zbroi II (7d)	Ten przedmiot poprawia wyglad twojej postaci.
+88237	R zowy Efekt Zbroi II (Staly)	Ten przedmiot poprawia wyglad twojej postaci.
+88238	Bialy Efekt Broni II (7d)	Ten przedmiot poprawia wyglad twojej postaci.
+88239	Bialy Efekt Broni II (Staly)	Ten przedmiot poprawia wyglad twojej postaci.
+88240	Bialy Efekt Zbroi II (7d)	Ten przedmiot poprawia wyglad twojej postaci.
+88241	Bialy Efekt Zbroi II (Staly)	Ten przedmiot poprawia wyglad twojej postaci.
+88242	Zielony Efekt Broni III (7d)	Ten przedmiot poprawia wyglad twojej postaci.
+88243	Zielony Efekt Broni III (Staly)	Ten przedmiot poprawia wyglad twojej postaci.
+88244	Zielony Efekt Zbroi III (7d)	Ten przedmiot poprawia wyglad twojej postaci.
+88245	Zielony Efekt Zbroi III (Staly)	Ten przedmiot poprawia wyglad twojej postaci.
+88246	Czerwony Efekt Broni III (7d)	Ten przedmiot poprawia wyglad twojej postaci.
+88247	Czerwony Efekt Broni III (Staly)	Ten przedmiot poprawia wyglad twojej postaci.
+88248	Czerwony Efekt Zbroi III (7d)	Ten przedmiot poprawia wyglad twojej postaci.
+88249	Czerwony Efket Zbroi III (Staly)	Ten przedmiot poprawia wyglad twojej postaci.
+88250	Niebieski Efekt Broni III (7d)	Ten przedmiot poprawia wyglad twojej postaci.
+88251	Niebieski Efekt Broni III (Staly)	Ten przedmiot poprawia wyglad twojej postaci.
+88252	Blekitny Efekt Zbroi III (7d)	Ten przedmiot poprawia wyglad twojej postaci.
+88253	Blekitny Efekt Zbroi III (Staly)	Ten przedmiot poprawia wyglad twojej postaci.
+88254	Z lty Efekt Broni III (7d)	Ten przedmiot poprawia wyglad twojej postaci.
+88255	Z lty Efekt Broni III (Staly)	Ten przedmiot poprawia wyglad twojej postaci.
+88256	Z lty Efekt Zbroi III (7d)	Ten przedmiot poprawia wyglad twojej postaci.
+88257	Z lty Efekt Zbroi III (Staly)	Ten przedmiot poprawia wyglad twojej postaci.
+88902	Szpula Kaszmiru	Ten przedmiot pozwala na dekoracje twojego prywatnego sklepiku.
+88910	Pomaranczowa Ampulka	B g Smok w obdarzy cie nastepujacym bonusem:	Nacisnij PPM aby aktywowac.
+88911	Z lta Ampulka	B g Smok w obdarzy cie nastepujacym bonusem:	Nacisnij PPM aby aktywowac.
+88912	Niebieska Ampulka	B g Smok w obdarzy cie nastepujacym bonusem:	Nacisnij PPM aby aktywowac.
+88913	Czerwona Ampulka	B g Smok w obdarzy cie nastepujacym bonusem:	Nacisnij PPM aby aktywowac.
+88914	Zielona Ampulka	B g Smok w obdarzy cie nastepujacym bonusem:	Nacisnij PPM aby aktywowac.
+88915	Fioletowa Ampulka	B g Smok w obdarzy cie nastepujacym bonusem:	Nacisnij PPM aby aktywowac.
+88916	Niebieska Rosa	B g Smok w obdarzy cie nastepujacym bonusem:	Nacisnij PPM aby aktywowac.
+88917	Pomaranczowa Rosa	B g Smok w obdarzy cie nastepujacym bonusem:	Nacisnij PPM aby aktywowac.
+88918	Biala Rosa	B g Smok w obdarzy cie nastepujacym bonusem:	Nacisnij PPM aby aktywowac.
+88919	Z lta Rosa	B g Smok w obdarzy cie nastepujacym bonusem:	Nacisnij PPM aby aktywowac.
+88920	Czerwona Rosa	B g Smok w obdarzy cie nastepujacym bonusem:	Nacisnij PPM aby aktywowac.
+88921	Zielona Rosa	B g Smok w obdarzy cie nastepujacym bonusem:	Nacisnij PPM aby aktywowac.
+88922	Dlon Krytyka	B g Smok w obdarzy cie nastepujacym bonusem:	Nacisnij PPM aby aktywowac.
+88923	Dlon Przebicia	B g Smok w obdarzy cie nastepujacym bonusem:	Nacisnij PPM aby aktywowac.
+88924	Atak Boga Smok w	B g Smok w obdarzy cie nastepujacym bonusem:	Nacisnij PPM aby aktywowac.
+88925	Obrona Boga Smok w	B g Smok w obdarzy cie nastepujacym bonusem:	Nacisnij PPM aby aktywowac.
+88926	Inteligencja Boga Smok w	B g Smok w obdarzy cie nastepujacym bonusem:	Nacisnij PPM aby aktywowac.
+88927	Zycie Boga Smok w	B g Smok w obdarzy cie nastepujacym bonusem:	Nacisnij PPM aby aktywowac.
+88928	Zielona Mikstura	B g Smok w obdarzy cie nastepujacym bonusem:	Nacisnij PPM aby aktywowac.
+88929	Zielona Mikstura(L) (Staly)	B g Smok w obdarzy cie nastepujacym bonusem:	Nacisnij PPM aby aktywowac.
+88930	Niebieska Rosa (Staly)	B g Smok w obdarzy cie nastepujacym bonusem:	Nacisnij PPM aby aktywowac.
+88931	Pomaranczowa Rosa (Staly)	B g Smok w obdarzy cie nastepujacym bonusem:	Nacisnij PPM aby aktywowac.
+88932	Z lta Rosa (Staly)	B g Smok w obdarzy cie nastepujacym bonusem:	Nacisnij PPM aby aktywowac.
+88933	Czerwona Rosa (Staly)	B g Smok w obdarzy cie nastepujacym bonusem:	Nacisnij PPM aby aktywowac.
+88934	Zielona Rosa (Staly)	B g Smok w obdarzy cie nastepujacym bonusem:	Nacisnij PPM aby aktywowac.
+88935	Dlon Krytyka (Staly)	B g Smok w obdarzy cie nastepujacym bonusem:	Nacisnij PPM aby aktywowac.
+88936	Dlon Przebicia (Staly)	B g Smok w obdarzy cie nastepujacym bonusem:	Nacisnij PPM aby aktywowac.
+88937	Atak Boga Smok w (Staly)	B g Smok w obdarzy cie nastepujacym bonusem:	Nacisnij PPM aby aktywowac.
+88938	Obrona Boga Smok w (Staly)	B g Smok w obdarzy cie nastepujacym bonusem:	Nacisnij PPM aby aktywowac.
+88939	Inteligencja Boga Smok w (Staly)	B g Smok w obdarzy cie nastepujacym bonusem:	Nacisnij PPM aby aktywowac.
+88940	Zycie Boga Smok w (Staly)	B g Smok w obdarzy cie nastepujacym bonusem:	Nacisnij PPM aby aktywowac.
+88941	Niebieska Rosa	B g Smok w obdarzy cie nastepujacym bonusem:	Nacisnij PPM aby aktywowac.
+88942	Pomaranczowa Rosa	B g Smok w obdarzy cie nastepujacym bonusem:	Nacisnij PPM aby aktywowac.
+88943	Z lta Rosa	B g Smok w obdarzy cie nastepujacym bonusem:	Nacisnij PPM aby aktywowac.
+88944	Czerwona Rosa	B g Smok w obdarzy cie nastepujacym bonusem:	Nacisnij PPM aby aktywowac.
+88945	Zielona Rosa	B g Smok w obdarzy cie nastepujacym bonusem:	Nacisnij PPM aby aktywowac.
+88946	Pomaranczowa Ampulka	B g Smok w obdarzy cie nastepujacym bonusem:	Nacisnij PPM aby aktywowac.
+88947	Z lta Ampulka	B g Smok w obdarzy cie nastepujacym bonusem:	Nacisnij PPM aby aktywowac.
+88948	Niebieska Ampulka	B g Smok w obdarzy cie nastepujacym bonusem:	Nacisnij PPM aby aktywowac.
+88949	Czerwona Ampulka	B g Smok w obdarzy cie nastepujacym bonusem:	Nacisnij PPM aby aktywowac.
+88950	Zielona Ampulka	B g Smok w obdarzy cie nastepujacym bonusem:	Nacisnij PPM aby aktywowac.
+88951	Fioletowa Ampulka	B g Smok w obdarzy cie nastepujacym bonusem:	Nacisnij PPM aby aktywowac.
+88952	Dlon Krytyka	B g Smok w obdarzy cie nastepujacym bonusem:	Nacisnij PPM aby aktywowac.
+88953	Dlon Przebicia	B g Smok w obdarzy cie nastepujacym bonusem:	Nacisnij PPM aby aktywowac.
+88954	Atak Boga Smok w	B g Smok w obdarzy cie nastepujacym bonusem:	Nacisnij PPM aby aktywowac.
+88955	Obrona Boga Smok w	B g Smok w obdarzy cie nastepujacym bonusem:	Nacisnij PPM aby aktywowac.
+88956	Inteligencja Boga Smok w	B g Smok w obdarzy cie nastepujacym bonusem:	Nacisnij PPM aby aktywowac.
+88957	Zycie Boga Smok w	B g Smok w obdarzy cie nastepujacym bonusem:	Nacisnij PPM aby aktywowac.
+88958	Pergamin Duszy	Ten zw j pozwoli podniesc twoja dusze o jeden poziom
+88959	Zaczarowanie Przedmiotu	Usuwa bonusy z twojego przedmiotu i dodaje nowe.
+88960	Specjalna Przekaska	Dzieki temu mozesz ulepszyc wybrany bonus zwierzaka.	Przeciagnij na ikone zwierzaka aby uzyc.
+88961	Zaczaruj Alchemie	Usuwa bonusy z jednego z twoich kamieni i dodaje nowe
+88962	Zaczarowanie Kostiumu Szarfy	Usuwa bonusy z twojej szarfy i dodaje nowe. Wartosci sa losowe, ale ograniczone poziomem szarfy.
+88963	Zaczaruj Kostium	Usuwa bonusy twojego kostiumu, i dodaje nowe.
+88964	Blogoslawienstwo Talizmanu	Legendarna kula, kt ra dodaje piaty bonus w talizmanie, jesli posiada on juz 4.
+88965	Zaczarowanie Talizmanu	Zmienia bonusy znajdujace sie w talizmanie.
+88966	Wzmocnienie Talizmanu	Dodaje nowy bonus do twojego talizmanu (maksymalnie 4).
+88967	Skrzynia Zwierzaka	Zawiera jajo zwierzaka.	Kliknij PPM aby wybrac swojego peta.
+88968	Mikstura Pieknosci	Mozna za nie kupic nakladki na Zwierzaki i Wierzchowce u NPC.
+88970	Itachi sharingan	 
+88971	Mangekyou Sharingan	 
+88972	Madara Sharingan	 
+88973	Sasuke Sharingan	 
+88974	Kakashi Sharingan	 
+88975	Sarada Sharingan	 
+88976	Rinnegan 	This Rinnegan only activates when all Sharingan have at least 50% power.
+88977	Sharingan (S)	Increases the power of a Sharingan.	Drag the bottle to the Sharingan you want.
+88978	Amaterasu (M)	Increases the power of a Sharingan.	Drag the bottle to the Sharingan you want.
+88979	Rinnegan (L)	Increases the power of a Sharingan.	Drag the bottle to the Sharingan you want.
+88980	Kuchiyose Pergamen	This item is used to purchase in the Susanoo Shop.
+89100	Kamien Zeusa	Ten przedmiot resetuje czas oczekiwania na Wyprawe Runiczna.
+89101	Runiczna Przepustka	Pozwala na wejscie do Runicznej Wyprawy.
+89102	Runiczna Dusza	Mozesz wymienic 10 Dusz na 1 Boski Klucz.	Kliknij PPM aby polaczyc.
+89103	Boski Klucz	Ten przedmiot potrzebny jest na pierwszym, i ostatnim pietrze Runicznej Wyprawy.	Kliknij PPM aby uzyc na pierwszym pietrze. Przenies na Kamien Runiczny, aby uzyc na ostatnim pietrze.
+89104	Klucz Zielonych Ork w	Ten przedmiot odblokowuje most w Orkowym Labiryncie.
+89105	Klucz Czarnych Ork w	Ten przedmiot odblokowuje ostatni most w Orkowym Labiryncie.
+89106	Przepustka Orkowa	Ten przedmiot jest potrzebny aby wejsc do Orkowego Labiryntu.
+89107	Runiczna Przepustka	Ten przedmiot jest potrzebny, aby wejsc na Runiczna Wyprawe.
+89108	Kolczyki Harmonii (2h)	Zwieksza szanse na przeszywajace uderzenie obu malzonk w maksymalnie o 8% przez 3 godziny, jesli zalozone przez jednego z nich. Efekt zalezy od poziomu punkt w milosci. Dla przykladu, jesli para posiada 50% punkt w milosci, efekt jest obnizony o polowe.
+89109	Bransoletka Milosci (2h)	Zwieksza ilosc zdobywanego doswiadczenia obu malzonk w o 20% przez 3 godziny jesli zalozona przez jednego z nich. Efekt zalezy od poziomu punkt w milosci. Dla przykladu, jesli para posiada 50% punkt w milosci, efekt jest obnizony o polowe.
+89110	Kolczyki Milosci (2h)	Zwieksza szanse na krytyczne uderzenie obu malzonk w maksymalnie o 8% przez 3 godziny. Efekt zalezy od poziomu punkt w milosci. Dla przykladu, jesli para posiada 50% punkt w milosci, efekt jest obnizony o polowe.
+89111	Bransoletka Harmonii (2h)	Zwieksza odpornosc na potwory obu malzonk w o 15% przez 3 godziny, jesli zalozona przez jednego z nich. Efekt zalezy od poziomu punkt w milosci. Dla przykladu, jesli para posiada 50% punkt w milosci, efekt jest obnizony o polowe.
+89112	Naszyjnik Milosci (2h)	Zwieksza wartosc ataku obu malzonk w maksymalnie o 40 przez 3 godziny, jesli zalozony prezz jednego z nich. Efekt zalezy od poziomu punkt w milosci. Dla przykladu, jesli para posiada 50% punkt w milosci, efekt jest obnizony o polowe.
+89113	Naszyjnik Harmonii (2h)	Zwieksza obrone obu malzonk w maksymalnie o 30 przez 3 godziny, jesli zalozony przez jednego z nich. Efekt zalezy od poziomu punkt w milosci. Dla przykladu, jesli para posiada 50% punkt w milosci, efekt jest obnizony o polowe.
+89114	Kolczyki Harmonii (8h)	Zwieksza szanse na przeszywajace uderzenie obu malzonk w maksymalnie o 8% przez 3 godziny, jesli zalozone przez jednego z nich. Efekt zalezy od poziomu punkt w milosci. Dla przykladu, jesli para posiada 50% punkt w milosci, efekt jest obnizony o polowe.
+89115	Bransoletka Milosci (8h)	Zwieksza ilosc zdobywanego doswiadczenia obu malzonk w o 20% przez 3 godziny jesli zalozona przez jednego z nich. Efekt zalezy od poziomu punkt w milosci. Dla przykladu, jesli para posiada 50% punkt w milosci, efekt jest obnizony o polowe.
+89116	Kolczyki Milosci (8h)	Zwieksza szanse na krytyczne uderzenie obu malzonk w maksymalnie o 8% przez 3 godziny. Efekt zalezy od poziomu punkt w milosci. Dla przykladu, jesli para posiada 50% punkt w milosci, efekt jest obnizony o polowe.
+89117	Bransoletka Harmonii (8h)	Zwieksza odpornosc na potwory obu malzonk w o 15% przez 3 godziny, jesli zalozona przez jednego z nich. Efekt zalezy od poziomu punkt w milosci. Dla przykladu, jesli para posiada 50% punkt w milosci, efekt jest obnizony o polowe.
+89118	Naszyjnik Milosci (8h)	Zwieksza wartosc ataku obu malzonk w maksymalnie o 40 przez 3 godziny, jesli zalozony prezz jednego z nich. Efekt zalezy od poziomu punkt w milosci. Dla przykladu, jesli para posiada 50% punkt w milosci, efekt jest obnizony o polowe.
+89119	Naszyjnik Harmonii (8h)	Zwieksza obrone obu malzonk w maksymalnie o 30 przez 3 godziny, jesli zalozony przez jednego z nich. Efekt zalezy od poziomu punkt w milosci. Dla przykladu, jesli para posiada 50% punkt w milosci, efekt jest obnizony o polowe.
+89120	Kolczyki Harmonii (Staly)	Zwieksza szanse na przeszywajace uderzenie obu malzonk w maksymalnie o 8% przez 3 godziny, jesli zalozone przez jednego z nich. Efekt zalezy od poziomu punkt w milosci. Dla przykladu, jesli para posiada 50% punkt w milosci, efekt jest obnizony o polowe.
+89121	Bransoletka Milosci (Staly)	Zwieksza ilosc zdobywanego doswiadczenia obu malzonk w o 20% przez 3 godziny jesli zalozona przez jednego z nich. Efekt zalezy od poziomu punkt w milosci. Dla przykladu, jesli para posiada 50% punkt w milosci, efekt jest obnizony o polowe.
+89122	Kolczyki Milosci (Staly)	Zwieksza szanse na krytyczne uderzenie obu malzonk w maksymalnie o 8% przez 3 godziny. Efekt zalezy od poziomu punkt w milosci. Dla przykladu, jesli para posiada 50% punkt w milosci, efekt jest obnizony o polowe.
+89123	Bransoletka Harmonii (Staly)	Zwieksza odpornosc na potwory obu malzonk w o 15% przez 3 godziny, jesli zalozona przez jednego z nich. Efekt zalezy od poziomu punkt w milosci. Dla przykladu, jesli para posiada 50% punkt w milosci, efekt jest obnizony o polowe.
+89124	Naszyjnik Milosci (Staly)	Zwieksza wartosc ataku obu malzonk w maksymalnie o 40 przez 3 godziny, jesli zalozony prezz jednego z nich. Efekt zalezy od poziomu punkt w milosci. Dla przykladu, jesli para posiada 50% punkt w milosci, efekt jest obnizony o polowe.
+89125	Naszyjnik Harmonii (Staly)	Zwieksza obrone obu malzonk w maksymalnie o 30 przez 3 godziny, jesli zalozony przez jednego z nich. Efekt zalezy od poziomu punkt w milosci. Dla przykladu, jesli para posiada 50% punkt w milosci, efekt jest obnizony o polowe.
+164401	Magia Biologa	Dzieki temu przedmiotowi mozna zresetowac bonusy od biologa.
+164402	Papirus Chairegraba	Mozna wymienic na przedmioty potrzebne do badan biologa.
+164406	Teczowy Eliksir	Ten przedmiot pozwala zmienic kolor jednej z twoich umiejetnosci.
+164407	Lsniacy Eliksir	Mozna go wymienic u NPC na efekty broni i zbroi.
+164408	Owoc Bog w	Slodki owoc z Ogrodu Boga Smok w. Jest uzywany jako ulepszacz.
+164409	Eliksir Bog w	Butelka zawiera mistyczny, lsniacy plyn. Jest uzywany jako ulepszacz.
+164410	Dusza Prawdy	Dobra dusza uwieziona na zawsze w sferze. Jest uzywany jako ulepszacz.
+164411	Ksiega Prawdy	Potezny tom, kr rego tytul wydaje sie polyskiwac. Jest uzywany jako ulepszacz.
+164412	Boski Kwiat	Swiety Kwiat z Ogrodu Boga Smok w.	Jest uzywany jako ulepszacz.
+164413	Odlamek Miecza Zadlo	Dzieki temu mozna ulepszyc Zatruty Miecz +9 na poziom Epicki.
+164414	Odlamek Demonicznego Ostrza	Dzieki temu mozna ulepszyc Lwi Miecz +9 na poziom Epicki.
+164415	Odlamek Zlodzieja Dusz	Dzieki temu mozna ulepszyc Zlodzieja Dusz +9 na poziom Epicki.
+164416	Odlamek Luku Nieb. Smoka	Dzieki temu mozna ulepszyc Stalowy Luk Kruka +9 na poziom Epicki.
+164417	Odlamek Ekstazyjnego Wachlarza	Dzieki temu mozna ulepszyc Bambusowy Dzwon +9 na poziom Epicki.
+164418	Odlamek Nozy Siamese	Dzieki temu mozna ulepsszyc Skrzydla Demona Chakr. +9 na poziom Epicki.
+164419	Lsniacy Eliksir	Mozna go wymienic u NPC na efekty broni i zbroi.
+30707	Silver key	Owls can make really clean silver. This key can unlock Owl totem in first floor or Owl dungeon.
+30708	Infinity key	This key is made by best owl alchemysts. It can unlock Owl totem in first floor or Owl dungeon.
+30709	Owl gemstone	Beautiful, but dangerous owl jewel. It can be used as ingredient for healing potions.
+30710	Suran's blood	Blood from very dangerous and evil creature. It can be used as ingredient for healing potions.
+30711	Owl feather	Owl feather is very nice ornament.
+30712	Healing potion	This potion has great healing effects for.
+30713	Owl pass	You need this pass to get into Owl dungeon.
+39017	Max HP +20%	 Max HP +20% 30 min
+39018	PvM Attack +20%	 PvM Attack +20% 30 min
+39019	Max MP +20%	Max MP +20% 30 min
+39020	DEFF +20%	DEFF +20% 30 min
+39021	ATK SPEED	ATK SPEED +30% 30 min
+72025	Piercing Fight	Piercing Fight 20% 30 min 
+72046	Critical Struggle	Critical Struggle 20% 30min
+76018	ATK SPEED	ATK SPEED +30% 30 min
