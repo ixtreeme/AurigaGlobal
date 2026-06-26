@@ -1,0 +1,32 @@
+buffer.o: buffer.cpp stdafx.h typedef.h heart.h fdwatch.h socket.h \
+ kstbl.h hangul.h buffer.h signal.h log.h main.h utils.h crypt.h
+des.o: des.cpp stdafx.h typedef.h heart.h fdwatch.h socket.h kstbl.h \
+ hangul.h buffer.h signal.h log.h main.h utils.h crypt.h DES_table.h
+fdwatch.o: fdwatch.cpp stdafx.h typedef.h heart.h fdwatch.h socket.h \
+ kstbl.h hangul.h buffer.h signal.h log.h main.h utils.h crypt.h
+gost.o: gost.cpp stdafx.h typedef.h heart.h fdwatch.h socket.h kstbl.h \
+ hangul.h buffer.h signal.h log.h main.h utils.h crypt.h
+gost_old.o: gost_old.cpp
+hangul.o: hangul.cpp stdafx.h typedef.h heart.h fdwatch.h socket.h \
+ kstbl.h hangul.h buffer.h signal.h log.h main.h utils.h crypt.h
+heart.o: heart.cpp stdafx.h typedef.h heart.h fdwatch.h socket.h kstbl.h \
+ hangul.h buffer.h signal.h log.h main.h utils.h crypt.h
+kstbl.o: kstbl.cpp
+log.o: log.cpp stdafx.h typedef.h heart.h fdwatch.h socket.h kstbl.h \
+ hangul.h buffer.h signal.h log.h main.h utils.h crypt.h
+main.o: main.cpp stdafx.h typedef.h heart.h fdwatch.h socket.h kstbl.h \
+ hangul.h buffer.h signal.h log.h main.h utils.h crypt.h
+signal.o: signal.cpp stdafx.h typedef.h heart.h fdwatch.h socket.h \
+ kstbl.h hangul.h buffer.h signal.h log.h main.h utils.h crypt.h
+socket.o: socket.cpp stdafx.h typedef.h heart.h fdwatch.h socket.h \
+ kstbl.h hangul.h buffer.h signal.h log.h main.h utils.h crypt.h
+tea.o: tea.cpp stdafx.h typedef.h heart.h fdwatch.h socket.h kstbl.h \
+ hangul.h buffer.h signal.h log.h main.h utils.h crypt.h
+utils.o: utils.cpp stdafx.h typedef.h heart.h fdwatch.h socket.h kstbl.h \
+ hangul.h buffer.h signal.h log.h main.h utils.h crypt.h
+xdirent.o: xdirent.cpp stdafx.h typedef.h heart.h fdwatch.h socket.h \
+ kstbl.h hangul.h buffer.h signal.h log.h main.h utils.h crypt.h
+xgetopt.o: xgetopt.cpp stdafx.h typedef.h heart.h fdwatch.h socket.h \
+ kstbl.h hangul.h buffer.h signal.h log.h main.h utils.h crypt.h
+xmd5.o: xmd5.cpp stdafx.h typedef.h heart.h fdwatch.h socket.h kstbl.h \
+ hangul.h buffer.h signal.h log.h main.h utils.h crypt.h

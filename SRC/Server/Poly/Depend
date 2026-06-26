@@ -1,0 +1,5 @@
+Base.o: Base.cpp Base.h
+Poly.o: Poly.cpp Poly.h SymTable.h Constants.h
+SymTable.o: SymTable.cpp SymTable.h
+Symbol.o: Symbol.cpp Symbol.h Base.h
+main.o: main.cpp Poly.h SymTable.h

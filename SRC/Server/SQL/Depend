@@ -1,0 +1,15 @@
+AsyncSQL.o: AsyncSQL.cpp AsyncSQL.h ../Core/stdafx.h ../Core/typedef.h \
+ ../Core/heart.h ../Core/fdwatch.h ../Core/socket.h ../Core/kstbl.h \
+ ../Core/hangul.h ../Core/buffer.h ../Core/signal.h ../Core/log.h \
+ ../Core/main.h ../Core/utils.h ../Core/crypt.h ../Core/log.h Semaphore.h
+Semaphore.o: Semaphore.cpp stdafx.h ../Core/stdafx.h ../Core/typedef.h \
+ ../Core/heart.h ../Core/fdwatch.h ../Core/socket.h ../Core/kstbl.h \
+ ../Core/hangul.h ../Core/buffer.h ../Core/signal.h ../Core/log.h \
+ ../Core/main.h ../Core/utils.h ../Core/crypt.h AsyncSQL.h ../Core/log.h \
+ Semaphore.h
+Statement.o: Statement.cpp Statement.h AsyncSQL.h ../Core/stdafx.h \
+ ../Core/typedef.h ../Core/heart.h ../Core/fdwatch.h ../Core/socket.h \
+ ../Core/kstbl.h ../Core/hangul.h ../Core/buffer.h ../Core/signal.h \
+ ../Core/log.h ../Core/main.h ../Core/utils.h ../Core/crypt.h \
+ ../Core/log.h Semaphore.h
+Tellwait.o: Tellwait.cpp

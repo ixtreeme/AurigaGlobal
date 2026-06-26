@@ -1,0 +1,9 @@
+attribute.o: attribute.cpp ../Core/stdafx.h ../Core/typedef.h \
+ ../Core/heart.h ../Core/fdwatch.h ../Core/socket.h ../Core/kstbl.h \
+ ../Core/hangul.h ../Core/buffer.h ../Core/signal.h ../Core/log.h \
+ ../Core/main.h ../Core/utils.h ../Core/crypt.h attribute.h
+grid.o: grid.cpp ../common/stl.h grid.h
+targa.o: targa.cpp ../Core/stdafx.h ../Core/typedef.h ../Core/heart.h \
+ ../Core/fdwatch.h ../Core/socket.h ../Core/kstbl.h ../Core/hangul.h \
+ ../Core/buffer.h ../Core/signal.h ../Core/log.h ../Core/main.h \
+ ../Core/utils.h ../Core/crypt.h targa.h

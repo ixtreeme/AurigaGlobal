@@ -2432,7 +2432,7 @@ NEW_DETAILS_2	Esély az exp bónuszra
 NEW_DETAILS_2_TOOLTIP	Talizmán Védelem: Védelmet biztosít bónusz talizmán ellen.
 NEW_DETAILS_5	%-al több esély a tárgyak dobására
 NEW_DETAILS_5_TOOLTIP	Zodiákus szörnyek elleni ero: sebzés növelése Zodiákus szörnyek ellen.
-NEW_DETAILS_6	Metinek elleni ero
+NEW_DETAILS_6	Metinek elleni erõ
 NEW_DETAILS_6_TOOLTIP	Metinek elleni ero: sebzés növelése Metinek ellen.
 NEW_DETAILS_7	Foszörnyek ellni ero
 NEW_DETAILS_7_TOOLTIP	Foszörnyek ellni ero: sebzés növelése Foszörnyek ellen.
@@ -3720,7 +3720,7 @@ NEW_AFFECT_VOTE4BUFF	Vote4Buff	SNA
 NEW_AFFECT_AUTO_METIN_FARM	Premium Metinfarm	SNA
 TOOLTIP_MAX_HP_S	TP
 TOOLTIP_ATT_GRADE_S	Támadó érték+
-TOOLTIP_APPLY_ATTBONUS_HUMAN_S	Félember elleni erö
+TOOLTIP_APPLY_ATTBONUS_HUMAN_S	Félember elleni erõ
 TOOLTIP_SKILL_DAMAGE_BONUS_S	Készség károk
 TOOLTIP_NORMAL_HIT_DAMAGE_BONUS_S	Átlagos károk
 TOOLTIP_APPLY_GOLD_DOUBLE_BONUS_S	Yang drop
