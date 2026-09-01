@@ -42,6 +42,7 @@
 #include "../components/inventory_components.hpp"
 #include "../components/social_components.hpp"
 #include "../components/status_components.hpp"
+#include "../components/vital_components.hpp"
 #include "../../questmanager.h"
 #include "../../safebox.h"
 #include "../../sectree.h"
@@ -232,6 +233,11 @@ void CHARACTER::CreatePlayerProto(TPlayerTable& tab)
     tab.job = m_points.job;
     if (const entt::entity e = GetEntityHandle(); e != entt::null && g_registry.valid(e))
     {
+        if (const auto* points = g_registry.try_get<ecs::CharacterPoints>(e))
+            tab.job = points->base.job;
+    }
+    if (const entt::entity e = GetEntityHandle(); e != entt::null && g_registry.valid(e))
+    {
         if (const auto* appearance = g_registry.try_get<ecs::AppearancePartsComponent>(e))
             tab.part_base = appearance->basePart;
     }
@@ -322,9 +328,9 @@ void CHARACTER::CreatePlayerProto(TPlayerTable& tab)
     tab.dwBattlePassEndTime = m_dwBattlePassEndTime;
 #endif
 #ifdef ENABLE_RANKING
-    for (int i = 0; i < RANKING_MAX_CATEGORIES; ++i) {
-        tab.lRankPoints[i] = m_lRankPoints[i];
-    }
+    const entt::entity rankEntity = GetEntityHandle();
+    for (int i = 0; i < RANKING_MAX_CATEGORIES; ++i)
+        tab.lRankPoints[i] = ecs::PlayerRuntime::GetRankPoints(rankEntity, i);
 #endif
     tab.horse = GetHorseData();
 }

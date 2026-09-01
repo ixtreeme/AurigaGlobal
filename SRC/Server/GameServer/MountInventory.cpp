@@ -1,13 +1,11 @@
 #include "stdafx.h"
-#include "ecs/systems/PlayerRuntimeSystem.hpp"
 #include "MountInventory.h"
 #include "char_interface.hpp"
 #include "db.h"
 #include "desc.h"
 #include "item_manager.h"
-#include "ecs/AIHelpers.hpp"
-#include "ecs/EntityFactory.hpp"
 #include "ecs/Registry.hpp"
+#include "ecs/components/identity_components.hpp"
 #include "ecs/systems/ItemSystem.hpp"
 
 #include <array>
@@ -56,8 +54,8 @@ namespace
         return bChanged;
     }
 }
-CMountInventory::CMountInventory(LPCHARACTER pkOwner, int iHeight)
-    : m_pkOwner(pkOwner), m_iHeight(iHeight)
+CMountInventory::CMountInventory(entt::entity owner, int iHeight)
+    : m_owner(owner), m_iHeight(iHeight)
 {
     m_items.assign(MOUNT_INVENTORY_WIDTH * m_iHeight, entt::null);
     m_grid = std::make_unique<CGrid>(MOUNT_INVENTORY_WIDTH, m_iHeight);
@@ -99,7 +97,7 @@ bool CMountInventory::Add(uint32_t pos, entt::entity itemEntity, bool skipSave)
 
     ItemSystem::SetItemSkipSave(itemEntity, true);
     ItemSystem::SetItemWindow(itemEntity, MOUNT_INVENTORY);
-    ItemSystem::SetItemCell(itemEntity, AIHelpers::EcsOf(m_pkOwner), pos);
+    ItemSystem::SetItemCell(itemEntity, m_owner, pos);
 
     m_grid->Put(pos, 1, ItemSystem::GetItemSize(itemEntity));
     m_items[pos] = itemEntity;
@@ -189,7 +187,7 @@ bool CMountInventory::MoveItem(uint32_t from, uint32_t to)
     m_items[from] = entt::null;
     m_items[to] = item;
 
-    ItemSystem::SetItemCell(item, AIHelpers::EcsOf(m_pkOwner), to);
+    ItemSystem::SetItemCell(item, m_owner, to);
     SaveItem(to, item);
     DeleteItem(from, 0);
     return true;
@@ -197,7 +195,11 @@ bool CMountInventory::MoveItem(uint32_t from, uint32_t to)
 
 uint32_t CMountInventory::GetAccountId() const
 {
-    return m_pkOwner && ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(m_pkOwner)) ? ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(m_pkOwner))->GetAccountTable().id : 0;
+    if (m_owner == entt::null || !g_registry.valid(m_owner))
+        return 0;
+
+    const auto* account = g_registry.try_get<ecs::AccountID>(m_owner);
+    return account ? account->aid : 0;
 }
 
 void CMountInventory::CollectItems(std::vector<TMountInventoryItemTable>& out) const

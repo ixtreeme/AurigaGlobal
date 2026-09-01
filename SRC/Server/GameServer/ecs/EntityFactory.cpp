@@ -151,6 +151,9 @@ ecs::CharacterPoints MakeCharacterPoints(const TPlayerTable& data)
     points.base.points[POINT_DX] = data.dx;
     points.base.points[POINT_IQ] = data.iq;
     points.base.points[POINT_STAT_RESET_COUNT] = data.stat_reset_count;
+#ifdef __ENABLE_EXTEND_INVEN_SYSTEM__
+    points.base.envanter = data.envanter;
+#endif
 
     return points;
 }
@@ -194,6 +197,8 @@ ecs::LoginInfo MakeLoginInfo(const TPlayerTable& data, LPDESC desc, uint32_t now
     info.playStartTime = now;
     info.mobile = data.szMobile;
     info.logOffInterval = data.logoff_interval;
+    std::copy_n(std::begin(data.aiPremiumTimes), PREMIUM_MAX_NUM,
+        info.premiumTimes.begin());
     return info;
 }
 
@@ -416,11 +421,17 @@ ecs::ItemIdentity MakeItemIdentity(LPITEM item)
 {
     return ecs::ItemIdentity {
         item->GetID(),
+        item->GetVnum(),
         item->GetOriginalVnum(),
         item->GetVID(),
         item->GetMaskVnum(),
         item->GetSIGVnum(),
         item->GetSpecialGroup(),
+#ifdef __CHANGELOOK_SYSTEM__
+        item->GetTransmutation(),
+#else
+        0,
+#endif
     };
 }
 
@@ -532,6 +543,9 @@ ecs::ItemProtoRef MakeItemProtoRef(LPITEM item)
 #endif
     protoRef.name[ITEM_NAME_MAX_LEN] = '\0';
     protoRef.size = proto->bSize;
+#ifdef ENABLE_EXTRA_INVENTORY
+    protoRef.extra_category = item->GetExtraCategory();
+#endif
     protoRef.level_limit = static_cast<uint8_t>(std::clamp(item->GetLevelLimit(), 0, 255));
     protoRef.wear_flags = proto->dwWearFlags;
     protoRef.anti_flags = proto->dwAntiFlags;
@@ -700,6 +714,7 @@ entt::entity EntityFactory::CreatePC(entt::registry& reg, const TPlayerTable& da
     });
 
     reg.emplace_or_replace<ecs::QuestContext>(entity, 0u, 0u, entt::null);
+    reg.emplace_or_replace<ecs::ItemAward>(entity, ecs::ItemAward {});
     reg.emplace_or_replace<ecs::RankPoints>(entity, MakeRankPoints(data));
     reg.emplace_or_replace<ecs::AlignBonuses>(entity, ecs::AlignBonuses { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, static_cast<uint8_t>(255) });
 

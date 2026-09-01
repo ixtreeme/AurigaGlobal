@@ -18,4 +18,9 @@ struct FishingState {
 
 struct FishingActiveTag {};
 
+struct MiningState {
+    LPEVENT event { nullptr };
+    entt::entity load { entt::null };
+};
+
 } // namespace ecs

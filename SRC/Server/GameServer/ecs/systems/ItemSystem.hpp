@@ -36,42 +36,14 @@ bool RemoveSpecifyItemEcs(entt::entity e, uint32_t vnum, uint32_t count = 1,
 // Slice B - equip / unequip
 entt::entity GetWearItem(entt::entity e, uint8_t wearPos);
 LPITEM GetWear(entt::entity e, uint8_t wearPos);
-void SetWearItem(entt::entity e, uint8_t wearPos, entt::entity item);
-bool UnequipItem(entt::entity e, entt::entity item);
-bool EquipItem(entt::entity e, entt::entity item, int candidateCell = -1);
 bool UnequipItemEcs(entt::entity owner, entt::entity item);
 bool EquipItemEcs(entt::entity owner, entt::entity item, int candidateCell = -1);
 bool IsEquipUniqueItem(entt::entity e, uint32_t itemVnum);
 bool IsEquipUniqueGroup(entt::entity e, uint32_t groupVnum);
 bool UnEquipSpecialRideUniqueItem(entt::entity e);
-bool CanEquipNow(entt::entity e, entt::entity item, const TItemPos& srcCell, const TItemPos& destCell);
-bool CanUnequipNow(entt::entity e, entt::entity item, const TItemPos& srcCell, const TItemPos& destCell);
-
-// Slice C1 - drop / move / pickup
-bool DropItem(entt::entity e, TItemPos cell,
-#ifdef ENABLE_NEW_STACK_LIMIT
-              int
-#else
-              uint8_t
-#endif
-                  count);
-bool DropGold(entt::entity e, int64_t gold);
-bool MoveItem(entt::entity e, TItemPos fromCell, TItemPos toCell,
-#ifdef ENABLE_NEW_STACK_LIMIT
-              int
-#else
-              uint8_t
-#endif
-                  count);
-bool PickupItem(entt::entity e, uint32_t vid);
-
-// Slice C2a - use item wrapper
-bool UseItem(entt::entity e, TItemPos cell, TItemPos destCell = NPOS);
-bool UseItemEx(entt::entity e, entt::entity item, TItemPos destCell = NPOS);
 bool UseItemEcs(entt::entity owner, entt::entity item, TItemPos destCell = NPOS);
 
 // Slice D - item creation / give / remove
-void RemoveTypeItem(entt::entity e, uint8_t type, int count = 1);
 void AutoGiveItem(entt::entity e, entt::entity item, bool longOwnerShip = false
 #ifdef __HIGHLIGHT_SYSTEM__
                   , bool isHighLight = true
@@ -91,12 +63,20 @@ bool IsDragonSoulItem(entt::entity item);
 bool IsExtraItem(entt::entity item);
 bool IsRideItem(entt::entity item);
 bool IsMountItem(entt::entity item);
+#ifdef ENABLE_RUNE_SYSTEM
+bool IsRuneItem(entt::entity item);
+bool ActivateRuneLegacyBoundary(entt::entity item);
+bool DeactivateRuneLegacyBoundary(entt::entity item);
+bool ChangeRuneAttributesLegacyBoundary(entt::entity item, int32_t time);
+bool ActivateRuneBonusLegacyBoundary(entt::entity item);
+#endif
 uint32_t GetItemID(entt::entity item);
 uint32_t GetItemVID(entt::entity item);
 uint32_t GetItemVnum(entt::entity item);
 uint32_t GetItemOriginalVnum(entt::entity item);
 uint32_t GetItemSIGVnum(entt::entity item);
 int32_t GetItemSpecialGroup(entt::entity item);
+uint32_t GetItemTransmutationVnum(entt::entity item);
 uint8_t GetItemType(entt::entity item);
 uint8_t GetItemSubType(entt::entity item);
 uint32_t GetItemCount(entt::entity item);
@@ -127,6 +107,7 @@ bool SaveItemEcs(entt::entity item, bool flush = true);
 bool FlushDelayedSaveEcs(entt::entity item);
 entt::entity GetItemOwner(entt::entity item);
 entt::entity GetItemOwnerEntity(entt::entity item);
+entt::entity RollPartyDropOwnership(entt::entity item, entt::entity initialOwner);
 uint32_t GetItemLastOwnerPID(entt::entity item);
 uint32_t GetItemSocket(entt::entity item, int index);
 bool HasItemSocket(entt::entity item, int index);
@@ -172,7 +153,15 @@ bool IsItemInExtraInventory(entt::entity item);
 bool IsItemInDragonSoulInventory(entt::entity item);
 bool PlaceItemEcs(entt::entity owner, entt::entity item, uint8_t window, uint16_t cell);
 bool RemoveItemEcs(entt::entity item);
+bool RemoveItemFromCharacterLegacyBoundary(entt::entity item);
 int GetEmptyInventoryPositionEcs(entt::entity owner, entt::entity item);
+bool HasMainInventorySpaceEcs(entt::entity owner, uint8_t itemSize = 1);
+bool HasInventorySpaceForItemVnum(entt::entity owner, uint32_t itemVnum);
+// Explicit transition boundary. Ground insertion still depends on CItem /
+// LPENTITY and must not be presented as a native ECS operation.
+bool PlaceItemOnGroundLegacyBoundary(entt::entity item, int32_t mapIndex,
+                                     const PIXEL_POSITION& position,
+                                     int destroySeconds = 300);
 int GetEmptyDragonSoulInventory(entt::entity owner, entt::entity item);
 bool IsItemVnumStackable(uint32_t vnum);
 bool ModifyItemPointsEcs(entt::entity item, bool add);
@@ -183,11 +172,11 @@ bool SyncItemLocationFromLegacy(entt::entity item);
 bool SyncItemOwnerFromLegacy(entt::entity item);
 bool SyncItemStateFromLegacy(entt::entity item);
 bool DestroyLoadedDuplicateItem(entt::entity item);
-bool GiveItem(entt::entity from, entt::entity victim, TItemPos cell);
-bool CanReceiveItem(entt::entity receiver, entt::entity from, entt::entity item);
-void ReceiveItem(entt::entity receiver, entt::entity from, entt::entity item);
 bool TransferItemOwnership(entt::entity item, entt::entity from, entt::entity to);
-bool SetGroundOwnership(entt::entity item, entt::entity owner, int seconds = 10);
+// Explicit transition boundary. The ownership timeout event still stores a
+// legacy CHARACTER pointer until the ground-item event layer is migrated.
+bool SetGroundOwnershipLegacyBoundary(entt::entity item, entt::entity owner,
+                                      int seconds = 10);
 bool ReceiveItemEcs(entt::entity receiver, entt::entity from, entt::entity item);
 struct SpecialItemGroupResult {
     std::vector<entt::entity> itemEntities;
@@ -196,7 +185,6 @@ struct SpecialItemGroupResult {
     int count = 0;
 };
 SpecialItemGroupResult GiveItemFromSpecialItemGroup(entt::entity e, uint32_t groupNum);
-bool DestroyItem(entt::entity e, TItemPos cell);
 void ItemDivision(entt::entity e, TItemPos cell);
 
 // Slice E - shop / trade / refine
@@ -210,16 +198,9 @@ struct RefineResult {
     bool success = false;
 };
 
-void SetRefineNPC(entt::entity e, entt::entity npc);
 bool DoRefine(entt::entity e, entt::entity item, bool moneyOnly = false);
 bool DoRefineWithScroll(entt::entity e, entt::entity item);
 bool DoRefineItemSoul(entt::entity e, entt::entity item);
-bool RefineInformation(entt::entity e, uint8_t cell, uint8_t type, int additionalCell = -1);
-bool RefineItem(entt::entity e, entt::entity item, entt::entity target);
-RefineResult RefineItemEcs(entt::entity e, const RefineInput& input, entt::entity target);
-void UseSilkBotary(entt::entity e);
-void SetRefineMode(entt::entity e, int additionalCell = -1);
-void ClearRefineMode(entt::entity e);
 
 } // namespace ItemSystem
 

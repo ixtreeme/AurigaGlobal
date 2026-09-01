@@ -2404,7 +2404,7 @@ private:
 	bool m_isinPCBang;
 
 public:
-	bool SetPCBang(bool flag) { m_isinPCBang = flag; return m_isinPCBang; }
+	bool SetPCBang(bool flag);
 	bool IsPCBang() const { return m_isinPCBang; }
 	// END_PC_BANG_ITEM_ADD
 
@@ -2432,10 +2432,10 @@ private:
 
 public:
 	void 	SetArena(CArena* pArena) { m_pArena = pArena; }
-	void	SetArenaObserverMode(bool flag) { m_ArenaObserver = flag; }
+	void	SetArenaObserverMode(bool flag);
 
 	CArena* GetArena() const { return m_pArena; }
-	bool	GetArenaObserverMode() const { return m_ArenaObserver; }
+	bool	GetArenaObserverMode() const;
 
 	void	SetPotionLimit(int count) { m_nPotionLimit = count; }
 	int		GetPotionLimit() const { return m_nPotionLimit; }
@@ -2673,8 +2673,8 @@ public:
 	unsigned int GetItemAward_vnum() { return itemAward_vnum; }
 	char* GetItemAward_cmd() { return itemAward_cmd; }
 	//bool		 GetItemAward_flag() { return itemAward_flag; }
-	void		 SetItemAward_vnum(unsigned int vnum) { itemAward_vnum = vnum; }
-	void		 SetItemAward_cmd(char* cmd) { strcpy(itemAward_cmd, cmd); }
+	void		 SetItemAward_vnum(unsigned int vnum);
+	void		 SetItemAward_cmd(char* cmd);
 	//void		 SetItemAward_flag(bool flag) { itemAward_flag = flag; }
 #ifdef ENABLE_ANTI_CMD_FLOOD
 private:

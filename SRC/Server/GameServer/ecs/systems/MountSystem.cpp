@@ -40,7 +40,10 @@ namespace
 
 using LegacyCharHandle = decltype(std::declval<ecs::LegacyCharPtr>().ptr);
 
-LegacyCharHandle LegacyCharOf(entt::entity e)
+// Transitional boundary for the two operations whose side effects still live
+// in CHARACTER/CMountSystem (network rebroadcast and legacy actor teardown).
+// Do not use this for entity state reads.
+LegacyCharHandle ResolveLegacyMountOwnerBoundary(entt::entity e)
 {
     if (e == entt::null || !g_registry.valid(e))
         return nullptr;
@@ -83,78 +86,26 @@ void SyncHorseRiding(entt::entity e, bool riding)
     g_registry.emplace_or_replace<ecs::DirtyTag>(e);
 }
 
+uint32_t GetMountMobVnum(entt::entity item)
+{
+    if (!ItemSystem::IsValidItem(item))
+        return 0;
+
+#ifdef __CHANGELOOK_SYSTEM__
+    const uint32_t transmutationVnum = ItemSystem::GetItemTransmutationVnum(item);
+    if (transmutationVnum != 0)
+    {
+        if (const TItemTable* itemTable = ITEM_MANAGER::instance().GetTable(transmutationVnum))
+            return itemTable->alValues[1];
+    }
+#endif
+
+    return ItemSystem::GetItemValue(item, 1);
+}
+
 } // namespace
 
 namespace MountSystem {
-
-bool StartRiding(entt::entity rider)
-{
-    auto* ch = LegacyCharOf(rider);
-    return ch ? ch->StartRiding() : false;
-}
-
-bool StopRiding(entt::entity rider)
-{
-    auto* ch = LegacyCharOf(rider);
-    return ch ? ch->StopRiding() : false;
-}
-
-void SetRider(entt::entity horse, entt::entity rider)
-{
-    auto* chHorse = LegacyCharOf(horse);
-    auto* chRider = LegacyCharOf(rider);
-    if (chHorse)
-        chHorse->SetRider(chRider);
-}
-
-entt::entity GetRider(entt::entity horse)
-{
-    auto* chHorse = LegacyCharOf(horse);
-    if (!chHorse)
-        return entt::null;
-
-    return chHorse->GetRider() ? chHorse->GetRider()->GetEntityHandle() : entt::null;
-}
-
-void HorseSummon(entt::entity owner, bool summon, bool fromFar, uint32_t vnum, const char* petName)
-{
-    auto* ch = LegacyCharOf(owner);
-    if (ch)
-        ch->HorseSummon(summon, fromFar, vnum, petName);
-}
-
-uint32_t GetMyHorseVnum(entt::entity owner)
-{
-    auto* ch = LegacyCharOf(owner);
-    return ch ? ch->GetMyHorseVnum() : 0;
-}
-
-void HorseDie(entt::entity owner)
-{
-    auto* ch = LegacyCharOf(owner);
-    if (ch)
-        ch->HorseDie();
-}
-
-bool ReviveHorse(entt::entity owner)
-{
-    auto* ch = LegacyCharOf(owner);
-    return ch ? ch->ReviveHorse() : false;
-}
-
-void ClearHorseInfo(entt::entity owner)
-{
-    auto* ch = LegacyCharOf(owner);
-    if (ch)
-        ch->ClearHorseInfo();
-}
-
-void SendHorseInfo(entt::entity owner)
-{
-    auto* ch = LegacyCharOf(owner);
-    if (ch)
-        ch->SendHorseInfo();
-}
 
 } // namespace MountSystem
 
@@ -184,22 +135,25 @@ void CHARACTER::LoadMountInventory(const std::vector<TMountInventoryItemTable>& 
         return;
 
     const int iHeight = 16;
-    m_pkMountInventory = M2_NEW CMountInventory(this, iHeight);
+    m_pkMountInventory = M2_NEW CMountInventory(GetEntityHandle(), iHeight);
 
     for (const auto& entry : items)
     {
-        LPITEM item = ITEM_MANAGER::instance().CreateItem(entry.vnum, entry.count, entry.id);
-        if (!item)
+        const entt::entity item = ItemSystem::CreateItemEcs(
+            entry.vnum, entry.count, entry.id);
+        if (!ItemSystem::IsValidItem(item))
             continue;
 
-        ItemSystem::SetItemSkipSave(EntityFactory::CreateItemEntity(g_registry, item), true);
-        item->SetSockets(entry.alSockets);
-        item->SetAttributes(entry.aAttr);
+        ItemSystem::SetItemSkipSave(item, true);
+        for (int socket = 0; socket < ITEM_SOCKET_MAX_NUM; ++socket)
+            ItemSystem::SetItemSocketEcs(item, socket, entry.alSockets[socket]);
+        for (int attribute = 0; attribute < ITEM_ATTRIBUTE_MAX_NUM; ++attribute)
+            ItemSystem::SetItemForceAttributeEcs(
+                item, attribute, entry.aAttr[attribute].bType,
+                entry.aAttr[attribute].sValue);
 
-        if (!m_pkMountInventory->Add(entry.slot, EntityFactory::CreateItemEntity(g_registry, item), true))
-            ItemSystem::DestroyItemEntityEcs(
-                EntityFactory::CreateItemEntity(g_registry, item),
-                "MOUNT_INVENTORY_LOAD_ADD_FAILED");
+        if (!m_pkMountInventory->Add(entry.slot, item, true))
+            ItemSystem::DestroyItemEntityEcs(item, "MOUNT_INVENTORY_LOAD_ADD_FAILED");
     }
 
     m_bMountInventoryLoaded = true;
@@ -310,19 +264,6 @@ void CHARACTER::UpdateMountCountOverheadToViewers()
 
 namespace MountSystem {
 
-bool CanUseHorseSkill(entt::entity owner)
-{
-    auto* ch = LegacyCharOf(owner);
-    return ch ? ch->CanUseHorseSkill() : false;
-}
-
-void SetHorseLevel(entt::entity owner, int level)
-{
-    auto* ch = LegacyCharOf(owner);
-    if (ch)
-        ch->SetHorseLevel(level);
-}
-
 bool IsRiding(entt::entity rider)
 {
     if (rider == entt::null || !g_registry.valid(rider))
@@ -343,7 +284,7 @@ uint32_t GetMountVnum(entt::entity rider)
 
 void SetMountVnum(entt::entity rider, uint32_t vnum)
 {
-    auto* ch = LegacyCharOf(rider);
+    auto* ch = ResolveLegacyMountOwnerBoundary(rider);
     if (ch)
         ch->MountVnum(vnum);
 }
@@ -353,7 +294,7 @@ void ForceClearRidingState(entt::entity rider)
     if (rider == entt::null || !g_registry.valid(rider))
         return;
 
-    auto* ch = LegacyCharOf(rider);
+    auto* ch = ResolveLegacyMountOwnerBoundary(rider);
     if (ch)
     {
         const uint32_t mountVnum = ch->GetMountVnum();
@@ -428,9 +369,10 @@ bool CHARACTER::StartRiding()
 		return false;
 	}
 
-	LPITEM armor = GetWear(WEAR_BODY);
+	const entt::entity armor = ItemSystem::GetWearItem(GetEntityHandle(), WEAR_BODY);
+	const uint32_t armorVnum = ItemSystem::GetItemVnum(armor);
 
-	if (armor && (ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, armor)) >= 11901 && ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, armor)) <= 11904))
+	if (ItemSystem::IsValidItem(armor) && armorVnum >= 11901 && armorVnum <= 11904)
 	{
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 410, "");
@@ -861,29 +803,11 @@ void CHARACTER::MountSummon(entt::entity mountItem)
 		return;
 
 	CMountSystem* mountSystem = GetMountSystem();
-	uint32_t mobVnum = 0;
 
 	if (!mountSystem || !ItemSystem::IsValidItem(mountItem))
 		return;
 
-#ifdef __CHANGELOOK_SYSTEM__
-	const uint32_t mountItemID = ItemSystem::GetItemID(mountItem);
-	LPITEM legacyMountItem = mountItemID != 0 ? ITEM_MANAGER::instance().Find(mountItemID) : nullptr;
-	if (legacyMountItem && legacyMountItem->GetTransmutation())
-	{
-		const TItemTable* itemTable = ITEM_MANAGER::instance().GetTable(legacyMountItem->GetTransmutation());
-
-		if (itemTable)
-			mobVnum = itemTable->alValues[1];
-		else
-			mobVnum = ItemSystem::GetItemValue(mountItem, 1);
-	}
-	else
-		mobVnum = ItemSystem::GetItemValue(mountItem, 1);
-#else
-	if (ItemSystem::GetItemValue(mountItem, 1) != 0)
-		mobVnum = ItemSystem::GetItemValue(mountItem, 1);
-#endif
+	const uint32_t mobVnum = GetMountMobVnum(mountItem);
 
 	if (IsHorseRiding())
 		StopRiding();
@@ -897,29 +821,11 @@ void CHARACTER::MountSummon(entt::entity mountItem)
 void CHARACTER::MountUnsummon(entt::entity mountItem)
 {
 	CMountSystem* mountSystem = GetMountSystem();
-	uint32_t mobVnum = 0;
 
 	if (!mountSystem || !ItemSystem::IsValidItem(mountItem))
 		return;
 
-#ifdef __CHANGELOOK_SYSTEM__
-	const uint32_t mountItemID = ItemSystem::GetItemID(mountItem);
-	LPITEM legacyMountItem = mountItemID != 0 ? ITEM_MANAGER::instance().Find(mountItemID) : nullptr;
-	if (legacyMountItem && legacyMountItem->GetTransmutation())
-	{
-		const TItemTable* itemTable = ITEM_MANAGER::instance().GetTable(legacyMountItem->GetTransmutation());
-
-		if (itemTable)
-			mobVnum = itemTable->alValues[1];
-		else
-			mobVnum = ItemSystem::GetItemValue(mountItem, 1);
-	}
-	else
-		mobVnum = ItemSystem::GetItemValue(mountItem, 1);
-#else
-	if (ItemSystem::GetItemValue(mountItem, 1) != 0)
-		mobVnum = ItemSystem::GetItemValue(mountItem, 1);
-#endif
+	const uint32_t mobVnum = GetMountMobVnum(mountItem);
 
 	if (GetMountVnum() == mobVnum)
 		mountSystem->Unmount(mobVnum);
@@ -930,41 +836,24 @@ void CHARACTER::MountUnsummon(entt::entity mountItem)
 void CHARACTER::CheckMount()
 {
 	CMountSystem* mountSystem = GetMountSystem();
-	LPITEM mountItem = GetWear(WEAR_COSTUME_MOUNT);
-	const entt::entity mountEntity = EntityFactory::CreateItemEntity(g_registry, mountItem);
-	uint32_t mobVnum = 0;
+	const entt::entity mountItem = ItemSystem::GetWearItem(GetEntityHandle(), WEAR_COSTUME_MOUNT);
 
-	if (!mountSystem || !ItemSystem::IsValidItem(mountEntity))
+	if (!mountSystem || !ItemSystem::IsValidItem(mountItem))
 		return;
 
-#ifdef __CHANGELOOK_SYSTEM__
-	const uint32_t mountItemID = ItemSystem::GetItemID(mountEntity);
-	LPITEM legacyMountItem = mountItemID != 0 ? ITEM_MANAGER::instance().Find(mountItemID) : nullptr;
-	if (legacyMountItem && legacyMountItem->GetTransmutation())
-	{
-		const TItemTable* itemTable = ITEM_MANAGER::instance().GetTable(legacyMountItem->GetTransmutation());
-
-		if (itemTable)
-			mobVnum = itemTable->alValues[1];
-		else
-			mobVnum = ItemSystem::GetItemValue(mountEntity, 1);
-	}
-	else
-		mobVnum = ItemSystem::GetItemValue(mountEntity, 1);
-#else
-	if (ItemSystem::GetItemValue(mountEntity, 1) != 0)
-		mobVnum = ItemSystem::GetItemValue(mountEntity, 1);
-#endif
+	const uint32_t mobVnum = GetMountMobVnum(mountItem);
 
 	if (mountSystem->CountSummoned() == 0)
 	{
-		mountSystem->Summon(mobVnum, mountEntity, false);
+		mountSystem->Summon(mobVnum, mountItem, false);
 	}
 }
 
 bool CHARACTER::IsRidingMount()
 {
-	return (GetWear(WEAR_COSTUME_MOUNT) || FindAffect(AFFECT_MOUNT));
+	return ItemSystem::IsValidItem(
+		ItemSystem::GetWearItem(GetEntityHandle(), WEAR_COSTUME_MOUNT)) ||
+		FindAffect(AFFECT_MOUNT);
 }
 #endif
 
@@ -977,8 +866,8 @@ void CHARACTER::UpdatePetSkin() {
 }
 
 uint32_t CHARACTER::GetPetSkinVnum() {
-	LPITEM item = GetWear(WEAR_COSTUME_PET_SKIN);
-	return item != nullptr ? ItemSystem::GetItemValue(EntityFactory::CreateItemEntity(g_registry, item), 0) : 0;
+	const entt::entity item = ItemSystem::GetWearItem(GetEntityHandle(), WEAR_COSTUME_PET_SKIN);
+	return ItemSystem::IsValidItem(item) ? ItemSystem::GetItemValue(item, 0) : 0;
 }
 #endif
 
@@ -990,35 +879,20 @@ void CHARACTER::UpdateMountSkin() {
 	m_mountSystem->UpdateMountSkin();
 
 	if (IsRiding()) {
-		LPITEM item = GetWear(WEAR_COSTUME_MOUNT);
-		if (!item)
+		const entt::entity item = ItemSystem::GetWearItem(GetEntityHandle(), WEAR_COSTUME_MOUNT);
+		if (!ItemSystem::IsValidItem(item))
 			return;
 
-		uint32_t mobVnum = 0;
-#ifdef __CHANGELOOK_SYSTEM__
-		if (item->GetTransmutation())
-		{
-			const TItemTable* itemTable = ITEM_MANAGER::instance().GetTable(item->GetTransmutation());
-			if (itemTable)
-				mobVnum = itemTable->alValues[1];
-			else
-				mobVnum = ItemSystem::GetItemValue(EntityFactory::CreateItemEntity(g_registry, item), 1);
-		}
-		else
-			mobVnum = ItemSystem::GetItemValue(EntityFactory::CreateItemEntity(g_registry, item), 1);
-#else
-		if (ItemSystem::GetItemValue(EntityFactory::CreateItemEntity(g_registry, item), 1) != 0)
-			mobVnum = ItemSystem::GetItemValue(EntityFactory::CreateItemEntity(g_registry, item), 1);
-#endif
+		const uint32_t mobVnum = GetMountMobVnum(item);
 
 		m_mountSystem->Unmount(mobVnum);
-		m_mountSystem->Mount(mobVnum, EntityFactory::CreateItemEntity(g_registry, item));
+		m_mountSystem->Mount(mobVnum, item);
 	}
 }
 
 uint32_t CHARACTER::GetMountSkinVnum() {
-	LPITEM item = GetWear(WEAR_COSTUME_MOUNT_SKIN);
-	return item != nullptr ? ItemSystem::GetItemValue(EntityFactory::CreateItemEntity(g_registry, item), 0) : 0;
+	const entt::entity item = ItemSystem::GetWearItem(GetEntityHandle(), WEAR_COSTUME_MOUNT_SKIN);
+	return ItemSystem::IsValidItem(item) ? ItemSystem::GetItemValue(item, 0) : 0;
 }
 #endif
 

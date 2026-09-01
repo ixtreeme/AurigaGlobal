@@ -757,10 +757,12 @@ void CMountSystem::Unmount(uint32_t mobVnum)
 
 	mountActor->Unmount();
 
-	if(LPITEM pSummonItem = ItemSystem::GetWear(AIHelpers::EcsOf(m_pkOwner), WEAR_COSTUME_MOUNT))
+	const entt::entity pSummonItem = ItemSystem::GetWearItem(
+		AIHelpers::EcsOf(m_pkOwner), WEAR_COSTUME_MOUNT);
+	if (ItemSystem::IsValidItem(pSummonItem))
 	{
-		ItemSystem::SetItemSocket(EntityFactory::CreateItemEntity(g_registry, pSummonItem), 2, 0);
-		this->Summon(mobVnum, EntityFactory::CreateItemEntity(g_registry, pSummonItem), false);
+		ItemSystem::SetItemSocket(pSummonItem, 2, 0);
+		this->Summon(mobVnum, pSummonItem, false);
 	}
 }
 

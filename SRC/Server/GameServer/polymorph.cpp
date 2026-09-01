@@ -3,6 +3,7 @@
 #include "ecs/systems/PlayerRuntimeSystem.hpp"
 #include <Core/Logging.hpp>
 #include "ecs/systems/AffectSystem.hpp"
+#include "ecs/systems/SkillSystem.hpp"
 #include "ecs/AIHelpers.hpp"
 #include "char_interface.hpp"
 #include "ecs/CharacterAccessors.hpp"
@@ -40,14 +41,19 @@ POLYMORPH_BONUS_TYPE CPolymorphUtils::GetBonusType(uint32_t dwVnum)
 	return POLYMORPH_NO_BONUS;
 }
 
-bool CPolymorphUtils::PolymorphCharacter(LPCHARACTER pChar, LPITEM pItem, const CMob* pMob)
+bool CPolymorphUtils::PolymorphCharacter(
+	entt::entity character, entt::entity item, const CMob* pMob)
 {
-	uint8_t bySkillLevel = pChar->GetSkillLevel(POLYMORPH_SKILL_ID);
+	if (character == entt::null || !g_registry.valid(character) ||
+		!ItemSystem::IsValidItem(item) || !pMob)
+		return false;
+
+	const uint8_t bySkillLevel = SkillSystem::GetSkillLevel(character, POLYMORPH_SKILL_ID);
 	uint32_t dwDuration = 0;
 	uint32_t dwBonusPercent = 0;
 	int iPolyPercent = 0;
 
-	switch (pChar->GetSkillMasterType(POLYMORPH_SKILL_ID))
+	switch (SkillSystem::GetSkillMasterType(character, POLYMORPH_SKILL_ID))
 	{
 		case SKILL_NORMAL:
 			dwDuration = 10;
@@ -72,12 +78,13 @@ bool CPolymorphUtils::PolymorphCharacter(LPCHARACTER pChar, LPITEM pItem, const 
 	// dwDuration *= 60;
 
 	// ���� Ȯ�� = ĳ���� ���� - �� ���� + �а��� ���� + 29 + �а� ��ų ����
-	iPolyPercent = ecs::PointSystem::GetLevel(AIHelpers::EcsOf(pChar)) - pMob->m_table.bLevel + ItemSystem::GetItemSocket(EntityFactory::CreateItemEntity(g_registry, pItem), 2) + (29 + bySkillLevel);
+	iPolyPercent = ecs::PointSystem::GetLevel(character) - pMob->m_table.bLevel +
+		ItemSystem::GetItemSocket(item, 2) + (29 + bySkillLevel);
 
 	if (iPolyPercent <= 0)
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(pChar), CHAT_TYPE_INFO, 317, "");
+		ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 317, "");
 #endif
 		return false;
 	}
@@ -86,29 +93,29 @@ bool CPolymorphUtils::PolymorphCharacter(LPCHARACTER pChar, LPITEM pItem, const 
 		if (number(1, 100) > iPolyPercent)
 		{
 #ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(pChar), CHAT_TYPE_INFO, 317, "");
+			ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 317, "");
 #endif
 			return false;
 		}
 	}
 
-	AffectSystem::AddAffect(AIHelpers::EcsOf(pChar), AFFECT_POLYMORPH, POINT_POLYMORPH, pMob->m_table.dwVnum, AFF_POLYMORPH, dwDuration, 0, true);
+	AffectSystem::AddAffect(character, AFFECT_POLYMORPH, POINT_POLYMORPH, pMob->m_table.dwVnum, AFF_POLYMORPH, dwDuration, 0, true);
 
 	// ���� ���ʽ� = �а� ��ų ���� + �а��� ����
-	dwBonusPercent = bySkillLevel + ItemSystem::GetItemSocket(EntityFactory::CreateItemEntity(g_registry, pItem), 2);
+	dwBonusPercent = bySkillLevel + ItemSystem::GetItemSocket(item, 2);
 
 	switch (GetBonusType(pMob->m_table.dwVnum))
 	{
 		case POLYMORPH_ATK_BONUS:
-			AffectSystem::AddAffect(AIHelpers::EcsOf(pChar), AFFECT_POLYMORPH, POINT_ATT_BONUS, dwBonusPercent, AFF_POLYMORPH, dwDuration - 1, 0, false);
+			AffectSystem::AddAffect(character, AFFECT_POLYMORPH, POINT_ATT_BONUS, dwBonusPercent, AFF_POLYMORPH, dwDuration - 1, 0, false);
 			break;
 
 		case POLYMORPH_DEF_BONUS:
-			AffectSystem::AddAffect(AIHelpers::EcsOf(pChar), AFFECT_POLYMORPH, POINT_DEF_BONUS, dwBonusPercent, AFF_POLYMORPH, dwDuration - 1, 0, false);
+			AffectSystem::AddAffect(character, AFFECT_POLYMORPH, POINT_DEF_BONUS, dwBonusPercent, AFF_POLYMORPH, dwDuration - 1, 0, false);
 			break;
 
 		case POLYMORPH_SPD_BONUS:
-			AffectSystem::AddAffect(AIHelpers::EcsOf(pChar), AFFECT_POLYMORPH, POINT_MOV_SPEED, dwBonusPercent, AFF_POLYMORPH, dwDuration - 1, 0, false);
+			AffectSystem::AddAffect(character, AFFECT_POLYMORPH, POINT_MOV_SPEED, dwBonusPercent, AFF_POLYMORPH, dwDuration - 1, 0, false);
 			break;
 
 		default:
@@ -119,54 +126,60 @@ bool CPolymorphUtils::PolymorphCharacter(LPCHARACTER pChar, LPITEM pItem, const 
 	return true;
 }
 
-bool CPolymorphUtils::UpdateBookPracticeGrade(LPCHARACTER pChar, LPITEM pItem)
+bool CPolymorphUtils::UpdateBookPracticeGrade(entt::entity character, entt::entity item)
 {
-	if (pChar == nullptr || pItem == nullptr)
+	if (character == entt::null || !g_registry.valid(character) ||
+		!ItemSystem::IsValidItem(item))
 		return false;
 
-	if (ItemSystem::GetItemSocket(EntityFactory::CreateItemEntity(g_registry, pItem), 1) > 0) {
-		ItemSystem::SetItemSocket(EntityFactory::CreateItemEntity(g_registry, pItem), 1, ItemSystem::GetItemSocket(EntityFactory::CreateItemEntity(g_registry, pItem), 1) - 1);
+	if (ItemSystem::GetItemSocket(item, 1) > 0) {
+		ItemSystem::SetItemSocket(item, 1, ItemSystem::GetItemSocket(item, 1) - 1);
 	}
 #ifdef TEXTS_IMPROVEMENT
 	else {
-		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(pChar), CHAT_TYPE_INFO, 232, "");
+		ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 232, "");
 	}
 #endif
 	return true;
 }
 
-bool CPolymorphUtils::GiveBook(LPCHARACTER pChar, uint32_t dwMobVnum, uint32_t dwPracticeCount, uint8_t BookLevel, uint8_t LevelLimit)
+bool CPolymorphUtils::GiveBook(entt::entity character, uint32_t dwMobVnum, uint32_t dwPracticeCount, uint8_t BookLevel, uint8_t LevelLimit)
 {
 	// ����0                ����1       ����2
 	// �а��� ���� ��ȣ   ��������    �а��� ����
-	if (pChar == nullptr)
-		return false;
-
-	LPITEM pItem = pChar->AutoGiveItem(POLYMORPH_BOOK_ID, 1);
-
-	if (pItem == nullptr)
+	if (character == entt::null || !g_registry.valid(character))
 		return false;
 
 	if (CMobManager::instance().Get(dwMobVnum) == nullptr)
 	{
-		LOG_ERROR("Wrong Polymorph vnum passed: CPolymorphUtils::GiveBook(PID({}), {} {} {} {})", (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(pChar))), dwMobVnum, dwPracticeCount, BookLevel, LevelLimit);
+		LOG_ERROR("Wrong Polymorph vnum passed: CPolymorphUtils::GiveBook(PID({}), {} {} {} {})", ecs::PlayerRuntime::GetPlayerID(character), dwMobVnum, dwPracticeCount, BookLevel, LevelLimit);
 		return false;
 	}
 
-	ItemSystem::SetItemSocket(EntityFactory::CreateItemEntity(g_registry, pItem), 0, dwMobVnum);			// �а��� ���� ��ȣ
-	ItemSystem::SetItemSocket(EntityFactory::CreateItemEntity(g_registry, pItem), 1, dwPracticeCount);		// �����ؾ��� Ƚ��
-	ItemSystem::SetItemSocket(EntityFactory::CreateItemEntity(g_registry, pItem), 2, BookLevel);			// ���÷���
+	const entt::entity item = ItemSystem::CreateItemEcs(POLYMORPH_BOOK_ID, 1);
+	if (!ItemSystem::IsValidItem(item))
+		return false;
+
+	if (!ItemSystem::SetItemSocket(item, 0, dwMobVnum) ||
+		!ItemSystem::SetItemSocket(item, 1, dwPracticeCount) ||
+		!ItemSystem::SetItemSocket(item, 2, BookLevel))
+	{
+		ItemSystem::DestroyItemEntityEcs(item, "POLYMORPH_BOOK_INIT_FAILED");
+		return false;
+	}
+
+	ItemSystem::AutoGiveItem(character, item);
 	return true;
 }
 
-bool CPolymorphUtils::BookUpgrade(LPCHARACTER pChar, LPITEM pItem)
+bool CPolymorphUtils::BookUpgrade(entt::entity character, entt::entity item)
 {
-	if (pChar == nullptr || pItem == nullptr)
+	if (character == entt::null || !g_registry.valid(character) || !ItemSystem::IsValidItem(item))
 		return false;
 
-	ItemSystem::SetItemSocket(EntityFactory::CreateItemEntity(g_registry, pItem), 1, ItemSystem::GetItemSocket(EntityFactory::CreateItemEntity(g_registry, pItem), 2) * 50);
-	ItemSystem::SetItemSocket(EntityFactory::CreateItemEntity(g_registry, pItem), 2, ItemSystem::GetItemSocket(EntityFactory::CreateItemEntity(g_registry, pItem), 2)+1);
-	return true;
+	const uint32_t bookLevel = ItemSystem::GetItemSocket(item, 2);
+	return ItemSystem::SetItemSocket(item, 1, bookLevel * 50) &&
+		ItemSystem::SetItemSocket(item, 2, bookLevel + 1);
 }
 
 

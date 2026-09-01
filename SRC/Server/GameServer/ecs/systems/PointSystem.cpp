@@ -2,13 +2,17 @@
 
 #include "PointSystem.hpp"
 #include "PointRouter.hpp"
+#include "QuestSystem.hpp"
 
 #include <array>
 #include <common/VnumHelper.h>
 
 #include "../CharacterAccessors.hpp"
+#include "../Registry.hpp"
 #include "../components/character_stats_components.hpp"
+#include "../components/dirty_components.hpp"
 #include "../components/inventory_components.hpp"
+#include "../components/status_components.hpp"
 #include "../components/vital_components.hpp"
 #include "../../char.h"
 
@@ -318,6 +322,30 @@ int32_t GetLevel(entt::entity e)
 
 	return 0;
 }
+
+#ifdef __ENABLE_BLOCK_EXP__
+bool IsExperienceBlocked(entt::entity e)
+{
+	if (!IsReadableEntity(e))
+		return false;
+
+	const auto* status = g_registry.try_get<ecs::StatusFlags>(e);
+	return (status && status->blockExp) ||
+		ecs::QuestSystem::GetFlag(e, "exp.stat") == 1;
+}
+
+bool SetExperienceBlocked(entt::entity e, bool blocked)
+{
+	if (!IsReadableEntity(e))
+		return false;
+
+	auto& status = g_registry.get_or_emplace<ecs::StatusFlags>(e);
+	status.blockExp = blocked;
+	ecs::QuestSystem::SetFlag(e, "exp.stat", blocked ? 1 : 0);
+	g_registry.emplace_or_replace<ecs::DirtyTag>(e);
+	return true;
+}
+#endif
 
 void Change(entt::entity e, uint8_t type, int64_t amount, bool bAmount, bool bBroadcast
 #ifdef __ENABLE_BLOCK_EXP__
@@ -657,7 +685,7 @@ void CHARACTER::PointChange(uint8_t type, int64_t amount, bool bAmount, bool bBr
 				return;
 
 #ifdef __ENABLE_BLOCK_EXP__
-			if (Block_Exp && !bForceExp)
+			if (ecs::PointSystem::IsExperienceBlocked(GetEntityHandle()) && !bForceExp)
 			{
 				return;
 			}

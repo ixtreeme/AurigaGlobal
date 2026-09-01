@@ -15604,9 +15604,10 @@ bool CHARACTER::ItemProcess_Polymorph(LPITEM item)
 // Í ¹øÈ£   ¼ö·ÃÁ¤µµ        µÐ°©¼­ ·¹º§
 		LOG_INFO("USE_POLYMORPH_BOOK: {}({}) vnum({})", GetName(), GetPlayerID(), dwVnum);
 
-		if (CPolymorphUtils::instance().PolymorphCharacter(this, item, pMob) == true)
+		const entt::entity polymorphItem = EntityFactory::CreateItemEntity(g_registry, item);
+		if (CPolymorphUtils::instance().PolymorphCharacter(AIHelpers::EcsOf(this), polymorphItem, pMob) == true)
 		{
-			CPolymorphUtils::instance().UpdateBookPracticeGrade(this, item);
+			CPolymorphUtils::instance().UpdateBookPracticeGrade(AIHelpers::EcsOf(this), polymorphItem);
 		}
 		else
 		{

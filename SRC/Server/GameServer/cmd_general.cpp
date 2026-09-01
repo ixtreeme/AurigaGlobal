@@ -2466,30 +2466,31 @@ ACMD(do_unmount)
 {
 
 #ifdef ENABLE_MOUNT_COSTUME_SYSTEM
-	if(ItemSystem::GetWear(AIHelpers::EcsOf(ch), WEAR_COSTUME_MOUNT))
+	const entt::entity owner = AIHelpers::EcsOf(ch);
+	const entt::entity mount = ItemSystem::GetWearItem(owner, WEAR_COSTUME_MOUNT);
+	if (ItemSystem::IsValidItem(mount))
 	{
 		CMountSystem* mountSystem = ch->GetMountSystem();
-		LPITEM mount = ItemSystem::GetWear(AIHelpers::EcsOf(ch), WEAR_COSTUME_MOUNT);
 		uint32_t mobVnum = 0;
 
-		if (!mountSystem || !mount)//if (!mountSystem && !mount) Razor93
+		if (!mountSystem)
 			return;
 
 #ifdef __CHANGELOOK_SYSTEM__
-		if(mount->GetTransmutation())
+		if (const uint32_t transmutation = ItemSystem::GetItemTransmutationVnum(mount))
 		{
-			const TItemTable* itemTable = ITEM_MANAGER::instance().GetTable(mount->GetTransmutation());
+			const TItemTable* itemTable = ITEM_MANAGER::instance().GetTable(transmutation);
 
 			if (itemTable)
 				mobVnum = itemTable->alValues[1];
 			else
-				mobVnum = ItemSystem::GetItemValue(EntityFactory::CreateItemEntity(g_registry, mount), 1);
+				mobVnum = ItemSystem::GetItemValue(mount, 1);
 		}
 		else
-			mobVnum = ItemSystem::GetItemValue(EntityFactory::CreateItemEntity(g_registry, mount), 1);
+			mobVnum = ItemSystem::GetItemValue(mount, 1);
 #else
-		if(ItemSystem::GetItemValue(EntityFactory::CreateItemEntity(g_registry, mount), 1) != 0)
-			mobVnum = ItemSystem::GetItemValue(EntityFactory::CreateItemEntity(g_registry, mount), 1);
+		if (ItemSystem::GetItemValue(mount, 1) != 0)
+			mobVnum = ItemSystem::GetItemValue(mount, 1);
 #endif
 
 		if (MountSystem::GetMountVnum(AIHelpers::EcsOf(ch)))
@@ -2768,8 +2769,6 @@ ACMD(do_inventory)
 	char arg1[256];
 	char arg2[256];
 
-	LPITEM	item;
-
 	two_arguments(argument, arg1, sizeof(arg1), arg2, sizeof(arg2));
 
 	if (!*arg1) {
@@ -2792,10 +2791,12 @@ ACMD(do_inventory)
 		if (index >= INVENTORY_MAX_NUM)
 			break;
 
-		item = ItemSystem::GetInventoryItemPtr(AIHelpers::EcsOf(ch), index);
+		const entt::entity item = ItemSystem::GetInventoryItem(
+			AIHelpers::EcsOf(ch), index);
 #ifdef TEXTS_IMPROVEMENT
-		if (item) {
-			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 727, "%d#%s", index, item->GetName());
+		if (ItemSystem::IsValidItem(item)) {
+			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 727,
+				"%d#%s", index, ItemSystem::GetItemName(item));
 		} else {
 			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 728, "%d", index);
 		}
@@ -3555,6 +3556,7 @@ ACMD(do_ride)
 	if (ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)) == 113)
 		return;
 
+	const entt::entity owner = AIHelpers::EcsOf(ch);
 #ifdef ENABLE_MOUNT_COSTUME_SYSTEM
 	if (ch->IsPolymorphed() == true){
 #ifdef TEXTS_IMPROVEMENT
@@ -3562,30 +3564,30 @@ ACMD(do_ride)
 #endif
 		return;
 	}
-	if(ItemSystem::GetWear(AIHelpers::EcsOf(ch), WEAR_COSTUME_MOUNT))
+	const entt::entity mount = ItemSystem::GetWearItem(owner, WEAR_COSTUME_MOUNT);
+	if (ItemSystem::IsValidItem(mount))
 	{
 		CMountSystem* mountSystem = ch->GetMountSystem();
-		LPITEM mount = ItemSystem::GetWear(AIHelpers::EcsOf(ch), WEAR_COSTUME_MOUNT);
 		uint32_t mobVnum = 0;
 
-		if (!mountSystem || !mount)//if (!mountSystem && !mount) Razor93
+		if (!mountSystem)
 			return;
 
 #ifdef __CHANGELOOK_SYSTEM__
-		if(mount->GetTransmutation())
+		if (const uint32_t transmutation = ItemSystem::GetItemTransmutationVnum(mount))
 		{
-			const TItemTable* itemTable = ITEM_MANAGER::instance().GetTable(mount->GetTransmutation());
+			const TItemTable* itemTable = ITEM_MANAGER::instance().GetTable(transmutation);
 
 			if (itemTable)
 				mobVnum = itemTable->alValues[1];
 			else
-				mobVnum = ItemSystem::GetItemValue(EntityFactory::CreateItemEntity(g_registry, mount), 1);
+				mobVnum = ItemSystem::GetItemValue(mount, 1);
 		}
 		else
-			mobVnum = ItemSystem::GetItemValue(EntityFactory::CreateItemEntity(g_registry, mount), 1);
+			mobVnum = ItemSystem::GetItemValue(mount, 1);
 #else
-		if(ItemSystem::GetItemValue(EntityFactory::CreateItemEntity(g_registry, mount), 1) != 0)
-			mobVnum = ItemSystem::GetItemValue(EntityFactory::CreateItemEntity(g_registry, mount), 1);
+		if (ItemSystem::GetItemValue(mount, 1) != 0)
+			mobVnum = ItemSystem::GetItemValue(mount, 1);
 #endif
 
 		if (MountSystem::GetMountVnum(AIHelpers::EcsOf(ch)))
@@ -3596,7 +3598,7 @@ ACMD(do_ride)
 		{
 			if(mountSystem->CountSummoned() == 1)
 			{
-				mountSystem->Mount(mobVnum, EntityFactory::CreateItemEntity(g_registry, mount));
+				mountSystem->Mount(mobVnum, mount);
 			}
 		}
 
@@ -3618,12 +3620,13 @@ ACMD(do_ride)
 
 	for (UINT i=0; i< INVENTORY_MAX_NUM; ++i) //INVENTORY_MAX_NUM
 	{
-		LPITEM item = ItemSystem::GetInventoryItemPtr(AIHelpers::EcsOf(ch), i);
-		if (nullptr == item)
+		const entt::entity item = ItemSystem::GetInventoryItem(owner, i);
+		if (!ItemSystem::IsValidItem(item))
 			continue;
 
-		if (ItemSystem::GetItemType(EntityFactory::CreateItemEntity(g_registry, item)) == ITEM_COSTUME && ItemSystem::GetItemSubType(EntityFactory::CreateItemEntity(g_registry, item)) == COSTUME_MOUNT)	{
-			ch->UseItem(TItemPos (INVENTORY, i));
+		if (ItemSystem::GetItemType(item) == ITEM_COSTUME &&
+			ItemSystem::GetItemSubType(item) == COSTUME_MOUNT) {
+			ItemSystem::UseItemEcs(owner, item);
 			return;
 		}
 	}
@@ -3784,6 +3787,7 @@ ACMD(do_rune)
 {
 	if (!ch)
 		return;
+	const entt::entity owner = AIHelpers::EcsOf(ch);
 
 	char arg1[512];
 	const char* rest = one_argument(argument, arg1, sizeof(arg1));
@@ -3799,9 +3803,9 @@ ACMD(do_rune)
 				if (slot == WEAR_RUNE7)
 					return;
 
-				LPITEM pkItem = ItemSystem::GetWear(AIHelpers::EcsOf(ch), slot);
-				if (pkItem)
-					pkItem->ActivateRune();
+				const entt::entity item = ItemSystem::GetWearItem(owner, slot);
+				if (ItemSystem::IsValidItem(item))
+					ItemSystem::ActivateRuneLegacyBoundary(item);
 			}
 			break;
 		case 'd':
@@ -3814,9 +3818,9 @@ ACMD(do_rune)
 				if (slot == WEAR_RUNE7)
 					return;
 
-				LPITEM pkItem = ItemSystem::GetWear(AIHelpers::EcsOf(ch), slot);
-				if (pkItem)
-					pkItem->DeactivateRune();
+				const entt::entity item = ItemSystem::GetWearItem(owner, slot);
+				if (ItemSystem::IsValidItem(item))
+					ItemSystem::DeactivateRuneLegacyBoundary(item);
 			}
 			break;
 		case 'l':
@@ -3827,14 +3831,14 @@ ACMD(do_rune)
 					return;
 
 				int iMaxSubTypes = RUNE_SUBTYPES - 1;
-				LPITEM pkItem = nullptr;
 				for (int i = 0; i < iMaxSubTypes; i++) {
-					pkItem = ItemSystem::GetWear(AIHelpers::EcsOf(ch), WEAR_RUNE1 + i);
-					if (pkItem) {
+					const entt::entity item = ItemSystem::GetWearItem(
+						owner, WEAR_RUNE1 + i);
+					if (ItemSystem::IsValidItem(item)) {
 						if (w == 0)
-							pkItem->DeactivateRune();
+							ItemSystem::DeactivateRuneLegacyBoundary(item);
 						else
-							pkItem->ActivateRune();
+							ItemSystem::ActivateRuneLegacyBoundary(item);
 					}
 				}
 			}
@@ -3846,6 +3850,7 @@ ACMD(do_rune_charge)
 {
 	if (!ch)
 		return;
+	const entt::entity owner = AIHelpers::EcsOf(ch);
 
 	char arg1[256], arg2[256];
 	two_arguments(argument, arg1, sizeof(arg1), arg2, sizeof(arg2));
@@ -3861,24 +3866,25 @@ ACMD(do_rune_charge)
 	if (str_to_number(iArg2, arg2) == false)
 		return;
 
-	LPITEM pkRune = ItemSystem::GetWear(AIHelpers::EcsOf(ch), iArg1);
-	if (!pkRune)
+	entt::entity rune = ItemSystem::GetWearItem(owner, iArg1);
+	if (!ItemSystem::IsValidItem(rune))
 		return;
 
-	if (!pkRune->IsRune())
+	if (!ItemSystem::IsRuneItem(rune))
 		return;
-	else if (ItemSystem::GetItemSubType(EntityFactory::CreateItemEntity(g_registry, pkRune)) == RUNE_SLOT7)
-		return;
-
-	LPITEM pkBottle = ItemSystem::GetInventoryItemPtr(AIHelpers::EcsOf(ch), iArg2);
-	if (!pkBottle)
+	else if (ItemSystem::GetItemSubType(rune) == RUNE_SLOT7)
 		return;
 
-	if ((ItemSystem::GetItemType(EntityFactory::CreateItemEntity(g_registry, pkBottle)) != ITEM_USE) && (ItemSystem::GetItemSubType(EntityFactory::CreateItemEntity(g_registry, pkBottle)) != USE_RUNE_PERC_CHARGE))
+	entt::entity bottle = ItemSystem::GetInventoryItem(owner, iArg2);
+	if (!ItemSystem::IsValidItem(bottle))
 		return;
 
-	if (ItemSystem::GetItemCount(EntityFactory::CreateItemEntity(g_registry, pkBottle)) > 1) {
-		int pos = ch->GetEmptyInventory(pkBottle->GetSize());
+	if (ItemSystem::GetItemType(bottle) != ITEM_USE ||
+		ItemSystem::GetItemSubType(bottle) != USE_RUNE_PERC_CHARGE)
+		return;
+
+	if (ItemSystem::GetItemCount(bottle) > 1) {
+		const int pos = ItemSystem::GetEmptyInventoryPositionEcs(owner, bottle);
 		if (pos == -1) {
 #ifdef TEXTS_IMPROVEMENT
 			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 366, "");
@@ -3886,26 +3892,32 @@ ACMD(do_rune_charge)
 			return;
 		}
 
-		ItemSystem::ConsumeItemEcs(
-			EntityFactory::CreateItemEntity(g_registry, pkBottle), 1);
-		LPITEM item2 = ITEM_MANAGER::instance().CreateItem(ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, pkBottle)), 1);
-		if (!item2)
+		const uint32_t bottleVnum = ItemSystem::GetItemVnum(bottle);
+		ItemSystem::ConsumeItemEcs(bottle, 1);
+		const entt::entity splitBottle = ItemSystem::CreateItemEcs(bottleVnum, 1);
+		if (!ItemSystem::IsValidItem(splitBottle))
 			return;
-
-		item2->AddToCharacter(ch, TItemPos(INVENTORY, pos), false);
-		pkBottle = item2;
+		if (!ItemSystem::PlaceItemEcs(owner, splitBottle, INVENTORY, pos)) {
+			ItemSystem::DestroyItemEntityEcs(splitBottle, "RUNE_BOTTLE_SPLIT_FAIL");
+			return;
+		}
+		bottle = splitBottle;
 	}
 
-	int32_t lBottlePercent = ItemSystem::GetItemSocket(EntityFactory::CreateItemEntity(g_registry, pkBottle), 0);
+	int32_t lBottlePercent = ItemSystem::GetItemSocket(bottle, 0);
 	if (lBottlePercent < 1)
 		return;
 
-	int32_t lMaxTime = ItemSystem::GetItemValue(EntityFactory::CreateItemEntity(g_registry, pkRune), 0);
+	int32_t lMaxTime = ItemSystem::GetItemValue(rune, 0);
 	int32_t lOnePercent = lMaxTime / 100;
-	int32_t lRemainPercent = ItemSystem::GetItemSocket(EntityFactory::CreateItemEntity(g_registry, pkRune), ITEM_SOCKET_REMAIN_SEC) / lOnePercent;
+	if (lOnePercent <= 0)
+		return;
+	int32_t lRemainPercent =
+		ItemSystem::GetItemSocket(rune, ITEM_SOCKET_REMAIN_SEC) / lOnePercent;
 	if (lRemainPercent > 99) {
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 33, "%s", pkRune->GetName());
+		ecs::ChatSystem::SendNew(owner, CHAT_TYPE_INFO, 33, "%s",
+			ItemSystem::GetItemName(rune));
 #endif
 		return;
 	}
@@ -3913,19 +3925,21 @@ ACMD(do_rune_charge)
 	int32_t dif = 100 - lRemainPercent;
 	dif = dif > lBottlePercent ? lBottlePercent : dif;
 	int32_t add = lOnePercent * dif;
-	int32_t lValue = ItemSystem::GetItemSocket(EntityFactory::CreateItemEntity(g_registry, pkRune), ITEM_SOCKET_REMAIN_SEC) + add;
-	ItemSystem::SetItemSocket(EntityFactory::CreateItemEntity(g_registry, pkRune), ITEM_SOCKET_REMAIN_SEC, lValue);
+	int32_t lValue = ItemSystem::GetItemSocket(rune, ITEM_SOCKET_REMAIN_SEC) + add;
+	ItemSystem::SetItemSocket(rune, ITEM_SOCKET_REMAIN_SEC, lValue);
 #ifdef TEXTS_IMPROVEMENT
-	ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 34, "%s#%d", pkRune->GetName(), dif);
+	ecs::ChatSystem::SendNew(owner, CHAT_TYPE_INFO, 34, "%s#%d",
+		ItemSystem::GetItemName(rune), dif);
 #endif
-	ItemSystem::SetItemSocket(EntityFactory::CreateItemEntity(g_registry, pkBottle), 0, lBottlePercent-dif);
-	if (ItemSystem::GetItemSocket(EntityFactory::CreateItemEntity(g_registry, pkBottle), 0) < 1)
-		pkBottle->RemoveFromCharacter();
+	ItemSystem::SetItemSocket(bottle, 0, lBottlePercent - dif);
+	if (ItemSystem::GetItemSocket(bottle, 0) < 1)
+		ItemSystem::RemoveItemFromCharacterLegacyBoundary(bottle);
 
-	pkRune->ChangeRuneAttr(lValue);
-	if ((!AffectSystem::FindAffect(AIHelpers::EcsOf(ch), AFFECT_RUNE2)) && (ItemSystem::GetItemSocket(EntityFactory::CreateItemEntity(g_registry, pkRune), 1) == 1)) {
-		if (int32_t(lValue / (ItemSystem::GetItemValue(EntityFactory::CreateItemEntity(g_registry, pkRune), 0) / 100)) >= 50) {
-			pkRune->ActivateRuneBonus();
+	ItemSystem::ChangeRuneAttributesLegacyBoundary(rune, lValue);
+	if (!AffectSystem::FindAffect(owner, AFFECT_RUNE2) &&
+		ItemSystem::GetItemSocket(rune, 1) == 1) {
+		if (int32_t(lValue / lOnePercent) >= 50) {
+			ItemSystem::ActivateRuneBonusLegacyBoundary(rune);
 		}
 	}
 }
@@ -4122,19 +4136,20 @@ ACMD(do_gr_deposit_item)
 	if (cell < 0 || count == 0)
 		return;
 
-	LPITEM item = ItemSystem::GetInventoryItemPtr(AIHelpers::EcsOf(ch), cell);
-	if (!item)
+	const entt::entity owner = AIHelpers::EcsOf(ch);
+	const entt::entity item = ItemSystem::GetInventoryItem(owner, cell);
+	if (!ItemSystem::IsValidItem(item))
 		return;
-	if (count > ItemSystem::GetItemCount(EntityFactory::CreateItemEntity(g_registry, item)))
-		count = ItemSystem::GetItemCount(EntityFactory::CreateItemEntity(g_registry, item));
+	if (count > ItemSystem::GetItemCount(item))
+		count = ItemSystem::GetItemCount(item);
 
-	const uint32_t vnum = ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, item));
+	const uint32_t vnum = ItemSystem::GetItemVnum(item);
 
 	// Remove from player
-	if (count >= ItemSystem::GetItemCount(EntityFactory::CreateItemEntity(g_registry, item)))
-		ITEM_MANAGER::instance().RemoveItem(item);
+	if (count >= ItemSystem::GetItemCount(item))
+		ItemSystem::DestroyItemEntityEcs(item, "GUILD_RENEWAL_DEPOSIT");
 	else
-		ItemSystem::ConsumeItemEcs(EntityFactory::CreateItemEntity(g_registry, item), count);
+		ItemSystem::ConsumeItemEcs(item, count);
 
 	g->RenewalDepositItem(ch, vnum, count, false);
 	g->SendRenewalInfoTo(ch);

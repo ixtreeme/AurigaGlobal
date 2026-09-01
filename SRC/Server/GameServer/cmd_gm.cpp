@@ -49,6 +49,7 @@
 #include "ecs/EntityFactory.hpp"
 #include "ecs/VIDRegistry.hpp"
 #include "ecs/systems/ItemSystem.hpp"
+#include "ecs/systems/ActivitySystem.hpp"
 #include <common/CommonDefines.h>
 #include "LostCastleDungeon.h"
 #ifdef __ENABLE_NEW_OFFLINESHOP__
@@ -1059,8 +1060,8 @@ ACMD(do_item_purge)
 		return;
 	}
 
-	int	i;
-	LPITEM	item;
+	int i;
+	const entt::entity owner = AIHelpers::EcsOf(ch);
 
 #ifdef __NEWPET_SYSTEM__
 	CNewPetSystem* petSystem = ch->GetNewPetSystem();
@@ -1078,24 +1079,26 @@ ACMD(do_item_purge)
 	{
 		for (i = 0; i < INVENTORY_AND_EQUIP_SLOT_MAX; ++i)
 		{
-			if ((item = ItemSystem::GetInventoryItemPtr(AIHelpers::EcsOf(ch), i)))
+			const entt::entity item = ItemSystem::GetInventoryItem(owner, i);
+			if (ItemSystem::IsValidItem(item))
 			{
-				ITEM_MANAGER::instance().RemoveItem(item, "PURGE");
+				ItemSystem::DestroyItemEntityEcs(item, "PURGE");
 				ch->SyncQuickslot(QUICKSLOT_TYPE_ITEM, i, 255);
 			}
 		}
 		for (i = 0; i < DRAGON_SOUL_INVENTORY_MAX_NUM; ++i)
 		{
-			if ((item = ch->GetItem(TItemPos(DRAGON_SOUL_INVENTORY, i ))))
-			{
-				ITEM_MANAGER::instance().RemoveItem(item, "PURGE");
-			}
+			const entt::entity item = ItemSystem::GetItem(
+				owner, TItemPos(DRAGON_SOUL_INVENTORY, i));
+			if (ItemSystem::IsValidItem(item))
+				ItemSystem::DestroyItemEntityEcs(item, "PURGE");
 		}
 #ifdef ENABLE_EXTRA_INVENTORY
 		for (i = 0; i < EXTRA_INVENTORY_MAX_NUM; ++i)
 		{
-			if ((item = ch->GetItem(TItemPos(EXTRA_INVENTORY, i)))) {
-				ITEM_MANAGER::instance().RemoveItem(item, "PURGE");
+			const entt::entity item = ItemSystem::GetExtraInventoryItem(owner, i);
+			if (ItemSystem::IsValidItem(item)) {
+				ItemSystem::DestroyItemEntityEcs(item, "PURGE");
 				ch->SyncQuickslot(QUICKSLOT_TYPE_ITEM_EXTRA, i, 255);
 			}
 		}
@@ -1105,9 +1108,10 @@ ACMD(do_item_purge)
 	{
 		for (i = 0; i < INVENTORY_MAX_NUM; ++i)
 		{
-			if ((item = ItemSystem::GetInventoryItemPtr(AIHelpers::EcsOf(ch), i)))
+			const entt::entity item = ItemSystem::GetInventoryItem(owner, i);
+			if (ItemSystem::IsValidItem(item))
 			{
-				ITEM_MANAGER::instance().RemoveItem(item, "PURGE");
+				ItemSystem::DestroyItemEntityEcs(item, "PURGE");
 				ch->SyncQuickslot(QUICKSLOT_TYPE_ITEM, i, 255);
 			}
 		}
@@ -1116,9 +1120,10 @@ ACMD(do_item_purge)
 	{
 		for (i = 0; i < WEAR_MAX_NUM; ++i)
 		{
-			if ((item = ItemSystem::GetInventoryItemPtr(AIHelpers::EcsOf(ch), INVENTORY_MAX_NUM + i)))
+			const entt::entity item = ItemSystem::GetWearItem(owner, i);
+			if (ItemSystem::IsValidItem(item))
 			{
-				ITEM_MANAGER::instance().RemoveItem(item, "PURGE");
+				ItemSystem::DestroyItemEntityEcs(item, "PURGE");
 				ch->SyncQuickslot(QUICKSLOT_TYPE_ITEM, INVENTORY_MAX_NUM + i, 255);
 			}
 		}
@@ -1127,19 +1132,21 @@ ACMD(do_item_purge)
 	{
 		for (i = 0; i < DRAGON_SOUL_INVENTORY_MAX_NUM; ++i)
 		{
-			if ((item = ch->GetItem(TItemPos(DRAGON_SOUL_INVENTORY, i ))))
-			{
-				ITEM_MANAGER::instance().RemoveItem(item, "PURGE");
-			}
+			const entt::entity item = ItemSystem::GetItem(
+				owner, TItemPos(DRAGON_SOUL_INVENTORY, i));
+			if (ItemSystem::IsValidItem(item))
+				ItemSystem::DestroyItemEntityEcs(item, "PURGE");
 		}
 	}
 	else if (!strArg.compare(0, 4, "belt"))
 	{
 		for (i = 0; i < BELT_INVENTORY_SLOT_COUNT; ++i)
 		{
-			if ((item = ItemSystem::GetInventoryItemPtr(AIHelpers::EcsOf(ch), BELT_INVENTORY_SLOT_START + i)))
+			const entt::entity item = ItemSystem::GetInventoryItem(
+				owner, BELT_INVENTORY_SLOT_START + i);
+			if (ItemSystem::IsValidItem(item))
 			{
-				ITEM_MANAGER::instance().RemoveItem(item, "PURGE");
+				ItemSystem::DestroyItemEntityEcs(item, "PURGE");
 				ch->SyncQuickslot(QUICKSLOT_TYPE_ITEM, BELT_INVENTORY_SLOT_START + i, 255);
 			}
 		}
@@ -1149,37 +1156,40 @@ ACMD(do_item_purge)
 	{
 		for (i = 0; i < EXTRA_INVENTORY_MAX_NUM; ++i)
 		{
-			if ((item = ch->GetItem(TItemPos(EXTRA_INVENTORY, i)))) {
-				ITEM_MANAGER::instance().RemoveItem(item, "PURGE");
+			const entt::entity item = ItemSystem::GetExtraInventoryItem(owner, i);
+			if (ItemSystem::IsValidItem(item)) {
+				ItemSystem::DestroyItemEntityEcs(item, "PURGE");
 				ch->SyncQuickslot(QUICKSLOT_TYPE_ITEM_EXTRA, i, 255);
 			}
 		}
 	}
 #endif
 #else
-	int         i;
-	LPITEM      item;
+	int i;
+	const entt::entity owner = AIHelpers::EcsOf(ch);
 
 	for (i = 0; i < INVENTORY_AND_EQUIP_SLOT_MAX; ++i)
 	{
-		if ((item = ItemSystem::GetInventoryItemPtr(AIHelpers::EcsOf(ch), i)))
+		const entt::entity item = ItemSystem::GetInventoryItem(owner, i);
+		if (ItemSystem::IsValidItem(item))
 		{
-			ITEM_MANAGER::instance().RemoveItem(item, "PURGE");
+			ItemSystem::DestroyItemEntityEcs(item, "PURGE");
 			ch->SyncQuickslot(QUICKSLOT_TYPE_ITEM, i, 255);
 		}
 	}
 	for (i = 0; i < DRAGON_SOUL_INVENTORY_MAX_NUM; ++i)
 	{
-		if ((item = ch->GetItem(TItemPos(DRAGON_SOUL_INVENTORY, i ))))
-		{
-			ITEM_MANAGER::instance().RemoveItem(item, "PURGE");
-		}
+		const entt::entity item = ItemSystem::GetItem(
+			owner, TItemPos(DRAGON_SOUL_INVENTORY, i));
+		if (ItemSystem::IsValidItem(item))
+			ItemSystem::DestroyItemEntityEcs(item, "PURGE");
 	}
 #ifdef ENABLE_EXTRA_INVENTORY
 	for (i = 0; i < EXTRA_INVENTORY_MAX_NUM; ++i)
 	{
-		if ((item = ch->GetItem(TItemPos(EXTRA_INVENTORY, i)))) {
-			ITEM_MANAGER::instance().RemoveItem(item, "PURGE");
+		const entt::entity item = ItemSystem::GetExtraInventoryItem(owner, i);
+		if (ItemSystem::IsValidItem(item)) {
+			ItemSystem::DestroyItemEntityEcs(item, "PURGE");
 			ch->SyncQuickslot(QUICKSLOT_TYPE_ITEM_EXTRA, i, 255);
 		}
 	}
@@ -2193,9 +2203,10 @@ ACMD(do_refine_rod)
 
 	uint8_t cell = 0;
 	str_to_number(cell, arg1);
-	LPITEM item = ItemSystem::GetInventoryItemPtr(AIHelpers::EcsOf(ch), cell);
-	if (item)
-		fishing::RealRefineRod(ch, item);
+	const entt::entity owner = AIHelpers::EcsOf(ch);
+	const entt::entity item = ItemSystem::GetInventoryItem(owner, cell);
+	if (ItemSystem::IsValidItem(item))
+		ActivitySystem::RefineFishingRod(owner, item);
 }
 // END_OF_REFINE_ROD_HACK_BUG_FIX
 
@@ -2207,12 +2218,12 @@ ACMD(do_refine_pick)
 
 	uint8_t cell = 0;
 	str_to_number(cell, arg1);
-	LPITEM item = ItemSystem::GetInventoryItemPtr(AIHelpers::EcsOf(ch), cell);
-	if (item)
+	const entt::entity character = AIHelpers::EcsOf(ch);
+	const entt::entity item = ItemSystem::GetInventoryItem(character, cell);
+	if (ItemSystem::IsValidItem(item))
 	{
-		const entt::entity itemEntity = EntityFactory::CreateItemEntity(g_registry, item);
-		mining::CHEAT_MAX_PICK(ch, itemEntity);
-		mining::RealRefinePick(ch, itemEntity);
+		mining::CHEAT_MAX_PICK(character, item);
+		mining::RealRefinePick(character, item);
 	}
 }
 
@@ -2223,10 +2234,11 @@ ACMD(do_max_pick)
 
 	uint8_t cell = 0;
 	str_to_number(cell, arg1);
-	LPITEM item = ItemSystem::GetInventoryItemPtr(AIHelpers::EcsOf(ch), cell);
-	if (item)
+	const entt::entity character = AIHelpers::EcsOf(ch);
+	const entt::entity item = ItemSystem::GetInventoryItem(character, cell);
+	if (ItemSystem::IsValidItem(item))
 	{
-		mining::CHEAT_MAX_PICK(ch, EntityFactory::CreateItemEntity(g_registry, item));
+		mining::CHEAT_MAX_PICK(character, item);
 	}
 }
 // END_OF_REFINE_PICK
@@ -3737,38 +3749,49 @@ ACMD(do_affect_remove)
 
 ACMD(do_change_attr)
 {
-	LPITEM weapon = ItemSystem::GetWear(AIHelpers::EcsOf(ch), WEAR_WEAPON);
-	if (weapon)
-		weapon->ChangeAttribute();
+	const entt::entity weapon = ItemSystem::GetWearItem(
+		AIHelpers::EcsOf(ch), WEAR_WEAPON);
+	if (ItemSystem::IsValidItem(weapon))
+		ItemSystem::ChangeItemAttributeEcs(weapon);
 }
 
 ACMD(do_add_attr)
 {
-	LPITEM weapon = ItemSystem::GetWear(AIHelpers::EcsOf(ch), WEAR_WEAPON);
-	if (weapon)
-		weapon->AddAttribute();
+	const entt::entity weapon = ItemSystem::GetWearItem(
+		AIHelpers::EcsOf(ch), WEAR_WEAPON);
+	if (ItemSystem::IsValidItem(weapon))
+		ItemSystem::AddItemAttributeEcs(weapon);
 }
 
 ACMD(do_add_socket)
 {
-	LPITEM weapon = ItemSystem::GetWear(AIHelpers::EcsOf(ch), WEAR_WEAPON);
-	if (weapon)
-		weapon->AddSocket();
+	const entt::entity weapon = ItemSystem::GetWearItem(
+		AIHelpers::EcsOf(ch), WEAR_WEAPON);
+	if (!ItemSystem::IsValidItem(weapon))
+		return;
+	for (int socket = 0; socket < ITEM_SOCKET_MAX_NUM; ++socket) {
+		if (ItemSystem::GetItemSocket(weapon, socket) == 0) {
+			ItemSystem::SetItemSocketEcs(weapon, socket, 1);
+			break;
+		}
+	}
 }
 
 #ifdef ENABLE_NEWSTUFF
 ACMD(do_change_rare_attr)
 {
-	LPITEM weapon = ItemSystem::GetWear(AIHelpers::EcsOf(ch), WEAR_WEAPON);
-	if (weapon)
-		weapon->ChangeRareAttribute();
+	const entt::entity weapon = ItemSystem::GetWearItem(
+		AIHelpers::EcsOf(ch), WEAR_WEAPON);
+	if (ItemSystem::IsValidItem(weapon))
+		ItemSystem::ChangeItemRareAttributeEcs(weapon);
 }
 
 ACMD(do_add_rare_attr)
 {
-	LPITEM weapon = ItemSystem::GetWear(AIHelpers::EcsOf(ch), WEAR_WEAPON);
-	if (weapon)
-		weapon->AddRareAttribute();
+	const entt::entity weapon = ItemSystem::GetWearItem(
+		AIHelpers::EcsOf(ch), WEAR_WEAPON);
+	if (ItemSystem::IsValidItem(weapon))
+		ItemSystem::AddItemRareAttributeEcs(weapon);
 }
 #endif
 
@@ -4665,10 +4688,33 @@ ACMD (do_item_full_set)
 	}
 }
 
+namespace {
+struct FullAttributeSpec {
+	uint8_t type;
+	int16_t value;
+};
+
+void ApplyFullAttributes(entt::entity owner, uint8_t wearSlot,
+	std::initializer_list<FullAttributeSpec> attributes)
+{
+	const entt::entity item = ItemSystem::GetWearItem(owner, wearSlot);
+	if (!ItemSystem::IsValidItem(item))
+		return;
+
+	ItemSystem::ModifyItemPointsEcs(item, false);
+	ItemSystem::ClearItemAttributesEcs(item);
+	int index = 0;
+	for (const FullAttributeSpec attribute : attributes)
+		ItemSystem::SetItemForceAttributeEcs(
+			item, index++, attribute.type, attribute.value);
+	ItemSystem::ModifyItemPointsEcs(item, true);
+}
+}
+
 ACMD (do_attr_full_set)
 {
 	uint8_t job = ch->GetJob();
-	LPITEM item;
+	const entt::entity owner = AIHelpers::EcsOf(ch);
 	switch (job)
 	{
 		case JOB_WARRIOR:
@@ -4680,127 +4726,35 @@ ACMD (do_attr_full_set)
 	#endif
 		{
 
-			item = ItemSystem::GetWear(AIHelpers::EcsOf(ch), WEAR_HEAD);
-			if (item != nullptr)
-			{
-				ItemSystem::ClearItemAttributesEcs(EntityFactory::CreateItemEntity(g_registry, item));
-				ItemSystem::SetItemForceAttributeEcs(EntityFactory::CreateItemEntity(g_registry, item), 0, APPLY_HP_REGEN, 25);
-				ItemSystem::SetItemForceAttributeEcs(EntityFactory::CreateItemEntity(g_registry, item), 1, APPLY_POISON_REDUCE, 10);
-				ItemSystem::SetItemForceAttributeEcs(EntityFactory::CreateItemEntity(g_registry, item), 2, APPLY_RESIST_MAGIC, 15);
-				ItemSystem::SetItemForceAttributeEcs(EntityFactory::CreateItemEntity(g_registry, item), 3, APPLY_RESIST_BOW, 60);
-				ItemSystem::SetItemForceAttributeEcs(EntityFactory::CreateItemEntity(g_registry, item), 4, APPLY_ATTBONUS_HUMAN, 10);
-				ItemSystem::SetItemForceAttributeEcs(EntityFactory::CreateItemEntity(g_registry, item), 5, APPLY_ATTBONUS_HUMAN, 10);
-				ItemSystem::SetItemForceAttributeEcs(EntityFactory::CreateItemEntity(g_registry, item), 6, APPLY_MAX_HP, 4000);
-				item->ModifyPoints(true);
-			}
-
-			item = ItemSystem::GetWear(AIHelpers::EcsOf(ch), WEAR_WEAPON);
-			if (item != nullptr)
-			{
-				ItemSystem::ClearItemAttributesEcs(EntityFactory::CreateItemEntity(g_registry, item));
-				ItemSystem::SetItemForceAttributeEcs(EntityFactory::CreateItemEntity(g_registry, item), 0, APPLY_NORMAL_HIT_DAMAGE_BONUS, 53);
-				ItemSystem::SetItemForceAttributeEcs(EntityFactory::CreateItemEntity(g_registry, item), 1, APPLY_SKILL_DAMAGE_BONUS, 10);
-				ItemSystem::SetItemForceAttributeEcs(EntityFactory::CreateItemEntity(g_registry, item), 2, APPLY_ATTBONUS_HUMAN, 10);
-				ItemSystem::SetItemForceAttributeEcs(EntityFactory::CreateItemEntity(g_registry, item), 3, APPLY_ATTBONUS_DEVIL, 20);
-				ItemSystem::SetItemForceAttributeEcs(EntityFactory::CreateItemEntity(g_registry, item), 4, APPLY_ATTBONUS_ORC, 20);
-				ItemSystem::SetItemForceAttributeEcs(EntityFactory::CreateItemEntity(g_registry, item), 5, APPLY_ATTBONUS_HUMAN, 10);
-				ItemSystem::SetItemForceAttributeEcs(EntityFactory::CreateItemEntity(g_registry, item), 6, APPLY_MAX_HP, 4000);
-				item->ModifyPoints(true);
-			}
-
-			item = ItemSystem::GetWear(AIHelpers::EcsOf(ch), WEAR_SHIELD);
-			if (item != nullptr)
-			{
-				ItemSystem::ClearItemAttributesEcs(EntityFactory::CreateItemEntity(g_registry, item));
-				ItemSystem::SetItemForceAttributeEcs(EntityFactory::CreateItemEntity(g_registry, item), 0, APPLY_ATTBONUS_HUMAN, 10);
-				ItemSystem::SetItemForceAttributeEcs(EntityFactory::CreateItemEntity(g_registry, item), 1, APPLY_BLOCK, 15);
-				ItemSystem::SetItemForceAttributeEcs(EntityFactory::CreateItemEntity(g_registry, item), 2, APPLY_REFLECT_MELEE, 10);
-				ItemSystem::SetItemForceAttributeEcs(EntityFactory::CreateItemEntity(g_registry, item), 3, APPLY_IMMUNE_STUN, 1);
-				ItemSystem::SetItemForceAttributeEcs(EntityFactory::CreateItemEntity(g_registry, item), 4, APPLY_IMMUNE_SLOW, 1);
-				ItemSystem::SetItemForceAttributeEcs(EntityFactory::CreateItemEntity(g_registry, item), 5, APPLY_ATTBONUS_HUMAN, 50);
-				ItemSystem::SetItemForceAttributeEcs(EntityFactory::CreateItemEntity(g_registry, item), 6, APPLY_MAX_HP, 4000);
-				item->ModifyPoints(true);
-			}
-
-			item = ItemSystem::GetWear(AIHelpers::EcsOf(ch), WEAR_BODY);
-			if (item != nullptr)
-			{
-				ItemSystem::ClearItemAttributesEcs(EntityFactory::CreateItemEntity(g_registry, item));
-				ItemSystem::SetItemForceAttributeEcs(EntityFactory::CreateItemEntity(g_registry, item), 0, APPLY_RESIST_SWORD, 15);
-				ItemSystem::SetItemForceAttributeEcs(EntityFactory::CreateItemEntity(g_registry, item), 1, APPLY_RESIST_TWOHAND, 15);
-				ItemSystem::SetItemForceAttributeEcs(EntityFactory::CreateItemEntity(g_registry, item), 2, APPLY_RESIST_DAGGER, 15);
-				ItemSystem::SetItemForceAttributeEcs(EntityFactory::CreateItemEntity(g_registry, item), 3, APPLY_RESIST_BELL, 15);
-				ItemSystem::SetItemForceAttributeEcs(EntityFactory::CreateItemEntity(g_registry, item), 4, APPLY_RESIST_FAN, 15);
-				ItemSystem::SetItemForceAttributeEcs(EntityFactory::CreateItemEntity(g_registry, item), 5, APPLY_ATTBONUS_HUMAN, 10);
-				ItemSystem::SetItemForceAttributeEcs(EntityFactory::CreateItemEntity(g_registry, item), 6, APPLY_MAX_HP, 4000);
-				item->ModifyPoints(true);
-			}
-
-			item = ItemSystem::GetWear(AIHelpers::EcsOf(ch), WEAR_FOOTS);
-			if (item != nullptr)
-			{
-				ItemSystem::ClearItemAttributesEcs(EntityFactory::CreateItemEntity(g_registry, item));
-				ItemSystem::SetItemForceAttributeEcs(EntityFactory::CreateItemEntity(g_registry, item), 0, APPLY_RESIST_SWORD, 15);
-				ItemSystem::SetItemForceAttributeEcs(EntityFactory::CreateItemEntity(g_registry, item), 1, APPLY_RESIST_TWOHAND, 15);
-				ItemSystem::SetItemForceAttributeEcs(EntityFactory::CreateItemEntity(g_registry, item), 2, APPLY_RESIST_DAGGER, 15);
-				ItemSystem::SetItemForceAttributeEcs(EntityFactory::CreateItemEntity(g_registry, item), 3, APPLY_RESIST_BELL, 15);
-				ItemSystem::SetItemForceAttributeEcs(EntityFactory::CreateItemEntity(g_registry, item), 4, APPLY_RESIST_FAN, 15);
-				ItemSystem::SetItemForceAttributeEcs(EntityFactory::CreateItemEntity(g_registry, item), 5, APPLY_ATTBONUS_HUMAN, 10);
-				ItemSystem::SetItemForceAttributeEcs(EntityFactory::CreateItemEntity(g_registry, item), 6, APPLY_MAX_HP, 4000);
-				item->ModifyPoints(true);
-			}
-
-			item = ItemSystem::GetWear(AIHelpers::EcsOf(ch), WEAR_WRIST);
-			if (item != nullptr)
-			{
-				ItemSystem::ClearItemAttributesEcs(EntityFactory::CreateItemEntity(g_registry, item));
-				ItemSystem::SetItemForceAttributeEcs(EntityFactory::CreateItemEntity(g_registry, item), 0, APPLY_MAX_HP, 2500);
-				ItemSystem::SetItemForceAttributeEcs(EntityFactory::CreateItemEntity(g_registry, item), 1, APPLY_ATTBONUS_HUMAN, 10);
-				ItemSystem::SetItemForceAttributeEcs(EntityFactory::CreateItemEntity(g_registry, item), 2, APPLY_PENETRATE_PCT, 12);
-				ItemSystem::SetItemForceAttributeEcs(EntityFactory::CreateItemEntity(g_registry, item), 3, APPLY_STEAL_HP, 10);
-				ItemSystem::SetItemForceAttributeEcs(EntityFactory::CreateItemEntity(g_registry, item), 4, APPLY_RESIST_MAGIC, 15);
-				ItemSystem::SetItemForceAttributeEcs(EntityFactory::CreateItemEntity(g_registry, item), 5, APPLY_ATTBONUS_HUMAN, 10);
-				ItemSystem::SetItemForceAttributeEcs(EntityFactory::CreateItemEntity(g_registry, item), 6, APPLY_MAX_HP, 4000);
-				item->ModifyPoints(true);
-			}
-
-			item = ItemSystem::GetWear(AIHelpers::EcsOf(ch), WEAR_NECK);
-			if (item != nullptr)
-			{
-				ItemSystem::ClearItemAttributesEcs(EntityFactory::CreateItemEntity(g_registry, item));
-				ItemSystem::SetItemForceAttributeEcs(EntityFactory::CreateItemEntity(g_registry, item), 0, APPLY_RESIST_SWORD, 15);
-				ItemSystem::SetItemForceAttributeEcs(EntityFactory::CreateItemEntity(g_registry, item), 1, APPLY_RESIST_TWOHAND, 15);
-				ItemSystem::SetItemForceAttributeEcs(EntityFactory::CreateItemEntity(g_registry, item), 2, APPLY_RESIST_DAGGER, 15);
-				ItemSystem::SetItemForceAttributeEcs(EntityFactory::CreateItemEntity(g_registry, item), 3, APPLY_RESIST_BELL, 15);
-				ItemSystem::SetItemForceAttributeEcs(EntityFactory::CreateItemEntity(g_registry, item), 4, APPLY_RESIST_FAN, 15);
-				ItemSystem::SetItemForceAttributeEcs(EntityFactory::CreateItemEntity(g_registry, item), 5, APPLY_ATTBONUS_HUMAN, 10);
-				ItemSystem::SetItemForceAttributeEcs(EntityFactory::CreateItemEntity(g_registry, item), 6, APPLY_MAX_HP, 4000);
-				item->ModifyPoints(true);
-			}
-
-			item = ItemSystem::GetWear(AIHelpers::EcsOf(ch), WEAR_EAR);
-			if (item != nullptr)
-			{
-				ItemSystem::ClearItemAttributesEcs(EntityFactory::CreateItemEntity(g_registry, item));
-				ItemSystem::SetItemForceAttributeEcs(EntityFactory::CreateItemEntity(g_registry, item), 0, APPLY_RESIST_SWORD, 15);
-				ItemSystem::SetItemForceAttributeEcs(EntityFactory::CreateItemEntity(g_registry, item), 1, APPLY_RESIST_TWOHAND, 15);
-				ItemSystem::SetItemForceAttributeEcs(EntityFactory::CreateItemEntity(g_registry, item), 2, APPLY_RESIST_DAGGER, 15);
-				ItemSystem::SetItemForceAttributeEcs(EntityFactory::CreateItemEntity(g_registry, item), 3, APPLY_RESIST_BELL, 15);
-				ItemSystem::SetItemForceAttributeEcs(EntityFactory::CreateItemEntity(g_registry, item), 4, APPLY_RESIST_FAN, 15);
-				ItemSystem::SetItemForceAttributeEcs(EntityFactory::CreateItemEntity(g_registry, item), 5, APPLY_ATTBONUS_HUMAN, 10);
-				ItemSystem::SetItemForceAttributeEcs(EntityFactory::CreateItemEntity(g_registry, item), 6, APPLY_MAX_HP, 4000);
-				item->ModifyPoints(true);
-			}
-			item = ItemSystem::GetWear(AIHelpers::EcsOf(ch), WEAR_PENDANT);
-			if (item != nullptr)
-			{
-				ItemSystem::ClearItemAttributesEcs(EntityFactory::CreateItemEntity(g_registry, item));
-				ItemSystem::SetItemForceAttributeEcs(EntityFactory::CreateItemEntity(g_registry, item), 0, APPLY_RESIST_MEZZIUOMINI, 10);
-				ItemSystem::SetItemForceAttributeEcs(EntityFactory::CreateItemEntity(g_registry, item), 1, APPLY_ATTBONUS_HUMAN, 10);
-				ItemSystem::SetItemForceAttributeEcs(EntityFactory::CreateItemEntity(g_registry, item), 2, APPLY_CRITICAL_PCT, 15);
-
-				item->ModifyPoints(true);
-			}
+			ApplyFullAttributes(owner, WEAR_HEAD, {
+				{APPLY_HP_REGEN, 25}, {APPLY_POISON_REDUCE, 10},
+				{APPLY_RESIST_MAGIC, 15}, {APPLY_RESIST_BOW, 60},
+				{APPLY_ATTBONUS_HUMAN, 10}, {APPLY_ATTBONUS_HUMAN, 10},
+				{APPLY_MAX_HP, 4000}});
+			ApplyFullAttributes(owner, WEAR_WEAPON, {
+				{APPLY_NORMAL_HIT_DAMAGE_BONUS, 53}, {APPLY_SKILL_DAMAGE_BONUS, 10},
+				{APPLY_ATTBONUS_HUMAN, 10}, {APPLY_ATTBONUS_DEVIL, 20},
+				{APPLY_ATTBONUS_ORC, 20}, {APPLY_ATTBONUS_HUMAN, 10},
+				{APPLY_MAX_HP, 4000}});
+			ApplyFullAttributes(owner, WEAR_SHIELD, {
+				{APPLY_ATTBONUS_HUMAN, 10}, {APPLY_BLOCK, 15},
+				{APPLY_REFLECT_MELEE, 10}, {APPLY_IMMUNE_STUN, 1},
+				{APPLY_IMMUNE_SLOW, 1}, {APPLY_ATTBONUS_HUMAN, 50},
+				{APPLY_MAX_HP, 4000}});
+			for (const uint8_t slot : {WEAR_BODY, WEAR_FOOTS, WEAR_NECK, WEAR_EAR})
+				ApplyFullAttributes(owner, slot, {
+					{APPLY_RESIST_SWORD, 15}, {APPLY_RESIST_TWOHAND, 15},
+					{APPLY_RESIST_DAGGER, 15}, {APPLY_RESIST_BELL, 15},
+					{APPLY_RESIST_FAN, 15}, {APPLY_ATTBONUS_HUMAN, 10},
+					{APPLY_MAX_HP, 4000}});
+			ApplyFullAttributes(owner, WEAR_WRIST, {
+				{APPLY_MAX_HP, 2500}, {APPLY_ATTBONUS_HUMAN, 10},
+				{APPLY_PENETRATE_PCT, 12}, {APPLY_STEAL_HP, 10},
+				{APPLY_RESIST_MAGIC, 15}, {APPLY_ATTBONUS_HUMAN, 10},
+				{APPLY_MAX_HP, 4000}});
+			ApplyFullAttributes(owner, WEAR_PENDANT, {
+				{APPLY_RESIST_MEZZIUOMINI, 10}, {APPLY_ATTBONUS_HUMAN, 10},
+				{APPLY_CRITICAL_PCT, 15}});
 		}
 		break;
 	}
@@ -4815,10 +4769,11 @@ ACMD (do_use_item)
 	int cell = 0;
 	str_to_number(cell, arg1);
 
-	LPITEM item = ItemSystem::GetInventoryItemPtr(AIHelpers::EcsOf(ch), cell);
-	if (item)
+	const entt::entity owner = AIHelpers::EcsOf(ch);
+	const entt::entity item = ItemSystem::GetInventoryItem(owner, cell);
+	if (ItemSystem::IsValidItem(item))
 	{
-		ch->UseItem(TItemPos (INVENTORY, cell));
+		ItemSystem::UseItemEcs(owner, item);
 	}
 #ifdef TEXTS_IMPROVEMENT
 	else {

@@ -10,9 +10,12 @@
 #include "../../char_manager.h"
 #include "../../config.h"
 #include "../../desc.h"
+#include "../../desc_client.h"
+#include "../../db.h"
 #include "../../guild.h"
 #include "../../guild_manager.h"
 #include "../../item.h"
+#include "../../log.h"
 #include "../../marriage.h"
 #include "../../packet.h"
 #include "../../party.h"
@@ -64,6 +67,60 @@ CExchange* GetExchange(entt::entity e)
 
     const auto* exchange = g_registry.try_get<ecs::ExchangeRef>(e);
     return exchange ? exchange->exchange : nullptr;
+}
+
+bool CanDeposit(entt::entity e)
+{
+    if (e == entt::null || !g_registry.valid(e))
+        return false;
+
+    const auto* state = g_registry.try_get<ecs::GuildDepositState>(e);
+    return !state || state->nextAllowedPulse == 0 ||
+        state->nextAllowedPulse < thecore_pulse();
+}
+
+void UpdateDepositPulse(entt::entity e)
+{
+    if (e == entt::null || !g_registry.valid(e))
+        return;
+
+    auto& state = g_registry.get_or_emplace<ecs::GuildDepositState>(e);
+    state.nextAllowedPulse = thecore_pulse() + PASSES_PER_SEC(60 * 5);
+    g_registry.emplace_or_replace<ecs::DirtyTag>(e);
+}
+
+bool DepositGuildMoney(entt::entity character, CGuild& guild, int gold)
+{
+    if (!CanDeposit(character))
+    {
+#ifdef TEXTS_IMPROVEMENT
+        ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 493, "");
+#endif
+        return false;
+    }
+
+    if (gold <= 0 || ecs::PointSystem::GetGold(character) < gold)
+        return false;
+
+    ecs::PointSystem::Change(character, POINT_GOLD, -gold);
+
+    TPacketGDGuildMoney packet{};
+    packet.dwGuild = guild.GetID();
+    packet.iGold = gold;
+    db_clientdesc->DBPacket(
+        HEADER_GD_GUILD_DEPOSIT_MONEY, 0, &packet, sizeof(packet));
+
+    char hint[65];
+    snprintf(hint, sizeof(hint), "%u %s", guild.GetID(), guild.GetName());
+    LogManager::instance().CharLog(
+        character, gold, "GUILD_DEPOSIT", hint);
+    UpdateDepositPulse(character);
+
+    LOG_INFO("GUILD: DEPOSIT {}:{} player {}[{}] gold {}",
+        guild.GetName(), guild.GetID(),
+        ecs::PlayerRuntime::GetName(character).data(),
+        ecs::PlayerRuntime::GetPlayerID(character), gold);
+    return true;
 }
 
 } // namespace ecs::SocialSystem

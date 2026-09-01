@@ -18,10 +18,12 @@ struct LegacyItemPtr {
 struct ItemIdentity {
     uint32_t id { 0 };
     uint32_t vnum { 0 };
+    uint32_t originalVnum { 0 };
     uint32_t vid { 0 };
     uint32_t maskVnum { 0 };
     uint32_t sigVnum { 0 };
     int32_t specialGroup { 0 };
+    uint32_t transmutationVnum { 0 };
 };
 
 struct ItemLocation {

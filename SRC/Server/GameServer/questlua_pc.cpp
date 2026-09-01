@@ -9,6 +9,8 @@
 #include "ecs/systems/MountSystem.hpp"
 #include "ecs/systems/MovementSystem.hpp"
 #include "ecs/systems/NetworkSyncSystem.hpp"
+#include "ecs/systems/ActivitySystem.hpp"
+#include "ecs/systems/SkillSystem.hpp"
 #include "ecs/AIHelpers.hpp"
 
 #include "config.h"
@@ -38,6 +40,7 @@
 #include "ecs/EntityFactory.hpp"
 #include "ecs/events.hpp"
 #include "ecs/systems/ItemSystem.hpp"
+#include "ecs/components/appearance_components.hpp"
 
 
 #ifdef ENABLE_NEWSTUFF
@@ -96,16 +99,7 @@ namespace quest
 			lua_pushboolean(L, bHasMasterSkill ? 1 : 0);
 			return 1;
 		}
-		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
-		auto* ch = ecs::LegacyCharOf(chEntity);
-		bool bHasMasterSkill = false;
-		for (int i=0; ch && i< SKILL_MAX_NUM; i++)
-			if (ch->GetSkillMasterType(i) >= SKILL_MASTER && ch->GetSkillLevel(i) >= 21)
-			{
-				bHasMasterSkill = true;
-				break;
-			}
-		lua_pushboolean(L, bHasMasterSkill ? 1 : 0);
+		lua_pushboolean(L, 0);
 		return 1;
 	}
 
@@ -114,8 +108,7 @@ namespace quest
         // migrated from CHARACTER::RemoveAffect
         // DUAL-PATH: legacy only during migration window
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
-		auto* ch = ecs::LegacyCharOf(chEntity);
-		AffectSystem::RemoveAffect(AIHelpers::EcsOf(ch), AFFECT_SKILL_NO_BOOK_DELAY);
+		AffectSystem::RemoveAffect(chEntity, AFFECT_SKILL_NO_BOOK_DELAY);
 		return 0;
 	}
 
@@ -138,8 +131,7 @@ namespace quest
 			return 1;
 		}
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
-		auto* ch = ecs::LegacyCharOf(chEntity);
-		lua_pushboolean(L, ch && AffectSystem::FindAffect(AIHelpers::EcsOf(ch), AFFECT_SKILL_NO_BOOK_DELAY) ? 1 : 0);
+		lua_pushboolean(L, AffectSystem::FindAffect(chEntity, AFFECT_SKILL_NO_BOOK_DELAY) ? 1 : 0);
 		return 1;
 	}
 
@@ -252,8 +244,7 @@ namespace quest
 			return 3;
 		}
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
-		auto* ch = ecs::LegacyCharOf(chEntity);
-		const uint8_t empireIndex = ch ? ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(ch)) : 0;
+		const uint8_t empireIndex = ecs::PlayerRuntime::GetEmpire(chEntity);
 		lua_pushnumber(L, g_start_map[empireIndex]);
 		lua_pushnumber(L, g_start_position[empireIndex][0] / 100);
 		lua_pushnumber(L, g_start_position[empireIndex][1] / 100);
@@ -343,9 +334,8 @@ namespace quest
             g_registry.emplace_or_replace<ecs::DirtyTag>(e);
         }
         const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
-        auto* ch = ecs::LegacyCharOf(chEntity);
-        if (ch)
-            ecs::MovementSystem::WarpSet(AIHelpers::EcsOf(ch), warpX, warpY);
+        if (chEntity != entt::null && g_registry.valid(chEntity))
+            ecs::MovementSystem::WarpSet(chEntity, warpX, warpY);
         return 0;
     }
 
@@ -365,9 +355,8 @@ namespace quest
             }
         }
         const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
-        auto* ch = ecs::LegacyCharOf(chEntity);
-        if (ch)
-            ecs::MovementSystem::ExitToSavedLocation(AIHelpers::EcsOf(ch));
+        if (chEntity != entt::null && g_registry.valid(chEntity))
+            ecs::MovementSystem::ExitToSavedLocation(chEntity);
         return 0;
     }
 
@@ -380,9 +369,7 @@ namespace quest
 			lua_pushboolean(L, dungeon->dungeon ? 1 : 0);
 			return 1;
 		}
-		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
-		auto* ch = ecs::LegacyCharOf(chEntity);
-		lua_pushboolean(L, (ch && ch->GetDungeon()) ? 1 : 0);
+		lua_pushboolean(L, 0);
 		return 1;
 	}
 
@@ -396,16 +383,15 @@ namespace quest
 			return 1;
 		}
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
-		auto* ch = ecs::LegacyCharOf(chEntity);
-		lua_pushboolean(L, (ch && ecs::SocialSystem::GetGuild(AIHelpers::EcsOf(ch))) ? 1 : 0);
+		lua_pushboolean(L, ecs::SocialSystem::GetGuild(chEntity) ? 1 : 0);
 		return 1;
 	}
 
 	ALUA(pc_getguild)
 	{
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
-		auto* ch = ecs::LegacyCharOf(chEntity);
-		lua_pushnumber(L, ecs::SocialSystem::GetGuild(AIHelpers::EcsOf(ch)) ? ecs::SocialSystem::GetGuild(AIHelpers::EcsOf(ch))->GetID() : 0);
+		CGuild* guild = ecs::SocialSystem::GetGuild(chEntity);
+		lua_pushnumber(L, guild ? guild->GetID() : 0);
 		return 1;
 	}
 
@@ -420,20 +406,18 @@ namespace quest
 			return 1;
 		}
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
-		auto* ch = ecs::LegacyCharOf(chEntity);
-		CGuild * g = ch ? ecs::SocialSystem::GetGuild(AIHelpers::EcsOf(ch)) : nullptr;
-		lua_pushboolean(L, (g && ch && (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))) == g->GetMasterPID()) ? 1 : 0);
+		CGuild * g = ecs::SocialSystem::GetGuild(chEntity);
+		lua_pushboolean(L, (g && ecs::PlayerRuntime::GetPlayerID(chEntity) == g->GetMasterPID()) ? 1 : 0);
 		return 1;
 	}
 
 	ALUA(pc_destroy_guild)
 	{
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
-		auto* ch = ecs::LegacyCharOf(chEntity);
-		CGuild * g = ecs::SocialSystem::GetGuild(AIHelpers::EcsOf(ch));
+		CGuild * g = ecs::SocialSystem::GetGuild(chEntity);
 
 		if (g)
-			g->RequestDisband((ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))));
+			g->RequestDisband(ecs::PlayerRuntime::GetPlayerID(chEntity));
 
 		return 0;
 	}
@@ -441,11 +425,10 @@ namespace quest
 	ALUA(pc_remove_from_guild)
 	{
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
-		auto* ch = ecs::LegacyCharOf(chEntity);
-		CGuild * g = ecs::SocialSystem::GetGuild(AIHelpers::EcsOf(ch));
+		CGuild * g = ecs::SocialSystem::GetGuild(chEntity);
 
 		if (g)
-			g->RequestRemoveMember((ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))));
+			g->RequestRemoveMember(ecs::PlayerRuntime::GetPlayerID(chEntity));
 
 		return 0;
 	}
@@ -472,11 +455,11 @@ namespace quest
             g_registry.emplace_or_replace<ecs::DirtyTag>(e);
         }
         const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
-        auto* ch = ecs::LegacyCharOf(chEntity);
-        if (ch)
+        if (chEntity != entt::null && g_registry.valid(chEntity))
         {
-            DBManager::instance().SendMoneyLog(MONEY_LOG_QUEST, (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))), iAmount);
-            ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_GOLD, iAmount, true);
+            DBManager::instance().SendMoneyLog(
+                MONEY_LOG_QUEST, ecs::PlayerRuntime::GetPlayerID(chEntity), iAmount);
+            ecs::PointSystem::Change(chEntity, POINT_GOLD, iAmount, true);
         }
         return 0;
     }
@@ -522,28 +505,19 @@ namespace quest
 
 	ALUA(pc_give_item_from_special_item_group)
 	{
-        // migrated from CHARACTER::GiveItemFromSpecialItemGroup
-        // DUAL-PATH: legacy only - LPITEM not ECS-migrated in this phase
 		luaL_checknumber(L, 1);
 
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
-
-		auto* ch = ecs::LegacyCharOf(chEntity);
-		if (!ch)
+		if (chEntity == entt::null || !g_registry.valid(chEntity))
 			return 0;
 
-		uint32_t dwGroupVnum = (uint32_t) lua_tonumber(L,1);
-
-		std::vector <uint32_t> dwVnums;
-		std::vector <uint32_t> dwCounts;
-		std::vector<entt::entity> item_gets;
-		int count = 0;
-
-		ch->GiveItemFromSpecialItemGroup(dwGroupVnum, dwVnums, dwCounts, item_gets, count);
+		const uint32_t dwGroupVnum = static_cast<uint32_t>(lua_tonumber(L, 1));
+		const ItemSystem::SpecialItemGroupResult result =
+			ItemSystem::GiveItemFromSpecialItemGroup(chEntity, dwGroupVnum);
 #ifdef TEXTS_IMPROVEMENT
-		for (int i = 0; i < count; i++) {
-			if (item_gets[i] == entt::null) {
-				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 102, "%d", dwCounts[i]);
+		for (int i = 0; i < result.count; ++i) {
+			if (result.itemEntities[i] == entt::null) {
+				ecs::ChatSystem::SendNew(chEntity, CHAT_TYPE_INFO, 102, "%d", result.itemCounts[i]);
 			}
 		}
 #endif
@@ -552,36 +526,22 @@ namespace quest
 
 	ALUA(pc_enough_inventory)
 	{
-        // migrated from CHARACTER::GetEmptyInventory
-        // DUAL-PATH: legacy only - LPITEM not ECS-migrated in this phase
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
-		auto* ch = ecs::LegacyCharOf(chEntity);
 		if (!lua_isnumber(L, 1))
 		{
 			lua_pushboolean(L, 0);
 			return 1;
 		}
 
-		uint32_t item_vnum = static_cast<uint32_t>(lua_tonumber(L, 1));
-		TItemTable * pTable = ITEM_MANAGER::instance().GetTable(item_vnum);
-		if (!pTable)
-		{
-			lua_pushboolean(L, 0);
-			return 1;
-		}
-
-		bool bEnoughInventoryForItem = ch->GetEmptyInventory(pTable->bSize) != -1;
-		lua_pushboolean(L, bEnoughInventoryForItem);
+		const uint32_t itemVnum = static_cast<uint32_t>(lua_tonumber(L, 1));
+		lua_pushboolean(L, ItemSystem::HasInventorySpaceForItemVnum(chEntity, itemVnum));
 		return 1;
 	}
 
 	ALUA(pc_give_item)
 	{
-        // migrated from CHARACTER::AutoGiveItem
-        // DUAL-PATH: legacy only - LPITEM not ECS-migrated in this phase
 		PC* pPC = CQuestManager::instance().GetCurrentPC();
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
-		auto* ch = ecs::LegacyCharOf(chEntity);
 		if (!lua_isstring(L, 1) || !(lua_isstring(L, 2)||lua_isnumber(L, 2)))
 		{
 			sys_err("QUEST : wrong argument");
@@ -613,16 +573,13 @@ namespace quest
 
 		pPC->GiveItem(lua_tostring(L, 1), dwVnum, icount);
 
-		LogManager::instance().QuestRewardLog(pPC->GetCurrentQuestName().c_str(), (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))), (ecs::PointSystem::GetLevel(AIHelpers::EcsOf(ch))), dwVnum, icount);
+		LogManager::instance().QuestRewardLog(pPC->GetCurrentQuestName().c_str(), ecs::PlayerRuntime::GetPlayerID(chEntity), ecs::PointSystem::GetLevel(chEntity), dwVnum, icount);
 		return 0;
 	}
 
 	ALUA(pc_give_or_drop_item)
 	{
-        // migrated from CHARACTER::AutoGiveItem
-        // DUAL-PATH: legacy only - LPITEM not ECS-migrated in this phase
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
-		auto* ch = ecs::LegacyCharOf(chEntity);
 		if (!lua_isstring(L, 1) && !lua_isnumber(L, 1))
 		{
 			sys_err("QUEST Make item call error : wrong argument");
@@ -656,18 +613,18 @@ namespace quest
 			}
 		}
 
-		LOG_INFO("QUEST [REWARD] item {} to {}", lua_tostring(L, 1), ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data());
+		LOG_INFO("QUEST [REWARD] item {} to {}", lua_tostring(L, 1), ecs::PlayerRuntime::GetName(chEntity).data());
 
 		PC* pPC = CQuestManager::instance().GetCurrentPC();
 
-		LogManager::instance().QuestRewardLog(pPC->GetCurrentQuestName().c_str(), (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))), (ecs::PointSystem::GetLevel(AIHelpers::EcsOf(ch))), dwVnum, icount);
+		LogManager::instance().QuestRewardLog(pPC->GetCurrentQuestName().c_str(), ecs::PlayerRuntime::GetPlayerID(chEntity), ecs::PointSystem::GetLevel(chEntity), dwVnum, icount);
 
 		const entt::entity item = ItemSystem::AutoGiveItemEcs(chEntity, dwVnum, icount);
 		const uint32_t itemId = ItemSystem::GetItemID(item);
 
 		if ( dwVnum >= 80003 && dwVnum <= 80007 && itemId != 0 )
 		{
-			LogManager::instance().GoldBarLog((ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))), itemId, QUEST, "quest: give_item2");
+			LogManager::instance().GoldBarLog(ecs::PlayerRuntime::GetPlayerID(chEntity), itemId, QUEST, "quest: give_item2");
 		}
 
 		if (item != entt::null)
@@ -680,8 +637,6 @@ namespace quest
 #ifdef ENABLE_DICE_SYSTEM
 	ALUA(pc_give_or_drop_item_with_dice)
 	{
-        // migrated from CHARACTER::AutoGiveItem
-        // DUAL-PATH: legacy only - LPITEM not ECS-migrated in this phase
 		if (!lua_isstring(L, 1) && !lua_isnumber(L, 1))
 		{
 			sys_err("QUEST Make item call error : wrong argument");
@@ -717,33 +672,31 @@ namespace quest
 
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
 
-		auto* ch = ecs::LegacyCharOf(chEntity);
-		LPITEM item = ITEM_MANAGER::instance().CreateItem(dwVnum, icount);
-		if (ecs::SocialSystem::GetParty(AIHelpers::EcsOf(ch)))
+		const entt::entity item = ItemSystem::CreateItemEcs(dwVnum, icount);
+		if (chEntity == entt::null || !g_registry.valid(chEntity) ||
+			!ItemSystem::IsValidItem(item))
 		{
-			FPartyDropDiceRoll f(EntityFactory::CreateItemEntity(g_registry, item), ch);
-			f.Process(nullptr);
-			f.GetItemOwner()->AutoGiveItem(item);
+			lua_pushnumber(L, 0);
+			return 1;
 		}
-		else
-			ch->AutoGiveItem(item);
 
+		entt::entity recipient = chEntity;
+		if (ecs::SocialSystem::GetParty(chEntity))
+			recipient = ItemSystem::RollPartyDropOwnership(item, chEntity);
+		ItemSystem::AutoGiveItem(recipient, item);
 
-		LOG_INFO("QUEST [REWARD] item {} to {}", lua_tostring(L, 1), ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data());
+		LOG_INFO("QUEST [REWARD] item {} to {}", lua_tostring(L, 1), ecs::PlayerRuntime::GetName(recipient).data());
 
-		LogManager::instance().QuestRewardLog(CQuestManager::instance().GetCurrentPC()->GetCurrentQuestName().c_str(), (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))), (ecs::PointSystem::GetLevel(AIHelpers::EcsOf(ch))), dwVnum, icount);
+		LogManager::instance().QuestRewardLog(CQuestManager::instance().GetCurrentPC()->GetCurrentQuestName().c_str(), ecs::PlayerRuntime::GetPlayerID(recipient), ecs::PointSystem::GetLevel(recipient), dwVnum, icount);
 
-		lua_pushnumber(L, (item) ? ItemSystem::GetItemID(EntityFactory::CreateItemEntity(g_registry, item)) : 0);
+		lua_pushnumber(L, ItemSystem::GetItemID(item));
 		return 1;
 	}
 #endif
 
 	ALUA(pc_give_or_drop_item_and_select)
 	{
-        // migrated from CHARACTER::AutoGiveItem
-        // DUAL-PATH: legacy only - LPITEM not ECS-migrated in this phase
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
-		auto* ch = ecs::LegacyCharOf(chEntity);
 		if (!lua_isstring(L, 1) && !lua_isnumber(L, 1))
 		{
 			sys_err("QUEST Make item call error : wrong argument");
@@ -773,11 +726,11 @@ namespace quest
 			}
 		}
 
-		LOG_INFO("QUEST [REWARD] item {} to {}", lua_tostring(L, 1), ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data());
+		LOG_INFO("QUEST [REWARD] item {} to {}", lua_tostring(L, 1), ecs::PlayerRuntime::GetName(chEntity).data());
 
 		PC* pPC = CQuestManager::instance().GetCurrentPC();
 
-		LogManager::instance().QuestRewardLog(pPC->GetCurrentQuestName().c_str(), (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))), (ecs::PointSystem::GetLevel(AIHelpers::EcsOf(ch))), dwVnum, icount);
+		LogManager::instance().QuestRewardLog(pPC->GetCurrentQuestName().c_str(), ecs::PlayerRuntime::GetPlayerID(chEntity), ecs::PointSystem::GetLevel(chEntity), dwVnum, icount);
 
 		const entt::entity item = ItemSystem::AutoGiveItemEcs(chEntity, dwVnum, icount);
 		const uint32_t itemId = ItemSystem::GetItemID(item);
@@ -787,7 +740,7 @@ namespace quest
 
 		if ( dwVnum >= 80003 && dwVnum <= 80007 && itemId != 0 )
 		{
-			LogManager::instance().GoldBarLog((ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))), itemId, QUEST, "quest: give_item2");
+			LogManager::instance().GoldBarLog(ecs::PlayerRuntime::GetPlayerID(chEntity), itemId, QUEST, "quest: give_item2");
 		}
 
 		return 0;
@@ -803,8 +756,7 @@ namespace quest
 			return 1;
 		}
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
-		auto* ch = ecs::LegacyCharOf(chEntity);
-		lua_pushnumber(L, ch ? ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)) : 0);
+		lua_pushnumber(L, ecs::PlayerRuntime::GetMapIndex(chEntity));
 		return 1;
 	}
 
@@ -818,8 +770,7 @@ namespace quest
 			return 1;
 		}
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
-		auto* ch = ecs::LegacyCharOf(chEntity);
-		lua_pushnumber(L, ch ? ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(ch)) / 100 : 0);
+		lua_pushnumber(L, ecs::PlayerRuntime::GetX(chEntity) / 100);
 		return 1;
 	}
 
@@ -833,8 +784,7 @@ namespace quest
 			return 1;
 		}
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
-		auto* ch = ecs::LegacyCharOf(chEntity);
-		lua_pushnumber(L, ch ? ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(ch)) / 100 : 0);
+		lua_pushnumber(L, ecs::PlayerRuntime::GetY(chEntity) / 100);
 		return 1;
 	}
 
@@ -849,15 +799,10 @@ namespace quest
 			lua_pushnumber(L, pMap ? ((pos->x - pMap->m_setting.iBaseX) / 100) : (pos->x / 100));
 			return 1;
 		}
-		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
-		auto* ch = ecs::LegacyCharOf(chEntity);
-		if (!ch)
-		{
-			lua_pushnumber(L, 0);
-			return 1;
-		}
-		LPSECTREE_MAP pMap = SECTREE_MANAGER::instance().GetMap(ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)));
-		lua_pushnumber(L, pMap ? ((ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(ch)) - pMap->m_setting.iBaseX) / 100) : (ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(ch)) / 100));
+		const entt::entity character = CQuestManager::instance().GetCurrentPCEntity();
+		LPSECTREE_MAP pMap = SECTREE_MANAGER::instance().GetMap(ecs::PlayerRuntime::GetMapIndex(character));
+		const int32_t x = ecs::PlayerRuntime::GetX(character);
+		lua_pushnumber(L, pMap ? ((x - pMap->m_setting.iBaseX) / 100) : (x / 100));
 		return 1;
 	}
 
@@ -872,24 +817,18 @@ namespace quest
 			lua_pushnumber(L, pMap ? ((pos->y - pMap->m_setting.iBaseY) / 100) : (pos->y / 100));
 			return 1;
 		}
-		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
-		auto* ch = ecs::LegacyCharOf(chEntity);
-		if (!ch)
-		{
-			lua_pushnumber(L, 0);
-			return 1;
-		}
-		LPSECTREE_MAP pMap = SECTREE_MANAGER::instance().GetMap(ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)));
-		lua_pushnumber(L, pMap ? ((ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(ch)) - pMap->m_setting.iBaseY) / 100) : (ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(ch)) / 100));
+		const entt::entity character = CQuestManager::instance().GetCurrentPCEntity();
+		LPSECTREE_MAP pMap = SECTREE_MANAGER::instance().GetMap(ecs::PlayerRuntime::GetMapIndex(character));
+		const int32_t y = ecs::PlayerRuntime::GetY(character);
+		lua_pushnumber(L, pMap ? ((y - pMap->m_setting.iBaseY) / 100) : (y / 100));
 		return 1;
 	}
 
 	ALUA(pc_count_item)
 	{
-        // migrated from CHARACTER::CountSpecifyItem
-        // DUAL-PATH: legacy only - LPITEM not ECS-migrated in this phase
+		const entt::entity character = CQuestManager::instance().GetCurrentPCEntity();
 		if (lua_isnumber(L, -1))
-			lua_pushnumber(L,CQuestManager::instance().GetCurrentCharacterPtr()->CountSpecifyItem((uint32_t)lua_tonumber(L, -1)));
+			lua_pushnumber(L, ItemSystem::CountItem(character, static_cast<uint32_t>(lua_tonumber(L, -1))));
 		else if (lua_isstring(L, -1))
 		{
 			uint32_t item_vnum;
@@ -901,7 +840,7 @@ namespace quest
 			}
 			else
 			{
-				lua_pushnumber(L, CQuestManager::instance().GetCurrentCharacterPtr()->CountSpecifyItem(item_vnum));
+				lua_pushnumber(L, ItemSystem::CountItem(character, item_vnum));
 			}
 		}
 		else
@@ -912,8 +851,7 @@ namespace quest
 
 	ALUA(pc_remove_item)
 	{
-        // migrated from CHARACTER::RemoveSpecifyItem
-        // DUAL-PATH: legacy only - LPITEM not ECS-migrated in this phase
+		const entt::entity character = CQuestManager::instance().GetCurrentPCEntity();
 		if (lua_gettop(L) == 1)
 		{
 			uint32_t item_vnum;
@@ -936,8 +874,8 @@ namespace quest
 				return 0;
 			}
 
-			LOG_INFO("QUEST remove a item vnum {} of {}[{}]", item_vnum, ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(CQuestManager::instance().GetCurrentCharacterPtr())).data(), ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(CQuestManager::instance().GetCurrentCharacterPtr())));
-			CQuestManager::instance().GetCurrentCharacterPtr()->RemoveSpecifyItem(item_vnum);
+			LOG_INFO("QUEST remove a item vnum {} of {}[{}]", item_vnum, ecs::PlayerRuntime::GetName(character).data(), ecs::PlayerRuntime::GetPlayerID(character));
+			ItemSystem::RemoveSpecifyItemEcs(character, item_vnum);
 		}
 		else if (lua_gettop(L) == 2)
 		{
@@ -962,9 +900,10 @@ namespace quest
 			}
 
 			int32_t item_count = static_cast<int32_t>(lua_tonumber(L, 2));
-			LOG_INFO("QUEST remove items(vnum {}) count {} of {}[{}]", item_vnum, item_count, ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(CQuestManager::instance().GetCurrentCharacterPtr())).data(), ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(CQuestManager::instance().GetCurrentCharacterPtr())));
+			LOG_INFO("QUEST remove items(vnum {}) count {} of {}[{}]", item_vnum, item_count, ecs::PlayerRuntime::GetName(character).data(), ecs::PlayerRuntime::GetPlayerID(character));
 
-			CQuestManager::instance().GetCurrentCharacterPtr()->RemoveSpecifyItem(item_vnum, item_count);
+			if (item_count > 0)
+				ItemSystem::RemoveSpecifyItemEcs(character, item_vnum, static_cast<uint32_t>(item_count));
 		}
 		return 0;
 	}
@@ -972,12 +911,8 @@ namespace quest
 	ALUA(pc_get_leadership)
 	{
 		// migrated from CHARACTER::GetLeadershipSkillLevel
-		// TODO Phase 8: decompose leadership into a dedicated ECS stat field
 		entt::entity e = CQuestManager::instance().GetPCEntity(L);
-		(void)e;
-		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
-		auto* ch = ecs::LegacyCharOf(chEntity);
-		lua_pushnumber(L, ch ? ch->GetLeadershipSkillLevel() : 0);
+		lua_pushnumber(L, SkillSystem::GetSkillLevel(e, SKILL_LEADERSHIP));
 		return 1;
 	}
 
@@ -1000,8 +935,7 @@ namespace quest
 			return 1;
 		}
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
-		auto* ch = ecs::LegacyCharOf(chEntity);
-		lua_pushnumber(L, ch ? ecs::PointSystem::GetReal(AIHelpers::EcsOf(ch), POINT_PLAYTIME) : 0);
+		lua_pushnumber(L, ecs::PointSystem::GetReal(chEntity, POINT_PLAYTIME));
 		return 1;
 	}
 
@@ -1015,8 +949,7 @@ namespace quest
 			return 1;
 		}
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
-		auto* ch = ecs::LegacyCharOf(chEntity);
-		lua_pushnumber(L, ch ? ((ch)->GetLegacyVID()) : 0);
+		lua_pushnumber(L, ecs::PlayerRuntime::GetPacketVID(chEntity));
 		return 1;
 	}
 
@@ -1030,8 +963,7 @@ namespace quest
 			return 1;
 		}
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
-		auto* ch = ecs::LegacyCharOf(chEntity);
-		lua_pushstring(L, ch ? ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data() : "");
+		lua_pushstring(L, ecs::PlayerRuntime::GetName(chEntity).data());
 		return 1;
 	}
 	ALUA(pc_get_next_exp)
@@ -1043,9 +975,7 @@ namespace quest
 			lua_pushnumber(L, exp->next);
 			return 1;
 		}
-		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
-		auto* ch = ecs::LegacyCharOf(chEntity);
-		lua_pushnumber(L, ch ? ch->GetNextExp() : 0);
+		lua_pushnumber(L, 0);
 		return 1;
 	}
 
@@ -1058,9 +988,7 @@ namespace quest
 			lua_pushnumber(L, exp->current);
 			return 1;
 		}
-		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
-		auto* ch = ecs::LegacyCharOf(chEntity);
-		lua_pushnumber(L, ch ? ch->GetExp() : 0);
+		lua_pushnumber(L, 0);
 		return 1;
 	}
 
@@ -1074,8 +1002,7 @@ namespace quest
 			return 1;
 		}
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
-		auto* ch = ecs::LegacyCharOf(chEntity);
-		lua_pushnumber(L, ch ? (ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(ch))) : 0);
+		lua_pushnumber(L, ecs::PlayerRuntime::GetRaceNum(chEntity));
 		return 1;
 	}
 
@@ -1084,25 +1011,19 @@ namespace quest
         // migrated from CHARACTER::ChangeSex
         // DUAL-PATH: ECS update + legacy call during migration window
         entt::entity e = CQuestManager::instance().GetPCEntity(L);
-        const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
-        auto* ch = ecs::LegacyCharOf(chEntity);
-        if (!ch) {
+        if (e == entt::null || !g_registry.valid(e)) {
             lua_pushnumber(L, 0);
             return 1;
         }
-        LPITEM item;
-        if (item = ItemSystem::GetWear(AIHelpers::EcsOf(ch), WEAR_COSTUME_BODY)) {
+        if (ItemSystem::IsValidItem(ItemSystem::GetWearItem(e, WEAR_COSTUME_BODY))) {
             lua_pushnumber(L, 2);
             return 1;
-        } else if (item = ItemSystem::GetWear(AIHelpers::EcsOf(ch), WEAR_COSTUME_HAIR)) {
+        }
+        if (ItemSystem::IsValidItem(ItemSystem::GetWearItem(e, WEAR_COSTUME_HAIR))) {
             lua_pushnumber(L, 3);
             return 1;
         }
-        const int result = ch->ChangeSex();
-        if (auto* race = ECS_TryGet<ecs::RaceComponent>(e))
-            race->value = static_cast<uint16_t>((ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(ch))));
-        if (e != entt::null && g_registry.valid(e))
-            g_registry.emplace_or_replace<ecs::DirtyTag>(e);
+        const int result = ecs::PlayerRuntime::ChangeSex(e) ? 1 : 0;
         lua_pushnumber(L, result);
         return 1;
     }
@@ -1111,14 +1032,12 @@ namespace quest
 	{
 		// migrated from CHARACTER::GetJob
 		entt::entity e = CQuestManager::instance().GetPCEntity(L);
-		if (const auto* race = ECS_TryGet<ecs::RaceComponent>(e))
+		if (const auto* points = ECS_TryGet<ecs::CharacterPoints>(e))
 		{
-			lua_pushnumber(L, race->value);
+			lua_pushnumber(L, points->base.job);
 			return 1;
 		}
-		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
-		auto* ch = ecs::LegacyCharOf(chEntity);
-		lua_pushnumber(L, ch ? ch->GetJob() : 0);
+		lua_pushnumber(L, 0);
 		return 1;
 	}
 
@@ -1131,9 +1050,7 @@ namespace quest
 			lua_pushnumber(L, mana->max);
 			return 1;
 		}
-		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
-		auto* ch = ecs::LegacyCharOf(chEntity);
-		lua_pushnumber(L, ch ? ecs::PointSystem::GetMaxSP(AIHelpers::EcsOf(ch)) : 0);
+		lua_pushnumber(L, 0);
 		return 1;
 	}
 
@@ -1146,9 +1063,7 @@ namespace quest
 			lua_pushnumber(L, mana->current);
 			return 1;
 		}
-		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
-		auto* ch = ecs::LegacyCharOf(chEntity);
-		lua_pushnumber(L, ch ? ch->GetSP() : 0);
+		lua_pushnumber(L, 0);
 		return 1;
 	}
 
@@ -1168,30 +1083,24 @@ namespace quest
 			lua_pushboolean(L, 0);
 			return 1;
 		}
-		entt::entity e = CQuestManager::instance().GetPCEntity(L);
-		if (auto* mana = ECS_TryGet<ecs::Mana>(e))
+		const entt::entity e = CQuestManager::instance().GetPCEntity(L);
+		if (e == entt::null || !g_registry.valid(e))
 		{
-			const int64_t next = static_cast<int64_t>(mana->current) + val;
-			if (next >= 0)
-			{
-				mana->current = static_cast<int32_t>(std::min<int64_t>(mana->max, next));
-				g_registry.emplace_or_replace<ecs::DirtyTag>(e);
-			}
+			lua_pushboolean(L, 0);
+			return 1;
 		}
-		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
-		auto* ch = ecs::LegacyCharOf(chEntity);
 		if (val > 0)
 		{
-			if (ch) ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_SP, val);
+			ecs::PointSystem::Change(e, POINT_SP, val);
 		}
 		else if (val < 0)
 		{
-			if (ch && ch->GetSP() < -val)
+			if (ecs::PointSystem::Get(e, POINT_SP) < -val)
 			{
 				lua_pushboolean(L, 0);
 				return 1;
 			}
-			if (ch) ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_SP, val);
+			ecs::PointSystem::Change(e, POINT_SP, val);
 		}
 		lua_pushboolean(L, 1);
 		return 1;
@@ -1206,9 +1115,7 @@ namespace quest
 			lua_pushnumber(L, health->max);
 			return 1;
 		}
-		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
-		auto* ch = ecs::LegacyCharOf(chEntity);
-		lua_pushnumber(L, ch ? ecs::PointSystem::GetMaxHP(AIHelpers::EcsOf(ch)) : 0);
+		lua_pushnumber(L, 0);
 		return 1;
 	}
 
@@ -1221,9 +1128,7 @@ namespace quest
 			lua_pushnumber(L, health->current);
 			return 1;
 		}
-		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
-		auto* ch = ecs::LegacyCharOf(chEntity);
-		lua_pushnumber(L, ch ? ch->GetHP() : 0);
+		lua_pushnumber(L, 0);
 		return 1;
 	}
 
@@ -1236,9 +1141,7 @@ namespace quest
 			lua_pushnumber(L, level->value);
 			return 1;
 		}
-		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
-		auto* ch = ecs::LegacyCharOf(chEntity);
-		lua_pushnumber(L, ch ? (ecs::PointSystem::GetLevel(AIHelpers::EcsOf(ch))) : 0);
+		lua_pushnumber(L, 0);
 		return 1;
 	}
 
@@ -1299,35 +1202,17 @@ namespace quest
 
 	ALUA(pc_get_weapon)
 	{
-		// migrated from CHARACTER::GetWear
-		entt::entity e = CQuestManager::instance().GetPCEntity(L);
-		if (e != entt::null && g_registry.valid(e))
-		{
-			const entt::entity item = ItemSystem::GetWearItem(e, WEAR_WEAPON);
-			lua_pushnumber(L, item != entt::null ? ItemSystem::GetItemVnum(item) : 0);
-			return 1;
-		}
-		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
-		auto* ch = ecs::LegacyCharOf(chEntity);
-		LPITEM item = ch ? ItemSystem::GetWear(AIHelpers::EcsOf(ch), WEAR_WEAPON) : nullptr;
-		lua_pushnumber(L, item ? ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, item)) : 0);
+		const entt::entity character = CQuestManager::instance().GetPCEntity(L);
+		const entt::entity item = ItemSystem::GetWearItem(character, WEAR_WEAPON);
+		lua_pushnumber(L, ItemSystem::IsValidItem(item) ? ItemSystem::GetItemVnum(item) : 0);
 		return 1;
 	}
 
 	ALUA(pc_get_armor)
 	{
-		// migrated from CHARACTER::GetWear
-		entt::entity e = CQuestManager::instance().GetPCEntity(L);
-		if (e != entt::null && g_registry.valid(e))
-		{
-			const entt::entity item = ItemSystem::GetWearItem(e, WEAR_BODY);
-			lua_pushnumber(L, item != entt::null ? ItemSystem::GetItemVnum(item) : 0);
-			return 1;
-		}
-		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
-		auto* ch = ecs::LegacyCharOf(chEntity);
-		LPITEM item = ch ? ItemSystem::GetWear(AIHelpers::EcsOf(ch), WEAR_BODY) : nullptr;
-		lua_pushnumber(L, item ? ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, item)) : 0);
+		const entt::entity character = CQuestManager::instance().GetPCEntity(L);
+		const entt::entity item = ItemSystem::GetWearItem(character, WEAR_BODY);
+		lua_pushnumber(L, ItemSystem::IsValidItem(item) ? ItemSystem::GetItemVnum(item) : 0);
 		return 1;
 	}
 
@@ -1340,23 +1225,14 @@ namespace quest
 			return 0;
 		}
 		const uint8_t bCell = static_cast<uint8_t>(lua_tonumber(L, 1));
-		entt::entity e = CQuestManager::instance().GetPCEntity(L);
-		if (e != entt::null && g_registry.valid(e))
-		{
-			const entt::entity item = bCell < WEAR_MAX_NUM ? ItemSystem::GetWearItem(e, bCell) : entt::null;
-			if (item == entt::null)
-				lua_pushnil(L);
-			else
-				lua_pushnumber(L, ItemSystem::GetItemVnum(item));
-			return 1;
-		}
-		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
-		auto* ch = ecs::LegacyCharOf(chEntity);
-		LPITEM item = ch ? ItemSystem::GetWear(AIHelpers::EcsOf(ch), bCell) : nullptr;
-		if (!item)
+		const entt::entity character = CQuestManager::instance().GetPCEntity(L);
+		const entt::entity item = bCell < WEAR_MAX_NUM
+			? ItemSystem::GetWearItem(character, bCell)
+			: entt::null;
+		if (!ItemSystem::IsValidItem(item))
 			lua_pushnil(L);
 		else
-			lua_pushnumber(L, ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, item)));
+			lua_pushnumber(L, ItemSystem::GetItemVnum(item));
 		return 1;
 	}
 
@@ -1370,8 +1246,7 @@ namespace quest
 			return 1;
 		}
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
-		auto* ch = ecs::LegacyCharOf(chEntity);
-		lua_pushnumber(L, ch ? ecs::PointSystem::GetGold(AIHelpers::EcsOf(ch)) : 0);
+		lua_pushnumber(L, ecs::PointSystem::GetGold(chEntity));
 		return 1;
 	}
 
@@ -1384,9 +1259,7 @@ namespace quest
 			lua_pushnumber(L, static_cast<int32_t>(combat->realAlignment) / 10);
 			return 1;
 		}
-		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
-		auto* ch = ecs::LegacyCharOf(chEntity);
-		lua_pushnumber(L, ch ? ch->GetRealAlignment() / 10 : 0);
+		lua_pushnumber(L, 0);
 		return 1;
 	}
 	ALUA(pc_get_alignment)
@@ -1398,9 +1271,7 @@ namespace quest
 			lua_pushnumber(L, static_cast<int32_t>(combat->alignment) / 10);
 			return 1;
 		}
-		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
-		auto* ch = ecs::LegacyCharOf(chEntity);
-		lua_pushnumber(L, ch ? ch->GetAlignment() / 10 : 0);
+		lua_pushnumber(L, 0);
 		return 1;
 	}
 
@@ -1435,20 +1306,14 @@ namespace quest
 		// migrated from CHARACTER::PointChange(POINT_GOLD, ...)
 		// DUAL-PATH: ECS update + legacy call during migration window
 		const int64_t gold = static_cast<int64_t>(lua_tonumber(L, -1));
-		entt::entity e = CQuestManager::instance().GetPCEntity(L);
-		if (auto* wallet = ECS_TryGet<ecs::GoldAmount>(e))
+		const entt::entity character = CQuestManager::instance().GetPCEntity(L);
+		const int64_t currentGold = ecs::PointSystem::GetGold(character);
+		if (gold + currentGold < 0)
+			sys_err("QUEST wrong ChangeGold {} (now {})", gold, currentGold);
+		else if (character != entt::null && g_registry.valid(character))
 		{
-			wallet->amount += gold;
-			g_registry.emplace_or_replace<ecs::DirtyTag>(e);
-		}
-		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
-		auto* ch = ecs::LegacyCharOf(chEntity);
-		if (ch && gold + ecs::PointSystem::GetGold(AIHelpers::EcsOf(ch)) < 0)
-			sys_err("QUEST wrong ChangeGold {} (now {})", gold, ecs::PointSystem::GetGold(AIHelpers::EcsOf(ch)));
-		else if (ch)
-		{
-			DBManager::instance().SendMoneyLog(MONEY_LOG_QUEST, (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))), gold);
-			ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_GOLD, gold, true);
+			DBManager::instance().SendMoneyLog(MONEY_LOG_QUEST, ecs::PlayerRuntime::GetPlayerID(character), gold);
+			ecs::PointSystem::Change(character, POINT_GOLD, gold, true);
 		}
 		return 0;
 	}
@@ -1596,22 +1461,14 @@ namespace quest
         // migrated from CHARACTER::PointChange(POINT_EXP, ...)
         // DUAL-PATH: ECS update + legacy call during migration window
         CQuestManager& q = CQuestManager::instance();
-        const entt::entity chEntity = q.GetCurrentPCEntity();
-        auto* ch = ecs::LegacyCharOf(chEntity);
-        if (!lua_isnumber(L,1) || !ch)
+		const entt::entity character = q.GetCurrentPCEntity();
+		if (!lua_isnumber(L,1) || character == entt::null || !g_registry.valid(character))
             return 0;
-        LOG_INFO("QUEST [REWARD] {} give exp2 {}", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), (int)rint(lua_tonumber(L,1)));
+		LOG_INFO("QUEST [REWARD] {} give exp2 {}", ecs::PlayerRuntime::GetName(character).data(), (int)rint(lua_tonumber(L,1)));
         uint32_t exp = (uint32_t)rint(lua_tonumber(L,1));
-        entt::entity e = q.GetPCEntity(L);
-        if (auto* ecsExp = ECS_TryGet<ecs::Experience>(e))
-        {
-            ecsExp->current += exp;
-            g_registry.emplace_or_replace<ecs::DirtyTag>(e);
-            g_dispatcher.trigger(ecs::EvExperienceChanged{e, exp});
-        }
         PC* pPC = CQuestManager::instance().GetCurrentPC();
-        LogManager::instance().QuestRewardLog(pPC->GetCurrentQuestName().c_str(), (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))), (ecs::PointSystem::GetLevel(AIHelpers::EcsOf(ch))), exp, 0);
-        ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_EXP, exp);
+		LogManager::instance().QuestRewardLog(pPC->GetCurrentQuestName().c_str(), ecs::PlayerRuntime::GetPlayerID(character), ecs::PointSystem::GetLevel(character), exp, 0);
+		ecs::PointSystem::Change(character, POINT_EXP, exp);
         return 0;
     }
 
@@ -1622,21 +1479,13 @@ namespace quest
         if (!lua_isstring(L,1) || !lua_isnumber(L,2))
             return 0;
         CQuestManager& q = CQuestManager::instance();
-        const entt::entity chEntity = q.GetCurrentPCEntity();
-        auto* ch = ecs::LegacyCharOf(chEntity);
-        if (!ch)
+		const entt::entity character = q.GetCurrentPCEntity();
+		if (character == entt::null || !g_registry.valid(character))
             return 0;
-        LOG_INFO("QUEST [REWARD] {} give exp {} {}", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), lua_tostring(L,1), (int)rint(lua_tonumber(L,2)));
+		LOG_INFO("QUEST [REWARD] {} give exp {} {}", ecs::PlayerRuntime::GetName(character).data(), lua_tostring(L,1), (int)rint(lua_tonumber(L,2)));
         uint32_t exp = (uint32_t)rint(lua_tonumber(L,2));
-        entt::entity e = q.GetPCEntity(L);
-        if (auto* ecsExp = ECS_TryGet<ecs::Experience>(e))
-        {
-            ecsExp->current += exp;
-            g_registry.emplace_or_replace<ecs::DirtyTag>(e);
-            g_dispatcher.trigger(ecs::EvExperienceChanged{e, exp});
-        }
         PC* pPC = CQuestManager::instance().GetCurrentPC();
-        LogManager::instance().QuestRewardLog(pPC->GetCurrentQuestName().c_str(), (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))), (ecs::PointSystem::GetLevel(AIHelpers::EcsOf(ch))), exp, 0);
+		LogManager::instance().QuestRewardLog(pPC->GetCurrentQuestName().c_str(), ecs::PlayerRuntime::GetPlayerID(character), ecs::PointSystem::GetLevel(character), exp, 0);
         pPC->GiveExp(lua_tostring(L,1), exp);
         return 0;
     }
@@ -1646,23 +1495,15 @@ namespace quest
         // migrated from CHARACTER::PointChange(POINT_EXP, ...)
         // DUAL-PATH: ECS update + legacy call during migration window
         CQuestManager & q = CQuestManager::instance();
-        const entt::entity chEntity = q.GetCurrentPCEntity();
-        auto* ch = ecs::LegacyCharOf(chEntity);
-        if (!ch || !lua_isstring(L, 1) || !lua_isnumber(L, 2) || !lua_isnumber(L, 3))
+		const entt::entity character = q.GetCurrentPCEntity();
+		if (character == entt::null || !g_registry.valid(character) || !lua_isstring(L, 1) || !lua_isnumber(L, 2) || !lua_isnumber(L, 3))
             return 0;
         int lev = (int)rint(lua_tonumber(L,2));
         double proc = (lua_tonumber(L,3));
-        LOG_INFO("QUEST [REWARD] {} give exp {} lev {} percent {:g}%", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), lua_tostring(L, 1), lev, proc);
+		LOG_INFO("QUEST [REWARD] {} give exp {} lev {} percent {:g}%", ecs::PlayerRuntime::GetName(character).data(), lua_tostring(L, 1), lev, proc);
         uint32_t exp = (uint32_t)((exp_table[MINMAX(0, lev, PLAYER_MAX_LEVEL_CONST)] * proc) / 100);
-        entt::entity e = q.GetPCEntity(L);
-        if (auto* ecsExp = ECS_TryGet<ecs::Experience>(e))
-        {
-            ecsExp->current += exp;
-            g_registry.emplace_or_replace<ecs::DirtyTag>(e);
-            g_dispatcher.trigger(ecs::EvExperienceChanged{e, exp});
-        }
         PC * pPC = CQuestManager::instance().GetCurrentPC();
-        LogManager::instance().QuestRewardLog(pPC->GetCurrentQuestName().c_str(), (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))), (ecs::PointSystem::GetLevel(AIHelpers::EcsOf(ch))), exp, 0);
+		LogManager::instance().QuestRewardLog(pPC->GetCurrentQuestName().c_str(), ecs::PlayerRuntime::GetPlayerID(character), ecs::PointSystem::GetLevel(character), exp, 0);
         pPC->GiveExp(lua_tostring(L, 1), exp);
         return 0;
     }
@@ -1677,8 +1518,7 @@ namespace quest
 			return 1;
 		}
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
-		auto* ch = ecs::LegacyCharOf(chEntity);
-		lua_pushnumber(L, ch ? ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(ch)) : 0);
+		lua_pushnumber(L, ecs::PlayerRuntime::GetEmpire(chEntity));
 		return 1;
 	}
 
@@ -1691,9 +1531,9 @@ namespace quest
 			return 1;
 		}
 		const int part_idx = static_cast<int>(lua_tonumber(L, 1));
-		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
-		auto* ch = ecs::LegacyCharOf(chEntity);
-		lua_pushnumber(L, ch ? ch->GetPart(part_idx) : 0);
+		const entt::entity character = CQuestManager::instance().GetCurrentPCEntity();
+		const auto* appearance = ECS_TryGet<ecs::AppearancePartsComponent>(character);
+		lua_pushnumber(L, appearance && part_idx >= 0 && part_idx < PART_MAX_NUM ? appearance->parts[part_idx] : 0);
 		return 1;
 	}
 
@@ -1701,16 +1541,19 @@ namespace quest
     {
         // migrated from CHARACTER::SetPart
         CQuestManager& q = CQuestManager::instance();
-        const entt::entity chEntity = q.GetCurrentPCEntity();
-        auto* ch = ecs::LegacyCharOf(chEntity);
-        if (!ch || !lua_isnumber(L,1) || !lua_isnumber(L,2))
+		const entt::entity character = q.GetCurrentPCEntity();
+		if (character == entt::null || !g_registry.valid(character) || !lua_isnumber(L,1) || !lua_isnumber(L,2))
         {
             return 0;
         }
         int part_idx = (int)lua_tonumber(L, 1);
         int part_value = (int)lua_tonumber(L, 2);
-        ch->SetPart(part_idx, part_value);
-        NetworkSyncSystem::UpdatePacket(AIHelpers::EcsOf(ch));
+		if (part_idx < 0 || part_idx >= PART_MAX_NUM)
+			return 0;
+		auto& appearance = g_registry.get_or_emplace<ecs::AppearancePartsComponent>(character);
+		appearance.parts[part_idx] = static_cast<uint16_t>(part_value);
+		g_registry.emplace_or_replace<ecs::DirtyTag>(character);
+		NetworkSyncSystem::UpdatePacket(character);
         return 0;
     }
 
@@ -1723,10 +1566,7 @@ namespace quest
 			lua_pushnumber(L, points->base.skill_group);
 			return 1;
 		}
-		// TODO Phase 8: decompose CharacterPoints
-		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
-		auto* ch = ecs::LegacyCharOf(chEntity);
-		lua_pushnumber(L, ch ? ch->GetSkillGroup() : 0);
+		lua_pushnumber(L, 0);
 		return 1;
 	}
 
@@ -1766,9 +1606,7 @@ namespace quest
 			lua_pushboolean(L, sf->isPolymorph ? 1 : 0);
 			return 1;
 		}
-		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
-		auto* ch = ecs::LegacyCharOf(chEntity);
-		lua_pushboolean(L, ch ? (ch->IsPolymorphed() ? 1 : 0) : 0);
+		lua_pushboolean(L, 0);
 		return 1;
 	}
 
@@ -1810,10 +1648,8 @@ namespace quest
         }
         if (auto* sf = ECS_TryGet<ecs::StatusFlags>(e))
             sf->isPolymorph = (dwVnum != 0);
-        const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
-        auto* ch = ecs::LegacyCharOf(chEntity);
-        if (ch)
-            AffectSystem::AddAffect(AIHelpers::EcsOf(ch), AFFECT_POLYMORPH, POINT_POLYMORPH, dwVnum, AFF_POLYMORPH, iDuration, 0, true);
+		if (e != entt::null && g_registry.valid(e))
+			AffectSystem::AddAffect(e, AFFECT_POLYMORPH, POINT_POLYMORPH, dwVnum, AFF_POLYMORPH, iDuration, 0, true);
         return 0;
     }
 
@@ -1829,19 +1665,10 @@ namespace quest
 			lua_pushboolean(L, ret ? 1 : 0);
 			return 1;
 		}
-		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
-		auto* ch = ecs::LegacyCharOf(chEntity);
-		if (!ch) {
-			lua_pushboolean(L, 0);
-			return 1;
-		}
-		bool ret = MountSystem::GetMountVnum(AIHelpers::EcsOf(ch)) != 0;
-		if (!ret) {
-			LPITEM item = ItemSystem::GetWear(AIHelpers::EcsOf(ch), WEAR_COSTUME_MOUNT);
-			if (item) {
-				ret = true;
-			}
-		}
+		const entt::entity character = CQuestManager::instance().GetCurrentPCEntity();
+		const bool ret = character != entt::null && g_registry.valid(character) &&
+			(MountSystem::GetMountVnum(character) != 0 ||
+			 ItemSystem::IsValidItem(ItemSystem::GetWearItem(character, WEAR_COSTUME_MOUNT)));
 		lua_pushboolean(L, ret ? 1 : 0);
 		return 1;
 	}
@@ -1938,17 +1765,11 @@ namespace quest
 		int32_t value = static_cast<int32_t>(lua_tonumber(L, 2));
 		int32_t duration = static_cast<int32_t>(lua_tonumber(L, 3));
 
-		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
-
-		auto* ch = ecs::LegacyCharOf(chEntity);
-		if(nullptr != ch )
-		{
-			// @fixme134
-			if (!MountSystem::GetMountVnum(AIHelpers::EcsOf(ch)))
-				return 0;
-			AffectSystem::RemoveAffect(AIHelpers::EcsOf(ch), AFFECT_MOUNT_BONUS);
-			AffectSystem::AddAffect(AIHelpers::EcsOf(ch), AFFECT_MOUNT_BONUS, aApplyInfo[applyOn].bPointType, value, AFF_NONE, duration, 0, false);
-		}
+		const entt::entity character = CQuestManager::instance().GetCurrentPCEntity();
+		if (!MountSystem::GetMountVnum(character))
+			return 0;
+		AffectSystem::RemoveAffect(character, AFFECT_MOUNT_BONUS);
+		AffectSystem::AddAffect(character, AFFECT_MOUNT_BONUS, aApplyInfo[applyOn].bPointType, value, AFF_NONE, duration, 0, false);
 
 		return 0;
 	}
@@ -2063,21 +1884,19 @@ namespace quest
 		}
 
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
-
-		auto* ch = ecs::LegacyCharOf(chEntity);
 		bool bFind = false;
 		for (int iCell = 0; iCell < INVENTORY_MAX_NUM; iCell++)
 		{
-			LPITEM item = ItemSystem::GetInventoryItemPtr(AIHelpers::EcsOf(ch), iCell);
-			if (!item)
+			const entt::entity item = ItemSystem::GetInventoryItem(chEntity, iCell);
+			if (!ItemSystem::IsValidItem(item))
 				continue;
 
-			if (ItemSystem::GetItemType(EntityFactory::CreateItemEntity(g_registry, item)) == ITEM_USE &&
-					ItemSystem::GetItemSubType(EntityFactory::CreateItemEntity(g_registry, item)) == USE_TALISMAN &&
-					(ItemSystem::GetItemValue(EntityFactory::CreateItemEntity(g_registry, item), 0) == 1 || ItemSystem::GetItemValue(EntityFactory::CreateItemEntity(g_registry, item), 0) == 2))
+			if (ItemSystem::GetItemType(item) == ITEM_USE &&
+					ItemSystem::GetItemSubType(item) == USE_TALISMAN &&
+					(ItemSystem::GetItemValue(item, 0) == 1 || ItemSystem::GetItemValue(item, 0) == 2))
 			{
-				int x = ItemSystem::GetItemSocket(EntityFactory::CreateItemEntity(g_registry, item), 0);
-				int y = ItemSystem::GetItemSocket(EntityFactory::CreateItemEntity(g_registry, item), 1);
+				int x = ItemSystem::GetItemSocket(item, 0);
+				int y = ItemSystem::GetItemSocket(item, 1);
 				//if ((x-item_x)*(x-item_x)+(y-item_y)*(y-item_y)<r*r)
 				if (region->sx <=x && region->sy <= y && x <= region->ex && y <= region->ey)
 				{
@@ -2111,7 +1930,6 @@ namespace quest
         // migrated from CHARACTER::GetInventoryItem
         // DUAL-PATH: legacy only during migration window
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
-		auto* ch = ecs::LegacyCharOf(chEntity);
 		if (!lua_isnumber(L,1) || !lua_isnumber(L,2))
 		{
 			sys_err("invalid x y position");
@@ -2119,7 +1937,7 @@ namespace quest
 			return 1;
 		}
 
-		if (!lua_isnumber(L,2))
+		if (!lua_isnumber(L,3))
 		{
 			sys_err("invalid radius");
 			lua_pushboolean(L, 0);
@@ -2133,16 +1951,16 @@ namespace quest
 		bool bFind = false;
 		for (int iCell = 0; iCell < INVENTORY_MAX_NUM; iCell++)
 		{
-			LPITEM item = ItemSystem::GetInventoryItemPtr(AIHelpers::EcsOf(ch), iCell);
-			if (!item)
+			const entt::entity item = ItemSystem::GetInventoryItem(chEntity, iCell);
+			if (!ItemSystem::IsValidItem(item))
 				continue;
 
-			if (ItemSystem::GetItemType(EntityFactory::CreateItemEntity(g_registry, item)) == ITEM_USE &&
-					ItemSystem::GetItemSubType(EntityFactory::CreateItemEntity(g_registry, item)) == USE_TALISMAN &&
-					(ItemSystem::GetItemValue(EntityFactory::CreateItemEntity(g_registry, item), 0) == 1 || ItemSystem::GetItemValue(EntityFactory::CreateItemEntity(g_registry, item), 0) == 2))
+			if (ItemSystem::GetItemType(item) == ITEM_USE &&
+					ItemSystem::GetItemSubType(item) == USE_TALISMAN &&
+					(ItemSystem::GetItemValue(item, 0) == 1 || ItemSystem::GetItemValue(item, 0) == 2))
 			{
-				int item_x = ItemSystem::GetItemSocket(EntityFactory::CreateItemEntity(g_registry, item), 0);
-				int item_y = ItemSystem::GetItemSocket(EntityFactory::CreateItemEntity(g_registry, item), 1);
+				int item_x = ItemSystem::GetItemSocket(item, 0);
+				int item_y = ItemSystem::GetItemSocket(item, 1);
 				if ((x-item_x)*(x-item_x)+(y-item_y)*(y-item_y)<r*r)
 				{
 					bFind = true;
@@ -2165,26 +1983,14 @@ namespace quest
 			lua_pushnumber(L, 0);
 			return 1;
 		}
-		entt::entity e = CQuestManager::instance().GetPCEntity(L);
-		if (e != entt::null && g_registry.valid(e))
-		{
-			const entt::entity item = ItemSystem::GetWearItem(e, cell);
-			lua_pushnumber(L, item != entt::null ? ItemSystem::GetItemRefineLevel(item) : 0);
-			return 1;
-		}
-		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
-		auto* ch = ecs::LegacyCharOf(chEntity);
-		LPITEM item = ch ? ItemSystem::GetWear(AIHelpers::EcsOf(ch), cell) : nullptr;
-		lua_pushnumber(L, item ? item->GetRefineLevel() : 0);
+		const entt::entity character = CQuestManager::instance().GetPCEntity(L);
+		const entt::entity item = ItemSystem::GetWearItem(character, cell);
+		lua_pushnumber(L, ItemSystem::IsValidItem(item) ? ItemSystem::GetItemRefineLevel(item) : 0);
 		return 1;
 	}
 
 	ALUA(pc_refine_equip)
 	{
-        // migrated from CHARACTER::GetWear
-        // DUAL-PATH: legacy only during migration window
-		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
-		auto* ch = ecs::LegacyCharOf(chEntity);
 		if (!lua_isnumber(L, 1) || !lua_isnumber(L, 2))
 		{
 			sys_err("invalid argument");
@@ -2192,72 +1998,80 @@ namespace quest
 			return 1;
 		}
 
-		int cell = (int) lua_tonumber(L, 1);
-		int level_limit = (int) lua_tonumber(L, 2);
-		int pct = lua_isnumber(L, 3) ? (int)lua_tonumber(L, 3) : 100;
-
-		LPITEM item = ItemSystem::GetWear(AIHelpers::EcsOf(ch), cell);
-		if (!item)
+		const int cell = static_cast<int>(lua_tonumber(L, 1));
+		const int levelLimit = static_cast<int>(lua_tonumber(L, 2));
+		const int pct = lua_isnumber(L, 3) ? static_cast<int>(lua_tonumber(L, 3)) : 100;
+		const entt::entity character = CQuestManager::instance().GetCurrentPCEntity();
+		if (cell < 0 || cell >= WEAR_MAX_NUM ||
+			character == entt::null || !g_registry.valid(character))
 		{
 			lua_pushboolean(L, 0);
 			return 1;
 		}
 
-		if (item->GetRefinedVnum() == 0)
+		const entt::entity source = ItemSystem::GetWearItem(character, cell);
+		const uint32_t refinedVnum = ItemSystem::GetItemRefineVnum(source);
+		if (!ItemSystem::IsValidItem(source) || refinedVnum == 0 ||
+			ItemSystem::GetItemRefineLevel(source) > levelLimit ||
+			(pct != 100 && number(1, 100) > pct))
 		{
 			lua_pushboolean(L, 0);
 			return 1;
 		}
 
-		if (item->GetRefineLevel()>level_limit)
+		const entt::entity replacement = ItemSystem::CreateItemEcs(refinedVnum, 1, 0, false);
+		if (!ItemSystem::IsValidItem(replacement))
 		{
 			lua_pushboolean(L, 0);
 			return 1;
 		}
 
-		if (pct == 100 || number(1, 100) <= pct)
+		bool initialized = true;
+		for (int i = 0; i < ITEM_SOCKET_MAX_NUM; ++i)
 		{
-			// ���� ����
-			lua_pushboolean(L, 1);
-
-			LPITEM pkNewItem = ITEM_MANAGER::instance().CreateItem(item->GetRefinedVnum(), 1, 0, false);
-
-			if (pkNewItem)
-			{
-				for (int i = 0; i < ITEM_SOCKET_MAX_NUM; ++i)
-					if (!ItemSystem::GetItemSocket(EntityFactory::CreateItemEntity(g_registry, item), i))
-						break;
-					else
-						ItemSystem::SetItemSocket(EntityFactory::CreateItemEntity(g_registry, pkNewItem), i, 1);
-
-				int set = 0;
-				for (int i=0; i<ITEM_SOCKET_MAX_NUM; i++)
-				{
-					int32_t socket = ItemSystem::GetItemSocket(EntityFactory::CreateItemEntity(g_registry, item), i);
-					if (socket > 2 && socket != 28960)
-					{
-						ItemSystem::SetItemSocket(EntityFactory::CreateItemEntity(g_registry, pkNewItem), set++, socket);
-					}
-				}
-
-				item->CopyAttributeTo(pkNewItem);
-
-				ITEM_MANAGER::instance().RemoveItem(item, "REMOVE (REFINE SUCCESS)");
-
-				// some tuits need here -_- pkNewItem->AddToCharacter(this, bCell);
-				pkNewItem->EquipTo(ch, cell);
-
-				ITEM_MANAGER::instance().FlushDelayedSave(pkNewItem);
-
-				LogManager::instance().ItemLog(ch, pkNewItem, "REFINE SUCCESS (QUEST)", pkNewItem->GetName());
-			}
+			if (ItemSystem::GetItemSocket(source, i) == 0)
+				break;
+			initialized = initialized && ItemSystem::SetItemSocket(replacement, i, 1);
 		}
-		else
+
+		int targetSocket = 0;
+		for (int i = 0; i < ITEM_SOCKET_MAX_NUM; ++i)
 		{
-			// ���� ����
+			const uint32_t socket = ItemSystem::GetItemSocket(source, i);
+			if (socket > 2 && socket != ITEM_BROKEN_METIN_VNUM && targetSocket < ITEM_SOCKET_MAX_NUM)
+				initialized = initialized && ItemSystem::SetItemSocket(replacement, targetSocket++, socket);
+		}
+
+		initialized = initialized && ItemSystem::CopyItemAttributesEcs(source, replacement);
+		if (!initialized || !ItemSystem::RemoveItemEcs(source))
+		{
+			ItemSystem::DestroyItemEntityEcs(replacement, "QUEST_REFINE_INIT_ROLLBACK");
 			lua_pushboolean(L, 0);
+			return 1;
 		}
 
+		if (!ItemSystem::EquipItemEcs(character, replacement, cell))
+		{
+			ItemSystem::EquipItemEcs(character, source, cell);
+			ItemSystem::DestroyItemEntityEcs(replacement, "QUEST_REFINE_EQUIP_ROLLBACK");
+			lua_pushboolean(L, 0);
+			return 1;
+		}
+
+		if (!ItemSystem::DestroyItemEntityEcs(source, "REMOVE (REFINE SUCCESS)"))
+		{
+			ItemSystem::RemoveItemEcs(replacement);
+			ItemSystem::EquipItemEcs(character, source, cell);
+			ItemSystem::DestroyItemEntityEcs(replacement, "QUEST_REFINE_SOURCE_ROLLBACK");
+			lua_pushboolean(L, 0);
+			return 1;
+		}
+
+		LogManager::instance().ItemLogEntity(
+			character, replacement,
+			"REFINE SUCCESS (QUEST)", ItemSystem::GetItemName(replacement));
+		ItemSystem::FlushDelayedSaveEcs(replacement);
+		lua_pushboolean(L, 1);
 		return 1;
 	}
 
@@ -2280,9 +2094,7 @@ namespace quest
                 return 1;
             }
         }
-        const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
-        auto* ch = ecs::LegacyCharOf(chEntity);
-        lua_pushnumber(L, ch ? ch->GetSkillLevel(dwVnum) : 0);
+		lua_pushnumber(L, 0);
         return 1;
     }
 
@@ -2291,9 +2103,9 @@ namespace quest
         // migrated from CHARACTER::GetPlayerID
         // DUAL-PATH: legacy only during migration window
 		CQuestManager& q = CQuestManager::instance();
-		const entt::entity chEntity = q.GetCurrentPCEntity();
-		auto* ch = ecs::LegacyCharOf(chEntity);
-		LOG_INFO("TRY GIVE LOTTO TO pid {}", (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))));
+		const entt::entity character = q.GetCurrentPCEntity();
+		const uint32_t playerID = ecs::PlayerRuntime::GetPlayerID(character);
+		LOG_INFO("TRY GIVE LOTTO TO pid {}", playerID);
 
 		uint32_t * pdw = M2_NEW uint32_t[3];
 
@@ -2302,9 +2114,9 @@ namespace quest
 		pdw[2] = q.GetEventFlag("lotto_round");
 
 		// ��÷���� ������ �����Ѵ�
-		DBManager::instance().ReturnQuery(QID_LOTTO, (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))), pdw,
+		DBManager::instance().ReturnQuery(QID_LOTTO, playerID, pdw,
 				"INSERT INTO lotto_list VALUES(0, 'server%s', %u, NOW())",
-				get_table_postfix(), (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))));
+				get_table_postfix(), playerID);
 
 		return 0;
 	}
@@ -2341,20 +2153,13 @@ namespace quest
 
 	ALUA(pc_select_pid)
 	{
-        // migrated from CHARACTER::GetPlayerID
-        // DUAL-PATH: legacy only during migration window
-		uint32_t pid = (uint32_t) lua_tonumber(L, 1);
-
+		const uint32_t pid = static_cast<uint32_t>(lua_tonumber(L, 1));
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
-
-		auto* ch = ecs::LegacyCharOf(chEntity);
-		LPCHARACTER new_ch = CHARACTER_MANAGER::instance().FindByPID(pid);
-
-		if (new_ch)
+		const entt::entity selected = ecs::PlayerRuntime::FindByPlayerID(pid);
+		if (selected != entt::null)
 		{
-			CQuestManager::instance().GetPC((ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(new_ch))));
-
-			lua_pushnumber(L, (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))));
+			CQuestManager::instance().GetPC(pid);
+			lua_pushnumber(L, ecs::PlayerRuntime::GetPlayerID(chEntity));
 		}
 		else
 		{
@@ -2366,23 +2171,14 @@ namespace quest
 
 	ALUA(pc_select_vid)
 	{
-        // migrated from CHARACTER::GetVID
-        // DUAL-PATH: legacy only during migration window
-		uint32_t vid = (uint32_t) lua_tonumber(L, 1);
-
+		const uint32_t vid = static_cast<uint32_t>(lua_tonumber(L, 1));
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
-
-		auto* ch = ecs::LegacyCharOf(chEntity);
-		LPCHARACTER new_ch = CHARACTER_MANAGER::instance().Find(vid);
-
-		if (new_ch)
+		const entt::entity selected = CVIDRegistry::Instance().Find(vid);
+		const uint32_t selectedPID = ecs::PlayerRuntime::GetPlayerID(selected);
+		if (selectedPID != 0)
 		{
-			CQuestManager::instance().GetPC((ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(new_ch))));
-#ifdef ENABLE_BUG_FIXES
-			lua_pushnumber(L, ch ? (uint32_t)((ch)->GetLegacyVID()) : 0);
-#else
-			lua_pushnumber(L, (uint32_t)((ch)->GetLegacyVID()));
-#endif
+			CQuestManager::instance().GetPC(selectedPID);
+			lua_pushnumber(L, ecs::PlayerRuntime::GetPacketVID(chEntity));
 		}
 		else
 		{
@@ -2394,9 +2190,7 @@ namespace quest
 
 	ALUA(pc_get_sex)
 	{
-		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
-		auto* ch = ecs::LegacyCharOf(chEntity);
-		lua_pushnumber(L, GET_SEX(ch)); /* 0==MALE, 1==FEMALE */
+		lua_pushnumber(L, ecs::PlayerRuntime::GetSex(CQuestManager::instance().GetCurrentPCEntity()));
 		return 1;
 	}
 
@@ -2409,9 +2203,7 @@ namespace quest
 			lua_pushboolean(L, marriageState->partner ? 1 : 0);
 			return 1;
 		}
-		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
-		auto* ch = ecs::LegacyCharOf(chEntity);
-		lua_pushboolean(L, (ch && marriage::CManager::instance().IsEngaged((ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))))) ? 1 : 0);
+		lua_pushboolean(L, marriage::CManager::instance().IsEngaged(ecs::PlayerRuntime::GetPlayerID(e)) ? 1 : 0);
 		return 1;
 	}
 
@@ -2424,9 +2216,7 @@ namespace quest
 			lua_pushboolean(L, marriageState->weddingMap != nullptr ? 1 : 0);
 			return 1;
 		}
-		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
-		auto* ch = ecs::LegacyCharOf(chEntity);
-		lua_pushboolean(L, (ch && marriage::CManager::instance().IsMarried((ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))))) ? 1 : 0);
+		lua_pushboolean(L, marriage::CManager::instance().IsMarried(ecs::PlayerRuntime::GetPlayerID(e)) ? 1 : 0);
 		return 1;
 	}
 
@@ -2439,9 +2229,7 @@ namespace quest
 			lua_pushboolean(L, (marriageState->partner || marriageState->weddingMap) ? 1 : 0);
 			return 1;
 		}
-		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
-		auto* ch = ecs::LegacyCharOf(chEntity);
-		lua_pushboolean(L, (ch && marriage::CManager::instance().IsEngagedOrMarried((ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))))) ? 1 : 0);
+		lua_pushboolean(L, marriage::CManager::instance().IsEngagedOrMarried(ecs::PlayerRuntime::GetPlayerID(e)) ? 1 : 0);
 		return 1;
 	}
 
@@ -2459,9 +2247,7 @@ namespace quest
 			lua_pushboolean(L, (gm->level >= GM_HIGH_WIZARD) ? 1 : 0);
 			return 1;
 		}
-		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
-		auto* ch = ecs::LegacyCharOf(chEntity);
-		lua_pushboolean(L, (ch && ecs::PlayerRuntime::GetGMLevel(AIHelpers::EcsOf(ch)) >= GM_HIGH_WIZARD) ? 1 : 0);
+		lua_pushboolean(L, 0);
 		return 1;
 	}
 
@@ -2474,28 +2260,20 @@ namespace quest
 			lua_pushnumber(L, gm->level);
 			return 1;
 		}
-		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
-		auto* ch = ecs::LegacyCharOf(chEntity);
-		lua_pushnumber(L, ch ? ecs::PlayerRuntime::GetGMLevel(AIHelpers::EcsOf(ch)) : 0);
+		lua_pushnumber(L, 0);
 		return 1;
 	}
 
 	ALUA(pc_mining)
 	{
-        // migrated from CHARACTER::mining
-        // DUAL-PATH: legacy only during migration window
-		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
-		auto* ch = ecs::LegacyCharOf(chEntity);
-		const entt::entity npcEntity = CQuestManager::instance().GetCurrentNPCEntity();
-		auto* npc = ecs::LegacyCharOf(npcEntity);
-		ch->mining(npc);
+		const entt::entity character = CQuestManager::instance().GetCurrentPCEntity();
+		const entt::entity load = CQuestManager::instance().GetCurrentNPCEntity();
+		ActivitySystem::StartMining(character, load);
 		return 0;
 	}
 
 	ALUA(pc_diamond_refine)
 	{
-        // migrated from CHARACTER::Refine
-        // DUAL-PATH: legacy only during migration window
 		if (!lua_isnumber(L, 1))
 		{
 			lua_pushboolean(L, 0);
@@ -2506,17 +2284,14 @@ namespace quest
 		int pct = (int)lua_tonumber(L, 2);
 
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
-
-		auto* ch = ecs::LegacyCharOf(chEntity);
 		const entt::entity npcEntity = CQuestManager::instance().GetCurrentNPCEntity();
-		auto* npc = ecs::LegacyCharOf(npcEntity);
-		LPITEM item = CQuestManager::instance().GetCurrentItem();
+		const entt::entity item = CQuestManager::instance().GetCurrentItemEntity();
 
-		if (item)
+		if (ItemSystem::IsValidItem(item))
 			lua_pushboolean(L, mining::OreRefine(
-				ch,
-				npc,
-				EntityFactory::CreateItemEntity(g_registry, item),
+				chEntity,
+				npcEntity,
+				item,
 				cost,
 				pct,
 				entt::null));
@@ -2528,8 +2303,6 @@ namespace quest
 
 	ALUA(pc_ore_refine)
 	{
-        // migrated from CHARACTER::Refine
-        // DUAL-PATH: legacy only during migration window
 		if (!lua_isnumber(L, 1) || !lua_isnumber(L, 2) || !lua_isnumber(L, 3) || !lua_isnumber(L, 4))
 		{
 			lua_pushboolean(L, 0);
@@ -2542,27 +2315,23 @@ namespace quest
 		int cell = (int)lua_tonumber(L, 4);
 
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
-
-		auto* ch = ecs::LegacyCharOf(chEntity);
 		const entt::entity npcEntity = CQuestManager::instance().GetCurrentNPCEntity();
-		auto* npc = ecs::LegacyCharOf(npcEntity);
-		LPITEM item = CQuestManager::instance().GetCurrentItem();
-
-		LPITEM metinstone_item = nullptr;
+		const entt::entity item = CQuestManager::instance().GetCurrentItemEntity();
+		entt::entity metinstoneItem = entt::null;
 
 		if (inv_type == EXTRA_INVENTORY)
-			metinstone_item = ch->GetExtraInventoryItem(cell);
+			metinstoneItem = ItemSystem::GetExtraInventoryItem(chEntity, cell);
 		else
-			metinstone_item = ItemSystem::GetInventoryItemPtr(AIHelpers::EcsOf(ch), cell);
+			metinstoneItem = ItemSystem::GetInventoryItem(chEntity, cell);
 
-		if (item && metinstone_item)
+		if (ItemSystem::IsValidItem(item) && ItemSystem::IsValidItem(metinstoneItem))
 			lua_pushboolean(L, mining::OreRefine(
-				ch,
-				npc,
-				EntityFactory::CreateItemEntity(g_registry, item),
+				chEntity,
+				npcEntity,
+				item,
 				cost,
 				pct,
-				EntityFactory::CreateItemEntity(g_registry, metinstone_item)));
+				metinstoneItem));
 		else
 			lua_pushboolean(L, 0);
 
@@ -2653,9 +2422,7 @@ namespace quest
 		// TODO Phase 8: dedicated QuestFlag component
 		entt::entity e = CQuestManager::instance().GetPCEntity(L);
 		(void)e;
-		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
-		auto* ch = ecs::LegacyCharOf(chEntity);
-		lua_pushboolean(L, (ch && ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(ch), "skill_group_clear.clear") == 1) ? 1 : 0);
+		lua_pushboolean(L, ecs::QuestSystem::GetFlag(e, "skill_group_clear.clear") == 1 ? 1 : 0);
 		return 1;
 	}
 
@@ -2664,9 +2431,7 @@ namespace quest
         // migrated from CHARACTER::SaveExitLocation
         // DUAL-PATH: ECS update + legacy call during migration window
         entt::entity e = CQuestManager::instance().GetPCEntity(L);
-        const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
-        auto* ch = ecs::LegacyCharOf(chEntity);
-        if (!ch)
+		if (e == entt::null || !g_registry.valid(e))
             return 0;
         if (auto* exitPos = ECS_TryGet<ecs::ExitPosition>(e))
         {
@@ -2677,17 +2442,16 @@ namespace quest
             }
             else
             {
-                exitPos->x = ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(ch));
-                exitPos->y = ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(ch));
+				exitPos->x = ecs::PlayerRuntime::GetX(e);
+				exitPos->y = ecs::PlayerRuntime::GetY(e);
             }
             if (const auto* mapIndex = ECS_TryGet<ecs::MapIndex>(e))
                 exitPos->mapIndex = mapIndex->value;
             else
-                exitPos->mapIndex = ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch));
+				exitPos->mapIndex = ecs::PlayerRuntime::GetMapIndex(e);
             g_registry.emplace_or_replace<ecs::DirtyTag>(e);
         }
-        ch->SaveExitLocation();
-        return 0;
+		return 0;
     }
 
 	//�ڷ���Ʈ
@@ -2696,9 +2460,7 @@ namespace quest
 		// migrated from CHARACTER::WarpSet
 		// DUAL-PATH: ECS component update + legacy warp packet
 		entt::entity e = CQuestManager::instance().GetPCEntity(L);
-		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
-		auto* ch = ecs::LegacyCharOf(chEntity);
-		if (!ch)
+		if (e == entt::null || !g_registry.valid(e))
 		{
 			lua_pushnumber(L, 0 );
 			return 1;
@@ -2737,9 +2499,9 @@ namespace quest
 		{
 			const char * arg1 = lua_tostring(L, 1);
 
-			LPCHARACTER tch = CHARACTER_MANAGER::instance().FindPC(arg1);
+			const entt::entity target = ecs::PlayerRuntime::FindByPlayerName(arg1);
 
-			if (!tch)
+			if (target == entt::null)
 			{
 				const CCI* pkCCI = P2P_MANAGER::instance().Find(arg1);
 
@@ -2752,7 +2514,7 @@ namespace quest
 
 						if (SECTREE_MANAGER::instance().GetCenterPositionOfMap(pkCCI->lMapIndex, pos)) {
 #ifdef TEXTS_IMPROVEMENT
-							ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 737, "%d#%d", pos.x, pos.y);
+						ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 737, "%d#%d", pos.x, pos.y);
 #endif
 								if (auto* warpPos = ECS_TryGet<ecs::WarpPosition>(e))
 							{
@@ -2761,20 +2523,20 @@ namespace quest
 								warpPos->mapIndex = pkCCI->lMapIndex;
 								g_registry.emplace_or_replace<ecs::DirtyTag>(e);
 							}
-							ecs::MovementSystem::WarpSet(AIHelpers::EcsOf(ch), pos.x, pos.y);
+							ecs::MovementSystem::WarpSet(e, pos.x, pos.y);
 							lua_pushnumber(L, 1 );
 						}
 					}
 #ifdef TEXTS_IMPROVEMENT
 					else {
-						ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 367, "");
+						ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 367, "");
 					}
 #endif
 				}
 #ifdef TEXTS_IMPROVEMENT
-				else if (nullptr == CHARACTER_MANAGER::instance().FindPC(arg1))
+				else
 				{
-					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 723, "");
+					ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 723, "");
 				}
 #endif
 				lua_pushnumber(L, 0 );
@@ -2783,8 +2545,8 @@ namespace quest
 			}
 			else
 			{
-				x = ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(tch)) / 100;
-				y = ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(tch)) / 100;
+				x = ecs::PlayerRuntime::GetX(target) / 100;
+				y = ecs::PlayerRuntime::GetY(target) / 100;
 			}
 		}
 
@@ -2793,17 +2555,17 @@ teleport_area:
 		x *= 100;
 		y *= 100;
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 737, "%d#%d", x, y);
+		ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 737, "%d#%d", x, y);
 #endif
 		if (auto* warpPos = ECS_TryGet<ecs::WarpPosition>(e))
 		{
 			warpPos->x = x;
 			warpPos->y = y;
-			warpPos->mapIndex = ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch));
+			warpPos->mapIndex = ecs::PlayerRuntime::GetMapIndex(e);
 			g_registry.emplace_or_replace<ecs::DirtyTag>(e);
 		}
-		ecs::MovementSystem::WarpSet(AIHelpers::EcsOf(ch), x,y);
-		ecs::MovementSystem::Stop(AIHelpers::EcsOf(ch));
+		ecs::MovementSystem::WarpSet(e, x,y);
+		ecs::MovementSystem::Stop(e);
 		lua_pushnumber(L, 1 );
 		return 1;
 	}
@@ -2814,52 +2576,33 @@ teleport_area:
         // DUAL-PATH: ECS SkillLevels + legacy call
         uint32_t dwVnum = (uint32_t)lua_tonumber(L, 1);
         uint8_t byLev = (uint8_t)lua_tonumber(L, 2);
-        entt::entity e = CQuestManager::instance().GetPCEntity(L);
-        if (auto* sl = ECS_TryGet<ecs::SkillLevels>(e))
-        {
-            if (sl->levels && dwVnum < SKILL_MAX_NUM)
-            {
-                sl->levels[dwVnum].bLevel = byLev;
-                g_registry.emplace_or_replace<ecs::DirtyTag>(e);
-            }
-        }
-        const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
-        auto* ch = ecs::LegacyCharOf(chEntity);
-        if (ch)
-        {
-            ch->SetSkillLevel(dwVnum, byLev);
-            ch->SkillLevelPacket();
-        }
+		const entt::entity character = CQuestManager::instance().GetPCEntity(L);
+		SkillSystem::SetSkillLevel(character, dwVnum, byLev);
+		SkillSystem::SendSkillLevelPacket(character);
         return 0;
     }
 
 	ALUA(pc_give_polymorph_book)
 	{
-        // migrated from CHARACTER::AutoGiveItem
-        // DUAL-PATH: legacy only - LPITEM not ECS-migrated in this phase
-		if ( lua_isnumber(L, 1) != true && lua_isnumber(L, 2) != true && lua_isnumber(L, 3) != true && lua_isnumber(L, 4) != true )
+		if (!lua_isnumber(L, 1) || !lua_isnumber(L, 2) ||
+			!lua_isnumber(L, 3) || !lua_isnumber(L, 4))
 		{
 			sys_err("Wrong Quest Function Arguments: pc_give_polymorph_book");
 			return 0;
 		}
 
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
-
-		auto* ch = ecs::LegacyCharOf(chEntity);
-		CPolymorphUtils::instance().GiveBook(ch, (uint32_t)lua_tonumber(L, 1), (uint32_t)lua_tonumber(L, 2), (uint8_t)lua_tonumber(L, 3), (uint8_t)lua_tonumber(L, 4));
+		CPolymorphUtils::instance().GiveBook(chEntity, (uint32_t)lua_tonumber(L, 1), (uint32_t)lua_tonumber(L, 2), (uint8_t)lua_tonumber(L, 3), (uint8_t)lua_tonumber(L, 4));
 
 		return 0;
 	}
 
 	ALUA(pc_upgrade_polymorph_book)
 	{
-        // migrated from CHARACTER::AutoGiveItem
-        // DUAL-PATH: legacy only - LPITEM not ECS-migrated in this phase
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
-		auto* ch = ecs::LegacyCharOf(chEntity);
-		LPITEM pItem = CQuestManager::instance().GetCurrentItem();
+		const entt::entity item = CQuestManager::instance().GetCurrentItemEntity();
 
-		bool ret = CPolymorphUtils::instance().BookUpgrade(ch, pItem);
+		bool ret = CPolymorphUtils::instance().BookUpgrade(chEntity, item);
 
 		lua_pushboolean(L, ret);
 
@@ -2991,7 +2734,7 @@ teleport_area:
             lua_pushnumber(L, 0);
             return 1;
         }
-        if ( lua_isstring(L, 1) != true )
+        if (!lua_isstring(L, 1))
         {
             lua_pushnumber(L, 1);
             return 1;
@@ -3037,13 +2780,7 @@ teleport_area:
 	{
 		// migrated from CHARACTER::IsDead
 		entt::entity e = CQuestManager::instance().GetPCEntity(L);
-		if (e == entt::null || !g_registry.valid(e)) {
-			const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
-			auto* ch = ecs::LegacyCharOf(chEntity);
-			lua_pushboolean(L, ch ? (CombatSystem::IsDead(AIHelpers::EcsOf(ch)) ? 1 : 0) : 0);
-			return 1;
-		}
-		lua_pushboolean(L, g_registry.all_of<ecs::DeadTag>(e) ? 1 : 0);
+		lua_pushboolean(L, CombatSystem::IsDead(e) ? 1 : 0);
 		return 1;
 	}
 
@@ -3052,7 +2789,7 @@ teleport_area:
         // migrated from CHARACTER::ResetPoint
         // TODO Phase 8: CharacterPoints decomposition
         // DUAL-PATH: legacy only during migration window
-		if ( lua_isnumber(L, 1) == true )
+		if (lua_isnumber(L, 1))
 		{
 			int idx = (int)lua_tonumber(L, 1);
 
@@ -3139,10 +2876,7 @@ teleport_area:
 			lua_pushnumber(L, points->base.points[POINT_HT]);
 			return 1;
 		}
-		// TODO Phase 8: decompose CharacterPoints
-		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
-		auto* ch = ecs::LegacyCharOf(chEntity);
-		lua_pushnumber(L, ch ? ecs::PointSystem::GetReal(AIHelpers::EcsOf(ch), POINT_HT) : 0);
+		lua_pushnumber(L, 0);
 		return 1;
 	}
 
@@ -3182,10 +2916,7 @@ teleport_area:
 			lua_pushnumber(L, points->base.points[POINT_IQ]);
 			return 1;
 		}
-		// TODO Phase 8: decompose CharacterPoints
-		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
-		auto* ch = ecs::LegacyCharOf(chEntity);
-		lua_pushnumber(L, ch ? ecs::PointSystem::GetReal(AIHelpers::EcsOf(ch), POINT_IQ) : 0);
+		lua_pushnumber(L, 0);
 		return 1;
 	}
 
@@ -3225,10 +2956,7 @@ teleport_area:
 			lua_pushnumber(L, points->base.points[POINT_ST]);
 			return 1;
 		}
-		// TODO Phase 8: decompose CharacterPoints
-		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
-		auto* ch = ecs::LegacyCharOf(chEntity);
-		lua_pushnumber(L, ch ? ecs::PointSystem::GetReal(AIHelpers::EcsOf(ch), POINT_ST) : 0);
+		lua_pushnumber(L, 0);
 		return 1;
 	}
 
@@ -3268,10 +2996,7 @@ teleport_area:
 			lua_pushnumber(L, points->base.points[POINT_DX]);
 			return 1;
 		}
-		// TODO Phase 8: decompose CharacterPoints
-		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
-		auto* ch = ecs::LegacyCharOf(chEntity);
-		lua_pushnumber(L, ch ? ecs::PointSystem::GetReal(AIHelpers::EcsOf(ch), POINT_DX) : 0);
+		lua_pushnumber(L, 0);
 		return 1;
 	}
 
@@ -3305,7 +3030,7 @@ teleport_area:
 	ALUA(pc_is_near_vid)
 	{
 		// migrated from CHARACTER::GetX
-		if ( lua_isnumber(L, 1) != true || lua_isnumber(L, 2) != true )
+		if (!lua_isnumber(L, 1) || !lua_isnumber(L, 2))
 		{
 			lua_pushboolean(L, false);
 			return 1;
@@ -3321,62 +3046,24 @@ teleport_area:
 			lua_pushboolean(L, (DISTANCE_APPROX(mePos->x - otherPos->x, mePos->y - otherPos->y) < range) ? 1 : 0);
 			return 1;
 		}
-		const entt::entity pMeEntity = CQuestManager::instance().GetCurrentPCEntity();
-		auto* pMe = ecs::LegacyCharOf(pMeEntity);
-		LPCHARACTER pOther = CHARACTER_MANAGER::instance().Find(vid);
-		lua_pushboolean(L, (pMe && pOther && DISTANCE_APPROX(ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(pMe)) - ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(pOther)), ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(pMe)) - ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(pOther))) < range) ? 1 : 0);
+		lua_pushboolean(L, 0);
 		return 1;
 	}
 
 	ALUA(pc_get_socket_items)
 	{
-		// migrated from CHARACTER::GetInventoryItem
-		entt::entity e = CQuestManager::instance().GetPCEntity(L);
+		const entt::entity character = CQuestManager::instance().GetPCEntity(L);
 		lua_newtable(L);
-		if (const auto* inventory = ECS_TryGet<ecs::MainInventoryRuntimeComponent>(e))
-		{
-			int idx = 1;
-			for (int i = 0; i < INVENTORY_MAX_NUM; ++i)
-			{
-				const entt::entity item = inventory->items[i];
-				if (item == entt::null)
-					continue;
-				int j = 0;
-				for (; j < ITEM_SOCKET_MAX_NUM; ++j)
-				{
-					int32_t socket = ItemSystem::GetItemSocket(item, j);
-					if (socket > 2 && socket != ITEM_BROKEN_METIN_VNUM)
-					{
-						TItemTable* pItemInfo = ITEM_MANAGER::instance().GetTable(socket);
-						if (pItemInfo != nullptr && pItemInfo->bType == ITEM_METIN)
-							break;
-					}
-				}
-				if (j >= ITEM_SOCKET_MAX_NUM)
-					continue;
-				lua_newtable(L);
-				lua_pushstring(L, ItemSystem::GetItemName(item));
-				lua_rawseti(L, -2, 1);
-				lua_pushnumber(L, i);
-				lua_rawseti(L, -2, 2);
-				lua_rawseti(L, -2, idx++);
-			}
-			return 1;
-		}
-		const entt::entity pCharEntity = CQuestManager::instance().GetCurrentPCEntity();
-		auto* pChar = ecs::LegacyCharOf(pCharEntity);
-		if (pChar == nullptr)
-			return 1;
 		int idx = 1;
 		for (int i = 0; i < INVENTORY_MAX_NUM; ++i)
 		{
-			LPITEM pItem = ItemSystem::GetInventoryItemPtr(AIHelpers::EcsOf(pChar), i);
-			if (!pItem)
+			const entt::entity item = ItemSystem::GetInventoryItem(character, i);
+			if (!ItemSystem::IsValidItem(item))
 				continue;
 			int j = 0;
 			for (; j < ITEM_SOCKET_MAX_NUM; ++j)
 			{
-				int32_t socket = ItemSystem::GetItemSocket(EntityFactory::CreateItemEntity(g_registry, pItem), j);
+				const int32_t socket = ItemSystem::GetItemSocket(item, j);
 				if (socket > 2 && socket != ITEM_BROKEN_METIN_VNUM)
 				{
 					TItemTable* pItemInfo = ITEM_MANAGER::instance().GetTable(socket);
@@ -3387,7 +3074,7 @@ teleport_area:
 			if (j >= ITEM_SOCKET_MAX_NUM)
 				continue;
 			lua_newtable(L);
-			lua_pushstring(L, pItem->GetName());
+			lua_pushstring(L, ItemSystem::GetItemName(item));
 			lua_rawseti(L, -2, 1);
 			lua_pushnumber(L, i);
 			lua_rawseti(L, -2, 2);
@@ -3413,9 +3100,7 @@ teleport_area:
 			lua_pushnumber(L, emptyCount);
 			return 1;
 		}
-		const entt::entity pCharEntity = CQuestManager::instance().GetCurrentPCEntity();
-		auto* pChar = ecs::LegacyCharOf(pCharEntity);
-		lua_pushnumber(L, pChar ? pChar->CountEmptyInventory() : 0);
+		lua_pushnumber(L, 0);
 		return 1;
 	}
 
@@ -3428,9 +3113,7 @@ teleport_area:
 			lua_pushnumber(L, loginInfo->logOffInterval);
 			return 1;
 		}
-		const entt::entity pCharEntity = CQuestManager::instance().GetCurrentPCEntity();
-		auto* pChar = ecs::LegacyCharOf(pCharEntity);
-		lua_pushnumber(L, pChar ? pChar->GetLogOffInterval() : 0);
+		lua_pushnumber(L, 0);
 		return 1;
 	}
 
@@ -3444,8 +3127,7 @@ teleport_area:
 			return 1;
 		}
 		const entt::entity pCharEntity = CQuestManager::instance().GetCurrentPCEntity();
-		auto* pChar = ecs::LegacyCharOf(pCharEntity);
-		lua_pushnumber(L, pChar ? (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(pChar))) : 0);
+		lua_pushnumber(L, ecs::PlayerRuntime::GetPlayerID(pCharEntity));
 		return 1;
 	}
 
@@ -3459,10 +3141,9 @@ teleport_area:
 			return 1;
 		}
 		const entt::entity pCharEntity = CQuestManager::instance().GetCurrentPCEntity();
-		auto* pChar = ecs::LegacyCharOf(pCharEntity);
-		if (pChar && ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(pChar)))
+		if (LPDESC desc = ecs::PlayerRuntime::GetDesc(pCharEntity))
 		{
-			lua_pushnumber(L, ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(pChar))->GetAccountTable().id);
+			lua_pushnumber(L, desc->GetAccountTable().id);
 			return 1;
 		}
 		lua_pushnumber(L, 0);
@@ -3479,10 +3160,9 @@ teleport_area:
 			return 1;
 		}
 		const entt::entity pCharEntity = CQuestManager::instance().GetCurrentPCEntity();
-		auto* pChar = ecs::LegacyCharOf(pCharEntity);
-		if (pChar && ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(pChar)))
+		if (LPDESC desc = ecs::PlayerRuntime::GetDesc(pCharEntity))
 		{
-			lua_pushstring(L, ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(pChar))->GetAccountTable().login);
+			lua_pushstring(L, desc->GetAccountTable().login);
 			return 1;
 		}
 		lua_pushstring(L, "");
@@ -3498,16 +3178,13 @@ teleport_area:
 			lua_pushboolean(L, (mount->mountVnum != 0) ? 1 : 0);
 			return 1;
 		}
-		const entt::entity pCharEntity = CQuestManager::instance().GetCurrentPCEntity();
-		auto* pChar = ecs::LegacyCharOf(pCharEntity);
-		lua_pushboolean(L, (pChar && pChar->IsRiding()) ? 1 : 0);
+		lua_pushboolean(L, MountSystem::IsRiding(e) ? 1 : 0);
 		return 1;
 	}
 
 	ALUA(pc_get_special_ride_vnum)
 	{
-		// migrated from CHARACTER::GetWear
-		entt::entity e = CQuestManager::instance().GetPCEntity(L);
+		const entt::entity e = CQuestManager::instance().GetPCEntity(L);
 		if (e != entt::null && g_registry.valid(e))
 		{
 			const entt::entity unique1 = ItemSystem::GetWearItem(e, WEAR_UNIQUE1);
@@ -3536,36 +3213,6 @@ teleport_area:
 			}
 #endif
 		}
-		const entt::entity pCharEntity = CQuestManager::instance().GetCurrentPCEntity();
-		auto* pChar = ecs::LegacyCharOf(pCharEntity);
-		if (pChar != nullptr)
-		{
-			LPITEM Unique1 = ItemSystem::GetWear(AIHelpers::EcsOf(pChar), WEAR_UNIQUE1);
-			LPITEM Unique2 = ItemSystem::GetWear(AIHelpers::EcsOf(pChar), WEAR_UNIQUE2);
-#ifdef ENABLE_MOUNT_COSTUME_SYSTEM
-			LPITEM MountCostume = ItemSystem::GetWear(AIHelpers::EcsOf(pChar), WEAR_COSTUME_MOUNT);
-#endif
-			if (Unique1 && UNIQUE_GROUP_SPECIAL_RIDE == Unique1->GetSpecialGroup())
-			{
-				lua_pushnumber(L, ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, Unique1)));
-				lua_pushnumber(L, ItemSystem::GetItemSocket(EntityFactory::CreateItemEntity(g_registry, Unique1), 0));
-				return 2;
-			}
-			if (Unique2 && UNIQUE_GROUP_SPECIAL_RIDE == Unique2->GetSpecialGroup())
-			{
-				lua_pushnumber(L, ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, Unique2)));
-				lua_pushnumber(L, ItemSystem::GetItemSocket(EntityFactory::CreateItemEntity(g_registry, Unique2), 0));
-				return 2;
-			}
-#ifdef ENABLE_MOUNT_COSTUME_SYSTEM
-			if (MountCostume)
-			{
-				lua_pushnumber(L, ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, MountCostume)));
-				lua_pushnumber(L, ItemSystem::GetItemSocket(EntityFactory::CreateItemEntity(g_registry, MountCostume), 0));
-				return 2;
-			}
-#endif
-		}
 		lua_pushnumber(L, 0);
 		lua_pushnumber(L, 0);
 		return 2;
@@ -3585,8 +3232,7 @@ teleport_area:
 			}
 		}
 		const entt::entity pCharEntity = CQuestManager::instance().GetCurrentPCEntity();
-		auto* pChar = ecs::LegacyCharOf(pCharEntity);
-		lua_pushboolean(L, pChar ? (ecs::PlayerRuntime::CanWarp(AIHelpers::EcsOf(pChar)) ? 1 : 0) : 0);
+		lua_pushboolean(L, ecs::PlayerRuntime::CanWarp(pCharEntity) ? 1 : 0);
 		return 1;
 	}
 
@@ -3601,9 +3247,8 @@ teleport_area:
             g_registry.emplace_or_replace<ecs::DirtyTag>(e);
         }
         const entt::entity pCharEntity = CQuestManager::instance().GetCurrentPCEntity();
-        auto* pChar = ecs::LegacyCharOf(pCharEntity);
-        if (nullptr != pChar)
-            ecs::PointSystem::Change(AIHelpers::EcsOf(pChar), POINT_SKILL, -1);
+        if (pCharEntity != entt::null && g_registry.valid(pCharEntity))
+            ecs::PointSystem::Change(pCharEntity, POINT_SKILL, -1);
         return 0;
     }
 
@@ -3618,8 +3263,7 @@ teleport_area:
 		}
 		// TODO Phase 8: decompose CharacterPoints
 		const entt::entity pCharEntity = CQuestManager::instance().GetCurrentPCEntity();
-		auto* pChar = ecs::LegacyCharOf(pCharEntity);
-		lua_pushnumber(L, pChar ? ecs::PointSystem::Get(AIHelpers::EcsOf(pChar), POINT_SKILL) : 0);
+		lua_pushnumber(L, ecs::PointSystem::Get(pCharEntity, POINT_SKILL));
 		return 1;
 	}
 
@@ -3632,8 +3276,6 @@ teleport_area:
 
 	ALUA(pc_give_poly_marble)
 	{
-        // migrated from CHARACTER::AutoGiveItem
-        // DUAL-PATH: legacy only - LPITEM not ECS-migrated in this phase
 		const int dwVnum = lua_tonumber(L, 1);
 
 		const CMob* MobInfo = CMobManager::instance().Get(dwVnum);
@@ -3650,34 +3292,41 @@ teleport_area:
 			return 1;
 		}
 
-		LPITEM item = ITEM_MANAGER::instance().CreateItem( MobInfo->m_table.dwPolymorphItemVnum );
+		const entt::entity item = ItemSystem::CreateItemEcs(MobInfo->m_table.dwPolymorphItemVnum);
 
-		if (nullptr == item)
+		if (!ItemSystem::IsValidItem(item))
 		{
 			lua_pushboolean(L, false);
 			return 1;
 		}
 
-		ItemSystem::SetItemSocket(EntityFactory::CreateItemEntity(g_registry, item), 0, dwVnum);
+		const entt::entity character = CQuestManager::instance().GetCurrentPCEntity();
+		if (!ItemSystem::SetItemSocket(item, 0, dwVnum))
+		{
+			ItemSystem::DestroyItemEntityEcs(item, "QUEST_POLY_MARBLE_INIT_FAIL");
+			lua_pushboolean(L, false);
+			return 1;
+		}
 
-		const LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
-
-		int iEmptyCell = ch->GetEmptyInventory(item->GetSize());
+		const int iEmptyCell = ItemSystem::GetEmptyInventoryPositionEcs(character, item);
 
 		if (-1 == iEmptyCell)
 		{
-			ItemSystem::DestroyItemEntityEcs(
-				EntityFactory::CreateItemEntity(g_registry, item),
-				"QUEST_ITEM_FAIL");
+			ItemSystem::DestroyItemEntityEcs(item, "QUEST_ITEM_FAIL");
 			lua_pushboolean(L, false);
 			return 1;
 		}
 
-		item->AddToCharacter(ch, TItemPos(INVENTORY, iEmptyCell));
+		if (!ItemSystem::PlaceItemEcs(character, item, INVENTORY, iEmptyCell))
+		{
+			ItemSystem::DestroyItemEntityEcs(item, "QUEST_POLY_MARBLE_PLACE_FAIL");
+			lua_pushboolean(L, false);
+			return 1;
+		}
 
 		const PC* pPC = CQuestManager::instance().GetCurrentPC();
 
-		LogManager::instance().QuestRewardLog(pPC->GetCurrentQuestName().c_str(), (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))), (ecs::PointSystem::GetLevel(AIHelpers::EcsOf(ch))), MobInfo->m_table.dwPolymorphItemVnum, dwVnum);
+		LogManager::instance().QuestRewardLog(pPC->GetCurrentQuestName().c_str(), ecs::PlayerRuntime::GetPlayerID(character), ecs::PointSystem::GetLevel(character), MobInfo->m_table.dwPolymorphItemVnum, dwVnum);
 
 		lua_pushboolean(L, true);
 
@@ -3686,35 +3335,16 @@ teleport_area:
 
 	ALUA(pc_get_sig_items)
 	{
-		// migrated from CHARACTER::GetInventoryItem
 		const uint32_t group_vnum = static_cast<uint32_t>(lua_tonumber(L, 1));
-		entt::entity e = CQuestManager::instance().GetPCEntity(L);
-		if (const auto* inventory = ECS_TryGet<ecs::MainInventoryRuntimeComponent>(e))
-		{
-			int count = 0;
-			for (int i = 0; i < INVENTORY_MAX_NUM; ++i)
-			{
-				const entt::entity item = inventory->items[i];
-				if (item != entt::null && ItemSystem::GetItemSIGVnum(item) == group_vnum)
-				{
-					lua_pushnumber(L, ItemSystem::GetItemID(item));
-					++count;
-				}
-			}
-			return count;
-		}
-		const LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
+		const entt::entity character = CQuestManager::instance().GetPCEntity(L);
 		int count = 0;
-		if (ch)
+		for (int i = 0; i < INVENTORY_MAX_NUM; ++i)
 		{
-			for (int i = 0; i < INVENTORY_MAX_NUM; ++i)
+			const entt::entity item = ItemSystem::GetInventoryItem(character, i);
+			if (ItemSystem::IsValidItem(item) && ItemSystem::GetItemSIGVnum(item) == group_vnum)
 			{
-				LPITEM item = ItemSystem::GetInventoryItemPtr(AIHelpers::EcsOf(ch), i);
-				if (item != nullptr && item->GetSIGVnum() == group_vnum)
-				{
-					lua_pushnumber(L, ItemSystem::GetItemID(EntityFactory::CreateItemEntity(g_registry, item)));
-					++count;
-				}
+				lua_pushnumber(L, ItemSystem::GetItemID(item));
+				++count;
 			}
 		}
 		return count;
@@ -3732,9 +3362,8 @@ teleport_area:
 		}
 
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
-
-		auto* ch = ecs::LegacyCharOf(chEntity);
-		if (ch == nullptr || ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch)) == nullptr)
+		const auto* session = ECS_TryGet<ecs::NetworkSession>(chEntity);
+		if (!session || !session->desc)
 		{
 			lua_pushboolean(L, 0);
 			return 1;
@@ -3748,7 +3377,7 @@ teleport_area:
 		}
 
 		TRequestChargeCash packet;
-		packet.aid = ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->GetAccountTable().id;
+		packet.aid = session->desc->GetAccountTable().id;
 		packet.amount = amount;
 
 		db_clientdesc->DBPacketHeader(HEADER_GD_REQUEST_CHARGE_CASH, 0, sizeof(TRequestChargeCash));
@@ -3759,14 +3388,17 @@ teleport_area:
 
 	ALUA(pc_give_award)
 	{
-        // migrated from CHARACTER::GetDesc
-        // DUAL-PATH: legacy only - LPITEM not ECS-migrated in this phase
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
-		auto* ch = ecs::LegacyCharOf(chEntity);
+		LPDESC desc = ecs::PlayerRuntime::GetDesc(chEntity);
 		if (!lua_isnumber(L, 1) || !lua_isnumber(L, 2) || !lua_isstring(L, 3) )
 		{
 			sys_err("QUEST give award call error : wrong argument");
 			lua_pushnumber (L, 0);
+			return 1;
+		}
+		if (!desc)
+		{
+			lua_pushnumber(L, 0);
 			return 1;
 		}
 
@@ -3774,14 +3406,14 @@ teleport_area:
 
 		int icount = (int) lua_tonumber(L, 2);
 
-		LOG_INFO("QUEST [award] item {} to login {}", dwVnum, ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->GetAccountTable().login);
+		LOG_INFO("QUEST [award] item {} to login {}", dwVnum, desc->GetAccountTable().login);
 
 		DBManager::instance().Query("INSERT INTO item_award (login, vnum, count, given_time, why, mall)select '%s', %d, %d, now(), '%s', 1 from DUAL where not exists (select login, why from item_award where login = '%s' and why  = '%s') ;",
-			ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->GetAccountTable().login,
+			desc->GetAccountTable().login,
 			dwVnum,
 			icount,
 			lua_tostring(L,3),
-			ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->GetAccountTable().login,
+			desc->GetAccountTable().login,
 			lua_tostring(L,3));
 
 		lua_pushnumber (L, 0);
@@ -3789,14 +3421,17 @@ teleport_area:
 	}
 	ALUA(pc_give_award_socket)
 	{
-        // migrated from CHARACTER::GetDesc
-        // DUAL-PATH: legacy only - LPITEM not ECS-migrated in this phase
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
-		auto* ch = ecs::LegacyCharOf(chEntity);
+		LPDESC desc = ecs::PlayerRuntime::GetDesc(chEntity);
 		if (!lua_isnumber(L, 1) || !lua_isnumber(L, 2) || !lua_isstring(L, 3) || !lua_isstring(L, 4) || !lua_isstring(L, 5) || !lua_isstring(L, 6) )
 		{
 			sys_err("QUEST give award call error : wrong argument");
 			lua_pushnumber (L, 0);
+			return 1;
+		}
+		if (!desc)
+		{
+			lua_pushnumber(L, 0);
 			return 1;
 		}
 
@@ -3804,17 +3439,17 @@ teleport_area:
 
 		int icount = (int) lua_tonumber(L, 2);
 
-		LOG_INFO("QUEST [award] item {} to login {}", dwVnum, ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->GetAccountTable().login);
+		LOG_INFO("QUEST [award] item {} to login {}", dwVnum, desc->GetAccountTable().login);
 
 		DBManager::instance().Query("INSERT INTO item_award (login, vnum, count, given_time, why, mall, socket0, socket1, socket2)select '%s', %d, %d, now(), '%s', 1, %s, %s, %s from DUAL where not exists (select login, why from item_award where login = '%s' and why  = '%s') ;",
-			ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->GetAccountTable().login,
+			desc->GetAccountTable().login,
 			dwVnum,
 			icount,
 			lua_tostring(L,3),
 			lua_tostring(L,4),
 			lua_tostring(L,5),
 			lua_tostring(L,6),
-			ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->GetAccountTable().login,
+			desc->GetAccountTable().login,
 			lua_tostring(L,3));
 
 		lua_pushnumber (L, 0);
@@ -3823,40 +3458,31 @@ teleport_area:
 
 	ALUA(pc_get_informer_type)	//���� ���� ���
 	{
-		// migrated from CHARACTER::GetItemAward_cmd
-		// TODO Phase 8: dedicated ItemAward component
-		entt::entity e = CQuestManager::instance().GetPCEntity(L);
-		(void)e;
-		const entt::entity pCharEntity = CQuestManager::instance().GetCurrentPCEntity();
-		auto* pChar = ecs::LegacyCharOf(pCharEntity);
-		lua_pushstring(L, pChar ? pChar->GetItemAward_cmd() : "");
+		const entt::entity character = CQuestManager::instance().GetPCEntity(L);
+		const auto* award = ECS_TryGet<ecs::ItemAward>(character);
+		lua_pushstring(L, award ? award->command.c_str() : "");
 		return 1;
 	}
 
 	ALUA(pc_get_informer_item)
 	{
-		// migrated from CHARACTER::GetItemAward_vnum
-		// TODO Phase 8: dedicated ItemAward component
-		entt::entity e = CQuestManager::instance().GetPCEntity(L);
-		(void)e;
-		const entt::entity pCharEntity = CQuestManager::instance().GetCurrentPCEntity();
-		auto* pChar = ecs::LegacyCharOf(pCharEntity);
-		lua_pushnumber(L, pChar ? pChar->GetItemAward_vnum() : 0);
+		const entt::entity character = CQuestManager::instance().GetPCEntity(L);
+		const auto* award = ECS_TryGet<ecs::ItemAward>(character);
+		lua_pushnumber(L, award ? award->vnum : 0);
 		return 1;
 	}
 
 	ALUA(pc_get_killee_drop_pct)
 	{
-		// migrated from CHARACTER::GetQuestNPC
-		// TODO Phase 8: dedicated QuestTarget component
-		entt::entity e = CQuestManager::instance().GetPCEntity(L);
-		(void)e;
-		const entt::entity pCharEntity = CQuestManager::instance().GetCurrentPCEntity();
-		auto* pChar = ecs::LegacyCharOf(pCharEntity);
-		LPCHARACTER pKillee = pChar ? pChar->GetQuestNPC() : nullptr;
+		const entt::entity character = CQuestManager::instance().GetPCEntity(L);
+		const entt::entity killee = ecs::PlayerRuntime::GetQuestNPC(character);
+		auto* characterLegacy = ecs::LegacyCharOf(character);
+		auto* killeeLegacy = ecs::LegacyCharOf(killee);
 		int iDeltaPercent = -1;
 		int iRandRange = -1;
-		if (nullptr == pKillee || !pChar || !ITEM_MANAGER::instance().GetDropPct(pKillee, pChar, iDeltaPercent, iRandRange))
+		// Explicit legacy boundary: the drop-rate authority still lives in ITEM_MANAGER.
+		if (!killeeLegacy || !characterLegacy ||
+			!ITEM_MANAGER::instance().GetDropPct(killeeLegacy, characterLegacy, iDeltaPercent, iRandRange))
 		{
 			sys_err("killee is null");
 			lua_pushnumber(L, -1);
@@ -3876,10 +3502,7 @@ teleport_area:
 	enum eMakeItemType{PCMI0_GIVE, PCMI0_DROP, PCMI0_DROPWP, PCMI0_MAX};
 	ALUA(pc_make_item0)
 	{
-        // migrated from CHARACTER::AutoGiveItem
-        // DUAL-PATH: legacy only - LPITEM not ECS-migrated in this phase
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
-		auto* ch = ecs::LegacyCharOf(chEntity);
 		if (!lua_istable(L, 1) && !lua_istable(L, 2) && !lua_istable(L, 3) && !lua_isnumber(L, 4))
 			return 0;
 
@@ -3899,7 +3522,7 @@ teleport_area:
 						if ((m_vnum = lua_tonumber(L, -1))<=0)
 						{
 #ifdef TEXTS_IMPROVEMENT
-							ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 738, "%d", m_vnum);
+							ecs::ChatSystem::SendNew(chEntity, CHAT_TYPE_INFO, 738, "%d", m_vnum);
 #endif
 							return 0;
 						}
@@ -3909,7 +3532,7 @@ teleport_area:
 						if (!ITEM_MANAGER::instance().GetVnum(lua_tostring(L, -1), m_vnum))
 						{
 #ifdef TEXTS_IMPROVEMENT
-							ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 739, "%d", m_vnum);
+							ecs::ChatSystem::SendNew(chEntity, CHAT_TYPE_INFO, 739, "%d", m_vnum);
 #endif
 							return 0;
 						}
@@ -3966,46 +3589,62 @@ teleport_area:
 		if ((m_state = lua_tonumber(L, 4))>=PCMI0_MAX)
 			return 0;
 
-		LPITEM pkNewItem = ITEM_MANAGER::instance().CreateItem(m_vnum, 1, 0, false);
-		if (pkNewItem)
+		const entt::entity newItem = ItemSystem::CreateItemEcs(m_vnum, m_count, 0, false);
+		if (ItemSystem::IsValidItem(newItem))
 		{
 			// socket
+			bool initialized = true;
 			for (int i=0; i<ITEM_SOCKET_MAX_NUM; i++)
-				ItemSystem::SetItemSocket(EntityFactory::CreateItemEntity(g_registry, pkNewItem), i, m_socket[i]);
+				initialized = initialized && ItemSystem::SetItemSocket(newItem, i, m_socket[i]);
 			// attr
 			for (int i=0; i<ITEM_ATTRIBUTE_MAX_NUM; i++)
-				ItemSystem::SetItemForceAttributeEcs(EntityFactory::CreateItemEntity(g_registry, pkNewItem), i, m_attr[(i*2)+0], m_attr[(i*2)+1]);
+				initialized = initialized && ItemSystem::SetItemForceAttributeEcs(newItem, i, m_attr[(i*2)+0], m_attr[(i*2)+1]);
+			if (!initialized)
+			{
+				ItemSystem::DestroyItemEntityEcs(newItem, "QUEST_MAKE_ITEM_INIT_FAIL");
+				lua_pushboolean(L, false);
+				return 1;
+			}
 			// state
 			int iEmptyCell = -1;
 			int m_sec = 0;
-			PIXEL_POSITION pos;
+			PIXEL_POSITION pos{};
 			switch(m_state)
 			{
 				case PCMI0_GIVE:
-					iEmptyCell = ch->GetEmptyInventory(pkNewItem->GetSize());
+					iEmptyCell = ItemSystem::GetEmptyInventoryPositionEcs(chEntity, newItem);
 					if (-1 == iEmptyCell)
 					{
-						ItemSystem::DestroyItemEntityEcs(
-							EntityFactory::CreateItemEntity(g_registry, pkNewItem),
-							"QUEST_ITEM_FAIL");
+						ItemSystem::DestroyItemEntityEcs(newItem, "QUEST_ITEM_FAIL");
 						lua_pushboolean(L, false);
 						return 1;
 					}
-					pkNewItem->AddToCharacter(ch, TItemPos(INVENTORY, iEmptyCell));
+					if (!ItemSystem::PlaceItemEcs(chEntity, newItem, INVENTORY, iEmptyCell))
+					{
+						ItemSystem::DestroyItemEntityEcs(newItem, "QUEST_ITEM_PLACE_FAIL");
+						lua_pushboolean(L, false);
+						return 1;
+					}
 					break;
 				case PCMI0_DROPWP:
 					if (lua_isnumber(L, 5) && (m_sec = lua_tonumber(L, 5)))
-						pkNewItem->SetOwnership(ch, m_sec<=0?1:m_sec);
+						ItemSystem::SetGroundOwnershipLegacyBoundary(newItem, chEntity, m_sec <= 0 ? 1 : m_sec);
 					else
-						pkNewItem->SetOwnership(ch);
+						ItemSystem::SetGroundOwnershipLegacyBoundary(newItem, chEntity);
 				case PCMI0_DROP:
-					pos.x = ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(ch)) + number(-200, 200);
-					pos.y = ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(ch)) + number(-200, 200);
+					pos.x = ecs::PlayerRuntime::GetX(chEntity) + number(-200, 200);
+					pos.y = ecs::PlayerRuntime::GetY(chEntity) + number(-200, 200);
 
-					pkNewItem->AddToGround(ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)), pos);
-					pkNewItem->StartDestroyEvent();
+					if (!ItemSystem::PlaceItemOnGroundLegacyBoundary(
+							newItem, ecs::PlayerRuntime::GetMapIndex(chEntity), pos))
+					{
+						ItemSystem::DestroyItemEntityEcs(newItem, "QUEST_ITEM_GROUND_FAIL");
+						lua_pushboolean(L, false);
+						return 1;
+					}
 					break;
 				default:
+					ItemSystem::DestroyItemEntityEcs(newItem, "QUEST_ITEM_BAD_STATE");
 					lua_pushboolean(L, false);
 					return 1;
 			}
@@ -4094,18 +3733,9 @@ teleport_area:
 		const int amount = static_cast<int>(lua_tonumber(L, 2));
 		const bool broadcast = lua_toboolean(L, 3) != 0;
 		const bool ignoreMax = lua_toboolean(L, 4) != 0;
-		entt::entity e = CQuestManager::instance().GetPCEntity(L);
-		if (auto* points = ECS_TryGet<ecs::CharacterPoints>(e))
-		{
-			if (type >= 0 && type < POINT_MAX_NUM)
-			{
-				points->base.points[type] += amount;
-				g_registry.emplace_or_replace<ecs::DirtyTag>(e);
-			}
-		}
-		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
-		auto* ch = ecs::LegacyCharOf(chEntity);
-		if (ch) ecs::PointSystem::Change(AIHelpers::EcsOf(ch), type, amount, broadcast, ignoreMax);
+		const entt::entity character = CQuestManager::instance().GetPCEntity(L);
+		if (character != entt::null && g_registry.valid(character))
+			ecs::PointSystem::Change(character, type, amount, broadcast, ignoreMax);
 		return 0;
 	}
 
@@ -4180,8 +3810,7 @@ teleport_area:
 			return 1;
 		}
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
-		auto* ch = ecs::LegacyCharOf(chEntity);
-		lua_pushboolean(L, ch ? (AffectSystem::IsAffectFlag(AIHelpers::EcsOf(ch), AFF_FIRE) ? 1 : 0) : 0);
+		lua_pushboolean(L, AffectSystem::IsAffectFlag(chEntity, AFF_FIRE) ? 1 : 0);
 		return 1;
 	}
 
@@ -4195,8 +3824,7 @@ teleport_area:
 			return 1;
 		}
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
-		auto* ch = ecs::LegacyCharOf(chEntity);
-		lua_pushboolean(L, ch ? (AffectSystem::IsAffectFlag(AIHelpers::EcsOf(ch), AFF_INVISIBILITY) ? 1 : 0) : 0);
+		lua_pushboolean(L, AffectSystem::IsAffectFlag(chEntity, AFF_INVISIBILITY) ? 1 : 0);
 		return 1;
 	}
 	ALUA(pc_if_poison)
@@ -4209,8 +3837,7 @@ teleport_area:
 			return 1;
 		}
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
-		auto* ch = ecs::LegacyCharOf(chEntity);
-		lua_pushboolean(L, ch ? (AffectSystem::IsAffectFlag(AIHelpers::EcsOf(ch), AFF_POISON) ? 1 : 0) : 0);
+		lua_pushboolean(L, AffectSystem::IsAffectFlag(chEntity, AFF_POISON) ? 1 : 0);
 		return 1;
 	}
 #ifdef ENABLE_WOLFMAN_CHARACTER
@@ -4224,8 +3851,7 @@ teleport_area:
 			return 1;
 		}
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
-		auto* ch = ecs::LegacyCharOf(chEntity);
-		lua_pushboolean(L, ch ? (AffectSystem::IsAffectFlag(AIHelpers::EcsOf(ch), AFF_BLEEDING) ? 1 : 0) : 0);
+		lua_pushboolean(L, AffectSystem::IsAffectFlag(chEntity, AFF_BLEEDING) ? 1 : 0);
 		return 1;
 	}
 #endif
@@ -4236,8 +3862,7 @@ teleport_area:
 		entt::entity e = CQuestManager::instance().GetPCEntity(L);
 		(void)e;
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
-		auto* ch = ecs::LegacyCharOf(chEntity);
-		lua_pushboolean(L, ch ? (AffectSystem::IsAffectFlag(AIHelpers::EcsOf(ch), AFF_SLOW) ? 1 : 0) : 0);
+		lua_pushboolean(L, AffectSystem::IsAffectFlag(chEntity, AFF_SLOW) ? 1 : 0);
 		return 1;
 	}
 	ALUA(pc_if_stun)
@@ -4251,8 +3876,7 @@ teleport_area:
 			return 1;
 		}
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
-		auto* ch = ecs::LegacyCharOf(chEntity);
-		lua_pushboolean(L, ch ? (AffectSystem::IsAffectFlag(AIHelpers::EcsOf(ch), AFF_STUN) ? 1 : 0) : 0);
+		lua_pushboolean(L, AffectSystem::IsAffectFlag(chEntity, AFF_STUN) ? 1 : 0);
 		return 1;
 	}
     ALUA(pc_sf_fire)
@@ -4269,14 +3893,12 @@ teleport_area:
                 g_registry.remove<ecs::FireTag>(e);
             g_registry.emplace_or_replace<ecs::DirtyTag>(e);
         }
-        const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
-        auto* ch = ecs::LegacyCharOf(chEntity);
-        if (ch)
+        if (e != entt::null && g_registry.valid(e))
         {
             if(enabled)
-                AffectSystem::AddAffect(AIHelpers::EcsOf(ch), AFFECT_FIRE, 0, 0, AFF_FIRE, 3 * 5 + 1, 0, 1, 0);
+                AffectSystem::AddAffect(e, AFFECT_FIRE, 0, 0, AFF_FIRE, 3 * 5 + 1, 0, 1, 0);
             else
-                AffectSystem::RemoveAffect(AIHelpers::EcsOf(ch), AFFECT_FIRE);
+                AffectSystem::RemoveAffect(e, AFFECT_FIRE);
         }
         return 0;
     }
@@ -4291,14 +3913,12 @@ teleport_area:
             sf->isInvisible = enabled;
             g_registry.emplace_or_replace<ecs::DirtyTag>(e);
         }
-        const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
-        auto* ch = ecs::LegacyCharOf(chEntity);
-        if (ch)
+        if (e != entt::null && g_registry.valid(e))
         {
             if(enabled)
-                AffectSystem::AddAffect(AIHelpers::EcsOf(ch), AFFECT_INVISIBILITY, 0, 0, AFF_INVISIBILITY, 60*60*24*365*60+1, 0, 1, 0);
+                AffectSystem::AddAffect(e, AFFECT_INVISIBILITY, 0, 0, AFF_INVISIBILITY, 60*60*24*365*60+1, 0, 1, 0);
             else
-                AffectSystem::RemoveAffect(AIHelpers::EcsOf(ch), AFFECT_INVISIBILITY);
+                AffectSystem::RemoveAffect(e, AFFECT_INVISIBILITY);
         }
         return 0;
     }
@@ -4313,14 +3933,12 @@ teleport_area:
             sf->hasPoisoned = enabled;
             g_registry.emplace_or_replace<ecs::DirtyTag>(e);
         }
-        const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
-        auto* ch = ecs::LegacyCharOf(chEntity);
-        if (ch)
+        if (e != entt::null && g_registry.valid(e))
         {
             if(enabled)
-                AffectSystem::AddAffect(AIHelpers::EcsOf(ch), AFFECT_POISON, 0, 0, AFF_POISON, 30+1, 0, 1, 0);
+                AffectSystem::AddAffect(e, AFFECT_POISON, 0, 0, AFF_POISON, 30+1, 0, 1, 0);
             else
-                AffectSystem::RemoveAffect(AIHelpers::EcsOf(ch), AFFECT_POISON);
+                AffectSystem::RemoveAffect(e, AFFECT_POISON);
         }
         return 0;
     }
@@ -4336,14 +3954,12 @@ teleport_area:
             sf->hasBled = enabled;
             g_registry.emplace_or_replace<ecs::DirtyTag>(e);
         }
-        const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
-        auto* ch = ecs::LegacyCharOf(chEntity);
-        if (ch)
+        if (e != entt::null && g_registry.valid(e))
         {
             if(enabled)
-                AffectSystem::AddAffect(AIHelpers::EcsOf(ch), AFFECT_BLEEDING, 0, 0, AFF_BLEEDING, 30+1, 0, 1, 0);
+                AffectSystem::AddAffect(e, AFFECT_BLEEDING, 0, 0, AFF_BLEEDING, 30+1, 0, 1, 0);
             else
-                AffectSystem::RemoveAffect(AIHelpers::EcsOf(ch), AFFECT_BLEEDING);
+                AffectSystem::RemoveAffect(e, AFFECT_BLEEDING);
         }
         return 0;
     }
@@ -4356,14 +3972,12 @@ teleport_area:
         entt::entity e = CQuestManager::instance().GetPCEntity(L);
         if (e != entt::null && g_registry.valid(e))
             g_registry.emplace_or_replace<ecs::DirtyTag>(e);
-        const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
-        auto* ch = ecs::LegacyCharOf(chEntity);
-        if (ch)
+        if (e != entt::null && g_registry.valid(e))
         {
             if(lua_toboolean(L, 1))
-                AffectSystem::AddAffect(AIHelpers::EcsOf(ch), AFFECT_SLOW, 19, -30, AFF_SLOW, 30, 0, 1, 0);
+                AffectSystem::AddAffect(e, AFFECT_SLOW, 19, -30, AFF_SLOW, 30, 0, 1, 0);
             else
-                AffectSystem::RemoveAffect(AIHelpers::EcsOf(ch), AFFECT_SLOW);
+                AffectSystem::RemoveAffect(e, AFFECT_SLOW);
         }
         return 0;
     }
@@ -4383,23 +3997,21 @@ teleport_area:
                 sf->isStunned = enabled;
             g_registry.emplace_or_replace<ecs::DirtyTag>(e);
         }
-        const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
-        auto* ch = ecs::LegacyCharOf(chEntity);
-        if (ch)
+        if (e != entt::null && g_registry.valid(e))
         {
             if(enabled)
-                AffectSystem::AddAffect(AIHelpers::EcsOf(ch), AFFECT_STUN, 0, 0, AFF_STUN, 30, 0, 1, 0);
+                AffectSystem::AddAffect(e, AFFECT_STUN, 0, 0, AFF_STUN, 30, 0, 1, 0);
             else
-                AffectSystem::RemoveAffect(AIHelpers::EcsOf(ch), AFFECT_STUN);
+                AffectSystem::RemoveAffect(e, AFFECT_STUN);
         }
         return 0;
     }
 
 	ALUA(pc_sf_kill)
 	{
-		LPCHARACTER ch = CHARACTER_MANAGER::instance().FindPC(lua_tostring(L, 1));
-		if (ch)
-			ch->Dead(nullptr, 0);
+		// Explicit legacy boundary: CHARACTER::Dead has not been ECS-migrated yet.
+		if (LPCHARACTER victim = CHARACTER_MANAGER::instance().FindPC(lua_tostring(L, 1)))
+			victim->Dead(nullptr, 0);
 		return 0;
 	}
 
@@ -4481,8 +4093,8 @@ teleport_area:
 			return 1;
 		}
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
-		auto* ch = ecs::LegacyCharOf(chEntity);
-		lua_pushstring(L, (ch && ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))) ? ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->GetHostName() : "");
+		LPDESC desc = ecs::PlayerRuntime::GetDesc(chEntity);
+		lua_pushstring(L, desc ? desc->GetHostName() : "");
 		return 1;
 	}
 
@@ -4496,8 +4108,8 @@ teleport_area:
 			return 1;
 		}
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
-		auto* ch = ecs::LegacyCharOf(chEntity);
-		lua_pushstring(L, (ch && ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch)) && ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->GetClientVersion()) ? ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->GetClientVersion() : "");
+		LPDESC desc = ecs::PlayerRuntime::GetDesc(chEntity);
+		lua_pushstring(L, (desc && desc->GetClientVersion()) ? desc->GetClientVersion() : "");
 		return 1;
 	}
 
@@ -4506,8 +4118,8 @@ teleport_area:
         // migrated from CHARACTER::GetDesc
         // DUAL-PATH: legacy only during migration window
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
-		auto* ch = ecs::LegacyCharOf(chEntity);
-		bool bRet = ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->DelayedDisconnect(MINMAX(0, lua_tonumber(L, 1), 60*5));
+		LPDESC desc = ecs::PlayerRuntime::GetDesc(chEntity);
+		bool bRet = desc && desc->DelayedDisconnect(MINMAX(0, lua_tonumber(L, 1), 60*5));
 		lua_pushboolean(L, bRet);
 		return 1;
 	}
@@ -4535,8 +4147,7 @@ teleport_area:
 			}
 		}
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
-		auto* ch = ecs::LegacyCharOf(chEntity);
-		lua_pushboolean(L, (ch && ecs::SocialSystem::GetExchange(AIHelpers::EcsOf(ch))!= nullptr) ? 1 : 0);
+		lua_pushboolean(L, ecs::SocialSystem::GetExchange(chEntity) ? 1 : 0);
 		return 1;
 	}
 
@@ -4548,15 +4159,16 @@ teleport_area:
 		{
 			const auto* shop = ECS_TryGet<ecs::ShopState>(e);
 			const auto* safebox = ECS_TryGet<ecs::SafeboxRef>(e);
-			if ((shop && (shop->currentShop || shop->myShop || shop->underRefine)) || (safebox && safebox->isOpening))
+			const auto* cube = ECS_TryGet<ecs::CubeWindowComponent>(e);
+			if (ecs::SocialSystem::GetExchange(e) ||
+				(shop && (shop->currentShop || shop->myShop || shop->shopOwner || shop->underRefine)) ||
+				(safebox && safebox->isOpening) || (cube && cube->pNpc))
 			{
 				lua_pushboolean(L, 1);
 				return 1;
 			}
 		}
-		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
-		auto* ch = ecs::LegacyCharOf(chEntity);
-		lua_pushboolean(L, (ch && (ecs::SocialSystem::GetExchange(AIHelpers::EcsOf(ch)) || ch->GetMyShop() || ch->GetShopOwner() || ch->IsOpenSafebox() || ch->IsCubeOpen())) ? 1 : 0);
+		lua_pushboolean(L, ecs::SocialSystem::GetExchange(e) ? 1 : 0);
 		return 1;
 	}
 
@@ -4572,39 +4184,36 @@ teleport_area:
 				return 1;
 			}
 		}
-		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
-		auto* ch = ecs::LegacyCharOf(chEntity);
-		lua_pushboolean(L, (ch && ch->GetArena()!= nullptr) ? 1 : 0);
+		lua_pushboolean(L, 0);
 		return 1;
 	}
 
 	ALUA(pc_is_arena_observer0)
 	{
-		// migrated from CHARACTER::GetArenaObserverMode
-		// TODO Phase 8: dedicated ArenaObserver component
-		entt::entity e = CQuestManager::instance().GetPCEntity(L);
-		(void)e;
-		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
-		auto* ch = ecs::LegacyCharOf(chEntity);
-		lua_pushboolean(L, (ch && ch->GetArenaObserverMode()) ? 1 : 0);
+		lua_pushboolean(L, ecs::PlayerRuntime::IsArenaObserverMode(
+			CQuestManager::instance().GetPCEntity(L)) ? 1 : 0);
 		return 1;
 	}
 
 	ALUA(pc_equip_slot0)
 	{
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
-		auto* ch = ecs::LegacyCharOf(chEntity);
-		LPITEM item = ItemSystem::GetInventoryItemPtr(AIHelpers::EcsOf(ch), lua_tonumber(L, 1));
-		lua_pushboolean(L, (item)?ch->EquipItem(item):false);
+		const int cell = lua_isnumber(L, 1) ? static_cast<int>(lua_tonumber(L, 1)) : -1;
+		const entt::entity item = cell >= 0 && cell < INVENTORY_MAX_NUM
+			? ItemSystem::GetInventoryItem(chEntity, static_cast<uint16_t>(cell))
+			: entt::null;
+		lua_pushboolean(L, ItemSystem::IsValidItem(item) && ItemSystem::EquipItemEcs(chEntity, item));
 		return 1;
 	}
 
 	ALUA(pc_unequip_slot0)
 	{
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
-		auto* ch = ecs::LegacyCharOf(chEntity);
-		LPITEM item = ItemSystem::GetWear(AIHelpers::EcsOf(ch), lua_tonumber(L, 1));
-		lua_pushboolean(L, (item)?ch->UnequipItem(item):false);
+		const int wearCell = static_cast<int>(lua_tonumber(L, 1));
+		const entt::entity item = wearCell >= 0 && wearCell < WEAR_MAX_NUM
+			? ItemSystem::GetWearItem(chEntity, static_cast<uint8_t>(wearCell))
+			: entt::null;
+		lua_pushboolean(L, ItemSystem::IsValidItem(item) && ItemSystem::UnequipItemEcs(chEntity, item));
 		return 1;
 	}
 
@@ -4618,26 +4227,24 @@ teleport_area:
 			return 1;
 		}
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
-		auto* ch = ecs::LegacyCharOf(chEntity);
-		lua_pushboolean(L, ch != nullptr ? 1 : 0);
+		lua_pushboolean(L, chEntity != entt::null && g_registry.valid(chEntity));
 		return 1;
 	}
 
 	ALUA(pc_give_random_book0)
 	{
-        // migrated from CHARACTER::AutoGiveItem
-        // DUAL-PATH: legacy only - LPITEM not ECS-migrated in this phase
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
-		auto* ch = ecs::LegacyCharOf(chEntity);
-		LPITEM item = ch->AutoGiveItem(50300);
-		if (item)
-		{
-			if (lua_isnumber(L, 1))
-				ItemSystem::SetItemSocket(EntityFactory::CreateItemEntity(g_registry, item), 0, ::GetRandomSkillVnum(lua_tonumber(L, 1)));
-			else
-				ItemSystem::SetItemSocket(EntityFactory::CreateItemEntity(g_registry, item), 0, ::GetRandomSkillVnum());
-		}
-		lua_pushboolean(L, item!= nullptr);
+		const entt::entity item = ItemSystem::CreateItemEcs(50300);
+		const uint32_t skillVnum = lua_isnumber(L, 1)
+			? ::GetRandomSkillVnum(lua_tonumber(L, 1))
+			: ::GetRandomSkillVnum();
+		const bool initialized = ItemSystem::IsValidItem(item) &&
+			ItemSystem::SetItemSocket(item, 0, skillVnum);
+		if (initialized)
+			ItemSystem::AutoGiveItem(chEntity, item);
+		else if (ItemSystem::IsValidItem(item))
+			ItemSystem::DestroyItemEntityEcs(item, "QUEST_RANDOM_BOOK_INIT_FAIL");
+		lua_pushboolean(L, initialized);
 		return 1;
 	}
 
@@ -4651,8 +4258,8 @@ teleport_area:
 			return 1;
 		}
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
-		auto* ch = ecs::LegacyCharOf(chEntity);
-		lua_pushboolean(L, ch ? (CPVPManager::instance().IsFighting((ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)))) ? 1 : 0) : 0);
+		lua_pushboolean(L, CPVPManager::instance().IsFighting(
+			ecs::PlayerRuntime::GetPlayerID(chEntity)) ? 1 : 0);
 		return 1;
 	}
 
@@ -4735,10 +4342,9 @@ teleport_area:
 	{
 		if (lua_isboolean(L, 1))
 		{
-			CQuestManager & qMgr = CQuestManager::instance();
-			LPCHARACTER pkChar = qMgr.GetCurrentCharacterPtr();
-			if (pkChar)
-				pkChar->OpenAcce(lua_toboolean(L, 1));
+			// Explicit legacy boundary: all accessory-window state must move together.
+			if (LPCHARACTER character = CQuestManager::instance().GetCurrentCharacterPtr())
+				character->OpenAcce(lua_toboolean(L, 1));
 		}
 		else
 			sys_err("Invalid argument: arg1 must be boolean.");
@@ -4762,15 +4368,6 @@ teleport_area:
 			}
 		}
 
-		const entt::entity pCharEntity = CQuestManager::instance().GetCurrentPCEntity();
-
-		auto* pChar = ecs::LegacyCharOf(pCharEntity);
-		if (pChar && ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(pChar)))
-		{
-			lua_pushstring(L, LC_CONVERT(ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(pChar))->GetLanguage()));
-			return 1;
-		}
-
 		lua_pushstring(L, "ro");
 		return 1;
 	}
@@ -4779,9 +4376,8 @@ teleport_area:
 #ifdef __ENABLE_BLOCK_EXP__
 	ALUA(_Block_Exp)
 	{
-		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
-		auto* ch = ecs::LegacyCharOf(chEntity);
-		ch->Block_Exp = true;
+		ecs::PointSystem::SetExperienceBlocked(
+			CQuestManager::instance().GetCurrentPCEntity(), true);
 		return 0;
 	}
 
@@ -4789,11 +4385,8 @@ teleport_area:
 	{
 		// migrated from CHARACTER::Block_Exp
 		// DUAL-PATH: ECS update + legacy call during migration window
-		entt::entity e = CQuestManager::instance().GetPCEntity(L);
-		if (auto* sf = ECS_TryGet<ecs::StatusFlags>(e)) sf->blockExp = false;
-		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
-		auto* ch = ecs::LegacyCharOf(chEntity);
-		if (ch) ch->Block_Exp = false;
+		ecs::PointSystem::SetExperienceBlocked(
+			CQuestManager::instance().GetPCEntity(L), false);
 		return 0;
 	}
 #endif
@@ -4975,7 +4568,8 @@ teleport_area:
 #ifdef ENABLE_RANKING
 	ALUA(pc_get_rank_dungeon)
 	{
-		lua_pushnumber(L, CQuestManager::instance().GetCurrentCharacterPtr()->GetRankPoints(16));
+		lua_pushnumber(L, ecs::PlayerRuntime::GetRankPoints(
+			CQuestManager::instance().GetCurrentPCEntity(), 16));
 		return 1;
 	}
 
@@ -4985,15 +4579,8 @@ teleport_area:
 		// DUAL-PATH: ECS update + legacy call during migration window
 		if (lua_isnumber(L, 1)) {
 			long long lPoints = lua_tonumber(L, 1);
-			entt::entity e = CQuestManager::instance().GetPCEntity(L);
-			if (auto* rank = ECS_TryGet<ecs::RankPoints>(e))
-			{
-				rank->points[16] = lPoints;
-				g_registry.emplace_or_replace<ecs::DirtyTag>(e);
-			}
-			const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
-			auto* ch = ecs::LegacyCharOf(chEntity);
-			if (ch) ch->SetRankPoints(16, lPoints);
+			ecs::PlayerRuntime::SetRankPoints(
+				CQuestManager::instance().GetPCEntity(L), 16, lPoints);
 		}
 		return 0;
 	}
@@ -5009,11 +4596,7 @@ teleport_area:
 			lua_pushboolean(L, 0);
 			return 1;
 		}
-		bool ret = true;
-		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
-		auto* ch = ecs::LegacyCharOf(chEntity);
-		if (ch && AffectSystem::FindAffect(AIHelpers::EcsOf(ch), AFFECT_DROP_BLOCK, APPLY_NONE))
-			ret = false;
+		const bool ret = !AffectSystem::FindAffect(e, AFFECT_DROP_BLOCK, APPLY_NONE);
 		lua_pushboolean(L, ret ? 1 : 0);
 		return 1;
 	}
@@ -5024,18 +4607,17 @@ teleport_area:
 	{
         // migrated from CHARACTER::ChatPacket
         // DUAL-PATH: legacy only during migration window
-		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
-		auto* ch = ecs::LegacyCharOf(chEntity);
-		if (ch) {
-			ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_COMMAND, "biologistch_clear");
+		const entt::entity character = CQuestManager::instance().GetCurrentPCEntity();
+		if (character != entt::null && g_registry.valid(character)) {
+			ecs::ChatSystem::Send(character, CHAT_TYPE_COMMAND, "biologistch_clear");
 			int type = APPLY_NONE, last = 0;
 			for (int i = 0; i < 16; i++) {
 				if (biologistMissionInfo[i][11] == 1) {
-					if (ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(ch), "biologist.stat") > i) {
+					if (ecs::QuestSystem::GetFlag(character, "biologist.stat") > i) {
 						for (int j = 0; j < 4; j++) {
 							type = biologistMissionInfo[i][3 + (j * 2)];
 							if (type != APPLY_NONE) {
-								CAffect * pkAff = AffectSystem::FindAffect(AIHelpers::EcsOf(ch), biologistMissionInfo[i][14], aApplyInfo[type].bPointType);
+								CAffect * pkAff = AffectSystem::FindAffect(character, biologistMissionInfo[i][14], aApplyInfo[type].bPointType);
 								if (pkAff) {
 									continue;
 								}
@@ -5044,7 +4626,7 @@ teleport_area:
 									last = 1;
 								}
 
-								ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_COMMAND, "biologistch_append %d#%d#%d#%d", i, type, biologistMissionInfo[i][4 + (j * 2)], j);
+								ecs::ChatSystem::Send(character, CHAT_TYPE_COMMAND, "biologistch_append %d#%d#%d#%d", i, type, biologistMissionInfo[i][4 + (j * 2)], j);
 							}
 						}
 					}
@@ -5053,10 +4635,10 @@ teleport_area:
 
 			if (last == 0) {
 #ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 872, "");
+				ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 872, "");
 #endif
 			} else {
-				ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_COMMAND, "biologistch_open");
+				ecs::ChatSystem::Send(character, CHAT_TYPE_COMMAND, "biologistch_open");
 			}
 		}
 
@@ -5070,12 +4652,11 @@ teleport_area:
         // DUAL-PATH: legacy only during migration window
 		int32_t ret = 0;
 
-		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
-
-		auto* ch = ecs::LegacyCharOf(chEntity);
-		if (ch) {
-			if (!AffectSystem::FindAffect(AIHelpers::EcsOf(ch), AFFECT_VOTEFORBONUS)) {
-				LPDESC d = ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch));
+		const entt::entity character = CQuestManager::instance().GetCurrentPCEntity();
+		if (character != entt::null && g_registry.valid(character)) {
+			if (!AffectSystem::FindAffect(character, AFFECT_VOTEFORBONUS)) {
+				const auto* session = ECS_TryGet<ecs::NetworkSession>(character);
+				LPDESC d = session ? session->desc : nullptr;
 				if (d) {
 					std::unique_ptr<SQLMsg> msg(DBManager::instance().DirectQuery("SELECT UNIX_TIMESTAMP(vote_time)-UNIX_TIMESTAMP(NOW()) FROM account.account WHERE id=%u", d->GetAccountTable().id));
 					if (msg->Get()->uiNumRows > 0) {
@@ -5114,28 +4695,26 @@ teleport_area:
         if (lua_isnumber(L, 1)) {
             int32_t type = (int32_t)lua_tonumber(L, 1);
             if (type >= 1 && type <= 3) {
-                const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
-                auto* ch = ecs::LegacyCharOf(chEntity);
-                if (ch) {
-                    if (!AffectSystem::FindAffect(AIHelpers::EcsOf(ch), AFFECT_VOTEFORBONUS))
+                if (e != entt::null && g_registry.valid(e)) {
+                    if (!AffectSystem::FindAffect(e, AFFECT_VOTEFORBONUS))
                     {
                         switch (type)
                         {
                             case 1:
                             {
-                                AffectSystem::AddAffect(AIHelpers::EcsOf(ch), AFFECT_VOTEFORBONUS, POINT_ATTBONUS_MONSTER, 10, AFF_NONE, get_global_time() + 86400, 0, false);
+                                AffectSystem::AddAffect(e, AFFECT_VOTEFORBONUS, POINT_ATTBONUS_MONSTER, 10, AFF_NONE, get_global_time() + 86400, 0, false);
                                 ret = 2;
                             }
                             break;
                             case 2:
                             {
-                                AffectSystem::AddAffect(AIHelpers::EcsOf(ch), AFFECT_VOTEFORBONUS, POINT_EXP_DOUBLE_BONUS, 20, AFF_NONE, get_global_time() + 86400, 0, false);
+                                AffectSystem::AddAffect(e, AFFECT_VOTEFORBONUS, POINT_EXP_DOUBLE_BONUS, 20, AFF_NONE, get_global_time() + 86400, 0, false);
                                 ret = 3;
                             }
                             break;
                             case 3:
                             {
-                                AffectSystem::AddAffect(AIHelpers::EcsOf(ch), AFFECT_VOTEFORBONUS, POINT_DOUBLE_DROP_ITEM, 20, AFF_NONE, get_global_time() + 86400, 0, false);
+                                AffectSystem::AddAffect(e, AFFECT_VOTEFORBONUS, POINT_DOUBLE_DROP_ITEM, 20, AFF_NONE, get_global_time() + 86400, 0, false);
                                 ret = 4;
                             }
                             break;
@@ -5164,9 +4743,8 @@ teleport_area:
 #ifdef ENABLE_VOTE4BUFF
 	ALUA(pc_get_vote_coin)
 	{
-		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
-		auto* ch = ecs::LegacyCharOf(chEntity);
-		lua_pushnumber(L, ch ? ch->GetVoteCoin() : 0);
+		lua_pushnumber(L, ecs::PlayerRuntime::GetVoteCoin(
+			CQuestManager::instance().GetCurrentPCEntity()));
 		return 1;
 	}
 	ALUA(pc_set_vote_coin)
@@ -5176,12 +4754,8 @@ teleport_area:
 		if (lua_isnumber(L, 1))
 		{
 			const long long amount = static_cast<long long>(lua_tonumber(L, 1));
-			entt::entity e = CQuestManager::instance().GetPCEntity(L);
-			if (e != entt::null && g_registry.valid(e))
-				g_registry.emplace_or_replace<ecs::DirtyTag>(e);
-			const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
-			auto* ch = ecs::LegacyCharOf(chEntity);
-			if (ch) ch->SetVoteCoin(amount);
+			ecs::PlayerRuntime::SetVoteCoin(
+				CQuestManager::instance().GetPCEntity(L), amount);
 		}
 		return 0;
 	}

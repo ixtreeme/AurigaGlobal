@@ -2,8 +2,10 @@
 
 #include "QuestSystem.hpp"
 
-#include "../CharacterAccessors.hpp"
-#include "../../char.h"
+#include "../Registry.hpp"
+#include "../components/identity_components.hpp"
+#include "../../questmanager.h"
+#include "../../questpc.h"
 
 #include <string>
 
@@ -11,20 +13,28 @@ namespace ecs::QuestSystem {
 
 int32_t GetFlag(entt::entity e, std::string_view flagName)
 {
-	auto* ch = ecs::LegacyCharOf(e);
-	if (!ch)
+	if (e == entt::null || !g_registry.valid(e))
 		return 0;
 
-	return ch->GetQuestFlag(std::string(flagName));
+	const auto* identity = g_registry.try_get<ecs::PlayerID>(e);
+	if (!identity)
+		return 0;
+
+	quest::PC* pc = quest::CQuestManager::instance().GetPC(identity->pid);
+	return pc ? pc->GetFlag(std::string(flagName)) : 0;
 }
 
 void SetFlag(entt::entity e, std::string_view flagName, int32_t value)
 {
-	auto* ch = ecs::LegacyCharOf(e);
-	if (!ch)
+	if (e == entt::null || !g_registry.valid(e))
 		return;
 
-	ch->SetQuestFlag(std::string(flagName), value);
+	const auto* identity = g_registry.try_get<ecs::PlayerID>(e);
+	if (!identity)
+		return;
+
+	if (quest::PC* pc = quest::CQuestManager::instance().GetPC(identity->pid))
+		pc->SetFlag(std::string(flagName), value);
 }
 
 } // namespace ecs::QuestSystem

@@ -7,11 +7,13 @@
 #include "MovementSystem.hpp"
 #include "../AIHelpers.hpp"
 #include "../CharacterAccessors.hpp"
+#include "../VIDRegistry.hpp"
 #include "ItemSystem.hpp"
 #include "../components/visibility_components.hpp"
 #include "../services/SpatialService.hpp"
 
 #include <algorithm>
+#include <cctype>
 
 #include "../../char.h"
 #include "../../char_manager.h"
@@ -31,6 +33,7 @@
 #include "../../ecs/SpatialHelpers.hpp"
 #include "../../ecs/Registry.hpp"
 #include "../../ecs/components/appearance_components.hpp"
+#include "../../ecs/components/ai_components.hpp"
 #include "../../ecs/components/character_runtime_components.hpp"
 #include "../../ecs/components/combat_components.hpp"
 #include "../../ecs/components/dirty_components.hpp"
@@ -38,6 +41,7 @@
 #include "../../ecs/components/inventory_components.hpp"
 #include "../../ecs/components/movement_components.hpp"
 #include "../../ecs/components/quest_components.hpp"
+#include "../../ecs/components/session_components.hpp"
 #include "../../ecs/components/skill_components.hpp"
 #include "../../ecs/components/social_components.hpp"
 #include "../../ecs/components/status_components.hpp"
@@ -84,11 +88,51 @@ LPITEM ResolveLegacyItem(entt::entity item)
 
 namespace ecs::PlayerRuntime {
 
+entt::entity FindByPlayerID(uint32_t playerID)
+{
+	if (playerID == 0)
+		return entt::null;
+
+	auto players = g_registry.view<ecs::PlayerID>();
+	for (const entt::entity player : players)
+	{
+		if (players.get<ecs::PlayerID>(player).pid == playerID)
+			return player;
+	}
+
+	return entt::null;
+}
+
+entt::entity FindByPlayerName(std::string_view name)
+{
+	if (name.empty())
+		return entt::null;
+
+	const auto equalCaseInsensitive = [](std::string_view left, std::string_view right) {
+		return left.size() == right.size() && std::equal(
+			left.begin(), left.end(), right.begin(),
+			[](unsigned char lhs, unsigned char rhs) {
+				return std::tolower(lhs) == std::tolower(rhs);
+			});
+	};
+
+	auto players = g_registry.view<ecs::PlayerID, ecs::PlayerName>();
+	for (const entt::entity player : players)
+	{
+		if (equalCaseInsensitive(players.get<ecs::PlayerName>(player).value, name))
+			return player;
+	}
+
+	return entt::null;
+}
+
 LPDESC GetDesc(entt::entity e)
 {
-	// E-class service pointer debt: network sessions are not ECS-owned yet.
-	auto* ch = ecs::LegacyCharOf(e);
-	return ch ? ch->GetDesc() : nullptr;
+	if (e == entt::null || !g_registry.valid(e))
+		return nullptr;
+
+	const auto* session = g_registry.try_get<ecs::NetworkSession>(e);
+	return session ? session->desc : nullptr;
 }
 
 uint32_t GetPlayerID(entt::entity e)
@@ -184,11 +228,19 @@ int32_t GetY(entt::entity e)
 	return 0;
 }
 
+float GetRotation(entt::entity e)
+{
+	if (e != entt::null && g_registry.valid(e)) {
+		if (const auto* flags = g_registry.try_get<ecs::CharacterRuntimeFlagsComponent>(e))
+			return flags->rotation;
+	}
+
+	return 0.0f;
+}
+
 LPSECTREE GetSectree(entt::entity e)
 {
-	// E-class service pointer debt: sectree is spatial-service state, not modeled as ECS state yet.
-	auto* ch = ecs::LegacyCharOf(e);
-	return ch ? ch->GetSectree() : nullptr;
+	return ecs::SpatialService::GetSectree(g_registry, e);
 }
 
 bool IsPC(entt::entity e)
@@ -211,6 +263,33 @@ bool IsMonster(entt::entity e)
 	return e != entt::null && g_registry.valid(e) && g_registry.all_of<ecs::TagMonster>(e);
 }
 
+uint8_t GetMobRank(entt::entity e)
+{
+	if (e == entt::null || !g_registry.valid(e))
+		return MOB_RANK_KNIGHT;
+
+	const auto* mob = g_registry.try_get<ecs::MobDataRef>(e);
+	return mob && mob->data ? mob->data->m_table.bRank : MOB_RANK_KNIGHT;
+}
+
+int GetPremiumRemainSeconds(entt::entity e, uint8_t premiumType)
+{
+	if (e == entt::null || !g_registry.valid(e) || premiumType >= PREMIUM_MAX_NUM)
+		return 0;
+
+	const auto* login = g_registry.try_get<ecs::LoginInfo>(e);
+	return login ? login->premiumTimes[premiumType] - get_global_time() : 0;
+}
+
+bool IsPCBang(entt::entity e)
+{
+	if (e == entt::null || !g_registry.valid(e))
+		return false;
+
+	const auto* login = g_registry.try_get<ecs::LoginInfo>(e);
+	return login && login->isPCBang;
+}
+
 bool IsObserverMode(entt::entity e)
 {
 	if (e == entt::null || !g_registry.valid(e))
@@ -221,6 +300,15 @@ bool IsObserverMode(entt::entity e)
 
 	const auto* status = g_registry.try_get<ecs::StatusFlags>(e);
 	return status && status->isObserverMode;
+}
+
+bool IsArenaObserverMode(entt::entity e)
+{
+	if (e == entt::null || !g_registry.valid(e))
+		return false;
+
+	const auto* status = g_registry.try_get<ecs::StatusFlags>(e);
+	return status && status->isArenaObserver;
 }
 
 bool CanWarp(entt::entity e)
@@ -282,6 +370,139 @@ bool CanWarp(entt::entity e)
 
 	return true;
 }
+
+uint8_t GetSex(entt::entity e)
+{
+    switch (GetRaceNum(e))
+    {
+    case MAIN_RACE_ASSASSIN_W:
+    case MAIN_RACE_SHAMAN_W:
+    case MAIN_RACE_WARRIOR_W:
+    case MAIN_RACE_SURA_W:
+        return SEX_FEMALE;
+    default:
+        return SEX_MALE;
+    }
+}
+
+bool SetRace(entt::entity e, uint8_t race)
+{
+	if (e == entt::null || !g_registry.valid(e) || race >= MAIN_RACE_MAX_NUM)
+		return false;
+
+	g_registry.emplace_or_replace<ecs::RaceComponent>(e,
+		ecs::RaceComponent { static_cast<uint16_t>(race) });
+	auto& raceState = g_registry.get_or_emplace<ecs::RaceState>(e);
+	raceState.baseRace = race;
+	if (auto* points = g_registry.try_get<ecs::CharacterPoints>(e))
+		points->base.job = race;
+	g_registry.emplace_or_replace<ecs::DirtyTag>(e);
+	return true;
+}
+
+bool ChangeSex(entt::entity e)
+{
+	if (e == entt::null || !g_registry.valid(e))
+		return false;
+
+	const auto* race = g_registry.try_get<ecs::RaceComponent>(e);
+	if (!race)
+		return false;
+
+	uint8_t targetRace = static_cast<uint8_t>(race->value);
+	switch (race->value)
+	{
+	case MAIN_RACE_WARRIOR_M: targetRace = MAIN_RACE_WARRIOR_W; break;
+	case MAIN_RACE_WARRIOR_W: targetRace = MAIN_RACE_WARRIOR_M; break;
+	case MAIN_RACE_ASSASSIN_M: targetRace = MAIN_RACE_ASSASSIN_W; break;
+	case MAIN_RACE_ASSASSIN_W: targetRace = MAIN_RACE_ASSASSIN_M; break;
+	case MAIN_RACE_SURA_M: targetRace = MAIN_RACE_SURA_W; break;
+	case MAIN_RACE_SURA_W: targetRace = MAIN_RACE_SURA_M; break;
+	case MAIN_RACE_SHAMAN_M: targetRace = MAIN_RACE_SHAMAN_W; break;
+	case MAIN_RACE_SHAMAN_W: targetRace = MAIN_RACE_SHAMAN_M; break;
+#ifdef ENABLE_WOLFMAN_CHARACTER
+	case MAIN_RACE_WOLFMAN_M: targetRace = MAIN_RACE_WOLFMAN_M; break;
+#endif
+	default: return false;
+	}
+
+	return SetRace(e, targetRace);
+}
+
+entt::entity GetQuestNPC(entt::entity e)
+{
+    if (e == entt::null || !g_registry.valid(e))
+        return entt::null;
+
+    const auto* context = g_registry.try_get<ecs::QuestContext>(e);
+    if (!context || context->npcVID == 0)
+        return entt::null;
+
+    const entt::entity npc = CVIDRegistry::Instance().Find(context->npcVID);
+    return npc != entt::null && g_registry.valid(npc) ? npc : entt::null;
+}
+
+#ifdef ENABLE_RANKING
+int64_t GetRankPoints(entt::entity e, int category)
+{
+	if (e == entt::null || !g_registry.valid(e) ||
+		category < 0 || category >= RANKING_MAX_CATEGORIES)
+		return 0;
+
+	const auto* rank = g_registry.try_get<ecs::RankPoints>(e);
+	return rank ? rank->points[category] : 0;
+}
+
+bool SetRankPoints(entt::entity e, int category, int64_t value)
+{
+	if (e == entt::null || !g_registry.valid(e) ||
+		category < 0 || category >= RANKING_MAX_CATEGORIES)
+		return false;
+
+	auto& rank = g_registry.get_or_emplace<ecs::RankPoints>(e);
+	rank.points[category] = value;
+	g_registry.emplace_or_replace<ecs::DirtyTag>(e);
+	return true;
+}
+#endif
+
+#ifdef ENABLE_VOTE4BUFF
+int64_t GetVoteCoin(entt::entity e)
+{
+	if (e == entt::null || !g_registry.valid(e))
+		return 0;
+
+	const auto* account = g_registry.try_get<ecs::AccountID>(e);
+	if (!account)
+		return 0;
+
+	std::unique_ptr<SQLMsg> message(DBManager::instance().DirectQuery(
+		"SELECT coins FROM account.account WHERE id = '%u';", account->aid));
+	if (!message || message->Get()->uiNumRows == 0)
+		return 0;
+
+	MYSQL_ROW row = mysql_fetch_row(message->Get()->pSQLResult);
+	int64_t coins = 0;
+	if (row && row[0])
+		str_to_number(coins, row[0]);
+	return coins;
+}
+
+bool SetVoteCoin(entt::entity e, int64_t amount)
+{
+	if (e == entt::null || !g_registry.valid(e))
+		return false;
+
+	const auto* account = g_registry.try_get<ecs::AccountID>(e);
+	if (!account)
+		return false;
+
+	DBManager::instance().DirectQuery(
+		"UPDATE account.account SET coins = '%lld' WHERE id = '%u';",
+		static_cast<long long>(amount), account->aid);
+	return true;
+}
+#endif
 
 } // namespace ecs::PlayerRuntime
 #include "../../../common/rune_length.h"
@@ -610,6 +831,24 @@ void CHARACTER::ClearCheatChecks()
 
 bool CHARACTER::ChangeSex()
 {
+	const entt::entity entity = GetEntityHandle();
+	if (entity != entt::null && g_registry.valid(entity))
+	{
+		const auto* source = g_registry.try_get<ecs::RaceComponent>(entity);
+		const uint16_t sourceRace = source ? source->value : 0;
+		if (!ecs::PlayerRuntime::ChangeSex(entity))
+		{
+			LOG_ERROR("CHANGE_SEX: {} unknown race {}", GetName(), static_cast<int>(sourceRace));
+			return false;
+		}
+
+		const auto* target = g_registry.try_get<ecs::RaceComponent>(entity);
+		m_points.job = target ? static_cast<uint8_t>(target->value) : m_points.job;
+		LOG_INFO("CHANGE_SEX: {} ({} -> {})", GetName(), static_cast<int>(sourceRace),
+			static_cast<int>(m_points.job));
+		return true;
+	}
+
     int src_race = GetRaceNum();
 
     switch (src_race)
@@ -678,7 +917,8 @@ void CHARACTER::SetRace(uint8_t race)
         return;
     }
 
-    m_points.job = race;
+	m_points.job = race;
+	ecs::PlayerRuntime::SetRace(GetEntityHandle(), race);
 }
 
 uint8_t CHARACTER::GetJob() const
@@ -880,6 +1120,12 @@ uint32_t CHARACTER::GetAID() const
 void CHARACTER::SetQuestNPCID(uint32_t vid)
 {
     m_dwQuestNPCVID = vid;
+    const entt::entity owner = AIHelpers::EcsOf(this);
+    if (owner != entt::null && g_registry.valid(owner))
+    {
+        auto& context = g_registry.get_or_emplace<ecs::QuestContext>(owner);
+        context.npcVID = vid;
+    }
 }
 
 LPCHARACTER CHARACTER::GetQuestNPC() const
@@ -1000,6 +1246,30 @@ void CHARACTER::SetQuestFlag(const std::string& flag, int value)
     pPC->SetFlag(flag, value);
 }
 
+void CHARACTER::SetItemAward_vnum(unsigned int vnum)
+{
+	itemAward_vnum = vnum;
+	const entt::entity entity = GetEntityHandle();
+	if (entity != entt::null && g_registry.valid(entity))
+	{
+		auto& award = g_registry.get_or_emplace<ecs::ItemAward>(entity);
+		award.vnum = vnum;
+		g_registry.emplace_or_replace<ecs::DirtyTag>(entity);
+	}
+}
+
+void CHARACTER::SetItemAward_cmd(char* cmd)
+{
+	strlcpy(itemAward_cmd, cmd ? cmd : "", sizeof(itemAward_cmd));
+	const entt::entity entity = GetEntityHandle();
+	if (entity != entt::null && g_registry.valid(entity))
+	{
+		auto& award = g_registry.get_or_emplace<ecs::ItemAward>(entity);
+		award.command = cmd ? cmd : "";
+		g_registry.emplace_or_replace<ecs::DirtyTag>(entity);
+	}
+}
+
 #ifdef ENABLE_VOTE4BUFF
 long long CHARACTER::GetVoteCoin()
 {
@@ -1116,10 +1386,7 @@ uint32_t CHARACTER::GetMonsterDrainSPPoint() const
 
 uint8_t CHARACTER::GetMobRank() const
 {
-    if (!m_pkMobData)
-        return MOB_RANK_KNIGHT;
-
-    return m_pkMobData->m_table.bRank;
+	return ecs::PlayerRuntime::GetMobRank(GetEntityHandle());
 }
 
 uint8_t CHARACTER::GetMobSize() const
@@ -1179,10 +1446,20 @@ void CHARACTER::ResetPlayTime(uint32_t dwTimeRemain)
 
 int CHARACTER::GetPremiumRemainSeconds(uint8_t bType) const
 {
-    if (bType >= PREMIUM_MAX_NUM)
-        return 0;
+	return ecs::PlayerRuntime::GetPremiumRemainSeconds(GetEntityHandle(), bType);
+}
 
-    return m_aiPremiumTimes[bType] - get_global_time();
+bool CHARACTER::SetPCBang(bool flag)
+{
+	m_isinPCBang = flag;
+	const entt::entity character = GetEntityHandle();
+	if (character != entt::null && g_registry.valid(character))
+	{
+		auto& login = g_registry.get_or_emplace<ecs::LoginInfo>(character);
+		login.isPCBang = flag;
+		g_registry.emplace_or_replace<ecs::DirtyTag>(character);
+	}
+	return m_isinPCBang;
 }
 
 void CHARACTER::UpdateDepositPulse()
@@ -1542,27 +1819,30 @@ uint16_t CHARACTER::GetRuneEffect() {
         return 0;
 
     uint16_t r = 1;
-    LPITEM pkItem = nullptr;
     int iMaxSubTypes = RUNE_SUBTYPES - 1;
     int32_t lMaxTime = 0;
     int32_t lOnePercent = 0;
     int32_t lRemainPercent = 0;
 
     for (int i = 0; i < iMaxSubTypes; i++) {
-        pkItem = GetWear(WEAR_RUNE1 + i);
-        if (!pkItem) {
+        const entt::entity item = ItemSystem::GetWearItem(GetEntityHandle(), WEAR_RUNE1 + i);
+        if (!ItemSystem::IsValidItem(item)) {
             r = 0;
             break;
         }
         else {
-            if (ItemSystem::GetItemSocket(EntityFactory::CreateItemEntity(g_registry, pkItem), 1) != 1) {
+            if (ItemSystem::GetItemSocket(item, 1) != 1) {
                 r = 0;
                 break;
             }
             else {
-                lMaxTime = ItemSystem::GetItemValue(EntityFactory::CreateItemEntity(g_registry, pkItem), 0);
+                lMaxTime = ItemSystem::GetItemValue(item, 0);
                 lOnePercent = lMaxTime / 100;
-                lRemainPercent = ItemSystem::GetItemSocket(EntityFactory::CreateItemEntity(g_registry, pkItem), ITEM_SOCKET_REMAIN_SEC) / lOnePercent;
+                if (lOnePercent <= 0) {
+                    r = 0;
+                    break;
+                }
+                lRemainPercent = ItemSystem::GetItemSocket(item, ITEM_SOCKET_REMAIN_SEC) / lOnePercent;
                 if (lRemainPercent < RUNE_EFFECT_FROM) {
                     r = 0;
                     break;
@@ -1580,33 +1860,31 @@ bool CHARACTER::CanTakeInventoryItem(entt::entity item, TItemPos* cell)
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
     ecs::ChatSystem::Send(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, "char.cpp::bool CHARACTER::CanTakeInventoryItem");
 #endif
-    const uint32_t itemID = ItemSystem::GetItemID(item);
-    LPITEM legacyItem = itemID != 0 ? ITEM_MANAGER::instance().Find(itemID) : nullptr;
-    if (!legacyItem)
+    if (!cell || !ItemSystem::IsValidItem(item))
         return false;
 
-    int iEmpty = -1;
+    const int iEmpty = ItemSystem::GetEmptyInventoryPositionEcs(GetEntityHandle(), item);
+    if (iEmpty == -1)
+        return false;
 
-    if (legacyItem->IsDragonSoul())
+    if (ItemSystem::IsDragonSoulItem(item))
     {
         cell->window_type = DRAGON_SOUL_INVENTORY;
-        cell->cell = iEmpty = GetEmptyDragonSoulInventory(legacyItem);
     }
 
 #ifdef ENABLE_EXTRA_INVENTORY
-    else if (legacyItem->IsExtraItem())
+    else if (ItemSystem::IsExtraItem(item))
     {
         cell->window_type = EXTRA_INVENTORY;
-        cell->cell = iEmpty = GetEmptyExtraInventory(legacyItem);
     }
 #endif
     else
     {
         cell->window_type = INVENTORY;
-        cell->cell = iEmpty = GetEmptyInventory(ItemSystem::GetItemSize(item));
     }
 
-    return iEmpty != -1;
+    cell->cell = static_cast<uint16_t>(iEmpty);
+    return true;
 }
 
 #ifdef ENABLE_SOUL_SYSTEM
@@ -1625,34 +1903,39 @@ int CHARACTER::GetSoulItemDamage(LPCHARACTER pkVictim, int iDamage, uint8_t bSou
     int iDamageAdd = 0;
     if (pAffect)
     {
-        LPITEM soulItem = FindItemByID(pAffect->lSPCost);
-        if (soulItem)
+        const entt::entity soulItem =
+            ItemSystem::FindItemByID(GetEntityHandle(), pAffect->lSPCost);
+        if (ItemSystem::IsValidItem(soulItem))
         {
-            int iCurrentMinutes = (ItemSystem::GetItemSocket(EntityFactory::CreateItemEntity(g_registry, soulItem), 2) / 10000);
-            int iCurrentStrike = (ItemSystem::GetItemSocket(EntityFactory::CreateItemEntity(g_registry, soulItem), 2) % 10000);
+            int iCurrentMinutes = ItemSystem::GetItemSocket(soulItem, 2) / 10000;
+            int iCurrentStrike = ItemSystem::GetItemSocket(soulItem, 2) % 10000;
 
             int valueIndex = MINMAX(3, 2 + (iCurrentMinutes / 60), 5);
-            float fDamageIncrease = float(ItemSystem::GetItemValue(EntityFactory::CreateItemEntity(g_registry, soulItem), valueIndex) / 10.0f);
+            float fDamageIncrease = float(ItemSystem::GetItemValue(soulItem, valueIndex) / 10.0f);
 
             iDamageAdd = (fDamageIncrease * iDamage) - iDamage;
             int iNextStrikes = iCurrentStrike - 1;
             if (iNextStrikes <= 0)
             {
                 iCurrentMinutes = MINMAX(0, iCurrentMinutes - 60, 180);
-                iNextStrikes = ItemSystem::GetItemValue(EntityFactory::CreateItemEntity(g_registry, soulItem), 2);
+                iNextStrikes = ItemSystem::GetItemValue(soulItem, 2);
 
                 if (iCurrentMinutes < 60)
                 {
-                    ItemSystem::UnlockItem(EntityFactory::CreateItemEntity(g_registry, soulItem));
-                    ItemSystem::SetItemSocket(EntityFactory::CreateItemEntity(g_registry, soulItem), 1, false);
+                    ItemSystem::UnlockItem(soulItem);
+                    ItemSystem::SetItemSocket(soulItem, 1, false);
                     RemoveAffect(const_cast<CAffect*>(pAffect));
                 }
 
-                ItemSystem::SetItemSocket(EntityFactory::CreateItemEntity(g_registry, soulItem), 2, 0);
-                soulItem->StartSoulItemEvent();
+                ItemSystem::SetItemSocket(soulItem, 2, 0);
+                // The soul timer itself is still owned by CItem. Keep this one
+                // transition visible until item events become ECS components.
+                if (LPITEM legacySoulItem = ResolveLegacyItem(soulItem))
+                    legacySoulItem->StartSoulItemEvent();
             }
 
-            ItemSystem::SetItemSocket(EntityFactory::CreateItemEntity(g_registry, soulItem), 2, (iCurrentMinutes * 10000 + iNextStrikes));
+            ItemSystem::SetItemSocket(
+                soulItem, 2, iCurrentMinutes * 10000 + iNextStrikes);
         }
     }
 
@@ -2404,9 +2687,8 @@ void CHARACTER::RefineAcceMaterials()
         return;
 
 	auto pkItemMaterial = GetAcceMaterials();
-	LPITEM legacyMaterial0 = ResolveLegacyItem(pkItemMaterial[0]);
-	LPITEM legacyMaterial1 = ResolveLegacyItem(pkItemMaterial[1]);
-	if (!legacyMaterial0 || !legacyMaterial1)
+	if (!ItemSystem::IsValidItem(pkItemMaterial[0]) ||
+		!ItemSystem::IsValidItem(pkItemMaterial[1]))
 		return;
 
     uint32_t dwItemVnum, dwMinAbs, dwMaxAbs;
@@ -2480,26 +2762,23 @@ void CHARACTER::RefineAcceMaterials()
         bool bSucces = (iChance <= iSuccessChance ? true : false);
         if (bSucces)
         {
-			LPITEM pkItem = ITEM_MANAGER::instance().CreateItem(dwItemVnum, 1, 0, false);
-            if (!pkItem)
+			const entt::entity resultItem =
+				ItemSystem::CreateItemEcs(dwItemVnum, 1, 0, false);
+			if (!ItemSystem::IsValidItem(resultItem))
             {
                 LOG_ERROR("{} can't be created.", dwItemVnum);
-				return;
-			}
-			const entt::entity resultItem = EntityFactory::CreateItemEntity(g_registry, pkItem);
-			if (resultItem == entt::null)
-			{
-				ITEM_MANAGER::instance().RemoveItem(pkItem, "COMBINE ECS CREATE FAILED");
 				return;
 			}
 
 #ifdef ENABLE_STOLE_COSTUME
 			if (ItemSystem::GetItemSubType(resultItem) != COSTUME_STOLE)
-				ITEM_MANAGER::CopyAllAttrTo(legacyMaterial0, pkItem);
+				ItemSystem::CopyAllAttrToEcs(pkItemMaterial[0], resultItem);
 #else
-			ITEM_MANAGER::CopyAllAttrTo(legacyMaterial0, pkItem);
+			ItemSystem::CopyAllAttrToEcs(pkItemMaterial[0], resultItem);
 #endif
-            LogManager::instance().ItemLog(this, pkItem, "COMBINE SUCCESS", pkItem->GetName());
+            LogManager::instance().ItemLogEntity(
+				GetEntityHandle(), resultItem, "COMBINE SUCCESS",
+				ItemSystem::GetItemName(resultItem));
             uint32_t dwAbs = (dwMinAbs == dwMaxAbs ? dwMinAbs : number(dwMinAbs + 1, dwMaxAbs));
 			ItemSystem::SetItemSocket(resultItem, ACCE_ABSORPTION_SOCKET, dwAbs);
 			ItemSystem::SetItemSocket(resultItem, ACCE_ABSORBED_SOCKET, ItemSystem::GetItemSocket(pkItemMaterial[0], ACCE_ABSORBED_SOCKET));
@@ -2508,14 +2787,25 @@ void CHARACTER::RefineAcceMaterials()
 			DBManager::instance().SendMoneyLog(MONEY_LOG_REFINE, ItemSystem::GetItemVnum(pkItemMaterial[0]), -dwPrice);
 
 			uint16_t wCell = ItemSystem::GetItemCell(pkItemMaterial[0]);
+			const entt::entity material0 = pkItemMaterial[0];
+			const entt::entity material1 = pkItemMaterial[1];
 			pkItemMaterial[0] = entt::null;
 			pkItemMaterial[1] = entt::null;
-			ITEM_MANAGER::instance().RemoveItem(legacyMaterial0, "COMBINE (REFINE SUCCESS)");
-			ITEM_MANAGER::instance().RemoveItem(legacyMaterial1, "COMBINE (REFINE SUCCESS)");
+			ItemSystem::DestroyItemEntityEcs(
+				material0, "COMBINE (REFINE SUCCESS)");
+			ItemSystem::DestroyItemEntityEcs(
+				material1, "COMBINE (REFINE SUCCESS)");
 
-            pkItem->AddToCharacter(this, TItemPos(INVENTORY, wCell));
-            ITEM_MANAGER::instance().FlushDelayedSave(pkItem);
-            pkItem->AttrLog();
+			if (!ItemSystem::PlaceItemEcs(
+					GetEntityHandle(), resultItem, INVENTORY, wCell))
+			{
+				ItemSystem::DestroyItemEntityEcs(
+					resultItem, "COMBINE RESULT PLACE FAILED");
+				ClearAcceMaterials();
+				return;
+			}
+			ItemSystem::FlushDelayedSaveEcs(resultItem);
+			ItemSystem::AttrLogEcs(resultItem);
 
 #ifdef TEXTS_IMPROVEMENT
             if (lVal == 4) {
@@ -2531,11 +2821,13 @@ void CHARACTER::RefineAcceMaterials()
             ClearAcceMaterials();
         }
         else
-        {
+		{
             PointChange(POINT_GOLD, -dwPrice);
 			DBManager::instance().SendMoneyLog(MONEY_LOG_REFINE, ItemSystem::GetItemVnum(pkItemMaterial[0]), -dwPrice);
+			const entt::entity failedMaterial = pkItemMaterial[1];
 			pkItemMaterial[1] = entt::null;
-			ITEM_MANAGER::instance().RemoveItem(legacyMaterial1, "COMBINE (REFINE FAIL)");
+			ItemSystem::DestroyItemEntityEcs(
+				failedMaterial, "COMBINE (REFINE FAIL)");
 #ifdef TEXTS_IMPROVEMENT
             ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 390, "");
 #endif
@@ -2564,9 +2856,10 @@ void CHARACTER::RefineAcceMaterials()
     }
     else
     {
-		legacyMaterial1->CopyAttributeTo(legacyMaterial0);
-		ItemSystem::SyncItemAttributesFromLegacy(pkItemMaterial[0]);
-		LogManager::instance().ItemLog(this, legacyMaterial0, "ABSORB (REFINE SUCCESS)", legacyMaterial0->GetName());
+		ItemSystem::CopyItemAttributesEcs(pkItemMaterial[1], pkItemMaterial[0]);
+		LogManager::instance().ItemLogEntity(
+			GetEntityHandle(), pkItemMaterial[0], "ABSORB (REFINE SUCCESS)",
+			ItemSystem::GetItemName(pkItemMaterial[0]));
 		ItemSystem::SetItemSocket(pkItemMaterial[0], ACCE_ABSORBED_SOCKET, ItemSystem::GetItemOriginalVnum(pkItemMaterial[1]));
 		for (int i = 0; i < ITEM_ATTRIBUTE_MAX_NUM; ++i)
 		{
@@ -2574,11 +2867,13 @@ void CHARACTER::RefineAcceMaterials()
 				ItemSystem::SetItemForceAttributeEcs(pkItemMaterial[0], i, ItemSystem::GetItemAttributeType(pkItemMaterial[0], i), 0);
 		}
 
+		const entt::entity absorbedMaterial = pkItemMaterial[1];
 		pkItemMaterial[1] = entt::null;
-		ITEM_MANAGER::instance().RemoveItem(legacyMaterial1, "ABSORBED (REFINE SUCCESS)");
+		ItemSystem::DestroyItemEntityEcs(
+			absorbedMaterial, "ABSORBED (REFINE SUCCESS)");
 
-		ITEM_MANAGER::instance().FlushDelayedSave(legacyMaterial0);
-		legacyMaterial0->AttrLog();
+		ItemSystem::FlushDelayedSaveEcs(pkItemMaterial[0]);
+		ItemSystem::AttrLogEcs(pkItemMaterial[0]);
 
 #ifdef TEXTS_IMPROVEMENT
         ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 629, "");
@@ -2610,11 +2905,8 @@ bool CHARACTER::CleanAcceAttr(entt::entity pkItem, entt::entity pkTarget)
     else if (!ItemSystem::IsValidItem(pkItem) || !ItemSystem::IsValidItem(pkTarget))
         return false;
 
-    const uint32_t targetID = ItemSystem::GetItemID(pkTarget);
-    LPITEM legacyTarget = targetID != 0 ? ITEM_MANAGER::instance().Find(targetID) : nullptr;
-    if (!legacyTarget)
-        return false;
-    else if ((ItemSystem::GetItemType(pkTarget) != ITEM_COSTUME) && (ItemSystem::GetItemSubType(pkTarget) != COSTUME_ACCE))
+    if ((ItemSystem::GetItemType(pkTarget) != ITEM_COSTUME) &&
+		(ItemSystem::GetItemSubType(pkTarget) != COSTUME_ACCE))
         return false;
 
     if (ItemSystem::GetItemSocket(pkTarget, ACCE_ABSORBED_SOCKET) <= 0)
@@ -2625,7 +2917,9 @@ bool CHARACTER::CleanAcceAttr(entt::entity pkItem, entt::entity pkTarget)
         ItemSystem::SetItemForceAttributeEcs(pkTarget, i, 0, 0);
 
     ItemSystem::ConsumeItemEcs(pkItem);
-    LogManager::instance().ItemLog(this, legacyTarget, "USE_DETACHMENT (CLEAN ATTR)", legacyTarget->GetName());
+    LogManager::instance().ItemLogEntity(
+		GetEntityHandle(), pkTarget, "USE_DETACHMENT (CLEAN ATTR)",
+		ItemSystem::GetItemName(pkTarget));
     return true;
 }
 
@@ -2790,13 +3084,43 @@ void CHARACTER::SetShopSafebox(offlineshop::CShopSafebox* pk)
 }
 #endif
 
+void CHARACTER::SetArenaObserverMode(bool flag)
+{
+	m_ArenaObserver = flag;
+
+	const entt::entity entity = GetEntityHandle();
+	if (entity == entt::null || !g_registry.valid(entity))
+		return;
+
+	auto& status = g_registry.get_or_emplace<ecs::StatusFlags>(entity);
+	status.isArenaObserver = flag;
+	g_registry.emplace_or_replace<ecs::DirtyTag>(entity);
+}
+
+bool CHARACTER::GetArenaObserverMode() const
+{
+	const entt::entity entity = GetEntityHandle();
+	if (entity != entt::null && g_registry.valid(entity))
+	{
+		if (const auto* status = g_registry.try_get<ecs::StatusFlags>(entity))
+			return status->isArenaObserver;
+	}
+
+	return m_ArenaObserver;
+}
+
 #ifdef ENABLE_RANKING
 long long CHARACTER::GetRankPoints(int iArg)
 {
     if ((iArg < 0) || (iArg >= RANKING_MAX_CATEGORIES))
         return 0;
 
-    return m_lRankPoints[iArg];
+	const entt::entity entity = GetEntityHandle();
+	if (entity != entt::null && g_registry.valid(entity) &&
+		g_registry.all_of<ecs::RankPoints>(entity))
+		return ecs::PlayerRuntime::GetRankPoints(entity, iArg);
+
+	return m_lRankPoints[iArg];
 }
 
 void CHARACTER::SetRankPoints(int iArg, long long lPoint)
@@ -2804,8 +3128,9 @@ void CHARACTER::SetRankPoints(int iArg, long long lPoint)
     if ((iArg < 0) || (iArg >= RANKING_MAX_CATEGORIES))
         return;
 
-    m_lRankPoints[iArg] = lPoint;
-    Save();
+	m_lRankPoints[iArg] = lPoint;
+	ecs::PlayerRuntime::SetRankPoints(GetEntityHandle(), iArg, lPoint);
+	Save();
 }
 
 void CHARACTER::RankingSubcategory(int iArg)
@@ -2892,27 +3217,31 @@ void CHARACTER::SetPart(uint8_t bPartPos, uint16_t wVal)
 uint16_t CHARACTER::GetPart(uint8_t bPartPos) const
 {
     assert(bPartPos < PART_MAX_NUM);
+	const entt::entity character = GetEntityHandle();
 
 #ifdef __HIDE_COSTUME_SYSTEM__
-    if (bPartPos == PART_MAIN && GetWear(WEAR_COSTUME_BODY) && IsBodyCostumeHidden() == true) {
-        if (const LPITEM pArmor = GetWear(WEAR_BODY))
-#ifdef __CHANGE_LOOK_SYSTEM__
-            return pArmor->GetTransmutation() != 0 ? pArmor->GetTransmutation() : ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, pArmor));
-#else
-            return ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, pArmor));
-#endif
-        else
-            return 0;
+    if (bPartPos == PART_MAIN &&
+		ItemSystem::IsValidItem(ItemSystem::GetWearItem(character, WEAR_COSTUME_BODY)) &&
+		IsBodyCostumeHidden() == true) {
+		const entt::entity armor = ItemSystem::GetWearItem(character, WEAR_BODY);
+		if (!ItemSystem::IsValidItem(armor))
+			return 0;
+		const uint32_t transmutation = ItemSystem::GetItemTransmutationVnum(armor);
+		return transmutation != 0 ? transmutation : ItemSystem::GetItemVnum(armor);
     }
-    else if (bPartPos == PART_HAIR && GetWear(WEAR_COSTUME_HAIR) && IsHairCostumeHidden() == true)
+    else if (bPartPos == PART_HAIR &&
+		ItemSystem::IsValidItem(ItemSystem::GetWearItem(character, WEAR_COSTUME_HAIR)) &&
+		IsHairCostumeHidden() == true)
         return 0;
 #ifdef ENABLE_STOLE_COSTUME
-    else if (bPartPos == PART_ACCE && GetWear(WEAR_COSTUME_ACCE) && IsAcceCostumeHidden() == true) {
-        LPITEM pAcce = GetWear(WEAR_COSTUME_ACCE_SLOT);
-        if (pAcce) {
-            uint32_t toSetValue = ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, pAcce));
+    else if (bPartPos == PART_ACCE &&
+		ItemSystem::IsValidItem(ItemSystem::GetWearItem(character, WEAR_COSTUME_ACCE)) &&
+		IsAcceCostumeHidden() == true) {
+		const entt::entity acce = ItemSystem::GetWearItem(character, WEAR_COSTUME_ACCE_SLOT);
+        if (ItemSystem::IsValidItem(acce)) {
+            uint32_t toSetValue = ItemSystem::GetItemVnum(acce);
             toSetValue -= 85000;
-            if (ItemSystem::GetItemSocket(EntityFactory::CreateItemEntity(g_registry, pAcce), ACCE_ABSORPTION_SOCKET) >= ACCE_EFFECT_FROM_ABS)
+            if (ItemSystem::GetItemSocket(acce, ACCE_ABSORPTION_SOCKET) >= ACCE_EFFECT_FROM_ABS)
                 toSetValue += 1000;
 
             return toSetValue;
@@ -2921,19 +3250,20 @@ uint16_t CHARACTER::GetPart(uint8_t bPartPos) const
             return 0;
     }
 #else
-    else if (bPartPos == PART_ACCE && GetWear(WEAR_COSTUME_ACCE_SLOT) && IsAcceCostumeHidden() == true)
+    else if (bPartPos == PART_ACCE &&
+		ItemSystem::IsValidItem(ItemSystem::GetWearItem(character, WEAR_COSTUME_ACCE_SLOT)) &&
+		IsAcceCostumeHidden() == true)
         return 0;
 #endif
-    else if (bPartPos == PART_WEAPON && GetWear(WEAR_COSTUME_WEAPON) && IsWeaponCostumeHidden() == true)
+    else if (bPartPos == PART_WEAPON &&
+		ItemSystem::IsValidItem(ItemSystem::GetWearItem(character, WEAR_COSTUME_WEAPON)) &&
+		IsWeaponCostumeHidden() == true)
     {
-        if (const LPITEM pWeapon = GetWear(WEAR_WEAPON))
-#ifdef __CHANGE_LOOK_SYSTEM__
-            return pWeapon->GetTransmutation() != 0 ? pWeapon->GetTransmutation() : ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, pWeapon));
-#else
-            return ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, pWeapon));
-#endif
-        else
-            return 0;
+		const entt::entity weapon = ItemSystem::GetWearItem(character, WEAR_WEAPON);
+		if (!ItemSystem::IsValidItem(weapon))
+			return 0;
+		const uint32_t transmutation = ItemSystem::GetItemTransmutationVnum(weapon);
+		return transmutation != 0 ? transmutation : ItemSystem::GetItemVnum(weapon);
     }
 #endif
 
@@ -2945,6 +3275,7 @@ uint16_t CHARACTER::GetPart(uint8_t bPartPos) const
 
 uint16_t CHARACTER::GetOriginalPart(uint8_t bPartPos) const
 {
+	const entt::entity character = GetEntityHandle();
     switch (bPartPos)
     {
     case PART_MAIN:
@@ -2953,9 +3284,11 @@ uint16_t CHARACTER::GetOriginalPart(uint8_t bPartPos) const
             return GetPart(PART_MAIN);
 
 #ifdef __HIDE_COSTUME_SYSTEM__
-        if (GetWear(WEAR_COSTUME_BODY) && IsBodyCostumeHidden() == true) {
-            if (const LPITEM pArmor = GetWear(WEAR_BODY))
-                return ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, pArmor));
+        if (ItemSystem::IsValidItem(ItemSystem::GetWearItem(character, WEAR_COSTUME_BODY)) &&
+			IsBodyCostumeHidden() == true) {
+			const entt::entity armor = ItemSystem::GetWearItem(character, WEAR_BODY);
+			if (ItemSystem::IsValidItem(armor))
+				return ItemSystem::GetItemVnum(armor);
         }
 #endif
 
@@ -2967,7 +3300,8 @@ uint16_t CHARACTER::GetOriginalPart(uint8_t bPartPos) const
     case PART_HAIR:
     {
 #ifdef __HIDE_COSTUME_SYSTEM__
-        if (GetWear(WEAR_COSTUME_HAIR) && IsHairCostumeHidden() == true)
+        if (ItemSystem::IsValidItem(ItemSystem::GetWearItem(character, WEAR_COSTUME_HAIR)) &&
+			IsHairCostumeHidden() == true)
             return 0;
 #endif
 
@@ -2978,12 +3312,13 @@ uint16_t CHARACTER::GetOriginalPart(uint8_t bPartPos) const
     {
 #ifdef __HIDE_COSTUME_SYSTEM__
 #ifdef ENABLE_STOLE_COSTUME
-        if (GetWear(WEAR_COSTUME_ACCE) && IsAcceCostumeHidden() == true) {
-            LPITEM pAcce = GetWear(WEAR_COSTUME_ACCE_SLOT);
-            if (pAcce) {
-                uint32_t toSetValue = ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, pAcce));
+        if (ItemSystem::IsValidItem(ItemSystem::GetWearItem(character, WEAR_COSTUME_ACCE)) &&
+			IsAcceCostumeHidden() == true) {
+			const entt::entity acce = ItemSystem::GetWearItem(character, WEAR_COSTUME_ACCE_SLOT);
+            if (ItemSystem::IsValidItem(acce)) {
+                uint32_t toSetValue = ItemSystem::GetItemVnum(acce);
                 toSetValue -= 85000;
-                if (ItemSystem::GetItemSocket(EntityFactory::CreateItemEntity(g_registry, pAcce), ACCE_ABSORPTION_SOCKET) >= ACCE_EFFECT_FROM_ABS)
+                if (ItemSystem::GetItemSocket(acce, ACCE_ABSORPTION_SOCKET) >= ACCE_EFFECT_FROM_ABS)
                     toSetValue += 1000;
 
                 return toSetValue;
@@ -2992,11 +3327,12 @@ uint16_t CHARACTER::GetOriginalPart(uint8_t bPartPos) const
                 return 0;
         }
 #else
-        if (GetWear(WEAR_COSTUME_ACCE_SLOT) && IsAcceCostumeHidden() == true)
+        if (ItemSystem::IsValidItem(ItemSystem::GetWearItem(character, WEAR_COSTUME_ACCE_SLOT)) &&
+			IsAcceCostumeHidden() == true)
             return 0;
 #endif
 #else
-        if (GetWear(WEAR_COSTUME_ACCE_SLOT))
+        if (ItemSystem::IsValidItem(ItemSystem::GetWearItem(character, WEAR_COSTUME_ACCE_SLOT)))
             return 0;
 #endif
         return GetPart(PART_ACCE);
@@ -3006,9 +3342,11 @@ uint16_t CHARACTER::GetOriginalPart(uint8_t bPartPos) const
     case PART_WEAPON:
     {
 #ifdef __HIDE_COSTUME_SYSTEM__
-        if (GetWear(WEAR_COSTUME_WEAPON) && IsWeaponCostumeHidden() == true) {
-            if (const LPITEM pWeapon = GetWear(WEAR_WEAPON))
-                return ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, pWeapon));
+        if (ItemSystem::IsValidItem(ItemSystem::GetWearItem(character, WEAR_COSTUME_WEAPON)) &&
+			IsWeaponCostumeHidden() == true) {
+			const entt::entity weapon = ItemSystem::GetWearItem(character, WEAR_WEAPON);
+			if (ItemSystem::IsValidItem(weapon))
+				return ItemSystem::GetItemVnum(weapon);
         }
 #endif
         return GetPart(PART_WEAPON);
@@ -3328,9 +3666,9 @@ void CHARACTER::ResetPoint(int iLv)
 
 void CHARACTER::GiveRandomSkillBook()
 {
-    LPITEM item = AutoGiveItem(50300);
+    const entt::entity item = ItemSystem::AutoGiveItemEcs(GetEntityHandle(), 50300);
 
-    if (nullptr != item)
+    if (ItemSystem::IsValidItem(item))
     {
         extern const uint32_t GetRandomSkillVnum(uint8_t bJob = JOB_MAX_NUM);
         uint32_t dwSkillVnum = 0;
@@ -3338,7 +3676,7 @@ void CHARACTER::GiveRandomSkillBook()
             dwSkillVnum = GetRandomSkillVnum(GetJob());
         else
             dwSkillVnum = GetRandomSkillVnum();
-        ItemSystem::SetItemSocket(EntityFactory::CreateItemEntity(g_registry, item), 0, dwSkillVnum);
+        ItemSystem::SetItemSocket(item, 0, dwSkillVnum);
     }
 }
 
@@ -3737,6 +4075,13 @@ void CHARACTER::SetPlayerProto(const TPlayerTable* t)
         UpdateHorseDataByLogoff(t->logoff_interval);
 
     memcpy(m_aiPremiumTimes, t->aiPremiumTimes, sizeof(t->aiPremiumTimes));
+	if (const entt::entity character = GetEntityHandle();
+		character != entt::null && g_registry.valid(character))
+	{
+		auto& login = g_registry.get_or_emplace<ecs::LoginInfo>(character);
+		std::copy_n(std::begin(t->aiPremiumTimes), PREMIUM_MAX_NUM,
+			login.premiumTimes.begin());
+	}
 
     m_dwLogOffInterval = t->logoff_interval;
 
@@ -4492,21 +4837,21 @@ void CHARACTER::OpenMyShop(const char* c_pszSign, TShopItemTable* pTable, uint8_
             return;
         }
 
-        LPITEM pkItem = GetItem((pTable + i)->pos);
+        const entt::entity item = ItemSystem::GetItem(GetEntityHandle(), (pTable + i)->pos);
 
-        if (pkItem)
+        if (ItemSystem::IsValidItem(item))
         {
-            const TItemTable* item_table = ItemSystem::GetItemProto(EntityFactory::CreateItemEntity(g_registry, pkItem));
+            const TItemTable* item_table = ItemSystem::GetItemProto(item);
 
             if (item_table && (IS_SET(item_table->dwAntiFlags, ITEM_ANTIFLAG_GIVE | ITEM_ANTIFLAG_MYSHOP)))
             {
 #ifdef TEXTS_IMPROVEMENT
-                ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 416, "%s", pkItem->GetName());
+                ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 416, "%s", ItemSystem::GetItemName(item));
 #endif
                 return;
             }
 
-            if (ItemSystem::IsItemEquipped(EntityFactory::CreateItemEntity(g_registry, pkItem)) == true)
+            if (ItemSystem::IsItemEquipped(item) == true)
             {
 #ifdef TEXTS_IMPROVEMENT
                 ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 541, "");
@@ -4514,7 +4859,7 @@ void CHARACTER::OpenMyShop(const char* c_pszSign, TShopItemTable* pTable, uint8_
                 return;
             }
 
-            if (true == pkItem->isLocked())
+            if (ItemSystem::IsItemLocked(item))
             {
 #ifdef TEXTS_IMPROVEMENT
                 ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 656, "");
@@ -4522,7 +4867,14 @@ void CHARACTER::OpenMyShop(const char* c_pszSign, TShopItemTable* pTable, uint8_
                 return;
             }
 
-            itemkind[ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, pkItem))] = (pTable + i)->price / ItemSystem::GetItemCount(EntityFactory::CreateItemEntity(g_registry, pkItem));
+			const uint32_t itemCount = ItemSystem::GetItemCount(item);
+			if (itemCount == 0)
+			{
+				LOG_ERROR("MYSHOP: zero-count item rejected (name: {} item_id: {})",
+					GetName(), ItemSystem::GetItemID(item));
+				return;
+			}
+			itemkind[ItemSystem::GetItemVnum(item)] = (pTable + i)->price / itemCount;
         }
 
         cont.insert((pTable + i)->pos);

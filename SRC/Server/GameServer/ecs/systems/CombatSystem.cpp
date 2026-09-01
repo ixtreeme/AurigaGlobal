@@ -28,6 +28,7 @@
 #include "../EntityFactory.hpp"
 #include "../EntityInvariants.hpp"
 #include "../Registry.hpp"
+#include "../NetworkService.hpp"
 #include "../VIDRegistry.hpp"
 #include "ItemSystem.hpp"
 #include "../../utils.h"
@@ -112,15 +113,6 @@ static inline entt::entity EntityOf(LegacyCharHandle ch)
     }
 
     return AIHelpers::EcsOf(ch);
-}
-
-static inline LPITEM LegacyItemOf(entt::entity item)
-{
-    if (!ItemSystem::IsValidItem(item)) {
-        return nullptr;
-    }
-
-    return ITEM_MANAGER::instance().Find(ItemSystem::GetItemID(item));
 }
 
 static inline ecs::CharacterRuntimeFlagsComponent* RuntimeFlags(LegacyCharHandle ch)
@@ -2587,36 +2579,34 @@ bool CHARACTER::Attack(LPCHARACTER pkVictim, uint8_t bType)
 
 int CHARACTER::GetArrowAndBow(entt::entity* ppkBow, entt::entity* ppkArrow, int iArrowCount/* = 1 */)
 {
-	LPITEM pkBow;
-
-	if (!(pkBow = GetWear(WEAR_WEAPON)))
+	const entt::entity bow = ItemSystem::GetWearItem(GetEntityHandle(), WEAR_WEAPON);
+	if (!ItemSystem::IsValidItem(bow))
 	{
 		return 0;
 	}
 
-	const TItemTable* bowProto = ItemSystem::GetItemProto(EntityFactory::CreateItemEntity(g_registry, pkBow));
+	const TItemTable* bowProto = ItemSystem::GetItemProto(bow);
 	if (!bowProto || bowProto->bSubType != WEAPON_BOW)
 	{
 		return 0;
 	}
 
-	LPITEM pkArrow;
-
-	if (!(pkArrow = GetWear(WEAR_ARROW)) || ItemSystem::GetItemType(EntityFactory::CreateItemEntity(g_registry, pkArrow)) != ITEM_WEAPON)
+	const entt::entity arrow = ItemSystem::GetWearItem(GetEntityHandle(), WEAR_ARROW);
+	if (!ItemSystem::IsValidItem(arrow) || ItemSystem::GetItemType(arrow) != ITEM_WEAPON)
 	{
 		return 0;
 	}
 
-	const TItemTable* arrowProto = ItemSystem::GetItemProto(EntityFactory::CreateItemEntity(g_registry, pkArrow));
+	const TItemTable* arrowProto = ItemSystem::GetItemProto(arrow);
 	if (!arrowProto || arrowProto->bSubType != WEAPON_ARROW)
 	{
 		return 0;
 	}
 
-	iArrowCount = std::min(iArrowCount, static_cast<int>(ItemSystem::GetItemCount(EntityFactory::CreateItemEntity(g_registry, pkArrow))));
+	iArrowCount = std::min(iArrowCount, static_cast<int>(ItemSystem::GetItemCount(arrow)));
 
-	*ppkBow = EntityFactory::CreateItemEntity(g_registry, pkBow);
-	*ppkArrow = EntityFactory::CreateItemEntity(g_registry, pkArrow);
+	*ppkBow = bow;
+	*ppkArrow = arrow;
 
 	return iArrowCount;
 }
@@ -2885,7 +2875,7 @@ void CHARACTER::ItemDropPenalty(LPCHARACTER pkKiller)
 	else return;
 
 	std::vector<std::pair<entt::entity, int>> vec_item;
-	LPITEM pkItem;
+	const entt::entity ownerEntity = GetEntityHandle();
 	int	i;
 	bool isDropAllEquipments = false;
 
@@ -2908,7 +2898,7 @@ void CHARACTER::ItemDropPenalty(LPCHARACTER pkKiller)
 		std::vector<uint8_t> vec_bSlots;
 
 		for (i = 0; i < INVENTORY_MAX_NUM; ++i)
-			if (GetInventoryItem(i))
+			if (ItemSystem::IsValidItem(ItemSystem::GetInventoryItem(ownerEntity, i)))
 				vec_bSlots.push_back(i);
 
 		if (!vec_bSlots.empty())
@@ -2923,9 +2913,8 @@ void CHARACTER::ItemDropPenalty(LPCHARACTER pkKiller)
 
 			for (i = 0; i < iQty; ++i)
 			{
-				pkItem = GetInventoryItem(vec_bSlots[i]);
-
-				const entt::entity itemEntity = EntityFactory::CreateItemEntity(g_registry, pkItem);
+				const entt::entity itemEntity =
+					ItemSystem::GetInventoryItem(ownerEntity, vec_bSlots[i]);
 				if (IS_SET(ItemSystem::GetItemAntiFlag(itemEntity), ITEM_ANTIFLAG_GIVE | ITEM_ANTIFLAG_PKDROP))
 					continue;
 
@@ -2943,7 +2932,7 @@ void CHARACTER::ItemDropPenalty(LPCHARACTER pkKiller)
 		std::vector<uint8_t> vec_bSlots;
 
 		for (i = 0; i < WEAR_MAX_NUM; ++i)
-			if (GetWear(i))
+			if (ItemSystem::IsValidItem(ItemSystem::GetWearItem(ownerEntity, i)))
 				vec_bSlots.push_back(i);
 
 		if (!vec_bSlots.empty())
@@ -2963,9 +2952,8 @@ void CHARACTER::ItemDropPenalty(LPCHARACTER pkKiller)
 
 			for (i = 0; i < iQty; ++i)
 			{
-				pkItem = GetWear(vec_bSlots[i]);
-
-				const entt::entity itemEntity = EntityFactory::CreateItemEntity(g_registry, pkItem);
+				const entt::entity itemEntity =
+					ItemSystem::GetWearItem(ownerEntity, vec_bSlots[i]);
 				if (IS_SET(ItemSystem::GetItemAntiFlag(itemEntity), ITEM_ANTIFLAG_GIVE | ITEM_ANTIFLAG_PKDROP))
 					continue;
 
@@ -2978,22 +2966,18 @@ void CHARACTER::ItemDropPenalty(LPCHARACTER pkKiller)
 
 	if (bDropAntiDropUniqueItem)
 	{
-		LPITEM pkItem;
-
-		pkItem = GetWear(WEAR_UNIQUE1);
-
-		const entt::entity unique1 = pkItem ? EntityFactory::CreateItemEntity(g_registry, pkItem) : entt::null;
-		if (pkItem && ItemSystem::GetItemVnum(unique1) == UNIQUE_ITEM_SKIP_ITEM_DROP_PENALTY)
+		const entt::entity unique1 = ItemSystem::GetWearItem(ownerEntity, WEAR_UNIQUE1);
+		if (ItemSystem::IsValidItem(unique1) &&
+			ItemSystem::GetItemVnum(unique1) == UNIQUE_ITEM_SKIP_ITEM_DROP_PENALTY)
 		{
 			SyncQuickslot(QUICKSLOT_TYPE_ITEM, WEAR_UNIQUE1, 255);
 			if (ItemSystem::RemoveItemEcs(unique1))
 				vec_item.emplace_back(unique1, EQUIPMENT);
 		}
 
-		pkItem = GetWear(WEAR_UNIQUE2);
-
-		const entt::entity unique2 = pkItem ? EntityFactory::CreateItemEntity(g_registry, pkItem) : entt::null;
-		if (pkItem && ItemSystem::GetItemVnum(unique2) == UNIQUE_ITEM_SKIP_ITEM_DROP_PENALTY)
+		const entt::entity unique2 = ItemSystem::GetWearItem(ownerEntity, WEAR_UNIQUE2);
+		if (ItemSystem::IsValidItem(unique2) &&
+			ItemSystem::GetItemVnum(unique2) == UNIQUE_ITEM_SKIP_ITEM_DROP_PENALTY)
 		{
 			SyncQuickslot(QUICKSLOT_TYPE_ITEM, WEAR_UNIQUE2, 255);
 			if (ItemSystem::RemoveItemEcs(unique2))
@@ -3010,16 +2994,21 @@ void CHARACTER::ItemDropPenalty(LPCHARACTER pkKiller)
 
 		for (i = 0; i < vec_item.size(); ++i)
 		{
-			LPITEM item = LegacyItemOf(vec_item[i].first);
-			if (!item)
+			const entt::entity item = vec_item[i].first;
+			if (!ItemSystem::IsValidItem(item))
 				continue;
 			int window = vec_item[i].second;
 
-			item->AddToGround(GetMapIndex(), pos);
-			item->StartDestroyEvent();
+			if (!ItemSystem::PlaceItemOnGroundLegacyBoundary(
+					item, GetMapIndex(), pos, 300))
+				continue;
 
-			LOG_INFO("DROP_ITEM_PK: {} {} {} from {}", item->GetName(), pos.x, pos.y, GetName());
-			LogManager::instance().ItemLog(this, item, "DEAD_DROP", (window == INVENTORY) ? "INVENTORY" : ((window == EQUIPMENT) ? "EQUIPMENT" : ""));
+			LOG_INFO("DROP_ITEM_PK: {} {} {} from {}",
+				ItemSystem::GetItemName(item), pos.x, pos.y, GetName());
+			LogManager::instance().ItemLogEntity(
+				GetEntityHandle(), item, "DEAD_DROP",
+				(window == INVENTORY) ? "INVENTORY" :
+				((window == EQUIPMENT) ? "EQUIPMENT" : ""));
 
 			pos.x = GetX() + number(-7, 7) * 20;
 			pos.y = GetY() + number(-7, 7) * 20;
@@ -3064,213 +3053,153 @@ static void __UpdateBattlePassCollectProgress(LegacyCharHandle ch, uint32_t dwIt
 #endif
 }
 
-static LPITEM __LegacyCombatItem(entt::entity item)
-{
-	if (item == entt::null)
-		return nullptr;
-
-	const uint32_t id = ItemSystem::GetItemID(item);
-	return id != 0 ? ITEM_MANAGER::instance().Find(id) : nullptr;
-}
-
 static bool __TryAutoGiveRewardItem(LegacyCharHandle ch, entt::entity itemEntity, uint32_t& dwGivenCount)
 {
 	dwGivenCount = 0;
 
-	LPITEM item = __LegacyCombatItem(itemEntity);
-	if (!ch || !item)
+	const entt::entity owner = EntityOf(ch);
+	if (!ch || owner == entt::null || !g_registry.valid(owner) ||
+		!ItemSystem::IsValidItem(itemEntity))
 		return false;
 
-	const char* szItemName = item->GetName(ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch)) ? ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->GetLanguage() : 0);
+	const uint32_t itemVnum = ItemSystem::GetItemVnum(itemEntity);
+	const TItemTable* itemProto = ItemSystem::GetItemProto(itemEntity);
+#ifdef ENABLE_MULTI_NAMES
+	const uint8_t language = ecs::NetworkService::GetLanguage(owner);
+	const std::string itemName = itemProto
+		? itemProto->szLocaleName[language]
+		: ItemSystem::GetItemName(itemEntity);
+#else
+	const std::string itemName = itemProto
+		? itemProto->szLocaleName
+		: ItemSystem::GetItemName(itemEntity);
+#endif
+	int remainingCount = static_cast<int>(ItemSystem::GetItemCount(itemEntity));
+
+	const auto socketsMatch = [itemEntity](entt::entity candidate) {
+		for (int socket = 0; socket < ITEM_SOCKET_MAX_NUM; ++socket)
+		{
+			if (ItemSystem::GetItemSocket(candidate, socket) !=
+				ItemSystem::GetItemSocket(itemEntity, socket))
+				return false;
+		}
+		return true;
+	};
+
+	const auto mergeIntoInventory = [&](int slotCount, const auto& getItem) {
+		for (int cell = 0; cell < slotCount && remainingCount > 0; ++cell)
+		{
+			const entt::entity candidate = getItem(cell);
+			if (!ItemSystem::IsValidItem(candidate) ||
+				ItemSystem::GetItemVnum(candidate) != itemVnum ||
+				!socketsMatch(candidate))
+				continue;
+
+			const int capacity = std::max(
+				0, static_cast<int>(g_bItemCountLimit) -
+				static_cast<int>(ItemSystem::GetItemCount(candidate)));
+			const int moved = std::min(capacity, remainingCount);
+			if (moved <= 0)
+				continue;
+
+			if (!ItemSystem::AddItemCountEcs(candidate, moved))
+				continue;
+
+			remainingCount -= moved;
+			dwGivenCount += static_cast<uint32_t>(moved);
+		}
+	};
+
+	if (ItemSystem::IsItemVnumStackable(itemVnum))
+	{
 
 #ifdef ENABLE_EXTRA_INVENTORY
-	if (item->IsExtraItem() && item->IsStackable() && !IS_SET(ItemSystem::GetItemAntiFlag(EntityFactory::CreateItemEntity(g_registry, item)), ITEM_ANTIFLAG_STACK))
-	{
-#ifdef ENABLE_NEW_STACK_LIMIT
-		int bCount = ItemSystem::GetItemCount(EntityFactory::CreateItemEntity(g_registry, item));
-#else
-		uint8_t bCount = ItemSystem::GetItemCount(EntityFactory::CreateItemEntity(g_registry, item));
-#endif
-		for (int i = 0; i < EXTRA_INVENTORY_MAX_NUM; ++i)
+		if (ItemSystem::IsExtraItem(itemEntity))
 		{
-			LPITEM item2 = ch->GetExtraInventoryItem(i);
-			if (!item2)
-				continue;
-
-			if (ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, item2)) != ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, item)))
-				continue;
-
-			int j = 0;
-			for (j = 0; j < ITEM_SOCKET_MAX_NUM; ++j)
-			{
-				if (ItemSystem::GetItemSocket(EntityFactory::CreateItemEntity(g_registry, item2), j) != ItemSystem::GetItemSocket(EntityFactory::CreateItemEntity(g_registry, item), j))
-					break;
-			}
-
-			if (j != ITEM_SOCKET_MAX_NUM)
-				continue;
-
-#ifdef ENABLE_NEW_STACK_LIMIT
-			int bCount2 = std::min(static_cast<int>(g_bItemCountLimit - ItemSystem::GetItemCount(EntityFactory::CreateItemEntity(g_registry, item2))), bCount);
-#else
-			uint8_t bCount2 = std::min(g_bItemCountLimit - ItemSystem::GetItemCount(EntityFactory::CreateItemEntity(g_registry, item2)), bCount);
+			mergeIntoInventory(EXTRA_INVENTORY_MAX_NUM, [owner](int cell) {
+				return ItemSystem::GetExtraInventoryItem(
+					owner, static_cast<uint16_t>(cell));
+			});
+		}
+		else
 #endif
-			if (bCount2 <= 0)
-				continue;
-
-			bCount -= bCount2;
-			dwGivenCount += bCount2;
-			ItemSystem::AddItemCountEcs(
-				EntityFactory::CreateItemEntity(g_registry, item2), bCount2);
-
-			if (bCount == 0)
-			{
-#ifdef TEXTS_IMPROVEMENT
-				if (dwGivenCount > 0)
-				{
-					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch),
-#ifdef ENABLE_NEW_CHAT
-						CHAT_TYPE_INFO_ITEM
-#else
-						CHAT_TYPE_INFO
-#endif
-						, 102, "%u#%s", dwGivenCount, szItemName);
-				}
-#endif
-
-				ItemSystem::ConsumeItemEcs(
-					EntityFactory::CreateItemEntity(g_registry, item),
-					ItemSystem::GetItemCount(EntityFactory::CreateItemEntity(g_registry, item)));
-				return true;
-			}
+		{
+			mergeIntoInventory(INVENTORY_MAX_NUM, [owner](int cell) {
+				return ItemSystem::GetInventoryItem(
+					owner, static_cast<uint16_t>(cell));
+			});
 		}
 
-		ItemSystem::SetItemCountEcs(
-			EntityFactory::CreateItemEntity(g_registry, item), bCount);
-	}
-	else if (item->IsStackable() && !IS_SET(ItemSystem::GetItemAntiFlag(EntityFactory::CreateItemEntity(g_registry, item)), ITEM_ANTIFLAG_STACK))
-#else
-	if (item->IsStackable() && !IS_SET(ItemSystem::GetItemAntiFlag(EntityFactory::CreateItemEntity(g_registry, item)), ITEM_ANTIFLAG_STACK))
-#endif
-	{
-#ifdef ENABLE_NEW_STACK_LIMIT
-		int bCount = ItemSystem::GetItemCount(EntityFactory::CreateItemEntity(g_registry, item));
-#else
-		uint8_t bCount = ItemSystem::GetItemCount(EntityFactory::CreateItemEntity(g_registry, item));
-#endif
-		for (int i = 0; i < INVENTORY_MAX_NUM; ++i)
+		if (remainingCount == 0)
 		{
-			LPITEM item2 = ch->GetInventoryItem(i);
-			if (!item2)
-				continue;
-
-			if (ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, item2)) != ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, item)))
-				continue;
-
-			int j = 0;
-			for (j = 0; j < ITEM_SOCKET_MAX_NUM; ++j)
-			{
-				if (ItemSystem::GetItemSocket(EntityFactory::CreateItemEntity(g_registry, item2), j) != ItemSystem::GetItemSocket(EntityFactory::CreateItemEntity(g_registry, item), j))
-					break;
-			}
-
-			if (j != ITEM_SOCKET_MAX_NUM)
-				continue;
-
-#ifdef ENABLE_NEW_STACK_LIMIT
-			int bCount2 = std::min(static_cast<int>(g_bItemCountLimit - ItemSystem::GetItemCount(EntityFactory::CreateItemEntity(g_registry, item2))), bCount);
-#else
-			uint8_t bCount2 = std::min(g_bItemCountLimit - ItemSystem::GetItemCount(EntityFactory::CreateItemEntity(g_registry, item2)), bCount);
-#endif
-			if (bCount2 <= 0)
-				continue;
-
-			bCount -= bCount2;
-			dwGivenCount += bCount2;
-			ItemSystem::AddItemCountEcs(
-				EntityFactory::CreateItemEntity(g_registry, item2), bCount2);
-
-			if (bCount == 0)
-			{
+			ItemSystem::DestroyItemEntityEcs(itemEntity, "COMBAT_INSTANT_LOOT_STACKED");
 #ifdef TEXTS_IMPROVEMENT
-				if (dwGivenCount > 0)
-				{
-					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch),
+			if (dwGivenCount > 0)
+			{
+				ecs::ChatSystem::SendNew(owner,
 #ifdef ENABLE_NEW_CHAT
-						CHAT_TYPE_INFO_ITEM
+					CHAT_TYPE_INFO_ITEM
 #else
-						CHAT_TYPE_INFO
+					CHAT_TYPE_INFO
 #endif
-						, 102, "%u#%s", dwGivenCount, szItemName);
-				}
-#endif
-
-				ItemSystem::ConsumeItemEcs(
-					EntityFactory::CreateItemEntity(g_registry, item),
-					ItemSystem::GetItemCount(EntityFactory::CreateItemEntity(g_registry, item)));
-				return true;
+					, 102, "%u#%s", dwGivenCount, itemName.c_str());
 			}
+#endif
+			return true;
 		}
 
-		ItemSystem::SetItemCountEcs(
-			EntityFactory::CreateItemEntity(g_registry, item), bCount);
+		if (!ItemSystem::SetItemCountEcs(
+				itemEntity, static_cast<uint32_t>(remainingCount)))
+			return false;
 	}
 
-	int iEmptyCell = -1;
-	TItemPos pos;
-
-	if (item->IsDragonSoul())
-	{
-		iEmptyCell = ch->GetEmptyDragonSoulInventory(item);
-		pos = TItemPos(DRAGON_SOUL_INVENTORY, iEmptyCell);
-	}
-#ifdef ENABLE_EXTRA_INVENTORY
-	else if (item->IsExtraItem())
-	{
-		iEmptyCell = ch->GetEmptyExtraInventory(item);
-		pos = TItemPos(EXTRA_INVENTORY, iEmptyCell);
-	}
-#endif
-	else
-	{
-		iEmptyCell = ch->GetEmptyInventory(item->GetSize());
-		pos = TItemPos(INVENTORY, iEmptyCell);
-	}
-
-	if (iEmptyCell == -1)
+	const int emptyCell = ItemSystem::GetEmptyInventoryPositionEcs(owner, itemEntity);
+	if (emptyCell < 0)
 		return false;
 
-	const uint32_t dwDirectCount = ItemSystem::GetItemCount(EntityFactory::CreateItemEntity(g_registry, item));
-	item->AddToCharacter(ch, pos);
-	dwGivenCount += dwDirectCount;
+	uint8_t window = INVENTORY;
+	if (ItemSystem::IsDragonSoulItem(itemEntity))
+		window = DRAGON_SOUL_INVENTORY;
+#ifdef ENABLE_EXTRA_INVENTORY
+	else if (ItemSystem::IsExtraItem(itemEntity))
+		window = EXTRA_INVENTORY;
+#endif
+
+	const uint32_t directCount = ItemSystem::GetItemCount(itemEntity);
+	if (!ItemSystem::PlaceItemEcs(
+			owner, itemEntity, window, static_cast<uint16_t>(emptyCell)))
+		return false;
+
+	dwGivenCount += directCount;
 
 #ifdef TEXTS_IMPROVEMENT
 	if (dwGivenCount > 0)
 	{
-		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch),
+		ecs::ChatSystem::SendNew(owner,
 #ifdef ENABLE_NEW_CHAT
 			CHAT_TYPE_INFO_ITEM
 #else
 			CHAT_TYPE_INFO
 #endif
-			, 102, "%u#%s", dwGivenCount, szItemName);
+			, 102, "%u#%s", dwGivenCount, itemName.c_str());
 	}
 #endif
 
-	char szHint[32 + 1];
-	snprintf(szHint, sizeof(szHint), "%s %u %u", item->GetName(), ItemSystem::GetItemCount(EntityFactory::CreateItemEntity(g_registry, item)), item->GetOriginalVnum());
-	LogManager::instance().ItemLog(ch, item, "GET", szHint);
+	char hint[96];
+	snprintf(hint, sizeof(hint), "%s %u %u", itemName.c_str(),
+		ItemSystem::GetItemCount(itemEntity),
+		ItemSystem::GetItemOriginalVnum(itemEntity));
+	LogManager::instance().ItemLogEntity(owner, itemEntity, "GET", hint);
 	return true;
 }
 
 static void __GiveRewardItemToCharacterOrDrop(LegacyCharHandle ch, LegacyCharHandle pkVictim, entt::entity itemEntity, const PIXEL_POSITION& pos, bool bTrackBattlePass)
 {
-	LPITEM item = __LegacyCombatItem(itemEntity);
-	if (!item)
+	if (!ItemSystem::IsValidItem(itemEntity))
 		return;
 
 	uint32_t dwGivenCount = 0;
-	const uint32_t dwItemVnum = ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, item));
+	const uint32_t dwItemVnum = ItemSystem::GetItemVnum(itemEntity);
 
 	if (ch && __TryAutoGiveRewardItem(ch, itemEntity, dwGivenCount))
 	{
@@ -3282,14 +3211,18 @@ static void __GiveRewardItemToCharacterOrDrop(LegacyCharHandle ch, LegacyCharHan
 	if (bTrackBattlePass && dwGivenCount > 0)
 		__UpdateBattlePassCollectProgress(ch, dwItemVnum, dwGivenCount);
 
-	item->AddToGround(ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(pkVictim)), pos);
+	if (!ItemSystem::PlaceItemOnGroundLegacyBoundary(
+			itemEntity,
+			ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(pkVictim)),
+			pos, 300))
+		return;
 
 	if (ch && CBattleArena::instance().IsBattleArenaMap(ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch))) == false)
-		item->SetOwnership(ch, 60);
+		ItemSystem::SetGroundOwnershipLegacyBoundary(
+			itemEntity, AIHelpers::EcsOf(ch), 60);
 
-	item->StartDestroyEvent();
-
-	LOG_INFO("DROP_ITEM: {} {} {} from {}", item->GetName(), pos.x, pos.y, ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(pkVictim)).data());
+	LOG_INFO("DROP_ITEM: {} {} {} from {}", ItemSystem::GetItemName(itemEntity),
+		pos.x, pos.y, ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(pkVictim)).data());
 }
 #endif
 
@@ -3639,7 +3572,6 @@ void CHARACTER::Reward(bool bItemDrop)
 	//
 	//
 	//PROF_UNIT pu3("r3");
-	LPITEM item;
 	entt::entity itemEntity = entt::null;
 
 	std::vector<entt::entity> s_vec_item;
@@ -3825,36 +3757,49 @@ void CHARACTER::Reward(bool bItemDrop)
 
 								for (const auto& di : drops)
 								{
-									LPITEM newItem = ITEM_MANAGER::instance().CreateItem(di.vnum, di.count);
-									if (!newItem)
+									const entt::entity newItem =
+										ItemSystem::CreateItemEcs(di.vnum, di.count);
+									if (!ItemSystem::IsValidItem(newItem))
 										continue;
 
 									for (int i = 0; i < ITEM_SOCKET_MAX_NUM; ++i)
-										ItemSystem::SetItemSocket(EntityFactory::CreateItemEntity(g_registry, newItem), i, di.sockets[i]);
+										ItemSystem::SetItemSocket(newItem, i, di.sockets[i]);
 
-									newItem->SetAttributes(di.attrs);
+									for (int i = 0; i < ITEM_ATTRIBUTE_MAX_NUM; ++i)
+										ItemSystem::SetItemAttribute(
+											newItem, i, di.attrs[i].bType, di.attrs[i].sValue);
 
 #ifdef ENABLE_DROP_INSTANT_INVENTORY
 									if (bInstantRewardToInventory)
 									{
-										__GiveRewardItemToCharacterOrDrop(rch, this, EntityFactory::CreateItemEntity(g_registry, newItem), mpos, true);
+										__GiveRewardItemToCharacterOrDrop(rch, this, newItem, mpos, true);
 									}
 									else
 									{
-										newItem->AddToGround(lMapIndex, mpos);
+										if (!ItemSystem::PlaceItemOnGroundLegacyBoundary(
+												newItem, lMapIndex, mpos, 300))
+										{
+											ItemSystem::DestroyItemEntityEcs(
+												newItem, "SHARED_DROP_PLACE_FAIL");
+											continue;
+										}
 
 										if (CBattleArena::instance().IsBattleArenaMap(ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(rch))) == false)
-											newItem->SetOwnership(rch);
-
-										newItem->StartDestroyEvent();
+											ItemSystem::SetGroundOwnershipLegacyBoundary(
+												newItem, AIHelpers::EcsOf(rch));
 									}
 #else
-									newItem->AddToGround(lMapIndex, mpos);
+									if (!ItemSystem::PlaceItemOnGroundLegacyBoundary(
+											newItem, lMapIndex, mpos, 300))
+									{
+										ItemSystem::DestroyItemEntityEcs(
+											newItem, "SHARED_DROP_PLACE_FAIL");
+										continue;
+									}
 
 									if (CBattleArena::instance().IsBattleArenaMap(ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(rch))) == false)
-										newItem->SetOwnership(rch);
-
-									newItem->StartDestroyEvent();
+										ItemSystem::SetGroundOwnershipLegacyBoundary(
+											newItem, AIHelpers::EcsOf(rch));
 #endif
 								}
 							}
@@ -3886,8 +3831,7 @@ void CHARACTER::Reward(bool bItemDrop)
 			else if (s_vec_item.size() == 1)
 			{
 				itemEntity = s_vec_item[0];
-				item = LegacyItemOf(itemEntity);
-				if (!item)
+				if (!ItemSystem::IsValidItem(itemEntity))
 				{
 					LOG_ERROR("invalid item entity in single drop");
 					m_map_kDamage.clear();
@@ -3906,7 +3850,14 @@ void CHARACTER::Reward(bool bItemDrop)
 				}
 				else
 				{
-					item->AddToGround(GetMapIndex(), pos);
+					if (!ItemSystem::PlaceItemOnGroundLegacyBoundary(
+							itemEntity, GetMapIndex(), pos, 300))
+					{
+						LOG_ERROR("failed to place single drop entity {}",
+							static_cast<uint32_t>(itemEntity));
+						m_map_kDamage.clear();
+						return;
+					}
 
 					if (CBattleArena::instance().IsBattleArenaMap(ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(pkAttacker))) == false)
 					{
@@ -3917,15 +3868,16 @@ void CHARACTER::Reward(bool bItemDrop)
 							f.Process(this);
 						}
 						else
-							item->SetOwnership(pkAttacker);
+							ItemSystem::SetGroundOwnershipLegacyBoundary(
+								itemEntity, AIHelpers::EcsOf(pkAttacker));
 #else
-						item->SetOwnership(pkAttacker);
+						ItemSystem::SetGroundOwnershipLegacyBoundary(
+							itemEntity, AIHelpers::EcsOf(pkAttacker));
 #endif
 					}
 
-					item->StartDestroyEvent();
-
-					LOG_INFO("DROP_ITEM: {} {} {} from {}", item->GetName(), pos.x, pos.y, GetName());
+					LOG_INFO("DROP_ITEM: {} {} {} from {}",
+						ItemSystem::GetItemName(itemEntity), pos.x, pos.y, GetName());
 				}
 
 				pos.x = number(-7, 7) * 20;
@@ -3969,22 +3921,23 @@ void CHARACTER::Reward(bool bItemDrop)
 					while (iItemIdx >= 0)
 					{
 						itemEntity = s_vec_item[iItemIdx--];
-						item = LegacyItemOf(itemEntity);
 
-						if (!item)
+						if (!ItemSystem::IsValidItem(itemEntity))
 						{
 							LOG_ERROR("item null in vector idx {}", iItemIdx + 1);
 							continue;
 						}
 
-						item->AddToGround(GetMapIndex(), pos);
+						if (!ItemSystem::PlaceItemOnGroundLegacyBoundary(
+								itemEntity, GetMapIndex(), pos, 300))
+							continue;
 
 						if (pkAttacker && CBattleArena::instance().IsBattleArenaMap(ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(pkAttacker))) == false)
-							item->SetOwnership(pkAttacker);
+							ItemSystem::SetGroundOwnershipLegacyBoundary(
+								itemEntity, AIHelpers::EcsOf(pkAttacker));
 
-						item->StartDestroyEvent();
-
-						LOG_INFO("DROP_ITEM: {} {} {} by {}", item->GetName(), pos.x, pos.y, GetName());
+						LOG_INFO("DROP_ITEM: {} {} {} by {}",
+							ItemSystem::GetItemName(itemEntity), pos.x, pos.y, GetName());
 
 						pos.x = number(-7, 7) * 20;
 						pos.y = number(-7, 7) * 20;
@@ -3999,9 +3952,8 @@ void CHARACTER::Reward(bool bItemDrop)
 					while (iItemIdx >= 0)
 					{
 						itemEntity = s_vec_item[iItemIdx--];
-						item = LegacyItemOf(itemEntity);
 
-						if (!item)
+						if (!ItemSystem::IsValidItem(itemEntity))
 						{
 							LOG_ERROR("item null in vector idx {}", iItemIdx + 1);
 							continue;
@@ -4029,7 +3981,9 @@ void CHARACTER::Reward(bool bItemDrop)
 						}
 						else
 						{
-							item->AddToGround(GetMapIndex(), pos);
+							if (!ItemSystem::PlaceItemOnGroundLegacyBoundary(
+									itemEntity, GetMapIndex(), pos, 300))
+								continue;
 
 							if (CBattleArena::instance().IsBattleArenaMap(ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch))) == false)
 							{
@@ -4040,15 +3994,16 @@ void CHARACTER::Reward(bool bItemDrop)
 									f.Process(this);
 								}
 								else
-									item->SetOwnership(ch);
+									ItemSystem::SetGroundOwnershipLegacyBoundary(
+										itemEntity, AIHelpers::EcsOf(ch));
 #else
-								item->SetOwnership(ch);
+								ItemSystem::SetGroundOwnershipLegacyBoundary(
+									itemEntity, AIHelpers::EcsOf(ch));
 #endif
 							}
 
-							item->StartDestroyEvent();
-
-							LOG_INFO("DROP_ITEM: {} {} {} by {}", item->GetName(), pos.x, pos.y, GetName());
+							LOG_INFO("DROP_ITEM: {} {} {} by {}",
+								ItemSystem::GetItemName(itemEntity), pos.x, pos.y, GetName());
 						}
 
 						pos.x = number(-7, 7) * 20;
@@ -4065,14 +4020,20 @@ void CHARACTER::Reward(bool bItemDrop)
 			else if (s_vec_item.size() == 1)
 			{
 				itemEntity = s_vec_item[0];
-				item = LegacyItemOf(itemEntity);
-				if (!item)
+				if (!ItemSystem::IsValidItem(itemEntity))
 				{
 					LOG_ERROR("invalid item entity in single ground drop");
 					m_map_kDamage.clear();
 					return;
 				}
-				item->AddToGround(GetMapIndex(), pos);
+				if (!ItemSystem::PlaceItemOnGroundLegacyBoundary(
+						itemEntity, GetMapIndex(), pos, 300))
+				{
+					LOG_ERROR("failed to place single ground drop entity {}",
+						static_cast<uint32_t>(itemEntity));
+					m_map_kDamage.clear();
+					return;
+				}
 
 				if (CBattleArena::instance().IsBattleArenaMap(ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(pkAttacker))) == false)
 				{
@@ -4083,20 +4044,21 @@ void CHARACTER::Reward(bool bItemDrop)
 						f.Process(this);
 					}
 					else
-						item->SetOwnership(pkAttacker);
+						ItemSystem::SetGroundOwnershipLegacyBoundary(
+							itemEntity, AIHelpers::EcsOf(pkAttacker));
 #else
-					item->SetOwnership(pkAttacker);
+					ItemSystem::SetGroundOwnershipLegacyBoundary(
+						itemEntity, AIHelpers::EcsOf(pkAttacker));
 #endif
 				}
-
-				item->StartDestroyEvent();
 
 				pos.x = number(-7, 7) * 20;
 				pos.y = number(-7, 7) * 20;
 				pos.x += GetX();
 				pos.y += GetY();
 
-				LOG_INFO("DROP_ITEM: {} {} {} from {}", item->GetName(), pos.x, pos.y, GetName());
+				LOG_INFO("DROP_ITEM: {} {} {} from {}",
+					ItemSystem::GetItemName(itemEntity), pos.x, pos.y, GetName());
 			}
 			else
 			{
@@ -4134,27 +4096,28 @@ void CHARACTER::Reward(bool bItemDrop)
 					while (iItemIdx >= 0)
 					{
 						itemEntity = s_vec_item[iItemIdx--];
-						item = LegacyItemOf(itemEntity);
 
-						if (!item)
+						if (!ItemSystem::IsValidItem(itemEntity))
 						{
 							LOG_ERROR("item null in vector idx {}", iItemIdx + 1);
 							continue;
 						}
 
-						item->AddToGround(GetMapIndex(), pos);
+						if (!ItemSystem::PlaceItemOnGroundLegacyBoundary(
+								itemEntity, GetMapIndex(), pos, 300))
+							continue;
 
 						if (pkAttacker && CBattleArena::instance().IsBattleArenaMap(ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(pkAttacker))) == false)
-							item->SetOwnership(pkAttacker);
-
-						item->StartDestroyEvent();
+							ItemSystem::SetGroundOwnershipLegacyBoundary(
+								itemEntity, AIHelpers::EcsOf(pkAttacker));
 
 						pos.x = number(-7, 7) * 20;
 						pos.y = number(-7, 7) * 20;
 						pos.x += GetX();
 						pos.y += GetY();
 
-						LOG_INFO("DROP_ITEM: {} {} {} by {}", item->GetName(), pos.x, pos.y, GetName());
+						LOG_INFO("DROP_ITEM: {} {} {} by {}",
+							ItemSystem::GetItemName(itemEntity), pos.x, pos.y, GetName());
 					}
 				}
 				else
@@ -4164,15 +4127,16 @@ void CHARACTER::Reward(bool bItemDrop)
 					while (iItemIdx >= 0)
 					{
 						itemEntity = s_vec_item[iItemIdx--];
-						item = LegacyItemOf(itemEntity);
 
-						if (!item)
+						if (!ItemSystem::IsValidItem(itemEntity))
 						{
 							LOG_ERROR("item null in vector idx {}", iItemIdx + 1);
 							continue;
 						}
 
-						item->AddToGround(GetMapIndex(), pos);
+						if (!ItemSystem::PlaceItemOnGroundLegacyBoundary(
+								itemEntity, GetMapIndex(), pos, 300))
+							continue;
 
 						auto* ch = *it;
 
@@ -4193,20 +4157,21 @@ void CHARACTER::Reward(bool bItemDrop)
 								f.Process(this);
 							}
 							else
-								item->SetOwnership(ch);
+								ItemSystem::SetGroundOwnershipLegacyBoundary(
+									itemEntity, AIHelpers::EcsOf(ch));
 #else
-							item->SetOwnership(ch);
+							ItemSystem::SetGroundOwnershipLegacyBoundary(
+								itemEntity, AIHelpers::EcsOf(ch));
 #endif
 						}
-
-						item->StartDestroyEvent();
 
 						pos.x = number(-7, 7) * 20;
 						pos.y = number(-7, 7) * 20;
 						pos.x += GetX();
 						pos.y += GetY();
 
-						LOG_INFO("DROP_ITEM: {} {} {} by {}", item->GetName(), pos.x, pos.y, GetName());
+						LOG_INFO("DROP_ITEM: {} {} {} by {}",
+							ItemSystem::GetItemName(itemEntity), pos.x, pos.y, GetName());
 					}
 				}
 			}
@@ -4355,8 +4320,6 @@ void CHARACTER::RewardGold(LPCHARACTER pkAttacker) {
 			//
 			// ---------   ó -------------
 			//
-			LPITEM item;
-
 			int iGold10DropPct = 100;
 #ifdef ENABLE_EVENT_MANAGER
 			const auto event = CHARACTER_MANAGER::Instance().CheckEventIsActive(YANG_DROP_EVENT, ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(pkAttacker)));
@@ -4395,23 +4358,22 @@ void CHARACTER::RewardGold(LPCHARACTER pkAttacker) {
 						LOG_TRACE("Drop Money gold {} GoldMin {} GoldMax {}", iGold, GetMobTable().dwGoldMax, GetMobTable().dwGoldMax);
 					}
 
-					// NOTE:  ź  3  ó
-					if ((item = ITEM_MANAGER::instance().CreateItem(1, iGold)))
-					{
 #ifdef ENABLE_YANG_INSTANT_INVENTORY_RAZOR93
-
-						pkAttacker->GiveGold(iGold);
-						iTotalGold += iGold;
+					pkAttacker->GiveGold(iGold);
+					iTotalGold += iGold;
 #else
+					const entt::entity gold = ItemSystem::CreateItemEcs(1, iGold);
+					if (ItemSystem::IsValidItem(gold))
+					{
 						pos.x = GetX() + ((number(-14, 14) + number(-14, 14)) * 23);
 						pos.y = GetY() + ((number(-14, 14) + number(-14, 14)) * 23);
-
-						item->AddToGround(GetMapIndex(), pos);
-						item->StartDestroyEvent();
-
-						iTotalGold += iGold; // Total gold
-#endif
+						if (ItemSystem::PlaceItemOnGroundLegacyBoundary(
+								gold, GetMapIndex(), pos, 300))
+							iTotalGold += iGold;
+						else
+							ItemSystem::DestroyItemEntityEcs(gold, "GOLD_DROP_PLACE_FAIL");
 					}
+#endif
 				}
 			}
 			// 1% Ȯ  10  ߸. (10 )
@@ -4431,23 +4393,22 @@ void CHARACTER::RewardGold(LPCHARACTER pkAttacker) {
 						continue;
 					}
 
-					// NOTE:  ź  3  ó
-					if ((item = ITEM_MANAGER::instance().CreateItem(1, iGold)))
-					{
 #ifdef ENABLE_YANG_INSTANT_INVENTORY_RAZOR93
-
-						pkAttacker->GiveGold(iGold);
-						iTotalGold += iGold;
+					pkAttacker->GiveGold(iGold);
+					iTotalGold += iGold;
 #else
+					const entt::entity gold = ItemSystem::CreateItemEcs(1, iGold);
+					if (ItemSystem::IsValidItem(gold))
+					{
 						pos.x = GetX() + (number(-7, 7) * 20);
 						pos.y = GetY() + (number(-7, 7) * 20);
-
-						item->AddToGround(GetMapIndex(), pos);
-						item->StartDestroyEvent();
-
-						iTotalGold += iGold; // Total gold
-#endif
+						if (ItemSystem::PlaceItemOnGroundLegacyBoundary(
+								gold, GetMapIndex(), pos, 300))
+							iTotalGold += iGold;
+						else
+							ItemSystem::DestroyItemEntityEcs(gold, "GOLD_DROP_PLACE_FAIL");
 					}
+#endif
 
 				}
 			}
@@ -4485,18 +4446,21 @@ void CHARACTER::RewardGold(LPCHARACTER pkAttacker) {
 						{
 							pkAttacker->GiveGold(splitGold);
 						}
-						else if ((item = ITEM_MANAGER::instance().CreateItem(1, splitGold)))
+						else
 						{
 #ifdef ENABLE_YANG_INSTANT_INVENTORY_RAZOR93
-
 							pkAttacker->GiveGold(splitGold);
 #else
-
-							pos.x = GetX() + (number(-7, 7) * 20);
-							pos.y = GetY() + (number(-7, 7) * 20);
-
-							item->AddToGround(GetMapIndex(), pos);
-							item->StartDestroyEvent();
+							const entt::entity gold = ItemSystem::CreateItemEcs(1, splitGold);
+							if (ItemSystem::IsValidItem(gold))
+							{
+								pos.x = GetX() + (number(-7, 7) * 20);
+								pos.y = GetY() + (number(-7, 7) * 20);
+								if (!ItemSystem::PlaceItemOnGroundLegacyBoundary(
+										gold, GetMapIndex(), pos, 300))
+									ItemSystem::DestroyItemEntityEcs(
+										gold, "GOLD_DROP_PLACE_FAIL");
+							}
 #endif
 						}
 					}
@@ -4533,15 +4497,18 @@ bool CHARACTER::Damage(LPCHARACTER pAttacker, int64_t dam, EDamageType type) // 
 
 	if (pAttacker)
 	{
-		if (AffectSystem::IsAffectFlag(AIHelpers::EcsOf(pAttacker), AFF_GWIGUM) && !pAttacker->GetWear(WEAR_WEAPON))
+		const entt::entity attackerEntity = AIHelpers::EcsOf(pAttacker);
+		const bool hasWeapon = ItemSystem::IsValidItem(
+			ItemSystem::GetWearItem(attackerEntity, WEAR_WEAPON));
+		if (AffectSystem::IsAffectFlag(attackerEntity, AFF_GWIGUM) && !hasWeapon)
 		{
-			AffectSystem::RemoveAffect(AIHelpers::EcsOf(pAttacker), SKILL_GWIGEOM);
+			AffectSystem::RemoveAffect(attackerEntity, SKILL_GWIGEOM);
 			return false;
 		}
 
-		if (AffectSystem::IsAffectFlag(AIHelpers::EcsOf(pAttacker), AFF_GEOMGYEONG) && !pAttacker->GetWear(WEAR_WEAPON))
+		if (AffectSystem::IsAffectFlag(attackerEntity, AFF_GEOMGYEONG) && !hasWeapon)
 		{
-			AffectSystem::RemoveAffect(AIHelpers::EcsOf(pAttacker), SKILL_GEOMKYUNG);
+			AffectSystem::RemoveAffect(attackerEntity, SKILL_GEOMKYUNG);
 			return false;
 		}
 
@@ -4584,8 +4551,9 @@ bool CHARACTER::Damage(LPCHARACTER pAttacker, int64_t dam, EDamageType type) // 
 
 
 
-		LPITEM pkWeap = pAttacker->GetWear(WEAR_WEAPON);
-		const TItemTable* weaponProto = pkWeap ? ItemSystem::GetItemProto(EntityFactory::CreateItemEntity(g_registry, pkWeap)) : nullptr;
+		const entt::entity weapon = ItemSystem::GetWearItem(
+			AIHelpers::EcsOf(pAttacker), WEAR_WEAPON);
+		const TItemTable* weaponProto = ItemSystem::GetItemProto(weapon);
 		if (weaponProto && weaponProto->bSubType == WEAPON_BOW)
 		{
 
@@ -5988,12 +5956,18 @@ void CHARACTER::UseArrow(entt::entity pkArrow, uint32_t dwArrowCount)
 
 	if (iCount == 0)
 	{
-		LPITEM pkNewArrow = FindSpecifyItem(dwVnum);
+		const entt::entity newArrow = ItemSystem::FindSpecifyItem(
+			GetEntityHandle(), dwVnum
+#ifdef ENABLE_EXTRA_INVENTORY
+			, false
+#endif
+		);
 
-		LOG_INFO("UseArrow : FindSpecifyItem {} {}", dwVnum, static_cast<const void*>(get_pointer(pkNewArrow)));
+		LOG_INFO("UseArrow : FindSpecifyItem {} entity {}", dwVnum,
+			static_cast<uint32_t>(newArrow));
 
-		if (pkNewArrow)
-			EquipItem(pkNewArrow);
+		if (ItemSystem::IsValidItem(newArrow))
+			ItemSystem::EquipItemEcs(GetEntityHandle(), newArrow);
 	}
 }
 
@@ -6845,8 +6819,11 @@ static int64_t CalcReferenceBasicHitDamage(LPCHARACTER pAttacker, LPCHARACTER pV
 
 	int64_t dam = 0;
 
-	LPITEM pkWeapon = pAttacker->GetWear(WEAR_WEAPON);
-	if (pkWeapon && ItemSystem::GetItemType(EntityFactory::CreateItemEntity(g_registry, pkWeapon)) == ITEM_WEAPON && ItemSystem::GetItemSubType(EntityFactory::CreateItemEntity(g_registry, pkWeapon)) == WEAPON_BOW)
+	const entt::entity weapon = ItemSystem::GetWearItem(
+		AIHelpers::EcsOf(pAttacker), WEAR_WEAPON);
+	if (ItemSystem::IsValidItem(weapon) &&
+		ItemSystem::GetItemType(weapon) == ITEM_WEAPON &&
+		ItemSystem::GetItemSubType(weapon) == WEAPON_BOW)
 		dam = CalcReferenceBowHitDamage(pAttacker, pVictim);
 	else
 		dam = CalcReferenceNormalHitDamage(pAttacker, pVictim);
@@ -6869,12 +6846,13 @@ static int64_t CalcReferenceNormalHitDamage(LPCHARACTER pAttacker, LPCHARACTER p
 	if (dam <= 0)
 		return 0;
 
-	LPITEM pkWeapon = pAttacker->GetWear(WEAR_WEAPON);
-	if (pkWeapon)
+	const entt::entity weapon = ItemSystem::GetWearItem(
+		AIHelpers::EcsOf(pAttacker), WEAR_WEAPON);
+	if (ItemSystem::IsValidItem(weapon))
 	{
 		int32_t lValue = 0;
 
-		switch (ItemSystem::GetItemSubType(EntityFactory::CreateItemEntity(g_registry, pkWeapon)))
+		switch (ItemSystem::GetItemSubType(weapon))
 		{
 		case WEAPON_SWORD:
 			lValue = ecs::PointSystem::Get(AIHelpers::EcsOf(pVictim), POINT_RESIST_SWORD);
@@ -7474,9 +7452,10 @@ void CHARACTER::SetTarget(LPCHARACTER pkChrTarget)
 	p.bElement = 0;
 	if (m_pkChrTarget) {
 		if (ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(m_pkChrTarget))) {
-			LPITEM item = m_pkChrTarget->GetWear(WEAR_PENDANT);
-			if (item) {
-				uint32_t vnum = ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, item));
+			const entt::entity item = ItemSystem::GetWearItem(
+				AIHelpers::EcsOf(m_pkChrTarget), WEAR_PENDANT);
+			if (ItemSystem::IsValidItem(item)) {
+				uint32_t vnum = ItemSystem::GetItemVnum(item);
 				if (vnum >= 10750 && vnum <= 10950) {
 					p.bElement = 1;
 				}

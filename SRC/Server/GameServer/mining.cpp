@@ -2,6 +2,9 @@
 #include "ecs/systems/PointSystem.hpp"
 #include "ecs/AIHelpers.hpp"
 #include "ecs/systems/PlayerRuntimeSystem.hpp"
+#include "ecs/systems/SkillSystem.hpp"
+#include "ecs/systems/ActivitySystem.hpp"
+#include "ecs/systems/SocialSystem.hpp"
 #include <Core/Logging.hpp>
 #include "mining.h"
 #include "char_interface.hpp"
@@ -9,6 +12,7 @@
 #include "ecs/CharacterAccessors.hpp"
 #include "ecs/EntityFactory.hpp"
 #include "ecs/Registry.hpp"
+#include "ecs/VIDRegistry.hpp"
 #include "ecs/systems/ItemSystem.hpp"
 #include "item_manager.h"
 #include "item.h"
@@ -20,15 +24,6 @@
 #define ENABLE_PICKAXE_RENEWAL
 namespace mining
 {
-	LPITEM LegacyMiningItem(entt::entity item)
-	{
-		if (item == entt::null)
-			return nullptr;
-
-		const uint32_t id = ItemSystem::GetItemID(item);
-		return id != 0 ? ITEM_MANAGER::instance().Find(id) : nullptr;
-	}
-
 	enum
 	{
 		MAX_ORE = 19,
@@ -135,11 +130,11 @@ namespace mining
 		return 0;
 	}
 
-	void OreDrop(LPCHARACTER ch, uint32_t dwLoadVnum)
+	void OreDrop(entt::entity character, uint32_t dwLoadVnum)
 	{
-		uint32_t dwRawOreVnum = GetRawOreFromLoad(dwLoadVnum);
+		const uint32_t dwRawOreVnum = GetRawOreFromLoad(dwLoadVnum);
 
-		int iFractionCount = GetFractionCount();
+		const int iFractionCount = GetFractionCount();
 
 		if (iFractionCount == 0)
 		{
@@ -147,36 +142,41 @@ namespace mining
 			return;
 		}
 
-		LPITEM item = ITEM_MANAGER::instance().CreateItem(dwRawOreVnum, GetFractionCount());
+		const entt::entity item = ItemSystem::CreateItemEcs(dwRawOreVnum, iFractionCount);
 
-		if (!item)
+		if (!ItemSystem::IsValidItem(item))
 		{
 			LOG_ERROR("cannot create item vnum {}", dwRawOreVnum);
 			return;
 		}
 
-		PIXEL_POSITION pos;
-		pos.x = ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(ch)) + number(-200, 200);
-		pos.y = ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(ch)) + number(-200, 200);
+		PIXEL_POSITION pos{};
+		pos.x = ecs::PlayerRuntime::GetX(character) + number(-200, 200);
+		pos.y = ecs::PlayerRuntime::GetY(character) + number(-200, 200);
 
-		item->AddToGround(ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)), pos);
-		item->StartDestroyEvent();
-		item->SetOwnership(ch, 15);
+		if (!ItemSystem::PlaceItemOnGroundLegacyBoundary(
+				item, ecs::PlayerRuntime::GetMapIndex(character), pos))
+		{
+			ItemSystem::DestroyItemEntityEcs(item, "MINING_ORE_GROUND_FAIL");
+			return;
+		}
+		ItemSystem::SetGroundOwnershipLegacyBoundary(item, character, 15);
 
-		DBManager::instance().SendMoneyLog(MONEY_LOG_DROP, ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, item)), ItemSystem::GetItemCount(EntityFactory::CreateItemEntity(g_registry, item)));
+		DBManager::instance().SendMoneyLog(
+			MONEY_LOG_DROP, ItemSystem::GetItemVnum(item), ItemSystem::GetItemCount(item));
 	}
 
-	int GetOrePct(LPCHARACTER ch)
+	int GetOrePct(entt::entity character)
 	{
-		int defaultPct = NAGYFASZU_MINING_CHANCE;
-		int iSkillLevel = ch->GetSkillLevel(SKILL_MINING);
+		const int defaultPct = NAGYFASZU_MINING_CHANCE;
+		const int iSkillLevel = SkillSystem::GetSkillLevel(character, SKILL_MINING);
+		const entt::entity pick = ItemSystem::GetWearItem(character, WEAR_WEAPON);
 
-		LPITEM pick = ItemSystem::GetWear(AIHelpers::EcsOf(ch), WEAR_WEAPON);
-
-		if (!pick || ItemSystem::GetItemType(EntityFactory::CreateItemEntity(g_registry, pick)) != ITEM_PICK)
+		if (!ItemSystem::IsValidItem(pick) || ItemSystem::GetItemType(pick) != ITEM_PICK)
 			return 0;
 
-		return defaultPct + SkillLevelAddPct[MINMAX(0, iSkillLevel, 40)] + PickGradeAddPct[MINMAX(0, pick->GetRefineLevel(), 9)];
+		return defaultPct + SkillLevelAddPct[MINMAX(0, iSkillLevel, 40)] +
+			PickGradeAddPct[MINMAX(0, ItemSystem::GetItemRefineLevel(pick), 9)];
 	}
 
 	EVENTINFO(mining_event_info)
@@ -192,45 +192,41 @@ namespace mining
 	};
 
 	// REFINE_PICK
-	bool Pick_Check(CItem& item)
+	bool Pick_Check(entt::entity item)
 	{
-		if (item.GetType() != ITEM_PICK)
-			return false;
-
-		return true;
+		return ItemSystem::IsValidItem(item) && ItemSystem::GetItemType(item) == ITEM_PICK;
 	}
 
-	int Pick_GetMaxExp(CItem& pick)
+	int Pick_GetMaxExp(entt::entity pick)
 	{
-		return pick.GetValue(2);
+		return ItemSystem::GetItemValue(pick, 2);
 	}
 
-	int Pick_GetCurExp(CItem& pick)
+	int Pick_GetCurExp(entt::entity pick)
 	{
-		return pick.GetSocket(0);
+		return ItemSystem::GetItemSocket(pick, 0);
 	}
 
-	void Pick_IncCurExp(CItem& pick)
+	void Pick_IncCurExp(entt::entity pick)
 	{
-		int cur = Pick_GetCurExp(pick);
-		pick.SetSocket(0, cur + 1);
+		const int cur = Pick_GetCurExp(pick);
+		ItemSystem::SetItemSocket(pick, 0, cur + 1);
 	}
 
 #ifdef ENABLE_PICKAXE_RENEWAL
-	void Pick_SetPenaltyExp(CItem& pick)
+	void Pick_SetPenaltyExp(entt::entity pick)
 	{
-		int cur = Pick_GetCurExp(pick);
-		pick.SetSocket(0, (cur > 0) ? (cur - (cur * 10 / 100)) : 0);
+		const int cur = Pick_GetCurExp(pick);
+		ItemSystem::SetItemSocket(pick, 0, (cur > 0) ? (cur - (cur * 10 / 100)) : 0);
 	}
 #endif
 
-	void Pick_MaxCurExp(CItem& pick)
+	void Pick_MaxCurExp(entt::entity pick)
 	{
-		int max = Pick_GetMaxExp(pick);
-		pick.SetSocket(0, max);
+		ItemSystem::SetItemSocket(pick, 0, Pick_GetMaxExp(pick));
 	}
 
-	bool Pick_Refinable(CItem& item)
+	bool Pick_Refinable(entt::entity item)
 	{
 		if (Pick_GetCurExp(item) < Pick_GetMaxExp(item))
 			return false;
@@ -238,77 +234,100 @@ namespace mining
 		return true;
 	}
 
-	bool Pick_IsPracticeSuccess(CItem& pick)
+	bool Pick_IsPracticeSuccess(entt::entity pick)
 	{
-		return (number(1,pick.GetValue(1))==1);
+		return number(1, ItemSystem::GetItemValue(pick, 1)) == 1;
 	}
 
-	bool Pick_IsRefineSuccess(CItem& pick)
+	bool Pick_IsRefineSuccess(entt::entity pick)
 	{
-		return (number(1,100) <= pick.GetValue(3));
+		return number(1, 100) <= ItemSystem::GetItemValue(pick, 3);
 	}
 
-	int RealRefinePick(LPCHARACTER ch, entt::entity itemEntity)
+	int RealRefinePick(entt::entity character, entt::entity item)
 	{
-		LPITEM item = LegacyMiningItem(itemEntity);
-		if (!ch || !item)
+		if (character == entt::null || !g_registry.valid(character) ||
+			!ItemSystem::IsValidItem(item))
 			return 2;
 
 		LogManager& rkLogMgr = LogManager::instance();
-		ITEM_MANAGER& rkItemMgr = ITEM_MANAGER::instance();
 
-		if (!Pick_Check(*item))
+		if (!Pick_Check(item))
 		{
-			LOG_ERROR("REFINE_PICK_HACK pid({}) item({}:{}) type({})", (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))), item->GetName(), ItemSystem::GetItemID(EntityFactory::CreateItemEntity(g_registry, item)), ItemSystem::GetItemType(EntityFactory::CreateItemEntity(g_registry, item)));
-			rkLogMgr.RefineLog((ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))), item->GetName(), ItemSystem::GetItemID(EntityFactory::CreateItemEntity(g_registry, item)), -1, 1, "PICK_HACK");
+			LOG_ERROR("REFINE_PICK_HACK pid({}) item({}:{}) type({})",
+				ecs::PlayerRuntime::GetPlayerID(character), ItemSystem::GetItemName(item),
+				ItemSystem::GetItemID(item), ItemSystem::GetItemType(item));
+			rkLogMgr.RefineLog(ecs::PlayerRuntime::GetPlayerID(character),
+				ItemSystem::GetItemName(item), ItemSystem::GetItemID(item), -1, 1, "PICK_HACK");
 			return 2;
 		}
 
-		CItem& rkOldPick = *item;
-
-		if (!Pick_Refinable(rkOldPick))
+		if (!Pick_Refinable(item))
 			return 2;
 
-		int iAdv = rkOldPick.GetValue(0) / 10;
+		const int iAdv = ItemSystem::GetItemValue(item, 0) / 10;
 
-		if (rkOldPick.IsEquipped() == true)
+		if (ItemSystem::IsItemEquipped(item))
 			return 2;
 
-		if (Pick_IsRefineSuccess(rkOldPick))
+		if (Pick_IsRefineSuccess(item))
 		{
-			rkLogMgr.RefineLog((ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))), rkOldPick.GetName(), rkOldPick.GetID(), iAdv, 1, "PICK");
+			rkLogMgr.RefineLog(ecs::PlayerRuntime::GetPlayerID(character),
+				ItemSystem::GetItemName(item), ItemSystem::GetItemID(item), iAdv, 1, "PICK");
 
-			LPITEM pkNewPick = ITEM_MANAGER::instance().CreateItem(rkOldPick.GetRefinedVnum(), 1);
-			if (pkNewPick)
+			const entt::entity newPick = ItemSystem::CreateItemEcs(ItemSystem::GetItemRefineVnum(item), 1);
+			if (!ItemSystem::IsValidItem(newPick))
+				return 2;
+
+			const uint16_t cell = ItemSystem::GetItemCell(item);
+			if (!ItemSystem::RemoveItemEcs(item) ||
+				!ItemSystem::PlaceItemEcs(character, newPick, INVENTORY, cell))
 			{
-				uint8_t bCell = rkOldPick.GetCell();
-				rkItemMgr.RemoveItem(item, "REMOVE (REFINE PICK)");
-				pkNewPick->AddToCharacter(ch, TItemPos(INVENTORY, bCell));
-				LogManager::instance().ItemLog(ch, pkNewPick, "REFINE PICK SUCCESS", pkNewPick->GetName());
-				return 1;
+				ItemSystem::PlaceItemEcs(character, item, INVENTORY, cell);
+				ItemSystem::DestroyItemEntityEcs(newPick, "REFINE_PICK_PLACE_ROLLBACK");
+				return 2;
 			}
 
-			return 2;
+			LogManager::instance().ItemLogEntity(
+				character, newPick,
+				"REFINE PICK SUCCESS", ItemSystem::GetItemName(newPick));
+			if (!ItemSystem::DestroyItemEntityEcs(item, "REMOVE (REFINE PICK)"))
+			{
+				ItemSystem::RemoveItemEcs(newPick);
+				ItemSystem::PlaceItemEcs(character, item, INVENTORY, cell);
+				ItemSystem::DestroyItemEntityEcs(newPick, "REFINE_PICK_SOURCE_ROLLBACK");
+				return 2;
+			}
+			return 1;
 		}
 		else
 		{
-			rkLogMgr.RefineLog((ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))), rkOldPick.GetName(), rkOldPick.GetID(), iAdv, 0, "PICK");
+			rkLogMgr.RefineLog(ecs::PlayerRuntime::GetPlayerID(character),
+				ItemSystem::GetItemName(item), ItemSystem::GetItemID(item), iAdv, 0, "PICK");
 
 #ifdef ENABLE_PICKAXE_RENEWAL
 			{
-				Pick_SetPenaltyExp(*item);
-				rkLogMgr.ItemLog(ch, item, "REFINE PICK FAIL", item->GetName());
+				Pick_SetPenaltyExp(item);
+				rkLogMgr.ItemLogEntity(character, item,
+					"REFINE PICK FAIL", ItemSystem::GetItemName(item));
 				return 0;
 			}
 #else
-			LPITEM pkNewPick = ITEM_MANAGER::instance().CreateItem(rkOldPick.GetValue(4), 1);
+			const entt::entity newPick = ItemSystem::CreateItemEcs(ItemSystem::GetItemValue(item, 4), 1);
 
-			if (pkNewPick)
+			if (ItemSystem::IsValidItem(newPick))
 			{
-				uint8_t bCell = rkOldPick.GetCell();
-				rkItemMgr.RemoveItem(item, "REMOVE (REFINE PICK)");
-				pkNewPick->AddToCharacter(ch, TItemPos(INVENTORY, bCell));
-				rkLogMgr.ItemLog(ch, pkNewPick, "REFINE PICK FAIL", pkNewPick->GetName());
+				const uint16_t cell = ItemSystem::GetItemCell(item);
+				if (!ItemSystem::RemoveItemEcs(item) ||
+					!ItemSystem::PlaceItemEcs(character, newPick, INVENTORY, cell))
+				{
+					ItemSystem::PlaceItemEcs(character, item, INVENTORY, cell);
+					ItemSystem::DestroyItemEntityEcs(newPick, "REFINE_PICK_FAIL_ROLLBACK");
+					return 2;
+				}
+				ItemSystem::DestroyItemEntityEcs(item, "REMOVE (REFINE PICK)");
+				rkLogMgr.ItemLogEntity(character, newPick,
+					"REFINE PICK FAIL", ItemSystem::GetItemName(newPick));
 				return 0;
 			}
 #endif
@@ -316,34 +335,24 @@ namespace mining
 		}
 	}
 
-	void CHEAT_MAX_PICK(LPCHARACTER ch, entt::entity itemEntity)
+	void CHEAT_MAX_PICK(entt::entity character, entt::entity item)
 	{
-		LPITEM item = LegacyMiningItem(itemEntity);
-		if (!item)
+		if (!Pick_Check(item))
 			return;
 
-		if (!Pick_Check(*item))
-			return;
-
-		CItem& pick = *item;
-		Pick_MaxCurExp(pick);
+		Pick_MaxCurExp(item);
 
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 249, "%d", Pick_GetCurExp(pick));
+		ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 249, "%d", Pick_GetCurExp(item));
 #endif
 	}
 
-	void PracticePick(LPCHARACTER ch, entt::entity itemEntity)
+	void PracticePick(entt::entity character, entt::entity pick)
 	{
-		LPITEM item = LegacyMiningItem(itemEntity);
-		if (!item)
+		if (!Pick_Check(pick))
 			return;
 
-		if (!Pick_Check(*item))
-			return;
-
-		CItem& pick = *item;
-		if (pick.GetRefinedVnum()<=0)
+		if (ItemSystem::GetItemRefineVnum(pick) == 0)
 			return;
 
 		if (Pick_IsPracticeSuccess(pick))
@@ -352,21 +361,21 @@ namespace mining
 			if (Pick_Refinable(pick))
 			{
 #ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 250, "");
-				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 273, "");
+				ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 250, "");
+				ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 273, "");
 #endif
 			}
 			else
 			{
 				Pick_IncCurExp(pick);
 #ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 253, "%d#%d", Pick_GetCurExp(pick), Pick_GetMaxExp(pick));
+				ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 253, "%d#%d", Pick_GetCurExp(pick), Pick_GetMaxExp(pick));
 #endif
 				if (Pick_Refinable(pick))
 				{
 #ifdef TEXTS_IMPROVEMENT
-					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 250, "");
-					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 273, "");
+					ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 250, "");
+					ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 273, "");
 #endif
 				}
 			}
@@ -383,74 +392,118 @@ namespace mining
 			return 0;
 		}
 
-		LPCHARACTER ch = CHARACTER_MANAGER::instance().FindByPID(info->pid);
-		LPCHARACTER load = CHARACTER_MANAGER::instance().Find(info->vid_load);
-
-		if (!ch)
+		const entt::entity character = ecs::PlayerRuntime::FindByPlayerID(info->pid);
+		const entt::entity load = CVIDRegistry::Instance().Find(info->vid_load);
+		if (character == entt::null || !g_registry.valid(character))
 			return 0;
 
-		ch->mining_take();
+		ActivitySystem::FinishMining(character);
 
-		LPITEM pick = ItemSystem::GetWear(AIHelpers::EcsOf(ch), WEAR_WEAPON);
+		const entt::entity pick = ItemSystem::GetWearItem(character, WEAR_WEAPON);
 
 		// REFINE_PICK
-		if (!pick || !Pick_Check(*pick))
+		if (!Pick_Check(pick))
 		{
 #ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 251, "");
+			ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 251, "");
 #endif
 			return 0;
 		}
 		// END_OF_REFINE_PICK
 
-		if (!load)
+		if (load == entt::null || !g_registry.valid(load))
 		{
 #ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 309, "");
+			ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 309, "");
 #endif
 			return 0;
 		}
 
-		int iPct = GetOrePct(ch);
+		const int iPct = GetOrePct(character);
 
 		if (number(1, 100) <= iPct)
 		{
-			OreDrop(ch, ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(load)));
+			OreDrop(character, ecs::PlayerRuntime::GetRaceNum(load));
 #ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 470, "");
+			ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 470, "");
 #endif
 		}
 #ifdef TEXTS_IMPROVEMENT
 		else {
-			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 471, "");
+			ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 471, "");
 		}
 #endif
 
-		PracticePick(ch, EntityFactory::CreateItemEntity(g_registry, pick));
+		PracticePick(character, pick);
 		return 0;
 	}
 
-	LPEVENT CreateMiningEvent(LPCHARACTER ch, LPCHARACTER load, int count)
+	LPEVENT CreateMiningEvent(entt::entity character, entt::entity load, int count)
 	{
+		if (character == entt::null || load == entt::null ||
+			!g_registry.valid(character) || !g_registry.valid(load))
+			return nullptr;
+
 		mining_event_info* info = AllocEventInfo<mining_event_info>();
-		info->pid = (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)));
-		info->vid_load = load->GetLegacyVID();
+		info->pid = ecs::PlayerRuntime::GetPlayerID(character);
+		info->vid_load = ecs::PlayerRuntime::GetPacketVID(load);
 
 		return event_create(mining_event, info, PASSES_PER_SEC(2 * count));
 	}
 
-	bool OreRefine(LPCHARACTER ch, LPCHARACTER npc, entt::entity itemEntity, int cost, int pct, entt::entity metinstoneItemEntity)
+	int64_t ComputeOreRefineFee(entt::entity character, entt::entity npc, int64_t cost)
 	{
-		if (!ch || !npc)
+		CGuild* refineGuild = ecs::SocialSystem::GetGuild(npc);
+		if (!refineGuild)
+			return cost;
+
+		if (refineGuild == ecs::SocialSystem::GetGuild(character))
+			return cost * 9 / 10;
+
+		if (ecs::PlayerRuntime::GetEmpire(npc) !=
+			ecs::PlayerRuntime::GetEmpire(character))
+			return cost * 3;
+
+		return cost;
+	}
+
+	void PayOreRefineFee(entt::entity character, entt::entity npc, int64_t total)
+	{
+		const int64_t guildFee = total / 10;
+		int64_t remaining = total;
+		CGuild* refineGuild = ecs::SocialSystem::GetGuild(npc);
+		if (refineGuild && refineGuild != ecs::SocialSystem::GetGuild(character))
+		{
+			ecs::SocialSystem::DepositGuildMoney(
+				character, *refineGuild, static_cast<int>(guildFee));
+			remaining -= guildFee;
+		}
+
+		ecs::PointSystem::Change(character, POINT_GOLD, -remaining);
+	}
+
+	bool OreRefine(entt::entity character, entt::entity npcEntity,
+		entt::entity itemEntity, int cost, int pct,
+		entt::entity metinstoneItemEntity)
+	{
+		if (character == entt::null || npcEntity == entt::null ||
+			!g_registry.valid(character) || !g_registry.valid(npcEntity))
 			return false;
 
-		LPITEM item = LegacyMiningItem(itemEntity);
-		if (!item)
+		if (!ItemSystem::IsValidItem(itemEntity))
 			return false;
 
-		if (ItemSystem::GetItemOwnerEntity(itemEntity) != AIHelpers::EcsOf(ch))
+		if (ItemSystem::GetItemOwnerEntity(itemEntity) != character)
 		{
 			LOG_ERROR("wrong owner");
+			return false;
+		}
+
+		if (metinstoneItemEntity != entt::null &&
+			(!ItemSystem::IsValidItem(metinstoneItemEntity) ||
+			 ItemSystem::GetItemOwnerEntity(metinstoneItemEntity) != character))
+		{
+			LOG_ERROR("wrong metinstone owner");
 			return false;
 		}
 
@@ -465,23 +518,23 @@ namespace mining
 		if (dwRefinedVnum == 0)
 			return false;
 
-		ch->SetRefineNPC(npc);
-		ItemSystem::ConsumeItemEcs(
-			itemEntity,
-			ORE_COUNT_FOR_REFINE);
-		int64_t iCost = ch->ComputeRefineFee(cost, 1);
+		const int64_t iCost = ComputeOreRefineFee(character, npcEntity, cost);
 
-		if (ecs::PointSystem::GetGold(AIHelpers::EcsOf(ch)) < iCost)
+		if (ecs::PointSystem::GetGold(character) < iCost)
 			return false;
 
-		ch->PayRefineFee(iCost);
+		if (!ItemSystem::ConsumeItemEcs(itemEntity, ORE_COUNT_FOR_REFINE))
+			return false;
 
-		if (LPITEM metinstone_item = LegacyMiningItem(metinstoneItemEntity))
-			ITEM_MANAGER::instance().RemoveItem(metinstone_item, "REMOVE (MELT)");
+		PayOreRefineFee(character, npcEntity, iCost);
+
+		if (metinstoneItemEntity != entt::null &&
+			!ItemSystem::DestroyItemEntityEcs(metinstoneItemEntity, "REMOVE (MELT)"))
+			return false;
 
 		if (number(1, 100) <= pct)
 		{
-			ch->AutoGiveItem(dwRefinedVnum, 1);
+			ItemSystem::AutoGiveItemEcs(character, dwRefinedVnum, 1);
 			return true;
 		}
 

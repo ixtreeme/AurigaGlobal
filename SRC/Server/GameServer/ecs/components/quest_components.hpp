@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <string>
 #include <entt/entity/entity.hpp>
 
 #include "../../char.h"
@@ -12,6 +13,11 @@ struct QuestContext {
     uint32_t npcVID;
     uint32_t byVnum;
     entt::entity questItem { entt::null };
+};
+
+struct ItemAward {
+    uint32_t vnum { 0 };
+    std::string command;
 };
 
 struct RankPoints {

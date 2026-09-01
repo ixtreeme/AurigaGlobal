@@ -2,6 +2,7 @@
 #include <Core/Logging.hpp>
 #include "ecs/systems/PlayerRuntimeSystem.hpp"
 #include "ecs/systems/CombatSystem.hpp"
+#include "ecs/systems/PointSystem.hpp"
 #include "ecs/AIHelpers.hpp"
 #include "ecs/systems/QuestSystem.hpp"
 #include "utils.h"
@@ -339,8 +340,9 @@ ACMD(do_ranking_subcategory)
 
 ACMD(do_manage_exp)
 {
-	bool arg = ch->Block_Exp == false ? true : false;
-	ch->Block_Exp = arg;
+	const entt::entity character = AIHelpers::EcsOf(ch);
+	const bool arg = ecs::QuestSystem::GetFlag(character, "exp.stat") != 1;
+	ecs::PointSystem::SetExperienceBlocked(character, arg);
 #ifdef TEXTS_IMPROVEMENT
 	if (arg) {
 		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 77, "");
@@ -348,8 +350,7 @@ ACMD(do_manage_exp)
 		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 78, "");
 	}
 #endif
-	ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(ch), "exp.stat", arg == true ? 1 : 0);
-	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_COMMAND, "manage_exp_status %d", arg == true ? 1 : 0);
+	ecs::ChatSystem::Send(character, CHAT_TYPE_COMMAND, "manage_exp_status %d", arg ? 1 : 0);
 }
 
 #ifdef ENABLE_LOCKED_EXTRA_INVENTORY

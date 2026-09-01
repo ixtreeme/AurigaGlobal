@@ -36,6 +36,7 @@ struct StatusFlags {
     bool isKillerMode : 1;
     bool isSpawnState : 1;
     bool isPartyState : 1;
+    bool isArenaObserver : 1;
 };
 
 struct PolymorphState {

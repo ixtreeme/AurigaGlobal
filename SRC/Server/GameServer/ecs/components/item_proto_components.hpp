@@ -22,6 +22,7 @@ struct ItemProtoRef {
 
     char name[ITEM_NAME_MAX_LEN + 1] {};
     uint8_t size { 0 };
+    uint8_t extra_category { 0 };
 
     uint8_t level_limit { 0 };
     uint32_t wear_flags { 0 };

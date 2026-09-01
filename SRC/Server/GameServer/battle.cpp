@@ -528,15 +528,16 @@ void Item_GetDamage(entt::entity item, int* pdamMin, int* pdamMax)
 
 int CalcMeleeDamage(LPCHARACTER pkAttacker, LPCHARACTER pkVictim, bool bIgnoreDefense, bool bIgnoreTargetRating)
 {
-	LPITEM pWeapon = ItemSystem::GetWear(AIHelpers::EcsOf(pkAttacker), WEAR_WEAPON);
+	const entt::entity attacker = AIHelpers::EcsOf(pkAttacker);
+	const entt::entity weapon = ItemSystem::GetWearItem(attacker, WEAR_WEAPON);
 	bool bPolymorphed = pkAttacker->IsPolymorphed();
 
-	if (pWeapon && !(bPolymorphed && !pkAttacker->IsPolyMaintainStat()))
+	if (ItemSystem::IsValidItem(weapon) && !(bPolymorphed && !pkAttacker->IsPolyMaintainStat()))
 	{
-		if (ItemSystem::GetItemType(EntityFactory::CreateItemEntity(g_registry, pWeapon)) != ITEM_WEAPON)
+		if (ItemSystem::GetItemType(weapon) != ITEM_WEAPON)
 			return 0;
 
-				switch (ItemSystem::GetItemSubType(EntityFactory::CreateItemEntity(g_registry, pWeapon)))
+		switch (ItemSystem::GetItemSubType(weapon))
 		{
 			case WEAPON_SWORD:
 			case WEAPON_DAGGER:
@@ -570,7 +571,7 @@ int CalcMeleeDamage(LPCHARACTER pkAttacker, LPCHARACTER pkVictim, bool bIgnoreDe
 	if (bPolymorphed && !pkAttacker->IsPolyMaintainStat())
 	{
 		// MONKEY_ROD_ATTACK_BUG_FIX
-		Item_GetDamage(EntityFactory::CreateItemEntity(g_registry, pWeapon), &iDamMin, &iDamMax);
+		Item_GetDamage(weapon, &iDamMin, &iDamMax);
 		// END_OF_MONKEY_ROD_ATTACK_BUG_FIX
 
 		uint32_t dwMobVnum = pkAttacker->GetPolymorphVnum();
@@ -583,10 +584,10 @@ int CalcMeleeDamage(LPCHARACTER pkAttacker, LPCHARACTER pkVictim, bool bIgnoreDe
 			iDamMax += pMob->m_table.dwDamageRange[1] * iPower / 100;
 		}
 	}
-	else if (pWeapon)
+	else if (ItemSystem::IsValidItem(weapon))
 	{
 		// MONKEY_ROD_ATTACK_BUG_FIX
-		Item_GetDamage(EntityFactory::CreateItemEntity(g_registry, pWeapon), &iDamMin, &iDamMax);
+		Item_GetDamage(weapon, &iDamMin, &iDamMax);
 		// END_OF_MONKEY_ROD_ATTACK_BUG_FIX
 	}
 	else if (ecs::PlayerRuntime::IsNPC(AIHelpers::EcsOf(pkAttacker)))
@@ -608,12 +609,12 @@ int CalcMeleeDamage(LPCHARACTER pkAttacker, LPCHARACTER pkVictim, bool bIgnoreDe
 	iAtk = (int) (iAtk * fAR);
 	iAtk += ecs::PointSystem::GetLevel(AIHelpers::EcsOf(pkAttacker)) * 2; // and add again
 
-	if (pWeapon)
+	if (ItemSystem::IsValidItem(weapon))
 	{
-		iAtk += ItemSystem::GetItemValue(EntityFactory::CreateItemEntity(g_registry, pWeapon), 5) * 2;
+		iAtk += ItemSystem::GetItemValue(weapon, 5) * 2;
 
 		// 2004.11.12.myevan.TESTSERVER_SHOW_ATTACKINFO
-		DEBUG_iDamBonus = ItemSystem::GetItemValue(EntityFactory::CreateItemEntity(g_registry, pWeapon), 5) * 2;
+		DEBUG_iDamBonus = ItemSystem::GetItemValue(weapon, 5) * 2;
 		///////////////////////////////////////////////
 	}
 
@@ -820,10 +821,11 @@ int battle_hit(LPCHARACTER pkAttacker, LPCHARACTER pkVictim, int & iRetDam)
 
 	// ?????? ???
 	//iDam = iDam * (100 - ecs::PointSystem::Get(AIHelpers::EcsOf(pkVictim), POINT_RESIST)) / 100;
-	LPITEM pkWeapon = ItemSystem::GetWear(AIHelpers::EcsOf(pkAttacker), WEAR_WEAPON);
+	const entt::entity weapon = ItemSystem::GetWearItem(
+		AIHelpers::EcsOf(pkAttacker), WEAR_WEAPON);
 
-	if (pkWeapon)
-		switch (ItemSystem::GetItemSubType(EntityFactory::CreateItemEntity(g_registry, pkWeapon)))
+	if (ItemSystem::IsValidItem(weapon))
+		switch (ItemSystem::GetItemSubType(weapon))
 		{
 			case WEAPON_SWORD:
 			{
@@ -991,8 +993,10 @@ int32_t GET_ATTACK_SPEED(LPCHARACTER ch) {
 	int32_t ani_speed = ani_attack_speed(ch);
 	int32_t real_speed = (ani_speed * 100) / (default_bonus + ecs::PointSystem::Get(AIHelpers::EcsOf(ch), POINT_ATT_SPEED) + riding_bonus);
 
-	LPITEM item = ItemSystem::GetWear(AIHelpers::EcsOf(ch), WEAR_WEAPON);
-	return item && ItemSystem::GetItemSubType(EntityFactory::CreateItemEntity(g_registry, item)) == WEAPON_DAGGER ? real_speed / 2 : real_speed;
+	const entt::entity item = ItemSystem::GetWearItem(AIHelpers::EcsOf(ch), WEAR_WEAPON);
+	return ItemSystem::IsValidItem(item) && ItemSystem::GetItemSubType(item) == WEAPON_DAGGER
+		? real_speed / 2
+		: real_speed;
 }
 
 void SET_ATTACK_TIME(LPCHARACTER ch, LPCHARACTER victim, int32_t current_time) {

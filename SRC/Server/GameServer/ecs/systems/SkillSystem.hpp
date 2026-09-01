@@ -14,6 +14,7 @@ void SetSkillNextReadTime(entt::entity e, uint32_t skillId, time_t when);
 
 int GetSkillLevel(entt::entity e, uint32_t skillId);
 void SetSkillLevel(entt::entity e, uint32_t skillId, uint8_t level);
+void SendSkillLevelPacket(entt::entity e);
 uint8_t GetSkillGroup(entt::entity e);
 void SetSkillGroup(entt::entity e, uint8_t skillGroup);
 

@@ -54,6 +54,7 @@ extern bool RaceToJob(unsigned race, unsigned* ret_job);
 #include "../components/dirty_components.hpp"
 #include "../components/identity_components.hpp"
 #include "../components/skill_components.hpp"
+#include "../components/session_components.hpp"
 #include "../components/vital_components.hpp"
 #include "ItemSystem.hpp"
 
@@ -168,6 +169,21 @@ int GetSkillLevel(entt::entity e, uint32_t skillId)
 
     const auto* levels = TryGetSkillLevels(e, 0);
     return (levels && levels->levels) ? MIN(SKILL_MAX_LEVEL, levels->levels[skillId].bLevel) : 0;
+}
+
+void SendSkillLevelPacket(entt::entity e)
+{
+    const auto* levels = TryGetSkillLevels(e, 0);
+    const auto* session = e != entt::null && g_registry.valid(e)
+        ? g_registry.try_get<ecs::NetworkSession>(e)
+        : nullptr;
+    if (!levels || !levels->levels || !session || !session->desc)
+        return;
+
+    TPacketGCSkillLevel packet {};
+    packet.bHeader = HEADER_GC_SKILL_LEVEL;
+    std::copy_n(levels->levels, SKILL_MAX_NUM, packet.skills);
+    session->desc->Packet(&packet, sizeof(packet));
 }
 
 uint8_t GetSkillGroup(entt::entity e)
@@ -1958,6 +1974,8 @@ struct FuncSplashDamage
 #endif
 		;
 
+		const entt::entity equippedWeapon = ItemSystem::GetWearItem(
+			AIHelpers::EcsOf(m_pkChr), WEAR_WEAPON);
 		if (m_pkSk->dwVnum == SKILL_AMSEOP)
 		{
 			float fDelta = GetDegreeDelta(m_pkChr->GetRotation(), pkChrVictim->GetRotation());
@@ -1970,7 +1988,8 @@ struct FuncSplashDamage
 				if (bUnderEunhyung)
 					adjust += 0.5f;
 
-				if (m_pkChr->GetWear(WEAR_WEAPON) && ItemSystem::GetItemSubType(EntityFactory::CreateItemEntity(g_registry, m_pkChr->GetWear(WEAR_WEAPON))) == WEAPON_DAGGER)
+				if (ItemSystem::IsValidItem(equippedWeapon) &&
+					ItemSystem::GetItemSubType(equippedWeapon) == WEAPON_DAGGER)
 				{
 					adjust += 0.5f;
 				}
@@ -1982,7 +2001,8 @@ struct FuncSplashDamage
 				if (bUnderEunhyung)
 					adjust += 0.5f;
 
-				if (m_pkChr->GetWear(WEAR_WEAPON) && ItemSystem::GetItemSubType(EntityFactory::CreateItemEntity(g_registry, m_pkChr->GetWear(WEAR_WEAPON))) == WEAPON_DAGGER)
+				if (ItemSystem::IsValidItem(equippedWeapon) &&
+					ItemSystem::GetItemSubType(equippedWeapon) == WEAPON_DAGGER)
 					adjust += 0.5f;
 			}
 
@@ -1992,7 +2012,8 @@ struct FuncSplashDamage
 		{
 			float adjust = 1.0;
 
-			if (m_pkChr->GetWear(WEAR_WEAPON) && ItemSystem::GetItemSubType(EntityFactory::CreateItemEntity(g_registry, m_pkChr->GetWear(WEAR_WEAPON))) == WEAPON_DAGGER)
+			if (ItemSystem::IsValidItem(equippedWeapon) &&
+				ItemSystem::GetItemSubType(equippedWeapon) == WEAPON_DAGGER)
 			{
 				adjust = 1.35f;
 			}
@@ -2004,7 +2025,8 @@ struct FuncSplashDamage
 		{
 			float adjust = 1.0;
 
-			if (m_pkChr->GetWear(WEAR_WEAPON) && ItemSystem::GetItemSubType(EntityFactory::CreateItemEntity(g_registry, m_pkChr->GetWear(WEAR_WEAPON))) == WEAPON_CLAW)
+			if (ItemSystem::IsValidItem(equippedWeapon) &&
+				ItemSystem::GetItemSubType(equippedWeapon) == WEAPON_CLAW)
 			{
 				adjust = 1.35f;
 			}
@@ -2039,9 +2061,8 @@ struct FuncSplashDamage
 				{
 					dt = DAMAGE_TYPE_MELEE;
 
-					LPITEM pkWeapon = m_pkChr->GetWear(WEAR_WEAPON);
-					if (pkWeapon) {
-						switch (ItemSystem::GetItemSubType(EntityFactory::CreateItemEntity(g_registry, pkWeapon)))
+					if (ItemSystem::IsValidItem(equippedWeapon)) {
+						switch (ItemSystem::GetItemSubType(equippedWeapon))
 						{
 							case WEAPON_SWORD:
 							{
@@ -2765,9 +2786,9 @@ int CHARACTER::ComputeSkillAtPosition(uint32_t dwVnum, const PIXEL_POSITION& pos
 	if (pkSk->bSkillAttrType != SKILL_ATTR_TYPE_NORMAL)
 		OnMove(true);
 
-	LPITEM pkWeapon = GetWear(WEAR_WEAPON);
+	entt::entity pkWeapon = ItemSystem::GetWearItem(GetEntityHandle(), WEAR_WEAPON);
 
-	SetPolyVarForAttack(this, pkSk, EntityFactory::CreateItemEntity(g_registry, pkWeapon));
+	SetPolyVarForAttack(this, pkSk, pkWeapon);
 
 	pkSk->SetDurationVar("k", k/*bSkillLevel*/);
 
@@ -2808,7 +2829,7 @@ int CHARACTER::ComputeSkillAtPosition(uint32_t dwVnum, const PIXEL_POSITION& pos
 		{
 			int iAG = 0;
 
-			FuncSplashDamage f(posTarget.x, posTarget.y, pkSk, this, iAmount, iAG, pkSk->lMaxHit, EntityFactory::CreateItemEntity(g_registry, pkWeapon), m_bDisableCooltime, IsPC()?&m_SkillUseInfo[dwVnum]: nullptr, GetSkillPower(dwVnum, bSkillLevel));
+			FuncSplashDamage f(posTarget.x, posTarget.y, pkSk, this, iAmount, iAG, pkSk->lMaxHit, pkWeapon, m_bDisableCooltime, IsPC()?&m_SkillUseInfo[dwVnum]: nullptr, GetSkillPower(dwVnum, bSkillLevel));
 
 			if (IS_SET(pkSk->dwFlag, SKILL_FLAG_SPLASH))
 			{
@@ -3065,15 +3086,15 @@ int CHARACTER::ComputeGyeongGongSkill(uint32_t dwVnum, LPCHARACTER pkVictim, uin
 	if (pkSk->bSkillAttrType != SKILL_ATTR_TYPE_NORMAL)
 		OnMove(true);
 
-	LPITEM pkWeapon = GetWear(WEAR_WEAPON);
+	entt::entity pkWeapon = ItemSystem::GetWearItem(GetEntityHandle(), WEAR_WEAPON);
 
-	SetPolyVarForAttack(this, pkSk, EntityFactory::CreateItemEntity(g_registry, pkWeapon));
+	SetPolyVarForAttack(this, pkSk, pkWeapon);
 	int iAmount = (int) pkSk->kPointPoly2.Eval();
 
 		// END_OF_ADD_GRANDMASTER_SKILL
 	if (iAmount > 0 && dwVnum == SKILL_GYEONGGONG)
 	{
-		FuncSplashDamage f(ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(pkVictim)), ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(pkVictim)), pkSk, this, -iAmount, 0, pkSk->lMaxHit, EntityFactory::CreateItemEntity(g_registry, pkWeapon), m_bDisableCooltime, IsPC()?&m_SkillUseInfo[dwVnum]: nullptr, GetSkillPower(dwVnum, bSkillLevel));
+		FuncSplashDamage f(ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(pkVictim)), ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(pkVictim)), pkSk, this, -iAmount, 0, pkSk->lMaxHit, pkWeapon, m_bDisableCooltime, IsPC()?&m_SkillUseInfo[dwVnum]: nullptr, GetSkillPower(dwVnum, bSkillLevel));
 		if (ecs::PlayerRuntime::GetSectree(AIHelpers::EcsOf(pkVictim)))
 			ecs::PlayerRuntime::GetSectree(AIHelpers::EcsOf(pkVictim))->ForEachAround(f);
 		else
@@ -3231,9 +3252,9 @@ int CHARACTER::ComputeSkill(uint32_t dwVnum, LPCHARACTER pkVictim, uint8_t bSkil
 	if (pkSk->bSkillAttrType != SKILL_ATTR_TYPE_NORMAL)
 		OnMove(true);
 
-	LPITEM pkWeapon = GetWear(WEAR_WEAPON);
+	entt::entity pkWeapon = ItemSystem::GetWearItem(GetEntityHandle(), WEAR_WEAPON);
 
-	SetPolyVarForAttack(this, pkSk, EntityFactory::CreateItemEntity(g_registry, pkWeapon));
+	SetPolyVarForAttack(this, pkSk, pkWeapon);
 
 	pkSk->kDurationPoly.SetVar("k", k/*bSkillLevel*/);
 	pkSk->kDurationPoly2.SetVar("k", k/*bSkillLevel*/);
@@ -3276,7 +3297,7 @@ int CHARACTER::ComputeSkill(uint32_t dwVnum, LPCHARACTER pkVictim, uint8_t bSkil
 			SetSkillHit(true);
 #endif
 
-			FuncSplashDamage f(ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(pkVictim)), ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(pkVictim)), pkSk, this, iAmount, iAG, pkSk->lMaxHit, EntityFactory::CreateItemEntity(g_registry, pkWeapon), m_bDisableCooltime, IsPC()?&m_SkillUseInfo[dwVnum]: nullptr, GetSkillPower(dwVnum, bSkillLevel));
+			FuncSplashDamage f(ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(pkVictim)), ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(pkVictim)), pkSk, this, iAmount, iAG, pkSk->lMaxHit, pkWeapon, m_bDisableCooltime, IsPC()?&m_SkillUseInfo[dwVnum]: nullptr, GetSkillPower(dwVnum, bSkillLevel));
 			if (IS_SET(pkSk->dwFlag, SKILL_FLAG_SPLASH))
 			{
 				if (ecs::PlayerRuntime::GetSectree(AIHelpers::EcsOf(pkVictim)))
@@ -3528,7 +3549,7 @@ int CHARACTER::ComputeSkill(uint32_t dwVnum, LPCHARACTER pkVictim, uint8_t bSkil
 #ifdef ENABLE_NEW_GYEONGGONG_SKILL
 		if (pkSk->bPointOn2 == POINT_NONE && iAmount2 > 0 && dwVnum == SKILL_GYEONGGONG)
 		{
-			FuncSplashDamage f(ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(pkVictim)), ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(pkVictim)), pkSk, this, -iAmount2, 0, pkSk->lMaxHit, EntityFactory::CreateItemEntity(g_registry, pkWeapon), m_bDisableCooltime, IsPC()?&m_SkillUseInfo[dwVnum]: nullptr, GetSkillPower(dwVnum, bSkillLevel));
+			FuncSplashDamage f(ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(pkVictim)), ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(pkVictim)), pkSk, this, -iAmount2, 0, pkSk->lMaxHit, pkWeapon, m_bDisableCooltime, IsPC()?&m_SkillUseInfo[dwVnum]: nullptr, GetSkillPower(dwVnum, bSkillLevel));
 			if (ecs::PlayerRuntime::GetSectree(AIHelpers::EcsOf(pkVictim)))
 				ecs::PlayerRuntime::GetSectree(AIHelpers::EcsOf(pkVictim))->ForEachAround(f);
 
@@ -3549,7 +3570,8 @@ int CHARACTER::ComputeSkill(uint32_t dwVnum, LPCHARACTER pkVictim, uint8_t bSkil
 bool CHARACTER::UseSkill(uint32_t dwVnum, LPCHARACTER pkVictim, bool bUseGrandMaster)
 {
 #ifdef ENABLE_BUG_FIXES
-	if ((dwVnum == SKILL_GEOMKYUNG || dwVnum == SKILL_GWIGEOM) && !GetWear(WEAR_WEAPON))
+	if ((dwVnum == SKILL_GEOMKYUNG || dwVnum == SKILL_GWIGEOM) &&
+		!ItemSystem::IsValidItem(ItemSystem::GetWearItem(GetEntityHandle(), WEAR_WEAPON)))
 		return false;
 #endif
 
@@ -3643,7 +3665,10 @@ bool CHARACTER::UseSkill(uint32_t dwVnum, LPCHARACTER pkVictim, bool bUseGrandMa
 	// END_OF_NO_GRANDMASTER
 
 	// MINING
-	if (GetWear(WEAR_WEAPON) && (ItemSystem::GetItemType(EntityFactory::CreateItemEntity(g_registry, GetWear(WEAR_WEAPON))) == ITEM_ROD || ItemSystem::GetItemType(EntityFactory::CreateItemEntity(g_registry, GetWear(WEAR_WEAPON))) == ITEM_PICK))
+	const entt::entity equippedWeapon = ItemSystem::GetWearItem(GetEntityHandle(), WEAR_WEAPON);
+	if (ItemSystem::IsValidItem(equippedWeapon) &&
+		(ItemSystem::GetItemType(equippedWeapon) == ITEM_ROD ||
+		 ItemSystem::GetItemType(equippedWeapon) == ITEM_PICK))
 		return false;
 	// END_OF_MINING
 

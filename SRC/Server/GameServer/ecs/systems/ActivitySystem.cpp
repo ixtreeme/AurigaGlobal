@@ -4,6 +4,8 @@
 
 #include "ActivitySystem.hpp"
 #include "ItemSystem.hpp"
+#include "../Registry.hpp"
+#include "../../log.h"
 
 #ifdef ENABLE_NEW_FISHING_SYSTEM
 
@@ -23,7 +25,9 @@
 #include "../../unique_item.h"
 #include "../../vector.h"
 #include "../AIHelpers.hpp"
+#include "../CharacterAccessors.hpp"
 #include "../EntityFactory.hpp"
+#include "../NetworkService.hpp"
 #include "../SpatialHelpers.hpp"
 #include "../Registry.hpp"
 #include "../VIDRegistry.hpp"
@@ -35,18 +39,6 @@
 namespace
 {
 
-LPCHARACTER LegacyCharacter(entt::entity e)
-{
-    if (e == entt::null || !g_registry.valid(e))
-        return nullptr;
-
-    auto* vid = g_registry.try_get<ecs::VIDComponent>(e);
-    if (!vid)
-        return nullptr;
-
-    return CHARACTER_MANAGER::instance().Find(vid->value);
-}
-
 ecs::FishingState* GetFishingState(entt::entity e)
 {
     if (e == entt::null || !g_registry.valid(e))
@@ -55,8 +47,10 @@ ecs::FishingState* GetFishingState(entt::entity e)
     return &g_registry.get_or_emplace<ecs::FishingState>(e);
 }
 
-void SyncLegacyFishing(LPCHARACTER ch, const ecs::FishingState& state)
+void MirrorFishingStateToLegacyBoundary(entt::entity fisher,
+                                        const ecs::FishingState& state)
 {
+    LPCHARACTER ch = ecs::LegacyCharOf(fisher);
     if (!ch)
         return;
 
@@ -65,6 +59,28 @@ void SyncLegacyFishing(LPCHARACTER ch, const ecs::FishingState& state)
     ch->SetFishCatchFailed(state.catchFailed);
     ch->SetLastCatchTime(state.lastCatchTime);
 }
+
+#ifdef ENABLE_BATTLE_PASS
+void UpdateFishingBattlePassLegacyBoundary(entt::entity fisher)
+{
+    LPCHARACTER ch = ecs::LegacyCharOf(fisher);
+    if (!ch)
+        return;
+
+    const uint8_t battlePassId = ch->GetBattlePassId();
+    if (!battlePassId)
+        return;
+
+    uint32_t count = 0;
+    uint32_t unused = 0;
+    if (CBattlePass::instance().BattlePassMissionGetInfo(
+            battlePassId, CATCH_FISH, &unused, &count) &&
+        ch->GetMissionProgress(CATCH_FISH, battlePassId) < count)
+    {
+        ch->UpdateMissionProgress(CATCH_FISH, battlePassId, 1, count);
+    }
+}
+#endif
 
 void MarkFishing(entt::entity e, bool active)
 {
@@ -85,11 +101,7 @@ EVENTFUNC(ecs_fishing_event)
     if (info == nullptr)
         return 0;
 
-    LPCHARACTER ch = CHARACTER_MANAGER::instance().FindByPID(info->pid);
-    if (!ch)
-        return 0;
-
-    const entt::entity fisher = AIHelpers::EcsOf(ch);
+    const entt::entity fisher = ecs::PlayerRuntime::FindByPlayerID(info->pid);
     if (fisher == entt::null || !g_registry.valid(fisher))
         return 0;
 
@@ -102,8 +114,8 @@ EVENTFUNC(ecs_fishing_event)
         return 0;
     }
 
-    LPITEM rod = ch->GetWear(WEAR_WEAPON);
-    if (!(rod && ItemSystem::GetItemType(EntityFactory::CreateItemEntity(g_registry, rod)) == ITEM_ROD)) {
+    const entt::entity rod = ItemSystem::GetWearItem(fisher, WEAR_WEAPON);
+    if (!ItemSystem::IsValidItem(rod) || ItemSystem::GetItemType(rod) != ITEM_ROD) {
         ActivitySystem::StopFishing(fisher);
         return 0;
     }
@@ -116,18 +128,18 @@ EVENTFUNC(ecs_fishing_event)
 #ifdef TEXTS_IMPROVEMENT
 #ifdef ENABLE_MULTI_NAMES
             uint8_t lang = 0;
-            if (LPDESC d = ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch)))
+            if (LPDESC d = ecs::PlayerRuntime::GetDesc(fisher))
                 lang = d->GetLanguage();
-            ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 896, "%s", pTable->szLocaleName[lang]);
+            ecs::ChatSystem::SendNew(fisher, CHAT_TYPE_INFO, 896, "%s", pTable->szLocaleName[lang]);
 #else
-            ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 896, "%s", pTable->szLocaleName);
+            ecs::ChatSystem::SendNew(fisher, CHAT_TYPE_INFO, 896, "%s", pTable->szLocaleName);
 #endif
 #endif
         }
         else
         {
 #ifdef TEXTS_IMPROVEMENT
-            ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 897, "");
+            ecs::ChatSystem::SendNew(fisher, CHAT_TYPE_INFO, 897, "");
 #endif
         }
     }
@@ -135,7 +147,7 @@ EVENTFUNC(ecs_fishing_event)
     if (state->catchFailed > 0) {
         info->sec += state->catchFailed;
         state->catchFailed = 0;
-        SyncLegacyFishing(ch, *state);
+        MirrorFishingStateToLegacyBoundary(fisher, *state);
     }
 
     if (info->sec >= 15) {
@@ -155,58 +167,58 @@ namespace ActivitySystem {
 
 void StartFishing(entt::entity fisher, uint32_t)
 {
-    LPCHARACTER ch = LegacyCharacter(fisher);
-    auto* state = GetFishingState(fisher);
-    if (!ch || !state || state->fishingNewEvent)
+    if (fisher == entt::null || !g_registry.valid(fisher))
         return;
 
-    const int x = ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(ch));
-    const int y = ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(ch));
-    LPSECTREE tree = ecs::SectorAt(ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)), x, y);
+    auto* state = GetFishingState(fisher);
+    if (!state || state->fishingNewEvent)
+        return;
+
+    const int x = ecs::PlayerRuntime::GetX(fisher);
+    const int y = ecs::PlayerRuntime::GetY(fisher);
+    LPSECTREE tree = ecs::SectorAt(ecs::PlayerRuntime::GetMapIndex(fisher), x, y);
     if (!tree)
         return;
 
     if (tree->IsAttr(x, y, ATTR_BLOCK)) {
 #ifdef TEXTS_IMPROVEMENT
-        ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 894, "");
+        ecs::ChatSystem::SendNew(fisher, CHAT_TYPE_INFO, 894, "");
 #endif
         return;
     }
 
-    if (ch->GetEmptyInventory(1) == -1) {
+    if (!ItemSystem::HasMainInventorySpaceEcs(fisher)) {
 #ifdef TEXTS_IMPROVEMENT
-        ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 899, "");
+        ecs::ChatSystem::SendNew(fisher, CHAT_TYPE_INFO, 899, "");
 #endif
         return;
     }
 
-    LPITEM rod = ch->GetWear(WEAR_WEAPON);
-    if (!rod || ItemSystem::GetItemType(EntityFactory::CreateItemEntity(g_registry, rod)) != ITEM_ROD) {
+    const entt::entity rod = ItemSystem::GetWearItem(fisher, WEAR_WEAPON);
+    if (!ItemSystem::IsValidItem(rod) || ItemSystem::GetItemType(rod) != ITEM_ROD) {
 #ifdef TEXTS_IMPROVEMENT
-        ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 895, "");
+        ecs::ChatSystem::SendNew(fisher, CHAT_TYPE_INFO, 895, "");
 #endif
         return;
     }
 
-    if (ItemSystem::GetItemSocket(EntityFactory::CreateItemEntity(g_registry, rod), 2) == 0) {
+    if (ItemSystem::GetItemSocket(rod, 2) == 0) {
 #ifdef TEXTS_IMPROVEMENT
-        ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 281, "");
+        ecs::ChatSystem::SendNew(fisher, CHAT_TYPE_INFO, 281, "");
 #endif
         return;
     }
 
-    float fx = 0.0f;
-    float fy = 0.0f;
-    GetDeltaByDegree(ch->GetRotation(), 400.0f, &fx, &fy);
+    const float rotation = ecs::PlayerRuntime::GetRotation(fisher);
 
-    const uint32_t rodVnum = ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, rod));
+    const uint32_t rodVnum = ItemSystem::GetItemVnum(rod);
     const bool second = !(rodVnum >= 27400 && rodVnum <= 27490);
 
     fishingnew_event_info* info = AllocEventInfo<fishingnew_event_info>();
-    info->pid = ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch));
+    info->pid = ecs::PlayerRuntime::GetPlayerID(fisher);
     info->vnum = fishingnew::GetFishCatchedVnum(
         100,
-        15 + ecs::PointSystem::Get(AIHelpers::EcsOf(ch), POINT_FISHING_RARE) + ItemSystem::GetItemSocket(EntityFactory::CreateItemEntity(g_registry, rod), 2),
+        15 + ecs::PointSystem::Get(fisher, POINT_FISHING_RARE) + ItemSystem::GetItemSocket(rod, 2),
         second);
     info->chance = 100;
     info->sec = 1;
@@ -219,24 +231,26 @@ void StartFishing(entt::entity fisher, uint32_t)
     state->lastCatchTime = 0;
     state->fishingNewEvent = event_create(ecs_fishing_event, info, PASSES_PER_SEC(1));
 
-    SyncLegacyFishing(ch, *state);
+    MirrorFishingStateToLegacyBoundary(fisher, *state);
     MarkFishing(fisher, true);
 
     TPacketFishingNew p;
     p.header = HEADER_GC_FISHING_NEW;
     p.subheader = FISHING_SUBHEADER_NEW_START;
-    p.vid = ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(ch));
-    p.dir = static_cast<uint8_t>(ch->GetRotation() / 5);
+    p.vid = ecs::PlayerRuntime::GetPacketVID(fisher);
+    p.dir = static_cast<uint8_t>(rotation / 5);
     p.need = FISHING_NEED_CATCH;
     p.count = 0;
-    ch->PacketAround(&p, sizeof(p));
+    ecs::NetworkService::BroadcastToView(g_registry, fisher, &p, sizeof(p), false);
 }
 
 void StopFishing(entt::entity fisher)
 {
-    LPCHARACTER ch = LegacyCharacter(fisher);
+    if (fisher == entt::null || !g_registry.valid(fisher))
+        return;
+
     auto* state = GetFishingState(fisher);
-    if (!ch || !state || !state->fishingNewEvent)
+    if (!state || !state->fishingNewEvent)
         return;
 
     event_cancel(&state->fishingNewEvent);
@@ -245,28 +259,30 @@ void StopFishing(entt::entity fisher)
     state->fishVnum = 0;
     state->chance = 0;
 
-    LPITEM rod = ch->GetWear(WEAR_WEAPON);
-    if (rod && ItemSystem::GetItemType(EntityFactory::CreateItemEntity(g_registry, rod)) == ITEM_ROD)
-        ItemSystem::SetItemSocket(EntityFactory::CreateItemEntity(g_registry, rod), 2, 0);
+    const entt::entity rod = ItemSystem::GetWearItem(fisher, WEAR_WEAPON);
+    if (ItemSystem::IsValidItem(rod) && ItemSystem::GetItemType(rod) == ITEM_ROD)
+        ItemSystem::SetItemSocket(rod, 2, 0);
 
-    SyncLegacyFishing(ch, *state);
+    MirrorFishingStateToLegacyBoundary(fisher, *state);
     MarkFishing(fisher, false);
 
     TPacketFishingNew p;
     p.header = HEADER_GC_FISHING_NEW;
     p.subheader = FISHING_SUBHEADER_NEW_STOP;
-    p.vid = ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(ch));
+    p.vid = ecs::PlayerRuntime::GetPacketVID(fisher);
     p.dir = 0;
     p.need = 0;
     p.count = 0;
-    ch->PacketAround(&p, sizeof(p));
+    ecs::NetworkService::BroadcastToView(g_registry, fisher, &p, sizeof(p), false);
 }
 
 void CatchFishing(entt::entity fisher, uint32_t)
 {
-    LPCHARACTER ch = LegacyCharacter(fisher);
+    if (fisher == entt::null || !g_registry.valid(fisher))
+        return;
+
     auto* state = GetFishingState(fisher);
-    if (!ch || !state || !state->fishingNewEvent)
+    if (!state || !state->fishingNewEvent)
         return;
 
     if (state->lastCatchTime > get_global_time())
@@ -274,45 +290,49 @@ void CatchFishing(entt::entity fisher, uint32_t)
 
     state->catchCount = static_cast<uint8_t>(state->catchCount + 1);
     state->lastCatchTime = get_global_time() + 1;
-    SyncLegacyFishing(ch, *state);
+    MirrorFishingStateToLegacyBoundary(fisher, *state);
     g_registry.emplace_or_replace<ecs::DirtyTag>(fisher);
 
     TPacketFishingNew p;
     p.header = HEADER_GC_FISHING_NEW;
     p.subheader = FISHING_SUBHEADER_NEW_CATCH;
-    p.vid = ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(ch));
+    p.vid = ecs::PlayerRuntime::GetPacketVID(fisher);
     p.dir = 0;
     p.need = 0;
     p.count = state->catchCount;
-    ch->PacketAround(&p, sizeof(p));
+    ecs::NetworkService::BroadcastToView(g_registry, fisher, &p, sizeof(p), false);
 }
 
 void CatchFishingFailed(entt::entity fisher)
 {
-    LPCHARACTER ch = LegacyCharacter(fisher);
+    if (fisher == entt::null || !g_registry.valid(fisher))
+        return;
+
     auto* state = GetFishingState(fisher);
-    if (!ch || !state || !state->fishingNewEvent)
+    if (!state || !state->fishingNewEvent)
         return;
 
     ++state->catchFailed;
-    SyncLegacyFishing(ch, *state);
+    MirrorFishingStateToLegacyBoundary(fisher, *state);
     g_registry.emplace_or_replace<ecs::DirtyTag>(fisher);
 
     TPacketFishingNew p;
     p.header = HEADER_GC_FISHING_NEW;
     p.subheader = FISHING_SUBHEADER_NEW_CATCH_FAILED;
-    p.vid = ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(ch));
+    p.vid = ecs::PlayerRuntime::GetPacketVID(fisher);
     p.dir = 0;
     p.need = 0;
     p.count = 0;
-    ch->PacketAround(&p, sizeof(p));
+    ecs::NetworkService::BroadcastToView(g_registry, fisher, &p, sizeof(p), false);
 }
 
 void CatchDecision(entt::entity fisher, uint32_t itemVnum)
 {
-    LPCHARACTER ch = LegacyCharacter(fisher);
+    if (fisher == entt::null || !g_registry.valid(fisher))
+        return;
+
     auto* state = GetFishingState(fisher);
-    if (!ch || !state || !state->fishingNewEvent)
+    if (!state || !state->fishingNewEvent)
         return;
 
     event_cancel(&state->fishingNewEvent);
@@ -322,28 +342,32 @@ void CatchDecision(entt::entity fisher, uint32_t itemVnum)
     state->chance = 0;
     MarkFishing(fisher, false);
 
-    LPITEM rod = ch->GetWear(WEAR_WEAPON);
-    if (!rod)
+    const entt::entity rod = ItemSystem::GetWearItem(fisher, WEAR_WEAPON);
+    if (!ItemSystem::IsValidItem(rod))
         return;
 
-    if (ItemSystem::GetItemType(EntityFactory::CreateItemEntity(g_registry, rod)) == ITEM_ROD)
+    if (ItemSystem::GetItemType(rod) == ITEM_ROD)
     {
-        if (rod->GetRefinedVnum() > 0 && ItemSystem::GetItemSocket(EntityFactory::CreateItemEntity(g_registry, rod), 0) < ItemSystem::GetItemValue(EntityFactory::CreateItemEntity(g_registry, rod), 2) && number(1, ItemSystem::GetItemValue(EntityFactory::CreateItemEntity(g_registry, rod), 1)) == 1)
+        if (ItemSystem::GetItemRefineVnum(rod) > 0 &&
+            ItemSystem::GetItemSocket(rod, 0) < ItemSystem::GetItemValue(rod, 2) &&
+            number(1, ItemSystem::GetItemValue(rod, 1)) == 1)
         {
-            ItemSystem::SetItemSocket(EntityFactory::CreateItemEntity(g_registry, rod), 0, ItemSystem::GetItemSocket(EntityFactory::CreateItemEntity(g_registry, rod), 0) + 1);
+            ItemSystem::SetItemSocket(rod, 0, ItemSystem::GetItemSocket(rod, 0) + 1);
 #ifdef TEXTS_IMPROVEMENT
-            ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 283, "%d#%d", ItemSystem::GetItemSocket(EntityFactory::CreateItemEntity(g_registry, rod), 0), ItemSystem::GetItemValue(EntityFactory::CreateItemEntity(g_registry, rod), 2));
+            ecs::ChatSystem::SendNew(fisher, CHAT_TYPE_INFO, 283, "%d#%d",
+                ItemSystem::GetItemSocket(rod, 0), ItemSystem::GetItemValue(rod, 2));
 #endif
-            if (ItemSystem::GetItemSocket(EntityFactory::CreateItemEntity(g_registry, rod), 0) == ItemSystem::GetItemValue(EntityFactory::CreateItemEntity(g_registry, rod), 2))
+
+            if (ItemSystem::GetItemSocket(rod, 0) == ItemSystem::GetItemValue(rod, 2))
             {
 #ifdef TEXTS_IMPROVEMENT
-                ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 279, "");
-                ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 280, "");
+                ecs::ChatSystem::SendNew(fisher, CHAT_TYPE_INFO, 279, "");
+                ecs::ChatSystem::SendNew(fisher, CHAT_TYPE_INFO, 280, "");
 #endif
             }
         }
 
-        ItemSystem::SetItemSocket(EntityFactory::CreateItemEntity(g_registry, rod), 2, 0);
+        ItemSystem::SetItemSocket(rod, 2, 0);
     }
 
     uint8_t chance = 0;
@@ -449,16 +473,16 @@ void CatchDecision(entt::entity fisher, uint32_t itemVnum)
             break;
     }
 
-    if (ecs::PointSystem::Get(AIHelpers::EcsOf(ch), POINT_FISHING_RARE) > 0 && chance == 5)
+    if (ecs::PointSystem::Get(fisher, POINT_FISHING_RARE) > 0 && chance == 5)
         chance += 20;
 
-    const uint32_t rodVnum = ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, rod));
+    const uint32_t rodVnum = ItemSystem::GetItemVnum(rod);
     if (rodVnum >= 27400 && rodVnum <= 27490)
-        chance += (ItemSystem::GetItemValue(EntityFactory::CreateItemEntity(g_registry, rod), 0) / 10) * 2;
+        chance += (ItemSystem::GetItemValue(rod, 0) / 10) * 2;
     else
-        chance += ItemSystem::GetItemValue(EntityFactory::CreateItemEntity(g_registry, rod), 0) / 10;
+        chance += ItemSystem::GetItemValue(rod, 0) / 10;
 
-    SyncLegacyFishing(ch, *state);
+    MirrorFishingStateToLegacyBoundary(fisher, *state);
 
     TPacketFishingNew p;
     p.header = HEADER_GC_FISHING_NEW;
@@ -466,27 +490,21 @@ void CatchDecision(entt::entity fisher, uint32_t itemVnum)
         p.subheader = FISHING_SUBHEADER_NEW_CATCH_FAIL;
     } else {
 #ifdef ENABLE_RANKING
-        ch->SetRankPoints(14, ch->GetRankPoints(14) + 1);
+        ecs::PlayerRuntime::SetRankPoints(
+            fisher, 14, ecs::PlayerRuntime::GetRankPoints(fisher, 14) + 1);
 #endif
 #ifdef ENABLE_BATTLE_PASS
-        uint8_t bBattlePassId = ch->GetBattlePassId();
-        if (bBattlePassId) {
-            uint32_t dwCount, dwNotUsed;
-            if (CBattlePass::instance().BattlePassMissionGetInfo(bBattlePassId, CATCH_FISH, &dwNotUsed, &dwCount)) {
-                if (ch->GetMissionProgress(CATCH_FISH, bBattlePassId) < dwCount)
-                    ch->UpdateMissionProgress(CATCH_FISH, bBattlePassId, 1, dwCount);
-            }
-        }
+        UpdateFishingBattlePassLegacyBoundary(fisher);
 #endif
 
         p.subheader = FISHING_SUBHEADER_NEW_CATCH_SUCCESS;
 
-        const entt::entity reward = ItemSystem::AutoGiveItemEcs(AIHelpers::EcsOf(ch), itemVnum, 1, -1, false);
+        const entt::entity reward = ItemSystem::AutoGiveItemEcs(fisher, itemVnum, 1, -1, false);
         if (reward != entt::null)
         {
 #ifdef ENABLE_MULTI_NAMES
             uint8_t lang = 0;
-            if (LPDESC d = ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch)))
+            if (LPDESC d = ecs::PlayerRuntime::GetDesc(fisher))
                 lang = d->GetLanguage();
 
             TItemTable* pTable = ITEM_MANAGER::instance().GetTable(itemVnum);
@@ -502,48 +520,182 @@ void CatchDecision(entt::entity fisher, uint32_t itemVnum)
                 char buf[256];
                 snprintf(buf, sizeof(buf),
                     "%s kifogta a Legendas vizi szornyet: %s",
-                    ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), szName);
+                    ecs::PlayerRuntime::GetName(fisher).data(), szName);
                 BroadcastNotice(buf);
             }
 
-            ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "%s kaptal.", szName);
+            ecs::ChatSystem::Send(fisher, CHAT_TYPE_INFO, "%s kaptal.", szName);
         }
         else
         {
-            ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "nincs hely az inventoryban.");
+            ecs::ChatSystem::Send(fisher, CHAT_TYPE_INFO, "nincs hely az inventoryban.");
         }
     }
 
-    p.vid = ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(ch));
+    p.vid = ecs::PlayerRuntime::GetPacketVID(fisher);
     p.dir = 0;
     p.need = 0;
     p.count = 0;
-    ch->PacketAround(&p, sizeof(p));
+    ecs::NetworkService::BroadcastToView(g_registry, fisher, &p, sizeof(p), false);
 }
 
-void UpdateFishing(entt::registry& reg, uint32_t)
+bool IsMining(entt::entity miner)
 {
-    // During the migration window, only process entities with an active fishing state.
-    auto view = reg.view<ecs::FishingState, ecs::FishingActiveTag, ecs::VIDComponent>();
-    view.each([](entt::entity e, ecs::FishingState& state, const ecs::VIDComponent& vid) {
-        if (!state.fishingNewEvent) {
-            return;
+    if (miner == entt::null || !g_registry.valid(miner))
+        return false;
+
+    const auto* state = g_registry.try_get<ecs::MiningState>(miner);
+    return state && state->event;
+}
+
+void FinishMining(entt::entity miner)
+{
+    if (miner == entt::null || !g_registry.valid(miner))
+        return;
+
+    auto* state = g_registry.try_get<ecs::MiningState>(miner);
+    if (!state)
+        return;
+
+    state->event = nullptr;
+    state->load = entt::null;
+    g_registry.emplace_or_replace<ecs::DirtyTag>(miner);
+}
+
+void CancelMining(entt::entity miner)
+{
+    if (miner == entt::null || !g_registry.valid(miner))
+        return;
+
+    auto* state = g_registry.try_get<ecs::MiningState>(miner);
+    if (!state || !state->event)
+        return;
+
+    LOG_INFO("XXX MINING CANCEL entity {}", static_cast<uint32_t>(miner));
+    event_cancel(&state->event);
+    state->event = nullptr;
+    state->load = entt::null;
+    g_registry.emplace_or_replace<ecs::DirtyTag>(miner);
+#ifdef TEXTS_IMPROVEMENT
+    ecs::ChatSystem::SendNew(miner, CHAT_TYPE_INFO, 472, "");
+#endif
+}
+
+bool StartMining(entt::entity miner, entt::entity load)
+{
+    if (miner == entt::null || load == entt::null ||
+        !g_registry.valid(miner) || !g_registry.valid(load))
+        return false;
+
+    if (IsMining(miner)) {
+        CancelMining(miner);
+        return false;
+    }
+
+    if (ecs::PlayerRuntime::GetMapIndex(miner) != ecs::PlayerRuntime::GetMapIndex(load) ||
+        DISTANCE_APPROX(
+            ecs::PlayerRuntime::GetX(miner) - ecs::PlayerRuntime::GetX(load),
+            ecs::PlayerRuntime::GetY(miner) - ecs::PlayerRuntime::GetY(load)) > 1000 ||
+        mining::GetRawOreFromLoad(ecs::PlayerRuntime::GetRaceNum(load)) == 0)
+        return false;
+
+    const entt::entity pick = ItemSystem::GetWearItem(miner, WEAR_WEAPON);
+    if (!ItemSystem::IsValidItem(pick) || ItemSystem::GetItemType(pick) != ITEM_PICK)
+    {
+#ifdef TEXTS_IMPROVEMENT
+        ecs::ChatSystem::SendNew(miner, CHAT_TYPE_INFO, 252, "");
+#endif
+        return false;
+    }
+
+    const int count = number(5, 15);
+    TPacketGCDigMotion packet{};
+    packet.header = HEADER_GC_DIG_MOTION;
+    packet.vid = ecs::PlayerRuntime::GetPacketVID(miner);
+    packet.target_vid = ecs::PlayerRuntime::GetPacketVID(load);
+    packet.count = count;
+    ecs::NetworkService::BroadcastToView(
+        g_registry, miner, &packet, sizeof(packet), false);
+
+    LPEVENT event = mining::CreateMiningEvent(miner, load, count);
+    if (!event)
+        return false;
+
+    auto& state = g_registry.get_or_emplace<ecs::MiningState>(miner);
+    state.event = event;
+    state.load = load;
+    g_registry.emplace_or_replace<ecs::DirtyTag>(miner);
+    return true;
+}
+
+int RefineFishingRod(entt::entity owner, entt::entity rod)
+{
+    if (owner == entt::null || !g_registry.valid(owner) ||
+        !ItemSystem::IsValidItem(rod))
+        return 2;
+
+    const bool refinable = ItemSystem::GetItemType(rod) == ITEM_ROD &&
+        !ItemSystem::IsItemEquipped(rod) &&
+        ItemSystem::GetItemSocket(rod, 0) == ItemSystem::GetItemValue(rod, 2);
+    if (!refinable)
+    {
+        LOG_ERROR("REFINE_ROD_HACK pid({}) item({}:{})",
+            ecs::PlayerRuntime::GetPlayerID(owner), ItemSystem::GetItemName(rod),
+            ItemSystem::GetItemID(rod));
+        LogManager::instance().RefineLog(
+            ecs::PlayerRuntime::GetPlayerID(owner), ItemSystem::GetItemName(rod),
+            ItemSystem::GetItemID(rod), -1, 1, "ROD_HACK");
+        return 6;
+    }
+
+    const int advance = ItemSystem::GetItemValue(rod, 0) / 10;
+    const uint16_t cell = ItemSystem::GetItemCell(rod);
+    const bool success = number(1, 100) <= ItemSystem::GetItemValue(rod, 3);
+    LogManager::instance().RefineLog(
+        ecs::PlayerRuntime::GetPlayerID(owner), ItemSystem::GetItemName(rod),
+        ItemSystem::GetItemID(rod), advance, success ? 1 : 0, "ROD");
+
+    if (success)
+    {
+        const entt::entity newRod = ItemSystem::CreateItemEcs(
+            ItemSystem::GetItemRefineVnum(rod), 1);
+        if (!ItemSystem::IsValidItem(newRod))
+            return 4;
+
+        ItemSystem::DestroyItemEntityEcs(rod, "REMOVE (REFINE FISH_ROD)");
+        if (!ItemSystem::PlaceItemEcs(owner, newRod, INVENTORY, cell))
+        {
+            ItemSystem::DestroyItemEntityEcs(newRod, "REFINE_FISH_ROD_PLACE_FAIL");
+            return 4;
         }
+        LogManager::instance().ItemLogEntity(
+            owner, newRod, "REFINE FISH_ROD SUCCESS",
+            ItemSystem::GetItemName(newRod));
+        return 1;
+    }
 
-        LPCHARACTER ch = CHARACTER_MANAGER::instance().Find(vid.value);
-        if (!ch)
-            return;
+#ifdef ENABLE_FISHINGROD_RENEWAL
+    const int current = ItemSystem::GetItemSocket(rod, 0);
+    ItemSystem::SetItemSocket(
+        rod, 0, current > 0 ? current - (current * 20 / 100) : 0);
+    LogManager::instance().ItemLogEntity(
+        owner, rod, "REFINE FISH_ROD FAIL", ItemSystem::GetItemName(rod));
+#else
+    const entt::entity newRod = ItemSystem::CreateItemEcs(
+        ItemSystem::GetItemValue(rod, 4), 1);
+    if (!ItemSystem::IsValidItem(newRod))
+        return 3;
 
-        state.fishingNewEvent = ch->m_pkFishingNewEvent;
-        state.catchCount = ch->GetFishCatch();
-        state.catchFailed = ch->GetFishCatchFailed();
-        state.lastCatchTime = ch->GetLastCatchTime();
-
-        if (state.fishingNewEvent)
-            g_registry.emplace_or_replace<ecs::FishingActiveTag>(e);
-        else if (g_registry.all_of<ecs::FishingActiveTag>(e))
-            g_registry.remove<ecs::FishingActiveTag>(e);
-    });
+    ItemSystem::DestroyItemEntityEcs(rod, "REMOVE (REFINE FISH_ROD)");
+    if (!ItemSystem::PlaceItemEcs(owner, newRod, INVENTORY, cell))
+    {
+        ItemSystem::DestroyItemEntityEcs(newRod, "REFINE_FISH_ROD_PLACE_FAIL");
+        return 3;
+    }
+    LogManager::instance().ItemLogEntity(
+        owner, newRod, "REFINE FISH_ROD FAIL", ItemSystem::GetItemName(newRod));
+#endif
+    return 2;
 }
 
 } // namespace ActivitySystem
@@ -575,59 +727,17 @@ void CHARACTER::fishing_catch_decision(uint32_t itemVnum)
 
 void CHARACTER::mining_take()
 {
-    m_pkMiningEvent = nullptr;
+    ActivitySystem::FinishMining(AIHelpers::EcsOf(this));
 }
 
 void CHARACTER::mining_cancel()
 {
-    if (m_pkMiningEvent)
-    {
-        LOG_INFO("XXX MINING CANCEL");
-        event_cancel(&m_pkMiningEvent);
-#ifdef TEXTS_IMPROVEMENT
-        ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 472, "");
-#endif
-    }
+    ActivitySystem::CancelMining(AIHelpers::EcsOf(this));
 }
 
 void CHARACTER::mining(LPCHARACTER chLoad)
 {
-    if (m_pkMiningEvent)
-    {
-        mining_cancel();
-        return;
-    }
-
-    if (!chLoad)
-        return;
-
-    if (GetMapIndex() != ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(chLoad)) || DISTANCE_APPROX(GetX() - ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(chLoad)), GetY() - ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(chLoad))) > 1000)
-        return;
-
-    if (mining::GetRawOreFromLoad(ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(chLoad))) == 0)
-        return;
-
-    LPITEM pick = GetWear(WEAR_WEAPON);
-
-    if (!pick || ItemSystem::GetItemType(EntityFactory::CreateItemEntity(g_registry, pick)) != ITEM_PICK)
-    {
-#ifdef TEXTS_IMPROVEMENT
-        ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 252, "");
-#endif
-        return;
-    }
-
-    int count = number(5, 15);
-
-    TPacketGCDigMotion p;
-    p.header = HEADER_GC_DIG_MOTION;
-    p.vid = GetPacketVID();
-    p.target_vid = ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(chLoad));
-    p.count = count;
-
-    PacketAround(&p, sizeof(p));
-
-    m_pkMiningEvent = mining::CreateMiningEvent(this, chLoad, count);
+    ActivitySystem::StartMining(AIHelpers::EcsOf(this), AIHelpers::EcsOf(chLoad));
 }
 
 void CHARACTER::fishing()
@@ -654,9 +764,9 @@ void CHARACTER::fishing()
         }
     }
 
-    LPITEM rod = GetWear(WEAR_WEAPON);
+    const entt::entity rod = ItemSystem::GetWearItem(AIHelpers::EcsOf(this), WEAR_WEAPON);
 
-    if (!rod || ItemSystem::GetItemType(EntityFactory::CreateItemEntity(g_registry, rod)) != ITEM_ROD)
+    if (!ItemSystem::IsValidItem(rod) || ItemSystem::GetItemType(rod) != ITEM_ROD)
     {
 #ifdef TEXTS_IMPROVEMENT
         ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 281, "");
@@ -664,7 +774,7 @@ void CHARACTER::fishing()
         return;
     }
 
-    if (0 == ItemSystem::GetItemSocket(EntityFactory::CreateItemEntity(g_registry, rod), 2))
+    if (0 == ItemSystem::GetItemSocket(rod, 2))
     {
 #ifdef TEXTS_IMPROVEMENT
         ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 351, "");
@@ -680,8 +790,8 @@ void CHARACTER::fishing()
 
 void CHARACTER::fishing_take()
 {
-    LPITEM rod = GetWear(WEAR_WEAPON);
-    if (rod && ItemSystem::GetItemType(EntityFactory::CreateItemEntity(g_registry, rod)) == ITEM_ROD)
+    const entt::entity rod = ItemSystem::GetWearItem(AIHelpers::EcsOf(this), WEAR_WEAPON);
+    if (ItemSystem::IsValidItem(rod) && ItemSystem::GetItemType(rod) == ITEM_ROD)
     {
         using fishing::fishing_event_info;
         if (m_pkFishingEvent)

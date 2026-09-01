@@ -16,7 +16,7 @@ constexpr int MOUNT_INVENTORY_WIDTH = 12;
 class CMountInventory
 {
 public:
-    CMountInventory(LPCHARACTER pkOwner, int iHeight);
+    CMountInventory(entt::entity owner, int iHeight);
     ~CMountInventory();
 
     bool Add(uint32_t pos, entt::entity item, bool skipSave = false);
@@ -40,7 +40,7 @@ private:
     uint32_t GetAccountId() const;
 
 private:
-    LPCHARACTER m_pkOwner;
+    entt::entity m_owner { entt::null };
     std::vector<entt::entity> m_items;
     std::unique_ptr<CGrid> m_grid;
     int m_iHeight;

@@ -1,5 +1,8 @@
 #include "../../stdafx.h"
 #include "PlayerRuntimeSystem.hpp"
+#include "QuestSystem.hpp"
+#include "SocialSystem.hpp"
+#include "InventorySystem.hpp"
 
 #include "ItemSystem.hpp"
 #include "../EntityFactory.hpp"
@@ -88,6 +91,10 @@
 #include "../EventDispatcher.hpp"
 #include "../components/item_components.hpp"
 #include "../components/item_proto_components.hpp"
+#include "../components/session_components.hpp"
+#include "../components/social_components.hpp"
+#include "../components/transform_components.hpp"
+#include "../components/vital_components.hpp"
 #include "../ItemRegistry.hpp"
 
 bool IS_SUMMONABLE_ZONE(int map_index);
@@ -147,6 +154,17 @@ static const ecs::MainInventoryRuntimeComponent* TryGetMainInventoryRuntimeCompo
         return nullptr;
 
     return g_registry.try_get<ecs::MainInventoryRuntimeComponent>(e);
+}
+
+static int GetMainInventoryLimit(entt::entity e)
+{
+    int limit = INVENTORY_MAX_NUM;
+#ifdef __ENABLE_EXTEND_INVEN_SYSTEM__
+    if (const auto* points = g_registry.try_get<ecs::CharacterPoints>(e))
+        limit = std::clamp(90 + (5 * points->base.envanter), 0,
+                           static_cast<int>(INVENTORY_MAX_NUM));
+#endif
+    return limit;
 }
 
 static entt::entity GetMainInventoryItem(entt::entity e, uint16_t cell)
@@ -302,16 +320,17 @@ static bool DestroyItemEntityAndLegacy(entt::entity itemEntity, const char* reas
         // Fix: run the legacy RemoveItem first (which broadcasts the
         // SendRemove burst while the ECS entity is still valid), then
         // destroy the ECS entity. EntityFactory::DestroyItemEntity is
-        // idempotent enough - the legacy path also calls it internally
-        // via item_manager.cpp:741, so by the time we reach the explicit
-        // DestroyItemEntity call below, the ECS entity may already be
-        // gone. The code is defensive in either case.
+        // idempotent enough - the legacy path also destroys and unregisters
+        // the ECS entity internally. Never pass legacyItem anywhere after
+        // RemoveItem returns: at that point CItem may already be freed.
         if (reason && *reason)
             ITEM_MANAGER::instance().RemoveItem(legacyItem, reason);
         else
             ITEM_MANAGER::instance().RemoveItem(legacyItem);
-        if (g_registry.valid(itemEntity))
-            EntityFactory::DestroyItemEntity(g_registry, legacyItem);
+        if (g_registry.valid(itemEntity)) {
+            CItemRegistry::Instance().Unregister(itemID, itemEntity);
+            g_registry.destroy(itemEntity);
+        }
         return true;
     }
 
@@ -649,11 +668,11 @@ entt::entity GetExtraInventoryItem(entt::entity e, uint16_t cell)
 
 void SyncExtraInventoryAll(entt::entity e)
 {
-    auto* ch = LegacyCharOf(e);
-    if (!ch || !ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch)))
+    if (e == entt::null || !g_registry.valid(e))
         return;
 
-    if (e == entt::null || !g_registry.valid(e))
+    const auto* session = g_registry.try_get<ecs::NetworkSession>(e);
+    if (!session || !session->desc)
         return;
 
     const auto* inventory = g_registry.try_get<ecs::ExtraInventoryRuntimeComponent>(e);
@@ -687,7 +706,7 @@ void SyncExtraInventoryAll(entt::entity e)
             for (int index = 0; index < ITEM_ATTRIBUTE_MAX_NUM; ++index)
                 packet.aAttr[index] = GetItemAttribute(item, index);
 
-            ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->Packet(&packet, sizeof(packet));
+            session->desc->Packet(&packet, sizeof(packet));
         }
         else
         {
@@ -700,7 +719,7 @@ void SyncExtraInventoryAll(entt::entity e)
 #endif
             packet.vnum = 0;
 
-            ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->Packet(&packet, sizeof(packet));
+            session->desc->Packet(&packet, sizeof(packet));
         }
     }
 }
@@ -712,23 +731,63 @@ entt::entity FindSpecifyItem(entt::entity e, uint32_t vnum
 #endif
 )
 {
-    auto* ch = LegacyCharOf(e);
-    if (!ch)
+    if (e == entt::null || !g_registry.valid(e) || vnum == 0)
         return entt::null;
 
 #ifdef ENABLE_EXTRA_INVENTORY
-    LPITEM item = ch->FindSpecifyItem(vnum, reinforce);
-#else
-    LPITEM item = ch->FindSpecifyItem(vnum);
+    if (reinforce)
+    {
+        const auto* inventory = g_registry.try_get<ecs::ExtraInventoryRuntimeComponent>(e);
+        if (!inventory)
+            return entt::null;
+        for (const entt::entity item : inventory->items)
+            if (IsValidItem(item) && GetItemVnum(item) == vnum)
+                return item;
+        return entt::null;
+    }
 #endif
-    return EntityFactory::CreateItemEntity(g_registry, item);
+
+    const auto* inventory = TryGetMainInventoryRuntimeComponent(e);
+    if (!inventory)
+        return entt::null;
+    const int limit = GetMainInventoryLimit(e);
+    for (int cell = 0; cell < limit; ++cell)
+    {
+        const entt::entity item = inventory->items[cell];
+        if (IsValidItem(item) && GetItemVnum(item) == vnum)
+            return item;
+    }
+    return entt::null;
 }
 
 entt::entity FindItemByID(entt::entity e, uint32_t id)
 {
-    auto* ch = LegacyCharOf(e);
-    LPITEM item = ch ? ch->FindItemByID(id) : nullptr;
-    return EntityFactory::CreateItemEntity(g_registry, item);
+    if (e == entt::null || !g_registry.valid(e) || id == 0)
+        return entt::null;
+
+    const auto matches = [id](entt::entity item) {
+        return IsValidItem(item) && GetItemID(item) == id;
+    };
+
+    if (const auto* inventory = TryGetMainInventoryRuntimeComponent(e))
+    {
+        const int limit = GetMainInventoryLimit(e);
+        for (int cell = 0; cell < limit; ++cell)
+            if (matches(inventory->items[cell]))
+                return inventory->items[cell];
+        for (int cell = BELT_INVENTORY_SLOT_START; cell < BELT_INVENTORY_SLOT_END; ++cell)
+            if (matches(inventory->items[cell]))
+                return inventory->items[cell];
+    }
+
+#ifdef ENABLE_EXTRA_INVENTORY
+    if (const auto* extra = g_registry.try_get<ecs::ExtraInventoryRuntimeComponent>(e))
+        for (const entt::entity item : extra->items)
+            if (matches(item))
+                return item;
+#endif
+
+    return entt::null;
 }
 
 entt::entity FindItemByID(uint32_t id)
@@ -736,12 +795,8 @@ entt::entity FindItemByID(uint32_t id)
     if (id == 0)
         return entt::null;
 
-    entt::entity item = CItemRegistry::Instance().Find(id);
-    if (item != entt::null && g_registry.valid(item))
-        return item;
-
-    LPITEM legacyItem = ITEM_MANAGER::instance().Find(id);
-    return EntityFactory::CreateItemEntity(g_registry, legacyItem);
+    const entt::entity item = CItemRegistry::Instance().Find(id);
+    return item != entt::null && g_registry.valid(item) ? item : entt::null;
 }
 
 entt::entity FindItemByVID(uint32_t vid)
@@ -749,30 +804,89 @@ entt::entity FindItemByVID(uint32_t vid)
     if (vid == 0)
         return entt::null;
 
-    entt::entity item = CItemRegistry::Instance().FindByVID(vid);
-    if (item != entt::null && g_registry.valid(item))
-        return item;
-
-    LPITEM legacyItem = ITEM_MANAGER::instance().FindByVID(vid);
-    return EntityFactory::CreateItemEntity(g_registry, legacyItem);
+    const entt::entity item = CItemRegistry::Instance().FindByVID(vid);
+    return item != entt::null && g_registry.valid(item) ? item : entt::null;
 }
 
 int CountItemRenewal(entt::entity e, uint32_t vnum)
 {
-    auto* ch = LegacyCharOf(e);
-    return ch ? ch->CountSpecifyItemRenewal(vnum) : 0;
+    if (e == entt::null || !g_registry.valid(e) || vnum == 0)
+        return 0;
+
+    const auto* shop = g_registry.try_get<ecs::ShopState>(e);
+    const auto countItem = [vnum, shop](entt::entity item) -> int {
+        if (!IsValidItem(item) || GetItemVnum(item) != vnum ||
+            GetItemLockedAttributeIndex(item) != -1)
+            return 0;
+        if (shop && shop->myShop && shop->myShop->IsSellingItem(GetItemID(item)))
+            return 0;
+        return static_cast<int>(GetItemCount(item));
+    };
+
+    int count = 0;
+#ifdef ENABLE_EXTRA_INVENTORY
+    if (ITEM_MANAGER::instance().IsExtraItem(vnum))
+    {
+        if (const auto* extra = g_registry.try_get<ecs::ExtraInventoryRuntimeComponent>(e))
+            for (const entt::entity item : extra->items)
+                count += countItem(item);
+        return count;
+    }
+#endif
+
+    if (const auto* inventory = TryGetMainInventoryRuntimeComponent(e))
+        for (int cell = 0, limit = GetMainInventoryLimit(e); cell < limit; ++cell)
+            count += countItem(inventory->items[cell]);
+    return count;
 }
 
 int CountItem(entt::entity e, uint32_t vnum)
 {
-    auto* ch = LegacyCharOf(e);
-    return ch ? ch->CountSpecifyItem(vnum) : 0;
+    if (e == entt::null || !g_registry.valid(e) || vnum == 0)
+        return 0;
+
+    const auto* shop = g_registry.try_get<ecs::ShopState>(e);
+    const auto countItem = [vnum, shop](entt::entity item) -> int {
+        if (!IsValidItem(item) || GetItemVnum(item) != vnum)
+            return 0;
+        if (shop && shop->myShop && shop->myShop->IsSellingItem(GetItemID(item)))
+            return 0;
+        return static_cast<int>(GetItemCount(item));
+    };
+
+    int count = 0;
+#ifdef ENABLE_EXTRA_INVENTORY
+    if (ITEM_MANAGER::instance().IsExtraItem(vnum))
+    {
+        if (const auto* extra = g_registry.try_get<ecs::ExtraInventoryRuntimeComponent>(e))
+            for (const entt::entity item : extra->items)
+                count += countItem(item);
+        return count;
+    }
+#endif
+
+    if (const auto* inventory = TryGetMainInventoryRuntimeComponent(e))
+        for (int cell = 0, limit = GetMainInventoryLimit(e); cell < limit; ++cell)
+            count += countItem(inventory->items[cell]);
+    return count;
 }
 
 int CountTypeItem(entt::entity e, uint8_t type)
 {
-    auto* ch = LegacyCharOf(e);
-    return ch ? ch->CountSpecifyTypeItem(type) : 0;
+    if (e == entt::null || !g_registry.valid(e))
+        return 0;
+
+    int count = 0;
+    if (const auto* inventory = TryGetMainInventoryRuntimeComponent(e))
+    {
+        for (int cell = 0, limit = GetMainInventoryLimit(e); cell < limit; ++cell)
+        {
+            const entt::entity item = inventory->items[cell];
+            if (IsValidItem(item) && GetItemType(item) == type)
+                count += static_cast<int>(GetItemCount(item));
+        }
+    }
+    return count;
 }
 
 bool HasItem(entt::entity e, uint32_t vnum, uint32_t count)
@@ -783,16 +897,46 @@ bool HasItem(entt::entity e, uint32_t vnum, uint32_t count)
 bool RemoveSpecifyItemEcs(entt::entity e, uint32_t vnum, uint32_t count,
                           bool cubeRenewal)
 {
-    auto* ch = LegacyCharOf(e);
-    if (!ch || count == 0)
+    if (e == entt::null || !g_registry.valid(e) || count == 0)
         return false;
 
     const int available = cubeRenewal ? CountItemRenewal(e, vnum) : CountItem(e, vnum);
     if (available < static_cast<int>(count))
         return false;
 
-    ch->RemoveSpecifyItem(vnum, static_cast<int>(count), cubeRenewal);
-    return true;
+    const auto* shop = g_registry.try_get<ecs::ShopState>(e);
+    auto consumeMatching = [&](entt::entity item) {
+        if (count == 0 || !IsValidItem(item) || GetItemVnum(item) != vnum)
+            return;
+        if (cubeRenewal && GetItemLockedAttributeIndex(item) != -1)
+            return;
+        if (shop && shop->myShop && shop->myShop->IsSellingItem(GetItemID(item)))
+            return;
+
+        if (vnum >= 80003 && vnum <= 80007)
+            LogManager::instance().GoldBarLog(
+                ecs::PlayerRuntime::GetPlayerID(e), GetItemID(item), QUEST,
+                "RemoveSpecifyItemEcs");
+
+        const uint32_t amount = std::min(count, GetItemCount(item));
+        if (ConsumeItemEcs(item, amount))
+            count -= amount;
+    };
+
+#ifdef ENABLE_EXTRA_INVENTORY
+    if (ITEM_MANAGER::instance().IsExtraItem(vnum))
+    {
+        if (const auto* extra = g_registry.try_get<ecs::ExtraInventoryRuntimeComponent>(e))
+            for (int cell = 0; cell < EXTRA_INVENTORY_MAX_NUM && count > 0; ++cell)
+                consumeMatching(extra->items[cell]);
+        return count == 0;
+    }
+#endif
+
+    if (const auto* inventory = TryGetMainInventoryRuntimeComponent(e))
+        for (int cell = 0, limit = GetMainInventoryLimit(e); cell < limit && count > 0; ++cell)
+            consumeMatching(inventory->items[cell]);
+    return count == 0;
 }
 
 entt::entity GetWearItem(entt::entity e, uint8_t wearPos)
@@ -811,103 +955,40 @@ LPITEM GetWear(entt::entity e, uint8_t wearPos)
     return LegacyItemOf(GetWearItem(e, wearPos));
 }
 
-void SetWearItem(entt::entity e, uint8_t wearPos, entt::entity item)
-{
-    auto* ch = LegacyCharOf(e);
-    LPITEM legacyItem = ResolveLegacyItemForLegacySideEffect(item);
-    if (ch) {
-        ch->SetWear(wearPos, legacyItem);
-        SyncItemStateFromLegacy(item);
-    }
-}
-
-bool UnequipItem(entt::entity e, entt::entity item)
-{
-    return UnequipItemEcs(e, item);
-}
-
-bool EquipItem(entt::entity e, entt::entity item, int candidateCell)
-{
-    return EquipItemEcs(e, item, candidateCell);
-}
-
 bool IsEquipUniqueItem(entt::entity e, uint32_t itemVnum)
 {
-    auto* ch = LegacyCharOf(e);
-    return ch ? ch->IsEquipUniqueItem(itemVnum) : false;
+    for (const uint8_t wearSlot : { WEAR_UNIQUE1, WEAR_UNIQUE2, WEAR_COSTUME_MOUNT })
+    {
+        const entt::entity item = GetWearItem(e, wearSlot);
+        if (IsValidItem(item) && GetItemVnum(item) == itemVnum)
+            return true;
+    }
+
+    return itemVnum == UNIQUE_ITEM_RING_OF_LANGUAGE &&
+        IsEquipUniqueItem(e, UNIQUE_ITEM_RING_OF_LANGUAGE_SAMPLE);
 }
 
 bool IsEquipUniqueGroup(entt::entity e, uint32_t groupVnum)
 {
-    auto* ch = LegacyCharOf(e);
-    return ch ? ch->IsEquipUniqueGroup(groupVnum) : false;
+    for (const uint8_t wearSlot : { WEAR_UNIQUE1, WEAR_UNIQUE2, WEAR_COSTUME_MOUNT })
+    {
+        const entt::entity item = GetWearItem(e, wearSlot);
+        if (IsValidItem(item) &&
+            GetItemSpecialGroup(item) == static_cast<int32_t>(groupVnum))
+            return true;
+    }
+    return false;
 }
 
 bool UnEquipSpecialRideUniqueItem(entt::entity e)
 {
-    auto* ch = LegacyCharOf(e);
-    return ch ? ch->UnEquipSpecialRideUniqueItem() : false;
-}
-
-bool CanEquipNow(entt::entity e, entt::entity item, const TItemPos& srcCell, const TItemPos& destCell)
-{
-    auto* ch = LegacyCharOf(e);
-    LPITEM legacyItem = ResolveLegacyItemForLegacySideEffect(item);
-    return ch && legacyItem ? ch->CanEquipNow(legacyItem, srcCell, destCell) : false;
-}
-
-bool CanUnequipNow(entt::entity e, entt::entity item, const TItemPos& srcCell, const TItemPos& destCell)
-{
-    auto* ch = LegacyCharOf(e);
-    LPITEM legacyItem = ResolveLegacyItemForLegacySideEffect(item);
-    return ch && legacyItem ? ch->CanUnequipNow(legacyItem, srcCell, destCell) : false;
-}
-
-bool DropItem(entt::entity e, TItemPos cell,
-#ifdef ENABLE_NEW_STACK_LIMIT
-              int
-#else
-              uint8_t
-#endif
-                  count)
-{
-    auto* ch = LegacyCharOf(e);
-    return ch ? ch->DropItem(cell, count) : false;
-}
-
-bool DropGold(entt::entity e, int64_t gold)
-{
-    auto* ch = LegacyCharOf(e);
-    return ch ? ch->DropGold(gold) : false;
-}
-
-bool MoveItem(entt::entity e, TItemPos fromCell, TItemPos toCell,
-#ifdef ENABLE_NEW_STACK_LIMIT
-              int
-#else
-              uint8_t
-#endif
-                  count)
-{
-    auto* ch = LegacyCharOf(e);
-    return ch ? ch->MoveItem(fromCell, toCell, count) : false;
-}
-
-bool PickupItem(entt::entity e, uint32_t vid)
-{
-    auto* ch = LegacyCharOf(e);
-    return ch ? ch->PickupItem(vid) : false;
-}
-
-bool UseItem(entt::entity e, TItemPos cell, TItemPos destCell)
-{
-    auto* ch = LegacyCharOf(e);
-    return ch ? ch->UseItem(cell, destCell) : false;
-}
-
-bool UseItemEx(entt::entity e, entt::entity item, TItemPos destCell)
-{
-    return UseItemEcs(e, item, destCell);
+    for (const uint8_t wearSlot : { WEAR_UNIQUE1, WEAR_UNIQUE2, WEAR_COSTUME_MOUNT })
+    {
+        const entt::entity item = GetWearItem(e, wearSlot);
+        if (IsValidItem(item) && GetItemSpecialGroup(item) == UNIQUE_GROUP_SPECIAL_RIDE)
+            return UnequipItemEcs(e, item);
+    }
+    return true;
 }
 
 static bool IsSimpleEquipToggleType(uint8_t type)
@@ -927,11 +1008,30 @@ static bool IsSimpleEquipToggleType(uint8_t type)
     }
 }
 
+static bool UseNonEquipItemLegacyBoundary(entt::entity owner,
+                                          entt::entity item,
+                                          TItemPos destCell)
+{
+    LPCHARACTER legacyOwner = LegacyCharOf(owner);
+    LPITEM legacyItem = ResolveLegacyItemForLegacySideEffect(item);
+    if (!legacyOwner || !legacyItem)
+        return false;
+
+    const bool result = legacyOwner->UseItemEx(legacyItem, destCell);
+    if (!result)
+        return false;
+
+    if (g_registry.valid(item) && IsValidItem(item)) {
+        SyncItemStateFromLegacy(item);
+        return true;
+    }
+
+    return true;
+}
+
 bool UseItemEcs(entt::entity owner, entt::entity item, TItemPos destCell)
 {
-    auto* ch = LegacyCharOf(owner);
-    LPITEM legacyItem = ResolveLegacyItemForLegacySideEffect(item);
-    if (!ch || !legacyItem)
+    if (owner == entt::null || !g_registry.valid(owner) || !IsValidItem(item))
         return false;
 
     const uint8_t itemType = GetItemType(item);
@@ -941,25 +1041,14 @@ bool UseItemEcs(entt::entity owner, entt::entity item, TItemPos destCell)
             : EquipItemEcs(owner, item);
     }
 
-    const uint32_t itemID = legacyItem->GetID();
-    const bool result = ch->UseItemEx(legacyItem, destCell);
-    if (result) {
-        LPITEM currentItem = itemID != 0 ? ITEM_MANAGER::instance().Find(itemID) : nullptr;
-        if (!currentItem) {
-            DestroyItemEntityAndLegacy(item, "USE_ITEM_ECS_CONSUMED");
-            return true;
-        }
-        SyncItemStateFromLegacy(item);
-    }
-    return result;
+    return UseNonEquipItemLegacyBoundary(owner, item, destCell);
 }
 
-
-void RemoveTypeItem(entt::entity e, uint8_t type, int count)
-{
-    if (auto* ch = LegacyCharOf(e))
-        ch->RemoveSpecifyTypeItem(type, count);
+namespace {
+entt::entity GiveExistingItemEcs(entt::entity owner, entt::entity item,
+                                 bool longOwnerShip);
 }
+
 
 void AutoGiveItem(entt::entity e, entt::entity item, bool longOwnerShip
 #ifdef __HIGHLIGHT_SYSTEM__
@@ -967,30 +1056,19 @@ void AutoGiveItem(entt::entity e, entt::entity item, bool longOwnerShip
 #endif
 )
 {
-    LPITEM legacyItem = ResolveLegacyItemForLegacySideEffect(item);
-    if (auto* ch = LegacyCharOf(e))
-        if (legacyItem) {
-            ch->AutoGiveItem(legacyItem, longOwnerShip
 #ifdef __HIGHLIGHT_SYSTEM__
-                             , isHighLight
+    (void)isHighLight;
 #endif
-            );
-            SyncItemStateFromLegacy(item);
-        }
+    GiveExistingItemEcs(e, item, longOwnerShip);
 }
 
 #ifdef ENABLE_DS_REFINE_ALL
 bool AutoGiveDS(entt::entity e, entt::entity item, bool longOwnerShip)
 {
-    auto* ch = LegacyCharOf(e);
-    LPITEM legacyItem = ResolveLegacyItemForLegacySideEffect(item);
-    if (!ch || !legacyItem)
+    if (!IsDragonSoulItem(item))
         return false;
 
-    const bool result = ch->AutoGiveDS(legacyItem, longOwnerShip);
-    if (result)
-        SyncItemStateFromLegacy(item);
-    return result;
+    return GiveExistingItemEcs(e, item, longOwnerShip) != entt::null;
 }
 #endif
 
@@ -1093,40 +1171,34 @@ static entt::entity TryMergeItemVnum(entt::entity owner, uint32_t itemVnum,
     return count == 0 ? lastMerged : entt::null;
 }
 
-static void SendAutoGiveMessage(entt::entity owner, uint32_t count, LPITEM item)
+static void SendAutoGiveMessage(entt::entity owner, uint32_t count,
+                                entt::entity item)
 {
-    auto* ch = LegacyCharOf(owner);
-    if (!ch || !item)
+    if (owner == entt::null || !g_registry.valid(owner) || !IsValidItem(item))
         return;
 
 #ifdef TEXTS_IMPROVEMENT
+    const LPDESC desc = ecs::PlayerRuntime::GetDesc(owner);
+    const uint8_t language = desc ? desc->GetLanguage() : 0;
+    const TItemTable* proto = GetItemProto(item);
+    const char* itemName = proto ? proto->szLocaleName[language] : GetItemName(item);
     ecs::ChatSystem::SendNew(owner,
 #ifdef ENABLE_NEW_CHAT
                              CHAT_TYPE_INFO_ITEM
 #else
                              CHAT_TYPE_INFO
 #endif
-                             , 102, "%d#%s", count,
-                             item->GetName(ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch)) ? ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->GetLanguage() : 0));
+                             , 102, "%d#%s", count, itemName);
 #else
     (void)count;
+    (void)item;
 #endif
-}
-
-static entt::entity CreateItemEntityFromProto(uint32_t itemVnum,
-                                              uint32_t count,
-                                              int rarePct)
-{
-    (void)rarePct;
-    LPITEM item = ITEM_MANAGER::instance().CreateItem(itemVnum, count, 0, true);
-    return EntityFactory::CreateItemEntity(g_registry, item);
 }
 
 static entt::entity HandleBlendItemMerge(entt::entity owner, entt::entity item)
 {
-    auto* ch = LegacyCharOf(owner);
-    LPITEM legacyItem = ResolveLegacyItemForLegacySideEffect(item);
-    if (!ch || !legacyItem || legacyItem->GetType() != ITEM_BLEND)
+    if (owner == entt::null || !g_registry.valid(owner) ||
+        !IsValidItem(item) || GetItemType(item) != ITEM_BLEND)
         return item;
 
     auto* incomingSockets = g_registry.try_get<ecs::ItemSockets>(item);
@@ -1166,8 +1238,7 @@ static entt::entity HandleBlendItemMerge(entt::entity owner, entt::entity item)
             continue;
 
         SetItemCount(candidate, static_cast<uint32_t>(count.count) + GetItemCount(item));
-        EntityFactory::DestroyItemEntity(g_registry, legacyItem);
-        M2_DESTROY_ITEM(legacyItem);
+        DestroyItemEntityEcs(item, "AUTOGIVE_BLEND_MERGE");
         return candidate;
     }
 
@@ -1179,68 +1250,142 @@ static entt::entity PlaceItemInInventory(entt::entity owner, entt::entity item,
                                          bool sendMessage,
                                          uint32_t messageCount)
 {
-    auto* ch = LegacyCharOf(owner);
-    LPITEM legacyItem = ResolveLegacyItemForLegacySideEffect(item);
-    if (!ch || !legacyItem)
+    if (owner == entt::null || !g_registry.valid(owner) ||
+        !g_registry.any_of<ecs::PlayerID>(owner) || !IsValidItem(item))
         return entt::null;
 
-    int cell = -1;
-    if (legacyItem->IsDragonSoul()) {
-        cell = ch->GetEmptyDragonSoulInventory(legacyItem);
-    }
+    const int cell = GetEmptyInventoryPositionEcs(owner, item);
+    uint8_t targetWindow = INVENTORY;
+    if (IsDragonSoulItem(item))
+        targetWindow = DRAGON_SOUL_INVENTORY;
 #ifdef ENABLE_EXTRA_INVENTORY
-    else if (legacyItem->IsExtraItem()) {
-        cell = ch->GetEmptyExtraInventory(legacyItem);
-    }
+    else if (IsExtraItem(item))
+        targetWindow = EXTRA_INVENTORY;
 #endif
-    else {
-        cell = ch->GetEmptyInventory(legacyItem->GetSize());
-    }
 
     if (cell != -1) {
-        if (legacyItem->IsDragonSoul()) {
-            if (!PlaceItemEcs(owner, item, DRAGON_SOUL_INVENTORY, cell))
-                return entt::null;
-        }
-#ifdef ENABLE_EXTRA_INVENTORY
-        else if (legacyItem->IsExtraItem()) {
-            if (!PlaceItemEcs(owner, item, EXTRA_INVENTORY, cell))
-                return entt::null;
-        }
-#endif
-        else {
-            if (!PlaceItemEcs(owner, item, INVENTORY, cell))
-                return entt::null;
-        }
+        if (!PlaceItemEcs(owner, item, targetWindow, static_cast<uint16_t>(cell)))
+            return entt::null;
 
-        LogManager::instance().ItemLog(ch, legacyItem, "SYSTEM", legacyItem->GetName());
+        LogManager::instance().ItemLogEntity(owner, item, "SYSTEM", GetItemName(item));
         if (sendMessage)
-            SendAutoGiveMessage(owner, messageCount, legacyItem);
+            SendAutoGiveMessage(owner, messageCount, item);
 
-        if (legacyItem->GetType() == ITEM_USE && legacyItem->GetSubType() == USE_POTION) {
-            TQuickslot* pSlot;
-            if (ch->GetQuickslot(0, &pSlot) && pSlot->type == QUICKSLOT_TYPE_NONE) {
-                TQuickslot slot;
+        if (GetItemType(item) == ITEM_USE && GetItemSubType(item) == USE_POTION) {
+            TQuickslot currentSlot {};
+            if (InventorySystem::GetQuickslot(owner, 0, currentSlot) &&
+                currentSlot.type == QUICKSLOT_TYPE_NONE) {
+                TQuickslot slot {};
                 slot.type = QUICKSLOT_TYPE_ITEM;
-                slot.pos = cell;
-                ch->SetQuickslot(0, slot);
+                slot.pos = static_cast<uint8_t>(cell);
+                InventorySystem::SetQuickslot(owner, 0, slot);
+                if (LPDESC desc = ecs::PlayerRuntime::GetDesc(owner)) {
+                    packet_quickslot_add packet {};
+                    packet.header = HEADER_GC_QUICKSLOT_ADD;
+                    packet.pos = 0;
+                    packet.slot = slot;
+                    desc->Packet(&packet, sizeof(packet));
+                }
             }
         }
 
-        SyncItemStateFromLegacy(item);
         return item;
     }
 
-    legacyItem->AddToGround(ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)), ch->GetXYZ());
+    PIXEL_POSITION position {
+        ecs::PlayerRuntime::GetX(owner), ecs::PlayerRuntime::GetY(owner), 0
+    };
+    if (const auto* spatialPosition = g_registry.try_get<ecs::Position>(owner))
+        position.z = spatialPosition->z;
 #ifdef ENABLE_NEWSTUFF
-    legacyItem->StartDestroyEvent(g_aiItemDestroyTime[ITEM_DESTROY_TIME_AUTOGIVE]);
+    const int destroySeconds = g_aiItemDestroyTime[ITEM_DESTROY_TIME_AUTOGIVE];
 #else
-    legacyItem->StartDestroyEvent();
+    const int destroySeconds = 300;
 #endif
-    legacyItem->SetOwnership(ch, longOwnerShip ? 300 : 60);
-    LogManager::instance().ItemLog(ch, legacyItem, "SYSTEM_DROP", legacyItem->GetName());
-    SyncItemStateFromLegacy(item);
+    if (!PlaceItemOnGroundLegacyBoundary(
+            item, ecs::PlayerRuntime::GetMapIndex(owner), position, destroySeconds))
+        return entt::null;
+    SetGroundOwnershipLegacyBoundary(item, owner, longOwnerShip ? 300 : 60);
+    LogManager::instance().ItemLogEntity(
+        owner, item, "SYSTEM_DROP", GetItemName(item));
     return item;
+}
+
+static entt::entity MergeExistingStackIntoInventory(entt::entity owner,
+                                                    entt::entity item)
+{
+    if (!IsValidItem(item) ||
+        !IS_SET(GetItemFlags(item), ITEM_FLAG_STACKABLE) ||
+        IS_SET(GetItemAntiFlags(item), ITEM_ANTIFLAG_STACK) ||
+        IsDragonSoulItem(item))
+        return item;
+
+    const auto* ownerID = g_registry.try_get<ecs::PlayerID>(owner);
+    const auto* incomingSockets = g_registry.try_get<ecs::ItemSockets>(item);
+    if (!ownerID || ownerID->pid == 0 || !incomingSockets)
+        return item;
+
+    const uint8_t targetWindow =
+#ifdef ENABLE_EXTRA_INVENTORY
+        IsExtraItem(item) ? EXTRA_INVENTORY :
+#endif
+        INVENTORY;
+    const uint32_t itemVnum = GetItemVnum(item);
+    uint32_t remaining = GetItemCount(item);
+    entt::entity lastMerged = entt::null;
+
+    auto view = g_registry.view<ecs::ItemIdentity, ecs::ItemOwner,
+                                ecs::ItemLocation, ecs::ItemCount,
+                                ecs::ItemSockets>();
+    for (auto candidate : view) {
+        if (candidate == item || remaining == 0)
+            continue;
+
+        const auto& identity = view.get<ecs::ItemIdentity>(candidate);
+        const auto& candidateOwner = view.get<ecs::ItemOwner>(candidate);
+        const auto& location = view.get<ecs::ItemLocation>(candidate);
+        const auto& count = view.get<ecs::ItemCount>(candidate);
+        const auto& sockets = view.get<ecs::ItemSockets>(candidate);
+        if (candidateOwner.ownerPID != ownerID->pid ||
+            location.window != targetWindow || identity.vnum != itemVnum ||
+            sockets.sockets != incomingSockets->sockets ||
+            count.count >= g_bItemCountLimit)
+            continue;
+
+        const uint32_t capacity = static_cast<uint32_t>(g_bItemCountLimit - count.count);
+        const uint32_t merged = std::min(capacity, remaining);
+        SetItemCount(candidate, static_cast<uint32_t>(count.count) + merged);
+        remaining -= merged;
+        lastMerged = candidate;
+    }
+
+    if (remaining == 0) {
+        DestroyItemEntityEcs(item, "AUTOGIVE_STACK_MERGE");
+        return lastMerged;
+    }
+
+    if (remaining != GetItemCount(item))
+        SetItemCount(item, remaining);
+    return item;
+}
+
+entt::entity GiveExistingItemEcs(entt::entity owner, entt::entity item,
+                                 bool longOwnerShip)
+{
+    if (owner == entt::null || !g_registry.valid(owner) ||
+        !g_registry.any_of<ecs::PlayerID>(owner) || !IsValidItem(item))
+        return entt::null;
+
+    if (const auto* itemOwner = g_registry.try_get<ecs::ItemOwner>(item);
+        itemOwner && itemOwner->ownerPID != 0)
+        return entt::null;
+
+    const entt::entity merged = MergeExistingStackIntoInventory(owner, item);
+    if (merged != item)
+        return merged;
+
+    return PlaceItemInInventory(owner, item, longOwnerShip, false,
+                                GetItemCount(item));
 }
 
 } // namespace
@@ -1249,8 +1394,8 @@ entt::entity AutoGiveItemEcs(entt::entity owner, uint32_t itemVnum,
                              uint32_t count, int rarePct,
                              bool sendMessage)
 {
-    auto* ch = LegacyCharOf(owner);
-    if (!ch)
+    if (owner == entt::null || !g_registry.valid(owner) ||
+        !g_registry.any_of<ecs::PlayerID>(owner))
         return entt::null;
 
     TItemTable* proto = ITEM_MANAGER::instance().GetTable(itemVnum);
@@ -1272,7 +1417,7 @@ entt::entity AutoGiveItemEcs(entt::entity owner, uint32_t itemVnum,
         merged = TryMergeItemVnum(owner, itemVnum, count, *proto, StackInventoryKind::Extra);
         if (merged != entt::null) {
             if (sendMessage)
-                SendAutoGiveMessage(owner, requestedCount, ResolveLegacyItemForLegacySideEffect(merged));
+                SendAutoGiveMessage(owner, requestedCount, merged);
             return merged;
         }
     }
@@ -1287,12 +1432,12 @@ entt::entity AutoGiveItemEcs(entt::entity owner, uint32_t itemVnum,
         merged = TryMergeItemVnum(owner, itemVnum, count, *proto, StackInventoryKind::Main);
         if (merged != entt::null) {
             if (sendMessage)
-                SendAutoGiveMessage(owner, requestedCount, ResolveLegacyItemForLegacySideEffect(merged));
+                SendAutoGiveMessage(owner, requestedCount, merged);
             return merged;
         }
     }
 
-    entt::entity created = CreateItemEntityFromProto(itemVnum, count, rarePct);
+    entt::entity created = CreateItemEcs(itemVnum, count, 0, true, rarePct);
     if (created == entt::null)
         return entt::null;
 
@@ -1342,20 +1487,74 @@ bool IsExtraItem(entt::entity item)
 
 bool IsRideItem(entt::entity item)
 {
-    LPITEM legacyItem = ResolveLegacyItemForLegacySideEffect(item);
-    return legacyItem && legacyItem->IsRideItem();
+    if (!IsValidItem(item))
+        return false;
+    const uint8_t type = GetItemType(item);
+    const uint8_t subType = GetItemSubType(item);
+    if (type == ITEM_UNIQUE &&
+        (subType == UNIQUE_SPECIAL_RIDE || subType == UNIQUE_SPECIAL_MOUNT_RIDE))
+        return true;
+#ifdef ENABLE_MOUNT_COSTUME_SYSTEM
+    return type == ITEM_COSTUME && subType == COSTUME_MOUNT;
+#else
+    return false;
+#endif
 }
 
 bool IsMountItem(entt::entity item)
 {
 #ifdef ENABLE_MOUNT_COSTUME_SYSTEM
-    LPITEM legacyItem = ResolveLegacyItemForLegacySideEffect(item);
-    return legacyItem && legacyItem->IsMountItem();
+    return IsValidItem(item) && GetItemType(item) == ITEM_COSTUME &&
+        GetItemSubType(item) == COSTUME_MOUNT;
 #else
     (void)item;
     return false;
 #endif
 }
+
+#ifdef ENABLE_RUNE_SYSTEM
+bool IsRuneItem(entt::entity item)
+{
+    return IsValidItem(item) && GetItemType(item) == ITEM_COSTUME &&
+        GetItemSubType(item) >= RUNE_SLOT1 && GetItemSubType(item) <= RUNE_SLOT7;
+}
+
+bool ActivateRuneLegacyBoundary(entt::entity item)
+{
+    LPITEM legacyItem = ResolveLegacyItemForLegacySideEffect(item);
+    if (!legacyItem)
+        return false;
+    legacyItem->ActivateRune();
+    return SyncItemStateFromLegacy(item);
+}
+
+bool DeactivateRuneLegacyBoundary(entt::entity item)
+{
+    LPITEM legacyItem = ResolveLegacyItemForLegacySideEffect(item);
+    if (!legacyItem)
+        return false;
+    legacyItem->DeactivateRune();
+    return SyncItemStateFromLegacy(item);
+}
+
+bool ChangeRuneAttributesLegacyBoundary(entt::entity item, int32_t time)
+{
+    LPITEM legacyItem = ResolveLegacyItemForLegacySideEffect(item);
+    if (!legacyItem)
+        return false;
+    legacyItem->ChangeRuneAttr(time);
+    return SyncItemStateFromLegacy(item);
+}
+
+bool ActivateRuneBonusLegacyBoundary(entt::entity item)
+{
+    LPITEM legacyItem = ResolveLegacyItemForLegacySideEffect(item);
+    if (!legacyItem)
+        return false;
+    legacyItem->ActivateRuneBonus();
+    return SyncItemStateFromLegacy(item);
+}
+#endif
 
 uint32_t GetItemID(entt::entity item)
 {
@@ -1383,7 +1582,10 @@ uint32_t GetItemVnum(entt::entity item)
 
 uint32_t GetItemOriginalVnum(entt::entity item)
 {
-    return GetItemVnum(item);
+    if (const auto* identity = g_registry.try_get<ecs::ItemIdentity>(item))
+        return identity->originalVnum;
+
+    return 0;
 }
 
 uint32_t GetItemSIGVnum(entt::entity item)
@@ -1398,6 +1600,14 @@ int32_t GetItemSpecialGroup(entt::entity item)
 {
     if (const auto* identity = g_registry.try_get<ecs::ItemIdentity>(item))
         return identity->specialGroup;
+
+    return 0;
+}
+
+uint32_t GetItemTransmutationVnum(entt::entity item)
+{
+    if (const auto* identity = g_registry.try_get<ecs::ItemIdentity>(item))
+        return identity->transmutationVnum;
 
     return 0;
 }
@@ -1465,8 +1675,8 @@ uint8_t GetItemSize(entt::entity item)
 uint8_t GetItemExtraCategory(entt::entity item)
 {
 #ifdef ENABLE_EXTRA_INVENTORY
-    LPITEM legacyItem = ResolveLegacyItemForLegacySideEffect(item);
-    return legacyItem ? legacyItem->GetExtraCategory() : 0;
+    const auto* protoRef = g_registry.try_get<ecs::ItemProtoRef>(item);
+    return protoRef ? protoRef->extra_category : 0;
 #else
     (void)item;
     return 0;
@@ -1682,12 +1892,8 @@ bool SaveItemEcs(entt::entity item, bool flush)
 
 entt::entity GetItemOwner(entt::entity item)
 {
-    if (const auto* owner = g_registry.try_get<ecs::ItemOwner>(item)) {
-        if (owner->ownerPID != 0) {
-            if (auto* ch = CHARACTER_MANAGER::instance().FindByPID(owner->ownerPID))
-                return AIHelpers::EcsOf(ch);
-        }
-    }
+    if (const auto* owner = g_registry.try_get<ecs::ItemOwner>(item))
+        return ecs::PlayerRuntime::FindByPlayerID(owner->ownerPID);
 
     return entt::null;
 }
@@ -1695,6 +1901,56 @@ entt::entity GetItemOwner(entt::entity item)
 entt::entity GetItemOwnerEntity(entt::entity item)
 {
     return GetItemOwner(item);
+}
+
+entt::entity RollPartyDropOwnership(entt::entity item, entt::entity initialOwner)
+{
+    if (!IsValidItem(item) || initialOwner == entt::null || !g_registry.valid(initialOwner))
+        return entt::null;
+
+    LPPARTY party = ecs::SocialSystem::GetParty(initialOwner);
+    if (!party || party->GetNearMemberCount() <= 1)
+    {
+        SetGroundOwnershipLegacyBoundary(item, initialOwner);
+        return initialOwner;
+    }
+
+#ifdef TEXTS_IMPROVEMENT
+    party->ChatPacketToAllMemberNew(CHAT_TYPE_DICE_INFO, 542, "%s", GetItemName(item));
+#endif
+
+    entt::entity selected = initialOwner;
+    int lastNumber = 0;
+    auto roll = [&](LPCHARACTER member)
+    {
+        const entt::entity memberEntity = AIHelpers::EcsOf(member);
+        if (memberEntity == entt::null || !g_registry.valid(memberEntity))
+            return;
+
+        int pickedNumber = 0;
+        do
+        {
+            pickedNumber = number(10000, 99999);
+        } while (pickedNumber == lastNumber);
+
+        if (pickedNumber > lastNumber)
+        {
+            lastNumber = pickedNumber;
+            selected = memberEntity;
+        }
+#ifdef TEXTS_IMPROVEMENT
+        party->ChatPacketToAllMemberNew(CHAT_TYPE_DICE_INFO, 543, "%s#%d",
+            ecs::PlayerRuntime::GetName(memberEntity).data(), pickedNumber);
+#endif
+    };
+    party->ForEachNearMember(roll);
+
+    SetGroundOwnershipLegacyBoundary(item, selected);
+#ifdef TEXTS_IMPROVEMENT
+    party->ChatPacketToAllMemberNew(CHAT_TYPE_DICE_INFO, 903, "%s#%s",
+        ecs::PlayerRuntime::GetName(selected).data(), GetItemName(item));
+#endif
+    return selected;
 }
 
 uint32_t GetItemLastOwnerPID(entt::entity item)
@@ -1934,13 +2190,49 @@ bool CopyItemSocketsEcs(entt::entity source, entt::entity target)
 
 bool CopyAllAttrToEcs(entt::entity source, entt::entity target)
 {
-    LPITEM legacySource = ResolveLegacyItemForLegacySideEffect(source);
-    LPITEM legacyTarget = ResolveLegacyItemForLegacySideEffect(target);
-    if (!legacySource || !legacyTarget)
+    if (!IsValidItem(source) || !IsValidItem(target))
         return false;
 
-    ITEM_MANAGER::CopyAllAttrTo(legacySource, legacyTarget);
-    return SyncItemSocketsFromLegacy(target) && SyncItemAttributesFromLegacy(target);
+    const auto* sourceSockets = g_registry.try_get<ecs::ItemSockets>(source);
+    const auto* sourceAttributes = g_registry.try_get<ecs::ItemAttributes>(source);
+    if (!sourceSockets || !sourceAttributes)
+        return false;
+
+    auto& targetSockets = g_registry.get_or_emplace<ecs::ItemSockets>(target);
+    const uint8_t type = GetItemType(source);
+    const uint8_t subType = GetItemSubType(source);
+    const bool isAccessoryForSocket =
+        (type == ITEM_ARMOR &&
+         (subType == ARMOR_WRIST || subType == ARMOR_NECK || subType == ARMOR_EAR)) ||
+        type == ITEM_BELT;
+
+    if (isAccessoryForSocket)
+    {
+        targetSockets = *sourceSockets;
+    }
+    else
+    {
+        for (int index = 0; index < ITEM_SOCKET_MAX_NUM; ++index)
+        {
+            if (sourceSockets->sockets[index] == 0)
+                break;
+            targetSockets.sockets[index] = 1;
+        }
+
+        constexpr int32_t brokenMetinVnum = 28960;
+        int targetSlot = 0;
+        for (int index = 0;
+             index < ITEM_SOCKET_MAX_NUM && targetSlot < ITEM_SOCKET_MAX_NUM;
+             ++index)
+        {
+            const int32_t socket = sourceSockets->sockets[index];
+            if (socket > 2 && socket != brokenMetinVnum)
+                targetSockets.sockets[targetSlot++] = socket;
+        }
+    }
+
+    g_registry.emplace_or_replace<ecs::ItemAttributes>(target, *sourceAttributes);
+    return SyncLegacySocketsFromEcs(target) && SyncLegacyAttributesFromEcs(target);
 }
 
 int GetItemAttributeCount(entt::entity item)
@@ -2082,6 +2374,21 @@ bool SetItemWindow(entt::entity item, uint8_t window)
     return true;
 }
 
+static bool MirrorItemCellToLegacyBoundary(entt::entity item,
+                                           entt::entity owner,
+                                           uint16_t cell)
+{
+    LPITEM legacyItem = ResolveLegacyItemForLegacySideEffect(item);
+    if (!legacyItem)
+        return false;
+
+    LPCHARACTER legacyOwner = LegacyCharOf(owner);
+    if (!legacyOwner)
+        legacyOwner = legacyItem->GetOwner();
+    legacyItem->SetCell(legacyOwner, cell);
+    return true;
+}
+
 bool SetItemCell(entt::entity item, entt::entity owner, uint16_t cell)
 {
     if (item == entt::null || !g_registry.valid(item))
@@ -2093,16 +2400,7 @@ bool SetItemCell(entt::entity item, entt::entity owner, uint16_t cell)
     auto& itemOwner = g_registry.get_or_emplace<ecs::ItemOwner>(item);
     itemOwner.ownerPID = ecs::PlayerRuntime::GetPlayerID(owner);
 
-    LPCHARACTER legacyOwner = LegacyCharOf(owner);
-    if (!legacyOwner)
-        legacyOwner = ResolveLegacyItemForLegacySideEffect(item)
-            ? ResolveLegacyItemForLegacySideEffect(item)->GetOwner()
-            : nullptr;
-
-    if (LPITEM legacyItem = ResolveLegacyItemForLegacySideEffect(item))
-        legacyItem->SetCell(legacyOwner, cell);
-
-    return true;
+    return MirrorItemCellToLegacyBoundary(item, owner, cell);
 }
 
 bool AlterItemToMagicItem(entt::entity item)
@@ -2201,11 +2499,21 @@ static bool IsItemLocationOccupied(entt::entity owner, entt::entity item,
     return false;
 }
 
+static bool AddItemToCharacterLegacyBoundary(entt::entity owner,
+                                             entt::entity item,
+                                             uint8_t window,
+                                             uint16_t cell)
+{
+    LPCHARACTER legacyOwner = LegacyCharOf(owner);
+    LPITEM legacyItem = ResolveLegacyItemForLegacySideEffect(item);
+    return legacyOwner && legacyItem &&
+        legacyItem->AddToCharacter(legacyOwner, TItemPos(window, cell));
+}
+
 bool PlaceItemEcs(entt::entity owner, entt::entity item, uint8_t window, uint16_t cell)
 {
-    auto* ch = LegacyCharOf(owner);
-    LPITEM legacyItem = ResolveLegacyItemForLegacySideEffect(item);
-    if (!ch || !legacyItem)
+    if (owner == entt::null || !g_registry.valid(owner) ||
+        !g_registry.any_of<ecs::PlayerID>(owner) || !IsValidItem(item))
         return false;
     if (!IsItemLocationInBounds(window, cell))
         return false;
@@ -2228,7 +2536,7 @@ bool PlaceItemEcs(entt::entity owner, entt::entity item, uint8_t window, uint16_
     g_registry.emplace_or_replace<ecs::ItemLocation>(item, ecs::ItemLocation{window, cell});
     g_registry.emplace_or_replace<ecs::ItemEquipped>(item, ecs::ItemEquipped{false});
 
-    if (!legacyItem->AddToCharacter(ch, TItemPos(window, cell))) {
+    if (!AddItemToCharacterLegacyBoundary(owner, item, window, cell)) {
         if (hadLocation)
             g_registry.emplace_or_replace<ecs::ItemLocation>(item, oldLocation);
         else
@@ -2270,30 +2578,186 @@ bool RemoveItemEcs(entt::entity item)
     return true;
 }
 
-int GetEmptyInventoryPositionEcs(entt::entity owner, entt::entity item)
+bool RemoveItemFromCharacterLegacyBoundary(entt::entity item)
 {
-    auto* ch = LegacyCharOf(owner);
     LPITEM legacyItem = ResolveLegacyItemForLegacySideEffect(item);
-    if (!ch || !legacyItem)
+    if (!legacyItem || !legacyItem->GetOwner())
+        return false;
+
+    legacyItem->RemoveFromCharacter();
+    return SyncItemStateFromLegacy(item);
+}
+
+static int FindEmptyMainInventoryPosition(entt::entity owner, uint8_t itemSize)
+{
+    if (owner == entt::null || !g_registry.valid(owner) || itemSize == 0)
         return -1;
 
-    if (legacyItem->IsDragonSoul())
-        return ch->GetEmptyDragonSoulInventory(legacyItem);
+    const auto* inventory = TryGetMainInventoryRuntimeComponent(owner);
+    if (!inventory)
+        return -1;
+
+    const int inventoryLimit = GetMainInventoryLimit(owner);
+
+    constexpr int pageSize = INVENTORY_PAGE_SIZE;
+    for (int cell = 0; cell < inventoryLimit; ++cell)
+    {
+        if (inventory->itemGrid[cell] != 0)
+            continue;
+
+        const int page = cell / pageSize;
+        bool fits = true;
+        for (int row = 1; row < itemSize; ++row)
+        {
+            const int occupiedCell = cell + (INVENTORY_PAGE_COLUMN * row);
+            if (occupiedCell >= inventoryLimit || occupiedCell / pageSize != page ||
+                inventory->itemGrid[occupiedCell] != 0)
+            {
+                fits = false;
+                break;
+            }
+        }
+        if (fits)
+            return cell;
+    }
+    return -1;
+}
+
 #ifdef ENABLE_EXTRA_INVENTORY
-    if (legacyItem->IsExtraItem())
-        return ch->GetEmptyExtraInventory(legacyItem);
+static int FindEmptyExtraInventoryPosition(entt::entity owner, uint8_t itemSize,
+                                           uint8_t category)
+{
+    if (owner == entt::null || !g_registry.valid(owner) || itemSize == 0 || category >= 6)
+        return -1;
+
+    const auto* inventory = g_registry.try_get<ecs::ExtraInventoryRuntimeComponent>(owner);
+    if (!inventory)
+        return -1;
+
+    const int begin = EXTRA_INVENTORY_CATEGORY_MAX_NUM * category;
+    int end = EXTRA_INVENTORY_CATEGORY_MAX_NUM * (category + 1);
+#ifdef ENABLE_LOCKED_EXTRA_INVENTORY
+    static constexpr std::array<std::string_view, 6> unlockFlags {
+        "lock_extra.cat1", "lock_extra.cat2", "lock_extra.cat3",
+        "lock_extra.cat4", "lock_extra.cat5", "lock_extra.cat6"
+    };
+    constexpr int freeSlots = (EXTRA_INVENTORY_PAGE_SIZE * 2) + 20;
+    constexpr int maxUnlockSlots = 25 + EXTRA_INVENTORY_PAGE_SIZE;
+    const int unlockedSlots = std::clamp(
+        ecs::QuestSystem::GetFlag(owner, unlockFlags[category]) * 5,
+        0, maxUnlockSlots);
+    end = std::min(begin + freeSlots + unlockedSlots,
+                   static_cast<int>(EXTRA_INVENTORY_MAX_NUM));
 #endif
-    return ch->GetEmptyInventory(legacyItem->GetSize());
+
+    for (int cell = begin; cell < end; ++cell)
+    {
+        if (inventory->itemGrid[cell] != 0)
+            continue;
+
+        const int page = cell / EXTRA_INVENTORY_PAGE_SIZE;
+        bool fits = true;
+        for (int row = 1; row < itemSize; ++row)
+        {
+            const int occupiedCell = cell + (EXTRA_INVENTORY_PAGE_COLUMN * row);
+            if (occupiedCell >= end ||
+                occupiedCell / EXTRA_INVENTORY_PAGE_SIZE != page ||
+                inventory->itemGrid[occupiedCell] != 0)
+            {
+                fits = false;
+                break;
+            }
+        }
+
+        if (fits)
+            return cell;
+    }
+
+    return -1;
+}
+#endif
+
+int GetEmptyInventoryPositionEcs(entt::entity owner, entt::entity item)
+{
+    if (owner == entt::null || !g_registry.valid(owner) || !IsValidItem(item))
+        return -1;
+
+    if (IsDragonSoulItem(item))
+        return GetEmptyDragonSoulInventory(owner, item);
+#ifdef ENABLE_EXTRA_INVENTORY
+    if (IsExtraItem(item))
+        return FindEmptyExtraInventoryPosition(
+            owner, GetItemSize(item), GetItemExtraCategory(item));
+#endif
+    return FindEmptyMainInventoryPosition(owner, GetItemSize(item));
+}
+
+bool HasMainInventorySpaceEcs(entt::entity owner, uint8_t itemSize)
+{
+    return FindEmptyMainInventoryPosition(owner, itemSize) != -1;
+}
+
+bool HasInventorySpaceForItemVnum(entt::entity owner, uint32_t itemVnum)
+{
+    const TItemTable* proto = ITEM_MANAGER::instance().GetTable(itemVnum);
+    if (!proto)
+        return false;
+
+    return FindEmptyMainInventoryPosition(owner, proto->bSize) != -1;
+}
+
+bool PlaceItemOnGroundLegacyBoundary(entt::entity item, int32_t mapIndex,
+                                     const PIXEL_POSITION& position, int destroySeconds)
+{
+    LPITEM legacyItem = ResolveLegacyItemForLegacySideEffect(item);
+    if (!legacyItem || destroySeconds <= 0)
+        return false;
+
+    if (!legacyItem->AddToGround(mapIndex, position))
+        return false;
+
+    legacyItem->StartDestroyEvent(destroySeconds);
+    return SyncItemStateFromLegacy(item);
 }
 
 int GetEmptyDragonSoulInventory(entt::entity owner, entt::entity item)
 {
-    auto* ch = LegacyCharOf(owner);
-    LPITEM legacyItem = ResolveLegacyItemForLegacySideEffect(item);
-    if (!ch || !legacyItem || !IsDragonSoulItem(item))
+    if (owner == entt::null || !g_registry.valid(owner) || !IsDragonSoulItem(item))
         return -1;
 
-    return ch->GetEmptyDragonSoulInventory(legacyItem);
+    const auto* inventory = g_registry.try_get<ecs::DragonSoulInventoryComponent>(owner);
+    if (!inventory)
+        return -1;
+
+    const uint8_t itemSize = GetItemSize(item);
+    const uint16_t baseCell = DSManager::instance().GetBasePosition(item);
+    if (itemSize == 0 || baseCell == WORD_MAX ||
+        baseCell >= DRAGON_SOUL_INVENTORY_MAX_NUM)
+        return -1;
+
+    const int boxEnd = std::min<int>(baseCell + DRAGON_SOUL_BOX_SIZE,
+                                     DRAGON_SOUL_INVENTORY_MAX_NUM);
+    for (int cell = baseCell; cell < boxEnd; ++cell)
+    {
+        if (inventory->itemGrid[cell] != 0)
+            continue;
+
+        bool fits = true;
+        for (int row = 1; row < itemSize; ++row)
+        {
+            const int occupiedCell = cell + (DRAGON_SOUL_BOX_COLUMN_NUM * row);
+            if (occupiedCell >= boxEnd || inventory->itemGrid[occupiedCell] != 0)
+            {
+                fits = false;
+                break;
+            }
+        }
+
+        if (fits)
+            return cell;
+    }
+
+    return -1;
 }
 
 bool IsItemVnumStackable(uint32_t vnum)
@@ -2310,7 +2774,6 @@ bool ModifyItemPointsEcs(entt::entity item, bool add)
         return false;
 
     legacyItem->ModifyPoints(add);
-    SyncItemStateFromLegacy(item);
     return true;
 }
 
@@ -2346,14 +2809,38 @@ bool StartRealTimeExpireEventEcs(entt::entity item)
     return true;
 }
 
+static int FindEquipCellLegacyBoundary(entt::entity owner, entt::entity item,
+                                       int candidateCell)
+{
+    LPCHARACTER legacyOwner = LegacyCharOf(owner);
+    LPITEM legacyItem = ResolveLegacyItemForLegacySideEffect(item);
+    return legacyOwner && legacyItem
+        ? legacyItem->FindEquipCell(legacyOwner, candidateCell)
+        : -1;
+}
+
+static bool EquipItemLegacyBoundary(entt::entity owner, entt::entity item,
+                                    int candidateCell)
+{
+    LPCHARACTER legacyOwner = LegacyCharOf(owner);
+    LPITEM legacyItem = ResolveLegacyItemForLegacySideEffect(item);
+    return legacyOwner && legacyItem &&
+        legacyOwner->EquipItem(legacyItem, candidateCell);
+}
+
+static bool UnequipItemLegacyBoundary(entt::entity owner, entt::entity item)
+{
+    LPCHARACTER legacyOwner = LegacyCharOf(owner);
+    LPITEM legacyItem = ResolveLegacyItemForLegacySideEffect(item);
+    return legacyOwner && legacyItem && legacyOwner->UnequipItem(legacyItem);
+}
+
 bool EquipItemEcs(entt::entity owner, entt::entity item, int candidateCell)
 {
-    auto* ch = LegacyCharOf(owner);
-    LPITEM legacyItem = ResolveLegacyItemForLegacySideEffect(item);
-    if (!ch || !legacyItem)
+    if (owner == entt::null || !g_registry.valid(owner) || !IsValidItem(item))
         return false;
 
-    const int wearCell = legacyItem->FindEquipCell(ch, candidateCell);
+    const int wearCell = FindEquipCellLegacyBoundary(owner, item, candidateCell);
     if (wearCell < 0)
         return false;
 
@@ -2373,7 +2860,7 @@ bool EquipItemEcs(entt::entity owner, entt::entity item, int candidateCell)
     g_registry.emplace_or_replace<ecs::ItemEquipped>(
         item, ecs::ItemEquipped{true, static_cast<uint8_t>(wearCell)});
 
-    const bool result = ch->EquipItem(legacyItem, candidateCell);
+    const bool result = EquipItemLegacyBoundary(owner, item, candidateCell);
     if (!result) {
         if (hadLocation)
             g_registry.emplace_or_replace<ecs::ItemLocation>(item, oldLocation);
@@ -2398,18 +2885,14 @@ bool EquipItemEcs(entt::entity owner, entt::entity item, int candidateCell)
 
 bool UnequipItemEcs(entt::entity owner, entt::entity item)
 {
-    auto* ch = LegacyCharOf(owner);
-    LPITEM legacyItem = ResolveLegacyItemForLegacySideEffect(item);
-    if (!ch || !legacyItem)
+    if (owner == entt::null || !g_registry.valid(owner) || !IsValidItem(item))
         return false;
 
-    const int targetCell = legacyItem->IsDragonSoul()
-        ? ch->GetEmptyDragonSoulInventory(legacyItem)
-        : ch->GetEmptyInventory(legacyItem->GetSize());
+    const int targetCell = GetEmptyInventoryPositionEcs(owner, item);
     if (targetCell < 0)
         return false;
 
-    const uint8_t targetWindow = legacyItem->IsDragonSoul()
+    const uint8_t targetWindow = IsDragonSoulItem(item)
         ? DRAGON_SOUL_INVENTORY
         : INVENTORY;
 
@@ -2429,7 +2912,7 @@ bool UnequipItemEcs(entt::entity owner, entt::entity item)
     g_registry.emplace_or_replace<ecs::ItemEquipped>(
         item, ecs::ItemEquipped{false, 0});
 
-    const bool result = ch->UnequipItem(legacyItem);
+    const bool result = UnequipItemLegacyBoundary(owner, item);
     if (!result) {
         if (hadLocation)
             g_registry.emplace_or_replace<ecs::ItemLocation>(item, oldLocation);
@@ -2492,9 +2975,19 @@ bool SyncItemStateFromLegacy(entt::entity item)
     g_registry.emplace_or_replace<ecs::ItemIdentity>(
         item, ecs::ItemIdentity{
                   legacyItem->GetID(),
+                  legacyItem->GetVnum(),
                   legacyItem->GetOriginalVnum(),
                   legacyItem->GetVID(),
                   legacyItem->GetMaskVnum(),
+#ifdef __CHANGELOOK_SYSTEM__
+                  legacyItem->GetSIGVnum(),
+                  legacyItem->GetSpecialGroup(),
+                  legacyItem->GetTransmutation(),
+#else
+                  legacyItem->GetSIGVnum(),
+                  legacyItem->GetSpecialGroup(),
+                  0,
+#endif
               });
     g_registry.emplace_or_replace<ecs::ItemCount>(
         item, ecs::ItemCount{legacyItem->GetCount()});
@@ -2557,33 +3050,10 @@ bool DestroyLoadedDuplicateItem(entt::entity item)
     return true;
 }
 
-bool GiveItem(entt::entity from, entt::entity victim, TItemPos cell)
-{
-    auto* fromCh = LegacyCharOf(from);
-    auto* victimCh = LegacyCharOf(victim);
-    return (fromCh && victimCh) ? fromCh->GiveItem(victimCh, cell) : false;
-}
-
-bool CanReceiveItem(entt::entity receiver, entt::entity from, entt::entity item)
-{
-    auto* receiverCh = LegacyCharOf(receiver);
-    auto* fromCh = LegacyCharOf(from);
-    LPITEM legacyItem = ResolveLegacyItemForLegacySideEffect(item);
-    return (receiverCh && fromCh && legacyItem) ? receiverCh->CanReceiveItem(fromCh, legacyItem) : false;
-}
-
-void ReceiveItem(entt::entity receiver, entt::entity from, entt::entity item)
-{
-    ReceiveItemEcs(receiver, from, item);
-}
-
 static uint32_t EntityPlayerID(entt::entity e)
 {
     if (const auto* playerID = g_registry.try_get<ecs::PlayerID>(e))
         return playerID->pid;
-
-    if (const auto* ch = LegacyCharOf(e))
-        return ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch));
 
     return 0;
 }
@@ -2605,7 +3075,8 @@ bool TransferItemOwnership(entt::entity item, entt::entity from, entt::entity to
     return true;
 }
 
-bool SetGroundOwnership(entt::entity item, entt::entity owner, int seconds)
+bool SetGroundOwnershipLegacyBoundary(entt::entity item, entt::entity owner,
+                                      int seconds)
 {
     LPITEM legacyItem = ResolveLegacyItemForLegacySideEffect(item);
     LPCHARACTER legacyOwner = LegacyCharOf(owner);
@@ -2616,49 +3087,64 @@ bool SetGroundOwnership(entt::entity item, entt::entity owner, int seconds)
     return SyncItemOwnerFromLegacy(item);
 }
 
+static bool ReceiveItemLegacyBoundary(entt::entity receiver,
+                                      entt::entity from,
+                                      entt::entity item)
+{
+    LPCHARACTER legacyReceiver = LegacyCharOf(receiver);
+    LPCHARACTER legacyFrom = LegacyCharOf(from);
+    LPITEM legacyItem = ResolveLegacyItemForLegacySideEffect(item);
+    if (!legacyReceiver || !legacyFrom || !legacyItem ||
+        !legacyReceiver->CanReceiveItem(legacyFrom, legacyItem))
+        return false;
+
+    legacyReceiver->ReceiveItem(legacyFrom, legacyItem);
+    return true;
+}
+
 bool ReceiveItemEcs(entt::entity receiver, entt::entity from, entt::entity item)
 {
-    auto* receiverCh = LegacyCharOf(receiver);
-    auto* fromCh = LegacyCharOf(from);
-    LPITEM legacyItem = ResolveLegacyItemForLegacySideEffect(item);
-    if (!receiverCh || !fromCh || !legacyItem)
+    if (receiver == entt::null || from == entt::null ||
+        !g_registry.valid(receiver) || !g_registry.valid(from) ||
+        !IsValidItem(item))
         return false;
 
-    if (!receiverCh->CanReceiveItem(fromCh, legacyItem))
+    if (!ReceiveItemLegacyBoundary(receiver, from, item))
         return false;
 
-    const uint32_t itemID = legacyItem->GetID();
-    receiverCh->ReceiveItem(fromCh, legacyItem);
-
-    LPITEM currentItem = itemID != 0 ? ITEM_MANAGER::instance().Find(itemID) : nullptr;
-    if (currentItem) {
+    if (g_registry.valid(item) && IsValidItem(item)) {
         SyncItemStateFromLegacy(item);
         return true;
     }
 
-    return DestroyItemEntityAndLegacy(item, "RECEIVE_ITEM_ECS_CONSUMED");
+    return true;
+}
+
+static bool GiveSpecialItemGroupLegacyBoundary(
+    entt::entity owner, uint32_t groupNum,
+    std::vector<uint32_t>& itemVnums, std::vector<uint32_t>& itemCounts,
+    std::vector<entt::entity>& itemEntities, int& count)
+{
+    LPCHARACTER legacyOwner = LegacyCharOf(owner);
+    return legacyOwner && legacyOwner->GiveItemFromSpecialItemGroup(
+        groupNum, itemVnums, itemCounts, itemEntities, count);
 }
 
 SpecialItemGroupResult GiveItemFromSpecialItemGroup(entt::entity e, uint32_t groupNum)
 {
     SpecialItemGroupResult result;
-    auto* ch = LegacyCharOf(e);
-    if (!ch)
+    if (e == entt::null || !g_registry.valid(e))
         return result;
 
     std::vector<entt::entity> itemGets;
-    if (!ch->GiveItemFromSpecialItemGroup(groupNum, result.itemVnums, result.itemCounts, itemGets, result.count))
+    if (!GiveSpecialItemGroupLegacyBoundary(
+            e, groupNum, result.itemVnums, result.itemCounts, itemGets,
+            result.count))
         return result;
 
     result.itemEntities = std::move(itemGets);
 
     return result;
-}
-
-bool DestroyItem(entt::entity e, TItemPos cell)
-{
-    auto* ch = LegacyCharOf(e);
-    return ch ? ch->DestroyItem(cell) : false;
 }
 
 void ItemDivision(entt::entity e, TItemPos cell)
@@ -2667,20 +3153,36 @@ void ItemDivision(entt::entity e, TItemPos cell)
     (void)cell;
 }
 
-void SetRefineNPC(entt::entity e, entt::entity npc)
+static bool DoRefineLegacyBoundary(entt::entity owner, entt::entity item,
+                                   bool moneyOnly)
 {
-    if (auto* ch = LegacyCharOf(e))
-        ch->SetRefineNPC(LegacyCharOf(npc));
+    LPCHARACTER legacyOwner = LegacyCharOf(owner);
+    LPITEM legacyItem = ResolveLegacyItemForLegacySideEffect(item);
+    return legacyOwner && legacyItem &&
+        legacyOwner->DoRefine(legacyItem, moneyOnly);
+}
+
+static bool DoRefineWithScrollLegacyBoundary(entt::entity owner,
+                                             entt::entity item)
+{
+    LPCHARACTER legacyOwner = LegacyCharOf(owner);
+    LPITEM legacyItem = ResolveLegacyItemForLegacySideEffect(item);
+    return legacyOwner && legacyItem &&
+        legacyOwner->DoRefineWithScroll(legacyItem);
+}
+
+static bool DoRefineItemSoulLegacyBoundary(entt::entity owner,
+                                           entt::entity item)
+{
+    LPCHARACTER legacyOwner = LegacyCharOf(owner);
+    LPITEM legacyItem = ResolveLegacyItemForLegacySideEffect(item);
+    return legacyOwner && legacyItem &&
+        legacyOwner->DoRefineItemSoul(legacyItem);
 }
 
 bool DoRefine(entt::entity e, entt::entity item, bool moneyOnly)
 {
-    auto* ch = LegacyCharOf(e);
-    LPITEM legacyItem = ResolveLegacyItemForLegacySideEffect(item);
-    if (!ch || !legacyItem)
-        return false;
-
-    const bool result = ch->DoRefine(legacyItem, moneyOnly);
+    const bool result = DoRefineLegacyBoundary(e, item, moneyOnly);
     if (result)
         SyncItemStateFromLegacy(item);
     return result;
@@ -2688,12 +3190,7 @@ bool DoRefine(entt::entity e, entt::entity item, bool moneyOnly)
 
 bool DoRefineWithScroll(entt::entity e, entt::entity item)
 {
-    auto* ch = LegacyCharOf(e);
-    LPITEM legacyItem = ResolveLegacyItemForLegacySideEffect(item);
-    if (!ch || !legacyItem)
-        return false;
-
-    const bool result = ch->DoRefineWithScroll(legacyItem);
+    const bool result = DoRefineWithScrollLegacyBoundary(e, item);
     if (result)
         SyncItemStateFromLegacy(item);
     return result;
@@ -2701,63 +3198,10 @@ bool DoRefineWithScroll(entt::entity e, entt::entity item)
 
 bool DoRefineItemSoul(entt::entity e, entt::entity item)
 {
-    auto* ch = LegacyCharOf(e);
-    LPITEM legacyItem = ResolveLegacyItemForLegacySideEffect(item);
-    if (!ch || !legacyItem)
-        return false;
-
-    const bool result = ch->DoRefineItemSoul(legacyItem);
+    const bool result = DoRefineItemSoulLegacyBoundary(e, item);
     if (result)
         SyncItemStateFromLegacy(item);
     return result;
-}
-
-bool RefineInformation(entt::entity e, uint8_t cell, uint8_t type, int additionalCell)
-{
-    auto* ch = LegacyCharOf(e);
-    return ch ? ch->RefineInformation(cell, type, additionalCell) : false;
-}
-
-bool RefineItem(entt::entity e, entt::entity item, entt::entity target)
-{
-    auto* ch = LegacyCharOf(e);
-    LPITEM legacyItem = ResolveLegacyItemForLegacySideEffect(item);
-    LPITEM legacyTarget = ResolveLegacyItemForLegacySideEffect(target);
-    if (!ch || !legacyItem || !legacyTarget)
-        return false;
-
-    const bool result = ch->RefineItem(legacyItem, legacyTarget);
-    if (result) {
-        SyncItemStateFromLegacy(item);
-        SyncItemStateFromLegacy(target);
-    }
-    return result;
-}
-
-RefineResult RefineItemEcs(entt::entity e, const RefineInput& input, entt::entity target)
-{
-    RefineResult result;
-    result.success = RefineItem(e, input.item, target);
-    result.resultItem = result.success ? input.item : entt::null;
-    return result;
-}
-
-void UseSilkBotary(entt::entity e)
-{
-    if (auto* ch = LegacyCharOf(e))
-        ch->UseSilkBotary();
-}
-
-void SetRefineMode(entt::entity e, int additionalCell)
-{
-    if (auto* ch = LegacyCharOf(e))
-        ch->SetRefineMode(additionalCell);
-}
-
-void ClearRefineMode(entt::entity e)
-{
-    if (auto* ch = LegacyCharOf(e))
-        ch->ClearRefineMode();
 }
 
 } // namespace ItemSystem

@@ -46,6 +46,10 @@ struct GuildMembership {
     uint32_t underWarInfoMessageTime;
 };
 
+struct GuildDepositState {
+    int nextAllowedPulse { 0 };
+};
+
 struct DungeonMembership {
     LPDUNGEON dungeon { nullptr };
     int eventAttr;

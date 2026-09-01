@@ -329,27 +329,31 @@ namespace
 
         // A legtobb PvP skill ellenorzi a WEAR_WEAPON-t (es a weapon tipust),
         // ezert a klonnak is legyen valodi fegyver itemje, nem csak vizualis PART.
-        LPITEM srcW = ItemSystem::GetWear(AIHelpers::EcsOf(source), WEAR_WEAPON);
-        if (!srcW)
+        const entt::entity sourceWeapon = ItemSystem::GetWearItem(
+            AIHelpers::EcsOf(source), WEAR_WEAPON);
+        if (!ItemSystem::IsValidItem(sourceWeapon))
             return;
 
-        if (ItemSystem::GetWear(AIHelpers::EcsOf(clone), WEAR_WEAPON))
+        if (ItemSystem::IsValidItem(
+                ItemSystem::GetWearItem(AIHelpers::EcsOf(clone), WEAR_WEAPON)))
             return;
 
 		// RefineLevel a legtobb forrasban a vnum-bol szamolodik, igy eleg a megfelelo vnum-ot klonozni.
 		// (Nincs SetRefineLevel API nalatok.)
-		const uint32_t vnum = srcW->GetOriginalVnum() ? srcW->GetOriginalVnum() : ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, srcW));
+		const uint32_t vnum = ItemSystem::GetItemOriginalVnum(sourceWeapon);
 
 		LPITEM w = ITEM_MANAGER::instance().CreateItem(vnum, 1, 0, true);
         if (!w)
             return;
+		const entt::entity cloneWeapon =
+			EntityFactory::CreateItemEntity(g_registry, w);
 
 		// klon item: ne menjen DB save/DelayedSave
-		ItemSystem::SetItemSkipSave(EntityFactory::CreateItemEntity(g_registry, w), true);
+		ItemSystem::SetItemSkipSave(cloneWeapon, true);
 
 		// Sockets + Attributes masolasa publikus API-val
-		w->SetSockets(srcW->GetSockets());
-		w->SetAttributes(srcW->GetAttributes());
+		ItemSystem::CopyItemSocketsEcs(sourceWeapon, cloneWeapon);
+		ItemSystem::CopyItemAttributesEcs(sourceWeapon, cloneWeapon);
 
         // Equip without inventory (direct wear)
         w->EquipTo(clone, WEAR_WEAPON);

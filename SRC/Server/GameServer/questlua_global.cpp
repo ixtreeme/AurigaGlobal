@@ -33,6 +33,7 @@
 #include "ecs/EntityFactory.hpp"
 #include "ecs/Registry.hpp"
 #include "ecs/systems/ItemSystem.hpp"
+#include "ecs/systems/ActivitySystem.hpp"
 
 #undef sys_err
 #ifndef _WIN32
@@ -512,11 +513,9 @@ namespace quest
 		CQuestManager& q = CQuestManager::instance();
 
 		const entt::entity chEntity = q.GetCurrentPCEntity();
+		const entt::entity item = ItemSystem::GetInventoryItem(chEntity, bCell);
 
-		auto* ch = ecs::LegacyCharOf(chEntity);
-		LPITEM item = ItemSystem::GetInventoryItemPtr(AIHelpers::EcsOf(ch), bCell);
-
-		int ret = mining::RealRefinePick(ch, EntityFactory::CreateItemEntity(g_registry, item));
+		int ret = mining::RealRefinePick(chEntity, item);
 		lua_pushnumber(L, ret);
 		return 1;
 	}
@@ -531,11 +530,9 @@ namespace quest
 		CQuestManager& q = CQuestManager::instance();
 
 		const entt::entity chEntity = q.GetCurrentPCEntity();
+		const entt::entity item = ItemSystem::GetInventoryItem(chEntity, bCell);
 
-		auto* ch = ecs::LegacyCharOf(chEntity);
-		LPITEM item = ItemSystem::GetInventoryItemPtr(AIHelpers::EcsOf(ch), bCell);
-
-		int ret = fishing::RealRefineRod(ch, item);
+		int ret = ActivitySystem::RefineFishingRod(chEntity, item);
 		lua_pushnumber(L, ret);
 		return 1;
 	}

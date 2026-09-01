@@ -1,5 +1,6 @@
 #pragma once
 
+#include <array>
 #include <cstdint>
 #include <string>
 
@@ -17,6 +18,8 @@ struct LoginInfo {
     uint32_t playStartTime;
     std::string mobile;
     uint32_t logOffInterval;
+    std::array<int, PREMIUM_MAX_NUM> premiumTimes {};
+    bool isPCBang { false };
 };
 
 struct AntiFlood {

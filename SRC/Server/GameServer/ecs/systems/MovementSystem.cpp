@@ -793,11 +793,10 @@ uint32_t CHARACTER::GetMotionMode() const
 	if (IsPolymorphed())
 		return dwMode;
 
-	LPITEM pkItem;
-
-	if ((pkItem = GetWear(WEAR_WEAPON)))
+	const entt::entity weapon = ItemSystem::GetWearItem(EcsEntityOf(this), WEAR_WEAPON);
+	if (ItemSystem::IsValidItem(weapon))
 	{
-		const TItemTable* itemProto = ItemSystem::GetItemProto(EntityFactory::CreateItemEntity(g_registry, pkItem));
+		const TItemTable* itemProto = ItemSystem::GetItemProto(weapon);
 		if (!itemProto)
 			return dwMode;
 

@@ -589,19 +589,20 @@ uint64_t CGuildRenewal::CountItemVnum(CHARACTER* ch, uint32_t vnum) const
 		return 0;
 
 	uint64_t total = 0;
+	const entt::entity owner = AIHelpers::EcsOf(ch);
 	for (uint16_t i = 0; i < INVENTORY_MAX_NUM; i++)
 	{
-		LPITEM it = ItemSystem::GetInventoryItemPtr(AIHelpers::EcsOf(ch), i);
-		if (it && ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, it)) == vnum)
-			total += ItemSystem::GetItemCount(EntityFactory::CreateItemEntity(g_registry, it));
+		const entt::entity item = ItemSystem::GetInventoryItem(owner, i);
+		if (ItemSystem::IsValidItem(item) && ItemSystem::GetItemVnum(item) == vnum)
+			total += ItemSystem::GetItemCount(item);
 	}
 
 #ifdef ENABLE_EXTRA_INVENTORY
 	for (uint16_t i = 0; i < EXTRA_INVENTORY_MAX_NUM; i++)
 	{
-		LPITEM it = ch->GetExtraInventoryItem(i);
-		if (it && ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, it)) == vnum)
-			total += ItemSystem::GetItemCount(EntityFactory::CreateItemEntity(g_registry, it));
+		const entt::entity item = ItemSystem::GetExtraInventoryItem(owner, i);
+		if (ItemSystem::IsValidItem(item) && ItemSystem::GetItemVnum(item) == vnum)
+			total += ItemSystem::GetItemCount(item);
 	}
 #endif
 
@@ -614,32 +615,33 @@ bool CGuildRenewal::RemoveItemVnum(CHARACTER* ch, uint32_t vnum, uint32_t count)
 	if (!ch)
 		return false;
 
+	const entt::entity owner = AIHelpers::EcsOf(ch);
 	uint32_t need = count;
 	for (uint16_t i = 0; i < INVENTORY_MAX_NUM && need>0; i++)
 	{
-		LPITEM it = ItemSystem::GetInventoryItemPtr(AIHelpers::EcsOf(ch), i);
-		if (!it || ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, it)) != vnum)
+		const entt::entity item = ItemSystem::GetInventoryItem(owner, i);
+		if (!ItemSystem::IsValidItem(item) || ItemSystem::GetItemVnum(item) != vnum)
 			continue;
 
-		uint32_t cur = ItemSystem::GetItemCount(EntityFactory::CreateItemEntity(g_registry, it));
+		uint32_t cur = ItemSystem::GetItemCount(item);
 		uint32_t take = MIN(need, cur);
 		uint32_t newCount = cur - take;
 		need -= take;
-		ItemSystem::SetItemCountEcs(EntityFactory::CreateItemEntity(g_registry, it), newCount);
+		ItemSystem::SetItemCountEcs(item, newCount);
 	}
 
 #ifdef ENABLE_EXTRA_INVENTORY
 	for (uint16_t i = 0; i < EXTRA_INVENTORY_MAX_NUM && need>0; i++)
 	{
-		LPITEM it = ch->GetExtraInventoryItem(i);
-		if (!it || ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, it)) != vnum)
+		const entt::entity item = ItemSystem::GetExtraInventoryItem(owner, i);
+		if (!ItemSystem::IsValidItem(item) || ItemSystem::GetItemVnum(item) != vnum)
 			continue;
 
-		uint32_t cur = ItemSystem::GetItemCount(EntityFactory::CreateItemEntity(g_registry, it));
+		uint32_t cur = ItemSystem::GetItemCount(item);
 		uint32_t take = MIN(need, cur);
 		uint32_t newCount = cur - take;
 		need -= take;
-		ItemSystem::SetItemCountEcs(EntityFactory::CreateItemEntity(g_registry, it), newCount);
+		ItemSystem::SetItemCountEcs(item, newCount);
 	}
 #endif
 
@@ -776,18 +778,19 @@ bool CGuildRenewal::DepositItem(CHARACTER* ch, uint16_t invCell, uint32_t count)
 	}
 	const LevelReq& req = itReq->second;
 
-	LPITEM item = ItemSystem::GetInventoryItemPtr(AIHelpers::EcsOf(ch), invCell);
-	if (!item)
+	const entt::entity owner = AIHelpers::EcsOf(ch);
+	const entt::entity item = ItemSystem::GetInventoryItem(owner, invCell);
+	if (!ItemSystem::IsValidItem(item))
 		return false;
 
-	const uint32_t haveCount = ItemSystem::GetItemCount(EntityFactory::CreateItemEntity(g_registry, item));
+	const uint32_t haveCount = ItemSystem::GetItemCount(item);
 	if (haveCount == 0)
 		return false;
 
 	if (count == 0 || count > haveCount)
 		count = haveCount;
 
-	const uint32_t vnum = ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, item));
+	const uint32_t vnum = ItemSystem::GetItemVnum(item);
 
 	// Csak azokat engedjk, amiket ppen kr a ch a kvetkez szinthez
 	int reqIdx = -1;
@@ -836,7 +839,7 @@ bool CGuildRenewal::DepositItem(CHARACTER* ch, uint16_t invCell, uint32_t count)
 	}
 
 	// Levons a jtkostl
-	ItemSystem::SetItemCountEcs(EntityFactory::CreateItemEntity(g_registry, item), haveCount - allowed);
+	ItemSystem::SetItemCountEcs(item, haveCount - allowed);
 
 	// Befizets nyilvntarts (sszestve + rszletes bonts memriban)
 	auto& c = GetCache(guildId);

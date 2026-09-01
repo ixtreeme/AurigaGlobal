@@ -109,6 +109,26 @@ void LogManager::ItemLogEntity(LPCHARACTER ch, entt::entity item, const char * c
 		   	ItemSystem::GetItemOriginalVnum(item));
 }
 
+void LogManager::ItemLogEntity(entt::entity character, entt::entity item,
+	const char * c_pszText, const char * c_pszHint)
+{
+	LOG_LEVEL_CHECK_N_RET(LOG_LEVEL_MIN);
+	if (character == entt::null || !g_registry.valid(character) ||
+		item == entt::null || !ItemSystem::IsValidItem(item))
+	{
+		LOG_ERROR("character or item entity nil (character {} item {} text {})",
+			static_cast<uint32_t>(character), static_cast<uint32_t>(item), c_pszText);
+		return;
+	}
+
+	const LPDESC desc = ecs::PlayerRuntime::GetDesc(character);
+	ItemLog(ecs::PlayerRuntime::GetPlayerID(character),
+		ecs::PlayerRuntime::GetX(character), ecs::PlayerRuntime::GetY(character),
+		ItemSystem::GetItemID(item), nullptr == c_pszText ? "" : c_pszText,
+		c_pszHint, desc ? desc->GetHostName() : "",
+		ItemSystem::GetItemOriginalVnum(item));
+}
+
 void LogManager::ItemLog(LPCHARACTER ch, int itemID, int itemVnum, const char * c_pszText, const char * c_pszHint)
 {
 	LOG_LEVEL_CHECK_N_RET(LOG_LEVEL_MIN);
@@ -131,6 +151,22 @@ void LogManager::CharLog(LPCHARACTER ch, uint32_t dw, const char * c_pszText, co
 		CharLog((ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))), ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(ch)), ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(ch)), dw, c_pszText, c_pszHint, ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch)) ? ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->GetHostName() : "");
 	else
 		CharLog(0, 0, 0, dw, c_pszText, c_pszHint, "");
+}
+
+void LogManager::CharLog(entt::entity character, uint32_t value,
+	const char * text, const char * hint)
+{
+	LOG_LEVEL_CHECK_N_RET(LOG_LEVEL_MIN);
+	if (character == entt::null || !g_registry.valid(character))
+	{
+		CharLog(0, 0, 0, value, text, hint, "");
+		return;
+	}
+
+	const LPDESC desc = ecs::PlayerRuntime::GetDesc(character);
+	CharLog(ecs::PlayerRuntime::GetPlayerID(character),
+		ecs::PlayerRuntime::GetX(character), ecs::PlayerRuntime::GetY(character),
+		value, text, hint, desc ? desc->GetHostName() : "");
 }
 
 void LogManager::LoginLog(bool isLogin, uint32_t dwAccountID, uint32_t dwPID, uint8_t bLevel, uint8_t bJob, uint32_t dwPlayTime)

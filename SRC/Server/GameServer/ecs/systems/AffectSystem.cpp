@@ -885,7 +885,7 @@ EVENTFUNC(affect_event)
 bool CHARACTER::UpdateAffect()
 {
 #ifdef ENABLE_BUG_FIXES
-	if (!GetWear(WEAR_WEAPON)) {
+	if (!ItemSystem::IsValidItem(ItemSystem::GetWearItem(GetEntityHandle(), WEAR_WEAPON))) {
 		if (IsAffectFlag(AFF_GEOMGYEONG)) {
 			RemoveAffect(SKILL_GEOMKYUNG);
 		}
@@ -1195,8 +1195,6 @@ int CHARACTER::ProcessAffect()
 	TAffectFlag afOld = m_afAffectFlag;
 	int64_t lMovSpd = GetPoint(POINT_MOV_SPEED);
 	int64_t lAttSpd = GetPoint(POINT_ATT_SPEED);
-
-
 	auto it = m_list_pkAffect.begin();
 
 	while (it != m_list_pkAffect.end())
@@ -1446,6 +1444,7 @@ void CHARACTER::LoadAffect(uint32_t dwCount, TPacketAffectElement * pElements)
 
 	int64_t lMovSpd = GetPoint(POINT_MOV_SPEED);
 	int64_t lAttSpd = GetPoint(POINT_ATT_SPEED);
+	const entt::entity character = GetEntityHandle();
 
 	for (uint32_t i = 0; i < dwCount; ++i, ++pElements)
 	{
@@ -1454,26 +1453,29 @@ void CHARACTER::LoadAffect(uint32_t dwCount, TPacketAffectElement * pElements)
 		////	continue;
 		if (AFFECT_AUTO_HP_RECOVERY == pElements->dwType || AFFECT_AUTO_SP_RECOVERY == pElements->dwType)
 		{
-			LPITEM item = FindItemByID( pElements->dwFlag );
-			if (nullptr == item)
+			const entt::entity item = ItemSystem::FindItemByID(
+				character, pElements->dwFlag);
+			if (!ItemSystem::IsValidItem(item))
 				continue;
 
-			ItemSystem::LockItem(EntityFactory::CreateItemEntity(g_registry, item));
+			ItemSystem::LockItem(item);
 		}
 #ifdef ENABLE_NEW_USE_POTION
 		else if (AFFECT_AUTO_HP_RECOVERY2 == pElements->dwType || AFFECT_AUTO_SP_RECOVERY2 == pElements->dwType)
 		{
-			LPITEM item = FindItemByID( pElements->dwFlag );
-			if (nullptr == item)
+			const entt::entity item = ItemSystem::FindItemByID(
+				character, pElements->dwFlag);
+			if (!ItemSystem::IsValidItem(item))
 				continue;
 
-			ItemSystem::LockItem(EntityFactory::CreateItemEntity(g_registry, item));
+			ItemSystem::LockItem(item);
 		}
 		else if ((pElements->dwType >= AFFECT_NEW_POTION1) && (pElements->dwType <= AFFECT_NEW_POTION31))
 		{
-			LPITEM item = FindItemByID(pElements->dwFlag);
-			if (item)
-				ItemSystem::LockItem(EntityFactory::CreateItemEntity(g_registry, item));
+			const entt::entity item = ItemSystem::FindItemByID(
+				character, pElements->dwFlag);
+			if (ItemSystem::IsValidItem(item))
+				ItemSystem::LockItem(item);
 			else
 				continue;
 		}
@@ -1496,9 +1498,10 @@ void CHARACTER::LoadAffect(uint32_t dwCount, TPacketAffectElement * pElements)
 #ifdef __PET_SYSTEM__
 		else if (pElements->dwType == AFFECT_RECALL1)
 		{
-			LPITEM item = FindItemByID(pElements->dwFlag);
-			if (item)
-				ItemSystem::LockItem(EntityFactory::CreateItemEntity(g_registry, item));
+			const entt::entity item = ItemSystem::FindItemByID(
+				character, pElements->dwFlag);
+			if (ItemSystem::IsValidItem(item))
+				ItemSystem::LockItem(item);
 			else
 				continue;
 		}
@@ -1506,9 +1509,10 @@ void CHARACTER::LoadAffect(uint32_t dwCount, TPacketAffectElement * pElements)
 #ifdef __NEWPET_SYSTEM__
 		else if (pElements->dwType == AFFECT_RECALL2)
 		{
-			LPITEM item = FindItemByID(pElements->dwFlag);
-			if (item)
-				ItemSystem::LockItem(EntityFactory::CreateItemEntity(g_registry, item));
+			const entt::entity item = ItemSystem::FindItemByID(
+				character, pElements->dwFlag);
+			if (ItemSystem::IsValidItem(item))
+				ItemSystem::LockItem(item);
 			else
 				continue;
 		}
@@ -1518,12 +1522,13 @@ void CHARACTER::LoadAffect(uint32_t dwCount, TPacketAffectElement * pElements)
 #ifdef ENABLE_SOUL_SYSTEM
 		if(pElements->dwType == AFFECT_SOUL_RED || pElements->dwType == AFFECT_SOUL_BLUE)
 		{
-			LPITEM item = FindItemByID( pElements->lSPCost );
+			const entt::entity item = ItemSystem::FindItemByID(
+				character, static_cast<uint32_t>(pElements->lSPCost));
 
-			if (!item)
+			if (!ItemSystem::IsValidItem(item))
 				continue;
 
-			ItemSystem::LockItem(EntityFactory::CreateItemEntity(g_registry, item));
+			ItemSystem::LockItem(item);
 		}
 #endif
 

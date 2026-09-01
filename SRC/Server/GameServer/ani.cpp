@@ -350,16 +350,17 @@ uint32_t ani_attack_speed(LPCHARACTER ch)
 	if (nullptr == ch)
 		return speed;
 
-	LPITEM item = ItemSystem::GetWear(AIHelpers::EcsOf(ch), WEAR_WEAPON);
+	const entt::entity character = AIHelpers::EcsOf(ch);
+	const entt::entity item = ItemSystem::GetWearItem(character, WEAR_WEAPON);
 
-	if (nullptr == item)
+	if (!ItemSystem::IsValidItem(item))
 		return speed;
 
-	if (ITEM_WEAPON != ItemSystem::GetItemType(EntityFactory::CreateItemEntity(g_registry, item)))
+	if (ITEM_WEAPON != ItemSystem::GetItemType(item))
 		return speed;
 
-	int race = (ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(ch)));
-	int weapon = ItemSystem::GetItemSubType(EntityFactory::CreateItemEntity(g_registry, item));
+	int race = ecs::PlayerRuntime::GetRaceNum(character);
+	int weapon = ItemSystem::GetItemSubType(item);
 
 	/*
 	dev_log(LOG_DEB0, "%s : (race,weapon) = (%s,%s) POINT_ATT_SPEED = %d",
@@ -379,12 +380,17 @@ uint32_t ani_attack_speed(LPCHARACTER ch)
 
 uint32_t ani_combo_speed(LPCHARACTER ch, uint8_t combo)
 {
-	LPITEM item = ItemSystem::GetWear(AIHelpers::EcsOf(ch), WEAR_WEAPON);
-
-	if (nullptr == item || combo > 8)
+	if (!ch)
 		return 1000;
 
-	return s_ANI.attack_speed((ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(ch))), ItemSystem::GetItemSubType(EntityFactory::CreateItemEntity(g_registry, item)), combo, ch->IsRiding());
+	const entt::entity character = AIHelpers::EcsOf(ch);
+	const entt::entity item = ItemSystem::GetWearItem(character, WEAR_WEAPON);
+
+	if (!ItemSystem::IsValidItem(item) || combo > 8)
+		return 1000;
+
+	return s_ANI.attack_speed(ecs::PlayerRuntime::GetRaceNum(character),
+		ItemSystem::GetItemSubType(item), combo, ch->IsRiding());
 }
 
 void ani_print_attack_speed()
