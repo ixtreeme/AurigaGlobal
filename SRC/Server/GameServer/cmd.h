@@ -4,13 +4,13 @@
 #include <string_view>
 #include <entt/entt.hpp>
 
-#define ACMD(name)  void (name)(LPCHARACTER ch, const char *argument, int cmd, int subcmd)
+#define ACMD(name)  void (name)(entt::entity character, const char *argument, int cmd, int subcmd)
 #define CMD_NAME(name) cmd_info[cmd].command
 
 struct command_info
 {
 	const char * command;
-	void (*command_pointer) (LPCHARACTER ch, const char *argument, int cmd, int subcmd);
+	void (*command_pointer) (entt::entity character, const char *argument, int cmd, int subcmd);
 	int subcmd;
 	int minimum_position;
 	int gm_level;

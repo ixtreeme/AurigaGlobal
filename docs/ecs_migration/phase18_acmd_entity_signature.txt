@@ -1,0 +1,93 @@
+Phase 18 - ACMD command handler entity signature flip
+Date: 2026-09-01
+
+Scope
+-----
+Continuation of the "OOP - ECS konverzio eltuntetes" batches (d8ec8cb, 6cc076f).
+Those commits inlined AIHelpers::EcsOf(x) into the explicit form
+((x) ? (x)->GetEntityHandle() : entt::null) so every remaining OOP->ECS
+conversion point became greppable. This phase removes that conversion from the
+whole chat-command surface by pushing the entity up into the handler signature.
+
+Signature change
+----------------
+cmd.h:
+  #define ACMD(name)  void (name)(LPCHARACTER ch, ...)
+    ->
+  #define ACMD(name)  void (name)(entt::entity character, ...)
+
+  struct command_info::command_pointer follows the same flip.
+
+cmd.cpp:
+  interpret_command(entt::entity, ...) is now the primary implementation; it
+  resolves the legacy pointer once (ecs::LegacyCharOf) for the anti-flood /
+  position gates and dispatches the entity to the handler.
+  interpret_command(LPCHARACTER, ...) is now a one-line wrapper kept for the
+  remaining legacy call sites.
+
+Handler body rule
+-----------------
+Inside each ACMD body:
+  - ((ch) ? (ch)->GetEntityHandle() : entt::null)  ->  character
+  - handlers that still call legacy CHARACTER methods get exactly one alias at
+    the top of the body:
+        LPCHARACTER ch = ecs::LegacyCharOf(character);
+    so every remaining ch-> call site is textually unchanged and the legacy
+    surface stays trivially greppable for the next phase.
+
+Files and counts
+----------------
+  cmd.cpp                 7 handlers,   15 conversions removed,   5 legacy refs
+  cmd_gm.cpp            121 handlers,  354 conversions removed, 234 legacy refs
+  cmd_gm2.cpp             2 handlers,    6 conversions removed,   0 legacy refs
+  cmd_general.cpp        78 handlers,  384 conversions removed, 282 legacy refs
+  cmd_general2.cpp       14 handlers,  154 conversions removed,  34 legacy refs
+  cmd_emotion.cpp         2 handlers,   17 conversions removed,  11 legacy refs
+  cmd_oxevent.cpp         3 handlers,    5 conversions removed,   1 legacy ref
+  cmd_guild_renewal.cpp   6 handlers,    9 conversions removed,  11 legacy refs
+
+  Total: 233 handlers, 944 conversion sites removed, 578 legacy refs aliased
+         into 147 single-line ch aliases.
+
+Project-wide conversion count (grep "GetEntityHandle() : entt::null"):
+  before: 6354
+  after:  5400
+
+Special cases handled by hand
+-----------------------------
+- cmd_gm.cpp do_full_set: the three local `extern void do_xxx(LPCHARACTER ...)`
+  redeclarations were replaced by `extern ACMD(do_xxx);` so they track the macro.
+- cmd_gm.cpp block_chat(entt::entity): now forwards the entity directly instead
+  of round-tripping through ecs::LegacyCharOf.
+- cmd.cpp / cmd_gm.cpp: three handlers already declared a local
+  `const entt::entity character = ...`; those declarations are now redundant and
+  were deleted (they collided with the new parameter name).
+- cmd_gm.cpp do_save_attribute_to_image carries a trailing comment on the ACMD
+  line; it needed the same treatment as the rest.
+- cmd_oxevent.cpp / cmd_guild_renewal.cpp gained
+  #include "ecs/CharacterAccessors.hpp" for ecs::LegacyCharOf.
+
+Deliberately left alone
+-----------------------
+41 conversion sites remain in the cmd_*.cpp files. They are NOT in ACMD bodies:
+  - file-local helpers that still take LPCHARACTER
+    (Command_ApplyAffect, CHARACTER_GoToName, MakeDailyRewardHWKey,
+     DailyReward_CheckHWIDLimit, the FCountInMap / FuncPurge / FuncWeaken
+     functors, open_in_game_mall's neighbours)
+  - commented-out blocks in cmd_gm.cpp
+These are the natural next slice for this file group.
+
+Next targets by conversion density
+----------------------------------
+  input_main.cpp                   465   (CInputMain packet handlers, uniform
+                                          LPCHARACTER ch first parameter,
+                                          single dispatcher in Analyze())
+  ecs/systems/CombatSystem.cpp     419
+  ecs/systems/ItemSystem_LegacyBridge.cpp 298
+  char_manager.cpp                 204
+  battle.cpp                       172
+
+Build status
+------------
+cmake --build build --config RelWithDebInfo --target GameServer --parallel 8
+Result: build succeeded, 0 errors, GameServer.exe linked.

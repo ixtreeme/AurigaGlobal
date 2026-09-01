@@ -252,31 +252,34 @@ ACMD(do_pcbang_check)
 	char arg1[256];
 	one_argument(argument, arg1, sizeof(arg1));
 	if (CPCBangManager::instance().IsPCBangIP(arg1) == true) {
-		ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 801, "%s", arg1);
+		ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 801, "%s", arg1);
 	} else {
-		ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 802, "%s", arg1);
+		ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 802, "%s", arg1);
 	}
 #endif
 }
 
 ACMD(do_stun)
 {
+	LPCHARACTER ch = ecs::LegacyCharOf(character);
 	Command_ApplyAffect(ch, argument, "stun", COMMANDAFFECT_STUN);
 }
 
 ACMD(do_slow)
 {
+	LPCHARACTER ch = ecs::LegacyCharOf(character);
 	Command_ApplyAffect(ch, argument, "slow", COMMANDAFFECT_SLOW);
 }
 
 ACMD(do_transfer)
 {
+	LPCHARACTER ch = ecs::LegacyCharOf(character);
 	char arg1[256];
 	one_argument(argument, arg1, sizeof(arg1));
 
 	if (!*arg1)
 	{
-		ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "Usage: transfer <name>");
+		ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "Usage: transfer <name>");
 		return;
 	}
 
@@ -290,7 +293,7 @@ ACMD(do_transfer)
 			if (pkCCI->bChannel != g_bChannel)
 			{
 #ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 803, "%s#%d#%d", arg1, pkCCI->bChannel, g_bChannel);
+				ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 803, "%s#%d#%d", arg1, pkCCI->bChannel, g_bChannel);
 #endif
 				return;
 			}
@@ -299,17 +302,17 @@ ACMD(do_transfer)
 
 			pgg.bHeader = HEADER_GG_TRANSFER;
 			strlcpy(pgg.szName, arg1, sizeof(pgg.szName));
-			pgg.lX = ecs::PlayerRuntime::GetX(((ch) ? (ch)->GetEntityHandle() : entt::null));
-			pgg.lY = ecs::PlayerRuntime::GetY(((ch) ? (ch)->GetEntityHandle() : entt::null));
+			pgg.lX = ecs::PlayerRuntime::GetX(character);
+			pgg.lY = ecs::PlayerRuntime::GetY(character);
 
 			P2P_MANAGER::instance().Send(&pgg, sizeof(TPacketGGTransfer));
 #ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 804, "");
+			ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 804, "");
 #endif
 		}
 #ifdef TEXTS_IMPROVEMENT
 		else {
-			ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 501, "%s", arg1);
+			ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 501, "%s", arg1);
 		}
 #endif
 		return;
@@ -319,8 +322,8 @@ ACMD(do_transfer)
 		return;
 	}
 
-	//tch->Show(ecs::PlayerRuntime::GetMapIndex(((ch) ? (ch)->GetEntityHandle() : entt::null)), ecs::PlayerRuntime::GetX(((ch) ? (ch)->GetEntityHandle() : entt::null)), ecs::PlayerRuntime::GetY(((ch) ? (ch)->GetEntityHandle() : entt::null)), ch->GetZ());
-	ecs::MovementSystem::WarpSet(((tch) ? (tch)->GetEntityHandle() : entt::null), ecs::PlayerRuntime::GetX(((ch) ? (ch)->GetEntityHandle() : entt::null)), ecs::PlayerRuntime::GetY(((ch) ? (ch)->GetEntityHandle() : entt::null)), ecs::PlayerRuntime::GetMapIndex(((ch) ? (ch)->GetEntityHandle() : entt::null)));
+	//tch->Show(ecs::PlayerRuntime::GetMapIndex(character), ecs::PlayerRuntime::GetX(character), ecs::PlayerRuntime::GetY(character), ch->GetZ());
+	ecs::MovementSystem::WarpSet(((tch) ? (tch)->GetEntityHandle() : entt::null), ecs::PlayerRuntime::GetX(character), ecs::PlayerRuntime::GetY(character), ecs::PlayerRuntime::GetMapIndex(character));
 }
 
 // LUA_ADD_GOTO_INFO
@@ -439,6 +442,7 @@ bool CHARACTER_GoToName(LPCHARACTER ch, uint8_t empire, int mapIndex, const char
 
 ACMD(do_goto)
 {
+	LPCHARACTER ch = ecs::LegacyCharOf(character);
 	char arg1[256], arg2[256];
 	int x = 0, y = 0, z = 0;
 
@@ -446,7 +450,7 @@ ACMD(do_goto)
 
 	if (!*arg1 && !*arg2)
 	{
-		ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "Usage: goto <x meter> <y meter>");
+		ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "Usage: goto <x meter> <y meter>");
 		return;
 	}
 
@@ -457,14 +461,14 @@ ACMD(do_goto)
 
 		PIXEL_POSITION p;
 
-		if (SECTREE_MANAGER::instance().GetMapBasePosition(ecs::PlayerRuntime::GetX(((ch) ? (ch)->GetEntityHandle() : entt::null)), ecs::PlayerRuntime::GetY(((ch) ? (ch)->GetEntityHandle() : entt::null)), p))
+		if (SECTREE_MANAGER::instance().GetMapBasePosition(ecs::PlayerRuntime::GetX(character), ecs::PlayerRuntime::GetY(character), p))
 		{
 			x += p.x / 100;
 			y += p.y / 100;
 		}
 
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 737, "%d#%d", x, y);
+		ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 737, "%d#%d", x, y);
 #endif
 	}
 	else
@@ -481,11 +485,11 @@ ACMD(do_goto)
 			empire = MINMAX(1, empire, 3);
 		}
 		else
-			empire = (ecs::PlayerRuntime::GetEmpire(((ch) ? (ch)->GetEntityHandle() : entt::null)));
+			empire = (ecs::PlayerRuntime::GetEmpire(character));
 
 		if (CHARACTER_GoToName(ch, empire, mapIndex, arg1))
 		{
-			ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "Cannot find map command syntax: /goto <mapname> [empire]");
+			ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "Cannot find map command syntax: /goto <mapname> [empire]");
 			return;
 		}
 
@@ -495,19 +499,20 @@ ACMD(do_goto)
 	x *= 100;
 	y *= 100;
 
-	ecs::MovementSystem::Show(((ch) ? (ch)->GetEntityHandle() : entt::null), ecs::PlayerRuntime::GetMapIndex(((ch) ? (ch)->GetEntityHandle() : entt::null)), x, y, z);
-	ecs::MovementSystem::Stop(((ch) ? (ch)->GetEntityHandle() : entt::null));
+	ecs::MovementSystem::Show(character, ecs::PlayerRuntime::GetMapIndex(character), x, y, z);
+	ecs::MovementSystem::Stop(character);
 }
 
 ACMD(do_warp)
 {
+	LPCHARACTER ch = ecs::LegacyCharOf(character);
 	char arg1[256], arg2[256];
 
 	two_arguments(argument, arg1, sizeof(arg1), arg2, sizeof(arg2));
 
 	if (!*arg1)
 	{
-		ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "Usage: warp <character name> | <x meter> <y meter>");
+		ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "Usage: warp <character name> | <x meter> <y meter>");
 		return;
 	}
 
@@ -534,7 +539,7 @@ ACMD(do_warp)
 				if (pkCCI->bChannel != g_bChannel)
 				{
 #ifdef TEXTS_IMPROVEMENT
-					ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 803, "%s#%d#%d", arg1, pkCCI->bChannel, g_bChannel);
+					ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 803, "%s#%d#%d", arg1, pkCCI->bChannel, g_bChannel);
 #endif
 					return;
 				}
@@ -543,7 +548,7 @@ ACMD(do_warp)
 			}
 #ifdef TEXTS_IMPROVEMENT
 			else {
-				ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 501, "%s", arg1);
+				ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 501, "%s", arg1);
 			}
 #endif
 			return;
@@ -563,39 +568,40 @@ ACMD(do_warp)
 
 #ifdef __CMD_WARP_IN_DUNGEON__
 #ifdef TEXTS_IMPROVEMENT
-	ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 805, "%d#%d#%d", mapIndex, x, y);
+	ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 805, "%d#%d#%d", mapIndex, x, y);
 #endif
-	ecs::MovementSystem::WarpSet(((ch) ? (ch)->GetEntityHandle() : entt::null), x, y, mapIndex);
+	ecs::MovementSystem::WarpSet(character, x, y, mapIndex);
 #else
 #ifdef TEXTS_IMPROVEMENT
-	ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 737, "%d#%d", x, y);
+	ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 737, "%d#%d", x, y);
 #endif
-	ecs::MovementSystem::WarpSet(((ch) ? (ch)->GetEntityHandle() : entt::null), x, y);
+	ecs::MovementSystem::WarpSet(character, x, y);
 #endif
 
 
-	ecs::MovementSystem::Stop(((ch) ? (ch)->GetEntityHandle() : entt::null));
+	ecs::MovementSystem::Stop(character);
 }
 
 #ifdef ENABLE_NEWSTUFF
 ACMD(do_rewarp)
 {
 #ifdef TEXTS_IMPROVEMENT
-	ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 737, "%d#%d", ecs::PlayerRuntime::GetX(((ch) ? (ch)->GetEntityHandle() : entt::null)), ecs::PlayerRuntime::GetY(((ch) ? (ch)->GetEntityHandle() : entt::null)));
+	ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 737, "%d#%d", ecs::PlayerRuntime::GetX(character), ecs::PlayerRuntime::GetY(character));
 #endif
-	ecs::MovementSystem::WarpSet(((ch) ? (ch)->GetEntityHandle() : entt::null), ecs::PlayerRuntime::GetX(((ch) ? (ch)->GetEntityHandle() : entt::null)), ecs::PlayerRuntime::GetY(((ch) ? (ch)->GetEntityHandle() : entt::null)));
-	ecs::MovementSystem::Stop(((ch) ? (ch)->GetEntityHandle() : entt::null));
+	ecs::MovementSystem::WarpSet(character, ecs::PlayerRuntime::GetX(character), ecs::PlayerRuntime::GetY(character));
+	ecs::MovementSystem::Stop(character);
 }
 #endif
 
 ACMD(do_item)
 {
+	LPCHARACTER ch = ecs::LegacyCharOf(character);
 	char arg1[256], arg2[256];
 	two_arguments(argument, arg1, sizeof(arg1), arg2, sizeof(arg2));
 
 	if (!*arg1)
 	{
-		ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "Usage: item <item vnum>");
+		ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "Usage: item <item vnum>");
 		return;
 	}
 
@@ -615,7 +621,7 @@ ACMD(do_item)
 	{
 		if (!ITEM_MANAGER::instance().GetVnum(arg1, dwVnum))
 		{
-			ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "#%u item not exist by that vnum(%s).", dwVnum, arg1);
+			ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "#%u item not exist by that vnum(%s).", dwVnum, arg1);
 			return;
 		}
 	}
@@ -639,7 +645,7 @@ ACMD(do_item)
 			(item ? item->GetEntityHandle() : entt::null),
 			"GM_CMD_DESTROY");
 #ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 626, "");
+				ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 626, "");
 #endif
 			}
 		}
@@ -659,7 +665,7 @@ ACMD(do_item)
 			(item ? item->GetEntityHandle() : entt::null),
 			"GM_CMD_DESTROY");
 #ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 539, "");
+				ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 539, "");
 #endif
 			}
 		}
@@ -679,14 +685,14 @@ ACMD(do_item)
 			(item ? item->GetEntityHandle() : entt::null),
 			"GM_CMD_DESTROY");
 #ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 366, "");
+				ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 366, "");
 #endif
 			}
 		}
 	}
 	else
 	{
-		ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "#%u item not exist by that vnum(%s).", dwVnum, arg1);
+		ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "#%u item not exist by that vnum(%s).", dwVnum, arg1);
 	}
 }
 
@@ -697,13 +703,13 @@ ACMD(do_group_random)
 
 	if (!*arg1)
 	{
-		ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "Usage: grrandom <group vnum>");
+		ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "Usage: grrandom <group vnum>");
 		return;
 	}
 
 	uint32_t dwVnum = 0;
 	str_to_number(dwVnum, arg1);
-	CHARACTER_MANAGER::instance().SpawnGroupGroup(dwVnum, ecs::PlayerRuntime::GetMapIndex(((ch) ? (ch)->GetEntityHandle() : entt::null)), ecs::PlayerRuntime::GetX(((ch) ? (ch)->GetEntityHandle() : entt::null)) - 500, ecs::PlayerRuntime::GetY(((ch) ? (ch)->GetEntityHandle() : entt::null)) - 500, ecs::PlayerRuntime::GetX(((ch) ? (ch)->GetEntityHandle() : entt::null)) + 500, ecs::PlayerRuntime::GetY(((ch) ? (ch)->GetEntityHandle() : entt::null)) + 500);
+	CHARACTER_MANAGER::instance().SpawnGroupGroup(dwVnum, ecs::PlayerRuntime::GetMapIndex(character), ecs::PlayerRuntime::GetX(character) - 500, ecs::PlayerRuntime::GetY(character) - 500, ecs::PlayerRuntime::GetX(character) + 500, ecs::PlayerRuntime::GetY(character) + 500);
 }
 
 ACMD(do_group)
@@ -713,7 +719,7 @@ ACMD(do_group)
 
 	if (!*arg1)
 	{
-		ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "Usage: group <group vnum>");
+		ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "Usage: group <group vnum>");
 		return;
 	}
 
@@ -721,9 +727,9 @@ ACMD(do_group)
 	str_to_number(dwVnum, arg1);
 
 	if (test_server)
-		LOG_INFO("COMMAND GROUP SPAWN {} at {} {} {}", dwVnum, ecs::PlayerRuntime::GetMapIndex(((ch) ? (ch)->GetEntityHandle() : entt::null)), ecs::PlayerRuntime::GetX(((ch) ? (ch)->GetEntityHandle() : entt::null)), ecs::PlayerRuntime::GetY(((ch) ? (ch)->GetEntityHandle() : entt::null)));
+		LOG_INFO("COMMAND GROUP SPAWN {} at {} {} {}", dwVnum, ecs::PlayerRuntime::GetMapIndex(character), ecs::PlayerRuntime::GetX(character), ecs::PlayerRuntime::GetY(character));
 
-	CHARACTER_MANAGER::instance().SpawnGroup(dwVnum, ecs::PlayerRuntime::GetMapIndex(((ch) ? (ch)->GetEntityHandle() : entt::null)), ecs::PlayerRuntime::GetX(((ch) ? (ch)->GetEntityHandle() : entt::null)) - 500, ecs::PlayerRuntime::GetY(((ch) ? (ch)->GetEntityHandle() : entt::null)) - 500, ecs::PlayerRuntime::GetX(((ch) ? (ch)->GetEntityHandle() : entt::null)) + 500, ecs::PlayerRuntime::GetY(((ch) ? (ch)->GetEntityHandle() : entt::null)) + 500);
+	CHARACTER_MANAGER::instance().SpawnGroup(dwVnum, ecs::PlayerRuntime::GetMapIndex(character), ecs::PlayerRuntime::GetX(character) - 500, ecs::PlayerRuntime::GetY(character) - 500, ecs::PlayerRuntime::GetX(character) + 500, ecs::PlayerRuntime::GetY(character) + 500);
 }
 
 ACMD(do_mob_coward)
@@ -736,7 +742,7 @@ ACMD(do_mob_coward)
 
 	if (!*arg1)
 	{
-		ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "Usage: mc <vnum>");
+		ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "Usage: mc <vnum>");
 		return;
 	}
 
@@ -759,7 +765,7 @@ ACMD(do_mob_coward)
 
 	if (vnum == 0)
 	{
-		ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "No such mob(%s) by that vnum", arg1);
+		ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "No such mob(%s) by that vnum", arg1);
 		return;
 	}
 
@@ -775,11 +781,11 @@ ACMD(do_mob_coward)
 	while (iCount--)
 	{
 		tch = CHARACTER_MANAGER::instance().SpawnMobRange(vnum,
-				ecs::PlayerRuntime::GetMapIndex(((ch) ? (ch)->GetEntityHandle() : entt::null)),
-				ecs::PlayerRuntime::GetX(((ch) ? (ch)->GetEntityHandle() : entt::null)) - number(200, 750),
-				ecs::PlayerRuntime::GetY(((ch) ? (ch)->GetEntityHandle() : entt::null)) - number(200, 750),
-				ecs::PlayerRuntime::GetX(((ch) ? (ch)->GetEntityHandle() : entt::null)) + number(200, 750),
-				ecs::PlayerRuntime::GetY(((ch) ? (ch)->GetEntityHandle() : entt::null)) + number(200, 750),
+				ecs::PlayerRuntime::GetMapIndex(character),
+				ecs::PlayerRuntime::GetX(character) - number(200, 750),
+				ecs::PlayerRuntime::GetY(character) - number(200, 750),
+				ecs::PlayerRuntime::GetX(character) + number(200, 750),
+				ecs::PlayerRuntime::GetY(character) + number(200, 750),
 				true,
 				pkMob->m_table.bType == CHAR_TYPE_STONE);
 		if (tch)
@@ -794,18 +800,18 @@ ACMD(do_mob_map)
 
 	if (!*arg1)
 	{
-		ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "Syntax: mm <vnum>");
+		ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "Syntax: mm <vnum>");
 		return;
 	}
 
 	uint32_t vnum = 0;
 	str_to_number(vnum, arg1);
-	LPCHARACTER tch = CHARACTER_MANAGER::instance().SpawnMobRandomPosition(vnum, ecs::PlayerRuntime::GetMapIndex(((ch) ? (ch)->GetEntityHandle() : entt::null)));
+	LPCHARACTER tch = CHARACTER_MANAGER::instance().SpawnMobRandomPosition(vnum, ecs::PlayerRuntime::GetMapIndex(character));
 
 	if (tch)
-		ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "%s spawned in %dx%d", ecs::PlayerRuntime::GetName(((tch) ? (tch)->GetEntityHandle() : entt::null)).data(), ecs::PlayerRuntime::GetX(((tch) ? (tch)->GetEntityHandle() : entt::null)), ecs::PlayerRuntime::GetY(((tch) ? (tch)->GetEntityHandle() : entt::null)));
+		ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "%s spawned in %dx%d", ecs::PlayerRuntime::GetName(((tch) ? (tch)->GetEntityHandle() : entt::null)).data(), ecs::PlayerRuntime::GetX(((tch) ? (tch)->GetEntityHandle() : entt::null)), ecs::PlayerRuntime::GetY(((tch) ? (tch)->GetEntityHandle() : entt::null)));
 	else
-		ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "Spawn failed.");
+		ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "Spawn failed.");
 }
 
 ACMD(do_mob_aggresive)
@@ -818,7 +824,7 @@ ACMD(do_mob_aggresive)
 
 	if (!*arg1)
 	{
-		ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "Usage: mob <mob vnum>");
+		ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "Usage: mob <mob vnum>");
 		return;
 	}
 
@@ -841,7 +847,7 @@ ACMD(do_mob_aggresive)
 
 	if (vnum == 0)
 	{
-		ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "No such mob(%s) by that vnum", arg1);
+		ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "No such mob(%s) by that vnum", arg1);
 		return;
 	}
 
@@ -857,11 +863,11 @@ ACMD(do_mob_aggresive)
 	while (iCount--)
 	{
 		tch = CHARACTER_MANAGER::instance().SpawnMobRange(vnum,
-				ecs::PlayerRuntime::GetMapIndex(((ch) ? (ch)->GetEntityHandle() : entt::null)),
-				ecs::PlayerRuntime::GetX(((ch) ? (ch)->GetEntityHandle() : entt::null)) - number(200, 750),
-				ecs::PlayerRuntime::GetY(((ch) ? (ch)->GetEntityHandle() : entt::null)) - number(200, 750),
-				ecs::PlayerRuntime::GetX(((ch) ? (ch)->GetEntityHandle() : entt::null)) + number(200, 750),
-				ecs::PlayerRuntime::GetY(((ch) ? (ch)->GetEntityHandle() : entt::null)) + number(200, 750),
+				ecs::PlayerRuntime::GetMapIndex(character),
+				ecs::PlayerRuntime::GetX(character) - number(200, 750),
+				ecs::PlayerRuntime::GetY(character) - number(200, 750),
+				ecs::PlayerRuntime::GetX(character) + number(200, 750),
+				ecs::PlayerRuntime::GetY(character) + number(200, 750),
 				true,
 				pkMob->m_table.bType == CHAR_TYPE_STONE);
 		if (tch)
@@ -882,7 +888,7 @@ ACMD(do_mob)
 
 	if (!*arg1)
 	{
-		ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "Usage: mob <mob vnum>");
+		ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "Usage: mob <mob vnum>");
 		return;
 	}
 
@@ -905,7 +911,7 @@ ACMD(do_mob)
 
 	if (vnum == 0)
 	{
-		ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "No such mob(%s) by that vnum", arg1);
+		ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "No such mob(%s) by that vnum", arg1);
 		return;
 	}
 
@@ -924,11 +930,11 @@ ACMD(do_mob)
 	while (iCount--)
 	{
 		CHARACTER_MANAGER::instance().SpawnMobRange(vnum,
-				ecs::PlayerRuntime::GetMapIndex(((ch) ? (ch)->GetEntityHandle() : entt::null)),
-				ecs::PlayerRuntime::GetX(((ch) ? (ch)->GetEntityHandle() : entt::null)) - number(200, 750),
-				ecs::PlayerRuntime::GetY(((ch) ? (ch)->GetEntityHandle() : entt::null)) - number(200, 750),
-				ecs::PlayerRuntime::GetX(((ch) ? (ch)->GetEntityHandle() : entt::null)) + number(200, 750),
-				ecs::PlayerRuntime::GetY(((ch) ? (ch)->GetEntityHandle() : entt::null)) + number(200, 750),
+				ecs::PlayerRuntime::GetMapIndex(character),
+				ecs::PlayerRuntime::GetX(character) - number(200, 750),
+				ecs::PlayerRuntime::GetY(character) - number(200, 750),
+				ecs::PlayerRuntime::GetX(character) + number(200, 750),
+				ecs::PlayerRuntime::GetY(character) + number(200, 750),
 				true,
 				pkMob->m_table.bType == CHAR_TYPE_STONE);
 	}
@@ -936,6 +942,7 @@ ACMD(do_mob)
 
 ACMD(do_mob_ld)
 {
+	LPCHARACTER ch = ecs::LegacyCharOf(character);
 	char	arg1[256], arg2[256], arg3[256], arg4[256];
 	uint32_t	vnum = 0;
 
@@ -943,7 +950,7 @@ ACMD(do_mob_ld)
 
 	if (!*arg1)
 	{
-		ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "Usage: mob <mob vnum>");
+		ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "Usage: mob <mob vnum>");
 		return;
 	}
 
@@ -966,7 +973,7 @@ ACMD(do_mob_ld)
 
 	if (vnum == 0)
 	{
-		ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "No such mob(%s) by that vnum", arg1);
+		ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "No such mob(%s) by that vnum", arg1);
 		return;
 	}
 
@@ -982,7 +989,7 @@ ACMD(do_mob_ld)
 
 
 	CHARACTER_MANAGER::instance().SpawnMob(vnum,
-		ecs::PlayerRuntime::GetMapIndex(((ch) ? (ch)->GetEntityHandle() : entt::null)),
+		ecs::PlayerRuntime::GetMapIndex(character),
 		x*100,
 		y*100,
 		ch->GetZ(),
@@ -1027,6 +1034,7 @@ struct FuncPurge
 
 ACMD(do_purge)
 {
+	LPCHARACTER ch = ecs::LegacyCharOf(character);
 	char arg1[256];
 	one_argument(argument, arg1, sizeof(arg1));
 
@@ -1035,33 +1043,34 @@ ACMD(do_purge)
 	if (*arg1 && !strcmp(arg1, "all"))
 		func.m_bAll = true;
 
-	LPSECTREE sectree = ecs::PlayerRuntime::GetSectree(((ch) ? (ch)->GetEntityHandle() : entt::null));
+	LPSECTREE sectree = ecs::PlayerRuntime::GetSectree(character);
 	if (sectree) // #431
 		sectree->ForEachAround(func);
 	else
-		LOG_ERROR("PURGE_ERROR.NULL_SECTREE(mapIndex={}, pos=({}, {})", ecs::PlayerRuntime::GetMapIndex(((ch) ? (ch)->GetEntityHandle() : entt::null)), ecs::PlayerRuntime::GetX(((ch) ? (ch)->GetEntityHandle() : entt::null)), ecs::PlayerRuntime::GetY(((ch) ? (ch)->GetEntityHandle() : entt::null)));
+		LOG_ERROR("PURGE_ERROR.NULL_SECTREE(mapIndex={}, pos=({}, {})", ecs::PlayerRuntime::GetMapIndex(character), ecs::PlayerRuntime::GetX(character), ecs::PlayerRuntime::GetY(character));
 }
 
 #define ENABLE_CMD_IPURGE_EX
 ACMD(do_item_purge)
 {
+	LPCHARACTER ch = ecs::LegacyCharOf(character);
 #ifdef ENABLE_CMD_IPURGE_EX
 	char arg1[256];
 	one_argument(argument, arg1, sizeof(arg1));
 	if (!*arg1)
 	{
-		ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "Usage: ipurge <window>");
-		ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "List of the available windows:");
-		ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, " all");
-		ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, " inventory or inv");
-		ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, " equipment or equip");
-		ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, " dragonsoul or ds");
-		ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, " belt");
+		ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "Usage: ipurge <window>");
+		ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "List of the available windows:");
+		ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, " all");
+		ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, " inventory or inv");
+		ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, " equipment or equip");
+		ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, " dragonsoul or ds");
+		ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, " belt");
 		return;
 	}
 
 	int i;
-	const entt::entity owner = ((ch) ? (ch)->GetEntityHandle() : entt::null);
+	const entt::entity owner = character;
 
 #ifdef __NEWPET_SYSTEM__
 	CNewPetSystem* petSystem = ch->GetNewPetSystem();
@@ -1069,7 +1078,7 @@ ACMD(do_item_purge)
 	if(petSystem->CountSummoned() > 0)
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 807, "");
+		ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 807, "");
 #endif
 		return;
 	}
@@ -1166,7 +1175,7 @@ ACMD(do_item_purge)
 #endif
 #else
 	int i;
-	const entt::entity owner = ((ch) ? (ch)->GetEntityHandle() : entt::null);
+	const entt::entity owner = character;
 
 	for (i = 0; i < INVENTORY_AND_EQUIP_SLOT_MAX; ++i)
 	{
@@ -1199,6 +1208,7 @@ ACMD(do_item_purge)
 
 ACMD(do_state)
 {
+	LPCHARACTER ch = ecs::LegacyCharOf(character);
 	char arg1[256];
 	LPCHARACTER tch;
 
@@ -1240,10 +1250,10 @@ ACMD(do_state)
 	if (ch->GetShop())
 		strlcat(buf, ", Shop", sizeof(buf));
 
-	if (ecs::SocialSystem::GetExchange(((ch) ? (ch)->GetEntityHandle() : entt::null)))
+	if (ecs::SocialSystem::GetExchange(character))
 		strlcat(buf, ", Exchange", sizeof(buf));
 
-	ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "%s", buf);
+	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "%s", buf);
 
 	int len;
 	len = snprintf(buf, sizeof(buf), "Coordinate %ldx%ld (%ldx%ld)",
@@ -1261,26 +1271,26 @@ ACMD(do_state)
 			ecs::PlayerRuntime::GetMapIndex(((tch) ? (tch)->GetEntityHandle() : entt::null)), pSec->GetAttribute(ecs::PlayerRuntime::GetX(((tch) ? (tch)->GetEntityHandle() : entt::null)), ecs::PlayerRuntime::GetY(((tch) ? (tch)->GetEntityHandle() : entt::null))), (ecs::PlayerRuntime::GetX(((tch) ? (tch)->GetEntityHandle() : entt::null)) - map_setting.iBaseX)/100, (ecs::PlayerRuntime::GetY(((tch) ? (tch)->GetEntityHandle() : entt::null)) - map_setting.iBaseY)/100);
 	}
 
-	ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "%s", buf);
+	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "%s", buf);
 
-	ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "LEV %d", (ecs::PointSystem::GetLevel(((tch) ? (tch)->GetEntityHandle() : entt::null))));
-	ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "HP %d/%d", tch->GetHP(), ecs::PointSystem::GetMaxHP(((tch) ? (tch)->GetEntityHandle() : entt::null)));
-	ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "SP %d/%d", tch->GetSP(), ecs::PointSystem::GetMaxSP(((tch) ? (tch)->GetEntityHandle() : entt::null)));
-	ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "ATT %d MAGIC_ATT %d SPD %d CRIT %d%% PENE %d%% ATT_BONUS %d%%",
+	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "LEV %d", (ecs::PointSystem::GetLevel(((tch) ? (tch)->GetEntityHandle() : entt::null))));
+	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "HP %d/%d", tch->GetHP(), ecs::PointSystem::GetMaxHP(((tch) ? (tch)->GetEntityHandle() : entt::null)));
+	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "SP %d/%d", tch->GetSP(), ecs::PointSystem::GetMaxSP(((tch) ? (tch)->GetEntityHandle() : entt::null)));
+	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "ATT %d MAGIC_ATT %d SPD %d CRIT %d%% PENE %d%% ATT_BONUS %d%%",
 			ecs::PointSystem::Get(((tch) ? (tch)->GetEntityHandle() : entt::null), POINT_ATT_GRADE),
 			ecs::PointSystem::Get(((tch) ? (tch)->GetEntityHandle() : entt::null), POINT_MAGIC_ATT_GRADE),
 			ecs::PointSystem::Get(((tch) ? (tch)->GetEntityHandle() : entt::null), POINT_ATT_SPEED),
 			ecs::PointSystem::Get(((tch) ? (tch)->GetEntityHandle() : entt::null), POINT_CRITICAL_PCT),
 			ecs::PointSystem::Get(((tch) ? (tch)->GetEntityHandle() : entt::null), POINT_PENETRATE_PCT),
 			ecs::PointSystem::Get(((tch) ? (tch)->GetEntityHandle() : entt::null), POINT_ATT_BONUS));
-	ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "DEF %d MAGIC_DEF %d BLOCK %d%% DODGE %d%% DEF_BONUS %d%%",
+	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "DEF %d MAGIC_DEF %d BLOCK %d%% DODGE %d%% DEF_BONUS %d%%",
 			ecs::PointSystem::Get(((tch) ? (tch)->GetEntityHandle() : entt::null), POINT_DEF_GRADE),
 			ecs::PointSystem::Get(((tch) ? (tch)->GetEntityHandle() : entt::null), POINT_MAGIC_DEF_GRADE),
 			ecs::PointSystem::Get(((tch) ? (tch)->GetEntityHandle() : entt::null), POINT_BLOCK),
 			ecs::PointSystem::Get(((tch) ? (tch)->GetEntityHandle() : entt::null), POINT_DODGE),
 			ecs::PointSystem::Get(((tch) ? (tch)->GetEntityHandle() : entt::null), POINT_DEF_BONUS));
-	ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "RESISTANCES:");
-	ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "   WARR:%3d%% ASAS:%3d%% SURA:%3d%% SHAM:%3d%%"
+	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "RESISTANCES:");
+	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "   WARR:%3d%% ASAS:%3d%% SURA:%3d%% SHAM:%3d%%"
 #ifdef ENABLE_WOLFMAN_CHARACTER
 			" WOLF:%3d%%"
 #endif
@@ -1293,7 +1303,7 @@ ACMD(do_state)
 			,ecs::PointSystem::Get(((tch) ? (tch)->GetEntityHandle() : entt::null), POINT_RESIST_WOLFMAN)
 #endif
 	);
-	ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "   SWORD:%3d%% THSWORD:%3d%% DAGGER:%3d%% BELL:%3d%% FAN:%3d%% BOW:%3d%%"
+	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "   SWORD:%3d%% THSWORD:%3d%% DAGGER:%3d%% BELL:%3d%% FAN:%3d%% BOW:%3d%%"
 #ifdef ENABLE_WOLFMAN_CHARACTER
 			" CLAW:%3d%%"
 #endif
@@ -1308,21 +1318,21 @@ ACMD(do_state)
 			,ecs::PointSystem::Get(((tch) ? (tch)->GetEntityHandle() : entt::null), POINT_RESIST_CLAW)
 #endif
 	);
-	ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "   FIRE:%3d%% ELEC:%3d%% MAGIC:%3d%% WIND:%3d%% CRIT:%3d%% PENE:%3d%%",
+	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "   FIRE:%3d%% ELEC:%3d%% MAGIC:%3d%% WIND:%3d%% CRIT:%3d%% PENE:%3d%%",
 			ecs::PointSystem::Get(((tch) ? (tch)->GetEntityHandle() : entt::null), POINT_RESIST_FIRE),
 			ecs::PointSystem::Get(((tch) ? (tch)->GetEntityHandle() : entt::null), POINT_RESIST_ELEC),
 			ecs::PointSystem::Get(((tch) ? (tch)->GetEntityHandle() : entt::null), POINT_RESIST_MAGIC),
 			ecs::PointSystem::Get(((tch) ? (tch)->GetEntityHandle() : entt::null), POINT_RESIST_WIND),
 			ecs::PointSystem::Get(((tch) ? (tch)->GetEntityHandle() : entt::null), POINT_RESIST_CRITICAL),
 			ecs::PointSystem::Get(((tch) ? (tch)->GetEntityHandle() : entt::null), POINT_RESIST_PENETRATE));
-	ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "   ICE:%3d%% EARTH:%3d%% DARK:%3d%%",
+	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "   ICE:%3d%% EARTH:%3d%% DARK:%3d%%",
 			ecs::PointSystem::Get(((tch) ? (tch)->GetEntityHandle() : entt::null), POINT_RESIST_ICE),
 			ecs::PointSystem::Get(((tch) ? (tch)->GetEntityHandle() : entt::null), POINT_RESIST_EARTH),
 			ecs::PointSystem::Get(((tch) ? (tch)->GetEntityHandle() : entt::null), POINT_RESIST_DARK));
 
 
 #ifdef ENABLE_NEW_BONUS_TALISMAN
-	ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "IRR_SPA:%3d%% IRR_SPAD:%3d%% IRR_PUG:%3d%% IRR_FRE:%3d%% IRR_VEN:%3d%% IRR_CAMP:%3d%%"
+	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "IRR_SPA:%3d%% IRR_SPAD:%3d%% IRR_PUG:%3d%% IRR_FRE:%3d%% IRR_VEN:%3d%% IRR_CAMP:%3d%%"
 									"RES_MEZ:%3d%% DEF_TAL:%3d%% FORT_DES:%3d%% FORT_INS:%3d%% FORT_ZOD:%3d%% ",
 			ecs::PointSystem::Get(((tch) ? (tch)->GetEntityHandle() : entt::null), POINT_ATTBONUS_IRR_SPADA),
 			ecs::PointSystem::Get(((tch) ? (tch)->GetEntityHandle() : entt::null), POINT_ATTBONUS_IRR_SPADONE),
@@ -1337,39 +1347,39 @@ ACMD(do_state)
 
 
 #ifdef ENABLE_MAGIC_REDUCTION_SYSTEM
-	ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "   MAGICREDUCT:%3d%%", ecs::PointSystem::Get(((tch) ? (tch)->GetEntityHandle() : entt::null), POINT_RESIST_MAGIC_REDUCTION));
+	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "   MAGICREDUCT:%3d%%", ecs::PointSystem::Get(((tch) ? (tch)->GetEntityHandle() : entt::null), POINT_RESIST_MAGIC_REDUCTION));
 #endif
 
-	ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "MALL:");
-	ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "   ATT:%3d%% DEF:%3d%% EXP:%3d%% ITEMx%d GOLDx%d",
+	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "MALL:");
+	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "   ATT:%3d%% DEF:%3d%% EXP:%3d%% ITEMx%d GOLDx%d",
 			ecs::PointSystem::Get(((tch) ? (tch)->GetEntityHandle() : entt::null), POINT_MALL_ATTBONUS),
 			ecs::PointSystem::Get(((tch) ? (tch)->GetEntityHandle() : entt::null), POINT_MALL_DEFBONUS),
 			ecs::PointSystem::Get(((tch) ? (tch)->GetEntityHandle() : entt::null), POINT_MALL_EXPBONUS),
 			ecs::PointSystem::Get(((tch) ? (tch)->GetEntityHandle() : entt::null), POINT_MALL_ITEMBONUS) / 10,
 			ecs::PointSystem::Get(((tch) ? (tch)->GetEntityHandle() : entt::null), POINT_MALL_GOLDBONUS) / 10);
 
-	ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "BONUS:");
-	ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "   SKILL:%3d%% NORMAL:%3d%% SKILL_DEF:%3d%% NORMAL_DEF:%3d%%",
+	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "BONUS:");
+	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "   SKILL:%3d%% NORMAL:%3d%% SKILL_DEF:%3d%% NORMAL_DEF:%3d%%",
 			ecs::PointSystem::Get(((tch) ? (tch)->GetEntityHandle() : entt::null), POINT_SKILL_DAMAGE_BONUS),
 			ecs::PointSystem::Get(((tch) ? (tch)->GetEntityHandle() : entt::null), POINT_NORMAL_HIT_DAMAGE_BONUS),
 			ecs::PointSystem::Get(((tch) ? (tch)->GetEntityHandle() : entt::null), POINT_SKILL_DEFEND_BONUS),
 			ecs::PointSystem::Get(((tch) ? (tch)->GetEntityHandle() : entt::null), POINT_NORMAL_HIT_DEFEND_BONUS));
 
-	ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "   HUMAN:%3d%% ANIMAL:%3d%% ORC:%3d%% MILGYO:%3d%% UNDEAD:%3d%%",
+	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "   HUMAN:%3d%% ANIMAL:%3d%% ORC:%3d%% MILGYO:%3d%% UNDEAD:%3d%%",
 			ecs::PointSystem::Get(((tch) ? (tch)->GetEntityHandle() : entt::null), POINT_ATTBONUS_HUMAN),
 			ecs::PointSystem::Get(((tch) ? (tch)->GetEntityHandle() : entt::null), POINT_ATTBONUS_ANIMAL),
 			ecs::PointSystem::Get(((tch) ? (tch)->GetEntityHandle() : entt::null), POINT_ATTBONUS_ORC),
 			ecs::PointSystem::Get(((tch) ? (tch)->GetEntityHandle() : entt::null), POINT_ATTBONUS_MILGYO),
 			ecs::PointSystem::Get(((tch) ? (tch)->GetEntityHandle() : entt::null), POINT_ATTBONUS_UNDEAD));
 
-	ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "   DEVIL:%3d%% INSECT:%3d%% FIRE:%3d%% ICE:%3d%% DESERT:%3d%%",
+	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "   DEVIL:%3d%% INSECT:%3d%% FIRE:%3d%% ICE:%3d%% DESERT:%3d%%",
 			ecs::PointSystem::Get(((tch) ? (tch)->GetEntityHandle() : entt::null), POINT_ATTBONUS_DEVIL),
 			ecs::PointSystem::Get(((tch) ? (tch)->GetEntityHandle() : entt::null), POINT_ATTBONUS_INSECT),
 			ecs::PointSystem::Get(((tch) ? (tch)->GetEntityHandle() : entt::null), POINT_ATTBONUS_FIRE),
 			ecs::PointSystem::Get(((tch) ? (tch)->GetEntityHandle() : entt::null), POINT_ATTBONUS_ICE),
 			ecs::PointSystem::Get(((tch) ? (tch)->GetEntityHandle() : entt::null), POINT_ATTBONUS_DESERT));
 
-	ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "   TREE:%3d%% MONSTER:%3d%%"
+	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "   TREE:%3d%% MONSTER:%3d%%"
 #ifdef ENABLE_STRONG_METIN
 			"METIN:%3d%%"
 #endif
@@ -1404,7 +1414,7 @@ ACMD(do_state)
 #endif
 			);
 
-	ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "   WARR:%3d%% ASAS:%3d%% SURA:%3d%% SHAM:%3d%%"
+	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "   WARR:%3d%% ASAS:%3d%% SURA:%3d%% SHAM:%3d%%"
 #ifdef ENABLE_WOLFMAN_CHARACTER
 			" WOLF:%3d%%"
 #endif
@@ -1417,8 +1427,8 @@ ACMD(do_state)
 			,ecs::PointSystem::Get(((tch) ? (tch)->GetEntityHandle() : entt::null), POINT_ATTBONUS_WOLFMAN)
 #endif
 	);
-	ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "IMMUNE:");
-	ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "   STUN:%d SLOW:%d FALL:%d",
+	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "IMMUNE:");
+	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "   STUN:%d SLOW:%d FALL:%d",
 		ecs::PointSystem::Get(((tch) ? (tch)->GetEntityHandle() : entt::null), POINT_IMMUNE_STUN),
 		ecs::PointSystem::Get(((tch) ? (tch)->GetEntityHandle() : entt::null), POINT_IMMUNE_SLOW),
 		ecs::PointSystem::Get(((tch) ? (tch)->GetEntityHandle() : entt::null), POINT_IMMUNE_FALL));
@@ -1638,7 +1648,7 @@ ACMD(do_notice)
 
 ACMD(do_map_notice)
 {
-	SendNoticeMap(argument, ecs::PlayerRuntime::GetMapIndex(((ch) ? (ch)->GetEntityHandle() : entt::null)), false);
+	SendNoticeMap(argument, ecs::PlayerRuntime::GetMapIndex(character), false);
 }
 
 ACMD(do_big_notice)
@@ -1646,24 +1656,24 @@ ACMD(do_big_notice)
 #ifdef ENABLE_FULL_NOTICE
 	BroadcastNotice(argument, true);
 #else
-	ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_BIG_NOTICE, "%s", argument);
+	ecs::ChatSystem::Send(character, CHAT_TYPE_BIG_NOTICE, "%s", argument);
 #endif
 }
 
 #ifdef ENABLE_FULL_NOTICE
 ACMD(do_map_big_notice)
 {
-	SendNoticeMap(argument, ecs::PlayerRuntime::GetMapIndex(((ch) ? (ch)->GetEntityHandle() : entt::null)), true);
+	SendNoticeMap(argument, ecs::PlayerRuntime::GetMapIndex(character), true);
 }
 
 ACMD(do_notice_test)
 {
-	ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_NOTICE, "%s", argument);
+	ecs::ChatSystem::Send(character, CHAT_TYPE_NOTICE, "%s", argument);
 }
 
 ACMD(do_big_notice_test)
 {
-	ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_BIG_NOTICE, "%s", argument);
+	ecs::ChatSystem::Send(character, CHAT_TYPE_BIG_NOTICE, "%s", argument);
 }
 #endif
 
@@ -1674,7 +1684,7 @@ ACMD(do_who)
 	int iLocal;
 	DESC_MANAGER::instance().GetUserCount(iTotal, &paiEmpireUserCount, iLocal);
 #ifdef TEXTS_IMPROVEMENT
-	ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 808, "%d#%d#%d#%d#%d",  iTotal, paiEmpireUserCount[1], paiEmpireUserCount[2], paiEmpireUserCount[3], iLocal);
+	ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 808, "%d#%d#%d#%d#%d",  iTotal, paiEmpireUserCount[1], paiEmpireUserCount[2], paiEmpireUserCount[3], iLocal);
 #endif
 }
 
@@ -1727,6 +1737,7 @@ int	user_func::str_len = 0;
 
 ACMD(do_user)
 {
+	LPCHARACTER ch = ecs::LegacyCharOf(character);
 	const DESC_MANAGER::DESC_SET & c_ref_set = DESC_MANAGER::instance().GetClientSet();
 	user_func func;
 
@@ -1734,19 +1745,20 @@ ACMD(do_user)
 	std::for_each(c_ref_set.begin(), c_ref_set.end(), func);
 
 	if (func.count % 4)
-		ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, func.str);
+		ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, func.str);
 
-	ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "Total %d", func.count);
+	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "Total %d", func.count);
 }
 
 ACMD(do_disconnect)
 {
+	LPCHARACTER ch = ecs::LegacyCharOf(character);
 	char arg1[256];
 	one_argument(argument, arg1, sizeof(arg1));
 
 	if (!*arg1)
 	{
-		ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "usage: /dc <player name>");
+		ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "usage: /dc <player name>");
 		return;
 	}
 
@@ -1755,13 +1767,13 @@ ACMD(do_disconnect)
 
 	if (!tch)
 	{
-		ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "%s: no such a player.", arg1);
+		ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "%s: no such a player.", arg1);
 		return;
 	}
 
 	if (tch == ch)
 	{
-		ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "cannot disconnect myself");
+		ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "cannot disconnect myself");
 		return;
 	}
 
@@ -1775,7 +1787,7 @@ ACMD(do_kill)
 
 	if (!*arg1)
 	{
-		ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "usage: /kill <player name>");
+		ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "usage: /kill <player name>");
 		return;
 	}
 
@@ -1784,7 +1796,7 @@ ACMD(do_kill)
 
 	if (!tch)
 	{
-		ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "%s: no such a player", arg1);
+		ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "%s: no such a player", arg1);
 		return;
 	}
 
@@ -1799,7 +1811,7 @@ ACMD(do_poison)
 
 	if (!*arg1)
 	{
-		ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "ex) /poison <player name>");
+		ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "ex) /poison <player name>");
 		return;
 	}
 
@@ -1808,7 +1820,7 @@ ACMD(do_poison)
 
 	if (!tch)
 	{
-		ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "%s: no such a player", arg1);
+		ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "%s: no such a player", arg1);
 		return;
 	}
 
@@ -1823,7 +1835,7 @@ ACMD(do_bleeding)
 
 	if (!*arg1)
 	{
-		ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "ex) /bleeding <player name>");
+		ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "ex) /bleeding <player name>");
 		return;
 	}
 
@@ -1832,7 +1844,7 @@ ACMD(do_bleeding)
 
 	if (!tch)
 	{
-		ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "%s: no such a player", arg1);
+		ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "%s: no such a player", arg1);
 		return;
 	}
 
@@ -1880,6 +1892,7 @@ const struct set_struct
 
 ACMD(do_set)
 {
+	LPCHARACTER ch = ecs::LegacyCharOf(character);
 	char arg1[256], arg2[256], arg3[256];
 
 	LPCHARACTER tch = nullptr;
@@ -1892,14 +1905,14 @@ ACMD(do_set)
 
 	if (!*arg1 || !*arg2 || !*arg3)
 	{
-		ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "Usage: set <name> <field> <value>");
+		ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "Usage: set <name> <field> <value>");
 #ifdef ENABLE_NEWSTUFF
-		ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "List of the fields available:");
+		ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "List of the fields available:");
 		for (i = 0; *(set_fields[i].cmd) != '\n'; i++)
 		{
-			ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, " %d. %s", i+1, set_fields[i].cmd);
+			ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, " %d. %s", i+1, set_fields[i].cmd);
 			if (set_fields[i].help != nullptr)
-				ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "  Help: %s", set_fields[i].help);
+				ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "  Help: %s", set_fields[i].help);
 		}
 #endif
 		return;
@@ -1909,7 +1922,7 @@ ACMD(do_set)
 
 	if (!tch)
 	{
-		ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "%s not exist", arg1);
+		ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "%s not exist", arg1);
 		return;
 	}
 
@@ -1932,7 +1945,7 @@ ACMD(do_set)
 				if (after_gold < 0)
 				{
 #ifdef TEXTS_IMPROVEMENT
-					ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 809, "");
+					ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 809, "");
 #endif
 					tch->SetGold(0);
 				}
@@ -2081,15 +2094,16 @@ ACMD(do_set)
 	{
 		int64_t	amount = 0;
 		str_to_number(amount, arg3);
-		ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "%s's %s set to [%lld]", ecs::PlayerRuntime::GetName(((tch) ? (tch)->GetEntityHandle() : entt::null)).data(), set_fields[i].cmd, amount);
+		ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "%s's %s set to [%lld]", ecs::PlayerRuntime::GetName(((tch) ? (tch)->GetEntityHandle() : entt::null)).data(), set_fields[i].cmd, amount);
 
 	}
 }
 
 ACMD(do_reset)
 {
-	ecs::PointSystem::Change(((ch) ? (ch)->GetEntityHandle() : entt::null), POINT_HP, ecs::PointSystem::GetMaxHP(((ch) ? (ch)->GetEntityHandle() : entt::null)) - ch->GetHP());
-	ecs::PointSystem::Change(((ch) ? (ch)->GetEntityHandle() : entt::null), POINT_SP, ecs::PointSystem::GetMaxSP(((ch) ? (ch)->GetEntityHandle() : entt::null)) - ch->GetSP());
+	LPCHARACTER ch = ecs::LegacyCharOf(character);
+	ecs::PointSystem::Change(character, POINT_HP, ecs::PointSystem::GetMaxHP(character) - ch->GetHP());
+	ecs::PointSystem::Change(character, POINT_SP, ecs::PointSystem::GetMaxSP(character) - ch->GetSP());
 	ch->Save();
 }
 
@@ -2100,7 +2114,7 @@ ACMD(do_advance)
 
 	if (!*arg1 || !*arg2)
 	{
-		ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "Syntax: advance <name> <level>");
+		ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "Syntax: advance <name> <level>");
 		return;
 	}
 
@@ -2108,7 +2122,7 @@ ACMD(do_advance)
 
 	if (!tch)
 	{
-		ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "%s not exist", arg1);
+		ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "%s not exist", arg1);
 		return;
 	}
 
@@ -2125,18 +2139,19 @@ ACMD(do_respawn)
 
 	if (*arg1 && !strcasecmp(arg1, "all"))
 	{
-		ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "Respaw everywhere");
+		ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "Respaw everywhere");
 		regen_reset(0, 0);
 	}
 	else
 	{
-		ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "Respaw around");
-		regen_reset(ecs::PlayerRuntime::GetX(((ch) ? (ch)->GetEntityHandle() : entt::null)), ecs::PlayerRuntime::GetY(((ch) ? (ch)->GetEntityHandle() : entt::null)));
+		ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "Respaw around");
+		regen_reset(ecs::PlayerRuntime::GetX(character), ecs::PlayerRuntime::GetY(character));
 	}
 }
 
 ACMD(do_safebox_size)
 {
+	LPCHARACTER ch = ecs::LegacyCharOf(character);
 
 	char arg1[256];
 	one_argument(argument, arg1, sizeof(arg1));
@@ -2149,13 +2164,13 @@ ACMD(do_safebox_size)
 	if (size > 3 || size < 0)
 		size = 0;
 
-	ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "Safebox size set to %d", size);
+	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "Safebox size set to %d", size);
 	ch->ChangeSafeboxSize(size);
 }
 
 ACMD(do_makeguild)
 {
-	if (ecs::SocialSystem::GetGuild(((ch) ? (ch)->GetEntityHandle() : entt::null)))
+	if (ecs::SocialSystem::GetGuild(character))
 		return;
 
 	CGuildManager& gm = CGuildManager::instance();
@@ -2166,33 +2181,33 @@ ACMD(do_makeguild)
 	TGuildCreateParameter cp;
 	memset(&cp, 0, sizeof(cp));
 
-	cp.master = ch ? ch->GetEntityHandle() : entt::null;
+	cp.master = character;
 	strlcpy(cp.name, arg1, sizeof(cp.name));
 
 	if (!check_name(cp.name))
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 455, "");
+		ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 455, "");
 #endif
 		return;
 	}
 
 	gm.CreateGuild(cp);
 #ifdef TEXTS_IMPROVEMENT
-	ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 119, "%s", cp.name);
+	ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 119, "%s", cp.name);
 #endif
 }
 
 ACMD(do_deleteguild)
 {
-	if (ecs::SocialSystem::GetGuild(((ch) ? (ch)->GetEntityHandle() : entt::null)))
-		ecs::SocialSystem::GetGuild(((ch) ? (ch)->GetEntityHandle() : entt::null))->RequestDisband((ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null))));
+	if (ecs::SocialSystem::GetGuild(character))
+		ecs::SocialSystem::GetGuild(character)->RequestDisband((ecs::PlayerRuntime::GetPlayerID(character)));
 }
 
 ACMD(do_greset)
 {
-	if (ecs::SocialSystem::GetGuild(((ch) ? (ch)->GetEntityHandle() : entt::null)))
-		ecs::SocialSystem::GetGuild(((ch) ? (ch)->GetEntityHandle() : entt::null))->Reset();
+	if (ecs::SocialSystem::GetGuild(character))
+		ecs::SocialSystem::GetGuild(character)->Reset();
 }
 
 // REFINE_ROD_HACK_BUG_FIX
@@ -2203,7 +2218,7 @@ ACMD(do_refine_rod)
 
 	uint8_t cell = 0;
 	str_to_number(cell, arg1);
-	const entt::entity owner = ((ch) ? (ch)->GetEntityHandle() : entt::null);
+	const entt::entity owner = character;
 	const entt::entity item = ItemSystem::GetInventoryItem(owner, cell);
 	if (ItemSystem::IsValidItem(item))
 		ActivitySystem::RefineFishingRod(owner, item);
@@ -2218,7 +2233,6 @@ ACMD(do_refine_pick)
 
 	uint8_t cell = 0;
 	str_to_number(cell, arg1);
-	const entt::entity character = ((ch) ? (ch)->GetEntityHandle() : entt::null);
 	const entt::entity item = ItemSystem::GetInventoryItem(character, cell);
 	if (ItemSystem::IsValidItem(item))
 	{
@@ -2234,7 +2248,6 @@ ACMD(do_max_pick)
 
 	uint8_t cell = 0;
 	str_to_number(cell, arg1);
-	const entt::entity character = ((ch) ? (ch)->GetEntityHandle() : entt::null);
 	const entt::entity item = ItemSystem::GetInventoryItem(character, cell);
 	if (ItemSystem::IsValidItem(item))
 	{
@@ -2246,6 +2259,7 @@ ACMD(do_max_pick)
 
 ACMD(do_fishing_simul)
 {
+	LPCHARACTER ch = ecs::LegacyCharOf(character);
 	char arg1[256];
 	char arg2[256];
 	char arg3[256];
@@ -2256,7 +2270,7 @@ ACMD(do_fishing_simul)
 	int prob_idx = 0;
 	int level = 100;
 
-	ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "Usage: fishing_simul <level> <prob index> <count>");
+	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "Usage: fishing_simul <level> <prob index> <count>");
 
 	if (*arg1)
 		str_to_number(level, arg1);
@@ -2272,13 +2286,13 @@ ACMD(do_fishing_simul)
 
 ACMD(do_invisibility)
 {
-	if (AffectSystem::IsAffectFlag(((ch) ? (ch)->GetEntityHandle() : entt::null), AFF_INVISIBILITY))
+	if (AffectSystem::IsAffectFlag(character, AFF_INVISIBILITY))
 	{
-		AffectSystem::RemoveAffect(((ch) ? (ch)->GetEntityHandle() : entt::null), AFFECT_INVISIBILITY);
+		AffectSystem::RemoveAffect(character, AFFECT_INVISIBILITY);
 	}
 	else
 	{
-		AffectSystem::AddAffect(((ch) ? (ch)->GetEntityHandle() : entt::null), AFFECT_INVISIBILITY, POINT_NONE, 0, AFF_INVISIBILITY, INFINITE_AFFECT_DURATION, 0, true);
+		AffectSystem::AddAffect(character, AFFECT_INVISIBILITY, POINT_NONE, 0, AFF_INVISIBILITY, INFINITE_AFFECT_DURATION, 0, true);
 	}
 }
 
@@ -2309,23 +2323,25 @@ ACMD(do_event_flag)
 
 	//quest::CQuestManager::instance().SetEventFlag(arg1, atoi(arg2));
 	quest::CQuestManager::instance().RequestSetEventFlag(arg1, value);
-	ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "RequestSetEventFlag %s %d", arg1, value);
+	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "RequestSetEventFlag %s %d", arg1, value);
 	LOG_INFO("RequestSetEventFlag {} {}", arg1, value);
 }
 
 ACMD(do_get_event_flag)
 {
+	LPCHARACTER ch = ecs::LegacyCharOf(character);
 	quest::CQuestManager::instance().SendEventFlagList(ch);
 }
 
 ACMD(do_private)
 {
+	LPCHARACTER ch = ecs::LegacyCharOf(character);
 	char arg1[256];
 	one_argument(argument, arg1, sizeof(arg1));
 
 	if (!*arg1)
 	{
-		ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "Usage: private <map index>");
+		ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "Usage: private <map index>");
 		return;
 	}
 
@@ -2337,10 +2353,10 @@ ACMD(do_private)
 		ch->SaveExitLocation();
 
 		LPSECTREE_MAP pkSectreeMap = SECTREE_MANAGER::instance().GetMap(lMapIndex);
-		ecs::MovementSystem::WarpSet(((ch) ? (ch)->GetEntityHandle() : entt::null), pkSectreeMap->m_setting.posSpawn.x, pkSectreeMap->m_setting.posSpawn.y, lMapIndex);
+		ecs::MovementSystem::WarpSet(character, pkSectreeMap->m_setting.posSpawn.x, pkSectreeMap->m_setting.posSpawn.y, lMapIndex);
 	}
 	else
-		ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "Can't find map by index %d", map_index);
+		ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "Can't find map by index %d", map_index);
 }
 
 ACMD(do_qf)
@@ -2352,7 +2368,7 @@ ACMD(do_qf)
 	if (!*arg1)
 		return;
 
-	quest::PC* pPC = quest::CQuestManager::instance().GetPCForce((ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null))));
+	quest::PC* pPC = quest::CQuestManager::instance().GetPCForce((ecs::PlayerRuntime::GetPlayerID(character)));
 	std::string questname = pPC->GetCurrentQuestName();
 
 	if (!questname.empty())
@@ -2376,16 +2392,17 @@ ACMD(do_qf)
 			++it;
 		}
 
-		ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "setting quest state flag %s %s %d", questname.c_str(), arg1, value);
+		ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "setting quest state flag %s %s %d", questname.c_str(), arg1, value);
 	}
 	else
 	{
-		ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "setting quest state flag failed");
+		ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "setting quest state flag failed");
 	}
 }
 
 ACMD(do_book)
 {
+	LPCHARACTER ch = ecs::LegacyCharOf(character);
 	char arg1[256];
 
 	one_argument(argument, arg1, sizeof(arg1));
@@ -2403,7 +2420,7 @@ ACMD(do_book)
 
 	if (!pkProto)
 	{
-		ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "There is no such a skill.");
+		ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "There is no such a skill.");
 		return;
 	}
 
@@ -2419,7 +2436,7 @@ ACMD(do_setskillother)
 
 	if (!*arg1 || !*arg2 || !*arg3 || !isdigit(*arg3))
 	{
-		ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "Syntax: setskillother <target> <skillname> <lev>");
+		ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "Syntax: setskillother <target> <skillname> <lev>");
 		return;
 	}
 
@@ -2429,7 +2446,7 @@ ACMD(do_setskillother)
 
 	if (!tch)
 	{
-		ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "There is no such character.");
+		ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "There is no such character.");
 		return;
 	}
 
@@ -2446,7 +2463,7 @@ ACMD(do_setskillother)
 
 	if (!pk)
 	{
-		ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "No such a skill by that name.");
+		ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "No such a skill by that name.");
 		return;
 	}
 
@@ -2459,12 +2476,13 @@ ACMD(do_setskillother)
 
 ACMD(do_setskill)
 {
+	LPCHARACTER ch = ecs::LegacyCharOf(character);
 	char arg1[256], arg2[256];
 	two_arguments(argument, arg1, sizeof(arg1), arg2, sizeof(arg2));
 
 	if (!*arg1 || !*arg2 || !isdigit(*arg2))
 	{
-		ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "Syntax: setskill <name> <lev>");
+		ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "Syntax: setskill <name> <lev>");
 		return;
 	}
 
@@ -2482,7 +2500,7 @@ ACMD(do_setskill)
 
 	if (!pk)
 	{
-		ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "No such a skill by that name.");
+		ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "No such a skill by that name.");
 		return;
 	}
 
@@ -2495,6 +2513,7 @@ ACMD(do_setskill)
 
 ACMD(do_set_skill_point)
 {
+	LPCHARACTER ch = ecs::LegacyCharOf(character);
 	char arg1[256];
 	one_argument(argument, arg1, sizeof(arg1));
 
@@ -2503,12 +2522,13 @@ ACMD(do_set_skill_point)
 		str_to_number(skill_point, arg1);
 
 	ch->SetRealPoint(POINT_SKILL, skill_point);
-	ch->SetPoint(POINT_SKILL, ecs::PointSystem::GetReal(((ch) ? (ch)->GetEntityHandle() : entt::null), POINT_SKILL));
-	ecs::PointSystem::Change(((ch) ? (ch)->GetEntityHandle() : entt::null), POINT_SKILL, 0);
+	ch->SetPoint(POINT_SKILL, ecs::PointSystem::GetReal(character, POINT_SKILL));
+	ecs::PointSystem::Change(character, POINT_SKILL, 0);
 }
 
 ACMD(do_set_skill_group)
 {
+	LPCHARACTER ch = ecs::LegacyCharOf(character);
 	char arg1[256];
 	one_argument(argument, arg1, sizeof(arg1));
 
@@ -2519,7 +2539,7 @@ ACMD(do_set_skill_group)
 	ch->SetSkillGroup(skill_group);
 
 	ch->ClearSkill();
-	ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "skill group to %d.", skill_group);
+	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "skill group to %d.", skill_group);
 }
 
 ACMD(do_reload)
@@ -2532,7 +2552,7 @@ ACMD(do_reload)
 		switch (LOWER(*arg1))
 		{
 			case 'u':
-				ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "Reloading state_user_count.");
+				ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "Reloading state_user_count.");
 				LoadStateUserCount();
 				break;
 
@@ -2548,17 +2568,17 @@ ACMD(do_reload)
 
 
 			case 'p':
-				ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "Reloading prototype tables,");
+				ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "Reloading prototype tables,");
 				db_clientdesc->DBPacket(HEADER_GD_RELOAD_PROTO, 0, nullptr, 0);
 				break;
 
 			case 's':
-				ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "Reloading notice string.");
+				ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "Reloading notice string.");
 				DBManager::instance().LoadDBString();
 				break;
 
 			case 'q':
-				ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "Reloading quest.");
+				ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "Reloading quest.");
 				quest::CQuestManager::instance().Reload();
 				break;
 
@@ -2568,7 +2588,7 @@ ACMD(do_reload)
 
 				//RELOAD_ADMIN
 			case 'a':
-				ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "Reloading Admin infomation.");
+				ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "Reloading Admin infomation.");
 				db_clientdesc->DBPacket(HEADER_GD_RELOAD_ADMIN, 0, nullptr, 0);
 				LOG_INFO("Reloading admin infomation.");
 				break;
@@ -2581,30 +2601,32 @@ ACMD(do_reload)
 	}
 	else
 	{
-		ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "Reloading state_user_count.");
+		ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "Reloading state_user_count.");
 		LoadStateUserCount();
 
-		ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "Reloading prototype tables,");
+		ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "Reloading prototype tables,");
 		db_clientdesc->DBPacket(HEADER_GD_RELOAD_PROTO, 0, nullptr, 0);
 
-		ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "Reloading notice string.");
+		ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "Reloading notice string.");
 		DBManager::instance().LoadDBString();
 	}
 }
 
 ACMD(do_cooltime)
 {
+	LPCHARACTER ch = ecs::LegacyCharOf(character);
 	ch->DisableCooltime();
 }
 
 ACMD(do_level)
 {
+	LPCHARACTER ch = ecs::LegacyCharOf(character);
 	char arg2[256];
 	one_argument(argument, arg2, sizeof(arg2));
 
 	if (!*arg2)
 	{
-		ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "Syntax: level <level>");
+		ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "Syntax: level <level>");
 		return;
 	}
 
@@ -2619,8 +2641,9 @@ ACMD(do_level)
 
 ACMD(do_gwlist)
 {
+	LPCHARACTER ch = ecs::LegacyCharOf(character);
 #ifdef TEXTS_IMPROVEMENT
-	ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_NOTICE, 490, "");
+	ecs::ChatSystem::SendNew(character, CHAT_TYPE_NOTICE, 490, "");
 #endif
 	CGuildManager::instance().ShowGuildWarList(ch);
 }
@@ -2646,7 +2669,7 @@ ACMD(do_stop_guild_war)
 		std::swap(id1, id2);
 	}
 
-	ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_TALKING, "%d %d", id1, id2);
+	ecs::ChatSystem::Send(character, CHAT_TYPE_TALKING, "%d %d", id1, id2);
 	CGuildManager::instance().RequestEndWar(id1, id2);
 }
 
@@ -2673,13 +2696,13 @@ ACMD(do_guild_state)
 	CGuild* pGuild = CGuildManager::instance().FindGuildByName(arg1);
 	if (pGuild != nullptr)
 	{
-		ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "GuildID: %d", pGuild->GetID());
-		ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "GuildMasterPID: %d", pGuild->GetMasterPID());
-		ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "IsInWar: %d", pGuild->UnderAnyWar());
+		ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "GuildID: %d", pGuild->GetID());
+		ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "GuildMasterPID: %d", pGuild->GetMasterPID());
+		ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "IsInWar: %d", pGuild->UnderAnyWar());
 	}
 #ifdef TEXTS_IMPROVEMENT
 	else {
-		ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 114, "%s", arg1);
+		ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 114, "%s", arg1);
 	}
 #endif
 }
@@ -2712,6 +2735,7 @@ struct FuncWeaken
 
 ACMD(do_weaken)
 {
+	LPCHARACTER ch = ecs::LegacyCharOf(character);
 	char arg1[256];
 	one_argument(argument, arg1, sizeof(arg1));
 
@@ -2720,11 +2744,12 @@ ACMD(do_weaken)
 	if (*arg1 && !strcmp(arg1, "all"))
 		func.m_bAll = true;
 
-	ecs::PlayerRuntime::GetSectree(((ch) ? (ch)->GetEntityHandle() : entt::null))->ForEachAround(func);
+	ecs::PlayerRuntime::GetSectree(character)->ForEachAround(func);
 }
 
 ACMD(do_getqf)
 {
+	LPCHARACTER ch = ecs::LegacyCharOf(character);
 	char arg1[256];
 
 	one_argument(argument, arg1, sizeof(arg1));
@@ -2739,7 +2764,7 @@ ACMD(do_getqf)
 
 		if (!tch)
 		{
-			ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "There is no such character.");
+			ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "There is no such character.");
 			return;
 		}
 	}
@@ -2753,6 +2778,7 @@ ACMD(do_getqf)
 #define ENABLE_SET_STATE_WITH_TARGET
 ACMD(do_set_state)
 {
+	LPCHARACTER ch = ecs::LegacyCharOf(character);
 	char arg1[256];
 	char arg2[256];
 
@@ -2760,7 +2786,7 @@ ACMD(do_set_state)
 
 	if (!*arg1 || !*arg2)
 	{
-		ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO,
+		ecs::ChatSystem::Send(character, CHAT_TYPE_INFO,
 			"Syntax: set_state <questname> <statename>"
 #ifdef ENABLE_SET_STATE_WITH_TARGET
 			" [<character name>]"
@@ -2778,13 +2804,13 @@ ACMD(do_set_state)
 		tch = CHARACTER_MANAGER::instance().FindPC(arg3);
 		if (!tch)
 		{
-			ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "There is no such character.");
+			ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "There is no such character.");
 			return;
 		}
 	}
 	quest::PC* pPC = quest::CQuestManager::instance().GetPCForce(ecs::PlayerRuntime::GetPlayerID(((tch) ? (tch)->GetEntityHandle() : entt::null)));
 #else
-	quest::PC* pPC = quest::CQuestManager::instance().GetPCForce((ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null))));
+	quest::PC* pPC = quest::CQuestManager::instance().GetPCForce((ecs::PlayerRuntime::GetPlayerID(character)));
 #endif
 	std::string questname = arg1;
 	std::string statename = arg2;
@@ -2810,16 +2836,17 @@ ACMD(do_set_state)
 			++it;
 		}
 
-		ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "setting quest state flag %s %s %d", questname.c_str(), arg1, value);
+		ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "setting quest state flag %s %s %d", questname.c_str(), arg1, value);
 	}
 	else
 	{
-		ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "setting quest state flag failed");
+		ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "setting quest state flag failed");
 	}
 }
 
 ACMD(do_setqf)
 {
+	LPCHARACTER ch = ecs::LegacyCharOf(character);
 	char arg1[256];
 	char arg2[256];
 	char arg3[256];
@@ -2828,7 +2855,7 @@ ACMD(do_setqf)
 
 	if (!*arg1)
 	{
-		ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "Syntax: setqf <flagname> <value> [<character name>]");
+		ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "Syntax: setqf <flagname> <value> [<character name>]");
 		return;
 	}
 
@@ -2839,7 +2866,7 @@ ACMD(do_setqf)
 
 	if (!tch)
 	{
-		ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "There is no such character.");
+		ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "There is no such character.");
 		return;
 	}
 
@@ -2850,12 +2877,13 @@ ACMD(do_setqf)
 		int value = 0;
 		str_to_number(value, arg2);
 		pPC->SetFlag(arg1, value);
-		ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "Quest flag set: %s %d", arg1, value);
+		ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "Quest flag set: %s %d", arg1, value);
 	}
 }
 
 ACMD(do_delqf)
 {
+	LPCHARACTER ch = ecs::LegacyCharOf(character);
 	char arg1[256];
 	char arg2[256];
 
@@ -2863,7 +2891,7 @@ ACMD(do_delqf)
 
 	if (!*arg1)
 	{
-		ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "Syntax: delqf <flagname> [<character name>]");
+		ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "Syntax: delqf <flagname> [<character name>]");
 		return;
 	}
 
@@ -2874,7 +2902,7 @@ ACMD(do_delqf)
 
 	if (!tch)
 	{
-		ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "There is no such character.");
+		ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "There is no such character.");
 		return;
 	}
 
@@ -2883,34 +2911,39 @@ ACMD(do_delqf)
 	if (pPC)
 	{
 		if (pPC->DeleteFlag(arg1))
-			ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "Delete success.");
+			ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "Delete success.");
 		else
-			ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "Delete failed. Quest flag does not exist.");
+			ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "Delete failed. Quest flag does not exist.");
 	}
 }
 
 ACMD(do_forgetme)
 {
+	LPCHARACTER ch = ecs::LegacyCharOf(character);
 	ch->ForgetMyAttacker();
 }
 
 ACMD(do_aggregate)
 {
+	LPCHARACTER ch = ecs::LegacyCharOf(character);
 	ch->AggregateMonster();
 }
 
 ACMD(do_attract_ranger)
 {
+	LPCHARACTER ch = ecs::LegacyCharOf(character);
 	ch->AttractRanger();
 }
 
 ACMD(do_pull_monster)
 {
+	LPCHARACTER ch = ecs::LegacyCharOf(character);
 	ch->PullMonster();
 }
 
 ACMD(do_polymorph)
 {
+	LPCHARACTER ch = ecs::LegacyCharOf(character);
 	char arg1[256], arg2[256];
 
 	two_arguments(argument, arg1, sizeof(arg1), arg2, sizeof(arg2));
@@ -2932,6 +2965,7 @@ ACMD(do_polymorph)
 
 ACMD(do_polymorph_item)
 {
+	LPCHARACTER ch = ecs::LegacyCharOf(character);
 	char arg1[256];
 
 	one_argument(argument, arg1, sizeof(arg1));
@@ -2958,13 +2992,13 @@ ACMD(do_polymorph_item)
 			(item ? item->GetEntityHandle() : entt::null),
 			"GM_CMD_DESTROY");
 #ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 366, "");
+				ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 366, "");
 #endif
 			}
 		}
 		else
 		{
-			ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "#%d item not exist by that vnum.", 70103);
+			ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "#%d item not exist by that vnum.", 70103);
 		}
 		//ch->SetPolymorph(dwVnum, bMaintainStat);
 	}
@@ -3020,11 +3054,11 @@ ACMD(do_priv_empire)
 	return;
 
 USAGE:
-	ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "usage : priv_empire <empire> <type> <value> <duration>");
-	ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "  <empire>    0 - 3 (0==all)");
-	ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "  <type>      1:item_drop, 2:gold_drop, 3:gold10_drop, 4:exp");
-	ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "  <value>     percent");
-	ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "  <duration>  hour");
+	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "usage : priv_empire <empire> <type> <value> <duration>");
+	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "  <empire>    0 - 3 (0==all)");
+	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "  <type>      1:item_drop, 2:gold_drop, 3:gold10_drop, 4:exp");
+	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "  <value>     percent");
+	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "  <duration>  hour");
 }
 
 /**
@@ -3054,7 +3088,7 @@ ACMD(do_priv_guild)
 			snprintf(buf, sizeof(buf), msg, g->GetID());
 
 			using namespace quest;
-			PC * pc = CQuestManager::instance().GetPC((ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null))));
+			PC * pc = CQuestManager::instance().GetPC((ecs::PlayerRuntime::GetPlayerID(character)));
 			QuestState qs = CQuestManager::instance().OpenState("ADMIN_QUEST", QUEST_FISH_REFINE_STATE_INDEX);
 			luaL_loadbuffer(qs.co, buf, strlen(buf), "ADMIN_QUEST");
 			pc->SetQuest("ADMIN_QUEST", qs);
@@ -3069,7 +3103,7 @@ ACMD(do_priv_guild)
 		}
 #ifdef TEXTS_IMPROVEMENT
 		else {
-			ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 268, "");
+			ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 268, "");
 		}
 #endif
 	}
@@ -3085,17 +3119,19 @@ ACMD(do_mount_test)
 	{
 		uint32_t vnum = 0;
 		str_to_number(vnum, arg1);
-		MountSystem::SetMountVnum(((ch) ? (ch)->GetEntityHandle() : entt::null), vnum);
+		MountSystem::SetMountVnum(character, vnum);
 	}
 }
 
 ACMD(do_observer)
 {
-	ch->SetObserverMode(!ecs::PlayerRuntime::IsObserverMode(((ch) ? (ch)->GetEntityHandle() : entt::null)));
+	LPCHARACTER ch = ecs::LegacyCharOf(character);
+	ch->SetObserverMode(!ecs::PlayerRuntime::IsObserverMode(character));
 }
 
 ACMD(do_socket_item)
 {
+	LPCHARACTER ch = ecs::LegacyCharOf(character);
 	char arg1[256], arg2[256];
 	two_arguments(argument, arg1, sizeof(arg1), arg2, sizeof(arg2));
 
@@ -3114,7 +3150,7 @@ ACMD(do_socket_item)
 		{
 			if (!ITEM_MANAGER::instance().GetVnum(arg1, dwVnum))
 			{
-				ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "#%d item not exist by that vnum.", dwVnum);
+				ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "#%d item not exist by that vnum.", dwVnum);
 				return;
 			}
 		}
@@ -3128,7 +3164,7 @@ ACMD(do_socket_item)
 		}
 		else
 		{
-			ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "#%d cannot create item.", dwVnum);
+			ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "#%d cannot create item.", dwVnum);
 		}
 	}
 }
@@ -3136,22 +3172,24 @@ ACMD(do_socket_item)
 // BLOCK_CHAT
 ACMD(do_block_chat_list)
 {
+	LPCHARACTER ch = ecs::LegacyCharOf(character);
 	// GM ƴϰų block_chat_privilege   ɾ  Ұ
-	if (!ch || ((ecs::PlayerRuntime::GetGMLevel(((ch) ? (ch)->GetEntityHandle() : entt::null))) < GM_HIGH_WIZARD && ecs::QuestSystem::GetFlag(((ch) ? (ch)->GetEntityHandle() : entt::null), "chat_privilege.block") <= 0))
+	if (!ch || ((ecs::PlayerRuntime::GetGMLevel(character)) < GM_HIGH_WIZARD && ecs::QuestSystem::GetFlag(character, "chat_privilege.block") <= 0))
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 266, "");
+		ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 266, "");
 #endif
 		return;
 	}
 
-	DBManager::instance().ReturnQuery(QID_BLOCK_CHAT_LIST, (ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null))), nullptr,
+	DBManager::instance().ReturnQuery(QID_BLOCK_CHAT_LIST, (ecs::PlayerRuntime::GetPlayerID(character)), nullptr,
 			"SELECT p.name, a.lDuration FROM affect%s as a, player%s as p WHERE a.bType = %d AND a.dwPID = p.id",
 			get_table_postfix(), get_table_postfix(), AFFECT_BLOCK_CHAT);
 }
 
 ACMD(do_vote_block_chat)
 {
+	LPCHARACTER ch = ecs::LegacyCharOf(character);
 	return;
 
 	char arg1[256];
@@ -3159,7 +3197,7 @@ ACMD(do_vote_block_chat)
 
 	if (!*arg1)
 	{
-		ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "Usage: vote_block_chat <name>");
+		ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "Usage: vote_block_chat <name>");
 		return;
 	}
 
@@ -3188,12 +3226,12 @@ ACMD(do_vote_block_chat)
 
 			strlcpy(p.szName, name, sizeof(p.szName));
 			p.lDuration = lBlockDuration;
-			db_clientdesc->DBPacket(HEADER_GD_BLOCK_CHAT, ch ? ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null))->GetHandle() : 0, &p, sizeof(p));
+			db_clientdesc->DBPacket(HEADER_GD_BLOCK_CHAT, ch ? ecs::PlayerRuntime::GetDesc(character)->GetHandle() : 0, &p, sizeof(p));
 
 		}
 
 		if (ch)
-			ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "Chat block requested.");
+			ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "Chat block requested.");
 
 		return;
 	}
@@ -3204,11 +3242,12 @@ ACMD(do_vote_block_chat)
 
 ACMD(do_block_chat)
 {
+	LPCHARACTER ch = ecs::LegacyCharOf(character);
 	// GM ƴϰų block_chat_privilege   ɾ  Ұ
-	if (ch && (ecs::PlayerRuntime::GetGMLevel(((ch) ? (ch)->GetEntityHandle() : entt::null)) < GM_HIGH_WIZARD && ecs::QuestSystem::GetFlag(((ch) ? (ch)->GetEntityHandle() : entt::null), "chat_privilege.block") <= 0))
+	if (ch && (ecs::PlayerRuntime::GetGMLevel(character) < GM_HIGH_WIZARD && ecs::QuestSystem::GetFlag(character, "chat_privilege.block") <= 0))
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 266, "");
+		ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 266, "");
 #endif
 		return;
 	}
@@ -3219,7 +3258,7 @@ ACMD(do_block_chat)
 	if (!*arg1)
 	{
 		if (ch)
-			ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "Usage: block_chat <name> <time> (0 to off)");
+			ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "Usage: block_chat <name> <time> (0 to off)");
 
 		return;
 	}
@@ -3254,12 +3293,12 @@ ACMD(do_block_chat)
 
 			strlcpy(p.szName, name, sizeof(p.szName));
 			p.lDuration = lBlockDuration;
-			db_clientdesc->DBPacket(HEADER_GD_BLOCK_CHAT, ch ? ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null))->GetHandle() : 0, &p, sizeof(p));
+			db_clientdesc->DBPacket(HEADER_GD_BLOCK_CHAT, ch ? ecs::PlayerRuntime::GetDesc(character)->GetHandle() : 0, &p, sizeof(p));
 		}
 
 #ifdef TEXTS_IMPROVEMENT
 		if (ch) {
-			ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 810, "");
+			ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 810, "");
 		}
 #endif
 		return;
@@ -3272,32 +3311,33 @@ ACMD(do_block_chat)
 void block_chat(entt::entity executor, std::string_view arguments)
 {
 	std::string ownedArguments(arguments);
-	do_block_chat(ecs::LegacyCharOf(executor), ownedArguments.data(), 0, 0);
+	do_block_chat(executor, ownedArguments.data(), 0, 0);
 }
 // END_OF_BLOCK_CHAT
 
 // BUILD_BUILDING
 ACMD(do_build)
 {
+	LPCHARACTER ch = ecs::LegacyCharOf(character);
 	using namespace building;
 
 	char arg1[256], arg2[256], arg3[256], arg4[256];
 	const char * line = one_argument(argument, arg1, sizeof(arg1));
-	uint8_t GMLevel = (ecs::PlayerRuntime::GetGMLevel(((ch) ? (ch)->GetEntityHandle() : entt::null)));
+	uint8_t GMLevel = (ecs::PlayerRuntime::GetGMLevel(character));
 
-	CLand * pkLand = CManager::instance().FindLand(ecs::PlayerRuntime::GetMapIndex(((ch) ? (ch)->GetEntityHandle() : entt::null)), ecs::PlayerRuntime::GetX(((ch) ? (ch)->GetEntityHandle() : entt::null)), ecs::PlayerRuntime::GetY(((ch) ? (ch)->GetEntityHandle() : entt::null)));
+	CLand * pkLand = CManager::instance().FindLand(ecs::PlayerRuntime::GetMapIndex(character), ecs::PlayerRuntime::GetX(character), ecs::PlayerRuntime::GetY(character));
 
 	// NOTE:  üũ Ŭ̾Ʈ  Բ ϱ
 	//       ޼  ʰ  Ѵ.
 	if (!pkLand)
 	{
-		LOG_ERROR("{} trying to build on not buildable area.", ecs::PlayerRuntime::GetName(((ch) ? (ch)->GetEntityHandle() : entt::null)).data());
+		LOG_ERROR("{} trying to build on not buildable area.", ecs::PlayerRuntime::GetName(character).data());
 		return;
 	}
 
 	if (!*arg1)
 	{
-		ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "Invalid syntax: no command");
+		ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "Invalid syntax: no command");
 		return;
 	}
 
@@ -3305,16 +3345,16 @@ ACMD(do_build)
 	if (GMLevel == GM_PLAYER)
 	{
 		// ÷̾      Ȯؾ Ѵ.
-		if ((!ecs::SocialSystem::GetGuild(((ch) ? (ch)->GetEntityHandle() : entt::null)) || ecs::SocialSystem::GetGuild(((ch) ? (ch)->GetEntityHandle() : entt::null))->GetID() != pkLand->GetOwner()))
+		if ((!ecs::SocialSystem::GetGuild(character) || ecs::SocialSystem::GetGuild(character)->GetID() != pkLand->GetOwner()))
 		{
-			LOG_ERROR("{} trying to build on not owned land.", ecs::PlayerRuntime::GetName(((ch) ? (ch)->GetEntityHandle() : entt::null)).data());
+			LOG_ERROR("{} trying to build on not owned land.", ecs::PlayerRuntime::GetName(character).data());
 			return;
 		}
 
 		//  渶ΰ?
-		if (ecs::SocialSystem::GetGuild(((ch) ? (ch)->GetEntityHandle() : entt::null))->GetMasterPID() != (ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null))))
+		if (ecs::SocialSystem::GetGuild(character)->GetMasterPID() != (ecs::PlayerRuntime::GetPlayerID(character)))
 		{
-			LOG_ERROR("{} trying to build while not the guild master.", ecs::PlayerRuntime::GetName(((ch) ? (ch)->GetEntityHandle() : entt::null)).data());
+			LOG_ERROR("{} trying to build while not the guild master.", ecs::PlayerRuntime::GetName(character).data());
 			return;
 		}
 	}
@@ -3330,7 +3370,7 @@ ACMD(do_build)
 
 				if (!*arg1 || !*arg2 || !*arg3 || !*arg4 || !*arg5 || !*arg6)
 				{
-					ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "Invalid syntax");
+					ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "Invalid syntax");
 					return;
 				}
 
@@ -3343,7 +3383,7 @@ ACMD(do_build)
 				if (!t)
 				{
 #ifdef TEXTS_IMPROVEMENT
-					ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 462, "");
+					ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 462, "");
 #endif
 					return;
 				}
@@ -3355,7 +3395,7 @@ ACMD(do_build)
 					if (pkLand->FindObjectByGroup(t->dwGroupVnum))
 					{
 #ifdef TEXTS_IMPROVEMENT
-						ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 231, "");
+						ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 231, "");
 #endif
 						return;
 					}
@@ -3371,7 +3411,7 @@ ACMD(do_build)
 						if (!pkLand->FindObjectByGroup(t->dwDependOnGroupVnum))
 						{
 #ifdef TEXTS_IMPROVEMENT
-							ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 239, "");
+							ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 239, "");
 #endif
 							return;
 						}
@@ -3385,16 +3425,16 @@ ACMD(do_build)
 					if (t->dwPrice > BUILDING_MAX_PRICE)
 					{
 #ifdef TEXTS_IMPROVEMENT
-						ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 238, "");
+						ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 238, "");
 #endif
 						return;
 					}
 
-					if (ecs::PointSystem::GetGold(((ch) ? (ch)->GetEntityHandle() : entt::null)) < (int64_t)t->dwPrice)
+					if (ecs::PointSystem::GetGold(character) < (int64_t)t->dwPrice)
 
 					{
 #ifdef TEXTS_IMPROVEMENT
-						ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 232, "");
+						ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 232, "");
 #endif
 						return;
 					}
@@ -3413,7 +3453,7 @@ ACMD(do_build)
 						if ((int) dwItemCount > ch->CountSpecifyItem(dwItemVnum))
 						{
 #ifdef TEXTS_IMPROVEMENT
-							ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 449, "");
+							ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 449, "");
 #endif
 							return;
 						}
@@ -3429,7 +3469,7 @@ ACMD(do_build)
 				str_to_number(map_y, arg3);
 
 				bool isSuccess = pkLand->RequestCreateObject(dwVnum,
-						ecs::PlayerRuntime::GetMapIndex(((ch) ? (ch)->GetEntityHandle() : entt::null)),
+						ecs::PlayerRuntime::GetMapIndex(character),
 						map_x,
 						map_y,
 						x_rot,
@@ -3442,7 +3482,7 @@ ACMD(do_build)
 
 				if (test_server || GMLevel == GM_PLAYER)
 				{
-					ecs::PointSystem::Change(((ch) ? (ch)->GetEntityHandle() : entt::null), POINT_GOLD, -static_cast<int64_t>(t->dwPrice));
+					ecs::PointSystem::Change(character, POINT_GOLD, -static_cast<int64_t>(t->dwPrice));
 
 					{
 						for (int i = 0; i < OBJECT_MATERIAL_MAX_NUM; ++i)
@@ -3468,7 +3508,7 @@ ACMD(do_build)
 
 				if (!*arg1)
 				{
-					ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "Invalid syntax");
+					ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "Invalid syntax");
 					return;
 				}
 
@@ -3484,7 +3524,7 @@ ACMD(do_build)
 		case 'w' :
 			if (GMLevel > GM_PLAYER)
 			{
-				int mapIndex = ecs::PlayerRuntime::GetMapIndex(((ch) ? (ch)->GetEntityHandle() : entt::null));
+				int mapIndex = ecs::PlayerRuntime::GetMapIndex(character);
 
 				one_argument(line, arg1, sizeof(arg1));
 
@@ -3505,7 +3545,7 @@ ACMD(do_build)
 						pkLand->RequestCreateWall(mapIndex, 270.0f);
 						break;
 					default:
-						ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "guild.wall.build unknown_direction[%s]", arg1);
+						ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "guild.wall.build unknown_direction[%s]", arg1);
 						LOG_ERROR("guild.wall.build unknown_direction[{}]", arg1);
 						break;
 				}
@@ -3550,7 +3590,7 @@ ACMD(do_build)
 					str_to_number(door_south, arg5);
 					bool door_north = false;
 					str_to_number(door_north, arg6);
-					pkLand->RequestCreateWallBlocks(setID, ecs::PlayerRuntime::GetMapIndex(((ch) ? (ch)->GetEntityHandle() : entt::null)), wallSize, door_east, door_west, door_south, door_north);
+					pkLand->RequestCreateWallBlocks(setID, ecs::PlayerRuntime::GetMapIndex(character), wallSize, door_east, door_west, door_south, door_north);
 				}
 			}
 			break;
@@ -3568,7 +3608,7 @@ ACMD(do_build)
 			break;
 
 		default:
-			ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "Invalid command %s", arg1);
+			ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "Invalid command %s", arg1);
 			break;
 	}
 }
@@ -3583,16 +3623,17 @@ ACMD(do_clear_quest)
 	if (!*arg1)
 		return;
 
-	quest::PC* pPC = quest::CQuestManager::instance().GetPCForce((ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null))));
+	quest::PC* pPC = quest::CQuestManager::instance().GetPCForce((ecs::PlayerRuntime::GetPlayerID(character)));
 	pPC->ClearQuest(arg1);
 }
 
 ACMD(do_horse_state)
 {
-	ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "Horse Information:");
-	ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "    Level  %d", ch->GetHorseLevel());
-	ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "    Health %d/%d (%d%%)", ch->GetHorseHealth(), ch->GetHorseMaxHealth(), ch->GetHorseHealth() * 100 / ch->GetHorseMaxHealth());
-	ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "    Stam   %d/%d (%d%%)", ch->GetHorseStamina(), ch->GetHorseMaxStamina(), ch->GetHorseStamina() * 100 / ch->GetHorseMaxStamina());
+	LPCHARACTER ch = ecs::LegacyCharOf(character);
+	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "Horse Information:");
+	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "    Level  %d", ch->GetHorseLevel());
+	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "    Health %d/%d (%d%%)", ch->GetHorseHealth(), ch->GetHorseMaxHealth(), ch->GetHorseHealth() * 100 / ch->GetHorseMaxHealth());
+	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "    Stam   %d/%d (%d%%)", ch->GetHorseStamina(), ch->GetHorseMaxStamina(), ch->GetHorseStamina() * 100 / ch->GetHorseMaxStamina());
 }
 
 ACMD(do_horse_level)
@@ -3606,7 +3647,7 @@ ACMD(do_horse_level)
 
 	if (!*arg1 || !*arg2)
 	{
-		ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "usage : /horse_level <name> <level>");
+		ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "usage : /horse_level <name> <level>");
 		return;
 	}
 
@@ -3615,7 +3656,7 @@ ACMD(do_horse_level)
 	if (nullptr == victim)
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 463, "");
+		ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 463, "");
 #endif
 		return;
 	}
@@ -3623,7 +3664,7 @@ ACMD(do_horse_level)
 	str_to_number(level, arg2);
 	level = MINMAX(0, level, HORSE_MAX_LEVEL);
 
-	ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "horse level set (%s: %d)", ecs::PlayerRuntime::GetName(((victim) ? (victim)->GetEntityHandle() : entt::null)).data(), level);
+	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "horse level set (%s: %d)", ecs::PlayerRuntime::GetName(((victim) ? (victim)->GetEntityHandle() : entt::null)).data(), level);
 
 	victim->SetHorseLevel(level);
 	victim->ComputePoints();
@@ -3633,6 +3674,7 @@ ACMD(do_horse_level)
 
 ACMD(do_horse_ride)
 {
+	LPCHARACTER ch = ecs::LegacyCharOf(character);
 	if (ch->IsHorseRiding())
 		ch->StopRiding();
 	else
@@ -3641,6 +3683,7 @@ ACMD(do_horse_ride)
 
 ACMD(do_horse_summon)
 {
+	LPCHARACTER ch = ecs::LegacyCharOf(character);
 
 #ifdef ENABLE_MOUNT_COSTUME_SYSTEM
 	if (ch->IsRidingMount())
@@ -3652,11 +3695,13 @@ ACMD(do_horse_summon)
 
 ACMD(do_horse_unsummon)
 {
+	LPCHARACTER ch = ecs::LegacyCharOf(character);
 	ch->HorseSummon(false, true);
 }
 
 ACMD(do_horse_set_stat)
 {
+	LPCHARACTER ch = ecs::LegacyCharOf(character);
 	char arg1[256], arg2[256];
 
 	two_arguments(argument, arg1, sizeof(arg1), arg2, sizeof(arg2));
@@ -3672,7 +3717,7 @@ ACMD(do_horse_set_stat)
 	}
 	else
 	{
-		ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "Usage : /horse_set_stat <hp> <stamina>");
+		ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "Usage : /horse_set_stat <hp> <stamina>");
 	}
 }
 
@@ -3685,7 +3730,7 @@ ACMD(do_save_attribute_to_image) // command "/saveati" for alias
 
 	if (!*szMapIndex || !*szFileName)
 	{
-		ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "Syntax: /saveati <map_index> <filename>");
+		ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "Syntax: /saveati <map_index> <filename>");
 		return;
 	}
 
@@ -3693,13 +3738,14 @@ ACMD(do_save_attribute_to_image) // command "/saveati" for alias
 	str_to_number(lMapIndex, szMapIndex);
 
 	if (SECTREE_MANAGER::instance().SaveAttributeToImage(lMapIndex, szFileName))
-		ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "Save done.");
+		ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "Save done.");
 	else
-		ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "Save failed.");
+		ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "Save failed.");
 }
 
 ACMD(do_affect_remove)
 {
+	LPCHARACTER ch = ecs::LegacyCharOf(character);
 	char arg1[256];
 	char arg2[256];
 
@@ -3707,8 +3753,8 @@ ACMD(do_affect_remove)
 
 	if (!*arg1 || !*arg2)
 	{
-		ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "Syntax: /affect_remove <player name>");
-		ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "Syntax: /affect_remove <type> <point>");
+		ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "Syntax: /affect_remove <player name>");
+		ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "Syntax: /affect_remove <type> <point>");
 
 		LPCHARACTER tch = ch;
 
@@ -3716,8 +3762,8 @@ ACMD(do_affect_remove)
 			if (!(tch = CHARACTER_MANAGER::instance().FindPC(arg1)))
 				tch = ch;
 
-		ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "-- Affect List of %s -------------------------------", ecs::PlayerRuntime::GetName(((tch) ? (tch)->GetEntityHandle() : entt::null)).data());
-		ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "Type Point Modif Duration Flag");
+		ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "-- Affect List of %s -------------------------------", ecs::PlayerRuntime::GetName(((tch) ? (tch)->GetEntityHandle() : entt::null)).data());
+		ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "Type Point Modif Duration Flag");
 
 		const std::list<CAffect *> & cont = tch->GetAffectContainer();
 
@@ -3727,7 +3773,7 @@ ACMD(do_affect_remove)
 		{
 			CAffect * pkAff = *it++;
 
-			ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "%4d %5d %5d %8d %u",
+			ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "%4d %5d %5d %8d %u",
 					pkAff->dwType, pkAff->bApplyOn, pkAff->lApplyValue, pkAff->lDuration, pkAff->dwFlag);
 		}
 		return;
@@ -3741,22 +3787,22 @@ ACMD(do_affect_remove)
 	str_to_number(type, arg1);
 	uint8_t	point = 0;
 	str_to_number(point, arg2);
-	while ((af = AffectSystem::FindAffect(((ch) ? (ch)->GetEntityHandle() : entt::null), type, point)))
+	while ((af = AffectSystem::FindAffect(character, type, point)))
 	{
-		AffectSystem::RemoveAffect(((ch) ? (ch)->GetEntityHandle() : entt::null), af);
+		AffectSystem::RemoveAffect(character, af);
 		removed = true;
 	}
 
 	if (removed)
-		ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "Affect successfully removed.");
+		ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "Affect successfully removed.");
 	else
-		ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "Not affected by that type and point.");
+		ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "Not affected by that type and point.");
 }
 
 ACMD(do_change_attr)
 {
 	const entt::entity weapon = ItemSystem::GetWearItem(
-		((ch) ? (ch)->GetEntityHandle() : entt::null), WEAR_WEAPON);
+		character, WEAR_WEAPON);
 	if (ItemSystem::IsValidItem(weapon))
 		ItemSystem::ChangeItemAttributeEcs(weapon);
 }
@@ -3764,7 +3810,7 @@ ACMD(do_change_attr)
 ACMD(do_add_attr)
 {
 	const entt::entity weapon = ItemSystem::GetWearItem(
-		((ch) ? (ch)->GetEntityHandle() : entt::null), WEAR_WEAPON);
+		character, WEAR_WEAPON);
 	if (ItemSystem::IsValidItem(weapon))
 		ItemSystem::AddItemAttributeEcs(weapon);
 }
@@ -3772,7 +3818,7 @@ ACMD(do_add_attr)
 ACMD(do_add_socket)
 {
 	const entt::entity weapon = ItemSystem::GetWearItem(
-		((ch) ? (ch)->GetEntityHandle() : entt::null), WEAR_WEAPON);
+		character, WEAR_WEAPON);
 	if (!ItemSystem::IsValidItem(weapon))
 		return;
 	for (int socket = 0; socket < ITEM_SOCKET_MAX_NUM; ++socket) {
@@ -3787,7 +3833,7 @@ ACMD(do_add_socket)
 ACMD(do_change_rare_attr)
 {
 	const entt::entity weapon = ItemSystem::GetWearItem(
-		((ch) ? (ch)->GetEntityHandle() : entt::null), WEAR_WEAPON);
+		character, WEAR_WEAPON);
 	if (ItemSystem::IsValidItem(weapon))
 		ItemSystem::ChangeItemRareAttributeEcs(weapon);
 }
@@ -3795,7 +3841,7 @@ ACMD(do_change_rare_attr)
 ACMD(do_add_rare_attr)
 {
 	const entt::entity weapon = ItemSystem::GetWearItem(
-		((ch) ? (ch)->GetEntityHandle() : entt::null), WEAR_WEAPON);
+		character, WEAR_WEAPON);
 	if (ItemSystem::IsValidItem(weapon))
 		ItemSystem::AddItemRareAttributeEcs(weapon);
 }
@@ -3803,6 +3849,7 @@ ACMD(do_add_rare_attr)
 
 ACMD(do_show_arena_list)
 {
+	LPCHARACTER ch = ecs::LegacyCharOf(character);
 	CArenaManager::instance().SendArenaMapListTo(ch);
 }
 
@@ -3821,7 +3868,7 @@ ACMD(do_end_duel)
 	if (pChar == nullptr)
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 463, "");
+		ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 463, "");
 #endif
 		return;
 	}
@@ -3897,18 +3944,18 @@ ACMD(do_duel)
 
 		if (CArenaManager::instance().StartDuel(pChar1->GetEntityHandle(), pChar2->GetEntityHandle(), set, minute) == true) {
 #ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 301, "");
+			ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 301, "");
 #endif
 		}
 #ifdef TEXTS_IMPROVEMENT
 		else {
-			ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 300, "");
+			ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 300, "");
 		}
 #endif
 	}
 #ifdef TEXTS_IMPROVEMENT
 	else {
-		ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 302, "");
+		ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 302, "");
 	}
 #endif
 }
@@ -3916,6 +3963,7 @@ ACMD(do_duel)
 #define ENABLE_STATPLUS_NOLIMIT
 ACMD(do_stat_plus_amount)
 {
+	LPCHARACTER ch = ecs::LegacyCharOf(character);
 	char szPoint[256];
 
 	one_argument(argument, szPoint, sizeof(szPoint));
@@ -3926,17 +3974,17 @@ ACMD(do_stat_plus_amount)
 	if (ch->IsPolymorphed())
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 314, "");
+		ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 314, "");
 #endif
 		return;
 	}
 
-	int nRemainPoint = ecs::PointSystem::Get(((ch) ? (ch)->GetEntityHandle() : entt::null), POINT_STAT);
+	int nRemainPoint = ecs::PointSystem::Get(character, POINT_STAT);
 
 	if (nRemainPoint <= 0)
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 285, "");
+		ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 285, "");
 #endif
 		return;
 	}
@@ -3947,7 +3995,7 @@ ACMD(do_stat_plus_amount)
 	if (nRemainPoint < nPoint)
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 286, "");
+		ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 286, "");
 #endif
 		return;
 	}
@@ -3955,7 +4003,7 @@ ACMD(do_stat_plus_amount)
 	if (nPoint < 0)
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 228, "");
+		ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 228, "");
 #endif
 		return;
 	}
@@ -3964,36 +4012,36 @@ ACMD(do_stat_plus_amount)
 	switch (subcmd)
 	{
 		case POINT_HT : // ü
-			if (nPoint + ecs::PointSystem::Get(((ch) ? (ch)->GetEntityHandle() : entt::null), POINT_HT) > 90)
+			if (nPoint + ecs::PointSystem::Get(character, POINT_HT) > 90)
 			{
-				nPoint = 90 - ecs::PointSystem::Get(((ch) ? (ch)->GetEntityHandle() : entt::null), POINT_HT);
+				nPoint = 90 - ecs::PointSystem::Get(character, POINT_HT);
 			}
 			break;
 
 		case POINT_IQ : //
-			if (nPoint + ecs::PointSystem::Get(((ch) ? (ch)->GetEntityHandle() : entt::null), POINT_IQ) > 90)
+			if (nPoint + ecs::PointSystem::Get(character, POINT_IQ) > 90)
 			{
-				nPoint = 90 - ecs::PointSystem::Get(((ch) ? (ch)->GetEntityHandle() : entt::null), POINT_IQ);
+				nPoint = 90 - ecs::PointSystem::Get(character, POINT_IQ);
 			}
 			break;
 
 		case POINT_ST : // ٷ
-			if (nPoint + ecs::PointSystem::Get(((ch) ? (ch)->GetEntityHandle() : entt::null), POINT_ST) > 90)
+			if (nPoint + ecs::PointSystem::Get(character, POINT_ST) > 90)
 			{
-				nPoint = 90 - ecs::PointSystem::Get(((ch) ? (ch)->GetEntityHandle() : entt::null), POINT_ST);
+				nPoint = 90 - ecs::PointSystem::Get(character, POINT_ST);
 			}
 			break;
 
 		case POINT_DX : // ø
-			if (nPoint + ecs::PointSystem::Get(((ch) ? (ch)->GetEntityHandle() : entt::null), POINT_DX) > 90)
+			if (nPoint + ecs::PointSystem::Get(character, POINT_DX) > 90)
 			{
-				nPoint = 90 - ecs::PointSystem::Get(((ch) ? (ch)->GetEntityHandle() : entt::null), POINT_DX);
+				nPoint = 90 - ecs::PointSystem::Get(character, POINT_DX);
 			}
 			break;
 
 		default :
 #ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 343, "");
+			ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 343, "");
 #endif
 			return;
 			break;
@@ -4002,12 +4050,12 @@ ACMD(do_stat_plus_amount)
 
 	if (nPoint != 0)
 	{
-		ch->SetRealPoint(subcmd, ecs::PointSystem::GetReal(((ch) ? (ch)->GetEntityHandle() : entt::null), subcmd) + nPoint);
-		ch->SetPoint(subcmd, ecs::PointSystem::Get(((ch) ? (ch)->GetEntityHandle() : entt::null), subcmd) + nPoint);
+		ch->SetRealPoint(subcmd, ecs::PointSystem::GetReal(character, subcmd) + nPoint);
+		ch->SetPoint(subcmd, ecs::PointSystem::Get(character, subcmd) + nPoint);
 		ch->ComputePoints();
-		ecs::PointSystem::Change(((ch) ? (ch)->GetEntityHandle() : entt::null), subcmd, 0);
+		ecs::PointSystem::Change(character, subcmd, 0);
 
-		ecs::PointSystem::Change(((ch) ? (ch)->GetEntityHandle() : entt::null), POINT_STAT, -nPoint);
+		ecs::PointSystem::Change(character, POINT_STAT, -nPoint);
 		ch->ComputePoints();
 	}
 }
@@ -4038,7 +4086,7 @@ ACMD(do_effect)
 
 	uint8_t	effect_type = 0;
 	str_to_number(effect_type, arg1);
-	NetworkSyncSystem::BroadcastEffect(g_registry, ((ch) ? (ch)->GetEntityHandle() : entt::null), effect_type);
+	NetworkSyncSystem::BroadcastEffect(g_registry, character, effect_type);
 }
 
 
@@ -4066,7 +4114,7 @@ ACMD(do_reset_subskill)
 
 	if (!*arg1)
 	{
-		ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "Usage: reset_subskill <name>");
+		ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "Usage: reset_subskill <name>");
 		return;
 	}
 
@@ -4076,7 +4124,7 @@ ACMD(do_reset_subskill)
 		return;
 
 	tch->ClearSubSkill();
-	ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "Subskill of [%s] was reset", ecs::PlayerRuntime::GetName(((tch) ? (tch)->GetEntityHandle() : entt::null)).data());
+	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "Subskill of [%s] was reset", ecs::PlayerRuntime::GetName(((tch) ? (tch)->GetEntityHandle() : entt::null)).data());
 }
 
 ACMD(do_flush)
@@ -4086,7 +4134,7 @@ ACMD(do_flush)
 
 	if (0 == arg1[0])
 	{
-		ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "usage : /flush player_id");
+		ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "usage : /flush player_id");
 		return;
 	}
 
@@ -4131,7 +4179,7 @@ struct FMobCounter
 
 ACMD(do_get_mob_count)
 {
-	LPSECTREE_MAP pSectree = SECTREE_MANAGER::instance().GetMap(ecs::PlayerRuntime::GetMapIndex(((ch) ? (ch)->GetEntityHandle() : entt::null)));
+	LPSECTREE_MAP pSectree = SECTREE_MANAGER::instance().GetMap(ecs::PlayerRuntime::GetMapIndex(character));
 
 	if (pSectree == nullptr)
 		return;
@@ -4141,19 +4189,19 @@ ACMD(do_get_mob_count)
 
 	pSectree->for_each(f);
 
-	ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "MapIndex: %d MobCount %d", ecs::PlayerRuntime::GetMapIndex(((ch) ? (ch)->GetEntityHandle() : entt::null)), f.nCount);
+	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "MapIndex: %d MobCount %d", ecs::PlayerRuntime::GetMapIndex(character), f.nCount);
 }
 
 ACMD(do_clear_land)
 {
-	const building::CLand* pLand = building::CManager::instance().FindLand(ecs::PlayerRuntime::GetMapIndex(((ch) ? (ch)->GetEntityHandle() : entt::null)), ecs::PlayerRuntime::GetX(((ch) ? (ch)->GetEntityHandle() : entt::null)), ecs::PlayerRuntime::GetY(((ch) ? (ch)->GetEntityHandle() : entt::null)));
+	const building::CLand* pLand = building::CManager::instance().FindLand(ecs::PlayerRuntime::GetMapIndex(character), ecs::PlayerRuntime::GetX(character), ecs::PlayerRuntime::GetY(character));
 
 	if(nullptr == pLand )
 	{
 		return;
 	}
 
-	ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "Guild Land(%d) Cleared", pLand->GetID());
+	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "Guild Land(%d) Cleared", pLand->GetID());
 
 	building::CManager::instance().ClearLand(pLand->GetID());
 }
@@ -4172,7 +4220,7 @@ ACMD(do_set_stat)
 
 	if (*szName == '\0' || *szChangeAmount == '\0')
 	{
-		ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "Invalid argument.");
+		ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "Invalid argument.");
 		return;
 	}
 
@@ -4184,12 +4232,12 @@ ACMD(do_set_stat)
 
 		if (pkCCI)
 		{
-			ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "Cannot find player(%s). %s is not in your game server.", szName, szName);
+			ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "Cannot find player(%s). %s is not in your game server.", szName, szName);
 			return;
 		}
 		else
 		{
-			ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "Cannot find player(%s). Perhaps %s doesn't login or exist.", szName, szName);
+			ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "Cannot find player(%s). Perhaps %s doesn't login or exist.", szName, szName);
 			return;
 		}
 	}
@@ -4198,7 +4246,7 @@ ACMD(do_set_stat)
 		if (tch->IsPolymorphed())
 		{
 #ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 314, "");
+			ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 314, "");
 #endif
 			return;
 		}
@@ -4206,7 +4254,7 @@ ACMD(do_set_stat)
 		if (subcmd != POINT_HT && subcmd != POINT_IQ && subcmd != POINT_ST && subcmd != POINT_DX)
 		{
 #ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 343, "");
+			ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 343, "");
 #endif
 			return;
 		}
@@ -4258,7 +4306,7 @@ ACMD(do_set_stat)
 		if (nRemainPoint < nChangeAmount)
 		{
 #ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 286, "");
+			ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 286, "");
 #endif
 			return;
 		}
@@ -4274,13 +4322,13 @@ ACMD(do_set_stat)
 		const char* stat_name[4] = {"con", "int", "str", "dex"};
 		if (-1 == n)
 			return;
-		ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "%s's %s change %d to %d", szName, stat_name[n], nCurPoint, nPoint);
+		ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "%s's %s change %d to %d", szName, stat_name[n], nCurPoint, nPoint);
 	}
 }
 
 ACMD(do_get_item_id_list)
 {
-	const entt::entity owner = ((ch) ? (ch)->GetEntityHandle() : entt::null);
+	const entt::entity owner = character;
 	for (int i = 0; i < INVENTORY_AND_EQUIP_SLOT_MAX; i++)
 	{
 		const entt::entity item = ItemSystem::GetInventoryItem(owner, i);
@@ -4308,6 +4356,7 @@ ACMD(do_set_socket)
 
 ACMD (do_can_dead)
 {
+	LPCHARACTER ch = ecs::LegacyCharOf(character);
 	if (subcmd)
 		ch->SetArmada();
 	else
@@ -4316,21 +4365,22 @@ ACMD (do_can_dead)
 
 ACMD (do_full_set)
 {
-	extern void do_all_skill_master(LPCHARACTER ch, const char *argument, int cmd, int subcmd);
-	do_all_skill_master(ch, nullptr, 0, 0);
-	extern void do_item_full_set(LPCHARACTER ch, const char *argument, int cmd, int subcmd);
-	do_item_full_set(ch, nullptr, 0, 0);
-	extern void do_attr_full_set(LPCHARACTER ch, const char *argument, int cmd, int subcmd);
-	do_attr_full_set(ch, nullptr, 0, 0);
+	extern ACMD(do_all_skill_master);
+	do_all_skill_master(character, nullptr, 0, 0);
+	extern ACMD(do_item_full_set);
+	do_item_full_set(character, nullptr, 0, 0);
+	extern ACMD(do_attr_full_set);
+	do_attr_full_set(character, nullptr, 0, 0);
 
 }
 
 ACMD (do_all_skill_master)
 {
+	LPCHARACTER ch = ecs::LegacyCharOf(character);
 	ch->SetHorseLevel(SKILL_MAX_LEVEL);
 	for (int i = 0; i < SKILL_MAX_NUM; i++)
 	{
-		if (true == SkillSystem::CanUseSkill(((ch) ? (ch)->GetEntityHandle() : entt::null), i))
+		if (true == SkillSystem::CanUseSkill(character, i))
 		{
 			ch->SetSkillLevel(i, SKILL_MAX_LEVEL);
 		}
@@ -4353,8 +4403,9 @@ ACMD (do_all_skill_master)
 
 ACMD (do_item_full_set)
 {
+	LPCHARACTER ch = ecs::LegacyCharOf(character);
 	uint8_t job = ch->GetJob();
-	const entt::entity owner = ((ch) ? (ch)->GetEntityHandle() : entt::null);
+	const entt::entity owner = character;
 	for (int i = 0; i < 6; i++)
 	{
 		const entt::entity equippedItem = ItemSystem::GetWearItem(owner, i);
@@ -4719,8 +4770,9 @@ void ApplyFullAttributes(entt::entity owner, uint8_t wearSlot,
 
 ACMD (do_attr_full_set)
 {
+	LPCHARACTER ch = ecs::LegacyCharOf(character);
 	uint8_t job = ch->GetJob();
-	const entt::entity owner = ((ch) ? (ch)->GetEntityHandle() : entt::null);
+	const entt::entity owner = character;
 	switch (job)
 	{
 		case JOB_WARRIOR:
@@ -4775,7 +4827,7 @@ ACMD (do_use_item)
 	int cell = 0;
 	str_to_number(cell, arg1);
 
-	const entt::entity owner = ((ch) ? (ch)->GetEntityHandle() : entt::null);
+	const entt::entity owner = character;
 	const entt::entity item = ItemSystem::GetInventoryItem(owner, cell);
 	if (ItemSystem::IsValidItem(item))
 	{
@@ -4783,18 +4835,20 @@ ACMD (do_use_item)
 	}
 #ifdef TEXTS_IMPROVEMENT
 	else {
-		ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 811, "");
+		ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 811, "");
 	}
 #endif
 }
 
 ACMD (do_clear_affect)
 {
+	LPCHARACTER ch = ecs::LegacyCharOf(character);
 	ch->ClearAffect(true);
 }
 
 ACMD (do_dragon_soul)
 {
+	LPCHARACTER ch = ecs::LegacyCharOf(character);
 	char arg1[512];
 	const char* rest = one_argument (argument, arg1, sizeof(arg1));
 	switch (arg1[0])
@@ -4843,22 +4897,22 @@ ACMD(do_offshop_change_shop_name) {
 		str_to_number(id, arg1);
 
 		if (id == 0) {
-			ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "syntax : offshop_change_shop_name  <player-id>  <new-name> ");
+			ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "syntax : offshop_change_shop_name  <player-id>  <new-name> ");
 			return;
 		} else {
 			offlineshop::CShop* pkShop = offlineshop::GetManager().GetShopByOwnerID(id);
 			if (!pkShop) {
-				ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "Cannot find shop by id %u ", id);
+				ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "Cannot find shop by id %u ", id);
 				return;
 			} else {
 				std::string oldname = pkShop->GetName();
 				offlineshop::GetManager().SendShopChangeNameDBPacket(id, GetNewShopName(oldname, arg2).c_str());
-				ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "shop's name changed.");
+				ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "shop's name changed.");
 			}
 		}
 
 	} else {
-		ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO , "syntax : offshop_change_shop_name  <player-id>  <new-name> ");
+		ecs::ChatSystem::Send(character, CHAT_TYPE_INFO , "syntax : offshop_change_shop_name  <player-id>  <new-name> ");
 		return;
 	}
 }
@@ -4874,23 +4928,23 @@ ACMD(do_offshop_force_close_shop) {
 		str_to_number(id, arg1);
 
 		if (id == 0) {
-			ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "syntax : offshop_force_close_shop  <player-id>  ");
+			ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "syntax : offshop_force_close_shop  <player-id>  ");
 			return;
 		}
 		else {
 			offlineshop::CShop* pkShop = offlineshop::GetManager().GetShopByOwnerID(id);
 			if (!pkShop) {
-				ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "Cannot find shop by id %u ", id);
+				ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "Cannot find shop by id %u ", id);
 				return;
 			}
 			else {
 				offlineshop::GetManager().SendShopForceCloseDBPacket(id);
-				ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "shop closed successfully.");
+				ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "shop closed successfully.");
 			}
 		}
 
 	} else {
-		ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "syntax : offshop_force_close_shop  <player-id>  ");
+		ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "syntax : offshop_force_close_shop  <player-id>  ");
 		return;
 	}
 }
@@ -4898,6 +4952,6 @@ ACMD(do_offshop_force_close_shop) {
 
 #ifdef ENABLE_WHISPER_ADMIN_SYSTEM
 ACMD(do_open_whispersys) {
-	ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_COMMAND, "recv_whispersys");
+	ecs::ChatSystem::Send(character, CHAT_TYPE_COMMAND, "recv_whispersys");
 }
 #endif

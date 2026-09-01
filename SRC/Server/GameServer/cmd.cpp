@@ -203,7 +203,7 @@ ACMD(do_wheel_open);
 ACMD(do_inputall)
 {
 #ifdef TEXTS_IMPROVEMENT
-	ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 342, "");
+	ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 342, "");
 #endif
 }
 
@@ -307,7 +307,8 @@ ACMD(do_hide_costume);
 
 #ifdef ENABLE_ATTR_COSTUMES
 ACMD(do_attrdialog_remove) {
-	if (ecs::PlayerRuntime::IsObserverMode(((ch) ? (ch)->GetEntityHandle() : entt::null)) || CombatSystem::IsDead(((ch) ? (ch)->GetEntityHandle() : entt::null))) {
+	LPCHARACTER ch = ecs::LegacyCharOf(character);
+	if (ecs::PlayerRuntime::IsObserverMode(character) || CombatSystem::IsDead(character)) {
 		return;
 	}
 
@@ -329,6 +330,7 @@ ACMD(do_attrdialog_remove) {
 #ifdef ENABLE_RANKING
 ACMD(do_ranking_subcategory)
 {
+	LPCHARACTER ch = ecs::LegacyCharOf(character);
 	char arg1[256];
 	one_argument(argument, arg1, sizeof(arg1));
 	if (!*arg1)
@@ -340,14 +342,13 @@ ACMD(do_ranking_subcategory)
 
 ACMD(do_manage_exp)
 {
-	const entt::entity character = ((ch) ? (ch)->GetEntityHandle() : entt::null);
 	const bool arg = ecs::QuestSystem::GetFlag(character, "exp.stat") != 1;
 	ecs::PointSystem::SetExperienceBlocked(character, arg);
 #ifdef TEXTS_IMPROVEMENT
 	if (arg) {
-		ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 77, "");
+		ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 77, "");
 	} else {
-		ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 78, "");
+		ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 78, "");
 	}
 #endif
 	ecs::ChatSystem::Send(character, CHAT_TYPE_COMMAND, "manage_exp_status %d", arg ? 1 : 0);
@@ -356,6 +357,7 @@ ACMD(do_manage_exp)
 #ifdef ENABLE_LOCKED_EXTRA_INVENTORY
 ACMD(do_unlock_extra)
 {
+	LPCHARACTER ch = ecs::LegacyCharOf(character);
 	char arg1[256];
 	one_argument(argument, arg1, sizeof(arg1));
 	if (!*arg1)
@@ -366,23 +368,25 @@ ACMD(do_unlock_extra)
 #endif
 ACMD(do_wheel_open)
 {
+	LPCHARACTER ch = ecs::LegacyCharOf(character);
 
-	if ((ecs::PlayerRuntime::IsObserverMode(((ch) ? (ch)->GetEntityHandle() : entt::null))) || (CombatSystem::IsDead(((ch) ? (ch)->GetEntityHandle() : entt::null))) || (CombatSystem::IsStun(((ch) ? (ch)->GetEntityHandle() : entt::null))))
+	if ((ecs::PlayerRuntime::IsObserverMode(character)) || (CombatSystem::IsDead(character)) || (CombatSystem::IsStun(character)))
 	{
-		ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "You Can't do this now");
+		ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "You Can't do this now");
 		return;
 
 		if (ch->GetDungeon())
-			ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "You cannot open in dungeon");
+			ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "You cannot open in dungeon");
 		return;
 	}
-	ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_COMMAND, "BINARY_WHEEL_ASKOPEN");
+	ecs::ChatSystem::Send(character, CHAT_TYPE_COMMAND, "BINARY_WHEEL_ASKOPEN");
 }
 
 #ifdef ENABLE_NEW_PET_EDITS
 ACMD(do_petenchant)
 {
-	if ((ecs::PlayerRuntime::IsObserverMode(((ch) ? (ch)->GetEntityHandle() : entt::null))) || (CombatSystem::IsDead(((ch) ? (ch)->GetEntityHandle() : entt::null))) || (CombatSystem::IsStun(((ch) ? (ch)->GetEntityHandle() : entt::null))))
+	LPCHARACTER ch = ecs::LegacyCharOf(character);
+	if ((ecs::PlayerRuntime::IsObserverMode(character)) || (CombatSystem::IsDead(character)) || (CombatSystem::IsStun(character)))
 		return;
 
 	char arg1[256];
@@ -897,8 +901,9 @@ void double_dollar(const char *src, size_t src_len, char *dest, size_t dest_len)
 	*dest = '\0';
 }
 // #define ENABLE_BLOCK_CMD_SHORTCUT
-void interpret_command(LPCHARACTER ch, const char * argument, uint64_t len)
+void interpret_command(entt::entity character, const char * argument, uint64_t len)
 {
+	LPCHARACTER ch = ecs::LegacyCharOf(character);
 #ifdef ENABLE_ANTI_CMD_FLOOD
 	if (ch && !ch->IsGM())
 	{
@@ -909,7 +914,7 @@ void interpret_command(LPCHARACTER ch, const char * argument, uint64_t len)
 		}
 		if (ch->IncreaseCmdAntiFloodCount()>=50)
 		{
-			ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null))->DelayedDisconnect(0);
+			ecs::PlayerRuntime::GetDesc(character)->DelayedDisconnect(0);
 			return;
 		}
 	}
@@ -976,39 +981,39 @@ void interpret_command(LPCHARACTER ch, const char * argument, uint64_t len)
 	if (*cmd_info[icmd].command == '\n')
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 266, "");
+		ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 266, "");
 #endif
 		return;
 	}
 
-	if (cmd_info[icmd].gm_level && (cmd_info[icmd].gm_level > ecs::PlayerRuntime::GetGMLevel(((ch) ? (ch)->GetEntityHandle() : entt::null)) || cmd_info[icmd].gm_level == GM_DISABLE))
+	if (cmd_info[icmd].gm_level && (cmd_info[icmd].gm_level > ecs::PlayerRuntime::GetGMLevel(character) || cmd_info[icmd].gm_level == GM_DISABLE))
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 266, "");
+		ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 266, "");
 #endif
 		return;
 	}
 
 	if (strncmp("phase", cmd_info[icmd].command, 5) != 0) //  ɾ ó
-		LOG_INFO("COMMAND: {}: {}", ecs::PlayerRuntime::GetName(((ch) ? (ch)->GetEntityHandle() : entt::null)).data(), cmd_info[icmd].command);
+		LOG_INFO("COMMAND: {}: {}", ecs::PlayerRuntime::GetName(character).data(), cmd_info[icmd].command);
 
-	((*cmd_info[icmd].command_pointer) (ch, line, icmd, cmd_info[icmd].subcmd));
+	((*cmd_info[icmd].command_pointer) (character, line, icmd, cmd_info[icmd].subcmd));
 
-	if (ecs::PlayerRuntime::GetGMLevel(((ch) ? (ch)->GetEntityHandle() : entt::null)) >= GM_IMPLEMENTOR)
+	if (ecs::PlayerRuntime::GetGMLevel(character) >= GM_IMPLEMENTOR)
 	{
 		if (cmd_info[icmd].gm_level >= GM_IMPLEMENTOR)
 		{
 			char buf[1024];
 			snprintf( buf, sizeof(buf), "%s", argument );
 
-			LogManager::instance().GMCommandLog((ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null))), ecs::PlayerRuntime::GetName(((ch) ? (ch)->GetEntityHandle() : entt::null)).data(), ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null))->GetHostName(), g_bChannel, buf);
+			LogManager::instance().GMCommandLog((ecs::PlayerRuntime::GetPlayerID(character)), ecs::PlayerRuntime::GetName(character).data(), ecs::PlayerRuntime::GetDesc(character)->GetHostName(), g_bChannel, buf);
 		}
 	}
 }
 
-void interpret_command(entt::entity character, const char* argument, uint64_t len)
+void interpret_command(LPCHARACTER ch, const char* argument, uint64_t len)
 {
-	interpret_command(ecs::LegacyCharOf(character), argument, len);
+	interpret_command(((ch) ? (ch)->GetEntityHandle() : entt::null), argument, len);
 }
 
 

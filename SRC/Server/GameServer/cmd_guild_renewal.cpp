@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "ecs/AIHelpers.hpp"
+#include "ecs/CharacterAccessors.hpp"
 #include "ecs/systems/SocialSystem.hpp"
 
 #ifdef ENABLE_GUILD_RENEWAL_BY_RAZOR93
@@ -68,21 +69,23 @@ namespace
 
 ACMD(do_gr_open)
 {
+	LPCHARACTER ch = ecs::LegacyCharOf(character);
 	if (!ch)
 		return;
-	if (!ecs::SocialSystem::GetGuild(((ch) ? (ch)->GetEntityHandle() : entt::null)))
+	if (!ecs::SocialSystem::GetGuild(character))
 		return;
 
 	// UI side can hook this to open the window.
-	ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_COMMAND, "gr_open");
+	ecs::ChatSystem::Send(character, CHAT_TYPE_COMMAND, "gr_open");
 	CGuildRenewal::instance().SendFullStateTo(ch);
 }
 
 ACMD(do_gr_deposit_item)
 {
+	LPCHARACTER ch = ecs::LegacyCharOf(character);
 	if (!ch)
 		return;
-	CGuild* g = ecs::SocialSystem::GetGuild(((ch) ? (ch)->GetEntityHandle() : entt::null));
+	CGuild* g = ecs::SocialSystem::GetGuild(character);
 	if (!g)
 		return;
 
@@ -106,9 +109,10 @@ ACMD(do_gr_deposit_item)
 
 ACMD(do_gr_deposit_yang)
 {
+	LPCHARACTER ch = ecs::LegacyCharOf(character);
 	if (!ch)
 		return;
-	CGuild* g = ecs::SocialSystem::GetGuild(((ch) ? (ch)->GetEntityHandle() : entt::null));
+	CGuild* g = ecs::SocialSystem::GetGuild(character);
 	if (!g)
 		return;
 
@@ -130,19 +134,21 @@ ACMD(do_gr_deposit_yang)
 
 ACMD(do_gr_set_tax)
 {
+	LPCHARACTER ch = ecs::LegacyCharOf(character);
 	if (!ch)
 		return;
 
-	ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "A kivetett ado rendszer ki van kapcsolva (kis ado rendszer van ervenyben).");
+	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "A kivetett ado rendszer ki van kapcsolva (kis ado rendszer van ervenyben).");
 	return;
 }
 
 ACMD(do_gr_pay_tax)
 {
+	LPCHARACTER ch = ecs::LegacyCharOf(character);
 	if (!ch)
 		return;
 
-	CGuild* g = ecs::SocialSystem::GetGuild(((ch) ? (ch)->GetEntityHandle() : entt::null));
+	CGuild* g = ecs::SocialSystem::GetGuild(character);
 	if (!g)
 		return;
 
@@ -171,8 +177,8 @@ ACMD(do_gr_pay_tax)
 
 	if (nums.empty())
 	{
-		ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "Hasznalat: /gr_pay_tax <yang> <db0> <db1> <db2> <db3> <db4>");
-		ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "Vagy: /gr_pay_tax <yang> <vnum0> <db0> ... <vnum4> <db4>");
+		ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "Hasznalat: /gr_pay_tax <yang> <db0> <db1> <db2> <db3> <db4>");
+		ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "Vagy: /gr_pay_tax <yang> <vnum0> <db0> ... <vnum4> <db4>");
 		return;
 	}
 
@@ -221,9 +227,10 @@ ACMD(do_gr_pay_tax)
 
 ACMD(do_gr_levelup)
 {
+	LPCHARACTER ch = ecs::LegacyCharOf(character);
 	if (!ch)
 		return;
-	CGuild* g = ecs::SocialSystem::GetGuild(((ch) ? (ch)->GetEntityHandle() : entt::null));
+	CGuild* g = ecs::SocialSystem::GetGuild(character);
 	if (!g)
 		return;
 
