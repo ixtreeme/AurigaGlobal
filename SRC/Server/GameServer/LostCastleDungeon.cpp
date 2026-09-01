@@ -129,18 +129,18 @@ namespace
 
     struct FForEachPC
     {
-        std::function<void(LPCHARACTER)> fn;
+        std::function<void(entt::entity)> fn;
         void operator()(LPENTITY ent)
         {
             if (!ent || !ent->IsType(ENTITY_CHARACTER))
                 return;
             LPCHARACTER ch = static_cast<LPCHARACTER>(ent);
-            if (ch && ecs::PlayerRuntime::IsPC(((ch) ? (ch)->GetEntityHandle() : entt::null)))
-                fn(ch);
+            if (ch && ecs::PlayerRuntime::IsPC(ch->GetEntityHandle()))
+                fn(ch->GetEntityHandle());
         }
     };
 
-    inline void ForEachPcOnMap(int32_t mapIndex, const std::function<void(LPCHARACTER)>& fn)
+    inline void ForEachPcOnMap(int32_t mapIndex, const std::function<void(entt::entity)>& fn)
     {
         LPSECTREE_MAP map = SECTREE_MANAGER::instance().GetMap(mapIndex);
         if (!map)
@@ -157,9 +157,10 @@ namespace
         vsnprintf(buf, sizeof(buf), fmt, ap);
         va_end(ap);
 
-        ForEachPcOnMap(mapIndex, [&](LPCHARACTER pc) {
-            if (pc)
-                ecs::ChatSystem::Send(((pc) ? (pc)->GetEntityHandle() : entt::null), CHAT_TYPE_BIG_NOTICE, "%s", buf);
+        ForEachPcOnMap(mapIndex, [&](entt::entity pc){
+            LPCHARACTER pkPc = ecs::LegacyCharOf(pc);
+            if (pkPc)
+                ecs::ChatSystem::Send(pc, CHAT_TYPE_BIG_NOTICE, "%s", buf);
             });
     }
 
@@ -171,9 +172,10 @@ namespace
         vsnprintf(buf, sizeof(buf), fmt, ap);
         va_end(ap);
 
-        ForEachPcOnMap(mapIndex, [&](LPCHARACTER pc) {
-            if (pc && ecs::PlayerRuntime::GetDesc(((pc) ? (pc)->GetEntityHandle() : entt::null)))
-                ecs::ChatSystem::Send(((pc) ? (pc)->GetEntityHandle() : entt::null), CHAT_TYPE_COMMAND, "%s", buf);
+        ForEachPcOnMap(mapIndex, [&](entt::entity pc){
+            LPCHARACTER pkPc = ecs::LegacyCharOf(pc);
+            if (pkPc && ecs::PlayerRuntime::GetDesc(pc))
+                ecs::ChatSystem::Send(pc, CHAT_TYPE_COMMAND, "%s", buf);
             });
     }
 
@@ -268,8 +270,9 @@ namespace
 
     void SendAdditionalInfoToMap(int32_t mapIndex, LPCHARACTER target, const char* name, const uint16_t parts[CHR_EQUIPPART_NUM])
     {
-        ForEachPcOnMap(mapIndex, [&](LPCHARACTER pc) {
-            SendAdditionalInfo(pc, target, name, parts);
+        ForEachPcOnMap(mapIndex, [&](entt::entity pc){
+            LPCHARACTER pkPc = ecs::LegacyCharOf(pc);
+            SendAdditionalInfo(pkPc, target, name, parts);
             });
     }
 
@@ -692,7 +695,8 @@ void ClearClonesOnMap(int32_t mapIndex)
 
         std::vector<LPCHARACTER> members;
         members.reserve(8);
-        ForEachPcOnMap(mapIndex, [&](LPCHARACTER pc) { if (pc) members.push_back(pc); });
+        ForEachPcOnMap(mapIndex, [&](entt::entity pc){
+            LPCHARACTER pkPc = ecs::LegacyCharOf(pc); if (pkPc) members.push_back(pkPc); });
 
         std::sort(members.begin(), members.end(), [](LPCHARACTER a, LPCHARACTER b) {
             return ecs::PlayerRuntime::GetPlayerID(((a) ? (a)->GetEntityHandle() : entt::null)) < ecs::PlayerRuntime::GetPlayerID(((b) ? (b)->GetEntityHandle() : entt::null));
@@ -1540,29 +1544,30 @@ bool CLostCastleDungeon::OnClickNpc(entt::entity character)
         bool ok = true;
         const int32_t leaderMap = ecs::PlayerRuntime::GetMapIndex(character);
 
-        auto check = [&](LPCHARACTER m)
-            {
-                if (!m || !ecs::PlayerRuntime::IsPC(((m) ? (m)->GetEntityHandle() : entt::null)))
+        auto check = [&](entt::entity m){
+                LPCHARACTER pkM = ecs::LegacyCharOf(m);
+                if (!pkM || !ecs::PlayerRuntime::IsPC(m))
                     return;
 
-                if (ecs::PlayerRuntime::GetMapIndex(((m) ? (m)->GetEntityHandle() : entt::null)) != leaderMap)
+                if (ecs::PlayerRuntime::GetMapIndex(m) != leaderMap)
                 {
                     ok = false;
                     return;
                 }
-                if (ecs::PointSystem::GetLevel(((m) ? (m)->GetEntityHandle() : entt::null)) < kMinLevel || ecs::PointSystem::GetLevel(((m) ? (m)->GetEntityHandle() : entt::null)) > kMaxLevel)
+                if (ecs::PointSystem::GetLevel(m) < kMinLevel || ecs::PointSystem::GetLevel(m) > kMaxLevel)
                 {
                     ok = false;
                     return;
                 }
-                if (m->CountSpecifyItem(kEntryItemVnum) < 1)
+                if (pkM->CountSpecifyItem(kEntryItemVnum) < 1)
                 {
                     ok = false;
                     return;
                 }
             };
+        auto checkPtr = [&](LPCHARACTER pkMember) { check(pkMember ? pkMember->GetEntityHandle() : entt::null); };
 
-        party->ForEachOnlineMember(check);
+        party->ForEachOnlineMember(checkPtr);
 
         if (!ok)
         {
@@ -1601,33 +1606,35 @@ bool CLostCastleDungeon::OnClickNpc(entt::entity character)
     d->SetFlag(kFlagTileStage, 0);
     d->SetFlag(kFlagClonesRemain, 0);
 
-    auto applyMember = [&](LPCHARACTER m)
-        {
-            if (!m || !ecs::PlayerRuntime::IsPC(((m) ? (m)->GetEntityHandle() : entt::null)))
+    auto applyMember = [&](entt::entity m){
+            LPCHARACTER pkM = ecs::LegacyCharOf(m);
+            if (!pkM || !ecs::PlayerRuntime::IsPC(m))
                 return;
 
-            m->RemoveSpecifyItem(kEntryItemVnum, 1);
+            pkM->RemoveSpecifyItem(kEntryItemVnum, 1);
 
             // rejoin flags reset
-            ecs::QuestSystem::SetFlag(((m) ? (m)->GetEntityHandle() : entt::null), kQfDisconnect, 0);
-            ecs::QuestSystem::SetFlag(((m) ? (m)->GetEntityHandle() : entt::null), kQfIdx, d->GetMapIndex());
-            ecs::QuestSystem::SetFlag(((m) ? (m)->GetEntityHandle() : entt::null), kQfCh, (int32_t)g_bChannel);
+            ecs::QuestSystem::SetFlag(m, kQfDisconnect, 0);
+            ecs::QuestSystem::SetFlag(m, kQfIdx, d->GetMapIndex());
+            ecs::QuestSystem::SetFlag(m, kQfCh, (int32_t)g_bChannel);
 
             // exit/lobby
-            m->SetWarpLocation(lobbyMap, lobbyX, lobbyY);
+            pkM->SetWarpLocation(lobbyMap, lobbyX, lobbyY);
         };
 
     if (!party)
     {
-        applyMember(ch);
+        applyMember(character);
 
         // IMPORTANT: Join expects GLOBAL CELL on your core
         d->Join_Coords(ch, kJoinGlobalX, kJoinGlobalY, ecs::PlayerRuntime::GetMapIndex(character));
     }
     else
     {
-        auto fn = [&](LPCHARACTER m) { applyMember(m); };
-        party->ForEachOnMapMember(fn, ecs::PlayerRuntime::GetMapIndex(character));
+        auto fn = [&](entt::entity m){
+            LPCHARACTER pkM = ecs::LegacyCharOf(m); applyMember(m); };
+        auto fnPtr = [&](LPCHARACTER pkMember) { fn(pkMember ? pkMember->GetEntityHandle() : entt::null); };
+        party->ForEachOnMapMember(fnPtr, ecs::PlayerRuntime::GetMapIndex(character));
 
         // IMPORTANT: Join expects GLOBAL CELL on your core
         d->JoinParty_Coords(party, kJoinGlobalX, kJoinGlobalY, ecs::PlayerRuntime::GetMapIndex(character));
@@ -1738,13 +1745,14 @@ bool CLostCastleDungeon::OnNpcTakeItem(entt::entity from, entt::entity npc, LPIT
         {
             BigNoticeMap(idx, "Elveszett Kastely: Megvan mind az 5 kulcs! Floor3 kovetkezik.");
 
-            ForEachPcOnMap(idx, [&](LPCHARACTER pc) {
-                if (!pc) return;
+            ForEachPcOnMap(idx, [&](entt::entity pc){
+                LPCHARACTER pkPc = ecs::LegacyCharOf(pc);
+                if (!pkPc) return;
                 for (uint32_t kv : kKeyItems)
                 {
-                    const int32_t c = pc->CountSpecifyItem(kv);
+                    const int32_t c = pkPc->CountSpecifyItem(kv);
                     if (c > 0)
-                        pc->RemoveSpecifyItem(kv, c);
+                        pkPc->RemoveSpecifyItem(kv, c);
                 }
                 });
 

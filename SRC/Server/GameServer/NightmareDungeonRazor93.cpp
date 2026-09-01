@@ -99,19 +99,19 @@ namespace
     // Iterate PCs on a mapIndex (same pattern as ValentineDungeon.cpp)
     struct FForEachPC
     {
-        const std::function<void(LPCHARACTER)>& fn;
+        const std::function<void(entt::entity)>& fn;
         void operator()(LPENTITY ent)
         {
             if (!ent || !ent->IsType(ENTITY_CHARACTER))
                 return;
 
             LPCHARACTER ch = (LPCHARACTER)ent;
-            if (ch && ecs::PlayerRuntime::IsPC(((ch) ? (ch)->GetEntityHandle() : entt::null)))
-                fn(ch);
+            if (ch && ecs::PlayerRuntime::IsPC(ch->GetEntityHandle()))
+                fn(ch->GetEntityHandle());
         }
     };
 
-    inline void ForEachPcOnMap(int32_t mapIndex, const std::function<void(LPCHARACTER)>& fn)
+    inline void ForEachPcOnMap(int32_t mapIndex, const std::function<void(entt::entity)>& fn)
     {
         LPSECTREE_MAP map = SECTREE_MANAGER::instance().GetMap(mapIndex);
         if (!map)
@@ -129,9 +129,8 @@ namespace
         vsnprintf(buf, sizeof(buf), fmt, ap);
         va_end(ap);
 
-        ForEachPcOnMap(mapIndex, [&](LPCHARACTER ch)
-            {
-                ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "%s", buf);
+        ForEachPcOnMap(mapIndex, [&](entt::entity ch){
+                ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "%s", buf);
             });
     }
 
@@ -540,43 +539,44 @@ bool CNightmareDungeonRazor93::OnClickNpc(entt::entity character)
     enum { BAD_NONE, BAD_LEVEL, BAD_ITEM, BAD_COOLDOWN } badType = BAD_NONE;
     int32_t badVal = 0;
 
-    auto checkMember = [&](LPCHARACTER m)
-        {
-            if (!ok || !m || !ecs::PlayerRuntime::IsPC(((m) ? (m)->GetEntityHandle() : entt::null)))
+    auto checkMember = [&](entt::entity m){
+            LPCHARACTER pkM = ecs::LegacyCharOf(m);
+            if (!ok || !pkM || !ecs::PlayerRuntime::IsPC(m))
                 return;
 
-            if (!CheckLevel(m))
+            if (!CheckLevel(pkM))
             {
                 ok = false;
-                badName = ecs::PlayerRuntime::GetName(((m) ? (m)->GetEntityHandle() : entt::null)).data();
+                badName = ecs::PlayerRuntime::GetName(m).data();
                 badType = BAD_LEVEL;
-                badVal = ecs::PointSystem::GetLevel(((m) ? (m)->GetEntityHandle() : entt::null));
+                badVal = ecs::PointSystem::GetLevel(m);
                 return;
             }
 
-            const int32_t rem = CooldownRemain(m);
+            const int32_t rem = CooldownRemain(pkM);
             if (rem > 0)
             {
                 ok = false;
-                badName = ecs::PlayerRuntime::GetName(((m) ? (m)->GetEntityHandle() : entt::null)).data();
+                badName = ecs::PlayerRuntime::GetName(m).data();
                 badType = BAD_COOLDOWN;
                 badVal = rem;
                 return;
             }
 
-            if (!HasEntryItem(m))
+            if (!HasEntryItem(pkM))
             {
                 ok = false;
-                badName = ecs::PlayerRuntime::GetName(((m) ? (m)->GetEntityHandle() : entt::null)).data();
+                badName = ecs::PlayerRuntime::GetName(m).data();
                 badType = BAD_ITEM;
                 return;
             }
         };
+    auto checkMemberPtr = [&](LPCHARACTER pkMember) { checkMember(pkMember ? pkMember->GetEntityHandle() : entt::null); };
 
     if (!party)
-        checkMember(ch);
+        checkMember(character);
     else
-        party->ForEachOnMapMember(checkMember, originMapForWarp);
+        party->ForEachOnMapMember(checkMemberPtr, originMapForWarp);
 
     if (!ok)
     {
@@ -614,28 +614,29 @@ bool CNightmareDungeonRazor93::OnClickNpc(entt::entity character)
     const int32_t newMapIndex = d->GetMapIndex();
 
     // Consume items + set cooldown + save return location BEFORE join
-    auto applyMember = [&](LPCHARACTER m)
-        {
-            if (!m || !ecs::PlayerRuntime::IsPC(((m) ? (m)->GetEntityHandle() : entt::null)))
+    auto applyMember = [&](entt::entity m){
+            LPCHARACTER pkM = ecs::LegacyCharOf(m);
+            if (!pkM || !ecs::PlayerRuntime::IsPC(m))
                 return;
 
-            RemoveEntryItem(m);
-            SetCooldown(m);
+            RemoveEntryItem(pkM);
+            SetCooldown(pkM);
 
             // Save current position as return point for ExitAllLobby.
             // When restarting from inside a completed instance, keep the original return point.
             if (!fromCompletedInside)
-                m->SetWarpLocation(ecs::PlayerRuntime::GetMapIndex(((m) ? (m)->GetEntityHandle() : entt::null)), (int32_t)(ecs::PlayerRuntime::GetX(((m) ? (m)->GetEntityHandle() : entt::null)) / 100), (int32_t)(ecs::PlayerRuntime::GetY(((m) ? (m)->GetEntityHandle() : entt::null)) / 100));
+                pkM->SetWarpLocation(ecs::PlayerRuntime::GetMapIndex(m), (int32_t)(ecs::PlayerRuntime::GetX(m) / 100), (int32_t)(ecs::PlayerRuntime::GetY(m) / 100));
         };
+    auto applyMemberPtr = [&](LPCHARACTER pkMember) { applyMember(pkMember ? pkMember->GetEntityHandle() : entt::null); };
 
     if (!party)
     {
-        applyMember(ch);
+        applyMember(character);
         d->Join_Coords(ch, 2113, 1729, kOriginalMap);
     }
     else
     {
-        party->ForEachOnMapMember(applyMember, originMapForWarp);
+        party->ForEachOnMapMember(applyMemberPtr, originMapForWarp);
         d->JoinParty_Coords(party, 2113, 1729, originMapForWarp);
     }
 

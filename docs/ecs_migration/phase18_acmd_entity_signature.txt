@@ -391,3 +391,64 @@ line. Flipping that std::function to void(entt::entity) would push the entity
 into every lambda in all ten files at once - that is the natural next step for
 this group, and it is a different shape from the hook flip, so it gets its own
 pass.
+
+
+Phase 18g - dungeon group, pass 2: ForEachPcOnMap
+--------------------------------------------------
+The shape phase 18f left open. Every dungeon file carries its own copy of a
+per-map PC iterator, in two spellings:
+
+  A) inline void ForEachPcOnMap(int32_t, const std::function<void(LPCHARACTER)>&)
+     (7 files, plus PyramidDungeonRazor93's hand-rolled collector variant)
+  B) template <typename F> void ForEachPcOnMap(int32_t, F&&)
+     (Halloween2022, RuneDungeon, VikingDungeon)
+
+Both now hand over an entt::entity, converting exactly once at the iterator's
+own PC check. 65 lambdas flipped across the ten files, 178 conversion sites
+removed inside them; 62 kept a pk-prefixed alias for their remaining pointer
+use.
+
+Two follow-on shapes had to be handled
+--------------------------------------
+1. Named lambdas (applyMember, checkMember, setupMember, prepareMember, fn,
+   check, removeEntranceItems) are both passed to ForEachPcOnMap *and* invoked
+   directly on the single-player path: `if (!party) applyMember(ch);`. Those
+   invocations now pass the entity already in scope.
+
+2. CParty::ForEach*Member still calls back with an LPCHARACTER, and it takes
+   Func& - an lvalue. Nine sites in four files handed a now-entity lambda to
+   it. Each got a named pointer->entity adapter:
+
+     auto checkMemberPtr = [&](LPCHARACTER pkMember) {
+         checkMember(pkMember ? pkMember->GetEntityHandle() : entt::null); };
+
+   Flipping CParty's iterators themselves would reach dungeon.cpp,
+   CombatSystem, ItemSystem_LegacyBridge, SocialSystem, questlua_* and
+   input_main - a separate phase.
+
+Two tooling bugs, caught and reverted
+-------------------------------------
+The first attempt at this pass was reverted whole rather than patched:
+
+- The lambda-invocation fixer rewrote the string in place while iterating a
+  match list computed on the *old* string, so every match after the first used
+  a stale offset. It produced `applyMember(m)er(pkM);` - a syntax error, so the
+  compiler caught it, but the same bug in a whole-word-safe rewrite could have
+  landed silently. The fixer now builds the output in one pass.
+- The CParty adapter was inserted at the call site, which is often a braceless
+  `if (party) ...` branch, turning one statement into two and detaching the
+  `else`. Adapters are now declared right after the lambda they wrap, which is
+  always at statement scope.
+
+Dungeon group: 351 -> 196 conversion sites (819 -> 196 across both passes)
+Project-wide conversion count: 3909 -> 3730
+Build: RelWithDebInfo GameServer, 0 errors.
+
+What is left in this group (196 sites)
+--------------------------------------
+Almost all of them are on spawned NPCs and mobs, not on players: clone (36),
+target (20), source (11), boss, stone, gate, metin, statue, totem, memorial.
+These come from CHARACTER_MANAGER::SpawnMob, which still returns LPCHARACTER -
+the same identity boundary that phase 18c deliberately left alone. They cannot
+move until the spawn/lookup API returns entities.
+LostCastleDungeon keeps 76 of the 196 because it is the clone-heavy one.

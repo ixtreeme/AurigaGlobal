@@ -189,8 +189,8 @@ namespace
                 if (!ent || ent->GetType() != ENTITY_CHARACTER)
                     return;
                 LPCHARACTER ch = (LPCHARACTER)ent;
-                if (ch && ecs::PlayerRuntime::IsPC(((ch) ? (ch)->GetEntityHandle() : entt::null)))
-                    m_f(ch);
+                if (ch && ecs::PlayerRuntime::IsPC(ch->GetEntityHandle()))
+                    m_f(ch->GetEntityHandle());
             }
         } each(fn);
 
@@ -205,10 +205,10 @@ namespace
         vsnprintf(buf, sizeof(buf), fmt, ap);
         va_end(ap);
 
-        ForEachPcOnMap(mapIndex, [&](LPCHARACTER pc)
-        {
-            if (pc)
-                ecs::ChatSystem::Send(((pc) ? (pc)->GetEntityHandle() : entt::null), CHAT_TYPE_NOTICE, "%s", buf);
+        ForEachPcOnMap(mapIndex, [&](entt::entity pc){
+            LPCHARACTER pkPc = ecs::LegacyCharOf(pc);
+            if (pkPc)
+                ecs::ChatSystem::Send(pc, CHAT_TYPE_NOTICE, "%s", buf);
         });
     }
 
@@ -220,10 +220,10 @@ namespace
         vsnprintf(buf, sizeof(buf), fmt, ap);
         va_end(ap);
 
-        ForEachPcOnMap(mapIndex, [&](LPCHARACTER pc)
-        {
-            if (pc)
-                ecs::ChatSystem::Send(((pc) ? (pc)->GetEntityHandle() : entt::null), CHAT_TYPE_BIG_NOTICE, "%s", buf);
+        ForEachPcOnMap(mapIndex, [&](entt::entity pc){
+            LPCHARACTER pkPc = ecs::LegacyCharOf(pc);
+            if (pkPc)
+                ecs::ChatSystem::Send(pc, CHAT_TYPE_BIG_NOTICE, "%s", buf);
         });
     }
 
@@ -284,9 +284,9 @@ namespace
 
     void WarpAllOut(int32_t mapIndex)
     {
-        ForEachPcOnMap(mapIndex, [&](LPCHARACTER pc)
-        {
-            WarpOut(pc);
+        ForEachPcOnMap(mapIndex, [&](entt::entity pc){
+            LPCHARACTER pkPc = ecs::LegacyCharOf(pc);
+            WarpOut(pkPc);
         });
     }
 
@@ -366,12 +366,13 @@ namespace
         int32_t count = 0;
         if (!party)
             return 0;
-        auto fn = [&](LPCHARACTER pc)
-        {
-            if (pc && ecs::SocialSystem::GetParty(((pc) ? (pc)->GetEntityHandle() : entt::null)) == party)
+        auto fn = [&](entt::entity pc){
+            LPCHARACTER pkPc = ecs::LegacyCharOf(pc);
+            if (pkPc && ecs::SocialSystem::GetParty(pc) == party)
                 ++count;
         };
-        party->ForEachOnMapMember(fn, mapIndex);
+        auto fnPtr = [&](LPCHARACTER pkMember) { fn(pkMember ? pkMember->GetEntityHandle() : entt::null); };
+        party->ForEachOnMapMember(fnPtr, mapIndex);
         return count;
     }
 
@@ -776,52 +777,53 @@ bool CHalloween2022Dungeon::OnClickNpc(entt::entity character, entt::entity npc)
     enum EBad { BAD_NONE, BAD_LEVEL, BAD_WARP, BAD_ITEM, BAD_COOLDOWN } bad = BAD_NONE;
     int32_t badVal = 0;
 
-    auto checkMember = [&](LPCHARACTER m)
-    {
-        if (!ok || !m || !ecs::PlayerRuntime::IsPC(((m) ? (m)->GetEntityHandle() : entt::null)))
+    auto checkMember = [&](entt::entity m){
+        LPCHARACTER pkM = ecs::LegacyCharOf(m);
+        if (!ok || !pkM || !ecs::PlayerRuntime::IsPC(m))
             return;
 
-        const int32_t lv = ecs::PointSystem::GetLevel(((m) ? (m)->GetEntityHandle() : entt::null));
+        const int32_t lv = ecs::PointSystem::GetLevel(m);
         if (lv < kMinLevel || lv > kMaxLevel)
         {
             ok = false;
             bad = BAD_LEVEL;
-            badName = ecs::PlayerRuntime::GetName(((m) ? (m)->GetEntityHandle() : entt::null)).data();
+            badName = ecs::PlayerRuntime::GetName(m).data();
             badVal = lv;
             return;
         }
 
-        if (!ecs::PlayerRuntime::CanWarp(((m) ? (m)->GetEntityHandle() : entt::null)))
+        if (!ecs::PlayerRuntime::CanWarp(m))
         {
             ok = false;
             bad = BAD_WARP;
-            badName = ecs::PlayerRuntime::GetName(((m) ? (m)->GetEntityHandle() : entt::null)).data();
+            badName = ecs::PlayerRuntime::GetName(m).data();
             return;
         }
 
-        const int32_t rem = CooldownRemain(m);
+        const int32_t rem = CooldownRemain(pkM);
         if (rem > 0)
         {
             ok = false;
             bad = BAD_COOLDOWN;
-            badName = ecs::PlayerRuntime::GetName(((m) ? (m)->GetEntityHandle() : entt::null)).data();
+            badName = ecs::PlayerRuntime::GetName(m).data();
             badVal = rem;
             return;
         }
 
-        if (m->CountSpecifyItem(kEntryItemVnum) < kEntryItemCount)
+        if (pkM->CountSpecifyItem(kEntryItemVnum) < kEntryItemCount)
         {
             ok = false;
             bad = BAD_ITEM;
-            badName = ecs::PlayerRuntime::GetName(((m) ? (m)->GetEntityHandle() : entt::null)).data();
+            badName = ecs::PlayerRuntime::GetName(m).data();
             return;
         }
     };
+    auto checkMemberPtr = [&](LPCHARACTER pkMember) { checkMember(pkMember ? pkMember->GetEntityHandle() : entt::null); };
 
     if (!party)
-        checkMember(ch);
+        checkMember(character);
     else
-        party->ForEachOnMapMember(checkMember, originMapForWarp);
+        party->ForEachOnMapMember(checkMemberPtr, originMapForWarp);
 
     if (!ok)
     {
@@ -856,25 +858,26 @@ bool CHalloween2022Dungeon::OnClickNpc(entt::entity character, entt::entity npc)
 
     const int32_t dungeonMapIdx = d->GetMapIndex();
 
-    auto prepareMember = [&](LPCHARACTER m)
-    {
-        if (!m || !ecs::PlayerRuntime::IsPC(((m) ? (m)->GetEntityHandle() : entt::null)))
+    auto prepareMember = [&](entt::entity m){
+        LPCHARACTER pkM = ecs::LegacyCharOf(m);
+        if (!pkM || !ecs::PlayerRuntime::IsPC(m))
             return;
 
         if (!fromCompletedInside)
-            SetOutsideWarpLocation(m);
+            SetOutsideWarpLocation(pkM);
 
-        ClearRejoinFlags(m);
-        ecs::QuestSystem::SetFlag(((m) ? (m)->GetEntityHandle() : entt::null), kQfIdx, dungeonMapIdx);
-        ecs::QuestSystem::SetFlag(((m) ? (m)->GetEntityHandle() : entt::null), kQfCh, (int32_t)g_bChannel);
-        SetCooldown(m);
-        m->RemoveSpecifyItem(kEntryItemVnum, kEntryItemCount);
+        ClearRejoinFlags(pkM);
+        ecs::QuestSystem::SetFlag(m, kQfIdx, dungeonMapIdx);
+        ecs::QuestSystem::SetFlag(m, kQfCh, (int32_t)g_bChannel);
+        SetCooldown(pkM);
+        pkM->RemoveSpecifyItem(kEntryItemVnum, kEntryItemCount);
     };
+    auto prepareMemberPtr = [&](LPCHARACTER pkMember) { prepareMember(pkMember ? pkMember->GetEntityHandle() : entt::null); };
 
     if (!party)
-        prepareMember(ch);
+        prepareMember(character);
     else
-        party->ForEachOnMapMember(prepareMember, originMapForWarp);
+        party->ForEachOnMapMember(prepareMemberPtr, originMapForWarp);
 
     SetDungeonReady(d);
     s_hw22.ScheduleTimeout(dungeonMapIdx);
@@ -1073,10 +1076,10 @@ void CHalloween2022Dungeon::OnMobKilled(entt::entity killer, entt::entity victim
 
         s_hw22.Cancel(s_hw22.m_evTimeout, idx);
 
-        ForEachPcOnMap(idx, [&](LPCHARACTER pc)
-        {
-            SetCooldown(pc);
-            ClearRejoinFlags(pc);
+        ForEachPcOnMap(idx, [&](entt::entity pc){
+            LPCHARACTER pkPc = ecs::LegacyCharOf(pc);
+            SetCooldown(pkPc);
+            ClearRejoinFlags(pkPc);
         });
 
         d->SpawnMob(kEntryNpcVnum, kRewardChestPos.x, kRewardChestPos.y, kRewardChestPos.dir);

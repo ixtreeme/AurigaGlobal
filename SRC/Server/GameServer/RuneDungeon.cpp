@@ -176,8 +176,8 @@ namespace
                 if (!ent || ent->GetType() != ENTITY_CHARACTER)
                     return;
                 LPCHARACTER ch = (LPCHARACTER)ent;
-                if (ch && ecs::PlayerRuntime::IsPC(((ch) ? (ch)->GetEntityHandle() : entt::null)))
-                    m_f(ch);
+                if (ch && ecs::PlayerRuntime::IsPC(ch->GetEntityHandle()))
+                    m_f(ch->GetEntityHandle());
             }
         } each(fn);
 
@@ -196,12 +196,13 @@ namespace
 
     void RemoveAllItemOnMap(int32_t mapIndex, uint32_t vnum)
     {
-        ForEachPcOnMap(mapIndex, [vnum](LPCHARACTER pc) {
-            if (!pc)
+        ForEachPcOnMap(mapIndex, [vnum](entt::entity pc){
+            LPCHARACTER pkPc = ecs::LegacyCharOf(pc);
+            if (!pkPc)
                 return;
-            const int32_t cnt = pc->CountSpecifyItem(vnum);
+            const int32_t cnt = pkPc->CountSpecifyItem(vnum);
             if (cnt > 0)
-                pc->RemoveSpecifyItem(vnum, cnt);
+                pkPc->RemoveSpecifyItem(vnum, cnt);
             });
     }
 
@@ -229,36 +230,36 @@ namespace
     {
         const int32_t now = get_global_time();
 
-        ForEachPcOnMap(dungeonMapIdx, [&](LPCHARACTER ch)
-            {
-                if (!ch)
+        ForEachPcOnMap(dungeonMapIdx, [&](entt::entity ch){
+                LPCHARACTER pkCh = ecs::LegacyCharOf(ch);
+                if (!pkCh)
                     return;
 
                 // Mimic questlua_dungeon::d.complete()
-                ch->SetRankPoints(16, ch->GetRankPoints(16) + 1);
+                pkCh->SetRankPoints(16, pkCh->GetRankPoints(16) + 1);
 
 #ifdef ENABLE_BATTLE_PASS
                 {
-                    const uint8_t battlepassid = ch->GetBattlePassId();
+                    const uint8_t battlepassid = pkCh->GetBattlePassId();
                     if (battlepassid)
                     {
                         uint32_t id, count;
                         if (CBattlePass::instance().BattlePassMissionGetInfo(battlepassid, COMPLETE_DUNGEON, &id, &count))
                         {
-                            if (id == 1 && ch->GetMissionProgress(COMPLETE_DUNGEON, battlepassid) < count)
-                                ch->UpdateMissionProgress(COMPLETE_DUNGEON, battlepassid, 1, count);
+                            if (id == 1 && pkCh->GetMissionProgress(COMPLETE_DUNGEON, battlepassid) < count)
+                                pkCh->UpdateMissionProgress(COMPLETE_DUNGEON, battlepassid, 1, count);
                         }
                     }
                 }
 #endif
 
-                const int32_t enter_time = ecs::QuestSystem::GetFlag(((ch) ? (ch)->GetEntityHandle() : entt::null), kQfEnterTime);
+                const int32_t enter_time = ecs::QuestSystem::GetFlag(ch, kQfEnterTime);
 
-                ecs::QuestSystem::SetFlag(((ch) ? (ch)->GetEntityHandle() : entt::null), kQfEnterTime, 0);
-                ecs::QuestSystem::SetFlag(((ch) ? (ch)->GetEntityHandle() : entt::null), kQfDisconnect, 0);
-                ecs::QuestSystem::SetFlag(((ch) ? (ch)->GetEntityHandle() : entt::null), kQfIdx, 0);
-                ecs::QuestSystem::SetFlag(((ch) ? (ch)->GetEntityHandle() : entt::null), kQfCh, 0);
-                ecs::QuestSystem::SetFlag(((ch) ? (ch)->GetEntityHandle() : entt::null), kQfCooldown, now + kCooldownSeconds);
+                ecs::QuestSystem::SetFlag(ch, kQfEnterTime, 0);
+                ecs::QuestSystem::SetFlag(ch, kQfDisconnect, 0);
+                ecs::QuestSystem::SetFlag(ch, kQfIdx, 0);
+                ecs::QuestSystem::SetFlag(ch, kQfCh, 0);
+                ecs::QuestSystem::SetFlag(ch, kQfCooldown, now + kCooldownSeconds);
 
                 int32_t elapsed = (enter_time > 0) ? (now - enter_time) : 0;
                 if (elapsed < 0)
@@ -266,12 +267,12 @@ namespace
 
                 int32_t damage = 0;
 #ifdef __DUNGEON_INFO_SYSTEM__
-                damage = ch->GetQuestDamage((int)kBossFloor5_Final);
+                damage = pkCh->GetQuestDamage((int)kBossFloor5_Final);
                 if (damage < 0)
                     damage = 0;
 #endif
 
-                const int32_t pid = ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null));
+                const int32_t pid = ecs::PlayerRuntime::GetPlayerID(ch);
                 const int32_t dungeon_index = kRuneOriginalMap;
 
                 std::unique_ptr<SQLMsg> msgcheck(DBManager::instance().DirectQuery(
@@ -294,7 +295,7 @@ namespace
                 }
                 else
                 {
-                    LPDESC desc = ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null));
+                    LPDESC desc = ecs::PlayerRuntime::GetDesc(ch);
                     const uint32_t accId = desc ? desc->GetAccountTable().id : 0;
                     DBManager::instance().DirectQuery(
                         "INSERT INTO dungeon_ranking (acc_id, pid, dungeon_index, completed, time, damage) VALUES ('%u', '%d', '%d', '%d', '%d', '%d')",
@@ -1287,25 +1288,26 @@ bool CRuneDungeon::OnClickNpc(entt::entity character)
     }
 
     // Level / entry item checks
-    auto removeEntranceItems = [](LPCHARACTER pc) {
-        if (!pc)
+    auto removeEntranceItems = [](entt::entity pc){
+        LPCHARACTER pkPc = ecs::LegacyCharOf(pc);
+        if (!pkPc)
             return;
 
         // Entry item (1x)
-        pc->RemoveSpecifyItem(kRequiredItem, 1);
+        pkPc->RemoveSpecifyItem(kRequiredItem, 1);
 
         // Leftovers (Lua: d.remove_item / pc.remove_item)
-        const int32_t c = pc->CountSpecifyItem(kRemoveAllItem);
+        const int32_t c = pkPc->CountSpecifyItem(kRemoveAllItem);
         if (c > 0)
-            pc->RemoveSpecifyItem(kRemoveAllItem, c);
+            pkPc->RemoveSpecifyItem(kRemoveAllItem, c);
 
-        const int32_t f = pc->CountSpecifyItem(kKeyFragment);
+        const int32_t f = pkPc->CountSpecifyItem(kKeyFragment);
         if (f > 0)
-            pc->RemoveSpecifyItem(kKeyFragment, f);
+            pkPc->RemoveSpecifyItem(kKeyFragment, f);
 
-        const int32_t k = pc->CountSpecifyItem(kFloorKey);
+        const int32_t k = pkPc->CountSpecifyItem(kFloorKey);
         if (k > 0)
-            pc->RemoveSpecifyItem(kFloorKey, k);
+            pkPc->RemoveSpecifyItem(kFloorKey, k);
         };
 
     LPPARTY party = ecs::SocialSystem::GetParty(character);
@@ -1326,26 +1328,27 @@ bool CRuneDungeon::OnClickNpc(entt::entity character)
         bool missingItem = false;
 
         // Check only players that will be pulled by JoinParty_Coords (same map as leader)
-        ForEachPcOnMap(ecs::PlayerRuntime::GetMapIndex(character), [&](LPCHARACTER pc) {
-            if (!ok || !pc || !ecs::PlayerRuntime::IsPC(((pc) ? (pc)->GetEntityHandle() : entt::null)))
+        ForEachPcOnMap(ecs::PlayerRuntime::GetMapIndex(character), [&](entt::entity pc){
+            LPCHARACTER pkPc = ecs::LegacyCharOf(pc);
+            if (!ok || !pkPc || !ecs::PlayerRuntime::IsPC(pc))
                 return;
-            if (ecs::SocialSystem::GetParty(((pc) ? (pc)->GetEntityHandle() : entt::null)) != party)
+            if (ecs::SocialSystem::GetParty(pc) != party)
                 return;
 
-            if (ecs::PointSystem::GetLevel(((pc) ? (pc)->GetEntityHandle() : entt::null)) < kMinLevel || ecs::PointSystem::GetLevel(((pc) ? (pc)->GetEntityHandle() : entt::null)) > kMaxLevel)
+            if (ecs::PointSystem::GetLevel(pc) < kMinLevel || ecs::PointSystem::GetLevel(pc) > kMaxLevel)
             {
                 ok = false;
-                badName = ecs::PlayerRuntime::GetName(((pc) ? (pc)->GetEntityHandle() : entt::null)).data();
-                badLevel = ecs::PointSystem::GetLevel(((pc) ? (pc)->GetEntityHandle() : entt::null));
+                badName = ecs::PlayerRuntime::GetName(pc).data();
+                badLevel = ecs::PointSystem::GetLevel(pc);
                 missingItem = false;
                 return;
             }
 
-            if (pc->CountSpecifyItem(kRequiredItem) < 1)
+            if (pkPc->CountSpecifyItem(kRequiredItem) < 1)
             {
                 ok = false;
-                badName = ecs::PlayerRuntime::GetName(((pc) ? (pc)->GetEntityHandle() : entt::null)).data();
-                badLevel = ecs::PointSystem::GetLevel(((pc) ? (pc)->GetEntityHandle() : entt::null));
+                badName = ecs::PlayerRuntime::GetName(pc).data();
+                badLevel = ecs::PointSystem::GetLevel(pc);
                 missingItem = true;
                 return;
             }
@@ -1386,27 +1389,28 @@ bool CRuneDungeon::OnClickNpc(entt::entity character)
 
     const int32_t dungeonMapIdx = d->GetMapIndex();
 
-    auto setupMember = [&](LPCHARACTER pc)
-        {
-            if (!pc || !ecs::PlayerRuntime::IsPC(((pc) ? (pc)->GetEntityHandle() : entt::null)))
+    auto setupMember = [&](entt::entity pc){
+            LPCHARACTER pkPc = ecs::LegacyCharOf(pc);
+            if (!pkPc || !ecs::PlayerRuntime::IsPC(pc))
                 return;
 
             removeEntranceItems(pc);
 
-            ecs::QuestSystem::SetFlag(((pc) ? (pc)->GetEntityHandle() : entt::null), kQfDisconnect, 0);
-            ecs::QuestSystem::SetFlag(((pc) ? (pc)->GetEntityHandle() : entt::null), kQfIdx, dungeonMapIdx);
-            ecs::QuestSystem::SetFlag(((pc) ? (pc)->GetEntityHandle() : entt::null), kQfCh, (int32_t)g_bChannel);
-            ecs::QuestSystem::SetFlag(((pc) ? (pc)->GetEntityHandle() : entt::null), kQfEnterTime, now);
+            ecs::QuestSystem::SetFlag(pc, kQfDisconnect, 0);
+            ecs::QuestSystem::SetFlag(pc, kQfIdx, dungeonMapIdx);
+            ecs::QuestSystem::SetFlag(pc, kQfCh, (int32_t)g_bChannel);
+            ecs::QuestSystem::SetFlag(pc, kQfEnterTime, now);
 
             // Same return location as Lua.
-            pc->SetWarpLocation(219, 5369, 14292);
+            pkPc->SetWarpLocation(219, 5369, 14292);
         };
 
     // Consume entry items + clear leftovers BEFORE warping, and set rejoin/ranking timers
     if (party)
     {
-        ForEachPcOnMap(ecs::PlayerRuntime::GetMapIndex(character), [&](LPCHARACTER pc) {
-            if (!pc || !ecs::PlayerRuntime::IsPC(((pc) ? (pc)->GetEntityHandle() : entt::null)) || ecs::SocialSystem::GetParty(((pc) ? (pc)->GetEntityHandle() : entt::null)) != party)
+        ForEachPcOnMap(ecs::PlayerRuntime::GetMapIndex(character), [&](entt::entity pc){
+            LPCHARACTER pkPc = ecs::LegacyCharOf(pc);
+            if (!pkPc || !ecs::PlayerRuntime::IsPC(pc) || ecs::SocialSystem::GetParty(pc) != party)
                 return;
             setupMember(pc);
             });
@@ -1415,7 +1419,7 @@ bool CRuneDungeon::OnClickNpc(entt::entity character)
     }
     else
     {
-        setupMember(ch);
+        setupMember(character);
         d->Join_Coords(ch, kEnterFloor1X, kEnterFloor1Y, ecs::PlayerRuntime::GetMapIndex(character));
     }
 

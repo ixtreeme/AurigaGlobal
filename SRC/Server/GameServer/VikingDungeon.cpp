@@ -228,8 +228,8 @@ namespace
                 if (!ent || ent->GetType() != ENTITY_CHARACTER)
                     return;
                 LPCHARACTER ch = (LPCHARACTER)ent;
-                if (ch && ecs::PlayerRuntime::IsPC(((ch) ? (ch)->GetEntityHandle() : entt::null)))
-                    m_f(ch);
+                if (ch && ecs::PlayerRuntime::IsPC(ch->GetEntityHandle()))
+                    m_f(ch->GetEntityHandle());
             }
         } each(fn);
 
@@ -244,9 +244,8 @@ namespace
         vsnprintf(buf, sizeof(buf), fmt, ap);
         va_end(ap);
 
-        ForEachPcOnMap(mapIndex, [&](LPCHARACTER pc)
-        {
-            ecs::ChatSystem::Send(((pc) ? (pc)->GetEntityHandle() : entt::null), CHAT_TYPE_NOTICE, "%s", buf);
+        ForEachPcOnMap(mapIndex, [&](entt::entity pc){
+            ecs::ChatSystem::Send(pc, CHAT_TYPE_NOTICE, "%s", buf);
         });
     }
 
@@ -258,9 +257,8 @@ namespace
         vsnprintf(buf, sizeof(buf), fmt, ap);
         va_end(ap);
 
-        ForEachPcOnMap(mapIndex, [&](LPCHARACTER pc)
-        {
-            ecs::ChatSystem::Send(((pc) ? (pc)->GetEntityHandle() : entt::null), CHAT_TYPE_BIG_NOTICE, "%s", buf);
+        ForEachPcOnMap(mapIndex, [&](entt::entity pc){
+            ecs::ChatSystem::Send(pc, CHAT_TYPE_BIG_NOTICE, "%s", buf);
         });
     }
 
@@ -318,9 +316,9 @@ namespace
 
     void WarpAllOut(int32_t mapIndex)
     {
-        ForEachPcOnMap(mapIndex, [&](LPCHARACTER ch)
-        {
-            WarpOut(ch);
+        ForEachPcOnMap(mapIndex, [&](entt::entity ch){
+            LPCHARACTER pkCh = ecs::LegacyCharOf(ch);
+            WarpOut(pkCh);
         });
     }
 
@@ -360,18 +358,18 @@ namespace
         if (pct <= 0)
             return;
 
-        ForEachPcOnMap(mapIndex, [&](LPCHARACTER ch)
-        {
-            if (!ch || ch->GetHP() <= 1)
+        ForEachPcOnMap(mapIndex, [&](entt::entity ch){
+            LPCHARACTER pkCh = ecs::LegacyCharOf(ch);
+            if (!pkCh || pkCh->GetHP() <= 1)
                 return;
 
-            int64_t dmg = (ch->GetHP() * pct) / 100;
+            int64_t dmg = (pkCh->GetHP() * pct) / 100;
             if (dmg < 1)
                 dmg = 1;
-            if (dmg >= ch->GetHP())
-                dmg = ch->GetHP() - 1;
+            if (dmg >= pkCh->GetHP())
+                dmg = pkCh->GetHP() - 1;
             if (dmg > 0)
-                ecs::PointSystem::Change(((ch) ? (ch)->GetEntityHandle() : entt::null), POINT_HP, -dmg);
+                ecs::PointSystem::Change(ch, POINT_HP, -dmg);
         });
     }
 
@@ -871,9 +869,9 @@ namespace
 
             CancelAll(idx);
 
-            ForEachPcOnMap(idx, [&](LPCHARACTER member)
-            {
-                SetCooldown(member);
+            ForEachPcOnMap(idx, [&](entt::entity member){
+                LPCHARACTER pkMember = ecs::LegacyCharOf(member);
+                SetCooldown(pkMember);
             });
 
             ClearDungeonNonPlayers(d);
@@ -1248,54 +1246,55 @@ bool CVikingDungeon::OnClickNpc(entt::entity character, entt::entity npc)
     int32_t badVal = 0;
     bool ok = true;
 
-    auto checkMember = [&](LPCHARACTER m)
-    {
-        if (!m || !ecs::PlayerRuntime::IsPC(((m) ? (m)->GetEntityHandle() : entt::null)) || !ok)
+    auto checkMember = [&](entt::entity m){
+        LPCHARACTER pkM = ecs::LegacyCharOf(m);
+        if (!pkM || !ecs::PlayerRuntime::IsPC(m) || !ok)
             return;
 
-        if (ecs::PointSystem::GetLevel(((m) ? (m)->GetEntityHandle() : entt::null)) < kMinLevel || ecs::PointSystem::GetLevel(((m) ? (m)->GetEntityHandle() : entt::null)) > kMaxLevel)
+        if (ecs::PointSystem::GetLevel(m) < kMinLevel || ecs::PointSystem::GetLevel(m) > kMaxLevel)
         {
             ok = false;
             bad = BAD_LEVEL;
-            badName = ecs::PlayerRuntime::GetName(((m) ? (m)->GetEntityHandle() : entt::null)).data();
-            badVal = ecs::PointSystem::GetLevel(((m) ? (m)->GetEntityHandle() : entt::null));
+            badName = ecs::PlayerRuntime::GetName(m).data();
+            badVal = ecs::PointSystem::GetLevel(m);
             return;
         }
 
-        if (!ecs::PlayerRuntime::CanWarp(((m) ? (m)->GetEntityHandle() : entt::null)))
+        if (!ecs::PlayerRuntime::CanWarp(m))
         {
             ok = false;
             bad = BAD_WARP;
-            badName = ecs::PlayerRuntime::GetName(((m) ? (m)->GetEntityHandle() : entt::null)).data();
+            badName = ecs::PlayerRuntime::GetName(m).data();
             return;
         }
 
         if (!quickRestart)
         {
-            if (m->CountSpecifyItem(kEntryItemVnum) < kEntryItemCount)
+            if (pkM->CountSpecifyItem(kEntryItemVnum) < kEntryItemCount)
             {
                 ok = false;
                 bad = BAD_ITEM;
-                badName = ecs::PlayerRuntime::GetName(((m) ? (m)->GetEntityHandle() : entt::null)).data();
+                badName = ecs::PlayerRuntime::GetName(m).data();
                 return;
             }
 
-            const int32_t cd = ecs::QuestSystem::GetFlag(((m) ? (m)->GetEntityHandle() : entt::null), kQfCooldown);
+            const int32_t cd = ecs::QuestSystem::GetFlag(m, kQfCooldown);
             if (cd > now)
             {
                 ok = false;
                 bad = BAD_COOLDOWN;
-                badName = ecs::PlayerRuntime::GetName(((m) ? (m)->GetEntityHandle() : entt::null)).data();
+                badName = ecs::PlayerRuntime::GetName(m).data();
                 badVal = cd - now;
                 return;
             }
         }
     };
+    auto checkMemberPtr = [&](LPCHARACTER pkMember) { checkMember(pkMember ? pkMember->GetEntityHandle() : entt::null); };
 
     if (party)
-        party->ForEachOnMapMember(checkMember, ecs::PlayerRuntime::GetMapIndex(character));
+        party->ForEachOnMapMember(checkMemberPtr, ecs::PlayerRuntime::GetMapIndex(character));
     else
-        checkMember(ch);
+        checkMember(character);
 
     if (!ok)
     {
@@ -1330,27 +1329,28 @@ bool CVikingDungeon::OnClickNpc(entt::entity character, entt::entity npc)
 
     const int32_t dungeonMapIdx = d->GetMapIndex();
 
-    auto prepareMember = [&](LPCHARACTER m)
-    {
-        if (!m || !ecs::PlayerRuntime::IsPC(((m) ? (m)->GetEntityHandle() : entt::null)))
+    auto prepareMember = [&](entt::entity m){
+        LPCHARACTER pkM = ecs::LegacyCharOf(m);
+        if (!pkM || !ecs::PlayerRuntime::IsPC(m))
             return;
 
-        SetOutsideWarpLocation(m);
-        ClearRejoinFlags(m);
-        ecs::QuestSystem::SetFlag(((m) ? (m)->GetEntityHandle() : entt::null), kQfIdx, dungeonMapIdx);
-        ecs::QuestSystem::SetFlag(((m) ? (m)->GetEntityHandle() : entt::null), kQfCh, (int32_t)g_bChannel);
+        SetOutsideWarpLocation(pkM);
+        ClearRejoinFlags(pkM);
+        ecs::QuestSystem::SetFlag(m, kQfIdx, dungeonMapIdx);
+        ecs::QuestSystem::SetFlag(m, kQfCh, (int32_t)g_bChannel);
 
         if (!quickRestart)
         {
-            SetCooldown(m);
-            m->RemoveSpecifyItem(kEntryItemVnum, kEntryItemCount);
+            SetCooldown(pkM);
+            pkM->RemoveSpecifyItem(kEntryItemVnum, kEntryItemCount);
         }
     };
+    auto prepareMemberPtr = [&](LPCHARACTER pkMember) { prepareMember(pkMember ? pkMember->GetEntityHandle() : entt::null); };
 
     if (party)
-        party->ForEachOnMapMember(prepareMember, ecs::PlayerRuntime::GetMapIndex(character));
+        party->ForEachOnMapMember(prepareMemberPtr, ecs::PlayerRuntime::GetMapIndex(character));
     else
-        prepareMember(ch);
+        prepareMember(character);
 
     SetDungeonReady(d);
 

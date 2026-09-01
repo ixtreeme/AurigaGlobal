@@ -85,18 +85,18 @@ namespace
 
     struct FForEachPC
     {
-        std::function<void(LPCHARACTER)> fn;
+        std::function<void(entt::entity)> fn;
         void operator()(LPENTITY ent)
         {
             if (!ent || !ent->IsType(ENTITY_CHARACTER))
                 return;
             LPCHARACTER ch = static_cast<LPCHARACTER>(ent);
-            if (ch && ecs::PlayerRuntime::IsPC(((ch) ? (ch)->GetEntityHandle() : entt::null)))
-                fn(ch);
+            if (ch && ecs::PlayerRuntime::IsPC(ch->GetEntityHandle()))
+                fn(ch->GetEntityHandle());
         }
     };
 
-    inline void ForEachPcOnMap(int32_t mapIndex, const std::function<void(LPCHARACTER)>& fn)
+    inline void ForEachPcOnMap(int32_t mapIndex, const std::function<void(entt::entity)>& fn)
     {
         LPSECTREE_MAP map = SECTREE_MANAGER::instance().GetMap(mapIndex);
         if (!map)
@@ -402,33 +402,33 @@ static void OrcDungeon_CompleteRankingForMap(int32_t dungeonMapIdx)
 {
     const int32_t now = get_global_time();
 
-    ForEachPcOnMap(dungeonMapIdx, [&](LPCHARACTER ch)
-        {
-            if (!ch)
+    ForEachPcOnMap(dungeonMapIdx, [&](entt::entity ch){
+            LPCHARACTER pkCh = ecs::LegacyCharOf(ch);
+            if (!pkCh)
                 return;
 
             // mimic questlua_dungeon::d.complete (simplified)
-            ch->SetRankPoints(16, ch->GetRankPoints(16) + 1);
+            pkCh->SetRankPoints(16, pkCh->GetRankPoints(16) + 1);
 
 #ifdef ENABLE_BATTLE_PASS
             {
-                uint8_t battlepassid = ch->GetBattlePassId();
+                uint8_t battlepassid = pkCh->GetBattlePassId();
                 if (battlepassid)
                 {
                     uint32_t id, count;
                     if (CBattlePass::instance().BattlePassMissionGetInfo(battlepassid, COMPLETE_DUNGEON, &id, &count))
                     {
-                        if (id == 1 && ch->GetMissionProgress(COMPLETE_DUNGEON, battlepassid) < count)
-                            ch->UpdateMissionProgress(COMPLETE_DUNGEON, battlepassid, 1, count);
+                        if (id == 1 && pkCh->GetMissionProgress(COMPLETE_DUNGEON, battlepassid) < count)
+                            pkCh->UpdateMissionProgress(COMPLETE_DUNGEON, battlepassid, 1, count);
                     }
                 }
             }
 #endif
 
-            const int32_t enter_time = ecs::QuestSystem::GetFlag(((ch) ? (ch)->GetEntityHandle() : entt::null), kQfEnterTime);
-            ecs::QuestSystem::SetFlag(((ch) ? (ch)->GetEntityHandle() : entt::null), kQfEnterTime, 0);
-            ecs::QuestSystem::SetFlag(((ch) ? (ch)->GetEntityHandle() : entt::null), kQfCh, 0);
-            ecs::QuestSystem::SetFlag(((ch) ? (ch)->GetEntityHandle() : entt::null), kQfCooldown, now + kCooldownSeconds);
+            const int32_t enter_time = ecs::QuestSystem::GetFlag(ch, kQfEnterTime);
+            ecs::QuestSystem::SetFlag(ch, kQfEnterTime, 0);
+            ecs::QuestSystem::SetFlag(ch, kQfCh, 0);
+            ecs::QuestSystem::SetFlag(ch, kQfCooldown, now + kCooldownSeconds);
 
             int32_t elapsed = now - enter_time;
             if (elapsed < 0)
@@ -436,13 +436,13 @@ static void OrcDungeon_CompleteRankingForMap(int32_t dungeonMapIdx)
 
             int32_t damage = 0;
 #ifdef __DUNGEON_INFO_SYSTEM__
-            damage = ch->GetQuestDamage((int)kBossVnum);
+            damage = pkCh->GetQuestDamage((int)kBossVnum);
             if (damage < 0)
                 damage = 0;
 #endif
 
             // dungeon_ranking update (same logic as questlua)
-            const int32_t pid = ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null));
+            const int32_t pid = ecs::PlayerRuntime::GetPlayerID(ch);
             const int32_t dungeon_index = kOrcOriginalMap;
 
             std::unique_ptr<SQLMsg> msgcheck(DBManager::instance().DirectQuery(
@@ -465,7 +465,7 @@ static void OrcDungeon_CompleteRankingForMap(int32_t dungeonMapIdx)
             }
             else
             {
-                LPDESC desc = ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null));
+                LPDESC desc = ecs::PlayerRuntime::GetDesc(ch);
                 const uint32_t accId = desc ? desc->GetAccountTable().id : 0;
                 DBManager::instance().DirectQuery(
                     "INSERT INTO dungeon_ranking (acc_id, pid, dungeon_index, completed, time, damage) VALUES ('%u', '%d', '%d', '%d', '%d', '%d')",
@@ -540,10 +540,10 @@ void COrcsDungeon::OnMobKilled(entt::entity killer, entt::entity victim)
             {
                 d->SpawnMob(kBonusMobVnum, kBossX, kBossY);
                 // mimic Lua syschat (send to all players in this dungeon map)
-                ForEachPcOnMap(idx, [&](LPCHARACTER p)
-                    {
-                        if (p)
-                            ecs::ChatSystem::Send(((p) ? (p)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "Dungeon bonus spawn: Nemere ");
+                ForEachPcOnMap(idx, [&](entt::entity p){
+                        LPCHARACTER pkP = ecs::LegacyCharOf(p);
+                        if (pkP)
+                            ecs::ChatSystem::Send(p, CHAT_TYPE_INFO, "Dungeon bonus spawn: Nemere ");
                     });
             }
         }
@@ -708,10 +708,11 @@ bool COrcsDungeon::OnClickNpc(entt::entity character)
     if (party)
     {
         FCooldownCheck f(now, kQfCooldown);
-        ForEachPcOnMap(ecs::PlayerRuntime::GetMapIndex(character), [&](LPCHARACTER m) {
-            if (!m || !ecs::PlayerRuntime::IsPC(((m) ? (m)->GetEntityHandle() : entt::null)) || ecs::SocialSystem::GetParty(((m) ? (m)->GetEntityHandle() : entt::null)) != party)
+        ForEachPcOnMap(ecs::PlayerRuntime::GetMapIndex(character), [&](entt::entity m){
+            LPCHARACTER pkM = ecs::LegacyCharOf(m);
+            if (!pkM || !ecs::PlayerRuntime::IsPC(m) || ecs::SocialSystem::GetParty(m) != party)
                 return;
-            f(m);
+            f(pkM);
         });
         if (!f.ok)
         {
@@ -736,24 +737,25 @@ bool COrcsDungeon::OnClickNpc(entt::entity character)
         int32_t badLevel = 0;
         bool missingItem = false;
 
-        ForEachPcOnMap(ecs::PlayerRuntime::GetMapIndex(character), [&](LPCHARACTER m) {
-            if (!ok || !m || !ecs::PlayerRuntime::IsPC(((m) ? (m)->GetEntityHandle() : entt::null)) || ecs::SocialSystem::GetParty(((m) ? (m)->GetEntityHandle() : entt::null)) != party)
+        ForEachPcOnMap(ecs::PlayerRuntime::GetMapIndex(character), [&](entt::entity m){
+            LPCHARACTER pkM = ecs::LegacyCharOf(m);
+            if (!ok || !pkM || !ecs::PlayerRuntime::IsPC(m) || ecs::SocialSystem::GetParty(m) != party)
                 return;
 
-            if (ecs::PointSystem::GetLevel(((m) ? (m)->GetEntityHandle() : entt::null)) < kMinLevel || ecs::PointSystem::GetLevel(((m) ? (m)->GetEntityHandle() : entt::null)) > kMaxLevel)
+            if (ecs::PointSystem::GetLevel(m) < kMinLevel || ecs::PointSystem::GetLevel(m) > kMaxLevel)
             {
                 ok = false;
-                badName = ecs::PlayerRuntime::GetName(((m) ? (m)->GetEntityHandle() : entt::null)).data();
-                badLevel = ecs::PointSystem::GetLevel(((m) ? (m)->GetEntityHandle() : entt::null));
+                badName = ecs::PlayerRuntime::GetName(m).data();
+                badLevel = ecs::PointSystem::GetLevel(m);
                 missingItem = false;
                 return;
             }
 
-            if (m->CountSpecifyItem(kRequiredItem) < 1)
+            if (pkM->CountSpecifyItem(kRequiredItem) < 1)
             {
                 ok = false;
-                badName = ecs::PlayerRuntime::GetName(((m) ? (m)->GetEntityHandle() : entt::null)).data();
-                badLevel = ecs::PointSystem::GetLevel(((m) ? (m)->GetEntityHandle() : entt::null));
+                badName = ecs::PlayerRuntime::GetName(m).data();
+                badLevel = ecs::PointSystem::GetLevel(m);
                 missingItem = true;
                 return;
             }
@@ -783,32 +785,33 @@ bool COrcsDungeon::OnClickNpc(entt::entity character)
     d->SetFlag(kFlagBossVid, 0);
 
     // Consume items + set per-player flags
-    auto applyMember = [&](LPCHARACTER m)
-        {
-            if (!m || !ecs::PlayerRuntime::IsPC(((m) ? (m)->GetEntityHandle() : entt::null)))
+    auto applyMember = [&](entt::entity m){
+            LPCHARACTER pkM = ecs::LegacyCharOf(m);
+            if (!pkM || !ecs::PlayerRuntime::IsPC(m))
                 return;
 
-            m->RemoveSpecifyItem(kRequiredItem, 1);
-            const int32_t rmAll = m->CountSpecifyItem(kRemoveAllItem);
+            pkM->RemoveSpecifyItem(kRequiredItem, 1);
+            const int32_t rmAll = pkM->CountSpecifyItem(kRemoveAllItem);
             if (rmAll > 0)
-                m->RemoveSpecifyItem(kRemoveAllItem, rmAll);
+                pkM->RemoveSpecifyItem(kRemoveAllItem, rmAll);
 
-            ecs::QuestSystem::SetFlag(((m) ? (m)->GetEntityHandle() : entt::null), kQfDisconnect, 0);
-            ecs::QuestSystem::SetFlag(((m) ? (m)->GetEntityHandle() : entt::null), kQfIdx, d->GetMapIndex());
-            ecs::QuestSystem::SetFlag(((m) ? (m)->GetEntityHandle() : entt::null), kQfCh, (int32_t)g_bChannel);
-            ecs::QuestSystem::SetFlag(((m) ? (m)->GetEntityHandle() : entt::null), kQfEnterTime, now);
+            ecs::QuestSystem::SetFlag(m, kQfDisconnect, 0);
+            ecs::QuestSystem::SetFlag(m, kQfIdx, d->GetMapIndex());
+            ecs::QuestSystem::SetFlag(m, kQfCh, (int32_t)g_bChannel);
+            ecs::QuestSystem::SetFlag(m, kQfEnterTime, now);
             // cooldown is set on completion, just like original quest.
         };
 
     if (!party)
     {
-        applyMember(ch);
+        applyMember(character);
         d->Join_Coords(ch, kEnterX, kEnterY, kOrcOriginalMap);
     }
     else
     {
-        ForEachPcOnMap(ecs::PlayerRuntime::GetMapIndex(character), [&](LPCHARACTER m) {
-            if (!m || !ecs::PlayerRuntime::IsPC(((m) ? (m)->GetEntityHandle() : entt::null)) || ecs::SocialSystem::GetParty(((m) ? (m)->GetEntityHandle() : entt::null)) != party)
+        ForEachPcOnMap(ecs::PlayerRuntime::GetMapIndex(character), [&](entt::entity m){
+            LPCHARACTER pkM = ecs::LegacyCharOf(m);
+            if (!pkM || !ecs::PlayerRuntime::IsPC(m) || ecs::SocialSystem::GetParty(m) != party)
                 return;
             applyMember(m);
         });

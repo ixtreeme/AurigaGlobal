@@ -95,7 +95,7 @@ namespace
 
 
     // Iterate all PCs on a specific map (used to replace Lua d.notice/syschat).
-    static void ForEachPcOnMap(int32_t mapIndex, const std::function<void(LPCHARACTER)>& fn)
+    static void ForEachPcOnMap(int32_t mapIndex, const std::function<void(entt::entity)>& fn)
     {
         LPSECTREE_MAP map = SECTREE_MANAGER::instance().GetMap(mapIndex);
         if (!map)
@@ -125,10 +125,10 @@ namespace
                 continue;
 
             LPCHARACTER c = (LPCHARACTER)ent;
-            if (!c || !ecs::PlayerRuntime::IsPC(((c) ? (c)->GetEntityHandle() : entt::null)))
+            if (!c || !ecs::PlayerRuntime::IsPC(c->GetEntityHandle()))
                 continue;
 
-            fn(c);
+            fn(c->GetEntityHandle());
         }
     }
 
@@ -196,8 +196,9 @@ namespace
                 d->SpawnMob(kMetinVnum, kMetinPos[i][0], kMetinPos[i][1]);
 
             // English notice
-            ForEachPcOnMap(mapIndex, [](LPCHARACTER pc) {
-                if (pc) ecs::ChatSystem::Send(((pc) ? (pc)->GetEntityHandle() : entt::null), CHAT_TYPE_NOTICE, "[Pyramid] Destroy all metins!");
+            ForEachPcOnMap(mapIndex, [](entt::entity pc){
+                LPCHARACTER pkPc = ecs::LegacyCharOf(pc);
+                if (pkPc) ecs::ChatSystem::Send(pc, CHAT_TYPE_NOTICE, "[Pyramid] Destroy all metins!");
                 });
         }
 
@@ -597,15 +598,17 @@ void CPyramidDungeonRazor93::OnMobKilled(entt::entity killer, entt::entity victi
         s -= 1;
         d->SetFlag(kFlagStep, s);
 
-        ForEachPcOnMap(mapIdx, [s](LPCHARACTER pc) {
-            if (pc) ecs::ChatSystem::Send(((pc) ? (pc)->GetEntityHandle() : entt::null), CHAT_TYPE_NOTICE, "[Pyramid] Metins remaining: %d", s);
+        ForEachPcOnMap(mapIdx, [s](entt::entity pc){
+            LPCHARACTER pkPc = ecs::LegacyCharOf(pc);
+            if (pkPc) ecs::ChatSystem::Send(pc, CHAT_TYPE_NOTICE, "[Pyramid] Metins remaining: %d", s);
             });
 
         if (s == 0)
         {
             d->SpawnMob(kStoneVnum, kStoneX, kStoneY);
-            ForEachPcOnMap(mapIdx, [](LPCHARACTER pc) {
-                if (pc) ecs::ChatSystem::Send(((pc) ? (pc)->GetEntityHandle() : entt::null), CHAT_TYPE_NOTICE, "[Pyramid] The stone has appeared!");
+            ForEachPcOnMap(mapIdx, [](entt::entity pc){
+                LPCHARACTER pkPc = ecs::LegacyCharOf(pc);
+                if (pkPc) ecs::ChatSystem::Send(pc, CHAT_TYPE_NOTICE, "[Pyramid] The stone has appeared!");
                 });
         }
         return;
@@ -617,8 +620,9 @@ void CPyramidDungeonRazor93::OnMobKilled(entt::entity killer, entt::entity victi
         d->SetFlag(kFlagBossSpawned, 0);
         d->SpawnRegen(kRegen3, true);
 
-        ForEachPcOnMap(mapIdx, [](LPCHARACTER pc) {
-            if (pc) ecs::ChatSystem::Send(((pc) ? (pc)->GetEntityHandle() : entt::null), CHAT_TYPE_NOTICE, "[Pyramid] Kill all monsters!");
+        ForEachPcOnMap(mapIdx, [](entt::entity pc){
+            LPCHARACTER pkPc = ecs::LegacyCharOf(pc);
+            if (pkPc) ecs::ChatSystem::Send(pc, CHAT_TYPE_NOTICE, "[Pyramid] Kill all monsters!");
             });
         return;
     }
@@ -636,8 +640,9 @@ void CPyramidDungeonRazor93::OnMobKilled(entt::entity killer, entt::entity victi
         {
             d->SetFlag(kFlagBossSpawned, 1);
             d->SpawnMob(kBossVnum, kBossX, kBossY);
-            ForEachPcOnMap(mapIdx, [](LPCHARACTER pc) {
-                if (pc) ecs::ChatSystem::Send(((pc) ? (pc)->GetEntityHandle() : entt::null), CHAT_TYPE_NOTICE, "-------- Kill the Boss! --------");
+            ForEachPcOnMap(mapIdx, [](entt::entity pc){
+                LPCHARACTER pkPc = ecs::LegacyCharOf(pc);
+                if (pkPc) ecs::ChatSystem::Send(pc, CHAT_TYPE_NOTICE, "-------- Kill the Boss! --------");
                 });
         }
         return;
@@ -671,8 +676,9 @@ void CPyramidDungeonRazor93::OnMobKilled(entt::entity killer, entt::entity victi
             if (number(1, 100) <= bonus)
                 d->SpawnMob(kBonusMobVnum, kStoneX, kStoneY);
 
-            ForEachPcOnMap(mapIdx, [](LPCHARACTER pc) {
-                if (pc) ecs::ChatSystem::Send(((pc) ? (pc)->GetEntityHandle() : entt::null), CHAT_TYPE_NOTICE, "[Pyramid] Dungeon completed!");
+            ForEachPcOnMap(mapIdx, [](entt::entity pc){
+                LPCHARACTER pkPc = ecs::LegacyCharOf(pc);
+                if (pkPc) ecs::ChatSystem::Send(pc, CHAT_TYPE_NOTICE, "[Pyramid] Dungeon completed!");
                 });
         }
     }

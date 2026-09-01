@@ -115,18 +115,18 @@ namespace
 
     struct FForEachPC
     {
-        std::function<void(LPCHARACTER)> fn;
+        std::function<void(entt::entity)> fn;
         void operator()(LPENTITY ent)
         {
             if (!ent || !ent->IsType(ENTITY_CHARACTER))
                 return;
             LPCHARACTER ch = static_cast<LPCHARACTER>(ent);
-            if (ch && ecs::PlayerRuntime::IsPC(((ch) ? (ch)->GetEntityHandle() : entt::null)))
-                fn(ch);
+            if (ch && ecs::PlayerRuntime::IsPC(ch->GetEntityHandle()))
+                fn(ch->GetEntityHandle());
         }
     };
 
-    inline void ForEachPcOnMap(int32_t mapIndex, const std::function<void(LPCHARACTER)>& fn)
+    inline void ForEachPcOnMap(int32_t mapIndex, const std::function<void(entt::entity)>& fn)
     {
         LPSECTREE_MAP map = SECTREE_MANAGER::instance().GetMap(mapIndex);
         if (!map)
@@ -143,10 +143,10 @@ namespace
         std::vsnprintf(buf, sizeof(buf), fmt, ap);
         va_end(ap);
 
-        ForEachPcOnMap(mapIndex, [&](LPCHARACTER pc)
-            {
-                if (pc)
-                    ecs::ChatSystem::Send(((pc) ? (pc)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "%s", buf);
+        ForEachPcOnMap(mapIndex, [&](entt::entity pc){
+                LPCHARACTER pkPc = ecs::LegacyCharOf(pc);
+                if (pkPc)
+                    ecs::ChatSystem::Send(pc, CHAT_TYPE_INFO, "%s", buf);
             });
     }
 
@@ -438,16 +438,16 @@ public:
         CancelEvent(m_evToF2, mapIndex);
 
         const int32_t now = get_global_time();
-        ForEachPcOnMap(mapIndex, [&](LPCHARACTER ch)
-            {
-                if (!ch)
+        ForEachPcOnMap(mapIndex, [&](entt::entity ch){
+                LPCHARACTER pkCh = ecs::LegacyCharOf(ch);
+                if (!pkCh)
                     return;
 
-                ecs::QuestSystem::SetFlag(((ch) ? (ch)->GetEntityHandle() : entt::null), "easter_dungeon.disconnect", 0);
-                ecs::QuestSystem::SetFlag(((ch) ? (ch)->GetEntityHandle() : entt::null), "easter_dungeon.idx", 0);
-                ecs::QuestSystem::SetFlag(((ch) ? (ch)->GetEntityHandle() : entt::null), "easter_dungeon.ch", 0);
-                ecs::QuestSystem::SetFlag(((ch) ? (ch)->GetEntityHandle() : entt::null), "easter_dungeon.enter_time", 0);
-                ecs::QuestSystem::SetFlag(((ch) ? (ch)->GetEntityHandle() : entt::null), "easter_dungeon.cooldown", now + kCooldownSeconds);
+                ecs::QuestSystem::SetFlag(ch, "easter_dungeon.disconnect", 0);
+                ecs::QuestSystem::SetFlag(ch, "easter_dungeon.idx", 0);
+                ecs::QuestSystem::SetFlag(ch, "easter_dungeon.ch", 0);
+                ecs::QuestSystem::SetFlag(ch, "easter_dungeon.enter_time", 0);
+                ecs::QuestSystem::SetFlag(ch, "easter_dungeon.cooldown", now + kCooldownSeconds);
             });
 
         // --- Broadcast: solo vs party ---
@@ -455,15 +455,15 @@ public:
         const int32_t leaderPid = d->GetFlag(kFlagLeaderPid);
 
         const char* leaderName = nullptr;
-        ForEachPcOnMap(mapIndex, [&](LPCHARACTER pc)
-            {
+        ForEachPcOnMap(mapIndex, [&](entt::entity pc){
+                LPCHARACTER pkPc = ecs::LegacyCharOf(pc);
                 if (leaderName)
                     return;
-                if (!pc || !ecs::PlayerRuntime::IsPC(((pc) ? (pc)->GetEntityHandle() : entt::null)))
+                if (!pkPc || !ecs::PlayerRuntime::IsPC(pc))
                     return;
 
-                if (leaderPid <= 0 || (int32_t)ecs::PlayerRuntime::GetPlayerID(((pc) ? (pc)->GetEntityHandle() : entt::null)) == leaderPid)
-                    leaderName = ecs::PlayerRuntime::GetName(((pc) ? (pc)->GetEntityHandle() : entt::null)).data();
+                if (leaderPid <= 0 || (int32_t)ecs::PlayerRuntime::GetPlayerID(pc) == leaderPid)
+                    leaderName = ecs::PlayerRuntime::GetName(pc).data();
             });
 
         if (!leaderName)
@@ -848,15 +848,16 @@ bool CEasterDungeon::OnClickNpc(entt::entity character)
         const char* badName = nullptr;
         int32_t badLevel = 0;
 
-        ForEachPcOnMap(ecs::PlayerRuntime::GetMapIndex(character), [&](LPCHARACTER m) {
-            if (!ok || !m || !ecs::PlayerRuntime::IsPC(((m) ? (m)->GetEntityHandle() : entt::null)) || ecs::SocialSystem::GetParty(((m) ? (m)->GetEntityHandle() : entt::null)) != party)
+        ForEachPcOnMap(ecs::PlayerRuntime::GetMapIndex(character), [&](entt::entity m){
+            LPCHARACTER pkM = ecs::LegacyCharOf(m);
+            if (!ok || !pkM || !ecs::PlayerRuntime::IsPC(m) || ecs::SocialSystem::GetParty(m) != party)
                 return;
 
-            if ((kMinLevel > 0 && ecs::PointSystem::GetLevel(((m) ? (m)->GetEntityHandle() : entt::null)) < kMinLevel) || (kMaxLevel > 0 && ecs::PointSystem::GetLevel(((m) ? (m)->GetEntityHandle() : entt::null)) > kMaxLevel))
+            if ((kMinLevel > 0 && ecs::PointSystem::GetLevel(m) < kMinLevel) || (kMaxLevel > 0 && ecs::PointSystem::GetLevel(m) > kMaxLevel))
             {
                 ok = false;
-                badName = ecs::PlayerRuntime::GetName(((m) ? (m)->GetEntityHandle() : entt::null)).data();
-                badLevel = ecs::PointSystem::GetLevel(((m) ? (m)->GetEntityHandle() : entt::null));
+                badName = ecs::PlayerRuntime::GetName(m).data();
+                badLevel = ecs::PointSystem::GetLevel(m);
                 return;
             }
         });
@@ -872,10 +873,11 @@ bool CEasterDungeon::OnClickNpc(entt::entity character)
     if (party)
     {
         FCooldownCheck f(now, "easter_dungeon.cooldown");
-        ForEachPcOnMap(ecs::PlayerRuntime::GetMapIndex(character), [&](LPCHARACTER m) {
-            if (!m || !ecs::PlayerRuntime::IsPC(((m) ? (m)->GetEntityHandle() : entt::null)) || ecs::SocialSystem::GetParty(((m) ? (m)->GetEntityHandle() : entt::null)) != party)
+        ForEachPcOnMap(ecs::PlayerRuntime::GetMapIndex(character), [&](entt::entity m){
+            LPCHARACTER pkM = ecs::LegacyCharOf(m);
+            if (!pkM || !ecs::PlayerRuntime::IsPC(m) || ecs::SocialSystem::GetParty(m) != party)
                 return;
-            f(m);
+            f(pkM);
         });
 if (!f.ok)
         {
@@ -900,10 +902,11 @@ if (!f.ok)
     else
     {
         FEntryItemCheck it(kEntryItemVnum);
-        ForEachPcOnMap(ecs::PlayerRuntime::GetMapIndex(character), [&](LPCHARACTER m) {
-            if (!m || !ecs::PlayerRuntime::IsPC(((m) ? (m)->GetEntityHandle() : entt::null)) || ecs::SocialSystem::GetParty(((m) ? (m)->GetEntityHandle() : entt::null)) != party)
+        ForEachPcOnMap(ecs::PlayerRuntime::GetMapIndex(character), [&](entt::entity m){
+            LPCHARACTER pkM = ecs::LegacyCharOf(m);
+            if (!pkM || !ecs::PlayerRuntime::IsPC(m) || ecs::SocialSystem::GetParty(m) != party)
                 return;
-            it(m);
+            it(pkM);
         });
 if (!it.ok)
         {
@@ -932,29 +935,30 @@ if (!it.ok)
     d->SetFlag(kFlagF1ToF2, 0);
 
     // Set per-player rejoin flags + consume entry item
-    auto applyMember = [&](LPCHARACTER m)
-        {
-            if (!m || !ecs::PlayerRuntime::IsPC(((m) ? (m)->GetEntityHandle() : entt::null)))
+    auto applyMember = [&](entt::entity m){
+            LPCHARACTER pkM = ecs::LegacyCharOf(m);
+            if (!pkM || !ecs::PlayerRuntime::IsPC(m))
                 return;
 
             // Consume entry item (already checked above)
-            m->RemoveSpecifyItem(kEntryItemVnum, 1);
+            pkM->RemoveSpecifyItem(kEntryItemVnum, 1);
 
-            ecs::QuestSystem::SetFlag(((m) ? (m)->GetEntityHandle() : entt::null), "easter_dungeon.disconnect", 0);
-            ecs::QuestSystem::SetFlag(((m) ? (m)->GetEntityHandle() : entt::null), "easter_dungeon.idx", d->GetMapIndex());
-            ecs::QuestSystem::SetFlag(((m) ? (m)->GetEntityHandle() : entt::null), "easter_dungeon.ch", (int32_t)g_bChannel);
-            ecs::QuestSystem::SetFlag(((m) ? (m)->GetEntityHandle() : entt::null), "easter_dungeon.enter_time", now);
+            ecs::QuestSystem::SetFlag(m, "easter_dungeon.disconnect", 0);
+            ecs::QuestSystem::SetFlag(m, "easter_dungeon.idx", d->GetMapIndex());
+            ecs::QuestSystem::SetFlag(m, "easter_dungeon.ch", (int32_t)g_bChannel);
+            ecs::QuestSystem::SetFlag(m, "easter_dungeon.enter_time", now);
         };
 
     if (!party)
     {
-        applyMember(ch);
+        applyMember(character);
         d->Join_Coords(ch, kEnterX, kEnterY, kEasterOriginalMap);
     }
     else
     {
-        ForEachPcOnMap(ecs::PlayerRuntime::GetMapIndex(character), [&](LPCHARACTER m) {
-            if (!m || !ecs::PlayerRuntime::IsPC(((m) ? (m)->GetEntityHandle() : entt::null)) || ecs::SocialSystem::GetParty(((m) ? (m)->GetEntityHandle() : entt::null)) != party)
+        ForEachPcOnMap(ecs::PlayerRuntime::GetMapIndex(character), [&](entt::entity m){
+            LPCHARACTER pkM = ecs::LegacyCharOf(m);
+            if (!pkM || !ecs::PlayerRuntime::IsPC(m) || ecs::SocialSystem::GetParty(m) != party)
                 return;
             applyMember(m);
         });
