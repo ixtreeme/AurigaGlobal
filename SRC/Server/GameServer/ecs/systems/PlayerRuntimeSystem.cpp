@@ -1,11 +1,14 @@
 #include "../../stdafx.h"
 #include "AffectSystem.hpp"
+#include "ActivitySystem.hpp"
+#include "ChatSystem.hpp"
+#include "PointSystem.hpp"
+#include "SocialSystem.hpp"
 
 #include "PlayerRuntimeSystem.hpp"
 #include "QuestSystem.hpp"
 #include "NetworkSyncSystem.hpp"
 #include "MovementSystem.hpp"
-#include "../AIHelpers.hpp"
 #include "../CharacterAccessors.hpp"
 #include "../VIDRegistry.hpp"
 #include "ItemSystem.hpp"
@@ -28,7 +31,6 @@
 #include "../../desc_client.h"
 #include "../../dungeon.h"
 #include "../../ecs/EntityFactory.hpp"
-#include "../../ecs/AIHelpers.hpp"
 #include "../../ecs/PositionSync.hpp"
 #include "../../ecs/SpatialHelpers.hpp"
 #include "../../ecs/Registry.hpp"
@@ -54,6 +56,7 @@
 #include "../../item_manager.h"
 #include "../../log.h"
 #include "../../marriage.h"
+#include "../../messenger_manager.h"
 #include "../../mining.h"
 #include "../../mob_manager.h"
 #include "../../MountSystem.h"
@@ -73,6 +76,8 @@
 #include "../../war_map.h"
 #include "../../wedding.h"
 #include "../../DragonSoul.h"
+
+extern bool RaceToJob(unsigned race, unsigned* ret_job);
 
 namespace {
 
@@ -126,6 +131,30 @@ entt::entity FindByPlayerName(std::string_view name)
 	return entt::null;
 }
 
+entt::entity FindByVID(uint32_t vid)
+{
+	if (vid == 0)
+		return entt::null;
+
+	const entt::entity character = CVIDRegistry::Instance().Find(vid);
+	return character != entt::null && g_registry.valid(character) ? character : entt::null;
+}
+
+entt::entity FindSpecifyPC(uint32_t jobFlag, int32_t mapIndex, entt::entity except,
+	int minLevel, int maxLevel)
+{
+	LPCHARACTER legacyExcept = nullptr;
+	if (except != entt::null && g_registry.valid(except))
+	{
+		if (const auto* legacy = g_registry.try_get<ecs::LegacyCharPtr>(except))
+			legacyExcept = legacy->ptr;
+	}
+
+	LPCHARACTER found = CHARACTER_MANAGER::instance().FindSpecifyPC(
+		jobFlag, mapIndex, legacyExcept, minLevel, maxLevel);
+	return found ? found->GetEntityHandle() : entt::null;
+}
+
 LPDESC GetDesc(entt::entity e)
 {
 	if (e == entt::null || !g_registry.valid(e))
@@ -145,6 +174,15 @@ uint32_t GetPlayerID(entt::entity e)
 	return 0;
 }
 
+uint32_t GetAccountID(entt::entity e)
+{
+	if (e == entt::null || !g_registry.valid(e))
+		return 0;
+
+	const auto* account = g_registry.try_get<ecs::AccountID>(e);
+	return account ? account->aid : 0;
+}
+
 uint8_t GetEmpire(entt::entity e)
 {
 	if (e != entt::null && g_registry.valid(e)) {
@@ -157,6 +195,9 @@ uint8_t GetEmpire(entt::entity e)
 
 uint8_t GetGMLevel(entt::entity e)
 {
+	if (test_server)
+		return GM_IMPLEMENTOR;
+
 	if (e != entt::null && g_registry.valid(e)) {
 		if (const auto* gmLevel = g_registry.try_get<ecs::GMLevel>(e))
 			return gmLevel->level;
@@ -166,6 +207,163 @@ uint8_t GetGMLevel(entt::entity e)
 	}
 
 	return 0;
+}
+
+void SetEmpire(entt::entity e, uint8_t empire)
+{
+	if (e == entt::null || !g_registry.valid(e))
+		return;
+
+	auto& state = g_registry.get_or_emplace<ecs::EmpireComponent>(e);
+	state.value = empire;
+	g_registry.emplace_or_replace<ecs::DirtyTag>(e);
+}
+
+int GetChangeEmpireCount(entt::entity e)
+{
+	const uint32_t accountID = GetAccountID(e);
+	if (accountID == 0)
+		return 0;
+
+	char query[256];
+	snprintf(query, sizeof(query),
+		"SELECT change_count FROM change_empire WHERE account_id = %u", accountID);
+	std::unique_ptr<SQLMsg> message(DBManager::instance().DirectQuery(query));
+	if (!message || message->Get()->uiNumRows == 0)
+		return 0;
+
+	MYSQL_ROW row = mysql_fetch_row(message->Get()->pSQLResult);
+	uint32_t count = 0;
+	if (row && row[0])
+		str_to_number(count, row[0]);
+
+	if (e != entt::null && g_registry.valid(e))
+		g_registry.get_or_emplace<ecs::EmpireComponent>(e).changeCount = count;
+	return static_cast<int>(count);
+}
+
+void IncrementChangeEmpireCount(entt::entity e)
+{
+	const uint32_t accountID = GetAccountID(e);
+	if (accountID == 0)
+		return;
+
+	const int count = GetChangeEmpireCount(e) + 1;
+	char query[256];
+	if (count == 1)
+		snprintf(query, sizeof(query),
+			"INSERT INTO change_empire VALUES(%u, %d, NOW())", accountID, count);
+	else
+		snprintf(query, sizeof(query),
+			"UPDATE change_empire SET change_count=%d WHERE account_id=%u", count, accountID);
+
+	std::unique_ptr<SQLMsg> message(DBManager::instance().DirectQuery(query));
+	if (e != entt::null && g_registry.valid(e))
+	{
+		auto& state = g_registry.get_or_emplace<ecs::EmpireComponent>(e);
+		state.changeCount = static_cast<uint32_t>(count);
+		g_registry.emplace_or_replace<ecs::DirtyTag>(e);
+	}
+}
+
+int ChangeEmpire(entt::entity e, uint8_t empire)
+{
+	if (e == entt::null || !g_registry.valid(e))
+		return 0;
+	if (GetEmpire(e) == empire)
+		return 1;
+
+	const uint32_t accountID = GetAccountID(e);
+	if (accountID == 0)
+		return 0;
+
+	char query[1025];
+	snprintf(query, sizeof(query),
+		"SELECT pid1, pid2, pid3, pid4, pid5 FROM player_index%s WHERE id=%u AND empire=%u",
+		get_table_postfix(), accountID, GetEmpire(e));
+	std::unique_ptr<SQLMsg> message(DBManager::instance().DirectQuery(query));
+	if (!message || message->Get()->uiNumRows == 0)
+		return 0;
+
+	uint32_t playerIDs[5] {};
+	MYSQL_ROW row = mysql_fetch_row(message->Get()->pSQLResult);
+	for (size_t index = 0; index < std::size(playerIDs); ++index)
+	{
+		if (row && row[index])
+			str_to_number(playerIDs[index], row[index]);
+	}
+
+	for (const uint32_t playerID : playerIDs)
+	{
+		if (playerID == 0)
+			continue;
+		snprintf(query, sizeof(query),
+			"SELECT guild_id FROM guild_member%s WHERE pid=%u", get_table_postfix(), playerID);
+		std::unique_ptr<SQLMsg> guildMessage(DBManager::instance().DirectQuery(query));
+		if (guildMessage && guildMessage->Get()->uiNumRows > 0)
+		{
+			MYSQL_ROW guildRow = mysql_fetch_row(guildMessage->Get()->pSQLResult);
+			uint32_t guildID = 0;
+			if (guildRow && guildRow[0])
+				str_to_number(guildID, guildRow[0]);
+			if (CGuildManager::instance().FindGuild(guildID))
+				return 2;
+		}
+	}
+
+	for (const uint32_t playerID : playerIDs)
+	{
+		if (playerID != 0 && marriage::CManager::instance().IsEngagedOrMarried(playerID))
+			return 3;
+	}
+
+	snprintf(query, sizeof(query),
+		"UPDATE player_index%s SET empire=%u WHERE id=%u AND empire=%u",
+		get_table_postfix(), empire, accountID, GetEmpire(e));
+	std::unique_ptr<SQLMsg> updateMessage(DBManager::instance().DirectQuery(query));
+	if (!updateMessage || updateMessage->Get()->uiAffectedRows <= 0)
+		return 0;
+
+	SetEmpire(e, empire);
+	IncrementChangeEmpireCount(e);
+#ifdef ENABLE_BUG_FIXES
+	NetworkSyncSystem::UpdatePacket(e);
+#endif
+	return 999;
+}
+
+void RefreshGMLevel(entt::entity e)
+{
+	if (e == entt::null || !g_registry.valid(e))
+		return;
+
+	uint8_t level = GM_PLAYER;
+	if (LPDESC desc = GetDesc(e))
+	{
+		const std::string_view name = GetName(e);
+		level = gm_get_level(name.data(), desc->GetHostName(), desc->GetAccountTable().login);
+	}
+
+	auto& flags = g_registry.get_or_emplace<ecs::CharacterRuntimeFlagsComponent>(e);
+	flags.gmLevel = level;
+	g_registry.emplace_or_replace<ecs::GMLevel>(e, ecs::GMLevel { level });
+
+	auto* status = g_registry.try_get<ecs::StatusFlags>(e);
+	if (!status)
+		status = &g_registry.emplace<ecs::StatusFlags>(e, ecs::StatusFlags {});
+	status->isGM = level != GM_PLAYER || test_server;
+	g_registry.emplace_or_replace<ecs::DirtyTag>(e);
+}
+
+void SetBlockModeForce(entt::entity e, uint8_t blockMode)
+{
+	if (e == entt::null || !g_registry.valid(e))
+		return;
+
+	auto& flags = g_registry.get_or_emplace<ecs::CharacterRuntimeFlagsComponent>(e);
+	flags.blockMode = blockMode;
+	ecs::ChatSystem::Send(e, CHAT_TYPE_COMMAND, "setblockmode %d", blockMode);
+	g_registry.emplace_or_replace<ecs::DirtyTag>(e);
 }
 
 uint32_t GetPacketVID(entt::entity e)
@@ -196,6 +394,71 @@ std::string_view GetName(entt::entity e)
 	}
 
 	return {};
+}
+
+std::string_view GetPendingName(entt::entity e)
+{
+	if (e == entt::null || !g_registry.valid(e))
+		return {};
+	const auto* pending = g_registry.try_get<ecs::PendingPlayerName>(e);
+	return pending ? std::string_view(pending->value) : std::string_view {};
+}
+
+void SetPendingName(entt::entity e, std::string_view name)
+{
+	if (e == entt::null || !g_registry.valid(e))
+		return;
+	auto& pending = g_registry.get_or_emplace<ecs::PendingPlayerName>(e);
+	pending.value.assign(name.data(), name.size());
+	g_registry.emplace_or_replace<ecs::DirtyTag>(e);
+}
+
+int RequestNameChange(entt::entity e, std::string_view name)
+{
+#ifdef ENABLE_LOCALECHECK_CHANGENAME
+	return 5;
+#else
+	if (e == entt::null || !g_registry.valid(e) || name.empty())
+		return 1;
+	if (!GetPendingName(e).empty())
+		return 0;
+
+	const std::string requestedName(name);
+	if (!check_name(requestedName.c_str()))
+		return 2;
+
+	char query[1024];
+	snprintf(query, sizeof(query), "SELECT COUNT(*) FROM player%s WHERE name='%s'",
+		get_table_postfix(), requestedName.c_str());
+	std::unique_ptr<SQLMsg> checkMessage(DBManager::instance().DirectQuery(query));
+	if (checkMessage && checkMessage->Get()->uiNumRows > 0)
+	{
+		MYSQL_ROW row = mysql_fetch_row(checkMessage->Get()->pSQLResult);
+		int count = 0;
+		if (row && row[0])
+			str_to_number(count, row[0]);
+		if (count != 0)
+			return 3;
+	}
+
+	const uint32_t playerID = GetPlayerID(e);
+	if (playerID == 0)
+		return 1;
+	db_clientdesc->DBPacketHeader(HEADER_GD_FLUSH_CACHE, 0, sizeof(uint32_t));
+	db_clientdesc->Packet(&playerID, sizeof(uint32_t));
+
+	const std::string currentName(GetName(e));
+	MessengerManager::instance().RemoveAllList(currentName.c_str());
+	const LPDESC desc = GetDesc(e);
+	LogManager::instance().ChangeNameLog(playerID, currentName.c_str(), requestedName.c_str(),
+		desc ? desc->GetHostName() : "");
+
+	snprintf(query, sizeof(query), "UPDATE player%s SET name='%s' WHERE id=%u",
+		get_table_postfix(), requestedName.c_str(), playerID);
+	std::unique_ptr<SQLMsg> updateMessage(DBManager::instance().DirectQuery(query));
+	SetPendingName(e, requestedName);
+	return 4;
+#endif
 }
 
 int32_t GetMapIndex(entt::entity e)
@@ -311,6 +574,25 @@ bool IsArenaObserverMode(entt::entity e)
 	return status && status->isArenaObserver;
 }
 
+CArena* GetArena(entt::entity e)
+{
+	if (e == entt::null || !g_registry.valid(e))
+		return nullptr;
+
+	const auto* membership = g_registry.try_get<ecs::ArenaMembership>(e);
+	return membership ? membership->arena : nullptr;
+}
+
+void SetArena(entt::entity e, CArena* arena)
+{
+	if (e == entt::null || !g_registry.valid(e))
+		return;
+
+	auto& membership = g_registry.get_or_emplace<ecs::ArenaMembership>(e);
+	membership.arena = arena;
+	g_registry.emplace_or_replace<ecs::DirtyTag>(e);
+}
+
 bool CanWarp(entt::entity e)
 {
 	if (e == entt::null || !g_registry.valid(e))
@@ -335,7 +617,7 @@ bool CanWarp(entt::entity e)
 		return false;
 
 	const auto* shop = g_registry.try_get<ecs::ShopState>(e);
-	if (shop && (shop->currentShop || shop->myShop || shop->shopOwner || shop->underRefine))
+	if (shop && (shop->currentShop || shop->myShop || shop->shopOwner != entt::null || shop->underRefine))
 		return false;
 
 	if (const auto* safebox = g_registry.try_get<ecs::SafeboxRef>(e); safebox && safebox->isOpening)
@@ -373,7 +655,13 @@ bool CanWarp(entt::entity e)
 
 uint8_t GetSex(entt::entity e)
 {
-    switch (GetRaceNum(e))
+	uint32_t race = GetRaceNum(e);
+	if (e != entt::null && g_registry.valid(e))
+	{
+		if (const auto* raceComponent = g_registry.try_get<ecs::RaceComponent>(e))
+			race = raceComponent->value;
+	}
+    switch (race)
     {
     case MAIN_RACE_ASSASSIN_W:
     case MAIN_RACE_SHAMAN_W:
@@ -383,6 +671,19 @@ uint8_t GetSex(entt::entity e)
     default:
         return SEX_MALE;
     }
+}
+
+uint8_t GetJob(entt::entity e)
+{
+	if (e == entt::null || !g_registry.valid(e))
+		return JOB_WARRIOR;
+	uint32_t race = 0;
+	if (const auto* raceComponent = g_registry.try_get<ecs::RaceComponent>(e))
+		race = raceComponent->value;
+	else if (const auto* state = g_registry.try_get<ecs::RaceState>(e))
+		race = state->baseRace;
+	unsigned job = JOB_WARRIOR;
+	return RaceToJob(race, &job) ? static_cast<uint8_t>(job) : JOB_WARRIOR;
 }
 
 bool SetRace(entt::entity e, uint8_t race)
@@ -398,6 +699,114 @@ bool SetRace(entt::entity e, uint8_t race)
 		points->base.job = race;
 	g_registry.emplace_or_replace<ecs::DirtyTag>(e);
 	return true;
+}
+
+bool SetCostumeHidden(entt::entity e, uint8_t part, bool hidden, bool skipPersistence)
+{
+	if (e == entt::null || !g_registry.valid(e) || part < 1 || part > 4)
+		return false;
+	auto& flags = g_registry.get_or_emplace<ecs::HideCostumeFlags>(e);
+	const char* command = nullptr;
+	const char* questFlag = nullptr;
+	switch (part)
+	{
+	case 1:
+		flags.body = hidden;
+		command = "SetBodyCostumeHidden %d";
+		questFlag = "costume_option.hide_body";
+		break;
+	case 2:
+		flags.hair = hidden;
+		command = "SetHairCostumeHidden %d";
+		questFlag = "costume_option.hide_hair";
+		break;
+	case 3:
+		flags.accessory = hidden;
+		command = "SetAcceCostumeHidden %d";
+		questFlag = "costume_option.hide_acce";
+		break;
+	case 4:
+		flags.weapon = hidden;
+		command = "SetWeaponCostumeHidden %d";
+		questFlag = "costume_option.hide_weapon";
+		break;
+	default:
+		return false;
+	}
+	ecs::ChatSystem::Send(e, CHAT_TYPE_COMMAND, command, hidden ? 1 : 0);
+	if (!skipPersistence)
+		ecs::QuestSystem::SetFlag(e, questFlag, hidden ? 1 : 0);
+	g_registry.emplace_or_replace<ecs::DirtyTag>(e);
+	return true;
+}
+
+bool IsCostumeHidden(entt::entity e, uint8_t part)
+{
+	if (e == entt::null || !g_registry.valid(e))
+		return false;
+	const auto* flags = g_registry.try_get<ecs::HideCostumeFlags>(e);
+	if (!flags)
+		return false;
+	switch (part)
+	{
+	case 1: return flags->body;
+	case 2: return flags->hair;
+	case 3: return flags->accessory;
+	case 4: return flags->weapon;
+	default: return false;
+	}
+}
+
+bool IsHack(entt::entity e, bool sendMessage, bool checkShopOwner, int limitTime)
+{
+	if (e == entt::null || !g_registry.valid(e))
+		return true;
+
+	if (test_server)
+		sendMessage = true;
+
+	const auto blockedByTime = [&](int lastPulse) {
+		if (thecore_pulse() - lastPulse >= PASSES_PER_SEC(limitTime))
+			return false;
+#ifdef TEXTS_IMPROVEMENT
+		if (sendMessage)
+			ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 234, "%d", limitTime);
+#endif
+		return true;
+	};
+
+	if (const auto* warp = g_registry.try_get<ecs::WarpBlockState>(e))
+	{
+		if (blockedByTime(warp->safeboxLoadTime) || blockedByTime(warp->exchangeTime) ||
+			blockedByTime(warp->myShopTime) || blockedByTime(warp->refineTime))
+			return true;
+	}
+
+	const auto* exchange = g_registry.try_get<ecs::ExchangeRef>(e);
+	const auto* shop = g_registry.try_get<ecs::ShopState>(e);
+	const auto* safebox = g_registry.try_get<ecs::SafeboxRef>(e);
+	const auto* cube = g_registry.try_get<ecs::CubeWindowComponent>(e);
+	const bool activeWindow = (exchange && exchange->exchange) ||
+		(shop && (shop->myShop || (checkShopOwner && shop->shopOwner != entt::null))) ||
+		(safebox && safebox->isOpening) || (cube && cube->pNpc)
+#if defined(ENABLE_CHRISTMAS_WHEEL_OF_DESTINY)
+		|| (shop && shop->wheelDestiny)
+#endif
+		;
+
+	if (!activeWindow)
+		return false;
+
+#ifdef TEXTS_IMPROVEMENT
+	if (sendMessage)
+		ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 236, "");
+#endif
+	return true;
+}
+
+bool IsHack(entt::entity e, bool sendMessage, bool checkShopOwner)
+{
+	return IsHack(e, sendMessage, checkShopOwner, g_nPortalLimitTime);
 }
 
 bool ChangeSex(entt::entity e)
@@ -429,6 +838,14 @@ bool ChangeSex(entt::entity e)
 	return SetRace(e, targetRace);
 }
 
+int GetDuelOption(entt::entity e, const char* option)
+{
+    if (e == entt::null || !g_registry.valid(e) || !option)
+        return 0;
+    const auto* legacy = g_registry.try_get<ecs::LegacyCharPtr>(e);
+    return legacy && legacy->ptr ? legacy->ptr->GetDuel(option) : 0;
+}
+
 entt::entity GetQuestNPC(entt::entity e)
 {
     if (e == entt::null || !g_registry.valid(e))
@@ -441,6 +858,133 @@ entt::entity GetQuestNPC(entt::entity e)
     const entt::entity npc = CVIDRegistry::Instance().Find(context->npcVID);
     return npc != entt::null && g_registry.valid(npc) ? npc : entt::null;
 }
+
+uint32_t GetQuestNPCID(entt::entity e)
+{
+    if (e == entt::null || !g_registry.valid(e))
+        return 0;
+
+    const auto* context = g_registry.try_get<ecs::QuestContext>(e);
+    return context ? context->npcVID : 0;
+}
+
+bool SetQuestNPCID(entt::entity e, uint32_t id)
+{
+    if (e == entt::null || !g_registry.valid(e))
+        return false;
+
+    auto& context = g_registry.get_or_emplace<ecs::QuestContext>(e);
+    context.npcVID = id;
+
+    // Compatibility boundary until CHARACTER's duplicate quest context is removed.
+    if (const auto* legacy = g_registry.try_get<ecs::LegacyCharPtr>(e); legacy && legacy->ptr)
+        legacy->ptr->SetQuestNPCID(id);
+
+    return true;
+}
+
+uint32_t GetQuestBy(entt::entity e)
+{
+    if (e == entt::null || !g_registry.valid(e))
+        return 0;
+    const auto* context = g_registry.try_get<ecs::QuestContext>(e);
+    return context ? context->byVnum : 0;
+}
+
+bool SetQuestBy(entt::entity e, uint32_t questVnum)
+{
+    if (e == entt::null || !g_registry.valid(e))
+        return false;
+    auto& context = g_registry.get_or_emplace<ecs::QuestContext>(e);
+    context.byVnum = questVnum;
+    return true;
+}
+
+void DestroyCharacter(entt::entity e)
+{
+    // Compatibility boundary: CHARACTER_MANAGER still owns legacy object lifetime.
+    if (e == entt::null || !g_registry.valid(e))
+        return;
+    if (const auto* legacy = g_registry.try_get<ecs::LegacyCharPtr>(e); legacy && legacy->ptr)
+        M2_DESTROY_CHARACTER(legacy->ptr);
+}
+
+#ifdef __PET_SYSTEM__
+CPetSystem* GetPetSystem(entt::entity e)
+{
+	if (e == entt::null || !g_registry.valid(e))
+		return nullptr;
+	const auto* refs = g_registry.try_get<ecs::PetRuntimeRefs>(e);
+	return refs ? refs->petSystem : nullptr;
+}
+#endif
+
+#ifdef __NEWPET_SYSTEM__
+CNewPetSystem* GetNewPetSystem(entt::entity e)
+{
+	if (e == entt::null || !g_registry.valid(e))
+		return nullptr;
+	const auto* refs = g_registry.try_get<ecs::PetRuntimeRefs>(e);
+	return refs ? refs->newPetSystem : nullptr;
+}
+
+void SetEggVID(entt::entity e, int vid)
+{
+	if (e == entt::null || !g_registry.valid(e))
+		return;
+	auto& refs = g_registry.get_or_emplace<ecs::PetRuntimeRefs>(e);
+	refs.eggVID = vid;
+}
+
+int GetEggVID(entt::entity e)
+{
+	if (e == entt::null || !g_registry.valid(e))
+		return 0;
+	const auto* refs = g_registry.try_get<ecs::PetRuntimeRefs>(e);
+	return refs ? refs->eggVID : 0;
+}
+#endif
+
+#ifdef __DUNGEON_INFO_SYSTEM__
+uint64_t GetQuestDamage(entt::entity e, int race)
+{
+	if (e == entt::null || !g_registry.valid(e))
+		return 0;
+
+	const auto* damage = g_registry.try_get<ecs::DungeonDamage>(e);
+	if (!damage)
+		return 0;
+
+	const auto it = damage->highestByRace.find(race);
+	return it == damage->highestByRace.end() ? 0 : static_cast<uint64_t>(it->second);
+}
+#endif
+
+#ifdef ENABLE_BATTLE_PASS
+uint8_t GetBattlePassID(entt::entity e)
+{
+	LPCHARACTER character = LegacyCharOf(e);
+	return character ? character->GetBattlePassId() : 0;
+}
+
+uint32_t GetMissionProgress(entt::entity e, uint32_t missionID, uint32_t battlePassID)
+{
+	LPCHARACTER character = LegacyCharOf(e);
+	return character ? character->GetMissionProgress(missionID, battlePassID) : 0;
+}
+
+bool UpdateMissionProgress(entt::entity e, uint32_t missionID, uint32_t battlePassID,
+	uint32_t updateValue, uint32_t totalValue, bool overrideValue)
+{
+	LPCHARACTER character = LegacyCharOf(e);
+	if (!character)
+		return false;
+
+	character->UpdateMissionProgress(
+		missionID, battlePassID, updateValue, totalValue, overrideValue);
+	return true;
+}
+#endif
 
 #ifdef ENABLE_RANKING
 int64_t GetRankPoints(entt::entity e, int category)
@@ -519,14 +1063,6 @@ EVENTFUNC(kill_ore_load_event);
 
 namespace
 {
-inline entt::entity EcsEntityOf(const CHARACTER* ch)
-{
-    if (!ch)
-        return entt::null;
-
-    return ch->GetEntityHandle();
-}
-
 static ecs::AppearancePartsComponent* EnsureAppearancePartsComponent(entt::entity e)
 {
     if (e == entt::null || !g_registry.valid(e))
@@ -783,12 +1319,20 @@ void CHARACTER::SetQuestDamage(int race, int dmg)
         dungeonDamage.insert(dungeonDamage.begin(), std::pair(race, dmg));
     else if (dmg > it->second)
         it->second = dmg;
+
+    const entt::entity character = GetEntityHandle();
+    if (character != entt::null && g_registry.valid(character))
+    {
+        auto& damage = g_registry.get_or_emplace<ecs::DungeonDamage>(character);
+        auto [ecsIt, inserted] = damage.highestByRace.try_emplace(race, dmg);
+        if (!inserted && dmg > ecsIt->second)
+            ecsIt->second = dmg;
+    }
 }
 
 uint64_t CHARACTER::GetQuestDamage(int race)
 {
-    auto it = dungeonDamage.find(race);
-    return it == dungeonDamage.end() ? 0 : it->second;
+    return ecs::PlayerRuntime::GetQuestDamage(GetEntityHandle(), race);
 }
 #endif
 
@@ -923,19 +1467,12 @@ void CHARACTER::SetRace(uint8_t race)
 
 uint8_t CHARACTER::GetJob() const
 {
-    unsigned race = m_points.job;
-    unsigned job;
-
-    if (RaceToJob(race, &job))
-        return job;
-
-    LOG_ERROR("CHARACTER::GetJob(name={}, race={}).OUT_OF_RACE_RANGE", GetName(), static_cast<int>(race));
-    return JOB_WARRIOR;
+	return ecs::PlayerRuntime::GetJob(GetEntityHandle());
 }
 
 void CHARACTER::SetLevel(uint8_t level)
 {
-    if (auto* ecsLevel = EnsureLevelComponent(EcsEntityOf(this)))
+    if (auto* ecsLevel = EnsureLevelComponent(GetEntityHandle()))
         ecsLevel->value = level;
 
     if (IsPC())
@@ -951,7 +1488,7 @@ void CHARACTER::SetLevel(uint8_t level)
 
 int CHARACTER::GetLevel() const
 {
-    if (const auto* ecsLevel = TryGetLevelComponent(EcsEntityOf(this)))
+    if (const auto* ecsLevel = TryGetLevelComponent(GetEntityHandle()))
         return ecsLevel->value;
 
     return 0;
@@ -959,7 +1496,7 @@ int CHARACTER::GetLevel() const
 
 uint32_t CHARACTER::GetExp() const
 {
-    if (const auto* exp = TryGetExperienceComponent(EcsEntityOf(this)))
+    if (const auto* exp = TryGetExperienceComponent(GetEntityHandle()))
         return static_cast<uint32_t>(std::clamp<int64_t>(exp->current, 0, UINT32_MAX));
 
     return 0;
@@ -967,13 +1504,13 @@ uint32_t CHARACTER::GetExp() const
 
 void CHARACTER::SetExp(uint32_t exp)
 {
-    if (auto* ecsExp = EnsureExperienceComponent(EcsEntityOf(this)))
+    if (auto* ecsExp = EnsureExperienceComponent(GetEntityHandle()))
         ecsExp->current = exp;
 }
 
 int64_t CHARACTER::GetGold() const
 {
-    if (const auto* gold = TryGetGoldAmountComponent(EcsEntityOf(this)))
+    if (const auto* gold = TryGetGoldAmountComponent(GetEntityHandle()))
         return gold->amount;
 
     return 0;
@@ -981,13 +1518,19 @@ int64_t CHARACTER::GetGold() const
 
 void CHARACTER::SetGold(int64_t gold)
 {
-    if (auto* wallet = EnsureGoldAmountComponent(EcsEntityOf(this)))
+    if (auto* wallet = EnsureGoldAmountComponent(GetEntityHandle()))
         wallet->amount = gold;
 }
 
 void CHARACTER::SetEmpire(uint8_t bEmpire)
 {
     m_bEmpire = bEmpire;
+	ecs::PlayerRuntime::SetEmpire(GetEntityHandle(), bEmpire);
+}
+
+uint8_t CHARACTER::GetEmpire() const
+{
+	return ecs::PlayerRuntime::GetEmpire(GetEntityHandle());
 }
 
 uint8_t CHARACTER::GetCharType() const
@@ -997,7 +1540,7 @@ uint8_t CHARACTER::GetCharType() const
 
 uint32_t CHARACTER::GetAIFlag() const
 {
-    if (const auto* flags = TryGetRuntimeFlagsComponent(EcsEntityOf(this)))
+    if (const auto* flags = TryGetRuntimeFlagsComponent(GetEntityHandle()))
         return flags->aiFlag;
 
     return 0;
@@ -1005,13 +1548,13 @@ uint32_t CHARACTER::GetAIFlag() const
 
 void CHARACTER::SetHP(int64_t hp)
 {
-    if (auto* health = EnsureHealthComponent(EcsEntityOf(this)))
+    if (auto* health = EnsureHealthComponent(GetEntityHandle()))
         health->current = static_cast<int32_t>(std::clamp<int64_t>(hp, 0, INT32_MAX));
 }
 
 int64_t CHARACTER::GetHP() const
 {
-    if (const auto* health = TryGetHealthComponent(EcsEntityOf(this)))
+    if (const auto* health = TryGetHealthComponent(GetEntityHandle()))
         return health->current;
 
     return 0;
@@ -1019,13 +1562,13 @@ int64_t CHARACTER::GetHP() const
 
 void CHARACTER::SetSP(int64_t sp)
 {
-    if (auto* mana = EnsureManaComponent(EcsEntityOf(this)))
+    if (auto* mana = EnsureManaComponent(GetEntityHandle()))
         mana->current = static_cast<int32_t>(std::clamp<int64_t>(sp, 0, INT32_MAX));
 }
 
 int64_t CHARACTER::GetSP() const
 {
-    if (const auto* mana = TryGetManaComponent(EcsEntityOf(this)))
+    if (const auto* mana = TryGetManaComponent(GetEntityHandle()))
         return mana->current;
 
     return 0;
@@ -1033,13 +1576,13 @@ int64_t CHARACTER::GetSP() const
 
 void CHARACTER::SetStamina(int stamina)
 {
-    if (auto* staminaComp = EnsureStaminaComponent(EcsEntityOf(this)))
+    if (auto* staminaComp = EnsureStaminaComponent(GetEntityHandle()))
         staminaComp->current = static_cast<int32_t>(std::clamp<int64_t>(stamina, 0, INT32_MAX));
 }
 
 int CHARACTER::GetStamina() const
 {
-    if (const auto* stamina = TryGetStaminaComponent(EcsEntityOf(this)))
+    if (const auto* stamina = TryGetStaminaComponent(GetEntityHandle()))
         return stamina->current;
 
     return 0;
@@ -1047,7 +1590,7 @@ int CHARACTER::GetStamina() const
 
 int32_t CHARACTER::GetInstantFlag() const
 {
-    if (const auto* flags = TryGetRuntimeFlagsComponent(EcsEntityOf(this)))
+    if (const auto* flags = TryGetRuntimeFlagsComponent(GetEntityHandle()))
         return flags->instantFlag;
 
     return 0;
@@ -1055,7 +1598,7 @@ int32_t CHARACTER::GetInstantFlag() const
 
 uint32_t CHARACTER::GetLastShoutPulse() const
 {
-    if (const auto* flags = TryGetRuntimeFlagsComponent(EcsEntityOf(this)))
+    if (const auto* flags = TryGetRuntimeFlagsComponent(GetEntityHandle()))
         return flags->lastShoutPulse;
 
     return 0;
@@ -1063,7 +1606,7 @@ uint32_t CHARACTER::GetLastShoutPulse() const
 
 void CHARACTER::SetLastShoutPulse(uint32_t pulse)
 {
-    if (auto* flags = EnsureRuntimeFlagsComponent(EcsEntityOf(this)))
+    if (auto* flags = EnsureRuntimeFlagsComponent(GetEntityHandle()))
         flags->lastShoutPulse = pulse;
 }
 
@@ -1072,7 +1615,7 @@ uint8_t CHARACTER::GetGMLevel() const
     if (test_server)
         return GM_IMPLEMENTOR;
 
-    if (const auto* flags = TryGetRuntimeFlagsComponent(EcsEntityOf(this)))
+    if (const auto* flags = TryGetRuntimeFlagsComponent(GetEntityHandle()))
         return flags->gmLevel;
 
     return GM_PLAYER;
@@ -1080,16 +1623,7 @@ uint8_t CHARACTER::GetGMLevel() const
 
 void CHARACTER::SetGMLevel()
 {
-    uint8_t level = GM_PLAYER;
-
-    if (GetDesc())
-        level = gm_get_level(GetName(), GetDesc()->GetHostName(), GetDesc()->GetAccountTable().login);
-
-    if (auto* flags = EnsureRuntimeFlagsComponent(EcsEntityOf(this)))
-        flags->gmLevel = level;
-
-    if (const entt::entity e = EcsEntityOf(this); e != entt::null && g_registry.valid(e))
-        g_registry.emplace_or_replace<ecs::GMLevel>(e, ecs::GMLevel { level });
+	ecs::PlayerRuntime::RefreshGMLevel(GetEntityHandle());
 }
 
 BOOL CHARACTER::IsGM() const
@@ -1120,7 +1654,7 @@ uint32_t CHARACTER::GetAID() const
 void CHARACTER::SetQuestNPCID(uint32_t vid)
 {
     m_dwQuestNPCVID = vid;
-    const entt::entity owner = AIHelpers::EcsOf(this);
+    const entt::entity owner = GetEntityHandle();
     if (owner != entt::null && g_registry.valid(owner))
     {
         auto& context = g_registry.get_or_emplace<ecs::QuestContext>(owner);
@@ -1128,14 +1662,39 @@ void CHARACTER::SetQuestNPCID(uint32_t vid)
     }
 }
 
+const std::string CHARACTER::GetNewName() const
+{
+	return std::string(ecs::PlayerRuntime::GetPendingName(GetEntityHandle()));
+}
+
+void CHARACTER::SetNewName(const std::string name)
+{
+	m_strNewName = name;
+	ecs::PlayerRuntime::SetPendingName(GetEntityHandle(), name);
+}
+
 LPCHARACTER CHARACTER::GetQuestNPC() const
 {
     return CHARACTER_MANAGER::instance().Find(m_dwQuestNPCVID);
 }
 
+void CHARACTER::SetQuestBy(uint32_t questVnum)
+{
+    m_dwQuestByVnum = questVnum;
+    ecs::PlayerRuntime::SetQuestBy(GetEntityHandle(), questVnum);
+}
+
+uint32_t CHARACTER::GetQuestBy() const
+{
+    const entt::entity self = GetEntityHandle();
+    return self != entt::null && g_registry.valid(self)
+        ? ecs::PlayerRuntime::GetQuestBy(self)
+        : m_dwQuestByVnum;
+}
+
 void CHARACTER::SetQuestItemPtr(entt::entity item)
 {
-	const entt::entity owner = AIHelpers::EcsOf(this);
+	const entt::entity owner = GetEntityHandle();
 	if (owner == entt::null || !g_registry.valid(owner))
 		return;
 
@@ -1150,7 +1709,7 @@ void CHARACTER::ClearQuestItemPtr()
 
 entt::entity CHARACTER::GetQuestItemEntity() const
 {
-	const entt::entity owner = AIHelpers::EcsOf(this);
+	const entt::entity owner = GetEntityHandle();
 	if (owner == entt::null || !g_registry.valid(owner))
 		return entt::null;
 
@@ -1173,10 +1732,10 @@ LPDUNGEON CHARACTER::GetDungeonForce() const
 
 void CHARACTER::SetBlockMode(uint8_t bFlag)
 {
-    if (auto* flags = EnsureRuntimeFlagsComponent(EcsEntityOf(this)))
+    if (auto* flags = EnsureRuntimeFlagsComponent(GetEntityHandle()))
         flags->blockMode = bFlag;
 
-    ecs::ChatSystem::Send(AIHelpers::EcsOf(this), CHAT_TYPE_COMMAND, "setblockmode %d", bFlag);
+    ecs::ChatSystem::Send(GetEntityHandle(), CHAT_TYPE_COMMAND, "setblockmode %d", bFlag);
 
     SetQuestFlag("game_option.block_exchange", bFlag & BLOCK_EXCHANGE ? 1 : 0);
     SetQuestFlag("game_option.block_party_invite", bFlag & BLOCK_PARTY_INVITE ? 1 : 0);
@@ -1188,15 +1747,12 @@ void CHARACTER::SetBlockMode(uint8_t bFlag)
 
 void CHARACTER::SetBlockModeForce(uint8_t bFlag)
 {
-    if (auto* flags = EnsureRuntimeFlagsComponent(EcsEntityOf(this)))
-        flags->blockMode = bFlag;
-
-    ecs::ChatSystem::Send(AIHelpers::EcsOf(this), CHAT_TYPE_COMMAND, "setblockmode %d", bFlag);
+	ecs::PlayerRuntime::SetBlockModeForce(GetEntityHandle(), bFlag);
 }
 
 uint8_t CHARACTER::GetBlockMode() const
 {
-    if (const auto* flags = TryGetRuntimeFlagsComponent(EcsEntityOf(this)))
+    if (const auto* flags = TryGetRuntimeFlagsComponent(GetEntityHandle()))
         return flags->blockMode;
 
     return 0;
@@ -1209,15 +1765,15 @@ bool CHARACTER::IsBlockMode(uint8_t bFlag) const
 
 void CHARACTER::SetImmuneFlag(uint32_t dw)
 {
-    if (auto* flags = EnsureRuntimeFlagsComponent(EcsEntityOf(this)))
+    if (auto* flags = EnsureRuntimeFlagsComponent(GetEntityHandle()))
         flags->immuneFlag = dw;
-    auto& immunity = g_registry.get_or_emplace<ecs::ImmunityFlags>(AIHelpers::EcsOf(this));
+    auto& immunity = g_registry.get_or_emplace<ecs::ImmunityFlags>(GetEntityHandle());
     immunity.flags = dw;
 }
 
 uint32_t CHARACTER::GetImmuneFlag() const
 {
-    if (const auto* flags = TryGetRuntimeFlagsComponent(EcsEntityOf(this)))
+    if (const auto* flags = TryGetRuntimeFlagsComponent(GetEntityHandle()))
         return flags->immuneFlag;
 
     return 0;
@@ -1858,7 +2414,7 @@ uint16_t CHARACTER::GetRuneEffect() {
 bool CHARACTER::CanTakeInventoryItem(entt::entity item, TItemPos* cell)
 {
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
-    ecs::ChatSystem::Send(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, "char.cpp::bool CHARACTER::CanTakeInventoryItem");
+    ecs::ChatSystem::Send(GetEntityHandle(), CHAT_TYPE_INFO, "char.cpp::bool CHARACTER::CanTakeInventoryItem");
 #endif
     if (!cell || !ItemSystem::IsValidItem(item))
         return false;
@@ -1946,53 +2502,34 @@ int CHARACTER::GetSoulItemDamage(LPCHARACTER pkVictim, int iDamage, uint8_t bSou
 #ifdef __SKILL_COLOR_SYSTEM__
 void CHARACTER::SetSkillColor(uint32_t* dwSkillColor) {
     memcpy(m_dwSkillColor, dwSkillColor, sizeof(m_dwSkillColor));
-    if (auto* skillColor = g_registry.try_get<ecs::SkillColor>(EcsEntityOf(this))) {
+    if (auto* skillColor = g_registry.try_get<ecs::SkillColor>(GetEntityHandle())) {
         memcpy(skillColor->data, m_dwSkillColor, sizeof(skillColor->data));
-        g_registry.emplace_or_replace<ecs::DirtyTag>(EcsEntityOf(this));
+        g_registry.emplace_or_replace<ecs::DirtyTag>(GetEntityHandle());
     }
-    NetworkSyncSystem::UpdatePacket(AIHelpers::EcsOf(this));
+    NetworkSyncSystem::UpdatePacket(GetEntityHandle());
 }
 #endif
 
 void CHARACTER::SetShop(LPSHOP pkShop)
 {
-    const auto e = AIHelpers::EcsOf(this);
-    if (e != entt::null && g_registry.valid(e))
-    {
-        auto& shop = g_registry.get_or_emplace<ecs::ShopState>(e);
-        shop.currentShop = pkShop;
-        g_registry.emplace_or_replace<ecs::DirtyTag>(e);
-    }
-
-    if ((m_pkShop = pkShop)) {
-        if (auto* flags = EnsureRuntimeFlagsComponent(EcsEntityOf(this)))
-            SET_BIT(flags->instantFlag, INSTANT_FLAG_SHOP);
-    }
-    else
-    {
-        if (auto* flags = EnsureRuntimeFlagsComponent(EcsEntityOf(this)))
-            REMOVE_BIT(flags->instantFlag, INSTANT_FLAG_SHOP);
-        SetShopOwner(nullptr);
-    }
+    const auto e = GetEntityHandle();
+    ecs::SocialSystem::SetShop(e, pkShop);
+    m_pkShop = pkShop;
+    if (!pkShop)
+        m_pkChrShopOwner = nullptr;
 }
 
 void CHARACTER::SetShopOwner(LPCHARACTER ch)
 {
-    const auto e = AIHelpers::EcsOf(this);
-    if (e != entt::null && g_registry.valid(e))
-    {
-        auto& shop = g_registry.get_or_emplace<ecs::ShopState>(e);
-        shop.shopOwner = ch;
-        g_registry.emplace_or_replace<ecs::DirtyTag>(e);
-    }
-
+    const auto e = GetEntityHandle();
+    ecs::SocialSystem::SetShopOwner(e, ch ? ch->GetEntityHandle() : entt::null);
     m_pkChrShopOwner = ch;
 }
 
 #ifdef __ENABLE_NEW_OFFLINESHOP__
 void CHARACTER::SetOfflineShopGuest(offlineshop::CShop* pkShop)
 {
-    const auto e = AIHelpers::EcsOf(this);
+    const auto e = GetEntityHandle();
     if (e != entt::null && g_registry.valid(e))
     {
         auto& shop = g_registry.get_or_emplace<ecs::ShopState>(e);
@@ -2005,7 +2542,7 @@ void CHARACTER::SetOfflineShopGuest(offlineshop::CShop* pkShop)
 
 void CHARACTER::SetAuctionGuest(offlineshop::CAuction* pk)
 {
-    const auto e = AIHelpers::EcsOf(this);
+    const auto e = GetEntityHandle();
     if (e != entt::null && g_registry.valid(e))
     {
         auto& shop = g_registry.get_or_emplace<ecs::ShopState>(e);
@@ -2019,7 +2556,7 @@ void CHARACTER::SetAuctionGuest(offlineshop::CAuction* pk)
 void CHARACTER::SetOfflineShopUseTime()
 {
     m_iOfflineShopUseTime = thecore_pulse();
-    const auto e = AIHelpers::EcsOf(this);
+    const auto e = GetEntityHandle();
     if (e != entt::null && g_registry.valid(e))
     {
         auto& shop = g_registry.get_or_emplace<ecs::ShopState>(e);
@@ -2033,7 +2570,7 @@ void CHARACTER::SetOfflineShopUseTime()
 void CHARACTER::SetWheelDestiny(std::shared_ptr<CWheelDestiny> pt)
 {
     pWheelDestiny = std::move(pt);
-    const auto e = AIHelpers::EcsOf(this);
+    const auto e = GetEntityHandle();
     if (e != entt::null && g_registry.valid(e))
     {
         auto& shop = g_registry.get_or_emplace<ecs::ShopState>(e);
@@ -2045,7 +2582,7 @@ void CHARACTER::SetWheelDestiny(std::shared_ptr<CWheelDestiny> pt)
 
 void CHARACTER::SetExchange(CExchange* pkExchange)
 {
-    const auto e = AIHelpers::EcsOf(this);
+    const auto e = GetEntityHandle();
     if (e != entt::null && g_registry.valid(e))
     {
         auto& exchange = g_registry.get_or_emplace<ecs::ExchangeRef>(e);
@@ -2139,7 +2676,7 @@ void CHARACTER::OpenAcce(bool bCombination)
     if (isAcceOpened(bCombination))
     {
 #ifdef TEXTS_IMPROVEMENT
-        ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 659, "");
+        ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 659, "");
 #endif
         return;
     }
@@ -2149,13 +2686,13 @@ void CHARACTER::OpenAcce(bool bCombination)
         if (m_bAcceAbsorption)
         {
 #ifdef TEXTS_IMPROVEMENT
-            ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 660, "");
+            ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 660, "");
 #endif
             return;
         }
 
         m_bAcceCombination = true;
-        if (const auto e = AIHelpers::EcsOf(this); e != entt::null && g_registry.valid(e))
+        if (const auto e = GetEntityHandle(); e != entt::null && g_registry.valid(e))
         {
             auto& acce = g_registry.get_or_emplace<ecs::AcceWindowComponent>(e);
             acce.combinationOpen = true;
@@ -2167,13 +2704,13 @@ void CHARACTER::OpenAcce(bool bCombination)
         if (m_bAcceCombination)
         {
 #ifdef TEXTS_IMPROVEMENT
-            ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 661, "");
+            ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 661, "");
 #endif
             return;
         }
 
         m_bAcceAbsorption = true;
-        if (const auto e = AIHelpers::EcsOf(this); e != entt::null && g_registry.valid(e))
+        if (const auto e = GetEntityHandle(); e != entt::null && g_registry.valid(e))
         {
             auto& acce = g_registry.get_or_emplace<ecs::AcceWindowComponent>(e);
             acce.absorptionOpen = true;
@@ -2228,7 +2765,7 @@ void CHARACTER::CloseAcce()
     else
         m_bAcceAbsorption = false;
 
-    if (const auto e = AIHelpers::EcsOf(this); e != entt::null && g_registry.valid(e))
+    if (const auto e = GetEntityHandle(); e != entt::null && g_registry.valid(e))
     {
         auto& acce = g_registry.get_or_emplace<ecs::AcceWindowComponent>(e);
         acce.combinationOpen = m_bAcceCombination;
@@ -2409,7 +2946,7 @@ void CHARACTER::AddAcceMaterial(TItemPos tPos, uint8_t bPos)
             return;
     }
 
-	const entt::entity item = ItemSystem::GetItem(AIHelpers::EcsOf(this), tPos);
+	const entt::entity item = ItemSystem::GetItem(GetEntityHandle(), tPos);
 	if (item == entt::null)
 		return;
 	else if ((ItemSystem::GetItemCell(item) >= INVENTORY_MAX_NUM) || ItemSystem::IsItemEquipped(item) || tPos.IsBeltInventoryPosition() || ItemSystem::GetItemType(item) == ITEM_DS)
@@ -2421,14 +2958,14 @@ void CHARACTER::AddAcceMaterial(TItemPos tPos, uint8_t bPos)
 	else if (ItemSystem::IsItemLocked(item))
     {
 #ifdef TEXTS_IMPROVEMENT
-        ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 519, "");
+        ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 519, "");
 #endif
         return;
     }
 	else if ((ItemSystem::GetItemType(item) == ITEM_ARMOR) && (ItemSystem::GetItemSubType(item) == ARMOR_BODY))
     {
 #ifdef TEXTS_IMPROVEMENT
-        ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 519, "");
+        ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 519, "");
 #endif
         return;
     }
@@ -2436,7 +2973,7 @@ void CHARACTER::AddAcceMaterial(TItemPos tPos, uint8_t bPos)
 	else if (ItemSystem::IsItemBound(item))
     {
 #ifdef TEXTS_IMPROVEMENT
-        ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 519, "");
+        ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 519, "");
 #endif
         return;
     }
@@ -2450,7 +2987,7 @@ void CHARACTER::AddAcceMaterial(TItemPos tPos, uint8_t bPos)
 	else if ((m_bAcceCombination) && (bPos == 1) && (!AcceIsSameGrade(ItemSystem::GetItemValue(item, ACCE_GRADE_VALUE_FIELD))))
     {
 #ifdef TEXTS_IMPROVEMENT
-        ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 662, "");
+        ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 662, "");
 #endif
         return;
     }
@@ -2458,7 +2995,7 @@ void CHARACTER::AddAcceMaterial(TItemPos tPos, uint8_t bPos)
 	else if ((m_bAcceCombination) && (ItemSystem::GetItemSubType(item) == COSTUME_STOLE) && (ItemSystem::GetItemValue(item, 0) == 4))
     {
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 20, "%s", ItemSystem::GetItemName(item));
+		ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 20, "%s", ItemSystem::GetItemName(item));
 #endif
         return;
     }
@@ -2466,7 +3003,7 @@ void CHARACTER::AddAcceMaterial(TItemPos tPos, uint8_t bPos)
 	else if ((m_bAcceCombination) && (ItemSystem::GetItemSocket(item, ACCE_ABSORPTION_SOCKET) >= ACCE_GRADE_4_ABS_MAX))
     {
 #ifdef TEXTS_IMPROVEMENT
-        ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 663, "%d", ACCE_GRADE_4_ABS_MAX);
+        ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 663, "%d", ACCE_GRADE_4_ABS_MAX);
 #endif
         return;
     }
@@ -2475,14 +3012,14 @@ void CHARACTER::AddAcceMaterial(TItemPos tPos, uint8_t bPos)
 		if ((ItemSystem::GetItemType(item) != ITEM_WEAPON) && (ItemSystem::GetItemType(item) != ITEM_ARMOR))
         {
 #ifdef TEXTS_IMPROVEMENT
-            ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 520, "");
+            ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 520, "");
 #endif
             return;
         }
 		else if ((ItemSystem::GetItemType(item) == ITEM_ARMOR) && (ItemSystem::GetItemSubType(item) != ARMOR_BODY))
         {
 #ifdef TEXTS_IMPROVEMENT
-            ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 520, "");
+            ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 520, "");
 #endif
             return;
         }
@@ -2518,17 +3055,17 @@ void CHARACTER::AddAcceMaterial(TItemPos tPos, uint8_t bPos)
 	if ((!m_bAcceAbsorption) && (bPos == 1) && (ItemSystem::GetItemSubType(pkItemMaterial[0]) != ItemSystem::GetItemSubType(item))) {
 #ifdef TEXTS_IMPROVEMENT
 		if (ItemSystem::GetItemSubType(pkItemMaterial[0]) == COSTUME_STOLE) {
-            ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 18, "");
+            ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 18, "");
         }
         else {
-            ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 822, "");
+            ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 822, "");
         }
 #endif
         return;
     }
 	else if (!m_bAcceAbsorption && bPos == 1 && ItemSystem::GetItemSubType(pkItemMaterial[0]) == COSTUME_STOLE && ItemSystem::GetItemVnum(pkItemMaterial[0]) != ItemSystem::GetItemVnum(item)) {
 #ifdef TEXTS_IMPROVEMENT
-        ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 1293, "");
+        ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 1293, "");
 #endif
         return;
     }
@@ -2662,7 +3199,7 @@ uint8_t CHARACTER::CanRefineAcceMaterials()
                 {
                     bReturn = 0;
 #ifdef TEXTS_IMPROVEMENT
-                    ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 783, "");
+                    ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 783, "");
 #endif
                 }
             }
@@ -2753,7 +3290,7 @@ void CHARACTER::RefineAcceMaterials()
         if (GetGold() < dwPrice)
         {
 #ifdef TEXTS_IMPROVEMENT
-            ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 232, "");
+            ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 232, "");
 #endif
             return;
         }
@@ -2809,10 +3346,10 @@ void CHARACTER::RefineAcceMaterials()
 
 #ifdef TEXTS_IMPROVEMENT
             if (lVal == 4) {
-                ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 521, "%d", dwAbs);
+                ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 521, "%d", dwAbs);
             }
             else {
-                ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 389, "");
+                ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 389, "");
             }
 #endif
             EffectPacket(SE_EFFECT_ACCE_SUCCEDED);
@@ -2829,7 +3366,7 @@ void CHARACTER::RefineAcceMaterials()
 			ItemSystem::DestroyItemEntityEcs(
 				failedMaterial, "COMBINE (REFINE FAIL)");
 #ifdef TEXTS_IMPROVEMENT
-            ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 390, "");
+            ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 390, "");
 #endif
             LogManager::instance().AcceLog(GetPlayerID(), GetX(), GetY(), dwItemVnum, 0, 0, 0, 0);
 		}
@@ -2876,7 +3413,7 @@ void CHARACTER::RefineAcceMaterials()
 		ItemSystem::AttrLogEcs(pkItemMaterial[0]);
 
 #ifdef TEXTS_IMPROVEMENT
-        ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 629, "");
+        ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 629, "");
 #endif
         ClearAcceMaterials();
 
@@ -2942,7 +3479,7 @@ bool CHARACTER::Update_Inven()
     int32_t time = GetLastUnlock() - get_global_time();
     if (time > 0) {
 #ifdef TEXTS_IMPROVEMENT
-        ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 234, "%d", time);
+        ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 234, "%d", time);
 #endif
         return false;
     }
@@ -2953,8 +3490,8 @@ bool CHARACTER::Update_Inven()
     if (CountSpecifyItem(key2) >= needkey) {
         RemoveSpecifyItem(key2, needkey);
         PointChange(POINT_INVEN, 1, false);
-        ecs::ChatSystem::Send(AIHelpers::EcsOf(this), CHAT_TYPE_COMMAND, "refreshinven");
-        NetworkSyncSystem::UpdatePacket(AIHelpers::EcsOf(this));
+        ecs::ChatSystem::Send(GetEntityHandle(), CHAT_TYPE_COMMAND, "refreshinven");
+        NetworkSyncSystem::UpdatePacket(GetEntityHandle());
 #ifdef ENABLE_SPAM_CHECK
         SetLastUnlock();
 #endif
@@ -2962,7 +3499,7 @@ bool CHARACTER::Update_Inven()
     }
     else {
         int need_key = needkey - CountSpecifyItem(key2);
-        ecs::ChatSystem::Send(AIHelpers::EcsOf(this), CHAT_TYPE_COMMAND, "update_envanter_need %d", need_key);
+        ecs::ChatSystem::Send(GetEntityHandle(), CHAT_TYPE_COMMAND, "update_envanter_need %d", need_key);
         return false;
     }
 }
@@ -2970,85 +3507,7 @@ bool CHARACTER::Update_Inven()
 
 bool CHARACTER::IsHack(bool bSendMsg, bool bCheckShopOwner, int limittime)
 {
-    const int iPulse = thecore_pulse();
-
-    if (test_server)
-        bSendMsg = true;
-
-    if (iPulse - GetSafeboxLoadTime() < PASSES_PER_SEC(limittime))
-    {
-#ifdef TEXTS_IMPROVEMENT
-        if (bSendMsg) {
-            ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 234, "%d", limittime);
-        }
-#endif
-        return true;
-    }
-
-    if (bCheckShopOwner)
-    {
-        if (GetExchange() || GetMyShop() || GetShopOwner() || IsOpenSafebox() || IsCubeOpen()
-#if defined(ENABLE_CHRISTMAS_WHEEL_OF_DESTINY)
-            || GetWheelDestiny()
-#endif
-            )
-        {
-#ifdef TEXTS_IMPROVEMENT
-            if (bSendMsg) {
-                ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 236, "");
-            }
-#endif
-            return true;
-        }
-    }
-    else
-    {
-        if (GetExchange() || GetMyShop() || IsOpenSafebox() || IsCubeOpen()
-#if defined(ENABLE_CHRISTMAS_WHEEL_OF_DESTINY)
-            || GetWheelDestiny()
-#endif
-            )
-        {
-#ifdef TEXTS_IMPROVEMENT
-            if (bSendMsg) {
-                ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 236, "");
-            }
-#endif
-            return true;
-        }
-    }
-
-    if (iPulse - GetExchangeTime() < PASSES_PER_SEC(limittime))
-    {
-#ifdef TEXTS_IMPROVEMENT
-        if (bSendMsg) {
-            ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 234, "%d", limittime);
-        }
-#endif
-        return true;
-    }
-
-    if (iPulse - GetMyShopTime() < PASSES_PER_SEC(limittime))
-    {
-#ifdef TEXTS_IMPROVEMENT
-        if (bSendMsg) {
-            ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 234, "%d", limittime);
-        }
-#endif
-        return true;
-    }
-
-    if (iPulse - GetRefineTime() < PASSES_PER_SEC(limittime))
-    {
-#ifdef TEXTS_IMPROVEMENT
-        if (bSendMsg) {
-            ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 234, "%d", limittime);
-        }
-#endif
-        return true;
-    }
-
-    return false;
+	return ecs::PlayerRuntime::IsHack(GetEntityHandle(), bSendMsg, bCheckShopOwner, limittime);
 }
 
 void CHARACTER::Say(const std::string& s)
@@ -3081,6 +3540,37 @@ void CHARACTER::SetShopSafebox(offlineshop::CShopSafebox* pk)
         pk->SetOwner(this);
 
     m_pkShopSafebox = pk;
+}
+#endif
+
+void CHARACTER::SetArena(CArena* arena)
+{
+	m_pArena = arena;
+	ecs::PlayerRuntime::SetArena(GetEntityHandle(), arena);
+}
+
+CArena* CHARACTER::GetArena() const
+{
+	const entt::entity entity = GetEntityHandle();
+	if (entity != entt::null && g_registry.valid(entity))
+		return ecs::PlayerRuntime::GetArena(entity);
+
+	return m_pArena;
+}
+
+#ifdef __NEWPET_SYSTEM__
+void CHARACTER::SetEggVid(int vid)
+{
+	m_eggvid = vid;
+	ecs::PlayerRuntime::SetEggVID(GetEntityHandle(), vid);
+}
+
+int CHARACTER::GetEggVid() const
+{
+	const entt::entity entity = GetEntityHandle();
+	if (entity != entt::null && g_registry.valid(entity))
+		return ecs::PlayerRuntime::GetEggVID(entity);
+	return m_eggvid;
 }
 #endif
 
@@ -3197,12 +3687,12 @@ void CHARACTER::RankingSubcategory(int iArg)
 #ifdef ENABLE_PVP_ADVANCED
 int CHARACTER::GetDuel(const char* type) const
 {
-    return GetDuelImpl(EcsEntityOf(this), type);
+    return GetDuelImpl(GetEntityHandle(), type);
 }
 
 void CHARACTER::SetDuel(const char* type, int value)
 {
-    SetDuelImpl(EcsEntityOf(this), type, value);
+    SetDuelImpl(GetEntityHandle(), type, value);
 }
 #endif
 
@@ -3210,7 +3700,7 @@ void CHARACTER::SetPart(uint8_t bPartPos, uint16_t wVal)
 {
     assert(bPartPos < PART_MAX_NUM);
 
-    if (auto* appearance = EnsureAppearancePartsComponent(EcsEntityOf(this)))
+    if (auto* appearance = EnsureAppearancePartsComponent(GetEntityHandle()))
         appearance->parts[bPartPos] = wVal;
 }
 
@@ -3267,7 +3757,7 @@ uint16_t CHARACTER::GetPart(uint8_t bPartPos) const
     }
 #endif
 
-    if (const auto* appearance = TryGetAppearancePartsComponent(EcsEntityOf(this)))
+    if (const auto* appearance = TryGetAppearancePartsComponent(GetEntityHandle()))
         return appearance->parts[bPartPos];
 
     return 0;
@@ -3292,7 +3782,7 @@ uint16_t CHARACTER::GetOriginalPart(uint8_t bPartPos) const
         }
 #endif
 
-        if (const auto* appearance = TryGetAppearancePartsComponent(EcsEntityOf(this)))
+        if (const auto* appearance = TryGetAppearancePartsComponent(GetEntityHandle()))
             return appearance->basePart;
 
         return 0;
@@ -3359,13 +3849,13 @@ uint16_t CHARACTER::GetOriginalPart(uint8_t bPartPos) const
 
 void CHARACTER::SetMaxHP(int64_t iVal)
 {
-    if (auto* health = EnsureHealthComponent(EcsEntityOf(this)))
+    if (auto* health = EnsureHealthComponent(GetEntityHandle()))
         health->max = static_cast<int32_t>(std::clamp<int64_t>(iVal, 0, INT32_MAX));
 }
 
 int64_t CHARACTER::GetMaxHP() const
 {
-    if (const auto* health = TryGetHealthComponent(EcsEntityOf(this)))
+    if (const auto* health = TryGetHealthComponent(GetEntityHandle()))
         return health->max;
 
     return 0;
@@ -3373,13 +3863,13 @@ int64_t CHARACTER::GetMaxHP() const
 
 void CHARACTER::SetMaxSP(int64_t iVal)
 {
-    if (auto* mana = EnsureManaComponent(EcsEntityOf(this)))
+    if (auto* mana = EnsureManaComponent(GetEntityHandle()))
         mana->max = static_cast<int32_t>(std::clamp<int64_t>(iVal, 0, INT32_MAX));
 }
 
 int64_t CHARACTER::GetMaxSP() const
 {
-    if (const auto* mana = TryGetManaComponent(EcsEntityOf(this)))
+    if (const auto* mana = TryGetManaComponent(GetEntityHandle()))
         return mana->max;
 
     return 0;
@@ -3387,13 +3877,13 @@ int64_t CHARACTER::GetMaxSP() const
 
 void CHARACTER::SetMaxStamina(int64_t iVal)
 {
-    if (auto* stamina = EnsureStaminaComponent(EcsEntityOf(this)))
+    if (auto* stamina = EnsureStaminaComponent(GetEntityHandle()))
         stamina->max = static_cast<int32_t>(std::clamp<int64_t>(iVal, 0, INT32_MAX));
 }
 
 int64_t CHARACTER::GetMaxStamina() const
 {
-    if (const auto* stamina = TryGetStaminaComponent(EcsEntityOf(this)))
+    if (const auto* stamina = TryGetStaminaComponent(GetEntityHandle()))
         return stamina->max;
 
     return 0;
@@ -3449,6 +3939,8 @@ void CHARACTER::Destroy()
         delete m_petSystem;
 
         m_petSystem = nullptr;
+		if (GetEntityHandle() != entt::null && g_registry.valid(GetEntityHandle()))
+			g_registry.get_or_emplace<ecs::PetRuntimeRefs>(GetEntityHandle()).petSystem = nullptr;
     }
 #endif
 
@@ -3459,6 +3951,8 @@ void CHARACTER::Destroy()
         delete m_newpetSystem;
 
         m_newpetSystem = nullptr;
+		if (GetEntityHandle() != entt::null && g_registry.valid(GetEntityHandle()))
+			g_registry.get_or_emplace<ecs::PetRuntimeRefs>(GetEntityHandle()).newPetSystem = nullptr;
     }
 #endif
 
@@ -3553,15 +4047,11 @@ void CHARACTER::Destroy()
     event_cancel(&m_pkTimedEvent);
     event_cancel(&m_pkStunEvent);
     event_cancel(&m_pkFishingEvent);
-    event_cancel(&m_pkPoisonEvent);
-#ifdef ENABLE_WOLFMAN_CHARACTER
-    event_cancel(&m_pkBleedingEvent);
-#endif
-    event_cancel(&m_pkFireEvent);
+    AffectSystem::CancelDamageEvents(GetEntityHandle());
     event_cancel(&m_pkPartyRequestEvent);
     event_cancel(&m_pkWarpEvent);
 #ifdef ENABLE_NEW_FISHING_SYSTEM
-    event_cancel(&m_pkFishingNewEvent);
+    ActivitySystem::StopFishing(GetEntityHandle());
 #endif
 #ifdef ENABLE_BATTLE_PASS_STAY_ONLINE
     if (m_pkBattlePassStayOnlineEvent)
@@ -3610,7 +4100,7 @@ void CHARACTER::Destroy()
 
     CEntity::Destroy();
 
-    const entt::entity e = AIHelpers::EcsOf(this);
+    const entt::entity e = GetEntityHandle();
     if (GetSectree())
         GetSectree()->RemoveEntity(this);
     if (e != entt::null && g_registry.valid(e))
@@ -3628,40 +4118,7 @@ void CHARACTER::Destroy()
 
 void CHARACTER::ResetPoint(int iLv)
 {
-    uint8_t bJob = GetJob();
-
-    PointChange(POINT_LEVEL, iLv - GetLevel());
-
-    SetRealPoint(POINT_ST, JobInitialPoints[bJob].st);
-    SetPoint(POINT_ST, GetRealPoint(POINT_ST));
-
-    SetRealPoint(POINT_HT, JobInitialPoints[bJob].ht);
-    SetPoint(POINT_HT, GetRealPoint(POINT_HT));
-
-    SetRealPoint(POINT_DX, JobInitialPoints[bJob].dx);
-    SetPoint(POINT_DX, GetRealPoint(POINT_DX));
-
-    SetRealPoint(POINT_IQ, JobInitialPoints[bJob].iq);
-    SetPoint(POINT_IQ, GetRealPoint(POINT_IQ));
-
-    SetRandomHP((iLv - 1) * number(JobInitialPoints[GetJob()].hp_per_lv_begin, JobInitialPoints[GetJob()].hp_per_lv_end));
-    SetRandomSP((iLv - 1) * number(JobInitialPoints[GetJob()].sp_per_lv_begin, JobInitialPoints[GetJob()].sp_per_lv_end));
-
-    int iLvl = iLv;
-#ifdef ENABLE_STATUS_MAX_344_POINTS
-    if (iLvl > 0)
-        iLvl -= 1;
-#endif
-    PointChange(POINT_STAT, (MINMAX(1, iLvl, g_iStatusPointGetLevelLimit) * 3) + GetPoint(POINT_LEVEL_STEP) - GetPoint(POINT_STAT));
-
-    ComputePoints();
-
-    PointChange(POINT_HP, GetMaxHP() - GetHP());
-    PointChange(POINT_SP, GetMaxSP() - GetSP());
-
-    NetworkSyncSystem::PointsPacket(AIHelpers::EcsOf(this));
-
-    LogManager::instance().CharLog(this, 0, "RESET_POINT", "");
+	ecs::PointSystem::ResetAllPoints(GetEntityHandle(), iLv);
 }
 
 void CHARACTER::GiveRandomSkillBook()
@@ -3700,7 +4157,7 @@ void CHARACTER::SendGreetMessage()
 
     for (auto it = v.begin(); it != v.end(); ++it)
     {
-        ecs::ChatSystem::Send(AIHelpers::EcsOf(this), CHAT_TYPE_NOTICE, it->c_str());
+        ecs::ChatSystem::Send(GetEntityHandle(), CHAT_TYPE_NOTICE, it->c_str());
     }
 }
 
@@ -3711,121 +4168,17 @@ void CHARACTER::BeginStateEmpty()
 
 int CHARACTER::ChangeEmpire(uint8_t empire)
 {
-    if (GetEmpire() == empire)
-        return 1;
-
-    char szQuery[1024 + 1];
-    uint32_t dwAID;
-    uint32_t dwPID[4];
-    memset(dwPID, 0, sizeof(dwPID));
-
-    snprintf(szQuery, sizeof(szQuery),
-        "SELECT id, pid1, pid2, pid3, pid4, pid5 FROM player_index%s WHERE pid1=%u OR pid2=%u OR pid3=%u OR pid4=%u OR pid5=%u AND empire=%u",
-        get_table_postfix(), GetPlayerID(), GetPlayerID(), GetPlayerID(), GetPlayerID(), GetPlayerID(), GetEmpire());
-
-    std::unique_ptr<SQLMsg> msg(DBManager::instance().DirectQuery(szQuery));
-    if (msg->Get()->uiNumRows == 0)
-        return 0;
-
-    MYSQL_ROW row = mysql_fetch_row(msg->Get()->pSQLResult);
-    str_to_number(dwAID, row[0]);
-    str_to_number(dwPID[0], row[1]);
-    str_to_number(dwPID[1], row[2]);
-    str_to_number(dwPID[2], row[3]);
-    str_to_number(dwPID[3], row[4]);
-
-    for (int i = 0; i < 4; ++i)
-    {
-        snprintf(szQuery, sizeof(szQuery), "SELECT guild_id FROM guild_member%s WHERE pid=%u", get_table_postfix(), dwPID[i]);
-        std::unique_ptr<SQLMsg> guildMsg(DBManager::instance().DirectQuery(szQuery));
-        if (guildMsg->Get()->uiNumRows > 0)
-        {
-            uint32_t dwGuildID = 0;
-            MYSQL_ROW guildRow = mysql_fetch_row(guildMsg->Get()->pSQLResult);
-            str_to_number(dwGuildID, guildRow[0]);
-            if (CGuildManager::instance().FindGuild(dwGuildID) != nullptr)
-                return 2;
-        }
-    }
-
-    for (int i = 0; i < 4; ++i)
-    {
-        if (marriage::CManager::instance().IsEngagedOrMarried(dwPID[i]) == true)
-            return 3;
-    }
-
-    snprintf(szQuery, sizeof(szQuery), "UPDATE player_index%s SET empire=%u WHERE pid1=%u OR pid2=%u OR pid3=%u OR pid4=%u OR pid5=%u AND empire=%u",
-        get_table_postfix(), empire, GetPlayerID(), GetPlayerID(), GetPlayerID(), GetPlayerID(), GetPlayerID(), GetEmpire());
-
-    std::unique_ptr<SQLMsg> updateMsg(DBManager::instance().DirectQuery(szQuery));
-    if (updateMsg->Get()->uiAffectedRows <= 0)
-        return 0;
-
-    const entt::entity e = AIHelpers::EcsOf(this);
-    if (e != entt::null && g_registry.valid(e))
-    {
-        auto& emp = g_registry.get_or_emplace<ecs::EmpireComponent>(e);
-        emp.value = empire;
-        ++emp.changeCount;
-        g_registry.emplace_or_replace<ecs::DirtyTag>(e);
-    }
-
-    SetChangeEmpireCount();
-#ifdef ENABLE_BUG_FIXES
-    SetEmpire(empire);
-    NetworkSyncSystem::UpdatePacket(AIHelpers::EcsOf(this));
-#endif
-    return 999;
+	return ecs::PlayerRuntime::ChangeEmpire(GetEntityHandle(), empire);
 }
 
 int CHARACTER::GetChangeEmpireCount() const
 {
-    char szQuery[1024 + 1];
-    uint32_t dwAID = GetAID();
-
-    if (dwAID == 0)
-        return 0;
-
-    snprintf(szQuery, sizeof(szQuery), "SELECT change_count FROM change_empire WHERE account_id = %u", dwAID);
-    std::unique_ptr<SQLMsg> msg(DBManager::instance().DirectQuery(szQuery));
-    if (msg->Get()->uiNumRows == 0)
-        return 0;
-
-    MYSQL_ROW row = mysql_fetch_row(msg->Get()->pSQLResult);
-    uint32_t count = 0;
-    str_to_number(count, row[0]);
-    return count;
+	return ecs::PlayerRuntime::GetChangeEmpireCount(GetEntityHandle());
 }
 
 void CHARACTER::SetChangeEmpireCount()
 {
-    char szQuery[1024 + 1];
-    uint32_t dwAID = GetAID();
-
-    if (dwAID == 0)
-        return;
-
-    int count = GetChangeEmpireCount();
-    const entt::entity e = AIHelpers::EcsOf(this);
-    if (e != entt::null && g_registry.valid(e))
-    {
-        auto& emp = g_registry.get_or_emplace<ecs::EmpireComponent>(e);
-        emp.changeCount = static_cast<uint32_t>(count + 1);
-        g_registry.emplace_or_replace<ecs::DirtyTag>(e);
-    }
-
-    if (count == 0)
-    {
-        ++count;
-        snprintf(szQuery, sizeof(szQuery), "INSERT INTO change_empire VALUES(%u, %d, NOW())", dwAID, count);
-    }
-    else
-    {
-        ++count;
-        snprintf(szQuery, sizeof(szQuery), "UPDATE change_empire SET change_count=%d WHERE account_id=%u", count, dwAID);
-    }
-
-    std::unique_ptr<SQLMsg> pmsg(DBManager::instance().DirectQuery(szQuery));
+	ecs::PlayerRuntime::IncrementChangeEmpireCount(GetEntityHandle());
 }
 
 void CHARACTER::MountVnum(uint32_t vnum)
@@ -3838,7 +4191,7 @@ void CHARACTER::MountVnum(uint32_t vnum)
     m_dwMountVnum = vnum;
     m_dwMountTime = get_dword_time();
 
-    const auto e = AIHelpers::EcsOf(this);
+    const auto e = GetEntityHandle();
     if (e != entt::null && g_registry.valid(e))
     {
         auto& mount = g_registry.get_or_emplace<ecs::MountState>(e);
@@ -3857,7 +4210,7 @@ void CHARACTER::MountVnum(uint32_t vnum)
     // current position (GetX/Y fallback in GetCurrentDestX/Y).
     m_posStart.x = GetX();
     m_posStart.y = GetY();
-    ecs::MovementSystem::SyncDestinationClear(AIHelpers::EcsOf(this));
+    ecs::MovementSystem::SyncDestinationClear(GetEntityHandle());
 
     EncodeInsertPacket(this);
 
@@ -3954,7 +4307,7 @@ void CHARACTER::SetPlayerProto(const TPlayerTable* t)
 
     m_iAlignment = t->lAlignment;
     m_iRealAlignment = t->lAlignment;
-    if (auto* combat = g_registry.try_get<ecs::CombatStats>(EcsEntityOf(this))) {
+    if (auto* combat = g_registry.try_get<ecs::CombatStats>(GetEntityHandle())) {
         combat->alignment = m_iAlignment;
         combat->realAlignment = m_iRealAlignment;
     }
@@ -3963,15 +4316,15 @@ void CHARACTER::SetPlayerProto(const TPlayerTable* t)
 
     m_points.skill_group = t->skill_group;
 
-    if (auto* appearance = EnsureAppearancePartsComponent(EcsEntityOf(this)))
+    if (auto* appearance = EnsureAppearancePartsComponent(GetEntityHandle()))
         appearance->basePart = t->part_base;
     SetPart(PART_HAIR, t->parts[PART_HAIR]);
 #ifdef ENABLE_ACCE_SYSTEM
     SetPart(PART_ACCE, t->parts[PART_ACCE]);
 #endif
 
-    m_points.iRandomHP = t->sRandomHP;
-    m_points.iRandomSP = t->sRandomSP;
+    SetRandomHP(t->sRandomHP);
+    SetRandomSP(t->sRandomSP);
 
     if (m_pSkillLevels) {
         M2_DELETE_ARRAY(m_pSkillLevels);
@@ -4056,14 +4409,14 @@ void CHARACTER::SetPlayerProto(const TPlayerTable* t)
         {
             m_afAffectFlag.Set(AFF_YMIR);
             m_bPKMode = PK_MODE_PROTECT;
-            if (auto* combat = g_registry.try_get<ecs::CombatStats>(EcsEntityOf(this)))
+            if (auto* combat = g_registry.try_get<ecs::CombatStats>(GetEntityHandle()))
                 combat->pkMode = m_bPKMode;
         }
     }
 
     if (GetLevel() < PK_PROTECT_LEVEL) {
         m_bPKMode = PK_MODE_PROTECT;
-        if (auto* combat = g_registry.try_get<ecs::CombatStats>(EcsEntityOf(this)))
+        if (auto* combat = g_registry.try_get<ecs::CombatStats>(GetEntityHandle()))
             combat->pkMode = m_bPKMode;
     }
 
@@ -4106,6 +4459,8 @@ void CHARACTER::SetPlayerProto(const TPlayerTable* t)
     }
 
     m_petSystem = M2_NEW CPetSystem(this);
+	if (GetEntityHandle() != entt::null && g_registry.valid(GetEntityHandle()))
+		g_registry.get_or_emplace<ecs::PetRuntimeRefs>(GetEntityHandle()).petSystem = m_petSystem;
 #endif
 
 #ifdef ENABLE_MOUNT_COSTUME_SYSTEM
@@ -4126,6 +4481,8 @@ void CHARACTER::SetPlayerProto(const TPlayerTable* t)
     }
 
     m_newpetSystem = M2_NEW CNewPetSystem(this);
+	if (GetEntityHandle() != entt::null && g_registry.valid(GetEntityHandle()))
+		g_registry.get_or_emplace<ecs::PetRuntimeRefs>(GetEntityHandle()).newPetSystem = m_newpetSystem;
 #endif
 }
 
@@ -4138,7 +4495,7 @@ void CHARACTER::SetProto(const CMob* pkMob)
     m_pkMobInst = M2_NEW CMobInstance;
 
     m_bPKMode = PK_MODE_FREE;
-    if (auto* combat = g_registry.try_get<ecs::CombatStats>(EcsEntityOf(this)))
+    if (auto* combat = g_registry.try_get<ecs::CombatStats>(GetEntityHandle()))
         combat->pkMode = m_bPKMode;
 
     const TMobTable* t = &m_pkMobData->m_table;
@@ -4158,7 +4515,7 @@ void CHARACTER::SetProto(const CMob* pkMob)
 
     SetHP(GetMaxHP());
     SetSP(GetMaxSP());
-    if (auto* flags = EnsureRuntimeFlagsComponent(EcsEntityOf(this)))
+    if (auto* flags = EnsureRuntimeFlagsComponent(GetEntityHandle()))
         flags->aiFlag = t->dwAIFlag;
     SetImmuneFlag(t->dwImmuneFlag);
 
@@ -4320,6 +4677,7 @@ void CHARACTER::OnClick(LPCHARACTER pkChrCauser)
         LOG_ERROR("OnClick {} by NULL", GetName());
         return;
     }
+	const entt::entity causer = pkChrCauser->GetEntityHandle();
 
     uint32_t vid = GetPacketVID();
     LOG_INFO("OnClick {}[vnum: {} vid: {}] by {}", GetName(), GetRaceNum(), vid, pkChrCauser->GetName());
@@ -4354,7 +4712,7 @@ void CHARACTER::OnClick(LPCHARACTER pkChrCauser)
                     if ((GetExchange() || IsOpenSafebox() || GetShopOwner()) || IsCubeOpen())
                     {
 #ifdef TEXTS_IMPROVEMENT
-                        ecs::ChatSystem::SendNew(AIHelpers::EcsOf(pkChrCauser), CHAT_TYPE_INFO, 291, "");
+                        ecs::ChatSystem::SendNew(causer, CHAT_TYPE_INFO, 291, "");
 #endif
                         return;
                     }
@@ -4363,7 +4721,7 @@ void CHARACTER::OnClick(LPCHARACTER pkChrCauser)
                     if (IsAttrTransferOpen())
                     {
 #ifdef TEXTS_IMPROVEMENT
-                        ecs::ChatSystem::SendNew(AIHelpers::EcsOf(pkChrCauser), CHAT_TYPE_INFO, 291, "");
+                        ecs::ChatSystem::SendNew(causer, CHAT_TYPE_INFO, 291, "");
 #endif
                         return;
                     }
@@ -4374,7 +4732,7 @@ void CHARACTER::OnClick(LPCHARACTER pkChrCauser)
                     if ((pkChrCauser->GetExchange() || pkChrCauser->IsOpenSafebox() || pkChrCauser->GetMyShop() || pkChrCauser->GetShopOwner()) || pkChrCauser->IsCubeOpen())
                     {
 #ifdef TEXTS_IMPROVEMENT
-                        ecs::ChatSystem::SendNew(AIHelpers::EcsOf(pkChrCauser), CHAT_TYPE_INFO, 291, "");
+                        ecs::ChatSystem::SendNew(causer, CHAT_TYPE_INFO, 291, "");
 #endif
                         return;
                     }
@@ -4383,7 +4741,7 @@ void CHARACTER::OnClick(LPCHARACTER pkChrCauser)
                     if (pkChrCauser->IsAttrTransferOpen())
                     {
 #ifdef TEXTS_IMPROVEMENT
-                        ecs::ChatSystem::SendNew(AIHelpers::EcsOf(pkChrCauser), CHAT_TYPE_INFO, 291, "");
+                        ecs::ChatSystem::SendNew(causer, CHAT_TYPE_INFO, 291, "");
 #endif
                         return;
                     }
@@ -4392,7 +4750,7 @@ void CHARACTER::OnClick(LPCHARACTER pkChrCauser)
                     if ((GetExchange() || IsOpenSafebox() || IsCubeOpen()))
                     {
 #ifdef TEXTS_IMPROVEMENT
-                        ecs::ChatSystem::SendNew(AIHelpers::EcsOf(pkChrCauser), CHAT_TYPE_INFO, 369, "%s", GetName());
+                        ecs::ChatSystem::SendNew(causer, CHAT_TYPE_INFO, 369, "%s", GetName());
 #endif
                         return;
                     }
@@ -4401,7 +4759,7 @@ void CHARACTER::OnClick(LPCHARACTER pkChrCauser)
                     if (IsAttrTransferOpen())
                     {
 #ifdef TEXTS_IMPROVEMENT
-                        ecs::ChatSystem::SendNew(AIHelpers::EcsOf(pkChrCauser), CHAT_TYPE_INFO, 369, "%s", GetName());
+                        ecs::ChatSystem::SendNew(causer, CHAT_TYPE_INFO, 369, "%s", GetName());
 #endif
                         return;
                     }
@@ -4462,7 +4820,7 @@ void CHARACTER::DestroyPvP()
 
             char szBuf[CHAT_MAX_LEN + 1];
             snprintf(szBuf, sizeof(szBuf), "BINARY_Duel_Delete");
-            ecs::ChatSystem::Send(AIHelpers::EcsOf(this), CHAT_TYPE_COMMAND, szBuf);
+            ecs::ChatSystem::Send(GetEntityHandle(), CHAT_TYPE_COMMAND, szBuf);
 
             for (size_t i = 0; i < _countof(szTableStaticPvP); i++)
             {
@@ -4540,7 +4898,7 @@ bool CHARACTER::SwitchChannel(int32_t newAddr, uint16_t newPort)
     if (GetSectree())
     {
         GetSectree()->RemoveEntity(this);
-        const entt::entity e = AIHelpers::EcsOf(this);
+        const entt::entity e = GetEntityHandle();
         if (e != entt::null && g_registry.valid(e))
         {
             g_registry.remove<ecs::SectorPlacement>(e);
@@ -4603,16 +4961,17 @@ EVENTFUNC(switch_channel)
         LOG_ERROR("No char to work on for the switch.");
         return 0;
     }
+	const entt::entity character = ch->GetEntityHandle();
 
     // Phase 10: WRITES_STATE - deferred until ECS component covers m_pkTimedEvent
 
-    if (!ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch)))
+    if (!ecs::PlayerRuntime::GetDesc(character))
         return 0;
 
     if (info->secs > 0)
     {
 #ifdef TEXTS_IMPROVEMENT
-        ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 658, "%d", info->secs);
+        ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 658, "%d", info->secs);
 #endif
         --info->secs;
         return PASSES_PER_SEC(1);
@@ -4647,7 +5006,7 @@ void CHARACTER::BlockProcessed()
     }
     else {
 #ifdef TEXTS_IMPROVEMENT
-        ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 42, "");
+        ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 42, "");
 #endif
         event_cancel(&m_pkDropEvent);
         m_pkDropEvent = nullptr;
@@ -4663,14 +5022,14 @@ void CHARACTER::BlockDrop()
 
     if (GetMapIndex() != 358 && GetMapIndex() != 359 && GetMapIndex() != 360 && GetMapIndex() != 361) {
 #ifdef TEXTS_IMPROVEMENT
-        ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 36, "");
+        ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 36, "");
 #endif
         return;
     }
 
     if (m_pkDropEvent) {
 #ifdef TEXTS_IMPROVEMENT
-        ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 44, "");
+        ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 44, "");
 #endif
         return;
     }
@@ -4681,7 +5040,7 @@ void CHARACTER::BlockDrop()
     info->drop = false;
     m_pkDropEvent = event_create(drop_event, info, PASSES_PER_SEC(1));
 #ifdef TEXTS_IMPROVEMENT
-    ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 43, "%d", 5);
+    ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 43, "%d", 5);
 #endif
 }
 
@@ -4689,14 +5048,14 @@ void CHARACTER::UnblockDrop()
 {
     if (GetMapIndex() != 358 && GetMapIndex() != 359 && GetMapIndex() != 360 && GetMapIndex() != 361) {
 #ifdef TEXTS_IMPROVEMENT
-        ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 36, "");
+        ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 36, "");
 #endif
         return;
     }
 
     if (m_pkDropEvent) {
 #ifdef TEXTS_IMPROVEMENT
-        ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 44, "");
+        ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 44, "");
 #endif
         return;
     }
@@ -4707,7 +5066,7 @@ void CHARACTER::UnblockDrop()
     info->drop = true;
     m_pkDropEvent = event_create(drop_event, info, PASSES_PER_SEC(1));
 #ifdef TEXTS_IMPROVEMENT
-    ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 43, "%d", 5);
+    ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 43, "%d", 5);
 #endif
 }
 
@@ -4742,7 +5101,7 @@ void CHARACTER::OpenMyShop(const char* c_pszSign, TShopItemTable* pTable, uint8_
     if (!CanHandleItem())
     {
 #ifdef TEXTS_IMPROVEMENT
-        ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 291, "");
+        ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 291, "");
 #endif
         return;
     }
@@ -4757,7 +5116,7 @@ void CHARACTER::OpenMyShop(const char* c_pszSign, TShopItemTable* pTable, uint8_
     if (GetPart(PART_MAIN) > 2)
     {
 #ifdef TEXTS_IMPROVEMENT
-        ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 503, "");
+        ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 503, "");
 #endif
         return;
     }
@@ -4788,7 +5147,7 @@ void CHARACTER::OpenMyShop(const char* c_pszSign, TShopItemTable* pTable, uint8_
     if (GOLD_MAX <= nTotalMoney)
     {
 #ifdef TEXTS_IMPROVEMENT
-        ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 226,
+        ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 226,
             "%lld"
 
             , GOLD_MAX);
@@ -4807,7 +5166,7 @@ void CHARACTER::OpenMyShop(const char* c_pszSign, TShopItemTable* pTable, uint8_
     if (CBanwordManager::instance().CheckString(m_stShopSign.c_str(), m_stShopSign.length()))
     {
 #ifdef TEXTS_IMPROVEMENT
-        ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 358, "");
+        ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 358, "");
 #endif
         return;
     }
@@ -4817,12 +5176,12 @@ void CHARACTER::OpenMyShop(const char* c_pszSign, TShopItemTable* pTable, uint8_
     if (m_bKasmirPaketBaslik < 1 && m_bKasmirPaketBaslik > 6)
     {
 #ifdef TEXTS_IMPROVEMENT
-        ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 46, "");
+        ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 46, "");
 #endif
         return;
     }
     // LPENTITY.4-fixup.2.g: mirror legacy KASMIR title into ECS ShopState
-    if (auto* shop = g_registry.try_get<ecs::ShopState>(AIHelpers::EcsOf(this)))
+    if (auto* shop = g_registry.try_get<ecs::ShopState>(GetEntityHandle()))
         shop->kasmirTitle = m_bKasmirPaketBaslik;
 #endif
 
@@ -4846,7 +5205,7 @@ void CHARACTER::OpenMyShop(const char* c_pszSign, TShopItemTable* pTable, uint8_
             if (item_table && (IS_SET(item_table->dwAntiFlags, ITEM_ANTIFLAG_GIVE | ITEM_ANTIFLAG_MYSHOP)))
             {
 #ifdef TEXTS_IMPROVEMENT
-                ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 416, "%s", ItemSystem::GetItemName(item));
+                ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 416, "%s", ItemSystem::GetItemName(item));
 #endif
                 return;
             }
@@ -4854,7 +5213,7 @@ void CHARACTER::OpenMyShop(const char* c_pszSign, TShopItemTable* pTable, uint8_
             if (ItemSystem::IsItemEquipped(item) == true)
             {
 #ifdef TEXTS_IMPROVEMENT
-                ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 541, "");
+                ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 541, "");
 #endif
                 return;
             }
@@ -4862,7 +5221,7 @@ void CHARACTER::OpenMyShop(const char* c_pszSign, TShopItemTable* pTable, uint8_
             if (ItemSystem::IsItemLocked(item))
             {
 #ifdef TEXTS_IMPROVEMENT
-                ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 656, "");
+                ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 656, "");
 #endif
                 return;
             }
@@ -4920,7 +5279,7 @@ void CHARACTER::OpenMyShop(const char* c_pszSign, TShopItemTable* pTable, uint8_
     PacketAround(&p, sizeof(TPacketGCShopSign));
 
     m_pkMyShop = CShopManager::instance().CreatePCShop(this, pTable, bItemCount);
-    if (const auto e = AIHelpers::EcsOf(this); e != entt::null && g_registry.valid(e))
+    if (const auto e = GetEntityHandle(); e != entt::null && g_registry.valid(e))
     {
         auto& shop = g_registry.get_or_emplace<ecs::ShopState>(e);
         shop.myShop = m_pkMyShop;
@@ -4956,7 +5315,7 @@ void CHARACTER::CloseMyShop()
         m_stShopSign.clear();
         CShopManager::instance().DestroyPCShop(this);
         m_pkMyShop = nullptr;
-        if (const auto e = AIHelpers::EcsOf(this); e != entt::null && g_registry.valid(e))
+        if (const auto e = GetEntityHandle(); e != entt::null && g_registry.valid(e))
         {
             auto& shop = g_registry.get_or_emplace<ecs::ShopState>(e);
             shop.myShop = nullptr;
@@ -4966,7 +5325,7 @@ void CHARACTER::CloseMyShop()
         m_bKasmirPaketBaslik = 0;
         m_bKasmirPaketDurum = false;
         // LPENTITY.4-fixup.2.g: clear ECS mirror on shop close
-        if (auto* shop = g_registry.try_get<ecs::ShopState>(AIHelpers::EcsOf(this)))
+        if (auto* shop = g_registry.try_get<ecs::ShopState>(GetEntityHandle()))
             shop->kasmirTitle = 0;
 #endif
 
@@ -4992,29 +5351,35 @@ void CHARACTER::CloseMyShop()
 void CHARACTER::SetBodyCostumeHidden(bool hidden, bool pass)
 {
     m_bHideBodyCostume = hidden;
-    ecs::ChatSystem::Send(AIHelpers::EcsOf(this), CHAT_TYPE_COMMAND, "SetBodyCostumeHidden %d", m_bHideBodyCostume ? 1 : 0);
-    if (!pass) {
-        SetQuestFlag("costume_option.hide_body", m_bHideBodyCostume ? 1 : 0);
-    }
+	ecs::PlayerRuntime::SetCostumeHidden(GetEntityHandle(), 1, hidden, pass);
+}
+
+bool CHARACTER::IsBodyCostumeHidden() const
+{
+	return ecs::PlayerRuntime::IsCostumeHidden(GetEntityHandle(), 1);
 }
 
 void CHARACTER::SetHairCostumeHidden(bool hidden, bool pass)
 {
     m_bHideHairCostume = hidden;
-    ecs::ChatSystem::Send(AIHelpers::EcsOf(this), CHAT_TYPE_COMMAND, "SetHairCostumeHidden %d", m_bHideHairCostume ? 1 : 0);
-    if (!pass) {
-        SetQuestFlag("costume_option.hide_hair", m_bHideHairCostume ? 1 : 0);
-    }
+	ecs::PlayerRuntime::SetCostumeHidden(GetEntityHandle(), 2, hidden, pass);
+}
+
+bool CHARACTER::IsHairCostumeHidden() const
+{
+	return ecs::PlayerRuntime::IsCostumeHidden(GetEntityHandle(), 2);
 }
 
 #ifdef ENABLE_ACCE_SYSTEM
 void CHARACTER::SetAcceCostumeHidden(bool hidden, bool pass)
 {
     m_bHideAcceCostume = hidden;
-    ecs::ChatSystem::Send(AIHelpers::EcsOf(this), CHAT_TYPE_COMMAND, "SetAcceCostumeHidden %d", m_bHideAcceCostume ? 1 : 0);
-    if (!pass) {
-        SetQuestFlag("costume_option.hide_acce", m_bHideAcceCostume ? 1 : 0);
-    }
+	ecs::PlayerRuntime::SetCostumeHidden(GetEntityHandle(), 3, hidden, pass);
+}
+
+bool CHARACTER::IsAcceCostumeHidden() const
+{
+	return ecs::PlayerRuntime::IsCostumeHidden(GetEntityHandle(), 3);
 }
 #endif
 
@@ -5022,10 +5387,12 @@ void CHARACTER::SetAcceCostumeHidden(bool hidden, bool pass)
 void CHARACTER::SetWeaponCostumeHidden(bool hidden, bool pass)
 {
     m_bHideWeaponCostume = hidden;
-    ecs::ChatSystem::Send(AIHelpers::EcsOf(this), CHAT_TYPE_COMMAND, "SetWeaponCostumeHidden %d", m_bHideWeaponCostume ? 1 : 0);
-    if (!pass) {
-        SetQuestFlag("costume_option.hide_weapon", m_bHideWeaponCostume ? 1 : 0);
-    }
+	ecs::PlayerRuntime::SetCostumeHidden(GetEntityHandle(), 4, hidden, pass);
+}
+
+bool CHARACTER::IsWeaponCostumeHidden() const
+{
+	return ecs::PlayerRuntime::IsCostumeHidden(GetEntityHandle(), 4);
 }
 #endif
 #endif
@@ -5120,11 +5487,6 @@ void CHARACTER::Initialize()
 
     m_pkMiningEvent = nullptr;
 
-    m_pkPoisonEvent = nullptr;
-#ifdef ENABLE_WOLFMAN_CHARACTER
-    m_pkBleedingEvent = NULL;
-#endif
-    m_pkFireEvent = nullptr;
     m_pkAffectEvent = nullptr;
     m_afAffectFlag = TAffectFlag(0, 0);
 
@@ -5142,7 +5504,7 @@ void CHARACTER::Initialize()
 
     m_dwPlayStartTime = m_dwLastMoveTime = get_dword_time();
 
-    EnterIdleState(EcsEntityOf(this));
+    EnterIdleState(GetEntityHandle());
     GotoState(m_stateIdle);
     m_dwStateDuration = 1;
 
@@ -5190,10 +5552,6 @@ void CHARACTER::Initialize()
 
     m_bItemLoaded = false;
 
-    m_bHasPoisoned = false;
-#ifdef ENABLE_WOLFMAN_CHARACTER
-    m_bHasBled = false;
-#endif
     m_pkDungeon = nullptr;
     m_iEventAttr = 0;
 
@@ -5336,12 +5694,6 @@ void CHARACTER::Initialize()
 #endif
     memset(&m_tvLastSyncTime, 0, sizeof(m_tvLastSyncTime));
     m_iSyncHackCount = 0;
-#ifdef ENABLE_NEW_FISHING_SYSTEM
-    m_pkFishingNewEvent = nullptr;
-    m_bFishCatch = 0;
-    m_dwLastCatch = 0;
-    m_dwCatchFailed = 0;
-#endif
 #ifdef ENABLE_RANKING
     for (int i = 0; i < RANKING_MAX_CATEGORIES; ++i)
         m_lRankPoints[i] = 0;
@@ -5423,7 +5775,7 @@ uint32_t CHARACTER::GetLegacyVID() const
         return m_dwLegacyVID;
     }
 
-    const entt::entity e = m_entity != entt::null ? m_entity : AIHelpers::EcsOf(const_cast<CHARACTER*>(this));
+    const entt::entity e = m_entity != entt::null ? m_entity : GetEntityHandle();
     if (e != entt::null) {
         if (const auto* vid = g_registry.try_get<ecs::VIDComponent>(e)) {
             return vid->value;
@@ -5570,8 +5922,9 @@ EVENTFUNC(drop_event)
         LOG_ERROR("<drop_event> ch is null.");
         return 0;
     }
+	const entt::entity character = ch->GetEntityHandle();
 
-    LPDESC d = ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch));
+    LPDESC d = ecs::PlayerRuntime::GetDesc(character);
     if (!d) {
         LOG_ERROR("<drop_event> {} have no desc connector.", ch->GetName());
         return 0;
@@ -5582,11 +5935,11 @@ EVENTFUNC(drop_event)
     time_t diff = info->time - get_global_time();
     if (diff > 0) {
 #ifdef TEXTS_IMPROVEMENT
-        ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 43, "%d", diff);
+        ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 43, "%d", diff);
 #endif
     }
     else {
-        std::string login = ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->GetAccountTable().login;
+        std::string login = ecs::PlayerRuntime::GetDesc(character)->GetAccountTable().login;
         std::unique_ptr<SQLMsg> msg(DBManager::instance().DirectQuery("SELECT status FROM account.antifarm WHERE login='%s'", login.c_str()));
         if (msg->Get()->uiNumRows > 0) {
             MYSQL_ROW row = mysql_fetch_row(msg->Get()->pSQLResult);
@@ -5596,7 +5949,7 @@ EVENTFUNC(drop_event)
                 if (iStatus == 1) {
                     already = true;
 #ifdef TEXTS_IMPROVEMENT
-                    ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 38, "");
+                    ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 38, "");
 #endif
                 }
                 else {
@@ -5610,14 +5963,14 @@ EVENTFUNC(drop_event)
                     if (c >= 2) {
                         already = true;
 #ifdef TEXTS_IMPROVEMENT
-                        ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 37, "");
+                        ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 37, "");
 #endif
                     }
                     else {
-                        AffectSystem::RemoveAffect(AIHelpers::EcsOf(ch), AFFECT_DROP_BLOCK);
-                        AffectSystem::AddAffect(AIHelpers::EcsOf(ch), AFFECT_DROP_UNBLOCK, APPLY_NONE, 0, 0, 31536000, 0, true, false);
+                        AffectSystem::RemoveAffect(character, AFFECT_DROP_BLOCK);
+                        AffectSystem::AddAffect(character, AFFECT_DROP_UNBLOCK, APPLY_NONE, 0, 0, 31536000, 0, true, false);
 #ifdef TEXTS_IMPROVEMENT
-                        ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 40, "");
+                        ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 40, "");
 #endif
                     }
                 }
@@ -5626,14 +5979,14 @@ EVENTFUNC(drop_event)
                 if (iStatus == 0) {
                     already = true;
 #ifdef TEXTS_IMPROVEMENT
-                    ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 39, "");
+                    ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 39, "");
 #endif
                 }
                 else {
-                    AffectSystem::RemoveAffect(AIHelpers::EcsOf(ch), AFFECT_DROP_UNBLOCK);
-                    AffectSystem::AddAffect(AIHelpers::EcsOf(ch), AFFECT_DROP_BLOCK, APPLY_NONE, 0, 0, 31536000, 0, true, false);
+                    AffectSystem::RemoveAffect(character, AFFECT_DROP_UNBLOCK);
+                    AffectSystem::AddAffect(character, AFFECT_DROP_BLOCK, APPLY_NONE, 0, 0, 31536000, 0, true, false);
 #ifdef TEXTS_IMPROVEMENT
-                    ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 41, "");
+                    ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 41, "");
 #endif
                 }
             }

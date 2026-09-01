@@ -338,7 +338,7 @@ void CEntity::SetObserverMode(bool bFlag)
 	if (IsType(ENTITY_CHARACTER))
 	{
 		LPCHARACTER ch = (LPCHARACTER) this;
-		const auto e = AIHelpers::EcsOf(ch);
+		const auto e = ((ch) ? (ch)->GetEntityHandle() : entt::null);
 		if (e != entt::null && g_registry.valid(e))
 		{
 			if (bFlag)
@@ -350,7 +350,7 @@ void CEntity::SetObserverMode(bool bFlag)
 				status->isObserverMode = bFlag;
 			g_registry.emplace_or_replace<ecs::DirtyTag>(e);
 		}
-		ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_COMMAND, "ObserverMode %d", m_bIsObserver ? 1 : 0);
+		ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_COMMAND, "ObserverMode %d", m_bIsObserver ? 1 : 0);
 	}
 }
 

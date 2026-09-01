@@ -12,7 +12,6 @@
 #include "../../sectree.h"
 #include "../../sectree_manager.h"
 #include "../../utils.h"
-#include "../AIHelpers.hpp"
 #include "../CBuildingRegistry.hpp"
 #include "../EntityInvariants.hpp"
 #include "../EventDispatcher.hpp"
@@ -76,8 +75,7 @@ void SyncVIDFromLegacy(entt::registry& reg, entt::entity e, LPENTITY legacy)
 
     switch (legacy->GetType()) {
     case ENTITY_CHARACTER:
-        if (auto* ch = static_cast<LPCHARACTER>(legacy))
-            reg.emplace_or_replace<ecs::VIDComponent>(e, ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(ch)));
+		reg.emplace_or_replace<ecs::VIDComponent>(e, ecs::PlayerRuntime::GetPacketVID(e));
         break;
     case ENTITY_ITEM:
         if (auto* item = static_cast<LPITEM>(legacy))
@@ -166,7 +164,7 @@ entt::entity EntityFromLPENTITY(LPENTITY entity)
 
     switch (entity->GetType()) {
     case ENTITY_CHARACTER:
-        return AIHelpers::EcsOf(static_cast<LPCHARACTER>(entity));
+		return static_cast<LPCHARACTER>(entity)->GetEntityHandle();
     case ENTITY_ITEM: {
         auto* item = static_cast<LPITEM>(entity);
         entt::entity itemEntity = CItemRegistry::Instance().Find(item->GetID());

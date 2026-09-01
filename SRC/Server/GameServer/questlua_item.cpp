@@ -3,7 +3,6 @@
 #include "questmanager.h"
 #include "char_interface.hpp"
 #include "item_manager.h"
-#include "ecs/CharacterAccessors.hpp"
 #include "ecs/Registry.hpp"
 #include "ecs/systems/ItemSystem.hpp"
 #include "over9refine.h"
@@ -393,8 +392,7 @@ namespace quest
 		CQuestManager& q = CQuestManager::instance();
 		const entt::entity source = q.GetCurrentItemEntity();
 		const entt::entity character = q.GetCurrentPCEntity();
-		LPCHARACTER legacyCharacter = ecs::LegacyCharOf(character);
-		if (!legacyCharacter || !ItemSystem::IsValidItem(source) ||
+		if (character == entt::null || !g_registry.valid(character) || !ItemSystem::IsValidItem(source) ||
 			ItemSystem::GetItemOwner(source) != character || !ItemSystem::IsItemInInventory(source))
 			return 1;
 
@@ -424,7 +422,7 @@ namespace quest
 		}
 
 		LogManager::instance().ItemLogEntity(
-			legacyCharacter, replacement, "COPY SUCCESS", ItemSystem::GetItemName(replacement));
+			character, replacement, "COPY SUCCESS", ItemSystem::GetItemName(replacement));
 
 		if (!ItemSystem::DestroyItemEntityEcs(source, "REMOVE (COPY SUCCESS)"))
 		{

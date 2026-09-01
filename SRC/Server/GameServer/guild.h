@@ -3,6 +3,7 @@
 
 #include "skill.h"
 #include <string_view>
+#include <entt/entt.hpp>
 
 typedef struct _SQLMsg SQLMsg;
 
@@ -135,7 +136,7 @@ typedef struct SGuildData
 
 struct TGuildCreateParameter
 {
-	LPCHARACTER master;
+	entt::entity master { entt::null };
 	char name[GUILD_NAME_MAX_LEN+1];
 };
 
@@ -195,6 +196,7 @@ void		Reset() { m_data.power = m_data.max_power; }
 		void		Disband();
 
 		void		RequestAddMember(LPCHARACTER ch, int grade = 15);
+		void		RequestAddMember(entt::entity character, int grade = 15);
 		void		AddMember(TPacketDGGuildMember * p);
 
 		bool		RequestRemoveMember(uint32_t pid);
@@ -207,7 +209,7 @@ void		Reset() { m_data.power = m_data.max_power; }
 		void		P2PLogoutMember(uint32_t pid);
 
 		void		ChangeMemberGrade(uint32_t pid, uint8_t grade);
-		bool		OfferExp(LPCHARACTER ch, int amount);
+		bool		OfferExp(entt::entity character, int amount);
 		void		LevelChange(uint32_t pid, uint8_t level);
 		void		ChangeMemberData(uint32_t pid, uint32_t offer, uint8_t level, uint8_t grade);
 
@@ -255,7 +257,7 @@ void		Reset() { m_data.power = m_data.max_power; }
 
 		bool		HasGradeAuth(int grade, int auth_flag) const	{ return (bool)(m_data.grade_array[grade-1].auth_flag & auth_flag);}
 
-		void		AddComment(LPCHARACTER ch, std::string_view str);
+		void		AddComment(entt::entity character, std::string_view str);
 		void		DeleteComment(LPCHARACTER ch, uint32_t comment_id);
 
 		void		RefreshComment(LPCHARACTER ch);
@@ -311,7 +313,7 @@ void		Reset() { m_data.power = m_data.max_power; }
 
 		// War entry question
 		void		GuildWarEntryAsk(uint32_t guild_opp);
-		void		GuildWarEntryAccept(uint32_t guild_opp, LPCHARACTER ch);
+		void		GuildWarEntryAccept(uint32_t guild_opp, entt::entity character);
 
 		// War state relative
 #ifdef TEXTS_IMPROVEMENT

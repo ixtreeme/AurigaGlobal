@@ -85,10 +85,12 @@ struct QuickSlots {
 struct SafeboxRef {
     CSafebox* safebox { nullptr };
     CSafebox* mall { nullptr };
-    int safeboxSize;
-    int safeboxLoadTime;
-    int mallLoadTime;
-    bool isOpening;
+    int safeboxSize { -1 };
+    int safeboxLoadTime { 0 };
+    int mallLoadTime { 0 };
+    bool isOpening { false };
+    int32_t openX { -1000 };
+    int32_t openY { -1000 };
 };
 
 } // namespace ecs

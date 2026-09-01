@@ -98,7 +98,7 @@ bool COXEventManager::Enter(LPCHARACTER pkChar)
 {
 	if (GetStatus() == OXEVENT_FINISH)
 	{
-		LOG_INFO("OXEVENT : map finished. but char enter. {}", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(pkChar)).data());
+		LOG_INFO("OXEVENT : map finished. but char enter. {}", ecs::PlayerRuntime::GetName(((pkChar) ? (pkChar)->GetEntityHandle() : entt::null)).data());
 		return false;
 	}
 
@@ -123,7 +123,7 @@ bool COXEventManager::Enter(LPCHARACTER pkChar)
 
 bool COXEventManager::EnterAttender(LPCHARACTER pkChar)
 {
-	uint32_t pid = (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(pkChar)));
+	uint32_t pid = (ecs::PlayerRuntime::GetPlayerID(((pkChar) ? (pkChar)->GetEntityHandle() : entt::null)));
 
 	m_map_char.insert(std::make_pair(pid, pid));
 	m_map_attender.insert(std::make_pair(pid, pid));
@@ -133,7 +133,7 @@ bool COXEventManager::EnterAttender(LPCHARACTER pkChar)
 
 bool COXEventManager::EnterAudience(LPCHARACTER pkChar)
 {
-	uint32_t pid = (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(pkChar)));
+	uint32_t pid = (ecs::PlayerRuntime::GetPlayerID(((pkChar) ? (pkChar)->GetEntityHandle() : entt::null)));
 
 	m_map_char.insert(std::make_pair(pid, pid));
 
@@ -163,14 +163,14 @@ bool COXEventManager::ShowQuizList(LPCHARACTER pkChar)
 	for (size_t i = 0; i < m_vec_quiz.size(); ++i) {
 		for (size_t j = 0; j < m_vec_quiz[i].size(); ++j, ++c) {
 			if (m_vec_quiz[i][j].answer) {
-				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(pkChar), CHAT_TYPE_INFO, 608, "%s", m_vec_quiz[i][j].Quiz);
+				ecs::ChatSystem::SendNew(((pkChar) ? (pkChar)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 608, "%s", m_vec_quiz[i][j].Quiz);
 			} else {
-				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(pkChar), CHAT_TYPE_INFO, 609, "%s", m_vec_quiz[i][j].Quiz);
+				ecs::ChatSystem::SendNew(((pkChar) ? (pkChar)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 609, "%s", m_vec_quiz[i][j].Quiz);
 			}
 		}
 	}
 
-	ecs::ChatSystem::SendNew(AIHelpers::EcsOf(pkChar), CHAT_TYPE_INFO, 610, "%d", c);
+	ecs::ChatSystem::SendNew(((pkChar) ? (pkChar)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 610, "%d", c);
 #endif
 	return true;
 }
@@ -316,11 +316,11 @@ bool COXEventManager::CheckAnswer(bool answer)
 
 			if (pos.x < rect[0] || pos.x > rect[2] || pos.y < rect[1] || pos.y > rect[3])
 			{
-			NetworkSyncSystem::BroadcastEffect(g_registry, AIHelpers::EcsOf(pkChar), SE_FAIL);
+			NetworkSyncSystem::BroadcastEffect(g_registry, ((pkChar) ? (pkChar)->GetEntityHandle() : entt::null), SE_FAIL);
 				const auto iter_tmp = iter;
 				iter++;
 				m_map_attender.erase(iter_tmp);
-				m_map_miss.insert(std::make_pair((ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(pkChar))), (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(pkChar)))));
+				m_map_miss.insert(std::make_pair((ecs::PlayerRuntime::GetPlayerID(((pkChar) ? (pkChar)->GetEntityHandle() : entt::null))), (ecs::PlayerRuntime::GetPlayerID(((pkChar) ? (pkChar)->GetEntityHandle() : entt::null)))));
 			}
 			else
 			{
@@ -346,7 +346,7 @@ bool COXEventManager::CheckAnswer(bool answer)
 				buf.write(chatbuf, len);
 
 				pkChar->PacketAround(buf.read_peek(), buf.size());
-			NetworkSyncSystem::BroadcastEffect(g_registry, AIHelpers::EcsOf(pkChar), SE_SUCCESS);
+			NetworkSyncSystem::BroadcastEffect(g_registry, ((pkChar) ? (pkChar)->GetEntityHandle() : entt::null), SE_SUCCESS);
 
 				++iter;
 			}
@@ -382,11 +382,11 @@ void COXEventManager::WarpToAudience()
 		{
 			switch ( number(0, 3))
 			{
-				case 0 : ecs::MovementSystem::Show(AIHelpers::EcsOf(pkChar), OXEVENT_MAP_INDEX, 896300, 28900); break;
-				case 1 : ecs::MovementSystem::Show(AIHelpers::EcsOf(pkChar), OXEVENT_MAP_INDEX, 890900, 28100); break;
-				case 2 : ecs::MovementSystem::Show(AIHelpers::EcsOf(pkChar), OXEVENT_MAP_INDEX, 896600, 20500); break;
-				case 3 : ecs::MovementSystem::Show(AIHelpers::EcsOf(pkChar), OXEVENT_MAP_INDEX, 902500, 28100); break;
-				default : ecs::MovementSystem::Show(AIHelpers::EcsOf(pkChar), OXEVENT_MAP_INDEX, 896300, 28900); break;
+				case 0 : ecs::MovementSystem::Show(((pkChar) ? (pkChar)->GetEntityHandle() : entt::null), OXEVENT_MAP_INDEX, 896300, 28900); break;
+				case 1 : ecs::MovementSystem::Show(((pkChar) ? (pkChar)->GetEntityHandle() : entt::null), OXEVENT_MAP_INDEX, 890900, 28100); break;
+				case 2 : ecs::MovementSystem::Show(((pkChar) ? (pkChar)->GetEntityHandle() : entt::null), OXEVENT_MAP_INDEX, 896600, 20500); break;
+				case 3 : ecs::MovementSystem::Show(((pkChar) ? (pkChar)->GetEntityHandle() : entt::null), OXEVENT_MAP_INDEX, 902500, 28100); break;
+				default : ecs::MovementSystem::Show(((pkChar) ? (pkChar)->GetEntityHandle() : entt::null), OXEVENT_MAP_INDEX, 896300, 28900); break;
 			}
 		}
 	}
@@ -408,7 +408,7 @@ bool COXEventManager::CloseEvent()
 		pkChar = CHARACTER_MANAGER::instance().FindByPID(iter->second);
 
 		if (pkChar != nullptr)
-			ecs::MovementSystem::WarpSet(AIHelpers::EcsOf(pkChar), EMPIRE_START_X(ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(pkChar))), EMPIRE_START_Y(ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(pkChar))));
+			ecs::MovementSystem::WarpSet(((pkChar) ? (pkChar)->GetEntityHandle() : entt::null), EMPIRE_START_X(ecs::PlayerRuntime::GetEmpire(((pkChar) ? (pkChar)->GetEntityHandle() : entt::null))), EMPIRE_START_Y(ecs::PlayerRuntime::GetEmpire(((pkChar) ? (pkChar)->GetEntityHandle() : entt::null))));
 	}
 
 	m_map_char.clear();
@@ -444,16 +444,16 @@ count)
 	for (; iter != m_map_attender.end(); ++iter)
 	{
 		LPCHARACTER pkChar = CHARACTER_MANAGER::instance().FindByPID(iter->second);
-		if (pkChar && ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(pkChar)))
+		if (pkChar && ecs::PlayerRuntime::IsPC(((pkChar) ? (pkChar)->GetEntityHandle() : entt::null)))
 		{
 #ifdef ENABLE_BLOCK_MULTIFARM
-			if (AffectSystem::FindAffect(AIHelpers::EcsOf(pkChar), AFFECT_DROP_UNBLOCK, APPLY_NONE)) {
+			if (AffectSystem::FindAffect(((pkChar) ? (pkChar)->GetEntityHandle() : entt::null), AFFECT_DROP_UNBLOCK, APPLY_NONE)) {
 				pkChar->AutoGiveItem(dwItemVnum, count);
-				LogManager::instance().ItemLog((ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(pkChar))), 0, count, dwItemVnum, "OXEVENT_REWARD", "", ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(pkChar))->GetHostName(), dwItemVnum);
+				LogManager::instance().ItemLog((ecs::PlayerRuntime::GetPlayerID(((pkChar) ? (pkChar)->GetEntityHandle() : entt::null))), 0, count, dwItemVnum, "OXEVENT_REWARD", "", ecs::PlayerRuntime::GetDesc(((pkChar) ? (pkChar)->GetEntityHandle() : entt::null))->GetHostName(), dwItemVnum);
 			}
 #else
 			pkChar->AutoGiveItem(dwItemVnum, count);
-			LogManager::instance().ItemLog((ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(pkChar))), 0, count, dwItemVnum, "OXEVENT_REWARD", "", ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(pkChar))->GetHostName(), dwItemVnum);
+			LogManager::instance().ItemLog((ecs::PlayerRuntime::GetPlayerID(((pkChar) ? (pkChar)->GetEntityHandle() : entt::null))), 0, count, dwItemVnum, "OXEVENT_REWARD", "", ecs::PlayerRuntime::GetDesc(((pkChar) ? (pkChar)->GetEntityHandle() : entt::null))->GetHostName(), dwItemVnum);
 #endif
 		}
 	}

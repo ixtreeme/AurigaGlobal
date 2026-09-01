@@ -2,13 +2,12 @@
 #include <Core/Logging.hpp>
 #include "ecs/systems/AffectSystem.hpp"
 #include "ecs/systems/NetworkSyncSystem.hpp"
-#include "ecs/AIHelpers.hpp"
+#include "ecs/systems/PlayerRuntimeSystem.hpp"
+#include "ecs/systems/ItemSystem.hpp"
 
 #include "questlua.h"
 #include "questmanager.h"
 #include "horsename_manager.h"
-#include "char_interface.hpp"
-#include "ecs/CharacterAccessors.hpp"
 #include "affect.h"
 #include "config.h"
 #include "utils.h"
@@ -37,20 +36,19 @@ namespace quest
 		// migrated from CHARACTER CNewPetSystem
 		// TODO Phase 8: dedicated NewPetComponent
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
-		auto* ch = ecs::LegacyCharOf(chEntity);
-		CNewPetSystem* petSystem = ch->GetNewPetSystem();
-		LPITEM pItem = CQuestManager::instance().GetCurrentItem();
-		if (!ch || !petSystem || !pItem)
+		CNewPetSystem* petSystem = ecs::PlayerRuntime::GetNewPetSystem(chEntity);
+		const entt::entity item = CQuestManager::instance().GetCurrentItemEntity();
+		if (!petSystem || !ItemSystem::IsValidItem(item))
 		{
 			lua_pushnumber(L, 0);
 			return 1;
 		}
 
 #ifdef ENABLE_PVP_ADVANCED
-		if ((ch->GetDuel("BlockPet")))
+		if (ecs::PlayerRuntime::GetDuelOption(chEntity, "BlockPet"))
 		{
 #ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 516, "");
+			ecs::ChatSystem::SendNew(chEntity, CHAT_TYPE_INFO, 516, "");
 #endif
 			lua_pushnumber (L, 0);
 			return 1;
@@ -73,7 +71,7 @@ namespace quest
 		// 소환하면 멀리서부터 달려오는지 여부
 		bool bFromFar = lua_isboolean(L, 3) ? lua_toboolean(L, 3) : false;
 
-		CNewPetActor* pet = petSystem->Summon(mobVnum, EntityFactory::CreateItemEntity(g_registry, pItem), petName, bFromFar);
+		CNewPetActor* pet = petSystem->Summon(mobVnum, item, petName, bFromFar);
 
 		if (pet != nullptr)
 			lua_pushnumber(L, pet->GetVID());
@@ -89,11 +87,7 @@ namespace quest
 		// migrated from CHARACTER CNewPetSystem
 		// TODO Phase 8: dedicated NewPetComponent
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
-		auto* ch = ecs::LegacyCharOf(chEntity);
-		if (!ch)
-			return 0;
-		
-		CNewPetSystem* petSystem = ch->GetNewPetSystem();
+		CNewPetSystem* petSystem = ecs::PlayerRuntime::GetNewPetSystem(chEntity);
 
 		if (nullptr == petSystem)
 			return 0;
@@ -103,9 +97,9 @@ namespace quest
 
 		petSystem->Unsummon(mobVnum);
 #ifdef ENABLE_RECALL
-		const CAffect* pAffect = AffectSystem::FindAffect(AIHelpers::EcsOf(ch), AFFECT_RECALL2);
+		const CAffect* pAffect = AffectSystem::FindAffect(chEntity, AFFECT_RECALL2);
 		if (pAffect) {
-			AffectSystem::RemoveAffect(AIHelpers::EcsOf(ch), const_cast<CAffect*>(pAffect));
+			AffectSystem::RemoveAffect(chEntity, const_cast<CAffect*>(pAffect));
 		}
 #endif
 		return 1;
@@ -117,8 +111,7 @@ namespace quest
 		// migrated from CHARACTER CNewPetSystem
 		// TODO Phase 8: dedicated NewPetComponent
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
-		auto* ch = ecs::LegacyCharOf(chEntity);
-		CNewPetSystem* petSystem = ch->GetNewPetSystem();
+		CNewPetSystem* petSystem = ecs::PlayerRuntime::GetNewPetSystem(chEntity);
 
 		lua_Number count = 0;
 
@@ -136,8 +129,7 @@ namespace quest
 		// migrated from CHARACTER CNewPetSystem
 		// TODO Phase 8: dedicated NewPetComponent
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
-		auto* ch = ecs::LegacyCharOf(chEntity);
-		CNewPetSystem* petSystem = ch->GetNewPetSystem();
+		CNewPetSystem* petSystem = ecs::PlayerRuntime::GetNewPetSystem(chEntity);
 
 		if (nullptr == petSystem)
 			return 0;
@@ -160,8 +152,7 @@ namespace quest
 		// migrated from CHARACTER CNewPetSystem
 		// TODO Phase 8: dedicated NewPetComponent
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
-		auto* ch = ecs::LegacyCharOf(chEntity);
-		CNewPetSystem* petSystem = ch->GetNewPetSystem();
+		CNewPetSystem* petSystem = ecs::PlayerRuntime::GetNewPetSystem(chEntity);
 
 		if (nullptr == petSystem)
 			return 0;
@@ -186,8 +177,7 @@ namespace quest
 		// migrated from CHARACTER CNewPetSystem
 		// TODO Phase 8: dedicated NewPetComponent
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
-		auto* ch = ecs::LegacyCharOf(chEntity);
-		CNewPetSystem* petSystem = ch->GetNewPetSystem();
+		CNewPetSystem* petSystem = ecs::PlayerRuntime::GetNewPetSystem(chEntity);
 
 		if (nullptr == petSystem)
 			return 0;
@@ -209,8 +199,7 @@ namespace quest
 		// migrated from CHARACTER CNewPetSystem
 		// TODO Phase 8: dedicated NewPetComponent
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
-		auto* ch = ecs::LegacyCharOf(chEntity);
-		CNewPetSystem* petSystem = ch->GetNewPetSystem();
+		CNewPetSystem* petSystem = ecs::PlayerRuntime::GetNewPetSystem(chEntity);
 
 		if (nullptr == petSystem) {
 			lua_pushnumber(L, -1);
@@ -232,8 +221,7 @@ namespace quest
 		// migrated from CHARACTER CNewPetSystem
 		// TODO Phase 8: dedicated NewPetComponent
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
-		auto* ch = ecs::LegacyCharOf(chEntity);
-		CNewPetSystem* petSystem = ch->GetNewPetSystem();
+		CNewPetSystem* petSystem = ecs::PlayerRuntime::GetNewPetSystem(chEntity);
 
 		if (nullptr == petSystem) {
 			lua_pushnumber(L, -1);
@@ -286,8 +274,7 @@ namespace quest
 		// migrated from CHARACTER CNewPetSystem
 		// TODO Phase 8: dedicated NewPetComponent
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
-		auto* ch = ecs::LegacyCharOf(chEntity);
-		CNewPetSystem* petSystem = ch->GetNewPetSystem();
+		CNewPetSystem* petSystem = ecs::PlayerRuntime::GetNewPetSystem(chEntity);
 
 		if (nullptr == petSystem)
 			return 0;
@@ -297,13 +284,13 @@ namespace quest
 		CNewPetActor* petActor = petSystem->GetByVnum(mobVnum);
 		if (nullptr == petActor)
 			return 0;
-		LPCHARACTER pet_ch = petActor->GetCharacter();
-		if (nullptr == pet_ch)
+		const entt::entity pet = petActor->GetCharacterEntity();
+		if (pet == entt::null)
 			return 0;
 
 		if (lua_isstring(L, 2))
 		{
-			NetworkSyncSystem::BroadcastSpecificEffect(g_registry, AIHelpers::EcsOf(pet_ch), lua_tostring(L, 2));
+			NetworkSyncSystem::BroadcastSpecificEffect(g_registry, pet, lua_tostring(L, 2));
 		}
 		return 0;
 	}
@@ -313,9 +300,8 @@ namespace quest
 		// migrated from CHARACTER CNewPetSystem
 		// TODO Phase 8: dedicated NewPetComponent
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
-		auto* ch = ecs::LegacyCharOf(chEntity);
 		int evid = lua_isnumber(L, 0) ? static_cast<int>(lua_tonumber(L, 0)) : 0;
-		ch->SetEggVid(evid);
+		ecs::PlayerRuntime::SetEggVID(chEntity, evid);
 		return 1;
 	}
 	
@@ -325,13 +311,7 @@ namespace quest
 		// migrated from CHARACTER CNewPetSystem
 		// TODO Phase 8: dedicated NewPetComponent
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
-		auto* ch = ecs::LegacyCharOf(chEntity);
-		if (!ch) {
-			lua_pushnumber(L, 2);
-			return 1;
-		}
-		
-		CNewPetSystem* petSystem = ch->GetNewPetSystem();
+		CNewPetSystem* petSystem = ecs::PlayerRuntime::GetNewPetSystem(chEntity);
 		if (!petSystem) {
 			lua_pushnumber(L, 2);
 			return 1;
@@ -346,13 +326,7 @@ namespace quest
 		// migrated from CHARACTER CNewPetSystem
 		// TODO Phase 8: dedicated NewPetComponent
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
-		auto* ch = ecs::LegacyCharOf(chEntity);
-		if (!ch) {
-			lua_pushnumber(L, 2);
-			return 1;
-		}
-		
-		CNewPetSystem* petSystem = ch->GetNewPetSystem();
+		CNewPetSystem* petSystem = ecs::PlayerRuntime::GetNewPetSystem(chEntity);
 		if (!petSystem) {
 			lua_pushnumber(L, 2);
 			return 1;
@@ -369,9 +343,6 @@ namespace quest
 		// migrated from CHARACTER CNewPetSystem
 		// TODO Phase 8: dedicated NewPetComponent
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
-		auto* ch = ecs::LegacyCharOf(chEntity);
-		if (!ch)
-			return 0;
 
 		if (lua_isstring(L, 1) != true) {
 			lua_pushnumber(L, 0);
@@ -384,7 +355,7 @@ namespace quest
 			return 1;
 		}
 
-		CNewPetSystem* petSystem = ch->GetNewPetSystem();
+		CNewPetSystem* petSystem = ecs::PlayerRuntime::GetNewPetSystem(chEntity);
 		if (!petSystem) {
 			lua_pushnumber(L, 3);
 			return 1;

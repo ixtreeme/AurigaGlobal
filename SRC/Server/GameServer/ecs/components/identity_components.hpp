@@ -23,6 +23,7 @@ struct RaceState {
     uint32_t polymorphRace { 0 };
 };
 struct PlayerName { std::string value; };
+struct PendingPlayerName { std::string value; };
 struct GMLevel { uint8_t level; };
 
 struct TagPC {};

@@ -528,7 +528,7 @@ void CInputDB::PlayerLoad(LPDESC d, const char * data)
 	if (d->GetCharacter() || d->IsPhase(PHASE_GAME))
 	{
 		auto* p = d->GetCharacter();
-		LOG_ERROR("login state already has main state (character {} {})", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(p)).data(), static_cast<const void*>(get_pointer(p)));
+		LOG_ERROR("login state already has main state (character {} {})", ecs::PlayerRuntime::GetName(((p) ? (p)->GetEntityHandle() : entt::null)).data(), static_cast<const void*>(get_pointer(p)));
 		return;
 	}
 
@@ -554,28 +554,28 @@ void CInputDB::PlayerLoad(LPDESC d, const char * data)
             d,
             ch->GetLegacyVID());
         d->SetEntity(ecs_e);
-        LOG_INFO("ECS: PC entity created VID={} pid={}", ch->GetLegacyVID(), ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)));
+        LOG_INFO("ECS: PC entity created VID={} pid={}", ch->GetLegacyVID(), ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null)));
 
 
         // Phase 7: sync ECS vital components from DB result
         if (g_registry.valid(ecs_e)) {
             auto& h = g_registry.get_or_emplace<ecs::Health>(ecs_e);
             h.current = ch->GetHP();
-            h.max     = ecs::PointSystem::GetMaxHP(AIHelpers::EcsOf(ch));
+            h.max     = ecs::PointSystem::GetMaxHP(((ch) ? (ch)->GetEntityHandle() : entt::null));
 
             auto& m = g_registry.get_or_emplace<ecs::Mana>(ecs_e);
             m.current = ch->GetSP();
-            m.max     = ecs::PointSystem::GetMaxSP(AIHelpers::EcsOf(ch));
+            m.max     = ecs::PointSystem::GetMaxSP(((ch) ? (ch)->GetEntityHandle() : entt::null));
 
             auto& lv = g_registry.get_or_emplace<ecs::LevelComponent>(ecs_e);
-            lv.value = ecs::PointSystem::GetLevel(AIHelpers::EcsOf(ch));
+            lv.value = ecs::PointSystem::GetLevel(((ch) ? (ch)->GetEntityHandle() : entt::null));
 
             auto& exp = g_registry.get_or_emplace<ecs::Experience>(ecs_e);
             exp.current = ch->GetExp();
             exp.next    = ch->GetNextExp();
 
             auto& gold = g_registry.get_or_emplace<ecs::GoldAmount>(ecs_e);
-            gold.amount = ecs::PointSystem::GetGold(AIHelpers::EcsOf(ch));
+            gold.amount = ecs::PointSystem::GetGold(((ch) ? (ch)->GetEntityHandle() : entt::null));
         }
     }
 
@@ -584,10 +584,10 @@ void CInputDB::PlayerLoad(LPDESC d, const char * data)
 		TPacketGGLogin p;
 
 		p.bHeader = HEADER_GG_LOGIN;
-		strlcpy(p.szName, ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), sizeof(p.szName));
-		p.dwPID = (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)));
-		p.bEmpire = ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(ch));
-		p.lMapIndex = SECTREE_MANAGER::instance().GetMapIndex(ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(ch)), ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(ch)));
+		strlcpy(p.szName, ecs::PlayerRuntime::GetName(((ch) ? (ch)->GetEntityHandle() : entt::null)).data(), sizeof(p.szName));
+		p.dwPID = (ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null)));
+		p.bEmpire = ecs::PlayerRuntime::GetEmpire(((ch) ? (ch)->GetEntityHandle() : entt::null));
+		p.lMapIndex = SECTREE_MANAGER::instance().GetMapIndex(ecs::PlayerRuntime::GetX(((ch) ? (ch)->GetEntityHandle() : entt::null)), ecs::PlayerRuntime::GetY(((ch) ? (ch)->GetEntityHandle() : entt::null)));
 		p.bChannel = g_bChannel;
 
 		P2P_MANAGER::instance().Send(&p, sizeof(TPacketGGLogin));
@@ -596,22 +596,22 @@ void CInputDB::PlayerLoad(LPDESC d, const char * data)
 
 		snprintf(buf, sizeof(buf), "%s %lld %d %d %u",
 
-				inet_ntoa(ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->GetAddr().sin_addr), ecs::PointSystem::GetGold(AIHelpers::EcsOf(ch)), g_bChannel, ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)), ch->GetAlignment());
+				inet_ntoa(ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null))->GetAddr().sin_addr), ecs::PointSystem::GetGold(((ch) ? (ch)->GetEntityHandle() : entt::null)), g_bChannel, ecs::PlayerRuntime::GetMapIndex(((ch) ? (ch)->GetEntityHandle() : entt::null)), ch->GetAlignment());
 		LogManager::instance().CharLog(ch, 0, "LOGIN", buf);
 
 #ifdef ENABLE_PCBANG_FEATURE // @warme006
 		{
 			LogManager::instance().LoginLog(true,
-					ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->GetAccountTable().id, (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))), (ecs::PointSystem::GetLevel(AIHelpers::EcsOf(ch))), ch->GetJob(), ecs::PointSystem::GetReal(AIHelpers::EcsOf(ch), POINT_PLAYTIME));
+					ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null))->GetAccountTable().id, (ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null))), (ecs::PointSystem::GetLevel(((ch) ? (ch)->GetEntityHandle() : entt::null))), ch->GetJob(), ecs::PointSystem::GetReal(((ch) ? (ch)->GetEntityHandle() : entt::null), POINT_PLAYTIME));
 
 			if (0)
-				ch->SetPCBang(CPCBangManager::instance().IsPCBangIP(ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->GetHostName()));
+				ch->SetPCBang(CPCBangManager::instance().IsPCBangIP(ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null))->GetHostName()));
 		}
 #endif
 	}
 
 	d->SetPhase(PHASE_LOADING);
-	NetworkSyncSystem::MainCharacterPacket(AIHelpers::EcsOf(ch));
+	NetworkSyncSystem::MainCharacterPacket(((ch) ? (ch)->GetEntityHandle() : entt::null));
 
 	int32_t lPublicMapIndex = lMapIndex >= 10000 ? lMapIndex / 10000 : lMapIndex;
 	//if (!map_allow_find(lMapIndex >= 10000 ? lMapIndex / 10000 : lMapIndex) || !CheckEmpire(ch, lMapIndex))
@@ -632,10 +632,10 @@ void CInputDB::PlayerLoad(LPDESC d, const char * data)
 	for (int i = 0; i < QUICKSLOT_MAX_NUM; ++i)
 		ch->SetQuickslot(i, pTab->quickslot[i]);
 
-	NetworkSyncSystem::PointsPacket(AIHelpers::EcsOf(ch));
+	NetworkSyncSystem::PointsPacket(((ch) ? (ch)->GetEntityHandle() : entt::null));
 	ch->SkillLevelPacket();
 
-	LOG_INFO("InputDB: player_load {} {}x{}x{} LEVEL {} MOV_SPEED {} JOB {} ATG {} DFG {} GMLv {}", pTab->name, ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(ch)), ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(ch)), ch->GetZ(), (ecs::PointSystem::GetLevel(AIHelpers::EcsOf(ch))), ecs::PointSystem::Get(AIHelpers::EcsOf(ch), POINT_MOV_SPEED), ch->GetJob(), ecs::PointSystem::Get(AIHelpers::EcsOf(ch), POINT_ATT_GRADE), ecs::PointSystem::Get(AIHelpers::EcsOf(ch), POINT_DEF_GRADE), ecs::PlayerRuntime::GetGMLevel(AIHelpers::EcsOf(ch)));
+	LOG_INFO("InputDB: player_load {} {}x{}x{} LEVEL {} MOV_SPEED {} JOB {} ATG {} DFG {} GMLv {}", pTab->name, ecs::PlayerRuntime::GetX(((ch) ? (ch)->GetEntityHandle() : entt::null)), ecs::PlayerRuntime::GetY(((ch) ? (ch)->GetEntityHandle() : entt::null)), ch->GetZ(), (ecs::PointSystem::GetLevel(((ch) ? (ch)->GetEntityHandle() : entt::null))), ecs::PointSystem::Get(((ch) ? (ch)->GetEntityHandle() : entt::null), POINT_MOV_SPEED), ch->GetJob(), ecs::PointSystem::Get(((ch) ? (ch)->GetEntityHandle() : entt::null), POINT_ATT_GRADE), ecs::PointSystem::Get(((ch) ? (ch)->GetEntityHandle() : entt::null), POINT_DEF_GRADE), ecs::PlayerRuntime::GetGMLevel(((ch) ? (ch)->GetEntityHandle() : entt::null)));
 
 	ch->QuerySafeboxSize();
 	ch->QueryMountInventory();
@@ -1167,7 +1167,7 @@ EVENTFUNC(quest_login_event)
 	if (!ch)
 		return 0;
 
-	LPDESC d = ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch));
+	LPDESC d = ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null));
 
 	if (!d)
 		return 0;
@@ -1186,13 +1186,13 @@ EVENTFUNC(quest_login_event)
 	}
 	else if (d->IsPhase(PHASE_GAME))
 	{
-		LOG_INFO("QUEST_LOAD: Login pc {} by event", (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))));
-		quest::CQuestManager::instance().Login((ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))));
+		LOG_INFO("QUEST_LOAD: Login pc {} by event", (ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null))));
+		quest::CQuestManager::instance().Login((ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null))));
 		return 0;
 	}
 	else
 	{
-		LOG_ERROR("input_db.cpp:quest_login_event INVALID PHASE pid {}", (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))));
+		LOG_ERROR("input_db.cpp:quest_login_event INVALID PHASE pid {}", (ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null))));
 		return 0;
 	}
 }
@@ -1215,16 +1215,16 @@ void CInputDB::QuestLoad(LPDESC d, const char * c_pData)
 	{
 		if (dwCount != 0)
 		{
-			if ((ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))) != pQuestTable[0].dwPID)
+			if ((ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null))) != pQuestTable[0].dwPID)
 			{
-				LOG_ERROR("PID differs {} {}", (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))), pQuestTable[0].dwPID);
+				LOG_ERROR("PID differs {} {}", (ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null))), pQuestTable[0].dwPID);
 				return;
 			}
 		}
 
 		LOG_INFO("QUEST_LOAD: count {}", dwCount);
 
-		quest::PC * pkPC = quest::CQuestManager::instance().GetPCForce((ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))));
+		quest::PC * pkPC = quest::CQuestManager::instance().GetPCForce((ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null))));
 
 		if (!pkPC)
 		{
@@ -1271,7 +1271,7 @@ void CInputDB::QuestLoad(LPDESC d, const char * c_pData)
 		pkPC->SetLoaded();
 		pkPC->Build();
 
-		if (ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->IsPhase(PHASE_GAME))
+		if (ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null))->IsPhase(PHASE_GAME))
 		{
 			LOG_INFO("QUEST_LOAD: Login pc {}", pQuestTable[0].dwPID);
 			quest::CQuestManager::instance().Login(pQuestTable[0].dwPID);
@@ -1279,7 +1279,7 @@ void CInputDB::QuestLoad(LPDESC d, const char * c_pData)
 		else
 		{
 			quest_login_event_info* info = AllocEventInfo<quest_login_event_info>();
-			info->dwPID = (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)));
+			info->dwPID = (ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null)));
 
 			event_create(quest_login_event, info, PASSES_PER_SEC(1));
 		}
@@ -1307,10 +1307,10 @@ void CInputDB::SafeboxLoad(LPDESC d, const char * c_pData)
 	auto* ch = d->GetCharacter();
 
 	//PREVENT_TRADE_WINDOW
-	if (ch->GetShopOwner() || ecs::SocialSystem::GetExchange(AIHelpers::EcsOf(ch)) || ch->GetMyShop() || ch->IsCubeOpen() )
+	if (ch->GetShopOwner() || ecs::SocialSystem::GetExchange(((ch) ? (ch)->GetEntityHandle() : entt::null)) || ch->GetMyShop() || ch->IsCubeOpen() )
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 296, "");
+		ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 296, "");
 #endif
 		d->GetCharacter()->CancelSafeboxLoad();
 		return;
@@ -1320,7 +1320,7 @@ void CInputDB::SafeboxLoad(LPDESC d, const char * c_pData)
 	if (ch->IsAttrTransferOpen())
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 296, "");
+		ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 296, "");
 #endif
 		d->GetCharacter()->CancelSafeboxLoad();
 		return;
@@ -1382,10 +1382,10 @@ void CInputDB::SafeboxChangePasswordAnswer(LPDESC d, const char* c_pData)
 #ifdef TEXTS_IMPROVEMENT
 	TSafeboxChangePasswordPacketAnswer* p = (TSafeboxChangePasswordPacketAnswer*) c_pData;
 	if (p->flag) {
-		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(d->GetCharacter()), CHAT_TYPE_INFO, 187, "");
+		ecs::ChatSystem::SendNew(((d->GetCharacter()) ? (d->GetCharacter())->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 187, "");
 	}
 	else {
-		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(d->GetCharacter()), CHAT_TYPE_INFO, 186, "");
+		ecs::ChatSystem::SendNew(((d->GetCharacter()) ? (d->GetCharacter())->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 186, "");
 	}
 #endif
 }
@@ -1681,7 +1681,7 @@ void CInputDB::ItemLoad(LPDESC d, const char * c_pData)
 	uint32_t dwCount = decode_4bytes(c_pData);
 	c_pData += sizeof(uint32_t);
 
-	LOG_INFO("ITEM_LOAD: COUNT {} {}", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), dwCount);
+	LOG_INFO("ITEM_LOAD: COUNT {} {}", ecs::PlayerRuntime::GetName(((ch) ? (ch)->GetEntityHandle() : entt::null)).data(), dwCount);
 
 	std::vector<entt::entity> deferredItems;
 	TPlayerItem * p = (TPlayerItem *) c_pData;
@@ -1694,8 +1694,8 @@ void CInputDB::ItemLoad(LPDESC d, const char * c_pData)
 		{
 			const entt::entity staleOwner = ItemSystem::GetItemOwner(staleItem);
 			const bool samePlayer =
-				(staleOwner == AIHelpers::EcsOf(ch)) ||
-				(ItemSystem::GetItemLastOwnerPID(staleItem) == ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)));
+				(staleOwner == ((ch) ? (ch)->GetEntityHandle() : entt::null)) ||
+				(ItemSystem::GetItemLastOwnerPID(staleItem) == ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null)));
 
 #ifdef ENABLE_EXTRA_INVENTORY
 			const bool extraInventoryWindow = (p->window == EXTRA_INVENTORY);
@@ -1707,10 +1707,10 @@ void CInputDB::ItemLoad(LPDESC d, const char * c_pData)
 			{
 				++duplicatePurgeCount;
 				LOG_ERROR("DUP_ITEM_PURGE_BEGIN index={} id={} owner_pid={} window={} entity={}",
-					i, p->id, (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))), p->window, static_cast<uint32_t>(staleItem));
+					i, p->id, (ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null))), p->window, static_cast<uint32_t>(staleItem));
 				const bool destroyed = ItemSystem::DestroyLoadedDuplicateItem(staleItem);
 				LOG_ERROR("DUP_ITEM_PURGE_END index={} id={} owner_pid={} window={} destroyed={}",
-					i, p->id, (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))), p->window, destroyed);
+					i, p->id, (ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null))), p->window, destroyed);
 			}
 		}
 
@@ -1718,10 +1718,10 @@ void CInputDB::ItemLoad(LPDESC d, const char * c_pData)
 
 		if (!item)
 		{
-			LOG_ERROR("cannot create item by vnum {} (name {} id {})", p->vnum, ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), p->id);
+			LOG_ERROR("cannot create item by vnum {} (name {} id {})", p->vnum, ecs::PlayerRuntime::GetName(((ch) ? (ch)->GetEntityHandle() : entt::null)).data(), p->id);
 			continue;
 		}
-		const entt::entity itemEntity = EntityFactory::CreateItemEntity(g_registry, item);
+		const entt::entity itemEntity = (item ? item->GetEntityHandle() : entt::null);
 		if (!ItemSystem::IsValidItem(itemEntity))
 		{
 			ITEM_MANAGER::instance().RemoveItem(item);
@@ -1742,10 +1742,10 @@ void CInputDB::ItemLoad(LPDESC d, const char * c_pData)
 		}
 #endif
 
-		if ((p->window == INVENTORY && ItemSystem::IsValidItem(ItemSystem::GetInventoryItem(AIHelpers::EcsOf(ch), p->pos))) ||
-				(p->window == EQUIPMENT && ItemSystem::IsValidItem(ItemSystem::GetWearItem(AIHelpers::EcsOf(ch), p->pos))))
+		if ((p->window == INVENTORY && ItemSystem::IsValidItem(ItemSystem::GetInventoryItem(((ch) ? (ch)->GetEntityHandle() : entt::null), p->pos))) ||
+				(p->window == EQUIPMENT && ItemSystem::IsValidItem(ItemSystem::GetWearItem(((ch) ? (ch)->GetEntityHandle() : entt::null), p->pos))))
 		{
-			LOG_INFO("ITEM_RESTORE: {} {}", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), item->GetName());
+			LOG_INFO("ITEM_RESTORE: {} {}", ecs::PlayerRuntime::GetName(((ch) ? (ch)->GetEntityHandle() : entt::null)).data(), item->GetName());
 			deferredItems.push_back(itemEntity);
 		}
 		else
@@ -1775,7 +1775,7 @@ void CInputDB::ItemLoad(LPDESC d, const char * c_pData)
 					break;
 #endif
 				case EQUIPMENT:
-					if (item->CheckItemUseLevel((ecs::PointSystem::GetLevel(AIHelpers::EcsOf(ch)))) == true )
+					if (item->CheckItemUseLevel((ecs::PointSystem::GetLevel(((ch) ? (ch)->GetEntityHandle() : entt::null)))) == true )
 					{
 						if (item->EquipTo(ch, p->pos) == false )
 						{
@@ -1799,7 +1799,7 @@ void CInputDB::ItemLoad(LPDESC d, const char * c_pData)
 	if (duplicatePurgeCount > 0)
 	{
 		LOG_ERROR("DUP_ITEM_PURGE_SUMMARY owner_pid={} name={} count={} loaded_count={}",
-			(ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))), ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), duplicatePurgeCount, dwCount);
+			(ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null))), ecs::PlayerRuntime::GetName(((ch) ? (ch)->GetEntityHandle() : entt::null)).data(), duplicatePurgeCount, dwCount);
 	}
 
 	for (const entt::entity itemEntity : deferredItems)
@@ -1815,10 +1815,10 @@ void CInputDB::ItemLoad(LPDESC d, const char * c_pData)
 		if (pos < 0)
 		{
 			PIXEL_POSITION coord;
-			coord.x = ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(ch));
-			coord.y = ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(ch));
+			coord.x = ecs::PlayerRuntime::GetX(((ch) ? (ch)->GetEntityHandle() : entt::null));
+			coord.y = ecs::PlayerRuntime::GetY(((ch) ? (ch)->GetEntityHandle() : entt::null));
 
-			item->AddToGround(ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)), coord);
+			item->AddToGround(ecs::PlayerRuntime::GetMapIndex(((ch) ? (ch)->GetEntityHandle() : entt::null)), coord);
 			item->SetOwnership(ch, 180);
 			item->StartDestroyEvent();
 		}
@@ -1830,7 +1830,7 @@ void CInputDB::ItemLoad(LPDESC d, const char * c_pData)
 #endif
 	}
 	ch->CheckMaximumPoints();
-	NetworkSyncSystem::PointsPacket(AIHelpers::EcsOf(ch));
+	NetworkSyncSystem::PointsPacket(((ch) ? (ch)->GetEntityHandle() : entt::null));
 
 	ch->SetItemLoaded();
 }
@@ -1852,7 +1852,7 @@ void CInputDB::BattlePassLoad(LPDESC d, const char * c_pData)
 	uint32_t dwCount = decode_4bytes(c_pData);
 	c_pData += sizeof(uint32_t);
 
-	if (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)) != dwPID)
+	if (ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null)) != dwPID)
 		return;
 
 	ch->LoadBattlePass(dwCount, (TPlayerBattlePassMission *)c_pData);
@@ -1879,7 +1879,7 @@ void CInputDB::BattlePassLoadRanking(LPDESC d, const char * c_pData)
 
 	//LOG_ERROR("BattlePassLoadRanking count {} playerid {}", dwCount, dwPID);
 
-	if (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)) != dwPID)
+	if (ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null)) != dwPID)
 		return;
 
 	if(dwCount)
@@ -1906,13 +1906,13 @@ void CInputDB::BattlePassLoadRanking(LPDESC d, const char * c_pData)
 			packet.wSize = sizeof(packet) + sizeof(TBattlePassRanking) * sendVector.size();
 			packet.bIsGlobal = bIsGlobal;
 
-			ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->BufferedPacket(&packet, sizeof(packet));
-			ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->Packet(&sendVector[0], sizeof(TBattlePassRanking) * sendVector.size());
+			ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null))->BufferedPacket(&packet, sizeof(packet));
+			ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null))->Packet(&sendVector[0], sizeof(TBattlePassRanking) * sendVector.size());
 		}
 	}
 #ifdef TEXTS_IMPROVEMENT
 	else {
-		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 762, "");
+		ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 762, "");
 	}
 #endif
 }
@@ -1934,7 +1934,7 @@ void CInputDB::AffectLoad(LPDESC d, const char * c_pData)
 	uint32_t dwCount = decode_4bytes(c_pData);
 	c_pData += sizeof(uint32_t);
 
-	if (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)) != dwPID)
+	if (ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null)) != dwPID)
 		return;
 
 	ch->LoadAffect(dwCount, (TPacketAffectElement *) c_pData);
@@ -2222,7 +2222,7 @@ void CInputDB::BillingExpire(const char * c_pData)
 			d->SetBillingExpireSecond(p->dwRemainSeconds);
 #ifdef TEXTS_IMPROVEMENT
 			if (ch) {
-				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 241, "%d", (p->dwRemainSeconds / 60));
+				ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 241, "%d", (p->dwRemainSeconds / 60));
 			}
 #endif
 		}
@@ -2389,7 +2389,7 @@ void CInputDB::MyshopPricelistRes(LPDESC d, const TPacketMyshopPricelistHeader* 
 	if (!d || !(ch = d->GetCharacter()) )
 		return;
 
-	LOG_INFO("RecvMyshopPricelistRes name[{}]", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data());
+	LOG_INFO("RecvMyshopPricelistRes name[{}]", ecs::PlayerRuntime::GetName(((ch) ? (ch)->GetEntityHandle() : entt::null)).data());
 	ch->UseSilkBotaryReal(p );
 
 }
@@ -3400,7 +3400,7 @@ void CInputDB::ItemAwardInformer(TPacketItemAwardInfromer *data)
 
 			if(d->IsPhase(PHASE_GAME))			//�����������϶�
 			{
-				quest::CQuestManager::instance().ItemInformer((ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))),ch->GetItemAward_vnum());	//questmanager ȣ��
+				quest::CQuestManager::instance().ItemInformer((ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null))),ch->GetItemAward_vnum());	//questmanager ȣ��
 			}
 		}
 	}
@@ -3437,7 +3437,7 @@ void CInputDB::ChangeChannel(LPDESC d, const char* pcData)
 	TPacketReturnChannel* p = (TPacketReturnChannel*)pcData;
 	if (!p->lAddr || !p->port) {
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(d->GetCharacter()), CHAT_TYPE_INFO, 636, "");
+		ecs::ChatSystem::SendNew(((d->GetCharacter()) ? (d->GetCharacter())->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 636, "");
 #endif
 		return;
 	}

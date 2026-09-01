@@ -36,5 +36,8 @@ int GetSkillMasterType(entt::entity e, uint32_t skillId);
 int GetSkillPower(entt::entity e, uint32_t skillId, uint8_t level = 0);
 void ComputeSkillPoints(entt::entity e);
 void ResetSkill(entt::entity e);
+void ClearSkill(entt::entity e);
+void ClearSubSkill(entt::entity e);
+bool ResetOneSkill(entt::entity e, uint32_t skillId);
 
 } // namespace SkillSystem

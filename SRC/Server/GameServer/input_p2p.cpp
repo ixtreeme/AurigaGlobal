@@ -96,7 +96,7 @@ int CInputP2P::Relay(LPDESC d, const char * c_pData, size_t uiBytes)
 			p2->bType = WHISPER_TYPE_SYSTEM;
 		} else {
 			if (!pkChr->IsEquipUniqueGroup(UNIQUE_GROUP_RING_OF_LANGUAGE))
-				if (bToEmpire >= 1 && bToEmpire <= 3 && ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(pkChr)) != bToEmpire)
+				if (bToEmpire >= 1 && bToEmpire <= 3 && ecs::PlayerRuntime::GetEmpire(((pkChr) ? (pkChr)->GetEntityHandle() : entt::null)) != bToEmpire)
 				{
 					ConvertEmpireText(bToEmpire,
 							buf + sizeof(TPacketGCWhisper),
@@ -105,10 +105,10 @@ int CInputP2P::Relay(LPDESC d, const char * c_pData, size_t uiBytes)
 				}
 		}
 
-		ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(pkChr))->Packet(buf, p->lSize);
+		ecs::PlayerRuntime::GetDesc(((pkChr) ? (pkChr)->GetEntityHandle() : entt::null))->Packet(buf, p->lSize);
 	}
 	else
-		ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(pkChr))->Packet(c_pbData, p->lSize);
+		ecs::PlayerRuntime::GetDesc(((pkChr) ? (pkChr)->GetEntityHandle() : entt::null))->Packet(c_pbData, p->lSize);
 
 	return (p->lSize);
 }
@@ -239,13 +239,13 @@ struct FuncShout
 	void operator () (LPDESC d)
 	{
 #ifdef ENABLE_NEWSTUFF
-		if (!d->GetCharacter() || (!g_bGlobalShoutEnable && ecs::PlayerRuntime::GetGMLevel(AIHelpers::EcsOf(d->GetCharacter())) == GM_PLAYER && d->GetEmpire() != m_bEmpire))
+		if (!d->GetCharacter() || (!g_bGlobalShoutEnable && ecs::PlayerRuntime::GetGMLevel(((d->GetCharacter()) ? (d->GetCharacter())->GetEntityHandle() : entt::null)) == GM_PLAYER && d->GetEmpire() != m_bEmpire))
 			return;
 #else
-		if (!d->GetCharacter() || (ecs::PlayerRuntime::GetGMLevel(AIHelpers::EcsOf(d->GetCharacter())) == GM_PLAYER && d->GetEmpire() != m_bEmpire))
+		if (!d->GetCharacter() || (ecs::PlayerRuntime::GetGMLevel(((d->GetCharacter()) ? (d->GetCharacter())->GetEntityHandle() : entt::null)) == GM_PLAYER && d->GetEmpire() != m_bEmpire))
 			return;
 #endif
-		ecs::ChatSystem::Send(AIHelpers::EcsOf(d->GetCharacter()), CHAT_TYPE_SHOUT, "%s", m_str);
+		ecs::ChatSystem::Send(((d->GetCharacter()) ? (d->GetCharacter())->GetEntityHandle() : entt::null), CHAT_TYPE_SHOUT, "%s", m_str);
 	}
 };
 
@@ -310,16 +310,16 @@ void CInputP2P::FindPosition(LPDESC d, const char* c_pData)
 #ifdef __CMD_WARP_IN_DUNGEON__
 	if (ch)
 #else
-	if (ch && ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)) < 10000)
+	if (ch && ecs::PlayerRuntime::GetMapIndex(((ch) ? (ch)->GetEntityHandle() : entt::null)) < 10000)
 #endif
 	{
 		TPacketGGWarpCharacter pw;
 		pw.header = HEADER_GG_WARP_CHARACTER;
 		pw.pid = p->dwFromPID;
-		pw.x = ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(ch));
-		pw.y = ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(ch));
+		pw.x = ecs::PlayerRuntime::GetX(((ch) ? (ch)->GetEntityHandle() : entt::null));
+		pw.y = ecs::PlayerRuntime::GetY(((ch) ? (ch)->GetEntityHandle() : entt::null));
 #ifdef __CMD_WARP_IN_DUNGEON__
-		pw.mapIndex = (ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)) < 10000) ? 0 : ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch));
+		pw.mapIndex = (ecs::PlayerRuntime::GetMapIndex(((ch) ? (ch)->GetEntityHandle() : entt::null)) < 10000) ? 0 : ecs::PlayerRuntime::GetMapIndex(((ch) ? (ch)->GetEntityHandle() : entt::null));
 #endif
 		d->Packet(&pw, sizeof(pw));
 	}
@@ -335,12 +335,12 @@ void CInputP2P::WarpCharacter(const char* c_pData)
 #ifdef __CMD_WARP_IN_DUNGEON__
 	if (ch)
 	{
-		ecs::MovementSystem::WarpSet(AIHelpers::EcsOf(ch), p->x, p->y, p->mapIndex);
+		ecs::MovementSystem::WarpSet(((ch) ? (ch)->GetEntityHandle() : entt::null), p->x, p->y, p->mapIndex);
 	}
 #else
 	if (ch)
 	{
-		ecs::MovementSystem::WarpSet(AIHelpers::EcsOf(ch), p->x, p->y);
+		ecs::MovementSystem::WarpSet(((ch) ? (ch)->GetEntityHandle() : entt::null), p->x, p->y);
 	}
 #endif
 }
@@ -372,7 +372,7 @@ void CInputP2P::Transfer(const char * c_pData)
 	LPCHARACTER ch = CHARACTER_MANAGER::instance().FindPC(p->szName);
 
 	if (ch)
-		ecs::MovementSystem::WarpSet(AIHelpers::EcsOf(ch), p->lX, p->lY);
+		ecs::MovementSystem::WarpSet(((ch) ? (ch)->GetEntityHandle() : entt::null), p->lX, p->lY);
 }
 
 void CInputP2P::LoginPing(LPDESC d, const char * c_pData)
@@ -398,7 +398,7 @@ void CInputP2P::BlockChat(const char * c_pData)
 	if (ch)
 	{
 		LOG_INFO("BLOCK CHAT apply name {} dur {}", p->szName, p->lBlockDuration);
-		AffectSystem::AddAffect(AIHelpers::EcsOf(ch), AFFECT_BLOCK_CHAT, POINT_NONE, 0, AFF_NONE, p->lBlockDuration, 0, true);
+		AffectSystem::AddAffect(((ch) ? (ch)->GetEntityHandle() : entt::null), AFFECT_BLOCK_CHAT, POINT_NONE, 0, AFF_NONE, p->lBlockDuration, 0, true);
 	}
 	else
 	{

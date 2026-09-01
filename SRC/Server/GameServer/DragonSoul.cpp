@@ -72,7 +72,7 @@ void SyncDragonSoulGridItems(LPCHARACTER ch, const TItemPos (&aItemPoses)[DRAGON
 	if (!ch)
 		return;
 
-	const entt::entity owner = AIHelpers::EcsOf(ch);
+	const entt::entity owner = ((ch) ? (ch)->GetEntityHandle() : entt::null);
 	for (int i = 0; i < DRAGON_SOUL_REFINE_GRID_SIZE; ++i)
 		SyncDragonSoulItemPtr(ItemSystem::GetItem(owner, aItemPoses[i]));
 }
@@ -377,7 +377,7 @@ bool DSManager::ExtractDragonHeart(LPCHARACTER ch, entt::entity item, entt::enti
 	if (!ch || !ItemSystem::IsDragonSoulItem(item))
 		return false;
 
-	const entt::entity owner = AIHelpers::EcsOf(ch);
+	const entt::entity owner = ((ch) ? (ch)->GetEntityHandle() : entt::null);
 	const bool hasExtractor = extractor != entt::null;
 	if (hasExtractor && !ItemSystem::IsValidItem(extractor))
 		return false;
@@ -479,7 +479,7 @@ bool DSManager::PullOut(LPCHARACTER ch, TItemPos DestCell, entt::entity& item, e
 		return false;
 	}
 
-	const entt::entity owner = AIHelpers::EcsOf(ch);
+	const entt::entity owner = ((ch) ? (ch)->GetEntityHandle() : entt::null);
 	const bool hasExtractor = extractor != entt::null;
 	if (hasExtractor && !ItemSystem::IsValidItem(extractor))
 		return false;
@@ -580,7 +580,7 @@ bool DSManager::DoRefineGrade(LPCHARACTER ch, TItemPos (&aItemPoses)[DRAGON_SOUL
 	if (!ch || !ch->DragonSoul_RefineWindow_CanRefine())
 		return false;
 
-	const entt::entity owner = AIHelpers::EcsOf(ch);
+	const entt::entity owner = ((ch) ? (ch)->GetEntityHandle() : entt::null);
 	std::set<entt::entity> items;
 	for (int i = 0; i < DRAGON_SOUL_REFINE_GRID_SIZE; ++i)
 	{
@@ -709,7 +709,7 @@ bool DSManager::DoRefineStep(LPCHARACTER ch, TItemPos (&aItemPoses)[DRAGON_SOUL_
 	if (!ch || !ch->DragonSoul_RefineWindow_CanRefine())
 		return false;
 
-	const entt::entity owner = AIHelpers::EcsOf(ch);
+	const entt::entity owner = ((ch) ? (ch)->GetEntityHandle() : entt::null);
 	std::set<entt::entity> items;
 	for (int i = 0; i < DRAGON_SOUL_REFINE_GRID_SIZE; ++i)
 	{
@@ -845,7 +845,7 @@ bool DSManager::DoRefineStrength(LPCHARACTER ch, TItemPos (&aItemPoses)[DRAGON_S
 	if (!ch || !ch->DragonSoul_RefineWindow_CanRefine())
 		return false;
 
-	const entt::entity owner = AIHelpers::EcsOf(ch);
+	const entt::entity owner = ((ch) ? (ch)->GetEntityHandle() : entt::null);
 	std::set<entt::entity> items;
 	for (int i = 0; i < DRAGON_SOUL_REFINE_GRID_SIZE; ++i)
 	{
@@ -1003,14 +1003,14 @@ void DSManager::DoRefineAll(LPCHARACTER ch, uint8_t subheader, uint8_t type, uin
 	if (remainingDelay > 0)
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 234, "%d", remainingDelay);
+		ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 234, "%d", remainingDelay);
 #endif
 		return;
 	}
 	ch->SetLastDSREfine();
 #endif
 
-	const entt::entity owner = AIHelpers::EcsOf(ch);
+	const entt::entity owner = ((ch) ? (ch)->GetEntityHandle() : entt::null);
 	const int32_t firstCell = 300 + (192 * type) + (requestedGrade * DRAGON_SOUL_BOX_SIZE);
 	const bool gradeMode = subheader == DS_SUB_HEADER_DO_REFINE_GRADE;
 	const int firstIndex = gradeMode ? DRAGON_SOUL_GRADE_NORMAL : DRAGON_SOUL_STEP_LOWEST;
@@ -1151,7 +1151,7 @@ void DSManager::SendRefineResultPacket(LPCHARACTER ch, uint8_t bSubHeader, const
 	{
 		pack.Pos = pos;
 	}
-	LPDESC d = ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch));
+	LPDESC d = ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null));
 	if (nullptr == d)
 	{
 		return ;
@@ -1274,7 +1274,7 @@ void DSManager::RefreshDragonSoulState(LPCHARACTER ch)
 	if (!ch)
 		return;
 
-	const entt::entity owner = AIHelpers::EcsOf(ch);
+	const entt::entity owner = ((ch) ? (ch)->GetEntityHandle() : entt::null);
 	for (int i = WEAR_MAX_NUM; i < WEAR_MAX_NUM + DS_SLOT_MAX * DRAGON_SOUL_DECK_MAX_NUM; ++i)
 	{
 		const entt::entity item = ItemSystem::GetWearItem(owner, i);

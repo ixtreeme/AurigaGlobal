@@ -90,10 +90,10 @@ namespace marriage
 		for (auto it = m_set_pkChr.begin(); it != m_set_pkChr.end(); ++it)
 		{
 			LPCHARACTER ch = *it;
-			if (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)) == dwPID1 || ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)) == dwPID2)
+			if (ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null)) == dwPID1 || ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null)) == dwPID2)
 				continue;
 
-			if (ecs::PointSystem::GetLevel(AIHelpers::EcsOf(ch)) < 10) // 10 레벨이하는 주지않는다.
+			if (ecs::PointSystem::GetLevel(((ch) ? (ch)->GetEntityHandle() : entt::null)) < 10) // 10 레벨이하는 주지않는다.
 				continue;
 
 			//ch->AutoGiveItem(27003, 5);
@@ -110,7 +110,7 @@ namespace marriage
 		FNotice(uint8_t type, uint32_t idx, const char * format) : m_type(type), m_idx(idx), m_format(format) {}
 
 		void operator() (LPCHARACTER ch) {
-			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), m_type, m_idx, m_format);
+			ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), m_type, m_idx, m_format);
 		}
 	};
 #endif
@@ -133,12 +133,12 @@ namespace marriage
 	{
 		void operator() (LPCHARACTER ch)
 		{
-			if (ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch)))
+			if (ecs::PlayerRuntime::IsPC(((ch) ? (ch)->GetEntityHandle() : entt::null)))
 			{
 				// ExitToSavedLocation은 WarpSet을 부르는데 이 함수에서
 				// Sectree가 NULL이 된다. 추 후 SectreeManager로 부터는
 				// 이 캐릭터를 찾을 수 없으므로 아래 DestroyAll에서 별도 처리함
-				ecs::MovementSystem::ExitToSavedLocation(AIHelpers::EcsOf(ch));
+				ecs::MovementSystem::ExitToSavedLocation(((ch) ? (ch)->GetEntityHandle() : entt::null));
 			}
 		}
 	};
@@ -153,10 +153,10 @@ namespace marriage
 	{
 		void operator() (LPCHARACTER ch)
 		{
-			LOG_INFO("WeddingMap::DestroyAll: {}", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data());
+			LOG_INFO("WeddingMap::DestroyAll: {}", ecs::PlayerRuntime::GetName(((ch) ? (ch)->GetEntityHandle() : entt::null)).data());
 
-			if (ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch)))
-				DESC_MANAGER::instance().DestroyDesc(ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch)));
+			if (ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null)))
+				DESC_MANAGER::instance().DestroyDesc(ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null)));
 			else
 				M2_DESTROY_CHARACTER(ch);
 		}
@@ -177,12 +177,12 @@ namespace marriage
 		if (IsMember(ch) == true)
 			return;
 
-		//0, "WeddingMap: IncMember %s", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data());
+		//0, "WeddingMap: IncMember %s", ecs::PlayerRuntime::GetName(((ch) ? (ch)->GetEntityHandle() : entt::null)).data());
 		m_set_pkChr.insert(ch);
 
 		SendLocalEvent(ch);
 
-		if (ecs::PointSystem::GetLevel(AIHelpers::EcsOf(ch)) < 10)
+		if (ecs::PointSystem::GetLevel(((ch) ? (ch)->GetEntityHandle() : entt::null)) < 10)
 		{
 			ch->SetObserverMode(true);
 		}
@@ -193,10 +193,10 @@ namespace marriage
 		if (IsMember(ch) == false)
 			return;
 
-		//0, "WeddingMap: DecMember %s", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data());
+		//0, "WeddingMap: DecMember %s", ecs::PlayerRuntime::GetName(((ch) ? (ch)->GetEntityHandle() : entt::null)).data());
 		m_set_pkChr.erase(ch);
 
-		if (ecs::PointSystem::GetLevel(AIHelpers::EcsOf(ch)) < 10)
+		if (ecs::PointSystem::GetLevel(((ch) ? (ch)->GetEntityHandle() : entt::null)) < 10)
 		{
 			ch->SetObserverMode(false);
 		}
@@ -215,7 +215,7 @@ namespace marriage
 		for (auto it = m_set_pkChr.begin(); it != m_set_pkChr.end(); ++it)
 		{
 			LPCHARACTER ch = *it;
-			ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_COMMAND, msg);
+			ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_COMMAND, msg);
 		}
 	}
 
@@ -274,11 +274,11 @@ namespace marriage
 		char szCommand[256];
 
 		if (m_isDark)
-			ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_COMMAND, "DayMode dark");
+			ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_COMMAND, "DayMode dark");
 		if (m_isSnow)
-			ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_COMMAND, "xmas_snow 1");
+			ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_COMMAND, "xmas_snow 1");
 		if (m_isMusic)
-			ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_COMMAND, __BuildCommandPlayMusic(szCommand, sizeof(szCommand), 1, m_stMusicFileName.c_str()));
+			ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_COMMAND, __BuildCommandPlayMusic(szCommand, sizeof(szCommand), 1, m_stMusicFileName.c_str()));
 	}
 
 	const char* WeddingMap::__BuildCommandPlayMusic(char* szCommand, size_t nCmdLen, uint8_t bSet, const char* c_szMusicFileName)

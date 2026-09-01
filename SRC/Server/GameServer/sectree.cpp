@@ -55,10 +55,10 @@ void SECTREE::Destroy()
 			{
 				LPCHARACTER ch = (LPCHARACTER)ent;
 
-				LOG_ERROR("Sectree: destroying character: {} is_pc {}", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), (ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch))) ? 1 : 0);
+				LOG_ERROR("Sectree: destroying character: {} is_pc {}", ecs::PlayerRuntime::GetName(((ch) ? (ch)->GetEntityHandle() : entt::null)).data(), (ecs::PlayerRuntime::IsPC(((ch) ? (ch)->GetEntityHandle() : entt::null))) ? 1 : 0);
 
-				if (ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch)))
-					DESC_MANAGER::instance().DestroyDesc(ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch)));
+				if (ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null)))
+					DESC_MANAGER::instance().DestroyDesc(ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null)));
 				else
 					M2_DESTROY_CHARACTER(ch);
 			}
@@ -68,7 +68,7 @@ void SECTREE::Destroy()
 
 				LOG_ERROR("Sectree: destroying item: {}", item->GetName());
 				ItemSystem::DestroyItemEntityEcs(
-					EntityFactory::CreateItemEntity(g_registry, item),
+					(item ? item->GetEntityHandle() : entt::null),
 					"SECTREE_DESTROY_ITEM");
 			}
 			else
@@ -187,7 +187,7 @@ bool SECTREE::InsertEntity(LPENTITY pkEnt)
 	{
 		LPCHARACTER pkChr = (LPCHARACTER) pkEnt;
 
-		if ((ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(pkChr))))
+		if ((ecs::PlayerRuntime::IsPC(((pkChr) ? (pkChr)->GetEntityHandle() : entt::null))))
 		{
 			IncreasePC();
 
@@ -227,7 +227,7 @@ void SECTREE::RemoveEntity(LPENTITY pkEnt)
 
 	if (pkEnt->IsType(ENTITY_CHARACTER))
 	{
-	if (ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf((LPCHARACTER) pkEnt)))
+	if (ecs::PlayerRuntime::IsPC((((LPCHARACTER) pkEnt) ? ((LPCHARACTER) pkEnt)->GetEntityHandle() : entt::null)))
 			DecreasePC();
 	}
 }

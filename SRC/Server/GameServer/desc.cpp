@@ -672,7 +672,7 @@ bool DESC::HandshakeProcess(uint32_t dwTime, int32_t lDelta, bool bInfiniteRetry
 		}
 
 		if (GetCharacter())
-			LOG_INFO("Handshake: client_time {} server_time {} name: {}", m_dwClientTime, dwCurTime, ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(GetCharacter())).data());
+			LOG_INFO("Handshake: client_time {} server_time {} name: {}", m_dwClientTime, dwCurTime, ecs::PlayerRuntime::GetName(((GetCharacter()) ? (GetCharacter())->GetEntityHandle() : entt::null)).data());
 		else
 			LOG_INFO("Handshake: client_time {} server_time {}", m_dwClientTime, dwCurTime);
 
@@ -693,7 +693,7 @@ bool DESC::HandshakeProcess(uint32_t dwTime, int32_t lDelta, bool bInfiniteRetry
 
 	if (!bInfiniteRetry)
 		if (++m_iHandshakeRetry > HANDSHAKE_RETRY_LIMIT) {
-			LOG_ERROR("handshake retry limit reached! (limit {} character {})", HANDSHAKE_RETRY_LIMIT, GetCharacter() ? ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(GetCharacter())).data() : "!NO CHARACTER!");
+			LOG_ERROR("handshake retry limit reached! (limit {} character {})", HANDSHAKE_RETRY_LIMIT, GetCharacter() ? ecs::PlayerRuntime::GetName(((GetCharacter()) ? (GetCharacter())->GetEntityHandle() : entt::null)).data() : "!NO CHARACTER!");
 			SetPhase(PHASE_CLOSE);
 			return false;
 		}
@@ -883,7 +883,7 @@ void DESC::DisconnectOfSameLogin()
 			return;
 
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(GetCharacter()), CHAT_TYPE_INFO, 295, "");
+		ecs::ChatSystem::SendNew(((GetCharacter()) ? (GetCharacter())->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 295, "");
 #endif
 		DelayedDisconnect(3);
 	}

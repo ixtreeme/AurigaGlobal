@@ -61,10 +61,10 @@
 #ifdef ENABLE_DAILY_REWARD_HWID_LIMIT_RAZOR93
 static std::string MakeDailyRewardHWKey(LPCHARACTER ch)
 {
-	if (!ch || !(ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch))) || !ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch)))
+	if (!ch || !(ecs::PlayerRuntime::IsPC(((ch) ? (ch)->GetEntityHandle() : entt::null))) || !ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null)))
 		return std::string();
 
-	DESC* d = ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch));
+	DESC* d = ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null));
 	const char* hwid = d->GetHwid();
 	const char* host = d->GetHostName();
 
@@ -88,7 +88,7 @@ static std::string MakeDailyRewardHWKey(LPCHARACTER ch)
 
 static bool DailyReward_CheckHWIDLimit(LPCHARACTER ch)
 {
-	if (!ch || !(ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch))) || !ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch)))
+	if (!ch || !(ecs::PlayerRuntime::IsPC(((ch) ? (ch)->GetEntityHandle() : entt::null))) || !ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null)))
 		return false;
 
 	std::string key = MakeDailyRewardHWKey(ch);
@@ -107,8 +107,8 @@ static bool DailyReward_CheckHWIDLimit(LPCHARACTER ch)
 		"INSERT INTO player.daily_reward_claim_hwid (hwkey, claim_day, pid, account_id) "
 		"VALUES('%s', CURDATE(), %u, %u)",
 		key.c_str(),
-		(ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))),
-		ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->GetAccountTable().id
+		(ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null))),
+		ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null))->GetAccountTable().id
 	));
 
 	return true;
@@ -117,17 +117,17 @@ static bool DailyReward_CheckHWIDLimit(LPCHARACTER ch)
 
 ACMD(do_user_horse_ride)
 {
-	if (ecs::PlayerRuntime::IsObserverMode(AIHelpers::EcsOf(ch)))
+	if (ecs::PlayerRuntime::IsObserverMode(((ch) ? (ch)->GetEntityHandle() : entt::null)))
 		return;
 
-	if (CombatSystem::IsDead(AIHelpers::EcsOf(ch)) || CombatSystem::IsStun(AIHelpers::EcsOf(ch)))
+	if (CombatSystem::IsDead(((ch) ? (ch)->GetEntityHandle() : entt::null)) || CombatSystem::IsStun(((ch) ? (ch)->GetEntityHandle() : entt::null)))
 		return;
 
 	if (ch->IsHorseRiding() == false)
 	{
-		if (MountSystem::GetMountVnum(AIHelpers::EcsOf(ch))) {
+		if (MountSystem::GetMountVnum(((ch) ? (ch)->GetEntityHandle() : entt::null))) {
 #ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 532, "");
+			ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 532, "");
 #endif
 			return;
 		}
@@ -135,7 +135,7 @@ ACMD(do_user_horse_ride)
 		if (ch->GetHorse() == nullptr)
 		{
 #ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 332, "");
+			ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 332, "");
 #endif
 			return;
 		}
@@ -152,20 +152,20 @@ ACMD(do_daily_reward_reload){
 		return;
 	}
 
-	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_COMMAND, "ManagerGiftSystem DeleteRewards|");
+	ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_COMMAND, "ManagerGiftSystem DeleteRewards|");
 	std::string time = "";
 	std::string rewards = "";
 
-	std::unique_ptr<SQLMsg> msg(DBManager::instance().DirectQuery("SELECT UNIX_TIMESTAMP(time), reward FROM player.daily_reward_status WHERE pid = %u", (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)))));
+	std::unique_ptr<SQLMsg> msg(DBManager::instance().DirectQuery("SELECT UNIX_TIMESTAMP(time), reward FROM player.daily_reward_status WHERE pid = %u", (ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null)))));
 	if (msg->Get()->uiNumRows > 0) {
-		std::unique_ptr<SQLMsg> msg2(DBManager::instance().DirectQuery("SELECT UNIX_TIMESTAMP(time),reward FROM player.daily_reward_status WHERE pid = %u and (time + INTERVAL 1 DAY < NOW()) limit 1;", (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)))));
+		std::unique_ptr<SQLMsg> msg2(DBManager::instance().DirectQuery("SELECT UNIX_TIMESTAMP(time),reward FROM player.daily_reward_status WHERE pid = %u and (time + INTERVAL 1 DAY < NOW()) limit 1;", (ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null)))));
 		if (msg2->Get()->uiNumRows > 0) {
-			std::unique_ptr<SQLMsg>(DBManager::Instance().DirectQuery("DELETE FROM player.daily_reward_status WHERE pid = %u", (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)))));
-			std::unique_ptr<SQLMsg>(DBManager::Instance().DirectQuery("INSERT INTO player.daily_reward_status (pid, time, reward, total_rewards) VALUES(%u, NOW(), 0, 0)", (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)))));
+			std::unique_ptr<SQLMsg>(DBManager::Instance().DirectQuery("DELETE FROM player.daily_reward_status WHERE pid = %u", (ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null)))));
+			std::unique_ptr<SQLMsg>(DBManager::Instance().DirectQuery("INSERT INTO player.daily_reward_status (pid, time, reward, total_rewards) VALUES(%u, NOW(), 0, 0)", (ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null)))));
 #ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 721, "");
+			ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 721, "");
 #endif
-			std::unique_ptr<SQLMsg> msg3(DBManager::instance().DirectQuery("SELECT UNIX_TIMESTAMP(time), reward FROM player.daily_reward_status WHERE pid = %u", (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)))));
+			std::unique_ptr<SQLMsg> msg3(DBManager::instance().DirectQuery("SELECT UNIX_TIMESTAMP(time), reward FROM player.daily_reward_status WHERE pid = %u", (ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null)))));
 			if (msg3->Get()->uiNumRows > 0) {
 				MYSQL_ROW row;
 				while ((row = mysql_fetch_row(msg3->Get()->pSQLResult)) != nullptr) {
@@ -174,7 +174,7 @@ ACMD(do_daily_reward_reload){
 				}
 			}
 		} else {
-			std::unique_ptr<SQLMsg> msg3(DBManager::instance().DirectQuery("SELECT UNIX_TIMESTAMP(time), reward FROM player.daily_reward_status WHERE pid = %u", (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)))));
+			std::unique_ptr<SQLMsg> msg3(DBManager::instance().DirectQuery("SELECT UNIX_TIMESTAMP(time), reward FROM player.daily_reward_status WHERE pid = %u", (ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null)))));
 			if (msg3->Get()->uiNumRows > 0) {
 				MYSQL_ROW row;
 				while ((row = mysql_fetch_row(msg3->Get()->pSQLResult)) != nullptr) {
@@ -184,9 +184,9 @@ ACMD(do_daily_reward_reload){
 			}
 		}
 	} else {
-		std::unique_ptr<SQLMsg>(DBManager::Instance().DirectQuery("INSERT INTO player.daily_reward_status (pid, time, reward, total_rewards) VALUES(%u, NOW(), 0, 0)", (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)))));
+		std::unique_ptr<SQLMsg>(DBManager::Instance().DirectQuery("INSERT INTO player.daily_reward_status (pid, time, reward, total_rewards) VALUES(%u, NOW(), 0, 0)", (ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null)))));
 
-		std::unique_ptr<SQLMsg> msg2(DBManager::instance().DirectQuery("SELECT UNIX_TIMESTAMP(time), reward FROM player.daily_reward_status WHERE pid = %u", (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)))));
+		std::unique_ptr<SQLMsg> msg2(DBManager::instance().DirectQuery("SELECT UNIX_TIMESTAMP(time), reward FROM player.daily_reward_status WHERE pid = %u", (ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null)))));
 		if (msg2->Get()->uiNumRows > 0) {
 			MYSQL_ROW row;
 			while ((row = mysql_fetch_row(msg2->Get()->pSQLResult)) != nullptr) {
@@ -200,13 +200,13 @@ ACMD(do_daily_reward_reload){
 	if (msgend->Get()->uiNumRows > 0) {
 		MYSQL_ROW row;
 		while ((row = mysql_fetch_row(msgend->Get()->pSQLResult)) != nullptr) {
-			ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_COMMAND, "ManagerGiftSystem SetReward|%s|%s", row[0], row[1]);
+			ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_COMMAND, "ManagerGiftSystem SetReward|%s|%s", row[0], row[1]);
 		}
 	}
 
-	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_COMMAND, "ManagerGiftSystem SetTime|%s", time.c_str());
-	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_COMMAND, "ManagerGiftSystem SetDailyReward|%s", rewards.c_str());
-	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_COMMAND, "ManagerGiftSystem SetRewardDone|");
+	ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_COMMAND, "ManagerGiftSystem SetTime|%s", time.c_str());
+	ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_COMMAND, "ManagerGiftSystem SetDailyReward|%s", rewards.c_str());
+	ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_COMMAND, "ManagerGiftSystem SetRewardDone|");
 }
 
 ACMD(do_daily_reward_get_reward){
@@ -218,7 +218,7 @@ ACMD(do_daily_reward_get_reward){
 	std::string rewards = "";
 	// and (NOW() - interval 30 minute > time)
 
-	std::unique_ptr<SQLMsg> msg(DBManager::instance().DirectQuery("SELECT reward from player.daily_reward_status where (NOW() > time) and pid = %u", (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)))));
+	std::unique_ptr<SQLMsg> msg(DBManager::instance().DirectQuery("SELECT reward from player.daily_reward_status where (NOW() > time) and pid = %u", (ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null)))));
 	if (msg->Get()->uiNumRows > 0) {
 		MYSQL_ROW row;
 		while ((row = mysql_fetch_row(msg->Get()->pSQLResult)) != nullptr) {
@@ -233,7 +233,7 @@ ACMD(do_daily_reward_get_reward){
 		// HWID limit: 1 gep / nap
 		if (!DailyReward_CheckHWIDLimit(ch))
 		{
-			ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "Napi 1 jutalom jar. // You have already collected the reward.");
+			ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "Napi 1 jutalom jar. // You have already collected the reward.");
 			return;
 		}
 #endif
@@ -253,12 +253,12 @@ ACMD(do_daily_reward_get_reward){
 
 		str_to_number(item, items.c_str());
 		str_to_number(count, counts.c_str());
-		ItemSystem::AutoGiveItemEcs(AIHelpers::EcsOf(ch), item, count);
-		std::unique_ptr<SQLMsg>(DBManager::Instance().DirectQuery("UPDATE daily_reward_status SET reward = CASE WHEN reward = 0 THEN '1' WHEN reward = 1 THEN '2' WHEN reward = 2 THEN '3' WHEN reward = 3 THEN '4' WHEN reward = 4 THEN '5' WHEN reward = 5 THEN '6' WHEN reward = 6 THEN '0' END, total_rewards = total_rewards +1, time = (NOW() + interval 1 day) WHERE pid = %u", (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)))));
+		ItemSystem::AutoGiveItemEcs(((ch) ? (ch)->GetEntityHandle() : entt::null), item, count);
+		std::unique_ptr<SQLMsg>(DBManager::Instance().DirectQuery("UPDATE daily_reward_status SET reward = CASE WHEN reward = 0 THEN '1' WHEN reward = 1 THEN '2' WHEN reward = 2 THEN '3' WHEN reward = 3 THEN '4' WHEN reward = 4 THEN '5' WHEN reward = 5 THEN '6' WHEN reward = 6 THEN '0' END, total_rewards = total_rewards +1, time = (NOW() + interval 1 day) WHERE pid = %u", (ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null)))));
 	}
 #ifdef TEXTS_IMPROVEMENT
 	else {
-		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 715, "");
+		ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 715, "");
 	}
 #endif
 }
@@ -269,8 +269,8 @@ ACMD(do_user_horse_back)
 
 	CMountSystem* mountSystem = ch->GetMountSystem();
 	if (mountSystem) {
-		if ((mountSystem->CountSummoned() > 0) || MountSystem::GetMountVnum(AIHelpers::EcsOf(ch))) {
-			const entt::entity owner = AIHelpers::EcsOf(ch);
+		if ((mountSystem->CountSummoned() > 0) || MountSystem::GetMountVnum(((ch) ? (ch)->GetEntityHandle() : entt::null))) {
+			const entt::entity owner = ((ch) ? (ch)->GetEntityHandle() : entt::null);
 			const entt::entity item = ItemSystem::GetWearItem(owner, WEAR_COSTUME_MOUNT);
 			if (item != entt::null) {
 				ItemSystem::UnequipItemEcs(owner, item);
@@ -283,19 +283,19 @@ ACMD(do_user_horse_back)
 	{
 		ch->HorseSummon(false);
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 331, "");
+		ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 331, "");
 #endif
 	}
 	else if (ch->IsHorseRiding() == true)
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 330, "");
+		ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 330, "");
 #endif
 	}
 	else
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 332, "");
+		ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 332, "");
 #endif
 	}
 }
@@ -310,10 +310,10 @@ ACMD(do_user_horse_feed)
 	{
 #ifdef TEXTS_IMPROVEMENT
 		if (ch->IsHorseRiding() == false) {
-			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 332, "");
+			ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 332, "");
 		}
 		else {
-			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 336, "");
+			ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 336, "");
 		}
 #endif
 		return;
@@ -327,9 +327,9 @@ ACMD(do_user_horse_feed)
 		ch->RemoveSpecifyItem(dwFood, 1);
 		ch->FeedHorse();
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 112, "%s",
+		ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 112, "%s",
 #ifdef ENABLE_MULTI_NAMES
-		ITEM_MANAGER::instance().GetTable(dwFood)->szLocaleName[ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->GetLanguage()]
+		ITEM_MANAGER::instance().GetTable(dwFood)->szLocaleName[ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null))->GetLanguage()]
 #else
 		ITEM_MANAGER::instance().GetTable(dwFood)->szLocaleName
 #endif
@@ -339,9 +339,9 @@ ACMD(do_user_horse_feed)
 	else
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 111, "%s",
+		ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 111, "%s",
 #ifdef ENABLE_MULTI_NAMES
-		ITEM_MANAGER::instance().GetTable(dwFood)->szLocaleName[ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->GetLanguage()]
+		ITEM_MANAGER::instance().GetTable(dwFood)->szLocaleName[ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null))->GetLanguage()]
 #else
 		ITEM_MANAGER::instance().GetTable(dwFood)->szLocaleName
 #endif
@@ -375,8 +375,8 @@ struct SendDisconnectFunc
 	{
 		if (d->GetCharacter())
 		{
-			if ((ecs::PlayerRuntime::GetGMLevel(AIHelpers::EcsOf(d->GetCharacter()))) == GM_PLAYER)
-				ecs::ChatSystem::Send(AIHelpers::EcsOf(d->GetCharacter()), CHAT_TYPE_COMMAND, "quit Shutdown(SendDisconnectFunc)");
+			if ((ecs::PlayerRuntime::GetGMLevel(((d->GetCharacter()) ? (d->GetCharacter())->GetEntityHandle() : entt::null))) == GM_PLAYER)
+				ecs::ChatSystem::Send(((d->GetCharacter()) ? (d->GetCharacter())->GetEntityHandle() : entt::null), CHAT_TYPE_COMMAND, "quit Shutdown(SendDisconnectFunc)");
 		}
 	}
 };
@@ -475,7 +475,7 @@ ACMD(do_shutdown)
 {
 	if (nullptr == ch)
 	{
-		LOG_ERROR("Accept shutdown command from {}.", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data());
+		LOG_ERROR("Accept shutdown command from {}.", ecs::PlayerRuntime::GetName(((ch) ? (ch)->GetEntityHandle() : entt::null)).data());
 	}
 	TPacketGGShutdown p;
 	p.bHeader = HEADER_GG_SHUTDOWN;
@@ -496,10 +496,10 @@ ACMD(do_change_channel)
 		return;
 	}
 
-	if (!ecs::PlayerRuntime::CanWarp(AIHelpers::EcsOf(ch)))
+	if (!ecs::PlayerRuntime::CanWarp(((ch) ? (ch)->GetEntityHandle() : entt::null)))
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 234, "10");
+		ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 234, "10");
 #endif
 		return;
 	}
@@ -507,7 +507,7 @@ ACMD(do_change_channel)
 	if (ch->GetTimedEvent())
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 482, "");
+		ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 482, "");
 #endif
 		event_cancel(&ch->GetTimedEventRef());
 		return;
@@ -519,7 +519,7 @@ ACMD(do_change_channel)
 	if (!*arg1)
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 716, "");
+		ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 716, "");
 #endif
 		return;
 	}
@@ -527,7 +527,7 @@ ACMD(do_change_channel)
 	if (g_bChannel == 99)
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 719, "");
+		ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 719, "");
 #endif
 		return;
 	}
@@ -538,7 +538,7 @@ ACMD(do_change_channel)
 	if (channel < 1 || channel > 6)
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 717, "");
+		ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 717, "");
 #endif
 		return;
 	}
@@ -546,7 +546,7 @@ ACMD(do_change_channel)
 	if (channel == g_bChannel)
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 718, "%d", g_bChannel);
+		ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 718, "%d", g_bChannel);
 #endif
 		return;
 	}
@@ -554,16 +554,16 @@ ACMD(do_change_channel)
 	if (ch->GetDungeon())
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 720, "");
+		ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 720, "");
 #endif
 		return;
 	}
 
 	TPacketChangeChannel p;
 	p.channel = channel;
-	p.lMapIndex = ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch));
+	p.lMapIndex = ecs::PlayerRuntime::GetMapIndex(((ch) ? (ch)->GetEntityHandle() : entt::null));
 
-	db_clientdesc->DBPacket(HEADER_GD_FIND_CHANNEL, ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->GetHandle(), &p, sizeof(p));
+	db_clientdesc->DBPacket(HEADER_GD_FIND_CHANNEL, ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null))->GetHandle(), &p, sizeof(p));
 }
 #endif
 
@@ -595,7 +595,7 @@ EVENTFUNC(timed_event)
 	if (ch == nullptr) { // <Factor>
 		return 0;
 	}
-	LPDESC d = ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch));
+	LPDESC d = ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null));
 
 	if (info->left_second <= 0)
 	{
@@ -608,7 +608,7 @@ EVENTFUNC(timed_event)
 			case SCMD_PHASE_SELECT:
 				{
 					TPacketNeedLoginLogInfo acc_info;
-					acc_info.dwPlayerID = ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->GetAccountTable().id;
+					acc_info.dwPlayerID = ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null))->GetAccountTable().id;
 
 					db_clientdesc->DBPacket( HEADER_GD_VALID_LOGOUT, 0, &acc_info, sizeof(acc_info) );
 
@@ -625,7 +625,7 @@ EVENTFUNC(timed_event)
 				break;
 
 			case SCMD_QUIT:
-				ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_COMMAND, "quit");
+				ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_COMMAND, "quit");
 				break;
 
 			case SCMD_PHASE_SELECT:
@@ -645,7 +645,7 @@ EVENTFUNC(timed_event)
 	else
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 103, "%d", info->left_second);
+		ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 103, "%d", info->left_second);
 #endif
 		--info->left_second;
 	}
@@ -658,7 +658,7 @@ ACMD(do_cmd)
 	if (ch->GetTimedEvent())
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 482, "");
+		ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 482, "");
 #endif
 		event_cancel(&ch->GetTimedEventRef());
 		return;
@@ -668,14 +668,14 @@ ACMD(do_cmd)
 	switch (subcmd)
 	{
 		case SCMD_LOGOUT:
-			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 326, "");
+			ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 326, "");
 			break;
 		case SCMD_QUIT:
-			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 240, "");
+			ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 240, "");
 			break;
 		case SCMD_PHASE_SELECT:
 #ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 483, "");
+			ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 483, "");
 #endif
 			break;
 	}
@@ -726,12 +726,12 @@ ACMD(do_fishing)
 
 ACMD(do_console)
 {
-	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_COMMAND, "ConsoleEnable");
+	ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_COMMAND, "ConsoleEnable");
 }
 
 ACMD(do_restart)
 {
-	if (!(ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch))) || ch->GetPosition() != POS_DEAD)
+	if (!(ecs::PlayerRuntime::IsPC(((ch) ? (ch)->GetEntityHandle() : entt::null))) || ch->GetPosition() != POS_DEAD)
 	{
 		return;
 	}
@@ -748,16 +748,16 @@ ACMD(do_restart)
 		}
 	}
 
-	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_COMMAND, "CloseRestartWindow");
+	ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_COMMAND, "CloseRestartWindow");
 
-	ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->SetPhase(PHASE_GAME);
+	ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null))->SetPhase(PHASE_GAME);
 	ch->SetPosition(POS_STANDING);
 	ch->StartRecoveryEvent();
 
 
-	int32_t mapidx = ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch));
+	int32_t mapidx = ecs::PlayerRuntime::GetMapIndex(((ch) ? (ch)->GetEntityHandle() : entt::null));
 
-	if (ch->GetWarMap() && !ecs::PlayerRuntime::IsObserverMode(AIHelpers::EcsOf(ch)))
+	if (ch->GetWarMap() && !ecs::PlayerRuntime::IsObserverMode(((ch) ? (ch)->GetEntityHandle() : entt::null)))
 	{
 		CWarMap * pMap = ch->GetWarMap();
 		uint32_t dwGuildOpponent = pMap ? pMap->GetGuildOpponent(ch) : 0;
@@ -770,17 +770,17 @@ ACMD(do_restart)
 						LOG_INFO("do_restart: restart town");
 
 						PIXEL_POSITION pos;
-						if (CWarMapManager::instance().GetStartPosition(mapidx, ecs::SocialSystem::GetGuild(AIHelpers::EcsOf(ch))->GetID() < dwGuildOpponent ? 0 : 1, pos))
+						if (CWarMapManager::instance().GetStartPosition(mapidx, ecs::SocialSystem::GetGuild(((ch) ? (ch)->GetEntityHandle() : entt::null))->GetID() < dwGuildOpponent ? 0 : 1, pos))
 						{
-							ecs::MovementSystem::Show(AIHelpers::EcsOf(ch), mapidx, pos.x, pos.y);
+							ecs::MovementSystem::Show(((ch) ? (ch)->GetEntityHandle() : entt::null), mapidx, pos.x, pos.y);
 						}
 						else
 						{
-							ecs::MovementSystem::ExitToSavedLocation(AIHelpers::EcsOf(ch));
+							ecs::MovementSystem::ExitToSavedLocation(((ch) ? (ch)->GetEntityHandle() : entt::null));
 						}
 
-						ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_HP, ecs::PointSystem::GetMaxHP(AIHelpers::EcsOf(ch)) - ch->GetHP());
-						ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_SP, ecs::PointSystem::GetMaxSP(AIHelpers::EcsOf(ch)) - ch->GetSP());
+						ecs::PointSystem::Change(((ch) ? (ch)->GetEntityHandle() : entt::null), POINT_HP, ecs::PointSystem::GetMaxHP(((ch) ? (ch)->GetEntityHandle() : entt::null)) - ch->GetHP());
+						ecs::PointSystem::Change(((ch) ? (ch)->GetEntityHandle() : entt::null), POINT_SP, ecs::PointSystem::GetMaxSP(((ch) ? (ch)->GetEntityHandle() : entt::null)) - ch->GetSP());
 						ch->ReviveInvisible(5);
 #ifdef ENABLE_MOUNT_COSTUME_SYSTEM
 						ch->CheckMount();
@@ -792,8 +792,8 @@ ACMD(do_restart)
 					{
 						LOG_INFO("do_restart: restart here");
 						ch->RestartAtSamePos();
-						ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_HP, ecs::PointSystem::GetMaxHP(AIHelpers::EcsOf(ch)) - ch->GetHP());
-						ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_SP, ecs::PointSystem::GetMaxSP(AIHelpers::EcsOf(ch)) - ch->GetSP());
+						ecs::PointSystem::Change(((ch) ? (ch)->GetEntityHandle() : entt::null), POINT_HP, ecs::PointSystem::GetMaxHP(((ch) ? (ch)->GetEntityHandle() : entt::null)) - ch->GetHP());
+						ecs::PointSystem::Change(((ch) ? (ch)->GetEntityHandle() : entt::null), POINT_SP, ecs::PointSystem::GetMaxSP(((ch) ? (ch)->GetEntityHandle() : entt::null)) - ch->GetSP());
 						ch->ReviveInvisible(5);
 #ifdef ENABLE_MOUNT_COSTUME_SYSTEM
 						ch->CheckMount();
@@ -805,7 +805,7 @@ ACMD(do_restart)
 					break;
 				default:
 					{
-						LOG_ERROR("do_restart: unknown method for {}", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data());
+						LOG_ERROR("do_restart: unknown method for {}", ecs::PlayerRuntime::GetName(((ch) ? (ch)->GetEntityHandle() : entt::null)).data());
 					}
 					break;
 			}
@@ -835,31 +835,31 @@ ACMD(do_restart)
 							{
 								case 1:
 									{
-										ecs::MovementSystem::Show(AIHelpers::EcsOf(ch), mapidx, 445000, 1228200);
+										ecs::MovementSystem::Show(((ch) ? (ch)->GetEntityHandle() : entt::null), mapidx, 445000, 1228200);
 										showed = true;
 									}
 									break;
 								case 2:
 									{
-										ecs::MovementSystem::Show(AIHelpers::EcsOf(ch), mapidx, 391700, 1293200);
+										ecs::MovementSystem::Show(((ch) ? (ch)->GetEntityHandle() : entt::null), mapidx, 391700, 1293200);
 										showed = true;
 									}
 									break;
 								case 3:
 									{
-										ecs::MovementSystem::Show(AIHelpers::EcsOf(ch), mapidx, 443400, 1269800);
+										ecs::MovementSystem::Show(((ch) ? (ch)->GetEntityHandle() : entt::null), mapidx, 443400, 1269800);
 										showed = true;
 									}
 									break;
 								case 4:
 									{
-										ecs::MovementSystem::Show(AIHelpers::EcsOf(ch), mapidx, 314700, 1318700);
+										ecs::MovementSystem::Show(((ch) ? (ch)->GetEntityHandle() : entt::null), mapidx, 314700, 1318700);
 										showed = true;
 									}
 									break;
 								default:
 									{
-										ecs::MovementSystem::ExitToSavedLocation(AIHelpers::EcsOf(ch));
+										ecs::MovementSystem::ExitToSavedLocation(((ch) ? (ch)->GetEntityHandle() : entt::null));
 									}
 									break;
 							}
@@ -870,12 +870,12 @@ ACMD(do_restart)
 							int32_t floor = dungeon->GetFlag("floor");
 							if (floor != 0)
 							{
-								ecs::MovementSystem::Show(AIHelpers::EcsOf(ch), mapidx, 843500, 1066800);
+								ecs::MovementSystem::Show(((ch) ? (ch)->GetEntityHandle() : entt::null), mapidx, 843500, 1066800);
 								showed = true;
 							}
 							else
 							{
-								ecs::MovementSystem::ExitToSavedLocation(AIHelpers::EcsOf(ch));
+								ecs::MovementSystem::ExitToSavedLocation(((ch) ? (ch)->GetEntityHandle() : entt::null));
 							}
 						}
 						else if (mapidx >= 2170000 && mapidx < 2180000)
@@ -884,12 +884,12 @@ ACMD(do_restart)
 							int32_t floor = dungeon->GetFlag("floor");
 							if (floor != 0)
 							{
-								ecs::MovementSystem::Show(AIHelpers::EcsOf(ch), mapidx, 87900, 614700);
+								ecs::MovementSystem::Show(((ch) ? (ch)->GetEntityHandle() : entt::null), mapidx, 87900, 614700);
 								showed = true;
 							}
 							else
 							{
-								ecs::MovementSystem::ExitToSavedLocation(AIHelpers::EcsOf(ch));
+								ecs::MovementSystem::ExitToSavedLocation(((ch) ? (ch)->GetEntityHandle() : entt::null));
 							}
 						}
 						else if (mapidx >= 3550000 && mapidx < 3560000)
@@ -900,19 +900,19 @@ ACMD(do_restart)
 							{
 								case 1:
 									{
-										ecs::MovementSystem::Show(AIHelpers::EcsOf(ch), mapidx, 216600, 266700);
+										ecs::MovementSystem::Show(((ch) ? (ch)->GetEntityHandle() : entt::null), mapidx, 216600, 266700);
 										showed = true;
 									}
 									break;
 								case 2:
 									{
-										ecs::MovementSystem::Show(AIHelpers::EcsOf(ch), mapidx, 218600, 348900);
+										ecs::MovementSystem::Show(((ch) ? (ch)->GetEntityHandle() : entt::null), mapidx, 218600, 348900);
 										showed = true;
 									}
 									break;
 								default:
 									{
-										ecs::MovementSystem::ExitToSavedLocation(AIHelpers::EcsOf(ch));
+										ecs::MovementSystem::ExitToSavedLocation(((ch) ? (ch)->GetEntityHandle() : entt::null));
 									}
 									break;
 							}
@@ -923,12 +923,12 @@ ACMD(do_restart)
 							int32_t floor = dungeon->GetFlag("floor");
 							if (floor != 0)
 							{
-								ecs::MovementSystem::Show(AIHelpers::EcsOf(ch), mapidx, 166500, 522100);
+								ecs::MovementSystem::Show(((ch) ? (ch)->GetEntityHandle() : entt::null), mapidx, 166500, 522100);
 								showed = true;
 							}
 							else
 							{
-								ecs::MovementSystem::ExitToSavedLocation(AIHelpers::EcsOf(ch));
+								ecs::MovementSystem::ExitToSavedLocation(((ch) ? (ch)->GetEntityHandle() : entt::null));
 							}
 						}
 						else if (mapidx >= 3520000 && mapidx < 3530000)
@@ -940,45 +940,45 @@ ACMD(do_restart)
 								case 1:
 								case 2:
 									{
-										ecs::MovementSystem::Show(AIHelpers::EcsOf(ch), mapidx, 588100, 180400);
+										ecs::MovementSystem::Show(((ch) ? (ch)->GetEntityHandle() : entt::null), mapidx, 588100, 180400);
 										showed = true;
 									}
 									break;
 								case 3:
 									{
-										ecs::MovementSystem::Show(AIHelpers::EcsOf(ch), mapidx, 554000, 207000);
+										ecs::MovementSystem::Show(((ch) ? (ch)->GetEntityHandle() : entt::null), mapidx, 554000, 207000);
 										showed = true;
 									}
 									break;
 								case 4:
 								case 5:
 									{
-										ecs::MovementSystem::Show(AIHelpers::EcsOf(ch), mapidx, 569100, 223000);
+										ecs::MovementSystem::Show(((ch) ? (ch)->GetEntityHandle() : entt::null), mapidx, 569100, 223000);
 										showed = true;
 									}
 									break;
 								case 6:
 									{
-										ecs::MovementSystem::Show(AIHelpers::EcsOf(ch), mapidx, 586600, 206800);
+										ecs::MovementSystem::Show(((ch) ? (ch)->GetEntityHandle() : entt::null), mapidx, 586600, 206800);
 										showed = true;
 									}
 									break;
 								case 7:
 								case 8:
 									{
-										ecs::MovementSystem::Show(AIHelpers::EcsOf(ch), mapidx, 596900, 222500);
+										ecs::MovementSystem::Show(((ch) ? (ch)->GetEntityHandle() : entt::null), mapidx, 596900, 222500);
 										showed = true;
 									}
 									break;
 								case 9:
 									{
-										ecs::MovementSystem::Show(AIHelpers::EcsOf(ch), mapidx, 604700, 192600);
+										ecs::MovementSystem::Show(((ch) ? (ch)->GetEntityHandle() : entt::null), mapidx, 604700, 192600);
 										showed = true;
 									}
 									break;
 								default:
 									{
-										ecs::MovementSystem::ExitToSavedLocation(AIHelpers::EcsOf(ch));
+										ecs::MovementSystem::ExitToSavedLocation(((ch) ? (ch)->GetEntityHandle() : entt::null));
 									}
 									break;
 							}
@@ -991,39 +991,39 @@ ACMD(do_restart)
 							{
 								case 1:
 									{
-										ecs::MovementSystem::Show(AIHelpers::EcsOf(ch), mapidx, 905100, 2261700);
+										ecs::MovementSystem::Show(((ch) ? (ch)->GetEntityHandle() : entt::null), mapidx, 905100, 2261700);
 										showed = true;
 									}
 									break;
 								case 2:
 								case 3:
 									{
-										ecs::MovementSystem::Show(AIHelpers::EcsOf(ch), mapidx, 926600, 2262100);
+										ecs::MovementSystem::Show(((ch) ? (ch)->GetEntityHandle() : entt::null), mapidx, 926600, 2262100);
 										showed = true;
 									}
 									break;
 								case 4:
 								case 5:
 									{
-										ecs::MovementSystem::Show(AIHelpers::EcsOf(ch), mapidx, 953600, 2260800);
+										ecs::MovementSystem::Show(((ch) ? (ch)->GetEntityHandle() : entt::null), mapidx, 953600, 2260800);
 										showed = true;
 									}
 									break;
 								case 6:
 									{
-										ecs::MovementSystem::Show(AIHelpers::EcsOf(ch), mapidx, 913700, 2355800);
+										ecs::MovementSystem::Show(((ch) ? (ch)->GetEntityHandle() : entt::null), mapidx, 913700, 2355800);
 										showed = true;
 									}
 									break;
 								case 7:
 									{
-										ecs::MovementSystem::Show(AIHelpers::EcsOf(ch), mapidx, 975900, 2365500);
+										ecs::MovementSystem::Show(((ch) ? (ch)->GetEntityHandle() : entt::null), mapidx, 975900, 2365500);
 										showed = true;
 									}
 									break;
 								default:
 									{
-										ecs::MovementSystem::ExitToSavedLocation(AIHelpers::EcsOf(ch));
+										ecs::MovementSystem::ExitToSavedLocation(((ch) ? (ch)->GetEntityHandle() : entt::null));
 									}
 									break;
 							}
@@ -1042,19 +1042,19 @@ ACMD(do_restart)
 								case 6:
 								case 7:
 									{
-										ecs::MovementSystem::Show(AIHelpers::EcsOf(ch), mapidx, 776600, 671900);
+										ecs::MovementSystem::Show(((ch) ? (ch)->GetEntityHandle() : entt::null), mapidx, 776600, 671900);
 										showed = true;
 									}
 									break;
 								case 8:
 									{
-										ecs::MovementSystem::Show(AIHelpers::EcsOf(ch), mapidx, 810900, 686700);
+										ecs::MovementSystem::Show(((ch) ? (ch)->GetEntityHandle() : entt::null), mapidx, 810900, 686700);
 										showed = true;
 									}
 									break;
 								default:
 									{
-										ecs::MovementSystem::ExitToSavedLocation(AIHelpers::EcsOf(ch));
+										ecs::MovementSystem::ExitToSavedLocation(((ch) ? (ch)->GetEntityHandle() : entt::null));
 									}
 									break;
 							}
@@ -1067,37 +1067,37 @@ ACMD(do_restart)
 							{
 								case 1:
 									{
-										ecs::MovementSystem::Show(AIHelpers::EcsOf(ch), mapidx, 624500, 1415200);
+										ecs::MovementSystem::Show(((ch) ? (ch)->GetEntityHandle() : entt::null), mapidx, 624500, 1415200);
 										showed = true;
 									}
 									break;
 								case 2:
 									{
-										ecs::MovementSystem::Show(AIHelpers::EcsOf(ch), mapidx, 627300, 1446800);
+										ecs::MovementSystem::Show(((ch) ? (ch)->GetEntityHandle() : entt::null), mapidx, 627300, 1446800);
 										showed = true;
 									}
 									break;
 								case 3:
 									{
-										ecs::MovementSystem::Show(AIHelpers::EcsOf(ch), mapidx, 673200, 1444000);
+										ecs::MovementSystem::Show(((ch) ? (ch)->GetEntityHandle() : entt::null), mapidx, 673200, 1444000);
 										showed = true;
 									}
 									break;
 								case 4:
 									{
-										ecs::MovementSystem::Show(AIHelpers::EcsOf(ch), mapidx, 655400, 1421200);
+										ecs::MovementSystem::Show(((ch) ? (ch)->GetEntityHandle() : entt::null), mapidx, 655400, 1421200);
 										showed = true;
 									}
 									break;
 								case 5:
 									{
-										ecs::MovementSystem::Show(AIHelpers::EcsOf(ch), mapidx, 695500, 1421300);
+										ecs::MovementSystem::Show(((ch) ? (ch)->GetEntityHandle() : entt::null), mapidx, 695500, 1421300);
 										showed = true;
 									}
 									break;
 								default:
 									{
-										ecs::MovementSystem::ExitToSavedLocation(AIHelpers::EcsOf(ch));
+										ecs::MovementSystem::ExitToSavedLocation(((ch) ? (ch)->GetEntityHandle() : entt::null));
 									}
 									break;
 							}
@@ -1108,12 +1108,12 @@ ACMD(do_restart)
 							int32_t floor = dungeon->GetFlag("floor");
 							if (floor != 0)
 							{
-								ecs::MovementSystem::Show(AIHelpers::EcsOf(ch), mapidx, 942000, 127700);
+								ecs::MovementSystem::Show(((ch) ? (ch)->GetEntityHandle() : entt::null), mapidx, 942000, 127700);
 								showed = true;
 							}
 							else
 							{
-								ecs::MovementSystem::ExitToSavedLocation(AIHelpers::EcsOf(ch));
+								ecs::MovementSystem::ExitToSavedLocation(((ch) ? (ch)->GetEntityHandle() : entt::null));
 							}
 						}
 						else if (mapidx >= 2090000 && mapidx < 2100000)
@@ -1122,12 +1122,12 @@ ACMD(do_restart)
 							int32_t floor = dungeon->GetFlag("floor");
 							if (floor != 0)
 							{
-								ecs::MovementSystem::Show(AIHelpers::EcsOf(ch), mapidx, 853700, 1416400);
+								ecs::MovementSystem::Show(((ch) ? (ch)->GetEntityHandle() : entt::null), mapidx, 853700, 1416400);
 								showed = true;
 							}
 							else
 							{
-								ecs::MovementSystem::ExitToSavedLocation(AIHelpers::EcsOf(ch));
+								ecs::MovementSystem::ExitToSavedLocation(((ch) ? (ch)->GetEntityHandle() : entt::null));
 							}
 						}
 						else if (mapidx >= 2100000 && mapidx < 2110000)
@@ -1136,12 +1136,12 @@ ACMD(do_restart)
 							int32_t floor = dungeon->GetFlag("floor");
 							if (floor != 0)
 							{
-								ecs::MovementSystem::Show(AIHelpers::EcsOf(ch), mapidx, 782400, 1502100);
+								ecs::MovementSystem::Show(((ch) ? (ch)->GetEntityHandle() : entt::null), mapidx, 782400, 1502100);
 								showed = true;
 							}
 							else
 							{
-								ecs::MovementSystem::ExitToSavedLocation(AIHelpers::EcsOf(ch));
+								ecs::MovementSystem::ExitToSavedLocation(((ch) ? (ch)->GetEntityHandle() : entt::null));
 							}
 						}
 						else if (mapidx >= 660000 && mapidx < 670000)
@@ -1152,33 +1152,33 @@ ACMD(do_restart)
 							{
 								case 1:
 									{
-										ecs::MovementSystem::Show(AIHelpers::EcsOf(ch), mapidx, 377400, 2704000);
+										ecs::MovementSystem::Show(((ch) ? (ch)->GetEntityHandle() : entt::null), mapidx, 377400, 2704000);
 										showed = true;
 									}
 									break;
 								case 2:
 									{
-										ecs::MovementSystem::Show(AIHelpers::EcsOf(ch), mapidx, 378200, 2680300);
+										ecs::MovementSystem::Show(((ch) ? (ch)->GetEntityHandle() : entt::null), mapidx, 378200, 2680300);
 										showed = true;
 									}
 									break;
 								case 3:
 								case 4:
 									{
-										ecs::MovementSystem::Show(AIHelpers::EcsOf(ch), mapidx, 401700, 2728500);
+										ecs::MovementSystem::Show(((ch) ? (ch)->GetEntityHandle() : entt::null), mapidx, 401700, 2728500);
 										showed = true;
 									}
 									break;
 								case 5:
 									{
-										ecs::MovementSystem::Show(AIHelpers::EcsOf(ch), mapidx, 401700, 2705700);
+										ecs::MovementSystem::Show(((ch) ? (ch)->GetEntityHandle() : entt::null), mapidx, 401700, 2705700);
 										showed = true;
 									}
 									break;
 								case 6:
 								case 7:
 									{
-										ecs::MovementSystem::Show(AIHelpers::EcsOf(ch), mapidx, 402200, 2682300);
+										ecs::MovementSystem::Show(((ch) ? (ch)->GetEntityHandle() : entt::null), mapidx, 402200, 2682300);
 										showed = true;
 									}
 									break;
@@ -1186,26 +1186,26 @@ ACMD(do_restart)
 								case 9:
 								case 10:
 									{
-										ecs::MovementSystem::Show(AIHelpers::EcsOf(ch), mapidx, 423800, 2729400);
+										ecs::MovementSystem::Show(((ch) ? (ch)->GetEntityHandle() : entt::null), mapidx, 423800, 2729400);
 										showed = true;
 									}
 									break;
 								case 11:
 								case 12:
 									{
-										ecs::MovementSystem::Show(AIHelpers::EcsOf(ch), mapidx, 423800, 2705900);
+										ecs::MovementSystem::Show(((ch) ? (ch)->GetEntityHandle() : entt::null), mapidx, 423800, 2705900);
 										showed = true;
 									}
 									break;
 								case 13:
 									{
-										ecs::MovementSystem::Show(AIHelpers::EcsOf(ch), mapidx, 423800, 2681100);
+										ecs::MovementSystem::Show(((ch) ? (ch)->GetEntityHandle() : entt::null), mapidx, 423800, 2681100);
 										showed = true;
 									}
 									break;
 								default:
 									{
-										ecs::MovementSystem::ExitToSavedLocation(AIHelpers::EcsOf(ch));
+										ecs::MovementSystem::ExitToSavedLocation(((ch) ? (ch)->GetEntityHandle() : entt::null));
 									}
 									break;
 							}
@@ -1218,33 +1218,33 @@ ACMD(do_restart)
 							{
 								case 1:
 									{
-										ecs::MovementSystem::Show(AIHelpers::EcsOf(ch), mapidx, 486400, 25600);
+										ecs::MovementSystem::Show(((ch) ? (ch)->GetEntityHandle() : entt::null), mapidx, 486400, 25600);
 										showed = true;
 									}
 									break;
 								case 2:
 									{
-										ecs::MovementSystem::Show(AIHelpers::EcsOf(ch), mapidx, 502500, 70300);
+										ecs::MovementSystem::Show(((ch) ? (ch)->GetEntityHandle() : entt::null), mapidx, 502500, 70300);
 										showed = true;
 									}
 									break;
 								case 3:
 								case 4:
 									{
-										ecs::MovementSystem::Show(AIHelpers::EcsOf(ch), mapidx, 524300, 43500);
+										ecs::MovementSystem::Show(((ch) ? (ch)->GetEntityHandle() : entt::null), mapidx, 524300, 43500);
 										showed = true;
 									}
 									break;
 								case 5:
 									{
-										ecs::MovementSystem::Show(AIHelpers::EcsOf(ch), mapidx, 523500, 67000);
+										ecs::MovementSystem::Show(((ch) ? (ch)->GetEntityHandle() : entt::null), mapidx, 523500, 67000);
 										showed = true;
 									}
 									break;
 								case 6:
 								case 7:
 									{
-										ecs::MovementSystem::Show(AIHelpers::EcsOf(ch), mapidx, 546900, 68700);
+										ecs::MovementSystem::Show(((ch) ? (ch)->GetEntityHandle() : entt::null), mapidx, 546900, 68700);
 										showed = true;
 									}
 									break;
@@ -1252,26 +1252,26 @@ ACMD(do_restart)
 								case 9:
 								case 10:
 									{
-										ecs::MovementSystem::Show(AIHelpers::EcsOf(ch), mapidx, 549400, 45600);
+										ecs::MovementSystem::Show(((ch) ? (ch)->GetEntityHandle() : entt::null), mapidx, 549400, 45600);
 										showed = true;
 									}
 									break;
 								case 11:
 								case 12:
 									{
-										ecs::MovementSystem::Show(AIHelpers::EcsOf(ch), mapidx, 528900, 46200);
+										ecs::MovementSystem::Show(((ch) ? (ch)->GetEntityHandle() : entt::null), mapidx, 528900, 46200);
 										showed = true;
 									}
 									break;
 								case 13:
 									{
-										ecs::MovementSystem::Show(AIHelpers::EcsOf(ch), mapidx, 506400, 45600);
+										ecs::MovementSystem::Show(((ch) ? (ch)->GetEntityHandle() : entt::null), mapidx, 506400, 45600);
 										showed = true;
 									}
 									break;
 								default:
 									{
-										ecs::MovementSystem::ExitToSavedLocation(AIHelpers::EcsOf(ch));
+										ecs::MovementSystem::ExitToSavedLocation(((ch) ? (ch)->GetEntityHandle() : entt::null));
 									}
 									break;
 							}
@@ -1282,12 +1282,12 @@ ACMD(do_restart)
 							int32_t floor = dungeon->GetFlag("floor");
 							if (floor != 0)
 							{
-								ecs::MovementSystem::Show(AIHelpers::EcsOf(ch), mapidx, 1528200, 2318700);
+								ecs::MovementSystem::Show(((ch) ? (ch)->GetEntityHandle() : entt::null), mapidx, 1528200, 2318700);
 								showed = true;
 							}
 							else
 							{
-								ecs::MovementSystem::ExitToSavedLocation(AIHelpers::EcsOf(ch));
+								ecs::MovementSystem::ExitToSavedLocation(((ch) ? (ch)->GetEntityHandle() : entt::null));
 							}
 						}
 						else if (mapidx >= 2120000 && mapidx < 2130000)
@@ -1296,12 +1296,12 @@ ACMD(do_restart)
 							int32_t floor = dungeon->GetFlag("floor");
 							if (floor != 0)
 							{
-								ecs::MovementSystem::Show(AIHelpers::EcsOf(ch), mapidx, 320000, 1529000);
+								ecs::MovementSystem::Show(((ch) ? (ch)->GetEntityHandle() : entt::null), mapidx, 320000, 1529000);
 								showed = true;
 							}
 							else
 							{
-								ecs::MovementSystem::ExitToSavedLocation(AIHelpers::EcsOf(ch));
+								ecs::MovementSystem::ExitToSavedLocation(((ch) ? (ch)->GetEntityHandle() : entt::null));
 							}
 						}
 						else if (mapidx >= 260000 && mapidx < 270000)
@@ -1312,25 +1312,25 @@ ACMD(do_restart)
 							{
 								case 1:
 									{
-										ecs::MovementSystem::Show(AIHelpers::EcsOf(ch), mapidx, 54500, 2268000);
+										ecs::MovementSystem::Show(((ch) ? (ch)->GetEntityHandle() : entt::null), mapidx, 54500, 2268000);
 										showed = true;
 									}
 									break;
 								case 2:
 									{
-										ecs::MovementSystem::Show(AIHelpers::EcsOf(ch), mapidx, 19400, 2306600);
+										ecs::MovementSystem::Show(((ch) ? (ch)->GetEntityHandle() : entt::null), mapidx, 19400, 2306600);
 										showed = true;
 									}
 									break;
 								case 3:
 									{
-										ecs::MovementSystem::Show(AIHelpers::EcsOf(ch), mapidx, 110500, 2295900);
+										ecs::MovementSystem::Show(((ch) ? (ch)->GetEntityHandle() : entt::null), mapidx, 110500, 2295900);
 										showed = true;
 									}
 									break;
 								default:
 									{
-										ecs::MovementSystem::ExitToSavedLocation(AIHelpers::EcsOf(ch));
+										ecs::MovementSystem::ExitToSavedLocation(((ch) ? (ch)->GetEntityHandle() : entt::null));
 									}
 									break;
 							}
@@ -1343,19 +1343,19 @@ ACMD(do_restart)
 							{
 								case 1:
 									{
-										ecs::MovementSystem::Show(AIHelpers::EcsOf(ch), mapidx, 2320600, 3077800);
+										ecs::MovementSystem::Show(((ch) ? (ch)->GetEntityHandle() : entt::null), mapidx, 2320600, 3077800);
 										showed = true;
 									}
 									break;
 								case 2:
 									{
-										ecs::MovementSystem::Show(AIHelpers::EcsOf(ch), mapidx, 2351500, 3141500);
+										ecs::MovementSystem::Show(((ch) ? (ch)->GetEntityHandle() : entt::null), mapidx, 2351500, 3141500);
 										showed = true;
 									}
 									break;
 								default:
 									{
-										ecs::MovementSystem::ExitToSavedLocation(AIHelpers::EcsOf(ch));
+										ecs::MovementSystem::ExitToSavedLocation(((ch) ? (ch)->GetEntityHandle() : entt::null));
 									}
 									break;
 							}
@@ -1366,18 +1366,18 @@ ACMD(do_restart)
 				if (!wasDungeon)
 				{
 					PIXEL_POSITION pos;
-					if (SECTREE_MANAGER::instance().GetRecallPositionByEmpire(mapidx, (ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(ch))), pos))
+					if (SECTREE_MANAGER::instance().GetRecallPositionByEmpire(mapidx, (ecs::PlayerRuntime::GetEmpire(((ch) ? (ch)->GetEntityHandle() : entt::null))), pos))
 					{
-						ecs::MovementSystem::WarpSet(AIHelpers::EcsOf(ch), pos.x, pos.y);
+						ecs::MovementSystem::WarpSet(((ch) ? (ch)->GetEntityHandle() : entt::null), pos.x, pos.y);
 					}
 					else
 					{
-						ecs::MovementSystem::WarpSet(AIHelpers::EcsOf(ch), EMPIRE_START_X((ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(ch)))), EMPIRE_START_Y((ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(ch)))));
+						ecs::MovementSystem::WarpSet(((ch) ? (ch)->GetEntityHandle() : entt::null), EMPIRE_START_X((ecs::PlayerRuntime::GetEmpire(((ch) ? (ch)->GetEntityHandle() : entt::null)))), EMPIRE_START_Y((ecs::PlayerRuntime::GetEmpire(((ch) ? (ch)->GetEntityHandle() : entt::null)))));
 					}
 				}
 
-				ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_HP, ecs::PointSystem::GetMaxHP(AIHelpers::EcsOf(ch)) - ch->GetHP());
-				ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_SP, ecs::PointSystem::GetMaxSP(AIHelpers::EcsOf(ch)) - ch->GetSP());
+				ecs::PointSystem::Change(((ch) ? (ch)->GetEntityHandle() : entt::null), POINT_HP, ecs::PointSystem::GetMaxHP(((ch) ? (ch)->GetEntityHandle() : entt::null)) - ch->GetHP());
+				ecs::PointSystem::Change(((ch) ? (ch)->GetEntityHandle() : entt::null), POINT_SP, ecs::PointSystem::GetMaxSP(((ch) ? (ch)->GetEntityHandle() : entt::null)) - ch->GetSP());
 				ch->DeathPenalty(1);
 				if (showed)
 				{
@@ -1396,11 +1396,11 @@ ACMD(do_restart)
 
 				ch->RestartAtSamePos();
 #ifdef ENABLE_REVIVE_WITH_HALF_HP_IF_MONSTER_KILLED_YOU
-				ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_HP, ch->GetDeadByMonster() ? (ecs::PointSystem::GetMaxHP(AIHelpers::EcsOf(ch)) - ch->GetHP()) / 2 : 50 - ch->GetHP());
+				ecs::PointSystem::Change(((ch) ? (ch)->GetEntityHandle() : entt::null), POINT_HP, ch->GetDeadByMonster() ? (ecs::PointSystem::GetMaxHP(((ch) ? (ch)->GetEntityHandle() : entt::null)) - ch->GetHP()) / 2 : 50 - ch->GetHP());
 #else
-				ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_HP, 50 - ch->GetHP());
+				ecs::PointSystem::Change(((ch) ? (ch)->GetEntityHandle() : entt::null), POINT_HP, 50 - ch->GetHP());
 #endif
-				ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_SP, ecs::PointSystem::GetMaxSP(AIHelpers::EcsOf(ch)) - ch->GetSP());
+				ecs::PointSystem::Change(((ch) ? (ch)->GetEntityHandle() : entt::null), POINT_SP, ecs::PointSystem::GetMaxSP(((ch) ? (ch)->GetEntityHandle() : entt::null)) - ch->GetSP());
 				ch->DeathPenalty(0);
 				ch->ReviveInvisible(5);
 #ifdef ENABLE_MOUNT_COSTUME_SYSTEM
@@ -1413,7 +1413,7 @@ ACMD(do_restart)
 			break;
 		default:
 			{
-				LOG_ERROR("do_restart: unknown method for {}", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data());
+				LOG_ERROR("do_restart: unknown method for {}", ecs::PlayerRuntime::GetName(((ch) ? (ch)->GetEntityHandle() : entt::null)).data());
 			}
 			break;
 	}
@@ -1423,7 +1423,7 @@ ACMD(do_restart)
 
 ACMD(do_stat_reset)
 {
-	ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_STAT_RESET_COUNT, 12 - ecs::PointSystem::Get(AIHelpers::EcsOf(ch), POINT_STAT_RESET_COUNT));
+	ecs::PointSystem::Change(((ch) ? (ch)->GetEntityHandle() : entt::null), POINT_STAT_RESET_COUNT, 12 - ecs::PointSystem::Get(((ch) ? (ch)->GetEntityHandle() : entt::null), POINT_STAT_RESET_COUNT));
 }
 
 ACMD(do_stat_minus)
@@ -1437,61 +1437,61 @@ ACMD(do_stat_minus)
 	if (ch->IsPolymorphed())
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 312, "");
+		ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 312, "");
 #endif
 		return;
 	}
 
-	if (ecs::PointSystem::Get(AIHelpers::EcsOf(ch), POINT_STAT_RESET_COUNT) <= 0)
+	if (ecs::PointSystem::Get(((ch) ? (ch)->GetEntityHandle() : entt::null), POINT_STAT_RESET_COUNT) <= 0)
 		return;
 
 	if (!strcmp(arg1, "st"))
 	{
-		if (ecs::PointSystem::GetReal(AIHelpers::EcsOf(ch), POINT_ST) <= JobInitialPoints[ch->GetJob()].st)
+		if (ecs::PointSystem::GetReal(((ch) ? (ch)->GetEntityHandle() : entt::null), POINT_ST) <= JobInitialPoints[ch->GetJob()].st)
 			return;
 
-		ch->SetRealPoint(POINT_ST, ecs::PointSystem::GetReal(AIHelpers::EcsOf(ch), POINT_ST) - 1);
-		ch->SetPoint(POINT_ST, ecs::PointSystem::Get(AIHelpers::EcsOf(ch), POINT_ST) - 1);
+		ch->SetRealPoint(POINT_ST, ecs::PointSystem::GetReal(((ch) ? (ch)->GetEntityHandle() : entt::null), POINT_ST) - 1);
+		ch->SetPoint(POINT_ST, ecs::PointSystem::Get(((ch) ? (ch)->GetEntityHandle() : entt::null), POINT_ST) - 1);
 		ch->ComputePoints();
-		ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_ST, 0);
+		ecs::PointSystem::Change(((ch) ? (ch)->GetEntityHandle() : entt::null), POINT_ST, 0);
 	}
 	else if (!strcmp(arg1, "dx"))
 	{
-		if (ecs::PointSystem::GetReal(AIHelpers::EcsOf(ch), POINT_DX) <= JobInitialPoints[ch->GetJob()].dx)
+		if (ecs::PointSystem::GetReal(((ch) ? (ch)->GetEntityHandle() : entt::null), POINT_DX) <= JobInitialPoints[ch->GetJob()].dx)
 			return;
 
-		ch->SetRealPoint(POINT_DX, ecs::PointSystem::GetReal(AIHelpers::EcsOf(ch), POINT_DX) - 1);
-		ch->SetPoint(POINT_DX, ecs::PointSystem::Get(AIHelpers::EcsOf(ch), POINT_DX) - 1);
+		ch->SetRealPoint(POINT_DX, ecs::PointSystem::GetReal(((ch) ? (ch)->GetEntityHandle() : entt::null), POINT_DX) - 1);
+		ch->SetPoint(POINT_DX, ecs::PointSystem::Get(((ch) ? (ch)->GetEntityHandle() : entt::null), POINT_DX) - 1);
 		ch->ComputePoints();
-		ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_DX, 0);
+		ecs::PointSystem::Change(((ch) ? (ch)->GetEntityHandle() : entt::null), POINT_DX, 0);
 	}
 	else if (!strcmp(arg1, "ht"))
 	{
-		if (ecs::PointSystem::GetReal(AIHelpers::EcsOf(ch), POINT_HT) <= JobInitialPoints[ch->GetJob()].ht)
+		if (ecs::PointSystem::GetReal(((ch) ? (ch)->GetEntityHandle() : entt::null), POINT_HT) <= JobInitialPoints[ch->GetJob()].ht)
 			return;
 
-		ch->SetRealPoint(POINT_HT, ecs::PointSystem::GetReal(AIHelpers::EcsOf(ch), POINT_HT) - 1);
-		ch->SetPoint(POINT_HT, ecs::PointSystem::Get(AIHelpers::EcsOf(ch), POINT_HT) - 1);
+		ch->SetRealPoint(POINT_HT, ecs::PointSystem::GetReal(((ch) ? (ch)->GetEntityHandle() : entt::null), POINT_HT) - 1);
+		ch->SetPoint(POINT_HT, ecs::PointSystem::Get(((ch) ? (ch)->GetEntityHandle() : entt::null), POINT_HT) - 1);
 		ch->ComputePoints();
-		ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_HT, 0);
-		ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_MAX_HP, 0);
+		ecs::PointSystem::Change(((ch) ? (ch)->GetEntityHandle() : entt::null), POINT_HT, 0);
+		ecs::PointSystem::Change(((ch) ? (ch)->GetEntityHandle() : entt::null), POINT_MAX_HP, 0);
 	}
 	else if (!strcmp(arg1, "iq"))
 	{
-		if (ecs::PointSystem::GetReal(AIHelpers::EcsOf(ch), POINT_IQ) <= JobInitialPoints[ch->GetJob()].iq)
+		if (ecs::PointSystem::GetReal(((ch) ? (ch)->GetEntityHandle() : entt::null), POINT_IQ) <= JobInitialPoints[ch->GetJob()].iq)
 			return;
 
-		ch->SetRealPoint(POINT_IQ, ecs::PointSystem::GetReal(AIHelpers::EcsOf(ch), POINT_IQ) - 1);
-		ch->SetPoint(POINT_IQ, ecs::PointSystem::Get(AIHelpers::EcsOf(ch), POINT_IQ) - 1);
+		ch->SetRealPoint(POINT_IQ, ecs::PointSystem::GetReal(((ch) ? (ch)->GetEntityHandle() : entt::null), POINT_IQ) - 1);
+		ch->SetPoint(POINT_IQ, ecs::PointSystem::Get(((ch) ? (ch)->GetEntityHandle() : entt::null), POINT_IQ) - 1);
 		ch->ComputePoints();
-		ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_IQ, 0);
-		ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_MAX_SP, 0);
+		ecs::PointSystem::Change(((ch) ? (ch)->GetEntityHandle() : entt::null), POINT_IQ, 0);
+		ecs::PointSystem::Change(((ch) ? (ch)->GetEntityHandle() : entt::null), POINT_MAX_SP, 0);
 	}
 	else
 		return;
 
-	ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_STAT, +1);
-	ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_STAT_RESET_COUNT, -1);
+	ecs::PointSystem::Change(((ch) ? (ch)->GetEntityHandle() : entt::null), POINT_STAT, +1);
+	ecs::PointSystem::Change(((ch) ? (ch)->GetEntityHandle() : entt::null), POINT_STAT_RESET_COUNT, -1);
 	ch->ComputePoints();
 }
 
@@ -1506,12 +1506,12 @@ ACMD(do_stat)
 	if (ch->IsPolymorphed())
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 312, "");
+		ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 312, "");
 #endif
 		return;
 	}
 
-	if (ecs::PointSystem::Get(AIHelpers::EcsOf(ch), POINT_STAT) <= 0)
+	if (ecs::PointSystem::Get(((ch) ? (ch)->GetEntityHandle() : entt::null), POINT_STAT) <= 0)
 		return;
 
 	uint8_t idx = 0;
@@ -1527,24 +1527,24 @@ ACMD(do_stat)
 	else
 		return;
 
-	if (ecs::PointSystem::GetReal(AIHelpers::EcsOf(ch), idx) >= MAX_STAT)
+	if (ecs::PointSystem::GetReal(((ch) ? (ch)->GetEntityHandle() : entt::null), idx) >= MAX_STAT)
 		return;
 
-	ch->SetRealPoint(idx, ecs::PointSystem::GetReal(AIHelpers::EcsOf(ch), idx) + 1);
-	ch->SetPoint(idx, ecs::PointSystem::Get(AIHelpers::EcsOf(ch), idx) + 1);
+	ch->SetRealPoint(idx, ecs::PointSystem::GetReal(((ch) ? (ch)->GetEntityHandle() : entt::null), idx) + 1);
+	ch->SetPoint(idx, ecs::PointSystem::Get(((ch) ? (ch)->GetEntityHandle() : entt::null), idx) + 1);
 	ch->ComputePoints();
-	ecs::PointSystem::Change(AIHelpers::EcsOf(ch), idx, 0);
+	ecs::PointSystem::Change(((ch) ? (ch)->GetEntityHandle() : entt::null), idx, 0);
 
 	if (idx == POINT_IQ)
 	{
-		ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_MAX_HP, 0);
+		ecs::PointSystem::Change(((ch) ? (ch)->GetEntityHandle() : entt::null), POINT_MAX_HP, 0);
 	}
 	else if (idx == POINT_HT)
 	{
-		ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_MAX_SP, 0);
+		ecs::PointSystem::Change(((ch) ? (ch)->GetEntityHandle() : entt::null), POINT_MAX_SP, 0);
 	}
 
-	ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_STAT, -1);
+	ecs::PointSystem::Change(((ch) ? (ch)->GetEntityHandle() : entt::null), POINT_STAT, -1);
 	ch->ComputePoints();
 }
 
@@ -1560,10 +1560,10 @@ ACMD(do_pvp)
 	if (!ch)
 		return;
 
-	if (ch->GetArena() != nullptr || CArenaManager::instance().IsArenaMap(ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch))) == true)
+	if (ch->GetArena() != nullptr || CArenaManager::instance().IsArenaMap(ecs::PlayerRuntime::GetMapIndex(((ch) ? (ch)->GetEntityHandle() : entt::null))) == true)
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 303, "");
+		ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 303, "");
 #endif
 		return;
 	}
@@ -1576,35 +1576,35 @@ ACMD(do_pvp)
 	str_to_number(vid, arg1);
 	LPCHARACTER pkVictim = CHARACTER_MANAGER::instance().Find(vid);
 	//// Fake PC / non-real target => ignore
-	//if (pkVictim->IsFakePlayer() || !ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(pkVictim)))
+	//if (pkVictim->IsFakePlayer() || !ecs::PlayerRuntime::GetDesc(((pkVictim) ? (pkVictim)->GetEntityHandle() : entt::null)))
 	//{
-	//	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "Nem lehet PVP-t kezelni klónnal.");
+	//	ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "Nem lehet PVP-t kezelni klónnal.");
 	//	return;
 	//}
 	if (!pkVictim)
 		return;
 
-	if (ecs::PlayerRuntime::IsNPC(AIHelpers::EcsOf(pkVictim)))
+	if (ecs::PlayerRuntime::IsNPC(((pkVictim) ? (pkVictim)->GetEntityHandle() : entt::null)))
 		return;
 
 	if (pkVictim->GetArena() != nullptr) {
 		return;
 	}
 
-	int mytime = ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(pkVictim), "pvp.timed");
+	int mytime = ecs::QuestSystem::GetFlag(((pkVictim) ? (pkVictim)->GetEntityHandle() : entt::null), "pvp.timed");
 	int itime = mytime <= 0 ? 0 : mytime - get_global_time();
 	if (itime > 0) {
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_DIALOG, 888, "%d", itime);
-		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(pkVictim), CHAT_TYPE_DIALOG, 889, "%s", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data());
+		ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_DIALOG, 888, "%d", itime);
+		ecs::ChatSystem::SendNew(((pkVictim) ? (pkVictim)->GetEntityHandle() : entt::null), CHAT_TYPE_DIALOG, 889, "%s", ecs::PlayerRuntime::GetName(((ch) ? (ch)->GetEntityHandle() : entt::null)).data());
 #endif
 		return;
 	}
 	else {
-		ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(pkVictim), "pvp.timed", get_global_time() + 30);
+		ecs::QuestSystem::SetFlag(((pkVictim) ? (pkVictim)->GetEntityHandle() : entt::null), "pvp.timed", get_global_time() + 30);
 	}
 
-	if (ecs::SocialSystem::GetExchange(AIHelpers::EcsOf(ch)) || ecs::SocialSystem::GetExchange(AIHelpers::EcsOf(pkVictim)))
+	if (ecs::SocialSystem::GetExchange(((ch) ? (ch)->GetEntityHandle() : entt::null)) || ecs::SocialSystem::GetExchange(((pkVictim) ? (pkVictim)->GetEntityHandle() : entt::null)))
 	{
 		CPVPManager::instance().Decline(ch, pkVictim);
 		CPVPManager::instance().Decline(pkVictim, ch);
@@ -1613,15 +1613,15 @@ ACMD(do_pvp)
 
 	if (*arg2 && !strcmp(arg2, "accept"))
 	{
-		int64_t chA_nBetMoney = ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(ch), szTableStaticPvP[8]);
-		int64_t  chB_nBetMoney = ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(pkVictim), szTableStaticPvP[8]);
+		int64_t chA_nBetMoney = ecs::QuestSystem::GetFlag(((ch) ? (ch)->GetEntityHandle() : entt::null), szTableStaticPvP[8]);
+		int64_t  chB_nBetMoney = ecs::QuestSystem::GetFlag(((pkVictim) ? (pkVictim)->GetEntityHandle() : entt::null), szTableStaticPvP[8]);
 		int64_t  limit = 2000000000;
 
 
-		if ((ecs::PointSystem::GetGold(AIHelpers::EcsOf(ch)) < chA_nBetMoney) || (ecs::PointSystem::GetGold(AIHelpers::EcsOf(pkVictim)) < chB_nBetMoney ) || (chA_nBetMoney > limit) || (chB_nBetMoney > limit)) {
+		if ((ecs::PointSystem::GetGold(((ch) ? (ch)->GetEntityHandle() : entt::null)) < chA_nBetMoney) || (ecs::PointSystem::GetGold(((pkVictim) ? (pkVictim)->GetEntityHandle() : entt::null)) < chB_nBetMoney ) || (chA_nBetMoney > limit) || (chB_nBetMoney > limit)) {
 #ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 722, "");
-			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(pkVictim), CHAT_TYPE_INFO, 722, "");
+			ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 722, "");
+			ecs::ChatSystem::SendNew(((pkVictim) ? (pkVictim)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 722, "");
 #endif
 			CPVPManager::instance().Decline(ch, pkVictim);
 			CPVPManager::instance().Decline(pkVictim, ch);
@@ -1633,8 +1633,8 @@ ACMD(do_pvp)
 
 		if (chA_nBetMoney > 0 && chA_nBetMoney > 0)
 		{
-			ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_GOLD, - chA_nBetMoney, true);
-			ecs::PointSystem::Change(AIHelpers::EcsOf(pkVictim), POINT_GOLD, - chB_nBetMoney, true);
+			ecs::PointSystem::Change(((ch) ? (ch)->GetEntityHandle() : entt::null), POINT_GOLD, - chA_nBetMoney, true);
+			ecs::PointSystem::Change(((pkVictim) ? (pkVictim)->GetEntityHandle() : entt::null), POINT_GOLD, - chB_nBetMoney, true);
 		}
 
 		CPVPManager::instance().Insert(ch, pkVictim);
@@ -1656,7 +1656,7 @@ ACMD(do_pvp)
 	if (!isdigit(*arg2) && !isdigit(*arg3) && !isdigit(*arg4) && !isdigit(*arg5) && !isdigit(*arg6) && !isdigit(*arg7) && !isdigit(*arg8) && !isdigit(*arg9) && !isdigit(*arg10))
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_DIALOG, 874, "");
+		ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_DIALOG, 874, "");
 #endif
 		return;
 	}
@@ -1664,7 +1664,7 @@ ACMD(do_pvp)
 	if (m_BetMoney < 0)
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_DIALOG, 875, "");
+		ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_DIALOG, 875, "");
 #endif
 		return;
 	}
@@ -1672,39 +1672,39 @@ ACMD(do_pvp)
 	if (m_BetMoney >= GOLD_MAX)
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_DIALOG, 876, "");
+		ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_DIALOG, 876, "");
 #endif
 		return;
 	}
 
-	if (ecs::PointSystem::GetGold(AIHelpers::EcsOf(ch)) < m_BetMoney)
+	if (ecs::PointSystem::GetGold(((ch) ? (ch)->GetEntityHandle() : entt::null)) < m_BetMoney)
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_DIALOG, 877, "");
+		ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_DIALOG, 877, "");
 #endif
 		return;
 	}
 
-	if ((ecs::PointSystem::GetGold(AIHelpers::EcsOf(ch)) + m_BetMoney) > GOLD_MAX)
+	if ((ecs::PointSystem::GetGold(((ch) ? (ch)->GetEntityHandle() : entt::null)) + m_BetMoney) > GOLD_MAX)
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_DIALOG, 878, "");
+		ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_DIALOG, 878, "");
 #endif
 		return;
 	}
 
-	if ((ecs::PointSystem::GetGold(AIHelpers::EcsOf(pkVictim)) + m_BetMoney) > GOLD_MAX)
+	if ((ecs::PointSystem::GetGold(((pkVictim) ? (pkVictim)->GetEntityHandle() : entt::null)) + m_BetMoney) > GOLD_MAX)
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_DIALOG, 878, "");
+		ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_DIALOG, 878, "");
 #endif
 		return;
 	}
 
-	if (ecs::PointSystem::GetGold(AIHelpers::EcsOf(pkVictim)) < m_BetMoney)
+	if (ecs::PointSystem::GetGold(((pkVictim) ? (pkVictim)->GetEntityHandle() : entt::null)) < m_BetMoney)
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_DIALOG, 879, "");
+		ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_DIALOG, 879, "");
 #endif
 		return;
 	}
@@ -1732,10 +1732,10 @@ ACMD(do_pvp_advanced)
 	if (!ch)
 		return;
 
-	if (ch->GetArena() != nullptr || CArenaManager::instance().IsArenaMap(ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch))) == true)
+	if (ch->GetArena() != nullptr || CArenaManager::instance().IsArenaMap(ecs::PlayerRuntime::GetMapIndex(((ch) ? (ch)->GetEntityHandle() : entt::null))) == true)
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 303, "");
+		ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 303, "");
 #endif
 		return;
 	}
@@ -1747,64 +1747,64 @@ ACMD(do_pvp_advanced)
 	str_to_number(vid, arg1);
 	LPCHARACTER pkVictim = CHARACTER_MANAGER::instance().Find(vid);
 	// Fake PC / non-real target => ignore
-	//if (pkVictim->IsFakePlayer() || !ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(pkVictim)))
+	//if (pkVictim->IsFakePlayer() || !ecs::PlayerRuntime::GetDesc(((pkVictim) ? (pkVictim)->GetEntityHandle() : entt::null)))
 	//{
-	//	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "Nem lehet PVP-t kezelni klónnal.");
+	//	ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "Nem lehet PVP-t kezelni klónnal.");
 	//	return;
 	//}
 	if (!pkVictim)
 		return;
 
-	if (ecs::PlayerRuntime::IsNPC(AIHelpers::EcsOf(pkVictim)))
+	if (ecs::PlayerRuntime::IsNPC(((pkVictim) ? (pkVictim)->GetEntityHandle() : entt::null)))
 		return;
 
 	if (pkVictim->GetArena() != nullptr) {
 		return;
 	}
 
-	if (ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(ch), szTableStaticPvP[9]) > 0)
+	if (ecs::QuestSystem::GetFlag(((ch) ? (ch)->GetEntityHandle() : entt::null), szTableStaticPvP[9]) > 0)
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_DIALOG, 882, "");
+		ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_DIALOG, 882, "");
 #endif
 		return;
 	}
 
-	if (ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(pkVictim), szTableStaticPvP[9]) > 0)
+	if (ecs::QuestSystem::GetFlag(((pkVictim) ? (pkVictim)->GetEntityHandle() : entt::null), szTableStaticPvP[9]) > 0)
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_DIALOG, 882, "");
+		ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_DIALOG, 882, "");
 #endif
 		return;
 	}
 
-	int statusEq = ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(pkVictim), BLOCK_EQUIPMENT_);
+	int statusEq = ecs::QuestSystem::GetFlag(((pkVictim) ? (pkVictim)->GetEntityHandle() : entt::null), BLOCK_EQUIPMENT_);
 
-	CGuild * g = ecs::SocialSystem::GetGuild(AIHelpers::EcsOf(pkVictim));
+	CGuild * g = ecs::SocialSystem::GetGuild(((pkVictim) ? (pkVictim)->GetEntityHandle() : entt::null));
 
-	const char* m_Name = ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(pkVictim)).data();
+	const char* m_Name = ecs::PlayerRuntime::GetName(((pkVictim) ? (pkVictim)->GetEntityHandle() : entt::null)).data();
 	const char* m_GuildName = "-";
 
-	int m_Vid = ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(pkVictim));
-	int m_Level = ecs::PointSystem::GetLevel(AIHelpers::EcsOf(pkVictim));
-	int m_PlayTime = ecs::PointSystem::GetReal(AIHelpers::EcsOf(pkVictim), POINT_PLAYTIME);
-	int m_MaxHP = ecs::PointSystem::GetMaxHP(AIHelpers::EcsOf(pkVictim));
-	int m_MaxSP = ecs::PointSystem::GetMaxSP(AIHelpers::EcsOf(pkVictim));
+	int m_Vid = ecs::PlayerRuntime::GetPacketVID(((pkVictim) ? (pkVictim)->GetEntityHandle() : entt::null));
+	int m_Level = ecs::PointSystem::GetLevel(((pkVictim) ? (pkVictim)->GetEntityHandle() : entt::null));
+	int m_PlayTime = ecs::PointSystem::GetReal(((pkVictim) ? (pkVictim)->GetEntityHandle() : entt::null), POINT_PLAYTIME);
+	int m_MaxHP = ecs::PointSystem::GetMaxHP(((pkVictim) ? (pkVictim)->GetEntityHandle() : entt::null));
+	int m_MaxSP = ecs::PointSystem::GetMaxSP(((pkVictim) ? (pkVictim)->GetEntityHandle() : entt::null));
 
-	uint32_t m_Race = ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkVictim));
+	uint32_t m_Race = ecs::PlayerRuntime::GetRaceNum(((pkVictim) ? (pkVictim)->GetEntityHandle() : entt::null));
 
 	if (g)
 	{
-		ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_COMMAND, "BINARY_Duel_GetInfo %d %s %s %d %d %d %d %d", m_Vid, m_Name, g->GetName(), m_Level, m_Race, m_PlayTime, m_MaxHP, m_MaxSP);
+		ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_COMMAND, "BINARY_Duel_GetInfo %d %s %s %d %d %d %d %d", m_Vid, m_Name, g->GetName(), m_Level, m_Race, m_PlayTime, m_MaxHP, m_MaxSP);
 
 		if (statusEq < 1)
-			NetworkSyncSystem::SendEquipmentToViewer(g_registry, AIHelpers::EcsOf(pkVictim), AIHelpers::EcsOf(ch));
+			NetworkSyncSystem::SendEquipmentToViewer(g_registry, ((pkVictim) ? (pkVictim)->GetEntityHandle() : entt::null), ((ch) ? (ch)->GetEntityHandle() : entt::null));
 	}
 	else {
-		ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_COMMAND, "BINARY_Duel_GetInfo %d %s %s %d %d %d %d %d", m_Vid, m_Name, m_GuildName, m_Level, m_Race, m_PlayTime, m_MaxHP, m_MaxSP);
+		ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_COMMAND, "BINARY_Duel_GetInfo %d %s %s %d %d %d %d %d", m_Vid, m_Name, m_GuildName, m_Level, m_Race, m_PlayTime, m_MaxHP, m_MaxSP);
 
 		if (statusEq < 1)
-			NetworkSyncSystem::SendEquipmentToViewer(g_registry, AIHelpers::EcsOf(pkVictim), AIHelpers::EcsOf(ch));
+			NetworkSyncSystem::SendEquipmentToViewer(g_registry, ((pkVictim) ? (pkVictim)->GetEntityHandle() : entt::null), ((ch) ? (ch)->GetEntityHandle() : entt::null));
 	}
 }
 
@@ -1827,12 +1827,12 @@ ACMD(do_decline_pvp)
 	if (!pkVictim)
 		return;
 
-	if (ecs::PlayerRuntime::IsNPC(AIHelpers::EcsOf(pkVictim)))
+	if (ecs::PlayerRuntime::IsNPC(((pkVictim) ? (pkVictim)->GetEntityHandle() : entt::null)))
 		return;
 
 	CPVPManager::instance().Decline(ch, pkVictim);
-	ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(ch), "pvp.timed", 0);
-	ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(pkVictim), "pvp.timed", 0);
+	ecs::QuestSystem::SetFlag(((ch) ? (ch)->GetEntityHandle() : entt::null), "pvp.timed", 0);
+	ecs::QuestSystem::SetFlag(((pkVictim) ? (pkVictim)->GetEntityHandle() : entt::null), "pvp.timed", 0);
 }
 ACMD(do_block_equipment)
 {
@@ -1842,39 +1842,39 @@ ACMD(do_block_equipment)
 	char arg1[256];
 	one_argument (argument, arg1, sizeof(arg1));
 
-	if (!(ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch))) || nullptr == ch)
+	if (!(ecs::PlayerRuntime::IsPC(((ch) ? (ch)->GetEntityHandle() : entt::null))) || nullptr == ch)
 		return;
 
-	int statusEq = ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(ch), BLOCK_EQUIPMENT_);
+	int statusEq = ecs::QuestSystem::GetFlag(((ch) ? (ch)->GetEntityHandle() : entt::null), BLOCK_EQUIPMENT_);
 
 	if (!strcmp(arg1, "BLOCK"))
 	{
 		if (statusEq > 0)
 		{
 #ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 11, "");
+			ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 11, "");
 #endif
 		}
 		else {
-			ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(ch), BLOCK_EQUIPMENT_, 1);
-			ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_COMMAND, "equipview 1");
+			ecs::QuestSystem::SetFlag(((ch) ? (ch)->GetEntityHandle() : entt::null), BLOCK_EQUIPMENT_, 1);
+			ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_COMMAND, "equipview 1");
 #ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 12, "");
+			ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 12, "");
 #endif
 		}
 	}
 	else if (!strcmp(arg1, "UNBLOCK"))
 	{
 		if (statusEq != 0) {
-			ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(ch), BLOCK_EQUIPMENT_, 0);
-			ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_COMMAND, "equipview 0");
+			ecs::QuestSystem::SetFlag(((ch) ? (ch)->GetEntityHandle() : entt::null), BLOCK_EQUIPMENT_, 0);
+			ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_COMMAND, "equipview 0");
 #ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 14, "");
+			ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 14, "");
 #endif
 		}
 #ifdef TEXTS_IMPROVEMENT
 		else {
-			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 13, "");
+			ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 13, "");
 		}
 #endif
 	}
@@ -1889,16 +1889,16 @@ ACMD(do_guildskillup)
 	if (!*arg1)
 		return;
 
-	if (!ecs::SocialSystem::GetGuild(AIHelpers::EcsOf(ch)))
+	if (!ecs::SocialSystem::GetGuild(((ch) ? (ch)->GetEntityHandle() : entt::null)))
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 138, "");
+		ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 138, "");
 #endif
 		return;
 	}
 
-	CGuild* g = ecs::SocialSystem::GetGuild(AIHelpers::EcsOf(ch));
-	TGuildMember* gm = g->GetMember((ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))));
+	CGuild* g = ecs::SocialSystem::GetGuild(((ch) ? (ch)->GetEntityHandle() : entt::null));
+	TGuildMember* gm = g->GetMember((ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null))));
 	if (gm->grade == GUILD_LEADER_GRADE)
 	{
 		uint32_t vnum = 0;
@@ -1907,7 +1907,7 @@ ACMD(do_guildskillup)
 	}
 #ifdef TEXTS_IMPROVEMENT
 	else {
-		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 890, "");
+		ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 890, "");
 	}
 #endif
 }
@@ -1923,7 +1923,7 @@ ACMD(do_skillup)
 	uint32_t vnum = 0;
 	str_to_number(vnum, arg1);
 
-	if (true == SkillSystem::CanUseSkill(AIHelpers::EcsOf(ch), vnum))
+	if (true == SkillSystem::CanUseSkill(((ch) ? (ch)->GetEntityHandle() : entt::null), vnum))
 	{
 		ch->SkillLevelUp(vnum);
 	}
@@ -2008,7 +2008,7 @@ ACMD(do_safebox_change_password)
 	if (!*arg1 || strlen(arg1)>6)
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 188, "");
+		ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 188, "");
 #endif
 		return;
 	}
@@ -2016,18 +2016,18 @@ ACMD(do_safebox_change_password)
 	if (!*arg2 || strlen(arg2)>6)
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 188, "");
+		ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 188, "");
 #endif
 		return;
 	}
 
 	TSafeboxChangePasswordPacket p;
 
-	p.dwID = ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->GetAccountTable().id;
+	p.dwID = ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null))->GetAccountTable().id;
 	strlcpy(p.szOldPassword, arg1, sizeof(p.szOldPassword));
 	strlcpy(p.szNewPassword, arg2, sizeof(p.szNewPassword));
 
-	db_clientdesc->DBPacket(HEADER_GD_SAFEBOX_CHANGE_PASSWORD, ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->GetHandle(), &p, sizeof(p));
+	db_clientdesc->DBPacket(HEADER_GD_SAFEBOX_CHANGE_PASSWORD, ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null))->GetHandle(), &p, sizeof(p));
 }
 
 ACMD(do_mall_password)
@@ -2038,7 +2038,7 @@ ACMD(do_mall_password)
 	if (!*arg1 || strlen(arg1) > 6)
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 188, "");
+		ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 188, "");
 #endif
 		return;
 	}
@@ -2048,7 +2048,7 @@ ACMD(do_mall_password)
 	if (ch->GetMall())
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 189, "");
+		ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 189, "");
 #endif
 		return;
 	}
@@ -2056,7 +2056,7 @@ ACMD(do_mall_password)
 	if (iPulse - ch->GetMallLoadTime() < passes_per_sec * 10) // 10ʿ ѹ û
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 190, "");
+		ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 190, "");
 #endif
 		return;
 	}
@@ -2064,11 +2064,11 @@ ACMD(do_mall_password)
 	ch->SetMallLoadTime(iPulse);
 
 	TSafeboxLoadPacket p;
-	p.dwID = ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->GetAccountTable().id;
-	strlcpy(p.szLogin, ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->GetAccountTable().login, sizeof(p.szLogin));
+	p.dwID = ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null))->GetAccountTable().id;
+	strlcpy(p.szLogin, ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null))->GetAccountTable().login, sizeof(p.szLogin));
 	strlcpy(p.szPassword, arg1, sizeof(p.szPassword));
 
-	db_clientdesc->DBPacket(HEADER_GD_MALL_LOAD, ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->GetHandle(), &p, sizeof(p));
+	db_clientdesc->DBPacket(HEADER_GD_MALL_LOAD, ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null))->GetHandle(), &p, sizeof(p));
 }
 
 ACMD(do_mall_close)
@@ -2083,13 +2083,13 @@ ACMD(do_mall_close)
 
 ACMD(do_ungroup)
 {
-	if (!ecs::SocialSystem::GetParty(AIHelpers::EcsOf(ch)))
+	if (!ecs::SocialSystem::GetParty(((ch) ? (ch)->GetEntityHandle() : entt::null)))
 		return;
 
 	if (!CPartyManager::instance().IsEnablePCParty())
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 208, "");
+		ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 208, "");
 #endif
 		return;
 	}
@@ -2097,12 +2097,12 @@ ACMD(do_ungroup)
 	if (ch->GetDungeon())
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 202, "");
+		ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 202, "");
 #endif
 		return;
 	}
 
-	LPPARTY pParty = ecs::SocialSystem::GetParty(AIHelpers::EcsOf(ch));
+	LPPARTY pParty = ecs::SocialSystem::GetParty(((ch) ? (ch)->GetEntityHandle() : entt::null));
 
 	if (pParty->GetMemberCount() == 2)
 	{
@@ -2112,10 +2112,10 @@ ACMD(do_ungroup)
 	else
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 215, "");
+		ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 215, "");
 #endif
 		//pParty->SendPartyRemoveOneToAll(ch);
-		pParty->Quit((ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))));
+		pParty->Quit((ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null))));
 		//pParty->SendPartyRemoveAllToOne(ch);
 	}
 }
@@ -2144,7 +2144,7 @@ ACMD(do_set_run_mode)
 ACMD(do_war)
 {
 	//
-	CGuild * g = ecs::SocialSystem::GetGuild(AIHelpers::EcsOf(ch));
+	CGuild * g = ecs::SocialSystem::GetGuild(((ch) ? (ch)->GetEntityHandle() : entt::null));
 
 	if (!g)
 		return;
@@ -2153,7 +2153,7 @@ ACMD(do_war)
 	if (g->UnderAnyWar())
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 167, "");
+		ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 167, "");
 #endif
 		return;
 	}
@@ -2183,10 +2183,10 @@ ACMD(do_war)
 	uint32_t gm_pid = g->GetMasterPID();
 
 	// üũ( 常 )
-	if (gm_pid != (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))))
+	if (gm_pid != (ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null))))
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 144, "");
+		ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 144, "");
 #endif
 		return;
 	}
@@ -2197,7 +2197,7 @@ ACMD(do_war)
 	if (!opp_g)
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 130, "");
+		ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 130, "");
 #endif
 		return;
 	}
@@ -2210,7 +2210,7 @@ ACMD(do_war)
 				if (opp_g->UnderAnyWar())
 				{
 #ifdef TEXTS_IMPROVEMENT
-					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 157, "");
+					ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 157, "");
 #endif
 					return;
 				}
@@ -2220,7 +2220,7 @@ ACMD(do_war)
 				if (g->GetGuildMoney() < iWarPrice)
 				{
 #ifdef TEXTS_IMPROVEMENT
-					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 172, "");
+					ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 172, "");
 #endif
 					return;
 				}
@@ -2228,7 +2228,7 @@ ACMD(do_war)
 				if (opp_g->GetGuildMoney() < iWarPrice)
 				{
 #ifdef TEXTS_IMPROVEMENT
-					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 160, "");
+					ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 160, "");
 #endif
 					return;
 				}
@@ -2238,7 +2238,7 @@ ACMD(do_war)
 		case GUILD_WAR_SEND_DECLARE:
 			{
 #ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 438, "");
+				ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 438, "");
 #endif
 				return;
 			}
@@ -2249,7 +2249,7 @@ ACMD(do_war)
 				if (opp_g->UnderAnyWar())
 				{
 #ifdef TEXTS_IMPROVEMENT
-					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 157, "");
+					ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 157, "");
 #endif
 					g->RequestRefuseWar(opp_g->GetID());
 					return;
@@ -2260,7 +2260,7 @@ ACMD(do_war)
 		case GUILD_WAR_RESERVE:
 			{
 #ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 169, "");
+				ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 169, "");
 #endif
 				return;
 			}
@@ -2271,7 +2271,7 @@ ACMD(do_war)
 
 		default:
 #ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 168, "");
+			ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 168, "");
 #endif
 			g->RequestRefuseWar(opp_g->GetID());
 			return;
@@ -2283,14 +2283,14 @@ ACMD(do_war)
 		if (g->GetLadderPoint() == 0)
 		{
 #ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 159, "");
+			ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 159, "");
 #endif
 			LOG_INFO("GuildWar.StartError.NEED_LADDER_POINT");
 		}
 		else if (g->GetMemberCount() < GUILD_WAR_MIN_MEMBER_COUNT)
 		{
 #ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 145, "%d", GUILD_WAR_MIN_MEMBER_COUNT);
+			ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 145, "%d", GUILD_WAR_MIN_MEMBER_COUNT);
 #endif
 			LOG_INFO("GuildWar.StartError.NEED_MINIMUM_MEMBER[{}]", GUILD_WAR_MIN_MEMBER_COUNT);
 		}
@@ -2306,9 +2306,9 @@ ACMD(do_war)
 	{
 #ifdef TEXTS_IMPROVEMENT
 		if (opp_g->GetLadderPoint() == 0) {
-			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 153, "%s", opp_g->GetName());
+			ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 153, "%s", opp_g->GetName());
 		} else if (opp_g->GetMemberCount() < GUILD_WAR_MIN_MEMBER_COUNT) {
-			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 158, "");
+			ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 158, "");
 		}
 #endif
 		return;
@@ -2325,7 +2325,7 @@ ACMD(do_war)
 			break;
 
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 507, "");
+		ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 507, "");
 #endif
 		g->RequestRefuseWar(opp_g->GetID());
 		return;
@@ -2343,7 +2343,7 @@ ACMD(do_war)
 			break;
 
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 507, "");
+		ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 507, "");
 #endif
 		g->RequestRefuseWar(opp_g->GetID());
 		return;
@@ -2355,7 +2355,7 @@ ACMD(do_war)
 
 ACMD(do_nowar)
 {
-	CGuild* g = ecs::SocialSystem::GetGuild(AIHelpers::EcsOf(ch));
+	CGuild* g = ecs::SocialSystem::GetGuild(((ch) ? (ch)->GetEntityHandle() : entt::null));
 	if (!g)
 		return;
 
@@ -2367,10 +2367,10 @@ ACMD(do_nowar)
 
 	uint32_t gm_pid = g->GetMasterPID();
 
-	if (gm_pid != (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))))
+	if (gm_pid != (ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null))))
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 144, "");
+		ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 144, "");
 #endif
 		return;
 	}
@@ -2380,7 +2380,7 @@ ACMD(do_nowar)
 	if (!opp_g)
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 130, "");
+		ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 130, "");
 #endif
 		return;
 	}
@@ -2412,7 +2412,7 @@ ACMD(do_pkmode)
 	if (mode == PK_MODE_PROTECT)
 		return;
 
-	if ((ecs::PointSystem::GetLevel(AIHelpers::EcsOf(ch))) < PK_PROTECT_LEVEL && mode != 0)
+	if ((ecs::PointSystem::GetLevel(((ch) ? (ch)->GetEntityHandle() : entt::null))) < PK_PROTECT_LEVEL && mode != 0)
 		return;
 
 	ch->SetPKMode(mode);
@@ -2423,7 +2423,7 @@ ACMD(do_messenger_auth)
 	if (ch->GetArena())
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 303, "");
+		ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 303, "");
 #endif
 		return;
 	}
@@ -2437,13 +2437,13 @@ ACMD(do_messenger_auth)
 	char answer = LOWER(*arg1);
 	// @fixme130 AuthToAdd void -> bool
 	bool bIsDenied = answer != 'y';
-	bool bIsAdded = MessengerManager::instance().AuthToAdd(ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), arg2, bIsDenied); // DENY
+	bool bIsAdded = MessengerManager::instance().AuthToAdd(ecs::PlayerRuntime::GetName(((ch) ? (ch)->GetEntityHandle() : entt::null)).data(), arg2, bIsDenied); // DENY
 	if (bIsAdded && bIsDenied)
 	{
 		LPCHARACTER tch = CHARACTER_MANAGER::instance().FindPC(arg2);
 #ifdef TEXTS_IMPROVEMENT
 		if (tch) {
-			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(tch), CHAT_TYPE_INFO, 107, "%s", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data());
+			ecs::ChatSystem::SendNew(((tch) ? (tch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 107, "%s", ecs::PlayerRuntime::GetName(((ch) ? (ch)->GetEntityHandle() : entt::null)).data());
 		}
 #endif
 	}
@@ -2466,7 +2466,7 @@ ACMD(do_unmount)
 {
 
 #ifdef ENABLE_MOUNT_COSTUME_SYSTEM
-	const entt::entity owner = AIHelpers::EcsOf(ch);
+	const entt::entity owner = ((ch) ? (ch)->GetEntityHandle() : entt::null);
 	const entt::entity mount = ItemSystem::GetWearItem(owner, WEAR_COSTUME_MOUNT);
 	if (ItemSystem::IsValidItem(mount))
 	{
@@ -2493,7 +2493,7 @@ ACMD(do_unmount)
 			mobVnum = ItemSystem::GetItemValue(mount, 1);
 #endif
 
-		if (MountSystem::GetMountVnum(AIHelpers::EcsOf(ch)))
+		if (MountSystem::GetMountVnum(((ch) ? (ch)->GetEntityHandle() : entt::null)))
 		{
 			mountSystem->Unmount(mobVnum);
 		}
@@ -2503,8 +2503,8 @@ ACMD(do_unmount)
 
 	if (true == ch->UnEquipSpecialRideUniqueItem())
 	{
-		AffectSystem::RemoveAffect(AIHelpers::EcsOf(ch), AFFECT_MOUNT);
-		AffectSystem::RemoveAffect(AIHelpers::EcsOf(ch), AFFECT_MOUNT_BONUS);
+		AffectSystem::RemoveAffect(((ch) ? (ch)->GetEntityHandle() : entt::null), AFFECT_MOUNT);
+		AffectSystem::RemoveAffect(((ch) ? (ch)->GetEntityHandle() : entt::null), AFFECT_MOUNT_BONUS);
 
 		if (ch->IsHorseRiding())
 		{
@@ -2513,14 +2513,14 @@ ACMD(do_unmount)
 	}
 #ifdef TEXTS_IMPROVEMENT
 	else {
-		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 366, "");
+		ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 366, "");
 	}
 #endif
 }
 
 ACMD(do_observer_exit)
 {
-	if (ecs::PlayerRuntime::IsObserverMode(AIHelpers::EcsOf(ch)))
+	if (ecs::PlayerRuntime::IsObserverMode(((ch) ? (ch)->GetEntityHandle() : entt::null)))
 	{
 		if (ch->GetWarMap())
 			ch->SetWarMap(nullptr);
@@ -2530,14 +2530,14 @@ ACMD(do_observer_exit)
 			ch->SetArenaObserverMode(false);
 
 			if (ch->GetArena() != nullptr)
-				ch->GetArena()->RemoveObserver((ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))));
+				ch->GetArena()->RemoveObserver((ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null))));
 
 			ch->SetArena(nullptr);
-			ecs::MovementSystem::WarpSet(AIHelpers::EcsOf(ch), ARENA_RETURN_POINT_X((ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(ch)))), ARENA_RETURN_POINT_Y((ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(ch)))));
+			ecs::MovementSystem::WarpSet(((ch) ? (ch)->GetEntityHandle() : entt::null), ARENA_RETURN_POINT_X((ecs::PlayerRuntime::GetEmpire(((ch) ? (ch)->GetEntityHandle() : entt::null)))), ARENA_RETURN_POINT_Y((ecs::PlayerRuntime::GetEmpire(((ch) ? (ch)->GetEntityHandle() : entt::null)))));
 		}
 		else
 		{
-			ecs::MovementSystem::ExitToSavedLocation(AIHelpers::EcsOf(ch));
+			ecs::MovementSystem::ExitToSavedLocation(((ch) ? (ch)->GetEntityHandle() : entt::null));
 		}
 		ch->SetObserverMode(false);
 	}
@@ -2545,7 +2545,7 @@ ACMD(do_observer_exit)
 
 ACMD(do_view_equip)
 {
-	if ((ecs::PlayerRuntime::GetGMLevel(AIHelpers::EcsOf(ch))) <= GM_PLAYER)
+	if ((ecs::PlayerRuntime::GetGMLevel(((ch) ? (ch)->GetEntityHandle() : entt::null))) <= GM_PLAYER)
 		return;
 
 	char arg1[256];
@@ -2560,10 +2560,10 @@ ACMD(do_view_equip)
 		if (!tch)
 			return;
 
-		if (!ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(tch)))
+		if (!ecs::PlayerRuntime::IsPC(((tch) ? (tch)->GetEntityHandle() : entt::null)))
 			return;
 
-		NetworkSyncSystem::SendEquipmentToViewer(g_registry, AIHelpers::EcsOf(tch), AIHelpers::EcsOf(ch));
+		NetworkSyncSystem::SendEquipmentToViewer(g_registry, ((tch) ? (tch)->GetEntityHandle() : entt::null), ((ch) ? (ch)->GetEntityHandle() : entt::null));
 	}
 }
 
@@ -2572,15 +2572,15 @@ ACMD(do_party_request)
 	if (ch->GetArena())
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 303, "");
+		ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 303, "");
 #endif
 		return;
 	}
 
-	if (ecs::SocialSystem::GetParty(AIHelpers::EcsOf(ch)))
+	if (ecs::SocialSystem::GetParty(((ch) ? (ch)->GetEntityHandle() : entt::null)))
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 441, "");
+		ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 441, "");
 #endif
 		return;
 	}
@@ -2597,7 +2597,7 @@ ACMD(do_party_request)
 
 	if (tch)
 		if (!ch->RequestToParty(tch))
-			ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_COMMAND, "PartyRequestDenied");
+			ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_COMMAND, "PartyRequestDenied");
 }
 
 ACMD(do_party_request_accept)
@@ -2678,7 +2678,7 @@ ACMD(do_attr_transfer)
 	if (!ch->CanDoAttrTransfer())
 		return;
 
-	LOG_INFO("{} has used an Attr Transfer command: {}.", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), argument);
+	LOG_INFO("{} has used an Attr Transfer command: {}.", ecs::PlayerRuntime::GetName(((ch) ? (ch)->GetEntityHandle() : entt::null)).data(), argument);
 
 	int w_index = 0, i_index = 0;
 	const char *line;
@@ -2792,13 +2792,13 @@ ACMD(do_inventory)
 			break;
 
 		const entt::entity item = ItemSystem::GetInventoryItem(
-			AIHelpers::EcsOf(ch), index);
+			((ch) ? (ch)->GetEntityHandle() : entt::null), index);
 #ifdef TEXTS_IMPROVEMENT
 		if (ItemSystem::IsValidItem(item)) {
-			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 727,
+			ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 727,
 				"%d#%s", index, ItemSystem::GetItemName(item));
 		} else {
-			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 728, "%d", index);
+			ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 728, "%d", index);
 		}
 #endif
 		++index;
@@ -2808,7 +2808,7 @@ ACMD(do_inventory)
 //gift notify quest command
 ACMD(do_gift)
 {
-	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_COMMAND, "gift");
+	ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_COMMAND, "gift");
 }
 
 #ifdef __NEWPET_SYSTEM__
@@ -2867,7 +2867,7 @@ ACMD(do_PetSkill) {
 	}
 #ifdef TEXTS_IMPROVEMENT
 	else {
-		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 729, "");
+		ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 729, "");
 	}
 #endif
 }
@@ -2902,16 +2902,16 @@ ACMD(do_FeedCubePet) {
 	}
 #ifdef TEXTS_IMPROVEMENT
 	else {
-		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 729, "");
+		ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 729, "");
 	}
 #endif
 }
 
 ACMD(do_PetEvo) {
 
-	if (ecs::SocialSystem::GetExchange(AIHelpers::EcsOf(ch)) || ch->GetMyShop() || ch->GetShopOwner() || ch->IsOpenSafebox() || ch->IsCubeOpen()) {
+	if (ecs::SocialSystem::GetExchange(((ch) ? (ch)->GetEntityHandle() : entt::null)) || ch->GetMyShop() || ch->GetShopOwner() || ch->IsOpenSafebox() || ch->IsCubeOpen()) {
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 730, "");
+		ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 730, "");
 #endif
 		return;
 	}
@@ -2921,7 +2921,7 @@ ACMD(do_PetEvo) {
 #ifdef ENABLE_NEW_PET_EDITS
 			if (ch->GetNewPetSystem()->GetExp() < ch->GetNewPetSystem()->GetNextExpFromMob()) {
 #ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 59, "");
+				ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 59, "");
 #endif
 				return;
 			}
@@ -2931,9 +2931,9 @@ ACMD(do_PetEvo) {
 			uint32_t dwItemVnum1 = 55003 + tmpevo;
 			if (ch->CountSpecifyItem(dwItemVnum1) < 10) {
 #ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 60, "%d#%s", 10,
+				ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 60, "%d#%s", 10,
 #ifdef ENABLE_MULTI_NAMES
-				ITEM_MANAGER::instance().GetTable(dwItemVnum1)->szLocaleName[ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->GetLanguage()]
+				ITEM_MANAGER::instance().GetTable(dwItemVnum1)->szLocaleName[ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null))->GetLanguage()]
 #else
 				ITEM_MANAGER::instance().GetTable(dwItemVnum1)->szLocaleName
 #endif
@@ -2945,9 +2945,9 @@ ACMD(do_PetEvo) {
 			uint32_t dwItemVnum2 = 27992 + tmpevo;
 			if (!bRet && ch->CountSpecifyItem(dwItemVnum2) < 10) {
 #ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 60, "%d#%s", 10,
+				ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 60, "%d#%s", 10,
 #ifdef ENABLE_MULTI_NAMES
-				ITEM_MANAGER::instance().GetTable(dwItemVnum2)->szLocaleName[ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->GetLanguage()]
+				ITEM_MANAGER::instance().GetTable(dwItemVnum2)->szLocaleName[ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null))->GetLanguage()]
 #else
 				ITEM_MANAGER::instance().GetTable(dwItemVnum2)->szLocaleName
 #endif
@@ -2959,9 +2959,9 @@ ACMD(do_PetEvo) {
 			uint32_t dwItemVnum3 = 86056 + tmpevo;
 			if (!bRet && ch->CountSpecifyItem(dwItemVnum3) < 3) {
 #ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 60, "%d#%s", 3,
+				ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 60, "%d#%s", 3,
 #ifdef ENABLE_MULTI_NAMES
-				ITEM_MANAGER::instance().GetTable(dwItemVnum3)->szLocaleName[ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->GetLanguage()]
+				ITEM_MANAGER::instance().GetTable(dwItemVnum3)->szLocaleName[ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null))->GetLanguage()]
 #else
 				ITEM_MANAGER::instance().GetTable(dwItemVnum3)->szLocaleName
 #endif
@@ -2980,14 +2980,14 @@ ACMD(do_PetEvo) {
 		}
 		else {
 #ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 730, "");
+			ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 730, "");
 #endif
 			return;
 		}
 	}
 #ifdef TEXTS_IMPROVEMENT
 	else {
-		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 729, "");
+		ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 729, "");
 	}
 #endif
 
@@ -3053,11 +3053,11 @@ namespace
 			return nullptr;
 
 		auto* npc = ch->GetQuestNPC();
-		if (npc && ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(npc)) == STONE_CRAFT_NPC_VNUM)
+		if (npc && ecs::PlayerRuntime::GetRaceNum(((npc) ? (npc)->GetEntityHandle() : entt::null)) == STONE_CRAFT_NPC_VNUM)
 			return npc;
 
 		npc = ch->GetTarget();
-		if (npc && ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(npc)) == STONE_CRAFT_NPC_VNUM)
+		if (npc && ecs::PlayerRuntime::GetRaceNum(((npc) ? (npc)->GetEntityHandle() : entt::null)) == STONE_CRAFT_NPC_VNUM)
 			return npc;
 
 		return nullptr;
@@ -3068,16 +3068,16 @@ namespace
 		if (!ch || !npc)
 			return false;
 
-		if (ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(npc)) != STONE_CRAFT_NPC_VNUM)
+		if (ecs::PlayerRuntime::GetRaceNum(((npc) ? (npc)->GetEntityHandle() : entt::null)) != STONE_CRAFT_NPC_VNUM)
 			return false;
 
-	if (CombatSystem::IsDead(AIHelpers::EcsOf(ch)) || CombatSystem::IsStun(AIHelpers::EcsOf(ch)) || ecs::PlayerRuntime::IsObserverMode(AIHelpers::EcsOf(ch)))
+	if (CombatSystem::IsDead(((ch) ? (ch)->GetEntityHandle() : entt::null)) || CombatSystem::IsStun(((ch) ? (ch)->GetEntityHandle() : entt::null)) || ecs::PlayerRuntime::IsObserverMode(((ch) ? (ch)->GetEntityHandle() : entt::null)))
 			return false;
 
-		if (ecs::SocialSystem::GetExchange(AIHelpers::EcsOf(ch)) || ch->GetMyShop() || ch->GetShopOwner() || ch->IsOpenSafebox() || ch->IsCubeOpen())
+		if (ecs::SocialSystem::GetExchange(((ch) ? (ch)->GetEntityHandle() : entt::null)) || ch->GetMyShop() || ch->GetShopOwner() || ch->IsOpenSafebox() || ch->IsCubeOpen())
 			return false;
 
-		const int32_t distance = DISTANCE_APPROX(ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(ch)) - ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(npc)), ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(ch)) - ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(npc)));
+		const int32_t distance = DISTANCE_APPROX(ecs::PlayerRuntime::GetX(((ch) ? (ch)->GetEntityHandle() : entt::null)) - ecs::PlayerRuntime::GetX(((npc) ? (npc)->GetEntityHandle() : entt::null)), ecs::PlayerRuntime::GetY(((ch) ? (ch)->GetEntityHandle() : entt::null)) - ecs::PlayerRuntime::GetY(((npc) ? (npc)->GetEntityHandle() : entt::null)));
 		if (distance >= STONE_CRAFT_MAX_DISTANCE)
 			return false;
 
@@ -3100,11 +3100,11 @@ ACMD(do_stonecraft)
 		auto* npc = GetStoneCraftNpc(ch);
 		if (!CanUseStoneCraft(ch, npc))
 		{
-			ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "You need to be closer to npc.");
+			ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "You need to be closer to npc.");
 			return;
 		}
 
-		ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_COMMAND, "stone_craft_open");
+		ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_COMMAND, "stone_craft_open");
 		return;
 	}
 
@@ -3117,33 +3117,33 @@ ACMD(do_stonecraft)
 
 		if (!IsStoneCraftMaterialVnum(materialVnum))
 		{
-			ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "Unknow stone.");
+			ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "Unknow stone.");
 			return;
 		}
 
 		auto* npc = GetStoneCraftNpc(ch);
 		if (!CanUseStoneCraft(ch, npc))
 		{
-			ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "You are too far from npc.");
+			ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "You are too far from npc.");
 			return;
 		}
 
 		const int materialCount = ch->CountSpecifyItemRenewal(materialVnum);
 		if (materialCount < STONE_CRAFT_NEED_COUNT)
 		{
-			ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "Not enough stone.");
+			ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "Not enough stone.");
 			return;
 		}
 
-		const entt::entity reward = ItemSystem::AutoGiveItemEcs(AIHelpers::EcsOf(ch), STONE_CRAFT_REWARD_VNUM, 1);
+		const entt::entity reward = ItemSystem::AutoGiveItemEcs(((ch) ? (ch)->GetEntityHandle() : entt::null), STONE_CRAFT_REWARD_VNUM, 1);
 		if (reward == entt::null)
 		{
-			ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "Not enough space in inventory.");
+			ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "Not enough space in inventory.");
 			return;
 		}
 
 		ch->RemoveSpecifyItem(materialVnum, STONE_CRAFT_NEED_COUNT, true);
-		ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "Craft successful.");
+		ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "Craft successful.");
 		return;
 	}
 	if (!str_cmp(arg1, "makeall"))
@@ -3151,7 +3151,7 @@ ACMD(do_stonecraft)
 		auto* npc = GetStoneCraftNpc(ch);
 		if (!CanUseStoneCraft(ch, npc))
 		{
-			ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "You are too far from npc");
+			ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "You are too far from npc");
 			return;
 		}
 
@@ -3182,15 +3182,15 @@ ACMD(do_stonecraft)
 
 		if (totalCrafted <= 0)
 		{
-			ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "Not enough stone.");
+			ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "Not enough stone.");
 			return;
 		}
 
 
-		const entt::entity reward = ItemSystem::AutoGiveItemEcs(AIHelpers::EcsOf(ch), STONE_CRAFT_REWARD_VNUM, totalCrafted, -1, false);
+		const entt::entity reward = ItemSystem::AutoGiveItemEcs(((ch) ? (ch)->GetEntityHandle() : entt::null), STONE_CRAFT_REWARD_VNUM, totalCrafted, -1, false);
 		if (reward == entt::null)
 		{
-			ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "Not enough space in inventory.");
+			ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "Not enough space in inventory.");
 			return;
 		}
 
@@ -3205,7 +3205,7 @@ ACMD(do_stonecraft)
 				ch->RemoveSpecifyItem(materialVnum, craftCount * STONE_CRAFT_NEED_COUNT, true);
 		}
 
-		ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "Craft successful: You got %d items.", totalCrafted);
+		ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "Craft successful: You got %d items.", totalCrafted);
 		return;
 	}
 }
@@ -3242,7 +3242,7 @@ ACMD(do_cube)
 	if (!ch->CanDoCube())
 		return;
 
-	dev_log(LOG_DEB0, "CUBE COMMAND <%s>: %s", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), argument);
+	dev_log(LOG_DEB0, "CUBE COMMAND <%s>: %s", ecs::PlayerRuntime::GetName(((ch) ? (ch)->GetEntityHandle() : entt::null)).data(), argument);
 	int cube_index = 0, inven_index = 0;
 #ifdef ENABLE_EXTRA_INVENTORY
 	uint8_t window_type = 0;
@@ -3355,9 +3355,9 @@ ACMD(do_cube)
 #endif
 
 
-ACMD(do_in_game_mall)
+void open_in_game_mall(entt::entity character)
 {
-	if (!ch)
+	if (character == entt::null || !g_registry.valid(character))
 		return;
 
 	char buf[512+1];
@@ -3368,7 +3368,8 @@ ACMD(do_in_game_mall)
 	char language[3];
 	strcpy(language, "en");//If you have multilanguage, update this
 
-	snprintf(buf, sizeof(buf), "%u%u%s", (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))), ch->GetAID(), sas_key);
+	snprintf(buf, sizeof(buf), "%u%u%s", ecs::PlayerRuntime::GetPlayerID(character),
+		ecs::PlayerRuntime::GetAccountID(character), sas_key);
 
 	MD5Init(&ctx);
 	MD5Update(&ctx, (const unsigned char *) buf, strlen(buf));
@@ -3387,10 +3388,10 @@ ACMD(do_in_game_mall)
 #endif
 
 	// snprintf(buf, sizeof(buf), "mall https://www.%s/shop?pid=%u&lang=%s&sid=%d&sas=%s",
-			// g_strWebMallURL.c_str(), (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))), language, g_server_id, sas);
+			// g_strWebMallURL.c_str(), (ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null))), language, g_server_id, sas);
 	snprintf(buf, sizeof(buf), "mall https://bwmt2-global.eu/shop/",
-			(ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))), language, sas);
-	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_COMMAND, buf);
+			ecs::PlayerRuntime::GetPlayerID(character), language, sas);
+	ecs::ChatSystem::Send(character, CHAT_TYPE_COMMAND, buf);
 
 //	char buf[512+1];
 //	char sas[33];
@@ -3416,7 +3417,7 @@ ACMD(do_in_game_mall)
 //#endif
 //
 //#ifdef ENABLE_MULTI_LANGUAGE
-//	uint8_t lang = ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch)) ? ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->GetLanguage() : 0;
+//	uint8_t lang = ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null)) ? ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null))->GetLanguage() : 0;
 //	std::string str_lang;
 //	switch (lang) {
 //		case LANGUAGE_RO: {
@@ -3465,7 +3466,12 @@ ACMD(do_in_game_mall)
 //#else
 //	snprintf(buf, sizeof(buf), "mall %s/in-game-shop?aid=%u&secret=%s", websiteUrl, ch->GetAID(), sas);
 //#endif
-//	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_COMMAND, buf);
+//	ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_COMMAND, buf);
+}
+
+ACMD(do_in_game_mall)
+{
+	open_in_game_mall(ch ? ch->GetEntityHandle() : entt::null);
 }
 
 // ֻ
@@ -3492,16 +3498,16 @@ ACMD(do_dice)
 	start = MIN(start, end);
 
 	int n = number(start, end);
-	if (ecs::SocialSystem::GetParty(AIHelpers::EcsOf(ch))) {
-		ecs::SocialSystem::GetParty(AIHelpers::EcsOf(ch))->ChatPacketToAllMemberNew(
+	if (ecs::SocialSystem::GetParty(((ch) ? (ch)->GetEntityHandle() : entt::null))) {
+		ecs::SocialSystem::GetParty(((ch) ? (ch)->GetEntityHandle() : entt::null))->ChatPacketToAllMemberNew(
 #ifdef ENABLE_DICE_SYSTEM
 		CHAT_TYPE_DICE_INFO
 #else
 		CHAT_TYPE_INFO
 #endif
-		, 544, "%s#%d#%d#%d", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), n, start, end);
+		, 544, "%s#%d#%d#%d", ecs::PlayerRuntime::GetName(((ch) ? (ch)->GetEntityHandle() : entt::null)).data(), n, start, end);
 	} else {
-		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch),
+		ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null),
 #ifdef ENABLE_DICE_SYSTEM
 		CHAT_TYPE_DICE_INFO
 #else
@@ -3518,17 +3524,17 @@ ACMD(do_click_safebox)
 	if (ch->GetDungeon() || ch->GetWarMap())
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 731, "");
+		ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 731, "");
 #endif
 		return;
 	}
 
 	ch->SetSafeboxOpenPosition();
-	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_COMMAND, "ShowMeSafeboxPassword");
+	ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_COMMAND, "ShowMeSafeboxPassword");
 }
 ACMD(do_force_logout)
 {
-	LPDESC pDesc=DESC_MANAGER::instance().FindByCharacterName(ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data());
+	LPDESC pDesc=DESC_MANAGER::instance().FindByCharacterName(ecs::PlayerRuntime::GetName(((ch) ? (ch)->GetEntityHandle() : entt::null)).data());
 	if (!pDesc)
 		return;
 	pDesc->DelayedDisconnect(0);
@@ -3537,7 +3543,7 @@ ACMD(do_force_logout)
 
 ACMD(do_click_mall)
 {
-	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_COMMAND, "ShowMeMallPassword");
+	ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_COMMAND, "ShowMeMallPassword");
 }
 
 ACMD(do_ride)
@@ -3545,22 +3551,22 @@ ACMD(do_ride)
 #ifdef DISABLE_CORE_PULSE_RAZOR93
 
 	if (!ch->IsNextMountPulse()) {
-		ecs::ChatSystem::Send(AIHelpers::EcsOf(ch),  CHAT_TYPE_INFO, "You can't do this that fast, please calm down a bit...");
+		ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null),  CHAT_TYPE_INFO, "You can't do this that fast, please calm down a bit...");
 		return;
 	}
 #endif
     dev_log(LOG_DEB0, "[DO_RIDE] start");
-	if (CombatSystem::IsDead(AIHelpers::EcsOf(ch)) || CombatSystem::IsStun(AIHelpers::EcsOf(ch)))
+	if (CombatSystem::IsDead(((ch) ? (ch)->GetEntityHandle() : entt::null)) || CombatSystem::IsStun(((ch) ? (ch)->GetEntityHandle() : entt::null)))
 		return;
 
-	if (ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)) == 113)
+	if (ecs::PlayerRuntime::GetMapIndex(((ch) ? (ch)->GetEntityHandle() : entt::null)) == 113)
 		return;
 
-	const entt::entity owner = AIHelpers::EcsOf(ch);
+	const entt::entity owner = ((ch) ? (ch)->GetEntityHandle() : entt::null);
 #ifdef ENABLE_MOUNT_COSTUME_SYSTEM
 	if (ch->IsPolymorphed() == true){
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 732, "");
+		ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 732, "");
 #endif
 		return;
 	}
@@ -3590,7 +3596,7 @@ ACMD(do_ride)
 			mobVnum = ItemSystem::GetItemValue(mount, 1);
 #endif
 
-		if (MountSystem::GetMountVnum(AIHelpers::EcsOf(ch)))
+		if (MountSystem::GetMountVnum(((ch) ? (ch)->GetEntityHandle() : entt::null)))
 		{
 			mountSystem->Unmount(mobVnum);
 		}
@@ -3633,11 +3639,11 @@ ACMD(do_ride)
 //// belt inventory kereses
 //	for (uint8_t i = BELT_INVENTORY_SLOT_START; i < BELT_INVENTORY_SLOT_END; ++i)
 //	{
-//		LPITEM item = ItemSystem::GetInventoryItemPtr(AIHelpers::EcsOf(ch), i);
+//		const entt::entity item = ItemSystem::GetInventoryItem(ch ? ch->GetEntityHandle() : entt::null, i);
 //		if (!item)
 //			continue;
 //
-//		if (ItemSystem::GetItemType(EntityFactory::CreateItemEntity(g_registry, item)) == ITEM_COSTUME && ItemSystem::GetItemSubType(EntityFactory::CreateItemEntity(g_registry, item)) == COSTUME_MOUNT)
+//		if (ItemSystem::GetItemType((item ? item->GetEntityHandle() : entt::null)) == ITEM_COSTUME && ItemSystem::GetItemSubType((item ? item->GetEntityHandle() : entt::null)) == COSTUME_MOUNT)
 //		{
 //			ch->UseItem(TItemPos(INVENTORY, i)); // belt inventory is INVENTORY window_type
 //			return;
@@ -3645,7 +3651,7 @@ ACMD(do_ride)
 	//}
 
 #ifdef TEXTS_IMPROVEMENT
-	ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 5, "");
+	ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 5, "");
 #endif
 }
 
@@ -3655,7 +3661,7 @@ ACMD(do_gaya_system)
 	if (quest::CQuestManager::instance().GetEventFlag("gaya_disable") == 1)
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 734, "");
+		ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 734, "");
 #endif
 		return;
 	}
@@ -3708,13 +3714,13 @@ ACMD(do_extend_range_npc)
 	uint32_t vnum = 0;
 	str_to_number(vnum, arg1);
 
-	if (CombatSystem::IsDead(AIHelpers::EcsOf(ch)))
+	if (CombatSystem::IsDead(((ch) ? (ch)->GetEntityHandle() : entt::null)))
 		return;
 
-	if (CombatSystem::IsDead(AIHelpers::EcsOf(ch)) || ecs::SocialSystem::GetExchange(AIHelpers::EcsOf(ch)) || ch->GetMyShop() || ch->IsOpenSafebox() || ch->IsCubeOpen())
+	if (CombatSystem::IsDead(((ch) ? (ch)->GetEntityHandle() : entt::null)) || ecs::SocialSystem::GetExchange(((ch) ? (ch)->GetEntityHandle() : entt::null)) || ch->GetMyShop() || ch->IsOpenSafebox() || ch->IsCubeOpen())
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 735, "");
+		ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 735, "");
 #endif
 		return;
 	}
@@ -3774,7 +3780,7 @@ ACMD(do_hide_costume)
 	else
 		return;
 
-	NetworkSyncSystem::UpdatePacket(AIHelpers::EcsOf(ch));
+	NetworkSyncSystem::UpdatePacket(((ch) ? (ch)->GetEntityHandle() : entt::null));
 }
 #endif
 
@@ -3787,7 +3793,7 @@ ACMD(do_rune)
 {
 	if (!ch)
 		return;
-	const entt::entity owner = AIHelpers::EcsOf(ch);
+	const entt::entity owner = ((ch) ? (ch)->GetEntityHandle() : entt::null);
 
 	char arg1[512];
 	const char* rest = one_argument(argument, arg1, sizeof(arg1));
@@ -3850,7 +3856,7 @@ ACMD(do_rune_charge)
 {
 	if (!ch)
 		return;
-	const entt::entity owner = AIHelpers::EcsOf(ch);
+	const entt::entity owner = ((ch) ? (ch)->GetEntityHandle() : entt::null);
 
 	char arg1[256], arg2[256];
 	two_arguments(argument, arg1, sizeof(arg1), arg2, sizeof(arg2));
@@ -3887,7 +3893,7 @@ ACMD(do_rune_charge)
 		const int pos = ItemSystem::GetEmptyInventoryPositionEcs(owner, bottle);
 		if (pos == -1) {
 #ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 366, "");
+			ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 366, "");
 #endif
 			return;
 		}
@@ -3949,10 +3955,10 @@ ACMD(do_rune_shop)
 	if (!ch)
 		return;
 
-	if (ch->IsOpenSafebox() || ecs::SocialSystem::GetExchange(AIHelpers::EcsOf(ch)) || ch->GetMyShop() || ch->IsCubeOpen())
+	if (ch->IsOpenSafebox() || ecs::SocialSystem::GetExchange(((ch) ? (ch)->GetEntityHandle() : entt::null)) || ch->GetMyShop() || ch->IsCubeOpen())
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 294, "");
+		ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 294, "");
 #endif
 		return;
 	}
@@ -3979,13 +3985,13 @@ ACMD(do_rune_effect)
 	if ((iArg1 != 0) && (iArg1 != 1))
 		return;
 
-	if (ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(ch), "rune.hide_effect") == iArg1)
+	if (ecs::QuestSystem::GetFlag(((ch) ? (ch)->GetEntityHandle() : entt::null), "rune.hide_effect") == iArg1)
 		return;
 
-	ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(ch), "rune.hide_effect", iArg1);
+	ecs::QuestSystem::SetFlag(((ch) ? (ch)->GetEntityHandle() : entt::null), "rune.hide_effect", iArg1);
 	ch->ComputePoints();
-	NetworkSyncSystem::UpdatePacket(AIHelpers::EcsOf(ch));
-	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_COMMAND, "rune_affect %d", iArg1);
+	NetworkSyncSystem::UpdatePacket(((ch) ? (ch)->GetEntityHandle() : entt::null));
+	ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_COMMAND, "rune_affect %d", iArg1);
 }
 #endif
 #ifdef ENABLE_EVENT_MANAGER
@@ -4005,7 +4011,7 @@ ACMD(do_event_manager)
 
 		if (vecArgs.size() < 3) {
 
-			ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "put the event index!!");
+			ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "put the event index!!");
 			return;
 		}
 
@@ -4013,9 +4019,9 @@ ACMD(do_event_manager)
 		str_to_number(removeIndex, vecArgs[2].c_str());
 
 		if(CHARACTER_MANAGER::Instance().CloseEventManuel(removeIndex))
-			ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "successfuly remove!");
+			ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "successfuly remove!");
 		else
-			ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "dont has any event!");
+			ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "dont has any event!");
 	}
 	else if (vecArgs[1] == "update")
 	{
@@ -4026,7 +4032,7 @@ ACMD(do_event_manager)
 		//db_clientdesc->Packet(&subHeader, sizeof(uint8_t));
 		db_clientdesc->DBPacket(HEADER_GD_EVENT_MANAGER, 0, &subHeader, sizeof(uint8_t));
 
-		ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "successfully update!");
+		ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "successfully update!");
 	}
 }
 #endif
@@ -4107,16 +4113,16 @@ static bool ParseDateToEpochEndOfDay(const char* s, time_t& outEpoch)
 
 ACMD(do_gr_open)
 {
-	CGuild* g = ch ? ecs::SocialSystem::GetGuild(AIHelpers::EcsOf(ch)) : nullptr;
+	CGuild* g = ch ? ecs::SocialSystem::GetGuild(((ch) ? (ch)->GetEntityHandle() : entt::null)) : nullptr;
 	if (!g)
 		return;
-	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_COMMAND, "GuildRenewalOpen");
+	ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_COMMAND, "GuildRenewalOpen");
 	g->SendRenewalInfoTo(ch);
 }
 
 ACMD(do_gr_load)
 {
-	CGuild* g = ch ? ecs::SocialSystem::GetGuild(AIHelpers::EcsOf(ch)) : nullptr;
+	CGuild* g = ch ? ecs::SocialSystem::GetGuild(((ch) ? (ch)->GetEntityHandle() : entt::null)) : nullptr;
 	if (!g)
 		return;
 	g->RequestRenewalLoad();
@@ -4125,7 +4131,7 @@ ACMD(do_gr_load)
 
 ACMD(do_gr_deposit_item)
 {
-	CGuild* g = ch ? ecs::SocialSystem::GetGuild(AIHelpers::EcsOf(ch)) : nullptr;
+	CGuild* g = ch ? ecs::SocialSystem::GetGuild(((ch) ? (ch)->GetEntityHandle() : entt::null)) : nullptr;
 	if (!g)
 		return;
 
@@ -4136,7 +4142,7 @@ ACMD(do_gr_deposit_item)
 	if (cell < 0 || count == 0)
 		return;
 
-	const entt::entity owner = AIHelpers::EcsOf(ch);
+	const entt::entity owner = ((ch) ? (ch)->GetEntityHandle() : entt::null);
 	const entt::entity item = ItemSystem::GetInventoryItem(owner, cell);
 	if (!ItemSystem::IsValidItem(item))
 		return;
@@ -4157,30 +4163,30 @@ ACMD(do_gr_deposit_item)
 
 ACMD(do_gr_deposit_money)
 {
-	CGuild* g = ch ? ecs::SocialSystem::GetGuild(AIHelpers::EcsOf(ch)) : nullptr;
+	CGuild* g = ch ? ecs::SocialSystem::GetGuild(((ch) ? (ch)->GetEntityHandle() : entt::null)) : nullptr;
 	if (!g)
 		return;
 	const int64_t amount = atoll(argument);
 	if (amount <= 0)
 		return;
-	if ((int64_t)ecs::PointSystem::GetGold(AIHelpers::EcsOf(ch)) < amount)
+	if ((int64_t)ecs::PointSystem::GetGold(((ch) ? (ch)->GetEntityHandle() : entt::null)) < amount)
 	{
-		ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "Not enough yang.");
+		ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "Not enough yang.");
 		return;
 	}
-	ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_GOLD, (long)-amount, true);
+	ecs::PointSystem::Change(((ch) ? (ch)->GetEntityHandle() : entt::null), POINT_GOLD, (long)-amount, true);
 	g->RenewalDepositMoney(ch, amount, false);
 	g->SendRenewalInfoTo(ch);
 }
 
 ACMD(do_gr_set_tax)
 {
-	CGuild* g = ch ? ecs::SocialSystem::GetGuild(AIHelpers::EcsOf(ch)) : nullptr;
+	CGuild* g = ch ? ecs::SocialSystem::GetGuild(((ch) ? (ch)->GetEntityHandle() : entt::null)) : nullptr;
 	if (!g)
 		return;
-	if (!g->IsGuildMaster((ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)))))
+	if (!g->IsGuildMaster((ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null)))))
 	{
-		ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "Only guild leader can set tax request.");
+		ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "Only guild leader can set tax request.");
 		return;
 	}
 
@@ -4189,14 +4195,14 @@ ACMD(do_gr_set_tax)
 	argument = two_arguments(argument, dateArg, sizeof(dateArg), moneyArg, sizeof(moneyArg));
 	if (!*dateArg || !*moneyArg)
 	{
-		ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "Usage: gr_set_tax <YYYY.MM.DD> <yang> <vnum1> <count1> ... <vnum5> <count5>");
+		ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "Usage: gr_set_tax <YYYY.MM.DD> <yang> <vnum1> <count1> ... <vnum5> <count5>");
 		return;
 	}
 
 	int y=0, mo=0, d=0;
 	if (3 != sscanf(dateArg, "%d.%d.%d", &y, &mo, &d))
 	{
-		ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "Invalid date format. Use YYYY.MM.DD");
+		ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "Invalid date format. Use YYYY.MM.DD");
 		return;
 	}
 	// Deadline: end of that day
@@ -4211,7 +4217,7 @@ ACMD(do_gr_set_tax)
 	time_t deadline = mktime(&t);
 	if (deadline <= 0)
 	{
-		ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "Invalid deadline.");
+		ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "Invalid deadline.");
 		return;
 	}
 
@@ -4238,40 +4244,40 @@ ACMD(do_gr_set_tax)
 
 	if (!g->RenewalSetTax(ch, tax))
 	{
-		ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "Failed to set tax request.");
+		ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "Failed to set tax request.");
 		return;
 	}
 
 	// Notify everyone online in the guild
 	g->SendRenewalInfoToOnlineMembers();
-	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "Guild tax request has been set.");
+	ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "Guild tax request has been set.");
 }
 
 ACMD(do_gr_pay_tax)
 {
-	CGuild* g = ch ? ecs::SocialSystem::GetGuild(AIHelpers::EcsOf(ch)) : nullptr;
+	CGuild* g = ch ? ecs::SocialSystem::GetGuild(((ch) ? (ch)->GetEntityHandle() : entt::null)) : nullptr;
 	if (!g)
 		return;
 	std::string reason;
 	if (!g->RenewalPayTax(ch, &reason))
 	{
-		ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "%s", reason.c_str());
+		ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "%s", reason.c_str());
 	}
 	g->SendRenewalInfoTo(ch);
 }
 
 ACMD(do_gr_levelup)
 {
-	CGuild* g = ch ? ecs::SocialSystem::GetGuild(AIHelpers::EcsOf(ch)) : nullptr;
+	CGuild* g = ch ? ecs::SocialSystem::GetGuild(((ch) ? (ch)->GetEntityHandle() : entt::null)) : nullptr;
 	if (!g)
 		return;
 	std::string reason;
 	if (!g->DoRenewalLevelUp(ch, &reason))
 	{
 		if (!reason.empty())
-			ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "%s", reason.c_str());
+			ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "%s", reason.c_str());
 		else
-			ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "Guild cannot be upgraded.");
+			ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "Guild cannot be upgraded.");
 	}
 	g->SendRenewalInfoTo(ch);
 }

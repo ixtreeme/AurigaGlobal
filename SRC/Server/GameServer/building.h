@@ -1,5 +1,7 @@
 #pragma once
 
+#include <entt/entt.hpp>
+
 #include <common/building.h>
 
 namespace building
@@ -41,6 +43,7 @@ namespace building
 			void	Reconstruct(uint32_t dwVnum);
 
 			LPCHARACTER GetNPC() { return m_chNPC; }
+			entt::entity GetNPCEntity() const { return m_npcEntity; }
 			// END_OF_BUILDING_NPC
 
 		protected:
@@ -50,6 +53,7 @@ namespace building
 			CLand *		m_pkLand;
 
 			LPCHARACTER		m_chNPC;
+			entt::entity		m_npcEntity;
 	};
 
 	class CLand
@@ -72,7 +76,7 @@ namespace building
 			LPOBJECT	FindObjectByVID(uint32_t dwVID);
 			LPOBJECT	FindObjectByVnum(uint32_t dwVnum);
 			LPOBJECT	FindObjectByGroup(uint32_t dwGroupVnum);
-			LPOBJECT	FindObjectByNPC(LPCHARACTER npc);
+			LPOBJECT	FindObjectByNPC(entt::entity npc);
 			void DeleteObject(uint32_t dwID);
 
 			bool	RequestCreateObject(uint32_t dwVnum, int32_t lMapIndex, int32_t x, int32_t y, float xRot, float yRot, float zRot, bool checkAnother);

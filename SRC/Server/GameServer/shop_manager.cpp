@@ -113,7 +113,7 @@ LPSHOP CShopManager::GetByNPCVnum(uint32_t dwVnum)
 bool CShopManager::StartShopping(LPCHARACTER pkChr, LPCHARACTER pkChrShopKeeper, int iShopVnum)
 {
 #ifdef ENABLE_RESTRICT_GM_PERMISSIONS
-	if (ecs::PlayerRuntime::GetGMLevel(AIHelpers::EcsOf(pkChr)) > GM_PLAYER && ecs::PlayerRuntime::GetGMLevel(AIHelpers::EcsOf(pkChr)) < GM_IMPLEMENTOR) {
+	if (ecs::PlayerRuntime::GetGMLevel(((pkChr) ? (pkChr)->GetEntityHandle() : entt::null)) > GM_PLAYER && ecs::PlayerRuntime::GetGMLevel(((pkChr) ? (pkChr)->GetEntityHandle() : entt::null)) < GM_IMPLEMENTOR) {
 		return false;
 	}
 #endif
@@ -121,24 +121,24 @@ bool CShopManager::StartShopping(LPCHARACTER pkChr, LPCHARACTER pkChrShopKeeper,
 		return false;
 	// this method is only for NPC
 
-	if (ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(pkChrShopKeeper)))
+	if (ecs::PlayerRuntime::IsPC(((pkChrShopKeeper) ? (pkChrShopKeeper)->GetEntityHandle() : entt::null)))
 		return false;
 
 	//PREVENT_TRADE_WINDOW
-	if (pkChr->IsOpenSafebox() || ecs::SocialSystem::GetExchange(AIHelpers::EcsOf(pkChr)) || pkChr->GetMyShop() || pkChr->IsCubeOpen())
+	if (pkChr->IsOpenSafebox() || ecs::SocialSystem::GetExchange(((pkChr) ? (pkChr)->GetEntityHandle() : entt::null)) || pkChr->GetMyShop() || pkChr->IsCubeOpen())
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(pkChr), CHAT_TYPE_INFO, 294, "");
+		ecs::ChatSystem::SendNew(((pkChr) ? (pkChr)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 294, "");
 #endif
 		return false;
 	}
 	//END_PREVENT_TRADE_WINDOW
 
-	int32_t distance = DISTANCE_APPROX(ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(pkChr)) - ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(pkChrShopKeeper)), ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(pkChr)) - ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(pkChrShopKeeper)));
+	int32_t distance = DISTANCE_APPROX(ecs::PlayerRuntime::GetX(((pkChr) ? (pkChr)->GetEntityHandle() : entt::null)) - ecs::PlayerRuntime::GetX(((pkChrShopKeeper) ? (pkChrShopKeeper)->GetEntityHandle() : entt::null)), ecs::PlayerRuntime::GetY(((pkChr) ? (pkChr)->GetEntityHandle() : entt::null)) - ecs::PlayerRuntime::GetY(((pkChrShopKeeper) ? (pkChrShopKeeper)->GetEntityHandle() : entt::null)));
 
 	if (distance >= SHOP_MAX_DISTANCE)
 	{
-		LOG_INFO("SHOP: TOO_FAR: {} distance {}", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(pkChr)).data(), distance);
+		LOG_INFO("SHOP: TOO_FAR: {} distance {}", ecs::PlayerRuntime::GetName(((pkChr) ? (pkChr)->GetEntityHandle() : entt::null)).data(), distance);
 		return false;
 	}
 
@@ -147,7 +147,7 @@ bool CShopManager::StartShopping(LPCHARACTER pkChr, LPCHARACTER pkChrShopKeeper,
 	if (iShopVnum)
 		pkShop = Get(iShopVnum);
 	else
-		pkShop = GetByNPCVnum(ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkChrShopKeeper)));
+		pkShop = GetByNPCVnum(ecs::PlayerRuntime::GetRaceNum(((pkChrShopKeeper) ? (pkChrShopKeeper)->GetEntityHandle() : entt::null)));
 
 	if (!pkShop)
 	{
@@ -157,12 +157,12 @@ bool CShopManager::StartShopping(LPCHARACTER pkChr, LPCHARACTER pkChrShopKeeper,
 
 	bool bOtherEmpire = false;
 
-	if (ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(pkChr)) != ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(pkChrShopKeeper)))
+	if (ecs::PlayerRuntime::GetEmpire(((pkChr) ? (pkChr)->GetEntityHandle() : entt::null)) != ecs::PlayerRuntime::GetEmpire(((pkChrShopKeeper) ? (pkChrShopKeeper)->GetEntityHandle() : entt::null)))
 		bOtherEmpire = true;
 
-	pkShop->AddGuest(pkChr, ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(pkChrShopKeeper)), bOtherEmpire);
+	pkShop->AddGuest(pkChr, ecs::PlayerRuntime::GetPacketVID(((pkChrShopKeeper) ? (pkChrShopKeeper)->GetEntityHandle() : entt::null)), bOtherEmpire);
 	pkChr->SetShopOwner(pkChrShopKeeper);
-	LOG_INFO("SHOP: START: {}", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(pkChr)).data());
+	LOG_INFO("SHOP: START: {}", ecs::PlayerRuntime::GetName(((pkChr) ? (pkChr)->GetEntityHandle() : entt::null)).data());
 	return true;
 }
 
@@ -178,20 +178,20 @@ LPSHOP CShopManager::FindPCShop(uint32_t dwVID)
 
 LPSHOP CShopManager::CreatePCShop(LPCHARACTER ch, TShopItemTable * pTable, uint8_t bItemCount)
 {
-	if (FindPCShop(ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(ch))))
+	if (FindPCShop(ecs::PlayerRuntime::GetPacketVID(((ch) ? (ch)->GetEntityHandle() : entt::null))))
 		return nullptr;
 
 	LPSHOP pkShop = M2_NEW CShop;
 	pkShop->SetPCShop(ch);
 	pkShop->SetShopItems(pTable, bItemCount);
 
-	m_map_pkShopByPC.insert(TShopMap::value_type(ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(ch)), pkShop));
+	m_map_pkShopByPC.insert(TShopMap::value_type(ecs::PlayerRuntime::GetPacketVID(((ch) ? (ch)->GetEntityHandle() : entt::null)), pkShop));
 	return pkShop;
 }
 
 void CShopManager::DestroyPCShop(LPCHARACTER ch)
 {
-	LPSHOP pkShop = FindPCShop(ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(ch)));
+	LPSHOP pkShop = FindPCShop(ecs::PlayerRuntime::GetPacketVID(((ch) ? (ch)->GetEntityHandle() : entt::null)));
 
 	if (!pkShop)
 		return;
@@ -200,7 +200,7 @@ void CShopManager::DestroyPCShop(LPCHARACTER ch)
 	ch->SetMyShopTime();
 	//END_PREVENT_ITEM_COPY
 
-	m_map_pkShopByPC.erase(ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(ch)));
+	m_map_pkShopByPC.erase(ecs::PlayerRuntime::GetPacketVID(((ch) ? (ch)->GetEntityHandle() : entt::null)));
 	M2_DELETE(pkShop);
 }
 
@@ -217,14 +217,14 @@ void CShopManager::StopShopping(LPCHARACTER ch)
 	//END_PREVENT_ITEM_COPY
 
 	shop->RemoveGuest(ch);
-	LOG_INFO("SHOP: END: {}", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data());
+	LOG_INFO("SHOP: END: {}", ecs::PlayerRuntime::GetName(((ch) ? (ch)->GetEntityHandle() : entt::null)).data());
 }
 
 // 아이템 구입
 void CShopManager::Buy(LPCHARACTER ch, uint8_t pos)
 {
 #ifdef ENABLE_RESTRICT_GM_PERMISSIONS
-	if (ecs::PlayerRuntime::GetGMLevel(AIHelpers::EcsOf(ch)) > GM_PLAYER && ecs::PlayerRuntime::GetGMLevel(AIHelpers::EcsOf(ch)) < GM_IMPLEMENTOR) {
+	if (ecs::PlayerRuntime::GetGMLevel(((ch) ? (ch)->GetEntityHandle() : entt::null)) > GM_PLAYER && ecs::PlayerRuntime::GetGMLevel(((ch) ? (ch)->GetEntityHandle() : entt::null)) < GM_IMPLEMENTOR) {
 		return;
 	}
 #endif
@@ -234,7 +234,7 @@ void CShopManager::Buy(LPCHARACTER ch, uint8_t pos)
 		if (get_dword_time() < ch->GetLastBuySellTime()+g_BuySellTimeLimitValue)
 		{
 #ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 510, "");
+			ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 510, "");
 #endif
 			return;
 		}
@@ -247,10 +247,10 @@ void CShopManager::Buy(LPCHARACTER ch, uint8_t pos)
 
 	if (ch->GetShopOwner())
 	{
-		if (DISTANCE_APPROX(ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(ch)) - ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(ch->GetShopOwner())), ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(ch)) - ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(ch->GetShopOwner()))) > 2000)
+		if (DISTANCE_APPROX(ecs::PlayerRuntime::GetX(((ch) ? (ch)->GetEntityHandle() : entt::null)) - ecs::PlayerRuntime::GetX(((ch->GetShopOwner()) ? (ch->GetShopOwner())->GetEntityHandle() : entt::null)), ecs::PlayerRuntime::GetY(((ch) ? (ch)->GetEntityHandle() : entt::null)) - ecs::PlayerRuntime::GetY(((ch->GetShopOwner()) ? (ch->GetShopOwner())->GetEntityHandle() : entt::null))) > 2000)
 		{
 #ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 381, "");
+			ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 381, "");
 #endif
 			return;
 		}
@@ -271,14 +271,14 @@ void CShopManager::Buy(LPCHARACTER ch, uint8_t pos)
 		pack.subheader	= ret;
 		pack.size	= sizeof(TPacketGCShop);
 
-		ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->Packet(&pack, sizeof(pack));
+		ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null))->Packet(&pack, sizeof(pack));
 	}
 }
 
 #ifdef ENABLE_BUY_STACK_FROM_SHOP
 void CShopManager::MultipleBuy(LPCHARACTER ch, uint8_t p, uint8_t c) {
 #ifdef ENABLE_RESTRICT_GM_PERMISSIONS
-	if (ecs::PlayerRuntime::GetGMLevel(AIHelpers::EcsOf(ch)) > GM_PLAYER && ecs::PlayerRuntime::GetGMLevel(AIHelpers::EcsOf(ch)) < GM_IMPLEMENTOR) {
+	if (ecs::PlayerRuntime::GetGMLevel(((ch) ? (ch)->GetEntityHandle() : entt::null)) > GM_PLAYER && ecs::PlayerRuntime::GetGMLevel(((ch) ? (ch)->GetEntityHandle() : entt::null)) < GM_IMPLEMENTOR) {
 		return;
 	}
 #endif
@@ -288,9 +288,9 @@ void CShopManager::MultipleBuy(LPCHARACTER ch, uint8_t p, uint8_t c) {
 	}
 
 	if (ch->GetShopOwner()) {
-		if (DISTANCE_APPROX(ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(ch)) - ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(ch->GetShopOwner())), ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(ch)) - ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(ch->GetShopOwner()))) > 2000) {
+		if (DISTANCE_APPROX(ecs::PlayerRuntime::GetX(((ch) ? (ch)->GetEntityHandle() : entt::null)) - ecs::PlayerRuntime::GetX(((ch->GetShopOwner()) ? (ch->GetShopOwner())->GetEntityHandle() : entt::null)), ecs::PlayerRuntime::GetY(((ch) ? (ch)->GetEntityHandle() : entt::null)) - ecs::PlayerRuntime::GetY(((ch->GetShopOwner()) ? (ch->GetShopOwner())->GetEntityHandle() : entt::null))) > 2000) {
 #ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 381, "");
+			ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 381, "");
 #endif
 			return;
 		}
@@ -308,7 +308,7 @@ void CShopManager::MultipleBuy(LPCHARACTER ch, uint8_t p, uint8_t c) {
 		pack.subheader = ret;
 		pack.size = sizeof(TPacketGCShop);
 
-		ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->Packet(&pack, sizeof(pack));
+		ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null))->Packet(&pack, sizeof(pack));
 	}
 }
 #endif
@@ -333,7 +333,7 @@ uint8_t bCount
 {
 
 #ifdef ENABLE_RESTRICT_GM_PERMISSIONS
-	if (ecs::PlayerRuntime::GetGMLevel(AIHelpers::EcsOf(ch)) > GM_PLAYER && ecs::PlayerRuntime::GetGMLevel(AIHelpers::EcsOf(ch)) < GM_IMPLEMENTOR) {
+	if (ecs::PlayerRuntime::GetGMLevel(((ch) ? (ch)->GetEntityHandle() : entt::null)) > GM_PLAYER && ecs::PlayerRuntime::GetGMLevel(((ch) ? (ch)->GetEntityHandle() : entt::null)) < GM_IMPLEMENTOR) {
 		return;
 	}
 #endif
@@ -343,7 +343,7 @@ uint8_t bCount
 		if (get_dword_time() < ch->GetLastBuySellTime()+g_BuySellTimeLimitValue)
 		{
 #ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 510, "");
+			ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 510, "");
 #endif
 			return;
 		}
@@ -364,13 +364,13 @@ uint8_t bCount
 		return;
 
 	/*
-	if (DISTANCE_APPROX(ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(ch))-ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(ch->GetShopOwner())), ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(ch))-ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(ch->GetShopOwner())))>2000)
+	if (DISTANCE_APPROX(ecs::PlayerRuntime::GetX(((ch) ? (ch)->GetEntityHandle() : entt::null))-ecs::PlayerRuntime::GetX(((ch->GetShopOwner()) ? (ch->GetShopOwner())->GetEntityHandle() : entt::null)), ecs::PlayerRuntime::GetY(((ch) ? (ch)->GetEntityHandle() : entt::null))-ecs::PlayerRuntime::GetY(((ch->GetShopOwner()) ? (ch->GetShopOwner())->GetEntityHandle() : entt::null)))>2000)
 	{
 		return;
 	}
 	*/
 
-	const entt::entity owner = AIHelpers::EcsOf(ch);
+	const entt::entity owner = ((ch) ? (ch)->GetEntityHandle() : entt::null);
 #ifdef ENABLE_EXTRA_INVENTORY
 	const entt::entity itemEntity = ItemSystem::GetItem(owner, Cell);
 #else
@@ -383,7 +383,7 @@ uint8_t bCount
 	if (ItemSystem::IsItemEquipped(itemEntity) == true)
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 541, "");
+		ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 541, "");
 #endif
 		return;
 	}
@@ -426,14 +426,14 @@ uint8_t bCount
 	} */
 
 	if (test_server)
-		LOG_INFO("Sell Item price id {} {} itemid {}", ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)), ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), ItemSystem::GetItemID(itemEntity));
+		LOG_INFO("Sell Item price id {} {} itemid {}", ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null)), ecs::PlayerRuntime::GetName(((ch) ? (ch)->GetEntityHandle() : entt::null)).data(), ItemSystem::GetItemID(itemEntity));
 
 	const int64_t currentGold = ecs::PointSystem::GetGold(owner);
 	if (dwPrice < 0 || currentGold >= GOLD_MAX || dwPrice >= GOLD_MAX - currentGold)
 	{
-		LOG_ERROR("[OVERFLOW_GOLD] id {} name {} gold {}", ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)), ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), ecs::PointSystem::GetGold(AIHelpers::EcsOf(ch)));
+		LOG_ERROR("[OVERFLOW_GOLD] id {} name {} gold {}", ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null)), ecs::PlayerRuntime::GetName(((ch) ? (ch)->GetEntityHandle() : entt::null)).data(), ecs::PointSystem::GetGold(((ch) ? (ch)->GetEntityHandle() : entt::null)));
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 226,
+		ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 226,
 		"%lld"
 
 		, GOLD_MAX);

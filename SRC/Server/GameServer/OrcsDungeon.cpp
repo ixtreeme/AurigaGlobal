@@ -90,7 +90,7 @@ namespace
             if (!ent || !ent->IsType(ENTITY_CHARACTER))
                 return;
             LPCHARACTER ch = static_cast<LPCHARACTER>(ent);
-            if (ch && ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch)))
+            if (ch && ecs::PlayerRuntime::IsPC(((ch) ? (ch)->GetEntityHandle() : entt::null)))
                 fn(ch);
         }
     };
@@ -114,7 +114,7 @@ namespace
 
         void operator()(LPCHARACTER ch)
         {
-            if (!ch || !ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch)))
+            if (!ch || !ecs::PlayerRuntime::IsPC(((ch) ? (ch)->GetEntityHandle() : entt::null)))
                 return;
 
             // must have required item
@@ -277,14 +277,14 @@ struct FCooldownCheck
 
     void operator()(LPCHARACTER ch)
     {
-        if (!ch || !ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch)))
+        if (!ch || !ecs::PlayerRuntime::IsPC(((ch) ? (ch)->GetEntityHandle() : entt::null)))
             return;
 
-        const int32_t until = ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(ch), qfCooldown);
+        const int32_t until = ecs::QuestSystem::GetFlag(((ch) ? (ch)->GetEntityHandle() : entt::null), qfCooldown);
         if (until > now && ok)
         {
             ok = false;
-            name = ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data();
+            name = ecs::PlayerRuntime::GetName(((ch) ? (ch)->GetEntityHandle() : entt::null)).data();
             remain = until - now;
         }
     }
@@ -347,29 +347,29 @@ bool COrcsDungeon::IsOrcDungeonMap(int32_t mapIndex) const
 
 void COrcsDungeon::OnPlayerDisconnect(CHARACTER* ch)
 {
-    if (!ch || !ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch)))
+    if (!ch || !ecs::PlayerRuntime::IsPC(((ch) ? (ch)->GetEntityHandle() : entt::null)))
         return;
 
-    const int32_t idx = ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch));
+    const int32_t idx = ecs::PlayerRuntime::GetMapIndex(((ch) ? (ch)->GetEntityHandle() : entt::null));
     if (!IsOrcDungeonMap(idx))
         return;
 
-    ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(ch), kQfDisconnect, get_global_time() + kRejoinSeconds);
-    ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(ch), kQfIdx, idx);
-    ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(ch), kQfCh, (int32_t)g_bChannel);
+    ecs::QuestSystem::SetFlag(((ch) ? (ch)->GetEntityHandle() : entt::null), kQfDisconnect, get_global_time() + kRejoinSeconds);
+    ecs::QuestSystem::SetFlag(((ch) ? (ch)->GetEntityHandle() : entt::null), kQfIdx, idx);
+    ecs::QuestSystem::SetFlag(((ch) ? (ch)->GetEntityHandle() : entt::null), kQfCh, (int32_t)g_bChannel);
 }
 
 void COrcsDungeon::OnPlayerLogin(CHARACTER* ch)
 {
-    if (!ch || !ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch)))
+    if (!ch || !ecs::PlayerRuntime::IsPC(((ch) ? (ch)->GetEntityHandle() : entt::null)))
         return;
 
-    const int32_t idx = ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch));
+    const int32_t idx = ecs::PlayerRuntime::GetMapIndex(((ch) ? (ch)->GetEntityHandle() : entt::null));
 
     // Safety: if someone logs into the original dungeon map, move to lobby.
     if (idx == kOrcOriginalMap)
     {
-        ecs::MovementSystem::WarpSet(AIHelpers::EcsOf(ch), 535400, 1428400);
+        ecs::MovementSystem::WarpSet(((ch) ? (ch)->GetEntityHandle() : entt::null), 535400, 1428400);
         return;
     }
 
@@ -380,7 +380,7 @@ void COrcsDungeon::OnPlayerLogin(CHARACTER* ch)
     LPDUNGEON d = CDungeonManager::instance().FindByMapIndex(idx);
     if (!d)
     {
-        ecs::MovementSystem::WarpSet(AIHelpers::EcsOf(ch), 535400, 1428400);
+        ecs::MovementSystem::WarpSet(((ch) ? (ch)->GetEntityHandle() : entt::null), 535400, 1428400);
         return;
     }
 
@@ -422,10 +422,10 @@ static void OrcDungeon_CompleteRankingForMap(int32_t dungeonMapIdx)
             }
 #endif
 
-            const int32_t enter_time = ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(ch), kQfEnterTime);
-            ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(ch), kQfEnterTime, 0);
-            ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(ch), kQfCh, 0);
-            ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(ch), kQfCooldown, now + kCooldownSeconds);
+            const int32_t enter_time = ecs::QuestSystem::GetFlag(((ch) ? (ch)->GetEntityHandle() : entt::null), kQfEnterTime);
+            ecs::QuestSystem::SetFlag(((ch) ? (ch)->GetEntityHandle() : entt::null), kQfEnterTime, 0);
+            ecs::QuestSystem::SetFlag(((ch) ? (ch)->GetEntityHandle() : entt::null), kQfCh, 0);
+            ecs::QuestSystem::SetFlag(((ch) ? (ch)->GetEntityHandle() : entt::null), kQfCooldown, now + kCooldownSeconds);
 
             int32_t elapsed = now - enter_time;
             if (elapsed < 0)
@@ -439,7 +439,7 @@ static void OrcDungeon_CompleteRankingForMap(int32_t dungeonMapIdx)
 #endif
 
             // dungeon_ranking update (same logic as questlua)
-            const int32_t pid = ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch));
+            const int32_t pid = ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null));
             const int32_t dungeon_index = kOrcOriginalMap;
 
             std::unique_ptr<SQLMsg> msgcheck(DBManager::instance().DirectQuery(
@@ -462,7 +462,7 @@ static void OrcDungeon_CompleteRankingForMap(int32_t dungeonMapIdx)
             }
             else
             {
-                LPDESC desc = ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch));
+                LPDESC desc = ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null));
                 const uint32_t accId = desc ? desc->GetAccountTable().id : 0;
                 DBManager::instance().DirectQuery(
                     "INSERT INTO dungeon_ranking (acc_id, pid, dungeon_index, completed, time, damage) VALUES ('%u', '%d', '%d', '%d', '%d', '%d')",
@@ -475,13 +475,13 @@ void COrcsDungeon::OnMobKilled(CHARACTER* killer, CHARACTER* victim)
 {
     if (!killer || !victim)
         return;
-    if (!ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(killer)))
+    if (!ecs::PlayerRuntime::IsPC(((killer) ? (killer)->GetEntityHandle() : entt::null)))
         return;
     // 8009 is often CHAR_TYPE_STONE, not monster.
-    if (!(victim->IsMonster() || ecs::PlayerRuntime::IsStone(AIHelpers::EcsOf(victim))))
+    if (!(victim->IsMonster() || ecs::PlayerRuntime::IsStone(((victim) ? (victim)->GetEntityHandle() : entt::null))))
         return;
 
-    const int32_t idx = ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(victim));
+    const int32_t idx = ecs::PlayerRuntime::GetMapIndex(((victim) ? (victim)->GetEntityHandle() : entt::null));
     if (!IsOrcDungeonMap(idx))
         return;
 
@@ -489,7 +489,7 @@ void COrcsDungeon::OnMobKilled(CHARACTER* killer, CHARACTER* victim)
     if (!d)
         return;
 
-    const uint32_t vnum = ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(victim));
+    const uint32_t vnum = ecs::PlayerRuntime::GetRaceNum(((victim) ? (victim)->GetEntityHandle() : entt::null));
     const int32_t floorNum = d->GetFlag(kFlagFloor);
 
     if (vnum == kBossVnum)
@@ -502,14 +502,14 @@ void COrcsDungeon::OnMobKilled(CHARACTER* killer, CHARACTER* victim)
 
 #ifdef TEXTS_IMPROVEMENT
             // Global notice with existing text IDs
-            if (ecs::SocialSystem::GetParty(AIHelpers::EcsOf(killer)))
+            if (ecs::SocialSystem::GetParty(((killer) ? (killer)->GetEntityHandle() : entt::null)))
             {
-                LPCHARACTER leader = ecs::SocialSystem::GetParty(AIHelpers::EcsOf(killer))->GetLeaderCharacter();
-                BroadcastNoticeNew(CHAT_TYPE_NOTICE, 0, 0, 1272, "%s", leader ? ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(leader)).data() : ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(killer)).data());
+                LPCHARACTER leader = ecs::SocialSystem::GetParty(((killer) ? (killer)->GetEntityHandle() : entt::null))->GetLeaderCharacter();
+                BroadcastNoticeNew(CHAT_TYPE_NOTICE, 0, 0, 1272, "%s", leader ? ecs::PlayerRuntime::GetName(((leader) ? (leader)->GetEntityHandle() : entt::null)).data() : ecs::PlayerRuntime::GetName(((killer) ? (killer)->GetEntityHandle() : entt::null)).data());
             }
             else
             {
-                BroadcastNoticeNew(CHAT_TYPE_NOTICE, 0, 0, 1273, "%s", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(killer)).data());
+                BroadcastNoticeNew(CHAT_TYPE_NOTICE, 0, 0, 1273, "%s", ecs::PlayerRuntime::GetName(((killer) ? (killer)->GetEntityHandle() : entt::null)).data());
             }
 #else
             SendNotice("Orc Dungeon completed!");
@@ -538,7 +538,7 @@ void COrcsDungeon::OnMobKilled(CHARACTER* killer, CHARACTER* victim)
                 ForEachPcOnMap(idx, [&](LPCHARACTER p)
                     {
                         if (p)
-                            ecs::ChatSystem::Send(AIHelpers::EcsOf(p), CHAT_TYPE_INFO, "Dungeon bonus spawn: Nemere ");
+                            ecs::ChatSystem::Send(((p) ? (p)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "Dungeon bonus spawn: Nemere ");
                     });
             }
         }
@@ -626,13 +626,13 @@ void COrcsDungeon::OnMobKilled(CHARACTER* killer, CHARACTER* victim)
 // NPC click entry/exit.
 bool COrcsDungeon::OnClickNpc(CHARACTER* ch)
 {
-    if (!ch || !ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch)))
+    if (!ch || !ecs::PlayerRuntime::IsPC(((ch) ? (ch)->GetEntityHandle() : entt::null)))
         return false;
 
-    if (!ecs::PlayerRuntime::CanWarp(AIHelpers::EcsOf(ch)))
+    if (!ecs::PlayerRuntime::CanWarp(((ch) ? (ch)->GetEntityHandle() : entt::null)))
         return true;
 
-    const int32_t mapIdx = ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch));
+    const int32_t mapIdx = ecs::PlayerRuntime::GetMapIndex(((ch) ? (ch)->GetEntityHandle() : entt::null));
 
     // If clicked inside dungeon:
     // - while run is active (was_completed=0): behave as EXIT.
@@ -642,7 +642,7 @@ bool COrcsDungeon::OnClickNpc(CHARACTER* ch)
         LPDUNGEON cur = CDungeonManager::instance().FindByMapIndex(mapIdx);
         if (cur && cur->GetFlag(kFlagWasCompleted) == 0)
         {
-            ecs::MovementSystem::WarpSet(AIHelpers::EcsOf(ch), 535400, 1428400);
+            ecs::MovementSystem::WarpSet(((ch) ? (ch)->GetEntityHandle() : entt::null), 535400, 1428400);
             return true;
         }
         // completed -> continue below (fresh entrance flow)
@@ -651,17 +651,17 @@ bool COrcsDungeon::OnClickNpc(CHARACTER* ch)
     const int32_t now = get_global_time();
 
     // Rejoin flow
-    const int32_t rejoinUntil = ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(ch), kQfDisconnect);
+    const int32_t rejoinUntil = ecs::QuestSystem::GetFlag(((ch) ? (ch)->GetEntityHandle() : entt::null), kQfDisconnect);
     if (rejoinUntil > now)
     {
-        const int32_t rejoinIdx = ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(ch), kQfIdx);
-        const int32_t rejoinCh = ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(ch), kQfCh);
+        const int32_t rejoinIdx = ecs::QuestSystem::GetFlag(((ch) ? (ch)->GetEntityHandle() : entt::null), kQfIdx);
+        const int32_t rejoinCh = ecs::QuestSystem::GetFlag(((ch) ? (ch)->GetEntityHandle() : entt::null), kQfCh);
 
         if (rejoinIdx >= kPrivateMin && rejoinIdx < kPrivateMax)
         {
             if (rejoinCh != 0 && rejoinCh != (int32_t)g_bChannel)
             {
-                ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "You were in Orc Dungeon on a different channel. Channel: %d", rejoinCh);
+                ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "You were in Orc Dungeon on a different channel. Channel: %d", rejoinCh);
                 return true;
             }
 
@@ -669,32 +669,32 @@ bool COrcsDungeon::OnClickNpc(CHARACTER* ch)
             if (d && d->GetFlag(kFlagWasCompleted) == 0)
             {
                 ch->SaveExitLocation();
-                ecs::MovementSystem::WarpSet(AIHelpers::EcsOf(ch), kEnterX * 100, kEnterY * 100, rejoinIdx);
+                ecs::MovementSystem::WarpSet(((ch) ? (ch)->GetEntityHandle() : entt::null), kEnterX * 100, kEnterY * 100, rejoinIdx);
                 return true;
             }
         }
     }
 
     // Fresh entrance
-    if (ecs::PointSystem::GetLevel(AIHelpers::EcsOf(ch)) < kMinLevel || ecs::PointSystem::GetLevel(AIHelpers::EcsOf(ch)) > kMaxLevel)
+    if (ecs::PointSystem::GetLevel(((ch) ? (ch)->GetEntityHandle() : entt::null)) < kMinLevel || ecs::PointSystem::GetLevel(((ch) ? (ch)->GetEntityHandle() : entt::null)) > kMaxLevel)
     {
-        ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "Orc Dungeon: level requirement is %d-%d.", kMinLevel, kMaxLevel);
+        ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "Orc Dungeon: level requirement is %d-%d.", kMinLevel, kMaxLevel);
         return true;
     }
 
     // Cooldown
-    const int32_t cdUntil = ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(ch), kQfCooldown);
+    const int32_t cdUntil = ecs::QuestSystem::GetFlag(((ch) ? (ch)->GetEntityHandle() : entt::null), kQfCooldown);
     if (cdUntil > now)
     {
         const int32_t remain = cdUntil - now;
-        ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "Orc Dungeon: you must wait %d seconds.", remain);
+        ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "Orc Dungeon: you must wait %d seconds.", remain);
         return true;
     }
 
-    LPPARTY party = ecs::SocialSystem::GetParty(AIHelpers::EcsOf(ch));
-    if (party && party->GetLeaderPID() != ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)))
+    LPPARTY party = ecs::SocialSystem::GetParty(((ch) ? (ch)->GetEntityHandle() : entt::null));
+    if (party && party->GetLeaderPID() != ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null)))
     {
-        ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "Only the party leader can start Orc Dungeon.");
+        ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "Only the party leader can start Orc Dungeon.");
         return true;
     }
 
@@ -702,14 +702,14 @@ bool COrcsDungeon::OnClickNpc(CHARACTER* ch)
     if (party)
     {
         FCooldownCheck f(now, kQfCooldown);
-        ForEachPcOnMap(ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)), [&](LPCHARACTER m) {
-            if (!m || !ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(m)) || ecs::SocialSystem::GetParty(AIHelpers::EcsOf(m)) != party)
+        ForEachPcOnMap(ecs::PlayerRuntime::GetMapIndex(((ch) ? (ch)->GetEntityHandle() : entt::null)), [&](LPCHARACTER m) {
+            if (!m || !ecs::PlayerRuntime::IsPC(((m) ? (m)->GetEntityHandle() : entt::null)) || ecs::SocialSystem::GetParty(((m) ? (m)->GetEntityHandle() : entt::null)) != party)
                 return;
             f(m);
         });
         if (!f.ok)
         {
-            ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "%s is still on cooldown (%d seconds).", f.name ? f.name : "A party member", f.remain);
+            ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "%s is still on cooldown (%d seconds).", f.name ? f.name : "A party member", f.remain);
             return true;
         }
     }
@@ -719,7 +719,7 @@ bool COrcsDungeon::OnClickNpc(CHARACTER* ch)
     {
         if (ch->CountSpecifyItem(kRequiredItem) < 1)
         {
-            ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "Orc Dungeon: you don't have the entry item.");
+            ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "Orc Dungeon: you don't have the entry item.");
             return true;
         }
     }
@@ -730,15 +730,15 @@ bool COrcsDungeon::OnClickNpc(CHARACTER* ch)
         int32_t badLevel = 0;
         bool missingItem = false;
 
-        ForEachPcOnMap(ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)), [&](LPCHARACTER m) {
-            if (!ok || !m || !ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(m)) || ecs::SocialSystem::GetParty(AIHelpers::EcsOf(m)) != party)
+        ForEachPcOnMap(ecs::PlayerRuntime::GetMapIndex(((ch) ? (ch)->GetEntityHandle() : entt::null)), [&](LPCHARACTER m) {
+            if (!ok || !m || !ecs::PlayerRuntime::IsPC(((m) ? (m)->GetEntityHandle() : entt::null)) || ecs::SocialSystem::GetParty(((m) ? (m)->GetEntityHandle() : entt::null)) != party)
                 return;
 
-            if (ecs::PointSystem::GetLevel(AIHelpers::EcsOf(m)) < kMinLevel || ecs::PointSystem::GetLevel(AIHelpers::EcsOf(m)) > kMaxLevel)
+            if (ecs::PointSystem::GetLevel(((m) ? (m)->GetEntityHandle() : entt::null)) < kMinLevel || ecs::PointSystem::GetLevel(((m) ? (m)->GetEntityHandle() : entt::null)) > kMaxLevel)
             {
                 ok = false;
-                badName = ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(m)).data();
-                badLevel = ecs::PointSystem::GetLevel(AIHelpers::EcsOf(m));
+                badName = ecs::PlayerRuntime::GetName(((m) ? (m)->GetEntityHandle() : entt::null)).data();
+                badLevel = ecs::PointSystem::GetLevel(((m) ? (m)->GetEntityHandle() : entt::null));
                 missingItem = false;
                 return;
             }
@@ -746,8 +746,8 @@ bool COrcsDungeon::OnClickNpc(CHARACTER* ch)
             if (m->CountSpecifyItem(kRequiredItem) < 1)
             {
                 ok = false;
-                badName = ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(m)).data();
-                badLevel = ecs::PointSystem::GetLevel(AIHelpers::EcsOf(m));
+                badName = ecs::PlayerRuntime::GetName(((m) ? (m)->GetEntityHandle() : entt::null)).data();
+                badLevel = ecs::PointSystem::GetLevel(((m) ? (m)->GetEntityHandle() : entt::null));
                 missingItem = true;
                 return;
             }
@@ -756,9 +756,9 @@ bool COrcsDungeon::OnClickNpc(CHARACTER* ch)
         if (!ok)
         {
             if (missingItem)
-                ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "%s doesn't have the entry item.", badName ? badName : "A party member");
+                ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "%s doesn't have the entry item.", badName ? badName : "A party member");
             else
-                ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "%s has an invalid level (Lv%d). Required: %d-%d.", badName ? badName : "A party member", badLevel, kMinLevel, kMaxLevel);
+                ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "%s has an invalid level (Lv%d). Required: %d-%d.", badName ? badName : "A party member", badLevel, kMinLevel, kMaxLevel);
             return true;
         }
     }
@@ -766,7 +766,7 @@ bool COrcsDungeon::OnClickNpc(CHARACTER* ch)
     LPDUNGEON d = CDungeonManager::instance().Create(kOrcOriginalMap);
     if (!d)
     {
-        ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "Orc Dungeon: failed to create the dungeon.");
+        ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "Orc Dungeon: failed to create the dungeon.");
         return true;
     }
 
@@ -779,7 +779,7 @@ bool COrcsDungeon::OnClickNpc(CHARACTER* ch)
     // Consume items + set per-player flags
     auto applyMember = [&](LPCHARACTER m)
         {
-            if (!m || !ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(m)))
+            if (!m || !ecs::PlayerRuntime::IsPC(((m) ? (m)->GetEntityHandle() : entt::null)))
                 return;
 
             m->RemoveSpecifyItem(kRequiredItem, 1);
@@ -787,10 +787,10 @@ bool COrcsDungeon::OnClickNpc(CHARACTER* ch)
             if (rmAll > 0)
                 m->RemoveSpecifyItem(kRemoveAllItem, rmAll);
 
-            ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(m), kQfDisconnect, 0);
-            ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(m), kQfIdx, d->GetMapIndex());
-            ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(m), kQfCh, (int32_t)g_bChannel);
-            ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(m), kQfEnterTime, now);
+            ecs::QuestSystem::SetFlag(((m) ? (m)->GetEntityHandle() : entt::null), kQfDisconnect, 0);
+            ecs::QuestSystem::SetFlag(((m) ? (m)->GetEntityHandle() : entt::null), kQfIdx, d->GetMapIndex());
+            ecs::QuestSystem::SetFlag(((m) ? (m)->GetEntityHandle() : entt::null), kQfCh, (int32_t)g_bChannel);
+            ecs::QuestSystem::SetFlag(((m) ? (m)->GetEntityHandle() : entt::null), kQfEnterTime, now);
             // cooldown is set on completion, just like original quest.
         };
 
@@ -801,15 +801,15 @@ bool COrcsDungeon::OnClickNpc(CHARACTER* ch)
     }
     else
     {
-        ForEachPcOnMap(ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)), [&](LPCHARACTER m) {
-            if (!m || !ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(m)) || ecs::SocialSystem::GetParty(AIHelpers::EcsOf(m)) != party)
+        ForEachPcOnMap(ecs::PlayerRuntime::GetMapIndex(((ch) ? (ch)->GetEntityHandle() : entt::null)), [&](LPCHARACTER m) {
+            if (!m || !ecs::PlayerRuntime::IsPC(((m) ? (m)->GetEntityHandle() : entt::null)) || ecs::SocialSystem::GetParty(((m) ? (m)->GetEntityHandle() : entt::null)) != party)
                 return;
             applyMember(m);
         });
         // IMPORTANT: the last parameter selects which map members are currently on.
         // If the party starts a new run from inside the completed instance, members are on the private map,
         // so we must pass the current map index (same as the one used above).
-        d->JoinParty_Coords(party, kEnterX, kEnterY, ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)));
+        d->JoinParty_Coords(party, kEnterX, kEnterY, ecs::PlayerRuntime::GetMapIndex(((ch) ? (ch)->GetEntityHandle() : entt::null)));
     }
 
     // Prepare after 1 second

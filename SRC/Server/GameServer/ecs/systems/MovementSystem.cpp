@@ -46,7 +46,6 @@
 #include "PlayerRuntimeSystem.hpp"
 #include "../Registry.hpp"
 #include "PlayerRuntimeSystem.hpp"
-#include "../AIHelpers.hpp"
 #include "PlayerRuntimeSystem.hpp"
 #include "ItemSystem.hpp"
 #include "PlayerRuntimeSystem.hpp"
@@ -80,31 +79,20 @@ EVENTFUNC(recovery_event);
 
 namespace
 {
-    inline entt::entity EcsEntityOf(const CHARACTER* ch)
+    inline bool HasCombatState(entt::entity e)
     {
-        if (!ch)
-            return entt::null;
-
-        return AIHelpers::EcsOf(const_cast<CHARACTER*>(ch));
-    }
-
-    inline bool HasCombatState(const CHARACTER* ch)
-    {
-        const entt::entity e = EcsEntityOf(ch);
         return e != entt::null && g_registry.valid(e) &&
             g_registry.all_of<ecs::CombatActiveTag>(e);
     }
 
-    inline bool HasMoveState(const CHARACTER* ch)
+    inline bool HasMoveState(entt::entity e)
     {
-        const entt::entity e = EcsEntityOf(ch);
         return e != entt::null && g_registry.valid(e) &&
             g_registry.all_of<ecs::MovementDestination>(e);
     }
 
-    inline bool HasIdleState(const CHARACTER* ch)
+    inline bool HasIdleState(entt::entity e)
     {
-        const entt::entity e = EcsEntityOf(ch);
         if (e == entt::null || !g_registry.valid(e))
             return true;
 
@@ -112,9 +100,8 @@ namespace
             !g_registry.all_of<ecs::MovementDestination>(e);
     }
 
-    inline void EnterIdleState(CHARACTER* ch)
+    inline void EnterIdleState(entt::entity e)
     {
-        const entt::entity e = EcsEntityOf(ch);
         if (e == entt::null || !g_registry.valid(e))
             return;
 
@@ -123,9 +110,8 @@ namespace
         g_registry.remove<ecs::MovementDestination>(e);
     }
 
-    inline void EnterBattleState(CHARACTER* ch)
+    inline void EnterBattleState(entt::entity e)
     {
-        const entt::entity e = EcsEntityOf(ch);
         if (e == entt::null || !g_registry.valid(e))
             return;
         g_registry.emplace_or_replace<ecs::CombatActiveTag>(e);
@@ -133,7 +119,7 @@ namespace
     inline void TransitionAfterMovementStop(const ecs::VIDComponent& vid)
     {
         LPCHARACTER ch = CHARACTER_MANAGER::instance().Find(vid.value);
-        if (!ch || ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch)))
+        if (!ch || ecs::PlayerRuntime::IsPC(ch->GetEntityHandle()))
             return;
         if (ch->GetVictim() && !ch->IsCoward())
             ch->SetPosition(POS_FIGHTING);
@@ -286,6 +272,21 @@ bool WarpSet(entt::entity e, int32_t x, int32_t y, int32_t privateMapIndex)
     MarkDirty(e);
 
     return ch->WarpSet(x, y, privateMapIndex);
+}
+
+void SaveExitLocation(entt::entity e)
+{
+    if (!IsValid(e))
+        return;
+
+    auto& exit = g_registry.get_or_emplace<ecs::ExitPosition>(e);
+    exit.x = ecs::PlayerRuntime::GetX(e);
+    exit.y = ecs::PlayerRuntime::GetY(e);
+    exit.mapIndex = ecs::PlayerRuntime::GetMapIndex(e);
+    MarkDirty(e);
+
+    if (auto* ch = CharacterOf(e))
+        ch->SaveExitLocation();
 }
 
 void ExitToSavedLocation(entt::entity e)
@@ -570,10 +571,10 @@ void CHARACTER::SetRotation(float fRot)
 #endif
 	}
 
-		if (auto* runtime = ecs::TryGetRuntimeFlags(EcsEntityOf(this)))
+		if (auto* runtime = ecs::TryGetRuntimeFlags(GetEntityHandle()))
 		runtime->rotation = fRot;
 
-	if (const entt::entity e = EcsEntityOf(this); e != entt::null && g_registry.valid(e))
+	if (const entt::entity e = GetEntityHandle(); e != entt::null && g_registry.valid(e))
 	{
 		if (auto* rotation = g_registry.try_get<ecs::RotationComponent>(e))
 			rotation->yaw = fRot;
@@ -634,7 +635,7 @@ bool CHARACTER::Sync(int32_t x, int32_t y)
 	SetRotationToXY(x, y);
 	// Phase C.1: legacy m_pos write removed - SyncPositionComponents below
 	// emplaces ECS Position as the sole source of truth.
-	ecs::SyncPositionComponents(g_registry, EcsEntityOf(this), GetMapIndex(), x, y, GetZ());
+	ecs::SyncPositionComponents(g_registry, GetEntityHandle(), GetMapIndex(), x, y, GetZ());
 
 	// LPENTITY.4 sync drift fix: peer-sync overrides whatever destination the
 	// previous Goto/Move had recorded. Without this, EncodeInsertPacket reads
@@ -653,7 +654,7 @@ bool CHARACTER::Sync(int32_t x, int32_t y)
 	// semantic as legacy destination = current_pos.
 	m_posStart.x = x;
 	m_posStart.y = y;
-	ecs::MovementSystem::SyncDestinationClear(EcsEntityOf(this));
+	ecs::MovementSystem::SyncDestinationClear(GetEntityHandle());
 
 	if (GetDungeon())
 	{
@@ -693,7 +694,7 @@ bool CHARACTER::Sync(int32_t x, int32_t y)
 
 		new_tree->InsertEntity(this);
 
-		const entt::entity e = EcsEntityOf(this);
+		const entt::entity e = GetEntityHandle();
 		ecs::SyncSectorPlacement(g_registry, e, GetMapIndex(), GetX(), GetY());
 		if (e != entt::null && g_registry.valid(e))
 			g_registry.emplace_or_replace<ecs::ViewActiveTag>(e);
@@ -704,9 +705,9 @@ bool CHARACTER::Sync(int32_t x, int32_t y)
 
 void CHARACTER::Stop()
 {
-	if (!HasIdleState(this))
+	if (!HasIdleState(GetEntityHandle()))
 		MonsterLog("[IDLE] stop");
-	EnterIdleState(this);
+	EnterIdleState(GetEntityHandle());
 	if (!IsPC())
 		GotoState(m_stateIdle);
 
@@ -716,7 +717,7 @@ void CHARACTER::Stop()
 	// current pos" semantic.
 	m_posStart.x = GetX();
 	m_posStart.y = GetY();
-	ecs::MovementSystem::SyncDestinationClear(EcsEntityOf(this));
+	ecs::MovementSystem::SyncDestinationClear(GetEntityHandle());
 }
 
 bool CHARACTER::Goto(int32_t x, int32_t y)
@@ -753,10 +754,10 @@ bool CHARACTER::Goto(int32_t x, int32_t y)
 	// B.1.4: read via getter (ECS MovementDestination, fallback to GetX/Y).
 	if (GetCurrentDestX() == x && GetCurrentDestY() == y)
 	{
-		if (!HasMoveState(this))
+		if (!HasMoveState(GetEntityHandle()))
 		{
 			m_dwStateDuration = 4;
-			const entt::entity e = EcsEntityOf(this);
+			const entt::entity e = GetEntityHandle();
 			if (e != entt::null && g_registry.valid(e))
 				g_registry.emplace_or_replace<ecs::MovementDestination>(e, static_cast<int32_t>(x), static_cast<int32_t>(y));
 		}
@@ -766,7 +767,7 @@ bool CHARACTER::Goto(int32_t x, int32_t y)
 	// Phase C.3: legacy destination field write removed; ECS MovementDestination
 	// emplaced here BEFORE CalculateMoveDuration so the duration calc
 	// (which reads dest via GetCurrentDestX/Y) sees the new value.
-	if (const entt::entity destEntity = EcsEntityOf(this); destEntity != entt::null && g_registry.valid(destEntity))
+	if (const entt::entity destEntity = GetEntityHandle(); destEntity != entt::null && g_registry.valid(destEntity))
 		g_registry.emplace_or_replace<ecs::MovementDestination>(destEntity, x, y);
 
 	CalculateMoveDuration();
@@ -774,11 +775,11 @@ bool CHARACTER::Goto(int32_t x, int32_t y)
 	m_dwStateDuration = 4;
 
 
-	if (!HasMoveState(this)) {
+	if (!HasMoveState(GetEntityHandle())) {
 		MonsterLog("[MOVE] %s", GetVictim() ? "���A?u" : "��3?I?");
 	}
 
-	const entt::entity e = EcsEntityOf(this);
+	const entt::entity e = GetEntityHandle();
 	if (e != entt::null && g_registry.valid(e))
 		g_registry.emplace_or_replace<ecs::MovementDestination>(e, static_cast<int32_t>(x), static_cast<int32_t>(y));
 
@@ -793,7 +794,7 @@ uint32_t CHARACTER::GetMotionMode() const
 	if (IsPolymorphed())
 		return dwMode;
 
-	const entt::entity weapon = ItemSystem::GetWearItem(EcsEntityOf(this), WEAR_WEAPON);
+	const entt::entity weapon = ItemSystem::GetWearItem(GetEntityHandle(), WEAR_WEAPON);
 	if (ItemSystem::IsValidItem(weapon))
 	{
 		const TItemTable* itemProto = ItemSystem::GetItemProto(weapon);
@@ -918,7 +919,7 @@ void CHARACTER::CalculateMoveDuration()
 		static_cast<int>((fDist / motionSpeed) * 1000.0f));
 	const uint32_t newStartTime = get_dword_time();
 
-	ecs::MovementSystem::SyncTimingWrite(EcsEntityOf(this), newStartTime, newDuration);
+	ecs::MovementSystem::SyncTimingWrite(GetEntityHandle(), newStartTime, newDuration);
 
 	if (IsNPC())
 		LOG_TRACE("{}: GOTO: distance {:f}, spd {}, duration {}, motion speed {:f} pos {} {} -> {} {}",
@@ -971,7 +972,7 @@ void CHARACTER::MotionPacketEncode(uint8_t motion, LPCHARACTER victim, struct pa
 	packet->motion = motion;
 
 	if (victim)
-		packet->victim_vid = ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(victim));
+		packet->victim_vid = ecs::PlayerRuntime::GetPacketVID(victim->GetEntityHandle());
 	else
 		packet->victim_vid = 0;
 }
@@ -1001,7 +1002,7 @@ void CHARACTER::Motion(uint8_t motion, LPCHARACTER victim)
 // audit-only GetMoveStartTimeForAudit accessor.
 uint32_t CHARACTER::GetCurrentMoveDuration() const
 {
-	const entt::entity e = AIHelpers::EcsOf(const_cast<CHARACTER*>(this));
+	const entt::entity e = GetEntityHandle();
 	if (e == entt::null || !g_registry.valid(e))
 		return 0;
 	if (const auto* state = g_registry.try_get<ecs::MovementState>(e))
@@ -1011,7 +1012,7 @@ uint32_t CHARACTER::GetCurrentMoveDuration() const
 
 uint32_t CHARACTER::GetCurrentMoveStartTime() const
 {
-	const entt::entity e = AIHelpers::EcsOf(const_cast<CHARACTER*>(this));
+	const entt::entity e = GetEntityHandle();
 	if (e == entt::null || !g_registry.valid(e))
 		return 0;
 	if (const auto* state = g_registry.try_get<ecs::MovementState>(e))
@@ -1029,7 +1030,7 @@ uint32_t CHARACTER::GetCurrentMoveStartTime() const
 // which still pulls from legacy point storage.
 bool CHARACTER::IsNowWalking() const
 {
-	const entt::entity e = AIHelpers::EcsOf(const_cast<CHARACTER*>(this));
+	const entt::entity e = GetEntityHandle();
 	if (e == entt::null || !g_registry.valid(e))
 		return false;
 	if (const auto* state = g_registry.try_get<ecs::MovementState>(e))
@@ -1059,7 +1060,7 @@ bool CHARACTER::IsWalking() const
 // Phase C will redirect writes; Phase G removes the legacy field.
 int32_t CHARACTER::GetCurrentDestX() const
 {
-	const entt::entity e = AIHelpers::EcsOf(const_cast<CHARACTER*>(this));
+	const entt::entity e = GetEntityHandle();
 	if (e != entt::null && g_registry.valid(e))
 	{
 		if (const auto* dest = g_registry.try_get<ecs::MovementDestination>(e))
@@ -1070,7 +1071,7 @@ int32_t CHARACTER::GetCurrentDestX() const
 
 int32_t CHARACTER::GetCurrentDestY() const
 {
-	const entt::entity e = AIHelpers::EcsOf(const_cast<CHARACTER*>(this));
+	const entt::entity e = GetEntityHandle();
 	if (e != entt::null && g_registry.valid(e))
 	{
 		if (const auto* dest = g_registry.try_get<ecs::MovementDestination>(e))
@@ -1098,7 +1099,7 @@ int32_t CHARACTER::GetCurrentDestY() const
 // deletes.
 uint8_t CHARACTER::GetAddChrStateFlag() const
 {
-	const entt::entity e = AIHelpers::EcsOf(const_cast<CHARACTER*>(this));
+	const entt::entity e = GetEntityHandle();
 	if (e == entt::null || !g_registry.valid(e))
 		return 0;
 	const auto* status = g_registry.try_get<ecs::StatusFlags>(e);
@@ -1130,8 +1131,8 @@ EVENTFUNC(save_event)
 	if (ch == nullptr) { // <Factor>
 		return 0;
 	}
-	LOG_TRACE("SAVE_EVENT: {}", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data());
-	const entt::entity saveEntity = AIHelpers::EcsOf(ch);
+	const entt::entity saveEntity = ch->GetEntityHandle();
+	LOG_TRACE("SAVE_EVENT: {}", ecs::PlayerRuntime::GetName(saveEntity).data());
 	if (saveEntity != entt::null)
 		g_dispatcher.trigger(ecs::EvCharSaved { saveEntity });
 	ch->Save();
@@ -1150,7 +1151,7 @@ void CHARACTER::SetNowWalking(bool bWalkFlag)
         if (bWalkFlag)
             m_dwWalkStartTime = get_dword_time();
 
-        ecs::MovementSystem::SyncWalkingWrite(EcsEntityOf(this), bWalkFlag);
+		ecs::MovementSystem::SyncWalkingWrite(GetEntityHandle(), bWalkFlag);
 
         {
             TPacketGCWalkMode p;
@@ -1178,9 +1179,9 @@ void CHARACTER::StartStaminaConsume()
     PointChange(POINT_STAMINA, 0);
     m_bStaminaConsume = true;
     if (IsStaminaHalfConsume())
-        ecs::ChatSystem::Send(AIHelpers::EcsOf(this), CHAT_TYPE_COMMAND, "StartStaminaConsume %d %d", STAMINA_PER_STEP * passes_per_sec / 2, GetStamina());
+        ecs::ChatSystem::Send(GetEntityHandle(), CHAT_TYPE_COMMAND, "StartStaminaConsume %d %d", STAMINA_PER_STEP * passes_per_sec / 2, GetStamina());
     else
-        ecs::ChatSystem::Send(AIHelpers::EcsOf(this), CHAT_TYPE_COMMAND, "StartStaminaConsume %d %d", STAMINA_PER_STEP * passes_per_sec, GetStamina());
+        ecs::ChatSystem::Send(GetEntityHandle(), CHAT_TYPE_COMMAND, "StartStaminaConsume %d %d", STAMINA_PER_STEP * passes_per_sec, GetStamina());
 }
 
 void CHARACTER::StopStaminaConsume()
@@ -1189,7 +1190,7 @@ void CHARACTER::StopStaminaConsume()
         return;
     PointChange(POINT_STAMINA, 0);
     m_bStaminaConsume = false;
-    ecs::ChatSystem::Send(AIHelpers::EcsOf(this), CHAT_TYPE_COMMAND, "StopStaminaConsume %d", GetStamina());
+    ecs::ChatSystem::Send(GetEntityHandle(), CHAT_TYPE_COMMAND, "StopStaminaConsume %d", GetStamina());
 }
 
 bool CHARACTER::IsStaminaConsume() const
@@ -1223,9 +1224,9 @@ void CHARACTER::SetPosition(int pos)
 	{
 		// Phase C.4: legacy REMOVE_BIT(m_bAddChrState, DEAD/SPAWN) removed;
 		// ECS StatusFlags.isDead/isSpawnState below are the sole writes.
-		if (auto* runtime = ecs::TryGetRuntimeFlags(EcsEntityOf(this)))
+		if (auto* runtime = ecs::TryGetRuntimeFlags(GetEntityHandle()))
 			REMOVE_BIT(runtime->instantFlag, INSTANT_FLAG_STUN);
-		const auto e = EcsEntityOf(this);
+		const auto e = GetEntityHandle();
 		if (e != entt::null && g_registry.valid(e))
 		{
 			if (g_registry.all_of<ecs::DeadTag>(e))
@@ -1248,7 +1249,7 @@ void CHARACTER::SetPosition(int pos)
 	{
 		// Phase C.4: legacy SET_BIT(m_bAddChrState, DEAD) removed;
 		// ECS StatusFlags.isDead below is the sole write.
-		const auto e = EcsEntityOf(this);
+		const auto e = GetEntityHandle();
 		if (e != entt::null && g_registry.valid(e))
 		{
 			g_registry.emplace_or_replace<ecs::DeadTag>(e);
@@ -1263,24 +1264,24 @@ void CHARACTER::SetPosition(int pos)
 		switch (pos)
 		{
 		case POS_FIGHTING:
-			if (!HasCombatState(this))
+			if (!HasCombatState(GetEntityHandle()))
 				MonsterLog("[BATTLE] enter fighting state");
 
-			EnterBattleState(this);
+			EnterBattleState(GetEntityHandle());
 			GotoState(m_stateBattle);
 			break;
 
 		default:
-			if (!HasIdleState(this))
+			if (!HasIdleState(GetEntityHandle()))
 				MonsterLog("[IDLE] enter idle state");
 
-			EnterIdleState(this);
+			EnterIdleState(GetEntityHandle());
 			GotoState(m_stateIdle);
 			break;
 		}
 	}
 
-	if (auto* runtime = ecs::TryGetRuntimeFlags(EcsEntityOf(this)))
+	if (auto* runtime = ecs::TryGetRuntimeFlags(GetEntityHandle()))
 		runtime->position = pos;
 }
 
@@ -1291,16 +1292,18 @@ bool CHARACTER::IsPosition(int pos) const
 
 int CHARACTER::GetPosition() const
 {
-	if (const auto* runtime = ecs::TryGetRuntimeFlags(EcsEntityOf(this)))
+	if (const auto* runtime = ecs::TryGetRuntimeFlags(GetEntityHandle()))
 		return runtime->position;
 
+	return POS_STANDING;
 }
 
 float CHARACTER::GetRotation() const
 {
-	if (const auto* runtime = ecs::TryGetRuntimeFlags(EcsEntityOf(this)))
+	if (const auto* runtime = ecs::TryGetRuntimeFlags(GetEntityHandle()))
 		return runtime->rotation;
 
+	return 0.0f;
 }
 
 bool CHARACTER::IsAlive() const
@@ -1324,15 +1327,16 @@ EVENTFUNC(recovery_event)
 	if (ch == nullptr) {
 		return 0;
 	}
+	const entt::entity character = ch->GetEntityHandle();
 
 	// Phase 10: WRITES_STATE - deferred until ECS component covers m_pkRecoveryEvent
-	if (!ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch)))
+	if (!ecs::PlayerRuntime::IsPC(character))
 	{
-		if (AffectSystem::IsAffectFlag(AIHelpers::EcsOf(ch), AFF_POISON))
+		if (AffectSystem::IsAffectFlag(character, AFF_POISON))
 			return PASSES_PER_SEC(std::max((uint8_t)1, ch->GetMobTable().bRegenCycle));
 
 #ifdef ENABLE_WOLFMAN_CHARACTER
-		if (AffectSystem::IsAffectFlag(AIHelpers::EcsOf(ch), AFF_BLEEDING))
+		if (AffectSystem::IsAffectFlag(character, AFF_BLEEDING))
 			return PASSES_PER_SEC(MAX(1, ch->GetMobTable().bRegenCycle));
 #endif
 
@@ -1342,7 +1346,7 @@ EVENTFUNC(recovery_event)
 			if (target) {
 				if (target->GetFlag("floor") == 5) {
 					ch->DistributeSP(ch);
-					if (ecs::PointSystem::GetMaxHP(AIHelpers::EcsOf(ch)) <= ch->GetHP())
+					if (ecs::PointSystem::GetMaxHP(character) <= ch->GetHP())
 						return PASSES_PER_SEC(3);
 
 					int iPercent = 0;
@@ -1350,15 +1354,13 @@ EVENTFUNC(recovery_event)
 
 					{
 						iPercent = 2;
-						iAmount = 15 + (ecs::PointSystem::GetMaxHP(AIHelpers::EcsOf(ch)) * iPercent) / 100;
+						iAmount = 15 + (ecs::PointSystem::GetMaxHP(character) * iPercent) / 100;
 					}
 
-					iAmount += (iAmount * ecs::PointSystem::Get(AIHelpers::EcsOf(ch), POINT_HP_REGEN)) / 100;
-					LOG_TRACE("RECOVERY_EVENT: {} {} HP_REGEN {} HP +{}", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), iPercent, ecs::PointSystem::Get(AIHelpers::EcsOf(ch), POINT_HP_REGEN), iAmount);
-					const entt::entity recoveryEntity = AIHelpers::EcsOf(ch);
-					if (recoveryEntity != entt::null)
-						g_dispatcher.trigger(ecs::EvRecovery { recoveryEntity, iAmount, 0 });
-					ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_HP, iAmount, false);
+					iAmount += (iAmount * ecs::PointSystem::Get(character, POINT_HP_REGEN)) / 100;
+					LOG_TRACE("RECOVERY_EVENT: {} {} HP_REGEN {} HP +{}", ecs::PlayerRuntime::GetName(character).data(), iPercent, ecs::PointSystem::Get(character, POINT_HP_REGEN), iAmount);
+					g_dispatcher.trigger(ecs::EvRecovery { character, iAmount, 0 });
+					ecs::PointSystem::Change(character, POINT_HP, iAmount, false);
 					return PASSES_PER_SEC(10);
 				}
 			}
@@ -1368,7 +1370,7 @@ EVENTFUNC(recovery_event)
 			if (target) {
 				if (target->GetFlag("floor") == 1) {
 					ch->DistributeSP(ch);
-					if (ecs::PointSystem::GetMaxHP(AIHelpers::EcsOf(ch)) <= ch->GetHP())
+					if (ecs::PointSystem::GetMaxHP(character) <= ch->GetHP())
 						return PASSES_PER_SEC(3);
 
 					int iPercent = 0;
@@ -1376,15 +1378,13 @@ EVENTFUNC(recovery_event)
 
 					{
 						iPercent = 2;
-						iAmount = 15 + (ecs::PointSystem::GetMaxHP(AIHelpers::EcsOf(ch)) * iPercent) / 100;
+						iAmount = 15 + (ecs::PointSystem::GetMaxHP(character) * iPercent) / 100;
 					}
 
-					iAmount += (iAmount * ecs::PointSystem::Get(AIHelpers::EcsOf(ch), POINT_HP_REGEN)) / 100;
-					LOG_TRACE("RECOVERY_EVENT: {} {} HP_REGEN {} HP +{}", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), iPercent, ecs::PointSystem::Get(AIHelpers::EcsOf(ch), POINT_HP_REGEN), iAmount);
-					const entt::entity recoveryEntity = AIHelpers::EcsOf(ch);
-					if (recoveryEntity != entt::null)
-						g_dispatcher.trigger(ecs::EvRecovery { recoveryEntity, iAmount, 0 });
-					ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_HP, iAmount, false);
+					iAmount += (iAmount * ecs::PointSystem::Get(character, POINT_HP_REGEN)) / 100;
+					LOG_TRACE("RECOVERY_EVENT: {} {} HP_REGEN {} HP +{}", ecs::PlayerRuntime::GetName(character).data(), iPercent, ecs::PointSystem::Get(character, POINT_HP_REGEN), iAmount);
+					g_dispatcher.trigger(ecs::EvRecovery { character, iAmount, 0 });
+					ecs::PointSystem::Change(character, POINT_HP, iAmount, false);
 					return PASSES_PER_SEC(10);
 				}
 			}
@@ -1393,15 +1393,13 @@ EVENTFUNC(recovery_event)
 
 		if (!ch->IsDoor())
 		{
-			const int64_t hpGain = std::max(int64_t {1}, (static_cast<int64_t>(ecs::PointSystem::GetMaxHP(AIHelpers::EcsOf(ch))) * ch->GetMobTable().bRegenPercent) / 100);
+			const int64_t hpGain = std::max(int64_t {1}, (static_cast<int64_t>(ecs::PointSystem::GetMaxHP(character)) * ch->GetMobTable().bRegenPercent) / 100);
 			ch->MonsterLog("HP_REGEN +%d", hpGain);
-			const entt::entity recoveryEntity = AIHelpers::EcsOf(ch);
-			if (recoveryEntity != entt::null)
-				g_dispatcher.trigger(ecs::EvRecovery { recoveryEntity, static_cast<int32_t>(hpGain), 0 });
-			ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_HP, hpGain);
+			g_dispatcher.trigger(ecs::EvRecovery { character, static_cast<int32_t>(hpGain), 0 });
+			ecs::PointSystem::Change(character, POINT_HP, hpGain);
 		}
 
-		if (ch->GetHP() >= ecs::PointSystem::GetMaxHP(AIHelpers::EcsOf(ch)))
+		if (ch->GetHP() >= ecs::PointSystem::GetMaxHP(character))
 		{
 			ch->m_pkRecoveryEvent = nullptr;
 			return 0;
@@ -1414,19 +1412,19 @@ EVENTFUNC(recovery_event)
 		ch->CheckTarget();
 		ch->UpdateKillerMode();
 
-		if (AffectSystem::IsAffectFlag(AIHelpers::EcsOf(ch), AFF_POISON) == true)
+		if (AffectSystem::IsAffectFlag(character, AFF_POISON) == true)
 		{
 			return 3;
 		}
 #ifdef ENABLE_WOLFMAN_CHARACTER
-		if (AffectSystem::IsAffectFlag(AIHelpers::EcsOf(ch), AFF_BLEEDING))
+		if (AffectSystem::IsAffectFlag(character, AFF_BLEEDING))
 			return 3;
 #endif
 		int iSec = (get_dword_time() - ch->GetLastMoveTime()) / 3000;
 
 		ch->DistributeSP(ch);
 
-		if (ecs::PointSystem::GetMaxHP(AIHelpers::EcsOf(ch)) <= ch->GetHP())
+		if (ecs::PointSystem::GetMaxHP(character) <= ch->GetHP())
 			return PASSES_PER_SEC(3);
 
 		int iPercent = 0;
@@ -1434,17 +1432,15 @@ EVENTFUNC(recovery_event)
 
 		{
 			iPercent = aiRecoveryPercents[std::min(9, iSec)];
-			iAmount = 15 + (ecs::PointSystem::GetMaxHP(AIHelpers::EcsOf(ch)) * iPercent) / 100;
+			iAmount = 15 + (ecs::PointSystem::GetMaxHP(character) * iPercent) / 100;
 		}
 
-		iAmount += (iAmount * ecs::PointSystem::Get(AIHelpers::EcsOf(ch), POINT_HP_REGEN)) / 100;
+		iAmount += (iAmount * ecs::PointSystem::Get(character, POINT_HP_REGEN)) / 100;
 
-		LOG_TRACE("RECOVERY_EVENT: {} {} HP_REGEN {} HP +{}", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), iPercent, ecs::PointSystem::Get(AIHelpers::EcsOf(ch), POINT_HP_REGEN), iAmount);
+		LOG_TRACE("RECOVERY_EVENT: {} {} HP_REGEN {} HP +{}", ecs::PlayerRuntime::GetName(character).data(), iPercent, ecs::PointSystem::Get(character, POINT_HP_REGEN), iAmount);
 
-		const entt::entity recoveryEntity = AIHelpers::EcsOf(ch);
-		if (recoveryEntity != entt::null)
-			g_dispatcher.trigger(ecs::EvRecovery { recoveryEntity, iAmount, 0 });
-		ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_HP, iAmount, false);
+		g_dispatcher.trigger(ecs::EvRecovery { character, iAmount, 0 });
+		ecs::PointSystem::Change(character, POINT_HP, iAmount, false);
 		return PASSES_PER_SEC(3);
 	}
 }

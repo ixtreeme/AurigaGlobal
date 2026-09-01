@@ -25,5 +25,6 @@ void Shutdown(entt::registry& reg);
 // by AURIGA_LPENTITY_FIXUP_AUDIT - no-op in release. Call from the main
 // tick loop; the function self-throttles to one full sweep per 5 seconds.
 void DriftSweep(entt::registry& reg);
+void Reencode(entt::registry& reg, entt::entity character);
 
 } // namespace ecs::VisibilitySystem

@@ -16,4 +16,11 @@ struct ItemTitlePrefixCache {
     std::string prefix;
 };
 
+struct HideCostumeFlags {
+	bool body { false };
+	bool hair { false };
+	bool accessory { false };
+	bool weapon { false };
+};
+
 } // namespace ecs

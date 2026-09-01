@@ -15,6 +15,7 @@
 #include "buffer_manager.h"
 #include "char_manager.h"
 #include "ecs/CharacterAccessors.hpp"
+#include "ecs/Registry.hpp"
 #include "packet.h"
 #include "war_map.h"
 #include "questmanager.h"
@@ -40,7 +41,7 @@ namespace
 
 		void operator()(LPCHARACTER ch)
 		{
-			LPDESC d = ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch));
+			LPDESC d = ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null));
 
 			if (d)
 			{
@@ -86,13 +87,13 @@ int CGuildManager::GetWithdrawDelay()
 
 uint32_t CGuildManager::CreateGuild(TGuildCreateParameter& gcp)
 {
-	if (!gcp.master)
+	if (gcp.master == entt::null || !g_registry.valid(gcp.master))
 		return 0;
 
 	if (!check_name(gcp.name))
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(gcp.master), CHAT_TYPE_INFO, 135, "");
+		ecs::ChatSystem::SendNew(gcp.master, CHAT_TYPE_INFO, 135, "");
 #endif
 		return 0;
 	}
@@ -114,7 +115,7 @@ uint32_t CGuildManager::CreateGuild(TGuildCreateParameter& gcp)
 		if (!(row[0] && row[0][0] == '0'))
 		{
 #ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(gcp.master), CHAT_TYPE_INFO, 166, "");
+			ecs::ChatSystem::SendNew(gcp.master, CHAT_TYPE_INFO, 166, "");
 #endif
 			return 0;
 		}
@@ -122,7 +123,7 @@ uint32_t CGuildManager::CreateGuild(TGuildCreateParameter& gcp)
 	else
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(gcp.master), CHAT_TYPE_INFO, 136, "");
+		ecs::ChatSystem::SendNew(gcp.master, CHAT_TYPE_INFO, 136, "");
 #endif
 		return 0;
 	}
@@ -137,12 +138,12 @@ uint32_t CGuildManager::CreateGuild(TGuildCreateParameter& gcp)
 #ifdef ENABLE_GUILD_ATTRIBUTE
 void CGuildManager::RemoveGuildBuff(LPCHARACTER ch)
 {
-	CAffect* affect = AffectSystem::FindAffect(AIHelpers::EcsOf(ch), AFFECT_GUILD_ATTRIBUTE);
+	CAffect* affect = AffectSystem::FindAffect(((ch) ? (ch)->GetEntityHandle() : entt::null), AFFECT_GUILD_ATTRIBUTE);
 	while (affect != nullptr)
 	{
 		if (affect)
-			AffectSystem::RemoveAffect(AIHelpers::EcsOf(ch), affect);
-		affect = AffectSystem::FindAffect(AIHelpers::EcsOf(ch), AFFECT_GUILD_ATTRIBUTE);
+			AffectSystem::RemoveAffect(((ch) ? (ch)->GetEntityHandle() : entt::null), affect);
+		affect = AffectSystem::FindAffect(((ch) ? (ch)->GetEntityHandle() : entt::null), AFFECT_GUILD_ATTRIBUTE);
 	}
 }
 #endif
@@ -191,7 +192,7 @@ void CGuildManager::P2PLoginMember(uint32_t pid)
 
 void CGuildManager::LoginMember(LPCHARACTER ch)
 {
-	TGuildMap::iterator it = m_map_pkGuildByPID.find((ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))));
+	TGuildMap::iterator it = m_map_pkGuildByPID.find((ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null))));
 
 	if (it != m_map_pkGuildByPID.end())
 	{
@@ -612,7 +613,7 @@ void CGuildManager::RefuseWar(uint32_t guild_id1, uint32_t guild_id2)
 	if (g1 && g2)
 	{
 		if (g2->GetMasterCharacter())
-			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(g2->GetMasterCharacter()), CHAT_TYPE_INFO, 124, "%s", g1->GetName());
+			ecs::ChatSystem::SendNew(((g2->GetMasterCharacter()) ? (g2->GetMasterCharacter())->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 124, "%s", g1->GetName());
 	}
 #endif
 	if ( g1 != nullptr)
@@ -654,7 +655,7 @@ struct FSendWarList
 
 	void operator() (LPCHARACTER ch)
 	{
-		LPDESC d = ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch));
+		LPDESC d = ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null));
 
 		if (d)
 		{
@@ -802,7 +803,7 @@ void CGuildManager::CancelWar(uint32_t guild_id1, uint32_t guild_id2)
 	{
 		LPCHARACTER master1 = g1->GetMasterCharacter();
 		if (master1) {
-			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(master1), CHAT_TYPE_INFO, 146, "");
+			ecs::ChatSystem::SendNew(((master1) ? (master1)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 146, "");
 		}
 	}
 #endif
@@ -811,7 +812,7 @@ void CGuildManager::CancelWar(uint32_t guild_id1, uint32_t guild_id2)
 	{
 		LPCHARACTER master2 = g2->GetMasterCharacter();
 		if (master2) {
-			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(master2), CHAT_TYPE_INFO, 146, "");
+			ecs::ChatSystem::SendNew(((master2) ? (master2)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 146, "");
 		}
 	}
 
@@ -844,7 +845,7 @@ void CGuildManager::ShowGuildWarList(LPCHARACTER ch)
 
 		if (A && B)
 		{
-			ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_NOTICE, "%s[%d] vs %s[%d] time %u sec.",
+			ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_NOTICE, "%s[%d] vs %s[%d] time %u sec.",
 					A->GetName(), A->GetID(),
 					B->GetName(), B->GetID(),
 					get_global_time() - A->GetWarStartTime(B->GetID()));
@@ -854,7 +855,7 @@ void CGuildManager::ShowGuildWarList(LPCHARACTER ch)
 
 void CGuildManager::SendGuildWar(LPCHARACTER ch)
 {
-	if (!ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch)))
+	if (!ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null)))
 		return;
 
 	TEMP_BUFFER buf;
@@ -870,7 +871,7 @@ void CGuildManager::SendGuildWar(LPCHARACTER ch)
 		buf.write(&it->second, sizeof(uint32_t));
 	}
 
-	ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->Packet(buf.read_peek(), buf.size());
+	ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null))->Packet(buf.read_peek(), buf.size());
 }
 
 void SendGuildWarScore(uint32_t dwGuild, uint32_t dwGuildOpp, int iDelta, int iBetScoreDelta)
@@ -888,10 +889,10 @@ void SendGuildWarScore(uint32_t dwGuild, uint32_t dwGuildOpp, int iDelta, int iB
 
 void CGuildManager::Kill(LPCHARACTER killer, LPCHARACTER victim)
 {
-	if (!ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(killer)))
+	if (!ecs::PlayerRuntime::IsPC(((killer) ? (killer)->GetEntityHandle() : entt::null)))
 		return;
 
-	if (!(ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(victim))))
+	if (!(ecs::PlayerRuntime::IsPC(((victim) ? (victim)->GetEntityHandle() : entt::null))))
 		return;
 
 	if (killer->GetWarMap())
@@ -900,8 +901,8 @@ void CGuildManager::Kill(LPCHARACTER killer, LPCHARACTER victim)
 		return;
 	}
 
-	CGuild * gAttack = ecs::SocialSystem::GetGuild(AIHelpers::EcsOf(killer));
-	CGuild * gDefend = ecs::SocialSystem::GetGuild(AIHelpers::EcsOf(victim));
+	CGuild * gAttack = ecs::SocialSystem::GetGuild(((killer) ? (killer)->GetEntityHandle() : entt::null));
+	CGuild * gDefend = ecs::SocialSystem::GetGuild(((victim) ? (victim)->GetEntityHandle() : entt::null));
 
 	if (!gAttack || !gDefend)
 		return;
@@ -912,7 +913,7 @@ void CGuildManager::Kill(LPCHARACTER killer, LPCHARACTER victim)
 	if (!gAttack->UnderWar(gDefend->GetID()))
 		return;
 
-	SendGuildWarScore(gAttack->GetID(), gDefend->GetID(), (ecs::PointSystem::GetLevel(AIHelpers::EcsOf(victim))));
+	SendGuildWarScore(gAttack->GetID(), gDefend->GetID(), (ecs::PointSystem::GetLevel(((victim) ? (victim)->GetEntityHandle() : entt::null))));
 }
 
 void CGuildManager::StopAllGuildWar()

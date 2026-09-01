@@ -1,7 +1,6 @@
 #include "../../stdafx.h"
 #include "PointSystem.hpp"
 #include "PlayerRuntimeSystem.hpp"
-#include "../AIHelpers.hpp"
 
 #include "SessionSystem.hpp"
 #include "ItemSystem.hpp"
@@ -87,12 +86,13 @@ inline int32_t NormalizeMapIndex(int32_t mapIndex)
     return mapIndex;
 }
 
-bool CheckAndHandleSameHwid(LPCHARACTER ch)
+bool CheckAndHandleSameHwid(entt::entity character)
 {
-    if (!ch || !ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch)))
+    if (character == entt::null || !g_registry.valid(character) ||
+        !ecs::PlayerRuntime::IsPC(character))
         return false;
 
-    DESC* desc = ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch));
+    DESC* desc = ecs::PlayerRuntime::GetDesc(character);
     if (!desc)
         return false;
 
@@ -105,22 +105,26 @@ bool CheckAndHandleSameHwid(LPCHARACTER ch)
     if (!selfHost || !*selfHost)
         return false;
 
-    int32_t normalizedMapIndex = NormalizeMapIndex(ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)));
+    int32_t normalizedMapIndex = NormalizeMapIndex(ecs::PlayerRuntime::GetMapIndex(character));
     bool duplicateFound = false;
 
     CHARACTER_MANAGER::instance().for_each_pc([&](LPCHARACTER other)
         {
-            if (duplicateFound || !other || other == ch)
+            if (duplicateFound || !other)
                 return;
 
-            if (!ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(other)))
+			const entt::entity candidate = other->GetEntityHandle();
+			if (candidate == character)
+				return;
+
+            if (!ecs::PlayerRuntime::IsPC(candidate))
                 return;
 
-            DESC* otherDesc = ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(other));
+            DESC* otherDesc = ecs::PlayerRuntime::GetDesc(candidate);
             if (!otherDesc)
                 return;
 
-            int32_t otherMapIndex = NormalizeMapIndex(ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(other)));
+            int32_t otherMapIndex = NormalizeMapIndex(ecs::PlayerRuntime::GetMapIndex(candidate));
             if (otherMapIndex != normalizedMapIndex)
                 return;
 
@@ -142,10 +146,10 @@ bool CheckAndHandleSameHwid(LPCHARACTER ch)
         char notice[256];
         snprintf(notice, sizeof(notice),
             "[EVENTMAP]%s 2 karakterrel probalt belepni event mapra!",
-            ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data());
+            ecs::PlayerRuntime::GetName(character).data());
 
         BroadcastNotice(notice);
-        ch->WarpSet(983500, 265200, 41);
+        ecs::MovementSystem::WarpSet(character, 983500, 265200, 41);
         return true;
     }
 
@@ -160,8 +164,9 @@ EVENTFUNC(battle_pass_stay_online_event_session)
         return 0;
 
     LPCHARACTER ch = info->ch;
+	const entt::entity character = ch->GetEntityHandle();
 
-    if (!ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch)))
+    if (!ecs::PlayerRuntime::GetDesc(character))
         return PASSES_PER_SEC(60);
 
     const uint8_t bBattlePassId = ch->GetBattlePassId();
@@ -186,7 +191,7 @@ EVENTFUNC(battle_pass_stay_online_event_session)
 
 } // namespace
 
-bool CAN_ENTER_ZONE(const LPCHARACTER& ch, int map_index)
+bool CAN_ENTER_ZONE(entt::entity character, int map_index)
 {
     switch (map_index)
     {
@@ -194,7 +199,7 @@ bool CAN_ENTER_ZONE(const LPCHARACTER& ch, int map_index)
     case 302:
     case 303:
     case 304:
-        if (ecs::PointSystem::GetLevel(AIHelpers::EcsOf(ch)) < 90)
+        if (ecs::PointSystem::GetLevel(character) < 90)
             return false;
     }
     return true;
@@ -308,8 +313,8 @@ void CHARACTER::CreatePlayerProto(TPlayerTable& tab)
 
     tab.stamina = GetStamina();
 
-    tab.sRandomHP = m_points.iRandomHP;
-    tab.sRandomSP = m_points.iRandomSP;
+    tab.sRandomHP = GetRandomHP();
+    tab.sRandomSP = GetRandomSP();
 
     for (int i = 0; i < QUICKSLOT_MAX_NUM; ++i)
         tab.quickslot[i] = m_quickslot[i];
@@ -404,6 +409,7 @@ void CHARACTER::SetWarpLocation(int32_t lMapIndex, int32_t x, int32_t y)
     m_posWarp.x = x * 100;
     m_posWarp.y = y * 100;
     m_lWarpMapIndex = lMapIndex;
+	ecs::SessionSystem::SetWarpLocation(GetEntityHandle(), lMapIndex, x, y);
 }
 
 void CHARACTER::SaveExitLocation()
@@ -423,24 +429,96 @@ void CHARACTER::ExitToSavedLocation()
 
 namespace
 {
-ecs::WarpBlockState* EnsureWarpBlockState(LPCHARACTER ch)
+ecs::WarpBlockState* EnsureWarpBlockState(entt::entity character)
 {
-    if (!ch)
+    if (character == entt::null || !g_registry.valid(character))
         return nullptr;
 
-    const auto e = AIHelpers::EcsOf(ch);
-    if (e == entt::null || !g_registry.valid(e))
-        return nullptr;
-
-    return &g_registry.get_or_emplace<ecs::WarpBlockState>(e);
+    return &g_registry.get_or_emplace<ecs::WarpBlockState>(character);
 }
 } // namespace
+
+namespace ecs::SessionSystem {
+
+void SetWarpLocation(entt::entity character, int32_t mapIndex, int32_t x, int32_t y)
+{
+	if (character == entt::null || !g_registry.valid(character))
+		return;
+	auto& warp = g_registry.get_or_emplace<ecs::WarpPosition>(character);
+	warp.x = x * 100;
+	warp.y = y * 100;
+	warp.mapIndex = mapIndex;
+	g_registry.emplace_or_replace<ecs::DirtyTag>(character);
+}
+
+ecs::WarpPosition GetWarpLocation(entt::entity character)
+{
+	if (character == entt::null || !g_registry.valid(character))
+		return {};
+	const auto* warp = g_registry.try_get<ecs::WarpPosition>(character);
+	return warp ? *warp : ecs::WarpPosition {};
+}
+
+int GetSafeboxSize(entt::entity character)
+{
+    if (character == entt::null || !g_registry.valid(character))
+        return 0;
+
+    const auto* safebox = g_registry.try_get<ecs::SafeboxRef>(character);
+    return safebox ? safebox->safeboxSize : 0;
+}
+
+bool SetSafeboxSize(entt::entity character, int size)
+{
+    if (character == entt::null || !g_registry.valid(character))
+        return false;
+
+    LPDESC desc = ecs::PlayerRuntime::GetDesc(character);
+    if (!desc)
+        return false;
+
+    auto& safebox = g_registry.get_or_emplace<ecs::SafeboxRef>(character);
+    safebox.safeboxSize = size;
+    g_registry.emplace_or_replace<ecs::DirtyTag>(character);
+
+    LOG_INFO("SetSafeboxSize: {} {}", ecs::PlayerRuntime::GetName(character), size);
+    DBManager::instance().Query("UPDATE safebox%s SET size = %d WHERE account_id = %u",
+        get_table_postfix(), size / SAFEBOX_PAGE_SIZE, desc->GetAccountTable().id);
+    return true;
+}
+
+bool SetSafeboxOpenPosition(entt::entity character)
+{
+    if (character == entt::null || !g_registry.valid(character))
+        return false;
+
+    auto& safebox = g_registry.get_or_emplace<ecs::SafeboxRef>(character);
+    safebox.openX = ecs::PlayerRuntime::GetX(character);
+    safebox.openY = ecs::PlayerRuntime::GetY(character);
+    return true;
+}
+
+float GetDistanceFromSafeboxOpen(entt::entity character)
+{
+    if (character == entt::null || !g_registry.valid(character))
+        return 0.0f;
+
+    const auto* safebox = g_registry.try_get<ecs::SafeboxRef>(character);
+    if (!safebox)
+        return 0.0f;
+
+    return DISTANCE_APPROX(
+        ecs::PlayerRuntime::GetX(character) - safebox->openX,
+        ecs::PlayerRuntime::GetY(character) - safebox->openY);
+}
+
+} // namespace ecs::SessionSystem
 
 void CHARACTER::SetOpenSafebox(bool b)
 {
     m_isOpenSafebox = b;
 
-    const auto e = AIHelpers::EcsOf(this);
+	const auto e = GetEntityHandle();
     if (e != entt::null && g_registry.valid(e))
     {
         auto& safebox = g_registry.get_or_emplace<ecs::SafeboxRef>(e);
@@ -452,40 +530,40 @@ void CHARACTER::SetOpenSafebox(bool b)
 void CHARACTER::SetSafeboxLoadTime()
 {
     m_iSafeboxLoadTime = thecore_pulse();
-    if (auto* warp = EnsureWarpBlockState(this))
+    if (auto* warp = EnsureWarpBlockState(GetEntityHandle()))
     {
         warp->safeboxLoadTime = m_iSafeboxLoadTime;
-        g_registry.emplace_or_replace<ecs::DirtyTag>(AIHelpers::EcsOf(this));
+        g_registry.emplace_or_replace<ecs::DirtyTag>(GetEntityHandle());
     }
 }
 
 void CHARACTER::SetRefineTime()
 {
     m_iRefineTime = thecore_pulse();
-    if (auto* warp = EnsureWarpBlockState(this))
+    if (auto* warp = EnsureWarpBlockState(GetEntityHandle()))
     {
         warp->refineTime = m_iRefineTime;
-        g_registry.emplace_or_replace<ecs::DirtyTag>(AIHelpers::EcsOf(this));
+        g_registry.emplace_or_replace<ecs::DirtyTag>(GetEntityHandle());
     }
 }
 
 void CHARACTER::SetExchangeTime()
 {
     m_iExchangeTime = thecore_pulse();
-    if (auto* warp = EnsureWarpBlockState(this))
+    if (auto* warp = EnsureWarpBlockState(GetEntityHandle()))
     {
         warp->exchangeTime = m_iExchangeTime;
-        g_registry.emplace_or_replace<ecs::DirtyTag>(AIHelpers::EcsOf(this));
+        g_registry.emplace_or_replace<ecs::DirtyTag>(GetEntityHandle());
     }
 }
 
 void CHARACTER::SetMyShopTime()
 {
     m_iMyShopTime = thecore_pulse();
-    if (auto* warp = EnsureWarpBlockState(this))
+    if (auto* warp = EnsureWarpBlockState(GetEntityHandle()))
     {
         warp->myShopTime = m_iMyShopTime;
-        g_registry.emplace_or_replace<ecs::DirtyTag>(AIHelpers::EcsOf(this));
+        g_registry.emplace_or_replace<ecs::DirtyTag>(GetEntityHandle());
     }
 }
 
@@ -672,23 +750,23 @@ namespace {
     class FuncCheckWarp
     {
     public:
-        FuncCheckWarp(LPCHARACTER pkWarp)
+        FuncCheckWarp(entt::entity warp, bool isGoto)
         {
             m_lTargetY = 0;
             m_lTargetX = 0;
 
-            m_lX = ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(pkWarp));
-            m_lY = ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(pkWarp));
+            m_lX = ecs::PlayerRuntime::GetX(warp);
+            m_lY = ecs::PlayerRuntime::GetY(warp);
 
             m_bInvalid = false;
-            m_bEmpire = ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(pkWarp));
+            m_bEmpire = ecs::PlayerRuntime::GetEmpire(warp);
 
             char szTmp[64];
 
-            if (3 != sscanf(ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(pkWarp)).data(), " %s %ld %ld ", szTmp, &m_lTargetX, &m_lTargetY))
+            if (3 != sscanf(ecs::PlayerRuntime::GetName(warp).data(), " %s %ld %ld ", szTmp, &m_lTargetX, &m_lTargetY))
             {
                 if (number(1, 100) < 5)
-                    LOG_ERROR("Warp NPC name wrong : vnum({}) name({})", ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkWarp)), ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(pkWarp)).data());
+                    LOG_ERROR("Warp NPC name wrong : vnum({}) name({})", ecs::PlayerRuntime::GetRaceNum(warp), ecs::PlayerRuntime::GetName(warp).data());
 
                 m_bInvalid = true;
 
@@ -700,9 +778,9 @@ namespace {
 
             m_bUseWarp = true;
 
-            if (pkWarp->IsGoto())
+            if (isGoto)
             {
-                LPSECTREE_MAP pkSectreeMap = ecs::GetMap(ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(pkWarp)));
+                LPSECTREE_MAP pkSectreeMap = ecs::GetMap(ecs::PlayerRuntime::GetMapIndex(warp));
                 m_lTargetX += pkSectreeMap->m_setting.iBaseX;
                 m_lTargetY += pkSectreeMap->m_setting.iBaseY;
                 m_bUseWarp = false;
@@ -723,16 +801,17 @@ namespace {
                 return;
 
             LPCHARACTER pkChr = (LPCHARACTER)ent;
+			const entt::entity character = pkChr->GetEntityHandle();
 
-            if (!ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(pkChr)))
+            if (!ecs::PlayerRuntime::IsPC(character))
                 return;
 
-            int iDist = DISTANCE_APPROX(ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(pkChr)) - m_lX, ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(pkChr)) - m_lY);
+            int iDist = DISTANCE_APPROX(ecs::PlayerRuntime::GetX(character) - m_lX, ecs::PlayerRuntime::GetY(character) - m_lY);
 
             if (iDist > 300)
                 return;
 
-            if (m_bEmpire && ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(pkChr)) && m_bEmpire != ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(pkChr)))
+            if (m_bEmpire && ecs::PlayerRuntime::GetEmpire(character) && m_bEmpire != ecs::PlayerRuntime::GetEmpire(character))
                 return;
 
             if (pkChr->IsHack())
@@ -742,11 +821,11 @@ namespace {
                 return;
 
             if (m_bUseWarp)
-                pkChr->WarpSet(m_lTargetX, m_lTargetY);
+                ecs::MovementSystem::WarpSet(character, m_lTargetX, m_lTargetY);
             else
             {
-                pkChr->Show(ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(pkChr)), m_lTargetX, m_lTargetY);
-                pkChr->Stop();
+                ecs::MovementSystem::Show(character, ecs::PlayerRuntime::GetMapIndex(character), m_lTargetX, m_lTargetY);
+				ecs::MovementSystem::Stop(character);
             }
         }
 
@@ -783,21 +862,21 @@ EVENTFUNC(warp_npc_event)
         const PIXEL_POSITION& warpPos = ch->GetWarpPosition();
         g_dispatcher.trigger(ecs::EvWarpBegin {
             e,
-            static_cast<uint32_t>(ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch))),
+            static_cast<uint32_t>(ecs::PlayerRuntime::GetMapIndex(e)),
             warpPos.x,
             warpPos.y
         });
     }
 
-    if (!ecs::PlayerRuntime::GetSectree(AIHelpers::EcsOf(ch)))
+    if (!ecs::PlayerRuntime::GetSectree(e))
     {
         ch->m_pkWarpNPCEvent = nullptr;
         return 0;
     }
 
-    FuncCheckWarp f(ch);
+    FuncCheckWarp f(e, ch->IsGoto());
     if (f.Valid())
-        ecs::PlayerRuntime::GetSectree(AIHelpers::EcsOf(ch))->ForEachAround(f);
+        ecs::PlayerRuntime::GetSectree(e)->ForEachAround(f);
 
     return passes_per_sec / 2;
 }
@@ -822,17 +901,18 @@ bool CHARACTER::WarpToPID(uint32_t dwPID)
     LPCHARACTER victim;
     if ((victim = (CHARACTER_MANAGER::instance().FindByPID(dwPID))))
     {
-        int mapIdx = ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(victim));
+		const entt::entity victimEntity = victim->GetEntityHandle();
+        int mapIdx = ecs::PlayerRuntime::GetMapIndex(victimEntity);
         if (IS_SUMMONABLE_ZONE(mapIdx))
         {
-            if (CAN_ENTER_ZONE(this, mapIdx))
+            if (CAN_ENTER_ZONE(GetEntityHandle(), mapIdx))
             {
-                WarpSet(ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(victim)), ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(victim)));
+                WarpSet(ecs::PlayerRuntime::GetX(victimEntity), ecs::PlayerRuntime::GetY(victimEntity));
             }
             else
             {
 #ifdef TEXTS_IMPROVEMENT
-                ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 372, "");
+                ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 372, "");
 #endif
                 return false;
             }
@@ -840,7 +920,7 @@ bool CHARACTER::WarpToPID(uint32_t dwPID)
         else
         {
 #ifdef TEXTS_IMPROVEMENT
-            ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 372, "");
+            ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 372, "");
 #endif
             return false;
         }
@@ -852,7 +932,7 @@ bool CHARACTER::WarpToPID(uint32_t dwPID)
         if (!pcci)
         {
 #ifdef TEXTS_IMPROVEMENT
-            ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 371, "");
+            ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 371, "");
 #endif
             return false;
         }
@@ -860,23 +940,23 @@ bool CHARACTER::WarpToPID(uint32_t dwPID)
         if (pcci->bChannel != g_bChannel)
         {
 #ifdef TEXTS_IMPROVEMENT
-            ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 367, "%d#%d", g_bChannel, pcci->bChannel);
+            ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 367, "%d#%d", g_bChannel, pcci->bChannel);
 #endif
             return false;
         }
         else if (false == IS_SUMMONABLE_ZONE(pcci->lMapIndex))
         {
 #ifdef TEXTS_IMPROVEMENT
-            ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 372, "");
+            ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 372, "");
 #endif
             return false;
         }
         else
         {
-            if (!CAN_ENTER_ZONE(this, pcci->lMapIndex))
+            if (!CAN_ENTER_ZONE(GetEntityHandle(), pcci->lMapIndex))
             {
 #ifdef TEXTS_IMPROVEMENT
-                ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 372, "");
+                ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 372, "");
 #endif
                 return false;
             }
@@ -888,7 +968,7 @@ bool CHARACTER::WarpToPID(uint32_t dwPID)
             pcci->pkDesc->Packet(&p, sizeof(TPacketGGFindPosition));
 
             if (test_server)
-                ecs::ChatSystem::Send(AIHelpers::EcsOf(this), CHAT_TYPE_PARTY, "sent find position packet for teleport");
+                ecs::ChatSystem::Send(GetEntityHandle(), CHAT_TYPE_PARTY, "sent find position packet for teleport");
         }
     }
     return true;
@@ -906,7 +986,7 @@ bool CHARACTER::Show(int32_t lMapIndex, int32_t x, int32_t y, int32_t z, bool bS
     {
         const int32_t normalizedTargetMapIndex = NormalizeMapIndex(lMapIndex);
 
-        if (normalizedTargetMapIndex == 1 && CheckAndHandleSameHwid(this))
+        if (normalizedTargetMapIndex == 1 && CheckAndHandleSameHwid(GetEntityHandle()))
         {
             const uint32_t startMapIndex = EMPIRE_START_MAP(GetEmpire());
             const uint32_t startX = EMPIRE_START_X(GetEmpire());
@@ -1146,7 +1226,8 @@ bool CHARACTER::Show(int32_t lMapIndex, int32_t x, int32_t y, int32_t z, bool bS
             if (viewer == this)
                 continue;
 
-            if (ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(viewer)) && ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(viewer)))
+			const entt::entity viewerEntity = viewer->GetEntityHandle();
+            if (ecs::PlayerRuntime::IsPC(viewerEntity) && ecs::PlayerRuntime::GetDesc(viewerEntity))
                 UpdateMountInventoryCountOverhead(viewer);
         }
     }
@@ -1298,12 +1379,13 @@ void CHARACTER::Disconnect(const char* c_pszReason)
 
 float CHARACTER::GetDistanceFromSafeboxOpen() const
 {
-    return DISTANCE_APPROX(GetX() - m_posSafeboxOpen.x, GetY() - m_posSafeboxOpen.y);
+    return ecs::SessionSystem::GetDistanceFromSafeboxOpen(GetEntityHandle());
 }
 
 void CHARACTER::SetSafeboxOpenPosition()
 {
     m_posSafeboxOpen = GetXYZ();
+    ecs::SessionSystem::SetSafeboxOpenPosition(GetEntityHandle());
 }
 
 CSafebox* CHARACTER::GetSafebox() const
@@ -1316,14 +1398,14 @@ void CHARACTER::ReqSafeboxLoad(const char* pszPassword)
     if (!*pszPassword || strlen(pszPassword) > SAFEBOX_PASSWORD_MAX_LEN)
     {
 #ifdef TEXTS_IMPROVEMENT
-        ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 188, "");
+        ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 188, "");
 #endif
         return;
     }
     else if (m_pkSafebox)
     {
 #ifdef TEXTS_IMPROVEMENT
-        ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 189, "");
+        ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 189, "");
 #endif
         return;
     }
@@ -1333,7 +1415,7 @@ void CHARACTER::ReqSafeboxLoad(const char* pszPassword)
     if (iPulse - GetSafeboxLoadTime() < PASSES_PER_SEC(10))
     {
 #ifdef TEXTS_IMPROVEMENT
-        ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 190, "");
+        ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 190, "");
 #endif
         return;
     }
@@ -1341,7 +1423,7 @@ void CHARACTER::ReqSafeboxLoad(const char* pszPassword)
     else if (GetDistanceFromSafeboxOpen() > 1000)
     {
 #ifdef TEXTS_IMPROVEMENT
-        ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 185, "");
+        ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 185, "");
 #endif
         return;
     }
@@ -1400,16 +1482,16 @@ void CHARACTER::LoadSafebox(int iSize, uint32_t dwGold, int iItemCount, TPlayerI
                 continue;
             }
 
-            ItemSystem::SetItemSkipSave(EntityFactory::CreateItemEntity(g_registry, item), true);
+            ItemSystem::SetItemSkipSave((item ? item->GetEntityHandle() : entt::null), true);
             item->SetSockets(pItems->alSockets);
             item->SetAttributes(pItems->aAttr);
 
-			if (!m_pkSafebox->Add(pItems->pos, EntityFactory::CreateItemEntity(g_registry, item)))
+			if (!m_pkSafebox->Add(pItems->pos, (item ? item->GetEntityHandle() : entt::null)))
                 ItemSystem::DestroyItemEntityEcs(
-                    EntityFactory::CreateItemEntity(g_registry, item),
+                    (item ? item->GetEntityHandle() : entt::null),
                     "SAFEBOX_LOAD_ADD_FAILED");
             else
-                ItemSystem::SetItemSkipSave(EntityFactory::CreateItemEntity(g_registry, item), false);
+                ItemSystem::SetItemSkipSave((item ? item->GetEntityHandle() : entt::null), false);
         }
     }
 }
@@ -1426,6 +1508,11 @@ void CHARACTER::ChangeSafeboxSize(uint8_t bSize)
         m_pkSafebox->ChangeSize(bSize);
 
     m_iSafeboxSize = bSize;
+    if (GetEntityHandle() != entt::null && g_registry.valid(GetEntityHandle()))
+    {
+        auto& safebox = g_registry.get_or_emplace<ecs::SafeboxRef>(GetEntityHandle());
+        safebox.safeboxSize = bSize;
+    }
 }
 
 void CHARACTER::CloseSafebox()
@@ -1449,7 +1536,7 @@ void CHARACTER::CloseSafebox()
     M2_DELETE(m_pkSafebox);
     m_pkSafebox = nullptr;
 
-    ecs::ChatSystem::Send(AIHelpers::EcsOf(this), CHAT_TYPE_COMMAND, "CloseSafebox");
+    ecs::ChatSystem::Send(GetEntityHandle(), CHAT_TYPE_COMMAND, "CloseSafebox");
 
     SetSafeboxLoadTime();
     m_bOpeningSafebox = false;
@@ -1497,16 +1584,16 @@ void CHARACTER::LoadMall(int iItemCount, TPlayerItem* pItems)
                 continue;
             }
 
-            ItemSystem::SetItemSkipSave(EntityFactory::CreateItemEntity(g_registry, item), true);
+            ItemSystem::SetItemSkipSave((item ? item->GetEntityHandle() : entt::null), true);
             item->SetSockets(pItems->alSockets);
             item->SetAttributes(pItems->aAttr);
 
-			if (!m_pkMall->Add(pItems->pos, EntityFactory::CreateItemEntity(g_registry, item)))
+			if (!m_pkMall->Add(pItems->pos, (item ? item->GetEntityHandle() : entt::null)))
                 ItemSystem::DestroyItemEntityEcs(
-                    EntityFactory::CreateItemEntity(g_registry, item),
+                    (item ? item->GetEntityHandle() : entt::null),
                     "MALL_LOAD_ADD_FAILED");
             else
-                ItemSystem::SetItemSkipSave(EntityFactory::CreateItemEntity(g_registry, item), false);
+                ItemSystem::SetItemSkipSave((item ? item->GetEntityHandle() : entt::null), false);
         }
     }
 }
@@ -1521,7 +1608,7 @@ void CHARACTER::CloseMall()
     M2_DELETE(m_pkMall);
     m_pkMall = nullptr;
 
-    ecs::ChatSystem::Send(AIHelpers::EcsOf(this), CHAT_TYPE_COMMAND, "CloseMall");
+    ecs::ChatSystem::Send(GetEntityHandle(), CHAT_TYPE_COMMAND, "CloseMall");
 }
 
 void CHARACTER::QuerySafeboxSize()
@@ -1539,13 +1626,17 @@ void CHARACTER::QuerySafeboxSize()
 
 void CHARACTER::SetSafeboxSize(int iSize)
 {
-    LOG_INFO("SetSafeboxSize: {} {}", GetName(), iSize);
     m_iSafeboxSize = iSize;
-    DBManager::instance().Query("UPDATE safebox%s SET size = %d WHERE account_id = %u", get_table_postfix(), iSize / SAFEBOX_PAGE_SIZE, GetDesc()->GetAccountTable().id);
+    if (GetEntityHandle() != entt::null && g_registry.valid(GetEntityHandle()))
+    {
+        auto& safebox = g_registry.get_or_emplace<ecs::SafeboxRef>(GetEntityHandle());
+        safebox.safeboxSize = iSize;
+    }
+    ecs::SessionSystem::SetSafeboxSize(GetEntityHandle(), iSize);
 }
 
 int CHARACTER::GetSafeboxSize() const
 {
-    return m_iSafeboxSize;
+    return ecs::SessionSystem::GetSafeboxSize(GetEntityHandle());
 }
 

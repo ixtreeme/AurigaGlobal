@@ -499,7 +499,7 @@ namespace quest
 			{
 				CQuestManager & mgr = CQuestManager::instance();
 
-				LOG_ERROR("QUEST There's suspended quest state, can't run new quest state (quest: {} pc: {})", pc.GetCurrentQuestName().c_str(), mgr.GetCurrentCharacterPtr() ? ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(mgr.GetCurrentCharacterPtr())).data() : "<none>");
+				LOG_ERROR("QUEST There's suspended quest state, can't run new quest state (quest: {} pc: {})", pc.GetCurrentQuestName().c_str(), mgr.GetCurrentCharacterPtr() ? ecs::PlayerRuntime::GetName(((mgr.GetCurrentCharacterPtr()) ? (mgr.GetCurrentCharacterPtr())->GetEntityHandle() : entt::null)).data() : "<none>");
 			}
 
 			return false;
@@ -618,7 +618,7 @@ namespace quest
 			{
 				CQuestManager & mgr = CQuestManager::instance();
 
-				LOG_ERROR("QUEST There's suspended quest state, can't run new quest state (quest: {} pc: {})", pc.GetCurrentQuestName().c_str(), mgr.GetCurrentCharacterPtr() ? ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(mgr.GetCurrentCharacterPtr())).data() : "<none>");
+				LOG_ERROR("QUEST There's suspended quest state, can't run new quest state (quest: {} pc: {})", pc.GetCurrentQuestName().c_str(), mgr.GetCurrentCharacterPtr() ? ecs::PlayerRuntime::GetName(((mgr.GetCurrentCharacterPtr()) ? (mgr.GetCurrentCharacterPtr())->GetEntityHandle() : entt::null)).data() : "<none>");
 			}
 
 			return false;
@@ -733,7 +733,7 @@ namespace quest
 
 				LOG_ERROR("QUEST There\'s suspended quest state, can\'t run new quest state (quest: {} pc: {})",
 						pc.GetCurrentQuestName().c_str(),
-						mgr.GetCurrentCharacterPtr() ? ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(mgr.GetCurrentCharacterPtr())).data() : "<none>");
+						mgr.GetCurrentCharacterPtr() ? ecs::PlayerRuntime::GetName(((mgr.GetCurrentCharacterPtr()) ? (mgr.GetCurrentCharacterPtr())->GetEntityHandle() : entt::null)).data() : "<none>");
 			}
 
 			return false;
@@ -760,7 +760,7 @@ namespace quest
 			{
 				CQuestManager & mgr = CQuestManager::instance();
 
-				LOG_ERROR("3. QUEST There's suspended quest state, can't run new quest state (quest: {} pc: {})", pc.GetCurrentQuestName().c_str(), mgr.GetCurrentCharacterPtr() ? ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(mgr.GetCurrentCharacterPtr())).data() : "<none>");
+				LOG_ERROR("3. QUEST There's suspended quest state, can't run new quest state (quest: {} pc: {})", pc.GetCurrentQuestName().c_str(), mgr.GetCurrentCharacterPtr() ? ecs::PlayerRuntime::GetName(((mgr.GetCurrentCharacterPtr()) ? (mgr.GetCurrentCharacterPtr())->GetEntityHandle() : entt::null)).data() : "<none>");
 			}
 
 			return false;
@@ -805,7 +805,7 @@ namespace quest
 		{
 			if (test_server) {
 				CQuestManager & mgr = CQuestManager::instance();
-				LOG_ERROR("QUEST There's suspended quest state, can't run new quest state (quest: {} pc: {})", pc.GetCurrentQuestName().c_str(), mgr.GetCurrentCharacterPtr() ? ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(mgr.GetCurrentCharacterPtr())).data() : "<none>");
+				LOG_ERROR("QUEST There's suspended quest state, can't run new quest state (quest: {} pc: {})", pc.GetCurrentQuestName().c_str(), mgr.GetCurrentCharacterPtr() ? ecs::PlayerRuntime::GetName(((mgr.GetCurrentCharacterPtr()) ? (mgr.GetCurrentCharacterPtr())->GetEntityHandle() : entt::null)).data() : "<none>");
 			}
 
 			return false;
@@ -900,7 +900,7 @@ namespace quest
 			{
 				CQuestManager & mgr = CQuestManager::instance();
 
-				LOG_ERROR("5. QUEST There's suspended quest state, can't run new quest state (quest: {} pc: {})", pc.GetCurrentQuestName().c_str(), mgr.GetCurrentCharacterPtr() ? ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(mgr.GetCurrentCharacterPtr())).data() : "<none>");
+				LOG_ERROR("5. QUEST There's suspended quest state, can't run new quest state (quest: {} pc: {})", pc.GetCurrentQuestName().c_str(), mgr.GetCurrentCharacterPtr() ? ecs::PlayerRuntime::GetName(((mgr.GetCurrentCharacterPtr()) ? (mgr.GetCurrentCharacterPtr())->GetEntityHandle() : entt::null)).data() : "<none>");
 			}
 
 			return false;
@@ -931,7 +931,7 @@ namespace quest
 				uint8_t bLang = 0;
 				LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
 				if (ch) {
-					LPDESC d = ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch));
+					LPDESC d = ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null));
 					if (d) {
 						bLang = d->GetLanguage();
 					}

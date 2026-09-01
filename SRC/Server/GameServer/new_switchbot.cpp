@@ -295,14 +295,14 @@ std::string MakeFullItemLink(entt::entity item, LPCHARACTER pkKiller)
 
 	// killer nyelve (fallback: EN)
 	int lang = LANGUAGE_EN;
-	if (pkKiller && ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(pkKiller)))
-		lang = ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(pkKiller))->GetLanguage();
+	if (pkKiller && ecs::PlayerRuntime::GetDesc(((pkKiller) ? (pkKiller)->GetEntityHandle() : entt::null)))
+		lang = ecs::PlayerRuntime::GetDesc(((pkKiller) ? (pkKiller)->GetEntityHandle() : entt::null))->GetLanguage();
 
 	const char* fmt = GetHighAvgDmgFmtByLang(lang);
 
 	char szChat[1024];
 	snprintf(szChat, sizeof(szChat), fmt,
-		pkKiller ? ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(pkKiller)).data() : "Player",
+		pkKiller ? ecs::PlayerRuntime::GetName(((pkKiller) ? (pkKiller)->GetEntityHandle() : entt::null)).data() : "Player",
 		itemlink,
 		item != entt::null ? ItemSystem::GetItemName(item) : "item");
 
@@ -341,7 +341,7 @@ void CSwitchbot::SwitchItems()
 
 		if (CheckItem(itemEntity, bSlot))
 		{
-			LPDESC desc = ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(pkOwner));
+			LPDESC desc = ecs::PlayerRuntime::GetDesc(((pkOwner) ? (pkOwner)->GetEntityHandle() : entt::null));
 			if (desc)
 			{
 				char buf[512];
@@ -406,8 +406,8 @@ void CSwitchbot::SwitchItems()
 				int len = snprintf(buf, sizeof(buf), LC_TEXT("Bonuschange of %s (Slot: %d) successfully finished."), ItemSystem::GetItemName(itemEntity), bSlot + 1);
 #endif
 				pack.wSize = sizeof(TPacketGCWhisper) + len;
-				ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(pkOwner))->BufferedPacket(&pack, sizeof(pack));
-				ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(pkOwner))->Packet(buf, len);
+				ecs::PlayerRuntime::GetDesc(((pkOwner) ? (pkOwner)->GetEntityHandle() : entt::null))->BufferedPacket(&pack, sizeof(pack));
+				ecs::PlayerRuntime::GetDesc(((pkOwner) ? (pkOwner)->GetEntityHandle() : entt::null))->Packet(buf, len);
 			}
 
 			SetActive(bSlot, false);
@@ -661,7 +661,7 @@ void CSwitchbot::SwitchItems()
 			}
 			else if (SWITCHBOT_PRICE_TYPE == 2)
 			{
-				if (ecs::PointSystem::GetGold(AIHelpers::EcsOf(pkOwner)) >= SWITCHBOT_PRICE_AMOUNT)
+				if (ecs::PointSystem::GetGold(((pkOwner) ? (pkOwner)->GetEntityHandle() : entt::null)) >= SWITCHBOT_PRICE_AMOUNT)
 				{
 					stop = false;
 				}
@@ -673,14 +673,14 @@ void CSwitchbot::SwitchItems()
 				if (!HasActiveSlots()) {
 					Stop();
 				} else {
-					CSwitchbotManager::Instance().SendSwitchbotUpdate(ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(pkOwner)));
+					CSwitchbotManager::Instance().SendSwitchbotUpdate(ecs::PlayerRuntime::GetPlayerID(((pkOwner) ? (pkOwner)->GetEntityHandle() : entt::null)));
 				}
 
 #ifdef TEXTS_IMPROVEMENT
 				if (SWITCHBOT_PRICE_TYPE == 1) {
-					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(pkOwner), CHAT_TYPE_INFO, 754, "");
+					ecs::ChatSystem::SendNew(((pkOwner) ? (pkOwner)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 754, "");
 				} else {
-					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(pkOwner), CHAT_TYPE_INFO, 755, "");
+					ecs::ChatSystem::SendNew(((pkOwner) ? (pkOwner)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 755, "");
 				}
 #endif
 				return;
@@ -828,7 +828,7 @@ bool CSwitchbot::CheckItem(entt::entity item, uint8_t slot)
 #endif
 void CSwitchbot::SendItemUpdate(LPCHARACTER ch, uint8_t slot, entt::entity item)
 {
-	LPDESC desc = ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch));
+	LPDESC desc = ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null));
 	if (!desc)
 	{
 		return;
@@ -1067,7 +1067,7 @@ void CSwitchbotManager::SendItemAttributeInformations(LPCHARACTER ch)
 		return;
 	}
 
-	LPDESC desc = ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch));
+	LPDESC desc = ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null));
 	if (!desc)
 	{
 		return;
@@ -1124,7 +1124,7 @@ void CSwitchbotManager::SendSwitchbotUpdate(uint32_t player_id)
 		return;
 	}
 
-	LPDESC desc = ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch));
+	LPDESC desc = ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null));
 	if (!desc)
 	{
 		return;
@@ -1144,10 +1144,10 @@ void CSwitchbotManager::SendSwitchbotUpdate(uint32_t player_id)
 void CSwitchbotManager::EnterGame(LPCHARACTER ch)
 {
 	SendItemAttributeInformations(ch);
-	SetIsWarping(ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)), false);
-	SendSwitchbotUpdate(ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)));
+	SetIsWarping(ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null)), false);
+	SendSwitchbotUpdate(ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null)));
 
-	CSwitchbot* pkSwitchbot = FindSwitchbot(ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)));
+	CSwitchbot* pkSwitchbot = FindSwitchbot(ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null)));
 	if (pkSwitchbot && pkSwitchbot->HasActiveSlots() && !pkSwitchbot->IsSwitching())
 	{
 		pkSwitchbot->Start();

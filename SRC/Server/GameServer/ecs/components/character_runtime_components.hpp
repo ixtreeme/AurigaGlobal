@@ -2,6 +2,9 @@
 
 #include <cstdint>
 
+class CPetSystem;
+class CNewPetSystem;
+
 namespace ecs {
 
 struct CharacterRuntimeFlagsComponent {
@@ -13,6 +16,16 @@ struct CharacterRuntimeFlagsComponent {
     uint8_t gmLevel = 0;
     uint8_t blockMode = 0;
     float rotation = 0.0f;
+};
+
+struct PetRuntimeRefs {
+#ifdef __PET_SYSTEM__
+    CPetSystem* petSystem { nullptr };
+#endif
+#ifdef __NEWPET_SYSTEM__
+    CNewPetSystem* newPetSystem { nullptr };
+    int eggVID { 0 };
+#endif
 };
 
 } // namespace ecs

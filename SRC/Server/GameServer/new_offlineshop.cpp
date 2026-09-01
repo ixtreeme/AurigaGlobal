@@ -80,15 +80,15 @@ namespace offlineshop
 		if (pItem)
 		{
 			//basic info
-			m_itemInfo.dwCount	= ItemSystem::GetItemCount(EntityFactory::CreateItemEntity(g_registry, pItem));
+			m_itemInfo.dwCount	= ItemSystem::GetItemCount((pItem ? pItem->GetEntityHandle() : entt::null));
 			{
-				const entt::entity ownerEntity = ItemSystem::GetItemOwnerEntity(EntityFactory::CreateItemEntity(g_registry, pItem));
+				const entt::entity ownerEntity = ItemSystem::GetItemOwnerEntity((pItem ? pItem->GetEntityHandle() : entt::null));
 				auto* owner = ecs::LegacyCharOf(ownerEntity);
-				m_dwOwnerID			= owner ? ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(owner)) : 0;
+				m_dwOwnerID			= owner ? ecs::PlayerRuntime::GetPlayerID(((owner) ? (owner)->GetEntityHandle() : entt::null)) : 0;
 			}
-			m_itemInfo.dwVnum	= ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, pItem));
+			m_itemInfo.dwVnum	= ItemSystem::GetItemVnum((pItem ? pItem->GetEntityHandle() : entt::null));
 			//patch 08-03-2020
-			m_itemInfo.expiration = GetItemExpiration(pItem);
+			m_itemInfo.expiration = GetItemExpiration(pItem->GetEntityHandle());
 
 			//attributes
 			const TPlayerItemAttribute* pAttributes = pItem->GetAttributes();
@@ -162,13 +162,13 @@ namespace offlineshop
 		if (pItem)
 		{
 			//basic info
-			m_itemInfo.dwCount	= ItemSystem::GetItemCount(EntityFactory::CreateItemEntity(g_registry, pItem));
+			m_itemInfo.dwCount	= ItemSystem::GetItemCount((pItem ? pItem->GetEntityHandle() : entt::null));
 			{
-				const entt::entity ownerEntity = ItemSystem::GetItemOwnerEntity(EntityFactory::CreateItemEntity(g_registry, pItem));
+				const entt::entity ownerEntity = ItemSystem::GetItemOwnerEntity((pItem ? pItem->GetEntityHandle() : entt::null));
 				auto* owner = ecs::LegacyCharOf(ownerEntity);
-				m_dwOwnerID			= owner ? ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(owner)) : 0;
+				m_dwOwnerID			= owner ? ecs::PlayerRuntime::GetPlayerID(((owner) ? (owner)->GetEntityHandle() : entt::null)) : 0;
 			}
-			m_itemInfo.dwVnum	= ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, pItem));
+			m_itemInfo.dwVnum	= ItemSystem::GetItemVnum((pItem ? pItem->GetEntityHandle() : entt::null));
 
 			//attributes
 			const TPlayerItemAttribute* pAttributes = pItem->GetAttributes();
@@ -231,7 +231,7 @@ namespace offlineshop
 		if(!ch)
 			return false;
 
-		if(m_priceInfo.illYang > ecs::PointSystem::GetGold(AIHelpers::EcsOf(ch)))
+		if(m_priceInfo.illYang > ecs::PointSystem::GetGold(((ch) ? (ch)->GetEntityHandle() : entt::null)))
 			return false;
 #ifdef __ENABLE_CHEQUE_SYSTEM__
 		if(m_priceInfo.iCheque > ch->GetCheque())
@@ -616,7 +616,7 @@ namespace offlineshop
 				if (!ch)
 					continue;
 
-				if ((ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))) == m_dwPID)
+				if ((ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null))) == m_dwPID)
 					GetManager().SendShopOpenMyShopClientPacket(ch);
 
 				else
@@ -627,7 +627,7 @@ namespace offlineshop
 
 		else
 		{
-			if((ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))) == m_dwPID)
+			if((ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null))) == m_dwPID)
 				GetManager().SendShopOpenMyShopClientPacket(ch);
 
 			else

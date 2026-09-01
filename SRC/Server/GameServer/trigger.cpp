@@ -108,11 +108,11 @@ int OnClickShop(TRIGGERPARAM)
 
 int OnClickOrcsDungeon(TRIGGERPARAM)
 {
-	if (!causer || !ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(causer)))
+	if (!causer || !ecs::PlayerRuntime::IsPC(((causer) ? (causer)->GetEntityHandle() : entt::null)))
 		return 0;
 
 	// NPC vnum 9239
-	if (!ch || (ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(ch))) != 9239)
+	if (!ch || (ecs::PlayerRuntime::GetRaceNum(((ch) ? (ch)->GetEntityHandle() : entt::null))) != 9239)
 		return 0;
 
 	COrcsDungeon::instance().OnClickNpc(causer);
@@ -121,11 +121,11 @@ int OnClickOrcsDungeon(TRIGGERPARAM)
 
 int OnClickTritonTempleDungeon(TRIGGERPARAM)
 {
-	if (!causer || !ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(causer)))
+	if (!causer || !ecs::PlayerRuntime::IsPC(((causer) ? (causer)->GetEntityHandle() : entt::null)))
 		return 0;
 
 	// NPC vnum 20094
-	if (!ch || (ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(ch))) != 20094)
+	if (!ch || (ecs::PlayerRuntime::GetRaceNum(((ch) ? (ch)->GetEntityHandle() : entt::null))) != 20094)
 		return 0;
 
 	CTritonTempleDungeon::instance().OnClickNpc(causer);
@@ -134,11 +134,11 @@ int OnClickTritonTempleDungeon(TRIGGERPARAM)
 
 int OnClickValentineDungeon(TRIGGERPARAM)
 {
-	if (!causer || !ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(causer)))
+	if (!causer || !ecs::PlayerRuntime::IsPC(((causer) ? (causer)->GetEntityHandle() : entt::null)))
 		return 0;
 
 	// NPC vnum 20012
-	if (!ch || (ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(ch))) != 20012)
+	if (!ch || (ecs::PlayerRuntime::GetRaceNum(((ch) ? (ch)->GetEntityHandle() : entt::null))) != 20012)
 		return 0;
 
 	CValentineDungeon::instance().OnClickNpc(causer);
@@ -147,11 +147,11 @@ int OnClickValentineDungeon(TRIGGERPARAM)
 
 int OnClickEasterDungeon(TRIGGERPARAM)
 {
-    if (!causer || !ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(causer)))
+    if (!causer || !ecs::PlayerRuntime::IsPC(((causer) ? (causer)->GetEntityHandle() : entt::null)))
         return 0;
 
     // NPC vnum 21
-    if (!ch || (ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(ch))) != 9308)
+    if (!ch || (ecs::PlayerRuntime::GetRaceNum(((ch) ? (ch)->GetEntityHandle() : entt::null))) != 9308)
         return 0;
 
     CEasterDungeon::instance().OnClickNpc(causer);
@@ -160,11 +160,11 @@ int OnClickEasterDungeon(TRIGGERPARAM)
 
 int OnClickRuneDungeon(TRIGGERPARAM)
 {
-	if (!causer || !ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(causer)))
+	if (!causer || !ecs::PlayerRuntime::IsPC(((causer) ? (causer)->GetEntityHandle() : entt::null)))
 		return 0;
 
 	// NPC vnum 20506
-	if (!ch || (ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(ch))) != 20506)
+	if (!ch || (ecs::PlayerRuntime::GetRaceNum(((ch) ? (ch)->GetEntityHandle() : entt::null))) != 20506)
 		return 0;
 
 	CRuneDungeon::instance().OnClickNpc(causer);
@@ -173,11 +173,11 @@ int OnClickRuneDungeon(TRIGGERPARAM)
 
 int OnClickPyramidDungeon(TRIGGERPARAM)
 {
-	if (!causer || !ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(causer)))
+	if (!causer || !ecs::PlayerRuntime::IsPC(((causer) ? (causer)->GetEntityHandle() : entt::null)))
 		return 0;
 
 	// NPC vnum 9331
-	if (!ch || (ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(ch))) != 9331)
+	if (!ch || (ecs::PlayerRuntime::GetRaceNum(((ch) ? (ch)->GetEntityHandle() : entt::null))) != 9331)
 		return 0;
 
 	CPyramidDungeonRazor93::instance().OnClickNpc(causer);
@@ -186,10 +186,10 @@ int OnClickPyramidDungeon(TRIGGERPARAM)
 
 int OnClickNightmareDungeon(TRIGGERPARAM)
 {
-	if (!causer || !ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(causer)))
+	if (!causer || !ecs::PlayerRuntime::IsPC(((causer) ? (causer)->GetEntityHandle() : entt::null)))
 		return 0;
 
-	if (!ch || (ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(ch))) != 20088)
+	if (!ch || (ecs::PlayerRuntime::GetRaceNum(((ch) ? (ch)->GetEntityHandle() : entt::null))) != 20088)
 		return 0;
 
 	CNightmareDungeonRazor93::instance().OnClickNpc(causer);
@@ -197,13 +197,13 @@ int OnClickNightmareDungeon(TRIGGERPARAM)
 }
 int OnClickHalloween2022Dungeon(TRIGGERPARAM)
 {
-	if (!causer || !ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(causer)))
+	if (!causer || !ecs::PlayerRuntime::IsPC(((causer) ? (causer)->GetEntityHandle() : entt::null)))
 		return 0;
 
 	if (!ch)
 		return 0;
 
-	if ((ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(ch))) != 9475 && (ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(ch))) != 9484)
+	if ((ecs::PlayerRuntime::GetRaceNum(((ch) ? (ch)->GetEntityHandle() : entt::null))) != 9475 && (ecs::PlayerRuntime::GetRaceNum(((ch) ? (ch)->GetEntityHandle() : entt::null))) != 9484)
 		return 0;
 
 	CHalloween2022Dungeon::instance().OnClickNpc(causer, ch);
@@ -212,7 +212,7 @@ int OnClickHalloween2022Dungeon(TRIGGERPARAM)
 
 int OnClickVikingDungeon(TRIGGERPARAM)
 {
-	if (!causer || !ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(causer)))
+	if (!causer || !ecs::PlayerRuntime::IsPC(((causer) ? (causer)->GetEntityHandle() : entt::null)))
 		return 0;
 
 	if (!ch)
@@ -220,7 +220,7 @@ int OnClickVikingDungeon(TRIGGERPARAM)
 
 	// entry npc: 9615
 	// reward chest: 9626
-	if ((ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(ch))) != 9615 && (ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(ch))) != 9626)
+	if ((ecs::PlayerRuntime::GetRaceNum(((ch) ? (ch)->GetEntityHandle() : entt::null))) != 9615 && (ecs::PlayerRuntime::GetRaceNum(((ch) ? (ch)->GetEntityHandle() : entt::null))) != 9626)
 		return 0;
 
 	CVikingDungeon::instance().OnClickNpc(causer, ch);
@@ -229,26 +229,26 @@ int OnClickVikingDungeon(TRIGGERPARAM)
 #ifdef ENABLE_NEW_CRAFT_SYSTEM_RAZOR93
 int OnClickStoneCraft(TRIGGERPARAM)
 {
-	if (!causer || !ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(causer)))
+	if (!causer || !ecs::PlayerRuntime::IsPC(((causer) ? (causer)->GetEntityHandle() : entt::null)))
 		return 0;
 
-	if (!ch || (ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(ch))) != 9005)
+	if (!ch || (ecs::PlayerRuntime::GetRaceNum(((ch) ? (ch)->GetEntityHandle() : entt::null))) != 9005)
 		return 0;
 
-	if (ecs::SocialSystem::GetExchange(AIHelpers::EcsOf(causer)) || causer->GetMyShop() || causer->GetShopOwner() || causer->IsOpenSafebox() || causer->IsCubeOpen())
+	if (ecs::SocialSystem::GetExchange(((causer) ? (causer)->GetEntityHandle() : entt::null)) || causer->GetMyShop() || causer->GetShopOwner() || causer->IsOpenSafebox() || causer->IsCubeOpen())
 		return 0;
 
 	causer->SetQuestNPCID(((ch)->GetLegacyVID()));
-	ecs::ChatSystem::Send(AIHelpers::EcsOf(causer), CHAT_TYPE_COMMAND, "stone_craft_open");
+	ecs::ChatSystem::Send(((causer) ? (causer)->GetEntityHandle() : entt::null), CHAT_TYPE_COMMAND, "stone_craft_open");
 	return 1;
 }
 #endif
 //int OnClickLostCastleDungeon(TRIGGERPARAM)
 //{
-//	if (!causer || !ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(causer)))
+//	if (!causer || !ecs::PlayerRuntime::IsPC(((causer) ? (causer)->GetEntityHandle() : entt::null)))
 //		return 0;
 //
-//	if (!ch || (ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(ch))) != 20021)
+//	if (!ch || (ecs::PlayerRuntime::GetRaceNum(((ch) ? (ch)->GetEntityHandle() : entt::null))) != 20021)
 //		return 0;
 //
 //	CLostCastleDungeon::instance().OnClickNpc(causer);
@@ -274,8 +274,8 @@ public:
 		m_pkChr(pkChr),
 		m_iMinDistance(~(1L << 31)),
 		m_iMaxDistance(iMaxDistance),
-		m_lx(ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(pkChr))),
-		m_ly(ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(pkChr))),
+		m_lx(ecs::PlayerRuntime::GetX(((pkChr) ? (pkChr)->GetEntityHandle() : entt::null))),
+		m_ly(ecs::PlayerRuntime::GetY(((pkChr) ? (pkChr)->GetEntityHandle() : entt::null))),
 		m_pkChrVictim(nullptr),
 		m_pkChrBuilding(nullptr)
 	{
@@ -289,54 +289,54 @@ public:
 		LPCHARACTER pkChr = (LPCHARACTER)ent;
 
 		if (pkChr->IsBuilding() &&
-			(AffectSystem::IsAffectFlag(AIHelpers::EcsOf(pkChr), AFF_BUILDING_CONSTRUCTION_SMALL) ||
-				AffectSystem::IsAffectFlag(AIHelpers::EcsOf(pkChr), AFF_BUILDING_CONSTRUCTION_LARGE) ||
-				AffectSystem::IsAffectFlag(AIHelpers::EcsOf(pkChr), AFF_BUILDING_UPGRADE)))
+			(AffectSystem::IsAffectFlag(((pkChr) ? (pkChr)->GetEntityHandle() : entt::null), AFF_BUILDING_CONSTRUCTION_SMALL) ||
+				AffectSystem::IsAffectFlag(((pkChr) ? (pkChr)->GetEntityHandle() : entt::null), AFF_BUILDING_CONSTRUCTION_LARGE) ||
+				AffectSystem::IsAffectFlag(((pkChr) ? (pkChr)->GetEntityHandle() : entt::null), AFF_BUILDING_UPGRADE)))
 		{
 			m_pkChrBuilding = pkChr;
 		}
 
-		if (ecs::PlayerRuntime::IsNPC(AIHelpers::EcsOf(pkChr)))
+		if (ecs::PlayerRuntime::IsNPC(((pkChr) ? (pkChr)->GetEntityHandle() : entt::null)))
 		{
-			const entt::entity ownerEntity = AIHelpers::EcsOf(m_pkChr);
+			const entt::entity ownerEntity = ((m_pkChr) ? (m_pkChr)->GetEntityHandle() : entt::null);
 			if (!pkChr->IsMonster() || !AIHelpers::IsAttackMob(ownerEntity) || AIHelpers::IsAggressive(ownerEntity))
 				return false;
 
 		}
 
-		if (CombatSystem::IsDead(AIHelpers::EcsOf(pkChr)))
+		if (CombatSystem::IsDead(((pkChr) ? (pkChr)->GetEntityHandle() : entt::null)))
 			return false;
 
-		if (AffectSystem::IsAffectFlag(AIHelpers::EcsOf(pkChr), AFF_EUNHYUNG) ||
-			AffectSystem::IsAffectFlag(AIHelpers::EcsOf(pkChr), AFF_INVISIBILITY) ||
-			AffectSystem::IsAffectFlag(AIHelpers::EcsOf(pkChr), AFF_REVIVE_INVISIBLE))
+		if (AffectSystem::IsAffectFlag(((pkChr) ? (pkChr)->GetEntityHandle() : entt::null), AFF_EUNHYUNG) ||
+			AffectSystem::IsAffectFlag(((pkChr) ? (pkChr)->GetEntityHandle() : entt::null), AFF_INVISIBILITY) ||
+			AffectSystem::IsAffectFlag(((pkChr) ? (pkChr)->GetEntityHandle() : entt::null), AFF_REVIVE_INVISIBLE))
 			return false;
 
-		if (AffectSystem::IsAffectFlag(AIHelpers::EcsOf(pkChr), AFF_TERROR) && AffectSystem::IsImmune(AIHelpers::EcsOf(m_pkChr), IMMUNE_TERROR) == false)	// \xb0\xf8\xc6\xf7 �\xb8\xae
+		if (AffectSystem::IsAffectFlag(((pkChr) ? (pkChr)->GetEntityHandle() : entt::null), AFF_TERROR) && AffectSystem::IsImmune(((m_pkChr) ? (m_pkChr)->GetEntityHandle() : entt::null), IMMUNE_TERROR) == false)	// \xb0\xf8\xc6\xf7 �\xb8\xae
 		{
-			if ((ecs::PointSystem::GetLevel(AIHelpers::EcsOf(pkChr))) >= ecs::PointSystem::GetLevel(AIHelpers::EcsOf(m_pkChr)))
+			if ((ecs::PointSystem::GetLevel(((pkChr) ? (pkChr)->GetEntityHandle() : entt::null))) >= ecs::PointSystem::GetLevel(((m_pkChr) ? (m_pkChr)->GetEntityHandle() : entt::null)))
 				return false;
 		}
 
 		if (m_pkChr->IsNoAttackShinsu())
 		{
-			if (ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(pkChr)) == 1)
+			if (ecs::PlayerRuntime::GetEmpire(((pkChr) ? (pkChr)->GetEntityHandle() : entt::null)) == 1)
 				return false;
 		}
 
 		if (m_pkChr->IsNoAttackChunjo())
 		{
-			if (ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(pkChr)) == 2)
+			if (ecs::PlayerRuntime::GetEmpire(((pkChr) ? (pkChr)->GetEntityHandle() : entt::null)) == 2)
 				return false;
 		}
 
 		if (m_pkChr->IsNoAttackJinno())
 		{
-			if (ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(pkChr)) == 3)
+			if (ecs::PlayerRuntime::GetEmpire(((pkChr) ? (pkChr)->GetEntityHandle() : entt::null)) == 3)
 				return false;
 		}
 
-		int iDistance = DISTANCE_APPROX(m_lx - ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(pkChr)), m_ly - ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(pkChr)));
+		int iDistance = DISTANCE_APPROX(m_lx - ecs::PlayerRuntime::GetX(((pkChr) ? (pkChr)->GetEntityHandle() : entt::null)), m_ly - ecs::PlayerRuntime::GetY(((pkChr) ? (pkChr)->GetEntityHandle() : entt::null)));
 
 		if (iDistance < m_iMinDistance && iDistance <= m_iMaxDistance)
 		{
@@ -349,7 +349,7 @@ public:
 	LPCHARACTER GetVictim()
 	{
 		// \xb1\xd9�\xbf\xa1 \xb0?\xb0\xc0\xcc \xc0?\xed \xc7j\xa1 \xb8\xb9\xc0\xcc \xc0??\xe9 \xb0?\xb0\xc0\xbb \xb0\xf8\xb0\xdd\xc7?\xd9. \xb0?\xb0\xb8\xb8 \xc0?? \xb0?\xb0\xc0\xbb \xb0\xf8\xb0\xdd
-		if ((m_pkChrBuilding && ((m_pkChr->GetHP() * 2) > ecs::PointSystem::GetMaxHP(AIHelpers::EcsOf(m_pkChr)))) || !m_pkChrVictim)
+		if ((m_pkChrBuilding && ((m_pkChr->GetHP() * 2) > ecs::PointSystem::GetMaxHP(((m_pkChr) ? (m_pkChr)->GetEntityHandle() : entt::null)))) || !m_pkChrVictim)
 		{
 			return m_pkChrBuilding;
 		}
@@ -372,8 +372,8 @@ private:
 LPCHARACTER FindVictim(LPCHARACTER pkChr, int iMaxDistance)
 {
 	FuncFindMobVictim f(pkChr, iMaxDistance);
-	if (ecs::PlayerRuntime::GetSectree(AIHelpers::EcsOf(pkChr)) != nullptr) {
-		ecs::PlayerRuntime::GetSectree(AIHelpers::EcsOf(pkChr))->ForEachAround(f);
+	if (ecs::PlayerRuntime::GetSectree(((pkChr) ? (pkChr)->GetEntityHandle() : entt::null)) != nullptr) {
+		ecs::PlayerRuntime::GetSectree(((pkChr) ? (pkChr)->GetEntityHandle() : entt::null))->ForEachAround(f);
 	}
 	return f.GetVictim();
 }

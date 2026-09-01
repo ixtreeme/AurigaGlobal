@@ -64,8 +64,8 @@ CShop::~CShop()
 
 	while (it != m_map_guest.end())
 	{
-		LPCHARACTER ch = it->first;
-		ch->SetShop(nullptr);
+		const entt::entity guest = it->first;
+		ecs::SocialSystem::SetShop(guest, nullptr);
 		++it;
 	}
 
@@ -122,11 +122,11 @@ void CShop::SetShopItems(TShopItemTable * pTable, uint8_t bItemCount)
 
 			if (!pkItem)
 			{
-				LOG_ERROR("cannot find item on pos ({}, {}) (name: {})", static_cast<int>(pTable->pos.window_type), pTable->pos.cell, ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(m_pkPC)).data());
+				LOG_ERROR("cannot find item on pos ({}, {}) (name: {})", static_cast<int>(pTable->pos.window_type), pTable->pos.cell, ecs::PlayerRuntime::GetName(((m_pkPC) ? (m_pkPC)->GetEntityHandle() : entt::null)).data());
 				continue;
 			}
 
-			pkItemEntity = EntityFactory::CreateItemEntity(g_registry, pkItem);
+			pkItemEntity = (pkItem ? pkItem->GetEntityHandle() : entt::null);
 			item_table = ItemSystem::GetItemProto(pkItemEntity);
 		}
 		else
@@ -163,7 +163,7 @@ void CShop::SetShopItems(TShopItemTable * pTable, uint8_t bItemCount)
 		{
 			if (IsPCShop())
 			{
-				LOG_ERROR("not empty position for pc shop {}[{}]", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(m_pkPC)).data(), ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(m_pkPC)));
+				LOG_ERROR("not empty position for pc shop {}[{}]", ecs::PlayerRuntime::GetName(((m_pkPC) ? (m_pkPC)->GetEntityHandle() : entt::null)).data(), ecs::PlayerRuntime::GetPlayerID(((m_pkPC) ? (m_pkPC)->GetEntityHandle() : entt::null)));
 			}
 			else
 			{
@@ -235,7 +235,7 @@ int64_t CShop::Buy(LPCHARACTER ch, uint8_t pos
 
 	if (!ismultiple) {
 #ifdef ENABLE_RESTRICT_GM_PERMISSIONS
-		if (ecs::PlayerRuntime::GetGMLevel(AIHelpers::EcsOf(ch)) > GM_PLAYER && ecs::PlayerRuntime::GetGMLevel(AIHelpers::EcsOf(ch)) < GM_IMPLEMENTOR) {
+		if (ecs::PlayerRuntime::GetGMLevel(((ch) ? (ch)->GetEntityHandle() : entt::null)) > GM_PLAYER && ecs::PlayerRuntime::GetGMLevel(((ch) ? (ch)->GetEntityHandle() : entt::null)) < GM_IMPLEMENTOR) {
 			return SHOP_SUBHEADER_GC_OK;
 		}
 #endif
@@ -259,11 +259,11 @@ int64_t CShop::Buy(LPCHARACTER ch, uint8_t pos
 
 	if (pos >= m_itemVector.size())
 	{
-		LOG_INFO("Shop::Buy : invalid position {} : {}", static_cast<int>(pos), ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data());
+		LOG_INFO("Shop::Buy : invalid position {} : {}", static_cast<int>(pos), ecs::PlayerRuntime::GetName(((ch) ? (ch)->GetEntityHandle() : entt::null)).data());
 		return SHOP_SUBHEADER_GC_INVALID_POS;
 	}
 
-	GuestMapType::iterator it = m_map_guest.find(ch);
+	GuestMapType::iterator it = m_map_guest.find(ch ? ch->GetEntityHandle() : entt::null);
 	if (it == m_map_guest.end()) {
 		return SHOP_SUBHEADER_GC_END;
 	}
@@ -274,10 +274,10 @@ int64_t CShop::Buy(LPCHARACTER ch, uint8_t pos
 
 		if (IsPCShop()) {
 			if (selectedItem == entt::null || !ItemSystem::IsValidItem(selectedItem)) {
-				LOG_INFO("Shop::Buy : Critical: This user seems to be a hacker : invalid pcshop item : BuyerPID:{} SellerPID:{}", ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)), ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(m_pkPC)));
+				LOG_INFO("Shop::Buy : Critical: This user seems to be a hacker : invalid pcshop item : BuyerPID:{} SellerPID:{}", ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null)), ecs::PlayerRuntime::GetPlayerID(((m_pkPC) ? (m_pkPC)->GetEntityHandle() : entt::null)));
 				return SHOP_SUBHEADER_GC_SOLD_OUT;
-			} else if (ItemSystem::GetItemOwner(selectedItem) != AIHelpers::EcsOf(m_pkPC)) {
-				LOG_INFO("Shop::Buy : Critical: This user seems to be a hacker : invalid pcshop item : BuyerPID:{} SellerPID:{}", ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)), ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(m_pkPC)));
+			} else if (ItemSystem::GetItemOwner(selectedItem) != ((m_pkPC) ? (m_pkPC)->GetEntityHandle() : entt::null)) {
+				LOG_INFO("Shop::Buy : Critical: This user seems to be a hacker : invalid pcshop item : BuyerPID:{} SellerPID:{}", ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null)), ecs::PlayerRuntime::GetPlayerID(((m_pkPC) ? (m_pkPC)->GetEntityHandle() : entt::null)));
 				return SHOP_SUBHEADER_GC_SOLD_OUT;
 			}
 		}
@@ -286,7 +286,7 @@ int64_t CShop::Buy(LPCHARACTER ch, uint8_t pos
 
 	int64_t dwPrice = r_item.price;
 
-	if (ecs::PointSystem::GetGold(AIHelpers::EcsOf(ch)) < dwPrice)
+	if (ecs::PointSystem::GetGold(((ch) ? (ch)->GetEntityHandle() : entt::null)) < dwPrice)
 	{
 		return SHOP_SUBHEADER_GC_NOT_ENOUGH_MONEY;
 	}
@@ -299,7 +299,7 @@ int64_t CShop::Buy(LPCHARACTER ch, uint8_t pos
 			dwPriceCount = r_item.itemprice[i].count;
 			dwHaveCount = ch->CountSpecifyItem(dwPriceVnum);
 			if (dwHaveCount < dwPriceCount) {
-				LOG_INFO("Shop::Buy : Not enough item : {} has {}, price {}.", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), dwHaveCount, dwPriceCount);
+				LOG_INFO("Shop::Buy : Not enough item : {} has {}, price {}.", ecs::PlayerRuntime::GetName(((ch) ? (ch)->GetEntityHandle() : entt::null)).data(), dwHaveCount, dwPriceCount);
 				return SHOP_SUBHEADER_GC_NOT_ENOUGH_ITEM;
 			}
 		}
@@ -310,7 +310,7 @@ int64_t CShop::Buy(LPCHARACTER ch, uint8_t pos
 	if (!item) {
 		return SHOP_SUBHEADER_GC_SOLD_OUT;
 	}
-	const entt::entity itemEntity = EntityFactory::CreateItemEntity(g_registry, item);
+	const entt::entity itemEntity = (item ? item->GetEntityHandle() : entt::null);
 	if (!ItemSystem::IsValidItem(itemEntity))
 		return SHOP_SUBHEADER_GC_SOLD_OUT;
 
@@ -348,12 +348,12 @@ int64_t CShop::Buy(LPCHARACTER ch, uint8_t pos
 	{
 		if (m_pkPC)
 		{
-			LOG_INFO("Shop::Buy at PC Shop : Inventory full : {} size {}", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), item->GetSize());
+			LOG_INFO("Shop::Buy at PC Shop : Inventory full : {} size {}", ecs::PlayerRuntime::GetName(((ch) ? (ch)->GetEntityHandle() : entt::null)).data(), item->GetSize());
 			return SHOP_SUBHEADER_GC_INVENTORY_FULL;
 		}
 		else
 		{
-			LOG_INFO("Shop::Buy : Inventory full : {} size {}", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), item->GetSize());
+			LOG_INFO("Shop::Buy : Inventory full : {} size {}", ecs::PlayerRuntime::GetName(((ch) ? (ch)->GetEntityHandle() : entt::null)).data(), item->GetSize());
 			ItemSystem::DestroyItemEntityEcs(
 				itemEntity,
 				"SHOP_TRANSACTION");
@@ -362,7 +362,7 @@ int64_t CShop::Buy(LPCHARACTER ch, uint8_t pos
 	}
 
 	if (dwPrice > 0) {
-		ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_GOLD, -dwPrice, false);
+		ecs::PointSystem::Change(((ch) ? (ch)->GetEntityHandle() : entt::null), POINT_GOLD, -dwPrice, false);
 	}
 
 #ifdef ENABLE_BUY_WITH_ITEM
@@ -424,9 +424,9 @@ int64_t CShop::Buy(LPCHARACTER ch, uint8_t pos
 
 			if (ItemSystem::GetItemVnum(itemEntity) >= 80003 && ItemSystem::GetItemVnum(itemEntity) <= 80007)
 			{
-				snprintf(buf, sizeof(buf), "%s FROM: %u TO: %u PRICE: %lld", item->GetName(), ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)), ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(m_pkPC)), dwPrice);
-				LogManager::instance().GoldBarLog(ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)), ItemSystem::GetItemID(itemEntity), SHOP_BUY, buf);
-				LogManager::instance().GoldBarLog(ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(m_pkPC)), ItemSystem::GetItemID(itemEntity), SHOP_SELL, buf);
+				snprintf(buf, sizeof(buf), "%s FROM: %u TO: %u PRICE: %lld", item->GetName(), ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null)), ecs::PlayerRuntime::GetPlayerID(((m_pkPC) ? (m_pkPC)->GetEntityHandle() : entt::null)), dwPrice);
+				LogManager::instance().GoldBarLog(ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null)), ItemSystem::GetItemID(itemEntity), SHOP_BUY, buf);
+				LogManager::instance().GoldBarLog(ecs::PlayerRuntime::GetPlayerID(((m_pkPC) ? (m_pkPC)->GetEntityHandle() : entt::null)), ItemSystem::GetItemID(itemEntity), SHOP_SELL, buf);
 			}
 
 			item->RemoveFromCharacter();
@@ -445,7 +445,7 @@ int64_t CShop::Buy(LPCHARACTER ch, uint8_t pos
 #endif
 					bCount = ItemSystem::GetItemCount(itemEntity);
 					for (int i = 0; i < EXTRA_INVENTORY_MAX_NUM; ++i) {
-						const entt::entity item2 = ItemSystem::GetExtraInventoryItem(AIHelpers::EcsOf(ch), i);
+						const entt::entity item2 = ItemSystem::GetExtraInventoryItem(((ch) ? (ch)->GetEntityHandle() : entt::null), i);
 						if (!ItemSystem::IsValidItem(item2))
 							continue;
 
@@ -503,7 +503,7 @@ int64_t CShop::Buy(LPCHARACTER ch, uint8_t pos
 #endif
 					bCount = ItemSystem::GetItemCount(itemEntity);
 					for (int i = 0; i < INVENTORY_MAX_NUM; ++i) {
-						const entt::entity item2 = ItemSystem::GetInventoryItem(AIHelpers::EcsOf(ch), i);
+						const entt::entity item2 = ItemSystem::GetInventoryItem(((ch) ? (ch)->GetEntityHandle() : entt::null), i);
 						if (!ItemSystem::IsValidItem(item2))
 							continue;
 
@@ -559,7 +559,7 @@ int64_t CShop::Buy(LPCHARACTER ch, uint8_t pos
 		r_item.pkItem = entt::null;
 		BroadcastUpdateItem(pos);
 
-		ecs::PointSystem::Change(AIHelpers::EcsOf(m_pkPC), POINT_GOLD, dwPrice, false);
+		ecs::PointSystem::Change(((m_pkPC) ? (m_pkPC)->GetEntityHandle() : entt::null), POINT_GOLD, dwPrice, false);
 	}
 	else
 	{
@@ -577,7 +577,7 @@ int64_t CShop::Buy(LPCHARACTER ch, uint8_t pos
 #endif
 				bCount = ItemSystem::GetItemCount(itemEntity);
 				for (int i = 0; i < EXTRA_INVENTORY_MAX_NUM; ++i) {
-					const entt::entity item2 = ItemSystem::GetExtraInventoryItem(AIHelpers::EcsOf(ch), i);
+					const entt::entity item2 = ItemSystem::GetExtraInventoryItem(((ch) ? (ch)->GetEntityHandle() : entt::null), i);
 					if (!ItemSystem::IsValidItem(item2))
 						continue;
 
@@ -635,7 +635,7 @@ int64_t CShop::Buy(LPCHARACTER ch, uint8_t pos
 #endif
 				bCount = ItemSystem::GetItemCount(itemEntity);
 				for (int i = 0; i < INVENTORY_MAX_NUM; ++i) {
-					const entt::entity item2 = ItemSystem::GetInventoryItem(AIHelpers::EcsOf(ch), i);
+					const entt::entity item2 = ItemSystem::GetInventoryItem(((ch) ? (ch)->GetEntityHandle() : entt::null), i);
 					if (!ItemSystem::IsValidItem(item2))
 						continue;
 
@@ -720,7 +720,7 @@ uint8_t CShop::MultipleBuy(LPCHARACTER ch, uint8_t p, uint8_t c) {
 	}
 
 #ifdef ENABLE_RESTRICT_GM_PERMISSIONS
-	if (ecs::PlayerRuntime::GetGMLevel(AIHelpers::EcsOf(ch)) > GM_PLAYER && ecs::PlayerRuntime::GetGMLevel(AIHelpers::EcsOf(ch)) < GM_IMPLEMENTOR) {
+	if (ecs::PlayerRuntime::GetGMLevel(((ch) ? (ch)->GetEntityHandle() : entt::null)) > GM_PLAYER && ecs::PlayerRuntime::GetGMLevel(((ch) ? (ch)->GetEntityHandle() : entt::null)) < GM_IMPLEMENTOR) {
 		return SHOP_SUBHEADER_GC_OK;
 	}
 #endif
@@ -737,11 +737,11 @@ uint8_t CShop::MultipleBuy(LPCHARACTER ch, uint8_t p, uint8_t c) {
 	}
 
 	if (p >= m_itemVector.size()) {
-		LOG_INFO("Shop::MultipleBuy: invalid position {} : {}", static_cast<int>(p), ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data());
+		LOG_INFO("Shop::MultipleBuy: invalid position {} : {}", static_cast<int>(p), ecs::PlayerRuntime::GetName(((ch) ? (ch)->GetEntityHandle() : entt::null)).data());
 		return SHOP_SUBHEADER_GC_INVALID_POS;
 	}
 
-	GuestMapType::iterator it = m_map_guest.find(ch);
+	GuestMapType::iterator it = m_map_guest.find(ch ? ch->GetEntityHandle() : entt::null);
 	if (it == m_map_guest.end()) {
 		return SHOP_SUBHEADER_GC_END;
 	}
@@ -750,7 +750,7 @@ uint8_t CShop::MultipleBuy(LPCHARACTER ch, uint8_t p, uint8_t c) {
 
 	int64_t price = r_item.price * c;
 
-	if (ecs::PointSystem::GetGold(AIHelpers::EcsOf(ch)) < price) {
+	if (ecs::PointSystem::GetGold(((ch) ? (ch)->GetEntityHandle() : entt::null)) < price) {
 		return SHOP_SUBHEADER_GC_NOT_ENOUGH_MONEY;
 	}
 
@@ -762,7 +762,7 @@ uint8_t CShop::MultipleBuy(LPCHARACTER ch, uint8_t p, uint8_t c) {
 			price_count = r_item.itemprice[i].count * c;
 			have_count = ch->CountSpecifyItem(price_vnum);
 			if (have_count < price_count) {
-				LOG_INFO("Shop::MultipleBuy: Not enough item : {} has {}, price {}.", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), have_count, price_count);
+				LOG_INFO("Shop::MultipleBuy: Not enough item : {} has {}, price {}.", ecs::PlayerRuntime::GetName(((ch) ? (ch)->GetEntityHandle() : entt::null)).data(), have_count, price_count);
 				return SHOP_SUBHEADER_GC_NOT_ENOUGH_ITEM;
 			}
 		}
@@ -796,18 +796,23 @@ uint8_t CShop::MultipleBuy(LPCHARACTER ch, uint8_t p, uint8_t c) {
 
 bool CShop::AddGuest(LPCHARACTER ch, uint32_t owner_vid, bool bOtherEmpire)
 {
-	if (!ch)
+	return AddGuest(ch ? ch->GetEntityHandle() : entt::null, owner_vid, bOtherEmpire);
+}
+
+bool CShop::AddGuest(entt::entity guest, uint32_t owner_vid, bool bOtherEmpire)
+{
+	if (guest == entt::null || !g_registry.valid(guest))
 		return false;
 
-	if (ecs::SocialSystem::GetExchange(AIHelpers::EcsOf(ch)))
+	if (ecs::SocialSystem::GetExchange(guest) || ecs::SocialSystem::GetShop(guest))
 		return false;
 
-	if (ch->GetShop())
+	LPDESC desc = ecs::PlayerRuntime::GetDesc(guest);
+	if (!desc)
 		return false;
 
-	ch->SetShop(this);
-
-	m_map_guest.insert(GuestMapType::value_type(ch, bOtherEmpire));
+	ecs::SocialSystem::SetShop(guest, this);
+	m_map_guest.insert(GuestMapType::value_type(guest, bOtherEmpire));
 
 	TPacketGCShop pack;
 
@@ -876,18 +881,23 @@ bool CShop::AddGuest(LPCHARACTER ch, uint32_t owner_vid, bool bOtherEmpire)
 
 	pack.size = sizeof(pack) + sizeof(pack2);
 
-	ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->BufferedPacket(&pack, sizeof(TPacketGCShop));
-	ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->Packet(&pack2, sizeof(TPacketGCShopStart));
+	desc->BufferedPacket(&pack, sizeof(TPacketGCShop));
+	desc->Packet(&pack2, sizeof(TPacketGCShopStart));
 	return true;
 }
 
 void CShop::RemoveGuest(LPCHARACTER ch)
 {
-	if (ch->GetShop() != this)
+	RemoveGuest(ch ? ch->GetEntityHandle() : entt::null);
+}
+
+void CShop::RemoveGuest(entt::entity guest)
+{
+	if (guest == entt::null || !g_registry.valid(guest) || ecs::SocialSystem::GetShop(guest) != this)
 		return;
 
-	m_map_guest.erase(ch);
-	ch->SetShop(nullptr);
+	m_map_guest.erase(guest);
+	ecs::SocialSystem::SetShop(guest, nullptr);
 
 	TPacketGCShop pack;
 
@@ -895,7 +905,8 @@ void CShop::RemoveGuest(LPCHARACTER ch)
 	pack.subheader	= SHOP_SUBHEADER_GC_END;
 	pack.size		= sizeof(TPacketGCShop);
 
-	ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->Packet(&pack, sizeof(pack));
+	if (LPDESC desc = ecs::PlayerRuntime::GetDesc(guest))
+		desc->Packet(&pack, sizeof(pack));
 }
 
 void CShop::Broadcast(const void * data, int bytes)
@@ -908,10 +919,10 @@ void CShop::Broadcast(const void * data, int bytes)
 
 	while (it != m_map_guest.end())
 	{
-		LPCHARACTER ch = it->first;
+		const entt::entity guest = it->first;
 
-		if (ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch)))
-			ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->Packet(data, bytes);
+		if (LPDESC desc = ecs::PlayerRuntime::GetDesc(guest))
+			desc->Packet(data, bytes);
 
 		++it;
 	}

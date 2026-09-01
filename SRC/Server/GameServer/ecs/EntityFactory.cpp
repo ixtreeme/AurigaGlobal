@@ -1,6 +1,5 @@
 #include "../stdafx.h"
 #include "systems/PlayerRuntimeSystem.hpp"
-#include "AIHelpers.hpp"
 
 #include "EntityFactory.hpp"
 #include "EntityInvariants.hpp"
@@ -233,7 +232,7 @@ void AttachLegacyCharacter(entt::registry& reg, entt::entity entity, LPCHARACTER
     reg.emplace_or_replace<ecs::LegacyCharPtr>(entity, ch);
     if (ch) {
         ch->SetEntityHandle(entity);
-        if (LPDESC desc = ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))) {
+		if (LPDESC desc = ecs::PlayerRuntime::GetDesc(entity)) {
             desc->SetEntity(entity);
         }
     }
@@ -467,7 +466,7 @@ ecs::ItemOwner MakeItemOwner(LPITEM item)
     uint32_t ownerPID = 0;
 
     if (const auto* owner = item->GetOwner()) {
-        ownerPID = ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(owner));
+		ownerPID = ecs::PlayerRuntime::GetPlayerID(owner->GetEntityHandle());
     }
 
     return ecs::ItemOwner {
@@ -559,6 +558,7 @@ ecs::ItemProtoRef MakeItemProtoRef(LPITEM item)
 
 void SyncItemEntity(entt::registry& reg, entt::entity entity, LPITEM item)
 {
+	item->SetEntityHandle(entity);
     reg.emplace_or_replace<ecs::LegacyItemPtr>(entity, get_pointer(item));
     reg.emplace_or_replace<ecs::ItemIdentity>(entity, MakeItemIdentity(item));
     reg.emplace_or_replace<ecs::ItemLocation>(entity, MakeItemLocation(item));
@@ -758,7 +758,15 @@ entt::entity EntityFactory::CreateItemEntity(entt::registry& reg, LPITEM item)
         return entt::null;
     }
 
-    entt::entity existing = CItemRegistry::Instance().FindByLegacy(item);
+	entt::entity existing = item->GetEntityHandle();
+	if (existing != entt::null && reg.valid(existing)) {
+		SyncItemEntity(reg, existing, item);
+		CItemRegistry::Instance().Register(itemID, itemVID, item, existing);
+		ecs::ItemInvariants::ValidateItemEntity(reg, existing, "item.factory.handle");
+		return existing;
+	}
+
+	existing = CItemRegistry::Instance().FindByLegacy(item);
     if (existing == entt::null && itemID != 0)
         existing = CItemRegistry::Instance().Find(itemID);
     if (existing != entt::null && reg.valid(existing)) {
@@ -781,8 +789,12 @@ void EntityFactory::DestroyItemEntity(entt::registry& reg, LPITEM item)
         return;
     }
 
-    const entt::entity entity = CItemRegistry::Instance().FindByLegacy(item);
+	entt::entity entity = item->GetEntityHandle();
+	if (entity == entt::null || !reg.valid(entity))
+		entity = CItemRegistry::Instance().FindByLegacy(item);
+
     CItemRegistry::Instance().Unregister(entity);
+	item->SetEntityHandle(entt::null);
 
     if (entity != entt::null && reg.valid(entity)) {
         reg.destroy(entity);
@@ -804,6 +816,11 @@ void EntityFactory::Destroy(entt::registry& reg, entt::entity e)
     if (const auto* legacy = reg.try_get<ecs::LegacyCharPtr>(e); legacy && legacy->ptr) {
         legacy->ptr->SetEntityHandle(entt::null);
     }
+	if (const auto* legacyItem = reg.try_get<ecs::LegacyItemPtr>(e);
+		legacyItem && legacyItem->ptr) {
+		legacyItem->ptr->SetEntityHandle(entt::null);
+		CItemRegistry::Instance().Unregister(e);
+	}
 
     if (const auto* session = reg.try_get<ecs::NetworkSession>(e)) {
         if (session->desc) {

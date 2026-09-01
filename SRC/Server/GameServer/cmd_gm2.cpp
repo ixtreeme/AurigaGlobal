@@ -13,17 +13,17 @@ ACMD(do_blockhwid)
 	argument = one_argument(argument, arg, sizeof(arg));
 
 	if (!*arg) {
-		ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "Usage: blockhwid <name>");
+		ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "Usage: blockhwid <name>");
 		return;
 	}
 
 	const char* targetname = arg;
 
-	if (strcmp(ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), targetname) == 0) {
+	if (strcmp(ecs::PlayerRuntime::GetName(((ch) ? (ch)->GetEntityHandle() : entt::null)).data(), targetname) == 0) {
 		return;
 	}
 
-	CHwidManager::Instance().SendBlockHwid(ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), targetname);
+	CHwidManager::Instance().SendBlockHwid(ecs::PlayerRuntime::GetName(((ch) ? (ch)->GetEntityHandle() : entt::null)).data(), targetname);
 }
 
 ACMD(do_unblockhwid)
@@ -32,17 +32,17 @@ ACMD(do_unblockhwid)
 	argument = one_argument(argument, arg, sizeof(arg));
 
 	if (!*arg) {
-		ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "Usage: unblockhwid <name>");
+		ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "Usage: unblockhwid <name>");
 		return;
 	}
 
 	const char* targetname = arg;
 
-	if (strcmp(ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), targetname) == 0) {
+	if (strcmp(ecs::PlayerRuntime::GetName(((ch) ? (ch)->GetEntityHandle() : entt::null)).data(), targetname) == 0) {
 		return;
 	}
 
-	CHwidManager::Instance().SendUnblockHwid(ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), targetname);
+	CHwidManager::Instance().SendUnblockHwid(ecs::PlayerRuntime::GetName(((ch) ? (ch)->GetEntityHandle() : entt::null)).data(), targetname);
 }
 #endif
 

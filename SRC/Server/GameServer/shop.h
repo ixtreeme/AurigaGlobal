@@ -53,8 +53,10 @@ class CShop
 		virtual bool	IsPCShop()	{ return m_pkPC ? true : false; }
 
 		// 게스트 추가/삭제
-		virtual bool	AddGuest(LPCHARACTER ch,uint32_t owner_vid, bool bOtherEmpire);
+		bool	AddGuest(LPCHARACTER ch, uint32_t owner_vid, bool bOtherEmpire);
+		virtual bool	AddGuest(entt::entity guest, uint32_t owner_vid, bool bOtherEmpire);
 		void	RemoveGuest(LPCHARACTER ch);
+		void	RemoveGuest(entt::entity guest);
 
 
 		virtual int64_t	Buy(LPCHARACTER ch, uint8_t pos
@@ -87,7 +89,7 @@ class CShop
 
 		CGrid *				m_pGrid;
 
-		typedef std::unordered_map<LPCHARACTER, bool> GuestMapType;
+		typedef std::unordered_map<entt::entity, bool> GuestMapType;
 		GuestMapType m_map_guest;
 		std::vector<SHOP_ITEM>		m_itemVector;	// 이 상점에서 취급하는 물건들
 

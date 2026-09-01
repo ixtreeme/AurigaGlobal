@@ -1641,7 +1641,7 @@ void CheckClientVersion()
 
 		if (0 != g_stClientVersion.compare(d->GetClientVersion())) {
 #ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(d->GetCharacter()), CHAT_TYPE_INFO, 484, "");
+			ecs::ChatSystem::SendNew(((d->GetCharacter()) ? (d->GetCharacter())->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 484, "");
 #endif
 			d->DelayedDisconnect(3);
 		}

@@ -9,7 +9,6 @@
 #include "../../config.h"
 #include "../../sectree.h"
 #include "../../utils.h"
-#include "../AIHelpers.hpp"
 #include "../SpatialHelpers.hpp"
 #include "../components/session_components.hpp"
 #include "../components/status_components.hpp"
@@ -71,7 +70,7 @@ inline std::vector<entt::entity> GetEntitiesInRange(entt::registry& reg, entt::e
             if (!entity || !entity->IsType(ENTITY_CHARACTER))
                 return;
 
-            const auto e = AIHelpers::EcsOf(static_cast<LPCHARACTER>(entity));
+			const auto e = static_cast<LPCHARACTER>(entity)->GetEntityHandle();
             if (e == entt::null || !reg.valid(e))
                 return;
 

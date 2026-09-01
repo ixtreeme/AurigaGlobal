@@ -18,7 +18,7 @@ public:
 	bool			Create(uint32_t dwVnum, uint32_t dwNPCVnum);
 	bool			AddShopTable(TShopTableEx& shopTable);
 
-	virtual bool	AddGuest(LPCHARACTER ch,uint32_t owner_vid, bool bOtherEmpire);
+	virtual bool	AddGuest(entt::entity guest, uint32_t owner_vid, bool bOtherEmpire) override;
 	virtual void	SetPCShop(LPCHARACTER ch) { return; }
 	virtual bool	IsPCShop() { return false; }
 

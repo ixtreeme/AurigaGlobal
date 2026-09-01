@@ -34,7 +34,7 @@ CRefineManager::~CRefineManager()
 	int CRefineManager::Result(LPCHARACTER ch)
 	{
 		int uninitialized = 0;
-		int flag = ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(ch), REFINE_INCREASE);
+		int flag = ecs::QuestSystem::GetFlag(((ch) ? (ch)->GetEntityHandle() : entt::null), REFINE_INCREASE);
 
 		if (flag > 0)
 			return flag;
@@ -62,9 +62,9 @@ CRefineManager::~CRefineManager()
 				if (ch->CountSpecifyItem(EXTRA_REFINE_POTIONS_GRADE[it]) < 1)
 				{
 #ifdef TEXTS_IMPROVEMENT
-					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 620, "%s", 
+					ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 620, "%s",
 #ifdef ENABLE_MULTI_NAMES
-					ITEM_MANAGER::instance().GetTable(EXTRA_REFINE_POTIONS_GRADE[it])->szLocaleName[ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->GetLanguage()]
+					ITEM_MANAGER::instance().GetTable(EXTRA_REFINE_POTIONS_GRADE[it])->szLocaleName[ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null))->GetLanguage()]
 #else
 					ITEM_MANAGER::instance().GetTable(EXTRA_REFINE_POTIONS_GRADE[it])->szLocaleName)
 #endif
@@ -78,7 +78,7 @@ CRefineManager::~CRefineManager()
 		if (lTotal > 100 )
 		{
 #ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 621, "");
+			ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 621, "");
 #endif
 			return false;
 		}
@@ -93,11 +93,11 @@ CRefineManager::~CRefineManager()
 			char buf[MAX_HOST_LENGTH + 1];
 			snprintf(buf, sizeof(buf), "refine.mode_%d", it);
 			
-			if (ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(ch), buf) > 0)
+			if (ecs::QuestSystem::GetFlag(((ch) ? (ch)->GetEntityHandle() : entt::null), buf) > 0)
 			{
 				ch->RemoveSpecifyItem(EXTRA_REFINE_POTIONS_GRADE[it], 1);
-				ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(ch), REFINE_INCREASE, 0);
-				ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(ch), buf, 0);
+				ecs::QuestSystem::SetFlag(((ch) ? (ch)->GetEntityHandle() : entt::null), REFINE_INCREASE, 0);
+				ecs::QuestSystem::SetFlag(((ch) ? (ch)->GetEntityHandle() : entt::null), buf, 0);
 			}
 		}
 	}	
@@ -108,11 +108,11 @@ CRefineManager::~CRefineManager()
 			char buf[MAX_HOST_LENGTH + 1];
 			snprintf(buf, sizeof(buf), "refine.mode_%d", it);
 
-			if (ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(ch), buf) > 0)
+			if (ecs::QuestSystem::GetFlag(((ch) ? (ch)->GetEntityHandle() : entt::null), buf) > 0)
 			{
 				//ch->RemoveSpecifyItem(EXTRA_REFINE_POTIONS_GRADE[it], 1);
-				ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(ch), REFINE_INCREASE, 0);
-				ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(ch), buf, 0);
+				ecs::QuestSystem::SetFlag(((ch) ? (ch)->GetEntityHandle() : entt::null), REFINE_INCREASE, 0);
+				ecs::QuestSystem::SetFlag(((ch) ? (ch)->GetEntityHandle() : entt::null), buf, 0);
 			}
 		}
 	}
@@ -129,19 +129,19 @@ CRefineManager::~CRefineManager()
 			{
 				char buf[MAX_HOST_LENGTH + 1];
 				snprintf(buf, sizeof(buf), "refine.mode_%d", it);
-				ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(ch), buf, 1);
+				ecs::QuestSystem::SetFlag(((ch) ? (ch)->GetEntityHandle() : entt::null), buf, 1);
 
 				calcPercentage += ar_ListPercentage[it];		
 			}
 		}
 		
-		if (ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(ch), REFINE_INCREASE) < 1)
+		if (ecs::QuestSystem::GetFlag(((ch) ? (ch)->GetEntityHandle() : entt::null), REFINE_INCREASE) < 1)
 		{
-			ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(ch), REFINE_INCREASE, calcPercentage);
+			ecs::QuestSystem::SetFlag(((ch) ? (ch)->GetEntityHandle() : entt::null), REFINE_INCREASE, calcPercentage);
 		}
 #ifdef TEXTS_IMPROVEMENT
 		else {
-			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 622, "");
+			ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 622, "");
 		}
 #endif
 	}

@@ -305,7 +305,7 @@ template <class Func> void CParty::ForEachOnMapMember (Func & f, int32_t lMapInd
 		LPCHARACTER ch = it->second.pCharacter;
 		if (ch)
 		{
-			if (ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)) == lMapIndex)
+			if (ecs::PlayerRuntime::GetMapIndex(((ch) ? (ch)->GetEntityHandle() : entt::null)) == lMapIndex)
 				f(ch);
 		}
 	}
@@ -320,7 +320,7 @@ template <class Func> bool CParty::ForEachOnMapMemberBool(Func & f, int32_t lMap
 		LPCHARACTER ch = it->second.pCharacter;
 		if (ch)
 		{
-			if (ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)) == lMapIndex)
+			if (ecs::PlayerRuntime::GetMapIndex(((ch) ? (ch)->GetEntityHandle() : entt::null)) == lMapIndex)
 			{
 				if(f(ch) == false)
 				{
@@ -415,7 +415,7 @@ struct FPartyDropDiceRoll
 			{
 			}
 #ifdef TEXTS_IMPROVEMENT
-			pParty->ChatPacketToAllMemberNew(CHAT_TYPE_DICE_INFO, 543, "%s#%d", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), pickedNumber);
+			pParty->ChatPacketToAllMemberNew(CHAT_TYPE_DICE_INFO, 543, "%s#%d", ecs::PlayerRuntime::GetName(((ch) ? (ch)->GetEntityHandle() : entt::null)).data(), pickedNumber);
 #endif
 			break;
 		}

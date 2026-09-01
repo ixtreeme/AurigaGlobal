@@ -46,19 +46,19 @@ struct FWarpToHome
 		{
 			LPCHARACTER lpChar = (LPCHARACTER)ent;
 
-			if ( ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(lpChar)) == true )
+			if ( ecs::PlayerRuntime::IsPC(((lpChar) ? (lpChar)->GetEntityHandle() : entt::null)) == true )
 			{
 				if ( !test_server )
 				{
-					if ( ecs::PlayerRuntime::GetGMLevel(AIHelpers::EcsOf(lpChar)) != GM_PLAYER ) return;
+					if ( ecs::PlayerRuntime::GetGMLevel(((lpChar) ? (lpChar)->GetEntityHandle() : entt::null)) != GM_PLAYER ) return;
 				}
 
-				int nEmpire = ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(lpChar));
+				int nEmpire = ecs::PlayerRuntime::GetEmpire(((lpChar) ? (lpChar)->GetEntityHandle() : entt::null));
 				int nMapIndex = EMPIRE_START_MAP(nEmpire);
 				int x = EMPIRE_START_X(nEmpire);
 				int y = EMPIRE_START_Y(nEmpire);
 
-				ecs::MovementSystem::WarpSet(AIHelpers::EcsOf(lpChar), x, y, nMapIndex);
+				ecs::MovementSystem::WarpSet(((lpChar) ? (lpChar)->GetEntityHandle() : entt::null), x, y, nMapIndex);
 			}
 		}
 	}

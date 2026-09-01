@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "ecs/systems/PlayerRuntimeSystem.hpp"
+#include "ecs/systems/CombatSystem.hpp"
 #include <Core/Logging.hpp>
 #include "ecs/systems/SocialSystem.hpp"
 #include "ecs/AIHelpers.hpp"
@@ -45,30 +46,13 @@ namespace quest
 
 	ALUA(npc_is_pc)
 	{
-		// migrated from CHARACTER::IsPC()
-		entt::entity npcE = CQuestManager::instance().GetNPCEntity(L);
-		if (npcE == entt::null || !g_registry.valid(npcE)) {
-			const entt::entity npcEntity = CQuestManager::instance().GetCurrentNPCEntity();
-			auto* npc = ecs::LegacyCharOf(npcEntity);
-			lua_pushboolean(L, (npc && (ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(npc)))) ? 1 : 0);
-			return 1;
-		}
-		lua_pushboolean(L, g_registry.all_of<ecs::TagPC>(npcE) ? 1 : 0);
+		lua_pushboolean(L, ecs::PlayerRuntime::IsPC(CQuestManager::instance().GetNPCEntity(L)) ? 1 : 0);
 		return 1;
 	}
 
 	ALUA(npc_get_empire)
 	{
-		// migrated from CHARACTER::GetEmpire()
-		entt::entity npcE = CQuestManager::instance().GetNPCEntity(L);
-		auto* emp = ECS_TryGet<ecs::EmpireComponent>(npcE);
-		if (!emp) {
-			const entt::entity npcEntity = CQuestManager::instance().GetCurrentNPCEntity();
-			auto* npc = ecs::LegacyCharOf(npcEntity);
-			lua_pushnumber(L, npc ? ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(npc)) : 0);
-			return 1;
-		}
-		lua_pushnumber(L, emp->value);
+		lua_pushnumber(L, ecs::PlayerRuntime::GetEmpire(CQuestManager::instance().GetNPCEntity(L)));
 		return 1;
 	}
 
@@ -87,84 +71,46 @@ namespace quest
 
 	ALUA(npc_get_guild)
 	{
-		// migrated from CHARACTER::GetGuild()
-		entt::entity npcE = CQuestManager::instance().GetNPCEntity(L);
-		auto* gm = ECS_TryGet<ecs::GuildMembership>(npcE);
-		if (!gm) {
-			CQuestManager& q = CQuestManager::instance();
-			const entt::entity npcEntity = q.GetCurrentNPCEntity();
-			auto* npc = ecs::LegacyCharOf(npcEntity);
-			CGuild* pGuild = npc ? ecs::SocialSystem::GetGuild(AIHelpers::EcsOf(npc)) : nullptr;
-			lua_pushnumber(L, pGuild ? pGuild->GetID() : 0);
-			return 1;
-		}
-		lua_pushnumber(L, (gm->guild ? gm->guild->GetID() : 0));
+		CGuild* guild = ecs::SocialSystem::GetGuild(CQuestManager::instance().GetNPCEntity(L));
+		lua_pushnumber(L, guild ? guild->GetID() : 0);
 		return 1;
 	}
 
 	ALUA(npc_is_quest)
 	{
-		// migrated from CHARACTER::GetQuestBy
-		// DUAL-PATH: legacy only during migration window
 		CQuestManager& q = CQuestManager::instance();
 		const entt::entity npcEntity = q.GetCurrentNPCEntity();
-		auto* npc = ecs::LegacyCharOf(npcEntity);
-		if (npc)
-		{
-			const std::string & r_st = q.GetCurrentQuestName();
-
-			if (q.GetQuestIndexByName(r_st) == npc->GetQuestBy())
-			{
-				lua_pushboolean(L, 1);
-				return 1;
-			}
-		}
-
-		lua_pushboolean(L, 0);
+		const std::string& questName = q.GetCurrentQuestName();
+		lua_pushboolean(L,
+			q.GetQuestIndexByName(questName) == ecs::PlayerRuntime::GetQuestBy(npcEntity));
 		return 1;
 	}
 
 	ALUA(npc_kill)
 	{
-		// migrated from CHARACTER::Dead
-		// DUAL-PATH: ECS update + legacy call during migration window
 		CQuestManager& q = CQuestManager::instance();
-		entt::entity npcE = q.GetNPCEntity(L);
-		entt::entity pcE = q.GetPCEntity(L);
-		const entt::entity chEntity = q.GetCurrentPCEntity();
-		auto* ch = ecs::LegacyCharOf(chEntity);
-		const entt::entity npcEntity = q.GetCurrentNPCEntity();
-		auto* npc = ecs::LegacyCharOf(npcEntity);
-		if (ch)
-			ch->SetQuestNPCID(0);
+		const entt::entity npcE = q.GetNPCEntity(L);
+		const entt::entity pcE = q.GetPCEntity(L);
+		ecs::PlayerRuntime::SetQuestNPCID(pcE, 0);
 		if (g_registry.valid(npcE)) {
 			g_registry.emplace_or_replace<ecs::DeadTag>(npcE);
 			g_dispatcher.trigger(ecs::EvEntityDied{pcE, npcE});
 		}
-		if (npc)
-			npc->Dead();
+		CombatSystem::Dead(npcE);
 		return 0;
 	}
 
 	ALUA(npc_purge)
 	{
-		// migrated from CHARACTER::Dead
-		// DUAL-PATH: ECS update + legacy call during migration window
 		CQuestManager& q = CQuestManager::instance();
-		entt::entity npcE = q.GetNPCEntity(L);
-		entt::entity pcE = q.GetPCEntity(L);
-		const entt::entity chEntity = q.GetCurrentPCEntity();
-		auto* ch = ecs::LegacyCharOf(chEntity);
-		const entt::entity npcEntity = q.GetCurrentNPCEntity();
-		auto* npc = ecs::LegacyCharOf(npcEntity);
-		if (ch)
-			ch->SetQuestNPCID(0);
+		const entt::entity npcE = q.GetNPCEntity(L);
+		const entt::entity pcE = q.GetPCEntity(L);
+		ecs::PlayerRuntime::SetQuestNPCID(pcE, 0);
 		if (g_registry.valid(npcE)) {
 			g_registry.emplace_or_replace<ecs::DeadTag>(npcE);
 			g_dispatcher.trigger(ecs::EvEntityDied{pcE, npcE});
 		}
-		if (npc)
-			M2_DESTROY_CHARACTER(npc);
+		ecs::PlayerRuntime::DestroyCharacter(npcE);
 		return 0;
 	}
 
@@ -182,14 +128,7 @@ namespace quest
 
 		if (!pcPos || !npcPos)
 		{
-			const entt::entity chEntity = q.GetCurrentPCEntity();
-			auto* ch = ecs::LegacyCharOf(chEntity);
-			const entt::entity npcEntity = q.GetCurrentNPCEntity();
-			auto* npc = ecs::LegacyCharOf(npcEntity);
-			if (ch == nullptr || npc == nullptr)
-				lua_pushboolean(L, false);
-			else
-				lua_pushboolean(L, DISTANCE_APPROX(ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(ch)) - ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(npc)), ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(ch)) - ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(npc))) < dist*100);
+			lua_pushboolean(L, false);
 			return 1;
 		}
 
@@ -218,13 +157,7 @@ namespace quest
 
 		if (!targetPos || !npcPos)
 		{
-			LPCHARACTER ch = CHARACTER_MANAGER::instance().Find((uint32_t)lua_tonumber(L, 1));
-			const entt::entity npcEntity = q.GetCurrentNPCEntity();
-			auto* npc = ecs::LegacyCharOf(npcEntity);
-			if (ch == nullptr || npc == nullptr)
-				lua_pushboolean(L, false);
-			else
-				lua_pushboolean(L, DISTANCE_APPROX(ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(ch)) - ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(npc)), ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(ch)) - ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(npc))) < dist*100);
+			lua_pushboolean(L, false);
 			return 1;
 		}
 
@@ -234,44 +167,36 @@ namespace quest
 
 	ALUA(npc_unlock)
 	{
-		// migrated from CHARACTER::SetQuestNPCID
-		// DUAL-PATH: legacy only during migration window
 		CQuestManager& q = CQuestManager::instance();
 		const entt::entity chEntity = q.GetCurrentPCEntity();
-		auto* ch = ecs::LegacyCharOf(chEntity);
 		const entt::entity npcEntity = q.GetCurrentNPCEntity();
-		auto* npc = ecs::LegacyCharOf(npcEntity);
-		if ( npc != nullptr)
+		if (npcEntity != entt::null && g_registry.valid(npcEntity))
 		{
-			if ((ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(npc))))
+			if (ecs::PlayerRuntime::IsPC(npcEntity))
 				return 0;
 
-			if (npc->GetQuestNPCID() == (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))))
-			{
-				npc->SetQuestNPCID(0);
-			}
+			if (ecs::PlayerRuntime::GetQuestNPCID(npcEntity) == ecs::PlayerRuntime::GetPlayerID(chEntity))
+				ecs::PlayerRuntime::SetQuestNPCID(npcEntity, 0);
 		}
 		return 0;
 	}
 
 	ALUA(npc_lock)
 	{
-		// migrated from CHARACTER::SetQuestNPCID
-		// DUAL-PATH: legacy only during migration window
 		CQuestManager& q = CQuestManager::instance();
 		const entt::entity chEntity = q.GetCurrentPCEntity();
-		auto* ch = ecs::LegacyCharOf(chEntity);
 		const entt::entity npcEntity = q.GetCurrentNPCEntity();
-		auto* npc = ecs::LegacyCharOf(npcEntity);
-		if (!npc || (ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(npc))))
+		if (npcEntity == entt::null || !g_registry.valid(npcEntity) || ecs::PlayerRuntime::IsPC(npcEntity))
 		{
 			lua_pushboolean(L, true);
 			return 1;
 		}
 
-		if (npc->GetQuestNPCID() == 0 || npc->GetQuestNPCID() == (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))))
+		const uint32_t playerID = ecs::PlayerRuntime::GetPlayerID(chEntity);
+		const uint32_t lockOwner = ecs::PlayerRuntime::GetQuestNPCID(npcEntity);
+		if (lockOwner == 0 || lockOwner == playerID)
 		{
-			npc->SetQuestNPCID((ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))));
+			ecs::PlayerRuntime::SetQuestNPCID(npcEntity, playerID);
 			lua_pushboolean(L, true);
 		}
 		else
@@ -284,41 +209,15 @@ namespace quest
 
 	ALUA(npc_get_leader_vid)
 	{
-		// migrated from CHARACTER::GetParty
-		// DUAL-PATH: legacy fallback during migration window
-		CQuestManager& q = CQuestManager::instance();
-		const entt::entity npcEntity = q.GetCurrentNPCEntity();
-		auto* npc = ecs::LegacyCharOf(npcEntity);
-#ifdef ENABLE_BUG_FIXES
-		LPPARTY party = npc ? ecs::SocialSystem::GetParty(AIHelpers::EcsOf(npc)) : nullptr;
-		LPCHARACTER leader = party ? party->GetLeader() : nullptr;
-		lua_pushnumber(L, leader ? ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(leader)) : 0);
-#else
-		PPARTY party = ecs::SocialSystem::GetParty(AIHelpers::EcsOf(npc));
-		LPCHARACTER leader = party->GetLeader();
-
-		if (leader)
-			lua_pushnumber(L, ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(leader)));
-		else
-			lua_pushnumber(L, 0);
-#endif
+		const entt::entity leader = ecs::SocialSystem::GetPartyLeader(
+			CQuestManager::instance().GetNPCEntity(L));
+		lua_pushnumber(L, ecs::PlayerRuntime::GetPacketVID(leader));
 		return 1;
 	}
 
 	ALUA(npc_get_vid)
 	{
-		// migrated from CHARACTER::GetVID()
-		CQuestManager& q = CQuestManager::instance();
-		entt::entity npcE = q.GetNPCEntity(L);
-		auto* vid = ECS_TryGet<ecs::VIDComponent>(npcE);
-		if (!vid)
-		{
-			const entt::entity npcEntity = q.GetCurrentNPCEntity();
-			auto* npc = ecs::LegacyCharOf(npcEntity);
-			lua_pushnumber(L, npc ? ((npc)->GetLegacyVID()) : 0);
-			return 1;
-		}
-		lua_pushnumber(L, vid->value);
+		lua_pushnumber(L, ecs::PlayerRuntime::GetPacketVID(CQuestManager::instance().GetNPCEntity(L)));
 		return 1;
 	}
 
@@ -335,14 +234,14 @@ namespace quest
 
 		int32_t vid = (int32_t)lua_tonumber(L, 1);
 
-		LPCHARACTER ch = CHARACTER_MANAGER::instance().Find(vid);
-		if (!ch) {
+		const entt::entity character = CVIDRegistry::Instance().Find(vid);
+		if (character == entt::null || !g_registry.valid(character)) {
 			sys_err("The vid {} not exist.", vid);
 			lua_pushnumber(L, 0);
 			return 1;
 		}
 
-		lua_pushnumber(L, ch->GetAttMul());
+		lua_pushnumber(L, CombatSystem::GetAttackMultiplier(character));
 		return 1;
 	}
 
@@ -358,13 +257,13 @@ namespace quest
 
 		int32_t vid = (int32_t)lua_tonumber(L, 1);
 
-		LPCHARACTER ch = CHARACTER_MANAGER::instance().Find(vid);
-		if (!ch) {
+		const entt::entity character = CVIDRegistry::Instance().Find(vid);
+		if (character == entt::null || !g_registry.valid(character)) {
 			sys_err("The vid {} not exist.", vid);
 			return 0;
 		}
 
-		ch->SetAttMul((float)lua_tonumber(L, 2));
+		CombatSystem::SetAttackMultiplier(character, static_cast<float>(lua_tonumber(L, 2)));
 		return 0;
 	}
 
@@ -381,14 +280,14 @@ namespace quest
 
 		int32_t vid = (int32_t)lua_tonumber(L, 1);
 
-		LPCHARACTER ch = CHARACTER_MANAGER::instance().Find(vid);
-		if (!ch) {
+		const entt::entity character = CVIDRegistry::Instance().Find(vid);
+		if (character == entt::null || !g_registry.valid(character)) {
 			sys_err("The vid {} not exist.", vid);
 			lua_pushnumber(L, 0);
 			return 1;
 		}
 
-		lua_pushnumber(L, ch->GetDamMul());
+		lua_pushnumber(L, CombatSystem::GetDamageMultiplier(character));
 		return 1;
 	}
 
@@ -404,69 +303,45 @@ namespace quest
 
 		int32_t vid = (int32_t)lua_tonumber(L, 1);
 
-		LPCHARACTER ch = CHARACTER_MANAGER::instance().Find(vid);
-		if (!ch) {
+		const entt::entity character = CVIDRegistry::Instance().Find(vid);
+		if (character == entt::null || !g_registry.valid(character)) {
 			sys_err("The vid {} not exist.", vid);
 			return 0;
 		}
 
-		ch->SetDamMul((float)lua_tonumber(L, 2));
+		CombatSystem::SetDamageMultiplier(character, static_cast<float>(lua_tonumber(L, 2)));
 		return 0;
 	}
 
 #ifdef ENABLE_NEWSTUFF
 	ALUA(npc_get_level0)
 	{
-		// migrated from CHARACTER::GetLevel
-		// DUAL-PATH: legacy fallback during migration window
-		CQuestManager& q = CQuestManager::instance();
-		const entt::entity npcEntity = q.GetCurrentNPCEntity();
-		auto* npc = ecs::LegacyCharOf(npcEntity);
-		lua_pushnumber(L, (ecs::PointSystem::GetLevel(AIHelpers::EcsOf(npc))));
+		lua_pushnumber(L, ecs::PointSystem::GetLevel(CQuestManager::instance().GetNPCEntity(L)));
 		return 1;
 	}
 
 	ALUA(npc_get_name0)
 	{
-		// migrated from CHARACTER::GetName
-		// DUAL-PATH: legacy fallback during migration window
-		CQuestManager& q = CQuestManager::instance();
-		const entt::entity npcEntity = q.GetCurrentNPCEntity();
-		auto* npc = ecs::LegacyCharOf(npcEntity);
-		lua_pushstring(L, ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(npc)).data());
+		lua_pushstring(L, ecs::PlayerRuntime::GetName(CQuestManager::instance().GetNPCEntity(L)).data());
 		return 1;
 	}
 
 	ALUA(npc_get_pid0)
 	{
-		// migrated from CHARACTER::GetPlayerID
-		// DUAL-PATH: legacy fallback during migration window
-		CQuestManager& q = CQuestManager::instance();
-		const entt::entity npcEntity = q.GetCurrentNPCEntity();
-		auto* npc = ecs::LegacyCharOf(npcEntity);
-		lua_pushnumber(L, (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(npc))));
+		lua_pushnumber(L, ecs::PlayerRuntime::GetPlayerID(CQuestManager::instance().GetNPCEntity(L)));
 		return 1;
 	}
 
 	ALUA(npc_get_vnum0)
 	{
-		// migrated from CHARACTER::GetRaceNum
-		// DUAL-PATH: legacy fallback during migration window
-		CQuestManager& q = CQuestManager::instance();
-		const entt::entity npcEntity = q.GetCurrentNPCEntity();
-		auto* npc = ecs::LegacyCharOf(npcEntity);
-		lua_pushnumber(L, (ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(npc))));
+		lua_pushnumber(L, ecs::PlayerRuntime::GetRaceNum(CQuestManager::instance().GetNPCEntity(L)));
 		return 1;
 	}
 
 	ALUA(npc_is_available0)
 	{
-		// migrated from CHARACTER::IsNPC
-		// DUAL-PATH: legacy fallback during migration window
-		CQuestManager& q = CQuestManager::instance();
-		const entt::entity npcEntity = q.GetCurrentNPCEntity();
-		auto* npc = ecs::LegacyCharOf(npcEntity);
-		lua_pushboolean(L, npc!= nullptr);
+		const entt::entity npc = CQuestManager::instance().GetNPCEntity(L);
+		lua_pushboolean(L, npc != entt::null && g_registry.valid(npc));
 		return 1;
 	}
 
@@ -477,11 +352,11 @@ namespace quest
 		lua_Number vid = lua_tonumber(L, 1);
 		int percent = (int)lua_tonumber(L, 2);
 
-		LPCHARACTER npc = CHARACTER_MANAGER::instance().Find(vid);
-		if (npc && percent > 0 && percent <= 100)
+		const entt::entity npc = CVIDRegistry::Instance().Find(static_cast<uint32_t>(vid));
+		if (npc != entt::null && g_registry.valid(npc) && percent > 0 && percent <= 100)
 		{
-			int damage = ecs::PointSystem::GetMaxHP(AIHelpers::EcsOf(npc)) * percent / 100;
-			ecs::PointSystem::Change(AIHelpers::EcsOf(npc), POINT_HP, -damage);  // HP-t csökkentjük
+			const int damage = ecs::PointSystem::GetMaxHP(npc) * percent / 100;
+			ecs::PointSystem::Change(npc, POINT_HP, -damage);
 			lua_pushboolean(L, 1);
 		}
 		else

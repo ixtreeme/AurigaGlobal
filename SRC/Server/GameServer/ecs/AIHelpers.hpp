@@ -7,9 +7,6 @@
 
 namespace AIHelpers {
 
-entt::entity EcsOf(LPCHARACTER ch);
-entt::entity EcsOf(const CHARACTER* ch);
-
 inline ecs::AIFlags* TryGetFlags(entt::entity e)
 {
     if (e == entt::null || !g_registry.valid(e)) {

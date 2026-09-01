@@ -6,9 +6,10 @@
 #include <sstream>
 
 #include "SkillSystem.hpp"
+#include "PointSystem.hpp"
+#include "CombatSystem.hpp"
 #include "SocialSystem.hpp"
 #include "QuestSystem.hpp"
-#include "PointSystem.hpp"
 #include "MountSystem.hpp"
 #include "NetworkSyncSystem.hpp"
 
@@ -47,7 +48,6 @@
 extern bool RaceToJob(unsigned race, unsigned* ret_job);
 
 #include "../SpatialHelpers.hpp"
-#include "../AIHelpers.hpp"
 #include "../EntityFactory.hpp"
 #include "../Registry.hpp"
 #include "../VIDRegistry.hpp"
@@ -94,9 +94,10 @@ void MarkDirty(entt::entity e)
         g_registry.emplace_or_replace<ecs::DirtyTag>(e);
 }
 
-bool ShouldCheckSkillBookExp(LegacyCharHandle ch)
+bool ShouldCheckSkillBookExp(entt::entity character)
 {
-    return ch && ecs::PointSystem::GetLevel(AIHelpers::EcsOf(ch)) < gPlayerMaxLevel;
+    return character != entt::null && g_registry.valid(character) &&
+        ecs::PointSystem::GetLevel(character) < gPlayerMaxLevel;
 }
 
 static const uint32_t s_adwSubSkillVnums[] =
@@ -320,8 +321,9 @@ bool CheckSkillHit(entt::entity attacker, uint8_t skillId, entt::entity target)
 
 int ComputeCooltime(entt::entity e, int time)
 {
-    auto* ch = LegacyCharOf(e);
-    return ch ? CalculateDuration(ecs::PointSystem::Get(AIHelpers::EcsOf(ch), POINT_CASTING_SPEED), time) : time;
+    return e != entt::null && g_registry.valid(e)
+        ? CalculateDuration(ecs::PointSystem::Get(e, POINT_CASTING_SPEED), time)
+        : time;
 }
 
 void DisableCooltime(entt::entity e)
@@ -388,16 +390,87 @@ void ComputeSkillPoints(entt::entity)
 
 void ResetSkill(entt::entity e)
 {
-    auto* ch = LegacyCharOf(e);
-    if (ch)
-        ch->ResetSkill();
+	auto* levels = TryGetSkillLevels(e);
+	if (!levels || !levels->levels)
+		return;
+
+	std::vector<std::pair<uint32_t, TPlayerSkill>> preserved;
+	for (const uint32_t skillId : s_adwSubSkillVnums)
+	{
+		if (skillId < SKILL_MAX_NUM)
+			preserved.emplace_back(skillId, levels->levels[skillId]);
+	}
+
+	std::memset(levels->levels, 0, sizeof(TPlayerSkill) * SKILL_MAX_NUM);
+	for (const auto& [skillId, value] : preserved)
+		levels->levels[skillId] = value;
+
+	ecs::PointSystem::Compute(e);
+	SendSkillLevelPacket(e);
+	MarkDirty(e);
+
+#ifdef __SKILL_COLOR_SYSTEM__
+	auto& colors = g_registry.get_or_emplace<ecs::SkillColor>(e);
+	std::memset(colors.data, 0, sizeof(colors.data));
+	TSkillColor packet {};
+	std::memcpy(packet.dwSkillColor, colors.data, sizeof(colors.data));
+	packet.player_id = ecs::PlayerRuntime::GetPlayerID(e);
+	db_clientdesc->DBPacketHeader(HEADER_GD_SKILL_COLOR_SAVE, 0, sizeof(TSkillColor));
+	db_clientdesc->Packet(&packet, sizeof(TSkillColor));
+#endif
+}
+
+void ClearSkill(entt::entity e)
+{
+	if (e == entt::null || !g_registry.valid(e))
+		return;
+	ecs::PointSystem::Change(e, POINT_SKILL,
+		4 + (ecs::PointSystem::GetLevel(e) - 5) - ecs::PointSystem::Get(e, POINT_SKILL));
+	ResetSkill(e);
+}
+
+void ClearSubSkill(entt::entity e)
+{
+	auto* levels = TryGetSkillLevels(e);
+	if (!levels || !levels->levels)
+		return;
+
+	ecs::PointSystem::Change(e, POINT_SUB_SKILL,
+		ecs::PointSystem::GetLevel(e) < 10 ? 0 :
+		(ecs::PointSystem::GetLevel(e) - 9) - ecs::PointSystem::Get(e, POINT_SUB_SKILL));
+
+	const TPlayerSkill clean {};
+	for (const uint32_t skillId : s_adwSubSkillVnums)
+	{
+		if (skillId < SKILL_MAX_NUM)
+			levels->levels[skillId] = clean;
+	}
+	ecs::PointSystem::Compute(e);
+	SendSkillLevelPacket(e);
+	MarkDirty(e);
+}
+
+bool ResetOneSkill(entt::entity e, uint32_t skillId)
+{
+	auto* levels = TryGetSkillLevels(e);
+	if (!levels || !levels->levels || skillId >= SKILL_MAX_NUM)
+		return false;
+
+	uint8_t level = levels->levels[skillId].bLevel;
+	levels->levels[skillId] = TPlayerSkill {};
+	ecs::PointSystem::Change(e, POINT_SKILL, std::min<uint8_t>(level, 17));
+	LogManager::instance().CharLog(e, skillId, "ONE_SKILL_RESET_BY_SCROLL", "");
+	ecs::PointSystem::Compute(e);
+	SendSkillLevelPacket(e);
+	MarkDirty(e);
+	return true;
 }
 
 } // namespace SkillSystem
 
 int CHARACTER::ComputeCooltime(int time)
 {
-    return SkillSystem::ComputeCooltime(AIHelpers::EcsOf(this), time);
+    return SkillSystem::ComputeCooltime(GetEntityHandle(), time);
 }
 
 void CHARACTER::SetSkillGroup(uint8_t bSkillGroup)
@@ -406,7 +479,7 @@ void CHARACTER::SetSkillGroup(uint8_t bSkillGroup)
         return;
 
     m_points.skill_group = bSkillGroup;
-    SkillSystem::SetSkillGroup(AIHelpers::EcsOf(this), bSkillGroup);
+    SkillSystem::SetSkillGroup(GetEntityHandle(), bSkillGroup);
 
     TPacketGCChangeSkillGroup p;
     p.header = HEADER_GC_SKILL_GROUP;
@@ -423,7 +496,7 @@ time_t CHARACTER::GetSkillNextReadTime(uint32_t dwVnum) const
         return 0;
     }
 
-    const entt::entity e = AIHelpers::EcsOf(this);
+    const entt::entity e = GetEntityHandle();
     if (e != entt::null && g_registry.valid(e))
         return SkillSystem::GetSkillNextReadTime(e, dwVnum);
 
@@ -445,7 +518,12 @@ void CHARACTER::SetSkillNextReadTime(uint32_t dwVnum, time_t time)
     if (m_pSkillLevels && dwVnum < SKILL_MAX_NUM)
         m_pSkillLevels[dwVnum].tNextRead = time;
 
-    SkillSystem::SetSkillNextReadTime(AIHelpers::EcsOf(this), dwVnum, time);
+    SkillSystem::SetSkillNextReadTime(GetEntityHandle(), dwVnum, time);
+}
+
+uint8_t CHARACTER::GetSkillGroup() const
+{
+	return SkillSystem::GetSkillGroup(GetEntityHandle());
 }
 
 void CHARACTER::SetSkillLevel(uint32_t dwVnum, uint8_t bLev)
@@ -487,7 +565,7 @@ void CHARACTER::SetSkillLevel(uint32_t dwVnum, uint8_t bLev)
     else
         m_pSkillLevels[dwVnum].bMasterType = SKILL_NORMAL;
 
-    SkillSystem::SetSkillLevel(AIHelpers::EcsOf(this), dwVnum, bLev);
+    SkillSystem::SetSkillLevel(GetEntityHandle(), dwVnum, bLev);
 }
 
 int CHARACTER::GetSkillLevel(uint32_t dwVnum) const
@@ -499,7 +577,7 @@ int CHARACTER::GetSkillLevel(uint32_t dwVnum) const
         return 0;
     }
 
-    const entt::entity e = AIHelpers::EcsOf(this);
+    const entt::entity e = GetEntityHandle();
     if (e != entt::null && g_registry.valid(e))
         return SkillSystem::GetSkillLevel(e, dwVnum);
 
@@ -509,12 +587,12 @@ int CHARACTER::GetSkillLevel(uint32_t dwVnum) const
 void CHARACTER::DisableCooltime()
 {
     m_bDisableCooltime = true;
-    SkillSystem::DisableCooltime(AIHelpers::EcsOf(this));
+    SkillSystem::DisableCooltime(GetEntityHandle());
 }
 
 void CHARACTER::ComputeSkillPoints()
 {
-    SkillSystem::ComputeSkillPoints(AIHelpers::EcsOf(this));
+    SkillSystem::ComputeSkillPoints(GetEntityHandle());
 }
 
 bool CHARACTER::IsLearnableSkill(uint32_t dwSkillVnum) const
@@ -602,7 +680,7 @@ bool CHARACTER::LearnGrandMasterSkill(uint32_t dwSkillVnum)
 	if (!IsLearnableSkill(dwSkillVnum))
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 398, "");
+		ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 398, "");
 #endif
 		return false;
 	}
@@ -612,7 +690,7 @@ bool CHARACTER::LearnGrandMasterSkill(uint32_t dwSkillVnum)
 	if (pkSk->dwType == 0)
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 265, "");
+		ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 265, "");
 #endif
 		return false;
 	}
@@ -620,9 +698,9 @@ bool CHARACTER::LearnGrandMasterSkill(uint32_t dwSkillVnum)
 	if (GetSkillMasterType(dwSkillVnum) != SKILL_GRAND_MASTER) {
 #ifdef TEXTS_IMPROVEMENT
 		if (GetSkillMasterType(dwSkillVnum) > SKILL_GRAND_MASTER) {
-			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 422, "");
+			ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 422, "");
 		} else {
-			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 421, "");
+			ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 421, "");
 		}
 #endif
 		return false;
@@ -682,14 +760,14 @@ bool CHARACTER::LearnGrandMasterSkill(uint32_t dwSkillVnum)
 	if (bLastLevel == GetSkillLevel(dwSkillVnum))
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 397, "");
+		ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 397, "");
 #endif
 		LogManager::instance().CharLog(this, dwSkillVnum, "GM_READ_FAIL", "");
 		return false;
 	}
 
 #ifdef TEXTS_IMPROVEMENT
-	ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 304, "");
+	ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 304, "");
 #endif
 	LogManager::instance().CharLog(this, dwSkillVnum, "GM_READ_SUCCESS", "");
 	return true;
@@ -705,7 +783,7 @@ bool CHARACTER::LearnSkillByBook(uint32_t dwSkillVnum, uint8_t bProb)
 	if (!IsLearnableSkill(dwSkillVnum))
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 398, "");
+		ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 398, "");
 #endif
 		return false;
 	}
@@ -717,13 +795,13 @@ bool CHARACTER::LearnSkillByBook(uint32_t dwSkillVnum, uint8_t bProb)
 
 	int64_t need_exp = 0;
 #ifndef DISABLE_SKILL_BOOK_NEED_EXP
-	if (ShouldCheckSkillBookExp(this))
+	if (ShouldCheckSkillBookExp(GetEntityHandle()))
 	{
 		need_exp = 20000;
 		if (GetExp() < need_exp)
 		{
 #ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 247, "");
+			ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 247, "");
 #endif
 			return false;
 		}
@@ -739,10 +817,10 @@ bool CHARACTER::LearnSkillByBook(uint32_t dwSkillVnum, uint8_t bProb)
 		{
 #ifdef TEXTS_IMPROVEMENT
 			if (GetSkillMasterType(dwSkillVnum) > SKILL_MASTER) {
-				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 423, "");
+				ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 423, "");
 			}
 			else {
-				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 424, "");
+				ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 424, "");
 			}
 #endif
 			return false;
@@ -755,7 +833,7 @@ bool CHARACTER::LearnSkillByBook(uint32_t dwSkillVnum, uint8_t bProb)
 		{
 			RemoveAffect(AFFECT_SKILL_NO_BOOK_DELAY);
 #ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 465, "");
+			ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 465, "");
 #endif
 		}
 		else
@@ -764,7 +842,7 @@ bool CHARACTER::LearnSkillByBook(uint32_t dwSkillVnum, uint8_t bProb)
 			int iHours = iTime / 3600;
 			int iMinutes = (iTime - (iHours * 3600)) / 60;
 #ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 91, "%d#%d", iHours, iMinutes);
+			ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 91, "%d#%d", iHours, iMinutes);
 #endif
 			return false;
 		}
@@ -781,7 +859,7 @@ bool CHARACTER::LearnSkillByBook(uint32_t dwSkillVnum, uint8_t bProb)
 			{
 				RemoveAffect(AFFECT_SKILL_NO_BOOK_DELAY);
 #ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 465, "");
+				ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 465, "");
 #endif
 			}
 			else
@@ -791,7 +869,7 @@ bool CHARACTER::LearnSkillByBook(uint32_t dwSkillVnum, uint8_t bProb)
 				int iHours = iTime / 3600;
 				int iMinutes = (iTime - (iHours * 3600)) / 60;
 #ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 91, "%d#%d", iHours, iMinutes);
+				ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 91, "%d#%d", iHours, iMinutes);
 #endif
 #else
 				SkillLearnWaitMoreTimeMessage(GetSkillNextReadTime(dwSkillVnum) - get_global_time());
@@ -864,7 +942,7 @@ bool CHARACTER::LearnSkillByBook(uint32_t dwSkillVnum, uint8_t bProb)
 				SkillLevelPacket();
 				pPC->SetFlag(szFlag, 0);
 #ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 304, "");
+				ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 304, "");
 #endif
 				LogManager::instance().CharLog(this, dwSkillVnum, "READ_SUCCESS", "");
 				return true;
@@ -874,20 +952,20 @@ bool CHARACTER::LearnSkillByBook(uint32_t dwSkillVnum, uint8_t bProb)
 #ifdef TEXTS_IMPROVEMENT
 				switch (number(1, 3)) {
 				case 1:
-					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 319, "");
+					ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 319, "");
 					break;
 				case 2:
-					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 318, "");
+					ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 318, "");
 					break;
 				case 3:
 				default:
-					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 320, "");
+					ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 320, "");
 					break;
 				}
 #endif
 
 #ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 492, "%d", (needBookCount - iReadCount));
+				ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 492, "%d", (needBookCount - iReadCount));
 #endif
 				return true;
 			}
@@ -925,7 +1003,7 @@ bool CHARACTER::LearnSkillByBook(uint32_t dwSkillVnum, uint8_t bProb)
 				SkillLevelUp(dwSkillVnum, SKILL_UP_BY_BOOK);
 				pPC->SetFlag(szFlag, 0);
 #ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 304, "");
+				ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 304, "");
 #endif
 				LogManager::instance().CharLog(this, dwSkillVnum, "READ_SUCCESS", "");
 				return true;
@@ -935,20 +1013,20 @@ bool CHARACTER::LearnSkillByBook(uint32_t dwSkillVnum, uint8_t bProb)
 #ifdef TEXTS_IMPROVEMENT
 				switch (number(1, 3)) {
 				case 1:
-					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 319, "");
+					ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 319, "");
 					break;
 				case 2:
-					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 318, "");
+					ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 318, "");
 					break;
 				case 3:
 				default:
-					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 320, "");
+					ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 320, "");
 					break;
 				}
 #endif
 
 #ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 492, "%d", (needBookCount - iReadCount));
+				ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 492, "%d", (needBookCount - iReadCount));
 #endif
 				return true;
 			}
@@ -1000,7 +1078,7 @@ bool CHARACTER::LearnSkillByBook(uint32_t dwSkillVnum, uint8_t bProb)
 						pPC->SetFlag(flag, 0);
 
 #ifdef TEXTS_IMPROVEMENT
-						ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 304, "");
+						ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 304, "");
 #endif
 						LogManager::instance().CharLog(this, dwSkillVnum, "READ_SUCCESS", "");
 						return true;
@@ -1011,19 +1089,19 @@ bool CHARACTER::LearnSkillByBook(uint32_t dwSkillVnum, uint8_t bProb)
 #ifdef TEXTS_IMPROVEMENT
 						switch (number(1, 3)) {
 						case 1:
-							ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 319, "");
+							ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 319, "");
 							break;
 						case 2:
-							ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 318, "");
+							ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 318, "");
 							break;
 						case 3:
 						default:
-							ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 320, "");
+							ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 320, "");
 							break;
 						}
 #endif
 #ifdef TEXTS_IMPROVEMENT
-						ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 492, "%d", (need_bookcount - read_count));
+						ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 492, "%d", (need_bookcount - read_count));
 #endif
 						return true;
 					}
@@ -1035,14 +1113,14 @@ bool CHARACTER::LearnSkillByBook(uint32_t dwSkillVnum, uint8_t bProb)
 	if (bLastLevel != GetSkillLevel(dwSkillVnum))
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 304, "");
+		ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 304, "");
 #endif
 		LogManager::instance().CharLog(this, dwSkillVnum, "READ_SUCCESS", "");
 	}
 	else
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 397, "");
+		ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 397, "");
 #endif
 		LogManager::instance().CharLog(this, dwSkillVnum, "READ_FAIL", "");
 	}
@@ -1188,54 +1266,12 @@ bool CHARACTER::CheckSkillHitCount(const uint8_t SkillID, entt::entity TargetVID
 void CHARACTER::ResetMobSkillCooltime()
 {
     memset(m_adwMobSkillCooltime, 0, sizeof(m_adwMobSkillCooltime));
-    SkillSystem::ResetMobSkillCooltime(AIHelpers::EcsOf(this));
+    SkillSystem::ResetMobSkillCooltime(GetEntityHandle());
 }
 
 void CHARACTER::ResetSkill()
 {
-	if (nullptr == m_pSkillLevels)
-		return;
-
-	std::vector<std::pair<uint32_t, TPlayerSkill> > vec;
-	size_t count = sizeof(s_adwSubSkillVnums) / sizeof(s_adwSubSkillVnums[0]);
-
-	for (size_t i = 0; i < count; ++i)
-	{
-		if (s_adwSubSkillVnums[i] >= SKILL_MAX_NUM)
-			continue;
-
-		vec.push_back(std::make_pair(s_adwSubSkillVnums[i], m_pSkillLevels[s_adwSubSkillVnums[i]]));
-	}
-
-	memset(m_pSkillLevels, 0, sizeof(TPlayerSkill) * SKILL_MAX_NUM);
-	std::vector<std::pair<uint32_t, TPlayerSkill> >::const_iterator iter = vec.begin();
-	while (iter != vec.end())
-	{
-		const std::pair<uint32_t, TPlayerSkill>& pair = *(iter++);
-		m_pSkillLevels[pair.first] = pair.second;
-	}
-
-	ComputePoints();
-	SkillLevelPacket();
-
-#ifdef __SKILL_COLOR_SYSTEM__
-	uint32_t data[ESkillColorLength::MAX_SKILL_COUNT + ESkillColorLength::MAX_BUFF_COUNT][ESkillColorLength::MAX_EFFECT_COUNT];
-	for (int i = 0; i < ESkillColorLength::MAX_SKILL_COUNT + ESkillColorLength::MAX_BUFF_COUNT; i++) {
-		for (int j = 0; j < 5; j++) {
-			data[i][j] = 0;
-		}
-	}
-
-	SetSkillColor(data[0]);
-
-	TSkillColor db_pack;
-	memcpy(db_pack.dwSkillColor, data, sizeof(data));
-	db_pack.player_id = GetPlayerID();
-	db_clientdesc->DBPacketHeader(HEADER_GD_SKILL_COLOR_SAVE, 0, sizeof(TSkillColor));
-	db_clientdesc->Packet(&db_pack, sizeof(TSkillColor));
-#endif
-
-    SkillSystem::SetSkillGroup(AIHelpers::EcsOf(this), GetSkillGroup());
+	SkillSystem::ResetSkill(GetEntityHandle());
 }
 
 // char_skill.cpp slice E + remaining helpers migrated
@@ -1443,7 +1479,7 @@ bool CHARACTER::SkillCanUp(uint32_t dwVnum, bool book)
 			{
 				if (GetLevel() < 90) {
 #ifdef TEXTS_IMPROVEMENT
-					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 92, "");
+					ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 92, "");
 #endif
 					return false;
 				}
@@ -1464,12 +1500,12 @@ bool CHARACTER::SkillCanUp(uint32_t dwVnum, bool book)
 
 	if (!bCan && !passive) {
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 93, "");
-		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 94, "");
+		ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 93, "");
+		ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 94, "");
 #endif
 	} else if (!bCan && passive) {
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 423, "");
+		ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 423, "");
 #endif
 	}
 
@@ -1488,7 +1524,7 @@ void CHARACTER::SkillLevelUp(uint32_t dwVnum, uint8_t bMethod)
 	if (IsPolymorphed())
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 313, "");
+		ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 313, "");
 #endif
 		return;
 	}
@@ -1680,6 +1716,7 @@ struct FFindNearVictim
 {
 	FFindNearVictim(LegacyCharHandle center, LegacyCharHandle attacker, const CHARACTER_SET& excepts_set = empty_set_)
 		: m_pkChrCenter(center),
+	m_center(center ? center->GetEntityHandle() : entt::null),
 	m_pkChrNextTarget(nullptr),
 	m_pkChrAttacker(attacker),
 	m_count(0),
@@ -1693,6 +1730,7 @@ struct FFindNearVictim
 			return;
 
 		auto* pkChr = static_cast<LegacyCharHandle>(ent);
+		const entt::entity candidate = pkChr->GetEntityHandle();
 
 		if (!m_excepts_set.empty()) {
 			if (m_excepts_set.find(pkChr) != m_excepts_set.end())
@@ -1707,10 +1745,10 @@ struct FFindNearVictim
 			return;
 		}
 
-		if (abs(ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(m_pkChrCenter)) - ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(pkChr))) > 1000 || abs(ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(m_pkChrCenter)) - ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(pkChr))) > 1000)
+		if (abs(ecs::PlayerRuntime::GetX(m_center) - ecs::PlayerRuntime::GetX(candidate)) > 1000 || abs(ecs::PlayerRuntime::GetY(m_center) - ecs::PlayerRuntime::GetY(candidate)) > 1000)
 			return;
 
-		float fDist = DISTANCE_APPROX(ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(m_pkChrCenter)) - ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(pkChr)), ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(m_pkChrCenter)) - ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(pkChr)));
+		float fDist = DISTANCE_APPROX(ecs::PlayerRuntime::GetX(m_center) - ecs::PlayerRuntime::GetX(candidate), ecs::PlayerRuntime::GetY(m_center) - ecs::PlayerRuntime::GetY(candidate));
 
 		if (fDist < 1000)
 		{
@@ -1727,6 +1765,7 @@ struct FFindNearVictim
 	}
 
 	LegacyCharHandle m_pkChrCenter;
+	entt::entity m_center;
 	LegacyCharHandle m_pkChrNextTarget;
 	LegacyCharHandle m_pkChrAttacker;
 	int		m_count;
@@ -1752,9 +1791,11 @@ EVENTINFO(chain_lightning_event_info)
 EVENTFUNC(ChainLightningEvent)
 {
 	chain_lightning_event_info * info = dynamic_cast<chain_lightning_event_info *>( event->info );
+	const entt::entity victimEntity = info->dwVictim;
+	const entt::entity character = info->dwChr;
 
-	auto* pkChrVictim = LegacyCharOf(info->dwVictim);
-	auto* pkChr = LegacyCharOf(info->dwChr);
+	auto* pkChrVictim = LegacyCharOf(victimEntity);
+	auto* pkChr = LegacyCharOf(character);
 	LegacyCharHandle pkTarget = nullptr;
 
 	if (!pkChr || !pkChrVictim)
@@ -1763,11 +1804,11 @@ EVENTFUNC(ChainLightningEvent)
 		return 0;
 	}
 
-	LOG_INFO("chainlighting event {}", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(pkChr)).data());
+	LOG_INFO("chainlighting event {}", ecs::PlayerRuntime::GetName(character).data());
 
-	if (ecs::SocialSystem::GetParty(AIHelpers::EcsOf(pkChrVictim))) // ĆÄĆĽ ¸ŐŔú
+	if (ecs::SocialSystem::GetParty(victimEntity)) // ĆÄĆĽ ¸ŐŔú
 	{
-		pkTarget = ecs::SocialSystem::GetParty(AIHelpers::EcsOf(pkChrVictim))->GetNextOwnership(nullptr, ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(pkChrVictim)), ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(pkChrVictim)));
+		pkTarget = ecs::SocialSystem::GetParty(victimEntity)->GetNextOwnership(nullptr, ecs::PlayerRuntime::GetX(victimEntity), ecs::PlayerRuntime::GetY(victimEntity));
 		if (pkTarget == pkChrVictim || !number(0, 2) || pkChr->GetChainLightingExcept().find(pkTarget) != pkChr->GetChainLightingExcept().end())
 			pkTarget = nullptr;
 	}
@@ -1777,9 +1818,9 @@ EVENTFUNC(ChainLightningEvent)
 		// 1. Find Next victim
 		FFindNearVictim f(pkChrVictim, pkChr, pkChr->GetChainLightingExcept());
 
-		if (ecs::PlayerRuntime::GetSectree(AIHelpers::EcsOf(pkChrVictim)))
+		if (ecs::PlayerRuntime::GetSectree(victimEntity))
 		{
-			ecs::PlayerRuntime::GetSectree(AIHelpers::EcsOf(pkChrVictim))->ForEachAround(f);
+			ecs::PlayerRuntime::GetSectree(victimEntity)->ForEachAround(f);
 			// 2. If exist, compute it again
 			pkTarget = f.GetVictim();
 		}
@@ -1788,23 +1829,22 @@ EVENTFUNC(ChainLightningEvent)
 	if (pkTarget)
 	{
 		pkChrVictim->CreateFly(FLY_CHAIN_LIGHTNING, pkTarget);
-		const entt::entity e = AIHelpers::EcsOf(pkChr);
-		if (e != entt::null)
-			g_dispatcher.trigger(ecs::EvSkillUsed { e, SKILL_CHAIN });
+		if (character != entt::null)
+			g_dispatcher.trigger(ecs::EvSkillUsed { character, SKILL_CHAIN });
 		pkChr->ComputeSkill(SKILL_CHAIN, pkTarget);
 		pkChr->AddChainLightningExcept(pkTarget);
 	}
 	else
 	{
-		LOG_INFO("{} use chainlighting, but find victim failed near {}", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(pkChr)).data(), ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(pkChrVictim)).data());
+		LOG_INFO("{} use chainlighting, but find victim failed near {}", ecs::PlayerRuntime::GetName(character).data(), ecs::PlayerRuntime::GetName(victimEntity).data());
 	}
 
 	return 0;
 }
 
-void SetPolyVarForAttack(LegacyCharHandle ch, CSkillProto * pkSk, entt::entity pkWeapon)
+void SetPolyVarForAttack(entt::entity character, CSkillProto * pkSk, entt::entity pkWeapon)
 {
-	if (ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch)))
+	if (ecs::PlayerRuntime::IsPC(character))
 	{
 		if (ItemSystem::IsValidItem(pkWeapon) && ItemSystem::GetItemType(pkWeapon) == ITEM_WEAPON)
 		{
@@ -1827,7 +1867,10 @@ void SetPolyVarForAttack(LegacyCharHandle ch, CSkillProto * pkSk, entt::entity p
 	}
 	else
 	{
-		int iWep = number(ch->GetMobDamageMin(), ch->GetMobDamageMax());
+		auto* legacyCharacter = LegacyCharOf(character);
+		const int iWep = legacyCharacter
+			? number(legacyCharacter->GetMobDamageMin(), legacyCharacter->GetMobDamageMax())
+			: 0;
 		pkSk->SetPointVar("wep", iWep);
 		pkSk->SetPointVar("mwep", iWep);
 		pkSk->SetPointVar("mtk", iWep);
@@ -1838,7 +1881,9 @@ struct FuncSplashDamage
 {
 	FuncSplashDamage(int x, int y, CSkillProto * pkSk, LegacyCharHandle pkChr, int iAmount, int iAG, int iMaxHit, entt::entity pkWeapon, bool bDisableCooltime, TSkillUseInfo* pInfo, uint8_t bUseSkillPower)
 		:
-		m_x(x), m_y(y), m_pkSk(pkSk), m_pkChr(pkChr), m_iAmount(iAmount), m_iAG(iAG), m_iCount(0), m_iMaxHit(iMaxHit), m_pkWeapon(pkWeapon), m_bDisableCooltime(bDisableCooltime), m_pInfo(pInfo), m_bUseSkillPower(bUseSkillPower)
+		m_x(x), m_y(y), m_pkSk(pkSk), m_pkChr(pkChr),
+		m_character(pkChr ? pkChr->GetEntityHandle() : entt::null),
+		m_iAmount(iAmount), m_iAG(iAG), m_iCount(0), m_iMaxHit(iMaxHit), m_pkWeapon(pkWeapon), m_bDisableCooltime(bDisableCooltime), m_pInfo(pInfo), m_bUseSkillPower(bUseSkillPower)
 		{
 		}
 
@@ -1846,33 +1891,34 @@ struct FuncSplashDamage
 	{
 		if (!ent->IsType(ENTITY_CHARACTER))
 		{
-			//if (m_pkSk->dwVnum == SKILL_CHAIN) LOG_INFO(0, "CHAIN target not character %s", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(m_pkChr)).data());
+			//if (m_pkSk->dwVnum == SKILL_CHAIN) LOG_INFO(0, "CHAIN target not character %s", ecs::PlayerRuntime::GetName(m_character).data());
 			return;
 		}
 
 		auto* pkChrVictim = static_cast<LegacyCharHandle>(ent);
+		const entt::entity victimEntity = pkChrVictim->GetEntityHandle();
 
-		if (DISTANCE_APPROX(m_x - ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(pkChrVictim)), m_y - ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(pkChrVictim))) > m_pkSk->iSplashRange)
+		if (DISTANCE_APPROX(m_x - ecs::PlayerRuntime::GetX(victimEntity), m_y - ecs::PlayerRuntime::GetY(victimEntity)) > m_pkSk->iSplashRange)
 		{
 			if(test_server)
-				LOG_INFO("XXX target too far {}", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(m_pkChr)).data());
+				LOG_INFO("XXX target too far {}", ecs::PlayerRuntime::GetName(m_character).data());
 			return;
 		}
 
 		if (!battle_is_attackable(m_pkChr, pkChrVictim))
 		{
 			if(test_server)
-				LOG_INFO("XXX target not attackable {}", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(m_pkChr)).data());
+				LOG_INFO("XXX target not attackable {}", ecs::PlayerRuntime::GetName(m_character).data());
 			return;
 		}
 
-		if (ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(m_pkChr)))
+		if (ecs::PlayerRuntime::IsPC(m_character))
 			// ±ćµĺ ˝şĹłŔş ÄđĹ¸ŔÓ Ăł¸®¸¦ ÇĎÁö ľĘ´Â´Ů.
 			if (!(m_pkSk->dwVnum >= GUILD_SKILL_START && m_pkSk->dwVnum <= GUILD_SKILL_END))
 				if (!m_bDisableCooltime && m_pInfo && !m_pInfo->HitOnce(m_pkSk->dwVnum) && m_pkSk->dwVnum != SKILL_MUYEONG)
 				{
 					if(test_server)
-						LOG_INFO("check guild skill {}", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(m_pkChr)).data());
+						LOG_INFO("check guild skill {}", ecs::PlayerRuntime::GetName(m_character).data());
 					return;
 				}
 
@@ -1884,13 +1930,13 @@ struct FuncSplashDamage
 		//float k = 1.0f * m_pkChr->GetSkillPower(m_pkSk->dwVnum) * m_pkSk->bMaxLevel / 100;
 		//m_pkSk->kPointPoly2.SetVar("k", 1.0 * m_bUseSkillPower * m_pkSk->bMaxLevel / 100);
 		m_pkSk->SetPointVar("k", 1.0 * m_bUseSkillPower * m_pkSk->bMaxLevel / 100);
-		m_pkSk->SetPointVar("lv", ecs::PointSystem::GetLevel(AIHelpers::EcsOf(m_pkChr)));
-		m_pkSk->SetPointVar("iq", ecs::PointSystem::Get(AIHelpers::EcsOf(m_pkChr), POINT_IQ));
-		m_pkSk->SetPointVar("str", ecs::PointSystem::Get(AIHelpers::EcsOf(m_pkChr), POINT_ST));
-		m_pkSk->SetPointVar("dex", ecs::PointSystem::Get(AIHelpers::EcsOf(m_pkChr), POINT_DX));
-		m_pkSk->SetPointVar("con", ecs::PointSystem::Get(AIHelpers::EcsOf(m_pkChr), POINT_HT));
-		m_pkSk->SetPointVar("def", ecs::PointSystem::Get(AIHelpers::EcsOf(m_pkChr), POINT_DEF_GRADE));
-		m_pkSk->SetPointVar("odef", ecs::PointSystem::Get(AIHelpers::EcsOf(m_pkChr), POINT_DEF_GRADE) - ecs::PointSystem::Get(AIHelpers::EcsOf(m_pkChr), POINT_DEF_GRADE_BONUS));
+		m_pkSk->SetPointVar("lv", ecs::PointSystem::GetLevel(m_character));
+		m_pkSk->SetPointVar("iq", ecs::PointSystem::Get(m_character, POINT_IQ));
+		m_pkSk->SetPointVar("str", ecs::PointSystem::Get(m_character, POINT_ST));
+		m_pkSk->SetPointVar("dex", ecs::PointSystem::Get(m_character, POINT_DX));
+		m_pkSk->SetPointVar("con", ecs::PointSystem::Get(m_character, POINT_HT));
+		m_pkSk->SetPointVar("def", ecs::PointSystem::Get(m_character, POINT_DEF_GRADE));
+		m_pkSk->SetPointVar("odef", ecs::PointSystem::Get(m_character, POINT_DEF_GRADE) - ecs::PointSystem::Get(m_character, POINT_DEF_GRADE_BONUS));
 		m_pkSk->SetPointVar("horse_level", m_pkChr->GetHorseLevel());
 
 		//int iPenetratePct = (int)(1 + k*4);
@@ -1931,8 +1977,8 @@ struct FuncSplashDamage
 		if (m_pkSk->bPointOn == POINT_MOV_SPEED)
 			m_pkSk->kPointPoly.SetVar("maxv", pkChrVictim->GetLimitPoint(POINT_MOV_SPEED));
 
-		m_pkSk->SetPointVar("maxhp", ecs::PointSystem::GetMaxHP(AIHelpers::EcsOf(pkChrVictim)));
-		m_pkSk->SetPointVar("maxsp", ecs::PointSystem::GetMaxSP(AIHelpers::EcsOf(pkChrVictim)));
+		m_pkSk->SetPointVar("maxhp", ecs::PointSystem::GetMaxHP(victimEntity));
+		m_pkSk->SetPointVar("maxsp", ecs::PointSystem::GetMaxSP(victimEntity));
 
 		m_pkSk->SetPointVar("chain", m_pkChr->GetChainLightningIndex());
 		m_pkChr->IncChainLightningIndex();
@@ -1941,7 +1987,7 @@ struct FuncSplashDamage
 
 		m_pkSk->SetPointVar("ek", m_pkChr->GetAffectedEunhyung()*1./100);
 		//m_pkChr->ClearAffectedEunhyung();
-		SetPolyVarForAttack(m_pkChr, m_pkSk, m_pkWeapon);
+		SetPolyVarForAttack(m_character, m_pkSk, m_pkWeapon);
 
 		int iAmount = 0;
 
@@ -1975,7 +2021,7 @@ struct FuncSplashDamage
 		;
 
 		const entt::entity equippedWeapon = ItemSystem::GetWearItem(
-			AIHelpers::EcsOf(m_pkChr), WEAR_WEAPON);
+			m_character, WEAR_WEAPON);
 		if (m_pkSk->dwVnum == SKILL_AMSEOP)
 		{
 			float fDelta = GetDegreeDelta(m_pkChr->GetRotation(), pkChrVictim->GetRotation());
@@ -2035,9 +2081,9 @@ struct FuncSplashDamage
 		}
 #endif
 		////////////////////////////////////////////////////////////////////////////////
-		//LOG_INFO(0, "name: %s skill: %s amount %d to %s", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(m_pkChr)).data(), m_pkSk->szName, iAmount, ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(pkChrVictim)).data());
-		iDam = CalcBattleDamage(iAmount, ecs::PointSystem::GetLevel(AIHelpers::EcsOf(m_pkChr)), ecs::PointSystem::GetLevel(AIHelpers::EcsOf(pkChrVictim)));
-		if (ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(m_pkChr)) && m_pkChr->m_SkillUseInfo[m_pkSk->dwVnum].GetMainTargetVID() != AIHelpers::EcsOf(pkChrVictim))
+		//LOG_INFO(0, "name: %s skill: %s amount %d to %s", ecs::PlayerRuntime::GetName(m_character).data(), m_pkSk->szName, iAmount, ecs::PlayerRuntime::GetName(victimEntity).data());
+		iDam = CalcBattleDamage(iAmount, ecs::PointSystem::GetLevel(m_character), ecs::PointSystem::GetLevel(victimEntity));
+		if (ecs::PlayerRuntime::IsPC(m_character) && m_pkChr->m_SkillUseInfo[m_pkSk->dwVnum].GetMainTargetVID() != victimEntity)
 		{
 			// µĄąĚÁö °¨ĽŇ
 			iDam = (int) (iDam * m_pkSk->kSplashAroundDamageAdjustPoly.Eval());
@@ -2066,12 +2112,12 @@ struct FuncSplashDamage
 						{
 							case WEAPON_SWORD:
 							{
-								int32_t lValue = ecs::PointSystem::Get(AIHelpers::EcsOf(pkChrVictim), POINT_RESIST_SWORD);
+								int32_t lValue = ecs::PointSystem::Get(victimEntity, POINT_RESIST_SWORD);
 #ifdef ENABLE_NEW_BONUS_TALISMAN
-								lValue -= ecs::PointSystem::Get(AIHelpers::EcsOf(m_pkChr), POINT_ATTBONUS_IRR_SPADA);
+								lValue -= ecs::PointSystem::Get(m_character, POINT_ATTBONUS_IRR_SPADA);
 #endif
 #ifdef ENABLE_NEW_COMMON_BONUSES
-								lValue -= ecs::PointSystem::Get(AIHelpers::EcsOf(m_pkChr), POINT_IRR_WEAPON_DEFENSE);
+								lValue -= ecs::PointSystem::Get(m_character, POINT_IRR_WEAPON_DEFENSE);
 #endif
 								lValue = lValue < 0 ? 0 :  lValue;
 								iDam = iDam * (100 - lValue) / 100;
@@ -2079,12 +2125,12 @@ struct FuncSplashDamage
 							}
 							case WEAPON_TWO_HANDED:
 							{
-								int32_t lValue = ecs::PointSystem::Get(AIHelpers::EcsOf(pkChrVictim), POINT_RESIST_TWOHAND);
+								int32_t lValue = ecs::PointSystem::Get(victimEntity, POINT_RESIST_TWOHAND);
 #ifdef ENABLE_NEW_BONUS_TALISMAN
-								lValue -= ecs::PointSystem::Get(AIHelpers::EcsOf(m_pkChr), POINT_ATTBONUS_IRR_SPADONE);
+								lValue -= ecs::PointSystem::Get(m_character, POINT_ATTBONUS_IRR_SPADONE);
 #endif
 #ifdef ENABLE_NEW_COMMON_BONUSES
-								lValue -= ecs::PointSystem::Get(AIHelpers::EcsOf(m_pkChr), POINT_IRR_WEAPON_DEFENSE);
+								lValue -= ecs::PointSystem::Get(m_character, POINT_IRR_WEAPON_DEFENSE);
 #endif
 								lValue = lValue < 0 ? 0 :  lValue;
 								iDam = iDam * (100 - lValue) / 100;
@@ -2092,12 +2138,12 @@ struct FuncSplashDamage
 							}
 							case WEAPON_DAGGER:
 							{
-								int32_t lValue = ecs::PointSystem::Get(AIHelpers::EcsOf(pkChrVictim), POINT_RESIST_DAGGER);
+								int32_t lValue = ecs::PointSystem::Get(victimEntity, POINT_RESIST_DAGGER);
 #ifdef ENABLE_NEW_BONUS_TALISMAN
-								lValue -= ecs::PointSystem::Get(AIHelpers::EcsOf(m_pkChr), POINT_ATTBONUS_IRR_PUGNALE);
+								lValue -= ecs::PointSystem::Get(m_character, POINT_ATTBONUS_IRR_PUGNALE);
 #endif
 #ifdef ENABLE_NEW_COMMON_BONUSES
-								lValue -= ecs::PointSystem::Get(AIHelpers::EcsOf(m_pkChr), POINT_IRR_WEAPON_DEFENSE);
+								lValue -= ecs::PointSystem::Get(m_character, POINT_IRR_WEAPON_DEFENSE);
 #endif
 								lValue = lValue < 0 ? 0 :  lValue;
 								iDam = iDam * (100 - lValue) / 100;
@@ -2105,12 +2151,12 @@ struct FuncSplashDamage
 							}
 							case WEAPON_BELL:
 							{
-								int32_t lValue = ecs::PointSystem::Get(AIHelpers::EcsOf(pkChrVictim), POINT_RESIST_BELL);
+								int32_t lValue = ecs::PointSystem::Get(victimEntity, POINT_RESIST_BELL);
 #ifdef ENABLE_NEW_BONUS_TALISMAN
-								lValue -= ecs::PointSystem::Get(AIHelpers::EcsOf(m_pkChr), POINT_ATTBONUS_IRR_CAMPANA);
+								lValue -= ecs::PointSystem::Get(m_character, POINT_ATTBONUS_IRR_CAMPANA);
 #endif
 #ifdef ENABLE_NEW_COMMON_BONUSES
-								lValue -= ecs::PointSystem::Get(AIHelpers::EcsOf(m_pkChr), POINT_IRR_WEAPON_DEFENSE);
+								lValue -= ecs::PointSystem::Get(m_character, POINT_IRR_WEAPON_DEFENSE);
 #endif
 								lValue = lValue < 0 ? 0 :  lValue;
 								iDam = iDam * (100 - lValue) / 100;
@@ -2118,12 +2164,12 @@ struct FuncSplashDamage
 							}
 							case WEAPON_FAN:
 							{
-								int32_t lValue = ecs::PointSystem::Get(AIHelpers::EcsOf(pkChrVictim), POINT_RESIST_FAN);
+								int32_t lValue = ecs::PointSystem::Get(victimEntity, POINT_RESIST_FAN);
 #ifdef ENABLE_NEW_BONUS_TALISMAN
-								lValue -= ecs::PointSystem::Get(AIHelpers::EcsOf(m_pkChr), POINT_ATTBONUS_IRR_VENTAGLIO);
+								lValue -= ecs::PointSystem::Get(m_character, POINT_ATTBONUS_IRR_VENTAGLIO);
 #endif
 #ifdef ENABLE_NEW_COMMON_BONUSES
-								lValue -= ecs::PointSystem::Get(AIHelpers::EcsOf(m_pkChr), POINT_IRR_WEAPON_DEFENSE);
+								lValue -= ecs::PointSystem::Get(m_character, POINT_IRR_WEAPON_DEFENSE);
 #endif
 								lValue = lValue < 0 ? 0 :  lValue;
 								iDam = iDam * (100 - lValue) / 100;
@@ -2131,12 +2177,12 @@ struct FuncSplashDamage
 							}
 							case WEAPON_BOW:
 							{
-								int32_t lValue = ecs::PointSystem::Get(AIHelpers::EcsOf(pkChrVictim), POINT_RESIST_BOW);
+								int32_t lValue = ecs::PointSystem::Get(victimEntity, POINT_RESIST_BOW);
 #ifdef ENABLE_NEW_BONUS_TALISMAN
-								lValue -= ecs::PointSystem::Get(AIHelpers::EcsOf(m_pkChr), POINT_ATTBONUS_IRR_FRECCIA);
+								lValue -= ecs::PointSystem::Get(m_character, POINT_ATTBONUS_IRR_FRECCIA);
 #endif
 #ifdef ENABLE_NEW_COMMON_BONUSES
-								lValue -= ecs::PointSystem::Get(AIHelpers::EcsOf(m_pkChr), POINT_IRR_WEAPON_DEFENSE);
+								lValue -= ecs::PointSystem::Get(m_character, POINT_IRR_WEAPON_DEFENSE);
 #endif
 								lValue = lValue < 0 ? 0 :  lValue;
 								iDam = iDam * (100 - lValue) / 100;
@@ -2145,12 +2191,12 @@ struct FuncSplashDamage
 #ifdef ENABLE_WOLFMAN_CHARACTER
 							case WEAPON_CLAW:
 							{
-								int32_t lValue = ecs::PointSystem::Get(AIHelpers::EcsOf(pkChrVictim), POINT_RESIST_DAGGER);
+								int32_t lValue = ecs::PointSystem::Get(victimEntity, POINT_RESIST_DAGGER);
 #ifdef ENABLE_NEW_BONUS_TALISMAN
-								lValue -= ecs::PointSystem::Get(AIHelpers::EcsOf(m_pkChr), POINT_ATTBONUS_IRR_PUGNALE);
+								lValue -= ecs::PointSystem::Get(m_character, POINT_ATTBONUS_IRR_PUGNALE);
 #endif
 #ifdef ENABLE_NEW_COMMON_BONUSES
-								lValue -= ecs::PointSystem::Get(AIHelpers::EcsOf(m_pkChr), POINT_IRR_WEAPON_DEFENSE);
+								lValue -= ecs::PointSystem::Get(m_character, POINT_IRR_WEAPON_DEFENSE);
 #endif
 								lValue = lValue < 0 ? 0 :  lValue;
 								iDam = iDam * (100 - lValue) / 100;
@@ -2163,19 +2209,19 @@ struct FuncSplashDamage
 					}
 
 					if (!bIgnoreDefense) {
-						iDam -= ecs::PointSystem::Get(AIHelpers::EcsOf(pkChrVictim), POINT_DEF_GRADE);
+						iDam -= ecs::PointSystem::Get(victimEntity, POINT_DEF_GRADE);
 					}
 
 					break;
 				}
 			case SKILL_ATTR_TYPE_RANGE: {
 				dt = DAMAGE_TYPE_RANGE;
-				int32_t lValue = ecs::PointSystem::Get(AIHelpers::EcsOf(pkChrVictim), POINT_RESIST_BOW);
+				int32_t lValue = ecs::PointSystem::Get(victimEntity, POINT_RESIST_BOW);
 #ifdef ENABLE_NEW_BONUS_TALISMAN
-				lValue -= ecs::PointSystem::Get(AIHelpers::EcsOf(m_pkChr), POINT_ATTBONUS_IRR_FRECCIA);
+				lValue -= ecs::PointSystem::Get(m_character, POINT_ATTBONUS_IRR_FRECCIA);
 #endif
 #ifdef ENABLE_NEW_COMMON_BONUSES
-				lValue -= ecs::PointSystem::Get(AIHelpers::EcsOf(m_pkChr), POINT_IRR_WEAPON_DEFENSE);
+				lValue -= ecs::PointSystem::Get(m_character, POINT_IRR_WEAPON_DEFENSE);
 #endif
 				lValue = lValue < 0 ? 0 : lValue;
 				iDam = iDam * (100 - lValue) / 100;
@@ -2187,16 +2233,16 @@ struct FuncSplashDamage
 				iDam = CalcAttBonus(m_pkChr, pkChrVictim, iDam);
 				// Ŕ¸ľĆľĆľĆľÇ
 				// żąŔüżˇ ŔűżëľČÇß´ř ąö±×°ˇ ŔÖľîĽ­ ąćľî·Â °č»ęŔ» ´Ů˝ĂÇĎ¸é ŔŻŔú°ˇ ł­¸®ł˛
-				//iDam -= ecs::PointSystem::Get(AIHelpers::EcsOf(pkChrVictim), POINT_MAGIC_DEF_GRADE);
+				//iDam -= ecs::PointSystem::Get(victimEntity, POINT_MAGIC_DEF_GRADE);
 //#ifdef ENABLE_MAGIC_REDUCTION_SYSTEM
 //				{
-//					const int resist_magic = MINMAX(0, ecs::PointSystem::Get(AIHelpers::EcsOf(pkChrVictim), POINT_RESIST_MAGIC), 100);
-//					const int resist_magic_reduction = MINMAX(0, (m_pkChr->GetJob()==JOB_SURA) ? ecs::PointSystem::Get(AIHelpers::EcsOf(m_pkChr), POINT_RESIST_MAGIC_REDUCTION)/2 : ecs::PointSystem::Get(AIHelpers::EcsOf(m_pkChr), POINT_RESIST_MAGIC_REDUCTION), 50);
+//					const int resist_magic = MINMAX(0, ecs::PointSystem::Get(victimEntity, POINT_RESIST_MAGIC), 100);
+//					const int resist_magic_reduction = MINMAX(0, (m_pkChr->GetJob()==JOB_SURA) ? ecs::PointSystem::Get(m_character, POINT_RESIST_MAGIC_REDUCTION)/2 : ecs::PointSystem::Get(m_character, POINT_RESIST_MAGIC_REDUCTION), 50);
 //					const int total_res_magic = MINMAX(0, resist_magic - resist_magic_reduction, 100);
 //					iDam = iDam * (100 - total_res_magic) / 100;
 //				}
 //#else
-				iDam = iDam * (100 - (int)(ecs::PointSystem::Get(AIHelpers::EcsOf(pkChrVictim), POINT_RESIST_MAGIC) / 2)) / 100;
+				iDam = iDam * (100 - (int)(ecs::PointSystem::Get(victimEntity, POINT_RESIST_MAGIC) / 2)) / 100;
 //#endif
 				break;
 
@@ -2214,21 +2260,21 @@ struct FuncSplashDamage
 		// ´Ŕł˘Áö ¸řÇĎ±â Ŕ§ÇŘ mob_protoŔÇ RESIST_MAGICŔ» RESIST_WIND, RESIST_ELEC, RESIST_FIRE·Î
 		// şą»çÇĎż´´Ů.
 		//
-		if (ecs::PlayerRuntime::IsNPC(AIHelpers::EcsOf(pkChrVictim)))
+		if (ecs::PlayerRuntime::IsNPC(victimEntity))
 		{
 			if (IS_SET(m_pkSk->dwFlag, SKILL_FLAG_WIND))
 			{
-				iDam = iDam * (100 - ecs::PointSystem::Get(AIHelpers::EcsOf(pkChrVictim), POINT_RESIST_WIND)) / 100;
+				iDam = iDam * (100 - ecs::PointSystem::Get(victimEntity, POINT_RESIST_WIND)) / 100;
 			}
 
 			if (IS_SET(m_pkSk->dwFlag, SKILL_FLAG_ELEC))
 			{
-				iDam = iDam * (100 - ecs::PointSystem::Get(AIHelpers::EcsOf(pkChrVictim), POINT_RESIST_ELEC)) / 100;
+				iDam = iDam * (100 - ecs::PointSystem::Get(victimEntity, POINT_RESIST_ELEC)) / 100;
 			}
 
 			if (IS_SET(m_pkSk->dwFlag, SKILL_FLAG_FIRE))
 			{
-				iDam = iDam * (100 - ecs::PointSystem::Get(AIHelpers::EcsOf(pkChrVictim), POINT_RESIST_FIRE)) / 100;
+				iDam = iDam * (100 - ecs::PointSystem::Get(victimEntity, POINT_RESIST_FIRE)) / 100;
 			}
 		}
 
@@ -2239,7 +2285,7 @@ struct FuncSplashDamage
 			pkChrVictim->BeginFight(m_pkChr);
 
 		if (m_pkSk->dwVnum == SKILL_CHAIN)
-			LOG_INFO("{} CHAIN INDEX {} DAM {} DT {}", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(m_pkChr)).data(), m_pkChr->GetChainLightningIndex() - 1, iDam, static_cast<int>(dt));
+			LOG_INFO("{} CHAIN INDEX {} DAM {} DT {}", ecs::PlayerRuntime::GetName(m_character).data(), m_pkChr->GetChainLightningIndex() - 1, iDam, static_cast<int>(dt));
 
 #ifdef ENABLE_NEW_PASSIVE_SKILLS
 		{
@@ -2399,8 +2445,8 @@ struct FuncSplashDamage
 			if (IS_SET(m_pkSk->dwFlag, SKILL_FLAG_REMOVE_GOOD_AFFECT))
 			{
 #ifdef ENABLE_NULLIFYAFFECT_LIMIT
-				int iLevel = ecs::PointSystem::GetLevel(AIHelpers::EcsOf(m_pkChr));
-				int yLevel = ecs::PointSystem::GetLevel(AIHelpers::EcsOf(pkChrVictim));
+				int iLevel = ecs::PointSystem::GetLevel(m_character);
+				int yLevel = ecs::PointSystem::GetLevel(victimEntity);
 				// const float k = 1.0 * m_pkChr->GetSkillPower(m_pkSk->dwVnum, bSkillLevel) * m_pkSk->bMaxLevel / 100;
 				int iDifLev = 9;
 				if ((iLevel-iDifLev <= yLevel) && (iLevel+iDifLev >= yLevel))
@@ -2408,12 +2454,12 @@ struct FuncSplashDamage
 				{
 					int iAmount2 = (int) m_pkSk->kPointPoly2.Eval();
 					int iDur2 = (int) m_pkSk->kDurationPoly2.Eval();
-					iDur2 += ecs::PointSystem::Get(AIHelpers::EcsOf(m_pkChr), POINT_PARTY_BUFFER_BONUS);
+					iDur2 += ecs::PointSystem::Get(m_character, POINT_PARTY_BUFFER_BONUS);
 
 					if (number(1, 100) <= iAmount2)
 					{
 						pkChrVictim->RemoveGoodAffect();
-						AffectSystem::AddAffect(AIHelpers::EcsOf(pkChrVictim), m_pkSk->dwVnum, POINT_NONE, 0, AFF_PABEOP, iDur2, 0, true);
+						AffectSystem::AddAffect(victimEntity, m_pkSk->dwVnum, POINT_NONE, 0, AFF_PABEOP, iDur2, 0, true);
 					}
 				}
 			}
@@ -2426,7 +2472,7 @@ struct FuncSplashDamage
 				int iPct = (int) m_pkSk->kPointPoly2.Eval();
 				int iDur = (int) m_pkSk->kDurationPoly2.Eval();
 
-				iDur += ecs::PointSystem::Get(AIHelpers::EcsOf(m_pkChr), POINT_PARTY_BUFFER_BONUS);
+				iDur += ecs::PointSystem::Get(m_character, POINT_PARTY_BUFFER_BONUS);
 
 				if (IS_SET(m_pkSk->dwFlag, SKILL_FLAG_STUN))
 				{
@@ -2439,10 +2485,10 @@ struct FuncSplashDamage
 				else if (IS_SET(m_pkSk->dwFlag, SKILL_FLAG_FIRE_CONT))
 				{
 					m_pkSk->SetDurationVar("k", 1.0 * m_bUseSkillPower * m_pkSk->bMaxLevel / 100);
-					m_pkSk->SetDurationVar("iq", ecs::PointSystem::Get(AIHelpers::EcsOf(m_pkChr), POINT_IQ));
+					m_pkSk->SetDurationVar("iq", ecs::PointSystem::Get(m_character, POINT_IQ));
 
 					iDur = (int)m_pkSk->kDurationPoly2.Eval();
-					int bonus = ecs::PointSystem::Get(AIHelpers::EcsOf(m_pkChr), POINT_PARTY_BUFFER_BONUS);
+					int bonus = ecs::PointSystem::Get(m_character, POINT_PARTY_BUFFER_BONUS);
 
 					if (bonus != 0)
 					{
@@ -2473,14 +2519,14 @@ struct FuncSplashDamage
 			{
 				float fCrushSlidingLength = 200;
 
-				if (ecs::PlayerRuntime::IsNPC(AIHelpers::EcsOf(m_pkChr)))
+				if (ecs::PlayerRuntime::IsNPC(m_character))
 					fCrushSlidingLength = 400;
 
 				if (IS_SET(m_pkSk->dwFlag, SKILL_FLAG_CRUSH_LONG))
 					fCrushSlidingLength *= 2;
 
 				float fx, fy;
-				float degree = GetDegreeFromPositionXY(ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(m_pkChr)), ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(m_pkChr)), ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(pkChrVictim)), ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(pkChrVictim)));
+				float degree = GetDegreeFromPositionXY(ecs::PlayerRuntime::GetX(m_character), ecs::PlayerRuntime::GetY(m_character), ecs::PlayerRuntime::GetX(victimEntity), ecs::PlayerRuntime::GetY(victimEntity));
 
 				if (m_pkSk->dwVnum == SKILL_HORSE_WILDATTACK)
 				{
@@ -2494,12 +2540,12 @@ struct FuncSplashDamage
 				}
 
 				GetDeltaByDegree(degree, fCrushSlidingLength, &fx, &fy);
-				LOG_INFO("CRUSH! {} -> {} ({} {}) -> ({} {})", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(m_pkChr)).data(), ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(pkChrVictim)).data(), ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(pkChrVictim)), ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(pkChrVictim)), ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(pkChrVictim)) + static_cast<int32_t>(fx), ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(pkChrVictim)) + static_cast<int32_t>(fy));
-				int32_t tx = ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(pkChrVictim))+static_cast<int32_t>(fx);
-				int32_t ty = ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(pkChrVictim))+static_cast<int32_t>(fy);
+				LOG_INFO("CRUSH! {} -> {} ({} {}) -> ({} {})", ecs::PlayerRuntime::GetName(m_character).data(), ecs::PlayerRuntime::GetName(victimEntity).data(), ecs::PlayerRuntime::GetX(victimEntity), ecs::PlayerRuntime::GetY(victimEntity), ecs::PlayerRuntime::GetX(victimEntity) + static_cast<int32_t>(fx), ecs::PlayerRuntime::GetY(victimEntity) + static_cast<int32_t>(fy));
+				int32_t tx = ecs::PlayerRuntime::GetX(victimEntity)+static_cast<int32_t>(fx);
+				int32_t ty = ecs::PlayerRuntime::GetY(victimEntity)+static_cast<int32_t>(fy);
 
 #ifdef ENABLE_BUG_FIXES
-				while (ecs::PlayerRuntime::GetSectree(AIHelpers::EcsOf(pkChrVictim))->GetAttribute(tx, ty) & (ATTR_BLOCK | ATTR_OBJECT) && fCrushSlidingLength > 0) {
+				while (ecs::PlayerRuntime::GetSectree(victimEntity)->GetAttribute(tx, ty) & (ATTR_BLOCK | ATTR_OBJECT) && fCrushSlidingLength > 0) {
 					if (fCrushSlidingLength >= 10) {
 						fCrushSlidingLength -= 10;
 					} else {
@@ -2507,8 +2553,8 @@ struct FuncSplashDamage
 					}
 
 					GetDeltaByDegree(degree, fCrushSlidingLength, &fx, &fy);
-					tx = ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(pkChrVictim)) + static_cast<int32_t>(fx);
-					ty = ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(pkChrVictim)) + static_cast<int32_t>(fy);
+					tx = ecs::PlayerRuntime::GetX(victimEntity) + static_cast<int32_t>(fx);
+					ty = ecs::PlayerRuntime::GetY(victimEntity) + static_cast<int32_t>(fy);
 				}
 #endif
 
@@ -2516,13 +2562,13 @@ struct FuncSplashDamage
 				pkChrVictim->Goto(tx, ty);
 				pkChrVictim->CalculateMoveDuration();
 
-				if (ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(m_pkChr)) && m_pkChr->m_SkillUseInfo[m_pkSk->dwVnum].GetMainTargetVID() == AIHelpers::EcsOf(pkChrVictim))
+				if (ecs::PlayerRuntime::IsPC(m_character) && m_pkChr->m_SkillUseInfo[m_pkSk->dwVnum].GetMainTargetVID() == victimEntity)
 				{
 					SkillAttackAffect(pkChrVictim, 1000, IMMUNE_STUN, m_pkSk->dwVnum, POINT_NONE, 0, AFF_STUN, 4, m_pkSk->szName);
 				}
 				else
 				{
-					NetworkSyncSystem::BroadcastSyncPacket(g_registry, AIHelpers::EcsOf(pkChrVictim));
+					NetworkSyncSystem::BroadcastSyncPacket(g_registry, victimEntity);
 				}
 			}
 		}
@@ -2530,39 +2576,39 @@ struct FuncSplashDamage
 		if (IS_SET(m_pkSk->dwFlag, SKILL_FLAG_HP_ABSORB))
 		{
 			int iPct = (int) m_pkSk->kPointPoly2.Eval();
-			ecs::PointSystem::Change(AIHelpers::EcsOf(m_pkChr), POINT_HP, iDam * iPct / 100);
+			ecs::PointSystem::Change(m_character, POINT_HP, iDam * iPct / 100);
 		}
 
 		if (IS_SET(m_pkSk->dwFlag, SKILL_FLAG_SP_ABSORB))
 		{
 			int iPct = (int) m_pkSk->kPointPoly2.Eval();
-			ecs::PointSystem::Change(AIHelpers::EcsOf(m_pkChr), POINT_SP, iDam * iPct / 100);
+			ecs::PointSystem::Change(m_character, POINT_SP, iDam * iPct / 100);
 		}
 
 		if (m_pkSk->dwVnum == SKILL_CHAIN && m_pkChr->GetChainLightningIndex() < m_pkChr->GetChainLightningMaxCount())
 		{
 			chain_lightning_event_info* info = AllocEventInfo<chain_lightning_event_info>();
 
-			info->dwVictim = AIHelpers::EcsOf(pkChrVictim);
-			info->dwChr = AIHelpers::EcsOf(m_pkChr);
+			info->dwVictim = victimEntity;
+			info->dwChr = m_character;
 
 			event_create(ChainLightningEvent, info, passes_per_sec / 5);
 		}
 		if(test_server)
-			LOG_INFO("FuncSplashDamage End :{} ", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(m_pkChr)).data());
+			LOG_INFO("FuncSplashDamage End :{} ", ecs::PlayerRuntime::GetName(m_character).data());
 //#ifdef ENABLE_MAP1_SKILL_MOB
 //		// csak PC -> 136-os mob esetén mentsünk
-//		if (ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(m_pkChr)) && pkChrVictim->IsMonster() && ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkChrVictim)) == 136)
+//		if (ecs::PlayerRuntime::IsPC(m_character) && pkChrVictim->IsMonster() && ecs::PlayerRuntime::GetRaceNum(victimEntity) == 136)
 //		{
 //
 //			DBManager::instance().DirectQuery(
 //				"UPDATE player.player "
 //				"SET map1_skillmob = GREATEST(map1_skillmob, %d) "
 //				"WHERE id=%u",
-//				iAmount, ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(m_pkChr)));
+//				iAmount, ecs::PlayerRuntime::GetPlayerID(m_character));
 //
 //			// (opcionális) debug üzenet a játékosnak
-//			ecs::ChatSystem::Send(AIHelpers::EcsOf(m_pkChr), CHAT_TYPE_INFO, "SkillMob DAMAGE: %d (max mentve).", iAmount);
+//			ecs::ChatSystem::Send(m_character, CHAT_TYPE_INFO, "SkillMob DAMAGE: %d (max mentve).", iAmount);
 //		}
 //
 //#endif
@@ -2572,6 +2618,7 @@ struct FuncSplashDamage
 	int		m_y;
 	CSkillProto * m_pkSk;
 	LegacyCharHandle	m_pkChr;
+	entt::entity m_character;
 	int		m_iAmount;
 	int		m_iAG;
 	int		m_iCount;
@@ -2611,21 +2658,22 @@ struct FuncSplashAffect
 		if (ent->IsType(ENTITY_CHARACTER))
 		{
 			auto* pkChr = static_cast<LegacyCharHandle>(ent);
+			const entt::entity target = pkChr->GetEntityHandle();
 
 			if (test_server)
-				LOG_INFO("FuncSplashAffect step 1 : name:{} vnum:{} iDur:{}", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(pkChr)).data(), m_dwVnum, m_iDuration);
-			if (DISTANCE_APPROX(m_x - ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(pkChr)), m_y - ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(pkChr))) < m_iDist)
+				LOG_INFO("FuncSplashAffect step 1 : name:{} vnum:{} iDur:{}", ecs::PlayerRuntime::GetName(target).data(), m_dwVnum, m_iDuration);
+			if (DISTANCE_APPROX(m_x - ecs::PlayerRuntime::GetX(target), m_y - ecs::PlayerRuntime::GetY(target)) < m_iDist)
 			{
 				if (test_server)
-					LOG_INFO("FuncSplashAffect step 2 : name:{} vnum:{} iDur:{}", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(pkChr)).data(), m_dwVnum, m_iDuration);
+					LOG_INFO("FuncSplashAffect step 2 : name:{} vnum:{} iDur:{}", ecs::PlayerRuntime::GetName(target).data(), m_dwVnum, m_iDuration);
 				if (m_dwVnum == SKILL_TUSOK)
 					if (pkChr->CanBeginFight())
 						pkChr->BeginFight(m_pkChrAttacker);
 
-				if (ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(pkChr)) && m_dwVnum == SKILL_TUSOK)
-					AffectSystem::AddAffect(AIHelpers::EcsOf(pkChr), m_dwVnum, m_bPointOn, m_iAmount, m_dwAffectFlag, m_iDuration/3, m_iSPCost, m_bOverride);
+				if (ecs::PlayerRuntime::IsPC(target) && m_dwVnum == SKILL_TUSOK)
+					AffectSystem::AddAffect(target, m_dwVnum, m_bPointOn, m_iAmount, m_dwAffectFlag, m_iDuration/3, m_iSPCost, m_bOverride);
 				else
-					AffectSystem::AddAffect(AIHelpers::EcsOf(pkChr), m_dwVnum, m_bPointOn, m_iAmount, m_dwAffectFlag, m_iDuration, m_iSPCost, m_bOverride);
+					AffectSystem::AddAffect(target, m_dwVnum, m_bPointOn, m_iAmount, m_dwAffectFlag, m_iDuration, m_iSPCost, m_bOverride);
 
 				m_iCount ++;
 			}
@@ -2675,6 +2723,7 @@ EVENTFUNC(skill_gwihwan_event)
 
 	if (!ch)
 		return 0;
+	const entt::entity character = ch->GetEntityHandle();
 
 	int percent = 20 * sklv - 1;
 
@@ -2683,20 +2732,20 @@ EVENTFUNC(skill_gwihwan_event)
 		PIXEL_POSITION pos;
 
 		// Ľş°ř
-		if (ecs::GetRecallPosition(ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)), ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(ch)), pos))
+		if (ecs::GetRecallPosition(ecs::PlayerRuntime::GetMapIndex(character), ecs::PlayerRuntime::GetEmpire(character), pos))
 		{
-			LOG_INFO("Recall: {} {} {} -> {} {}", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(ch)), ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(ch)), pos.x, pos.y);
+			LOG_INFO("Recall: {} {} {} -> {} {}", ecs::PlayerRuntime::GetName(character).data(), ecs::PlayerRuntime::GetX(character), ecs::PlayerRuntime::GetY(character), pos.x, pos.y);
 			ch->WarpSet(pos.x, pos.y);
 		}
 		else
 		{
-			LOG_ERROR("CHARACTER::UseItem : cannot find spawn position (name {}, {} x {})", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(ch)), ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(ch)));
-			ch->WarpSet(EMPIRE_START_X(ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(ch))), EMPIRE_START_Y(ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(ch))));
+			LOG_ERROR("CHARACTER::UseItem : cannot find spawn position (name {}, {} x {})", ecs::PlayerRuntime::GetName(character).data(), ecs::PlayerRuntime::GetX(character), ecs::PlayerRuntime::GetY(character));
+			ch->WarpSet(EMPIRE_START_X(ecs::PlayerRuntime::GetEmpire(character)), EMPIRE_START_Y(ecs::PlayerRuntime::GetEmpire(character)));
 		}
 	}
 #ifdef TEXTS_IMPROVEMENT
 	else {
-		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 241, "");
+		ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 241, "");
 	}
 #endif
 	return 0;
@@ -2775,8 +2824,8 @@ int CHARACTER::ComputeSkillAtPosition(uint32_t dwVnum, const PIXEL_POSITION& pos
 	pkSk->SetPointVar("str", GetPoint(POINT_ST));
 	pkSk->SetPointVar("dex", GetPoint(POINT_DX));
 	pkSk->SetPointVar("con", GetPoint(POINT_HT));
-	pkSk->SetPointVar("maxhp", ecs::PointSystem::GetMaxHP(AIHelpers::EcsOf(this)));
-	pkSk->SetPointVar("maxsp", ecs::PointSystem::GetMaxSP(AIHelpers::EcsOf(this)));
+	pkSk->SetPointVar("maxhp", ecs::PointSystem::GetMaxHP(GetEntityHandle()));
+	pkSk->SetPointVar("maxsp", ecs::PointSystem::GetMaxSP(GetEntityHandle()));
 	pkSk->SetPointVar("chain", 0);
 	pkSk->SetPointVar("ar", CalcAttackRating(this, this));
 	pkSk->SetPointVar("def", GetPoint(POINT_DEF_GRADE));
@@ -2788,7 +2837,7 @@ int CHARACTER::ComputeSkillAtPosition(uint32_t dwVnum, const PIXEL_POSITION& pos
 
 	entt::entity pkWeapon = ItemSystem::GetWearItem(GetEntityHandle(), WEAR_WEAPON);
 
-	SetPolyVarForAttack(this, pkSk, pkWeapon);
+	SetPolyVarForAttack(GetEntityHandle(), pkSk, pkWeapon);
 
 	pkSk->SetDurationVar("k", k/*bSkillLevel*/);
 
@@ -3048,6 +3097,7 @@ int CHARACTER::ComputeGyeongGongSkill(uint32_t dwVnum, LPCHARACTER pkVictim, uin
 
 		return BATTLE_NONE;
 	}
+	const entt::entity victimEntity = pkVictim->GetEntityHandle();
 
 	if (0 == bSkillLevel)
 	{
@@ -3075,8 +3125,8 @@ int CHARACTER::ComputeGyeongGongSkill(uint32_t dwVnum, LPCHARACTER pkVictim, uin
 	pkSk->SetPointVar("str", GetPoint(POINT_ST));
 	pkSk->SetPointVar("dex", GetPoint(POINT_DX));
 	pkSk->SetPointVar("con", GetPoint(POINT_HT));
-	pkSk->SetPointVar("maxhp", ecs::PointSystem::GetMaxHP(AIHelpers::EcsOf(pkVictim)));
-	pkSk->SetPointVar("maxsp", ecs::PointSystem::GetMaxSP(AIHelpers::EcsOf(pkVictim)));
+	pkSk->SetPointVar("maxhp", ecs::PointSystem::GetMaxHP(victimEntity));
+	pkSk->SetPointVar("maxsp", ecs::PointSystem::GetMaxSP(victimEntity));
 	pkSk->SetPointVar("chain", 0);
 	pkSk->SetPointVar("ar", CalcAttackRating(this, pkVictim));
 	pkSk->SetPointVar("def", GetPoint(POINT_DEF_GRADE));
@@ -3088,15 +3138,15 @@ int CHARACTER::ComputeGyeongGongSkill(uint32_t dwVnum, LPCHARACTER pkVictim, uin
 
 	entt::entity pkWeapon = ItemSystem::GetWearItem(GetEntityHandle(), WEAR_WEAPON);
 
-	SetPolyVarForAttack(this, pkSk, pkWeapon);
+	SetPolyVarForAttack(GetEntityHandle(), pkSk, pkWeapon);
 	int iAmount = (int) pkSk->kPointPoly2.Eval();
 
 		// END_OF_ADD_GRANDMASTER_SKILL
 	if (iAmount > 0 && dwVnum == SKILL_GYEONGGONG)
 	{
-		FuncSplashDamage f(ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(pkVictim)), ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(pkVictim)), pkSk, this, -iAmount, 0, pkSk->lMaxHit, pkWeapon, m_bDisableCooltime, IsPC()?&m_SkillUseInfo[dwVnum]: nullptr, GetSkillPower(dwVnum, bSkillLevel));
-		if (ecs::PlayerRuntime::GetSectree(AIHelpers::EcsOf(pkVictim)))
-			ecs::PlayerRuntime::GetSectree(AIHelpers::EcsOf(pkVictim))->ForEachAround(f);
+		FuncSplashDamage f(ecs::PlayerRuntime::GetX(victimEntity), ecs::PlayerRuntime::GetY(victimEntity), pkSk, this, -iAmount, 0, pkSk->lMaxHit, pkWeapon, m_bDisableCooltime, IsPC()?&m_SkillUseInfo[dwVnum]: nullptr, GetSkillPower(dwVnum, bSkillLevel));
+		if (ecs::PlayerRuntime::GetSectree(victimEntity))
+			ecs::PlayerRuntime::GetSectree(victimEntity)->ForEachAround(f);
 		else
 		{
 			f(pkVictim);
@@ -3169,11 +3219,12 @@ int CHARACTER::ComputeSkill(uint32_t dwVnum, LPCHARACTER pkVictim, uint8_t bSkil
 
 		return BATTLE_NONE;
 	}
+	const entt::entity victimEntity = pkVictim->GetEntityHandle();
 
-	if (pkSk->dwTargetRange && DISTANCE_SQRT(GetX() - ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(pkVictim)), GetY() - ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(pkVictim))) >= pkSk->dwTargetRange + 50)
+	if (pkSk->dwTargetRange && DISTANCE_SQRT(GetX() - ecs::PlayerRuntime::GetX(victimEntity), GetY() - ecs::PlayerRuntime::GetY(victimEntity)) >= pkSk->dwTargetRange + 50)
 	{
 		if (test_server)
-			LOG_INFO("ComputeSkill: Victim too far, skill {} : {} to {} (distance {} limit {})", dwVnum, GetName(), ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(pkVictim)).data(), (int32_t)DISTANCE_SQRT(GetX() - ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(pkVictim)), GetY() - ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(pkVictim))), pkSk->dwTargetRange);
+			LOG_INFO("ComputeSkill: Victim too far, skill {} : {} to {} (distance {} limit {})", dwVnum, GetName(), ecs::PlayerRuntime::GetName(victimEntity).data(), (int32_t)DISTANCE_SQRT(GetX() - ecs::PlayerRuntime::GetX(victimEntity), GetY() - ecs::PlayerRuntime::GetY(victimEntity)), pkSk->dwTargetRange);
 
 		return BATTLE_NONE;
 	}
@@ -3188,7 +3239,7 @@ int CHARACTER::ComputeSkill(uint32_t dwVnum, LPCHARACTER pkVictim, uint8_t bSkil
 		}
 	}
 
-	if (AffectSystem::IsAffectFlag(AIHelpers::EcsOf(pkVictim), AFF_PABEOP) && pkVictim->IsGoodAffect(dwVnum))
+	if (AffectSystem::IsAffectFlag(victimEntity, AFF_PABEOP) && pkVictim->IsGoodAffect(dwVnum))
 	{
 		return BATTLE_NONE;
 	}
@@ -3241,8 +3292,8 @@ int CHARACTER::ComputeSkill(uint32_t dwVnum, LPCHARACTER pkVictim, uint8_t bSkil
 	pkSk->SetPointVar("str", GetPoint(POINT_ST));
 	pkSk->SetPointVar("dex", GetPoint(POINT_DX));
 	pkSk->SetPointVar("con", GetPoint(POINT_HT));
-	pkSk->SetPointVar("maxhp", ecs::PointSystem::GetMaxHP(AIHelpers::EcsOf(pkVictim)));
-	pkSk->SetPointVar("maxsp", ecs::PointSystem::GetMaxSP(AIHelpers::EcsOf(pkVictim)));
+	pkSk->SetPointVar("maxhp", ecs::PointSystem::GetMaxHP(victimEntity));
+	pkSk->SetPointVar("maxsp", ecs::PointSystem::GetMaxSP(victimEntity));
 	pkSk->SetPointVar("chain", 0);
 	pkSk->SetPointVar("ar", CalcAttackRating(this, pkVictim));
 	pkSk->SetPointVar("def", GetPoint(POINT_DEF_GRADE));
@@ -3254,7 +3305,7 @@ int CHARACTER::ComputeSkill(uint32_t dwVnum, LPCHARACTER pkVictim, uint8_t bSkil
 
 	entt::entity pkWeapon = ItemSystem::GetWearItem(GetEntityHandle(), WEAR_WEAPON);
 
-	SetPolyVarForAttack(this, pkSk, pkWeapon);
+	SetPolyVarForAttack(GetEntityHandle(), pkSk, pkWeapon);
 
 	pkSk->kDurationPoly.SetVar("k", k/*bSkillLevel*/);
 	pkSk->kDurationPoly2.SetVar("k", k/*bSkillLevel*/);
@@ -3297,11 +3348,11 @@ int CHARACTER::ComputeSkill(uint32_t dwVnum, LPCHARACTER pkVictim, uint8_t bSkil
 			SetSkillHit(true);
 #endif
 
-			FuncSplashDamage f(ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(pkVictim)), ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(pkVictim)), pkSk, this, iAmount, iAG, pkSk->lMaxHit, pkWeapon, m_bDisableCooltime, IsPC()?&m_SkillUseInfo[dwVnum]: nullptr, GetSkillPower(dwVnum, bSkillLevel));
+			FuncSplashDamage f(ecs::PlayerRuntime::GetX(victimEntity), ecs::PlayerRuntime::GetY(victimEntity), pkSk, this, iAmount, iAG, pkSk->lMaxHit, pkWeapon, m_bDisableCooltime, IsPC()?&m_SkillUseInfo[dwVnum]: nullptr, GetSkillPower(dwVnum, bSkillLevel));
 			if (IS_SET(pkSk->dwFlag, SKILL_FLAG_SPLASH))
 			{
-				if (ecs::PlayerRuntime::GetSectree(AIHelpers::EcsOf(pkVictim)))
-					ecs::PlayerRuntime::GetSectree(AIHelpers::EcsOf(pkVictim))->ForEachAround(f);
+				if (ecs::PlayerRuntime::GetSectree(victimEntity))
+					ecs::PlayerRuntime::GetSectree(victimEntity)->ForEachAround(f);
 			}
 			else
 			{
@@ -3329,13 +3380,13 @@ int CHARACTER::ComputeSkill(uint32_t dwVnum, LPCHARACTER pkVictim, uint8_t bSkil
 				iDur += GetPoint(POINT_PARTY_BUFFER_BONUS);
 
 				if (!IS_SET(pkSk->dwFlag, SKILL_FLAG_SPLASH))
-					AffectSystem::AddAffect(AIHelpers::EcsOf(pkVictim), pkSk->dwVnum, pkSk->bPointOn, iAmount, pkSk->dwAffectFlag, iDur, 0, true);
+					AffectSystem::AddAffect(victimEntity, pkSk->dwVnum, pkSk->bPointOn, iAmount, pkSk->dwAffectFlag, iDur, 0, true);
 				else
 				{
-					if (ecs::PlayerRuntime::GetSectree(AIHelpers::EcsOf(pkVictim)))
+					if (ecs::PlayerRuntime::GetSectree(victimEntity))
 					{
-						FuncSplashAffect f(this, ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(pkVictim)), ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(pkVictim)), pkSk->iSplashRange, pkSk->dwVnum, pkSk->bPointOn, iAmount, pkSk->dwAffectFlag, iDur, 0, true, pkSk->lMaxHit);
-						ecs::PlayerRuntime::GetSectree(AIHelpers::EcsOf(pkVictim))->ForEachAround(f);
+						FuncSplashAffect f(this, ecs::PlayerRuntime::GetX(victimEntity), ecs::PlayerRuntime::GetY(victimEntity), pkSk->iSplashRange, pkSk->dwVnum, pkSk->bPointOn, iAmount, pkSk->dwAffectFlag, iDur, 0, true, pkSk->lMaxHit);
+						ecs::PlayerRuntime::GetSectree(victimEntity)->ForEachAround(f);
 					}
 				}
 				bAdded = true;
@@ -3352,13 +3403,13 @@ int CHARACTER::ComputeSkill(uint32_t dwVnum, LPCHARACTER pkVictim, uint8_t bSkil
 				iDur += GetPoint(POINT_PARTY_BUFFER_BONUS);
 
 				if (!IS_SET(pkSk->dwFlag, SKILL_FLAG_SPLASH))
-					AffectSystem::AddAffect(AIHelpers::EcsOf(pkVictim), pkSk->dwVnum, pkSk->bPointOn2, iAmount2, pkSk->dwAffectFlag2, iDur, 0, !bAdded);
+					AffectSystem::AddAffect(victimEntity, pkSk->dwVnum, pkSk->bPointOn2, iAmount2, pkSk->dwAffectFlag2, iDur, 0, !bAdded);
 				else
 				{
-					if (ecs::PlayerRuntime::GetSectree(AIHelpers::EcsOf(pkVictim)))
+					if (ecs::PlayerRuntime::GetSectree(victimEntity))
 					{
-						FuncSplashAffect f(this, ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(pkVictim)), ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(pkVictim)), pkSk->iSplashRange, pkSk->dwVnum, pkSk->bPointOn2, iAmount2, pkSk->dwAffectFlag2, iDur, 0, !bAdded, pkSk->lMaxHit);
-						ecs::PlayerRuntime::GetSectree(AIHelpers::EcsOf(pkVictim))->ForEachAround(f);
+						FuncSplashAffect f(this, ecs::PlayerRuntime::GetX(victimEntity), ecs::PlayerRuntime::GetY(victimEntity), pkSk->iSplashRange, pkSk->dwVnum, pkSk->bPointOn2, iAmount2, pkSk->dwAffectFlag2, iDur, 0, !bAdded, pkSk->lMaxHit);
+						ecs::PlayerRuntime::GetSectree(victimEntity)->ForEachAround(f);
 					}
 				}
 
@@ -3366,7 +3417,7 @@ int CHARACTER::ComputeSkill(uint32_t dwVnum, LPCHARACTER pkVictim, uint8_t bSkil
 			}
 			else
 			{
-				ecs::PointSystem::Change(AIHelpers::EcsOf(pkVictim), pkSk->bPointOn2, iAmount2);
+				ecs::PointSystem::Change(victimEntity, pkSk->bPointOn2, iAmount2);
 			}
 		}
 
@@ -3382,13 +3433,13 @@ int CHARACTER::ComputeSkill(uint32_t dwVnum, LPCHARACTER pkVictim, uint8_t bSkil
 				iDur += GetPoint(POINT_PARTY_BUFFER_BONUS);
 
 				if (!IS_SET(pkSk->dwFlag, SKILL_FLAG_SPLASH))
-					AffectSystem::AddAffect(AIHelpers::EcsOf(pkVictim), pkSk->dwVnum, pkSk->bPointOn3, iAmount3, /*pkSk->dwAffectFlag3*/ 0, iDur, 0, !bAdded);
+					AffectSystem::AddAffect(victimEntity, pkSk->dwVnum, pkSk->bPointOn3, iAmount3, /*pkSk->dwAffectFlag3*/ 0, iDur, 0, !bAdded);
 				else
 				{
-					if (ecs::PlayerRuntime::GetSectree(AIHelpers::EcsOf(pkVictim)))
+					if (ecs::PlayerRuntime::GetSectree(victimEntity))
 					{
-						FuncSplashAffect f(this, ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(pkVictim)), ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(pkVictim)), pkSk->iSplashRange, pkSk->dwVnum, pkSk->bPointOn3, iAmount3, /*pkSk->dwAffectFlag3*/ 0, iDur, 0, !bAdded, pkSk->lMaxHit);
-						ecs::PlayerRuntime::GetSectree(AIHelpers::EcsOf(pkVictim))->ForEachAround(f);
+						FuncSplashAffect f(this, ecs::PlayerRuntime::GetX(victimEntity), ecs::PlayerRuntime::GetY(victimEntity), pkSk->iSplashRange, pkSk->dwVnum, pkSk->bPointOn3, iAmount3, /*pkSk->dwAffectFlag3*/ 0, iDur, 0, !bAdded, pkSk->lMaxHit);
+						ecs::PlayerRuntime::GetSectree(victimEntity)->ForEachAround(f);
 					}
 				}
 
@@ -3396,7 +3447,7 @@ int CHARACTER::ComputeSkill(uint32_t dwVnum, LPCHARACTER pkVictim, uint8_t bSkil
 			}
 			else
 			{
-				ecs::PointSystem::Change(AIHelpers::EcsOf(pkVictim), pkSk->bPointOn3, iAmount3);
+				ecs::PointSystem::Change(victimEntity, pkSk->bPointOn3, iAmount3);
 			}
 		}
 		// END_OF_ADD_GRANDMASTER_SKILL
@@ -3436,7 +3487,7 @@ int CHARACTER::ComputeSkill(uint32_t dwVnum, LPCHARACTER pkVictim, uint8_t bSkil
 
 			if (pkSk->bPointOn2 != POINT_NONE)
 			{
-				AffectSystem::RemoveAffect(AIHelpers::EcsOf(pkVictim), pkSk->dwVnum);
+				AffectSystem::RemoveAffect(victimEntity, pkSk->dwVnum);
 
 				int iDur2 = (int) pkSk->kDurationPoly2.Eval();
 
@@ -3446,11 +3497,11 @@ int CHARACTER::ComputeSkill(uint32_t dwVnum, LPCHARACTER pkVictim, uint8_t bSkil
 						LOG_INFO("SKILL_AFFECT: {} {} Dur:{} To:{} Amount:{}", GetName(), pkSk->szName, iDur2, pkSk->bPointOn2, iAmount2);
 
 					iDur2 += GetPoint(POINT_PARTY_BUFFER_BONUS);
-					AffectSystem::AddAffect(AIHelpers::EcsOf(pkVictim), pkSk->dwVnum, pkSk->bPointOn2, iAmount2, pkSk->dwAffectFlag2, iDur2, 0, false);
+					AffectSystem::AddAffect(victimEntity, pkSk->dwVnum, pkSk->bPointOn2, iAmount2, pkSk->dwAffectFlag2, iDur2, 0, false);
 				}
 				else
 				{
-					ecs::PointSystem::Change(AIHelpers::EcsOf(pkVictim), pkSk->bPointOn2, iAmount2);
+					ecs::PointSystem::Change(victimEntity, pkSk->bPointOn2, iAmount2);
 				}
 
 				uint32_t affact_flag = pkSk->dwAffectFlag;
@@ -3460,7 +3511,7 @@ int CHARACTER::ComputeSkill(uint32_t dwVnum, LPCHARACTER pkVictim, uint8_t bSkil
 					affact_flag = AFF_CHEONGEUN_WITH_FALL;
 				// END_OF_ADD_GRANDMASTER_SKILL
 
-				AffectSystem::AddAffect(AIHelpers::EcsOf(pkVictim), pkSk->dwVnum,
+				AffectSystem::AddAffect(victimEntity, pkSk->dwVnum,
 						pkSk->bPointOn,
 						iAmount,
 						affact_flag,
@@ -3473,7 +3524,7 @@ int CHARACTER::ComputeSkill(uint32_t dwVnum, LPCHARACTER pkVictim, uint8_t bSkil
 				if (test_server)
 					LOG_INFO("SKILL_AFFECT: {} {} Dur:{} To:{} Amount:{}", GetName(), pkSk->szName, iDur, pkSk->bPointOn, iAmount);
 
-				AffectSystem::AddAffect(AIHelpers::EcsOf(pkVictim), pkSk->dwVnum,
+				AffectSystem::AddAffect(victimEntity, pkSk->dwVnum,
 						pkSk->bPointOn,
 						iAmount,
 						pkSk->dwAffectFlag,
@@ -3489,11 +3540,11 @@ int CHARACTER::ComputeSkill(uint32_t dwVnum, LPCHARACTER pkVictim, uint8_t bSkil
 		else
 		{
 			if (!pkSk->IsChargeSkill())
-				ecs::PointSystem::Change(AIHelpers::EcsOf(pkVictim), pkSk->bPointOn, iAmount);
+				ecs::PointSystem::Change(victimEntity, pkSk->bPointOn, iAmount);
 
 			if (pkSk->bPointOn2 != POINT_NONE)
 			{
-				AffectSystem::RemoveAffect(AIHelpers::EcsOf(pkVictim), pkSk->dwVnum);
+				AffectSystem::RemoveAffect(victimEntity, pkSk->dwVnum);
 
 				int iDur2 = (int) pkSk->kDurationPoly2.Eval();
 
@@ -3502,13 +3553,13 @@ int CHARACTER::ComputeSkill(uint32_t dwVnum, LPCHARACTER pkVictim, uint8_t bSkil
 					iDur2 += GetPoint(POINT_PARTY_BUFFER_BONUS);
 
 					if (pkSk->IsChargeSkill())
-						AffectSystem::AddAffect(AIHelpers::EcsOf(pkVictim), pkSk->dwVnum, pkSk->bPointOn2, iAmount2, AFF_TANHWAN_DASH, iDur2, 0, false);
+						AffectSystem::AddAffect(victimEntity, pkSk->dwVnum, pkSk->bPointOn2, iAmount2, AFF_TANHWAN_DASH, iDur2, 0, false);
 					else
-						AffectSystem::AddAffect(AIHelpers::EcsOf(pkVictim), pkSk->dwVnum, pkSk->bPointOn2, iAmount2, pkSk->dwAffectFlag2, iDur2, 0, false);
+						AffectSystem::AddAffect(victimEntity, pkSk->dwVnum, pkSk->bPointOn2, iAmount2, pkSk->dwAffectFlag2, iDur2, 0, false);
 				}
 				else
 				{
-					ecs::PointSystem::Change(AIHelpers::EcsOf(pkVictim), pkSk->bPointOn2, iAmount2);
+					ecs::PointSystem::Change(victimEntity, pkSk->bPointOn2, iAmount2);
 				}
 
 			}
@@ -3528,13 +3579,13 @@ int CHARACTER::ComputeSkill(uint32_t dwVnum, LPCHARACTER pkVictim, uint8_t bSkil
 				iDur += GetPoint(POINT_PARTY_BUFFER_BONUS);
 
 				if (!IS_SET(pkSk->dwFlag, SKILL_FLAG_SPLASH))
-					AffectSystem::AddAffect(AIHelpers::EcsOf(pkVictim), pkSk->dwVnum, pkSk->bPointOn3, iAmount3, /*pkSk->dwAffectFlag3*/ 0, iDur, 0, !bAdded);
+					AffectSystem::AddAffect(victimEntity, pkSk->dwVnum, pkSk->bPointOn3, iAmount3, /*pkSk->dwAffectFlag3*/ 0, iDur, 0, !bAdded);
 				else
 				{
-					if (ecs::PlayerRuntime::GetSectree(AIHelpers::EcsOf(pkVictim)))
+					if (ecs::PlayerRuntime::GetSectree(victimEntity))
 					{
-						FuncSplashAffect f(this, ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(pkVictim)), ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(pkVictim)), pkSk->iSplashRange, pkSk->dwVnum, pkSk->bPointOn3, iAmount3, /*pkSk->dwAffectFlag3*/ 0, iDur, 0, !bAdded, pkSk->lMaxHit);
-						ecs::PlayerRuntime::GetSectree(AIHelpers::EcsOf(pkVictim))->ForEachAround(f);
+						FuncSplashAffect f(this, ecs::PlayerRuntime::GetX(victimEntity), ecs::PlayerRuntime::GetY(victimEntity), pkSk->iSplashRange, pkSk->dwVnum, pkSk->bPointOn3, iAmount3, /*pkSk->dwAffectFlag3*/ 0, iDur, 0, !bAdded, pkSk->lMaxHit);
+						ecs::PlayerRuntime::GetSectree(victimEntity)->ForEachAround(f);
 					}
 				}
 
@@ -3542,16 +3593,16 @@ int CHARACTER::ComputeSkill(uint32_t dwVnum, LPCHARACTER pkVictim, uint8_t bSkil
 			}
 			else
 			{
-				ecs::PointSystem::Change(AIHelpers::EcsOf(pkVictim), pkSk->bPointOn3, iAmount3);
+				ecs::PointSystem::Change(victimEntity, pkSk->bPointOn3, iAmount3);
 			}
 		}
 
 #ifdef ENABLE_NEW_GYEONGGONG_SKILL
 		if (pkSk->bPointOn2 == POINT_NONE && iAmount2 > 0 && dwVnum == SKILL_GYEONGGONG)
 		{
-			FuncSplashDamage f(ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(pkVictim)), ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(pkVictim)), pkSk, this, -iAmount2, 0, pkSk->lMaxHit, pkWeapon, m_bDisableCooltime, IsPC()?&m_SkillUseInfo[dwVnum]: nullptr, GetSkillPower(dwVnum, bSkillLevel));
-			if (ecs::PlayerRuntime::GetSectree(AIHelpers::EcsOf(pkVictim)))
-				ecs::PlayerRuntime::GetSectree(AIHelpers::EcsOf(pkVictim))->ForEachAround(f);
+			FuncSplashDamage f(ecs::PlayerRuntime::GetX(victimEntity), ecs::PlayerRuntime::GetY(victimEntity), pkSk, this, -iAmount2, 0, pkSk->lMaxHit, pkWeapon, m_bDisableCooltime, IsPC()?&m_SkillUseInfo[dwVnum]: nullptr, GetSkillPower(dwVnum, bSkillLevel));
+			if (ecs::PlayerRuntime::GetSectree(victimEntity))
+				ecs::PlayerRuntime::GetSectree(victimEntity)->ForEachAround(f);
 
 			else
 			{
@@ -3569,6 +3620,9 @@ int CHARACTER::ComputeSkill(uint32_t dwVnum, LPCHARACTER pkVictim, uint8_t bSkil
 
 bool CHARACTER::UseSkill(uint32_t dwVnum, LPCHARACTER pkVictim, bool bUseGrandMaster)
 {
+	entt::entity victimEntity = pkVictim
+		? pkVictim->GetEntityHandle()
+		: entt::null;
 #ifdef ENABLE_BUG_FIXES
 	if ((dwVnum == SKILL_GEOMKYUNG || dwVnum == SKILL_GWIGEOM) &&
 		!ItemSystem::IsValidItem(ItemSystem::GetWearItem(GetEntityHandle(), WEAR_WEAPON)))
@@ -3587,12 +3641,12 @@ bool CHARACTER::UseSkill(uint32_t dwVnum, LPCHARACTER pkVictim, bool bUseGrandMa
 		{
 			if (pkVictim)
 			{
-				if (this != pkVictim && ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(this)) && ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(pkVictim)))
+				if (this != pkVictim && ecs::PlayerRuntime::GetDesc(GetEntityHandle()) && ecs::PlayerRuntime::GetDesc(victimEntity))
 				{
-					if (ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(pkVictim), BLOCK_BUFF))
+					if (ecs::QuestSystem::GetFlag(victimEntity, BLOCK_BUFF))
 					{
 #ifdef TEXTS_IMPROVEMENT
-						ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 518, "%s", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(pkVictim)).data());
+						ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 518, "%s", ecs::PlayerRuntime::GetName(victimEntity).data());
 #endif
 						return false;
 					}
@@ -3687,7 +3741,7 @@ bool CHARACTER::UseSkill(uint32_t dwVnum, LPCHARACTER pkVictim, bool bUseGrandMa
 					return false;
 			}
 
-			m_SkillUseInfo[dwVnum].SetMainTargetVID(AIHelpers::EcsOf(pkVictim));
+			m_SkillUseInfo[dwVnum].SetMainTargetVID(victimEntity);
 			// DASH »óĹÂŔÇ ĹşČŻ°ÝŔş °ř°Ý±âĽú
 			ComputeSkill(dwVnum, pkVictim);
 			RemoveAffect(dwVnum);
@@ -3697,12 +3751,9 @@ bool CHARACTER::UseSkill(uint32_t dwVnum, LPCHARACTER pkVictim, bool bUseGrandMa
 
 	if (dwVnum == SKILL_COMBO)
 	{
-		if (m_bComboIndex)
-			m_bComboIndex = 0;
-		else
-			m_bComboIndex = GetSkillLevel(SKILL_COMBO);
-
-		ecs::ChatSystem::Send(AIHelpers::EcsOf(this), CHAT_TYPE_COMMAND, "combo %d", m_bComboIndex);
+		const uint8_t comboIndex = CombatSystem::ToggleComboIndex(
+			GetEntityHandle(), GetSkillLevel(SKILL_COMBO));
+		ecs::ChatSystem::Send(GetEntityHandle(), CHAT_TYPE_COMMAND, "combo %d", comboIndex);
 		return true;
 	}
 
@@ -3775,23 +3826,30 @@ bool CHARACTER::UseSkill(uint32_t dwVnum, LPCHARACTER pkVictim, bool bUseGrandMa
 
 #ifdef TEXTS_IMPROVEMENT
 		if (test_server) {
-			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 104, "%s#%d", pkSk->szName, iNeededSP);
+			ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 104, "%s#%d", pkSk->szName, iNeededSP);
 		}
 #endif
 		PointChange(POINT_SP, -iNeededSP);
 	}
 
 	if (IS_SET(pkSk->dwFlag, SKILL_FLAG_SELFONLY))
+	{
 		pkVictim = this;
+		victimEntity = GetEntityHandle();
+	}
 #ifdef ENABLE_WOLFMAN_CHARACTER
 	else if (IS_SET(pkSk->dwFlag, SKILL_FLAG_PARTY))
+	{
 		pkVictim = this;
+		victimEntity = GetEntityHandle();
+	}
 #endif
 
 	if ((pkSk->dwVnum == SKILL_MUYEONG) || (pkSk->IsChargeSkill() && !IsAffectFlag(AFF_TANHWAN_DASH) && !pkVictim))
 	{
 		// ĂłŔ˝ »çżëÇĎ´Â ą«żµÁřŔş ŔÚ˝Ĺżˇ°Ô Affect¸¦ şŮŔÎ´Ů.
 		pkVictim = this;
+		victimEntity = GetEntityHandle();
 	}
 
 	int iSplashCount = 1;
@@ -3802,10 +3860,10 @@ bool CHARACTER::UseSkill(uint32_t dwVnum, LPCHARACTER pkVictim, bool bUseGrandMa
 		{
 			if (false ==
 					m_SkillUseInfo[dwVnum].UseSkill(
-						bUseGrandMaster, (nullptr != pkVictim && SKILL_HORSE_WILDATTACK != dwVnum) ? AIHelpers::EcsOf(pkVictim) : entt::null, ComputeCooltime(iCooltime * 1000), iSplashCount, 25000))
+						bUseGrandMaster, (nullptr != pkVictim && SKILL_HORSE_WILDATTACK != dwVnum) ? victimEntity : entt::null, ComputeCooltime(iCooltime * 1000), iSplashCount, 25000))
 			{
 				if (test_server)
-					ecs::ChatSystem::Send(AIHelpers::EcsOf(this), CHAT_TYPE_NOTICE, "cooltime not finished %s %d", pkSk->szName, iCooltime);
+					ecs::ChatSystem::Send(GetEntityHandle(), CHAT_TYPE_NOTICE, "cooltime not finished %s %d", pkSk->szName, iCooltime);
 				return false;
 			}
 		}
@@ -3814,13 +3872,13 @@ bool CHARACTER::UseSkill(uint32_t dwVnum, LPCHARACTER pkVictim, bool bUseGrandMa
 			if (false ==
 					m_SkillUseInfo[dwVnum].UseSkill(
 						bUseGrandMaster,
-				   		(nullptr != pkVictim && SKILL_HORSE_WILDATTACK != dwVnum) ? AIHelpers::EcsOf(pkVictim) : entt::null,
+						(nullptr != pkVictim && SKILL_HORSE_WILDATTACK != dwVnum) ? victimEntity : entt::null,
 				   		ComputeCooltime(iCooltime * 1000),
 				   		iSplashCount,
 				   		lMaxHit))
 			{
 				if (test_server)
-					ecs::ChatSystem::Send(AIHelpers::EcsOf(this), CHAT_TYPE_NOTICE, "cooltime not finished %s %d", pkSk->szName, iCooltime);
+					ecs::ChatSystem::Send(GetEntityHandle(), CHAT_TYPE_NOTICE, "cooltime not finished %s %d", pkSk->szName, iCooltime);
 				return false;
 			}
 
@@ -3829,13 +3887,13 @@ bool CHARACTER::UseSkill(uint32_t dwVnum, LPCHARACTER pkVictim, bool bUseGrandMa
 		if (false ==
 				m_SkillUseInfo[dwVnum].UseSkill(
 					bUseGrandMaster,
-				   	(NULL != pkVictim && SKILL_HORSE_WILDATTACK != dwVnum) ? AIHelpers::EcsOf(pkVictim) : entt::null,
+					(NULL != pkVictim && SKILL_HORSE_WILDATTACK != dwVnum) ? victimEntity : entt::null,
 				   	ComputeCooltime(iCooltime * 1000),
 				   	iSplashCount,
 				   	lMaxHit))
 		{
 			if (test_server)
-				ecs::ChatSystem::Send(AIHelpers::EcsOf(this), CHAT_TYPE_NOTICE, "cooltime not finished %s %d", pkSk->szName, iCooltime);
+				ecs::ChatSystem::Send(GetEntityHandle(), CHAT_TYPE_NOTICE, "cooltime not finished %s %d", pkSk->szName, iCooltime);
 
 			return false;
 		}
@@ -3852,7 +3910,7 @@ bool CHARACTER::UseSkill(uint32_t dwVnum, LPCHARACTER pkVictim, bool bUseGrandMa
 	if (dwVnum == 94 || dwVnum == 95 || dwVnum == 96 || dwVnum == 110 || dwVnum == 111) {
 		if (GetParty() && pkVictim)
 		{
-			LPPARTY party = ecs::SocialSystem::GetParty(AIHelpers::EcsOf(pkVictim));
+			LPPARTY party = ecs::SocialSystem::GetParty(victimEntity);
 			if (party && GetParty()) {
 				ComputeSkillParty(dwVnum, this);
 			}
@@ -3907,7 +3965,7 @@ bool CHARACTER::UseSkill(uint32_t dwVnum, LPCHARACTER pkVictim, bool bUseGrandMa
 
 		TSkillColor db_pack;
 		memcpy(db_pack.dwSkillColor, data, sizeof(data));
-		db_pack.player_id = ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(pkVictim));
+		db_pack.player_id = ecs::PlayerRuntime::GetPlayerID(victimEntity);
 		db_clientdesc->DBPacketHeader(HEADER_GD_SKILL_COLOR_SAVE, 0, sizeof(TSkillColor));
 		db_clientdesc->Packet(&db_pack, sizeof(TSkillColor));
 	}
@@ -3919,8 +3977,8 @@ bool CHARACTER::UseSkill(uint32_t dwVnum, LPCHARACTER pkVictim, bool bUseGrandMa
 			return false;
 		}
 
-		if (ecs::SocialSystem::GetParty(AIHelpers::EcsOf(pkVictim))){
-			if (ecs::SocialSystem::GetParty(AIHelpers::EcsOf(pkVictim)) == GetParty()){
+		if (ecs::SocialSystem::GetParty(victimEntity)){
+			if (ecs::SocialSystem::GetParty(victimEntity) == GetParty()){
 				ComputeSkillParty(dwVnum, this);
 			}
 		}
@@ -4019,8 +4077,9 @@ EVENTFUNC(skill_muyoung_event)
 	if (ch == nullptr) { // <Factor>
 		return 0;
 	}
+	const entt::entity character = ch->GetEntityHandle();
 
-	if (!AffectSystem::IsAffectFlag(AIHelpers::EcsOf(ch), AFF_MUYEONG))
+	if (!AffectSystem::IsAffectFlag(character, AFF_MUYEONG))
 	{
 		ch->StopMuyeongEvent();
 		return 0;
@@ -4028,9 +4087,9 @@ EVENTFUNC(skill_muyoung_event)
 
 	// 1. Find Victim
 	FFindNearVictim f(ch, ch);
-	if (ecs::PlayerRuntime::GetSectree(AIHelpers::EcsOf(ch)))
+	if (ecs::PlayerRuntime::GetSectree(character))
 	{
-		ecs::PlayerRuntime::GetSectree(AIHelpers::EcsOf(ch))->ForEachAround(f);
+		ecs::PlayerRuntime::GetSectree(character)->ForEachAround(f);
 		// 2. Shoot!
 		if (f.GetVictim())
 		{
@@ -4074,8 +4133,9 @@ EVENTFUNC(skill_gyeongGong_event)
 	if (ch == nullptr) { // <Factor>
 		return 0;
 	}
+	const entt::entity character = ch->GetEntityHandle();
 
-	if (!AffectSystem::IsAffectFlag(AIHelpers::EcsOf(ch), AFF_GYEONGGONG))
+	if (!AffectSystem::IsAffectFlag(character, AFF_GYEONGGONG))
 	{
 		ch->StopGyeongGongEvent();
 		return 0;
@@ -4107,28 +4167,28 @@ void CHARACTER::SkillLearnWaitMoreTimeMessage(uint32_t ms)
 {
 #ifdef TEXTS_IMPROVEMENT
 	if (ms < 3 * 60) {
-		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 345, "");
+		ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 345, "");
 	} else if (ms < 5 * 60) {
-		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 264, "");
+		ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 264, "");
 	} else if (ms < 10 * 60) {
-		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 262, "");
+		ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 262, "");
 	} else if (ms < 30 * 60) {
-		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 290, "");
-		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 263, "");
+		ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 290, "");
+		ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 263, "");
 	} else if (ms < 1 * 3600) {
-		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 447, "");
+		ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 447, "");
 	} else if (ms < 2 * 3600) {
-		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 407, "");
+		ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 407, "");
 	} else if (ms < 3 * 3600) {
-		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 464, "");
+		ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 464, "");
 	} else if (ms < 6 * 3600) {
-		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 479, "");
+		ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 479, "");
 	} else if (ms < 12 * 3600) {
-		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 446, "");
+		ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 446, "");
 	} else if (ms < 18 * 3600) {
-		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 254, "");
+		ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 254, "");
 	} else {
-		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 435, "");
+		ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 435, "");
 	}
 #endif
 }
@@ -4201,7 +4261,7 @@ EVENTFUNC(mob_skill_hit_event)
 		return 0;
 	}
 
-	const entt::entity e = AIHelpers::EcsOf(ch);
+	const entt::entity e = ch->GetEntityHandle();
 	if (e != entt::null)
 		g_dispatcher.trigger(ecs::EvSkillUsed { e, info->vnum });
 	ch->ComputeSkillAtPosition(info->vnum, info->pos, info->level);
@@ -4213,18 +4273,24 @@ EVENTFUNC(mob_skill_hit_event)
 #ifdef __VERSION_162__
 struct FHealerParty
 {
-	FHealerParty(LegacyCharHandle pkHealer) : m_pkHealer(pkHealer) {}
+	FHealerParty(LegacyCharHandle pkHealer)
+		: m_pkHealer(pkHealer),
+		m_healer(pkHealer ? pkHealer->GetEntityHandle() : entt::null)
+	{
+	}
 
 	void operator () (LegacyCharHandle ch)
 	{
-		int iRevive = (int)(ecs::PointSystem::GetMaxHP(AIHelpers::EcsOf(m_pkHealer)) / 100 * 15);
-		int iHP = (ecs::PointSystem::GetMaxHP(AIHelpers::EcsOf(ch)) >= ch->GetHP() + iRevive) ? (int)(ch->GetHP() + iRevive) : (int)(ecs::PointSystem::GetMaxHP(AIHelpers::EcsOf(ch)));
+		const entt::entity target = ch->GetEntityHandle();
+		int iRevive = (int)(ecs::PointSystem::GetMaxHP(m_healer) / 100 * 15);
+		int iHP = (ecs::PointSystem::GetMaxHP(target) >= ch->GetHP() + iRevive) ? (int)(ch->GetHP() + iRevive) : (int)(ecs::PointSystem::GetMaxHP(target));
 		ch->SetHP(iHP);
-		NetworkSyncSystem::BroadcastEffect(g_registry, AIHelpers::EcsOf(ch), SE_EFFECT_HEALER);
-		LOG_INFO("FHealerParty: {} (pointer: {}) heal the HP of {} (pointer: {}) with {} (new HP: {}).", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(m_pkHealer)).data(), static_cast<const void*>(get_pointer(m_pkHealer)), ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), static_cast<const void*>(get_pointer(ch)), iRevive, ch->GetHP());
+		NetworkSyncSystem::BroadcastEffect(g_registry, target, SE_EFFECT_HEALER);
+		LOG_INFO("FHealerParty: {} (pointer: {}) heal the HP of {} (pointer: {}) with {} (new HP: {}).", ecs::PlayerRuntime::GetName(m_healer).data(), static_cast<const void*>(get_pointer(m_pkHealer)), ecs::PlayerRuntime::GetName(target).data(), static_cast<const void*>(get_pointer(ch)), iRevive, ch->GetHP());
 	}
 
 	LegacyCharHandle	m_pkHealer;
+	entt::entity m_healer;
 };
 #endif
 
@@ -4267,7 +4333,7 @@ bool CHARACTER::UseMobSkill(unsigned int idx)
 			int iRevive = (int)(GetMaxHP() / 100 * 15);
 			int iHP = (GetMaxHP() >= GetHP() + iRevive) ? (int)(GetHP() + iRevive) : (int)(GetMaxHP());
 			SetHP(iHP);
-			NetworkSyncSystem::BroadcastEffect(g_registry, AIHelpers::EcsOf(this), SE_EFFECT_HEALER);
+			NetworkSyncSystem::BroadcastEffect(g_registry, GetEntityHandle(), SE_EFFECT_HEALER);
 			LOG_INFO("FHealer: {} (pointer: {}) heal their HP with {} (new HP: {}).", GetName(), static_cast<const void*>(get_pointer(this)), iRevive, GetHP());
 		}
 
@@ -4802,69 +4868,17 @@ bool CHARACTER::IsUsableSkillMotion(uint32_t dwMotionIndex) const
 
 void CHARACTER::ClearSkill()
 {
-	PointChange(POINT_SKILL, 4 + (GetLevel() - 5) - GetPoint(POINT_SKILL));
-
-	ResetSkill();
+	SkillSystem::ClearSkill(GetEntityHandle());
 }
 
 void CHARACTER::ClearSubSkill()
 {
-	PointChange(POINT_SUB_SKILL, GetLevel() < 10 ? 0 : (GetLevel() - 9) - GetPoint(POINT_SUB_SKILL));
-
-	if (m_pSkillLevels == nullptr)
-	{
-		LOG_ERROR("m_pSkillLevels nil (name: {})", GetName());
-		return;
-	}
-
-	TPlayerSkill CleanSkill;
-	memset(&CleanSkill, 0, sizeof(TPlayerSkill));
-
-	size_t count = sizeof(s_adwSubSkillVnums) / sizeof(s_adwSubSkillVnums[0]);
-
-	for (size_t i = 0; i < count; ++i)
-	{
-		if (s_adwSubSkillVnums[i] >= SKILL_MAX_NUM)
-			continue;
-
-		m_pSkillLevels[s_adwSubSkillVnums[i]] = CleanSkill;
-	}
-
-	ComputePoints();
-	SkillLevelPacket();
+	SkillSystem::ClearSubSkill(GetEntityHandle());
 }
 
 bool CHARACTER::ResetOneSkill(uint32_t dwVnum)
 {
-	if (nullptr == m_pSkillLevels)
-	{
-		LOG_ERROR("m_pSkillLevels nil (name {}, vnum {})", GetName(), dwVnum);
-		return false;
-	}
-
-	if (dwVnum >= SKILL_MAX_NUM)
-	{
-		LOG_ERROR("vnum overflow (name {}, vnum {})", GetName(), dwVnum);
-		return false;
-	}
-
-	uint8_t level = m_pSkillLevels[dwVnum].bLevel;
-
-	m_pSkillLevels[dwVnum].bLevel = 0;
-	m_pSkillLevels[dwVnum].bMasterType = 0;
-	m_pSkillLevels[dwVnum].tNextRead = 0;
-
-	if (level > 17)
-		level = 17;
-
-	PointChange(POINT_SKILL, level);
-
-	LogManager::instance().CharLog(this, dwVnum, "ONE_SKILL_RESET_BY_SCROLL", "");
-
-	ComputePoints();
-	SkillLevelPacket();
-
-	return true;
+	return SkillSystem::ResetOneSkill(GetEntityHandle(), dwVnum);
 }
 
 eMountType GetMountLevelByVnum(uint32_t dwMountVnum, bool IsNew) // updated to 2014/12/10

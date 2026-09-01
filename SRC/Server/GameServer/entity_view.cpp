@@ -430,7 +430,7 @@ public:
 			LPCHARACTER chMe = (LPCHARACTER)m_me;
 			LPCHARACTER chEnt = (LPCHARACTER)ent;
 
-			if (ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(chMe)) && !ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(chEnt)) && !chEnt->IsWarp() && !chEnt->IsGoto())
+			if (ecs::PlayerRuntime::IsPC(((chMe) ? (chMe)->GetEntityHandle() : entt::null)) && !ecs::PlayerRuntime::IsPC(((chEnt) ? (chEnt)->GetEntityHandle() : entt::null)) && !chEnt->IsWarp() && !chEnt->IsGoto())
 				chEnt->StartStateMachine();
 		}
 	}
@@ -443,7 +443,7 @@ void CEntity::UpdateSectree()
 		if (IsType(ENTITY_CHARACTER))
 		{
 			LPCHARACTER tch = (LPCHARACTER)this;
-			LOG_ERROR("null sectree name: {} {} {}", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(tch)).data(), GetX(), GetY());
+			LOG_ERROR("null sectree name: {} {} {}", ecs::PlayerRuntime::GetName(((tch) ? (tch)->GetEntityHandle() : entt::null)).data(), GetX(), GetY());
 		}
 
 		return;

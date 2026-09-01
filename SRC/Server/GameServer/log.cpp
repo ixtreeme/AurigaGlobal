@@ -88,9 +88,9 @@ void LogManager::ItemLog(LPCHARACTER ch, LPITEM item, const char * c_pszText, co
 		return;
 	}
 
-	ItemLog((ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))), ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(ch)), ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(ch)), item->GetID(),
+	ItemLog((ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null))), ecs::PlayerRuntime::GetX(((ch) ? (ch)->GetEntityHandle() : entt::null)), ecs::PlayerRuntime::GetY(((ch) ? (ch)->GetEntityHandle() : entt::null)), item->GetID(),
 	        nullptr == c_pszText ? "" : c_pszText,
-		   	c_pszHint, ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch)) ? ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->GetHostName() : "",
+			c_pszHint, ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null)) ? ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null))->GetHostName() : "",
 		   	item->GetOriginalVnum());
 }
 
@@ -103,9 +103,9 @@ void LogManager::ItemLogEntity(LPCHARACTER ch, entt::entity item, const char * c
 		return;
 	}
 
-	ItemLog((ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))), ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(ch)), ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(ch)), ItemSystem::GetItemID(item),
+	ItemLog((ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null))), ecs::PlayerRuntime::GetX(((ch) ? (ch)->GetEntityHandle() : entt::null)), ecs::PlayerRuntime::GetY(((ch) ? (ch)->GetEntityHandle() : entt::null)), ItemSystem::GetItemID(item),
 	        nullptr == c_pszText ? "" : c_pszText,
-		   	c_pszHint, ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch)) ? ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->GetHostName() : "",
+			c_pszHint, ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null)) ? ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null))->GetHostName() : "",
 		   	ItemSystem::GetItemOriginalVnum(item));
 }
 
@@ -132,7 +132,7 @@ void LogManager::ItemLogEntity(entt::entity character, entt::entity item,
 void LogManager::ItemLog(LPCHARACTER ch, int itemID, int itemVnum, const char * c_pszText, const char * c_pszHint)
 {
 	LOG_LEVEL_CHECK_N_RET(LOG_LEVEL_MIN);
-	ItemLog((ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))), ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(ch)), ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(ch)), itemID, c_pszText, c_pszHint, ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch)) ? ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->GetHostName() : "", itemVnum);
+	ItemLog((ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null))), ecs::PlayerRuntime::GetX(((ch) ? (ch)->GetEntityHandle() : entt::null)), ecs::PlayerRuntime::GetY(((ch) ? (ch)->GetEntityHandle() : entt::null)), itemID, c_pszText, c_pszHint, ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null)) ? ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null))->GetHostName() : "", itemVnum);
 }
 
 void LogManager::CharLog(uint32_t dwPID, uint32_t x, uint32_t y, uint32_t dwValue, const char * c_pszText, const char * c_pszHint, const char * c_pszIP)
@@ -148,7 +148,7 @@ void LogManager::CharLog(LPCHARACTER ch, uint32_t dw, const char * c_pszText, co
 {
 	LOG_LEVEL_CHECK_N_RET(LOG_LEVEL_MIN);
 	if (ch)
-		CharLog((ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))), ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(ch)), ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(ch)), dw, c_pszText, c_pszHint, ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch)) ? ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->GetHostName() : "");
+		CharLog((ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null))), ecs::PlayerRuntime::GetX(((ch) ? (ch)->GetEntityHandle() : entt::null)), ecs::PlayerRuntime::GetY(((ch) ? (ch)->GetEntityHandle() : entt::null)), dw, c_pszText, c_pszHint, ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null)) ? ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null))->GetHostName() : "");
 	else
 		CharLog(0, 0, 0, dw, c_pszText, c_pszHint, "");
 }
@@ -195,9 +195,9 @@ void LogManager::HackLog(const char * c_pszHackName, const char * c_pszLogin, co
 
 void LogManager::HackLog(const char * c_pszHackName, LPCHARACTER ch)
 {
-	if (ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch)))
+	if (ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null)))
 	{
-		HackLog(c_pszHackName, ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->GetAccountTable().login, ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->GetHostName());
+		HackLog(c_pszHackName, ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null))->GetAccountTable().login, ecs::PlayerRuntime::GetName(((ch) ? (ch)->GetEntityHandle() : entt::null)).data(), ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null))->GetHostName());
 	}
 }
 
@@ -315,13 +315,13 @@ void LogManager::LevelLog(LPCHARACTER pChar, unsigned int level, unsigned int pl
 	LOG_LEVEL_CHECK_N_RET(LOG_LEVEL_MIN);
 	uint32_t aid = 0;
 
-	if (nullptr != ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(pChar)))
+	if (nullptr != ecs::PlayerRuntime::GetDesc(((pChar) ? (pChar)->GetEntityHandle() : entt::null)))
 	{
-		aid = ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(pChar))->GetAccountTable().id;
+		aid = ecs::PlayerRuntime::GetDesc(((pChar) ? (pChar)->GetEntityHandle() : entt::null))->GetAccountTable().id;
 	}
 
 	Query("REPLACE INTO levellog%s (name, level, time, account_id, pid, playtime) VALUES('%s', %u, NOW(), %u, %u, %d)",
-			get_table_postfix(), ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(pChar)).data(), level, aid, (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(pChar))), playhour);
+			get_table_postfix(), ecs::PlayerRuntime::GetName(((pChar) ? (pChar)->GetEntityHandle() : entt::null)).data(), level, aid, (ecs::PlayerRuntime::GetPlayerID(((pChar) ? (pChar)->GetEntityHandle() : entt::null))), playhour);
 }
 
 void LogManager::BootLog(const char * c_pszHostName, uint8_t bChannel)
@@ -367,7 +367,7 @@ void LogManager::QuestRewardLog(const char * c_pszQuestName, uint32_t dwPID, uin
 void LogManager::DetailLoginLog(bool isLogin, LPCHARACTER ch)
 {
 	LOG_LEVEL_CHECK_N_RET(LOG_LEVEL_MID);
-	if (nullptr == ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch)))
+	if (nullptr == ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null)))
 		return;
 
 	if (true == isLogin)
@@ -376,16 +376,16 @@ void LogManager::DetailLoginLog(bool isLogin, LPCHARACTER ch)
 				"VALUES('INVALID', %s, NOW(), %d, %u, %u, inet_aton('%s'), '%s')",
 				ch->IsGM() == true ? "'Y'" : "'N'",
 				g_bChannel,
-				ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->GetAccountTable().id,
-				(ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))),
-				ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->GetHostName(),
-				ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->GetClientVersion());
+				ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null))->GetAccountTable().id,
+				(ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null))),
+				ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null))->GetHostName(),
+				ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null))->GetClientVersion());
 	}
 	else
 	{
 		Query("SET @i = (SELECT MAX(id) FROM loginlog2 WHERE account_id=%u AND pid=%u)",
-				ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->GetAccountTable().id,
-				(ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))));
+				ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null))->GetAccountTable().id,
+				(ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null))));
 
 		Query("UPDATE loginlog2 SET type='VALID', logout_time=NOW(), playtime=TIMEDIFF(logout_time,login_time) WHERE id=@i");
 	}

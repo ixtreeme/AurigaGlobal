@@ -1,10 +1,6 @@
 #include "stdafx.h"
-#include "ecs/AIHelpers.hpp"
 #include "ecs/systems/PlayerRuntimeSystem.hpp"
 #include <Core/Logging.hpp>
-#include "char_interface.hpp"
-#include "char_manager.h"
-#include "ecs/CharacterAccessors.hpp"
 #include "wedding.h"
 #include "questmanager.h"
 #include "utils.h"
@@ -25,11 +21,12 @@ namespace quest
 		// TODO Phase 8: MarriageState component integration
 		uint32_t vid = (uint32_t) lua_tonumber(L, 1);
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
-		auto* ch = ecs::LegacyCharOf(chEntity);
-		LPCHARACTER ch_you = CHARACTER_MANAGER::instance().Find(vid);
-		if (ch_you)
+		const entt::entity other = ecs::PlayerRuntime::FindByVID(vid);
+		if (ecs::PlayerRuntime::IsPC(chEntity) && ecs::PlayerRuntime::IsPC(other))
 		{
-			marriage::CManager::instance().RequestAdd((ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))), ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch_you)), ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch_you)).data());
+			marriage::CManager::instance().RequestAdd(
+				ecs::PlayerRuntime::GetPlayerID(chEntity), ecs::PlayerRuntime::GetPlayerID(other),
+				ecs::PlayerRuntime::GetName(chEntity).data(), ecs::PlayerRuntime::GetName(other).data());
 		}
 		return 0;
 	}
@@ -39,14 +36,14 @@ namespace quest
 		// migrated from marriage system
 		// TODO Phase 8: MarriageState component integration
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
-		auto* ch = ecs::LegacyCharOf(chEntity);
-		marriage::TMarriage* pMarriage = marriage::CManager::instance().Get((ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))));
+		const uint32_t playerID = ecs::PlayerRuntime::GetPlayerID(chEntity);
+		marriage::TMarriage* pMarriage = marriage::CManager::instance().Get(playerID);
 		if (!pMarriage)
 		{
-			sys_err("pid[{}:{}] is not exist couple", (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))), ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data());
+			sys_err("pid[{}:{}] is not exist couple", playerID, ecs::PlayerRuntime::GetName(chEntity).data());
 			return 0;
 		}
-		marriage::CManager::instance().RequestRemove((ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))), pMarriage->GetOther((ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)))));
+		marriage::CManager::instance().RequestRemove(playerID, pMarriage->GetOther(playerID));
 		return 0;
 	}
 
@@ -55,11 +52,11 @@ namespace quest
 		// migrated from marriage system
 		// TODO Phase 8: MarriageState component integration
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
-		auto* ch = ecs::LegacyCharOf(chEntity);
-		marriage::TMarriage* pMarriage = marriage::CManager::instance().Get((ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))));
+		const uint32_t playerID = ecs::PlayerRuntime::GetPlayerID(chEntity);
+		marriage::TMarriage* pMarriage = marriage::CManager::instance().Get(playerID);
 		if (!pMarriage)
 		{
-			sys_err("pid[{}:{}] is not exist couple", (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))), ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data());
+			sys_err("pid[{}:{}] is not exist couple", playerID, ecs::PlayerRuntime::GetName(chEntity).data());
 			return 0;
 		}
 		pMarriage->SetMarried();
@@ -71,14 +68,13 @@ namespace quest
 		// migrated from marriage system
 		// TODO Phase 8: MarriageState component integration
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
-		auto* ch = ecs::LegacyCharOf(chEntity);
-		marriage::TMarriage* pMarriage = marriage::CManager::instance().Get((ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))));
+		const uint32_t playerID = ecs::PlayerRuntime::GetPlayerID(chEntity);
+		marriage::TMarriage* pMarriage = marriage::CManager::instance().Get(playerID);
 		uint32_t vid = 0;
 		if (pMarriage)
 		{
-			LPCHARACTER you = CHARACTER_MANAGER::instance().FindByPID(pMarriage->GetOther((ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)))));
-			if (you)
-				vid = ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(you));
+			const entt::entity other = ecs::PlayerRuntime::FindByPlayerID(pMarriage->GetOther(playerID));
+			vid = ecs::PlayerRuntime::GetPacketVID(other);
 		}
 
 		lua_pushnumber(L, vid);
@@ -136,11 +132,11 @@ namespace quest
 
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
 
-		auto* ch = ecs::LegacyCharOf(chEntity);
+		const uint32_t playerID = ecs::PlayerRuntime::GetPlayerID(chEntity);
 		marriage::TMarriage* pMarriage = marriage::CManager::instance().Get(pid1);
 		if (!pMarriage)
 		{
-			sys_err("pid[{}:{}] is not exist couple", (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))), ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data());
+			sys_err("pid[{}:{}] is not exist couple", (playerID), ecs::PlayerRuntime::GetName(chEntity).data());
 			return 0;
 		}
 		if (pMarriage->GetOther(pid1) != pid2)
@@ -149,11 +145,11 @@ namespace quest
 			return 0;
 		}
 		//PREVENT_HACK
-		if ( ch->IsHack() )
+		if (ecs::PlayerRuntime::IsHack(chEntity))
 			return 0;
 		//END_PREVENT_HACK
 
-		pMarriage->WarpToWeddingMap((ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))));
+		pMarriage->WarpToWeddingMap((playerID));
 		return 0;
 	}
 
@@ -162,21 +158,21 @@ namespace quest
 		// migrated from marriage system
 		// DUAL-PATH: legacy only during migration window
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
-		auto* ch = ecs::LegacyCharOf(chEntity);
-		marriage::TMarriage* pMarriage = marriage::CManager::instance().Get((ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))));
+		const uint32_t playerID = ecs::PlayerRuntime::GetPlayerID(chEntity);
+		marriage::TMarriage* pMarriage = marriage::CManager::instance().Get(playerID);
 		if (!pMarriage)
 		{
-			sys_err("pid[{}:{}] is not exist couple", (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))), ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data());
+			sys_err("pid[{}:{}] is not exist couple", (playerID), ecs::PlayerRuntime::GetName(chEntity).data());
 			return 0;
 		}
 
 
 		//PREVENT_HACK
-		if ( ch->IsHack() )
+		if (ecs::PlayerRuntime::IsHack(chEntity))
 			return 0;
 		//END_PREVENT_HACK
 
-		pMarriage->WarpToWeddingMap((ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))));
+		pMarriage->WarpToWeddingMap((playerID));
 		return 0;
 	}
 
@@ -185,14 +181,14 @@ namespace quest
 		// migrated from marriage system
 		// DUAL-PATH: legacy only during migration window
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
-		auto* ch = ecs::LegacyCharOf(chEntity);
-		marriage::TMarriage* pMarriage = marriage::CManager::instance().Get((ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))));
+		const uint32_t playerID = ecs::PlayerRuntime::GetPlayerID(chEntity);
+		marriage::TMarriage* pMarriage = marriage::CManager::instance().Get(playerID);
 		if (!pMarriage)
 		{
-			sys_err("pid[{}:{}] is not exist couple", (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))), ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data());
+			sys_err("pid[{}:{}] is not exist couple", (playerID), ecs::PlayerRuntime::GetName(chEntity).data());
 			return 0;
 		}
-		if (pMarriage->pWeddingInfo)
+		if (pMarriage && pMarriage->pWeddingInfo)
 		{
 			// ��ȥ�� ������ ��û
 			pMarriage->RequestEndWedding();
@@ -210,12 +206,12 @@ namespace quest
 			return 0;
 		}
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
-		auto* ch = ecs::LegacyCharOf(chEntity);
-		marriage::TMarriage* pMarriage = marriage::CManager::instance().Get((ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))));
+		const uint32_t playerID = ecs::PlayerRuntime::GetPlayerID(chEntity);
+		marriage::TMarriage* pMarriage = marriage::CManager::instance().Get(playerID);
 
 		if (!pMarriage)
 		{
-			sys_err("pid[{}:{}] is not exist couple", (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))), ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data());
+			sys_err("pid[{}:{}] is not exist couple", (playerID), ecs::PlayerRuntime::GetName(chEntity).data());
 			return 0;
 		}
 		if (pMarriage->pWeddingInfo)
@@ -239,11 +235,11 @@ namespace quest
 
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
 
-		auto* ch = ecs::LegacyCharOf(chEntity);
-		marriage::TMarriage* pMarriage = marriage::CManager::instance().Get((ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))));
+		const uint32_t playerID = ecs::PlayerRuntime::GetPlayerID(chEntity);
+		marriage::TMarriage* pMarriage = marriage::CManager::instance().Get(playerID);
 		if (!pMarriage)
 		{
-			sys_err("pid[{}:{}] is not exist couple", (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))), ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data());
+			sys_err("pid[{}:{}] is not exist couple", (playerID), ecs::PlayerRuntime::GetName(chEntity).data());
 			return 0;
 		}
 		if (pMarriage->pWeddingInfo)
@@ -260,11 +256,11 @@ namespace quest
 		// migrated from marriage system
 		// DUAL-PATH: legacy only during migration window
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
-		auto* ch = ecs::LegacyCharOf(chEntity);
-		marriage::TMarriage* pMarriage = marriage::CManager::instance().Get((ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))));
+		const uint32_t playerID = ecs::PlayerRuntime::GetPlayerID(chEntity);
+		marriage::TMarriage* pMarriage = marriage::CManager::instance().Get(playerID);
 		if (!pMarriage)
 		{
-			sys_err("pid[{}:{}] is not exist couple", (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))), ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data());
+			sys_err("pid[{}:{}] is not exist couple", (playerID), ecs::PlayerRuntime::GetName(chEntity).data());
 			return 0;
 		}
 		if (pMarriage->pWeddingInfo)
@@ -296,11 +292,11 @@ namespace quest
 
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
 
-		auto* ch = ecs::LegacyCharOf(chEntity);
-		marriage::TMarriage* pMarriage = marriage::CManager::instance().Get((ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))));
+		const uint32_t playerID = ecs::PlayerRuntime::GetPlayerID(chEntity);
+		marriage::TMarriage* pMarriage = marriage::CManager::instance().Get(playerID);
 		if (!pMarriage)
 		{
-			sys_err("pid[{}:{}] is not exist couple", (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))), ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data());
+			sys_err("pid[{}:{}] is not exist couple", (playerID), ecs::PlayerRuntime::GetName(chEntity).data());
 			return 0;
 		}
 		if (pMarriage->pWeddingInfo)
@@ -323,11 +319,11 @@ namespace quest
 			return 0;
 		}
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
-		auto* ch = ecs::LegacyCharOf(chEntity);
-		marriage::TMarriage* pMarriage = marriage::CManager::instance().Get((ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))));
+		const uint32_t playerID = ecs::PlayerRuntime::GetPlayerID(chEntity);
+		marriage::TMarriage* pMarriage = marriage::CManager::instance().Get(playerID);
 		if (!pMarriage)
 		{
-			sys_err("pid[{}:{}] is not exist couple", (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))), ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data());
+			sys_err("pid[{}:{}] is not exist couple", (playerID), ecs::PlayerRuntime::GetName(chEntity).data());
 			return 0;
 		}
 		if (pMarriage->pWeddingInfo)
@@ -343,11 +339,11 @@ namespace quest
 		// migrated from marriage system
 		// DUAL-PATH: legacy only during migration window
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
-		auto* ch = ecs::LegacyCharOf(chEntity);
-		marriage::TMarriage* pMarriage = marriage::CManager::instance().Get((ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))));
-		if (pMarriage->pWeddingInfo)
+		const uint32_t playerID = ecs::PlayerRuntime::GetPlayerID(chEntity);
+		marriage::TMarriage* pMarriage = marriage::CManager::instance().Get(playerID);
+		if (pMarriage && pMarriage->pWeddingInfo)
 		{
-			lua_pushboolean(L, (uint32_t)ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)) == pMarriage->pWeddingInfo->dwMapIndex);
+			lua_pushboolean(L, (uint32_t)ecs::PlayerRuntime::GetMapIndex(chEntity) == pMarriage->pWeddingInfo->dwMapIndex);
 		}
 		else
 		{
@@ -361,8 +357,8 @@ namespace quest
 		// migrated from marriage system
 		// DUAL-PATH: legacy only during migration window
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
-		auto* ch = ecs::LegacyCharOf(chEntity);
-		marriage::TMarriage* pMarriage = marriage::CManager::instance().Get((ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))));
+		const uint32_t playerID = ecs::PlayerRuntime::GetPlayerID(chEntity);
+		marriage::TMarriage* pMarriage = marriage::CManager::instance().Get(playerID);
 
 		if (!pMarriage)
 		{
@@ -399,5 +395,3 @@ namespace quest
 		CQuestManager::instance().AddLuaFunctionTable("marriage", marriage_functions);
 	}
 }
-
-

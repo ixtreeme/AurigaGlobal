@@ -6,6 +6,8 @@
 #include "ecs/systems/SocialSystem.hpp"
 #include "ecs/AIHelpers.hpp"
 #include "ecs/systems/QuestSystem.hpp"
+#include "ecs/systems/ItemSystem.hpp"
+#include "ecs/Registry.hpp"
 #include "constants.h"
 #include "questmanager.h"
 #include "questlua.h"
@@ -14,7 +16,6 @@
 #include "party.h"
 #include "buffer_manager.h"
 #include "char_manager.h"
-#include "ecs/CharacterAccessors.hpp"
 #include "packet.h"
 #include "desc_client.h"
 #include "desc_manager.h"
@@ -39,7 +40,7 @@ template <class Func> Func CDungeon::ForEachMember(Func f)
 {
 	for (auto it = m_set_pkCharacter.begin(); it != m_set_pkCharacter.end(); ++it)
 	{
-		LOG_INFO("Dungeon ForEachMember {}", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf((*it))).data());
+		LOG_INFO("Dungeon ForEachMember {}", ecs::PlayerRuntime::GetName((((*it)) ? ((*it))->GetEntityHandle() : entt::null)).data());
 		f(*it);
 	}
 	return f;
@@ -63,12 +64,11 @@ namespace quest
 
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
 
-		auto* ch = ecs::LegacyCharOf(chEntity);
-		if (!ch) {
+		if (chEntity == entt::null || !g_registry.valid(chEntity)) {
 			return 0;
 		}
 
-		uint32_t pid = (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)));
+		uint32_t pid = (ecs::PlayerRuntime::GetPlayerID(chEntity));
 
 		int map_index = int(lua_tonumber(L, 1));
 		int time = int(lua_tonumber(L, 2));
@@ -101,7 +101,7 @@ namespace quest
 		}
 		else
 		{
-			std::unique_ptr<SQLMsg> msgadd(DBManager::instance().DirectQuery("INSERT INTO dungeon_ranking (acc_id, pid, dungeon_index, completed, time, damage) VALUES ('%u', '%d', '%d', '%d', '%d', '%d')", ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch)) ? ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->GetAccountTable().id : 0, pid, map_index, 1, time, damage));
+			std::unique_ptr<SQLMsg> msgadd(DBManager::instance().DirectQuery("INSERT INTO dungeon_ranking (acc_id, pid, dungeon_index, completed, time, damage) VALUES ('%u', '%d', '%d', '%d', '%d', '%d')", ecs::PlayerRuntime::GetAccountID(chEntity), pid, map_index, 1, time, damage));
 		}
 
 		return 1;
@@ -118,7 +118,6 @@ namespace quest
 
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
 
-		auto* ch = ecs::LegacyCharOf(chEntity);
 		int map_index = int(lua_tonumber(L, 1));
 		uint8_t rank_type = int(lua_tonumber(L, 2));
 		if (map_index <= 0 || rank_type <= 0) {
@@ -126,7 +125,7 @@ namespace quest
 			return 0;
 		}
 
-		ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_COMMAND, "CleanDungeonRanking");
+		ecs::ChatSystem::Send(chEntity, CHAT_TYPE_COMMAND, "CleanDungeonRanking");
 
 		std::string szRankType;
 		if (rank_type == 1)
@@ -140,7 +139,7 @@ namespace quest
 			char szQuery[1024] = {0};
 			snprintf(szQuery, sizeof(szQuery), "SELECT d.acc_id AS acc_id, d.pid AS pid, p.name AS name, p.level AS level, d.completed AS completed, d.time AS time, "
 				"d.damage AS damage FROM player.dungeon_ranking%s AS d INNER JOIN player.player%s AS p ON d.pid = p.id "
-				"WHERE dungeon_index = '%d' AND account_id=(SELECT id FROM account.account%s WHERE status='OK' AND id=d.acc_id) AND p.name not in(SELECT mName FROM common.gmlist%s) AND pid!='%d' ORDER BY d.%s LIMIT 100;", get_table_postfix(), get_table_postfix(), map_index, get_table_postfix(), get_table_postfix(), ecs::PlayerRuntime::GetGMLevel(AIHelpers::EcsOf(ch)) > GM_PLAYER ? (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))) : 0, szRankType.c_str());
+				"WHERE dungeon_index = '%d' AND account_id=(SELECT id FROM account.account%s WHERE status='OK' AND id=d.acc_id) AND p.name not in(SELECT mName FROM common.gmlist%s) AND pid!='%d' ORDER BY d.%s LIMIT 100;", get_table_postfix(), get_table_postfix(), map_index, get_table_postfix(), get_table_postfix(), ecs::PlayerRuntime::GetGMLevel(chEntity) > GM_PLAYER ? (ecs::PlayerRuntime::GetPlayerID(chEntity)) : 0, szRankType.c_str());
 			std::unique_ptr<SQLMsg> pMsg(DBManager::instance().DirectQuery(szQuery));
 
 			if (pMsg->Get()->uiNumRows > 0) {
@@ -165,23 +164,23 @@ namespace quest
 						str_to_number(points, row[c]);
 					}
 
-					ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_COMMAND, "UpdateDungeonRanking %s %d %d", name, level, points);
+					ecs::ChatSystem::Send(chEntity, CHAT_TYPE_COMMAND, "UpdateDungeonRanking %s %d %d", name, level, points);
 				}
 			}
 		}
 
 		{
 			char szQuery[1024] = {0};
-			if (ecs::PlayerRuntime::GetGMLevel(AIHelpers::EcsOf(ch)) > GM_PLAYER) {
+			if (ecs::PlayerRuntime::GetGMLevel(chEntity) > GM_PLAYER) {
 				snprintf(szQuery, sizeof(szQuery),
 				"SELECT * FROM (SELECT @position:=0) AS a, (SELECT @position:=@position+1 AS r, d.acc_id AS acc_id, d.pid AS pid, p.name AS name, p.level AS level, d.completed AS completed, d.time AS time, "
 				"d.damage AS damage FROM player.dungeon_ranking%s AS d INNER JOIN player.player%s AS p ON d.pid = p.id "
-				"WHERE dungeon_index = '%d' ORDER BY d.%s) AS b WHERE b.pid = '%d';", get_table_postfix(), get_table_postfix(), map_index, szRankType.c_str(), (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))));
+				"WHERE dungeon_index = '%d' ORDER BY d.%s) AS b WHERE b.pid = '%d';", get_table_postfix(), get_table_postfix(), map_index, szRankType.c_str(), (ecs::PlayerRuntime::GetPlayerID(chEntity)));
 			} else {
 				snprintf(szQuery, sizeof(szQuery),
 				"SELECT * FROM (SELECT @position:=0) AS a, (SELECT @position:=@position+1 AS r, d.acc_id AS acc_id, d.pid AS pid, p.name AS name, p.level AS level, d.completed AS completed, d.time AS time, "
 				"d.damage AS damage FROM player.dungeon_ranking%s AS d INNER JOIN player.player%s AS p ON d.pid = p.id "
-				"WHERE dungeon_index = '%d' AND p.name not in(SELECT mName FROM common.gmlist%s) ORDER BY d.%s) AS b WHERE b.pid = '%d';", get_table_postfix(), get_table_postfix(), map_index, get_table_postfix(), szRankType.c_str(), (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))));
+				"WHERE dungeon_index = '%d' AND p.name not in(SELECT mName FROM common.gmlist%s) ORDER BY d.%s) AS b WHERE b.pid = '%d';", get_table_postfix(), get_table_postfix(), map_index, get_table_postfix(), szRankType.c_str(), (ecs::PlayerRuntime::GetPlayerID(chEntity)));
 			}
 			std::unique_ptr<SQLMsg> pMsg(DBManager::instance().DirectQuery(szQuery));
 
@@ -207,7 +206,7 @@ namespace quest
 					str_to_number(points, row[c]);
 				}
 
-				ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_COMMAND, "UpdateMyDungeonRanking %d %s %d %d", p, name, level, points);
+				ecs::ChatSystem::Send(chEntity, CHAT_TYPE_COMMAND, "UpdateMyDungeonRanking %d %s %d %d", p, name, level, points);
 			}
 		}
 
@@ -227,8 +226,7 @@ namespace quest
 
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
 
-		auto* ch = ecs::LegacyCharOf(chEntity);
-		uint32_t pid = (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)));
+		uint32_t pid = (ecs::PlayerRuntime::GetPlayerID(chEntity));
 
 		int map_index = int(lua_tonumber(L, 1));
 		uint8_t rank_type = int(lua_tonumber(L, 2));
@@ -289,15 +287,14 @@ namespace quest
 
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
 
-		auto* ch = ecs::LegacyCharOf(chEntity);
-		int32_t index = ch ? ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)) : -1;
+		int32_t index = chEntity != entt::null && g_registry.valid(chEntity) ? ecs::PlayerRuntime::GetMapIndex(chEntity) : -1;
 		if (index != -1) {
-			LPPARTY party = ecs::SocialSystem::GetParty(AIHelpers::EcsOf(ch));
+			LPPARTY party = ecs::SocialSystem::GetParty(chEntity);
 			if (!party)
 			{
-				pDungeon->Join_Coords(ch, (int32_t)lua_tonumber(L, 2), (int32_t)lua_tonumber(L, 3), index);
+				pDungeon->Join_Coords(chEntity, (int32_t)lua_tonumber(L, 2), (int32_t)lua_tonumber(L, 3), index);
 			}
-			else if (party->GetLeaderPID() == (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))))
+			else if (party->GetLeaderPID() == (ecs::PlayerRuntime::GetPlayerID(chEntity)))
 			{
 				pDungeon->JoinParty_Coords(party, (int32_t)lua_tonumber(L, 2), (int32_t)lua_tonumber(L, 3), index);
 			}
@@ -710,9 +707,9 @@ namespace quest
 		bool what = lua_toboolean(L, 2);
 		if (what == false && !lastmeley)
 		{
-			if ((ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(ch))) == 6118 && AffectSystem::FindAffect(AIHelpers::EcsOf(ch), AFFECT_STATUE))
+			if ((ecs::PlayerRuntime::GetRaceNum(((ch) ? (ch)->GetEntityHandle() : entt::null))) == 6118 && AffectSystem::FindAffect(((ch) ? (ch)->GetEntityHandle() : entt::null), AFFECT_STATUE))
 			{
-				AffectSystem::RemoveAffect(AIHelpers::EcsOf(ch), AFFECT_STATUE);
+				AffectSystem::RemoveAffect(((ch) ? (ch)->GetEntityHandle() : entt::null), AFFECT_STATUE);
 			}
 		}
 
@@ -722,7 +719,7 @@ namespace quest
 		}
 		else
 		{
-			if ((ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(ch))) == 6118 && !AffectSystem::FindAffect(AIHelpers::EcsOf(ch), AFFECT_STATUE))
+			if ((ecs::PlayerRuntime::GetRaceNum(((ch) ? (ch)->GetEntityHandle() : entt::null))) == 6118 && !AffectSystem::FindAffect(((ch) ? (ch)->GetEntityHandle() : entt::null), AFFECT_STATUE))
 			{
 				lua_pushboolean(L, ch->SetInvincible(what));
 			}
@@ -940,9 +937,9 @@ namespace quest
 
 		void operator () (LPCHARACTER ch)
 		{
-			if (ch && (ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch))))
+			if (ch && (ecs::PlayerRuntime::IsPC(((ch) ? (ch)->GetEntityHandle() : entt::null))))
 			{
-				vecPIDs.push_back((ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))));
+				vecPIDs.push_back((ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null))));
 			}
 		}
 	};
@@ -964,8 +961,7 @@ namespace quest
 
 		const entt::entity chEntity = q.GetCurrentPCEntity();
 
-		auto* ch = ecs::LegacyCharOf(chEntity);
-		if (!ch)
+		if (chEntity == entt::null || !g_registry.valid(chEntity))
 		{
 			lua_pushnumber(L, 0);
 			lua_pushnumber(L, 0);
@@ -983,10 +979,10 @@ namespace quest
 		int32_t m_resulttime = 0;
 		std::string m_resultname = "";
 
-		LPPARTY party = ecs::SocialSystem::GetParty(AIHelpers::EcsOf(ch));
+		LPPARTY party = ecs::SocialSystem::GetParty(chEntity);
 		if (party)
 		{
-			if (party->GetLeaderPID() != (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))))
+			if (party->GetLeaderPID() != (ecs::PlayerRuntime::GetPlayerID(chEntity)))
 			{
 				lua_pushnumber(L, 2);
 				lua_pushnumber(L, 0);
@@ -995,101 +991,101 @@ namespace quest
 			}
 
 			FPartyPIDCollectorDungeon f;
-			party->ForEachOnMapMember(f, ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)));
+			party->ForEachOnMapMember(f, ecs::PlayerRuntime::GetMapIndex(chEntity));
 
 			for (auto it = f.vecPIDs.begin(); it != f.vecPIDs.end(); ++it)
 			{
-				LPCHARACTER tch = CHARACTER_MANAGER::instance().FindByPID(*it);
-				if (tch && (ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(tch))))
+				const entt::entity member = ecs::PlayerRuntime::FindByPlayerID(*it);
+				if (ecs::PlayerRuntime::IsPC(member))
 				{
-					if (!ecs::PlayerRuntime::CanWarp(AIHelpers::EcsOf(tch)))
+					if (!ecs::PlayerRuntime::CanWarp(member))
 					{
 						m_result = 3;
-						m_resultname = ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(tch)).data();
+						m_resultname = ecs::PlayerRuntime::GetName(member).data();
 					}
 
-					int32_t lvl = (ecs::PointSystem::GetLevel(AIHelpers::EcsOf(tch)));
+					int32_t lvl = (ecs::PointSystem::GetLevel(member));
 					if (lvl < m_minlvl)
 					{
 						m_result = 4;
-						m_resultname = ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(tch)).data();
+						m_resultname = ecs::PlayerRuntime::GetName(member).data();
 						break;
 					}
 					else if (lvl > m_maxlvl)
 					{
 						m_result = 5;
-						m_resultname = ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(tch)).data();
+						m_resultname = ecs::PlayerRuntime::GetName(member).data();
 						break;
 					}
-					else if (m_itemvnum2 == 0 && m_itemvnum1 > 0 && tch->CountSpecifyItem(m_itemvnum1) < m_itemcount)
+					else if (m_itemvnum2 == 0 && m_itemvnum1 > 0 && ItemSystem::CountItem(member, m_itemvnum1) < m_itemcount)
 					{
 						m_result = 6;
-						m_resultname = ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(tch)).data();
+						m_resultname = ecs::PlayerRuntime::GetName(member).data();
 						break;
 					}
 					else if (m_itemvnum2 > 0)
 					{
-						if (tch->CountSpecifyItem(m_itemvnum2) < m_itemcount && tch->CountSpecifyItem(m_itemvnum1) < m_itemcount)
+						if (ItemSystem::CountItem(member, m_itemvnum2) < m_itemcount && ItemSystem::CountItem(member, m_itemvnum1) < m_itemcount)
 						{
 							m_result = 7;
-							m_resultname = ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(tch)).data();
+							m_resultname = ecs::PlayerRuntime::GetName(member).data();
 							break;
 						}
 					}
 
-					m_resulttime = ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(tch), m_questname.c_str()) - get_global_time();
+					m_resulttime = ecs::QuestSystem::GetFlag(member, m_questname.c_str()) - get_global_time();
 					if (m_resulttime > 0)
 					{
 						m_result = 8;
-						m_resultname = ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(tch)).data();
+						m_resultname = ecs::PlayerRuntime::GetName(member).data();
 						break;
 					}
 				}
 			}
 
-			if (!q.GetPC((ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)))))
+			if (!q.GetPC((ecs::PlayerRuntime::GetPlayerID(chEntity))))
 			{
 				sys_err("cannot return to leader.");
 			}
 		}
 		else
 		{
-			if (!ecs::PlayerRuntime::CanWarp(AIHelpers::EcsOf(ch)))
+			if (!ecs::PlayerRuntime::CanWarp(chEntity))
 			{
 				m_result = 3;
-				m_resultname = ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data();
+				m_resultname = ecs::PlayerRuntime::GetName(chEntity).data();
 			}
 
-			int32_t lvl = (ecs::PointSystem::GetLevel(AIHelpers::EcsOf(ch)));
-			m_resulttime = ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(ch), m_questname.c_str()) - get_global_time();
+			int32_t lvl = (ecs::PointSystem::GetLevel(chEntity));
+			m_resulttime = ecs::QuestSystem::GetFlag(chEntity, m_questname.c_str()) - get_global_time();
 			if (lvl < m_minlvl)
 			{
 				m_result = 4;
-				m_resultname = ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data();
+				m_resultname = ecs::PlayerRuntime::GetName(chEntity).data();
 			}
 			else if (lvl > m_maxlvl)
 			{
 				m_result = 5;
-				m_resultname = ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data();
+				m_resultname = ecs::PlayerRuntime::GetName(chEntity).data();
 			}
-			else if (m_itemvnum2 == 0 && m_itemvnum1 > 0 && ch->CountSpecifyItem(m_itemvnum1) < m_itemcount)
+			else if (m_itemvnum2 == 0 && m_itemvnum1 > 0 && ItemSystem::CountItem(chEntity, m_itemvnum1) < m_itemcount)
 			{
 				m_result = 6;
-				m_resultname = ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data();
+				m_resultname = ecs::PlayerRuntime::GetName(chEntity).data();
 			}
 			else if (m_itemvnum2 > 0)
 			{
-				if (ch->CountSpecifyItem(m_itemvnum2) < m_itemcount && ch->CountSpecifyItem(m_itemvnum1) < m_itemcount)
+				if (ItemSystem::CountItem(chEntity, m_itemvnum2) < m_itemcount && ItemSystem::CountItem(chEntity, m_itemvnum1) < m_itemcount)
 				{
 					m_result = 7;
-					m_resultname = ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data();
+					m_resultname = ecs::PlayerRuntime::GetName(chEntity).data();
 				}
 			}
 
 			if (m_result == 1 && m_resulttime > 0)
 			{
 				m_result = 8;
-				m_resultname = ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data();
+				m_resultname = ecs::PlayerRuntime::GetName(chEntity).data();
 			}
 		}
 
@@ -1113,8 +1109,7 @@ namespace quest
 
 		const entt::entity chEntity = q.GetCurrentPCEntity();
 
-		auto* ch = ecs::LegacyCharOf(chEntity);
-		if (!ch)
+		if (chEntity == entt::null || !g_registry.valid(chEntity))
 		{
 			sys_err("no current character.");
 			return 0;
@@ -1131,98 +1126,98 @@ namespace quest
 		int32_t cooldown = (int32_t)lua_tonumber(L, 17);
 		std::string m_questname = lua_tostring(L, 18);
 
-		LPPARTY party = ecs::SocialSystem::GetParty(AIHelpers::EcsOf(ch));
+		LPPARTY party = ecs::SocialSystem::GetParty(chEntity);
 		if (party)
 		{
 			FPartyPIDCollectorDungeon f;
-			party->ForEachOnMapMember(f, ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)));
+			party->ForEachOnMapMember(f, ecs::PlayerRuntime::GetMapIndex(chEntity));
 
 			for (auto it = f.vecPIDs.begin(); it != f.vecPIDs.end(); ++it)
 			{
-				LPCHARACTER tch = CHARACTER_MANAGER::instance().FindByPID(*it);
-				if (tch && (ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(tch))))
+				const entt::entity member = ecs::PlayerRuntime::FindByPlayerID(*it);
+				if (ecs::PlayerRuntime::IsPC(member))
 				{
 					bool ticket = false;
 					if (vnum2 > 0 && count2 > 0)
 					{
-						if (tch->CountSpecifyItem(vnum2) >= count2)
+						if (ItemSystem::CountItem(member, vnum2) >= count2)
 						{
 							ticket = true;
-							tch->RemoveSpecifyItem(vnum2, count2);
+							ItemSystem::RemoveSpecifyItemEcs(member, vnum2, count2);
 						}
 					}
 
 					if (ticket == false && vnum1 > 0 && count1 > 0)
 					{
-						tch->RemoveSpecifyItem(vnum1, count1);
+						ItemSystem::RemoveSpecifyItemEcs(member, vnum1, count1);
 					}
 
 					if (vnum3 > 0 && count3 > 0)
 					{
 						if (count3 == 255)
 						{
-							count3 = tch->CountSpecifyItem(vnum3);
+							count3 = ItemSystem::CountItem(member, vnum3);
 						}
 
-						tch->RemoveSpecifyItem(vnum3, count3);
+						ItemSystem::RemoveSpecifyItemEcs(member, vnum3, count3);
 					}
 
 					if (vnum4 > 0 && count4 > 0)
 					{
 						if (count4 == 255)
 						{
-							count4 = tch->CountSpecifyItem(vnum4);
+							count4 = ItemSystem::CountItem(member, vnum4);
 						}
 
-						tch->RemoveSpecifyItem(vnum4, count4);
+						ItemSystem::RemoveSpecifyItemEcs(member, vnum4, count4);
 					}
 
 					if (vnum5 > 0 && count5 > 0)
 					{
 						if (count5 == 255)
 						{
-							count5 = tch->CountSpecifyItem(vnum5);
+							count5 = ItemSystem::CountItem(member, vnum5);
 						}
 
-						tch->RemoveSpecifyItem(vnum5, count5);
+						ItemSystem::RemoveSpecifyItemEcs(member, vnum5, count5);
 					}
 
 					if (vnum6 > 0 && count6 > 0)
 					{
 						if (count6 == 255)
 						{
-							count6 = tch->CountSpecifyItem(vnum6);
+							count6 = ItemSystem::CountItem(member, vnum6);
 						}
 
-						tch->RemoveSpecifyItem(vnum6, count6);
+						ItemSystem::RemoveSpecifyItemEcs(member, vnum6, count6);
 					}
 
 					if (vnum7 > 0 && count7 > 0)
 					{
 						if (count7 == 255)
 						{
-							count7 = tch->CountSpecifyItem(vnum7);
+							count7 = ItemSystem::CountItem(member, vnum7);
 						}
 
-						tch->RemoveSpecifyItem(vnum7, count7);
+						ItemSystem::RemoveSpecifyItemEcs(member, vnum7, count7);
 					}
 
 					if (vnum8 > 0 && count8 > 0)
 					{
 						if (count8 == 255)
 						{
-							count8 = tch->CountSpecifyItem(vnum8);
+							count8 = ItemSystem::CountItem(member, vnum8);
 						}
 
-						tch->RemoveSpecifyItem(vnum8, count8);
+						ItemSystem::RemoveSpecifyItemEcs(member, vnum8, count8);
 					}
 
-					ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(tch), m_questname + ".enter_time", get_global_time());
-					ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(tch), m_questname + ".cooldown", get_global_time() + cooldown);
+					ecs::QuestSystem::SetFlag(member, m_questname + ".enter_time", get_global_time());
+					ecs::QuestSystem::SetFlag(member, m_questname + ".cooldown", get_global_time() + cooldown);
 				}
 			}
 
-			if (!q.GetPC((ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)))))
+			if (!q.GetPC((ecs::PlayerRuntime::GetPlayerID(chEntity))))
 			{
 				sys_err("cannot return to leader.");
 			}
@@ -1232,80 +1227,80 @@ namespace quest
 			bool ticket = false;
 			if (vnum2 > 0 && count2 > 0)
 			{
-				if (ch->CountSpecifyItem(vnum2) >= count2)
+				if (ItemSystem::CountItem(chEntity, vnum2) >= count2)
 				{
 					ticket = true;
-					ch->RemoveSpecifyItem(vnum2, count2);
+					ItemSystem::RemoveSpecifyItemEcs(chEntity, vnum2, count2);
 				}
 			}
 
 			if (ticket == false && vnum1 > 0 && count1 > 0)
 			{
-				ch->RemoveSpecifyItem(vnum1, count1);
+				ItemSystem::RemoveSpecifyItemEcs(chEntity, vnum1, count1);
 			}
 
 			if (vnum3 > 0 && count3 > 0)
 			{
 				if (count3 == 255)
 				{
-					count3 = ch->CountSpecifyItem(vnum3);
+					count3 = ItemSystem::CountItem(chEntity, vnum3);
 				}
 
-				ch->RemoveSpecifyItem(vnum3, count3);
+				ItemSystem::RemoveSpecifyItemEcs(chEntity, vnum3, count3);
 			}
 
 			if (vnum4 > 0 && count4 > 0)
 			{
 				if (count4 == 255)
 				{
-					count4 = ch->CountSpecifyItem(vnum4);
+					count4 = ItemSystem::CountItem(chEntity, vnum4);
 				}
 
-				ch->RemoveSpecifyItem(vnum4, count4);
+				ItemSystem::RemoveSpecifyItemEcs(chEntity, vnum4, count4);
 			}
 
 			if (vnum5 > 0 && count5 > 0)
 			{
 				if (count5 == 255)
 				{
-					count5 = ch->CountSpecifyItem(vnum5);
+					count5 = ItemSystem::CountItem(chEntity, vnum5);
 				}
 
-				ch->RemoveSpecifyItem(vnum5, count5);
+				ItemSystem::RemoveSpecifyItemEcs(chEntity, vnum5, count5);
 			}
 
 			if (vnum6 > 0 && count6 > 0)
 			{
 				if (count6 == 255)
 				{
-					count6 = ch->CountSpecifyItem(vnum6);
+					count6 = ItemSystem::CountItem(chEntity, vnum6);
 				}
 
-				ch->RemoveSpecifyItem(vnum6, count6);
+				ItemSystem::RemoveSpecifyItemEcs(chEntity, vnum6, count6);
 			}
 
 			if (vnum7 > 0 && count7 > 0)
 			{
 				if (count7 == 255)
 				{
-					count7 = ch->CountSpecifyItem(vnum7);
+					count7 = ItemSystem::CountItem(chEntity, vnum7);
 				}
 
-				ch->RemoveSpecifyItem(vnum7, count7);
+				ItemSystem::RemoveSpecifyItemEcs(chEntity, vnum7, count7);
 			}
 
 			if (vnum8 > 0 && count8 > 0)
 			{
 				if (count8 == 255)
 				{
-					count8 = ch->CountSpecifyItem(vnum8);
+					count8 = ItemSystem::CountItem(chEntity, vnum8);
 				}
 
-				ch->RemoveSpecifyItem(vnum8, count8);
+				ItemSystem::RemoveSpecifyItemEcs(chEntity, vnum8, count8);
 			}
 
-			ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(ch), m_questname + ".enter_time", get_global_time());
-			ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(ch), m_questname + ".cooldown", get_global_time() + cooldown);
+			ecs::QuestSystem::SetFlag(chEntity, m_questname + ".enter_time", get_global_time());
+			ecs::QuestSystem::SetFlag(chEntity, m_questname + ".cooldown", get_global_time() + cooldown);
 		}
 
 		return 0;
@@ -1325,8 +1320,7 @@ namespace quest
 
 		const entt::entity chEntity = q.GetCurrentPCEntity();
 
-		auto* ch = ecs::LegacyCharOf(chEntity);
-		if (!ch)
+		if (chEntity == entt::null || !g_registry.valid(chEntity))
 		{
 			return 0;
 		}
@@ -1336,55 +1330,55 @@ namespace quest
 		const int32_t idx = (int32_t)lua_tonumber(L, 3);
 		const std::string questname = lua_tostring(L, 4);
 
-		LPPARTY party = ecs::SocialSystem::GetParty(AIHelpers::EcsOf(ch));
+		LPPARTY party = ecs::SocialSystem::GetParty(chEntity);
 		if (party)
 		{
-			LPDUNGEON currentDungeon = ch->GetDungeon();
+			LPDUNGEON currentDungeon = ecs::SocialSystem::GetDungeon(chEntity);
 			FPartyPIDCollectorDungeon f;
 			party->ForEachOnlineMember(f);
-			//party->ForEachOnMapMember(f, ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)));
+			//party->ForEachOnMapMember(f, ecs::PlayerRuntime::GetMapIndex(chEntity));
 
 			for (auto it = f.vecPIDs.begin(); it != f.vecPIDs.end(); ++it)
 			{
-				LPCHARACTER tch = CHARACTER_MANAGER::instance().FindByPID(*it);
-				if (tch && (ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(tch))))
+				const entt::entity member = ecs::PlayerRuntime::FindByPlayerID(*it);
+				if (ecs::PlayerRuntime::IsPC(member))
 				{
 
 					if (currentDungeon)
 					{
-						LPDUNGEON memberDungeon = tch->GetDungeon();
-						if (memberDungeon && memberDungeon != currentDungeon && ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(tch)) != ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)))
+						LPDUNGEON memberDungeon = ecs::SocialSystem::GetDungeon(member);
+						if (memberDungeon && memberDungeon != currentDungeon && ecs::PlayerRuntime::GetMapIndex(member) != ecs::PlayerRuntime::GetMapIndex(chEntity))
 						{
 							continue;
 						}
 					}
-					else if (ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(tch)) != ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)))
+					else if (ecs::PlayerRuntime::GetMapIndex(member) != ecs::PlayerRuntime::GetMapIndex(chEntity))
 					{
 						continue;
 					}
 
-					tch->SetRankPoints(16, tch->GetRankPoints(16) + 1);
+					ecs::PlayerRuntime::SetRankPoints(member, 16, ecs::PlayerRuntime::GetRankPoints(member, 16) + 1);
 #ifdef ENABLE_BATTLE_PASS
-					const uint8_t battlepassid = tch->GetBattlePassId();
+					const uint8_t battlepassid = ecs::PlayerRuntime::GetBattlePassID(member);
 					if(battlepassid)
 					{
 						uint32_t id, count;
 						if (CBattlePass::instance().BattlePassMissionGetInfo(battlepassid, COMPLETE_DUNGEON, &id, &count))
 						{
-							if (id == 1 && tch->GetMissionProgress(COMPLETE_DUNGEON, battlepassid) < count)
+							if (id == 1 && ecs::PlayerRuntime::GetMissionProgress(member, COMPLETE_DUNGEON, battlepassid) < count)
 							{
-								tch->UpdateMissionProgress(COMPLETE_DUNGEON, battlepassid, 1, count);
+								ecs::PlayerRuntime::UpdateMissionProgress(member, COMPLETE_DUNGEON, battlepassid, 1, count);
 							}
 						}
 					}
 #endif
-					int32_t enter_time = ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(tch), questname + ".enter_time");
-					ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(tch), questname + ".enter_time", 0);
-					ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(tch), questname + ".ch", 0);
-					ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(tch), questname + ".cooldown", get_global_time() + cooldown);
-					int32_t pid = (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(tch)));
+					int32_t enter_time = ecs::QuestSystem::GetFlag(member, questname + ".enter_time");
+					ecs::QuestSystem::SetFlag(member, questname + ".enter_time", 0);
+					ecs::QuestSystem::SetFlag(member, questname + ".ch", 0);
+					ecs::QuestSystem::SetFlag(member, questname + ".cooldown", get_global_time() + cooldown);
+					int32_t pid = (ecs::PlayerRuntime::GetPlayerID(member));
 					int32_t time = get_global_time() - enter_time;
-					int32_t damage = tch->GetQuestDamage(race);
+					int32_t damage = ecs::PlayerRuntime::GetQuestDamage(member, race);
 
 					if (time < 0) {
 						time = 0;
@@ -1409,41 +1403,41 @@ namespace quest
 					}
 					else
 					{
-						LPDESC desc = ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(tch));
+						LPDESC desc = ecs::PlayerRuntime::GetDesc(member);
 						std::unique_ptr<SQLMsg> msgadd(DBManager::instance().DirectQuery("INSERT INTO dungeon_ranking (acc_id, pid, dungeon_index, completed, time, damage) VALUES ('%u', '%d', '%d', '%d', '%d', '%d')", desc ? desc->GetAccountTable().id : 0, pid, idx, 1, time, damage));
 					}
 				}
 			}
 
-			if (!q.GetPC((ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)))))
+			if (!q.GetPC((ecs::PlayerRuntime::GetPlayerID(chEntity))))
 			{
 				sys_err("cannot return to main.");
 			}
 		}
 		else
 		{
-			ch->SetRankPoints(16, ch->GetRankPoints(16) + 1);
+			ecs::PlayerRuntime::SetRankPoints(chEntity, 16, ecs::PlayerRuntime::GetRankPoints(chEntity, 16) + 1);
 #ifdef ENABLE_BATTLE_PASS
-			uint8_t battlepassid = ch->GetBattlePassId();
+			uint8_t battlepassid = ecs::PlayerRuntime::GetBattlePassID(chEntity);
 			if(battlepassid)
 			{
 				uint32_t id, count;
 				if (CBattlePass::instance().BattlePassMissionGetInfo(battlepassid, COMPLETE_DUNGEON, &id, &count))
 				{
-					if (id == 1 && ch->GetMissionProgress(COMPLETE_DUNGEON, battlepassid) < count)
+					if (id == 1 && ecs::PlayerRuntime::GetMissionProgress(chEntity, COMPLETE_DUNGEON, battlepassid) < count)
 					{
-						ch->UpdateMissionProgress(COMPLETE_DUNGEON, battlepassid, 1, count);
+						ecs::PlayerRuntime::UpdateMissionProgress(chEntity, COMPLETE_DUNGEON, battlepassid, 1, count);
 					}
 				}
 			}
 #endif
-			int32_t enter_time = ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(ch), questname + ".enter_time");
-			ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(ch), questname + ".enter_time", 0);
-			ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(ch), questname + ".ch", 0);
-			ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(ch), questname + ".cooldown", get_global_time() + cooldown);
-			int32_t pid = (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)));
+			int32_t enter_time = ecs::QuestSystem::GetFlag(chEntity, questname + ".enter_time");
+			ecs::QuestSystem::SetFlag(chEntity, questname + ".enter_time", 0);
+			ecs::QuestSystem::SetFlag(chEntity, questname + ".ch", 0);
+			ecs::QuestSystem::SetFlag(chEntity, questname + ".cooldown", get_global_time() + cooldown);
+			int32_t pid = (ecs::PlayerRuntime::GetPlayerID(chEntity));
 			int32_t time = get_global_time() - enter_time;
-			int32_t damage = ch->GetQuestDamage(race);
+			int32_t damage = ecs::PlayerRuntime::GetQuestDamage(chEntity, race);
 
 			if (time < 0) {
 				time = 0;
@@ -1468,7 +1462,7 @@ namespace quest
 			}
 			else
 			{
-				LPDESC desc = ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch));
+				LPDESC desc = ecs::PlayerRuntime::GetDesc(chEntity);
 				std::unique_ptr<SQLMsg> msgadd(DBManager::instance().DirectQuery("INSERT INTO dungeon_ranking (acc_id, pid, dungeon_index, completed, time, damage) VALUES ('%u', '%d', '%d', '%d', '%d', '%d')", desc ? desc->GetAccountTable().id : 0, pid, idx, 1, time, damage));
 			}
 		}
@@ -1488,22 +1482,24 @@ namespace quest
 
 		void operator () (LPCHARACTER ch)
 		{
-			if (ch && (ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch))))
+			const entt::entity member = ch ? ch->GetEntityHandle() : entt::null;
+			if (ecs::PlayerRuntime::IsPC(member))
 			{
-				if (ecs::SocialSystem::GetGuild(AIHelpers::EcsOf(ch)))
+				CGuild* guild = ecs::SocialSystem::GetGuild(member);
+				if (guild)
 				{
-					if (guildid == ecs::SocialSystem::GetGuild(AIHelpers::EcsOf(ch))->GetID())
+					if (guildid == guild->GetID())
 					{
-						vecPIDs.push_back((ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))));
+						vecPIDs.push_back(ecs::PlayerRuntime::GetPlayerID(member));
 					}
 					else
 					{
-						name = ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data();
+						name = ecs::PlayerRuntime::GetName(member).data();
 					}
 				}
 				else
 				{
-					name = ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data();
+					name = ecs::PlayerRuntime::GetName(member).data();
 				}
 			}
 		}
@@ -1525,8 +1521,7 @@ namespace quest
 
 		CQuestManager & q = CQuestManager::instance();
 		const entt::entity chEntity = q.GetCurrentPCEntity();
-		auto* ch = ecs::LegacyCharOf(chEntity);
-		if (!ch)
+		if (chEntity == entt::null || !g_registry.valid(chEntity))
 		{
 			lua_pushnumber(L, 0);
 			lua_pushnumber(L, 0);
@@ -1534,7 +1529,7 @@ namespace quest
 			return 3;
 		}
 
-		CGuild * guild = ecs::SocialSystem::GetGuild(AIHelpers::EcsOf(ch));
+		CGuild * guild = ecs::SocialSystem::GetGuild(chEntity);
 		if (!guild)
 		{
 			lua_pushnumber(L, 2);
@@ -1559,10 +1554,10 @@ namespace quest
 			return 3;
 		}
 
-		LPPARTY party = ecs::SocialSystem::GetParty(AIHelpers::EcsOf(ch));
+		LPPARTY party = ecs::SocialSystem::GetParty(chEntity);
 		if (party)
 		{
-			if (party->GetLeaderPID() != (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))))
+			if (party->GetLeaderPID() != (ecs::PlayerRuntime::GetPlayerID(chEntity)))
 			{
 				lua_pushnumber(L, 6);
 				lua_pushnumber(L, 0);
@@ -1573,7 +1568,7 @@ namespace quest
 			FPartyPIDCollectorDungeonGuild f;
 			f.guildid = guild->GetID();
 			f.name = "";
-			party->ForEachOnMapMember(f, ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)));
+			party->ForEachOnMapMember(f, ecs::PlayerRuntime::GetMapIndex(chEntity));
 
 			if (f.vecPIDs.size() < m_partycount)
 			{
@@ -1593,40 +1588,40 @@ namespace quest
 
 			for (auto it = f.vecPIDs.begin(); it != f.vecPIDs.end(); ++it)
 			{
-				LPCHARACTER tch = CHARACTER_MANAGER::instance().FindByPID(*it);
-				if (tch && (ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(tch))))
+				const entt::entity member = ecs::PlayerRuntime::FindByPlayerID(*it);
+				if (ecs::PlayerRuntime::IsPC(member))
 				{
-					if (!ecs::PlayerRuntime::CanWarp(AIHelpers::EcsOf(tch)))
+					if (!ecs::PlayerRuntime::CanWarp(member))
 					{
 						m_result = 8;
-						r = ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(tch)).data();
+						r = ecs::PlayerRuntime::GetName(member).data();
 					}
 
-					int32_t lvl = (ecs::PointSystem::GetLevel(AIHelpers::EcsOf(tch)));
+					int32_t lvl = (ecs::PointSystem::GetLevel(member));
 					if (lvl < m_minlvl)
 					{
 						m_result = 9;
-						r = ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(tch)).data();
+						r = ecs::PlayerRuntime::GetName(member).data();
 						break;
 					}
 					else if (lvl > m_maxlvl)
 					{
 						m_result = 10;
-						r = ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(tch)).data();
+						r = ecs::PlayerRuntime::GetName(member).data();
 						break;
 					}
 
-					m_resulttime = ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(tch), m_questname.c_str()) - get_global_time();
+					m_resulttime = ecs::QuestSystem::GetFlag(member, m_questname.c_str()) - get_global_time();
 					if (m_resulttime > 0)
 					{
 						m_result = 11;
-						r = ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(tch)).data();
+						r = ecs::PlayerRuntime::GetName(member).data();
 						break;
 					}
 				}
 			}
 
-			if (!q.GetPC((ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)))))
+			if (!q.GetPC((ecs::PlayerRuntime::GetPlayerID(chEntity))))
 			{
 				sys_err("cannot return to leader.");
 			}
@@ -1659,8 +1654,7 @@ namespace quest
 
 		const entt::entity chEntity = q.GetCurrentPCEntity();
 
-		auto* ch = ecs::LegacyCharOf(chEntity);
-		if (!ch)
+		if (chEntity == entt::null || !g_registry.valid(chEntity))
 		{
 			sys_err("no current character.");
 			return 0;
@@ -1670,16 +1664,16 @@ namespace quest
 		int32_t cooldown = (int32_t)lua_tonumber(L, 2);
 		std::string m_questname = lua_tostring(L, 3);
 
-		// LPPARTY party = ecs::SocialSystem::GetParty(AIHelpers::EcsOf(ch));
+		// LPPARTY party = ecs::SocialSystem::GetParty(chEntity);
 		// if (party)
 		// {
 			// FPartyPIDCollectorDungeon f;
-			// party->ForEachOnMapMember(f, ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)));
+			// party->ForEachOnMapMember(f, ecs::PlayerRuntime::GetMapIndex(chEntity));
 
 			// for (auto it = f.vecPIDs.begin(); it != f.vecPIDs.end(); ++it)
 			// {
 				// LPCHARACTER tch = CHARACTER_MANAGER::instance().FindByPID(*it);
-				// if (tch && (ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(tch))))
+				// if (tch && (ecs::PlayerRuntime::IsPC(((tch) ? (tch)->GetEntityHandle() : entt::null))))
 				// {
 					// if (vnum > 0)
 					// {
@@ -1690,12 +1684,12 @@ namespace quest
 						// }
 					// }
 
-					// ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(tch), m_questname + ".enter_time", get_global_time());
-					// ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(tch), m_questname + ".cooldown", get_global_time() + cooldown);
+					// ecs::QuestSystem::SetFlag(((tch) ? (tch)->GetEntityHandle() : entt::null), m_questname + ".enter_time", get_global_time());
+					// ecs::QuestSystem::SetFlag(((tch) ? (tch)->GetEntityHandle() : entt::null), m_questname + ".cooldown", get_global_time() + cooldown);
 				// }
 			// }
 
-			// if (!q.GetPC((ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)))))
+			// if (!q.GetPC((ecs::PlayerRuntime::GetPlayerID(chEntity))))
 			// {
 				// "cannot return to leader.");
 			// }
@@ -1704,15 +1698,15 @@ namespace quest
 		{
 			if (vnum > 0)
 			{
-				int32_t count = ch->CountSpecifyItem(vnum);
+				int32_t count = ItemSystem::CountItem(chEntity, vnum);
 				if (count > 0)
 				{
-					ch->RemoveSpecifyItem(vnum, count);
+					ItemSystem::RemoveSpecifyItemEcs(chEntity, vnum, count);
 				}
 			}
 
-			ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(ch), m_questname + ".enter_time", get_global_time());
-			ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(ch), m_questname + ".cooldown", get_global_time() + cooldown);
+			ecs::QuestSystem::SetFlag(chEntity, m_questname + ".enter_time", get_global_time());
+			ecs::QuestSystem::SetFlag(chEntity, m_questname + ".cooldown", get_global_time() + cooldown);
 		}
 
 		return 0;
@@ -1774,10 +1768,10 @@ namespace quest
 
 		int32_t time = get_dword_time();
 
-		statue1->SendMovePacket(FUNC_MOB_SKILL, 0, ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(statue1)), ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(statue1)), 0, time);
-		statue2->SendMovePacket(FUNC_MOB_SKILL, 0, ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(statue2)), ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(statue2)), 0, time);
-		statue3->SendMovePacket(FUNC_MOB_SKILL, 0, ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(statue3)), ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(statue3)), 0, time);
-		statue4->SendMovePacket(FUNC_MOB_SKILL, 0, ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(statue4)), ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(statue4)), 0, time);
+		statue1->SendMovePacket(FUNC_MOB_SKILL, 0, ecs::PlayerRuntime::GetX(((statue1) ? (statue1)->GetEntityHandle() : entt::null)), ecs::PlayerRuntime::GetY(((statue1) ? (statue1)->GetEntityHandle() : entt::null)), 0, time);
+		statue2->SendMovePacket(FUNC_MOB_SKILL, 0, ecs::PlayerRuntime::GetX(((statue2) ? (statue2)->GetEntityHandle() : entt::null)), ecs::PlayerRuntime::GetY(((statue2) ? (statue2)->GetEntityHandle() : entt::null)), 0, time);
+		statue3->SendMovePacket(FUNC_MOB_SKILL, 0, ecs::PlayerRuntime::GetX(((statue3) ? (statue3)->GetEntityHandle() : entt::null)), ecs::PlayerRuntime::GetY(((statue3) ? (statue3)->GetEntityHandle() : entt::null)), 0, time);
+		statue4->SendMovePacket(FUNC_MOB_SKILL, 0, ecs::PlayerRuntime::GetX(((statue4) ? (statue4)->GetEntityHandle() : entt::null)), ecs::PlayerRuntime::GetY(((statue4) ? (statue4)->GetEntityHandle() : entt::null)), 0, time);
 
 		return 0;
 	}
@@ -1810,14 +1804,14 @@ namespace quest
 			return 0;
 		}
 
-		if (ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(statue)) == 6118)
+		if (ecs::PlayerRuntime::GetRaceNum(((statue) ? (statue)->GetEntityHandle() : entt::null)) == 6118)
 		{
-			if (AffectSystem::FindAffect(AIHelpers::EcsOf(statue), AFFECT_STATUE))
+			if (AffectSystem::FindAffect(((statue) ? (statue)->GetEntityHandle() : entt::null), AFFECT_STATUE))
 			{
-				AffectSystem::RemoveAffect(AIHelpers::EcsOf(statue), AFFECT_STATUE);
+				AffectSystem::RemoveAffect(((statue) ? (statue)->GetEntityHandle() : entt::null), AFFECT_STATUE);
 			}
 
-			AffectSystem::AddAffect(AIHelpers::EcsOf(statue), AFFECT_STATUE, POINT_NONE, 0, AFF_STATUE4, 3600, 0, true);
+			AffectSystem::AddAffect(((statue) ? (statue)->GetEntityHandle() : entt::null), AFFECT_STATUE, POINT_NONE, 0, AFF_STATUE4, 3600, 0, true);
 		}
 
 		return 0;

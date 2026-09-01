@@ -11,7 +11,6 @@
 #include "desc_client.h"
 #include "char_interface.hpp"
 #include "char_manager.h"
-#include "ecs/CharacterAccessors.hpp"
 #include "utils.h"
 #include "guild.h"
 #include "guild_manager.h"
@@ -28,19 +27,9 @@ namespace quest
 {
     namespace
     {
-        LPCHARACTER GetGuildQuestCharacter()
+        CGuild* GetGuildFromEntity(lua_State* L)
         {
-            return CQuestManager::instance().GetCurrentCharacterPtr();
-        }
-
-        CGuild* GetGuildFromECSOrLegacy(lua_State* L)
-        {
-            entt::entity e = CQuestManager::instance().GetPCEntity(L);
-            if (auto* gm = ECS_TryGet<ecs::GuildMembership>(e))
-                return gm->guild;
-
-            LPCHARACTER ch = GetGuildQuestCharacter();
-            return ch ? ecs::SocialSystem::GetGuild(AIHelpers::EcsOf(ch)) : nullptr;
+			return ecs::SocialSystem::GetGuild(CQuestManager::instance().GetPCEntity(L));
         }
     }
 
@@ -50,7 +39,7 @@ namespace quest
     ALUA(guild_around_ranking_string)
     {
         // migrated from CHARACTER::GetGuild()
-        CGuild* guild = GetGuildFromECSOrLegacy(L);
+        CGuild* guild = GetGuildFromEntity(L);
         if (!guild)
             lua_pushstring(L, "");
         else
@@ -66,7 +55,7 @@ namespace quest
     {
         // migrated from CHARACTER::GetGuild()
         uint32_t dwMyGuild = 0;
-        if (CGuild* guild = GetGuildFromECSOrLegacy(L))
+        if (CGuild* guild = GetGuildFromEntity(L))
             dwMyGuild = guild->GetID();
         char szBuf[4096+1];
         CGuildManager::instance().GetHighRankString(dwMyGuild, szBuf, sizeof(szBuf));
@@ -77,7 +66,7 @@ namespace quest
     ALUA(guild_get_ladder_point)
     {
         // migrated from CHARACTER::GetGuild()->GetLadderPoint()
-        CGuild* guild = GetGuildFromECSOrLegacy(L);
+        CGuild* guild = GetGuildFromEntity(L);
         lua_pushnumber(L, guild ? guild->GetLadderPoint() : -1);
         return 1;
     }
@@ -85,7 +74,7 @@ namespace quest
     ALUA(guild_get_rank)
     {
         // migrated from CHARACTER::GetGuild()
-        CGuild* guild = GetGuildFromECSOrLegacy(L);
+        CGuild* guild = GetGuildFromEntity(L);
         lua_pushnumber(L, guild ? CGuildManager::instance().GetRank(guild) : -1);
         return 1;
     }
@@ -98,7 +87,7 @@ namespace quest
             sys_err("invalid argument");
             return 0;
         }
-        CGuild* guild = GetGuildFromECSOrLegacy(L);
+        CGuild* guild = GetGuildFromEntity(L);
         lua_pushboolean(L, (guild && guild->UnderWar((uint32_t)lua_tonumber(L, 1))) ? 1 : 0);
         return 1;
     }
@@ -146,17 +135,17 @@ namespace quest
             sys_err("invalid argument");
             return 0;
         }
-        LPCHARACTER ch = GetGuildQuestCharacter();
-        CGuild* guild = GetGuildFromECSOrLegacy(L);
-        if (guild && ch)
-            guild->GuildWarEntryAccept((uint32_t) lua_tonumber(L, 1), ch);
+		const entt::entity character = CQuestManager::instance().GetPCEntity(L);
+        CGuild* guild = GetGuildFromEntity(L);
+        if (guild && character != entt::null)
+            guild->GuildWarEntryAccept((uint32_t) lua_tonumber(L, 1), character);
         return 0;
     }
 
     ALUA(guild_get_any_war)
     {
         // migrated from CHARACTER::GetGuild()->UnderAnyWar()
-        CGuild* guild = GetGuildFromECSOrLegacy(L);
+        CGuild* guild = GetGuildFromEntity(L);
         lua_pushnumber(L, guild ? guild->UnderAnyWar() : 0);
         return 1;
     }
@@ -189,21 +178,21 @@ namespace quest
             sys_err("invalid argument");
             return 0;
         }
-        entt::entity e = CQuestManager::instance().GetPCEntity(L);
+		const entt::entity e = CQuestManager::instance().GetPCEntity(L);
         if (auto* gm = ECS_TryGet<ecs::GuildMembership>(e))
         {
             if (!gm->guild)
                 return 0;
         }
-        LPCHARACTER ch = GetGuildQuestCharacter();
-        if (!ch || !ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch)))
+		LPDESC desc = ecs::PlayerRuntime::GetDesc(e);
+        if (!desc)
             return 0;
         TPacketGDGuildWarBet p;
         p.dwWarID = (uint32_t) lua_tonumber(L, 1);
-        strlcpy(p.szLogin, ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->GetAccountTable().login, sizeof(p.szLogin));
+		strlcpy(p.szLogin, desc->GetAccountTable().login, sizeof(p.szLogin));
         p.dwGuild = (uint32_t) lua_tonumber(L, 2);
         p.dwGold = (uint32_t) lua_tonumber(L, 3);
-        LOG_INFO("GUILD_WAR_BET: {} login {} war_id {} guild {} gold {}", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), p.szLogin, p.dwWarID, p.dwGuild, p.dwGold);
+		LOG_INFO("GUILD_WAR_BET: {} login {} war_id {} guild {} gold {}", ecs::PlayerRuntime::GetName(e).data(), p.szLogin, p.dwWarID, p.dwGuild, p.dwGold);
         db_clientdesc->DBPacket(HEADER_GD_GUILD_WAR_BET, 0, &p, sizeof(p));
         return 0;
     }
@@ -218,8 +207,9 @@ namespace quest
 			return 1;
 		}
 
-		bool bBet = CGuildManager::instance().IsBet((uint32_t) lua_tonumber(L, 1),
-				ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(CQuestManager::instance().GetCurrentCharacterPtr()))->GetAccountTable().login);
+		LPDESC desc = ecs::PlayerRuntime::GetDesc(CQuestManager::instance().GetCurrentPCEntity());
+		bool bBet = desc && CGuildManager::instance().IsBet(
+			(uint32_t) lua_tonumber(L, 1), desc->GetAccountTable().login);
 
 		lua_pushboolean(L, bBet);
 		return 1;
@@ -291,7 +281,7 @@ namespace quest
     ALUA(guild_get_member_count)
     {
         // migrated from CHARACTER::GetGuild()->GetMemberCount()
-        CGuild* pGuild = GetGuildFromECSOrLegacy(L);
+        CGuild* pGuild = GetGuildFromEntity(L);
         lua_pushnumber(L, pGuild ? pGuild->GetMemberCount() : 0);
         return 1;
     }
@@ -300,16 +290,16 @@ namespace quest
     {
         // migrated from CHARACTER::GetGuild()->ChangeMasterTo()
         // DUAL-PATH: ECS GuildMembership check + legacy call
-        LPCHARACTER ch = GetGuildQuestCharacter();
-        CGuild* pGuild = GetGuildFromECSOrLegacy(L);
-        if (!ch)
+		const entt::entity character = CQuestManager::instance().GetPCEntity(L);
+        CGuild* pGuild = GetGuildFromEntity(L);
+		if (character == entt::null)
         {
             lua_pushnumber(L, 4);
             return 1;
         }
         if ( pGuild != nullptr)
         {
-            if ( pGuild->GetMasterPID() == (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))) )
+			if (pGuild->GetMasterPID() == ecs::PlayerRuntime::GetPlayerID(character))
             {
                 if ( lua_isstring(L, 1) == false )
                     lua_pushnumber(L, 0);
@@ -331,30 +321,30 @@ namespace quest
     {
         // migrated from CHARACTER::GetGuild()->ChangeMasterTo()
         // DUAL-PATH: ECS GuildMembership check + legacy call
-        LPCHARACTER ch = GetGuildQuestCharacter();
-        CGuild* pGuild = GetGuildFromECSOrLegacy(L);
-        if (!ch)
+		const entt::entity character = CQuestManager::instance().GetPCEntity(L);
+        CGuild* pGuild = GetGuildFromEntity(L);
+		if (character == entt::null)
         {
             lua_pushnumber(L, 4);
             return 1;
         }
         if ( pGuild != nullptr)
         {
-            if ( pGuild->GetMasterPID() == (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))) )
+			if (pGuild->GetMasterPID() == ecs::PlayerRuntime::GetPlayerID(character))
             {
                 if ( lua_isstring(L, 1) == false )
                     lua_pushnumber(L, 0);
                 else
                 {
-                    LPCHARACTER pNewMaster = CHARACTER_MANAGER::instance().FindPC(lua_tostring(L,1));
-                    if ( pNewMaster != nullptr)
+					const entt::entity newMaster = ecs::PlayerRuntime::FindByPlayerName(lua_tostring(L, 1));
+					if (newMaster != entt::null)
                     {
-                        if ( ecs::PointSystem::GetLevel(AIHelpers::EcsOf(pNewMaster)) < lua_tonumber(L, 2) )
+						if (ecs::PointSystem::GetLevel(newMaster) < lua_tonumber(L, 2))
                             lua_pushnumber(L, 6);
                         else
                         {
-                            int nBeOtherLeader = ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(pNewMaster), "change_guild_master.be_other_leader");
-                            CQuestManager::instance().GetPC( (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))) );
+							int nBeOtherLeader = ecs::QuestSystem::GetFlag(newMaster, "change_guild_master.be_other_leader");
+							CQuestManager::instance().GetPC(ecs::PlayerRuntime::GetPlayerID(character));
                             if ( lua_toboolean(L, 6) == true ) nBeOtherLeader = 0;
                             if ( nBeOtherLeader > get_global_time() )
                                 lua_pushnumber(L, 7);
@@ -366,12 +356,12 @@ namespace quest
                                 else
                                 {
                                     lua_pushnumber(L, 3);
-                                    ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(pNewMaster), "change_guild_master.be_other_leader", 0);
-                                    ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(pNewMaster), "change_guild_master.be_other_member", 0);
-                                    ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(pNewMaster), "change_guild_master.resign_limit", (int)lua_tonumber(L, 3));
-                                    ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(ch), "change_guild_master.be_other_leader", (int)lua_tonumber(L, 4));
-                                    ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(ch), "change_guild_master.be_other_member", (int)lua_tonumber(L, 5));
-                                    ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(ch), "change_guild_master.resign_limit", 0);
+									ecs::QuestSystem::SetFlag(newMaster, "change_guild_master.be_other_leader", 0);
+									ecs::QuestSystem::SetFlag(newMaster, "change_guild_master.be_other_member", 0);
+									ecs::QuestSystem::SetFlag(newMaster, "change_guild_master.resign_limit", (int)lua_tonumber(L, 3));
+									ecs::QuestSystem::SetFlag(character, "change_guild_master.be_other_leader", (int)lua_tonumber(L, 4));
+									ecs::QuestSystem::SetFlag(character, "change_guild_master.be_other_member", (int)lua_tonumber(L, 5));
+									ecs::QuestSystem::SetFlag(character, "change_guild_master.resign_limit", 0);
                                 }
                             }
                         }
@@ -392,7 +382,7 @@ namespace quest
     ALUA(guild_get_wins)
     {
         // migrated from CHARACTER::GetGuild()->GetGuildWarWinCount()
-        CGuild* pGuild = GetGuildFromECSOrLegacy(L);
+        CGuild* pGuild = GetGuildFromEntity(L);
         lua_pushnumber(L, pGuild ? pGuild->GetGuildWarWinCount() : 0);
         return 1;
     }
@@ -402,7 +392,7 @@ namespace quest
     ALUA(guild_get_sp0)
     {
         // migrated from CHARACTER::GetGuild()->GetSP()
-        CGuild* pGuild = GetGuildFromECSOrLegacy(L);
+        CGuild* pGuild = GetGuildFromEntity(L);
         lua_pushnumber(L, (pGuild != nullptr) ? pGuild->GetSP() : 0);
         return 1;
     }
@@ -410,7 +400,7 @@ namespace quest
     ALUA(guild_get_maxsp0)
     {
         // migrated from CHARACTER::GetGuild()->GetMaxSP()
-        CGuild* pGuild = GetGuildFromECSOrLegacy(L);
+        CGuild* pGuild = GetGuildFromEntity(L);
         lua_pushnumber(L, (pGuild != nullptr) ? pGuild->GetMaxSP() : 0);
         return 1;
     }
@@ -418,7 +408,7 @@ namespace quest
     ALUA(guild_get_money0)
     {
         // migrated from CHARACTER::GetGuild()->GetGuildMoney()
-        CGuild* pGuild = GetGuildFromECSOrLegacy(L);
+        CGuild* pGuild = GetGuildFromEntity(L);
         lua_pushnumber(L, (pGuild != nullptr) ? pGuild->GetGuildMoney() : 0);
         return 1;
     }
@@ -426,7 +416,7 @@ namespace quest
     ALUA(guild_get_max_member0)
     {
         // migrated from CHARACTER::GetGuild()->GetMaxMemberCount()
-        CGuild* pGuild = GetGuildFromECSOrLegacy(L);
+        CGuild* pGuild = GetGuildFromEntity(L);
         lua_pushnumber(L, (pGuild != nullptr) ? pGuild->GetMaxMemberCount() : 0);
         return 1;
     }
@@ -434,7 +424,7 @@ namespace quest
     ALUA(guild_get_total_member_level0)
     {
         // migrated from CHARACTER::GetGuild()->GetTotalLevel()
-        CGuild* pGuild = GetGuildFromECSOrLegacy(L);
+        CGuild* pGuild = GetGuildFromEntity(L);
         lua_pushnumber(L, (pGuild != nullptr) ? pGuild->GetTotalLevel() : 0);
         return 1;
     }
@@ -442,7 +432,7 @@ namespace quest
     ALUA(guild_has_land0)
     {
         // migrated from CHARACTER::GetGuild()->HasLand()
-        CGuild* pGuild = GetGuildFromECSOrLegacy(L);
+        CGuild* pGuild = GetGuildFromEntity(L);
         lua_pushboolean(L, (pGuild != nullptr) ? pGuild->HasLand() : false);
         return 1;
     }
@@ -450,7 +440,7 @@ namespace quest
     ALUA(guild_get_win_count0)
     {
         // migrated from CHARACTER::GetGuild()->GetGuildWarWinCount()
-        CGuild* pGuild = GetGuildFromECSOrLegacy(L);
+        CGuild* pGuild = GetGuildFromEntity(L);
         lua_pushnumber(L, (pGuild != nullptr) ? pGuild->GetGuildWarWinCount() : 0);
         return 1;
     }
@@ -458,7 +448,7 @@ namespace quest
     ALUA(guild_get_draw_count0)
     {
         // migrated from CHARACTER::GetGuild()->GetGuildWarDrawCount()
-        CGuild* pGuild = GetGuildFromECSOrLegacy(L);
+        CGuild* pGuild = GetGuildFromEntity(L);
         lua_pushnumber(L, (pGuild != nullptr) ? pGuild->GetGuildWarDrawCount() : 0);
         return 1;
     }
@@ -466,7 +456,7 @@ namespace quest
     ALUA(guild_get_loss_count0)
     {
         // migrated from CHARACTER::GetGuild()->GetGuildWarLossCount()
-        CGuild* pGuild = GetGuildFromECSOrLegacy(L);
+        CGuild* pGuild = GetGuildFromEntity(L);
         lua_pushnumber(L, (pGuild != nullptr) ? pGuild->GetGuildWarLossCount() : 0);
         return 1;
     }
@@ -475,10 +465,10 @@ namespace quest
     {
         // migrated from CHARACTER::GetGuild()->AddComment()
         // DUAL-PATH: ECS update + legacy call
-        LPCHARACTER ch = GetGuildQuestCharacter();
-        CGuild* pGuild = GetGuildFromECSOrLegacy(L);
-        if (pGuild && ch)
-            pGuild->AddComment(ch, std::string(lua_tostring(L, 1)));
+		const entt::entity character = CQuestManager::instance().GetPCEntity(L);
+        CGuild* pGuild = GetGuildFromEntity(L);
+		if (pGuild && character != entt::null)
+			pGuild->AddComment(character, std::string(lua_tostring(L, 1)));
         return 0;
     }
 
@@ -486,7 +476,7 @@ namespace quest
 	// {
 		// LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
 
-		// CGuild* pGuild = ecs::SocialSystem::GetGuild(AIHelpers::EcsOf(ch));
+		// CGuild* pGuild = ecs::SocialSystem::GetGuild(((ch) ? (ch)->GetEntityHandle() : entt::null));
 		// if (pGuild)
 			// pGuild->SetWarData(lua_tonumber(L, 1), lua_tonumber(L, 2), lua_tonumber(L, 3));
 		// return 0;
@@ -495,8 +485,7 @@ namespace quest
 	ALUA(guild_get_skill_level0)
 	{
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
-		auto* ch = ecs::LegacyCharOf(chEntity);
-		CGuild* pGuild = ecs::SocialSystem::GetGuild(AIHelpers::EcsOf(ch));
+		CGuild* pGuild = ecs::SocialSystem::GetGuild(chEntity);
 		lua_pushnumber(L, (pGuild)?pGuild->GetSkillLevel(lua_tonumber(L, 1)):0);
 		return 1;
 	}
@@ -505,7 +494,7 @@ namespace quest
     {
         // migrated from CHARACTER::GetGuild()->SetSkillLevel()
         // DUAL-PATH: ECS update + legacy call
-        CGuild* pGuild = GetGuildFromECSOrLegacy(L);
+        CGuild* pGuild = GetGuildFromEntity(L);
         if (pGuild)
             pGuild->SetSkillLevel(lua_tonumber(L, 1), lua_tonumber(L, 2), lua_isnumber(L, 3) ? lua_tonumber(L, 3) : 0);
         return 0;
@@ -514,8 +503,7 @@ namespace quest
 	ALUA(guild_get_skill_point0)
 	{
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
-		auto* ch = ecs::LegacyCharOf(chEntity);
-		CGuild* pGuild = ecs::SocialSystem::GetGuild(AIHelpers::EcsOf(ch));
+		CGuild* pGuild = ecs::SocialSystem::GetGuild(chEntity);
 		lua_pushnumber(L, (pGuild)?pGuild->GetSkillPoint():0);
 		return 1;
 	}
@@ -524,7 +512,7 @@ namespace quest
     {
         // migrated from CHARACTER::GetGuild()->SetSkillPoint()
         // DUAL-PATH: ECS update + legacy call
-        CGuild* pGuild = GetGuildFromECSOrLegacy(L);
+        CGuild* pGuild = GetGuildFromEntity(L);
         if (pGuild)
             pGuild->SetSkillPoint(lua_tonumber(L, 1));
         return 0;
@@ -541,9 +529,9 @@ namespace quest
     {
         // migrated from CHARACTER::GetGuild()->OfferExp()
         // DUAL-PATH: ECS update + legacy call
-        LPCHARACTER ch = GetGuildQuestCharacter();
-        CGuild* pGuild = GetGuildFromECSOrLegacy(L);
-        if (!pGuild || !ch)
+		const entt::entity character = CQuestManager::instance().GetPCEntity(L);
+        CGuild* pGuild = GetGuildFromEntity(L);
+		if (!pGuild || character == entt::null)
         {
             lua_pushboolean(L, false);
             return 1;
@@ -555,7 +543,7 @@ namespace quest
         {
             offer /= 100;
             offer *= 100;
-            lua_pushboolean(L, pGuild->OfferExp(ch, offer) ? true : false);
+			lua_pushboolean(L, pGuild->OfferExp(character, offer) ? true : false);
         }
         return 1;
     }
@@ -564,7 +552,7 @@ namespace quest
     {
         // migrated from CHARACTER::GetGuild()->GuildPointChange()
         // DUAL-PATH: ECS update + legacy call
-        CGuild* pGuild = GetGuildFromECSOrLegacy(L);
+        CGuild* pGuild = GetGuildFromEntity(L);
         if (!pGuild)
             return 0;
         pGuild->GuildPointChange(POINT_EXP, lua_tonumber(L, 1) / 100, true);
@@ -576,7 +564,7 @@ namespace quest
     ALUA(guild_get_id)
     {
         // migrated from CHARACTER::GetGuild()->GetID()
-        CGuild* guild = GetGuildFromECSOrLegacy(L);
+        CGuild* guild = GetGuildFromEntity(L);
         lua_pushnumber(L, guild ? guild->GetID() : 0);
         return 1;
     }

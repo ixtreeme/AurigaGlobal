@@ -11,7 +11,6 @@
 #include "../../sectree_manager.h"
 #include "../../motion.h"
 #include "../../vector.h"
-#include "../AIHelpers.hpp"
 #include "../VIDRegistry.hpp"
 #include "../components/ai_components.hpp"
 #include "../components/combat_components.hpp"
@@ -26,36 +25,33 @@ constexpr uint8_t AI_STATE_CHASE = 1;
 constexpr uint8_t AI_STATE_ATTACK = 2;
 constexpr uint8_t AI_STATE_RETURN = 3;
 
-LPCHARACTER LegacyCharOf(entt::registry& reg, entt::entity entity)
+LPCHARACTER LegacyCharBoundary(entt::registry& reg, entt::entity entity)
 {
     if (entity == entt::null || !reg.valid(entity)) {
         return nullptr;
     }
 
-    const auto* vid = reg.try_get<ecs::VIDComponent>(entity);
-    if (!vid) {
-        return nullptr;
-    }
-
-    return CHARACTER_MANAGER::instance().Find(vid->value);
+    const auto* legacy = reg.try_get<ecs::LegacyCharPtr>(entity);
+    return legacy ? legacy->ptr : nullptr;
 }
 
 uint8_t ObserveAIState(entt::registry& reg, entt::entity entity, LPCHARACTER ch)
 {
-    if (!ch || ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch))) {
+    if (!ch || ecs::PlayerRuntime::IsPC(entity)) {
         return AI_STATE_IDLE;
     }
 
     if (LPCHARACTER victim = ch->GetVictim()) {
-        const int32_t dx = ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(victim)) - ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(ch));
-        const int32_t dy = ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(victim)) - ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(ch));
+        const entt::entity victimEntity = victim->GetEntityHandle();
+        const int32_t dx = ecs::PlayerRuntime::GetX(victimEntity) - ecs::PlayerRuntime::GetX(entity);
+        const int32_t dy = ecs::PlayerRuntime::GetY(victimEntity) - ecs::PlayerRuntime::GetY(entity);
         const int32_t distance = DISTANCE_APPROX(dx, dy);
         const int32_t attackRange = static_cast<int32_t>(ch->GetMobAttackRange()) * 100;
         return distance <= attackRange ? AI_STATE_ATTACK : AI_STATE_CHASE;
     }
 
     if (const auto* spawn = reg.try_get<ecs::SpawnInfo>(entity)) {
-        if (ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(ch)) != spawn->x || ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(ch)) != spawn->y) {
+        if (ecs::PlayerRuntime::GetX(entity) != spawn->x || ecs::PlayerRuntime::GetY(entity) != spawn->y) {
             return AI_STATE_RETURN;
         }
     }
@@ -168,7 +164,7 @@ void CHARACTER::__StateIdle_NPC()
     }
 
     LPCHARACTER protege = GetProtege();
-    if (protege && DISTANCE_APPROX(GetX() - ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(protege)), GetY() - ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(protege))) > 500) {
+    if (protege && DISTANCE_APPROX(GetX() - ecs::PlayerRuntime::GetX(protege->GetEntityHandle()), GetY() - ecs::PlayerRuntime::GetY(protege->GetEntityHandle())) > 500) {
         if (Follow(protege, number(100, 300))) {
             return;
         }
@@ -244,7 +240,7 @@ void CHARACTER::__StateIdle_Monster()
         : PASSES_PER_SEC(number(3, 5));
 
     LPCHARACTER protege = GetProtege();
-    if (protege && DISTANCE_APPROX(GetX() - ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(protege)), GetY() - ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(protege))) > 1000) {
+    if (protege && DISTANCE_APPROX(GetX() - ecs::PlayerRuntime::GetX(protege->GetEntityHandle()), GetY() - ecs::PlayerRuntime::GetY(protege->GetEntityHandle())) > 1000) {
         if (Follow(protege, number(150, 400))) {
             MonsterLog("[IDLE] returning to protege");
             return;
@@ -327,11 +323,14 @@ void CHARACTER::StateBattle()
     }
 
     LPCHARACTER protege = GetProtege();
-    const float dist = static_cast<float>(DISTANCE_APPROX(GetX() - ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(victim)), GetY() - ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(victim))));
+    const entt::entity victimEntity = victim->GetEntityHandle();
+    const float dist = static_cast<float>(DISTANCE_APPROX(
+        GetX() - ecs::PlayerRuntime::GetX(victimEntity),
+        GetY() - ecs::PlayerRuntime::GetY(victimEntity)));
 
     if (dist >= 4000.0f) {
         SetVictim(nullptr);
-        if (protege && DISTANCE_APPROX(GetX() - ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(protege)), GetY() - ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(protege))) > 1000) {
+        if (protege && DISTANCE_APPROX(GetX() - ecs::PlayerRuntime::GetX(protege->GetEntityHandle()), GetY() - ecs::PlayerRuntime::GetY(protege->GetEntityHandle())) > 1000) {
             Follow(protege, number(150, 400));
         } else {
             SetPosition(POS_STANDING);
@@ -371,7 +370,7 @@ void CHARACTER::StateBattle()
                 continue;
             }
 
-            SetRotationToXY(ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(victim)), ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(victim)));
+            SetRotationToXY(ecs::PlayerRuntime::GetX(victimEntity), ecs::PlayerRuntime::GetY(victimEntity));
             if (UseMobSkill(skillIdx)) {
                 SendMovePacket(FUNC_MOB_SKILL, skillIdx, GetX(), GetY(), 0, curTime);
 
@@ -409,7 +408,7 @@ void CHARACTER::StateBattle()
         return;
     }
 
-    SetRotationToXY(ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(victim)), ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(victim)));
+    SetRotationToXY(ecs::PlayerRuntime::GetX(victimEntity), ecs::PlayerRuntime::GetY(victimEntity));
     SendMovePacket(FUNC_ATTACK, 0, GetX(), GetY(), 0, curTime);
 
     const float motionDuration = CMotionManager::instance().GetMotionDuration(
@@ -426,8 +425,8 @@ void AISystem_Update(entt::registry& reg, uint32_t tick)
     auto view = reg.view<ecs::VIDComponent>();
 
     for (auto entity : view) {
-        LPCHARACTER ch = LegacyCharOf(reg, entity);
-        if (!ch || ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch))) {
+        LPCHARACTER ch = LegacyCharBoundary(reg, entity);
+        if (!ch || ecs::PlayerRuntime::IsPC(entity)) {
             continue;
         }
 
@@ -435,7 +434,7 @@ void AISystem_Update(entt::registry& reg, uint32_t tick)
 
         entt::entity victimEntity = entt::null;
         if (LPCHARACTER victim = ch->GetVictim()) {
-            victimEntity = AIHelpers::EcsOf(victim);
+            victimEntity = victim->GetEntityHandle();
         }
 
         if (victimEntity != entt::null) {

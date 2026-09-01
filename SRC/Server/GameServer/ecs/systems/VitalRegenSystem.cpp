@@ -1,7 +1,6 @@
 #include "../../stdafx.h"
 #include "PointSystem.hpp"
 #include "PlayerRuntimeSystem.hpp"
-#include "../AIHelpers.hpp"
 
 #include "VitalRegenSystem.hpp"
 
@@ -52,7 +51,7 @@ void DebugStatsDriftCheck(entt::registry& reg)
             }
 
             if (stats.points[point] != ch->GetPoint(static_cast<uint8_t>(point))) {
-                LOG_ERROR("STATS_DRIFT pt={} ecs={} legacy={} name={}", point, static_cast<long long>(stats.points[point]), static_cast<long long>(ch->GetPoint(static_cast<uint8_t>(point))), ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data());
+                LOG_ERROR("STATS_DRIFT pt={} ecs={} legacy={} name={}", point, static_cast<long long>(stats.points[point]), static_cast<long long>(ch->GetPoint(static_cast<uint8_t>(point))), ecs::PlayerRuntime::GetName(entity).data());
             }
         }
     }
@@ -80,7 +79,7 @@ void VitalRegenSystem_Update(entt::registry& reg, uint32_t tick)
             return;
         }
 
-        if (!ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch)) && !ecs::PlayerRuntime::IsNPC(AIHelpers::EcsOf(ch))) {
+        if (!ecs::PlayerRuntime::GetDesc(entity) && !ecs::PlayerRuntime::IsNPC(entity)) {
             return;
         }
 
@@ -90,9 +89,9 @@ void VitalRegenSystem_Update(entt::registry& reg, uint32_t tick)
         const int32_t oldManaMax = mana.max;
 
         health.current = ch->GetHP();
-        health.max = ecs::PointSystem::GetMaxHP(AIHelpers::EcsOf(ch));
+        health.max = ecs::PointSystem::GetMaxHP(entity);
         mana.current = ch->GetSP();
-        mana.max = ecs::PointSystem::GetMaxSP(AIHelpers::EcsOf(ch));
+        mana.max = ecs::PointSystem::GetMaxSP(entity);
 
         if (auto* stamina = reg.try_get<ecs::Stamina>(entity)) {
             stamina->current = ch->GetStamina();

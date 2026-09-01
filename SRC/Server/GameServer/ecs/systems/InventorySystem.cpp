@@ -15,7 +15,6 @@
 #include "../../packet.h"
 #include "../../sectree_manager.h"
 #include "../../../common/VnumHelper.h"
-#include "../AIHelpers.hpp"
 #include "../EntityFactory.hpp"
 #include "../EntityInvariants.hpp"
 #include "../SpatialHelpers.hpp"
@@ -38,14 +37,6 @@ ecs::QuickSlots* GetQuickSlots(entt::entity e)
 		return nullptr;
 
 	return &g_registry.get_or_emplace<ecs::QuickSlots>(e);
-}
-
-entt::entity ItemEntityOf(LPITEM item)
-{
-	if (!item)
-		return entt::null;
-
-	return EntityFactory::CreateItemEntity(g_registry, item);
 }
 
 void SyncItemLocation(entt::entity e)
@@ -179,7 +170,7 @@ void CHARACTER::SyncQuickslot(uint8_t bType, uint8_t bOldPos, uint8_t bNewPos)
 		}
 	}
 
-	InventorySystem::SyncQuickslot(AIHelpers::EcsOf(this), bType, bOldPos, bNewPos);
+	InventorySystem::SyncQuickslot(GetEntityHandle(), bType, bOldPos, bNewPos);
 }
 
 bool CHARACTER::GetQuickslot(uint8_t pos, TQuickslot** ppSlot)
@@ -190,10 +181,10 @@ bool CHARACTER::GetQuickslot(uint8_t pos, TQuickslot** ppSlot)
 	*ppSlot = &m_quickslot[pos];
 
 	TQuickslot ecsSlot {};
-	if (InventorySystem::GetQuickslot(AIHelpers::EcsOf(this), pos, ecsSlot))
+	if (InventorySystem::GetQuickslot(GetEntityHandle(), pos, ecsSlot))
 		m_quickslot[pos] = ecsSlot;
 	else
-		InventorySystem::SetQuickslot(AIHelpers::EcsOf(this), pos, m_quickslot[pos]);
+		InventorySystem::SetQuickslot(GetEntityHandle(), pos, m_quickslot[pos]);
 
 	return true;
 }
@@ -255,7 +246,7 @@ bool CHARACTER::SetQuickslot(uint8_t pos, TQuickslot& rSlot)
 	}
 
 	m_quickslot[pos] = rSlot;
-	InventorySystem::SetQuickslot(AIHelpers::EcsOf(this), pos, rSlot);
+	InventorySystem::SetQuickslot(GetEntityHandle(), pos, rSlot);
 
 	if (GetDesc())
 	{
@@ -277,7 +268,7 @@ bool CHARACTER::DelQuickslot(uint8_t pos)
 		return false;
 
 	memset(&m_quickslot[pos], 0, sizeof(TQuickslot));
-	InventorySystem::DelQuickslot(AIHelpers::EcsOf(this), pos);
+	InventorySystem::DelQuickslot(GetEntityHandle(), pos);
 
 	pack_quickslot_del.header = HEADER_GC_QUICKSLOT_DEL;
 	pack_quickslot_del.pos = pos;
@@ -299,7 +290,7 @@ bool CHARACTER::SwapQuickslot(uint8_t a, uint8_t b)
 
 	m_quickslot[a] = m_quickslot[b];
 	m_quickslot[b] = quickslot;
-	InventorySystem::SwapQuickslot(AIHelpers::EcsOf(this), a, b);
+	InventorySystem::SwapQuickslot(GetEntityHandle(), a, b);
 
 	pack_quickslot_swap.header = HEADER_GC_QUICKSLOT_SWAP;
 	pack_quickslot_swap.pos = a;
@@ -346,7 +337,7 @@ LPITEM CItem::RemoveFromCharacter()
 		SetWindow(RESERVED_WINDOW);
 		Save();
 
-		const entt::entity itemEntity = ItemEntityOf(this);
+		const entt::entity itemEntity = GetEntityHandle();
 		SyncItemLocation(itemEntity);
 		SyncItemOwner(itemEntity, 0, m_dwLastOwnerPID, m_dwOwnershipPID);
 		g_registry.remove<ecs::ItemEquipped>(itemEntity);
@@ -357,14 +348,14 @@ LPITEM CItem::RemoveFromCharacter()
 		if (GetWindow() == MOUNT_INVENTORY)
 		{
 			if (CMountInventory* mi = pOwner->GetMountInventory())
-				mi->RemoveByItem(EntityFactory::CreateItemEntity(g_registry, this));
+				mi->RemoveByItem(GetEntityHandle());
 
 			m_pOwner = nullptr;
 			m_wCell = 0;
 			SetWindow(RESERVED_WINDOW);
 			Save();
 
-			const entt::entity itemEntity = ItemEntityOf(this);
+			const entt::entity itemEntity = GetEntityHandle();
 			SyncItemLocation(itemEntity);
 			SyncItemOwner(itemEntity, 0, m_dwLastOwnerPID, m_dwOwnershipPID);
 			g_registry.remove<ecs::ItemEquipped>(itemEntity);
@@ -419,7 +410,7 @@ LPITEM CItem::RemoveFromCharacter()
 		SetWindow(RESERVED_WINDOW);
 		Save();
 
-		const entt::entity itemEntity = ItemEntityOf(this);
+		const entt::entity itemEntity = GetEntityHandle();
 		SyncItemLocation(itemEntity);
 		SyncItemOwner(itemEntity, 0, m_dwLastOwnerPID, m_dwOwnershipPID);
 		g_registry.remove<ecs::ItemEquipped>(itemEntity);
@@ -435,7 +426,10 @@ bool CItem::AddToCharacter(LPCHARACTER ch, TItemPos Cell)
 {
 	assert(GetSectree() == NULL);
 	assert(m_pOwner == NULL);
-	const entt::entity itemEntity = EntityFactory::CreateItemEntity(g_registry, this);
+	const entt::entity character = ch
+		? ch->GetEntityHandle()
+		: entt::null;
+	const entt::entity itemEntity = GetEntityHandle();
 	if (itemEntity == entt::null)
 	{
 		LOG_ERROR("CItem::AddToCharacter: item {} has no ECS entity", GetID());
@@ -449,21 +443,20 @@ bool CItem::AddToCharacter(LPCHARACTER ch, TItemPos Cell)
 #ifdef ENABLE_RUNE_SYSTEM
 		if ((IsRune()) && (ch)) {
 			int iFindCell = FindEquipCell(ch);
-			const entt::entity equipped =
-				ItemSystem::GetWearItem(AIHelpers::EcsOf(ch), iFindCell);
+			const entt::entity equipped = ItemSystem::GetWearItem(character, iFindCell);
 			if (ItemSystem::IsValidItem(equipped)) {
 #ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 35, "%s", GetName());
+				ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 35, "%s", GetName());
 #endif
 				ItemSystem::DestroyItemEntityEcs(
-					EntityFactory::CreateItemEntity(g_registry, this),
+					GetEntityHandle(),
 					"INVENTORY_RUNE_ADD_FAILED");
 				return false;
 			}
 			else {
 				this->EquipTo(ch, iFindCell);
-				if (ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch)))
-					m_dwLastOwnerPID = ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch));
+				if (ecs::PlayerRuntime::GetDesc(character))
+					m_dwLastOwnerPID = ecs::PlayerRuntime::GetPlayerID(character);
 
 				event_cancel(&m_pkDestroyEvent);
 
@@ -471,8 +464,8 @@ bool CItem::AddToCharacter(LPCHARACTER ch, TItemPos Cell)
 				m_pOwner = ch;
 				Save();
 
-				const entt::entity itemEntity = ItemEntityOf(this);
-				SyncItemOwner(itemEntity, ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)), m_dwLastOwnerPID, m_dwOwnershipPID);
+				const entt::entity itemEntity = GetEntityHandle();
+				SyncItemOwner(itemEntity, ecs::PlayerRuntime::GetPlayerID(character), m_dwLastOwnerPID, m_dwOwnershipPID);
 				SyncItemLocation(itemEntity);
 				SyncItemEquipped(itemEntity, true);
 				return true;
@@ -486,7 +479,7 @@ bool CItem::AddToCharacter(LPCHARACTER ch, TItemPos Cell)
 		if (m_wCell >= INVENTORY_MAX_NUM && BELT_INVENTORY_SLOT_START > m_wCell)
 #endif
 		{
-			LOG_ERROR("CItem::AddToCharacter: cell overflow: {} to {} cell {}", m_pProto->szName, ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), m_wCell);
+			LOG_ERROR("CItem::AddToCharacter: cell overflow: {} to {} cell {}", m_pProto->szName, ecs::PlayerRuntime::GetName(character).data(), m_wCell);
 			return false;
 		}
 	}
@@ -494,7 +487,7 @@ bool CItem::AddToCharacter(LPCHARACTER ch, TItemPos Cell)
 	{
 		if (m_wCell >= DRAGON_SOUL_INVENTORY_MAX_NUM)
 		{
-			LOG_ERROR("CItem::AddToCharacter: cell overflow: {} to {} cell {}", m_pProto->szName, ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), m_wCell);
+			LOG_ERROR("CItem::AddToCharacter: cell overflow: {} to {} cell {}", m_pProto->szName, ecs::PlayerRuntime::GetName(character).data(), m_wCell);
 			return false;
 		}
 	}
@@ -503,7 +496,7 @@ bool CItem::AddToCharacter(LPCHARACTER ch, TItemPos Cell)
 	{
 		if (m_wCell >= EXTRA_INVENTORY_MAX_NUM)
 		{
-			LOG_ERROR("CItem::AddToCharacter: EXTRA cell overflow: {} to {} cell {}", m_pProto->szName, ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), m_wCell);
+			LOG_ERROR("CItem::AddToCharacter: EXTRA cell overflow: {} to {} cell {}", m_pProto->szName, ecs::PlayerRuntime::GetName(character).data(), m_wCell);
 			return false;
 		}
 	}
@@ -513,13 +506,13 @@ bool CItem::AddToCharacter(LPCHARACTER ch, TItemPos Cell)
 	{
 		if (m_wCell >= SWITCHBOT_SLOT_COUNT)
 		{
-			LOG_ERROR("CItem::AddToCharacter:switchbot cell overflow: {} to {} cell {}", m_pProto->szName, ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), m_wCell);
+			LOG_ERROR("CItem::AddToCharacter:switchbot cell overflow: {} to {} cell {}", m_pProto->szName, ecs::PlayerRuntime::GetName(character).data(), m_wCell);
 			return false;
 		}
 	}
 #endif
-	if (ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch)))
-		m_dwLastOwnerPID = ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch));
+	if (ecs::PlayerRuntime::GetDesc(character))
+		m_dwLastOwnerPID = ecs::PlayerRuntime::GetPlayerID(character);
 
 
 #ifdef ENABLE_ACCE_SYSTEM
@@ -566,7 +559,7 @@ bool CItem::AddToCharacter(LPCHARACTER ch, TItemPos Cell)
 
 	Save();
 
-	SyncItemOwner(itemEntity, ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)), m_dwLastOwnerPID, m_dwOwnershipPID);
+	SyncItemOwner(itemEntity, ecs::PlayerRuntime::GetPlayerID(character), m_dwLastOwnerPID, m_dwOwnershipPID);
 	SyncItemLocation(itemEntity);
 	SyncItemEquipped(itemEntity, false);
 	return true;
@@ -578,7 +571,7 @@ LPITEM CItem::RemoveFromGround()
 	{
 		SetOwnership(nullptr);
 
-		const entt::entity itemEntity = ItemEntityOf(this);
+		const entt::entity itemEntity = GetEntityHandle();
 		if (itemEntity != entt::null && g_registry.valid(itemEntity))
 			ecs::SpatialService::RemoveEntity(g_registry, itemEntity);
 		else
@@ -642,7 +635,7 @@ bool CItem::AddToGround(int32_t lMapIndex, const PIXEL_POSITION& pos, bool skipO
 	SetWindow(GROUND);
 	SetXYZ(pos.x, pos.y, pos.z);
 
-	const entt::entity itemEntity = EntityFactory::CreateItemEntity(g_registry, this);
+	const entt::entity itemEntity = GetEntityHandle();
 	if (itemEntity != entt::null && g_registry.valid(itemEntity)) {
 		g_registry.emplace_or_replace<ecs::SpatialEntity>(itemEntity);
 		g_registry.emplace_or_replace<ecs::SpatialKindTag>(itemEntity, ecs::SpatialKindTag{ecs::SpatialKind::Item});
@@ -676,7 +669,10 @@ bool CItem::DistanceValid(LPCHARACTER ch)
 	if (!GetSectree())
 		return false;
 
-	int iDist = DISTANCE_APPROX(GetX() - ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(ch)), GetY() - ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(ch)));
+	const entt::entity character = ch ? ch->GetEntityHandle() : entt::null;
+	int iDist = DISTANCE_APPROX(
+		GetX() - ecs::PlayerRuntime::GetX(character),
+		GetY() - ecs::PlayerRuntime::GetY(character));
 	if (iDist > 2400)
 		return false;
 
@@ -688,7 +684,8 @@ bool CItem::IsOwnership(LPCHARACTER ch)
 	if (!m_pkOwnershipEvent)
 		return true;
 
-	return m_dwOwnershipPID == ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)) ? true : false;
+	const entt::entity character = ch ? ch->GetEntityHandle() : entt::null;
+	return m_dwOwnershipPID == ecs::PlayerRuntime::GetPlayerID(character);
 }
 
 void CItem::SetOwnershipEvent(LPEVENT pkEvent)
@@ -713,7 +710,7 @@ void CItem::SetOwnership(LPCHARACTER ch, int iSec)
 
 			PacketAround(&p, sizeof(p));
 
-			const entt::entity itemEntity = ItemEntityOf(this);
+			const entt::entity itemEntity = GetEntityHandle();
 			SyncItemOwner(itemEntity, 0, m_dwLastOwnerPID, m_dwOwnershipPID);
 			if (itemEntity != entt::null && g_registry.valid(itemEntity))
 				g_registry.remove<ecs::ItemOwnershipDisplay>(itemEntity);
@@ -727,11 +724,12 @@ void CItem::SetOwnership(LPCHARACTER ch, int iSec)
 	if (iSec <= 10)
 		iSec = 30;
 
-	m_dwOwnershipPID = ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch));
+	const entt::entity character = ch->GetEntityHandle();
+	m_dwOwnershipPID = ecs::PlayerRuntime::GetPlayerID(character);
 
 	item_event_info* info = AllocEventInfo<item_event_info>();
-	strlcpy(info->szOwnerName, ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), sizeof(info->szOwnerName));
-	info->item = ItemEntityOf(this);
+	strlcpy(info->szOwnerName, ecs::PlayerRuntime::GetName(character).data(), sizeof(info->szOwnerName));
+	info->item = GetEntityHandle();
 
 	SetOwnershipEvent(event_create(ownership_event, info, PASSES_PER_SEC(iSec)));
 
@@ -739,15 +737,19 @@ void CItem::SetOwnership(LPCHARACTER ch, int iSec)
 
 	p.bHeader = HEADER_GC_ITEM_OWNERSHIP;
 	p.dwVID = m_dwVID;
-	strlcpy(p.szName, ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), sizeof(p.szName));
+	strlcpy(p.szName, ecs::PlayerRuntime::GetName(character).data(), sizeof(p.szName));
 
 	PacketAround(&p, sizeof(p));
 
-	const entt::entity itemEntity = ItemEntityOf(this);
-	SyncItemOwner(itemEntity, m_pOwner ? ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(m_pOwner)) : 0, m_dwLastOwnerPID, m_dwOwnershipPID);
+	const entt::entity itemEntity = GetEntityHandle();
+	SyncItemOwner(
+		itemEntity,
+		m_pOwner ? ecs::PlayerRuntime::GetPlayerID(m_pOwner->GetEntityHandle()) : 0,
+		m_dwLastOwnerPID,
+		m_dwOwnershipPID);
 	if (itemEntity != entt::null && g_registry.valid(itemEntity))
 		g_registry.emplace_or_replace<ecs::ItemOwnershipDisplay>(
-			itemEntity, ecs::ItemOwnershipDisplay{ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data()});
+			itemEntity, ecs::ItemOwnershipDisplay{ecs::PlayerRuntime::GetName(character).data()});
 }
 
 bool CItem::CanUsedBy(LPCHARACTER ch)
@@ -787,7 +789,7 @@ bool CItem::CanUsedBy(LPCHARACTER ch)
 
 int CItem::FindEquipCell(LPCHARACTER ch, int iCandidateCell)
 {
-	const entt::entity ownerEntity = AIHelpers::EcsOf(ch);
+	const entt::entity ownerEntity = ch ? ch->GetEntityHandle() : entt::null;
 	const auto hasWearItem = [ownerEntity](uint8_t wearCell) {
 		return ItemSystem::IsValidItem(ItemSystem::GetWearItem(ownerEntity, wearCell));
 	};
@@ -1025,7 +1027,7 @@ bool CItem::EquipTo(LPCHARACTER ch, uint8_t bWearCell)
 		}
 	}
 
-	const entt::entity charEntity = AIHelpers::EcsOf(ch);
+	const entt::entity charEntity = ch->GetEntityHandle();
 	const entt::entity occupied = ItemSystem::GetWearItem(charEntity, bWearCell);
 	if (ItemSystem::IsValidItem(occupied))
 	{
@@ -1060,7 +1062,7 @@ bool CItem::EquipTo(LPCHARACTER ch, uint8_t bWearCell)
 
 	if (IsDragonSoul())
 	{
-		DSManager::instance().ActivateDragonSoul(ItemEntityOf(this));
+		DSManager::instance().ActivateDragonSoul(GetEntityHandle());
 	}
 	else
 	{
@@ -1087,12 +1089,12 @@ bool CItem::EquipTo(LPCHARACTER ch, uint8_t bWearCell)
 
 #ifdef ENABLE_MOUNT_COSTUME_SYSTEM
 	if (IsMountItem())
-		ch->MountSummon(EntityFactory::CreateItemEntity(g_registry, this));
+		ch->MountSummon(GetEntityHandle());
 #endif
-	NetworkSyncSystem::UpdatePacket(AIHelpers::EcsOf(m_pOwner));
+	NetworkSyncSystem::UpdatePacket(charEntity);
 #ifdef ENABLE_ITEM_ON_TITLE_RAZOR93
 	if (bWearCell == WEAR_BELT)
-		NetworkSyncSystem::UpdateItemOnTitleName(g_registry, AIHelpers::EcsOf(ch), true);
+		NetworkSyncSystem::UpdateItemOnTitleName(g_registry, charEntity, true);
 #endif
 
 #ifdef ENABLE_COSTUME_PET
@@ -1106,11 +1108,11 @@ bool CItem::EquipTo(LPCHARACTER ch, uint8_t bWearCell)
 	}
 #endif
 
-	const entt::entity itemEntity = ItemEntityOf(this);
+	const entt::entity itemEntity = GetEntityHandle();
 	SyncItemEquipped(itemEntity, true);
 	SyncItemLocation(itemEntity);
-	SyncItemOwner(itemEntity, ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)), m_dwLastOwnerPID, m_dwOwnershipPID);
-	g_dispatcher.trigger(ecs::EvItemEquipped { AIHelpers::EcsOf(ch), itemEntity });
+	SyncItemOwner(itemEntity, ecs::PlayerRuntime::GetPlayerID(charEntity), m_dwLastOwnerPID, m_dwOwnershipPID);
+	g_dispatcher.trigger(ecs::EvItemEquipped { charEntity, itemEntity });
 
 	Save();
 	return (true);
@@ -1124,8 +1126,8 @@ bool CItem::Unequip()
 		return false;
 	}
 
-	const entt::entity itemEntity = ItemEntityOf(this);
-	const entt::entity charEntity = AIHelpers::EcsOf(m_pOwner);
+	const entt::entity itemEntity = GetEntityHandle();
+	const entt::entity charEntity = m_pOwner->GetEntityHandle();
 	if (ItemSystem::GetWearItem(
 			charEntity, static_cast<uint8_t>(GetCell() - INVENTORY_MAX_NUM)) != itemEntity)
 	{
@@ -1138,7 +1140,7 @@ bool CItem::Unequip()
 
 #ifdef ENABLE_MOUNT_COSTUME_SYSTEM
 	if (IsMountItem())
-		m_pOwner->MountUnsummon(EntityFactory::CreateItemEntity(g_registry, this));
+		m_pOwner->MountUnsummon(GetEntityHandle());
 #endif
 
 	if (IsRideItem())
@@ -1187,7 +1189,7 @@ bool CItem::Unequip()
 
 	m_pOwner->ComputeBattlePoints();
 
-	NetworkSyncSystem::UpdatePacket(AIHelpers::EcsOf(m_pOwner));
+	NetworkSyncSystem::UpdatePacket(charEntity);
 #ifdef ENABLE_COSTUME_PET
 	if ((GetType() == ITEM_COSTUME) && (GetSubType() == COSTUME_PET_SKIN)) {
 		m_pOwner->UpdatePetSkin();
@@ -1216,7 +1218,7 @@ void CItem::ModifyPoints(bool bAdd)
 	}
 #endif
 
-	const entt::entity ownerEntity = AIHelpers::EcsOf(m_pOwner);
+	const entt::entity ownerEntity = m_pOwner->GetEntityHandle();
 	int accessoryGrade;
 
 	if (false == IsAccessoryForSocket())
@@ -1744,7 +1746,7 @@ void CItem::ModifyPoints(bool bAdd)
 		if (PART_MAX_NUM != toSetPart)
 		{
 			m_pOwner->SetPart((uint8_t)toSetPart, toSetValue);
-			NetworkSyncSystem::UpdatePacket(AIHelpers::EcsOf(m_pOwner));
+			NetworkSyncSystem::UpdatePacket(ownerEntity);
 
 		}
 	}

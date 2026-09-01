@@ -522,7 +522,7 @@ struct name_with_desc_func
 
 	bool operator () (LPDESC d)
 	{
-		if (d->GetCharacter() && !strcmp(ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(d->GetCharacter())).data(), m_name))
+		if (d->GetCharacter() && !strcmp(ecs::PlayerRuntime::GetName(((d->GetCharacter()) ? (d->GetCharacter())->GetEntityHandle() : entt::null)).data(), m_name))
 			return true;
 
 		return false;

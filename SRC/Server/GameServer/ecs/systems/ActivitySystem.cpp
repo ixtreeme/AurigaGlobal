@@ -24,7 +24,6 @@
 #include "../../sectree_manager.h"
 #include "../../unique_item.h"
 #include "../../vector.h"
-#include "../AIHelpers.hpp"
 #include "../CharacterAccessors.hpp"
 #include "../EntityFactory.hpp"
 #include "../NetworkService.hpp"
@@ -45,19 +44,6 @@ ecs::FishingState* GetFishingState(entt::entity e)
         return nullptr;
 
     return &g_registry.get_or_emplace<ecs::FishingState>(e);
-}
-
-void MirrorFishingStateToLegacyBoundary(entt::entity fisher,
-                                        const ecs::FishingState& state)
-{
-    LPCHARACTER ch = ecs::LegacyCharOf(fisher);
-    if (!ch)
-        return;
-
-    ch->m_pkFishingNewEvent = state.fishingNewEvent;
-    ch->SetFishCatch(state.catchCount);
-    ch->SetFishCatchFailed(state.catchFailed);
-    ch->SetLastCatchTime(state.lastCatchTime);
 }
 
 #ifdef ENABLE_BATTLE_PASS
@@ -147,7 +133,6 @@ EVENTFUNC(ecs_fishing_event)
     if (state->catchFailed > 0) {
         info->sec += state->catchFailed;
         state->catchFailed = 0;
-        MirrorFishingStateToLegacyBoundary(fisher, *state);
     }
 
     if (info->sec >= 15) {
@@ -231,7 +216,6 @@ void StartFishing(entt::entity fisher, uint32_t)
     state->lastCatchTime = 0;
     state->fishingNewEvent = event_create(ecs_fishing_event, info, PASSES_PER_SEC(1));
 
-    MirrorFishingStateToLegacyBoundary(fisher, *state);
     MarkFishing(fisher, true);
 
     TPacketFishingNew p;
@@ -263,7 +247,6 @@ void StopFishing(entt::entity fisher)
     if (ItemSystem::IsValidItem(rod) && ItemSystem::GetItemType(rod) == ITEM_ROD)
         ItemSystem::SetItemSocket(rod, 2, 0);
 
-    MirrorFishingStateToLegacyBoundary(fisher, *state);
     MarkFishing(fisher, false);
 
     TPacketFishingNew p;
@@ -290,7 +273,6 @@ void CatchFishing(entt::entity fisher, uint32_t)
 
     state->catchCount = static_cast<uint8_t>(state->catchCount + 1);
     state->lastCatchTime = get_global_time() + 1;
-    MirrorFishingStateToLegacyBoundary(fisher, *state);
     g_registry.emplace_or_replace<ecs::DirtyTag>(fisher);
 
     TPacketFishingNew p;
@@ -313,7 +295,6 @@ void CatchFishingFailed(entt::entity fisher)
         return;
 
     ++state->catchFailed;
-    MirrorFishingStateToLegacyBoundary(fisher, *state);
     g_registry.emplace_or_replace<ecs::DirtyTag>(fisher);
 
     TPacketFishingNew p;
@@ -482,8 +463,6 @@ void CatchDecision(entt::entity fisher, uint32_t itemVnum)
     else
         chance += ItemSystem::GetItemValue(rod, 0) / 10;
 
-    MirrorFishingStateToLegacyBoundary(fisher, *state);
-
     TPacketFishingNew p;
     p.header = HEADER_GC_FISHING_NEW;
     if (number(1, 100) >= chance) {
@@ -537,6 +516,15 @@ void CatchDecision(entt::entity fisher, uint32_t itemVnum)
     p.need = 0;
     p.count = 0;
     ecs::NetworkService::BroadcastToView(g_registry, fisher, &p, sizeof(p), false);
+}
+
+bool IsFishing(entt::entity fisher)
+{
+    if (fisher == entt::null || !g_registry.valid(fisher))
+        return false;
+
+    const auto* state = g_registry.try_get<ecs::FishingState>(fisher);
+    return state && state->fishingNewEvent;
 }
 
 bool IsMining(entt::entity miner)
@@ -702,46 +690,50 @@ int RefineFishingRod(entt::entity owner, entt::entity rod)
 
 void CHARACTER::fishing_new_start()
 {
-    ActivitySystem::StartFishing(AIHelpers::EcsOf(this), get_dword_time());
+    ActivitySystem::StartFishing(GetEntityHandle(), get_dword_time());
 }
 
 void CHARACTER::fishing_new_stop()
 {
-    ActivitySystem::StopFishing(AIHelpers::EcsOf(this));
+    ActivitySystem::StopFishing(GetEntityHandle());
 }
 
 void CHARACTER::fishing_new_catch()
 {
-    ActivitySystem::CatchFishing(AIHelpers::EcsOf(this), get_dword_time());
+    ActivitySystem::CatchFishing(GetEntityHandle(), get_dword_time());
 }
 
 void CHARACTER::fishing_new_catch_failed()
 {
-    ActivitySystem::CatchFishingFailed(AIHelpers::EcsOf(this));
+    ActivitySystem::CatchFishingFailed(GetEntityHandle());
 }
 
 void CHARACTER::fishing_catch_decision(uint32_t itemVnum)
 {
-    ActivitySystem::CatchDecision(AIHelpers::EcsOf(this), itemVnum);
+    ActivitySystem::CatchDecision(GetEntityHandle(), itemVnum);
 }
 
 void CHARACTER::mining_take()
 {
-    ActivitySystem::FinishMining(AIHelpers::EcsOf(this));
+    ActivitySystem::FinishMining(GetEntityHandle());
 }
 
 void CHARACTER::mining_cancel()
 {
-    ActivitySystem::CancelMining(AIHelpers::EcsOf(this));
+    ActivitySystem::CancelMining(GetEntityHandle());
 }
 
 void CHARACTER::mining(LPCHARACTER chLoad)
 {
-    ActivitySystem::StartMining(AIHelpers::EcsOf(this), AIHelpers::EcsOf(chLoad));
+    ActivitySystem::StartMining(
+        GetEntityHandle(),
+        chLoad ? chLoad->GetEntityHandle() : entt::null);
 }
 
 void CHARACTER::fishing()
 {
+    const entt::entity character = GetEntityHandle();
+
     if (m_pkFishingEvent)
     {
         fishing_take();
@@ -758,18 +750,18 @@ void CHARACTER::fishing()
         if (IS_SET(dwAttr, ATTR_BLOCK))
         {
 #ifdef TEXTS_IMPROVEMENT
-            ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 657, "");
+            ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 657, "");
 #endif
             return;
         }
     }
 
-    const entt::entity rod = ItemSystem::GetWearItem(AIHelpers::EcsOf(this), WEAR_WEAPON);
+    const entt::entity rod = ItemSystem::GetWearItem(character, WEAR_WEAPON);
 
     if (!ItemSystem::IsValidItem(rod) || ItemSystem::GetItemType(rod) != ITEM_ROD)
     {
 #ifdef TEXTS_IMPROVEMENT
-        ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 281, "");
+        ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 281, "");
 #endif
         return;
     }
@@ -777,7 +769,7 @@ void CHARACTER::fishing()
     if (0 == ItemSystem::GetItemSocket(rod, 2))
     {
 #ifdef TEXTS_IMPROVEMENT
-        ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 351, "");
+        ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 351, "");
 #endif
         return;
     }
@@ -790,7 +782,8 @@ void CHARACTER::fishing()
 
 void CHARACTER::fishing_take()
 {
-    const entt::entity rod = ItemSystem::GetWearItem(AIHelpers::EcsOf(this), WEAR_WEAPON);
+    const entt::entity character = GetEntityHandle();
+    const entt::entity rod = ItemSystem::GetWearItem(character, WEAR_WEAPON);
     if (ItemSystem::IsValidItem(rod) && ItemSystem::GetItemType(rod) == ITEM_ROD)
     {
         using fishing::fishing_event_info;

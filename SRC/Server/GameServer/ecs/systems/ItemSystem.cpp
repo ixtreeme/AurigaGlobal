@@ -83,7 +83,6 @@
 #endif
 
 #include "../Registry.hpp"
-#include "../AIHelpers.hpp"
 #include "../SpatialHelpers.hpp"
 #include "../components/identity_components.hpp"
 #include "../components/inventory_components.hpp"
@@ -116,10 +115,11 @@ struct FFindStone
 		if (pEnt->IsType(ENTITY_CHARACTER) == true)
 		{
 			auto* pChar = static_cast<LegacyCharHandle>(pEnt);
+			const entt::entity character = pChar->GetEntityHandle();
 
-			if (ecs::PlayerRuntime::IsStone(AIHelpers::EcsOf(pChar)) == true)
+			if (ecs::PlayerRuntime::IsStone(character))
 			{
-				m_mapStone[ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(pChar))] = pChar;
+				m_mapStone[ecs::PlayerRuntime::GetPacketVID(character)] = pChar;
 			}
 		}
 	}
@@ -254,39 +254,13 @@ static ecs::SwitchbotRuntimeComponent* EnsureSwitchbotRuntimeComponent(entt::ent
 
 #endif
 
-static entt::entity ItemEntityOf(LPITEM item)
-{
-    if (!item || item->GetID() == 0)
-        return entt::null;
-
-    return CItemRegistry::Instance().Find(item->GetID());
-}
-
-static LPITEM LegacyItemOf(entt::entity itemEntity)
+static LPITEM LegacyItemBoundary(entt::entity itemEntity)
 {
     if (itemEntity == entt::null || !g_registry.valid(itemEntity))
         return nullptr;
 
-    const auto* identity = g_registry.try_get<ecs::ItemIdentity>(itemEntity);
-    if (!identity || identity->id == 0)
-        return nullptr;
-
-    return ITEM_MANAGER::instance().Find(identity->id);
-}
-
-static LPITEM ResolveLegacyItemForSync(entt::entity itemEntity)
-{
-    return LegacyItemOf(itemEntity);
-}
-
-static LPITEM ResolveLegacyItemForLegacySideEffect(entt::entity itemEntity)
-{
-    return LegacyItemOf(itemEntity);
-}
-
-static LPITEM ResolveLegacyItemForDestruction(entt::entity itemEntity)
-{
-    return LegacyItemOf(itemEntity);
+    const auto* legacy = g_registry.try_get<ecs::LegacyItemPtr>(itemEntity);
+    return legacy ? legacy->ptr : nullptr;
 }
 
 static bool DestroyItemEntityAndLegacy(entt::entity itemEntity, const char* reason)
@@ -298,7 +272,7 @@ static bool DestroyItemEntityAndLegacy(entt::entity itemEntity, const char* reas
     if (const auto* identity = g_registry.try_get<ecs::ItemIdentity>(itemEntity))
         itemID = identity->id;
 
-    LPITEM legacyItem = ResolveLegacyItemForDestruction(itemEntity);
+    LPITEM legacyItem = LegacyItemBoundary(itemEntity);
     if (legacyItem) {
         // Phase 15E-final.LPENTITY.4-architect.D.6.fixup-5:
         // Order matters. The legacy ITEM_MANAGER::RemoveItem path ultimately
@@ -346,7 +320,7 @@ static uint32_t ItemVnumOrLegacy(LPITEM item)
     if (!item)
         return 0;
 
-    entt::entity e = ItemEntityOf(item);
+	entt::entity e = item ? item->GetEntityHandle() : entt::null;
     if (e != entt::null)
     {
         if (const auto* identity = g_registry.try_get<ecs::ItemIdentity>(e))
@@ -358,7 +332,7 @@ static uint32_t ItemVnumOrLegacy(LPITEM item)
 
 static void SyncItemCountComponent(LPITEM item, int count)
 {
-    entt::entity e = ItemEntityOf(item);
+	entt::entity e = item ? item->GetEntityHandle() : entt::null;
     if (e == entt::null)
         return;
 
@@ -367,7 +341,7 @@ static void SyncItemCountComponent(LPITEM item, int count)
 
 static void SyncItemFlagsComponent(LPITEM item)
 {
-    entt::entity e = ItemEntityOf(item);
+	entt::entity e = item ? item->GetEntityHandle() : entt::null;
     if (e == entt::null)
         return;
 
@@ -386,7 +360,7 @@ const int MAX_RARE_ATTR_NUM = ITEM_MANAGER::MAX_RARE_ATTR_NUM;
 
 static void SyncItemAttributesComponent(LPITEM item)
 {
-    entt::entity e = ItemEntityOf(item);
+	entt::entity e = item ? item->GetEntityHandle() : entt::null;
     if (e == entt::null)
         return;
 
@@ -400,7 +374,7 @@ static void SyncItemAttributesComponent(LPITEM item)
 
 static void SyncItemSocketsComponent(LPITEM item)
 {
-    entt::entity e = ItemEntityOf(item);
+	entt::entity e = item ? item->GetEntityHandle() : entt::null;
     if (e == entt::null)
         return;
 
@@ -649,11 +623,6 @@ entt::entity GetItem(entt::entity e, TItemPos cell)
 entt::entity GetInventoryItem(entt::entity e, uint16_t cell)
 {
     return GetMainInventoryItem(e, cell);
-}
-
-LPITEM GetInventoryItemPtr(entt::entity e, uint16_t cell)
-{
-    return LegacyItemOf(GetMainInventoryItem(e, cell));
 }
 
 #ifdef ENABLE_EXTRA_INVENTORY
@@ -947,14 +916,6 @@ entt::entity GetWearItem(entt::entity e, uint8_t wearPos)
     return GetMainInventoryItem(e, static_cast<uint16_t>(INVENTORY_MAX_NUM + wearPos));
 }
 
-LPITEM GetWear(entt::entity e, uint8_t wearPos)
-{
-    if (wearPos >= WEAR_MAX_NUM)
-        return nullptr;
-
-    return LegacyItemOf(GetWearItem(e, wearPos));
-}
-
 bool IsEquipUniqueItem(entt::entity e, uint32_t itemVnum)
 {
     for (const uint8_t wearSlot : { WEAR_UNIQUE1, WEAR_UNIQUE2, WEAR_COSTUME_MOUNT })
@@ -1013,7 +974,7 @@ static bool UseNonEquipItemLegacyBoundary(entt::entity owner,
                                           TItemPos destCell)
 {
     LPCHARACTER legacyOwner = LegacyCharOf(owner);
-    LPITEM legacyItem = ResolveLegacyItemForLegacySideEffect(item);
+    LPITEM legacyItem = LegacyItemBoundary(item);
     if (!legacyOwner || !legacyItem)
         return false;
 
@@ -1456,7 +1417,7 @@ entt::entity CreateItemEcs(uint32_t itemVnum, uint32_t count, uint32_t id,
     if (!legacyItem)
         return entt::null;
 
-    const entt::entity item = EntityFactory::CreateItemEntity(g_registry, legacyItem);
+    const entt::entity item = (legacyItem ? legacyItem->GetEntityHandle() : entt::null);
     if (!IsValidItem(item))
         return entt::null;
 
@@ -1521,7 +1482,7 @@ bool IsRuneItem(entt::entity item)
 
 bool ActivateRuneLegacyBoundary(entt::entity item)
 {
-    LPITEM legacyItem = ResolveLegacyItemForLegacySideEffect(item);
+    LPITEM legacyItem = LegacyItemBoundary(item);
     if (!legacyItem)
         return false;
     legacyItem->ActivateRune();
@@ -1530,7 +1491,7 @@ bool ActivateRuneLegacyBoundary(entt::entity item)
 
 bool DeactivateRuneLegacyBoundary(entt::entity item)
 {
-    LPITEM legacyItem = ResolveLegacyItemForLegacySideEffect(item);
+    LPITEM legacyItem = LegacyItemBoundary(item);
     if (!legacyItem)
         return false;
     legacyItem->DeactivateRune();
@@ -1539,7 +1500,7 @@ bool DeactivateRuneLegacyBoundary(entt::entity item)
 
 bool ChangeRuneAttributesLegacyBoundary(entt::entity item, int32_t time)
 {
-    LPITEM legacyItem = ResolveLegacyItemForLegacySideEffect(item);
+    LPITEM legacyItem = LegacyItemBoundary(item);
     if (!legacyItem)
         return false;
     legacyItem->ChangeRuneAttr(time);
@@ -1548,7 +1509,7 @@ bool ChangeRuneAttributesLegacyBoundary(entt::entity item, int32_t time)
 
 bool ActivateRuneBonusLegacyBoundary(entt::entity item)
 {
-    LPITEM legacyItem = ResolveLegacyItemForLegacySideEffect(item);
+    LPITEM legacyItem = LegacyItemBoundary(item);
     if (!legacyItem)
         return false;
     legacyItem->ActivateRuneBonus();
@@ -1661,6 +1622,19 @@ const char* GetItemName(entt::entity item)
         return protoRef->name;
 
     return "";
+}
+
+const char* GetItemNameByVnum(uint32_t vnum)
+{
+    const TItemTable* proto = ITEM_MANAGER::instance().GetTable(vnum);
+    if (!proto)
+        return "";
+
+#ifdef ENABLE_MULTI_NAMES
+    return proto->szLocaleName[DEFAULT_LANGUAGE];
+#else
+    return proto->szLocaleName;
+#endif
 }
 
 uint8_t GetItemSize(entt::entity item)
@@ -1800,7 +1774,7 @@ static void MirrorItemCountToLegacyNonDestroy(entt::entity item, uint32_t count)
 {
     if (count == 0)
         return;
-    if (LPITEM legacyItem = ResolveLegacyItemForLegacySideEffect(item))
+    if (LPITEM legacyItem = LegacyItemBoundary(item))
         legacyItem->SetCount(count);
 }
 
@@ -1869,7 +1843,7 @@ bool DestroyItemEntityEcs(entt::entity item, const char* reason)
 
 bool FlushDelayedSaveEcs(entt::entity item)
 {
-    LPITEM legacyItem = ResolveLegacyItemForLegacySideEffect(item);
+    LPITEM legacyItem = LegacyItemBoundary(item);
     if (!legacyItem)
         return false;
 
@@ -1879,7 +1853,7 @@ bool FlushDelayedSaveEcs(entt::entity item)
 
 bool SaveItemEcs(entt::entity item, bool flush)
 {
-    LPITEM legacyItem = ResolveLegacyItemForLegacySideEffect(item);
+    LPITEM legacyItem = LegacyItemBoundary(item);
     if (!legacyItem)
         return false;
 
@@ -1923,7 +1897,9 @@ entt::entity RollPartyDropOwnership(entt::entity item, entt::entity initialOwner
     int lastNumber = 0;
     auto roll = [&](LPCHARACTER member)
     {
-        const entt::entity memberEntity = AIHelpers::EcsOf(member);
+        const entt::entity memberEntity = member
+            ? member->GetEntityHandle()
+            : entt::null;
         if (memberEntity == entt::null || !g_registry.valid(memberEntity))
             return;
 
@@ -2020,7 +1996,7 @@ bool SetItemSocket(entt::entity item, int index, uint32_t value)
     auto& sockets = g_registry.get_or_emplace<ecs::ItemSockets>(item);
     sockets.sockets[index] = static_cast<int32_t>(value);
 
-    if (LPITEM legacyItem = ResolveLegacyItemForLegacySideEffect(item))
+    if (LPITEM legacyItem = LegacyItemBoundary(item))
         legacyItem->SetSocket(index, static_cast<int32_t>(value));
 
     return true;
@@ -2033,7 +2009,7 @@ bool SetItemSocketEcs(entt::entity item, int index, uint32_t value)
 
 bool SyncItemSocketsFromLegacy(entt::entity item)
 {
-    LPITEM legacyItem = ResolveLegacyItemForLegacySideEffect(item);
+    LPITEM legacyItem = LegacyItemBoundary(item);
     if (!legacyItem || item == entt::null || !g_registry.valid(item))
         return false;
 
@@ -2049,7 +2025,7 @@ bool SyncItemSocketsFromLegacy(entt::entity item)
 bool SyncLegacySocketsFromEcs(entt::entity item)
 {
     auto* sockets = g_registry.try_get<ecs::ItemSockets>(item);
-    LPITEM legacyItem = ResolveLegacyItemForLegacySideEffect(item);
+    LPITEM legacyItem = LegacyItemBoundary(item);
     if (!sockets || !legacyItem)
         return false;
 
@@ -2069,7 +2045,7 @@ bool SetItemAttribute(entt::entity item, int index, int type, int value)
     attrs.attrs[index].bType = static_cast<uint8_t>(type);
     attrs.attrs[index].sValue = static_cast<short>(value);
 
-    if (LPITEM legacyItem = ResolveLegacyItemForLegacySideEffect(item))
+    if (LPITEM legacyItem = LegacyItemBoundary(item))
         legacyItem->SetAttributes(attrs.attrs.data());
 
     return true;
@@ -2087,7 +2063,7 @@ bool SetItemForceAttributeEcs(entt::entity item, int index, uint8_t type, int16_
 
 bool AddItemAttributeEcs(entt::entity item)
 {
-    LPITEM legacyItem = ResolveLegacyItemForLegacySideEffect(item);
+    LPITEM legacyItem = LegacyItemBoundary(item);
     if (!legacyItem)
         return false;
 
@@ -2097,7 +2073,7 @@ bool AddItemAttributeEcs(entt::entity item)
 
 bool ChangeItemAttributeEcs(entt::entity item)
 {
-    LPITEM legacyItem = ResolveLegacyItemForLegacySideEffect(item);
+    LPITEM legacyItem = LegacyItemBoundary(item);
     if (!legacyItem)
         return false;
 
@@ -2116,7 +2092,7 @@ bool ClearItemAttributesEcs(entt::entity item)
         attr.sValue = 0;
     }
 
-    if (LPITEM legacyItem = ResolveLegacyItemForLegacySideEffect(item))
+    if (LPITEM legacyItem = LegacyItemBoundary(item))
         legacyItem->SetAttributes(attrs.attrs.data());
 
     return true;
@@ -2124,7 +2100,7 @@ bool ClearItemAttributesEcs(entt::entity item)
 
 bool SyncItemAttributesFromLegacy(entt::entity item)
 {
-    LPITEM legacyItem = ResolveLegacyItemForLegacySideEffect(item);
+    LPITEM legacyItem = LegacyItemBoundary(item);
     if (!legacyItem || item == entt::null || !g_registry.valid(item))
         return false;
 
@@ -2140,7 +2116,7 @@ bool SyncItemAttributesFromLegacy(entt::entity item)
 bool SyncLegacyAttributesFromEcs(entt::entity item)
 {
     auto* attrs = g_registry.try_get<ecs::ItemAttributes>(item);
-    LPITEM legacyItem = ResolveLegacyItemForLegacySideEffect(item);
+    LPITEM legacyItem = LegacyItemBoundary(item);
     if (!attrs || !legacyItem)
         return false;
 
@@ -2156,7 +2132,7 @@ bool SetItemExchanging(entt::entity item, bool flag)
     auto& flags = g_registry.get_or_emplace<ecs::ItemFlags>(item);
     flags.exchanging = flag;
 
-    if (LPITEM legacyItem = ResolveLegacyItemForLegacySideEffect(item))
+    if (LPITEM legacyItem = LegacyItemBoundary(item))
         legacyItem->SetExchanging(flag);
 
     return true;
@@ -2263,7 +2239,7 @@ int GetItemRareAttributeCount(entt::entity item)
 
 bool AddItemRareAttributeEcs(entt::entity item)
 {
-    LPITEM legacyItem = ResolveLegacyItemForLegacySideEffect(item);
+    LPITEM legacyItem = LegacyItemBoundary(item);
     if (!legacyItem || !legacyItem->AddRareAttribute())
         return false;
 
@@ -2272,7 +2248,7 @@ bool AddItemRareAttributeEcs(entt::entity item)
 
 bool ChangeItemRareAttributeEcs(entt::entity item)
 {
-    LPITEM legacyItem = ResolveLegacyItemForLegacySideEffect(item);
+    LPITEM legacyItem = LegacyItemBoundary(item);
     if (!legacyItem || !legacyItem->ChangeRareAttribute())
         return false;
 
@@ -2281,7 +2257,7 @@ bool ChangeItemRareAttributeEcs(entt::entity item)
 
 bool AttrLogEcs(entt::entity item)
 {
-    LPITEM legacyItem = ResolveLegacyItemForLegacySideEffect(item);
+    LPITEM legacyItem = LegacyItemBoundary(item);
     if (!legacyItem)
         return false;
 
@@ -2310,7 +2286,7 @@ bool IsItemLocked(entt::entity item)
 bool IsItemBound(entt::entity item)
 {
 #ifdef __SOULBINDING_SYSTEM__
-    if (LPITEM legacyItem = ResolveLegacyItemForLegacySideEffect(item))
+    if (LPITEM legacyItem = LegacyItemBoundary(item))
         return legacyItem->IsBind() || legacyItem->IsUntilBind();
 #else
     (void)item;
@@ -2335,7 +2311,7 @@ bool LockItem(entt::entity item, bool locked)
     auto& flags = g_registry.get_or_emplace<ecs::ItemFlags>(item);
     flags.isLocked = locked;
 
-    if (LPITEM legacyItem = ResolveLegacyItemForLegacySideEffect(item))
+    if (LPITEM legacyItem = LegacyItemBoundary(item))
         legacyItem->Lock(locked);
 
     return true;
@@ -2354,7 +2330,7 @@ bool SetItemSkipSave(entt::entity item, bool flag)
     auto& flags = g_registry.get_or_emplace<ecs::ItemFlags>(item);
     flags.skipSave = flag;
 
-    if (LPITEM legacyItem = ResolveLegacyItemForLegacySideEffect(item))
+    if (LPITEM legacyItem = LegacyItemBoundary(item))
         legacyItem->SetSkipSave(flag);
 
     return true;
@@ -2368,7 +2344,7 @@ bool SetItemWindow(entt::entity item, uint8_t window)
     auto& location = g_registry.get_or_emplace<ecs::ItemLocation>(item);
     location.window = window;
 
-    if (LPITEM legacyItem = ResolveLegacyItemForLegacySideEffect(item))
+    if (LPITEM legacyItem = LegacyItemBoundary(item))
         legacyItem->SetWindow(window);
 
     return true;
@@ -2378,7 +2354,7 @@ static bool MirrorItemCellToLegacyBoundary(entt::entity item,
                                            entt::entity owner,
                                            uint16_t cell)
 {
-    LPITEM legacyItem = ResolveLegacyItemForLegacySideEffect(item);
+    LPITEM legacyItem = LegacyItemBoundary(item);
     if (!legacyItem)
         return false;
 
@@ -2405,7 +2381,7 @@ bool SetItemCell(entt::entity item, entt::entity owner, uint16_t cell)
 
 bool AlterItemToMagicItem(entt::entity item)
 {
-    LPITEM legacyItem = ResolveLegacyItemForLegacySideEffect(item);
+    LPITEM legacyItem = LegacyItemBoundary(item);
     if (!legacyItem)
         return false;
 
@@ -2505,7 +2481,7 @@ static bool AddItemToCharacterLegacyBoundary(entt::entity owner,
                                              uint16_t cell)
 {
     LPCHARACTER legacyOwner = LegacyCharOf(owner);
-    LPITEM legacyItem = ResolveLegacyItemForLegacySideEffect(item);
+    LPITEM legacyItem = LegacyItemBoundary(item);
     return legacyOwner && legacyItem &&
         legacyItem->AddToCharacter(legacyOwner, TItemPos(window, cell));
 }
@@ -2560,7 +2536,7 @@ bool PlaceItemEcs(entt::entity owner, entt::entity item, uint8_t window, uint16_
 
 bool RemoveItemEcs(entt::entity item)
 {
-    LPITEM legacyItem = ResolveLegacyItemForLegacySideEffect(item);
+    LPITEM legacyItem = LegacyItemBoundary(item);
     if (!legacyItem)
         return false;
 
@@ -2580,7 +2556,7 @@ bool RemoveItemEcs(entt::entity item)
 
 bool RemoveItemFromCharacterLegacyBoundary(entt::entity item)
 {
-    LPITEM legacyItem = ResolveLegacyItemForLegacySideEffect(item);
+    LPITEM legacyItem = LegacyItemBoundary(item);
     if (!legacyItem || !legacyItem->GetOwner())
         return false;
 
@@ -2709,7 +2685,7 @@ bool HasInventorySpaceForItemVnum(entt::entity owner, uint32_t itemVnum)
 bool PlaceItemOnGroundLegacyBoundary(entt::entity item, int32_t mapIndex,
                                      const PIXEL_POSITION& position, int destroySeconds)
 {
-    LPITEM legacyItem = ResolveLegacyItemForLegacySideEffect(item);
+    LPITEM legacyItem = LegacyItemBoundary(item);
     if (!legacyItem || destroySeconds <= 0)
         return false;
 
@@ -2769,7 +2745,7 @@ bool IsItemVnumStackable(uint32_t vnum)
 
 bool ModifyItemPointsEcs(entt::entity item, bool add)
 {
-    LPITEM legacyItem = ResolveLegacyItemForLegacySideEffect(item);
+    LPITEM legacyItem = LegacyItemBoundary(item);
     if (!legacyItem)
         return false;
 
@@ -2779,7 +2755,7 @@ bool ModifyItemPointsEcs(entt::entity item, bool add)
 
 bool StartTimerBasedOnWearExpireEventEcs(entt::entity item)
 {
-    LPITEM legacyItem = ResolveLegacyItemForLegacySideEffect(item);
+    LPITEM legacyItem = LegacyItemBoundary(item);
     if (!legacyItem)
         return false;
 
@@ -2790,7 +2766,7 @@ bool StartTimerBasedOnWearExpireEventEcs(entt::entity item)
 
 bool StopTimerBasedOnWearExpireEventEcs(entt::entity item)
 {
-    LPITEM legacyItem = ResolveLegacyItemForLegacySideEffect(item);
+    LPITEM legacyItem = LegacyItemBoundary(item);
     if (!legacyItem)
         return false;
 
@@ -2801,7 +2777,7 @@ bool StopTimerBasedOnWearExpireEventEcs(entt::entity item)
 
 bool StartRealTimeExpireEventEcs(entt::entity item)
 {
-    LPITEM legacyItem = ResolveLegacyItemForLegacySideEffect(item);
+    LPITEM legacyItem = LegacyItemBoundary(item);
     if (!legacyItem)
         return false;
 
@@ -2813,7 +2789,7 @@ static int FindEquipCellLegacyBoundary(entt::entity owner, entt::entity item,
                                        int candidateCell)
 {
     LPCHARACTER legacyOwner = LegacyCharOf(owner);
-    LPITEM legacyItem = ResolveLegacyItemForLegacySideEffect(item);
+    LPITEM legacyItem = LegacyItemBoundary(item);
     return legacyOwner && legacyItem
         ? legacyItem->FindEquipCell(legacyOwner, candidateCell)
         : -1;
@@ -2823,7 +2799,7 @@ static bool EquipItemLegacyBoundary(entt::entity owner, entt::entity item,
                                     int candidateCell)
 {
     LPCHARACTER legacyOwner = LegacyCharOf(owner);
-    LPITEM legacyItem = ResolveLegacyItemForLegacySideEffect(item);
+    LPITEM legacyItem = LegacyItemBoundary(item);
     return legacyOwner && legacyItem &&
         legacyOwner->EquipItem(legacyItem, candidateCell);
 }
@@ -2831,7 +2807,7 @@ static bool EquipItemLegacyBoundary(entt::entity owner, entt::entity item,
 static bool UnequipItemLegacyBoundary(entt::entity owner, entt::entity item)
 {
     LPCHARACTER legacyOwner = LegacyCharOf(owner);
-    LPITEM legacyItem = ResolveLegacyItemForLegacySideEffect(item);
+    LPITEM legacyItem = LegacyItemBoundary(item);
     return legacyOwner && legacyItem && legacyOwner->UnequipItem(legacyItem);
 }
 
@@ -2937,7 +2913,7 @@ bool UnequipItemEcs(entt::entity owner, entt::entity item)
 
 bool SyncItemLocationFromLegacy(entt::entity item)
 {
-    LPITEM legacyItem = ResolveLegacyItemForLegacySideEffect(item);
+    LPITEM legacyItem = LegacyItemBoundary(item);
     if (!legacyItem || item == entt::null || !g_registry.valid(item))
         return false;
 
@@ -2953,13 +2929,13 @@ bool SyncItemLocationFromLegacy(entt::entity item)
 
 bool SyncItemOwnerFromLegacy(entt::entity item)
 {
-    LPITEM legacyItem = ResolveLegacyItemForLegacySideEffect(item);
+    LPITEM legacyItem = LegacyItemBoundary(item);
     if (!legacyItem || item == entt::null || !g_registry.valid(item))
         return false;
 
     uint32_t ownerPID = 0;
     if (const auto* owner = legacyItem->GetOwner())
-        ownerPID = ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(owner));
+        ownerPID = ecs::PlayerRuntime::GetPlayerID(owner->GetEntityHandle());
 
     g_registry.emplace_or_replace<ecs::ItemOwner>(
         item, ecs::ItemOwner{ownerPID, legacyItem->GetLastOwnerPID(), ownerPID});
@@ -2968,7 +2944,7 @@ bool SyncItemOwnerFromLegacy(entt::entity item)
 
 bool SyncItemStateFromLegacy(entt::entity item)
 {
-    LPITEM legacyItem = ResolveLegacyItemForLegacySideEffect(item);
+    LPITEM legacyItem = LegacyItemBoundary(item);
     if (!legacyItem || item == entt::null || !g_registry.valid(item))
         return false;
 
@@ -3010,7 +2986,7 @@ bool SyncItemStateFromLegacy(entt::entity item)
 
 bool DestroyLoadedDuplicateItem(entt::entity item)
 {
-    LPITEM legacyItem = ResolveLegacyItemForDestruction(item);
+    LPITEM legacyItem = LegacyItemBoundary(item);
     if (!legacyItem) {
         LOG_ERROR("DUP_ITEM_DESTROY_RESOLVE_FAIL entity={}", static_cast<uint32_t>(item));
         return false;
@@ -3078,7 +3054,7 @@ bool TransferItemOwnership(entt::entity item, entt::entity from, entt::entity to
 bool SetGroundOwnershipLegacyBoundary(entt::entity item, entt::entity owner,
                                       int seconds)
 {
-    LPITEM legacyItem = ResolveLegacyItemForLegacySideEffect(item);
+    LPITEM legacyItem = LegacyItemBoundary(item);
     LPCHARACTER legacyOwner = LegacyCharOf(owner);
     if (!legacyItem || !legacyOwner)
         return false;
@@ -3093,7 +3069,7 @@ static bool ReceiveItemLegacyBoundary(entt::entity receiver,
 {
     LPCHARACTER legacyReceiver = LegacyCharOf(receiver);
     LPCHARACTER legacyFrom = LegacyCharOf(from);
-    LPITEM legacyItem = ResolveLegacyItemForLegacySideEffect(item);
+    LPITEM legacyItem = LegacyItemBoundary(item);
     if (!legacyReceiver || !legacyFrom || !legacyItem ||
         !legacyReceiver->CanReceiveItem(legacyFrom, legacyItem))
         return false;
@@ -3157,7 +3133,7 @@ static bool DoRefineLegacyBoundary(entt::entity owner, entt::entity item,
                                    bool moneyOnly)
 {
     LPCHARACTER legacyOwner = LegacyCharOf(owner);
-    LPITEM legacyItem = ResolveLegacyItemForLegacySideEffect(item);
+    LPITEM legacyItem = LegacyItemBoundary(item);
     return legacyOwner && legacyItem &&
         legacyOwner->DoRefine(legacyItem, moneyOnly);
 }
@@ -3166,7 +3142,7 @@ static bool DoRefineWithScrollLegacyBoundary(entt::entity owner,
                                              entt::entity item)
 {
     LPCHARACTER legacyOwner = LegacyCharOf(owner);
-    LPITEM legacyItem = ResolveLegacyItemForLegacySideEffect(item);
+    LPITEM legacyItem = LegacyItemBoundary(item);
     return legacyOwner && legacyItem &&
         legacyOwner->DoRefineWithScroll(legacyItem);
 }
@@ -3175,7 +3151,7 @@ static bool DoRefineItemSoulLegacyBoundary(entt::entity owner,
                                            entt::entity item)
 {
     LPCHARACTER legacyOwner = LegacyCharOf(owner);
-    LPITEM legacyItem = ResolveLegacyItemForLegacySideEffect(item);
+    LPITEM legacyItem = LegacyItemBoundary(item);
     return legacyOwner && legacyItem &&
         legacyOwner->DoRefineItemSoul(legacyItem);
 }

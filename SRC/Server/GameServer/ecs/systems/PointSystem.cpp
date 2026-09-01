@@ -3,6 +3,9 @@
 #include "PointSystem.hpp"
 #include "PointRouter.hpp"
 #include "QuestSystem.hpp"
+#include "PlayerRuntimeSystem.hpp"
+#include "SkillSystem.hpp"
+#include "NetworkSyncSystem.hpp"
 
 #include <array>
 #include <common/VnumHelper.h>
@@ -14,6 +17,8 @@
 #include "../components/inventory_components.hpp"
 #include "../components/status_components.hpp"
 #include "../components/vital_components.hpp"
+#include "../EventDispatcher.hpp"
+#include "../events.hpp"
 #include "../../char.h"
 
 
@@ -323,6 +328,179 @@ int32_t GetLevel(entt::entity e)
 	return 0;
 }
 
+bool Set(entt::entity e, uint8_t type, int64_t value)
+{
+	if (type >= POINT_MAX_NUM || !IsReadableEntity(e))
+		return false;
+
+	// The legacy method mirrors the write back into CharacterStatsComponent.
+	if (auto* character = ecs::LegacyCharOf(e))
+	{
+		character->SetPoint(type, value);
+		return true;
+	}
+
+	auto& stats = g_registry.get_or_emplace<ecs::CharacterStatsComponent>(e);
+	stats.points[type] = value;
+	auto& points = g_registry.get_or_emplace<ecs::CharacterPoints>(e);
+	points.instant.points[type] = value;
+	g_registry.emplace_or_replace<ecs::DirtyTag>(e);
+	return true;
+}
+
+bool SetReal(entt::entity e, uint8_t type, int64_t value)
+{
+	if (type >= POINT_MAX_NUM || !IsReadableEntity(e))
+		return false;
+
+	// Compatibility boundary until CHARACTER's point storage is removed.
+	if (auto* character = ecs::LegacyCharOf(e))
+	{
+		character->SetRealPoint(type, value);
+		return true;
+	}
+
+	auto& points = g_registry.get_or_emplace<ecs::CharacterPoints>(e);
+	points.base.points[type] = value;
+	g_registry.emplace_or_replace<ecs::DirtyTag>(e);
+	return true;
+}
+
+void SetRandomHP(entt::entity e, int value)
+{
+	if (!IsReadableEntity(e))
+		return;
+	g_registry.get_or_emplace<ecs::CharacterPoints>(e).base.iRandomHP = value;
+	g_registry.emplace_or_replace<ecs::DirtyTag>(e);
+}
+
+void SetRandomSP(entt::entity e, int value)
+{
+	if (!IsReadableEntity(e))
+		return;
+	g_registry.get_or_emplace<ecs::CharacterPoints>(e).base.iRandomSP = value;
+	g_registry.emplace_or_replace<ecs::DirtyTag>(e);
+}
+
+int GetRandomHP(entt::entity e)
+{
+	if (!IsReadableEntity(e))
+		return 0;
+	const auto* points = g_registry.try_get<ecs::CharacterPoints>(e);
+	return points ? points->base.iRandomHP : 0;
+}
+
+int GetRandomSP(entt::entity e)
+{
+	if (!IsReadableEntity(e))
+		return 0;
+	const auto* points = g_registry.try_get<ecs::CharacterPoints>(e);
+	return points ? points->base.iRandomSP : 0;
+}
+
+bool SetLevelFromQuest(entt::entity e, int newLevel)
+{
+	if (!IsReadableEntity(e))
+		return false;
+	const int oldLevel = GetLevel(e);
+	Change(e, POINT_SKILL, newLevel - oldLevel);
+	Change(e, POINT_SUB_SKILL, newLevel < 10 ? 0 : newLevel - MAX(oldLevel, 9));
+	Change(e, POINT_STAT,
+		(MINMAX(1, newLevel, gPlayerMaxLevel) - oldLevel) * 3 + Get(e, POINT_LEVEL_STEP));
+	Change(e, POINT_LEVEL, newLevel - oldLevel);
+
+	const uint8_t job = ecs::PlayerRuntime::GetJob(e);
+	SetRandomHP(e, (newLevel - 1) * number(
+		JobInitialPoints[job].hp_per_lv_begin, JobInitialPoints[job].hp_per_lv_end));
+	SetRandomSP(e, (newLevel - 1) * number(
+		JobInitialPoints[job].sp_per_lv_begin, JobInitialPoints[job].sp_per_lv_end));
+	Compute(e);
+	Change(e, POINT_HP, GetMaxHP(e) - Get(e, POINT_HP));
+	Change(e, POINT_SP, GetMaxSP(e) - Get(e, POINT_SP));
+	NetworkSyncSystem::PointsPacket(e);
+	SkillSystem::SendSkillLevelPacket(e);
+	g_registry.emplace_or_replace<ecs::DirtyTag>(e);
+	g_dispatcher.trigger(ecs::EvLevelUp { e, GetLevel(e) });
+	return true;
+}
+
+bool ResetStat(entt::entity e, int statIndex)
+{
+	if (!IsReadableEntity(e) || statIndex < 0 || statIndex > 3)
+		return false;
+	static constexpr uint8_t points[] { POINT_HT, POINT_IQ, POINT_ST, POINT_DX };
+	static constexpr const char* names[] { "ht", "iq", "st", "dx" };
+	const uint8_t point = points[statIndex];
+	const int64_t oldValue = GetReal(e, point);
+	const int64_t oldStat = GetReal(e, POINT_STAT);
+	SetReal(e, point, 1);
+	Set(e, point, 1);
+	Change(e, POINT_STAT, oldValue - 1);
+
+	const uint8_t job = ecs::PlayerRuntime::GetJob(e);
+	if (point == POINT_HT)
+		SetRandomHP(e, (GetLevel(e) - 1) * number(
+			JobInitialPoints[job].hp_per_lv_begin, JobInitialPoints[job].hp_per_lv_end));
+	else if (point == POINT_IQ)
+		SetRandomSP(e, (GetLevel(e) - 1) * number(
+			JobInitialPoints[job].sp_per_lv_begin, JobInitialPoints[job].sp_per_lv_end));
+
+	Compute(e);
+	NetworkSyncSystem::PointsPacket(e);
+	if (point == POINT_HT)
+		Change(e, POINT_HP, GetMaxHP(e) - Get(e, POINT_HP));
+	else if (point == POINT_IQ)
+		Change(e, POINT_SP, GetMaxSP(e) - Get(e, POINT_SP));
+
+	char detail[128];
+	snprintf(detail, sizeof(detail), "reset %s(%lld)->1 stat_point(%lld)->(%lld)",
+		names[statIndex], oldValue, oldStat, GetReal(e, POINT_STAT));
+	LogManager::instance().CharLog(e, 0, "RESET_ONE_STATUS", detail);
+	return true;
+}
+
+bool ResetAllPoints(entt::entity e, int level)
+{
+	if (!IsReadableEntity(e))
+		return false;
+	const uint8_t job = ecs::PlayerRuntime::GetJob(e);
+	Change(e, POINT_LEVEL, level - GetLevel(e));
+	for (const auto [point, value] : {
+		std::pair<uint8_t, int> { POINT_ST, JobInitialPoints[job].st },
+		std::pair<uint8_t, int> { POINT_HT, JobInitialPoints[job].ht },
+		std::pair<uint8_t, int> { POINT_DX, JobInitialPoints[job].dx },
+		std::pair<uint8_t, int> { POINT_IQ, JobInitialPoints[job].iq } })
+	{
+		SetReal(e, point, value);
+		Set(e, point, value);
+	}
+	SetRandomHP(e, (level - 1) * number(
+		JobInitialPoints[job].hp_per_lv_begin, JobInitialPoints[job].hp_per_lv_end));
+	SetRandomSP(e, (level - 1) * number(
+		JobInitialPoints[job].sp_per_lv_begin, JobInitialPoints[job].sp_per_lv_end));
+	int statusLevel = level;
+#ifdef ENABLE_STATUS_MAX_344_POINTS
+	if (statusLevel > 0)
+		--statusLevel;
+#endif
+	Change(e, POINT_STAT,
+		MINMAX(1, statusLevel, g_iStatusPointGetLevelLimit) * 3 +
+		Get(e, POINT_LEVEL_STEP) - Get(e, POINT_STAT));
+	Compute(e);
+	Change(e, POINT_HP, GetMaxHP(e) - Get(e, POINT_HP));
+	Change(e, POINT_SP, GetMaxSP(e) - Get(e, POINT_SP));
+	NetworkSyncSystem::PointsPacket(e);
+	LogManager::instance().CharLog(e, 0, "RESET_POINT", "");
+	return true;
+}
+
+void Compute(entt::entity e)
+{
+	// Compatibility boundary until point calculation is component-native.
+	if (auto* character = ecs::LegacyCharOf(e))
+		character->ComputePoints();
+}
+
 #ifdef __ENABLE_BLOCK_EXP__
 bool IsExperienceBlocked(entt::entity e)
 {
@@ -397,6 +575,28 @@ void Change(entt::entity e, uint8_t type, int64_t amount, bool bAmount, bool bBr
 int64_t CHARACTER::GetRealPoint(uint8_t type) const
 {
 	return m_points.points[type];
+}
+
+void CHARACTER::SetRandomHP(int value)
+{
+	m_points.iRandomHP = value;
+	ecs::PointSystem::SetRandomHP(GetEntityHandle(), value);
+}
+
+void CHARACTER::SetRandomSP(int value)
+{
+	m_points.iRandomSP = value;
+	ecs::PointSystem::SetRandomSP(GetEntityHandle(), value);
+}
+
+int CHARACTER::GetRandomHP() const
+{
+	return ecs::PointSystem::GetRandomHP(GetEntityHandle());
+}
+
+int CHARACTER::GetRandomSP() const
+{
+	return ecs::PointSystem::GetRandomSP(GetEntityHandle());
 }
 
 void CHARACTER::SetRealPoint(uint8_t type, int64_t val)
@@ -701,7 +901,7 @@ void CHARACTER::PointChange(uint8_t type, int64_t amount, bool bAmount, bool bBr
 			//							n -= 3;
 			//						}
 			//
-			//						ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), 
+			//						ecs::ChatSystem::SendNew(GetEntityHandle(),
 			//#ifdef ENABLE_NEW_CHAT
 			//						CHAT_TYPE_INFO_EXP
 			//#else
@@ -796,8 +996,8 @@ void CHARACTER::PointChange(uint8_t type, int64_t amount, bool bAmount, bool bBr
 				int iHP = number(JobInitialPoints[GetJob()].hp_per_lv_begin, JobInitialPoints[GetJob()].hp_per_lv_end);
 				int iSP = number(JobInitialPoints[GetJob()].sp_per_lv_begin, JobInitialPoints[GetJob()].sp_per_lv_end);
 
-				m_points.iRandomHP += iHP;
-				m_points.iRandomSP += iSP;
+				SetRandomHP(GetRandomHP() + iHP);
+				SetRandomSP(GetRandomSP() + iSP);
 
 				if (GetSkillGroup())
 				{
@@ -976,7 +1176,7 @@ void CHARACTER::PointChange(uint8_t type, int64_t amount, bool bAmount, bool bBr
 		//						n -= 3;
 		//					}
 		//
-		//					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), 
+		//					ecs::ChatSystem::SendNew(GetEntityHandle(),
 		//#ifdef ENABLE_NEW_CHAT
 		//					CHAT_TYPE_INFO_VALUE
 		//#else

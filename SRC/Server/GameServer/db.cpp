@@ -1043,7 +1043,7 @@ void DBManager::AnalyzeReturnQuery(SQLMsg * pMsg)
 				{
 					if (pMsg->Get()->uiAffectedRows == 0 || pMsg->Get()->uiAffectedRows == (uint32_t)-1)
 					{
-						LOG_INFO("GIVE LOTTO FAIL TO pid {}", (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))));
+						LOG_INFO("GIVE LOTTO FAIL TO pid {}", (ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null))));
 					}
 					else
 					{
@@ -1051,12 +1051,12 @@ void DBManager::AnalyzeReturnQuery(SQLMsg * pMsg)
 
 						if (pkItem)
 						{
-							LOG_INFO("GIVE LOTTO SUCCESS TO {} (pid {})", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), qi->dwIdent);
-							ItemSystem::SetItemSocket(EntityFactory::CreateItemEntity(g_registry, pkItem), 0, pMsg->Get()->uiInsertID);
-							ItemSystem::SetItemSocket(EntityFactory::CreateItemEntity(g_registry, pkItem), 1, pdw[2]);
+							LOG_INFO("GIVE LOTTO SUCCESS TO {} (pid {})", ecs::PlayerRuntime::GetName(((ch) ? (ch)->GetEntityHandle() : entt::null)).data(), qi->dwIdent);
+							ItemSystem::SetItemSocket((pkItem ? pkItem->GetEntityHandle() : entt::null), 0, pMsg->Get()->uiInsertID);
+							ItemSystem::SetItemSocket((pkItem ? pkItem->GetEntityHandle() : entt::null), 1, pdw[2]);
 						}
 						else
-							LOG_INFO("GIVE LOTTO FAIL2 TO pid {}", (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))));
+							LOG_INFO("GIVE LOTTO FAIL2 TO pid {}", (ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null))));
 					}
 				}
 
@@ -1109,12 +1109,12 @@ void DBManager::AnalyzeReturnQuery(SQLMsg * pMsg)
 					MYSQL_ROW row;
 					while ((row = mysql_fetch_row(pMsg->Get()->pSQLResult)))
 					{
-						ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "%s %s sec", row[0], row[1]);
+						ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "%s %s sec", row[0], row[1]);
 					}
 				}
 #ifdef TEXTS_IMPROVEMENT
 				else {
-					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 820, "");
+					ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 820, "");
 				}
 #endif
 			}
@@ -1232,23 +1232,23 @@ void VCardUse(LPCHARACTER CardOwner, LPCHARACTER CardTaker, LPITEM item)
 {
 	TPacketGDVCard p;
 
-	p.dwID = ItemSystem::GetItemSocket(EntityFactory::CreateItemEntity(g_registry, item), 0);
-	strlcpy(p.szSellCharacter, ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(CardOwner)).data(), sizeof(p.szSellCharacter));
-	strlcpy(p.szSellAccount, ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(CardOwner))->GetAccountTable().login, sizeof(p.szSellAccount));
-	strlcpy(p.szBuyCharacter, ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(CardTaker)).data(), sizeof(p.szBuyCharacter));
-	strlcpy(p.szBuyAccount, ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(CardTaker))->GetAccountTable().login, sizeof(p.szBuyAccount));
+	p.dwID = ItemSystem::GetItemSocket((item ? item->GetEntityHandle() : entt::null), 0);
+	strlcpy(p.szSellCharacter, ecs::PlayerRuntime::GetName(((CardOwner) ? (CardOwner)->GetEntityHandle() : entt::null)).data(), sizeof(p.szSellCharacter));
+	strlcpy(p.szSellAccount, ecs::PlayerRuntime::GetDesc(((CardOwner) ? (CardOwner)->GetEntityHandle() : entt::null))->GetAccountTable().login, sizeof(p.szSellAccount));
+	strlcpy(p.szBuyCharacter, ecs::PlayerRuntime::GetName(((CardTaker) ? (CardTaker)->GetEntityHandle() : entt::null)).data(), sizeof(p.szBuyCharacter));
+	strlcpy(p.szBuyAccount, ecs::PlayerRuntime::GetDesc(((CardTaker) ? (CardTaker)->GetEntityHandle() : entt::null))->GetAccountTable().login, sizeof(p.szBuyAccount));
 
 	db_clientdesc->DBPacket(HEADER_GD_VCARD, 0, &p, sizeof(TPacketGDVCard));
 #ifdef TEXTS_IMPROVEMENT
-	ecs::ChatSystem::SendNew(AIHelpers::EcsOf(CardTaker), CHAT_TYPE_INFO, 101, "%d", ItemSystem::GetItemSocket(EntityFactory::CreateItemEntity(g_registry, item), 1) / 60, ItemSystem::GetItemSocket(EntityFactory::CreateItemEntity(g_registry, item), 0));
+	ecs::ChatSystem::SendNew(((CardTaker) ? (CardTaker)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 101, "%d", ItemSystem::GetItemSocket((item ? item->GetEntityHandle() : entt::null), 1) / 60, ItemSystem::GetItemSocket((item ? item->GetEntityHandle() : entt::null), 0));
 #endif
-	LogManager::instance().VCardLog(p.dwID, ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(CardTaker)), ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(CardTaker)), g_stHostname.c_str(),
-			ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(CardOwner)).data(), ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(CardOwner))->GetHostName(),
-			ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(CardTaker)).data(), ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(CardTaker))->GetHostName());
+	LogManager::instance().VCardLog(p.dwID, ecs::PlayerRuntime::GetX(((CardTaker) ? (CardTaker)->GetEntityHandle() : entt::null)), ecs::PlayerRuntime::GetY(((CardTaker) ? (CardTaker)->GetEntityHandle() : entt::null)), g_stHostname.c_str(),
+			ecs::PlayerRuntime::GetName(((CardOwner) ? (CardOwner)->GetEntityHandle() : entt::null)).data(), ecs::PlayerRuntime::GetDesc(((CardOwner) ? (CardOwner)->GetEntityHandle() : entt::null))->GetHostName(),
+			ecs::PlayerRuntime::GetName(((CardTaker) ? (CardTaker)->GetEntityHandle() : entt::null)).data(), ecs::PlayerRuntime::GetDesc(((CardTaker) ? (CardTaker)->GetEntityHandle() : entt::null))->GetHostName());
 
 	ITEM_MANAGER::instance().RemoveItem(item);
 
-	LOG_INFO("VCARD_TAKE: {} {} -> {}", p.dwID, ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(CardOwner)).data(), ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(CardTaker)).data());
+	LOG_INFO("VCARD_TAKE: {} {} -> {}", p.dwID, ecs::PlayerRuntime::GetName(((CardOwner) ? (CardOwner)->GetEntityHandle() : entt::null)).data(), ecs::PlayerRuntime::GetName(((CardTaker) ? (CardTaker)->GetEntityHandle() : entt::null)).data());
 }
 
 void DBManager::StopAllBilling()

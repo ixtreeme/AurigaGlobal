@@ -134,7 +134,7 @@ namespace
             if (!ent || !ent->IsType(ENTITY_CHARACTER))
                 return;
             LPCHARACTER ch = static_cast<LPCHARACTER>(ent);
-            if (ch && ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch)))
+            if (ch && ecs::PlayerRuntime::IsPC(((ch) ? (ch)->GetEntityHandle() : entt::null)))
                 fn(ch);
         }
     };
@@ -158,7 +158,7 @@ namespace
 
         ForEachPcOnMap(mapIndex, [&](LPCHARACTER pc) {
             if (pc)
-                ecs::ChatSystem::Send(AIHelpers::EcsOf(pc), CHAT_TYPE_BIG_NOTICE, "%s", buf);
+                ecs::ChatSystem::Send(((pc) ? (pc)->GetEntityHandle() : entt::null), CHAT_TYPE_BIG_NOTICE, "%s", buf);
             });
     }
 
@@ -171,8 +171,8 @@ namespace
         va_end(ap);
 
         ForEachPcOnMap(mapIndex, [&](LPCHARACTER pc) {
-            if (pc && ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(pc)))
-                ecs::ChatSystem::Send(AIHelpers::EcsOf(pc), CHAT_TYPE_COMMAND, "%s", buf);
+            if (pc && ecs::PlayerRuntime::GetDesc(((pc) ? (pc)->GetEntityHandle() : entt::null)))
+                ecs::ChatSystem::Send(((pc) ? (pc)->GetEntityHandle() : entt::null), CHAT_TYPE_COMMAND, "%s", buf);
             });
     }
 
@@ -186,11 +186,11 @@ namespace
             return;
 
         PIXEL_POSITION pos;
-        pos.x = ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(victim)) + number(-200, 200);
-        pos.y = ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(victim)) + number(-200, 200);
+        pos.x = ecs::PlayerRuntime::GetX(((victim) ? (victim)->GetEntityHandle() : entt::null)) + number(-200, 200);
+        pos.y = ecs::PlayerRuntime::GetY(((victim) ? (victim)->GetEntityHandle() : entt::null)) + number(-200, 200);
         pos.z = victim->GetZ();
 
-        item->AddToGround(ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(victim)), pos);
+        item->AddToGround(ecs::PlayerRuntime::GetMapIndex(((victim) ? (victim)->GetEntityHandle() : entt::null)), pos);
         item->StartDestroyEvent();
 
         if (owner)
@@ -251,18 +251,18 @@ namespace
 
     void SendAdditionalInfo(LPCHARACTER viewer, LPCHARACTER target, const char* name, const uint16_t parts[CHR_EQUIPPART_NUM])
     {
-        if (!viewer || !ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(viewer)) || !target)
+        if (!viewer || !ecs::PlayerRuntime::GetDesc(((viewer) ? (viewer)->GetEntityHandle() : entt::null)) || !target)
             return;
 
         TPacketGCCharacterAdditionalInfo p;
         memset(&p, 0, sizeof(p));
         p.header = HEADER_GC_CHAR_ADDITIONAL_INFO;
-			p.dwVID = ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(target));
-        strlcpy(p.name, name ? name : ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(target)).data(), sizeof(p.name));
+			p.dwVID = ecs::PlayerRuntime::GetPacketVID(((target) ? (target)->GetEntityHandle() : entt::null));
+        strlcpy(p.name, name ? name : ecs::PlayerRuntime::GetName(((target) ? (target)->GetEntityHandle() : entt::null)).data(), sizeof(p.name));
         for (int i = 0; i < CHR_EQUIPPART_NUM; ++i)
             p.awPart[i] = parts ? parts[i] : 0;
 
-        ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(viewer))->Packet(&p, sizeof(p));
+        ecs::PlayerRuntime::GetDesc(((viewer) ? (viewer)->GetEntityHandle() : entt::null))->Packet(&p, sizeof(p));
     }
 
     void SendAdditionalInfoToMap(int32_t mapIndex, LPCHARACTER target, const char* name, const uint16_t parts[CHR_EQUIPPART_NUM])
@@ -286,7 +286,7 @@ namespace
     {
         if (!ch)
             return;
-        const int64_t v = ecs::PointSystem::Get(AIHelpers::EcsOf(ch), pt);
+        const int64_t v = ecs::PointSystem::Get(((ch) ? (ch)->GetEntityHandle() : entt::null), pt);
         const int64_t nv = ClampMul10(v * STR_MULTIPLE);
         ch->SetRealPoint(pt, nv);
         ch->SetPoint(pt, nv);
@@ -298,7 +298,7 @@ namespace
             return 220;
 
         const uint32_t mode = ch->GetMotionMode();
-        const float durSec = CMotionManager::instance().GetMotionDuration(ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(ch)), MAKE_MOTION_KEY(mode, motionIndex));
+        const float durSec = CMotionManager::instance().GetMotionDuration(ecs::PlayerRuntime::GetRaceNum(((ch) ? (ch)->GetEntityHandle() : entt::null)), MAKE_MOTION_KEY(mode, motionIndex));
         uint32_t durMs = (durSec > 0.01f) ? (uint32_t)(durSec * 1000.0f) : 650;
 
         // Hit generally lands early-mid swing
@@ -330,12 +330,12 @@ namespace
         // A legtobb PvP skill ellenorzi a WEAR_WEAPON-t (es a weapon tipust),
         // ezert a klonnak is legyen valodi fegyver itemje, nem csak vizualis PART.
         const entt::entity sourceWeapon = ItemSystem::GetWearItem(
-            AIHelpers::EcsOf(source), WEAR_WEAPON);
+            ((source) ? (source)->GetEntityHandle() : entt::null), WEAR_WEAPON);
         if (!ItemSystem::IsValidItem(sourceWeapon))
             return;
 
         if (ItemSystem::IsValidItem(
-                ItemSystem::GetWearItem(AIHelpers::EcsOf(clone), WEAR_WEAPON)))
+                ItemSystem::GetWearItem(((clone) ? (clone)->GetEntityHandle() : entt::null), WEAR_WEAPON)))
             return;
 
 		// RefineLevel a legtobb forrasban a vnum-bol szamolodik, igy eleg a megfelelo vnum-ot klonozni.
@@ -346,7 +346,7 @@ namespace
         if (!w)
             return;
 		const entt::entity cloneWeapon =
-			EntityFactory::CreateItemEntity(g_registry, w);
+			(w ? w->GetEntityHandle() : entt::null);
 
 		// klon item: ne menjen DB save/DelayedSave
 		ItemSystem::SetItemSkipSave(cloneWeapon, true);
@@ -364,13 +364,13 @@ namespace
         if (!clone)
             return;
 
-        if (ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(clone)) == tx && ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(clone)) == ty)
+        if (ecs::PlayerRuntime::GetX(((clone) ? (clone)->GetEntityHandle() : entt::null)) == tx && ecs::PlayerRuntime::GetY(((clone) ? (clone)->GetEntityHandle() : entt::null)) == ty)
             return;
 
         clone->StartStateMachine(1);
         clone->SetNowWalking(false);
         clone->SetRotationToXY(tx, ty);
-        ecs::MovementSystem::Goto(AIHelpers::EcsOf(clone), tx, ty);
+        ecs::MovementSystem::Goto(((clone) ? (clone)->GetEntityHandle() : entt::null), tx, ty);
 
         // server-controlled chars need explicit MOVE packets
         clone->SendMovePacket(FUNC_MOVE, 0, tx, ty, clone->GetCurrentMoveDuration(), now);
@@ -381,12 +381,12 @@ namespace
         if (!clone || !target)
             return;
 
-        clone->SetRotationToXY(ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(target)), ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(target)));
-        ecs::MovementSystem::Stop(AIHelpers::EcsOf(clone));
+        clone->SetRotationToXY(ecs::PlayerRuntime::GetX(((target) ? (target)->GetEntityHandle() : entt::null)), ecs::PlayerRuntime::GetY(((target) ? (target)->GetEntityHandle() : entt::null)));
+        ecs::MovementSystem::Stop(((clone) ? (clone)->GetEntityHandle() : entt::null));
 
         // PC swing is broadcast as FUNC_COMBO with motion index (13..21)
-        clone->SendMovePacket(FUNC_COMBO, motionIndex, ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(clone)), ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(clone)), 0, now);
-        ecs::MovementSystem::OnMove(AIHelpers::EcsOf(clone), true);
+        clone->SendMovePacket(FUNC_COMBO, motionIndex, ecs::PlayerRuntime::GetX(((clone) ? (clone)->GetEntityHandle() : entt::null)), ecs::PlayerRuntime::GetY(((clone) ? (clone)->GetEntityHandle() : entt::null)), 0, now);
+        ecs::MovementSystem::OnMove(((clone) ? (clone)->GetEntityHandle() : entt::null), true);
     }
 
     inline void LostCastleCloneBroadcastSkill(LPCHARACTER clone, LPCHARACTER target, uint8_t skillVnum, uint32_t now)
@@ -394,13 +394,13 @@ namespace
         if (!clone || !target)
             return;
 
-        clone->SetRotationToXY(ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(target)), ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(target)));
-        ecs::MovementSystem::Stop(AIHelpers::EcsOf(clone));
+        clone->SetRotationToXY(ecs::PlayerRuntime::GetX(((target) ? (target)->GetEntityHandle() : entt::null)), ecs::PlayerRuntime::GetY(((target) ? (target)->GetEntityHandle() : entt::null)));
+        ecs::MovementSystem::Stop(((clone) ? (clone)->GetEntityHandle() : entt::null));
 
         // Skills are broadcast as FUNC_SKILL|skillVnum (see input_main.cpp)
         const uint8_t func = (uint8_t)(FUNC_SKILL | (skillVnum & 0x7F));
-        clone->SendMovePacket(func, 0, ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(clone)), ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(clone)), 0, now);
-        ecs::MovementSystem::OnMove(AIHelpers::EcsOf(clone), true);
+        clone->SendMovePacket(func, 0, ecs::PlayerRuntime::GetX(((clone) ? (clone)->GetEntityHandle() : entt::null)), ecs::PlayerRuntime::GetY(((clone) ? (clone)->GetEntityHandle() : entt::null)), 0, now);
+        ecs::MovementSystem::OnMove(((clone) ? (clone)->GetEntityHandle() : entt::null), true);
     }
 }
 
@@ -575,7 +575,7 @@ void ClearClonesOnMap(int32_t mapIndex)
                     continue;
                 }
 
-		spawnedVids.push_back(ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(metin)));
+		spawnedVids.push_back(ecs::PlayerRuntime::GetPacketVID(((metin) ? (metin)->GetEntityHandle() : entt::null)));
             }
 
             if (spawnedVids.empty())
@@ -659,7 +659,7 @@ void ClearClonesOnMap(int32_t mapIndex)
 
             LPCHARACTER statue = d->SpawnMob((int32_t)kStatueVnum, kFloor2CenterX, kFloor2CenterY);
             if (statue)
-	d->SetFlag(kFlagStatueVid, (int32_t)ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(statue)));
+	d->SetFlag(kFlagStatueVid, (int32_t)ecs::PlayerRuntime::GetPacketVID(((statue) ? (statue)->GetEntityHandle() : entt::null)));
 
             d->SpawnRegen(kFloor2Regen, true);
 
@@ -694,7 +694,7 @@ void ClearClonesOnMap(int32_t mapIndex)
         ForEachPcOnMap(mapIndex, [&](LPCHARACTER pc) { if (pc) members.push_back(pc); });
 
         std::sort(members.begin(), members.end(), [](LPCHARACTER a, LPCHARACTER b) {
-            return ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(a)) < ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(b));
+            return ecs::PlayerRuntime::GetPlayerID(((a) ? (a)->GetEntityHandle() : entt::null)) < ecs::PlayerRuntime::GetPlayerID(((b) ? (b)->GetEntityHandle() : entt::null));
         });
 
         if (members.empty())
@@ -716,8 +716,8 @@ void ClearClonesOnMap(int32_t mapIndex)
                 continue;
 
             // owner GLOBAL cell -> LOCAL cell (private map uses LOCAL in many APIs)
-            const int32_t ox = (ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(owner)) / 100) - baseCellX;
-            const int32_t oy = (ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(owner)) / 100) - baseCellY;
+            const int32_t ox = (ecs::PlayerRuntime::GetX(((owner) ? (owner)->GetEntityHandle() : entt::null)) / 100) - baseCellX;
+            const int32_t oy = (ecs::PlayerRuntime::GetY(((owner) ? (owner)->GetEntityHandle() : entt::null)) / 100) - baseCellY;
 
             int32_t sx = ox, sy = oy;
             for (int t = 0; t < 30; ++t)
@@ -749,7 +749,7 @@ void ClearClonesOnMap(int32_t mapIndex)
             const int32_t gy = map->m_setting.iBaseY + sy * 100;
 
             char evilName[CHARACTER_NAME_MAX_LEN + 1];
-            snprintf(evilName, sizeof(evilName), "Gonosz%s", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(source)).data());
+            snprintf(evilName, sizeof(evilName), "Gonosz%s", ecs::PlayerRuntime::GetName(((source) ? (source)->GetEntityHandle() : entt::null)).data());
 
             // FAKE PC (nem mob!) - PID=0, hogy ne keruljon bele PC name/PID map-ekbe
             LPCHARACTER clone = CHARACTER_MANAGER::instance().CreateCharacter(evilName, 0);
@@ -761,8 +761,8 @@ void ClearClonesOnMap(int32_t mapIndex)
             clone->SetName(std::string(evilName));
 
             // Fontos: legyen PC race/job/empire/PK mode, hogy a kliens PvP-kent kezelje
-            clone->SetRace((uint8_t)ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(source)));
-            clone->SetEmpire(ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(source)));
+            clone->SetRace((uint8_t)ecs::PlayerRuntime::GetRaceNum(((source) ? (source)->GetEntityHandle() : entt::null)));
+            clone->SetEmpire(ecs::PlayerRuntime::GetEmpire(((source) ? (source)->GetEntityHandle() : entt::null)));
             clone->SetPKMode(PK_MODE_FREE);
             clone->SetSkillGroup(source->GetSkillGroup());
 
@@ -791,16 +791,16 @@ void ClearClonesOnMap(int32_t mapIndex)
             // erő: pontok másolása
             for (int p = 0; p < POINT_MAX_NUM; ++p)
             {
-                clone->SetRealPoint((uint8_t)p, ecs::PointSystem::Get(AIHelpers::EcsOf(source), (uint8_t)p));
-                clone->SetPoint((uint8_t)p, ecs::PointSystem::Get(AIHelpers::EcsOf(source), (uint8_t)p));
+                clone->SetRealPoint((uint8_t)p, ecs::PointSystem::Get(((source) ? (source)->GetEntityHandle() : entt::null), (uint8_t)p));
+                clone->SetPoint((uint8_t)p, ecs::PointSystem::Get(((source) ? (source)->GetEntityHandle() : entt::null), (uint8_t)p));
             }
 
             // 10x erosites (HP/SP/DMG/STAT)
-            clone->SetLevel((uint8_t)ecs::PointSystem::GetLevel(AIHelpers::EcsOf(source)));
-            clone->SetMaxHP((int64_t)ecs::PointSystem::GetMaxHP(AIHelpers::EcsOf(source)) * STR_MULTIPLE);
-            clone->SetMaxSP((int64_t)ecs::PointSystem::GetMaxSP(AIHelpers::EcsOf(source)) * STR_MULTIPLE);
-            clone->SetHP((int64_t)ecs::PointSystem::GetMaxHP(AIHelpers::EcsOf(source)) * STR_MULTIPLE);
-            clone->SetSP((int64_t)ecs::PointSystem::GetMaxSP(AIHelpers::EcsOf(source)) * STR_MULTIPLE);
+            clone->SetLevel((uint8_t)ecs::PointSystem::GetLevel(((source) ? (source)->GetEntityHandle() : entt::null)));
+            clone->SetMaxHP((int64_t)ecs::PointSystem::GetMaxHP(((source) ? (source)->GetEntityHandle() : entt::null)) * STR_MULTIPLE);
+            clone->SetMaxSP((int64_t)ecs::PointSystem::GetMaxSP(((source) ? (source)->GetEntityHandle() : entt::null)) * STR_MULTIPLE);
+            clone->SetHP((int64_t)ecs::PointSystem::GetMaxHP(((source) ? (source)->GetEntityHandle() : entt::null)) * STR_MULTIPLE);
+            clone->SetSP((int64_t)ecs::PointSystem::GetMaxSP(((source) ? (source)->GetEntityHandle() : entt::null)) * STR_MULTIPLE);
 
             MulPoint10(clone, POINT_ST);
             MulPoint10(clone, POINT_HT);
@@ -840,21 +840,21 @@ void ClearClonesOnMap(int32_t mapIndex)
                 skillList.push_back((uint8_t)sv);
             }
 
-            if (!ecs::MovementSystem::Show(AIHelpers::EcsOf(clone), mapIndex, gx, gy, 0))
+            if (!ecs::MovementSystem::Show(((clone) ? (clone)->GetEntityHandle() : entt::null), mapIndex, gx, gy, 0))
             {
                 M2_DESTROY_CHARACTER(clone);
                 continue;
             }
 
             // register
-	m_cloneAllowedPid[ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(clone))] = ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(owner));
-	m_cloneMap[ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(clone))] = mapIndex;
-	m_cloneTargetVid[ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(clone))] = ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(owner));
-	m_cloneSkills[ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(clone))] = std::move(skillList);
+	m_cloneAllowedPid[ecs::PlayerRuntime::GetPacketVID(((clone) ? (clone)->GetEntityHandle() : entt::null))] = ecs::PlayerRuntime::GetPlayerID(((owner) ? (owner)->GetEntityHandle() : entt::null));
+	m_cloneMap[ecs::PlayerRuntime::GetPacketVID(((clone) ? (clone)->GetEntityHandle() : entt::null))] = mapIndex;
+	m_cloneTargetVid[ecs::PlayerRuntime::GetPacketVID(((clone) ? (clone)->GetEntityHandle() : entt::null))] = ecs::PlayerRuntime::GetPacketVID(((owner) ? (owner)->GetEntityHandle() : entt::null));
+	m_cloneSkills[ecs::PlayerRuntime::GetPacketVID(((clone) ? (clone)->GetEntityHandle() : entt::null))] = std::move(skillList);
 
-	m_clonePending.erase(ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(clone)));
-	m_cloneNextAction[ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(clone))] = get_dword_time() + 800;
-	m_cloneOffset[ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(clone))] = std::make_pair((int16_t)number(-40, 40), (int16_t)number(-40, 40));
+	m_clonePending.erase(ecs::PlayerRuntime::GetPacketVID(((clone) ? (clone)->GetEntityHandle() : entt::null)));
+	m_cloneNextAction[ecs::PlayerRuntime::GetPacketVID(((clone) ? (clone)->GetEntityHandle() : entt::null))] = get_dword_time() + 800;
+	m_cloneOffset[ecs::PlayerRuntime::GetPacketVID(((clone) ? (clone)->GetEntityHandle() : entt::null))] = std::make_pair((int16_t)number(-40, 40), (int16_t)number(-40, 40));
 
             ++remain;
         }
@@ -894,7 +894,7 @@ void ClearClonesOnMap(int32_t mapIndex)
 
             LPCHARACTER totem = d->SpawnMob((int32_t)kTotemVnum, kFloor4CenterX, kFloor4CenterY);
             if (totem)
-	d->SetFlag(kFlagTotemVid, (int32_t)ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(totem)));
+	d->SetFlag(kFlagTotemVid, (int32_t)ecs::PlayerRuntime::GetPacketVID(((totem) ? (totem)->GetEntityHandle() : entt::null)));
 
             SendCommandMap(mapIndex, "lostcastle_tile 0");
             BigNoticeMap(mapIndex, "Elveszett Kastely: Mobokbol eshet %u (3%%). Huzd a totemre, hogy csempet tegyel le!", kTileItemVnum);
@@ -1053,7 +1053,7 @@ void ClearClonesOnMap(int32_t mapIndex)
                 continue;
 
             LPCHARACTER clone = CHARACTER_MANAGER::instance().Find(cloneVid);
-            if (!clone || CombatSystem::IsDead(AIHelpers::EcsOf(clone)))
+            if (!clone || CombatSystem::IsDead(((clone) ? (clone)->GetEntityHandle() : entt::null)))
                 continue;
 
             auto tgtIt = s_lc.m_cloneTargetVid.find(cloneVid);
@@ -1061,13 +1061,13 @@ void ClearClonesOnMap(int32_t mapIndex)
                 continue;
 
             LPCHARACTER target = CHARACTER_MANAGER::instance().Find(tgtIt->second);
-            if (!target || !ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(target)) || CombatSystem::IsDead(AIHelpers::EcsOf(target)))
+            if (!target || !ecs::PlayerRuntime::IsPC(((target) ? (target)->GetEntityHandle() : entt::null)) || CombatSystem::IsDead(((target) ? (target)->GetEntityHandle() : entt::null)))
             {
                 s_lc.m_clonePending.erase(cloneVid);
                 continue;
             }
 
-            const int32_t dist = DISTANCE_APPROX(ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(target)) - ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(clone)), ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(target)) - ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(clone)));
+            const int32_t dist = DISTANCE_APPROX(ecs::PlayerRuntime::GetX(((target) ? (target)->GetEntityHandle() : entt::null)) - ecs::PlayerRuntime::GetX(((clone) ? (clone)->GetEntityHandle() : entt::null)), ecs::PlayerRuntime::GetY(((target) ? (target)->GetEntityHandle() : entt::null)) - ecs::PlayerRuntime::GetY(((clone) ? (clone)->GetEntityHandle() : entt::null)));
 
             // 1) Pending hit: damage only when we previously started an animation
             auto pendIt = s_lc.m_clonePending.find(cloneVid);
@@ -1131,8 +1131,8 @@ void ClearClonesOnMap(int32_t mapIndex)
             // ha túl közel van, lépjen hátra kicsit (különben "átfut" és köröz)
             if (dist < desired - 40)
             {
-                const int32_t dx = ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(clone)) - ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(target));
-                const int32_t dy = ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(clone)) - ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(target));
+                const int32_t dx = ecs::PlayerRuntime::GetX(((clone) ? (clone)->GetEntityHandle() : entt::null)) - ecs::PlayerRuntime::GetX(((target) ? (target)->GetEntityHandle() : entt::null));
+                const int32_t dy = ecs::PlayerRuntime::GetY(((clone) ? (clone)->GetEntityHandle() : entt::null)) - ecs::PlayerRuntime::GetY(((target) ? (target)->GetEntityHandle() : entt::null));
                 float len = sqrtf((float)dx * (float)dx + (float)dy * (float)dy);
                 if (len < 1.0f) len = 1.0f;
 
@@ -1144,8 +1144,8 @@ void ClearClonesOnMap(int32_t mapIndex)
                     oy = offIt->second.second;
                 }
 
-                int32_t tx = ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(target)) + (int32_t)((dx / len) * desired) + ox;
-                int32_t ty = ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(target)) + (int32_t)((dy / len) * desired) + oy;
+                int32_t tx = ecs::PlayerRuntime::GetX(((target) ? (target)->GetEntityHandle() : entt::null)) + (int32_t)((dx / len) * desired) + ox;
+                int32_t ty = ecs::PlayerRuntime::GetY(((target) ? (target)->GetEntityHandle() : entt::null)) + (int32_t)((dy / len) * desired) + oy;
 
                 if (SECTREE_MANAGER::instance().IsMovablePosition(mapIndex, tx, ty))
                     LostCastleCloneStartMove(clone, tx, ty, now);
@@ -1163,11 +1163,11 @@ void ClearClonesOnMap(int32_t mapIndex)
                     oy = offIt->second.second;
                 }
 
-                int32_t tx = ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(target));
-                int32_t ty = ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(target));
+                int32_t tx = ecs::PlayerRuntime::GetX(((target) ? (target)->GetEntityHandle() : entt::null));
+                int32_t ty = ecs::PlayerRuntime::GetY(((target) ? (target)->GetEntityHandle() : entt::null));
 
-                const int32_t dx = tx - ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(clone));
-                const int32_t dy = ty - ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(clone));
+                const int32_t dx = tx - ecs::PlayerRuntime::GetX(((clone) ? (clone)->GetEntityHandle() : entt::null));
+                const int32_t dy = ty - ecs::PlayerRuntime::GetY(((clone) ? (clone)->GetEntityHandle() : entt::null));
                 float len = sqrtf((float)dx * (float)dx + (float)dy * (float)dy);
                 if (len < 1.0f) len = 1.0f;
 
@@ -1177,8 +1177,8 @@ void ClearClonesOnMap(int32_t mapIndex)
 
                 if (!SECTREE_MANAGER::instance().IsMovablePosition(mapIndex, tx, ty))
                 {
-                    tx = ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(target));
-                    ty = ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(target));
+                    tx = ecs::PlayerRuntime::GetX(((target) ? (target)->GetEntityHandle() : entt::null));
+                    ty = ecs::PlayerRuntime::GetY(((target) ? (target)->GetEntityHandle() : entt::null));
                 }
 
                 LostCastleCloneStartMove(clone, tx, ty, now);
@@ -1201,7 +1201,7 @@ void ClearClonesOnMap(int32_t mapIndex)
                     const uint8_t sv = skills[number(0, (int)skills.size() - 1)];
                     if (sv == 0)
                         continue;
-                    if (!SkillSystem::CanUseSkill(AIHelpers::EcsOf(clone), sv))
+                    if (!SkillSystem::CanUseSkill(((clone) ? (clone)->GetEntityHandle() : entt::null), sv))
                         continue;
                     chosenSkill = sv;
                     break;
@@ -1213,7 +1213,7 @@ void ClearClonesOnMap(int32_t mapIndex)
                 LostCastleCloneBroadcastSkill(clone, target, chosenSkill, now);
 
                 SClonePending p;
-	p.targetVid = ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(target));
+	p.targetVid = ecs::PlayerRuntime::GetPacketVID(((target) ? (target)->GetEntityHandle() : entt::null));
                 p.attackType = chosenSkill;
                 p.motionArg = chosenSkill;
                 p.isSkill = true;
@@ -1229,7 +1229,7 @@ void ClearClonesOnMap(int32_t mapIndex)
             LostCastleCloneBroadcastMelee(clone, target, motion, now);
 
             SClonePending p;
-	p.targetVid = ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(target));
+	p.targetVid = ecs::PlayerRuntime::GetPacketVID(((target) ? (target)->GetEntityHandle() : entt::null));
             p.attackType = 0;
             p.motionArg = motion;
             p.isSkill = false;
@@ -1268,28 +1268,28 @@ bool CLostCastleDungeon::SpawnTestClones(CHARACTER* source, CHARACTER* target, i
 {
     if (!source || !target)
         return false;
-    if (!ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(source)) || !ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(target)))
+    if (!ecs::PlayerRuntime::IsPC(((source) ? (source)->GetEntityHandle() : entt::null)) || !ecs::PlayerRuntime::IsPC(((target) ? (target)->GetEntityHandle() : entt::null)))
         return false;
 
     if (count <= 0) count = 1;
     if (count > 20) count = 20;
 
-    const int32_t mapIndex = ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(target));
+    const int32_t mapIndex = ecs::PlayerRuntime::GetMapIndex(((target) ? (target)->GetEntityHandle() : entt::null));
 
     // Spawn near target (global coords)
     int32_t spawned = 0;
     for (int32_t n = 0; n < count; ++n)
     {
-        int32_t gx = ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(target));
-        int32_t gy = ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(target));
+        int32_t gx = ecs::PlayerRuntime::GetX(((target) ? (target)->GetEntityHandle() : entt::null));
+        int32_t gy = ecs::PlayerRuntime::GetY(((target) ? (target)->GetEntityHandle() : entt::null));
 
         // try random nearby points
         for (int t = 0; t < 25; ++t)
         {
             const int dx = number(-400, 400);
             const int dy = number(-400, 400);
-            const int32_t tx = ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(target)) + dx;
-            const int32_t ty = ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(target)) + dy;
+            const int32_t tx = ecs::PlayerRuntime::GetX(((target) ? (target)->GetEntityHandle() : entt::null)) + dx;
+            const int32_t ty = ecs::PlayerRuntime::GetY(((target) ? (target)->GetEntityHandle() : entt::null)) + dy;
             if (SECTREE_MANAGER::instance().Get(mapIndex, tx, ty))
             {
                 gx = tx;
@@ -1300,7 +1300,7 @@ bool CLostCastleDungeon::SpawnTestClones(CHARACTER* source, CHARACTER* target, i
 
         char cloneName[CHARACTER_NAME_MAX_LEN + 1];
         // unique name to avoid collisions
-        snprintf(cloneName, sizeof(cloneName), "Gonosz %s", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(source)).data());
+        snprintf(cloneName, sizeof(cloneName), "Gonosz %s", ecs::PlayerRuntime::GetName(((source) ? (source)->GetEntityHandle() : entt::null)).data());
 
         LPCHARACTER clone = CHARACTER_MANAGER::instance().CreateCharacter(cloneName, 0);
         if (!clone)
@@ -1310,8 +1310,8 @@ bool CLostCastleDungeon::SpawnTestClones(CHARACTER* source, CHARACTER* target, i
       //  clone->SetFakePlayer(true);
         clone->SetName(std::string(cloneName));
 
-        clone->SetRace((uint8_t)ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(source)));
-        clone->SetEmpire(ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(source)));
+        clone->SetRace((uint8_t)ecs::PlayerRuntime::GetRaceNum(((source) ? (source)->GetEntityHandle() : entt::null)));
+        clone->SetEmpire(ecs::PlayerRuntime::GetEmpire(((source) ? (source)->GetEntityHandle() : entt::null)));
         clone->SetPKMode(PK_MODE_FREE);
         clone->SetSkillGroup(source->GetSkillGroup());
 
@@ -1340,14 +1340,14 @@ bool CLostCastleDungeon::SpawnTestClones(CHARACTER* source, CHARACTER* target, i
         // copy points (NO 10x here - real PvP test)
         for (int p = 0; p < POINT_MAX_NUM; ++p)
         {
-            clone->SetRealPoint((uint8_t)p, ecs::PointSystem::Get(AIHelpers::EcsOf(source), (uint8_t)p));
-            clone->SetPoint((uint8_t)p, ecs::PointSystem::Get(AIHelpers::EcsOf(source), (uint8_t)p));
+            clone->SetRealPoint((uint8_t)p, ecs::PointSystem::Get(((source) ? (source)->GetEntityHandle() : entt::null), (uint8_t)p));
+            clone->SetPoint((uint8_t)p, ecs::PointSystem::Get(((source) ? (source)->GetEntityHandle() : entt::null), (uint8_t)p));
         }
-        clone->SetLevel((uint8_t)ecs::PointSystem::GetLevel(AIHelpers::EcsOf(source)));
-        clone->SetMaxHP(ecs::PointSystem::GetMaxHP(AIHelpers::EcsOf(source))* STR_MULTIPLE);
-        clone->SetMaxSP(ecs::PointSystem::GetMaxSP(AIHelpers::EcsOf(source)) * STR_MULTIPLE);
-        clone->SetHP(ecs::PointSystem::GetMaxHP(AIHelpers::EcsOf(source)) * STR_MULTIPLE);
-        clone->SetSP(ecs::PointSystem::GetMaxSP(AIHelpers::EcsOf(source)) * STR_MULTIPLE);
+        clone->SetLevel((uint8_t)ecs::PointSystem::GetLevel(((source) ? (source)->GetEntityHandle() : entt::null)));
+        clone->SetMaxHP(ecs::PointSystem::GetMaxHP(((source) ? (source)->GetEntityHandle() : entt::null))* STR_MULTIPLE);
+        clone->SetMaxSP(ecs::PointSystem::GetMaxSP(((source) ? (source)->GetEntityHandle() : entt::null)) * STR_MULTIPLE);
+        clone->SetHP(ecs::PointSystem::GetMaxHP(((source) ? (source)->GetEntityHandle() : entt::null)) * STR_MULTIPLE);
+        clone->SetSP(ecs::PointSystem::GetMaxSP(((source) ? (source)->GetEntityHandle() : entt::null)) * STR_MULTIPLE);
         clone->SetKillerMode(true);
 
         // Skills (AI uses only ATTACK skills)
@@ -1376,21 +1376,21 @@ bool CLostCastleDungeon::SpawnTestClones(CHARACTER* source, CHARACTER* target, i
             skillList.push_back((uint8_t)sv);
         }
 
-        if (!ecs::MovementSystem::Show(AIHelpers::EcsOf(clone), mapIndex, gx, gy, 0))
+        if (!ecs::MovementSystem::Show(((clone) ? (clone)->GetEntityHandle() : entt::null), mapIndex, gx, gy, 0))
         {
             M2_DESTROY_CHARACTER(clone);
             continue;
         }
 
         // Register: only the target can fight this clone, and the clone targets the target
-	s_lc.m_cloneAllowedPid[ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(clone))] = ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(target));
-	s_lc.m_cloneMap[ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(clone))] = mapIndex;
-	s_lc.m_cloneTargetVid[ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(clone))] = ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(target));
-	s_lc.m_cloneSkills[ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(clone))] = std::move(skillList);
+	s_lc.m_cloneAllowedPid[ecs::PlayerRuntime::GetPacketVID(((clone) ? (clone)->GetEntityHandle() : entt::null))] = ecs::PlayerRuntime::GetPlayerID(((target) ? (target)->GetEntityHandle() : entt::null));
+	s_lc.m_cloneMap[ecs::PlayerRuntime::GetPacketVID(((clone) ? (clone)->GetEntityHandle() : entt::null))] = mapIndex;
+	s_lc.m_cloneTargetVid[ecs::PlayerRuntime::GetPacketVID(((clone) ? (clone)->GetEntityHandle() : entt::null))] = ecs::PlayerRuntime::GetPacketVID(((target) ? (target)->GetEntityHandle() : entt::null));
+	s_lc.m_cloneSkills[ecs::PlayerRuntime::GetPacketVID(((clone) ? (clone)->GetEntityHandle() : entt::null))] = std::move(skillList);
 
-	s_lc.m_clonePending.erase(ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(clone)));
-	s_lc.m_cloneNextAction[ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(clone))] = get_dword_time() + 800;
-	s_lc.m_cloneOffset[ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(clone))] = std::make_pair((int16_t)number(-40, 40), (int16_t)number(-40, 40));
+	s_lc.m_clonePending.erase(ecs::PlayerRuntime::GetPacketVID(((clone) ? (clone)->GetEntityHandle() : entt::null)));
+	s_lc.m_cloneNextAction[ecs::PlayerRuntime::GetPacketVID(((clone) ? (clone)->GetEntityHandle() : entt::null))] = get_dword_time() + 800;
+	s_lc.m_cloneOffset[ecs::PlayerRuntime::GetPacketVID(((clone) ? (clone)->GetEntityHandle() : entt::null))] = std::make_pair((int16_t)number(-40, 40), (int16_t)number(-40, 40));
 
         ++spawned;
     }
@@ -1463,87 +1463,87 @@ void CLostCastleDungeon::PurgeTestClonesForTargetPID(uint32_t targetPid, int32_t
 
 bool CLostCastleDungeon::OnUseItem30001(CHARACTER* ch)
 {
-    if (!ch || !ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch)))
+    if (!ch || !ecs::PlayerRuntime::IsPC(((ch) ? (ch)->GetEntityHandle() : entt::null)))
         return false;
 
-    const int32_t idx = ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch));
+    const int32_t idx = ecs::PlayerRuntime::GetMapIndex(((ch) ? (ch)->GetEntityHandle() : entt::null));
 
     // Block inside LostCastle instance maps to avoid skipping dungeon mechanics
     if (IsInRange(idx, kPrivateMin, kPrivateMax))
     {
-        ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "Dungeonban nem hasznalhato.");
+        ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "Dungeonban nem hasznalhato.");
         return false;
     }
 
-    PurgeTestClonesForTargetPID(ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)), idx);
-    ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "Klonok torolve ezen a mapon.");
+    PurgeTestClonesForTargetPID(ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null)), idx);
+    ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "Klonok torolve ezen a mapon.");
     return true;
 }
 
 void CLostCastleDungeon::OnPlayerDisconnect(CHARACTER* ch)
 {
-    if (!ch || !ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch)))
+    if (!ch || !ecs::PlayerRuntime::IsPC(((ch) ? (ch)->GetEntityHandle() : entt::null)))
         return;
 
-    const int32_t idx = ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch));
+    const int32_t idx = ecs::PlayerRuntime::GetMapIndex(((ch) ? (ch)->GetEntityHandle() : entt::null));
     if (!IsInRange(idx, kPrivateMin, kPrivateMax))
         return;
 
     const int32_t now = get_global_time();
-    ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(ch), kQfDisconnect, now + kRejoinSeconds);
-    ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(ch), kQfIdx, idx);
-    ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(ch), kQfCh, (int32_t)g_bChannel);
+    ecs::QuestSystem::SetFlag(((ch) ? (ch)->GetEntityHandle() : entt::null), kQfDisconnect, now + kRejoinSeconds);
+    ecs::QuestSystem::SetFlag(((ch) ? (ch)->GetEntityHandle() : entt::null), kQfIdx, idx);
+    ecs::QuestSystem::SetFlag(((ch) ? (ch)->GetEntityHandle() : entt::null), kQfCh, (int32_t)g_bChannel);
 }
 
 void CLostCastleDungeon::OnPlayerLogin(CHARACTER* ch)
 {
-    if (!ch || !ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch)))
+    if (!ch || !ecs::PlayerRuntime::IsPC(((ch) ? (ch)->GetEntityHandle() : entt::null)))
         return;
 
-    const int32_t idx = ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch));
+    const int32_t idx = ecs::PlayerRuntime::GetMapIndex(((ch) ? (ch)->GetEntityHandle() : entt::null));
     if (!IsInRange(idx, kPrivateMin, kPrivateMax))
         return;
 
     // IMPORTANT: don't set warp location to kOriginalMap here.
     // Lobby is set at entry time (npc click) to where the player came from.
-    ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(ch), kQfIdx, idx);
-    ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(ch), kQfCh, (int32_t)g_bChannel);
+    ecs::QuestSystem::SetFlag(((ch) ? (ch)->GetEntityHandle() : entt::null), kQfIdx, idx);
+    ecs::QuestSystem::SetFlag(((ch) ? (ch)->GetEntityHandle() : entt::null), kQfCh, (int32_t)g_bChannel);
 }
 
 bool CLostCastleDungeon::OnClickNpc(CHARACTER* ch)
 {
-    if (!ch || !ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch)))
+    if (!ch || !ecs::PlayerRuntime::IsPC(((ch) ? (ch)->GetEntityHandle() : entt::null)))
         return false;
 
     // save "lobby" as where the NPC was clicked (like your flow expects)
-    const int32_t lobbyMap = ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch));
-    const int32_t lobbyX = ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(ch)) / 100;
-    const int32_t lobbyY = ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(ch)) / 100;
+    const int32_t lobbyMap = ecs::PlayerRuntime::GetMapIndex(((ch) ? (ch)->GetEntityHandle() : entt::null));
+    const int32_t lobbyX = ecs::PlayerRuntime::GetX(((ch) ? (ch)->GetEntityHandle() : entt::null)) / 100;
+    const int32_t lobbyY = ecs::PlayerRuntime::GetY(((ch) ? (ch)->GetEntityHandle() : entt::null)) / 100;
 
-    LPPARTY party = ecs::SocialSystem::GetParty(AIHelpers::EcsOf(ch));
+    LPPARTY party = ecs::SocialSystem::GetParty(((ch) ? (ch)->GetEntityHandle() : entt::null));
 
     if (party)
     {
-        if (party->GetLeaderPID() != ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)))
+        if (party->GetLeaderPID() != ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null)))
         {
-            ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "Csak a party leader indithatja!");
+            ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "Csak a party leader indithatja!");
             return true;
         }
 
         bool ok = true;
-        const int32_t leaderMap = ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch));
+        const int32_t leaderMap = ecs::PlayerRuntime::GetMapIndex(((ch) ? (ch)->GetEntityHandle() : entt::null));
 
         auto check = [&](LPCHARACTER m)
             {
-                if (!m || !ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(m)))
+                if (!m || !ecs::PlayerRuntime::IsPC(((m) ? (m)->GetEntityHandle() : entt::null)))
                     return;
 
-                if (ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(m)) != leaderMap)
+                if (ecs::PlayerRuntime::GetMapIndex(((m) ? (m)->GetEntityHandle() : entt::null)) != leaderMap)
                 {
                     ok = false;
                     return;
                 }
-                if (ecs::PointSystem::GetLevel(AIHelpers::EcsOf(m)) < kMinLevel || ecs::PointSystem::GetLevel(AIHelpers::EcsOf(m)) > kMaxLevel)
+                if (ecs::PointSystem::GetLevel(((m) ? (m)->GetEntityHandle() : entt::null)) < kMinLevel || ecs::PointSystem::GetLevel(((m) ? (m)->GetEntityHandle() : entt::null)) > kMaxLevel)
                 {
                     ok = false;
                     return;
@@ -1559,20 +1559,20 @@ bool CLostCastleDungeon::OnClickNpc(CHARACTER* ch)
 
         if (!ok)
         {
-            ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "Feltetelek: minden tagnak itt kell lennie, lvl %d-%d, es kell 1 db %u.", kMinLevel, kMaxLevel, kEntryItemVnum);
+            ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "Feltetelek: minden tagnak itt kell lennie, lvl %d-%d, es kell 1 db %u.", kMinLevel, kMaxLevel, kEntryItemVnum);
             return true;
         }
     }
     else
     {
-        if (ecs::PointSystem::GetLevel(AIHelpers::EcsOf(ch)) < kMinLevel || ecs::PointSystem::GetLevel(AIHelpers::EcsOf(ch)) > kMaxLevel)
+        if (ecs::PointSystem::GetLevel(((ch) ? (ch)->GetEntityHandle() : entt::null)) < kMinLevel || ecs::PointSystem::GetLevel(((ch) ? (ch)->GetEntityHandle() : entt::null)) > kMaxLevel)
         {
-            ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "Csak lvl %d-%d kozott lephetsz be!", kMinLevel, kMaxLevel);
+            ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "Csak lvl %d-%d kozott lephetsz be!", kMinLevel, kMaxLevel);
             return true;
         }
         if (ch->CountSpecifyItem(kEntryItemVnum) < 1)
         {
-            ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "Szukseges belepo item: %u", kEntryItemVnum);
+            ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "Szukseges belepo item: %u", kEntryItemVnum);
             return true;
         }
     }
@@ -1581,7 +1581,7 @@ bool CLostCastleDungeon::OnClickNpc(CHARACTER* ch)
     LPDUNGEON d = CDungeonManager::instance().Create(kOriginalMap);
     if (!d)
     {
-        ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "Elveszett Kastely: nem sikerult letrehozni a dungeont.");
+        ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "Elveszett Kastely: nem sikerult letrehozni a dungeont.");
         return true;
     }
 
@@ -1596,15 +1596,15 @@ bool CLostCastleDungeon::OnClickNpc(CHARACTER* ch)
 
     auto applyMember = [&](LPCHARACTER m)
         {
-            if (!m || !ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(m)))
+            if (!m || !ecs::PlayerRuntime::IsPC(((m) ? (m)->GetEntityHandle() : entt::null)))
                 return;
 
             m->RemoveSpecifyItem(kEntryItemVnum, 1);
 
             // rejoin flags reset
-            ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(m), kQfDisconnect, 0);
-            ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(m), kQfIdx, d->GetMapIndex());
-            ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(m), kQfCh, (int32_t)g_bChannel);
+            ecs::QuestSystem::SetFlag(((m) ? (m)->GetEntityHandle() : entt::null), kQfDisconnect, 0);
+            ecs::QuestSystem::SetFlag(((m) ? (m)->GetEntityHandle() : entt::null), kQfIdx, d->GetMapIndex());
+            ecs::QuestSystem::SetFlag(((m) ? (m)->GetEntityHandle() : entt::null), kQfCh, (int32_t)g_bChannel);
 
             // exit/lobby
             m->SetWarpLocation(lobbyMap, lobbyX, lobbyY);
@@ -1615,15 +1615,15 @@ bool CLostCastleDungeon::OnClickNpc(CHARACTER* ch)
         applyMember(ch);
 
         // IMPORTANT: Join expects GLOBAL CELL on your core
-        d->Join_Coords(ch, kJoinGlobalX, kJoinGlobalY, ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)));
+        d->Join_Coords(ch, kJoinGlobalX, kJoinGlobalY, ecs::PlayerRuntime::GetMapIndex(((ch) ? (ch)->GetEntityHandle() : entt::null)));
     }
     else
     {
         auto fn = [&](LPCHARACTER m) { applyMember(m); };
-        party->ForEachOnMapMember(fn, ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)));
+        party->ForEachOnMapMember(fn, ecs::PlayerRuntime::GetMapIndex(((ch) ? (ch)->GetEntityHandle() : entt::null)));
 
         // IMPORTANT: Join expects GLOBAL CELL on your core
-        d->JoinParty_Coords(party, kJoinGlobalX, kJoinGlobalY, ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)));
+        d->JoinParty_Coords(party, kJoinGlobalX, kJoinGlobalY, ecs::PlayerRuntime::GetMapIndex(((ch) ? (ch)->GetEntityHandle() : entt::null)));
     }
 
     s_lc.StartFloor1(d->GetMapIndex());
@@ -1635,7 +1635,7 @@ void CLostCastleDungeon::OnMobKilled(CHARACTER* killer, CHARACTER* victim)
     if (!victim)
         return;
 
-    const int32_t idx = ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(victim));
+    const int32_t idx = ecs::PlayerRuntime::GetMapIndex(((victim) ? (victim)->GetEntityHandle() : entt::null));
     if (!IsInRange(idx, kPrivateMin, kPrivateMax))
         return;
 
@@ -1645,10 +1645,10 @@ void CLostCastleDungeon::OnMobKilled(CHARACTER* killer, CHARACTER* victim)
 
     const int32_t floor = d->GetFlag(kFlagFloor);
 
-    if (floor == 1 && ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(victim)) == kMetinVnum)
+    if (floor == 1 && ecs::PlayerRuntime::GetRaceNum(((victim) ? (victim)->GetEntityHandle() : entt::null)) == kMetinVnum)
     {
         const uint32_t correctVid = (uint32_t)d->GetFlag(kFlagCorrectMetin);
-	if (correctVid && ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(victim)) == correctVid)
+	if (correctVid && ecs::PlayerRuntime::GetPacketVID(((victim) ? (victim)->GetEntityHandle() : entt::null)) == correctVid)
         {
             BigNoticeMap(idx, "Elveszett Kastely: Megtalaltatok a megfelelõ metinkõvet! Floor2 kovetkezik.");
             s_lc.StartFloor2(idx);
@@ -1658,7 +1658,7 @@ void CLostCastleDungeon::OnMobKilled(CHARACTER* killer, CHARACTER* victim)
 
     if (floor == 3)
     {
-	const uint32_t vvid = ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(victim));
+	const uint32_t vvid = ecs::PlayerRuntime::GetPacketVID(((victim) ? (victim)->GetEntityHandle() : entt::null));
         if (s_lc.IsClone(vvid))
             s_lc.OnCloneKilled(idx, vvid);
         return;
@@ -1666,9 +1666,9 @@ void CLostCastleDungeon::OnMobKilled(CHARACTER* killer, CHARACTER* victim)
 
     if (floor == 4)
     {
-        if (killer && ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(killer)) && victim->IsMonster())
+        if (killer && ecs::PlayerRuntime::IsPC(((killer) ? (killer)->GetEntityHandle() : entt::null)) && victim->IsMonster())
         {
-            const uint16_t vnum = ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(victim));
+            const uint16_t vnum = ecs::PlayerRuntime::GetRaceNum(((victim) ? (victim)->GetEntityHandle() : entt::null));
             if (vnum != kTotemVnum && vnum != kStatueVnum)
             {
                 if (number(1, 100) <= kTileDropChancePct)
@@ -1681,10 +1681,10 @@ void CLostCastleDungeon::OnMobKilled(CHARACTER* killer, CHARACTER* victim)
 
 bool CLostCastleDungeon::OnNpcTakeItem(CHARACTER* from, CHARACTER* npc, LPITEM item)
 {
-    if (!from || !ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(from)) || !npc || !item)
+    if (!from || !ecs::PlayerRuntime::IsPC(((from) ? (from)->GetEntityHandle() : entt::null)) || !npc || !item)
         return false;
 
-    const int32_t idx = ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(from));
+    const int32_t idx = ecs::PlayerRuntime::GetMapIndex(((from) ? (from)->GetEntityHandle() : entt::null));
     if (!IsInRange(idx, kPrivateMin, kPrivateMax))
         return false;
 
@@ -1697,10 +1697,10 @@ bool CLostCastleDungeon::OnNpcTakeItem(CHARACTER* from, CHARACTER* npc, LPITEM i
     if (floor == 2)
     {
         const uint32_t statueVid = (uint32_t)d->GetFlag(kFlagStatueVid);
-	if (statueVid && ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(npc)) != statueVid)
+	if (statueVid && ecs::PlayerRuntime::GetPacketVID(((npc) ? (npc)->GetEntityHandle() : entt::null)) != statueVid)
             return false;
 
-        const uint32_t vnum = ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, item));
+        const uint32_t vnum = ItemSystem::GetItemVnum((item ? item->GetEntityHandle() : entt::null));
         int keyIndex = -1;
         for (int i = 0; i < 5; ++i)
         {
@@ -1713,15 +1713,15 @@ bool CLostCastleDungeon::OnNpcTakeItem(CHARACTER* from, CHARACTER* npc, LPITEM i
         const int32_t bit = 1 << keyIndex;
         if (mask & bit)
         {
-            ecs::ChatSystem::Send(AIHelpers::EcsOf(from), CHAT_TYPE_INFO, "Ez a kulcs mar be lett adva!");
+            ecs::ChatSystem::Send(((from) ? (from)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "Ez a kulcs mar be lett adva!");
             return true;
         }
 
-        ConsumeOneGivenItem(EntityFactory::CreateItemEntity(g_registry, item), "LOSTCASTLE_KEY");
+        ConsumeOneGivenItem((item ? item->GetEntityHandle() : entt::null), "LOSTCASTLE_KEY");
         mask |= bit;
         d->SetFlag(kFlagKeyMask, mask);
 
-        BigNoticeMap(idx, "Elveszett Kastely: %s megtalalta az egyik kulcsot!", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(from)).data());
+        BigNoticeMap(idx, "Elveszett Kastely: %s megtalalta az egyik kulcsot!", ecs::PlayerRuntime::GetName(((from) ? (from)->GetEntityHandle() : entt::null)).data());
 
         if (mask == ((1 << 5) - 1))
         {
@@ -1746,16 +1746,16 @@ bool CLostCastleDungeon::OnNpcTakeItem(CHARACTER* from, CHARACTER* npc, LPITEM i
     if (floor == 4)
     {
         const uint32_t totemVid = (uint32_t)d->GetFlag(kFlagTotemVid);
-	if (totemVid && ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(npc)) != totemVid)
+	if (totemVid && ecs::PlayerRuntime::GetPacketVID(((npc) ? (npc)->GetEntityHandle() : entt::null)) != totemVid)
             return false;
 
-        if (ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, item)) != kTileItemVnum)
+        if (ItemSystem::GetItemVnum((item ? item->GetEntityHandle() : entt::null)) != kTileItemVnum)
             return false;
 
-        ConsumeOneGivenItem(EntityFactory::CreateItemEntity(g_registry, item), "LOSTCASTLE_TILE");
+        ConsumeOneGivenItem((item ? item->GetEntityHandle() : entt::null), "LOSTCASTLE_TILE");
 
         if (!s_lc.UnlockNextTile(idx))
-            ecs::ChatSystem::Send(AIHelpers::EcsOf(from), CHAT_TYPE_INFO, "Mar minden csempe le van teve!");
+            ecs::ChatSystem::Send(((from) ? (from)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "Mar minden csempe le van teve!");
 
         return true;
     }
@@ -1768,8 +1768,8 @@ bool CLostCastleDungeon::CheckCloneDamage(CHARACTER* attacker, CHARACTER* victim
     if (!attacker || !victim)
         return true;
 
-	const uint32_t aVid = ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(attacker));
-	const uint32_t vVid = ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(victim));
+	const uint32_t aVid = ecs::PlayerRuntime::GetPacketVID(((attacker) ? (attacker)->GetEntityHandle() : entt::null));
+	const uint32_t vVid = ecs::PlayerRuntime::GetPacketVID(((victim) ? (victim)->GetEntityHandle() : entt::null));
 
     const bool attackerIsClone = s_lc.IsClone(aVid);
     const bool victimIsClone = s_lc.IsClone(vVid);
@@ -1781,19 +1781,19 @@ bool CLostCastleDungeon::CheckCloneDamage(CHARACTER* attacker, CHARACTER* victim
     // Player/NPC -> Clone
     //if (!attackerIsClone && victimIsClone)
     //{
-    //    if (!(ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(attacker)) || attacker->IsFakePlayer()))
+    //    if (!(ecs::PlayerRuntime::IsPC(((attacker) ? (attacker)->GetEntityHandle() : entt::null)) || attacker->IsFakePlayer()))
     //        return false;
 
-    //    return s_lc.IsCloneAttackAllowed(vVid, ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(attacker)));
+    //    return s_lc.IsCloneAttackAllowed(vVid, ecs::PlayerRuntime::GetPlayerID(((attacker) ? (attacker)->GetEntityHandle() : entt::null)));
     //}
 
     //// Clone -> Player/NPC
     //if (attackerIsClone && !victimIsClone)
     //{
-    //    if (!(ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(victim)) || victim->IsFakePlayer()))
+    //    if (!(ecs::PlayerRuntime::IsPC(((victim) ? (victim)->GetEntityHandle() : entt::null)) || victim->IsFakePlayer()))
     //        return false;
 
-    //    return s_lc.IsCloneAttackAllowed(aVid, ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(victim)));
+    //    return s_lc.IsCloneAttackAllowed(aVid, ecs::PlayerRuntime::GetPlayerID(((victim) ? (victim)->GetEntityHandle() : entt::null)));
     //}
 
     // Clone -> Clone tiltás

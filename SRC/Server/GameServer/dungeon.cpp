@@ -73,7 +73,7 @@ struct FWarpToDungeonCoords
 	void operator () (LPCHARACTER ch)
 	{
 		ch->SaveExitLocation();
-		ecs::MovementSystem::WarpSet(AIHelpers::EcsOf(ch), m_x, m_y, m_lMapIndex);
+		ecs::MovementSystem::WarpSet(((ch) ? (ch)->GetEntityHandle() : entt::null), m_x, m_y, m_lMapIndex);
 	}
 
 	int32_t m_lMapIndex;
@@ -94,6 +94,18 @@ void CDungeon::Join_Coords(LPCHARACTER ch, int32_t X, int32_t Y, int32_t index)
 	FWarpToDungeonCoords(m_lMapIndex, X, Y, this) (ch);
 }
 
+void CDungeon::Join_Coords(entt::entity character, int32_t X, int32_t Y, int32_t index)
+{
+	if (character == entt::null || !g_registry.valid(character) ||
+		SECTREE_MANAGER::instance().GetMap(m_lMapIndex) == nullptr)
+	{
+		LOG_ERROR("CDungeon: invalid entity or missing SECTREE_MAP for #{}", m_lMapIndex);
+		return;
+	}
+
+	ecs::MovementSystem::SaveExitLocation(character);
+	ecs::MovementSystem::WarpSet(character, X * 100, Y * 100, m_lMapIndex);
+}
 void CDungeon::JoinParty_Coords(LPPARTY pParty, int32_t X, int32_t Y, int32_t index)
 {
 	pParty->SetDungeon(this);
@@ -169,8 +181,8 @@ struct FWarpToDungeon
 	void operator () (LPCHARACTER ch)
 	{
 		ch->SaveExitLocation();
-		ecs::MovementSystem::WarpSet(AIHelpers::EcsOf(ch), m_x, m_y, m_lMapIndex);
-		//m_pkDungeon->IncPartyMember(ecs::SocialSystem::GetParty(AIHelpers::EcsOf(ch)));
+		ecs::MovementSystem::WarpSet(((ch) ? (ch)->GetEntityHandle() : entt::null), m_x, m_y, m_lMapIndex);
+		//m_pkDungeon->IncPartyMember(ecs::SocialSystem::GetParty(((ch) ? (ch)->GetEntityHandle() : entt::null)));
 	}
 
 	int32_t m_lMapIndex;
@@ -318,17 +330,17 @@ struct FWarpToPosition
 			return;
 		}
 		LPCHARACTER ch = (LPCHARACTER)ent;
-		if (!ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch))) {
+		if (!ecs::PlayerRuntime::IsPC(((ch) ? (ch)->GetEntityHandle() : entt::null))) {
 			return;
 		}
-		if (ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)) == lMapIndex)
+		if (ecs::PlayerRuntime::GetMapIndex(((ch) ? (ch)->GetEntityHandle() : entt::null)) == lMapIndex)
 		{
-			ecs::MovementSystem::Show(AIHelpers::EcsOf(ch), lMapIndex, x, y, 0);
-			ecs::MovementSystem::Stop(AIHelpers::EcsOf(ch));
+			ecs::MovementSystem::Show(((ch) ? (ch)->GetEntityHandle() : entt::null), lMapIndex, x, y, 0);
+			ecs::MovementSystem::Stop(((ch) ? (ch)->GetEntityHandle() : entt::null));
 		}
 		else
 		{
-			ecs::MovementSystem::WarpSet(AIHelpers::EcsOf(ch), x,y,lMapIndex);
+			ecs::MovementSystem::WarpSet(((ch) ? (ch)->GetEntityHandle() : entt::null), x,y,lMapIndex);
 		}
 	}
 };
@@ -439,7 +451,7 @@ void CDungeon::SetUnique(const char* key, uint32_t vid)
 	}
 
 	m_map_UniqueMob.insert(std::make_pair(std::string(key), ch));
-	AffectSystem::AddAffect(AIHelpers::EcsOf(ch), AFFECT_DUNGEON_UNIQUE, POINT_NONE, 0, AFF_DUNGEON_UNIQUE, 65535, 0, true);
+	AffectSystem::AddAffect(((ch) ? (ch)->GetEntityHandle() : entt::null), AFFECT_DUNGEON_UNIQUE, POINT_NONE, 0, AFF_DUNGEON_UNIQUE, 65535, 0, true);
 }
 
 void CDungeon::KillUnique(std::string_view key)
@@ -472,9 +484,9 @@ int32_t CDungeon::GetUniqueVid(std::string_view key)
 
 void CDungeon::DeadCharacter(LPCHARACTER ch)
 {
-	if (!ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch)))
+	if (!ecs::PlayerRuntime::IsPC(((ch) ? (ch)->GetEntityHandle() : entt::null)))
 	{
-		if (AffectSystem::FindAffect(AIHelpers::EcsOf(ch), AFFECT_DUNGEON_UNIQUE)) {
+		if (AffectSystem::FindAffect(((ch) ? (ch)->GetEntityHandle() : entt::null), AFFECT_DUNGEON_UNIQUE)) {
 			auto it = m_map_UniqueMob.begin();
 			for ( ; it != m_map_UniqueMob.end(); ) {
 				if (it->second == ch)
@@ -501,7 +513,7 @@ bool CDungeon::IsUniqueDead(std::string_view key)
 		return false;
 	}
 
-	return CombatSystem::IsDead(AIHelpers::EcsOf(it->second));
+	return CombatSystem::IsDead(((it->second) ? (it->second)->GetEntityHandle() : entt::null));
 }
 
 LPCHARACTER CDungeon::SpawnMob(int32_t vnum, int32_t x, int32_t y, int32_t dir)
@@ -580,7 +592,7 @@ namespace
 			if (ent->IsType(ENTITY_CHARACTER))
 			{
 				LPCHARACTER ch = (LPCHARACTER) ent;
-				if (!ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch)) && !ch->IsPet() && !ch->IsMount()
+				if (!ecs::PlayerRuntime::IsPC(((ch) ? (ch)->GetEntityHandle() : entt::null)) && !ch->IsPet() && !ch->IsMount()
 #ifdef __NEWPET_SYSTEM__
 				 && !ch->IsNewPet()
 #endif
@@ -599,7 +611,7 @@ namespace
 			if (ent->IsType(ENTITY_CHARACTER))
 			{
 				LPCHARACTER ch = (LPCHARACTER) ent;
-				if (!ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch)) && (ch->IsMonster() || ecs::PlayerRuntime::IsStone(AIHelpers::EcsOf(ch))))
+				if (!ecs::PlayerRuntime::IsPC(((ch) ? (ch)->GetEntityHandle() : entt::null)) && (ch->IsMonster() || ecs::PlayerRuntime::IsStone(((ch) ? (ch)->GetEntityHandle() : entt::null))))
 				{
 					ch->Dead();
 				}
@@ -615,9 +627,9 @@ namespace
 			if (ent->IsType(ENTITY_CHARACTER))
 			{
 				LPCHARACTER ch = (LPCHARACTER) ent;
-				if (!ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch)) && (ch->IsMonster() || ecs::PlayerRuntime::IsStone(AIHelpers::EcsOf(ch))))
+				if (!ecs::PlayerRuntime::IsPC(((ch) ? (ch)->GetEntityHandle() : entt::null)) && (ch->IsMonster() || ecs::PlayerRuntime::IsStone(((ch) ? (ch)->GetEntityHandle() : entt::null))))
 				{
-					int32_t racevnum = ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(ch));
+					int32_t racevnum = ecs::PlayerRuntime::GetRaceNum(((ch) ? (ch)->GetEntityHandle() : entt::null));
 					if (racevnum != 3963 && racevnum != 3964)
 					{
 						ch->Dead();
@@ -637,9 +649,9 @@ namespace
 				LPCHARACTER ch = (LPCHARACTER) ent;
 
 #ifdef __NEWPET_SYSTEM__
-				if (!ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch)) && !ch->IsPet() && !ch->IsNewPet()
+				if (!ecs::PlayerRuntime::IsPC(((ch) ? (ch)->GetEntityHandle() : entt::null)) && !ch->IsPet() && !ch->IsNewPet()
 #else
-				if (!ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch)) && !ch->IsPet()
+				if (!ecs::PlayerRuntime::IsPC(((ch) ? (ch)->GetEntityHandle() : entt::null)) && !ch->IsPet()
 #endif
 				)
 				{
@@ -650,7 +662,7 @@ namespace
 			{
 				LPITEM item = (LPITEM) ent;
 				ItemSystem::DestroyItemEntityEcs(
-					EntityFactory::CreateItemEntity(g_registry, item),
+					(item ? item->GetEntityHandle() : entt::null),
 					"DUNGEON_ENTITY_CLEANUP");
 			}
 			else
@@ -721,19 +733,19 @@ struct FExitDungeonLobby
 		if (ent->IsType(ENTITY_CHARACTER))
 		{
 			LPCHARACTER ch = (LPCHARACTER) ent;
-			if (ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch)))
+			if (ecs::PlayerRuntime::IsPC(((ch) ? (ch)->GetEntityHandle() : entt::null)))
 			{
 				if (lobby == 1)
 				{
-					ecs::MovementSystem::WarpSet(AIHelpers::EcsOf(ch), 535400, 1428400);
+					ecs::MovementSystem::WarpSet(((ch) ? (ch)->GetEntityHandle() : entt::null), 535400, 1428400);
 				}
 				else if (lobby == 2)
 				{
-					ecs::MovementSystem::WarpSet(AIHelpers::EcsOf(ch), 536900, 1331400);
+					ecs::MovementSystem::WarpSet(((ch) ? (ch)->GetEntityHandle() : entt::null), 536900, 1331400);
 				}
 				else if (lobby == 3)
 				{
-					ecs::MovementSystem::WarpSet(AIHelpers::EcsOf(ch), 645800, 351400);
+					ecs::MovementSystem::WarpSet(((ch) ? (ch)->GetEntityHandle() : entt::null), 645800, 351400);
 				}
 			}
 		}
@@ -769,9 +781,9 @@ namespace
 			if (ent->IsType(ENTITY_CHARACTER))
 			{
 				LPCHARACTER ch = (LPCHARACTER) ent;
-				if (ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch)))
+				if (ecs::PlayerRuntime::IsPC(((ch) ? (ch)->GetEntityHandle() : entt::null)))
 				{
-					ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_COMMAND, "%s", m_psz);
+					ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_COMMAND, "%s", m_psz);
 				}
 			}
 		}
@@ -812,18 +824,18 @@ namespace
 		void operator() (LPENTITY ent) {
 			if (ent->IsType(ENTITY_CHARACTER)) {
 				LPCHARACTER ch = (LPCHARACTER) ent;
-				if (ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch))) {
+				if (ecs::PlayerRuntime::IsPC(((ch) ? (ch)->GetEntityHandle() : entt::null))) {
 #ifdef TEXTS_IMPROVEMENT
 					if (m_big == true)
 					{
-						ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_BIG_NOTICE, m_idx, m_psz);
+						ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_BIG_NOTICE, m_idx, m_psz);
 					}
 					else
 					{
-						ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_NOTICE, m_idx, m_psz);
+						ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_NOTICE, m_idx, m_psz);
 					}
 #else
-					ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_NOTICE, "%s", m_psz);
+					ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_NOTICE, "%s", m_psz);
 #endif
 				}
 			}
@@ -929,9 +941,9 @@ struct SUpdateMastHp
 		if (ent->IsType(ENTITY_CHARACTER))
 		{
 			LPCHARACTER ch = (LPCHARACTER) ent;
-			if (ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch)))
+			if (ecs::PlayerRuntime::IsPC(((ch) ? (ch)->GetEntityHandle() : entt::null)))
 			{
-				ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_COMMAND, "BINARY_Update_Mast_HP %d", m_value);
+				ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_COMMAND, "BINARY_Update_Mast_HP %d", m_value);
 			}
 		}
 	}

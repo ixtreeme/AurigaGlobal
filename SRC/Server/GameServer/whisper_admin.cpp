@@ -142,7 +142,7 @@ struct whisper_packet_func
 
 		if (!d->GetCharacter()->GetLang().compare(CWhisperAdmin::instance().GetLang()) || CWhisperAdmin::instance().IsEuropa(CWhisperAdmin::instance().GetLang()))
 		{
-			ecs::ChatSystem::Send(AIHelpers::EcsOf(d->GetCharacter()), CHAT_TYPE_COMMAND, "OnRecvWhisperAdminSystem [SYSTEM] %s %d", c_pszText, CWhisperAdmin::instance().GetColor());
+			ecs::ChatSystem::Send(((d->GetCharacter()) ? (d->GetCharacter())->GetEntityHandle() : entt::null), CHAT_TYPE_COMMAND, "OnRecvWhisperAdminSystem [SYSTEM] %s %d", c_pszText, CWhisperAdmin::instance().GetColor());
 		}
 	}
 };
@@ -181,7 +181,7 @@ int CWhisperAdmin::Whisper(LPDESC d, const char * c_pData, size_t uiBytes)
 void CWhisperAdmin::SaveLog(LPCHARACTER ch, const char* c_pszText, const char* c_pszLang, int color)
 {
 	char szQuery[QUERY_MAX_LEN + 1];
-	snprintf(szQuery, sizeof(szQuery), "INSERT INTO whisper_system_message (who, date, text, lang, color) VALUES('%s', NOW(), '%s', '%s', '%d')", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), c_pszText, c_pszLang, color);
+	snprintf(szQuery, sizeof(szQuery), "INSERT INTO whisper_system_message (who, date, text, lang, color) VALUES('%s', NOW(), '%s', '%s', '%d')", ecs::PlayerRuntime::GetName(((ch) ? (ch)->GetEntityHandle() : entt::null)).data(), c_pszText, c_pszLang, color);
 	std::unique_ptr<SQLMsg> msg(DBManager::Instance().DirectQuery(szQuery));
 }
 
@@ -192,10 +192,10 @@ void CWhisperAdmin::Manager(LPCHARACTER ch, const char* c_pData)
 	if (!ch)
 		return;
 
-	if (ecs::PlayerRuntime::GetGMLevel(AIHelpers::EcsOf(ch)) != GM_IMPLEMENTOR)
+	if (ecs::PlayerRuntime::GetGMLevel(((ch) ? (ch)->GetEntityHandle() : entt::null)) != GM_IMPLEMENTOR)
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 774, "");
+		ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 774, "");
 #endif
 		return;
 	}
@@ -203,7 +203,7 @@ void CWhisperAdmin::Manager(LPCHARACTER ch, const char* c_pData)
 	if (strlen(f->szText) <= 0 || strlen(f->szLang) <= 0 || f->color < 0)
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 775, "");
+		ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 775, "");
 #endif
 		return;
 	}

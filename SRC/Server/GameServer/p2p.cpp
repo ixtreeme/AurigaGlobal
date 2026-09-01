@@ -45,10 +45,10 @@ void P2P_MANAGER::Boot(LPDESC d)
 		it++;
 
 		p.bHeader = HEADER_GG_LOGIN;
-		strlcpy(p.szName, ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), sizeof(p.szName));
-		p.dwPID = (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)));
-		p.bEmpire = ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(ch));
-		p.lMapIndex = SECTREE_MANAGER::instance().GetMapIndex(ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(ch)), ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(ch)));
+		strlcpy(p.szName, ecs::PlayerRuntime::GetName(((ch) ? (ch)->GetEntityHandle() : entt::null)).data(), sizeof(p.szName));
+		p.dwPID = (ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null)));
+		p.bEmpire = ecs::PlayerRuntime::GetEmpire(((ch) ? (ch)->GetEntityHandle() : entt::null));
+		p.lMapIndex = SECTREE_MANAGER::instance().GetMapIndex(ecs::PlayerRuntime::GetX(((ch) ? (ch)->GetEntityHandle() : entt::null)), ecs::PlayerRuntime::GetY(((ch) ? (ch)->GetEntityHandle() : entt::null)));
 		p.bChannel = g_bChannel;
 
 		d->Packet(&p, sizeof(p));

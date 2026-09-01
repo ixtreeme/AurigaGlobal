@@ -2,6 +2,7 @@
 #define __INC_METIN_II_GAME_CMD_H__
 
 #include <string_view>
+#include <entt/entt.hpp>
 
 #define ACMD(name)  void (name)(LPCHARACTER ch, const char *argument, int cmd, int subcmd)
 #define CMD_NAME(name) cmd_info[cmd].command
@@ -18,6 +19,9 @@ struct command_info
 extern struct command_info cmd_info[];
 
 extern void interpret_command(LPCHARACTER ch, const char * argument, uint64_t len);
+extern void interpret_command(entt::entity character, const char* argument, uint64_t len);
+extern void block_chat(entt::entity executor, std::string_view arguments);
+extern void open_in_game_mall(entt::entity character);
 extern void interpreter_set_privilege(const char * cmd, int lvl);
 
 enum SCMD_ACTION

@@ -28,7 +28,7 @@ namespace
 
 		if ((uint64_t)cur >= maxCoins)
 		{
-			ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "You cannot receive more Dragon Coins.");
+			ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "You cannot receive more Dragon Coins.");
 			return;
 		}
 
@@ -37,7 +37,7 @@ namespace
 			return;
 
 		ch->SetDragonCoin(cur + (uint32_t)canAdd);
-		ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "You received %u Dragon Coins.", (uint32_t)canAdd);
+		ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "You received %u Dragon Coins.", (uint32_t)canAdd);
 	}
 
 	inline bool CheckCanUseNow(LPCHARACTER ch)
@@ -45,9 +45,9 @@ namespace
 		if (!ch)
 			return false;
 
-		if (!ecs::PlayerRuntime::CanWarp(AIHelpers::EcsOf(ch)))
+		if (!ecs::PlayerRuntime::CanWarp(((ch) ? (ch)->GetEntityHandle() : entt::null)))
 		{
-			ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "You cannot use this item right now.");
+			ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "You cannot use this item right now.");
 			return false;
 		}
 
@@ -68,7 +68,7 @@ namespace item_change
 		if (CVikingDungeon::instance().OnUseItem(ch, item))
 			return true;
 #endif
-		switch (ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, item)))
+		switch (ItemSystem::GetItemVnum((item ? item->GetEntityHandle() : entt::null)))
 		{
 			//-----------------------------------------//
 			//        EZT A CHAR_ITEM.CPP KEZELI       //
@@ -79,10 +79,10 @@ namespace item_change
 			//	if (!CheckCanUseNow(ch))
 			//		return true;
 
-			//	if (ItemSystem::GetItemCount(EntityFactory::CreateItemEntity(g_registry, item)) < 1)
+			//	if (ItemSystem::GetItemCount((item ? item->GetEntityHandle() : entt::null)) < 1)
 			//		return true;
 
-			//	item->SetCount(ItemSystem::GetItemCount(EntityFactory::CreateItemEntity(g_registry, item)) - 1);
+			//	item->SetCount(ItemSystem::GetItemCount((item ? item->GetEntityHandle() : entt::null)) - 1);
 			//	AddDragonCoinSafe(ch, 1);
 			//	return true;
 			//}
@@ -96,13 +96,13 @@ namespace item_change
 				
 				if (ch->CountSpecifyItem(30279) < 100)
 				{
-					ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "You need 100 crystals to exchange.");
+					ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "You need 100 crystals to exchange.");
 					return true;
 				}
 
 				ch->RemoveSpecifyItem(30279, 100);
 				ch->AutoGiveItem(30280, 1);
-				ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "Exchange complete.");
+				ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "Exchange complete.");
 				return true;
 			}
 			// kristaly
@@ -114,13 +114,13 @@ namespace item_change
 				
 				if (ch->CountSpecifyItem(30277) < 100)
 				{
-					ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "You need 100 crystals to exchange.");
+					ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "You need 100 crystals to exchange.");
 					return true;
 				}
 
 				ch->RemoveSpecifyItem(30277, 100);
 				ch->AutoGiveItem(30278, 1);
-				ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "Exchange complete.");
+				ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "Exchange complete.");
 				return true;
 			}
 
@@ -131,10 +131,10 @@ namespace item_change
 				if (!CheckCanUseNow(ch))
 					return true;
 
-				if (ItemSystem::GetItemCount(EntityFactory::CreateItemEntity(g_registry, item)) < 1)
+				if (ItemSystem::GetItemCount((item ? item->GetEntityHandle() : entt::null)) < 1)
 					return true;
 
-				ItemSystem::ConsumeItemEcs(EntityFactory::CreateItemEntity(g_registry, item));
+				ItemSystem::ConsumeItemEcs((item ? item->GetEntityHandle() : entt::null));
 				AddDragonCoinSafe(ch, 100);
 				return true;
 			}
@@ -145,19 +145,19 @@ namespace item_change
 				if (!CheckCanUseNow(ch))
 					return true;
 
-				const int32_t count = ItemSystem::GetItemCount(EntityFactory::CreateItemEntity(g_registry, item));
+				const int32_t count = ItemSystem::GetItemCount((item ? item->GetEntityHandle() : entt::null));
 				if (count <= 0)
 					return true;
 
 				const int64_t kYangPerItem = 10000000LL;
 				const int64_t maxGold = (int64_t)GOLD_MAX;
 
-				const int64_t beforeGold = (int64_t)ecs::PointSystem::GetGold(AIHelpers::EcsOf(ch));
+				const int64_t beforeGold = (int64_t)ecs::PointSystem::GetGold(((ch) ? (ch)->GetEntityHandle() : entt::null));
 				const int64_t freeSpace = maxGold - beforeGold;
 
 				if (freeSpace <= 0)
 				{
-					ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "You can't receive more Yang (gold cap reached).");
+					ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "You can't receive more Yang (gold cap reached).");
 					return true; // semmit nem vesz el
 				}
 
@@ -165,7 +165,7 @@ namespace item_change
 				int32_t wantUse = (int32_t)(freeSpace / kYangPerItem);
 				if (wantUse <= 0)
 				{
-					ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "Not enough Yang capacity to redeem even 1 item.");
+					ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "Not enough Yang capacity to redeem even 1 item.");
 					return true; // semmit nem vesz el
 				}
 
@@ -175,15 +175,15 @@ namespace item_change
 				const int64_t wantAdd = kYangPerItem * (int64_t)wantUse;
 
 				 
-				ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_GOLD, wantAdd, true);
+				ecs::PointSystem::Change(((ch) ? (ch)->GetEntityHandle() : entt::null), POINT_GOLD, wantAdd, true);
 
 				 
-				const int64_t afterGold = (int64_t)ecs::PointSystem::GetGold(AIHelpers::EcsOf(ch));
+				const int64_t afterGold = (int64_t)ecs::PointSystem::GetGold(((ch) ? (ch)->GetEntityHandle() : entt::null));
 				int64_t realAdded = afterGold - beforeGold;
 
 				if (realAdded <= 0)
 				{
-					ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "You can't receive more Yang (gold cap reached).");
+					ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "You can't receive more Yang (gold cap reached).");
 					return true; // semmit nem vesz el
 				}
 
@@ -191,16 +191,16 @@ namespace item_change
 				int32_t realUse = (int32_t)(realAdded / kYangPerItem);
 				if (realUse <= 0)
 				{
-					ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "You can't receive more Yang (gold cap reached).");
+					ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "You can't receive more Yang (gold cap reached).");
 					return true; // semmit nem vesz el
 				}
 				if (realUse > count)
 					realUse = count;
 
 				 
-				ItemSystem::ConsumeItemEcs(EntityFactory::CreateItemEntity(g_registry, item), realUse);
+				ItemSystem::ConsumeItemEcs((item ? item->GetEntityHandle() : entt::null), realUse);
 
-				ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "You received %lld Yang.", (long long)(kYangPerItem * (int64_t)realUse));
+				ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "You received %lld Yang.", (long long)(kYangPerItem * (int64_t)realUse));
 				return true;
 			}
 		}

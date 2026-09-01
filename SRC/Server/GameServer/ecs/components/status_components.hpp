@@ -2,11 +2,16 @@
 
 #include <cstdint>
 #include <list>
+#include <unordered_map>
 #include <vector>
 
 #include "../../char.h"
 
 namespace ecs {
+
+struct DungeonDamage {
+    std::unordered_map<int, int> highestByRace;
+};
 
 struct AffectList {
     std::list<CAffect*> affects;
@@ -46,6 +51,14 @@ struct PolymorphState {
 
 struct ImmunityFlags {
     uint32_t flags { 0 };
+};
+
+struct AffectEventState {
+    LPEVENT poisonEvent;
+#ifdef ENABLE_WOLFMAN_CHARACTER
+    LPEVENT bleedingEvent;
+#endif
+    LPEVENT fireEvent;
 };
 
 struct DeadTag {};

@@ -1,6 +1,5 @@
 #include "stdafx.h"
 #include <Core/Logging.hpp>
-#include "ecs/AIHelpers.hpp"
 #include "ecs/systems/SocialSystem.hpp"
 #include "config.h"
 #include "questmanager.h"
@@ -11,8 +10,6 @@
 #define sys_err(fmt, ...) quest::CQuestManager::instance().QuestErrorFmt(__FUNCTION__, __LINE__, FMT_STRING(fmt), __VA_ARGS__)
 #endif
 #include "sectree_manager.h"
-#include "char_interface.hpp"
-#include "ecs/CharacterAccessors.hpp"
 #include "guild.h"
 #include "db.h"
 #include "building.h"
@@ -158,11 +155,10 @@ namespace quest
 
 		const entt::entity npcEntity = q.GetCurrentNPCEntity();
 
-		auto* npc = ecs::LegacyCharOf(npcEntity);
-		if (!npc)
+		if (npcEntity == entt::null)
 			return 0;
 
-		CGuild* pGuild = ecs::SocialSystem::GetGuild(AIHelpers::EcsOf(npc));
+		CGuild* pGuild = ecs::SocialSystem::GetGuild(npcEntity);
 		if (!pGuild)
 			return 0;
 
@@ -170,7 +166,7 @@ namespace quest
 		if (!pLand)
 			return 0;
 
-		LPOBJECT pObject = pLand->FindObjectByNPC(npc);
+		LPOBJECT pObject = pLand->FindObjectByNPC(npcEntity);
 		if (!pObject)
 			return 0;
 

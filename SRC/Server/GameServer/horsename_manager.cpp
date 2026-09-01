@@ -62,15 +62,15 @@ void CHorseNameManager::BroadcastHorseName(uint32_t dwPlayerID, const char* szHo
 
 void CHorseNameManager::Validate(LPCHARACTER pChar)
 {
-	CAffect *pkAff = AffectSystem::FindAffect(AIHelpers::EcsOf(pChar), AFFECT_HORSE_NAME);
+	CAffect *pkAff = AffectSystem::FindAffect(((pChar) ? (pChar)->GetEntityHandle() : entt::null), AFFECT_HORSE_NAME);
 
 	if ( pkAff != nullptr)
 	{
-		if ( ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(pChar), "horse_name.valid_till") < get_global_time() )
+		if ( ecs::QuestSystem::GetFlag(((pChar) ? (pChar)->GetEntityHandle() : entt::null), "horse_name.valid_till") < get_global_time() )
 		{
 			pChar->HorseSummon(false, true);
-			AffectSystem::RemoveAffect(AIHelpers::EcsOf(pChar), pkAff);
-			UpdateHorseName(ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(pChar)), "", true);
+			AffectSystem::RemoveAffect(((pChar) ? (pChar)->GetEntityHandle() : entt::null), pkAff);
+			UpdateHorseName(ecs::PlayerRuntime::GetPlayerID(((pChar) ? (pChar)->GetEntityHandle() : entt::null)), "", true);
 			pChar->HorseSummon(true, true);
 		}
 		else

@@ -3,6 +3,8 @@
 #include "ecs/systems/PlayerRuntimeSystem.hpp"
 #include "ecs/systems/MovementSystem.hpp"
 #include "ecs/systems/AffectSystem.hpp"
+#include "ecs/systems/MountSystem.hpp"
+#include "ecs/systems/QuestSystem.hpp"
 #include "ecs/AIHelpers.hpp"
 #include "constants.h"
 #include "utils.h"
@@ -49,11 +51,11 @@ void CGuild::GuildWarPacket(uint32_t dwOppGID, uint8_t bWarType, uint8_t bWarSta
 		LPCHARACTER ch = *it;
 #ifdef TEXTS_IMPROVEMENT
 		if (bWarState == GUILD_WAR_ON_WAR) {
-			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 147, "");
+			ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 147, "");
 		}
 #endif
 		
-		LPDESC d = ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch));
+		LPDESC d = ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null));
 
 		if (d)
 		{
@@ -67,7 +69,7 @@ void CGuild::GuildWarPacket(uint32_t dwOppGID, uint8_t bWarType, uint8_t bWarSta
 
 void CGuild::SendEnemyGuild(LPCHARACTER ch)
 {
-	LPDESC d = ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch));
+	LPDESC d = ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null));
 
 	if (!d)
 		return;
@@ -288,7 +290,7 @@ void CGuild::NotifyGuildMaster(uint8_t type, uint32_t idx, const char * format, 
 		vsnprintf(chatbuf, sizeof(chatbuf), format, args);
 		va_end(args);
 
-		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), type, idx, chatbuf);
+		ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), type, idx, chatbuf);
 	}
 }
 #endif
@@ -628,12 +630,12 @@ void CGuild::EndWar(uint32_t dwOppGID)
 			for (auto it = m_memberOnline.begin(); it != m_memberOnline.end(); ++it)
 			{
 				LPCHARACTER ch = *it;
-				AffectSystem::RemoveAffect(AIHelpers::EcsOf(ch), GUILD_SKILL_BLOOD);
-				AffectSystem::RemoveAffect(AIHelpers::EcsOf(ch), GUILD_SKILL_BLESS);
-				AffectSystem::RemoveAffect(AIHelpers::EcsOf(ch), GUILD_SKILL_SEONGHWI);
-				AffectSystem::RemoveAffect(AIHelpers::EcsOf(ch), GUILD_SKILL_ACCEL);
-				AffectSystem::RemoveAffect(AIHelpers::EcsOf(ch), GUILD_SKILL_BUNNO);
-				AffectSystem::RemoveAffect(AIHelpers::EcsOf(ch), GUILD_SKILL_JUMUN);
+				AffectSystem::RemoveAffect(((ch) ? (ch)->GetEntityHandle() : entt::null), GUILD_SKILL_BLOOD);
+				AffectSystem::RemoveAffect(((ch) ? (ch)->GetEntityHandle() : entt::null), GUILD_SKILL_BLESS);
+				AffectSystem::RemoveAffect(((ch) ? (ch)->GetEntityHandle() : entt::null), GUILD_SKILL_SEONGHWI);
+				AffectSystem::RemoveAffect(((ch) ? (ch)->GetEntityHandle() : entt::null), GUILD_SKILL_ACCEL);
+				AffectSystem::RemoveAffect(((ch) ? (ch)->GetEntityHandle() : entt::null), GUILD_SKILL_BUNNO);
+				AffectSystem::RemoveAffect(((ch) ? (ch)->GetEntityHandle() : entt::null), GUILD_SKILL_JUMUN);
 
 				ch->RemoveBadAffect();
 			}
@@ -652,7 +654,7 @@ void CGuild::SetGuildWarMapIndex(uint32_t dwOppGID, int32_t lMapIndex)
 	LOG_INFO("GuildWar.SetGuildWarMapIndex id({} -> {}), map({})", GetID(), dwOppGID, lMapIndex);
 }
 
-void CGuild::GuildWarEntryAccept(uint32_t dwOppGID, LPCHARACTER ch)
+void CGuild::GuildWarEntryAccept(uint32_t dwOppGID, entt::entity character)
 {
 	auto git = m_EnemyGuild.find(dwOppGID);
 
@@ -667,7 +669,7 @@ void CGuild::GuildWarEntryAccept(uint32_t dwOppGID, LPCHARACTER ch)
 	if (gw.state != GUILD_WAR_ON_WAR)
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 439, "");
+		ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 439, "");
 #endif
 		return;
 	}
@@ -682,17 +684,16 @@ void CGuild::GuildWarEntryAccept(uint32_t dwOppGID, LPCHARACTER ch)
 #ifdef ENABLE_NEWSTUFF
 	if (g_NoMountAtGuildWar)
 	{
-		AffectSystem::RemoveAffect(AIHelpers::EcsOf(ch), AFFECT_MOUNT);
-		AffectSystem::RemoveAffect(AIHelpers::EcsOf(ch), AFFECT_MOUNT_BONUS);
-		if (ch->IsRiding())
-			ch->StopRiding();
+		AffectSystem::RemoveAffect(character, AFFECT_MOUNT);
+		AffectSystem::RemoveAffect(character, AFFECT_MOUNT_BONUS);
+		if (MountSystem::IsRiding(character))
+			MountSystem::StopRiding(character);
 	}
 #endif
-	quest::PC * pPC = quest::CQuestManager::instance().GetPC((ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))));
-	pPC->SetFlag("war.is_war_member", 1);
+	ecs::QuestSystem::SetFlag(character, "war.is_war_member", 1);
 
-	ch->SaveExitLocation();
-	ecs::MovementSystem::WarpSet(AIHelpers::EcsOf(ch), pos.x, pos.y, gw.map_index);
+	ecs::MovementSystem::SaveExitLocation(character);
+	ecs::MovementSystem::WarpSet(character, pos.x, pos.y, gw.map_index);
 }
 
 void CGuild::GuildWarEntryAsk(uint32_t dwOppGID)
@@ -732,12 +733,12 @@ void CGuild::GuildWarEntryAsk(uint32_t dwOppGID)
 		unsigned int questIndex=CQuestManager::instance().GetQuestIndexByName("guild_war_join");
 		if (questIndex)
 		{
-			LOG_INFO("GuildWar.GuildWarEntryAsk.SendLetterToMember pid({}), qid({})", (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))), questIndex);
-			CQuestManager::instance().Letter((ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))), questIndex, 0);
+			LOG_INFO("GuildWar.GuildWarEntryAsk.SendLetterToMember pid({}), qid({})", (ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null))), questIndex);
+			CQuestManager::instance().Letter((ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null))), questIndex, 0);
 		}
 		else
 		{
-			LOG_ERROR("GuildWar.GuildWarEntryAsk.SendLetterToMember.QUEST_ERROR pid({}), quest_name('guild_war_join.quest')", (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))), questIndex);
+			LOG_ERROR("GuildWar.GuildWarEntryAsk.SendLetterToMember.QUEST_ERROR pid({}), quest_name('guild_war_join.quest')", (ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null))), questIndex);
 			break;
 		}
 	}
@@ -756,12 +757,12 @@ void CGuild::SetLadderPoint(int point)
 			if (point > m_data.ladder_point) {
 				i = point - m_data.ladder_point;
 				if (i > 0) {
-					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 152, "%d", i);
+					ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 152, "%d", i);
 				}
 			} else {
 				i = m_data.ladder_point - point;
 				if (i > 0) {
-					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 1284, "%d", i);
+					ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 1284, "%d", i);
 				}
 			}
 		}

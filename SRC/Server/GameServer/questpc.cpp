@@ -300,7 +300,7 @@ namespace quest
 			LOG_TRACE("QUEST Icon File {}", m_RunningQuestState->_icon_file.c_str());
 		}
 
-		ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(CQuestManager::instance().GetCurrentCharacterPtr()))->Packet(buf.read_peek(), buf.size());
+		ecs::PlayerRuntime::GetDesc(((CQuestManager::instance().GetCurrentCharacterPtr()) ? (CQuestManager::instance().GetCurrentCharacterPtr())->GetEntityHandle() : entt::null))->Packet(buf.read_peek(), buf.size());
 
 		m_iSendToClient = 0;
 //		if (m_iSendToClient & QUEST_SEND_TITLE) {
@@ -348,7 +348,7 @@ namespace quest
 //		}
 //		qi.szIconFileName[24] = '\0';
 //
-//		ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(CQuestManager::instance().GetCurrentCharacterPtr()))->Packet(&qi, sizeof(qi));
+//		ecs::PlayerRuntime::GetDesc(((CQuestManager::instance().GetCurrentCharacterPtr()) ? (CQuestManager::instance().GetCurrentCharacterPtr())->GetEntityHandle() : entt::null))->Packet(&qi, sizeof(qi));
 //		m_iSendToClient = 0;
 	}
 
@@ -359,12 +359,12 @@ namespace quest
 			LPCHARACTER npc = CQuestManager::instance().GetCurrentNPCCharacterPtr();
 			LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
 
-			if (npc && !(ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(npc))))
+			if (npc && !(ecs::PlayerRuntime::IsPC(((npc) ? (npc)->GetEntityHandle() : entt::null))))
 			{
-				if ((ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))) == npc->GetQuestNPCID())
+				if ((ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null))) == npc->GetQuestNPCID())
 				{
 					npc->SetQuestNPCID(0);
-					LOG_TRACE("QUEST NPC lock isn't unlocked : pid {}", (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))));
+					LOG_TRACE("QUEST NPC lock isn't unlocked : pid {}", (ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null))));
 					CQuestManager::instance().WriteRunningStateToSyserr();
 				}
 			}
@@ -405,12 +405,12 @@ namespace quest
 			if (ch)
 			{
 				SetFlag(m_stCurQuest + ".__status", m_iLastState);
-				CQuestManager::instance().LeaveState((ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))), dwQuestIndex, m_iLastState);
+				CQuestManager::instance().LeaveState((ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null))), dwQuestIndex, m_iLastState);
 				pOldState->st = iNowState;
 				SetFlag(m_stCurQuest + ".__status", iNowState);
-				CQuestManager::instance().EnterState((ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))), dwQuestIndex, iNowState);
+				CQuestManager::instance().EnterState((ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null))), dwQuestIndex, iNowState);
 				if (GetFlag(m_stCurQuest + ".__status") == iNowState)
-					CQuestManager::instance().Letter((ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))), dwQuestIndex, iNowState);
+					CQuestManager::instance().Letter((ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null))), dwQuestIndex, iNowState);
 			}
 		}
 
@@ -449,14 +449,14 @@ namespace quest
 
 			assert(it->second.st == rInfo.prev_state);
 
-			CQuestManager::instance().LeaveState((ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))), dwQuestIdx, rInfo.prev_state);
+			CQuestManager::instance().LeaveState((ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null))), dwQuestIdx, rInfo.prev_state);
 			it->second.st = rInfo.next_state;
 			SetFlag(stQuestName + ".__status", rInfo.next_state);
 
-			CQuestManager::instance().EnterState((ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))), dwQuestIdx, rInfo.next_state);
+			CQuestManager::instance().EnterState((ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null))), dwQuestIdx, rInfo.next_state);
 
 			if (GetFlag(stQuestName + ".__status")==rInfo.next_state)
-				CQuestManager::instance().Letter((ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))), dwQuestIdx, rInfo.next_state);
+				CQuestManager::instance().Letter((ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null))), dwQuestIdx, rInfo.next_state);
 		}
 	}
 
@@ -673,7 +673,7 @@ namespace quest
 		if (m_bIsGivenReward)
 		{
 #ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 191, "");
+			ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 191, "");
 #endif
 			m_bIsGivenReward = false;
 		}
@@ -686,9 +686,9 @@ namespace quest
 					LOG_INFO("EXP cur {} add {} next {}", ch->GetExp(), it->value1, ch->GetNextExp());
 
 					if (ch->GetExp() + it->value1 > ch->GetNextExp())
-						ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_EXP, ch->GetNextExp() - 1 - ch->GetExp());
+						ecs::PointSystem::Change(((ch) ? (ch)->GetEntityHandle() : entt::null), POINT_EXP, ch->GetNextExp() - 1 - ch->GetExp());
 					else
-						ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_EXP, it->value1);
+						ecs::PointSystem::Change(((ch) ? (ch)->GetEntityHandle() : entt::null), POINT_EXP, it->value1);
 
 					break;
 
@@ -761,12 +761,12 @@ namespace quest
 				const string quest_name = it->first.substr(0, it->first.size()-9);
 				const char* state_name = CQuestManager::instance().GetQuestStateName(quest_name, it->second);
 #ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 758, "%s#%s#%d", quest_name.c_str(), state_name, it->second);
+				ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 758, "%s#%s#%d", quest_name.c_str(), state_name, it->second);
 #endif
 			}
 #ifdef TEXTS_IMPROVEMENT
 			else {
-				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 757, "%s#%d", it->first.c_str(), it->second);
+				ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 757, "%s#%d", it->first.c_str(), it->second);
 			}
 #endif
 		}

@@ -116,7 +116,7 @@ public:
 	{
 		for (uint16_t i = BELT_INVENTORY_SLOT_START; i < BELT_INVENTORY_SLOT_END; ++i)
 		{
-			const entt::entity beltInventoryItem = ItemSystem::GetInventoryItem(AIHelpers::EcsOf(pc), i);
+			const entt::entity beltInventoryItem = ItemSystem::GetInventoryItem(((pc) ? (pc)->GetEntityHandle() : entt::null), i);
 
 			if (ItemSystem::IsValidItem(beltInventoryItem))
 				return true;

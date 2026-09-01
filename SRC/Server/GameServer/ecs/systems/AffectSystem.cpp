@@ -6,6 +6,9 @@
 #include "QuestSystem.hpp"
 #include "NetworkSyncSystem.hpp"
 #include "MovementSystem.hpp"
+#include "CombatSystem.hpp"
+#include "MountSystem.hpp"
+#include "VisibilitySystem.hpp"
 
 #include "../../affect.h"
 #include "../../arena.h"
@@ -29,7 +32,6 @@
 #include "../../party.h"
 #endif
 #include "../../utils.h"
-#include "../AIHelpers.hpp"
 #include "../EntityFactory.hpp"
 #include "ItemSystem.hpp"
 #include "../Registry.hpp"
@@ -48,23 +50,23 @@ const int poison_damage_rate[MOB_RANK_MAX_NUM] = {
     80, 50, 40, 30, 25, 1
 };
 
-int GetPoisonDamageRate(LegacyCharHandle ch)
+int GetPoisonDamageRate(entt::entity character)
 {
-    int iRate = ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch)) ? 50 : poison_damage_rate[ch->GetMobRank()];
-    iRate = MAX(0, iRate - ecs::PointSystem::Get(AIHelpers::EcsOf(ch), POINT_POISON_REDUCE));
+    int iRate = ecs::PlayerRuntime::IsPC(character)
+        ? 50
+        : poison_damage_rate[ecs::PlayerRuntime::GetMobRank(character)];
+    iRate = MAX(0, iRate - ecs::PointSystem::Get(character, POINT_POISON_REDUCE));
     return iRate;
 }
 
 EVENTINFO(TPoisonEventInfo)
 {
-    DynamicCharacterPtr ch;
+    entt::entity character { entt::null };
+    entt::entity attacker { entt::null };
     int count;
-    uint32_t attacker_pid;
 
     TPoisonEventInfo()
-        : ch()
-        , count(0)
-        , attacker_pid(0)
+        : count(0)
     {
     }
 };
@@ -77,25 +79,23 @@ EVENTFUNC(poison_event)
         return 0;
     }
 
-    auto* ch = info->ch.Get();
-    if (ch == nullptr) {
+    const entt::entity character = info->character;
+    if (character == entt::null || !g_registry.valid(character)) {
         return 0;
     }
 
-    // Phase 10: WRITES_STATE - deferred until ECS component covers m_pkPoisonEvent
-    auto* pkAttacker = CHARACTER_MANAGER::instance().FindByPID(info->attacker_pid);
-    int dam = ecs::PointSystem::GetMaxHP(AIHelpers::EcsOf(ch)) * GetPoisonDamageRate(ch) / 1000;
+    int dam = ecs::PointSystem::GetMaxHP(character) * GetPoisonDamageRate(character) / 1000;
     if (test_server) {
-        ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_NOTICE, "Poison Damage %d", dam);
+        ecs::ChatSystem::Send(character, CHAT_TYPE_NOTICE, "Poison Damage %d", dam);
     }
 
-    const entt::entity poisonEntity = AIHelpers::EcsOf(ch);
-    if (poisonEntity != entt::null) {
-        g_dispatcher.trigger(ecs::EvPoisonApplied { poisonEntity, dam });
+    if (character != entt::null) {
+        g_dispatcher.trigger(ecs::EvPoisonApplied { character, dam });
     }
 
-    if (ch->Damage(pkAttacker, dam, DAMAGE_TYPE_POISON)) {
-        ch->m_pkPoisonEvent = nullptr;
+    if (CombatSystem::Damage(character, info->attacker, dam, DAMAGE_TYPE_POISON)) {
+        if (auto* state = g_registry.try_get<ecs::AffectEventState>(character))
+            state->poisonEvent = nullptr;
         return 0;
     }
 
@@ -104,7 +104,8 @@ EVENTFUNC(poison_event)
         return PASSES_PER_SEC(3);
     }
 
-    ch->m_pkPoisonEvent = nullptr;
+    if (auto* state = g_registry.try_get<ecs::AffectEventState>(character))
+        state->poisonEvent = nullptr;
     return 0;
 }
 
@@ -113,26 +114,26 @@ const int bleeding_damage_rate[MOB_RANK_MAX_NUM] = {
     80, 50, 40, 30, 25, 1
 };
 
-int GetBleedingDamageRate(LegacyCharHandle ch)
+int GetBleedingDamageRate(entt::entity character)
 {
-    int iRate = ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch)) ? 50 : bleeding_damage_rate[ch->GetMobRank()];
-    iRate = MAX(0, iRate - ecs::PointSystem::Get(AIHelpers::EcsOf(ch), POINT_BLEEDING_REDUCE));
+    int iRate = ecs::PlayerRuntime::IsPC(character)
+        ? 50
+        : bleeding_damage_rate[ecs::PlayerRuntime::GetMobRank(character)];
+    iRate = MAX(0, iRate - ecs::PointSystem::Get(character, POINT_BLEEDING_REDUCE));
 #if defined(ENABLE_WOLFMAN_CHARACTER) && defined(USE_ITEM_BLEEDING_AS_POISON)
-    iRate = MAX(0, iRate - ecs::PointSystem::Get(AIHelpers::EcsOf(ch), POINT_POISON_REDUCE));
+    iRate = MAX(0, iRate - ecs::PointSystem::Get(character, POINT_POISON_REDUCE));
 #endif
     return iRate;
 }
 
 EVENTINFO(TBleedingEventInfo)
 {
-    DynamicCharacterPtr ch;
+    entt::entity character { entt::null };
+    entt::entity attacker { entt::null };
     int count;
-    uint32_t attacker_pid;
 
     TBleedingEventInfo()
-        : ch()
-        , count(0)
-        , attacker_pid(0)
+        : count(0)
     {
     }
 };
@@ -145,25 +146,23 @@ EVENTFUNC(bleeding_event)
         return 0;
     }
 
-    auto* ch = info->ch.Get();
-    if (ch == nullptr) {
+    const entt::entity character = info->character;
+    if (character == entt::null || !g_registry.valid(character)) {
         return 0;
     }
 
-    // Phase 10: WRITES_STATE - deferred until ECS component covers m_pkBleedingEvent
-    auto* pkAttacker = CHARACTER_MANAGER::instance().FindByPID(info->attacker_pid);
-    int dam = ecs::PointSystem::GetMaxHP(AIHelpers::EcsOf(ch)) * GetBleedingDamageRate(ch) / 1000;
+    int dam = ecs::PointSystem::GetMaxHP(character) * GetBleedingDamageRate(character) / 1000;
     if (test_server) {
-        ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_NOTICE, "Bleeding Damage %d", dam);
+        ecs::ChatSystem::Send(character, CHAT_TYPE_NOTICE, "Bleeding Damage %d", dam);
     }
 
-    const entt::entity bleedingEntity = AIHelpers::EcsOf(ch);
-    if (bleedingEntity != entt::null) {
-        g_dispatcher.trigger(ecs::EvBleedingApplied { bleedingEntity, dam });
+    if (character != entt::null) {
+        g_dispatcher.trigger(ecs::EvBleedingApplied { character, dam });
     }
 
-    if (ch->Damage(pkAttacker, dam, DAMAGE_TYPE_BLEEDING)) {
-        ch->m_pkBleedingEvent = nullptr;
+    if (CombatSystem::Damage(character, info->attacker, dam, DAMAGE_TYPE_BLEEDING)) {
+        if (auto* state = g_registry.try_get<ecs::AffectEventState>(character))
+            state->bleedingEvent = nullptr;
         return 0;
     }
 
@@ -172,23 +171,22 @@ EVENTFUNC(bleeding_event)
         return PASSES_PER_SEC(3);
     }
 
-    ch->m_pkBleedingEvent = nullptr;
+    if (auto* state = g_registry.try_get<ecs::AffectEventState>(character))
+        state->bleedingEvent = nullptr;
     return 0;
 }
 #endif
 
 EVENTINFO(TFireEventInfo)
 {
-    DynamicCharacterPtr ch;
+    entt::entity character { entt::null };
+    entt::entity attacker { entt::null };
     int count;
     int amount;
-    uint32_t attacker_pid;
 
     TFireEventInfo()
-        : ch()
-        , count(0)
+        : count(0)
         , amount(0)
-        , attacker_pid(0)
     {
     }
 };
@@ -201,25 +199,23 @@ EVENTFUNC(fire_event)
         return 0;
     }
 
-    auto* ch = info->ch.Get();
-    if (ch == nullptr) {
+    const entt::entity character = info->character;
+    if (character == entt::null || !g_registry.valid(character)) {
         return 0;
     }
 
-    // Phase 10: WRITES_STATE - deferred until ECS component covers m_pkFireEvent
-    auto* pkAttacker = CHARACTER_MANAGER::instance().FindByPID(info->attacker_pid);
     int dam = info->amount;
     if (test_server) {
-        ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_NOTICE, "Fire Damage %d", dam);
+        ecs::ChatSystem::Send(character, CHAT_TYPE_NOTICE, "Fire Damage %d", dam);
     }
 
-    const entt::entity fireEntity = AIHelpers::EcsOf(ch);
-    if (fireEntity != entt::null) {
-        g_dispatcher.trigger(ecs::EvFireApplied { fireEntity, dam });
+    if (character != entt::null) {
+        g_dispatcher.trigger(ecs::EvFireApplied { character, dam });
     }
 
-    if (ch->Damage(pkAttacker, dam, DAMAGE_TYPE_FIRE)) {
-        ch->m_pkFireEvent = nullptr;
+    if (CombatSystem::Damage(character, info->attacker, dam, DAMAGE_TYPE_FIRE)) {
+        if (auto* state = g_registry.try_get<ecs::AffectEventState>(character))
+            state->fireEvent = nullptr;
         return 0;
     }
 
@@ -228,7 +224,8 @@ EVENTFUNC(fire_event)
         return PASSES_PER_SEC(3);
     }
 
-    ch->m_pkFireEvent = nullptr;
+    if (auto* state = g_registry.try_get<ecs::AffectEventState>(character))
+        state->fireEvent = nullptr;
     return 0;
 }
 
@@ -323,68 +320,62 @@ namespace AffectSystem {
 
 void ApplyFire(entt::entity target, entt::entity attacker, int amount, int count)
 {
-    MarkFire(target, true);
-
-    auto* ch = LegacyCharOf(target);
-    if (!ch || ch->m_pkFireEvent) {
+    if (target == entt::null || !g_registry.valid(target))
         return;
-    }
 
-    ch->AddAffect(AFFECT_FIRE, POINT_NONE, 0, AFF_FIRE, count * 3 + 1, 0, true);
+    auto& events = g_registry.get_or_emplace<ecs::AffectEventState>(target);
+    if (events.fireEvent)
+        return;
+
+    MarkFire(target, true);
+    AddAffect(target, AFFECT_FIRE, POINT_NONE, 0, AFF_FIRE, count * 3 + 1, 0, true);
 
     TFireEventInfo* info = AllocEventInfo<TFireEventInfo>();
-    info->ch = ch;
+    info->character = target;
+    info->attacker = attacker;
     info->count = count;
     info->amount = amount;
-
-    if (auto* pkAttacker = LegacyCharOf(attacker)) {
-        info->attacker_pid = ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(pkAttacker));
-    } else {
-        info->attacker_pid = 0;
-    }
-
-    ch->m_pkFireEvent = event_create(fire_event, info, 1);
+    events.fireEvent = event_create(fire_event, info, 1);
 }
 
 void RemoveFire(entt::entity e)
 {
     MarkFire(e, false);
 
-    auto* ch = LegacyCharOf(e);
-    if (!ch) {
+    if (e == entt::null || !g_registry.valid(e)) {
         return;
     }
 
-    ch->RemoveAffect(AFFECT_FIRE);
-    event_cancel(&ch->m_pkFireEvent);
+    RemoveAffect(e, AFFECT_FIRE);
+    if (auto* events = g_registry.try_get<ecs::AffectEventState>(e))
+        event_cancel(&events->fireEvent);
 }
 
 void ApplyPoison(entt::entity target, entt::entity attacker)
 {
-    MarkPoison(target, true);
-
-    auto* ch = LegacyCharOf(target);
-    if (!ch || ch->m_pkPoisonEvent) {
+    if (target == entt::null || !g_registry.valid(target))
         return;
-    }
 
-    if (ch->m_bHasPoisoned && !ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch))) {
+    auto& events = g_registry.get_or_emplace<ecs::AffectEventState>(target);
+    auto& status = g_registry.get_or_emplace<ecs::StatusFlags>(target);
+    if (events.poisonEvent)
         return;
-    }
+
+    if (status.hasPoisoned && !ecs::PlayerRuntime::IsPC(target))
+        return;
 
 #ifdef ENABLE_WOLFMAN_CHARACTER
-    if (ch->m_pkBleedingEvent) {
+    if (events.bleedingEvent)
         return;
-    }
 
-    if (ch->m_bHasBled && !ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch))) {
+    if (status.hasBled && !ecs::PlayerRuntime::IsPC(target)) {
         return;
     }
 #endif
 
-    auto* pkAttacker = LegacyCharOf(attacker);
-    if (pkAttacker && ecs::PointSystem::GetLevel(AIHelpers::EcsOf(pkAttacker)) < ecs::PointSystem::GetLevel(AIHelpers::EcsOf(ch))) {
-        int delta = ecs::PointSystem::GetLevel(AIHelpers::EcsOf(ch)) - ecs::PointSystem::GetLevel(AIHelpers::EcsOf(pkAttacker));
+    const bool hasAttacker = attacker != entt::null && g_registry.valid(attacker);
+    if (hasAttacker && ecs::PointSystem::GetLevel(attacker) < ecs::PointSystem::GetLevel(target)) {
+        int delta = ecs::PointSystem::GetLevel(target) - ecs::PointSystem::GetLevel(attacker);
         if (delta > 8) {
             delta = 8;
         }
@@ -394,19 +385,19 @@ void ApplyPoison(entt::entity target, entt::entity attacker)
         }
     }
 
-    ch->m_bHasPoisoned = true;
-    ch->AddAffect(AFFECT_POISON, POINT_NONE, 0, AFF_POISON, POISON_LENGTH + 1, 0, true);
+    MarkPoison(target, true);
+    AddAffect(target, AFFECT_POISON, POINT_NONE, 0, AFF_POISON, POISON_LENGTH + 1, 0, true);
 
     TPoisonEventInfo* info = AllocEventInfo<TPoisonEventInfo>();
-    info->ch = ch;
+    info->character = target;
+    info->attacker = attacker;
     info->count = 10;
-    info->attacker_pid = pkAttacker ? ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(pkAttacker)) : 0;
-    ch->m_pkPoisonEvent = event_create(poison_event, info, 1);
+    events.poisonEvent = event_create(poison_event, info, 1);
 
-    if (test_server && pkAttacker) {
+    if (test_server && hasAttacker) {
         char buf[256];
-        snprintf(buf, sizeof(buf), "POISON %s -> %s", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(pkAttacker)).data(), ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data());
-        ecs::ChatSystem::Send(AIHelpers::EcsOf(pkAttacker), CHAT_TYPE_INFO, "%s", buf);
+        snprintf(buf, sizeof(buf), "POISON %s -> %s", ecs::PlayerRuntime::GetName(attacker).data(), ecs::PlayerRuntime::GetName(target).data());
+        ecs::ChatSystem::Send(attacker, CHAT_TYPE_INFO, "%s", buf);
     }
 }
 
@@ -414,40 +405,40 @@ void RemovePoison(entt::entity e)
 {
     MarkPoison(e, false);
 
-    auto* ch = LegacyCharOf(e);
-    if (!ch) {
+    if (e == entt::null || !g_registry.valid(e)) {
         return;
     }
 
-    ch->RemoveAffect(AFFECT_POISON);
-    event_cancel(&ch->m_pkPoisonEvent);
+    RemoveAffect(e, AFFECT_POISON);
+    if (auto* events = g_registry.try_get<ecs::AffectEventState>(e))
+        event_cancel(&events->poisonEvent);
 }
 
 #ifdef ENABLE_WOLFMAN_CHARACTER
 void ApplyBleeding(entt::entity target, entt::entity attacker)
 {
-    MarkBleeding(target, true);
+    if (target == entt::null || !g_registry.valid(target))
+        return;
 
-    auto* ch = LegacyCharOf(target);
-    if (!ch || ch->m_pkBleedingEvent) {
+    auto& events = g_registry.get_or_emplace<ecs::AffectEventState>(target);
+    auto& status = g_registry.get_or_emplace<ecs::StatusFlags>(target);
+    if (events.bleedingEvent)
+        return;
+
+    if (status.hasBled && !ecs::PlayerRuntime::IsPC(target))
+        return;
+
+    if (events.poisonEvent) {
         return;
     }
 
-    if (ch->m_bHasBled && !ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch))) {
+    if (status.hasPoisoned && !ecs::PlayerRuntime::IsPC(target)) {
         return;
     }
 
-    if (ch->m_pkPoisonEvent) {
-        return;
-    }
-
-    if (ch->m_bHasPoisoned && !ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch))) {
-        return;
-    }
-
-    auto* pkAttacker = LegacyCharOf(attacker);
-    if (pkAttacker && ecs::PointSystem::GetLevel(AIHelpers::EcsOf(pkAttacker)) < ecs::PointSystem::GetLevel(AIHelpers::EcsOf(ch))) {
-        int delta = ecs::PointSystem::GetLevel(AIHelpers::EcsOf(ch)) - ecs::PointSystem::GetLevel(AIHelpers::EcsOf(pkAttacker));
+    const bool hasAttacker = attacker != entt::null && g_registry.valid(attacker);
+    if (hasAttacker && ecs::PointSystem::GetLevel(attacker) < ecs::PointSystem::GetLevel(target)) {
+        int delta = ecs::PointSystem::GetLevel(target) - ecs::PointSystem::GetLevel(attacker);
         if (delta > 8) {
             delta = 8;
         }
@@ -457,19 +448,19 @@ void ApplyBleeding(entt::entity target, entt::entity attacker)
         }
     }
 
-    ch->m_bHasBled = true;
-    ch->AddAffect(AFFECT_BLEEDING, POINT_NONE, 0, AFF_BLEEDING, BLEEDING_LENGTH + 1, 0, true);
+    MarkBleeding(target, true);
+    AddAffect(target, AFFECT_BLEEDING, POINT_NONE, 0, AFF_BLEEDING, BLEEDING_LENGTH + 1, 0, true);
 
     TBleedingEventInfo* info = AllocEventInfo<TBleedingEventInfo>();
-    info->ch = ch;
+    info->character = target;
+    info->attacker = attacker;
     info->count = 10;
-    info->attacker_pid = pkAttacker ? ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(pkAttacker)) : 0;
-    ch->m_pkBleedingEvent = event_create(bleeding_event, info, 1);
+    events.bleedingEvent = event_create(bleeding_event, info, 1);
 
-    if (test_server && pkAttacker) {
+    if (test_server && hasAttacker) {
         char buf[256];
-        snprintf(buf, sizeof(buf), "BLEEDING %s -> %s", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(pkAttacker)).data(), ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data());
-        ecs::ChatSystem::Send(AIHelpers::EcsOf(pkAttacker), CHAT_TYPE_INFO, "%s", buf);
+        snprintf(buf, sizeof(buf), "BLEEDING %s -> %s", ecs::PlayerRuntime::GetName(attacker).data(), ecs::PlayerRuntime::GetName(target).data());
+        ecs::ChatSystem::Send(attacker, CHAT_TYPE_INFO, "%s", buf);
     }
 }
 
@@ -477,13 +468,13 @@ void RemoveBleeding(entt::entity e)
 {
     MarkBleeding(e, false);
 
-    auto* ch = LegacyCharOf(e);
-    if (!ch) {
+    if (e == entt::null || !g_registry.valid(e)) {
         return;
     }
 
-    ch->RemoveAffect(AFFECT_BLEEDING);
-    event_cancel(&ch->m_pkBleedingEvent);
+    RemoveAffect(e, AFFECT_BLEEDING);
+    if (auto* events = g_registry.try_get<ecs::AffectEventState>(e))
+        event_cancel(&events->bleedingEvent);
 }
 #else
 void ApplyBleeding(entt::entity, entt::entity)
@@ -494,6 +485,20 @@ void RemoveBleeding(entt::entity)
 {
 }
 #endif
+
+void CancelDamageEvents(entt::entity e)
+{
+    if (e == entt::null || !g_registry.valid(e))
+        return;
+
+    if (auto* events = g_registry.try_get<ecs::AffectEventState>(e)) {
+        event_cancel(&events->poisonEvent);
+#ifdef ENABLE_WOLFMAN_CHARACTER
+        event_cancel(&events->bleedingEvent);
+#endif
+        event_cancel(&events->fireEvent);
+    }
+}
 
 bool IsImmune(entt::entity e, uint32_t immuneFlag)
 {
@@ -600,6 +605,22 @@ CAffect* FindAffect(entt::entity e, uint32_t type, uint8_t apply)
     return nullptr;
 }
 
+CAffect* FindAffect(entt::entity e, uint32_t type, uint8_t apply, int32_t value)
+{
+    if (e == entt::null || !g_registry.valid(e))
+        return nullptr;
+    const auto* affectList = g_registry.try_get<ecs::AffectList>(e);
+    if (!affectList)
+        return nullptr;
+    for (auto* affect : affectList->affects)
+    {
+        if (affect && affect->dwType == type && affect->bApplyOn == apply &&
+            affect->lApplyValue == value)
+            return affect;
+    }
+    return nullptr;
+}
+
 bool IsAffectFlag(entt::entity e, uint32_t flag)
 {
     if (e == entt::null || !g_registry.valid(e)) {
@@ -648,6 +669,24 @@ bool RemoveAffect(entt::entity e, CAffect* affect)
     return result;
 }
 
+void RemoveBadAffects(entt::entity e)
+{
+    if (auto* ch = LegacyCharOf(e))
+    {
+        ch->RemoveBadAffect();
+        SyncAffectList(e, ch);
+    }
+}
+
+void RemoveGoodAffects(entt::entity e)
+{
+    if (auto* ch = LegacyCharOf(e))
+    {
+        ch->RemoveGoodAffect();
+        SyncAffectList(e, ch);
+    }
+}
+
 void ClearAffect(entt::entity e, bool save)
 {
     auto* ch = LegacyCharOf(e);
@@ -668,6 +707,75 @@ void RefreshAffect(entt::entity e)
 
     ch->RefreshAffect();
     SyncAffectList(e, ch);
+}
+
+bool IsPolymorphed(entt::entity e)
+{
+	return GetPolymorphVnum(e) != 0;
+}
+
+bool IsPolyMaintainStat(entt::entity e)
+{
+	if (e == entt::null || !g_registry.valid(e))
+		return false;
+	const auto* state = g_registry.try_get<ecs::PolymorphState>(e);
+	return state && state->maintainStat;
+}
+
+uint32_t GetPolymorphVnum(entt::entity e)
+{
+	if (e == entt::null || !g_registry.valid(e))
+		return 0;
+	if (const auto* race = g_registry.try_get<ecs::RaceState>(e))
+		return race->polymorphRace;
+	const auto* state = g_registry.try_get<ecs::PolymorphState>(e);
+	return state ? state->raceVnum : 0;
+}
+
+void SetPolymorph(entt::entity e, uint32_t raceVnum, bool maintainStats)
+{
+	if (e == entt::null || !g_registry.valid(e))
+		return;
+#ifdef ENABLE_WOLFMAN_CHARACTER
+	if (raceVnum < MAIN_RACE_MAX_NUM)
+#else
+	if (raceVnum < JOB_MAX_NUM)
+#endif
+	{
+		raceVnum = 0;
+		maintainStats = false;
+	}
+	if (GetPolymorphVnum(e) == raceVnum)
+		return;
+
+	auto& race = g_registry.get_or_emplace<ecs::RaceState>(e);
+	race.polymorphRace = raceVnum;
+	auto& polymorph = g_registry.get_or_emplace<ecs::PolymorphState>(e);
+	polymorph.raceVnum = raceVnum;
+	polymorph.maintainStat = maintainStats;
+	auto* status = g_registry.try_get<ecs::StatusFlags>(e);
+	if (!status)
+		status = &g_registry.emplace<ecs::StatusFlags>(e, ecs::StatusFlags {});
+	status->isPolymorph = raceVnum != 0;
+
+	LOG_INFO("POLYMORPH: {} race {}", ecs::PlayerRuntime::GetName(e), raceVnum);
+	if (raceVnum != 0)
+		MountSystem::StopRiding(e);
+
+	status->isSpawnState = true;
+	ecs::VisibilitySystem::Reencode(g_registry, e);
+	status->isSpawnState = false;
+
+	if (!maintainStats)
+	{
+		ecs::PointSystem::Change(e, POINT_ST, 0);
+		ecs::PointSystem::Change(e, POINT_DX, 0);
+		ecs::PointSystem::Change(e, POINT_IQ, 0);
+		ecs::PointSystem::Change(e, POINT_HT, 0);
+	}
+	CombatSystem::SetValidComboInterval(e, 0);
+	CombatSystem::SetComboSequence(e, 0);
+	g_registry.emplace_or_replace<ecs::DirtyTag>(e);
 }
 
 void UpdateAffect(entt::registry& reg, uint32_t tick)
@@ -696,8 +804,8 @@ void UpdateAffect(entt::registry& reg, uint32_t tick)
 void CHARACTER::AttackedByFire(LPCHARACTER pkAttacker, int amount, int count)
 {
     AffectSystem::ApplyFire
-        (AIHelpers::EcsOf(this),
-        pkAttacker ? AIHelpers::EcsOf(pkAttacker) : entt::null,
+        (GetEntityHandle(),
+        pkAttacker ? pkAttacker->GetEntityHandle() : entt::null,
         amount,
         count);
 }
@@ -705,44 +813,44 @@ void CHARACTER::AttackedByFire(LPCHARACTER pkAttacker, int amount, int count)
 void CHARACTER::AttackedByPoison(LPCHARACTER pkAttacker)
 {
     AffectSystem::ApplyPoison(
-        AIHelpers::EcsOf(this),
-        pkAttacker ? AIHelpers::EcsOf(pkAttacker) : entt::null);
+        GetEntityHandle(),
+        pkAttacker ? pkAttacker->GetEntityHandle() : entt::null);
 }
 
 #ifdef ENABLE_WOLFMAN_CHARACTER
 void CHARACTER::AttackedByBleeding(LPCHARACTER pkAttacker)
 {
     AffectSystem::ApplyBleeding(
-        AIHelpers::EcsOf(this),
-        pkAttacker ? AIHelpers::EcsOf(pkAttacker) : entt::null);
+        GetEntityHandle(),
+        pkAttacker ? pkAttacker->GetEntityHandle() : entt::null);
 }
 #endif
 
 void CHARACTER::RemoveFire()
 {
-    AffectSystem::RemoveFire(AIHelpers::EcsOf(this));
+    AffectSystem::RemoveFire(GetEntityHandle());
 }
 
 void CHARACTER::RemovePoison()
 {
-    AffectSystem::RemovePoison(AIHelpers::EcsOf(this));
+    AffectSystem::RemovePoison(GetEntityHandle());
 }
 
 #ifdef ENABLE_WOLFMAN_CHARACTER
 void CHARACTER::RemoveBleeding()
 {
-    AffectSystem::RemoveBleeding(AIHelpers::EcsOf(this));
+    AffectSystem::RemoveBleeding(GetEntityHandle());
 }
 #endif
 
 bool CHARACTER::IsImmune(uint32_t dwImmuneFlag)
 {
-    return AffectSystem::IsImmune(AIHelpers::EcsOf(this), dwImmuneFlag);
+    return AffectSystem::IsImmune(GetEntityHandle(), dwImmuneFlag);
 }
 
 void CHARACTER::ApplyMobAttribute(const TMobTable* table)
 {
-    AffectSystem::ApplyMobAttribute(AIHelpers::EcsOf(this), table);
+    AffectSystem::ApplyMobAttribute(GetEntityHandle(), table);
 }
 
 void AffectSystem_Update(entt::registry& reg, uint32_t tick)
@@ -1102,8 +1210,8 @@ void CHARACTER::ClearAffect(bool bSave)
 	if (afOld != m_afAffectFlag ||
 			wMovSpd != GetPoint(POINT_MOV_SPEED) ||
 			wAttSpd != GetPoint(POINT_ATT_SPEED))
-		SyncAffectList(AIHelpers::EcsOf(this), this);
-	NetworkSyncSystem::UpdatePacket(AIHelpers::EcsOf(this));
+		SyncAffectList(GetEntityHandle(), this);
+	NetworkSyncSystem::UpdatePacket(GetEntityHandle());
 
 	CheckMaximumPoints();
 
@@ -1174,7 +1282,7 @@ int CHARACTER::ProcessAffect()
 	if (pkAff)
 	{
 		// IF HAIR_LIMIT_TIME() < CURRENT_TIME()
-		if ( ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(this), "hair.limit_time") < get_global_time())
+		if ( ecs::QuestSystem::GetFlag(GetEntityHandle(), "hair.limit_time") < get_global_time())
 		{
 			// SET HAIR NORMAL
 			this->SetPart(PART_HAIR, 0);
@@ -1254,8 +1362,8 @@ int CHARACTER::ProcessAffect()
 				lMovSpd != GetPoint(POINT_MOV_SPEED) ||
 				lAttSpd != GetPoint(POINT_ATT_SPEED))
 		{
-			SyncAffectList(AIHelpers::EcsOf(this), this);
-	NetworkSyncSystem::UpdatePacket(AIHelpers::EcsOf(this));
+			SyncAffectList(GetEntityHandle(), this);
+	NetworkSyncSystem::UpdatePacket(GetEntityHandle());
 		}
 
 		CheckMaximumPoints();
@@ -1326,7 +1434,8 @@ EVENTFUNC(load_affect_login_event)
 		return 0;
 	}
 
-	LPDESC d = ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch));
+	const entt::entity character = ch->GetEntityHandle();
+	LPDESC d = ecs::PlayerRuntime::GetDesc(character);
 
 	if (!d)
 	{
@@ -1353,19 +1462,19 @@ EVENTFUNC(load_affect_login_event)
 	{
 		LOG_INFO("Affect Load by Event");
 		LOG_ERROR("AFFECT_EVENT_LOAD_BEGIN pid={} name={} count={} data={} ch={}",
-			ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)), ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), info->count, static_cast<const void*>(info->data), static_cast<const void*>(ch));
+			ecs::PlayerRuntime::GetPlayerID(character), ecs::PlayerRuntime::GetName(character).data(), info->count, static_cast<const void*>(info->data), static_cast<const void*>(ch));
 		ch->LoadAffect(info->count, (TPacketAffectElement*)info->data);
 		LOG_ERROR("AFFECT_EVENT_LOAD_END pid={} name={} count={} data={}",
-			ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)), ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), info->count, static_cast<const void*>(info->data));
-		LOG_ERROR("AFFECT_EVENT_DATA_DELETE_BEGIN pid={} data={}", ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)), static_cast<const void*>(info->data));
+			ecs::PlayerRuntime::GetPlayerID(character), ecs::PlayerRuntime::GetName(character).data(), info->count, static_cast<const void*>(info->data));
+		LOG_ERROR("AFFECT_EVENT_DATA_DELETE_BEGIN pid={} data={}", ecs::PlayerRuntime::GetPlayerID(character), static_cast<const void*>(info->data));
 		M2_DELETE_ARRAY(info->data);
 		info->data = nullptr;
-		LOG_ERROR("AFFECT_EVENT_DATA_DELETE_END pid={} data={}", ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)), static_cast<const void*>(info->data));
+		LOG_ERROR("AFFECT_EVENT_DATA_DELETE_END pid={} data={}", ecs::PlayerRuntime::GetPlayerID(character), static_cast<const void*>(info->data));
 		return 0;
 	}
 	else
 	{
-		LOG_ERROR("input_db.cpp:quest_login_event INVALID PHASE pid {}", ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)));
+		LOG_ERROR("input_db.cpp:quest_login_event INVALID PHASE pid {}", ecs::PlayerRuntime::GetPlayerID(character));
 		M2_DELETE_ARRAY(info->data);
 		info->data = nullptr;
 		return 0;
@@ -1578,8 +1687,8 @@ void CHARACTER::LoadAffect(uint32_t dwCount, TPacketAffectElement * pElements)
 
 	if (afOld != m_afAffectFlag || lMovSpd != GetPoint(POINT_MOV_SPEED) || lAttSpd != GetPoint(POINT_ATT_SPEED))
 	{
-		SyncAffectList(AIHelpers::EcsOf(this), this);
-	NetworkSyncSystem::UpdatePacket(AIHelpers::EcsOf(this));
+		SyncAffectList(GetEntityHandle(), this);
+	NetworkSyncSystem::UpdatePacket(GetEntityHandle());
 	}
 
 	LOG_ERROR("LOAD_AFFECT_START_EVENT_BEGIN pid={} name={}", GetPlayerID(), GetName());
@@ -1653,7 +1762,7 @@ bool CHARACTER::AddAffect(uint32_t dwType, uint8_t bApplyOn, int32_t lApplyValue
 	if (dwType == AFFECT_BLOCK_CHAT && lDuration > 1)
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 414, "%d", (lDuration / 60));
+		ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 414, "%d", (lDuration / 60));
 #endif
 	}
 	// END_OF_CHAT_BLOCK
@@ -1685,9 +1794,9 @@ bool CHARACTER::AddAffect(uint32_t dwType, uint8_t bApplyOn, int32_t lApplyValue
 			// Stun forces movement abort. SyncDestinationClear removes ECS
 			// MovementDestination - GetCurrentDestX/Y falls back to GetX/Y
 			// (per B.1.4) so subsequent INSERT packets show current position.
-			ecs::MovementSystem::SyncDestinationClear(AIHelpers::EcsOf(this));
+			ecs::MovementSystem::SyncDestinationClear(GetEntityHandle());
 
-			NetworkSyncSystem::BroadcastSyncPacket(g_registry, AIHelpers::EcsOf(this));
+			NetworkSyncSystem::BroadcastSyncPacket(g_registry, GetEntityHandle());
 		}
 	}
 
@@ -1728,8 +1837,8 @@ bool CHARACTER::AddAffect(uint32_t dwType, uint8_t bApplyOn, int32_t lApplyValue
 	ComputeAffect(pkAff, true);
 
 	if (pkAff->dwFlag || wMovSpd != GetPoint(POINT_MOV_SPEED) || wAttSpd != GetPoint(POINT_ATT_SPEED))
-		SyncAffectList(AIHelpers::EcsOf(this), this);
-	NetworkSyncSystem::UpdatePacket(AIHelpers::EcsOf(this));
+		SyncAffectList(GetEntityHandle(), this);
+	NetworkSyncSystem::UpdatePacket(GetEntityHandle());
 
 	StartAffectEvent();
 
@@ -1835,8 +1944,8 @@ bool CHARACTER::RemoveAffect(CAffect * pkAff)
 	) {
 		ComputePoints();
 	} else {
-		SyncAffectList(AIHelpers::EcsOf(this), this);
-	NetworkSyncSystem::UpdatePacket(AIHelpers::EcsOf(this));
+		SyncAffectList(GetEntityHandle(), this);
+	NetworkSyncSystem::UpdatePacket(GetEntityHandle());
 	}
 
 	CheckMaximumPoints();
@@ -1857,7 +1966,7 @@ bool CHARACTER::RemoveAffect(uint32_t dwType)
 {
 #ifdef TEXTS_IMPROVEMENT
 	if (dwType == AFFECT_BLOCK_CHAT) {
-		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 474, "");
+		ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 474, "");
 	}
 #endif
 
@@ -2001,48 +2110,22 @@ int CHARACTER::GetPolymorphPower() const
 }
 void CHARACTER::SetPolymorph(uint32_t dwRaceNum, bool bMaintainStat)
 {
-#ifdef ENABLE_WOLFMAN_CHARACTER
-	if (dwRaceNum < MAIN_RACE_MAX_NUM)
-#else
-	if (dwRaceNum < JOB_MAX_NUM)
-#endif
-	{
-		dwRaceNum = 0;
-		bMaintainStat = false;
-	}
-	if (m_dwPolymorphRace == dwRaceNum)
-		return;
-	m_bPolyMaintainStat = bMaintainStat;
-	m_dwPolymorphRace = dwRaceNum;
-	if (auto* race = g_registry.try_get<ecs::RaceState>(AIHelpers::EcsOf(this))) {
-		race->polymorphRace = dwRaceNum;
-	}
-	if (auto* polymorph = g_registry.try_get<ecs::PolymorphState>(AIHelpers::EcsOf(this))) {
-		polymorph->raceVnum = dwRaceNum;
-		polymorph->maintainStat = bMaintainStat;
-	}
-	LOG_INFO("POLYMORPH: {} race {} ", GetName(), dwRaceNum);
-	if (dwRaceNum != 0)
-		StopRiding();
-	// Phase C.4: legacy SET_BIT/REMOVE_BIT(m_bAddChrState, SPAWN) removed.
-	// ECS StatusFlags.isSpawnState is the sole source - GetAddChrStateFlag
-	// composes the wire-format byte from the bool fields.
-	if (auto* status = g_registry.try_get<ecs::StatusFlags>(AIHelpers::EcsOf(this)))
-		status->isSpawnState = true;
-	m_afAffectFlag.Set(AFF_SPAWN);
-	ViewReencode();
-	if (auto* status = g_registry.try_get<ecs::StatusFlags>(AIHelpers::EcsOf(this)))
-		status->isSpawnState = false;
-	if (!bMaintainStat)
-	{
-		PointChange(POINT_ST, 0);
-		PointChange(POINT_DX, 0);
-		PointChange(POINT_IQ, 0);
-		PointChange(POINT_HT, 0);
-	}
-	SetValidComboInterval(0);
-	SetComboSequence(0);
-	ComputeBattlePoints();
+	AffectSystem::SetPolymorph(GetEntityHandle(), dwRaceNum, bMaintainStat);
+}
+
+bool CHARACTER::IsPolymorphed() const
+{
+	return AffectSystem::IsPolymorphed(GetEntityHandle());
+}
+
+bool CHARACTER::IsPolyMaintainStat() const
+{
+	return AffectSystem::IsPolyMaintainStat(GetEntityHandle());
+}
+
+uint32_t CHARACTER::GetPolymorphVnum() const
+{
+	return AffectSystem::GetPolymorphVnum(GetEntityHandle());
 }
 int32_t CHARACTER::SetInvincible(bool arg)
 {

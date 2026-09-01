@@ -38,7 +38,7 @@ entt::entity FindSummonItemByVID(uint32_t vid)
 bool IsSummonItemOwnedBy(uint32_t vid, LPCHARACTER owner)
 {
 	const entt::entity item = FindSummonItemByVID(vid);
-	return item != entt::null && ItemSystem::GetItemOwner(item) == AIHelpers::EcsOf(owner);
+	return item != entt::null && ItemSystem::GetItemOwner(item) == ((owner) ? (owner)->GetEntityHandle() : entt::null);
 }
 
 LPITEM LegacyItemFromEntity(entt::entity item)
@@ -57,12 +57,12 @@ bool SnapFollowerToOwner(LPCHARACTER follower, LPCHARACTER owner, int32_t x, int
 
 	if (follower->Sync(x, y))
 	{
-		ecs::MovementSystem::Stop(AIHelpers::EcsOf(follower));
+		ecs::MovementSystem::Stop(((follower) ? (follower)->GetEntityHandle() : entt::null));
 		follower->SendMovePacket(FUNC_WAIT, 0, 0, 0, 0, 0);
 		return true;
 	}
 
-	return ecs::MovementSystem::Show(AIHelpers::EcsOf(follower), ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(owner)), x, y, z);
+	return ecs::MovementSystem::Show(((follower) ? (follower)->GetEntityHandle() : entt::null), ecs::PlayerRuntime::GetMapIndex(((owner) ? (owner)->GetEntityHandle() : entt::null)), x, y, z);
 }
 }
 
@@ -89,7 +89,7 @@ EVENTFUNC(mountsystem_update_event)
 	pMountSystem->Update(0);
 	if (auto* owner = pMountSystem->GetOwner())
 	{
-		const entt::entity e = AIHelpers::EcsOf(owner);
+		const entt::entity e = ((owner) ? (owner)->GetEntityHandle() : entt::null);
 		if (e != entt::null)
 			g_dispatcher.trigger(ecs::EvMountSystemUpdate { e });
 	}
@@ -123,7 +123,7 @@ CMountActor::~CMountActor()
 
 void CMountActor::SetName()
 {
-	std::string petName = ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(m_pkOwner)).data();
+	std::string petName = ecs::PlayerRuntime::GetName(((m_pkOwner) ? (m_pkOwner)->GetEntityHandle() : entt::null)).data();
 
 	if (true == IsSummoned())
 	{
@@ -141,7 +141,7 @@ bool CMountActor::Mount(entt::entity mountItemEntity)
 {
 #ifdef DISABLE_CORE_PULSE_RAZOR93
 	if (!ch->IsNextMountPulse()) {
-		ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "You can't do this that fast, please calm down a bit...");
+		ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "You can't do this that fast, please calm down a bit...");
 		return false;
 	}
 #endif
@@ -156,7 +156,7 @@ bool CMountActor::Mount(entt::entity mountItemEntity)
 #ifdef BLOCK_RIDING_INSIDE_WAR
 	if (m_pkOwner->GetWarMap()) {
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(m_pkOwner), CHAT_TYPE_INFO, 852, "");
+		ecs::ChatSystem::SendNew(((m_pkOwner) ? (m_pkOwner)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 852, "");
 #endif
 		Unmount();
 		return false;
@@ -169,7 +169,7 @@ bool CMountActor::Mount(entt::entity mountItemEntity)
 	if (m_pkOwner->GetHorse())
 		m_pkOwner->HorseSummon(false);
 
-	uint32_t myMountVnum = MountSystem::GetMountVnum(AIHelpers::EcsOf(m_pkOwner));
+	uint32_t myMountVnum = MountSystem::GetMountVnum(((m_pkOwner) ? (m_pkOwner)->GetEntityHandle() : entt::null));
 
 #ifdef ENABLE_COSTUME_MOUNT
 	uint32_t dwMountSkinvnum = m_pkOwner->GetMountSkinVnum();
@@ -190,20 +190,20 @@ bool CMountActor::Mount(entt::entity mountItemEntity)
 		m_pkOwner->HorseSummon(false);
 	}
 
-	uint32_t dwTime = mountItem->IsUnlimitedTimeUnique() ? 86400 : ItemSystem::GetItemSocket(EntityFactory::CreateItemEntity(g_registry, mountItem), 0) - time(nullptr);
-	const TItemTable* mountProto = ItemSystem::GetItemProto(EntityFactory::CreateItemEntity(g_registry, mountItem));
+	uint32_t dwTime = mountItem->IsUnlimitedTimeUnique() ? 86400 : ItemSystem::GetItemSocket((mountItem ? mountItem->GetEntityHandle() : entt::null), 0) - time(nullptr);
+	const TItemTable* mountProto = ItemSystem::GetItemProto((mountItem ? mountItem->GetEntityHandle() : entt::null));
 	if (!mountProto)
 		return false;
 
 	//  Duplikacio elleni vedelem
-	if (!AffectSystem::FindAffect(AIHelpers::EcsOf(m_pkOwner), AFFECT_MOUNT_BONUS))
+	if (!AffectSystem::FindAffect(((m_pkOwner) ? (m_pkOwner)->GetEntityHandle() : entt::null), AFFECT_MOUNT_BONUS))
 	{
 		for (int i = 0; i < ITEM_APPLY_MAX_NUM; ++i)
 		{
 			if (mountProto->aApplies[i].bType == APPLY_NONE)
 				continue;
 
-			AffectSystem::AddAffect(AIHelpers::EcsOf(m_pkOwner),
+			AffectSystem::AddAffect(((m_pkOwner) ? (m_pkOwner)->GetEntityHandle() : entt::null),
 				AFFECT_MOUNT_BONUS,
 				aApplyInfo[mountProto->aApplies[i].bType].bPointType,
 				mountProto->aApplies[i].lValue,
@@ -214,24 +214,24 @@ bool CMountActor::Mount(entt::entity mountItemEntity)
 			);
 		}
 
-		AffectSystem::AddAffect(AIHelpers::EcsOf(m_pkOwner), AFFECT_MOUNT_BONUS, POINT_MOV_SPEED, 50, AFF_NONE, dwTime, 0, false);
+		AffectSystem::AddAffect(((m_pkOwner) ? (m_pkOwner)->GetEntityHandle() : entt::null), AFFECT_MOUNT_BONUS, POINT_MOV_SPEED, 50, AFF_NONE, dwTime, 0, false);
 	}
 	else
 	{
-		ecs::ChatSystem::Send(AIHelpers::EcsOf(m_pkOwner), CHAT_TYPE_INFO, "MountActor::Mount - Mount bonus already active, skipping duplicate apply.");
+		ecs::ChatSystem::Send(((m_pkOwner) ? (m_pkOwner)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "MountActor::Mount - Mount bonus already active, skipping duplicate apply.");
 
 	}
 
 #ifdef ENABLE_COSTUME_MOUNT
 	if (dwMountSkinvnum > 0)
-		AffectSystem::AddAffect(AIHelpers::EcsOf(m_pkOwner), AFFECT_MOUNT, POINT_MOUNT, dwMountSkinvnum, AFF_NONE, dwTime, 0, true);
+		AffectSystem::AddAffect(((m_pkOwner) ? (m_pkOwner)->GetEntityHandle() : entt::null), AFFECT_MOUNT, POINT_MOUNT, dwMountSkinvnum, AFF_NONE, dwTime, 0, true);
 	else
-		AffectSystem::AddAffect(AIHelpers::EcsOf(m_pkOwner), AFFECT_MOUNT, POINT_MOUNT, m_dwVnum, AFF_NONE, dwTime, 0, true);
+		AffectSystem::AddAffect(((m_pkOwner) ? (m_pkOwner)->GetEntityHandle() : entt::null), AFFECT_MOUNT, POINT_MOUNT, m_dwVnum, AFF_NONE, dwTime, 0, true);
 
 	return myMountVnum == m_dwVnum;
 #else
-	AffectSystem::AddAffect(AIHelpers::EcsOf(m_pkOwner), AFFECT_MOUNT, POINT_MOUNT, m_dwVnum, AFF_NONE, dwTime, 0, true);
-	return MountSystem::GetMountVnum(AIHelpers::EcsOf(m_pkOwner)) == m_dwVnum;
+	AffectSystem::AddAffect(((m_pkOwner) ? (m_pkOwner)->GetEntityHandle() : entt::null), AFFECT_MOUNT, POINT_MOUNT, m_dwVnum, AFF_NONE, dwTime, 0, true);
+	return MountSystem::GetMountVnum(((m_pkOwner) ? (m_pkOwner)->GetEntityHandle() : entt::null)) == m_dwVnum;
 #endif
 }
 #else
@@ -240,7 +240,7 @@ bool CMountActor::Mount(entt::entity mountItemEntity)
 #ifdef DISABLE_CORE_PULSE_RAZOR93
 
 	if (!ch->IsNextMountPulse()) {
-		ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "You can't do this that fast, please calm down a bit...");
+		ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "You can't do this that fast, please calm down a bit...");
 		return;
 	}
 #endif
@@ -254,7 +254,7 @@ bool CMountActor::Mount(entt::entity mountItemEntity)
 #ifdef BLOCK_RIDING_INSIDE_WAR
 	if (m_pkOwner->GetWarMap()) {
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(m_pkOwner), CHAT_TYPE_INFO, 852, "");
+		ecs::ChatSystem::SendNew(((m_pkOwner) ? (m_pkOwner)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 852, "");
 #endif
 		Unmount();
 		return false;
@@ -267,7 +267,7 @@ bool CMountActor::Mount(entt::entity mountItemEntity)
 	if (m_pkOwner->GetHorse())
 		m_pkOwner->HorseSummon(false);
 
-	uint32_t myMountVnum = MountSystem::GetMountVnum(AIHelpers::EcsOf(m_pkOwner));
+	uint32_t myMountVnum = MountSystem::GetMountVnum(((m_pkOwner) ? (m_pkOwner)->GetEntityHandle() : entt::null));
 #ifdef ENABLE_COSTUME_MOUNT
 	uint32_t dwMountSkinvnum = m_pkOwner->GetMountSkinVnum();
 	if (dwMountSkinvnum > 0) {
@@ -285,8 +285,8 @@ bool CMountActor::Mount(entt::entity mountItemEntity)
 		m_pkOwner->HorseSummon(false);
 	}
 
-	uint32_t dwTime = mountItem->IsUnlimitedTimeUnique() == true ? 86400 : ItemSystem::GetItemSocket(EntityFactory::CreateItemEntity(g_registry, mountItem), 0) - time(nullptr);
-	const TItemTable* mountProto = ItemSystem::GetItemProto(EntityFactory::CreateItemEntity(g_registry, mountItem));
+	uint32_t dwTime = mountItem->IsUnlimitedTimeUnique() == true ? 86400 : ItemSystem::GetItemSocket((mountItem ? mountItem->GetEntityHandle() : entt::null), 0) - time(nullptr);
+	const TItemTable* mountProto = ItemSystem::GetItemProto((mountItem ? mountItem->GetEntityHandle() : entt::null));
 	if (!mountProto)
 		return false;
 
@@ -295,23 +295,23 @@ bool CMountActor::Mount(entt::entity mountItemEntity)
 		if (mountProto->aApplies[i].bType == APPLY_NONE)
 			continue;
 
-		AffectSystem::AddAffect(AIHelpers::EcsOf(m_pkOwner), AFFECT_MOUNT_BONUS, aApplyInfo[mountProto->aApplies[i].bType].bPointType, mountProto->aApplies[i].lValue, AFF_NONE, dwTime, 0, false);
+		AffectSystem::AddAffect(((m_pkOwner) ? (m_pkOwner)->GetEntityHandle() : entt::null), AFFECT_MOUNT_BONUS, aApplyInfo[mountProto->aApplies[i].bType].bPointType, mountProto->aApplies[i].lValue, AFF_NONE, dwTime, 0, false);
 	}
 
 
-	AffectSystem::AddAffect(AIHelpers::EcsOf(m_pkOwner), AFFECT_MOUNT_BONUS, POINT_MOV_SPEED, 50, AFF_NONE, dwTime, 0, false);
+	AffectSystem::AddAffect(((m_pkOwner) ? (m_pkOwner)->GetEntityHandle() : entt::null), AFFECT_MOUNT_BONUS, POINT_MOV_SPEED, 50, AFF_NONE, dwTime, 0, false);
 
 
 #ifdef ENABLE_COSTUME_MOUNT
 	if (dwMountSkinvnum > 0)
-		AffectSystem::AddAffect(AIHelpers::EcsOf(m_pkOwner), AFFECT_MOUNT, POINT_MOUNT, dwMountSkinvnum, AFF_NONE, dwTime, 0, true);
+		AffectSystem::AddAffect(((m_pkOwner) ? (m_pkOwner)->GetEntityHandle() : entt::null), AFFECT_MOUNT, POINT_MOUNT, dwMountSkinvnum, AFF_NONE, dwTime, 0, true);
 	else
-		AffectSystem::AddAffect(AIHelpers::EcsOf(m_pkOwner), AFFECT_MOUNT, POINT_MOUNT, m_dwVnum, AFF_NONE, dwTime, 0, true);
+		AffectSystem::AddAffect(((m_pkOwner) ? (m_pkOwner)->GetEntityHandle() : entt::null), AFFECT_MOUNT, POINT_MOUNT, m_dwVnum, AFF_NONE, dwTime, 0, true);
 
 	return myMountVnum == m_dwVnum;
 #else
-	AffectSystem::AddAffect(AIHelpers::EcsOf(m_pkOwner), AFFECT_MOUNT, POINT_MOUNT, m_dwVnum, AFF_NONE, dwTime, 0, true);
-	return MountSystem::GetMountVnum(AIHelpers::EcsOf(m_pkOwner)) == m_dwVnum;
+	AffectSystem::AddAffect(((m_pkOwner) ? (m_pkOwner)->GetEntityHandle() : entt::null), AFFECT_MOUNT, POINT_MOUNT, m_dwVnum, AFF_NONE, dwTime, 0, true);
+	return MountSystem::GetMountVnum(((m_pkOwner) ? (m_pkOwner)->GetEntityHandle() : entt::null)) == m_dwVnum;
 #endif
 }
 
@@ -323,12 +323,12 @@ void CMountActor::Unmount()
 	if (nullptr == m_pkOwner)
 		return;
 
-	AffectSystem::RemoveAffect(AIHelpers::EcsOf(m_pkOwner), AFFECT_MOUNT);
-	AffectSystem::RemoveAffect(AIHelpers::EcsOf(m_pkOwner), AFFECT_MOUNT_BONUS);
+	AffectSystem::RemoveAffect(((m_pkOwner) ? (m_pkOwner)->GetEntityHandle() : entt::null), AFFECT_MOUNT);
+	AffectSystem::RemoveAffect(((m_pkOwner) ? (m_pkOwner)->GetEntityHandle() : entt::null), AFFECT_MOUNT_BONUS);
 
 
 
-	MountSystem::SetMountVnum(AIHelpers::EcsOf(m_pkOwner), 0);
+	MountSystem::SetMountVnum(((m_pkOwner) ? (m_pkOwner)->GetEntityHandle() : entt::null), 0);
 
 	if (m_pkOwner->IsHorseRiding())
 		m_pkOwner->StopRiding();
@@ -337,10 +337,10 @@ void CMountActor::Unmount()
 		m_pkOwner->HorseSummon(false);
 
 
-	ecs::PointSystem::Change(AIHelpers::EcsOf(m_pkOwner), POINT_ST, 0);
-	ecs::PointSystem::Change(AIHelpers::EcsOf(m_pkOwner), POINT_DX, 0);
-	ecs::PointSystem::Change(AIHelpers::EcsOf(m_pkOwner), POINT_HT, 0);
-	ecs::PointSystem::Change(AIHelpers::EcsOf(m_pkOwner), POINT_IQ, 0);
+	ecs::PointSystem::Change(((m_pkOwner) ? (m_pkOwner)->GetEntityHandle() : entt::null), POINT_ST, 0);
+	ecs::PointSystem::Change(((m_pkOwner) ? (m_pkOwner)->GetEntityHandle() : entt::null), POINT_DX, 0);
+	ecs::PointSystem::Change(((m_pkOwner) ? (m_pkOwner)->GetEntityHandle() : entt::null), POINT_HT, 0);
+	ecs::PointSystem::Change(((m_pkOwner) ? (m_pkOwner)->GetEntityHandle() : entt::null), POINT_IQ, 0);
 
 
 }
@@ -353,7 +353,7 @@ void CMountActor::Unsummon()
 
 		if (nullptr != m_pkChar)
 		{
-			const entt::entity mountEntity = AIHelpers::EcsOf(m_pkChar);
+			const entt::entity mountEntity = ((m_pkChar) ? (m_pkChar)->GetEntityHandle() : entt::null);
 			if (mountEntity != entt::null && g_registry.valid(mountEntity))
 				M2_DESTROY_CHARACTER(m_pkChar);
 		}
@@ -364,7 +364,7 @@ void CMountActor::Unsummon()
 
 
 
-		MountSystem::SetMountVnum(AIHelpers::EcsOf(m_pkOwner), 0);
+		MountSystem::SetMountVnum(((m_pkOwner) ? (m_pkOwner)->GetEntityHandle() : entt::null), 0);
 
 	if (m_pkOwner->IsHorseRiding())
 		m_pkOwner->StopRiding();
@@ -376,8 +376,8 @@ void CMountActor::Unsummon()
 
 uint32_t CMountActor::Summon(entt::entity pSummonItem, bool bSpawnFar)
 {
-	int32_t x = ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(m_pkOwner));
-	int32_t y = ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(m_pkOwner));
+	int32_t x = ecs::PlayerRuntime::GetX(((m_pkOwner) ? (m_pkOwner)->GetEntityHandle() : entt::null));
+	int32_t y = ecs::PlayerRuntime::GetY(((m_pkOwner) ? (m_pkOwner)->GetEntityHandle() : entt::null));
 	int32_t z = m_pkOwner->GetZ();
 
 	if (true == bSpawnFar)
@@ -394,7 +394,7 @@ uint32_t CMountActor::Summon(entt::entity pSummonItem, bool bSpawnFar)
 	if (nullptr != m_pkChar)
 	{
 		SnapFollowerToOwner(m_pkChar, m_pkOwner, x, y, z);
-		m_dwVID = ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(m_pkChar));
+		m_dwVID = ecs::PlayerRuntime::GetPacketVID(((m_pkChar) ? (m_pkChar)->GetEntityHandle() : entt::null));
 
 		return m_dwVID;
 	}
@@ -402,11 +402,11 @@ uint32_t CMountActor::Summon(entt::entity pSummonItem, bool bSpawnFar)
 #ifdef ENABLE_COSTUME_PET
 	uint32_t dwMountSkinvnum = m_pkOwner->GetMountSkinVnum();
 	if (dwMountSkinvnum > 0)
-		m_pkChar = CHARACTER_MANAGER::instance().SpawnMob(dwMountSkinvnum, ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(m_pkOwner)), x, y, z, false, (int)(m_pkOwner->GetRotation()+180), false);
+		m_pkChar = CHARACTER_MANAGER::instance().SpawnMob(dwMountSkinvnum, ecs::PlayerRuntime::GetMapIndex(((m_pkOwner) ? (m_pkOwner)->GetEntityHandle() : entt::null)), x, y, z, false, (int)(m_pkOwner->GetRotation()+180), false);
 	else
-		m_pkChar = CHARACTER_MANAGER::instance().SpawnMob(m_dwVnum, ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(m_pkOwner)), x, y, z, false, (int)(m_pkOwner->GetRotation()+180), false);
+		m_pkChar = CHARACTER_MANAGER::instance().SpawnMob(m_dwVnum, ecs::PlayerRuntime::GetMapIndex(((m_pkOwner) ? (m_pkOwner)->GetEntityHandle() : entt::null)), x, y, z, false, (int)(m_pkOwner->GetRotation()+180), false);
 #else
-	m_pkChar = CHARACTER_MANAGER::instance().SpawnMob(m_dwVnum, ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(m_pkOwner)), x, y, z, false, (int)(m_pkOwner->GetRotation()+180), false);
+	m_pkChar = CHARACTER_MANAGER::instance().SpawnMob(m_dwVnum, ecs::PlayerRuntime::GetMapIndex(((m_pkOwner) ? (m_pkOwner)->GetEntityHandle() : entt::null)), x, y, z, false, (int)(m_pkOwner->GetRotation()+180), false);
 #endif
 
 	if (nullptr == m_pkChar)
@@ -417,9 +417,9 @@ uint32_t CMountActor::Summon(entt::entity pSummonItem, bool bSpawnFar)
 
 	m_pkChar->SetMount();
 
-	m_pkChar->SetEmpire(ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(m_pkOwner)));
+	m_pkChar->SetEmpire(ecs::PlayerRuntime::GetEmpire(((m_pkOwner) ? (m_pkOwner)->GetEntityHandle() : entt::null)));
 
-	m_dwVID = ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(m_pkChar));
+	m_dwVID = ecs::PlayerRuntime::GetPacketVID(((m_pkChar) ? (m_pkChar)->GetEntityHandle() : entt::null));
 
 	this->SetName();
 
@@ -427,7 +427,7 @@ uint32_t CMountActor::Summon(entt::entity pSummonItem, bool bSpawnFar)
 
 	//m_pkOwner->ComputePoints();
 
-	ecs::MovementSystem::Show(AIHelpers::EcsOf(m_pkChar), ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(m_pkOwner)), x, y, z);
+	ecs::MovementSystem::Show(((m_pkChar) ? (m_pkChar)->GetEntityHandle() : entt::null), ecs::PlayerRuntime::GetMapIndex(((m_pkOwner) ? (m_pkOwner)->GetEntityHandle() : entt::null)), x, y, z);
 	return m_dwVID;
 }
 
@@ -455,8 +455,8 @@ bool CMountActor::UpdateFollowAI()
 
 	uint32_t currentTime = get_dword_time();
 
-	int32_t ownerX = ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(m_pkOwner));		int32_t ownerY = ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(m_pkOwner));
-	int32_t charX = ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(m_pkChar));			int32_t charY = ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(m_pkChar));
+	int32_t ownerX = ecs::PlayerRuntime::GetX(((m_pkOwner) ? (m_pkOwner)->GetEntityHandle() : entt::null));		int32_t ownerY = ecs::PlayerRuntime::GetY(((m_pkOwner) ? (m_pkOwner)->GetEntityHandle() : entt::null));
+	int32_t charX = ecs::PlayerRuntime::GetX(((m_pkChar) ? (m_pkChar)->GetEntityHandle() : entt::null));			int32_t charY = ecs::PlayerRuntime::GetY(((m_pkChar) ? (m_pkChar)->GetEntityHandle() : entt::null));
 
 	float fDist = DISTANCE_APPROX(charX - ownerX, charY - ownerY);
 
@@ -490,7 +490,7 @@ bool CMountActor::Update(uint32_t deltaTime)
 {
 	bool bResult = true;
 
-	if (CombatSystem::IsDead(AIHelpers::EcsOf(m_pkOwner)) || (IsSummoned() && CombatSystem::IsDead(AIHelpers::EcsOf(m_pkChar)))
+	if (CombatSystem::IsDead(((m_pkOwner) ? (m_pkOwner)->GetEntityHandle() : entt::null)) || (IsSummoned() && CombatSystem::IsDead(((m_pkChar) ? (m_pkChar)->GetEntityHandle() : entt::null)))
 		|| !IsSummonItemOwnedBy(this->GetSummonItemVID(), this->GetOwner())
 		)
 	{
@@ -509,11 +509,11 @@ bool CMountActor::Follow(float fMinDistance)
 	if( !m_pkOwner || !m_pkChar)
 		return false;
 
-	int32_t fOwnerX = ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(m_pkOwner));
-	int32_t fOwnerY = ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(m_pkOwner));
+	int32_t fOwnerX = ecs::PlayerRuntime::GetX(((m_pkOwner) ? (m_pkOwner)->GetEntityHandle() : entt::null));
+	int32_t fOwnerY = ecs::PlayerRuntime::GetY(((m_pkOwner) ? (m_pkOwner)->GetEntityHandle() : entt::null));
 
-	int32_t fPetX = ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(m_pkChar));
-	int32_t fPetY = ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(m_pkChar));
+	int32_t fPetX = ecs::PlayerRuntime::GetX(((m_pkChar) ? (m_pkChar)->GetEntityHandle() : entt::null));
+	int32_t fPetY = ecs::PlayerRuntime::GetY(((m_pkChar) ? (m_pkChar)->GetEntityHandle() : entt::null));
 
 	float fDist = DISTANCE_SQRT(fOwnerX - fPetX, fOwnerY - fPetY);
 	if (fDist <= fMinDistance)
@@ -526,7 +526,7 @@ bool CMountActor::Follow(float fMinDistance)
 	float fDistToGo = fDist - fMinDistance;
 	GetDeltaByDegree(m_pkChar->GetRotation(), fDistToGo, &fx, &fy);
 
-	if (!ecs::MovementSystem::Goto(AIHelpers::EcsOf(m_pkChar), static_cast<int>(static_cast<float>(fPetX) + fx + 0.5f), static_cast<int>(static_cast<float>(fPetY) + fy + 0.5f)) )
+	if (!ecs::MovementSystem::Goto(((m_pkChar) ? (m_pkChar)->GetEntityHandle() : entt::null), static_cast<int>(static_cast<float>(fPetX) + fx + 0.5f), static_cast<int>(static_cast<float>(fPetY) + fy + 0.5f)) )
 		return false;
 
 	m_pkChar->SendMovePacket(FUNC_WAIT, 0, 0, 0, 0, 0);
@@ -545,19 +545,19 @@ void CMountActor::SetSummonItem(entt::entity pItemEntity)
 	}
 
 	m_dwSummonItemVID = pItem->GetVID();
-	m_dwSummonItemVnum = ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, pItem));
+	m_dwSummonItemVnum = ItemSystem::GetItemVnum((pItem ? pItem->GetEntityHandle() : entt::null));
 
-	const entt::entity owner = AIHelpers::EcsOf(m_pkOwner);
+	const entt::entity owner = ((m_pkOwner) ? (m_pkOwner)->GetEntityHandle() : entt::null);
 	if (owner != entt::null && g_registry.valid(owner)) {
 		auto& mount = g_registry.emplace_or_replace<ecs::MountComponent>(owner);
 		mount.owner = owner;
-		mount.itemID = ItemSystem::GetItemID(EntityFactory::CreateItemEntity(g_registry, pItem));
+		mount.itemID = ItemSystem::GetItemID((pItem ? pItem->GetEntityHandle() : entt::null));
 		mount.itemVID = pItem->GetVID();
-		mount.itemVnum = ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, pItem));
+		mount.itemVnum = ItemSystem::GetItemVnum((pItem ? pItem->GetEntityHandle() : entt::null));
 		mount.level = 0;
 		mount.state = IsSummoned() ? 1u : 0u;
 		for (int i = 0; i < ITEM_SOCKET_MAX_NUM; ++i)
-			mount.sockets[i] = static_cast<int32_t>(ItemSystem::GetItemSocket(EntityFactory::CreateItemEntity(g_registry, pItem), i));
+			mount.sockets[i] = static_cast<int32_t>(ItemSystem::GetItemSocket((pItem ? pItem->GetEntityHandle() : entt::null), i));
 	}
 }
 
@@ -617,7 +617,7 @@ bool CMountSystem::Update(uint32_t deltaTime)
 				continue;
 			}
 
-			const entt::entity mountEntity = AIHelpers::EcsOf(pMount);
+			const entt::entity mountEntity = ((pMount) ? (pMount)->GetEntityHandle() : entt::null);
 			if (mountEntity == entt::null || !g_registry.valid(mountEntity))
 			{
 				v_garbageActor.push_back(mountActor);
@@ -758,7 +758,7 @@ void CMountSystem::Unmount(uint32_t mobVnum)
 	mountActor->Unmount();
 
 	const entt::entity pSummonItem = ItemSystem::GetWearItem(
-		AIHelpers::EcsOf(m_pkOwner), WEAR_COSTUME_MOUNT);
+		((m_pkOwner) ? (m_pkOwner)->GetEntityHandle() : entt::null), WEAR_COSTUME_MOUNT);
 	if (ItemSystem::IsValidItem(pSummonItem))
 	{
 		ItemSystem::SetItemSocket(pSummonItem, 2, 0);
@@ -826,7 +826,7 @@ void CMountActor::UpdateMountSkin() {
 	LPITEM pSummonItem = LegacyItemFromEntity(FindSummonItemByVID(this->GetSummonItemVID()));
 	if (pSummonItem != nullptr){
 		Unsummon();
-		Summon(EntityFactory::CreateItemEntity(g_registry, pSummonItem), false);
+		Summon((pSummonItem ? pSummonItem->GetEntityHandle() : entt::null), false);
 	}
 }
 

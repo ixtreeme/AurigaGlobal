@@ -364,7 +364,7 @@ void Cube_open (LPCHARACTER ch)
 		return;
 	}
 
-	uint32_t npcVNUM = ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(npc));
+	uint32_t npcVNUM = ecs::PlayerRuntime::GetRaceNum(((npc) ? (npc)->GetEntityHandle() : entt::null));
 
 	if ( FN_check_valid_npc(npcVNUM) == false )
 	{
@@ -376,7 +376,7 @@ void Cube_open (LPCHARACTER ch)
 	}
 
 
-	if (ecs::SocialSystem::GetExchange(AIHelpers::EcsOf(ch)) || ch->GetMyShop() || ch->GetShopOwner() || ch->IsOpenSafebox() || ch->IsCubeOpen()
+	if (ecs::SocialSystem::GetExchange(((ch) ? (ch)->GetEntityHandle() : entt::null)) || ch->GetMyShop() || ch->GetShopOwner() || ch->IsOpenSafebox() || ch->IsCubeOpen()
 #ifdef ENABLE_ACCE_SYSTEM
 		 || ch->IsAcceOpen()
 #endif
@@ -389,16 +389,16 @@ void Cube_open (LPCHARACTER ch)
 	)
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 815, "");
+		ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 815, "");
 #endif
 		return;
 	}
 
-	int32_t distance = DISTANCE_APPROX(ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(ch)) - ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(npc)), ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(ch)) - ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(npc)));
+	int32_t distance = DISTANCE_APPROX(ecs::PlayerRuntime::GetX(((ch) ? (ch)->GetEntityHandle() : entt::null)) - ecs::PlayerRuntime::GetX(((npc) ? (npc)->GetEntityHandle() : entt::null)), ecs::PlayerRuntime::GetY(((ch) ? (ch)->GetEntityHandle() : entt::null)) - ecs::PlayerRuntime::GetY(((npc) ? (npc)->GetEntityHandle() : entt::null)));
 
 	if (distance >= CUBE_MAX_DISTANCE)
 	{
-		LOG_INFO("CUBE: TOO_FAR: {} distance {}", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), distance);
+		LOG_INFO("CUBE: TOO_FAR: {} distance {}", ecs::PlayerRuntime::GetName(((ch) ? (ch)->GetEntityHandle() : entt::null)).data(), distance);
 		return;
 	}
 
@@ -428,11 +428,11 @@ void Cube_Make(LPCHARACTER ch, int index, int count_item, int index_item_improve
 	if (!npc)
 		return;
 
-	const entt::entity ownerEntity = AIHelpers::EcsOf(ch);
+	const entt::entity ownerEntity = ((ch) ? (ch)->GetEntityHandle() : entt::null);
 	if (ownerEntity == entt::null || !g_registry.valid(ownerEntity))
 		return;
 
-	const auto resultIt = cube_info_map.find(ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(npc)));
+	const auto resultIt = cube_info_map.find(ecs::PlayerRuntime::GetRaceNum(((npc) ? (npc)->GetEntityHandle() : entt::null)));
 	if (resultIt == cube_info_map.end() || index < 0 ||
 		static_cast<size_t>(index) >= resultIt->second.size())
 	{
@@ -764,11 +764,11 @@ void SendDateCubeRenewalPackets(LPCHARACTER ch, uint8_t subheader, uint32_t npcV
 
 			memcpy (pack.date_cube_renewal.category, 	materialInfo.category.c_str(), 		sizeof(pack.date_cube_renewal.category));
 
-			LPDESC d = ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch));
+			LPDESC d = ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null));
 
 			if (nullptr == d)
 			{
-				LOG_ERROR("User SendDateCubeRenewalPackets ({})'s DESC is NULL POINT.", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data());
+				LOG_ERROR("User SendDateCubeRenewalPackets ({})'s DESC is NULL POINT.", ecs::PlayerRuntime::GetName(((ch) ? (ch)->GetEntityHandle() : entt::null)).data());
 				return ;
 			}
 
@@ -777,11 +777,11 @@ void SendDateCubeRenewalPackets(LPCHARACTER ch, uint8_t subheader, uint32_t npcV
 	}
 	else{
 
-		LPDESC d = ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch));
+		LPDESC d = ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null));
 
 		if (nullptr == d)
 		{
-			LOG_ERROR("User SendDateCubeRenewalPackets ({})'s DESC is NULL POINT.", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data());
+			LOG_ERROR("User SendDateCubeRenewalPackets ({})'s DESC is NULL POINT.", ecs::PlayerRuntime::GetName(((ch) ? (ch)->GetEntityHandle() : entt::null)).data());
 			return ;
 		}
 

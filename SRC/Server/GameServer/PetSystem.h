@@ -51,6 +51,7 @@ private:
 
 public:
 	LPCHARACTER		GetCharacter()	const					{ return m_pkChar; }
+	entt::entity		GetCharacterEntity() const				{ return m_characterEntity; }
 	LPCHARACTER		GetOwner()	const						{ return m_pkOwner; }
 	uint32_t			GetVID() const							{ return m_dwVID; }
 	uint32_t			GetVnum() const							{ return m_dwVnum; }
@@ -91,6 +92,7 @@ private:
 	std::string		m_name;
 
 	LPCHARACTER		m_pkChar;					// Instance of pet(CHARACTER)
+	entt::entity		m_characterEntity { entt::null };
 	LPCHARACTER		m_pkOwner;
 
 //	SPetAbility		m_petAbility;				// ´É·ÂÄ¡

@@ -10,7 +10,6 @@
 #define sys_err(fmt, ...) quest::CQuestManager::instance().QuestErrorFmt(__FUNCTION__, __LINE__, FMT_STRING(fmt), __VA_ARGS__)
 #endif
 #include "char_interface.hpp"
-#include "ecs/CharacterAccessors.hpp"
 #include "sectree_manager.h"
 #include "target.h"
 
@@ -24,27 +23,26 @@ namespace quest
 		// migrated from CHARACTER::Target position lookup
 		// DUAL-PATH: legacy only during migration window
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
-		auto* ch = ecs::LegacyCharOf(chEntity);
 		uint32_t iQuestIndex = CQuestManager::instance().GetCurrentPC()->GetCurrentQuestIndex();
 
 		if (!lua_isstring(L, 1) || !lua_isnumber(L, 2) || !lua_isnumber(L, 3))
 		{
-			sys_err("invalid argument, name: {}, quest_index {}", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), iQuestIndex);
+			sys_err("invalid argument, name: {}, quest_index {}", ecs::PlayerRuntime::GetName(chEntity).data(), iQuestIndex);
 			return 0;
 		}
 
 		PIXEL_POSITION pos;
 
-		if (!SECTREE_MANAGER::instance().GetMapBasePositionByMapIndex(ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)), pos))
+		if (!SECTREE_MANAGER::instance().GetMapBasePositionByMapIndex(ecs::PlayerRuntime::GetMapIndex(chEntity), pos))
 		{
-			sys_err("cannot find base position in this map {}", ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)));
+			sys_err("cannot find base position in this map {}", ecs::PlayerRuntime::GetMapIndex(chEntity));
 			return 0;
 		}
 
 		int x = pos.x + (int) lua_tonumber(L, 2) * 100;
 		int y = pos.y + (int) lua_tonumber(L, 3) * 100;
 
-		CTargetManager::instance().CreateTarget((ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))),
+		CTargetManager::instance().CreateTarget(ecs::PlayerRuntime::GetPlayerID(chEntity),
 				iQuestIndex,
 				lua_tostring(L, 1),
 				TARGET_TYPE_POS,
@@ -62,23 +60,22 @@ namespace quest
 		// migrated from CHARACTER::Target VID lookup
 		// DUAL-PATH: legacy only during migration window
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
-		auto* ch = ecs::LegacyCharOf(chEntity);
 		uint32_t iQuestIndex = CQuestManager::instance().GetCurrentPC()->GetCurrentQuestIndex();
 
 		if (!lua_isstring(L, 1) || !lua_isnumber(L, 2))
 		{
-			sys_err("invalid argument, name: {}, quest_index {}", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), iQuestIndex);
+			sys_err("invalid argument, name: {}, quest_index {}", ecs::PlayerRuntime::GetName(chEntity).data(), iQuestIndex);
 			return 0;
 		}
 
 
-		CTargetManager::instance().CreateTarget((ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))),
+		CTargetManager::instance().CreateTarget(ecs::PlayerRuntime::GetPlayerID(chEntity),
 				iQuestIndex,
 				lua_tostring(L, 1),
 				TARGET_TYPE_VID,
 				(int) lua_tonumber(L, 2),
 				0,
-				ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)),
+				ecs::PlayerRuntime::GetMapIndex(chEntity),
 				lua_isstring(L, 3) ? lua_tostring(L, 3) : nullptr,
 				lua_isnumber(L, 4) ? (int)lua_tonumber(L, 4): 1);
 
@@ -91,16 +88,15 @@ namespace quest
 		// migrated from CHARACTER::DeleteTarget
 		// DUAL-PATH: legacy only during migration window
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
-		auto* ch = ecs::LegacyCharOf(chEntity);
 		uint32_t iQuestIndex = CQuestManager::instance().GetCurrentPC()->GetCurrentQuestIndex();
 
 		if (!lua_isstring(L, 1))
 		{
-			sys_err("invalid argument, name: {}, quest_index {}", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), iQuestIndex);
+			sys_err("invalid argument, name: {}, quest_index {}", ecs::PlayerRuntime::GetName(chEntity).data(), iQuestIndex);
 			return 0;
 		}
 
-		CTargetManager::instance().DeleteTarget((ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))), iQuestIndex, lua_tostring(L, 1));
+		CTargetManager::instance().DeleteTarget(ecs::PlayerRuntime::GetPlayerID(chEntity), iQuestIndex, lua_tostring(L, 1));
 
 		return 0;
 	}
@@ -111,10 +107,9 @@ namespace quest
 		// migrated from CHARACTER::DeleteTarget
 		// DUAL-PATH: legacy only during migration window
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
-		auto* ch = ecs::LegacyCharOf(chEntity);
 		uint32_t iQuestIndex = CQuestManager::instance().GetCurrentPC()->GetCurrentQuestIndex();
 
-		CTargetManager::instance().DeleteTarget((ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))), iQuestIndex, nullptr);
+		CTargetManager::instance().DeleteTarget(ecs::PlayerRuntime::GetPlayerID(chEntity), iQuestIndex, nullptr);
 
 		return 0;
 	}
@@ -124,17 +119,16 @@ namespace quest
 		// migrated from CHARACTER::GetTargetEvent
 		// DUAL-PATH: legacy only during migration window
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
-		auto* ch = ecs::LegacyCharOf(chEntity);
 		uint32_t dwQuestIndex = CQuestManager::instance().GetCurrentPC()->GetCurrentQuestIndex();
 
 		if (!lua_isstring(L, 1))
 		{
-			sys_err("invalid argument, name: {}, quest_index {}", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), dwQuestIndex);
+			sys_err("invalid argument, name: {}, quest_index {}", ecs::PlayerRuntime::GetName(chEntity).data(), dwQuestIndex);
 			lua_pushnumber(L, 0);
 			return 1;
 		}
 
-		LPEVENT pkEvent = CTargetManager::instance().GetTargetEvent((ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))), dwQuestIndex, (const char *) lua_tostring(L, 1));
+		LPEVENT pkEvent = CTargetManager::instance().GetTargetEvent(ecs::PlayerRuntime::GetPlayerID(chEntity), dwQuestIndex, (const char *) lua_tostring(L, 1));
 
 		if (pkEvent)
 		{

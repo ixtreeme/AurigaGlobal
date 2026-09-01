@@ -11,6 +11,7 @@ void StopFishing(entt::entity fisher);
 void CatchFishing(entt::entity fisher, uint32_t tick);
 void CatchFishingFailed(entt::entity fisher);
 void CatchDecision(entt::entity fisher, uint32_t itemVnum);
+bool IsFishing(entt::entity fisher);
 bool StartMining(entt::entity miner, entt::entity load);
 void CancelMining(entt::entity miner);
 void FinishMining(entt::entity miner);

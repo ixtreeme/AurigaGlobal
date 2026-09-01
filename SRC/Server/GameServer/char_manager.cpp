@@ -147,7 +147,7 @@ namespace
 				continue;
 			}
 
-			if (CombatSystem::IsDead(AIHelpers::EcsOf(ch)) || ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)) != st.mapIndex || ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(ch)) != st.mobVnum)
+			if (CombatSystem::IsDead(((ch) ? (ch)->GetEntityHandle() : entt::null)) || ecs::PlayerRuntime::GetMapIndex(((ch) ? (ch)->GetEntityHandle() : entt::null)) != st.mapIndex || ecs::PlayerRuntime::GetRaceNum(((ch) ? (ch)->GetEntityHandle() : entt::null)) != st.mobVnum)
 			{
 				toErase.push_back(vid);
 				continue;
@@ -419,9 +419,9 @@ void CHARACTER_MANAGER::DestroyCharacter(LPCHARACTER ch, const char* file, size_
 	}
 
 #ifdef __NEWPET_SYSTEM__
-	if (ecs::PlayerRuntime::IsNPC(AIHelpers::EcsOf(ch)) && !ch->IsPet() && !ch->IsNewPet() && ch->GetRider() == nullptr)
+	if (ecs::PlayerRuntime::IsNPC(((ch) ? (ch)->GetEntityHandle() : entt::null)) && !ch->IsPet() && !ch->IsNewPet() && ch->GetRider() == nullptr)
 #else
-	if (ecs::PlayerRuntime::IsNPC(AIHelpers::EcsOf(ch)) && !ch->IsPet() && ch->GetRider() == NULL)
+	if (ecs::PlayerRuntime::IsNPC(((ch) ? (ch)->GetEntityHandle() : entt::null)) && !ch->IsPet() && ch->GetRider() == NULL)
 #endif
 	{
 		if (ch->GetDungeon())
@@ -441,16 +441,16 @@ void CHARACTER_MANAGER::DestroyCharacter(LPCHARACTER ch, const char* file, size_
 		m_set_pkChrForDelayedSave.erase(it2);
 	}
 
-	//if (ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch)))											   // Ixtreeme fix -- ITEM_SAVE invalid owner pointer
+	//if (ecs::PlayerRuntime::IsPC(((ch) ? (ch)->GetEntityHandle() : entt::null)))											   // Ixtreeme fix -- ITEM_SAVE invalid owner pointer
 	//	ITEM_MANAGER::instance().FlushDelayedSaveByOwner(ch);  // Ixtreeme fix -- ITEM_SAVE invalid owner pointer
 
 	m_map_pkChrByVID.erase(it);
 
-	if (true == ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch)))
+	if (true == ecs::PlayerRuntime::IsPC(((ch) ? (ch)->GetEntityHandle() : entt::null)))
 	{
 		char szName[CHARACTER_NAME_MAX_LEN + 1];
 
-		str_lower(ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), szName, sizeof(szName));
+		str_lower(ecs::PlayerRuntime::GetName(((ch) ? (ch)->GetEntityHandle() : entt::null)).data(), szName, sizeof(szName));
 
 		auto it = m_map_pkPCChr.find(szName);
 
@@ -458,9 +458,9 @@ void CHARACTER_MANAGER::DestroyCharacter(LPCHARACTER ch, const char* file, size_
 			m_map_pkPCChr.erase(it);
 	}
 
-	if (0 != ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)))
+	if (0 != ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null)))
 	{
-		auto it = m_map_pkChrByPID.find(ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)));
+		auto it = m_map_pkChrByPID.find(ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null)));
 
 		if (m_map_pkChrByPID.end() != it)
 		{
@@ -468,7 +468,7 @@ void CHARACTER_MANAGER::DestroyCharacter(LPCHARACTER ch, const char* file, size_
 		}
 	}
 
-	if (ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch))) {
+	if (ecs::PlayerRuntime::IsPC(((ch) ? (ch)->GetEntityHandle() : entt::null))) {
 		auto it = m_set_pkChrForDelayedSave.find(ch);
 		if (m_set_pkChrForDelayedSave.end() != it)
 		{
@@ -561,8 +561,8 @@ LPCHARACTER CHARACTER_MANAGER::FindByPID(uint32_t dwPID)
 
 	// <Factor> Added sanity check
 	LPCHARACTER found = it->second;
-	if (found != nullptr && dwPID != ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(found))) {
-		LOG_ERROR("[CHARACTER_MANAGER::FindByPID] <Factor> {} != {}", dwPID, ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(found)));
+	if (found != nullptr && dwPID != ecs::PlayerRuntime::GetPlayerID(((found) ? (found)->GetEntityHandle() : entt::null))) {
+		LOG_ERROR("[CHARACTER_MANAGER::FindByPID] <Factor> {} != {}", dwPID, ecs::PlayerRuntime::GetPlayerID(((found) ? (found)->GetEntityHandle() : entt::null)));
 		return nullptr;
 	}
 	return found;
@@ -579,8 +579,8 @@ LPCHARACTER CHARACTER_MANAGER::FindPC(const char* name)
 
 	// <Factor> Added sanity check
 	LPCHARACTER found = it->second;
-	if (found != nullptr && strncasecmp(szName, ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(found)).data(), CHARACTER_NAME_MAX_LEN) != 0) {
-		LOG_ERROR("[CHARACTER_MANAGER::FindPC] <Factor> {} != {}", name, ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(found)).data());
+	if (found != nullptr && strncasecmp(szName, ecs::PlayerRuntime::GetName(((found) ? (found)->GetEntityHandle() : entt::null)).data(), CHARACTER_NAME_MAX_LEN) != 0) {
+		LOG_ERROR("[CHARACTER_MANAGER::FindPC] <Factor> {} != {}", name, ecs::PlayerRuntime::GetName(((found) ? (found)->GetEntityHandle() : entt::null)).data());
 		return nullptr;
 	}
 	return found;
@@ -660,12 +660,12 @@ LPCHARACTER CHARACTER_MANAGER::SpawnMobRandomPosition(uint32_t dwVnum, int32_t l
 
 	// if mob is npc with no empire assigned, assign to empire of map
 	if (pkMob->m_table.bType == CHAR_TYPE_NPC)
-		if (ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(ch)) == 0)
+		if (ecs::PlayerRuntime::GetEmpire(((ch) ? (ch)->GetEntityHandle() : entt::null)) == 0)
 			ch->SetEmpire(SECTREE_MANAGER::instance().GetEmpireFromMapIndex(lMapIndex));
 
 	ch->SetRotation(number(0, 360));
 
-	if (!ecs::MovementSystem::Show(AIHelpers::EcsOf(ch), lMapIndex, x, y, 0, false))
+	if (!ecs::MovementSystem::Show(((ch) ? (ch)->GetEntityHandle() : entt::null), lMapIndex, x, y, 0, false))
 	{
 		M2_DESTROY_CHARACTER(ch);
 		LOG_ERROR("SpawnMobRandomPosition: cannot show monster");
@@ -679,15 +679,15 @@ LPCHARACTER CHARACTER_MANAGER::SpawnMobRandomPosition(uint32_t dwVnum, int32_t l
 	{
 		if (pkMob->m_table.bType == CHAR_TYPE_STONE)
 		{
-			EntityFactory::CreateStone(g_registry, ch->GetMobTable(), ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(ch)), ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(ch)), ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)), ch->GetLegacyVID());
+			EntityFactory::CreateStone(g_registry, ch->GetMobTable(), ecs::PlayerRuntime::GetX(((ch) ? (ch)->GetEntityHandle() : entt::null)), ecs::PlayerRuntime::GetY(((ch) ? (ch)->GetEntityHandle() : entt::null)), ecs::PlayerRuntime::GetMapIndex(((ch) ? (ch)->GetEntityHandle() : entt::null)), ch->GetLegacyVID());
 		}
 		else if (pkMob->m_table.bType == CHAR_TYPE_MONSTER)
 		{
-			EntityFactory::CreateMonster(g_registry, ch->GetMobTable(), ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(ch)), ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(ch)), ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)), ch->GetLegacyVID());
+			EntityFactory::CreateMonster(g_registry, ch->GetMobTable(), ecs::PlayerRuntime::GetX(((ch) ? (ch)->GetEntityHandle() : entt::null)), ecs::PlayerRuntime::GetY(((ch) ? (ch)->GetEntityHandle() : entt::null)), ecs::PlayerRuntime::GetMapIndex(((ch) ? (ch)->GetEntityHandle() : entt::null)), ch->GetLegacyVID());
 		}
 		else if (pkMob->m_table.bType == CHAR_TYPE_NPC || pkMob->m_table.bType == CHAR_TYPE_WARP || pkMob->m_table.bType == CHAR_TYPE_GOTO)
 		{
-			EntityFactory::CreateNPC(g_registry, ch->GetMobTable(), ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(ch)), ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(ch)), ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)), ch->GetLegacyVID());
+			EntityFactory::CreateNPC(g_registry, ch->GetMobTable(), ecs::PlayerRuntime::GetX(((ch) ? (ch)->GetEntityHandle() : entt::null)), ecs::PlayerRuntime::GetY(((ch) ? (ch)->GetEntityHandle() : entt::null)), ecs::PlayerRuntime::GetMapIndex(((ch) ? (ch)->GetEntityHandle() : entt::null)), ch->GetLegacyVID());
 		}
 	}
 
@@ -791,7 +791,7 @@ LPCHARACTER CHARACTER_MANAGER::SpawnMob(uint32_t dwVnum, int32_t lMapIndex, int3
 
 	// if mob is npc with no empire assigned, assign to empire of map
 	if (pkMob->m_table.bType == CHAR_TYPE_NPC)
-		if (ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(ch)) == 0)
+		if (ecs::PlayerRuntime::GetEmpire(((ch) ? (ch)->GetEntityHandle() : entt::null)) == 0)
 			ch->SetEmpire(SECTREE_MANAGER::instance().GetEmpireFromMapIndex(lMapIndex));
 
 #ifdef ENABLE_ANCIENT_PYRAMID
@@ -800,7 +800,7 @@ LPCHARACTER CHARACTER_MANAGER::SpawnMob(uint32_t dwVnum, int32_t lMapIndex, int3
 	ch->SetRotation(iRot);
 #endif
 
-	if (bShow && !ecs::MovementSystem::Show(AIHelpers::EcsOf(ch), lMapIndex, x, y, z, bSpawnMotion))
+	if (bShow && !ecs::MovementSystem::Show(((ch) ? (ch)->GetEntityHandle() : entt::null), lMapIndex, x, y, z, bSpawnMotion))
 	{
 		M2_DESTROY_CHARACTER(ch);
 		//"SpawnMob: cannot show monster");
@@ -851,15 +851,15 @@ LPCHARACTER CHARACTER_MANAGER::SpawnMob(uint32_t dwVnum, int32_t lMapIndex, int3
 	{
 		if (pkMob->m_table.bType == CHAR_TYPE_STONE)
 		{
-			EntityFactory::CreateStone(g_registry, ch->GetMobTable(), ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(ch)), ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(ch)), ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)), ch->GetLegacyVID());
+			EntityFactory::CreateStone(g_registry, ch->GetMobTable(), ecs::PlayerRuntime::GetX(((ch) ? (ch)->GetEntityHandle() : entt::null)), ecs::PlayerRuntime::GetY(((ch) ? (ch)->GetEntityHandle() : entt::null)), ecs::PlayerRuntime::GetMapIndex(((ch) ? (ch)->GetEntityHandle() : entt::null)), ch->GetLegacyVID());
 		}
 		else if (pkMob->m_table.bType == CHAR_TYPE_MONSTER)
 		{
-			EntityFactory::CreateMonster(g_registry, ch->GetMobTable(), ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(ch)), ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(ch)), ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)), ch->GetLegacyVID());
+			EntityFactory::CreateMonster(g_registry, ch->GetMobTable(), ecs::PlayerRuntime::GetX(((ch) ? (ch)->GetEntityHandle() : entt::null)), ecs::PlayerRuntime::GetY(((ch) ? (ch)->GetEntityHandle() : entt::null)), ecs::PlayerRuntime::GetMapIndex(((ch) ? (ch)->GetEntityHandle() : entt::null)), ch->GetLegacyVID());
 		}
 		else if (pkMob->m_table.bType == CHAR_TYPE_NPC || pkMob->m_table.bType == CHAR_TYPE_WARP || pkMob->m_table.bType == CHAR_TYPE_GOTO)
 		{
-			EntityFactory::CreateNPC(g_registry, ch->GetMobTable(), ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(ch)), ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(ch)), ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)), ch->GetLegacyVID());
+			EntityFactory::CreateNPC(g_registry, ch->GetMobTable(), ecs::PlayerRuntime::GetX(((ch) ? (ch)->GetEntityHandle() : entt::null)), ecs::PlayerRuntime::GetY(((ch) ? (ch)->GetEntityHandle() : entt::null)), ecs::PlayerRuntime::GetMapIndex(((ch) ? (ch)->GetEntityHandle() : entt::null)), ch->GetLegacyVID());
 		}
 	}
 
@@ -867,7 +867,7 @@ LPCHARACTER CHARACTER_MANAGER::SpawnMob(uint32_t dwVnum, int32_t lMapIndex, int3
 	if (bShow && ch)
 	{
 		const bool isNpcLike = (pkMob->m_table.bType == CHAR_TYPE_NPC || pkMob->m_table.bType == CHAR_TYPE_WARP || pkMob->m_table.bType == CHAR_TYPE_GOTO);
-		if (ecs::PlayerRuntime::IsStone(AIHelpers::EcsOf(ch)) || isNpcLike)
+		if (ecs::PlayerRuntime::IsStone(((ch) ? (ch)->GetEntityHandle() : entt::null)) || isNpcLike)
 		{
 		}
 	}
@@ -900,7 +900,7 @@ LPCHARACTER CHARACTER_MANAGER::SpawnMobRange(uint32_t dwVnum, int32_t lMapIndex,
 
 		if (ch)
 		{
-			LOG_TRACE("MOB_SPAWN: {}({}) {}x{}", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), ch->GetLegacyVID(), ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(ch)), ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(ch)));
+			LOG_TRACE("MOB_SPAWN: {}({}) {}x{}", ecs::PlayerRuntime::GetName(((ch) ? (ch)->GetEntityHandle() : entt::null)).data(), ch->GetLegacyVID(), ecs::PlayerRuntime::GetX(((ch) ? (ch)->GetEntityHandle() : entt::null)), ecs::PlayerRuntime::GetY(((ch) ? (ch)->GetEntityHandle() : entt::null)));
 			if (bAggressive)
 				ch->SetAggressive();
 			return ch;
@@ -957,10 +957,10 @@ bool CHARACTER_MANAGER::SpawnMoveGroup(uint32_t dwVnum, int32_t lMapIndex, int s
 			continue;
 		}
 
-		sx = ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(tch)) - number(300, 500);
-		sy = ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(tch)) - number(300, 500);
-		ex = ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(tch)) + number(300, 500);
-		ey = ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(tch)) + number(300, 500);
+		sx = ecs::PlayerRuntime::GetX(((tch) ? (tch)->GetEntityHandle() : entt::null)) - number(300, 500);
+		sy = ecs::PlayerRuntime::GetY(((tch) ? (tch)->GetEntityHandle() : entt::null)) - number(300, 500);
+		ex = ecs::PlayerRuntime::GetX(((tch) ? (tch)->GetEntityHandle() : entt::null)) + number(300, 500);
+		ey = ecs::PlayerRuntime::GetY(((tch) ? (tch)->GetEntityHandle() : entt::null)) + number(300, 500);
 
 		if (m_pkChrSelectedStone)
 			tch->SetStone(m_pkChrSelectedStone);
@@ -979,7 +979,7 @@ bool CHARACTER_MANAGER::SpawnMoveGroup(uint32_t dwVnum, int32_t lMapIndex, int s
 		if (bAggressive)
 			tch->SetAggressive();
 
-		if (ecs::MovementSystem::Goto(AIHelpers::EcsOf(tch), tx, ty))
+		if (ecs::MovementSystem::Goto(((tch) ? (tch)->GetEntityHandle() : entt::null), tx, ty))
 			tch->SendMovePacket(FUNC_WAIT, 0, 0, 0, 0);
 	}
 
@@ -1050,10 +1050,10 @@ LPCHARACTER CHARACTER_MANAGER::SpawnGroup(uint32_t dwVnum, int32_t lMapIndex, in
 
 		tch->SetDungeon(pDungeon);
 
-		sx = ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(tch)) - number(300, 500);
-		sy = ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(tch)) - number(300, 500);
-		ex = ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(tch)) + number(300, 500);
-		ey = ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(tch)) + number(300, 500);
+		sx = ecs::PlayerRuntime::GetX(((tch) ? (tch)->GetEntityHandle() : entt::null)) - number(300, 500);
+		sy = ecs::PlayerRuntime::GetY(((tch) ? (tch)->GetEntityHandle() : entt::null)) - number(300, 500);
+		ex = ecs::PlayerRuntime::GetX(((tch) ? (tch)->GetEntityHandle() : entt::null)) + number(300, 500);
+		ey = ecs::PlayerRuntime::GetY(((tch) ? (tch)->GetEntityHandle() : entt::null)) + number(300, 500);
 
 		if (m_pkChrSelectedStone)
 			tch->SetStone(m_pkChrSelectedStone);
@@ -1122,7 +1122,7 @@ void CHARACTER_MANAGER::Update(int iPulse)
 		for (LPCHARACTER ch : all)
 		{
 			if (!ch) continue;
-			if (ecs::PlayerRuntime::IsStone(AIHelpers::EcsOf(ch)) && ch->IsDungeonTicketExtraMetin())
+			if (ecs::PlayerRuntime::IsStone(((ch) ? (ch)->GetEntityHandle() : entt::null)) && ch->IsDungeonTicketExtraMetin())
 				DestroyCharacter(ch);
 		}
 
@@ -1139,10 +1139,10 @@ void CHARACTER_MANAGER::Update(int iPulse)
 			for (LPCHARACTER ch : all)
 			{
 				if (!ch) continue;
-				if (!ecs::PlayerRuntime::IsStone(AIHelpers::EcsOf(ch))) continue;
+				if (!ecs::PlayerRuntime::IsStone(((ch) ? (ch)->GetEntityHandle() : entt::null))) continue;
 				if (ch->IsDungeonTicketExtraMetin()) continue;
 
-				const int32_t mapIndex = ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch));
+				const int32_t mapIndex = ecs::PlayerRuntime::GetMapIndex(((ch) ? (ch)->GetEntityHandle() : entt::null));
 
 				const bool isDungeonMap =
 					(mapIndex >= 10000) ||
@@ -1151,9 +1151,9 @@ void CHARACTER_MANAGER::Update(int iPulse)
 				if (isDungeonMap)
 					continue;
 
-				const uint32_t vnum = ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(ch));
-				const int32_t x = ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(ch));
-				const int32_t y = ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(ch));
+				const uint32_t vnum = ecs::PlayerRuntime::GetRaceNum(((ch) ? (ch)->GetEntityHandle() : entt::null));
+				const int32_t x = ecs::PlayerRuntime::GetX(((ch) ? (ch)->GetEntityHandle() : entt::null));
+				const int32_t y = ecs::PlayerRuntime::GetY(((ch) ? (ch)->GetEntityHandle() : entt::null));
 				const int32_t z = ch->GetZ();
 
 				g_bDungeonTicketExtraMetinSpawn = true;
@@ -1265,7 +1265,7 @@ void CHARACTER_MANAGER::ProcessDelayedSave()
 bool CHARACTER_MANAGER::AddToStateList(LPCHARACTER ch)
 {
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "char_manager.cpp::bool CHARACTER_MANAGER::AddToStateList");//INGAME_DEBUG_RAZOR93
+	ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "char_manager.cpp::bool CHARACTER_MANAGER::AddToStateList");//INGAME_DEBUG_RAZOR93
 #endif
 	assert(ch != NULL);
 
@@ -1281,7 +1281,7 @@ bool CHARACTER_MANAGER::AddToStateList(LPCHARACTER ch)
 void CHARACTER_MANAGER::RemoveFromStateList(LPCHARACTER ch)
 {
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "char_manager.cpp::void CHARACTER_MANAGER::RemoveFromStateList");//INGAME_DEBUG_RAZOR93
+	ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "char_manager.cpp::void CHARACTER_MANAGER::RemoveFromStateList");//INGAME_DEBUG_RAZOR93
 #endif
 	if (const auto it = m_set_pkChrState.find(ch); it != m_set_pkChrState.end())
 	{
@@ -1292,7 +1292,7 @@ void CHARACTER_MANAGER::RemoveFromStateList(LPCHARACTER ch)
 
 void CHARACTER_MANAGER::DelayedSave(LPCHARACTER ch) {
 	//#ifdef ENABLE_INGAME_DEBUG_RAZOR93d
-	//	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "char_manager.cpp::void CHARACTER_MANAGER::DelayedSave");//INGAME_DEBUG_RAZOR93
+	//	ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "char_manager.cpp::void CHARACTER_MANAGER::DelayedSave");//INGAME_DEBUG_RAZOR93
 	//#endif
 		//////////FIX m_set_pkChrForDelayedSave.insert(ch);
 	if (const auto it = m_set_pkChrForDelayedSave.find(ch); it != m_set_pkChrForDelayedSave.end()) {
@@ -1305,7 +1305,7 @@ void CHARACTER_MANAGER::DelayedSave(LPCHARACTER ch) {
 bool CHARACTER_MANAGER::FlushDelayedSave(LPCHARACTER ch)
 {
 	//#ifdef ENABLE_INGAME_DEBUG_RAZOR93d
-	//	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "char_manager.cpp::CHARACTER_MANAGER::FlushDelayedSave");//INGAME_DEBUG_RAZOR93
+	//	ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "char_manager.cpp::CHARACTER_MANAGER::FlushDelayedSave");//INGAME_DEBUG_RAZOR93
 	//#endif
 	const auto it = m_set_pkChrForDelayedSave.find(ch);
 
@@ -1320,7 +1320,7 @@ bool CHARACTER_MANAGER::FlushDelayedSave(LPCHARACTER ch)
 void CHARACTER_MANAGER::RegisterForMonsterLog(LPCHARACTER ch)
 {
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "char_manager.cpp::CHARACTER_MANAGER::RegisterForMonsterLog");//INGAME_DEBUG_RAZOR93
+	ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "char_manager.cpp::CHARACTER_MANAGER::RegisterForMonsterLog");//INGAME_DEBUG_RAZOR93
 #endif
 	m_set_pkChrMonsterLog.insert(ch);
 }
@@ -1328,7 +1328,7 @@ void CHARACTER_MANAGER::RegisterForMonsterLog(LPCHARACTER ch)
 void CHARACTER_MANAGER::UnregisterForMonsterLog(LPCHARACTER ch)
 {
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "char_manager.cpp::CHARACTER_MANAGER::UnregisterForMonsterLog");//INGAME_DEBUG_RAZOR93
+	ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "char_manager.cpp::CHARACTER_MANAGER::UnregisterForMonsterLog");//INGAME_DEBUG_RAZOR93
 #endif
 	m_set_pkChrMonsterLog.erase(ch);
 }
@@ -1336,16 +1336,16 @@ void CHARACTER_MANAGER::UnregisterForMonsterLog(LPCHARACTER ch)
 void CHARACTER_MANAGER::PacketMonsterLog(LPCHARACTER ch, const void* buf, int size)
 {
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "char_manager.cpp::CHARACTER_MANAGER::PacketMonsterLog");//INGAME_DEBUG_RAZOR93
+	ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "char_manager.cpp::CHARACTER_MANAGER::PacketMonsterLog");//INGAME_DEBUG_RAZOR93
 #endif
 	for (auto it = m_set_pkChrMonsterLog.begin(); it != m_set_pkChrMonsterLog.end(); ++it)
 	{
 		LPCHARACTER c = *it;
 
-		if (ch && DISTANCE_APPROX(ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(c)) - ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(ch)), ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(c)) - ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(ch))) > 6000)
+		if (ch && DISTANCE_APPROX(ecs::PlayerRuntime::GetX(((c) ? (c)->GetEntityHandle() : entt::null)) - ecs::PlayerRuntime::GetX(((ch) ? (ch)->GetEntityHandle() : entt::null)), ecs::PlayerRuntime::GetY(((c) ? (c)->GetEntityHandle() : entt::null)) - ecs::PlayerRuntime::GetY(((ch) ? (ch)->GetEntityHandle() : entt::null))) > 6000)
 			continue;
 
-		LPDESC d = ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(c));
+		LPDESC d = ecs::PlayerRuntime::GetDesc(((c) ? (c)->GetEntityHandle() : entt::null));
 
 		if (d)
 			d->Packet(buf, size);
@@ -1378,9 +1378,9 @@ void CHARACTER_MANAGER::RegisterRaceNum(uint32_t dwVnum)
 void CHARACTER_MANAGER::RegisterRaceNumMap(LPCHARACTER ch)
 {
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "char_manager.cpp::CHARACTER_MANAGER::RegisterRaceNumMap");//INGAME_DEBUG_RAZOR93
+	ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "char_manager.cpp::CHARACTER_MANAGER::RegisterRaceNumMap");//INGAME_DEBUG_RAZOR93
 #endif
-	const auto entity = AIHelpers::EcsOf(ch);
+	const auto entity = ((ch) ? (ch)->GetEntityHandle() : entt::null);
 	uint32_t dwVnum = ecs::PlayerRuntime::GetRaceNum(entity);
 
 	if (m_set_dwRegisteredRaceNum.contains(dwVnum)) // ϵ ȣ ̸
@@ -1393,9 +1393,9 @@ void CHARACTER_MANAGER::RegisterRaceNumMap(LPCHARACTER ch)
 void CHARACTER_MANAGER::UnregisterRaceNumMap(LPCHARACTER ch)
 {
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "char_manager.cpp::CHARACTER_MANAGER::UnregisterRaceNumMap");//INGAME_DEBUG_RAZOR93
+	ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "char_manager.cpp::CHARACTER_MANAGER::UnregisterRaceNumMap");//INGAME_DEBUG_RAZOR93
 #endif
-	uint32_t dwVnum = ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(ch));
+	uint32_t dwVnum = ecs::PlayerRuntime::GetRaceNum(((ch) ? (ch)->GetEntityHandle() : entt::null));
 
 	if (const auto it = m_map_pkChrByRaceNum.find(dwVnum); it != m_map_pkChrByRaceNum.end())
 		it->second.erase(ch);
@@ -1450,13 +1450,13 @@ LPCHARACTER CHARACTER_MANAGER::FindSpecifyPC(unsigned int uiJobFlag, int32_t lMa
 		if (ch == except)
 			continue;
 
-		if ((ecs::PointSystem::GetLevel(AIHelpers::EcsOf(ch))) < iMinLevel)
+		if ((ecs::PointSystem::GetLevel(((ch) ? (ch)->GetEntityHandle() : entt::null))) < iMinLevel)
 			continue;
 
-		if ((ecs::PointSystem::GetLevel(AIHelpers::EcsOf(ch))) > iMaxLevel)
+		if ((ecs::PointSystem::GetLevel(((ch) ? (ch)->GetEntityHandle() : entt::null))) > iMaxLevel)
 			continue;
 
-		if (ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)) != lMapIndex)
+		if (ecs::PlayerRuntime::GetMapIndex(((ch) ? (ch)->GetEntityHandle() : entt::null)) != lMapIndex)
 			continue;
 
 		if (uiJobFlag)
@@ -1476,10 +1476,15 @@ LPCHARACTER CHARACTER_MANAGER::FindSpecifyPC(unsigned int uiJobFlag, int32_t lMa
 
 int CHARACTER_MANAGER::GetMobItemRate(LPCHARACTER ch)
 {
+	return GetMobItemRate(ch ? ch->GetEntityHandle() : entt::null);
+}
+
+int CHARACTER_MANAGER::GetMobItemRate(entt::entity character)
+{
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "char_manager.cpp::CHARACTER_MANAGER::GetMobItemRate");//INGAME_DEBUG_RAZOR93
+	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "char_manager.cpp::CHARACTER_MANAGER::GetMobItemRate");
 #endif
-	if (ch && ch->GetPremiumRemainSeconds(PREMIUM_ITEM) > 0)
+	if (ecs::PlayerRuntime::GetPremiumRemainSeconds(character, PREMIUM_ITEM) > 0)
 		return m_iMobItemRatePremium;
 	return m_iMobItemRate;
 }
@@ -1487,7 +1492,7 @@ int CHARACTER_MANAGER::GetMobItemRate(LPCHARACTER ch)
 int CHARACTER_MANAGER::GetMobDamageRate(LPCHARACTER ch)
 {
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "char_manager.cpp::CHARACTER_MANAGER::GetMobDamageRate");//INGAME_DEBUG_RAZOR93
+	ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "char_manager.cpp::CHARACTER_MANAGER::GetMobDamageRate");//INGAME_DEBUG_RAZOR93
 #endif
 	return m_iMobDamageRate;
 }
@@ -1495,7 +1500,7 @@ int CHARACTER_MANAGER::GetMobDamageRate(LPCHARACTER ch)
 int CHARACTER_MANAGER::GetMobGoldAmountRate(LPCHARACTER ch)
 {
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "char_manager.cpp::CHARACTER_MANAGER::GetMobGoldAmountRate");//INGAME_DEBUG_RAZOR93
+	ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "char_manager.cpp::CHARACTER_MANAGER::GetMobGoldAmountRate");//INGAME_DEBUG_RAZOR93
 #endif
 	if (!ch)
 		return m_iMobGoldAmountRate;
@@ -1508,7 +1513,7 @@ int CHARACTER_MANAGER::GetMobGoldAmountRate(LPCHARACTER ch)
 int CHARACTER_MANAGER::GetMobGoldDropRate(LPCHARACTER ch)
 {
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "char_manager.cpp::CHARACTER_MANAGER::GetMobGoldDropRate");//INGAME_DEBUG_RAZOR93
+	ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "char_manager.cpp::CHARACTER_MANAGER::GetMobGoldDropRate");//INGAME_DEBUG_RAZOR93
 #endif
 	if (!ch) {
 		return m_iMobGoldDropRate;
@@ -1524,7 +1529,7 @@ int CHARACTER_MANAGER::GetMobGoldDropRate(LPCHARACTER ch)
 int CHARACTER_MANAGER::GetMobExpRate(LPCHARACTER ch)
 {
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "char_manager.cpp::CHARACTER_MANAGER::GetMobExpRate");//INGAME_DEBUG_RAZOR93
+	ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "char_manager.cpp::CHARACTER_MANAGER::GetMobExpRate");//INGAME_DEBUG_RAZOR93
 #endif
 	if (!ch) {
 		return m_iMobExpRate;
@@ -1540,7 +1545,7 @@ int CHARACTER_MANAGER::GetMobExpRate(LPCHARACTER ch)
 int	CHARACTER_MANAGER::GetUserDamageRate(LPCHARACTER ch)
 {
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "char_manager.cpp::CHARACTER_MANAGER::GetUserDamageRate");//INGAME_DEBUG_RAZOR93
+	ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "char_manager.cpp::CHARACTER_MANAGER::GetUserDamageRate");//INGAME_DEBUG_RAZOR93
 #endif
 	if (!ch)
 		return m_iUserDamageRate;
@@ -1630,9 +1635,9 @@ void CHARACTER_MANAGER::ClearEventData()
 void CHARACTER_MANAGER::CheckBonusEvent(LPCHARACTER ch)
 {
 	//#ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	//	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "char_manager.cpp::CHARACTER_MANAGER::CheckBonusEvent");//INGAME_DEBUG_RAZOR93
+	//	ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "char_manager.cpp::CHARACTER_MANAGER::CheckBonusEvent");//INGAME_DEBUG_RAZOR93
 	//#endif
-	const TEventManagerData* eventPtr = CheckEventIsActive(BONUS_EVENT, ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(ch)));
+	const TEventManagerData* eventPtr = CheckEventIsActive(BONUS_EVENT, ecs::PlayerRuntime::GetEmpire(((ch) ? (ch)->GetEntityHandle() : entt::null)));
 	if (eventPtr)
 		ch->ApplyPoint(eventPtr->value[0], eventPtr->value[1]);
 }
@@ -1665,11 +1670,11 @@ const TEventManagerData* CHARACTER_MANAGER::CheckEventIsActive(uint8_t eventInde
 }
 void CHARACTER_MANAGER::CheckEventForDrop(LPCHARACTER pkChr, LPCHARACTER pkKiller, std::vector<entt::entity>& vec_item)
 {
-	const uint8_t killerEmpire = ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(pkKiller));
+	const uint8_t killerEmpire = ecs::PlayerRuntime::GetEmpire(((pkKiller) ? (pkKiller)->GetEntityHandle() : entt::null));
 	const TEventManagerData* eventPtr = nullptr;
 	LPITEM rewardItem = nullptr;
 
-	if (ecs::PlayerRuntime::IsStone(AIHelpers::EcsOf(pkChr)))
+	if (ecs::PlayerRuntime::IsStone(((pkChr) ? (pkChr)->GetEntityHandle() : entt::null)))
 	{
 		eventPtr = CheckEventIsActive(DOUBLE_METIN_LOOT_EVENT, killerEmpire);
 		if (eventPtr && RollEventChance(eventPtr->value[3]))
@@ -1680,32 +1685,32 @@ void CHARACTER_MANAGER::CheckEventForDrop(LPCHARACTER pkChr, LPCHARACTER pkKille
 			for (const auto& vItem : vec_item)
 			{
 				rewardItem = ITEM_MANAGER::Instance().CreateItem(ItemSystem::GetItemVnum(vItem), ItemSystem::GetItemCount(vItem), 0, true);
-				if (rewardItem) m_cache.emplace_back(EntityFactory::CreateItemEntity(g_registry, rewardItem));
+				if (rewardItem) m_cache.emplace_back((rewardItem ? rewardItem->GetEntityHandle() : entt::null));
 			}
 			for (const auto& rItem : m_cache)
 				vec_item.emplace_back(rItem);
 
 		}
 	}
-	else if (ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkChr)) == 693//Szellem orkvezr
-		|| ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkChr)) == 2832//Shen tbornok
-		|| ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkChr)) == 6191//Nemere
-		|| ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkChr)) == 768//slime
-		|| ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkChr)) == 1093//Kaszs
-		|| ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkChr)) == 3491//Triton
-		|| ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkChr)) == 2493//Beran-Setaou
-		|| ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkChr)) == 4158//Szfinksz
-		|| ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkChr)) == 4203//Agares
-		|| ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkChr)) == 2598//Irn Azrael
-		|| ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkChr)) == 719//Ru-Taig
-		|| ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkChr)) == 6393//Ers Ochao fejedelem
-		|| ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkChr)) == 6191//Nemere
-		|| ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkChr)) == 6091//Razador
-		|| ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkChr)) == 2092//Pk-brn
-		|| ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkChr)) == 4815//	Fagyvész zsarnok óriás
-		|| ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkChr)) == 4584//Fandalia nover
-		|| ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkChr)) == 4011//Eien (BOSS)
-		|| ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkChr)) == 3910//Skeletos
+	else if (ecs::PlayerRuntime::GetRaceNum(((pkChr) ? (pkChr)->GetEntityHandle() : entt::null)) == 693//Szellem orkvezr
+		|| ecs::PlayerRuntime::GetRaceNum(((pkChr) ? (pkChr)->GetEntityHandle() : entt::null)) == 2832//Shen tbornok
+		|| ecs::PlayerRuntime::GetRaceNum(((pkChr) ? (pkChr)->GetEntityHandle() : entt::null)) == 6191//Nemere
+		|| ecs::PlayerRuntime::GetRaceNum(((pkChr) ? (pkChr)->GetEntityHandle() : entt::null)) == 768//slime
+		|| ecs::PlayerRuntime::GetRaceNum(((pkChr) ? (pkChr)->GetEntityHandle() : entt::null)) == 1093//Kaszs
+		|| ecs::PlayerRuntime::GetRaceNum(((pkChr) ? (pkChr)->GetEntityHandle() : entt::null)) == 3491//Triton
+		|| ecs::PlayerRuntime::GetRaceNum(((pkChr) ? (pkChr)->GetEntityHandle() : entt::null)) == 2493//Beran-Setaou
+		|| ecs::PlayerRuntime::GetRaceNum(((pkChr) ? (pkChr)->GetEntityHandle() : entt::null)) == 4158//Szfinksz
+		|| ecs::PlayerRuntime::GetRaceNum(((pkChr) ? (pkChr)->GetEntityHandle() : entt::null)) == 4203//Agares
+		|| ecs::PlayerRuntime::GetRaceNum(((pkChr) ? (pkChr)->GetEntityHandle() : entt::null)) == 2598//Irn Azrael
+		|| ecs::PlayerRuntime::GetRaceNum(((pkChr) ? (pkChr)->GetEntityHandle() : entt::null)) == 719//Ru-Taig
+		|| ecs::PlayerRuntime::GetRaceNum(((pkChr) ? (pkChr)->GetEntityHandle() : entt::null)) == 6393//Ers Ochao fejedelem
+		|| ecs::PlayerRuntime::GetRaceNum(((pkChr) ? (pkChr)->GetEntityHandle() : entt::null)) == 6191//Nemere
+		|| ecs::PlayerRuntime::GetRaceNum(((pkChr) ? (pkChr)->GetEntityHandle() : entt::null)) == 6091//Razador
+		|| ecs::PlayerRuntime::GetRaceNum(((pkChr) ? (pkChr)->GetEntityHandle() : entt::null)) == 2092//Pk-brn
+		|| ecs::PlayerRuntime::GetRaceNum(((pkChr) ? (pkChr)->GetEntityHandle() : entt::null)) == 4815//	Fagyvész zsarnok óriás
+		|| ecs::PlayerRuntime::GetRaceNum(((pkChr) ? (pkChr)->GetEntityHandle() : entt::null)) == 4584//Fandalia nover
+		|| ecs::PlayerRuntime::GetRaceNum(((pkChr) ? (pkChr)->GetEntityHandle() : entt::null)) == 4011//Eien (BOSS)
+		|| ecs::PlayerRuntime::GetRaceNum(((pkChr) ? (pkChr)->GetEntityHandle() : entt::null)) == 3910//Skeletos
 
 
 
@@ -1719,42 +1724,42 @@ void CHARACTER_MANAGER::CheckEventForDrop(LPCHARACTER pkChr, LPCHARACTER pkKille
 			{
 				rewardItem = ITEM_MANAGER::Instance().CreateItem(ItemSystem::GetItemVnum(vItem), ItemSystem::GetItemCount(vItem), 0, true);
 				if (rewardItem)
-					m_cache.emplace_back(EntityFactory::CreateItemEntity(g_registry, rewardItem));
+					m_cache.emplace_back((rewardItem ? rewardItem->GetEntityHandle() : entt::null));
 			}
 
 			for (const auto& rItem : m_cache)
 				vec_item.emplace_back(rItem);
 
 		}
-		if (ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkChr)) == 4011)
+		if (ecs::PlayerRuntime::GetRaceNum(((pkChr) ? (pkChr)->GetEntityHandle() : entt::null)) == 4011)
 		{
 			LPITEM extraDrop = ITEM_MANAGER::Instance().CreateItem(50101, 1, 0, true);
 			if (extraDrop)
-				vec_item.emplace_back(EntityFactory::CreateItemEntity(g_registry, extraDrop));
+				vec_item.emplace_back((extraDrop ? extraDrop->GetEntityHandle() : entt::null));
 		}
 	}
-	else if (ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkChr)) == 491//map1
-		|| ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkChr)) == 492//map1
-		|| ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkChr)) == 493//map1
-		|| ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkChr)) == 494//map1
-		|| ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkChr)) == 691//orkvezr
-		|| ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkChr)) == 2491//Yonghan Parancsnok
-		|| ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkChr)) == 3590//Arccsont
-		|| ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkChr)) == 3490//Kappa tbornok
-		|| ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkChr)) == 3690//Homr tbornok
-		|| ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkChr)) == 3691//Tarisznyark kirly
-		|| ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkChr)) == 3791//Wubba kirly
-		|| ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkChr)) == 3591//Vrs fnk
-		|| ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkChr)) == 3595//Brutlis Arccsont
-		|| ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkChr)) == 4157//Anubis
-		|| ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkChr)) == 4155//Bastet
-		|| ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkChr)) == 4156//Ra
-		|| ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkChr)) == 2597//Charon
-		|| ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkChr)) == 5001//Szellem I
-		|| ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkChr)) == 6407//En-Tai uralkod
-		|| ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkChr)) == 6408//Bagjanamu
-		|| ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkChr)) == 2206//Lngkirly
-		|| ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkChr)) == 2094//Pk-br
+	else if (ecs::PlayerRuntime::GetRaceNum(((pkChr) ? (pkChr)->GetEntityHandle() : entt::null)) == 491//map1
+		|| ecs::PlayerRuntime::GetRaceNum(((pkChr) ? (pkChr)->GetEntityHandle() : entt::null)) == 492//map1
+		|| ecs::PlayerRuntime::GetRaceNum(((pkChr) ? (pkChr)->GetEntityHandle() : entt::null)) == 493//map1
+		|| ecs::PlayerRuntime::GetRaceNum(((pkChr) ? (pkChr)->GetEntityHandle() : entt::null)) == 494//map1
+		|| ecs::PlayerRuntime::GetRaceNum(((pkChr) ? (pkChr)->GetEntityHandle() : entt::null)) == 691//orkvezr
+		|| ecs::PlayerRuntime::GetRaceNum(((pkChr) ? (pkChr)->GetEntityHandle() : entt::null)) == 2491//Yonghan Parancsnok
+		|| ecs::PlayerRuntime::GetRaceNum(((pkChr) ? (pkChr)->GetEntityHandle() : entt::null)) == 3590//Arccsont
+		|| ecs::PlayerRuntime::GetRaceNum(((pkChr) ? (pkChr)->GetEntityHandle() : entt::null)) == 3490//Kappa tbornok
+		|| ecs::PlayerRuntime::GetRaceNum(((pkChr) ? (pkChr)->GetEntityHandle() : entt::null)) == 3690//Homr tbornok
+		|| ecs::PlayerRuntime::GetRaceNum(((pkChr) ? (pkChr)->GetEntityHandle() : entt::null)) == 3691//Tarisznyark kirly
+		|| ecs::PlayerRuntime::GetRaceNum(((pkChr) ? (pkChr)->GetEntityHandle() : entt::null)) == 3791//Wubba kirly
+		|| ecs::PlayerRuntime::GetRaceNum(((pkChr) ? (pkChr)->GetEntityHandle() : entt::null)) == 3591//Vrs fnk
+		|| ecs::PlayerRuntime::GetRaceNum(((pkChr) ? (pkChr)->GetEntityHandle() : entt::null)) == 3595//Brutlis Arccsont
+		|| ecs::PlayerRuntime::GetRaceNum(((pkChr) ? (pkChr)->GetEntityHandle() : entt::null)) == 4157//Anubis
+		|| ecs::PlayerRuntime::GetRaceNum(((pkChr) ? (pkChr)->GetEntityHandle() : entt::null)) == 4155//Bastet
+		|| ecs::PlayerRuntime::GetRaceNum(((pkChr) ? (pkChr)->GetEntityHandle() : entt::null)) == 4156//Ra
+		|| ecs::PlayerRuntime::GetRaceNum(((pkChr) ? (pkChr)->GetEntityHandle() : entt::null)) == 2597//Charon
+		|| ecs::PlayerRuntime::GetRaceNum(((pkChr) ? (pkChr)->GetEntityHandle() : entt::null)) == 5001//Szellem I
+		|| ecs::PlayerRuntime::GetRaceNum(((pkChr) ? (pkChr)->GetEntityHandle() : entt::null)) == 6407//En-Tai uralkod
+		|| ecs::PlayerRuntime::GetRaceNum(((pkChr) ? (pkChr)->GetEntityHandle() : entt::null)) == 6408//Bagjanamu
+		|| ecs::PlayerRuntime::GetRaceNum(((pkChr) ? (pkChr)->GetEntityHandle() : entt::null)) == 2206//Lngkirly
+		|| ecs::PlayerRuntime::GetRaceNum(((pkChr) ? (pkChr)->GetEntityHandle() : entt::null)) == 2094//Pk-br
 		)
 	{
 		eventPtr = CheckEventIsActive(DOUBLE_BOSS_LOOT_EVENT, killerEmpire);
@@ -1766,7 +1771,7 @@ void CHARACTER_MANAGER::CheckEventForDrop(LPCHARACTER pkChr, LPCHARACTER pkKille
 			{
 				rewardItem = ITEM_MANAGER::Instance().CreateItem(ItemSystem::GetItemVnum(vItem), ItemSystem::GetItemCount(vItem), 0, true);
 				if (rewardItem)
-					m_cache.emplace_back(EntityFactory::CreateItemEntity(g_registry, rewardItem));
+					m_cache.emplace_back((rewardItem ? rewardItem->GetEntityHandle() : entt::null));
 			}
 
 			for (const auto& rItem : m_cache)
@@ -1790,7 +1795,7 @@ void CHARACTER_MANAGER::CheckEventForDrop(LPCHARACTER pkChr, LPCHARACTER pkKille
 				if (missionBook == itemVnum)
 				{
 					rewardItem = ITEM_MANAGER::Instance().CreateItem(itemVnum, ItemSystem::GetItemCount(vItem), 0, true);
-					if (rewardItem) m_cache.emplace_back(EntityFactory::CreateItemEntity(g_registry, rewardItem));
+					if (rewardItem) m_cache.emplace_back((rewardItem ? rewardItem->GetEntityHandle() : entt::null));
 
 					break;
 				}
@@ -1814,7 +1819,7 @@ void CHARACTER_MANAGER::CheckEventForDrop(LPCHARACTER pkChr, LPCHARACTER pkKille
 				if (ticketItem == itemVnum)
 				{
 					rewardItem = ITEM_MANAGER::Instance().CreateItem(itemVnum, ItemSystem::GetItemCount(vItem), 0, true);
-					if (rewardItem) m_cache.emplace_back(EntityFactory::CreateItemEntity(g_registry, rewardItem));
+					if (rewardItem) m_cache.emplace_back((rewardItem ? rewardItem->GetEntityHandle() : entt::null));
 
 					break;
 				}
@@ -1829,7 +1834,7 @@ void CHARACTER_MANAGER::CheckEventForDrop(LPCHARACTER pkChr, LPCHARACTER pkKille
 
 		// If your moonlight item vnum is different change 50011!
 		LPITEM item = ITEM_MANAGER::Instance().CreateItem(50011, 1, 0, true);
-		if (item) vec_item.emplace_back(EntityFactory::CreateItemEntity(g_registry, item));
+		if (item) vec_item.emplace_back((item ? item->GetEntityHandle() : entt::null));
 
 	}
 	eventPtr = CheckEventIsActive(LELEKGOMB_EVENT, killerEmpire);
@@ -1838,7 +1843,7 @@ void CHARACTER_MANAGER::CheckEventForDrop(LPCHARACTER pkChr, LPCHARACTER pkKille
 
 		// If your moonlight item vnum is different change 50011!
 		LPITEM item = ITEM_MANAGER::Instance().CreateItem(30135, 1, 0, true);
-		if (item) vec_item.emplace_back(EntityFactory::CreateItemEntity(g_registry, item));
+		if (item) vec_item.emplace_back((item ? item->GetEntityHandle() : entt::null));
 
 	}
 
@@ -1848,7 +1853,7 @@ void CHARACTER_MANAGER::CheckEventForDrop(LPCHARACTER pkChr, LPCHARACTER pkKille
 
 		// If your moonlight item vnum is different change 50011!
 		LPITEM item = ITEM_MANAGER::Instance().CreateItem(50037, 1, 0, true);
-		if (item) vec_item.emplace_back(EntityFactory::CreateItemEntity(g_registry, item));
+		if (item) vec_item.emplace_back((item ? item->GetEntityHandle() : entt::null));
 
 	}
 	eventPtr = CheckEventIsActive(MIKI_EVENT, killerEmpire);
@@ -1857,7 +1862,7 @@ void CHARACTER_MANAGER::CheckEventForDrop(LPCHARACTER pkChr, LPCHARACTER pkKille
 
 		// If your moonlight item vnum is different change 50011!
 		LPITEM item = ITEM_MANAGER::Instance().CreateItem(50010, 1, 0, true);
-		if (item) vec_item.emplace_back(EntityFactory::CreateItemEntity(g_registry, item));
+		if (item) vec_item.emplace_back((item ? item->GetEntityHandle() : entt::null));
 
 	}
 
@@ -1867,11 +1872,11 @@ void CHARACTER_MANAGER::CheckEventForDrop(LPCHARACTER pkChr, LPCHARACTER pkKille
 
 		const uint32_t dwBossVnum = eventPtr->value[0];
 
-		if (dwBossVnum && pkChr && ecs::PlayerRuntime::IsStone(AIHelpers::EcsOf(pkChr)) && pkKiller && ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(pkKiller)))
+		if (dwBossVnum && pkChr && ecs::PlayerRuntime::IsStone(((pkChr) ? (pkChr)->GetEntityHandle() : entt::null)) && pkKiller && ecs::PlayerRuntime::IsPC(((pkKiller) ? (pkKiller)->GetEntityHandle() : entt::null)))
 		{
-			const int32_t mapIndex = ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(pkChr));
-			const int32_t baseX = ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(pkChr));
-			const int32_t baseY = ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(pkChr));
+			const int32_t mapIndex = ecs::PlayerRuntime::GetMapIndex(((pkChr) ? (pkChr)->GetEntityHandle() : entt::null));
+			const int32_t baseX = ecs::PlayerRuntime::GetX(((pkChr) ? (pkChr)->GetEntityHandle() : entt::null));
+			const int32_t baseY = ecs::PlayerRuntime::GetY(((pkChr) ? (pkChr)->GetEntityHandle() : entt::null));
 			const int32_t baseZ = pkChr->GetZ();
 
 			LPCHARACTER boss = nullptr;
@@ -1909,11 +1914,11 @@ void CHARACTER_MANAGER::CheckEventForDrop(LPCHARACTER pkChr, LPCHARACTER pkKille
 		{
 			const uint32_t dwBossVnum = eventPtr->value[0];
 
-			if (dwBossVnum && pkChr && ecs::PlayerRuntime::IsStone(AIHelpers::EcsOf(pkChr)) && pkKiller && ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(pkKiller)))
+			if (dwBossVnum && pkChr && ecs::PlayerRuntime::IsStone(((pkChr) ? (pkChr)->GetEntityHandle() : entt::null)) && pkKiller && ecs::PlayerRuntime::IsPC(((pkKiller) ? (pkKiller)->GetEntityHandle() : entt::null)))
 			{
-				const int32_t mapIndex = ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(pkChr));
-				const int32_t baseX = ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(pkChr));
-				const int32_t baseY = ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(pkChr));
+				const int32_t mapIndex = ecs::PlayerRuntime::GetMapIndex(((pkChr) ? (pkChr)->GetEntityHandle() : entt::null));
+				const int32_t baseX = ecs::PlayerRuntime::GetX(((pkChr) ? (pkChr)->GetEntityHandle() : entt::null));
+				const int32_t baseY = ecs::PlayerRuntime::GetY(((pkChr) ? (pkChr)->GetEntityHandle() : entt::null));
 				const int32_t baseZ = pkChr->GetZ();
 
 				LPCHARACTER boss = nullptr;
@@ -1942,7 +1947,7 @@ void CHARACTER_MANAGER::CheckEventForDrop(LPCHARACTER pkChr, LPCHARACTER pkKille
 		{
 			LPITEM item = ITEM_MANAGER::instance().CreateItem(50181, 1, 0, true);//egy néger kosár fasz
 			if (item)
-				vec_item.emplace_back(EntityFactory::CreateItemEntity(g_registry, item));
+				vec_item.emplace_back((item ? item->GetEntityHandle() : entt::null));
 		}
 	}
 	eventPtr = CheckEventIsActive(KARI_EVENT, killerEmpire);
@@ -1956,74 +1961,74 @@ void CHARACTER_MANAGER::CheckEventForDrop(LPCHARACTER pkChr, LPCHARACTER pkKille
 
 		// If your moonlight item vnum is different change 50011!
 		LPITEM item = ITEM_MANAGER::Instance().CreateItem(39068, 1, 0, true);
-		if (item) vec_item.emplace_back(EntityFactory::CreateItemEntity(g_registry, item));
+		if (item) vec_item.emplace_back((item ? item->GetEntityHandle() : entt::null));
 
 	}
 	eventPtr = CheckEventIsActive(DUPLA_BOSS_PONT_EVENT, killerEmpire);
 	if (eventPtr && RollEventChance(eventPtr->value[3]))
 	{
 		if (
-			ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkChr)) == 491 || // map1
-			ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkChr)) == 492 || // map1
-			ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkChr)) == 493 || // map1
-			ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkChr)) == 494 || // map1
-			ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkChr)) == 691 || // Orkvezr
-			ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkChr)) == 2491 || // Yonghan Parancsnok
-			ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkChr)) == 3590 || // Arccsont
-			ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkChr)) == 3490 || // Kappa tbornok
-			ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkChr)) == 3690 || // Homr tbornok
-			ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkChr)) == 3691 || // Tarisznyark kirly
-			ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkChr)) == 3791 || // Wubba kirly
-			ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkChr)) == 3591 || // Vrs fnk
-			ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkChr)) == 3595 || // Brutlis Arccsont
-			ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkChr)) == 4157 || // Anubis
-			ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkChr)) == 4155 || // Bastet
-			ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkChr)) == 4156 || // Ra
-			ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkChr)) == 2597 || // Charon
-			ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkChr)) == 5001 || // Szellem I
-			ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkChr)) == 6407 || // En-Tai uralkod
-			ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkChr)) == 6408 || // Bagjanamu
-			ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkChr)) == 2206 || // Lngkirly
-			ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkChr)) == 2094    // Pk-br
+			ecs::PlayerRuntime::GetRaceNum(((pkChr) ? (pkChr)->GetEntityHandle() : entt::null)) == 491 || // map1
+			ecs::PlayerRuntime::GetRaceNum(((pkChr) ? (pkChr)->GetEntityHandle() : entt::null)) == 492 || // map1
+			ecs::PlayerRuntime::GetRaceNum(((pkChr) ? (pkChr)->GetEntityHandle() : entt::null)) == 493 || // map1
+			ecs::PlayerRuntime::GetRaceNum(((pkChr) ? (pkChr)->GetEntityHandle() : entt::null)) == 494 || // map1
+			ecs::PlayerRuntime::GetRaceNum(((pkChr) ? (pkChr)->GetEntityHandle() : entt::null)) == 691 || // Orkvezr
+			ecs::PlayerRuntime::GetRaceNum(((pkChr) ? (pkChr)->GetEntityHandle() : entt::null)) == 2491 || // Yonghan Parancsnok
+			ecs::PlayerRuntime::GetRaceNum(((pkChr) ? (pkChr)->GetEntityHandle() : entt::null)) == 3590 || // Arccsont
+			ecs::PlayerRuntime::GetRaceNum(((pkChr) ? (pkChr)->GetEntityHandle() : entt::null)) == 3490 || // Kappa tbornok
+			ecs::PlayerRuntime::GetRaceNum(((pkChr) ? (pkChr)->GetEntityHandle() : entt::null)) == 3690 || // Homr tbornok
+			ecs::PlayerRuntime::GetRaceNum(((pkChr) ? (pkChr)->GetEntityHandle() : entt::null)) == 3691 || // Tarisznyark kirly
+			ecs::PlayerRuntime::GetRaceNum(((pkChr) ? (pkChr)->GetEntityHandle() : entt::null)) == 3791 || // Wubba kirly
+			ecs::PlayerRuntime::GetRaceNum(((pkChr) ? (pkChr)->GetEntityHandle() : entt::null)) == 3591 || // Vrs fnk
+			ecs::PlayerRuntime::GetRaceNum(((pkChr) ? (pkChr)->GetEntityHandle() : entt::null)) == 3595 || // Brutlis Arccsont
+			ecs::PlayerRuntime::GetRaceNum(((pkChr) ? (pkChr)->GetEntityHandle() : entt::null)) == 4157 || // Anubis
+			ecs::PlayerRuntime::GetRaceNum(((pkChr) ? (pkChr)->GetEntityHandle() : entt::null)) == 4155 || // Bastet
+			ecs::PlayerRuntime::GetRaceNum(((pkChr) ? (pkChr)->GetEntityHandle() : entt::null)) == 4156 || // Ra
+			ecs::PlayerRuntime::GetRaceNum(((pkChr) ? (pkChr)->GetEntityHandle() : entt::null)) == 2597 || // Charon
+			ecs::PlayerRuntime::GetRaceNum(((pkChr) ? (pkChr)->GetEntityHandle() : entt::null)) == 5001 || // Szellem I
+			ecs::PlayerRuntime::GetRaceNum(((pkChr) ? (pkChr)->GetEntityHandle() : entt::null)) == 6407 || // En-Tai uralkod
+			ecs::PlayerRuntime::GetRaceNum(((pkChr) ? (pkChr)->GetEntityHandle() : entt::null)) == 6408 || // Bagjanamu
+			ecs::PlayerRuntime::GetRaceNum(((pkChr) ? (pkChr)->GetEntityHandle() : entt::null)) == 2206 || // Lngkirly
+			ecs::PlayerRuntime::GetRaceNum(((pkChr) ? (pkChr)->GetEntityHandle() : entt::null)) == 2094    // Pk-br
 			)
 		{
 			// === DROP ===
 			LPITEM item = ITEM_MANAGER::Instance().CreateItem(99998, 1, 0, true);
 			if (item)
-				vec_item.emplace_back(EntityFactory::CreateItemEntity(g_registry, item));
+				vec_item.emplace_back((item ? item->GetEntityHandle() : entt::null));
 		}
 	}
 	eventPtr = CheckEventIsActive(DUPLA_RUN_PONT_EVENT, killerEmpire);
 	if (eventPtr && RollEventChance(eventPtr->value[3]))
 	{
-		if (ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkChr)) == 693//Szellem orkvezr
-			|| ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkChr)) == 2832//Shen tbornok
-			|| ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkChr)) == 4584//Blood run
-			|| ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkChr)) == 6191//Nemere
-			|| ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkChr)) == 768//slime
-			|| ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkChr)) == 1093//Kaszs
-			|| ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkChr)) == 3491//Triton
-			|| ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkChr)) == 2493//Beran-Setaou
-			|| ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkChr)) == 4158//Szfinksz
-			|| ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkChr)) == 4203//Agares
-			|| ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkChr)) == 2598//Irn Azrael
-			|| ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkChr)) == 719//Ru-Taig
-			|| ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkChr)) == 6393//Er s Ochao fejedelem
-			|| ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkChr)) == 6191//Nemere
-			|| ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkChr)) == 6091//Razador
-			|| ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkChr)) == 2092//Pk-b
-			|| ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkChr)) == 4011//Eien (BOSS
-			|| ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkChr)) == 6192//	Jotun Thrym/
-			|| ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkChr)) == 3910//Skeletos
+		if (ecs::PlayerRuntime::GetRaceNum(((pkChr) ? (pkChr)->GetEntityHandle() : entt::null)) == 693//Szellem orkvezr
+			|| ecs::PlayerRuntime::GetRaceNum(((pkChr) ? (pkChr)->GetEntityHandle() : entt::null)) == 2832//Shen tbornok
+			|| ecs::PlayerRuntime::GetRaceNum(((pkChr) ? (pkChr)->GetEntityHandle() : entt::null)) == 4584//Blood run
+			|| ecs::PlayerRuntime::GetRaceNum(((pkChr) ? (pkChr)->GetEntityHandle() : entt::null)) == 6191//Nemere
+			|| ecs::PlayerRuntime::GetRaceNum(((pkChr) ? (pkChr)->GetEntityHandle() : entt::null)) == 768//slime
+			|| ecs::PlayerRuntime::GetRaceNum(((pkChr) ? (pkChr)->GetEntityHandle() : entt::null)) == 1093//Kaszs
+			|| ecs::PlayerRuntime::GetRaceNum(((pkChr) ? (pkChr)->GetEntityHandle() : entt::null)) == 3491//Triton
+			|| ecs::PlayerRuntime::GetRaceNum(((pkChr) ? (pkChr)->GetEntityHandle() : entt::null)) == 2493//Beran-Setaou
+			|| ecs::PlayerRuntime::GetRaceNum(((pkChr) ? (pkChr)->GetEntityHandle() : entt::null)) == 4158//Szfinksz
+			|| ecs::PlayerRuntime::GetRaceNum(((pkChr) ? (pkChr)->GetEntityHandle() : entt::null)) == 4203//Agares
+			|| ecs::PlayerRuntime::GetRaceNum(((pkChr) ? (pkChr)->GetEntityHandle() : entt::null)) == 2598//Irn Azrael
+			|| ecs::PlayerRuntime::GetRaceNum(((pkChr) ? (pkChr)->GetEntityHandle() : entt::null)) == 719//Ru-Taig
+			|| ecs::PlayerRuntime::GetRaceNum(((pkChr) ? (pkChr)->GetEntityHandle() : entt::null)) == 6393//Er s Ochao fejedelem
+			|| ecs::PlayerRuntime::GetRaceNum(((pkChr) ? (pkChr)->GetEntityHandle() : entt::null)) == 6191//Nemere
+			|| ecs::PlayerRuntime::GetRaceNum(((pkChr) ? (pkChr)->GetEntityHandle() : entt::null)) == 6091//Razador
+			|| ecs::PlayerRuntime::GetRaceNum(((pkChr) ? (pkChr)->GetEntityHandle() : entt::null)) == 2092//Pk-b
+			|| ecs::PlayerRuntime::GetRaceNum(((pkChr) ? (pkChr)->GetEntityHandle() : entt::null)) == 4011//Eien (BOSS
+			|| ecs::PlayerRuntime::GetRaceNum(((pkChr) ? (pkChr)->GetEntityHandle() : entt::null)) == 6192//	Jotun Thrym/
+			|| ecs::PlayerRuntime::GetRaceNum(((pkChr) ? (pkChr)->GetEntityHandle() : entt::null)) == 3910//Skeletos
 			)
 		{
 			// === DROP ===
 			LPITEM item = ITEM_MANAGER::Instance().CreateItem(99999, 1, 0, true);
 			if (item)
-				vec_item.emplace_back(EntityFactory::CreateItemEntity(g_registry, item));
+				vec_item.emplace_back((item ? item->GetEntityHandle() : entt::null));
 		}
 	}
-	if (ecs::PlayerRuntime::IsStone(AIHelpers::EcsOf(pkChr)))
+	if (ecs::PlayerRuntime::IsStone(((pkChr) ? (pkChr)->GetEntityHandle() : entt::null)))
 	{
 		eventPtr = CheckEventIsActive(DUPLA_SZILI_EVENT, killerEmpire);
 		if (eventPtr && RollEventChance(eventPtr->value[3]))
@@ -2037,7 +2042,7 @@ void CHARACTER_MANAGER::CheckEventForDrop(LPCHARACTER pkChr, LPCHARACTER pkKille
 				{
 					rewardItem = ITEM_MANAGER::Instance().CreateItem(30271, ItemSystem::GetItemCount(vItem), 0, true);
 					if (rewardItem)
-						m_cache.emplace_back(EntityFactory::CreateItemEntity(g_registry, rewardItem));
+						m_cache.emplace_back((rewardItem ? rewardItem->GetEntityHandle() : entt::null));
 				}
 			}
 
@@ -2089,9 +2094,9 @@ void CHARACTER_MANAGER::UpdateAllPlayerEventData()
 void CHARACTER_MANAGER::SendDataPlayer(LPCHARACTER ch)
 {
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "char_manager.cpp::CHARACTER_MANAGER::SendDataPlayer");//INGAME_DEBUG_RAZOR93
+	ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "char_manager.cpp::CHARACTER_MANAGER::SendDataPlayer");//INGAME_DEBUG_RAZOR93
 #endif
-	auto desc = ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch));
+	auto desc = ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null));
 	if (!desc)
 		return;
 	TEMP_BUFFER buf;
@@ -2172,7 +2177,7 @@ void CHARACTER_MANAGER::SetEventStatus(const uint16_t eventID, const bool eventS
 			if (!ch) continue;
 
 #ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_BIG_NOTICE, eventStatus ? it->second.first : it->second.second, "");
+			ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_BIG_NOTICE, eventStatus ? it->second.first : it->second.second, "");
 #endif
 		}
 	}
@@ -2188,7 +2193,7 @@ void CHARACTER_MANAGER::SetEventStatus(const uint16_t eventID, const bool eventS
 			if (!ch)
 				continue;
 			if (eventData->empireFlag != 0)
-				if (eventData->empireFlag != ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(ch)))
+				if (eventData->empireFlag != ecs::PlayerRuntime::GetEmpire(((ch) ? (ch)->GetEntityHandle() : entt::null)))
 					continue;
 			if (eventData->channelFlag != 0)
 				if (eventData->channelFlag != g_bChannel)
@@ -2243,7 +2248,7 @@ void CHARACTER_MANAGER::SetEventData(uint8_t dayIndex, const std::vector<TEventM
 void CHARACTER_MANAGER::LoadItemShopLogReal(LPCHARACTER ch, const char* c_pData)
 {
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "char_manager.cpp::CHARACTER_MANAGER::LoadItemShopLogReal");//INGAME_DEBUG_RAZOR93
+	ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "char_manager.cpp::CHARACTER_MANAGER::LoadItemShopLogReal");//INGAME_DEBUG_RAZOR93
 #endif
 	if (!ch)
 		return;
@@ -2274,24 +2279,24 @@ void CHARACTER_MANAGER::LoadItemShopLogReal(LPCHARACTER ch, const char* c_pData)
 	if (logCount)
 		buf.write(m_vec.data(), sizeof(TIShopLogData) * logCount);
 
-	ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->Packet(buf.read_peek(), buf.size());
+	ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null))->Packet(buf.read_peek(), buf.size());
 }
 void CHARACTER_MANAGER::LoadItemShopLog(LPCHARACTER ch)
 {
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "char_manager.cpp::CHARACTER_MANAGER::LoadItemShopLog");//INGAME_DEBUG_RAZOR93
+	ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "char_manager.cpp::CHARACTER_MANAGER::LoadItemShopLog");//INGAME_DEBUG_RAZOR93
 #endif
 	uint8_t subIndex = ITEMSHOP_LOG;
-	uint32_t accountID = ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->GetAccountTable().id;
+	uint32_t accountID = ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null))->GetAccountTable().id;
 
-	db_clientdesc->DBPacketHeader(HEADER_GD_ITEMSHOP, ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->GetHandle(), sizeof(uint8_t) + sizeof(uint32_t));
+	db_clientdesc->DBPacketHeader(HEADER_GD_ITEMSHOP, ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null))->GetHandle(), sizeof(uint8_t) + sizeof(uint32_t));
 	db_clientdesc->Packet(&subIndex, sizeof(uint8_t));
 	db_clientdesc->Packet(&accountID, sizeof(uint32_t));
 }
 void CHARACTER_MANAGER::LoadItemShopData(LPCHARACTER ch, bool isAll)
 {
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "char_manager.cpp::CHARACTER_MANAGER::LoadItemShopData");//INGAME_DEBUG_RAZOR93
+	ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "char_manager.cpp::CHARACTER_MANAGER::LoadItemShopData");//INGAME_DEBUG_RAZOR93
 #endif
 	TEMP_BUFFER buf;
 	TPacketGCItemShop p;
@@ -2380,7 +2385,7 @@ void CHARACTER_MANAGER::LoadItemShopData(LPCHARACTER ch, bool isAll)
 		int categoryTotalSize = 9999;
 		buf.write(&categoryTotalSize, sizeof(int));
 	}
-	ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->Packet(buf.read_peek(), buf.size());
+	ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null))->Packet(buf.read_peek(), buf.size());
 }
 
 
@@ -2409,7 +2414,7 @@ bool CHARACTER_MANAGER::GetItemShopDataByVnum(uint32_t vnum, TIShopData& outData
 void CHARACTER_MANAGER::LoadItemShopBuyReal(LPCHARACTER ch, const char* c_pData)
 {
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "char_manager.cpp::CHARACTER_MANAGER::LoadItemShopBuyReal");//INGAME_DEBUG_RAZOR93
+	ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "char_manager.cpp::CHARACTER_MANAGER::LoadItemShopBuyReal");//INGAME_DEBUG_RAZOR93
 #endif
 	if (!ch)
 		return;
@@ -2418,21 +2423,21 @@ void CHARACTER_MANAGER::LoadItemShopBuyReal(LPCHARACTER ch, const char* c_pData)
 
 	if (returnType == 0)
 	{
-		ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "You don't have enought dragon coin!");
+		ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "You don't have enought dragon coin!");
 		return;
 	}
 	else if (returnType == 1)
 	{
 		const int weekMaxCount = *(int*)c_pData;
 		c_pData += sizeof(int);
-		ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "You cannot exceed the weekly purchase count.");
+		ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "You cannot exceed the weekly purchase count.");
 		return;
 	}
 	else if (returnType == 2)
 	{
 		const int monthMaxCount = *(int*)c_pData;
 		c_pData += sizeof(int);
-		ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "You cannot exceed the monthly purchase count.");
+		ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "You cannot exceed the monthly purchase count.");
 		return;
 	}
 
@@ -2480,7 +2485,7 @@ void CHARACTER_MANAGER::LoadItemShopBuyReal(LPCHARACTER ch, const char* c_pData)
 
 		buf.write(&logData, sizeof(TIShopLogData));
 	}
-	ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->Packet(buf.read_peek(), buf.size());
+	ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null))->Packet(buf.read_peek(), buf.size());
 
 	if (returnType == 3)
 	{
@@ -2495,7 +2500,7 @@ void CHARACTER_MANAGER::LoadItemShopBuyReal(LPCHARACTER ch, const char* c_pData)
 				for (size_t i = 0; i < ITEM_SOCKET_MAX_NUM; ++i)
 					alSockets[i] = itemData.alSocket[i];
 
-				const TItemTable* itemProto = ItemSystem::GetItemProto(EntityFactory::CreateItemEntity(g_registry, item));
+				const TItemTable* itemProto = ItemSystem::GetItemProto((item ? item->GetEntityHandle() : entt::null));
 				if (itemProto != nullptr && alSockets[ITEM_SOCKET_REMAIN_SEC] == 0)
 				{
 					for (const auto& limit : itemProto->aLimits)
@@ -2520,20 +2525,20 @@ void CHARACTER_MANAGER::LoadItemShopBuyReal(LPCHARACTER ch, const char* c_pData)
 				}
 
 				for (size_t i = 0; i < ITEM_SOCKET_MAX_NUM; ++i)
-					ItemSystem::SetItemSocket(EntityFactory::CreateItemEntity(g_registry, item), i, alSockets[i]);
+					ItemSystem::SetItemSocket((item ? item->GetEntityHandle() : entt::null), i, alSockets[i]);
 
 				for (size_t i = 0; i < ITEM_ATTRIBUTE_MAX_NUM; ++i)
 				{
 					const TPlayerItemAttribute& attribute = itemData.aAttr[i];
 					if (attribute.bType != 0)
-						ItemSystem::SetItemForceAttributeEcs(EntityFactory::CreateItemEntity(g_registry, item), i, attribute.bType, attribute.sValue);
+						ItemSystem::SetItemForceAttributeEcs((item ? item->GetEntityHandle() : entt::null), i, attribute.bType, attribute.sValue);
 				}
 
 				ch->AutoGiveItem(item);
 			}
 			else
 			{
-				LOG_ERROR("ItemShop purchase failed to create item vnum {} for {}", itemVnum, ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data());
+				LOG_ERROR("ItemShop purchase failed to create item vnum {} for {}", itemVnum, ecs::PlayerRuntime::GetName(((ch) ? (ch)->GetEntityHandle() : entt::null)).data());
 			}
 		}
 		else
@@ -2548,28 +2553,28 @@ void CHARACTER_MANAGER::LoadItemShopBuyReal(LPCHARACTER ch, const char* c_pData)
 		LPITEM item = ITEM_MANAGER::instance().CreateItem(mallItem.vnum, mallItem.count, mallItem.id);
 		if (item)
 		{
-			ItemSystem::SetItemSkipSave(EntityFactory::CreateItemEntity(g_registry, item), true);
+			ItemSystem::SetItemSkipSave((item ? item->GetEntityHandle() : entt::null), true);
 			item->SetSockets(mallItem.alSockets);
 			item->SetAttributes(mallItem.aAttr);
 #ifdef ATTR_LOCK
 			item->SetLockedAttr(mallItem.lockedattr);
 #endif
 			if (ch->GetMall()->Add(mallItem.pos, item))
-				ItemSystem::SetItemSkipSave(EntityFactory::CreateItemEntity(g_registry, item), false);
+				ItemSystem::SetItemSkipSave((item ? item->GetEntityHandle() : entt::null), false);
 			else
 				M2_DESTROY_ITEM(item);
 		}
 	}*/
 
 	if (itemCount > 1)
-		ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "You bought from game itemshop : count: %d Coins: %u", itemCount, itemPrice);
+		ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "You bought from game itemshop : count: %d Coins: %u", itemCount, itemPrice);
 	else
-		ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "You bought from game itemshop :  Coins: %u", itemPrice);
+		ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "You bought from game itemshop :  Coins: %u", itemPrice);
 }
 void CHARACTER_MANAGER::LoadItemShopBuy(LPCHARACTER ch, int itemID, int itemCount)
 {
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "char_manager.cpp::CHARACTER_MANAGER::LoadItemShopBuy");//INGAME_DEBUG_RAZOR93
+	ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "char_manager.cpp::CHARACTER_MANAGER::LoadItemShopBuy");//INGAME_DEBUG_RAZOR93
 #endif
 	if (itemCount > 20)
 		return;
@@ -2598,17 +2603,17 @@ void CHARACTER_MANAGER::LoadItemShopBuy(LPCHARACTER ch, int itemID, int itemCoun
 
 								if (itemPrice > dragonCoin)
 								{
-									ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "You don't have enough DC");
+									ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "You don't have enough DC");
 									return;
 								}
 
-								uint32_t accountID = ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->GetAccountTable().id;
+								uint32_t accountID = ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null))->GetAccountTable().id;
 								uint8_t subIndex = ITEMSHOP_BUY;
 								char playerName[CHARACTER_NAME_MAX_LEN + 1];
-								strlcpy(playerName, ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), sizeof(playerName));
+								strlcpy(playerName, ecs::PlayerRuntime::GetName(((ch) ? (ch)->GetEntityHandle() : entt::null)).data(), sizeof(playerName));
 
 								char ipAdress[16];
-								strlcpy(ipAdress, ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->GetHostName(), sizeof(ipAdress));
+								strlcpy(ipAdress, ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null))->GetHostName(), sizeof(ipAdress));
 
 								TEMP_BUFFER buf;
 								buf.write(&subIndex, sizeof(uint8_t));
@@ -2620,7 +2625,7 @@ void CHARACTER_MANAGER::LoadItemShopBuy(LPCHARACTER ch, int itemID, int itemCoun
 								bool isLogOpen = ch->GetProtectTime("itemshop.log") == 1 ? true : false;
 								buf.write(&isLogOpen, sizeof(bool));
 
-								db_clientdesc->DBPacketHeader(HEADER_GD_ITEMSHOP, ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->GetHandle(), buf.size());
+								db_clientdesc->DBPacketHeader(HEADER_GD_ITEMSHOP, ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null))->GetHandle(), buf.size());
 								db_clientdesc->Packet(buf.read_peek(), buf.size());
 
 								return;
@@ -2641,7 +2646,7 @@ void RefreshItemShop(LPDESC d)
 		return;
 	if (ch->GetProtectTime("itemshop.load") == 1)
 	{
-		ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "ItemShop was update!");
+		ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "ItemShop was update!");
 		CHARACTER_MANAGER::Instance().LoadItemShopData(ch, true);
 	}
 }

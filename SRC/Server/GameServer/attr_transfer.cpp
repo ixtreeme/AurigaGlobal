@@ -28,39 +28,39 @@ void AttrTransfer_open(LPCHARACTER ch)
 	const LPCHARACTER npc = ch->GetQuestNPC();
 	if (npc == nullptr)
 	{
-		LOG_INFO("{} has try to open the Attr Transfer window without talk to the NPC.", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data());
+		LOG_INFO("{} has try to open the Attr Transfer window without talk to the NPC.", ecs::PlayerRuntime::GetName(((ch) ? (ch)->GetEntityHandle() : entt::null)).data());
 		return;
 	}
 
 	if (ch->IsAttrTransferOpen())
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 80, "");
+		ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 80, "");
 #endif
 		return;
 	}
 
-	if (ecs::SocialSystem::GetExchange(AIHelpers::EcsOf(ch)) || ch->GetMyShop() || ch->GetShopOwner() || ch->IsOpenSafebox() || ch->IsCubeOpen() || ch->IsAcceOpen() || ch->IsAttrTransferOpen())
+	if (ecs::SocialSystem::GetExchange(((ch) ? (ch)->GetEntityHandle() : entt::null)) || ch->GetMyShop() || ch->GetShopOwner() || ch->IsOpenSafebox() || ch->IsCubeOpen() || ch->IsAcceOpen() || ch->IsAttrTransferOpen())
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 81, "");
+		ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 81, "");
 #endif
 		return;
 	}
 
-	int32_t distance = DISTANCE_APPROX(ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(ch)) - ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(npc)), ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(ch)) - ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(npc)));
+	int32_t distance = DISTANCE_APPROX(ecs::PlayerRuntime::GetX(((ch) ? (ch)->GetEntityHandle() : entt::null)) - ecs::PlayerRuntime::GetX(((npc) ? (npc)->GetEntityHandle() : entt::null)), ecs::PlayerRuntime::GetY(((ch) ? (ch)->GetEntityHandle() : entt::null)) - ecs::PlayerRuntime::GetY(((npc) ? (npc)->GetEntityHandle() : entt::null)));
 	if (distance >= ATTR_TRANSFER_MAX_DISTANCE)
 	{
-		LOG_INFO("{} is too far for can open the Attr Transfer Window. (character distance: {}, distance allowed: {})", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), distance, ATTR_TRANSFER_MAX_DISTANCE);
+		LOG_INFO("{} is too far for can open the Attr Transfer Window. (character distance: {}, distance allowed: {})", ecs::PlayerRuntime::GetName(((ch) ? (ch)->GetEntityHandle() : entt::null)).data(), distance, ATTR_TRANSFER_MAX_DISTANCE);
 		return;
 	}
 
 	AttrTransfer_clean_item(ch);
 	ch->SetAttrTransferNpc(npc);
-	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_COMMAND, "AttrTransfer open");
+	ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_COMMAND, "AttrTransfer open");
 	if (test_server == true)
 	{
-		LOG_INFO("{} has open the Attr Transfer window.", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data());
+		LOG_INFO("{} has open the Attr Transfer window.", ecs::PlayerRuntime::GetName(((ch) ? (ch)->GetEntityHandle() : entt::null)).data());
 	}
 }
 
@@ -69,10 +69,10 @@ void AttrTransfer_close(LPCHARACTER ch)
 	RETURN_IF_ATTR_TRANSFER_IS_NOT_OPENED(ch);
 	AttrTransfer_clean_item(ch);
 	ch->SetAttrTransferNpc(nullptr);
-	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_COMMAND, "AttrTransfer close");
+	ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_COMMAND, "AttrTransfer close");
 	if (test_server == true)
 	{
-		LOG_INFO("{} has close the Attr Transfer window.", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data());
+		LOG_INFO("{} has close the Attr Transfer window.", ecs::PlayerRuntime::GetName(((ch) ? (ch)->GetEntityHandle() : entt::null)).data());
 	}
 }
 
@@ -99,7 +99,7 @@ bool AttrTransfer_make(LPCHARACTER ch)
 	if (!(ch)->IsAttrTransferOpen())
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 82, "");
+		ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 82, "");
 #endif
 		return false;
 	}
@@ -107,7 +107,7 @@ bool AttrTransfer_make(LPCHARACTER ch)
 	LPCHARACTER npc = ch->GetQuestNPC();
 	if (npc == nullptr)
 	{
-		LOG_INFO("{} has try to open the transfer the bonuses between costumes without talk to the NPC.", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data());
+		LOG_INFO("{} has try to open the transfer the bonuses between costumes without talk to the NPC.", ecs::PlayerRuntime::GetName(((ch) ? (ch)->GetEntityHandle() : entt::null)).data());
 		return false;
 	}
 
@@ -115,7 +115,7 @@ bool AttrTransfer_make(LPCHARACTER ch)
 	if (items[0] == entt::null || items[1] == entt::null || items[2] == entt::null)
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 83, "");
+		ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 83, "");
 #endif
 		return false;
 	}
@@ -123,7 +123,7 @@ bool AttrTransfer_make(LPCHARACTER ch)
 	if (ItemSystem::GetItemType(items[0]) != ITEM_TRANSFER_SCROLL || ItemSystem::GetItemType(items[1]) != ITEM_COSTUME || ItemSystem::GetItemType(items[2]) != ITEM_COSTUME)
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 83, "");
+		ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 83, "");
 #endif
 		return false;
 	}
@@ -139,7 +139,7 @@ bool AttrTransfer_make(LPCHARACTER ch)
 	if (has_attr != 1)
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 86, "");
+		ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 86, "");
 #endif
 		return false;
 	}
@@ -162,10 +162,10 @@ bool AttrTransfer_make(LPCHARACTER ch)
 	items[2] = entt::null;
 
 
-	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_COMMAND, "AttrTransfer success");
-	LogManager::instance().AttrTransferLog((ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))), ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(ch)), ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(ch)), ItemSystem::GetItemVnum(items[1]));
+	ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_COMMAND, "AttrTransfer success");
+	LogManager::instance().AttrTransferLog((ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null))), ecs::PlayerRuntime::GetX(((ch) ? (ch)->GetEntityHandle() : entt::null)), ecs::PlayerRuntime::GetY(((ch) ? (ch)->GetEntityHandle() : entt::null)), ItemSystem::GetItemVnum(items[1]));
 #ifdef TEXTS_IMPROVEMENT
-	ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 84, "");
+	ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 84, "");
 #endif
 	return true;
 }
@@ -177,7 +177,7 @@ void AttrTransfer_add_item(LPCHARACTER ch, int w_index, int i_index)
 	if (i_index < 0 || INVENTORY_MAX_NUM <= i_index || w_index < 0 || MAX_ATTR_TRANSFER_SLOT <= w_index)
 		return;
 
-	const entt::entity item = ItemSystem::GetInventoryItem(AIHelpers::EcsOf(ch), i_index);
+	const entt::entity item = ItemSystem::GetInventoryItem(((ch) ? (ch)->GetEntityHandle() : entt::null), i_index);
 	if (item == entt::null)
 		return;
 
@@ -308,7 +308,7 @@ void AttrTransfer_add_item(LPCHARACTER ch, int w_index, int i_index)
 	if (w_index != 0 && attr_transfer_item[0] == entt::null)
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 85, "");
+		ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 85, "");
 #endif
 		return;
 	}
@@ -316,7 +316,7 @@ void AttrTransfer_add_item(LPCHARACTER ch, int w_index, int i_index)
 	{
 		if (attr_transfer_item[2] == entt::null) {
 #ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 79, "");
+			ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 79, "");
 #endif
 			return;
 		}
@@ -326,7 +326,7 @@ void AttrTransfer_add_item(LPCHARACTER ch, int w_index, int i_index)
 
 	if (w_index == 1)
 	{
-		ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_COMMAND, "AttrTransferMessage");
+		ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_COMMAND, "AttrTransferMessage");
 	}
 
 	attr_transfer_item[w_index] = item;

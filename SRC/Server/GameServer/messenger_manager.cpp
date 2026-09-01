@@ -166,22 +166,22 @@ void MessengerManager::Logout(MessengerManager::keyA account)
 
 void MessengerManager::RequestToAdd(LPCHARACTER ch, LPCHARACTER target)
 {
-	if (!(ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch))) || !ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(target)))
+	if (!(ecs::PlayerRuntime::IsPC(((ch) ? (ch)->GetEntityHandle() : entt::null))) || !ecs::PlayerRuntime::IsPC(((target) ? (target)->GetEntityHandle() : entt::null)))
 		return;
 
-	if (quest::CQuestManager::instance().GetPCForce((ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))))->IsRunning() == true)
+	if (quest::CQuestManager::instance().GetPCForce((ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null))))->IsRunning() == true)
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 607, "");
+		ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 607, "");
 #endif
 		return;
 	}
 
-	if (quest::CQuestManager::instance().GetPCForce(ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(target)))->IsRunning() == true)
+	if (quest::CQuestManager::instance().GetPCForce(ecs::PlayerRuntime::GetPlayerID(((target) ? (target)->GetEntityHandle() : entt::null)))->IsRunning() == true)
 		return;
 
-	uint32_t dw1 = GetCRC32(ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), strlen(ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data()));
-	uint32_t dw2 = GetCRC32(ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(target)).data(), strlen(ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(target)).data()));
+	uint32_t dw1 = GetCRC32(ecs::PlayerRuntime::GetName(((ch) ? (ch)->GetEntityHandle() : entt::null)).data(), strlen(ecs::PlayerRuntime::GetName(((ch) ? (ch)->GetEntityHandle() : entt::null)).data()));
+	uint32_t dw2 = GetCRC32(ecs::PlayerRuntime::GetName(((target) ? (target)->GetEntityHandle() : entt::null)).data(), strlen(ecs::PlayerRuntime::GetName(((target) ? (target)->GetEntityHandle() : entt::null)).data()));
 
 	char buf[64];
 	snprintf(buf, sizeof(buf), "%u:%u", dw1, dw2);
@@ -189,7 +189,7 @@ void MessengerManager::RequestToAdd(LPCHARACTER ch, LPCHARACTER target)
 
 	m_set_requestToAdd.insert(dwComplex);
 
-	ecs::ChatSystem::Send(AIHelpers::EcsOf(target), CHAT_TYPE_COMMAND, "messenger_auth %s", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data());
+	ecs::ChatSystem::Send(((target) ? (target)->GetEntityHandle() : entt::null), CHAT_TYPE_COMMAND, "messenger_auth %s", ecs::PlayerRuntime::GetName(((ch) ? (ch)->GetEntityHandle() : entt::null)).data());
 }
 
 // @fixme130 void -> bool
@@ -226,7 +226,7 @@ void MessengerManager::__AddToList(MessengerManager::keyA account, MessengerMana
 	LPCHARACTER ch = CHARACTER_MANAGER::instance().FindPC(account.c_str());
 #ifdef TEXTS_IMPROVEMENT
 	if (ch) {
-		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 183, "%s", companion.c_str());
+		ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 183, "%s", companion.c_str());
 	}
 #endif
 	LPCHARACTER tch = CHARACTER_MANAGER::instance().FindPC(companion.c_str());
@@ -303,7 +303,7 @@ void MessengerManager::SendTeamList(MessengerManager::keyA account)
 	if (!ch)
 		return;
 
-	LPDESC d = ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch));
+	LPDESC d = ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null));
 
 	if (!d)
 		return;
@@ -392,7 +392,7 @@ void MessengerManager::SendTeamList(MessengerManager::keyA account)
 void MessengerManager::SendTeamLogin(MessengerManager::keyA account, MessengerManager::keyA companion)
 {
 	LPCHARACTER ch = CHARACTER_MANAGER::instance().FindPC(account.c_str());
-	LPDESC d = ch ? ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch)) : nullptr;
+	LPDESC d = ch ? ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null)) : nullptr;
 
 	if (!d)
 		return;
@@ -418,7 +418,7 @@ void MessengerManager::SendTeamLogout(MessengerManager::keyA account, MessengerM
 		return;
 
 	LPCHARACTER ch = CHARACTER_MANAGER::instance().FindPC(account.c_str());
-	LPDESC d = ch ? ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch)) : nullptr;
+	LPDESC d = ch ? ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null)) : nullptr;
 
 	if (!d)
 		return;
@@ -473,7 +473,7 @@ void MessengerManager::SendHelperList(MessengerManager::keyA account)
 	if (!ch)
 		return;
 
-	LPDESC d = ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch));
+	LPDESC d = ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null));
 	if (!d)
 		return;
 
@@ -563,7 +563,7 @@ void MessengerManager::SendHelperList(MessengerManager::keyA account)
 void MessengerManager::SendHelperLogin(MessengerManager::keyA account, MessengerManager::keyA companion)
 {
 	LPCHARACTER ch = CHARACTER_MANAGER::instance().FindPC(account.c_str());
-	LPDESC d = ch ? ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch)) : nullptr;
+	LPDESC d = ch ? ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null)) : nullptr;
 	if (!d)
 	{
 		return;
@@ -594,7 +594,7 @@ void MessengerManager::SendHelperLogout(MessengerManager::keyA account, Messenge
 	}
 
 	LPCHARACTER ch = CHARACTER_MANAGER::instance().FindPC(account.c_str());
-	LPDESC d = ch ? ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch)) : nullptr;
+	LPDESC d = ch ? ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null)) : nullptr;
 
 	if (!d)
 	{
@@ -622,7 +622,7 @@ void MessengerManager::__RemoveFromList(MessengerManager::keyA account, Messenge
 	LPCHARACTER ch = CHARACTER_MANAGER::instance().FindPC(account.c_str());
 #ifdef TEXTS_IMPROVEMENT
 	if (ch) {
-		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 182, "%s", companion.c_str());
+		ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 182, "%s", companion.c_str());
 	}
 #endif
 }
@@ -694,7 +694,7 @@ void MessengerManager::SendList(MessengerManager::keyA account)
 	if (!ch)
 		return;
 
-	LPDESC d = ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch));
+	LPDESC d = ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null));
 
 	if (!d)
 		return;
@@ -753,7 +753,7 @@ void MessengerManager::SendList(MessengerManager::keyA account)
 void MessengerManager::SendLogin(MessengerManager::keyA account, MessengerManager::keyA companion)
 {
 	LPCHARACTER ch = CHARACTER_MANAGER::instance().FindPC(account.c_str());
-	LPDESC d = ch ? ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch)) : nullptr;
+	LPDESC d = ch ? ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null)) : nullptr;
 
 	if (!d)
 		return;
@@ -761,7 +761,7 @@ void MessengerManager::SendLogin(MessengerManager::keyA account, MessengerManage
 	if (!d->GetCharacter())
 		return;
 
-	if (ecs::PlayerRuntime::GetGMLevel(AIHelpers::EcsOf(ch)) == GM_PLAYER && gm_get_level(companion.c_str()) != GM_PLAYER)
+	if (ecs::PlayerRuntime::GetGMLevel(((ch) ? (ch)->GetEntityHandle() : entt::null)) == GM_PLAYER && gm_get_level(companion.c_str()) != GM_PLAYER)
 		return;
 
 	uint8_t bLen = companion.size();
@@ -783,7 +783,7 @@ void MessengerManager::SendLogout(MessengerManager::keyA account, MessengerManag
 		return;
 
 	LPCHARACTER ch = CHARACTER_MANAGER::instance().FindPC(account.c_str());
-	LPDESC d = ch ? ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch)) : nullptr;
+	LPDESC d = ch ? ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null)) : nullptr;
 
 	if (!d)
 		return;

@@ -17,9 +17,9 @@ namespace quest
 			{
 				LPCHARACTER ch = (LPCHARACTER) ent;
 
-				if ( (ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch))) == true && ch->IsGM() != true )
+				if ( (ecs::PlayerRuntime::IsPC(((ch) ? (ch)->GetEntityHandle() : entt::null))) == true && ch->IsGM() != true )
 				{
-					if ( ((ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(ch)) >= 764503 && ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(ch)) <= 772362) && (ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(ch)) >= 22807 && ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(ch)) <= 26499)) == false )
+					if ( ((ecs::PlayerRuntime::GetX(((ch) ? (ch)->GetEntityHandle() : entt::null)) >= 764503 && ecs::PlayerRuntime::GetX(((ch) ? (ch)->GetEntityHandle() : entt::null)) <= 772362) && (ecs::PlayerRuntime::GetY(((ch) ? (ch)->GetEntityHandle() : entt::null)) >= 22807 && ecs::PlayerRuntime::GetY(((ch) ? (ch)->GetEntityHandle() : entt::null)) <= 26499)) == false )
 					{
 						ch->GoHome();
 					}

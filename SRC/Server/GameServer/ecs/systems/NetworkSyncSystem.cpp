@@ -19,7 +19,6 @@
 #include "../../packet.h"
 #include "../../party.h"
 #include "../../sectree.h"
-#include "../AIHelpers.hpp"
 #include "../EntityFactory.hpp"
 #include "../ItemRegistry.hpp"
 #include "../NetworkService.hpp"
@@ -680,7 +679,9 @@ bool NetworkSyncSystem::BuildPartyUpdatePacket(entt::registry& reg, entt::entity
     LOG_INFO("PARTY {} role is {}", ecs::PlayerRuntime::GetName(member), packet.role);
 
     LPCHARACTER leader = party->GetLeaderCharacter();
-    const entt::entity leaderEntity = leader ? AIHelpers::EcsOf(leader) : entt::null;
+    const entt::entity leaderEntity = leader
+        ? leader->GetEntityHandle()
+        : entt::null;
     if (leaderEntity != entt::null && reg.valid(leaderEntity)) {
         const auto* memberPos = reg.try_get<ecs::Position>(member);
         const auto* leaderPos = reg.try_get<ecs::Position>(leaderEntity);
@@ -1005,7 +1006,8 @@ void CHARACTER::EncodeInsertPacket(LPENTITY entity)
 
     d->Packet(&pack, sizeof(pack));
     if (entity->IsType(ENTITY_CHARACTER))
-        NetworkSyncSystem::SendCharAdditionalInfo(g_registry, AIHelpers::EcsOf(this), AIHelpers::EcsOf(ch));
+        NetworkSyncSystem::SendCharAdditionalInfo(
+            g_registry, GetEntityHandle(), ch->GetEntityHandle());
 
     if (iDur) {
         TPacketGCMove pack;
@@ -1026,7 +1028,7 @@ void CHARACTER::EncodeInsertPacket(LPENTITY entity)
         LPCHARACTER ch = (LPCHARACTER)entity;
         if (ch->IsWalking()) {
             TPacketGCWalkMode p;
-            p.vid = ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(ch));
+            p.vid = ecs::PlayerRuntime::GetPacketVID(ch->GetEntityHandle());
             p.header = HEADER_GC_WALK_MODE;
             // B.1.3: read via IsNowWalking() on the viewer-side character.
             p.mode = ch->IsNowWalking() ? WALKMODE_WALK : WALKMODE_RUN;
@@ -1047,13 +1049,14 @@ void CHARACTER::EncodeInsertPacket(LPENTITY entity)
     }
 
     if (entity->IsType(ENTITY_CHARACTER)) {
-        LOG_TRACE("EntityInsert {} (RaceNum {}) ({} {}) TO {}", GetName(), GetRaceNum(), GetX() / SECTREE_SIZE, GetY() / SECTREE_SIZE, ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(((LPCHARACTER)entity))).data());
+        LOG_TRACE("EntityInsert {} (RaceNum {}) ({} {}) TO {}", GetName(), GetRaceNum(), GetX() / SECTREE_SIZE, GetY() / SECTREE_SIZE, ecs::PlayerRuntime::GetName(static_cast<LPCHARACTER>(entity)->GetEntityHandle()).data());
     }
 #ifdef ENABLE_FAKE_SHOP_HEADER
     if (IsPC() && entity->IsType(ENTITY_CHARACTER))
     {
         LPCHARACTER viewer = (LPCHARACTER)entity;
-        if (ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(viewer)) && ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(viewer)))
+        const entt::entity viewerEntity = viewer->GetEntityHandle();
+        if (ecs::PlayerRuntime::IsPC(viewerEntity) && ecs::PlayerRuntime::GetDesc(viewerEntity))
             UpdateMountInventoryCountOverhead(viewer);
     }
 #endif
@@ -1077,7 +1080,7 @@ void CHARACTER::EncodeRemovePacket(LPENTITY entity)
     d->Packet(&pack, sizeof(TPacketGCCharacterDelete));
 
     if (entity->IsType(ENTITY_CHARACTER))
-        LOG_TRACE("EntityRemove {}({}) FROM {}", GetName(), GetPacketVID(), ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(((LPCHARACTER)entity))).data());
+        LOG_TRACE("EntityRemove {}({}) FROM {}", GetName(), GetPacketVID(), ecs::PlayerRuntime::GetName(static_cast<LPCHARACTER>(entity)->GetEntityHandle()).data());
 }
 
 bool CHARACTER::SetSyncOwner(LPCHARACTER ch, bool bRemoveFromList)
@@ -1108,18 +1111,21 @@ bool CHARACTER::SetSyncOwner(LPCHARACTER ch, bool bRemoveFromList)
         }
 
         if (m_pkChrSyncOwner)
-            LOG_TRACE("SyncRelease {} {} from {}", GetName(), static_cast<const void*>(this), ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(m_pkChrSyncOwner)).data());
+            LOG_TRACE("SyncRelease {} {} from {}", GetName(), static_cast<const void*>(this), ecs::PlayerRuntime::GetName(m_pkChrSyncOwner->GetEntityHandle()).data());
 
         m_pkChrSyncOwner = nullptr;
     }
     else
     {
+		const entt::entity syncOwner = ch->GetEntityHandle();
         if (!IsSyncOwner(ch))
             return false;
 
-        if (DISTANCE_APPROX(GetX() - ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(ch)), GetY() - ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(ch))) > 250)
+        if (DISTANCE_APPROX(
+				GetX() - ecs::PlayerRuntime::GetX(syncOwner),
+				GetY() - ecs::PlayerRuntime::GetY(syncOwner)) > 250)
         {
-            LOG_TRACE("SetSyncOwner distance over than 250 {} {}", GetName(), ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data());
+            LOG_TRACE("SetSyncOwner distance over than 250 {} {}", GetName(), ecs::PlayerRuntime::GetName(syncOwner).data());
 
             if (m_pkChrSyncOwner == ch)
                 return true;
@@ -1131,7 +1137,7 @@ bool CHARACTER::SetSyncOwner(LPCHARACTER ch, bool bRemoveFromList)
         {
             if (m_pkChrSyncOwner)
             {
-                LOG_TRACE("SyncRelease {} {} from {}", GetName(), static_cast<const void*>(this), ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(m_pkChrSyncOwner)).data());
+                LOG_TRACE("SyncRelease {} {} from {}", GetName(), static_cast<const void*>(this), ecs::PlayerRuntime::GetName(m_pkChrSyncOwner->GetEntityHandle()).data());
                 m_pkChrSyncOwner->m_kLst_pkChrSyncOwned.remove(this);
             }
 
@@ -1141,7 +1147,7 @@ bool CHARACTER::SetSyncOwner(LPCHARACTER ch, bool bRemoveFromList)
             static const timeval zero_tv = { 0, 0 };
             SetLastSyncTime(zero_tv);
 
-            LOG_TRACE("SetSyncOwner set {} {} to {}", GetName(), static_cast<const void*>(this), ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data());
+            LOG_TRACE("SetSyncOwner set {} {} to {}", GetName(), static_cast<const void*>(this), ecs::PlayerRuntime::GetName(syncOwner).data());
         }
 
         m_fSyncTime = get_float_time();
@@ -1150,10 +1156,12 @@ bool CHARACTER::SetSyncOwner(LPCHARACTER ch, bool bRemoveFromList)
     TPacketGCOwnership pack;
 
     pack.bHeader = HEADER_GC_OWNERSHIP;
-    pack.dwOwnerVID = ch ? ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(ch)) : 0;
+    pack.dwOwnerVID = ch
+		? ecs::PlayerRuntime::GetPacketVID(ch->GetEntityHandle())
+		: 0;
     pack.dwVictimVID = GetPacketVID();
 
-    ecs::NetworkService::BroadcastToView(g_registry, AIHelpers::EcsOf(this), &pack, sizeof(pack), false);
+    ecs::NetworkService::BroadcastToView(g_registry, GetEntityHandle(), &pack, sizeof(pack), false);
     return true;
 }
 
@@ -1233,12 +1241,12 @@ const char* CHARACTER::GetName() const
 
 void CHARACTER::EffectPacket(uint8_t enumEffectType)
 {
-    NetworkSyncSystem::BroadcastEffect(g_registry, AIHelpers::EcsOf(this), enumEffectType);
+    NetworkSyncSystem::BroadcastEffect(g_registry, GetEntityHandle(), enumEffectType);
 }
 
 void CHARACTER::SpecificEffectPacket(const char filename[MAX_EFFECT_FILE_NAME])
 {
-    NetworkSyncSystem::BroadcastSpecificEffect(g_registry, AIHelpers::EcsOf(this), filename);
+    NetworkSyncSystem::BroadcastSpecificEffect(g_registry, GetEntityHandle(), filename);
 }
 
 void CItem::EncodeInsertPacket(LPENTITY ent)
@@ -1275,8 +1283,8 @@ void CItem::UsePacketEncode(LPCHARACTER ch, LPCHARACTER victim, packet_item_use*
 
     ecs::ItemNetworkSystem::EncodeItemUse(
         g_registry,
-        AIHelpers::EcsOf(ch),
-        AIHelpers::EcsOf(victim),
+        ch ? ch->GetEntityHandle() : entt::null,
+        victim ? victim->GetEntityHandle() : entt::null,
         item,
         *packet);
 }

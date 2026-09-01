@@ -4,6 +4,10 @@
 #include "ecs/AIHelpers.hpp"
 #include "ecs/EntityFactory.hpp"
 #include "ecs/systems/SocialSystem.hpp"
+#include "ecs/systems/SessionSystem.hpp"
+#include "ecs/systems/ItemSystem.hpp"
+#include "ecs/systems/GayaSystem.hpp"
+#include "ecs/Registry.hpp"
 #include "questlua.h"
 #include "questmanager.h"
 #include "desc_client.h"
@@ -35,8 +39,6 @@
 #else
 #define sys_err(fmt, ...) quest::CQuestManager::instance().QuestErrorFmt(__FUNCTION__, __LINE__, FMT_STRING(fmt), __VA_ARGS__)
 #endif
-
-extern ACMD(do_in_game_mall);
 
 namespace quest
 {
@@ -71,7 +73,7 @@ namespace quest
 		// migrated from CHARACTER::GetDesc()->Packet
 		// DUAL-PATH: legacy only during migration window
 		CQuestManager& q = CQuestManager::instance();
-		LPDESC d = ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(q.GetCurrentCharacterPtr()));
+		LPDESC d = ecs::PlayerRuntime::GetDesc(q.GetCurrentPCEntity());
 		if (d)
 		{
 			uint8_t header = HEADER_GC_REQUEST_MAKE_GUILD;
@@ -83,18 +85,8 @@ namespace quest
 	ALUA(game_get_safebox_level)
 	{
 		// migrated from CHARACTER::GetSafeboxSize()
-		entt::entity e = CQuestManager::instance().GetPCEntity(L);
-		auto* sb = ECS_TryGet<ecs::SafeboxRef>(e);
-		if (!sb)
-		{
-			CQuestManager& q = CQuestManager::instance();
-			const entt::entity chEntity = q.GetCurrentPCEntity();
-			auto* ch = ecs::LegacyCharOf(chEntity);
-			lua_pushnumber(L, ch ? ch->GetSafeboxSize()/SAFEBOX_PAGE_SIZE : 0);
-			return 1;
-		}
-
-		lua_pushnumber(L, sb->safeboxSize / SAFEBOX_PAGE_SIZE);
+		const entt::entity character = CQuestManager::instance().GetPCEntity(L);
+		lua_pushnumber(L, ecs::SessionSystem::GetSafeboxSize(character) / SAFEBOX_PAGE_SIZE);
 		return 1;
 	}
 
@@ -105,18 +97,15 @@ namespace quest
 		CQuestManager& q = CQuestManager::instance();
 		entt::entity e = q.GetPCEntity(L);
 		int32_t size = static_cast<int32_t>(lua_tonumber(L, -1));
-		auto* sb = ECS_TryGet<ecs::SafeboxRef>(e);
-		if (sb)
-		{
-			sb->safeboxSize = SAFEBOX_PAGE_SIZE * size;
-			g_registry.emplace_or_replace<ecs::DirtyTag>(e);
-		}
+		LPDESC desc = ecs::PlayerRuntime::GetDesc(e);
+		if (!desc)
+			return 0;
 
 		TSafeboxChangeSizePacket p;
-		p.dwID = ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(q.GetCurrentCharacterPtr()))->GetAccountTable().id;
+		p.dwID = ecs::PlayerRuntime::GetAccountID(e);
 		p.bSize = size;
-		db_clientdesc->DBPacket(HEADER_GD_SAFEBOX_CHANGE_SIZE, ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(q.GetCurrentCharacterPtr()))->GetHandle(), &p, sizeof(p));
-		q.GetCurrentCharacterPtr()->SetSafeboxSize(SAFEBOX_PAGE_SIZE * size);
+		db_clientdesc->DBPacket(HEADER_GD_SAFEBOX_CHANGE_SIZE, desc->GetHandle(), &p, sizeof(p));
+		ecs::SessionSystem::SetSafeboxSize(e, SAFEBOX_PAGE_SIZE * size);
 		return 0;
 	}
 
@@ -126,16 +115,14 @@ namespace quest
 		// DUAL-PATH: ECS update + legacy call during migration window
 		CQuestManager& q = CQuestManager::instance();
 		const entt::entity chEntity = q.GetCurrentPCEntity();
-		auto* ch = ecs::LegacyCharOf(chEntity);
-		entt::entity e = q.GetPCEntity(L);
-		auto* sb = ECS_TryGet<ecs::SafeboxRef>(e);
-		if (sb)
+		if (chEntity != entt::null && g_registry.valid(chEntity))
 		{
-			sb->isOpening = true;
-			g_registry.emplace_or_replace<ecs::DirtyTag>(e);
+			auto& sb = g_registry.get_or_emplace<ecs::SafeboxRef>(chEntity);
+			sb.isOpening = true;
+			g_registry.emplace_or_replace<ecs::DirtyTag>(chEntity);
 		}
-		ch->SetSafeboxOpenPosition();
-		ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_COMMAND, "ShowMeSafeboxPassword");
+		ecs::SessionSystem::SetSafeboxOpenPosition(chEntity);
+		ecs::ChatSystem::Send(chEntity, CHAT_TYPE_COMMAND, "ShowMeSafeboxPassword");
 		return 0;
 	}
 
@@ -145,9 +132,8 @@ namespace quest
 		// DUAL-PATH: legacy only during migration window
 		CQuestManager& q = CQuestManager::instance();
 		const entt::entity chEntity = q.GetCurrentPCEntity();
-		auto* ch = ecs::LegacyCharOf(chEntity);
-		ch->SetSafeboxOpenPosition();
-		ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_COMMAND, "ShowMeMallPassword");
+		ecs::SessionSystem::SetSafeboxOpenPosition(chEntity);
+		ecs::ChatSystem::Send(chEntity, CHAT_TYPE_COMMAND, "ShowMeMallPassword");
 		return 0;
 	}
 
@@ -159,15 +145,14 @@ namespace quest
 		// Syntax: game.drop_item(50050, 1)
 		//
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
-		auto* ch = ecs::LegacyCharOf(chEntity);
 		uint32_t item_vnum = (uint32_t) lua_tonumber(L, 1);
 		int count = (int) lua_tonumber(L, 2);
-		int32_t x = ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(ch));
-		int32_t y = ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(ch));
+		int32_t x = ecs::PlayerRuntime::GetX(chEntity);
+		int32_t y = ecs::PlayerRuntime::GetY(chEntity);
 
-		LPITEM item = ITEM_MANAGER::instance().CreateItem(item_vnum, count);
+		const entt::entity item = ItemSystem::CreateItemEcs(item_vnum, count);
 
-		if (!item)
+		if (!ItemSystem::IsValidItem(item))
 		{
 			sys_err("cannot create item vnum {} count {}", item_vnum, count);
 			return 0;
@@ -177,8 +162,9 @@ namespace quest
 		pos.x = x + number(-200, 200);
 		pos.y = y + number(-200, 200);
 
-		item->AddToGround(ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)), pos);
-		item->StartDestroyEvent();
+		if (!ItemSystem::PlaceItemOnGroundLegacyBoundary(
+			item, ecs::PlayerRuntime::GetMapIndex(chEntity), pos, 300))
+			ItemSystem::DestroyItemEntityEcs(item, "QUEST_DROP_GROUND_FAILED");
 
 		return 0;
 	}
@@ -188,22 +174,21 @@ namespace quest
 		// migrated from CHARACTER::DropItemWithOwnership
 		// DUAL-PATH: legacy only during migration window
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
-		auto* ch = ecs::LegacyCharOf(chEntity);
-		LPITEM item = nullptr;
+		entt::entity item = entt::null;
 		switch (lua_gettop(L))
 		{
 		case 1:
-			item = ITEM_MANAGER::instance().CreateItem((uint32_t) lua_tonumber(L, 1));
+			item = ItemSystem::CreateItemEcs((uint32_t) lua_tonumber(L, 1));
 			break;
 		case 2:
 		case 3:
-			item = ITEM_MANAGER::instance().CreateItem((uint32_t) lua_tonumber(L, 1), (int) lua_tonumber(L, 2));
+			item = ItemSystem::CreateItemEcs((uint32_t) lua_tonumber(L, 1), (int) lua_tonumber(L, 2));
 			break;
 		default:
 			return 0;
 		}
 
-		if ( item == nullptr)
+		if (!ItemSystem::IsValidItem(item))
 		{
 			return 0;
 		}
@@ -213,22 +198,23 @@ namespace quest
 			int sec = (int) lua_tonumber(L, 3);
 			if (sec <= 0)
 			{
-				item->SetOwnership( ch );
+				ItemSystem::SetGroundOwnershipLegacyBoundary(item, chEntity);
 			}
 			else
 			{
-				item->SetOwnership( ch, sec );
+				ItemSystem::SetGroundOwnershipLegacyBoundary(item, chEntity, sec);
 			}
 		}
 		else
-			item->SetOwnership( ch );
+			ItemSystem::SetGroundOwnershipLegacyBoundary(item, chEntity);
 
 		PIXEL_POSITION pos;
-		pos.x = ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(ch)) + number(-200, 200);
-		pos.y = ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(ch)) + number(-200, 200);
+		pos.x = ecs::PlayerRuntime::GetX(chEntity) + number(-200, 200);
+		pos.y = ecs::PlayerRuntime::GetY(chEntity) + number(-200, 200);
 
-		item->AddToGround(ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)), pos);
-		item->StartDestroyEvent();
+		if (!ItemSystem::PlaceItemOnGroundLegacyBoundary(
+			item, ecs::PlayerRuntime::GetMapIndex(chEntity), pos, 300))
+			ItemSystem::DestroyItemEntityEcs(item, "QUEST_OWNED_DROP_GROUND_FAILED");
 
 		return 0;
 	}
@@ -238,55 +224,53 @@ namespace quest
 	{
 		// migrated from CHARACTER::DropItemWithOwnership
 		// DUAL-PATH: legacy only during migration window
-		LPITEM item = nullptr;
+		entt::entity item = entt::null;
 		switch (lua_gettop(L))
 		{
 		case 1:
-			item = ITEM_MANAGER::instance().CreateItem((uint32_t) lua_tonumber(L, 1));
+			item = ItemSystem::CreateItemEcs((uint32_t) lua_tonumber(L, 1));
 			break;
 		case 2:
 		case 3:
-			item = ITEM_MANAGER::instance().CreateItem((uint32_t) lua_tonumber(L, 1), (int) lua_tonumber(L, 2));
+			item = ItemSystem::CreateItemEcs((uint32_t) lua_tonumber(L, 1), (int) lua_tonumber(L, 2));
 			break;
 		default:
 			return 0;
 		}
 
-		if ( item == nullptr)
+		if (!ItemSystem::IsValidItem(item))
 		{
 			return 0;
 		}
 
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
 
-		auto* ch = ecs::LegacyCharOf(chEntity);
-		if (ecs::SocialSystem::GetParty(AIHelpers::EcsOf(ch)))
-		{
-			FPartyDropDiceRoll f(EntityFactory::CreateItemEntity(g_registry, item), ch);
-			f.Process(nullptr);
-		}
+		entt::entity owner = chEntity;
+		if (ecs::SocialSystem::GetParty(chEntity))
+			owner = ItemSystem::RollPartyDropOwnership(item, chEntity);
 
 		if (lua_isnumber(L, 3))
 		{
 			int sec = (int) lua_tonumber(L, 3);
 			if (sec <= 0)
 			{
-				item->SetOwnership( ch );
+				ItemSystem::SetGroundOwnershipLegacyBoundary(item, owner);
 			}
 			else
 			{
-				item->SetOwnership( ch, sec );
+				ItemSystem::SetGroundOwnershipLegacyBoundary(item, owner, sec);
 			}
 		}
 		else
-			item->SetOwnership( ch );
+			ItemSystem::SetGroundOwnershipLegacyBoundary(item, owner);
 
 		PIXEL_POSITION pos;
-		pos.x = ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(ch)) + number(-200, 200);
-		pos.y = ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(ch)) + number(-200, 200);
+		pos.x = ecs::PlayerRuntime::GetX(chEntity) + number(-200, 200);
+		pos.y = ecs::PlayerRuntime::GetY(chEntity) + number(-200, 200);
 
-		item->AddToGround(ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)), pos);
-		item->StartDestroyEvent();
+		if (!ItemSystem::PlaceItemOnGroundLegacyBoundary(
+			item, ecs::PlayerRuntime::GetMapIndex(chEntity), pos, 300))
+			ItemSystem::DestroyItemEntityEcs(item, "QUEST_DICE_DROP_GROUND_FAILED");
 
 		return 0;
 	}
@@ -297,11 +281,7 @@ namespace quest
 		// migrated from CHARACTER::do_in_game_mall
 		// DUAL-PATH: legacy only during migration window
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
-		auto* ch = ecs::LegacyCharOf(chEntity);
-		if ( ch != nullptr)
-		{
-			do_in_game_mall(ch, const_cast<char*>(""), 0, 0);
-		}
+		open_in_game_mall(chEntity);
 		return 0;
 	}
 
@@ -313,16 +293,15 @@ namespace quest
 		// DUAL-PATH: legacy only during migration window
 		CQuestManager& q = CQuestManager::instance();
 		const entt::entity chEntity = q.GetCurrentPCEntity();
-		auto* ch = ecs::LegacyCharOf(chEntity);
 		if (quest::CQuestManager::instance().GetEventFlag("gaya_disable") == 1)
 		{
 #ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 734, "");
+			ecs::ChatSystem::SendNew(chEntity, CHAT_TYPE_INFO, 734, "");
 #endif
 			return 0;
 		}
 
-		ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_COMMAND, "OpenGuiGaya");
+		ecs::ChatSystem::Send(chEntity, CHAT_TYPE_COMMAND, "OpenGuiGaya");
 		return 0;
 	}
 
@@ -332,28 +311,27 @@ namespace quest
 		// DUAL-PATH: legacy only during migration window
 		CQuestManager& q = CQuestManager::instance();
 		const entt::entity chEntity = q.GetCurrentPCEntity();
-		auto* ch = ecs::LegacyCharOf(chEntity);
 		if (quest::CQuestManager::instance().GetEventFlag("gaya_disable") == 1)
 		{
 #ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 734, "");
+			ecs::ChatSystem::SendNew(chEntity, CHAT_TYPE_INFO, 734, "");
 #endif
 			return 0;
 		}
 
-		if (ch->CheckItemsFull() == false)
+		if (!GayaSystem::CheckItemsFull(chEntity))
 		{
-			ch->UpdateItemsGayaMarker();
-			ch->InfoGayaMarker();
-			ch->StartCheckTimeMarket();
+			GayaSystem::UpdateItems(chEntity);
+			GayaSystem::InfoMarket(chEntity);
+			GayaSystem::StartCheckTimeMarket(chEntity);
 		}
 		else
 		{
-			ch->InfoGayaMarker();
-			ch->StartCheckTimeMarket();
+			GayaSystem::InfoMarket(chEntity);
+			GayaSystem::StartCheckTimeMarket(chEntity);
 		}
 
-		ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_COMMAND, "OpenGuiGayaMarket");
+		ecs::ChatSystem::Send(chEntity, CHAT_TYPE_COMMAND, "OpenGuiGayaMarket");
 		return 0;
 	}
 #endif

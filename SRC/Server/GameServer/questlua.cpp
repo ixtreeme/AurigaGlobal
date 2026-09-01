@@ -59,7 +59,7 @@ namespace quest
 
 	void FSetWarpLocation::operator() (LPCHARACTER ch) const
 	{
-		if ((ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch))))
+		if ((ecs::PlayerRuntime::IsPC(((ch) ? (ch)->GetEntityHandle() : entt::null))))
 		{
 			ch->SetWarpLocation (map_index, x, y);
 		}
@@ -67,19 +67,19 @@ namespace quest
 
 	void FSetQuestFlag::operator() (LPCHARACTER ch) const
 	{
-		if (!(ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch))))
+		if (!(ecs::PlayerRuntime::IsPC(((ch) ? (ch)->GetEntityHandle() : entt::null))))
 			return;
 
-		if (PC * pPC = CQuestManager::instance().GetPCForce((ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)))))
+		if (PC * pPC = CQuestManager::instance().GetPCForce((ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null)))))
 			pPC->SetFlag(flagname, value);
 	}
 
 	bool FPartyCheckFlagLt::operator() (LPCHARACTER ch) const
 	{
-		if (!(ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch))))
+		if (!(ecs::PlayerRuntime::IsPC(((ch) ? (ch)->GetEntityHandle() : entt::null))))
 			return false;
 
-		PC * pPC = CQuestManager::instance().GetPCForce((ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))));
+		PC * pPC = CQuestManager::instance().GetPCForce((ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null))));
 		bool returnBool = false;
 		if (pPC)
 		{
@@ -99,21 +99,21 @@ namespace quest
 
 	void FPartyChat::operator() (LPCHARACTER ch) const
 	{
-		ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), static_cast<uint8_t>(iChatType), "%s", str);
+		ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), static_cast<uint8_t>(iChatType), "%s", str);
 	}
 
 	void FPartyClearReady::operator() (LPCHARACTER ch) const
 	{
-		AffectSystem::RemoveAffect(AIHelpers::EcsOf(ch), AFFECT_DUNGEON_READY);
+		AffectSystem::RemoveAffect(((ch) ? (ch)->GetEntityHandle() : entt::null), AFFECT_DUNGEON_READY);
 	}
 
 	void FSendPacket::operator() (LPENTITY ent)
 	{
 		if (ent->IsType(ENTITY_CHARACTER))
 		{
-			if (const auto ch = dynamic_cast<LPCHARACTER>(ent); ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch)))
+			if (const auto ch = dynamic_cast<LPCHARACTER>(ent); ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null)))
 			{
-				ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->Packet(buf.read_peek(), buf.size());
+				ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null))->Packet(buf.read_peek(), buf.size());
 			}
 		}
 	}
@@ -122,10 +122,10 @@ namespace quest
 	{
 		if (ent->IsType(ENTITY_CHARACTER))
 		{
-			if (const auto ch = dynamic_cast<LPCHARACTER>(ent); ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch)))
+			if (const auto ch = dynamic_cast<LPCHARACTER>(ent); ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null)))
 			{
-				if (ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(ch)) == bEmpire)
-					ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->Packet(buf.read_peek(), buf.size());
+				if (ecs::PlayerRuntime::GetEmpire(((ch) ? (ch)->GetEntityHandle() : entt::null)) == bEmpire)
+					ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null))->Packet(buf.read_peek(), buf.size());
 			}
 		}
 	}
@@ -134,9 +134,9 @@ namespace quest
 	{
 		if (ent->IsType(ENTITY_CHARACTER))
 		{
-			if (const auto ch = dynamic_cast<LPCHARACTER>(ent); (ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch))) && ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(ch)) == m_bEmpire)
+			if (const auto ch = dynamic_cast<LPCHARACTER>(ent); (ecs::PlayerRuntime::IsPC(((ch) ? (ch)->GetEntityHandle() : entt::null))) && ecs::PlayerRuntime::GetEmpire(((ch) ? (ch)->GetEntityHandle() : entt::null)) == m_bEmpire)
 			{
-				ecs::MovementSystem::WarpSet(AIHelpers::EcsOf(ch), m_x, m_y, m_lMapIndexTo);
+				ecs::MovementSystem::WarpSet(((ch) ? (ch)->GetEntityHandle() : entt::null), m_x, m_y, m_lMapIndexTo);
 			}
 		}
 	}
@@ -208,7 +208,7 @@ namespace quest
 	{
 		CQuestManager & q = CQuestManager::instance();
 		const char * pszBoardName = lua_tostring(L, 1);
-		uint32_t mypid = ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(q.GetCurrentCharacterPtr()));
+		uint32_t mypid = ecs::PlayerRuntime::GetPlayerID(((q.GetCurrentCharacterPtr()) ? (q.GetCurrentCharacterPtr())->GetEntityHandle() : entt::null));
 		bool bOrder = (int) lua_tonumber(L, 2) != 0 ? true : false;
 
 		DBManager::instance().ReturnQuery(QID_HIGHSCORE_SHOW, mypid, nullptr,
@@ -224,7 +224,7 @@ namespace quest
 		THighscoreRegisterQueryInfo * qi = M2_NEW THighscoreRegisterQueryInfo;
 
 		strlcpy(qi->szBoard, lua_tostring(L, 1), sizeof(qi->szBoard));
-		qi->dwPID = ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(q.GetCurrentCharacterPtr()));
+		qi->dwPID = ecs::PlayerRuntime::GetPlayerID(((q.GetCurrentCharacterPtr()) ? (q.GetCurrentCharacterPtr())->GetEntityHandle() : entt::null));
 		qi->iValue = (int) lua_tonumber(L, 2);
 		qi->bOrder = (int) lua_tonumber(L, 3);
 
@@ -240,21 +240,21 @@ namespace quest
 	{
 		ostringstream s;
 		combine_lua_string(L, s);
-		ecs::ChatSystem::Send(AIHelpers::EcsOf(CQuestManager::Instance().GetCurrentPartyMember()), CHAT_TYPE_TALKING, "%s", s.str().c_str());
+		ecs::ChatSystem::Send(((CQuestManager::Instance().GetCurrentPartyMember()) ? (CQuestManager::Instance().GetCurrentPartyMember())->GetEntityHandle() : entt::null), CHAT_TYPE_TALKING, "%s", s.str().c_str());
 		return 0;
 	}
 
 	ALUA(member_clear_ready)
 	{
 		LPCHARACTER ch = CQuestManager::instance().GetCurrentPartyMember();
-		AffectSystem::RemoveAffect(AIHelpers::EcsOf(ch), AFFECT_DUNGEON_READY);
+		AffectSystem::RemoveAffect(((ch) ? (ch)->GetEntityHandle() : entt::null), AFFECT_DUNGEON_READY);
 		return 0;
 	}
 
 	ALUA(member_set_ready)
 	{
 		LPCHARACTER ch = CQuestManager::instance().GetCurrentPartyMember();
-		AffectSystem::AddAffect(AIHelpers::EcsOf(ch), AFFECT_DUNGEON_READY, POINT_NONE, 0, AFF_DUNGEON_READY, 65535, 0, true);
+		AffectSystem::AddAffect(((ch) ? (ch)->GetEntityHandle() : entt::null), AFFECT_DUNGEON_READY, POINT_NONE, 0, AFF_DUNGEON_READY, 65535, 0, true);
 		return 0;
 	}
 
@@ -282,7 +282,7 @@ namespace quest
 		}
 
 		LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
-		LPSECTREE_MAP pMap = SECTREE_MANAGER::instance().GetMap(ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)));
+		LPSECTREE_MAP pMap = SECTREE_MANAGER::instance().GetMap(ecs::PlayerRuntime::GetMapIndex(((ch) ? (ch)->GetEntityHandle() : entt::null)));
 		if (pMap == nullptr) {
 			return 0;
 		}
@@ -301,7 +301,7 @@ namespace quest
 				int32_t x = local_x + pMap->m_setting.iBaseX + (int32_t)(r * cos(angle));
 				int32_t y = local_y + pMap->m_setting.iBaseY + (int32_t)(r * sin(angle));
 
-				mob = CHARACTER_MANAGER::instance().SpawnMob(mob_vnum, ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)), x, y, 0);
+				mob = CHARACTER_MANAGER::instance().SpawnMob(mob_vnum, ecs::PlayerRuntime::GetMapIndex(((ch) ? (ch)->GetEntityHandle() : entt::null)), x, y, 0);
 
 				if (mob)
 					break;
@@ -317,7 +317,7 @@ namespace quest
 				if (!ret)
 				{
 					ret = true;
-					lua_pushnumber(L, ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(mob)));
+					lua_pushnumber(L, ecs::PlayerRuntime::GetPacketVID(((mob) ? (mob)->GetEntityHandle() : entt::null)));
 				}
 			}
 		}
@@ -353,7 +353,7 @@ namespace quest
 		}
 
 		LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
-		LPSECTREE_MAP pMap = SECTREE_MANAGER::instance().GetMap(ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)));
+		LPSECTREE_MAP pMap = SECTREE_MANAGER::instance().GetMap(ecs::PlayerRuntime::GetMapIndex(((ch) ? (ch)->GetEntityHandle() : entt::null)));
 		if (pMap == nullptr) {
 			lua_pushnumber(L, 0);
 			return 1;
@@ -373,7 +373,7 @@ namespace quest
 				int32_t x = local_x + pMap->m_setting.iBaseX + static_cast<int32_t>(r * cos(angle));
 				int32_t y = local_y + pMap->m_setting.iBaseY + static_cast<int32_t>(r * sin(angle));
 
-				mob = CHARACTER_MANAGER::instance().SpawnGroup(group_vnum, ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)), x, y, x, y, nullptr, bAggressive);
+				mob = CHARACTER_MANAGER::instance().SpawnGroup(group_vnum, ecs::PlayerRuntime::GetMapIndex(((ch) ? (ch)->GetEntityHandle() : entt::null)), x, y, x, y, nullptr, bAggressive);
 
 				if (mob)
 					break;
@@ -386,7 +386,7 @@ namespace quest
 				if (!ret)
 				{
 					ret = true;
-					lua_pushnumber(L, ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(mob)));
+					lua_pushnumber(L, ecs::PlayerRuntime::GetPacketVID(((mob) ? (mob)->GetEntityHandle() : entt::null)));
 				}
 			}
 		}
@@ -924,12 +924,12 @@ namespace quest
 		LOG_INFO("GotoConfirmState vid {} msg '{}', timeout {}", dwVID, szMsg, iTimeout);
 
 		LPCHARACTER ch = CHARACTER_MANAGER::instance().Find(dwVID);
-		if (ch && (ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch))))
+		if (ch && (ecs::PlayerRuntime::IsPC(((ch) ? (ch)->GetEntityHandle() : entt::null))))
 		{
-			NetworkSyncSystem::SendConfirmWithMsg(g_registry, AIHelpers::EcsOf(ch), szMsg, iTimeout, ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(GetCurrentCharacterPtr())));
+			NetworkSyncSystem::SendConfirmWithMsg(g_registry, ((ch) ? (ch)->GetEntityHandle() : entt::null), szMsg, iTimeout, ecs::PlayerRuntime::GetPlayerID(((GetCurrentCharacterPtr()) ? (GetCurrentCharacterPtr())->GetEntityHandle() : entt::null)));
 		}
 
-		GetCurrentPC()->SetConfirmWait((ch && (ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch))))?(ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))):0);
+		GetCurrentPC()->SetConfirmWait((ch && (ecs::PlayerRuntime::IsPC(((ch) ? (ch)->GetEntityHandle() : entt::null))))?(ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null))):0);
 		ostringstream os;
 		os << "[CONFIRM_WAIT timeout;" << iTimeout << "]";
 		AddScript(os.str());
@@ -937,8 +937,8 @@ namespace quest
 
 		confirm_timeout_event_info* info = AllocEventInfo<confirm_timeout_event_info>();
 
-		info->dwWaitPID = ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(GetCurrentCharacterPtr()));
-		info->dwReplyPID = (ch && (ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch)))) ? (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))) : 0;
+		info->dwWaitPID = ecs::PlayerRuntime::GetPlayerID(((GetCurrentCharacterPtr()) ? (GetCurrentCharacterPtr())->GetEntityHandle() : entt::null));
+		info->dwReplyPID = (ch && (ecs::PlayerRuntime::IsPC(((ch) ? (ch)->GetEntityHandle() : entt::null)))) ? (ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null))) : 0;
 
 		event_create(confirm_timeout_event, info, PASSES_PER_SEC(iTimeout));
 	}

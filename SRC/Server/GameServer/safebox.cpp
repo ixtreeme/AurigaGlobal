@@ -73,7 +73,7 @@ bool CSafebox::Add(uint32_t dwPos, entt::entity item)
 	}
 
 	ItemSystem::SetItemWindow(item, m_bWindowMode);
-	ItemSystem::SetItemCell(item, AIHelpers::EcsOf(m_pkChrOwner), dwPos);
+	ItemSystem::SetItemCell(item, ((m_pkChrOwner) ? (m_pkChrOwner)->GetEntityHandle() : entt::null), dwPos);
 	if (!ItemSystem::SaveItemEcs(item))
 		return false;
 
@@ -95,9 +95,9 @@ bool CSafebox::Add(uint32_t dwPos, entt::entity item)
 	for (int i = 0; i < ITEM_ATTRIBUTE_MAX_NUM; ++i)
 		pack.aAttr[i] = ItemSystem::GetItemAttribute(item, i);
 
-	if (LPDESC desc = ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(m_pkChrOwner)))
+	if (LPDESC desc = ecs::PlayerRuntime::GetDesc(((m_pkChrOwner) ? (m_pkChrOwner)->GetEntityHandle() : entt::null)))
 		desc->Packet(&pack, sizeof(pack));
-	LOG_INFO("SAFEBOX: ADD {} {} count {}", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(m_pkChrOwner)).data(), ItemSystem::GetItemName(item), ItemSystem::GetItemCount(item));
+	LOG_INFO("SAFEBOX: ADD {} {} count {}", ecs::PlayerRuntime::GetName(((m_pkChrOwner) ? (m_pkChrOwner)->GetEntityHandle() : entt::null)).data(), ItemSystem::GetItemName(item), ItemSystem::GetItemCount(item));
 	return true;
 }
 
@@ -127,9 +127,9 @@ entt::entity CSafebox::Remove(uint32_t dwPos)
 	TPacketGCItemDel pack{};
 	pack.header = m_bWindowMode == SAFEBOX ? HEADER_GC_SAFEBOX_DEL : HEADER_GC_MALL_DEL;
 	pack.pos = dwPos;
-	if (LPDESC desc = ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(m_pkChrOwner)))
+	if (LPDESC desc = ecs::PlayerRuntime::GetDesc(((m_pkChrOwner) ? (m_pkChrOwner)->GetEntityHandle() : entt::null)))
 		desc->Packet(&pack, sizeof(pack));
-	LOG_INFO("SAFEBOX: REMOVE {} {} count {}", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(m_pkChrOwner)).data(), ItemSystem::GetItemName(item), ItemSystem::GetItemCount(item));
+	LOG_INFO("SAFEBOX: REMOVE {} {} count {}", ecs::PlayerRuntime::GetName(((m_pkChrOwner) ? (m_pkChrOwner)->GetEntityHandle() : entt::null)).data(), ItemSystem::GetItemName(item), ItemSystem::GetItemCount(item));
 	return item;
 }
 
@@ -139,11 +139,11 @@ void CSafebox::Save()
 
 	memset(&t, 0, sizeof(TSafeboxTable));
 
-	t.dwID = ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(m_pkChrOwner))->GetAccountTable().id;
+	t.dwID = ecs::PlayerRuntime::GetDesc(((m_pkChrOwner) ? (m_pkChrOwner)->GetEntityHandle() : entt::null))->GetAccountTable().id;
 	t.dwGold = m_lGold;
 
 	db_clientdesc->DBPacket(HEADER_GD_SAFEBOX_SAVE, 0, &t, sizeof(TSafeboxTable));
-	LOG_INFO("SAFEBOX: SAVE {}", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(m_pkChrOwner)).data());
+	LOG_INFO("SAFEBOX: SAVE {}", ecs::PlayerRuntime::GetName(((m_pkChrOwner) ? (m_pkChrOwner)->GetEntityHandle() : entt::null)).data());
 }
 
 bool CSafebox::IsEmpty(uint32_t dwPos, uint8_t bSize)
@@ -221,14 +221,14 @@ bool CSafebox::MoveItem(uint32_t bCell, uint32_t bDestCell, uint32_t count)
 
 		ItemSystem::ConsumeItemEcs(item, count);
 		ItemSystem::AddItemCountEcs(destination, count);
-		LOG_INFO("SAFEBOX: STACK {} {} -> {} {} count {}", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(m_pkChrOwner)).data(), static_cast<int>(bCell), static_cast<int>(bDestCell), ItemSystem::GetItemName(destination), ItemSystem::GetItemCount(destination));
+		LOG_INFO("SAFEBOX: STACK {} {} -> {} {} count {}", ecs::PlayerRuntime::GetName(((m_pkChrOwner) ? (m_pkChrOwner)->GetEntityHandle() : entt::null)).data(), static_cast<int>(bCell), static_cast<int>(bDestCell), ItemSystem::GetItemName(destination), ItemSystem::GetItemCount(destination));
 		return true;
 	}
 
 	if (!IsEmpty(bDestCell, ItemSystem::GetItemSize(item)))
 		return false;
 
-	LOG_INFO("SAFEBOX: MOVE {} {} -> {} {} count {}", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(m_pkChrOwner)).data(), static_cast<int>(bCell), static_cast<int>(bDestCell), ItemSystem::GetItemName(item), sourceCount);
+	LOG_INFO("SAFEBOX: MOVE {} {} -> {} {} count {}", ecs::PlayerRuntime::GetName(((m_pkChrOwner) ? (m_pkChrOwner)->GetEntityHandle() : entt::null)).data(), static_cast<int>(bCell), static_cast<int>(bDestCell), ItemSystem::GetItemName(item), sourceCount);
 	if (Remove(bCell) == entt::null)
 		return false;
 	return Add(bDestCell, item);

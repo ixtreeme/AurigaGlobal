@@ -40,6 +40,7 @@ class CDungeon
 	void	DecMember(LPCHARACTER ch);
 	void	JoinParty_Coords(LPPARTY pParty, int32_t X, int32_t Y, int32_t index);
 	void	Join_Coords(LPCHARACTER ch, int32_t X, int32_t Y, int32_t index);
+	void	Join_Coords(entt::entity character, int32_t X, int32_t Y, int32_t index);
 
 	// DUNGEON_KILL_ALL_BUG_FIX
 	void	Purge();

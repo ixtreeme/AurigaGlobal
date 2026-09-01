@@ -2,6 +2,7 @@
 
 #include "lua_incl.h"
 #include "char_manager.h"
+#include <entt/entt.hpp>
 
 enum MEMBER_IDENTITY
 {
@@ -37,12 +38,12 @@ class CArena
 	uint32_t m_dwSetPointOfA;
 	uint32_t m_dwSetPointOfB;
 
-	std::map<uint32_t, LPCHARACTER> m_mapObserver;
+	std::map<uint32_t, entt::entity> m_mapObserver;
 
 	protected :
 	CArena(uint16_t startA_X, uint16_t startA_Y, uint16_t startB_X, uint16_t startB_Y);
 
-	bool StartDuel(LPCHARACTER pCharFrom, LPCHARACTER pCharTo, int nSetPoint, int nMinute = 5);
+	bool StartDuel(entt::entity charFrom, entt::entity charTo, int nSetPoint, int nMinute = 5);
 
 	bool IsEmpty() const	{ return ((m_dwPIDA==0) && (m_dwPIDB==0)); }
 	bool IsMember(uint32_t dwPID) const	{ return ((m_dwPIDA==dwPID) || (m_dwPIDB==dwPID)); }
@@ -55,8 +56,8 @@ class CArena
 
 	bool IsObserver(uint32_t pid);
 	bool IsMyObserver(uint16_t ObserverX, uint16_t ObserverY);
-	bool AddObserver(LPCHARACTER pChar);
-	bool RegisterObserverPtr(LPCHARACTER pChar);
+	bool AddObserver(entt::entity character);
+	bool RegisterObserverPtr(entt::entity character);
 
 	public :
 	uint32_t GetPlayerAPID() { return m_dwPIDA; }
@@ -95,7 +96,7 @@ class CArenaMap
 	bool AddArena(uint32_t mapIdx, uint16_t startA_X, uint16_t startA_Y, uint16_t startB_X, uint16_t startB_Y);
 	void SendArenaMapListTo(LPCHARACTER pChar, uint32_t dwMapIndex);
 
-	bool StartDuel(LPCHARACTER pCharFrom, LPCHARACTER pCharTo, int nSetPoint, int nMinute = 5);
+	bool StartDuel(entt::entity charFrom, entt::entity charTo, int nSetPoint, int nMinute = 5);
 	void EndAllDuel();
 	bool EndDuel(uint32_t pid);
 
@@ -104,8 +105,8 @@ class CArenaMap
 	bool CanAttack(LPCHARACTER pCharAttacker, LPCHARACTER pCharVictim);
 	bool OnDead(LPCHARACTER pCharKiller, LPCHARACTER pCharVictim);
 
-	bool AddObserver(LPCHARACTER pChar, uint16_t ObserverX, uint16_t ObserverY);
-	bool RegisterObserverPtr(LPCHARACTER pChar, uint32_t mapIdx, uint16_t ObserverX, uint16_t ObserverY);
+	bool AddObserver(entt::entity character, uint16_t ObserverX, uint16_t ObserverY);
+	bool RegisterObserverPtr(entt::entity character, uint32_t mapIdx, uint16_t ObserverX, uint16_t ObserverY);
 
 	MEMBER_IDENTITY IsMember(uint32_t PID);
 };
@@ -119,7 +120,7 @@ class CArenaManager : public singleton<CArenaManager>
 		bool Initialize();
 		void Destroy();
 
-		bool StartDuel(LPCHARACTER pCharFrom, LPCHARACTER pCharTo, int nSetPoint, int nMinute = 5);
+		bool StartDuel(entt::entity charFrom, entt::entity charTo, int nSetPoint, int nMinute = 5);
 
 		bool AddArena(uint32_t mapIdx, uint16_t startA_X, uint16_t startA_Y, uint16_t startB_X, uint16_t startB_Y);
 
@@ -134,8 +135,8 @@ class CArenaManager : public singleton<CArenaManager>
 
 		bool OnDead(LPCHARACTER pCharKiller, LPCHARACTER pCharVictim);
 
-		bool AddObserver(LPCHARACTER pChar, uint32_t mapIdx, uint16_t ObserverX, uint16_t ObserverY);
-		bool RegisterObserverPtr(LPCHARACTER pChar, uint32_t mapIdx, uint16_t ObserverX, uint16_t ObserverY);
+		bool AddObserver(entt::entity character, uint32_t mapIdx, uint16_t ObserverX, uint16_t ObserverY);
+		bool RegisterObserverPtr(entt::entity character, uint32_t mapIdx, uint16_t ObserverX, uint16_t ObserverY);
 
 		bool IsArenaMap(uint32_t dwMapIndex);
 		MEMBER_IDENTITY IsMember(uint32_t dwMapIndex, uint32_t PID);

@@ -104,7 +104,7 @@ ACMD(do_emotion_allow)
 	if ( ch->GetArena() )
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 303, "");
+		ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 303, "");
 #endif
 		return;
 	}
@@ -150,7 +150,7 @@ ACMD(do_emotion)
 		if (ch->IsRiding())
 		{
 #ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 798, "");
+			ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 798, "");
 #endif
 			return;
 		}
@@ -174,7 +174,7 @@ ACMD(do_emotion)
 	if (!CHARACTER_CanEmotion(*ch))
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 409, "");
+		ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 409, "");
 #endif
 		return;
 	}
@@ -182,7 +182,7 @@ ACMD(do_emotion)
 	if (IS_SET(emotion_types[i].flag, WOMAN_ONLY) && SEX_MALE==GET_SEX(ch))
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 383, "");
+		ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 383, "");
 #endif
 		return;
 	}
@@ -193,7 +193,7 @@ ACMD(do_emotion)
 	LPCHARACTER victim = nullptr;
 
 	if (*arg1) {
-		const entt::entity victimEntity = NetworkSyncSystem::FindCharacterInView(g_registry, AIHelpers::EcsOf(ch), arg1, IS_SET(emotion_types[i].flag, NEED_PC));
+		const entt::entity victimEntity = NetworkSyncSystem::FindCharacterInView(g_registry, ((ch) ? (ch)->GetEntityHandle() : entt::null), arg1, IS_SET(emotion_types[i].flag, NEED_PC));
 		victim = victimEntity != entt::null ? CHARACTER_MANAGER::instance().Find(ecs::PlayerRuntime::GetPacketVID(victimEntity)) : nullptr;
 	}
 
@@ -202,7 +202,7 @@ ACMD(do_emotion)
 		if (!victim)
 		{
 #ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 267, "");
+			ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 267, "");
 #endif
 			return;
 		}
@@ -210,23 +210,23 @@ ACMD(do_emotion)
 
 	if (victim)
 	{
-		if (!(ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(victim))) || victim == ch)
+		if (!(ecs::PlayerRuntime::IsPC(((victim) ? (victim)->GetEntityHandle() : entt::null))) || victim == ch)
 			return;
 
 		if (victim->IsRiding())
 		{
 #ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 799, "");
+			ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 799, "");
 #endif
 			return;
 		}
 
-		int32_t distance = DISTANCE_APPROX(ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(ch)) - ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(victim)), ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(ch)) - ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(victim)));
+		int32_t distance = DISTANCE_APPROX(ecs::PlayerRuntime::GetX(((ch) ? (ch)->GetEntityHandle() : entt::null)) - ecs::PlayerRuntime::GetX(((victim) ? (victim)->GetEntityHandle() : entt::null)), ecs::PlayerRuntime::GetY(((ch) ? (ch)->GetEntityHandle() : entt::null)) - ecs::PlayerRuntime::GetY(((victim) ? (victim)->GetEntityHandle() : entt::null)));
 
 		if (distance < 10)
 		{
 #ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 288, "");
+			ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 288, "");
 #endif
 			return;
 		}
@@ -234,7 +234,7 @@ ACMD(do_emotion)
 		if (distance > 500)
 		{
 #ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 289, "");
+			ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 289, "");
 #endif
 			return;
 		}
@@ -244,7 +244,7 @@ ACMD(do_emotion)
 			if (GET_SEX(ch)==GET_SEX(victim))
 			{
 #ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 445, "");
+				ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 445, "");
 #endif
 				return;
 			}
@@ -254,16 +254,16 @@ ACMD(do_emotion)
 		{
 			if (s_emotion_set.find(std::make_pair(((victim)->GetLegacyVID()), ((ch)->GetLegacyVID()))) == s_emotion_set.end())
 			{
-				if (true == marriage::CManager::instance().IsMarried( (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))) ))
+				if (true == marriage::CManager::instance().IsMarried( (ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null))) ))
 				{
-					const marriage::TMarriage* marriageInfo = marriage::CManager::instance().Get( (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))) );
+					const marriage::TMarriage* marriageInfo = marriage::CManager::instance().Get( (ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null))) );
 
-					const uint32_t other = marriageInfo->GetOther( (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))) );
+					const uint32_t other = marriageInfo->GetOther( (ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null))) );
 
-					if (0 == other || other != (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(victim))))
+					if (0 == other || other != (ecs::PlayerRuntime::GetPlayerID(((victim) ? (victim)->GetEntityHandle() : entt::null))))
 					{
 #ifdef TEXTS_IMPROVEMENT
-						ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 432, "%s", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(victim)).data());
+						ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 432, "%s", ecs::PlayerRuntime::GetName(((victim) ? (victim)->GetEntityHandle() : entt::null)).data());
 #endif
 						return;
 					}
@@ -271,7 +271,7 @@ ACMD(do_emotion)
 				else
 				{
 #ifdef TEXTS_IMPROVEMENT
-					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 432, "%s", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(victim)).data());
+					ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 432, "%s", ecs::PlayerRuntime::GetName(((victim) ? (victim)->GetEntityHandle() : entt::null)).data());
 #endif
 					return;
 				}
@@ -303,7 +303,7 @@ ACMD(do_emotion)
 	ch->PacketAround(buf.read_peek(), buf.size());
 
 	if (victim)
-		LOG_INFO("ACTION: {} TO {}", emotion_types[i].command, ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(victim)).data());
+		LOG_INFO("ACTION: {} TO {}", emotion_types[i].command, ecs::PlayerRuntime::GetName(((victim) ? (victim)->GetEntityHandle() : entt::null)).data());
 	else
 		LOG_INFO("ACTION: {}", emotion_types[i].command);
 }

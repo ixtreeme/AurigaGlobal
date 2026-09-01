@@ -23,7 +23,6 @@
 #include "../../arena.h"
 #include "../../desc.h"
 #include "../../PetSystem.h"
-#include "../AIHelpers.hpp"
 #include "../EntityFactory.hpp"
 #include "../Registry.hpp"
 #include "../VIDRegistry.hpp"
@@ -226,10 +225,14 @@ void CHARACTER::UpdateMountInventoryCountOverhead(LPCHARACTER viewer)
     if (!IsPC())
         return;
 
-    if (!viewer || !ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(viewer)))
+    const entt::entity viewerEntity = viewer
+        ? viewer->GetEntityHandle()
+        : entt::null;
+    if (!ecs::PlayerRuntime::IsPC(viewerEntity))
         return;
 
-    if (!ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(viewer)))
+    LPDESC viewerDesc = ecs::PlayerRuntime::GetDesc(viewerEntity);
+    if (!viewerDesc)
         return;
 
     TPacketGCFakeShopSign p;
@@ -238,7 +241,7 @@ void CHARACTER::UpdateMountInventoryCountOverhead(LPCHARACTER viewer)
     p.iMountCount = GetMountCount();
     p.iBeltCount = GetBeltCount();
 
-    ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(viewer))->Packet(&p, sizeof(p));
+    viewerDesc->Packet(&p, sizeof(p));
 }
 
 void CHARACTER::UpdateMountCountOverheadToViewers()
@@ -256,7 +259,8 @@ void CHARACTER::UpdateMountCountOverheadToViewers()
         if (!viewer || viewer == this)
             continue;
 
-        if (ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(viewer)) && ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(viewer)))
+        const entt::entity viewerEntity = viewer->GetEntityHandle();
+        if (ecs::PlayerRuntime::IsPC(viewerEntity) && ecs::PlayerRuntime::GetDesc(viewerEntity))
             UpdateMountInventoryCountOverhead(viewer);
     }
 #endif
@@ -273,6 +277,44 @@ bool IsRiding(entt::entity rider)
     return state && (state->horseRiding || state->mountVnum != 0);
 }
 
+bool IsSummoned(entt::entity rider)
+{
+    auto* character = ResolveLegacyMountOwnerBoundary(rider);
+    return character && character->GetHorse();
+}
+
+bool IsRidingCostume(entt::entity rider)
+{
+    auto* character = ResolveLegacyMountOwnerBoundary(rider);
+    return character && character->IsRidingMount();
+}
+
+bool IsOwnedHorse(entt::entity rider, entt::entity horse)
+{
+    auto* legacyHorse = ResolveLegacyMountOwnerBoundary(horse);
+    auto* legacyRider = ResolveLegacyMountOwnerBoundary(rider);
+    return legacyHorse && legacyHorse->GetRider() == legacyRider;
+}
+
+bool StartRiding(entt::entity rider)
+{
+    auto* character = ResolveLegacyMountOwnerBoundary(rider);
+    return character && character->StartRiding();
+}
+
+bool StopRiding(entt::entity rider)
+{
+    auto* character = ResolveLegacyMountOwnerBoundary(rider);
+    return character && character->StopRiding();
+}
+
+void SummonHorse(entt::entity rider, bool summon, bool fromFar,
+    uint32_t vnum, const char* name)
+{
+    if (auto* character = ResolveLegacyMountOwnerBoundary(rider))
+        character->HorseSummon(summon, fromFar, vnum, name);
+}
+
 uint32_t GetMountVnum(entt::entity rider)
 {
     if (rider == entt::null || !g_registry.valid(rider))
@@ -287,6 +329,64 @@ void SetMountVnum(entt::entity rider, uint32_t vnum)
     auto* ch = ResolveLegacyMountOwnerBoundary(rider);
     if (ch)
         ch->MountVnum(vnum);
+}
+
+int GetHorseLevel(entt::entity rider)
+{
+    auto* character = ResolveLegacyMountOwnerBoundary(rider);
+    return character ? character->GetHorseLevel() : 0;
+}
+
+void SetHorseLevel(entt::entity rider, int level)
+{
+    if (auto* character = ResolveLegacyMountOwnerBoundary(rider))
+    {
+        character->SetHorseLevel(level);
+        character->ComputePoints();
+        character->SkillLevelPacket();
+    }
+}
+
+int GetHorseHealth(entt::entity rider)
+{
+    auto* character = ResolveLegacyMountOwnerBoundary(rider);
+    return character ? character->GetHorseHealth() : 0;
+}
+
+int GetHorseMaxHealth(entt::entity rider)
+{
+    auto* character = ResolveLegacyMountOwnerBoundary(rider);
+    return character ? character->GetHorseMaxHealth() : 0;
+}
+
+int GetHorseStamina(entt::entity rider)
+{
+    auto* character = ResolveLegacyMountOwnerBoundary(rider);
+    return character ? character->GetHorseStamina() : 0;
+}
+
+int GetHorseMaxStamina(entt::entity rider)
+{
+    auto* character = ResolveLegacyMountOwnerBoundary(rider);
+    return character ? character->GetHorseMaxStamina() : 0;
+}
+
+int GetHorseGrade(entt::entity rider)
+{
+    auto* character = ResolveLegacyMountOwnerBoundary(rider);
+    return character ? character->GetHorseGrade() : 0;
+}
+
+bool ReviveHorse(entt::entity rider)
+{
+    auto* character = ResolveLegacyMountOwnerBoundary(rider);
+    return character && character->ReviveHorse();
+}
+
+void FeedHorse(entt::entity rider)
+{
+    if (auto* character = ResolveLegacyMountOwnerBoundary(rider))
+        character->FeedHorse();
 }
 
 void ForceClearRidingState(entt::entity rider)
@@ -323,7 +423,8 @@ void ForceClearRidingState(entt::entity rider)
 
 bool CHARACTER::StartRiding()
 {
-	ecs::ChatSystem::Send(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, "DEBUG: char_horse.cpp: bool CHARACTER::StartRiding()");
+	const entt::entity rider = GetEntityHandle();
+	ecs::ChatSystem::Send(rider, CHAT_TYPE_INFO, "DEBUG: char_horse.cpp: bool CHARACTER::StartRiding()");
 #ifdef ENABLE_BUG_FIXES
 	if (IsRiding()) {
 		return false;
@@ -333,7 +434,7 @@ bool CHARACTER::StartRiding()
 #ifdef BLOCK_RIDING_INSIDE_WAR
 	if (GetWarMap()) {
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 852, "");
+		ecs::ChatSystem::SendNew(rider, CHAT_TYPE_INFO, 852, "");
 #endif
 		RemoveAffect(AFFECT_MOUNT);
 		RemoveAffect(AFFECT_MOUNT_BONUS);
@@ -356,7 +457,7 @@ bool CHARACTER::StartRiding()
 	if (IsDead() == true)
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 356, "");
+		ecs::ChatSystem::SendNew(rider, CHAT_TYPE_INFO, 356, "");
 #endif
 		return false;
 	}
@@ -364,7 +465,7 @@ bool CHARACTER::StartRiding()
 	if (IsPolymorphed())
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 355, "");
+		ecs::ChatSystem::SendNew(rider, CHAT_TYPE_INFO, 355, "");
 #endif
 		return false;
 	}
@@ -375,7 +476,7 @@ bool CHARACTER::StartRiding()
 	if (ItemSystem::IsValidItem(armor) && armorVnum >= 11901 && armorVnum <= 11904)
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 410, "");
+		ecs::ChatSystem::SendNew(rider, CHAT_TYPE_INFO, 410, "");
 #endif
 		return false;
 	}
@@ -383,17 +484,19 @@ bool CHARACTER::StartRiding()
 	if (CArenaManager::instance().IsArenaMap(GetMapIndex()) == true)
 		return false;
 
-	uint32_t dwMountVnum = m_chHorse ? ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(m_chHorse)) : GetMyHorseVnum();
+	uint32_t dwMountVnum = m_chHorse
+		? ecs::PlayerRuntime::GetRaceNum(m_chHorse->GetEntityHandle())
+		: GetMyHorseVnum();
 
 	if (false == CHorseRider::StartRiding())
 	{
 #ifdef TEXTS_IMPROVEMENT
 		if (GetHorseLevel() <= 0) {
-			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 333, "");
+			ecs::ChatSystem::SendNew(rider, CHAT_TYPE_INFO, 333, "");
 		} else if (GetHorseHealth() <= 0) {
-			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 335, "");
+			ecs::ChatSystem::SendNew(rider, CHAT_TYPE_INFO, 335, "");
 		} else if (GetHorseStamina() <= 0) {
-			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 334, "");
+			ecs::ChatSystem::SendNew(rider, CHAT_TYPE_INFO, 334, "");
 		}
 #endif
 		return false;
@@ -407,17 +510,18 @@ bool CHARACTER::StartRiding()
 		LOG_INFO("Ride Horse : {} ", GetName());
 
 #ifdef DISABLE_CORE_PULSE_RAZOR93
-	SyncMountState(AIHelpers::EcsOf(this), GetMountVnum(), GetLastMountTime(), m_bSendHorseLevel, m_bSendHorseHealthGrade, m_bSendHorseStaminaGrade, m_mountPulse);
+	SyncMountState(rider, GetMountVnum(), GetLastMountTime(), m_bSendHorseLevel, m_bSendHorseHealthGrade, m_bSendHorseStaminaGrade, m_mountPulse);
 #else
-	SyncMountState(AIHelpers::EcsOf(this), GetMountVnum(), GetLastMountTime(), m_bSendHorseLevel, m_bSendHorseHealthGrade, m_bSendHorseStaminaGrade, 0);
+	SyncMountState(rider, GetMountVnum(), GetLastMountTime(), m_bSendHorseLevel, m_bSendHorseHealthGrade, m_bSendHorseStaminaGrade, 0);
 #endif
-	SyncHorseRiding(AIHelpers::EcsOf(this), true);
+	SyncHorseRiding(rider, true);
 	return true;
 }
 
 bool CHARACTER::StopRiding()
 {
-	ecs::ChatSystem::Send(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, "DEBUG: char_horse.cpp: bool CHARACTER::StopRiding()");
+	const entt::entity rider = GetEntityHandle();
+	ecs::ChatSystem::Send(rider, CHAT_TYPE_INFO, "DEBUG: char_horse.cpp: bool CHARACTER::StopRiding()");
 
 	if (CHorseRider::StopRiding())
 	{
@@ -433,7 +537,7 @@ bool CHARACTER::StopRiding()
 		{
 			m_dwMountVnum = 0;
 			ComputePoints();
-			NetworkSyncSystem::UpdatePacket(AIHelpers::EcsOf(this));
+			NetworkSyncSystem::UpdatePacket(rider);
 		}
 
 		PointChange(POINT_ST, 0);
@@ -441,11 +545,11 @@ bool CHARACTER::StopRiding()
 		PointChange(POINT_HT, 0);
 		PointChange(POINT_IQ, 0);
 #ifdef DISABLE_CORE_PULSE_RAZOR93
-		SyncMountState(AIHelpers::EcsOf(this), GetMountVnum(), GetLastMountTime(), m_bSendHorseLevel, m_bSendHorseHealthGrade, m_bSendHorseStaminaGrade, m_mountPulse);
+		SyncMountState(rider, GetMountVnum(), GetLastMountTime(), m_bSendHorseLevel, m_bSendHorseHealthGrade, m_bSendHorseStaminaGrade, m_mountPulse);
 #else
-		SyncMountState(AIHelpers::EcsOf(this), GetMountVnum(), GetLastMountTime(), m_bSendHorseLevel, m_bSendHorseHealthGrade, m_bSendHorseStaminaGrade, 0);
+		SyncMountState(rider, GetMountVnum(), GetLastMountTime(), m_bSendHorseLevel, m_bSendHorseHealthGrade, m_bSendHorseStaminaGrade, 0);
 #endif
-		SyncHorseRiding(AIHelpers::EcsOf(this), false);
+		SyncHorseRiding(rider, false);
 		return true;
 	}
 
@@ -527,7 +631,7 @@ void CHARACTER::HorseSummon(bool bSummon, bool bFromFar, uint32_t dwVnum, const 
 		if (!m_chHorse)
 		{
 #ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 328, "");
+			ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 328, "");
 #endif
 			return;
 		}
@@ -573,7 +677,7 @@ void CHARACTER::HorseSummon(bool bSummon, bool bFromFar, uint32_t dwVnum, const 
 		{
 			TPacketGCDead pack;
 			pack.header	= HEADER_GC_DEAD;
-			pack.vid    = ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(m_chHorse));
+			pack.vid    = ecs::PlayerRuntime::GetPacketVID(m_chHorse->GetEntityHandle());
 			PacketAround(&pack, sizeof(pack));
 		}
 
@@ -598,10 +702,15 @@ void CHARACTER::HorseSummon(bool bSummon, bool bFromFar, uint32_t dwVnum, const 
 		else
 		{
 			chHorse->SetNowWalking(false);
+			const entt::entity horseEntity = chHorse->GetEntityHandle();
 			float fx, fy;
-			chHorse->SetRotation(GetDegreeFromPositionXY(ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(chHorse)), ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(chHorse)), GetX(), GetY())+180);
+			chHorse->SetRotation(GetDegreeFromPositionXY(
+				ecs::PlayerRuntime::GetX(horseEntity),
+				ecs::PlayerRuntime::GetY(horseEntity), GetX(), GetY()) + 180);
 			GetDeltaByDegree(chHorse->GetRotation(), 3500, &fx, &fy);
-			chHorse->Goto((int32_t)(ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(chHorse))+fx), (int32_t) (ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(chHorse))+fy));
+			chHorse->Goto(
+				static_cast<int32_t>(ecs::PlayerRuntime::GetX(horseEntity) + fx),
+				static_cast<int32_t>(ecs::PlayerRuntime::GetY(horseEntity) + fy));
 			chHorse->SendMovePacket(FUNC_WAIT, 0, 0, 0, 0);
 		}
 
@@ -609,9 +718,9 @@ void CHARACTER::HorseSummon(bool bSummon, bool bFromFar, uint32_t dwVnum, const 
 	}
 
 #ifdef DISABLE_CORE_PULSE_RAZOR93
-	SyncMountState(AIHelpers::EcsOf(this), GetMountVnum(), GetLastMountTime(), m_bSendHorseLevel, m_bSendHorseHealthGrade, m_bSendHorseStaminaGrade, m_mountPulse);
+	SyncMountState(GetEntityHandle(), GetMountVnum(), GetLastMountTime(), m_bSendHorseLevel, m_bSendHorseHealthGrade, m_bSendHorseStaminaGrade, m_mountPulse);
 #else
-	SyncMountState(AIHelpers::EcsOf(this), GetMountVnum(), GetLastMountTime(), m_bSendHorseLevel, m_bSendHorseHealthGrade, m_bSendHorseStaminaGrade, 0);
+	SyncMountState(GetEntityHandle(), GetMountVnum(), GetLastMountTime(), m_bSendHorseLevel, m_bSendHorseHealthGrade, m_bSendHorseStaminaGrade, 0);
 #endif
 }
 
@@ -643,9 +752,9 @@ bool CHARACTER::ReviveHorse()
 		HorseSummon(false);
 		HorseSummon(true);
 #ifdef DISABLE_CORE_PULSE_RAZOR93
-		SyncMountState(AIHelpers::EcsOf(this), GetMountVnum(), GetLastMountTime(), m_bSendHorseLevel, m_bSendHorseHealthGrade, m_bSendHorseStaminaGrade, m_mountPulse);
+		SyncMountState(GetEntityHandle(), GetMountVnum(), GetLastMountTime(), m_bSendHorseLevel, m_bSendHorseHealthGrade, m_bSendHorseStaminaGrade, m_mountPulse);
 #else
-		SyncMountState(AIHelpers::EcsOf(this), GetMountVnum(), GetLastMountTime(), m_bSendHorseLevel, m_bSendHorseHealthGrade, m_bSendHorseStaminaGrade, 0);
+		SyncMountState(GetEntityHandle(), GetMountVnum(), GetLastMountTime(), m_bSendHorseLevel, m_bSendHorseHealthGrade, m_bSendHorseStaminaGrade, 0);
 #endif
 		return true;
 	}
@@ -656,7 +765,7 @@ void CHARACTER::ClearHorseInfo()
 {
 	if (!IsHorseRiding())
 	{
-		ecs::ChatSystem::Send(AIHelpers::EcsOf(this), CHAT_TYPE_COMMAND, "hide_horse_state");
+		ecs::ChatSystem::Send(GetEntityHandle(), CHAT_TYPE_COMMAND, "hide_horse_state");
 
 		m_bSendHorseLevel = 0;
 		m_bSendHorseHealthGrade = 0;
@@ -665,9 +774,9 @@ void CHARACTER::ClearHorseInfo()
 
 	m_chHorse = nullptr;
 #ifdef DISABLE_CORE_PULSE_RAZOR93
-	SyncMountState(AIHelpers::EcsOf(this), GetMountVnum(), GetLastMountTime(), m_bSendHorseLevel, m_bSendHorseHealthGrade, m_bSendHorseStaminaGrade, m_mountPulse);
+	SyncMountState(GetEntityHandle(), GetMountVnum(), GetLastMountTime(), m_bSendHorseLevel, m_bSendHorseHealthGrade, m_bSendHorseStaminaGrade, m_mountPulse);
 #else
-	SyncMountState(AIHelpers::EcsOf(this), GetMountVnum(), GetLastMountTime(), m_bSendHorseLevel, m_bSendHorseHealthGrade, m_bSendHorseStaminaGrade, 0);
+	SyncMountState(GetEntityHandle(), GetMountVnum(), GetLastMountTime(), m_bSendHorseLevel, m_bSendHorseHealthGrade, m_bSendHorseStaminaGrade, 0);
 #endif
 }
 
@@ -699,15 +808,15 @@ void CHARACTER::SendHorseInfo()
 				m_bSendHorseHealthGrade != iHealthGrade ||
 				m_bSendHorseStaminaGrade != iStaminaGrade)
 		{
-			ecs::ChatSystem::Send(AIHelpers::EcsOf(this), CHAT_TYPE_COMMAND, "horse_state %d %d %d", GetHorseLevel(), iHealthGrade, iStaminaGrade);
+			ecs::ChatSystem::Send(GetEntityHandle(), CHAT_TYPE_COMMAND, "horse_state %d %d %d", GetHorseLevel(), iHealthGrade, iStaminaGrade);
 
 			m_bSendHorseLevel = GetHorseLevel();
 			m_bSendHorseHealthGrade = iHealthGrade;
 			m_bSendHorseStaminaGrade = iStaminaGrade;
 #ifdef DISABLE_CORE_PULSE_RAZOR93
-			SyncMountState(AIHelpers::EcsOf(this), GetMountVnum(), GetLastMountTime(), m_bSendHorseLevel, m_bSendHorseHealthGrade, m_bSendHorseStaminaGrade, m_mountPulse);
+			SyncMountState(GetEntityHandle(), GetMountVnum(), GetLastMountTime(), m_bSendHorseLevel, m_bSendHorseHealthGrade, m_bSendHorseStaminaGrade, m_mountPulse);
 #else
-			SyncMountState(AIHelpers::EcsOf(this), GetMountVnum(), GetLastMountTime(), m_bSendHorseLevel, m_bSendHorseHealthGrade, m_bSendHorseStaminaGrade, 0);
+			SyncMountState(GetEntityHandle(), GetMountVnum(), GetLastMountTime(), m_bSendHorseLevel, m_bSendHorseHealthGrade, m_bSendHorseStaminaGrade, 0);
 #endif
 		}
 	}
@@ -743,9 +852,9 @@ void CHARACTER::SetHorseLevel(int iLevel)
 	CHorseRider::SetHorseLevel(iLevel);
 	SetSkillLevel(SKILL_HORSE, GetHorseLevel());
 #ifdef DISABLE_CORE_PULSE_RAZOR93
-	SyncMountState(AIHelpers::EcsOf(this), GetMountVnum(), GetLastMountTime(), m_bSendHorseLevel, m_bSendHorseHealthGrade, m_bSendHorseStaminaGrade, m_mountPulse);
+	SyncMountState(GetEntityHandle(), GetMountVnum(), GetLastMountTime(), m_bSendHorseLevel, m_bSendHorseHealthGrade, m_bSendHorseStaminaGrade, m_mountPulse);
 #else
-	SyncMountState(AIHelpers::EcsOf(this), GetMountVnum(), GetLastMountTime(), m_bSendHorseLevel, m_bSendHorseHealthGrade, m_bSendHorseStaminaGrade, 0);
+	SyncMountState(GetEntityHandle(), GetMountVnum(), GetLastMountTime(), m_bSendHorseLevel, m_bSendHorseHealthGrade, m_bSendHorseStaminaGrade, 0);
 #endif
 }
 
@@ -791,7 +900,7 @@ void CHARACTER::MountSummon(entt::entity mountItem)
 	if (IsPolymorphed() == true)
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 732, "");
+		ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 732, "");
 #endif
 		return;
 	}

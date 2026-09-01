@@ -7,7 +7,6 @@
 #include "constants.h"
 #include "char_interface.hpp"
 #include "char_manager.h"
-#include "ecs/CharacterAccessors.hpp"
 #include "log.h"
 #include "questmanager.h"
 #include "questlua.h"
@@ -44,8 +43,6 @@
 #ifdef ENABLE_NEWSTUFF
 #include "db.h"
 #endif
-extern ACMD(do_block_chat);
-
 namespace quest
 {
 	ALUA(_get_locale)
@@ -93,7 +90,7 @@ namespace quest
 		ostringstream s;
 		combine_lua_string(L, s);
 
-		ecs::ChatSystem::Send(AIHelpers::EcsOf(CQuestManager::Instance().GetCurrentCharacterPtr()), CHAT_TYPE_TALKING, "%s", s.str().c_str());
+		ecs::ChatSystem::Send(((CQuestManager::Instance().GetCurrentCharacterPtr()) ? (CQuestManager::Instance().GetCurrentCharacterPtr())->GetEntityHandle() : entt::null), CHAT_TYPE_TALKING, "%s", s.str().c_str());
 		return 0;
 	}
 
@@ -103,7 +100,7 @@ namespace quest
 		// DUAL-PATH: legacy only during migration window
 		ostringstream s;
 		combine_lua_string(L, s);
-		ecs::ChatSystem::Send(AIHelpers::EcsOf(CQuestManager::Instance().GetCurrentCharacterPtr()), CHAT_TYPE_COMMAND, "%s", s.str().c_str());
+		ecs::ChatSystem::Send(((CQuestManager::Instance().GetCurrentCharacterPtr()) ? (CQuestManager::Instance().GetCurrentCharacterPtr())->GetEntityHandle() : entt::null), CHAT_TYPE_COMMAND, "%s", s.str().c_str());
 		return 0;
 	}
 
@@ -113,7 +110,7 @@ namespace quest
 		// DUAL-PATH: legacy only during migration window
 		ostringstream s;
 		combine_lua_string(L, s);
-		ecs::ChatSystem::Send(AIHelpers::EcsOf(CQuestManager::Instance().GetCurrentCharacterPtr()), CHAT_TYPE_INFO, "%s", s.str().c_str());
+		ecs::ChatSystem::Send(((CQuestManager::Instance().GetCurrentCharacterPtr()) ? (CQuestManager::Instance().GetCurrentCharacterPtr())->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "%s", s.str().c_str());
 		return 0;
 	}
 
@@ -123,7 +120,7 @@ namespace quest
 		// DUAL-PATH: legacy only during migration window
 		ostringstream s;
 		combine_lua_string(L, s);
-		ecs::ChatSystem::Send(AIHelpers::EcsOf(CQuestManager::Instance().GetCurrentCharacterPtr()), CHAT_TYPE_NOTICE, "%s", s.str().c_str());
+		ecs::ChatSystem::Send(((CQuestManager::Instance().GetCurrentCharacterPtr()) ? (CQuestManager::Instance().GetCurrentCharacterPtr())->GetEntityHandle() : entt::null), CHAT_TYPE_NOTICE, "%s", s.str().c_str());
 		return 0;
 	}
 
@@ -247,7 +244,7 @@ namespace quest
 
 			CQuestManager & q = CQuestManager::instance();
 			int timernpc = q.LoadTimerScript(name);
-			q.GetCurrentPC()->AddTimer(name, quest_create_timer_event(name, ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(q.GetCurrentCharacterPtr())), t, timernpc, true));
+			q.GetCurrentPC()->AddTimer(name, quest_create_timer_event(name, ecs::PlayerRuntime::GetPlayerID(((q.GetCurrentCharacterPtr()) ? (q.GetCurrentCharacterPtr())->GetEntityHandle() : entt::null)), t, timernpc, true));
 		}
 
 		return 0;
@@ -272,7 +269,7 @@ namespace quest
 			double t = lua_tonumber(L, -1);
 
 			CQuestManager& q = CQuestManager::instance();
-			quest_create_timer_event("", ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(q.GetCurrentCharacterPtr())), t);
+			quest_create_timer_event("", ecs::PlayerRuntime::GetPlayerID(((q.GetCurrentCharacterPtr()) ? (q.GetCurrentCharacterPtr())->GetEntityHandle() : entt::null)), t);
 		}
 
 		return 0;
@@ -295,7 +292,7 @@ namespace quest
 
 			CQuestManager & q = CQuestManager::instance();
 			int timernpc = q.LoadTimerScript(name);
-			q.GetCurrentPC()->AddTimer(name, quest_create_timer_event(name, ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(q.GetCurrentCharacterPtr())), t, timernpc));
+			q.GetCurrentPC()->AddTimer(name, quest_create_timer_event(name, ecs::PlayerRuntime::GetPlayerID(((q.GetCurrentCharacterPtr()) ? (q.GetCurrentCharacterPtr())->GetEntityHandle() : entt::null)), t, timernpc));
 		}
 
 		return 0;
@@ -366,7 +363,6 @@ namespace quest
 		// DUAL-PATH: legacy only during migration window
 		CQuestManager& q = CQuestManager::instance();
 		const entt::entity chEntity = q.GetCurrentPCEntity();
-		auto* ch = ecs::LegacyCharOf(chEntity);
 		uint32_t what = 0;
 		const char* how = "";
 		const char* hint = "";
@@ -375,7 +371,7 @@ namespace quest
 		if (lua_isstring(L, 2)) how = lua_tostring(L, 2);
 		if (lua_tostring(L, 3)) hint = lua_tostring(L, 3);
 
-		LogManager::instance().CharLog(ch, what, how, hint);
+		LogManager::instance().CharLog(chEntity, what, how, hint);
 		return 0;
 	}
 
@@ -385,7 +381,6 @@ namespace quest
 		// DUAL-PATH: legacy only during migration window
 		CQuestManager& q = CQuestManager::instance();
 		const entt::entity chEntity = q.GetCurrentPCEntity();
-		auto* ch = ecs::LegacyCharOf(chEntity);
 		uint32_t dwItemID = 0;
 		const char* how = "";
 		const char* hint = "";
@@ -397,7 +392,7 @@ namespace quest
 		const entt::entity item = ItemSystem::FindItemByID(dwItemID);
 
 		if (item != entt::null)
-			LogManager::instance().ItemLogEntity(ch, item, how, hint);
+			LogManager::instance().ItemLogEntity(chEntity, item, how, hint);
 
 		return 0;
 	}
@@ -421,12 +416,10 @@ namespace quest
 			return 0;
 
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
-
-		auto* ch = ecs::LegacyCharOf(chEntity);
-		if (!ch)
+		if (chEntity == entt::null || !g_registry.valid(chEntity))
 			return 0;
 
-		LOG_INFO("QUEST: quest: {} player: {} : {}", pc->GetCurrentQuestName().c_str(), ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), lua_tostring(L, 2));
+		LOG_INFO("QUEST: quest: {} player: {} : {}", pc->GetCurrentQuestName().c_str(), ecs::PlayerRuntime::GetName(chEntity).data(), lua_tostring(L, 2));
 		return 0;
 	}
 
@@ -443,12 +436,10 @@ namespace quest
 			return 0;
 
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
-
-		auto* ch = ecs::LegacyCharOf(chEntity);
-		if (!ch)
+		if (chEntity == entt::null || !g_registry.valid(chEntity))
 			return 0;
 
-		sys_err("QUEST: quest: {} player: {} : {}", pc->GetCurrentQuestName().c_str(), ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), lua_tostring(L, 1));
+		sys_err("QUEST: quest: {} player: {} : {}", pc->GetCurrentQuestName().c_str(), ecs::PlayerRuntime::GetName(chEntity).data(), lua_tostring(L, 1));
 		return 0;
 	}
 
@@ -541,7 +532,7 @@ namespace quest
 	{
 		// migrated from CHARACTER::give_char_privilege
 		// DUAL-PATH: legacy only during migration window
-		int pid = ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(CQuestManager::instance().GetCurrentCharacterPtr()));
+		int pid = ecs::PlayerRuntime::GetPlayerID(((CQuestManager::instance().GetCurrentCharacterPtr()) ? (CQuestManager::instance().GetCurrentCharacterPtr())->GetEntityHandle() : entt::null));
 		int type = (int)lua_tonumber(L, 1);
 		int value = (int)lua_tonumber(L, 2);
 
@@ -565,15 +556,14 @@ namespace quest
 		int value = (int)lua_tonumber(L, 3);
 		int time = (int) lua_tonumber(L,4);
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
-		auto* ch = ecs::LegacyCharOf(chEntity);
 		if (MAX_PRIV_NUM <= type)
 		{
 			sys_err("PRIV_MANAGER: _give_empire_privilege: wrong empire priv type({})", type);
 			return 0;
 		}
 
-		if (ch)
-			LOG_INFO("_give_empire_privileage(empire={}, type={}, value={}, time={}), by quest, {}", empire, type, value, time, ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data());
+		if (chEntity != entt::null && g_registry.valid(chEntity))
+			LOG_INFO("_give_empire_privileage(empire={}, type={}, value={}, time={}), by quest, {}", empire, type, value, time, ecs::PlayerRuntime::GetName(chEntity).data());
 		else
 			LOG_INFO("_give_empire_privileage(empire={}, type={}, value={}, time={}), by quest, NULL", empire, type, value, time);
 
@@ -726,12 +716,12 @@ namespace quest
 			TItemTable* pTable = ITEM_MANAGER::instance().GetTable(dwVnum);
 #ifdef ENABLE_MULTI_NAMES
 			const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
-			auto* ch = ecs::LegacyCharOf(chEntity);
+			LPDESC desc = ecs::PlayerRuntime::GetDesc(chEntity);
 #endif
 
 			if (pTable)
 #ifdef ENABLE_MULTI_NAMES
-				lua_pushstring(L,pTable->szLocaleName[ch && ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch)) ? ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->GetLanguage() : 0]);
+				lua_pushstring(L,pTable->szLocaleName[desc ? desc->GetLanguage() : 0]);
 #else
 				lua_pushstring(L,pTable->szLocaleName);
 #endif
@@ -754,12 +744,12 @@ namespace quest
 
 #ifdef ENABLE_MULTI_NAMES
 			const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
-			auto* ch = ecs::LegacyCharOf(chEntity);
+			LPDESC desc = ecs::PlayerRuntime::GetDesc(chEntity);
 #endif
 
 			if (pkMob)
 #ifdef ENABLE_MULTI_NAMES
-				lua_pushstring(L, pkMob->m_table.szLocaleName[ch && ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch)) ? ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->GetLanguage() : 0]);
+				lua_pushstring(L, pkMob->m_table.szLocaleName[desc ? desc->GetLanguage() : 0]);
 #else
 				lua_pushstring(L, pkMob->m_table.szLocaleName);
 #endif
@@ -820,9 +810,7 @@ namespace quest
 		size_t len = strlen(str);
 
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
-
-		auto* ch = ecs::LegacyCharOf(chEntity);
-		interpret_command(ch, str, len);
+		interpret_command(chEntity, str, len);
 		return 0;
 	}
 
@@ -838,8 +826,8 @@ namespace quest
 		}
 
 		const char * name = lua_tostring(L, 1);
-		LPCHARACTER tch = CHARACTER_MANAGER::instance().FindPC(name);
-		lua_pushnumber(L, tch ? ((tch)->GetLegacyVID()) : 0);
+		const entt::entity target = ecs::PlayerRuntime::FindByPlayerName(name);
+		lua_pushnumber(L, ecs::PlayerRuntime::GetPacketVID(target));
 		return 1;
 	}
 
@@ -859,22 +847,17 @@ namespace quest
 		unsigned int uiJobFlag = (unsigned int) lua_tonumber(L, 3);
 
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
-
-		auto* ch = ecs::LegacyCharOf(chEntity);
-		LPCHARACTER tch;
+		const int32_t mapIndex = ecs::PlayerRuntime::GetMapIndex(chEntity);
 
 		if (test_server)
 		{
-			LOG_INFO("find_pc_cond map={}, job={}, level={}~{}", ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)), uiJobFlag, iMinLev, iMaxLev);
+			LOG_INFO("find_pc_cond map={}, job={}, level={}~{}", mapIndex, uiJobFlag, iMinLev, iMaxLev);
 		}
 
-		tch = CHARACTER_MANAGER::instance().FindSpecifyPC(uiJobFlag,
-				ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)),
-				ch,
-				iMinLev,
-				iMaxLev);
+		const entt::entity target = ecs::PlayerRuntime::FindSpecifyPC(
+			uiJobFlag, mapIndex, chEntity, iMinLev, iMaxLev);
 
-		lua_pushnumber(L, tch ? ((tch)->GetLegacyVID()) : 0);
+		lua_pushnumber(L, ecs::PlayerRuntime::GetPacketVID(target));
 		return 1;
 	}
 
@@ -901,7 +884,7 @@ namespace quest
 			{
 				LPCHARACTER tch = *(it++);
 
-				if (ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(tch)) == ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(CQuestManager::instance().GetCurrentCharacterPtr())))
+				if (ecs::PlayerRuntime::GetMapIndex(((tch) ? (tch)->GetEntityHandle() : entt::null)) == ecs::PlayerRuntime::GetMapIndex(((CQuestManager::instance().GetCurrentCharacterPtr()) ? (CQuestManager::instance().GetCurrentCharacterPtr())->GetEntityHandle() : entt::null)))
 				{
 					lua_pushnumber(L, ((tch)->GetLegacyVID()));
 					return 1;
@@ -1004,7 +987,7 @@ namespace quest
 		// DUAL-PATH: legacy only during migration window
 		ostringstream s;
 		combine_lua_string(L, s);
-		ecs::ChatSystem::Send(AIHelpers::EcsOf(CQuestManager::Instance().GetCurrentCharacterPtr()), CHAT_TYPE_BIG_NOTICE, "%s", s.str().c_str());
+		ecs::ChatSystem::Send(((CQuestManager::Instance().GetCurrentCharacterPtr()) ? (CQuestManager::Instance().GetCurrentCharacterPtr())->GetEntityHandle() : entt::null), CHAT_TYPE_BIG_NOTICE, "%s", s.str().c_str());
 		return 0;
 	}
 
@@ -1014,7 +997,7 @@ namespace quest
 		// DUAL-PATH: legacy only during migration window
 		const LPCHARACTER pChar = CQuestManager::instance().GetCurrentCharacterPtr();
 		if (pChar != nullptr) {
-			SendNoticeMap(lua_tostring(L,1), ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(pChar)), true);
+			SendNoticeMap(lua_tostring(L,1), ecs::PlayerRuntime::GetMapIndex(((pChar) ? (pChar)->GetEntityHandle() : entt::null)), true);
 		}
 
 		return 0;
@@ -1105,16 +1088,16 @@ namespace quest
 			if (ent->IsType(ENTITY_CHARACTER))
 			{
 				LPCHARACTER ch = (LPCHARACTER) ent;
-				if ((ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch))))
+				if ((ecs::PlayerRuntime::IsPC(((ch) ? (ch)->GetEntityHandle() : entt::null))))
 				{
-					uint8_t bEmpire =  ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(ch));
+					uint8_t bEmpire =  ecs::PlayerRuntime::GetEmpire(((ch) ? (ch)->GetEntityHandle() : entt::null));
 					if ( bEmpire == 0 )
 					{
-						sys_err("Unkonwn Empire {} {} ", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))));
+						sys_err("Unkonwn Empire {} {} ", ecs::PlayerRuntime::GetName(((ch) ? (ch)->GetEntityHandle() : entt::null)).data(), (ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null))));
 						return;
 					}
 
-					ecs::MovementSystem::WarpSet(AIHelpers::EcsOf(ch),  g_start_position[bEmpire][0], g_start_position[bEmpire][1] );
+					ecs::MovementSystem::WarpSet(((ch) ? (ch)->GetEntityHandle() : entt::null),  g_start_position[bEmpire][0], g_start_position[bEmpire][1] );
 				}
 			}
 		}
@@ -1164,11 +1147,10 @@ namespace quest
 		// migrated from CHARACTER::warp_to_village
 		// DUAL-PATH: legacy only during migration window
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
-		auto* ch = ecs::LegacyCharOf(chEntity);
-		if (nullptr != ch)
+		if (chEntity != entt::null && g_registry.valid(chEntity))
 		{
-			uint8_t bEmpire = ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(ch));
-			ecs::MovementSystem::WarpSet(AIHelpers::EcsOf(ch),  g_start_position[bEmpire][0], g_start_position[bEmpire][1] );
+			uint8_t bEmpire = ecs::PlayerRuntime::GetEmpire(chEntity);
+			ecs::MovementSystem::WarpSet(chEntity, g_start_position[bEmpire][0], g_start_position[bEmpire][1]);
 		}
 
 		return 0;
@@ -1213,9 +1195,9 @@ namespace quest
 			{
 				LPCHARACTER ch = (LPCHARACTER) ent;
 #ifdef __NEWPET_SYSTEM__
-				if (!(ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch))) && !ch->IsPet() && !ch->IsNewPet())
+				if (!(ecs::PlayerRuntime::IsPC(((ch) ? (ch)->GetEntityHandle() : entt::null))) && !ch->IsPet() && !ch->IsNewPet())
 #else
-				if (!(ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch))) && !ch->IsPet())
+				if (!(ecs::PlayerRuntime::IsPC(((ch) ? (ch)->GetEntityHandle() : entt::null))) && !ch->IsPet())
 #endif
 					ch->Dead();
 			}
@@ -1318,8 +1300,7 @@ namespace quest
 		// migrated from CHARACTER::block_chat
 		// DUAL-PATH: legacy only during migration window
 		const entt::entity pCharEntity = CQuestManager::instance().GetCurrentPCEntity();
-		auto* pChar = ecs::LegacyCharOf(pCharEntity);
-		if (pChar != nullptr)
+		if (pCharEntity != entt::null && g_registry.valid(pCharEntity))
 		{
 			if (lua_isstring(L, 1) != true && lua_isstring(L, 2) != true)
 			{
@@ -1332,7 +1313,7 @@ namespace quest
 
 			std::string strArg = strName + " " + strTime;
 
-			do_block_chat(pChar, const_cast<char*>(strArg.c_str()), 0, 0);
+			block_chat(pCharEntity, strArg);
 
 			lua_pushboolean(L, true);
 			return 1;
@@ -1399,11 +1380,11 @@ namespace quest
 			for( uint32_t i=0 ; i < count ; ++i )
 			{
 				const LPCHARACTER pSpawnMonster = CHARACTER_MANAGER::instance().SpawnMobRange( dwVnum,
-						ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(pChar)),
-						ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(pChar)) - number(200, 750),
-						ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(pChar)) - number(200, 750),
-						ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(pChar)) + number(200, 750),
-						ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(pChar)) + number(200, 750),
+						ecs::PlayerRuntime::GetMapIndex(((pChar) ? (pChar)->GetEntityHandle() : entt::null)),
+						ecs::PlayerRuntime::GetX(((pChar) ? (pChar)->GetEntityHandle() : entt::null)) - number(200, 750),
+						ecs::PlayerRuntime::GetY(((pChar) ? (pChar)->GetEntityHandle() : entt::null)) - number(200, 750),
+						ecs::PlayerRuntime::GetX(((pChar) ? (pChar)->GetEntityHandle() : entt::null)) + number(200, 750),
+						ecs::PlayerRuntime::GetY(((pChar) ? (pChar)->GetEntityHandle() : entt::null)) + number(200, 750),
 						true,
 						pMonster->m_table.bType == CHAR_TYPE_STONE,
 						isAggresive );
@@ -1416,10 +1397,10 @@ namespace quest
 					EntityFactory::CreateMonster(
 						g_registry,
 						pSpawnMonster->GetMobTable(),
-						ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(pSpawnMonster)),
-						ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(pSpawnMonster)),
-						ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(pSpawnMonster)),
-						ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(pSpawnMonster)));
+						ecs::PlayerRuntime::GetX(((pSpawnMonster) ? (pSpawnMonster)->GetEntityHandle() : entt::null)),
+						ecs::PlayerRuntime::GetY(((pSpawnMonster) ? (pSpawnMonster)->GetEntityHandle() : entt::null)),
+						ecs::PlayerRuntime::GetMapIndex(((pSpawnMonster) ? (pSpawnMonster)->GetEntityHandle() : entt::null)),
+						ecs::PlayerRuntime::GetPacketVID(((pSpawnMonster) ? (pSpawnMonster)->GetEntityHandle() : entt::null)));
 				}
 				}
 			}
@@ -1485,10 +1466,10 @@ namespace quest
 					EntityFactory::CreateMonster(
 						g_registry,
 						pSpawnMonster->GetMobTable(),
-						ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(pSpawnMonster)),
-						ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(pSpawnMonster)),
-						ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(pSpawnMonster)),
-						ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(pSpawnMonster)));
+						ecs::PlayerRuntime::GetX(((pSpawnMonster) ? (pSpawnMonster)->GetEntityHandle() : entt::null)),
+						ecs::PlayerRuntime::GetY(((pSpawnMonster) ? (pSpawnMonster)->GetEntityHandle() : entt::null)),
+						ecs::PlayerRuntime::GetMapIndex(((pSpawnMonster) ? (pSpawnMonster)->GetEntityHandle() : entt::null)),
+						ecs::PlayerRuntime::GetPacketVID(((pSpawnMonster) ? (pSpawnMonster)->GetEntityHandle() : entt::null)));
 				}
 				}
 			}
@@ -1519,9 +1500,9 @@ namespace quest
 				return 0;
 			}
 
-			SendNoticeNew(CHAT_TYPE_NOTICE, 0, ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(pChar)), (uint32_t)lua_tonumber(L, 1), lua_tostring(L, 2));
+			SendNoticeNew(CHAT_TYPE_NOTICE, 0, ecs::PlayerRuntime::GetMapIndex(((pChar) ? (pChar)->GetEntityHandle() : entt::null)), (uint32_t)lua_tonumber(L, 1), lua_tostring(L, 2));
 #else
-			SendNoticeMap( lua_tostring(L,1), ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(pChar)), lua_toboolean(L,2) );
+			SendNoticeMap( lua_tostring(L,1), ecs::PlayerRuntime::GetMapIndex(((pChar) ? (pChar)->GetEntityHandle() : entt::null)), lua_toboolean(L,2) );
 #endif
 		}
 
@@ -1556,12 +1537,12 @@ namespace quest
 				if (pChar == ExceptChar)
 					return;
 #ifdef __NEWPET_SYSTEM__
-				if (!pChar->IsPet() && !pChar->IsNewPet() && (true == pChar->IsMonster() || true == ecs::PlayerRuntime::IsStone(AIHelpers::EcsOf(pChar))))
+				if (!pChar->IsPet() && !pChar->IsNewPet() && (true == pChar->IsMonster() || true == ecs::PlayerRuntime::IsStone(((pChar) ? (pChar)->GetEntityHandle() : entt::null))))
 #else
-				if (!pChar->IsPet() && (true == pChar->IsMonster() || true == ecs::PlayerRuntime::IsStone(AIHelpers::EcsOf(pChar))))
+				if (!pChar->IsPet() && (true == pChar->IsMonster() || true == ecs::PlayerRuntime::IsStone(((pChar) ? (pChar)->GetEntityHandle() : entt::null))))
 #endif
 				{
-					if (x1 <= ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(pChar)) && ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(pChar)) <= x2 && y1 <= ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(pChar)) && ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(pChar)) <= y2)
+					if (x1 <= ecs::PlayerRuntime::GetX(((pChar) ? (pChar)->GetEntityHandle() : entt::null)) && ecs::PlayerRuntime::GetX(((pChar) ? (pChar)->GetEntityHandle() : entt::null)) <= x2 && y1 <= ecs::PlayerRuntime::GetY(((pChar) ? (pChar)->GetEntityHandle() : entt::null)) && ecs::PlayerRuntime::GetY(((pChar) ? (pChar)->GetEntityHandle() : entt::null)) <= y2)
 					{
 						M2_DESTROY_CHARACTER(pChar);
 					}
@@ -1617,13 +1598,13 @@ namespace quest
 			{
 				LPCHARACTER pChar = static_cast<LPCHARACTER>(ent);
 
-				if (true == (ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(pChar))))
+				if (true == (ecs::PlayerRuntime::IsPC(((pChar) ? (pChar)->GetEntityHandle() : entt::null))))
 				{
-					if (from_x1 <= ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(pChar)) && ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(pChar)) <= from_x2 && from_y1 <= ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(pChar)) && ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(pChar)) <= from_y2)
+					if (from_x1 <= ecs::PlayerRuntime::GetX(((pChar) ? (pChar)->GetEntityHandle() : entt::null)) && ecs::PlayerRuntime::GetX(((pChar) ? (pChar)->GetEntityHandle() : entt::null)) <= from_x2 && from_y1 <= ecs::PlayerRuntime::GetY(((pChar) ? (pChar)->GetEntityHandle() : entt::null)) && ecs::PlayerRuntime::GetY(((pChar) ? (pChar)->GetEntityHandle() : entt::null)) <= from_y2)
 					{
 						++warpCount;
 
-						ecs::MovementSystem::WarpSet(AIHelpers::EcsOf(pChar),  number(to_x1, to_x2), number(to_y1, to_y2) );
+						ecs::MovementSystem::WarpSet(((pChar) ? (pChar)->GetEntityHandle() : entt::null),  number(to_x1, to_x2), number(to_y1, to_y2) );
 					}
 				}
 			}

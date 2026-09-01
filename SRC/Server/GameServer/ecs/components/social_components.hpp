@@ -17,6 +17,7 @@ class WeddingMap;
 
 class CExchange;
 class CWheelDestiny;
+class CArena;
 
 #ifdef __ENABLE_NEW_OFFLINESHOP__
 namespace offlineshop {
@@ -56,6 +57,10 @@ struct DungeonMembership {
     CWarMap* warMap { nullptr };
 };
 
+struct ArenaMembership {
+    CArena* arena { nullptr };
+};
+
 struct MarriageState {
     LPCHARACTER partner { nullptr };
     marriage::WeddingMap* weddingMap { nullptr };
@@ -63,7 +68,7 @@ struct MarriageState {
 
 struct ShopState {
     LPSHOP currentShop { nullptr };
-    LPCHARACTER shopOwner { nullptr };
+    entt::entity shopOwner { entt::null };
     LPSHOP myShop { nullptr };
 #ifdef __ENABLE_NEW_OFFLINESHOP__
     offlineshop::CShop* offlineShopGuest { nullptr };

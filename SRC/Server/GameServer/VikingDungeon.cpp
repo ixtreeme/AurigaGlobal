@@ -227,7 +227,7 @@ namespace
                 if (!ent || ent->GetType() != ENTITY_CHARACTER)
                     return;
                 LPCHARACTER ch = (LPCHARACTER)ent;
-                if (ch && ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch)))
+                if (ch && ecs::PlayerRuntime::IsPC(((ch) ? (ch)->GetEntityHandle() : entt::null)))
                     m_f(ch);
             }
         } each(fn);
@@ -245,7 +245,7 @@ namespace
 
         ForEachPcOnMap(mapIndex, [&](LPCHARACTER pc)
         {
-            ecs::ChatSystem::Send(AIHelpers::EcsOf(pc), CHAT_TYPE_NOTICE, "%s", buf);
+            ecs::ChatSystem::Send(((pc) ? (pc)->GetEntityHandle() : entt::null), CHAT_TYPE_NOTICE, "%s", buf);
         });
     }
 
@@ -259,7 +259,7 @@ namespace
 
         ForEachPcOnMap(mapIndex, [&](LPCHARACTER pc)
         {
-            ecs::ChatSystem::Send(AIHelpers::EcsOf(pc), CHAT_TYPE_BIG_NOTICE, "%s", buf);
+            ecs::ChatSystem::Send(((pc) ? (pc)->GetEntityHandle() : entt::null), CHAT_TYPE_BIG_NOTICE, "%s", buf);
         });
     }
 
@@ -294,7 +294,7 @@ namespace
 
     bool IsEntryMapForEmpire(LPCHARACTER ch)
     {
-        return ch && ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)) == 219;
+        return ch && ecs::PlayerRuntime::GetMapIndex(((ch) ? (ch)->GetEntityHandle() : entt::null)) == 219;
     }
 
     void SetOutsideWarpLocation(LPCHARACTER ch)
@@ -302,7 +302,7 @@ namespace
         if (!ch)
             return;
         int32_t mapIdx = 1, x = 0, y = 0;
-        GetOutsideWarpByEmpire(ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(ch)), mapIdx, x, y);
+        GetOutsideWarpByEmpire(ecs::PlayerRuntime::GetEmpire(((ch) ? (ch)->GetEntityHandle() : entt::null)), mapIdx, x, y);
         ch->SetWarpLocation(mapIdx, x, y);
     }
 
@@ -311,8 +311,8 @@ namespace
         if (!ch)
             return;
         int32_t mapIdx = 1, x = 0, y = 0;
-        GetOutsideWarpByEmpire(ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(ch)), mapIdx, x, y);
-        ecs::MovementSystem::WarpSet(AIHelpers::EcsOf(ch), x * 100, y * 100, mapIdx);
+        GetOutsideWarpByEmpire(ecs::PlayerRuntime::GetEmpire(((ch) ? (ch)->GetEntityHandle() : entt::null)), mapIdx, x, y);
+        ecs::MovementSystem::WarpSet(((ch) ? (ch)->GetEntityHandle() : entt::null), x * 100, y * 100, mapIdx);
     }
 
     void WarpAllOut(int32_t mapIndex)
@@ -326,23 +326,23 @@ namespace
     void SetCooldown(LPCHARACTER ch)
     {
         if (ch)
-            ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(ch), kQfCooldown, get_global_time() + kEntranceCooldownSec);
+            ecs::QuestSystem::SetFlag(((ch) ? (ch)->GetEntityHandle() : entt::null), kQfCooldown, get_global_time() + kEntranceCooldownSec);
     }
 
     void SetRejoinFlags(LPCHARACTER ch, int32_t mapIndex)
     {
         if (!ch)
             return;
-        ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(ch), kQfIdx, mapIndex);
-        ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(ch), kQfCh, (int32_t)g_bChannel);
-        ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(ch), kQfDisconnect, get_global_time() + kRejoinSec);
+        ecs::QuestSystem::SetFlag(((ch) ? (ch)->GetEntityHandle() : entt::null), kQfIdx, mapIndex);
+        ecs::QuestSystem::SetFlag(((ch) ? (ch)->GetEntityHandle() : entt::null), kQfCh, (int32_t)g_bChannel);
+        ecs::QuestSystem::SetFlag(((ch) ? (ch)->GetEntityHandle() : entt::null), kQfDisconnect, get_global_time() + kRejoinSec);
     }
 
     void ClearRejoinFlags(LPCHARACTER ch)
     {
         if (!ch)
             return;
-        ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(ch), kQfDisconnect, 0);
+        ecs::QuestSystem::SetFlag(((ch) ? (ch)->GetEntityHandle() : entt::null), kQfDisconnect, 0);
     }
 
     void ClearDungeonNonPlayers(LPDUNGEON d)
@@ -370,7 +370,7 @@ namespace
             if (dmg >= ch->GetHP())
                 dmg = ch->GetHP() - 1;
             if (dmg > 0)
-                ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_HP, -dmg);
+                ecs::PointSystem::Change(((ch) ? (ch)->GetEntityHandle() : entt::null), POINT_HP, -dmg);
         });
     }
 
@@ -421,13 +421,13 @@ namespace
 
         LPCHARACTER memorial = d->SpawnMob(kMemorialNpc1, kMemorialPos.x, kMemorialPos.y, kMemorialPos.dir);
         if (memorial)
-		d->SetUnique("vk_memorial", ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(memorial)));
+		d->SetUnique("vk_memorial", ecs::PlayerRuntime::GetPacketVID(((memorial) ? (memorial)->GetEntityHandle() : entt::null)));
 
         for (int i = 0; i < 3; ++i)
         {
             LPCHARACTER stone = d->SpawnMob(kFloor3StoneVnum, kFloor3Stones[i].x, kFloor3Stones[i].y, kFloor3Stones[i].dir);
             if (stone)
-				d->SetUnique(GetFloor3StoneKey(i), ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(stone)));
+				d->SetUnique(GetFloor3StoneKey(i), ecs::PlayerRuntime::GetPacketVID(((stone) ? (stone)->GetEntityHandle() : entt::null)));
         }
     }
 
@@ -449,7 +449,7 @@ namespace
 
             LPCHARACTER stone = d->SpawnMob(kFloor3StoneVnum, kFloor3Stones[i].x, kFloor3Stones[i].y, kFloor3Stones[i].dir);
             if (stone)
-				d->SetUnique(GetFloor3StoneKey(i), ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(stone)));
+				d->SetUnique(GetFloor3StoneKey(i), ecs::PlayerRuntime::GetPacketVID(((stone) ? (stone)->GetEntityHandle() : entt::null)));
         }
     }
 
@@ -471,7 +471,7 @@ namespace
 
             LPCHARACTER protector = d->SpawnMob(kStoneProtectorNpc, kFloor3Stones[i].x, kFloor3Stones[i].y, kFloor3Stones[i].dir);
             if (protector)
-			d->SetUnique(GetFloor3ProtectorKey(i), ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(protector)));
+			d->SetUnique(GetFloor3ProtectorKey(i), ecs::PlayerRuntime::GetPacketVID(((protector) ? (protector)->GetEntityHandle() : entt::null)));
         }
     }
 
@@ -486,7 +486,7 @@ namespace
 
         LPCHARACTER spawned = d->SpawnMob(newVnum, kCompassPos.x, kCompassPos.y, kCompassPos.dir);
         if (spawned)
-		d->SetUnique("vk_compass", ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(spawned)));
+		d->SetUnique("vk_compass", ecs::PlayerRuntime::GetPacketVID(((spawned) ? (spawned)->GetEntityHandle() : entt::null)));
 
         npc->Dead(nullptr, true);
     }
@@ -674,7 +674,7 @@ namespace
             d->SetFlag(kFlagMainBossStage, 0);
             LPCHARACTER boss = d->SpawnMob(kFloor1MainBossVnum, kFloor1MainBossPos.x, kFloor1MainBossPos.y, kFloor1MainBossPos.dir);
             if (boss)
-	d->SetUnique("vk_main_boss", ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(boss)));
+	d->SetUnique("vk_main_boss", ecs::PlayerRuntime::GetPacketVID(((boss) ? (boss)->GetEntityHandle() : entt::null)));
             ScheduleFloor1BossHp(idx);
             BigNoticeMap(idx, "<Frostbane Fortress> The first main boss has appeared!");
             return 0;
@@ -695,7 +695,7 @@ namespace
             }
 
             LPCHARACTER boss = FindUnique(d, "vk_main_boss");
-            if (!boss || CombatSystem::IsDead(AIHelpers::EcsOf(boss)))
+            if (!boss || CombatSystem::IsDead(((boss) ? (boss)->GetEntityHandle() : entt::null)))
             {
                 evFloor1BossHp.erase(idx);
                 return 0;
@@ -766,7 +766,7 @@ namespace
 
             LPCHARACTER gate = d->SpawnMob(kGateNpc, kGatePos2.x, kGatePos2.y, kGatePos2.dir);
             if (gate)
-		d->SetUnique("vk_gate_2", ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(gate)));
+		d->SetUnique("vk_gate_2", ecs::PlayerRuntime::GetPacketVID(((gate) ? (gate)->GetEntityHandle() : entt::null)));
 
             ScheduleFloor2Timer(idx);
             NoticeMap(idx, "<Frostbane Fortress> Destroy all second-floor stones within 4 minutes.");
@@ -803,7 +803,7 @@ namespace
                 const int64_t hp = d->GetFlag(kFlagFinalPenalty) ? kFinalBossPenaltyHP : kFinalBossNormalHP;
                 boss->SetMaxHP(hp);
                 boss->SetHP(hp);
-	d->SetUnique("vk_final_boss", ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(boss)));
+	d->SetUnique("vk_final_boss", ecs::PlayerRuntime::GetPacketVID(((boss) ? (boss)->GetEntityHandle() : entt::null)));
             }
             ScheduleFinalHp(idx);
             BigNoticeMap(idx, "<Frostbane Fortress> The final boss has appeared!");
@@ -825,7 +825,7 @@ namespace
             }
 
             LPCHARACTER boss = FindUnique(d, "vk_final_boss");
-            if (!boss || CombatSystem::IsDead(AIHelpers::EcsOf(boss)))
+            if (!boss || CombatSystem::IsDead(((boss) ? (boss)->GetEntityHandle() : entt::null)))
             {
                 evFinalHp.erase(idx);
                 return 0;
@@ -1011,10 +1011,10 @@ bool CVikingDungeon::IsVikingDungeonMap(int32_t mapIndex) const
 
 void CVikingDungeon::OnPlayerDisconnect(CHARACTER* ch)
 {
-    if (!ch || !ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch)))
+    if (!ch || !ecs::PlayerRuntime::IsPC(((ch) ? (ch)->GetEntityHandle() : entt::null)))
         return;
 
-    const int32_t idx = ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch));
+    const int32_t idx = ecs::PlayerRuntime::GetMapIndex(((ch) ? (ch)->GetEntityHandle() : entt::null));
     if (!IsVikingDungeonMap(idx))
         return;
 
@@ -1029,10 +1029,10 @@ void CVikingDungeon::OnPlayerDisconnect(CHARACTER* ch)
 
 void CVikingDungeon::OnPlayerLogin(CHARACTER* ch)
 {
-    if (!ch || !ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch)))
+    if (!ch || !ecs::PlayerRuntime::IsPC(((ch) ? (ch)->GetEntityHandle() : entt::null)))
         return;
 
-    const int32_t idx = ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch));
+    const int32_t idx = ecs::PlayerRuntime::GetMapIndex(((ch) ? (ch)->GetEntityHandle() : entt::null));
 
     if (idx == kOriginalMap)
     {
@@ -1051,8 +1051,8 @@ void CVikingDungeon::OnPlayerLogin(CHARACTER* ch)
     }
 
     SetOutsideWarpLocation(ch);
-    ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(ch), kQfIdx, idx);
-    ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(ch), kQfCh, (int32_t)g_bChannel);
+    ecs::QuestSystem::SetFlag(((ch) ? (ch)->GetEntityHandle() : entt::null), kQfIdx, idx);
+    ecs::QuestSystem::SetFlag(((ch) ? (ch)->GetEntityHandle() : entt::null), kQfCh, (int32_t)g_bChannel);
 
     if (d->GetFlag(kFlagBlockRejoin) != 0)
     {
@@ -1065,31 +1065,31 @@ void CVikingDungeon::OnPlayerLogin(CHARACTER* ch)
         d->SetFlag(kFlagInitialized, 1);
         LPCHARACTER gate = d->SpawnMob(kGateNpc, kGatePos1.x, kGatePos1.y, kGatePos1.dir);
         if (gate)
-	d->SetUnique("vk_gate_1", ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(gate)));
+	d->SetUnique("vk_gate_1", ecs::PlayerRuntime::GetPacketVID(((gate) ? (gate)->GetEntityHandle() : entt::null)));
 
         LPCHARACTER compass = d->SpawnMob(kCompassEmptyNpc, kCompassPos.x, kCompassPos.y, kCompassPos.dir);
         if (compass)
-	d->SetUnique("vk_compass", ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(compass)));
+	d->SetUnique("vk_compass", ecs::PlayerRuntime::GetPacketVID(((compass) ? (compass)->GetEntityHandle() : entt::null)));
 
         NoticeMap(idx, "<Frostbane Fortress> Starting in 10 seconds. Get ready.");
         s_viking.ScheduleStart(idx);
     }
 
-    if (ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(ch), kQfDisconnect) > 0)
+    if (ecs::QuestSystem::GetFlag(((ch) ? (ch)->GetEntityHandle() : entt::null), kQfDisconnect) > 0)
     {
-        ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(ch), kQfDisconnect, 0);
-        ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_BIG_NOTICE, "Welcome back.");
+        ecs::QuestSystem::SetFlag(((ch) ? (ch)->GetEntityHandle() : entt::null), kQfDisconnect, 0);
+        ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_BIG_NOTICE, "Welcome back.");
 
         const int32_t limit = d->GetFlag(kFlagTimeLimit);
         if (d->GetFlag(kFlagCompleted) != 0)
         {
-            ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_BIG_NOTICE, "This instance will close soon. Pick up your drops quickly.");
+            ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_BIG_NOTICE, "This instance will close soon. Pick up your drops quickly.");
         }
         else if (limit > get_global_time())
         {
             char tmp[64];
             FormatDuration(limit - get_global_time(), tmp, sizeof(tmp));
-            ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_BIG_NOTICE, "Time remaining: %s.", tmp);
+            ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_BIG_NOTICE, "Time remaining: %s.", tmp);
         }
     }
 
@@ -1101,44 +1101,44 @@ bool CVikingDungeon::OnUseItem(CHARACTER* ch, CItem* item)
     if (!ch || !item)
         return false;
 
-    if (ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, item)) != kResetItemVnum)
+    if (ItemSystem::GetItemVnum((item ? item->GetEntityHandle() : entt::null)) != kResetItemVnum)
         return false;
 
-    if (IsVikingDungeonMap(ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch))))
+    if (IsVikingDungeonMap(ecs::PlayerRuntime::GetMapIndex(((ch) ? (ch)->GetEntityHandle() : entt::null))))
     {
-        ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "You cannot use this item while inside the dungeon.");
+        ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "You cannot use this item while inside the dungeon.");
         return true;
     }
 
-    const int32_t cooldownUntil = ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(ch), kQfCooldown);
+    const int32_t cooldownUntil = ecs::QuestSystem::GetFlag(((ch) ? (ch)->GetEntityHandle() : entt::null), kQfCooldown);
     if (cooldownUntil <= get_global_time())
     {
-        ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "You can already enter the dungeon.");
+        ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "You can already enter the dungeon.");
         return true;
     }
 
     ch->RemoveSpecifyItem(kResetItemVnum, 1);
-    ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(ch), kQfCooldown, 0);
-    ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "Dungeon cooldown reset successfully.");
+    ecs::QuestSystem::SetFlag(((ch) ? (ch)->GetEntityHandle() : entt::null), kQfCooldown, 0);
+    ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "Dungeon cooldown reset successfully.");
     return true;
 }
 
 bool CVikingDungeon::OnClickNpc(CHARACTER* ch, CHARACTER* npc)
 {
-    if (!ch || !npc || !ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch)))
+    if (!ch || !npc || !ecs::PlayerRuntime::IsPC(((ch) ? (ch)->GetEntityHandle() : entt::null)))
         return false;
 
-    const uint32_t race = ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(npc));
+    const uint32_t race = ecs::PlayerRuntime::GetRaceNum(((npc) ? (npc)->GetEntityHandle() : entt::null));
     const int32_t now = get_global_time();
 
-    const int32_t currentIdx = ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch));
+    const int32_t currentIdx = ecs::PlayerRuntime::GetMapIndex(((ch) ? (ch)->GetEntityHandle() : entt::null));
     const bool isInsideViking = IsVikingDungeonMap(currentIdx);
     LPDUNGEON currentDungeon = isInsideViking ? CDungeonManager::instance().FindByMapIndex(currentIdx) : nullptr;
     const bool quickRestart = (race == kEntryNpcVnum && currentDungeon && currentDungeon->GetFlag(kFlagCompleted) != 0);
 
     if (race == kRewardChestVnum)
     {
-        const int32_t idx = ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch));
+        const int32_t idx = ecs::PlayerRuntime::GetMapIndex(((ch) ? (ch)->GetEntityHandle() : entt::null));
         if (!IsVikingDungeonMap(idx))
             return false;
 
@@ -1147,52 +1147,52 @@ bool CVikingDungeon::OnClickNpc(CHARACTER* ch, CHARACTER* npc)
             return false;
 
         char rewardFlag[64];
-        snprintf(rewardFlag, sizeof(rewardFlag), "vk_reward_%u", ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)));
+        snprintf(rewardFlag, sizeof(rewardFlag), "vk_reward_%u", ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null)));
         if (d->GetFlag(rewardFlag) != 0)
         {
-            ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "You already took your reward.");
+            ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "You already took your reward.");
             return true;
         }
 
         d->SetFlag(rewardFlag, 1);
         ch->AutoGiveItem(kRewardItemVnum, kRewardItemCount);
-        ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "Reward received.");
+        ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "Reward received.");
         return true;
     }
 
     if (race != kEntryNpcVnum)
         return false;
 
-    const int32_t disconnectUntil = ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(ch), kQfDisconnect);
-    const int32_t rejoinIdx = ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(ch), kQfIdx);
-    const int32_t rejoinCh = ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(ch), kQfCh);
+    const int32_t disconnectUntil = ecs::QuestSystem::GetFlag(((ch) ? (ch)->GetEntityHandle() : entt::null), kQfDisconnect);
+    const int32_t rejoinIdx = ecs::QuestSystem::GetFlag(((ch) ? (ch)->GetEntityHandle() : entt::null), kQfIdx);
+    const int32_t rejoinCh = ecs::QuestSystem::GetFlag(((ch) ? (ch)->GetEntityHandle() : entt::null), kQfCh);
 
     if (disconnectUntil > now && rejoinIdx > 0 && rejoinCh == (int32_t)g_bChannel && IsVikingDungeonMap(rejoinIdx))
     {
         LPDUNGEON d = CDungeonManager::instance().FindByMapIndex(rejoinIdx);
         if (d && d->GetFlag(kFlagCompleted) == 0 && d->GetFlag(kFlagBlockRejoin) == 0)
         {
-            ecs::MovementSystem::WarpSet(AIHelpers::EcsOf(ch), kEnterGlobalX * 100, kEnterGlobalY * 100, rejoinIdx);
-            ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(ch), kQfDisconnect, 0);
+            ecs::MovementSystem::WarpSet(((ch) ? (ch)->GetEntityHandle() : entt::null), kEnterGlobalX * 100, kEnterGlobalY * 100, rejoinIdx);
+            ecs::QuestSystem::SetFlag(((ch) ? (ch)->GetEntityHandle() : entt::null), kQfDisconnect, 0);
             return true;
         }
     }
 
     //if (!IsEntryMapForEmpire(ch))
     //{
-    //    ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "You must be in the correct map to enter Frostbane Fortress.");
+    //    ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "You must be in the correct map to enter Frostbane Fortress.");
     //    return true;
     //}
 
-    if (!ecs::PlayerRuntime::CanWarp(AIHelpers::EcsOf(ch)))
+    if (!ecs::PlayerRuntime::CanWarp(((ch) ? (ch)->GetEntityHandle() : entt::null)))
     {
-        ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "You have to wait a bit before entering.");
+        ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "You have to wait a bit before entering.");
         return true;
     }
 
     if (quest::CQuestManager::instance().GetEventFlag("vikingdungeon_zone_block") == 1 && !ch->IsGM())
     {
-        ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "The dungeon is currently blocked.");
+        ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "The dungeon is currently blocked.");
         return true;
     }
 
@@ -1201,29 +1201,29 @@ bool CVikingDungeon::OnClickNpc(CHARACTER* ch, CHARACTER* npc)
     const int32_t antiSpamUntil = quest::CQuestManager::instance().GetEventFlag(antiSpamFlag);
     if (antiSpamUntil > now)
     {
-        ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "Please wait a moment.");
+        ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "Please wait a moment.");
         return true;
     }
     quest::CQuestManager::instance().SetEventFlag(antiSpamFlag, now + kAntiSpamSec);
 
-    LPPARTY party = ecs::SocialSystem::GetParty(AIHelpers::EcsOf(ch));
+    LPPARTY party = ecs::SocialSystem::GetParty(((ch) ? (ch)->GetEntityHandle() : entt::null));
     if (party)
     {
-        if (party->GetLeaderPID() != ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)))
+        if (party->GetLeaderPID() != ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null)))
         {
-            ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "Only the party leader can start the dungeon.");
+            ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "Only the party leader can start the dungeon.");
             return true;
         }
 
         if (party->GetNearMemberCount() != party->GetMemberCount())
         {
-            ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "Every party member must be online and near the NPC.");
+            ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "Every party member must be online and near the NPC.");
             return true;
         }
 
         if ((int32_t)party->GetMemberCount() < kMinMembers)
         {
-            ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "Your party needs at least %d members.", kMinMembers);
+            ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "Your party needs at least %d members.", kMinMembers);
             return true;
         }
     }
@@ -1244,23 +1244,23 @@ bool CVikingDungeon::OnClickNpc(CHARACTER* ch, CHARACTER* npc)
 
     auto checkMember = [&](LPCHARACTER m)
     {
-        if (!m || !ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(m)) || !ok)
+        if (!m || !ecs::PlayerRuntime::IsPC(((m) ? (m)->GetEntityHandle() : entt::null)) || !ok)
             return;
 
-        if (ecs::PointSystem::GetLevel(AIHelpers::EcsOf(m)) < kMinLevel || ecs::PointSystem::GetLevel(AIHelpers::EcsOf(m)) > kMaxLevel)
+        if (ecs::PointSystem::GetLevel(((m) ? (m)->GetEntityHandle() : entt::null)) < kMinLevel || ecs::PointSystem::GetLevel(((m) ? (m)->GetEntityHandle() : entt::null)) > kMaxLevel)
         {
             ok = false;
             bad = BAD_LEVEL;
-            badName = ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(m)).data();
-            badVal = ecs::PointSystem::GetLevel(AIHelpers::EcsOf(m));
+            badName = ecs::PlayerRuntime::GetName(((m) ? (m)->GetEntityHandle() : entt::null)).data();
+            badVal = ecs::PointSystem::GetLevel(((m) ? (m)->GetEntityHandle() : entt::null));
             return;
         }
 
-        if (!ecs::PlayerRuntime::CanWarp(AIHelpers::EcsOf(m)))
+        if (!ecs::PlayerRuntime::CanWarp(((m) ? (m)->GetEntityHandle() : entt::null)))
         {
             ok = false;
             bad = BAD_WARP;
-            badName = ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(m)).data();
+            badName = ecs::PlayerRuntime::GetName(((m) ? (m)->GetEntityHandle() : entt::null)).data();
             return;
         }
 
@@ -1270,16 +1270,16 @@ bool CVikingDungeon::OnClickNpc(CHARACTER* ch, CHARACTER* npc)
             {
                 ok = false;
                 bad = BAD_ITEM;
-                badName = ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(m)).data();
+                badName = ecs::PlayerRuntime::GetName(((m) ? (m)->GetEntityHandle() : entt::null)).data();
                 return;
             }
 
-            const int32_t cd = ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(m), kQfCooldown);
+            const int32_t cd = ecs::QuestSystem::GetFlag(((m) ? (m)->GetEntityHandle() : entt::null), kQfCooldown);
             if (cd > now)
             {
                 ok = false;
                 bad = BAD_COOLDOWN;
-                badName = ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(m)).data();
+                badName = ecs::PlayerRuntime::GetName(((m) ? (m)->GetEntityHandle() : entt::null)).data();
                 badVal = cd - now;
                 return;
             }
@@ -1287,7 +1287,7 @@ bool CVikingDungeon::OnClickNpc(CHARACTER* ch, CHARACTER* npc)
     };
 
     if (party)
-        party->ForEachOnMapMember(checkMember, ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)));
+        party->ForEachOnMapMember(checkMember, ecs::PlayerRuntime::GetMapIndex(((ch) ? (ch)->GetEntityHandle() : entt::null)));
     else
         checkMember(ch);
 
@@ -1297,17 +1297,17 @@ bool CVikingDungeon::OnClickNpc(CHARACTER* ch, CHARACTER* npc)
         switch (bad)
         {
             case BAD_LEVEL:
-                ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "%s has invalid level (Lv%d). Required: %d-%d.", badName ? badName : "A member", badVal, kMinLevel, kMaxLevel);
+                ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "%s has invalid level (Lv%d). Required: %d-%d.", badName ? badName : "A member", badVal, kMinLevel, kMaxLevel);
                 break;
             case BAD_WARP:
-                ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "%s cannot warp yet.", badName ? badName : "A member");
+                ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "%s cannot warp yet.", badName ? badName : "A member");
                 break;
             case BAD_ITEM:
-                ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "%s does not have the required entry item.", badName ? badName : "A member");
+                ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "%s does not have the required entry item.", badName ? badName : "A member");
                 break;
             case BAD_COOLDOWN:
                 FormatDuration(badVal, tmp, sizeof(tmp));
-                ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "%s is still on cooldown (%s).", badName ? badName : "A member", tmp);
+                ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "%s is still on cooldown (%s).", badName ? badName : "A member", tmp);
                 break;
             default:
                 break;
@@ -1318,7 +1318,7 @@ bool CVikingDungeon::OnClickNpc(CHARACTER* ch, CHARACTER* npc)
     LPDUNGEON d = CDungeonManager::instance().Create(kOriginalMap);
     if (!d)
     {
-        ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "Failed to create dungeon instance.");
+        ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "Failed to create dungeon instance.");
         return true;
     }
 
@@ -1326,13 +1326,13 @@ bool CVikingDungeon::OnClickNpc(CHARACTER* ch, CHARACTER* npc)
 
     auto prepareMember = [&](LPCHARACTER m)
     {
-        if (!m || !ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(m)))
+        if (!m || !ecs::PlayerRuntime::IsPC(((m) ? (m)->GetEntityHandle() : entt::null)))
             return;
 
         SetOutsideWarpLocation(m);
         ClearRejoinFlags(m);
-        ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(m), kQfIdx, dungeonMapIdx);
-        ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(m), kQfCh, (int32_t)g_bChannel);
+        ecs::QuestSystem::SetFlag(((m) ? (m)->GetEntityHandle() : entt::null), kQfIdx, dungeonMapIdx);
+        ecs::QuestSystem::SetFlag(((m) ? (m)->GetEntityHandle() : entt::null), kQfCh, (int32_t)g_bChannel);
 
         if (!quickRestart)
         {
@@ -1342,16 +1342,16 @@ bool CVikingDungeon::OnClickNpc(CHARACTER* ch, CHARACTER* npc)
     };
 
     if (party)
-        party->ForEachOnMapMember(prepareMember, ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)));
+        party->ForEachOnMapMember(prepareMember, ecs::PlayerRuntime::GetMapIndex(((ch) ? (ch)->GetEntityHandle() : entt::null)));
     else
         prepareMember(ch);
 
     SetDungeonReady(d);
 
     if (party)
-        d->JoinParty_Coords(party, kEnterGlobalX, kEnterGlobalY, ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)));
+        d->JoinParty_Coords(party, kEnterGlobalX, kEnterGlobalY, ecs::PlayerRuntime::GetMapIndex(((ch) ? (ch)->GetEntityHandle() : entt::null)));
     else
-        d->Join_Coords(ch, kEnterGlobalX, kEnterGlobalY, ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)));
+        d->Join_Coords(ch, kEnterGlobalX, kEnterGlobalY, ecs::PlayerRuntime::GetMapIndex(((ch) ? (ch)->GetEntityHandle() : entt::null)));
 
     BigNoticeMap(dungeonMapIdx, "<Frostbane Fortress> Dungeon instance created.");
     return true;
@@ -1359,10 +1359,10 @@ bool CVikingDungeon::OnClickNpc(CHARACTER* ch, CHARACTER* npc)
 
 bool CVikingDungeon::OnNpcTakeItem(CHARACTER* from, CHARACTER* npc, CItem* item)
 {
-    if (!from || !npc || !item || !ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(from)))
+    if (!from || !npc || !item || !ecs::PlayerRuntime::IsPC(((from) ? (from)->GetEntityHandle() : entt::null)))
         return false;
 
-    const int32_t idx = ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(from));
+    const int32_t idx = ecs::PlayerRuntime::GetMapIndex(((from) ? (from)->GetEntityHandle() : entt::null));
     if (!IsVikingDungeonMap(idx))
         return false;
 
@@ -1370,8 +1370,8 @@ bool CVikingDungeon::OnNpcTakeItem(CHARACTER* from, CHARACTER* npc, CItem* item)
     if (!d)
         return false;
 
-    const uint32_t npcVnum = ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(npc));
-    const uint32_t itemVnum = ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, item));
+    const uint32_t npcVnum = ecs::PlayerRuntime::GetRaceNum(((npc) ? (npc)->GetEntityHandle() : entt::null));
+    const uint32_t itemVnum = ItemSystem::GetItemVnum((item ? item->GetEntityHandle() : entt::null));
     const int32_t floor = d->GetFlag(kFlagFloor);
 
     if (floor == 1 && itemVnum == kFloor1ItemVnum)
@@ -1434,7 +1434,7 @@ bool CVikingDungeon::OnNpcTakeItem(CHARACTER* from, CHARACTER* npc, CItem* item)
         d->SetFlag(kFlagFloor3NpcVnum, newNpc);
         LPCHARACTER memorial = d->SpawnMob(newNpc, kMemorialPos.x, kMemorialPos.y, kMemorialPos.dir);
         if (memorial)
-		d->SetUnique("vk_memorial", ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(memorial)));
+		d->SetUnique("vk_memorial", ecs::PlayerRuntime::GetPacketVID(((memorial) ? (memorial)->GetEntityHandle() : entt::null)));
 
         if (stage < 3)
         {
@@ -1455,10 +1455,10 @@ bool CVikingDungeon::OnNpcTakeItem(CHARACTER* from, CHARACTER* npc, CItem* item)
 
 void CVikingDungeon::OnMobKilled(CHARACTER* killer, CHARACTER* victim)
 {
-    if (!killer || !victim || !ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(killer)))
+    if (!killer || !victim || !ecs::PlayerRuntime::IsPC(((killer) ? (killer)->GetEntityHandle() : entt::null)))
         return;
 
-    const int32_t idx = ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(killer));
+    const int32_t idx = ecs::PlayerRuntime::GetMapIndex(((killer) ? (killer)->GetEntityHandle() : entt::null));
     if (!IsVikingDungeonMap(idx))
         return;
 
@@ -1466,13 +1466,13 @@ void CVikingDungeon::OnMobKilled(CHARACTER* killer, CHARACTER* victim)
     if (!d)
         return;
 
-    const uint32_t vnum = ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(victim));
+    const uint32_t vnum = ecs::PlayerRuntime::GetRaceNum(((victim) ? (victim)->GetEntityHandle() : entt::null));
     const int32_t floor = d->GetFlag(kFlagFloor);
 
     if (floor == 1 && vnum == kFloor1LowBossVnum)
     {
         killer->AutoGiveItem(kFloor1ItemVnum, 1);
-        NoticeMap(idx, "<Frostbane Fortress> %s received the required item. Use it on the compass.", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(killer)).data());
+        NoticeMap(idx, "<Frostbane Fortress> %s received the required item. Use it on the compass.", ecs::PlayerRuntime::GetName(((killer) ? (killer)->GetEntityHandle() : entt::null)).data());
         return;
     }
 
@@ -1500,17 +1500,17 @@ void CVikingDungeon::OnMobKilled(CHARACTER* killer, CHARACTER* victim)
 
     if (floor == 4 && vnum == kFloor3StoneVnum)
     {
-	const int killedSlot = FindFloor3StoneSlotByVid(d, ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(victim)));
+	const int killedSlot = FindFloor3StoneSlotByVid(d, ecs::PlayerRuntime::GetPacketVID(((victim) ? (victim)->GetEntityHandle() : entt::null)));
         if (killedSlot >= 0)
             SetFloor3SlotCleared(d, killedSlot, true);
 
         SpawnFloor3ProtectorsForRemainingSlots(d);
 
-        const int32_t bossLocalX = std::max<int32_t>(1, ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(killer)) / 100 - kBaseCellX);
-        const int32_t bossLocalY = std::max<int32_t>(1, ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(killer)) / 100 - kBaseCellY);
+        const int32_t bossLocalX = std::max<int32_t>(1, ecs::PlayerRuntime::GetX(((killer) ? (killer)->GetEntityHandle() : entt::null)) / 100 - kBaseCellX);
+        const int32_t bossLocalY = std::max<int32_t>(1, ecs::PlayerRuntime::GetY(((killer) ? (killer)->GetEntityHandle() : entt::null)) / 100 - kBaseCellY);
         LPCHARACTER boss = d->SpawnMob(kFloor3BossVnum, bossLocalX, bossLocalY, 0);
         if (boss)
-		d->SetUnique("vk_floor3_boss", ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(boss)));
+		d->SetUnique("vk_floor3_boss", ecs::PlayerRuntime::GetPacketVID(((boss) ? (boss)->GetEntityHandle() : entt::null)));
         d->SetFlag(kFlagCanKillFloor3Boss, 1);
         NoticeMap(idx, "<Frostbane Fortress> The protecting boss appeared. Kill it to proceed.");
         return;
@@ -1523,27 +1523,27 @@ void CVikingDungeon::OnMobKilled(CHARACTER* killer, CHARACTER* victim)
             d->SetFlag(kFlagCanKillFloor3Boss, 0);
             d->SetFlag(kFlagCanUseRune, 1);
             killer->AutoGiveItem(kFloor3ItemVnum, 1);
-            NoticeMap(idx, "<Frostbane Fortress> %s received the rune item. Use it on the memorial.", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(killer)).data());
+            NoticeMap(idx, "<Frostbane Fortress> %s received the rune item. Use it on the memorial.", ecs::PlayerRuntime::GetName(((killer) ? (killer)->GetEntityHandle() : entt::null)).data());
         }
         return;
     }
 
     if (floor == 5 && vnum == kFinalBossVnum && d->GetFlag(kFlagCompleted) == 0)
     {
-        const char* leaderName = ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(killer)).data();
+        const char* leaderName = ecs::PlayerRuntime::GetName(((killer) ? (killer)->GetEntityHandle() : entt::null)).data();
 
-        if (ecs::SocialSystem::GetParty(AIHelpers::EcsOf(killer)))
+        if (ecs::SocialSystem::GetParty(((killer) ? (killer)->GetEntityHandle() : entt::null)))
         {
-            LPCHARACTER leader = ecs::SocialSystem::GetParty(AIHelpers::EcsOf(killer))->GetLeaderCharacter();
+            LPCHARACTER leader = ecs::SocialSystem::GetParty(((killer) ? (killer)->GetEntityHandle() : entt::null))->GetLeaderCharacter();
             if (leader)
-                leaderName = ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(leader)).data();
+                leaderName = ecs::PlayerRuntime::GetName(((leader) ? (leader)->GetEntityHandle() : entt::null)).data();
         }
 
         char notice[256];
-        if (ecs::SocialSystem::GetParty(AIHelpers::EcsOf(killer)))
+        if (ecs::SocialSystem::GetParty(((killer) ? (killer)->GetEntityHandle() : entt::null)))
             std::snprintf(notice, sizeof(notice), "%s es csoportja teljesitette a Fagyos dungeont!", leaderName);
         else
-            std::snprintf(notice, sizeof(notice), "%s befejezte a Fagyos dungeont!", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(killer)).data());
+            std::snprintf(notice, sizeof(notice), "%s befejezte a Fagyos dungeont!", ecs::PlayerRuntime::GetName(((killer) ? (killer)->GetEntityHandle() : entt::null)).data());
 
         BroadcastNotice(notice);
 

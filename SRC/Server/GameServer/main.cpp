@@ -232,8 +232,8 @@ namespace
 		{
 			if (d->GetCharacter())
 			{
-				if (ecs::PlayerRuntime::GetGMLevel(AIHelpers::EcsOf(d->GetCharacter())) == GM_PLAYER)
-					ecs::ChatSystem::Send(AIHelpers::EcsOf(d->GetCharacter()), CHAT_TYPE_COMMAND, "quit Shutdown(SendDisconnectFunc)");
+				if (ecs::PlayerRuntime::GetGMLevel(((d->GetCharacter()) ? (d->GetCharacter())->GetEntityHandle() : entt::null)) == GM_PLAYER)
+					ecs::ChatSystem::Send(((d->GetCharacter()) ? (d->GetCharacter())->GetEntityHandle() : entt::null), CHAT_TYPE_COMMAND, "quit Shutdown(SendDisconnectFunc)");
 			}
 		}
 	};

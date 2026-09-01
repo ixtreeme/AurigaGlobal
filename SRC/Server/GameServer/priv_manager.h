@@ -1,6 +1,8 @@
 #ifndef __PRIV_MANAGER_H
 #define __PRIV_MANAGER_H
 
+#include <entt/entity/entity.hpp>
+
 /**
  * @version 05/06/08	Bang2ni - Guild privilege 관련 함수 지속 시간 추가
  * 			          RequestGiveGuildPriv, GiveGuildPriv 함수 프로토타잎 수정
@@ -25,6 +27,7 @@ class CPrivManager : public singleton<CPrivManager>
 		void RemoveCharacterPriv(uint32_t pid, uint8_t type);
 
 		int GetPriv(LPCHARACTER ch, uint8_t type);
+		int GetPriv(entt::entity character, uint8_t type);
 		int GetPrivByEmpire(uint8_t bEmpire, uint8_t type);
 		int GetPrivByGuild(uint32_t guild_id, uint8_t type);
 		int GetPrivByCharacter(uint32_t pid, uint8_t type);

@@ -8,7 +8,7 @@
 
 #ifdef __USE_PID_AS_GUESTLIST__
 #define AS_LPGUEST(some)  (CHARACTER_MANAGER::instance().FindByPID(some)) 
-#define AS_GUESTID(some)  (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(some)))
+#define AS_GUESTID(some)  (ecs::PlayerRuntime::GetPlayerID(((some) ? (some)->GetEntityHandle() : entt::null)))
 #else
 #define AS_LPGUEST(some) (some)
 #define AS_GUESTID(some) (some)
@@ -58,8 +58,8 @@ void DeletePointersContainer(T& obj){
 namespace offlineshop
 {
 	//patch 08-03-2020
-	inline offlineshop::ExpirationType GetItemExpiration(LPITEM item) {
-		auto proto = ItemSystem::GetItemProto(EntityFactory::CreateItemEntity(g_registry, item));
+	inline offlineshop::ExpirationType GetItemExpiration(entt::entity item) {
+		auto proto = ItemSystem::GetItemProto(item);
 		if (!proto)
 			return offlineshop::ExpirationType::EXPIRE_NONE;
 #ifdef ENABLE_NEW_USE_POTION
@@ -71,7 +71,7 @@ namespace offlineshop
 		for (const auto limit : proto->aLimits) {
 			if (limit.bType == LIMIT_REAL_TIME)
 				return offlineshop::ExpirationType::EXPIRE_REAL_TIME;
-			else if (limit.bType == LIMIT_REAL_TIME_START_FIRST_USE && ItemSystem::GetItemSocket(EntityFactory::CreateItemEntity(g_registry, item), 1) != 0)
+			else if (limit.bType == LIMIT_REAL_TIME_START_FIRST_USE && ItemSystem::GetItemSocket(item, 1) != 0)
 				return offlineshop::ExpirationType::EXPIRE_REAL_TIME_FIRST_USE;
 		} return offlineshop::ExpirationType::EXPIRE_NONE;
 	}
@@ -129,127 +129,127 @@ namespace offlineshop
 		{
 			case CHAT_PACKET_CANNOT_CREATE_SHOP:
 				{
-					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 825, "");
+					ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 825, "");
 				}
 				break;
 			case CHAT_PACKET_CANNOT_CHANGE_NAME:
 				{
-					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 826, "");
+					ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 826, "");
 				}
 				break;
 			case CHAT_PACKET_CANNOT_FORCE_CLOSE:
 				{
-					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 827, "");
+					ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 827, "");
 				}
 				break;
 			case CHAT_PACKET_CANNOT_OPEN_SHOP:
 				{
-					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 828, "");
+					ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 828, "");
 				}
 				break;
 			case CHAT_PACKET_CANNOT_OPEN_SHOP_OWNER:
 				{
-					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 829, "");
+					ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 829, "");
 				}
 				break;
 			case CHAT_PACKET_CANNOT_ADD_ITEM:
 				{
-					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 830, "");
+					ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 830, "");
 				}
 				break;
 			case CHAT_PACKET_CANNOT_BUY_ITEM:
 				{
-					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 831, "");
+					ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 831, "");
 				}
 				break;
 			case CHAT_PACKET_CANNOT_REMOVE_ITEM:
 				{
-					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 832, "");
+					ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 832, "");
 				}
 				break;
 			case CHAT_PACKET_CANNOT_EDIT_ITEM:
 				{
-					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 833, "");
+					ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 833, "");
 				}
 				break;
 			case CHAT_PACKET_CANNOT_REMOVE_LAST_ITEM:
 				{
-					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 834, "");
+					ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 834, "");
 				}
 				break;
 			case CHAT_PACKET_CANNOT_FILTER:
 				{
-					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 835, "");
+					ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 835, "");
 				}
 				break;
 			case CHAT_PACKET_CANNOT_SEARCH_YET:
 				{
-					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 836, "");
+					ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 836, "");
 				}
 				break;
 			case CHAT_PACKET_OFFER_CREATE:
 				{
-					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 837, "");
+					ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 837, "");
 				}
 				break;
 			case CHAT_PACKET_CANNOT_CREATE_OFFER:
 				{
-					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 838, "");
+					ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 838, "");
 				}
 				break;
 			case CHAT_PACKET_CANNOT_ACCEPT_OFFER:
 				{
-					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 839, "");
+					ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 839, "");
 				}
 				break;
 			case CHAT_PACKET_CANNOT_OPEN_SAFEBOX:
 				{
-					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 840, "");
+					ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 840, "");
 				}
 				break;
 			case CHAT_PACKET_CANNOT_SAFEBOX_GET_ITEM:
 				{
-					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 841, "");
+					ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 841, "");
 				}
 				break;
 			case CHAT_PACKET_CANNOT_SAFEBOX_GET_VALUTES:
 				{
-					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 842, "");
+					ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 842, "");
 				}
 				break;
 			case CHAT_PACKET_CANNOT_SAFEBOX_CLOSE:
 				{
-					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 843, "");
+					ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 843, "");
 				}
 				break;
 			case CHAT_PACKET_RECV_ITEM_SAFEBOX:
 				{
-					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 844, "");
+					ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 844, "");
 				}
 				break;
 			case CHAT_PACKET_AUCTION_CANNOT_SEND_LIST:
 				{
-					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 845, "");
+					ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 845, "");
 				}
 				break;
 			case CHAT_PACKET_AUCTION_CANNOT_OPEN_AUCTION:
 				{
-					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 846, "");
+					ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 846, "");
 				}
 				break;
 			case CHAT_PACKET_AUCTION_CANNOT_CREATE_AUCTION:
 				{
-					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 847, "");
+					ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 847, "");
 				}
 				break;
 			case CHAT_PACKET_AUCTION_CANNOT_ADD_OFFER:
 				{
-					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 848, "");
+					ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 848, "");
 				}
 				break;
 			case CHAT_PACKET_CANNOT_DO_NOW:
 				{
-					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 849, "");
+					ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 849, "");
 				}
 				break;
 		default:

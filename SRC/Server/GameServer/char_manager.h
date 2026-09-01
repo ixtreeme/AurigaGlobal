@@ -113,6 +113,7 @@ protected:
 		void			SetUserDamageRatePremium(int value)	{ m_iUserDamageRatePremium = value; }
 		void			SetUserDamageRate(int value ) { m_iUserDamageRate = value; }
 		int			GetMobItemRate(LPCHARACTER ch);
+		int			GetMobItemRate(entt::entity character);
 		int			GetMobDamageRate(LPCHARACTER ch);
 		int			GetMobGoldAmountRate(LPCHARACTER ch);
 		int			GetMobGoldDropRate(LPCHARACTER ch);

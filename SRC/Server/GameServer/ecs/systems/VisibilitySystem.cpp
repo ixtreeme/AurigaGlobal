@@ -5,13 +5,13 @@
 #include "../../config.h"
 #include "../../sectree.h"
 #include "../../utils.h"
-#include "../AIHelpers.hpp"
 #include "../EventDispatcher.hpp"
 #include "../Registry.hpp"
 #include "../SpatialHelpers.hpp"
 #include "../components/spatial_components.hpp"
 #include "../components/transform_components.hpp"
 #include "../components/visibility_components.hpp"
+#include "../components/status_components.hpp"
 #include "../events.hpp"
 #include "../services/EntityNetworkDispatch.hpp"
 
@@ -21,6 +21,31 @@
 #include <unordered_set>
 
 namespace ecs::VisibilitySystem {
+
+void Reencode(entt::registry& reg, entt::entity character)
+{
+	if (character == entt::null || !reg.valid(character))
+		return;
+	if (const auto* status = reg.try_get<ecs::StatusFlags>(character);
+		status && status->isObserverMode)
+		return;
+
+	ecs::EntityNetworkDispatch::SendRemove(reg, character, character);
+	ecs::EntityNetworkDispatch::SendInsert(reg, character, character);
+
+	const auto* view = reg.try_get<ecs::ViewMap>(character);
+	if (!view)
+		return;
+	const auto visible = view->visible;
+	for (const entt::entity other : visible)
+	{
+		if (other == entt::null || !reg.valid(other))
+			continue;
+		const auto* otherStatus = reg.try_get<ecs::StatusFlags>(other);
+		if (!otherStatus || !otherStatus->isObserverMode)
+			ecs::EntityNetworkDispatch::SendInsert(reg, other, character);
+	}
+}
 
 namespace {
     bool g_initialized = false;
@@ -66,7 +91,7 @@ namespace {
                 if (!entity || !entity->IsType(ENTITY_CHARACTER))
                     return;
 
-                const auto e = AIHelpers::EcsOf(static_cast<LPCHARACTER>(entity));
+                const auto e = static_cast<LPCHARACTER>(entity)->GetEntityHandle();
                 if (e == entt::null || !reg.valid(e) || e == self)
                     return;
 

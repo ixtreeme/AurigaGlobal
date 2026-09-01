@@ -872,11 +872,11 @@ public:
 	void			SetMaxStamina(int64_t iVal);
 	int64_t				GetMaxStamina() const;
 
-	void			SetRandomHP(int v) { m_points.iRandomHP = v; }
-	void			SetRandomSP(int v) { m_points.iRandomSP = v; }
+	void			SetRandomHP(int v);
+	void			SetRandomSP(int v);
 
-	int				GetRandomHP() const { return m_points.iRandomHP; }
-	int				GetRandomSP() const { return m_points.iRandomSP; }
+	int				GetRandomHP() const;
+	int				GetRandomSP() const;
 
 	int				GetHPPct() const;
 
@@ -968,10 +968,10 @@ public:
 	uint8_t			GetBlockMode() const;
 	bool			IsBlockMode(uint8_t bFlag) const;
 
-	bool			IsPolymorphed() const { return m_dwPolymorphRace > 0; }
-	bool			IsPolyMaintainStat() const { return m_bPolyMaintainStat; } // ���� ������ �����ϴ� ��������.
+	bool			IsPolymorphed() const;
+	bool			IsPolyMaintainStat() const;
 	void			SetPolymorph(uint32_t dwRaceNum, bool bMaintainStat = false);
-	uint32_t			GetPolymorphVnum() const { return m_dwPolymorphRace; }
+	uint32_t			GetPolymorphVnum() const;
 	int				GetPolymorphPower() const;
 
 	// FISING
@@ -1958,7 +1958,7 @@ public:
 	void				ComputeSkillPoints();
 
 	void				SetSkillGroup(uint8_t bSkillGroup);
-	uint8_t				GetSkillGroup() const { return m_points.skill_group; }
+	uint8_t				GetSkillGroup() const;
 
 	int					ComputeCooltime(int time);
 
@@ -2250,7 +2250,7 @@ private:
 
 public:
 	void 				SetEmpire(uint8_t bEmpire);
-	uint8_t				GetEmpire() const { return m_bEmpire; }
+	uint8_t				GetEmpire() const;
 
 protected:
 	uint8_t				m_bEmpire;
@@ -2292,8 +2292,8 @@ public:
 	entt::entity		GetQuestItemEntity() const;
 	LPITEM				GetQuestItemPtr() const;
 
-	void				SetQuestBy(uint32_t dwQuestVnum) { m_dwQuestByVnum = dwQuestVnum; }
-	uint32_t				GetQuestBy() const { return m_dwQuestByVnum; }
+	void				SetQuestBy(uint32_t dwQuestVnum);
+	uint32_t				GetQuestBy() const;
 
 	int					GetQuestFlag(const std::string& flag) const;
 	void				SetQuestFlag(const std::string& flag, int value);
@@ -2347,15 +2347,10 @@ public:
 	LPEVENT				m_pkTimedEvent;
 	LPEVENT				m_pkFishingEvent;
 	LPEVENT				m_pkAffectEvent;
-	LPEVENT				m_pkPoisonEvent;
 	LPEVENT				GetTimedEvent() const { return m_pkTimedEvent; }
 	LPEVENT&			GetTimedEventRef() { return m_pkTimedEvent; }
 	LPEVENT				GetFishingEvent() const { return m_pkFishingEvent; }
 	LPEVENT&			GetFishingEventRef() { return m_pkFishingEvent; }
-#ifdef ENABLE_WOLFMAN_CHARACTER
-	LPEVENT				m_pkBleedingEvent;
-#endif
-	LPEVENT				m_pkFireEvent;
 	LPEVENT				m_pkWarpNPCEvent;
 	//DELAYED_WARP
 	//END_DELAYED_WARP
@@ -2372,10 +2367,6 @@ public:
 #endif
 	bool IsWarping() const { return m_pkWarpEvent ? true : false; }
 
-	bool				m_bHasPoisoned;
-#ifdef ENABLE_WOLFMAN_CHARACTER
-	bool				m_bHasBled;
-#endif
 
 	const CMob* m_pkMobData;
 	CMobInstance* m_pkMobInst;
@@ -2431,10 +2422,10 @@ private:
 	int m_nPotionLimit;
 
 public:
-	void 	SetArena(CArena* pArena) { m_pArena = pArena; }
+	void 	SetArena(CArena* pArena);
 	void	SetArenaObserverMode(bool flag);
 
-	CArena* GetArena() const { return m_pArena; }
+	CArena* GetArena() const;
 	bool	GetArenaObserverMode() const;
 
 	void	SetPotionLimit(int count) { m_nPotionLimit = count; }
@@ -2531,8 +2522,8 @@ private:
 	std::string m_strNewName;
 
 public:
-	const std::string GetNewName() const { return this->m_strNewName; }
-	void SetNewName(const std::string name) { this->m_strNewName = name; }
+	const std::string GetNewName() const;
+	void SetNewName(const std::string name);
 
 public:
 	void GoHome();
@@ -2609,8 +2600,8 @@ private:
 public:
 	void SetNewPet() { m_bIsNewPet = true; }
 	bool IsNewPet() const { return m_bIsNewPet ? true : false; }
-	void SetEggVid(int vid) { m_eggvid = vid; }
-	int GetEggVid() { return m_eggvid; }
+	void SetEggVid(int vid);
+	int GetEggVid() const;
 
 #endif
 
@@ -2729,10 +2720,10 @@ public:
 #ifdef __HIDE_COSTUME_SYSTEM__
 public:
 	void SetBodyCostumeHidden(bool hidden, bool pass = false);
-	bool IsBodyCostumeHidden() const { return m_bHideBodyCostume; };
+	bool IsBodyCostumeHidden() const;
 
 	void SetHairCostumeHidden(bool hidden, bool pass = false);
-	bool IsHairCostumeHidden() const { return m_bHideHairCostume; };
+	bool IsHairCostumeHidden() const;
 #ifdef ENABLE_FREE_PASS_RAZOR93
 
 	bool HasBattlePassBoost(uint8_t bBattlePassId);
@@ -2745,12 +2736,12 @@ public:
 
 #ifdef ENABLE_ACCE_SYSTEM
 	void SetAcceCostumeHidden(bool hidden, bool pass = false);
-	bool IsAcceCostumeHidden() const { return m_bHideAcceCostume; };
+	bool IsAcceCostumeHidden() const;
 #endif
 
 #ifdef ENABLE_WEAPON_COSTUME_SYSTEM
 	void SetWeaponCostumeHidden(bool hidden, bool pass = false);
-	bool IsWeaponCostumeHidden() const { return m_bHideWeaponCostume; };
+	bool IsWeaponCostumeHidden() const;
 #endif
 
 private:
@@ -2775,40 +2766,6 @@ private:
 
 #ifdef ENABLE_GAYA_SYSTEM
 public:
-	struct Gaya_Shop_Values
-	{
-		int		value_1;
-		int		value_2;
-		int 	value_3;
-		int 	value_4;
-		int 	value_5;
-		int 	value_6;
-
-		bool operator == (const Gaya_Shop_Values& b)
-		{
-			return (this->value_1 == b.value_1) && (this->value_2 == b.value_2) &&
-				(this->value_3 == b.value_3) && (this->value_4 == b.value_4) &&
-				(this->value_5 == b.value_5) && (this->value_6 == b.value_6);
-		}
-	};
-
-	struct Gaya_Load_Values
-	{
-		uint32_t	items;
-		uint32_t	gaya;
-		uint32_t	count;
-		uint32_t	glimmerstone;
-		uint32_t	gaya_expansion;
-		uint32_t	gaya_refresh;
-		uint32_t	glimmerstone_count;
-		uint32_t	gaya_expansion_count;
-		uint32_t	gaya_refresh_count;
-		uint32_t	grade_stone;
-		uint32_t	give_gaya;
-		uint32_t	prob_gaya;
-		uint32_t	cost_gaya_yang;
-	};
-
 	bool CheckItemsFull();
 	void UpdateItemsGayaMarker0();
 	void UpdateItemsGayaMarker();
@@ -2822,16 +2779,9 @@ public:
 	void MarketGayaItems(int slot);
 	void RefreshGayaItems();
 	void LOAD_GAYA();
-	int  GetGayaState(const std::string& state) const;
+	int GetGayaState(const std::string& state) const;
 	void SetGayaState(const std::string& state, int szValue);
 	void StartCheckTimeMarket();
-
-public:
-	std::vector<Gaya_Shop_Values> info_items;
-	std::vector<Gaya_Shop_Values> info_slots;
-	std::vector<Gaya_Load_Values> load_gaya_items;
-	Gaya_Load_Values	load_gaya_values;
-	LPEVENT	GayaUpdateTime;
 #endif
 
 
@@ -2881,24 +2831,11 @@ public:
 #endif
 #ifdef ENABLE_NEW_FISHING_SYSTEM
 public:
-	LPEVENT m_pkFishingNewEvent;
-
 	void fishing_new_start();
 	void fishing_new_stop();
 	void fishing_new_catch();
 	void fishing_new_catch_failed();
 	void fishing_catch_decision(uint32_t itemVnum);
-	void SetFishCatch(int i) { m_bFishCatch = i; }
-	uint8_t GetFishCatch() { return m_bFishCatch; }
-	void SetLastCatchTime(uint32_t i) { m_dwLastCatch = i; }
-	int GetLastCatchTime() { return m_dwLastCatch; }
-	void SetFishCatchFailed(int i) { m_dwCatchFailed = i; }
-	uint8_t GetFishCatchFailed() { return m_dwCatchFailed; }
-
-private:
-	uint8_t m_bFishCatch;
-	uint32_t m_dwCatchFailed;
-	int m_dwLastCatch;
 #endif
 public:
 	int		GetGoToXYTime() const { return m_iGoToXYTime; }

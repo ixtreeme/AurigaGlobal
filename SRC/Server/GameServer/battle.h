@@ -45,20 +45,20 @@ inline void AttackAffect(LPCHARACTER pkAttacker,
 		int time,
 		const char* name)
 {
-	if (ecs::PointSystem::Get(AIHelpers::EcsOf(pkAttacker), att_point) && !AffectSystem::IsAffectFlag(AIHelpers::EcsOf(pkVictim), affect_flag))
+	if (ecs::PointSystem::Get(((pkAttacker) ? (pkAttacker)->GetEntityHandle() : entt::null), att_point) && !AffectSystem::IsAffectFlag(((pkVictim) ? (pkVictim)->GetEntityHandle() : entt::null), affect_flag))
 	{
-		if (number(1, 100) <= ecs::PointSystem::Get(AIHelpers::EcsOf(pkAttacker), att_point) && !AffectSystem::IsImmune(AIHelpers::EcsOf(pkVictim), immune_flag))
+		if (number(1, 100) <= ecs::PointSystem::Get(((pkAttacker) ? (pkAttacker)->GetEntityHandle() : entt::null), att_point) && !AffectSystem::IsImmune(((pkVictim) ? (pkVictim)->GetEntityHandle() : entt::null), immune_flag))
 		{
-			AffectSystem::AddAffect(AIHelpers::EcsOf(pkVictim), affect_idx, affect_point, affect_amount, affect_flag, time, 0, true);
+			AffectSystem::AddAffect(((pkVictim) ? (pkVictim)->GetEntityHandle() : entt::null), affect_idx, affect_point, affect_amount, affect_flag, time, 0, true);
 
 			if (test_server)
 			{
-				ecs::ChatSystem::Send(AIHelpers::EcsOf(pkVictim), CHAT_TYPE_PARTY, "%s %s(%ld%%) SUCCESS", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(pkAttacker)).data(), name, ecs::PointSystem::Get(AIHelpers::EcsOf(pkAttacker), att_point));
+				ecs::ChatSystem::Send(((pkVictim) ? (pkVictim)->GetEntityHandle() : entt::null), CHAT_TYPE_PARTY, "%s %s(%ld%%) SUCCESS", ecs::PlayerRuntime::GetName(((pkAttacker) ? (pkAttacker)->GetEntityHandle() : entt::null)).data(), name, ecs::PointSystem::Get(((pkAttacker) ? (pkAttacker)->GetEntityHandle() : entt::null), att_point));
 			}
 		}
 		else if (test_server)
 		{
-			ecs::ChatSystem::Send(AIHelpers::EcsOf(pkVictim), CHAT_TYPE_PARTY, "%s %s(%ld%%) FAIL", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(pkAttacker)).data(), name, ecs::PointSystem::Get(AIHelpers::EcsOf(pkAttacker), att_point));
+			ecs::ChatSystem::Send(((pkVictim) ? (pkVictim)->GetEntityHandle() : entt::null), CHAT_TYPE_PARTY, "%s %s(%ld%%) FAIL", ecs::PlayerRuntime::GetName(((pkAttacker) ? (pkAttacker)->GetEntityHandle() : entt::null)).data(), name, ecs::PointSystem::Get(((pkAttacker) ? (pkAttacker)->GetEntityHandle() : entt::null), att_point));
 		}
 	}
 }
@@ -73,22 +73,22 @@ inline void SkillAttackAffect(LPCHARACTER pkVictim,
 		int time,
 		const char* name)
 {
-	if (success_pct && !AffectSystem::IsAffectFlag(AIHelpers::EcsOf(pkVictim), affect_flag))
+	if (success_pct && !AffectSystem::IsAffectFlag(((pkVictim) ? (pkVictim)->GetEntityHandle() : entt::null), affect_flag))
 	{
-		if (number(1, 1000) <= success_pct && !AffectSystem::IsImmune(AIHelpers::EcsOf(pkVictim), immune_flag))
+		if (number(1, 1000) <= success_pct && !AffectSystem::IsImmune(((pkVictim) ? (pkVictim)->GetEntityHandle() : entt::null), immune_flag))
 		{
-			AffectSystem::AddAffect(AIHelpers::EcsOf(pkVictim), affect_idx, affect_point, affect_amount, affect_flag, time, 0, true);
+			AffectSystem::AddAffect(((pkVictim) ? (pkVictim)->GetEntityHandle() : entt::null), affect_idx, affect_point, affect_amount, affect_flag, time, 0, true);
 
 			// SKILL_ATTACK_NO_LOG_TARGET_NAME_FIX
 			if (test_server)
-				ecs::ChatSystem::Send(AIHelpers::EcsOf(pkVictim), CHAT_TYPE_PARTY,
+				ecs::ChatSystem::Send(((pkVictim) ? (pkVictim)->GetEntityHandle() : entt::null), CHAT_TYPE_PARTY,
 						"%s(%d%%) -> %s SUCCESS", name, success_pct, name);
 			// END_OF_SKILL_ATTACK_LOG_NO_TARGET_NAME_FIX
 		}
 		else if (test_server)
 		{
 			// SKILL_ATTACK_NO_LOG_TARGET_NAME_FIX
-			ecs::ChatSystem::Send(AIHelpers::EcsOf(pkVictim), CHAT_TYPE_PARTY, "%s(%d%%) -> %s FAIL", name, success_pct, name);
+			ecs::ChatSystem::Send(((pkVictim) ? (pkVictim)->GetEntityHandle() : entt::null), CHAT_TYPE_PARTY, "%s(%d%%) -> %s FAIL", name, success_pct, name);
 			// END_OF_SKILL_ATTACK_LOG_NO_TARGET_NAME_FIX
 		}
 	}

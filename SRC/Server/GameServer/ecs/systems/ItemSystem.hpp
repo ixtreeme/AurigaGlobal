@@ -13,7 +13,6 @@ namespace ItemSystem {
 
 entt::entity GetItem(entt::entity e, TItemPos cell);
 entt::entity GetInventoryItem(entt::entity e, uint16_t cell);
-LPITEM GetInventoryItemPtr(entt::entity e, uint16_t cell);
 #ifdef ENABLE_EXTRA_INVENTORY
 entt::entity GetExtraInventoryItem(entt::entity e, uint16_t cell);
 void SyncExtraInventoryAll(entt::entity e);
@@ -35,7 +34,6 @@ bool RemoveSpecifyItemEcs(entt::entity e, uint32_t vnum, uint32_t count = 1,
 
 // Slice B - equip / unequip
 entt::entity GetWearItem(entt::entity e, uint8_t wearPos);
-LPITEM GetWear(entt::entity e, uint8_t wearPos);
 bool UnequipItemEcs(entt::entity owner, entt::entity item);
 bool EquipItemEcs(entt::entity owner, entt::entity item, int candidateCell = -1);
 bool IsEquipUniqueItem(entt::entity e, uint32_t itemVnum);
@@ -83,6 +81,7 @@ uint32_t GetItemCount(entt::entity item);
 int32_t GetItemValue(entt::entity item, uint32_t index);
 int64_t GetItemShopBuyPrice(entt::entity item);
 const char* GetItemName(entt::entity item);
+const char* GetItemNameByVnum(uint32_t vnum);
 uint8_t GetItemSize(entt::entity item);
 uint8_t GetItemExtraCategory(entt::entity item);
 uint32_t GetItemRefineVnum(entt::entity item);

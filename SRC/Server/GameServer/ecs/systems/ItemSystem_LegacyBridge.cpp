@@ -1,6 +1,7 @@
 #include "../../stdafx.h"
 #include "PlayerRuntimeSystem.hpp"
 #include "AffectSystem.hpp"
+#include "ActivitySystem.hpp"
 
 #include "ItemSystem.hpp"
 #include "MountSystem.hpp"
@@ -85,7 +86,6 @@
 #endif
 
 #include "../Registry.hpp"
-#include "../AIHelpers.hpp"
 #include "../SpatialHelpers.hpp"
 #include "../components/identity_components.hpp"
 #include "../components/inventory_components.hpp"
@@ -116,275 +116,184 @@ struct FFindStone
 
 			if (pChar->IsStone() == true)
 			{
-				m_mapStone[ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(pChar))] = pChar;
+				m_mapStone[ecs::PlayerRuntime::GetPacketVID((pChar ? pChar->GetEntityHandle() : entt::null))] = pChar;
 			}
 		}
 	}
 };
 
-LegacyCharHandle LegacyCharOf(entt::entity e)
+static LPITEM LegacyItemBoundary(entt::entity itemEntity);
+
+static ecs::MainInventoryRuntimeComponent* EnsureMainInventoryRuntimeComponent(entt::entity character)
 {
-    if (e == entt::null || !g_registry.valid(e))
+    if (character == entt::null || !g_registry.valid(character))
         return nullptr;
 
-    auto* legacy = g_registry.try_get<ecs::LegacyCharPtr>(e);
-    return legacy ? legacy->ptr : nullptr;
-}
-
-static LPITEM LegacyItemOf(entt::entity itemEntity);
-
-static ecs::MainInventoryRuntimeComponent* EnsureMainInventoryRuntimeComponent(LPCHARACTER ch)
-{
-    if (!ch)
-        return nullptr;
-
-    const entt::entity e = AIHelpers::EcsOf(ch);
-    if (e == entt::null || !g_registry.valid(e))
-        return nullptr;
-
-    if (auto* comp = g_registry.try_get<ecs::MainInventoryRuntimeComponent>(e))
+    if (auto* comp = g_registry.try_get<ecs::MainInventoryRuntimeComponent>(character))
         return comp;
 
-    return &g_registry.emplace<ecs::MainInventoryRuntimeComponent>(e);
+    return &g_registry.emplace<ecs::MainInventoryRuntimeComponent>(character);
 }
 
-static const ecs::MainInventoryRuntimeComponent* TryGetMainInventoryRuntimeComponent(const CHARACTER* ch)
+static const ecs::MainInventoryRuntimeComponent* TryGetMainInventoryRuntimeComponent(entt::entity character)
 {
-    if (!ch)
+    if (character == entt::null || !g_registry.valid(character))
         return nullptr;
 
-    const entt::entity e = AIHelpers::EcsOf(ch);
-    if (e == entt::null || !g_registry.valid(e))
-        return nullptr;
-
-    return g_registry.try_get<ecs::MainInventoryRuntimeComponent>(e);
+    return g_registry.try_get<ecs::MainInventoryRuntimeComponent>(character);
 }
 
-static LPITEM GetMainInventoryItem(const CHARACTER* ch, uint16_t cell)
+static LPITEM GetMainInventoryItem(entt::entity character, uint16_t cell)
 {
     if (cell >= INVENTORY_AND_EQUIP_SLOT_MAX)
         return nullptr;
 
-    if (const auto* comp = TryGetMainInventoryRuntimeComponent(ch))
-        return LegacyItemOf(comp->items[cell]);
+    if (const auto* comp = TryGetMainInventoryRuntimeComponent(character))
+        return LegacyItemBoundary(comp->items[cell]);
 
     return nullptr;
 }
 
-static uint16_t GetMainInventoryGrid(const CHARACTER* ch, uint16_t cell)
+static uint16_t GetMainInventoryGrid(entt::entity character, uint16_t cell)
 {
     if (cell >= INVENTORY_AND_EQUIP_SLOT_MAX)
         return 0;
 
-    if (const auto* comp = TryGetMainInventoryRuntimeComponent(ch))
+    if (const auto* comp = TryGetMainInventoryRuntimeComponent(character))
         return comp->itemGrid[cell];
 
     return 0;
 }
 #ifdef ENABLE_EXTRA_INVENTORY
-static ecs::ExtraInventoryRuntimeComponent* EnsureExtraInventoryRuntimeComponent(LPCHARACTER ch)
+static ecs::ExtraInventoryRuntimeComponent* EnsureExtraInventoryRuntimeComponent(entt::entity character)
 {
-    if (!ch)
+    if (character == entt::null || !g_registry.valid(character))
         return nullptr;
 
-    const entt::entity e = AIHelpers::EcsOf(ch);
-    if (e == entt::null || !g_registry.valid(e))
-        return nullptr;
-
-    if (auto* comp = g_registry.try_get<ecs::ExtraInventoryRuntimeComponent>(e))
+    if (auto* comp = g_registry.try_get<ecs::ExtraInventoryRuntimeComponent>(character))
         return comp;
 
-    return &g_registry.emplace<ecs::ExtraInventoryRuntimeComponent>(e);
+    return &g_registry.emplace<ecs::ExtraInventoryRuntimeComponent>(character);
 }
 
-static const ecs::ExtraInventoryRuntimeComponent* TryGetExtraInventoryRuntimeComponent(const CHARACTER* ch)
+static const ecs::ExtraInventoryRuntimeComponent* TryGetExtraInventoryRuntimeComponent(entt::entity character)
 {
-    if (!ch)
+    if (character == entt::null || !g_registry.valid(character))
         return nullptr;
 
-    const entt::entity e = AIHelpers::EcsOf(ch);
-    if (e == entt::null || !g_registry.valid(e))
-        return nullptr;
-
-    return g_registry.try_get<ecs::ExtraInventoryRuntimeComponent>(e);
+    return g_registry.try_get<ecs::ExtraInventoryRuntimeComponent>(character);
 }
 #endif
 
-static ecs::DragonSoulInventoryComponent* EnsureDragonSoulInventoryComponent(LPCHARACTER ch)
+static ecs::DragonSoulInventoryComponent* EnsureDragonSoulInventoryComponent(entt::entity character)
 {
-    if (!ch)
+    if (character == entt::null || !g_registry.valid(character))
         return nullptr;
 
-    const entt::entity e = AIHelpers::EcsOf(ch);
-    if (e == entt::null || !g_registry.valid(e))
-        return nullptr;
-
-    if (auto* comp = g_registry.try_get<ecs::DragonSoulInventoryComponent>(e))
+    if (auto* comp = g_registry.try_get<ecs::DragonSoulInventoryComponent>(character))
         return comp;
 
-    return &g_registry.emplace<ecs::DragonSoulInventoryComponent>(e);
+    return &g_registry.emplace<ecs::DragonSoulInventoryComponent>(character);
 }
 
-static const ecs::DragonSoulInventoryComponent* TryGetDragonSoulInventoryComponent(const CHARACTER* ch)
+static const ecs::DragonSoulInventoryComponent* TryGetDragonSoulInventoryComponent(entt::entity character)
 {
-    if (!ch)
+    if (character == entt::null || !g_registry.valid(character))
         return nullptr;
 
-    const entt::entity e = AIHelpers::EcsOf(ch);
-    if (e == entt::null || !g_registry.valid(e))
-        return nullptr;
-
-    return g_registry.try_get<ecs::DragonSoulInventoryComponent>(e);
+    return g_registry.try_get<ecs::DragonSoulInventoryComponent>(character);
 }
 
 
-static ecs::CubeWindowComponent* EnsureCubeWindowComponent(LPCHARACTER ch)
+static ecs::CubeWindowComponent* EnsureCubeWindowComponent(entt::entity character)
 {
-    if (!ch)
+    if (character == entt::null || !g_registry.valid(character))
         return nullptr;
 
-    const entt::entity e = AIHelpers::EcsOf(ch);
-    if (e == entt::null || !g_registry.valid(e))
-        return nullptr;
-
-    if (auto* comp = g_registry.try_get<ecs::CubeWindowComponent>(e))
+    if (auto* comp = g_registry.try_get<ecs::CubeWindowComponent>(character))
         return comp;
 
-    return &g_registry.emplace<ecs::CubeWindowComponent>(e);
+    return &g_registry.emplace<ecs::CubeWindowComponent>(character);
 }
 
-static const ecs::CubeWindowComponent* TryGetCubeWindowComponent(const CHARACTER* ch)
+static const ecs::CubeWindowComponent* TryGetCubeWindowComponent(entt::entity character)
 {
-    if (!ch)
+    if (character == entt::null || !g_registry.valid(character))
         return nullptr;
 
-    const entt::entity e = AIHelpers::EcsOf(ch);
-    if (e == entt::null || !g_registry.valid(e))
-        return nullptr;
-
-    return g_registry.try_get<ecs::CubeWindowComponent>(e);
+    return g_registry.try_get<ecs::CubeWindowComponent>(character);
 }
 
 #ifdef __ATTR_TRANSFER_SYSTEM__
-static ecs::AttrTransferWindowComponent* EnsureAttrTransferWindowComponent(LPCHARACTER ch)
+static ecs::AttrTransferWindowComponent* EnsureAttrTransferWindowComponent(entt::entity character)
 {
-    if (!ch)
+    if (character == entt::null || !g_registry.valid(character))
         return nullptr;
 
-    const entt::entity e = AIHelpers::EcsOf(ch);
-    if (e == entt::null || !g_registry.valid(e))
-        return nullptr;
-
-    if (auto* comp = g_registry.try_get<ecs::AttrTransferWindowComponent>(e))
+    if (auto* comp = g_registry.try_get<ecs::AttrTransferWindowComponent>(character))
         return comp;
 
-    return &g_registry.emplace<ecs::AttrTransferWindowComponent>(e);
+    return &g_registry.emplace<ecs::AttrTransferWindowComponent>(character);
 }
 
-static const ecs::AttrTransferWindowComponent* TryGetAttrTransferWindowComponent(const CHARACTER* ch)
+static const ecs::AttrTransferWindowComponent* TryGetAttrTransferWindowComponent(entt::entity character)
 {
-    if (!ch)
+    if (character == entt::null || !g_registry.valid(character))
         return nullptr;
 
-    const entt::entity e = AIHelpers::EcsOf(ch);
-    if (e == entt::null || !g_registry.valid(e))
-        return nullptr;
-
-    return g_registry.try_get<ecs::AttrTransferWindowComponent>(e);
+    return g_registry.try_get<ecs::AttrTransferWindowComponent>(character);
 }
 #endif
 
 #ifdef ENABLE_ACCE_SYSTEM
-static ecs::AcceWindowComponent* EnsureAcceWindowComponent(LPCHARACTER ch)
+static ecs::AcceWindowComponent* EnsureAcceWindowComponent(entt::entity character)
 {
-    if (!ch)
+    if (character == entt::null || !g_registry.valid(character))
         return nullptr;
 
-    const entt::entity e = AIHelpers::EcsOf(ch);
-    if (e == entt::null || !g_registry.valid(e))
-        return nullptr;
-
-    if (auto* comp = g_registry.try_get<ecs::AcceWindowComponent>(e))
+    if (auto* comp = g_registry.try_get<ecs::AcceWindowComponent>(character))
         return comp;
 
-    return &g_registry.emplace<ecs::AcceWindowComponent>(e);
+    return &g_registry.emplace<ecs::AcceWindowComponent>(character);
 }
 
-static const ecs::AcceWindowComponent* TryGetAcceWindowComponent(const CHARACTER* ch)
+static const ecs::AcceWindowComponent* TryGetAcceWindowComponent(entt::entity character)
 {
-    if (!ch)
+    if (character == entt::null || !g_registry.valid(character))
         return nullptr;
 
-    const entt::entity e = AIHelpers::EcsOf(ch);
-    if (e == entt::null || !g_registry.valid(e))
-        return nullptr;
-
-    return g_registry.try_get<ecs::AcceWindowComponent>(e);
+    return g_registry.try_get<ecs::AcceWindowComponent>(character);
 }
 #endif
 
 #ifdef ENABLE_SWITCHBOT
-static ecs::SwitchbotRuntimeComponent* EnsureSwitchbotRuntimeComponent(LPCHARACTER ch)
+static ecs::SwitchbotRuntimeComponent* EnsureSwitchbotRuntimeComponent(entt::entity character)
 {
-    if (!ch)
+    if (character == entt::null || !g_registry.valid(character))
         return nullptr;
 
-    const entt::entity e = AIHelpers::EcsOf(ch);
-    if (e == entt::null || !g_registry.valid(e))
-        return nullptr;
-
-    if (auto* comp = g_registry.try_get<ecs::SwitchbotRuntimeComponent>(e))
+    if (auto* comp = g_registry.try_get<ecs::SwitchbotRuntimeComponent>(character))
         return comp;
 
-    return &g_registry.emplace<ecs::SwitchbotRuntimeComponent>(e);
+    return &g_registry.emplace<ecs::SwitchbotRuntimeComponent>(character);
 }
 
-static const ecs::SwitchbotRuntimeComponent* TryGetSwitchbotRuntimeComponent(const CHARACTER* ch)
+static const ecs::SwitchbotRuntimeComponent* TryGetSwitchbotRuntimeComponent(entt::entity character)
 {
-    if (!ch)
+    if (character == entt::null || !g_registry.valid(character))
         return nullptr;
 
-    const entt::entity e = AIHelpers::EcsOf(ch);
-    if (e == entt::null || !g_registry.valid(e))
-        return nullptr;
-
-    return g_registry.try_get<ecs::SwitchbotRuntimeComponent>(e);
+    return g_registry.try_get<ecs::SwitchbotRuntimeComponent>(character);
 }
 #endif
 
-static entt::entity ItemEntityOf(LPITEM item)
-{
-    if (!item || item->GetID() == 0)
-        return entt::null;
-
-    return CItemRegistry::Instance().Find(item->GetID());
-}
-
-static LPITEM LegacyItemOf(entt::entity itemEntity)
+static LPITEM LegacyItemBoundary(entt::entity itemEntity)
 {
     if (itemEntity == entt::null || !g_registry.valid(itemEntity))
         return nullptr;
 
-    const auto* identity = g_registry.try_get<ecs::ItemIdentity>(itemEntity);
-    if (!identity || identity->id == 0)
-        return nullptr;
-
-    return ITEM_MANAGER::instance().Find(identity->id);
-}
-
-static LPITEM ResolveLegacyItemForSync(entt::entity itemEntity)
-{
-    return LegacyItemOf(itemEntity);
-}
-
-static LPITEM ResolveLegacyItemForLegacySideEffect(entt::entity itemEntity)
-{
-    return LegacyItemOf(itemEntity);
-}
-
-static LPITEM ResolveLegacyItemForDestruction(entt::entity itemEntity)
-{
-    return LegacyItemOf(itemEntity);
+    const auto* legacy = g_registry.try_get<ecs::LegacyItemPtr>(itemEntity);
+    return legacy ? legacy->ptr : nullptr;
 }
 
 static bool DestroyItemEntityAndLegacy(entt::entity itemEntity, const char* reason)
@@ -396,7 +305,7 @@ static bool DestroyItemEntityAndLegacy(entt::entity itemEntity, const char* reas
     if (const auto* identity = g_registry.try_get<ecs::ItemIdentity>(itemEntity))
         itemID = identity->id;
 
-    LPITEM legacyItem = ResolveLegacyItemForDestruction(itemEntity);
+    LPITEM legacyItem = LegacyItemBoundary(itemEntity);
     if (legacyItem) {
         EntityFactory::DestroyItemEntity(g_registry, legacyItem);
         if (reason && *reason)
@@ -418,7 +327,7 @@ static uint32_t ItemVnumOrLegacy(LPITEM item)
     if (!item)
         return 0;
 
-    entt::entity e = ItemEntityOf(item);
+    entt::entity e = (item ? item->GetEntityHandle() : entt::null);
     if (e != entt::null)
     {
         if (const auto* identity = g_registry.try_get<ecs::ItemIdentity>(e))
@@ -430,7 +339,7 @@ static uint32_t ItemVnumOrLegacy(LPITEM item)
 
 static void SyncItemCountComponent(LPITEM item, int count)
 {
-    entt::entity e = ItemEntityOf(item);
+    entt::entity e = (item ? item->GetEntityHandle() : entt::null);
     if (e == entt::null)
         return;
 
@@ -439,7 +348,7 @@ static void SyncItemCountComponent(LPITEM item, int count)
 
 static void SyncItemFlagsComponent(LPITEM item)
 {
-    entt::entity e = ItemEntityOf(item);
+    entt::entity e = (item ? item->GetEntityHandle() : entt::null);
     if (e == entt::null)
         return;
 
@@ -458,7 +367,7 @@ const int MAX_RARE_ATTR_NUM = ITEM_MANAGER::MAX_RARE_ATTR_NUM;
 
 static void SyncItemAttributesComponent(LPITEM item)
 {
-    entt::entity e = ItemEntityOf(item);
+    entt::entity e = (item ? item->GetEntityHandle() : entt::null);
     if (e == entt::null)
         return;
 
@@ -472,7 +381,7 @@ static void SyncItemAttributesComponent(LPITEM item)
 
 static void SyncItemSocketsComponent(LPITEM item)
 {
-    entt::entity e = ItemEntityOf(item);
+    entt::entity e = (item ? item->GetEntityHandle() : entt::null);
     if (e == entt::null)
         return;
 
@@ -595,7 +504,7 @@ static void FN_copy_item_socket(LPITEM dest, LPITEM src)
 {
 	for (int i = 0; i < ITEM_SOCKET_MAX_NUM; ++i)
 	{
-		ItemSystem::SetItemSocketEcs(EntityFactory::CreateItemEntity(g_registry, dest), i, src->GetSocket(i));
+		ItemSystem::SetItemSocketEcs((dest ? dest->GetEntityHandle() : entt::null), i, src->GetSocket(i));
 	}
 }
 
@@ -732,7 +641,7 @@ const char* CItem::GetName(uint8_t Lang)
 
 		if (m_pOwner)
 		{
-			if (LPDESC d = ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(m_pOwner)))
+			if (LPDESC d = ecs::PlayerRuntime::GetDesc((m_pOwner ? m_pOwner->GetEntityHandle() : entt::null)))
 			{
 				const uint8_t dlang = d->GetLanguage();
 				if (dlang != 0)
@@ -777,7 +686,7 @@ int CItem::GetCount()
 	}
 
 	int count = m_dwCount;
-	entt::entity e = ItemEntityOf(this);
+	entt::entity e = GetEntityHandle();
 	if (e != entt::null)
 	{
 		if (const auto* itemCount = g_registry.try_get<ecs::ItemCount>(e))
@@ -840,7 +749,7 @@ bool CItem::SetCount(int count)
 
 			M2_DESTROY_ITEM(RemoveFromCharacter());
 
-			const uint8_t bType = ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(pOwner), "main_quest_flame_lv7.reward")*1 + ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(pOwner), "main_quest_flame_lv7.reward")*2;
+			const uint8_t bType = ecs::QuestSystem::GetFlag((pOwner ? pOwner->GetEntityHandle() : entt::null), "main_quest_flame_lv7.reward")*1 + ecs::QuestSystem::GetFlag((pOwner ? pOwner->GetEntityHandle() : entt::null), "main_quest_flame_lv7.reward")*2;
 			if (IsDragonSoul())
 			{
 				if (bType == 0)
@@ -1263,9 +1172,9 @@ void CItem::SetAttribute(int i, uint8_t bType, short sValue)
 
 		const char * pszIP = nullptr;
 
-		if (GetOwner() && ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(GetOwner())))
+		if (GetOwner() && ecs::PlayerRuntime::GetDesc((GetOwner() ? GetOwner()->GetEntityHandle() : entt::null)))
 
-			pszIP = ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(GetOwner()))->GetHostName();
+			pszIP = ecs::PlayerRuntime::GetDesc((GetOwner() ? GetOwner()->GetEntityHandle() : entt::null))->GetHostName();
 
 		LOG_LEVEL_CHECK(LOG_LEVEL_MAX, LogManager::instance().ItemLog(i, bType, sValue, GetID(), "SET_ATTR", "", pszIP ? pszIP : "", GetOriginalVnum()));
 
@@ -1299,9 +1208,9 @@ void CItem::SetAttribute2(int i, uint8_t bType, short sValue)
 
 
 
-		if (GetOwner() && ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(GetOwner())))
+		if (GetOwner() && ecs::PlayerRuntime::GetDesc((GetOwner() ? GetOwner()->GetEntityHandle() : entt::null)))
 
-			pszIP = ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(GetOwner()))->GetHostName();
+			pszIP = ecs::PlayerRuntime::GetDesc((GetOwner() ? GetOwner()->GetEntityHandle() : entt::null))->GetHostName();
 
 
 
@@ -1337,9 +1246,9 @@ void CItem::SetForceAttribute(int i, uint8_t bType, short sValue)
 
 
 
-		if (GetOwner() && ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(GetOwner())))
+		if (GetOwner() && ecs::PlayerRuntime::GetDesc((GetOwner() ? GetOwner()->GetEntityHandle() : entt::null)))
 
-			pszIP = ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(GetOwner()))->GetHostName();
+			pszIP = ecs::PlayerRuntime::GetDesc((GetOwner() ? GetOwner()->GetEntityHandle() : entt::null))->GetHostName();
 
 
 
@@ -1704,7 +1613,7 @@ bool CItem::ChangeRareAttribute()
 
 	SyncItemAttributesComponent(this);
 
-	if (GetOwner() && ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(GetOwner())))
+	if (GetOwner() && ecs::PlayerRuntime::GetDesc((GetOwner() ? GetOwner()->GetEntityHandle() : entt::null)))
 		LOG_LEVEL_CHECK(LOG_LEVEL_MAX, LogManager::instance().ItemLog(GetOwner(), this, "SET_RARE_CHANGE", ""))
 	else
 		LOG_LEVEL_CHECK(LOG_LEVEL_MAX, LogManager::instance().ItemLog(0, 0, 0, GetID(), "SET_RARE_CHANGE", "", "", GetOriginalVnum()))
@@ -1762,8 +1671,8 @@ bool CItem::AddRareAttribute()
 
 	const char * pszIP = nullptr;
 
-	if (GetOwner() && ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(GetOwner())))
-		pszIP = ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(GetOwner()))->GetHostName();
+	if (GetOwner() && ecs::PlayerRuntime::GetDesc((GetOwner() ? GetOwner()->GetEntityHandle() : entt::null)))
+		pszIP = ecs::PlayerRuntime::GetDesc((GetOwner() ? GetOwner()->GetEntityHandle() : entt::null))->GetHostName();
 
 	LOG_LEVEL_CHECK(LOG_LEVEL_MAX, LogManager::instance().ItemLog(pos, attr.bType, attr.sValue, GetID(), "SET_RARE", "", pszIP ? pszIP : "", GetOriginalVnum()));
 	return true;
@@ -2191,14 +2100,14 @@ LPITEM CHARACTER::GetInventoryItem(uint16_t wCell) const
 #ifdef ENABLE_EXTRA_INVENTORY
 void CHARACTER::SetCubeNpc(LPCHARACTER npc)
 {
-    if (auto* comp = EnsureCubeWindowComponent(this))
+    if (auto* comp = EnsureCubeWindowComponent(GetEntityHandle()))
         comp->pNpc = npc;
 
 }
 
 std::span<entt::entity> CHARACTER::GetCubeItem()
 {
-    if (auto* comp = EnsureCubeWindowComponent(this))
+    if (auto* comp = EnsureCubeWindowComponent(GetEntityHandle()))
         return comp->items;
 
     return {};
@@ -2206,7 +2115,7 @@ std::span<entt::entity> CHARACTER::GetCubeItem()
 
 bool CHARACTER::IsCubeOpen() const
 {
-    if (const auto* comp = TryGetCubeWindowComponent(this))
+    if (const auto* comp = TryGetCubeWindowComponent(GetEntityHandle()))
         return comp->pNpc != nullptr;
 
     return false;
@@ -2215,14 +2124,14 @@ bool CHARACTER::IsCubeOpen() const
 #ifdef __ATTR_TRANSFER_SYSTEM__
 void CHARACTER::SetAttrTransferNpc(LPCHARACTER npc)
 {
-    if (auto* comp = EnsureAttrTransferWindowComponent(this))
+    if (auto* comp = EnsureAttrTransferWindowComponent(GetEntityHandle()))
         comp->pNpc = npc;
 
 }
 
 std::span<entt::entity> CHARACTER::GetAttrTransferItem()
 {
-    if (auto* comp = EnsureAttrTransferWindowComponent(this))
+    if (auto* comp = EnsureAttrTransferWindowComponent(GetEntityHandle()))
         return comp->items;
 
     return {};
@@ -2230,7 +2139,7 @@ std::span<entt::entity> CHARACTER::GetAttrTransferItem()
 
 bool CHARACTER::IsAttrTransferOpen() const
 {
-    if (const auto* comp = TryGetAttrTransferWindowComponent(this))
+    if (const auto* comp = TryGetAttrTransferWindowComponent(GetEntityHandle()))
         return comp->pNpc != nullptr;
 
     return false;
@@ -2240,7 +2149,7 @@ bool CHARACTER::IsAttrTransferOpen() const
 #ifdef ENABLE_ACCE_SYSTEM
 std::span<entt::entity> CHARACTER::GetAcceMaterials()
 {
-    if (auto* comp = EnsureAcceWindowComponent(this))
+    if (auto* comp = EnsureAcceWindowComponent(GetEntityHandle()))
         return comp->materials;
 
     return {};
@@ -2253,8 +2162,8 @@ LPITEM CHARACTER::GetSwitchbotItem(uint16_t wCell) const
     if (wCell >= SWITCHBOT_SLOT_COUNT)
         return nullptr;
 
-    if (const auto* switchbot = TryGetSwitchbotRuntimeComponent(this))
-        return LegacyItemOf(switchbot->items[wCell]);
+    if (const auto* switchbot = TryGetSwitchbotRuntimeComponent(GetEntityHandle()))
+        return LegacyItemBoundary(switchbot->items[wCell]);
 
     return nullptr;
 }
@@ -2265,8 +2174,8 @@ LPITEM CHARACTER::GetDragonSoulItem(uint16_t wCell) const
 	if (wCell >= DRAGON_SOUL_INVENTORY_MAX_NUM)
 		return nullptr;
 
-	if (const auto* comp = TryGetDragonSoulInventoryComponent(this))
-		return LegacyItemOf(comp->items[wCell]);
+	if (const auto* comp = TryGetDragonSoulInventoryComponent(GetEntityHandle()))
+		return LegacyItemBoundary(comp->items[wCell]);
 
 	return nullptr;
 }
@@ -2276,7 +2185,7 @@ uint16_t CHARACTER::GetDragonSoulGrid(uint16_t wCell) const
 	if (wCell >= DRAGON_SOUL_INVENTORY_MAX_NUM)
 		return 0;
 
-	if (const auto* comp = TryGetDragonSoulInventoryComponent(this))
+	if (const auto* comp = TryGetDragonSoulInventoryComponent(GetEntityHandle()))
 		return comp->itemGrid[wCell];
 
 	return 0;
@@ -2290,8 +2199,8 @@ LPITEM CHARACTER::GetExtraInventoryItem(uint16_t wCell) const
 	if (wCell >= EXTRA_INVENTORY_MAX_NUM)
 		return nullptr;
 
-	if (const auto* comp = TryGetExtraInventoryRuntimeComponent(this))
-		return LegacyItemOf(comp->items[wCell]);
+	if (const auto* comp = TryGetExtraInventoryRuntimeComponent(GetEntityHandle()))
+		return LegacyItemBoundary(comp->items[wCell]);
 
 	return nullptr;
 }
@@ -2301,7 +2210,7 @@ uint16_t CHARACTER::GetExtraInventoryGrid(uint16_t wCell) const
 	if (wCell >= EXTRA_INVENTORY_MAX_NUM)
 		return 0;
 
-	if (const auto* comp = TryGetExtraInventoryRuntimeComponent(this))
+	if (const auto* comp = TryGetExtraInventoryRuntimeComponent(GetEntityHandle()))
 		return comp->itemGrid[wCell];
 
 	return 0;
@@ -2323,7 +2232,7 @@ LPITEM CHARACTER::GetItem(TItemPos Cell) const
 			LOG_ERROR("CHARACTER::GetInventoryItem: invalid item cell {}", wCell);
 			return nullptr;
 		}
-		return GetMainInventoryItem(this, wCell);
+		return GetMainInventoryItem(GetEntityHandle(), wCell);
 	case EQUIPMENT:
 	{
 		const uint16_t storageCell = static_cast<uint16_t>(INVENTORY_MAX_NUM + wCell);
@@ -2332,7 +2241,7 @@ LPITEM CHARACTER::GetItem(TItemPos Cell) const
 			LOG_ERROR("CHARACTER::GetInventoryItem: invalid equipment cell {}", wCell);
 			return nullptr;
 		}
-		return GetMainInventoryItem(this, storageCell);
+		return GetMainInventoryItem(GetEntityHandle(), storageCell);
 	}
 	case DRAGON_SOUL_INVENTORY:
 		if (wCell >= DRAGON_SOUL_INVENTORY_MAX_NUM)
@@ -2583,14 +2492,14 @@ void CHARACTER::RemoveSpecifyItem(uint32_t vnum, int count, bool cuberenewal)
 			if (count >= item->GetCount())
 			{
 				count -= item->GetCount();
-				ItemSystem::ConsumeItemEcs(EntityFactory::CreateItemEntity(g_registry, item), item->GetCount());
+				ItemSystem::ConsumeItemEcs((item ? item->GetEntityHandle() : entt::null), item->GetCount());
 
 				if (0 == count)
 					return;
 			}
 			else
 			{
-				ItemSystem::ConsumeItemEcs(EntityFactory::CreateItemEntity(g_registry, item), count);
+				ItemSystem::ConsumeItemEcs((item ? item->GetEntityHandle() : entt::null), count);
 				return;
 			}
 		}
@@ -2624,14 +2533,14 @@ void CHARACTER::RemoveSpecifyItem(uint32_t vnum, int count, bool cuberenewal)
 			if (count >= itemCount)
 			{
 				count -= itemCount;
-				ItemSystem::ConsumeItemEcs(EntityFactory::CreateItemEntity(g_registry, item), itemCount);
+				ItemSystem::ConsumeItemEcs((item ? item->GetEntityHandle() : entt::null), itemCount);
 
 				if (0 == count)
 					return;
 			}
 			else
 			{
-				ItemSystem::ConsumeItemEcs(EntityFactory::CreateItemEntity(g_registry, item), count);
+				ItemSystem::ConsumeItemEcs((item ? item->GetEntityHandle() : entt::null), count);
 				return;
 			}
 		}
@@ -2672,7 +2581,7 @@ LPITEM CHARACTER::GetWear(uint8_t bCell) const
 		return nullptr;
 	}
 
-	return GetMainInventoryItem(this, static_cast<uint16_t>(INVENTORY_MAX_NUM + bCell));
+	return GetMainInventoryItem(GetEntityHandle(), static_cast<uint16_t>(INVENTORY_MAX_NUM + bCell));
 }
 
 
@@ -2704,7 +2613,7 @@ void CHARACTER::SetWear(uint8_t bCell, LPITEM item)
 bool CHARACTER::UnequipItem(LPITEM item)
 {
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, "char_item.cpp:: CHARACTER::UnequipItem ");//INGAME_DEBUG_RAZOR93
+	ecs::ChatSystem::Send(GetEntityHandle(), CHAT_TYPE_INFO, "char_item.cpp:: CHARACTER::UnequipItem ");//INGAME_DEBUG_RAZOR93
 #endif
 #ifdef ENABLE_WEAPON_COSTUME_SYSTEM
 	int iWearCell = item->FindEquipCell(this);
@@ -2714,7 +2623,7 @@ bool CHARACTER::UnequipItem(LPITEM item)
 		if (costumeWeapon && !UnequipItem(costumeWeapon))
 		{
 #ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 366, "");
+			ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 366, "");
 #endif
 			return false;
 		}
@@ -2765,7 +2674,7 @@ bool CHARACTER::UnequipItem(LPITEM item)
 #ifdef ENABLE_ITEM_ON_TITLE_RAZOR93
 	if (iWearCell == WEAR_BELT) {
 
-		NetworkSyncSystem::UpdateItemOnTitleName(g_registry, AIHelpers::EcsOf(this));
+		NetworkSyncSystem::UpdateItemOnTitleName(g_registry, GetEntityHandle());
 	}
 #endif
 	return true;
@@ -2775,7 +2684,7 @@ bool CHARACTER::UnequipItem(LPITEM item)
 bool CHARACTER::EquipItem(LPITEM item, int iCandidateCell)
 {
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, "char_item.cpp:: CHARACTER::UnequipItem ");// 1993
+	ecs::ChatSystem::Send(GetEntityHandle(), CHAT_TYPE_INFO, "char_item.cpp:: CHARACTER::UnequipItem ");// 1993
 #endif
 	if (item->IsExchanging())
 
@@ -2796,14 +2705,14 @@ bool CHARACTER::EquipItem(LPITEM item, int iCandidateCell)
 	if (iWearCell == WEAR_BODY && IsRiding() && (item->GetVnum() >= 11901 && item->GetVnum() <= 11904))
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 693, "");
+		ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 693, "");
 #endif
 		return false;
 	}
 
 	if (iWearCell != WEAR_ARROW && IsPolymorphed()) {
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 315, "");
+		ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 315, "");
 #endif
 		return false;
 	}
@@ -2811,19 +2720,19 @@ bool CHARACTER::EquipItem(LPITEM item, int iCandidateCell)
 	if (FN_check_item_sex(this, item) == false)
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 496, "");
+		ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 496, "");
 #endif
 		return false;
 	}
 
 	//1A�� A��� ��?�1A ���� �� ��?�?�o� A1A�
 	if (item->IsRideItem() && IsRiding() && GetMountVnum() != 0 && !GetWear(WEAR_COSTUME_MOUNT))
-		MountSystem::ForceClearRidingState(AIHelpers::EcsOf(this));
+		MountSystem::ForceClearRidingState(GetEntityHandle());
 
 	if (item->IsRideItem() && IsRiding())
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 532, "");
+		ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 532, "");
 #endif
 		return false;
 	}
@@ -2837,7 +2746,7 @@ bool CHARACTER::EquipItem(LPITEM item, int iCandidateCell)
 			if (costumeWeapon && costumeWeapon->GetValue(3) != item->GetSubType() && !UnequipItem(costumeWeapon))
 			{
 #ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 366, "");
+				ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 366, "");
 #endif
 				return false;
 			}
@@ -2848,7 +2757,7 @@ bool CHARACTER::EquipItem(LPITEM item, int iCandidateCell)
 			if (costumeWeapon && !UnequipItem(costumeWeapon))
 			{
 #ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 366, "");
+				ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 366, "");
 #endif
 				return false;
 			}
@@ -2862,7 +2771,7 @@ bool CHARACTER::EquipItem(LPITEM item, int iCandidateCell)
 			if (!pkWeapon || pkWeapon->GetType() != ITEM_WEAPON || item->GetValue(3) != pkWeapon->GetSubType())
 			{
 #ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 694, "");
+				ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 694, "");
 #endif
 				return false;
 			}
@@ -2878,7 +2787,7 @@ bool CHARACTER::EquipItem(LPITEM item, int iCandidateCell)
 		if (GetInventoryItem(INVENTORY_MAX_NUM + iWearCell))
 		{
 #ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 796, "");
+			ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 796, "");
 #endif
 			return false;
 		}
@@ -3006,7 +2915,7 @@ bool CHARACTER::EquipItem(LPITEM item, int iCandidateCell)
 #endif
 			)
 		{
-			quest::CQuestManager::instance().UseItem(GetPlayerID(), EntityFactory::CreateItemEntity(g_registry, item), false);
+			quest::CQuestManager::instance().UseItem(GetPlayerID(), (item ? item->GetEntityHandle() : entt::null), false);
 		}
 
 	}
@@ -3018,7 +2927,7 @@ bool CHARACTER::EquipItem(LPITEM item, int iCandidateCell)
 		if (mountSystem)
 		{
 			uint32_t mountVnum = item->GetValue(1);
-			mountSystem->Mount(mountVnum, EntityFactory::CreateItemEntity(g_registry, item));
+			mountSystem->Mount(mountVnum, (item ? item->GetEntityHandle() : entt::null));
 		}
 	}
 #endif
@@ -3139,7 +3048,7 @@ bool CHARACTER::CanEquipNow(const LPITEM item, const TItemPos & srcCell, const T
 	if ((GetDuel("BlockChangeItem")))
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 516, "");
+		ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 516, "");
 #endif
 		return false;
 	}
@@ -3182,7 +3091,7 @@ bool CHARACTER::CanEquipNow(const LPITEM item, const TItemPos & srcCell, const T
 		case LIMIT_LEVEL:
 			if (GetLevel() < limit) {
 #ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 325, "%d", limit);
+				ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 325, "%d", limit);
 #endif
 				return false;
 			}
@@ -3190,7 +3099,7 @@ bool CHARACTER::CanEquipNow(const LPITEM item, const TItemPos & srcCell, const T
 		case LIMIT_STR:
 			if (GetPoint(POINT_ST) < limit) {
 #ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 269, "%d", limit);
+				ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 269, "%d", limit);
 #endif
 				return false;
 			}
@@ -3198,7 +3107,7 @@ bool CHARACTER::CanEquipNow(const LPITEM item, const TItemPos & srcCell, const T
 		case LIMIT_INT:
 			if (GetPoint(POINT_IQ) < limit) {
 #ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 468, "%d", limit);
+				ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 468, "%d", limit);
 #endif
 				return false;
 			}
@@ -3206,7 +3115,7 @@ bool CHARACTER::CanEquipNow(const LPITEM item, const TItemPos & srcCell, const T
 		case LIMIT_DEX:
 			if (GetPoint(POINT_DX) < limit) {
 #ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 352, "%d", limit);
+				ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 352, "%d", limit);
 #endif
 				return false;
 			}
@@ -3215,7 +3124,7 @@ bool CHARACTER::CanEquipNow(const LPITEM item, const TItemPos & srcCell, const T
 		case LIMIT_CON:
 			if (GetPoint(POINT_HT) < limit) {
 #ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 481, "%d", limit);
+				ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 481, "%d", limit);
 #endif
 				return false;
 			}
@@ -3235,7 +3144,7 @@ bool CHARACTER::CanEquipNow(const LPITEM item, const TItemPos & srcCell, const T
 				(GetWear(WEAR_COSTUME_MOUNT) && GetWear(WEAR_COSTUME_MOUNT)->IsSameSpecialGroup(item))))
 		{
 #ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 695, "");
+			ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 695, "");
 #endif
 			return false;
 		}
@@ -3244,7 +3153,7 @@ bool CHARACTER::CanEquipNow(const LPITEM item, const TItemPos & srcCell, const T
 			!marriage::CManager::instance().IsMarried(GetPlayerID()))
 		{
 #ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 696, "");
+			ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 696, "");
 #endif
 			return false;
 		}
@@ -3257,7 +3166,7 @@ bool CHARACTER::CanEquipNow(const LPITEM item, const TItemPos & srcCell, const T
 		if (atakanxd && (atakanxd->GetVnum() >= 11901 && atakanxd->GetVnum() <= 11914))
 		{
 #ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 1129, "");
+			ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 1129, "");
 #endif
 			return false;
 		}
@@ -3269,7 +3178,7 @@ bool CHARACTER::CanEquipNow(const LPITEM item, const TItemPos & srcCell, const T
 		if (atakan && (atakan->GetType() == ITEM_COSTUME && atakan->GetSubType() == COSTUME_BODY))
 		{
 #ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 1129, "");
+			ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 1129, "");
 #endif
 			return false;
 		}
@@ -3279,7 +3188,7 @@ bool CHARACTER::CanEquipNow(const LPITEM item, const TItemPos & srcCell, const T
 #ifdef ENABLE_DS_SET
 	if ((DragonSoul_IsDeckActivated()) && (item->IsDragonSoul())) {
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 76, "");
+		ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 76, "");
 #endif
 		return false;
 	}
@@ -3292,7 +3201,7 @@ bool CHARACTER::CanEquipNow(const LPITEM item, const TItemPos & srcCell, const T
 bool CHARACTER::CanUnequipNow(const LPITEM item, const TItemPos & srcCell, const TItemPos & destCell) {
 	if (ITEM_BELT == item->GetType() && CBeltInventoryHelper::IsExistItemInBeltInventory(this)) {
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 366, "");
+		ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 366, "");
 #endif
 		return false;
 	}
@@ -3312,7 +3221,7 @@ bool CHARACTER::CanUnequipNow(const LPITEM item, const TItemPos & srcCell, const
 
 		if (pos == -1) {
 #ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 366, "");
+			ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 366, "");
 #endif
 			return false;
 		}
@@ -3321,7 +3230,7 @@ bool CHARACTER::CanUnequipNow(const LPITEM item, const TItemPos & srcCell, const
 #ifdef ENABLE_DS_SET
 	if ((DragonSoul_IsDeckActivated()) && (item->IsDragonSoul())) {
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 76, "");
+		ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 76, "");
 #endif
 		return false;
 	}
@@ -3388,7 +3297,7 @@ namespace NPartyPickupDistribute
 			if (ch != c)
 				if (DISTANCE_APPROX(ch->GetX() - x, ch->GetY() - y) <= PARTY_DEFAULT_RANGE)
 				{
-					ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_GOLD, iMoney, true);
+					ecs::PointSystem::Change((ch ? ch->GetEntityHandle() : entt::null), POINT_GOLD, iMoney, true);
 
 					if (iMoney > 1000) // Ãµ¿ø ÀÌ»ó¸¸ ±â·ÏÇÑ´Ù.
 					{
@@ -3427,7 +3336,7 @@ bool CHARACTER::DropItem(TItemPos Cell,
 	{
 #ifdef TEXTS_IMPROVEMENT
 		if (nullptr != DragonSoul_RefineWindow_GetOpener()) {
-			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 232, "");
+			ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 232, "");
 		}
 #endif
 
@@ -3469,7 +3378,7 @@ bool CHARACTER::DropItem(TItemPos Cell,
 	if (IS_SET(item->GetAntiFlag(), ITEM_ANTIFLAG_DROP | ITEM_ANTIFLAG_GIVE))
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 353, "");
+		ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 353, "");
 #endif
 		return false;
 	}
@@ -3480,7 +3389,7 @@ bool CHARACTER::DropItem(TItemPos Cell,
 #ifdef ENABLE_EXTRA_INVENTORY
 	if (item->IsExtraItem()) {
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
-		ecs::ChatSystem::Send(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, "char_item.cpp::if (item->IsExtraItem()) {");//INGAME_DEBUG_RAZOR93
+		ecs::ChatSystem::Send(GetEntityHandle(), CHAT_TYPE_INFO, "char_item.cpp::if (item->IsExtraItem()) {");//INGAME_DEBUG_RAZOR93
 
 		LOG_INFO("Razor93 LOG:: Called: Char_item.cpp line 8391 if (item->IsExtraItem()) {{ ");
 
@@ -3510,7 +3419,7 @@ bool CHARACTER::DropItem(TItemPos Cell,
 			return false;
 		}
 
-		ItemSystem::ConsumeItemEcs(EntityFactory::CreateItemEntity(g_registry, item), bCount);
+		ItemSystem::ConsumeItemEcs((item ? item->GetEntityHandle() : entt::null), bCount);
 		ITEM_MANAGER::instance().FlushDelayedSave(item);
 
 		pkItemToDrop = ITEM_MANAGER::instance().CreateItem(item->GetVnum(), bCount);
@@ -3528,7 +3437,7 @@ bool CHARACTER::DropItem(TItemPos Cell,
 	if (pkItemToDrop->AddToGround(GetMapIndex(), pxPos))
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 321, "%d",
+		ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 321, "%d",
 #ifdef ENABLE_NEWSTUFF
 			g_aiItemDestroyTime[ITEM_DESTROY_TIME_DROPITEM]
 #else
@@ -3570,7 +3479,7 @@ bool CHARACTER::DropGold(int64_t gold)
 		if (get_dword_time() < m_dwLastGoldDropTime + g_GoldDropTimeLimitValue)
 		{
 #ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 510, "");
+			ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 510, "");
 #endif
 			return false;
 		}
@@ -3598,7 +3507,7 @@ bool CHARACTER::DropGold(int64_t gold)
 			item->StartDestroyEvent();
 #endif
 #ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 321, "%d", (150 / 60));
+			ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 321, "%d", (150 / 60));
 #endif
 		}
 
@@ -3618,7 +3527,7 @@ bool CHARACTER::MoveItem(TItemPos Cell, TItemPos DestCell,
 	count)
 
 {
-	//ecs::ChatSystem::Send(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, "char_item.cpp::MoveItem called.");
+	//ecs::ChatSystem::Send(GetEntityHandle(), CHAT_TYPE_INFO, "char_item.cpp::MoveItem called.");
 	bool stupid = false;
 	if (count < 0)
 	{
@@ -3646,12 +3555,12 @@ bool CHARACTER::MoveItem(TItemPos Cell, TItemPos DestCell,
 	if (Cell.IsBeltInventoryPosition() &&
 		(DestCell.window_type == SAFEBOX || DestCell.window_type == MALL))
 	{
-		ecs::ChatSystem::Send(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, "You cannot place items from the mount inventory into the storage.");
+		ecs::ChatSystem::Send(GetEntityHandle(), CHAT_TYPE_INFO, "You cannot place items from the mount inventory into the storage.");
 		//LOG_INFO("BELT_TO_SAFEBOX_BLOCKED: FROM belt cell={} TO window={}, cell={}", Cell.cell, DestCell.window_type, DestCell.cell);
 		// BELT INVENTORY: csak KIVENNI lehessen, BERAKNI TILOS
 		//if (DestCell.IsBeltInventoryPosition() && !Cell.IsBeltInventoryPosition())
 		//{
-		//	ecs::ChatSystem::Send(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, "Belt inventory is disabled. You can only take items out.");//ezt majd be kell kapcsolni ha bekerül élesre
+		//	ecs::ChatSystem::Send(GetEntityHandle(), CHAT_TYPE_INFO, "Belt inventory is disabled. You can only take items out.");//ezt majd be kell kapcsolni ha bekerül élesre
 		//	return false;
 		//}
 
@@ -3670,7 +3579,7 @@ bool CHARACTER::MoveItem(TItemPos Cell, TItemPos DestCell,
 		if (targetItem)
 		{
 			//LOG_INFO("BELT_SLOT_OCCUPIED: Attempt to move item to occupied slot cell={}", DestCell.cell);
-			ecs::ChatSystem::Send(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, "This place is already taken.");
+			ecs::ChatSystem::Send(GetEntityHandle(), CHAT_TYPE_INFO, "This place is already taken.");
 			return false;
 		}
 	}
@@ -3692,7 +3601,7 @@ bool CHARACTER::MoveItem(TItemPos Cell, TItemPos DestCell,
 
 			if (beltItem->GetVnum() == item->GetVnum() && beltItem != item)
 			{
-				ecs::ChatSystem::Send(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, "This mount already added,you can't add two time!");
+				ecs::ChatSystem::Send(GetEntityHandle(), CHAT_TYPE_INFO, "This mount already added,you can't add two time!");
 				return false;
 			}
 		}
@@ -3701,7 +3610,7 @@ bool CHARACTER::MoveItem(TItemPos Cell, TItemPos DestCell,
 			const TItemLimit& limit = item->GetProto()->aLimits[0];
 			if (limit.bType == LIMIT_LEVEL && GetLevel() < limit.lValue)
 			{
-				ecs::ChatSystem::Send(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, "You need to be at least level %d to equip this item.", limit.lValue);
+				ecs::ChatSystem::Send(GetEntityHandle(), CHAT_TYPE_INFO, "You need to be at least level %d to equip this item.", limit.lValue);
 				return false;
 			}
 		}
@@ -3724,7 +3633,7 @@ bool CHARACTER::MoveItem(TItemPos Cell, TItemPos DestCell,
 
 				if (itemGroup == otherGroup && beltItem != item)
 				{
-					ecs::ChatSystem::Send(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, "You already have a belt of this type in your inventory.");
+					ecs::ChatSystem::Send(GetEntityHandle(), CHAT_TYPE_INFO, "You already have a belt of this type in your inventory.");
 					return false;
 				}
 			}
@@ -3751,7 +3660,7 @@ bool CHARACTER::MoveItem(TItemPos Cell, TItemPos DestCell,
 	{
 #ifdef TEXTS_IMPROVEMENT
 		if (nullptr != DragonSoul_RefineWindow_GetOpener()) {
-			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 232, "");
+			ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 232, "");
 		}
 #endif
 
@@ -3762,10 +3671,10 @@ bool CHARACTER::MoveItem(TItemPos Cell, TItemPos DestCell,
 // ä¸®¿¡´Â Æ¯Á¤ �
 // ¸ÀÔÀÇ ¾ÆÀÌ�
 // Û¸¸ ³ÖÀ» ¼ö ÀÖ´Ù.
-	if (DestCell.IsBeltInventoryPosition() && false == CBeltInventoryHelper::CanMoveIntoBeltInventory(EntityFactory::CreateItemEntity(g_registry, item)))
+	if (DestCell.IsBeltInventoryPosition() && false == CBeltInventoryHelper::CanMoveIntoBeltInventory((item ? item->GetEntityHandle() : entt::null)))
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::Send(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, "Belt Only // Csak öveket tehetsz ide.");
+		ecs::ChatSystem::Send(GetEntityHandle(), CHAT_TYPE_INFO, "Belt Only // Csak öveket tehetsz ide.");
 #endif
 		return false;
 	}
@@ -3774,7 +3683,7 @@ bool CHARACTER::MoveItem(TItemPos Cell, TItemPos DestCell,
 	if (Cell.IsSwitchbotPosition() && CSwitchbotManager::Instance().IsActive(GetPlayerID(), Cell.cell))
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 690, "");
+		ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 690, "");
 #endif
 		return false;
 	}
@@ -3784,10 +3693,10 @@ bool CHARACTER::MoveItem(TItemPos Cell, TItemPos DestCell,
 		return false;
 	}
 
-	if (DestCell.IsSwitchbotPosition() && !SwitchbotHelper::IsValidItem(EntityFactory::CreateItemEntity(g_registry, item)))
+	if (DestCell.IsSwitchbotPosition() && !SwitchbotHelper::IsValidItem((item ? item->GetEntityHandle() : entt::null)))
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 691, "");
+		ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 691, "");
 #endif
 		return false;
 	}
@@ -3810,7 +3719,7 @@ bool CHARACTER::MoveItem(TItemPos Cell, TItemPos DestCell,
 			if (costumeWeapon && !UnequipItem(costumeWeapon))
 			{
 #ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 366, "");
+				ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 366, "");
 #endif
 				return false;
 			}
@@ -3831,10 +3740,10 @@ bool CHARACTER::MoveItem(TItemPos Cell, TItemPos DestCell,
 		if (GetItem(DestCell))	// ÀåºñÀÏ °æ¿ì ÇÑ °÷¸¸ °Ë»çÇØµµ µÈ´Ù.
 		{
 #ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 538, "");
+			ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 538, "");
 #endif
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
-			ecs::ChatSystem::Send(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, "char_item.cpp:	if (GetItem(DestCell))	// ÀåºñÀÏ °æ¿ì ÇÑ °÷¸¸ °Ë»çÇØµµ µÈ´Ù.");//INGAME_DEBUG_RAZOR93
+			ecs::ChatSystem::Send(GetEntityHandle(), CHAT_TYPE_INFO, "char_item.cpp:	if (GetItem(DestCell))	// ÀåºñÀÏ °æ¿ì ÇÑ °÷¸¸ °Ë»çÇØµµ µÈ´Ù.");//INGAME_DEBUG_RAZOR93
 
 			LOG_INFO("Razor93 LOG:: Called: Char_item.cpp 	if (GetItem(DestCell))	// ÀåºñÀÏ °æ¿ì ÇÑ °÷¸¸ °Ë»çÇØµµ µÈ´Ù. ");
 
@@ -3850,7 +3759,7 @@ bool CHARACTER::MoveItem(TItemPos Cell, TItemPos DestCell,
 		{
 			if (item->IsEquipped())
 			{
-				entt::entity itemEntity = EntityFactory::CreateItemEntity(g_registry, item);
+				entt::entity itemEntity = (item ? item->GetEntityHandle() : entt::null);
 				return DSManager::instance().PullOut(this, DestCell, itemEntity);
 			}
 			else
@@ -3860,7 +3769,7 @@ bool CHARACTER::MoveItem(TItemPos Cell, TItemPos DestCell,
 					return false;
 				}
 
-				if (!DSManager::instance().IsValidCellForThisItem(EntityFactory::CreateItemEntity(g_registry, item), DestCell))
+				if (!DSManager::instance().IsValidCellForThisItem((item ? item->GetEntityHandle() : entt::null), DestCell))
 				{
 					return false;
 				}
@@ -3906,8 +3815,8 @@ bool CHARACTER::MoveItem(TItemPos Cell, TItemPos DestCell,
 
 			count = std::min(g_bItemCountLimit - item2->GetCount(), count);
 
-			ItemSystem::ConsumeItemEcs(EntityFactory::CreateItemEntity(g_registry, item), count);
-			ItemSystem::AddItemCountEcs(EntityFactory::CreateItemEntity(g_registry, item2), count);
+			ItemSystem::ConsumeItemEcs((item ? item->GetEntityHandle() : entt::null), count);
+			ItemSystem::AddItemCountEcs((item2 ? item2->GetEntityHandle() : entt::null), count);
 			return true;
 		}
 
@@ -4095,7 +4004,7 @@ bool CHARACTER::MoveItem(TItemPos Cell, TItemPos DestCell,
 			//			//GetDisplayedNameWithBeltCount();
 			//#ifdef ENABLE_FAKE_SHOP_HEADER
 			//			UpdateMountCountOverhead();
-			//			ecs::ChatSystem::Send(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, "item bekerült!");
+			//			ecs::ChatSystem::Send(GetEntityHandle(), CHAT_TYPE_INFO, "item bekerült!");
 			//#endif
 			//		}
 					// Ha belt inventory-ba mozgattak, vagy onnan el, akkor ujraszamolas
@@ -4121,7 +4030,7 @@ bool CHARACTER::MoveItem(TItemPos Cell, TItemPos DestCell,
 					if (viewer == this)
 						continue;
 
-					if (viewer->IsPC() && ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(viewer)))
+					if (viewer->IsPC() && ecs::PlayerRuntime::GetDesc((viewer ? viewer->GetEntityHandle() : entt::null)))
 						UpdateMountInventoryCountOverhead(viewer);
 				}
 #endif
@@ -4135,7 +4044,7 @@ bool CHARACTER::MoveItem(TItemPos Cell, TItemPos DestCell,
 			else if (EXTRA_INVENTORY == Cell.window_type && EXTRA_INVENTORY == DestCell.window_type) {
 				SyncQuickslot(QUICKSLOT_TYPE_ITEM_EXTRA, Cell.cell, DestCell.cell);
 
-				//ecs::ChatSystem::Send(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, "char_item.cpp:else if (EXTRA_INVENTORY == Cell.window_type && EXTRA_INVENTORY == DestCell.window_type)");//INGAME_DEBUG_RAZOR93
+				//ecs::ChatSystem::Send(GetEntityHandle(), CHAT_TYPE_INFO, "char_item.cpp:else if (EXTRA_INVENTORY == Cell.window_type && EXTRA_INVENTORY == DestCell.window_type)");//INGAME_DEBUG_RAZOR93
 
 				//LOG_INFO(0, "Razor93 LOG:: Called: Char_item.cpp else if (EXTRA_INVENTORY == Cell.window_type && EXTRA_INVENTORY == DestCell.window_type) ");
 
@@ -4148,7 +4057,7 @@ bool CHARACTER::MoveItem(TItemPos Cell, TItemPos DestCell,
 
 			LOG_INFO("{}: ITEM_SPLIT {} (window: {}, cell : {}) -> (window:{}, cell {}) count {}", GetName(), item->GetName(), Cell.window_type, Cell.cell, DestCell.window_type, DestCell.cell, count);
 
-			ItemSystem::ConsumeItemEcs(EntityFactory::CreateItemEntity(g_registry, item), count);
+			ItemSystem::ConsumeItemEcs((item ? item->GetEntityHandle() : entt::null), count);
 			LPITEM item2 = ITEM_MANAGER::instance().CreateItem(item->GetVnum(), count);
 
 			// copy socket -- by mhh
@@ -4188,7 +4097,7 @@ void CHARACTER::GiveGold(int64_t iAmount)
 
 	LOG_INFO("GIVE_GOLD: {} {}", GetName(), iAmount);
 	//#ifdef TEXTS_IMPROVEMENT
-	//	ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 3, "%lld", iAmount);
+	//	ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 3, "%lld", iAmount);
 	//#endif
 
 #ifdef ENABLE_BATTLE_PASS
@@ -4257,7 +4166,7 @@ void CHARACTER::GiveGold(int64_t iAmount)
 bool CHARACTER::PickupItem(uint32_t dwVID)
 {
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, "char_item.cpp::bool CHARACTER::PickupItem ");//INGAME_DEBUG_RAZOR93
+	ecs::ChatSystem::Send(GetEntityHandle(), CHAT_TYPE_INFO, "char_item.cpp::bool CHARACTER::PickupItem ");//INGAME_DEBUG_RAZOR93
 #endif
 	if (!IsPC() || IsDead() || IsObserverMode())
 	{
@@ -4280,7 +4189,7 @@ bool CHARACTER::PickupItem(uint32_t dwVID)
 			if (quest::CQuestManager::instance().GetPCForce(GetPlayerID())->IsRunning() == true)
 			{
 #ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 692, "");
+				ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 692, "");
 #endif
 				return false;
 			}
@@ -4300,7 +4209,7 @@ bool CHARACTER::PickupItem(uint32_t dwVID)
 				SetRankPoints(10, GetRankPoints(10) + item->GetCount());
 #endif
 				ItemSystem::DestroyItemEntityEcs(
-					EntityFactory::CreateItemEntity(g_registry, item),
+					(item ? item->GetEntityHandle() : entt::null),
 					"PICKUP_GOLD");
 
 				Save();
@@ -4313,7 +4222,7 @@ bool CHARACTER::PickupItem(uint32_t dwVID)
 				if (item->IsExtraItem() && item->IsStackable() && !IS_SET(item->GetAntiFlag(), ITEM_ANTIFLAG_STACK))
 				{
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
-					ecs::ChatSystem::Send(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, "char_item.cpp:else if (item->IsExtraItem() && item->IsStackable() && !IS_SET(item->GetAntiFlag()..");//INGAME_DEBUG_RAZOR93
+					ecs::ChatSystem::Send(GetEntityHandle(), CHAT_TYPE_INFO, "char_item.cpp:else if (item->IsExtraItem() && item->IsStackable() && !IS_SET(item->GetAntiFlag()..");//INGAME_DEBUG_RAZOR93
 
 					LOG_INFO("Razor93 LOG:: Called: Char_item.cpp if (item->IsExtraItem() && item->IsStackable() && !IS_SET(item->GetAntiFlag(), ITEM_ANTIFLAG_STACK)) ");
 
@@ -4379,20 +4288,20 @@ bool CHARACTER::PickupItem(uint32_t dwVID)
 							}
 #endif
 
-							ItemSystem::AddItemCountEcs(EntityFactory::CreateItemEntity(g_registry, item2), bCount2);
-							ItemSystem::ConsumeItemEcs(EntityFactory::CreateItemEntity(g_registry, item), bCount2);
+							ItemSystem::AddItemCountEcs((item2 ? item2->GetEntityHandle() : entt::null), bCount2);
+							ItemSystem::ConsumeItemEcs((item ? item->GetEntityHandle() : entt::null), bCount2);
 
 							if (bCount == 0)
 							{
 #ifdef TEXTS_IMPROVEMENT
-								ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), 
+								ecs::ChatSystem::SendNew(GetEntityHandle(),
 #ifdef ENABLE_NEW_CHAT
 									CHAT_TYPE_INFO_ITEM
 #else
 									CHAT_TYPE_INFO
 #endif
 									, 102, "%d#%s", bCount2, item2->GetName(GetDesc() ? GetDesc()->GetLanguage() : 0));
-								//ecs::ChatSystem::Send(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, "|cffffc700[Kaptál:]|r 01 |cffffff00%u x %s|r", item->GetCount(), item->GetName());
+								//ecs::ChatSystem::Send(GetEntityHandle(), CHAT_TYPE_INFO, "|cffffc700[Kaptál:]|r 01 |cffffff00%u x %s|r", item->GetCount(), item->GetName());
 
 #endif
 								return true;
@@ -4465,20 +4374,20 @@ bool CHARACTER::PickupItem(uint32_t dwVID)
 								}
 							}
 #endif
-							ItemSystem::AddItemCountEcs(EntityFactory::CreateItemEntity(g_registry, item2), bCount2);
-							ItemSystem::ConsumeItemEcs(EntityFactory::CreateItemEntity(g_registry, item), bCount2);
+							ItemSystem::AddItemCountEcs((item2 ? item2->GetEntityHandle() : entt::null), bCount2);
+							ItemSystem::ConsumeItemEcs((item ? item->GetEntityHandle() : entt::null), bCount2);
 
 							if (bCount == 0)
 							{
 #ifdef TEXTS_IMPROVEMENT
-								ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), 
+								ecs::ChatSystem::SendNew(GetEntityHandle(),
 #ifdef ENABLE_NEW_CHAT
 									CHAT_TYPE_INFO_ITEM
 #else
 									CHAT_TYPE_INFO
 #endif
 									, 102, "%d#%s", bCount2, item2->GetName(GetDesc() ? GetDesc()->GetLanguage() : 0));
-								//ecs::ChatSystem::Send(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, "|cffffc700[Kaptál:]|r 02 |cffffff00%u x %s|r", item->GetCount(), item->GetName());
+								//ecs::ChatSystem::Send(GetEntityHandle(), CHAT_TYPE_INFO, "|cffffc700[Kaptál:]|r 02 |cffffff00%u x %s|r", item->GetCount(), item->GetName());
 
 #endif
 								return true;
@@ -4494,7 +4403,7 @@ bool CHARACTER::PickupItem(uint32_t dwVID)
 					if ((iEmptyCell = GetEmptyDragonSoulInventory(item)) == -1)
 					{
 #ifdef TEXTS_IMPROVEMENT
-						ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 366, "");
+						ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 366, "");
 #endif
 						return false;
 					}
@@ -4503,7 +4412,7 @@ bool CHARACTER::PickupItem(uint32_t dwVID)
 				else if (item->IsExtraItem())
 				{
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
-					ecs::ChatSystem::Send(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, "char_item.cpp: line 9217  else if (item->IsExtraItem()).");//INGAME_DEBUG_RAZOR93
+					ecs::ChatSystem::Send(GetEntityHandle(), CHAT_TYPE_INFO, "char_item.cpp: line 9217  else if (item->IsExtraItem()).");//INGAME_DEBUG_RAZOR93
 
 					LOG_INFO("Razor93 LOG:: Called: Char_item.cpp else if (item->IsExtraItem()) ");
 
@@ -4511,7 +4420,7 @@ bool CHARACTER::PickupItem(uint32_t dwVID)
 					if ((iEmptyCell = GetEmptyExtraInventory(item)) == -1)
 					{
 #ifdef TEXTS_IMPROVEMENT
-						ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 539, "");
+						ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 539, "");
 #endif
 						return false;
 					}
@@ -4522,7 +4431,7 @@ bool CHARACTER::PickupItem(uint32_t dwVID)
 					if ((iEmptyCell = GetEmptyInventory(item->GetSize())) == -1)
 					{
 #ifdef TEXTS_IMPROVEMENT
-						ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 366, "");
+						ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 366, "");
 #endif
 						return false;
 					}
@@ -4571,14 +4480,14 @@ bool CHARACTER::PickupItem(uint32_t dwVID)
 				snprintf(szHint, sizeof(szHint), "%s %u %u", item->GetName(), item->GetCount(), item->GetOriginalVnum());
 				LogManager::instance().ItemLog(this, item, "GET", szHint);
 #ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), 
+				ecs::ChatSystem::SendNew(GetEntityHandle(),
 #ifdef ENABLE_NEW_CHAT
 					CHAT_TYPE_INFO_ITEM
 #else
 					CHAT_TYPE_INFO
 #endif
 					, 102, "%d#%s", item->GetCount(), item->GetName(GetDesc() ? GetDesc()->GetLanguage() : 0));//földröl
-				//ecs::ChatSystem::Send(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, "|cffffc700[Kaptál:]|r 03 |cffffff00%u x %s|r", item->GetCount(), item->GetName());
+				//ecs::ChatSystem::Send(GetEntityHandle(), CHAT_TYPE_INFO, "|cffffc700[Kaptál:]|r 03 |cffffff00%u x %s|r", item->GetCount(), item->GetName());
 
 #endif
 			}
@@ -4661,20 +4570,20 @@ bool CHARACTER::PickupItem(uint32_t dwVID)
 							}
 						}
 #endif
-						ItemSystem::AddItemCountEcs(EntityFactory::CreateItemEntity(g_registry, item2), bCount2);
-						ItemSystem::ConsumeItemEcs(EntityFactory::CreateItemEntity(g_registry, item), bCount2);
+						ItemSystem::AddItemCountEcs((item2 ? item2->GetEntityHandle() : entt::null), bCount2);
+						ItemSystem::ConsumeItemEcs((item ? item->GetEntityHandle() : entt::null), bCount2);
 
 						if (bCount == 0)
 						{
 #ifdef TEXTS_IMPROVEMENT
-							ecs::ChatSystem::SendNew(AIHelpers::EcsOf(owner), 
+							ecs::ChatSystem::SendNew((owner ? owner->GetEntityHandle() : entt::null),
 #ifdef ENABLE_NEW_CHAT
 								CHAT_TYPE_INFO_ITEM
 #else
 								CHAT_TYPE_INFO
 #endif
 								, 102, "%d#%s", item2->GetCount(), item2->GetName(GetDesc() ? GetDesc()->GetLanguage() : 0));
-							//ecs::ChatSystem::Send(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, "|cffffc700[Kaptál:]|r 04 |cffffff00%u x %s|r", item->GetCount(), item->GetName());
+							//ecs::ChatSystem::Send(GetEntityHandle(), CHAT_TYPE_INFO, "|cffffc700[Kaptál:]|r 04 |cffffff00%u x %s|r", item->GetCount(), item->GetName());
 
 #endif
 							return true;
@@ -4747,20 +4656,20 @@ bool CHARACTER::PickupItem(uint32_t dwVID)
 							}
 						}
 #endif
-						ItemSystem::AddItemCountEcs(EntityFactory::CreateItemEntity(g_registry, item2), bCount2);
-						ItemSystem::ConsumeItemEcs(EntityFactory::CreateItemEntity(g_registry, item), bCount2);
+						ItemSystem::AddItemCountEcs((item2 ? item2->GetEntityHandle() : entt::null), bCount2);
+						ItemSystem::ConsumeItemEcs((item ? item->GetEntityHandle() : entt::null), bCount2);
 
 						if (bCount == 0)
 						{
 #ifdef TEXTS_IMPROVEMENT
-							ecs::ChatSystem::SendNew(AIHelpers::EcsOf(owner), 
+							ecs::ChatSystem::SendNew((owner ? owner->GetEntityHandle() : entt::null),
 #ifdef ENABLE_NEW_CHAT
 								CHAT_TYPE_INFO_ITEM
 #else
 								CHAT_TYPE_INFO
 #endif
 								, 102, "%d#%s", bCount2, item2->GetName(GetDesc() ? GetDesc()->GetLanguage() : 0));
-							//ecs::ChatSystem::Send(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, "|cffffc700[Kaptál:]|r 05 |cffffff00%u x %s|r", item->GetCount(), item->GetName());
+							//ecs::ChatSystem::Send(GetEntityHandle(), CHAT_TYPE_INFO, "|cffffc700[Kaptál:]|r 05 |cffffff00%u x %s|r", item->GetCount(), item->GetName());
 
 #endif
 							return true;
@@ -4778,7 +4687,7 @@ bool CHARACTER::PickupItem(uint32_t dwVID)
 				{
 #ifdef ENABLE_BUG_FIXES
 #ifdef TEXTS_IMPROVEMENT
-					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 1248, "%s", owner->GetName());
+					ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 1248, "%s", owner->GetName());
 #endif
 					return false;
 #else
@@ -4787,7 +4696,7 @@ bool CHARACTER::PickupItem(uint32_t dwVID)
 					if ((iEmptyCell = GetEmptyDragonSoulInventory(item)) == -1)
 					{
 #ifdef TEXTS_IMPROVEMENT
-						ecs::ChatSystem::SendNew(AIHelpers::EcsOf(owner), CHAT_TYPE_INFO, 366, "");
+						ecs::ChatSystem::SendNew((owner ? owner->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 366, "");
 #endif
 						return false;
 					}
@@ -4801,7 +4710,7 @@ bool CHARACTER::PickupItem(uint32_t dwVID)
 				{
 #ifdef ENABLE_BUG_FIXES
 #ifdef TEXTS_IMPROVEMENT
-					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 1248, "%s", owner->GetName());
+					ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 1248, "%s", owner->GetName());
 #endif
 					return false;
 #else
@@ -4810,7 +4719,7 @@ bool CHARACTER::PickupItem(uint32_t dwVID)
 					if ((iEmptyCell = GetEmptyExtraInventory(item)) == -1)
 					{
 #ifdef TEXTS_IMPROVEMENT
-						ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 539, "");
+						ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 539, "");
 #endif
 						return false;
 					}
@@ -4824,7 +4733,7 @@ bool CHARACTER::PickupItem(uint32_t dwVID)
 				{
 #ifdef ENABLE_BUG_FIXES
 #ifdef TEXTS_IMPROVEMENT
-					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 1248, "%s", owner->GetName());
+					ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 1248, "%s", owner->GetName());
 #endif
 					return false;
 #else
@@ -4833,7 +4742,7 @@ bool CHARACTER::PickupItem(uint32_t dwVID)
 					if ((iEmptyCell = GetEmptyInventory(item->GetSize())) == -1)
 					{
 #ifdef TEXTS_IMPROVEMENT
-						ecs::ChatSystem::SendNew(AIHelpers::EcsOf(owner), CHAT_TYPE_INFO, 366, "");
+						ecs::ChatSystem::SendNew((owner ? owner->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 366, "");
 #endif
 						return false;
 					}
@@ -4886,32 +4795,32 @@ bool CHARACTER::PickupItem(uint32_t dwVID)
 
 			if (owner == this) {
 #ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), 
+				ecs::ChatSystem::SendNew(GetEntityHandle(),
 #ifdef ENABLE_NEW_CHAT
 					CHAT_TYPE_INFO_ITEM
 #else
 					CHAT_TYPE_INFO
 #endif
 					, 102, "%d#%s", item->GetCount(), item->GetName(GetDesc() ? GetDesc()->GetLanguage() : 0));
-				//ecs::ChatSystem::Send(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, "|cffffc700[Kaptál:]|r 06 |cffffff00%u x %s|r", item->GetCount(), item->GetName());
+				//ecs::ChatSystem::Send(GetEntityHandle(), CHAT_TYPE_INFO, "|cffffc700[Kaptál:]|r 06 |cffffff00%u x %s|r", item->GetCount(), item->GetName());
 
 #endif
 			}
 			else
 			{
 #ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(owner), 
+				ecs::ChatSystem::SendNew((owner ? owner->GetEntityHandle() : entt::null),
 #ifdef ENABLE_NEW_CHAT
 					CHAT_TYPE_INFO_ITEM
 #else
 					CHAT_TYPE_INFO
 #endif
 					, 102, "%d#%s", item->GetCount(), item->GetName(GetDesc() ? GetDesc()->GetLanguage() : 0));
-				//ecs::ChatSystem::Send(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, "|cffffc700[Kaptál:]|r 07 |cffffff00%u x %s|r", item->GetCount(), item->GetName());
+				//ecs::ChatSystem::Send(GetEntityHandle(), CHAT_TYPE_INFO, "|cffffc700[Kaptál:]|r 07 |cffffff00%u x %s|r", item->GetCount(), item->GetName());
 
 #endif
 #ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(owner), CHAT_TYPE_INFO, 401, "%s", item->GetName());
+				ecs::ChatSystem::SendNew((owner ? owner->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 401, "%s", item->GetName());
 #endif
 			}
 
@@ -4973,7 +4882,7 @@ bool CHARACTER::UseItem(TItemPos Cell, TItemPos DestCell)
 	if (quest::CQuestManager::instance().GetPCForce(GetPlayerID())->IsRunning() == true)
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 1247, "");
+		ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 1247, "");
 #endif
 		//if (GetDesc()) {
 		//	GetDesc()->DelayedDisconnect(3);
@@ -5003,7 +4912,7 @@ bool CHARACTER::UseItem(TItemPos Cell, TItemPos DestCell)
 		if (iEmptyCell == -1)
 		{
 #ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 687, "");
+			ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 687, "");
 #endif
 			return false;
 		}
@@ -5015,7 +4924,7 @@ bool CHARACTER::UseItem(TItemPos Cell, TItemPos DestCell)
 	if (!item->CanUsedBy(this))
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 495, "");
+		ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 495, "");
 #endif
 		return false;
 	}
@@ -5026,7 +4935,7 @@ bool CHARACTER::UseItem(TItemPos Cell, TItemPos DestCell)
 	if (false == FN_check_item_sex(this, item))
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 496, "");
+		ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 496, "");
 #endif
 		return false;
 	}
@@ -5035,7 +4944,7 @@ bool CHARACTER::UseItem(TItemPos Cell, TItemPos DestCell)
 	if ((GetDuel("BlockPotion")) && IS_POTION_PVP_BLOCKED(item->GetVnum()))
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 516, "");
+		ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 516, "");
 #endif
 		return false;
 	}
@@ -5047,7 +4956,7 @@ bool CHARACTER::UseItem(TItemPos Cell, TItemPos DestCell)
 		if (false == IS_SUMMONABLE_ZONE(GetMapIndex()))
 		{
 #ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 688, "");
+			ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 688, "");
 #endif
 			return false;
 		}
@@ -5059,7 +4968,7 @@ bool CHARACTER::UseItem(TItemPos Cell, TItemPos DestCell)
 		if (iPulse - GetSafeboxLoadTime() < PASSES_PER_SEC(g_nPortalLimitTime))
 		{
 #ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 234, "%d", g_nPortalLimitTime);
+			ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 234, "%d", g_nPortalLimitTime);
 #endif
 			return false;
 		}
@@ -5070,7 +4979,7 @@ bool CHARACTER::UseItem(TItemPos Cell, TItemPos DestCell)
 		if (GetExchange() || GetMyShop() || GetShopOwner() || IsOpenSafebox() || IsCubeOpen())
 		{
 #ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 235, "");
+			ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 235, "");
 #endif
 			return false;
 		}
@@ -5079,7 +4988,7 @@ bool CHARACTER::UseItem(TItemPos Cell, TItemPos DestCell)
 		if (IsAttrTransferOpen())
 		{
 #ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 235, "");
+			ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 235, "");
 #endif
 			return false;
 		}
@@ -5092,7 +5001,7 @@ bool CHARACTER::UseItem(TItemPos Cell, TItemPos DestCell)
 			if (iPulse - GetRefineTime() < PASSES_PER_SEC(g_nPortalLimitTime))
 			{
 #ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 234, "%d", g_nPortalLimitTime);
+				ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 234, "%d", g_nPortalLimitTime);
 #endif
 				return false;
 			}
@@ -5105,7 +5014,7 @@ bool CHARACTER::UseItem(TItemPos Cell, TItemPos DestCell)
 			if (iPulse - GetMyShopTime() < PASSES_PER_SEC(g_nPortalLimitTime))
 			{
 #ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 234, "%d", g_nPortalLimitTime);
+				ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 234, "%d", g_nPortalLimitTime);
 #endif
 				return false;
 			}
@@ -5152,7 +5061,7 @@ bool CHARACTER::UseItem(TItemPos Cell, TItemPos DestCell)
 			nDist = sqrt(pow((float)x, 2) + pow((float)y, 2));
 			if (nDistant > nDist) {
 #ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 433, "");
+				ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 433, "");
 #endif
 				return false;
 			}
@@ -5164,7 +5073,7 @@ bool CHARACTER::UseItem(TItemPos Cell, TItemPos DestCell)
 		if (iPulse - GetExchangeTime() < PASSES_PER_SEC(g_nPortalLimitTime))
 		{
 #ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 234, "%d", g_nPortalLimitTime);
+			ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 234, "%d", g_nPortalLimitTime);
 #endif
 			return false;
 		}
@@ -5184,7 +5093,7 @@ bool CHARACTER::UseItem(TItemPos Cell, TItemPos DestCell)
 		if (GetExchange() || GetMyShop() || GetShopOwner() || IsOpenSafebox() || IsCubeOpen())
 		{
 #ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 237, "");
+			ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 237, "");
 #endif
 			return false;
 		}
@@ -5193,7 +5102,7 @@ bool CHARACTER::UseItem(TItemPos Cell, TItemPos DestCell)
 		if (IsAttrTransferOpen())
 		{
 #ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 237, "");
+			ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 237, "");
 #endif
 			return false;
 		}
@@ -5265,12 +5174,12 @@ int CalculateConsume(LegacyCharHandle ch)
 		// CheckNeedLifeForWarp
 		const int curLife = ch->GetHP();
 		const int needPercent = WARP_NEED_LIFE_PERCENT;
-		const int needLife = ecs::PointSystem::GetMaxHP(AIHelpers::EcsOf(ch)) * needPercent / 100;
+		const int needLife = ecs::PointSystem::GetMaxHP((ch ? ch->GetEntityHandle() : entt::null)) * needPercent / 100;
 		if (curLife < needLife)
 		{
 #ifdef TEXTS_IMPROVEMENT
 			if (ch) {
-				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 284, "");
+				ecs::ChatSystem::SendNew((ch ? ch->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 284, "");
 			}
 #endif
 			return -1;
@@ -5281,7 +5190,7 @@ int CalculateConsume(LegacyCharHandle ch)
 
 		// CheckMinLifeForWarp: µ¶¿¡ ÀÇÇØ¼­ Á×À¸¸é ¾ÈµÇ¹Ç·Î »ý¸í·Â ÃÖ¼Ò·®´Â ³²°ÜÁØ´Ù
 		const int minPercent = WARP_MIN_LIFE_PERCENT;
-		const int minLife = ecs::PointSystem::GetMaxHP(AIHelpers::EcsOf(ch)) * minPercent / 100;
+		const int minLife = ecs::PointSystem::GetMaxHP((ch ? ch->GetEntityHandle() : entt::null)) * minPercent / 100;
 		if (curLife - needLife < minLife)
 			consumeLife = curLife - minLife;
 
@@ -5297,13 +5206,13 @@ int CalculateConsumeSP(LegacyCharHandle lpChar)
 	static const int NEED_WARP_SP_PERCENT = 30;
 
 	const int curSP = lpChar->GetSP();
-	const int needSP = ecs::PointSystem::GetMaxSP(AIHelpers::EcsOf(lpChar)) * NEED_WARP_SP_PERCENT / 100;
+	const int needSP = ecs::PointSystem::GetMaxSP((lpChar ? lpChar->GetEntityHandle() : entt::null)) * NEED_WARP_SP_PERCENT / 100;
 
 	if (curSP < needSP)
 	{
 #ifdef TEXTS_IMPROVEMENT
 		if (lpChar) {
-			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(lpChar), CHAT_TYPE_INFO, 287, "");
+			ecs::ChatSystem::SendNew((lpChar ? lpChar->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 287, "");
 		}
 #endif
 		return -1;
@@ -5331,7 +5240,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 			if (GetLevel() < limitValue)
 			{
 #ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 325, "%d", limitValue);
+				ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 325, "%d", limitValue);
 #endif
 				return false;
 			}
@@ -5355,7 +5264,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 	if (CArenaManager::instance().IsLimitedItem(GetMapIndex(), item->GetVnum()) == true)
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 667, "");
+		ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 667, "");
 #endif
 		return false;
 	}
@@ -5363,7 +5272,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 	else if (g_NoPotionsOnPVP && CPVPManager::instance().IsFighting(GetPlayerID()) && IsLimitedPotionOnPVP(item->GetVnum()))
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 667, "");
+		ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 667, "");
 #endif
 		return false;
 	}
@@ -5382,7 +5291,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 		if (NULL == beltItem)
 		{
 #ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 785, "");
+			ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 785, "");
 #endif
 			return false;
 		}
@@ -5390,7 +5299,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 		if (false == CBeltInventoryHelper::IsAvailableCell(item->GetCell() - BELT_INVENTORY_SLOT_START, beltItem->GetValue(0)))
 		{
 #ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 786, "");
+			ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 786, "");
 #endif
 			return false;
 		}
@@ -5444,23 +5353,23 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 			if (atoi(row[0]) > 0) {
 				if (GetNewPetSystem()->IsActivePet()) {
 #ifdef TEXTS_IMPROVEMENT
-					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 787, "");
+					ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 787, "");
 #endif
 					return false;
 				}
 
 				std::unique_ptr<SQLMsg> msg(DBManager::instance().DirectQuery("UPDATE new_petsystem SET duration =(tduration) WHERE id = %d", item2->GetID()));
 #ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 788, "");
+				ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 788, "");
 #endif
 			}
 			else {
 				std::unique_ptr<SQLMsg> msg(DBManager::instance().DirectQuery("UPDATE new_petsystem SET duration =(tduration/2) WHERE id = %d", item2->GetID()));
 #ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 788, "");
+				ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 788, "");
 #endif
 			}
-			ItemSystem::ConsumeItemEcs(EntityFactory::CreateItemEntity(g_registry, item));
+			ItemSystem::ConsumeItemEcs((item ? item->GetEntityHandle() : entt::null));
 			return true;
 		}
 		else
@@ -5472,21 +5381,21 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 		if (box) {
 			if (item->GetSocket(1) == 0) {
 #ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 858, "");
+				ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 858, "");
 #endif
 				return false;
 			}
 
 			if (box->GetSocket(0) != 0) {
 #ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 853, "%s", box->GetName());
+				ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 853, "%s", box->GetName());
 #endif
 				return false;
 			}
 			else {
 				if (item->GetSocket(0) == true) {
 #ifdef TEXTS_IMPROVEMENT
-					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 854, "");
+					ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 854, "");
 #endif
 					return false;
 				}
@@ -5567,7 +5476,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 						box->SetForceAttribute(5, dwskilllv3, dwskill4);
 						box->SetForceAttribute(6, dwskilllv4, 1);
 #ifdef TEXTS_IMPROVEMENT
-						ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 855, "%s", box->GetName());
+						ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 855, "%s", box->GetName());
 #endif
 						return true;
 					}
@@ -5665,13 +5574,13 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 			std::unique_ptr<SQLMsg> msg(DBManager::instance().DirectQuery("UPDATE player.new_petsystem SET id = %d WHERE id = %ld", petItem->GetID(), item->GetSocket(1)));
 			ITEM_MANAGER::instance().RemoveItem(item);
 #ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 857, "%s", item->GetName());
+			ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 857, "%s", item->GetName());
 			return true;
 #endif
 		}
 		else {
 #ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 856, "%s", item->GetName());
+			ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 856, "%s", item->GetName());
 #endif
 			return false;
 		}
@@ -5710,7 +5619,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 			return false;
 		}
 
-		ItemSystem::ConsumeItemEcs(EntityFactory::CreateItemEntity(g_registry, item));
+		ItemSystem::ConsumeItemEcs((item ? item->GetEntityHandle() : entt::null));
 		return true;
 	}
 	break;
@@ -5727,7 +5636,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 			if (item->GetVnum() == 50051 || item->GetVnum() == 50052 || item->GetVnum() == 50053)
 			{
 #ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 667, "");
+				ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 667, "");
 #endif
 				return false;
 			}
@@ -5737,11 +5646,11 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 		{
 			if (item->GetSIGVnum() == 0)
 			{
-				quest::CQuestManager::instance().UseItem(GetPlayerID(), EntityFactory::CreateItemEntity(g_registry, item), false);
+				quest::CQuestManager::instance().UseItem(GetPlayerID(), (item ? item->GetEntityHandle() : entt::null), false);
 			}
 			else
 			{
-				quest::CQuestManager::instance().SIGUse(GetPlayerID(), item->GetSIGVnum(), EntityFactory::CreateItemEntity(g_registry, item), false);
+				quest::CQuestManager::instance().SIGUse(GetPlayerID(), item->GetSIGVnum(), (item ? item->GetEntityHandle() : entt::null), false);
 			}
 		}
 
@@ -5752,12 +5661,12 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 				return false;
 
 			if (FindAffect(AFFECT_AUTO_METIN_FARM)) {
-				ecs::ChatSystem::Send(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, "You has already affect.");
+				ecs::ChatSystem::Send(GetEntityHandle(), CHAT_TYPE_INFO, "You has already affect.");
 				return false;
 			}
-			ecs::ChatSystem::Send(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, "Affect successfully added.");
+			ecs::ChatSystem::Send(GetEntityHandle(), CHAT_TYPE_INFO, "Affect successfully added.");
 			AddAffect(AFFECT_AUTO_METIN_FARM, 0, 0, AFF_NONE, item->GetValue(0) == 999 ? INFINITE_AFFECT_DURATION : 60 * 60 * 24 * item->GetValue(0), 0, false);
-			ItemSystem::ConsumeItemEcs(EntityFactory::CreateItemEntity(g_registry, item));
+			ItemSystem::ConsumeItemEcs((item ? item->GetEntityHandle() : entt::null));
 			return true;
 		}
 #endif
@@ -5773,7 +5682,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 		if (!tree)
 		{
 #ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 344, "");
+			ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 344, "");
 #endif
 			return false;
 		}
@@ -5781,7 +5690,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 		if (tree->IsAttr((int32_t)(GetX() + fx), (int32_t)(GetY() + fy), ATTR_WATER))
 		{
 #ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 346, "");
+			ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 346, "");
 #endif
 			return false;
 		}
@@ -5789,7 +5698,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 #ifdef ENABLE_BUG_FIXES
 		if (get_global_time() - GetQuestFlag("kamp.spawned") < 60) {
 #ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 1246, "");
+			ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 1246, "");
 #endif
 			return false;
 		}
@@ -5806,7 +5715,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 
 		campfire->m_pkMiningEvent = event_create(kill_campfire_event, info, PASSES_PER_SEC(40));
 
-		ItemSystem::ConsumeItemEcs(EntityFactory::CreateItemEntity(g_registry, item));
+		ItemSystem::ConsumeItemEcs((item ? item->GetEntityHandle() : entt::null));
 	}
 	break;
 
@@ -5865,7 +5774,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 		if (GetWarMap())
 			GetWarMap()->UsePotion(this, item);
 
-		ItemSystem::ConsumeItemEcs(EntityFactory::CreateItemEntity(g_registry, item));
+		ItemSystem::ConsumeItemEcs((item ? item->GetEntityHandle() : entt::null));
 		break;
 
 		default:
@@ -5892,7 +5801,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 						}
 #ifdef TEXTS_IMPROVEMENT
 						else {
-							ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 668, "");
+							ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 668, "");
 						}
 #endif
 					}
@@ -5930,7 +5839,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 	case ITEM_BELT:		// ½�
 // ±Ô º§Æ® ¾ÆÀÌ�
 // Û
-		//ecs::ChatSystem::Send(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, "You can put in your Mount inventory");
+		//ecs::ChatSystem::Send(GetEntityHandle(), CHAT_TYPE_INFO, "You can put in your Mount inventory");
 		// MINING
 	case ITEM_PICK:
 		// END_OF_MINING
@@ -5950,7 +5859,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 	{
 		if (!item->IsEquipped())
 			return false;
-		entt::entity itemEntity = EntityFactory::CreateItemEntity(g_registry, item);
+		entt::entity itemEntity = (item ? item->GetEntityHandle() : entt::null);
 		return DSManager::instance().PullOut(this, NPOS, itemEntity);
 		break;
 	}
@@ -5966,7 +5875,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 		if (CArenaManager::instance().IsArenaMap(GetMapIndex()) == true)
 		{
 #ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 667, "");
+			ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 667, "");
 #endif
 			return false;
 		}
@@ -5974,14 +5883,14 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 		else if (g_NoPotionsOnPVP && CPVPManager::instance().IsFighting(GetPlayerID()) && !IsAllowedPotionOnPVP(item->GetVnum()))
 		{
 #ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 667, "");
+			ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 667, "");
 #endif
 			return false;
 		}
 #endif
 
 		if (item->GetSubType() == FISH_ALIVE)
-			fishing::UseFishEcs(AIHelpers::EcsOf(this), EntityFactory::CreateItemEntity(g_registry, item));
+			fishing::UseFishEcs(GetEntityHandle(), (item ? item->GetEntityHandle() : entt::null));
 	}
 	break;
 
@@ -6004,7 +5913,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 		if (item2->GetType() != ITEM_TREASURE_BOX)
 		{
 #ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 408, "");
+			ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 408, "");
 #endif
 			return false;
 		}
@@ -6031,43 +5940,43 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 						break;
 					case CSpecialItemGroup::MOB:
 #ifdef TEXTS_IMPROVEMENT
-						ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 378, "");
+						ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 378, "");
 #endif
 						break;
 					case CSpecialItemGroup::SLOW:
 #ifdef TEXTS_IMPROVEMENT
-						ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 377, "");
+						ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 377, "");
 #endif
 						break;
 					case CSpecialItemGroup::DRAIN_HP:
 #ifdef TEXTS_IMPROVEMENT
-						ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 373, "");
+						ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 373, "");
 #endif
 						break;
 					case CSpecialItemGroup::POISON:
 #ifdef TEXTS_IMPROVEMENT
-						ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 376, "");
+						ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 376, "");
 #endif
 						break;
 #ifdef ENABLE_WOLFMAN_CHARACTER
 					case CSpecialItemGroup::BLEEDING:
 #ifdef TEXTS_IMPROVEMENT
-						ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 379, "");
+						ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 379, "");
 #endif
 						break;
 #endif
 					case CSpecialItemGroup::MOB_GROUP:
 #ifdef TEXTS_IMPROVEMENT
-						ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 380, "");
+						ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 380, "");
 #endif
 						break;
 					default:
 						//#ifdef TEXTS_IMPROVEMENT
 						//									if (item_gets[i]) {
 						//										if (dwCounts[i] > 1) {
-						//											ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 374, "%d#%s", dwCounts[i], item_gets[i]->GetName());
+						//											ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 374, "%d#%s", dwCounts[i], item_gets[i]->GetName());
 						//										} else {
-						//											ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 375, "%s", item_gets[i]->GetName());
+						//											ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 375, "%s", item_gets[i]->GetName());
 						//										}
 						//									}
 						//#endif
@@ -6078,7 +5987,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 			else
 			{
 #ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 408, "");
+				ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 408, "");
 #endif
 				return false;
 			}
@@ -6086,7 +5995,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 		else
 		{
 #ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 408, "");
+			ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 408, "");
 #endif
 			return false;
 		}
@@ -6101,7 +6010,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 			if (get_dword_time() < m_dwLastBoxUseTime + g_BoxUseTimeLimitValue)
 			{
 #ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 510, "");
+				ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 510, "");
 #endif
 				return false;
 			}
@@ -6118,7 +6027,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 
 		if (GiveItemFromSpecialItemGroup(dwBoxVnum, dwVnums, dwCounts, item_gets, count))
 		{
-			ItemSystem::ConsumeItemEcs(EntityFactory::CreateItemEntity(g_registry, item));
+			ItemSystem::ConsumeItemEcs((item ? item->GetEntityHandle() : entt::null));
 #ifdef ENABLE_RANKING
 			SetRankPoints(17, GetRankPoints(17) + 1);
 #endif
@@ -6132,43 +6041,43 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 					break;
 				case CSpecialItemGroup::MOB:
 #ifdef TEXTS_IMPROVEMENT
-					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 378, "");
+					ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 378, "");
 #endif
 					break;
 				case CSpecialItemGroup::SLOW:
 #ifdef TEXTS_IMPROVEMENT
-					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 377, "");
+					ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 377, "");
 #endif
 					break;
 				case CSpecialItemGroup::DRAIN_HP:
 #ifdef TEXTS_IMPROVEMENT
-					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 373, "");
+					ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 373, "");
 #endif
 					break;
 				case CSpecialItemGroup::POISON:
 #ifdef TEXTS_IMPROVEMENT
-					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 376, "");
+					ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 376, "");
 #endif
 					break;
 #ifdef ENABLE_WOLFMAN_CHARACTER
 				case CSpecialItemGroup::BLEEDING:
 #ifdef TEXTS_IMPROVEMENT
-					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 379, "");
+					ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 379, "");
 #endif
 					break;
 #endif
 				case CSpecialItemGroup::MOB_GROUP:
 #ifdef TEXTS_IMPROVEMENT
-					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 380, "");
+					ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 380, "");
 #endif
 					break;
 				default:
 					//#ifdef TEXTS_IMPROVEMENT
 					//							if (item_gets[i]) {
 					//								if (dwCounts[i] > 1) {
-					//									ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 374, "%d#%s", dwCounts[i], item_gets[i]->GetName());
+					//									ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 374, "%d#%s", dwCounts[i], item_gets[i]->GetName());
 					//								} else {
-					//									ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 375, "%s", item_gets[i]->GetName());
+					//									ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 375, "%s", item_gets[i]->GetName());
 					//								}
 					//							}
 					//#endif
@@ -6179,7 +6088,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 		else
 		{
 #ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 395, "");
+			ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 395, "");
 #endif
 			return false;
 		}
@@ -6199,12 +6108,12 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 		if (SkillLevelDown(dwVnum)) {
 			ITEM_MANAGER::instance().RemoveItem(item);
 #ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 399, "");
+			ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 399, "");
 #endif
 		}
 #ifdef TEXTS_IMPROVEMENT
 		else {
-			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 400, "");
+			ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 400, "");
 		}
 #endif
 	}
@@ -6219,7 +6128,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 		if (IsPolymorphed())
 		{
 #ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 313, "");
+			ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 313, "");
 #endif
 			return false;
 		}
@@ -6247,14 +6156,14 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 			int lv = GetSkillLevel(SKILL_LEADERSHIP);
 			if (lv < item->GetValue(0)) {
 #ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 429, "");
+				ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 429, "");
 #endif
 				return false;
 			}
 
 			if (lv >= item->GetValue(1)) {
 #ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 430, "");
+				ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 430, "");
 #endif
 				return false;
 			}
@@ -6263,7 +6172,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 		if (true == LearnSkillByBook(dwVnum))
 		{
 #ifdef ENABLE_BOOKS_STACKFIX
-			ItemSystem::ConsumeItemEcs(EntityFactory::CreateItemEntity(g_registry, item));
+			ItemSystem::ConsumeItemEcs((item ? item->GetEntityHandle() : entt::null));
 #else
 			ITEM_MANAGER::instance().RemoveItem(item);
 #endif
@@ -6279,11 +6188,11 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 			return false;
 
 		if (GetNewPetSystem()->IsActivePet()) {
-			GetNewPetSystem()->IncreasePetSkillByBook(EntityFactory::CreateItemEntity(g_registry, item));
+			GetNewPetSystem()->IncreasePetSkillByBook((item ? item->GetEntityHandle() : entt::null));
 		}
 #ifdef TEXTS_IMPROVEMENT
 		else {
-			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 53, "");
+			ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 53, "");
 		}
 #endif
 	}
@@ -6307,7 +6216,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 				if (FindAffect(affect_type, apply_type))
 				{
 #ifdef TEXTS_IMPROVEMENT
-					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 442, "");
+					ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 442, "");
 #endif
 					return false;
 				}
@@ -6339,7 +6248,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 				if (GetWarMap())
 					GetWarMap()->UsePotion(this, item);
 
-				ItemSystem::ConsumeItemEcs(EntityFactory::CreateItemEntity(g_registry, item));
+				ItemSystem::ConsumeItemEcs((item ? item->GetEntityHandle() : entt::null));
 				break;
 
 			case USE_AFFECT:
@@ -6347,7 +6256,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 				if (FindAffect(AFFECT_EXP_BONUS_EURO_FREE, aApplyInfo[item->GetValue(1)].bPointType))
 				{
 #ifdef TEXTS_IMPROVEMENT
-					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 442, "");
+					ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 442, "");
 #endif
 				}
 				else
@@ -6360,7 +6269,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 						if (CPCBangManager::instance().IsPCBangIP(GetDesc()->GetHostName()) == false)
 						{
 #ifdef TEXTS_IMPROVEMENT
-							ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 426, "");
+							ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 426, "");
 #endif
 							return false;
 						}
@@ -6368,7 +6277,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 					// END_PC_BANG_ITEM_ADD
 
 					AddAffect(AFFECT_EXP_BONUS_EURO_FREE, aApplyInfo[item->GetValue(1)].bPointType, item->GetValue(2), 0, item->GetValue(3), 0, false, true);
-					ItemSystem::ConsumeItemEcs(EntityFactory::CreateItemEntity(g_registry, item));
+					ItemSystem::ConsumeItemEcs((item ? item->GetEntityHandle() : entt::null));
 				}
 			}
 			break;
@@ -6379,7 +6288,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 					if (quest::CQuestManager::instance().GetEventFlag("arena_potion_limit") > 0)
 					{
 #ifdef TEXTS_IMPROVEMENT
-						ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 303, "");
+						ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 303, "");
 #endif
 						return false;
 					}
@@ -6395,7 +6304,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 							if (m_nPotionLimit <= 0)
 							{
 #ifdef TEXTS_IMPROVEMENT
-								ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 362, "");
+								ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 362, "");
 #endif
 								return false;
 							}
@@ -6404,7 +6313,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 
 					default:
 #ifdef TEXTS_IMPROVEMENT
-						ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 303, "");
+						ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 303, "");
 #endif
 						return false;
 						break;
@@ -6414,7 +6323,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 				else if (g_NoPotionsOnPVP && CPVPManager::instance().IsFighting(GetPlayerID()) && !IsAllowedPotionOnPVP(item->GetVnum()))
 				{
 #ifdef TEXTS_IMPROVEMENT
-					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 667, "");
+					ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 667, "");
 #endif
 					return false;
 				}
@@ -6474,7 +6383,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 					m_nPotionLimit--;
 
 					//RESTRICT_USE_SEED_OR_MOONBOTTLE
-					ItemSystem::ConsumeItemEcs(EntityFactory::CreateItemEntity(g_registry, item));
+					ItemSystem::ConsumeItemEcs((item ? item->GetEntityHandle() : entt::null));
 					//END_RESTRICT_USE_SEED_OR_MOONBOTTLE
 				}
 			}
@@ -6490,7 +6399,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 			if (CArenaManager::instance().IsArenaMap(GetMapIndex()) == true)
 			{
 #ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 667, "");
+				ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 667, "");
 #endif
 				return false;
 			}
@@ -6498,7 +6407,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 			else if (g_NoPotionsOnPVP && CPVPManager::instance().IsFighting(GetPlayerID()) && !IsAllowedPotionOnPVP(item->GetVnum()))
 			{
 #ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 667, "");
+				ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 667, "");
 #endif
 				return false;
 			}
@@ -6525,12 +6434,12 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 
 			if (pAffect != nullptr) {
 #ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 893, "");
+				ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 893, "");
 #endif
 				return false;
 			}
 			else {
-				ItemSystem::ConsumeItemEcs(EntityFactory::CreateItemEntity(g_registry, item));
+				ItemSystem::ConsumeItemEcs((item ? item->GetEntityHandle() : entt::null));
 
 				for (int i = 0; i < ITEM_APPLY_MAX_NUM; i++) {
 					type = item->GetApplyType(i);
@@ -6556,12 +6465,12 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 					int pos = GetEmptyInventory(item->GetSize());
 					if (pos == -1) {
 #ifdef TEXTS_IMPROVEMENT
-						ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 366, "");
+						ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 366, "");
 #endif
 						return false;
 					}
 
-					ItemSystem::ConsumeItemEcs(EntityFactory::CreateItemEntity(g_registry, item));
+					ItemSystem::ConsumeItemEcs((item ? item->GetEntityHandle() : entt::null));
 					LPITEM item2 = ITEM_MANAGER::instance().CreateItem(item->GetVnum(), 1);
 					if (!item2)
 						return false;
@@ -6575,7 +6484,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 					return false;
 				}
 				else {
-					uint32_t duration = DSManager::instance().GetDuration(EntityFactory::CreateItemEntity(g_registry, pDestItem));
+					uint32_t duration = DSManager::instance().GetDuration((pDestItem ? pDestItem->GetEntityHandle() : entt::null));
 					uint32_t remain_sec = pDestItem->GetSocket(ITEM_SOCKET_REMAIN_SEC);
 					if (remain_sec == duration)
 						return false;
@@ -6622,9 +6531,9 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 					}
 
 #ifdef TEXTS_IMPROVEMENT
-					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 670, "%s#%d", pDestItem->GetName(), ret);
+					ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 670, "%s#%d", pDestItem->GetName(), ret);
 #endif
-					ItemSystem::ConsumeItemEcs(EntityFactory::CreateItemEntity(g_registry, item));
+					ItemSystem::ConsumeItemEcs((item ? item->GetEntityHandle() : entt::null));
 					LogManager::instance().ItemLog(this, item, "DS_CHARGING_SUCCESS", buf);
 					return true;
 				}
@@ -6640,7 +6549,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 					}
 
 #ifdef TEXTS_IMPROVEMENT
-					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 671, "%s", pDestItem->GetName());
+					ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 671, "%s", pDestItem->GetName());
 #endif
 					LogManager::instance().ItemLog(this, item, "DS_CHARGING_FAILED", buf);
 					return false;
@@ -6666,17 +6575,17 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 				if (ret)
 				{
 #ifdef TEXTS_IMPROVEMENT
-					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 670, "%s#%d", pDestItem->GetName(), ret);
+					ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 670, "%s#%d", pDestItem->GetName(), ret);
 #endif
 					sprintf(buf, "Increase %ds by item{VN:%d VAL%d:%ld}", ret, item->GetVnum(), ITEM_VALUE_CHARGING_AMOUNT_IDX, item->GetValue(ITEM_VALUE_CHARGING_AMOUNT_IDX));
 					LogManager::instance().ItemLog(this, item, "DS_CHARGING_SUCCESS", buf);
-					ItemSystem::ConsumeItemEcs(EntityFactory::CreateItemEntity(g_registry, item));
+					ItemSystem::ConsumeItemEcs((item ? item->GetEntityHandle() : entt::null));
 					return true;
 				}
 				else
 				{
 #ifdef TEXTS_IMPROVEMENT
-					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 671, "%s", pDestItem->GetName());
+					ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 671, "%s", pDestItem->GetName());
 #endif
 					sprintf(buf, "No change by item{VN:%d VAL%d:%ld}", item->GetVnum(), ITEM_VALUE_CHARGING_AMOUNT_IDX, item->GetValue(ITEM_VALUE_CHARGING_AMOUNT_IDX));
 					LogManager::instance().ItemLog(this, item, "DS_CHARGING_FAILED", buf);
@@ -6692,7 +6601,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 			uint32_t dwType = item->GetValue(0);
 			if (dwType >= AFFECT_NEW_POTION24 && dwType <= AFFECT_NEW_POTION29 && !marriage::CManager::instance().IsMarried(GetPlayerID())) {
 #ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 891, "");
+				ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 891, "");
 #endif
 				return false;
 			}
@@ -6701,7 +6610,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 				LPPARTY party = GetParty();
 				if ((!party) || (party && GetPlayerID() != party->GetLeaderPID())) {
 #ifdef TEXTS_IMPROVEMENT
-					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 902, "");
+					ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 902, "");
 #endif
 					return false;
 				}
@@ -6711,9 +6620,9 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 			if (pAffect && item->GetID() != pAffect->dwFlag)
 			{
 #ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 442, "");
+				ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 442, "");
 #else
-				ecs::ChatSystem::Send(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, "Már aktiv egy ilyen harmat.");
+				ecs::ChatSystem::Send(GetEntityHandle(), CHAT_TYPE_INFO, "Már aktiv egy ilyen harmat.");
 #endif
 				return false;
 			}
@@ -6736,12 +6645,12 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 
 				if (pos == -1) {
 #ifdef TEXTS_IMPROVEMENT
-					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 366, "");
+					ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 366, "");
 #endif
 					break;
 				}
 
-				ItemSystem::ConsumeItemEcs(EntityFactory::CreateItemEntity(g_registry, item));
+				ItemSystem::ConsumeItemEcs((item ? item->GetEntityHandle() : entt::null));
 				LPITEM item2 = ITEM_MANAGER::instance().CreateItem(item->GetVnum(), 1);
 				if (!item2)
 					return true;
@@ -6764,25 +6673,25 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 				uint32_t dwItemID = pAffect->dwFlag;
 				if (item->GetID() == dwItemID) {
 					item->Lock(false);
-					ItemSystem::SetItemSocketEcs(EntityFactory::CreateItemEntity(g_registry, item), 1, 0);
+					ItemSystem::SetItemSocketEcs((item ? item->GetEntityHandle() : entt::null), 1, 0);
 					RemoveAffect(dwType);
 #ifdef TEXTS_IMPROVEMENT
-					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 28, "%s", item->GetName());
+					ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 28, "%s", item->GetName());
 #endif
 				}
 				else {
 					LPITEM pkItem = FindItemByID(dwItemID);
 					if (pkItem) {
 						pkItem->Lock(false);
-						ItemSystem::SetItemSocketEcs(EntityFactory::CreateItemEntity(g_registry, pkItem), 1, 0);
+						ItemSystem::SetItemSocketEcs((pkItem ? pkItem->GetEntityHandle() : entt::null), 1, 0);
 					}
 
 					RemoveAffect(dwType);
 					item->Lock(true);
-					ItemSystem::SetItemSocketEcs(EntityFactory::CreateItemEntity(g_registry, item), 1, 1);
+					ItemSystem::SetItemSocketEcs((item ? item->GetEntityHandle() : entt::null), 1, 1);
 					AddAffect(dwType, aApplyInfo[bApplyOn].bPointType, lApplyValue, item->GetID(), INFINITE_AFFECT_DURATION, 0, true, false);
 #ifdef TEXTS_IMPROVEMENT
-					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 29, "%s", item->GetName());
+					ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 29, "%s", item->GetName());
 #endif
 				}
 			}
@@ -6793,7 +6702,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 						LPITEM pkItem = FindItemByID(pAffect->dwFlag);
 						if (pkItem) {
 							pkItem->Lock(false);
-							ItemSystem::SetItemSocketEcs(EntityFactory::CreateItemEntity(g_registry, pkItem), 1, 0);
+							ItemSystem::SetItemSocketEcs((pkItem ? pkItem->GetEntityHandle() : entt::null), 1, 0);
 						}
 
 						RemoveAffect(AFFECT_NEW_POTION20);
@@ -6805,7 +6714,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 						LPITEM pkItem = FindItemByID(pAffect->dwFlag);
 						if (pkItem) {
 							pkItem->Lock(false);
-							ItemSystem::SetItemSocketEcs(EntityFactory::CreateItemEntity(g_registry, pkItem), 1, 0);
+							ItemSystem::SetItemSocketEcs((pkItem ? pkItem->GetEntityHandle() : entt::null), 1, 0);
 						}
 
 						RemoveAffect(AFFECT_NEW_POTION19);
@@ -6817,7 +6726,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 						LPITEM pkItem = FindItemByID(pAffect->dwFlag);
 						if (pkItem) {
 							pkItem->Lock(false);
-							ItemSystem::SetItemSocketEcs(EntityFactory::CreateItemEntity(g_registry, pkItem), 1, 0);
+							ItemSystem::SetItemSocketEcs((pkItem ? pkItem->GetEntityHandle() : entt::null), 1, 0);
 						}
 
 						RemoveAffect(AFFECT_NEW_POTION22);
@@ -6829,7 +6738,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 						LPITEM pkItem = FindItemByID(pAffect->dwFlag);
 						if (pkItem) {
 							pkItem->Lock(false);
-							ItemSystem::SetItemSocketEcs(EntityFactory::CreateItemEntity(g_registry, pkItem), 1, 0);
+							ItemSystem::SetItemSocketEcs((pkItem ? pkItem->GetEntityHandle() : entt::null), 1, 0);
 						}
 
 						RemoveAffect(AFFECT_NEW_POTION21);
@@ -6837,10 +6746,10 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 				}
 
 				item->Lock(true);
-				ItemSystem::SetItemSocketEcs(EntityFactory::CreateItemEntity(g_registry, item), 1, 1);
+				ItemSystem::SetItemSocketEcs((item ? item->GetEntityHandle() : entt::null), 1, 1);
 				AddAffect(dwType, aApplyInfo[bApplyOn].bPointType, lApplyValue, item->GetID(), INFINITE_AFFECT_DURATION, 0, true, false);
 #ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 29, "%s", item->GetName());
+				ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 29, "%s", item->GetName());
 #endif
 			}
 		}
@@ -6865,7 +6774,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 				if (FindAffect(AFFECT_NOG_ABILITY))
 				{
 #ifdef TEXTS_IMPROVEMENT
-					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 442, "");
+					ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 442, "");
 #endif
 					return false;
 				}
@@ -6876,7 +6785,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 				AddAffect(AFFECT_NOG_ABILITY, POINT_MOV_SPEED, moveSpeedPer, AFF_MOV_SPEED_POTION, time, 0, true, true);
 				AddAffect(AFFECT_NOG_ABILITY, POINT_MALL_ATTBONUS, attPer, AFF_NONE, time, 0, true, true);
 				AddAffect(AFFECT_NOG_ABILITY, POINT_MALL_EXPBONUS, expPer, AFF_NONE, time, 0, true, true);
-				ItemSystem::ConsumeItemEcs(EntityFactory::CreateItemEntity(g_registry, item));
+				ItemSystem::ConsumeItemEcs((item ? item->GetEntityHandle() : entt::null));
 			}
 			break;
 
@@ -6897,7 +6806,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 				if (FindAffect(AFFECT_RAMADAN_ABILITY))
 				{
 #ifdef TEXTS_IMPROVEMENT
-					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 442, "");
+					ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 442, "");
 #endif
 					return false;
 				}
@@ -6909,7 +6818,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 				AddAffect(AFFECT_RAMADAN_ABILITY, POINT_MOV_SPEED, moveSpeedPer, AFF_MOV_SPEED_POTION, time, 0, true, true);
 				AddAffect(AFFECT_RAMADAN_ABILITY, POINT_MALL_ATTBONUS, attPer, AFF_NONE, time, 0, true, true);
 				AddAffect(AFFECT_RAMADAN_ABILITY, POINT_MALL_EXPBONUS, expPer, AFF_NONE, time, 0, true, true);
-				ItemSystem::ConsumeItemEcs(EntityFactory::CreateItemEntity(g_registry, item));
+				ItemSystem::ConsumeItemEcs((item ? item->GetEntityHandle() : entt::null));
 			}
 			break;
 			case ITEM_MARRIAGE_RING:
@@ -6922,7 +6831,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 						if (CArenaManager::instance().IsArenaMap(pMarriage->ch1->GetMapIndex()) == true)
 						{
 #ifdef TEXTS_IMPROVEMENT
-							ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 672, "");
+							ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 672, "");
 #endif
 							break;
 						}
@@ -6933,7 +6842,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 						if (CArenaManager::instance().IsArenaMap(pMarriage->ch2->GetMapIndex()) == true)
 						{
 #ifdef TEXTS_IMPROVEMENT
-							ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 672, "");
+							ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 672, "");
 #endif
 							break;
 						}
@@ -6950,7 +6859,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 				}
 #ifdef TEXTS_IMPROVEMENT
 				else {
-					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 242, "");
+					ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 242, "");
 				}
 #endif
 			}
@@ -6963,7 +6872,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 					// if (GetMapIndex() != 1)
 					// {
 	// #ifdef TEXTS_IMPROVEMENT
-						// ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 489, "");
+						// ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 489, "");
 	// #endif
 						// return true;
 					// }
@@ -6983,7 +6892,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 				else
 				{
 #ifdef TEXTS_IMPROVEMENT
-					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 489, "");
+					ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 489, "");
 					return false;
 #endif
 				}
@@ -7000,20 +6909,20 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 				else
 				{
 #ifdef TEXTS_IMPROVEMENT
-					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 489, "");
+					ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 489, "");
 					return false;
 #endif
 				}
 
 #endif
 #endif
-				ItemSystem::ConsumeItemEcs(EntityFactory::CreateItemEntity(g_registry, item));//@Razor93 (batorsag kopi fogyjon)
+				ItemSystem::ConsumeItemEcs((item ? item->GetEntityHandle() : entt::null));//@Razor93 (batorsag kopi fogyjon)
 				//UpdateMountCountOverhead(this);
 				break;
 
 			case UNIQUE_ITEM_WHITE_FLAG:
 				ForgetMyAttacker();
-				ItemSystem::ConsumeItemEcs(EntityFactory::CreateItemEntity(g_registry, item));
+				ItemSystem::ConsumeItemEcs((item ? item->GetEntityHandle() : entt::null));
 				break;
 
 			case UNIQUE_ITEM_TREASURE_BOX:
@@ -7027,7 +6936,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 				if (!bBattlePassId)
 				{
 #ifdef TEXTS_IMPROVEMENT
-					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 780, "");  
+					ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 780, "");
 #endif
 					return false;
 				}
@@ -7036,7 +6945,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 				if (HasBattlePassBoost(bBattlePassId))
 				{
 #ifdef TEXTS_IMPROVEMENT
-					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 8, ""); 
+					ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 8, "");
 #endif
 					return false;
 				}
@@ -7054,7 +6963,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 				 
 				CBattlePass::instance().BattlePassRequestOpen(this);
 
-				ItemSystem::ConsumeItemEcs(EntityFactory::CreateItemEntity(g_registry, item));
+				ItemSystem::ConsumeItemEcs((item ? item->GetEntityHandle() : entt::null));
 			}
 			break;
 #endif
@@ -7068,7 +6977,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 				std::unique_ptr<SQLMsg> pmsg(DBManager::instance().DirectQuery(szQuery));
 				if (pmsg->Get()->uiNumRows > 0) {
 #ifdef TEXTS_IMPROVEMENT
-					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 6, "");
+					ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 6, "");
 #endif
 					return false;
 				}
@@ -7076,14 +6985,14 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 				int iSeconds = GetSecondsTillNextMonth();
 				if (iSeconds < 0) {
 #ifdef TEXTS_IMPROVEMENT
-					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 7, "");
+					ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 7, "");
 #endif
 					return false;
 				}
 
 				if (FindAffect(AFFECT_BATTLE_PASS)) {
 #ifdef TEXTS_IMPROVEMENT
-					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 8, "");
+					ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 8, "");
 #endif
 					return false;
 				}
@@ -7091,7 +7000,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 					m_dwBattlePassEndTime = get_global_time() + iSeconds;
 
 					AddAffect(AFFECT_BATTLE_PASS, POINT_BATTLE_PASS_ID, 1, 0, iSeconds, 0, true);
-					ItemSystem::ConsumeItemEcs(EntityFactory::CreateItemEntity(g_registry, item));
+					ItemSystem::ConsumeItemEcs((item ? item->GetEntityHandle() : entt::null));
 				}
 			}
 			break;
@@ -7104,7 +7013,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 
 				if (pMap != nullptr)
 				{
-					ItemSystem::SetItemSocketEcs(EntityFactory::CreateItemEntity(g_registry, item), 0, item->GetSocket(0) + 1);
+					ItemSystem::SetItemSocketEcs((item ? item->GetEntityHandle() : entt::null), 0, item->GetSocket(0) + 1);
 
 					FFindStone f;
 
@@ -7137,24 +7046,24 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 							if (max < 10000) val = 2;
 							else if (max < 70000) val = 1;
 
-							ecs::ChatSystem::Send(AIHelpers::EcsOf(this), CHAT_TYPE_COMMAND, "StoneDetect %u %d %d", GetPacketVID(), val,
+							ecs::ChatSystem::Send(GetEntityHandle(), CHAT_TYPE_COMMAND, "StoneDetect %u %d %d", GetPacketVID(), val,
 								(int)GetDegreeFromPositionXY(GetX(), pTarget->GetY(), pTarget->GetX(), GetY()));
 						}
 #ifdef TEXTS_IMPROVEMENT
 						else {
-							ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 673, "");
+							ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 673, "");
 						}
 #endif
 					}
 #ifdef TEXTS_IMPROVEMENT
 					else {
-						ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 673, "");
+						ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 673, "");
 					}
 #endif
 
 					if (item->GetSocket(0) >= 6)
 					{
-						ecs::ChatSystem::Send(AIHelpers::EcsOf(this), CHAT_TYPE_COMMAND, "StoneDetect %u 0 0", GetPacketVID());
+						ecs::ChatSystem::Send(GetEntityHandle(), CHAT_TYPE_COMMAND, "StoneDetect %u 0 0", GetPacketVID());
 						ITEM_MANAGER::instance().RemoveItem(item);
 					}
 				}
@@ -7163,7 +7072,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 			break;
 
 			case 27996: // µ¶º´
-				ItemSystem::ConsumeItemEcs(EntityFactory::CreateItemEntity(g_registry, item));
+				ItemSystem::ConsumeItemEcs((item ? item->GetEntityHandle() : entt::null));
 				AttackedByPoison(nullptr); // @warme008
 				break;
 
@@ -7174,16 +7083,16 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 				// 7   Ã»ÁøÁÖ 47993
 				// 3   ÇÇÁøÁÖ 47994
 			{
-				ItemSystem::ConsumeItemEcs(EntityFactory::CreateItemEntity(g_registry, item));
+				ItemSystem::ConsumeItemEcs((item ? item->GetEntityHandle() : entt::null));
 
 				int r = number(1, 100);
 
 				if (r <= 50)
 				{
 #ifdef TEXTS_IMPROVEMENT
-					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 458, "");
+					ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 458, "");
 #endif
-					ItemSystem::AutoGiveItemEcs(AIHelpers::EcsOf(this), 27990);
+					ItemSystem::AutoGiveItemEcs(GetEntityHandle(), 27990);
 				}
 				else
 				{
@@ -7196,29 +7105,29 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 
 					if (r <= prob_table[0]) {
 #ifdef TEXTS_IMPROVEMENT
-						ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 457, "");
+						ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 457, "");
 #endif
 					}
 					else if (r <= prob_table[1])
 					{
 #ifdef TEXTS_IMPROVEMENT
-						ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 459, "");
+						ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 459, "");
 #endif
-						ItemSystem::AutoGiveItemEcs(AIHelpers::EcsOf(this), 27992);
+						ItemSystem::AutoGiveItemEcs(GetEntityHandle(), 27992);
 					}
 					else if (r <= prob_table[2])
 					{
 #ifdef TEXTS_IMPROVEMENT
-						ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 460, "");
+						ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 460, "");
 #endif
-						ItemSystem::AutoGiveItemEcs(AIHelpers::EcsOf(this), 27993);
+						ItemSystem::AutoGiveItemEcs(GetEntityHandle(), 27993);
 					}
 					else
 					{
 #ifdef TEXTS_IMPROVEMENT
-						ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 461, "");
+						ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 461, "");
 #endif
-						ItemSystem::AutoGiveItemEcs(AIHelpers::EcsOf(this), 27994);
+						ItemSystem::AutoGiveItemEcs(GetEntityHandle(), 27994);
 					}
 				}
 			}
@@ -7226,7 +7135,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 
 			case 71013: // ÃàÁ¦¿ëÆøÁ×
 				CreateFly(number(FLY_FIREWORK1, FLY_FIREWORK6), this);
-				ItemSystem::ConsumeItemEcs(EntityFactory::CreateItemEntity(g_registry, item));
+				ItemSystem::ConsumeItemEcs((item ? item->GetEntityHandle() : entt::null));
 				break;
 
 			case 50100: // ÆøÁ×
@@ -7237,7 +7146,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 			case 50105:
 			case 50106:
 				CreateFly(item->GetVnum() - 50100 + FLY_FIREWORK1, this);
-				ItemSystem::ConsumeItemEcs(EntityFactory::CreateItemEntity(g_registry, item));
+				ItemSystem::ConsumeItemEcs((item ? item->GetEntityHandle() : entt::null));
 				break;
 
 			case 50200: // º¸µû¸®
@@ -7252,7 +7161,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 					}
 #ifdef TEXTS_IMPROVEMENT
 					else {
-						ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 668, "");
+						ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 668, "");
 					}
 #endif
 				}
@@ -7270,14 +7179,14 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 #ifdef ENABLE_NEW_FISHING_SYSTEM
 				if (FindAffect(AFFECT_FISH_MIND_PILL)) {
 #ifdef TEXTS_IMPROVEMENT
-					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 900, "");
+					ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 900, "");
 #endif
 					return false;
 				}
 #endif
 
 				AddAffect(AFFECT_FISH_MIND_PILL, POINT_NONE, 0, AFF_FISH_MIND, 20 * 60, 0, true);
-				ItemSystem::ConsumeItemEcs(EntityFactory::CreateItemEntity(g_registry, item));
+				ItemSystem::ConsumeItemEcs((item ? item->GetEntityHandle() : entt::null));
 			}
 			break;
 
@@ -7288,7 +7197,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 				if (IsPolymorphed())
 				{
 #ifdef TEXTS_IMPROVEMENT
-					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 313, "");
+					ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 313, "");
 #endif
 					return false;
 
@@ -7296,7 +7205,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 				if (GetSkillLevel(SKILL_COMBO) == 0 && GetLevel() < 30)
 				{
 #ifdef TEXTS_IMPROVEMENT
-					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 322, "");
+					ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 322, "");
 #endif
 					return false;
 				}
@@ -7304,7 +7213,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 				if (GetSkillLevel(SKILL_COMBO) == 1 && GetLevel() < 50)
 				{
 #ifdef TEXTS_IMPROVEMENT
-					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 323, "");
+					ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 323, "");
 #endif
 					return false;
 				}
@@ -7312,7 +7221,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 				if (GetSkillLevel(SKILL_COMBO) >= 2)
 				{
 #ifdef TEXTS_IMPROVEMENT
-					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 324, "");
+					ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 324, "");
 #endif
 					return false;
 				}
@@ -7322,7 +7231,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 				if (LearnSkillByBook(SKILL_COMBO, iPct))
 				{
 #ifdef ENABLE_BOOKS_STACKFIX
-					ItemSystem::ConsumeItemEcs(EntityFactory::CreateItemEntity(g_registry, item));
+					ItemSystem::ConsumeItemEcs((item ? item->GetEntityHandle() : entt::null));
 #else
 					ITEM_MANAGER::instance().RemoveItem(item);
 #endif
@@ -7340,7 +7249,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 			case 50336: {
 				if (IsPolymorphed()) {
 #ifdef TEXTS_IMPROVEMENT
-					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 313, "");
+					ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 313, "");
 #endif
 					return false;
 
@@ -7349,13 +7258,13 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 				uint32_t dwSkillVnum = item->GetValue(0);
 				if (GetSkillLevel(dwSkillVnum) >= 10) {
 #ifdef TEXTS_IMPROVEMENT
-					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 439, "");
+					ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 439, "");
 #endif
 					return false;
 				}
 
 				if (LearnSkillByBook(dwSkillVnum, 0)) {
-					ItemSystem::ConsumeItemEcs(EntityFactory::CreateItemEntity(g_registry, item));
+					ItemSystem::ConsumeItemEcs((item ? item->GetEntityHandle() : entt::null));
 					SetSkillNextReadTime(dwSkillVnum, get_global_time() + 10800);
 				}
 			}
@@ -7369,7 +7278,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 				if (IsPolymorphed())
 				{
 #ifdef TEXTS_IMPROVEMENT
-					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 313, "");
+					ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 313, "");
 #endif
 					return false;
 
@@ -7379,7 +7288,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 				if (GetSkillLevel(dwSkillVnum) >= 20 || dwSkillVnum - SKILL_LANGUAGE1 + 1 == GetEmpire())
 				{
 #ifdef TEXTS_IMPROVEMENT
-					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 439, "");
+					ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 439, "");
 #endif
 					return false;
 				}
@@ -7387,7 +7296,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 				if (LearnSkillByBook(dwSkillVnum, iPct))
 				{
 #ifdef ENABLE_BOOKS_STACKFIX
-					ItemSystem::ConsumeItemEcs(EntityFactory::CreateItemEntity(g_registry, item));
+					ItemSystem::ConsumeItemEcs((item ? item->GetEntityHandle() : entt::null));
 #else
 					ITEM_MANAGER::instance().RemoveItem(item);
 #endif
@@ -7404,7 +7313,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 				if (IsPolymorphed())
 				{
 #ifdef TEXTS_IMPROVEMENT
-					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 313, "");
+					ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 313, "");
 #endif
 					return false;
 
@@ -7415,7 +7324,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 				if (GetSkillLevel(dwSkillVnum) >= 10)
 				{
 #ifdef TEXTS_IMPROVEMENT
-					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 306, "");
+					ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 306, "");
 #endif
 					return false;
 				}
@@ -7423,7 +7332,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 				if (LearnSkillByBook(dwSkillVnum, iPct))
 				{
 #ifdef ENABLE_BOOKS_STACKFIX
-					ItemSystem::ConsumeItemEcs(EntityFactory::CreateItemEntity(g_registry, item));
+					ItemSystem::ConsumeItemEcs((item ? item->GetEntityHandle() : entt::null));
 #else
 					ITEM_MANAGER::instance().RemoveItem(item);
 #endif
@@ -7443,7 +7352,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 				if (IsPolymorphed() == true)
 				{
 #ifdef TEXTS_IMPROVEMENT
-					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 313, "");
+					ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 313, "");
 #endif
 					return false;
 				}
@@ -7478,7 +7387,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 				if (GetLevel() < iLevelLimit)
 				{
 #ifdef TEXTS_IMPROVEMENT
-					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 431, "%d", iLevelLimit);
+					ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 431, "%d", iLevelLimit);
 #endif
 					return false;
 				}
@@ -7486,7 +7395,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 				if (GetSkillLevel(dwSkillVnum) >= 40)
 				{
 #ifdef TEXTS_IMPROVEMENT
-					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 306, "");
+					ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 306, "");
 #endif
 					return false;
 				}
@@ -7494,7 +7403,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 				if (GetSkillLevel(dwSkillVnum) < iSkillLevelLowLimit)
 				{
 #ifdef TEXTS_IMPROVEMENT
-					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 429, "");
+					ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 429, "");
 #endif
 					return false;
 				}
@@ -7502,7 +7411,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 				if (GetSkillLevel(dwSkillVnum) >= iSkillLevelHighLimit)
 				{
 #ifdef TEXTS_IMPROVEMENT
-					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 306, "");
+					ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 306, "");
 #endif
 					return false;
 				}
@@ -7510,7 +7419,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 				if (LearnSkillByBook(dwSkillVnum, iPct))
 				{
 #ifdef ENABLE_BOOKS_STACKFIX
-					ItemSystem::ConsumeItemEcs(EntityFactory::CreateItemEntity(g_registry, item));
+					ItemSystem::ConsumeItemEcs((item ? item->GetEntityHandle() : entt::null));
 #else
 					ITEM_MANAGER::instance().RemoveItem(item);
 #endif
@@ -7528,7 +7437,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 				if (IsPolymorphed())
 				{
 #ifdef TEXTS_IMPROVEMENT
-					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 313, "");
+					ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 313, "");
 #endif
 					return false;
 
@@ -7539,7 +7448,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 				if (GetSkillLevel(dwSkillVnum) >= 40)
 				{
 #ifdef TEXTS_IMPROVEMENT
-					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 306, "");
+					ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 306, "");
 #endif
 					return false;
 				}
@@ -7547,7 +7456,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 				if (LearnSkillByBook(dwSkillVnum, iPct))
 				{
 #ifdef ENABLE_BOOKS_STACKFIX
-					ItemSystem::ConsumeItemEcs(EntityFactory::CreateItemEntity(g_registry, item));
+					ItemSystem::ConsumeItemEcs((item ? item->GetEntityHandle() : entt::null));
 #else
 					ITEM_MANAGER::instance().RemoveItem(item);
 #endif
@@ -7563,7 +7472,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 				if (IsPolymorphed())
 				{
 #ifdef TEXTS_IMPROVEMENT
-					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 313, "");
+					ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 313, "");
 #endif
 					return false;
 
@@ -7574,7 +7483,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 				if (GetSkillLevel(dwSkillVnum) >= 40)
 				{
 #ifdef TEXTS_IMPROVEMENT
-					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 306, "");
+					ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 306, "");
 #endif
 					return false;
 				}
@@ -7582,7 +7491,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 				if (LearnSkillByBook(dwSkillVnum, iPct))
 				{
 #ifdef ENABLE_BOOKS_STACKFIX
-					ItemSystem::ConsumeItemEcs(EntityFactory::CreateItemEntity(g_registry, item));
+					ItemSystem::ConsumeItemEcs((item ? item->GetEntityHandle() : entt::null));
 #else
 					ITEM_MANAGER::instance().RemoveItem(item);
 #endif
@@ -7599,7 +7508,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 				if (IsPolymorphed())
 				{
 #ifdef TEXTS_IMPROVEMENT
-					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 313, "");
+					ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 313, "");
 #endif
 					return false;
 
@@ -7610,7 +7519,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 				if (GetLevel() < 50)
 				{
 #ifdef TEXTS_IMPROVEMENT
-					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 404, "%d", 50);
+					ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 404, "%d", 50);
 #endif
 					return false;
 				}
@@ -7622,7 +7531,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 						// ÁÖ¾È¼ú¼­ »ç¿ëÁß¿¡´Â ½Ã°£ Á¦ÇÑ ¹«½Ã
 						RemoveAffect(AFFECT_SKILL_NO_BOOK_DELAY);
 #ifdef TEXTS_IMPROVEMENT
-						ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 465, "");
+						ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 465, "");
 #endif
 					}
 					else
@@ -7637,7 +7546,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 					GetSkillLevel(SKILL_HORSE_WILDATTACK_RANGE) + GetSkillLevel(SKILL_HORSE_CHARGE) + GetSkillLevel(SKILL_HORSE_ESCAPE) >= 60)
 				{
 #ifdef TEXTS_IMPROVEMENT
-					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 307, "");
+					ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 307, "");
 #endif
 					return false;
 				}
@@ -7645,7 +7554,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 				if (number(1, 100) <= iPct)
 				{
 #ifdef TEXTS_IMPROVEMENT
-					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 394, "");
+					ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 394, "");
 #endif
 					PointChange(POINT_HORSE_SKILL, 1);
 
@@ -7655,11 +7564,11 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 				}
 #ifdef TEXTS_IMPROVEMENT
 				else {
-					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 393, "");
+					ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 393, "");
 				}
 #endif
 #ifdef ENABLE_BOOKS_STACKFIX
-				ItemSystem::ConsumeItemEcs(EntityFactory::CreateItemEntity(g_registry, item));
+				ItemSystem::ConsumeItemEcs((item ? item->GetEntityHandle() : entt::null));
 #else
 				ITEM_MANAGER::instance().RemoveItem(item);
 #endif
@@ -7676,7 +7585,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 
 				if (current >= max_limit)
 				{
-					ecs::ChatSystem::Send(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, "Max  250.000 with this item!");
+					ecs::ChatSystem::Send(GetEntityHandle(), CHAT_TYPE_INFO, "Max  250.000 with this item!");
 					return false;
 				}
 
@@ -7686,9 +7595,9 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 				uint32_t real_add = std::min(add_value, remaining);
 
 				UpdateAlignment(real_add);
-				ItemSystem::ConsumeItemEcs(EntityFactory::CreateItemEntity(g_registry, item));
+				ItemSystem::ConsumeItemEcs((item ? item->GetEntityHandle() : entt::null));
 
-				ecs::ChatSystem::Send(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, " +500 point.");
+				ecs::ChatSystem::Send(GetEntityHandle(), CHAT_TYPE_INFO, " +500 point.");
 			}
 			break;
 
@@ -7700,7 +7609,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 
 				if (current >= max_limit)
 				{
-					ecs::ChatSystem::Send(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, "Max 2.500.000 with this item!");
+					ecs::ChatSystem::Send(GetEntityHandle(), CHAT_TYPE_INFO, "Max 2.500.000 with this item!");
 					return false;
 				}
 
@@ -7708,9 +7617,9 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 				const uint32_t real_add = std::min(add_value, max_limit - current);
 
 				UpdateAlignment(real_add);
-				ItemSystem::ConsumeItemEcs(EntityFactory::CreateItemEntity(g_registry, item));
+				ItemSystem::ConsumeItemEcs((item ? item->GetEntityHandle() : entt::null));
 
-				ecs::ChatSystem::Send(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, "+5.000 point.");
+				ecs::ChatSystem::Send(GetEntityHandle(), CHAT_TYPE_INFO, "+5.000 point.");
 			}
 			break;
 
@@ -7751,10 +7660,10 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 
 				SetDragonCoin(curCoins + (uint32_t)canAdd);
 
-				ItemSystem::ConsumeItemEcs(EntityFactory::CreateItemEntity(g_registry, item), count); // teljes stack felhasznalasa
-				ecs::ChatSystem::Send(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, "Kaptal %u Sarkanyermet.", (uint32_t)canAdd);
+				ItemSystem::ConsumeItemEcs((item ? item->GetEntityHandle() : entt::null), count); // teljes stack felhasznalasa
+				ecs::ChatSystem::Send(GetEntityHandle(), CHAT_TYPE_INFO, "Kaptal %u Sarkanyermet.", (uint32_t)canAdd);
 #else
-				ecs::ChatSystem::Send(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, "ItemShop ki van kapcsolva.");
+				ecs::ChatSystem::Send(GetEntityHandle(), CHAT_TYPE_INFO, "ItemShop ki van kapcsolva.");
 #endif
 			}
 			break;
@@ -7770,7 +7679,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 
 				if (current >= max_limit)
 				{
-					ecs::ChatSystem::Send(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, "Max 2.500.000 with this item!");
+					ecs::ChatSystem::Send(GetEntityHandle(), CHAT_TYPE_INFO, "Max 2.500.000 with this item!");
 					return false;
 				}
 
@@ -7778,9 +7687,9 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 				const uint32_t real_add = std::min(add_value, max_limit - current);
 
 				UpdateAlignment(real_add);
-				ItemSystem::ConsumeItemEcs(EntityFactory::CreateItemEntity(g_registry, item));
+				ItemSystem::ConsumeItemEcs((item ? item->GetEntityHandle() : entt::null));
 
-				ecs::ChatSystem::Send(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, "+2000 point");
+				ecs::ChatSystem::Send(GetEntityHandle(), CHAT_TYPE_INFO, "+2000 point");
 			}
 			break;
 
@@ -7792,13 +7701,13 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 
 				if (current < min_limit)
 				{
-					ecs::ChatSystem::Send(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, "Min point: 2.500.000 ");
+					ecs::ChatSystem::Send(GetEntityHandle(), CHAT_TYPE_INFO, "Min point: 2.500.000 ");
 					return false;
 				}
 
 				if (current >= max_limit)
 				{
-					ecs::ChatSystem::Send(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, "Max 5.000.000!");
+					ecs::ChatSystem::Send(GetEntityHandle(), CHAT_TYPE_INFO, "Max 5.000.000!");
 					return false;
 				}
 
@@ -7807,9 +7716,9 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 				const uint32_t real_add = std::min(add_value, max_limit - current);
 
 				UpdateAlignment(real_add);
-				ItemSystem::ConsumeItemEcs(EntityFactory::CreateItemEntity(g_registry, item));
+				ItemSystem::ConsumeItemEcs((item ? item->GetEntityHandle() : entt::null));
 
-				ecs::ChatSystem::Send(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, "+30.000 point addaed.");
+				ecs::ChatSystem::Send(GetEntityHandle(), CHAT_TYPE_INFO, "+30.000 point addaed.");
 			}
 			break;
 			// --------------------------------------------------------------
@@ -7822,7 +7731,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 
 				if (current >= max_limit)
 				{
-					ecs::ChatSystem::Send(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, "Max 2.500.000!");
+					ecs::ChatSystem::Send(GetEntityHandle(), CHAT_TYPE_INFO, "Max 2.500.000!");
 					return false;
 				}
 
@@ -7830,9 +7739,9 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 				const uint32_t real_add = std::min(add_value, max_limit - current);
 
 				UpdateAlignment(real_add);
-				ItemSystem::ConsumeItemEcs(EntityFactory::CreateItemEntity(g_registry, item));
+				ItemSystem::ConsumeItemEcs((item ? item->GetEntityHandle() : entt::null));
 
-				ecs::ChatSystem::Send(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, "+10.000.");
+				ecs::ChatSystem::Send(GetEntityHandle(), CHAT_TYPE_INFO, "+10.000.");
 			}
 			break;
 			break;
@@ -7876,7 +7785,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 				GiveGold((long long)canAdd);
 
 				 
-				ItemSystem::ConsumeItemEcs(EntityFactory::CreateItemEntity(g_registry, item), canUse);
+				ItemSystem::ConsumeItemEcs((item ? item->GetEntityHandle() : entt::null), canUse);
 			}
 			break;
 
@@ -7891,7 +7800,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 //				if (get_global_time() - last_use_time < interval * 60 * 60)
 //				{
 //#ifdef TEXTS_IMPROVEMENT
-//					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 508, "");
+//					ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 508, "");
 //#endif
 //					return false;
 //				}
@@ -7899,7 +7808,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 //				if (GetAlignment() == 25000000)
 //				{
 //#ifdef TEXTS_IMPROVEMENT
-//					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 674, "%d", 25000000);
+//					ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 674, "%d", 25000000);
 //#endif
 //					return false;
 //				}
@@ -7913,11 +7822,11 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 //
 //				UpdateAlignment(val * 10);
 //
-//				ItemSystem::ConsumeItemEcs(EntityFactory::CreateItemEntity(g_registry, item));
+//				ItemSystem::ConsumeItemEcs((item ? item->GetEntityHandle() : entt::null));
 //				pPC->SetFlag("mythical_peach.last_use_time", get_global_time());
 //
 //#ifdef TEXTS_IMPROVEMENT
-//				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 327, "%d", val);
+//				ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 327, "%d", val);
 //#endif
 //
 //				char buf[256 + 1];
@@ -7957,7 +7866,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 					case ARMOR_WRIST:
 					case ARMOR_NECK:
 #ifdef TEXTS_IMPROVEMENT
-						ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 675, "%s", item->GetName());
+						ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 675, "%s", item->GetName());
 #endif
 						return false;
 					}
@@ -7986,7 +7895,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 				if (socket.size() == 0)
 				{
 #ifdef TEXTS_IMPROVEMENT
-					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 675, "%s", item2->GetName());
+					ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 675, "%s", item2->GetName());
 #endif
 					return false;
 				}
@@ -7995,14 +7904,14 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 
 				if (pItemReward != nullptr)
 				{
-					ItemSystem::SetItemSocketEcs(EntityFactory::CreateItemEntity(g_registry, item2), idx, 1);
+					ItemSystem::SetItemSocketEcs((item2 ? item2->GetEntityHandle() : entt::null), idx, 1);
 
 					char buf[256 + 1];
 					snprintf(buf, sizeof(buf), "%s(%u) %s(%u)",
 						item2->GetName(), item2->GetID(), pItemReward->GetName(), pItemReward->GetID());
 					LogManager::instance().ItemLog(this, item, "USE_DETACHMENT_ONE", buf);
 
-					ItemSystem::ConsumeItemEcs(EntityFactory::CreateItemEntity(g_registry, item));
+					ItemSystem::ConsumeItemEcs((item ? item->GetEntityHandle() : entt::null));
 				}
 			}
 			break;
@@ -8035,19 +7944,19 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 							else
 								pPC->SetFlag("dyeing_hair.last_dye_level", GetLevel());
 
-							ItemSystem::ConsumeItemEcs(EntityFactory::CreateItemEntity(g_registry, item));
-							NetworkSyncSystem::UpdatePacket(AIHelpers::EcsOf(this));
+							ItemSystem::ConsumeItemEcs((item ? item->GetEntityHandle() : entt::null));
+							NetworkSyncSystem::UpdatePacket(GetEntityHandle());
 						}
 #ifdef TEXTS_IMPROVEMENT
 						else {
-							ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 97, "%d", last_dye_level + 3);
+							ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 97, "%d", last_dye_level + 3);
 						}
 #endif
 					}
 				}
 #ifdef TEXTS_IMPROVEMENT
 				else {
-					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 491, "");
+					ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 491, "");
 				}
 #endif
 			}
@@ -8066,11 +7975,11 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 #ifdef TEXTS_IMPROVEMENT
 					for (int i = 0; i < count; i++) {
 						if (dwVnums[i] == CSpecialItemGroup::GOLD) {
-							ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 102, "%d", dwCounts[i]);
+							ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 102, "%d", dwCounts[i]);
 						}
 					}
 #endif
-					ItemSystem::ConsumeItemEcs(EntityFactory::CreateItemEntity(g_registry, item));
+					ItemSystem::ConsumeItemEcs((item ? item->GetEntityHandle() : entt::null));
 				}
 			}
 			break;
@@ -8086,19 +7995,19 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 
 				if (item->GetVnum() == ITEM_VALENTINE_ROSE && SEX_MALE == GET_SEX(this)) {
 #ifdef TEXTS_IMPROVEMENT
-					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 383, "");
+					ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 383, "");
 #endif
 					return false;
 				}
 				else if (item->GetVnum() == ITEM_VALENTINE_CHOCOLATE && SEX_FEMALE == GET_SEX(this)) {
 #ifdef TEXTS_IMPROVEMENT
-					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 382, "");
+					ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 382, "");
 #endif
 					return false;
 				}
 
 				if (GiveItemFromSpecialItemGroup(dwBoxVnum, dwVnums, dwCounts, item_gets, count))
-					ItemSystem::ConsumeItemEcs(EntityFactory::CreateItemEntity(g_registry, item));
+					ItemSystem::ConsumeItemEcs((item ? item->GetEntityHandle() : entt::null));
 			}
 			break;
 
@@ -8113,19 +8022,19 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 
 				if (item->GetVnum() == ITEM_WHITEDAY_ROSE && SEX_MALE == GET_SEX(this)) {
 #ifdef TEXTS_IMPROVEMENT
-					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 383, "");
+					ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 383, "");
 #endif
 					return false;
 				}
 				else if (item->GetVnum() == ITEM_WHITEDAY_CANDY && SEX_FEMALE == GET_SEX(this)) {
 #ifdef TEXTS_IMPROVEMENT
-					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 382, "");
+					ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 382, "");
 #endif
 					return false;
 				}
 
 				if (GiveItemFromSpecialItemGroup(dwBoxVnum, dwVnums, dwCounts, item_gets, count))
-					ItemSystem::ConsumeItemEcs(EntityFactory::CreateItemEntity(g_registry, item));
+					ItemSystem::ConsumeItemEcs((item ? item->GetEntityHandle() : entt::null));
 			}
 			break;
 
@@ -8146,7 +8055,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 						LogManager::instance().ItemLog(this, item, "MOONLIGHT_GET", buf);
 
 						//ITEM_MANAGER::instance().RemoveItem(item);
-						ItemSystem::ConsumeItemEcs(EntityFactory::CreateItemEntity(g_registry, item));
+						ItemSystem::ConsumeItemEcs((item ? item->GetEntityHandle() : entt::null));
 
 						switch (dwVnums[i])
 						{
@@ -8157,37 +8066,37 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 
 						case CSpecialItemGroup::MOB:
 #ifdef TEXTS_IMPROVEMENT
-							ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 378, "");
+							ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 378, "");
 #endif
 							break;
 
 						case CSpecialItemGroup::SLOW:
 #ifdef TEXTS_IMPROVEMENT
-							ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 377, "");
+							ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 377, "");
 #endif
 							break;
 
 						case CSpecialItemGroup::DRAIN_HP:
 #ifdef TEXTS_IMPROVEMENT
-							ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 373, "");
+							ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 373, "");
 #endif
 							break;
 
 						case CSpecialItemGroup::POISON:
 #ifdef TEXTS_IMPROVEMENT
-							ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 376, "");
+							ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 376, "");
 #endif
 							break;
 #ifdef ENABLE_WOLFMAN_CHARACTER
 						case CSpecialItemGroup::BLEEDING:
 #ifdef TEXTS_IMPROVEMENT
-							ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 379, "");
+							ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 379, "");
 #endif
 							break;
 #endif
 						case CSpecialItemGroup::MOB_GROUP:
 #ifdef TEXTS_IMPROVEMENT
-							ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 380, "");
+							ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 380, "");
 #endif
 							break;
 
@@ -8195,9 +8104,9 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 							//#ifdef TEXTS_IMPROVEMENT
 							//												if (item_gets[i]) {
 							//													if (dwCounts[i] > 1) {
-							//														ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 374, "%d#%s", dwCounts[i], item_gets[i]->GetName());
+							//														ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 374, "%d#%s", dwCounts[i], item_gets[i]->GetName());
 							//													} else {
-							//														ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 375, "%s", item_gets[i]->GetName());
+							//														ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 375, "%s", item_gets[i]->GetName());
 							//													}
 							//												}
 							//#endif
@@ -8208,7 +8117,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 				else
 				{
 #ifdef TEXTS_IMPROVEMENT
-					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 395, "");
+					ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 395, "");
 #endif
 					return false;
 				}
@@ -8219,7 +8128,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 			{
 				//PointChange(POINT_GOLD, -iCost);
 				PointChange(POINT_STAT_RESET_COUNT, 1);
-				ItemSystem::ConsumeItemEcs(EntityFactory::CreateItemEntity(g_registry, item));
+				ItemSystem::ConsumeItemEcs((item ? item->GetEntityHandle() : entt::null));
 			}
 			break;
 
@@ -8228,7 +8137,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 				if (CArenaManager::instance().IsArenaMap(GetMapIndex()) == true)
 				{
 #ifdef TEXTS_IMPROVEMENT
-					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 667, "");
+					ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 667, "");
 #endif
 					return false;
 				}
@@ -8236,7 +8145,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 				else if (g_NoPotionsOnPVP && CPVPManager::instance().IsFighting(GetPlayerID()) && !IsAllowedPotionOnPVP(item->GetVnum()))
 				{
 #ifdef TEXTS_IMPROVEMENT
-					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 667, "");
+					ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 667, "");
 #endif
 					return false;
 				}
@@ -8248,7 +8157,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 // Ï °ø°ÝÀ» ¿Ã·ÁÁØ´Ù
 				AddAffect(AFFECT_CHINA_FIREWORK, POINT_STUN_PCT, 30, AFF_CHINA_FIREWORK, 5 * 60, 0, true);
 #endif
-				ItemSystem::ConsumeItemEcs(EntityFactory::CreateItemEntity(g_registry, item));
+				ItemSystem::ConsumeItemEcs((item ? item->GetEntityHandle() : entt::null));
 			}
 			break;
 
@@ -8257,7 +8166,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 				if (CArenaManager::instance().IsArenaMap(GetMapIndex()) == true)
 				{
 #ifdef TEXTS_IMPROVEMENT
-					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 667, "");
+					ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 667, "");
 #endif
 					return false;
 				}
@@ -8265,7 +8174,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 				else if (g_NoPotionsOnPVP && CPVPManager::instance().IsFighting(GetPlayerID()) && !IsAllowedPotionOnPVP(item->GetVnum()))
 				{
 #ifdef TEXTS_IMPROVEMENT
-					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 667, "");
+					ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 667, "");
 #endif
 					return false;
 				}
@@ -8277,23 +8186,23 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 // Ï °ø°ÝÀ» ¿Ã·ÁÁØ´Ù
 				AddAffect(AFFECT_CHINA_FIREWORK, POINT_STUN_PCT, 30, AFF_CHINA_FIREWORK, 5 * 60, 0, true);
 #endif
-				ItemSystem::ConsumeItemEcs(EntityFactory::CreateItemEntity(g_registry, item));
+				ItemSystem::ConsumeItemEcs((item ? item->GetEntityHandle() : entt::null));
 			}
 			break;
 
 			case ITEM_WONSO_BEAN_VNUM:
 				PointChange(POINT_HP, GetMaxHP() - GetHP());
-				ItemSystem::ConsumeItemEcs(EntityFactory::CreateItemEntity(g_registry, item));
+				ItemSystem::ConsumeItemEcs((item ? item->GetEntityHandle() : entt::null));
 				break;
 
 			case ITEM_WONSO_SUGAR_VNUM:
 				PointChange(POINT_SP, GetMaxSP() - GetSP());
-				ItemSystem::ConsumeItemEcs(EntityFactory::CreateItemEntity(g_registry, item));
+				ItemSystem::ConsumeItemEcs((item ? item->GetEntityHandle() : entt::null));
 				break;
 
 			case ITEM_WONSO_FRUIT_VNUM:
 				PointChange(POINT_STAMINA, GetMaxStamina() - GetStamina());
-				ItemSystem::ConsumeItemEcs(EntityFactory::CreateItemEntity(g_registry, item));
+				ItemSystem::ConsumeItemEcs((item ? item->GetEntityHandle() : entt::null));
 				break;
 
 			case 90008: // VCARD
@@ -8321,7 +8230,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 					if (m_pkChrTarget->IsPolymorphed())
 					{
 						m_pkChrTarget->SetPolymorph(0);
-						AffectSystem::RemoveAffect(AIHelpers::EcsOf(m_pkChrTarget), AFFECT_POLYMORPH);
+						AffectSystem::RemoveAffect((m_pkChrTarget ? m_pkChrTarget->GetEntityHandle() : entt::null), AFFECT_POLYMORPH);
 					}
 				}
 				else
@@ -8346,7 +8255,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 				if (ITEM_COSTUME == item2->GetType())
 				{
 #ifdef TEXTS_IMPROVEMENT
-					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 396, "");
+					ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 396, "");
 #endif
 					return false;
 				}
@@ -8357,7 +8266,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 				if (item2->GetAttributeSetIndex() == -1)
 				{
 #ifdef TEXTS_IMPROVEMENT
-					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 396, "");
+					ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 396, "");
 #endif
 					return false;
 				}
@@ -8365,7 +8274,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 				if (item2->AddRareAttribute() == true)
 				{
 #ifdef TEXTS_IMPROVEMENT
-					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 389, "");
+					ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 389, "");
 #endif
 					int iAddedIdx = item2->GetRareAttrCount() + 4;
 					char buf[21];
@@ -8381,11 +8290,11 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 						GetDesc()->GetHostName(),
 						item->GetOriginalVnum());
 
-					ItemSystem::ConsumeItemEcs(EntityFactory::CreateItemEntity(g_registry, item));
+					ItemSystem::ConsumeItemEcs((item ? item->GetEntityHandle() : entt::null));
 				}
 #ifdef TEXTS_IMPROVEMENT
 				else {
-					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 308, "");
+					ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 308, "");
 				}
 #endif
 			}
@@ -8402,7 +8311,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 				if (ITEM_COSTUME == item2->GetType()) // @fixme124
 				{
 #ifdef TEXTS_IMPROVEMENT
-					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 396, "");
+					ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 396, "");
 #endif
 					return false;
 				}
@@ -8413,7 +8322,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 				if (item2->GetAttributeSetIndex() == -1)
 				{
 #ifdef TEXTS_IMPROVEMENT
-					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 396, "");
+					ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 396, "");
 #endif
 					return false;
 				}
@@ -8424,11 +8333,11 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 					snprintf(buf, sizeof(buf), "%u", item2->GetID());
 					LogManager::instance().ItemLog(this, item, "CHANGE_RARE_ATTR", buf);
 
-					ItemSystem::ConsumeItemEcs(EntityFactory::CreateItemEntity(g_registry, item));
+					ItemSystem::ConsumeItemEcs((item ? item->GetEntityHandle() : entt::null));
 				}
 #ifdef TEXTS_IMPROVEMENT
 				else {
-					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 354, "");
+					ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 354, "");
 				}
 #endif
 			}
@@ -8445,7 +8354,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 				if (ITEM_COSTUME == item2->GetType()) // @fixme124
 				{
 #ifdef TEXTS_IMPROVEMENT
-					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 396, "");
+					ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 396, "");
 #endif
 					return false;
 				}
@@ -8456,7 +8365,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 				if (item2->GetAttributeSetIndex() == -1)
 				{
 #ifdef TEXTS_IMPROVEMENT
-					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 396, "");
+					ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 396, "");
 #endif
 					return false;
 				}
@@ -8467,11 +8376,11 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 					snprintf(buf, sizeof(buf), "%u", item2->GetID());
 					LogManager::instance().ItemLog(this, item, "CHANGE_RARE_ATTR21", buf);
 
-					ItemSystem::ConsumeItemEcs(EntityFactory::CreateItemEntity(g_registry, item));
+					ItemSystem::ConsumeItemEcs((item ? item->GetEntityHandle() : entt::null));
 				}
 #ifdef TEXTS_IMPROVEMENT
 				else {
-					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 354, "");
+					ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 354, "");
 				}
 #endif
 			}
@@ -8498,7 +8407,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 				if (CArenaManager::instance().IsArenaMap(GetMapIndex()) == true)
 				{
 #ifdef TEXTS_IMPROVEMENT
-					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 667, "");
+					ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 667, "");
 #endif
 					return false;
 				}
@@ -8506,7 +8415,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 				else if (g_NoPotionsOnPVP && CPVPManager::instance().IsFighting(GetPlayerID()) && !IsAllowedPotionOnPVP(item->GetVnum()))
 				{
 #ifdef TEXTS_IMPROVEMENT
-					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 667, "");
+					ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 667, "");
 #endif
 					return false;
 				}
@@ -8562,12 +8471,12 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 					if (-1 == pos)
 					{
 #ifdef TEXTS_IMPROVEMENT
-						ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 366, "");
+						ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 366, "");
 #endif
 						break;
 					}
 
-					ItemSystem::ConsumeItemEcs(EntityFactory::CreateItemEntity(g_registry, item));
+					ItemSystem::ConsumeItemEcs((item ? item->GetEntityHandle() : entt::null));
 
 					LPITEM item2 = ITEM_MANAGER::instance().CreateItem(item->GetVnum(), 1);
 
@@ -8580,7 +8489,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 
 					if (item->GetSocket(1) != 0)
 					{
-						ItemSystem::SetItemSocketEcs(EntityFactory::CreateItemEntity(g_registry, item2), 1, item->GetSocket(1));
+						ItemSystem::SetItemSocketEcs((item2 ? item2->GetEntityHandle() : entt::null), 1, item->GetSocket(1));
 					}
 
 					if (FindAffect(type))
@@ -8636,7 +8545,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 						{
 							RemoveAffect(pAffect2);
 							item->Lock(false);
-							ItemSystem::SetItemSocketEcs(EntityFactory::CreateItemEntity(g_registry, item), 0, false);
+							ItemSystem::SetItemSocketEcs((item ? item->GetEntityHandle() : entt::null), 0, false);
 						}
 						else
 						{
@@ -8644,7 +8553,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 							if (nullptr != old)
 							{
 								old->Lock(false);
-								ItemSystem::SetItemSocketEcs(EntityFactory::CreateItemEntity(g_registry, old), 0, false);
+								ItemSystem::SetItemSocketEcs((old ? old->GetEntityHandle() : entt::null), 0, false);
 							}
 
 							RemoveAffect(pAffect2);
@@ -8657,7 +8566,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 							{
 								RemoveAffect(pAffect2);
 								item->Lock(false);
-								ItemSystem::SetItemSocketEcs(EntityFactory::CreateItemEntity(g_registry, item), 0, false);
+								ItemSystem::SetItemSocketEcs((item ? item->GetEntityHandle() : entt::null), 0, false);
 								return true;
 							}
 							else {
@@ -8665,7 +8574,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 								if (old)
 								{
 									old->Lock(false);
-									ItemSystem::SetItemSocketEcs(EntityFactory::CreateItemEntity(g_registry, old), 0, false);
+									ItemSystem::SetItemSocketEcs((old ? old->GetEntityHandle() : entt::null), 0, false);
 								}
 							}
 						}
@@ -8674,7 +8583,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 
 					AddAffect(type, bonus, 4, item->GetID(), INFINITE_AFFECT_DURATION, 0, true, false);
 					item->Lock(true);
-					ItemSystem::SetItemSocketEcs(EntityFactory::CreateItemEntity(g_registry, item), 0, true);
+					ItemSystem::SetItemSocketEcs((item ? item->GetEntityHandle() : entt::null), 0, true);
 					AutoRecoveryItemProcess(type);
 				}
 				else
@@ -8684,7 +8593,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 						RemoveAffect(pAffect);
 
 						item->Lock(false);
-						ItemSystem::SetItemSocketEcs(EntityFactory::CreateItemEntity(g_registry, item), 0, false);
+						ItemSystem::SetItemSocketEcs((item ? item->GetEntityHandle() : entt::null), 0, false);
 					}
 					else
 					{
@@ -8693,7 +8602,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 						if (nullptr != old)
 						{
 							old->Lock(false);
-							ItemSystem::SetItemSocketEcs(EntityFactory::CreateItemEntity(g_registry, old), 0, false);
+							ItemSystem::SetItemSocketEcs((old ? old->GetEntityHandle() : entt::null), 0, false);
 						}
 
 						RemoveAffect(pAffect);
@@ -8733,7 +8642,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 							{
 								RemoveAffect(pAffect2);
 								item->Lock(false);
-								ItemSystem::SetItemSocketEcs(EntityFactory::CreateItemEntity(g_registry, item), 0, false);
+								ItemSystem::SetItemSocketEcs((item ? item->GetEntityHandle() : entt::null), 0, false);
 							}
 							else
 							{
@@ -8741,7 +8650,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 								if (nullptr != old)
 								{
 									old->Lock(false);
-									ItemSystem::SetItemSocketEcs(EntityFactory::CreateItemEntity(g_registry, old), 0, false);
+									ItemSystem::SetItemSocketEcs((old ? old->GetEntityHandle() : entt::null), 0, false);
 								}
 
 								RemoveAffect(pAffect2);
@@ -8752,7 +8661,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 						AddAffect(type, bonus, 4, item->GetID(), INFINITE_AFFECT_DURATION, 0, true, false);
 
 						item->Lock(true);
-						ItemSystem::SetItemSocketEcs(EntityFactory::CreateItemEntity(g_registry, item), 0, true);
+						ItemSystem::SetItemSocketEcs((item ? item->GetEntityHandle() : entt::null), 0, true);
 
 						AutoRecoveryItemProcess(type);
 					}
@@ -8776,7 +8685,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 				RemoveBadAffect();
 				break;
 			}
-			ItemSystem::ConsumeItem(EntityFactory::CreateItemEntity(g_registry, item));
+			ItemSystem::ConsumeItem((item ? item->GetEntityHandle() : entt::null));
 		}
 		break;
 
@@ -8794,7 +8703,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 					if (get_global_time() - last_use_time < 10 * 60)
 					{
 #ifdef TEXTS_IMPROVEMENT
-						ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 508, "");
+						ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 508, "");
 #endif
 						return false;
 					}
@@ -8804,7 +8713,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 			}
 
 			AddAffect(AFFECT_INVISIBILITY, POINT_NONE, 0, AFF_INVISIBILITY, 300, 0, true);
-			ItemSystem::ConsumeItemEcs(EntityFactory::CreateItemEntity(g_registry, item));
+			ItemSystem::ConsumeItemEcs((item ? item->GetEntityHandle() : entt::null));
 		}
 		break;
 
@@ -8815,7 +8724,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 				if (quest::CQuestManager::instance().GetEventFlag("arena_potion_limit") > 0)
 				{
 #ifdef TEXTS_IMPROVEMENT
-					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 303, "");
+					ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 303, "");
 #endif
 					return false;
 				}
@@ -8831,7 +8740,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 						if (m_nPotionLimit <= 0)
 						{
 #ifdef TEXTS_IMPROVEMENT
-							ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 362, "");
+							ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 362, "");
 #endif
 							return false;
 						}
@@ -8840,7 +8749,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 
 				default:
 #ifdef TEXTS_IMPROVEMENT
-					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 303, "");
+					ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 303, "");
 #endif
 					return false;
 				}
@@ -8849,7 +8758,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 			else if (g_NoPotionsOnPVP && CPVPManager::instance().IsFighting(GetPlayerID()) && !IsAllowedPotionOnPVP(item->GetVnum()))
 			{
 #ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 667, "");
+				ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 667, "");
 #endif
 				return false;
 			}
@@ -8909,7 +8818,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 				m_nPotionLimit--;
 
 				//RESTRICT_USE_SEED_OR_MOONBOTTLE
-				ItemSystem::ConsumeItemEcs(EntityFactory::CreateItemEntity(g_registry, item));
+				ItemSystem::ConsumeItemEcs((item ? item->GetEntityHandle() : entt::null));
 				//END_RESTRICT_USE_SEED_OR_MOONBOTTLE
 			}
 		}
@@ -8921,7 +8830,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 				if (quest::CQuestManager::instance().GetEventFlag("arena_potion_limit") > 0)
 				{
 #ifdef TEXTS_IMPROVEMENT
-					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 303, "");
+					ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 303, "");
 #endif
 					return false;
 				}
@@ -8930,7 +8839,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 			else if (g_NoPotionsOnPVP && CPVPManager::instance().IsFighting(GetPlayerID()) && !IsAllowedPotionOnPVP(item->GetVnum()))
 			{
 #ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 667, "");
+				ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 667, "");
 #endif
 				return false;
 			}
@@ -8963,7 +8872,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 			if (GetWarMap())
 				GetWarMap()->UsePotion(this, item);
 
-			ItemSystem::ConsumeItem(EntityFactory::CreateItemEntity(g_registry, item));
+			ItemSystem::ConsumeItem((item ? item->GetEntityHandle() : entt::null));
 			m_nPotionLimit--;
 			break;
 
@@ -8984,7 +8893,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 		if (GetWarMap())
 			GetWarMap()->UsePotion(this, item);
 
-		ItemSystem::ConsumeItem(EntityFactory::CreateItemEntity(g_registry, item));
+		ItemSystem::ConsumeItem((item ? item->GetEntityHandle() : entt::null));
 		break;
 
 		case USE_ABILITY_UP:
@@ -9040,7 +8949,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 		if (GetWarMap())
 			GetWarMap()->UsePotion(this, item);
 
-		ItemSystem::ConsumeItem(EntityFactory::CreateItemEntity(g_registry, item));
+		ItemSystem::ConsumeItem((item ? item->GetEntityHandle() : entt::null));
 		break;
 
 		case USE_TALISMAN:
@@ -9053,7 +8962,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 			if (GetMapIndex() == 200 || GetMapIndex() == 113)
 			{
 #ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 489, "");
+				ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 489, "");
 #endif
 				return false;
 			}
@@ -9061,7 +8970,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 			if (CArenaManager::instance().IsArenaMap(GetMapIndex()) == true)
 			{
 #ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 667, "");
+				ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 667, "");
 #endif
 				return false;
 			}
@@ -9069,7 +8978,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 			else if (g_NoPotionsOnPVP && CPVPManager::instance().IsFighting(GetPlayerID()) && !IsAllowedPotionOnPVP(item->GetVnum()))
 			{
 #ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 667, "");
+				ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 667, "");
 #endif
 				return false;
 			}
@@ -9078,7 +8987,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 			if (m_pkWarpEvent)
 			{
 #ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 434, "");
+				ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 434, "");
 #endif
 				return false;
 			}
@@ -9117,7 +9026,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 				{
 #ifdef TEXTS_IMPROVEMENT
 					if (test_server) {
-						ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 415, "");
+						ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 415, "");
 					}
 #endif
 					ProcessRecallItem(item);
@@ -9130,7 +9039,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 					if (GetDungeon())
 					{
 #ifdef TEXTS_IMPROVEMENT
-						ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 310, "%s", item->GetName());
+						ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 310, "%s", item->GetName());
 #endif
 						return false;
 					}
@@ -9162,14 +9071,14 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 			if (item2->GetType() != ITEM_COSTUME)
 			{
 #ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 396, "");
+				ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 396, "");
 #endif
 				return false;
 			}
 
 			if ((item2->GetSubType() != COSTUME_BODY) && (item2->GetSubType() != COSTUME_HAIR) && (item2->GetSubType() != COSTUME_WEAPON)) {
 #ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 396, "");
+				ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 396, "");
 #endif
 				return false;
 			}
@@ -9180,14 +9089,14 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 			if (item2->GetAttributeSetIndex() == -1)
 			{
 #ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 396, "");
+				ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 396, "");
 #endif
 				return false;
 			}
 			else if (item2->GetAttributeCount() == 0)
 			{
 #ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 354, "");
+				ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 354, "");
 #endif
 				return false;
 			}
@@ -9201,9 +9110,9 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 			}
 
 #ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 392, "");
+			ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 392, "");
 #endif
-			ItemSystem::ConsumeItemEcs(EntityFactory::CreateItemEntity(g_registry, item));
+			ItemSystem::ConsumeItemEcs((item ? item->GetEntityHandle() : entt::null));
 			break;
 		}
 		case USE_ADD_ATTR_COSTUME1:
@@ -9219,14 +9128,14 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 			if (item2->GetType() != ITEM_COSTUME)
 			{
 #ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 396, "");
+				ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 396, "");
 #endif
 				return false;
 			}
 
 			if ((item2->GetSubType() != COSTUME_BODY) && (item2->GetSubType() != COSTUME_HAIR) && (item2->GetSubType() != COSTUME_WEAPON)) {
 #ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 396, "");
+				ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 396, "");
 #endif
 				return false;
 			}
@@ -9237,7 +9146,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 			if (item2->GetAttributeSetIndex() == -1)
 			{
 #ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 396, "");
+				ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 396, "");
 #endif
 				return false;
 			}
@@ -9245,7 +9154,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 			if ((item2->GetAttributeType(ITEM_ATTRIBUTE_MAX_NUM - 2) != 0) && (item2->GetAttributeType(ITEM_ATTRIBUTE_MAX_NUM - 1) != 0))
 			{
 #ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 87, "");
+				ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 87, "");
 #endif
 				return false;
 			}
@@ -9255,7 +9164,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 			if (item2->GetAttributeType(bAttrSocketCheck) == item->GetSocket(0))
 			{
 #ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 88, "");
+				ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 88, "");
 #endif
 				return false;
 			}
@@ -9269,9 +9178,9 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 			}
 
 #ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 677, "");
+			ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 677, "");
 #endif
-			ItemSystem::ConsumeItemEcs(EntityFactory::CreateItemEntity(g_registry, item));
+			ItemSystem::ConsumeItemEcs((item ? item->GetEntityHandle() : entt::null));
 			break;
 		}
 		case USE_REMOVE_ATTR_COSTUME:
@@ -9286,14 +9195,14 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 			if (item2->GetType() != ITEM_COSTUME)
 			{
 #ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 396, "");
+				ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 396, "");
 #endif
 				return false;
 			}
 
 			if ((item2->GetSubType() != COSTUME_BODY) && (item2->GetSubType() != COSTUME_HAIR) && (item2->GetSubType() != COSTUME_WEAPON)) {
 #ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 396, "");
+				ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 396, "");
 #endif
 				return false;
 			}
@@ -9304,7 +9213,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 			if (item2->GetAttributeSetIndex() == -1)
 			{
 #ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 396, "");
+				ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 396, "");
 #endif
 				return false;
 			}
@@ -9312,7 +9221,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 			if ((item2->GetAttributeType(ITEM_ATTRIBUTE_MAX_NUM - 2) == 0) && (item2->GetAttributeType(ITEM_ATTRIBUTE_MAX_NUM - 1) == 0))
 			{
 #ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 89, "");
+				ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 89, "");
 #endif
 				return false;
 			}
@@ -9333,9 +9242,9 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 			}
 
 #ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 90, "");
+			ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 90, "");
 #endif
-			ItemSystem::ConsumeItemEcs(EntityFactory::CreateItemEntity(g_registry, item));
+			ItemSystem::ConsumeItemEcs((item ? item->GetEntityHandle() : entt::null));
 			break;
 		}
 #endif
@@ -9347,7 +9256,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 
 			if ((item2->GetType() != ITEM_COSTUME) || (item2->GetSubType() != COSTUME_STOLE)) {
 #ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 22, "%s", item->GetName());
+				ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 22, "%s", item->GetName());
 #endif
 				return false;
 			}
@@ -9366,9 +9275,9 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 			}
 
 #ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 21, "%s", item2->GetName());
+			ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 21, "%s", item2->GetName());
 #endif
-			ItemSystem::ConsumeItemEcs(EntityFactory::CreateItemEntity(g_registry, item));
+			ItemSystem::ConsumeItemEcs((item ? item->GetEntityHandle() : entt::null));
 			break;
 		}
 #endif
@@ -9380,14 +9289,14 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 
 			if (!item2->IsDragonSoul()) {
 #ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 73, "");
+				ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 73, "");
 #endif
 				return false;
 			}
 
 			if ((DragonSoul_IsDeckActivated()) && (item2->IsEquipped())) {
 #ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 76, "");
+				ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 76, "");
 #endif
 				return false;
 			}
@@ -9404,7 +9313,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 #endif
 				) || (iStep != DRAGON_SOUL_STEP_HIGHEST)) {
 #ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 75, "");
+				ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 75, "");
 #endif
 				return false;
 			}
@@ -9412,7 +9321,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 			for (int i = 0; i < ITEM_ATTRIBUTE_RARE_END; i++)
 				item2->SetForceAttribute(i, 0, 0);
 
-			bool bRet = DSManager::instance().PutAttributes(EntityFactory::CreateItemEntity(g_registry, item2));
+			bool bRet = DSManager::instance().PutAttributes((item2 ? item2->GetEntityHandle() : entt::null));
 			if (!bRet)
 				return false;
 
@@ -9423,9 +9332,9 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 			}
 
 #ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 74, "");
+			ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 74, "");
 #endif
-			ItemSystem::ConsumeItemEcs(EntityFactory::CreateItemEntity(g_registry, item));
+			ItemSystem::ConsumeItemEcs((item ? item->GetEntityHandle() : entt::null));
 			break;
 		}
 #endif
@@ -9441,12 +9350,12 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 			if ((item2->GetType() == ITEM_COSTUME) && (item2->GetSubType() == COSTUME_ACCE)) {
 				if (item2->GetSocket(ACCE_ABSORBED_SOCKET) <= 0) {
 #ifdef TEXTS_IMPROVEMENT
-					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 71, "");
+					ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 71, "");
 #endif
 					return false;
 				}
 
-				bool bClean = CleanAcceAttr(EntityFactory::CreateItemEntity(g_registry, item), EntityFactory::CreateItemEntity(g_registry, item2));
+				bool bClean = CleanAcceAttr((item ? item->GetEntityHandle() : entt::null), (item2 ? item2->GetEntityHandle() : entt::null));
 				if (bClean) {
 					{
 						char buf[21];
@@ -9455,7 +9364,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 					}
 
 #ifdef TEXTS_IMPROVEMENT
-					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 72, "");
+					ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 72, "");
 #endif
 				}
 
@@ -9463,7 +9372,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 			}
 			else {
 #ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 70, "");
+				ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 70, "");
 #endif
 				return false;
 			}
@@ -9477,21 +9386,21 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 
 			if ((item2->GetVnum() < 55701) || (item2->GetVnum() > 55711)) {
 #ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 66, "");
+				ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 66, "");
 #endif
 				return false;
 			}
 
 			if (item2->GetSocket(0) != 0) {
 #ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 67, "");
+				ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 67, "");
 #endif
 				return false;
 			}
 
 			if (item2->GetSocket(2) == 0) {
 #ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 64, "");
+				ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 64, "");
 #endif
 				return false;
 			}
@@ -9501,7 +9410,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 
 			if (item2->GetSocket(1) > int(1440 * 365)) {
 #ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 69, "");
+				ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 69, "");
 #endif
 				return false;
 			}
@@ -9512,7 +9421,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 			iNewDuration += item2->GetSocket(1);
 			if ((iNewDuration >= iLimit) && (item->GetVnum() != 86074)) {
 #ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 68, "");
+				ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 68, "");
 #endif
 				return false;
 			}
@@ -9532,9 +9441,9 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 			}
 
 #ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 65, "");
+			ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 65, "");
 #endif
-			ItemSystem::ConsumeItemEcs(EntityFactory::CreateItemEntity(g_registry, item));
+			ItemSystem::ConsumeItemEcs((item ? item->GetEntityHandle() : entt::null));
 			break;
 		}
 		case USE_PET_ENCHANT: {
@@ -9544,14 +9453,14 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 
 			if ((item2->GetVnum() < 55701) || (item2->GetVnum() > 55711)) {
 #ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 66, "");
+				ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 66, "");
 #endif
 				return false;
 			}
 
 			if (item2->GetSocket(0) != 0) {
 #ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 67, "");
+				ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 67, "");
 #endif
 				return false;
 			}
@@ -9566,21 +9475,21 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 			int iValue = item2->GetAttributeValue(idx);
 			if ((idx == 0) && (iValue >= 150)) {
 #ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 63, "");
+				ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 63, "");
 #endif
 				return false;
 			}
 
 			if ((idx == 1) && (iValue >= 100)) {
 #ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 63, "");
+				ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 63, "");
 #endif
 				return false;
 			}
 
 			if ((idx == 2) && (iValue >= 100)) {
 #ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 63, "");
+				ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 63, "");
 #endif
 				return false;
 			}
@@ -9602,16 +9511,16 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 				std::unique_ptr<SQLMsg> msg(DBManager::instance().DirectQuery("UPDATE player.new_petsystem SET bonus%d = %d WHERE id = %lu ", idx, iMax, item2->GetID()));
 
 #ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 61, "");
+				ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 61, "");
 #endif
 			}
 #ifdef TEXTS_IMPROVEMENT
 			else {
-				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 62, "");
+				ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 62, "");
 			}
 #endif
 
-			ItemSystem::ConsumeItemEcs(EntityFactory::CreateItemEntity(g_registry, item));
+			ItemSystem::ConsumeItemEcs((item ? item->GetEntityHandle() : entt::null));
 			break;
 		}
 #endif
@@ -9629,7 +9538,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 			if (item2->GetVnum() >= 28330 && item2->GetVnum() <= 28343) // ¿µ¼®+3
 			{
 #ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 678, "%s", item->GetName());
+				ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 678, "%s", item->GetName());
 #endif
 				return false;
 			}
@@ -9642,7 +9551,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 #ifdef ENABLE_ACCE_SYSTEM
 			if (item->GetValue(0) == ACCE_CLEAN_ATTR_VALUE0)
 			{
-				if (!CleanAcceAttr(EntityFactory::CreateItemEntity(g_registry, item), EntityFactory::CreateItemEntity(g_registry, item2)))
+				if (!CleanAcceAttr((item ? item->GetEntityHandle() : entt::null), (item2 ? item2->GetEntityHandle() : entt::null)))
 					return false;
 
 				return true;
@@ -9656,7 +9565,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 				}
 #ifdef TEXTS_IMPROVEMENT
 				else {
-					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 679, "%s", item->GetName());
+					ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 679, "%s", item->GetName());
 				}
 #endif
 			}
@@ -9676,7 +9585,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 			if (ITEM_COSTUME == item2->GetType() || item2->GetWearFlag() == WEARABLE_PENDANT || item2->IsDragonSoul())
 			{
 #ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 791, "");
+				ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 791, "");
 #endif
 				return false;
 			}
@@ -9684,7 +9593,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 			if (item2->GetAttributeCount() < 5)
 			{
 #ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 792, "");
+				ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 792, "");
 #endif
 				return false;
 			}
@@ -9692,7 +9601,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 			if (item2->GetLockedAttr() != -1)
 			{
 #ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 793, "");
+				ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 793, "");
 #endif
 				return false;
 			}
@@ -9706,7 +9615,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 				return false;
 
 			item2->AddLockedAttr();
-			ItemSystem::ConsumeItemEcs(EntityFactory::CreateItemEntity(g_registry, item));
+			ItemSystem::ConsumeItemEcs((item ? item->GetEntityHandle() : entt::null));
 		}
 		break;
 		case USE_CHANGE_ATTRIBUTE_LOCK:
@@ -9719,7 +9628,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 			if (item2->GetLockedAttr() == -1)
 			{
 #ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 795, "");
+				ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 795, "");
 #endif
 				return false;
 			}
@@ -9727,7 +9636,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 			if (ITEM_COSTUME == item2->GetType() /*|| item2->GetWearFlag() == WEARABLE_PENDANT*/ || item2->IsDragonSoul())
 			{
 #ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 791, "");
+				ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 791, "");
 #endif
 				return false;
 			}
@@ -9743,7 +9652,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 
 
 			item2->ChangeLockedAttr();
-			ItemSystem::ConsumeItemEcs(EntityFactory::CreateItemEntity(g_registry, item));
+			ItemSystem::ConsumeItemEcs((item ? item->GetEntityHandle() : entt::null));
 		}
 		break;
 		case USE_DELETE_ATTRIBUTE_LOCK:
@@ -9755,7 +9664,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 			if (item2->GetLockedAttr() == -1)
 			{
 #ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 795, "");
+				ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 795, "");
 #endif
 				return false;
 			}
@@ -9768,7 +9677,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 			if (ITEM_COSTUME == item2->GetType() || item2->IsDragonSoul())
 			{
 #ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 680, "");
+				ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 680, "");
 #endif
 				return false;
 			}
@@ -9777,7 +9686,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 				return false;
 
 			item2->RemoveLockedAttr();
-			ItemSystem::ConsumeItemEcs(EntityFactory::CreateItemEntity(g_registry, item));
+			ItemSystem::ConsumeItemEcs((item ? item->GetEntityHandle() : entt::null));
 		}
 		break;
 #endif
@@ -9796,7 +9705,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 			if (ITEM_COSTUME != item2->GetType())
 			{
 #ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 396, "");
+				ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 396, "");
 #endif
 				return false;
 			}
@@ -9820,7 +9729,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 			if (item2->GetAttributeSetIndex() == -1)
 			{
 #ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 396, "");
+				ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 396, "");
 #endif
 				return false;
 			}
@@ -9828,7 +9737,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 			if (item2->GetAttributeCount() == 0)
 			{
 #ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 354, "");
+				ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 354, "");
 #endif
 				return false;
 			}
@@ -9855,9 +9764,9 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 			}
 
 #ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 392, "");
+			ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 392, "");
 #endif
-			ItemSystem::ConsumeItemEcs(EntityFactory::CreateItemEntity(g_registry, item));
+			ItemSystem::ConsumeItemEcs((item ? item->GetEntityHandle() : entt::null));
 			break;
 		}
 
@@ -9891,7 +9800,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 			if (ITEM_COSTUME == item2->GetType())
 			{
 #ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 396, "");
+				ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 396, "");
 #endif
 				return false;
 			}
@@ -9913,7 +9822,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 				if (i == ITEM_SOCKET_MAX_NUM)
 				{
 #ifdef TEXTS_IMPROVEMENT
-					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 480, "");
+					ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 480, "");
 #endif
 					return false;
 				}
@@ -9923,13 +9832,13 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 				for (i = 0; i < ITEM_SOCKET_MAX_NUM; ++i)
 				{
 					if (item2->GetSocket(i) != ITEM_BROKEN_METIN_VNUM && item2->GetSocket(i) != 0)
-						ItemSystem::SetItemSocketEcs(EntityFactory::CreateItemEntity(g_registry, item2), j++, item2->GetSocket(i));
+						ItemSystem::SetItemSocketEcs((item2 ? item2->GetEntityHandle() : entt::null), j++, item2->GetSocket(i));
 				}
 
 				for (; j < ITEM_SOCKET_MAX_NUM; ++j)
 				{
 					if (item2->GetSocket(j) > 0)
-						ItemSystem::SetItemSocketEcs(EntityFactory::CreateItemEntity(g_registry, item2), j, 1);
+						ItemSystem::SetItemSocketEcs((item2 ? item2->GetEntityHandle() : entt::null), j, 1);
 				}
 
 				{
@@ -9938,7 +9847,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 					LogManager::instance().ItemLog(this, item, "CLEAN_SOCKET", buf);
 				}
 
-				ItemSystem::ConsumeItemEcs(EntityFactory::CreateItemEntity(g_registry, item));
+				ItemSystem::ConsumeItemEcs((item ? item->GetEntityHandle() : entt::null));
 
 			}
 			break;
@@ -9948,7 +9857,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 				if (item2->GetAttributeSetIndex() == -1)
 				{
 #ifdef TEXTS_IMPROVEMENT
-					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 396, "");
+					ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 396, "");
 #endif
 					return false;
 				}
@@ -9956,7 +9865,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 				if (item2->GetAttributeCount() == 0)
 				{
 #ifdef TEXTS_IMPROVEMENT
-					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 354, "");
+					ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 354, "");
 #endif
 					return false;
 				}
@@ -9987,7 +9896,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 						if (dwLastChangeItemAttrSec + dwChangeItemAttrCycle > dwNowSec)
 						{
 #ifdef TEXTS_IMPROVEMENT
-							ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 391, "%d#%d", dwChangeItemAttrCycle, dwChangeItemAttrCycle - (dwNowSec - dwLastChangeItemAttrSec));
+							ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 391, "%d#%d", dwChangeItemAttrCycle, dwChangeItemAttrCycle - (dwNowSec - dwLastChangeItemAttrSec));
 #endif
 							return false;
 						}
@@ -10056,14 +9965,14 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 					if (item->GetVnum() != 86060) {
 						if (bZodiacItem) {
 #ifdef TEXTS_IMPROVEMENT
-							ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 10, "%s", item2->GetName());
+							ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 10, "%s", item2->GetName());
 #endif
 							return false;
 						}
 					}
 					else if (!bZodiacItem) {
 #ifdef TEXTS_IMPROVEMENT
-						ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 9, "%s", item2->GetName());
+						ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 9, "%s", item2->GetName());
 #endif
 						return false;
 					}
@@ -10078,7 +9987,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 					if (item2->GetType() == ITEM_ARMOR && item2->GetSubType() == ARMOR_PENDANT)
 					{
 						item2->ChangeAttribute();
-						ItemSystem::ConsumeItemEcs(EntityFactory::CreateItemEntity(g_registry, item));
+						ItemSystem::ConsumeItemEcs((item ? item->GetEntityHandle() : entt::null));
 #ifdef ENABLE_RANKING
 						SetRankPoints(13, GetRankPoints(13) + 1);
 #endif
@@ -10087,7 +9996,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 					else
 					{
 #ifdef TEXTS_IMPROVEMENT
-						ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 681, "");
+						ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 681, "");
 #endif
 						return false;
 					}
@@ -10095,7 +10004,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 				else if (item2->GetType() == ITEM_ARMOR && item2->GetSubType() == ARMOR_PENDANT)
 				{
 #ifdef TEXTS_IMPROVEMENT
-					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 850, "");
+					ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 850, "");
 #endif
 					return false;
 				}
@@ -10160,7 +10069,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 #else
 								int iLimit = 40;
 #endif
-								ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 682, "%d", iLimit);
+								ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 682, "%d", iLimit);
 #endif
 								break;
 							}
@@ -10168,7 +10077,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 						else
 						{
 #ifdef TEXTS_IMPROVEMENT
-							ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 683, "");
+							ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 683, "");
 #endif
 							break;
 						}
@@ -10203,7 +10112,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 				}
 
 #ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 392, "");
+				ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 392, "");
 #endif
 
 				{
@@ -10212,7 +10121,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 					LogManager::instance().ItemLog(this, item, "CHANGE_ATTRIBUTE", buf);
 				}
 
-				ItemSystem::ConsumeItemEcs(EntityFactory::CreateItemEntity(g_registry, item));
+				ItemSystem::ConsumeItemEcs((item ? item->GetEntityHandle() : entt::null));
 #ifdef ENABLE_RANKING
 				if (item->GetVnum() == 86051 || item->GetVnum() == 88965)
 					SetRankPoints(13, GetRankPoints(13) + 1);
@@ -10225,7 +10134,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 				if (item2->GetAttributeSetIndex() == -1)
 				{
 #ifdef TEXTS_IMPROVEMENT
-					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 396, "");
+					ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 396, "");
 #endif
 					return false;
 				}
@@ -10240,20 +10149,20 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 							if (item2->GetAttributeCount() == 4)
 							{
 #if defined(TEXTS_IMPROVEMENT)
-								ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 1359, "");
+								ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 1359, "");
 #endif
 								return false;
 							}
 #endif
 
-							ItemSystem::AddItemAttributeEcs(EntityFactory::CreateItemEntity(g_registry, item2));
-							ItemSystem::ConsumeItemEcs(EntityFactory::CreateItemEntity(g_registry, item));
+							ItemSystem::AddItemAttributeEcs((item2 ? item2->GetEntityHandle() : entt::null));
+							ItemSystem::ConsumeItemEcs((item ? item->GetEntityHandle() : entt::null));
 							return true;
 						}
 						else
 						{
 #ifdef TEXTS_IMPROVEMENT
-							ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 681, "");
+							ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 681, "");
 #endif
 							return false;
 						}
@@ -10261,7 +10170,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 					else if (item2->GetType() == ITEM_ARMOR && item2->GetSubType() == ARMOR_PENDANT)
 					{
 #ifdef TEXTS_IMPROVEMENT
-						ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 684, "");
+						ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 684, "");
 #endif
 						return false;
 					}
@@ -10305,7 +10214,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 #else
 								int iLimit = 40;
 #endif
-								ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 682, "%d", iLimit);
+								ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 682, "%d", iLimit);
 #endif
 								break;
 							}
@@ -10313,7 +10222,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 						else
 						{
 #ifdef TEXTS_IMPROVEMENT
-							ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 683, "");
+							ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 683, "");
 #endif
 							break;
 						}
@@ -10327,13 +10236,13 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 #ifdef ENABLE_MAX_ADD_ATTRIBUTE
 						short AttributeCount = abs(1 - item->GetAttributeCount());//1 bonuszt ad hozz?a z?d er?
 						for (int i = 0; i < AttributeCount; i++)
-							ItemSystem::AddItemAttributeEcs(EntityFactory::CreateItemEntity(g_registry, item2));
-						ItemSystem::ConsumeItemEcs(EntityFactory::CreateItemEntity(g_registry, item));// elvesz 1 db ot
+							ItemSystem::AddItemAttributeEcs((item2 ? item2->GetEntityHandle() : entt::null));
+						ItemSystem::ConsumeItemEcs((item ? item->GetEntityHandle() : entt::null));// elvesz 1 db ot
 #else
-						ItemSystem::AddItemAttributeEcs(EntityFactory::CreateItemEntity(g_registry, item2));
+						ItemSystem::AddItemAttributeEcs((item2 ? item2->GetEntityHandle() : entt::null));
 #endif
 #ifdef TEXTS_IMPROVEMENT
-						ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 389, "");
+						ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 389, "");
 #endif
 						int iAddedIdx = item2->GetAttributeCount() - 1;
 						LogManager::instance().ItemLog(
@@ -10350,17 +10259,17 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 					else
 					{
 #ifdef TEXTS_IMPROVEMENT
-						ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 390, "");
+						ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 390, "");
 #endif
 						LogManager::instance().ItemLog(this, item, "ADD_ATTRIBUTE_FAIL", buf);
 					}
 
-					ItemSystem::ConsumeItemEcs(EntityFactory::CreateItemEntity(g_registry, item));
+					ItemSystem::ConsumeItemEcs((item ? item->GetEntityHandle() : entt::null));
 #endif
 				}
 #ifdef TEXTS_IMPROVEMENT
 				else {
-					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 308, "");
+					ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 308, "");
 				}
 #endif
 				break;
@@ -10374,7 +10283,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 				if (item2->GetAttributeSetIndex() == -1)
 				{
 #ifdef TEXTS_IMPROVEMENT
-					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 396, "");
+					ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 396, "");
 #endif
 					return false;
 				}
@@ -10389,15 +10298,15 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 						{
 							if (number(1, 100) <= 75) // % Successo di inserimeno Sfera Benedetta 75%
 							{
-								ItemSystem::AddItemAttributeEcs(EntityFactory::CreateItemEntity(g_registry, item2));
-								ItemSystem::ConsumeItemEcs(EntityFactory::CreateItemEntity(g_registry, item));
+								ItemSystem::AddItemAttributeEcs((item2 ? item2->GetEntityHandle() : entt::null));
+								ItemSystem::ConsumeItemEcs((item ? item->GetEntityHandle() : entt::null));
 								return true;
 							}
 							else
 							{
-								ItemSystem::ConsumeItemEcs(EntityFactory::CreateItemEntity(g_registry, item));
+								ItemSystem::ConsumeItemEcs((item ? item->GetEntityHandle() : entt::null));
 #ifdef TEXTS_IMPROVEMENT
-								ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 390, "");
+								ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 390, "");
 #endif
 								return false;
 							}
@@ -10405,7 +10314,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 						else
 						{
 #ifdef TEXTS_IMPROVEMENT
-							ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 681, "");
+							ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 681, "");
 #endif
 							return false;
 						}
@@ -10413,7 +10322,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 					else if (item2->GetType() == ITEM_ARMOR && item2->GetSubType() == ARMOR_PENDANT)
 					{
 #ifdef TEXTS_IMPROVEMENT
-						ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 684, "");
+						ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 684, "");
 #endif
 						return false;
 					}
@@ -10428,12 +10337,12 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 #ifdef ENABLE_MAX_ADD_ATTRIBUTE
 						short AttributeCount = abs(1 - item->GetAttributeCount());
 						for (int i = 0; i < AttributeCount; i++)
-							ItemSystem::AddItemAttributeEcs(EntityFactory::CreateItemEntity(g_registry, item2));
+							ItemSystem::AddItemAttributeEcs((item2 ? item2->GetEntityHandle() : entt::null));
 #else
-						ItemSystem::AddItemAttributeEcs(EntityFactory::CreateItemEntity(g_registry, item2));
+						ItemSystem::AddItemAttributeEcs((item2 ? item2->GetEntityHandle() : entt::null));
 #endif
 #ifdef TEXTS_IMPROVEMENT
-						ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 389, "");
+						ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 389, "");
 #endif
 						int iAddedIdx = item2->GetAttributeCount() - 1;
 						LogManager::instance().ItemLog(
@@ -10449,23 +10358,23 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 					else
 					{
 #ifdef TEXTS_IMPROVEMENT
-						ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 390, "");
+						ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 390, "");
 #endif
 						LogManager::instance().ItemLog(this, item, "ADD_ATTRIBUTE2_FAIL", buf);
 					}
 
-					ItemSystem::ConsumeItemEcs(EntityFactory::CreateItemEntity(g_registry, item));
+					ItemSystem::ConsumeItemEcs((item ? item->GetEntityHandle() : entt::null));
 				}
 				else if (item2->GetAttributeCount() == 5)
 				{
 #ifdef TEXTS_IMPROVEMENT
-					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 308, "");
+					ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 308, "");
 #endif
 				}
 				else if (item2->GetAttributeCount() < 4)
 				{
 #ifdef TEXTS_IMPROVEMENT
-					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 339, "%d#%d#%d", 4, item2->GetAttributeCount(), 4);
+					ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 339, "%d#%d#%d", 4, item2->GetAttributeCount(), 4);
 #endif
 				}
 				else
@@ -10481,7 +10390,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 				snprintf(buf, sizeof(buf), "%u", item2->GetID());
 				if (item2->GetType() == ITEM_BELT)
 				{
-					ecs::ChatSystem::Send(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, "You can't add new slot's to belt items");
+					ecs::ChatSystem::Send(GetEntityHandle(), CHAT_TYPE_INFO, "You can't add new slot's to belt items");
 					return false;
 					
 				}
@@ -10497,30 +10406,30 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 						{
 							item2->SetAccessorySocketMaxGrade(item2->GetAccessorySocketMaxGrade() + 1);
 #ifdef TEXTS_IMPROVEMENT
-							ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 387, "");
+							ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 387, "");
 #endif
 							LogManager::instance().ItemLog(this, item, "ADD_SOCKET_SUCCESS", buf);
 						}
 						else
 						{
 #ifdef TEXTS_IMPROVEMENT
-							ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 386, "");
+							ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 386, "");
 #endif
 							LogManager::instance().ItemLog(this, item, "ADD_SOCKET_FAIL", buf);
 						}
 
-						ItemSystem::ConsumeItemEcs(EntityFactory::CreateItemEntity(g_registry, item));
+						ItemSystem::ConsumeItemEcs((item ? item->GetEntityHandle() : entt::null));
 					}
 #ifdef TEXTS_IMPROVEMENT
 					else {
-						ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 428, "");
+						ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 428, "");
 					}
 #endif
 				}
 				else
 				{
 #ifdef TEXTS_IMPROVEMENT
-					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 425, "");
+					ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 425, "");
 #endif
 				}
 			}
@@ -10534,7 +10443,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 #ifdef ENABLE_INFINITE_RAFINES
 						if (item2->GetSocket(0) > 86400 || item2->GetSocket(1) > 86400 || item2->GetSocket(2) > 86400) {
 #ifdef TEXTS_IMPROVEMENT
-							ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 859, "");
+							ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 859, "");
 #endif
 							return false;
 						}
@@ -10548,29 +10457,29 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 							//{
 							item2->SetAccessorySocketGrade(item2->GetAccessorySocketGrade() + 1);
 #ifdef TEXTS_IMPROVEMENT
-							ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 452, "");
+							ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 452, "");
 #endif
 							LogManager::instance().ItemLog(this, item, "PUT_SOCKET_SUCCESS", buf);
 							//}
 							//else
 							//{
 //#ifdef TEXTS_IMPROVEMENT
-													//ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 453, "");
+													//ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 453, "");
 //#endif
 													//LogManager::instance().ItemLog(this, item, "PUT_SOCKET_FAIL", buf);
 												//}
 
-							ItemSystem::ConsumeItemEcs(EntityFactory::CreateItemEntity(g_registry, item));
+							ItemSystem::ConsumeItemEcs((item ? item->GetEntityHandle() : entt::null));
 						}
 						else
 						{
 #ifdef TEXTS_IMPROVEMENT
 							if (item2->GetAccessorySocketMaxGrade() == 0 || item2->GetAccessorySocketMaxGrade() < ITEM_ACCESSORY_SOCKET_MAX_NUM) {
-								ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 297, "");
-								ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 298, "");
+								ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 297, "");
+								ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 298, "");
 							}
 							else {
-								ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 337, "");
+								ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 337, "");
 							}
 #endif
 						}
@@ -10579,7 +10488,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 					else if (item->CanPutInto2(item2)) {
 						if ((item2->GetSocket(0) > 5 && item2->GetSocket(0) <= 86400) || (item2->GetSocket(1) > 5 && item2->GetSocket(1) <= 86400) || (item2->GetSocket(2) > 5 && item2->GetSocket(2) <= 86400)) {
 #ifdef TEXTS_IMPROVEMENT
-							ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 860, "");
+							ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 860, "");
 #endif
 							return false;
 						}
@@ -10594,41 +10503,41 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 							{
 								item2->SetAccessorySocketGrade(item2->GetAccessorySocketGrade() + 1, infinite);
 #ifdef TEXTS_IMPROVEMENT
-								ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 452, "");
+								ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 452, "");
 #endif
 								LogManager::instance().ItemLog(this, item, "PUT_SOCKET_SUCCESS", buf);
 							}
 							else
 							{
 #ifdef TEXTS_IMPROVEMENT
-								ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 453, "");
+								ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 453, "");
 #endif
 								LogManager::instance().ItemLog(this, item, "PUT_SOCKET_FAIL", buf);
 							}
 
-							ItemSystem::ConsumeItemEcs(EntityFactory::CreateItemEntity(g_registry, item));
+							ItemSystem::ConsumeItemEcs((item ? item->GetEntityHandle() : entt::null));
 						}
 						else
 						{
 #ifdef TEXTS_IMPROVEMENT
 							if (item2->GetAccessorySocketMaxGrade() == 0 || item2->GetAccessorySocketMaxGrade() < ITEM_ACCESSORY_SOCKET_MAX_NUM) {
-								ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 297, "");
-								ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 298, "");
+								ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 297, "");
+								ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 298, "");
 							}
 							else {
-								ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 337, "");
+								ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 337, "");
 							}
 #endif
 						}
 					}
 #endif
 					else {
-						ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 425, "");
+						ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 425, "");
 					}
 				}
 				else {
 #ifdef TEXTS_IMPROVEMENT
-					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 425, "");
+					ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 425, "");
 #endif
 				}
 				break;
@@ -10646,12 +10555,12 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 
 			if (m_pkFishingEvent
 #ifdef ENABLE_NEW_FISHING_SYSTEM
-				|| m_pkFishingNewEvent
+				|| ActivitySystem::IsFishing(GetEntityHandle())
 #endif
 				)
 			{
 #ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 277, "");
+				ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 277, "");
 #endif
 				return false;
 			}
@@ -10663,14 +10572,14 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 
 #ifdef TEXTS_IMPROVEMENT
 			if (weapon->GetSocket(2)) {
-				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 898, "%s", item->GetName());
+				ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 898, "%s", item->GetName());
 			}
 			else {
-				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 282, "%s", item->GetName());
+				ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 282, "%s", item->GetName());
 			}
 #endif
-			ItemSystem::SetItemSocketEcs(EntityFactory::CreateItemEntity(g_registry, weapon), 2, item->GetValue(0));
-			ItemSystem::ConsumeItemEcs(EntityFactory::CreateItemEntity(g_registry, item));
+			ItemSystem::SetItemSocketEcs((weapon ? weapon->GetEntityHandle() : entt::null), 2, item->GetValue(0));
+			ItemSystem::ConsumeItemEcs((item ? item->GetEntityHandle() : entt::null));
 		}
 		break;
 
@@ -10683,7 +10592,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 		{
 			if (FindAffect(item->GetValue(0), aApplyInfo[item->GetValue(1)].bPointType)) {
 #ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 442, "");
+				ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 442, "");
 #endif
 			}
 			else
@@ -10696,7 +10605,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 					if (CPCBangManager::instance().IsPCBangIP(GetDesc()->GetHostName()) == false)
 					{
 #ifdef TEXTS_IMPROVEMENT
-						ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 426, "");
+						ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 426, "");
 #endif
 						return false;
 					}
@@ -10704,14 +10613,14 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 				// END_PC_BANG_ITEM_ADD
 
 				AddAffect(item->GetValue(0), aApplyInfo[item->GetValue(1)].bPointType, item->GetValue(2), 0, item->GetValue(3), 0, false);
-				ItemSystem::ConsumeItemEcs(EntityFactory::CreateItemEntity(g_registry, item));
+				ItemSystem::ConsumeItemEcs((item ? item->GetEntityHandle() : entt::null));
 			}
 		}
 		break;
 
 		case USE_CREATE_STONE:
-			ItemSystem::AutoGiveItemEcs(AIHelpers::EcsOf(this), number(28000, 28013));
-			ItemSystem::ConsumeItemEcs(EntityFactory::CreateItemEntity(g_registry, item));
+			ItemSystem::AutoGiveItemEcs(GetEntityHandle(), number(28000, 28013));
+			ItemSystem::ConsumeItemEcs((item ? item->GetEntityHandle() : entt::null));
 			break;
 
 			// ¹°¾à Á¦Á¶ ½º�
@@ -10729,7 +10638,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 				if (pSource1 == nullptr)
 				{
 #ifdef TEXTS_IMPROVEMENT
-					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 350, "");
+					ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 350, "");
 #endif
 					return false;
 				}
@@ -10740,7 +10649,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 				if (pSource2 == nullptr)
 				{
 #ifdef TEXTS_IMPROVEMENT
-					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 350, "");
+					ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 350, "");
 #endif
 					return false;
 				}
@@ -10751,12 +10660,12 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 				if (pSource1->GetCount() < dwSourceCount1)
 				{
 #ifdef TEXTS_IMPROVEMENT
-					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 454, "%s#%d#%d", pSource1->GetName(), dwSourceCount1, pSource1->GetCount());
+					ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 454, "%s#%d#%d", pSource1->GetName(), dwSourceCount1, pSource1->GetCount());
 #endif
 					return false;
 				}
 
-				ItemSystem::ConsumeItemEcs(EntityFactory::CreateItemEntity(g_registry, pSource1), dwSourceCount1);
+				ItemSystem::ConsumeItemEcs((pSource1 ? pSource1->GetEntityHandle() : entt::null), dwSourceCount1);
 			}
 
 			if (pSource2 != nullptr)
@@ -10764,12 +10673,12 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 				if (pSource2->GetCount() < dwSourceCount2)
 				{
 #ifdef TEXTS_IMPROVEMENT
-					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 454, "%s#%d#%d", pSource2->GetName(), dwSourceCount1, pSource2->GetCount());
+					ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 454, "%s#%d#%d", pSource2->GetName(), dwSourceCount1, pSource2->GetCount());
 #endif
 					return false;
 				}
 
-				ItemSystem::ConsumeItemEcs(EntityFactory::CreateItemEntity(g_registry, pSource2), dwSourceCount2);
+				ItemSystem::ConsumeItemEcs((pSource2 ? pSource2->GetEntityHandle() : entt::null), dwSourceCount2);
 			}
 
 			LPITEM pBottle = FindSpecifyItem(50901);
@@ -10777,22 +10686,22 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 			if (!pBottle || pBottle->GetCount() < 1)
 			{
 #ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 359, "");
+				ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 359, "");
 #endif
 				return false;
 			}
 
-			ItemSystem::ConsumeItemEcs(EntityFactory::CreateItemEntity(g_registry, pBottle));
+			ItemSystem::ConsumeItemEcs((pBottle ? pBottle->GetEntityHandle() : entt::null));
 
 			if (number(1, 100) > item->GetValue(5))
 			{
 #ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 347, "");
+				ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 347, "");
 #endif
 				return false;
 			}
 
-			ItemSystem::AutoGiveItemEcs(AIHelpers::EcsOf(this), item->GetValue(0));
+			ItemSystem::AutoGiveItemEcs(GetEntityHandle(), item->GetValue(0));
 		}
 		break;
 		}
@@ -10838,7 +10747,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 				(insV4 && (insV4 == exV5 || insV4 == exV4)))
 			{
 #ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 230, "");
+				ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 230, "");
 #endif
 				return false;
 			}
@@ -10848,7 +10757,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 			if (item->GetValue(5) == p->alValues[5])
 			{
 #ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 230, "");
+				ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 230, "");
 #endif
 				return false;
 			}
@@ -10860,7 +10769,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 			if (!IS_SET(item->GetWearFlag(), WEARABLE_BODY) || !IS_SET(item2->GetWearFlag(), WEARABLE_BODY))
 			{
 #ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 420, "%s", item->GetName());
+				ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 420, "%s", item->GetName());
 #endif
 				return false;
 			}
@@ -10870,7 +10779,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 			if (!IS_SET(item->GetWearFlag(), WEARABLE_WEAPON))
 			{
 #ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 419, "%s", item->GetName());
+				ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 419, "%s", item->GetName());
 #endif
 				return false;
 			}
@@ -10878,7 +10787,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 		else
 		{
 #ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 357, "");
+			ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 357, "");
 #endif
 			return false;
 		}
@@ -10894,22 +10803,22 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 #endif
 				{
 #ifdef TEXTS_IMPROVEMENT
-					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 340, "");
+					ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 340, "");
 #endif
-					ItemSystem::SetItemSocketEcs(EntityFactory::CreateItemEntity(g_registry, item2), i, item->GetVnum());
+					ItemSystem::SetItemSocketEcs((item2 ? item2->GetEntityHandle() : entt::null), i, item->GetVnum());
 				}
 				else
 				{
-					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 341, "");
-					ItemSystem::SetItemSocketEcs(EntityFactory::CreateItemEntity(g_registry, item2), i, ITEM_BROKEN_METIN_VNUM);
+					ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 341, "");
+					ItemSystem::SetItemSocketEcs((item2 ? item2->GetEntityHandle() : entt::null), i, ITEM_BROKEN_METIN_VNUM);
 				}
 
 				LogManager::instance().ItemLog(this, item2, "SOCKET", item->GetName());
 #ifdef ENABLE_BUG_FIXES
-				ItemSystem::ConsumeItemEcs(EntityFactory::CreateItemEntity(g_registry, item));
+				ItemSystem::ConsumeItemEcs((item ? item->GetEntityHandle() : entt::null));
 #else
 #ifdef ENABLE_STONE_STACKFIX
-				ItemSystem::ConsumeItemEcs(EntityFactory::CreateItemEntity(g_registry, item));
+				ItemSystem::ConsumeItemEcs((item ? item->GetEntityHandle() : entt::null));
 #else
 				ITEM_MANAGER::instance().RemoveItem(item, "REMOVE (METIN)");
 #endif
@@ -10919,7 +10828,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 
 		if (i == ITEM_SOCKET_MAX_NUM)
 #ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 357, "%s", item2->GetName());
+			ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 357, "%s", item2->GetName());
 #endif
 	}
 	break;
@@ -10950,14 +10859,14 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 
 			if (FindAffect(affect_type, apply_type)) {
 #ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 442, "");
+				ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 442, "");
 #endif
 			}
 			else
 			{
 				if (FindAffect(AFFECT_EXP_BONUS_EURO_FREE, POINT_RESIST_MAGIC)) {
 #ifdef TEXTS_IMPROVEMENT
-					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 442, "");
+					ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 442, "");
 #endif
 				}
 				else
@@ -10969,7 +10878,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 #endif
 
 					AddAffect(affect_type, apply_type, apply_value, 0, apply_duration, 0, false);
-					ItemSystem::ConsumeItemEcs(EntityFactory::CreateItemEntity(g_registry, item));
+					ItemSystem::ConsumeItemEcs((item ? item->GetEntityHandle() : entt::null));
 				}
 			}
 		}
@@ -10986,14 +10895,14 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 		case EXTRACT_DRAGON_SOUL:
 			if (pDestItem->IsDragonSoul())
 			{
-				entt::entity destItemEntity = EntityFactory::CreateItemEntity(g_registry, pDestItem);
-				return DSManager::instance().PullOut(this, NPOS, destItemEntity, EntityFactory::CreateItemEntity(g_registry, item));
+				entt::entity destItemEntity = (pDestItem ? pDestItem->GetEntityHandle() : entt::null);
+				return DSManager::instance().PullOut(this, NPOS, destItemEntity, (item ? item->GetEntityHandle() : entt::null));
 			}
 			return false;
 		case EXTRACT_DRAGON_HEART:
 			if (pDestItem->IsDragonSoul())
 			{
-				return DSManager::instance().ExtractDragonHeart(this, EntityFactory::CreateItemEntity(g_registry, pDestItem), EntityFactory::CreateItemEntity(g_registry, item));
+				return DSManager::instance().ExtractDragonHeart(this, (pDestItem ? pDestItem->GetEntityHandle() : entt::null), (item ? item->GetEntityHandle() : entt::null));
 			}
 			return false;
 		default:
@@ -11011,7 +10920,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 		if (iCurrentMinutes < 60)
 		{
 #ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 685, "");
+			ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 685, "");
 #endif
 			return false;
 		}
@@ -11019,7 +10928,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 		if (iCurrentStrike <= 0)
 		{
 #ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 686, "");
+			ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 686, "");
 #endif
 			return false;
 		}
@@ -11045,7 +10954,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 			if (currentItem)
 			{
 				currentItem->Lock(false);
-				ItemSystem::SetItemSocketEcs(EntityFactory::CreateItemEntity(g_registry, currentItem), 1, false);
+				ItemSystem::SetItemSocketEcs((currentItem ? currentItem->GetEntityHandle() : entt::null), 1, false);
 			}
 
 			RemoveAffect(const_cast<CAffect*>(pAffect));
@@ -11054,7 +10963,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 		if (!blockUse)
 		{
 			item->Lock(true);
-			ItemSystem::SetItemSocketEcs(EntityFactory::CreateItemEntity(g_registry, item), 1, true);
+			ItemSystem::SetItemSocketEcs((item ? item->GetEntityHandle() : entt::null), 1, true);
 
 			AddAffect(iAffectID, APPLY_NONE, 0, iAffID, INFINITE_AFFECT_DURATION, item->GetID(), true, false);
 		}
@@ -11088,11 +10997,11 @@ void CHARACTER::ItemDivision(TItemPos Cell)
 void CHARACTER::SetRefineNPC(LPCHARACTER ch)
 {
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "char_item.cpp:: void CHARACTER::SetRefineNPC ");//INGAME_DEBUG_RAZOR93
+	ecs::ChatSystem::Send((ch ? ch->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "char_item.cpp:: void CHARACTER::SetRefineNPC ");//INGAME_DEBUG_RAZOR93
 #endif
 	if (ch != nullptr)
 	{
-		m_dwRefineNPCVID = ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(ch));
+		m_dwRefineNPCVID = ecs::PlayerRuntime::GetPacketVID((ch ? ch->GetEntityHandle() : entt::null));
 	}
 	else
 	{
@@ -11103,7 +11012,7 @@ void CHARACTER::SetRefineNPC(LPCHARACTER ch)
 bool CHARACTER::DoRefine(LPITEM item, bool bMoneyOnly)
 {
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, "char_item.cpp:: bool CHARACTER::DoRefine ");
+	ecs::ChatSystem::Send(GetEntityHandle(), CHAT_TYPE_INFO, "char_item.cpp:: bool CHARACTER::DoRefine ");
 #endif
 	if (!CanHandleItem(true))
 	{
@@ -11133,7 +11042,7 @@ bool CHARACTER::DoRefine(LPITEM item, bool bMoneyOnly)
 	if (result_vnum == 0)
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 305, "");
+		ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 305, "");
 #endif
 		return false;
 	}
@@ -11146,7 +11055,7 @@ bool CHARACTER::DoRefine(LPITEM item, bool bMoneyOnly)
 	if (!pProto)
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 427, "");
+		ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 427, "");
 #endif
 		return false;
 	}
@@ -11155,7 +11064,7 @@ bool CHARACTER::DoRefine(LPITEM item, bool bMoneyOnly)
 	if (GetGold() < cost)
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 232, "");
+		ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 232, "");
 #ifdef ENABLE_FEATURES_REFINE_SYSTEM
 		CRefineManager::instance().Reset_percent(this);
 #endif
@@ -11170,7 +11079,7 @@ bool CHARACTER::DoRefine(LPITEM item, bool bMoneyOnly)
 			if (CountSpecifyItem(prt->materials[i].vnum) < prt->materials[i].count)
 			{
 #ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 233, "");
+				ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 233, "");
 #endif
 				return false;
 			}
@@ -11378,7 +11287,7 @@ bool CHARACTER::DoRefineWithScroll(LPITEM item)
 	
 	//if (item && IsRefineBlockedVnum(item->GetVnum()))
 	//{
-	//	ecs::ChatSystem::Send(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, "Ezt a targyat nem lehet fejleszteni.");
+	//	ecs::ChatSystem::Send(GetEntityHandle(), CHAT_TYPE_INFO, "Ezt a targyat nem lehet fejleszteni.");
 	//	ClearRefineMode();
 	//	return false;
 	//}
@@ -11431,7 +11340,7 @@ bool CHARACTER::DoRefineWithScroll(LPITEM item)
 	if (result_vnum == 0)
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 305, "");
+		ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 305, "");
 #endif
 		return false;
 	}
@@ -11442,7 +11351,7 @@ bool CHARACTER::DoRefineWithScroll(LPITEM item)
 		
 		//if (item->GetRefineLevel() >= 4)
 		//{
-		//	ecs::ChatSystem::Send(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, "MAX +9 with this scroll!");
+		//	ecs::ChatSystem::Send(GetEntityHandle(), CHAT_TYPE_INFO, "MAX +9 with this scroll!");
 		//	return false;
 		//}
 	}
@@ -11453,7 +11362,7 @@ bool CHARACTER::DoRefineWithScroll(LPITEM item)
 		if (item->GetRefineLevel() != pkItemScroll->GetValue(1))
 		{
 #ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 417, "%s#%s", item->GetName(), pkItemScroll->GetName());
+			ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 417, "%s#%s", item->GetName(), pkItemScroll->GetName());
 #endif
 			return false;
 		}
@@ -11463,7 +11372,7 @@ bool CHARACTER::DoRefineWithScroll(LPITEM item)
 		if (item->GetType() != ITEM_METIN || item->GetRefineLevel() != 4)
 		{
 #ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 665, "%s#%s", item->GetName(), pkItemScroll->GetName());
+			ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 665, "%s#%s", item->GetName(), pkItemScroll->GetName());
 #endif
 			return false;
 		}
@@ -11474,7 +11383,7 @@ bool CHARACTER::DoRefineWithScroll(LPITEM item)
 	if (!pProto)
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 427, "");
+		ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 427, "");
 #endif
 		return false;
 	}
@@ -11482,7 +11391,7 @@ bool CHARACTER::DoRefineWithScroll(LPITEM item)
 	if (GetGold() < prt->cost)
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 232, "");
+		ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 232, "");
 #endif
 #ifdef ENABLE_FEATURES_REFINE_SYSTEM
 		CRefineManager::instance().Reset_percent(this);
@@ -11495,7 +11404,7 @@ bool CHARACTER::DoRefineWithScroll(LPITEM item)
 		if (CountSpecifyItem(prt->materials[i].vnum) < prt->materials[i].count)
 		{
 #ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 233, "");
+			ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 233, "");
 #endif
 			return false;
 		}
@@ -11577,7 +11486,7 @@ bool CHARACTER::DoRefineWithScroll(LPITEM item)
 	success_prob += CRefineManager::instance().Result(this);
 
 #endif
-	ItemSystem::ConsumeItemEcs(EntityFactory::CreateItemEntity(g_registry, pkItemScroll));
+	ItemSystem::ConsumeItemEcs((pkItemScroll ? pkItemScroll->GetEntityHandle() : entt::null));
 
 	if (prob <= success_prob)
 	{
@@ -11697,7 +11606,7 @@ bool CHARACTER::DoRefineWithScroll(LPITEM item)
 					"|cff00ff00[%s]|r Successfully upgraded:|cffffd700|H%s|h[%s]|h|r",
 					GetName(), itemlink, pkNewItem->GetName());
 
-				ecs::ChatSystem::Send(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, szChat);
+				ecs::ChatSystem::Send(GetEntityHandle(), CHAT_TYPE_INFO, szChat);
 			}
 #endif ENABLE_UPGRADE_NOTICE_BY_RAZOR93
 		}
@@ -11828,7 +11737,7 @@ bool CHARACTER::DoRefineWithScroll(LPITEM item)
 	if (result_vnum == 0)
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 305, "");
+		ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 305, "");
 #endif
 		return false;
 	}
@@ -11839,7 +11748,7 @@ bool CHARACTER::DoRefineWithScroll(LPITEM item)
 		if (item->GetRefineLevel() >= 4)
 		{
 #ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 305, "");
+			ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 305, "");
 #endif
 			return false;
 		}
@@ -11851,7 +11760,7 @@ bool CHARACTER::DoRefineWithScroll(LPITEM item)
 		if (item->GetRefineLevel() != pkItemScroll->GetValue(1))
 		{
 #ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 417, "%s#%s", item->GetName(), pkItemScroll->GetName());
+			ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 417, "%s#%s", item->GetName(), pkItemScroll->GetName());
 #endif
 			return false;
 		}
@@ -11861,7 +11770,7 @@ bool CHARACTER::DoRefineWithScroll(LPITEM item)
 		if (item->GetType() != ITEM_METIN || item->GetRefineLevel() != 4)
 		{
 #ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 665, "%s#%s", item->GetName(), pkItemScroll->GetName());
+			ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 665, "%s#%s", item->GetName(), pkItemScroll->GetName());
 #endif
 			return false;
 		}
@@ -11872,7 +11781,7 @@ bool CHARACTER::DoRefineWithScroll(LPITEM item)
 	if (!pProto)
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 427, "");
+		ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 427, "");
 #endif
 		return false;
 	}
@@ -11880,7 +11789,7 @@ bool CHARACTER::DoRefineWithScroll(LPITEM item)
 	if (GetGold() < prt->cost)
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 232, "");
+		ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 232, "");
 #endif
 #ifdef ENABLE_FEATURES_REFINE_SYSTEM
 		CRefineManager::instance().Reset_percent(this);
@@ -11893,7 +11802,7 @@ bool CHARACTER::DoRefineWithScroll(LPITEM item)
 		if (CountSpecifyItem(prt->materials[i].vnum) < prt->materials[i].count)
 		{
 #ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 233, "");
+			ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 233, "");
 #endif
 			return false;
 		}
@@ -11974,7 +11883,7 @@ bool CHARACTER::DoRefineWithScroll(LPITEM item)
 	success_prob += CRefineManager::instance().Result(this);
 
 #endif
-	ItemSystem::ConsumeItemEcs(EntityFactory::CreateItemEntity(g_registry, pkItemScroll));
+	ItemSystem::ConsumeItemEcs((pkItemScroll ? pkItemScroll->GetEntityHandle() : entt::null));
 
 	if (prob <= success_prob)
 	{
@@ -12094,7 +12003,7 @@ bool CHARACTER::DoRefineWithScroll(LPITEM item)
 					"|cff00ff00[%s]|r Successfully upgraded:|cffffd700|H%s|h[%s]|h|r",
 					GetName(), itemlink, pkNewItem->GetName());
 
-				ecs::ChatSystem::Send(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, szChat);
+				ecs::ChatSystem::Send(GetEntityHandle(), CHAT_TYPE_INFO, szChat);
 			}
 #endif ENABLE_UPGRADE_NOTICE_BY_RAZOR93
 		}
@@ -12207,7 +12116,7 @@ bool CHARACTER::DoRefineItemSoul(LPITEM item)
 	if (resultVnum == 0)
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 666, "%s", item->GetName());
+		ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 666, "%s", item->GetName());
 #endif
 		return false;
 	}
@@ -12218,7 +12127,7 @@ bool CHARACTER::DoRefineItemSoul(LPITEM item)
 	{
 		LOG_ERROR("DoRefineWithScroll NOT GET ITEM PROTO {}", item->GetRefinedVnum());
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 305, "");
+		ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 305, "");
 #endif
 		return false;
 	}
@@ -12226,7 +12135,7 @@ bool CHARACTER::DoRefineItemSoul(LPITEM item)
 	int prob = number(1, 100);
 	int successProb = pkItemScroll->GetValue(1);
 
-	ItemSystem::ConsumeItemEcs(EntityFactory::CreateItemEntity(g_registry, pkItemScroll));
+	ItemSystem::ConsumeItemEcs((pkItemScroll ? pkItemScroll->GetEntityHandle() : entt::null));
 
 	if (prob <= successProb)
 	{
@@ -12234,7 +12143,7 @@ bool CHARACTER::DoRefineItemSoul(LPITEM item)
 		if (pkNewItem)
 		{
 			uint8_t bCell = item->GetCell();
-			ecs::ChatSystem::Send(AIHelpers::EcsOf(this), CHAT_TYPE_COMMAND, "RefineSoulSuceeded");
+			ecs::ChatSystem::Send(GetEntityHandle(), CHAT_TYPE_COMMAND, "RefineSoulSuceeded");
 			ITEM_MANAGER::instance().RemoveItem(item, "REMOVE (REFINE SUCCESS)");
 
 			pkNewItem->AddToCharacter(this, TItemPos(INVENTORY, bCell));
@@ -12243,12 +12152,12 @@ bool CHARACTER::DoRefineItemSoul(LPITEM item)
 		else
 		{
 			LOG_ERROR("Cannot create item soul {}", resultVnum);
-			ecs::ChatSystem::Send(AIHelpers::EcsOf(this), CHAT_TYPE_COMMAND, "RefineSoulFailed");
+			ecs::ChatSystem::Send(GetEntityHandle(), CHAT_TYPE_COMMAND, "RefineSoulFailed");
 		}
 	}
 	else
 	{
-		ecs::ChatSystem::Send(AIHelpers::EcsOf(this), CHAT_TYPE_COMMAND, "RefineSoulFailed");
+		ecs::ChatSystem::Send(GetEntityHandle(), CHAT_TYPE_COMMAND, "RefineSoulFailed");
 	}
 
 	return true;
@@ -12271,7 +12180,7 @@ bool CHARACTER::RefineInformation(uint8_t bCell, uint8_t bType, int iAdditionalC
 	if (item->GetLockedAttr() != -1)
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 784, "");
+		ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 784, "");
 #endif
 		return false;
 	}
@@ -12281,7 +12190,7 @@ bool CHARACTER::RefineInformation(uint8_t bCell, uint8_t bType, int iAdditionalC
 	if (bType == REFINE_TYPE_MONEY_ONLY && !GetQuestFlag("deviltower_zone.can_refine"))
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 361, "");
+		ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 361, "");
 #endif
 		return false;
 	}
@@ -12298,7 +12207,7 @@ bool CHARACTER::RefineInformation(uint8_t bCell, uint8_t bType, int iAdditionalC
 	if (p.result_vnum == 0)
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 427, "");
+		ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 427, "");
 #endif
 		return false;
 	}
@@ -12308,7 +12217,7 @@ bool CHARACTER::RefineInformation(uint8_t bCell, uint8_t bType, int iAdditionalC
 		if (bType == 0)
 		{
 #ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 424, "");
+			ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 424, "");
 #endif
 			return false;
 		}
@@ -12318,7 +12227,7 @@ bool CHARACTER::RefineInformation(uint8_t bCell, uint8_t bType, int iAdditionalC
 			if (!itemScroll || item->GetVnum() == itemScroll->GetVnum())
 			{
 #ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 229, "");
+				ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 229, "");
 #endif
 				return false;
 			}
@@ -12351,7 +12260,7 @@ bool CHARACTER::RefineInformation(uint8_t bCell, uint8_t bType, int iAdditionalC
 	if (!prt)
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 427, "");
+		ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 427, "");
 #endif
 		return false;
 	}
@@ -12383,7 +12292,7 @@ bool CHARACTER::RefineInformation(uint8_t bCell, uint8_t bType, int iAdditionalC
 			{
 				//if (item->GetRefineLevel() >= 9)
 				//{
-				//	ecs::ChatSystem::Send(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, "MAX +9 with this scroll!");
+				//	ecs::ChatSystem::Send(GetEntityHandle(), CHAT_TYPE_INFO, "MAX +9 with this scroll!");
 				//	return false;
 				//}
 				success_prob += 100;
@@ -12440,7 +12349,7 @@ bool CHARACTER::RefineItem(LPITEM pkItem, LPITEM pkTarget)
 	uint32_t vnum = pkItem->GetVnum();
 	if ((vnum == 70602 || vnum == 70603 || vnum == 88958) && pkTarget->GetType() != ITEM_SOUL) {
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 1294, "%s", pkItem->GetName());
+		ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 1294, "%s", pkItem->GetName());
 #endif
 		return false;
 	}
@@ -12496,20 +12405,20 @@ bool CHARACTER::RefineItem(LPITEM pkItem, LPITEM pkTarget)
 				int32_t socket = pkTarget->GetSocket(i);
 				if (socket > 2 && socket != ITEM_BROKEN_METIN_VNUM)
 				{
-					ItemSystem::AutoGiveItemEcs(AIHelpers::EcsOf(this), socket);
+					ItemSystem::AutoGiveItemEcs(GetEntityHandle(), socket);
 					//TItemTable* pTable = ITEM_MANAGER::instance().GetTable(pkTarget->GetSocket(i));
 					//pkTarget->SetSocket(i, pTable->alValues[2]);
 					// ±úÁøµ¹·Î ´ëÃ¼ÇØÁØ´Ù
-					ItemSystem::SetItemSocketEcs(EntityFactory::CreateItemEntity(g_registry, pkTarget), i, ITEM_BROKEN_METIN_VNUM);
+					ItemSystem::SetItemSocketEcs((pkTarget ? pkTarget->GetEntityHandle() : entt::null), i, ITEM_BROKEN_METIN_VNUM);
 				}
 			}
-			ItemSystem::ConsumeItemEcs(EntityFactory::CreateItemEntity(g_registry, pkItem));
+			ItemSystem::ConsumeItemEcs((pkItem ? pkItem->GetEntityHandle() : entt::null));
 			return true;
 		}
 		else
 		{
 #ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 360, "");
+			ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 360, "");
 #endif
 			return false;
 		}
@@ -12527,11 +12436,11 @@ void CHARACTER::__OpenPrivateShop(
 #ifdef ENABLE_OPEN_SHOP_WITH_ARMOR
 #ifdef KASMIR_PAKET_SYSTEM
 	if (bKasmir) {
-		ecs::ChatSystem::Send(AIHelpers::EcsOf(this), CHAT_TYPE_COMMAND, "OpenPrivateShopKasmir");
+		ecs::ChatSystem::Send(GetEntityHandle(), CHAT_TYPE_COMMAND, "OpenPrivateShopKasmir");
 		return;
 	}
 #endif
-	ecs::ChatSystem::Send(AIHelpers::EcsOf(this), CHAT_TYPE_COMMAND, "OpenPrivateShop");
+	ecs::ChatSystem::Send(GetEntityHandle(), CHAT_TYPE_COMMAND, "OpenPrivateShop");
 #else
 	unsigned bodyPart = GetPart(PART_MAIN);
 	switch (bodyPart)
@@ -12541,17 +12450,17 @@ void CHARACTER::__OpenPrivateShop(
 	case 2: {
 #ifdef KASMIR_PAKET_SYSTEM
 		if (bKasmir) {
-			ecs::ChatSystem::Send(AIHelpers::EcsOf(this), CHAT_TYPE_COMMAND, "OpenPrivateShopKasmir");
+			ecs::ChatSystem::Send(GetEntityHandle(), CHAT_TYPE_COMMAND, "OpenPrivateShopKasmir");
 			break;
 		}
 #endif
 
-		ecs::ChatSystem::Send(AIHelpers::EcsOf(this), CHAT_TYPE_COMMAND, "OpenPrivateShop");
+		ecs::ChatSystem::Send(GetEntityHandle(), CHAT_TYPE_COMMAND, "OpenPrivateShop");
 	}
 		  break;
 	default:
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 503, "");
+		ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 503, "");
 #endif
 		break;
 	}
@@ -12564,7 +12473,7 @@ void CHARACTER::SendMyShopPriceListCmd(uint32_t dwItemVnum, int64_t dwItemPrice)
 {
 	char szLine[256];
 	snprintf(szLine, sizeof(szLine), "MyShopPriceList %u %lld", dwItemVnum, dwItemPrice);
-	ecs::ChatSystem::Send(AIHelpers::EcsOf(this), CHAT_TYPE_COMMAND, szLine);
+	ecs::ChatSystem::Send(GetEntityHandle(), CHAT_TYPE_COMMAND, szLine);
 	LOG_INFO("{}", szLine);
 }
 
@@ -12677,26 +12586,26 @@ void TransformRefineItem(LPITEM pkOldItem, LPITEM pkNewItem)
 void NotifyRefineSuccess(LPCHARACTER ch, LPITEM item, const char* way)
 {
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "char_item.cpp::void NotifyRefineSuccess ");//INGAME_DEBUG_RAZOR93
+	ecs::ChatSystem::Send((ch ? ch->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "char_item.cpp::void NotifyRefineSuccess ");//INGAME_DEBUG_RAZOR93
 #endif
 	if (nullptr != ch && item != nullptr)
 	{
-		ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_COMMAND, "RefineSuceeded");
+		ecs::ChatSystem::Send((ch ? ch->GetEntityHandle() : entt::null), CHAT_TYPE_COMMAND, "RefineSuceeded");
 
-		LogManager::instance().RefineLog(ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)), item->GetName(), item->GetID(), item->GetRefineLevel(), 1, way);
+		LogManager::instance().RefineLog(ecs::PlayerRuntime::GetPlayerID((ch ? ch->GetEntityHandle() : entt::null)), item->GetName(), item->GetID(), item->GetRefineLevel(), 1, way);
 	}
 }
 
 void NotifyRefineFail(LPCHARACTER ch, LPITEM item, const char* way, int success)
 {
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "char_item.cpp:: void NotifyRefineFail ");//INGAME_DEBUG_RAZOR93
+	ecs::ChatSystem::Send((ch ? ch->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "char_item.cpp:: void NotifyRefineFail ");//INGAME_DEBUG_RAZOR93
 #endif
 	if (nullptr != ch && nullptr != item)
 	{
-		ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_COMMAND, "RefineFailed");
+		ecs::ChatSystem::Send((ch ? ch->GetEntityHandle() : entt::null), CHAT_TYPE_COMMAND, "RefineFailed");
 
-		LogManager::instance().RefineLog(ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)), item->GetName(), item->GetID(), item->GetRefineLevel(), success, way);
+		LogManager::instance().RefineLog(ecs::PlayerRuntime::GetPlayerID((ch ? ch->GetEntityHandle() : entt::null)), item->GetName(), item->GetID(), item->GetRefineLevel(), success, way);
 	}
 }
 
@@ -12727,14 +12636,14 @@ void CHARACTER::RemoveSpecifyTypeItem(uint8_t type, int count)
 		if (count >= itemCount)
 		{
 			count -= itemCount;
-			ItemSystem::ConsumeItemEcs(EntityFactory::CreateItemEntity(g_registry, item), itemCount);
+			ItemSystem::ConsumeItemEcs((item ? item->GetEntityHandle() : entt::null), itemCount);
 
 			if (0 == count)
 				return;
 		}
 		else
 		{
-			ItemSystem::ConsumeItemEcs(EntityFactory::CreateItemEntity(g_registry, item), count);
+			ItemSystem::ConsumeItemEcs((item ? item->GetEntityHandle() : entt::null), count);
 			return;
 		}
 	}
@@ -12747,7 +12656,7 @@ void CHARACTER::AutoGiveItem(LPITEM item, bool longOwnerShip
 )
 {
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, "char_item.cpp::void CHARACTER::AutoGiveItem(LPITEM item, bool longOwnerShip,");//INGAME_DEBUG_RAZOR93
+	ecs::ChatSystem::Send(GetEntityHandle(), CHAT_TYPE_INFO, "char_item.cpp::void CHARACTER::AutoGiveItem(LPITEM item, bool longOwnerShip,");//INGAME_DEBUG_RAZOR93
 #endif
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
 	LOG_INFO("Razor93 LOG:: Called: void CHARACTER::AutoGiveItem(LPITEM item, bool longOwnerShip");
@@ -12795,8 +12704,8 @@ void CHARACTER::AutoGiveItem(LPITEM item, bool longOwnerShip
 #endif
 					bCount2 = std::min(g_bItemCountLimit - item2->GetCount(), bCount); // change type for some
 				bCount -= bCount2;
-				ItemSystem::AddItemCountEcs(EntityFactory::CreateItemEntity(g_registry, item2), bCount2);
-				ItemSystem::ConsumeItemEcs(EntityFactory::CreateItemEntity(g_registry, item), bCount2);
+				ItemSystem::AddItemCountEcs((item2 ? item2->GetEntityHandle() : entt::null), bCount2);
+				ItemSystem::ConsumeItemEcs((item ? item->GetEntityHandle() : entt::null), bCount2);
 				if (bCount == 0) {
 					return;
 				}
@@ -12837,8 +12746,8 @@ void CHARACTER::AutoGiveItem(LPITEM item, bool longOwnerShip
 #endif
 					bCount2 = std::min(g_bItemCountLimit - item2->GetCount(), bCount); // change type for some
 				bCount -= bCount2;
-				ItemSystem::AddItemCountEcs(EntityFactory::CreateItemEntity(g_registry, item2), bCount2);
-				ItemSystem::ConsumeItemEcs(EntityFactory::CreateItemEntity(g_registry, item), bCount2);
+				ItemSystem::AddItemCountEcs((item2 ? item2->GetEntityHandle() : entt::null), bCount2);
+				ItemSystem::ConsumeItemEcs((item ? item->GetEntityHandle() : entt::null), bCount2);
 				if (bCount == 0) {
 					return;
 				}
@@ -12981,7 +12890,7 @@ LPITEM CHARACTER::AutoGiveItem(uint32_t dwItemVnum,
 )
 {
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, "char_item.cpp::LPITEM CHARACTER::AutoGiveItem(uint32_t dwItemVnum,");//INGAME_DEBUG_RAZOR93
+	ecs::ChatSystem::Send(GetEntityHandle(), CHAT_TYPE_INFO, "char_item.cpp::LPITEM CHARACTER::AutoGiveItem(uint32_t dwItemVnum,");//INGAME_DEBUG_RAZOR93
 #endif
 	TItemTable* p = ITEM_MANAGER::instance().GetTable(dwItemVnum);
 
@@ -13017,20 +12926,20 @@ LPITEM CHARACTER::AutoGiveItem(uint32_t dwItemVnum,
 					bCount2 = std::min(g_bItemCountLimit - item->GetCount(), bCount); // change type for some
 				bCount -= bCount2;
 
-				ItemSystem::AddItemCountEcs(EntityFactory::CreateItemEntity(g_registry, item), bCount2);
+				ItemSystem::AddItemCountEcs((item ? item->GetEntityHandle() : entt::null), bCount2);
 
 				if (bCount == 0)
 				{
 #ifdef TEXTS_IMPROVEMENT
 					if (bMsg) {
-						ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), 
+						ecs::ChatSystem::SendNew(GetEntityHandle(),
 #ifdef ENABLE_NEW_CHAT
 							CHAT_TYPE_INFO_ITEM
 #else
 							CHAT_TYPE_INFO
 #endif
 							, 102, "%d#%s", bCount2, item->GetName(GetDesc() ? GetDesc()->GetLanguage() : 0));
-						//ecs::ChatSystem::Send(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, "|cffffc700[Kaptál:]|r 08 |cffffff00%u jelenlegi:%u x %s|r", bCount2, item->GetCount(), item->GetName());
+						//ecs::ChatSystem::Send(GetEntityHandle(), CHAT_TYPE_INFO, "|cffffc700[Kaptál:]|r 08 |cffffff00%u jelenlegi:%u x %s|r", bCount2, item->GetCount(), item->GetName());
 
 					}
 #endif
@@ -13072,20 +12981,20 @@ LPITEM CHARACTER::AutoGiveItem(uint32_t dwItemVnum,
 					bCount2 = std::min(g_bItemCountLimit - item->GetCount(), bCount);
 				bCount -= bCount2;
 
-				ItemSystem::AddItemCountEcs(EntityFactory::CreateItemEntity(g_registry, item), bCount2);
+				ItemSystem::AddItemCountEcs((item ? item->GetEntityHandle() : entt::null), bCount2);
 
 				if (bCount == 0)
 				{
 #ifdef TEXTS_IMPROVEMENT
 					if (bMsg) {
-						ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), 
+						ecs::ChatSystem::SendNew(GetEntityHandle(),
 #ifdef ENABLE_NEW_CHAT
 							CHAT_TYPE_INFO_ITEM
 #else
 							CHAT_TYPE_INFO
 #endif
 							, 102, "%d#%s", bCount2, item->GetName(GetDesc() ? GetDesc()->GetLanguage() : 0));
-						//ecs::ChatSystem::Send(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, "|cffffc700[Kaptál:]|r 09 |cffffff00%u x %s|r", item->GetCount(), item->GetName());
+						//ecs::ChatSystem::Send(GetEntityHandle(), CHAT_TYPE_INFO, "|cffffc700[Kaptál:]|r 09 |cffffff00%u x %s|r", item->GetCount(), item->GetName());
 
 					}
 #endif
@@ -13121,7 +13030,7 @@ LPITEM CHARACTER::AutoGiveItem(uint32_t dwItemVnum,
 						inv_item->GetSocket(2) == item->GetSocket(2) &&
 						inv_item->GetCount() < g_bItemCountLimit)
 					{
-						ItemSystem::AddItemCountEcs(EntityFactory::CreateItemEntity(g_registry, inv_item), item->GetCount());
+						ItemSystem::AddItemCountEcs((inv_item ? inv_item->GetEntityHandle() : entt::null), item->GetCount());
 						return inv_item;
 					}
 				}
@@ -13145,14 +13054,14 @@ LPITEM CHARACTER::AutoGiveItem(uint32_t dwItemVnum,
 	{
 #ifdef TEXTS_IMPROVEMENT
 		if (bMsg) {
-			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), 
+			ecs::ChatSystem::SendNew(GetEntityHandle(),
 #ifdef ENABLE_NEW_CHAT
 				CHAT_TYPE_INFO_ITEM
 #else
 				CHAT_TYPE_INFO
 #endif
 				, 102, "%d#%s", bCount, item->GetName(GetDesc() ? GetDesc()->GetLanguage() : 0));
-			//ecs::ChatSystem::Send(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, "|cffffc700[10:]|r 10 ");
+			//ecs::ChatSystem::Send(GetEntityHandle(), CHAT_TYPE_INFO, "|cffffc700[10:]|r 10 ");
 
 		}
 #endif
@@ -13226,7 +13135,7 @@ bool CHARACTER::GiveItem(LPCHARACTER victim, TItemPos Cell)
 	if (quest::CQuestManager::instance().GetPCForce(GetPlayerID())->IsRunning() == true)
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 740, "");
+		ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 740, "");
 #endif
 		return false;
 	}
@@ -13237,9 +13146,9 @@ bool CHARACTER::GiveItem(LPCHARACTER victim, TItemPos Cell)
 	if (item && !item->IsExchanging())
 	{
 		const entt::entity itemEntity =
-			EntityFactory::CreateItemEntity(g_registry, item);
-		if (ItemSystem::ReceiveItemEcs(AIHelpers::EcsOf(victim),
-				AIHelpers::EcsOf(this), itemEntity))
+			(item ? item->GetEntityHandle() : entt::null);
+		if (ItemSystem::ReceiveItemEcs((victim ? victim->GetEntityHandle() : entt::null),
+				GetEntityHandle(), itemEntity))
 			return true;
 	}
 
@@ -13272,7 +13181,7 @@ bool CHARACTER::CanReceiveItem(LPCHARACTER from, LPITEM item) const
 
 		if (!bCanProced) {
 #ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(from), CHAT_TYPE_INFO, 1360, "");
+			ecs::ChatSystem::SendNew((from ? from->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 1360, "");
 #endif
 			return false;
 		}
@@ -13344,7 +13253,7 @@ bool CHARACTER::CanReceiveItem(LPCHARACTER from, LPITEM item) const
 			if (!IsDead())
 			{
 #ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(from), CHAT_TYPE_INFO, 467, "");
+				ecs::ChatSystem::SendNew((from ? from->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 467, "");
 #endif
 				return false;
 			}
@@ -13355,7 +13264,7 @@ bool CHARACTER::CanReceiveItem(LPCHARACTER from, LPITEM item) const
 			if (IsDead())
 			{
 #ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(from), CHAT_TYPE_INFO, 466, "");
+				ecs::ChatSystem::SendNew((from ? from->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 466, "");
 #endif
 				return false;
 			}
@@ -13375,7 +13284,7 @@ bool CHARACTER::CanReceiveItem(LPCHARACTER from, LPITEM item) const
 			if (!IsDead())
 			{
 #ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(from), CHAT_TYPE_INFO, 467, "");
+				ecs::ChatSystem::SendNew((from ? from->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 467, "");
 #endif
 				return false;
 			}
@@ -13386,7 +13295,7 @@ bool CHARACTER::CanReceiveItem(LPCHARACTER from, LPITEM item) const
 			if (IsDead())
 			{
 #ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(from), CHAT_TYPE_INFO, 466, "");
+				ecs::ChatSystem::SendNew((from ? from->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 466, "");
 #endif
 				return false;
 			}
@@ -13406,7 +13315,7 @@ bool CHARACTER::CanReceiveItem(LPCHARACTER from, LPITEM item) const
 			if (!IsDead())
 			{
 #ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(from), CHAT_TYPE_INFO, 467, "");
+				ecs::ChatSystem::SendNew((from ? from->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 467, "");
 #endif
 				return false;
 			}
@@ -13417,7 +13326,7 @@ bool CHARACTER::CanReceiveItem(LPCHARACTER from, LPITEM item) const
 			if (IsDead())
 			{
 #ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(from), CHAT_TYPE_INFO, 466, "");
+				ecs::ChatSystem::SendNew((from ? from->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 466, "");
 #endif
 				return false;
 			}
@@ -13458,13 +13367,13 @@ void CHARACTER::ReceiveItem(LPCHARACTER from, LPITEM item)
 	{
 	case fishing::CAMPFIRE_MOB:
 		if (item->GetType() == ITEM_FISH && (item->GetSubType() == FISH_ALIVE || item->GetSubType() == FISH_DEAD))
-			fishing::GrillFishEcs(AIHelpers::EcsOf(from), EntityFactory::CreateItemEntity(g_registry, item));
+			fishing::GrillFishEcs((from ? from->GetEntityHandle() : entt::null), (item ? item->GetEntityHandle() : entt::null));
 		else
 		{
 			// TAKE_ITEM_BUG_FIX
 			from->SetQuestNPCID(GetPacketVID());
 			// END_OF_TAKE_ITEM_BUG_FIX
-			quest::CQuestManager::instance().TakeItem(ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(from)), GetRaceNum(), EntityFactory::CreateItemEntity(g_registry, item));
+			quest::CQuestManager::instance().TakeItem(ecs::PlayerRuntime::GetPlayerID((from ? from->GetEntityHandle() : entt::null)), GetRaceNum(), (item ? item->GetEntityHandle() : entt::null));
 		}
 		break;
 
@@ -13552,7 +13461,7 @@ void CHARACTER::ReceiveItem(LPCHARACTER from, LPITEM item)
 		}
 #ifdef TEXTS_IMPROVEMENT
 		else {
-			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(from), CHAT_TYPE_INFO, 427, "");
+			ecs::ChatSystem::SendNew((from ? from->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 427, "");
 		}
 #endif
 		break;
@@ -13571,7 +13480,7 @@ void CHARACTER::ReceiveItem(LPCHARACTER from, LPITEM item)
 		}
 #ifdef TEXTS_IMPROVEMENT
 		else {
-			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(from), CHAT_TYPE_INFO, 427, "");
+			ecs::ChatSystem::SendNew((from ? from->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 427, "");
 		}
 #endif
 		break;
@@ -13589,9 +13498,9 @@ void CHARACTER::ReceiveItem(LPCHARACTER from, LPITEM item)
 			item->GetVnum() == ITEM_REVIVE_HORSE_3)
 		{
 			from->ReviveHorse();
-			ItemSystem::ConsumeItemEcs(EntityFactory::CreateItemEntity(g_registry, item));
+			ItemSystem::ConsumeItemEcs((item ? item->GetEntityHandle() : entt::null));
 #ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(from), CHAT_TYPE_INFO, 329, "%s", item->GetName());
+			ecs::ChatSystem::SendNew((from ? from->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 329, "%s", item->GetName());
 #endif
 		}
 		else if (item->GetVnum() == ITEM_HORSE_FOOD_1 ||
@@ -13600,9 +13509,9 @@ void CHARACTER::ReceiveItem(LPCHARACTER from, LPITEM item)
 		{
 			from->FeedHorse();
 #ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(from), CHAT_TYPE_INFO, 112, "%s", item->GetName());
+			ecs::ChatSystem::SendNew((from ? from->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 112, "%s", item->GetName());
 #endif
-			ItemSystem::ConsumeItemEcs(EntityFactory::CreateItemEntity(g_registry, item));
+			ItemSystem::ConsumeItemEcs((item ? item->GetEntityHandle() : entt::null));
 			EffectPacket(SE_HPUP_RED);
 		}
 		break;
@@ -13610,7 +13519,7 @@ void CHARACTER::ReceiveItem(LPCHARACTER from, LPITEM item)
 	default:
 		LOG_INFO("TakeItem {} {} {}", from->GetName(), GetRaceNum(), item->GetName());
 		from->SetQuestNPCID(GetPacketVID());
-		quest::CQuestManager::instance().TakeItem(ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(from)), GetRaceNum(), EntityFactory::CreateItemEntity(g_registry, item));
+		quest::CQuestManager::instance().TakeItem(ecs::PlayerRuntime::GetPlayerID((from ? from->GetEntityHandle() : entt::null)), GetRaceNum(), (item ? item->GetEntityHandle() : entt::null));
 		break;
 	}
 }
@@ -13726,7 +13635,7 @@ bool CHARACTER::GiveItemFromSpecialItemGroup(uint32_t dwGroupNum, std::vector<ui
 		{
 			dwItemVnums.push_back(dwVnum);
 			dwItemCounts.push_back(dwCount);
-			item_gets.push_back(item_get ? EntityFactory::CreateItemEntity(g_registry, item_get) : entt::null);
+			item_gets.push_back(item_get ? (item_get ? item_get->GetEntityHandle() : entt::null) : entt::null);
 			count++;
 
 		}
@@ -13741,13 +13650,13 @@ bool CHARACTER::GiveItemFromSpecialItemGroup(uint32_t dwGroupNum, std::vector<ui
 bool CHARACTER::DestroyItem(TItemPos Cell)
 {
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, "char_item.cpp::bool CHARACTER::DestroyItem(TItemPos Cell),");//INGAME_DEBUG_RAZOR93
+	ecs::ChatSystem::Send(GetEntityHandle(), CHAT_TYPE_INFO, "char_item.cpp::bool CHARACTER::DestroyItem(TItemPos Cell),");//INGAME_DEBUG_RAZOR93
 #endif
 	LPITEM item = nullptr;
 	if (!CanHandleItem()) {
 #ifdef TEXTS_IMPROVEMENT
 		if (nullptr != DragonSoul_RefineWindow_GetOpener()) {
-			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 232, "");
+			ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 232, "");
 		}
 #endif
 
@@ -13802,7 +13711,7 @@ bool CHARACTER::DestroyItem(TItemPos Cell)
 #endif
 
 #ifdef TEXTS_IMPROVEMENT
-	ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 47, "%s", item->GetName());
+	ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 47, "%s", item->GetName());
 #endif
 	ITEM_MANAGER::instance().RemoveItem(item, "DESTROY");
 	return true;
@@ -13841,7 +13750,7 @@ struct FFindStone
 
 			if (pChar->IsStone() == true)
 			{
-				m_mapStone[ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(pChar))] = pChar;
+				m_mapStone[ecs::PlayerRuntime::GetPacketVID((pChar ? pChar->GetEntityHandle() : entt::null))] = pChar;
 			}
 		}
 	}
@@ -13958,7 +13867,7 @@ static bool FN_check_item_sex(LegacyCharHandle ch, LPITEM item)
 bool CHARACTER::CanHandleItem(bool bSkipCheckRefine, bool bSkipObserver)
 {
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, "char_item.cpp::bool CHARACTER::CanHandleItem");//INGAME_DEBUG_RAZOR93
+	ecs::ChatSystem::Send(GetEntityHandle(), CHAT_TYPE_INFO, "char_item.cpp::bool CHARACTER::CanHandleItem");//INGAME_DEBUG_RAZOR93
 	LOG_INFO("Razor93 LOG:: bool CHARACTER::CanHandleItem");
 #endif
 	if (!bSkipObserver)
@@ -14001,7 +13910,7 @@ void CHARACTER::SetItem(TItemPos Cell, LPITEM pItem)
 #endif
 {
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, "input_main.cpp:: void CInputMain::RequestLanguage ");//INGAME_DEBUG_RAZOR93
+	ecs::ChatSystem::Send(GetEntityHandle(), CHAT_TYPE_INFO, "input_main.cpp:: void CInputMain::RequestLanguage ");//INGAME_DEBUG_RAZOR93
 #endif
 	uint16_t wCell = Cell.cell;
 	uint8_t window_type = Cell.window_type;
@@ -14019,7 +13928,7 @@ void CHARACTER::SetItem(TItemPos Cell, LPITEM pItem)
 	}
 
 	const entt::entity itemEntity = pItem
-		? EntityFactory::CreateItemEntity(g_registry, pItem)
+		? (pItem ? pItem->GetEntityHandle() : entt::null)
 		: entt::null;
 	if (pItem && itemEntity == entt::null)
 	{
@@ -14038,7 +13947,7 @@ void CHARACTER::SetItem(TItemPos Cell, LPITEM pItem)
 			return;
 		}
 
-		auto* pMainInventory = EnsureMainInventoryRuntimeComponent(this);
+		auto* pMainInventory = EnsureMainInventoryRuntimeComponent(GetEntityHandle());
 		if (!pMainInventory)
 		{
 			LOG_ERROR("CHARACTER::SetItem: missing MainInventoryRuntimeComponent");
@@ -14098,7 +14007,7 @@ void CHARACTER::SetItem(TItemPos Cell, LPITEM pItem)
 			return;
 		}
 
-		auto* pMainInventory = EnsureMainInventoryRuntimeComponent(this);
+		auto* pMainInventory = EnsureMainInventoryRuntimeComponent(GetEntityHandle());
 		if (!pMainInventory)
 		{
 			LOG_ERROR("CHARACTER::SetItem: missing MainInventoryRuntimeComponent");
@@ -14125,7 +14034,7 @@ void CHARACTER::SetItem(TItemPos Cell, LPITEM pItem)
 			return;
 		}
 
-		auto* pDragonSoulInventory = EnsureDragonSoulInventoryComponent(this);
+		auto* pDragonSoulInventory = EnsureDragonSoulInventoryComponent(GetEntityHandle());
 		if (!pDragonSoulInventory)
 		{
 			LOG_ERROR("CHARACTER::SetItem: missing DragonSoulInventoryComponent");
@@ -14172,13 +14081,13 @@ void CHARACTER::SetItem(TItemPos Cell, LPITEM pItem)
 		if (wCell >= EXTRA_INVENTORY_MAX_NUM)
 		{
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
-			ecs::ChatSystem::Send(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, "char_item.cpp::if (wCell >= EXTRA_INVENTORY_MAX_NUM)");//INGAME_DEBUG_RAZOR93
+			ecs::ChatSystem::Send(GetEntityHandle(), CHAT_TYPE_INFO, "char_item.cpp::if (wCell >= EXTRA_INVENTORY_MAX_NUM)");//INGAME_DEBUG_RAZOR93
 #endif
 			LOG_ERROR("CHARACTER::SetItem: invalid EXTRA item cell {}", wCell);
 			return;
 		}
 
-		auto* pExtraInventory = EnsureExtraInventoryRuntimeComponent(this);
+		auto* pExtraInventory = EnsureExtraInventoryRuntimeComponent(GetEntityHandle());
 		if (!pExtraInventory)
 		{
 			LOG_ERROR("CHARACTER::SetItem: missing ExtraInventoryRuntimeComponent");
@@ -14190,7 +14099,7 @@ void CHARACTER::SetItem(TItemPos Cell, LPITEM pItem)
 		if (pOld != entt::null)
 		{
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
-			ecs::ChatSystem::Send(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, "char_item.cpp::if (pOld != entt::null)");//INGAME_DEBUG_RAZOR93
+			ecs::ChatSystem::Send(GetEntityHandle(), CHAT_TYPE_INFO, "char_item.cpp::if (pOld != entt::null)");//INGAME_DEBUG_RAZOR93
 #endif
 
 			if (wCell < EXTRA_INVENTORY_MAX_NUM)
@@ -14215,7 +14124,7 @@ void CHARACTER::SetItem(TItemPos Cell, LPITEM pItem)
 		if (pItem)
 		{
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
-			ecs::ChatSystem::Send(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, "char_item.cpp::if (pItem)");//INGAME_DEBUG_RAZOR93
+			ecs::ChatSystem::Send(GetEntityHandle(), CHAT_TYPE_INFO, "char_item.cpp::if (pItem)");//INGAME_DEBUG_RAZOR93
 #endif
 			if (wCell < EXTRA_INVENTORY_MAX_NUM)
 			{
@@ -14241,7 +14150,7 @@ void CHARACTER::SetItem(TItemPos Cell, LPITEM pItem)
 #ifdef ENABLE_SWITCHBOT
 	case SWITCHBOT:
 	{
-		const entt::entity oldItem = ItemSystem::GetItem(AIHelpers::EcsOf(this), TItemPos(SWITCHBOT, wCell));
+		const entt::entity oldItem = ItemSystem::GetItem(GetEntityHandle(), TItemPos(SWITCHBOT, wCell));
 		if (pItem && oldItem != entt::null)
 		{
 			return;
@@ -14262,7 +14171,7 @@ void CHARACTER::SetItem(TItemPos Cell, LPITEM pItem)
 			CSwitchbotManager::Instance().UnregisterItem(GetPlayerID(), wCell);
 		}
 
-		if (auto* switchbot = EnsureSwitchbotRuntimeComponent(this))
+		if (auto* switchbot = EnsureSwitchbotRuntimeComponent(GetEntityHandle()))
 			switchbot->items[wCell] = itemEntity;
 	}
 	break;
@@ -14331,7 +14240,7 @@ void CHARACTER::SetItem(TItemPos Cell, LPITEM pItem)
 		case INVENTORY:
 			if (wCell >= BELT_INVENTORY_SLOT_START && wCell < BELT_INVENTORY_SLOT_END)
 			{
-				if (CBeltInventoryHelper::CanMoveIntoBeltInventory(EntityFactory::CreateItemEntity(g_registry, pItem)))
+				if (CBeltInventoryHelper::CanMoveIntoBeltInventory((pItem ? pItem->GetEntityHandle() : entt::null)))
 					pItem->SetWindow(INVENTORY);
 				else
 					pItem->SetWindow(EQUIPMENT); // vagy return is lehet, ha nem engedelyezett
@@ -14371,7 +14280,7 @@ void CHARACTER::SetItem(TItemPos Cell, LPITEM pItem)
 void CHARACTER::ClearItem()
 {
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, "char_item.cpp:: void CHARACTER::ClearItem ");//INGAME_DEBUG_RAZOR93
+	ecs::ChatSystem::Send(GetEntityHandle(), CHAT_TYPE_INFO, "char_item.cpp:: void CHARACTER::ClearItem ");//INGAME_DEBUG_RAZOR93
 #endif
 	int		i;
 	LPITEM	item;
@@ -14385,7 +14294,7 @@ void CHARACTER::ClearItem()
 
 			item->RemoveFromCharacter();
 			ItemSystem::DestroyItemEntityEcs(
-				EntityFactory::CreateItemEntity(g_registry, item),
+				(item ? item->GetEntityHandle() : entt::null),
 				"CLEAR_ITEM_INVENTORY");
 
 			SyncQuickslot(QUICKSLOT_TYPE_ITEM, i, 255);
@@ -14400,7 +14309,7 @@ void CHARACTER::ClearItem()
 
 			item->RemoveFromCharacter();
 			ItemSystem::DestroyItemEntityEcs(
-				EntityFactory::CreateItemEntity(g_registry, item),
+				(item ? item->GetEntityHandle() : entt::null),
 				"CLEAR_ITEM_DRAGON_SOUL");
 		}
 	}
@@ -14418,7 +14327,7 @@ void CHARACTER::ClearItem()
 
 			item->RemoveFromCharacter();
 			ItemSystem::DestroyItemEntityEcs(
-				EntityFactory::CreateItemEntity(g_registry, item),
+				(item ? item->GetEntityHandle() : entt::null),
 				"CLEAR_ITEM_EXTRA_INVENTORY");
 
 			SyncQuickslot(QUICKSLOT_TYPE_ITEM_EXTRA, i, 255);
@@ -14436,7 +14345,7 @@ void CHARACTER::ClearItem()
 
 			item->RemoveFromCharacter();
 			ItemSystem::DestroyItemEntityEcs(
-				EntityFactory::CreateItemEntity(g_registry, item),
+				(item ? item->GetEntityHandle() : entt::null),
 				"CLEAR_ITEM_SWITCHBOT");
 		}
 	}
@@ -14469,9 +14378,9 @@ bool CHARACTER::IsEmptyItemGrid(TItemPos Cell, uint8_t bSize, int iExceptionCell
 						if (false == CBeltInventoryHelper::IsAvailableCell(bCell - BELT_INVENTORY_SLOT_START, beltItem->GetValue(0)))
 							return false;
 
-						if (GetMainInventoryGrid(this, bCell))
+						if (GetMainInventoryGrid(GetEntityHandle(), bCell))
 						{
-							if (GetMainInventoryGrid(this, bCell) == iExceptionCell)
+							if (GetMainInventoryGrid(GetEntityHandle(), bCell) == iExceptionCell)
 								return true;
 
 							return false;
@@ -14487,9 +14396,9 @@ bool CHARACTER::IsEmptyItemGrid(TItemPos Cell, uint8_t bSize, int iExceptionCell
 			// NE ellen?rizd az ov tipusat
 			// --> mindig engedelyezett
 
-			if (GetMainInventoryGrid(this, bCell))
+			if (GetMainInventoryGrid(GetEntityHandle(), bCell))
 			{
-				if (GetMainInventoryGrid(this, bCell) == iExceptionCell)
+				if (GetMainInventoryGrid(GetEntityHandle(), bCell) == iExceptionCell)
 					return true;
 
 				return false;
@@ -14503,9 +14412,9 @@ bool CHARACTER::IsEmptyItemGrid(TItemPos Cell, uint8_t bSize, int iExceptionCell
 		else if (bCell >= Inventory_Size())
 			return false;
 
-		if (GetMainInventoryGrid(this, bCell))
+		if (GetMainInventoryGrid(GetEntityHandle(), bCell))
 		{
-			if (GetMainInventoryGrid(this, bCell) == iExceptionCell)
+			if (GetMainInventoryGrid(GetEntityHandle(), bCell) == iExceptionCell)
 			{
 				if (bSize == 1)
 					return true;
@@ -14522,8 +14431,8 @@ bool CHARACTER::IsEmptyItemGrid(TItemPos Cell, uint8_t bSize, int iExceptionCell
 					if (p / (INVENTORY_MAX_NUM / 4) != bPage)
 						return false;
 
-					if (GetMainInventoryGrid(this, p))
-						if (GetMainInventoryGrid(this, p) != iExceptionCell)
+					if (GetMainInventoryGrid(GetEntityHandle(), p))
+						if (GetMainInventoryGrid(GetEntityHandle(), p) != iExceptionCell)
 							return false;
 				} while (++j < bSize);
 
@@ -14550,8 +14459,8 @@ bool CHARACTER::IsEmptyItemGrid(TItemPos Cell, uint8_t bSize, int iExceptionCell
 				if (p / (INVENTORY_MAX_NUM / 4) != bPage)
 					return false;
 
-				if (GetMainInventoryGrid(this, p))
-					if (GetMainInventoryGrid(this, p) != iExceptionCell)
+				if (GetMainInventoryGrid(GetEntityHandle(), p))
+					if (GetMainInventoryGrid(GetEntityHandle(), p) != iExceptionCell)
 						return false;
 			} while (++j < bSize);
 
@@ -14651,9 +14560,9 @@ bool CHARACTER::IsEmptyItemGrid(TItemPos Cell, uint8_t bSize, int iExceptionCell
 			if (false == CBeltInventoryHelper::IsAvailableCell(bCell - BELT_INVENTORY_SLOT_START, beltItem->GetValue(0)))
 				return false;
 
-			if (GetMainInventoryGrid(this, bCell))
+			if (GetMainInventoryGrid(GetEntityHandle(), bCell))
 			{
-				if (GetMainInventoryGrid(this, bCell) == iExceptionCell)
+				if (GetMainInventoryGrid(GetEntityHandle(), bCell) == iExceptionCell)
 					return true;
 
 				return false;
@@ -14667,9 +14576,9 @@ bool CHARACTER::IsEmptyItemGrid(TItemPos Cell, uint8_t bSize, int iExceptionCell
 		else if (bCell >= INVENTORY_MAX_NUM)
 			return false;
 
-		if (GetMainInventoryGrid(this, bCell))
+		if (GetMainInventoryGrid(GetEntityHandle(), bCell))
 		{
-			if (GetMainInventoryGrid(this, bCell) == iExceptionCell)
+			if (GetMainInventoryGrid(GetEntityHandle(), bCell) == iExceptionCell)
 			{
 				if (bSize == 1)
 					return true;
@@ -14687,8 +14596,8 @@ bool CHARACTER::IsEmptyItemGrid(TItemPos Cell, uint8_t bSize, int iExceptionCell
 					if (p / (INVENTORY_MAX_NUM / 4) != bPage)
 						return false;
 
-					if (GetMainInventoryGrid(this, p))
-						if (GetMainInventoryGrid(this, p) != iExceptionCell)
+					if (GetMainInventoryGrid(GetEntityHandle(), p))
+						if (GetMainInventoryGrid(GetEntityHandle(), p) != iExceptionCell)
 							return false;
 				} while (++j < bSize);
 
@@ -14715,8 +14624,8 @@ bool CHARACTER::IsEmptyItemGrid(TItemPos Cell, uint8_t bSize, int iExceptionCell
 				if (p / (INVENTORY_MAX_NUM / 4) != bPage)
 					return false;
 
-				if (GetMainInventoryGrid(this, p))
-					if (GetMainInventoryGrid(this, p) != iExceptionCell)
+				if (GetMainInventoryGrid(GetEntityHandle(), p))
+					if (GetMainInventoryGrid(GetEntityHandle(), p) != iExceptionCell)
 						return false;
 			} while (++j < bSize);
 
@@ -14866,7 +14775,7 @@ bool CHARACTER::IsEmptyItemGrid(TItemPos Cell, uint8_t bSize, int iExceptionCell
 				if (p >= DRAGON_SOUL_INVENTORY_MAX_NUM)
 					return false;
 
-				if (GetMainInventoryGrid(this, p))
+				if (GetMainInventoryGrid(GetEntityHandle(), p))
 					if (GetDragonSoulGrid(p) != iExceptionCell)
 						return false;
 			} while (++j < bSize);
@@ -14984,7 +14893,7 @@ void CHARACTER::UnlockExtraInventory(uint8_t category) {
 	int32_t time = GetLastUnlock() - get_global_time();
 	if (time > 0) {
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 234, "%d", time);
+		ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 234, "%d", time);
 #endif
 		return;
 	}
@@ -15022,13 +14931,13 @@ void CHARACTER::UnlockExtraInventory(uint8_t category) {
 
 		SetQuestFlag(stageName.c_str(), stage + 1);
 		PointChange(POINT_EXTRA_INVENTORY1 + category, stage + 1);
-		ecs::ChatSystem::Send(AIHelpers::EcsOf(this), CHAT_TYPE_COMMAND, "RefreshExpandInventory");
+		ecs::ChatSystem::Send(GetEntityHandle(), CHAT_TYPE_COMMAND, "RefreshExpandInventory");
 #ifdef ENABLE_SPAM_CHECK
 		SetLastUnlock();
 #endif
 	}
 	else {
-		ecs::ChatSystem::Send(AIHelpers::EcsOf(this), CHAT_TYPE_COMMAND, "update_envanter_need %d", needKeys - CountSpecifyItem(72320));
+		ecs::ChatSystem::Send(GetEntityHandle(), CHAT_TYPE_COMMAND, "update_envanter_need %d", needKeys - CountSpecifyItem(72320));
 	}
 }
 #endif
@@ -15072,7 +14981,7 @@ int CHARACTER::GetEmptyDragonSoulInventory(LPITEM pItem) const
 		return -1;
 
 	uint8_t bSize = pItem->GetSize();
-	uint16_t wBaseCell = DSManager::instance().GetBasePosition(EntityFactory::CreateItemEntity(g_registry, pItem));
+	uint16_t wBaseCell = DSManager::instance().GetBasePosition((pItem ? pItem->GetEntityHandle() : entt::null));
 
 	if (WORD_MAX == wBaseCell)
 		return -1;
@@ -15137,7 +15046,7 @@ bool CHARACTER::GiveRecallItem(LPITEM item)
 	if (iEmpireByMapIndex && GetEmpire() != iEmpireByMapIndex)
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 270, "");
+		ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 270, "");
 #endif
 		return false;
 	}
@@ -15161,13 +15070,13 @@ bool CHARACTER::GiveRecallItem(LPITEM item)
 			item2->SetSocket(1, GetY());
 			item2->AddToCharacter(this, TItemPos(INVENTORY, pos));
 
-			ItemSystem::ConsumeItemEcs(EntityFactory::CreateItemEntity(g_registry, item));
+			ItemSystem::ConsumeItemEcs((item ? item->GetEntityHandle() : entt::null));
 		}
 	}
 	else
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 366, "");
+		ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 366, "");
 #endif
 		return false;
 	}
@@ -15207,7 +15116,7 @@ void CHARACTER::ProcessRecallItem(LPITEM item)
 		if (GetLevel() < 90)
 		{
 #ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 325, "%d", 90);
+			ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 325, "%d", 90);
 #endif
 			return;
 		}
@@ -15218,7 +15127,7 @@ void CHARACTER::ProcessRecallItem(LPITEM item)
 	if (iEmpireByMapIndex && GetEmpire() != iEmpireByMapIndex)
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 270, "");
+		ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 270, "");
 #endif
 		item->SetSocket(0, 0);
 		item->SetSocket(1, 0);
@@ -15227,14 +15136,14 @@ void CHARACTER::ProcessRecallItem(LPITEM item)
 	{
 		LOG_INFO("Recall: {} {} {} -> {} {}", GetName(), GetX(), GetY(), item->GetSocket(0), item->GetSocket(1));
 		WarpSet(item->GetSocket(0), item->GetSocket(1));
-		ItemSystem::ConsumeItemEcs(EntityFactory::CreateItemEntity(g_registry, item));
+		ItemSystem::ConsumeItemEcs((item ? item->GetEntityHandle() : entt::null));
 	}
 }
 
 bool CHARACTER::SwapItem(uint8_t bCell, uint8_t bDestCell)
 {
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, "char_item.cpp::bool bool CHARACTER::SwapItem ");//INGAME_DEBUG_RAZOR93
+	ecs::ChatSystem::Send(GetEntityHandle(), CHAT_TYPE_INFO, "char_item.cpp::bool bool CHARACTER::SwapItem ");//INGAME_DEBUG_RAZOR93
 #endif
 	if (!CanHandleItem())
 		return false;
@@ -15455,7 +15364,7 @@ bool CHARACTER::ItemProcess_Hair(LPITEM item, int iDestCell)
 	if (item->CheckItemUseLevel(GetLevel()) == false)
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 405, "");
+		ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 405, "");
 #endif
 		return false;
 	}
@@ -15494,15 +15403,15 @@ bool CHARACTER::ItemProcess_Hair(LPITEM item, int iDestCell)
 	if (hair == GetPart(PART_HAIR))
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 311, "");
+		ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 311, "");
 #endif
 		return true;
 	}
 
-	ItemSystem::ConsumeItemEcs(EntityFactory::CreateItemEntity(g_registry, item));
+	ItemSystem::ConsumeItemEcs((item ? item->GetEntityHandle() : entt::null));
 
 	SetPart(PART_HAIR, hair);
-	NetworkSyncSystem::UpdatePacket(AIHelpers::EcsOf(this));
+	NetworkSyncSystem::UpdatePacket(GetEntityHandle());
 
 	return true;
 }
@@ -15515,7 +15424,7 @@ bool CHARACTER::ItemProcess_Polymorph(LPITEM item)
 	if ((GetDuel("BlockPoly")))
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 516, "");
+		ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 516, "");
 #endif
 		return false;
 	}
@@ -15523,7 +15432,7 @@ bool CHARACTER::ItemProcess_Polymorph(LPITEM item)
 
 	if (IsPolymorphed()) {
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 437, "");
+		ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 437, "");
 #endif
 		return false;
 	}
@@ -15531,7 +15440,7 @@ bool CHARACTER::ItemProcess_Polymorph(LPITEM item)
 	if (true == IsRiding())
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 741, "");
+		ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 741, "");
 #endif
 		return false;
 	}
@@ -15541,9 +15450,9 @@ bool CHARACTER::ItemProcess_Polymorph(LPITEM item)
 	if (dwVnum == 0)
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 450, "");
+		ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 450, "");
 #endif
-		ItemSystem::ConsumeItemEcs(EntityFactory::CreateItemEntity(g_registry, item));
+		ItemSystem::ConsumeItemEcs((item ? item->GetEntityHandle() : entt::null));
 		return false;
 	}
 
@@ -15552,9 +15461,9 @@ bool CHARACTER::ItemProcess_Polymorph(LPITEM item)
 	if (pMob == nullptr)
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 451, "");
+		ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 451, "");
 #endif
-		ItemSystem::ConsumeItemEcs(EntityFactory::CreateItemEntity(g_registry, item));
+		ItemSystem::ConsumeItemEcs((item ? item->GetEntityHandle() : entt::null));
 		return false;
 	}
 
@@ -15575,7 +15484,7 @@ bool CHARACTER::ItemProcess_Polymorph(LPITEM item)
 		if (pMob->m_table.bLevel >= GetLevel() + iPolymorphLevelLimit)
 		{
 #ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 275, "");
+			ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 275, "");
 #endif
 			return false;
 		}
@@ -15590,7 +15499,7 @@ bool CHARACTER::ItemProcess_Polymorph(LPITEM item)
 		AddAffect(AFFECT_POLYMORPH, POINT_POLYMORPH, dwVnum, AFF_POLYMORPH, iDuration, 0, true);
 		AddAffect(AFFECT_POLYMORPH, POINT_ATT_BONUS, dwBonus, AFF_POLYMORPH, iDuration, 0, false);
 
-		ItemSystem::ConsumeItemEcs(EntityFactory::CreateItemEntity(g_registry, item));
+		ItemSystem::ConsumeItemEcs((item ? item->GetEntityHandle() : entt::null));
 	}
 	break;
 
@@ -15604,10 +15513,10 @@ bool CHARACTER::ItemProcess_Polymorph(LPITEM item)
 // Í ¹øÈ£   ¼ö·ÃÁ¤µµ        µÐ°©¼­ ·¹º§
 		LOG_INFO("USE_POLYMORPH_BOOK: {}({}) vnum({})", GetName(), GetPlayerID(), dwVnum);
 
-		const entt::entity polymorphItem = EntityFactory::CreateItemEntity(g_registry, item);
-		if (CPolymorphUtils::instance().PolymorphCharacter(AIHelpers::EcsOf(this), polymorphItem, pMob) == true)
+		const entt::entity polymorphItem = (item ? item->GetEntityHandle() : entt::null);
+		if (CPolymorphUtils::instance().PolymorphCharacter(GetEntityHandle(), polymorphItem, pMob) == true)
 		{
-			CPolymorphUtils::instance().UpdateBookPracticeGrade(AIHelpers::EcsOf(this), polymorphItem);
+			CPolymorphUtils::instance().UpdateBookPracticeGrade(GetEntityHandle(), polymorphItem);
 		}
 		else
 		{
@@ -15650,7 +15559,7 @@ void CHARACTER::AutoRecallProcess()
 					CPetSystem* petSystem = GetPetSystem();
 					if (petSystem) {
 						if (petSystem->CountSummoned() < 1) {
-							CPetActor* pPet = petSystem->Summon(pItem->GetValue(1), EntityFactory::CreateItemEntity(g_registry, pItem), "", false);
+							CPetActor* pPet = petSystem->Summon(pItem->GetValue(1), (pItem ? pItem->GetEntityHandle() : entt::null), "", false);
 							if (!pPet)
 								RemoveAffect(const_cast<CAffect*>(pAffect));
 						}
@@ -15674,7 +15583,7 @@ void CHARACTER::AutoRecallProcess()
 					CNewPetSystem* petSystem = GetNewPetSystem();
 					if (petSystem) {
 						if (petSystem->CountSummoned() < 1) {
-							CNewPetActor* pPet = petSystem->Summon(pItem->GetValue(0), EntityFactory::CreateItemEntity(g_registry, pItem), "", false);
+							CNewPetActor* pPet = petSystem->Summon(pItem->GetValue(0), (pItem ? pItem->GetEntityHandle() : entt::null), "", false);
 							if (!pPet)
 								RemoveAffect(const_cast<CAffect*>(pAffect));
 						}
@@ -15823,7 +15732,7 @@ void CHARACTER::AutoRecoveryItemProcess(const EAffectTypes type)
 			else
 			{
 				pItem->Lock(false);
-				ItemSystem::SetItemSocketEcs(EntityFactory::CreateItemEntity(g_registry, pItem), 0, false);
+				ItemSystem::SetItemSocketEcs((pItem ? pItem->GetEntityHandle() : entt::null), 0, false);
 				RemoveAffect(const_cast<CAffect*>(pAffect));
 			}
 		}
@@ -15918,6 +15827,7 @@ bool CHARACTER::CanDoAttrTransfer() const
 void CItem::Initialize()
 {
 	CEntity::Initialize(ENTITY_ITEM);
+	SetEntityHandle(entt::null);
 
 	m_bWindow = RESERVED_WINDOW;
 	m_pOwner = nullptr;
@@ -15965,7 +15875,7 @@ void CItem::Destroy()
 
 	CEntity::Destroy();
 
-	const entt::entity e = ItemEntityOf(this);
+	const entt::entity e = GetEntityHandle();
 	if (GetSectree())
 		GetSectree()->RemoveEntity(this);
 	if (e != entt::null && g_registry.valid(e))
@@ -16017,7 +15927,7 @@ void CItem::StartDestroyEvent(int iSec)
 		return;
 
 	item_event_info* info = AllocEventInfo<item_event_info>();
-	info->item = EntityFactory::CreateItemEntity(g_registry, this);
+	info->item = GetEntityHandle();
 
 	SetDestroyEvent(event_create(item_destroy_event, info, PASSES_PER_SEC(iSec)));
 }
@@ -16052,11 +15962,11 @@ void CItem::StartUniqueExpireEvent()
 	SetSocket(ITEM_SOCKET_UNIQUE_SAVE_TIME, 0);
 
 	item_event_info* info = AllocEventInfo<item_event_info>();
-	info->item = EntityFactory::CreateItemEntity(g_registry, this);
+	info->item = GetEntityHandle();
 
 	SetUniqueExpireEvent(event_create(unique_expire_event, info, PASSES_PER_SEC(iSec)));
 
-	const entt::entity e = ItemEntityOf(this);
+	const entt::entity e = GetEntityHandle();
 	if (e != entt::null)
 		g_dispatcher.trigger(ecs::EvItemExpired { e, GetID() });
 }
@@ -16105,11 +16015,11 @@ void CItem::StartTimerBasedOnWearExpireEvent()
 	}
 
 	item_event_info* info = AllocEventInfo<item_event_info>();
-	info->item = EntityFactory::CreateItemEntity(g_registry, this);
+	info->item = GetEntityHandle();
 
 	SetTimerBasedOnWearExpireEvent(event_create(timer_based_on_wear_expire_event, info, PASSES_PER_SEC(iSec)));
 
-	const entt::entity e = ItemEntityOf(this);
+	const entt::entity e = GetEntityHandle();
 	if (e != entt::null)
 		g_dispatcher.trigger(ecs::EvItemExpired { e, GetID() });
 }
@@ -16137,7 +16047,7 @@ void CItem::StartRealTimeExpireEvent()
 		if (LIMIT_REAL_TIME == aLimit.bType || LIMIT_REAL_TIME_START_FIRST_USE == aLimit.bType)
 		{
 			item_vid_event_info* info = AllocEventInfo<item_vid_event_info>();
-			info->item = EntityFactory::CreateItemEntity(g_registry, this);
+			info->item = GetEntityHandle();
 #ifdef ENABLE_NEW_USE_POTION
 			if ((GetType() == ITEM_USE) && (GetSubType() == USE_NEW_POTIION)) {
 				int32_t remainSec = GetSocket(0);
@@ -16145,12 +16055,12 @@ void CItem::StartRealTimeExpireEvent()
 					if (GetSocket(1) == 1) {
 						auto* pkOwner = GetOwner();
 						if (pkOwner) {
-							if (AffectSystem::FindAffect(AIHelpers::EcsOf(pkOwner), GetValue(0))) {
-								AffectSystem::RemoveAffect(AIHelpers::EcsOf(pkOwner), GetValue(0));
+							if (AffectSystem::FindAffect((pkOwner ? pkOwner->GetEntityHandle() : entt::null), GetValue(0))) {
+								AffectSystem::RemoveAffect((pkOwner ? pkOwner->GetEntityHandle() : entt::null), GetValue(0));
 							}
 
 #ifdef TEXTS_IMPROVEMENT
-							ecs::ChatSystem::SendNew(AIHelpers::EcsOf(pkOwner), CHAT_TYPE_INFO, 27, "%s", GetName());
+							ecs::ChatSystem::SendNew((pkOwner ? pkOwner->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 27, "%s", GetName());
 #endif
 						}
 					}
@@ -16162,21 +16072,21 @@ void CItem::StartRealTimeExpireEvent()
 				info->newpotion = true;
 				m_pkRealTimeExpireEvent = event_create(real_time_expire_event, info, PASSES_PER_SEC(remainSec > 60 ? 60 : remainSec));
 
-				const entt::entity e = ItemEntityOf(this);
+				const entt::entity e = GetEntityHandle();
 				if (e != entt::null)
 					g_dispatcher.trigger(ecs::EvItemExpired { e, GetID() });
 			}
 			else {
 				info->newpotion = false;
 				m_pkRealTimeExpireEvent = event_create(real_time_expire_event, info, PASSES_PER_SEC(1));
-				const entt::entity e = ItemEntityOf(this);
+				const entt::entity e = GetEntityHandle();
 				if (e != entt::null)
 					g_dispatcher.trigger(ecs::EvItemExpired { e, GetID() });
 			}
 #else
 			m_pkRealTimeExpireEvent = event_create(real_time_expire_event, info, PASSES_PER_SEC(1));
 
-			const entt::entity e = ItemEntityOf(this);
+			const entt::entity e = GetEntityHandle();
 			if (e != entt::null)
 				g_dispatcher.trigger(ecs::EvItemExpired { e, GetID() });
 #endif
@@ -16215,11 +16125,11 @@ void CItem::StartAccessorySocketExpireEvent()
 		iSec = MIN(iSec, 60);
 
 	item_vid_event_info* info = AllocEventInfo<item_vid_event_info>();
-	info->item = EntityFactory::CreateItemEntity(g_registry, this);
+	info->item = GetEntityHandle();
 
 	SetAccessorySocketExpireEvent(event_create(accessory_socket_expire_event, info, PASSES_PER_SEC(iSec)));
 
-	const entt::entity e = ItemEntityOf(this);
+	const entt::entity e = GetEntityHandle();
 	if (e != entt::null)
 		g_dispatcher.trigger(ecs::EvItemExpired { e, GetID() });
 }
@@ -16270,10 +16180,10 @@ void CItem::StartSoulItemEvent()
 		return;
 
 	item_vid_event_info* pInfo = AllocEventInfo<item_vid_event_info>();
-	pInfo->item = EntityFactory::CreateItemEntity(g_registry, this);
+	pInfo->item = GetEntityHandle();
 	SetSoulItemEvent(event_create(soul_item_event, pInfo, PASSES_PER_SEC(test_server ? 5 : 60)));
 
-	const entt::entity e = ItemEntityOf(this);
+	const entt::entity e = GetEntityHandle();
 	if (e != entt::null)
 		g_dispatcher.trigger(ecs::EvItemExpired { e, GetID() });
 }
@@ -16357,27 +16267,27 @@ void CItem::ActivateRuneBonus() {
 	}
 
 	if (!bCan) {
-		if (AffectSystem::FindAffect(AIHelpers::EcsOf(m_pOwner), AFFECT_RUNE2))
-			AffectSystem::RemoveAffect(AIHelpers::EcsOf(m_pOwner), AFFECT_RUNE2);
+		if (AffectSystem::FindAffect((m_pOwner ? m_pOwner->GetEntityHandle() : entt::null), AFFECT_RUNE2))
+			AffectSystem::RemoveAffect((m_pOwner ? m_pOwner->GetEntityHandle() : entt::null), AFFECT_RUNE2);
 
-		if (!AffectSystem::FindAffect(AIHelpers::EcsOf(m_pOwner), AFFECT_RUNE1))
-			AffectSystem::AddAffect(AIHelpers::EcsOf(m_pOwner), AFFECT_RUNE1, APPLY_NONE, 0, 0, INFINITE_AFFECT_DURATION, false, false);
+		if (!AffectSystem::FindAffect((m_pOwner ? m_pOwner->GetEntityHandle() : entt::null), AFFECT_RUNE1))
+			AffectSystem::AddAffect((m_pOwner ? m_pOwner->GetEntityHandle() : entt::null), AFFECT_RUNE1, APPLY_NONE, 0, 0, INFINITE_AFFECT_DURATION, false, false);
 
 		return;
 	}
 	else {
-		if (AffectSystem::FindAffect(AIHelpers::EcsOf(m_pOwner), AFFECT_RUNE1))
-			AffectSystem::RemoveAffect(AIHelpers::EcsOf(m_pOwner), AFFECT_RUNE1);
+		if (AffectSystem::FindAffect((m_pOwner ? m_pOwner->GetEntityHandle() : entt::null), AFFECT_RUNE1))
+			AffectSystem::RemoveAffect((m_pOwner ? m_pOwner->GetEntityHandle() : entt::null), AFFECT_RUNE1);
 
-		if (!AffectSystem::FindAffect(AIHelpers::EcsOf(m_pOwner), AFFECT_RUNE2))
-			AffectSystem::AddAffect(AIHelpers::EcsOf(m_pOwner), AFFECT_RUNE2, APPLY_NONE, 0, 0, INFINITE_AFFECT_DURATION, false, false);
+		if (!AffectSystem::FindAffect((m_pOwner ? m_pOwner->GetEntityHandle() : entt::null), AFFECT_RUNE2))
+			AffectSystem::AddAffect((m_pOwner ? m_pOwner->GetEntityHandle() : entt::null), AFFECT_RUNE2, APPLY_NONE, 0, 0, INFINITE_AFFECT_DURATION, false, false);
 	}
 
-	ItemSystem::SetItemSocketEcs(EntityFactory::CreateItemEntity(g_registry, pkItem1), 1, 1);
+	ItemSystem::SetItemSocketEcs((pkItem1 ? pkItem1->GetEntityHandle() : entt::null), 1, 1);
 	pkItem1->ModifyPoints(true);
 	pkItem1->UpdatePacket();
 #ifdef TEXTS_IMPROVEMENT
-	ecs::ChatSystem::SendNew(AIHelpers::EcsOf(m_pOwner), CHAT_TYPE_INFO, 31, "%s", pkItem1->GetName());
+	ecs::ChatSystem::SendNew((m_pOwner ? m_pOwner->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 31, "%s", pkItem1->GetName());
 #endif
 }
 
@@ -16392,14 +16302,14 @@ void CItem::DeactivateRuneBonus() {
 	if (pkItem1->GetSocket(1) != 1)
 		return;
 
-	if (AffectSystem::FindAffect(AIHelpers::EcsOf(m_pOwner), AFFECT_RUNE2))
-		AffectSystem::RemoveAffect(AIHelpers::EcsOf(m_pOwner), AFFECT_RUNE2);
+	if (AffectSystem::FindAffect((m_pOwner ? m_pOwner->GetEntityHandle() : entt::null), AFFECT_RUNE2))
+		AffectSystem::RemoveAffect((m_pOwner ? m_pOwner->GetEntityHandle() : entt::null), AFFECT_RUNE2);
 
-	ItemSystem::SetItemSocketEcs(EntityFactory::CreateItemEntity(g_registry, pkItem1), 1, 0);
+	ItemSystem::SetItemSocketEcs((pkItem1 ? pkItem1->GetEntityHandle() : entt::null), 1, 0);
 	pkItem1->ModifyPoints(false);
 	pkItem1->UpdatePacket();
 #ifdef TEXTS_IMPROVEMENT
-	ecs::ChatSystem::SendNew(AIHelpers::EcsOf(m_pOwner), CHAT_TYPE_INFO, 901, "%s", pkItem1->GetName());
+	ecs::ChatSystem::SendNew((m_pOwner ? m_pOwner->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 901, "%s", pkItem1->GetName());
 #endif
 }
 
@@ -16407,7 +16317,7 @@ void CItem::DeactivateRuneBonusRefresh() {
 	int iMaxSubTypes = RUNE_SUBTYPES - 1;
 	bool bAdd = false;
 	LPITEM pkItem2 = nullptr;
-	if (!AffectSystem::FindAffect(AIHelpers::EcsOf(m_pOwner), AFFECT_RUNE1)) {
+	if (!AffectSystem::FindAffect((m_pOwner ? m_pOwner->GetEntityHandle() : entt::null), AFFECT_RUNE1)) {
 		for (int i = 0; i < iMaxSubTypes; i++) {
 			pkItem2 = m_pOwner->GetWear(WEAR_RUNE1 + i);
 			if (pkItem2) {
@@ -16423,7 +16333,7 @@ void CItem::DeactivateRuneBonusRefresh() {
 		}
 
 		if (bAdd)
-			AffectSystem::AddAffect(AIHelpers::EcsOf(m_pOwner), AFFECT_RUNE1, APPLY_NONE, 0, 0, INFINITE_AFFECT_DURATION, false, false);
+			AffectSystem::AddAffect((m_pOwner ? m_pOwner->GetEntityHandle() : entt::null), AFFECT_RUNE1, APPLY_NONE, 0, 0, INFINITE_AFFECT_DURATION, false, false);
 	}
 	else {
 		for (int i = 0; i < iMaxSubTypes; i++) {
@@ -16441,7 +16351,7 @@ void CItem::DeactivateRuneBonusRefresh() {
 		}
 
 		if (!bAdd)
-			AffectSystem::RemoveAffect(AIHelpers::EcsOf(m_pOwner), AFFECT_RUNE1);
+			AffectSystem::RemoveAffect((m_pOwner ? m_pOwner->GetEntityHandle() : entt::null), AFFECT_RUNE1);
 	}
 }
 
@@ -16455,7 +16365,7 @@ void CItem::ActivateRune() {
 	if (GetSocket(ITEM_SOCKET_REMAIN_SEC) <= 0) {
 #ifdef TEXTS_IMPROVEMENT
 		if (m_pOwner) {
-			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(m_pOwner), CHAT_TYPE_INFO, 30, "%s", GetName());
+			ecs::ChatSystem::SendNew((m_pOwner ? m_pOwner->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 30, "%s", GetName());
 		}
 #endif
 		return;
@@ -16466,7 +16376,7 @@ void CItem::ActivateRune() {
 	UpdatePacket();
 #ifdef TEXTS_IMPROVEMENT
 	if (m_pOwner) {
-		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(m_pOwner), CHAT_TYPE_INFO, 31, "%s", GetName());
+		ecs::ChatSystem::SendNew((m_pOwner ? m_pOwner->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 31, "%s", GetName());
 	}
 #endif
 
@@ -16488,7 +16398,7 @@ void CItem::DeactivateRune() {
 	DeactivateRuneBonusRefresh();
 #ifdef TEXTS_IMPROVEMENT
 	if (m_pOwner) {
-		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(m_pOwner), CHAT_TYPE_INFO, 32, "%s", GetName());
+		ecs::ChatSystem::SendNew((m_pOwner ? m_pOwner->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 32, "%s", GetName());
 	}
 #endif
 }
@@ -16538,7 +16448,7 @@ void CItem::AccessorySocketDegrade()
 		auto* ch = GetOwner();
 #ifdef TEXTS_IMPROVEMENT
 		if (ch) {
-			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 117, "%s", GetName());
+			ecs::ChatSystem::SendNew((ch ? ch->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 117, "%s", GetName());
 		}
 #endif
 
@@ -16702,8 +16612,8 @@ void CItem::AttrLog()
 {
 	const char* pszIP = nullptr;
 
-	if (GetOwner() && ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(GetOwner())))
-		pszIP = ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(GetOwner()))->GetHostName();
+	if (GetOwner() && ecs::PlayerRuntime::GetDesc((GetOwner() ? GetOwner()->GetEntityHandle() : entt::null)))
+		pszIP = ecs::PlayerRuntime::GetDesc((GetOwner() ? GetOwner()->GetEntityHandle() : entt::null))->GetHostName();
 
 	for (int i = 0; i < ITEM_SOCKET_MAX_NUM; ++i)
 	{
@@ -16787,7 +16697,7 @@ int CItem::GiveMoreTime_Per(float fPercent)
 {
 	if (IsDragonSoul())
 	{
-		uint32_t duration = DSManager::instance().GetDuration(EntityFactory::CreateItemEntity(g_registry, this));
+		uint32_t duration = DSManager::instance().GetDuration(GetEntityHandle());
 		uint32_t remain_sec = GetSocket(ITEM_SOCKET_REMAIN_SEC);
 		uint32_t given_time = fPercent * duration / 100u;
 		if (remain_sec == duration)
@@ -16812,7 +16722,7 @@ int CItem::GiveMoreTime_Fix(uint32_t dwTime)
 {
 	if (IsDragonSoul())
 	{
-		uint32_t duration = DSManager::instance().GetDuration(EntityFactory::CreateItemEntity(g_registry, this));
+		uint32_t duration = DSManager::instance().GetDuration(GetEntityHandle());
 		uint32_t remain_sec = GetSocket(ITEM_SOCKET_REMAIN_SEC);
 		if (remain_sec == duration)
 			return false;
@@ -16900,15 +16810,15 @@ void CItem::ClearMountAttributeAndAffect()
 {
 	auto* ch = GetOwner();
 
-	AffectSystem::RemoveAffect(AIHelpers::EcsOf(ch), AFFECT_MOUNT);
-	AffectSystem::RemoveAffect(AIHelpers::EcsOf(ch), AFFECT_MOUNT_BONUS);
+	AffectSystem::RemoveAffect((ch ? ch->GetEntityHandle() : entt::null), AFFECT_MOUNT);
+	AffectSystem::RemoveAffect((ch ? ch->GetEntityHandle() : entt::null), AFFECT_MOUNT_BONUS);
 
-	MountSystem::ForceClearRidingState(AIHelpers::EcsOf(ch));
+	MountSystem::ForceClearRidingState((ch ? ch->GetEntityHandle() : entt::null));
 
-	ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_ST, 0);
-	ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_DX, 0);
-	ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_HT, 0);
-	ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_IQ, 0);
+	ecs::PointSystem::Change((ch ? ch->GetEntityHandle() : entt::null), POINT_ST, 0);
+	ecs::PointSystem::Change((ch ? ch->GetEntityHandle() : entt::null), POINT_DX, 0);
+	ecs::PointSystem::Change((ch ? ch->GetEntityHandle() : entt::null), POINT_HT, 0);
+	ecs::PointSystem::Change((ch ? ch->GetEntityHandle() : entt::null), POINT_IQ, 0);
 }
 
 int32_t CItem::FindApplyValue(uint8_t bApplyType)
@@ -16970,7 +16880,7 @@ void CItem::RemoveLockedAttr()
 void CItem::SetLockedAttr(short sIndex)
 {
 	m_sLockedAttr = sIndex;
-	if (const entt::entity itemEntity = EntityFactory::CreateItemEntity(g_registry, this);
+	if (const entt::entity itemEntity = GetEntityHandle();
 		itemEntity != entt::null && g_registry.valid(itemEntity))
 		g_registry.emplace_or_replace<ecs::ItemLockedAttribute>(itemEntity, ecs::ItemLockedAttribute{sIndex});
 	UpdatePacket();
@@ -17383,7 +17293,7 @@ EVENTFUNC(item_destroy_event)
 	}
 
 	const entt::entity itemEntity = info->item;
-	LPITEM pkItem = LegacyItemOf(itemEntity);
+	LPITEM pkItem = LegacyItemBoundary(itemEntity);
 	if (!pkItem)
 		return 0;
 
@@ -17408,7 +17318,7 @@ EVENTFUNC(ownership_event)
 	}
 
 	const entt::entity itemEntity = info->item;
-	LPITEM pkItem = LegacyItemOf(itemEntity);
+	LPITEM pkItem = LegacyItemBoundary(itemEntity);
 	if (!pkItem)
 		return 0;
 
@@ -17435,7 +17345,7 @@ EVENTFUNC(unique_expire_event)
 	}
 
 	const entt::entity itemEntity = info->item;
-	LPITEM pkItem = LegacyItemOf(itemEntity);
+	LPITEM pkItem = LegacyItemBoundary(itemEntity);
 	if (!pkItem)
 		return 0;
 
@@ -17485,7 +17395,7 @@ EVENTFUNC(timer_based_on_wear_expire_event)
 	}
 
 	const entt::entity itemEntity = info->item;
-	LPITEM pkItem = LegacyItemOf(itemEntity);
+	LPITEM pkItem = LegacyItemBoundary(itemEntity);
 	if (!pkItem)
 		return 0;
 	int remain_time = pkItem->GetSocket(ITEM_SOCKET_REMAIN_SEC) - processing_time / passes_per_sec;
@@ -17537,7 +17447,7 @@ EVENTFUNC(real_time_expire_event)
 	if (nullptr == info)
 		return 0;
 
-	const LPITEM item = LegacyItemOf(info->item);
+	const LPITEM item = LegacyItemBoundary(info->item);
 	if (!item)
 		return 0;
 
@@ -17551,12 +17461,12 @@ EVENTFUNC(real_time_expire_event)
 			if (item->GetSocket(1) == 1) {
 				auto* pkOwner = item->GetOwner();
 				if (pkOwner) {
-					if (AffectSystem::FindAffect(AIHelpers::EcsOf(pkOwner), item->GetValue(0))) {
-						AffectSystem::RemoveAffect(AIHelpers::EcsOf(pkOwner), item->GetValue(0));
+					if (AffectSystem::FindAffect((pkOwner ? pkOwner->GetEntityHandle() : entt::null), item->GetValue(0))) {
+						AffectSystem::RemoveAffect((pkOwner ? pkOwner->GetEntityHandle() : entt::null), item->GetValue(0));
 					}
 
 #ifdef TEXTS_IMPROVEMENT
-					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(pkOwner), CHAT_TYPE_INFO, 27, "%s", item->GetName());
+					ecs::ChatSystem::SendNew((pkOwner ? pkOwner->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 27, "%s", item->GetName());
 #endif
 				}
 			}
@@ -17574,12 +17484,12 @@ EVENTFUNC(real_time_expire_event)
 			if (nextSec <= 0) {
 				auto* pkOwner = item->GetOwner();
 				if (pkOwner) {
-					if (AffectSystem::FindAffect(AIHelpers::EcsOf(pkOwner), item->GetValue(0))) {
-						AffectSystem::RemoveAffect(AIHelpers::EcsOf(pkOwner), item->GetValue(0));
+					if (AffectSystem::FindAffect((pkOwner ? pkOwner->GetEntityHandle() : entt::null), item->GetValue(0))) {
+						AffectSystem::RemoveAffect((pkOwner ? pkOwner->GetEntityHandle() : entt::null), item->GetValue(0));
 					}
 
 #ifdef TEXTS_IMPROVEMENT
-					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(pkOwner), CHAT_TYPE_INFO, 27, "%s", item->GetName());
+					ecs::ChatSystem::SendNew((pkOwner ? pkOwner->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 27, "%s", item->GetName());
 #endif
 				}
 
@@ -17598,7 +17508,7 @@ EVENTFUNC(real_time_expire_event)
 	{
 		auto* pkOwner = item->GetOwner();
 
-		if (pkOwner && ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(pkOwner)) && item->GetWindow() == MOUNT_INVENTORY)
+		if (pkOwner && ecs::PlayerRuntime::GetDesc((pkOwner ? pkOwner->GetEntityHandle() : entt::null)) && item->GetWindow() == MOUNT_INVENTORY)
 		{
 			TPacketGCWhisper pack;
 			char msg[CHAT_MAX_LEN + 1];
@@ -17610,8 +17520,8 @@ EVENTFUNC(real_time_expire_event)
 			pack.wSize = static_cast<uint16_t>(sizeof(TPacketGCWhisper) + len + 1);
 			strlcpy(pack.szNameFrom, "[MountInventory]", sizeof(pack.szNameFrom));
 
-			ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(pkOwner))->BufferedPacket(&pack, sizeof(pack));
-			ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(pkOwner))->Packet(msg, len + 1);
+			ecs::PlayerRuntime::GetDesc((pkOwner ? pkOwner->GetEntityHandle() : entt::null))->BufferedPacket(&pack, sizeof(pack));
+			ecs::PlayerRuntime::GetDesc((pkOwner ? pkOwner->GetEntityHandle() : entt::null))->Packet(msg, len + 1);
 		}
 
 		if (item->IsNewMountItem()) {
@@ -17636,7 +17546,7 @@ EVENTFUNC(accessory_socket_expire_event)
 		return 0;
 	}
 
-	LPITEM item = LegacyItemOf(info->item);
+	LPITEM item = LegacyItemBoundary(info->item);
 	if (!item)
 		return 0;
 	if (item->GetAccessorySocketDownGradeTime() <= 1)
@@ -17669,7 +17579,7 @@ EVENTFUNC(soul_item_event)
 	if (!pInfo)
 		return 0;
 
-	const LPITEM pItem = LegacyItemOf(pInfo->item);
+	const LPITEM pItem = LegacyItemBoundary(pInfo->item);
 	if (!pItem)
 		return 0;
 

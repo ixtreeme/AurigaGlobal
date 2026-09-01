@@ -1,51 +1,45 @@
 
 #include "stdafx.h"
-#include "ecs/AIHelpers.hpp"
 #include "ecs/systems/PlayerRuntimeSystem.hpp"
+#include "ecs/systems/MountSystem.hpp"
 #include <Core/Logging.hpp>
 #include "questmanager.h"
-#include "char_interface.hpp"
-#include "char_manager.h"
-#include "ecs/CharacterAccessors.hpp"
 #include "arena.h"
 
 namespace quest
 {
 	ALUA(arena_start_duel)
 	{
-		// migrated from arena system
-		// DUAL-PATH: legacy only during migration window
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
-		auto* ch = ecs::LegacyCharOf(chEntity);
-		LPCHARACTER ch2 = CHARACTER_MANAGER::instance().FindPC(lua_tostring(L,1));
+		const entt::entity opponent = ecs::PlayerRuntime::FindByPlayerName(lua_tostring(L, 1));
 		int nSetPoint = (int)lua_tonumber(L, 2);
 
-		if ( ch == nullptr || ch2 == nullptr)
+		if (!ecs::PlayerRuntime::IsPC(chEntity) || !ecs::PlayerRuntime::IsPC(opponent))
 		{
 			lua_pushnumber(L, 0);
 			return 1;
 		}
 
-		if ( ch->IsHorseRiding() == true )
+		if (MountSystem::IsRiding(chEntity))
 		{
-			ch->StopRiding();
-			ch->HorseSummon(false);
+			MountSystem::StopRiding(chEntity);
+			MountSystem::SummonHorse(chEntity, false);
 		}
 
-		if ( ch2->IsHorseRiding() == true )
+		if (MountSystem::IsRiding(opponent))
 		{
-			ch2->StopRiding();
-			ch2->HorseSummon(false);
+			MountSystem::StopRiding(opponent);
+			MountSystem::SummonHorse(opponent, false);
 		}
 
-		if ( CArenaManager::instance().IsMember(ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)), (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)))) != MEMBER_NO ||
-				CArenaManager::instance().IsMember(ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch2)), ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch2))) != MEMBER_NO	)
+		if (CArenaManager::instance().IsMember(ecs::PlayerRuntime::GetMapIndex(chEntity), ecs::PlayerRuntime::GetPlayerID(chEntity)) != MEMBER_NO ||
+				CArenaManager::instance().IsMember(ecs::PlayerRuntime::GetMapIndex(opponent), ecs::PlayerRuntime::GetPlayerID(opponent)) != MEMBER_NO)
 		{
 			lua_pushnumber(L, 2);
 			return 1;
 		}
 
-		if ( CArenaManager::instance().StartDuel(ch, ch2, nSetPoint) == false )
+		if (!CArenaManager::instance().StartDuel(chEntity, opponent, nSetPoint))
 		{
 			lua_pushnumber(L, 3);
 			return 1;
@@ -89,35 +83,30 @@ namespace quest
 
 	ALUA(arena_add_observer)
 	{
-		// migrated from arena observer system
-		// DUAL-PATH: legacy only during migration window
 		int mapIdx = (int)lua_tonumber(L, 1);
 		int ObPointX = (int)lua_tonumber(L, 2);
 		int ObPointY = (int)lua_tonumber(L, 3);
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
-		auto* ch = ecs::LegacyCharOf(chEntity);
-		CArenaManager::instance().AddObserver(ch, mapIdx, ObPointX, ObPointY);
+		CArenaManager::instance().AddObserver(chEntity, mapIdx, ObPointX, ObPointY);
 
 		return 1;
 	}
 
 	ALUA(arena_is_in_arena)
 	{
-		// migrated from arena system
-		// DUAL-PATH: legacy only during migration window
 		uint32_t pid = (uint32_t)lua_tonumber(L, 1);
 
-		LPCHARACTER ch = CHARACTER_MANAGER::instance().FindByPID(pid);
+		const entt::entity character = ecs::PlayerRuntime::FindByPlayerID(pid);
 
-		if ( ch == nullptr)
+		if (character == entt::null)
 		{
 			lua_pushnumber(L, 1);
 		}
 		else
 		{
-			if ( ch->GetArena() == nullptr || ch->GetArenaObserverMode() == true )
+			if (ecs::PlayerRuntime::GetArena(character) == nullptr || ecs::PlayerRuntime::IsArenaObserverMode(character))
 			{
-				if ( CArenaManager::instance().IsMember(ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)), (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)))) == MEMBER_DUELIST )
+				if (CArenaManager::instance().IsMember(ecs::PlayerRuntime::GetMapIndex(character), ecs::PlayerRuntime::GetPlayerID(character)) == MEMBER_DUELIST)
 					lua_pushnumber(L, 1);
 				else
 					lua_pushnumber(L, 0);

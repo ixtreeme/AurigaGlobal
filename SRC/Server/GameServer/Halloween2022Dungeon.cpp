@@ -188,7 +188,7 @@ namespace
                 if (!ent || ent->GetType() != ENTITY_CHARACTER)
                     return;
                 LPCHARACTER ch = (LPCHARACTER)ent;
-                if (ch && ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch)))
+                if (ch && ecs::PlayerRuntime::IsPC(((ch) ? (ch)->GetEntityHandle() : entt::null)))
                     m_f(ch);
             }
         } each(fn);
@@ -207,7 +207,7 @@ namespace
         ForEachPcOnMap(mapIndex, [&](LPCHARACTER pc)
         {
             if (pc)
-                ecs::ChatSystem::Send(AIHelpers::EcsOf(pc), CHAT_TYPE_NOTICE, "%s", buf);
+                ecs::ChatSystem::Send(((pc) ? (pc)->GetEntityHandle() : entt::null), CHAT_TYPE_NOTICE, "%s", buf);
         });
     }
 
@@ -222,7 +222,7 @@ namespace
         ForEachPcOnMap(mapIndex, [&](LPCHARACTER pc)
         {
             if (pc)
-                ecs::ChatSystem::Send(AIHelpers::EcsOf(pc), CHAT_TYPE_BIG_NOTICE, "%s", buf);
+                ecs::ChatSystem::Send(((pc) ? (pc)->GetEntityHandle() : entt::null), CHAT_TYPE_BIG_NOTICE, "%s", buf);
         });
     }
 
@@ -268,8 +268,8 @@ namespace
         if (!ch)
             return;
         int32_t x = 0, y = 0;
-        GetOutsideCellByEmpire(ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(ch)), x, y);
-        ch->SetWarpLocation(GetOutsideMapByEmpire(ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(ch))), x, y);
+        GetOutsideCellByEmpire(ecs::PlayerRuntime::GetEmpire(((ch) ? (ch)->GetEntityHandle() : entt::null)), x, y);
+        ch->SetWarpLocation(GetOutsideMapByEmpire(ecs::PlayerRuntime::GetEmpire(((ch) ? (ch)->GetEntityHandle() : entt::null))), x, y);
     }
 
     void WarpOut(LPCHARACTER ch)
@@ -277,8 +277,8 @@ namespace
         if (!ch)
             return;
         int32_t x = 0, y = 0;
-        GetOutsideCellByEmpire(ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(ch)), x, y);
-        ecs::MovementSystem::WarpSet(AIHelpers::EcsOf(ch), x * 100, y * 100, GetOutsideMapByEmpire(ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(ch))));
+        GetOutsideCellByEmpire(ecs::PlayerRuntime::GetEmpire(((ch) ? (ch)->GetEntityHandle() : entt::null)), x, y);
+        ecs::MovementSystem::WarpSet(((ch) ? (ch)->GetEntityHandle() : entt::null), x * 100, y * 100, GetOutsideMapByEmpire(ecs::PlayerRuntime::GetEmpire(((ch) ? (ch)->GetEntityHandle() : entt::null))));
     }
 
     void WarpAllOut(int32_t mapIndex)
@@ -309,11 +309,11 @@ namespace
             return;
 
         PIXEL_POSITION pos;
-        pos.x = ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(victim)) + number(-200, 200);
-        pos.y = ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(victim)) + number(-200, 200);
+        pos.x = ecs::PlayerRuntime::GetX(((victim) ? (victim)->GetEntityHandle() : entt::null)) + number(-200, 200);
+        pos.y = ecs::PlayerRuntime::GetY(((victim) ? (victim)->GetEntityHandle() : entt::null)) + number(-200, 200);
         pos.z = victim->GetZ();
 
-        item->AddToGround(ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(victim)), pos);
+        item->AddToGround(ecs::PlayerRuntime::GetMapIndex(((victim) ? (victim)->GetEntityHandle() : entt::null)), pos);
         item->StartDestroyEvent();
 
         if (owner)
@@ -324,7 +324,7 @@ namespace
     {
         if (!ch)
             return false;
-        return ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)) == 219;
+        return ecs::PlayerRuntime::GetMapIndex(((ch) ? (ch)->GetEntityHandle() : entt::null)) == 219;
     }
 
     int32_t CooldownRemain(LPCHARACTER ch)
@@ -332,32 +332,32 @@ namespace
         if (!ch)
             return 0;
         const int32_t now = get_global_time();
-        const int32_t until = ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(ch), kQfCooldown);
+        const int32_t until = ecs::QuestSystem::GetFlag(((ch) ? (ch)->GetEntityHandle() : entt::null), kQfCooldown);
         return (until > now) ? (until - now) : 0;
     }
 
     void SetCooldown(LPCHARACTER ch)
     {
         if (ch)
-            ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(ch), kQfCooldown, get_global_time() + kEntranceCooldownSec);
+            ecs::QuestSystem::SetFlag(((ch) ? (ch)->GetEntityHandle() : entt::null), kQfCooldown, get_global_time() + kEntranceCooldownSec);
     }
 
     void SetRejoinFlags(LPCHARACTER ch, int32_t mapIndex)
     {
         if (!ch)
             return;
-        ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(ch), kQfDisconnect, get_global_time() + kRejoinSec);
-        ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(ch), kQfIdx, mapIndex);
-        ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(ch), kQfCh, (int32_t)g_bChannel);
+        ecs::QuestSystem::SetFlag(((ch) ? (ch)->GetEntityHandle() : entt::null), kQfDisconnect, get_global_time() + kRejoinSec);
+        ecs::QuestSystem::SetFlag(((ch) ? (ch)->GetEntityHandle() : entt::null), kQfIdx, mapIndex);
+        ecs::QuestSystem::SetFlag(((ch) ? (ch)->GetEntityHandle() : entt::null), kQfCh, (int32_t)g_bChannel);
     }
 
     void ClearRejoinFlags(LPCHARACTER ch)
     {
         if (!ch)
             return;
-        ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(ch), kQfDisconnect, 0);
-        ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(ch), kQfIdx, 0);
-        ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(ch), kQfCh, 0);
+        ecs::QuestSystem::SetFlag(((ch) ? (ch)->GetEntityHandle() : entt::null), kQfDisconnect, 0);
+        ecs::QuestSystem::SetFlag(((ch) ? (ch)->GetEntityHandle() : entt::null), kQfIdx, 0);
+        ecs::QuestSystem::SetFlag(((ch) ? (ch)->GetEntityHandle() : entt::null), kQfCh, 0);
     }
 
     int32_t GetPartyOnlineCountOnMap(LPPARTY party, int32_t mapIndex)
@@ -367,7 +367,7 @@ namespace
             return 0;
         auto fn = [&](LPCHARACTER pc)
         {
-            if (pc && ecs::SocialSystem::GetParty(AIHelpers::EcsOf(pc)) == party)
+            if (pc && ecs::SocialSystem::GetParty(((pc) ? (pc)->GetEntityHandle() : entt::null)) == party)
                 ++count;
         };
         party->ForEachOnMapMember(fn, mapIndex);
@@ -415,7 +415,7 @@ namespace
             {
                 char key[32];
                 snprintf(key, sizeof(key), "hw22_stone_%d", i + 1);
-		d->SetUnique(key, ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(stone)));
+		d->SetUnique(key, ecs::PlayerRuntime::GetPacketVID(((stone) ? (stone)->GetEntityHandle() : entt::null)));
             }
         }
 
@@ -444,7 +444,7 @@ namespace
         {
             char key[32];
             snprintf(key, sizeof(key), "hw22_calyx_%d", i + 1);
-		if (ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(npc)) == (uint32_t)d->GetUniqueVid(key))
+		if (ecs::PlayerRuntime::GetPacketVID(((npc) ? (npc)->GetEntityHandle() : entt::null)) == (uint32_t)d->GetUniqueVid(key))
             {
                 d->SpawnMob(kCalyxFullNpc, kCalyxPos[i].x, kCalyxPos[i].y, kCalyxPos[i].dir);
                 d->KillUnique(key);
@@ -562,7 +562,7 @@ namespace
             d->SetFlag(kFlagFinalBossActive, 1);
             LPCHARACTER boss = d->SpawnMob(kFinalBossVnum, kFinalBossPos.x, kFinalBossPos.y, kFinalBossPos.dir);
             if (boss)
-		d->SetUnique("hw22_final_boss", ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(boss)));
+		d->SetUnique("hw22_final_boss", ecs::PlayerRuntime::GetPacketVID(((boss) ? (boss)->GetEntityHandle() : entt::null)));
 
             BigNoticeMap(idx, "<Bloody cathedral> The final boss has appeared!");
             return 0;
@@ -617,10 +617,10 @@ bool CHalloween2022Dungeon::IsHalloweenDungeonMap(int32_t mapIndex) const
 
 void CHalloween2022Dungeon::OnPlayerDisconnect(CHARACTER* ch)
 {
-    if (!ch || !ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch)))
+    if (!ch || !ecs::PlayerRuntime::IsPC(((ch) ? (ch)->GetEntityHandle() : entt::null)))
         return;
 
-    const int32_t idx = ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch));
+    const int32_t idx = ecs::PlayerRuntime::GetMapIndex(((ch) ? (ch)->GetEntityHandle() : entt::null));
     if (!IsHalloweenDungeonMap(idx))
         return;
 
@@ -633,10 +633,10 @@ void CHalloween2022Dungeon::OnPlayerDisconnect(CHARACTER* ch)
 
 void CHalloween2022Dungeon::OnPlayerLogin(CHARACTER* ch)
 {
-    if (!ch || !ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch)))
+    if (!ch || !ecs::PlayerRuntime::IsPC(((ch) ? (ch)->GetEntityHandle() : entt::null)))
         return;
 
-    const int32_t idx = ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch));
+    const int32_t idx = ecs::PlayerRuntime::GetMapIndex(((ch) ? (ch)->GetEntityHandle() : entt::null));
 
     if (IsHalloweenDungeonMap(idx))
     {
@@ -648,8 +648,8 @@ void CHalloween2022Dungeon::OnPlayerLogin(CHARACTER* ch)
         }
 
         SetOutsideWarpLocation(ch);
-        ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(ch), kQfIdx, idx);
-        ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(ch), kQfCh, (int32_t)g_bChannel);
+        ecs::QuestSystem::SetFlag(((ch) ? (ch)->GetEntityHandle() : entt::null), kQfIdx, idx);
+        ecs::QuestSystem::SetFlag(((ch) ? (ch)->GetEntityHandle() : entt::null), kQfCh, (int32_t)g_bChannel);
         return;
     }
 
@@ -659,12 +659,12 @@ void CHalloween2022Dungeon::OnPlayerLogin(CHARACTER* ch)
 
 bool CHalloween2022Dungeon::OnClickNpc(CHARACTER* ch, CHARACTER* npc)
 {
-    if (!ch || !ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch)) || !npc)
+    if (!ch || !ecs::PlayerRuntime::IsPC(((ch) ? (ch)->GetEntityHandle() : entt::null)) || !npc)
         return false;
 
-    const uint32_t race = ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(npc));
+    const uint32_t race = ecs::PlayerRuntime::GetRaceNum(((npc) ? (npc)->GetEntityHandle() : entt::null));
     const int32_t now = get_global_time();
-    const int32_t currentIdx = ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch));
+    const int32_t currentIdx = ecs::PlayerRuntime::GetMapIndex(((ch) ? (ch)->GetEntityHandle() : entt::null));
 
     bool fromCompletedInside = false;
     int32_t originMapForWarp = currentIdx;
@@ -679,14 +679,14 @@ bool CHalloween2022Dungeon::OnClickNpc(CHARACTER* ch, CHARACTER* npc)
         }
         else if (race == kEntryNpcVnum)
         {
-            ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "You are already inside the dungeon.");
+            ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "You are already inside the dungeon.");
             return true;
         }
     }
 
     if (race == kRewardChestVnum)
     {
-        const int32_t idx = ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch));
+        const int32_t idx = ecs::PlayerRuntime::GetMapIndex(((ch) ? (ch)->GetEntityHandle() : entt::null));
         if (!IsHalloweenDungeonMap(idx))
             return false;
 
@@ -695,10 +695,10 @@ bool CHalloween2022Dungeon::OnClickNpc(CHARACTER* ch, CHARACTER* npc)
             return false;
 
         char rewardFlag[64];
-        snprintf(rewardFlag, sizeof(rewardFlag), "hw22_reward_%u", ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)));
+        snprintf(rewardFlag, sizeof(rewardFlag), "hw22_reward_%u", ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null)));
         if (d->GetFlag(rewardFlag) != 0)
         {
-            ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "You already took your reward.");
+            ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "You already took your reward.");
             return true;
         }
 
@@ -711,9 +711,9 @@ bool CHalloween2022Dungeon::OnClickNpc(CHARACTER* ch, CHARACTER* npc)
 
     if (!fromCompletedInside)
     {
-        const int32_t disconnectUntil = ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(ch), kQfDisconnect);
-        const int32_t rejoinIdx = ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(ch), kQfIdx);
-        const int32_t rejoinCh = ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(ch), kQfCh);
+        const int32_t disconnectUntil = ecs::QuestSystem::GetFlag(((ch) ? (ch)->GetEntityHandle() : entt::null), kQfDisconnect);
+        const int32_t rejoinIdx = ecs::QuestSystem::GetFlag(((ch) ? (ch)->GetEntityHandle() : entt::null), kQfIdx);
+        const int32_t rejoinCh = ecs::QuestSystem::GetFlag(((ch) ? (ch)->GetEntityHandle() : entt::null), kQfCh);
 
         if (disconnectUntil > now && rejoinIdx > 0 && rejoinCh == (int32_t)g_bChannel && IsHalloweenDungeonMap(rejoinIdx))
         {
@@ -722,10 +722,10 @@ bool CHalloween2022Dungeon::OnClickNpc(CHARACTER* ch, CHARACTER* npc)
             {
                 const int32_t floor = std::max(1, d->GetFlag(kFlagFloor));
                 if (floor == 1)
-                    ecs::MovementSystem::WarpSet(AIHelpers::EcsOf(ch), kEnterGlobalX * 100, kEnterGlobalY * 100, rejoinIdx);
+                    ecs::MovementSystem::WarpSet(((ch) ? (ch)->GetEntityHandle() : entt::null), kEnterGlobalX * 100, kEnterGlobalY * 100, rejoinIdx);
                 else
-                    ecs::MovementSystem::WarpSet(AIHelpers::EcsOf(ch), kRejoinFloor2GlobalX * 100, kRejoinFloor2GlobalY * 100, rejoinIdx);
-                ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(ch), kQfDisconnect, 0);
+                    ecs::MovementSystem::WarpSet(((ch) ? (ch)->GetEntityHandle() : entt::null), kRejoinFloor2GlobalX * 100, kRejoinFloor2GlobalY * 100, rejoinIdx);
+                ecs::QuestSystem::SetFlag(((ch) ? (ch)->GetEntityHandle() : entt::null), kQfDisconnect, 0);
                 return true;
             }
         }
@@ -733,19 +733,19 @@ bool CHalloween2022Dungeon::OnClickNpc(CHARACTER* ch, CHARACTER* npc)
 
     if (!fromCompletedInside && !IsEntryMapForEmpire(ch))
     {
-        ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "You must be in the correct map to enter Bloody cathedral.");
+        ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "You must be in the correct map to enter Bloody cathedral.");
         return true;
     }
 
-    if (!ecs::PlayerRuntime::CanWarp(AIHelpers::EcsOf(ch)))
+    if (!ecs::PlayerRuntime::CanWarp(((ch) ? (ch)->GetEntityHandle() : entt::null)))
     {
-        ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "You have to wait a bit before entering.");
+        ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "You have to wait a bit before entering.");
         return true;
     }
 
     if (quest::CQuestManager::instance().GetEventFlag("Halloween2022Dungeon_block") == 1 && !ch->IsGM())
     {
-        ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "The Bloody cathedral is currently blocked.");
+        ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "The Bloody cathedral is currently blocked.");
         return true;
     }
 
@@ -754,15 +754,15 @@ bool CHalloween2022Dungeon::OnClickNpc(CHARACTER* ch, CHARACTER* npc)
     const int32_t antiSpamUntil = quest::CQuestManager::instance().GetEventFlag(antiSpamFlag);
     if (antiSpamUntil > now)
     {
-        ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "Please wait a moment.");
+        ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "Please wait a moment.");
         return true;
     }
     quest::CQuestManager::instance().SetEventFlag(antiSpamFlag, now + kAntiSpamSec);
 
-    LPPARTY party = ecs::SocialSystem::GetParty(AIHelpers::EcsOf(ch));
-    if (party && party->GetLeaderPID() != ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)))
+    LPPARTY party = ecs::SocialSystem::GetParty(((ch) ? (ch)->GetEntityHandle() : entt::null));
+    if (party && party->GetLeaderPID() != ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null)))
     {
-        ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "Only the party leader can enter.");
+        ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "Only the party leader can enter.");
         return true;
     }
 
@@ -773,24 +773,24 @@ bool CHalloween2022Dungeon::OnClickNpc(CHARACTER* ch, CHARACTER* npc)
 
     auto checkMember = [&](LPCHARACTER m)
     {
-        if (!ok || !m || !ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(m)))
+        if (!ok || !m || !ecs::PlayerRuntime::IsPC(((m) ? (m)->GetEntityHandle() : entt::null)))
             return;
 
-        const int32_t lv = ecs::PointSystem::GetLevel(AIHelpers::EcsOf(m));
+        const int32_t lv = ecs::PointSystem::GetLevel(((m) ? (m)->GetEntityHandle() : entt::null));
         if (lv < kMinLevel || lv > kMaxLevel)
         {
             ok = false;
             bad = BAD_LEVEL;
-            badName = ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(m)).data();
+            badName = ecs::PlayerRuntime::GetName(((m) ? (m)->GetEntityHandle() : entt::null)).data();
             badVal = lv;
             return;
         }
 
-        if (!ecs::PlayerRuntime::CanWarp(AIHelpers::EcsOf(m)))
+        if (!ecs::PlayerRuntime::CanWarp(((m) ? (m)->GetEntityHandle() : entt::null)))
         {
             ok = false;
             bad = BAD_WARP;
-            badName = ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(m)).data();
+            badName = ecs::PlayerRuntime::GetName(((m) ? (m)->GetEntityHandle() : entt::null)).data();
             return;
         }
 
@@ -799,7 +799,7 @@ bool CHalloween2022Dungeon::OnClickNpc(CHARACTER* ch, CHARACTER* npc)
         {
             ok = false;
             bad = BAD_COOLDOWN;
-            badName = ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(m)).data();
+            badName = ecs::PlayerRuntime::GetName(((m) ? (m)->GetEntityHandle() : entt::null)).data();
             badVal = rem;
             return;
         }
@@ -808,7 +808,7 @@ bool CHalloween2022Dungeon::OnClickNpc(CHARACTER* ch, CHARACTER* npc)
         {
             ok = false;
             bad = BAD_ITEM;
-            badName = ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(m)).data();
+            badName = ecs::PlayerRuntime::GetName(((m) ? (m)->GetEntityHandle() : entt::null)).data();
             return;
         }
     };
@@ -824,17 +824,17 @@ bool CHalloween2022Dungeon::OnClickNpc(CHARACTER* ch, CHARACTER* npc)
         switch (bad)
         {
             case BAD_LEVEL:
-                ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "%s has invalid level (Lv%d). Required: %d-%d.", badName ? badName : "A member", badVal, kMinLevel, kMaxLevel);
+                ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "%s has invalid level (Lv%d). Required: %d-%d.", badName ? badName : "A member", badVal, kMinLevel, kMaxLevel);
                 break;
             case BAD_WARP:
-                ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "%s cannot warp yet.", badName ? badName : "A member");
+                ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "%s cannot warp yet.", badName ? badName : "A member");
                 break;
             case BAD_ITEM:
-                ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "%s does not have the required entry item.", badName ? badName : "A party member");
+                ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "%s does not have the required entry item.", badName ? badName : "A party member");
                 break;
             case BAD_COOLDOWN:
                 FormatDuration(badVal, tmp, sizeof(tmp));
-                ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "%s is still on cooldown (%s).", badName ? badName : "A member", tmp);
+                ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "%s is still on cooldown (%s).", badName ? badName : "A member", tmp);
                 break;
             default:
                 break;
@@ -845,7 +845,7 @@ bool CHalloween2022Dungeon::OnClickNpc(CHARACTER* ch, CHARACTER* npc)
     LPDUNGEON d = CDungeonManager::instance().Create(kOriginalMap);
     if (!d)
     {
-        ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "Failed to create dungeon instance.");
+        ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "Failed to create dungeon instance.");
         return true;
     }
 
@@ -853,15 +853,15 @@ bool CHalloween2022Dungeon::OnClickNpc(CHARACTER* ch, CHARACTER* npc)
 
     auto prepareMember = [&](LPCHARACTER m)
     {
-        if (!m || !ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(m)))
+        if (!m || !ecs::PlayerRuntime::IsPC(((m) ? (m)->GetEntityHandle() : entt::null)))
             return;
 
         if (!fromCompletedInside)
             SetOutsideWarpLocation(m);
 
         ClearRejoinFlags(m);
-        ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(m), kQfIdx, dungeonMapIdx);
-        ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(m), kQfCh, (int32_t)g_bChannel);
+        ecs::QuestSystem::SetFlag(((m) ? (m)->GetEntityHandle() : entt::null), kQfIdx, dungeonMapIdx);
+        ecs::QuestSystem::SetFlag(((m) ? (m)->GetEntityHandle() : entt::null), kQfCh, (int32_t)g_bChannel);
         SetCooldown(m);
         m->RemoveSpecifyItem(kEntryItemVnum, kEntryItemCount);
     };
@@ -885,10 +885,10 @@ bool CHalloween2022Dungeon::OnClickNpc(CHARACTER* ch, CHARACTER* npc)
 
 void CHalloween2022Dungeon::OnMobKilled(CHARACTER* killer, CHARACTER* victim)
 {
-    if (!killer || !victim || !ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(killer)))
+    if (!killer || !victim || !ecs::PlayerRuntime::IsPC(((killer) ? (killer)->GetEntityHandle() : entt::null)))
         return;
 
-    const int32_t idx = ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(killer));
+    const int32_t idx = ecs::PlayerRuntime::GetMapIndex(((killer) ? (killer)->GetEntityHandle() : entt::null));
     if (!IsHalloweenDungeonMap(idx))
         return;
 
@@ -896,7 +896,7 @@ void CHalloween2022Dungeon::OnMobKilled(CHARACTER* killer, CHARACTER* victim)
     if (!d)
         return;
 
-    const uint32_t vnum = ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(victim));
+    const uint32_t vnum = ecs::PlayerRuntime::GetRaceNum(((victim) ? (victim)->GetEntityHandle() : entt::null));
     const int32_t floor = d->GetFlag(kFlagFloor);
 
     // Floor 1 - full stones
@@ -910,14 +910,14 @@ void CHalloween2022Dungeon::OnMobKilled(CHARACTER* killer, CHARACTER* victim)
         {
             char key[32];
             snprintf(key, sizeof(key), "hw22_stone_%d", i + 1);
-	if (ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(victim)) == (uint32_t)d->GetUniqueVid(key))
+	if (ecs::PlayerRuntime::GetPacketVID(((victim) ? (victim)->GetEntityHandle() : entt::null)) == (uint32_t)d->GetUniqueVid(key))
             {
                 LPCHARACTER stoneNpc = d->SpawnMob(kStoneNpc, kStonePos[i].x, kStonePos[i].y, kStonePos[i].dir);
                 if (stoneNpc)
                 {
                     char u[32];
                     snprintf(u, sizeof(u), "hw22_spellstone_%d", i + 1);
-		d->SetUnique(u, ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(stoneNpc)));
+		d->SetUnique(u, ecs::PlayerRuntime::GetPacketVID(((stoneNpc) ? (stoneNpc)->GetEntityHandle() : entt::null)));
                 }
                 break;
             }
@@ -969,7 +969,7 @@ void CHalloween2022Dungeon::OnMobKilled(CHARACTER* killer, CHARACTER* victim)
     }
 
     // Floor 1 - monster waves
-    if (floor == 1 && d->GetFlag(kFlagFloor1Monsters) == 1 && !ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(victim)))
+    if (floor == 1 && d->GetFlag(kFlagFloor1Monsters) == 1 && !ecs::PlayerRuntime::IsPC(((victim) ? (victim)->GetEntityHandle() : entt::null)))
     {
         const int32_t killed = d->GetFlag(kFlagFloor1Killed) + 1;
         d->SetFlag(kFlagFloor1Killed, killed);
@@ -1039,7 +1039,7 @@ void CHalloween2022Dungeon::OnMobKilled(CHARACTER* killer, CHARACTER* victim)
     }
 
     // Floor 2 - monster room
-    if (floor == 2 && d->GetFlag(kFlagSecondFloorMonsters) == 1 && !ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(victim)))
+    if (floor == 2 && d->GetFlag(kFlagSecondFloorMonsters) == 1 && !ecs::PlayerRuntime::IsPC(((victim) ? (victim)->GetEntityHandle() : entt::null)))
     {
         const int32_t killed = d->GetFlag(kFlagSecondFloorKilled) + 1;
         d->SetFlag(kFlagSecondFloorKilled, killed);
@@ -1085,10 +1085,10 @@ void CHalloween2022Dungeon::OnMobKilled(CHARACTER* killer, CHARACTER* victim)
 
 bool CHalloween2022Dungeon::OnNpcTakeItem(CHARACTER* from, CHARACTER* npc, CItem* item)
 {
-    if (!from || !ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(from)) || !npc || !item)
+    if (!from || !ecs::PlayerRuntime::IsPC(((from) ? (from)->GetEntityHandle() : entt::null)) || !npc || !item)
         return false;
 
-    const int32_t idx = ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(from));
+    const int32_t idx = ecs::PlayerRuntime::GetMapIndex(((from) ? (from)->GetEntityHandle() : entt::null));
     if (!IsHalloweenDungeonMap(idx))
         return false;
 
@@ -1097,13 +1097,13 @@ bool CHalloween2022Dungeon::OnNpcTakeItem(CHARACTER* from, CHARACTER* npc, CItem
         return false;
 
     const int32_t floor = d->GetFlag(kFlagFloor);
-    const uint32_t npcVnum = ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(npc));
-    const uint32_t itemVnum = ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, item));
+    const uint32_t npcVnum = ecs::PlayerRuntime::GetRaceNum(((npc) ? (npc)->GetEntityHandle() : entt::null));
+    const uint32_t itemVnum = ItemSystem::GetItemVnum((item ? item->GetEntityHandle() : entt::null));
 
     // Angel statue
     if (floor == 1 && npcVnum == kAngelStatueNpc && d->GetFlag(kFlagCanDestroyStatue) == 1 && itemVnum == kStatueItemVnum)
     {
-        RemoveOneGivenItem(EntityFactory::CreateItemEntity(g_registry, item), "HALLOWEEN22_STATUE");
+        RemoveOneGivenItem((item ? item->GetEntityHandle() : entt::null), "HALLOWEEN22_STATUE");
         d->SetFlag(kFlagCanDestroyStatue, 0);
         d->SetFlag(kFlagAngelStatueCount, d->GetFlag(kFlagAngelStatueCount) + 1);
         M2_DESTROY_CHARACTER(npc);
@@ -1132,7 +1132,7 @@ bool CHalloween2022Dungeon::OnNpcTakeItem(CHARACTER* from, CHARACTER* npc, CItem
     // Small seal -> starts wave 1
     if (floor == 1 && npcVnum == kSealSmallNpc && d->GetFlag(kFlagCanActivateSeal) == 1 && itemVnum == kActivateItemVnum)
     {
-        RemoveOneGivenItem(EntityFactory::CreateItemEntity(g_registry, item), "HALLOWEEN22_SEAL_SMALL");
+        RemoveOneGivenItem((item ? item->GetEntityHandle() : entt::null), "HALLOWEEN22_SEAL_SMALL");
         d->SetFlag(kFlagCanActivateSeal, 0);
         d->SetFlag(kFlagSealState, d->GetFlag(kFlagSealState) + 1);
         d->SetFlag(kFlagFloor1Monsters, 1);
@@ -1146,7 +1146,7 @@ bool CHalloween2022Dungeon::OnNpcTakeItem(CHARACTER* from, CHARACTER* npc, CItem
     // Middle seal -> spawn boss again
     if (floor == 1 && npcVnum == kSealMiddleNpc && d->GetFlag(kFlagCanActivateSeal) == 1 && itemVnum == kActivateItemVnum)
     {
-        RemoveOneGivenItem(EntityFactory::CreateItemEntity(g_registry, item), "HALLOWEEN22_SEAL_MIDDLE");
+        RemoveOneGivenItem((item ? item->GetEntityHandle() : entt::null), "HALLOWEEN22_SEAL_MIDDLE");
         d->SetFlag(kFlagCanActivateSeal, 0);
         d->SetFlag(kFlagSealState, d->GetFlag(kFlagSealState) + 1);
         d->SetFlag(kFlagKillFirstBoss, 1);
@@ -1159,7 +1159,7 @@ bool CHalloween2022Dungeon::OnNpcTakeItem(CHARACTER* from, CHARACTER* npc, CItem
     // Full seal -> transition to floor 2
     if (floor == 1 && npcVnum == kSealFullNpc && d->GetFlag(kFlagCanActivateSeal) == 1 && itemVnum == kActivateItemVnum)
     {
-        RemoveOneGivenItem(EntityFactory::CreateItemEntity(g_registry, item), "HALLOWEEN22_SEAL_FULL");
+        RemoveOneGivenItem((item ? item->GetEntityHandle() : entt::null), "HALLOWEEN22_SEAL_FULL");
         d->SetFlag(kFlagCanActivateSeal, 0);
         d->SetFlag(kFlagFloor, 2);
         d->KillAll();
@@ -1172,7 +1172,7 @@ bool CHalloween2022Dungeon::OnNpcTakeItem(CHARACTER* from, CHARACTER* npc, CItem
             {
                 char key[32];
                 snprintf(key, sizeof(key), "hw22_calyx_%d", i + 1);
-	d->SetUnique(key, ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(calyx)));
+	d->SetUnique(key, ecs::PlayerRuntime::GetPacketVID(((calyx) ? (calyx)->GetEntityHandle() : entt::null)));
             }
         }
 
@@ -1187,7 +1187,7 @@ bool CHalloween2022Dungeon::OnNpcTakeItem(CHARACTER* from, CHARACTER* npc, CItem
     // Empty calyx -> floor 2 progression
     if (floor == 2 && npcVnum == kCalyxEmptyNpc && d->GetFlag(kFlagCanFillCalyx) == 1 && itemVnum == kSecondFloorItem)
     {
-        RemoveOneGivenItem(EntityFactory::CreateItemEntity(g_registry, item), "HALLOWEEN22_CALYX");
+        RemoveOneGivenItem((item ? item->GetEntityHandle() : entt::null), "HALLOWEEN22_CALYX");
         d->SetFlag(kFlagCanFillCalyx, 0);
         d->SetFlag(kFlagCalyxFilled, d->GetFlag(kFlagCalyxFilled) + 1);
         ReplaceUniqueCalyx(d, npc);

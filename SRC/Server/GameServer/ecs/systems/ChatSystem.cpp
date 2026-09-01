@@ -1,17 +1,15 @@
 #include "../../stdafx.h"
 #include "PlayerRuntimeSystem.hpp"
-#include "../AIHelpers.hpp"
 #include "../EntityInvariants.hpp"
 
 #include "ChatSystem.hpp"
+#include "../NetworkService.hpp"
 #include "../Registry.hpp"
 
 #include "../../buffer_manager.h"
-#include "../../char.h"
 #include "../../config.h"
 #include "../../desc.h"
 #include "../../packet.h"
-#include "../CharacterAccessors.hpp"
 #include <Core/Logging.hpp>
 
 namespace {
@@ -50,12 +48,11 @@ void ChatSystem::SendV(entt::entity e, uint8_t type, const char* format, va_list
 {
     ecs::Invariants::ValidateCommonIdentity(g_registry, e, "chat.send");
 
-    auto* ch = LegacyCharOf(e);
-    if (!ch || !format) {
+    if (e == entt::null || !g_registry.valid(e) || !format) {
         return;
     }
 
-    LPDESC d = ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch));
+    LPDESC d = ecs::PlayerRuntime::GetDesc(e);
     if (!d) {
         return;
     }
@@ -82,7 +79,7 @@ void ChatSystem::SendV(entt::entity e, uint8_t type, const char* format, va_list
     d->Packet(buf.read_peek(), buf.size());
 
     if (type == CHAT_TYPE_COMMAND && test_server) {
-        LOG_INFO("SEND_COMMAND {} {}", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), chatbuf);
+        LOG_INFO("SEND_COMMAND {} {}", ecs::PlayerRuntime::GetName(e).data(), chatbuf);
     }
 }
 
@@ -98,8 +95,7 @@ void ChatSystem::SendNewV(entt::entity e, uint8_t type, uint32_t idx, const char
 {
     ecs::Invariants::ValidateCommonIdentity(g_registry, e, "chat.send_new");
 
-    auto* ch = LegacyCharOf(e);
-    if (!ch || !format) {
+    if (e == entt::null || !g_registry.valid(e) || !format) {
         return;
     }
 
@@ -118,7 +114,7 @@ void ChatSystem::SendNewV(entt::entity e, uint8_t type, uint32_t idx, const char
         return;
     }
 
-    LPDESC d = ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch));
+    LPDESC d = ecs::PlayerRuntime::GetDesc(e);
     if (!d) {
         return;
     }
@@ -156,8 +152,7 @@ void ChatSystem::BroadcastV(entt::entity source, uint8_t type, const char* forma
 {
     ecs::Invariants::ValidateCommonIdentity(g_registry, source, "chat.broadcast");
 
-    auto* ch = LegacyCharOf(source);
-    if (!ch || !format) {
+    if (source == entt::null || !g_registry.valid(source) || !format) {
         return;
     }
 
@@ -171,7 +166,7 @@ void ChatSystem::BroadcastV(entt::entity source, uint8_t type, const char* forma
     packet.header = HEADER_GC_CHAT;
     packet.size = sizeof(TPacketGCChat) + len;
     packet.type = type;
-    packet.id = ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(ch));
+    packet.id = ecs::PlayerRuntime::GetPacketVID(source);
     packet.bEmpire = 0;
 
     TEMP_BUFFER buf;
@@ -180,7 +175,8 @@ void ChatSystem::BroadcastV(entt::entity source, uint8_t type, const char* forma
         buf.write(chatbuf, len);
     }
 
-    ch->PacketAround(buf.read_peek(), buf.size());
+    ecs::NetworkService::BroadcastToView(
+        g_registry, source, buf.read_peek(), buf.size(), false);
 }
 
 } // namespace ecs

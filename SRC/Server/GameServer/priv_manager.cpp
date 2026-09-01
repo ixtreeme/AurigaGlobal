@@ -3,6 +3,8 @@
 #include <Core/Logging.hpp>
 #include "ecs/AIHelpers.hpp"
 #include "ecs/systems/SocialSystem.hpp"
+#include "ecs/systems/ItemSystem.hpp"
+#include "ecs/Registry.hpp"
 #include "constants.h"
 #include "priv_manager.h"
 #include "char_interface.hpp"
@@ -208,10 +210,17 @@ void CPrivManager::RemoveCharacterPriv(uint32_t pid, uint8_t type)
 
 int CPrivManager::GetPriv(LPCHARACTER ch, uint8_t type)
 {
-	// ĳ������ ���� ��ġ�� -��� ������ -�� ����ǰ�
-	int val_ch = GetPrivByCharacter((ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))), type);
+	return GetPriv(ch ? ch->GetEntityHandle() : entt::null, type);
+}
 
-	if (val_ch < 0 && !ch->IsEquipUniqueItem(UNIQUE_ITEM_NO_BAD_LUCK_EFFECT))
+int CPrivManager::GetPriv(entt::entity character, uint8_t type)
+{
+	if (character == entt::null || !g_registry.valid(character))
+		return 0;
+	// ĳ������ ���� ��ġ�� -��� ������ -�� ����ǰ�
+	int val_ch = GetPrivByCharacter(ecs::PlayerRuntime::GetPlayerID(character), type);
+
+	if (val_ch < 0 && !ItemSystem::IsEquipUniqueItem(character, UNIQUE_ITEM_NO_BAD_LUCK_EFFECT))
 		return val_ch;
 	else
 	{
@@ -219,10 +228,10 @@ int CPrivManager::GetPriv(LPCHARACTER ch, uint8_t type)
 
 		// ����, ����, ���, ��ü �� ū ���� ���Ѵ�.
 		val = MAX(val_ch, GetPrivByEmpire(0, type));
-		val = MAX(val, GetPrivByEmpire(ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(ch)), type));
+		val = MAX(val, GetPrivByEmpire(ecs::PlayerRuntime::GetEmpire(character), type));
 
-		if (ecs::SocialSystem::GetGuild(AIHelpers::EcsOf(ch)))
-			val = MAX(val, GetPrivByGuild(ecs::SocialSystem::GetGuild(AIHelpers::EcsOf(ch))->GetID(), type));
+		if (CGuild* guild = ecs::SocialSystem::GetGuild(character))
+			val = MAX(val, GetPrivByGuild(guild->GetID(), type));
 
 		return val;
 	}

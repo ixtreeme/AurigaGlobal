@@ -350,7 +350,7 @@ uint32_t ani_attack_speed(LPCHARACTER ch)
 	if (nullptr == ch)
 		return speed;
 
-	const entt::entity character = AIHelpers::EcsOf(ch);
+	const entt::entity character = ((ch) ? (ch)->GetEntityHandle() : entt::null);
 	const entt::entity item = ItemSystem::GetWearItem(character, WEAR_WEAPON);
 
 	if (!ItemSystem::IsValidItem(item))
@@ -364,10 +364,10 @@ uint32_t ani_attack_speed(LPCHARACTER ch)
 
 	/*
 	dev_log(LOG_DEB0, "%s : (race,weapon) = (%s,%s) POINT_ATT_SPEED = %d",
-			ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(),
+			ecs::PlayerRuntime::GetName(((ch) ? (ch)->GetEntityHandle() : entt::null)).data(),
 			FN_race_name(race),
 			FN_weapon_type(weapon),
-			ecs::PointSystem::Get(AIHelpers::EcsOf(ch), POINT_ATT_SPEED));
+			ecs::PointSystem::Get(((ch) ? (ch)->GetEntityHandle() : entt::null), POINT_ATT_SPEED));
 	*/
 
 	/* ���ڵ�� �ҵ��� ��� �￬�����ݰ� �¸��� */
@@ -383,7 +383,7 @@ uint32_t ani_combo_speed(LPCHARACTER ch, uint8_t combo)
 	if (!ch)
 		return 1000;
 
-	const entt::entity character = AIHelpers::EcsOf(ch);
+	const entt::entity character = ((ch) ? (ch)->GetEntityHandle() : entt::null);
 	const entt::entity item = ItemSystem::GetWearItem(character, WEAR_WEAPON);
 
 	if (!ItemSystem::IsValidItem(item) || combo > 8)

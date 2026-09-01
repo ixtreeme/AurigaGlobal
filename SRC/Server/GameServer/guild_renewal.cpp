@@ -336,7 +336,7 @@ void CGuildRenewal::OnP2PRefresh(uint32_t guildId)
 		if (!member)
 			continue;
 
-		CGuild* g = ecs::SocialSystem::GetGuild(AIHelpers::EcsOf(member));
+		CGuild* g = ecs::SocialSystem::GetGuild(((member) ? (member)->GetEntityHandle() : entt::null));
 		if (!g)
 			continue;
 
@@ -589,7 +589,7 @@ uint64_t CGuildRenewal::CountItemVnum(CHARACTER* ch, uint32_t vnum) const
 		return 0;
 
 	uint64_t total = 0;
-	const entt::entity owner = AIHelpers::EcsOf(ch);
+	const entt::entity owner = ((ch) ? (ch)->GetEntityHandle() : entt::null);
 	for (uint16_t i = 0; i < INVENTORY_MAX_NUM; i++)
 	{
 		const entt::entity item = ItemSystem::GetInventoryItem(owner, i);
@@ -615,7 +615,7 @@ bool CGuildRenewal::RemoveItemVnum(CHARACTER* ch, uint32_t vnum, uint32_t count)
 	if (!ch)
 		return false;
 
-	const entt::entity owner = AIHelpers::EcsOf(ch);
+	const entt::entity owner = ((ch) ? (ch)->GetEntityHandle() : entt::null);
 	uint32_t need = count;
 	for (uint16_t i = 0; i < INVENTORY_MAX_NUM && need>0; i++)
 	{
@@ -651,10 +651,10 @@ bool CGuildRenewal::RemoveItemVnum(CHARACTER* ch, uint32_t vnum, uint32_t count)
 
 void CGuildRenewal::SendFullStateTo(CHARACTER* ch)
 {
-	if (!ch || !ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch)))
+	if (!ch || !ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null)))
 		return;
 
-	CGuild* g = ecs::SocialSystem::GetGuild(AIHelpers::EcsOf(ch));
+	CGuild* g = ecs::SocialSystem::GetGuild(((ch) ? (ch)->GetEntityHandle() : entt::null));
 	if (!g)
 		return;
 
@@ -666,17 +666,17 @@ void CGuildRenewal::SendFullStateTo(CHARACTER* ch)
 	auto& c = GetCache(guildId);
 
 	// UI reset + guild storage money
-	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_COMMAND, "gr_clear");
-	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_COMMAND, "gr_money %lld", (long long)c.money);
+	ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_COMMAND, "gr_clear");
+	ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_COMMAND, "gr_money %lld", (long long)c.money);
 
 	// per-player paid flag (Ad: O/X a kliensben)
 	{
 		uint8_t paidFlag = 0;
-		auto itPaid = c.contrib.find(ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)));
+		auto itPaid = c.contrib.find(ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null)));
 		if (itPaid != c.contrib.end())
 			paidFlag = itPaid->second.paidFlag;
 
-		ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_COMMAND, "gr_paid %u", (unsigned)paidFlag);
+		ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_COMMAND, "gr_paid %u", (unsigned)paidFlag);
 	}
 
 	// next guild level requirements (yang + 5 item)
@@ -702,7 +702,7 @@ void CGuildRenewal::SendFullStateTo(CHARACTER* ch)
 			LOG_INFO("GUILD_RENEWAL: no req row for target level={} (guild level={})", (unsigned)target, g->GetLevel());
 		}
 
-		ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_COMMAND, "gr_req %lld %u %u %u %u %u %u %u %u %u %u",
+		ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_COMMAND, "gr_req %lld %u %u %u %u %u %u %u %u %u %u",
 			reqYang,
 			rv[0], rc[0],
 			rv[1], rc[1],
@@ -716,18 +716,18 @@ void CGuildRenewal::SendFullStateTo(CHARACTER* ch)
 	{
 		auto& s = c.storage[i];
 		if (s.vnum && s.count)
-			ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_COMMAND, "gr_item %u %u %u", (unsigned)i, (unsigned)s.vnum, (unsigned)s.count);
+			ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_COMMAND, "gr_item %u %u %u", (unsigned)i, (unsigned)s.vnum, (unsigned)s.count);
 	}
 
 	// tax request state (kis ad rendszerben nincs kivetett ad)
-	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_COMMAND, "gr_tax 0 0 0 0 0 0 0 0 0 0 0 0 0");
+	ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_COMMAND, "gr_tax 0 0 0 0 0 0 0 0 0 0 0 0 0");
 
 
 	// contrib list
 	for (auto& kv : c.contrib)
 	{
 		const TKisAdoItemArr itemArr = KisAdo_GetItemArrCopy(guildId, kv.first);
-		ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_COMMAND, "gr_contrib2 %u %u %lld %lld %u %u %u %u %u",
+		ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_COMMAND, "gr_contrib2 %u %u %lld %lld %u %u %u %u %u",
 			(unsigned)kv.first,
 			(unsigned)kv.second.paidFlag,
 			(long long)kv.second.paidMoney,
@@ -738,14 +738,14 @@ void CGuildRenewal::SendFullStateTo(CHARACTER* ch)
 			(unsigned)itemArr[3],
 			(unsigned)itemArr[4]);
 
-		ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_COMMAND, "gr_contrib %u %u %lld %lld",
+		ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_COMMAND, "gr_contrib %u %u %lld %lld",
 			(unsigned)kv.first,
 			(unsigned)kv.second.paidFlag,
 			(long long)kv.second.paidMoney,
 			(long long)kv.second.paidItemTotal);
 	}
 
-	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_COMMAND, "gr_done");
+	ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_COMMAND, "gr_done");
 }
 
 
@@ -754,14 +754,14 @@ bool CGuildRenewal::DepositItem(CHARACTER* ch, uint16_t invCell, uint32_t count)
 	if (!ch)
 		return false;
 
-	CGuild* g = ecs::SocialSystem::GetGuild(AIHelpers::EcsOf(ch));
+	CGuild* g = ecs::SocialSystem::GetGuild(((ch) ? (ch)->GetEntityHandle() : entt::null));
 	if (!g)
 		return false;
 
 	// kis ad: csak fejlesztshez (20-as szinttl)
 	if (g->GetLevel() < 20)
 	{
-		ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "A ceh fejlesztes csak 20-as szinttol elerheto.");
+		ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "A ceh fejlesztes csak 20-as szinttol elerheto.");
 		return false;
 	}
 
@@ -773,12 +773,12 @@ bool CGuildRenewal::DepositItem(CHARACTER* ch, uint16_t invCell, uint32_t count)
 	auto itReq = m_levelReqByTargetLevel.find(target);
 	if (itReq == m_levelReqByTargetLevel.end())
 	{
-		ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "Nincs beallitva fejlesztesi kovetelmeny ehhez a szinthez: %u", (unsigned)target);
+		ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "Nincs beallitva fejlesztesi kovetelmeny ehhez a szinthez: %u", (unsigned)target);
 		return false;
 	}
 	const LevelReq& req = itReq->second;
 
-	const entt::entity owner = AIHelpers::EcsOf(ch);
+	const entt::entity owner = ((ch) ? (ch)->GetEntityHandle() : entt::null);
 	const entt::entity item = ItemSystem::GetInventoryItem(owner, invCell);
 	if (!ItemSystem::IsValidItem(item))
 		return false;
@@ -807,7 +807,7 @@ bool CGuildRenewal::DepositItem(CHARACTER* ch, uint16_t invCell, uint32_t count)
 
 	if (reqIdx == -1 || totalNeedForVnum == 0)
 	{
-		ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "Ezt a targyat most nem keri a ceh fejleszteshez.");
+		ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "Ezt a targyat most nem keri a ceh fejleszteshez.");
 		return false;
 	}
 
@@ -815,12 +815,12 @@ bool CGuildRenewal::DepositItem(CHARACTER* ch, uint16_t invCell, uint32_t count)
 	const uint64_t haveInStorage = Storage_Count(guildId, vnum);
 	if (haveInStorage >= totalNeedForVnum)
 	{
-		const uint8_t lang = (ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch)) ? ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->GetLanguage() : 0);
+		const uint8_t lang = (ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null)) ? ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null))->GetLanguage() : 0);
 		const char* name = GetItemNameByVnum(vnum, lang);
 		if (name && *name)
-			ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "Ebbol a targybol mar eleg van a fejleszteshez: %s", name);
+			ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "Ebbol a targybol mar eleg van a fejleszteshez: %s", name);
 		else
-			ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "Ebbol a targybol mar eleg van a fejleszteshez: VNUM %u", (unsigned)vnum);
+			ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "Ebbol a targybol mar eleg van a fejleszteshez: VNUM %u", (unsigned)vnum);
 		return false;
 	}
 
@@ -834,7 +834,7 @@ bool CGuildRenewal::DepositItem(CHARACTER* ch, uint16_t invCell, uint32_t count)
 	// Elbb raktrba prbljuk tenni (ha tele van, ne vegyk el a jtkostl)
 	if (!Storage_Add(guildId, vnum, allowed))
 	{
-		ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "A ceh raktar tele van.");
+		ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "A ceh raktar tele van.");
 		return false;
 	}
 
@@ -843,7 +843,7 @@ bool CGuildRenewal::DepositItem(CHARACTER* ch, uint16_t invCell, uint32_t count)
 
 	// Befizets nyilvntarts (sszestve + rszletes bonts memriban)
 	auto& c = GetCache(guildId);
-	const uint32_t pid = ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch));
+	const uint32_t pid = ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null));
 
 	Contrib& cc = c.contrib[pid];
 	cc.paidItemTotal += (int64_t)allowed;
@@ -857,12 +857,12 @@ bool CGuildRenewal::DepositItem(CHARACTER* ch, uint16_t invCell, uint32_t count)
 	// Info, ha kevesebbet fogadott el (mert mr csak ennyi hinyzott)
 	if (allowed < requested)
 	{
-		const uint8_t lang = (ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch)) ? ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->GetLanguage() : 0);
+		const uint8_t lang = (ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null)) ? ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null))->GetLanguage() : 0);
 		const char* name = GetItemNameByVnum(vnum, lang);
 		if (name && *name)
-			ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "Csak %u db-ot tett be (ennyire hianyzott): %s", (unsigned)allowed, name);
+			ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "Csak %u db-ot tett be (ennyire hianyzott): %s", (unsigned)allowed, name);
 		else
-			ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "Csak %u db-ot tett be (ennyire hianyzott).", (unsigned)allowed);
+			ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "Csak %u db-ot tett be (ennyire hianyzott).", (unsigned)allowed);
 	}
 
 	// Kliens frissites (legalabb a befizeto + cehvezeto kapjon azonnali infot)
@@ -881,14 +881,14 @@ bool CGuildRenewal::DepositYang(CHARACTER* ch, int64_t yang)
 	if (!ch)
 		return false;
 
-	CGuild* g = ecs::SocialSystem::GetGuild(AIHelpers::EcsOf(ch));
+	CGuild* g = ecs::SocialSystem::GetGuild(((ch) ? (ch)->GetEntityHandle() : entt::null));
 	if (!g)
 		return false;
 
 	// kis ad: csak fejlesztshez (20-as szinttl)
 	if (g->GetLevel() < 20)
 	{
-		ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "A ceh fejlesztes csak 20-as szinttol elerheto.");
+		ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "A ceh fejlesztes csak 20-as szinttol elerheto.");
 		return false;
 	}
 
@@ -903,7 +903,7 @@ bool CGuildRenewal::DepositYang(CHARACTER* ch, int64_t yang)
 	auto itReq = m_levelReqByTargetLevel.find(target);
 	if (itReq == m_levelReqByTargetLevel.end())
 	{
-		ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "Nincs beallitva fejlesztesi kovetelmeny ehhez a szinthez: %u", (unsigned)target);
+		ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "Nincs beallitva fejlesztesi kovetelmeny ehhez a szinthez: %u", (unsigned)target);
 		return false;
 	}
 	const LevelReq& req = itReq->second;
@@ -914,11 +914,11 @@ bool CGuildRenewal::DepositYang(CHARACTER* ch, int64_t yang)
 	int64_t remaining = (int64_t)req.yang - (int64_t)c.money;
 	if (remaining <= 0)
 	{
-		ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "Mar elegendo yang van a ceh leltarban a fejleszteshez.");
+		ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "Mar elegendo yang van a ceh leltarban a fejleszteshez.");
 		return false;
 	}
 
-	const int64_t playerGold = (int64_t)ecs::PointSystem::GetGold(AIHelpers::EcsOf(ch));
+	const int64_t playerGold = (int64_t)ecs::PointSystem::GetGold(((ch) ? (ch)->GetEntityHandle() : entt::null));
 	if (playerGold <= 0)
 		return false;
 
@@ -933,12 +933,12 @@ bool CGuildRenewal::DepositYang(CHARACTER* ch, int64_t yang)
 		return false;
 
 	// Levons + hozzads
-	ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_GOLD, -allowed, true);
+	ecs::PointSystem::Change(((ch) ? (ch)->GetEntityHandle() : entt::null), POINT_GOLD, -allowed, true);
 	c.money += allowed;
 	DB_SaveMoney(guildId);
 
 	// Befizets nyilvntarts
-	const uint32_t pid = ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch));
+	const uint32_t pid = ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null));
 	Contrib& cc = c.contrib[pid];
 	cc.paidMoney += allowed;
 	cc.paidFlag = 1;
@@ -947,7 +947,7 @@ bool CGuildRenewal::DepositYang(CHARACTER* ch, int64_t yang)
 
 	// Info, ha kevesebbet fogadott el (mert mr csak ennyi hinyzott)
 	if (allowed < requested)
-		ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "Csak %lld yangot tett be (ennyire hianyzott).", (long long)allowed);
+		ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "Csak %lld yangot tett be (ennyire hianyzott).", (long long)allowed);
 
 	// Kliens frissites (legalabb a befizeto + cehvezeto kapjon azonnali infot)
 	SendFullStateTo(ch);
@@ -972,14 +972,14 @@ bool CGuildRenewal::SetTaxRequest(CHARACTER* leader, int deadlineUnix, int64_t p
 	if (!leader)
 		return false;
 
-	CGuild* g = ecs::SocialSystem::GetGuild(AIHelpers::EcsOf(leader));
+	CGuild* g = ecs::SocialSystem::GetGuild(((leader) ? (leader)->GetEntityHandle() : entt::null));
 	if (!g)
 	{
-		ecs::ChatSystem::Send(AIHelpers::EcsOf(leader), CHAT_TYPE_INFO, "Nincs cehed.");
+		ecs::ChatSystem::Send(((leader) ? (leader)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "Nincs cehed.");
 		return false;
 	}
 
-	ecs::ChatSystem::Send(AIHelpers::EcsOf(leader), CHAT_TYPE_INFO, "Ado rendszer ki van kapcsolva. (Kis ado: szabad befizetes van.)");
+	ecs::ChatSystem::Send(((leader) ? (leader)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "Ado rendszer ki van kapcsolva. (Kis ado: szabad befizetes van.)");
 	return false;
 }
 
@@ -988,7 +988,7 @@ bool CGuildRenewal::PayTax(CHARACTER* ch)
 	if (!ch)
 		return false;
 
-	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "Ado rendszer ki van kapcsolva. Hasznald a Yang betesz / Targy betesz gombokat.");
+	ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "Ado rendszer ki van kapcsolva. Hasznald a Yang betesz / Targy betesz gombokat.");
 	return false;
 }
 
@@ -997,14 +997,14 @@ bool CGuildRenewal::PayCustom(CHARACTER* ch, int64_t yang, const std::array<uint
 	if (!ch)
 		return false;
 
-	CGuild* g = ecs::SocialSystem::GetGuild(AIHelpers::EcsOf(ch));
+	CGuild* g = ecs::SocialSystem::GetGuild(((ch) ? (ch)->GetEntityHandle() : entt::null));
 	if (!g)
 		return false;
 
 	// kis ado: csak fejleszteshez (20-as szinttol)
 	if (g->GetLevel() < 20)
 	{
-		ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "A ceh fejlesztes csak 20-as szinttol elerheto.");
+		ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "A ceh fejlesztes csak 20-as szinttol elerheto.");
 		return false;
 	}
 
@@ -1016,13 +1016,13 @@ bool CGuildRenewal::PayCustom(CHARACTER* ch, int64_t yang, const std::array<uint
 	auto itReq = m_levelReqByTargetLevel.find(target);
 	if (itReq == m_levelReqByTargetLevel.end())
 	{
-		ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "Nincs beallitva fejlesztesi kovetelmeny ehhez a szinthez: %u", (unsigned)target);
+		ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "Nincs beallitva fejlesztesi kovetelmeny ehhez a szinthez: %u", (unsigned)target);
 		return false;
 	}
 	const LevelReq& req = itReq->second;
 
 	auto& c = GetCache(guildId);	
-	const uint32_t pid = ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch));
+	const uint32_t pid = ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null));
 	bool any = false;
 
 	// 1) Yang befizetes (clamp a hianyzo osszegre)
@@ -1031,13 +1031,13 @@ bool CGuildRenewal::PayCustom(CHARACTER* ch, int64_t yang, const std::array<uint
 		int64_t remaining = (int64_t)req.yang - (int64_t)c.money;
 		if (remaining > 0)
 		{
-			int64_t playerGold = (int64_t)ecs::PointSystem::GetGold(AIHelpers::EcsOf(ch));
+			int64_t playerGold = (int64_t)ecs::PointSystem::GetGold(((ch) ? (ch)->GetEntityHandle() : entt::null));
 			int64_t allowed = yang;
 			if (allowed > remaining) allowed = remaining;
 			if (allowed > playerGold) allowed = playerGold;
 			if (allowed > 0)
 			{
-				ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_GOLD, -allowed, true);
+				ecs::PointSystem::Change(((ch) ? (ch)->GetEntityHandle() : entt::null), POINT_GOLD, -allowed, true);
 				c.money += allowed;
 				DB_SaveMoney(guildId);
 
@@ -1098,7 +1098,7 @@ bool CGuildRenewal::PayCustom(CHARACTER* ch, int64_t yang, const std::array<uint
 		auto itNeed2 = needByVnum.find(vnum);
 		if (itNeed2 == needByVnum.end())
 		{
-			ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "Ezt a targyat most nem keri a ceh fejleszteshez. VNUM: %u", (unsigned)vnum);
+			ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "Ezt a targyat most nem keri a ceh fejleszteshez. VNUM: %u", (unsigned)vnum);
 			continue;
 		}
 
@@ -1122,7 +1122,7 @@ bool CGuildRenewal::PayCustom(CHARACTER* ch, int64_t yang, const std::array<uint
 		// Storage add elobb (ha tele van, ne vegyuk el)
 		if (!Storage_Add(guildId, vnum, (uint32_t)allowed))
 		{
-			ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "A ceh raktar tele van.");
+			ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "A ceh raktar tele van.");
 			continue;
 		}
 
@@ -1130,7 +1130,7 @@ bool CGuildRenewal::PayCustom(CHARACTER* ch, int64_t yang, const std::array<uint
 		{
 			// rollback
 			Storage_Remove(guildId, vnum, (uint32_t)allowed);
-			ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "Hiba: nem sikerult levonni a targyat (VNUM %u).", (unsigned)vnum);
+			ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "Hiba: nem sikerult levonni a targyat (VNUM %u).", (unsigned)vnum);
 			continue;
 		}
 
@@ -1174,22 +1174,22 @@ bool CGuildRenewal::TryLevelUp(CHARACTER* ch)
 	if (!ch)
 		return false;
 
-	CGuild* g = ecs::SocialSystem::GetGuild(AIHelpers::EcsOf(ch));
+	CGuild* g = ecs::SocialSystem::GetGuild(((ch) ? (ch)->GetEntityHandle() : entt::null));
 	if (!g)
 	{
-		ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "Nincs cehed.");
+		ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "Nincs cehed.");
 		return false;
 	}
 
 	const uint8_t curLvl = g->GetLevel();
 	if (curLvl < 20)
 	{
-		ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "A ceh fejlesztes csak 20-as szinttol elerheto.");
+		ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "A ceh fejlesztes csak 20-as szinttol elerheto.");
 		return false;
 	}
 	if (curLvl >= NSBUZERANT)
 	{
-		ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "A ceh elerte a maximum szintet.");
+		ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "A ceh elerte a maximum szintet.");
 		return false;
 	}
 
@@ -1199,7 +1199,7 @@ bool CGuildRenewal::TryLevelUp(CHARACTER* ch)
 	auto itReq = m_levelReqByTargetLevel.find(target);
 	if (itReq == m_levelReqByTargetLevel.end())
 	{
-		ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "Nincs beallitva fejlesztesi kovetelmeny ehhez a szinthez: %u", (unsigned)target);
+		ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "Nincs beallitva fejlesztesi kovetelmeny ehhez a szinthez: %u", (unsigned)target);
 		return false;
 	}
 
@@ -1213,7 +1213,7 @@ bool CGuildRenewal::TryLevelUp(CHARACTER* ch)
 	if (c.money < req.yang)
 	{
 		const long long diff = (long long)(req.yang - c.money);
-		ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "Nincs elegendo yang a ceh leltarban. Hianyzik: %lld", diff);
+		ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "Nincs elegendo yang a ceh leltarban. Hianyzik: %lld", diff);
 		return false;
 	}
 
@@ -1230,7 +1230,7 @@ bool CGuildRenewal::TryLevelUp(CHARACTER* ch)
 			needByVnum[req.vnum[i]] += req.count[i];
 		}
 
-		const uint8_t lang = (ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch)) ? ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->GetLanguage() : 0);
+		const uint8_t lang = (ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null)) ? ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null))->GetLanguage() : 0);
 		bool hasMissing = false;
 
 		for (const auto& kv : needByVnum)
@@ -1246,9 +1246,9 @@ bool CGuildRenewal::TryLevelUp(CHARACTER* ch)
 
 				const char* name = GetItemNameByVnum(vnum, lang);
 				if (name && *name)
-					ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "Hianyzik fejlesztesi targy a ceh leltarbol: %s x%u", name, (unsigned)diff);
+					ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "Hianyzik fejlesztesi targy a ceh leltarbol: %s x%u", name, (unsigned)diff);
 				else
-					ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "Hianyzik fejlesztesi targy a ceh leltarbol: VNUM %u x%u", (unsigned)vnum, (unsigned)diff);
+					ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "Hianyzik fejlesztesi targy a ceh leltarbol: VNUM %u x%u", (unsigned)vnum, (unsigned)diff);
 			}
 		}
 
@@ -1264,7 +1264,7 @@ bool CGuildRenewal::TryLevelUp(CHARACTER* ch)
 		{
 			if (!Storage_Remove(guildId, req.vnum[i], req.count[i]))
 			{
-				ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "Hiba: nem sikerult levonni egy fejlesztesi targyat (VNUM %u).", (unsigned)req.vnum[i]);
+				ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "Hiba: nem sikerult levonni egy fejlesztesi targyat (VNUM %u).", (unsigned)req.vnum[i]);
 				return false;
 			}
 		}

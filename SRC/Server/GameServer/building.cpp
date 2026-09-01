@@ -44,7 +44,7 @@ enum
 using namespace building;
 
 CObject::CObject(TObject * pData, TObjectProto * pProto)
-	: m_pProto(pProto), m_dwVID(0), m_chNPC(nullptr)
+	: m_pProto(pProto), m_dwVID(0), m_chNPC(nullptr), m_npcEntity(entt::null)
 {
 	CEntity::Initialize(ENTITY_OBJECT);
 
@@ -306,6 +306,7 @@ void CObject::RegenNPC()
 		LOG_ERROR("Cannot create guild npc");
 		return;
 	}
+	m_npcEntity = m_chNPC->GetEntityHandle();
 
 	m_chNPC->SetGuild(pGuild);
 
@@ -374,11 +375,11 @@ void CLand::PutData(const TLand * data)
 				{
 					LPCHARACTER ch = *(it++);
 
-					if (ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)) != m_data.lMapIndex)
+					if (ecs::PlayerRuntime::GetMapIndex(((ch) ? (ch)->GetEntityHandle() : entt::null)) != m_data.lMapIndex)
 						continue;
 
-					int x = ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(ch)) - r->sx;
-					int y = ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(ch)) - r->sy;
+					int x = ecs::PlayerRuntime::GetX(((ch) ? (ch)->GetEntityHandle() : entt::null)) - r->sx;
+					int y = ecs::PlayerRuntime::GetY(((ch) ? (ch)->GetEntityHandle() : entt::null)) - r->sy;
 
 					if (x > m_data.x + m_data.width || x < m_data.x)
 						continue;
@@ -436,15 +437,15 @@ LPOBJECT CLand::FindObjectByVnum(uint32_t dwVnum)
 }
 
 // BUILDING_NPC
-LPOBJECT CLand::FindObjectByNPC(LPCHARACTER npc)
+LPOBJECT CLand::FindObjectByNPC(entt::entity npc)
 {
-	if (!npc)
+	if (npc == entt::null)
 		return nullptr;
 
 	for (auto it = m_map_pkObject.begin(); it != m_map_pkObject.end(); ++it)
 	{
 		LPOBJECT pObj = it->second;
-		if (pObj->GetNPC() == npc)
+		if (pObj->GetNPCEntity() == npc)
 			return pObj;
 	}
 
@@ -498,8 +499,8 @@ struct FIsIn
 			{
 				return;
 			}
-			if (sx <= ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(ch)) && ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(ch)) <= ex
-				&& sy <= ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(ch)) && ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(ch)) <= ey)
+			if (sx <= ecs::PlayerRuntime::GetX(((ch) ? (ch)->GetEntityHandle() : entt::null)) && ecs::PlayerRuntime::GetX(((ch) ? (ch)->GetEntityHandle() : entt::null)) <= ex
+				&& sy <= ecs::PlayerRuntime::GetY(((ch) ? (ch)->GetEntityHandle() : entt::null)) && ecs::PlayerRuntime::GetY(((ch) ? (ch)->GetEntityHandle() : entt::null)) <= ey)
 			{
 				bIn = true;
 			}
@@ -748,7 +749,7 @@ void CManager::UpdateLand(TLand * pTable)
 	{
 		LPDESC d = *(it++);
 
-		if (d->GetCharacter() && ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(d->GetCharacter())) == pTable->lMapIndex)
+		if (d->GetCharacter() && ecs::PlayerRuntime::GetMapIndex(((d->GetCharacter()) ? (d->GetCharacter())->GetEntityHandle() : entt::null)) == pTable->lMapIndex)
 		{
 			// we must send the guild name first
 			d->GetCharacter()->SendGuildName(guild);

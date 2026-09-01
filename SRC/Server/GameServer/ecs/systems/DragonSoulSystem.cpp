@@ -11,7 +11,6 @@
 #include "../../item.h"
 #include "../../log.h"
 #include "../../packet.h"
-#include "../AIHelpers.hpp"
 #include "../EntityFactory.hpp"
 #include "../Registry.hpp"
 #include "../components/dirty_components.hpp"
@@ -23,15 +22,6 @@
 
 namespace
 {
-
-LPCHARACTER LegacyCharacter(entt::entity e)
-{
-    if (e == entt::null || !g_registry.valid(e))
-        return nullptr;
-
-    auto* legacy = g_registry.try_get<ecs::LegacyCharPtr>(e);
-    return legacy ? legacy->ptr : nullptr;
-}
 
 ecs::DragonSoulRuntimeStateComponent* GetDragonSoulState(entt::entity e)
 {
@@ -53,16 +43,15 @@ namespace DragonSoulSystem {
 
 void Initialize(entt::entity owner)
 {
-    auto* ch = LegacyCharacter(owner);
     auto* state = GetDragonSoulState(owner);
-    if (!ch || !state)
+    if (!state)
         return;
 
     for (int i = DRAGON_SOUL_EQUIP_SLOT_START; i < DRAGON_SOUL_EQUIP_SLOT_END; ++i)
     {
-        LPITEM item = ch->GetItem(TItemPos(INVENTORY, i));
-        if (item)
-            ItemSystem::SetItemSocket(EntityFactory::CreateItemEntity(g_registry, item), ITEM_SOCKET_DRAGON_SOUL_ACTIVE_IDX, 0);
+        const entt::entity item = ItemSystem::GetInventoryItem(owner, i);
+        if (item != entt::null)
+            ItemSystem::SetItemSocket(item, ITEM_SOCKET_DRAGON_SOUL_ACTIVE_IDX, 0);
     }
 
     state->activeDeck = -1;
@@ -87,9 +76,8 @@ bool IsDeckActivated(entt::entity owner)
 
 bool ActivateDeck(entt::entity owner, int deckIdx)
 {
-    auto* ch = LegacyCharacter(owner);
     auto* state = GetDragonSoulState(owner);
-    if (!ch || !state)
+    if (!state)
         return false;
 
     if (deckIdx < DRAGON_SOUL_DECK_0 || deckIdx >= DRAGON_SOUL_DECK_MAX_NUM)
@@ -121,18 +109,18 @@ bool ActivateDeck(entt::entity owner, int deckIdx)
     for (int i = DRAGON_SOUL_EQUIP_SLOT_START + DS_SLOT_MAX * deckIdx;
          i < DRAGON_SOUL_EQUIP_SLOT_START + DS_SLOT_MAX * (deckIdx + 1); ++i)
     {
-        LPITEM item = ch->GetInventoryItem(i);
-        if (!item)
+        const entt::entity item = ItemSystem::GetInventoryItem(owner, i);
+        if (item == entt::null)
             continue;
 
-        DSManager::instance().ActivateDragonSoul(EntityFactory::CreateItemEntity(g_registry, item));
+        DSManager::instance().ActivateDragonSoul(item);
 #ifdef ENABLE_DS_SET
-        if (!DSManager::instance().IsTimeLeftDragonSoul(EntityFactory::CreateItemEntity(g_registry, item)))
+        if (!DSManager::instance().IsTimeLeftDragonSoul(item))
             expired = true;
 
-        gradeList[j] = (ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, item)) / 1000) % 10;
-        stepList[j] = (ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, item)) / 100) % 10;
-        strengthList[j] = (ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, item)) / 10) % 10;
+        gradeList[j] = (ItemSystem::GetItemVnum(item) / 1000) % 10;
+        stepList[j] = (ItemSystem::GetItemVnum(item) / 100) % 10;
+        strengthList[j] = (ItemSystem::GetItemVnum(item) / 10) % 10;
         ++j;
 #endif
     }
@@ -178,13 +166,12 @@ bool ActivateDeck(entt::entity owner, int deckIdx)
 
 void DeactivateAll(entt::entity owner)
 {
-    auto* ch = LegacyCharacter(owner);
     auto* state = GetDragonSoulState(owner);
-    if (!ch || !state)
+    if (!state)
         return;
 
     for (int i = DRAGON_SOUL_EQUIP_SLOT_START; i < DRAGON_SOUL_EQUIP_SLOT_END; ++i)
-        DSManager::instance().DeactivateDragonSoul(EntityFactory::CreateItemEntity(g_registry, ch->GetInventoryItem(i)), true);
+		DSManager::instance().DeactivateDragonSoul(ItemSystem::GetInventoryItem(owner, i), true);
 
     state->activeDeck = -1;
     AffectSystem::RemoveAffect(owner, AFFECT_DRAGON_SOUL_DECK_0);
@@ -198,21 +185,19 @@ void DeactivateAll(entt::entity owner)
 
 void CleanUp(entt::entity owner)
 {
-    auto* ch = LegacyCharacter(owner);
-    if (!ch)
+    if (owner == entt::null || !g_registry.valid(owner))
         return;
 
     for (int i = DRAGON_SOUL_EQUIP_SLOT_START; i < DRAGON_SOUL_EQUIP_SLOT_END; ++i)
-        DSManager::instance().DeactivateDragonSoul(EntityFactory::CreateItemEntity(g_registry, ch->GetInventoryItem(i)), true);
+		DSManager::instance().DeactivateDragonSoul(ItemSystem::GetInventoryItem(owner, i), true);
 
     MarkDirty(owner);
 }
 
 bool OpenRefineWindow(entt::entity owner, LPENTITY opener)
 {
-    auto* ch = LegacyCharacter(owner);
     auto* state = GetDragonSoulState(owner);
-    if (!ch || !state)
+    if (!state)
         return false;
 
     if (!state->pRefineWindowOpener)
@@ -261,7 +246,7 @@ LPENTITY GetRefineWindowOpener(entt::entity owner)
 
 void CHARACTER::DragonSoul_Initialize()
 {
-    const entt::entity e = AIHelpers::EcsOf(this);
+    const entt::entity e = GetEntityHandle();
     DragonSoulSystem::Initialize(e);
 }
 
@@ -277,36 +262,36 @@ bool CHARACTER::DragonSoul_IsDeckActivated() const
 
 bool CHARACTER::DragonSoul_ActivateDeck(int deck_idx)
 {
-    const entt::entity e = AIHelpers::EcsOf(this);
+    const entt::entity e = GetEntityHandle();
     return DragonSoulSystem::ActivateDeck(e, deck_idx);
 }
 
 void CHARACTER::DragonSoul_DeactivateAll()
 {
-    DragonSoulSystem::DeactivateAll(AIHelpers::EcsOf(this));
+    DragonSoulSystem::DeactivateAll(GetEntityHandle());
 }
 
 void CHARACTER::DragonSoul_CleanUp()
 {
-    DragonSoulSystem::CleanUp(AIHelpers::EcsOf(this));
+    DragonSoulSystem::CleanUp(GetEntityHandle());
 }
 
 bool CHARACTER::DragonSoul_RefineWindow_Open(LPENTITY pEntity)
 {
-    return DragonSoulSystem::OpenRefineWindow(AIHelpers::EcsOf(this), pEntity);
+    return DragonSoulSystem::OpenRefineWindow(GetEntityHandle(), pEntity);
 }
 
 bool CHARACTER::DragonSoul_RefineWindow_Close()
 {
-    return DragonSoulSystem::CloseRefineWindow(AIHelpers::EcsOf(this));
+    return DragonSoulSystem::CloseRefineWindow(GetEntityHandle());
 }
 
 LPENTITY CHARACTER::DragonSoul_RefineWindow_GetOpener()
 {
-    return DragonSoulSystem::GetRefineWindowOpener(AIHelpers::EcsOf(this));
+    return DragonSoulSystem::GetRefineWindowOpener(GetEntityHandle());
 }
 
 bool CHARACTER::DragonSoul_RefineWindow_CanRefine()
 {
-    return DragonSoulSystem::CanRefine(AIHelpers::EcsOf(this));
+    return DragonSoulSystem::CanRefine(GetEntityHandle());
 }

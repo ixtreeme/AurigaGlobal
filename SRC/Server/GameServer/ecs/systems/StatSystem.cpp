@@ -5,7 +5,6 @@
 #include <common/VnumHelper.h>
 
 #include "../EntityFactory.hpp"
-#include "../AIHelpers.hpp"
 #include "../Registry.hpp"
 #include "ItemSystem.hpp"
 #include "NetworkSyncSystem.hpp"
@@ -211,16 +210,16 @@ void CHARACTER::ComputeBattlePoints()
 		LPITEM pkItem;
 
 		for (int i = 0; i < WEAR_MAX_NUM; ++i)
-			if ((pkItem = GetWear(i)) && ItemSystem::GetItemType(EntityFactory::CreateItemEntity(g_registry, pkItem)) == ITEM_ARMOR)
+			if ((pkItem = GetWear(i)) && ItemSystem::GetItemType((pkItem ? pkItem->GetEntityHandle() : entt::null)) == ITEM_ARMOR)
 			{
 #ifdef ENABLE_PENDANT
-				if (ItemSystem::GetItemSubType(EntityFactory::CreateItemEntity(g_registry, pkItem)) == ARMOR_BODY || ItemSystem::GetItemSubType(EntityFactory::CreateItemEntity(g_registry, pkItem)) == ARMOR_HEAD || ItemSystem::GetItemSubType(EntityFactory::CreateItemEntity(g_registry, pkItem)) == ARMOR_FOOTS || ItemSystem::GetItemSubType(EntityFactory::CreateItemEntity(g_registry, pkItem)) == ARMOR_SHIELD || ItemSystem::GetItemSubType(EntityFactory::CreateItemEntity(g_registry, pkItem)) == ARMOR_PENDANT)
+				if (ItemSystem::GetItemSubType((pkItem ? pkItem->GetEntityHandle() : entt::null)) == ARMOR_BODY || ItemSystem::GetItemSubType((pkItem ? pkItem->GetEntityHandle() : entt::null)) == ARMOR_HEAD || ItemSystem::GetItemSubType((pkItem ? pkItem->GetEntityHandle() : entt::null)) == ARMOR_FOOTS || ItemSystem::GetItemSubType((pkItem ? pkItem->GetEntityHandle() : entt::null)) == ARMOR_SHIELD || ItemSystem::GetItemSubType((pkItem ? pkItem->GetEntityHandle() : entt::null)) == ARMOR_PENDANT)
 #else
-				if (ItemSystem::GetItemSubType(EntityFactory::CreateItemEntity(g_registry, pkItem)) == ARMOR_BODY || ItemSystem::GetItemSubType(EntityFactory::CreateItemEntity(g_registry, pkItem)) == ARMOR_HEAD || ItemSystem::GetItemSubType(EntityFactory::CreateItemEntity(g_registry, pkItem)) == ARMOR_FOOTS || ItemSystem::GetItemSubType(EntityFactory::CreateItemEntity(g_registry, pkItem)) == ARMOR_SHIELD)
+				if (ItemSystem::GetItemSubType((pkItem ? pkItem->GetEntityHandle() : entt::null)) == ARMOR_BODY || ItemSystem::GetItemSubType((pkItem ? pkItem->GetEntityHandle() : entt::null)) == ARMOR_HEAD || ItemSystem::GetItemSubType((pkItem ? pkItem->GetEntityHandle() : entt::null)) == ARMOR_FOOTS || ItemSystem::GetItemSubType((pkItem ? pkItem->GetEntityHandle() : entt::null)) == ARMOR_SHIELD)
 #endif
 				{
-					iArmor += ItemSystem::GetItemValue(EntityFactory::CreateItemEntity(g_registry, pkItem), 1);
-					iArmor += (2 * ItemSystem::GetItemValue(EntityFactory::CreateItemEntity(g_registry, pkItem), 5));
+					iArmor += ItemSystem::GetItemValue((pkItem ? pkItem->GetEntityHandle() : entt::null), 1);
+					iArmor += (2 * ItemSystem::GetItemValue((pkItem ? pkItem->GetEntityHandle() : entt::null), 5));
 				}
 			}
 
@@ -370,8 +369,8 @@ void CHARACTER::ComputePoints()
 	if (IsPC())
 	{
 		// AÖ´ë »ý¸í·Â/Á¤1A·Â
-		iMaxHP = JobInitialPoints[GetJob()].max_hp + m_points.iRandomHP + GetPoint(POINT_HT) * JobInitialPoints[GetJob()].hp_per_ht;
-		iMaxSP = JobInitialPoints[GetJob()].max_sp + m_points.iRandomSP + GetPoint(POINT_IQ) * JobInitialPoints[GetJob()].sp_per_iq;
+		iMaxHP = JobInitialPoints[GetJob()].max_hp + GetRandomHP() + GetPoint(POINT_HT) * JobInitialPoints[GetJob()].hp_per_ht;
+		iMaxSP = JobInitialPoints[GetJob()].max_sp + GetRandomSP() + GetPoint(POINT_IQ) * JobInitialPoints[GetJob()].sp_per_iq;
 		iMaxStamina = JobInitialPoints[GetJob()].max_stamina + GetPoint(POINT_HT) * JobInitialPoints[GetJob()].stamina_per_con;
 
 		{
@@ -612,10 +611,10 @@ void CHARACTER::ComputePoints()
 		if (!item)
 			continue;
 
-		uint32_t vnum = ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, item));
+		uint32_t vnum = ItemSystem::GetItemVnum((item ? item->GetEntityHandle() : entt::null));
 		if (valid_mount_items.contains(vnum))
 		{
-			const TItemTable* proto = ItemSystem::GetItemProto(EntityFactory::CreateItemEntity(g_registry, item));
+			const TItemTable* proto = ItemSystem::GetItemProto((item ? item->GetEntityHandle() : entt::null));
 			if (!proto)
 				continue;
 
@@ -668,7 +667,7 @@ void CHARACTER::ComputePoints()
 		LPITEM pItem = GetWear(i);
 		if (pItem) {
 #ifdef ENABLE_RUNE_SYSTEM
-			if (pItem->IsRune() && ItemSystem::GetItemSocket(EntityFactory::CreateItemEntity(g_registry, pItem), 1) != 1) {
+			if (pItem->IsRune() && ItemSystem::GetItemSocket((pItem ? pItem->GetEntityHandle() : entt::null), 1) != 1) {
 				continue;
 			}
 #endif
@@ -694,7 +693,7 @@ void CHARACTER::ComputePoints()
 			LPITEM pItem = GetWear(i);
 			if (pItem)
 			{
-				if (DSManager::instance().IsTimeLeftDragonSoul(EntityFactory::CreateItemEntity(g_registry, pItem)))
+				if (DSManager::instance().IsTimeLeftDragonSoul((pItem ? pItem->GetEntityHandle() : entt::null)))
 					pItem->ModifyPoints(true);
 			}
 		}
@@ -726,9 +725,9 @@ void CHARACTER::ComputePoints()
 	if (IsPC())
 	{
 		if (this->GetHP() != iCurHP)
-			ecs::PointSystem::Change(AIHelpers::EcsOf(this), POINT_HP, iCurHP - this->GetHP());
+			ecs::PointSystem::Change(GetEntityHandle(), POINT_HP, iCurHP - this->GetHP());
 		if (this->GetSP() != iCurSP)
-			ecs::PointSystem::Change(AIHelpers::EcsOf(this), POINT_SP, iCurSP - this->GetSP());
+			ecs::PointSystem::Change(GetEntityHandle(), POINT_SP, iCurSP - this->GetSP());
 	}
 	//#ifdef ENABLE_FAKE_SHOP_HEADER
 	//	UpdateMountCountOverhead();
@@ -765,7 +764,7 @@ void CHARACTER::ComputePoints()
 	m_alignAppliedSkill = m_alignBonusSkill;
 
 
-	NetworkSyncSystem::UpdatePacket(AIHelpers::EcsOf(this));
+	NetworkSyncSystem::UpdatePacket(GetEntityHandle());
 	ComputeBattlePoints();
 
 

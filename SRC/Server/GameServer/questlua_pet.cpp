@@ -2,13 +2,12 @@
 #include <Core/Logging.hpp>
 #include "ecs/systems/AffectSystem.hpp"
 #include "ecs/systems/NetworkSyncSystem.hpp"
-#include "ecs/AIHelpers.hpp"
+#include "ecs/systems/PlayerRuntimeSystem.hpp"
+#include "ecs/systems/ItemSystem.hpp"
 
 #include "questlua.h"
 #include "questmanager.h"
 #include "horsename_manager.h"
-#include "char_interface.hpp"
-#include "ecs/CharacterAccessors.hpp"
 #include "affect.h"
 #include "config.h"
 #include "utils.h"
@@ -34,20 +33,19 @@ namespace quest
 		// migrated from CHARACTER CPetSystem
 		// DUAL-PATH: legacy only during migration window
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
-		auto* ch = ecs::LegacyCharOf(chEntity);
-		CPetSystem* petSystem = ch->GetPetSystem();
-		LPITEM pItem = CQuestManager::instance().GetCurrentItem();
-		if (!ch || !petSystem || !pItem)
+		CPetSystem* petSystem = ecs::PlayerRuntime::GetPetSystem(chEntity);
+		const entt::entity item = CQuestManager::instance().GetCurrentItemEntity();
+		if (!petSystem || !ItemSystem::IsValidItem(item))
 		{
 			lua_pushnumber (L, 0);
 			return 1;
 		}
 
 #ifdef ENABLE_PVP_ADVANCED
-		if ((ch->GetDuel("BlockPet")))
+		if (ecs::PlayerRuntime::GetDuelOption(chEntity, "BlockPet"))
 		{
 #ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 516, "");
+			ecs::ChatSystem::SendNew(chEntity, CHAT_TYPE_INFO, 516, "");
 #endif
 			lua_pushnumber (L, 0);
 			return 1;
@@ -64,7 +62,7 @@ namespace quest
 		uint32_t mobVnum= lua_isnumber(L, 1) ? static_cast<uint32_t>(lua_tonumber(L, 1)) : 0;
 
 		// 소환수의 이름
-		CPetActor* pet = petSystem->Summon(mobVnum, EntityFactory::CreateItemEntity(g_registry, pItem), "", false);
+		CPetActor* pet = petSystem->Summon(mobVnum, item, "", false);
 
 		if (pet != nullptr)
 			lua_pushnumber (L, pet->GetVID());
@@ -80,11 +78,7 @@ namespace quest
 		// migrated from CHARACTER CPetSystem
 		// DUAL-PATH: legacy only during migration window
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
-		auto* ch = ecs::LegacyCharOf(chEntity);
-		if (!ch)
-			return 0;
-		
-		CPetSystem* petSystem = ch->GetPetSystem();
+		CPetSystem* petSystem = ecs::PlayerRuntime::GetPetSystem(chEntity);
 
 		if (nullptr == petSystem)
 			return 0;
@@ -94,9 +88,9 @@ namespace quest
 
 		petSystem->Unsummon(mobVnum);
 #ifdef ENABLE_RECALL
-		const CAffect* pAffect = AffectSystem::FindAffect(AIHelpers::EcsOf(ch), AFFECT_RECALL1);
+		const CAffect* pAffect = AffectSystem::FindAffect(chEntity, AFFECT_RECALL1);
 		if (pAffect) {
-			AffectSystem::RemoveAffect(AIHelpers::EcsOf(ch), const_cast<CAffect*>(pAffect));
+			AffectSystem::RemoveAffect(chEntity, const_cast<CAffect*>(pAffect));
 		}
 #endif
 		return 1;
@@ -108,8 +102,7 @@ namespace quest
 		// migrated from CHARACTER CPetSystem
 		// DUAL-PATH: legacy only during migration window
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
-		auto* ch = ecs::LegacyCharOf(chEntity);
-		CPetSystem* petSystem = ch->GetPetSystem();
+		CPetSystem* petSystem = ecs::PlayerRuntime::GetPetSystem(chEntity);
 
 		lua_Number count = 0;
 
@@ -127,8 +120,7 @@ namespace quest
 		// migrated from CHARACTER CPetSystem
 		// DUAL-PATH: legacy only during migration window
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
-		auto* ch = ecs::LegacyCharOf(chEntity);
-		CPetSystem* petSystem = ch->GetPetSystem();
+		CPetSystem* petSystem = ecs::PlayerRuntime::GetPetSystem(chEntity);
 
 		if (nullptr == petSystem)
 			return 0;
@@ -151,8 +143,7 @@ namespace quest
 		// migrated from CHARACTER CPetSystem
 		// DUAL-PATH: legacy only during migration window
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
-		auto* ch = ecs::LegacyCharOf(chEntity);
-		CPetSystem* petSystem = ch->GetPetSystem();
+		CPetSystem* petSystem = ecs::PlayerRuntime::GetPetSystem(chEntity);
 
 		if (nullptr == petSystem)
 			return 0;
@@ -162,13 +153,13 @@ namespace quest
 		CPetActor* petActor = petSystem->GetByVnum(mobVnum);
 		if (nullptr == petActor)
 			return 0;
-		LPCHARACTER pet_ch = petActor->GetCharacter();
-		if (nullptr == pet_ch)
+		const entt::entity pet = petActor->GetCharacterEntity();
+		if (pet == entt::null)
 			return 0;
 
 		if (lua_isstring(L, 2))
 		{
-			NetworkSyncSystem::BroadcastSpecificEffect(g_registry, AIHelpers::EcsOf(pet_ch), lua_tostring(L, 2));
+			NetworkSyncSystem::BroadcastSpecificEffect(g_registry, pet, lua_tostring(L, 2));
 		}
 		return 0;
 	}

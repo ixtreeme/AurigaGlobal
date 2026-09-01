@@ -4,7 +4,6 @@
 #include "ecs/systems/AffectSystem.hpp"
 #include "ecs/systems/SocialSystem.hpp"
 #include "ecs/systems/QuestSystem.hpp"
-#include "ecs/AIHelpers.hpp"
 #include "ecs/systems/PointSystem.hpp"
 #include <sstream>
 
@@ -15,7 +14,6 @@
 #include "questmanager.h"
 #include "packet.h"
 #include "char_manager.h"
-#include "ecs/CharacterAccessors.hpp"
 #include "db.h"
 #include "ecs/quest_helpers.hpp"
 
@@ -30,110 +28,58 @@ namespace quest
 {
 	using namespace std;
 
-	namespace
-	{
-		LPCHARACTER GetPartyQuestCharacter()
-		{
-			return CQuestManager::instance().GetCurrentCharacterPtr();
-		}
-
-		LPPARTY GetPartyFromECSOrLegacy(lua_State* L)
-		{
-			entt::entity e = CQuestManager::instance().GetPCEntity(L);
-			if (auto* pm = ECS_TryGet<ecs::PartyMembership>(e))
-				return pm->party;
-
-			LPCHARACTER ch = GetPartyQuestCharacter();
-			return ch ? ecs::SocialSystem::GetParty(AIHelpers::EcsOf(ch)) : nullptr;
-		}
-	}
 	//
 	// "party" Lua functions
 	//
 	ALUA(party_clear_ready)
 	{
-		// migrated from CHARACTER::GetParty()->ForEachNearMember
-		// DUAL-PATH: legacy only during migration window
-		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
-		auto* ch = ecs::LegacyCharOf(chEntity);
-		if (ecs::SocialSystem::GetParty(AIHelpers::EcsOf(ch)))
+		if (LPPARTY party = ecs::SocialSystem::GetParty(CQuestManager::instance().GetPCEntity(L)))
 		{
 			FPartyClearReady f;
-			ecs::SocialSystem::GetParty(AIHelpers::EcsOf(ch))->ForEachNearMember(f);
+			party->ForEachNearMember(f);
 		}
 		return 0;
 	}
 
 	ALUA(party_get_max_level)
 	{
-		// migrated from CHARACTER::GetParty()->GetMemberMaxLevel()
-		entt::entity e = CQuestManager::instance().GetPCEntity(L);
-		auto* pm = ECS_TryGet<ecs::PartyMembership>(e);
-		if (!pm || !pm->party)
-		{
-			const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
-			auto* ch = ecs::LegacyCharOf(chEntity);
-			lua_pushnumber(L, (ch && ecs::SocialSystem::GetParty(AIHelpers::EcsOf(ch))) ? ecs::SocialSystem::GetParty(AIHelpers::EcsOf(ch))->GetMemberMaxLevel() : 1);
-			return 1;
-		}
-
-		lua_pushnumber(L, pm->party->GetMemberMaxLevel());
+		LPPARTY party = ecs::SocialSystem::GetParty(CQuestManager::instance().GetPCEntity(L));
+		lua_pushnumber(L, party ? party->GetMemberMaxLevel() : 1);
 		return 1;
 	}
 
 #ifdef ENABLE_NEWSTUFF
 	ALUA(party_get_min_level)
 	{
-		// migrated from CHARACTER::GetParty()->GetMemberMinLevel()
-		entt::entity e = CQuestManager::instance().GetPCEntity(L);
-		auto* pm = ECS_TryGet<ecs::PartyMembership>(e);
-		if (!pm || !pm->party)
-		{
-			const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
-			auto* ch = ecs::LegacyCharOf(chEntity);
-			lua_pushnumber(L, (ch && ecs::SocialSystem::GetParty(AIHelpers::EcsOf(ch))) ? ecs::SocialSystem::GetParty(AIHelpers::EcsOf(ch))->GetMemberMinLevel() : 1);
-			return 1;
-		}
-
-		lua_pushnumber(L, pm->party->GetMemberMinLevel());
+		LPPARTY party = ecs::SocialSystem::GetParty(CQuestManager::instance().GetPCEntity(L));
+		lua_pushnumber(L, party ? party->GetMemberMinLevel() : 1);
 		return 1;
 	}
 
 	ALUA(party_leave_party)
 	{
-		// migrated from CHARACTER::GetParty()->Quit
-		// DUAL-PATH: legacy only during migration window
-		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
-		auto* ch = ecs::LegacyCharOf(chEntity);
-		// if (!ecs::SocialSystem::GetParty(AIHelpers::EcsOf(ch))&&!CPartyManager::instance().IsEnablePCParty()&&ch->GetDungeon())
-			// return 0;
-
-		LPPARTY pParty = ecs::SocialSystem::GetParty(AIHelpers::EcsOf(ch));
+		const entt::entity character = CQuestManager::instance().GetPCEntity(L);
+		LPPARTY pParty = ecs::SocialSystem::GetParty(character);
 		if (pParty)
 		{
 			if (pParty->GetMemberCount() == 2)
 				CPartyManager::instance().DeleteParty(pParty);
 			else
-				pParty->Quit((ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))));
+				pParty->Quit(ecs::PlayerRuntime::GetPlayerID(character));
 		}
 
-		lua_pushboolean(L, ecs::SocialSystem::GetParty(AIHelpers::EcsOf(ch))== nullptr);
+		lua_pushboolean(L, ecs::SocialSystem::GetParty(character) == nullptr);
 		return 1;
 	}
 
 	ALUA(party_delete_party)
 	{
-		// migrated from CHARACTER::GetParty()->Delete
-		// DUAL-PATH: legacy only during migration window
-		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
-		auto* ch = ecs::LegacyCharOf(chEntity);
-		// if (!ecs::SocialSystem::GetParty(AIHelpers::EcsOf(ch))&&!CPartyManager::instance().IsEnablePCParty()&&ch->GetDungeon()&&!ecs::SocialSystem::GetParty(AIHelpers::EcsOf(ch))->GetLeaderPID() == (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))))
-			// return 0;
+		const entt::entity character = CQuestManager::instance().GetPCEntity(L);
+		LPPARTY party = ecs::SocialSystem::GetParty(character);
+		if (party && party->GetLeaderPID() == ecs::PlayerRuntime::GetPlayerID(character))
+			CPartyManager::instance().DeleteParty(party);
 
-		if (ecs::SocialSystem::GetParty(AIHelpers::EcsOf(ch)) && ecs::SocialSystem::GetParty(AIHelpers::EcsOf(ch))->GetLeaderPID() == (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))))
-			CPartyManager::instance().DeleteParty(ecs::SocialSystem::GetParty(AIHelpers::EcsOf(ch)));
-
-		lua_pushboolean(L, ecs::SocialSystem::GetParty(AIHelpers::EcsOf(ch))== nullptr);
+		lua_pushboolean(L, ecs::SocialSystem::GetParty(character) == nullptr);
 		return 1;
 	}
 #endif
@@ -156,15 +102,15 @@ namespace quest
             pack.size = pack.src_size + sizeof(struct packet_script);
         }
 
-        void operator()(LPCHARACTER ch)
-        {
-            LOG_INFO("CINEMASEND_TRY {}", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data());
+		void operator()(entt::entity character)
+		{
+			LOG_INFO("CINEMASEND_TRY {}", ecs::PlayerRuntime::GetName(character).data());
 
-            if (ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch)))
-            {
-                LOG_INFO("CINEMASEND {}", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data());
-                ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->BufferedPacket(&pack, sizeof(struct packet_script));
-                ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->Packet(data.c_str(),data.size());
+			if (LPDESC desc = ecs::PlayerRuntime::GetDesc(character))
+			{
+				LOG_INFO("CINEMASEND {}", ecs::PlayerRuntime::GetName(character).data());
+				desc->BufferedPacket(&pack, sizeof(struct packet_script));
+				desc->Packet(data.c_str(),data.size());
             }
         }
     };
@@ -177,14 +123,12 @@ namespace quest
 			return 0;
 
 		LOG_INFO("RUN_CINEMA {}", lua_tostring(L, 1));
-		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
-		auto* ch = ecs::LegacyCharOf(chEntity);
-		if (ecs::SocialSystem::GetParty(AIHelpers::EcsOf(ch)))
+		if (LPPARTY party = ecs::SocialSystem::GetParty(CQuestManager::instance().GetPCEntity(L)))
 		{
 			FRunCinematicSender f(lua_tostring(L, 1));
-
-			ecs::SocialSystem::GetParty(AIHelpers::EcsOf(ch))->Update();
-			ecs::SocialSystem::GetParty(AIHelpers::EcsOf(ch))->ForEachNearMember(f);
+			party->Update();
+			ecs::SocialSystem::ForEachNearPartyMember(
+				CQuestManager::instance().GetPCEntity(L), f);
 		}
 
 		return 0;
@@ -207,15 +151,15 @@ namespace quest
 			packet_script.size = packet_script.src_size + sizeof(struct packet_script);
 		}
 
-		void operator()(LPCHARACTER ch)
+		void operator()(entt::entity character)
 		{
-			LOG_INFO("CINEMASEND_TRY {}", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data());
+			LOG_INFO("CINEMASEND_TRY {}", ecs::PlayerRuntime::GetName(character).data());
 
-			if (ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch)))
+			if (LPDESC desc = ecs::PlayerRuntime::GetDesc(character))
 			{
-				LOG_INFO("CINEMASEND {}", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data());
-				ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->BufferedPacket(&packet_script, sizeof(struct packet_script));
-				ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->Packet(str,len);
+				LOG_INFO("CINEMASEND {}", ecs::PlayerRuntime::GetName(character).data());
+				desc->BufferedPacket(&packet_script, sizeof(struct packet_script));
+				desc->Packet(str,len);
 			}
 		}
 	};
@@ -228,32 +172,20 @@ namespace quest
 			return 0;
 
 		LOG_INFO("CINEMA {}", lua_tostring(L, 1));
-		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
-		auto* ch = ecs::LegacyCharOf(chEntity);
-		if (ecs::SocialSystem::GetParty(AIHelpers::EcsOf(ch)))
+		if (LPPARTY party = ecs::SocialSystem::GetParty(CQuestManager::instance().GetPCEntity(L)))
 		{
 			FCinematicSender f(lua_tostring(L, 1));
-
-			ecs::SocialSystem::GetParty(AIHelpers::EcsOf(ch))->Update();
-			ecs::SocialSystem::GetParty(AIHelpers::EcsOf(ch))->ForEachNearMember(f);
+			party->Update();
+			ecs::SocialSystem::ForEachNearPartyMember(
+				CQuestManager::instance().GetPCEntity(L), f);
 		}
 		return 0;
 	}
 
 	ALUA(party_get_near_count)
 	{
-		// migrated from CHARACTER::GetParty()->GetNearMemberCount()
-		entt::entity e = CQuestManager::instance().GetPCEntity(L);
-		auto* pm = ECS_TryGet<ecs::PartyMembership>(e);
-		if (!pm || !pm->party)
-		{
-			const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
-			auto* ch = ecs::LegacyCharOf(chEntity);
-			lua_pushnumber(L, (ch && ecs::SocialSystem::GetParty(AIHelpers::EcsOf(ch))) ? ecs::SocialSystem::GetParty(AIHelpers::EcsOf(ch))->GetNearMemberCount() : 0);
-			return 1;
-		}
-
-		lua_pushnumber(L, pm->party->GetNearMemberCount());
+		LPPARTY party = ecs::SocialSystem::GetParty(CQuestManager::instance().GetPCEntity(L));
+		lua_pushnumber(L, party ? party->GetNearMemberCount() : 0);
 		return 1;
 	}
 
@@ -261,8 +193,7 @@ namespace quest
 	{
 		// migrated from CHARACTER::GetParty()->ForEachOnlineMember
 		// DUAL-PATH: legacy only during migration window
-		LPCHARACTER ch = CQuestManager::Instance().GetCurrentCharacterPtr();
-		LPPARTY pParty = ch ? ecs::SocialSystem::GetParty(AIHelpers::EcsOf(ch)) : nullptr;
+		LPPARTY pParty = ecs::SocialSystem::GetParty(CQuestManager::Instance().GetPCEntity(L));
 
 		if (pParty)
 		{
@@ -279,59 +210,23 @@ namespace quest
 
 	ALUA(party_is_leader)
 	{
-		// migrated from CHARACTER::GetParty()->GetLeaderPID()
-		entt::entity e = CQuestManager::instance().GetPCEntity(L);
-		auto* pm = ECS_TryGet<ecs::PartyMembership>(e);
-		if (!pm || !pm->party)
-		{
-			const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
-			auto* ch = ecs::LegacyCharOf(chEntity);
-			if (!ch || !ecs::SocialSystem::GetParty(AIHelpers::EcsOf(ch)))
-			{
-				lua_pushboolean(L, 0);
-				return 1;
-			}
-
-			lua_pushboolean(L, ecs::SocialSystem::GetParty(AIHelpers::EcsOf(ch))->GetLeaderPID() == (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))) ? 1 : 0);
-			return 1;
-		}
-
-		auto* pid = ECS_TryGet<ecs::PlayerID>(e);
-		lua_pushboolean(L, (pid && pm->party->GetLeaderPID() == pid->pid) ? 1 : 0);
+		const entt::entity character = CQuestManager::instance().GetPCEntity(L);
+		LPPARTY party = ecs::SocialSystem::GetParty(character);
+		lua_pushboolean(L, party && party->GetLeaderPID() == ecs::PlayerRuntime::GetPlayerID(character));
 		return 1;
 	}
 
 	ALUA(party_is_party)
 	{
-		// migrated from CHARACTER::GetParty()
-		entt::entity e = CQuestManager::instance().GetPCEntity(L);
-		auto* pm = ECS_TryGet<ecs::PartyMembership>(e);
-		if (!pm)
-		{
-			const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
-			auto* ch = ecs::LegacyCharOf(chEntity);
-			lua_pushboolean(L, (ch && ecs::SocialSystem::GetParty(AIHelpers::EcsOf(ch))) ? 1 : 0);
-			return 1;
-		}
-
-		lua_pushboolean(L, pm->party != nullptr ? 1 : 0);
+		lua_pushboolean(L,
+			ecs::SocialSystem::GetParty(CQuestManager::instance().GetPCEntity(L)) != nullptr);
 		return 1;
 	}
 
 	ALUA(party_get_leader_pid)
 	{
-		// migrated from CHARACTER::GetParty()->GetLeaderPID()
-		entt::entity e = CQuestManager::instance().GetPCEntity(L);
-		auto* pm = ECS_TryGet<ecs::PartyMembership>(e);
-		if (!pm || !pm->party)
-		{
-			const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
-			auto* ch = ecs::LegacyCharOf(chEntity);
-			lua_pushnumber(L, (ch && ecs::SocialSystem::GetParty(AIHelpers::EcsOf(ch))) ? ecs::SocialSystem::GetParty(AIHelpers::EcsOf(ch))->GetLeaderPID() : -1);
-			return 1;
-		}
-
-		lua_pushnumber(L, pm->party->GetLeaderPID());
+		LPPARTY party = ecs::SocialSystem::GetParty(CQuestManager::instance().GetPCEntity(L));
+		lua_pushnumber(L, party ? party->GetLeaderPID() : -1);
 		return 1;
 	}
 
@@ -340,8 +235,7 @@ namespace quest
 	{
 		// migrated from CHARACTER::GetParty()->ForEachOnlineMember
 		// DUAL-PATH: legacy only during migration window
-		LPCHARACTER ch = CQuestManager::Instance().GetCurrentCharacterPtr();
-		LPPARTY pParty = ch ? ecs::SocialSystem::GetParty(AIHelpers::EcsOf(ch)) : nullptr;
+		LPPARTY pParty = ecs::SocialSystem::GetParty(CQuestManager::Instance().GetPCEntity(L));
 
 		if (pParty)
 		{
@@ -369,8 +263,8 @@ namespace quest
 		}
 
 		CQuestManager& q = CQuestManager::Instance();
-		LPCHARACTER ch = q.GetCurrentCharacterPtr();
-		LPPARTY pParty = ch ? ecs::SocialSystem::GetParty(AIHelpers::EcsOf(ch)) : nullptr;
+		const entt::entity character = q.GetPCEntity(L);
+		LPPARTY pParty = ecs::SocialSystem::GetParty(character);
 		PC* pPC = q.GetCurrentPC();
 
 		const char* sz = lua_tostring(L,1);
@@ -381,7 +275,8 @@ namespace quest
 			f.flagname = pPC->GetCurrentQuestName() + "."+sz;
 			f.value = (int) rint(lua_tonumber(L, 2));
 
-			bool returnBool = pParty->ForEachOnMapMemberBool(f, ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)));
+			bool returnBool = pParty->ForEachOnMapMemberBool(
+				f, ecs::PlayerRuntime::GetMapIndex(character));
 			lua_pushboolean(L, returnBool);
 		}
 
@@ -390,26 +285,20 @@ namespace quest
 
 	ALUA(party_set_flag)
 	{
-		// migrated from CHARACTER::GetParty()->SetFlag
-		// DUAL-PATH: ECS update + legacy call during migration window
-		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
-		auto* ch = ecs::LegacyCharOf(chEntity);
-		if (ecs::SocialSystem::GetParty(AIHelpers::EcsOf(ch)) && lua_isstring(L, 1) && lua_isnumber(L, 2))
-			ecs::SocialSystem::GetParty(AIHelpers::EcsOf(ch))->SetFlag(lua_tostring(L, 1), (int)lua_tonumber(L, 2));
+		LPPARTY party = ecs::SocialSystem::GetParty(CQuestManager::instance().GetPCEntity(L));
+		if (party && lua_isstring(L, 1) && lua_isnumber(L, 2))
+			party->SetFlag(lua_tostring(L, 1), static_cast<int>(lua_tonumber(L, 2)));
 
 		return 0;
 	}
 
 	ALUA(party_get_flag)
 	{
-		// migrated from CHARACTER::GetParty()->GetFlag
-		// DUAL-PATH: legacy fallback during migration window
-		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
-		auto* ch = ecs::LegacyCharOf(chEntity);
-		if (!ecs::SocialSystem::GetParty(AIHelpers::EcsOf(ch)) || !lua_isstring(L, 1))
+		LPPARTY party = ecs::SocialSystem::GetParty(CQuestManager::instance().GetPCEntity(L));
+		if (!party || !lua_isstring(L, 1))
 			lua_pushnumber(L, 0);
 		else
-			lua_pushnumber(L, ecs::SocialSystem::GetParty(AIHelpers::EcsOf(ch))->GetFlag(lua_tostring(L, 1)));
+			lua_pushnumber(L, party->GetFlag(lua_tostring(L, 1)));
 
 		return 1;
 	}
@@ -425,33 +314,22 @@ namespace quest
 		f.flagname = q.GetCurrentPC()->GetCurrentQuestName() + "." + lua_tostring(L, 1);
 		f.value = (int) rint(lua_tonumber(L, 2));
 
-		const entt::entity chEntity = q.GetCurrentPCEntity();
-
-		auto* ch = ecs::LegacyCharOf(chEntity);
-		if (ecs::SocialSystem::GetParty(AIHelpers::EcsOf(ch)))
-			ecs::SocialSystem::GetParty(AIHelpers::EcsOf(ch))->ForEachOnlineMember(f);
+		const entt::entity character = q.GetPCEntity(L);
+		if (ecs::SocialSystem::GetParty(character))
+			ecs::SocialSystem::ForEachOnlinePartyMember(character,
+				[&f](entt::entity member) {
+					ecs::QuestSystem::SetFlag(member, f.flagname, f.value);
+				});
 		else
-			f(ch);
+			ecs::QuestSystem::SetFlag(character, f.flagname, f.value);
 
 		return 0;
 	}
 
 	ALUA(party_is_in_dungeon)
 	{
-		// migrated from CHARACTER::GetParty()->GetDungeon()
-		entt::entity e = CQuestManager::instance().GetPCEntity(L);
-		auto* pm = ECS_TryGet<ecs::PartyMembership>(e);
-		if (!pm || !pm->party)
-		{
-			CQuestManager & q = CQuestManager::instance();
-			const entt::entity chEntity = q.GetCurrentPCEntity();
-			auto* ch = ecs::LegacyCharOf(chEntity);
-			LPPARTY pParty = ch ? ecs::SocialSystem::GetParty(AIHelpers::EcsOf(ch)) : nullptr;
-			lua_pushboolean(L, (pParty != nullptr && pParty->GetDungeon()) ? true : false);
-			return 1;
-		}
-
-		lua_pushboolean(L, pm->party->GetDungeon() ? true : false);
+		LPPARTY party = ecs::SocialSystem::GetParty(CQuestManager::instance().GetPCEntity(L));
+		lua_pushboolean(L, party && party->GetDungeon());
 		return 1;
 	}
 
@@ -471,9 +349,10 @@ namespace quest
 			: dwType (_dwType), bApplyOn (_bApplyOn), lApplyValue (_lApplyValue), dwFlag(_dwFlag), lDuration(_lDuration),
 				lSPCost(_lSPCost), bOverride(_bOverride), IsCube(_IsCube)
 		{}
-		void operator () (LPCHARACTER ch)
+		void operator () (entt::entity character)
 		{
-			AffectSystem::AddAffect(AIHelpers::EcsOf(ch), dwType, bApplyOn, lApplyValue, dwFlag, lDuration, lSPCost, bOverride, IsCube);
+			AffectSystem::AddAffect(character,
+				dwType, bApplyOn, lApplyValue, dwFlag, lDuration, lSPCost, bOverride, IsCube);
 		}
 	};
 
@@ -484,8 +363,7 @@ namespace quest
 		// migrated from CHARACTER::AddAffect
 		// DUAL-PATH: legacy only during migration window
 		CQuestManager & q = CQuestManager::instance();
-		const entt::entity chEntity = q.GetCurrentPCEntity();
-		auto* ch = ecs::LegacyCharOf(chEntity);
+		const entt::entity character = q.GetPCEntity(L);
 		if (!lua_isnumber(L, 1) || !lua_isnumber(L, 2) || !lua_isnumber(L, 3) || !lua_isnumber(L, 4) ||
 			!lua_isnumber(L, 5) || !lua_isnumber(L, 6) || !lua_isboolean(L, 7) || !lua_isboolean(L, 8))
 		{
@@ -502,10 +380,12 @@ namespace quest
 		bool IsCube = lua_toboolean(L, 8);
 
 		FGiveBuff f (dwType, bApplyOn, lApplyValue, dwFlag, lDuration, lSPCost, bOverride, IsCube);
-		if (ecs::SocialSystem::GetParty(AIHelpers::EcsOf(ch)))
-			ecs::SocialSystem::GetParty(AIHelpers::EcsOf(ch))->ForEachOnMapMember(f, ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)));
+		if (ecs::SocialSystem::GetParty(character))
+			ecs::SocialSystem::ForEachPartyMemberOnMap(
+				character, ecs::PlayerRuntime::GetMapIndex(character), f);
 		else
-			f(ch);
+			AffectSystem::AddAffect(character, dwType, bApplyOn, lApplyValue,
+				dwFlag, lDuration, lSPCost, bOverride, IsCube);
 
 		lua_pushboolean(L, true);
 		return 1;
@@ -517,9 +397,9 @@ namespace quest
 		FPartyPIDCollector()
 		{
 		}
-		void operator () (LPCHARACTER ch)
+		void operator () (entt::entity character)
 		{
-			vecPIDs.push_back((ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))));
+			vecPIDs.push_back(ecs::PlayerRuntime::GetPlayerID(character));
 		}
 	};
 
@@ -528,15 +408,15 @@ namespace quest
 		// migrated from CHARACTER::GetParty()->ForEachOnMapMember
 		// DUAL-PATH: legacy fallback during migration window
 		CQuestManager & q = CQuestManager::instance();
-		const entt::entity chEntity = q.GetCurrentPCEntity();
-		auto* ch = ecs::LegacyCharOf(chEntity);
-		LPPARTY pParty = ecs::SocialSystem::GetParty(AIHelpers::EcsOf(ch));
+		const entt::entity character = q.GetPCEntity(L);
+		LPPARTY pParty = ecs::SocialSystem::GetParty(character);
 		if (nullptr == pParty)
 		{
 			return 0;
 		}
 		FPartyPIDCollector f;
-		pParty->ForEachOnMapMember(f, ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)));
+		ecs::SocialSystem::ForEachPartyMemberOnMap(
+			character, ecs::PlayerRuntime::GetMapIndex(character), f);
 
 		for (std::vector <uint32_t>::iterator it = f.vecPIDs.begin(); it != f.vecPIDs.end(); it++)
 		{
@@ -549,28 +429,18 @@ namespace quest
 	{
 		// migrated from CHARACTER::GetParty()->GetLeaderPID
 		// DUAL-PATH: legacy fallback during migration window
-		std::string name = "";
-
-		CQuestManager & q = CQuestManager::instance();
-		const entt::entity chEntity = q.GetCurrentPCEntity();
-		auto* ch = ecs::LegacyCharOf(chEntity);
-		if (!ch)
-		{
-			lua_pushstring(L, name.c_str());
-			return 1;
-		}
-
-		LPPARTY party = ecs::SocialSystem::GetParty(AIHelpers::EcsOf(ch));
+		const entt::entity character = CQuestManager::instance().GetPCEntity(L);
+		std::string name;
+		LPPARTY party = ecs::SocialSystem::GetParty(character);
 		if (party)
 		{
-			int32_t pid = party->GetLeaderPID();
-			LPCHARACTER leader = CHARACTER_MANAGER::instance().FindByPID(pid);
-			name = leader != nullptr ? ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(leader)).data() : ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data();
+			const entt::entity leader = ecs::PlayerRuntime::FindByPlayerID(party->GetLeaderPID());
+			name = leader != entt::null
+				? ecs::PlayerRuntime::GetName(leader).data()
+				: ecs::PlayerRuntime::GetName(character).data();
 		}
 		else
-		{
-			name = ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data();
-		}
+			name = ecs::PlayerRuntime::GetName(character).data();
 
 		lua_pushstring(L, name.c_str());
 		return 1;
@@ -578,99 +448,63 @@ namespace quest
 
 	ALUA(party_give_gold)
 	{
-		// migrated from CHARACTER::PointChange(POINT_GOLD, ...)
-		// DUAL-PATH: legacy only during migration window
-		CQuestManager & q = CQuestManager::instance();
-		const entt::entity chEntity = q.GetCurrentPCEntity();
-		auto* ch = ecs::LegacyCharOf(chEntity);
-		if (!ch)
-		{
-			return 0;
-		}
-
-		int64_t gold = (int64_t)lua_tonumber(L, -1);
-
-		LPPARTY party = ecs::SocialSystem::GetParty(AIHelpers::EcsOf(ch));
+		CQuestManager& q = CQuestManager::instance();
+		const entt::entity character = q.GetPCEntity(L);
+		const int64_t gold = static_cast<int64_t>(lua_tonumber(L, -1));
+		LPPARTY party = ecs::SocialSystem::GetParty(character);
 		if (party)
 		{
-			FPartyPIDCollector f;
-			party->ForEachOnMapMember(f, ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)));
-
-			for (auto it = f.vecPIDs.begin(); it != f.vecPIDs.end(); ++it)
+			FPartyPIDCollector collector;
+			ecs::SocialSystem::ForEachPartyMemberOnMap(
+				character, ecs::PlayerRuntime::GetMapIndex(character), collector);
+			for (const uint32_t playerID : collector.vecPIDs)
 			{
-				LPCHARACTER tch = CHARACTER_MANAGER::instance().FindByPID(*it);
-				if (tch && ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(tch)))
+				const entt::entity member = ecs::PlayerRuntime::FindByPlayerID(playerID);
+				if (!ecs::PlayerRuntime::IsPC(member))
+					continue;
+				if (gold + ecs::PointSystem::GetGold(member) < 0)
+					sys_err("QUEST wrong ChangeGold {} (now {})", gold, ecs::PointSystem::GetGold(member));
+				else
 				{
-					if (gold + ecs::PointSystem::GetGold(AIHelpers::EcsOf(tch)) < 0)
-					{
-						sys_err("QUEST wrong ChangeGold {} (now {})", gold, ecs::PointSystem::GetGold(AIHelpers::EcsOf(tch)));
-					}
-					else
-					{
-						DBManager::instance().SendMoneyLog(MONEY_LOG_QUEST, (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(tch))), gold);
-						ecs::PointSystem::Change(AIHelpers::EcsOf(tch), POINT_GOLD, gold, true);
-					}
+					DBManager::instance().SendMoneyLog(MONEY_LOG_QUEST, playerID, gold);
+					ecs::PointSystem::Change(member, POINT_GOLD, gold, true);
 				}
 			}
-
-			if (!q.GetPC((ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)))))
-			{
+			if (!q.GetPC(ecs::PlayerRuntime::GetPlayerID(character)))
 				sys_err("cannot return to main.");
-			}
 		}
+		else if (gold + ecs::PointSystem::GetGold(character) < 0)
+			sys_err("QUEST wrong ChangeGold {} (now {})", gold, ecs::PointSystem::GetGold(character));
 		else
 		{
-			if (gold + ecs::PointSystem::GetGold(AIHelpers::EcsOf(ch)) < 0)
-			{
-				sys_err("QUEST wrong ChangeGold {} (now {})", gold, ecs::PointSystem::GetGold(AIHelpers::EcsOf(ch)));
-			}
-			else
-			{
-				DBManager::instance().SendMoneyLog(MONEY_LOG_QUEST, (ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))), gold);
-				ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_GOLD, gold, true);
-			}
+			DBManager::instance().SendMoneyLog(MONEY_LOG_QUEST,
+				ecs::PlayerRuntime::GetPlayerID(character), gold);
+			ecs::PointSystem::Change(character, POINT_GOLD, gold, true);
 		}
-
 		return 0;
 	}
 
 	ALUA(party_give_blacksmith)
 	{
-		// migrated from CHARACTER::SetQuestFlag
-		// DUAL-PATH: legacy only during migration window
-		CQuestManager & q = CQuestManager::instance();
-		const entt::entity chEntity = q.GetCurrentPCEntity();
-		auto* ch = ecs::LegacyCharOf(chEntity);
-		if (!ch)
-		{
-			return 0;
-		}
-
-		LPPARTY party = ecs::SocialSystem::GetParty(AIHelpers::EcsOf(ch));
+		CQuestManager& q = CQuestManager::instance();
+		const entt::entity character = q.GetPCEntity(L);
+		LPPARTY party = ecs::SocialSystem::GetParty(character);
 		if (party)
 		{
-			FPartyPIDCollector f;
-			party->ForEachOnMapMember(f, ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(ch)));
-
-			for (auto it = f.vecPIDs.begin(); it != f.vecPIDs.end(); it++)
+			FPartyPIDCollector collector;
+			ecs::SocialSystem::ForEachPartyMemberOnMap(
+				character, ecs::PlayerRuntime::GetMapIndex(character), collector);
+			for (const uint32_t playerID : collector.vecPIDs)
 			{
-				LPCHARACTER tch = CHARACTER_MANAGER::instance().FindByPID(*it);
-				if (tch && ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(tch)))
-				{
-					ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(tch), "deviltower_zone.can_refine", 1);
-				}
+				const entt::entity member = ecs::PlayerRuntime::FindByPlayerID(playerID);
+				if (ecs::PlayerRuntime::IsPC(member))
+					ecs::QuestSystem::SetFlag(member, "deviltower_zone.can_refine", 1);
 			}
-
-			if (!q.GetPC((ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)))))
-			{
+			if (!q.GetPC(ecs::PlayerRuntime::GetPlayerID(character)))
 				sys_err("cannot return to main.");
-			}
 		}
 		else
-		{
-			ecs::QuestSystem::SetFlag(AIHelpers::EcsOf(ch), "deviltower_zone.can_refine", 1);
-		}
-
+			ecs::QuestSystem::SetFlag(character, "deviltower_zone.can_refine", 1);
 		return 0;
 	}
 

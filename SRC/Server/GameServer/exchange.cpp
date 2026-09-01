@@ -37,7 +37,7 @@ LPITEM ResolveLegacyExchangeItem(entt::entity item)
 void exchange_packet(LPCHARACTER ch, uint8_t sub_header, bool is_me, int64_t arg1, TItemPos arg2, uint32_t arg3, entt::entity item = entt::null);
 void exchange_packet(LPCHARACTER ch, uint8_t sub_header, bool is_me, int64_t arg1, TItemPos arg2, uint32_t arg3, entt::entity item)
 {
-	if (!ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch)))
+	if (!ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null)))
 		return;
 
 	struct packet_exchange pack_exchg;
@@ -75,7 +75,7 @@ void exchange_packet(LPCHARACTER ch, uint8_t sub_header, bool is_me, int64_t arg
 #endif
 	}
 
-	ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->Packet(&pack_exchg, sizeof(pack_exchg));
+	ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null))->Packet(&pack_exchg, sizeof(pack_exchg));
 }
 
 bool CHARACTER::ExchangeStart(LPCHARACTER victim)
@@ -86,19 +86,19 @@ bool CHARACTER::ExchangeStart(LPCHARACTER victim)
 	if (IsObserverMode())
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 256, "");
+		ecs::ChatSystem::SendNew(((this) ? (this)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 256, "");
 #endif
 		return false;
 	}
 
-	if (ecs::PlayerRuntime::IsNPC(AIHelpers::EcsOf(victim)))
+	if (ecs::PlayerRuntime::IsNPC(((victim) ? (victim)->GetEntityHandle() : entt::null)))
 		return false;
 
 #ifdef ENABLE_PVP_ADVANCED
 	if ((GetDuel("BlockExchange")))
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 516, "");
+		ecs::ChatSystem::SendNew(((this) ? (this)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 516, "");
 #endif
 		return false;
 	}
@@ -106,7 +106,7 @@ bool CHARACTER::ExchangeStart(LPCHARACTER victim)
 	if ((victim->GetDuel("BlockExchange")))
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 517, "%s", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(victim)).data());
+		ecs::ChatSystem::SendNew(((this) ? (this)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 517, "%s", ecs::PlayerRuntime::GetName(((victim) ? (victim)->GetEntityHandle() : entt::null)).data());
 #endif
 		return false;
 	}
@@ -116,7 +116,7 @@ bool CHARACTER::ExchangeStart(LPCHARACTER victim)
 	if ( IsOpenSafebox() || GetShopOwner() || GetMyShop() || IsCubeOpen())
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 292, "");
+		ecs::ChatSystem::SendNew(((this) ? (this)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 292, "");
 #endif
 		return false;
 	}
@@ -124,7 +124,7 @@ bool CHARACTER::ExchangeStart(LPCHARACTER victim)
 	if ( victim->IsOpenSafebox() || victim->GetShopOwner() || victim->GetMyShop() || victim->IsCubeOpen() )
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 293, "%s", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(victim)).data());
+		ecs::ChatSystem::SendNew(((this) ? (this)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 293, "%s", ecs::PlayerRuntime::GetName(((victim) ? (victim)->GetEntityHandle() : entt::null)).data());
 #endif
 		return false;
 	}
@@ -133,7 +133,7 @@ bool CHARACTER::ExchangeStart(LPCHARACTER victim)
 	if (IsAttrTransferOpen())
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 292, "");
+		ecs::ChatSystem::SendNew(((this) ? (this)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 292, "");
 #endif
 		return false;
 	}
@@ -141,13 +141,13 @@ bool CHARACTER::ExchangeStart(LPCHARACTER victim)
 	if (victim->IsAttrTransferOpen())
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 293, "%s", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(victim)).data());
+		ecs::ChatSystem::SendNew(((this) ? (this)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 293, "%s", ecs::PlayerRuntime::GetName(((victim) ? (victim)->GetEntityHandle() : entt::null)).data());
 #endif
 		return false;
 	}
 #endif
 	//END_PREVENT_TRADE_WINDOW
-	int iDist = DISTANCE_APPROX(GetX() - ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(victim)), GetY() - ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(victim)));
+	int iDist = DISTANCE_APPROX(GetX() - ecs::PlayerRuntime::GetX(((victim) ? (victim)->GetEntityHandle() : entt::null)), GetY() - ecs::PlayerRuntime::GetY(((victim) ? (victim)->GetEntityHandle() : entt::null)));
 
 	// 거리 체크
 	if (iDist >= EXCHANGE_MAX_DISTANCE)
@@ -156,7 +156,7 @@ bool CHARACTER::ExchangeStart(LPCHARACTER victim)
 	if (GetExchange())
 		return false;
 
-	if (ecs::SocialSystem::GetExchange(AIHelpers::EcsOf(victim)))
+	if (ecs::SocialSystem::GetExchange(((victim) ? (victim)->GetEntityHandle() : entt::null)))
 	{
 		exchange_packet(this, EXCHANGE_SUBHEADER_GC_ALREADY, 0, 0, NPOS, 0);
 		return false;
@@ -165,7 +165,7 @@ bool CHARACTER::ExchangeStart(LPCHARACTER victim)
 	if (victim->IsBlockMode(BLOCK_EXCHANGE))
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 368, "%s", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(victim)).data());
+		ecs::ChatSystem::SendNew(((this) ? (this)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 368, "%s", ecs::PlayerRuntime::GetName(((victim) ? (victim)->GetEntityHandle() : entt::null)).data());
 #endif
 		return false;
 	}
@@ -173,15 +173,15 @@ bool CHARACTER::ExchangeStart(LPCHARACTER victim)
 	SetExchange(M2_NEW CExchange(this));
 	victim->SetExchange(M2_NEW CExchange(victim));
 
-	ecs::SocialSystem::GetExchange(AIHelpers::EcsOf(victim))->SetCompany(GetExchange());
-	GetExchange()->SetCompany(ecs::SocialSystem::GetExchange(AIHelpers::EcsOf(victim)));
+	ecs::SocialSystem::GetExchange(((victim) ? (victim)->GetEntityHandle() : entt::null))->SetCompany(GetExchange());
+	GetExchange()->SetCompany(ecs::SocialSystem::GetExchange(((victim) ? (victim)->GetEntityHandle() : entt::null)));
 
 	//
 	SetExchangeTime();
 	victim->SetExchangeTime();
 
 	exchange_packet(victim, EXCHANGE_SUBHEADER_GC_START, 0, GetPacketVID(), NPOS, 0);
-	exchange_packet(this, EXCHANGE_SUBHEADER_GC_START, 0, ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(victim)), NPOS, 0);
+	exchange_packet(this, EXCHANGE_SUBHEADER_GC_START, 0, ecs::PlayerRuntime::GetPacketVID(((victim) ? (victim)->GetEntityHandle() : entt::null)), NPOS, 0);
 
 	return true;
 }
@@ -221,14 +221,14 @@ bool CExchange::AddItem(TItemPos item_pos, uint8_t display_pos)
 	if (!item_pos.IsValidItemPosition() || item_pos.IsEquipPosition())
 		return false;
 
-	const entt::entity item = ItemSystem::GetItem(AIHelpers::EcsOf(m_pOwner), item_pos);
+	const entt::entity item = ItemSystem::GetItem(((m_pOwner) ? (m_pOwner)->GetEntityHandle() : entt::null), item_pos);
 	if (!ItemSystem::IsValidItem(item))
 		return false;
 
 	if (IS_SET(ItemSystem::GetItemAntiFlag(item), ITEM_ANTIFLAG_GIVE))
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(m_pOwner), CHAT_TYPE_INFO, 402, "%s", ItemSystem::GetItemName(item));
+		ecs::ChatSystem::SendNew(((m_pOwner) ? (m_pOwner)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 402, "%s", ItemSystem::GetItemName(item));
 #endif
 		return false;
 	}
@@ -321,7 +321,7 @@ bool CExchange::AddGold(int64_t gold)
 	if (gold <= 0)
 		return false;
 
-	if (ecs::PointSystem::GetGold(AIHelpers::EcsOf(GetOwner())) < gold)
+	if (ecs::PointSystem::GetGold(((GetOwner()) ? (GetOwner())->GetEntityHandle() : entt::null)) < gold)
 	{
 		// 가지고 있는 돈이 부족.
 		exchange_packet(GetOwner(), EXCHANGE_SUBHEADER_GC_LESS_GOLD, 0, 0, NPOS, 0);
@@ -344,11 +344,11 @@ bool CExchange::AddGold(int64_t gold)
 // 돈이 충분히 있는지, 교환하려는 아이템이 실제로 있는지 확인 한다.
 bool CExchange::Check(int * piItemCount)
 {
-	if (ecs::PointSystem::GetGold(AIHelpers::EcsOf(GetOwner())) < m_lGold)
+	if (ecs::PointSystem::GetGold(((GetOwner()) ? (GetOwner())->GetEntityHandle() : entt::null)) < m_lGold)
 		return false;
 
 	int item_count = 0;
-	const entt::entity owner = AIHelpers::EcsOf(GetOwner());
+	const entt::entity owner = ((GetOwner()) ? (GetOwner())->GetEntityHandle() : entt::null);
 
 	for (int i = 0; i < EXCHANGE_ITEM_MAX_NUM; ++i)
 	{
@@ -407,14 +407,14 @@ bool CExchange::CheckSpace()
 #endif
 
 	for (i = 0; i < INVEN_NUM_SLOT; ++i) {
-		if (!ItemSystem::IsValidItem(occupiedItem = ItemSystem::GetInventoryItem(AIHelpers::EcsOf(victim), i)))
+		if (!ItemSystem::IsValidItem(occupiedItem = ItemSystem::GetInventoryItem(((victim) ? (victim)->GetEntityHandle() : entt::null), i)))
 			continue;
 
 		s_grid1->Put(i, 1, ItemSystem::GetItemSize(occupiedItem));
 	}
 
 	for (i = INVEN_NUM_SLOT; i < INVEN_NUM_SLOT * 2; ++i) {
-		if (!ItemSystem::IsValidItem(occupiedItem = ItemSystem::GetInventoryItem(AIHelpers::EcsOf(victim), i)))
+		if (!ItemSystem::IsValidItem(occupiedItem = ItemSystem::GetInventoryItem(((victim) ? (victim)->GetEntityHandle() : entt::null), i)))
 			continue;
 
 		s_grid2->Put(i - INVEN_NUM_SLOT, 1, ItemSystem::GetItemSize(occupiedItem));
@@ -422,14 +422,14 @@ bool CExchange::CheckSpace()
 
 #ifdef ENABLE_EXTEND_INVEN_SYSTEM
 	for (i = INVEN_NUM_SLOT * 2; i < INVEN_NUM_SLOT * 3; ++i) {
-		if (!ItemSystem::IsValidItem(occupiedItem = ItemSystem::GetInventoryItem(AIHelpers::EcsOf(victim), i)))
+		if (!ItemSystem::IsValidItem(occupiedItem = ItemSystem::GetInventoryItem(((victim) ? (victim)->GetEntityHandle() : entt::null), i)))
 			continue;
 
 		s_grid3->Put(i - INVEN_NUM_SLOT * 2, 1, ItemSystem::GetItemSize(occupiedItem));
 	}
 
 	for (i = INVEN_NUM_SLOT * 3; i < INVEN_NUM_SLOT * 4; ++i) {
-		if (!ItemSystem::IsValidItem(occupiedItem = ItemSystem::GetInventoryItem(AIHelpers::EcsOf(victim), i)))
+		if (!ItemSystem::IsValidItem(occupiedItem = ItemSystem::GetInventoryItem(((victim) ? (victim)->GetEntityHandle() : entt::null), i)))
 			continue;
 
 		s_grid4->Put(i - INVEN_NUM_SLOT * 3, 1, ItemSystem::GetItemSize(occupiedItem));
@@ -443,7 +443,7 @@ bool CExchange::CheckSpace()
 	CGrid * s_gridExtraCat1_3;
 	CGrid * s_gridExtraCat1_4;
 
-	int gridextra_size_cat1 = ecs::PointSystem::Get(AIHelpers::EcsOf(victim), POINT_EXTRA_INVENTORY1) + 4;
+	int gridextra_size_cat1 = ecs::PointSystem::Get(((victim) ? (victim)->GetEntityHandle() : entt::null), POINT_EXTRA_INVENTORY1) + 4;
 	if (gridextra_size_cat1 >= 9) {
 		gridextra_size_cat1 -= 9;
 		s_gridExtraCat1_3 = new CGrid(5, 9);
@@ -464,28 +464,28 @@ bool CExchange::CheckSpace()
 	s_gridExtraCat1_4->Clear();
 
 	for (i = 0; i < EXTRA_INVENTORY_PAGE_SIZE * 1; ++i) {
-		if (!ItemSystem::IsValidItem(occupiedItem = ItemSystem::GetExtraInventoryItem(AIHelpers::EcsOf(victim), i)))
+		if (!ItemSystem::IsValidItem(occupiedItem = ItemSystem::GetExtraInventoryItem(((victim) ? (victim)->GetEntityHandle() : entt::null), i)))
 			continue;
 
 		s_gridExtraCat1_1->Put(i, 1, ItemSystem::GetItemSize(occupiedItem));
 	}
 
 	for (i = EXTRA_INVENTORY_PAGE_SIZE * 1; i < EXTRA_INVENTORY_PAGE_SIZE * 2; ++i) {
-		if (!ItemSystem::IsValidItem(occupiedItem = ItemSystem::GetExtraInventoryItem(AIHelpers::EcsOf(victim), i)))
+		if (!ItemSystem::IsValidItem(occupiedItem = ItemSystem::GetExtraInventoryItem(((victim) ? (victim)->GetEntityHandle() : entt::null), i)))
 			continue;
 
 		s_gridExtraCat1_2->Put(i - EXTRA_INVENTORY_PAGE_SIZE * 1, 1, ItemSystem::GetItemSize(occupiedItem));
 	}
 
 	for (i = EXTRA_INVENTORY_PAGE_SIZE * 2; i < EXTRA_INVENTORY_PAGE_SIZE * 3; ++i) {
-		if (!ItemSystem::IsValidItem(occupiedItem = ItemSystem::GetExtraInventoryItem(AIHelpers::EcsOf(victim), i)))
+		if (!ItemSystem::IsValidItem(occupiedItem = ItemSystem::GetExtraInventoryItem(((victim) ? (victim)->GetEntityHandle() : entt::null), i)))
 			continue;
 
 		s_gridExtraCat1_3->Put(i - EXTRA_INVENTORY_PAGE_SIZE * 2, 1, ItemSystem::GetItemSize(occupiedItem));
 	}
 
 	for (i = EXTRA_INVENTORY_PAGE_SIZE * 3; i < EXTRA_INVENTORY_PAGE_SIZE * 4; ++i) {
-		if (!ItemSystem::IsValidItem(occupiedItem = ItemSystem::GetExtraInventoryItem(AIHelpers::EcsOf(victim), i)))
+		if (!ItemSystem::IsValidItem(occupiedItem = ItemSystem::GetExtraInventoryItem(((victim) ? (victim)->GetEntityHandle() : entt::null), i)))
 			continue;
 
 		s_gridExtraCat1_4->Put(i - EXTRA_INVENTORY_PAGE_SIZE * 3, 1, ItemSystem::GetItemSize(occupiedItem));
@@ -497,7 +497,7 @@ bool CExchange::CheckSpace()
 	CGrid * s_gridExtraCat2_3;
 	CGrid * s_gridExtraCat2_4;
 
-	int gridextra_size_cat2 = ecs::PointSystem::Get(AIHelpers::EcsOf(victim), POINT_EXTRA_INVENTORY2) + 4;
+	int gridextra_size_cat2 = ecs::PointSystem::Get(((victim) ? (victim)->GetEntityHandle() : entt::null), POINT_EXTRA_INVENTORY2) + 4;
 	if (gridextra_size_cat2 >= 9) {
 		gridextra_size_cat2 -= 9;
 		s_gridExtraCat2_3 = new CGrid(5, 9);
@@ -518,28 +518,28 @@ bool CExchange::CheckSpace()
 	s_gridExtraCat2_4->Clear();
 
 	for (i = EXTRA_INVENTORY_PAGE_SIZE * 4; i < EXTRA_INVENTORY_PAGE_SIZE * 5; ++i) {
-		if (!ItemSystem::IsValidItem(occupiedItem = ItemSystem::GetExtraInventoryItem(AIHelpers::EcsOf(victim), i)))
+		if (!ItemSystem::IsValidItem(occupiedItem = ItemSystem::GetExtraInventoryItem(((victim) ? (victim)->GetEntityHandle() : entt::null), i)))
 			continue;
 
 		s_gridExtraCat2_1->Put(i - EXTRA_INVENTORY_PAGE_SIZE * 4, 1, ItemSystem::GetItemSize(occupiedItem));
 	}
 
 	for (i = EXTRA_INVENTORY_PAGE_SIZE * 5; i < EXTRA_INVENTORY_PAGE_SIZE * 6; ++i) {
-		if (!ItemSystem::IsValidItem(occupiedItem = ItemSystem::GetExtraInventoryItem(AIHelpers::EcsOf(victim), i)))
+		if (!ItemSystem::IsValidItem(occupiedItem = ItemSystem::GetExtraInventoryItem(((victim) ? (victim)->GetEntityHandle() : entt::null), i)))
 			continue;
 
 		s_gridExtraCat2_2->Put(i - EXTRA_INVENTORY_PAGE_SIZE * 5, 1, ItemSystem::GetItemSize(occupiedItem));
 	}
 
 	for (i = EXTRA_INVENTORY_PAGE_SIZE * 6; i < EXTRA_INVENTORY_PAGE_SIZE * 7; ++i) {
-		if (!ItemSystem::IsValidItem(occupiedItem = ItemSystem::GetExtraInventoryItem(AIHelpers::EcsOf(victim), i)))
+		if (!ItemSystem::IsValidItem(occupiedItem = ItemSystem::GetExtraInventoryItem(((victim) ? (victim)->GetEntityHandle() : entt::null), i)))
 			continue;
 
 		s_gridExtraCat2_3->Put(i - EXTRA_INVENTORY_PAGE_SIZE * 6, 1, ItemSystem::GetItemSize(occupiedItem));
 	}
 
 	for (i = EXTRA_INVENTORY_PAGE_SIZE * 7; i < EXTRA_INVENTORY_PAGE_SIZE * 8; ++i) {
-		if (!ItemSystem::IsValidItem(occupiedItem = ItemSystem::GetExtraInventoryItem(AIHelpers::EcsOf(victim), i)))
+		if (!ItemSystem::IsValidItem(occupiedItem = ItemSystem::GetExtraInventoryItem(((victim) ? (victim)->GetEntityHandle() : entt::null), i)))
 			continue;
 
 		s_gridExtraCat2_4->Put(i - EXTRA_INVENTORY_PAGE_SIZE * 7, 1, ItemSystem::GetItemSize(occupiedItem));
@@ -551,7 +551,7 @@ bool CExchange::CheckSpace()
 	CGrid * s_gridExtraCat3_3;
 	CGrid * s_gridExtraCat3_4;
 
-	int gridextra_size_cat3 = ecs::PointSystem::Get(AIHelpers::EcsOf(victim), POINT_EXTRA_INVENTORY3) + 4;
+	int gridextra_size_cat3 = ecs::PointSystem::Get(((victim) ? (victim)->GetEntityHandle() : entt::null), POINT_EXTRA_INVENTORY3) + 4;
 	if (gridextra_size_cat3 >= 9) {
 		gridextra_size_cat3 -= 9;
 		s_gridExtraCat3_3 = new CGrid(5, 9);
@@ -572,28 +572,28 @@ bool CExchange::CheckSpace()
 	s_gridExtraCat3_4->Clear();
 
 	for (i = EXTRA_INVENTORY_PAGE_SIZE * 8; i < EXTRA_INVENTORY_PAGE_SIZE * 9; ++i) {
-		if (!ItemSystem::IsValidItem(occupiedItem = ItemSystem::GetExtraInventoryItem(AIHelpers::EcsOf(victim), i)))
+		if (!ItemSystem::IsValidItem(occupiedItem = ItemSystem::GetExtraInventoryItem(((victim) ? (victim)->GetEntityHandle() : entt::null), i)))
 			continue;
 
 		s_gridExtraCat3_1->Put(i - EXTRA_INVENTORY_PAGE_SIZE * 8, 1, ItemSystem::GetItemSize(occupiedItem));
 	}
 
 	for (i = EXTRA_INVENTORY_PAGE_SIZE * 9; i < EXTRA_INVENTORY_PAGE_SIZE * 10; ++i) {
-		if (!ItemSystem::IsValidItem(occupiedItem = ItemSystem::GetExtraInventoryItem(AIHelpers::EcsOf(victim), i)))
+		if (!ItemSystem::IsValidItem(occupiedItem = ItemSystem::GetExtraInventoryItem(((victim) ? (victim)->GetEntityHandle() : entt::null), i)))
 			continue;
 
 		s_gridExtraCat3_2->Put(i - EXTRA_INVENTORY_PAGE_SIZE * 9, 1, ItemSystem::GetItemSize(occupiedItem));
 	}
 
 	for (i = EXTRA_INVENTORY_PAGE_SIZE * 10; i < EXTRA_INVENTORY_PAGE_SIZE * 11; ++i) {
-		if (!ItemSystem::IsValidItem(occupiedItem = ItemSystem::GetExtraInventoryItem(AIHelpers::EcsOf(victim), i)))
+		if (!ItemSystem::IsValidItem(occupiedItem = ItemSystem::GetExtraInventoryItem(((victim) ? (victim)->GetEntityHandle() : entt::null), i)))
 			continue;
 
 		s_gridExtraCat3_3->Put(i - EXTRA_INVENTORY_PAGE_SIZE * 10, 1, ItemSystem::GetItemSize(occupiedItem));
 	}
 
 	for (i = EXTRA_INVENTORY_PAGE_SIZE * 11; i < EXTRA_INVENTORY_PAGE_SIZE * 12; ++i) {
-		if (!ItemSystem::IsValidItem(occupiedItem = ItemSystem::GetExtraInventoryItem(AIHelpers::EcsOf(victim), i)))
+		if (!ItemSystem::IsValidItem(occupiedItem = ItemSystem::GetExtraInventoryItem(((victim) ? (victim)->GetEntityHandle() : entt::null), i)))
 			continue;
 
 		s_gridExtraCat3_4->Put(i - EXTRA_INVENTORY_PAGE_SIZE * 11, 1, ItemSystem::GetItemSize(occupiedItem));
@@ -605,7 +605,7 @@ bool CExchange::CheckSpace()
 	CGrid * s_gridExtraCat4_3;
 	CGrid * s_gridExtraCat4_4;
 
-	int gridextra_size_cat4 = ecs::PointSystem::Get(AIHelpers::EcsOf(victim), POINT_EXTRA_INVENTORY4) + 4;
+	int gridextra_size_cat4 = ecs::PointSystem::Get(((victim) ? (victim)->GetEntityHandle() : entt::null), POINT_EXTRA_INVENTORY4) + 4;
 	if (gridextra_size_cat4 >= 9) {
 		gridextra_size_cat4 -= 9;
 		s_gridExtraCat4_3 = new CGrid(5, 9);
@@ -626,28 +626,28 @@ bool CExchange::CheckSpace()
 	s_gridExtraCat4_4->Clear();
 
 	for (i = EXTRA_INVENTORY_PAGE_SIZE * 12; i < EXTRA_INVENTORY_PAGE_SIZE * 13; ++i) {
-		if (!ItemSystem::IsValidItem(occupiedItem = ItemSystem::GetExtraInventoryItem(AIHelpers::EcsOf(victim), i)))
+		if (!ItemSystem::IsValidItem(occupiedItem = ItemSystem::GetExtraInventoryItem(((victim) ? (victim)->GetEntityHandle() : entt::null), i)))
 			continue;
 
 		s_gridExtraCat4_1->Put(i - EXTRA_INVENTORY_PAGE_SIZE * 12, 1, ItemSystem::GetItemSize(occupiedItem));
 	}
 
 	for (i = EXTRA_INVENTORY_PAGE_SIZE * 13; i < EXTRA_INVENTORY_PAGE_SIZE * 14; ++i) {
-		if (!ItemSystem::IsValidItem(occupiedItem = ItemSystem::GetExtraInventoryItem(AIHelpers::EcsOf(victim), i)))
+		if (!ItemSystem::IsValidItem(occupiedItem = ItemSystem::GetExtraInventoryItem(((victim) ? (victim)->GetEntityHandle() : entt::null), i)))
 			continue;
 
 		s_gridExtraCat4_2->Put(i - EXTRA_INVENTORY_PAGE_SIZE * 13, 1, ItemSystem::GetItemSize(occupiedItem));
 	}
 
 	for (i = EXTRA_INVENTORY_PAGE_SIZE * 14; i < EXTRA_INVENTORY_PAGE_SIZE * 15; ++i) {
-		if (!ItemSystem::IsValidItem(occupiedItem = ItemSystem::GetExtraInventoryItem(AIHelpers::EcsOf(victim), i)))
+		if (!ItemSystem::IsValidItem(occupiedItem = ItemSystem::GetExtraInventoryItem(((victim) ? (victim)->GetEntityHandle() : entt::null), i)))
 			continue;
 
 		s_gridExtraCat4_3->Put(i - EXTRA_INVENTORY_PAGE_SIZE * 14, 1, ItemSystem::GetItemSize(occupiedItem));
 	}
 
 	for (i = EXTRA_INVENTORY_PAGE_SIZE * 15; i < EXTRA_INVENTORY_PAGE_SIZE * 16; ++i) {
-		if (!ItemSystem::IsValidItem(occupiedItem = ItemSystem::GetExtraInventoryItem(AIHelpers::EcsOf(victim), i)))
+		if (!ItemSystem::IsValidItem(occupiedItem = ItemSystem::GetExtraInventoryItem(((victim) ? (victim)->GetEntityHandle() : entt::null), i)))
 			continue;
 
 		s_gridExtraCat4_4->Put(i - EXTRA_INVENTORY_PAGE_SIZE * 15, 1, ItemSystem::GetItemSize(occupiedItem));
@@ -664,28 +664,28 @@ bool CExchange::CheckSpace()
 	s_gridExtraCat5_4->Clear();
 
 	for (i = EXTRA_INVENTORY_PAGE_SIZE * 16; i < EXTRA_INVENTORY_PAGE_SIZE * 17; ++i) {
-		if (!ItemSystem::IsValidItem(occupiedItem = ItemSystem::GetExtraInventoryItem(AIHelpers::EcsOf(victim), i)))
+		if (!ItemSystem::IsValidItem(occupiedItem = ItemSystem::GetExtraInventoryItem(((victim) ? (victim)->GetEntityHandle() : entt::null), i)))
 			continue;
 
 		s_gridExtraCat5_1->Put(i - EXTRA_INVENTORY_PAGE_SIZE * 16, 1, ItemSystem::GetItemSize(occupiedItem));
 	}
 
 	for (i = EXTRA_INVENTORY_PAGE_SIZE * 17; i < EXTRA_INVENTORY_PAGE_SIZE * 18; ++i) {
-		if (!ItemSystem::IsValidItem(occupiedItem = ItemSystem::GetExtraInventoryItem(AIHelpers::EcsOf(victim), i)))
+		if (!ItemSystem::IsValidItem(occupiedItem = ItemSystem::GetExtraInventoryItem(((victim) ? (victim)->GetEntityHandle() : entt::null), i)))
 			continue;
 
 		s_gridExtraCat5_2->Put(i - EXTRA_INVENTORY_PAGE_SIZE * 17, 1, ItemSystem::GetItemSize(occupiedItem));
 	}
 
 	for (i = EXTRA_INVENTORY_PAGE_SIZE * 18; i < EXTRA_INVENTORY_PAGE_SIZE * 19; ++i) {
-		if (!ItemSystem::IsValidItem(occupiedItem = ItemSystem::GetExtraInventoryItem(AIHelpers::EcsOf(victim), i)))
+		if (!ItemSystem::IsValidItem(occupiedItem = ItemSystem::GetExtraInventoryItem(((victim) ? (victim)->GetEntityHandle() : entt::null), i)))
 			continue;
 
 		s_gridExtraCat5_3->Put(i - EXTRA_INVENTORY_PAGE_SIZE * 18, 1, ItemSystem::GetItemSize(occupiedItem));
 	}
 
 	for (i = EXTRA_INVENTORY_PAGE_SIZE * 19; i < EXTRA_INVENTORY_PAGE_SIZE * 20; ++i) {
-		if (!ItemSystem::IsValidItem(occupiedItem = ItemSystem::GetExtraInventoryItem(AIHelpers::EcsOf(victim), i)))
+		if (!ItemSystem::IsValidItem(occupiedItem = ItemSystem::GetExtraInventoryItem(((victim) ? (victim)->GetEntityHandle() : entt::null), i)))
 			continue;
 
 		s_gridExtraCat5_4->Put(i - EXTRA_INVENTORY_PAGE_SIZE * 19, 1, ItemSystem::GetItemSize(occupiedItem));
@@ -697,7 +697,7 @@ bool CExchange::CheckSpace()
 	CGrid* s_gridExtraCat6_3;
 	CGrid* s_gridExtraCat6_4;
 
-	int gridextra_size_cat6 = ecs::PointSystem::Get(AIHelpers::EcsOf(victim), POINT_EXTRA_INVENTORY6) + 4;
+	int gridextra_size_cat6 = ecs::PointSystem::Get(((victim) ? (victim)->GetEntityHandle() : entt::null), POINT_EXTRA_INVENTORY6) + 4;
 	if (gridextra_size_cat6 >= 9) {
 		gridextra_size_cat6 -= 9;
 		s_gridExtraCat6_3 = new CGrid(5, 9);
@@ -718,28 +718,28 @@ bool CExchange::CheckSpace()
 	s_gridExtraCat6_4->Clear();
 
 	for (i = EXTRA_INVENTORY_PAGE_SIZE * 20; i < EXTRA_INVENTORY_PAGE_SIZE * 21; ++i) {
-		if (!ItemSystem::IsValidItem(occupiedItem = ItemSystem::GetExtraInventoryItem(AIHelpers::EcsOf(victim), i)))
+		if (!ItemSystem::IsValidItem(occupiedItem = ItemSystem::GetExtraInventoryItem(((victim) ? (victim)->GetEntityHandle() : entt::null), i)))
 			continue;
 
 		s_gridExtraCat6_1->Put(i - EXTRA_INVENTORY_PAGE_SIZE * 20, 1, ItemSystem::GetItemSize(occupiedItem));
 	}
 
 	for (i = EXTRA_INVENTORY_PAGE_SIZE * 21; i < EXTRA_INVENTORY_PAGE_SIZE * 22; ++i) {
-		if (!ItemSystem::IsValidItem(occupiedItem = ItemSystem::GetExtraInventoryItem(AIHelpers::EcsOf(victim), i)))
+		if (!ItemSystem::IsValidItem(occupiedItem = ItemSystem::GetExtraInventoryItem(((victim) ? (victim)->GetEntityHandle() : entt::null), i)))
 			continue;
 
 		s_gridExtraCat6_2->Put(i - EXTRA_INVENTORY_PAGE_SIZE * 21, 1, ItemSystem::GetItemSize(occupiedItem));
 	}
 
 	for (i = EXTRA_INVENTORY_PAGE_SIZE * 22; i < EXTRA_INVENTORY_PAGE_SIZE * 23; ++i) {
-		if (!ItemSystem::IsValidItem(occupiedItem = ItemSystem::GetExtraInventoryItem(AIHelpers::EcsOf(victim), i)))
+		if (!ItemSystem::IsValidItem(occupiedItem = ItemSystem::GetExtraInventoryItem(((victim) ? (victim)->GetEntityHandle() : entt::null), i)))
 			continue;
 
 		s_gridExtraCat6_3->Put(i - EXTRA_INVENTORY_PAGE_SIZE * 22, 1, ItemSystem::GetItemSize(occupiedItem));
 	}
 
 	for (i = EXTRA_INVENTORY_PAGE_SIZE * 23; i < EXTRA_INVENTORY_PAGE_SIZE * 24; ++i) {
-		if (!ItemSystem::IsValidItem(occupiedItem = ItemSystem::GetExtraInventoryItem(AIHelpers::EcsOf(victim), i)))
+		if (!ItemSystem::IsValidItem(occupiedItem = ItemSystem::GetExtraInventoryItem(((victim) ? (victim)->GetEntityHandle() : entt::null), i)))
 			continue;
 
 		s_gridExtraCat6_4->Put(i - EXTRA_INVENTORY_PAGE_SIZE * 23, 1, ItemSystem::GetItemSize(occupiedItem));
@@ -1023,7 +1023,7 @@ bool CExchange::Done()
 
 		if (empty_pos < 0)
 		{
-			LOG_ERROR("Exchange::Done : Cannot find blank position in inventory {} <-> {} item {}", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(m_pOwner)).data(), ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(victim)).data(), item->GetName());
+			LOG_ERROR("Exchange::Done : Cannot find blank position in inventory {} <-> {} item {}", ecs::PlayerRuntime::GetName(((m_pOwner) ? (m_pOwner)->GetEntityHandle() : entt::null)).data(), ecs::PlayerRuntime::GetName(((victim) ? (victim)->GetEntityHandle() : entt::null)).data(), item->GetName());
 			continue;
 		}
 
@@ -1062,16 +1062,16 @@ bool CExchange::Done()
 		{
 			char exchange_buf[51];
 
-			snprintf(exchange_buf, sizeof(exchange_buf), "%s %u %u", item->GetName(), ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(GetOwner())), ItemSystem::GetItemCount(itemEntity));
+			snprintf(exchange_buf, sizeof(exchange_buf), "%s %u %u", item->GetName(), ecs::PlayerRuntime::GetPlayerID(((GetOwner()) ? (GetOwner())->GetEntityHandle() : entt::null)), ItemSystem::GetItemCount(itemEntity));
 			LogManager::instance().ItemLog(victim, item, "EXCHANGE_TAKE", exchange_buf);
 
-			snprintf(exchange_buf, sizeof(exchange_buf), "%s %u %u", item->GetName(), ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(victim)), ItemSystem::GetItemCount(itemEntity));
+			snprintf(exchange_buf, sizeof(exchange_buf), "%s %u %u", item->GetName(), ecs::PlayerRuntime::GetPlayerID(((victim) ? (victim)->GetEntityHandle() : entt::null)), ItemSystem::GetItemCount(itemEntity));
 			LogManager::instance().ItemLog(GetOwner(), item, "EXCHANGE_GIVE", exchange_buf);
 
 			if (ItemSystem::GetItemVnum(itemEntity) >= 80003 && ItemSystem::GetItemVnum(itemEntity) <= 80007)
 			{
-				LogManager::instance().GoldBarLog(ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(victim)), ItemSystem::GetItemID(itemEntity), EXCHANGE_TAKE, "");
-				LogManager::instance().GoldBarLog(ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(GetOwner())), ItemSystem::GetItemID(itemEntity), EXCHANGE_GIVE, "");
+				LogManager::instance().GoldBarLog(ecs::PlayerRuntime::GetPlayerID(((victim) ? (victim)->GetEntityHandle() : entt::null)), ItemSystem::GetItemID(itemEntity), EXCHANGE_TAKE, "");
+				LogManager::instance().GoldBarLog(ecs::PlayerRuntime::GetPlayerID(((GetOwner()) ? (GetOwner())->GetEntityHandle() : entt::null)), ItemSystem::GetItemID(itemEntity), EXCHANGE_GIVE, "");
 			}
 		}
 
@@ -1080,16 +1080,16 @@ bool CExchange::Done()
 
 	if (m_lGold)
 	{
-		ecs::PointSystem::Change(AIHelpers::EcsOf(GetOwner()), POINT_GOLD, -m_lGold, true);
-		ecs::PointSystem::Change(AIHelpers::EcsOf(victim), POINT_GOLD, m_lGold, true);
+		ecs::PointSystem::Change(((GetOwner()) ? (GetOwner())->GetEntityHandle() : entt::null), POINT_GOLD, -m_lGold, true);
+		ecs::PointSystem::Change(((victim) ? (victim)->GetEntityHandle() : entt::null), POINT_GOLD, m_lGold, true);
 
 		if (m_lGold > 1000)
 		{
 			char exchange_buf[51];
-			snprintf(exchange_buf, sizeof(exchange_buf), "%u %s", ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(GetOwner())), ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(GetOwner())).data());
+			snprintf(exchange_buf, sizeof(exchange_buf), "%u %s", ecs::PlayerRuntime::GetPlayerID(((GetOwner()) ? (GetOwner())->GetEntityHandle() : entt::null)), ecs::PlayerRuntime::GetName(((GetOwner()) ? (GetOwner())->GetEntityHandle() : entt::null)).data());
 			LogManager::instance().CharLog(victim, m_lGold, "EXCHANGE_GOLD_TAKE", exchange_buf);
 
-			snprintf(exchange_buf, sizeof(exchange_buf), "%u %s", ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(victim)), ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(victim)).data());
+			snprintf(exchange_buf, sizeof(exchange_buf), "%u %s", ecs::PlayerRuntime::GetPlayerID(((victim) ? (victim)->GetEntityHandle() : entt::null)), ecs::PlayerRuntime::GetName(((victim) ? (victim)->GetEntityHandle() : entt::null)).data());
 			LogManager::instance().CharLog(GetOwner(), m_lGold, "EXCHANGE_GOLD_GIVE", exchange_buf);
 		}
 	}
@@ -1119,11 +1119,11 @@ bool CExchange::Accept(bool bAccept)
 		//END_PREVENT_PORTAL_AFTER_EXCHANGE
 
 		// @fixme150 BEGIN
-		if (quest::CQuestManager::instance().GetPCForce(ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(GetOwner())))->IsRunning() == true || quest::CQuestManager::instance().GetPCForce(ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(victim)))->IsRunning() == true)
+		if (quest::CQuestManager::instance().GetPCForce(ecs::PlayerRuntime::GetPlayerID(((GetOwner()) ? (GetOwner())->GetEntityHandle() : entt::null)))->IsRunning() == true || quest::CQuestManager::instance().GetPCForce(ecs::PlayerRuntime::GetPlayerID(((victim) ? (victim)->GetEntityHandle() : entt::null)))->IsRunning() == true)
 		{
 #ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(GetOwner()), CHAT_TYPE_INFO, 631, "");
-			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(victim), CHAT_TYPE_INFO, 631, "");
+			ecs::ChatSystem::SendNew(((GetOwner()) ? (GetOwner())->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 631, "");
+			ecs::ChatSystem::SendNew(((victim) ? (victim)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 631, "");
 #endif
 			goto EXCHANGE_END;
 		}
@@ -1135,9 +1135,9 @@ bool CExchange::Accept(bool bAccept)
 		if (!Check(&iItemCount))
 		{
 #ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(GetOwner()), CHAT_TYPE_INFO, 232, "");
+			ecs::ChatSystem::SendNew(((GetOwner()) ? (GetOwner())->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 232, "");
 #endif
-			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(victim), CHAT_TYPE_INFO, 274, "%s", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(GetOwner())).data());
+			ecs::ChatSystem::SendNew(((victim) ? (victim)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 274, "%s", ecs::PlayerRuntime::GetName(((GetOwner()) ? (GetOwner())->GetEntityHandle() : entt::null)).data());
 			goto EXCHANGE_END;
 		}
 
@@ -1145,8 +1145,8 @@ bool CExchange::Accept(bool bAccept)
 		if (!CheckSpace())
 		{
 #ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(GetOwner()), CHAT_TYPE_INFO, 365, "%s", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(victim)).data());
-			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(victim), CHAT_TYPE_INFO, 366, "");
+			ecs::ChatSystem::SendNew(((GetOwner()) ? (GetOwner())->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 365, "%s", ecs::PlayerRuntime::GetName(((victim) ? (victim)->GetEntityHandle() : entt::null)).data());
+			ecs::ChatSystem::SendNew(((victim) ? (victim)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 366, "");
 #endif
 			goto EXCHANGE_END;
 		}
@@ -1155,8 +1155,8 @@ bool CExchange::Accept(bool bAccept)
 		if (!GetCompany()->Check(&iItemCount))
 		{
 #ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(victim), CHAT_TYPE_INFO, 232, "");
-			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(GetOwner()), CHAT_TYPE_INFO, 274, "%s", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(victim)).data());
+			ecs::ChatSystem::SendNew(((victim) ? (victim)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 232, "");
+			ecs::ChatSystem::SendNew(((GetOwner()) ? (GetOwner())->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 274, "%s", ecs::PlayerRuntime::GetName(((victim) ? (victim)->GetEntityHandle() : entt::null)).data());
 #endif
 			goto EXCHANGE_END;
 		}
@@ -1164,8 +1164,8 @@ bool CExchange::Accept(bool bAccept)
 		if (!GetCompany()->CheckSpace())
 		{
 #ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(victim), CHAT_TYPE_INFO, 365, "%s", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(GetOwner())).data());
-			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(GetOwner()), CHAT_TYPE_INFO, 366, "");
+			ecs::ChatSystem::SendNew(((victim) ? (victim)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 365, "%s", ecs::PlayerRuntime::GetName(((GetOwner()) ? (GetOwner())->GetEntityHandle() : entt::null)).data());
+			ecs::ChatSystem::SendNew(((GetOwner()) ? (GetOwner())->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 366, "");
 #endif
 			goto EXCHANGE_END;
 		}
@@ -1174,8 +1174,8 @@ bool CExchange::Accept(bool bAccept)
 		{
 			LOG_ERROR("Cannot use exchange feature while DB cache connection is dead.");
 #ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(victim), CHAT_TYPE_INFO, 759, "");
-			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(GetOwner()), CHAT_TYPE_INFO, 759, "");
+			ecs::ChatSystem::SendNew(((victim) ? (victim)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 759, "");
+			ecs::ChatSystem::SendNew(((GetOwner()) ? (GetOwner())->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 759, "");
 #endif
 			goto EXCHANGE_END;
 		}
@@ -1191,8 +1191,8 @@ bool CExchange::Accept(bool bAccept)
 					victim->Save();
 
 #ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(GetOwner()), CHAT_TYPE_INFO, 105, "%s", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(victim)).data());
-				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(victim), CHAT_TYPE_INFO, 105, "%s", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(GetOwner())).data());
+				ecs::ChatSystem::SendNew(((GetOwner()) ? (GetOwner())->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 105, "%s", ecs::PlayerRuntime::GetName(((victim) ? (victim)->GetEntityHandle() : entt::null)).data());
+				ecs::ChatSystem::SendNew(((victim) ? (victim)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 105, "%s", ecs::PlayerRuntime::GetName(((GetOwner()) ? (GetOwner())->GetEntityHandle() : entt::null)).data());
 #endif
 			}
 		}

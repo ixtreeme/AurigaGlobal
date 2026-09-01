@@ -125,10 +125,10 @@ bool CMobManager::Initialize(TMobTable * pTable, int iSize)
 
 void CMobManager::RebindMobProto(LPCHARACTER ch)
 {
-	if (ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(ch)))
+	if (ecs::PlayerRuntime::IsPC(((ch) ? (ch)->GetEntityHandle() : entt::null)))
 		return;
 
-	const CMob * pMob = Get(ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(ch)));
+	const CMob * pMob = Get(ecs::PlayerRuntime::GetRaceNum(((ch) ? (ch)->GetEntityHandle() : entt::null)));
 
 	if (pMob)
 		ch->SetProto(pMob);

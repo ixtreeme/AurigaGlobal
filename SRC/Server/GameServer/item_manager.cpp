@@ -446,7 +446,6 @@ LPITEM ITEM_MANAGER::CreateItem(uint32_t vnum, uint32_t count, uint32_t id, bool
 			if (Blend_Item_find(item->GetVnum()))
 			{
 				Blend_Item_set_value(item);
-				EntityFactory::CreateItemEntity(g_registry, item);
 				return item;
 			}
 		}
@@ -530,7 +529,7 @@ LPITEM ITEM_MANAGER::CreateItem(uint32_t vnum, uint32_t count, uint32_t id, bool
 	// 새로 생성되는 용혼석 처리.
 	if (item->IsDragonSoul() && 0 == id)
 	{
-		DSManager::instance().DragonSoulItemInitialize(EntityFactory::CreateItemEntity(g_registry, item));
+		DSManager::instance().DragonSoulItemInitialize((item ? item->GetEntityHandle() : entt::null));
 	}
 
 #ifdef ENABLE_RUNE_SYSTEM
@@ -565,7 +564,6 @@ LPITEM ITEM_MANAGER::CreateItem(uint32_t vnum, uint32_t count, uint32_t id, bool
 	}
 #endif
 
-	EntityFactory::CreateItemEntity(g_registry, item);
 	return item;
 }
 
@@ -576,7 +574,7 @@ void ITEM_MANAGER::DelayedSave(LPITEM item)
 	if (!item || item->GetID() == 0)
 		return;
 
-	const entt::entity itemEntity = EntityFactory::CreateItemEntity(g_registry, item);
+	const entt::entity itemEntity = (item ? item->GetEntityHandle() : entt::null);
 	if (ItemSystem::IsValidItem(itemEntity))
 		m_set_pkItemForDelayedSave.insert(itemEntity);
 }
@@ -666,7 +664,7 @@ void ITEM_MANAGER::SaveSingleItem(LPITEM item)
 	}
 	t.count = (uint32_t)item->GetCount();
 	t.vnum = item->GetOriginalVnum();
-	t.owner = (t.window == SAFEBOX || t.window == MALL) ? ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(item->GetOwner()))->GetAccountTable().id : ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(item->GetOwner()));
+	t.owner = (t.window == SAFEBOX || t.window == MALL) ? ecs::PlayerRuntime::GetDesc(((item->GetOwner()) ? (item->GetOwner())->GetEntityHandle() : entt::null))->GetAccountTable().id : ecs::PlayerRuntime::GetPlayerID(((item->GetOwner()) ? (item->GetOwner())->GetEntityHandle() : entt::null));
 	memcpy(t.alSockets, item->GetSockets(), sizeof(t.alSockets));
 	memcpy(t.aAttr, item->GetAttributes(), sizeof(t.aAttr));
 
@@ -751,7 +749,7 @@ void ITEM_MANAGER::RemoveItem(LPITEM item, const char* c_pszReason)
 			{
 				o->SendMountInventory();
 				o->ComputePoints();
-				NetworkSyncSystem::PointsPacket(AIHelpers::EcsOf(o));
+				NetworkSyncSystem::PointsPacket(((o) ? (o)->GetEntityHandle() : entt::null));
 #ifdef ENABLE_FAKE_SHOP_HEADER
 				o->UpdateMountCountOverheadToViewers();
 #endif
@@ -796,7 +794,7 @@ void ITEM_MANAGER::DestroyItem(LPITEM item, const char* file, size_t line)
 
 		if (liveOwner == owner)
 		{
-			LOG_ERROR("DestroyItem: GetOwner {} {}!!", item->GetName(), ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(owner)).data());
+			LOG_ERROR("DestroyItem: GetOwner {} {}!!", item->GetName(), ecs::PlayerRuntime::GetName(((owner) ? (owner)->GetEntityHandle() : entt::null)).data());
 			item->RemoveFromCharacter();
 		}
 		else
@@ -1056,73 +1054,78 @@ int GetDropPerKillPct(int iMinimum, int iDefault, int iDeltaPercent, const char*
 
 bool ITEM_MANAGER::GetDropPct(LPCHARACTER pkChr, LPCHARACTER pkKiller, OUT int& iDeltaPercent, OUT int& iRandRange)
 {
-	if (nullptr == pkChr || nullptr == pkKiller)
+	return GetDropPct(pkChr ? pkChr->GetEntityHandle() : entt::null,
+		pkKiller ? pkKiller->GetEntityHandle() : entt::null, iDeltaPercent, iRandRange);
+}
+
+bool ITEM_MANAGER::GetDropPct(entt::entity victim, entt::entity killer,
+	OUT int& iDeltaPercent, OUT int& iRandRange)
+{
+	if (victim == entt::null || killer == entt::null ||
+		!g_registry.valid(victim) || !g_registry.valid(killer))
 		return false;
 
-	int iLevel = ecs::PointSystem::GetLevel(AIHelpers::EcsOf(pkKiller));
+	const int killerLevel = ecs::PointSystem::GetLevel(killer);
 	iDeltaPercent = 100;
-
-	if (!ecs::PlayerRuntime::IsStone(AIHelpers::EcsOf(pkChr)) && pkChr->GetMobRank() >= MOB_RANK_BOSS)
-		iDeltaPercent = PERCENT_LVDELTA_BOSS(ecs::PointSystem::GetLevel(AIHelpers::EcsOf(pkKiller)), ecs::PointSystem::GetLevel(AIHelpers::EcsOf(pkChr)));
+	if (!ecs::PlayerRuntime::IsStone(victim) &&
+		ecs::PlayerRuntime::GetMobRank(victim) >= MOB_RANK_BOSS)
+	{
+		iDeltaPercent = PERCENT_LVDELTA_BOSS(
+			killerLevel, ecs::PointSystem::GetLevel(victim));
+	}
 	else
-		iDeltaPercent = PERCENT_LVDELTA(ecs::PointSystem::GetLevel(AIHelpers::EcsOf(pkKiller)), ecs::PointSystem::GetLevel(AIHelpers::EcsOf(pkChr)));
+	{
+		iDeltaPercent = PERCENT_LVDELTA(
+			killerLevel, ecs::PointSystem::GetLevel(victim));
+	}
 
-	uint8_t bRank = pkChr->GetMobRank();
-
+	const uint8_t rank = ecs::PlayerRuntime::GetMobRank(victim);
 	if (1 == number(1, 50000))
 		iDeltaPercent += 1000;
 	else if (1 == number(1, 10000))
 		iDeltaPercent += 500;
 
-	LOG_INFO("CreateDropItem for level: {} rank: {} pct: {}", iLevel, bRank, iDeltaPercent);
-	iDeltaPercent = iDeltaPercent * CHARACTER_MANAGER::instance().GetMobItemRate(pkKiller) / 100;
+	LOG_INFO("CreateDropItem for level: {} rank: {} pct: {}", killerLevel, rank, iDeltaPercent);
+	iDeltaPercent = iDeltaPercent * CHARACTER_MANAGER::instance().GetMobItemRate(killer) / 100;
 
-	int iDropBonus = ecs::PointSystem::Get(AIHelpers::EcsOf(pkKiller), POINT_ITEM_DROP_BONUS);
-
-	if (iDropBonus > 0)
+	const int itemDropBonus = ecs::PointSystem::Get(killer, POINT_ITEM_DROP_BONUS);
+	if (itemDropBonus > 0)
 	{
-		int steps = iDropBonus / 10;
-		int added = steps * 5;         // 10  %onkent 5% ad hozza 50% max utanna gatya //Razor93
-
-		if (added > 50)                // max 50%
-			added = 50;
-
+		const int added = std::min((itemDropBonus / 10) * 5, 50);
 		iDeltaPercent += added;
 	}
 
-
 #ifdef ENABLE_NEW_COMMON_BONUSES
-	if (ecs::PointSystem::Get(AIHelpers::EcsOf(pkKiller), APPLY_DOUBLE_DROP_ITEM) > 0) {
+	if (ecs::PointSystem::Get(killer, APPLY_DOUBLE_DROP_ITEM) > 0)
 		iDeltaPercent *= 2;
-	}
 #endif
 
-	// ADD_PREMIUM
-	if (pkKiller->GetPremiumRemainSeconds(PREMIUM_ITEM) > 0 || pkKiller->IsEquipUniqueGroup(UNIQUE_GROUP_DOUBLE_ITEM)) {
+	if (ecs::PlayerRuntime::GetPremiumRemainSeconds(killer, PREMIUM_ITEM) > 0 ||
+		ItemSystem::IsEquipUniqueGroup(killer, UNIQUE_GROUP_DOUBLE_ITEM))
+	{
 		iDeltaPercent *= 2;
 	}
-	// END_OF_ADD_PREMIUM
 
-	// PC_BANG_ITEM_ADD
-	if (ecs::PointSystem::Get(AIHelpers::EcsOf(pkKiller), POINT_PC_BANG_DROP_BONUS) > 0)
+	if (ecs::PointSystem::Get(killer, POINT_PC_BANG_DROP_BONUS) > 0 &&
+		ecs::PlayerRuntime::IsPCBang(killer))
 	{
-		if (pkKiller->IsPCBang() == true)
-			iDeltaPercent += iDeltaPercent * ecs::PointSystem::Get(AIHelpers::EcsOf(pkKiller), POINT_PC_BANG_DROP_BONUS) / 100;
+		iDeltaPercent += iDeltaPercent *
+			ecs::PointSystem::Get(killer, POINT_PC_BANG_DROP_BONUS) / 100;
 	}
-	// END_PC_BANG_ITEM_ADD
 
 	iRandRange = 4000000;
 #ifdef ENABLE_EVENT_MANAGER
-	int extraDrop = CPrivManager::instance().GetPriv(pkKiller, PRIV_ITEM_DROP) + (pkKiller->IsEquipUniqueItem(UNIQUE_ITEM_DOUBLE_ITEM) ? 100 : 0);
-	const auto event = CHARACTER_MANAGER::Instance().CheckEventIsActive(ITEM_DROP_EVENT, ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(pkKiller)));
+	int extraDrop = CPrivManager::instance().GetPriv(killer, PRIV_ITEM_DROP) +
+		(ItemSystem::IsEquipUniqueItem(killer, UNIQUE_ITEM_DOUBLE_ITEM) ? 100 : 0);
+	const auto event = CHARACTER_MANAGER::Instance().CheckEventIsActive(
+		ITEM_DROP_EVENT, ecs::PlayerRuntime::GetEmpire(killer));
 	if (event != nullptr)
 		extraDrop += event->value[0];
 	iRandRange = iRandRange * 100 / (100 + extraDrop);
 #else
-	iRandRange = iRandRange * 100 /
-		(100 +
-			CPrivManager::instance().GetPriv(pkKiller, PRIV_ITEM_DROP) +
-			pkKiller->IsEquipUniqueItem(UNIQUE_ITEM_DOUBLE_ITEM) ? 100 : 0);
+	const int extraDrop = CPrivManager::instance().GetPriv(killer, PRIV_ITEM_DROP) +
+		(ItemSystem::IsEquipUniqueItem(killer, UNIQUE_ITEM_DOUBLE_ITEM) ? 100 : 0);
+	iRandRange = iRandRange * 100 / (100 + extraDrop);
 #endif
 
 	return true;
@@ -1131,22 +1134,22 @@ bool ITEM_MANAGER::GetDropPct(LPCHARACTER pkChr, LPCHARACTER pkKiller, OUT int& 
 bool ITEM_MANAGER::CreateDropItemVector(LPCHARACTER pkChr, LPCHARACTER pkKiller, std::vector<TargetInfoItem>& items)
 {
 #ifdef ENABLE_METINSTONE_DROP_BUGFIX_RAZOR9D
-	if (pkChr && ecs::PlayerRuntime::IsStone(AIHelpers::EcsOf(pkChr)) &&
-		!IsRegisteredDropMob(ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkChr))))
+	if (pkChr && ecs::PlayerRuntime::IsStone(((pkChr) ? (pkChr)->GetEntityHandle() : entt::null)) &&
+		!IsRegisteredDropMob(ecs::PlayerRuntime::GetRaceNum(((pkChr) ? (pkChr)->GetEntityHandle() : entt::null))))
 	{
 		LOG_INFO("[DROP-BLOKK] Metinko {} ({}) nincs mob_drop_item.txt-ben - CreateDropItemVector megszakitva.",
-			ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(pkChr)).data(),
-			ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkChr)));
+			ecs::PlayerRuntime::GetName(((pkChr) ? (pkChr)->GetEntityHandle() : entt::null)).data(),
+			ecs::PlayerRuntime::GetRaceNum(((pkChr) ? (pkChr)->GetEntityHandle() : entt::null)));
 		return false;
 	}
 #endif
-	if (!pkChr || !pkKiller || pkChr->IsPolymorphed() || ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(pkChr)))
+	if (!pkChr || !pkKiller || pkChr->IsPolymorphed() || ecs::PlayerRuntime::IsPC(((pkChr) ? (pkChr)->GetEntityHandle() : entt::null)))
 		return false;
 
-	const int level = ecs::PointSystem::GetLevel(AIHelpers::EcsOf(pkKiller));
+	const int level = ecs::PointSystem::GetLevel(((pkKiller) ? (pkKiller)->GetEntityHandle() : entt::null));
 	const uint8_t rank = pkChr->GetMobRank();
-	const uint32_t race = ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkChr));
-	const bool isStone = ecs::PlayerRuntime::IsStone(AIHelpers::EcsOf(pkChr));
+	const uint32_t race = ecs::PlayerRuntime::GetRaceNum(((pkChr) ? (pkChr)->GetEntityHandle() : entt::null));
+	const bool isStone = ecs::PlayerRuntime::IsStone(((pkChr) ? (pkChr)->GetEntityHandle() : entt::null));
 
 	const auto add = [&items](uint32_t vnum, uint32_t count)
 	{
@@ -1198,7 +1201,7 @@ bool ITEM_MANAGER::CreateDropItemVector(LPCHARACTER pkChr, LPCHARACTER pkKiller,
 		const bool hasDoubleDrop = pkKiller->GetPremiumRemainSeconds(PREMIUM_ITEM) > 0 ||
 			pkKiller->IsEquipUniqueGroup(UNIQUE_GROUP_DOUBLE_ITEM)
 #ifdef ENABLE_NEW_COMMON_BONUSES
-			|| ecs::PointSystem::Get(AIHelpers::EcsOf(pkKiller), APPLY_DOUBLE_DROP_ITEM) > 0
+			|| ecs::PointSystem::Get(((pkKiller) ? (pkKiller)->GetEntityHandle() : entt::null), APPLY_DOUBLE_DROP_ITEM) > 0
 #endif
 			;
 		if (hasDoubleDrop)
@@ -1227,16 +1230,16 @@ bool ITEM_MANAGER::CreateDropItemVector(LPCHARACTER pkChr, LPCHARACTER pkKiller,
 bool ITEM_MANAGER::CreateDropItem(LPCHARACTER pkChr, LPCHARACTER pkKiller, std::vector<entt::entity>& vec_item)
 {
 #ifdef ENABLE_METINSTONE_DROP_BUGFIX_RAZOR9d
-	const CMobItemGroup* pGroup = quest::CQuestManager::instance().GetMobDropItem(ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkChr)));
+	const CMobItemGroup* pGroup = quest::CQuestManager::instance().GetMobDropItem(ecs::PlayerRuntime::GetRaceNum(((pkChr) ? (pkChr)->GetEntityHandle() : entt::null)));
 	if (!pGroup || pGroup->IsEmpty())
 	{
-		LOG_INFO("[DROP BLOCKED] Metin VNUM {} nincs regisztr?va mob_drop_item.txt-ben!", ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkChr)));
+		LOG_INFO("[DROP BLOCKED] Metin VNUM {} nincs regisztr?va mob_drop_item.txt-ben!", ecs::PlayerRuntime::GetRaceNum(((pkChr) ? (pkChr)->GetEntityHandle() : entt::null)));
 		return false;
 	}
 
 
 #endif
-	int iLevel = ecs::PointSystem::GetLevel(AIHelpers::EcsOf(pkKiller));
+	int iLevel = ecs::PointSystem::GetLevel(((pkKiller) ? (pkKiller)->GetEntityHandle() : entt::null));
 
 	int iDeltaPercent, iRandRange;
 	if (!GetDropPct(pkChr, pkKiller, iDeltaPercent, iRandRange))
@@ -1248,7 +1251,7 @@ bool ITEM_MANAGER::CreateDropItem(LPCHARACTER pkChr, LPCHARACTER pkKiller, std::
 	// Common Drop Items
 	auto it = g_vec_pkCommonDropItem[bRank].begin();
 
-	while (!ecs::PlayerRuntime::IsStone(AIHelpers::EcsOf(pkChr)) && it != g_vec_pkCommonDropItem[bRank].end())
+	while (!ecs::PlayerRuntime::IsStone(((pkChr) ? (pkChr)->GetEntityHandle() : entt::null)) && it != g_vec_pkCommonDropItem[bRank].end())
 	{
 		const CItemDropInfo& c_rInfo = *(it++);
 
@@ -1275,25 +1278,25 @@ bool ITEM_MANAGER::CreateDropItem(LPCHARACTER pkChr, LPCHARACTER pkKiller, std::
 					item = CreateItem(c_rInfo.m_dwVnum, 1, 0, true);
 
 					if (item)
-						item->SetSocket(0, ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkChr)));
+						item->SetSocket(0, ecs::PlayerRuntime::GetRaceNum(((pkChr) ? (pkChr)->GetEntityHandle() : entt::null)));
 				}
 			}
 			else
 				item = CreateItem(c_rInfo.m_dwVnum, 1, 0, true);
 
-			if (item) vec_item.push_back(EntityFactory::CreateItemEntity(g_registry, item));
+			if (item) vec_item.push_back((item ? item->GetEntityHandle() : entt::null));
 		}
 	}
 
 	// Drop Item Group
 	{
-		if (ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkChr)) == 4815)
+		if (ecs::PlayerRuntime::GetRaceNum(((pkChr) ? (pkChr)->GetEntityHandle() : entt::null)) == 4815)
 		{
-			LOG_ERROR("VIKING DROP CHECK: killer_lv={} mob_lv={} delta={} rand={}", pkKiller ? ecs::PointSystem::GetLevel(AIHelpers::EcsOf(pkKiller)) : 0, ecs::PointSystem::GetLevel(AIHelpers::EcsOf(pkChr)), iDeltaPercent, iRandRange);
+			LOG_ERROR("VIKING DROP CHECK: killer_lv={} mob_lv={} delta={} rand={}", pkKiller ? ecs::PointSystem::GetLevel(((pkKiller) ? (pkKiller)->GetEntityHandle() : entt::null)) : 0, ecs::PointSystem::GetLevel(((pkChr) ? (pkChr)->GetEntityHandle() : entt::null)), iDeltaPercent, iRandRange);
 		}
-		auto it = m_map_pkDropItemGroup.find(ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkChr)));
+		auto it = m_map_pkDropItemGroup.find(ecs::PlayerRuntime::GetRaceNum(((pkChr) ? (pkChr)->GetEntityHandle() : entt::null)));
 
-		if (!ecs::PlayerRuntime::IsStone(AIHelpers::EcsOf(pkChr)) && it != m_map_pkDropItemGroup.end())
+		if (!ecs::PlayerRuntime::IsStone(((pkChr) ? (pkChr)->GetEntityHandle() : entt::null)) && it != m_map_pkDropItemGroup.end())
 		{
 			auto v = it->second->GetVector();
 
@@ -1312,14 +1315,14 @@ bool ITEM_MANAGER::CreateDropItem(LPCHARACTER pkChr, LPCHARACTER pkKiller, std::
 						{
 							if (item->GetVnum() == pkChr->GetPolymorphItemVnum())
 							{
-								item->SetSocket(0, ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkChr)));
+								item->SetSocket(0, ecs::PlayerRuntime::GetRaceNum(((pkChr) ? (pkChr)->GetEntityHandle() : entt::null)));
 							}
 						}
-						if (ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkChr)) == 4815)
+						if (ecs::PlayerRuntime::GetRaceNum(((pkChr) ? (pkChr)->GetEntityHandle() : entt::null)) == 4815)
 						{
 							LOG_ERROR("VIKING DROP ROLL: item={} pct_raw={} final={} count={}", v[i].dwVnum, v[i].dwPct, iPercent, v[i].iCount);
 						}
-						vec_item.push_back(EntityFactory::CreateItemEntity(g_registry, item));
+						vec_item.push_back((item ? item->GetEntityHandle() : entt::null));
 					}
 				}
 			}
@@ -1328,7 +1331,7 @@ bool ITEM_MANAGER::CreateDropItem(LPCHARACTER pkChr, LPCHARACTER pkKiller, std::
 
 	// MobDropItem Group
 	{
-		auto it = m_map_pkMobItemGroup.find(ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkChr)));
+		auto it = m_map_pkMobItemGroup.find(ecs::PlayerRuntime::GetRaceNum(((pkChr) ? (pkChr)->GetEntityHandle() : entt::null)));
 
 		if (it != m_map_pkMobItemGroup.end())
 		{
@@ -1344,7 +1347,7 @@ bool ITEM_MANAGER::CreateDropItem(LPCHARACTER pkChr, LPCHARACTER pkKiller, std::
 
 					const CMobItemGroup::SMobItemGroupInfo& info = pGroup->GetOne();
 					item = CreateItem(info.dwItemVnum, info.iCount, 0, true, info.iRarePct);
-					if (item) vec_item.push_back(EntityFactory::CreateItemEntity(g_registry, item));
+					if (item) vec_item.push_back((item ? item->GetEntityHandle() : entt::null));
 				}
 
 			}
@@ -1354,11 +1357,11 @@ bool ITEM_MANAGER::CreateDropItem(LPCHARACTER pkChr, LPCHARACTER pkKiller, std::
 
 	// Level Item Group
 	{
-		auto it = m_map_pkLevelItemGroup.find(ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkChr)));
+		auto it = m_map_pkLevelItemGroup.find(ecs::PlayerRuntime::GetRaceNum(((pkChr) ? (pkChr)->GetEntityHandle() : entt::null)));
 
 		if (it != m_map_pkLevelItemGroup.end())
 		{
-			if (!ecs::PlayerRuntime::IsStone(AIHelpers::EcsOf(pkChr)) && it->second->GetLevelLimit() <= (uint32_t)iLevel)
+			if (!ecs::PlayerRuntime::IsStone(((pkChr) ? (pkChr)->GetEntityHandle() : entt::null)) && it->second->GetLevelLimit() <= (uint32_t)iLevel)
 			{
 				auto v = it->second->GetVector();
 
@@ -1368,7 +1371,7 @@ bool ITEM_MANAGER::CreateDropItem(LPCHARACTER pkChr, LPCHARACTER pkKiller, std::
 					{
 						uint32_t dwVnum = v[i].dwVNum;
 						item = CreateItem(dwVnum, v[i].iCount, 0, true);
-						if (item) vec_item.push_back(EntityFactory::CreateItemEntity(g_registry, item));
+						if (item) vec_item.push_back((item ? item->GetEntityHandle() : entt::null));
 					}
 				}
 			}
@@ -1376,13 +1379,13 @@ bool ITEM_MANAGER::CreateDropItem(LPCHARACTER pkChr, LPCHARACTER pkKiller, std::
 	}
 
 	{
-		if (!ecs::PlayerRuntime::IsStone(AIHelpers::EcsOf(pkChr)) && ((pkKiller->GetPremiumRemainSeconds(PREMIUM_ITEM) > 0) || (pkKiller->IsEquipUniqueGroup(UNIQUE_GROUP_DOUBLE_ITEM))
+		if (!ecs::PlayerRuntime::IsStone(((pkChr) ? (pkChr)->GetEntityHandle() : entt::null)) && ((pkKiller->GetPremiumRemainSeconds(PREMIUM_ITEM) > 0) || (pkKiller->IsEquipUniqueGroup(UNIQUE_GROUP_DOUBLE_ITEM))
 #ifdef ENABLE_NEW_COMMON_BONUSES
-			|| (ecs::PointSystem::Get(AIHelpers::EcsOf(pkKiller), APPLY_DOUBLE_DROP_ITEM) > 0)
+			|| (ecs::PointSystem::Get(((pkKiller) ? (pkKiller)->GetEntityHandle() : entt::null), APPLY_DOUBLE_DROP_ITEM) > 0)
 #endif
 			))
 		{
-			auto it = m_map_pkGloveItemGroup.find(ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkChr)));
+			auto it = m_map_pkGloveItemGroup.find(ecs::PlayerRuntime::GetRaceNum(((pkChr) ? (pkChr)->GetEntityHandle() : entt::null)));
 
 			if (it != m_map_pkGloveItemGroup.end())
 			{
@@ -1396,7 +1399,7 @@ bool ITEM_MANAGER::CreateDropItem(LPCHARACTER pkChr, LPCHARACTER pkKiller, std::
 					{
 						uint32_t dwVnum = v[i].dwVnum;
 						item = CreateItem(dwVnum, v[i].iCount, 0, true);
-						if (item) vec_item.push_back(EntityFactory::CreateItemEntity(g_registry, item));
+						if (item) vec_item.push_back((item ? item->GetEntityHandle() : entt::null));
 					}
 				}
 			}
@@ -1415,16 +1418,16 @@ bool ITEM_MANAGER::CreateDropItem(LPCHARACTER pkChr, LPCHARACTER pkKiller, std::
 			if (iPercent >= number(1, iRandRange))
 			{
 				item = CreateItem(pkChr->GetMobDropItemVnum(), 1, 0, true);
-				if (item) vec_item.push_back(EntityFactory::CreateItemEntity(g_registry, item));
+				if (item) vec_item.push_back((item ? item->GetEntityHandle() : entt::null));
 			}
 		}
 	}
 
-	if (ecs::PlayerRuntime::IsStone(AIHelpers::EcsOf(pkChr)))
+	if (ecs::PlayerRuntime::IsStone(((pkChr) ? (pkChr)->GetEntityHandle() : entt::null)))
 	{
 		if (pkChr->GetDropMetinStoneVnum())
 		{
-			//if (ecs::PointSystem::GetLevel(AIHelpers::EcsOf(pkKiller)) - ecs::PointSystem::GetLevel(AIHelpers::EcsOf(pkChr)) >= 30)
+			//if (ecs::PointSystem::GetLevel(((pkKiller) ? (pkKiller)->GetEntityHandle() : entt::null)) - ecs::PointSystem::GetLevel(((pkChr) ? (pkChr)->GetEntityHandle() : entt::null)) >= 30)
 			//{
 			//	return false;
 			//}
@@ -1433,7 +1436,7 @@ bool ITEM_MANAGER::CreateDropItem(LPCHARACTER pkChr, LPCHARACTER pkKiller, std::
 			{
 				item = CreateItem(pkChr->GetDropMetinStoneVnum(), 1, 0, true);
 				if (item)
-					vec_item.push_back(EntityFactory::CreateItemEntity(g_registry, item));
+					vec_item.push_back((item ? item->GetEntityHandle() : entt::null));
 			}
 		}
 
@@ -1444,7 +1447,7 @@ bool ITEM_MANAGER::CreateDropItem(LPCHARACTER pkChr, LPCHARACTER pkKiller, std::
 		//	{
 		//		item = CreateItem(pkChr->GetDropMetinStofaVnum(), 1, 0, true);
 		//		if (item)
-		//			vec_item.push_back(EntityFactory::CreateItemEntity(g_registry, item));
+		//			vec_item.push_back((item ? item->GetEntityHandle() : entt::null));
 		//	}
 		//}
 
@@ -1455,7 +1458,7 @@ bool ITEM_MANAGER::CreateDropItem(LPCHARACTER pkChr, LPCHARACTER pkKiller, std::
 		//	{
 		//		item = CreateItem(pkChr->GetDropMetinSaccaVnum(), 1, 0, true);
 		//		if (item)
-		//			vec_item.push_back(EntityFactory::CreateItemEntity(g_registry, item));
+		//			vec_item.push_back((item ? item->GetEntityHandle() : entt::null));
 		//	}
 		//}
 	}
@@ -1466,7 +1469,7 @@ bool ITEM_MANAGER::CreateDropItem(LPCHARACTER pkChr, LPCHARACTER pkKiller, std::
 		LOG_INFO("EVENT HORSE_SKILL_BOOK_DROP");
 
 		if ((item = CreateItem(ITEM_HORSE_SKILL_TRAIN_BOOK, 1, 0, true)))
-			vec_item.push_back(EntityFactory::CreateItemEntity(g_registry, item));
+			vec_item.push_back((item ? item->GetEntityHandle() : entt::null));
 	}
 
 
@@ -1479,9 +1482,9 @@ bool ITEM_MANAGER::CreateDropItem(LPCHARACTER pkChr, LPCHARACTER pkKiller, std::
 		pdw[2] = quest::CQuestManager::instance().GetEventFlag("lotto_round");
 
 		// 행운의 서는 소켓을 설정한다
-		DBManager::instance().ReturnQuery(QID_LOTTO, ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(pkKiller)), pdw,
+		DBManager::instance().ReturnQuery(QID_LOTTO, ecs::PlayerRuntime::GetPlayerID(((pkKiller) ? (pkKiller)->GetEntityHandle() : entt::null)), pdw,
 			"INSERT INTO lotto_list VALUES(0, 'server%s', %u, NOW())",
-			get_table_postfix(), ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(pkKiller)));
+			get_table_postfix(), ecs::PlayerRuntime::GetPlayerID(((pkKiller) ? (pkKiller)->GetEntityHandle() : entt::null)));
 	}
 
 	//
@@ -1490,7 +1493,7 @@ bool ITEM_MANAGER::CreateDropItem(LPCHARACTER pkChr, LPCHARACTER pkKiller, std::
 	//CreateQuestDropItem(pkChr, pkKiller, vec_item, iDeltaPercent, iRandRange);
 #ifdef ENABLE_EVENT_MANAGER
 
-	if (ecs::PointSystem::GetLevel(AIHelpers::EcsOf(pkKiller)) - ecs::PointSystem::GetLevel(AIHelpers::EcsOf(pkChr)) >= 30)
+	if (ecs::PointSystem::GetLevel(((pkKiller) ? (pkKiller)->GetEntityHandle() : entt::null)) - ecs::PointSystem::GetLevel(((pkChr) ? (pkChr)->GetEntityHandle() : entt::null)) >= 30)
 	{
 		//eridj no
 	}
@@ -1577,7 +1580,7 @@ static void __DropEvent_CharStone_DropItem(CHARACTER& killer, CHARACTER& victim,
 #ifdef ENABLE_METINSTONE_DROP_BUGFIX_RAZOR9D
 	if (victim.IsStone())
 	{
-		const auto victimEntity = AIHelpers::EcsOf(&victim);
+		const auto victimEntity = ((&victim) ? (&victim)->GetEntityHandle() : entt::null);
 		const uint32_t victimRace = ecs::PlayerRuntime::GetRaceNum(victimEntity);
 		if (!itemMgr.IsRegisteredDropMob(victimRace))
 		{
@@ -1596,7 +1599,7 @@ static void __DropEvent_CharStone_DropItem(CHARACTER& killer, CHARACTER& victim,
 
 	if (number(1, MaxRange) <= dropPercent)
 	{
-		int log_level = (test_server || ecs::PlayerRuntime::GetGMLevel(AIHelpers::EcsOf(&killer)) >= GM_LOW_WIZARD) ? 0 : 1;
+		int log_level = (test_server || ecs::PlayerRuntime::GetGMLevel(((&killer) ? (&killer)->GetEntityHandle() : entt::null)) >= GM_LOW_WIZARD) ? 0 : 1;
 		int victim_level = victim.GetLevel();
 		int level_diff = victim_level - killer_level;
 
@@ -1613,7 +1616,7 @@ static void __DropEvent_CharStone_DropItem(CHARACTER& killer, CHARACTER& victim,
 
 		if ((p_item = itemMgr.CreateItem(item_vnum, 1, 0, true)))
 		{
-			vec_item.push_back(EntityFactory::CreateItemEntity(g_registry, p_item));
+			vec_item.push_back((p_item ? p_item->GetEntityHandle() : entt::null));
 
 			LOG_INFO("dropevent.drop_char_stone.item_drop: killer({}: lv{}), victim({}: lv:{}), item_name({})", killer.GetName(), killer.GetLevel(), victim.GetName(), victim.GetLevel(), p_item->GetName());
 		}
@@ -1734,13 +1737,13 @@ static void __DropEvent_RefineBox_DropItem(CHARACTER& killer, CHARACTER& victim,
 	if (!gs_dropEvent_refineBox.alive)
 		return;
 
-	int log_level = (test_server || ecs::PlayerRuntime::GetGMLevel(AIHelpers::EcsOf(&killer)) >= GM_LOW_WIZARD) ? 0 : 1;
+	int log_level = (test_server || ecs::PlayerRuntime::GetGMLevel(((&killer) ? (&killer)->GetEntityHandle() : entt::null)) >= GM_LOW_WIZARD) ? 0 : 1;
 
 	LPITEM p_item = __DropEvent_RefineBox_GetDropItem(killer, victim, itemMgr);
 
 	if (p_item)
 	{
-		vec_item.push_back(EntityFactory::CreateItemEntity(g_registry, p_item));
+		vec_item.push_back((p_item ? p_item->GetEntityHandle() : entt::null));
 
 		LOG_INFO("dropevent.drop_refine_box.item_drop: killer({}: lv{}), victim({}: lv:{}), item_name({})", killer.GetName(), killer.GetLevel(), victim.GetName(), victim.GetLevel(), p_item->GetName());
 	}
@@ -1790,7 +1793,7 @@ void ITEM_MANAGER::CreateQuestDropItem(LPCHARACTER pkChr, LPCHARACTER pkKiller, 
 	if (!pkKiller)
 		return;
 
-	LOG_INFO("CreateQuestDropItem victim({}), killer({})", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(pkChr)).data(), ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(pkKiller)).data());
+	LOG_INFO("CreateQuestDropItem victim({}), killer({})", ecs::PlayerRuntime::GetName(((pkChr) ? (pkChr)->GetEntityHandle() : entt::null)).data(), ecs::PlayerRuntime::GetName(((pkKiller) ? (pkKiller)->GetEntityHandle() : entt::null)).data());
 
 	// DROPEVENT_CHARSTONE
 	__DropEvent_CharStone_DropItem(*pkKiller, *pkChr, *this, vec_item);
@@ -1819,12 +1822,12 @@ void ITEM_MANAGER::CreateQuestDropItem(LPCHARACTER pkChr, LPCHARACTER pkKiller, 
 			if (iPercent >= number(1, iRandRange))
 			{
 				if ((item = CreateItem(ITEM_VNUM, 1, 0, true)))
-					vec_item.push_back(EntityFactory::CreateItemEntity(g_registry, item));
+					vec_item.push_back((item ? item->GetEntityHandle() : entt::null));
 			}
 		}
 	}
 
-	if (ecs::PointSystem::GetLevel(AIHelpers::EcsOf(pkKiller)) >= 15 && abs(ecs::PointSystem::GetLevel(AIHelpers::EcsOf(pkKiller)) - ecs::PointSystem::GetLevel(AIHelpers::EcsOf(pkChr))) <= 5)
+	if (ecs::PointSystem::GetLevel(((pkKiller) ? (pkKiller)->GetEntityHandle() : entt::null)) >= 15 && abs(ecs::PointSystem::GetLevel(((pkKiller) ? (pkKiller)->GetEntityHandle() : entt::null)) - ecs::PointSystem::GetLevel(((pkChr) ? (pkChr)->GetEntityHandle() : entt::null))) <= 5)
 	{
 		int pct = quest::CQuestManager::instance().GetEventFlag("hc_drop");
 
@@ -1835,7 +1838,7 @@ void ITEM_MANAGER::CreateQuestDropItem(LPCHARACTER pkChr, LPCHARACTER pkKiller, 
 			if (number(1, 100) <= pct)
 			{
 				if ((item = CreateItem(ITEM_VNUM, 1, 0, true)))
-					vec_item.push_back(EntityFactory::CreateItemEntity(g_registry, item));
+					vec_item.push_back((item ? item->GetEntityHandle() : entt::null));
 			}
 		}
 	}
@@ -1848,7 +1851,7 @@ void ITEM_MANAGER::CreateQuestDropItem(LPCHARACTER pkChr, LPCHARACTER pkKiller, 
 		const static uint32_t dwVnum = 50037;
 
 		if ((item = CreateItem(dwVnum, 1, 0, true)))
-			vec_item.push_back(EntityFactory::CreateItemEntity(g_registry, item));
+			vec_item.push_back((item ? item->GetEntityHandle() : entt::null));
 
 	}
 
@@ -1860,7 +1863,7 @@ void ITEM_MANAGER::CreateQuestDropItem(LPCHARACTER pkChr, LPCHARACTER pkKiller, 
 		const static uint32_t dwVnum = 50043;
 
 		if ((item = CreateItem(dwVnum, 1, 0, true)))
-			vec_item.push_back(EntityFactory::CreateItemEntity(g_registry, item));
+			vec_item.push_back((item ? item->GetEntityHandle() : entt::null));
 	}
 
 	// 새해 폭죽 이벤트
@@ -1870,7 +1873,7 @@ void ITEM_MANAGER::CreateQuestDropItem(LPCHARACTER pkChr, LPCHARACTER pkKiller, 
 		const uint32_t ITEM_VNUM_FIRE = 50107;
 
 		if ((item = CreateItem(ITEM_VNUM_FIRE, 1, 0, true)))
-			vec_item.push_back(EntityFactory::CreateItemEntity(g_registry, item));
+			vec_item.push_back((item ? item->GetEntityHandle() : entt::null));
 	}
 
 	// 새해 대보름 원소 이벤트
@@ -1882,7 +1885,7 @@ void ITEM_MANAGER::CreateQuestDropItem(LPCHARACTER pkChr, LPCHARACTER pkKiller, 
 		uint32_t dwVnum = wonso_items[number(0, 5)];
 
 		if ((item = CreateItem(dwVnum, 1, 0, true)))
-			vec_item.push_back(EntityFactory::CreateItemEntity(g_registry, item));
+			vec_item.push_back((item ? item->GetEntityHandle() : entt::null));
 	}
 
 	// 발렌타인 데이 이벤트. OGE의 요구에 따라 event 최소값을 1로 변경.(다른 이벤트는 일단 그대로 둠.)
@@ -1894,7 +1897,7 @@ void ITEM_MANAGER::CreateQuestDropItem(LPCHARACTER pkChr, LPCHARACTER pkKiller, 
 		uint32_t dwVnum = valentine_items[number(0, 1)];
 
 		if ((item = CreateItem(dwVnum, 1, 0, true)))
-			vec_item.push_back(EntityFactory::CreateItemEntity(g_registry, item));
+			vec_item.push_back((item ? item->GetEntityHandle() : entt::null));
 	}
 
 	// 아이스크림 이벤트
@@ -1903,14 +1906,14 @@ void ITEM_MANAGER::CreateQuestDropItem(LPCHARACTER pkChr, LPCHARACTER pkKiller, 
 		const static uint32_t icecream = 50123;
 
 		if ((item = CreateItem(icecream, 1, 0, true)))
-			vec_item.push_back(EntityFactory::CreateItemEntity(g_registry, item));
+			vec_item.push_back((item ? item->GetEntityHandle() : entt::null));
 	}
 
-	//if (ecs::PointSystem::GetLevel(AIHelpers::EcsOf(pkChr)) >= 30 && (GetDropPerKillPct(50, 100, iDeltaPercent, "ds_drop") >= number(1, iRandRange)))
+	//if (ecs::PointSystem::GetLevel(((pkChr) ? (pkChr)->GetEntityHandle() : entt::null)) >= 30 && (GetDropPerKillPct(50, 100, iDeltaPercent, "ds_drop") >= number(1, iRandRange)))
 	//{
 	//	const static uint32_t dragon_soul_gemstone = 30270;
 	//	if ((item = CreateItem(dragon_soul_gemstone, 1, 0, true)))
-	//		vec_item.push_back(EntityFactory::CreateItemEntity(g_registry, item));
+	//		vec_item.push_back((item ? item->GetEntityHandle() : entt::null));
 	//}
 
 	if (GetDropPerKillPct(100, 2000, iDeltaPercent, "halloween_drop") >= number(1, iRandRange))
@@ -1918,7 +1921,7 @@ void ITEM_MANAGER::CreateQuestDropItem(LPCHARACTER pkChr, LPCHARACTER pkKiller, 
 		const static uint32_t halloween_item = 30321;
 
 		if ((item = CreateItem(halloween_item, 1, 0, true)))
-			vec_item.push_back(EntityFactory::CreateItemEntity(g_registry, item));
+			vec_item.push_back((item ? item->GetEntityHandle() : entt::null));
 	}
 
 	// 2013라마단 이벤트 위해 주석처리함
@@ -1927,7 +1930,7 @@ void ITEM_MANAGER::CreateQuestDropItem(LPCHARACTER pkChr, LPCHARACTER pkKiller, 
 		const static uint32_t ramadan_item = 30315;
 
 		if ((item = CreateItem(ramadan_item, 1, 0, true)))
-			vec_item.push_back(EntityFactory::CreateItemEntity(g_registry, item));
+			vec_item.push_back((item ? item->GetEntityHandle() : entt::null));
 	}
 
 	if (GetDropPerKillPct(100, 2000, iDeltaPercent, "easter_drop") >= number(1, iRandRange))
@@ -1935,7 +1938,7 @@ void ITEM_MANAGER::CreateQuestDropItem(LPCHARACTER pkChr, LPCHARACTER pkKiller, 
 		const static uint32_t easter_item_base = 50160;
 
 		if ((item = CreateItem(easter_item_base + number(0, 19), 1, 0, true)))
-			vec_item.push_back(EntityFactory::CreateItemEntity(g_registry, item));
+			vec_item.push_back((item ? item->GetEntityHandle() : entt::null));
 	}
 
 	// 월드컵 이벤트
@@ -1944,7 +1947,7 @@ void ITEM_MANAGER::CreateQuestDropItem(LPCHARACTER pkChr, LPCHARACTER pkKiller, 
 		const static uint32_t football_item = 50096;
 
 		if ((item = CreateItem(football_item, 1, 0, true)))
-			vec_item.push_back(EntityFactory::CreateItemEntity(g_registry, item));
+			vec_item.push_back((item ? item->GetEntityHandle() : entt::null));
 	}
 
 	// 화이트 데이 이벤트
@@ -1955,18 +1958,18 @@ void ITEM_MANAGER::CreateQuestDropItem(LPCHARACTER pkChr, LPCHARACTER pkKiller, 
 		uint32_t dwVnum = whiteday_items[number(0, 1)];
 
 		if ((item = CreateItem(dwVnum, 1, 0, true)))
-			vec_item.push_back(EntityFactory::CreateItemEntity(g_registry, item));
+			vec_item.push_back((item ? item->GetEntityHandle() : entt::null));
 	}
 
 	// 어린이날 수수께끼 상자 이벤트
-	if (ecs::PointSystem::GetLevel(AIHelpers::EcsOf(pkKiller)) >= 50)
+	if (ecs::PointSystem::GetLevel(((pkKiller) ? (pkKiller)->GetEntityHandle() : entt::null)) >= 50)
 	{
 		if (GetDropPerKillPct(100, 1000, iDeltaPercent, "kids_day_drop_high") >= number(1, iRandRange))
 		{
 			uint32_t ITEM_QUIZ_BOX = 50034;
 
 			if ((item = CreateItem(ITEM_QUIZ_BOX, 1, 0, true)))
-				vec_item.push_back(EntityFactory::CreateItemEntity(g_registry, item));
+				vec_item.push_back((item ? item->GetEntityHandle() : entt::null));
 		}
 	}
 	else
@@ -1976,28 +1979,28 @@ void ITEM_MANAGER::CreateQuestDropItem(LPCHARACTER pkChr, LPCHARACTER pkKiller, 
 			uint32_t ITEM_QUIZ_BOX = 50034;
 
 			if ((item = CreateItem(ITEM_QUIZ_BOX, 1, 0, true)))
-				vec_item.push_back(EntityFactory::CreateItemEntity(g_registry, item));
+				vec_item.push_back((item ? item->GetEntityHandle() : entt::null));
 		}
 	}
 
 	// 올림픽 드롭 이벤트
-	if (ecs::PointSystem::GetLevel(AIHelpers::EcsOf(pkChr)) >= 30 && GetDropPerKillPct(50, 100, iDeltaPercent, "medal_part_drop") >= number(1, iRandRange))
+	if (ecs::PointSystem::GetLevel(((pkChr) ? (pkChr)->GetEntityHandle() : entt::null)) >= 30 && GetDropPerKillPct(50, 100, iDeltaPercent, "medal_part_drop") >= number(1, iRandRange))
 	{
 		const static uint32_t drop_items[] = { 30265, 30266, 30267, 30268, 30269 };
 		int i = number(0, 4);
 		item = CreateItem(drop_items[i]);
 		if (item != nullptr)
-			vec_item.push_back(EntityFactory::CreateItemEntity(g_registry, item));
+			vec_item.push_back((item ? item->GetEntityHandle() : entt::null));
 	}
 
 	// ADD_GRANDMASTER_SKILL
 	// 혼석 아이템 드롭
-	if (ecs::PointSystem::GetLevel(AIHelpers::EcsOf(pkChr)) >= 40 && pkChr->GetMobRank() >= MOB_RANK_BOSS && GetDropPerKillPct(/* minimum */ 1, /* default */ 1000, iDeltaPercent, "three_skill_item") / GetThreeSkillLevelAdjust(ecs::PointSystem::GetLevel(AIHelpers::EcsOf(pkChr))) >= number(1, iRandRange))
+	if (ecs::PointSystem::GetLevel(((pkChr) ? (pkChr)->GetEntityHandle() : entt::null)) >= 40 && pkChr->GetMobRank() >= MOB_RANK_BOSS && GetDropPerKillPct(/* minimum */ 1, /* default */ 1000, iDeltaPercent, "three_skill_item") / GetThreeSkillLevelAdjust(ecs::PointSystem::GetLevel(((pkChr) ? (pkChr)->GetEntityHandle() : entt::null))) >= number(1, iRandRange))
 	{
 		const uint32_t ITEM_VNUM = 50513;
 
 		if ((item = CreateItem(ITEM_VNUM, 1, 0, true)))
-			vec_item.push_back(EntityFactory::CreateItemEntity(g_registry, item));
+			vec_item.push_back((item ? item->GetEntityHandle() : entt::null));
 	}
 	// END_OF_ADD_GRANDMASTER_SKILL
 
@@ -2009,11 +2012,11 @@ void ITEM_MANAGER::CreateQuestDropItem(LPCHARACTER pkChr, LPCHARACTER pkKiller, 
 		const uint32_t ITEM_SEED = 50085;
 
 		if ((item = CreateItem(ITEM_SEED, 1, 0, true)))
-			vec_item.push_back(EntityFactory::CreateItemEntity(g_registry, item));
+			vec_item.push_back((item ? item->GetEntityHandle() : entt::null));
 	}
 
 	// 무신의 축복서용 만년한철 drop
-	if (ecs::PointSystem::GetLevel(AIHelpers::EcsOf(pkKiller)) >= 15 && quest::CQuestManager::instance().GetEventFlag("mars_drop"))
+	if (ecs::PointSystem::GetLevel(((pkKiller) ? (pkKiller)->GetEntityHandle() : entt::null)) >= 15 && quest::CQuestManager::instance().GetEventFlag("mars_drop"))
 	{
 		const uint32_t ITEM_HANIRON = 70035;
 		int iDropMultiply[MOB_RANK_MAX_NUM] =
@@ -2030,7 +2033,7 @@ void ITEM_MANAGER::CreateQuestDropItem(LPCHARACTER pkChr, LPCHARACTER pkKiller, 
 			GetDropPerKillPct(1000, 1500, iDeltaPercent, "mars_drop") >= number(1, iRandRange) * iDropMultiply[pkChr->GetMobRank()])
 		{
 			if ((item = CreateItem(ITEM_HANIRON, 1, 0, true)))
-				vec_item.push_back(EntityFactory::CreateItemEntity(g_registry, item));
+				vec_item.push_back((item ? item->GetEntityHandle() : entt::null));
 		}
 	}
 }
