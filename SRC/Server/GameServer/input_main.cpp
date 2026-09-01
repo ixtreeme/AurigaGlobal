@@ -4100,7 +4100,7 @@ int CInputMain::Guild(entt::entity character, const char * data, size_t uiBytes)
 					return SubPacketLen;
 				}
 
-				pGuild->RequestDepositMoney(ch, gold);
+				pGuild->RequestDepositMoney(character, gold);
 			}
 			return SubPacketLen;
 
@@ -4119,7 +4119,7 @@ int CInputMain::Guild(entt::entity character, const char * data, size_t uiBytes)
 					return SubPacketLen;
 				}
 
-				pGuild->RequestWithdrawMoney(ch, gold);
+				pGuild->RequestWithdrawMoney(character, gold);
 			}
 			return SubPacketLen;
 
@@ -4141,7 +4141,7 @@ int CInputMain::Guild(entt::entity character, const char * data, size_t uiBytes)
 					return SubPacketLen;
 				// @fixme145 END
 
-				pGuild->Invite(ch, newmember);
+				pGuild->Invite(character, ((newmember) ? (newmember)->GetEntityHandle() : entt::null));
 			}
 			return SubPacketLen;
 
@@ -4299,7 +4299,7 @@ int CInputMain::Guild(entt::entity character, const char * data, size_t uiBytes)
 				}
 
 #ifdef TEXTS_IMPROVEMENT
-				if (!pGuild->ChargeSP(ch, offer)) {
+				if (!pGuild->ChargeSP(character, offer)) {
 					ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 164, "");
 				}
 #endif
@@ -4345,12 +4345,12 @@ int CInputMain::Guild(entt::entity character, const char * data, size_t uiBytes)
 			{
 				const uint32_t comment_id = *reinterpret_cast<const uint32_t*>(c_pData);
 
-				pGuild->DeleteComment(ch, comment_id);
+				pGuild->DeleteComment(character, comment_id);
 			}
 			return SubPacketLen;
 
 		case GUILD_SUBHEADER_CG_REFRESH_COMMENT:
-			pGuild->RefreshComment(ch);
+			pGuild->RefreshComment(character);
 			return SubPacketLen;
 
 		case GUILD_SUBHEADER_CG_CHANGE_MEMBER_GRADE:
@@ -4384,7 +4384,7 @@ int CInputMain::Guild(entt::entity character, const char * data, size_t uiBytes)
 			{
 				const TPacketCGGuildUseSkill* p = reinterpret_cast<const TPacketCGGuildUseSkill*>(c_pData);
 
-				pGuild->UseSkill(p->dwVnum, ch, p->dwPID);
+				pGuild->UseSkill(p->dwVnum, character, p->dwPID);
 			}
 			return SubPacketLen;
 
@@ -4417,7 +4417,7 @@ int CInputMain::Guild(entt::entity character, const char * data, size_t uiBytes)
 				if (g)
 				{
 					if (accept)
-						g->InviteAccept(ch);
+						g->InviteAccept(character);
 					else
 						g->InviteDeny(ecs::PlayerRuntime::GetPlayerID(character));
 				}

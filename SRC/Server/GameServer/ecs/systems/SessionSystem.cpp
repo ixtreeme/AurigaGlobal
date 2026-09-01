@@ -1310,7 +1310,7 @@ void CHARACTER::Disconnect(const char* c_pszReason)
 #endif
 
     if (GetGuild())
-        GetGuild()->LogoutMember(this);
+        GetGuild()->LogoutMember(GetEntityHandle());
 
     quest::CQuestManager::instance().LogoutPC(this);
 
@@ -1359,7 +1359,7 @@ void CHARACTER::Disconnect(const char* c_pszReason)
     CloseSafebox();
     CloseMall();
 
-    CPVPManager::instance().Disconnect(this);
+    CPVPManager::instance().Disconnect(GetEntityHandle());
     CTargetManager::instance().Logout(GetPlayerID());
     MessengerManager::instance().Logout(GetName());
 

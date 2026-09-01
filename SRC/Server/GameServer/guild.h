@@ -195,17 +195,16 @@ void		Reset() { m_data.power = m_data.max_power; }
 		void		RequestDisband(uint32_t pid);
 		void		Disband();
 
-		void		RequestAddMember(LPCHARACTER ch, int grade = 15);
 		void		RequestAddMember(entt::entity character, int grade = 15);
 		void		AddMember(TPacketDGGuildMember * p);
 
 		bool		RequestRemoveMember(uint32_t pid);
 		bool		RemoveMember(uint32_t pid);
 
-		void		LoginMember(LPCHARACTER ch);
+		void		LoginMember(entt::entity character);
 		void		P2PLoginMember(uint32_t pid);
 
-		void		LogoutMember(LPCHARACTER ch);
+		void		LogoutMember(entt::entity character);
 		void		P2PLogoutMember(uint32_t pid);
 
 		void		ChangeMemberGrade(uint32_t pid, uint8_t grade);
@@ -224,15 +223,15 @@ void		Reset() { m_data.power = m_data.max_power; }
 		void		Packet(const void* buf, int size);
 
 		void		SendOnlineRemoveOnePacket(uint32_t pid);
-		void		SendAllGradePacket(LPCHARACTER ch);
-		void		SendListPacket(LPCHARACTER ch);
+		void		SendAllGradePacket(entt::entity character);
+		void		SendListPacket(entt::entity character);
 		void		SendListOneToAll(uint32_t pid);
-		void		SendListOneToAll(LPCHARACTER ch);
-		void		SendLoginPacket(LPCHARACTER ch, LPCHARACTER chLogin);
-		void		SendLogoutPacket(LPCHARACTER ch, LPCHARACTER chLogout);
-		void		SendLoginPacket(LPCHARACTER ch, uint32_t pid);
-		void		SendLogoutPacket(LPCHARACTER ch, uint32_t pid);
-		void		SendGuildInfoPacket(LPCHARACTER ch);
+		void		SendListOneToAll(entt::entity character);
+		void		SendLoginPacket(entt::entity character, entt::entity loginCharacter);
+		void		SendLogoutPacket(entt::entity character, entt::entity logoutCharacter);
+		void		SendLoginPacket(entt::entity character, uint32_t pid);
+		void		SendLogoutPacket(entt::entity character, uint32_t pid);
+		void		SendGuildInfoPacket(entt::entity character);
 		void		SendGuildDataUpdateToAllMember(SQLMsg* pmsg);
 
 		void		Load(uint32_t guild_id);
@@ -258,16 +257,16 @@ void		Reset() { m_data.power = m_data.max_power; }
 		bool		HasGradeAuth(int grade, int auth_flag) const	{ return (bool)(m_data.grade_array[grade-1].auth_flag & auth_flag);}
 
 		void		AddComment(entt::entity character, std::string_view str);
-		void		DeleteComment(LPCHARACTER ch, uint32_t comment_id);
+		void		DeleteComment(entt::entity character, uint32_t comment_id);
 
-		void		RefreshComment(LPCHARACTER ch);
+		void		RefreshComment(entt::entity character);
 		void		RefreshCommentForce(uint32_t player_id);
 
 		int			GetSkillLevel(uint32_t vnum);
 		void		SkillLevelUp(uint32_t dwVnum);
-		void		UseSkill(uint32_t dwVnum, LPCHARACTER ch, uint32_t pid);
+		void		UseSkill(uint32_t dwVnum, entt::entity character, uint32_t pid);
 
-		void		SendSkillInfoPacket(LPCHARACTER ch) const;
+		void		SendSkillInfoPacket(entt::entity character) const;
 		void		ComputeGuildPoints();
 
 		void		GuildPointChange( uint8_t type, int amount, bool save = false );
@@ -279,7 +278,7 @@ void		Reset() { m_data.power = m_data.max_power; }
 		void		SendDBSkillUpdate(int amount = 0);
 
 		void		SkillRecharge();
-		bool		ChargeSP(LPCHARACTER ch, int iSP);
+		bool		ChargeSP(entt::entity character, int iSP);
 
 		void		Chat(const char* c_pszText);
 		void		P2PChat(const char* c_pszText); // 길드 채팅
@@ -288,8 +287,8 @@ void		Reset() { m_data.power = m_data.max_power; }
 		void		AdvanceLevel(int iLevel);
 
 		// Guild Money
-		void		RequestDepositMoney(LPCHARACTER ch, int iGold);
-		void		RequestWithdrawMoney(LPCHARACTER ch, int iGold);
+		void		RequestDepositMoney(entt::entity character, int iGold);
+		void		RequestWithdrawMoney(entt::entity character, int iGold);
 
 		void		RecvMoneyChange(int iGold);
 		void		RecvWithdrawMoneyGive(int iChangeGold); // bGive==1 이면 길드장에게 주는 걸 시도하고 성공실패를 디비에게 보낸다
@@ -298,7 +297,7 @@ void		Reset() { m_data.power = m_data.max_power; }
 
 		// War general
 		void		GuildWarPacket(uint32_t guild_id, uint8_t bWarType, uint8_t bWarState);
-		void		SendEnemyGuild(LPCHARACTER ch);
+		void		SendEnemyGuild(entt::entity character);
 
 		int		GetGuildWarState(uint32_t guild_id);
 		bool		CanStartWar(uint8_t bGuildWarType);
@@ -355,7 +354,7 @@ void		Reset() { m_data.power = m_data.max_power; }
 		 *
 		 * 초대하거나 받을수 없는 상태라면 해당하는 채팅 메세지를 전송한다.
 		 */
-		void		Invite( LPCHARACTER pchInviter, LPCHARACTER pchInvitee );
+		void		Invite( entt::entity inviter, entt::entity invitee );
 
 		/// 길드초대에 대한 상대 character 의 수락을 처리한다.
 		/**
@@ -363,7 +362,7 @@ void		Reset() { m_data.power = m_data.max_power; }
 		 *
 		 * 길드에 가입가능한 상태가 아니라면 해당하는 채팅 메세지를 전송한다.
 		 */
-		void		InviteAccept( LPCHARACTER pchInvitee );
+		void		InviteAccept( entt::entity invitee );
 
 		/// 길드초대에 대한 상대 character 의 거부를 처리한다.
 		/**
@@ -430,15 +429,15 @@ void		Reset() { m_data.power = m_data.max_power; }
 		 * @param [in]	pchInvitee 초대받는 character
 		 * @return	GuildJoinErrCode
 		 */
-		GuildJoinErrCode	VerifyGuildJoinableCondition( const LPCHARACTER pchInvitee );
+		GuildJoinErrCode	VerifyGuildJoinableCondition( entt::entity invitee );
 
 		typedef std::map< uint32_t, LPEVENT >	EventMap;
 		EventMap	m_GuildInviteEventMap;	///< 길드 초청 Event map. key: 초대받은 캐릭터의 PID
 		// END_OF_GUILD_JOIN_BUG_FIX
 #ifdef ENABLE_GUILD_ATTRIBUTE
 	public:
-		void GiveGuildBuff(LPCHARACTER ch);
-		void RemoveGuildBuff(LPCHARACTER ch);
+		void GiveGuildBuff(entt::entity character);
+		void RemoveGuildBuff(entt::entity character);
 #endif
 #ifdef ENABLE_NEWSTUFF
 	public:

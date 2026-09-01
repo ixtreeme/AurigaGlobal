@@ -136,14 +136,14 @@ uint32_t CGuildManager::CreateGuild(TGuildCreateParameter& gcp)
 }
 
 #ifdef ENABLE_GUILD_ATTRIBUTE
-void CGuildManager::RemoveGuildBuff(LPCHARACTER ch)
+void CGuildManager::RemoveGuildBuff(entt::entity character)
 {
-	CAffect* affect = AffectSystem::FindAffect(((ch) ? (ch)->GetEntityHandle() : entt::null), AFFECT_GUILD_ATTRIBUTE);
+	CAffect* affect = AffectSystem::FindAffect(character, AFFECT_GUILD_ATTRIBUTE);
 	while (affect != nullptr)
 	{
 		if (affect)
-			AffectSystem::RemoveAffect(((ch) ? (ch)->GetEntityHandle() : entt::null), affect);
-		affect = AffectSystem::FindAffect(((ch) ? (ch)->GetEntityHandle() : entt::null), AFFECT_GUILD_ATTRIBUTE);
+			AffectSystem::RemoveAffect(character, affect);
+		affect = AffectSystem::FindAffect(character, AFFECT_GUILD_ATTRIBUTE);
 	}
 }
 #endif
@@ -190,13 +190,14 @@ void CGuildManager::P2PLoginMember(uint32_t pid)
 	}
 }
 
-void CGuildManager::LoginMember(LPCHARACTER ch)
+void CGuildManager::LoginMember(entt::entity character)
 {
-	TGuildMap::iterator it = m_map_pkGuildByPID.find((ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null))));
+	LPCHARACTER ch = ecs::LegacyCharOf(character);
+	TGuildMap::iterator it = m_map_pkGuildByPID.find((ecs::PlayerRuntime::GetPlayerID(character)));
 
 	if (it != m_map_pkGuildByPID.end())
 	{
-		it->second->LoginMember(ch);
+		it->second->LoginMember(character);
 	}
 }
 

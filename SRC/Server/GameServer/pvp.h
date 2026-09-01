@@ -1,6 +1,8 @@
 #ifndef __INC_METIN_II_GAME_PVP_H__
 #define __INC_METIN_II_GAME_PVP_H__
 
+#include <entt/entt.hpp>
+
 class CHARACTER;
 
 // CPVP에는 uint32_t 아이디 두개를 받아서 m_dwCRC를 만들어서 가지고 있는다.
@@ -60,19 +62,18 @@ class CPVPManager : public singleton<CPVPManager>
 	virtual ~CPVPManager();
 
 #ifdef ENABLE_NEWSTUFF
-	bool			IsFighting(LPCHARACTER pkChr);
 	bool			IsFighting(uint32_t dwPID);
 #endif
 
-	void			Insert(LPCHARACTER pkChr, LPCHARACTER pkVictim);
-	bool			CanAttack(LPCHARACTER pkChr, LPCHARACTER pkVictim, bool bIsFarmMap = false);//razor93-2024-12-30//CanAttack(LPCHARACTER pkChr, LPCHARACTER pkVictim);
-	bool			Dead(LPCHARACTER pkChr, uint32_t dwKillerPID);	// PVP에 있었나 없었나를 리턴
-	void			GiveUp(LPCHARACTER pkChr, uint32_t dwKillerPID);
-	void			Connect(LPCHARACTER pkChr);
+	void			Insert(entt::entity character, entt::entity victim);
+	bool			CanAttack(entt::entity character, entt::entity victim, bool bIsFarmMap = false);//razor93-2024-12-30//CanAttack(LPCHARACTER pkChr, LPCHARACTER pkVictim);
+	bool			Dead(entt::entity character, uint32_t dwKillerPID);	// PVP에 있었나 없었나를 리턴
+	void			GiveUp(entt::entity character, uint32_t dwKillerPID);
+	void			Connect(entt::entity character);
 #ifdef ENABLE_PVP_ADVANCED
-	void			Decline(LPCHARACTER pkChr, LPCHARACTER pkVictim);
+	void			Decline(entt::entity character, entt::entity victim);
 #endif
-	void			Disconnect(LPCHARACTER pkChr);
+	void			Disconnect(entt::entity character);
 
 	void			SendList(LPDESC d);
 	void			Delete(CPVP * pkPVP);
@@ -82,7 +83,7 @@ class CPVPManager : public singleton<CPVPManager>
 	public:
 	CPVP *			Find(uint32_t dwCRC);
 	protected:
-	void			ConnectEx(LPCHARACTER pkChr, bool bDisconnect);
+	void			ConnectEx(entt::entity character, bool bDisconnect);
 
 	std::map<uint32_t, CPVP *>	m_map_pkPVP;
 	CPVPSetMap		m_map_pkPVPSetByID;

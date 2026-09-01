@@ -32,11 +32,11 @@ class CGuildManager : public singleton<CGuildManager>
 		void		Unlink(uint32_t pid);
 		CGuild *	GetLinkedGuild(uint32_t pid);
 
-		void		LoginMember(LPCHARACTER ch);
+		void		LoginMember(entt::entity character);
 		void		P2PLoginMember(uint32_t pid);
 		void		P2PLogoutMember(uint32_t pid);
 #ifdef ENABLE_GUILD_ATTRIBUTE
-		void		RemoveGuildBuff(LPCHARACTER ch);
+		void		RemoveGuildBuff(entt::entity character);
 #endif
 
 		void		SkillRecharge();

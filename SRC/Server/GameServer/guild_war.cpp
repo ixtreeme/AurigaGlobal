@@ -67,9 +67,10 @@ void CGuild::GuildWarPacket(uint32_t dwOppGID, uint8_t bWarType, uint8_t bWarSta
 	}
 }
 
-void CGuild::SendEnemyGuild(LPCHARACTER ch)
+void CGuild::SendEnemyGuild(entt::entity character)
 {
-	LPDESC d = ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null));
+	LPCHARACTER ch = ecs::LegacyCharOf(character);
+	LPDESC d = ecs::PlayerRuntime::GetDesc(character);
 
 	if (!d)
 		return;

@@ -4274,7 +4274,7 @@ void CHARACTER::PayRefineFee(int64_t iTotalMoney)
     {
         if (pGuild != GetGuild())
         {
-            pGuild->RequestDepositMoney(this, iFee);
+            pGuild->RequestDepositMoney(GetEntityHandle(), iFee);
             iRemain -= iFee;
         }
     }

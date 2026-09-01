@@ -150,7 +150,7 @@ bool battle_is_attackable(entt::entity character, entt::entity victim)
 	}
 	break;
 	}
-	const bool canAttack = CPVPManager::instance().CanAttack(ch, pkVictim, bIsFarmMap);
+	const bool canAttack = CPVPManager::instance().CanAttack(character, victim, bIsFarmMap);
 	return canAttack;
 }
 

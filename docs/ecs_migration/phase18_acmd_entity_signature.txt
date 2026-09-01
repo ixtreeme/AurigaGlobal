@@ -249,3 +249,86 @@ Left in place
 battle.cpp: 195 -> 0 (1 in a comment)   battle.h: 16 -> 0
 Project-wide conversion count: 4743 -> 4568
 Build: RelWithDebInfo GameServer, 0 errors.
+
+
+Phase 18e - guild and pvp subsystem entity flip
+------------------------------------------------
+Two subsystems in one pass, same rule as before.
+
+guild
+-----
+guild.h: 24 declarations flipped (one deleted, see below).
+  LoginMember, LogoutMember, SendAllGradePacket, SendListPacket,
+  SendListOneToAll, SendLoginPacket x2, SendLogoutPacket x2,
+  SendGuildInfoPacket, DeleteComment, RefreshComment, UseSkill,
+  SendSkillInfoPacket, ChargeSP, RequestDepositMoney, RequestWithdrawMoney,
+  SendEnemyGuild, Invite, InviteAccept, VerifyGuildJoinableCondition,
+  GiveGuildBuff, RemoveGuildBuff.
+guild_manager.h: CGuildManager::LoginMember and RemoveGuildBuff too, so the
+  whole guild subsystem speaks one language.
+guild_war.cpp: CGuild::SendEnemyGuild lives there; it moved with the header.
+
+  CGuild::RequestAddMember(LPCHARACTER) was a forwarder to the entity overload
+  that already existed. Its last caller was Invite/InviteAccept's pchInvitee,
+  which is now an entity, so the forwarder was deleted. Same shape as
+  GetMobItemRate in phase 18c.
+
+  Two (entity, entity) forwarders - SendLoginPacket and SendLogoutPacket -
+  no longer need a legacy alias at all; they hand the entity straight to the
+  (entity, pid) overload. GiveGuildBuff likewise.
+
+  guild.cpp: 104 -> 24 by the strict per-parameter count.
+
+pvp
+---
+pvp.h: 9 declarations flipped (one deleted).
+  Insert, CanAttack, Dead, GiveUp, Connect, Decline, Disconnect, ConnectEx,
+  plus the file-local RemoveStateFull helper.
+  CPVPManager::IsFighting(LPCHARACTER) was another dead forwarder to the
+  IsFighting(uint32_t) overload - every caller in the tree already passed a
+  PID. Deleted.
+  <entt/entt.hpp> added to pvp.h.
+
+  CPVPManager::Insert alone was 45 conversions (31 pkChr + 14 pkVictim) with
+  *zero* legacy pointer uses in its body - a pure flip.
+
+  The two duel EVENTFUNCs are the other half: pvp_duel_counter (54) and
+  pvp_check_disconnect (12) pull chA/chB out of the event info struct and then
+  re-converted them on every line. They now resolve once into characterA /
+  characterB. Both keep the null-safe form, because pvp_check_disconnect
+  deliberately runs with one side already gone.
+
+  pvp.cpp: 163 -> 8, and 6 of those 8 *are* the hoisted locals - the single
+  point where a pointer becomes an entity. Only 2 real sites remain
+  (pkVictimDesc, and d->GetCharacter() in SendList).
+
+std::bind caught what the eye missed
+------------------------------------
+Seven for_each/std::bind sites in guild.cpp bound a now-entity member function
+over m_memberOnline, which is a CHARACTER_SET:
+
+  for_each(m_memberOnline.begin(), m_memberOnline.end(),
+           std::bind(&CGuild::SendSkillInfoPacket, this, _1));
+
+std::bind defers the type check into the binder's operator(), so this reports
+as "attempting to reference a deleted function" deep inside <algorithm> with
+no line number in our own code. Each one was rewritten as an explicit loop
+that converts at the point of call. Worth remembering for the remaining files:
+grep for std::bind over any method being flipped, the compiler will not point
+at the call site.
+
+Call sites
+----------
+21 external call sites adapted across input_main.cpp, input_login.cpp,
+battle.cpp, cmd_general.cpp, guild_manager.cpp, AffectSystem.cpp,
+CombatSystem.cpp, PlayerRuntimeSystem.cpp, SessionSystem.cpp.
+
+Left in place
+-------------
+guild.cpp keeps 68 raw conversions, 45 of them on *it / *iter. Those are the
+m_memberOnline broadcast loops - the container is a CHARACTER_SET, so it is
+the legacy holder, exactly like m_set_pkChrMonsterLog in phase 18c. Turning
+those into entity sets is an identity-level change, not this pass.
+
+Project-wide conversion count: 4568 -> 4350
+Build: RelWithDebInfo GameServer, 0 errors.

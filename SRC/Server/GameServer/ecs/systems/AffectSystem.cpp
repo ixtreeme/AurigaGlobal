@@ -1712,7 +1712,7 @@ void CHARACTER::LoadAffect(uint32_t dwCount, TPacketAffectElement * pElements)
 	}
 #ifdef ENABLE_GUILD_ATTRIBUTE
 	if (GetGuild())
-		GetGuild()->GiveGuildBuff(this);
+		GetGuild()->GiveGuildBuff(GetEntityHandle());
 	else
 	{
 		while (true)

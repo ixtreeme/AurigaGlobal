@@ -1621,8 +1621,8 @@ ACMD(do_pvp)
 
 	if (ecs::SocialSystem::GetExchange(character) || ecs::SocialSystem::GetExchange(((pkVictim) ? (pkVictim)->GetEntityHandle() : entt::null)))
 	{
-		CPVPManager::instance().Decline(ch, pkVictim);
-		CPVPManager::instance().Decline(pkVictim, ch);
+		CPVPManager::instance().Decline(character, ((pkVictim) ? (pkVictim)->GetEntityHandle() : entt::null));
+		CPVPManager::instance().Decline(((pkVictim) ? (pkVictim)->GetEntityHandle() : entt::null), character);
 		return;
 	}
 
@@ -1638,8 +1638,8 @@ ACMD(do_pvp)
 			ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 722, "");
 			ecs::ChatSystem::SendNew(((pkVictim) ? (pkVictim)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 722, "");
 #endif
-			CPVPManager::instance().Decline(ch, pkVictim);
-			CPVPManager::instance().Decline(pkVictim, ch);
+			CPVPManager::instance().Decline(character, ((pkVictim) ? (pkVictim)->GetEntityHandle() : entt::null));
+			CPVPManager::instance().Decline(((pkVictim) ? (pkVictim)->GetEntityHandle() : entt::null), character);
 			return;
 		}
 
@@ -1652,7 +1652,7 @@ ACMD(do_pvp)
 			ecs::PointSystem::Change(((pkVictim) ? (pkVictim)->GetEntityHandle() : entt::null), POINT_GOLD, - chB_nBetMoney, true);
 		}
 
-		CPVPManager::instance().Insert(ch, pkVictim);
+		CPVPManager::instance().Insert(character, ((pkVictim) ? (pkVictim)->GetEntityHandle() : entt::null));
 		return;
 	}
 
@@ -1738,7 +1738,7 @@ ACMD(do_pvp)
 		pkVictim->SetDuel("BlockParty", m_BlockParty);				pkVictim->SetDuel("BlockExchange", m_BlockExchange);
 		pkVictim->SetDuel("BetMoney", m_BetMoney);
 
-		CPVPManager::instance().Insert(ch, pkVictim);
+		CPVPManager::instance().Insert(character, ((pkVictim) ? (pkVictim)->GetEntityHandle() : entt::null));
 	}
 }
 
@@ -1847,7 +1847,7 @@ ACMD(do_decline_pvp)
 	if (ecs::PlayerRuntime::IsNPC(((pkVictim) ? (pkVictim)->GetEntityHandle() : entt::null)))
 		return;
 
-	CPVPManager::instance().Decline(ch, pkVictim);
+	CPVPManager::instance().Decline(character, ((pkVictim) ? (pkVictim)->GetEntityHandle() : entt::null));
 	ecs::QuestSystem::SetFlag(character, "pvp.timed", 0);
 	ecs::QuestSystem::SetFlag(((pkVictim) ? (pkVictim)->GetEntityHandle() : entt::null), "pvp.timed", 0);
 }

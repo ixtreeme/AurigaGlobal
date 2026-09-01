@@ -615,7 +615,7 @@ void CInputLogin::Entergame(LPDESC d, const char* data)
 		pos = pos2;
 	}
 
-	CGuildManager::instance().LoginMember(ch);
+	CGuildManager::instance().LoginMember(((ch) ? (ch)->GetEntityHandle() : entt::null));
 
 	// ?? ? ?
 	ecs::MovementSystem::Show(((ch) ? (ch)->GetEntityHandle() : entt::null), ecs::PlayerRuntime::GetMapIndex(((ch) ? (ch)->GetEntityHandle() : entt::null)), pos.x, pos.y, pos.z);
@@ -683,7 +683,7 @@ void CInputLogin::Entergame(LPDESC d, const char* data)
 	ch->StartSaveEvent();
 	ch->StartRecoveryEvent();
 
-	CPVPManager::instance().Connect(ch);
+	CPVPManager::instance().Connect(((ch) ? (ch)->GetEntityHandle() : entt::null));
 	CPVPManager::instance().SendList(d);
 
 	MessengerManager::instance().Login(ecs::PlayerRuntime::GetName(((ch) ? (ch)->GetEntityHandle() : entt::null)).data());

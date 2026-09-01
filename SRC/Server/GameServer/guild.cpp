@@ -155,11 +155,6 @@ CGuild::~CGuild()
 {
 }
 
-void CGuild::RequestAddMember(LPCHARACTER ch, int grade)
-{
-	RequestAddMember(ch ? ch->GetEntityHandle() : entt::null, grade);
-}
-
 void CGuild::RequestAddMember(entt::entity character, int grade)
 {
 	if (character == entt::null || !g_registry.valid(character) || ecs::SocialSystem::GetGuild(character))
@@ -204,11 +199,13 @@ void CGuild::AddMember(TPacketDGGuildMember * p)
 
 	LOG_INFO("GUILD: AddMember PID {}, grade {}, job {}, level {}, offer {}, name {} ptr {}", p->dwPID, p->bGrade, p->bJob, p->bLevel, p->dwOffer, p->szName, static_cast<const void*>(get_pointer(ch)));
 
+	const entt::entity character = ch ? ch->GetEntityHandle() : entt::null;
+
 	if (ch)
-		LoginMember(ch),
+		LoginMember(character),
 #ifdef ENABLE_GUILD_ATTRIBUTE
-		NetworkSyncSystem::UpdatePacket(((ch) ? (ch)->GetEntityHandle() : entt::null)),
-		GiveGuildBuff(ch);
+		NetworkSyncSystem::UpdatePacket(character),
+		GiveGuildBuff(character);
 
 	else
 #endif;
@@ -261,7 +258,7 @@ bool CGuild::RemoveMember(uint32_t pid)
 		m_memberOnline.erase(ch);
 		ch->SetGuild(nullptr);
 #ifdef ENABLE_GUILD_ATTRIBUTE
-		RemoveGuildBuff(ch);
+		RemoveGuildBuff(ch ? ch->GetEntityHandle() : entt::null);
 #endif
 	}
 
@@ -285,14 +282,15 @@ void CGuild::P2PLoginMember(uint32_t pid)
 	TGuildMemberOnlineContainer::iterator it;
 
 	for (it = m_memberOnline.begin(); it!=m_memberOnline.end();++it)
-		SendLoginPacket(*it, pid);
+		SendLoginPacket(((*it) ? (*it)->GetEntityHandle() : entt::null), pid);
 }
 
-void CGuild::LoginMember(LPCHARACTER ch)
+void CGuild::LoginMember(entt::entity character)
 {
-	if (m_member.find(ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null))) == m_member.end())
+	LPCHARACTER ch = ecs::LegacyCharOf(character);
+	if (m_member.find(ecs::PlayerRuntime::GetPlayerID(character)) == m_member.end())
 	{
-		LOG_ERROR("GUILD {}[{}] is not a memeber of guild.", ecs::PlayerRuntime::GetName(((ch) ? (ch)->GetEntityHandle() : entt::null)).data(), ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null)));
+		LOG_ERROR("GUILD {}[{}] is not a memeber of guild.", ecs::PlayerRuntime::GetName(character).data(), ecs::PlayerRuntime::GetPlayerID(character));
 		return;
 	}
 
@@ -302,15 +300,15 @@ void CGuild::LoginMember(LPCHARACTER ch)
 	TGuildMemberOnlineContainer::iterator it;
 
 	for (it = m_memberOnline.begin(); it!=m_memberOnline.end();++it)
-		SendLoginPacket(*it, ch);
+		SendLoginPacket(((*it) ? (*it)->GetEntityHandle() : entt::null), character);
 
 	m_memberOnline.insert(ch);
 
-	SendAllGradePacket(ch);
-	SendGuildInfoPacket(ch);
-	SendListPacket(ch);
-	SendSkillInfoPacket(ch);
-	SendEnemyGuild(ch);
+	SendAllGradePacket(character);
+	SendGuildInfoPacket(character);
+	SendListPacket(character);
+	SendSkillInfoPacket(character);
+	SendEnemyGuild(character);
 
 	//GuildUpdateAffect(ch);
 }
@@ -329,15 +327,16 @@ void CGuild::P2PLogoutMember(uint32_t pid)
 	TGuildMemberOnlineContainer::iterator it;
 	for (it = m_memberOnline.begin(); it!=m_memberOnline.end();++it)
 	{
-		SendLogoutPacket(*it, pid);
+		SendLogoutPacket(((*it) ? (*it)->GetEntityHandle() : entt::null), pid);
 	}
 }
 
-void CGuild::LogoutMember(LPCHARACTER ch)
+void CGuild::LogoutMember(entt::entity character)
 {
-	if (m_member.find(ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null)))==m_member.end())
+	LPCHARACTER ch = ecs::LegacyCharOf(character);
+	if (m_member.find(ecs::PlayerRuntime::GetPlayerID(character))==m_member.end())
 	{
-		LOG_ERROR("GUILD {}[{}] is not a memeber of guild.", ecs::PlayerRuntime::GetName(((ch) ? (ch)->GetEntityHandle() : entt::null)).data(), ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null)));
+		LOG_ERROR("GUILD {}[{}] is not a memeber of guild.", ecs::PlayerRuntime::GetName(character).data(), ecs::PlayerRuntime::GetPlayerID(character));
 		return;
 	}
 
@@ -350,7 +349,7 @@ void CGuild::LogoutMember(LPCHARACTER ch)
 	TGuildMemberOnlineContainer::iterator it;
 	for (it = m_memberOnline.begin(); it!=m_memberOnline.end();++it)
 	{
-		SendLogoutPacket(*it, ch);
+		SendLogoutPacket(((*it) ? (*it)->GetEntityHandle() : entt::null), character);
 	}
 }
 
@@ -376,9 +375,9 @@ void CGuild::SendOnlineRemoveOnePacket(uint32_t pid)
 	}
 }
 
-void CGuild::SendAllGradePacket(LPCHARACTER ch)
+void CGuild::SendAllGradePacket(entt::entity character)
 {
-	LPDESC d = ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null));
+	LPDESC d = ecs::PlayerRuntime::GetDesc(character);
 	if (!d)
 		return;
 
@@ -403,9 +402,9 @@ void CGuild::SendAllGradePacket(LPCHARACTER ch)
 	d->Packet(buf.read_peek(), buf.size());
 }
 
-void CGuild::SendListOneToAll(LPCHARACTER ch)
+void CGuild::SendListOneToAll(entt::entity character)
 {
-	SendListOneToAll(ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null)));
+	SendListOneToAll(ecs::PlayerRuntime::GetPlayerID(character));
 }
 
 void CGuild::SendListOneToAll(uint32_t pid)
@@ -444,8 +443,9 @@ void CGuild::SendListOneToAll(uint32_t pid)
 	}
 }
 
-void CGuild::SendListPacket(LPCHARACTER ch)
+void CGuild::SendListPacket(entt::entity character)
 {
+	LPCHARACTER ch = ecs::LegacyCharOf(character);
 	/*
 	   List Packet
 
@@ -459,7 +459,7 @@ void CGuild::SendListPacket(LPCHARACTER ch)
 
 	 */
 	LPDESC d;
-	if (!(d=ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null))))
+	if (!(d=ecs::PlayerRuntime::GetDesc(character)))
 		return;
 
 	TPacketGCGuild pack;
@@ -493,29 +493,29 @@ void CGuild::SendListPacket(LPCHARACTER ch)
 
 	for (TGuildMemberOnlineContainer::iterator it = m_memberOnline.begin(); it != m_memberOnline.end(); ++it)
 	{
-		SendLoginPacket(ch, *it);
+		SendLoginPacket(character, ((*it) ? (*it)->GetEntityHandle() : entt::null));
 	}
 
 	for (TGuildMemberP2POnlineContainer::iterator it = m_memberP2POnline.begin(); it != m_memberP2POnline.end(); ++it)
 	{
-		SendLoginPacket(ch, *it);
+		SendLoginPacket(character, *it);
 	}
 
 }
 
-void CGuild::SendLoginPacket(LPCHARACTER ch, LPCHARACTER chLogin)
+void CGuild::SendLoginPacket(entt::entity character, entt::entity loginCharacter)
 {
-	SendLoginPacket(ch, ecs::PlayerRuntime::GetPlayerID(((chLogin) ? (chLogin)->GetEntityHandle() : entt::null)));
+	SendLoginPacket(character, ecs::PlayerRuntime::GetPlayerID(loginCharacter));
 }
 
-void CGuild::SendLoginPacket(LPCHARACTER ch, uint32_t pid)
+void CGuild::SendLoginPacket(entt::entity character, uint32_t pid)
 {
 	/*
 	   Login Packet
 	   header 4
 	   pid 4
 	 */
-	if (!ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null)))
+	if (!ecs::PlayerRuntime::GetDesc(character))
 		return;
 
 	TPacketGCGuild pack;
@@ -529,22 +529,22 @@ void CGuild::SendLoginPacket(LPCHARACTER ch, uint32_t pid)
 
 	buf.write(&pid, 4);
 
-	ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null))->Packet(buf.read_peek(), buf.size());
+	ecs::PlayerRuntime::GetDesc(character)->Packet(buf.read_peek(), buf.size());
 }
 
-void CGuild::SendLogoutPacket(LPCHARACTER ch, LPCHARACTER chLogout)
+void CGuild::SendLogoutPacket(entt::entity character, entt::entity logoutCharacter)
 {
-	SendLogoutPacket(ch, ecs::PlayerRuntime::GetPlayerID(((chLogout) ? (chLogout)->GetEntityHandle() : entt::null)));
+	SendLogoutPacket(character, ecs::PlayerRuntime::GetPlayerID(logoutCharacter));
 }
 
-void CGuild::SendLogoutPacket(LPCHARACTER ch, uint32_t pid)
+void CGuild::SendLogoutPacket(entt::entity character, uint32_t pid)
 {
 	/*
 	   Logout Packet
 	   header 4
 	   pid 4
 	 */
-	if (!ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null)))
+	if (!ecs::PlayerRuntime::GetDesc(character))
 		return;
 
 	TPacketGCGuild pack;
@@ -557,7 +557,7 @@ void CGuild::SendLogoutPacket(LPCHARACTER ch, uint32_t pid)
 	buf.write(&pack, sizeof(pack));
 	buf.write(&pid, 4);
 
-	ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null))->Packet(buf.read_peek(), buf.size());
+	ecs::PlayerRuntime::GetDesc(character)->Packet(buf.read_peek(), buf.size());
 }
 
 void CGuild::LoadGuildMemberData(SQLMsg* pmsg)
@@ -925,9 +925,9 @@ void CGuild::ChangeGradeAuth(uint8_t grade, uint8_t auth)
 	}
 }
 
-void CGuild::SendGuildInfoPacket(LPCHARACTER ch)
+void CGuild::SendGuildInfoPacket(entt::entity character)
 {
-	LPDESC d = ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null));
+	LPDESC d = ecs::PlayerRuntime::GetDesc(character);
 
 	if (!d)
 		return;
@@ -1059,7 +1059,7 @@ void CGuild::Disband()
 	}
 #ifdef ENABLE_GUILD_ATTRIBUTE
 	for (auto it = m_memberOnline.begin(); it != m_memberOnline.end(); ++it)
-		RemoveGuildBuff(*it);
+		RemoveGuildBuff(((*it) ? (*it)->GetEntityHandle() : entt::null));
 #endif
 
 }
@@ -1092,29 +1092,29 @@ void CGuild::AddComment(entt::entity character, std::string_view str)
 			get_table_postfix(), m_data.guild_id, ecs::PlayerRuntime::GetName(character).data(), (!str.empty() && str.front() == '!') ? 1 : 0, text);
 }
 
-void CGuild::DeleteComment(LPCHARACTER ch, uint32_t comment_id)
+void CGuild::DeleteComment(entt::entity character, uint32_t comment_id)
 {
 	SQLMsg * pmsg;
 
-	if (GetMember(ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null)))->grade == GUILD_LEADER_GRADE)
+	if (GetMember(ecs::PlayerRuntime::GetPlayerID(character))->grade == GUILD_LEADER_GRADE)
 		pmsg = DBManager::instance().DirectQuery("DELETE FROM guild_comment%s WHERE id = %u AND guild_id = %u",get_table_postfix(), comment_id, m_data.guild_id);
 	else
-		pmsg = DBManager::instance().DirectQuery("DELETE FROM guild_comment%s WHERE id = %u AND guild_id = %u AND name = '%s'",get_table_postfix(), comment_id, m_data.guild_id, ecs::PlayerRuntime::GetName(((ch) ? (ch)->GetEntityHandle() : entt::null)).data());
+		pmsg = DBManager::instance().DirectQuery("DELETE FROM guild_comment%s WHERE id = %u AND guild_id = %u AND name = '%s'",get_table_postfix(), comment_id, m_data.guild_id, ecs::PlayerRuntime::GetName(character).data());
 
 	if (pmsg->Get()->uiAffectedRows == 0 || pmsg->Get()->uiAffectedRows == (uint32_t)-1) {
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 154, "");
+		ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 154, "");
 #endif
 	} else {
-		RefreshCommentForce(ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null)));
+		RefreshCommentForce(ecs::PlayerRuntime::GetPlayerID(character));
 	}
 
 	M2_DELETE(pmsg);
 }
 
-void CGuild::RefreshComment(LPCHARACTER ch)
+void CGuild::RefreshComment(entt::entity character)
 {
-	RefreshCommentForce(ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null)));
+	RefreshCommentForce(ecs::PlayerRuntime::GetPlayerID(character));
 }
 
 void CGuild::RefreshCommentForce(uint32_t player_id)
@@ -1306,19 +1306,21 @@ void CGuild::SkillLevelUp(uint32_t dwVnum)
 	  break;
 	  }*/
 
-	for_each(m_memberOnline.begin(), m_memberOnline.end(), std::bind(&CGuild::SendSkillInfoPacket, this, std::placeholders::_1));
+	for (auto it = m_memberOnline.begin(); it != m_memberOnline.end(); ++it)
+		SendSkillInfoPacket(((*it) ? (*it)->GetEntityHandle() : entt::null));
 
 	LOG_INFO("Guild SkillUp: {} {} level {} type {}", GetName(), pkSk->dwVnum, m_data.abySkill[dwRealVnum], pkSk->dwType);
 }
 
-void CGuild::UseSkill(uint32_t dwVnum, LPCHARACTER ch, uint32_t pid)
+void CGuild::UseSkill(uint32_t dwVnum, entt::entity character, uint32_t pid)
 {
+	LPCHARACTER ch = ecs::LegacyCharOf(character);
 	auto* victim = static_cast<LPCHARACTER>(nullptr);
 
-	if (!GetMember(ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null))) || !HasGradeAuth(GetMember(ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null)))->grade, GUILD_AUTH_USE_SKILL))
+	if (!GetMember(ecs::PlayerRuntime::GetPlayerID(character)) || !HasGradeAuth(GetMember(ecs::PlayerRuntime::GetPlayerID(character))->grade, GUILD_AUTH_USE_SKILL))
 		return;
 
-	LOG_INFO("GUILD_USE_SKILL : cname({}), skill({})", ch ? ecs::PlayerRuntime::GetName(((ch) ? (ch)->GetEntityHandle() : entt::null)).data() : "", dwVnum);
+	LOG_INFO("GUILD_USE_SKILL : cname({}), skill({})", ch ? ecs::PlayerRuntime::GetName(character).data() : "", dwVnum);
 
 	uint32_t dwRealVnum = dwVnum - GUILD_SKILL_START;
 
@@ -1342,17 +1344,17 @@ void CGuild::UseSkill(uint32_t dwVnum, LPCHARACTER ch, uint32_t pid)
 	if ((pkSk->dwFlag & SKILL_FLAG_SELFONLY))
 	{
 		// ̹ ɷ Ƿ  .
-		if (AffectSystem::FindAffect(((ch) ? (ch)->GetEntityHandle() : entt::null), pkSk->dwVnum))
+		if (AffectSystem::FindAffect(character, pkSk->dwVnum))
 			return;
 
 		victim = ch;
 	}
 
-	if (AffectSystem::IsAffectFlag(((ch) ? (ch)->GetEntityHandle() : entt::null), AFF_REVIVE_INVISIBLE))
-		AffectSystem::RemoveAffect(((ch) ? (ch)->GetEntityHandle() : entt::null), AFFECT_REVIVE_INVISIBLE);
+	if (AffectSystem::IsAffectFlag(character, AFF_REVIVE_INVISIBLE))
+		AffectSystem::RemoveAffect(character, AFFECT_REVIVE_INVISIBLE);
 
-	if (AffectSystem::IsAffectFlag(((ch) ? (ch)->GetEntityHandle() : entt::null), AFF_EUNHYUNG))
-		AffectSystem::RemoveAffect(((ch) ? (ch)->GetEntityHandle() : entt::null), SKILL_EUNHYUNG);
+	if (AffectSystem::IsAffectFlag(character, AFF_EUNHYUNG))
+		AffectSystem::RemoveAffect(character, SKILL_EUNHYUNG);
 
 	double k =1.0*m_data.abySkill[dwRealVnum]/pkSk->bMaxLevel;
 	pkSk->kSPCostPoly.SetVar("k", k);
@@ -1361,7 +1363,7 @@ void CGuild::UseSkill(uint32_t dwVnum, LPCHARACTER ch, uint32_t pid)
 	if (GetSP() < iNeededSP)
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 165, "%d#%d", GetSP(), iNeededSP);
+		ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 165, "%d#%d", GetSP(), iNeededSP);
 #endif
 		return;
 	}
@@ -1372,7 +1374,7 @@ void CGuild::UseSkill(uint32_t dwVnum, LPCHARACTER ch, uint32_t pid)
 	if (!abSkillUsable[dwRealVnum])
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 178, "");
+		ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 178, "");
 #endif
 		return;
 	}
@@ -1393,7 +1395,7 @@ void CGuild::UseSkill(uint32_t dwVnum, LPCHARACTER ch, uint32_t pid)
 
 #ifdef TEXTS_IMPROVEMENT
 	if (test_server) {
-		ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 120, "%d#%d#%d#%u", dwVnum, GetSP(), iNeededSP, pid);
+		ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 120, "%d#%d#%d#%u", dwVnum, GetSP(), iNeededSP, pid);
 	}
 #endif
 
@@ -1403,7 +1405,7 @@ void CGuild::UseSkill(uint32_t dwVnum, LPCHARACTER ch, uint32_t pid)
 			//   ִ   õ.
 			SendDBSkillUpdate(-iNeededSP);
 			if ((victim = (CHARACTER_MANAGER::instance().FindByPID(pid))))
-				ecs::MovementSystem::WarpSet(((ch) ? (ch)->GetEntityHandle() : entt::null), ecs::PlayerRuntime::GetX(((victim) ? (victim)->GetEntityHandle() : entt::null)), ecs::PlayerRuntime::GetY(((victim) ? (victim)->GetEntityHandle() : entt::null)));
+				ecs::MovementSystem::WarpSet(character, ecs::PlayerRuntime::GetX(((victim) ? (victim)->GetEntityHandle() : entt::null)), ecs::PlayerRuntime::GetY(((victim) ? (victim)->GetEntityHandle() : entt::null)));
 			else
 			{
 				if (m_memberP2POnline.find(pid) != m_memberP2POnline.end())
@@ -1412,33 +1414,33 @@ void CGuild::UseSkill(uint32_t dwVnum, LPCHARACTER ch, uint32_t pid)
 					if (pcci->bChannel != g_bChannel) {
 						TPacketGGFindPosition p;
 						p.header = HEADER_GG_FIND_POSITION;
-						p.dwFromPID = ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null));
+						p.dwFromPID = ecs::PlayerRuntime::GetPlayerID(character);
 						p.dwTargetPID = pid;
 						pcci->pkDesc->Packet(&p, sizeof(TPacketGGFindPosition));
 					}
 #ifdef TEXTS_IMPROVEMENT
 					else {
-						ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 155, "%d#%d", pcci->bChannel, g_bChannel);
+						ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 155, "%d#%d", pcci->bChannel, g_bChannel);
 					}
 #endif
 				}
 #ifdef TEXTS_IMPROVEMENT
 				else {
-					ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 156, "");
+					ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 156, "");
 				}
 #endif
 			}
 			break;
 
 			/*case GUILD_SKILL_ACCEL:
-			  AffectSystem::RemoveAffect(((ch) ? (ch)->GetEntityHandle() : entt::null), dwVnum);
-			  AffectSystem::AddAffect(((ch) ? (ch)->GetEntityHandle() : entt::null), dwVnum, POINT_MOV_SPEED, m_data.abySkill[dwRealVnum]*3, pkSk->dwAffectFlag, (int)pkSk->kDurationPoly.Eval(), 0, false);
-			  AffectSystem::AddAffect(((ch) ? (ch)->GetEntityHandle() : entt::null), dwVnum, POINT_ATT_SPEED, m_data.abySkill[dwRealVnum]*3, pkSk->dwAffectFlag, (int)pkSk->kDurationPoly.Eval(), 0, false);
+			  AffectSystem::RemoveAffect(character, dwVnum);
+			  AffectSystem::AddAffect(character, dwVnum, POINT_MOV_SPEED, m_data.abySkill[dwRealVnum]*3, pkSk->dwAffectFlag, (int)pkSk->kDurationPoly.Eval(), 0, false);
+			  AffectSystem::AddAffect(character, dwVnum, POINT_ATT_SPEED, m_data.abySkill[dwRealVnum]*3, pkSk->dwAffectFlag, (int)pkSk->kDurationPoly.Eval(), 0, false);
 			  break;*/
 
 		default:
 			{
-				/*if (ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null)) != GetMasterPID())
+				/*if (ecs::PlayerRuntime::GetPlayerID(character) != GetMasterPID())
 				  {
 				  return;
 				  }*/
@@ -1446,7 +1448,7 @@ void CGuild::UseSkill(uint32_t dwVnum, LPCHARACTER ch, uint32_t pid)
 				if (!UnderAnyWar())
 				{
 #ifdef TEXTS_IMPROVEMENT
-					ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 134, "");
+					ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 134, "");
 #endif
 					return;
 				}
@@ -1468,9 +1470,9 @@ void CGuild::UseSkill(uint32_t dwVnum, LPCHARACTER ch, uint32_t pid)
 	}
 }
 
-void CGuild::SendSkillInfoPacket(LPCHARACTER ch) const
+void CGuild::SendSkillInfoPacket(entt::entity character) const
 {
-	LPDESC d = ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null));
+	LPDESC d = ecs::PlayerRuntime::GetDesc(character);
 
 	if (!d)
 		return;
@@ -1562,7 +1564,7 @@ void CGuild::ResetAllStats()
 	m_data.trophies = 0;
 	for (TGuildMemberOnlineContainer::iterator it = m_memberOnline.begin(); it != m_memberOnline.end(); ++it)
 	{
-		SendGuildInfoPacket((*it));
+		SendGuildInfoPacket(((*it) ? (*it)->GetEntityHandle() : entt::null));
 	}
 }
 
@@ -1749,7 +1751,8 @@ void CGuild::GuildPointChange(uint8_t type, int amount, bool save)
 				SaveSkill();
 			}
 
-			for_each(m_memberOnline.begin(), m_memberOnline.end(), std::bind(&CGuild::SendSkillInfoPacket, this, std::placeholders::_1));
+			for (auto it = m_memberOnline.begin(); it != m_memberOnline.end(); ++it)
+				SendSkillInfoPacket(((*it) ? (*it)->GetEntityHandle() : entt::null));
 			break;
 
 		case POINT_EXP:
@@ -1800,8 +1803,8 @@ void CGuild::GuildPointChange(uint8_t type, int amount, bool save)
 #ifdef ENABLE_GUILD_ATTRIBUTE
 						for (auto it = m_memberOnline.begin(); it != m_memberOnline.end(); ++it)
 						{
-							RemoveGuildBuff(*it);
-							GiveGuildBuff(*it);
+							RemoveGuildBuff(((*it) ? (*it)->GetEntityHandle() : entt::null));
+							GiveGuildBuff(((*it) ? (*it)->GetEntityHandle() : entt::null));
 						}
 #endif
 
@@ -1815,7 +1818,8 @@ void CGuild::GuildPointChange(uint8_t type, int amount, bool save)
 							ChangeLadderPoint(GUILD_LADDER_POINT_PER_LEVEL);
 
 						// NOTIFY_GUILD_EXP_CHANGE
-						for_each(m_memberOnline.begin(), m_memberOnline.end(), std::bind(&CGuild::SendGuildInfoPacket, this, std::placeholders::_1));
+						for (auto it = m_memberOnline.begin(); it != m_memberOnline.end(); ++it)
+							SendGuildInfoPacket(((*it) ? (*it)->GetEntityHandle() : entt::null));
 						// END_OF_NOTIFY_GUILD_EXP_CHANGE
 					}
 
@@ -2001,11 +2005,11 @@ int CGuild::GetTotalLevel() const
 	return total;
 }
 
-bool CGuild::ChargeSP(LPCHARACTER ch, int iSP)
+bool CGuild::ChargeSP(entt::entity character, int iSP)
 {
 	int gold = iSP * 100;
 
-	if (gold < iSP || ecs::PointSystem::GetGold(((ch) ? (ch)->GetEntityHandle() : entt::null)) < gold)
+	if (gold < iSP || ecs::PointSystem::GetGold(character) < gold)
 		return false;
 
 	int iRemainSP = m_data.max_power - m_data.power;
@@ -2016,12 +2020,12 @@ bool CGuild::ChargeSP(LPCHARACTER ch, int iSP)
 		gold = iSP * 100;
 	}
 
-	ecs::PointSystem::Change(((ch) ? (ch)->GetEntityHandle() : entt::null), POINT_GOLD, -gold);
+	ecs::PointSystem::Change(character, POINT_GOLD, -gold);
 	DBManager::instance().SendMoneyLog(MONEY_LOG_GUILD, 1, -gold);
 
 	SendDBSkillUpdate(iSP);
 #ifdef TEXTS_IMPROVEMENT
-	ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 123, "%u", iSP);
+	ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 123, "%u", iSP);
 #endif
 	return true;
 }
@@ -2085,21 +2089,22 @@ void CGuild::AdvanceLevel(int iLevel)
 	m_data.level = MIN(GUILD_MAX_LEVEL, iLevel);
 }
 
-void CGuild::RequestDepositMoney(LPCHARACTER ch, int iGold)
+void CGuild::RequestDepositMoney(entt::entity character, int iGold)
 {
+	LPCHARACTER ch = ecs::LegacyCharOf(character);
 	if (false==ch->CanDeposit())
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 493, "");
+		ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 493, "");
 #endif
 		return;
 	}
 
-	if (ecs::PointSystem::GetGold(((ch) ? (ch)->GetEntityHandle() : entt::null)) < iGold)
+	if (ecs::PointSystem::GetGold(character) < iGold)
 		return;
 
 
-	ecs::PointSystem::Change(((ch) ? (ch)->GetEntityHandle() : entt::null), POINT_GOLD, -iGold);
+	ecs::PointSystem::Change(character, POINT_GOLD, -iGold);
 
 	TPacketGDGuildMoney p;
 	p.dwGuild = GetID();
@@ -2111,23 +2116,24 @@ void CGuild::RequestDepositMoney(LPCHARACTER ch, int iGold)
 	LogManager::instance().CharLog(ch, iGold, "GUILD_DEPOSIT", buf);
 
 	ch->UpdateDepositPulse();
-	LOG_INFO("GUILD: DEPOSIT {}:{} player {}[{}] gold {}", GetName(), GetID(), ecs::PlayerRuntime::GetName(((ch) ? (ch)->GetEntityHandle() : entt::null)).data(), ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null)), iGold);
+	LOG_INFO("GUILD: DEPOSIT {}:{} player {}[{}] gold {}", GetName(), GetID(), ecs::PlayerRuntime::GetName(character).data(), ecs::PlayerRuntime::GetPlayerID(character), iGold);
 }
 
-void CGuild::RequestWithdrawMoney(LPCHARACTER ch, int iGold)
+void CGuild::RequestWithdrawMoney(entt::entity character, int iGold)
 {
+	LPCHARACTER ch = ecs::LegacyCharOf(character);
 	if (false==ch->CanDeposit())
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 493, "");
+		ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 493, "");
 #endif
 		return;
 	}
 
-	if (ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null)) != GetMasterPID())
+	if (ecs::PlayerRuntime::GetPlayerID(character) != GetMasterPID())
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 131, "");
+		ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 131, "");
 #endif
 		return;
 	}
@@ -2135,7 +2141,7 @@ void CGuild::RequestWithdrawMoney(LPCHARACTER ch, int iGold)
 	if (m_data.gold < iGold)
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 126, "");
+		ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 126, "");
 #endif
 		return;
 	}
@@ -2228,75 +2234,76 @@ EVENTFUNC( GuildInviteEvent )
 	return 0;
 }
 
-void CGuild::Invite( LPCHARACTER pchInviter, LPCHARACTER pchInvitee )
+void CGuild::Invite( entt::entity inviter, entt::entity invitee )
 {
-	if (quest::CQuestManager::instance().GetPCForce(ecs::PlayerRuntime::GetPlayerID(((pchInviter) ? (pchInviter)->GetEntityHandle() : entt::null)))->IsRunning() == true)
+	LPCHARACTER pchInvitee = ecs::LegacyCharOf(invitee);
+	if (quest::CQuestManager::instance().GetPCForce(ecs::PlayerRuntime::GetPlayerID(inviter))->IsRunning() == true)
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(((pchInviter) ? (pchInviter)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 632, "%s", ecs::PlayerRuntime::GetName(((pchInvitee) ? (pchInvitee)->GetEntityHandle() : entt::null)).data());
+		ecs::ChatSystem::SendNew(inviter, CHAT_TYPE_INFO, 632, "%s", ecs::PlayerRuntime::GetName(invitee).data());
 #endif
 		return;
 	}
 
 
-	if (quest::CQuestManager::instance().GetPCForce(ecs::PlayerRuntime::GetPlayerID(((pchInvitee) ? (pchInvitee)->GetEntityHandle() : entt::null)))->IsRunning() == true)
+	if (quest::CQuestManager::instance().GetPCForce(ecs::PlayerRuntime::GetPlayerID(invitee))->IsRunning() == true)
 		return;
 
 	if ( pchInvitee->IsBlockMode( BLOCK_GUILD_INVITE ) )
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(((pchInviter) ? (pchInviter)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 162, "");
+		ecs::ChatSystem::SendNew(inviter, CHAT_TYPE_INFO, 162, "");
 #endif
 		return;
 	}
-	else if ( !HasGradeAuth( GetMember( ecs::PlayerRuntime::GetPlayerID(((pchInviter) ? (pchInviter)->GetEntityHandle() : entt::null)) )->grade, GUILD_AUTH_ADD_MEMBER ) )
+	else if ( !HasGradeAuth( GetMember( ecs::PlayerRuntime::GetPlayerID(inviter) )->grade, GUILD_AUTH_ADD_MEMBER ) )
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(((pchInviter) ? (pchInviter)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 140, "");
+		ecs::ChatSystem::SendNew(inviter, CHAT_TYPE_INFO, 140, "");
 #endif
 		return;
 	}
-/* 	else if ( ecs::PlayerRuntime::GetEmpire(((pchInvitee) ? (pchInvitee)->GetEntityHandle() : entt::null)) != ecs::PlayerRuntime::GetEmpire(((pchInviter) ? (pchInviter)->GetEntityHandle() : entt::null)) )//razor93 mas birodalom cehbe hivasa
+/* 	else if ( ecs::PlayerRuntime::GetEmpire(invitee) != ecs::PlayerRuntime::GetEmpire(inviter) )//razor93 mas birodalom cehbe hivasa
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(((pchInviter) ? (pchInviter)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 148, "");
+		ecs::ChatSystem::SendNew(inviter, CHAT_TYPE_INFO, 148, "");
 #endif
 		return;
 	} */
 
-	GuildJoinErrCode errcode = VerifyGuildJoinableCondition( pchInvitee );
+	GuildJoinErrCode errcode = VerifyGuildJoinableCondition( invitee );
 	switch ( errcode )
 	{
 		case GERR_NONE:
 			break;
 		case GERR_WITHDRAWPENALTY:
 #ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(((pchInviter) ? (pchInviter)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 180, "%d", quest::CQuestManager::instance().GetEventFlag("guild_withdraw_delay"));
+			ecs::ChatSystem::SendNew(inviter, CHAT_TYPE_INFO, 180, "%d", quest::CQuestManager::instance().GetEventFlag("guild_withdraw_delay"));
 #endif
 			return;
 		case GERR_COMMISSIONPENALTY:
 #ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(((pchInviter) ? (pchInviter)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 137, "%d", quest::CQuestManager::instance().GetEventFlag( "guild_disband_delay"));
+			ecs::ChatSystem::SendNew(inviter, CHAT_TYPE_INFO, 137, "%d", quest::CQuestManager::instance().GetEventFlag( "guild_disband_delay"));
 #endif
 						return;
 		case GERR_ALREADYJOIN:
 #ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(((pchInviter) ? (pchInviter)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 163, "");
+			ecs::ChatSystem::SendNew(inviter, CHAT_TYPE_INFO, 163, "");
 #endif
 			return;
 		case GERR_GUILDISFULL:
 #ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(((pchInviter) ? (pchInviter)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 177, "");
+			ecs::ChatSystem::SendNew(inviter, CHAT_TYPE_INFO, 177, "");
 #endif
 			return;
 		case GERR_GUILD_IS_IN_WAR:
 #ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(((pchInviter) ? (pchInviter)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 633, "");
+			ecs::ChatSystem::SendNew(inviter, CHAT_TYPE_INFO, 633, "");
 #endif
 			return;
 		case GERR_INVITE_LIMIT:
 #ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(((pchInviter) ? (pchInviter)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 634, "");
+			ecs::ChatSystem::SendNew(inviter, CHAT_TYPE_INFO, 634, "");
 #endif
 			return;
 		default:
@@ -2304,17 +2311,17 @@ void CGuild::Invite( LPCHARACTER pchInviter, LPCHARACTER pchInvitee )
 			return;
 	}
 
-	if ( m_GuildInviteEventMap.end() != m_GuildInviteEventMap.find( ecs::PlayerRuntime::GetPlayerID(((pchInvitee) ? (pchInvitee)->GetEntityHandle() : entt::null)) ) )
+	if ( m_GuildInviteEventMap.end() != m_GuildInviteEventMap.find( ecs::PlayerRuntime::GetPlayerID(invitee) ) )
 		return;
 
 	//
 	// ̺Ʈ
 	//
 	TInviteGuildEventInfo* pInfo = AllocEventInfo<TInviteGuildEventInfo>();
-	pInfo->dwInviteePID = ecs::PlayerRuntime::GetPlayerID(((pchInvitee) ? (pchInvitee)->GetEntityHandle() : entt::null));
+	pInfo->dwInviteePID = ecs::PlayerRuntime::GetPlayerID(invitee);
 	pInfo->dwGuildID = GetID();
 
-	m_GuildInviteEventMap.insert(EventMap::value_type(ecs::PlayerRuntime::GetPlayerID(((pchInvitee) ? (pchInvitee)->GetEntityHandle() : entt::null)), event_create(GuildInviteEvent, pInfo, PASSES_PER_SEC(10))));
+	m_GuildInviteEventMap.insert(EventMap::value_type(ecs::PlayerRuntime::GetPlayerID(invitee), event_create(GuildInviteEvent, pInfo, PASSES_PER_SEC(10))));
 
 	//
 	// ʴ ޴ character  ʴ Ŷ
@@ -2332,54 +2339,55 @@ void CGuild::Invite( LPCHARACTER pchInviter, LPCHARACTER pchInvitee )
 	buf.write( &gid, sizeof(uint32_t) );
 	buf.write( GetName(), GUILD_NAME_MAX_LEN + 1 );
 
-	ecs::PlayerRuntime::GetDesc(((pchInvitee) ? (pchInvitee)->GetEntityHandle() : entt::null))->Packet( buf.read_peek(), buf.size() );
+	ecs::PlayerRuntime::GetDesc(invitee)->Packet( buf.read_peek(), buf.size() );
 }
 
-void CGuild::InviteAccept( LPCHARACTER pchInvitee )
+void CGuild::InviteAccept( entt::entity invitee )
 {
-	EventMap::iterator itFind = m_GuildInviteEventMap.find( ecs::PlayerRuntime::GetPlayerID(((pchInvitee) ? (pchInvitee)->GetEntityHandle() : entt::null)) );
+	LPCHARACTER pchInvitee = ecs::LegacyCharOf(invitee);
+	EventMap::iterator itFind = m_GuildInviteEventMap.find( ecs::PlayerRuntime::GetPlayerID(invitee) );
 	if ( itFind == m_GuildInviteEventMap.end() )
 	{
-		LOG_INFO("GuildInviteAccept from not invited character(invite guild: {}, invitee: {})", GetName(), ecs::PlayerRuntime::GetName(((pchInvitee) ? (pchInvitee)->GetEntityHandle() : entt::null)).data());
+		LOG_INFO("GuildInviteAccept from not invited character(invite guild: {}, invitee: {})", GetName(), ecs::PlayerRuntime::GetName(invitee).data());
 		return;
 	}
 
 	event_cancel( &itFind->second );
 	m_GuildInviteEventMap.erase( itFind );
 
-	GuildJoinErrCode errcode = VerifyGuildJoinableCondition( pchInvitee );
+	GuildJoinErrCode errcode = VerifyGuildJoinableCondition( invitee );
 	switch ( errcode )
 	{
 		case GERR_NONE:
 			break;
 		case GERR_WITHDRAWPENALTY:
 #ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(((pchInvitee) ? (pchInvitee)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 180, "%d", quest::CQuestManager::instance().GetEventFlag("guild_withdraw_delay"));
+			ecs::ChatSystem::SendNew(invitee, CHAT_TYPE_INFO, 180, "%d", quest::CQuestManager::instance().GetEventFlag("guild_withdraw_delay"));
 #endif
 			return;
 		case GERR_COMMISSIONPENALTY:
 #ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(((pchInvitee) ? (pchInvitee)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 137, "%d", quest::CQuestManager::instance().GetEventFlag( "guild_disband_delay"));
+			ecs::ChatSystem::SendNew(invitee, CHAT_TYPE_INFO, 137, "%d", quest::CQuestManager::instance().GetEventFlag( "guild_disband_delay"));
 #endif
 						return;
 		case GERR_ALREADYJOIN:
 #ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(((pchInvitee) ? (pchInvitee)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 163, "");
+			ecs::ChatSystem::SendNew(invitee, CHAT_TYPE_INFO, 163, "");
 #endif
 			return;
 		case GERR_GUILDISFULL:
 #ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(((pchInvitee) ? (pchInvitee)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 177, "");
+			ecs::ChatSystem::SendNew(invitee, CHAT_TYPE_INFO, 177, "");
 #endif
 			return;
 		case GERR_GUILD_IS_IN_WAR:
 #ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(((pchInvitee) ? (pchInvitee)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 633, "");
+			ecs::ChatSystem::SendNew(invitee, CHAT_TYPE_INFO, 633, "");
 #endif
 			return;
 		case GERR_INVITE_LIMIT:
 #ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(((pchInvitee) ? (pchInvitee)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 634, "");
+			ecs::ChatSystem::SendNew(invitee, CHAT_TYPE_INFO, 634, "");
 #endif
 			return;
 		default:
@@ -2387,7 +2395,7 @@ void CGuild::InviteAccept( LPCHARACTER pchInvitee )
 			return;
 	}
 
-	RequestAddMember( pchInvitee, 15 );
+	RequestAddMember( invitee, 15 );
 }
 
 void CGuild::InviteDeny( uint32_t dwPID )
@@ -2403,20 +2411,20 @@ void CGuild::InviteDeny( uint32_t dwPID )
 	m_GuildInviteEventMap.erase( itFind );
 }
 
-CGuild::GuildJoinErrCode CGuild::VerifyGuildJoinableCondition(const LPCHARACTER pchInvitee)
+CGuild::GuildJoinErrCode CGuild::VerifyGuildJoinableCondition(const entt::entity invitee)
 {
 	// NINCS  kilpsi / feloszlatsi limit
 
 	/*
-	if ( get_global_time() - ecs::QuestSystem::GetFlag(((pchInvitee) ? (pchInvitee)->GetEntityHandle() : entt::null),  "guild_manage.new_withdraw_time" )
+	if ( get_global_time() - ecs::QuestSystem::GetFlag(invitee,  "guild_manage.new_withdraw_time" )
 			< CGuildManager::instance().GetWithdrawDelay() )
 		return GERR_WITHDRAWPENALTY;
-	else if ( get_global_time() - ecs::QuestSystem::GetFlag(((pchInvitee) ? (pchInvitee)->GetEntityHandle() : entt::null),  "guild_manage.new_disband_time" )
+	else if ( get_global_time() - ecs::QuestSystem::GetFlag(invitee,  "guild_manage.new_disband_time" )
 			< CGuildManager::instance().GetDisbandDelay() )
 		return GERR_COMMISSIONPENALTY;
 	*/
 
-	if (ecs::SocialSystem::GetGuild(((pchInvitee) ? (pchInvitee)->GetEntityHandle() : entt::null)))
+	if (ecs::SocialSystem::GetGuild(invitee))
 		return GERR_ALREADYJOIN;
 	else if (GetMemberCount() >= GetMaxMemberCount())
 	{
@@ -2476,8 +2484,8 @@ void CGuild::SendGuildDataUpdateToAllMember(SQLMsg* pmsg)
 
 	for (; iter != m_memberOnline.end(); iter++ )
 	{
-		SendGuildInfoPacket(*iter);
-		SendAllGradePacket(*iter);
+		SendGuildInfoPacket(((*iter) ? (*iter)->GetEntityHandle() : entt::null));
+		SendAllGradePacket(((*iter) ? (*iter)->GetEntityHandle() : entt::null));
 	}
 }
 
@@ -2513,7 +2521,8 @@ void CGuild::SetSkillLevel(uint32_t dwVnum, uint8_t level, uint8_t point)
 	SaveSkill();
 	SendDBSkillUpdate();
 
-	for_each(m_memberOnline.begin(), m_memberOnline.end(), std::bind(&CGuild::SendSkillInfoPacket, this, std::placeholders::_1));
+	for (auto it = m_memberOnline.begin(); it != m_memberOnline.end(); ++it)
+		SendSkillInfoPacket(((*it) ? (*it)->GetEntityHandle() : entt::null));
 
 	LOG_INFO("Guild SetSkillLevel: {} {} level {} type {}", GetName(), pkSk->dwVnum, m_data.abySkill[dwRealVnum], pkSk->dwType);
 }
@@ -2527,7 +2536,8 @@ void CGuild::SetSkillPoint(uint8_t point)
 {
 	m_data.skill_point = point;
 	SendDBSkillUpdate();
-	for_each(m_memberOnline.begin(), m_memberOnline.end(), std::bind(&CGuild::SendSkillInfoPacket, this, std::placeholders::_1));
+	for (auto it = m_memberOnline.begin(); it != m_memberOnline.end(); ++it)
+		SendSkillInfoPacket(((*it) ? (*it)->GetEntityHandle() : entt::null));
 }
 
 #endif
@@ -2535,7 +2545,7 @@ void CGuild::SetSkillPoint(uint8_t point)
 #ifdef ENABLE_GUILD_ATTRIBUTE
 
 
-static void ApplyGuildAttributes(LPCHARACTER ch, uint8_t level)
+static void ApplyGuildAttributes(entt::entity character, uint8_t level)
 {
 	const auto attrs = GetGuildAttributesByLevel(level);
 	if (attrs.empty())
@@ -2546,24 +2556,25 @@ static void ApplyGuildAttributes(LPCHARACTER ch, uint8_t level)
 		const auto apply = e.apply;
 		const auto value = e.value;
 
-		for (CAffect* af = AffectSystem::FindAffect(((ch) ? (ch)->GetEntityHandle() : entt::null), AFFECT_GUILD_ATTRIBUTE, apply); af != nullptr; af = AffectSystem::FindAffect(((ch) ? (ch)->GetEntityHandle() : entt::null), AFFECT_GUILD_ATTRIBUTE, apply))
+		for (CAffect* af = AffectSystem::FindAffect(character, AFFECT_GUILD_ATTRIBUTE, apply); af != nullptr; af = AffectSystem::FindAffect(character, AFFECT_GUILD_ATTRIBUTE, apply))
 		{
-			AffectSystem::RemoveAffect(((ch) ? (ch)->GetEntityHandle() : entt::null), af);
+			AffectSystem::RemoveAffect(character, af);
 		}
 
-		AffectSystem::AddAffect(((ch) ? (ch)->GetEntityHandle() : entt::null), AFFECT_GUILD_ATTRIBUTE, apply, value,AFF_NONE, INFINITE_AFFECT_DURATION, 0, false);
+		AffectSystem::AddAffect(character, AFFECT_GUILD_ATTRIBUTE, apply, value,AFF_NONE, INFINITE_AFFECT_DURATION, 0, false);
 	}
 }
 
-void CGuild::GiveGuildBuff(LPCHARACTER ch)
+void CGuild::GiveGuildBuff(entt::entity character)
 {
 	const uint8_t level = GetLevel();
-	ApplyGuildAttributes(ch, level);
+	ApplyGuildAttributes(character, level);
 }
 
-void CGuild::RemoveGuildBuff(LPCHARACTER ch)
+void CGuild::RemoveGuildBuff(entt::entity character)
 {
-	CGuildManager::Instance().RemoveGuildBuff(ch);
+	LPCHARACTER ch = ecs::LegacyCharOf(character);
+	CGuildManager::Instance().RemoveGuildBuff(character);
 }
 #endif
 
@@ -2598,7 +2609,8 @@ bool CGuild::RenewalSetLevel(uint8_t level)
 	}
 
 	// Update online members: guild info + guild name cache
-	for_each(m_memberOnline.begin(), m_memberOnline.end(), std::bind(&CGuild::SendGuildInfoPacket, this, std::placeholders::_1));
+	for (auto it = m_memberOnline.begin(); it != m_memberOnline.end(); ++it)
+		SendGuildInfoPacket(((*it) ? (*it)->GetEntityHandle() : entt::null));
 	// Force-refresh guild name/level cache for everyone (SendGuildName() is cached per character)
 	CHARACTER_MANAGER::instance().for_each_pc(FGuildNameSender(GetID(), GetName(), GetLevel()));
 
@@ -2625,8 +2637,8 @@ bool CGuild::RenewalSetLevel(uint8_t level)
 
 	for (auto it = m_memberOnline.begin(); it != m_memberOnline.end(); ++it)
 	{
-		RemoveGuildBuff(*it);
-		GiveGuildBuff(*it);
+		RemoveGuildBuff(((*it) ? (*it)->GetEntityHandle() : entt::null));
+		GiveGuildBuff(((*it) ? (*it)->GetEntityHandle() : entt::null));
 	}
 #endif
 
@@ -2672,7 +2684,8 @@ void CGuild::RenewalSetLevelP2P(uint8_t level)
 	GuildPointChange(POINT_SP, m_data.max_power - m_data.power);
 
 	// Update online members on THIS core
-	for_each(m_memberOnline.begin(), m_memberOnline.end(), std::bind(&CGuild::SendGuildInfoPacket, this, std::placeholders::_1));
+	for (auto it = m_memberOnline.begin(); it != m_memberOnline.end(); ++it)
+		SendGuildInfoPacket(((*it) ? (*it)->GetEntityHandle() : entt::null));
 	CHARACTER_MANAGER::instance().for_each_pc(FGuildNameSender(GetID(), GetName(), GetLevel()));
 
 	TPacketGCGuild pack;
@@ -2695,8 +2708,8 @@ void CGuild::RenewalSetLevelP2P(uint8_t level)
 #ifdef ENABLE_GUILD_ATTRIBUTE
 	for (auto it = m_memberOnline.begin(); it != m_memberOnline.end(); ++it)
 	{
-		RemoveGuildBuff(*it);
-		GiveGuildBuff(*it);
+		RemoveGuildBuff(((*it) ? (*it)->GetEntityHandle() : entt::null));
+		GiveGuildBuff(((*it) ? (*it)->GetEntityHandle() : entt::null));
 	}
 #endif
 
