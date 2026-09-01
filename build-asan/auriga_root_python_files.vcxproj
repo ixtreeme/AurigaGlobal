@@ -1,0 +1,696 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="18.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <PreferredToolArchitecture>x64</PreferredToolArchitecture>
+  </PropertyGroup>
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="MinSizeRel|x64">
+      <Configuration>MinSizeRel</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="RelWithDebInfo|x64">
+      <Configuration>RelWithDebInfo</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{E63A97C3-6154-34E1-8564-54AFEF0FC255}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+    <WindowsTargetPlatformVersion>10.0.28000.0</WindowsTargetPlatformVersion>
+    <Platform>x64</Platform>
+    <ProjectName>auriga_root_python_files</ProjectName>
+    <VCProjectUpgraderObjectName>NoUpgrade</VCProjectUpgraderObjectName>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>Utility</ConfigurationType>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v145</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>Utility</ConfigurationType>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v145</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'" Label="Configuration">
+    <ConfigurationType>Utility</ConfigurationType>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v145</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'" Label="Configuration">
+    <ConfigurationType>Utility</ConfigurationType>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v145</PlatformToolset>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup>
+    <_ProjectFileVersion>10.0.20506.1</_ProjectFileVersion>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <Midl>
+      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
+      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
+    </Midl>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <Midl>
+      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
+      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
+    </Midl>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">
+    <Midl>
+      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
+      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
+    </Midl>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">
+    <Midl>
+      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
+      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
+    </Midl>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <CustomBuild Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\CMakeLists.txt">
+      <UseUtf8Encoding>Always</UseUtf8Encoding>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Building Custom Rule D:/AurigaGlobal/LiveWork/AurigaGlobal/CMakeLists.txt</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -SD:/AurigaGlobal/LiveWork/AurigaGlobal -BD:/AurigaGlobal/LiveWork/AurigaGlobal/build-asan --check-stamp-file D:/AurigaGlobal/LiveWork/AurigaGlobal/build-asan/CMakeFiles/generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeCInformation.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeCXXInformation.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeCommonLanguageInclude.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeDependentOption.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeFindDependencyMacro.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeGenericSystem.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeInitializeConfigs.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeLanguageInformation.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeRCInformation.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeSystemSpecificInformation.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeSystemSpecificInitialize.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\CMakeCommonCompilerMacros.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\MSVC-C.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\MSVC-CXX.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\MSVC.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\FindPackageHandleStandardArgs.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\FindPackageMessage.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\FindPython\Support.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\FindZLIB.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Findpython2.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Internal\CMakeCLinkerInformation.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Internal\CMakeCXXLinkerInformation.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Internal\CMakeCommonLinkerInformation.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Linker\MSVC-C.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Linker\MSVC-CXX.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Linker\MSVC.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Platform\Linker\Windows-MSVC-C.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Platform\Linker\Windows-MSVC-CXX.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Platform\Linker\Windows-MSVC.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Platform\Windows-Initialize.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Platform\Windows-MSVC-C.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Platform\Windows-MSVC-CXX.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Platform\Windows-MSVC.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Platform\Windows.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Platform\WindowsPaths.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\SelectLibraryConfigurations.cmake;C:\vcpkg\installed\x64-windows\share\cryptopp\cryptopp-static-targets-debug.cmake;C:\vcpkg\installed\x64-windows\share\cryptopp\cryptopp-static-targets-release.cmake;C:\vcpkg\installed\x64-windows\share\cryptopp\cryptopp-static-targets.cmake;C:\vcpkg\installed\x64-windows\share\cryptopp\cryptoppConfig.cmake;C:\vcpkg\installed\x64-windows\share\cryptopp\cryptoppConfigVersion.cmake;C:\vcpkg\installed\x64-windows\share\curl\CURLConfig.cmake;C:\vcpkg\installed\x64-windows\share\curl\CURLConfigVersion.cmake;C:\vcpkg\installed\x64-windows\share\curl\CURLTargets-debug.cmake;C:\vcpkg\installed\x64-windows\share\curl\CURLTargets-release.cmake;C:\vcpkg\installed\x64-windows\share\curl\CURLTargets.cmake;C:\vcpkg\installed\x64-windows\share\curl\vcpkg-cmake-wrapper.cmake;C:\vcpkg\installed\x64-windows\share\entt\EnTTConfig.cmake;C:\vcpkg\installed\x64-windows\share\entt\EnTTConfigVersion.cmake;C:\vcpkg\installed\x64-windows\share\entt\EnTTTargets.cmake;C:\vcpkg\installed\x64-windows\share\libconfig\libconfigConfig-debug.cmake;C:\vcpkg\installed\x64-windows\share\libconfig\libconfigConfig-release.cmake;C:\vcpkg\installed\x64-windows\share\libconfig\libconfigConfig.cmake;C:\vcpkg\installed\x64-windows\share\libconfig\libconfigConfigVersion.cmake;C:\vcpkg\installed\x64-windows\share\libjpeg-turbo\libjpeg-turboConfig.cmake;C:\vcpkg\installed\x64-windows\share\libjpeg-turbo\libjpeg-turboConfigVersion.cmake;C:\vcpkg\installed\x64-windows\share\libjpeg-turbo\libjpeg-turboTargets-debug.cmake;C:\vcpkg\installed\x64-windows\share\libjpeg-turbo\libjpeg-turboTargets-release.cmake;C:\vcpkg\installed\x64-windows\share\libjpeg-turbo\libjpeg-turboTargets.cmake;C:\vcpkg\installed\x64-windows\share\lz4\lz4Config.cmake;C:\vcpkg\installed\x64-windows\share\lz4\lz4ConfigVersion.cmake;C:\vcpkg\installed\x64-windows\share\lz4\lz4Targets-debug.cmake;C:\vcpkg\installed\x64-windows\share\lz4\lz4Targets-release.cmake;C:\vcpkg\installed\x64-windows\share\lz4\lz4Targets.cmake;C:\vcpkg\installed\x64-windows\share\rapidjson\RapidJSON-targets.cmake;C:\vcpkg\installed\x64-windows\share\rapidjson\RapidJSONConfig.cmake;C:\vcpkg\installed\x64-windows\share\rapidjson\RapidJSONConfigVersion.cmake;C:\vcpkg\installed\x64-windows\share\stb\Findstb.cmake;C:\vcpkg\installed\x64-windows\share\stb\vcpkg-cmake-wrapper.cmake;C:\vcpkg\installed\x64-windows\share\xxhash\xxHashConfig.cmake;C:\vcpkg\installed\x64-windows\share\xxhash\xxHashConfigVersion.cmake;C:\vcpkg\installed\x64-windows\share\xxhash\xxHashTargets-debug.cmake;C:\vcpkg\installed\x64-windows\share\xxhash\xxHashTargets-release.cmake;C:\vcpkg\installed\x64-windows\share\xxhash\xxHashTargets.cmake;C:\vcpkg\installed\x64-windows\share\zlib\vcpkg-cmake-wrapper.cmake;C:\vcpkg\installed\x64-windows\share\zstd\zstdConfig.cmake;C:\vcpkg\installed\x64-windows\share\zstd\zstdConfigVersion.cmake;C:\vcpkg\installed\x64-windows\share\zstd\zstdTargets-debug.cmake;C:\vcpkg\installed\x64-windows\share\zstd\zstdTargets-release.cmake;C:\vcpkg\installed\x64-windows\share\zstd\zstdTargets.cmake;C:\vcpkg\scripts\buildsystems\vcpkg.cmake;D:\AurigaGlobal\LiveWork\AurigaGlobal\build-asan\CMakeFiles\4.3.2\CMakeCCompiler.cmake;D:\AurigaGlobal\LiveWork\AurigaGlobal\build-asan\CMakeFiles\4.3.2\CMakeCXXCompiler.cmake;D:\AurigaGlobal\LiveWork\AurigaGlobal\build-asan\CMakeFiles\4.3.2\CMakeRCCompiler.cmake;D:\AurigaGlobal\LiveWork\AurigaGlobal\build-asan\CMakeFiles\4.3.2\CMakeSystem.cmake;D:\AurigaGlobal\LiveWork\AurigaGlobal\build-asan\CMakeFiles\cmake.verify_globs;D:\AurigaGlobal\LiveWork\AurigaGlobal\cmake\BootstrapVcpkg.cmake;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">D:\AurigaGlobal\LiveWork\AurigaGlobal\build-asan\CMakeFiles\generate.stamp</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Building Custom Rule D:/AurigaGlobal/LiveWork/AurigaGlobal/CMakeLists.txt</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -SD:/AurigaGlobal/LiveWork/AurigaGlobal -BD:/AurigaGlobal/LiveWork/AurigaGlobal/build-asan --check-stamp-file D:/AurigaGlobal/LiveWork/AurigaGlobal/build-asan/CMakeFiles/generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeCInformation.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeCXXInformation.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeCommonLanguageInclude.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeDependentOption.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeFindDependencyMacro.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeGenericSystem.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeInitializeConfigs.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeLanguageInformation.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeRCInformation.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeSystemSpecificInformation.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeSystemSpecificInitialize.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\CMakeCommonCompilerMacros.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\MSVC-C.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\MSVC-CXX.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\MSVC.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\FindPackageHandleStandardArgs.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\FindPackageMessage.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\FindPython\Support.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\FindZLIB.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Findpython2.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Internal\CMakeCLinkerInformation.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Internal\CMakeCXXLinkerInformation.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Internal\CMakeCommonLinkerInformation.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Linker\MSVC-C.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Linker\MSVC-CXX.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Linker\MSVC.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Platform\Linker\Windows-MSVC-C.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Platform\Linker\Windows-MSVC-CXX.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Platform\Linker\Windows-MSVC.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Platform\Windows-Initialize.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Platform\Windows-MSVC-C.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Platform\Windows-MSVC-CXX.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Platform\Windows-MSVC.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Platform\Windows.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Platform\WindowsPaths.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\SelectLibraryConfigurations.cmake;C:\vcpkg\installed\x64-windows\share\cryptopp\cryptopp-static-targets-debug.cmake;C:\vcpkg\installed\x64-windows\share\cryptopp\cryptopp-static-targets-release.cmake;C:\vcpkg\installed\x64-windows\share\cryptopp\cryptopp-static-targets.cmake;C:\vcpkg\installed\x64-windows\share\cryptopp\cryptoppConfig.cmake;C:\vcpkg\installed\x64-windows\share\cryptopp\cryptoppConfigVersion.cmake;C:\vcpkg\installed\x64-windows\share\curl\CURLConfig.cmake;C:\vcpkg\installed\x64-windows\share\curl\CURLConfigVersion.cmake;C:\vcpkg\installed\x64-windows\share\curl\CURLTargets-debug.cmake;C:\vcpkg\installed\x64-windows\share\curl\CURLTargets-release.cmake;C:\vcpkg\installed\x64-windows\share\curl\CURLTargets.cmake;C:\vcpkg\installed\x64-windows\share\curl\vcpkg-cmake-wrapper.cmake;C:\vcpkg\installed\x64-windows\share\entt\EnTTConfig.cmake;C:\vcpkg\installed\x64-windows\share\entt\EnTTConfigVersion.cmake;C:\vcpkg\installed\x64-windows\share\entt\EnTTTargets.cmake;C:\vcpkg\installed\x64-windows\share\libconfig\libconfigConfig-debug.cmake;C:\vcpkg\installed\x64-windows\share\libconfig\libconfigConfig-release.cmake;C:\vcpkg\installed\x64-windows\share\libconfig\libconfigConfig.cmake;C:\vcpkg\installed\x64-windows\share\libconfig\libconfigConfigVersion.cmake;C:\vcpkg\installed\x64-windows\share\libjpeg-turbo\libjpeg-turboConfig.cmake;C:\vcpkg\installed\x64-windows\share\libjpeg-turbo\libjpeg-turboConfigVersion.cmake;C:\vcpkg\installed\x64-windows\share\libjpeg-turbo\libjpeg-turboTargets-debug.cmake;C:\vcpkg\installed\x64-windows\share\libjpeg-turbo\libjpeg-turboTargets-release.cmake;C:\vcpkg\installed\x64-windows\share\libjpeg-turbo\libjpeg-turboTargets.cmake;C:\vcpkg\installed\x64-windows\share\lz4\lz4Config.cmake;C:\vcpkg\installed\x64-windows\share\lz4\lz4ConfigVersion.cmake;C:\vcpkg\installed\x64-windows\share\lz4\lz4Targets-debug.cmake;C:\vcpkg\installed\x64-windows\share\lz4\lz4Targets-release.cmake;C:\vcpkg\installed\x64-windows\share\lz4\lz4Targets.cmake;C:\vcpkg\installed\x64-windows\share\rapidjson\RapidJSON-targets.cmake;C:\vcpkg\installed\x64-windows\share\rapidjson\RapidJSONConfig.cmake;C:\vcpkg\installed\x64-windows\share\rapidjson\RapidJSONConfigVersion.cmake;C:\vcpkg\installed\x64-windows\share\stb\Findstb.cmake;C:\vcpkg\installed\x64-windows\share\stb\vcpkg-cmake-wrapper.cmake;C:\vcpkg\installed\x64-windows\share\xxhash\xxHashConfig.cmake;C:\vcpkg\installed\x64-windows\share\xxhash\xxHashConfigVersion.cmake;C:\vcpkg\installed\x64-windows\share\xxhash\xxHashTargets-debug.cmake;C:\vcpkg\installed\x64-windows\share\xxhash\xxHashTargets-release.cmake;C:\vcpkg\installed\x64-windows\share\xxhash\xxHashTargets.cmake;C:\vcpkg\installed\x64-windows\share\zlib\vcpkg-cmake-wrapper.cmake;C:\vcpkg\installed\x64-windows\share\zstd\zstdConfig.cmake;C:\vcpkg\installed\x64-windows\share\zstd\zstdConfigVersion.cmake;C:\vcpkg\installed\x64-windows\share\zstd\zstdTargets-debug.cmake;C:\vcpkg\installed\x64-windows\share\zstd\zstdTargets-release.cmake;C:\vcpkg\installed\x64-windows\share\zstd\zstdTargets.cmake;C:\vcpkg\scripts\buildsystems\vcpkg.cmake;D:\AurigaGlobal\LiveWork\AurigaGlobal\build-asan\CMakeFiles\4.3.2\CMakeCCompiler.cmake;D:\AurigaGlobal\LiveWork\AurigaGlobal\build-asan\CMakeFiles\4.3.2\CMakeCXXCompiler.cmake;D:\AurigaGlobal\LiveWork\AurigaGlobal\build-asan\CMakeFiles\4.3.2\CMakeRCCompiler.cmake;D:\AurigaGlobal\LiveWork\AurigaGlobal\build-asan\CMakeFiles\4.3.2\CMakeSystem.cmake;D:\AurigaGlobal\LiveWork\AurigaGlobal\build-asan\CMakeFiles\cmake.verify_globs;D:\AurigaGlobal\LiveWork\AurigaGlobal\cmake\BootstrapVcpkg.cmake;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">D:\AurigaGlobal\LiveWork\AurigaGlobal\build-asan\CMakeFiles\generate.stamp</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">Building Custom Rule D:/AurigaGlobal/LiveWork/AurigaGlobal/CMakeLists.txt</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -SD:/AurigaGlobal/LiveWork/AurigaGlobal -BD:/AurigaGlobal/LiveWork/AurigaGlobal/build-asan --check-stamp-file D:/AurigaGlobal/LiveWork/AurigaGlobal/build-asan/CMakeFiles/generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeCInformation.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeCXXInformation.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeCommonLanguageInclude.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeDependentOption.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeFindDependencyMacro.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeGenericSystem.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeInitializeConfigs.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeLanguageInformation.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeRCInformation.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeSystemSpecificInformation.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeSystemSpecificInitialize.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\CMakeCommonCompilerMacros.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\MSVC-C.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\MSVC-CXX.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\MSVC.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\FindPackageHandleStandardArgs.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\FindPackageMessage.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\FindPython\Support.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\FindZLIB.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Findpython2.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Internal\CMakeCLinkerInformation.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Internal\CMakeCXXLinkerInformation.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Internal\CMakeCommonLinkerInformation.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Linker\MSVC-C.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Linker\MSVC-CXX.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Linker\MSVC.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Platform\Linker\Windows-MSVC-C.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Platform\Linker\Windows-MSVC-CXX.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Platform\Linker\Windows-MSVC.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Platform\Windows-Initialize.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Platform\Windows-MSVC-C.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Platform\Windows-MSVC-CXX.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Platform\Windows-MSVC.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Platform\Windows.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Platform\WindowsPaths.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\SelectLibraryConfigurations.cmake;C:\vcpkg\installed\x64-windows\share\cryptopp\cryptopp-static-targets-debug.cmake;C:\vcpkg\installed\x64-windows\share\cryptopp\cryptopp-static-targets-release.cmake;C:\vcpkg\installed\x64-windows\share\cryptopp\cryptopp-static-targets.cmake;C:\vcpkg\installed\x64-windows\share\cryptopp\cryptoppConfig.cmake;C:\vcpkg\installed\x64-windows\share\cryptopp\cryptoppConfigVersion.cmake;C:\vcpkg\installed\x64-windows\share\curl\CURLConfig.cmake;C:\vcpkg\installed\x64-windows\share\curl\CURLConfigVersion.cmake;C:\vcpkg\installed\x64-windows\share\curl\CURLTargets-debug.cmake;C:\vcpkg\installed\x64-windows\share\curl\CURLTargets-release.cmake;C:\vcpkg\installed\x64-windows\share\curl\CURLTargets.cmake;C:\vcpkg\installed\x64-windows\share\curl\vcpkg-cmake-wrapper.cmake;C:\vcpkg\installed\x64-windows\share\entt\EnTTConfig.cmake;C:\vcpkg\installed\x64-windows\share\entt\EnTTConfigVersion.cmake;C:\vcpkg\installed\x64-windows\share\entt\EnTTTargets.cmake;C:\vcpkg\installed\x64-windows\share\libconfig\libconfigConfig-debug.cmake;C:\vcpkg\installed\x64-windows\share\libconfig\libconfigConfig-release.cmake;C:\vcpkg\installed\x64-windows\share\libconfig\libconfigConfig.cmake;C:\vcpkg\installed\x64-windows\share\libconfig\libconfigConfigVersion.cmake;C:\vcpkg\installed\x64-windows\share\libjpeg-turbo\libjpeg-turboConfig.cmake;C:\vcpkg\installed\x64-windows\share\libjpeg-turbo\libjpeg-turboConfigVersion.cmake;C:\vcpkg\installed\x64-windows\share\libjpeg-turbo\libjpeg-turboTargets-debug.cmake;C:\vcpkg\installed\x64-windows\share\libjpeg-turbo\libjpeg-turboTargets-release.cmake;C:\vcpkg\installed\x64-windows\share\libjpeg-turbo\libjpeg-turboTargets.cmake;C:\vcpkg\installed\x64-windows\share\lz4\lz4Config.cmake;C:\vcpkg\installed\x64-windows\share\lz4\lz4ConfigVersion.cmake;C:\vcpkg\installed\x64-windows\share\lz4\lz4Targets-debug.cmake;C:\vcpkg\installed\x64-windows\share\lz4\lz4Targets-release.cmake;C:\vcpkg\installed\x64-windows\share\lz4\lz4Targets.cmake;C:\vcpkg\installed\x64-windows\share\rapidjson\RapidJSON-targets.cmake;C:\vcpkg\installed\x64-windows\share\rapidjson\RapidJSONConfig.cmake;C:\vcpkg\installed\x64-windows\share\rapidjson\RapidJSONConfigVersion.cmake;C:\vcpkg\installed\x64-windows\share\stb\Findstb.cmake;C:\vcpkg\installed\x64-windows\share\stb\vcpkg-cmake-wrapper.cmake;C:\vcpkg\installed\x64-windows\share\xxhash\xxHashConfig.cmake;C:\vcpkg\installed\x64-windows\share\xxhash\xxHashConfigVersion.cmake;C:\vcpkg\installed\x64-windows\share\xxhash\xxHashTargets-debug.cmake;C:\vcpkg\installed\x64-windows\share\xxhash\xxHashTargets-release.cmake;C:\vcpkg\installed\x64-windows\share\xxhash\xxHashTargets.cmake;C:\vcpkg\installed\x64-windows\share\zlib\vcpkg-cmake-wrapper.cmake;C:\vcpkg\installed\x64-windows\share\zstd\zstdConfig.cmake;C:\vcpkg\installed\x64-windows\share\zstd\zstdConfigVersion.cmake;C:\vcpkg\installed\x64-windows\share\zstd\zstdTargets-debug.cmake;C:\vcpkg\installed\x64-windows\share\zstd\zstdTargets-release.cmake;C:\vcpkg\installed\x64-windows\share\zstd\zstdTargets.cmake;C:\vcpkg\scripts\buildsystems\vcpkg.cmake;D:\AurigaGlobal\LiveWork\AurigaGlobal\build-asan\CMakeFiles\4.3.2\CMakeCCompiler.cmake;D:\AurigaGlobal\LiveWork\AurigaGlobal\build-asan\CMakeFiles\4.3.2\CMakeCXXCompiler.cmake;D:\AurigaGlobal\LiveWork\AurigaGlobal\build-asan\CMakeFiles\4.3.2\CMakeRCCompiler.cmake;D:\AurigaGlobal\LiveWork\AurigaGlobal\build-asan\CMakeFiles\4.3.2\CMakeSystem.cmake;D:\AurigaGlobal\LiveWork\AurigaGlobal\build-asan\CMakeFiles\cmake.verify_globs;D:\AurigaGlobal\LiveWork\AurigaGlobal\cmake\BootstrapVcpkg.cmake;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">D:\AurigaGlobal\LiveWork\AurigaGlobal\build-asan\CMakeFiles\generate.stamp</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">Building Custom Rule D:/AurigaGlobal/LiveWork/AurigaGlobal/CMakeLists.txt</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -SD:/AurigaGlobal/LiveWork/AurigaGlobal -BD:/AurigaGlobal/LiveWork/AurigaGlobal/build-asan --check-stamp-file D:/AurigaGlobal/LiveWork/AurigaGlobal/build-asan/CMakeFiles/generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeCInformation.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeCXXInformation.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeCommonLanguageInclude.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeDependentOption.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeFindDependencyMacro.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeGenericSystem.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeInitializeConfigs.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeLanguageInformation.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeRCInformation.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeSystemSpecificInformation.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeSystemSpecificInitialize.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\CMakeCommonCompilerMacros.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\MSVC-C.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\MSVC-CXX.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\MSVC.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\FindPackageHandleStandardArgs.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\FindPackageMessage.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\FindPython\Support.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\FindZLIB.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Findpython2.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Internal\CMakeCLinkerInformation.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Internal\CMakeCXXLinkerInformation.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Internal\CMakeCommonLinkerInformation.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Linker\MSVC-C.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Linker\MSVC-CXX.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Linker\MSVC.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Platform\Linker\Windows-MSVC-C.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Platform\Linker\Windows-MSVC-CXX.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Platform\Linker\Windows-MSVC.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Platform\Windows-Initialize.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Platform\Windows-MSVC-C.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Platform\Windows-MSVC-CXX.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Platform\Windows-MSVC.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Platform\Windows.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Platform\WindowsPaths.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\SelectLibraryConfigurations.cmake;C:\vcpkg\installed\x64-windows\share\cryptopp\cryptopp-static-targets-debug.cmake;C:\vcpkg\installed\x64-windows\share\cryptopp\cryptopp-static-targets-release.cmake;C:\vcpkg\installed\x64-windows\share\cryptopp\cryptopp-static-targets.cmake;C:\vcpkg\installed\x64-windows\share\cryptopp\cryptoppConfig.cmake;C:\vcpkg\installed\x64-windows\share\cryptopp\cryptoppConfigVersion.cmake;C:\vcpkg\installed\x64-windows\share\curl\CURLConfig.cmake;C:\vcpkg\installed\x64-windows\share\curl\CURLConfigVersion.cmake;C:\vcpkg\installed\x64-windows\share\curl\CURLTargets-debug.cmake;C:\vcpkg\installed\x64-windows\share\curl\CURLTargets-release.cmake;C:\vcpkg\installed\x64-windows\share\curl\CURLTargets.cmake;C:\vcpkg\installed\x64-windows\share\curl\vcpkg-cmake-wrapper.cmake;C:\vcpkg\installed\x64-windows\share\entt\EnTTConfig.cmake;C:\vcpkg\installed\x64-windows\share\entt\EnTTConfigVersion.cmake;C:\vcpkg\installed\x64-windows\share\entt\EnTTTargets.cmake;C:\vcpkg\installed\x64-windows\share\libconfig\libconfigConfig-debug.cmake;C:\vcpkg\installed\x64-windows\share\libconfig\libconfigConfig-release.cmake;C:\vcpkg\installed\x64-windows\share\libconfig\libconfigConfig.cmake;C:\vcpkg\installed\x64-windows\share\libconfig\libconfigConfigVersion.cmake;C:\vcpkg\installed\x64-windows\share\libjpeg-turbo\libjpeg-turboConfig.cmake;C:\vcpkg\installed\x64-windows\share\libjpeg-turbo\libjpeg-turboConfigVersion.cmake;C:\vcpkg\installed\x64-windows\share\libjpeg-turbo\libjpeg-turboTargets-debug.cmake;C:\vcpkg\installed\x64-windows\share\libjpeg-turbo\libjpeg-turboTargets-release.cmake;C:\vcpkg\installed\x64-windows\share\libjpeg-turbo\libjpeg-turboTargets.cmake;C:\vcpkg\installed\x64-windows\share\lz4\lz4Config.cmake;C:\vcpkg\installed\x64-windows\share\lz4\lz4ConfigVersion.cmake;C:\vcpkg\installed\x64-windows\share\lz4\lz4Targets-debug.cmake;C:\vcpkg\installed\x64-windows\share\lz4\lz4Targets-release.cmake;C:\vcpkg\installed\x64-windows\share\lz4\lz4Targets.cmake;C:\vcpkg\installed\x64-windows\share\rapidjson\RapidJSON-targets.cmake;C:\vcpkg\installed\x64-windows\share\rapidjson\RapidJSONConfig.cmake;C:\vcpkg\installed\x64-windows\share\rapidjson\RapidJSONConfigVersion.cmake;C:\vcpkg\installed\x64-windows\share\stb\Findstb.cmake;C:\vcpkg\installed\x64-windows\share\stb\vcpkg-cmake-wrapper.cmake;C:\vcpkg\installed\x64-windows\share\xxhash\xxHashConfig.cmake;C:\vcpkg\installed\x64-windows\share\xxhash\xxHashConfigVersion.cmake;C:\vcpkg\installed\x64-windows\share\xxhash\xxHashTargets-debug.cmake;C:\vcpkg\installed\x64-windows\share\xxhash\xxHashTargets-release.cmake;C:\vcpkg\installed\x64-windows\share\xxhash\xxHashTargets.cmake;C:\vcpkg\installed\x64-windows\share\zlib\vcpkg-cmake-wrapper.cmake;C:\vcpkg\installed\x64-windows\share\zstd\zstdConfig.cmake;C:\vcpkg\installed\x64-windows\share\zstd\zstdConfigVersion.cmake;C:\vcpkg\installed\x64-windows\share\zstd\zstdTargets-debug.cmake;C:\vcpkg\installed\x64-windows\share\zstd\zstdTargets-release.cmake;C:\vcpkg\installed\x64-windows\share\zstd\zstdTargets.cmake;C:\vcpkg\scripts\buildsystems\vcpkg.cmake;D:\AurigaGlobal\LiveWork\AurigaGlobal\build-asan\CMakeFiles\4.3.2\CMakeCCompiler.cmake;D:\AurigaGlobal\LiveWork\AurigaGlobal\build-asan\CMakeFiles\4.3.2\CMakeCXXCompiler.cmake;D:\AurigaGlobal\LiveWork\AurigaGlobal\build-asan\CMakeFiles\4.3.2\CMakeRCCompiler.cmake;D:\AurigaGlobal\LiveWork\AurigaGlobal\build-asan\CMakeFiles\4.3.2\CMakeSystem.cmake;D:\AurigaGlobal\LiveWork\AurigaGlobal\build-asan\CMakeFiles\cmake.verify_globs;D:\AurigaGlobal\LiveWork\AurigaGlobal\cmake\BootstrapVcpkg.cmake;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">D:\AurigaGlobal\LiveWork\AurigaGlobal\build-asan\CMakeFiles\generate.stamp</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">false</LinkObjects>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\colorinfo.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\consolemodule.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\constinfo.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\dailygift.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\data\inventorywindowex.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\debuginfo.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\dragon_soul_refine_settings.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\emotion.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\exception.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\game.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\ingamewiki.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\ingamewikiconfig.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\ingamewikiui.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\interfacemodule.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\introcreate.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\introempire.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\introloading.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\intrologin.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\introselect.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\localeinfo.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\marek38.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\mousemodule.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\musicinfo.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\networkmodule.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\pickupfilterwindow.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\playersettingmodule.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\prototype.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\servercommandparser.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\serverinfo.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\stringcommander.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\system.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\test_affect.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\ui.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiacce.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiaffectshower.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiattachmetin.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiattrdialog.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiattrtransfer.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiauction.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiautoban.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uibattlepass.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uibattleroyale.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uibiolog.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uicandidate.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uichannel.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uicharacter.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uicharacterdetails.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uichat.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uicommon.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uicube.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uicuberenewal.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uidoctrinechoose.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uidragonlairranking.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uidragonsoul.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiduel.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uidungeoninfo.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiequipmentdialog.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uieventcalendar.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiex.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiexchange.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiextrainventory.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uifishing.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uifishing_genyo.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uigamebutton.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uigameoption.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiguild.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiguildrank.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiguildrenewal.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiguildstorage.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiinventory.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiitemshop.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uimapnameshower.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uimarketsystem.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uimessenger.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiminimap.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiminimap_bak.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uimountinventory.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uimountlist.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiofflineshop.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uioption.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiparty.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uipetenchant.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uipetevownd.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uipetfeed.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uipetincubatrice.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uipetsystem.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiphasecurtain.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uipickmoney.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uipickupfilter.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiplayergauge.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uipointreset.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiprivateshopbuilder.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiquest.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiranking.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uirefine.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uirestart.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uirune.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uisafebox.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uisavepoint.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\acce_absorbwindow.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\acce_combinewindow.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\acceptguildwardialog.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\atlaswindow.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\attachstonedialog.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\attrdialog_remove.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\auctionwindow.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\auctionwindow_listpage.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\auctionwindow_registerpage.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\auctionwindow_uniqueauctionpage.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\battlepasswindow.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\battlepasswindow_back.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\battleroyale_info.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\battleroyale_selectchar.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\beltinventorywindow.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\biologwindow.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\biologwindow_changebonus.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\buildguildbuildingwindow.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\changegradenamedialog.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\changepassworddialog.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\characterdetailswindow.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\characterwindow.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\chatsettingwindow.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\connectingdialog.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\costumeequipmentdialog.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\costumewindow.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\createcharacterwindow.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\cuberenewalwindow.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\cuberesultwindow.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\cubewindow.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\dailygiftnew.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\declareguildwardialog.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\doctrinechoosewindow.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\dragonsoulrefinewindow.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\dragonsoulwindow.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\dungeoninfowindow.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\dungeonrankingwindow.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\equipmentdialog.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\exchangedialog.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\exchangedialog_new.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\expandedmoneytaskbar.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\expandedtaskbar.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\extrainventory.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\fishinggamewindow.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\fishingwindow.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\gameoptiondialog.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\gameoptiondialog_formobile.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\gamewindow.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\gemshopwindow.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\guildrenewal_taxsetting.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\guildrenewalwindow.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\guildstorage.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\guildstorageadmin.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\guildstoragelogs.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\guildstoragemoneymanager.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\guildwindow.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\guildwindow_baseinfopage.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\guildwindow_boardpage.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\guildwindow_gradepage.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\guildwindow_guilddragonlairranking.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\guildwindow_guildinfopage.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\guildwindow_guildinfopage_eu.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\guildwindow_guildinfopage_jp.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\guildwindow_guildlistwindow.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\guildwindow_guildskillpage.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\guildwindow_memberpage.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\imekor.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\inputdialog.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\inputdialogwithdescription.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\inputdialogwithdescription2.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\inputnewpincodedialog.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\inputpincodedialog.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\inventory_menu.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\inventorywindowex.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\itemcombinationwindow.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\kasmirmarketidialog.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\kasmirpaketidialog.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\loadingwindow.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\loginwindow.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\mallwindow.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\marklistwindow.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\messengerwindow.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\minimap.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\moneyinputdialog.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\mountinventory.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\mousebuttonwindow.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\multiplebuysdialog.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\musiclistwindow.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\offlineshopwindow.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\partymemberinfoboard.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\passworddialog.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\petdialog_enchant.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\petevownd.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\petfeedwindow.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\pethatchingwindow.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\petinformationwindow.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\petminiinformationwindow.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\pickmoneydialog.bak.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\pickmoneydialog.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\pickupfilterwindow.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\popupdialog.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\privateshopbuilder.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\pvp_advanced.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\pvp_advanced_informations.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\pvp_advanced_informations_mini.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\questdialog.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\questiondialog.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\questiondialog2.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\questiondialogitem.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\rankingboardwindow.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\rankingboardwindow_sys.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\refinedialog.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\refinedialog_old.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\restartdialog.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\restartdialog_new.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\rightmousebuttonwindow.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\runewindow.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\safeboxwindow.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\savepointwindow.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\selectcharacterwindow.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\selectempirewindow.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\selectitemwindow.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\shopdialog.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\shout.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\skillcolorwindow.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\skillpointresetdialog.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\systemdialog.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\systemdialog_formall.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\systemdialog_forportal.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\systemoptiondialog.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\taskbar.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\teleport.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\webwindow.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\webwindow_fullscreen.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\whisperdialog.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\whispermanager.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\wikiwindow.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscriptlocale.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiselectitem.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiselectmusic.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uishop.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uishout.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiskillcolor.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uistonecraft.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiswitchbot.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uisystem.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uisystemgems.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uisystemoption.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uitarget.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uitaskbar.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiteleporter.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uitip.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uitooltip.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uitriviapanel.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiuploadmark.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiweb.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiwheel.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiwhisper.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\utils.py">
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\whispermanager.py">
+    </None>
+  </ItemGroup>
+  <ItemGroup />
+  <ItemGroup>
+    <ProjectReference Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\build-asan\ZERO_CHECK.vcxproj">
+      <Project>{8DCF6E62-4198-3D54-9D62-3B2BB529300B}</Project>
+      <Name>ZERO_CHECK</Name>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </ProjectReference>
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

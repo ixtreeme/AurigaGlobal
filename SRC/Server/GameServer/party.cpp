@@ -5,6 +5,7 @@
 #include "ecs/systems/SocialSystem.hpp"
 #include "ecs/systems/PointSystem.hpp"
 #include "ecs/systems/NetworkSyncSystem.hpp"
+#include "ecs/systems/ItemSystem.hpp"
 #include "ecs/AIHelpers.hpp"
 #include "ecs/Registry.hpp"
 #include "utils.h"
@@ -18,6 +19,37 @@
 #include "unique_item.h"
 #include "ecs/CharacterAccessors.hpp"
 
+#ifdef ENABLE_DICE_SYSTEM
+void FPartyDropDiceRoll::Process(const LPCHARACTER mobVictim)
+{
+	if (!m_itemOwner || !ItemSystem::IsValidItem(m_itemDrop))
+		return;
+
+	LPPARTY party = m_itemOwner->GetParty();
+	const bool rollForParty =
+		(!mobVictim || (mobVictim->GetMobRank() >= MOB_RANK_BOSS && mobVictim->GetMobRank() <= MOB_RANK_KING)) &&
+		party && party->GetNearMemberCount() > 1;
+
+	if (rollForParty)
+	{
+#ifdef TEXTS_IMPROVEMENT
+		party->ChatPacketToAllMemberNew(CHAT_TYPE_DICE_INFO, 542, "%s", ItemSystem::GetItemName(m_itemDrop));
+#endif
+		party->ForEachNearMember(*this);
+		if (!m_itemOwner)
+			return;
+
+		ItemSystem::SetGroundOwnership(m_itemDrop, AIHelpers::EcsOf(m_itemOwner));
+#ifdef TEXTS_IMPROVEMENT
+		party->ChatPacketToAllMemberNew(CHAT_TYPE_DICE_INFO, 903, "%s#%s",
+			ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(m_itemOwner)).data(), ItemSystem::GetItemName(m_itemDrop));
+#endif
+		return;
+	}
+
+	ItemSystem::SetGroundOwnership(m_itemDrop, AIHelpers::EcsOf(m_itemOwner));
+}
+#endif
 CPartyManager::CPartyManager()
 {
 	Initialize();

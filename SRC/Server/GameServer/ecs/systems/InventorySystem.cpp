@@ -90,16 +90,6 @@ void SyncItemEquipped(entt::entity e, bool equipped)
 	g_registry.emplace_or_replace<ecs::ItemEquipped>(e, equipped, slot);
 }
 
-void SyncCharacterEquipmentSlot(entt::entity chEntity, uint8_t wearCell, entt::entity item)
-{
-	if (chEntity == entt::null || !g_registry.valid(chEntity))
-		return;
-
-	auto& slots = g_registry.get_or_emplace<ecs::EquipmentSlots>(chEntity);
-	if (wearCell < slots.items.size())
-		slots.items[wearCell] = LegacyItemOf(item);
-}
-
 } // namespace
 
 EVENTFUNC(ownership_event);
@@ -455,6 +445,12 @@ bool CItem::AddToCharacter(LPCHARACTER ch, TItemPos Cell)
 {
 	assert(GetSectree() == NULL);
 	assert(m_pOwner == NULL);
+	const entt::entity itemEntity = EntityFactory::CreateItemEntity(g_registry, this);
+	if (itemEntity == entt::null)
+	{
+		LOG_ERROR("CItem::AddToCharacter: item {} has no ECS entity", GetID());
+		return false;
+	}
 	uint16_t pos = Cell.cell;
 	uint8_t window_type = Cell.window_type;
 
@@ -579,7 +575,6 @@ bool CItem::AddToCharacter(LPCHARACTER ch, TItemPos Cell)
 
 	Save();
 
-	const entt::entity itemEntity = ItemEntityOf(this);
 	SyncItemOwner(itemEntity, ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)), m_dwLastOwnerPID, m_dwOwnershipPID);
 	SyncItemLocation(itemEntity);
 	SyncItemEquipped(itemEntity, false);
@@ -745,7 +740,7 @@ void CItem::SetOwnership(LPCHARACTER ch, int iSec)
 
 	item_event_info* info = AllocEventInfo<item_event_info>();
 	strlcpy(info->szOwnerName, ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), sizeof(info->szOwnerName));
-	info->item = this;
+	info->item = ItemEntityOf(this);
 
 	SetOwnershipEvent(event_create(ownership_event, info, PASSES_PER_SEC(iSec)));
 
@@ -1115,7 +1110,6 @@ bool CItem::EquipTo(LPCHARACTER ch, uint8_t bWearCell)
 	SyncItemEquipped(itemEntity, true);
 	SyncItemLocation(itemEntity);
 	SyncItemOwner(itemEntity, ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)), m_dwLastOwnerPID, m_dwOwnershipPID);
-	SyncCharacterEquipmentSlot(AIHelpers::EcsOf(ch), bWearCell, itemEntity);
 	g_dispatcher.trigger(ecs::EvItemEquipped { AIHelpers::EcsOf(ch), itemEntity });
 
 	Save();
@@ -1208,7 +1202,6 @@ bool CItem::Unequip()
 
 	SyncItemEquipped(itemEntity, false);
 	SyncItemLocation(itemEntity);
-	SyncCharacterEquipmentSlot(charEntity, wearCell, entt::null);
 	g_dispatcher.trigger(ecs::EvItemUnequipped { charEntity, itemEntity });
 	return true;
 }

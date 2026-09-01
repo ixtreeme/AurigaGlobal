@@ -18,8 +18,8 @@
 
 CSafebox::CSafebox(LPCHARACTER pkChrOwner, int iSize, uint32_t dwGold) : m_pkChrOwner(pkChrOwner), m_iSize(iSize), m_lGold(dwGold)
 {
-	assert(m_pkChrOwner != NULL);
-	memset(m_pkItems, 0, sizeof(m_pkItems));
+	assert(m_pkChrOwner != nullptr);
+	m_items.fill(entt::null);
 
 	if (m_iSize)
 		m_pkGrid = M2_NEW CGrid(16, m_iSize);
@@ -41,19 +41,20 @@ void CSafebox::SetWindowMode(uint8_t bMode)
 
 void CSafebox::__Destroy()
 {
-	for (int i = 0; i < SAFEBOX_MAX_NUM; ++i)
+	for (entt::entity& item : m_items)
 	{
-		if (m_pkItems[i])
+		if (!ItemSystem::IsValidItem(item))
 		{
-			ItemSystem::SetItemSkipSave(EntityFactory::CreateItemEntity(g_registry, m_pkItems[i]), true);
-			ITEM_MANAGER::instance().FlushDelayedSave(m_pkItems[i]);
-
-			LPITEM removed = m_pkItems[i]->RemoveFromCharacter();
-			ItemSystem::DestroyItemEntityEcs(
-				EntityFactory::CreateItemEntity(g_registry, removed),
-				"SAFEBOX_DESTRUCT");
-			m_pkItems[i] = nullptr;
+			item = entt::null;
+			continue;
 		}
+
+		const entt::entity itemToDestroy = item;
+		item = entt::null;
+		ItemSystem::SetItemSkipSave(itemToDestroy, true);
+		ItemSystem::FlushDelayedSaveEcs(itemToDestroy);
+		ItemSystem::RemoveItemEcs(itemToDestroy);
+		ItemSystem::DestroyItemEntityEcs(itemToDestroy, "SAFEBOX_DESTRUCT");
 	}
 
 	if (m_pkGrid)
@@ -63,74 +64,73 @@ void CSafebox::__Destroy()
 	}
 }
 
-bool CSafebox::Add(uint32_t dwPos, LPITEM pkItem)
+bool CSafebox::Add(uint32_t dwPos, entt::entity item)
 {
-	if (!IsValidPosition(dwPos))
+	if (!IsValidPosition(dwPos) || !ItemSystem::IsValidItem(item))
 	{
-		LOG_ERROR("SAFEBOX: item on wrong position at {} (size of grid = {})", dwPos, m_pkGrid->GetSize());
+		LOG_ERROR("SAFEBOX: item on wrong position at {}", dwPos);
 		return false;
 	}
 
-	const entt::entity itemEntity = EntityFactory::CreateItemEntity(g_registry, pkItem);
-	ItemSystem::SetItemWindow(itemEntity, m_bWindowMode);
-	ItemSystem::SetItemCell(itemEntity, AIHelpers::EcsOf(m_pkChrOwner), dwPos);
-	pkItem->Save(); // 강제로 Save를 불러줘야 한다.
-	ITEM_MANAGER::instance().FlushDelayedSave(pkItem);
+	ItemSystem::SetItemWindow(item, m_bWindowMode);
+	ItemSystem::SetItemCell(item, AIHelpers::EcsOf(m_pkChrOwner), dwPos);
+	if (!ItemSystem::SaveItemEcs(item))
+		return false;
 
-	m_pkGrid->Put(dwPos, 1, pkItem->GetSize());
-	m_pkItems[dwPos] = pkItem;
+	m_pkGrid->Put(dwPos, 1, ItemSystem::GetItemSize(item));
+	m_items[dwPos] = item;
 
-	TPacketGCItemSet pack;
-
-	pack.header	= m_bWindowMode == SAFEBOX ? HEADER_GC_SAFEBOX_SET : HEADER_GC_MALL_SET;
-	pack.Cell	= TItemPos(m_bWindowMode, dwPos);
-	pack.vnum	= ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, pkItem));
-	pack.count	= ItemSystem::GetItemCount(EntityFactory::CreateItemEntity(g_registry, pkItem));
-	pack.flags	= pkItem->GetFlag();
+	TPacketGCItemSet pack{};
+	pack.header = m_bWindowMode == SAFEBOX ? HEADER_GC_SAFEBOX_SET : HEADER_GC_MALL_SET;
+	pack.Cell = TItemPos(m_bWindowMode, dwPos);
+	pack.vnum = ItemSystem::GetItemVnum(item);
+	pack.count = ItemSystem::GetItemCount(item);
+	pack.flags = ItemSystem::GetItemFlags(item);
 #ifdef ATTR_LOCK
-	pack.lockedattr = pkItem->GetLockedAttr();
+	pack.lockedattr = ItemSystem::GetItemLockedAttributeIndex(item);
 #endif
-	pack.anti_flags	= ItemSystem::GetItemAntiFlag(EntityFactory::CreateItemEntity(g_registry, pkItem));
-	memcpy(pack.alSockets, pkItem->GetSockets(), sizeof(pack.alSockets));
-	memcpy(pack.aAttr, pkItem->GetAttributes(), sizeof(pack.aAttr));
+	pack.anti_flags = ItemSystem::GetItemAntiFlags(item);
+	for (int i = 0; i < ITEM_SOCKET_MAX_NUM; ++i)
+		pack.alSockets[i] = ItemSystem::GetItemSocket(item, i);
+	for (int i = 0; i < ITEM_ATTRIBUTE_MAX_NUM; ++i)
+		pack.aAttr[i] = ItemSystem::GetItemAttribute(item, i);
 
-	ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(m_pkChrOwner))->Packet(&pack, sizeof(pack));
-	LOG_INFO("SAFEBOX: ADD {} {} count {}", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(m_pkChrOwner)).data(), pkItem->GetName(), ItemSystem::GetItemCount(EntityFactory::CreateItemEntity(g_registry, pkItem)));
+	if (LPDESC desc = ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(m_pkChrOwner)))
+		desc->Packet(&pack, sizeof(pack));
+	LOG_INFO("SAFEBOX: ADD {} {} count {}", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(m_pkChrOwner)).data(), ItemSystem::GetItemName(item), ItemSystem::GetItemCount(item));
 	return true;
 }
 
-LPITEM CSafebox::Get(uint32_t dwPos)
+entt::entity CSafebox::Get(uint32_t dwPos) const
 {
-	if (dwPos >= m_pkGrid->GetSize())
-		return nullptr;
+	if (!m_pkGrid || dwPos >= m_pkGrid->GetSize())
+		return entt::null;
 
-	return m_pkItems[dwPos];
+	const entt::entity item = m_items[dwPos];
+	return ItemSystem::IsValidItem(item) ? item : entt::null;
 }
 
-LPITEM CSafebox::Remove(uint32_t dwPos)
+entt::entity CSafebox::Remove(uint32_t dwPos)
 {
-	LPITEM pkItem = Get(dwPos);
-
-	if (!pkItem)
-		return nullptr;
+	const entt::entity item = Get(dwPos);
+	if (!ItemSystem::IsValidItem(item))
+		return entt::null;
 
 	if (!m_pkGrid)
 		LOG_ERROR("Safebox::Remove : nil grid");
 	else
-		m_pkGrid->Get(dwPos, 1, pkItem->GetSize());
+		m_pkGrid->Get(dwPos, 1, ItemSystem::GetItemSize(item));
 
-	pkItem->RemoveFromCharacter();
+	m_items[dwPos] = entt::null;
+	ItemSystem::RemoveItemEcs(item);
 
-	m_pkItems[dwPos] = nullptr;
-
-	TPacketGCItemDel pack;
-
-	pack.header	= m_bWindowMode == SAFEBOX ? HEADER_GC_SAFEBOX_DEL : HEADER_GC_MALL_DEL;
-	pack.pos	= dwPos;
-
-	ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(m_pkChrOwner))->Packet(&pack, sizeof(pack));
-	LOG_INFO("SAFEBOX: REMOVE {} {} count {}", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(m_pkChrOwner)).data(), pkItem->GetName(), ItemSystem::GetItemCount(EntityFactory::CreateItemEntity(g_registry, pkItem)));
-	return pkItem;
+	TPacketGCItemDel pack{};
+	pack.header = m_bWindowMode == SAFEBOX ? HEADER_GC_SAFEBOX_DEL : HEADER_GC_MALL_DEL;
+	pack.pos = dwPos;
+	if (LPDESC desc = ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(m_pkChrOwner)))
+		desc->Packet(&pack, sizeof(pack));
+	LOG_INFO("SAFEBOX: REMOVE {} {} count {}", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(m_pkChrOwner)).data(), ItemSystem::GetItemName(item), ItemSystem::GetItemCount(item));
+	return item;
 }
 
 void CSafebox::Save()
@@ -174,109 +174,64 @@ void CSafebox::ChangeSize(int iSize)
 	}
 }
 
-LPITEM CSafebox::GetItem(uint32_t bCell)
+entt::entity CSafebox::GetItem(uint32_t bCell) const
 {
-	if (bCell >= 16 * m_iSize)
+	if (bCell >= static_cast<uint32_t>(16 * m_iSize))
 	{
 		LOG_ERROR("CHARACTER::GetItem: invalid item cell {}", bCell);
-		return nullptr;
+		return entt::null;
 	}
 
-	return m_pkItems[bCell];
+	return Get(bCell);
 }
 
-bool CSafebox::MoveItem(uint32_t bCell, uint32_t bDestCell,
-#ifdef ENABLE_NEW_STACK_LIMIT
-	uint32_t
-#else
-uint32_t
-#endif
-count)
+bool CSafebox::MoveItem(uint32_t bCell, uint32_t bDestCell, uint32_t count)
 {
-	bool stupid = false;
-	if (count < 0)
+	const uint32_t maxPosition = static_cast<uint32_t>(16 * m_iSize);
+	if (bCell >= maxPosition || bDestCell >= maxPosition)
+		return false;
+
+	const entt::entity item = GetItem(bCell);
+	if (!ItemSystem::IsValidItem(item) || ItemSystem::IsItemExchanging(item))
+		return false;
+
+	const uint32_t sourceCount = ItemSystem::GetItemCount(item);
+	if (sourceCount < count)
+		return false;
+
+	const entt::entity destination = GetItem(bDestCell);
+	if (ItemSystem::IsValidItem(destination) && destination != item &&
+		IS_SET(ItemSystem::GetItemFlags(destination), ITEM_FLAG_STACKABLE) &&
+		!IS_SET(ItemSystem::GetItemAntiFlags(destination), ITEM_ANTIFLAG_STACK) &&
+		ItemSystem::GetItemVnum(destination) == ItemSystem::GetItemVnum(item))
 	{
-		LOG_ERROR("I am a stupid hacker 5: {}", count);
-		stupid = true;
-	}
+		for (int i = 0; i < ITEM_SOCKET_MAX_NUM; ++i)
+			if (ItemSystem::GetItemSocket(destination, i) != ItemSystem::GetItemSocket(item, i))
+				return false;
 
-	count = static_cast<uint32_t>(std::abs(static_cast<int>(count)));
+		if (count == 0)
+			count = sourceCount;
 
-	if (stupid)
-	{
-		LOG_ERROR("I am a stupid hacker 6: {}", count);
-		return false;
-	}
-
-	LPITEM item;
-
-	int max_position = 16 * m_iSize;
-
-	if (bCell >= max_position || bDestCell >= max_position)
-		return false;
-
-	if (!(item = GetItem(bCell)))
-		return false;
-
-	if (item->IsExchanging())
-		return false;
-
-	if (ItemSystem::GetItemCount(EntityFactory::CreateItemEntity(g_registry, item)) < count)
-		return false;
-
-	{
-		LPITEM item2;
-
-		if ((item2 = GetItem(bDestCell)) && item != item2 && item2->IsStackable() &&
-				!IS_SET(ItemSystem::GetItemAntiFlag(EntityFactory::CreateItemEntity(g_registry, item2)), ITEM_ANTIFLAG_STACK) &&
-				ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, item2)) == ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, item))) // 합칠 수 있는 아이템의 경우
-		{
-			for (int i = 0; i < ITEM_SOCKET_MAX_NUM; ++i)
-				if (ItemSystem::GetItemSocket(EntityFactory::CreateItemEntity(g_registry, item2), i) != ItemSystem::GetItemSocket(EntityFactory::CreateItemEntity(g_registry, item), i))
-					return false;
-
-			if (count == 0)
-				count = ItemSystem::GetItemCount(EntityFactory::CreateItemEntity(g_registry, item));
-
-			count = MIN(g_bItemCountLimit - ItemSystem::GetItemCount(EntityFactory::CreateItemEntity(g_registry, item2)), count);
-
-			if (ItemSystem::GetItemCount(EntityFactory::CreateItemEntity(g_registry, item)) >= count)
-				Remove(bCell);
-
-			ItemSystem::ConsumeItemEcs(
-				EntityFactory::CreateItemEntity(g_registry, item),
-				count);
-			ItemSystem::AddItemCountEcs(
-				EntityFactory::CreateItemEntity(g_registry, item2),
-				count);
-
-			LOG_INFO("SAFEBOX: STACK {} {} -> {} {} count {}", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(m_pkChrOwner)).data(), static_cast<int>(bCell), static_cast<int>(bDestCell), item2->GetName(), ItemSystem::GetItemCount(EntityFactory::CreateItemEntity(g_registry, item2)));
-			return true;
-		}
-
-		if (!IsEmpty(bDestCell, item->GetSize()))
+		count = MIN(g_bItemCountLimit - ItemSystem::GetItemCount(destination), count);
+		if (count == 0)
 			return false;
 
-		m_pkGrid->Get(bCell, 1, item->GetSize());
+		if (count >= sourceCount)
+			Remove(bCell);
 
-		if (!m_pkGrid->Put(bDestCell, 1, item->GetSize()))
-		{
-			m_pkGrid->Put(bCell, 1, item->GetSize());
-			return false;
-		}
-		else
-		{
-			m_pkGrid->Get(bDestCell, 1, item->GetSize());
-			m_pkGrid->Put(bCell, 1, item->GetSize());
-		}
-
-		LOG_INFO("SAFEBOX: MOVE {} {} -> {} {} count {}", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(m_pkChrOwner)).data(), static_cast<int>(bCell), static_cast<int>(bDestCell), item->GetName(), ItemSystem::GetItemCount(EntityFactory::CreateItemEntity(g_registry, item)));
-
-		Remove(bCell);
-		Add(bDestCell, item);
+		ItemSystem::ConsumeItemEcs(item, count);
+		ItemSystem::AddItemCountEcs(destination, count);
+		LOG_INFO("SAFEBOX: STACK {} {} -> {} {} count {}", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(m_pkChrOwner)).data(), static_cast<int>(bCell), static_cast<int>(bDestCell), ItemSystem::GetItemName(destination), ItemSystem::GetItemCount(destination));
+		return true;
 	}
 
-	return true;
+	if (!IsEmpty(bDestCell, ItemSystem::GetItemSize(item)))
+		return false;
+
+	LOG_INFO("SAFEBOX: MOVE {} {} -> {} {} count {}", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(m_pkChrOwner)).data(), static_cast<int>(bCell), static_cast<int>(bDestCell), ItemSystem::GetItemName(item), sourceCount);
+	if (Remove(bCell) == entt::null)
+		return false;
+	return Add(bDestCell, item);
 }
 
 bool CSafebox::IsValidPosition(uint32_t dwPos)

@@ -1,0 +1,72 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="18.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\SpeedTree\BoundaryShapeManager.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\SpeedTree\SpeedGrassRT.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\SpeedTree\SpeedGrassWrapper.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\SpeedTree\SpeedTreeForest.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\SpeedTree\SpeedTreeForestDirectX8.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\SpeedTree\SpeedTreeWrapper.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\SpeedTree\StdAfx.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\SpeedTree\BoundaryShapeManager.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\SpeedTree\Constants.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\SpeedTree\SpeedGrassRT.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\SpeedTree\SpeedGrassWrapper.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\SpeedTree\SpeedTreeConfig.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\SpeedTree\SpeedTreeForest.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\SpeedTree\SpeedTreeForestDirectX8.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\SpeedTree\SpeedTreeMaterial.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\SpeedTree\SpeedTreeWrapper.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\SpeedTree\StdAfx.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\SpeedTree\VertexShaders.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\SpeedTree\CMakeLists.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{997E584A-6252-3F29-A1E1-D2CEBBC39C40}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{7C47B037-CBF3-320C-941D-71B3AFA5D9B8}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

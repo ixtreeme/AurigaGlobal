@@ -1,0 +1,312 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="18.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\Game\ActorInstance.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\Game\ActorInstanceAttach.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\Game\ActorInstanceBattle.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\Game\ActorInstanceBlend.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\Game\ActorInstanceCollisionDetection.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\Game\ActorInstanceData.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\Game\ActorInstanceEvent.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\Game\ActorInstanceFly.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\Game\ActorInstanceMotion.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\Game\ActorInstanceMotionEvent.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\Game\ActorInstancePosition.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\Game\ActorInstanceRender.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\Game\ActorInstanceRotation.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\Game\ActorInstanceSync.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\Game\ActorInstanceWeaponTrace.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\Game\Area.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\Game\AreaTerrain.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\Game\DungeonBlock.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\Game\FlyTarget.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\Game\FlyTrace.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\Game\FlyingData.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\Game\FlyingInstance.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\Game\FlyingObjectManager.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\Game\GameEventManager.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\Game\GameType.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\Game\GameUtil.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\Game\ItemData.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\Game\ItemManager.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\Game\MapBase.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\Game\MapManager.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\Game\MapOutdoor.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\Game\MapOutdoorCharacterShadow.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\Game\MapOutdoorIndexBuffer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\Game\MapOutdoorLoad.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\Game\MapOutdoorQuadtree.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\Game\MapOutdoorRender.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\Game\MapOutdoorRenderHTP.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\Game\MapOutdoorRenderSTP.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\Game\MapOutdoorUpdate.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\Game\MapOutdoorWater.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\Game\MapType.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\Game\MapUtil.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\Game\MonsterAreaInfo.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\Game\PhysicsObject.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\Game\Property.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\Game\PropertyLoader.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\Game\PropertyManager.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\Game\RaceData.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\Game\RaceDataFile.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\Game\RaceManager.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\Game\RaceMotionData.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\Game\SnowEnvironment.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\Game\SnowParticle.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\Game\StdAfx.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\Game\TerrainDecal.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\Game\TerrainPatch.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\Game\TerrainQuadtree.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\Game\WeaponTrace.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\Game\ActorInstance.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\Game\ActorInstanceInterface.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\Game\Area.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\Game\AreaTerrain.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\Game\DungeonBlock.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\Game\FlyHandler.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\Game\FlyTarget.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\Game\FlyTrace.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\Game\FlyingData.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\Game\FlyingInstance.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\Game\FlyingObjectManager.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\Game\GameEventManager.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\Game\GameLibDefines.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\Game\GameType.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\Game\GameUtil.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\Game\Interface.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\Game\ItemData.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\Game\ItemManager.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\Game\MapBase.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\Game\MapManager.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\Game\MapOutdoor.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\Game\MapType.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\Game\MapUtil.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\Game\MonsterAreaInfo.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\Game\PhysicsObject.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\Game\Property.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\Game\PropertyLoader.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\Game\PropertyManager.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\Game\RaceData.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\Game\RaceManager.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\Game\RaceMotionData.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\Game\RaceMotionDataEvent.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\Game\SnowEnvironment.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\Game\SnowParticle.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\Game\StdAfx.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\Game\TerrainDecal.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\Game\TerrainPatch.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\Game\TerrainQuadtree.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\Game\WeaponTrace.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\Game\in_game_wiki.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\Game\CMakeLists.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{997E584A-6252-3F29-A1E1-D2CEBBC39C40}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{7C47B037-CBF3-320C-941D-71B3AFA5D9B8}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

@@ -1,0 +1,445 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="18.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <PreferredToolArchitecture>x64</PreferredToolArchitecture>
+  </PropertyGroup>
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="MinSizeRel|x64">
+      <Configuration>MinSizeRel</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="RelWithDebInfo|x64">
+      <Configuration>RelWithDebInfo</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{382698CB-56D7-3D23-9F81-AA811C9EF8DF}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+    <VcpkgEnabled>false</VcpkgEnabled>
+    <WindowsTargetPlatformVersion>10.0.28000.0</WindowsTargetPlatformVersion>
+    <Platform>x64</Platform>
+    <ProjectName>Game</ProjectName>
+    <VCProjectUpgraderObjectName>NoUpgrade</VCProjectUpgraderObjectName>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v145</PlatformToolset>
+    <EnableAsan>true</EnableAsan>
+    <SpectreMitigation>Spectre</SpectreMitigation>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v145</PlatformToolset>
+    <EnableAsan>true</EnableAsan>
+    <SpectreMitigation>Spectre</SpectreMitigation>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v145</PlatformToolset>
+    <EnableAsan>true</EnableAsan>
+    <SpectreMitigation>Spectre</SpectreMitigation>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v145</PlatformToolset>
+    <EnableAsan>true</EnableAsan>
+    <SpectreMitigation>Spectre</SpectreMitigation>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets">
+    <Import Project="do_not_import_user.props" Condition="exists('do_not_import_user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup>
+    <_ProjectFileVersion>10.0.20506.1</_ProjectFileVersion>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">D:\AurigaGlobal\LiveWork\AurigaGlobal\build-asan\SRC\Launcher\Game\Debug\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Game.dir\Debug\</IntDir>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Game</TargetName>
+    <TargetExt Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">.lib</TargetExt>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|x64'">D:\AurigaGlobal\LiveWork\AurigaGlobal\build-asan\SRC\Launcher\Game\Release\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Game.dir\Release\</IntDir>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Game</TargetName>
+    <TargetExt Condition="'$(Configuration)|$(Platform)'=='Release|x64'">.lib</TargetExt>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">D:\AurigaGlobal\LiveWork\AurigaGlobal\build-asan\SRC\Launcher\Game\MinSizeRel\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">Game.dir\MinSizeRel\</IntDir>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">Game</TargetName>
+    <TargetExt Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">.lib</TargetExt>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">D:\AurigaGlobal\LiveWork\AurigaGlobal\build-asan\SRC\Launcher\Game\RelWithDebInfo\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">Game.dir\RelWithDebInfo\</IntDir>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">Game</TargetName>
+    <TargetExt Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">.lib</TargetExt>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\3rd\F_FS;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalOptions>%(AdditionalOptions) /external:I "D:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/3rd/Granny" /external:I "D:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/3rd/SpeedTree" /bigobj /fsanitize=address</AdditionalOptions>
+      <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
+      <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
+      <BufferSecurityCheck>true</BufferSecurityCheck>
+      <CallingConvention></CallingConvention>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <ExceptionHandling>Sync</ExceptionHandling>
+      <ExternalWarningLevel>TurnOffAllWarnings</ExternalWarningLevel>
+      <FloatingPointModel></FloatingPointModel>
+      <ForceConformanceInForLoopScope></ForceConformanceInForLoopScope>
+      <InlineFunctionExpansion>Disabled</InlineFunctionExpansion>
+      <LanguageStandard>stdcpplatest</LanguageStandard>
+      <MinimalRebuild></MinimalRebuild>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <Optimization>Disabled</Optimization>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <RemoveUnreferencedCodeData></RemoveUnreferencedCodeData>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+      <SDLCheck>true</SDLCheck>
+      <SupportJustMyCode></SupportJustMyCode>
+      <TreatWChar_tAsBuiltInType></TreatWChar_tAsBuiltInType>
+      <UseFullPaths>false</UseFullPaths>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;_CRT_SECURE_NO_WARNINGS;_WINSOCK_DEPRECATED_NO_WARNINGS;_DEBUG;_DISABLE_VECTOR_ANNOTATION;_DISABLE_STRING_ANNOTATION;_DISABLE_OPTIONAL_ANNOTATION;BUILDING_GRANNY_STATIC=1;CMAKE_INTDIR="Debug"</PreprocessorDefinitions>
+      <ObjectFileName>$(IntDir)</ObjectFileName>
+      <ScanSourceForModuleDependencies>false</ScanSourceForModuleDependencies>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_DEBUG;_WINDOWS;_CRT_SECURE_NO_WARNINGS;_WINSOCK_DEPRECATED_NO_WARNINGS;_DISABLE_VECTOR_ANNOTATION;_DISABLE_STRING_ANNOTATION;_DISABLE_OPTIONAL_ANNOTATION;BUILDING_GRANNY_STATIC=1;CMAKE_INTDIR=\"Debug\"</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\3rd\F_FS;D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\3rd\Granny;D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\3rd\SpeedTree;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ResourceCompile>
+    <Midl>
+      <AdditionalIncludeDirectories>D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\3rd\F_FS;D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\3rd\Granny;D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\3rd\SpeedTree;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
+      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
+    </Midl>
+    <Lib>
+      <AdditionalOptions>%(AdditionalOptions) /machine:x64</AdditionalOptions>
+    </Lib>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\3rd\F_FS;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalOptions>%(AdditionalOptions) /external:I "D:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/3rd/Granny" /external:I "D:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/3rd/SpeedTree" /bigobj /fsanitize=address</AdditionalOptions>
+      <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
+      <BasicRuntimeChecks>Default</BasicRuntimeChecks>
+      <BufferSecurityCheck>true</BufferSecurityCheck>
+      <CallingConvention></CallingConvention>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <ExceptionHandling>Sync</ExceptionHandling>
+      <ExternalWarningLevel>TurnOffAllWarnings</ExternalWarningLevel>
+      <FloatingPointModel></FloatingPointModel>
+      <ForceConformanceInForLoopScope></ForceConformanceInForLoopScope>
+      <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
+      <LanguageStandard>stdcpplatest</LanguageStandard>
+      <MinimalRebuild></MinimalRebuild>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <Optimization>MaxSpeed</Optimization>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <RemoveUnreferencedCodeData></RemoveUnreferencedCodeData>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <SDLCheck>true</SDLCheck>
+      <SupportJustMyCode></SupportJustMyCode>
+      <TreatWChar_tAsBuiltInType></TreatWChar_tAsBuiltInType>
+      <UseFullPaths>false</UseFullPaths>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;NDEBUG;_CRT_SECURE_NO_WARNINGS;_WINSOCK_DEPRECATED_NO_WARNINGS;_DISABLE_VECTOR_ANNOTATION;_DISABLE_STRING_ANNOTATION;_DISABLE_OPTIONAL_ANNOTATION;BUILDING_GRANNY_STATIC=1;CMAKE_INTDIR="Release"</PreprocessorDefinitions>
+      <ObjectFileName>$(IntDir)</ObjectFileName>
+      <ScanSourceForModuleDependencies>false</ScanSourceForModuleDependencies>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;NDEBUG;_CRT_SECURE_NO_WARNINGS;_WINSOCK_DEPRECATED_NO_WARNINGS;_DISABLE_VECTOR_ANNOTATION;_DISABLE_STRING_ANNOTATION;_DISABLE_OPTIONAL_ANNOTATION;BUILDING_GRANNY_STATIC=1;CMAKE_INTDIR=\"Release\"</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\3rd\F_FS;D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\3rd\Granny;D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\3rd\SpeedTree;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ResourceCompile>
+    <Midl>
+      <AdditionalIncludeDirectories>D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\3rd\F_FS;D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\3rd\Granny;D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\3rd\SpeedTree;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
+      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
+    </Midl>
+    <Lib>
+      <AdditionalOptions>%(AdditionalOptions) /machine:x64</AdditionalOptions>
+    </Lib>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\3rd\F_FS;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalOptions>%(AdditionalOptions) /external:I "D:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/3rd/Granny" /external:I "D:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/3rd/SpeedTree" /bigobj /fsanitize=address</AdditionalOptions>
+      <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
+      <BasicRuntimeChecks>Default</BasicRuntimeChecks>
+      <BufferSecurityCheck>true</BufferSecurityCheck>
+      <CallingConvention></CallingConvention>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <ExceptionHandling>Sync</ExceptionHandling>
+      <ExternalWarningLevel>TurnOffAllWarnings</ExternalWarningLevel>
+      <FloatingPointModel></FloatingPointModel>
+      <ForceConformanceInForLoopScope></ForceConformanceInForLoopScope>
+      <InlineFunctionExpansion>OnlyExplicitInline</InlineFunctionExpansion>
+      <LanguageStandard>stdcpplatest</LanguageStandard>
+      <MinimalRebuild></MinimalRebuild>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <Optimization>MinSpace</Optimization>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <RemoveUnreferencedCodeData></RemoveUnreferencedCodeData>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <SDLCheck>true</SDLCheck>
+      <SupportJustMyCode></SupportJustMyCode>
+      <TreatWChar_tAsBuiltInType></TreatWChar_tAsBuiltInType>
+      <UseFullPaths>false</UseFullPaths>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;NDEBUG;_CRT_SECURE_NO_WARNINGS;_WINSOCK_DEPRECATED_NO_WARNINGS;_DISABLE_VECTOR_ANNOTATION;_DISABLE_STRING_ANNOTATION;_DISABLE_OPTIONAL_ANNOTATION;BUILDING_GRANNY_STATIC=1;CMAKE_INTDIR="MinSizeRel"</PreprocessorDefinitions>
+      <ObjectFileName>$(IntDir)</ObjectFileName>
+      <ScanSourceForModuleDependencies>false</ScanSourceForModuleDependencies>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;NDEBUG;_CRT_SECURE_NO_WARNINGS;_WINSOCK_DEPRECATED_NO_WARNINGS;_DISABLE_VECTOR_ANNOTATION;_DISABLE_STRING_ANNOTATION;_DISABLE_OPTIONAL_ANNOTATION;BUILDING_GRANNY_STATIC=1;CMAKE_INTDIR=\"MinSizeRel\"</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\3rd\F_FS;D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\3rd\Granny;D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\3rd\SpeedTree;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ResourceCompile>
+    <Midl>
+      <AdditionalIncludeDirectories>D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\3rd\F_FS;D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\3rd\Granny;D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\3rd\SpeedTree;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
+      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
+    </Midl>
+    <Lib>
+      <AdditionalOptions>%(AdditionalOptions) /machine:x64</AdditionalOptions>
+    </Lib>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\3rd\F_FS;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalOptions>%(AdditionalOptions) /external:I "D:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/3rd/Granny" /external:I "D:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/3rd/SpeedTree" /bigobj /fsanitize=address</AdditionalOptions>
+      <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
+      <BasicRuntimeChecks>Default</BasicRuntimeChecks>
+      <BufferSecurityCheck>true</BufferSecurityCheck>
+      <CallingConvention></CallingConvention>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <ExceptionHandling>Sync</ExceptionHandling>
+      <ExternalWarningLevel>TurnOffAllWarnings</ExternalWarningLevel>
+      <FloatingPointModel></FloatingPointModel>
+      <ForceConformanceInForLoopScope></ForceConformanceInForLoopScope>
+      <InlineFunctionExpansion>OnlyExplicitInline</InlineFunctionExpansion>
+      <LanguageStandard>stdcpplatest</LanguageStandard>
+      <MinimalRebuild></MinimalRebuild>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <Optimization>MaxSpeed</Optimization>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <RemoveUnreferencedCodeData></RemoveUnreferencedCodeData>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <SDLCheck>true</SDLCheck>
+      <SupportJustMyCode></SupportJustMyCode>
+      <TreatWChar_tAsBuiltInType></TreatWChar_tAsBuiltInType>
+      <UseFullPaths>false</UseFullPaths>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;NDEBUG;_CRT_SECURE_NO_WARNINGS;_WINSOCK_DEPRECATED_NO_WARNINGS;_DISABLE_VECTOR_ANNOTATION;_DISABLE_STRING_ANNOTATION;_DISABLE_OPTIONAL_ANNOTATION;BUILDING_GRANNY_STATIC=1;CMAKE_INTDIR="RelWithDebInfo"</PreprocessorDefinitions>
+      <ObjectFileName>$(IntDir)</ObjectFileName>
+      <ScanSourceForModuleDependencies>false</ScanSourceForModuleDependencies>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;NDEBUG;_CRT_SECURE_NO_WARNINGS;_WINSOCK_DEPRECATED_NO_WARNINGS;_DISABLE_VECTOR_ANNOTATION;_DISABLE_STRING_ANNOTATION;_DISABLE_OPTIONAL_ANNOTATION;BUILDING_GRANNY_STATIC=1;CMAKE_INTDIR=\"RelWithDebInfo\"</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\3rd\F_FS;D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\3rd\Granny;D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\3rd\SpeedTree;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ResourceCompile>
+    <Midl>
+      <AdditionalIncludeDirectories>D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\3rd\F_FS;D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\3rd\Granny;D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\3rd\SpeedTree;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
+      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
+    </Midl>
+    <Lib>
+      <AdditionalOptions>%(AdditionalOptions) /machine:x64</AdditionalOptions>
+    </Lib>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <CustomBuild Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\Game\CMakeLists.txt">
+      <UseUtf8Encoding>Always</UseUtf8Encoding>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Building Custom Rule D:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Launcher/Game/CMakeLists.txt</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -SD:/AurigaGlobal/LiveWork/AurigaGlobal -BD:/AurigaGlobal/LiveWork/AurigaGlobal/build-asan --check-stamp-file D:/AurigaGlobal/LiveWork/AurigaGlobal/build-asan/SRC/Launcher/Game/CMakeFiles/generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">D:\AurigaGlobal\LiveWork\AurigaGlobal\build-asan\CMakeFiles\cmake.verify_globs;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">D:\AurigaGlobal\LiveWork\AurigaGlobal\build-asan\SRC\Launcher\Game\CMakeFiles\generate.stamp</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Building Custom Rule D:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Launcher/Game/CMakeLists.txt</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -SD:/AurigaGlobal/LiveWork/AurigaGlobal -BD:/AurigaGlobal/LiveWork/AurigaGlobal/build-asan --check-stamp-file D:/AurigaGlobal/LiveWork/AurigaGlobal/build-asan/SRC/Launcher/Game/CMakeFiles/generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">D:\AurigaGlobal\LiveWork\AurigaGlobal\build-asan\CMakeFiles\cmake.verify_globs;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">D:\AurigaGlobal\LiveWork\AurigaGlobal\build-asan\SRC\Launcher\Game\CMakeFiles\generate.stamp</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">Building Custom Rule D:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Launcher/Game/CMakeLists.txt</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -SD:/AurigaGlobal/LiveWork/AurigaGlobal -BD:/AurigaGlobal/LiveWork/AurigaGlobal/build-asan --check-stamp-file D:/AurigaGlobal/LiveWork/AurigaGlobal/build-asan/SRC/Launcher/Game/CMakeFiles/generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">D:\AurigaGlobal\LiveWork\AurigaGlobal\build-asan\CMakeFiles\cmake.verify_globs;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">D:\AurigaGlobal\LiveWork\AurigaGlobal\build-asan\SRC\Launcher\Game\CMakeFiles\generate.stamp</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">Building Custom Rule D:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Launcher/Game/CMakeLists.txt</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -SD:/AurigaGlobal/LiveWork/AurigaGlobal -BD:/AurigaGlobal/LiveWork/AurigaGlobal/build-asan --check-stamp-file D:/AurigaGlobal/LiveWork/AurigaGlobal/build-asan/SRC/Launcher/Game/CMakeFiles/generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">D:\AurigaGlobal\LiveWork\AurigaGlobal\build-asan\CMakeFiles\cmake.verify_globs;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">D:\AurigaGlobal\LiveWork\AurigaGlobal\build-asan\SRC\Launcher\Game\CMakeFiles\generate.stamp</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">false</LinkObjects>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\Game\ActorInstance.h" />
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\Game\ActorInstanceInterface.h" />
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\Game\Area.h" />
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\Game\AreaTerrain.h" />
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\Game\DungeonBlock.h" />
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\Game\FlyHandler.h" />
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\Game\FlyTarget.h" />
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\Game\FlyTrace.h" />
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\Game\FlyingData.h" />
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\Game\FlyingInstance.h" />
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\Game\FlyingObjectManager.h" />
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\Game\GameEventManager.h" />
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\Game\GameLibDefines.h" />
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\Game\GameType.h" />
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\Game\GameUtil.h" />
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\Game\Interface.h" />
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\Game\ItemData.h" />
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\Game\ItemManager.h" />
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\Game\MapBase.h" />
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\Game\MapManager.h" />
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\Game\MapOutdoor.h" />
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\Game\MapType.h" />
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\Game\MapUtil.h" />
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\Game\MonsterAreaInfo.h" />
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\Game\PhysicsObject.h" />
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\Game\Property.h" />
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\Game\PropertyLoader.h" />
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\Game\PropertyManager.h" />
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\Game\RaceData.h" />
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\Game\RaceManager.h" />
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\Game\RaceMotionData.h" />
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\Game\RaceMotionDataEvent.h" />
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\Game\SnowEnvironment.h" />
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\Game\SnowParticle.h" />
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\Game\StdAfx.h" />
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\Game\TerrainDecal.h" />
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\Game\TerrainPatch.h" />
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\Game\TerrainQuadtree.h" />
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\Game\WeaponTrace.h" />
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\Game\in_game_wiki.h" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\Game\ActorInstance.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\Game\ActorInstanceAttach.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\Game\ActorInstanceBattle.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\Game\ActorInstanceBlend.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\Game\ActorInstanceCollisionDetection.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\Game\ActorInstanceData.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\Game\ActorInstanceEvent.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\Game\ActorInstanceFly.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\Game\ActorInstanceMotion.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\Game\ActorInstanceMotionEvent.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\Game\ActorInstancePosition.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\Game\ActorInstanceRender.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\Game\ActorInstanceRotation.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\Game\ActorInstanceSync.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\Game\ActorInstanceWeaponTrace.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\Game\Area.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\Game\AreaTerrain.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\Game\DungeonBlock.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\Game\FlyTarget.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\Game\FlyTrace.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\Game\FlyingData.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\Game\FlyingInstance.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\Game\FlyingObjectManager.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\Game\GameEventManager.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\Game\GameType.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\Game\GameUtil.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\Game\ItemData.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\Game\ItemManager.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\Game\MapBase.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\Game\MapManager.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\Game\MapOutdoor.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\Game\MapOutdoorCharacterShadow.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\Game\MapOutdoorIndexBuffer.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\Game\MapOutdoorLoad.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\Game\MapOutdoorQuadtree.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\Game\MapOutdoorRender.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\Game\MapOutdoorRenderHTP.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\Game\MapOutdoorRenderSTP.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\Game\MapOutdoorUpdate.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\Game\MapOutdoorWater.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\Game\MapType.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\Game\MapUtil.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\Game\MonsterAreaInfo.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\Game\PhysicsObject.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\Game\Property.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\Game\PropertyLoader.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\Game\PropertyManager.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\Game\RaceData.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\Game\RaceDataFile.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\Game\RaceManager.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\Game\RaceMotionData.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\Game\SnowEnvironment.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\Game\SnowParticle.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\Game\StdAfx.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\Game\TerrainDecal.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\Game\TerrainPatch.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\Game\TerrainQuadtree.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\Game\WeaponTrace.cpp" />
+  </ItemGroup>
+  <ItemGroup />
+  <ItemGroup>
+    <ProjectReference Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\build-asan\ZERO_CHECK.vcxproj">
+      <Project>{8DCF6E62-4198-3D54-9D62-3B2BB529300B}</Project>
+      <Name>ZERO_CHECK</Name>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </ProjectReference>
+    <ProjectReference Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\build-asan\SRC\Launcher\AudioLib\AudioLib.vcxproj">
+      <Project>{A1F9A30D-EF18-3E42-AD75-F31AF9F30188}</Project>
+      <Name>AudioLib</Name>
+    </ProjectReference>
+    <ProjectReference Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\build-asan\SRC\Launcher\FoxFS\FoxFS.vcxproj">
+      <Project>{ABB35C5D-F277-3A6E-AE1A-488A9F233519}</Project>
+      <Name>FoxFS</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

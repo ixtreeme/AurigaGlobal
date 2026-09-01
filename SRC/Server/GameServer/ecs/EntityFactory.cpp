@@ -419,6 +419,8 @@ ecs::ItemIdentity MakeItemIdentity(LPITEM item)
         item->GetOriginalVnum(),
         item->GetVID(),
         item->GetMaskVnum(),
+        item->GetSIGVnum(),
+        item->GetSpecialGroup(),
     };
 }
 
@@ -543,6 +545,7 @@ ecs::ItemProtoRef MakeItemProtoRef(LPITEM item)
 
 void SyncItemEntity(entt::registry& reg, entt::entity entity, LPITEM item)
 {
+    reg.emplace_or_replace<ecs::LegacyItemPtr>(entity, get_pointer(item));
     reg.emplace_or_replace<ecs::ItemIdentity>(entity, MakeItemIdentity(item));
     reg.emplace_or_replace<ecs::ItemLocation>(entity, MakeItemLocation(item));
     reg.emplace_or_replace<ecs::ItemGroundPosition>(entity, MakeItemGroundPosition(item));
@@ -655,8 +658,6 @@ entt::entity EntityFactory::CreatePC(entt::registry& reg, const TPlayerTable& da
     reg.emplace_or_replace<ecs::LoginInfo>(entity, MakeLoginInfo(data, desc, now));
     reg.emplace_or_replace<ecs::AntiFlood>(entity, ecs::AntiFlood { 0, 0u, 0, 0u });
 
-    reg.emplace_or_replace<ecs::EquipmentSlots>(entity, ecs::EquipmentSlots {});
-    reg.emplace_or_replace<ecs::InventoryGrid>(entity, ecs::InventoryGrid {});
     reg.emplace_or_replace<ecs::MainInventoryRuntimeComponent>(entity, ecs::MainInventoryRuntimeComponent {});
 #ifdef ENABLE_EXTRA_INVENTORY
     reg.emplace_or_replace<ecs::ExtraInventoryRuntimeComponent>(entity, ecs::ExtraInventoryRuntimeComponent {});
@@ -698,7 +699,7 @@ entt::entity EntityFactory::CreatePC(entt::registry& reg, const TPlayerTable& da
         data.horse.bRiding != 0,
     });
 
-    reg.emplace_or_replace<ecs::QuestContext>(entity, 0u, 0u, nullptr);
+    reg.emplace_or_replace<ecs::QuestContext>(entity, 0u, 0u, entt::null);
     reg.emplace_or_replace<ecs::RankPoints>(entity, MakeRankPoints(data));
     reg.emplace_or_replace<ecs::AlignBonuses>(entity, ecs::AlignBonuses { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, static_cast<uint8_t>(255) });
 
@@ -737,21 +738,24 @@ entt::entity EntityFactory::CreateItemEntity(entt::registry& reg, LPITEM item)
     }
 
     const uint32_t itemID = item->GetID();
-    if (itemID == 0) {
+    const uint32_t itemVID = item->GetVID();
+    if (itemID == 0 && itemVID == 0) {
         return entt::null;
     }
 
-    const entt::entity existing = CItemRegistry::Instance().Find(itemID);
+    entt::entity existing = CItemRegistry::Instance().FindByLegacy(item);
+    if (existing == entt::null && itemID != 0)
+        existing = CItemRegistry::Instance().Find(itemID);
     if (existing != entt::null && reg.valid(existing)) {
         SyncItemEntity(reg, existing, item);
-        CItemRegistry::Instance().Register(itemID, item->GetVID(), existing);
+        CItemRegistry::Instance().Register(itemID, itemVID, item, existing);
         ecs::ItemInvariants::ValidateItemEntity(reg, existing, "item.factory.existing");
         return existing;
     }
 
     const entt::entity entity = reg.create();
     SyncItemEntity(reg, entity, item);
-    CItemRegistry::Instance().Register(itemID, item->GetVID(), entity);
+    CItemRegistry::Instance().Register(itemID, itemVID, item, entity);
     ecs::ItemInvariants::ValidateItemEntity(reg, entity, "item.factory.create");
     return entity;
 }
@@ -762,13 +766,8 @@ void EntityFactory::DestroyItemEntity(entt::registry& reg, LPITEM item)
         return;
     }
 
-    const uint32_t itemID = item->GetID();
-    if (itemID == 0) {
-        return;
-    }
-
-    const entt::entity entity = CItemRegistry::Instance().Find(itemID);
-    CItemRegistry::Instance().Unregister(itemID);
+    const entt::entity entity = CItemRegistry::Instance().FindByLegacy(item);
+    CItemRegistry::Instance().Unregister(entity);
 
     if (entity != entt::null && reg.valid(entity)) {
         reg.destroy(entity);

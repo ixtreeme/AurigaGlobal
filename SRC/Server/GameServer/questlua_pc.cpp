@@ -536,13 +536,13 @@ namespace quest
 
 		std::vector <uint32_t> dwVnums;
 		std::vector <uint32_t> dwCounts;
-		std::vector <LPITEM> item_gets(0);
+		std::vector<entt::entity> item_gets;
 		int count = 0;
 
 		ch->GiveItemFromSpecialItemGroup(dwGroupVnum, dwVnums, dwCounts, item_gets, count);
 #ifdef TEXTS_IMPROVEMENT
 		for (int i = 0; i < count; i++) {
-			if (!item_gets[i]) {
+			if (item_gets[i] == entt::null) {
 				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 102, "%d", dwCounts[i]);
 			}
 		}
@@ -721,7 +721,7 @@ namespace quest
 		LPITEM item = ITEM_MANAGER::instance().CreateItem(dwVnum, icount);
 		if (ecs::SocialSystem::GetParty(AIHelpers::EcsOf(ch)))
 		{
-			FPartyDropDiceRoll f(item, ch);
+			FPartyDropDiceRoll f(EntityFactory::CreateItemEntity(g_registry, item), ch);
 			f.Process(nullptr);
 			f.GetItemOwner()->AutoGiveItem(item);
 		}
@@ -1301,10 +1301,10 @@ namespace quest
 	{
 		// migrated from CHARACTER::GetWear
 		entt::entity e = CQuestManager::instance().GetPCEntity(L);
-		if (const auto* equipment = ECS_TryGet<ecs::EquipmentSlots>(e))
+		if (e != entt::null && g_registry.valid(e))
 		{
-			LPITEM item = equipment->items[WEAR_WEAPON];
-			lua_pushnumber(L, item ? ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, item)) : 0);
+			const entt::entity item = ItemSystem::GetWearItem(e, WEAR_WEAPON);
+			lua_pushnumber(L, item != entt::null ? ItemSystem::GetItemVnum(item) : 0);
 			return 1;
 		}
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
@@ -1318,10 +1318,10 @@ namespace quest
 	{
 		// migrated from CHARACTER::GetWear
 		entt::entity e = CQuestManager::instance().GetPCEntity(L);
-		if (const auto* equipment = ECS_TryGet<ecs::EquipmentSlots>(e))
+		if (e != entt::null && g_registry.valid(e))
 		{
-			LPITEM item = equipment->items[WEAR_BODY];
-			lua_pushnumber(L, item ? ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, item)) : 0);
+			const entt::entity item = ItemSystem::GetWearItem(e, WEAR_BODY);
+			lua_pushnumber(L, item != entt::null ? ItemSystem::GetItemVnum(item) : 0);
 			return 1;
 		}
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
@@ -1341,13 +1341,13 @@ namespace quest
 		}
 		const uint8_t bCell = static_cast<uint8_t>(lua_tonumber(L, 1));
 		entt::entity e = CQuestManager::instance().GetPCEntity(L);
-		if (const auto* equipment = ECS_TryGet<ecs::EquipmentSlots>(e))
+		if (e != entt::null && g_registry.valid(e))
 		{
-			LPITEM item = bCell < equipment->items.size() ? equipment->items[bCell] : nullptr;
-			if (!item)
+			const entt::entity item = bCell < WEAR_MAX_NUM ? ItemSystem::GetWearItem(e, bCell) : entt::null;
+			if (item == entt::null)
 				lua_pushnil(L);
 			else
-				lua_pushnumber(L, ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, item)));
+				lua_pushnumber(L, ItemSystem::GetItemVnum(item));
 			return 1;
 		}
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
@@ -2166,10 +2166,10 @@ namespace quest
 			return 1;
 		}
 		entt::entity e = CQuestManager::instance().GetPCEntity(L);
-		if (const auto* equipment = ECS_TryGet<ecs::EquipmentSlots>(e))
+		if (e != entt::null && g_registry.valid(e))
 		{
-			LPITEM item = equipment->items[cell];
-			lua_pushnumber(L, item ? item->GetRefineLevel() : 0);
+			const entt::entity item = ItemSystem::GetWearItem(e, cell);
+			lua_pushnumber(L, item != entt::null ? ItemSystem::GetItemRefineLevel(item) : 0);
 			return 1;
 		}
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
@@ -3333,18 +3333,18 @@ teleport_area:
 		// migrated from CHARACTER::GetInventoryItem
 		entt::entity e = CQuestManager::instance().GetPCEntity(L);
 		lua_newtable(L);
-		if (const auto* inventory = ECS_TryGet<ecs::InventoryGrid>(e))
+		if (const auto* inventory = ECS_TryGet<ecs::MainInventoryRuntimeComponent>(e))
 		{
 			int idx = 1;
 			for (int i = 0; i < INVENTORY_MAX_NUM; ++i)
 			{
-				LPITEM pItem = inventory->items[i];
-				if (!pItem)
+				const entt::entity item = inventory->items[i];
+				if (item == entt::null)
 					continue;
 				int j = 0;
 				for (; j < ITEM_SOCKET_MAX_NUM; ++j)
 				{
-					int32_t socket = ItemSystem::GetItemSocket(EntityFactory::CreateItemEntity(g_registry, pItem), j);
+					int32_t socket = ItemSystem::GetItemSocket(item, j);
 					if (socket > 2 && socket != ITEM_BROKEN_METIN_VNUM)
 					{
 						TItemTable* pItemInfo = ITEM_MANAGER::instance().GetTable(socket);
@@ -3355,7 +3355,7 @@ teleport_area:
 				if (j >= ITEM_SOCKET_MAX_NUM)
 					continue;
 				lua_newtable(L);
-				lua_pushstring(L, pItem->GetName());
+				lua_pushstring(L, ItemSystem::GetItemName(item));
 				lua_rawseti(L, -2, 1);
 				lua_pushnumber(L, i);
 				lua_rawseti(L, -2, 2);
@@ -3400,12 +3400,12 @@ teleport_area:
 	{
 		// migrated from CHARACTER::CountEmptyInventory
 		entt::entity e = CQuestManager::instance().GetPCEntity(L);
-		if (const auto* inventory = ECS_TryGet<ecs::InventoryGrid>(e))
+		if (const auto* inventory = ECS_TryGet<ecs::MainInventoryRuntimeComponent>(e))
 		{
 			int emptyCount = 0;
-			for (LPITEM item : inventory->items)
+			for (int cell = 0; cell < INVENTORY_MAX_NUM; ++cell)
 			{
-				if (!item)
+				if (inventory->items[cell] == entt::null)
 				{
 					++emptyCount;
 				}
@@ -3508,30 +3508,30 @@ teleport_area:
 	{
 		// migrated from CHARACTER::GetWear
 		entt::entity e = CQuestManager::instance().GetPCEntity(L);
-		if (const auto* equipment = ECS_TryGet<ecs::EquipmentSlots>(e))
+		if (e != entt::null && g_registry.valid(e))
 		{
-			LPITEM unique1 = equipment->items[WEAR_UNIQUE1];
-			LPITEM unique2 = equipment->items[WEAR_UNIQUE2];
+			const entt::entity unique1 = ItemSystem::GetWearItem(e, WEAR_UNIQUE1);
+			const entt::entity unique2 = ItemSystem::GetWearItem(e, WEAR_UNIQUE2);
 #ifdef ENABLE_MOUNT_COSTUME_SYSTEM
-			LPITEM mountCostume = equipment->items[WEAR_COSTUME_MOUNT];
+			const entt::entity mountCostume = ItemSystem::GetWearItem(e, WEAR_COSTUME_MOUNT);
 #endif
-			if (unique1 && unique1->GetSpecialGroup() == UNIQUE_GROUP_SPECIAL_RIDE)
+			if (unique1 != entt::null && ItemSystem::GetItemSpecialGroup(unique1) == UNIQUE_GROUP_SPECIAL_RIDE)
 			{
-				lua_pushnumber(L, ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, unique1)));
-				lua_pushnumber(L, ItemSystem::GetItemSocket(EntityFactory::CreateItemEntity(g_registry, unique1), 0));
+				lua_pushnumber(L, ItemSystem::GetItemVnum(unique1));
+				lua_pushnumber(L, ItemSystem::GetItemSocket(unique1, 0));
 				return 2;
 			}
-			if (unique2 && unique2->GetSpecialGroup() == UNIQUE_GROUP_SPECIAL_RIDE)
+			if (unique2 != entt::null && ItemSystem::GetItemSpecialGroup(unique2) == UNIQUE_GROUP_SPECIAL_RIDE)
 			{
-				lua_pushnumber(L, ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, unique2)));
-				lua_pushnumber(L, ItemSystem::GetItemSocket(EntityFactory::CreateItemEntity(g_registry, unique2), 0));
+				lua_pushnumber(L, ItemSystem::GetItemVnum(unique2));
+				lua_pushnumber(L, ItemSystem::GetItemSocket(unique2, 0));
 				return 2;
 			}
 #ifdef ENABLE_MOUNT_COSTUME_SYSTEM
-			if (mountCostume)
+			if (mountCostume != entt::null)
 			{
-				lua_pushnumber(L, ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, mountCostume)));
-				lua_pushnumber(L, ItemSystem::GetItemSocket(EntityFactory::CreateItemEntity(g_registry, mountCostume), 0));
+				lua_pushnumber(L, ItemSystem::GetItemVnum(mountCostume));
+				lua_pushnumber(L, ItemSystem::GetItemSocket(mountCostume, 0));
 				return 2;
 			}
 #endif
@@ -3689,15 +3689,15 @@ teleport_area:
 		// migrated from CHARACTER::GetInventoryItem
 		const uint32_t group_vnum = static_cast<uint32_t>(lua_tonumber(L, 1));
 		entt::entity e = CQuestManager::instance().GetPCEntity(L);
-		if (const auto* inventory = ECS_TryGet<ecs::InventoryGrid>(e))
+		if (const auto* inventory = ECS_TryGet<ecs::MainInventoryRuntimeComponent>(e))
 		{
 			int count = 0;
 			for (int i = 0; i < INVENTORY_MAX_NUM; ++i)
 			{
-				LPITEM item = inventory->items[i];
-				if (item != nullptr && item->GetSIGVnum() == group_vnum)
+				const entt::entity item = inventory->items[i];
+				if (item != entt::null && ItemSystem::GetItemSIGVnum(item) == group_vnum)
 				{
-					lua_pushnumber(L, ItemSystem::GetItemID(EntityFactory::CreateItemEntity(g_registry, item)));
+					lua_pushnumber(L, ItemSystem::GetItemID(item));
 					++count;
 				}
 			}

@@ -47,14 +47,6 @@ bool IsSummonItemOwnedBy(uint32_t vid, LPCHARACTER owner)
 	return item != entt::null && ItemSystem::GetItemOwner(item) == AIHelpers::EcsOf(owner);
 }
 
-LPITEM LegacyItemFromEntity(entt::entity item)
-{
-	if (item == entt::null)
-		return nullptr;
-
-	const uint32_t id = ItemSystem::GetItemID(item);
-	return id != 0 ? ITEM_MANAGER::instance().Find(id) : nullptr;
-}
 }
 
 
@@ -227,16 +219,16 @@ void CNewPetActor::ItemCubeFeed(int type)
 	{
 		if (m_dwpetslotitem[i] != -1)
 		{
-			LPITEM itemxp = ItemSystem::GetInventoryItemPtr(AIHelpers::EcsOf(m_pkOwner), m_dwpetslotitem[i]);
-			if (!itemxp)
+			const entt::entity itemxp = ItemSystem::GetInventoryItem(AIHelpers::EcsOf(m_pkOwner), m_dwpetslotitem[i]);
+			if (!ItemSystem::IsValidItem(itemxp))
 				return;
-			if (ItemSystem::GetItemID(EntityFactory::CreateItemEntity(g_registry, itemxp)) == ItemSystem::GetItemID(FindSummonItemByVID(this->GetSummonItemVID())) || ecs::SocialSystem::GetExchange(AIHelpers::EcsOf(m_pkOwner)) || m_pkOwner->GetMyShop() || m_pkOwner->GetShopOwner() || m_pkOwner->IsOpenSafebox() || m_pkOwner->IsCubeOpen())
+			if (ItemSystem::GetItemID(itemxp) == ItemSystem::GetItemID(FindSummonItemByVID(this->GetSummonItemVID())) || ecs::SocialSystem::GetExchange(AIHelpers::EcsOf(m_pkOwner)) || m_pkOwner->GetMyShop() || m_pkOwner->GetShopOwner() || m_pkOwner->IsOpenSafebox() || m_pkOwner->IsCubeOpen())
 				return;
 			if(type == 1)
 			{
-				if ((ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, itemxp)) >= 55401 && ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, itemxp)) <= 55411 )|| (ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, itemxp)) >= 55701 && ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, itemxp)) <= 55711 )||( ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, itemxp)) == 55001) )
+				if ((ItemSystem::GetItemVnum(itemxp) >= 55401 && ItemSystem::GetItemVnum(itemxp) <= 55411 )|| (ItemSystem::GetItemVnum(itemxp) >= 55701 && ItemSystem::GetItemVnum(itemxp) <= 55711 )||( ItemSystem::GetItemVnum(itemxp) == 55001) )
 				{
-					if(ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, itemxp)) == 55001)
+					if(ItemSystem::GetItemVnum(itemxp) == 55001)
 					{
 						int tmp_dur = m_dwtduration/2;
 						if (m_dwduration+tmp_dur > m_dwtduration)
@@ -253,17 +245,17 @@ void CNewPetActor::ItemCubeFeed(int type)
 							m_dwduration += tmp_dur;
 						ecs::ChatSystem::Send(AIHelpers::EcsOf(m_pkOwner), CHAT_TYPE_COMMAND, "PetDuration %d %d", m_dwduration, m_dwtduration);
 					}
-					ITEM_MANAGER::instance().RemoveItem(itemxp);
+					ItemSystem::DestroyItemEntityEcs(itemxp, "PET_CUBE_FEED");
 				}
 			}
 			else if(type == 3)
 			{
 				if (GetLevel() < 120)
 				{
-					if(ItemSystem::GetItemType(EntityFactory::CreateItemEntity(g_registry, itemxp)) == 1 || ItemSystem::GetItemType(EntityFactory::CreateItemEntity(g_registry, itemxp)) == 2)
+					if(ItemSystem::GetItemType(itemxp) == 1 || ItemSystem::GetItemType(itemxp) == 2)
 					{
-						SetExp(itemxp->GetShopBuyPrice() / 2, 1);
-						ITEM_MANAGER::instance().RemoveItem(itemxp);
+						SetExp(ItemSystem::GetItemShopBuyPrice(itemxp) / 2, 1);
+						ItemSystem::DestroyItemEntityEcs(itemxp, "PET_CUBE_FEED");
 					}
 				}
 #ifdef TEXTS_IMPROVEMENT
@@ -305,12 +297,12 @@ bool CNewPetActor::IncreasePetSkill(int skill)
 #else
 	Cell.window_type = INVENTORY;
 #endif
-	LPITEM bookItem = m_pkOwner->GetItem(Cell);
-	if (!bookItem)
+	const entt::entity bookItem = ItemSystem::GetItem(AIHelpers::EcsOf(m_pkOwner), Cell);
+	if (!ItemSystem::IsValidItem(bookItem))
 		return false;
 
-	iType = ItemSystem::GetItemValue(EntityFactory::CreateItemEntity(g_registry, bookItem), 0);
-	if ((iType > 12) || (iType < 1) || ((idx != 0) && (idx != iType)) || (ItemSystem::GetItemType(EntityFactory::CreateItemEntity(g_registry, bookItem)) != ITEM_TYPE_PET))
+	iType = ItemSystem::GetItemValue(bookItem, 0);
+	if ((iType > 12) || (iType < 1) || ((idx != 0) && (idx != iType)) || (ItemSystem::GetItemType(bookItem) != ITEM_TYPE_PET))
 		return false;
 
 	for (int i = 0; i < 4; i++) {
@@ -323,7 +315,7 @@ bool CNewPetActor::IncreasePetSkill(int skill)
 	}
 
 	ItemSystem::ConsumeItemEcs(
-		EntityFactory::CreateItemEntity(g_registry, bookItem), 1);
+		bookItem, 1);
 
 	if (idx == 0)
 		m_dwskillslot[iSlot] = iType;
@@ -398,14 +390,14 @@ bool CNewPetActor::IncreasePetSkill(int skill)
 #ifdef ENABLE_NEW_PET_EDITS
 bool CNewPetActor::IncreasePetSkillByBook(entt::entity bookItemEntity)
 {
-	LPITEM bookItem = LegacyItemFromEntity(bookItemEntity);
-	if (!bookItem)
+	const entt::entity bookItem = bookItemEntity;
+	if (!ItemSystem::IsValidItem(bookItem))
 		return false;
 
-	if (ItemSystem::GetItemType(EntityFactory::CreateItemEntity(g_registry, bookItem)) != ITEM_TYPE_PET)
+	if (ItemSystem::GetItemType(bookItem) != ITEM_TYPE_PET)
 		return false;
 
-	int iType = ItemSystem::GetItemValue(EntityFactory::CreateItemEntity(g_registry, bookItem), 0);
+	int iType = ItemSystem::GetItemValue(bookItem, 0);
 	if ((iType > 12) || (iType < 1))
 		return false;
 
@@ -451,7 +443,7 @@ bool CNewPetActor::IncreasePetSkillByBook(entt::entity bookItemEntity)
 	}
 
 	ItemSystem::ConsumeItemEcs(
-		EntityFactory::CreateItemEntity(g_registry, bookItem), 1);
+		bookItem, 1);
 
 	if (number(1, 100) < 30) {
 #ifdef TEXTS_IMPROVEMENT
@@ -542,10 +534,10 @@ bool CNewPetActor::IncreasePetEvolution()
 #endif
 			if (m_dwevolution == 3)
 			{
-				LPITEM pSummonItem = LegacyItemFromEntity(FindSummonItemByVID(this->GetSummonItemVID()));
-				if (pSummonItem != nullptr){
+				const entt::entity pSummonItem = FindSummonItemByVID(this->GetSummonItemVID());
+				if (ItemSystem::IsValidItem(pSummonItem)){
 					Unsummon();
-					Summon("Noname", EntityFactory::CreateItemEntity(g_registry, pSummonItem), false);
+					Summon("Noname", pSummonItem, false);
 				}
 			}
 
@@ -593,10 +585,10 @@ void CNewPetActor:: IncreasePetBonus()
 		m_dwbonuspet[2][1] += float(number(1, 6));
 	}
 	ecs::ChatSystem::Send(AIHelpers::EcsOf(m_pkOwner), CHAT_TYPE_COMMAND, "PetBonus %d %d %d", m_dwbonuspet[0][1], m_dwbonuspet[1][1], m_dwbonuspet[2][1]);
-	LPITEM pSummonItem = LegacyItemFromEntity(FindSummonItemByVID(this->GetSummonItemVID()));
-	if (pSummonItem != nullptr){
+	const entt::entity pSummonItem = FindSummonItemByVID(this->GetSummonItemVID());
+	if (ItemSystem::IsValidItem(pSummonItem)){
 		for (int b = 0; b < 3; b++){
-			ItemSystem::SetItemForceAttributeEcs(EntityFactory::CreateItemEntity(g_registry, pSummonItem), b, 1, m_dwbonuspet[b][1]);
+			ItemSystem::SetItemForceAttributeEcs(pSummonItem, b, 1, m_dwbonuspet[b][1]);
 		}
 
 	}
@@ -616,12 +608,12 @@ void CNewPetActor::SetLevel(uint32_t level)
 	m_dwlevel = level;
 	ecs::ChatSystem::Send(AIHelpers::EcsOf(m_pkOwner), CHAT_TYPE_COMMAND, "PetLevel %d", m_dwlevel);
 	SetNextExp(m_pkChar->PetGetNextExp());
-	LPITEM pSummonItem = LegacyItemFromEntity(FindSummonItemByVID(this->GetSummonItemVID()));
-	if (pSummonItem) {
+	const entt::entity pSummonItem = FindSummonItemByVID(this->GetSummonItemVID());
+	if (ItemSystem::IsValidItem(pSummonItem)) {
 #ifdef ENABLE_NEW_PET_EDITS
-	ItemSystem::SetItemForceAttributeEcs(EntityFactory::CreateItemEntity(g_registry, pSummonItem), 3, 1, m_dwlevel);
+	ItemSystem::SetItemForceAttributeEcs(pSummonItem, 3, 1, m_dwlevel);
 #else
-	ItemSystem::SetItemSocket(EntityFactory::CreateItemEntity(g_registry, pSummonItem), 1, m_dwlevel);
+	ItemSystem::SetItemSocket(pSummonItem, 1, m_dwlevel);
 #endif
 	}
 }
@@ -782,8 +774,8 @@ void CNewPetActor::UpdateTime(bool now)
 {
 	m_dwTimePet += 1;
 	if (m_dwTimePet >= 60 || now) {
-		LPITEM pSummonItem = LegacyItemFromEntity(FindSummonItemByVID(this->GetSummonItemVID()));
-		if (pSummonItem != nullptr) {
+		const entt::entity pSummonItem = FindSummonItemByVID(this->GetSummonItemVID());
+		if (ItemSystem::IsValidItem(pSummonItem)) {
 			lMinAge = get_global_time() - dwMinAge;
 			if (lMinAge >= 1296000 && m_dwskillslot[3] == -1) {
 				m_dwskill[3] = 0;
@@ -819,12 +811,12 @@ void CNewPetActor::UpdateTime(bool now)
 
 		m_dwduration -= 1;
 		m_dwTimePet = 0;
-		if (pSummonItem != nullptr){
+		if (ItemSystem::IsValidItem(pSummonItem)){
 #ifdef ENABLE_NEW_PET_EDITS
-			ItemSystem::SetItemSocket(EntityFactory::CreateItemEntity(g_registry, pSummonItem), 1, m_dwduration);
+			ItemSystem::SetItemSocket(pSummonItem, 1, m_dwduration);
 #else
-			ItemSystem::SetItemForceAttributeEcs(EntityFactory::CreateItemEntity(g_registry, pSummonItem), 3, 1, m_dwduration);
-			ItemSystem::SetItemForceAttributeEcs(EntityFactory::CreateItemEntity(g_registry, pSummonItem), 4, 1, m_dwtduration);
+			ItemSystem::SetItemForceAttributeEcs(pSummonItem, 3, 1, m_dwduration);
+			ItemSystem::SetItemForceAttributeEcs(pSummonItem, 4, 1, m_dwtduration);
 #endif
 		}
 		ecs::ChatSystem::Send(AIHelpers::EcsOf(m_pkOwner), CHAT_TYPE_COMMAND, "PetDuration %d %d", m_dwduration, m_dwtduration);
@@ -845,29 +837,29 @@ void CNewPetActor::Unsummon()
 {
 	if (true == this->IsSummoned())
 	{
-		LPITEM pSummonItem = LegacyItemFromEntity(FindSummonItemByVID(this->GetSummonItemVID()));
+		const entt::entity pSummonItem = FindSummonItemByVID(this->GetSummonItemVID());
 
-		if (pSummonItem != nullptr)
+		if (ItemSystem::IsValidItem(pSummonItem))
 		{
 			std::unique_ptr<SQLMsg> msg(DBManager::instance().DirectQuery("UPDATE new_petsystem SET level = %d, evolution=%d, exp=%d, expi=%d, bonus0=%d, bonus1=%d, bonus2=%d, skill0=%d, skill0lv= %d, skill1=%d, skill1lv= %d, skill2=%d, skill2lv= %d, skill3=%d, skill3lv= %d, duration=%d, tduration=%d WHERE id = %lu ", this->GetLevel(), this->m_dwevolution, this->GetExp(), this->GetExpI(), this->m_dwbonuspet[0][1], this->m_dwbonuspet[1][1], this->m_dwbonuspet[2][1], this->m_dwskillslot[0], this->m_dwskill[0], this->m_dwskillslot[1], this->m_dwskill[1], this->m_dwskillslot[2], this->m_dwskill[2], this->m_dwskillslot[3], this->m_dwskill[3], this->m_dwduration, this->m_dwtduration, ItemSystem::GetItemID(FindSummonItemByVID(this->GetSummonItemVID()))));
 			this->ClearBuff();
 
 			for (int b = 0; b < 3; b++)
 			{
-				ItemSystem::SetItemForceAttributeEcs(EntityFactory::CreateItemEntity(g_registry, pSummonItem), b, 1, m_dwbonuspet[b][1]);
+				ItemSystem::SetItemForceAttributeEcs(pSummonItem, b, 1, m_dwbonuspet[b][1]);
 			}
 
 #ifdef ENABLE_NEW_PET_EDITS
-			ItemSystem::SetItemForceAttributeEcs(EntityFactory::CreateItemEntity(g_registry, pSummonItem), 3, 1, m_dwlevel);
-			ItemSystem::SetItemSocket(EntityFactory::CreateItemEntity(g_registry, pSummonItem), 1, m_dwduration);
-			ItemSystem::SetItemSocket(EntityFactory::CreateItemEntity(g_registry, pSummonItem), 2, m_dwtduration);
+			ItemSystem::SetItemForceAttributeEcs(pSummonItem, 3, 1, m_dwlevel);
+			ItemSystem::SetItemSocket(pSummonItem, 1, m_dwduration);
+			ItemSystem::SetItemSocket(pSummonItem, 2, m_dwtduration);
 #else
-			ItemSystem::SetItemForceAttributeEcs(EntityFactory::CreateItemEntity(g_registry, pSummonItem), 3, 1, m_dwduration);
-			ItemSystem::SetItemForceAttributeEcs(EntityFactory::CreateItemEntity(g_registry, pSummonItem), 4, 1, m_dwtduration);
-			ItemSystem::SetItemSocket(EntityFactory::CreateItemEntity(g_registry, pSummonItem), 1, m_dwlevel);
+			ItemSystem::SetItemForceAttributeEcs(pSummonItem, 3, 1, m_dwduration);
+			ItemSystem::SetItemForceAttributeEcs(pSummonItem, 4, 1, m_dwtduration);
+			ItemSystem::SetItemSocket(pSummonItem, 1, m_dwlevel);
 #endif
-			ItemSystem::SetItemSocket(EntityFactory::CreateItemEntity(g_registry, pSummonItem), 0, false);
-			ItemSystem::UnlockItem(EntityFactory::CreateItemEntity(g_registry, pSummonItem));
+			ItemSystem::SetItemSocket(pSummonItem, 0, false);
+			ItemSystem::UnlockItem(pSummonItem);
 		}
 
 		this->SetSummonItem(entt::null);
@@ -902,8 +894,8 @@ void CNewPetActor::Unsummon()
 
 uint32_t CNewPetActor::Summon(const char* petName, entt::entity pSummonItemEntity, bool bSpawnFar)
 {
-	LPITEM pSummonItem = LegacyItemFromEntity(pSummonItemEntity);
-	if (!pSummonItem)
+	const entt::entity pSummonItem = pSummonItemEntity;
+	if (!ItemSystem::IsValidItem(pSummonItem))
 		return 0;
 	int32_t x = ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(m_pkOwner));
 	int32_t y = ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(m_pkOwner));
@@ -928,10 +920,10 @@ uint32_t CNewPetActor::Summon(const char* petName, entt::entity pSummonItemEntit
 		return m_dwVID;
 	}
 	int evolution = 0;
-	int ivnum = pSummonItem != nullptr ? ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, pSummonItem)) : 0;
+	int ivnum = ItemSystem::IsValidItem(pSummonItem) ? ItemSystem::GetItemVnum(pSummonItem) : 0;
 	int evocation = 0;
 	char szQuery2[1024];
-	snprintf(szQuery2, sizeof(szQuery2), "SELECT evolution,evocation FROM new_petsystem WHERE id = %d ", ItemSystem::GetItemID(EntityFactory::CreateItemEntity(g_registry, pSummonItem)));
+	snprintf(szQuery2, sizeof(szQuery2), "SELECT evolution,evocation FROM new_petsystem WHERE id = %d ", ItemSystem::GetItemID(pSummonItem));
 	std::unique_ptr<SQLMsg> pmsg3(DBManager::instance().DirectQuery(szQuery2));
 	if (pmsg3->Get()->uiNumRows > 0) {
 		MYSQL_ROW row1 = mysql_fetch_row(pmsg3->Get()->pSQLResult);
@@ -942,11 +934,11 @@ uint32_t CNewPetActor::Summon(const char* petName, entt::entity pSummonItemEntit
 	if(evocation == 0)
 	{
 		evocation = 1;
-		std::unique_ptr<SQLMsg> msg(DBManager::instance().DirectQuery("UPDATE new_petsystem SET evocation = %d WHERE id = %lu ",evocation, ItemSystem::GetItemID(EntityFactory::CreateItemEntity(g_registry, pSummonItem))));
+		std::unique_ptr<SQLMsg> msg(DBManager::instance().DirectQuery("UPDATE new_petsystem SET evocation = %d WHERE id = %lu ",evocation, ItemSystem::GetItemID(pSummonItem)));
 	}
 #ifdef ENABLE_NEW_PET_EDITS
 	else {
-		if (pSummonItem && ItemSystem::GetItemSocket(EntityFactory::CreateItemEntity(g_registry, pSummonItem), 1) <= 0) {
+		if (ItemSystem::IsValidItem(pSummonItem) && ItemSystem::GetItemSocket(pSummonItem, 1) <= 0) {
 			return 0;
 		}
 	}
@@ -1028,7 +1020,7 @@ uint32_t CNewPetActor::Summon(const char* petName, entt::entity pSummonItemEntit
 #ifdef ENABLE_NEW_PET_EDITS
 	", minAge "
 #endif
-	"FROM new_petsystem WHERE id = %d ", ItemSystem::GetItemID(EntityFactory::CreateItemEntity(g_registry, pSummonItem)));
+	"FROM new_petsystem WHERE id = %d ", ItemSystem::GetItemID(pSummonItem));
 	std::unique_ptr<SQLMsg> pmsg2(DBManager::instance().DirectQuery(szQuery1));
 	if (pmsg2->Get()->uiNumRows > 0)
 	{
@@ -1107,27 +1099,27 @@ uint32_t CNewPetActor::Summon(const char* petName, entt::entity pSummonItemEntit
 	UpdateTime(true);
 
 	for (int b = 0; b < 3; b++){
-		ItemSystem::SetItemForceAttributeEcs(EntityFactory::CreateItemEntity(g_registry, pSummonItem), b, 1, m_dwbonuspet[b][1]);
+		ItemSystem::SetItemForceAttributeEcs(pSummonItem, b, 1, m_dwbonuspet[b][1]);
 	}
 
 #ifdef ENABLE_NEW_PET_EDITS
-	ItemSystem::SetItemForceAttributeEcs(EntityFactory::CreateItemEntity(g_registry, pSummonItem), 3, 1, m_dwlevel);
-	ItemSystem::SetItemSocket(EntityFactory::CreateItemEntity(g_registry, pSummonItem), 1, m_dwduration);
-	ItemSystem::SetItemSocket(EntityFactory::CreateItemEntity(g_registry, pSummonItem), 2, m_dwtduration);
+	ItemSystem::SetItemForceAttributeEcs(pSummonItem, 3, 1, m_dwlevel);
+	ItemSystem::SetItemSocket(pSummonItem, 1, m_dwduration);
+	ItemSystem::SetItemSocket(pSummonItem, 2, m_dwtduration);
 #else
-	ItemSystem::SetItemForceAttributeEcs(EntityFactory::CreateItemEntity(g_registry, pSummonItem), 3, 1, m_dwduration);
-	ItemSystem::SetItemForceAttributeEcs(EntityFactory::CreateItemEntity(g_registry, pSummonItem), 4, 1, m_dwtduration);
-	ItemSystem::SetItemSocket(EntityFactory::CreateItemEntity(g_registry, pSummonItem), 1, m_dwlevel);
+	ItemSystem::SetItemForceAttributeEcs(pSummonItem, 3, 1, m_dwduration);
+	ItemSystem::SetItemForceAttributeEcs(pSummonItem, 4, 1, m_dwtduration);
+	ItemSystem::SetItemSocket(pSummonItem, 1, m_dwlevel);
 #endif
-	ItemSystem::SetItemSocket(EntityFactory::CreateItemEntity(g_registry, pSummonItem), 0, true);
-	ItemSystem::LockItem(EntityFactory::CreateItemEntity(g_registry, pSummonItem));
+	ItemSystem::SetItemSocket(pSummonItem, 0, true);
+	ItemSystem::LockItem(pSummonItem);
 #ifdef ENABLE_RECALL
 	const CAffect* pAffect = AffectSystem::FindAffect(AIHelpers::EcsOf(m_pkOwner), AFFECT_RECALL2);
 	if (pAffect) {
 		AffectSystem::RemoveAffect(AIHelpers::EcsOf(m_pkOwner), const_cast<CAffect*>(pAffect));
 	}
 
-	AffectSystem::AddAffect(AIHelpers::EcsOf(m_pkOwner), AFFECT_RECALL2, APPLY_NONE, 0, ItemSystem::GetItemID(EntityFactory::CreateItemEntity(g_registry, pSummonItem)), INFINITE_AFFECT_DURATION, 0, true, false);
+	AffectSystem::AddAffect(AIHelpers::EcsOf(m_pkOwner), AFFECT_RECALL2, APPLY_NONE, 0, ItemSystem::GetItemID(pSummonItem), INFINITE_AFFECT_DURATION, 0, true, false);
 #endif
 	return m_dwVID;
 }
@@ -1319,8 +1311,8 @@ bool CNewPetActor::Follow(float fMinDistance)
 
 void CNewPetActor::SetSummonItem (entt::entity pItemEntity)
 {
-	LPITEM pItem = LegacyItemFromEntity(pItemEntity);
-	if (nullptr == pItem)
+
+	if (!ItemSystem::IsValidItem(pItemEntity))
 	{
 		m_dwSummonItemVID = 0;
 		m_dwSummonItemID = 0;
@@ -1328,21 +1320,21 @@ void CNewPetActor::SetSummonItem (entt::entity pItemEntity)
 		return;
 	}
 
-	m_dwSummonItemVID = pItem->GetVID();
-	m_dwSummonItemID = ItemSystem::GetItemID(EntityFactory::CreateItemEntity(g_registry, pItem));
-	m_dwSummonItemVnum = ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, pItem));
+	m_dwSummonItemVID = ItemSystem::GetItemVID(pItemEntity);
+	m_dwSummonItemID = ItemSystem::GetItemID(pItemEntity);
+	m_dwSummonItemVnum = ItemSystem::GetItemVnum(pItemEntity);
 
 	const entt::entity owner = AIHelpers::EcsOf(m_pkOwner);
 	if (owner != entt::null && g_registry.valid(owner)) {
 		auto& pet = g_registry.emplace_or_replace<ecs::PetComponent>(owner);
 		pet.owner = owner;
-		pet.itemID = ItemSystem::GetItemID(EntityFactory::CreateItemEntity(g_registry, pItem));
-		pet.itemVID = pItem->GetVID();
-		pet.itemVnum = ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, pItem));
+		pet.itemID = ItemSystem::GetItemID(pItemEntity);
+		pet.itemVID = ItemSystem::GetItemVID(pItemEntity);
+		pet.itemVnum = ItemSystem::GetItemVnum(pItemEntity);
 		pet.level = m_dwlevel;
 		pet.state = IsSummoned() ? 1u : 0u;
 		for (int i = 0; i < ITEM_SOCKET_MAX_NUM; ++i)
-			pet.sockets[i] = static_cast<int32_t>(ItemSystem::GetItemSocket(EntityFactory::CreateItemEntity(g_registry, pItem), i));
+			pet.sockets[i] = static_cast<int32_t>(ItemSystem::GetItemSocket(pItemEntity, i));
 	}
 }
 
@@ -2038,10 +2030,10 @@ size_t CNewPetSystem::CountSummoned() const
 
 #ifdef ENABLE_COSTUME_PET
 void CNewPetActor::UpdatePetSkin() {
-	LPITEM pSummonItem = LegacyItemFromEntity(FindSummonItemByVID(this->GetSummonItemVID()));
-	if (pSummonItem != nullptr){
+	const entt::entity pSummonItem = FindSummonItemByVID(this->GetSummonItemVID());
+	if (ItemSystem::IsValidItem(pSummonItem)){
 		Unsummon();
-		Summon("Noname", EntityFactory::CreateItemEntity(g_registry, pSummonItem), false);
+		Summon("Noname", pSummonItem, false);
 	}
 }
 
@@ -2079,10 +2071,10 @@ void CNewPetActor::ChangeName(const char * name) {
 	snprintf(query2, sizeof(query2), "UPDATE player.new_petsystem SET name='%s' WHERE name='%s' LIMIT 1;", name, m_name.c_str());
 	std::unique_ptr<SQLMsg> pRes(DBManager::instance().DirectQuery(query2));
 
-	LPITEM pSummonItem = LegacyItemFromEntity(FindSummonItemByVID(this->GetSummonItemVID()));
-	if (pSummonItem != nullptr){
+	const entt::entity pSummonItem = FindSummonItemByVID(this->GetSummonItemVID());
+	if (ItemSystem::IsValidItem(pSummonItem)){
 		Unsummon();
-		Summon("Noname", EntityFactory::CreateItemEntity(g_registry, pSummonItem), false);
+		Summon("Noname", pSummonItem, false);
 	}
 }
 

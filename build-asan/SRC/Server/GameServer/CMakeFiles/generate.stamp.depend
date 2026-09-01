@@ -1,0 +1,6 @@
+# CMake generation dependency list for this directory.
+C:/vcpkg/installed/x64-windows/share/entt/EnTTConfig.cmake
+C:/vcpkg/installed/x64-windows/share/entt/EnTTConfigVersion.cmake
+C:/vcpkg/installed/x64-windows/share/entt/EnTTTargets.cmake
+D:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/CMakeLists.txt
+D:/AurigaGlobal/LiveWork/AurigaGlobal/build-asan/CMakeFiles/cmake.verify_globs

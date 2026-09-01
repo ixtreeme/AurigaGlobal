@@ -122,67 +122,29 @@ static int __deposit_limit()
 #ifdef __SEND_TARGET_INFO__
 void CInputMain::TargetInfoLoad(LPCHARACTER ch, const char* c_pData)
 {
-// migrated from CHARACTER handler
-// TODO Phase 8: migrate TargetInfoLoad handler ECS
-// DUAL-PATH: legacy only during migration window
-#ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "CInputMain::PartyInvite.");//INGAME_DEBUG_RAZOR93
-#endif
-	TPacketCGTargetInfoLoad* p = (TPacketCGTargetInfoLoad*)c_pData;
-	TPacketGCTargetInfo pInfo;
-	pInfo.header = HEADER_GC_TARGET_INFO;
-	static std::vector<LPITEM> s_vec_item;
-	s_vec_item.clear();
-	LPITEM pkInfoItem;
-	LPCHARACTER m_pkChrTarget = CHARACTER_MANAGER::instance().Find(p->dwVID);
-
-	if (!ch || !m_pkChrTarget)
+	if (!ch)
 		return;
 
-	// if (m_pkChrTarget && (m_pkChrTarget->IsMonster() || ecs::PlayerRuntime::IsStone(AIHelpers::EcsOf(m_pkChrTarget))))
-	// {
-		// if (thecore_heart->pulse - (int) ch->GetLastTargetInfoPulse() < passes_per_sec * 3)
-			// return;
+	const auto* request = reinterpret_cast<const TPacketCGTargetInfoLoad*>(c_pData);
+	LPCHARACTER target = CHARACTER_MANAGER::instance().Find(request->dwVID);
+	if (!target || (!target->IsMonster() && !ecs::PlayerRuntime::IsStone(AIHelpers::EcsOf(target))))
+		return;
 
-		// ch->SetLastTargetInfoPulse(thecore_heart->pulse);
+	std::vector<TargetInfoItem> items;
+	if (!ITEM_MANAGER::instance().CreateDropItemVector(target, ch, items))
+		return;
 
-	if (ITEM_MANAGER::instance().CreateDropItemVector(m_pkChrTarget, ch, s_vec_item) && (m_pkChrTarget->IsMonster() || ecs::PlayerRuntime::IsStone(AIHelpers::EcsOf(m_pkChrTarget))))
+	TPacketGCTargetInfo info{};
+	info.header = HEADER_GC_TARGET_INFO;
+	info.dwVID = ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(target));
+	info.race = ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(target));
+
+	for (const TargetInfoItem& item : items)
 	{
-#ifdef ENABLE_INGAME_DEBUG_RAZOR93
-		ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "input_main.cpp::  instance().CreateDropItemVector(");//INGAME_DEBUG_RAZOR93
-#endif
-		if (s_vec_item.size() == 0);
-		else if (s_vec_item.size() == 1)
-		{
-			pkInfoItem = s_vec_item[0];
-			pInfo.dwVID	= ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(m_pkChrTarget));
-			pInfo.race = ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(m_pkChrTarget));
-			pInfo.dwVnum = ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, pkInfoItem));
-			pInfo.count = ItemSystem::GetItemCount(EntityFactory::CreateItemEntity(g_registry, pkInfoItem));
-			ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->Packet(&pInfo, sizeof(TPacketGCTargetInfo));
-		}
-		else
-		{
-			int iItemIdx = s_vec_item.size() - 1;
-			while (iItemIdx >= 0)
-			{
-				pkInfoItem = s_vec_item[iItemIdx--];
-
-				if (!pkInfoItem)
-				{
-					LOG_ERROR("pkInfoItem null in vector idx {}", iItemIdx + 1);
-					continue;
-				}
-
-					pInfo.dwVID	= ecs::PlayerRuntime::GetPacketVID(AIHelpers::EcsOf(m_pkChrTarget));
-					pInfo.race = ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(m_pkChrTarget));
-					pInfo.dwVnum = ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, pkInfoItem));
-					pInfo.count = ItemSystem::GetItemCount(EntityFactory::CreateItemEntity(g_registry, pkInfoItem));
-					ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->Packet(&pInfo, sizeof(TPacketGCTargetInfo));
-			}
-		}
+		info.dwVnum = item.vnum;
+		info.count = item.count;
+		ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->Packet(&info, sizeof(info));
 	}
-	// }
 }
 #endif
 void SendBlockChatInfo(LPCHARACTER ch, int sec)
@@ -832,76 +794,120 @@ struct FYmirChatPacket
 #ifdef __NEWPET_SYSTEM__
 void CInputMain::BraveRequestPetName(LPCHARACTER ch, const char* c_pData)
 {
-// migrated from CHARACTER handler
-// TODO Phase 8: migrate BraveRequestPetName handler ECS
-// DUAL-PATH: legacy only during migration window
-	if (!ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))) { return; }
-	int vid = ch->GetEggVid();
-	if (vid == 0) { return; }
+	if (!ch)
+		return;
 
-	TPacketCGRequestPetName* p = (TPacketCGRequestPetName*)c_pData;
-
-	if (ecs::PointSystem::GetGold(AIHelpers::EcsOf(ch)) < 100000)
+	const entt::entity ownerEntity = AIHelpers::EcsOf(ch);
+	if (ownerEntity == entt::null || !g_registry.valid(ownerEntity) ||
+		!ecs::PlayerRuntime::GetDesc(ownerEntity))
 	{
-#ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 768, "%d", 100000);
-#endif
+		return;
 	}
 
-	if (ch->CountSpecifyItem(vid) > 0 && check_name(p->petname) != 0) {
-#ifdef ENABLE_NEW_PET_EDITS
-		{
-			char szQuery[256] = {0};
-			snprintf(szQuery, sizeof(szQuery), "SELECT id FROM player.new_petsystem%s WHERE name='%s';", get_table_postfix(), p->petname);
-			std::unique_ptr<SQLMsg> pRes(DBManager::instance().DirectQuery(szQuery));
-			int iRes = pRes->Get()->uiNumRows;
-			if (iRes > 0) {
+	const int eggVnum = ch->GetEggVid();
+	if (eggVnum <= 0)
+		return;
+
+	const auto p = reinterpret_cast<const TPacketCGRequestPetName*>(c_pData);
+	if (ecs::PointSystem::GetGold(ownerEntity) < 100000)
+	{
 #ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 50, "");
+		ecs::ChatSystem::SendNew(ownerEntity, CHAT_TYPE_INFO, 768, "%d", 100000);
 #endif
-				return;
-			}
-		}
+		return;
+	}
+
+	if (!ItemSystem::HasItem(ownerEntity, static_cast<uint32_t>(eggVnum)) ||
+		check_name(p->petname) == 0)
+	{
+#ifdef TEXTS_IMPROVEMENT
+		ecs::ChatSystem::SendNew(ownerEntity, CHAT_TYPE_INFO, 770, "");
+#endif
+		return;
+	}
+
+#ifdef ENABLE_NEW_PET_EDITS
+	char nameQuery[256] {};
+	snprintf(
+		nameQuery,
+		sizeof(nameQuery),
+		"SELECT id FROM player.new_petsystem%s WHERE name='%s';",
+		get_table_postfix(),
+		p->petname);
+	std::unique_ptr<SQLMsg> nameResult(DBManager::instance().DirectQuery(nameQuery));
+	if (nameResult->Get()->uiNumRows > 0)
+	{
+#ifdef TEXTS_IMPROVEMENT
+		ecs::ChatSystem::SendNew(ownerEntity, CHAT_TYPE_INFO, 50, "");
+#endif
+		return;
+	}
 #endif
 
-		DBManager::instance().SendMoneyLog(MONEY_LOG_QUEST, ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)), -100000);
-		ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_GOLD, -100000, true);
-		ch->RemoveSpecifyItem(vid, 1);
-		LPITEM item = ch->AutoGiveItem(vid + 300, 1);
+	const entt::entity petItem =
+		ItemSystem::CreateItemEcs(static_cast<uint32_t>(eggVnum + 300), 1);
+	if (!ItemSystem::IsValidItem(petItem))
+		return;
+
+	if (!ItemSystem::RemoveSpecifyItemEcs(
+			ownerEntity, static_cast<uint32_t>(eggVnum), 1))
+	{
+		ItemSystem::DestroyItemEntityEcs(petItem, "PET_NAME_EGG_REMOVE_FAILED");
+		return;
+	}
+
+	const uint32_t petItemId = ItemSystem::GetItemID(petItem);
+	DBManager::instance().SendMoneyLog(
+		MONEY_LOG_QUEST, ecs::PlayerRuntime::GetPlayerID(ownerEntity), -100000);
+	ecs::PointSystem::Change(ownerEntity, POINT_GOLD, -100000, true);
+	ItemSystem::AutoGiveItem(ownerEntity, petItem);
+
 #ifdef ENABLE_NEW_PET_EDITS
-		int tmpskill[4] = { -1, -1, -1, -1 };
+	int tmpskill[4] = { -1, -1, -1, -1 };
 #else
-		int tmpskill[4] = { 0, 0, 0, 0 };
-		int tmpslot = number(1, 3);
-		for (int i = 0; i < 4; ++i)
-		{
-			if (i > tmpslot - 1)
-				tmpskill[i] = -1;
-		}
+	int tmpskill[4] = { 0, 0, 0, 0 };
+	const int tmpslot = number(1, 3);
+	for (int i = 0; i < 4; ++i)
+	{
+		if (i > tmpslot - 1)
+			tmpskill[i] = -1;
+	}
 #endif
-		int tmpdur = 3 * 24 * 60;
-		char szQuery1[1024];
-		int hp[] = {30, 35, 40};
-		int mostri[] = {10, 15, 20};
-		int medi[] = {10, 15, 20};
-		snprintf(szQuery1, sizeof(szQuery1), "INSERT INTO new_petsystem VALUES(%u,'%s', 1, 0, 0, 0, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, 0"
+	const int tmpdur = 3 * 24 * 60;
+	char insertQuery[1024];
+	int hp[] = {30, 35, 40};
+	int mostri[] = {10, 15, 20};
+	int medi[] = {10, 15, 20};
+	snprintf(
+		insertQuery,
+		sizeof(insertQuery),
+		"INSERT INTO new_petsystem VALUES(%u,'%s', 1, 0, 0, 0, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, 0"
 #ifdef ENABLE_NEW_PET_EDITS
 		", %lld"
 #endif
-		")", ItemSystem::GetItemID(EntityFactory::CreateItemEntity(g_registry, item)), p->petname, hp[number(0, 2)], mostri[number(0, 2)], medi[number(0, 2)], tmpskill[0], 0, tmpskill[1], 0, tmpskill[2], 0, tmpskill[3], 0, tmpdur, tmpdur, get_global_time());
-		std::unique_ptr<SQLMsg> pmsg2(DBManager::instance().DirectQuery(szQuery1));
+		")",
+		petItemId,
+		p->petname,
+		hp[number(0, 2)],
+		mostri[number(0, 2)],
+		medi[number(0, 2)],
+		tmpskill[0],
+		0,
+		tmpskill[1],
+		0,
+		tmpskill[2],
+		0,
+		tmpskill[3],
+		0,
+		tmpdur,
+		tmpdur,
+		get_global_time());
+	std::unique_ptr<SQLMsg> insertResult(DBManager::instance().DirectQuery(insertQuery));
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 769, "");
-#endif
-	}
-#ifdef TEXTS_IMPROVEMENT
-	else  {
-		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 770, "");
-	}
+	ecs::ChatSystem::SendNew(ownerEntity, CHAT_TYPE_INFO, 769, "");
 #endif
 }
 #endif
-
 int CInputMain::Chat(LPCHARACTER ch, const char * data, uint32_t uiBytes)
 {
 // migrated from CHARACTER handler
@@ -1637,47 +1643,47 @@ void CInputMain::ItemPickup(LPCHARACTER ch, const char * data)
 
 void CInputMain::QuickslotAdd(LPCHARACTER ch, const char * data)
 {
-// migrated from CHARACTER handler
-// TODO Phase 8: migrate QuickslotAdd handler ECS
-// DUAL-PATH: legacy only during migration window
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "input_main.cpp:: void CInputMain::QuickslotAdd");//INGAME_DEBUG_RAZOR93
+	ecs::ChatSystem::Send(
+		AIHelpers::EcsOf(ch),
+		CHAT_TYPE_INFO,
+		"input_main.cpp:: void CInputMain::QuickslotAdd");
 #endif
-	struct command_quickslot_add * pinfo = (struct command_quickslot_add *) data;
+	auto pinfo = reinterpret_cast<command_quickslot_add*>(
+		const_cast<char*>(data));
 #ifdef ENABLE_BUG_FIXES
 	if (pinfo->slot.type == QUICKSLOT_TYPE_ITEM
 #ifdef ENABLE_EXTRA_INVENTORY
- || pinfo->slot.type == 12
+		|| pinfo->slot.type == 12
 #endif
-	) {
-		LPITEM item = nullptr;
-
+	)
+	{
 #ifdef ENABLE_EXTRA_INVENTORY
-		uint8_t type;
-		if (pinfo->slot.type == 12) {
+		uint8_t window = INVENTORY;
+		if (pinfo->slot.type == 12)
+		{
 			pinfo->slot.type = QUICKSLOT_TYPE_ITEM_EXTRA;
-			type = EXTRA_INVENTORY;
-		} else {
-			type = INVENTORY;
+			window = EXTRA_INVENTORY;
 		}
-#endif
-
-		TItemPos srcCell(
-#ifdef ENABLE_EXTRA_INVENTORY
-		type
 #else
-		INVENTORY
+		const uint8_t window = INVENTORY;
 #endif
-		, pinfo->slot.pos);
 
-		if (!(item = ch->GetItem(srcCell)))
+		const TItemPos srcCell(window, pinfo->slot.pos);
+		const entt::entity itemEntity =
+			ItemSystem::GetItem(AIHelpers::EcsOf(ch), srcCell);
+		if (!ItemSystem::IsValidItem(itemEntity))
 			return;
 
-		if (ItemSystem::GetItemType(EntityFactory::CreateItemEntity(g_registry, item)) != ITEM_USE && ItemSystem::GetItemType(EntityFactory::CreateItemEntity(g_registry, item)) != ITEM_QUEST)
+		const uint8_t itemType = ItemSystem::GetItemType(itemEntity);
+		if (itemType != ITEM_USE && itemType != ITEM_QUEST)
 			return;
 
 #ifdef ENABLE_EXTRA_INVENTORY
-		if (type == QUICKSLOT_TYPE_ITEM_EXTRA && ItemSystem::GetItemType(EntityFactory::CreateItemEntity(g_registry, item)) == ITEM_USE && ItemSystem::GetItemSubType(EntityFactory::CreateItemEntity(g_registry, item)) == USE_POTION) {
+		if (pinfo->slot.type == QUICKSLOT_TYPE_ITEM_EXTRA &&
+			itemType == ITEM_USE &&
+			ItemSystem::GetItemSubType(itemEntity) == USE_POTION)
+		{
 			return;
 		}
 #endif
@@ -1686,7 +1692,6 @@ void CInputMain::QuickslotAdd(LPCHARACTER ch, const char * data)
 
 	ch->SetQuickslot(pinfo->pos, pinfo->slot);
 }
-
 void CInputMain::QuickslotDelete(LPCHARACTER ch, const char * data)
 {
 // migrated from CHARACTER handler
@@ -2890,272 +2895,241 @@ void CInputMain::Warp(LPCHARACTER ch, const char * pcData)
 
 void CInputMain::SafeboxCheckin(LPCHARACTER ch, const char * c_pData)
 {
-// migrated from CHARACTER handler
-// TODO Phase 8: migrate SafeboxCheckin handler ECS
-// DUAL-PATH: legacy only during migration window
-#ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::SafeboxCheckin");//INGAME_DEBUG_RAZOR93
-#endif
-
-	if (quest::CQuestManager::instance().GetPCForce(ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)))->IsRunning() == true)
+	if (!ch || !ch->CanHandleItem())
 		return;
 
-	TPacketCGSafeboxCheckin * p = (TPacketCGSafeboxCheckin *) c_pData;
-
-	if (!ch->CanHandleItem())
+	const entt::entity ownerEntity = AIHelpers::EcsOf(ch);
+	if (ownerEntity == entt::null || !g_registry.valid(ownerEntity))
 		return;
 
+	if (quest::CQuestManager::instance()
+			.GetPCForce(ecs::PlayerRuntime::GetPlayerID(ownerEntity))
+			->IsRunning())
+	{
+		return;
+	}
+
+	const auto p = reinterpret_cast<const TPacketCGSafeboxCheckin*>(c_pData);
 #ifdef ENABLE_RESTRICT_GM_PERMISSIONS
-	if (ecs::PlayerRuntime::GetGMLevel(AIHelpers::EcsOf(ch)) > GM_PLAYER && ecs::PlayerRuntime::GetGMLevel(AIHelpers::EcsOf(ch)) < GM_IMPLEMENTOR) {
+	if (ecs::PlayerRuntime::GetGMLevel(ownerEntity) > GM_PLAYER &&
+		ecs::PlayerRuntime::GetGMLevel(ownerEntity) < GM_IMPLEMENTOR)
+	{
 		return;
 	}
 #endif
+
 	if (p->ItemPos.IsBeltInventoryPosition())
 	{
-
-		ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "You cannot place items from the Belt inventory into the safebox.");
-		//LOG_INFO(0, "BELT_TO_SAFEBOX_BLOCKED: Player %s tried to move item from belt to safebox.", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data());
+		ecs::ChatSystem::Send(
+			ownerEntity,
+			CHAT_TYPE_INFO,
+			"You cannot place items from the Belt inventory into the safebox.");
 		return;
 	}
 
-	CSafebox * pkSafebox = ch->GetSafebox();
-	LPITEM pkItem = ch->GetItem(p->ItemPos);
-
-	if (!pkSafebox || !pkItem)
+	CSafebox* safebox = ch->GetSafebox();
+	const entt::entity itemEntity = ItemSystem::GetItem(ownerEntity, p->ItemPos);
+	if (!safebox || !ItemSystem::IsValidItem(itemEntity))
 		return;
 
 #ifdef ENABLE_BUG_FIXES
-	if (ItemSystem::IsItemEquipped(EntityFactory::CreateItemEntity(g_registry, pkItem)))
+	if (ItemSystem::IsItemEquipped(itemEntity))
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 1244, "");
+		ecs::ChatSystem::SendNew(ownerEntity, CHAT_TYPE_INFO, 1244, "");
 #endif
 		return;
 	}
 #endif
 
 #if defined(ENABLE_EXTRA_INVENTORY) && !defined(ENABLE_SPECIAL_INV_TO_SAFEBOX)
-	if (pkItem->IsExtraItem())
+	if (ItemSystem::IsExtraItem(itemEntity))
 		return;
 #endif
 
 #ifdef __ENABLE_EXTEND_INVEN_SYSTEM__
-	if (ItemSystem::GetItemCell(EntityFactory::CreateItemEntity(g_registry, pkItem)) >= ch->Inventory_Size() && IS_SET(pkItem->GetFlag(),ITEM_FLAG_IRREMOVABLE))
+	if (ItemSystem::GetItemCell(itemEntity) >= ch->Inventory_Size() &&
+		IS_SET(ItemSystem::GetItemFlags(itemEntity), ITEM_FLAG_IRREMOVABLE))
 #else
-	if (ItemSystem::GetItemCell(EntityFactory::CreateItemEntity(g_registry, pkItem)) >= INVENTORY_MAX_NUM && IS_SET(pkItem->GetFlag(), ITEM_FLAG_IRREMOVABLE))
+	if (ItemSystem::GetItemCell(itemEntity) >= INVENTORY_MAX_NUM &&
+		IS_SET(ItemSystem::GetItemFlags(itemEntity), ITEM_FLAG_IRREMOVABLE))
 #endif
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 640, "");
+		ecs::ChatSystem::SendNew(ownerEntity, CHAT_TYPE_INFO, 640, "");
 #endif
 		return;
 	}
 
-	if (!pkSafebox->IsEmpty(p->bSafePos, pkItem->GetSize()))
+	if (!safebox->IsEmpty(p->bSafePos, ItemSystem::GetItemSize(itemEntity)))
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 641, "");
+		ecs::ChatSystem::SendNew(ownerEntity, CHAT_TYPE_INFO, 641, "");
 #endif
 		return;
 	}
 
-	if (ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, pkItem)) == UNIQUE_ITEM_SAFEBOX_EXPAND)
+	if (ItemSystem::GetItemVnum(itemEntity) == UNIQUE_ITEM_SAFEBOX_EXPAND ||
+		IS_SET(ItemSystem::GetItemAntiFlag(itemEntity), ITEM_ANTIFLAG_SAFEBOX) ||
+		ItemSystem::IsItemLocked(itemEntity))
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 187, "");
+		ecs::ChatSystem::SendNew(ownerEntity, CHAT_TYPE_INFO, 187, "");
 #endif
 		return;
 	}
 
-	if( IS_SET(ItemSystem::GetItemAntiFlag(EntityFactory::CreateItemEntity(g_registry, pkItem)), ITEM_ANTIFLAG_SAFEBOX) )
+	if (ItemSystem::GetItemType(itemEntity) == ITEM_BELT &&
+		CBeltInventoryHelper::IsExistItemInBeltInventory(ch))
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 187, "");
+		ecs::ChatSystem::SendNew(ownerEntity, CHAT_TYPE_INFO, 385, "");
 #endif
 		return;
 	}
 
-	if (true == pkItem->isLocked())
+	const TItemPos originalPos = p->ItemPos;
+	if (!ItemSystem::RemoveItemEcs(itemEntity))
+		return;
+
+	if (!ItemSystem::IsDragonSoulItem(itemEntity) &&
+		!ItemSystem::IsExtraItem(itemEntity))
 	{
-#ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 187, "");
-#endif
+		ch->SyncQuickslot(QUICKSLOT_TYPE_ITEM, originalPos.cell, 255);
+	}
+
+	if (!safebox->Add(p->bSafePos, itemEntity))
+	{
+		ItemSystem::RemoveItemEcs(itemEntity);
+		ItemSystem::PlaceItemEcs(
+			ownerEntity, itemEntity, originalPos.window_type, originalPos.cell);
 		return;
 	}
 
-	// @fixme140 BEGIN
-	if (ITEM_BELT == ItemSystem::GetItemType(EntityFactory::CreateItemEntity(g_registry, pkItem)) && CBeltInventoryHelper::IsExistItemInBeltInventory(ch))
-	{
-#ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 385, "");
-#endif
-		return;
-	}
-	// @fixme140 END
-
-	pkItem->RemoveFromCharacter();
-#ifdef ENABLE_EXTRA_INVENTORY
-	if (!pkItem->IsDragonSoul() && !pkItem->IsExtraItem())
-#else
-	if (!pkItem->IsDragonSoul())
-#endif
-	{
-		ch->SyncQuickslot(QUICKSLOT_TYPE_ITEM, p->ItemPos.cell, 255);
-	}
-
-	pkSafebox->Add(p->bSafePos, pkItem);
-
-	char szHint[128];
-	snprintf(szHint, sizeof(szHint), "%s %u", pkItem->GetName(), ItemSystem::GetItemCount(EntityFactory::CreateItemEntity(g_registry, pkItem)));
-	LogManager::instance().ItemLog(ch, pkItem, "SAFEBOX PUT", szHint);
+	char hint[128];
+	snprintf(
+		hint,
+		sizeof(hint),
+		"%s %u",
+		ItemSystem::GetItemName(itemEntity),
+		ItemSystem::GetItemCount(itemEntity));
+	LogManager::instance().ItemLogEntity(ch, itemEntity, "SAFEBOX PUT", hint);
 }
-
 void CInputMain::SafeboxCheckout(LPCHARACTER ch, const char * c_pData, bool bMall)
 {
-// migrated from CHARACTER handler
-// TODO Phase 8: migrate SafeboxCheckout handler ECS
-// DUAL-PATH: legacy only during migration window
-#ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::SafeboxCheckout");//INGAME_DEBUG_RAZOR93
-#endif
-	TPacketCGSafeboxCheckout * p = (TPacketCGSafeboxCheckout *) c_pData;
-
-	if (!ch->CanHandleItem())
+	if (!ch || !ch->CanHandleItem())
 		return;
 
+	const entt::entity ownerEntity = AIHelpers::EcsOf(ch);
+	if (ownerEntity == entt::null || !g_registry.valid(ownerEntity))
+		return;
+
+	const auto p = reinterpret_cast<const TPacketCGSafeboxCheckout*>(c_pData);
 #ifdef ENABLE_RESTRICT_GM_PERMISSIONS
-	if (ecs::PlayerRuntime::GetGMLevel(AIHelpers::EcsOf(ch)) > GM_PLAYER && ecs::PlayerRuntime::GetGMLevel(AIHelpers::EcsOf(ch)) < GM_IMPLEMENTOR) {
+	if (ecs::PlayerRuntime::GetGMLevel(ownerEntity) > GM_PLAYER &&
+		ecs::PlayerRuntime::GetGMLevel(ownerEntity) < GM_IMPLEMENTOR)
+	{
 		return;
 	}
 #endif
 
-	CSafebox * pkSafebox;
-
-	if (bMall)
-		pkSafebox = ch->GetMall();
-	else
-		pkSafebox = ch->GetSafebox();
-
-	if (!pkSafebox)
+	CSafebox* safebox = bMall ? ch->GetMall() : ch->GetSafebox();
+	if (!safebox)
 		return;
 
-	LPITEM pkItem = pkSafebox->Get(p->bSafePos);
-
-	if (!pkItem)
+	const entt::entity itemEntity = safebox->Get(p->bSafePos);
+	if (!ItemSystem::IsValidItem(itemEntity))
 		return;
 
-	if (!ch->IsEmptyItemGrid(p->ItemPos, pkItem->GetSize()))
+	TItemPos destination = p->ItemPos;
+	if (!ch->IsEmptyItemGrid(destination, ItemSystem::GetItemSize(itemEntity)))
 		return;
 
-	// ¾ÆÀÌÅÛ ¸ô¿¡¼­ ÀÎº¥À¸·Î ¿Å±â´Â ºÎºÐ¿¡¼­ ¿ëÈ¥¼® Æ¯¼ö Ã³¸®
-	// (¸ô¿¡¼­ ¸¸µå´Â ¾ÆÀÌÅÛÀº item_proto¿¡ Á¤ÀÇµÈ´ë·Î ¼Ó¼ºÀÌ ºÙ±â ¶§¹®¿¡,
-	//  ¿ëÈ¥¼®ÀÇ °æ¿ì, ÀÌ Ã³¸®¸¦ ÇÏÁö ¾ÊÀ¸¸é ¼Ó¼ºÀÌ ÇÏ³ªµµ ºÙÁö ¾Ê°Ô µÈ´Ù.)
-	if (pkItem->IsDragonSoul())
+	if (ItemSystem::IsDragonSoulItem(itemEntity))
 	{
 		if (bMall)
-		{
-			DSManager::instance().DragonSoulItemInitialize(EntityFactory::CreateItemEntity(g_registry, pkItem));
-		}
+			DSManager::instance().DragonSoulItemInitialize(itemEntity);
 
-		if (DRAGON_SOUL_INVENTORY != p->ItemPos.window_type)
+		if (destination.window_type != DRAGON_SOUL_INVENTORY)
 		{
 #ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 643, "");
+			ecs::ChatSystem::SendNew(ownerEntity, CHAT_TYPE_INFO, 643, "");
 #endif
 			return;
 		}
 
-		TItemPos DestPos = p->ItemPos;
-		if (!DSManager::instance().IsValidCellForThisItem(EntityFactory::CreateItemEntity(g_registry, pkItem), DestPos))
+		if (!DSManager::instance().IsValidCellForThisItem(itemEntity, destination))
 		{
-			int iCell = ch->GetEmptyDragonSoulInventory(pkItem);
-			if (iCell < 0)
+			const int emptyCell =
+				ItemSystem::GetEmptyDragonSoulInventory(ownerEntity, itemEntity);
+			if (emptyCell < 0)
 			{
 #ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 644, "");
+				ecs::ChatSystem::SendNew(ownerEntity, CHAT_TYPE_INFO, 644, "");
 #endif
-				return ;
+				return;
 			}
-			DestPos = TItemPos (DRAGON_SOUL_INVENTORY, iCell);
+			destination = TItemPos(DRAGON_SOUL_INVENTORY, emptyCell);
 		}
-
-		pkSafebox->Remove(p->bSafePos);
-		pkItem->AddToCharacter(ch, DestPos);
-		ITEM_MANAGER::instance().FlushDelayedSave(pkItem);
 	}
-#ifdef ENABLE_EXTRA_INVENTORY//RAzor93
-	else if(pkItem->IsExtraItem())
-	{
-//		if (p->ItemPos.window_type != EXTRA_INVENTORY)
-//		{
-//#ifdef TEXTS_IMPROVEMENT
-//			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 1292, "");
-//#endif
-//			return;
-//		}
-
-		uint8_t category = pkItem->GetExtraCategory();
-		if (p->ItemPos.cell < category * EXTRA_INVENTORY_CATEGORY_MAX_NUM || p->ItemPos.cell >= (category + 1) * EXTRA_INVENTORY_CATEGORY_MAX_NUM) {
-			return;
-		}
-
-		pkSafebox->Remove(p->bSafePos);
-		pkItem->AddToCharacter(ch, p->ItemPos);
-		ITEM_MANAGER::instance().FlushDelayedSave(pkItem);
-	}
-#endif
-	else
-	{
-		// safebox to beltinventory tiltas
-		if (p->ItemPos.IsBeltInventoryPosition())
-		{
-			ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "Nem helyezhetsz tárgyat közvetlenül a belt inventoryba.");
-			LOG_INFO("BELT_BLOCKED_SFBCHECK: Tiltott belt slot próbálva: {}", p->ItemPos.cell);
-			return;
-		}
-
 #ifdef ENABLE_EXTRA_INVENTORY
-		if (EXTRA_INVENTORY == p->ItemPos.window_type)
+	else if (ItemSystem::IsExtraItem(itemEntity))
+	{
+		if (destination.window_type != EXTRA_INVENTORY)
 		{
 #ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 645, "");
-#endif
-			return;
-		}
-#endif
-		if (DRAGON_SOUL_INVENTORY == p->ItemPos.window_type)
-		{
-#ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 646, "");
-#endif
-			return;
-		}
-		// @fixme119
-		if (p->ItemPos.IsBeltInventoryPosition() && false == CBeltInventoryHelper::CanMoveIntoBeltInventory(pkItem))
-		{
-#ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 509, "");
+			ecs::ChatSystem::SendNew(ownerEntity, CHAT_TYPE_INFO, 1292, "");
 #endif
 			return;
 		}
 
-		pkSafebox->Remove(p->bSafePos);
-		pkItem->AddToCharacter(ch, p->ItemPos);
-		ITEM_MANAGER::instance().FlushDelayedSave(pkItem);
+		const uint32_t category = ItemSystem::GetItemExtraCategory(itemEntity);
+		const uint32_t categoryBegin = category * EXTRA_INVENTORY_CATEGORY_MAX_NUM;
+		const uint32_t categoryEnd = categoryBegin + EXTRA_INVENTORY_CATEGORY_MAX_NUM;
+		if (destination.cell < categoryBegin || destination.cell >= categoryEnd)
+			return;
+	}
+#endif
+	else
+	{
+		if (destination.window_type != INVENTORY ||
+			destination.IsBeltInventoryPosition())
+		{
+			ecs::ChatSystem::Send(
+				ownerEntity,
+				CHAT_TYPE_INFO,
+				"You cannot place this item directly into that inventory.");
+			return;
+		}
 	}
 
-	uint32_t dwID = ItemSystem::GetItemID(EntityFactory::CreateItemEntity(g_registry, pkItem));
-	db_clientdesc->DBPacketHeader(HEADER_GD_ITEM_FLUSH, 0, sizeof(uint32_t));
-	db_clientdesc->Packet(&dwID, sizeof(uint32_t));
+	const entt::entity removedItem = safebox->Remove(p->bSafePos);
+	if (removedItem != itemEntity)
+		return;
 
-	char szHint[128];
-	snprintf(szHint, sizeof(szHint), "%s %u", pkItem->GetName(), ItemSystem::GetItemCount(EntityFactory::CreateItemEntity(g_registry, pkItem)));
-	if (bMall)
-		LogManager::instance().ItemLog(ch, pkItem, "MALL GET", szHint);
-	else
-		LogManager::instance().ItemLog(ch, pkItem, "SAFEBOX GET", szHint);
+	if (!ItemSystem::PlaceItemEcs(
+			ownerEntity, itemEntity, destination.window_type, destination.cell))
+	{
+		safebox->Add(p->bSafePos, itemEntity);
+		return;
+	}
+
+	ItemSystem::FlushDelayedSaveEcs(itemEntity);
+
+	const uint32_t itemId = ItemSystem::GetItemID(itemEntity);
+	db_clientdesc->DBPacketHeader(HEADER_GD_ITEM_FLUSH, 0, sizeof(itemId));
+	db_clientdesc->Packet(&itemId, sizeof(itemId));
+
+	char hint[128];
+	snprintf(
+		hint,
+		sizeof(hint),
+		"%s %u",
+		ItemSystem::GetItemName(itemEntity),
+		ItemSystem::GetItemCount(itemEntity));
+	LogManager::instance().ItemLogEntity(
+		ch, itemEntity, bMall ? "MALL GET" : "SAFEBOX GET", hint);
 }
-
 void CInputMain::SafeboxItemMove(LPCHARACTER ch, const char * data)
 {
 // migrated from CHARACTER handler
@@ -3184,113 +3158,123 @@ void CInputMain::SafeboxItemMove(LPCHARACTER ch, const char * data)
 
 void CInputMain::MountInventoryCheckin(LPCHARACTER ch, const char* c_pData)
 {
-// migrated from CHARACTER handler
-// TODO Phase 8: migrate MountInventoryCheckin handler ECS
-// DUAL-PATH: legacy only during migration window
-#ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::MountInventoryCheckin");
-#endif
-
-	const auto p = reinterpret_cast<const TPacketCGMountInventoryCheckin*>(c_pData);
-
 	if (!ch || !ch->CanHandleItem())
 		return;
 
+	const entt::entity ownerEntity = AIHelpers::EcsOf(ch);
+	if (ownerEntity == entt::null || !g_registry.valid(ownerEntity))
+		return;
+
+	const auto p = reinterpret_cast<const TPacketCGMountInventoryCheckin*>(c_pData);
 #ifdef ENABLE_RESTRICT_GM_PERMISSIONS
-	if (ecs::PlayerRuntime::GetGMLevel(AIHelpers::EcsOf(ch)) > GM_PLAYER && ecs::PlayerRuntime::GetGMLevel(AIHelpers::EcsOf(ch)) < GM_IMPLEMENTOR)
+	if (ecs::PlayerRuntime::GetGMLevel(ownerEntity) > GM_PLAYER &&
+		ecs::PlayerRuntime::GetGMLevel(ownerEntity) < GM_IMPLEMENTOR)
+	{
 		return;
+	}
 #endif
 
-	CMountInventory* mi = ch->GetMountInventory();
-	if (!mi)
+	CMountInventory* mountInventory = ch->GetMountInventory();
+	if (!mountInventory)
 		return;
 
-	LPITEM item = ch->GetItem(p->ItemPos);
-	if (!item)
+	const entt::entity itemEntity = ItemSystem::GetItem(ownerEntity, p->ItemPos);
+	if (!ItemSystem::IsValidItem(itemEntity))
 		return;
 
-	if (!mi->IsValidPosition(p->wMountPos) || !mi->IsEmpty(p->wMountPos, item->GetSize()))
+	if (!mountInventory->IsValidPosition(p->wMountPos) ||
+		!mountInventory->IsEmpty(
+			p->wMountPos, ItemSystem::GetItemSize(itemEntity)))
+	{
 		return;
+	}
 
-	if (ItemSystem::IsItemEquipped(EntityFactory::CreateItemEntity(g_registry, item)) || item->IsExchanging() || item->isLocked())
+	if (ItemSystem::IsItemEquipped(itemEntity) ||
+		ItemSystem::IsItemExchanging(itemEntity) ||
+		ItemSystem::IsItemLocked(itemEntity) ||
+		ItemSystem::IsExtraItem(itemEntity))
+	{
 		return;
-
-#ifdef ENABLE_EXTRA_INVENTORY
-	if (item->IsExtraItem())
-		return;
-#endif
+	}
 
 #ifdef __ENABLE_EXTEND_INVEN_SYSTEM__
-	if (ItemSystem::GetItemCell(EntityFactory::CreateItemEntity(g_registry, item)) >= ch->Inventory_Size() && IS_SET(item->GetFlag(), ITEM_FLAG_IRREMOVABLE))
+	if (ItemSystem::GetItemCell(itemEntity) >= ch->Inventory_Size() &&
+		IS_SET(ItemSystem::GetItemFlags(itemEntity), ITEM_FLAG_IRREMOVABLE))
 #else
-	if (ItemSystem::GetItemCell(EntityFactory::CreateItemEntity(g_registry, item)) >= INVENTORY_MAX_NUM && IS_SET(item->GetFlag(), ITEM_FLAG_IRREMOVABLE))
+	if (ItemSystem::GetItemCell(itemEntity) >= INVENTORY_MAX_NUM &&
+		IS_SET(ItemSystem::GetItemFlags(itemEntity), ITEM_FLAG_IRREMOVABLE))
 #endif
-		return;
-
-	// whitelist (mount_inventory_helper.h)
-	if (!CMountInventoryHelper::CanMoveIntoMountInventory(item))
-		return;
-
-	// duplikáció tiltás + 18000 group szabály
 	{
-		const uint32_t vnum = ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, item));
-		const int total = mi->GetWidth() * mi->GetSize();
+		return;
+	}
 
-		for (int i = 0; i < total; ++i)
+	if (!CMountInventoryHelper::CanMoveIntoMountInventory(itemEntity))
+		return;
+
+	const uint32_t vnum = ItemSystem::GetItemVnum(itemEntity);
+	const int totalSlots =
+		mountInventory->GetWidth() * mountInventory->GetSize();
+	for (int slot = 0; slot < totalSlots; ++slot)
+	{
+		const entt::entity storedItem = mountInventory->Get(slot);
+		if (!ItemSystem::IsValidItem(storedItem))
+			continue;
+
+		if (ItemSystem::GetItemVnum(storedItem) == vnum)
 		{
-			LPITEM it = mi->Get(i);
-			if (!it)
+			ecs::ChatSystem::Send(
+				ownerEntity,
+				CHAT_TYPE_INFO,
+				"This mount is already in your account inventory.");
+			return;
+		}
+	}
+
+	if (vnum >= 18000 && vnum <= 18149)
+	{
+		const uint32_t group = vnum / 10;
+		for (int slot = 0; slot < totalSlots; ++slot)
+		{
+			const entt::entity storedItem = mountInventory->Get(slot);
+			if (!ItemSystem::IsValidItem(storedItem))
 				continue;
 
-			if (ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, it)) == vnum)
+			const uint32_t storedVnum = ItemSystem::GetItemVnum(storedItem);
+			if (storedVnum >= 18000 && storedVnum <= 18149 &&
+				storedVnum / 10 == group)
 			{
-				ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "This mount already added,you can't add two time!");
+				ecs::ChatSystem::Send(
+					ownerEntity,
+					CHAT_TYPE_INFO,
+					"You already have a belt of this type in your inventory.");
 				return;
-			}
-		}
-
-		if (vnum >= 18000 && vnum <= 18149)
-		{
-			const uint32_t group = vnum / 10;
-			for (int i = 0; i < total; ++i)
-			{
-				LPITEM it = mi->Get(i);
-				if (!it)
-					continue;
-
-				const uint32_t ov = ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, it));
-				if (ov < 18000 || ov > 18149)
-					continue;
-
-				if ((ov / 10) == group)
-				{
-					ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "You already have a belt of this type in your inventory.");
-					return;
-				}
 			}
 		}
 	}
 
-	// mozgatás
-	item->RemoveFromCharacter();
+	const TItemPos originalPos = p->ItemPos;
+	if (!ItemSystem::RemoveItemEcs(itemEntity))
+		return;
 
-#ifdef ENABLE_EXTRA_INVENTORY
-	if (!item->IsDragonSoul() && !item->IsExtraItem())
-#else
-	if (!item->IsDragonSoul())
-#endif
-		ch->SyncQuickslot(QUICKSLOT_TYPE_ITEM, p->ItemPos.cell, 255);
+	if (!ItemSystem::IsDragonSoulItem(itemEntity) &&
+		!ItemSystem::IsExtraItem(itemEntity))
+	{
+		ch->SyncQuickslot(QUICKSLOT_TYPE_ITEM, originalPos.cell, 255);
+	}
 
-	// player item táblából biztosan kimenjen mentésben
-	ITEM_MANAGER::instance().FlushDelayedSave(item);
+	ItemSystem::FlushDelayedSaveEcs(itemEntity);
+	if (!mountInventory->Add(p->wMountPos, itemEntity))
+	{
+		ItemSystem::SetItemSkipSave(itemEntity, false);
+		ItemSystem::PlaceItemEcs(
+			ownerEntity, itemEntity, originalPos.window_type, originalPos.cell);
+		ItemSystem::FlushDelayedSaveEcs(itemEntity);
+		return;
+	}
 
-	mi->Add(p->wMountPos, EntityFactory::CreateItemEntity(g_registry, item));
 	ch->SendMountInventory();
-
-	// mount bonus frissítés
 	ch->ComputePoints();
-	NetworkSyncSystem::PointsPacket(AIHelpers::EcsOf(ch));
-	// overhead frissítés
+	NetworkSyncSystem::PointsPacket(ownerEntity);
 #ifdef ENABLE_FAKE_SHOP_HEADER
 	ch->UpdateMountCountOverheadToViewers();
 #endif
@@ -3298,66 +3282,65 @@ void CInputMain::MountInventoryCheckin(LPCHARACTER ch, const char* c_pData)
 
 
 
-
 void CInputMain::MountInventoryCheckout(LPCHARACTER ch, const char* c_pData)
 {
-// migrated from CHARACTER handler
-// TODO Phase 8: migrate MountInventoryCheckout handler ECS
-// DUAL-PATH: legacy only during migration window
-#ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::MountInventoryCheckout");
-#endif
-
-	const auto p = reinterpret_cast<const TPacketCGMountInventoryCheckout*>(c_pData);
-
 	if (!ch || !ch->CanHandleItem())
 		return;
 
-#ifdef ENABLE_RESTRICT_GM_PERMISSIONS
-	if (ecs::PlayerRuntime::GetGMLevel(AIHelpers::EcsOf(ch)) > GM_PLAYER && ecs::PlayerRuntime::GetGMLevel(AIHelpers::EcsOf(ch)) < GM_IMPLEMENTOR)
+	const entt::entity ownerEntity = AIHelpers::EcsOf(ch);
+	if (ownerEntity == entt::null || !g_registry.valid(ownerEntity))
 		return;
+
+	const auto p = reinterpret_cast<const TPacketCGMountInventoryCheckout*>(c_pData);
+#ifdef ENABLE_RESTRICT_GM_PERMISSIONS
+	if (ecs::PlayerRuntime::GetGMLevel(ownerEntity) > GM_PLAYER &&
+		ecs::PlayerRuntime::GetGMLevel(ownerEntity) < GM_IMPLEMENTOR)
+	{
+		return;
+	}
 #endif
 
-	CMountInventory* mi = ch->GetMountInventory();
-	if (!mi)
+	CMountInventory* mountInventory = ch->GetMountInventory();
+	if (!mountInventory || !mountInventory->IsValidPosition(p->wMountPos))
 		return;
 
-	if (!mi->IsValidPosition(p->wMountPos))
+	if (p->ItemPos.window_type != INVENTORY ||
+		p->ItemPos.IsBeltInventoryPosition())
+	{
+		return;
+	}
+
+	const entt::entity itemEntity = mountInventory->Get(p->wMountPos);
+	if (!ItemSystem::IsValidItem(itemEntity) ||
+		ItemSystem::IsItemExchanging(itemEntity) ||
+		ItemSystem::IsItemLocked(itemEntity))
+	{
+		return;
+	}
+
+	if (!ch->IsEmptyItemGrid(p->ItemPos, ItemSystem::GetItemSize(itemEntity)))
 		return;
 
-	// mount -> safebox/mall tiltás (belt-szabály)
-	if (p->ItemPos.window_type == SAFEBOX || p->ItemPos.window_type == MALL)
+	if (mountInventory->Remove(p->wMountPos) != itemEntity)
 		return;
 
-	LPITEM item = mi->Get(p->wMountPos);
-	if (!item)
+	ItemSystem::SetItemSkipSave(itemEntity, false);
+	if (!ItemSystem::PlaceItemEcs(
+			ownerEntity, itemEntity, p->ItemPos.window_type, p->ItemPos.cell))
+	{
+		mountInventory->Add(p->wMountPos, itemEntity);
 		return;
+	}
 
-	if (item->IsExchanging() || item->isLocked())
-		return;
+	ItemSystem::FlushDelayedSaveEcs(itemEntity);
 
-	if (!ch->IsEmptyItemGrid(p->ItemPos, item->GetSize()))
-		return;
-
-	mi->Remove(p->wMountPos);
-
-	// FONTOS: vissza kell kapcsolni a mentést
-	ItemSystem::SetItemSkipSave(EntityFactory::CreateItemEntity(g_registry, item), false);
-
-	item->AddToCharacter(ch, p->ItemPos);
-	ITEM_MANAGER::instance().FlushDelayedSave(item);
-
-	// extra biztos flush
-	uint32_t dwID = ItemSystem::GetItemID(EntityFactory::CreateItemEntity(g_registry, item));
-	db_clientdesc->DBPacketHeader(HEADER_GD_ITEM_FLUSH, 0, sizeof(uint32_t));
-	db_clientdesc->Packet(&dwID, sizeof(uint32_t));
+	const uint32_t itemId = ItemSystem::GetItemID(itemEntity);
+	db_clientdesc->DBPacketHeader(HEADER_GD_ITEM_FLUSH, 0, sizeof(itemId));
+	db_clientdesc->Packet(&itemId, sizeof(itemId));
 
 	ch->SendMountInventory();
-
-	// mount bonus frissítés
 	ch->ComputePoints();
-	NetworkSyncSystem::PointsPacket(AIHelpers::EcsOf(ch));
-	// overhead frissítés
+	NetworkSyncSystem::PointsPacket(ownerEntity);
 #ifdef ENABLE_FAKE_SHOP_HEADER
 	ch->UpdateMountCountOverheadToViewers();
 #endif
@@ -4572,11 +4555,9 @@ void CInputMain::Refine(LPCHARACTER ch, const char* c_pData)
 
 	const entt::entity owner = AIHelpers::EcsOf(ch);
 	const entt::entity itemEntity = ItemSystem::GetInventoryItem(owner, p->pos);
-	LPITEM item = ItemSystem::GetInventoryItemPtr(AIHelpers::EcsOf(ch), p->pos);
-
 
 #ifdef ENABLE_FEATURES_REFINE_SYSTEM
-	if (!CRefineManager::instance().GetPercentage(ch, p->lLow, p->lMedium, p->lExtra, p->lTotal, item))
+	if (!CRefineManager::instance().GetPercentage(ch, p->lLow, p->lMedium, p->lExtra, p->lTotal, itemEntity))
 	{
 		ch->ClearRefineMode();
 		return;
@@ -4585,7 +4566,7 @@ void CInputMain::Refine(LPCHARACTER ch, const char* c_pData)
 	CRefineManager::instance().Increase(ch, p->lLow, p->lMedium, p->lExtra);
 #endif
 
-	if (!item)
+	if (!ItemSystem::IsValidItem(itemEntity))
 	{
 		ch->ClearRefineMode();
 		return;
@@ -4612,7 +4593,7 @@ void CInputMain::Refine(LPCHARACTER ch, const char* c_pData)
 	}
 #endif
 	else if (p->type == REFINE_TYPE_MONEY_ONLY) {
-		if (item) {
+		if (ItemSystem::IsValidItem(itemEntity)) {
 			if (ecs::QuestSystem::GetFlag(AIHelpers::EcsOf(ch), "deviltower_zone.can_refine"))
 			{
 #ifdef ENABLE_BUG_FIXES
@@ -4692,11 +4673,26 @@ void CInputMain::CubeRenewalSend(LPCHARACTER ch, const char* data)
 		case CUBE_RENEWAL_SUB_HEADER_MAKE_ITEM:
 		{
 
-			int index_item = pinfo->index_item;
-			int count_item = pinfo->count_item;
-			int index_item_improve = pinfo->index_item_improve;
+			if (pinfo->index_item > static_cast<uint32_t>(INT_MAX) ||
+				pinfo->count_item == 0 ||
+				pinfo->count_item > static_cast<uint32_t>(g_bItemCountLimit))
+			{
+				return;
+			}
 
-			Cube_Make(ch,index_item,count_item,index_item_improve);
+			int index_item_improve = -1;
+			if (pinfo->index_item_improve != UINT32_MAX)
+			{
+				if (pinfo->index_item_improve >= INVENTORY_MAX_NUM)
+					return;
+				index_item_improve = static_cast<int>(pinfo->index_item_improve);
+			}
+
+			Cube_Make(
+				ch,
+				static_cast<int>(pinfo->index_item),
+				static_cast<int>(pinfo->count_item),
+				index_item_improve);
 		}
 		break;
 

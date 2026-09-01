@@ -331,19 +331,6 @@ uint8_t bCount
 )
 #endif
 {
-	bool stupid = false;
-	if (bCount < 0)
-	{
-		LOG_ERROR("I am a stupid hacker 7: {} {}", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), static_cast<int>(bCount));
-		stupid = true;
-	}
-
-	bCount = abs(bCount);
-	if (stupid)
-	{
-		LOG_ERROR("I am a stupid hacker 8: {} {}", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), static_cast<int>(bCount));
-		return;
-	}
 
 #ifdef ENABLE_RESTRICT_GM_PERMISSIONS
 	if (ecs::PlayerRuntime::GetGMLevel(AIHelpers::EcsOf(ch)) > GM_PLAYER && ecs::PlayerRuntime::GetGMLevel(AIHelpers::EcsOf(ch)) < GM_IMPLEMENTOR) {
@@ -383,16 +370,17 @@ uint8_t bCount
 	}
 	*/
 
+	const entt::entity owner = AIHelpers::EcsOf(ch);
 #ifdef ENABLE_EXTRA_INVENTORY
-	LPITEM item = ch->GetItem(Cell);
+	const entt::entity itemEntity = ItemSystem::GetItem(owner, Cell);
 #else
-	LPITEM item = ItemSystem::GetInventoryItemPtr(AIHelpers::EcsOf(ch), bCell);
+	const entt::entity itemEntity = ItemSystem::GetInventoryItem(owner, bCell);
 #endif
 
-	if (!item)
+	if (!ItemSystem::IsValidItem(itemEntity))
 		return;
 
-	if (ItemSystem::IsItemEquipped(EntityFactory::CreateItemEntity(g_registry, item)) == true)
+	if (ItemSystem::IsItemEquipped(itemEntity) == true)
 	{
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 541, "");
@@ -400,20 +388,23 @@ uint8_t bCount
 		return;
 	}
 
-	if (true == item->isLocked())
+	if (ItemSystem::IsItemLocked(itemEntity))
 	{
 		return;
 	}
 
-	if (IS_SET(ItemSystem::GetItemAntiFlag(EntityFactory::CreateItemEntity(g_registry, item)), ITEM_ANTIFLAG_SELL))
+	if (IS_SET(ItemSystem::GetItemAntiFlag(itemEntity), ITEM_ANTIFLAG_SELL))
 		return;
 
-	if (bCount == 0 || bCount > ItemSystem::GetItemCount(EntityFactory::CreateItemEntity(g_registry, item)))
-		bCount = ItemSystem::GetItemCount(EntityFactory::CreateItemEntity(g_registry, item));
+	const uint32_t itemCount = ItemSystem::GetItemCount(itemEntity);
+	if (itemCount == 0)
+		return;
+	if (bCount == 0 || bCount > itemCount)
+		bCount = static_cast<decltype(bCount)>(itemCount);
 
-	int64_t dwPrice = item->GetShopBuyPrice();
+	int64_t dwPrice = ItemSystem::GetItemShopBuyPrice(itemEntity);
 
-	if (IS_SET(item->GetFlag(), ITEM_FLAG_COUNT_PER_1GOLD))
+	if (IS_SET(ItemSystem::GetItemFlags(itemEntity), ITEM_FLAG_COUNT_PER_1GOLD))
 	{
 		if (dwPrice == 0)
 			dwPrice = bCount;
@@ -435,11 +426,10 @@ uint8_t bCount
 	} */
 
 	if (test_server)
-		LOG_INFO("Sell Item price id {} {} itemid {}", ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)), ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), ItemSystem::GetItemID(EntityFactory::CreateItemEntity(g_registry, item)));
+		LOG_INFO("Sell Item price id {} {} itemid {}", ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)), ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), ItemSystem::GetItemID(itemEntity));
 
-	const int64_t nTotalMoney = ecs::PointSystem::GetGold(AIHelpers::EcsOf(ch)) + dwPrice;
-
-	if (GOLD_MAX <= nTotalMoney)
+	const int64_t currentGold = ecs::PointSystem::GetGold(owner);
+	if (dwPrice < 0 || currentGold >= GOLD_MAX || dwPrice >= GOLD_MAX - currentGold)
 	{
 		LOG_ERROR("[OVERFLOW_GOLD] id {} name {} gold {}", ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)), ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), ecs::PointSystem::GetGold(AIHelpers::EcsOf(ch)));
 #ifdef TEXTS_IMPROVEMENT
@@ -451,7 +441,7 @@ uint8_t bCount
 		return;
 	}
 
-	DBManager::instance().SendMoneyLog(MONEY_LOG_SHOP, ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, item)), dwPrice);
+	DBManager::instance().SendMoneyLog(MONEY_LOG_SHOP, ItemSystem::GetItemVnum(itemEntity), dwPrice);
 #ifdef ENABLE_BATTLE_PASS
 	uint8_t bBattlePassId = ch->GetBattlePassId();
 	if(bBattlePassId)
@@ -459,17 +449,18 @@ uint8_t bCount
 		uint32_t dwItemVnum, dwSellCount;
 		if(CBattlePass::instance().BattlePassMissionGetInfo(bBattlePassId, SELL_ITEM, &dwItemVnum, &dwSellCount))
 		{
-			if(dwItemVnum == ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, item)) && ch->GetMissionProgress(SELL_ITEM, bBattlePassId) < dwSellCount)
+			if(dwItemVnum == ItemSystem::GetItemVnum(itemEntity) && ch->GetMissionProgress(SELL_ITEM, bBattlePassId) < dwSellCount)
 				ch->UpdateMissionProgress(SELL_ITEM, bBattlePassId, bCount, dwSellCount);
 		}
 	}
 #endif
-	if (bCount == ItemSystem::GetItemCount(EntityFactory::CreateItemEntity(g_registry, item)))
-		ITEM_MANAGER::instance().RemoveItem(item, "SELL");
-	else
-		ItemSystem::ConsumeItemEcs(EntityFactory::CreateItemEntity(g_registry, item), bCount);
+	const bool sold = (bCount == itemCount)
+		? ItemSystem::DestroyItemEntityEcs(itemEntity, "SELL")
+		: ItemSystem::ConsumeItemEcs(itemEntity, bCount);
+	if (!sold)
+		return;
 
-	ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_GOLD, dwPrice, false);
+	ecs::PointSystem::Change(owner, POINT_GOLD, dwPrice, false);
 }
 
 bool CompareShopItemName(const SShopItemTable& lhs, const SShopItemTable& rhs)

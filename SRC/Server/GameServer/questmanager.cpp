@@ -1291,7 +1291,7 @@ namespace quest
 
 	entt::entity CQuestManager::GetCurrentItemEntity()
 	{
-		return EntityFactory::CreateItemEntity(g_registry, GetCurrentItem());
+		return GetCurrentCharacterPtr() ? GetCurrentCharacterPtr()->GetQuestItemEntity() : entt::null;
 	}
 
 	void CQuestManager::ClearCurrentItem()
@@ -1312,8 +1312,7 @@ namespace quest
 		if (!ch)
 			return;
 
-		const uint32_t id = ItemSystem::GetItemID(item);
-		ch->SetQuestItemPtr(id != 0 ? ItemSystem::FindItemByID(id) : entt::null);
+		ch->SetQuestItemPtr(item);
 	}
 
 	LPCHARACTER CQuestManager::GetCurrentNPCCharacterPtr() const

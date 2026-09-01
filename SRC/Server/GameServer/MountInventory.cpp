@@ -10,7 +10,7 @@
 #include "ecs/Registry.hpp"
 #include "ecs/systems/ItemSystem.hpp"
 
-#include <cstring>
+#include <array>
 namespace
 {
     bool StartMountExpireIfNeeded(entt::entity itemEntity)
@@ -22,14 +22,11 @@ namespace
         if (!itemProto)
             return false;
 
-        LPITEM item = ITEM_MANAGER::instance().Find(ItemSystem::GetItemID(itemEntity));
-        if (!item)
-            return false;
-
 #ifdef ENABLE_MOUNT_COSTUME_SYSTEM
-        const bool bIsMountLikeItem = item->IsRideItem() || item->IsMountItem();
+        const bool bIsMountLikeItem =
+            ItemSystem::IsRideItem(itemEntity) || ItemSystem::IsMountItem(itemEntity);
 #else
-        const bool bIsMountLikeItem = item->IsRideItem();
+        const bool bIsMountLikeItem = ItemSystem::IsRideItem(itemEntity);
 #endif
         if (!bIsMountLikeItem)
             return false;
@@ -55,14 +52,14 @@ namespace
             bChanged = true;
         }
 
-        item->StartRealTimeExpireEvent();
+        ItemSystem::StartRealTimeExpireEventEcs(itemEntity);
         return bChanged;
     }
 }
 CMountInventory::CMountInventory(LPCHARACTER pkOwner, int iHeight)
     : m_pkOwner(pkOwner), m_iHeight(iHeight)
 {
-    m_items.assign(MOUNT_INVENTORY_WIDTH * m_iHeight, nullptr);
+    m_items.assign(MOUNT_INVENTORY_WIDTH * m_iHeight, entt::null);
     m_grid = std::make_unique<CGrid>(MOUNT_INVENTORY_WIDTH, m_iHeight);
 }
 
@@ -84,29 +81,28 @@ bool CMountInventory::IsEmpty(uint32_t pos, uint8_t size) const
     return m_grid->IsEmpty(pos, 1, size);
 }
 
-LPITEM CMountInventory::Get(uint32_t pos) const
+entt::entity CMountInventory::Get(uint32_t pos) const
 {
     if (!IsValidPosition(pos))
-        return nullptr;
+        return entt::null;
 
     return m_items[pos];
 }
 
 bool CMountInventory::Add(uint32_t pos, entt::entity itemEntity, bool skipSave)
 {
-    LPITEM item = ITEM_MANAGER::instance().Find(ItemSystem::GetItemID(itemEntity));
-    if (!item || !IsValidPosition(pos))
+    if (!ItemSystem::IsValidItem(itemEntity) || !IsValidPosition(pos))
         return false;
 
-    if (!IsEmpty(pos, item->GetSize()))
+    if (!IsEmpty(pos, ItemSystem::GetItemSize(itemEntity)))
         return false;
 
     ItemSystem::SetItemSkipSave(itemEntity, true);
     ItemSystem::SetItemWindow(itemEntity, MOUNT_INVENTORY);
     ItemSystem::SetItemCell(itemEntity, AIHelpers::EcsOf(m_pkOwner), pos);
 
-    m_grid->Put(pos, 1, item->GetSize());
-    m_items[pos] = item;
+    m_grid->Put(pos, 1, ItemSystem::GetItemSize(itemEntity));
+    m_items[pos] = itemEntity;
 
     const bool bExpireStateChanged = StartMountExpireIfNeeded(itemEntity);
 
@@ -123,20 +119,20 @@ bool CMountInventory::DetachSlot(uint32_t pos, entt::entity expectedItem, bool s
     if (!IsValidPosition(pos))
         return false;
 
-    LPITEM item = m_items[pos];
-    if (!item)
+    const entt::entity item = m_items[pos];
+    if (!ItemSystem::IsValidItem(item))
         return false;
 
-    if (expectedItem != entt::null && EntityFactory::CreateItemEntity(g_registry, item) != expectedItem)
+    if (expectedItem != entt::null && item != expectedItem)
         return false;
 
     if (m_grid)
-        m_grid->Get(pos, 1, item->GetSize());
+        m_grid->Get(pos, 1, ItemSystem::GetItemSize(item));
 
-    m_items[pos] = nullptr;
+    m_items[pos] = entt::null;
 
     if (!skipDbDelete)
-        DeleteItem(pos, ItemSystem::GetItemID(EntityFactory::CreateItemEntity(g_registry, item)));
+        DeleteItem(pos, ItemSystem::GetItemID(item));
 
     return true;
 }
@@ -148,7 +144,7 @@ bool CMountInventory::RemoveByItem(entt::entity itemEntity, bool skipDbDelete)
 
     for (uint32_t pos = 0; pos < m_items.size(); ++pos)
     {
-        if (!m_items[pos] || EntityFactory::CreateItemEntity(g_registry, m_items[pos]) != itemEntity)
+        if (m_items[pos] == entt::null || m_items[pos] != itemEntity)
             continue;
 
         return DetachSlot(pos, itemEntity, skipDbDelete);
@@ -157,44 +153,44 @@ bool CMountInventory::RemoveByItem(entt::entity itemEntity, bool skipDbDelete)
     return false;
 }
 
-LPITEM CMountInventory::Remove(uint32_t pos, bool skipDbDelete)
+entt::entity CMountInventory::Remove(uint32_t pos, bool skipDbDelete)
 {
-    LPITEM item = Get(pos);
+    const entt::entity item = Get(pos);
 
-    if (!item)
-        return nullptr;
+    if (!ItemSystem::IsValidItem(item))
+        return entt::null;
 
-    DetachSlot(pos, EntityFactory::CreateItemEntity(g_registry, item), skipDbDelete);
-    item->RemoveFromCharacter();
+    DetachSlot(pos, item, skipDbDelete);
+    ItemSystem::RemoveItemEcs(item);
     return item;
 }
 
 bool CMountInventory::MoveItem(uint32_t from, uint32_t to)
 {
-    LPITEM item = Get(from);
+    const entt::entity item = Get(from);
 
-    if (!item || !IsValidPosition(to))
+    if (!ItemSystem::IsValidItem(item) || !IsValidPosition(to))
         return false;
 
-    if (!IsEmpty(to, item->GetSize()))
+    if (!IsEmpty(to, ItemSystem::GetItemSize(item)))
         return false;
 
     if (m_grid)
     {
-        m_grid->Get(from, 1, item->GetSize());
+        m_grid->Get(from, 1, ItemSystem::GetItemSize(item));
 
-        if (!m_grid->Put(to, 1, item->GetSize()))
+        if (!m_grid->Put(to, 1, ItemSystem::GetItemSize(item)))
         {
-            m_grid->Put(from, 1, item->GetSize());
+            m_grid->Put(from, 1, ItemSystem::GetItemSize(item));
             return false;
         }
     }
 
-    m_items[from] = nullptr;
+    m_items[from] = entt::null;
     m_items[to] = item;
 
-    ItemSystem::SetItemCell(EntityFactory::CreateItemEntity(g_registry, item), AIHelpers::EcsOf(m_pkOwner), to);
-    SaveItem(to, EntityFactory::CreateItemEntity(g_registry, item));
+    ItemSystem::SetItemCell(item, AIHelpers::EcsOf(m_pkOwner), to);
+    SaveItem(to, item);
     DeleteItem(from, 0);
     return true;
 }
@@ -211,21 +207,20 @@ void CMountInventory::CollectItems(std::vector<TMountInventoryItemTable>& out) c
 
     for (uint32_t pos = 0; pos < m_items.size(); ++pos)
     {
-        const LPITEM item = m_items[pos];
-        if (!item)
+        const entt::entity item = m_items[pos];
+        if (!ItemSystem::IsValidItem(item))
             continue;
 
         TMountInventoryItemTable entry{};
-        entry.id = ItemSystem::GetItemID(EntityFactory::CreateItemEntity(g_registry, item));
+        entry.id = ItemSystem::GetItemID(item);
         entry.slot = pos;
-        entry.vnum = ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, item));
-        entry.count = ItemSystem::GetItemCount(EntityFactory::CreateItemEntity(g_registry, item));
+        entry.vnum = ItemSystem::GetItemVnum(item);
+        entry.count = ItemSystem::GetItemCount(item);
 
-        auto sockets = item->GetSockets();
-        memcpy(entry.alSockets, sockets, sizeof(entry.alSockets));
-
-        const TPlayerItemAttribute* attrs = item->GetAttributes();
-        memcpy(entry.aAttr, attrs, sizeof(entry.aAttr));
+        for (int i = 0; i < ITEM_SOCKET_MAX_NUM; ++i)
+            entry.alSockets[i] = ItemSystem::GetItemSocket(item, i);
+        for (int i = 0; i < ITEM_ATTRIBUTE_MAX_NUM; ++i)
+            entry.aAttr[i] = ItemSystem::GetItemAttribute(item, i);
 
         out.push_back(entry);
     }
@@ -233,8 +228,7 @@ void CMountInventory::CollectItems(std::vector<TMountInventoryItemTable>& out) c
 
 void CMountInventory::SaveItem(uint32_t pos, entt::entity itemEntity)
 {
-    LPITEM item = ITEM_MANAGER::instance().Find(ItemSystem::GetItemID(itemEntity));
-    if (!item)
+    if (!ItemSystem::IsValidItem(itemEntity))
         return;
 
     const uint32_t accountId = GetAccountId();
@@ -242,8 +236,12 @@ void CMountInventory::SaveItem(uint32_t pos, entt::entity itemEntity)
         return;
 
     char query[512];
-    auto sockets = item->GetSockets();
-    const TPlayerItemAttribute* attrs = item->GetAttributes();
+    std::array<int32_t, ITEM_SOCKET_MAX_NUM> sockets {};
+    std::array<TPlayerItemAttribute, ITEM_ATTRIBUTE_MAX_NUM> attrs {};
+    for (int i = 0; i < ITEM_SOCKET_MAX_NUM; ++i)
+        sockets[i] = ItemSystem::GetItemSocket(itemEntity, i);
+    for (int i = 0; i < ITEM_ATTRIBUTE_MAX_NUM; ++i)
+        attrs[i] = ItemSystem::GetItemAttribute(itemEntity, i);
 
     snprintf(query, sizeof(query),
         "REPLACE INTO account_mount_inventory (id, account_id, slot, vnum, count, "
@@ -251,11 +249,11 @@ void CMountInventory::SaveItem(uint32_t pos, entt::entity itemEntity)
         "attrtype0, attrvalue0, attrtype1, attrvalue1, attrtype2, attrvalue2, "
         "attrtype3, attrvalue3, attrtype4, attrvalue4, attrtype5, attrvalue5) "
         "VALUES(%u, %u, %u, %u, %u, %ld, %ld, %ld, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d)",
-        ItemSystem::GetItemID(EntityFactory::CreateItemEntity(g_registry, item)),
+        ItemSystem::GetItemID(itemEntity),
         accountId,
         pos,
-        ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, item)),
-        ItemSystem::GetItemCount(EntityFactory::CreateItemEntity(g_registry, item)),
+        ItemSystem::GetItemVnum(itemEntity),
+        ItemSystem::GetItemCount(itemEntity),
         sockets[0],
         sockets[1],
         sockets[2],
@@ -292,21 +290,19 @@ void CMountInventory::Destroy()
 {
     for (uint32_t pos = 0; pos < m_items.size(); ++pos)
     {
-        LPITEM item = m_items[pos];
-        if (!item)
+        const entt::entity item = m_items[pos];
+        if (!ItemSystem::IsValidItem(item))
             continue;
 
         if (m_grid)
-            m_grid->Get(pos, 1, item->GetSize());
+            m_grid->Get(pos, 1, ItemSystem::GetItemSize(item));
 
-        m_items[pos] = nullptr;
+        m_items[pos] = entt::null;
 
-        ItemSystem::SetItemSkipSave(EntityFactory::CreateItemEntity(g_registry, item), true);
-        ITEM_MANAGER::instance().FlushDelayedSave(item);
-        LPITEM removed = item->RemoveFromCharacter();
-        ItemSystem::DestroyItemEntityEcs(
-            EntityFactory::CreateItemEntity(g_registry, removed),
-            "MOUNT_INVENTORY_DESTROY");
+        ItemSystem::SetItemSkipSave(item, true);
+        ItemSystem::FlushDelayedSaveEcs(item);
+        ItemSystem::RemoveItemEcs(item);
+        ItemSystem::DestroyItemEntityEcs(item, "MOUNT_INVENTORY_DESTROY");
     }
 
     m_items.clear();

@@ -1,0 +1,521 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="18.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\UserInterface\AccountConnector.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\UserInterface\AffectFlagContainer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\UserInterface\CNetworkAdapter.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\UserInterface\CameraProcedure.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\UserInterface\GameType.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\UserInterface\GuildMarkDownloader.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\UserInterface\GuildMarkUploader.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\UserInterface\InstanceBase.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\UserInterface\InstanceBaseBattle.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\UserInterface\InstanceBaseEffect.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\UserInterface\InstanceBaseEvent.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\UserInterface\InstanceBaseMotion.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\UserInterface\InstanceBaseMovement.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\UserInterface\InstanceBaseTransform.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\UserInterface\InsultChecker.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\UserInterface\Locale.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\UserInterface\MarkImage.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\UserInterface\MarkManager.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\UserInterface\MovieMan.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\UserInterface\NetworkActorManager.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\UserInterface\PythonAcce.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\UserInterface\PythonApplication.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\UserInterface\PythonApplicationCamera.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\UserInterface\PythonApplicationCursor.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\UserInterface\PythonApplicationEvent.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\UserInterface\PythonApplicationLogo.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\UserInterface\PythonApplicationModule.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\UserInterface\PythonApplicationProcedure.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\UserInterface\PythonBackground.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\UserInterface\PythonBackgroundModule.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\UserInterface\PythonCharacterManager.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\UserInterface\PythonCharacterManagerModule.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\UserInterface\PythonCharacterModule.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\UserInterface\PythonChat.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\UserInterface\PythonChatModule.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\UserInterface\PythonConfig.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\UserInterface\PythonConfigModule.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\UserInterface\PythonCubeRenewal.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\UserInterface\PythonEffectModule.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\UserInterface\PythonEventManager.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\UserInterface\PythonEventManagerMoudle.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\UserInterface\PythonExceptionSender.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\UserInterface\PythonExchange.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\UserInterface\PythonExchangeModule.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\UserInterface\PythonFlyModule.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\UserInterface\PythonGameEventManagerModule.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\UserInterface\PythonGuild.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\UserInterface\PythonIME.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\UserInterface\PythonIMEModule.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\UserInterface\PythonItem.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\UserInterface\PythonItemModule.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\UserInterface\PythonLeaderboard.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\UserInterface\PythonMessenger.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\UserInterface\PythonMiniMap.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\UserInterface\PythonMiniMapModule.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\UserInterface\PythonNetworkDatagram.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\UserInterface\PythonNetworkDatagramModule.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\UserInterface\PythonNetworkStream.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\UserInterface\PythonNetworkStreamCommand.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\UserInterface\PythonNetworkStreamEvent.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\UserInterface\PythonNetworkStreamModule.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\UserInterface\PythonNetworkStreamOfflineshop.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\UserInterface\PythonNetworkStreamPhaseGame.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\UserInterface\PythonNetworkStreamPhaseGameActor.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\UserInterface\PythonNetworkStreamPhaseGameItem.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\UserInterface\PythonNetworkStreamPhaseHandShake.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\UserInterface\PythonNetworkStreamPhaseLoading.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\UserInterface\PythonNetworkStreamPhaseLogin.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\UserInterface\PythonNetworkStreamPhaseOffline.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\UserInterface\PythonNetworkStreamPhaseSelect.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\UserInterface\PythonNonPlayer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\UserInterface\PythonNonPlayerModule.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\UserInterface\PythonOfflineshop.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\UserInterface\PythonPackModule.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\UserInterface\PythonPlayer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\UserInterface\PythonPlayerEventHandler.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\UserInterface\PythonPlayerInput.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\UserInterface\PythonPlayerInputKeyboard.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\UserInterface\PythonPlayerInputMouse.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\UserInterface\PythonPlayerModule.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\UserInterface\PythonPlayerSkill.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\UserInterface\PythonProfilerModule.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\UserInterface\PythonQuest.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\UserInterface\PythonSafeBox.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\UserInterface\PythonShop.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\UserInterface\PythonSkill.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\UserInterface\PythonSkillPet.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\UserInterface\PythonSoundManagerModule.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\UserInterface\PythonSwitchbot.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\UserInterface\PythonSystem.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\UserInterface\PythonSystemModule.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\UserInterface\PythonTextTail.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\UserInterface\PythonTextTailModule.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\UserInterface\PythonWikiModule.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\UserInterface\PythonWikiRenderTarget.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\UserInterface\ServerStateChecker.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\UserInterface\ServerStateCheckerModule.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\UserInterface\StdAfx.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\UserInterface\TextTrans.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\UserInterface\Update.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\UserInterface\UserInterface.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\UserInterface\minIni.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\UserInterface\AbstractApplication.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\UserInterface\AbstractCharacterManager.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\UserInterface\AbstractChat.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\UserInterface\AbstractPlayer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\UserInterface\AbstractSingleton.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\UserInterface\AccountConnector.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\UserInterface\AffectFlagContainer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\UserInterface\CNetworkAdapter.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\UserInterface\Discord.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\UserInterface\GameType.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\UserInterface\GuildMarkDownloader.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\UserInterface\GuildMarkUploader.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\UserInterface\HideCore.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\UserInterface\InstanceBase.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\UserInterface\InsultChecker.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\UserInterface\Libs.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\UserInterface\Locale.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\UserInterface\Locale_inc.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\UserInterface\MarkImage.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\UserInterface\MarkManager.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\UserInterface\MovieMan.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\UserInterface\NetworkActorManager.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\UserInterface\Packet.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\UserInterface\PythonAcce.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\UserInterface\PythonApplication.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\UserInterface\PythonBackground.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\UserInterface\PythonCharacterManager.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\UserInterface\PythonChat.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\UserInterface\PythonConfig.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\UserInterface\PythonCubeRenewal.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\UserInterface\PythonEventManager.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\UserInterface\PythonExceptionSender.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\UserInterface\PythonExchange.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\UserInterface\PythonGuild.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\UserInterface\PythonIME.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\UserInterface\PythonItem.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\UserInterface\PythonLeaderboard.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\UserInterface\PythonMessenger.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\UserInterface\PythonMiniMap.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\UserInterface\PythonNetworkDatagram.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\UserInterface\PythonNetworkStream.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\UserInterface\PythonNonPlayer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\UserInterface\PythonOfflineshop.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\UserInterface\PythonPlayer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\UserInterface\PythonPlayerEventHandler.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\UserInterface\PythonQuest.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\UserInterface\PythonSafeBox.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\UserInterface\PythonShop.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\UserInterface\PythonSkill.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\UserInterface\PythonSkillPet.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\UserInterface\PythonSwitchbot.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\UserInterface\PythonSystem.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\UserInterface\PythonTextTail.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\UserInterface\PythonWikiRenderTarget.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\UserInterface\RegPack.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\UserInterface\ServerStateChecker.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\UserInterface\StdAfx.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\UserInterface\Test.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\UserInterface\TextTrans.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\UserInterface\Update.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\UserInterface\Version.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\UserInterface\minGlue.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\UserInterface\minIni.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\UserInterface\resource.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\UserInterface\CMakeLists.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Launcher\UserInterface\UserInterface.rc">
+      <Filter>Source Files</Filter>
+    </ResourceCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{997E584A-6252-3F29-A1E1-D2CEBBC39C40}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{7C47B037-CBF3-320C-941D-71B3AFA5D9B8}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

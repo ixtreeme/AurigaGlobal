@@ -1,0 +1,516 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="18.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <PreferredToolArchitecture>x64</PreferredToolArchitecture>
+  </PropertyGroup>
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="MinSizeRel|x64">
+      <Configuration>MinSizeRel</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="RelWithDebInfo|x64">
+      <Configuration>RelWithDebInfo</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{97DB6677-1584-3678-ACEB-25082A197DAB}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+    <VcpkgEnabled>false</VcpkgEnabled>
+    <WindowsTargetPlatformVersion>10.0.28000.0</WindowsTargetPlatformVersion>
+    <Platform>x64</Platform>
+    <ProjectName>Database</ProjectName>
+    <VCProjectUpgraderObjectName>NoUpgrade</VCProjectUpgraderObjectName>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v145</PlatformToolset>
+    <EnableAsan>true</EnableAsan>
+    <SpectreMitigation>Spectre</SpectreMitigation>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v145</PlatformToolset>
+    <EnableAsan>true</EnableAsan>
+    <SpectreMitigation>Spectre</SpectreMitigation>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v145</PlatformToolset>
+    <EnableAsan>true</EnableAsan>
+    <SpectreMitigation>Spectre</SpectreMitigation>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v145</PlatformToolset>
+    <EnableAsan>true</EnableAsan>
+    <SpectreMitigation>Spectre</SpectreMitigation>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets">
+    <Import Project="do_not_import_user.props" Condition="exists('do_not_import_user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup>
+    <_ProjectFileVersion>10.0.20506.1</_ProjectFileVersion>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">D:\AurigaGlobal\LiveWork\AurigaGlobal\build-asan\SRC\Server\Database\Debug\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Database.dir\Debug\</IntDir>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Database</TargetName>
+    <TargetExt Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">.exe</TargetExt>
+    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</LinkIncremental>
+    <GenerateManifest Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</GenerateManifest>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|x64'">D:\AurigaGlobal\LiveWork\AurigaGlobal\build-asan\SRC\Server\Database\Release\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Database.dir\Release\</IntDir>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Database</TargetName>
+    <TargetExt Condition="'$(Configuration)|$(Platform)'=='Release|x64'">.exe</TargetExt>
+    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</LinkIncremental>
+    <GenerateManifest Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</GenerateManifest>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">D:\AurigaGlobal\LiveWork\AurigaGlobal\build-asan\SRC\Server\Database\MinSizeRel\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">Database.dir\MinSizeRel\</IntDir>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">Database</TargetName>
+    <TargetExt Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">.exe</TargetExt>
+    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">false</LinkIncremental>
+    <GenerateManifest Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">true</GenerateManifest>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">D:\AurigaGlobal\LiveWork\AurigaGlobal\build-asan\SRC\Server\Database\RelWithDebInfo\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">Database.dir\RelWithDebInfo\</IntDir>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">Database</TargetName>
+    <TargetExt Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">.exe</TargetExt>
+    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">true</LinkIncremental>
+    <GenerateManifest Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">true</GenerateManifest>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server;D:\AurigaGlobal\LiveWork\AurigaGlobal\extern\fmt\include;D:\AurigaGlobal\LiveWork\AurigaGlobal\extern\spdlog\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalOptions>%(AdditionalOptions) /bigobj /fsanitize=address</AdditionalOptions>
+      <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
+      <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
+      <BufferSecurityCheck>true</BufferSecurityCheck>
+      <CallingConvention></CallingConvention>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <ExceptionHandling>Sync</ExceptionHandling>
+      <FloatingPointModel></FloatingPointModel>
+      <ForceConformanceInForLoopScope></ForceConformanceInForLoopScope>
+      <InlineFunctionExpansion>Disabled</InlineFunctionExpansion>
+      <LanguageStandard>stdcpplatest</LanguageStandard>
+      <MinimalRebuild></MinimalRebuild>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <Optimization>Disabled</Optimization>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <RemoveUnreferencedCodeData></RemoveUnreferencedCodeData>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+      <SDLCheck>true</SDLCheck>
+      <SupportJustMyCode></SupportJustMyCode>
+      <TreatWChar_tAsBuiltInType></TreatWChar_tAsBuiltInType>
+      <UseFullPaths>false</UseFullPaths>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;_CRT_SECURE_NO_WARNINGS;_WINSOCK_DEPRECATED_NO_WARNINGS;_DEBUG;_DISABLE_VECTOR_ANNOTATION;_DISABLE_STRING_ANNOTATION;_DISABLE_OPTIONAL_ANNOTATION;FMT_HEADER_ONLY=1;SPDLOG_FMT_EXTERNAL=1;SPDLOG_ACTIVE_LEVEL=SPDLOG_LEVEL_TRACE;CMAKE_INTDIR="Debug"</PreprocessorDefinitions>
+      <ObjectFileName>$(IntDir)</ObjectFileName>
+      <ScanSourceForModuleDependencies>false</ScanSourceForModuleDependencies>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_DEBUG;_WINDOWS;_CRT_SECURE_NO_WARNINGS;_WINSOCK_DEPRECATED_NO_WARNINGS;_DISABLE_VECTOR_ANNOTATION;_DISABLE_STRING_ANNOTATION;_DISABLE_OPTIONAL_ANNOTATION;FMT_HEADER_ONLY=1;SPDLOG_FMT_EXTERNAL=1;SPDLOG_ACTIVE_LEVEL=SPDLOG_LEVEL_TRACE;CMAKE_INTDIR=\"Debug\"</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server;D:\AurigaGlobal\LiveWork\AurigaGlobal\extern\fmt\include;D:\AurigaGlobal\LiveWork\AurigaGlobal\extern\spdlog\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ResourceCompile>
+    <Midl>
+      <AdditionalIncludeDirectories>D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server;D:\AurigaGlobal\LiveWork\AurigaGlobal\extern\fmt\include;D:\AurigaGlobal\LiveWork\AurigaGlobal\extern\spdlog\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
+      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
+    </Midl>
+    <PostBuildEvent>
+      <Message></Message>
+      <Command>setlocal
+C:\Users\ixtre\.cache\codex-runtimes\codex-primary-runtime\dependencies\native\powershell\pwsh.exe -noprofile -executionpolicy Bypass -file C:/vcpkg/scripts/buildsystems/msbuild/applocal.ps1 -targetBinary D:/AurigaGlobal/LiveWork/AurigaGlobal/build-asan/SRC/Server/Database/Debug/Database.exe -installedDir C:/vcpkg/installed/x64-windows/debug/bin -OutVariable out
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+    </PostBuildEvent>
+    <Link>
+      <AdditionalDependencies>..\Base\Debug\S_Base.lib;..\Core\Debug\S_Core.lib;..\Poly\Debug\S_Poly.lib;..\SQL\Debug\S_SQL.lib;ws2_32.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib</AdditionalDependencies>
+      <AdditionalLibraryDirectories>C:/Program Files/Microsoft Visual Studio/18/Professional/VC/Tools/MSVC/14.51.36231/lib/x64;C:/Program Files/Microsoft Visual Studio/18/Professional/VC/Tools/MSVC/14.51.36231/lib/x64/$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalOptions>%(AdditionalOptions) /machine:x64 /HIGHENTROPYVA</AdditionalOptions>
+      <DataExecutionPrevention>true</DataExecutionPrevention>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
+      <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
+      <ImportLibrary>D:/AurigaGlobal/LiveWork/AurigaGlobal/build-asan/SRC/Server/Database/Debug/Database.lib</ImportLibrary>
+      <LinkErrorReporting></LinkErrorReporting>
+      <ProgramDataBaseFile>D:/AurigaGlobal/LiveWork/AurigaGlobal/build-asan/SRC/Server/Database/Debug/Database.pdb</ProgramDataBaseFile>
+      <RandomizedBaseAddress>true</RandomizedBaseAddress>
+      <SubSystem>Console</SubSystem>
+    </Link>
+    <ProjectReference>
+      <LinkLibraryDependencies>false</LinkLibraryDependencies>
+    </ProjectReference>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server;D:\AurigaGlobal\LiveWork\AurigaGlobal\extern\fmt\include;D:\AurigaGlobal\LiveWork\AurigaGlobal\extern\spdlog\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalOptions>%(AdditionalOptions) /bigobj /fsanitize=address</AdditionalOptions>
+      <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
+      <BasicRuntimeChecks>Default</BasicRuntimeChecks>
+      <BufferSecurityCheck>true</BufferSecurityCheck>
+      <CallingConvention></CallingConvention>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <ExceptionHandling>Sync</ExceptionHandling>
+      <FloatingPointModel></FloatingPointModel>
+      <ForceConformanceInForLoopScope></ForceConformanceInForLoopScope>
+      <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
+      <LanguageStandard>stdcpplatest</LanguageStandard>
+      <MinimalRebuild></MinimalRebuild>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <Optimization>MaxSpeed</Optimization>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <RemoveUnreferencedCodeData></RemoveUnreferencedCodeData>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <SDLCheck>true</SDLCheck>
+      <SupportJustMyCode></SupportJustMyCode>
+      <TreatWChar_tAsBuiltInType></TreatWChar_tAsBuiltInType>
+      <UseFullPaths>false</UseFullPaths>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;NDEBUG;_CRT_SECURE_NO_WARNINGS;_WINSOCK_DEPRECATED_NO_WARNINGS;_DISABLE_VECTOR_ANNOTATION;_DISABLE_STRING_ANNOTATION;_DISABLE_OPTIONAL_ANNOTATION;FMT_HEADER_ONLY=1;SPDLOG_FMT_EXTERNAL=1;SPDLOG_ACTIVE_LEVEL=SPDLOG_LEVEL_TRACE;CMAKE_INTDIR="Release"</PreprocessorDefinitions>
+      <ObjectFileName>$(IntDir)</ObjectFileName>
+      <ScanSourceForModuleDependencies>false</ScanSourceForModuleDependencies>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;NDEBUG;_CRT_SECURE_NO_WARNINGS;_WINSOCK_DEPRECATED_NO_WARNINGS;_DISABLE_VECTOR_ANNOTATION;_DISABLE_STRING_ANNOTATION;_DISABLE_OPTIONAL_ANNOTATION;FMT_HEADER_ONLY=1;SPDLOG_FMT_EXTERNAL=1;SPDLOG_ACTIVE_LEVEL=SPDLOG_LEVEL_TRACE;CMAKE_INTDIR=\"Release\"</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server;D:\AurigaGlobal\LiveWork\AurigaGlobal\extern\fmt\include;D:\AurigaGlobal\LiveWork\AurigaGlobal\extern\spdlog\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ResourceCompile>
+    <Midl>
+      <AdditionalIncludeDirectories>D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server;D:\AurigaGlobal\LiveWork\AurigaGlobal\extern\fmt\include;D:\AurigaGlobal\LiveWork\AurigaGlobal\extern\spdlog\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
+      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
+    </Midl>
+    <PostBuildEvent>
+      <Message></Message>
+      <Command>setlocal
+C:\Users\ixtre\.cache\codex-runtimes\codex-primary-runtime\dependencies\native\powershell\pwsh.exe -noprofile -executionpolicy Bypass -file C:/vcpkg/scripts/buildsystems/msbuild/applocal.ps1 -targetBinary D:/AurigaGlobal/LiveWork/AurigaGlobal/build-asan/SRC/Server/Database/Release/Database.exe -installedDir C:/vcpkg/installed/x64-windows/bin -OutVariable out
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+    </PostBuildEvent>
+    <Link>
+      <AdditionalDependencies>..\Base\Release\S_Base.lib;..\Core\Release\S_Core.lib;..\Poly\Release\S_Poly.lib;..\SQL\Release\S_SQL.lib;ws2_32.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib</AdditionalDependencies>
+      <AdditionalLibraryDirectories>C:/Program Files/Microsoft Visual Studio/18/Professional/VC/Tools/MSVC/14.51.36231/lib/x64;C:/Program Files/Microsoft Visual Studio/18/Professional/VC/Tools/MSVC/14.51.36231/lib/x64/$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalOptions>%(AdditionalOptions) /machine:x64 /HIGHENTROPYVA</AdditionalOptions>
+      <DataExecutionPrevention>true</DataExecutionPrevention>
+      <GenerateDebugInformation>false</GenerateDebugInformation>
+      <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
+      <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
+      <ImportLibrary>D:/AurigaGlobal/LiveWork/AurigaGlobal/build-asan/SRC/Server/Database/Release/Database.lib</ImportLibrary>
+      <LinkErrorReporting></LinkErrorReporting>
+      <ProgramDataBaseFile>D:/AurigaGlobal/LiveWork/AurigaGlobal/build-asan/SRC/Server/Database/Release/Database.pdb</ProgramDataBaseFile>
+      <RandomizedBaseAddress>true</RandomizedBaseAddress>
+      <SubSystem>Console</SubSystem>
+    </Link>
+    <ProjectReference>
+      <LinkLibraryDependencies>false</LinkLibraryDependencies>
+    </ProjectReference>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server;D:\AurigaGlobal\LiveWork\AurigaGlobal\extern\fmt\include;D:\AurigaGlobal\LiveWork\AurigaGlobal\extern\spdlog\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalOptions>%(AdditionalOptions) /bigobj /fsanitize=address</AdditionalOptions>
+      <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
+      <BasicRuntimeChecks>Default</BasicRuntimeChecks>
+      <BufferSecurityCheck>true</BufferSecurityCheck>
+      <CallingConvention></CallingConvention>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <ExceptionHandling>Sync</ExceptionHandling>
+      <FloatingPointModel></FloatingPointModel>
+      <ForceConformanceInForLoopScope></ForceConformanceInForLoopScope>
+      <InlineFunctionExpansion>OnlyExplicitInline</InlineFunctionExpansion>
+      <LanguageStandard>stdcpplatest</LanguageStandard>
+      <MinimalRebuild></MinimalRebuild>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <Optimization>MinSpace</Optimization>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <RemoveUnreferencedCodeData></RemoveUnreferencedCodeData>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <SDLCheck>true</SDLCheck>
+      <SupportJustMyCode></SupportJustMyCode>
+      <TreatWChar_tAsBuiltInType></TreatWChar_tAsBuiltInType>
+      <UseFullPaths>false</UseFullPaths>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;NDEBUG;_CRT_SECURE_NO_WARNINGS;_WINSOCK_DEPRECATED_NO_WARNINGS;_DISABLE_VECTOR_ANNOTATION;_DISABLE_STRING_ANNOTATION;_DISABLE_OPTIONAL_ANNOTATION;FMT_HEADER_ONLY=1;SPDLOG_FMT_EXTERNAL=1;SPDLOG_ACTIVE_LEVEL=SPDLOG_LEVEL_TRACE;CMAKE_INTDIR="MinSizeRel"</PreprocessorDefinitions>
+      <ObjectFileName>$(IntDir)</ObjectFileName>
+      <ScanSourceForModuleDependencies>false</ScanSourceForModuleDependencies>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;NDEBUG;_CRT_SECURE_NO_WARNINGS;_WINSOCK_DEPRECATED_NO_WARNINGS;_DISABLE_VECTOR_ANNOTATION;_DISABLE_STRING_ANNOTATION;_DISABLE_OPTIONAL_ANNOTATION;FMT_HEADER_ONLY=1;SPDLOG_FMT_EXTERNAL=1;SPDLOG_ACTIVE_LEVEL=SPDLOG_LEVEL_TRACE;CMAKE_INTDIR=\"MinSizeRel\"</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server;D:\AurigaGlobal\LiveWork\AurigaGlobal\extern\fmt\include;D:\AurigaGlobal\LiveWork\AurigaGlobal\extern\spdlog\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ResourceCompile>
+    <Midl>
+      <AdditionalIncludeDirectories>D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server;D:\AurigaGlobal\LiveWork\AurigaGlobal\extern\fmt\include;D:\AurigaGlobal\LiveWork\AurigaGlobal\extern\spdlog\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
+      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
+    </Midl>
+    <PostBuildEvent>
+      <Message></Message>
+      <Command>setlocal
+C:\Users\ixtre\.cache\codex-runtimes\codex-primary-runtime\dependencies\native\powershell\pwsh.exe -noprofile -executionpolicy Bypass -file C:/vcpkg/scripts/buildsystems/msbuild/applocal.ps1 -targetBinary D:/AurigaGlobal/LiveWork/AurigaGlobal/build-asan/SRC/Server/Database/MinSizeRel/Database.exe -installedDir C:/vcpkg/installed/x64-windows/bin -OutVariable out
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+    </PostBuildEvent>
+    <Link>
+      <AdditionalDependencies>..\Base\MinSizeRel\S_Base.lib;..\Core\MinSizeRel\S_Core.lib;..\Poly\MinSizeRel\S_Poly.lib;..\SQL\MinSizeRel\S_SQL.lib;ws2_32.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib</AdditionalDependencies>
+      <AdditionalLibraryDirectories>C:/Program Files/Microsoft Visual Studio/18/Professional/VC/Tools/MSVC/14.51.36231/lib/x64;C:/Program Files/Microsoft Visual Studio/18/Professional/VC/Tools/MSVC/14.51.36231/lib/x64/$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalOptions>%(AdditionalOptions) /machine:x64 /HIGHENTROPYVA</AdditionalOptions>
+      <DataExecutionPrevention>true</DataExecutionPrevention>
+      <GenerateDebugInformation>false</GenerateDebugInformation>
+      <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
+      <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
+      <ImportLibrary>D:/AurigaGlobal/LiveWork/AurigaGlobal/build-asan/SRC/Server/Database/MinSizeRel/Database.lib</ImportLibrary>
+      <LinkErrorReporting></LinkErrorReporting>
+      <ProgramDataBaseFile>D:/AurigaGlobal/LiveWork/AurigaGlobal/build-asan/SRC/Server/Database/MinSizeRel/Database.pdb</ProgramDataBaseFile>
+      <RandomizedBaseAddress>true</RandomizedBaseAddress>
+      <SubSystem>Console</SubSystem>
+    </Link>
+    <ProjectReference>
+      <LinkLibraryDependencies>false</LinkLibraryDependencies>
+    </ProjectReference>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server;D:\AurigaGlobal\LiveWork\AurigaGlobal\extern\fmt\include;D:\AurigaGlobal\LiveWork\AurigaGlobal\extern\spdlog\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalOptions>%(AdditionalOptions) /bigobj /fsanitize=address</AdditionalOptions>
+      <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
+      <BasicRuntimeChecks>Default</BasicRuntimeChecks>
+      <BufferSecurityCheck>true</BufferSecurityCheck>
+      <CallingConvention></CallingConvention>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <ExceptionHandling>Sync</ExceptionHandling>
+      <FloatingPointModel></FloatingPointModel>
+      <ForceConformanceInForLoopScope></ForceConformanceInForLoopScope>
+      <InlineFunctionExpansion>OnlyExplicitInline</InlineFunctionExpansion>
+      <LanguageStandard>stdcpplatest</LanguageStandard>
+      <MinimalRebuild></MinimalRebuild>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <Optimization>MaxSpeed</Optimization>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <RemoveUnreferencedCodeData></RemoveUnreferencedCodeData>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <SDLCheck>true</SDLCheck>
+      <SupportJustMyCode></SupportJustMyCode>
+      <TreatWChar_tAsBuiltInType></TreatWChar_tAsBuiltInType>
+      <UseFullPaths>false</UseFullPaths>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;NDEBUG;_CRT_SECURE_NO_WARNINGS;_WINSOCK_DEPRECATED_NO_WARNINGS;_DISABLE_VECTOR_ANNOTATION;_DISABLE_STRING_ANNOTATION;_DISABLE_OPTIONAL_ANNOTATION;FMT_HEADER_ONLY=1;SPDLOG_FMT_EXTERNAL=1;SPDLOG_ACTIVE_LEVEL=SPDLOG_LEVEL_TRACE;CMAKE_INTDIR="RelWithDebInfo"</PreprocessorDefinitions>
+      <ObjectFileName>$(IntDir)</ObjectFileName>
+      <ScanSourceForModuleDependencies>false</ScanSourceForModuleDependencies>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;NDEBUG;_CRT_SECURE_NO_WARNINGS;_WINSOCK_DEPRECATED_NO_WARNINGS;_DISABLE_VECTOR_ANNOTATION;_DISABLE_STRING_ANNOTATION;_DISABLE_OPTIONAL_ANNOTATION;FMT_HEADER_ONLY=1;SPDLOG_FMT_EXTERNAL=1;SPDLOG_ACTIVE_LEVEL=SPDLOG_LEVEL_TRACE;CMAKE_INTDIR=\"RelWithDebInfo\"</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server;D:\AurigaGlobal\LiveWork\AurigaGlobal\extern\fmt\include;D:\AurigaGlobal\LiveWork\AurigaGlobal\extern\spdlog\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ResourceCompile>
+    <Midl>
+      <AdditionalIncludeDirectories>D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server;D:\AurigaGlobal\LiveWork\AurigaGlobal\extern\fmt\include;D:\AurigaGlobal\LiveWork\AurigaGlobal\extern\spdlog\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
+      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
+    </Midl>
+    <PostBuildEvent>
+      <Message></Message>
+      <Command>setlocal
+C:\Users\ixtre\.cache\codex-runtimes\codex-primary-runtime\dependencies\native\powershell\pwsh.exe -noprofile -executionpolicy Bypass -file C:/vcpkg/scripts/buildsystems/msbuild/applocal.ps1 -targetBinary D:/AurigaGlobal/LiveWork/AurigaGlobal/build-asan/SRC/Server/Database/RelWithDebInfo/Database.exe -installedDir C:/vcpkg/installed/x64-windows/bin -OutVariable out
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+    </PostBuildEvent>
+    <Link>
+      <AdditionalDependencies>..\Base\RelWithDebInfo\S_Base.lib;..\Core\RelWithDebInfo\S_Core.lib;..\Poly\RelWithDebInfo\S_Poly.lib;..\SQL\RelWithDebInfo\S_SQL.lib;ws2_32.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib</AdditionalDependencies>
+      <AdditionalLibraryDirectories>C:/Program Files/Microsoft Visual Studio/18/Professional/VC/Tools/MSVC/14.51.36231/lib/x64;C:/Program Files/Microsoft Visual Studio/18/Professional/VC/Tools/MSVC/14.51.36231/lib/x64/$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalOptions>%(AdditionalOptions) /machine:x64 /HIGHENTROPYVA</AdditionalOptions>
+      <DataExecutionPrevention>true</DataExecutionPrevention>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
+      <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
+      <ImportLibrary>D:/AurigaGlobal/LiveWork/AurigaGlobal/build-asan/SRC/Server/Database/RelWithDebInfo/Database.lib</ImportLibrary>
+      <LinkErrorReporting></LinkErrorReporting>
+      <ProgramDataBaseFile>D:/AurigaGlobal/LiveWork/AurigaGlobal/build-asan/SRC/Server/Database/RelWithDebInfo/Database.pdb</ProgramDataBaseFile>
+      <RandomizedBaseAddress>true</RandomizedBaseAddress>
+      <SubSystem>Console</SubSystem>
+    </Link>
+    <ProjectReference>
+      <LinkLibraryDependencies>false</LinkLibraryDependencies>
+    </ProjectReference>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <CustomBuild Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\Database\CMakeLists.txt">
+      <UseUtf8Encoding>Always</UseUtf8Encoding>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Building Custom Rule D:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/Database/CMakeLists.txt</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -SD:/AurigaGlobal/LiveWork/AurigaGlobal -BD:/AurigaGlobal/LiveWork/AurigaGlobal/build-asan --check-stamp-file D:/AurigaGlobal/LiveWork/AurigaGlobal/build-asan/SRC/Server/Database/CMakeFiles/generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">D:\AurigaGlobal\LiveWork\AurigaGlobal\build-asan\CMakeFiles\cmake.verify_globs;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">D:\AurigaGlobal\LiveWork\AurigaGlobal\build-asan\SRC\Server\Database\CMakeFiles\generate.stamp</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Building Custom Rule D:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/Database/CMakeLists.txt</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -SD:/AurigaGlobal/LiveWork/AurigaGlobal -BD:/AurigaGlobal/LiveWork/AurigaGlobal/build-asan --check-stamp-file D:/AurigaGlobal/LiveWork/AurigaGlobal/build-asan/SRC/Server/Database/CMakeFiles/generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">D:\AurigaGlobal\LiveWork\AurigaGlobal\build-asan\CMakeFiles\cmake.verify_globs;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">D:\AurigaGlobal\LiveWork\AurigaGlobal\build-asan\SRC\Server\Database\CMakeFiles\generate.stamp</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">Building Custom Rule D:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/Database/CMakeLists.txt</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -SD:/AurigaGlobal/LiveWork/AurigaGlobal -BD:/AurigaGlobal/LiveWork/AurigaGlobal/build-asan --check-stamp-file D:/AurigaGlobal/LiveWork/AurigaGlobal/build-asan/SRC/Server/Database/CMakeFiles/generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">D:\AurigaGlobal\LiveWork\AurigaGlobal\build-asan\CMakeFiles\cmake.verify_globs;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">D:\AurigaGlobal\LiveWork\AurigaGlobal\build-asan\SRC\Server\Database\CMakeFiles\generate.stamp</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">Building Custom Rule D:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/Database/CMakeLists.txt</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -SD:/AurigaGlobal/LiveWork/AurigaGlobal -BD:/AurigaGlobal/LiveWork/AurigaGlobal/build-asan --check-stamp-file D:/AurigaGlobal/LiveWork/AurigaGlobal/build-asan/SRC/Server/Database/CMakeFiles/generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">D:\AurigaGlobal\LiveWork\AurigaGlobal\build-asan\CMakeFiles\cmake.verify_globs;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">D:\AurigaGlobal\LiveWork\AurigaGlobal\build-asan\SRC\Server\Database\CMakeFiles\generate.stamp</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">false</LinkObjects>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\Database\Cache.h" />
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\Database\ClientManager.h" />
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\Database\Config.h" />
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\Database\CsvReader.h" />
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\Database\DBManager.h" />
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\Database\GuildManager.h" />
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\Database\ItemAwardManager.h" />
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\Database\ItemIDRangeManager.h" />
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\Database\Lock.h" />
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\Database\LoginData.h" />
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\Database\Main.h" />
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\Database\Marriage.h" />
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\Database\MoneyLog.h" />
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\Database\NetBase.h" />
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\Database\OfflineshopCache.h" />
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\Database\Peer.h" />
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\Database\PeerBase.h" />
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\Database\PrivManager.h" />
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\Database\ProtoReader.h" />
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\Database\QID.h" />
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\Database\buffer_manager.h" />
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\Database\grid.h" />
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\Database\stdafx.h" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\Database\Cache.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\Database\ClientManager.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\Database\ClientManagerBoot.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\Database\ClientManagerEventFlag.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\Database\ClientManagerGuild.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\Database\ClientManagerHorseName.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\Database\ClientManagerLogin.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\Database\ClientManagerOfflineshop.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\Database\ClientManagerParty.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\Database\ClientManagerPlayer.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\Database\Config.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\Database\CsvReader.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\Database\DBManager.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\Database\GuildManager.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\Database\ItemAwardManager.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\Database\ItemIDRangeManager.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\Database\Lock.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\Database\LoginData.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\Database\Main.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\Database\Marriage.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\Database\MoneyLog.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\Database\NetBase.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\Database\OfflineshopCache.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\Database\Peer.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\Database\PeerBase.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\Database\PrivManager.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\Database\ProtoReader.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\Database\buffer_manager.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\Database\grid.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\Database\version.cpp" />
+  </ItemGroup>
+  <ItemGroup />
+  <ItemGroup>
+    <ProjectReference Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\build-asan\ZERO_CHECK.vcxproj">
+      <Project>{8DCF6E62-4198-3D54-9D62-3B2BB529300B}</Project>
+      <Name>ZERO_CHECK</Name>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </ProjectReference>
+    <ProjectReference Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\build-asan\SRC\Server\Base\S_Base.vcxproj">
+      <Project>{49AB63D8-965F-3925-A85B-8B0E8ADB48E4}</Project>
+      <Name>S_Base</Name>
+    </ProjectReference>
+    <ProjectReference Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\build-asan\SRC\Server\Core\S_Core.vcxproj">
+      <Project>{240E8739-6BF4-3F11-B474-27FE6501FAB6}</Project>
+      <Name>S_Core</Name>
+    </ProjectReference>
+    <ProjectReference Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\build-asan\SRC\Server\Poly\S_Poly.vcxproj">
+      <Project>{E37F91E5-E49C-33D0-99CF-17CB71C65844}</Project>
+      <Name>S_Poly</Name>
+    </ProjectReference>
+    <ProjectReference Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\build-asan\SRC\Server\SQL\S_SQL.vcxproj">
+      <Project>{E2690F91-5534-3C63-AD2B-499C284DA649}</Project>
+      <Name>S_SQL</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

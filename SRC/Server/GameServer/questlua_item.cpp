@@ -2,10 +2,8 @@
 #include <Core/Logging.hpp>
 #include "questmanager.h"
 #include "char_interface.hpp"
-#include "ecs/CharacterAccessors.hpp"
-#include "item.h"
 #include "item_manager.h"
-#include "ecs/EntityFactory.hpp"
+#include "ecs/CharacterAccessors.hpp"
 #include "ecs/Registry.hpp"
 #include "ecs/systems/ItemSystem.hpp"
 #include "over9refine.h"
@@ -287,41 +285,35 @@ namespace quest
 
 	ALUA(item_can_over9refine)
 	{
-		LPITEM item = CQuestManager::instance().GetCurrentItem();
+		const entt::entity item = CQuestManager::instance().GetCurrentItemEntity();
+		if (!ItemSystem::IsValidItem(item))
+			return 0;
 
-		if ( item == nullptr) return 0;
-
-		lua_pushnumber(L, COver9RefineManager::instance().canOver9Refine(ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, item))));
-
+		lua_pushnumber(L, COver9RefineManager::instance().canOver9Refine(ItemSystem::GetItemVnum(item)));
 		return 1;
 	}
 
 	ALUA(item_change_to_over9)
 	{
-		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
-		auto* ch = ecs::LegacyCharOf(chEntity);
-		LPITEM item = CQuestManager::instance().GetCurrentItem();
+		const entt::entity character = CQuestManager::instance().GetCurrentPCEntity();
+		const entt::entity item = CQuestManager::instance().GetCurrentItemEntity();
+		if (character == entt::null || !g_registry.valid(character) || !ItemSystem::IsValidItem(item))
+			return 0;
 
-		if ( ch == nullptr || item == nullptr) return 0;
-
-		lua_pushboolean(L, COver9RefineManager::instance().Change9ToOver9(ch, item));
-
+		lua_pushboolean(L, COver9RefineManager::instance().Change9ToOver9(character, item));
 		return 1;
 	}
 
 	ALUA(item_over9refine)
 	{
-		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
-		auto* ch = ecs::LegacyCharOf(chEntity);
-		LPITEM item = CQuestManager::instance().GetCurrentItem();
+		const entt::entity character = CQuestManager::instance().GetCurrentPCEntity();
+		const entt::entity item = CQuestManager::instance().GetCurrentItemEntity();
+		if (character == entt::null || !g_registry.valid(character) || !ItemSystem::IsValidItem(item))
+			return 0;
 
-		if ( ch == nullptr || item == nullptr) return 0;
-
-		lua_pushboolean(L, COver9RefineManager::instance().Over9Refine(ch, item));
-
+		lua_pushboolean(L, COver9RefineManager::instance().Over9Refine(character, item));
 		return 1;
 	}
-
 	ALUA(item_get_over9_material_vnum)
 	{
 		if ( lua_isnumber(L, 1) == true )
@@ -389,52 +381,64 @@ namespace quest
 
 	ALUA(item_start_realtime_expire)
 	{
-		CQuestManager& q = CQuestManager::instance();
-		LPITEM pItem = q.GetCurrentItem();
-
-		if (pItem)
-		{
-			pItem->StartRealTimeExpireEvent();
-			return 1;
-		}
-
-		return 0;
+		const entt::entity item = CQuestManager::instance().GetCurrentItemEntity();
+		return ItemSystem::StartRealTimeExpireEventEcs(item) ? 1 : 0;
 	}
-
 	ALUA(item_copy_and_give_before_remove)
 	{
 		lua_pushboolean(L, 0);
 		if (!lua_isnumber(L, 1))
 			return 1;
 
-		uint32_t vnum = (uint32_t)lua_tonumber(L, 1);
-
 		CQuestManager& q = CQuestManager::instance();
-		LPITEM pItem = q.GetCurrentItem();
-		const entt::entity pCharEntity = q.GetCurrentPCEntity();
-		auto* pChar = ecs::LegacyCharOf(pCharEntity);
-		LPITEM pkNewItem = ITEM_MANAGER::instance().CreateItem(vnum, 1, 0, false);
+		const entt::entity source = q.GetCurrentItemEntity();
+		const entt::entity character = q.GetCurrentPCEntity();
+		LPCHARACTER legacyCharacter = ecs::LegacyCharOf(character);
+		if (!legacyCharacter || !ItemSystem::IsValidItem(source) ||
+			ItemSystem::GetItemOwner(source) != character || !ItemSystem::IsItemInInventory(source))
+			return 1;
 
-		if (pkNewItem)
+		const uint16_t sourceCell = ItemSystem::GetItemCell(source);
+		const entt::entity replacement = ItemSystem::CreateItemEcs(
+			static_cast<uint32_t>(lua_tonumber(L, 1)), 1, 0, false);
+		if (!ItemSystem::IsValidItem(replacement))
+			return 1;
+
+		if (!ItemSystem::CopyAllAttrToEcs(source, replacement))
 		{
-			ITEM_MANAGER::CopyAllAttrTo(pItem, pkNewItem);
-			LogManager::instance().ItemLog(pChar, pkNewItem, "COPY SUCCESS", pkNewItem->GetName());
-
-			uint8_t bCell = ItemSystem::GetItemCell(EntityFactory::CreateItemEntity(g_registry, pItem));
-
-			ITEM_MANAGER::instance().RemoveItem(pItem, "REMOVE (COPY SUCCESS)");
-
-			pkNewItem->AddToCharacter(pChar, TItemPos(INVENTORY, bCell));
-			ITEM_MANAGER::instance().FlushDelayedSave(pkNewItem);
-			pkNewItem->AttrLog();
-
-			// ¼º°ø!
-			lua_pushboolean(L, 1);
+			ItemSystem::DestroyItemEntityEcs(replacement, "COPY_ATTR_ROLLBACK");
+			return 1;
 		}
 
+		if (!ItemSystem::RemoveItemEcs(source))
+		{
+			ItemSystem::DestroyItemEntityEcs(replacement, "COPY_REMOVE_ROLLBACK");
+			return 1;
+		}
+
+		if (!ItemSystem::PlaceItemEcs(character, replacement, INVENTORY, sourceCell))
+		{
+			ItemSystem::PlaceItemEcs(character, source, INVENTORY, sourceCell);
+			ItemSystem::DestroyItemEntityEcs(replacement, "COPY_PLACE_ROLLBACK");
+			return 1;
+		}
+
+		LogManager::instance().ItemLogEntity(
+			legacyCharacter, replacement, "COPY SUCCESS", ItemSystem::GetItemName(replacement));
+
+		if (!ItemSystem::DestroyItemEntityEcs(source, "REMOVE (COPY SUCCESS)"))
+		{
+			ItemSystem::RemoveItemEcs(replacement);
+			ItemSystem::PlaceItemEcs(character, source, INVENTORY, sourceCell);
+			ItemSystem::DestroyItemEntityEcs(replacement, "COPY_SOURCE_ROLLBACK");
+			return 1;
+		}
+
+		ItemSystem::FlushDelayedSaveEcs(replacement);
+		ItemSystem::AttrLogEcs(replacement);
+		lua_pushboolean(L, 1);
 		return 1;
 	}
-
 #ifdef ENABLE_NEWSTUFF
 	ALUA(item_get_wearflag0)
 	{
@@ -527,55 +531,47 @@ namespace quest
 	{
 		NS_ITEM_GETMODE0(m_mode);
 
-		CQuestManager& q = CQuestManager::instance();
-		const entt::entity itemEntity = q.GetCurrentItemEntity();
-		LPITEM item = q.GetCurrentItem();
+		const entt::entity item = CQuestManager::instance().GetCurrentItemEntity();
+		if (!ItemSystem::IsValidItem(item))
+			return 0;
 
-		if(item)
+		int count = 0;
+		int requested = 1;
+		if (lua_isnumber(L, 2))
+			requested = static_cast<int>(lua_tonumber(L, 2));
+
+		if (m_mode == 1 || m_mode == 0)
 		{
-			int m_count = 0;
-			int m_reqsf = 1;
-			if (lua_isnumber(L, 2))
-				m_reqsf = lua_tonumber(L, 2);
-
-			if (m_mode==1 || m_mode==0)
-			{
-				m_count = ITEM_ATTRIBUTE_NORM_NUM - item->GetAttributeCount();
-				if (m_count>m_reqsf && m_reqsf!=0)
-					m_count = m_reqsf;
-				for (int i=0; i<m_count; i++)
-					ItemSystem::AddItemAttributeEcs(itemEntity);
-			}
-			if (m_mode==2 || m_mode==0)
-			{
-				m_count = ITEM_ATTRIBUTE_RARE_NUM - item->GetRareAttrCount();
-				if (m_count>m_reqsf && m_reqsf!=0)
-					m_count = m_reqsf;
-				for (int i=0; i<m_count; i++)
-					item->AddRareAttribute();
-			}
+			count = ITEM_ATTRIBUTE_NORM_NUM - ItemSystem::GetItemAttributeCount(item);
+			if (count > requested && requested != 0)
+				count = requested;
+			for (int i = 0; i < count; ++i)
+				ItemSystem::AddItemAttributeEcs(item);
+		}
+		if (m_mode == 2 || m_mode == 0)
+		{
+			count = ITEM_ATTRIBUTE_RARE_NUM - ItemSystem::GetItemRareAttributeCount(item);
+			if (count > requested && requested != 0)
+				count = requested;
+			for (int i = 0; i < count; ++i)
+				ItemSystem::AddItemRareAttributeEcs(item);
 		}
 		return 0;
 	}
-
 	ALUA(item_change_attr0)
 	{
 		NS_ITEM_GETMODE0(m_mode);
 
-		CQuestManager& q = CQuestManager::instance();
-		const entt::entity itemEntity = q.GetCurrentItemEntity();
-		LPITEM item = q.GetCurrentItem();
+		const entt::entity item = CQuestManager::instance().GetCurrentItemEntity();
+		if (!ItemSystem::IsValidItem(item))
+			return 0;
 
-		if(item)
-		{
-			if (m_mode==0 || m_mode==1)
-				ItemSystem::ChangeItemAttributeEcs(itemEntity);
-			if (m_mode==0 || m_mode==2)
-				item->ChangeRareAttribute();
-		}
+		if (m_mode == 0 || m_mode == 1)
+			ItemSystem::ChangeItemAttributeEcs(item);
+		if (m_mode == 0 || m_mode == 2)
+			ItemSystem::ChangeItemRareAttributeEcs(item);
 		return 0;
 	}
-
 	ALUA(item_clear_attr0)
 	{
 		NS_ITEM_GETMODE0(m_mode);
@@ -601,26 +597,20 @@ namespace quest
 	{
 		NS_ITEM_GETMODE0(m_mode);
 
-		CQuestManager& q = CQuestManager::instance();
-		LPITEM item = q.GetCurrentItem();
-
-		if(item)
+		const entt::entity item = CQuestManager::instance().GetCurrentItemEntity();
+		if (ItemSystem::IsValidItem(item))
 		{
-			if (m_mode==1)
-				lua_pushnumber(L, item->GetAttributeCount());
-			else if(m_mode==2)
-				lua_pushnumber(L, item->GetRareAttrCount());
-			else //0
+			if (m_mode == 1)
+				lua_pushnumber(L, ItemSystem::GetItemAttributeCount(item));
+			else if (m_mode == 2)
+				lua_pushnumber(L, ItemSystem::GetItemRareAttributeCount(item));
+			else
 			{
 				lua_newtable(L);
-				{
-					lua_pushnumber(L, item->GetAttributeCount());
-					lua_rawseti(L, -2, 1);
-				}
-				{
-					lua_pushnumber(L, item->GetRareAttrCount());
-					lua_rawseti(L, -2, 2);
-				}
+				lua_pushnumber(L, ItemSystem::GetItemAttributeCount(item));
+				lua_rawseti(L, -2, 1);
+				lua_pushnumber(L, ItemSystem::GetItemRareAttributeCount(item));
+				lua_rawseti(L, -2, 2);
 			}
 		}
 		else
@@ -628,7 +618,6 @@ namespace quest
 
 		return 1;
 	}
-
 	ALUA(item_get_attr0)
 	{
 		const entt::entity item = CQuestManager::instance().GetCurrentItemEntity();
@@ -696,7 +685,7 @@ namespace quest
 	// ALUA(item_equip_to0)
 	// {
 		// CQuestManager& q = CQuestManager::instance();
-		// LPITEM item = q.GetCurrentItem();
+		// entt::entity item = q.GetCurrentItemEntity();
 		// LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
 
 		// lua_pushboolean((item && ch)?item->EquipTo(ch, lua_tonumber(L, 1)):false);
@@ -707,7 +696,7 @@ namespace quest
 	// ALUA(item_unequip0)
 	// {
 		// CQuestManager& q = CQuestManager::instance();
-		// LPITEM item = q.GetCurrentItem();
+		// entt::entity item = q.GetCurrentItemEntity();
 
 		// lua_pushboolean(L, (item)?item->Unequip():false);
 

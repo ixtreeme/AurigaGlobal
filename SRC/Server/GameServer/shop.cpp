@@ -27,6 +27,15 @@
 #include "ecs/Registry.hpp"
 #include "ecs/systems/ItemSystem.hpp"
 
+namespace
+{
+LPITEM ResolveShopItem(entt::entity item)
+{
+	if (!ItemSystem::IsValidItem(item))
+		return nullptr;
+	return ITEM_MANAGER::instance().Find(ItemSystem::GetItemID(item));
+}
+}
 //#define ENABLE_SHOP_BLACKLIST
 /* ------------------------------------------------------------------------------------ */
 CShop::CShop()
@@ -99,12 +108,12 @@ void CShop::SetShopItems(TShopItemTable * pTable, uint8_t bItemCount)
 
 	m_pGrid->Clear();
 
-	m_itemVector.resize(SHOP_HOST_ITEM_MAX_NUM);
-	memset(&m_itemVector[0], 0, sizeof(SHOP_ITEM) * m_itemVector.size());
+	m_itemVector.assign(SHOP_HOST_ITEM_MAX_NUM, SHOP_ITEM{});
 
 	for (int i = 0; i < bItemCount; ++i)
 	{
 		LPITEM pkItem = nullptr;
+		entt::entity pkItemEntity = entt::null;
 		const TItemTable * item_table;
 
 		if (m_pkPC)
@@ -117,7 +126,8 @@ void CShop::SetShopItems(TShopItemTable * pTable, uint8_t bItemCount)
 				continue;
 			}
 
-			item_table = ItemSystem::GetItemProto(EntityFactory::CreateItemEntity(g_registry, pkItem));
+			pkItemEntity = EntityFactory::CreateItemEntity(g_registry, pkItem);
+			item_table = ItemSystem::GetItemProto(pkItemEntity);
 		}
 		else
 		{
@@ -166,17 +176,17 @@ void CShop::SetShopItems(TShopItemTable * pTable, uint8_t bItemCount)
 
 		SHOP_ITEM & item = m_itemVector[iPos];
 
-		item.pkItem = pkItem;
+		item.pkItem = pkItemEntity;
 		item.itemid = 0;
 
-		if (item.pkItem)
+		if (ItemSystem::IsValidItem(item.pkItem))
 		{
-			item.vnum = ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, pkItem));
-			item.count = ItemSystem::GetItemCount(EntityFactory::CreateItemEntity(g_registry, pkItem)); // PC 샵의 경우 아이템 개수는 진짜 아이템의 개수여야 한다.
+			item.vnum = ItemSystem::GetItemVnum(item.pkItem);
+			item.count = ItemSystem::GetItemCount(item.pkItem); // PC 샵의 경우 아이템 개수는 진짜 아이템의 개수여야 한다.
 #ifndef ENABLE_BUY_WITH_ITEM
 			item.price = pTable->price;
 #endif
-			item.itemid	= ItemSystem::GetItemID(EntityFactory::CreateItemEntity(g_registry, pkItem));
+			item.itemid	= ItemSystem::GetItemID(item.pkItem);
 		}
 		else
 		{
@@ -260,7 +270,7 @@ int64_t CShop::Buy(LPCHARACTER ch, uint8_t pos
 
 	SHOP_ITEM& r_item = m_itemVector[pos];
 	if (!ismultiple) {
-		const entt::entity selectedItem = ItemSystem::FindItemByID(r_item.itemid);
+		const entt::entity selectedItem = r_item.pkItem;
 
 		if (IsPCShop()) {
 			if (selectedItem == entt::null || !ItemSystem::IsValidItem(selectedItem)) {
@@ -296,10 +306,13 @@ int64_t CShop::Buy(LPCHARACTER ch, uint8_t pos
 	}
 #endif
 
-	LPITEM item = m_pkPC ? r_item.pkItem : ITEM_MANAGER::instance().CreateItem(r_item.vnum, r_item.count, 0, true);
+	LPITEM item = m_pkPC ? ResolveShopItem(r_item.pkItem) : ITEM_MANAGER::instance().CreateItem(r_item.vnum, r_item.count, 0, true);
 	if (!item) {
 		return SHOP_SUBHEADER_GC_SOLD_OUT;
 	}
+	const entt::entity itemEntity = EntityFactory::CreateItemEntity(g_registry, item);
+	if (!ItemSystem::IsValidItem(itemEntity))
+		return SHOP_SUBHEADER_GC_SOLD_OUT;
 
 #ifdef ENABLE_SHOP_BLACKLIST
 	if (!m_pkPC)
@@ -307,7 +320,7 @@ int64_t CShop::Buy(LPCHARACTER ch, uint8_t pos
 		if (quest::CQuestManager::instance().GetEventFlag("hivalue_item_sell") == 0)
 		{
 			//축복의 구슬 && 만년한철 이벤트
-			if (ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, item)) == 70024 || ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, item)) == 70035)
+			if (ItemSystem::GetItemVnum(itemEntity) == 70024 || ItemSystem::GetItemVnum(itemEntity) == 70035)
 			{
 				return SHOP_SUBHEADER_GC_END;
 			}
@@ -342,7 +355,7 @@ int64_t CShop::Buy(LPCHARACTER ch, uint8_t pos
 		{
 			LOG_INFO("Shop::Buy : Inventory full : {} size {}", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), item->GetSize());
 			ItemSystem::DestroyItemEntityEcs(
-				EntityFactory::CreateItemEntity(g_registry, item),
+				itemEntity,
 				"SHOP_TRANSACTION");
 			return SHOP_SUBHEADER_GC_INVENTORY_FULL;
 		}
@@ -392,15 +405,15 @@ int64_t CShop::Buy(LPCHARACTER ch, uint8_t pos
 	{
 #ifdef ENABLE_EXTRA_INVENTORY
 		if (item->IsExtraItem()) {
-			m_pkPC->SyncQuickslot(QUICKSLOT_TYPE_ITEM_EXTRA, ItemSystem::GetItemCell(EntityFactory::CreateItemEntity(g_registry, item)), 255);
+			m_pkPC->SyncQuickslot(QUICKSLOT_TYPE_ITEM_EXTRA, ItemSystem::GetItemCell(itemEntity), 255);
 		} else {
-			m_pkPC->SyncQuickslot(QUICKSLOT_TYPE_ITEM, ItemSystem::GetItemCell(EntityFactory::CreateItemEntity(g_registry, item)), 255);
+			m_pkPC->SyncQuickslot(QUICKSLOT_TYPE_ITEM, ItemSystem::GetItemCell(itemEntity), 255);
 		}
 #else
-		m_pkPC->SyncQuickslot(QUICKSLOT_TYPE_ITEM, ItemSystem::GetItemCell(EntityFactory::CreateItemEntity(g_registry, item)), 255);
+		m_pkPC->SyncQuickslot(QUICKSLOT_TYPE_ITEM, ItemSystem::GetItemCell(itemEntity), 255);
 #endif
 
-		if (ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, item)) == 90008 || ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, item)) == 90009) // VCARD
+		if (ItemSystem::GetItemVnum(itemEntity) == 90008 || ItemSystem::GetItemVnum(itemEntity) == 90009) // VCARD
 		{
 			VCardUse(m_pkPC, ch, item);
 			item = nullptr;
@@ -409,11 +422,11 @@ int64_t CShop::Buy(LPCHARACTER ch, uint8_t pos
 		{
 			char buf[512];
 
-			if (ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, item)) >= 80003 && ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, item)) <= 80007)
+			if (ItemSystem::GetItemVnum(itemEntity) >= 80003 && ItemSystem::GetItemVnum(itemEntity) <= 80007)
 			{
 				snprintf(buf, sizeof(buf), "%s FROM: %u TO: %u PRICE: %lld", item->GetName(), ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)), ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(m_pkPC)), dwPrice);
-				LogManager::instance().GoldBarLog(ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)), ItemSystem::GetItemID(EntityFactory::CreateItemEntity(g_registry, item)), SHOP_BUY, buf);
-				LogManager::instance().GoldBarLog(ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(m_pkPC)), ItemSystem::GetItemID(EntityFactory::CreateItemEntity(g_registry, item)), SHOP_SELL, buf);
+				LogManager::instance().GoldBarLog(ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch)), ItemSystem::GetItemID(itemEntity), SHOP_BUY, buf);
+				LogManager::instance().GoldBarLog(ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(m_pkPC)), ItemSystem::GetItemID(itemEntity), SHOP_SELL, buf);
 			}
 
 			item->RemoveFromCharacter();
@@ -424,22 +437,22 @@ int64_t CShop::Buy(LPCHARACTER ch, uint8_t pos
 #ifdef ENABLE_EXTRA_INVENTORY
 			else if (item->IsExtraItem()) {
 #ifdef ENABLE_25082021
-				if (item->IsStackable() && !IS_SET(ItemSystem::GetItemAntiFlag(EntityFactory::CreateItemEntity(g_registry, item)), ITEM_ANTIFLAG_STACK)) {
+				if (item->IsStackable() && !IS_SET(ItemSystem::GetItemAntiFlag(itemEntity), ITEM_ANTIFLAG_STACK)) {
 #ifdef ENABLE_NEW_STACK_LIMIT
 					int
 #else
 					uint8_t
 #endif
-					bCount = ItemSystem::GetItemCount(EntityFactory::CreateItemEntity(g_registry, item));
+					bCount = ItemSystem::GetItemCount(itemEntity);
 					for (int i = 0; i < EXTRA_INVENTORY_MAX_NUM; ++i) {
-						LPITEM item2 = ch->GetExtraInventoryItem(i);
-						if (!item2)
+						const entt::entity item2 = ItemSystem::GetExtraInventoryItem(AIHelpers::EcsOf(ch), i);
+						if (!ItemSystem::IsValidItem(item2))
 							continue;
 
-						if (ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, item2)) == ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, item))) {
+						if (ItemSystem::GetItemVnum(item2) == ItemSystem::GetItemVnum(itemEntity)) {
 							int j = 0;
 							for (j = 0; j < ITEM_SOCKET_MAX_NUM; ++j)
-								if (ItemSystem::GetItemSocket(EntityFactory::CreateItemEntity(g_registry, item2), j) != ItemSystem::GetItemSocket(EntityFactory::CreateItemEntity(g_registry, item), j))
+								if (ItemSystem::GetItemSocket(item2, j) != ItemSystem::GetItemSocket(itemEntity, j))
 									break;
 
 							if (j != ITEM_SOCKET_MAX_NUM)
@@ -450,15 +463,15 @@ int64_t CShop::Buy(LPCHARACTER ch, uint8_t pos
 #else
 							uint8_t
 #endif
-							bCount2 = MIN(g_bItemCountLimit - ItemSystem::GetItemCount(EntityFactory::CreateItemEntity(g_registry, item2)), bCount);
+							bCount2 = MIN(g_bItemCountLimit - ItemSystem::GetItemCount(item2), bCount);
 							bCount -= bCount2;
 
 							ItemSystem::AddItemCountEcs(
-								EntityFactory::CreateItemEntity(g_registry, item2),
+								item2,
 								bCount2);
 							if (bCount == 0) {
 								ItemSystem::DestroyItemEntityEcs(
-				EntityFactory::CreateItemEntity(g_registry, item),
+				itemEntity,
 				"SHOP_TRANSACTION");
 								item = nullptr;
 								break;
@@ -468,7 +481,7 @@ int64_t CShop::Buy(LPCHARACTER ch, uint8_t pos
 
 					if (item != nullptr) {
 						ItemSystem::SetItemCountEcs(
-						EntityFactory::CreateItemEntity(g_registry, item),
+						itemEntity,
 						bCount);
 						item->AddToCharacter(ch, TItemPos(EXTRA_INVENTORY, iEmptyPos));
 					}
@@ -482,22 +495,22 @@ int64_t CShop::Buy(LPCHARACTER ch, uint8_t pos
 #endif
 			else {
 #ifdef ENABLE_25082021
-				if (item->IsStackable() && !IS_SET(ItemSystem::GetItemAntiFlag(EntityFactory::CreateItemEntity(g_registry, item)), ITEM_ANTIFLAG_STACK)) {
+				if (item->IsStackable() && !IS_SET(ItemSystem::GetItemAntiFlag(itemEntity), ITEM_ANTIFLAG_STACK)) {
 #ifdef ENABLE_NEW_STACK_LIMIT
 					int
 #else
 					uint8_t
 #endif
-					bCount = ItemSystem::GetItemCount(EntityFactory::CreateItemEntity(g_registry, item));
+					bCount = ItemSystem::GetItemCount(itemEntity);
 					for (int i = 0; i < INVENTORY_MAX_NUM; ++i) {
-						LPITEM item2 = ItemSystem::GetInventoryItemPtr(AIHelpers::EcsOf(ch), i);
-						if (!item2)
+						const entt::entity item2 = ItemSystem::GetInventoryItem(AIHelpers::EcsOf(ch), i);
+						if (!ItemSystem::IsValidItem(item2))
 							continue;
 
-						if (ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, item2)) == ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, item))) {
+						if (ItemSystem::GetItemVnum(item2) == ItemSystem::GetItemVnum(itemEntity)) {
 							int j = 0;
 							for (j = 0; j < ITEM_SOCKET_MAX_NUM; ++j)
-								if (ItemSystem::GetItemSocket(EntityFactory::CreateItemEntity(g_registry, item2), j) != ItemSystem::GetItemSocket(EntityFactory::CreateItemEntity(g_registry, item), j))
+								if (ItemSystem::GetItemSocket(item2, j) != ItemSystem::GetItemSocket(itemEntity, j))
 									break;
 
 							if (j != ITEM_SOCKET_MAX_NUM)
@@ -508,15 +521,15 @@ int64_t CShop::Buy(LPCHARACTER ch, uint8_t pos
 #else
 							uint8_t
 #endif
-							bCount2 = MIN(g_bItemCountLimit - ItemSystem::GetItemCount(EntityFactory::CreateItemEntity(g_registry, item2)), bCount);
+							bCount2 = MIN(g_bItemCountLimit - ItemSystem::GetItemCount(item2), bCount);
 							bCount -= bCount2;
 
 							ItemSystem::AddItemCountEcs(
-								EntityFactory::CreateItemEntity(g_registry, item2),
+								item2,
 								bCount2);
 							if (bCount == 0) {
 								ItemSystem::DestroyItemEntityEcs(
-				EntityFactory::CreateItemEntity(g_registry, item),
+				itemEntity,
 				"SHOP_TRANSACTION");
 								item = nullptr;
 								break;
@@ -526,7 +539,7 @@ int64_t CShop::Buy(LPCHARACTER ch, uint8_t pos
 
 					if (item != nullptr) {
 						ItemSystem::SetItemCountEcs(
-						EntityFactory::CreateItemEntity(g_registry, item),
+						itemEntity,
 						bCount);
 						item->AddToCharacter(ch, TItemPos(INVENTORY, iEmptyPos));
 					}
@@ -543,7 +556,7 @@ int64_t CShop::Buy(LPCHARACTER ch, uint8_t pos
 			}
 		}
 
-		r_item.pkItem = nullptr;
+		r_item.pkItem = entt::null;
 		BroadcastUpdateItem(pos);
 
 		ecs::PointSystem::Change(AIHelpers::EcsOf(m_pkPC), POINT_GOLD, dwPrice, false);
@@ -556,22 +569,22 @@ int64_t CShop::Buy(LPCHARACTER ch, uint8_t pos
 #ifdef ENABLE_EXTRA_INVENTORY
 		else if (item->IsExtraItem()) {
 #ifdef ENABLE_25082021
-			if (item->IsStackable() && !IS_SET(ItemSystem::GetItemAntiFlag(EntityFactory::CreateItemEntity(g_registry, item)), ITEM_ANTIFLAG_STACK)) {
+			if (item->IsStackable() && !IS_SET(ItemSystem::GetItemAntiFlag(itemEntity), ITEM_ANTIFLAG_STACK)) {
 #ifdef ENABLE_NEW_STACK_LIMIT
 				int
 #else
 				uint8_t
 #endif
-				bCount = ItemSystem::GetItemCount(EntityFactory::CreateItemEntity(g_registry, item));
+				bCount = ItemSystem::GetItemCount(itemEntity);
 				for (int i = 0; i < EXTRA_INVENTORY_MAX_NUM; ++i) {
-					LPITEM item2 = ch->GetExtraInventoryItem(i);
-					if (!item2)
+					const entt::entity item2 = ItemSystem::GetExtraInventoryItem(AIHelpers::EcsOf(ch), i);
+					if (!ItemSystem::IsValidItem(item2))
 						continue;
 
-					if (ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, item2)) == ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, item))) {
+					if (ItemSystem::GetItemVnum(item2) == ItemSystem::GetItemVnum(itemEntity)) {
 						int j = 0;
 						for (j = 0; j < ITEM_SOCKET_MAX_NUM; ++j)
-							if (ItemSystem::GetItemSocket(EntityFactory::CreateItemEntity(g_registry, item2), j) != ItemSystem::GetItemSocket(EntityFactory::CreateItemEntity(g_registry, item), j))
+							if (ItemSystem::GetItemSocket(item2, j) != ItemSystem::GetItemSocket(itemEntity, j))
 								break;
 
 						if (j != ITEM_SOCKET_MAX_NUM)
@@ -582,15 +595,15 @@ int64_t CShop::Buy(LPCHARACTER ch, uint8_t pos
 #else
 						uint8_t
 #endif
-						bCount2 = MIN(g_bItemCountLimit - ItemSystem::GetItemCount(EntityFactory::CreateItemEntity(g_registry, item2)), bCount);
+						bCount2 = MIN(g_bItemCountLimit - ItemSystem::GetItemCount(item2), bCount);
 						bCount -= bCount2;
 
 						ItemSystem::AddItemCountEcs(
-								EntityFactory::CreateItemEntity(g_registry, item2),
+								item2,
 								bCount2);
 						if (bCount == 0) {
 							ItemSystem::DestroyItemEntityEcs(
-				EntityFactory::CreateItemEntity(g_registry, item),
+				itemEntity,
 				"SHOP_TRANSACTION");
 							item = nullptr;
 							break;
@@ -600,7 +613,7 @@ int64_t CShop::Buy(LPCHARACTER ch, uint8_t pos
 
 				if (item != nullptr) {
 					ItemSystem::SetItemCountEcs(
-						EntityFactory::CreateItemEntity(g_registry, item),
+						itemEntity,
 						bCount);
 					item->AddToCharacter(ch, TItemPos(EXTRA_INVENTORY, iEmptyPos));
 				}
@@ -614,22 +627,22 @@ int64_t CShop::Buy(LPCHARACTER ch, uint8_t pos
 #endif
 		else {
 #ifdef ENABLE_25082021
-			if (item->IsStackable() && !IS_SET(ItemSystem::GetItemAntiFlag(EntityFactory::CreateItemEntity(g_registry, item)), ITEM_ANTIFLAG_STACK)) {
+			if (item->IsStackable() && !IS_SET(ItemSystem::GetItemAntiFlag(itemEntity), ITEM_ANTIFLAG_STACK)) {
 #ifdef ENABLE_NEW_STACK_LIMIT
 				int
 #else
 				uint8_t
 #endif
-				bCount = ItemSystem::GetItemCount(EntityFactory::CreateItemEntity(g_registry, item));
+				bCount = ItemSystem::GetItemCount(itemEntity);
 				for (int i = 0; i < INVENTORY_MAX_NUM; ++i) {
-					LPITEM item2 = ItemSystem::GetInventoryItemPtr(AIHelpers::EcsOf(ch), i);
-					if (!item2)
+					const entt::entity item2 = ItemSystem::GetInventoryItem(AIHelpers::EcsOf(ch), i);
+					if (!ItemSystem::IsValidItem(item2))
 						continue;
 
-					if (ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, item2)) == ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, item))) {
+					if (ItemSystem::GetItemVnum(item2) == ItemSystem::GetItemVnum(itemEntity)) {
 						int j = 0;
 						for (j = 0; j < ITEM_SOCKET_MAX_NUM; ++j)
-							if (ItemSystem::GetItemSocket(EntityFactory::CreateItemEntity(g_registry, item2), j) != ItemSystem::GetItemSocket(EntityFactory::CreateItemEntity(g_registry, item), j))
+							if (ItemSystem::GetItemSocket(item2, j) != ItemSystem::GetItemSocket(itemEntity, j))
 								break;
 
 						if (j != ITEM_SOCKET_MAX_NUM)
@@ -640,15 +653,15 @@ int64_t CShop::Buy(LPCHARACTER ch, uint8_t pos
 #else
 						uint8_t
 #endif
-						bCount2 = MIN(g_bItemCountLimit - ItemSystem::GetItemCount(EntityFactory::CreateItemEntity(g_registry, item2)), bCount);
+						bCount2 = MIN(g_bItemCountLimit - ItemSystem::GetItemCount(item2), bCount);
 						bCount -= bCount2;
 
 						ItemSystem::AddItemCountEcs(
-								EntityFactory::CreateItemEntity(g_registry, item2),
+								item2,
 								bCount2);
 						if (bCount == 0) {
 							ItemSystem::DestroyItemEntityEcs(
-				EntityFactory::CreateItemEntity(g_registry, item),
+				itemEntity,
 				"SHOP_TRANSACTION");
 							item = nullptr;
 							break;
@@ -658,7 +671,7 @@ int64_t CShop::Buy(LPCHARACTER ch, uint8_t pos
 
 				if (item != nullptr) {
 					ItemSystem::SetItemCountEcs(
-						EntityFactory::CreateItemEntity(g_registry, item),
+						itemEntity,
 						bCount);
 					item->AddToCharacter(ch, TItemPos(INVENTORY, iEmptyPos));
 				}
@@ -822,7 +835,7 @@ bool CShop::AddGuest(LPCHARACTER ch, uint32_t owner_vid, bool bOtherEmpire)
 		}
 #endif
 		//END_HIVALUE_ITEM_EVENT
-		if (m_pkPC && !item.pkItem)
+		if (m_pkPC && !ItemSystem::IsValidItem(item.pkItem))
 			continue;
 
 		pack2.items[i].vnum = item.vnum;
@@ -849,12 +862,14 @@ bool CShop::AddGuest(LPCHARACTER ch, uint32_t owner_vid, bool bOtherEmpire)
 
 		pack2.items[i].count = item.count;
 
-		if (item.pkItem)
+		if (ItemSystem::IsValidItem(item.pkItem))
 		{
-			memcpy(pack2.items[i].alSockets, item.pkItem->GetSockets(), sizeof(pack2.items[i].alSockets));
-			memcpy(pack2.items[i].aAttr, item.pkItem->GetAttributes(), sizeof(pack2.items[i].aAttr));
+			for (int socket = 0; socket < ITEM_SOCKET_MAX_NUM; ++socket)
+				pack2.items[i].alSockets[socket] = ItemSystem::GetItemSocket(item.pkItem, socket);
+			for (int attr = 0; attr < ITEM_ATTRIBUTE_MAX_NUM; ++attr)
+				pack2.items[i].aAttr[attr] = ItemSystem::GetItemAttribute(item.pkItem, attr);
 #ifdef ATTR_LOCK
-			pack2.items[i].lockedattr = item.pkItem->GetLockedAttr();
+			pack2.items[i].lockedattr = ItemSystem::GetItemLockedAttributeIndex(item.pkItem);
 #endif
 		}
 	}
@@ -915,15 +930,17 @@ void CShop::BroadcastUpdateItem(uint8_t pos)
 
 	pack2.pos		= pos;
 
-	if (m_pkPC && !m_itemVector[pos].pkItem)
+	if (m_pkPC && !ItemSystem::IsValidItem(m_itemVector[pos].pkItem))
 		pack2.item.vnum = 0;
 	else
 	{
 		pack2.item.vnum	= m_itemVector[pos].vnum;
-		if (m_itemVector[pos].pkItem)
+		if (ItemSystem::IsValidItem(m_itemVector[pos].pkItem))
 		{
-			memcpy(pack2.item.alSockets, m_itemVector[pos].pkItem->GetSockets(), sizeof(pack2.item.alSockets));
-			memcpy(pack2.item.aAttr, m_itemVector[pos].pkItem->GetAttributes(), sizeof(pack2.item.aAttr));
+			for (int socket = 0; socket < ITEM_SOCKET_MAX_NUM; ++socket)
+				pack2.item.alSockets[socket] = ItemSystem::GetItemSocket(m_itemVector[pos].pkItem, socket);
+			for (int attr = 0; attr < ITEM_ATTRIBUTE_MAX_NUM; ++attr)
+				pack2.item.aAttr[attr] = ItemSystem::GetItemAttribute(m_itemVector[pos].pkItem, attr);
 		}
 		else
 		{

@@ -1,0 +1,620 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="18.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\BattleArena.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\DragonSoul.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\EasterDungeon.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\FSM.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\Halloween2022Dungeon.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\ItemUse.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\LostCastleDungeon.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\MarkConvert.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\MarkImage.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\MarkManager.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\MountInventory.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\MountSystem.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\New_PetSystem.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\NightmareDungeonRazor93.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\OXEvent.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\OrcsDungeon.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\PetSystem.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\PyramidDungeonRazor93.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\RuneDungeon.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\TritonTempleDungeon.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\ValentineDungeon.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\VikingDungeon.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\affect.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\ani.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\arena.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\attr_transfer.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\banword.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\battle.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\battle_pass.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\blend_item.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\buff_on_attributes.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\buffer_manager.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\building.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\char_manager.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\cipher.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\cmd.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\cmd_emotion.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\cmd_general.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\cmd_general2.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\cmd_gm.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\cmd_gm2.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\cmd_guild_renewal.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\cmd_oxevent.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\config.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\constants.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\crc32.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\cuberenewal.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\db.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\desc.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\desc_client.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\desc_manager.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\desc_p2p.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\dev_log.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\dragon_soul_table.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\dungeon.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\ecs\CBuildingRegistry.cpp">
+      <Filter>ecs</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\ecs\EntityFactory.cpp">
+      <Filter>ecs</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\ecs\EventDispatcher.cpp">
+      <Filter>ecs</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\ecs\ItemRegistry.cpp">
+      <Filter>ecs</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\ecs\NetworkService.cpp">
+      <Filter>ecs</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\ecs\OfflineShopEntityRegistry.cpp">
+      <Filter>ecs</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\ecs\Registry.cpp">
+      <Filter>ecs</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\ecs\VIDRegistry.cpp">
+      <Filter>ecs</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\ecs\services\EntityNetworkDispatch.cpp">
+      <Filter>ecs\services</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\ecs\services\EntityNetworkDispatchAudit.cpp">
+      <Filter>ecs\services</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\ecs\services\SpatialService.cpp">
+      <Filter>ecs\services</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\ecs\systems\AISystem.cpp">
+      <Filter>ecs\systems</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\ecs\systems\ActivitySystem.cpp">
+      <Filter>ecs\systems</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\ecs\systems\AffectSystem.cpp">
+      <Filter>ecs\systems</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\ecs\systems\ChatSystem.cpp">
+      <Filter>ecs\systems</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\ecs\systems\CombatSystem.cpp">
+      <Filter>ecs\systems</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\ecs\systems\DragonSoulSystem.cpp">
+      <Filter>ecs\systems</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\ecs\systems\GayaSystem.cpp">
+      <Filter>ecs\systems</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\ecs\systems\InventorySystem.cpp">
+      <Filter>ecs\systems</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\ecs\systems\ItemSystem.cpp">
+      <Filter>ecs\systems</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\ecs\systems\ItemSystem_LegacyBridge.cpp">
+      <Filter>ecs\systems</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\ecs\systems\MountSystem.cpp">
+      <Filter>ecs\systems</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\ecs\systems\MovementSystem.cpp">
+      <Filter>ecs\systems</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\ecs\systems\NetworkSyncSystem.cpp">
+      <Filter>ecs\systems</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\ecs\systems\PlayerRuntimeSystem.cpp">
+      <Filter>ecs\systems</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\ecs\systems\PointSystem.cpp">
+      <Filter>ecs\systems</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\ecs\systems\QuestSystem.cpp">
+      <Filter>ecs\systems</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\ecs\systems\SessionSystem.cpp">
+      <Filter>ecs\systems</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\ecs\systems\SkillSystem.cpp">
+      <Filter>ecs\systems</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\ecs\systems\SocialSystem.cpp">
+      <Filter>ecs\systems</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\ecs\systems\StatSystem.cpp">
+      <Filter>ecs\systems</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\ecs\systems\VisibilitySystem.cpp">
+      <Filter>ecs\systems</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\ecs\systems\VitalRegenSystem.cpp">
+      <Filter>ecs\systems</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\empire_text_convert.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\entity.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\entity_view.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\event.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\event_queue.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\exchange.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\file_loader.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\fishing.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\gm.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\group_text_parse_tree.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\guild.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\guild_manager.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\guild_renewal.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\guild_war.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\horse_rider.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\horsename_manager.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\hwidmanager.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\input.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\input_auth.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\input_db.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\input_login.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\input_main.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\input_p2p.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\input_udp.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\ip_ban.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\item_addon.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\item_manager.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\item_manager_idrange.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\item_manager_read_tables.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\locale.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\locale_service.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\log.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\login_data.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\lzo_manager.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\main.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\map_location.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\marriage.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\messenger_manager.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\mining.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\mob_manager.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\motion.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\new_offlineshop.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\new_offlineshop_manager.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\new_offlineshop_safebox.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\new_switchbot.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\over9refine.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\p2p.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\packet_info.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\party.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\pcbang.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\polymorph.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\priv_manager.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\pvp.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\questevent.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\questlua.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\questlua_affect.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\questlua_arena.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\questlua_ba.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\questlua_building.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\questlua_danceevent.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\questlua_dragonsoul.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\questlua_dungeon.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\questlua_game.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\questlua_global.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\questlua_guild.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\questlua_horse.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\questlua_item.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\questlua_marriage.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\questlua_npc.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\questlua_oxevent.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\questlua_party.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\questlua_pc.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\questlua_pet.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\questlua_petnew.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\questlua_quest.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\questlua_target.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\questmanager.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\questnpc.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\questpc.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\refine.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\regen.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\safebox.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\sectree.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\sectree_manager.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\shop.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\shopEx.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\shop_manager.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\shutdown_manager.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\skill.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\skill_power.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\start_position.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\target.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\text_file_loader.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\trigger.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\utils.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\vector.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\version.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\war_map.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\wedding.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\wheel_of_destiny.cpp" />
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\whisper_admin.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\BattleArena.h" />
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\DragonSoul.h" />
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\EasterDungeon.h" />
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\FSM.h" />
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\Halloween2022Dungeon.h" />
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\ItemUse.h" />
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\LostCastleDungeon.h" />
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\MarkImage.h" />
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\MarkManager.h" />
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\MountInventory.h" />
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\MountSystem.h" />
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\New_PetSystem.h" />
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\NightmareDungeonRazor93.h" />
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\OXEvent.h" />
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\OrcsDungeon.h" />
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\PetSystem.h" />
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\PyramidDungeonRazor93.h" />
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\RuneDungeon.h" />
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\TritonTempleDungeon.h" />
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\ValentineDungeon.h" />
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\VikingDungeon.h" />
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\affect.h" />
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\affect_flag.h" />
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\ani.h" />
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\any_function.h" />
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\arena.h" />
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\attr_transfer.h" />
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\banword.h" />
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\battle.h" />
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\battle_pass.h" />
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\belt_inventory_helper.h" />
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\blend_item.h" />
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\buff_on_attributes.h" />
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\buffer_manager.h" />
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\building.h" />
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\char.h" />
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\char_manager.h" />
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\cipher.h" />
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\cmd.h" />
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\config.h" />
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\constants.h" />
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\crc32.h" />
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\cuberenewal.h" />
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\db.h" />
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\debug_allocator.h" />
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\debug_allocator_adapter.h" />
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\debug_ptr.h" />
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\desc.h" />
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\desc_client.h" />
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\desc_manager.h" />
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\desc_p2p.h" />
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\dev_log.h" />
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\dragon_soul_table.h" />
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\dungeon.h" />
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\empire_text_convert.h" />
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\entity.h" />
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\event.h" />
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\event_queue.h" />
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\exchange.h" />
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\fifo_allocator.h" />
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\file_loader.h" />
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\fishing.h" />
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\gm.h" />
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\group_text_parse_tree.h" />
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\guild.h" />
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\guild_manager.h" />
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\guild_renewal.h" />
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\horse_rider.h" />
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\horsename_manager.h" />
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\hwidmanager.h" />
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\input.h" />
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\ip_ban.h" />
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\item.h" />
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\item_addon.h" />
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\item_manager.h" />
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\item_manager_private_types.h" />
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\limit_time.h" />
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\locale_service.h" />
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\log.h" />
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\login_data.h" />
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\login_sim.h" />
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\lua_incl.h" />
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\lzo_manager.h" />
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\lzoconf.h" />
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\lzodefs.h" />
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\malloc_allocator.h" />
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\map_location.h" />
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\marriage.h" />
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\messenger_manager.h" />
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\minilzo.h" />
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\mining.h" />
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\mob_manager.h" />
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\motion.h" />
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\mount_inventory_helper.h" />
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\new_offlineshop.h" />
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\new_offlineshop_manager.h" />
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\new_switchbot.h" />
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\object_allocator.h" />
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\over9refine.h" />
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\p2p.h" />
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\packet.h" />
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\packet_info.h" />
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\party.h" />
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\pcbang.h" />
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\polymorph.h" />
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\pool.h" />
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\priv_manager.h" />
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\profiler.h" />
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\protocol.h" />
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\pvp.h" />
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\quest.h" />
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\questevent.h" />
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\questlua.h" />
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\questmanager.h" />
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\questnpc.h" />
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\questpc.h" />
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\refine.h" />
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\regen.h" />
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\safebox.h" />
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\sectree.h" />
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\sectree_manager.h" />
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\shop.h" />
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\shopEx.h" />
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\shop_manager.h" />
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\shutdown_manager.h" />
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\skill.h" />
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\skill_power.h" />
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\spam.h" />
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\stable_priority_queue.h" />
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\start_position.h" />
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\state.h" />
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\stdafx.h" />
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\tables.h" />
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\target.h" />
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\text_file_loader.h" />
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\typedef.h" />
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\unique_item.h" />
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\utils.h" />
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\vector.h" />
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\war_map.h" />
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\wedding.h" />
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\wheel_of_destiny.h" />
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\whisper_admin.h" />
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\char_fwd.hpp" />
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\char_interface.hpp" />
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\ecs\AIHelpers.hpp">
+      <Filter>ecs</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\ecs\CBuildingRegistry.hpp">
+      <Filter>ecs</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\ecs\CharacterAccessors.hpp">
+      <Filter>ecs</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\ecs\EntityFactory.hpp">
+      <Filter>ecs</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\ecs\EntityInvariants.hpp">
+      <Filter>ecs</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\ecs\EventDispatcher.hpp">
+      <Filter>ecs</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\ecs\ItemInvariants.hpp">
+      <Filter>ecs</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\ecs\ItemRegistry.hpp">
+      <Filter>ecs</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\ecs\NetworkService.hpp">
+      <Filter>ecs</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\ecs\OfflineShopEntityRegistry.hpp">
+      <Filter>ecs</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\ecs\PointSemantic.hpp">
+      <Filter>ecs</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\ecs\PositionSync.hpp">
+      <Filter>ecs</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\ecs\Registry.hpp">
+      <Filter>ecs</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\ecs\SpatialHelpers.hpp">
+      <Filter>ecs</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\ecs\VIDRegistry.hpp">
+      <Filter>ecs</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\ecs\components\activity_components.hpp">
+      <Filter>ecs\components</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\ecs\components\ai_components.hpp">
+      <Filter>ecs\components</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\ecs\components\appearance_components.hpp">
+      <Filter>ecs\components</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\ecs\components\character_runtime_components.hpp">
+      <Filter>ecs\components</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\ecs\components\character_stats_components.hpp">
+      <Filter>ecs\components</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\ecs\components\combat_components.hpp">
+      <Filter>ecs\components</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\ecs\components\dirty_components.hpp">
+      <Filter>ecs\components</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\ecs\components\identity_components.hpp">
+      <Filter>ecs\components</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\ecs\components\inventory_components.hpp">
+      <Filter>ecs\components</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\ecs\components\item_components.hpp">
+      <Filter>ecs\components</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\ecs\components\item_proto_components.hpp">
+      <Filter>ecs\components</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\ecs\components\movement_components.hpp">
+      <Filter>ecs\components</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\ecs\components\pet_mount_components.hpp">
+      <Filter>ecs\components</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\ecs\components\quest_components.hpp">
+      <Filter>ecs\components</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\ecs\components\session_components.hpp">
+      <Filter>ecs\components</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\ecs\components\skill_components.hpp">
+      <Filter>ecs\components</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\ecs\components\social_components.hpp">
+      <Filter>ecs\components</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\ecs\components\spatial_components.hpp">
+      <Filter>ecs\components</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\ecs\components\status_components.hpp">
+      <Filter>ecs\components</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\ecs\components\transform_components.hpp">
+      <Filter>ecs\components</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\ecs\components\visibility_components.hpp">
+      <Filter>ecs\components</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\ecs\components\vital_components.hpp">
+      <Filter>ecs\components</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\ecs\events.hpp">
+      <Filter>ecs</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\ecs\quest_helpers.hpp">
+      <Filter>ecs</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\ecs\services\EntityNetworkDispatch.hpp">
+      <Filter>ecs\services</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\ecs\services\EntityNetworkDispatchAudit.hpp">
+      <Filter>ecs\services</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\ecs\services\SpatialService.hpp">
+      <Filter>ecs\services</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\ecs\services\VisibilityService.hpp">
+      <Filter>ecs\services</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\ecs\systems\AISystem.hpp">
+      <Filter>ecs\systems</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\ecs\systems\ActivitySystem.hpp">
+      <Filter>ecs\systems</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\ecs\systems\AffectSystem.hpp">
+      <Filter>ecs\systems</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\ecs\systems\ChatSystem.hpp">
+      <Filter>ecs\systems</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\ecs\systems\CombatSystem.hpp">
+      <Filter>ecs\systems</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\ecs\systems\DragonSoulSystem.hpp">
+      <Filter>ecs\systems</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\ecs\systems\GayaSystem.hpp">
+      <Filter>ecs\systems</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\ecs\systems\InventorySystem.hpp">
+      <Filter>ecs\systems</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\ecs\systems\ItemSystem.hpp">
+      <Filter>ecs\systems</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\ecs\systems\MountSystem.hpp">
+      <Filter>ecs\systems</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\ecs\systems\MovementSystem.hpp">
+      <Filter>ecs\systems</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\ecs\systems\NetworkSyncSystem.hpp">
+      <Filter>ecs\systems</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\ecs\systems\PlayerRuntimeSystem.hpp">
+      <Filter>ecs\systems</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\ecs\systems\PointRouter.hpp">
+      <Filter>ecs\systems</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\ecs\systems\PointSystem.hpp">
+      <Filter>ecs\systems</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\ecs\systems\QuestSystem.hpp">
+      <Filter>ecs\systems</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\ecs\systems\SessionSystem.hpp">
+      <Filter>ecs\systems</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\ecs\systems\SkillSystem.hpp">
+      <Filter>ecs\systems</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\ecs\systems\SocialSystem.hpp">
+      <Filter>ecs\systems</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\ecs\systems\StatSystem.hpp">
+      <Filter>ecs\systems</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\ecs\systems\VisibilitySystem.hpp">
+      <Filter>ecs\systems</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\ecs\systems\VitalRegenSystem.hpp">
+      <Filter>ecs\systems</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\locale.hpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\CMakeLists.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="ecs">
+      <UniqueIdentifier>{B955487D-DC48-3283-9E2B-CD8279EC2FC6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ecs\components">
+      <UniqueIdentifier>{2B1B49DB-CCEC-3274-888C-E00CFA4D6ABC}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ecs\services">
+      <UniqueIdentifier>{B1DEE414-42F9-301D-815A-C78A41208026}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ecs\systems">
+      <UniqueIdentifier>{ECA0E097-1C41-3771-A327-DE981466EB0C}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

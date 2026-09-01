@@ -1,14 +1,60 @@
 #include "stdafx.h"
-#include "ecs/EntityFactory.hpp"
 #include "ecs/Registry.hpp"
 #include "ecs/systems/ItemSystem.hpp"
 #include "constants.h"
 #include "log.h"
 #include "char_interface.hpp"
 #include "ecs/CharacterAccessors.hpp"
-#include "item_manager.h"
-#include "item.h"
 #include "over9refine.h"
+
+namespace
+{
+bool ReplaceItemWith(entt::entity character, entt::entity source, uint32_t resultVnum)
+{
+	if (character == entt::null || !g_registry.valid(character) ||
+		!ItemSystem::IsValidItem(source) ||
+		ItemSystem::GetItemOwner(source) != character || resultVnum == 0)
+		return false;
+
+	LPCHARACTER legacyCharacter = ecs::LegacyCharOf(character);
+	if (!legacyCharacter)
+		return false;
+
+	const entt::entity result = ItemSystem::CreateItemEcs(resultVnum, 1);
+	if (!ItemSystem::IsValidItem(result))
+		return false;
+
+	if (!ItemSystem::CopyItemSocketsEcs(source, result) ||
+		!ItemSystem::CopyItemAttributesEcs(source, result))
+	{
+		ItemSystem::DestroyItemEntityEcs(result, "OVER9_COPY_ROLLBACK");
+		return false;
+	}
+
+	const int emptyCell = ItemSystem::GetEmptyInventoryPositionEcs(character, result);
+	if (emptyCell < 0 || !ItemSystem::PlaceItemEcs(
+		character, result, INVENTORY, static_cast<uint16_t>(emptyCell)))
+	{
+		ItemSystem::DestroyItemEntityEcs(result, "OVER9_PLACE_ROLLBACK");
+		return false;
+	}
+
+	char hint[256];
+	snprintf(hint, sizeof(hint), "SUCCESS %u %s %u",
+		ItemSystem::GetItemID(result), ItemSystem::GetItemName(result),
+		ItemSystem::GetItemOriginalVnum(result));
+	LogManager::instance().ItemLogEntity(legacyCharacter, source, "REFINE OVER9", hint);
+
+	if (!ItemSystem::DestroyItemEntityEcs(source, "REFINE OVER9"))
+	{
+		ItemSystem::DestroyItemEntityEcs(result, "OVER9_SOURCE_ROLLBACK");
+		return false;
+	}
+
+	ItemSystem::FlushDelayedSaveEcs(result);
+	return true;
+}
+}
 
 void COver9RefineManager::enableOver9Refine(uint32_t dwVnumFrom, uint32_t dwVnumTo)
 {
@@ -34,66 +80,23 @@ int COver9RefineManager::canOver9Refine(uint32_t dwVnum)
 	return 0;
 }
 
-bool COver9RefineManager::Change9ToOver9(LPCHARACTER pChar, LPITEM item)
+bool COver9RefineManager::Change9ToOver9(entt::entity character, entt::entity item)
 {
-	OVER9ITEM_MAP::iterator iter = m_mapItem.find(ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, item)));
+	if (!ItemSystem::IsValidItem(item))
+		return false;
+
+	OVER9ITEM_MAP::iterator iter = m_mapItem.find(ItemSystem::GetItemVnum(item));
 
 	if (iter == m_mapItem.end())
 		return false;
 
-	uint32_t dwVnum = iter->second;
-
-	LPITEM over9 = ITEM_MANAGER::instance().CreateItem(dwVnum, 1);
-
-	if (over9 == nullptr)
-		return false;
-
-	item->CopySocketTo(over9);
-	item->CopyAttributeTo(over9);
-
-	int iEmptyCell = pChar->GetEmptyInventory(over9->GetSize());
-
-	if (iEmptyCell == -1)
-		return false;
-
-	item->RemoveFromCharacter();
-
-	over9->AddToCharacter(pChar, TItemPos(INVENTORY, iEmptyCell));
-
-	char szBuf[256];
-	snprintf(szBuf, sizeof(szBuf), "SUCCESS %u %s %u", ItemSystem::GetItemID(EntityFactory::CreateItemEntity(g_registry, over9)), over9->GetName(), over9->GetOriginalVnum());
-	LogManager::instance().ItemLog(pChar, item, "REFINE OVER9", szBuf);
-	return true;
+	return ReplaceItemWith(character, item, iter->second);
 }
 
-bool COver9RefineManager::Over9Refine(LPCHARACTER pChar, LPITEM item)
+bool COver9RefineManager::Over9Refine(entt::entity character, entt::entity item)
 {
-	uint32_t dwVnum = item->GetRefinedVnum();
-
-	if (dwVnum == 0)
-		return false;
-
-	LPITEM over9 = ITEM_MANAGER::instance().CreateItem(dwVnum, 1);
-
-	if (over9 == nullptr)
-		return false;
-
-	item->CopySocketTo(over9);
-	item->CopyAttributeTo(over9);
-
-	int iEmptyCell = pChar->GetEmptyInventory(over9->GetSize());
-
-	if (iEmptyCell == -1)
-		return false;
-
-	item->RemoveFromCharacter();
-
-	over9->AddToCharacter(pChar, TItemPos(INVENTORY, iEmptyCell));
-
-	char szBuf[256];
-	snprintf(szBuf, sizeof(szBuf), "SUCCESS %u %s %u", ItemSystem::GetItemID(EntityFactory::CreateItemEntity(g_registry, over9)), over9->GetName(), over9->GetOriginalVnum());
-	LogManager::instance().ItemLog(pChar, item, "REFINE OVER9", szBuf);
-	return true;
+	return ItemSystem::IsValidItem(item) &&
+		ReplaceItemWith(character, item, ItemSystem::GetItemRefineVnum(item));
 }
 
 uint32_t COver9RefineManager::GetMaterialVnum(uint32_t baseVnum)

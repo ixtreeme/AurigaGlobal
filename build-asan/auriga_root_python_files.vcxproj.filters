@@ -1,0 +1,551 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="18.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <CustomBuild Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\CMakeLists.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\colorinfo.py" />
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\consolemodule.py" />
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\constinfo.py" />
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\dailygift.py" />
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\data\inventorywindowex.py">
+      <Filter>data</Filter>
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\debuginfo.py" />
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\dragon_soul_refine_settings.py" />
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\emotion.py" />
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\exception.py" />
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\game.py" />
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\ingamewiki.py" />
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\ingamewikiconfig.py" />
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\ingamewikiui.py" />
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\interfacemodule.py" />
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\introcreate.py" />
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\introempire.py" />
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\introloading.py" />
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\intrologin.py" />
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\introselect.py" />
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\localeinfo.py" />
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\marek38.py" />
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\mousemodule.py" />
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\musicinfo.py" />
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\networkmodule.py" />
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\pickupfilterwindow.py" />
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\playersettingmodule.py" />
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\prototype.py" />
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\servercommandparser.py" />
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\serverinfo.py" />
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\stringcommander.py" />
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\system.py" />
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\test_affect.py" />
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\ui.py" />
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiacce.py" />
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiaffectshower.py" />
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiattachmetin.py" />
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiattrdialog.py" />
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiattrtransfer.py" />
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiauction.py" />
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiautoban.py" />
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uibattlepass.py" />
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uibattleroyale.py" />
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uibiolog.py" />
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uicandidate.py" />
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uichannel.py" />
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uicharacter.py" />
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uicharacterdetails.py" />
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uichat.py" />
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uicommon.py" />
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uicube.py" />
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uicuberenewal.py" />
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uidoctrinechoose.py" />
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uidragonlairranking.py" />
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uidragonsoul.py" />
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiduel.py" />
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uidungeoninfo.py" />
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiequipmentdialog.py" />
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uieventcalendar.py" />
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiex.py" />
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiexchange.py" />
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiextrainventory.py" />
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uifishing.py" />
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uifishing_genyo.py" />
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uigamebutton.py" />
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uigameoption.py" />
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiguild.py" />
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiguildrank.py" />
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiguildrenewal.py" />
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiguildstorage.py" />
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiinventory.py" />
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiitemshop.py" />
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uimapnameshower.py" />
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uimarketsystem.py" />
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uimessenger.py" />
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiminimap.py" />
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiminimap_bak.py" />
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uimountinventory.py" />
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uimountlist.py" />
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiofflineshop.py" />
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uioption.py" />
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiparty.py" />
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uipetenchant.py" />
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uipetevownd.py" />
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uipetfeed.py" />
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uipetincubatrice.py" />
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uipetsystem.py" />
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiphasecurtain.py" />
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uipickmoney.py" />
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uipickupfilter.py" />
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiplayergauge.py" />
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uipointreset.py" />
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiprivateshopbuilder.py" />
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiquest.py" />
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiranking.py" />
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uirefine.py" />
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uirestart.py" />
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uirune.py" />
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uisafebox.py" />
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uisavepoint.py" />
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\acce_absorbwindow.py">
+      <Filter>uiscript</Filter>
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\acce_combinewindow.py">
+      <Filter>uiscript</Filter>
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\acceptguildwardialog.py">
+      <Filter>uiscript</Filter>
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\atlaswindow.py">
+      <Filter>uiscript</Filter>
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\attachstonedialog.py">
+      <Filter>uiscript</Filter>
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\attrdialog_remove.py">
+      <Filter>uiscript</Filter>
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\auctionwindow.py">
+      <Filter>uiscript</Filter>
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\auctionwindow_listpage.py">
+      <Filter>uiscript</Filter>
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\auctionwindow_registerpage.py">
+      <Filter>uiscript</Filter>
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\auctionwindow_uniqueauctionpage.py">
+      <Filter>uiscript</Filter>
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\battlepasswindow.py">
+      <Filter>uiscript</Filter>
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\battlepasswindow_back.py">
+      <Filter>uiscript</Filter>
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\battleroyale_info.py">
+      <Filter>uiscript</Filter>
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\battleroyale_selectchar.py">
+      <Filter>uiscript</Filter>
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\beltinventorywindow.py">
+      <Filter>uiscript</Filter>
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\biologwindow.py">
+      <Filter>uiscript</Filter>
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\biologwindow_changebonus.py">
+      <Filter>uiscript</Filter>
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\buildguildbuildingwindow.py">
+      <Filter>uiscript</Filter>
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\changegradenamedialog.py">
+      <Filter>uiscript</Filter>
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\changepassworddialog.py">
+      <Filter>uiscript</Filter>
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\characterdetailswindow.py">
+      <Filter>uiscript</Filter>
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\characterwindow.py">
+      <Filter>uiscript</Filter>
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\chatsettingwindow.py">
+      <Filter>uiscript</Filter>
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\connectingdialog.py">
+      <Filter>uiscript</Filter>
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\costumeequipmentdialog.py">
+      <Filter>uiscript</Filter>
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\costumewindow.py">
+      <Filter>uiscript</Filter>
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\createcharacterwindow.py">
+      <Filter>uiscript</Filter>
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\cuberenewalwindow.py">
+      <Filter>uiscript</Filter>
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\cuberesultwindow.py">
+      <Filter>uiscript</Filter>
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\cubewindow.py">
+      <Filter>uiscript</Filter>
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\dailygiftnew.py">
+      <Filter>uiscript</Filter>
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\declareguildwardialog.py">
+      <Filter>uiscript</Filter>
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\doctrinechoosewindow.py">
+      <Filter>uiscript</Filter>
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\dragonsoulrefinewindow.py">
+      <Filter>uiscript</Filter>
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\dragonsoulwindow.py">
+      <Filter>uiscript</Filter>
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\dungeoninfowindow.py">
+      <Filter>uiscript</Filter>
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\dungeonrankingwindow.py">
+      <Filter>uiscript</Filter>
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\equipmentdialog.py">
+      <Filter>uiscript</Filter>
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\exchangedialog.py">
+      <Filter>uiscript</Filter>
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\exchangedialog_new.py">
+      <Filter>uiscript</Filter>
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\expandedmoneytaskbar.py">
+      <Filter>uiscript</Filter>
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\expandedtaskbar.py">
+      <Filter>uiscript</Filter>
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\extrainventory.py">
+      <Filter>uiscript</Filter>
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\fishinggamewindow.py">
+      <Filter>uiscript</Filter>
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\fishingwindow.py">
+      <Filter>uiscript</Filter>
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\gameoptiondialog.py">
+      <Filter>uiscript</Filter>
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\gameoptiondialog_formobile.py">
+      <Filter>uiscript</Filter>
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\gamewindow.py">
+      <Filter>uiscript</Filter>
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\gemshopwindow.py">
+      <Filter>uiscript</Filter>
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\guildrenewal_taxsetting.py">
+      <Filter>uiscript</Filter>
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\guildrenewalwindow.py">
+      <Filter>uiscript</Filter>
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\guildstorage.py">
+      <Filter>uiscript</Filter>
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\guildstorageadmin.py">
+      <Filter>uiscript</Filter>
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\guildstoragelogs.py">
+      <Filter>uiscript</Filter>
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\guildstoragemoneymanager.py">
+      <Filter>uiscript</Filter>
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\guildwindow.py">
+      <Filter>uiscript</Filter>
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\guildwindow_baseinfopage.py">
+      <Filter>uiscript</Filter>
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\guildwindow_boardpage.py">
+      <Filter>uiscript</Filter>
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\guildwindow_gradepage.py">
+      <Filter>uiscript</Filter>
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\guildwindow_guilddragonlairranking.py">
+      <Filter>uiscript</Filter>
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\guildwindow_guildinfopage.py">
+      <Filter>uiscript</Filter>
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\guildwindow_guildinfopage_eu.py">
+      <Filter>uiscript</Filter>
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\guildwindow_guildinfopage_jp.py">
+      <Filter>uiscript</Filter>
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\guildwindow_guildlistwindow.py">
+      <Filter>uiscript</Filter>
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\guildwindow_guildskillpage.py">
+      <Filter>uiscript</Filter>
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\guildwindow_memberpage.py">
+      <Filter>uiscript</Filter>
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\imekor.py">
+      <Filter>uiscript</Filter>
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\inputdialog.py">
+      <Filter>uiscript</Filter>
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\inputdialogwithdescription.py">
+      <Filter>uiscript</Filter>
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\inputdialogwithdescription2.py">
+      <Filter>uiscript</Filter>
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\inputnewpincodedialog.py">
+      <Filter>uiscript</Filter>
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\inputpincodedialog.py">
+      <Filter>uiscript</Filter>
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\inventory_menu.py">
+      <Filter>uiscript</Filter>
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\inventorywindowex.py">
+      <Filter>uiscript</Filter>
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\itemcombinationwindow.py">
+      <Filter>uiscript</Filter>
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\kasmirmarketidialog.py">
+      <Filter>uiscript</Filter>
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\kasmirpaketidialog.py">
+      <Filter>uiscript</Filter>
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\loadingwindow.py">
+      <Filter>uiscript</Filter>
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\loginwindow.py">
+      <Filter>uiscript</Filter>
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\mallwindow.py">
+      <Filter>uiscript</Filter>
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\marklistwindow.py">
+      <Filter>uiscript</Filter>
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\messengerwindow.py">
+      <Filter>uiscript</Filter>
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\minimap.py">
+      <Filter>uiscript</Filter>
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\moneyinputdialog.py">
+      <Filter>uiscript</Filter>
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\mountinventory.py">
+      <Filter>uiscript</Filter>
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\mousebuttonwindow.py">
+      <Filter>uiscript</Filter>
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\multiplebuysdialog.py">
+      <Filter>uiscript</Filter>
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\musiclistwindow.py">
+      <Filter>uiscript</Filter>
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\offlineshopwindow.py">
+      <Filter>uiscript</Filter>
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\partymemberinfoboard.py">
+      <Filter>uiscript</Filter>
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\passworddialog.py">
+      <Filter>uiscript</Filter>
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\petdialog_enchant.py">
+      <Filter>uiscript</Filter>
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\petevownd.py">
+      <Filter>uiscript</Filter>
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\petfeedwindow.py">
+      <Filter>uiscript</Filter>
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\pethatchingwindow.py">
+      <Filter>uiscript</Filter>
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\petinformationwindow.py">
+      <Filter>uiscript</Filter>
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\petminiinformationwindow.py">
+      <Filter>uiscript</Filter>
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\pickmoneydialog.bak.py">
+      <Filter>uiscript</Filter>
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\pickmoneydialog.py">
+      <Filter>uiscript</Filter>
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\pickupfilterwindow.py">
+      <Filter>uiscript</Filter>
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\popupdialog.py">
+      <Filter>uiscript</Filter>
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\privateshopbuilder.py">
+      <Filter>uiscript</Filter>
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\pvp_advanced.py">
+      <Filter>uiscript</Filter>
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\pvp_advanced_informations.py">
+      <Filter>uiscript</Filter>
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\pvp_advanced_informations_mini.py">
+      <Filter>uiscript</Filter>
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\questdialog.py">
+      <Filter>uiscript</Filter>
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\questiondialog.py">
+      <Filter>uiscript</Filter>
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\questiondialog2.py">
+      <Filter>uiscript</Filter>
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\questiondialogitem.py">
+      <Filter>uiscript</Filter>
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\rankingboardwindow.py">
+      <Filter>uiscript</Filter>
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\rankingboardwindow_sys.py">
+      <Filter>uiscript</Filter>
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\refinedialog.py">
+      <Filter>uiscript</Filter>
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\refinedialog_old.py">
+      <Filter>uiscript</Filter>
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\restartdialog.py">
+      <Filter>uiscript</Filter>
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\restartdialog_new.py">
+      <Filter>uiscript</Filter>
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\rightmousebuttonwindow.py">
+      <Filter>uiscript</Filter>
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\runewindow.py">
+      <Filter>uiscript</Filter>
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\safeboxwindow.py">
+      <Filter>uiscript</Filter>
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\savepointwindow.py">
+      <Filter>uiscript</Filter>
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\selectcharacterwindow.py">
+      <Filter>uiscript</Filter>
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\selectempirewindow.py">
+      <Filter>uiscript</Filter>
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\selectitemwindow.py">
+      <Filter>uiscript</Filter>
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\shopdialog.py">
+      <Filter>uiscript</Filter>
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\shout.py">
+      <Filter>uiscript</Filter>
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\skillcolorwindow.py">
+      <Filter>uiscript</Filter>
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\skillpointresetdialog.py">
+      <Filter>uiscript</Filter>
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\systemdialog.py">
+      <Filter>uiscript</Filter>
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\systemdialog_formall.py">
+      <Filter>uiscript</Filter>
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\systemdialog_forportal.py">
+      <Filter>uiscript</Filter>
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\systemoptiondialog.py">
+      <Filter>uiscript</Filter>
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\taskbar.py">
+      <Filter>uiscript</Filter>
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\teleport.py">
+      <Filter>uiscript</Filter>
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\webwindow.py">
+      <Filter>uiscript</Filter>
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\webwindow_fullscreen.py">
+      <Filter>uiscript</Filter>
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\whisperdialog.py">
+      <Filter>uiscript</Filter>
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\whispermanager.py">
+      <Filter>uiscript</Filter>
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscript\wikiwindow.py">
+      <Filter>uiscript</Filter>
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiscriptlocale.py" />
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiselectitem.py" />
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiselectmusic.py" />
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uishop.py" />
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uishout.py" />
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiskillcolor.py" />
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uistonecraft.py" />
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiswitchbot.py" />
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uisystem.py" />
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uisystemgems.py" />
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uisystemoption.py" />
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uitarget.py" />
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uitaskbar.py" />
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiteleporter.py" />
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uitip.py" />
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uitooltip.py" />
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uitriviapanel.py" />
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiuploadmark.py" />
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiweb.py" />
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiwheel.py" />
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\uiwhisper.py" />
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\utils.py" />
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\root\whispermanager.py" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="data">
+      <UniqueIdentifier>{709F3D5D-F8D1-335D-9FC3-1B25A8312B62}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="uiscript">
+      <UniqueIdentifier>{A54C848F-1EF6-33C3-8202-111244F541C6}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

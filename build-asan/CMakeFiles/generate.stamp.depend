@@ -1,0 +1,89 @@
+# CMake generation dependency list for this directory.
+C:/Program Files/CMake/share/cmake-4.3/Modules/CMakeCInformation.cmake
+C:/Program Files/CMake/share/cmake-4.3/Modules/CMakeCXXInformation.cmake
+C:/Program Files/CMake/share/cmake-4.3/Modules/CMakeCommonLanguageInclude.cmake
+C:/Program Files/CMake/share/cmake-4.3/Modules/CMakeDependentOption.cmake
+C:/Program Files/CMake/share/cmake-4.3/Modules/CMakeFindDependencyMacro.cmake
+C:/Program Files/CMake/share/cmake-4.3/Modules/CMakeGenericSystem.cmake
+C:/Program Files/CMake/share/cmake-4.3/Modules/CMakeInitializeConfigs.cmake
+C:/Program Files/CMake/share/cmake-4.3/Modules/CMakeLanguageInformation.cmake
+C:/Program Files/CMake/share/cmake-4.3/Modules/CMakeRCInformation.cmake
+C:/Program Files/CMake/share/cmake-4.3/Modules/CMakeSystemSpecificInformation.cmake
+C:/Program Files/CMake/share/cmake-4.3/Modules/CMakeSystemSpecificInitialize.cmake
+C:/Program Files/CMake/share/cmake-4.3/Modules/Compiler/CMakeCommonCompilerMacros.cmake
+C:/Program Files/CMake/share/cmake-4.3/Modules/Compiler/MSVC-C.cmake
+C:/Program Files/CMake/share/cmake-4.3/Modules/Compiler/MSVC-CXX.cmake
+C:/Program Files/CMake/share/cmake-4.3/Modules/Compiler/MSVC.cmake
+C:/Program Files/CMake/share/cmake-4.3/Modules/FindPackageHandleStandardArgs.cmake
+C:/Program Files/CMake/share/cmake-4.3/Modules/FindPackageMessage.cmake
+C:/Program Files/CMake/share/cmake-4.3/Modules/FindPython/Support.cmake
+C:/Program Files/CMake/share/cmake-4.3/Modules/FindZLIB.cmake
+C:/Program Files/CMake/share/cmake-4.3/Modules/Findpython2.cmake
+C:/Program Files/CMake/share/cmake-4.3/Modules/Internal/CMakeCLinkerInformation.cmake
+C:/Program Files/CMake/share/cmake-4.3/Modules/Internal/CMakeCXXLinkerInformation.cmake
+C:/Program Files/CMake/share/cmake-4.3/Modules/Internal/CMakeCommonLinkerInformation.cmake
+C:/Program Files/CMake/share/cmake-4.3/Modules/Linker/MSVC-C.cmake
+C:/Program Files/CMake/share/cmake-4.3/Modules/Linker/MSVC-CXX.cmake
+C:/Program Files/CMake/share/cmake-4.3/Modules/Linker/MSVC.cmake
+C:/Program Files/CMake/share/cmake-4.3/Modules/Platform/Linker/Windows-MSVC-C.cmake
+C:/Program Files/CMake/share/cmake-4.3/Modules/Platform/Linker/Windows-MSVC-CXX.cmake
+C:/Program Files/CMake/share/cmake-4.3/Modules/Platform/Linker/Windows-MSVC.cmake
+C:/Program Files/CMake/share/cmake-4.3/Modules/Platform/Windows-Initialize.cmake
+C:/Program Files/CMake/share/cmake-4.3/Modules/Platform/Windows-MSVC-C.cmake
+C:/Program Files/CMake/share/cmake-4.3/Modules/Platform/Windows-MSVC-CXX.cmake
+C:/Program Files/CMake/share/cmake-4.3/Modules/Platform/Windows-MSVC.cmake
+C:/Program Files/CMake/share/cmake-4.3/Modules/Platform/Windows.cmake
+C:/Program Files/CMake/share/cmake-4.3/Modules/Platform/WindowsPaths.cmake
+C:/Program Files/CMake/share/cmake-4.3/Modules/SelectLibraryConfigurations.cmake
+C:/vcpkg/installed/x64-windows/share/cryptopp/cryptopp-static-targets-debug.cmake
+C:/vcpkg/installed/x64-windows/share/cryptopp/cryptopp-static-targets-release.cmake
+C:/vcpkg/installed/x64-windows/share/cryptopp/cryptopp-static-targets.cmake
+C:/vcpkg/installed/x64-windows/share/cryptopp/cryptoppConfig.cmake
+C:/vcpkg/installed/x64-windows/share/cryptopp/cryptoppConfigVersion.cmake
+C:/vcpkg/installed/x64-windows/share/curl/CURLConfig.cmake
+C:/vcpkg/installed/x64-windows/share/curl/CURLConfigVersion.cmake
+C:/vcpkg/installed/x64-windows/share/curl/CURLTargets-debug.cmake
+C:/vcpkg/installed/x64-windows/share/curl/CURLTargets-release.cmake
+C:/vcpkg/installed/x64-windows/share/curl/CURLTargets.cmake
+C:/vcpkg/installed/x64-windows/share/curl/vcpkg-cmake-wrapper.cmake
+C:/vcpkg/installed/x64-windows/share/entt/EnTTConfig.cmake
+C:/vcpkg/installed/x64-windows/share/entt/EnTTConfigVersion.cmake
+C:/vcpkg/installed/x64-windows/share/entt/EnTTTargets.cmake
+C:/vcpkg/installed/x64-windows/share/libconfig/libconfigConfig-debug.cmake
+C:/vcpkg/installed/x64-windows/share/libconfig/libconfigConfig-release.cmake
+C:/vcpkg/installed/x64-windows/share/libconfig/libconfigConfig.cmake
+C:/vcpkg/installed/x64-windows/share/libconfig/libconfigConfigVersion.cmake
+C:/vcpkg/installed/x64-windows/share/libjpeg-turbo/libjpeg-turboConfig.cmake
+C:/vcpkg/installed/x64-windows/share/libjpeg-turbo/libjpeg-turboConfigVersion.cmake
+C:/vcpkg/installed/x64-windows/share/libjpeg-turbo/libjpeg-turboTargets-debug.cmake
+C:/vcpkg/installed/x64-windows/share/libjpeg-turbo/libjpeg-turboTargets-release.cmake
+C:/vcpkg/installed/x64-windows/share/libjpeg-turbo/libjpeg-turboTargets.cmake
+C:/vcpkg/installed/x64-windows/share/lz4/lz4Config.cmake
+C:/vcpkg/installed/x64-windows/share/lz4/lz4ConfigVersion.cmake
+C:/vcpkg/installed/x64-windows/share/lz4/lz4Targets-debug.cmake
+C:/vcpkg/installed/x64-windows/share/lz4/lz4Targets-release.cmake
+C:/vcpkg/installed/x64-windows/share/lz4/lz4Targets.cmake
+C:/vcpkg/installed/x64-windows/share/rapidjson/RapidJSON-targets.cmake
+C:/vcpkg/installed/x64-windows/share/rapidjson/RapidJSONConfig.cmake
+C:/vcpkg/installed/x64-windows/share/rapidjson/RapidJSONConfigVersion.cmake
+C:/vcpkg/installed/x64-windows/share/stb/Findstb.cmake
+C:/vcpkg/installed/x64-windows/share/stb/vcpkg-cmake-wrapper.cmake
+C:/vcpkg/installed/x64-windows/share/xxhash/xxHashConfig.cmake
+C:/vcpkg/installed/x64-windows/share/xxhash/xxHashConfigVersion.cmake
+C:/vcpkg/installed/x64-windows/share/xxhash/xxHashTargets-debug.cmake
+C:/vcpkg/installed/x64-windows/share/xxhash/xxHashTargets-release.cmake
+C:/vcpkg/installed/x64-windows/share/xxhash/xxHashTargets.cmake
+C:/vcpkg/installed/x64-windows/share/zlib/vcpkg-cmake-wrapper.cmake
+C:/vcpkg/installed/x64-windows/share/zstd/zstdConfig.cmake
+C:/vcpkg/installed/x64-windows/share/zstd/zstdConfigVersion.cmake
+C:/vcpkg/installed/x64-windows/share/zstd/zstdTargets-debug.cmake
+C:/vcpkg/installed/x64-windows/share/zstd/zstdTargets-release.cmake
+C:/vcpkg/installed/x64-windows/share/zstd/zstdTargets.cmake
+C:/vcpkg/scripts/buildsystems/vcpkg.cmake
+D:/AurigaGlobal/LiveWork/AurigaGlobal/CMakeLists.txt
+D:/AurigaGlobal/LiveWork/AurigaGlobal/build-asan/CMakeFiles/4.3.2/CMakeCCompiler.cmake
+D:/AurigaGlobal/LiveWork/AurigaGlobal/build-asan/CMakeFiles/4.3.2/CMakeCXXCompiler.cmake
+D:/AurigaGlobal/LiveWork/AurigaGlobal/build-asan/CMakeFiles/4.3.2/CMakeRCCompiler.cmake
+D:/AurigaGlobal/LiveWork/AurigaGlobal/build-asan/CMakeFiles/4.3.2/CMakeSystem.cmake
+D:/AurigaGlobal/LiveWork/AurigaGlobal/build-asan/CMakeFiles/cmake.verify_globs
+D:/AurigaGlobal/LiveWork/AurigaGlobal/cmake/BootstrapVcpkg.cmake

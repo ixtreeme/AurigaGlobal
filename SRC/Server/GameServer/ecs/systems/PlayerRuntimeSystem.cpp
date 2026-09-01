@@ -37,6 +37,7 @@
 #include "../../ecs/components/identity_components.hpp"
 #include "../../ecs/components/inventory_components.hpp"
 #include "../../ecs/components/movement_components.hpp"
+#include "../../ecs/components/quest_components.hpp"
 #include "../../ecs/components/skill_components.hpp"
 #include "../../ecs/components/social_components.hpp"
 #include "../../ecs/components/status_components.hpp"
@@ -68,6 +69,18 @@
 #include "../../war_map.h"
 #include "../../wedding.h"
 #include "../../DragonSoul.h"
+
+namespace {
+
+LPITEM ResolveLegacyItem(entt::entity item)
+{
+	if (!ItemSystem::IsValidItem(item))
+		return nullptr;
+
+	return ITEM_MANAGER::instance().Find(ItemSystem::GetItemID(item));
+}
+
+} // namespace
 
 namespace ecs::PlayerRuntime {
 
@@ -876,18 +889,32 @@ LPCHARACTER CHARACTER::GetQuestNPC() const
 
 void CHARACTER::SetQuestItemPtr(entt::entity item)
 {
-    const uint32_t id = ItemSystem::GetItemID(item);
-    m_pQuestItem = id != 0 ? ITEM_MANAGER::instance().Find(id) : nullptr;
+	const entt::entity owner = AIHelpers::EcsOf(this);
+	if (owner == entt::null || !g_registry.valid(owner))
+		return;
+
+	auto& context = g_registry.get_or_emplace<ecs::QuestContext>(owner);
+	context.questItem = ItemSystem::IsValidItem(item) ? item : entt::null;
 }
 
 void CHARACTER::ClearQuestItemPtr()
 {
-    m_pQuestItem = nullptr;
+	SetQuestItemPtr(entt::null);
+}
+
+entt::entity CHARACTER::GetQuestItemEntity() const
+{
+	const entt::entity owner = AIHelpers::EcsOf(this);
+	if (owner == entt::null || !g_registry.valid(owner))
+		return entt::null;
+
+	const auto* context = g_registry.try_get<ecs::QuestContext>(owner);
+	return context && ItemSystem::IsValidItem(context->questItem) ? context->questItem : entt::null;
 }
 
 LPITEM CHARACTER::GetQuestItemPtr() const
 {
-    return m_pQuestItem;
+	return ResolveLegacyItem(GetQuestItemEntity());
 }
 
 LPDUNGEON CHARACTER::GetDungeonForce() const
@@ -1931,26 +1958,24 @@ void CHARACTER::CloseAcce()
 
 void CHARACTER::ClearAcceMaterials()
 {
-    LPITEM* pkItemMaterial;
-    pkItemMaterial = GetAcceMaterials();
-    for (int i = 0; i < ACCE_WINDOW_MAX_MATERIALS; ++i)
-    {
-        if (!pkItemMaterial[i])
-            continue;
+	auto pkItemMaterial = GetAcceMaterials();
+	for (int i = 0; i < ACCE_WINDOW_MAX_MATERIALS; ++i)
+	{
+		if (pkItemMaterial[i] == entt::null)
+			continue;
 
-        ItemSystem::UnlockItem(EntityFactory::CreateItemEntity(g_registry, pkItemMaterial[i]));
-        pkItemMaterial[i] = nullptr;
-    }
+		ItemSystem::UnlockItem(pkItemMaterial[i]);
+		pkItemMaterial[i] = entt::null;
+	}
 }
 
 bool CHARACTER::AcceIsSameGrade(int32_t lGrade)
 {
-    LPITEM* pkItemMaterial;
-    pkItemMaterial = GetAcceMaterials();
-    if (!pkItemMaterial[0])
-        return false;
+	auto pkItemMaterial = GetAcceMaterials();
+	if (pkItemMaterial[0] == entt::null)
+		return false;
 
-    bool bReturn = (ItemSystem::GetItemValue(EntityFactory::CreateItemEntity(g_registry, pkItemMaterial[0]), ACCE_GRADE_VALUE_FIELD) == lGrade ? true : false);
+	bool bReturn = ItemSystem::GetItemValue(pkItemMaterial[0], ACCE_GRADE_VALUE_FIELD) == lGrade;
     return bReturn;
 }
 
@@ -2006,10 +2031,10 @@ uint32_t CHARACTER::GetAcceCombinePrice(int32_t lGrade
 
 uint8_t CHARACTER::CheckEmptyMaterialSlot()
 {
-    const LPITEM* pkItemMaterial = GetAcceMaterials();
+	const auto pkItemMaterial = GetAcceMaterials();
     for (int i = 0; i < ACCE_WINDOW_MAX_MATERIALS; ++i)
     {
-        if (!pkItemMaterial[i])
+		if (pkItemMaterial[i] == entt::null)
             return i;
     }
 
@@ -2018,23 +2043,23 @@ uint8_t CHARACTER::CheckEmptyMaterialSlot()
 
 void CHARACTER::GetAcceCombineResult(uint32_t& dwItemVnum, uint32_t& dwMinAbs, uint32_t& dwMaxAbs)
 {
-    const LPITEM* pkItemMaterial = GetAcceMaterials();
+	const auto pkItemMaterial = GetAcceMaterials();
 
     if (m_bAcceCombination)
     {
-        if ((pkItemMaterial[0]) && (pkItemMaterial[1]))
-        {
-            int32_t lVal = ItemSystem::GetItemValue(EntityFactory::CreateItemEntity(g_registry, pkItemMaterial[0]), ACCE_GRADE_VALUE_FIELD);
+		if (pkItemMaterial[0] != entt::null && pkItemMaterial[1] != entt::null)
+		{
+			int32_t lVal = ItemSystem::GetItemValue(pkItemMaterial[0], ACCE_GRADE_VALUE_FIELD);
             if (lVal == 4)
             {
-                dwItemVnum = pkItemMaterial[0]->GetOriginalVnum();
-                dwMinAbs = ItemSystem::GetItemSocket(EntityFactory::CreateItemEntity(g_registry, pkItemMaterial[0]), ACCE_ABSORPTION_SOCKET);
+				dwItemVnum = ItemSystem::GetItemOriginalVnum(pkItemMaterial[0]);
+				dwMinAbs = ItemSystem::GetItemSocket(pkItemMaterial[0], ACCE_ABSORPTION_SOCKET);
                 uint32_t dwMaxAbsCalc = (dwMinAbs + ACCE_GRADE_4_ABS_RANGE > ACCE_GRADE_4_ABS_MAX ? ACCE_GRADE_4_ABS_MAX : (dwMinAbs + ACCE_GRADE_4_ABS_RANGE));
                 dwMaxAbs = dwMaxAbsCalc;
             }
             else
             {
-                uint32_t dwMaskVnum = pkItemMaterial[0]->GetOriginalVnum();
+				uint32_t dwMaskVnum = ItemSystem::GetItemOriginalVnum(pkItemMaterial[0]);
                 TItemTable* pTable = ITEM_MANAGER::instance().GetTable(dwMaskVnum + 1);
                 if (pTable)
                     dwMaskVnum += 1;
@@ -2072,10 +2097,10 @@ void CHARACTER::GetAcceCombineResult(uint32_t& dwItemVnum, uint32_t& dwMinAbs, u
     }
     else
     {
-        if ((pkItemMaterial[0]) && (pkItemMaterial[1]))
-        {
-            dwItemVnum = pkItemMaterial[0]->GetOriginalVnum();
-            dwMinAbs = ItemSystem::GetItemSocket(EntityFactory::CreateItemEntity(g_registry, pkItemMaterial[0]), ACCE_ABSORPTION_SOCKET);
+		if (pkItemMaterial[0] != entt::null && pkItemMaterial[1] != entt::null)
+		{
+			dwItemVnum = ItemSystem::GetItemOriginalVnum(pkItemMaterial[0]);
+			dwMinAbs = ItemSystem::GetItemSocket(pkItemMaterial[0], ACCE_ABSORPTION_SOCKET);
             dwMaxAbs = dwMinAbs;
         }
         else
@@ -2101,23 +2126,23 @@ void CHARACTER::AddAcceMaterial(TItemPos tPos, uint8_t bPos)
             return;
     }
 
-    LPITEM pkItem = GetItem(tPos);
-    if (!pkItem)
-        return;
-    else if ((ItemSystem::GetItemCell(EntityFactory::CreateItemEntity(g_registry, pkItem)) >= INVENTORY_MAX_NUM) || (ItemSystem::IsItemEquipped(EntityFactory::CreateItemEntity(g_registry, pkItem))) || (tPos.IsBeltInventoryPosition()) || (pkItem->IsDragonSoul()))
-        return;
-    else if ((ItemSystem::GetItemType(EntityFactory::CreateItemEntity(g_registry, pkItem)) != ITEM_COSTUME) && (m_bAcceCombination))
-        return;
-    else if ((ItemSystem::GetItemType(EntityFactory::CreateItemEntity(g_registry, pkItem)) != ITEM_COSTUME) && (bPos == 0) && (m_bAcceAbsorption))
-        return;
-    else if (pkItem->isLocked())
+	const entt::entity item = ItemSystem::GetItem(AIHelpers::EcsOf(this), tPos);
+	if (item == entt::null)
+		return;
+	else if ((ItemSystem::GetItemCell(item) >= INVENTORY_MAX_NUM) || ItemSystem::IsItemEquipped(item) || tPos.IsBeltInventoryPosition() || ItemSystem::GetItemType(item) == ITEM_DS)
+		return;
+	else if ((ItemSystem::GetItemType(item) != ITEM_COSTUME) && (m_bAcceCombination))
+		return;
+	else if ((ItemSystem::GetItemType(item) != ITEM_COSTUME) && (bPos == 0) && (m_bAcceAbsorption))
+		return;
+	else if (ItemSystem::IsItemLocked(item))
     {
 #ifdef TEXTS_IMPROVEMENT
         ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 519, "");
 #endif
         return;
     }
-    else if ((ItemSystem::GetItemType(EntityFactory::CreateItemEntity(g_registry, pkItem)) == ITEM_ARMOR) && (ItemSystem::GetItemSubType(EntityFactory::CreateItemEntity(g_registry, pkItem)) == ARMOR_BODY))
+	else if ((ItemSystem::GetItemType(item) == ITEM_ARMOR) && (ItemSystem::GetItemSubType(item) == ARMOR_BODY))
     {
 #ifdef TEXTS_IMPROVEMENT
         ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 519, "");
@@ -2125,7 +2150,7 @@ void CHARACTER::AddAcceMaterial(TItemPos tPos, uint8_t bPos)
         return;
     }
 #ifdef __SOULBINDING_SYSTEM__
-    else if ((pkItem->IsBind()) || (pkItem->IsUntilBind()))
+	else if (ItemSystem::IsItemBound(item))
     {
 #ifdef TEXTS_IMPROVEMENT
         ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 519, "");
@@ -2134,12 +2159,12 @@ void CHARACTER::AddAcceMaterial(TItemPos tPos, uint8_t bPos)
     }
 #endif
 #ifdef ENABLE_STOLE_COSTUME
-    else if (m_bAcceAbsorption && bPos == 0 && ItemSystem::GetItemSubType(EntityFactory::CreateItemEntity(g_registry, pkItem)) != COSTUME_ACCE)
+	else if (m_bAcceAbsorption && bPos == 0 && ItemSystem::GetItemSubType(item) != COSTUME_ACCE)
     {
         return;
     }
 #endif
-    else if ((m_bAcceCombination) && (bPos == 1) && (!AcceIsSameGrade(ItemSystem::GetItemValue(EntityFactory::CreateItemEntity(g_registry, pkItem), ACCE_GRADE_VALUE_FIELD))))
+	else if ((m_bAcceCombination) && (bPos == 1) && (!AcceIsSameGrade(ItemSystem::GetItemValue(item, ACCE_GRADE_VALUE_FIELD))))
     {
 #ifdef TEXTS_IMPROVEMENT
         ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 662, "");
@@ -2147,15 +2172,15 @@ void CHARACTER::AddAcceMaterial(TItemPos tPos, uint8_t bPos)
         return;
     }
 #ifdef ENABLE_STOLE_COSTUME
-    else if ((m_bAcceCombination) && (ItemSystem::GetItemSubType(EntityFactory::CreateItemEntity(g_registry, pkItem)) == COSTUME_STOLE) && (ItemSystem::GetItemValue(EntityFactory::CreateItemEntity(g_registry, pkItem), 0) == 4))
+	else if ((m_bAcceCombination) && (ItemSystem::GetItemSubType(item) == COSTUME_STOLE) && (ItemSystem::GetItemValue(item, 0) == 4))
     {
 #ifdef TEXTS_IMPROVEMENT
-        ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 20, "%s", pkItem->GetName());
+		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 20, "%s", ItemSystem::GetItemName(item));
 #endif
         return;
     }
 #endif
-    else if ((m_bAcceCombination) && (ItemSystem::GetItemSocket(EntityFactory::CreateItemEntity(g_registry, pkItem), ACCE_ABSORPTION_SOCKET) >= ACCE_GRADE_4_ABS_MAX))
+	else if ((m_bAcceCombination) && (ItemSystem::GetItemSocket(item, ACCE_ABSORPTION_SOCKET) >= ACCE_GRADE_4_ABS_MAX))
     {
 #ifdef TEXTS_IMPROVEMENT
         ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 663, "%d", ACCE_GRADE_4_ABS_MAX);
@@ -2164,14 +2189,14 @@ void CHARACTER::AddAcceMaterial(TItemPos tPos, uint8_t bPos)
     }
     else if ((bPos == 1) && (m_bAcceAbsorption))
     {
-        if ((ItemSystem::GetItemType(EntityFactory::CreateItemEntity(g_registry, pkItem)) != ITEM_WEAPON) && (ItemSystem::GetItemType(EntityFactory::CreateItemEntity(g_registry, pkItem)) != ITEM_ARMOR))
+		if ((ItemSystem::GetItemType(item) != ITEM_WEAPON) && (ItemSystem::GetItemType(item) != ITEM_ARMOR))
         {
 #ifdef TEXTS_IMPROVEMENT
             ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 520, "");
 #endif
             return;
         }
-        else if ((ItemSystem::GetItemType(EntityFactory::CreateItemEntity(g_registry, pkItem)) == ITEM_ARMOR) && (ItemSystem::GetItemSubType(EntityFactory::CreateItemEntity(g_registry, pkItem)) != ARMOR_BODY))
+		else if ((ItemSystem::GetItemType(item) == ITEM_ARMOR) && (ItemSystem::GetItemSubType(item) != ARMOR_BODY))
         {
 #ifdef TEXTS_IMPROVEMENT
             ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 520, "");
@@ -2183,9 +2208,9 @@ void CHARACTER::AddAcceMaterial(TItemPos tPos, uint8_t bPos)
 #ifdef ENABLE_STOLE_COSTUME
     (
 #endif
-        ((ItemSystem::GetItemSubType(EntityFactory::CreateItemEntity(g_registry, pkItem)) != COSTUME_ACCE)
+		((ItemSystem::GetItemSubType(item) != COSTUME_ACCE)
 #ifdef ENABLE_STOLE_COSTUME
-            && (ItemSystem::GetItemSubType(EntityFactory::CreateItemEntity(g_registry, pkItem)) != COSTUME_STOLE))
+			&& (ItemSystem::GetItemSubType(item) != COSTUME_STOLE))
 #endif
         && (m_bAcceCombination))
         return;
@@ -2193,24 +2218,23 @@ void CHARACTER::AddAcceMaterial(TItemPos tPos, uint8_t bPos)
 #ifdef ENABLE_STOLE_COSTUME
     (
 #endif
-        ((ItemSystem::GetItemSubType(EntityFactory::CreateItemEntity(g_registry, pkItem)) != COSTUME_ACCE)
+		((ItemSystem::GetItemSubType(item) != COSTUME_ACCE)
 #ifdef ENABLE_STOLE_COSTUME
-            && (ItemSystem::GetItemSubType(EntityFactory::CreateItemEntity(g_registry, pkItem)) != COSTUME_STOLE))
+			&& (ItemSystem::GetItemSubType(item) != COSTUME_STOLE))
 #endif
         && (bPos == 0) && (m_bAcceAbsorption))
         return;
-    else if ((ItemSystem::GetItemSocket(EntityFactory::CreateItemEntity(g_registry, pkItem), ACCE_ABSORBED_SOCKET) > 0) && (bPos == 0) && (m_bAcceAbsorption))
-        return;
+	else if ((ItemSystem::GetItemSocket(item, ACCE_ABSORBED_SOCKET) > 0) && (bPos == 0) && (m_bAcceAbsorption))
+		return;
 
-    LPITEM* pkItemMaterial;
-    pkItemMaterial = GetAcceMaterials();
-    if ((bPos == 1) && (!pkItemMaterial[0]))
+	auto pkItemMaterial = GetAcceMaterials();
+	if ((bPos == 1) && pkItemMaterial[0] == entt::null)
         return;
 
 #ifdef ENABLE_STOLE_COSTUME
-    if ((!m_bAcceAbsorption) && (bPos == 1) && (ItemSystem::GetItemSubType(EntityFactory::CreateItemEntity(g_registry, pkItemMaterial[0])) != ItemSystem::GetItemSubType(EntityFactory::CreateItemEntity(g_registry, pkItem)))) {
+	if ((!m_bAcceAbsorption) && (bPos == 1) && (ItemSystem::GetItemSubType(pkItemMaterial[0]) != ItemSystem::GetItemSubType(item))) {
 #ifdef TEXTS_IMPROVEMENT
-        if (ItemSystem::GetItemSubType(EntityFactory::CreateItemEntity(g_registry, pkItemMaterial[0])) == COSTUME_STOLE) {
+		if (ItemSystem::GetItemSubType(pkItemMaterial[0]) == COSTUME_STOLE) {
             ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 18, "");
         }
         else {
@@ -2219,7 +2243,7 @@ void CHARACTER::AddAcceMaterial(TItemPos tPos, uint8_t bPos)
 #endif
         return;
     }
-    else if (!m_bAcceAbsorption && bPos == 1 && ItemSystem::GetItemSubType(EntityFactory::CreateItemEntity(g_registry, pkItemMaterial[0])) == COSTUME_STOLE && ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, pkItemMaterial[0])) != ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, pkItem))) {
+	else if (!m_bAcceAbsorption && bPos == 1 && ItemSystem::GetItemSubType(pkItemMaterial[0]) == COSTUME_STOLE && ItemSystem::GetItemVnum(pkItemMaterial[0]) != ItemSystem::GetItemVnum(item)) {
 #ifdef TEXTS_IMPROVEMENT
         ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 1293, "");
 #endif
@@ -2227,11 +2251,11 @@ void CHARACTER::AddAcceMaterial(TItemPos tPos, uint8_t bPos)
     }
 #endif
 
-    if (pkItemMaterial[bPos])
-        return;
+	if (pkItemMaterial[bPos] != entt::null)
+		return;
 
-    pkItemMaterial[bPos] = pkItem;
-    ItemSystem::LockItem(EntityFactory::CreateItemEntity(g_registry, pkItemMaterial[bPos]));
+	pkItemMaterial[bPos] = item;
+	ItemSystem::LockItem(pkItemMaterial[bPos]);
 
     uint32_t dwItemVnum, dwMinAbs, dwMaxAbs;
     GetAcceCombineResult(dwItemVnum, dwMinAbs, dwMaxAbs);
@@ -2240,9 +2264,9 @@ void CHARACTER::AddAcceMaterial(TItemPos tPos, uint8_t bPos)
     sPacket.header = HEADER_GC_ACCE;
     sPacket.subheader = ACCE_SUBHEADER_GC_ADDED;
     sPacket.bWindow = m_bAcceCombination == true ? true : false;
-    sPacket.dwPrice = GetAcceCombinePrice(ItemSystem::GetItemValue(EntityFactory::CreateItemEntity(g_registry, pkItem), ACCE_GRADE_VALUE_FIELD)
+	sPacket.dwPrice = GetAcceCombinePrice(ItemSystem::GetItemValue(item, ACCE_GRADE_VALUE_FIELD)
 #ifdef ENABLE_STOLE_COSTUME
-        , ItemSystem::GetItemSubType(EntityFactory::CreateItemEntity(g_registry, pkItem)) == COSTUME_STOLE ? true : false
+		, ItemSystem::GetItemSubType(item) == COSTUME_STOLE
 #endif
     );
     sPacket.bPos = bPos;
@@ -2258,23 +2282,22 @@ void CHARACTER::RemoveAcceMaterial(uint8_t bPos)
     if (bPos >= ACCE_WINDOW_MAX_MATERIALS)
         return;
 
-    LPITEM* pkItemMaterial;
-    pkItemMaterial = GetAcceMaterials();
+	auto pkItemMaterial = GetAcceMaterials();
 
     uint32_t dwPrice = 0;
 
     if (bPos == 1)
     {
-        if (pkItemMaterial[bPos])
-        {
-            ItemSystem::UnlockItem(EntityFactory::CreateItemEntity(g_registry, pkItemMaterial[bPos]));
-            pkItemMaterial[bPos] = nullptr;
-        }
+		if (pkItemMaterial[bPos] != entt::null)
+		{
+			ItemSystem::UnlockItem(pkItemMaterial[bPos]);
+			pkItemMaterial[bPos] = entt::null;
+		}
 
-        if (pkItemMaterial[0]) {
-            dwPrice = GetAcceCombinePrice(ItemSystem::GetItemValue(EntityFactory::CreateItemEntity(g_registry, pkItemMaterial[0]), ACCE_GRADE_VALUE_FIELD)
+		if (pkItemMaterial[0] != entt::null) {
+			dwPrice = GetAcceCombinePrice(ItemSystem::GetItemValue(pkItemMaterial[0], ACCE_GRADE_VALUE_FIELD)
 #ifdef ENABLE_STOLE_COSTUME
-                , ItemSystem::GetItemSubType(EntityFactory::CreateItemEntity(g_registry, pkItemMaterial[0])) == COSTUME_STOLE ? true : false
+				, ItemSystem::GetItemSubType(pkItemMaterial[0]) == COSTUME_STOLE
 #endif
             );
         }
@@ -2312,18 +2335,17 @@ uint8_t CHARACTER::CanRefineAcceMaterials()
         return 0;
 
     uint8_t bReturn = 0;
-    LPITEM* pkItemMaterial;
-    pkItemMaterial = GetAcceMaterials();
+	auto pkItemMaterial = GetAcceMaterials();
     if (m_bAcceCombination)
     {
         for (int i = 0; i < ACCE_WINDOW_MAX_MATERIALS; ++i)
         {
-            if (pkItemMaterial[i])
-            {
-                if ((ItemSystem::GetItemType(EntityFactory::CreateItemEntity(g_registry, pkItemMaterial[i])) == ITEM_COSTUME) && (ItemSystem::GetItemSubType(EntityFactory::CreateItemEntity(g_registry, pkItemMaterial[i])) == COSTUME_ACCE))
+			if (pkItemMaterial[i] != entt::null)
+			{
+				if ((ItemSystem::GetItemType(pkItemMaterial[i]) == ITEM_COSTUME) && (ItemSystem::GetItemSubType(pkItemMaterial[i]) == COSTUME_ACCE))
                     bReturn = 1;
 #ifdef ENABLE_STOLE_COSTUME
-                else if ((ItemSystem::GetItemType(EntityFactory::CreateItemEntity(g_registry, pkItemMaterial[i])) == ITEM_COSTUME) && (ItemSystem::GetItemSubType(EntityFactory::CreateItemEntity(g_registry, pkItemMaterial[i])) == COSTUME_STOLE))
+				else if ((ItemSystem::GetItemType(pkItemMaterial[i]) == ITEM_COSTUME) && (ItemSystem::GetItemSubType(pkItemMaterial[i]) == COSTUME_STOLE))
                     bReturn = 1;
 #endif
                 else
@@ -2341,19 +2363,19 @@ uint8_t CHARACTER::CanRefineAcceMaterials()
     }
     else if (m_bAcceAbsorption)
     {
-        if ((pkItemMaterial[0]) && (pkItemMaterial[1]))
-        {
-            if ((ItemSystem::GetItemType(EntityFactory::CreateItemEntity(g_registry, pkItemMaterial[0])) == ITEM_COSTUME) && (ItemSystem::GetItemSubType(EntityFactory::CreateItemEntity(g_registry, pkItemMaterial[0])) == COSTUME_ACCE))
+		if (pkItemMaterial[0] != entt::null && pkItemMaterial[1] != entt::null)
+		{
+			if ((ItemSystem::GetItemType(pkItemMaterial[0]) == ITEM_COSTUME) && (ItemSystem::GetItemSubType(pkItemMaterial[0]) == COSTUME_ACCE))
                 bReturn = 2;
             else
                 bReturn = 0;
 
-            if ((ItemSystem::GetItemType(EntityFactory::CreateItemEntity(g_registry, pkItemMaterial[1])) == ITEM_WEAPON) || ((ItemSystem::GetItemType(EntityFactory::CreateItemEntity(g_registry, pkItemMaterial[1])) == ITEM_ARMOR) && (ItemSystem::GetItemSubType(EntityFactory::CreateItemEntity(g_registry, pkItemMaterial[1])) == ARMOR_BODY)))
+			if ((ItemSystem::GetItemType(pkItemMaterial[1]) == ITEM_WEAPON) || ((ItemSystem::GetItemType(pkItemMaterial[1]) == ITEM_ARMOR) && (ItemSystem::GetItemSubType(pkItemMaterial[1]) == ARMOR_BODY)))
                 bReturn = 2;
 #ifdef ATTR_LOCK
-            if ((ItemSystem::GetItemType(EntityFactory::CreateItemEntity(g_registry, pkItemMaterial[1])) == ITEM_WEAPON) || ((ItemSystem::GetItemType(EntityFactory::CreateItemEntity(g_registry, pkItemMaterial[1])) == ITEM_ARMOR) && (ItemSystem::GetItemSubType(EntityFactory::CreateItemEntity(g_registry, pkItemMaterial[1])) == ARMOR_BODY)))
-            {
-                if (pkItemMaterial[1]->GetLockedAttr() != -1)
+			if ((ItemSystem::GetItemType(pkItemMaterial[1]) == ITEM_WEAPON) || ((ItemSystem::GetItemType(pkItemMaterial[1]) == ITEM_ARMOR) && (ItemSystem::GetItemSubType(pkItemMaterial[1]) == ARMOR_BODY)))
+			{
+				if (ItemSystem::GetItemLockedAttributeIndex(pkItemMaterial[1]) != -1)
                 {
                     bReturn = 0;
 #ifdef TEXTS_IMPROVEMENT
@@ -2365,7 +2387,7 @@ uint8_t CHARACTER::CanRefineAcceMaterials()
             else
                 bReturn = 0;
 
-            if (ItemSystem::GetItemSocket(EntityFactory::CreateItemEntity(g_registry, pkItemMaterial[0]), ACCE_ABSORBED_SOCKET) > 0)
+			if (ItemSystem::GetItemSocket(pkItemMaterial[0], ACCE_ABSORBED_SOCKET) > 0)
                 bReturn = 0;
         }
         else
@@ -2381,15 +2403,18 @@ void CHARACTER::RefineAcceMaterials()
     if (bCan == 0)
         return;
 
-    LPITEM* pkItemMaterial;
-    pkItemMaterial = GetAcceMaterials();
+	auto pkItemMaterial = GetAcceMaterials();
+	LPITEM legacyMaterial0 = ResolveLegacyItem(pkItemMaterial[0]);
+	LPITEM legacyMaterial1 = ResolveLegacyItem(pkItemMaterial[1]);
+	if (!legacyMaterial0 || !legacyMaterial1)
+		return;
 
     uint32_t dwItemVnum, dwMinAbs, dwMaxAbs;
     GetAcceCombineResult(dwItemVnum, dwMinAbs, dwMaxAbs);
 
-    int64_t dwPrice = GetAcceCombinePrice(ItemSystem::GetItemValue(EntityFactory::CreateItemEntity(g_registry, pkItemMaterial[0]), ACCE_GRADE_VALUE_FIELD)
+	int64_t dwPrice = GetAcceCombinePrice(ItemSystem::GetItemValue(pkItemMaterial[0], ACCE_GRADE_VALUE_FIELD)
 #ifdef ENABLE_STOLE_COSTUME
-        , ItemSystem::GetItemSubType(EntityFactory::CreateItemEntity(g_registry, pkItemMaterial[0])) == COSTUME_STOLE ? true : false
+		, ItemSystem::GetItemSubType(pkItemMaterial[0]) == COSTUME_STOLE
 #endif
     );
 
@@ -2397,10 +2422,10 @@ void CHARACTER::RefineAcceMaterials()
     if (bCan == 1)
     {
 #ifdef ENABLE_STOLE_COSTUME
-        bool bStole = ItemSystem::GetItemSubType(EntityFactory::CreateItemEntity(g_registry, pkItemMaterial[0])) == COSTUME_STOLE ? true : false;
+		bool bStole = ItemSystem::GetItemSubType(pkItemMaterial[0]) == COSTUME_STOLE;
 #endif
         int iSuccessChance = 0;
-        int32_t lVal = ItemSystem::GetItemValue(EntityFactory::CreateItemEntity(g_registry, pkItemMaterial[0]), ACCE_GRADE_VALUE_FIELD);
+		int32_t lVal = ItemSystem::GetItemValue(pkItemMaterial[0], ACCE_GRADE_VALUE_FIELD);
         switch (lVal)
         {
         case 2:
@@ -2455,30 +2480,38 @@ void CHARACTER::RefineAcceMaterials()
         bool bSucces = (iChance <= iSuccessChance ? true : false);
         if (bSucces)
         {
-            LPITEM pkItem = ITEM_MANAGER::instance().CreateItem(dwItemVnum, 1, 0, false);
+			LPITEM pkItem = ITEM_MANAGER::instance().CreateItem(dwItemVnum, 1, 0, false);
             if (!pkItem)
             {
                 LOG_ERROR("{} can't be created.", dwItemVnum);
-                return;
-            }
+				return;
+			}
+			const entt::entity resultItem = EntityFactory::CreateItemEntity(g_registry, pkItem);
+			if (resultItem == entt::null)
+			{
+				ITEM_MANAGER::instance().RemoveItem(pkItem, "COMBINE ECS CREATE FAILED");
+				return;
+			}
 
 #ifdef ENABLE_STOLE_COSTUME
-            if (ItemSystem::GetItemSubType(EntityFactory::CreateItemEntity(g_registry, pkItem)) != COSTUME_STOLE)
-                ITEM_MANAGER::CopyAllAttrTo(pkItemMaterial[0], pkItem);
+			if (ItemSystem::GetItemSubType(resultItem) != COSTUME_STOLE)
+				ITEM_MANAGER::CopyAllAttrTo(legacyMaterial0, pkItem);
 #else
-            ITEM_MANAGER::CopyAllAttrTo(pkItemMaterial[0], pkItem);
+			ITEM_MANAGER::CopyAllAttrTo(legacyMaterial0, pkItem);
 #endif
             LogManager::instance().ItemLog(this, pkItem, "COMBINE SUCCESS", pkItem->GetName());
             uint32_t dwAbs = (dwMinAbs == dwMaxAbs ? dwMinAbs : number(dwMinAbs + 1, dwMaxAbs));
-            ItemSystem::SetItemSocket(EntityFactory::CreateItemEntity(g_registry, pkItem), ACCE_ABSORPTION_SOCKET, dwAbs);
-            ItemSystem::SetItemSocket(EntityFactory::CreateItemEntity(g_registry, pkItem), ACCE_ABSORBED_SOCKET, ItemSystem::GetItemSocket(EntityFactory::CreateItemEntity(g_registry, pkItemMaterial[0]), ACCE_ABSORBED_SOCKET));
+			ItemSystem::SetItemSocket(resultItem, ACCE_ABSORPTION_SOCKET, dwAbs);
+			ItemSystem::SetItemSocket(resultItem, ACCE_ABSORBED_SOCKET, ItemSystem::GetItemSocket(pkItemMaterial[0], ACCE_ABSORBED_SOCKET));
 
             PointChange(POINT_GOLD, -dwPrice);
-            DBManager::instance().SendMoneyLog(MONEY_LOG_REFINE, ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, pkItemMaterial[0])), -dwPrice);
+			DBManager::instance().SendMoneyLog(MONEY_LOG_REFINE, ItemSystem::GetItemVnum(pkItemMaterial[0]), -dwPrice);
 
-            uint16_t wCell = ItemSystem::GetItemCell(EntityFactory::CreateItemEntity(g_registry, pkItemMaterial[0]));
-            ITEM_MANAGER::instance().RemoveItem(pkItemMaterial[0], "COMBINE (REFINE SUCCESS)");
-            ITEM_MANAGER::instance().RemoveItem(pkItemMaterial[1], "COMBINE (REFINE SUCCESS)");
+			uint16_t wCell = ItemSystem::GetItemCell(pkItemMaterial[0]);
+			pkItemMaterial[0] = entt::null;
+			pkItemMaterial[1] = entt::null;
+			ITEM_MANAGER::instance().RemoveItem(legacyMaterial0, "COMBINE (REFINE SUCCESS)");
+			ITEM_MANAGER::instance().RemoveItem(legacyMaterial1, "COMBINE (REFINE SUCCESS)");
 
             pkItem->AddToCharacter(this, TItemPos(INVENTORY, wCell));
             ITEM_MANAGER::instance().FlushDelayedSave(pkItem);
@@ -2493,21 +2526,21 @@ void CHARACTER::RefineAcceMaterials()
             }
 #endif
             EffectPacket(SE_EFFECT_ACCE_SUCCEDED);
-            LogManager::instance().AcceLog(GetPlayerID(), GetX(), GetY(), dwItemVnum, ItemSystem::GetItemID(EntityFactory::CreateItemEntity(g_registry, pkItem)), 1, dwAbs, 1);
+			LogManager::instance().AcceLog(GetPlayerID(), GetX(), GetY(), dwItemVnum, ItemSystem::GetItemID(resultItem), 1, dwAbs, 1);
 
             ClearAcceMaterials();
         }
         else
         {
             PointChange(POINT_GOLD, -dwPrice);
-            DBManager::instance().SendMoneyLog(MONEY_LOG_REFINE, ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, pkItemMaterial[0])), -dwPrice);
-            ITEM_MANAGER::instance().RemoveItem(pkItemMaterial[1], "COMBINE (REFINE FAIL)");
+			DBManager::instance().SendMoneyLog(MONEY_LOG_REFINE, ItemSystem::GetItemVnum(pkItemMaterial[0]), -dwPrice);
+			pkItemMaterial[1] = entt::null;
+			ITEM_MANAGER::instance().RemoveItem(legacyMaterial1, "COMBINE (REFINE FAIL)");
 #ifdef TEXTS_IMPROVEMENT
             ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 390, "");
 #endif
             LogManager::instance().AcceLog(GetPlayerID(), GetX(), GetY(), dwItemVnum, 0, 0, 0, 0);
-            pkItemMaterial[1] = nullptr;
-        }
+		}
 
         TItemPos tPos;
         tPos.window_type = INVENTORY;
@@ -2531,19 +2564,21 @@ void CHARACTER::RefineAcceMaterials()
     }
     else
     {
-        pkItemMaterial[1]->CopyAttributeTo(pkItemMaterial[0]);
-        LogManager::instance().ItemLog(this, pkItemMaterial[0], "ABSORB (REFINE SUCCESS)", pkItemMaterial[0]->GetName());
-        ItemSystem::SetItemSocket(EntityFactory::CreateItemEntity(g_registry, pkItemMaterial[0]), ACCE_ABSORBED_SOCKET, pkItemMaterial[1]->GetOriginalVnum());
-        for (int i = 0; i < ITEM_ATTRIBUTE_MAX_NUM; ++i)
-        {
-            if (pkItemMaterial[0]->GetAttributeValue(i) < 0)
-                ItemSystem::SetItemForceAttributeEcs(EntityFactory::CreateItemEntity(g_registry, pkItemMaterial[0]), i, pkItemMaterial[0]->GetAttributeType(i), 0);
-        }
+		legacyMaterial1->CopyAttributeTo(legacyMaterial0);
+		ItemSystem::SyncItemAttributesFromLegacy(pkItemMaterial[0]);
+		LogManager::instance().ItemLog(this, legacyMaterial0, "ABSORB (REFINE SUCCESS)", legacyMaterial0->GetName());
+		ItemSystem::SetItemSocket(pkItemMaterial[0], ACCE_ABSORBED_SOCKET, ItemSystem::GetItemOriginalVnum(pkItemMaterial[1]));
+		for (int i = 0; i < ITEM_ATTRIBUTE_MAX_NUM; ++i)
+		{
+			if (ItemSystem::GetItemAttributeValue(pkItemMaterial[0], i) < 0)
+				ItemSystem::SetItemForceAttributeEcs(pkItemMaterial[0], i, ItemSystem::GetItemAttributeType(pkItemMaterial[0], i), 0);
+		}
 
-        ITEM_MANAGER::instance().RemoveItem(pkItemMaterial[1], "ABSORBED (REFINE SUCCESS)");
+		pkItemMaterial[1] = entt::null;
+		ITEM_MANAGER::instance().RemoveItem(legacyMaterial1, "ABSORBED (REFINE SUCCESS)");
 
-        ITEM_MANAGER::instance().FlushDelayedSave(pkItemMaterial[0]);
-        pkItemMaterial[0]->AttrLog();
+		ITEM_MANAGER::instance().FlushDelayedSave(legacyMaterial0);
+		legacyMaterial0->AttrLog();
 
 #ifdef TEXTS_IMPROVEMENT
         ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 629, "");
@@ -2595,249 +2630,16 @@ bool CHARACTER::CleanAcceAttr(entt::entity pkItem, entt::entity pkTarget)
 }
 
 #ifdef ENABLE_SORT_INVEN
-static bool SortMyItems(const LPITEM& s1, const LPITEM& s2)
-{
-    std::string name(s1->GetName());
-    std::string name2(s2->GetName());
-
-    return name < name2;
-}
-
 void CHARACTER::EditMyInven()
 {
-    return;
-
-    int iPulse = thecore_pulse() - GetSortInv1Time();
-    if (iPulse < PASSES_PER_SEC(30)) {
-#ifdef TEXTS_IMPROVEMENT
-        ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 1290, "");
-#endif
-        return;
-    }
-
-    if (IsDead() || GetExchange() || GetShopOwner() || GetMyShop() || IsOpenSafebox() || IsCubeOpen())
-    {
-#ifdef TEXTS_IMPROVEMENT
-        ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 540, "");
-#endif
-        return;
-    }
-
-#ifdef __ENABLE_NEW_OFFLINESHOP__
-    if (GetOfflineShopGuest() || GetAuctionGuest())
-    {
-#ifdef TEXTS_IMPROVEMENT
-        ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 782, "");
-#endif
-        return;
-    }
-#endif
-
-    static std::vector<LPITEM> v;
-    LPITEM myitems;
-
-    std::map<uint32_t, uint8_t> mapOldPosition;
-
-    v.clear();
-
-#ifdef __ENABLE_EXTEND_INVEN_SYSTEM__
-    int size = Inventory_Size();
-#else
-    int size = INVENTORY_MAX_NUM;
-#endif
-
-    for (int i = 0; i < size; ++i)
-    {
-        if (!(myitems = GetInventoryItem(i)))
-            continue;
-
-        v.push_back(myitems);
-        mapOldPosition.insert(std::make_pair(ItemSystem::GetItemID(EntityFactory::CreateItemEntity(g_registry, myitems)), ItemSystem::GetItemCell(EntityFactory::CreateItemEntity(g_registry, myitems))));
-        myitems->RemoveFromCharacter();
-    }
-    std::sort(v.begin(), v.end(), SortMyItems);
-
-    std::vector<TQuickslot*> vecItemQuickslot;
-    for (auto& quick : m_quickslot)
-        if (quick.type == QUICKSLOT_TYPE_ITEM)
-            vecItemQuickslot.push_back(&quick);
-
-    auto lambdaChecker = [&vecItemQuickslot, &mapOldPosition](entt::entity itemEntity)
-        {
-            auto iter = mapOldPosition.find(ItemSystem::GetItemID(itemEntity));
-            if (iter == mapOldPosition.end())
-                return (TQuickslot*)nullptr;
-
-            auto itemPos = iter->second;
-
-            for (auto it = vecItemQuickslot.begin(); it != vecItemQuickslot.end(); it++)
-            {
-                TQuickslot* pQuick = *it;
-
-                if (pQuick && pQuick->pos == itemPos)
-                {
-                    vecItemQuickslot.erase(it);
-                    return pQuick;
-                }
-            }
-            return (TQuickslot*)nullptr;
-        };
-
-    auto it = v.begin();
-    while (it != v.end()) {
-        LPITEM item = *(it++);
-        if (item)
-        {
-            TQuickslot* pQuickSlot = lambdaChecker(EntityFactory::CreateItemEntity(g_registry, item));
-            bool isQuickSlotItem = pQuickSlot != nullptr;
-
-            LPITEM newItem = item;
-
-            TItemTable* p = ITEM_MANAGER::instance().GetTable(ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, item)));
-            if (p && p->dwFlags & ITEM_FLAG_STACKABLE && p->bType != ITEM_BLEND
-#ifdef ENABLE_NEW_USE_POTION
-                && (p->bType != ITEM_USE && p->bSubType != USE_NEW_POTIION)
-#endif
-                )
-                newItem = AutoGiveItem(ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, item)), ItemSystem::GetItemCount(EntityFactory::CreateItemEntity(g_registry, item)), -1, false
-#ifdef __HIGHLIGHT_SYSTEM__
-                    , false
-#endif
-                );
-            else
-                AutoGiveItem(item, false
-#ifdef __HIGHLIGHT_SYSTEM__
-                    , false
-#endif
-                );
-
-            if (isQuickSlotItem)
-                SyncQuickslot(QUICKSLOT_TYPE_ITEM, pQuickSlot->pos, ItemSystem::GetItemCell(EntityFactory::CreateItemEntity(g_registry, newItem)));
-        }
-    }
-
-    ecs::ChatSystem::Send(AIHelpers::EcsOf(this), CHAT_TYPE_COMMAND, "inv_sort_done");
-    SetSortInv1Time();
-}
-
-static bool SortMyExtraItems(const LPITEM& s1, const LPITEM& s2)
-{
-    uint32_t name(ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, s1)));
-    uint32_t name2(ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, s2)));
-
-    return name < name2;
+    // Disabled until the inventory sorter is rebuilt on the ECS inventory API.
 }
 
 void CHARACTER::EditMyExtraInven()
 {
-    return;
-
-    int iPulse = thecore_pulse() - GetSortInv2Time();
-    if (iPulse < PASSES_PER_SEC(30)) {
-#ifdef TEXTS_IMPROVEMENT
-        ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 1290, "");
-#endif
-        return;
-    }
-
-    if (IsDead() || GetExchange() || GetShopOwner() || GetMyShop() || IsOpenSafebox() || IsCubeOpen())
-    {
-#ifdef TEXTS_IMPROVEMENT
-        ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 540, "");
-#endif
-        return;
-    }
-
-#ifdef __ENABLE_NEW_OFFLINESHOP__
-    if (GetOfflineShopGuest() || GetAuctionGuest())
-    {
-#ifdef TEXTS_IMPROVEMENT
-        ecs::ChatSystem::SendNew(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, 782, "");
-#endif
-        return;
-    }
-#endif
-
-    static std::vector<LPITEM> v;
-    LPITEM myitems;
-
-    std::map<uint32_t, uint8_t> mapOldPosition;
-
-    v.clear();
-
-    int size = EXTRA_INVENTORY_MAX_NUM;
-
-    for (int i = 0; i < size; ++i)
-    {
-        if (!(myitems = GetExtraInventoryItem(i)))
-            continue;
-
-        v.push_back(myitems);
-        mapOldPosition.insert(std::make_pair(ItemSystem::GetItemID(EntityFactory::CreateItemEntity(g_registry, myitems)), ItemSystem::GetItemCell(EntityFactory::CreateItemEntity(g_registry, myitems))));
-        myitems->RemoveFromCharacter();
-    }
-    std::sort(v.begin(), v.end(), SortMyExtraItems);
-
-    std::vector<TQuickslot*> vecItemQuickslot;
-    for (auto& quick : m_quickslot)
-        if (quick.type == QUICKSLOT_TYPE_ITEM)
-            vecItemQuickslot.push_back(&quick);
-
-    auto lambdaChecker = [&vecItemQuickslot, &mapOldPosition](entt::entity itemEntity)
-        {
-            auto iter = mapOldPosition.find(ItemSystem::GetItemID(itemEntity));
-            if (iter == mapOldPosition.end())
-                return (TQuickslot*)nullptr;
-
-            auto itemPos = iter->second;
-
-            for (auto it = vecItemQuickslot.begin(); it != vecItemQuickslot.end(); it++)
-            {
-                TQuickslot* pQuick = *it;
-
-                if (pQuick && pQuick->pos == itemPos)
-                {
-                    vecItemQuickslot.erase(it);
-                    return pQuick;
-                }
-            }
-            return (TQuickslot*)nullptr;
-        };
-
-    auto it = v.begin();
-    while (it != v.end()) {
-        LPITEM item = *(it++);
-        if (item)
-        {
-            TQuickslot* pQuickSlot = lambdaChecker(EntityFactory::CreateItemEntity(g_registry, item));
-            bool isQuickSlotItem = pQuickSlot != nullptr;
-
-            LPITEM newItem = item;
-
-            TItemTable* p = ITEM_MANAGER::instance().GetTable(ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, item)));
-            if (p && p->dwFlags & ITEM_FLAG_STACKABLE && p->bType != ITEM_BLEND)
-                newItem = AutoGiveItem(ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, item)), ItemSystem::GetItemCount(EntityFactory::CreateItemEntity(g_registry, item)), -1, false
-#ifdef __HIGHLIGHT_SYSTEM__
-                    , false
-#endif
-                );
-            else
-                AutoGiveItem(item, false
-#ifdef __HIGHLIGHT_SYSTEM__
-                    , false
-#endif
-                );
-
-            if (isQuickSlotItem)
-                SyncQuickslot(QUICKSLOT_TYPE_ITEM, pQuickSlot->pos, ItemSystem::GetItemCell(EntityFactory::CreateItemEntity(g_registry, newItem)));
-        }
-    }
-
-    ecs::ChatSystem::Send(AIHelpers::EcsOf(this), CHAT_TYPE_COMMAND, "ext_sort_done");
-    SetSortInv2Time();
+    // Disabled until the extra-inventory sorter is rebuilt on the ECS inventory API.
 }
 #endif
-
 #ifdef __ENABLE_EXTEND_INVEN_SYSTEM__
 static int NeedKeys[] = { 2,2,2,2,3,3,4,4,4,5,5,5,6,6,6,7,7,7 };
 bool CHARACTER::Update_Inven()
@@ -3261,11 +3063,10 @@ int64_t CHARACTER::GetMaxStamina() const
 
 void CHARACTER::Destroy()
 {
-    {
-        entt::entity e = GetEntityHandle();
-        if (e != entt::null)
-            EntityFactory::Destroy(g_registry, e);
-    }
+	// Keep the ECS entity alive for the complete teardown. Inventory, session,
+	// shop and social state are ECS-owned now, so destroying the entity before
+	// ClearItem()/CloseMyShop() turns those cleanup calls into silent no-ops.
+	const entt::entity entityToDestroy = GetEntityHandle();
 
     CloseMyShop();
 
@@ -3480,8 +3281,11 @@ void CHARACTER::Destroy()
         g_registry.remove<ecs::ViewActiveTag>(e);
     }
 
-    if (m_bMonsterLog)
-        CHARACTER_MANAGER::instance().UnregisterForMonsterLog(this);
+	if (m_bMonsterLog)
+		CHARACTER_MANAGER::instance().UnregisterForMonsterLog(this);
+
+	if (entityToDestroy != entt::null && g_registry.valid(entityToDestroy))
+		EntityFactory::Destroy(g_registry, entityToDestroy);
 }
 
 void CHARACTER::ResetPoint(int iLv)
@@ -5062,7 +4866,6 @@ void CHARACTER::Initialize()
 
     m_dwQuestNPCVID = 0;
     m_dwQuestByVnum = 0;
-    m_pQuestItem = nullptr;
 
     m_szMobileAuth[0] = '\0';
 

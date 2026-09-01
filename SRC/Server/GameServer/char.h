@@ -3,6 +3,7 @@
 
 #include <unordered_map>
 #include <chrono>
+#include <span>
 #include <vector>
 
 #include <common/tables.h>
@@ -1474,7 +1475,7 @@ public:
 	bool			CanReceiveItem(LPCHARACTER from, LPITEM item) const;
 	void			ReceiveItem(LPCHARACTER from, LPITEM item);
 	bool			GiveItemFromSpecialItemGroup(uint32_t dwGroupNum, std::vector <uint32_t>& dwItemVnums,
-		std::vector <uint32_t>& dwItemCounts, std::vector <LPITEM>& item_gets, int& count);
+		std::vector <uint32_t>& dwItemCounts, std::vector<entt::entity>& item_gets, int& count);
 
 	bool			MoveItem(TItemPos pos, TItemPos change_pos,
 #ifdef ENABLE_NEW_STACK_LIMIT
@@ -2175,7 +2176,7 @@ public:
 	bool				IsRiding() const;
 #ifdef __ATTR_TRANSFER_SYSTEM__
 public:
-	LPITEM* GetAttrTransferItem();
+	std::span<entt::entity> GetAttrTransferItem();
 	bool IsAttrTransferOpen() const;
 	void SetAttrTransferNpc(LPCHARACTER npc);
 	bool CanDoAttrTransfer() const;
@@ -2288,6 +2289,7 @@ public:
 
 	void				SetQuestItemPtr(entt::entity item);
 	void				ClearQuestItemPtr();
+	entt::entity		GetQuestItemEntity() const;
 	LPITEM				GetQuestItemPtr() const;
 
 	void				SetQuestBy(uint32_t dwQuestVnum) { m_dwQuestByVnum = dwQuestVnum; }
@@ -2300,7 +2302,6 @@ public:
 private:
 	uint32_t				m_dwQuestNPCVID;
 	uint32_t				m_dwQuestByVnum;
-	LPITEM				m_pQuestItem;
 
 	// Events
 public:
@@ -2485,7 +2486,7 @@ public:
 	bool ItemProcess_Polymorph(LPITEM item);
 
 	// by mhh
-	LPITEM* GetCubeItem();
+	std::span<entt::entity> GetCubeItem();
 	bool IsCubeOpen() const;
 	void SetCubeNpc(LPCHARACTER npc);
 	bool CanDoCube() const;
@@ -2707,7 +2708,7 @@ public:
 	void	CloseAcce();
 	void	ClearAcceMaterials();
 	bool	CleanAcceAttr(entt::entity item, entt::entity target);
-	LPITEM* GetAcceMaterials();
+	std::span<entt::entity> GetAcceMaterials();
 	bool	AcceIsSameGrade(int32_t lGrade);
 	uint32_t	GetAcceCombinePrice(int32_t lGrade
 #ifdef ENABLE_STOLE_COSTUME

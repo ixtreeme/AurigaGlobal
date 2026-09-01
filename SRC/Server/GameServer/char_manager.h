@@ -1,6 +1,8 @@
 #ifndef __INC_METIN_II_GAME_CHARACTER_MANAGER_H__
 #define __INC_METIN_II_GAME_CHARACTER_MANAGER_H__
 
+#include <entt/entity/entity.hpp>
+
 #ifdef M2_USE_POOL
 #include "pool.h"
 #endif
@@ -132,7 +134,7 @@ protected:
 		void			UpdateAllPlayerEventData();
 		void			CompareEventSendData(TEMP_BUFFER* buf);
 		const TEventManagerData* CheckEventIsActive(uint8_t eventIndex, uint8_t empireIndex = 0);
-		void			CheckEventForDrop(LPCHARACTER pkChr, LPCHARACTER pkKiller, std::vector<LPITEM>& vec_item);
+		void			CheckEventForDrop(LPCHARACTER pkChr, LPCHARACTER pkKiller, std::vector<entt::entity>& vec_item);
 	protected:
 		std::map<uint8_t, std::vector<TEventManagerData>>	m_eventData;
 #endif

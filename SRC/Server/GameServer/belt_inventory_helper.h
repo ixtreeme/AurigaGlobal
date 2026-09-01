@@ -116,9 +116,9 @@ public:
 	{
 		for (uint16_t i = BELT_INVENTORY_SLOT_START; i < BELT_INVENTORY_SLOT_END; ++i)
 		{
-			LPITEM beltInventoryItem = ItemSystem::GetInventoryItemPtr(AIHelpers::EcsOf(pc), i);
+			const entt::entity beltInventoryItem = ItemSystem::GetInventoryItem(AIHelpers::EcsOf(pc), i);
 
-			if (nullptr != beltInventoryItem)
+			if (ItemSystem::IsValidItem(beltInventoryItem))
 				return true;
 		}
 
@@ -127,7 +127,7 @@ public:
 
 	/// item이 벨트 인벤토리에 들어갈 수 있는 타입인지 검사하는 함수. (이 규칙은 기획자가 결정함)
 /// item이 벨트 인벤토리에 들어갈 수 있는 타입인지 검사하는 함수. (이 규칙은 기획자가 결정함)
-	static bool CanMoveIntoBeltInventory(LPITEM item)
+	static bool CanMoveIntoBeltInventory(entt::entity item)
 	{
 		static const std::set<uint32_t> belt_allowed_items = {
 			//14590, 14591, 14592, 14593, 52040, 60001, 48421, 49009,
@@ -284,7 +284,7 @@ public:
 			//611666
 		};
 
-		return belt_allowed_items.contains(ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, item)));
+		return ItemSystem::IsValidItem(item) && belt_allowed_items.contains(ItemSystem::GetItemVnum(item));
 	}
 
 

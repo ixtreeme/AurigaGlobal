@@ -324,13 +324,14 @@ void CSwitchbot::SwitchItems()
 
 		const uint32_t item_id = m_table.items[bSlot];
 
-		LPITEM pkItem = ITEM_MANAGER::Instance().Find(item_id);
-		if (!pkItem)
+		const entt::entity itemEntity = ItemSystem::FindItemByID(item_id);
+		if (!ItemSystem::IsValidItem(itemEntity))
 		{
 			continue;
 		}
 
-		const entt::entity itemEntity = EntityFactory::CreateItemEntity(g_registry, pkItem);
+
+		const TItemTable* itemProto = ItemSystem::GetItemProto(itemEntity);
 		const entt::entity ownerEntity = ItemSystem::GetItemOwnerEntity(itemEntity);
 		LPCHARACTER pkOwner = ecs::LegacyCharOf(ownerEntity);
 		if (!pkOwner)
@@ -352,57 +353,57 @@ void CSwitchbot::SwitchItems()
 				switch (desc->GetLanguage()) {
 					case LANGUAGE_RO: {
 						strlcpy(pack.szNameFrom, "[Switchbot]", sizeof(pack.szNameFrom));
-						len = snprintf(buf, sizeof(buf), "Switchbot-ul a gãsit bonusurile pentru %s de pe slot-ul: %d.", pkItem->GetName(), bSlot + 1);
+						len = snprintf(buf, sizeof(buf), "Switchbot-ul a gãsit bonusurile pentru %s de pe slot-ul: %d.", ItemSystem::GetItemName(itemEntity), bSlot + 1);
 						break;
 					}
 					case LANGUAGE_IT: {
 						strlcpy(pack.szNameFrom, "[Girabonus]", sizeof(pack.szNameFrom));
-						len = snprintf(buf, sizeof(buf), "Il girabonus ha trovato i bonus per %s slot(%d).", pkItem->GetName(), bSlot + 1);
+						len = snprintf(buf, sizeof(buf), "Il girabonus ha trovato i bonus per %s slot(%d).", ItemSystem::GetItemName(itemEntity), bSlot + 1);
 						break;
 					}
 					case LANGUAGE_TR: {
 						strlcpy(pack.szNameFrom, "[BonusTuru]", sizeof(pack.szNameFrom));
-						len = snprintf(buf, sizeof(buf), "Bonus turu, %s yuvasi (%d) için bonuslar buldu.", pkItem->GetName(), bSlot + 1);
+						len = snprintf(buf, sizeof(buf), "Bonus turu, %s yuvasi (%d) için bonuslar buldu.", ItemSystem::GetItemName(itemEntity), bSlot + 1);
 						break;
 					}
 					case LANGUAGE_DE: {
 						strlcpy(pack.szNameFrom, "[Switchbot]", sizeof(pack.szNameFrom));
-						len = snprintf(buf, sizeof(buf), "Der Switchbot hat Boni für %s Steckplätze(%d) gefunden.", pkItem->GetName(), bSlot + 1);
+						len = snprintf(buf, sizeof(buf), "Der Switchbot hat Boni für %s Steckplätze(%d) gefunden.", ItemSystem::GetItemName(itemEntity), bSlot + 1);
 						break;
 					}
 					case LANGUAGE_PL: {
 						strlcpy(pack.szNameFrom, "[Switchbot]", sizeof(pack.szNameFrom));
-						len = snprintf(buf, sizeof(buf), "Switchbot znalazl bonusy dla %s slotów(%d).", pkItem->GetName(), bSlot + 1);
+						len = snprintf(buf, sizeof(buf), "Switchbot znalazl bonusy dla %s slotów(%d).", ItemSystem::GetItemName(itemEntity), bSlot + 1);
 						break;
 					}
 					case LANGUAGE_PT: {
 						strlcpy(pack.szNameFrom, "[Switchbot]", sizeof(pack.szNameFrom));
-						len = snprintf(buf, sizeof(buf), "O Switchbot encontrou o bonus para %s slot(%d).", pkItem->GetName(), bSlot + 1);
+						len = snprintf(buf, sizeof(buf), "O Switchbot encontrou o bonus para %s slot(%d).", ItemSystem::GetItemName(itemEntity), bSlot + 1);
 						break;
 					}
 					case LANGUAGE_ES: {
 						strlcpy(pack.szNameFrom, "[Girabonus]", sizeof(pack.szNameFrom));
-						len = snprintf(buf, sizeof(buf), "El girabonus encontró bonos para %s ranuras(%d).", pkItem->GetName(), bSlot + 1);
+						len = snprintf(buf, sizeof(buf), "El girabonus encontró bonos para %s ranuras(%d).", ItemSystem::GetItemName(itemEntity), bSlot + 1);
 						break;
 					}
 					case LANGUAGE_CZ: {
 						strlcpy(pack.szNameFrom, "[Žirabonus]", sizeof(pack.szNameFrom));
-						len = snprintf(buf, sizeof(buf), "Žirabonus našel bonusy pro %s slotu(%d).", pkItem->GetName(), bSlot + 1);
+						len = snprintf(buf, sizeof(buf), "Žirabonus našel bonusy pro %s slotu(%d).", ItemSystem::GetItemName(itemEntity), bSlot + 1);
 						break;
 					}
 					case LANGUAGE_HU: {
 						strlcpy(pack.szNameFrom, "[Switchbot]", sizeof(pack.szNameFrom));
-						len = snprintf(buf, sizeof(buf), "A switchbot bónuszokat talált %s slot(%d) számára.", pkItem->GetName(), bSlot + 1);
+						len = snprintf(buf, sizeof(buf), "A switchbot bónuszokat talált %s slot(%d) számára.", ItemSystem::GetItemName(itemEntity), bSlot + 1);
 						break;
 					}
 					default: {
 						strlcpy(pack.szNameFrom, "[Switchbot]", sizeof(pack.szNameFrom));
-						len = snprintf(buf, sizeof(buf), "The switchbot have founded the bonus for %s slot(%d).", pkItem->GetName(), bSlot + 1);
+						len = snprintf(buf, sizeof(buf), "The switchbot have founded the bonus for %s slot(%d).", ItemSystem::GetItemName(itemEntity), bSlot + 1);
 						break;
 					}
 				}
 #else
-				int len = snprintf(buf, sizeof(buf), LC_TEXT("Bonuschange of %s (Slot: %d) successfully finished."), pkItem->GetName(), bSlot + 1);
+				int len = snprintf(buf, sizeof(buf), LC_TEXT("Bonuschange of %s (Slot: %d) successfully finished."), ItemSystem::GetItemName(itemEntity), bSlot + 1);
 #endif
 				pack.wSize = sizeof(TPacketGCWhisper) + len;
 				ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(pkOwner))->BufferedPacket(&pack, sizeof(pack));
@@ -427,7 +428,7 @@ void CSwitchbot::SwitchItems()
 			bool stop = true;
 			if (SWITCHBOT_PRICE_TYPE == 1)
 			{
-				uint32_t dwTargetVnum = ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, pkItem));
+				uint32_t dwTargetVnum = ItemSystem::GetItemVnum(itemEntity);
 				bool bZodiacItem = (
 #ifdef DISABLE_ZODIAC_ATT
 
@@ -478,14 +479,16 @@ void CSwitchbot::SwitchItems()
 #endif
 
 				if (bZodiacItem) {
-					if (pkOwner->CountSpecifyItem(86060) >= SWITCHBOT_PRICE_AMOUNT) {
+					if (ItemSystem::HasItem(ownerEntity, 86060, SWITCHBOT_PRICE_AMOUNT)) {
 						stop = false;
 					}
 
-					LPITEM tpkItem = pkOwner->FindSpecifyItem(86060, true);
-					if (tpkItem && !stop)
+					const entt::entity priceItemEntity = ItemSystem::FindSpecifyItem(ownerEntity, 86060, true);
+					if (ItemSystem::IsValidItem(priceItemEntity) && !stop)
 					{
-						ItemSystem::ConsumeItemEcs(EntityFactory::CreateItemEntity(g_registry, tpkItem), SWITCHBOT_PRICE_AMOUNT);
+						const uint32_t priceItemVnum = ItemSystem::GetItemVnum(priceItemEntity);
+						if (!ItemSystem::RemoveSpecifyItemEcs(ownerEntity, priceItemVnum, SWITCHBOT_PRICE_AMOUNT))
+							continue;
 #ifdef ENABLE_RANKING
 						pkOwner->SetRankPoints(12, pkOwner->GetRankPoints(12) + 1);
 #endif
@@ -496,24 +499,24 @@ void CSwitchbot::SwitchItems()
 							uint32_t dwItemVnum, dwUseCount;
 							if(CBattlePass::instance().BattlePassMissionGetInfo(bBattlePassId, USE_ITEM, &dwItemVnum, &dwUseCount))
 							{
-								if(dwItemVnum == ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, tpkItem)) && pkOwner->GetMissionProgress(USE_ITEM, bBattlePassId) < dwUseCount)
+								if(dwItemVnum == priceItemVnum && pkOwner->GetMissionProgress(USE_ITEM, bBattlePassId) < dwUseCount)
 									pkOwner->UpdateMissionProgress(USE_ITEM, bBattlePassId, 1, dwUseCount);
 							}
 
 							if (CBattlePass::instance().BattlePassMissionGetInfo(bBattlePassId, USE_ITEM1, &dwItemVnum, &dwUseCount))
 							{
-								if (dwItemVnum == ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, tpkItem)) && pkOwner->GetMissionProgress(USE_ITEM1, bBattlePassId) < dwUseCount)
+								if (dwItemVnum == priceItemVnum && pkOwner->GetMissionProgress(USE_ITEM1, bBattlePassId) < dwUseCount)
 									pkOwner->UpdateMissionProgress(USE_ITEM1, bBattlePassId, 1, dwUseCount);
 							}
 
 							if (CBattlePass::instance().BattlePassMissionGetInfo(bBattlePassId, USE_ITEM2, &dwItemVnum, &dwUseCount))
 							{
-								if (dwItemVnum == ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, tpkItem)) && pkOwner->GetMissionProgress(USE_ITEM2, bBattlePassId) < dwUseCount)
+								if (dwItemVnum == priceItemVnum && pkOwner->GetMissionProgress(USE_ITEM2, bBattlePassId) < dwUseCount)
 									pkOwner->UpdateMissionProgress(USE_ITEM2, bBattlePassId, 1, dwUseCount);
 							}
 						}
 #endif
-						ItemSystem::ChangeItemAttributeEcs(EntityFactory::CreateItemEntity(g_registry, pkItem));
+						ItemSystem::ChangeItemAttributeEcs(itemEntity);
 						SendItemUpdate(pkOwner, bSlot, itemEntity);
 
 
@@ -526,22 +529,22 @@ void CSwitchbot::SwitchItems()
 						//CHECK_LIMITED_ITEM START
 						if (itemVnum == 71151 || itemVnum == 76023)
 						{
-							if ((ItemSystem::GetItemType(EntityFactory::CreateItemEntity(g_registry, pkItem)) == ITEM_WEAPON) || ((ItemSystem::GetItemType(EntityFactory::CreateItemEntity(g_registry, pkItem)) == ITEM_ARMOR && ItemSystem::GetItemSubType(EntityFactory::CreateItemEntity(g_registry, pkItem)) == ARMOR_BODY)
+							if ((ItemSystem::GetItemType(itemEntity) == ITEM_WEAPON) || ((ItemSystem::GetItemType(itemEntity) == ITEM_ARMOR && ItemSystem::GetItemSubType(itemEntity) == ARMOR_BODY)
 #define __USE_ADD_WITH_ALL_ITEMS__
 #ifdef __USE_ADD_WITH_ALL_ITEMS__
-								|| (ItemSystem::GetItemType(EntityFactory::CreateItemEntity(g_registry, pkItem)) == ITEM_ARMOR && ItemSystem::GetItemSubType(EntityFactory::CreateItemEntity(g_registry, pkItem)) == ARMOR_HEAD)
-								|| (ItemSystem::GetItemType(EntityFactory::CreateItemEntity(g_registry, pkItem)) == ITEM_ARMOR && ItemSystem::GetItemSubType(EntityFactory::CreateItemEntity(g_registry, pkItem)) == ARMOR_SHIELD)
-								|| (ItemSystem::GetItemType(EntityFactory::CreateItemEntity(g_registry, pkItem)) == ITEM_ARMOR && ItemSystem::GetItemSubType(EntityFactory::CreateItemEntity(g_registry, pkItem)) == ARMOR_WRIST)
-								|| (ItemSystem::GetItemType(EntityFactory::CreateItemEntity(g_registry, pkItem)) == ITEM_ARMOR && ItemSystem::GetItemSubType(EntityFactory::CreateItemEntity(g_registry, pkItem)) == ARMOR_FOOTS)
-								|| (ItemSystem::GetItemType(EntityFactory::CreateItemEntity(g_registry, pkItem)) == ITEM_ARMOR && ItemSystem::GetItemSubType(EntityFactory::CreateItemEntity(g_registry, pkItem)) == ARMOR_NECK)
-								|| (ItemSystem::GetItemType(EntityFactory::CreateItemEntity(g_registry, pkItem)) == ITEM_ARMOR && ItemSystem::GetItemSubType(EntityFactory::CreateItemEntity(g_registry, pkItem)) == ARMOR_EAR)
+								|| (ItemSystem::GetItemType(itemEntity) == ITEM_ARMOR && ItemSystem::GetItemSubType(itemEntity) == ARMOR_HEAD)
+								|| (ItemSystem::GetItemType(itemEntity) == ITEM_ARMOR && ItemSystem::GetItemSubType(itemEntity) == ARMOR_SHIELD)
+								|| (ItemSystem::GetItemType(itemEntity) == ITEM_ARMOR && ItemSystem::GetItemSubType(itemEntity) == ARMOR_WRIST)
+								|| (ItemSystem::GetItemType(itemEntity) == ITEM_ARMOR && ItemSystem::GetItemSubType(itemEntity) == ARMOR_FOOTS)
+								|| (ItemSystem::GetItemType(itemEntity) == ITEM_ARMOR && ItemSystem::GetItemSubType(itemEntity) == ARMOR_NECK)
+								|| (ItemSystem::GetItemType(itemEntity) == ITEM_ARMOR && ItemSystem::GetItemSubType(itemEntity) == ARMOR_EAR)
 #endif
 								))
 							{
 								bool bCanUse = true;
 								for (int i = 0; i < ITEM_LIMIT_MAX_NUM; ++i)
 								{
-									if (pkItem->GetLimitType(i) == LIMIT_LEVEL && pkItem->GetLimitValue(i) > 30)
+									if (itemProto && itemProto->aLimits[i].bType == LIMIT_LEVEL && itemProto->aLimits[i].lValue > 30)
 									{
 										bCanUse = false;
 										break;
@@ -553,17 +556,19 @@ void CSwitchbot::SwitchItems()
 								}
 								else
 								{
-									if (pkOwner->CountSpecifyItem(itemVnum) >= SWITCHBOT_PRICE_AMOUNT)
+									if (ItemSystem::HasItem(ownerEntity, itemVnum, SWITCHBOT_PRICE_AMOUNT))
 									{
 										stop = false;
 									}
 
-									LPITEM tpkItem = pkOwner->FindSpecifyItem(itemVnum, true);
-									if (tpkItem && !stop)
+									const entt::entity priceItemEntity = ItemSystem::FindSpecifyItem(ownerEntity, itemVnum, true);
+									if (ItemSystem::IsValidItem(priceItemEntity) && !stop)
 									{
-										ItemSystem::ConsumeItemEcs(EntityFactory::CreateItemEntity(g_registry, tpkItem), SWITCHBOT_PRICE_AMOUNT);
+										const uint32_t priceItemVnum = ItemSystem::GetItemVnum(priceItemEntity);
+						if (!ItemSystem::RemoveSpecifyItemEcs(ownerEntity, priceItemVnum, SWITCHBOT_PRICE_AMOUNT))
+							continue;
 #ifdef ENABLE_RANKING
-										if (ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, tpkItem)) == 86051 || ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, tpkItem)) == 88965)
+										if (priceItemVnum == 86051 || priceItemVnum == 88965)
 											pkOwner->SetRankPoints(13, pkOwner->GetRankPoints(13) + 1);
 										else
 											pkOwner->SetRankPoints(12, pkOwner->GetRankPoints(12) + 1);
@@ -576,24 +581,24 @@ void CSwitchbot::SwitchItems()
 											uint32_t dwItemVnum, dwUseCount;
 											if(CBattlePass::instance().BattlePassMissionGetInfo(bBattlePassId, USE_ITEM, &dwItemVnum, &dwUseCount))
 											{
-												if(dwItemVnum == ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, tpkItem)) && pkOwner->GetMissionProgress(USE_ITEM, bBattlePassId) < dwUseCount)
+												if(dwItemVnum == priceItemVnum && pkOwner->GetMissionProgress(USE_ITEM, bBattlePassId) < dwUseCount)
 													pkOwner->UpdateMissionProgress(USE_ITEM, bBattlePassId, 1, dwUseCount);
 											}
 
 											if (CBattlePass::instance().BattlePassMissionGetInfo(bBattlePassId, USE_ITEM1, &dwItemVnum, &dwUseCount))
 											{
-												if (dwItemVnum == ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, tpkItem)) && pkOwner->GetMissionProgress(USE_ITEM1, bBattlePassId) < dwUseCount)
+												if (dwItemVnum == priceItemVnum && pkOwner->GetMissionProgress(USE_ITEM1, bBattlePassId) < dwUseCount)
 													pkOwner->UpdateMissionProgress(USE_ITEM1, bBattlePassId, 1, dwUseCount);
 											}
 
 											if (CBattlePass::instance().BattlePassMissionGetInfo(bBattlePassId, USE_ITEM2, &dwItemVnum, &dwUseCount))
 											{
-												if (dwItemVnum == ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, tpkItem)) && pkOwner->GetMissionProgress(USE_ITEM2, bBattlePassId) < dwUseCount)
+												if (dwItemVnum == priceItemVnum && pkOwner->GetMissionProgress(USE_ITEM2, bBattlePassId) < dwUseCount)
 													pkOwner->UpdateMissionProgress(USE_ITEM2, bBattlePassId, 1, dwUseCount);
 											}
 										}
 #endif
-										ItemSystem::ChangeItemAttributeEcs(EntityFactory::CreateItemEntity(g_registry, pkItem));
+										ItemSystem::ChangeItemAttributeEcs(itemEntity);
 										SendItemUpdate(pkOwner, bSlot, itemEntity);
 										break;
 									}
@@ -606,16 +611,18 @@ void CSwitchbot::SwitchItems()
 						}
 						//CHECK_LIMITED_ITEM END
 
-						if (pkOwner->CountSpecifyItem(itemVnum) >= SWITCHBOT_PRICE_AMOUNT)
+						if (ItemSystem::HasItem(ownerEntity, itemVnum, SWITCHBOT_PRICE_AMOUNT))
 						{
 							stop = false;
 						}
-						LPITEM tpkItem = pkOwner->FindSpecifyItem(itemVnum, true);
-						if (tpkItem && !stop)
+						const entt::entity priceItemEntity = ItemSystem::FindSpecifyItem(ownerEntity, itemVnum, true);
+						if (ItemSystem::IsValidItem(priceItemEntity) && !stop)
 						{
-							ItemSystem::ConsumeItemEcs(EntityFactory::CreateItemEntity(g_registry, tpkItem), SWITCHBOT_PRICE_AMOUNT);
+							const uint32_t priceItemVnum = ItemSystem::GetItemVnum(priceItemEntity);
+						if (!ItemSystem::RemoveSpecifyItemEcs(ownerEntity, priceItemVnum, SWITCHBOT_PRICE_AMOUNT))
+							continue;
 #ifdef ENABLE_RANKING
-							if (ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, tpkItem)) == 86051 || ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, tpkItem)) == 88965)
+							if (priceItemVnum == 86051 || priceItemVnum == 88965)
 								pkOwner->SetRankPoints(13, pkOwner->GetRankPoints(13) + 1);
 							else
 								pkOwner->SetRankPoints(12, pkOwner->GetRankPoints(12) + 1);
@@ -628,24 +635,24 @@ void CSwitchbot::SwitchItems()
 								uint32_t dwItemVnum, dwUseCount;
 								if(CBattlePass::instance().BattlePassMissionGetInfo(bBattlePassId, USE_ITEM, &dwItemVnum, &dwUseCount))
 								{
-									if(dwItemVnum == ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, tpkItem)) && pkOwner->GetMissionProgress(USE_ITEM, bBattlePassId) < dwUseCount)
+									if(dwItemVnum == priceItemVnum && pkOwner->GetMissionProgress(USE_ITEM, bBattlePassId) < dwUseCount)
 										pkOwner->UpdateMissionProgress(USE_ITEM, bBattlePassId, 1, dwUseCount);
 								}
 
 								if (CBattlePass::instance().BattlePassMissionGetInfo(bBattlePassId, USE_ITEM1, &dwItemVnum, &dwUseCount))
 								{
-									if (dwItemVnum == ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, tpkItem)) && pkOwner->GetMissionProgress(USE_ITEM1, bBattlePassId) < dwUseCount)
+									if (dwItemVnum == priceItemVnum && pkOwner->GetMissionProgress(USE_ITEM1, bBattlePassId) < dwUseCount)
 										pkOwner->UpdateMissionProgress(USE_ITEM1, bBattlePassId, 1, dwUseCount);
 								}
 
 								if (CBattlePass::instance().BattlePassMissionGetInfo(bBattlePassId, USE_ITEM2, &dwItemVnum, &dwUseCount))
 								{
-									if (dwItemVnum == ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, tpkItem)) && pkOwner->GetMissionProgress(USE_ITEM2, bBattlePassId) < dwUseCount)
+									if (dwItemVnum == priceItemVnum && pkOwner->GetMissionProgress(USE_ITEM2, bBattlePassId) < dwUseCount)
 										pkOwner->UpdateMissionProgress(USE_ITEM2, bBattlePassId, 1, dwUseCount);
 								}
 							}
 #endif
-							ItemSystem::ChangeItemAttributeEcs(EntityFactory::CreateItemEntity(g_registry, pkItem));
+							ItemSystem::ChangeItemAttributeEcs(itemEntity);
 							SendItemUpdate(pkOwner, bSlot, itemEntity);
 							break;
 						}

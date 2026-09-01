@@ -1,6 +1,8 @@
 #ifndef __INC_METIN_II_GAME_SHOP_H__
 #define __INC_METIN_II_GAME_SHOP_H__
 
+#include <entt/entity/entity.hpp>
+
 enum
 {
 	SHOP_MAX_DISTANCE = 1000
@@ -23,7 +25,7 @@ class CShop
 #else
 			uint8_t			count;
 #endif
-			LPITEM			pkItem;
+			entt::entity		pkItem;
 			int				itemid;
 #ifdef ENABLE_BUY_WITH_ITEM
 			TShopItemPrice	itemprice[MAX_SHOP_PRICES];
@@ -37,7 +39,7 @@ class CShop
 #ifdef ENABLE_BUY_WITH_ITEM
 				memset(itemprice, 0, sizeof(itemprice));
 #endif
-				pkItem = nullptr;
+				pkItem = entt::null;
 			}
 		} SHOP_ITEM;
 

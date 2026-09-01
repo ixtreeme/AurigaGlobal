@@ -2,6 +2,7 @@
 #include <Core/Logging.hpp>
 #include "ecs/systems/PlayerRuntimeSystem.hpp"
 #include "ecs/AIHelpers.hpp"
+#include "ecs/EntityFactory.hpp"
 #include "ecs/systems/SocialSystem.hpp"
 #include "questlua.h"
 #include "questmanager.h"
@@ -261,7 +262,7 @@ namespace quest
 		auto* ch = ecs::LegacyCharOf(chEntity);
 		if (ecs::SocialSystem::GetParty(AIHelpers::EcsOf(ch)))
 		{
-			FPartyDropDiceRoll f(item, ch);
+			FPartyDropDiceRoll f(EntityFactory::CreateItemEntity(g_registry, item), ch);
 			f.Process(nullptr);
 		}
 

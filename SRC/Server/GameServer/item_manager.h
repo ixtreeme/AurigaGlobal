@@ -1,6 +1,8 @@
 #ifndef __INC_ITEM_MANAGER__
 #define __INC_ITEM_MANAGER__
 
+#include <entt/entity/entity.hpp>
+
 #ifdef M2_USE_POOL
 #include "pool.h"
 #endif
@@ -11,6 +13,12 @@
 #include <common/CommonDefines.h>
 
 #include "fifo_allocator.h"
+
+struct TargetInfoItem
+{
+	uint32_t vnum = 0;
+	uint32_t count = 0;
+};
 
 // special_item_group.txt에서 정의하는 속성 그룹
 // type attr로 선언할 수 있다.
@@ -417,9 +425,9 @@ class ITEM_MANAGER : public singleton<ITEM_MANAGER>
 		bool			GetVnumByOriginalName(const char * c_pszName, uint32_t & r_dwVnum);
 
 		bool			GetDropPct(LPCHARACTER pkChr, LPCHARACTER pkKiller, OUT int& iDeltaPercent, OUT int& iRandRange);
-		bool			CreateDropItem(LPCHARACTER pkChr, LPCHARACTER pkKiller, std::vector<LPITEM> & vec_item);
+		bool			CreateDropItem(LPCHARACTER pkChr, LPCHARACTER pkKiller, std::vector<entt::entity>& vec_item);
 #ifdef __SEND_TARGET_INFO__
-		bool			CreateDropItemVector(LPCHARACTER pkChr, LPCHARACTER pkKiller, std::vector<LPITEM> & vec_item);
+		bool			CreateDropItemVector(LPCHARACTER pkChr, LPCHARACTER pkKiller, std::vector<TargetInfoItem>& items);
 #endif
 		bool			ReadCommonDropItemFile(const char * c_pszFileName);
 		bool			ReadEtcDropItemFile(const char * c_pszFileName);
@@ -447,10 +455,10 @@ class ITEM_MANAGER : public singleton<ITEM_MANAGER>
 
 	protected:
 		int                     RealNumber( uint32_t vnum) const;
-		void			CreateQuestDropItem(LPCHARACTER pkChr, LPCHARACTER pkKiller, std::vector<LPITEM> & vec_item, int iDeltaPercent, int iRandRange);
+		void			CreateQuestDropItem(LPCHARACTER pkChr, LPCHARACTER pkKiller, std::vector<entt::entity>& vec_item, int iDeltaPercent, int iRandRange);
 
 	protected:
-		typedef std::map<uint32_t, LPITEM> ITEM_VID_MAP;
+		typedef std::map<uint32_t, entt::entity> ITEM_VID_MAP;
 
 #ifdef ENABLE_ITEM_EXTRA_PROTO
 		std::map<uint32_t, TItemExtraProto> m_map_ExtraProto;
@@ -469,8 +477,8 @@ class ITEM_MANAGER : public singleton<ITEM_MANAGER>
 		TItemIDRangeTable	m_ItemIDRange;
 		TItemIDRangeTable	m_ItemIDSpareRange;
 
-		std::unordered_set<LPITEM> m_set_pkItemForDelayedSave;
-		std::map<uint32_t, LPITEM>		m_map_pkItemByID;
+		std::unordered_set<entt::entity> m_set_pkItemForDelayedSave;
+		std::map<uint32_t, entt::entity>		m_map_pkItemByID;
 		std::map<uint32_t, uint32_t>		m_map_dwEtcItemDropProb;
 		std::map<uint32_t, CDropItemGroup*> m_map_pkDropItemGroup;
 		std::map<uint32_t, CSpecialItemGroup*> m_map_pkSpecialItemGroup;

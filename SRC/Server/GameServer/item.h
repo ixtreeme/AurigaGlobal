@@ -2,6 +2,7 @@
 #define __INC_METIN_II_GAME_ITEM_H__
 
 #include "entity.h"
+#include <entt/entity/entity.hpp>
 
 class CItem : public CEntity
 {
@@ -392,11 +393,11 @@ class CItem : public CEntity
 
 EVENTINFO(item_event_info)
 {
-	LPITEM item;
+	entt::entity item;
 	char szOwnerName[CHARACTER_NAME_MAX_LEN];
 
 	item_event_info()
-	: item( nullptr )
+	: item(entt::null)
 	{
 		::memset( szOwnerName, 0, CHARACTER_NAME_MAX_LEN );
 	}
@@ -404,13 +405,13 @@ EVENTINFO(item_event_info)
 
 EVENTINFO(item_vid_event_info)
 {
-	uint32_t item_vid;
+	entt::entity item;
 #ifdef ENABLE_NEW_USE_POTION
 	bool newpotion;
 #endif
 
 	item_vid_event_info()
-	: item_vid( 0 )
+	: item(entt::null)
 #ifdef ENABLE_NEW_USE_POTION
 	, newpotion(false)
 #endif

@@ -1,0 +1,299 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="18.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <PreferredToolArchitecture>x64</PreferredToolArchitecture>
+  </PropertyGroup>
+  <PropertyGroup>
+    <ResolveNugetPackages>false</ResolveNugetPackages>
+  </PropertyGroup>
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="MinSizeRel|x64">
+      <Configuration>MinSizeRel</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="RelWithDebInfo|x64">
+      <Configuration>RelWithDebInfo</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{C07CB612-9E80-3494-A93D-831E8855D400}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+    <WindowsTargetPlatformVersion>10.0.28000.0</WindowsTargetPlatformVersion>
+    <Platform>x64</Platform>
+    <ProjectName>ALL_BUILD</ProjectName>
+    <VCProjectUpgraderObjectName>NoUpgrade</VCProjectUpgraderObjectName>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>Utility</ConfigurationType>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v145</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>Utility</ConfigurationType>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v145</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'" Label="Configuration">
+    <ConfigurationType>Utility</ConfigurationType>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v145</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'" Label="Configuration">
+    <ConfigurationType>Utility</ConfigurationType>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v145</PlatformToolset>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup>
+    <_ProjectFileVersion>10.0.20506.1</_ProjectFileVersion>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <Midl>
+      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
+      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
+    </Midl>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <Midl>
+      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
+      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
+    </Midl>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">
+    <Midl>
+      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
+      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
+    </Midl>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">
+    <Midl>
+      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
+      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
+    </Midl>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <CustomBuild Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\CMakeLists.txt">
+      <UseUtf8Encoding>Always</UseUtf8Encoding>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Building Custom Rule D:/AurigaGlobal/LiveWork/AurigaGlobal/CMakeLists.txt</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -SD:/AurigaGlobal/LiveWork/AurigaGlobal -BD:/AurigaGlobal/LiveWork/AurigaGlobal/build-asan --check-stamp-file D:/AurigaGlobal/LiveWork/AurigaGlobal/build-asan/CMakeFiles/generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeCInformation.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeCXXInformation.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeCommonLanguageInclude.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeDependentOption.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeFindDependencyMacro.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeGenericSystem.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeInitializeConfigs.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeLanguageInformation.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeRCInformation.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeSystemSpecificInformation.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeSystemSpecificInitialize.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\CMakeCommonCompilerMacros.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\MSVC-C.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\MSVC-CXX.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\MSVC.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\FindPackageHandleStandardArgs.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\FindPackageMessage.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\FindPython\Support.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\FindZLIB.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Findpython2.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Internal\CMakeCLinkerInformation.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Internal\CMakeCXXLinkerInformation.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Internal\CMakeCommonLinkerInformation.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Linker\MSVC-C.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Linker\MSVC-CXX.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Linker\MSVC.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Platform\Linker\Windows-MSVC-C.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Platform\Linker\Windows-MSVC-CXX.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Platform\Linker\Windows-MSVC.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Platform\Windows-Initialize.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Platform\Windows-MSVC-C.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Platform\Windows-MSVC-CXX.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Platform\Windows-MSVC.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Platform\Windows.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Platform\WindowsPaths.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\SelectLibraryConfigurations.cmake;C:\vcpkg\installed\x64-windows\share\cryptopp\cryptopp-static-targets-debug.cmake;C:\vcpkg\installed\x64-windows\share\cryptopp\cryptopp-static-targets-release.cmake;C:\vcpkg\installed\x64-windows\share\cryptopp\cryptopp-static-targets.cmake;C:\vcpkg\installed\x64-windows\share\cryptopp\cryptoppConfig.cmake;C:\vcpkg\installed\x64-windows\share\cryptopp\cryptoppConfigVersion.cmake;C:\vcpkg\installed\x64-windows\share\curl\CURLConfig.cmake;C:\vcpkg\installed\x64-windows\share\curl\CURLConfigVersion.cmake;C:\vcpkg\installed\x64-windows\share\curl\CURLTargets-debug.cmake;C:\vcpkg\installed\x64-windows\share\curl\CURLTargets-release.cmake;C:\vcpkg\installed\x64-windows\share\curl\CURLTargets.cmake;C:\vcpkg\installed\x64-windows\share\curl\vcpkg-cmake-wrapper.cmake;C:\vcpkg\installed\x64-windows\share\entt\EnTTConfig.cmake;C:\vcpkg\installed\x64-windows\share\entt\EnTTConfigVersion.cmake;C:\vcpkg\installed\x64-windows\share\entt\EnTTTargets.cmake;C:\vcpkg\installed\x64-windows\share\libconfig\libconfigConfig-debug.cmake;C:\vcpkg\installed\x64-windows\share\libconfig\libconfigConfig-release.cmake;C:\vcpkg\installed\x64-windows\share\libconfig\libconfigConfig.cmake;C:\vcpkg\installed\x64-windows\share\libconfig\libconfigConfigVersion.cmake;C:\vcpkg\installed\x64-windows\share\libjpeg-turbo\libjpeg-turboConfig.cmake;C:\vcpkg\installed\x64-windows\share\libjpeg-turbo\libjpeg-turboConfigVersion.cmake;C:\vcpkg\installed\x64-windows\share\libjpeg-turbo\libjpeg-turboTargets-debug.cmake;C:\vcpkg\installed\x64-windows\share\libjpeg-turbo\libjpeg-turboTargets-release.cmake;C:\vcpkg\installed\x64-windows\share\libjpeg-turbo\libjpeg-turboTargets.cmake;C:\vcpkg\installed\x64-windows\share\lz4\lz4Config.cmake;C:\vcpkg\installed\x64-windows\share\lz4\lz4ConfigVersion.cmake;C:\vcpkg\installed\x64-windows\share\lz4\lz4Targets-debug.cmake;C:\vcpkg\installed\x64-windows\share\lz4\lz4Targets-release.cmake;C:\vcpkg\installed\x64-windows\share\lz4\lz4Targets.cmake;C:\vcpkg\installed\x64-windows\share\rapidjson\RapidJSON-targets.cmake;C:\vcpkg\installed\x64-windows\share\rapidjson\RapidJSONConfig.cmake;C:\vcpkg\installed\x64-windows\share\rapidjson\RapidJSONConfigVersion.cmake;C:\vcpkg\installed\x64-windows\share\stb\Findstb.cmake;C:\vcpkg\installed\x64-windows\share\stb\vcpkg-cmake-wrapper.cmake;C:\vcpkg\installed\x64-windows\share\xxhash\xxHashConfig.cmake;C:\vcpkg\installed\x64-windows\share\xxhash\xxHashConfigVersion.cmake;C:\vcpkg\installed\x64-windows\share\xxhash\xxHashTargets-debug.cmake;C:\vcpkg\installed\x64-windows\share\xxhash\xxHashTargets-release.cmake;C:\vcpkg\installed\x64-windows\share\xxhash\xxHashTargets.cmake;C:\vcpkg\installed\x64-windows\share\zlib\vcpkg-cmake-wrapper.cmake;C:\vcpkg\installed\x64-windows\share\zstd\zstdConfig.cmake;C:\vcpkg\installed\x64-windows\share\zstd\zstdConfigVersion.cmake;C:\vcpkg\installed\x64-windows\share\zstd\zstdTargets-debug.cmake;C:\vcpkg\installed\x64-windows\share\zstd\zstdTargets-release.cmake;C:\vcpkg\installed\x64-windows\share\zstd\zstdTargets.cmake;C:\vcpkg\scripts\buildsystems\vcpkg.cmake;D:\AurigaGlobal\LiveWork\AurigaGlobal\build-asan\CMakeFiles\4.3.2\CMakeCCompiler.cmake;D:\AurigaGlobal\LiveWork\AurigaGlobal\build-asan\CMakeFiles\4.3.2\CMakeCXXCompiler.cmake;D:\AurigaGlobal\LiveWork\AurigaGlobal\build-asan\CMakeFiles\4.3.2\CMakeRCCompiler.cmake;D:\AurigaGlobal\LiveWork\AurigaGlobal\build-asan\CMakeFiles\4.3.2\CMakeSystem.cmake;D:\AurigaGlobal\LiveWork\AurigaGlobal\build-asan\CMakeFiles\cmake.verify_globs;D:\AurigaGlobal\LiveWork\AurigaGlobal\cmake\BootstrapVcpkg.cmake;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">D:\AurigaGlobal\LiveWork\AurigaGlobal\build-asan\CMakeFiles\generate.stamp</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Building Custom Rule D:/AurigaGlobal/LiveWork/AurigaGlobal/CMakeLists.txt</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -SD:/AurigaGlobal/LiveWork/AurigaGlobal -BD:/AurigaGlobal/LiveWork/AurigaGlobal/build-asan --check-stamp-file D:/AurigaGlobal/LiveWork/AurigaGlobal/build-asan/CMakeFiles/generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeCInformation.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeCXXInformation.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeCommonLanguageInclude.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeDependentOption.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeFindDependencyMacro.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeGenericSystem.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeInitializeConfigs.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeLanguageInformation.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeRCInformation.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeSystemSpecificInformation.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeSystemSpecificInitialize.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\CMakeCommonCompilerMacros.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\MSVC-C.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\MSVC-CXX.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\MSVC.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\FindPackageHandleStandardArgs.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\FindPackageMessage.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\FindPython\Support.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\FindZLIB.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Findpython2.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Internal\CMakeCLinkerInformation.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Internal\CMakeCXXLinkerInformation.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Internal\CMakeCommonLinkerInformation.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Linker\MSVC-C.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Linker\MSVC-CXX.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Linker\MSVC.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Platform\Linker\Windows-MSVC-C.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Platform\Linker\Windows-MSVC-CXX.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Platform\Linker\Windows-MSVC.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Platform\Windows-Initialize.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Platform\Windows-MSVC-C.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Platform\Windows-MSVC-CXX.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Platform\Windows-MSVC.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Platform\Windows.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Platform\WindowsPaths.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\SelectLibraryConfigurations.cmake;C:\vcpkg\installed\x64-windows\share\cryptopp\cryptopp-static-targets-debug.cmake;C:\vcpkg\installed\x64-windows\share\cryptopp\cryptopp-static-targets-release.cmake;C:\vcpkg\installed\x64-windows\share\cryptopp\cryptopp-static-targets.cmake;C:\vcpkg\installed\x64-windows\share\cryptopp\cryptoppConfig.cmake;C:\vcpkg\installed\x64-windows\share\cryptopp\cryptoppConfigVersion.cmake;C:\vcpkg\installed\x64-windows\share\curl\CURLConfig.cmake;C:\vcpkg\installed\x64-windows\share\curl\CURLConfigVersion.cmake;C:\vcpkg\installed\x64-windows\share\curl\CURLTargets-debug.cmake;C:\vcpkg\installed\x64-windows\share\curl\CURLTargets-release.cmake;C:\vcpkg\installed\x64-windows\share\curl\CURLTargets.cmake;C:\vcpkg\installed\x64-windows\share\curl\vcpkg-cmake-wrapper.cmake;C:\vcpkg\installed\x64-windows\share\entt\EnTTConfig.cmake;C:\vcpkg\installed\x64-windows\share\entt\EnTTConfigVersion.cmake;C:\vcpkg\installed\x64-windows\share\entt\EnTTTargets.cmake;C:\vcpkg\installed\x64-windows\share\libconfig\libconfigConfig-debug.cmake;C:\vcpkg\installed\x64-windows\share\libconfig\libconfigConfig-release.cmake;C:\vcpkg\installed\x64-windows\share\libconfig\libconfigConfig.cmake;C:\vcpkg\installed\x64-windows\share\libconfig\libconfigConfigVersion.cmake;C:\vcpkg\installed\x64-windows\share\libjpeg-turbo\libjpeg-turboConfig.cmake;C:\vcpkg\installed\x64-windows\share\libjpeg-turbo\libjpeg-turboConfigVersion.cmake;C:\vcpkg\installed\x64-windows\share\libjpeg-turbo\libjpeg-turboTargets-debug.cmake;C:\vcpkg\installed\x64-windows\share\libjpeg-turbo\libjpeg-turboTargets-release.cmake;C:\vcpkg\installed\x64-windows\share\libjpeg-turbo\libjpeg-turboTargets.cmake;C:\vcpkg\installed\x64-windows\share\lz4\lz4Config.cmake;C:\vcpkg\installed\x64-windows\share\lz4\lz4ConfigVersion.cmake;C:\vcpkg\installed\x64-windows\share\lz4\lz4Targets-debug.cmake;C:\vcpkg\installed\x64-windows\share\lz4\lz4Targets-release.cmake;C:\vcpkg\installed\x64-windows\share\lz4\lz4Targets.cmake;C:\vcpkg\installed\x64-windows\share\rapidjson\RapidJSON-targets.cmake;C:\vcpkg\installed\x64-windows\share\rapidjson\RapidJSONConfig.cmake;C:\vcpkg\installed\x64-windows\share\rapidjson\RapidJSONConfigVersion.cmake;C:\vcpkg\installed\x64-windows\share\stb\Findstb.cmake;C:\vcpkg\installed\x64-windows\share\stb\vcpkg-cmake-wrapper.cmake;C:\vcpkg\installed\x64-windows\share\xxhash\xxHashConfig.cmake;C:\vcpkg\installed\x64-windows\share\xxhash\xxHashConfigVersion.cmake;C:\vcpkg\installed\x64-windows\share\xxhash\xxHashTargets-debug.cmake;C:\vcpkg\installed\x64-windows\share\xxhash\xxHashTargets-release.cmake;C:\vcpkg\installed\x64-windows\share\xxhash\xxHashTargets.cmake;C:\vcpkg\installed\x64-windows\share\zlib\vcpkg-cmake-wrapper.cmake;C:\vcpkg\installed\x64-windows\share\zstd\zstdConfig.cmake;C:\vcpkg\installed\x64-windows\share\zstd\zstdConfigVersion.cmake;C:\vcpkg\installed\x64-windows\share\zstd\zstdTargets-debug.cmake;C:\vcpkg\installed\x64-windows\share\zstd\zstdTargets-release.cmake;C:\vcpkg\installed\x64-windows\share\zstd\zstdTargets.cmake;C:\vcpkg\scripts\buildsystems\vcpkg.cmake;D:\AurigaGlobal\LiveWork\AurigaGlobal\build-asan\CMakeFiles\4.3.2\CMakeCCompiler.cmake;D:\AurigaGlobal\LiveWork\AurigaGlobal\build-asan\CMakeFiles\4.3.2\CMakeCXXCompiler.cmake;D:\AurigaGlobal\LiveWork\AurigaGlobal\build-asan\CMakeFiles\4.3.2\CMakeRCCompiler.cmake;D:\AurigaGlobal\LiveWork\AurigaGlobal\build-asan\CMakeFiles\4.3.2\CMakeSystem.cmake;D:\AurigaGlobal\LiveWork\AurigaGlobal\build-asan\CMakeFiles\cmake.verify_globs;D:\AurigaGlobal\LiveWork\AurigaGlobal\cmake\BootstrapVcpkg.cmake;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">D:\AurigaGlobal\LiveWork\AurigaGlobal\build-asan\CMakeFiles\generate.stamp</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">Building Custom Rule D:/AurigaGlobal/LiveWork/AurigaGlobal/CMakeLists.txt</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -SD:/AurigaGlobal/LiveWork/AurigaGlobal -BD:/AurigaGlobal/LiveWork/AurigaGlobal/build-asan --check-stamp-file D:/AurigaGlobal/LiveWork/AurigaGlobal/build-asan/CMakeFiles/generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeCInformation.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeCXXInformation.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeCommonLanguageInclude.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeDependentOption.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeFindDependencyMacro.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeGenericSystem.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeInitializeConfigs.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeLanguageInformation.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeRCInformation.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeSystemSpecificInformation.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeSystemSpecificInitialize.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\CMakeCommonCompilerMacros.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\MSVC-C.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\MSVC-CXX.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\MSVC.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\FindPackageHandleStandardArgs.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\FindPackageMessage.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\FindPython\Support.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\FindZLIB.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Findpython2.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Internal\CMakeCLinkerInformation.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Internal\CMakeCXXLinkerInformation.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Internal\CMakeCommonLinkerInformation.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Linker\MSVC-C.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Linker\MSVC-CXX.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Linker\MSVC.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Platform\Linker\Windows-MSVC-C.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Platform\Linker\Windows-MSVC-CXX.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Platform\Linker\Windows-MSVC.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Platform\Windows-Initialize.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Platform\Windows-MSVC-C.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Platform\Windows-MSVC-CXX.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Platform\Windows-MSVC.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Platform\Windows.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Platform\WindowsPaths.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\SelectLibraryConfigurations.cmake;C:\vcpkg\installed\x64-windows\share\cryptopp\cryptopp-static-targets-debug.cmake;C:\vcpkg\installed\x64-windows\share\cryptopp\cryptopp-static-targets-release.cmake;C:\vcpkg\installed\x64-windows\share\cryptopp\cryptopp-static-targets.cmake;C:\vcpkg\installed\x64-windows\share\cryptopp\cryptoppConfig.cmake;C:\vcpkg\installed\x64-windows\share\cryptopp\cryptoppConfigVersion.cmake;C:\vcpkg\installed\x64-windows\share\curl\CURLConfig.cmake;C:\vcpkg\installed\x64-windows\share\curl\CURLConfigVersion.cmake;C:\vcpkg\installed\x64-windows\share\curl\CURLTargets-debug.cmake;C:\vcpkg\installed\x64-windows\share\curl\CURLTargets-release.cmake;C:\vcpkg\installed\x64-windows\share\curl\CURLTargets.cmake;C:\vcpkg\installed\x64-windows\share\curl\vcpkg-cmake-wrapper.cmake;C:\vcpkg\installed\x64-windows\share\entt\EnTTConfig.cmake;C:\vcpkg\installed\x64-windows\share\entt\EnTTConfigVersion.cmake;C:\vcpkg\installed\x64-windows\share\entt\EnTTTargets.cmake;C:\vcpkg\installed\x64-windows\share\libconfig\libconfigConfig-debug.cmake;C:\vcpkg\installed\x64-windows\share\libconfig\libconfigConfig-release.cmake;C:\vcpkg\installed\x64-windows\share\libconfig\libconfigConfig.cmake;C:\vcpkg\installed\x64-windows\share\libconfig\libconfigConfigVersion.cmake;C:\vcpkg\installed\x64-windows\share\libjpeg-turbo\libjpeg-turboConfig.cmake;C:\vcpkg\installed\x64-windows\share\libjpeg-turbo\libjpeg-turboConfigVersion.cmake;C:\vcpkg\installed\x64-windows\share\libjpeg-turbo\libjpeg-turboTargets-debug.cmake;C:\vcpkg\installed\x64-windows\share\libjpeg-turbo\libjpeg-turboTargets-release.cmake;C:\vcpkg\installed\x64-windows\share\libjpeg-turbo\libjpeg-turboTargets.cmake;C:\vcpkg\installed\x64-windows\share\lz4\lz4Config.cmake;C:\vcpkg\installed\x64-windows\share\lz4\lz4ConfigVersion.cmake;C:\vcpkg\installed\x64-windows\share\lz4\lz4Targets-debug.cmake;C:\vcpkg\installed\x64-windows\share\lz4\lz4Targets-release.cmake;C:\vcpkg\installed\x64-windows\share\lz4\lz4Targets.cmake;C:\vcpkg\installed\x64-windows\share\rapidjson\RapidJSON-targets.cmake;C:\vcpkg\installed\x64-windows\share\rapidjson\RapidJSONConfig.cmake;C:\vcpkg\installed\x64-windows\share\rapidjson\RapidJSONConfigVersion.cmake;C:\vcpkg\installed\x64-windows\share\stb\Findstb.cmake;C:\vcpkg\installed\x64-windows\share\stb\vcpkg-cmake-wrapper.cmake;C:\vcpkg\installed\x64-windows\share\xxhash\xxHashConfig.cmake;C:\vcpkg\installed\x64-windows\share\xxhash\xxHashConfigVersion.cmake;C:\vcpkg\installed\x64-windows\share\xxhash\xxHashTargets-debug.cmake;C:\vcpkg\installed\x64-windows\share\xxhash\xxHashTargets-release.cmake;C:\vcpkg\installed\x64-windows\share\xxhash\xxHashTargets.cmake;C:\vcpkg\installed\x64-windows\share\zlib\vcpkg-cmake-wrapper.cmake;C:\vcpkg\installed\x64-windows\share\zstd\zstdConfig.cmake;C:\vcpkg\installed\x64-windows\share\zstd\zstdConfigVersion.cmake;C:\vcpkg\installed\x64-windows\share\zstd\zstdTargets-debug.cmake;C:\vcpkg\installed\x64-windows\share\zstd\zstdTargets-release.cmake;C:\vcpkg\installed\x64-windows\share\zstd\zstdTargets.cmake;C:\vcpkg\scripts\buildsystems\vcpkg.cmake;D:\AurigaGlobal\LiveWork\AurigaGlobal\build-asan\CMakeFiles\4.3.2\CMakeCCompiler.cmake;D:\AurigaGlobal\LiveWork\AurigaGlobal\build-asan\CMakeFiles\4.3.2\CMakeCXXCompiler.cmake;D:\AurigaGlobal\LiveWork\AurigaGlobal\build-asan\CMakeFiles\4.3.2\CMakeRCCompiler.cmake;D:\AurigaGlobal\LiveWork\AurigaGlobal\build-asan\CMakeFiles\4.3.2\CMakeSystem.cmake;D:\AurigaGlobal\LiveWork\AurigaGlobal\build-asan\CMakeFiles\cmake.verify_globs;D:\AurigaGlobal\LiveWork\AurigaGlobal\cmake\BootstrapVcpkg.cmake;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">D:\AurigaGlobal\LiveWork\AurigaGlobal\build-asan\CMakeFiles\generate.stamp</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">Building Custom Rule D:/AurigaGlobal/LiveWork/AurigaGlobal/CMakeLists.txt</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -SD:/AurigaGlobal/LiveWork/AurigaGlobal -BD:/AurigaGlobal/LiveWork/AurigaGlobal/build-asan --check-stamp-file D:/AurigaGlobal/LiveWork/AurigaGlobal/build-asan/CMakeFiles/generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeCInformation.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeCXXInformation.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeCommonLanguageInclude.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeDependentOption.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeFindDependencyMacro.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeGenericSystem.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeInitializeConfigs.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeLanguageInformation.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeRCInformation.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeSystemSpecificInformation.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\CMakeSystemSpecificInitialize.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\CMakeCommonCompilerMacros.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\MSVC-C.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\MSVC-CXX.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Compiler\MSVC.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\FindPackageHandleStandardArgs.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\FindPackageMessage.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\FindPython\Support.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\FindZLIB.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Findpython2.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Internal\CMakeCLinkerInformation.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Internal\CMakeCXXLinkerInformation.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Internal\CMakeCommonLinkerInformation.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Linker\MSVC-C.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Linker\MSVC-CXX.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Linker\MSVC.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Platform\Linker\Windows-MSVC-C.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Platform\Linker\Windows-MSVC-CXX.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Platform\Linker\Windows-MSVC.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Platform\Windows-Initialize.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Platform\Windows-MSVC-C.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Platform\Windows-MSVC-CXX.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Platform\Windows-MSVC.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Platform\Windows.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\Platform\WindowsPaths.cmake;C:\Program Files\CMake\share\cmake-4.3\Modules\SelectLibraryConfigurations.cmake;C:\vcpkg\installed\x64-windows\share\cryptopp\cryptopp-static-targets-debug.cmake;C:\vcpkg\installed\x64-windows\share\cryptopp\cryptopp-static-targets-release.cmake;C:\vcpkg\installed\x64-windows\share\cryptopp\cryptopp-static-targets.cmake;C:\vcpkg\installed\x64-windows\share\cryptopp\cryptoppConfig.cmake;C:\vcpkg\installed\x64-windows\share\cryptopp\cryptoppConfigVersion.cmake;C:\vcpkg\installed\x64-windows\share\curl\CURLConfig.cmake;C:\vcpkg\installed\x64-windows\share\curl\CURLConfigVersion.cmake;C:\vcpkg\installed\x64-windows\share\curl\CURLTargets-debug.cmake;C:\vcpkg\installed\x64-windows\share\curl\CURLTargets-release.cmake;C:\vcpkg\installed\x64-windows\share\curl\CURLTargets.cmake;C:\vcpkg\installed\x64-windows\share\curl\vcpkg-cmake-wrapper.cmake;C:\vcpkg\installed\x64-windows\share\entt\EnTTConfig.cmake;C:\vcpkg\installed\x64-windows\share\entt\EnTTConfigVersion.cmake;C:\vcpkg\installed\x64-windows\share\entt\EnTTTargets.cmake;C:\vcpkg\installed\x64-windows\share\libconfig\libconfigConfig-debug.cmake;C:\vcpkg\installed\x64-windows\share\libconfig\libconfigConfig-release.cmake;C:\vcpkg\installed\x64-windows\share\libconfig\libconfigConfig.cmake;C:\vcpkg\installed\x64-windows\share\libconfig\libconfigConfigVersion.cmake;C:\vcpkg\installed\x64-windows\share\libjpeg-turbo\libjpeg-turboConfig.cmake;C:\vcpkg\installed\x64-windows\share\libjpeg-turbo\libjpeg-turboConfigVersion.cmake;C:\vcpkg\installed\x64-windows\share\libjpeg-turbo\libjpeg-turboTargets-debug.cmake;C:\vcpkg\installed\x64-windows\share\libjpeg-turbo\libjpeg-turboTargets-release.cmake;C:\vcpkg\installed\x64-windows\share\libjpeg-turbo\libjpeg-turboTargets.cmake;C:\vcpkg\installed\x64-windows\share\lz4\lz4Config.cmake;C:\vcpkg\installed\x64-windows\share\lz4\lz4ConfigVersion.cmake;C:\vcpkg\installed\x64-windows\share\lz4\lz4Targets-debug.cmake;C:\vcpkg\installed\x64-windows\share\lz4\lz4Targets-release.cmake;C:\vcpkg\installed\x64-windows\share\lz4\lz4Targets.cmake;C:\vcpkg\installed\x64-windows\share\rapidjson\RapidJSON-targets.cmake;C:\vcpkg\installed\x64-windows\share\rapidjson\RapidJSONConfig.cmake;C:\vcpkg\installed\x64-windows\share\rapidjson\RapidJSONConfigVersion.cmake;C:\vcpkg\installed\x64-windows\share\stb\Findstb.cmake;C:\vcpkg\installed\x64-windows\share\stb\vcpkg-cmake-wrapper.cmake;C:\vcpkg\installed\x64-windows\share\xxhash\xxHashConfig.cmake;C:\vcpkg\installed\x64-windows\share\xxhash\xxHashConfigVersion.cmake;C:\vcpkg\installed\x64-windows\share\xxhash\xxHashTargets-debug.cmake;C:\vcpkg\installed\x64-windows\share\xxhash\xxHashTargets-release.cmake;C:\vcpkg\installed\x64-windows\share\xxhash\xxHashTargets.cmake;C:\vcpkg\installed\x64-windows\share\zlib\vcpkg-cmake-wrapper.cmake;C:\vcpkg\installed\x64-windows\share\zstd\zstdConfig.cmake;C:\vcpkg\installed\x64-windows\share\zstd\zstdConfigVersion.cmake;C:\vcpkg\installed\x64-windows\share\zstd\zstdTargets-debug.cmake;C:\vcpkg\installed\x64-windows\share\zstd\zstdTargets-release.cmake;C:\vcpkg\installed\x64-windows\share\zstd\zstdTargets.cmake;C:\vcpkg\scripts\buildsystems\vcpkg.cmake;D:\AurigaGlobal\LiveWork\AurigaGlobal\build-asan\CMakeFiles\4.3.2\CMakeCCompiler.cmake;D:\AurigaGlobal\LiveWork\AurigaGlobal\build-asan\CMakeFiles\4.3.2\CMakeCXXCompiler.cmake;D:\AurigaGlobal\LiveWork\AurigaGlobal\build-asan\CMakeFiles\4.3.2\CMakeRCCompiler.cmake;D:\AurigaGlobal\LiveWork\AurigaGlobal\build-asan\CMakeFiles\4.3.2\CMakeSystem.cmake;D:\AurigaGlobal\LiveWork\AurigaGlobal\build-asan\CMakeFiles\cmake.verify_globs;D:\AurigaGlobal\LiveWork\AurigaGlobal\cmake\BootstrapVcpkg.cmake;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">D:\AurigaGlobal\LiveWork\AurigaGlobal\build-asan\CMakeFiles\generate.stamp</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">false</LinkObjects>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+  </ItemGroup>
+  <ItemGroup />
+  <ItemGroup>
+    <ProjectReference Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\build-asan\ZERO_CHECK.vcxproj">
+      <Project>{8DCF6E62-4198-3D54-9D62-3B2BB529300B}</Project>
+      <Name>ZERO_CHECK</Name>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </ProjectReference>
+    <ProjectReference Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\build-asan\SRC\Launcher\AudioLib\AudioLib.vcxproj">
+      <Project>{A1F9A30D-EF18-3E42-AD75-F31AF9F30188}</Project>
+      <Name>AudioLib</Name>
+    </ProjectReference>
+    <ProjectReference Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\build-asan\SRC\Launcher\Base\Base.vcxproj">
+      <Project>{B0CBB497-3DD2-3C90-8246-B3CFDD589F28}</Project>
+      <Name>Base</Name>
+    </ProjectReference>
+    <ProjectReference Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\build-asan\SRC\Server\Database\Database.vcxproj">
+      <Project>{97DB6677-1584-3678-ACEB-25082A197DAB}</Project>
+      <Name>Database</Name>
+    </ProjectReference>
+    <ProjectReference Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\build-asan\SRC\Launcher\Effect\Effect.vcxproj">
+      <Project>{E60626F0-8067-3A70-8D59-819CCD931851}</Project>
+      <Name>Effect</Name>
+    </ProjectReference>
+    <ProjectReference Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\build-asan\SRC\Launcher\FoxFS\FoxFS.vcxproj">
+      <Project>{ABB35C5D-F277-3A6E-AE1A-488A9F233519}</Project>
+      <Name>FoxFS</Name>
+    </ProjectReference>
+    <ProjectReference Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\build-asan\SRC\Launcher\Game\Game.vcxproj">
+      <Project>{382698CB-56D7-3D23-9F81-AA811C9EF8DF}</Project>
+      <Name>Game</Name>
+    </ProjectReference>
+    <ProjectReference Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\build-asan\SRC\Server\GameServer\GameServer.vcxproj">
+      <Project>{93CBBEF8-A988-3FB6-8CCF-1447D5D0BFC3}</Project>
+      <Name>GameServer</Name>
+    </ProjectReference>
+    <ProjectReference Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\build-asan\SRC\Launcher\Granny\Granny.vcxproj">
+      <Project>{DB75065F-E5A1-3547-8EF1-0F283C538926}</Project>
+      <Name>Granny</Name>
+    </ProjectReference>
+    <ProjectReference Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\build-asan\SRC\Tools\IXAC\IXAC.vcxproj">
+      <Project>{DCCDC98F-8C7C-353A-A66C-392034D5F33E}</Project>
+      <Name>IXAC</Name>
+    </ProjectReference>
+    <ProjectReference Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\build-asan\SRC\Tools\IXAC_Updater\IXAC_Updater.vcxproj">
+      <Project>{1A179D27-F7A2-3E43-B828-D347546DAC3A}</Project>
+      <Name>IXAC_Updater</Name>
+    </ProjectReference>
+    <ProjectReference Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\build-asan\SRC\Launcher\Image\Image.vcxproj">
+      <Project>{AA49B64E-6577-32FB-B846-57696EB3D8E8}</Project>
+      <Name>Image</Name>
+    </ProjectReference>
+    <ProjectReference Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\build-asan\SRC\3rd\LUA\LUA.vcxproj">
+      <Project>{D3E443E8-3A1B-3E7F-913B-CD62C10BBC3B}</Project>
+      <Name>LUA</Name>
+    </ProjectReference>
+    <ProjectReference Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\build-asan\SRC\Tools\MSAMaker\MSA.vcxproj">
+      <Project>{A2382616-964C-3BF2-891A-97185BD75010}</Project>
+      <Name>MSA</Name>
+    </ProjectReference>
+    <ProjectReference Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\build-asan\SRC\Tools\Mysql2Proto\Mysql2Proto\Mysql2Proto.vcxproj">
+      <Project>{F6EB7BC7-171D-3C4F-8136-291C9C82B093}</Project>
+      <Name>Mysql2Proto</Name>
+    </ProjectReference>
+    <ProjectReference Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\build-asan\SRC\Launcher\Pack\Pack.vcxproj">
+      <Project>{DD5BE1C0-E616-3E9C-88A3-0D03E58B8184}</Project>
+      <Name>Pack</Name>
+    </ProjectReference>
+    <ProjectReference Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\build-asan\SRC\Launcher\Python\Python.vcxproj">
+      <Project>{6129F91A-DCC3-3E99-80EB-EB869EFB87C9}</Project>
+      <Name>Python</Name>
+    </ProjectReference>
+    <ProjectReference Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\build-asan\SRC\Tools\QC\QC.vcxproj">
+      <Project>{59D7032C-63D3-3600-8298-4E852A84D33F}</Project>
+      <Name>QC</Name>
+    </ProjectReference>
+    <ProjectReference Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\build-asan\SRC\Launcher\Render\Render.vcxproj">
+      <Project>{C493FA2F-9869-3D37-831F-5332E3FC53C8}</Project>
+      <Name>Render</Name>
+    </ProjectReference>
+    <ProjectReference Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\build-asan\SRC\Server\Base\S_Base.vcxproj">
+      <Project>{49AB63D8-965F-3925-A85B-8B0E8ADB48E4}</Project>
+      <Name>S_Base</Name>
+    </ProjectReference>
+    <ProjectReference Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\build-asan\SRC\Server\Core\S_Core.vcxproj">
+      <Project>{240E8739-6BF4-3F11-B474-27FE6501FAB6}</Project>
+      <Name>S_Core</Name>
+    </ProjectReference>
+    <ProjectReference Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\build-asan\SRC\Server\Poly\S_Poly.vcxproj">
+      <Project>{E37F91E5-E49C-33D0-99CF-17CB71C65844}</Project>
+      <Name>S_Poly</Name>
+    </ProjectReference>
+    <ProjectReference Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\build-asan\SRC\Server\SQL\S_SQL.vcxproj">
+      <Project>{E2690F91-5534-3C63-AD2B-499C284DA649}</Project>
+      <Name>S_SQL</Name>
+    </ProjectReference>
+    <ProjectReference Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\build-asan\SRC\Launcher\Script\Script.vcxproj">
+      <Project>{1E8A63DA-53D1-3B3D-850E-077369AA7783}</Project>
+      <Name>Script</Name>
+    </ProjectReference>
+    <ProjectReference Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\build-asan\SRC\Launcher\SecureLayer\SecureLayer.vcxproj">
+      <Project>{9C59F5B5-E743-34BE-BC05-54F0D3043F86}</Project>
+      <Name>SecureLayer</Name>
+    </ProjectReference>
+    <ProjectReference Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\build-asan\SRC\Launcher\SpeedTree\SpeedTree.vcxproj">
+      <Project>{F323B5D4-88DF-369E-B4AF-35E0463EAFDB}</Project>
+      <Name>SpeedTree</Name>
+    </ProjectReference>
+    <ProjectReference Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\build-asan\SRC\Launcher\Sphere\Sphere.vcxproj">
+      <Project>{5FA4B101-9A87-3C14-A69B-5CC6CEF77F24}</Project>
+      <Name>Sphere</Name>
+    </ProjectReference>
+    <ProjectReference Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\build-asan\SRC\Launcher\Terrain\Terrain.vcxproj">
+      <Project>{6B7A5E3D-9373-3294-96E6-29791C902072}</Project>
+      <Name>Terrain</Name>
+    </ProjectReference>
+    <ProjectReference Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\build-asan\SRC\Launcher\UserInterface\UserInterface.vcxproj">
+      <Project>{0E968171-0AA5-3DCE-B59F-561F3303F32A}</Project>
+      <Name>UserInterface</Name>
+    </ProjectReference>
+    <ProjectReference Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\build-asan\auriga_root_python_files.vcxproj">
+      <Project>{E63A97C3-6154-34E1-8564-54AFEF0FC255}</Project>
+      <Name>auriga_root_python_files</Name>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </ProjectReference>
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

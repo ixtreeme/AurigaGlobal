@@ -114,6 +114,15 @@ static inline entt::entity EntityOf(LegacyCharHandle ch)
     return AIHelpers::EcsOf(ch);
 }
 
+static inline LPITEM LegacyItemOf(entt::entity item)
+{
+    if (!ItemSystem::IsValidItem(item)) {
+        return nullptr;
+    }
+
+    return ITEM_MANAGER::instance().Find(ItemSystem::GetItemID(item));
+}
+
 static inline ecs::CharacterRuntimeFlagsComponent* RuntimeFlags(LegacyCharHandle ch)
 {
     return ecs::TryGetRuntimeFlags(EntityOf(ch));
@@ -2875,7 +2884,7 @@ void CHARACTER::ItemDropPenalty(LPCHARACTER pkKiller)
 	else if (GetRealAlignment() == 2500000)		iAlignIndex = 15;
 	else return;
 
-	std::vector<std::pair<LPITEM, int> > vec_item;
+	std::vector<std::pair<entt::entity, int>> vec_item;
 	LPITEM pkItem;
 	int	i;
 	bool isDropAllEquipments = false;
@@ -2916,11 +2925,13 @@ void CHARACTER::ItemDropPenalty(LPCHARACTER pkKiller)
 			{
 				pkItem = GetInventoryItem(vec_bSlots[i]);
 
-				if (IS_SET(ItemSystem::GetItemAntiFlag(EntityFactory::CreateItemEntity(g_registry, pkItem)), ITEM_ANTIFLAG_GIVE | ITEM_ANTIFLAG_PKDROP))
+				const entt::entity itemEntity = EntityFactory::CreateItemEntity(g_registry, pkItem);
+				if (IS_SET(ItemSystem::GetItemAntiFlag(itemEntity), ITEM_ANTIFLAG_GIVE | ITEM_ANTIFLAG_PKDROP))
 					continue;
 
 				SyncQuickslot(QUICKSLOT_TYPE_ITEM, vec_bSlots[i], 255);
-				vec_item.emplace_back(pkItem->RemoveFromCharacter(), INVENTORY);
+				if (ItemSystem::RemoveItemEcs(itemEntity))
+					vec_item.emplace_back(itemEntity, INVENTORY);
 			}
 		}
 		/*else if (iAlignIndex == 8)
@@ -2954,11 +2965,13 @@ void CHARACTER::ItemDropPenalty(LPCHARACTER pkKiller)
 			{
 				pkItem = GetWear(vec_bSlots[i]);
 
-				if (IS_SET(ItemSystem::GetItemAntiFlag(EntityFactory::CreateItemEntity(g_registry, pkItem)), ITEM_ANTIFLAG_GIVE | ITEM_ANTIFLAG_PKDROP))
+				const entt::entity itemEntity = EntityFactory::CreateItemEntity(g_registry, pkItem);
+				if (IS_SET(ItemSystem::GetItemAntiFlag(itemEntity), ITEM_ANTIFLAG_GIVE | ITEM_ANTIFLAG_PKDROP))
 					continue;
 
 				SyncQuickslot(QUICKSLOT_TYPE_ITEM, vec_bSlots[i], 255);
-				vec_item.emplace_back(pkItem->RemoveFromCharacter(), EQUIPMENT);
+				if (ItemSystem::RemoveItemEcs(itemEntity))
+					vec_item.emplace_back(itemEntity, EQUIPMENT);
 			}
 		}
 	}
@@ -2969,18 +2982,22 @@ void CHARACTER::ItemDropPenalty(LPCHARACTER pkKiller)
 
 		pkItem = GetWear(WEAR_UNIQUE1);
 
-		if (pkItem && ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, pkItem)) == UNIQUE_ITEM_SKIP_ITEM_DROP_PENALTY)
+		const entt::entity unique1 = pkItem ? EntityFactory::CreateItemEntity(g_registry, pkItem) : entt::null;
+		if (pkItem && ItemSystem::GetItemVnum(unique1) == UNIQUE_ITEM_SKIP_ITEM_DROP_PENALTY)
 		{
 			SyncQuickslot(QUICKSLOT_TYPE_ITEM, WEAR_UNIQUE1, 255);
-			vec_item.emplace_back(pkItem->RemoveFromCharacter(), EQUIPMENT);
+			if (ItemSystem::RemoveItemEcs(unique1))
+				vec_item.emplace_back(unique1, EQUIPMENT);
 		}
 
 		pkItem = GetWear(WEAR_UNIQUE2);
 
-		if (pkItem && ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, pkItem)) == UNIQUE_ITEM_SKIP_ITEM_DROP_PENALTY)
+		const entt::entity unique2 = pkItem ? EntityFactory::CreateItemEntity(g_registry, pkItem) : entt::null;
+		if (pkItem && ItemSystem::GetItemVnum(unique2) == UNIQUE_ITEM_SKIP_ITEM_DROP_PENALTY)
 		{
 			SyncQuickslot(QUICKSLOT_TYPE_ITEM, WEAR_UNIQUE2, 255);
-			vec_item.emplace_back(pkItem->RemoveFromCharacter(), EQUIPMENT);
+			if (ItemSystem::RemoveItemEcs(unique2))
+				vec_item.emplace_back(unique2, EQUIPMENT);
 		}
 	}
 
@@ -2993,7 +3010,9 @@ void CHARACTER::ItemDropPenalty(LPCHARACTER pkKiller)
 
 		for (i = 0; i < vec_item.size(); ++i)
 		{
-			LPITEM item = vec_item[i].first;
+			LPITEM item = LegacyItemOf(vec_item[i].first);
+			if (!item)
+				continue;
 			int window = vec_item[i].second;
 
 			item->AddToGround(GetMapIndex(), pos);
@@ -3621,19 +3640,20 @@ void CHARACTER::Reward(bool bItemDrop)
 	//
 	//PROF_UNIT pu3("r3");
 	LPITEM item;
+	entt::entity itemEntity = entt::null;
 
-	static std::vector<LPITEM> s_vec_item;
+	std::vector<entt::entity> s_vec_item;
 	s_vec_item.clear();
 
 	if (ITEM_MANAGER::instance().CreateDropItem(this, pkAttacker, s_vec_item))
 	{
 
 #ifdef ENABLE_RARE_DROP_NOTICE_RAZOR93
-		for (auto& item : s_vec_item)
+		for (const entt::entity dropItem : s_vec_item)
 		{
-			if (verjema_szadba_ixtreeme.find(ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, item))) != verjema_szadba_ixtreeme.end())
+			if (verjema_szadba_ixtreeme.find(ItemSystem::GetItemVnum(dropItem)) != verjema_szadba_ixtreeme.end())
 			{
-		std::string message = MakeItemLink(EntityFactory::CreateItemEntity(g_registry, item), pkAttacker, this);
+		std::string message = MakeItemLink(dropItem, pkAttacker, this);
 				BroadcastNotice(message.c_str());
 			}
 		}
@@ -3772,20 +3792,20 @@ void CHARACTER::Reward(bool bItemDrop)
 							std::vector<SPartySharedDropItem> drops;
 							drops.reserve(s_vec_item.size());
 
-							for (LPITEM srcItem : s_vec_item)
+							for (const entt::entity srcItem : s_vec_item)
 							{
-								if (!srcItem)
+								if (!ItemSystem::IsValidItem(srcItem))
 									continue;
 
 								SPartySharedDropItem di{};
-								di.vnum = ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, srcItem));
-								di.count = ItemSystem::GetItemCount(EntityFactory::CreateItemEntity(g_registry, srcItem));
+								di.vnum = ItemSystem::GetItemVnum(srcItem);
+								di.count = ItemSystem::GetItemCount(srcItem);
 
 								for (int i = 0; i < ITEM_SOCKET_MAX_NUM; ++i)
-									di.sockets[i] = ItemSystem::GetItemSocket(EntityFactory::CreateItemEntity(g_registry, srcItem), i);
+									di.sockets[i] = ItemSystem::GetItemSocket(srcItem, i);
 
 								for (int i = 0; i < ITEM_ATTRIBUTE_MAX_NUM; ++i)
-									di.attrs[i] = ItemSystem::GetItemAttribute(EntityFactory::CreateItemEntity(g_registry, srcItem), i);
+									di.attrs[i] = ItemSystem::GetItemAttribute(srcItem, i);
 
 								drops.push_back(di);
 							}
@@ -3840,11 +3860,11 @@ void CHARACTER::Reward(bool bItemDrop)
 							}
 
 							// 4) a template itemeket megsemmisitjuk, hogy ne duplazzon
-							for (LPITEM srcItem : s_vec_item)
+							for (const entt::entity srcItem : s_vec_item)
 							{
-								if (srcItem)
+								if (ItemSystem::IsValidItem(srcItem))
 									ItemSystem::DestroyItemEntityEcs(
-										EntityFactory::CreateItemEntity(g_registry, srcItem),
+										srcItem,
 										"COMBAT_SHARED_DROP_TEMPLATE");
 							}
 
@@ -3865,7 +3885,14 @@ void CHARACTER::Reward(bool bItemDrop)
 			if (s_vec_item.size() == 0);
 			else if (s_vec_item.size() == 1)
 			{
-				item = s_vec_item[0];
+				itemEntity = s_vec_item[0];
+				item = LegacyItemOf(itemEntity);
+				if (!item)
+				{
+					LOG_ERROR("invalid item entity in single drop");
+					m_map_kDamage.clear();
+					return;
+				}
 
 #ifdef ENABLE_DICE_SYSTEM_OFFOLVA
 				const bool bKeepGroundDrop = (pkAttacker && ecs::SocialSystem::GetParty(AIHelpers::EcsOf(pkAttacker)));
@@ -3875,7 +3902,7 @@ void CHARACTER::Reward(bool bItemDrop)
 
 				if (bInstantRewardToInventory && !bKeepGroundDrop)
 				{
-					__GiveRewardItemToCharacterOrDrop(pkAttacker, this, EntityFactory::CreateItemEntity(g_registry, item), pos, true);
+					__GiveRewardItemToCharacterOrDrop(pkAttacker, this, itemEntity, pos, true);
 				}
 				else
 				{
@@ -3886,7 +3913,7 @@ void CHARACTER::Reward(bool bItemDrop)
 #ifdef ENABLE_DICE_SYSTEM_OFFOLVA
 						if (ecs::SocialSystem::GetParty(AIHelpers::EcsOf(pkAttacker)))
 						{
-							FPartyDropDiceRoll f(item, pkAttacker);
+							FPartyDropDiceRoll f(itemEntity, pkAttacker);
 							f.Process(this);
 						}
 						else
@@ -3941,7 +3968,8 @@ void CHARACTER::Reward(bool bItemDrop)
 				{
 					while (iItemIdx >= 0)
 					{
-						item = s_vec_item[iItemIdx--];
+						itemEntity = s_vec_item[iItemIdx--];
+						item = LegacyItemOf(itemEntity);
 
 						if (!item)
 						{
@@ -3970,7 +3998,8 @@ void CHARACTER::Reward(bool bItemDrop)
 
 					while (iItemIdx >= 0)
 					{
-						item = s_vec_item[iItemIdx--];
+						itemEntity = s_vec_item[iItemIdx--];
+						item = LegacyItemOf(itemEntity);
 
 						if (!item)
 						{
@@ -3996,7 +4025,7 @@ void CHARACTER::Reward(bool bItemDrop)
 
 						if (bInstantRewardToInventory && !bKeepGroundDrop)
 						{
-							__GiveRewardItemToCharacterOrDrop(ch, this, EntityFactory::CreateItemEntity(g_registry, item), pos, true);
+							__GiveRewardItemToCharacterOrDrop(ch, this, itemEntity, pos, true);
 						}
 						else
 						{
@@ -4007,7 +4036,7 @@ void CHARACTER::Reward(bool bItemDrop)
 #ifdef ENABLE_DICE_SYSTEM_OFFOLVA
 								if (ecs::SocialSystem::GetParty(AIHelpers::EcsOf(ch)))
 								{
-									FPartyDropDiceRoll f(item, ch);
+									FPartyDropDiceRoll f(itemEntity, ch);
 									f.Process(this);
 								}
 								else
@@ -4035,7 +4064,14 @@ void CHARACTER::Reward(bool bItemDrop)
 			if (s_vec_item.size() == 0);
 			else if (s_vec_item.size() == 1)
 			{
-				item = s_vec_item[0];
+				itemEntity = s_vec_item[0];
+				item = LegacyItemOf(itemEntity);
+				if (!item)
+				{
+					LOG_ERROR("invalid item entity in single ground drop");
+					m_map_kDamage.clear();
+					return;
+				}
 				item->AddToGround(GetMapIndex(), pos);
 
 				if (CBattleArena::instance().IsBattleArenaMap(ecs::PlayerRuntime::GetMapIndex(AIHelpers::EcsOf(pkAttacker))) == false)
@@ -4043,7 +4079,7 @@ void CHARACTER::Reward(bool bItemDrop)
 #ifdef ENABLE_DICE_SYSTEM_OFFOLVA
 					if (ecs::SocialSystem::GetParty(AIHelpers::EcsOf(pkAttacker)))
 					{
-						FPartyDropDiceRoll f(item, pkAttacker);
+						FPartyDropDiceRoll f(itemEntity, pkAttacker);
 						f.Process(this);
 					}
 					else
@@ -4097,7 +4133,8 @@ void CHARACTER::Reward(bool bItemDrop)
 				{
 					while (iItemIdx >= 0)
 					{
-						item = s_vec_item[iItemIdx--];
+						itemEntity = s_vec_item[iItemIdx--];
+						item = LegacyItemOf(itemEntity);
 
 						if (!item)
 						{
@@ -4126,7 +4163,8 @@ void CHARACTER::Reward(bool bItemDrop)
 
 					while (iItemIdx >= 0)
 					{
-						item = s_vec_item[iItemIdx--];
+						itemEntity = s_vec_item[iItemIdx--];
+						item = LegacyItemOf(itemEntity);
 
 						if (!item)
 						{
@@ -4151,7 +4189,7 @@ void CHARACTER::Reward(bool bItemDrop)
 #ifdef ENABLE_DICE_SYSTEM_OFFOLVA
 							if (ecs::SocialSystem::GetParty(AIHelpers::EcsOf(ch)))
 							{
-								FPartyDropDiceRoll f(item, ch);
+								FPartyDropDiceRoll f(itemEntity, ch);
 								f.Process(this);
 							}
 							else

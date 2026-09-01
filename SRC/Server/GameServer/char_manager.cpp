@@ -508,7 +508,11 @@ void CHARACTER_MANAGER::DestroyCharacter(LPCHARACTER ch, const char* file, size_
 		// null - both branches of the D.6 ViewCleanup are no-ops on the
 		// second pass.
 		ch->ViewCleanup();
-		EntityFactory::Destroy(g_registry, entity);
+		// The CHARACTER destructor still needs the ECS-backed inventory,
+		// session and social components while it tears the legacy shell down.
+		// EntityFactory::Destroy is deliberately deferred to the end of
+		// CHARACTER::Destroy; destroying the entity here made ClearItem() see
+		// an empty inventory and left live CItem objects with a dangling owner.
 	}
 
 #ifdef M2_USE_POOL
@@ -1659,7 +1663,7 @@ const TEventManagerData* CHARACTER_MANAGER::CheckEventIsActive(uint8_t eventInde
 	}
 	return nullptr;
 }
-void CHARACTER_MANAGER::CheckEventForDrop(LPCHARACTER pkChr, LPCHARACTER pkKiller, std::vector<LPITEM>& vec_item)
+void CHARACTER_MANAGER::CheckEventForDrop(LPCHARACTER pkChr, LPCHARACTER pkKiller, std::vector<entt::entity>& vec_item)
 {
 	const uint8_t killerEmpire = ecs::PlayerRuntime::GetEmpire(AIHelpers::EcsOf(pkKiller));
 	const TEventManagerData* eventPtr = nullptr;
@@ -1672,11 +1676,11 @@ void CHARACTER_MANAGER::CheckEventForDrop(LPCHARACTER pkChr, LPCHARACTER pkKille
 		{
 
 
-			std::vector<LPITEM> m_cache;
+			std::vector<entt::entity> m_cache;
 			for (const auto& vItem : vec_item)
 			{
-				rewardItem = ITEM_MANAGER::Instance().CreateItem(ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, vItem)), ItemSystem::GetItemCount(EntityFactory::CreateItemEntity(g_registry, vItem)), 0, true);
-				if (rewardItem) m_cache.emplace_back(rewardItem);
+				rewardItem = ITEM_MANAGER::Instance().CreateItem(ItemSystem::GetItemVnum(vItem), ItemSystem::GetItemCount(vItem), 0, true);
+				if (rewardItem) m_cache.emplace_back(EntityFactory::CreateItemEntity(g_registry, rewardItem));
 			}
 			for (const auto& rItem : m_cache)
 				vec_item.emplace_back(rItem);
@@ -1710,12 +1714,12 @@ void CHARACTER_MANAGER::CheckEventForDrop(LPCHARACTER pkChr, LPCHARACTER pkKille
 		eventPtr = CheckEventIsActive(BUPLA_RUN_BOSS_LOOT_EVENT, killerEmpire);
 		if (eventPtr && RollEventChance(eventPtr->value[3]))
 		{
-			std::vector<LPITEM> m_cache;
+			std::vector<entt::entity> m_cache;
 			for (const auto& vItem : vec_item)
 			{
-				rewardItem = ITEM_MANAGER::Instance().CreateItem(ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, vItem)), ItemSystem::GetItemCount(EntityFactory::CreateItemEntity(g_registry, vItem)), 0, true);
+				rewardItem = ITEM_MANAGER::Instance().CreateItem(ItemSystem::GetItemVnum(vItem), ItemSystem::GetItemCount(vItem), 0, true);
 				if (rewardItem)
-					m_cache.emplace_back(rewardItem);
+					m_cache.emplace_back(EntityFactory::CreateItemEntity(g_registry, rewardItem));
 			}
 
 			for (const auto& rItem : m_cache)
@@ -1726,7 +1730,7 @@ void CHARACTER_MANAGER::CheckEventForDrop(LPCHARACTER pkChr, LPCHARACTER pkKille
 		{
 			LPITEM extraDrop = ITEM_MANAGER::Instance().CreateItem(50101, 1, 0, true);
 			if (extraDrop)
-				vec_item.emplace_back(extraDrop);
+				vec_item.emplace_back(EntityFactory::CreateItemEntity(g_registry, extraDrop));
 		}
 	}
 	else if (ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkChr)) == 491//map1
@@ -1757,12 +1761,12 @@ void CHARACTER_MANAGER::CheckEventForDrop(LPCHARACTER pkChr, LPCHARACTER pkKille
 		if (eventPtr && RollEventChance(eventPtr->value[3]))
 		{
 
-			std::vector<LPITEM> m_cache;
+			std::vector<entt::entity> m_cache;
 			for (const auto& vItem : vec_item)
 			{
-				rewardItem = ITEM_MANAGER::Instance().CreateItem(ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, vItem)), ItemSystem::GetItemCount(EntityFactory::CreateItemEntity(g_registry, vItem)), 0, true);
+				rewardItem = ITEM_MANAGER::Instance().CreateItem(ItemSystem::GetItemVnum(vItem), ItemSystem::GetItemCount(vItem), 0, true);
 				if (rewardItem)
-					m_cache.emplace_back(rewardItem);
+					m_cache.emplace_back(EntityFactory::CreateItemEntity(g_registry, rewardItem));
 			}
 
 			for (const auto& rItem : m_cache)
@@ -1777,16 +1781,16 @@ void CHARACTER_MANAGER::CheckEventForDrop(LPCHARACTER pkChr, LPCHARACTER pkKille
 
 		// If you have different book index put here!
 		constexpr uint32_t m_lbookItems[] = { 50300, 50301, 50302 };
-		std::vector<LPITEM> m_cache;
+		std::vector<entt::entity> m_cache;
 		for (const auto& vItem : vec_item)
 		{
-			const uint32_t itemVnum = ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, vItem));
+			const uint32_t itemVnum = ItemSystem::GetItemVnum(vItem);
 			for (const auto& missionBook : m_lbookItems)
 			{
 				if (missionBook == itemVnum)
 				{
-					rewardItem = ITEM_MANAGER::Instance().CreateItem(itemVnum, ItemSystem::GetItemCount(EntityFactory::CreateItemEntity(g_registry, vItem)), 0, true);
-					if (rewardItem) m_cache.emplace_back(rewardItem);
+					rewardItem = ITEM_MANAGER::Instance().CreateItem(itemVnum, ItemSystem::GetItemCount(vItem), 0, true);
+					if (rewardItem) m_cache.emplace_back(EntityFactory::CreateItemEntity(g_registry, rewardItem));
 
 					break;
 				}
@@ -1801,16 +1805,16 @@ void CHARACTER_MANAGER::CheckEventForDrop(LPCHARACTER pkChr, LPCHARACTER pkKille
 	{
 		// If you have different book index put here!
 		constexpr uint32_t m_lticketItems[] = { 71201 };
-		std::vector<LPITEM> m_cache;
+		std::vector<entt::entity> m_cache;
 		for (const auto& vItem : vec_item)
 		{
-			const uint32_t itemVnum = ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, vItem));
+			const uint32_t itemVnum = ItemSystem::GetItemVnum(vItem);
 			for (const auto& ticketItem : m_lticketItems)
 			{
 				if (ticketItem == itemVnum)
 				{
-					rewardItem = ITEM_MANAGER::Instance().CreateItem(itemVnum, ItemSystem::GetItemCount(EntityFactory::CreateItemEntity(g_registry, vItem)), 0, true);
-					if (rewardItem) m_cache.emplace_back(rewardItem);
+					rewardItem = ITEM_MANAGER::Instance().CreateItem(itemVnum, ItemSystem::GetItemCount(vItem), 0, true);
+					if (rewardItem) m_cache.emplace_back(EntityFactory::CreateItemEntity(g_registry, rewardItem));
 
 					break;
 				}
@@ -1825,7 +1829,7 @@ void CHARACTER_MANAGER::CheckEventForDrop(LPCHARACTER pkChr, LPCHARACTER pkKille
 
 		// If your moonlight item vnum is different change 50011!
 		LPITEM item = ITEM_MANAGER::Instance().CreateItem(50011, 1, 0, true);
-		if (item) vec_item.emplace_back(item);
+		if (item) vec_item.emplace_back(EntityFactory::CreateItemEntity(g_registry, item));
 
 	}
 	eventPtr = CheckEventIsActive(LELEKGOMB_EVENT, killerEmpire);
@@ -1834,7 +1838,7 @@ void CHARACTER_MANAGER::CheckEventForDrop(LPCHARACTER pkChr, LPCHARACTER pkKille
 
 		// If your moonlight item vnum is different change 50011!
 		LPITEM item = ITEM_MANAGER::Instance().CreateItem(30135, 1, 0, true);
-		if (item) vec_item.emplace_back(item);
+		if (item) vec_item.emplace_back(EntityFactory::CreateItemEntity(g_registry, item));
 
 	}
 
@@ -1844,7 +1848,7 @@ void CHARACTER_MANAGER::CheckEventForDrop(LPCHARACTER pkChr, LPCHARACTER pkKille
 
 		// If your moonlight item vnum is different change 50011!
 		LPITEM item = ITEM_MANAGER::Instance().CreateItem(50037, 1, 0, true);
-		if (item) vec_item.emplace_back(item);
+		if (item) vec_item.emplace_back(EntityFactory::CreateItemEntity(g_registry, item));
 
 	}
 	eventPtr = CheckEventIsActive(MIKI_EVENT, killerEmpire);
@@ -1853,7 +1857,7 @@ void CHARACTER_MANAGER::CheckEventForDrop(LPCHARACTER pkChr, LPCHARACTER pkKille
 
 		// If your moonlight item vnum is different change 50011!
 		LPITEM item = ITEM_MANAGER::Instance().CreateItem(50010, 1, 0, true);
-		if (item) vec_item.emplace_back(item);
+		if (item) vec_item.emplace_back(EntityFactory::CreateItemEntity(g_registry, item));
 
 	}
 
@@ -1938,7 +1942,7 @@ void CHARACTER_MANAGER::CheckEventForDrop(LPCHARACTER pkChr, LPCHARACTER pkKille
 		{
 			LPITEM item = ITEM_MANAGER::instance().CreateItem(50181, 1, 0, true);//egy néger kosár fasz
 			if (item)
-				vec_item.emplace_back(item);
+				vec_item.emplace_back(EntityFactory::CreateItemEntity(g_registry, item));
 		}
 	}
 	eventPtr = CheckEventIsActive(KARI_EVENT, killerEmpire);
@@ -1952,7 +1956,7 @@ void CHARACTER_MANAGER::CheckEventForDrop(LPCHARACTER pkChr, LPCHARACTER pkKille
 
 		// If your moonlight item vnum is different change 50011!
 		LPITEM item = ITEM_MANAGER::Instance().CreateItem(39068, 1, 0, true);
-		if (item) vec_item.emplace_back(item);
+		if (item) vec_item.emplace_back(EntityFactory::CreateItemEntity(g_registry, item));
 
 	}
 	eventPtr = CheckEventIsActive(DUPLA_BOSS_PONT_EVENT, killerEmpire);
@@ -1986,7 +1990,7 @@ void CHARACTER_MANAGER::CheckEventForDrop(LPCHARACTER pkChr, LPCHARACTER pkKille
 			// === DROP ===
 			LPITEM item = ITEM_MANAGER::Instance().CreateItem(99998, 1, 0, true);
 			if (item)
-				vec_item.emplace_back(item);
+				vec_item.emplace_back(EntityFactory::CreateItemEntity(g_registry, item));
 		}
 	}
 	eventPtr = CheckEventIsActive(DUPLA_RUN_PONT_EVENT, killerEmpire);
@@ -2016,7 +2020,7 @@ void CHARACTER_MANAGER::CheckEventForDrop(LPCHARACTER pkChr, LPCHARACTER pkKille
 			// === DROP ===
 			LPITEM item = ITEM_MANAGER::Instance().CreateItem(99999, 1, 0, true);
 			if (item)
-				vec_item.emplace_back(item);
+				vec_item.emplace_back(EntityFactory::CreateItemEntity(g_registry, item));
 		}
 	}
 	if (ecs::PlayerRuntime::IsStone(AIHelpers::EcsOf(pkChr)))
@@ -2024,16 +2028,16 @@ void CHARACTER_MANAGER::CheckEventForDrop(LPCHARACTER pkChr, LPCHARACTER pkKille
 		eventPtr = CheckEventIsActive(DUPLA_SZILI_EVENT, killerEmpire);
 		if (eventPtr && RollEventChance(eventPtr->value[3]))
 		{
-			std::vector<LPITEM> m_cache;
+			std::vector<entt::entity> m_cache;
 
 			for (const auto& vItem : vec_item)
 			{
 
-				if (ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, vItem)) == 30271)
+				if (ItemSystem::GetItemVnum(vItem) == 30271)
 				{
-					rewardItem = ITEM_MANAGER::Instance().CreateItem(30271, ItemSystem::GetItemCount(EntityFactory::CreateItemEntity(g_registry, vItem)), 0, true);
+					rewardItem = ITEM_MANAGER::Instance().CreateItem(30271, ItemSystem::GetItemCount(vItem), 0, true);
 					if (rewardItem)
-						m_cache.emplace_back(rewardItem);
+						m_cache.emplace_back(EntityFactory::CreateItemEntity(g_registry, rewardItem));
 				}
 			}
 

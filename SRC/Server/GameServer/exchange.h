@@ -1,6 +1,9 @@
 #ifndef __INC_METIN_II_GAME_EXCHANGE_H__
 #define __INC_METIN_II_GAME_EXCHANGE_H__
 
+#include <array>
+#include <entt/entity/entity.hpp>
+
 class CGrid;
 
 enum EExchangeValues
@@ -44,7 +47,7 @@ class CExchange
 		LPCHARACTER	m_pOwner;
 
 		TItemPos		m_aItemPos[EXCHANGE_ITEM_MAX_NUM];
-		LPITEM		m_apItems[EXCHANGE_ITEM_MAX_NUM];
+		std::array<entt::entity, EXCHANGE_ITEM_MAX_NUM> m_items;
 		uint8_t		m_abItemDisplayPos[EXCHANGE_ITEM_MAX_NUM];
 
 		bool 		m_bAccept;

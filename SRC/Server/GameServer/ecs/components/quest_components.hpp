@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <entt/entity/entity.hpp>
 
 #include "../../char.h"
 #include "../../typedef.h"
@@ -10,7 +11,7 @@ namespace ecs {
 struct QuestContext {
     uint32_t npcVID;
     uint32_t byVnum;
-    LPITEM questItem { nullptr };
+    entt::entity questItem { entt::null };
 };
 
 struct RankPoints {

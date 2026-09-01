@@ -25,6 +25,7 @@
 #include "ecs/Registry.hpp"
 #include "ecs/systems/ItemSystem.hpp"
 #include <string_view>
+#include <limits>
 
 #ifdef __ENABLE_NEW_OFFLINESHOP__
 #include "new_offlineshop.h"
@@ -417,385 +418,303 @@ void Cube_close(LPCHARACTER ch)
 
 void Cube_Make(LPCHARACTER ch, int index, int count_item, int index_item_improve)
 {
-	LPCHARACTER	npc;
-
-	npc = ch->GetQuestNPC();
-
-	if (!ch->IsCubeOpen()) {
-		return;
-	}
-
-	if (nullptr == npc)
+	if (!ch || !ch->IsCubeOpen() || count_item <= 0 ||
+		count_item > static_cast<int>(g_bItemCountLimit))
 	{
 		return;
 	}
 
-	int index_value = 0;
-	bool material_check = true;
-	bool item_frozen = false;
-	LPITEM pItem;
-	int iEmptyPos;
-#ifdef ENABLE_CUBE_RENEWAL_COPY_WORLDARD
-	uint32_t copyAttr[ITEM_ATTRIBUTE_MAX_NUM][2];
-	uint32_t copySocket[ITEM_SOCKET_MAX_NUM];
-	bool item_copy_bonus = false;
+	LPCHARACTER npc = ch->GetQuestNPC();
+	if (!npc)
+		return;
+
+	const entt::entity ownerEntity = AIHelpers::EcsOf(ch);
+	if (ownerEntity == entt::null || !g_registry.valid(ownerEntity))
+		return;
+
+	const auto resultIt = cube_info_map.find(ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(npc)));
+	if (resultIt == cube_info_map.end() || index < 0 ||
+		static_cast<size_t>(index) >= resultIt->second.size())
+	{
+		return;
+	}
+
+	const SCubeMaterialInfo& materialInfo = resultIt->second[static_cast<size_t>(index)];
+	if (materialInfo.reward.vnum == 0 || materialInfo.reward.count <= 0 ||
+		materialInfo.percent < 0 || materialInfo.percent > 100)
+	{
+		return;
+	}
+
+	const uint64_t maximumRewardCount =
+		static_cast<uint64_t>(materialInfo.reward.count) * static_cast<uint64_t>(count_item);
+	if (maximumRewardCount == 0 ||
+		maximumRewardCount > static_cast<uint64_t>(g_bItemCountLimit))
+	{
+		return;
+	}
+
+	bool materialCheck = true;
+	bool itemFrozen = false;
+	for (const auto& material : materialInfo.material)
+	{
+		if (material.vnum == 0 || material.count <= 0)
+			return;
+
+		const int64_t required64 =
+			static_cast<int64_t>(material.count) * static_cast<int64_t>(count_item);
+		if (required64 <= 0 || required64 > std::numeric_limits<int>::max())
+			return;
+
+		const int required = static_cast<int>(required64);
+		if (ItemSystem::CountItemRenewal(ownerEntity, material.vnum) < required)
+			itemFrozen = true;
+		if (ItemSystem::CountItem(ownerEntity, material.vnum) < required)
+			materialCheck = false;
+	}
+
+	if (materialInfo.gold < 0 ||
+		(materialInfo.gold != 0 &&
+		 materialInfo.gold > std::numeric_limits<int64_t>::max() / count_item))
+	{
+		return;
+	}
+
+	const int64_t requiredGold = materialInfo.gold * static_cast<int64_t>(count_item);
+	if (ecs::PointSystem::GetGold(ownerEntity) < requiredGold)
+	{
+#ifdef TEXTS_IMPROVEMENT
+		ecs::ChatSystem::SendNew(ownerEntity, CHAT_TYPE_INFO, 232, "");
 #endif
-	const TCubeResultList& resultList = cube_info_map[ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(npc))];
-	for (TCubeResultList::const_iterator iter = resultList.begin(); resultList.end() != iter; ++iter)
+		return;
+	}
+
+#ifdef ENABLE_GAYA_SYSTEM
+	const uint64_t requiredGaya =
+		static_cast<uint64_t>(materialInfo.gaya) * static_cast<uint64_t>(count_item);
+	if (requiredGaya > static_cast<uint64_t>(std::numeric_limits<int64_t>::max()) ||
+		static_cast<uint64_t>(ch->GetGaya()) < requiredGaya)
 	{
-		if (index_value == index)
+#ifdef TEXTS_IMPROVEMENT
+		ecs::ChatSystem::SendNew(ownerEntity, CHAT_TYPE_INFO, 524, "");
+#endif
+		return;
+	}
+#endif
+
+	if (itemFrozen && materialCheck)
+	{
+#ifdef TEXTS_IMPROVEMENT
+		ecs::ChatSystem::SendNew(ownerEntity, CHAT_TYPE_INFO, 816, "");
+#endif
+		return;
+	}
+
+	if (!materialCheck)
+	{
+#ifdef TEXTS_IMPROVEMENT
+		ecs::ChatSystem::SendNew(ownerEntity, CHAT_TYPE_INFO, 819, "");
+#endif
+		return;
+	}
+
+	constexpr uint32_t kCubeImproveItemVnum = 79605;
+	constexpr uint32_t kMaximumImproveItemCount = 40;
+	entt::entity improveItem = entt::null;
+	uint32_t improveAmount = 0;
+
+	if (index_item_improve != -1)
+	{
+		if (materialInfo.percent >= 100 || index_item_improve < 0 ||
+			index_item_improve >= INVENTORY_MAX_NUM)
 		{
-			const SCubeMaterialInfo& materialInfo = *iter;
+			return;
+		}
 
-			for (unsigned int i = 0; i < materialInfo.material.size(); ++i)
-			{
-				if (ch->CountSpecifyItemRenewal(materialInfo.material[i].vnum) < (materialInfo.material[i].count*count_item))
-				{
-					item_frozen = true;
-				}
+		improveItem = ItemSystem::GetInventoryItem(
+			ownerEntity, static_cast<uint16_t>(index_item_improve));
+		if (!ItemSystem::IsValidItem(improveItem) ||
+			ItemSystem::GetItemVnum(improveItem) != kCubeImproveItemVnum)
+		{
+			return;
+		}
 
-				if (ch->CountSpecifyItem(materialInfo.material[i].vnum) < (materialInfo.material[i].count*count_item))
-				{
-					material_check = false;
-				}
+		const uint32_t availableImproveCount = ItemSystem::GetItemCount(improveItem);
+		if (availableImproveCount == 0 || availableImproveCount > kMaximumImproveItemCount)
+			return;
 
-			}
+		improveAmount = std::min<uint32_t>(
+			availableImproveCount, static_cast<uint32_t>(100 - materialInfo.percent));
+	}
 
-			if (materialInfo.gold != 0){
-				if (ecs::PointSystem::GetGold(AIHelpers::EcsOf(ch)) < (materialInfo.gold*count_item)) {
+	int totalItemsGive = 0;
+	const int effectivePercent = materialInfo.percent + static_cast<int>(improveAmount);
+	for (int attempt = 0; attempt < count_item; ++attempt)
+	{
+		if (number(1, 100) <= effectivePercent)
+			++totalItemsGive;
+	}
+
+	const uint32_t rewardCount = totalItemsGive > 0
+		? static_cast<uint32_t>(
+			static_cast<uint64_t>(materialInfo.reward.count) *
+			static_cast<uint64_t>(totalItemsGive))
+		: static_cast<uint32_t>(materialInfo.reward.count);
+
+	entt::entity rewardItem =
+		ItemSystem::CreateItemEcs(materialInfo.reward.vnum, rewardCount);
+	if (!ItemSystem::IsValidItem(rewardItem))
+		return;
+
+	if (ItemSystem::GetEmptyInventoryPositionEcs(ownerEntity, rewardItem) < 0)
+	{
+		ItemSystem::DestroyItemEntityEcs(rewardItem, "CUBE_RENEWAL_NO_SPACE");
 #ifdef TEXTS_IMPROVEMENT
-					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 232, "");
+		ecs::ChatSystem::SendNew(ownerEntity, CHAT_TYPE_INFO, 366, "");
 #endif
-					return;
-				}
-			}
-#ifdef ENABLE_GAYA_SYSTEM
-			if (materialInfo.gaya != 0){
-				if ((int32_t)ch->GetGaya() < (int32_t)(materialInfo.gaya*count_item))
-				{
-#ifdef TEXTS_IMPROVEMENT
-					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 524, "");
-#endif
-					return;
-				}
-			}
-#endif
+		return;
+	}
 
-			if (item_frozen && material_check)
-			{
-#ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 816, "");
-#endif
-				return;
-			}
-
-			if (material_check){
-
-				int percent_number;
-				int total_items_give = 0;
-
-
-				int porcent_item_improve = 0;
-
-				if (index_item_improve != -1)
-				{
-
-					LPITEM item = ItemSystem::GetInventoryItemPtr(AIHelpers::EcsOf(ch), index_item_improve);
-					if(item != nullptr)
-					{
-
-						if(ItemSystem::GetItemCount(EntityFactory::CreateItemEntity(g_registry, item)) <= 40){
-							if (materialInfo.percent+ItemSystem::GetItemCount(EntityFactory::CreateItemEntity(g_registry, item)) <= 100){
-								porcent_item_improve = ItemSystem::GetItemCount(EntityFactory::CreateItemEntity(g_registry, item));
-							}
-
-							if(materialInfo.percent < 100)
-							{
-								if (materialInfo.percent+ItemSystem::GetItemCount(EntityFactory::CreateItemEntity(g_registry, item)) > 100){
-									porcent_item_improve = 100 - materialInfo.percent;
-								}
-							}
-						}
-					}
-
-					if(porcent_item_improve != 0)
-					{
-						ItemSystem::ConsumeItemEcs(
-							EntityFactory::CreateItemEntity(g_registry, item),
-							porcent_item_improve);
-					}
-				}
-
-				for (int i = 0; i < count_item; ++i)
-				{
-					percent_number = number(1,100);
-					if ( percent_number<=materialInfo.percent+porcent_item_improve)
-					{
-						total_items_give++;
-					}
-				}
 #ifdef ENABLE_CUBE_RENEWAL_COPY_WORLDARD
+	uint32_t copyAttr[ITEM_ATTRIBUTE_MAX_NUM][2] {};
+	uint32_t copySocket[ITEM_SOCKET_MAX_NUM] {};
+	bool itemCopyBonus = false;
 
-				LPITEM item = ITEM_MANAGER::instance().CreateItem(materialInfo.reward.vnum);
-
-				pItem = ch->FindSpecifyItem(materialInfo.allowCopy);
-
-				if(pItem != nullptr){
-					if ((ItemSystem::GetItemType(EntityFactory::CreateItemEntity(g_registry, pItem)) == ITEM_WEAPON  || ItemSystem::GetItemType(EntityFactory::CreateItemEntity(g_registry, pItem)) == ITEM_ARMOR) && ItemSystem::GetItemSubType(EntityFactory::CreateItemEntity(g_registry, item)) == ItemSystem::GetItemSubType(EntityFactory::CreateItemEntity(g_registry, pItem)) && item_copy_bonus == false)
-					{
-
-						for (int a = 0; a < ITEM_ATTRIBUTE_MAX_NUM; a++)
-						{
-							copyAttr[a][0] = pItem->GetAttributeType(a);
-							copyAttr[a][1] = pItem->GetAttributeValue(a);
-						}
-
-						for (int a = 0; a < ITEM_SOCKET_MAX_NUM; a++)
-						{
-							copySocket[a] = ItemSystem::GetItemSocket(EntityFactory::CreateItemEntity(g_registry, pItem), a);
-						}
-
-						item_copy_bonus = true;
-					}
-				}
+	if (materialInfo.allowCopy != 0)
+	{
+		const entt::entity copySource =
+			ItemSystem::FindSpecifyItem(ownerEntity, materialInfo.allowCopy, false);
+		if (ItemSystem::IsValidItem(copySource) &&
+			(ItemSystem::GetItemType(copySource) == ITEM_WEAPON ||
+			 ItemSystem::GetItemType(copySource) == ITEM_ARMOR) &&
+			ItemSystem::GetItemSubType(copySource) == ItemSystem::GetItemSubType(rewardItem))
+		{
+			for (int attribute = 0; attribute < ITEM_ATTRIBUTE_MAX_NUM; ++attribute)
+			{
+				copyAttr[attribute][0] =
+					static_cast<uint32_t>(ItemSystem::GetItemAttributeType(copySource, attribute));
+				copyAttr[attribute][1] =
+					static_cast<uint32_t>(ItemSystem::GetItemAttributeValue(copySource, attribute));
+			}
+			for (int socket = 0; socket < ITEM_SOCKET_MAX_NUM; ++socket)
+			{
+				copySocket[socket] =
+					static_cast<uint32_t>(ItemSystem::GetItemSocket(copySource, socket));
+			}
+			itemCopyBonus = true;
+		}
+	}
+#else
+	constexpr bool itemCopyBonus = false;
 #endif
-				pItem = ITEM_MANAGER::instance().CreateItem(materialInfo.reward.vnum,(materialInfo.reward.count*count_item));
-				if (pItem->IsDragonSoul())
-				{
-					iEmptyPos = ch->GetEmptyDragonSoulInventory(pItem);
-				}
 
-#ifdef ENABLE_EXTRA_INVENTORY
-				else if (pItem->IsExtraItem())
-				{
-					iEmptyPos = ch->GetEmptyExtraInventory(pItem);
-				}
-#endif
-				else{
-					iEmptyPos = ch->GetEmptyInventory(pItem->GetSize());
-				}
+	if (improveAmount != 0 &&
+		!ItemSystem::ConsumeItemEcs(improveItem, improveAmount))
+	{
+		ItemSystem::DestroyItemEntityEcs(rewardItem, "CUBE_RENEWAL_IMPROVE_FAILED");
+		return;
+	}
 
-				if (iEmptyPos < 0)
-				{
-#ifdef TEXTS_IMPROVEMENT
-					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 366, "");
-#endif
-					return;
-				}
+	for (const auto& material : materialInfo.material)
+	{
+		const uint32_t required = static_cast<uint32_t>(
+			static_cast<uint64_t>(material.count) * static_cast<uint64_t>(count_item));
+		if (!ItemSystem::RemoveSpecifyItemEcs(ownerEntity, material.vnum, required, true))
+		{
+			ItemSystem::DestroyItemEntityEcs(rewardItem, "CUBE_RENEWAL_MATERIAL_FAILED");
+			return;
+		}
+	}
 
-				for (unsigned int i = 0; i < materialInfo.material.size(); ++i)
-				{
-					ch->RemoveSpecifyItem(materialInfo.material[i].vnum, (materialInfo.material[i].count*count_item), true);
-				}
+	if (requiredGold != 0)
+		ecs::PointSystem::Change(ownerEntity, POINT_GOLD, -requiredGold, false);
 
-				if (materialInfo.gold != 0){
-					ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_GOLD, -materialInfo.gold*count_item, false);
-
-				}
 #ifdef ENABLE_GAYA_SYSTEM
-				if (materialInfo.gaya != 0)
-				{
-					ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_GAYA, -static_cast<int64_t>(materialInfo.gaya*count_item), false);
-				}
+	if (requiredGaya != 0)
+	{
+		ecs::PointSystem::Change(
+			ownerEntity, POINT_GAYA, -static_cast<int64_t>(requiredGaya), false);
+	}
 #endif
-				if(total_items_give <= 0)
-				{
-#ifdef TEXTS_IMPROVEMENT
-					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 817, "");
-#endif
-					return;
-				}
 
-				int totalCount = materialInfo.reward.count * total_items_give;
-				pItem = ITEM_MANAGER::instance().CreateItem(materialInfo.reward.vnum, totalCount);
+	if (totalItemsGive <= 0)
+	{
+		ItemSystem::DestroyItemEntityEcs(rewardItem, "CUBE_RENEWAL_FAILED_ROLL");
+#ifdef TEXTS_IMPROVEMENT
+		ecs::ChatSystem::SendNew(ownerEntity, CHAT_TYPE_INFO, 817, "");
+#endif
+		return;
+	}
+
 #ifdef ENABLE_BATTLE_PASS
-				uint8_t bBattlePassId = ch->GetBattlePassId();
-				if(bBattlePassId)
-				{
-					uint32_t dwItemVnum, dwCount;
-					if(CBattlePass::instance().BattlePassMissionGetInfo(bBattlePassId, CRAFT_ITEM, &dwItemVnum, &dwCount))
-					{
-						if(dwItemVnum == materialInfo.reward.vnum && ch->GetMissionProgress(CRAFT_ITEM, bBattlePassId) < dwCount)
-							ch->UpdateMissionProgress(CRAFT_ITEM, bBattlePassId, totalCount, dwCount);
-					}
-				}
+	const uint8_t battlePassId = ch->GetBattlePassId();
+	if (battlePassId)
+	{
+		uint32_t missionItemVnum = 0;
+		uint32_t missionCount = 0;
+		if (CBattlePass::instance().BattlePassMissionGetInfo(
+				battlePassId, CRAFT_ITEM, &missionItemVnum, &missionCount) &&
+			missionItemVnum == materialInfo.reward.vnum &&
+			ch->GetMissionProgress(CRAFT_ITEM, battlePassId) < missionCount)
+		{
+			ch->UpdateMissionProgress(
+				CRAFT_ITEM, battlePassId, rewardCount, missionCount);
+		}
+	}
 #endif
-				//toshow ChatPacket success item
+
 #ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 818, "");
+	ecs::ChatSystem::SendNew(ownerEntity, CHAT_TYPE_INFO, 818, "");
 #endif
 
 #ifdef ENABLE_CUBE_RENEWAL_COPY_WORLDARD
-				if (materialInfo.allowCopy != 0 && item_copy_bonus == true) {
-					ItemSystem::ClearItemAttributesEcs(EntityFactory::CreateItemEntity(g_registry, pItem));
-					for (int a = 0; a < ITEM_ATTRIBUTE_MAX_NUM; a++) {
-						ItemSystem::SetItemForceAttributeEcs(EntityFactory::CreateItemEntity(g_registry, pItem), a, copyAttr[a][0], copyAttr[a][1]);
-					}
-
-					for (int b = 0; b < ITEM_SOCKET_MAX_NUM; b++) {
-						ItemSystem::SetItemSocket(EntityFactory::CreateItemEntity(g_registry, pItem), b, copySocket[b]);
-					}
-				}
+	if (itemCopyBonus)
+	{
+		ItemSystem::ClearItemAttributesEcs(rewardItem);
+		for (int attribute = 0; attribute < ITEM_ATTRIBUTE_MAX_NUM; ++attribute)
+		{
+			ItemSystem::SetItemForceAttributeEcs(
+				rewardItem, attribute, copyAttr[attribute][0], copyAttr[attribute][1]);
+		}
+		for (int socket = 0; socket < ITEM_SOCKET_MAX_NUM; ++socket)
+			ItemSystem::SetItemSocket(rewardItem, socket, copySocket[socket]);
+	}
 #endif
 
 #ifdef ENABLE_BUG_FIXES
-				if (!item_copy_bonus && ItemSystem::GetItemType(EntityFactory::CreateItemEntity(g_registry, pItem)) == ITEM_COSTUME)
-				{
-					ItemSystem::ClearItemAttributesEcs(EntityFactory::CreateItemEntity(g_registry, pItem));
+	if (!itemCopyBonus && ItemSystem::GetItemType(rewardItem) == ITEM_COSTUME)
+	{
+		ItemSystem::ClearItemAttributesEcs(rewardItem);
 #ifdef ENABLE_STOLE_COSTUME
-					if (ItemSystem::GetItemSubType(EntityFactory::CreateItemEntity(g_registry, pItem)) == COSTUME_STOLE)
-					{
-						uint8_t grade = ItemSystem::GetItemValue(EntityFactory::CreateItemEntity(g_registry, pItem), 0);
-						if (grade > 0)
-						{
-							grade = grade > 4 ? 4 : grade;
-							uint8_t random = (grade * 4);
-
-							for (int i = 0; i < MAX_ATTR; i++)
-							{
-								ItemSystem::SetItemForceAttributeEcs(EntityFactory::CreateItemEntity(g_registry, pItem), i, stoleInfoTable[i][0], stoleInfoTable[i][number(random - 3, random)]);
-							}
-						}
-					}
-					else
-					{
-						ItemSystem::AlterItemToMagicItem(EntityFactory::CreateItemEntity(g_registry, pItem));
-					}
-#else
-					ItemSystem::AlterItemToMagicItem(EntityFactory::CreateItemEntity(g_registry, pItem));
-#endif
-				}
-#endif
-
-				if (pItem->IsDragonSoul())
+		if (ItemSystem::GetItemSubType(rewardItem) == COSTUME_STOLE)
+		{
+			uint8_t grade = static_cast<uint8_t>(ItemSystem::GetItemValue(rewardItem, 0));
+			if (grade > 0)
+			{
+				grade = grade > 4 ? 4 : grade;
+				const uint8_t randomRange = grade * 4;
+				for (int attribute = 0; attribute < MAX_ATTR; ++attribute)
 				{
-					iEmptyPos = ch->GetEmptyDragonSoulInventory(pItem);
-					pItem->AddToCharacter(ch, TItemPos(DRAGON_SOUL_INVENTORY, iEmptyPos));
-				}
-
-#ifdef ENABLE_EXTRA_INVENTORY
-				else if (pItem->IsExtraItem())
-				{
-					iEmptyPos = ch->GetEmptyExtraInventory(pItem);
-					if (pItem->IsStackable() && !IS_SET(ItemSystem::GetItemAntiFlag(EntityFactory::CreateItemEntity(g_registry, pItem)), ITEM_ANTIFLAG_STACK)) {
-#ifdef ENABLE_NEW_STACK_LIMIT
-						int
-#else
-						uint8_t
-#endif
-						bCount = ItemSystem::GetItemCount(EntityFactory::CreateItemEntity(g_registry, pItem));
-						for (int i = 0; i < EXTRA_INVENTORY_MAX_NUM; ++i) {
-							LPITEM item2 = ch->GetExtraInventoryItem(i);
-							if (!item2)
-								continue;
-
-							if (ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, item2)) == ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, pItem))) {
-								int j = 0;
-								for (j = 0; j < ITEM_SOCKET_MAX_NUM; ++j)
-									if (ItemSystem::GetItemSocket(EntityFactory::CreateItemEntity(g_registry, item2), j) != ItemSystem::GetItemSocket(EntityFactory::CreateItemEntity(g_registry, pItem), j))
-										break;
-
-								if (j != ITEM_SOCKET_MAX_NUM)
-									continue;
-
-#ifdef ENABLE_NEW_STACK_LIMIT
-								int
-#else
-								uint8_t
-#endif
-								bCount2 = MIN(g_bItemCountLimit - ItemSystem::GetItemCount(EntityFactory::CreateItemEntity(g_registry, item2)), bCount);
-								bCount -= bCount2;
-
-								ItemSystem::AddItemCountEcs(
-									EntityFactory::CreateItemEntity(g_registry, item2),
-									bCount2);
-								if (bCount == 0) {
-									ItemSystem::DestroyItemEntityEcs(
-									EntityFactory::CreateItemEntity(g_registry, pItem),
-									"CUBE_REFINING_CONSUME");
-									pItem = nullptr;
-									break;
-								}
-							}
-						}
-
-						if (pItem != nullptr) {
-							ItemSystem::SetItemCountEcs(
-							EntityFactory::CreateItemEntity(g_registry, pItem),
-							bCount);
-							pItem->AddToCharacter(ch, TItemPos(EXTRA_INVENTORY, iEmptyPos));
-						}
-					} else {
-						pItem->AddToCharacter(ch, TItemPos(EXTRA_INVENTORY, iEmptyPos));
-					}
-				}
-#endif
-				else {
-					iEmptyPos = ch->GetEmptyInventory(pItem->GetSize());
-					if (pItem->IsStackable() && !IS_SET(ItemSystem::GetItemAntiFlag(EntityFactory::CreateItemEntity(g_registry, pItem)), ITEM_ANTIFLAG_STACK)) {
-#ifdef ENABLE_NEW_STACK_LIMIT
-						int
-#else
-						uint8_t
-#endif
-						bCount = ItemSystem::GetItemCount(EntityFactory::CreateItemEntity(g_registry, pItem));
-						for (int i = 0; i < INVENTORY_MAX_NUM; ++i) {
-							LPITEM item2 = ItemSystem::GetInventoryItemPtr(AIHelpers::EcsOf(ch), i);
-							if (!item2)
-								continue;
-
-							if (ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, item2)) == ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, pItem))) {
-								int j = 0;
-								for (j = 0; j < ITEM_SOCKET_MAX_NUM; ++j)
-									if (ItemSystem::GetItemSocket(EntityFactory::CreateItemEntity(g_registry, item2), j) != ItemSystem::GetItemSocket(EntityFactory::CreateItemEntity(g_registry, pItem), j))
-										break;
-
-								if (j != ITEM_SOCKET_MAX_NUM)
-									continue;
-
-#ifdef ENABLE_NEW_STACK_LIMIT
-								int
-#else
-								uint8_t
-#endif
-								bCount2 = MIN(g_bItemCountLimit - ItemSystem::GetItemCount(EntityFactory::CreateItemEntity(g_registry, item2)), bCount);
-								bCount -= bCount2;
-
-								ItemSystem::AddItemCountEcs(
-									EntityFactory::CreateItemEntity(g_registry, item2),
-									bCount2);
-								if (bCount == 0) {
-									ItemSystem::DestroyItemEntityEcs(
-									EntityFactory::CreateItemEntity(g_registry, pItem),
-									"CUBE_REFINING_CONSUME");
-									pItem = nullptr;
-									break;
-								}
-							}
-						}
-
-						if (pItem != nullptr) {
-							ItemSystem::SetItemCountEcs(
-							EntityFactory::CreateItemEntity(g_registry, pItem),
-							bCount);
-							pItem->AddToCharacter(ch, TItemPos(INVENTORY, iEmptyPos));
-						}
-					} else {
-						pItem->AddToCharacter(ch, TItemPos(INVENTORY, iEmptyPos));
-					}
+					ItemSystem::SetItemForceAttributeEcs(
+						rewardItem,
+						attribute,
+						stoleInfoTable[attribute][0],
+						stoleInfoTable[attribute][number(randomRange - 3, randomRange)]);
 				}
 			}
-#ifdef TEXTS_IMPROVEMENT
-			else {
-				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 819, "");
-			}
-#endif
 		}
-
-		index_value++;
+		else
+		{
+			ItemSystem::AlterItemToMagicItem(rewardItem);
+		}
+#else
+		ItemSystem::AlterItemToMagicItem(rewardItem);
+#endif
 	}
-}
+#endif
 
+	ItemSystem::AutoGiveItem(ownerEntity, rewardItem);
+}
 
 void SendDateCubeRenewalPackets(LPCHARACTER ch, uint8_t subheader, uint32_t npcVNUM)
 {
@@ -814,13 +733,8 @@ void SendDateCubeRenewalPackets(LPCHARACTER ch, uint8_t subheader, uint32_t npcV
 			pack.date_cube_renewal.vnum_reward = materialInfo.reward.vnum;
 			pack.date_cube_renewal.count_reward = materialInfo.reward.count;
 
-			LPITEM item = ITEM_MANAGER::instance().CreateItem(materialInfo.reward.vnum, materialInfo.reward.count);
-			//tofix item not stackable
-			if (item->IsStackable() && !IS_SET(ItemSystem::GetItemAntiFlag(EntityFactory::CreateItemEntity(g_registry, item)), ITEM_ANTIFLAG_STACK)){
-				pack.date_cube_renewal.item_reward_stackable = true;
-			}else{
-				pack.date_cube_renewal.item_reward_stackable = false;
-			}
+			pack.date_cube_renewal.item_reward_stackable =
+				ItemSystem::IsItemVnumStackable(materialInfo.reward.vnum);
 
 			pack.date_cube_renewal.vnum_material_1 = FN_check_cube_item_vnum_material(materialInfo,1);
 			pack.date_cube_renewal.count_material_1 = FN_check_cube_item_count_material(materialInfo,1);

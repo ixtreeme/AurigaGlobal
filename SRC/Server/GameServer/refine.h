@@ -2,6 +2,7 @@
 #define __INC_REFINE_H
 
 #include "constants.h"
+#include <entt/entt.hpp>
 
 #define REFINE_INCREASE "REFINE.INCREASE_PERCENTAGE"
 
@@ -51,7 +52,7 @@ class CRefineManager : public singleton<CRefineManager>
 
 
 #ifdef ENABLE_FEATURES_REFINE_SYSTEM
-	bool	GetPercentage(LPCHARACTER ch, uint8_t lLow, uint8_t lMedium, uint8_t lExtra, uint8_t total, LPITEM item);	
+	bool	GetPercentage(LPCHARACTER ch, uint8_t lLow, uint8_t lMedium, uint8_t lExtra, uint8_t total, entt::entity item);
 	void	Increase(LPCHARACTER ch, uint8_t lLow, uint8_t lMedium, uint8_t lExtra);
 	void	Reset(LPCHARACTER ch);
 	void	Reset_percent(LPCHARACTER ch);

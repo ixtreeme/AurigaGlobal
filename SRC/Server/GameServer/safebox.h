@@ -1,6 +1,9 @@
 #ifndef __INC_METIN_II_GAME_SAFEBOX_H__
 #define __INC_METIN_II_GAME_SAFEBOX_H__
 
+#include <array>
+#include <entt/entity/entity.hpp>
+
 class CHARACTER;
 class CItem;
 class CGrid;
@@ -11,9 +14,9 @@ class CSafebox
 		CSafebox(LPCHARACTER pkChrOwner, int iSize, uint32_t dwGold);
 		~CSafebox();
 
-		bool		Add(uint32_t dwPos, LPITEM pkItem);
-		LPITEM		Get(uint32_t dwPos);
-		LPITEM		Remove(uint32_t dwPos);
+		bool		Add(uint32_t dwPos, entt::entity item);
+		entt::entity Get(uint32_t dwPos) const;
+		entt::entity Remove(uint32_t dwPos);
 		void		ChangeSize(int iSize);
 
 //		bool		MoveItem(uint8_t bCell, uint8_t bDestCell,
@@ -23,7 +26,7 @@ class CSafebox
 //		uint8_t 
 //#endif
 		//count);
-		LPITEM		GetItem(uint32_t bCell);
+		entt::entity GetItem(uint32_t bCell) const;
 
 		bool MoveItem(uint32_t bCell, uint32_t bDestCell, uint32_t count);
 
@@ -38,7 +41,7 @@ class CSafebox
 		void		__Destroy();
 
 		LPCHARACTER	m_pkChrOwner;
-		LPITEM		m_pkItems[SAFEBOX_MAX_NUM];
+		std::array<entt::entity, SAFEBOX_MAX_NUM> m_items;
 		CGrid *		m_pkGrid;
 		int		m_iSize;
 		int32_t		m_lGold;

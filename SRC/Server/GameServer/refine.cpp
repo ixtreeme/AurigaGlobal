@@ -9,8 +9,6 @@
 #include "char_interface.hpp"
 #include "item_manager.h"
 #include "item.h"
-#include "ecs/EntityFactory.hpp"
-#include "ecs/Registry.hpp"
 #include "ecs/systems/ItemSystem.hpp"
 
 #include "desc.h"
@@ -44,9 +42,9 @@ CRefineManager::~CRefineManager()
 			return uninitialized;
 	}
 
-	bool CRefineManager::GetPercentage(LPCHARACTER ch, uint8_t lLow, uint8_t lMedium, uint8_t lExtra, uint8_t lTotal, LPITEM item)
+	bool CRefineManager::GetPercentage(LPCHARACTER ch, uint8_t lLow, uint8_t lMedium, uint8_t lExtra, uint8_t lTotal, entt::entity item)
 	{
-		if (!item) {
+		if (!ItemSystem::IsValidItem(item)) {
 			return false;
 		}
 
@@ -57,7 +55,7 @@ CRefineManager::~CRefineManager()
 			if (ar_ListType[it] > 0)
 			{
 				//@fix 12.01.2017
-				if (ItemSystem::GetItemType(EntityFactory::CreateItemEntity(g_registry, item)) == ITEM_METIN)
+				if (ItemSystem::GetItemType(item) == ITEM_METIN)
 				{
 					return false;
 				}

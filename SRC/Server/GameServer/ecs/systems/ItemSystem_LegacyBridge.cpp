@@ -131,6 +131,8 @@ LegacyCharHandle LegacyCharOf(entt::entity e)
     return legacy ? legacy->ptr : nullptr;
 }
 
+static LPITEM LegacyItemOf(entt::entity itemEntity);
+
 static ecs::MainInventoryRuntimeComponent* EnsureMainInventoryRuntimeComponent(LPCHARACTER ch)
 {
     if (!ch)
@@ -164,7 +166,7 @@ static LPITEM GetMainInventoryItem(const CHARACTER* ch, uint16_t cell)
         return nullptr;
 
     if (const auto* comp = TryGetMainInventoryRuntimeComponent(ch))
-        return comp->pItems[cell];
+        return LegacyItemOf(comp->items[cell]);
 
     return nullptr;
 }
@@ -175,7 +177,7 @@ static uint16_t GetMainInventoryGrid(const CHARACTER* ch, uint16_t cell)
         return 0;
 
     if (const auto* comp = TryGetMainInventoryRuntimeComponent(ch))
-        return comp->bItemGrid[cell];
+        return comp->itemGrid[cell];
 
     return 0;
 }
@@ -405,7 +407,7 @@ static bool DestroyItemEntityAndLegacy(entt::entity itemEntity, const char* reas
     }
 
     if (itemID != 0)
-        CItemRegistry::Instance().Unregister(itemID);
+        CItemRegistry::Instance().Unregister(itemID, itemEntity);
     if (g_registry.valid(itemEntity))
         g_registry.destroy(itemEntity);
     return true;
@@ -2194,12 +2196,12 @@ void CHARACTER::SetCubeNpc(LPCHARACTER npc)
 
 }
 
-LPITEM* CHARACTER::GetCubeItem()
+std::span<entt::entity> CHARACTER::GetCubeItem()
 {
     if (auto* comp = EnsureCubeWindowComponent(this))
-        return comp->pItems;
+        return comp->items;
 
-    return nullptr;
+    return {};
 }
 
 bool CHARACTER::IsCubeOpen() const
@@ -2218,12 +2220,12 @@ void CHARACTER::SetAttrTransferNpc(LPCHARACTER npc)
 
 }
 
-LPITEM* CHARACTER::GetAttrTransferItem()
+std::span<entt::entity> CHARACTER::GetAttrTransferItem()
 {
     if (auto* comp = EnsureAttrTransferWindowComponent(this))
-        return comp->pItems;
+        return comp->items;
 
-    return nullptr;
+    return {};
 }
 
 bool CHARACTER::IsAttrTransferOpen() const
@@ -2236,12 +2238,12 @@ bool CHARACTER::IsAttrTransferOpen() const
 #endif
 
 #ifdef ENABLE_ACCE_SYSTEM
-LPITEM* CHARACTER::GetAcceMaterials()
+std::span<entt::entity> CHARACTER::GetAcceMaterials()
 {
     if (auto* comp = EnsureAcceWindowComponent(this))
-        return comp->pMaterials;
+        return comp->materials;
 
-    return nullptr;
+    return {};
 }
 #endif
 
@@ -2252,7 +2254,7 @@ LPITEM CHARACTER::GetSwitchbotItem(uint16_t wCell) const
         return nullptr;
 
     if (const auto* switchbot = TryGetSwitchbotRuntimeComponent(this))
-        return switchbot->pItems[wCell];
+        return LegacyItemOf(switchbot->items[wCell]);
 
     return nullptr;
 }
@@ -2264,7 +2266,7 @@ LPITEM CHARACTER::GetDragonSoulItem(uint16_t wCell) const
 		return nullptr;
 
 	if (const auto* comp = TryGetDragonSoulInventoryComponent(this))
-		return comp->pItems[wCell];
+		return LegacyItemOf(comp->items[wCell]);
 
 	return nullptr;
 }
@@ -2275,7 +2277,7 @@ uint16_t CHARACTER::GetDragonSoulGrid(uint16_t wCell) const
 		return 0;
 
 	if (const auto* comp = TryGetDragonSoulInventoryComponent(this))
-		return comp->wItemGrid[wCell];
+		return comp->itemGrid[wCell];
 
 	return 0;
 }
@@ -2289,7 +2291,7 @@ LPITEM CHARACTER::GetExtraInventoryItem(uint16_t wCell) const
 		return nullptr;
 
 	if (const auto* comp = TryGetExtraInventoryRuntimeComponent(this))
-		return comp->pItems[wCell];
+		return LegacyItemOf(comp->items[wCell]);
 
 	return nullptr;
 }
@@ -2300,7 +2302,7 @@ uint16_t CHARACTER::GetExtraInventoryGrid(uint16_t wCell) const
 		return 0;
 
 	if (const auto* comp = TryGetExtraInventoryRuntimeComponent(this))
-		return comp->wItemGrid[wCell];
+		return comp->itemGrid[wCell];
 
 	return 0;
 }
@@ -3760,7 +3762,7 @@ bool CHARACTER::MoveItem(TItemPos Cell, TItemPos DestCell,
 // ä¸®¿¡´Â Æ¯Á¤ �
 // ¸ÀÔÀÇ ¾ÆÀÌ�
 // Û¸¸ ³ÖÀ» ¼ö ÀÖ´Ù.
-	if (DestCell.IsBeltInventoryPosition() && false == CBeltInventoryHelper::CanMoveIntoBeltInventory(item))
+	if (DestCell.IsBeltInventoryPosition() && false == CBeltInventoryHelper::CanMoveIntoBeltInventory(EntityFactory::CreateItemEntity(g_registry, item)))
 	{
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::Send(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, "Belt Only // Csak öveket tehetsz ide.");
@@ -6012,7 +6014,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 			uint32_t dwBoxVnum = item2->GetVnum();
 			std::vector <uint32_t> dwVnums;
 			std::vector <uint32_t> dwCounts;
-			std::vector <LPITEM> item_gets(0);
+			std::vector<entt::entity> item_gets;
 			int count = 0;
 
 			if (GiveItemFromSpecialItemGroup(dwBoxVnum, dwVnums, dwCounts, item_gets, count))
@@ -6111,7 +6113,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 
 		std::vector <uint32_t> dwVnums;
 		std::vector <uint32_t> dwCounts;
-		std::vector <LPITEM> item_gets(0);
+		std::vector<entt::entity> item_gets;
 		int count = 0;
 
 		if (GiveItemFromSpecialItemGroup(dwBoxVnum, dwVnums, dwCounts, item_gets, count))
@@ -8056,7 +8058,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 				uint32_t dwBoxVnum = ITEM_NEW_YEAR_GREETING_VNUM;
 				std::vector <uint32_t> dwVnums;
 				std::vector <uint32_t> dwCounts;
-				std::vector <LPITEM> item_gets;
+				std::vector<entt::entity> item_gets;
 				int count = 0;
 
 				if (GiveItemFromSpecialItemGroup(dwBoxVnum, dwVnums, dwCounts, item_gets, count))
@@ -8079,7 +8081,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 				uint32_t dwBoxVnum = item->GetVnum();
 				std::vector <uint32_t> dwVnums;
 				std::vector <uint32_t> dwCounts;
-				std::vector <LPITEM> item_gets(0);
+				std::vector<entt::entity> item_gets;
 				int count = 0;
 
 				if (item->GetVnum() == ITEM_VALENTINE_ROSE && SEX_MALE == GET_SEX(this)) {
@@ -8106,7 +8108,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 				uint32_t dwBoxVnum = item->GetVnum();
 				std::vector <uint32_t> dwVnums;
 				std::vector <uint32_t> dwCounts;
-				std::vector <LPITEM> item_gets(0);
+				std::vector<entt::entity> item_gets;
 				int count = 0;
 
 				if (item->GetVnum() == ITEM_WHITEDAY_ROSE && SEX_MALE == GET_SEX(this)) {
@@ -8132,7 +8134,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 				uint32_t dwBoxVnum = 50011;
 				std::vector <uint32_t> dwVnums;
 				std::vector <uint32_t> dwCounts;
-				std::vector <LPITEM> item_gets(0);
+				std::vector<entt::entity> item_gets;
 				int count = 0;
 
 				if (GiveItemFromSpecialItemGroup(dwBoxVnum, dwVnums, dwCounts, item_gets, count))
@@ -13614,7 +13616,7 @@ void CHARACTER::ReceiveItem(LPCHARACTER from, LPITEM item)
 }
 
 bool CHARACTER::GiveItemFromSpecialItemGroup(uint32_t dwGroupNum, std::vector<uint32_t> &dwItemVnums,
-	std::vector<uint32_t> &dwItemCounts, std::vector <LPITEM> &item_gets, int& count)
+	std::vector<uint32_t> &dwItemCounts, std::vector<entt::entity> &item_gets, int& count)
 {
 	const CSpecialItemGroup* pGroup = ITEM_MANAGER::instance().GetSpecialItemGroup(dwGroupNum);
 
@@ -13724,7 +13726,7 @@ bool CHARACTER::GiveItemFromSpecialItemGroup(uint32_t dwGroupNum, std::vector<ui
 		{
 			dwItemVnums.push_back(dwVnum);
 			dwItemCounts.push_back(dwCount);
-			item_gets.push_back(item_get);
+			item_gets.push_back(item_get ? EntityFactory::CreateItemEntity(g_registry, item_get) : entt::null);
 			count++;
 
 		}
@@ -14015,6 +14017,15 @@ void CHARACTER::SetItem(TItemPos Cell, LPITEM pItem)
 		assert(!"GetOwner exist");
 		return;
 	}
+
+	const entt::entity itemEntity = pItem
+		? EntityFactory::CreateItemEntity(g_registry, pItem)
+		: entt::null;
+	if (pItem && itemEntity == entt::null)
+	{
+		LOG_ERROR("CHARACTER::SetItem: item {} has no ECS entity", pItem->GetID());
+		return;
+	}
 	// ��o� A�oYA丮
 	switch (window_type)
 	{
@@ -14034,48 +14045,48 @@ void CHARACTER::SetItem(TItemPos Cell, LPITEM pItem)
 			return;
 		}
 
-		LPITEM pOld = pMainInventory->pItems[storageCell];
+		const entt::entity pOld = pMainInventory->items[storageCell];
 
-		if (pOld)
+		if (pOld != entt::null)
 		{
 			if (storageCell < INVENTORY_MAX_NUM)
 			{
-				for (int i = 0; i < pOld->GetSize(); ++i)
+				for (int i = 0; i < ItemSystem::GetItemSize(pOld); ++i)
 				{
 					int p = storageCell + (i * 5);
 
 					if (p >= INVENTORY_MAX_NUM)
 						continue;
 
-					if (pMainInventory->pItems[p] && pMainInventory->pItems[p] != pOld)
+					if (pMainInventory->items[p] != entt::null && pMainInventory->items[p] != pOld)
 						continue;
 
-					pMainInventory->bItemGrid[p] = 0;
+					pMainInventory->itemGrid[p] = 0;
 				}
 			}
 			else
-				pMainInventory->bItemGrid[storageCell] = 0;
+				pMainInventory->itemGrid[storageCell] = 0;
 		}
 
 		if (pItem)
 		{
 			if (storageCell < INVENTORY_MAX_NUM)
 			{
-				for (int i = 0; i < pItem->GetSize(); ++i)
+				for (int i = 0; i < ItemSystem::GetItemSize(itemEntity); ++i)
 				{
 					int p = storageCell + (i * 5);
 
 					if (p >= INVENTORY_MAX_NUM)
 						continue;
 
-					pMainInventory->bItemGrid[p] = storageCell + 1;
+					pMainInventory->itemGrid[p] = storageCell + 1;
 				}
 			}
 			else
-				pMainInventory->bItemGrid[storageCell] = storageCell + 1;
+				pMainInventory->itemGrid[storageCell] = storageCell + 1;
 		}
 
-		pMainInventory->pItems[storageCell] = pItem;
+		pMainInventory->items[storageCell] = itemEntity;
 	}
 	break;
 	case EQUIPMENT:
@@ -14094,15 +14105,15 @@ void CHARACTER::SetItem(TItemPos Cell, LPITEM pItem)
 			return;
 		}
 
-		LPITEM pOld = pMainInventory->pItems[storageCell];
+		const entt::entity pOld = pMainInventory->items[storageCell];
 
-		if (pOld)
-			pMainInventory->bItemGrid[storageCell] = 0;
+		if (pOld != entt::null)
+			pMainInventory->itemGrid[storageCell] = 0;
 
 		if (pItem)
-			pMainInventory->bItemGrid[storageCell] = storageCell + 1;
+			pMainInventory->itemGrid[storageCell] = storageCell + 1;
 
-		pMainInventory->pItems[storageCell] = pItem;
+		pMainInventory->items[storageCell] = itemEntity;
 	}
 	break;
 	// ?�EY1� A�oYA丮
@@ -14121,38 +14132,38 @@ void CHARACTER::SetItem(TItemPos Cell, LPITEM pItem)
 			return;
 		}
 
-		LPITEM pOld = pDragonSoulInventory->pItems[wCell];
+		const entt::entity pOld = pDragonSoulInventory->items[wCell];
 
-		if (pOld)
+		if (pOld != entt::null)
 		{
-			for (int i = 0; i < pOld->GetSize(); ++i)
+			for (int i = 0; i < ItemSystem::GetItemSize(pOld); ++i)
 			{
 				int p = wCell + (i * DRAGON_SOUL_BOX_COLUMN_NUM);
 
 				if (p >= DRAGON_SOUL_INVENTORY_MAX_NUM)
 					continue;
 
-				if (pDragonSoulInventory->pItems[p] && pDragonSoulInventory->pItems[p] != pOld)
+				if (pDragonSoulInventory->items[p] != entt::null && pDragonSoulInventory->items[p] != pOld)
 					continue;
 
-				pDragonSoulInventory->wItemGrid[p] = 0;
+				pDragonSoulInventory->itemGrid[p] = 0;
 			}
 		}
 
 		if (pItem)
 		{
-			for (int i = 0; i < pItem->GetSize(); ++i)
+			for (int i = 0; i < ItemSystem::GetItemSize(itemEntity); ++i)
 			{
 				int p = wCell + (i * DRAGON_SOUL_BOX_COLUMN_NUM);
 
 				if (p >= DRAGON_SOUL_INVENTORY_MAX_NUM)
 					continue;
 
-				pDragonSoulInventory->wItemGrid[p] = wCell + 1;
+				pDragonSoulInventory->itemGrid[p] = wCell + 1;
 			}
 		}
 
-		pDragonSoulInventory->pItems[wCell] = pItem;
+		pDragonSoulInventory->items[wCell] = itemEntity;
 	}
 	break;
 #ifdef ENABLE_EXTRA_INVENTORY
@@ -14174,31 +14185,31 @@ void CHARACTER::SetItem(TItemPos Cell, LPITEM pItem)
 			return;
 		}
 
-		LPITEM pOld = pExtraInventory->pItems[wCell];
+		const entt::entity pOld = pExtraInventory->items[wCell];
 
-		if (pOld)
+		if (pOld != entt::null)
 		{
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
-			ecs::ChatSystem::Send(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, "char_item.cpp::if (pOld)");//INGAME_DEBUG_RAZOR93
+			ecs::ChatSystem::Send(AIHelpers::EcsOf(this), CHAT_TYPE_INFO, "char_item.cpp::if (pOld != entt::null)");//INGAME_DEBUG_RAZOR93
 #endif
 
 			if (wCell < EXTRA_INVENTORY_MAX_NUM)
 			{
-				for (int i = 0; i < pOld->GetSize(); ++i)
+				for (int i = 0; i < ItemSystem::GetItemSize(pOld); ++i)
 				{
 					int p = wCell + (i * EXTRA_INVENTORY_PAGE_COLUMN);
 
 					if (p >= EXTRA_INVENTORY_MAX_NUM)
 						continue;
 
-					if (pExtraInventory->pItems[p] && pExtraInventory->pItems[p] != pOld)
+					if (pExtraInventory->items[p] != entt::null && pExtraInventory->items[p] != pOld)
 						continue;
 
-					pExtraInventory->wItemGrid[p] = 0;
+					pExtraInventory->itemGrid[p] = 0;
 				}
 			}
 			else
-				pExtraInventory->wItemGrid[wCell] = 0;
+				pExtraInventory->itemGrid[wCell] = 0;
 		}
 
 		if (pItem)
@@ -14208,21 +14219,21 @@ void CHARACTER::SetItem(TItemPos Cell, LPITEM pItem)
 #endif
 			if (wCell < EXTRA_INVENTORY_MAX_NUM)
 			{
-				for (int i = 0; i < pItem->GetSize(); ++i)
+				for (int i = 0; i < ItemSystem::GetItemSize(itemEntity); ++i)
 				{
 					int p = wCell + (i * EXTRA_INVENTORY_PAGE_COLUMN);
 
 					if (p >= EXTRA_INVENTORY_MAX_NUM)
 						continue;
 
-					pExtraInventory->wItemGrid[p] = wCell + 1;
+					pExtraInventory->itemGrid[p] = wCell + 1;
 				}
 			}
 			else
-				pExtraInventory->wItemGrid[wCell] = wCell + 1;
+				pExtraInventory->itemGrid[wCell] = wCell + 1;
 		}
 
-		pExtraInventory->pItems[wCell] = pItem;
+		pExtraInventory->items[wCell] = itemEntity;
 	}
 	break;
 #endif
@@ -14230,8 +14241,8 @@ void CHARACTER::SetItem(TItemPos Cell, LPITEM pItem)
 #ifdef ENABLE_SWITCHBOT
 	case SWITCHBOT:
 	{
-		LPITEM pOld = GetSwitchbotItem(wCell);
-		if (pItem && pOld)
+		const entt::entity oldItem = ItemSystem::GetItem(AIHelpers::EcsOf(this), TItemPos(SWITCHBOT, wCell));
+		if (pItem && oldItem != entt::null)
 		{
 			return;
 		}
@@ -14251,6 +14262,8 @@ void CHARACTER::SetItem(TItemPos Cell, LPITEM pItem)
 			CSwitchbotManager::Instance().UnregisterItem(GetPlayerID(), wCell);
 		}
 
+		if (auto* switchbot = EnsureSwitchbotRuntimeComponent(this))
+			switchbot->items[wCell] = itemEntity;
 	}
 	break;
 #endif
@@ -14318,7 +14331,7 @@ void CHARACTER::SetItem(TItemPos Cell, LPITEM pItem)
 		case INVENTORY:
 			if (wCell >= BELT_INVENTORY_SLOT_START && wCell < BELT_INVENTORY_SLOT_END)
 			{
-				if (CBeltInventoryHelper::CanMoveIntoBeltInventory(pItem))
+				if (CBeltInventoryHelper::CanMoveIntoBeltInventory(EntityFactory::CreateItemEntity(g_registry, pItem)))
 					pItem->SetWindow(INVENTORY);
 				else
 					pItem->SetWindow(EQUIPMENT); // vagy return is lehet, ha nem engedelyezett
@@ -16003,7 +16016,7 @@ void CItem::StartDestroyEvent(int iSec)
 		return;
 
 	item_event_info* info = AllocEventInfo<item_event_info>();
-	info->item = this;
+	info->item = EntityFactory::CreateItemEntity(g_registry, this);
 
 	SetDestroyEvent(event_create(item_destroy_event, info, PASSES_PER_SEC(iSec)));
 }
@@ -16038,7 +16051,7 @@ void CItem::StartUniqueExpireEvent()
 	SetSocket(ITEM_SOCKET_UNIQUE_SAVE_TIME, 0);
 
 	item_event_info* info = AllocEventInfo<item_event_info>();
-	info->item = this;
+	info->item = EntityFactory::CreateItemEntity(g_registry, this);
 
 	SetUniqueExpireEvent(event_create(unique_expire_event, info, PASSES_PER_SEC(iSec)));
 
@@ -16091,7 +16104,7 @@ void CItem::StartTimerBasedOnWearExpireEvent()
 	}
 
 	item_event_info* info = AllocEventInfo<item_event_info>();
-	info->item = this;
+	info->item = EntityFactory::CreateItemEntity(g_registry, this);
 
 	SetTimerBasedOnWearExpireEvent(event_create(timer_based_on_wear_expire_event, info, PASSES_PER_SEC(iSec)));
 
@@ -16123,7 +16136,7 @@ void CItem::StartRealTimeExpireEvent()
 		if (LIMIT_REAL_TIME == aLimit.bType || LIMIT_REAL_TIME_START_FIRST_USE == aLimit.bType)
 		{
 			item_vid_event_info* info = AllocEventInfo<item_vid_event_info>();
-			info->item_vid = GetVID();
+			info->item = EntityFactory::CreateItemEntity(g_registry, this);
 #ifdef ENABLE_NEW_USE_POTION
 			if ((GetType() == ITEM_USE) && (GetSubType() == USE_NEW_POTIION)) {
 				int32_t remainSec = GetSocket(0);
@@ -16201,7 +16214,7 @@ void CItem::StartAccessorySocketExpireEvent()
 		iSec = MIN(iSec, 60);
 
 	item_vid_event_info* info = AllocEventInfo<item_vid_event_info>();
-	info->item_vid = GetVID();
+	info->item = EntityFactory::CreateItemEntity(g_registry, this);
 
 	SetAccessorySocketExpireEvent(event_create(accessory_socket_expire_event, info, PASSES_PER_SEC(iSec)));
 
@@ -16256,7 +16269,7 @@ void CItem::StartSoulItemEvent()
 		return;
 
 	item_vid_event_info* pInfo = AllocEventInfo<item_vid_event_info>();
-	pInfo->item_vid = GetVID();
+	pInfo->item = EntityFactory::CreateItemEntity(g_registry, this);
 	SetSoulItemEvent(event_create(soul_item_event, pInfo, PASSES_PER_SEC(test_server ? 5 : 60)));
 
 	const entt::entity e = ItemEntityOf(this);
@@ -17368,14 +17381,17 @@ EVENTFUNC(item_destroy_event)
 		return 0;
 	}
 
-	LPITEM pkItem = info->item;
+	const entt::entity itemEntity = info->item;
+	LPITEM pkItem = LegacyItemOf(itemEntity);
+	if (!pkItem)
+		return 0;
 
 	if (pkItem->GetOwner())
 		LOG_ERROR("item_destroy_event: Owner exist. (item {} owner {})", pkItem->GetName(), pkItem->GetOwner()->GetName());
 
 	pkItem->SetDestroyEvent(nullptr);
 	ItemSystem::DestroyItemEntityEcs(
-		EntityFactory::CreateItemEntity(g_registry, pkItem),
+		itemEntity,
 		"ITEM_DESTROY_EVENT");
 	return 0;
 }
@@ -17390,7 +17406,10 @@ EVENTFUNC(ownership_event)
 		return 0;
 	}
 
-	LPITEM pkItem = info->item;
+	const entt::entity itemEntity = info->item;
+	LPITEM pkItem = LegacyItemOf(itemEntity);
+	if (!pkItem)
+		return 0;
 
 	pkItem->SetOwnershipEvent(nullptr);
 
@@ -17414,7 +17433,10 @@ EVENTFUNC(unique_expire_event)
 		return 0;
 	}
 
-	LPITEM pkItem = info->item;
+	const entt::entity itemEntity = info->item;
+	LPITEM pkItem = LegacyItemOf(itemEntity);
+	if (!pkItem)
+		return 0;
 
 	if (pkItem->GetValue(2) == 0)
 	{
@@ -17461,7 +17483,10 @@ EVENTFUNC(timer_based_on_wear_expire_event)
 		return 0;
 	}
 
-	LPITEM pkItem = info->item;
+	const entt::entity itemEntity = info->item;
+	LPITEM pkItem = LegacyItemOf(itemEntity);
+	if (!pkItem)
+		return 0;
 	int remain_time = pkItem->GetSocket(ITEM_SOCKET_REMAIN_SEC) - processing_time / passes_per_sec;
 #ifdef ENABLE_RUNE_SYSTEM
 	if (pkItem->IsRune()) {
@@ -17491,7 +17516,7 @@ EVENTFUNC(timer_based_on_wear_expire_event)
 
 		if (pkItem->IsDragonSoul())
 		{
-			DSManager::instance().DeactivateDragonSoul(EntityFactory::CreateItemEntity(g_registry, pkItem));
+			DSManager::instance().DeactivateDragonSoul(itemEntity);
 		}
 		else
 		{
@@ -17511,7 +17536,9 @@ EVENTFUNC(real_time_expire_event)
 	if (nullptr == info)
 		return 0;
 
-	const LPITEM item = ITEM_MANAGER::instance().FindByVID(info->item_vid);
+	const LPITEM item = LegacyItemOf(info->item);
+	if (!item)
+		return 0;
 
 	if (nullptr == item)
 		return 0;
@@ -17608,7 +17635,9 @@ EVENTFUNC(accessory_socket_expire_event)
 		return 0;
 	}
 
-	LPITEM item = ITEM_MANAGER::instance().FindByVID(info->item_vid);
+	LPITEM item = LegacyItemOf(info->item);
+	if (!item)
+		return 0;
 	if (item->GetAccessorySocketDownGradeTime() <= 1)
 	{
 	degrade:
@@ -17639,7 +17668,7 @@ EVENTFUNC(soul_item_event)
 	if (!pInfo)
 		return 0;
 
-	const LPITEM pItem = ITEM_MANAGER::instance().FindByVID(pInfo->item_vid);
+	const LPITEM pItem = LegacyItemOf(pInfo->item);
 	if (!pItem)
 		return 0;
 

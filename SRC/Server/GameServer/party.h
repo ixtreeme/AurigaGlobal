@@ -5,6 +5,7 @@
 
 #include "char_interface.hpp"
 #include <Core/Logging.hpp>
+#include <entt/entt.hpp>
 #include <string_view>
 
 enum // unit : minute
@@ -370,43 +371,22 @@ inline int CParty::ComputePartyBonusDefenseGrade()
 
 
 #ifdef ENABLE_DICE_SYSTEM
-#include "item.h"
-
 struct FPartyDropDiceRoll
 {
-	const LPITEM m_itemDrop;
+	const entt::entity m_itemDrop;
 	LPCHARACTER m_itemOwner;
 	int m_lastNumber;
 
-	FPartyDropDiceRoll(const LPITEM itemDrop, LPCHARACTER itemOwner) : m_itemDrop(itemDrop), m_itemOwner(itemOwner), m_lastNumber(0)
+	FPartyDropDiceRoll(entt::entity itemDrop, LPCHARACTER itemOwner) : m_itemDrop(itemDrop), m_itemOwner(itemOwner), m_lastNumber(0)
 	{
 	};
 
-	void Process(const LPCHARACTER mobVictim)
-	{
-		if ((!mobVictim || (mobVictim->GetMobRank() >= MOB_RANK_BOSS && mobVictim->GetMobRank() <= MOB_RANK_KING)) && m_itemOwner->GetParty() && m_itemOwner->GetParty()->GetNearMemberCount() > 1)
-		{
-			LPPARTY pParty = m_itemOwner->GetParty();
-#ifdef TEXTS_IMPROVEMENT
-			pParty->ChatPacketToAllMemberNew(CHAT_TYPE_DICE_INFO, 542, "%s", m_itemDrop->GetName());
-#endif
-			pParty->ForEachNearMember(*this);
-			if (m_itemOwner)
-			{
-				m_itemDrop->SetOwnership(m_itemOwner);
-#ifdef TEXTS_IMPROVEMENT
-				pParty->ChatPacketToAllMemberNew(CHAT_TYPE_DICE_INFO, 903, "%s#%s", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(m_itemOwner)).data(), m_itemDrop->GetName());
-#endif
-			}
-		}
-		else
-			m_itemDrop->SetOwnership(m_itemOwner);
-	}
+	void Process(const LPCHARACTER mobVictim);
 	LPCHARACTER GetItemOwner()
 	{
 		return m_itemOwner;
 	}
-	const LPITEM GetItemDrop()
+	entt::entity GetItemDrop() const
 	{
 		return m_itemDrop;
 	}

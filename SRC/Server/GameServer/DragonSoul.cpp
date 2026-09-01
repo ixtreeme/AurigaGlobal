@@ -32,15 +32,6 @@ typedef std::vector <std::string> TTokenVector;
 
 namespace {
 
-LPITEM LegacyDragonSoulItemOf(entt::entity item)
-{
-	if (item == entt::null)
-		return nullptr;
-
-	const uint32_t id = ItemSystem::GetItemID(item);
-	return id != 0 ? ITEM_MANAGER::instance().Find(id) : nullptr;
-}
-
 void SyncDragonSoulItemEntity(entt::entity item)
 {
 	if (item != entt::null)
@@ -52,17 +43,38 @@ void SyncDragonSoulItemPtr(entt::entity item)
 	SyncDragonSoulItemEntity(item);
 }
 
+TItemPos DragonSoulItemPosition(entt::entity item)
+{
+	return ItemSystem::IsValidItem(item)
+		? TItemPos(ItemSystem::GetItemWindow(item), ItemSystem::GetItemCell(item))
+		: NPOS;
+}
+
+bool ConsumeDragonSoulMaterials(const std::set<entt::entity>& items, int amount)
+{
+	int remaining = amount;
+	for (const entt::entity item : items)
+	{
+		if (remaining <= 0)
+			break;
+
+		const uint32_t available = ItemSystem::GetItemCount(item);
+		const uint32_t consumed = MIN(static_cast<uint32_t>(remaining), available);
+		if (consumed == 0 || !ItemSystem::ConsumeItemEcs(item, consumed))
+			return false;
+		remaining -= static_cast<int>(consumed);
+	}
+	return remaining == 0;
+}
+
 void SyncDragonSoulGridItems(LPCHARACTER ch, const TItemPos (&aItemPoses)[DRAGON_SOUL_REFINE_GRID_SIZE])
 {
 	if (!ch)
 		return;
 
+	const entt::entity owner = AIHelpers::EcsOf(ch);
 	for (int i = 0; i < DRAGON_SOUL_REFINE_GRID_SIZE; ++i)
-	{
-		LPITEM item = ch->GetItem(aItemPoses[i]);
-		if (item)
-			SyncDragonSoulItemPtr(EntityFactory::CreateItemEntity(g_registry, item));
-	}
+		SyncDragonSoulItemPtr(ItemSystem::GetItem(owner, aItemPoses[i]));
 }
 
 } // namespace
@@ -204,8 +216,7 @@ uint16_t DSManager::GetBasePosition(entt::entity item) const
 
 bool DSManager::RefreshItemAttributes(entt::entity item)
 {
-	LPITEM pDS = LegacyDragonSoulItemOf(item);
-	if (!pDS || !pDS->IsDragonSoul())
+	if (!ItemSystem::IsDragonSoulItem(item))
 	{
 		LOG_ERROR("This item(ID : {}) is not DragonSoul.", ItemSystem::GetItemID(item));
 		return false;
@@ -229,7 +240,6 @@ bool DSManager::RefreshItemAttributes(entt::entity item)
 		return false;
 	}
 
-	// add_min과 add_max는 더미로 읽음.
 	int basic_apply_num, add_min, add_max;
 	if (!m_pTable->GetApplyNumSettings(ds_type, grade_idx, basic_apply_num, add_min, add_max))
 	{
@@ -239,44 +249,40 @@ bool DSManager::RefreshItemAttributes(entt::entity item)
 
 	float fWeight = 0.f;
 	if (!m_pTable->GetWeight(ds_type, grade_idx, step_idx, strength_idx, fWeight))
-	{
 		return false;
-	}
 	fWeight /= 100.f;
 
-	int n = MIN(basic_apply_num, vec_basic_applys.size());
-	for (int i = 0; i < n; i++)
+	const int n = MIN(basic_apply_num, vec_basic_applys.size());
+	for (int i = 0; i < n; ++i)
 	{
 		const SApply& basic_apply = vec_basic_applys[i];
-		uint8_t bType = basic_apply.apply_type;
-		short sValue = (short)(ceil((float)basic_apply.apply_value * fWeight - 0.01f));
-
-		ItemSystem::SetItemForceAttributeEcs(item, i, bType, sValue);
+		const short value = static_cast<short>(ceil(static_cast<float>(basic_apply.apply_value) * fWeight - 0.01f));
+		ItemSystem::SetItemForceAttributeEcs(item, i, basic_apply.apply_type, value);
 	}
 
-	for (int i = DRAGON_SOUL_ADDITIONAL_ATTR_START_IDX; i < ITEM_ATTRIBUTE_MAX_NUM; i++)
+	for (int i = DRAGON_SOUL_ADDITIONAL_ATTR_START_IDX; i < ITEM_ATTRIBUTE_MAX_NUM; ++i)
 	{
-		uint8_t bType = pDS->GetAttributeType(i);
-		short sValue = 0;
-		if (APPLY_NONE == bType)
+		const uint8_t type = static_cast<uint8_t>(ItemSystem::GetItemAttributeType(item, i));
+		if (type == APPLY_NONE)
 			continue;
-		for (size_t j = 0; j < vec_addtional_applys.size(); j++)
+
+		short value = 0;
+		for (const SApply& additional : vec_addtional_applys)
 		{
-			if (vec_addtional_applys[j].apply_type == bType)
+			if (additional.apply_type == type)
 			{
-				sValue = vec_addtional_applys[j].apply_value;
+				value = additional.apply_value;
 				break;
 			}
 		}
-		ItemSystem::SetItemForceAttributeEcs(item, i, bType, (short)(ceil((float)sValue * fWeight - 0.01f)));
+		ItemSystem::SetItemForceAttributeEcs(item, i, type,
+			static_cast<short>(ceil(static_cast<float>(value) * fWeight - 0.01f)));
 	}
 	return true;
 }
-
 bool DSManager::PutAttributes(entt::entity item)
 {
-	LPITEM pDS = LegacyDragonSoulItemOf(item);
-	if (!pDS || !pDS->IsDragonSoul())
+	if (!ItemSystem::IsDragonSoulItem(item))
 	{
 		LOG_ERROR("This item(ID : {}) is not DragonSoul.", ItemSystem::GetItemID(item));
 		return false;
@@ -287,7 +293,6 @@ bool DSManager::PutAttributes(entt::entity item)
 
 	DragonSoulTable::TVecApplys vec_basic_applys;
 	DragonSoulTable::TVecApplys vec_addtional_applys;
-
 	if (!m_pTable->GetBasicApplys(ds_type, vec_basic_applys))
 	{
 		LOG_ERROR("There is no BasicApply about {} type dragon soul.", static_cast<int>(ds_type));
@@ -299,7 +304,6 @@ bool DSManager::PutAttributes(entt::entity item)
 		return false;
 	}
 
-
 	int basic_apply_num, add_min, add_max;
 	if (!m_pTable->GetApplyNumSettings(ds_type, grade_idx, basic_apply_num, add_min, add_max))
 	{
@@ -309,64 +313,55 @@ bool DSManager::PutAttributes(entt::entity item)
 
 	float fWeight = 0.f;
 	if (!m_pTable->GetWeight(ds_type, grade_idx, step_idx, strength_idx, fWeight))
-	{
 		return false;
-	}
 	fWeight /= 100.f;
 
-	int n = MIN(basic_apply_num, vec_basic_applys.size());
-	for (int i = 0; i < n; i++)
+	const int n = MIN(basic_apply_num, vec_basic_applys.size());
+	for (int i = 0; i < n; ++i)
 	{
 		const SApply& basic_apply = vec_basic_applys[i];
-		uint8_t bType = basic_apply.apply_type;
-		short sValue = (short)(ceil((float)basic_apply.apply_value * fWeight - 0.01f));
-
-		ItemSystem::SetItemForceAttributeEcs(item, i, bType, sValue);
+		const short value = static_cast<short>(ceil(static_cast<float>(basic_apply.apply_value) * fWeight - 0.01f));
+		ItemSystem::SetItemForceAttributeEcs(item, i, basic_apply.apply_type, value);
 	}
 
-	uint8_t additional_attr_num = MIN(number (add_min, add_max), 4);
-
-	std::vector <int> random_set;
+	const uint8_t additional_attr_num = MIN(number(add_min, add_max), 4);
 	if (additional_attr_num > 0)
 	{
-		random_set.resize(additional_attr_num);
-		std::list <float> list_probs;
-		for (size_t i = 0; i < vec_addtional_applys.size(); i++)
-		{
-			list_probs.push_back(vec_addtional_applys[i].prob);
-		}
-		if (!MakeDistinctRandomNumberSet(list_probs, random_set))
+		std::vector<int> random_set(additional_attr_num);
+		std::list<float> probabilities;
+		for (const SApply& additional : vec_addtional_applys)
+			probabilities.push_back(additional.prob);
+
+		if (!MakeDistinctRandomNumberSet(probabilities, random_set))
 		{
 			LOG_ERROR("MakeDistinctRandomNumberSet error.");
 			return false;
 		}
 
-		for (int i = 0; i < additional_attr_num; i++)
+		for (int i = 0; i < additional_attr_num; ++i)
 		{
-			int r = random_set[i];
-			const SApply& additional_attr = vec_addtional_applys[r];
-			uint8_t bType = additional_attr.apply_type;
-			short sValue = (short)(ceil((float)additional_attr.apply_value * fWeight - 0.01f));
-
-			ItemSystem::SetItemForceAttributeEcs(item, DRAGON_SOUL_ADDITIONAL_ATTR_START_IDX + i, bType, sValue);
+			const SApply& additional = vec_addtional_applys[random_set[i]];
+			const short value = static_cast<short>(ceil(static_cast<float>(additional.apply_value) * fWeight - 0.01f));
+			ItemSystem::SetItemForceAttributeEcs(item,
+				DRAGON_SOUL_ADDITIONAL_ATTR_START_IDX + i,
+				additional.apply_type, value);
 		}
 	}
 
 	return true;
 }
-
 bool DSManager::DragonSoulItemInitialize(entt::entity item)
 {
-	LPITEM pItem = LegacyDragonSoulItemOf(item);
-	if (nullptr == pItem || !pItem->IsDragonSoul())
+	if (!ItemSystem::IsDragonSoulItem(item))
 		return false;
-	PutAttributes(item);
-	int time = DSManager::instance().GetDuration(item);
-	if (time > 0)
-		ItemSystem::SetItemSocket(item, ITEM_SOCKET_REMAIN_SEC, time);
+	if (!PutAttributes(item))
+		return false;
+
+	const int duration = GetDuration(item);
+	if (duration > 0)
+		ItemSystem::SetItemSocketEcs(item, ITEM_SOCKET_REMAIN_SEC, duration);
 	return true;
 }
-
 uint32_t DSManager::MakeDragonSoulVnum(uint8_t bType, uint8_t grade, uint8_t step, uint8_t refine)
 {
 	return bType * 10000 + grade * 1000 + step * 100 + refine * 10;
@@ -374,106 +369,93 @@ uint32_t DSManager::MakeDragonSoulVnum(uint8_t bType, uint8_t grade, uint8_t ste
 
 int DSManager::GetDuration(entt::entity item) const
 {
-	LPITEM pItem = LegacyDragonSoulItemOf(item);
-	return pItem ? pItem->GetDuration() : 0;
+	return ItemSystem::GetItemDuration(item);
 }
-
 // 용혼석을 받아서 용심을 추출하는 함수
 bool DSManager::ExtractDragonHeart(LPCHARACTER ch, entt::entity item, entt::entity extractor)
 {
-	LPITEM pItem = LegacyDragonSoulItemOf(item);
-	LPITEM pExtractor = LegacyDragonSoulItemOf(extractor);
-	if (nullptr == ch || nullptr == pItem)
+	if (!ch || !ItemSystem::IsDragonSoulItem(item))
 		return false;
+
+	const entt::entity owner = AIHelpers::EcsOf(ch);
+	const bool hasExtractor = extractor != entt::null;
+	if (hasExtractor && !ItemSystem::IsValidItem(extractor))
+		return false;
+
 	if (ItemSystem::IsItemEquipped(item))
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 623, "");
+		ecs::ChatSystem::SendNew(owner, CHAT_TYPE_INFO, 623, "");
 #endif
 		return false;
 	}
 
-	uint32_t dwVnum = ItemSystem::GetItemVnum(item);
 	uint8_t ds_type, grade_idx, step_idx, strength_idx;
-	GetDragonSoulInfo(dwVnum, ds_type, grade_idx, step_idx, strength_idx);
+	GetDragonSoulInfo(ItemSystem::GetItemVnum(item), ds_type, grade_idx, step_idx, strength_idx);
 
-	int iBonus = 0;
-
-	if (nullptr != pExtractor)
-	{
-		iBonus = ItemSystem::GetItemValue(extractor, 0);
-	}
-
-	std::vector <float> vec_chargings;
-	std::vector <float> vec_probs;
-
-	if (!m_pTable->GetDragonHeartExtValues(ds_type, grade_idx, vec_chargings, vec_probs))
-	{
+	const int bonus = hasExtractor ? ItemSystem::GetItemValue(extractor, 0) : 0;
+	std::vector<float> chargings;
+	std::vector<float> probabilities;
+	if (!m_pTable->GetDragonHeartExtValues(ds_type, grade_idx, chargings, probabilities))
 		return false;
-	}
 
-	int idx = Gamble(vec_probs);
-
-	//float sum = 0.f;
-	if (-1 == idx)
+	const int resultIndex = Gamble(probabilities);
+	if (resultIndex < 0 || static_cast<size_t>(resultIndex) >= chargings.size())
 	{
 		LOG_ERROR("Gamble is failed. ds_type({}), grade_idx({})", static_cast<int>(ds_type), static_cast<int>(grade_idx));
 		return false;
 	}
 
-	float fCharge = vec_chargings[idx] * (100 + iBonus) / 100.f;
+	float charge = chargings[resultIndex] * (100 + bonus) / 100.f;
 #ifdef ENABLE_DS_EDITS
-	fCharge = float(iBonus);
+	charge = static_cast<float>(bonus);
 #else
-	fCharge = MINMAX <float> (0.f, fCharge, 100.f);
+	charge = MINMAX<float>(0.f, charge, 100.f);
 #endif
-	if (fCharge < FLT_EPSILON)
+
+	if (charge < FLT_EPSILON)
 	{
-		ItemSystem::ConsumeItemEcs(
-			item, 1);
-		if (nullptr != pExtractor)
-		{
-			ItemSystem::ConsumeItemEcs(
-				extractor, 1);
-		}
-		LogManager::instance().ItemLog(ch, pItem, "DS_HEART_EXTRACT_FAIL", "");
+		LogManager::instance().ItemLogEntity(ch, item, "DS_HEART_EXTRACT_FAIL", "");
+		ItemSystem::ConsumeItemEcs(item, 1);
+		if (hasExtractor)
+			ItemSystem::ConsumeItemEcs(extractor, 1);
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 624, "");
+		ecs::ChatSystem::SendNew(owner, CHAT_TYPE_INFO, 624, "");
 #endif
 		return false;
 	}
-	else
+
+	const entt::entity dragonHeart = ItemSystem::CreateItemEcs(DRAGON_HEART_VNUM);
+	if (dragonHeart == entt::null)
 	{
-		LPITEM pDH = ITEM_MANAGER::instance().CreateItem(DRAGON_HEART_VNUM);
-
-		if (nullptr == pDH)
-		{
-			LOG_ERROR("Cannot create DRAGON_HEART({}).", DRAGON_HEART_VNUM);
-			return false;
-		}
-
-		ItemSystem::ConsumeItemEcs(
-			item, 1);
-		if (nullptr != pExtractor)
-		{
-			ItemSystem::ConsumeItemEcs(
-				extractor, 1);
-		}
-
-		int iCharge = (int)(fCharge + 0.5f);
-		ItemSystem::SetItemSocket(EntityFactory::CreateItemEntity(g_registry, pDH), ITEM_SOCKET_CHARGING_AMOUNT_IDX, iCharge);
-		ch->AutoGiveItem(pDH, true);
-
-		auto s = std::to_string(iCharge);
-		s += "%s";
-		LogManager::instance().ItemLog(ch, pItem, "DS_HEART_EXTRACT_SUCCESS", s.c_str());
-#ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 624, "");
-#endif
-		return true;
+		LOG_ERROR("Cannot create DRAGON_HEART({}).", DRAGON_HEART_VNUM);
+		return false;
 	}
-}
 
+	const int chargePercent = static_cast<int>(charge + 0.5f);
+	ItemSystem::SetItemSocketEcs(dragonHeart, ITEM_SOCKET_CHARGING_AMOUNT_IDX, chargePercent);
+
+	auto hint = std::to_string(chargePercent);
+	hint += "%s";
+	LogManager::instance().ItemLogEntity(ch, item, "DS_HEART_EXTRACT_SUCCESS", hint.c_str());
+
+	if (!ItemSystem::ConsumeItemEcs(item, 1))
+	{
+		ItemSystem::DestroyItemEntityEcs(dragonHeart, "DS_HEART_INPUT_INVALID");
+		return false;
+	}
+	if (hasExtractor && !ItemSystem::ConsumeItemEcs(extractor, 1))
+	{
+		ItemSystem::DestroyItemEntityEcs(dragonHeart, "DS_HEART_EXTRACTOR_INVALID");
+		return false;
+	}
+
+	ItemSystem::AutoGiveItem(owner, dragonHeart, true);
+#ifdef TEXTS_IMPROVEMENT
+	ecs::ChatSystem::SendNew(owner, CHAT_TYPE_INFO, 624, "");
+#endif
+	return true;
+}
 bool DSManager::ExtractDragonHeartEcs(entt::entity owner, entt::entity item, entt::entity extractor)
 {
 	LPCHARACTER ch = ecs::LegacyCharOf(owner);
@@ -490,126 +472,96 @@ bool DSManager::ExtractDragonHeartEcs(entt::entity owner, entt::entity item, ent
 // 특정 용혼석을 장비창에서 제거할 때에 성공 여부를 결정하고, 실패시 부산물을 주는 함수.
 bool DSManager::PullOut(LPCHARACTER ch, TItemPos DestCell, entt::entity& item, entt::entity extractor)
 {
-	LPITEM pItem = LegacyDragonSoulItemOf(item);
-	LPITEM pExtractor = LegacyDragonSoulItemOf(extractor);
-	if (nullptr == ch || nullptr == pItem)
+	if (!ch || !ItemSystem::IsDragonSoulItem(item))
 	{
-		LOG_ERROR("NULL POINTER. ch({}) or pItem({})", static_cast<const void*>(ch), static_cast<const void*>(pItem));
+		LOG_ERROR("Invalid dragon soul pull-out input. ch({}) item({})",
+			static_cast<const void*>(ch), static_cast<uint32_t>(item));
 		return false;
 	}
 
-	// 목표 위치가 valid한지 검사 후, valid하지 않다면 임의의 빈 공간을 찾는다.
+	const entt::entity owner = AIHelpers::EcsOf(ch);
+	const bool hasExtractor = extractor != entt::null;
+	if (hasExtractor && !ItemSystem::IsValidItem(extractor))
+		return false;
+	const uint32_t extractorVnum = hasExtractor ? ItemSystem::GetItemVnum(extractor) : 0;
+
 	if (!IsValidCellForThisItem(item, DestCell))
 	{
-		int iEmptyCell = ch->GetEmptyDragonSoulInventory(pItem);
-		if (iEmptyCell < 0)
+		const int emptyCell = ItemSystem::GetEmptyDragonSoulInventory(owner, item);
+		if (emptyCell < 0)
 		{
 #ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 626, "");
+			ecs::ChatSystem::SendNew(owner, CHAT_TYPE_INFO, 626, "");
 #endif
 			return false;
 		}
-		else
-		{
-			DestCell.window_type = DRAGON_SOUL_INVENTORY;
-			DestCell.cell = iEmptyCell;
-		}
+		DestCell = TItemPos(DRAGON_SOUL_INVENTORY, emptyCell);
 	}
 
-	if (!ItemSystem::IsItemEquipped(item) || !pItem->RemoveFromCharacter())
+	if (!ItemSystem::IsItemEquipped(item) || !ItemSystem::RemoveItemEcs(item))
 		return false;
 
-	bool bSuccess;
-	uint32_t dwByProduct = 0;
-	int iBonus = 0;
-	float fProb;
-	float fDice;
-	// 용혼석 추출 성공 여부 결정.
+	uint8_t ds_type, grade_idx, step_idx, strength_idx;
+	GetDragonSoulInfo(ItemSystem::GetItemVnum(item), ds_type, grade_idx, step_idx, strength_idx);
+
+	float probability = 0.f;
+	uint32_t byProductVnum = 0;
+	if (!m_pTable->GetDragonSoulExtValues(ds_type, grade_idx, probability, byProductVnum))
+		return ItemSystem::PlaceItemEcs(owner, item, DestCell.window_type, DestCell.cell);
+
+	const float dice = fnumber(0.f, 100.f);
+	int bonus = 0;
+	bool success = dice <= probability;
+	if (hasExtractor)
 	{
-		//uint32_t dwVnum = ItemSystem::GetItemVnum(item);
-
-		uint8_t ds_type, grade_idx, step_idx, strength_idx;
-		GetDragonSoulInfo(ItemSystem::GetItemVnum(item), ds_type, grade_idx, step_idx, strength_idx);
-
-		// 추출 정보가 없다면 일단 무조건 성공하는 것이라 생각하자.
-		if (!m_pTable->GetDragonSoulExtValues(ds_type, grade_idx, fProb, dwByProduct))
-		{
-			pItem->AddToCharacter(ch, DestCell);
-			return true;
-		}
-
-		fDice = fnumber(0.f, 100.f);
-		bSuccess = fDice <= (fProb * (100 + iBonus) / 100.f);
-		if (nullptr != pExtractor)
-		{
-			iBonus = ItemSystem::GetItemValue(extractor, ITEM_VALUE_DRAGON_SOUL_POLL_OUT_BONUS_IDX);
-			ItemSystem::ConsumeItemEcs(
-				extractor, 1);
-			bSuccess = number(1, 100) <= iBonus ? true : false;
-		}
+		bonus = ItemSystem::GetItemValue(extractor, ITEM_VALUE_DRAGON_SOUL_POLL_OUT_BONUS_IDX);
+		if (!ItemSystem::ConsumeItemEcs(extractor, 1))
+			return false;
+		success = number(1, 100) <= bonus;
 	}
 
-	// 캐릭터의 용혼석 추출 및 추가 혹은 제거. 부산물 제공.
+	char logHint[128];
+	if (success)
 	{
-		char buf[128];
-
-		if (bSuccess)
-		{
-			if (pExtractor)
-			{
-				sprintf(buf, "dice(%d) prob(%d + %d) EXTR(VN:%d)", (int)fDice, (int)fProb, iBonus, ItemSystem::GetItemVnum(extractor));
-			}
-			else
-			{
-				sprintf(buf, "dice(%d) prob(%d)", (int)fDice, (int)fProb);
-			}
-
-			LogManager::instance().ItemLog(ch, pItem, "DS_PULL_OUT_SUCCESS", buf);
-#ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 534, "%s", pItem->GetName(ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch)) ? ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->GetLanguage() : 0));
-#endif
-			pItem->AddToCharacter(ch, DestCell);
-			return true;
-		}
+		if (hasExtractor)
+			sprintf(logHint, "dice(%d) prob(%d + %d) EXTR(VN:%d)", static_cast<int>(dice), static_cast<int>(probability), bonus, extractorVnum);
 		else
-		{
-			if (pExtractor)
-			{
-				sprintf(buf, "dice(%d) prob(%d + %d) EXTR(VN:%d) ByProd(VN:%d)", (int)fDice, (int)fProb, iBonus, ItemSystem::GetItemVnum(extractor), dwByProduct);
-			}
-			else
-			{
-				sprintf(buf, "dice(%d) prob(%d) ByProd(VNUM:%d)", (int)fDice, (int)fProb, dwByProduct);
-			}
+			sprintf(logHint, "dice(%d) prob(%d)", static_cast<int>(dice), static_cast<int>(probability));
 
-			LogManager::instance().ItemLog(ch, pItem, "DS_PULL_OUT_FAILED", buf);
-			ItemSystem::DestroyItemEntityEcs(
-				item,
-				"DRAGON_SOUL_BYPRODUCT");
-			item = entt::null;
-			pItem = nullptr;
-			if (dwByProduct)
-			{
-				LPITEM pByProduct = ch->AutoGiveItem(dwByProduct);
+		LogManager::instance().ItemLogEntity(ch, item, "DS_PULL_OUT_SUCCESS", logHint);
 #ifdef TEXTS_IMPROVEMENT
-				if (pByProduct) {
-					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 535, "%s", pByProduct->GetName(ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch)) ? ecs::PlayerRuntime::GetDesc(AIHelpers::EcsOf(ch))->GetLanguage() : 0));
-				} else {
-					ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 536, "");
-				}
+		ecs::ChatSystem::SendNew(owner, CHAT_TYPE_INFO, 534, "%s", ItemSystem::GetItemName(item));
 #endif
-			}
-#ifdef TEXTS_IMPROVEMENT
-			else {
-				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 537, "");
-			}
-#endif
-		}
+		return ItemSystem::PlaceItemEcs(owner, item, DestCell.window_type, DestCell.cell);
 	}
 
-	return bSuccess;
-}
+	if (hasExtractor)
+		sprintf(logHint, "dice(%d) prob(%d + %d) EXTR(VN:%d) ByProd(VN:%d)", static_cast<int>(dice), static_cast<int>(probability), bonus, extractorVnum, byProductVnum);
+	else
+		sprintf(logHint, "dice(%d) prob(%d) ByProd(VNUM:%d)", static_cast<int>(dice), static_cast<int>(probability), byProductVnum);
 
+	LogManager::instance().ItemLogEntity(ch, item, "DS_PULL_OUT_FAILED", logHint);
+	ItemSystem::DestroyItemEntityEcs(item, "DRAGON_SOUL_BYPRODUCT");
+	item = entt::null;
+
+	if (byProductVnum != 0)
+	{
+		const entt::entity byProduct = ItemSystem::AutoGiveItemEcs(owner, byProductVnum, 1, -1, true);
+#ifdef TEXTS_IMPROVEMENT
+		if (byProduct != entt::null)
+			ecs::ChatSystem::SendNew(owner, CHAT_TYPE_INFO, 535, "%s", ItemSystem::GetItemName(byProduct));
+		else
+			ecs::ChatSystem::SendNew(owner, CHAT_TYPE_INFO, 536, "");
+#endif
+	}
+#ifdef TEXTS_IMPROVEMENT
+	else
+	{
+		ecs::ChatSystem::SendNew(owner, CHAT_TYPE_INFO, 537, "");
+	}
+#endif
+	return false;
+}
 bool DSManager::PullOutEcs(entt::entity owner, TItemPos DestCell, entt::entity& item, entt::entity extractor)
 {
 	LPCHARACTER ch = ecs::LegacyCharOf(owner);
@@ -625,177 +577,121 @@ bool DSManager::PullOutEcs(entt::entity owner, TItemPos DestCell, entt::entity& 
 
 bool DSManager::DoRefineGrade(LPCHARACTER ch, TItemPos (&aItemPoses)[DRAGON_SOUL_REFINE_GRID_SIZE])
 {
-	if (nullptr == ch)
+	if (!ch || !ch->DragonSoul_RefineWindow_CanRefine())
 		return false;
 
-	if (nullptr == aItemPoses)
-	{
-		return false;
-	}
-
-	if (!ch->DragonSoul_RefineWindow_CanRefine()) {
-		return false;
-	}
-
-	// 혹시나 모를 중복되는 item pointer 없애기 위해서 set 사용
-	// 이상한 패킷을 보낼 경우, 중복된 TItemPos가 있을 수도 있고, 잘못된 TItemPos가 있을 수도 있다.
-	std::set <LPITEM> set_items;
-	for (int i = 0; i < DRAGON_SOUL_REFINE_GRID_SIZE; i++)
+	const entt::entity owner = AIHelpers::EcsOf(ch);
+	std::set<entt::entity> items;
+	for (int i = 0; i < DRAGON_SOUL_REFINE_GRID_SIZE; ++i)
 	{
 		if (aItemPoses[i].IsEquipPosition())
 			return false;
-		LPITEM pItem = ch->GetItem(aItemPoses[i]);
-		if (nullptr != pItem)
-		{
-			// 용혼석이 아닌 아이템이 개량창에 있을 수 없다.
-			if (!pItem->IsDragonSoul())
-			{
-#ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 628, "");
-#endif
-				SendRefineResultPacket(ch, DS_SUB_HEADER_REFINE_FAIL_INVALID_MATERIAL, TItemPos(ItemSystem::GetItemWindow(EntityFactory::CreateItemEntity(g_registry, pItem)), ItemSystem::GetItemCell(EntityFactory::CreateItemEntity(g_registry, pItem))));
-				return false;
-			}
 
-			set_items.insert(pItem);
+		const entt::entity item = ItemSystem::GetItem(owner, aItemPoses[i]);
+		if (item == entt::null)
+			continue;
+		if (!ItemSystem::IsDragonSoulItem(item))
+		{
+#ifdef TEXTS_IMPROVEMENT
+			ecs::ChatSystem::SendNew(owner, CHAT_TYPE_INFO, 628, "");
+#endif
+			SendRefineResultPacket(ch, DS_SUB_HEADER_REFINE_FAIL_INVALID_MATERIAL, DragonSoulItemPosition(item));
+			return false;
 		}
+		items.insert(item);
 	}
 
-	if (set_items.size() == 0)
+	if (items.empty())
 	{
 		SendRefineResultPacket(ch, DS_SUB_HEADER_REFINE_FAIL_NOT_ENOUGH_MATERIAL, NPOS);
 		return false;
 	}
 
-	int count = set_items.size();
-	int need_count = 0;
+	uint8_t dsType, grade, step, strength;
+	GetDragonSoulInfo(ItemSystem::GetItemVnum(*items.begin()), dsType, grade, step, strength);
+
+	int neededCount = 0;
 	int fee = 0;
-	std::vector <float> vec_probs;
-	//float prob_sum;
-
-	uint8_t ds_type, grade_idx, step_idx, strength_idx;
-	int result_grade;
-
-	// 가장 처음 것을 강화의 기준으로 삼는다.
-	std::set <LPITEM>::iterator it = set_items.begin();
+	std::vector<float> probabilities;
+	if (!m_pTable->GetRefineGradeValues(dsType, grade, neededCount, fee, probabilities))
 	{
-		LPITEM pItem = *it;
-
-		GetDragonSoulInfo(ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, pItem)), ds_type, grade_idx, step_idx, strength_idx);
-
-		if (!m_pTable->GetRefineGradeValues(ds_type, grade_idx, need_count, fee, vec_probs))
-		{
 #ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 627, "");
+		ecs::ChatSystem::SendNew(owner, CHAT_TYPE_INFO, 627, "");
 #endif
-			SendRefineResultPacket(ch, DS_SUB_HEADER_REFINE_FAIL_INVALID_MATERIAL, TItemPos(ItemSystem::GetItemWindow(EntityFactory::CreateItemEntity(g_registry, pItem)), ItemSystem::GetItemCell(EntityFactory::CreateItemEntity(g_registry, pItem))));
-
-			return false;
-		}
-	}
-	while (++it != set_items.end())
-	{
-		LPITEM pItem = *it;
-
-		// 클라 ui에서 장착한 아이템은 개량창에 올릴 수 없도록 막았기 때문에,
-		// 별도의 알림 처리는 안함.
-		if (ItemSystem::IsItemEquipped(EntityFactory::CreateItemEntity(g_registry, pItem)))
-		{
-			return false;
-		}
-
-		if (ds_type != GetType(ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, pItem))) || grade_idx != GetGradeIdx(ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, pItem))))
-		{
-#ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 628, "");
-#endif
-			SendRefineResultPacket(ch, DS_SUB_HEADER_REFINE_FAIL_INVALID_MATERIAL, TItemPos(ItemSystem::GetItemWindow(EntityFactory::CreateItemEntity(g_registry, pItem)), ItemSystem::GetItemCell(EntityFactory::CreateItemEntity(g_registry, pItem))));
-
-			return false;
-		}
-	}
-
-	// 클라에서 한번 갯수 체크를 하기 때문에 count != need_count라면 invalid 클라일 가능성이 크다.
-	if (count != need_count)
-	{
-		LOG_ERROR("Possiblity of invalid client. Name {}", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data());
-		uint8_t bSubHeader = count < need_count? DS_SUB_HEADER_REFINE_FAIL_NOT_ENOUGH_MATERIAL : DS_SUB_HEADER_REFINE_FAIL_TOO_MUCH_MATERIAL;
-		SendRefineResultPacket(ch, bSubHeader, NPOS);
+		SendRefineResultPacket(ch, DS_SUB_HEADER_REFINE_FAIL_INVALID_MATERIAL, DragonSoulItemPosition(*items.begin()));
 		return false;
 	}
 
-	if (ecs::PointSystem::GetGold(AIHelpers::EcsOf(ch)) < fee)
+	for (const entt::entity item : items)
+	{
+		const uint32_t vnum = ItemSystem::GetItemVnum(item);
+		if (ItemSystem::IsItemEquipped(item) || dsType != GetType(vnum) || grade != GetGradeIdx(vnum))
+		{
+#ifdef TEXTS_IMPROVEMENT
+			ecs::ChatSystem::SendNew(owner, CHAT_TYPE_INFO, 628, "");
+#endif
+			SendRefineResultPacket(ch, DS_SUB_HEADER_REFINE_FAIL_INVALID_MATERIAL, DragonSoulItemPosition(item));
+			return false;
+		}
+	}
+
+	const int suppliedCount = static_cast<int>(items.size());
+	if (suppliedCount != neededCount)
+	{
+		LOG_ERROR("Possiblity of invalid client. Name {}", ecs::PlayerRuntime::GetName(owner).data());
+		const uint8_t subHeader = suppliedCount < neededCount
+			? DS_SUB_HEADER_REFINE_FAIL_NOT_ENOUGH_MATERIAL
+			: DS_SUB_HEADER_REFINE_FAIL_TOO_MUCH_MATERIAL;
+		SendRefineResultPacket(ch, subHeader, NPOS);
+		return false;
+	}
+
+	if (ecs::PointSystem::GetGold(owner) < fee)
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 232, "");
+		ecs::ChatSystem::SendNew(owner, CHAT_TYPE_INFO, 232, "");
 #endif
 		SendRefineResultPacket(ch, DS_SUB_HEADER_REFINE_FAIL_NOT_ENOUGH_MONEY, NPOS);
 		return false;
 	}
 
-	if (-1 == (result_grade = Gamble(vec_probs)))
+	const int resultGrade = Gamble(probabilities);
+	if (resultGrade < 0)
 	{
 		LOG_ERROR("Gamble failed. See RefineGardeTables' probabilities");
 		return false;
 	}
 
-	LPITEM pResultItem = ITEM_MANAGER::instance().CreateItem(MakeDragonSoulVnum(ds_type, (uint8_t)result_grade, 0, 0));
-
-	if (nullptr == pResultItem)
+	const uint32_t resultVnum = MakeDragonSoulVnum(dsType, static_cast<uint8_t>(resultGrade), 0, 0);
+	const entt::entity resultItem = ItemSystem::CreateItemEcs(resultVnum);
+	if (resultItem == entt::null)
 	{
-		LOG_ERROR("INVALID DRAGON SOUL({})", MakeDragonSoulVnum(ds_type, (uint8_t)result_grade, 0, 0));
+		LOG_ERROR("INVALID DRAGON SOUL({})", resultVnum);
 		return false;
 	}
 
-	ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_GOLD, -fee);
-	int left_count = need_count;
-
-	for (std::set <LPITEM>::iterator it = set_items.begin(); it != set_items.end(); it++)
+	if (!ConsumeDragonSoulMaterials(items, neededCount))
 	{
-		LPITEM pItem = *it;
-		int n = ItemSystem::GetItemCount(EntityFactory::CreateItemEntity(g_registry, pItem));
-		if (left_count > n)
-		{
-			LPITEM removed = pItem->RemoveFromCharacter();
-			ItemSystem::DestroyItemEntityEcs(
-				EntityFactory::CreateItemEntity(g_registry, removed),
-				"DRAGON_SOUL_REFINE_CONSUME");
-			left_count -= n;
-		}
-		else
-		{
-			ItemSystem::ConsumeItemEcs(
-				EntityFactory::CreateItemEntity(g_registry, pItem),
-				left_count);
-		}
-	}
-
-	ch->AutoGiveItem(pResultItem, true);
-
-	if (result_grade > grade_idx)
-	{
-		char buf[128];
-		sprintf(buf, "GRADE : %d -> %d", grade_idx, result_grade);
-		LogManager::instance().ItemLog(ch, pResultItem, "DS_GRADE_REFINE_SUCCESS", buf);
-#ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 629, "");
-#endif
-		SendRefineResultPacket(ch, DS_SUB_HEADER_REFINE_SUCCEED, TItemPos (ItemSystem::GetItemWindow(EntityFactory::CreateItemEntity(g_registry, pResultItem)), ItemSystem::GetItemCell(EntityFactory::CreateItemEntity(g_registry, pResultItem))));
-		return true;
-	}
-	else
-	{
-		char buf[128];
-		sprintf(buf, "GRADE : %d -> %d", grade_idx, result_grade);
-		LogManager::instance().ItemLog(ch, pResultItem, "DS_GRADE_REFINE_FAIL", buf);
-#ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 630, "");
-#endif
-		SendRefineResultPacket(ch, DS_SUB_HEADER_REFINE_FAIL, TItemPos (ItemSystem::GetItemWindow(EntityFactory::CreateItemEntity(g_registry, pResultItem)), ItemSystem::GetItemCell(EntityFactory::CreateItemEntity(g_registry, pResultItem))));
+		ItemSystem::DestroyItemEntityEcs(resultItem, "DRAGON_SOUL_REFINE_INPUT_INVALID");
 		return false;
 	}
+
+	ecs::PointSystem::Change(owner, POINT_GOLD, -fee);
+	ItemSystem::AutoGiveItem(owner, resultItem, true);
+
+	char logHint[128];
+	sprintf(logHint, "GRADE : %d -> %d", grade, resultGrade);
+	const bool success = resultGrade > grade;
+	LogManager::instance().ItemLogEntity(ch, resultItem,
+		success ? "DS_GRADE_REFINE_SUCCESS" : "DS_GRADE_REFINE_FAIL", logHint);
+#ifdef TEXTS_IMPROVEMENT
+	ecs::ChatSystem::SendNew(owner, CHAT_TYPE_INFO, success ? 629 : 630, "");
+#endif
+	SendRefineResultPacket(ch,
+		success ? DS_SUB_HEADER_REFINE_SUCCEED : DS_SUB_HEADER_REFINE_FAIL,
+		DragonSoulItemPosition(resultItem));
+	return success;
 }
-
 bool DSManager::DoRefineGradeEcs(entt::entity owner, TItemPos (&aItemPoses)[DRAGON_SOUL_REFINE_GRID_SIZE])
 {
 	LPCHARACTER ch = ecs::LegacyCharOf(owner);
@@ -810,169 +706,119 @@ bool DSManager::DoRefineGradeEcs(entt::entity owner, TItemPos (&aItemPoses)[DRAG
 
 bool DSManager::DoRefineStep(LPCHARACTER ch, TItemPos (&aItemPoses)[DRAGON_SOUL_REFINE_GRID_SIZE])
 {
-	if (nullptr == ch)
+	if (!ch || !ch->DragonSoul_RefineWindow_CanRefine())
 		return false;
-	if (nullptr == aItemPoses)
-	{
-		return false;
-	}
 
-	if (!ch->DragonSoul_RefineWindow_CanRefine()) {
-		return false;
-	}
-
-	// 혹시나 모를 중복되는 item pointer 없애기 위해서 set 사용
-	// 이상한 패킷을 보낼 경우, 중복된 TItemPos가 있을 수도 있고, 잘못된 TItemPos가 있을 수도 있다.
-	std::set <LPITEM> set_items;
-	for (int i = 0; i < DRAGON_SOUL_REFINE_GRID_SIZE; i++)
+	const entt::entity owner = AIHelpers::EcsOf(ch);
+	std::set<entt::entity> items;
+	for (int i = 0; i < DRAGON_SOUL_REFINE_GRID_SIZE; ++i)
 	{
-		LPITEM pItem = ch->GetItem(aItemPoses[i]);
-		if (nullptr != pItem)
+		const entt::entity item = ItemSystem::GetItem(owner, aItemPoses[i]);
+		if (item == entt::null)
+			continue;
+		if (!ItemSystem::IsDragonSoulItem(item))
 		{
-			// 용혼석이 아닌 아이템이 개량창에 있을 수 없다.
-			if (!pItem->IsDragonSoul())
-			{
 #ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 628, "");
+			ecs::ChatSystem::SendNew(owner, CHAT_TYPE_INFO, 628, "");
 #endif
-				SendRefineResultPacket(ch, DS_SUB_HEADER_REFINE_FAIL_INVALID_MATERIAL, TItemPos(ItemSystem::GetItemWindow(EntityFactory::CreateItemEntity(g_registry, pItem)), ItemSystem::GetItemCell(EntityFactory::CreateItemEntity(g_registry, pItem))));
-				return false;
-			}
-			set_items.insert(pItem);
+			SendRefineResultPacket(ch, DS_SUB_HEADER_REFINE_FAIL_INVALID_MATERIAL, DragonSoulItemPosition(item));
+			return false;
 		}
+		items.insert(item);
 	}
 
-	if (set_items.size() == 0)
+	if (items.empty())
 	{
 		SendRefineResultPacket(ch, DS_SUB_HEADER_REFINE_FAIL_NOT_ENOUGH_MATERIAL, NPOS);
 		return false;
 	}
 
-	std::string stGroupName;
-	int count = set_items.size();
-	int need_count = 0;
+	uint8_t dsType, grade, step, strength;
+	GetDragonSoulInfo(ItemSystem::GetItemVnum(*items.begin()), dsType, grade, step, strength);
+
+	int neededCount = 0;
 	int fee = 0;
-	std::vector <float> vec_probs;
-
-	uint8_t ds_type, grade_idx, step_idx, strength_idx;
-	int result_step;
-
-	// 가장 처음 것을 강화의 기준으로 삼는다.
-	std::set <LPITEM>::iterator it = set_items.begin();
+	std::vector<float> probabilities;
+	if (!m_pTable->GetRefineStepValues(dsType, step, neededCount, fee, probabilities))
 	{
-		LPITEM pItem = *it;
-		GetDragonSoulInfo(ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, pItem)), ds_type, grade_idx, step_idx, strength_idx);
-
-		if (!m_pTable->GetRefineStepValues(ds_type, step_idx, need_count, fee, vec_probs))
-		{
 #ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 627, "");
+		ecs::ChatSystem::SendNew(owner, CHAT_TYPE_INFO, 627, "");
 #endif
-			SendRefineResultPacket(ch, DS_SUB_HEADER_REFINE_FAIL_INVALID_MATERIAL, TItemPos(ItemSystem::GetItemWindow(EntityFactory::CreateItemEntity(g_registry, pItem)), ItemSystem::GetItemCell(EntityFactory::CreateItemEntity(g_registry, pItem))));
-			return false;
-		}
-	}
-
-	while(++it != set_items.end())
-	{
-		LPITEM pItem = *it;
-		// 클라 ui에서 장착한 아이템은 개량창에 올릴 수 없도록 막았기 때문에,
-		// 별도의 알림 처리는 안함.
-		if (ItemSystem::IsItemEquipped(EntityFactory::CreateItemEntity(g_registry, pItem)))
-		{
-			return false;
-		}
-		if (ds_type != GetType(ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, pItem))) || grade_idx != GetGradeIdx(ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, pItem))) || step_idx != GetStepIdx(ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, pItem))))
-		{
-#ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 628, "");
-#endif
-			SendRefineResultPacket(ch, DS_SUB_HEADER_REFINE_FAIL_INVALID_MATERIAL, TItemPos(ItemSystem::GetItemWindow(EntityFactory::CreateItemEntity(g_registry, pItem)), ItemSystem::GetItemCell(EntityFactory::CreateItemEntity(g_registry, pItem))));
-			return false;
-		}
-	}
-
-	// 클라에서 한번 갯수 체크를 하기 때문에 count != need_count라면 invalid 클라일 가능성이 크다.
-	if (count != need_count)
-	{
-		LOG_ERROR("Possiblity of invalid client. Name {}", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data());
-		uint8_t bSubHeader = count < need_count? DS_SUB_HEADER_REFINE_FAIL_NOT_ENOUGH_MATERIAL : DS_SUB_HEADER_REFINE_FAIL_TOO_MUCH_MATERIAL;
-		SendRefineResultPacket(ch, bSubHeader, NPOS);
+		SendRefineResultPacket(ch, DS_SUB_HEADER_REFINE_FAIL_INVALID_MATERIAL, DragonSoulItemPosition(*items.begin()));
 		return false;
 	}
 
-	if (ecs::PointSystem::GetGold(AIHelpers::EcsOf(ch)) < fee)
+	for (const entt::entity item : items)
+	{
+		const uint32_t vnum = ItemSystem::GetItemVnum(item);
+		if (ItemSystem::IsItemEquipped(item) || dsType != GetType(vnum) ||
+			grade != GetGradeIdx(vnum) || step != GetStepIdx(vnum))
+		{
+#ifdef TEXTS_IMPROVEMENT
+			ecs::ChatSystem::SendNew(owner, CHAT_TYPE_INFO, 628, "");
+#endif
+			SendRefineResultPacket(ch, DS_SUB_HEADER_REFINE_FAIL_INVALID_MATERIAL, DragonSoulItemPosition(item));
+			return false;
+		}
+	}
+
+	const int suppliedCount = static_cast<int>(items.size());
+	if (suppliedCount != neededCount)
+	{
+		LOG_ERROR("Possiblity of invalid client. Name {}", ecs::PlayerRuntime::GetName(owner).data());
+		const uint8_t subHeader = suppliedCount < neededCount
+			? DS_SUB_HEADER_REFINE_FAIL_NOT_ENOUGH_MATERIAL
+			: DS_SUB_HEADER_REFINE_FAIL_TOO_MUCH_MATERIAL;
+		SendRefineResultPacket(ch, subHeader, NPOS);
+		return false;
+	}
+
+	if (ecs::PointSystem::GetGold(owner) < fee)
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 232, "");
+		ecs::ChatSystem::SendNew(owner, CHAT_TYPE_INFO, 232, "");
 #endif
 		SendRefineResultPacket(ch, DS_SUB_HEADER_REFINE_FAIL_NOT_ENOUGH_MONEY, NPOS);
 		return false;
 	}
 
-	//float sum = 0.f;
-
-	if (-1 == (result_step = Gamble(vec_probs)))
+	const int resultStep = Gamble(probabilities);
+	if (resultStep < 0)
 	{
 		LOG_ERROR("Gamble failed. See RefineStepTables' probabilities");
 		return false;
 	}
 
-	LPITEM pResultItem = ITEM_MANAGER::instance().CreateItem(MakeDragonSoulVnum(ds_type, grade_idx, (uint8_t)result_step, 0));
-
-	if (nullptr == pResultItem)
+	const uint32_t resultVnum = MakeDragonSoulVnum(dsType, grade, static_cast<uint8_t>(resultStep), 0);
+	const entt::entity resultItem = ItemSystem::CreateItemEcs(resultVnum);
+	if (resultItem == entt::null)
 	{
-		LOG_ERROR("INVALID DRAGON SOUL({})", MakeDragonSoulVnum(ds_type, grade_idx, (uint8_t)result_step, 0));
+		LOG_ERROR("INVALID DRAGON SOUL({})", resultVnum);
 		return false;
 	}
 
-	ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_GOLD, -fee);
-	int left_count = need_count;
-	for (std::set <LPITEM>::iterator it = set_items.begin(); it != set_items.end(); it++)
+	if (!ConsumeDragonSoulMaterials(items, neededCount))
 	{
-		LPITEM pItem = *it;
-		int n = ItemSystem::GetItemCount(EntityFactory::CreateItemEntity(g_registry, pItem));
-		if (left_count > n)
-		{
-			LPITEM removed = pItem->RemoveFromCharacter();
-			ItemSystem::DestroyItemEntityEcs(
-				EntityFactory::CreateItemEntity(g_registry, removed),
-				"DRAGON_SOUL_REFINE_CONSUME");
-			left_count -= n;
-		}
-		else
-		{
-			ItemSystem::ConsumeItemEcs(
-				EntityFactory::CreateItemEntity(g_registry, pItem),
-				left_count);
-		}
-	}
-
-	ch->AutoGiveItem(pResultItem, true);
-	if (result_step > step_idx)
-	{
-		char buf[128];
-		sprintf(buf, "STEP : %d -> %d", step_idx, result_step);
-		LogManager::instance().ItemLog(ch, pResultItem, "DS_STEP_REFINE_SUCCESS", buf);
-#ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 629, "");
-#endif
-		SendRefineResultPacket(ch, DS_SUB_HEADER_REFINE_SUCCEED, TItemPos (ItemSystem::GetItemWindow(EntityFactory::CreateItemEntity(g_registry, pResultItem)), ItemSystem::GetItemCell(EntityFactory::CreateItemEntity(g_registry, pResultItem))));
-		return true;
-	}
-	else
-	{
-		char buf[128];
-		sprintf(buf, "STEP : %d -> %d", step_idx, result_step);
-		LogManager::instance().ItemLog(ch, pResultItem, "DS_STEP_REFINE_FAIL", buf);
-#ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 630, "");
-#endif
-		SendRefineResultPacket(ch, DS_SUB_HEADER_REFINE_FAIL, TItemPos (ItemSystem::GetItemWindow(EntityFactory::CreateItemEntity(g_registry, pResultItem)), ItemSystem::GetItemCell(EntityFactory::CreateItemEntity(g_registry, pResultItem))));
+		ItemSystem::DestroyItemEntityEcs(resultItem, "DRAGON_SOUL_REFINE_INPUT_INVALID");
 		return false;
 	}
+
+	ecs::PointSystem::Change(owner, POINT_GOLD, -fee);
+	ItemSystem::AutoGiveItem(owner, resultItem, true);
+
+	char logHint[128];
+	sprintf(logHint, "STEP : %d -> %d", step, resultStep);
+	const bool success = resultStep > step;
+	LogManager::instance().ItemLogEntity(ch, resultItem,
+		success ? "DS_STEP_REFINE_SUCCESS" : "DS_STEP_REFINE_FAIL", logHint);
+#ifdef TEXTS_IMPROVEMENT
+	ecs::ChatSystem::SendNew(owner, CHAT_TYPE_INFO, success ? 629 : 630, "");
+#endif
+	SendRefineResultPacket(ch,
+		success ? DS_SUB_HEADER_REFINE_SUCCEED : DS_SUB_HEADER_REFINE_FAIL,
+		DragonSoulItemPosition(resultItem));
+	return success;
 }
-
 bool DSManager::DoRefineStepEcs(entt::entity owner, TItemPos (&aItemPoses)[DRAGON_SOUL_REFINE_GRID_SIZE])
 {
 	LPCHARACTER ch = ecs::LegacyCharOf(owner);
@@ -996,198 +842,138 @@ bool IsDragonSoulRefineMaterial(entt::entity item)
 
 bool DSManager::DoRefineStrength(LPCHARACTER ch, TItemPos (&aItemPoses)[DRAGON_SOUL_REFINE_GRID_SIZE])
 {
-	if (nullptr == ch)
+	if (!ch || !ch->DragonSoul_RefineWindow_CanRefine())
 		return false;
-	if (nullptr == aItemPoses)
+
+	const entt::entity owner = AIHelpers::EcsOf(ch);
+	std::set<entt::entity> items;
+	for (int i = 0; i < DRAGON_SOUL_REFINE_GRID_SIZE; ++i)
 	{
+		const entt::entity item = ItemSystem::GetItem(owner, aItemPoses[i]);
+		if (item != entt::null)
+			items.insert(item);
+	}
+	if (items.empty())
 		return false;
-	}
 
-	if (!ch->DragonSoul_RefineWindow_CanRefine()) {
-		return false;
-	}
-
-	// 혹시나 모를 중복되는 item pointer 없애기 위해서 set 사용
-	// 이상한 패킷을 보낼 경우, 중복된 TItemPos가 있을 수도 있고, 잘못된 TItemPos가 있을 수도 있다.
-	std::set <LPITEM> set_items;
-	for (int i = 0; i < DRAGON_SOUL_REFINE_GRID_SIZE; i++)
+	entt::entity refineStone = entt::null;
+	entt::entity dragonSoul = entt::null;
+	for (const entt::entity item : items)
 	{
-		LPITEM pItem = ch->GetItem(aItemPoses[i]);
-		if (pItem)
-		{
-			set_items.insert(pItem);
-		}
-	}
-	if (set_items.size() == 0)
-	{
-		return false;
-	}
-
-	int fee;
-
-	LPITEM pRefineStone = nullptr;
-	LPITEM pDragonSoul = nullptr;
-	for (std::set <LPITEM>::iterator it = set_items.begin(); it != set_items.end(); it++)
-	{
-		LPITEM pItem = *it;
-		// 클라 ui에서 장착한 아이템은 개량창에 올릴 수 없도록 막았기 때문에,
-		// 별도의 알림 처리는 안함.
-		if (ItemSystem::IsItemEquipped(EntityFactory::CreateItemEntity(g_registry, pItem)))
-		{
+		if (ItemSystem::IsItemEquipped(item))
 			return false;
-		}
 
-		// 용혼석과 강화석만이 개량창에 있을 수 있다.
-		// 그리고 하나씩만 있어야한다.
-		if (pItem->IsDragonSoul())
+		if (ItemSystem::IsDragonSoulItem(item))
 		{
-			if (pDragonSoul != nullptr)
+			if (dragonSoul != entt::null)
 			{
-				SendRefineResultPacket(ch, DS_SUB_HEADER_REFINE_FAIL_TOO_MUCH_MATERIAL, TItemPos(ItemSystem::GetItemWindow(EntityFactory::CreateItemEntity(g_registry, pItem)), ItemSystem::GetItemCell(EntityFactory::CreateItemEntity(g_registry, pItem))));
+				SendRefineResultPacket(ch, DS_SUB_HEADER_REFINE_FAIL_TOO_MUCH_MATERIAL, DragonSoulItemPosition(item));
 				return false;
 			}
-			pDragonSoul = pItem;
+			dragonSoul = item;
 		}
-		else if(IsDragonSoulRefineMaterial(EntityFactory::CreateItemEntity(g_registry, pItem)))
+		else if (IsDragonSoulRefineMaterial(item))
 		{
-			if (pRefineStone != nullptr)
+			if (refineStone != entt::null)
 			{
-				SendRefineResultPacket(ch, DS_SUB_HEADER_REFINE_FAIL_TOO_MUCH_MATERIAL, TItemPos(ItemSystem::GetItemWindow(EntityFactory::CreateItemEntity(g_registry, pItem)), ItemSystem::GetItemCell(EntityFactory::CreateItemEntity(g_registry, pItem))));
+				SendRefineResultPacket(ch, DS_SUB_HEADER_REFINE_FAIL_TOO_MUCH_MATERIAL, DragonSoulItemPosition(item));
 				return false;
 			}
-			pRefineStone = pItem;
+			refineStone = item;
 		}
 		else
 		{
 #ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 628, "");
+			ecs::ChatSystem::SendNew(owner, CHAT_TYPE_INFO, 628, "");
 #endif
-			SendRefineResultPacket(ch, DS_SUB_HEADER_REFINE_FAIL_INVALID_MATERIAL, TItemPos(ItemSystem::GetItemWindow(EntityFactory::CreateItemEntity(g_registry, pItem)), ItemSystem::GetItemCell(EntityFactory::CreateItemEntity(g_registry, pItem))));
+			SendRefineResultPacket(ch, DS_SUB_HEADER_REFINE_FAIL_INVALID_MATERIAL, DragonSoulItemPosition(item));
 			return false;
 		}
 	}
 
-	uint8_t bType, bGrade, bStep, bStrength;
-
-	if (!pDragonSoul || !pRefineStone)
+	if (dragonSoul == entt::null || refineStone == entt::null)
 	{
 		SendRefineResultPacket(ch, DS_SUB_HEADER_REFINE_FAIL_NOT_ENOUGH_MATERIAL, NPOS);
-
 		return false;
 	}
 
-	if (nullptr != pDragonSoul)
-	{
-		GetDragonSoulInfo(ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, pDragonSoul)), bType, bGrade, bStep, bStrength);
+	uint8_t type, grade, step, strength;
+	GetDragonSoulInfo(ItemSystem::GetItemVnum(dragonSoul), type, grade, step, strength);
 
-		float fWeight = 0.f;
-		// 가중치 값이 없다면 강화할 수 없는 용혼석
-		if (!m_pTable->GetWeight(bType, bGrade, bStep, bStrength + 1, fWeight))
-		{
-#ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 627, "");
-#endif
-			SendRefineResultPacket(ch, DS_SUB_HEADER_REFINE_FAIL_MAX_REFINE, TItemPos(ItemSystem::GetItemWindow(EntityFactory::CreateItemEntity(g_registry, pDragonSoul)), ItemSystem::GetItemCell(EntityFactory::CreateItemEntity(g_registry, pDragonSoul))));
-			return false;
-		}
-		// 강화했을 때 가중치가 0이라면 더 이상 강화되서는 안된다.
-		if (fWeight < FLT_EPSILON)
-		{
-#ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 627, "");
-#endif
-			SendRefineResultPacket(ch, DS_SUB_HEADER_REFINE_FAIL_MAX_REFINE, TItemPos(ItemSystem::GetItemWindow(EntityFactory::CreateItemEntity(g_registry, pDragonSoul)), ItemSystem::GetItemCell(EntityFactory::CreateItemEntity(g_registry, pDragonSoul))));
-			return false;
-		}
-	}
-
-	float fProb;
-	if (!m_pTable->GetRefineStrengthValues(bType, ItemSystem::GetItemSubType(EntityFactory::CreateItemEntity(g_registry, pRefineStone)), bStrength, fee, fProb))
+	float nextWeight = 0.f;
+	if (!m_pTable->GetWeight(type, grade, step, strength + 1, nextWeight) || nextWeight < FLT_EPSILON)
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 627, "");
+		ecs::ChatSystem::SendNew(owner, CHAT_TYPE_INFO, 627, "");
 #endif
-		SendRefineResultPacket(ch, DS_SUB_HEADER_REFINE_FAIL_INVALID_MATERIAL, TItemPos(ItemSystem::GetItemWindow(EntityFactory::CreateItemEntity(g_registry, pDragonSoul)), ItemSystem::GetItemCell(EntityFactory::CreateItemEntity(g_registry, pDragonSoul))));
-
+		SendRefineResultPacket(ch, DS_SUB_HEADER_REFINE_FAIL_MAX_REFINE, DragonSoulItemPosition(dragonSoul));
 		return false;
 	}
 
-	if (ecs::PointSystem::GetGold(AIHelpers::EcsOf(ch)) < fee)
+	int fee = 0;
+	float probability = 0.f;
+	if (!m_pTable->GetRefineStrengthValues(type, ItemSystem::GetItemSubType(refineStone), strength, fee, probability))
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 232, "");
+		ecs::ChatSystem::SendNew(owner, CHAT_TYPE_INFO, 627, "");
+#endif
+		SendRefineResultPacket(ch, DS_SUB_HEADER_REFINE_FAIL_INVALID_MATERIAL, DragonSoulItemPosition(dragonSoul));
+		return false;
+	}
+
+	if (ecs::PointSystem::GetGold(owner) < fee)
+	{
+#ifdef TEXTS_IMPROVEMENT
+		ecs::ChatSystem::SendNew(owner, CHAT_TYPE_INFO, 232, "");
 #endif
 		SendRefineResultPacket(ch, DS_SUB_HEADER_REFINE_FAIL_NOT_ENOUGH_MONEY, NPOS);
 		return false;
 	}
 
-	ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_GOLD, -fee);
-	LPITEM pResult = nullptr;
-	uint8_t bSubHeader;
-
-	if (fnumber(0.f, 100.f) <= fProb)
+	const bool success = fnumber(0.f, 100.f) <= probability;
+	entt::entity result = entt::null;
+	if (success || strength != 0)
 	{
-		pResult = ITEM_MANAGER::instance().CreateItem(MakeDragonSoulVnum(bType, bGrade, bStep, bStrength + 1));
-		if (nullptr == pResult)
+		const uint8_t resultStrength = success ? strength + 1 : strength - 1;
+		const uint32_t resultVnum = MakeDragonSoulVnum(type, grade, step, resultStrength);
+		result = ItemSystem::CreateItemEcs(resultVnum);
+		if (result == entt::null)
 		{
-			LOG_ERROR("INVALID DRAGON SOUL({})", MakeDragonSoulVnum(bType, bGrade, bStep, bStrength + 1));
+			LOG_ERROR("INVALID DRAGON SOUL({})", resultVnum);
 			return false;
 		}
-//		pDragonSoul->RemoveFromCharacter(); ds duplicate fix razor93
-
-		pDragonSoul->CopyAttributeTo(pResult);
-		RefreshItemAttributes(EntityFactory::CreateItemEntity(g_registry, pResult));
-
-		ItemSystem::ConsumeItemEcs(
-			EntityFactory::CreateItemEntity(g_registry, pDragonSoul), 1);
-		ItemSystem::ConsumeItemEcs(
-			EntityFactory::CreateItemEntity(g_registry, pRefineStone), 1);
-
-		char buf[128];
-		sprintf(buf, "STRENGTH : %d -> %d", bStrength, bStrength + 1);
-		LogManager::instance().ItemLog(ch, pDragonSoul, "DS_STRENGTH_REFINE_SUCCESS", buf);
-#ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 629, "");
-#endif
-		ch->AutoGiveItem(pResult, true);
-		bSubHeader = DS_SUB_HEADER_REFINE_SUCCEED;
-	}
-	else
-	{
-		if (bStrength != 0)
+		if (!ItemSystem::CopyItemAttributesEcs(dragonSoul, result) || !RefreshItemAttributes(result))
 		{
-			pResult = ITEM_MANAGER::instance().CreateItem(MakeDragonSoulVnum(bType, bGrade, bStep, bStrength - 1));
-			if (nullptr == pResult)
-			{
-				LOG_ERROR("INVALID DRAGON SOUL({})", MakeDragonSoulVnum(bType, bGrade, bStep, bStrength - 1));
-				return false;
-			}
-			pDragonSoul->CopyAttributeTo(pResult);
-			RefreshItemAttributes(EntityFactory::CreateItemEntity(g_registry, pResult));
+			ItemSystem::DestroyItemEntityEcs(result, "DRAGON_SOUL_REFINE_RESULT_INVALID");
+			return false;
 		}
-		bSubHeader = DS_SUB_HEADER_REFINE_FAIL;
-
-		char buf[128];
-		sprintf(buf, "STRENGTH : %d -> %d", bStrength, bStrength - 1);
-		// strength강화는 실패시 깨질 수도 있어, 원본 아이템을 바탕으로 로그를 남김.
-		LogManager::instance().ItemLog(ch, pDragonSoul, "DS_STRENGTH_REFINE_FAIL", buf);
-#ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 630, "");
-#endif
-		ItemSystem::ConsumeItemEcs(
-			EntityFactory::CreateItemEntity(g_registry, pDragonSoul), 1);
-		ItemSystem::ConsumeItemEcs(
-			EntityFactory::CreateItemEntity(g_registry, pRefineStone), 1);
-		if (nullptr != pResult)
-			ch->AutoGiveItem(pResult, true);
-
 	}
 
-	SendRefineResultPacket(ch, bSubHeader, nullptr == pResult? NPOS : TItemPos (ItemSystem::GetItemWindow(EntityFactory::CreateItemEntity(g_registry, pResult)), ItemSystem::GetItemCell(EntityFactory::CreateItemEntity(g_registry, pResult))));
+	char logHint[128];
+	sprintf(logHint, "STRENGTH : %d -> %d", strength,
+		success ? static_cast<int>(strength) + 1 : static_cast<int>(strength) - 1);
+	LogManager::instance().ItemLogEntity(ch, dragonSoul,
+		success ? "DS_STRENGTH_REFINE_SUCCESS" : "DS_STRENGTH_REFINE_FAIL", logHint);
 
+	if (!ItemSystem::ConsumeItemEcs(dragonSoul, 1) || !ItemSystem::ConsumeItemEcs(refineStone, 1))
+	{
+		if (result != entt::null)
+			ItemSystem::DestroyItemEntityEcs(result, "DRAGON_SOUL_REFINE_INPUT_INVALID");
+		return false;
+	}
+
+	ecs::PointSystem::Change(owner, POINT_GOLD, -fee);
+	if (result != entt::null)
+		ItemSystem::AutoGiveItem(owner, result, true);
+
+#ifdef TEXTS_IMPROVEMENT
+	ecs::ChatSystem::SendNew(owner, CHAT_TYPE_INFO, success ? 629 : 630, "");
+#endif
+	SendRefineResultPacket(ch,
+		success ? DS_SUB_HEADER_REFINE_SUCCEED : DS_SUB_HEADER_REFINE_FAIL,
+		DragonSoulItemPosition(result));
 	return true;
 }
-
 bool DSManager::DoRefineStrengthEcs(entt::entity owner, TItemPos (&aItemPoses)[DRAGON_SOUL_REFINE_GRID_SIZE])
 {
 	LPCHARACTER ch = ecs::LegacyCharOf(owner);
@@ -1201,275 +987,147 @@ bool DSManager::DoRefineStrengthEcs(entt::entity owner, TItemPos (&aItemPoses)[D
 
 
 #ifdef ENABLE_DS_REFINE_ALL
-void DSManager::DoRefineAll(LPCHARACTER ch, uint8_t subheader, uint8_t type, uint8_t grade) {
-	if (ch == nullptr || !(subheader == DS_SUB_HEADER_DO_REFINE_GRADE || subheader == DS_SUB_HEADER_DO_REFINE_STEP)) {
+void DSManager::DoRefineAll(LPCHARACTER ch, uint8_t subheader, uint8_t type, uint8_t requestedGrade)
+{
+	if (!ch || (subheader != DS_SUB_HEADER_DO_REFINE_GRADE && subheader != DS_SUB_HEADER_DO_REFINE_STEP))
 		return;
-	}
-
-	if (!(type >= 0 && type <= 5) || !(grade >= 0 && grade <= 5)) {
+	if (type > 5 || requestedGrade > 5)
 		return;
-	}
-
-	if (subheader == DS_SUB_HEADER_DO_REFINE_GRADE && grade == 5) {
+	if (subheader == DS_SUB_HEADER_DO_REFINE_GRADE && requestedGrade == 5)
 		return;
-	}
+	if (!ch->DragonSoul_RefineWindow_CanRefine())
+		return;
 
-	if (ch && ch->DragonSoul_RefineWindow_CanRefine()) {
 #ifdef ENABLE_SPAM_CHECK
-		int32_t time = ch->GetLastDSREfine() - get_global_time();
-		if (time > 0) {
+	const int32_t remainingDelay = ch->GetLastDSREfine() - get_global_time();
+	if (remainingDelay > 0)
+	{
 #ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 234, "%d", time);
+		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 234, "%d", remainingDelay);
 #endif
-			return;
-		}
+		return;
+	}
+	ch->SetLastDSREfine();
 #endif
 
-		int32_t min = 300 + (192 * type) + (grade * DRAGON_SOUL_BOX_SIZE);
-		std::set <LPITEM> set_items;
-		bool first = false;
-		if (subheader == DS_SUB_HEADER_DO_REFINE_GRADE) {
-			int32_t grade = DRAGON_SOUL_GRADE_NORMAL;
-			bool done = false;
-			while (!done) {
-				if (grade >
+	const entt::entity owner = AIHelpers::EcsOf(ch);
+	const int32_t firstCell = 300 + (192 * type) + (requestedGrade * DRAGON_SOUL_BOX_SIZE);
+	const bool gradeMode = subheader == DS_SUB_HEADER_DO_REFINE_GRADE;
+	const int firstIndex = gradeMode ? DRAGON_SOUL_GRADE_NORMAL : DRAGON_SOUL_STEP_LOWEST;
+	const int lastIndex = gradeMode
 #ifdef ENABLE_DS_GRADE_MYTH
-				DRAGON_SOUL_GRADE_LEGENDARY
+		? DRAGON_SOUL_GRADE_LEGENDARY
 #else
-				DRAGON_SOUL_GRADE_ANCIENT
+		? DRAGON_SOUL_GRADE_ANCIENT
 #endif
-				) {
-					done = true;
-					break;
-				}
+		: DRAGON_SOUL_STEP_HIGH;
 
-#ifdef ENABLE_SPAM_CHECK
-				if (!first) {
-					ch->SetLastDSREfine();
-					first = true;
-				}
-#endif
+	for (int refineIndex = firstIndex; refineIndex <= lastIndex; ++refineIndex)
+	{
+		std::set<entt::entity> items;
+		for (int32_t i = 0; i < DRAGON_SOUL_BOX_SIZE; ++i)
+		{
+			const entt::entity item = ItemSystem::GetItem(
+				owner, TItemPos(DRAGON_SOUL_INVENTORY, i + firstCell));
+			if (!ItemSystem::IsDragonSoulItem(item) || ItemSystem::IsItemEquipped(item))
+				continue;
 
-				for (int32_t i = 0; i < DRAGON_SOUL_BOX_SIZE; i++) {
-					LPITEM item = ch->GetItem(TItemPos(DRAGON_SOUL_INVENTORY, i + min));
-					if (item && item->IsDragonSoul() && !ItemSystem::IsItemEquipped(EntityFactory::CreateItemEntity(g_registry, item))) {
-						if (GetGradeIdx(ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, item))) == grade) {
-							set_items.insert(item);
-						}
-					}
-				}
+			const uint32_t vnum = ItemSystem::GetItemVnum(item);
+			const int itemIndex = gradeMode ? GetGradeIdx(vnum) : GetStepIdx(vnum);
+			if (itemIndex == refineIndex)
+				items.insert(item);
+		}
 
-				if (set_items.size() < 2) {
-					set_items.clear();
-					grade++;
-					continue;
-				}
+		if (items.size() < 2)
+			continue;
 
-				int32_t n = 0;
-				bool endnow = false;
-				int32_t cell = 0;
-
-				for (std::set <LPITEM>::iterator it = set_items.begin(); it != set_items.end(); it++) {
-					n++;
-					LPITEM item = *it;
-
-					if (n % 2 == 0) {
-						uint8_t ds_type, grade_idx, step_idx, strength_idx;
-						int32_t result_grade;
-						GetDragonSoulInfo(ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, item)), ds_type, grade_idx, step_idx, strength_idx);
-
-						int32_t need_count = 0, fee = 0;
-						std::vector <float> vec_probs;
-
-						if (!m_pTable->GetRefineGradeValues(ds_type, grade_idx, need_count, fee, vec_probs)) {
-							continue;
-						}
-
-						if (need_count != 2) {
-							endnow = true;
-							break;
-						}
-
-						LPITEM itemold = ch->GetItem(TItemPos(DRAGON_SOUL_INVENTORY, cell));
-						if (!itemold) {
-							continue;
-						}
-
-						int32_t vnum = ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, itemold));
-						if (ds_type != GetType(vnum) || grade_idx != GetGradeIdx(vnum)) {
-							continue;
-						}
-
-						if (ecs::PointSystem::GetGold(AIHelpers::EcsOf(ch)) < fee) {
-#ifdef TEXTS_IMPROVEMENT
-							ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 232, "");
-#endif
-							endnow = true;
-							break;
-						}
-
-						if (-1 == (result_grade = Gamble(vec_probs))) {
-							continue;
-						}
-
-						LPITEM itemres = ITEM_MANAGER::instance().CreateItem(MakeDragonSoulVnum(ds_type, (int8_t)result_grade, 0, 0));
-						if (!itemres) {
-							LOG_ERROR("INVALID DRAGON SOUL({})", MakeDragonSoulVnum(ds_type, (int8_t)result_grade, 0, 0));
-							continue;
-						}
-
-						ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_GOLD, -fee);
-
-						LPITEM removedOld = itemold->RemoveFromCharacter();
-						ItemSystem::DestroyItemEntityEcs(
-							EntityFactory::CreateItemEntity(g_registry, removedOld),
-							"DRAGON_SOUL_INVALID");
-						LPITEM removedItem = item->RemoveFromCharacter();
-						ItemSystem::DestroyItemEntityEcs(
-							EntityFactory::CreateItemEntity(g_registry, removedItem),
-							"DRAGON_SOUL_INVALID");
-
-						if (ch->AutoGiveDS(itemres, true)) {
-							char buf[128];
-							if (result_grade > grade_idx) {
-								sprintf(buf, "GRADE : %d -> %d", grade_idx, result_grade);
-								LogManager::instance().ItemLog(ch, itemres, "DS_STEP_REFINE_SUCCESS", buf);
-							} else {
-								sprintf(buf, "GRADE : %d -> %d", grade_idx, result_grade);
-								LogManager::instance().ItemLog(ch, itemres, "DS_STEP_REFINE_FAIL", buf);
-							}
-						}
-					} else {
-						cell = ItemSystem::GetItemCell(EntityFactory::CreateItemEntity(g_registry, item));
-					}
-				}
-
-				set_items.clear();
-				if (endnow) {
-					done = true;
-					break;
-				}
+		entt::entity previous = entt::null;
+		for (const entt::entity current : items)
+		{
+			if (previous == entt::null)
+			{
+				previous = current;
+				continue;
 			}
-		} else {
-			int32_t step = DRAGON_SOUL_STEP_LOWEST;
-			bool done = false;
-			while (!done) {
-				if (step > DRAGON_SOUL_STEP_HIGH) {
-					done = true;
-					break;
-				}
 
-#ifdef ENABLE_SPAM_CHECK
-				if (!first) {
-					ch->SetLastDSREfine();
-					first = true;
-				}
-#endif
+			uint8_t dsType, grade, step, strength;
+			GetDragonSoulInfo(ItemSystem::GetItemVnum(current), dsType, grade, step, strength);
 
-				for (int32_t i = 0; i < DRAGON_SOUL_BOX_SIZE; i++) {
-					LPITEM item = ch->GetItem(TItemPos(DRAGON_SOUL_INVENTORY, i + min));
-					if (item && item->IsDragonSoul() && !ItemSystem::IsItemEquipped(EntityFactory::CreateItemEntity(g_registry, item))) {
-						if (GetStepIdx(ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, item))) == step) {
-							set_items.insert(item);
-						}
-					}
-				}
-
-				if (set_items.size() < 2) {
-					set_items.clear();
-					step++;
-					continue;
-				}
-
-				int32_t n = 0;
-				bool endnow = false;
-				int32_t cell = 0;
-
-				for (std::set <LPITEM>::iterator it = set_items.begin(); it != set_items.end(); it++) {
-					n++;
-					LPITEM item = *it;
-
-					if (n % 2 == 0) {
-						uint8_t ds_type, grade_idx, step_idx, strength_idx;
-						int32_t result_step;
-						GetDragonSoulInfo(ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, item)), ds_type, grade_idx, step_idx, strength_idx);
-
-						int32_t need_count = 0, fee = 0;
-						std::vector <float> vec_probs;
-
-						if (!m_pTable->GetRefineStepValues(ds_type, step_idx, need_count, fee, vec_probs)) {
-							continue;
-						}
-
-						if (need_count != 2) {
-							endnow = true;
-							break;
-						}
-
-						LPITEM itemold = ch->GetItem(TItemPos(DRAGON_SOUL_INVENTORY, cell));
-						if (!itemold) {
-							continue;
-						}
-
-						int32_t vnum = ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, itemold));
-						if (ds_type != GetType(vnum) || grade_idx != GetGradeIdx(vnum) || step_idx != GetStepIdx(vnum)) {
-							continue;
-						}
-
-						if (ecs::PointSystem::GetGold(AIHelpers::EcsOf(ch)) < fee) {
-#ifdef TEXTS_IMPROVEMENT
-							ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 232, "");
-#endif
-							endnow = true;
-							break;
-						}
-
-						if (-1 == (result_step = Gamble(vec_probs))) {
-							continue;
-						}
-
-						LPITEM itemres = ITEM_MANAGER::instance().CreateItem(MakeDragonSoulVnum(ds_type, grade_idx, (int8_t)result_step, 0));
-						if (!itemres) {
-							LOG_ERROR("INVALID DRAGON SOUL({})", MakeDragonSoulVnum(ds_type, grade_idx, (int8_t)result_step, 0));
-							continue;
-						}
-
-						ecs::PointSystem::Change(AIHelpers::EcsOf(ch), POINT_GOLD, -fee);
-
-						LPITEM removedOld = itemold->RemoveFromCharacter();
-						ItemSystem::DestroyItemEntityEcs(
-							EntityFactory::CreateItemEntity(g_registry, removedOld),
-							"DRAGON_SOUL_INVALID");
-						LPITEM removedItem = item->RemoveFromCharacter();
-						ItemSystem::DestroyItemEntityEcs(
-							EntityFactory::CreateItemEntity(g_registry, removedItem),
-							"DRAGON_SOUL_INVALID");
-
-						if (ch->AutoGiveDS(itemres, true)) {
-							char buf[128];
-							if (result_step > step_idx) {
-								sprintf(buf, "STEP : %d -> %d", step_idx, result_step);
-								LogManager::instance().ItemLog(ch, itemres, "DS_STEP_REFINE_SUCCESS", buf);
-							} else {
-								sprintf(buf, "STEP : %d -> %d", step_idx, result_step);
-								LogManager::instance().ItemLog(ch, itemres, "DS_STEP_REFINE_FAIL", buf);
-							}
-						}
-					} else {
-						cell = ItemSystem::GetItemCell(EntityFactory::CreateItemEntity(g_registry, item));
-					}
-				}
-
-				set_items.clear();
-				if (endnow) {
-					done = true;
-					break;
-				}
+			int neededCount = 0;
+			int fee = 0;
+			std::vector<float> probabilities;
+			const bool tableValid = gradeMode
+				? m_pTable->GetRefineGradeValues(dsType, grade, neededCount, fee, probabilities)
+				: m_pTable->GetRefineStepValues(dsType, step, neededCount, fee, probabilities);
+			if (!tableValid)
+			{
+				previous = entt::null;
+				continue;
 			}
+			if (neededCount != 2)
+				return;
+
+			const uint32_t previousVnum = ItemSystem::GetItemVnum(previous);
+			const bool pairValid = dsType == GetType(previousVnum) && grade == GetGradeIdx(previousVnum) &&
+				(gradeMode || step == GetStepIdx(previousVnum));
+			if (!pairValid)
+			{
+				previous = entt::null;
+				continue;
+			}
+
+			if (ecs::PointSystem::GetGold(owner) < fee)
+			{
+#ifdef TEXTS_IMPROVEMENT
+				ecs::ChatSystem::SendNew(owner, CHAT_TYPE_INFO, 232, "");
+#endif
+				return;
+			}
+
+			const int resultIndex = Gamble(probabilities);
+			if (resultIndex < 0)
+			{
+				previous = entt::null;
+				continue;
+			}
+
+			const uint32_t resultVnum = gradeMode
+				? MakeDragonSoulVnum(dsType, static_cast<uint8_t>(resultIndex), 0, 0)
+				: MakeDragonSoulVnum(dsType, grade, static_cast<uint8_t>(resultIndex), 0);
+			const entt::entity result = ItemSystem::CreateItemEcs(resultVnum);
+			if (result == entt::null)
+			{
+				LOG_ERROR("INVALID DRAGON SOUL({})", resultVnum);
+				previous = entt::null;
+				continue;
+			}
+
+			if (!ItemSystem::ConsumeItemEcs(previous, 1) || !ItemSystem::ConsumeItemEcs(current, 1))
+			{
+				ItemSystem::DestroyItemEntityEcs(result, "DRAGON_SOUL_REFINE_INPUT_INVALID");
+				return;
+			}
+
+			ecs::PointSystem::Change(owner, POINT_GOLD, -fee);
+			if (ItemSystem::AutoGiveDS(owner, result, true))
+			{
+				char logHint[128];
+				if (gradeMode)
+					sprintf(logHint, "GRADE : %d -> %d", grade, resultIndex);
+				else
+					sprintf(logHint, "STEP : %d -> %d", step, resultIndex);
+
+				const bool success = gradeMode ? resultIndex > grade : resultIndex > step;
+				LogManager::instance().ItemLogEntity(ch, result,
+					gradeMode
+						? (success ? "DS_GRADE_REFINE_SUCCESS" : "DS_GRADE_REFINE_FAIL")
+						: (success ? "DS_STEP_REFINE_SUCCESS" : "DS_STEP_REFINE_FAIL"),
+					logHint);
+			}
+
+			previous = entt::null;
 		}
 	}
-
-	return;
 }
 
 void DSManager::DoRefineAllEcs(entt::entity owner, uint8_t subheader, uint8_t type, uint8_t grade)
@@ -1480,15 +1138,10 @@ void DSManager::DoRefineAllEcs(entt::entity owner, uint8_t subheader, uint8_t ty
 
 	DoRefineAll(ch, subheader, type, grade);
 	for (int i = 0; i < DRAGON_SOUL_INVENTORY_MAX_NUM; ++i)
-	{
-		LPITEM item = ch->GetDragonSoulItem(i);
-		if (item)
-			SyncDragonSoulItemPtr(EntityFactory::CreateItemEntity(g_registry, item));
-	}
+		SyncDragonSoulItemPtr(ItemSystem::GetItem(owner, TItemPos(DRAGON_SOUL_INVENTORY, i)));
 }
 
 #endif
-
 void DSManager::SendRefineResultPacket(LPCHARACTER ch, uint8_t bSubHeader, const TItemPos& pos)
 {
 	TPacketGCDragonSoulRefine pack;
@@ -1549,38 +1202,35 @@ bool DSManager::IsActiveDragonSoul(entt::entity item) const
 
 bool DSManager::ActivateDragonSoul(entt::entity item)
 {
-	LPITEM pItem = LegacyDragonSoulItemOf(item);
-	if (nullptr == pItem)
-		return false;
-	const entt::entity ownerEntity = ItemSystem::GetItemOwnerEntity(item);
-	LPCHARACTER pOwner = ecs::LegacyCharOf(ownerEntity);
-	if (nullptr == pOwner)
+	if (!ItemSystem::IsDragonSoulItem(item))
 		return false;
 
-	int deck_idx = pOwner->DragonSoul_GetActiveDeck();
-
-	if (deck_idx < 0)
+	const entt::entity owner = ItemSystem::GetItemOwnerEntity(item);
+	LPCHARACTER ch = ecs::LegacyCharOf(owner);
+	if (!ch)
 		return false;
 
-	if (DRAGON_SOUL_EQUIP_SLOT_START + DS_SLOT_MAX * deck_idx <= ItemSystem::GetItemCell(item) &&
-			ItemSystem::GetItemCell(item) < DRAGON_SOUL_EQUIP_SLOT_START + DS_SLOT_MAX * (deck_idx + 1))
+	const int deck = ch->DragonSoul_GetActiveDeck();
+	if (deck < 0)
+		return false;
+
+	const uint16_t cell = ItemSystem::GetItemCell(item);
+	if (cell < DRAGON_SOUL_EQUIP_SLOT_START + DS_SLOT_MAX * deck ||
+		cell >= DRAGON_SOUL_EQUIP_SLOT_START + DS_SLOT_MAX * (deck + 1))
+		return false;
+
+	if (IsTimeLeftDragonSoul(item) && !IsActiveDragonSoul(item))
 	{
-		if (IsTimeLeftDragonSoul(item) && !IsActiveDragonSoul(item))
-		{
-			char buf[128];
-			sprintf (buf, "LEFT TIME(%d)", LeftTime(item));
-			LogManager::instance().ItemLog(pOwner, pItem, "DS_ACTIVATE", buf);
-			pItem->ModifyPoints(true);
-			ItemSystem::SetItemSocket(item, ITEM_SOCKET_DRAGON_SOUL_ACTIVE_IDX, 1);
-
-			pItem->StartTimerBasedOnWearExpireEvent();
-		}
-		return true;
+		char logHint[128];
+		sprintf(logHint, "LEFT TIME(%d)", LeftTime(item));
+		LogManager::instance().ItemLogEntity(ch, item, "DS_ACTIVATE", logHint);
+		if (!ItemSystem::ModifyItemPointsEcs(item, true))
+			return false;
+		ItemSystem::SetItemSocketEcs(item, ITEM_SOCKET_DRAGON_SOUL_ACTIVE_IDX, 1);
+		ItemSystem::StartTimerBasedOnWearExpireEventEcs(item);
 	}
-	else
-		return false;
+	return true;
 }
-
 bool DSManager::ActivateDragonSoulEcs(entt::entity item)
 {
 	const bool result = ActivateDragonSoul(item);
@@ -1591,32 +1241,26 @@ bool DSManager::ActivateDragonSoulEcs(entt::entity item)
 
 bool DSManager::DeactivateDragonSoul(entt::entity item, bool bSkipRefreshOwnerActiveState)
 {
-	LPITEM pItem = LegacyDragonSoulItemOf(item);
-	if (nullptr == pItem)
+	if (!ItemSystem::IsDragonSoulItem(item))
 		return false;
 
-	const entt::entity ownerEntity = ItemSystem::GetItemOwnerEntity(item);
-	LPCHARACTER pOwner = ecs::LegacyCharOf(ownerEntity);
-	if (nullptr == pOwner)
+	const entt::entity owner = ItemSystem::GetItemOwnerEntity(item);
+	LPCHARACTER ch = ecs::LegacyCharOf(owner);
+	if (!ch || !IsActiveDragonSoul(item))
 		return false;
 
-	if (!IsActiveDragonSoul(item))
-		return false;
+	ItemSystem::StopTimerBasedOnWearExpireEventEcs(item);
+	ItemSystem::SetItemSocketEcs(item, ITEM_SOCKET_DRAGON_SOUL_ACTIVE_IDX, 0);
+	ItemSystem::ModifyItemPointsEcs(item, false);
 
-	char buf[128];
-	pItem->StopTimerBasedOnWearExpireEvent();
-	ItemSystem::SetItemSocket(item, ITEM_SOCKET_DRAGON_SOUL_ACTIVE_IDX, 0);
-	pItem->ModifyPoints(false);
+	char logHint[128];
+	sprintf(logHint, "LEFT TIME(%d)", LeftTime(item));
+	LogManager::instance().ItemLogEntity(ch, item, "DS_DEACTIVATE", logHint);
 
-	sprintf (buf, "LEFT TIME(%d)", LeftTime(item));
-	LogManager::instance().ItemLog(pOwner, pItem, "DS_DEACTIVATE", buf);
-
-	if (false == bSkipRefreshOwnerActiveState)
-		RefreshDragonSoulState(pOwner);
-
+	if (!bSkipRefreshOwnerActiveState)
+		RefreshDragonSoulState(ch);
 	return true;
 }
-
 bool DSManager::DeactivateDragonSoulEcs(entt::entity item, bool bSkipRefreshOwnerActiveState)
 {
 	const bool result = DeactivateDragonSoul(item, bSkipRefreshOwnerActiveState);
@@ -1627,22 +1271,18 @@ bool DSManager::DeactivateDragonSoulEcs(entt::entity item, bool bSkipRefreshOwne
 
 void DSManager::RefreshDragonSoulState(LPCHARACTER ch)
 {
-	if (nullptr == ch)
-		return ;
-	for (int i = WEAR_MAX_NUM; i < WEAR_MAX_NUM + DS_SLOT_MAX * DRAGON_SOUL_DECK_MAX_NUM; i++)
+	if (!ch)
+		return;
+
+	const entt::entity owner = AIHelpers::EcsOf(ch);
+	for (int i = WEAR_MAX_NUM; i < WEAR_MAX_NUM + DS_SLOT_MAX * DRAGON_SOUL_DECK_MAX_NUM; ++i)
 	{
-		LPITEM pItem = ItemSystem::GetWear(AIHelpers::EcsOf(ch), i);
-		if (pItem != nullptr)
-		{
-			if(IsActiveDragonSoul(EntityFactory::CreateItemEntity(g_registry, pItem)))
-			{
-				return;
-			}
-		}
+		const entt::entity item = ItemSystem::GetWearItem(owner, i);
+		if (item != entt::null && IsActiveDragonSoul(item))
+			return;
 	}
 	ch->DragonSoul_DeactivateAll();
 }
-
 DSManager::DSManager()
 {
 	m_pTable = nullptr;

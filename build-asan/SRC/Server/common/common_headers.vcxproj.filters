@@ -1,0 +1,51 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="18.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <CustomBuild Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\common\CMakeLists.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\common\CommonDefines.h" />
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\common\Header_GC.h" />
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\common\Header_GG.h" />
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\common\Headers\CG_Packet.h">
+      <Filter>Headers</Filter>
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\common\Headers\GC_Packet.h">
+      <Filter>Headers</Filter>
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\common\Headers\GG_Packet.h">
+      <Filter>Headers</Filter>
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\common\Headers\Header_CG.h">
+      <Filter>Headers</Filter>
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\common\Headers\Header_GC.h">
+      <Filter>Headers</Filter>
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\common\Headers\Header_GG.h">
+      <Filter>Headers</Filter>
+    </None>
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\common\VnumHelper.h" />
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\common\billing.h" />
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\common\building.h" />
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\common\cache.h" />
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\common\d3dtype.h" />
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\common\in_game_wiki.h" />
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\common\item_length.h" />
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\common\length.h" />
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\common\noncopyable.h" />
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\common\pool.h" />
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\common\rune_length.h" />
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\common\service.h" />
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\common\singleton.h" />
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\common\stl.h" />
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\common\stole_length.h" />
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\common\tables.h" />
+    <None Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\common\utils.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="Headers">
+      <UniqueIdentifier>{4DB17E6E-51A3-3A8A-A25D-62CBE2364590}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

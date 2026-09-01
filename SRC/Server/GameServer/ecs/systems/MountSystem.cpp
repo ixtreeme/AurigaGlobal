@@ -259,7 +259,7 @@ int CHARACTER::GetMountCount() const
         const int total = mi->GetWidth() * mi->GetSize();
         for (int pos = 0; pos < total; ++pos)
         {
-            if (mi->Get(pos))
+            if (mi->Get(pos) != entt::null)
                 ++mountItemCount;
         }
     }
@@ -1035,15 +1035,15 @@ void CHARACTER::ComputeMountInventoryBonuses()
 
 	for (int pos = 0; pos < total; ++pos)
 	{
-		LPITEM item = mi->Get(pos);
-		if (!item)
+		const entt::entity item = mi->Get(pos);
+		if (!ItemSystem::IsValidItem(item))
 			continue;
 
-		const uint32_t vnum = ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, item));
+		const uint32_t vnum = ItemSystem::GetItemVnum(item);
 		if (!valid_items.contains(vnum))
 			continue;
 
-		const TItemTable* proto = ItemSystem::GetItemProto(EntityFactory::CreateItemEntity(g_registry, item));
+		const TItemTable* proto = ItemSystem::GetItemProto(item);
 		if (!proto)
 			continue;
 
@@ -1060,11 +1060,11 @@ void CHARACTER::ComputeMountInventoryBonuses()
 				mount_bonus_map[pointType] += apply.lValue;
 		}
 
-		const TPlayerItemAttribute* attrs = item->GetAttributes();
 		for (int i = 0; i < ITEM_ATTRIBUTE_MAX_NUM; ++i)
 		{
-			const uint8_t bType = attrs[i].bType;
-			const int16_t sVal = attrs[i].sValue;
+			const auto attribute = ItemSystem::GetItemAttribute(item, i);
+			const uint8_t bType = attribute.bType;
+			const int16_t sVal = attribute.sValue;
 
 			if (bType == APPLY_NONE || sVal == 0)
 				continue;

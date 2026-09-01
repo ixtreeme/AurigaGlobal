@@ -1398,7 +1398,7 @@ void CHARACTER::LoadSafebox(int iSize, uint32_t dwGold, int iItemCount, TPlayerI
             item->SetSockets(pItems->alSockets);
             item->SetAttributes(pItems->aAttr);
 
-            if (!m_pkSafebox->Add(pItems->pos, item))
+			if (!m_pkSafebox->Add(pItems->pos, EntityFactory::CreateItemEntity(g_registry, item)))
                 ItemSystem::DestroyItemEntityEcs(
                     EntityFactory::CreateItemEntity(g_registry, item),
                     "SAFEBOX_LOAD_ADD_FAILED");
@@ -1495,7 +1495,7 @@ void CHARACTER::LoadMall(int iItemCount, TPlayerItem* pItems)
             item->SetSockets(pItems->alSockets);
             item->SetAttributes(pItems->aAttr);
 
-            if (!m_pkMall->Add(pItems->pos, item))
+			if (!m_pkMall->Add(pItems->pos, EntityFactory::CreateItemEntity(g_registry, item)))
                 ItemSystem::DestroyItemEntityEcs(
                     EntityFactory::CreateItemEntity(g_registry, item),
                     "MALL_LOAD_ADD_FAILED");

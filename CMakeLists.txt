@@ -22,10 +22,9 @@ if(ENABLE_ASAN)
         "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL"
         CACHE STRING "MSVC runtime library" FORCE
     )
-    if(VCPKG_TARGET_TRIPLET STREQUAL "x64-windows-static")
-        set(VCPKG_TARGET_TRIPLET "x64-windows" CACHE STRING "vcpkg triplet" FORCE)
-        set(VCPKG_TRIPLET_TYPE "dynamic" CACHE STRING "" FORCE)
-    endif()
+    set(VCPKG_TARGET_TRIPLET "x64-windows" CACHE STRING "vcpkg triplet" FORCE)
+    set(VCPKG_HOST_TRIPLET "x64-windows" CACHE STRING "vcpkg host triplet" FORCE)
+    set(VCPKG_TRIPLET_TYPE "dynamic" CACHE STRING "" FORCE)
 elseif(VCPKG_TRIPLET_TYPE STREQUAL "static")
     set(CMAKE_MSVC_RUNTIME_LIBRARY
         "MultiThreaded$<$<CONFIG:Debug>:Debug>"
@@ -80,6 +79,7 @@ endif()
 # ============================================================
 vcpkg_require(
     stb
+    lzo
     lz4
 	curl
 	zstd
@@ -125,6 +125,22 @@ if(MSVC)
     add_compile_options(/bigobj)
 
     if(ENABLE_ASAN)
+        # Visual Studio's ASan libraries are shipped beside the selected MSVC
+        # toolset, but this directory is not always present in LIB for CMake
+        # generated projects (notably with VS 18 previews).
+        get_filename_component(_auriga_msvc_bin_x64 "${CMAKE_CXX_COMPILER}" DIRECTORY)
+        get_filename_component(_auriga_msvc_bin_host "${_auriga_msvc_bin_x64}" DIRECTORY)
+        get_filename_component(_auriga_msvc_bin "${_auriga_msvc_bin_host}" DIRECTORY)
+        get_filename_component(_auriga_msvc_tools "${_auriga_msvc_bin}" DIRECTORY)
+        set(AURIGA_ASAN_LIBRARY_DIR "${_auriga_msvc_tools}/lib/x64")
+        set(AURIGA_ASAN_RUNTIME_DLL
+            "${_auriga_msvc_bin_x64}/clang_rt.asan_dynamic-x86_64.dll")
+
+        if(NOT EXISTS "${AURIGA_ASAN_LIBRARY_DIR}/clang_rt.asan_dynamic_runtime_thunk-x86_64.lib")
+            message(FATAL_ERROR "MSVC x64 AddressSanitizer runtime is missing: ${AURIGA_ASAN_LIBRARY_DIR}")
+        endif()
+        link_directories(BEFORE "${AURIGA_ASAN_LIBRARY_DIR}")
+
         add_compile_options(
             /MP
             /GS
@@ -136,6 +152,7 @@ if(MSVC)
         add_compile_definitions(
             _DISABLE_VECTOR_ANNOTATION
             _DISABLE_STRING_ANNOTATION
+            _DISABLE_OPTIONAL_ANNOTATION
         )
         add_link_options(
             /NXCOMPAT

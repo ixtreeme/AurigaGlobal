@@ -2,6 +2,8 @@
 #include "ecs/systems/PointSystem.hpp"
 #include "ecs/systems/PlayerRuntimeSystem.hpp"
 #include "ecs/systems/NetworkSyncSystem.hpp"
+#include "ecs/systems/ItemSystem.hpp"
+#include "ecs/components/item_components.hpp"
 #include "ecs/AIHelpers.hpp"
 #include "utils.h"
 #include "config.h"
@@ -24,6 +26,7 @@
 #include "item_manager.h"
 #include "ecs/EntityFactory.hpp"
 #include "ecs/Registry.hpp"
+#include "ecs/ItemRegistry.hpp"
 
 #include <common/VnumHelper.h>
 #include "DragonSoul.h"
@@ -39,6 +42,17 @@
 #include "refine.h"
 #endif
 
+namespace
+{
+LPITEM ResolveManagedItem(entt::entity item)
+{
+	if (item == entt::null || !g_registry.valid(item))
+		return nullptr;
+
+	const auto* legacy = g_registry.try_get<ecs::LegacyItemPtr>(item);
+	return legacy ? legacy->ptr : nullptr;
+}
+}
 ITEM_MANAGER::ITEM_MANAGER()
 	: m_iTopOfTable(0), m_dwVIDCount(0), m_dwCurrentID(0)
 {
@@ -53,23 +67,32 @@ ITEM_MANAGER::~ITEM_MANAGER()
 
 void ITEM_MANAGER::Destroy()
 {
-	for (auto it = m_VIDMap.begin(); it != m_VIDMap.end(); ++it) {
+	for (const auto& [vid, itemEntity] : m_VIDMap)
+	{
+		LPITEM item = ResolveManagedItem(itemEntity);
+		if (!item)
+			continue;
+
+		EntityFactory::DestroyItemEntity(g_registry, item);
 #ifdef M2_USE_POOL
-		pool_.Destroy(it->second);
+		pool_.Destroy(item);
 #else
-		M2_DELETE(it->second);
+		M2_DELETE(item);
 #endif
 	}
+
 	m_VIDMap.clear();
+	m_map_pkItemByID.clear();
+	m_set_pkItemForDelayedSave.clear();
 }
 
 void ITEM_MANAGER::GracefulShutdown()
 {
-	auto it = m_set_pkItemForDelayedSave.begin();
-
-	while (it != m_set_pkItemForDelayedSave.end())
-		SaveSingleItem(*(it++));
-
+	for (const entt::entity itemEntity : m_set_pkItemForDelayedSave)
+	{
+		if (LPITEM item = ResolveManagedItem(itemEntity))
+			SaveSingleItem(item);
+	}
 	m_set_pkItemForDelayedSave.clear();
 }
 
@@ -151,8 +174,11 @@ bool ITEM_MANAGER::Initialize(TItemTable* table, int size)
 
 	while (it != m_VIDMap.end())
 	{
-		LPITEM item = it->second;
+		const entt::entity itemEntity = it->second;
 		++it;
+		LPITEM item = ResolveManagedItem(itemEntity);
+		if (!item)
+			continue;
 
 		const TItemTable* tableInfo = GetTable(item->GetOriginalVnum());
 
@@ -191,8 +217,11 @@ bool ITEM_MANAGER::InitializeExtraProto(TItemExtraProto* table, uint32_t count)
 	auto it = m_VIDMap.begin();
 	while (it != m_VIDMap.end())
 	{
-		LPITEM item = it->second;
+		const entt::entity itemEntity = it->second;
 		++it;
+		LPITEM item = ResolveManagedItem(itemEntity);
+		if (!item)
+			continue;
 
 		auto extra_it = map.find(item->GetOriginalVnum());
 		if (extra_it != map.end()) {
@@ -236,22 +265,23 @@ LPITEM ITEM_MANAGER::CreateItem(uint32_t vnum, uint32_t count, uint32_t id, bool
 	LPITEM item = nullptr;
 
 	//id로 검사해서 존재한다면 -- 리턴!
-	if (m_map_pkItemByID.contains(id))
+	if (auto duplicate = m_map_pkItemByID.find(id); duplicate != m_map_pkItemByID.end())
 	{
-		item = m_map_pkItemByID[id];
-		if (item) {
-			LPCHARACTER owner = item->GetOwner();
-			if (owner) {
-				const TItemTable* p = item->GetProto();
-				const char* itemName = (p && p->szName[0]) ? p->szName : "UNKNOWN";
-				LOG_ERROR("ITEM_ID_DUP: {} vnum={} {} owner {}", id, item->GetVnum(), itemName, static_cast<const void*>(get_pointer(owner)));
-
+		item = ResolveManagedItem(duplicate->second);
+		if (item)
+		{
+			if (LPCHARACTER owner = item->GetOwner())
+			{
+				const TItemTable* proto = item->GetProto();
+				const char* itemName = (proto && proto->szName[0]) ? proto->szName : "UNKNOWN";
+				LOG_ERROR("ITEM_ID_DUP: {} vnum={} {} owner {}", id, item->GetVnum(), itemName,
+					static_cast<const void*>(get_pointer(owner)));
 			}
+			return nullptr;
 		}
 
-		return nullptr;
+		m_map_pkItemByID.erase(duplicate);
 	}
-
 	//아이템 하나 할당하고
 #ifdef M2_USE_POOL
 	item = pool_.Construct();
@@ -330,13 +360,23 @@ LPITEM ITEM_MANAGER::CreateItem(uint32_t vnum, uint32_t count, uint32_t id, bool
 		count = 1;
 
 	item->SetVID(++m_dwVIDCount);
+	const entt::entity itemEntity = EntityFactory::CreateItemEntity(g_registry, item);
+	if (!ItemSystem::IsValidItem(itemEntity))
+	{
+#ifdef M2_USE_POOL
+		pool_.Destroy(item);
+#else
+		M2_DELETE(item);
+#endif
+		return nullptr;
+	}
 
-	if (bSkipSave == false)
-		m_VIDMap.insert(ITEM_VID_MAP::value_type(item->GetVID(), item));
-
-	if (item->GetID() != 0 && bSkipSave == false)
-		m_map_pkItemByID.insert(std::map<uint32_t, LPITEM>::value_type(item->GetID(), item));
-
+	if (!bSkipSave)
+	{
+		m_VIDMap.insert_or_assign(item->GetVID(), itemEntity);
+		if (item->GetID() != 0)
+			m_map_pkItemByID.insert_or_assign(item->GetID(), itemEntity);
+	}
 	if (!item->SetCount(count))
 		return nullptr;
 
@@ -529,24 +569,26 @@ LPITEM ITEM_MANAGER::CreateItem(uint32_t vnum, uint32_t count, uint32_t id, bool
 	return item;
 }
 
-void ITEM_MANAGER::DelayedSave(LPITEM item) {
-	if (item->GetID() != 0) {
-		if (auto it = m_set_pkItemForDelayedSave.find(item); it != m_set_pkItemForDelayedSave.end()) {
-			m_set_pkItemForDelayedSave.erase(it);
-		}
 
-		m_set_pkItemForDelayedSave.insert(item);
-	}
+
+void ITEM_MANAGER::DelayedSave(LPITEM item)
+{
+	if (!item || item->GetID() == 0)
+		return;
+
+	const entt::entity itemEntity = EntityFactory::CreateItemEntity(g_registry, item);
+	if (ItemSystem::IsValidItem(itemEntity))
+		m_set_pkItemForDelayedSave.insert(itemEntity);
 }
-
 void ITEM_MANAGER::FlushDelayedSave(LPITEM item)
 {
-	auto it = m_set_pkItemForDelayedSave.find(item);
-
-	if (it == m_set_pkItemForDelayedSave.end())
-	{
+	if (!item)
 		return;
-	}
+
+	const entt::entity itemEntity = CItemRegistry::Instance().Find(item->GetID());
+	const auto it = m_set_pkItemForDelayedSave.find(itemEntity);
+	if (it == m_set_pkItemForDelayedSave.end())
+		return;
 
 	m_set_pkItemForDelayedSave.erase(it);
 	SaveSingleItem(item);
@@ -560,8 +602,14 @@ void ITEM_MANAGER::FlushDelayedSaveByOwner(LPCHARACTER owner)
 	auto it = m_set_pkItemForDelayedSave.begin();
 	while (it != m_set_pkItemForDelayedSave.end())
 	{
-		LPITEM item = *it;
-		if (item && item->GetOwner() == owner)
+		LPITEM item = ResolveManagedItem(*it);
+		if (!item)
+		{
+			it = m_set_pkItemForDelayedSave.erase(it);
+			continue;
+		}
+
+		if (item->GetOwner() == owner)
 		{
 			it = m_set_pkItemForDelayedSave.erase(it);
 			SaveSingleItem(item);
@@ -629,12 +677,21 @@ void ITEM_MANAGER::SaveSingleItem(LPITEM item)
 void ITEM_MANAGER::Update()
 {
 	auto it = m_set_pkItemForDelayedSave.begin();
-	while (it != m_set_pkItemForDelayedSave.end()) {
-		const auto item = *it;
-		if (item->GetOwner() && IS_SET(item->GetFlag(), ITEM_FLAG_SLOW_QUERY)) {
+	while (it != m_set_pkItemForDelayedSave.end())
+	{
+		LPITEM item = ResolveManagedItem(*it);
+		if (!item)
+		{
+			it = m_set_pkItemForDelayedSave.erase(it);
+			continue;
+		}
+
+		if (item->GetOwner() && IS_SET(item->GetFlag(), ITEM_FLAG_SLOW_QUERY))
+		{
 			++it;
 			continue;
 		}
+
 		SaveSingleItem(item);
 		it = m_set_pkItemForDelayedSave.erase(it);
 	}
@@ -642,8 +699,25 @@ void ITEM_MANAGER::Update()
 
 void ITEM_MANAGER::RemoveItem(LPITEM item, const char* c_pszReason)
 {
-	LPCHARACTER o;
-	const bool bWasMountInventory = (item && item->GetWindow() == MOUNT_INVENTORY);
+	if (!item)
+	{
+		LOG_ERROR("ITEM_MANAGER::RemoveItem called with null item");
+		return;
+	}
+
+	const entt::entity itemEntity = CItemRegistry::Instance().FindByLegacy(item);
+	if (itemEntity == entt::null)
+	{
+		LOG_ERROR("ITEM_MANAGER::RemoveItem rejected stale item pointer {}", static_cast<const void*>(item));
+		return;
+	}
+
+	item = ResolveManagedItem(itemEntity);
+	if (!item)
+		return;
+
+	LPCHARACTER o = nullptr;
+	const bool bWasMountInventory = item->GetWindow() == MOUNT_INVENTORY;
 
 	if ((o = item->GetOwner()))
 	{
@@ -694,6 +768,23 @@ void ITEM_MANAGER::DestroyItem(LPITEM item)
 void ITEM_MANAGER::DestroyItem(LPITEM item, const char* file, size_t line)
 #endif
 {
+	if (!item)
+	{
+		LOG_ERROR("ITEM_MANAGER::DestroyItem called with null item");
+		return;
+	}
+
+	const entt::entity itemEntity = CItemRegistry::Instance().FindByLegacy(item);
+	if (itemEntity == entt::null)
+	{
+		LOG_ERROR("ITEM_MANAGER::DestroyItem rejected stale item pointer {}", static_cast<const void*>(item));
+		return;
+	}
+
+	item = ResolveManagedItem(itemEntity);
+	if (!item)
+		return;
+
 	if (item->GetSectree())
 		item->RemoveFromGround();
 
@@ -715,7 +806,7 @@ void ITEM_MANAGER::DestroyItem(LPITEM item, const char* file, size_t line)
 		}
 	}
 
-	if (auto it = m_set_pkItemForDelayedSave.find(item); it != m_set_pkItemForDelayedSave.end())
+	if (auto it = m_set_pkItemForDelayedSave.find(itemEntity); it != m_set_pkItemForDelayedSave.end())
 		m_set_pkItemForDelayedSave.erase(it);
 
 	uint32_t dwID = item->GetID();
@@ -753,20 +844,20 @@ void ITEM_MANAGER::DestroyItem(LPITEM item, const char* file, size_t line)
 
 LPITEM ITEM_MANAGER::Find(uint32_t id)
 {
-	auto it = m_map_pkItemByID.find(id);
+	const auto it = m_map_pkItemByID.find(id);
 	if (it == m_map_pkItemByID.end())
 		return nullptr;
-	return it->second;
+
+	return ResolveManagedItem(it->second);
 }
 
 LPITEM ITEM_MANAGER::FindByVID(uint32_t vid)
 {
-	auto it = m_VIDMap.find(vid);
-
+	const auto it = m_VIDMap.find(vid);
 	if (it == m_VIDMap.end())
 		return nullptr;
 
-	return (it->second);
+	return ResolveManagedItem(it->second);
 }
 
 TItemTable* ITEM_MANAGER::GetTable(uint32_t vnum)
@@ -1037,194 +1128,103 @@ bool ITEM_MANAGER::GetDropPct(LPCHARACTER pkChr, LPCHARACTER pkKiller, OUT int& 
 	return true;
 }
 #ifdef __SEND_TARGET_INFO__
-bool ITEM_MANAGER::CreateDropItemVector(LPCHARACTER pkChr, LPCHARACTER pkKiller, std::vector<LPITEM>& vec_item)
+bool ITEM_MANAGER::CreateDropItemVector(LPCHARACTER pkChr, LPCHARACTER pkKiller, std::vector<TargetInfoItem>& items)
 {
 #ifdef ENABLE_METINSTONE_DROP_BUGFIX_RAZOR9D
-	if (pkChr && ecs::PlayerRuntime::IsStone(AIHelpers::EcsOf(pkChr)))
+	if (pkChr && ecs::PlayerRuntime::IsStone(AIHelpers::EcsOf(pkChr)) &&
+		!IsRegisteredDropMob(ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkChr))))
 	{
-		if (!IsRegisteredDropMob(ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkChr))))
-		{
-			LOG_INFO("[DROP-BLOKK] Metinko {} ({}) nincs mob_drop_item.txt-ben   CreateDropItemVector megszakitva.", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(pkChr)).data(), ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkChr)));
-			return false;
-		}
-	}
-#endif
-	if (!pkChr || pkChr->IsPolymorphed() || ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(pkChr)))
-	{
+		LOG_INFO("[DROP-BLOKK] Metinko {} ({}) nincs mob_drop_item.txt-ben - CreateDropItemVector megszakitva.",
+			ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(pkChr)).data(),
+			ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkChr)));
 		return false;
 	}
+#endif
+	if (!pkChr || !pkKiller || pkChr->IsPolymorphed() || ecs::PlayerRuntime::IsPC(AIHelpers::EcsOf(pkChr)))
+		return false;
 
-	int iLevel = ecs::PointSystem::GetLevel(AIHelpers::EcsOf(pkKiller));
+	const int level = ecs::PointSystem::GetLevel(AIHelpers::EcsOf(pkKiller));
+	const uint8_t rank = pkChr->GetMobRank();
+	const uint32_t race = ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkChr));
+	const bool isStone = ecs::PlayerRuntime::IsStone(AIHelpers::EcsOf(pkChr));
 
-	uint8_t bRank = pkChr->GetMobRank();
-	LPITEM item = nullptr;
-
-	auto it = g_vec_pkCommonDropItem[bRank].begin();
-
-	while (!ecs::PlayerRuntime::IsStone(AIHelpers::EcsOf(pkChr)) && it != g_vec_pkCommonDropItem[bRank].end())
+	const auto add = [&items](uint32_t vnum, uint32_t count)
 	{
-		const CItemDropInfo& c_rInfo = *(it++);
+		if (vnum != 0 && count != 0)
+			items.push_back({vnum, count});
+	};
 
-		if (iLevel < c_rInfo.m_iLevelStart || iLevel > c_rInfo.m_iLevelEnd)
+	for (const CItemDropInfo& info : g_vec_pkCommonDropItem[rank])
+	{
+		if (isStone || level < info.m_iLevelStart || level > info.m_iLevelEnd)
 			continue;
 
-		TItemTable* table = GetTable(c_rInfo.m_dwVnum);
-
+		const TItemTable* table = GetTable(info.m_dwVnum);
 		if (!table)
 			continue;
-
-		item = nullptr;
-
-		if (table->bType == ITEM_POLYMORPH)
-		{
-			if (c_rInfo.m_dwVnum == pkChr->GetPolymorphItemVnum())
-			{
-				item = CreateItem(c_rInfo.m_dwVnum, 1, 0, true);
-
-				if (item)
-					item->SetSocket(0, ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkChr)));
-			}
-		}
-		else
-			item = CreateItem(c_rInfo.m_dwVnum, 1, 0, true);
-
-		if (item) vec_item.push_back(item);
+		if (table->bType == ITEM_POLYMORPH && info.m_dwVnum != pkChr->GetPolymorphItemVnum())
+			continue;
+		add(info.m_dwVnum, 1);
 	}
 
-	// Drop Item Group
+	if (!isStone)
 	{
-
-		auto it = m_map_pkDropItemGroup.find(ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkChr)));
-
-		if (!ecs::PlayerRuntime::IsStone(AIHelpers::EcsOf(pkChr)) && it != m_map_pkDropItemGroup.end())
+		if (const auto it = m_map_pkDropItemGroup.find(race); it != m_map_pkDropItemGroup.end())
 		{
-			auto v = it->second->GetVector();
-
-			for (uint32_t i = 0; i < v.size(); ++i)
-			{
-				item = CreateItem(v[i].dwVnum, v[i].iCount, 0, true);
-
-				if (item)
-				{
-					if (item->GetType() == ITEM_POLYMORPH)
-					{
-						if (item->GetVnum() == pkChr->GetPolymorphItemVnum())
-						{
-							item->SetSocket(0, ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkChr)));
-						}
-					}
-
-					vec_item.push_back(item);
-				}
-			}
+			for (const auto& info : it->second->GetVector())
+				add(info.dwVnum, info.iCount);
 		}
 	}
 
-	// MobDropItem Group
+	if (const auto it = m_map_pkMobItemGroup.find(race); it != m_map_pkMobItemGroup.end())
 	{
-		auto it = m_map_pkMobItemGroup.find(ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkChr)));
-
-		if (it != m_map_pkMobItemGroup.end())
+		CMobItemGroup* group = it->second;
+		if (group && !group->IsEmpty())
 		{
-			CMobItemGroup* pGroup = it->second;
-
-			// MOB_DROP_ITEM_BUG_FIX
-			// 20050805.myevan.MobDropItem ? ???? ?? ?? CMobItemGroup::GetOne() ??? ?? ?? ??
-			if (pGroup && !pGroup->IsEmpty())
-			{
-				const CMobItemGroup::SMobItemGroupInfo& info = pGroup->GetOne();
-				item = CreateItem(info.dwItemVnum, info.iCount, 0, true, info.iRarePct);
-
-				if (item) vec_item.push_back(item);
-			}
-			// END_OF_MOB_DROP_ITEM_BUG_FIX
+			const auto& info = group->GetOne();
+			add(info.dwItemVnum, info.iCount);
 		}
 	}
 
-	// Level Item Group
+	if (!isStone)
 	{
-		auto it = m_map_pkLevelItemGroup.find(ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkChr)));
-
-		if (it != m_map_pkLevelItemGroup.end())
+		if (const auto it = m_map_pkLevelItemGroup.find(race);
+			it != m_map_pkLevelItemGroup.end() && it->second->GetLevelLimit() <= static_cast<uint32_t>(level))
 		{
-			if (!ecs::PlayerRuntime::IsStone(AIHelpers::EcsOf(pkChr)) && it->second->GetLevelLimit() <= (uint32_t)iLevel)
-			{
-				auto v = it->second->GetVector();
-
-				for (uint32_t i = 0; i < v.size(); i++)
-				{
-					uint32_t dwVnum = v[i].dwVNum;
-					item = CreateItem(dwVnum, v[i].iCount, 0, true);
-					if (item) vec_item.push_back(item);
-				}
-			}
+			for (const auto& info : it->second->GetVector())
+				add(info.dwVNum, info.iCount);
 		}
-	}
 
-	// BuyerTheitGloves Item Group
-	{
-		if (!ecs::PlayerRuntime::IsStone(AIHelpers::EcsOf(pkChr)) && ((pkKiller->GetPremiumRemainSeconds(PREMIUM_ITEM) > 0) || (pkKiller->IsEquipUniqueGroup(UNIQUE_GROUP_DOUBLE_ITEM))
+		const bool hasDoubleDrop = pkKiller->GetPremiumRemainSeconds(PREMIUM_ITEM) > 0 ||
+			pkKiller->IsEquipUniqueGroup(UNIQUE_GROUP_DOUBLE_ITEM)
 #ifdef ENABLE_NEW_COMMON_BONUSES
-			|| (ecs::PointSystem::Get(AIHelpers::EcsOf(pkKiller), APPLY_DOUBLE_DROP_ITEM) > 0)
+			|| ecs::PointSystem::Get(AIHelpers::EcsOf(pkKiller), APPLY_DOUBLE_DROP_ITEM) > 0
 #endif
-			))
+			;
+		if (hasDoubleDrop)
 		{
-			auto it = m_map_pkGloveItemGroup.find(ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkChr)));
-			if (it != m_map_pkGloveItemGroup.end())
+			if (const auto it = m_map_pkGloveItemGroup.find(race); it != m_map_pkGloveItemGroup.end())
 			{
-				auto v = it->second->GetVector();
-
-				for (uint32_t i = 0; i < v.size(); ++i)
-				{
-
-					uint32_t dwVnum = v[i].dwVnum;
-					item = CreateItem(dwVnum, v[i].iCount, 0, true);
-					if (item) vec_item.push_back(item);
-				}
+				for (const auto& info : it->second->GetVector())
+					add(info.dwVnum, info.iCount);
 			}
 		}
 	}
 
-	// ??
-	if (pkChr->GetMobDropItemVnum())
-	{
-		auto it = m_map_dwEtcItemDropProb.find(pkChr->GetMobDropItemVnum());
+	if (pkChr->GetMobDropItemVnum() && m_map_dwEtcItemDropProb.contains(pkChr->GetMobDropItemVnum()))
+		add(pkChr->GetMobDropItemVnum(), 1);
 
-		if (it != m_map_dwEtcItemDropProb.end())
-		{
-			item = CreateItem(pkChr->GetMobDropItemVnum(), 1, 0, true);
-			if (item) vec_item.push_back(item);
-		}
+	if (isStone)
+	{
+		add(pkChr->GetDropMetinStoneVnum(), 1);
+		add(pkChr->GetDropMetinStofaVnum(), 1);
+		add(pkChr->GetDropMetinSaccaVnum(), 1);
 	}
 
-	if (ecs::PlayerRuntime::IsStone(AIHelpers::EcsOf(pkChr)))
-	{
-		if (pkChr->GetDropMetinStoneVnum())
-		{
-			item = CreateItem(pkChr->GetDropMetinStoneVnum(), 1, 0, true);
-			if (item)
-				vec_item.push_back(item);
-		}
-
-		if (pkChr->GetDropMetinStofaVnum())
-		{
-			item = CreateItem(pkChr->GetDropMetinStofaVnum(), 1, 0, true);
-			if (item)
-				vec_item.push_back(item);
-		}
-
-		if (pkChr->GetDropMetinSaccaVnum())
-		{
-			item = CreateItem(pkChr->GetDropMetinSaccaVnum(), 1, 0, true);
-			if (item)
-				vec_item.push_back(item);
-		}
-	}
-
-	return vec_item.size();
+	return !items.empty();
 }
 #endif
-bool ITEM_MANAGER::CreateDropItem(LPCHARACTER pkChr, LPCHARACTER pkKiller, std::vector<LPITEM>& vec_item)
+bool ITEM_MANAGER::CreateDropItem(LPCHARACTER pkChr, LPCHARACTER pkKiller, std::vector<entt::entity>& vec_item)
 {
 #ifdef ENABLE_METINSTONE_DROP_BUGFIX_RAZOR9d
 	const CMobItemGroup* pGroup = quest::CQuestManager::instance().GetMobDropItem(ecs::PlayerRuntime::GetRaceNum(AIHelpers::EcsOf(pkChr)));
@@ -1281,7 +1281,7 @@ bool ITEM_MANAGER::CreateDropItem(LPCHARACTER pkChr, LPCHARACTER pkKiller, std::
 			else
 				item = CreateItem(c_rInfo.m_dwVnum, 1, 0, true);
 
-			if (item) vec_item.push_back(item);
+			if (item) vec_item.push_back(EntityFactory::CreateItemEntity(g_registry, item));
 		}
 	}
 
@@ -1319,7 +1319,7 @@ bool ITEM_MANAGER::CreateDropItem(LPCHARACTER pkChr, LPCHARACTER pkKiller, std::
 						{
 							LOG_ERROR("VIKING DROP ROLL: item={} pct_raw={} final={} count={}", v[i].dwVnum, v[i].dwPct, iPercent, v[i].iCount);
 						}
-						vec_item.push_back(item);
+						vec_item.push_back(EntityFactory::CreateItemEntity(g_registry, item));
 					}
 				}
 			}
@@ -1344,7 +1344,7 @@ bool ITEM_MANAGER::CreateDropItem(LPCHARACTER pkChr, LPCHARACTER pkKiller, std::
 
 					const CMobItemGroup::SMobItemGroupInfo& info = pGroup->GetOne();
 					item = CreateItem(info.dwItemVnum, info.iCount, 0, true, info.iRarePct);
-					if (item) vec_item.push_back(item);
+					if (item) vec_item.push_back(EntityFactory::CreateItemEntity(g_registry, item));
 				}
 
 			}
@@ -1368,7 +1368,7 @@ bool ITEM_MANAGER::CreateDropItem(LPCHARACTER pkChr, LPCHARACTER pkKiller, std::
 					{
 						uint32_t dwVnum = v[i].dwVNum;
 						item = CreateItem(dwVnum, v[i].iCount, 0, true);
-						if (item) vec_item.push_back(item);
+						if (item) vec_item.push_back(EntityFactory::CreateItemEntity(g_registry, item));
 					}
 				}
 			}
@@ -1396,7 +1396,7 @@ bool ITEM_MANAGER::CreateDropItem(LPCHARACTER pkChr, LPCHARACTER pkKiller, std::
 					{
 						uint32_t dwVnum = v[i].dwVnum;
 						item = CreateItem(dwVnum, v[i].iCount, 0, true);
-						if (item) vec_item.push_back(item);
+						if (item) vec_item.push_back(EntityFactory::CreateItemEntity(g_registry, item));
 					}
 				}
 			}
@@ -1415,7 +1415,7 @@ bool ITEM_MANAGER::CreateDropItem(LPCHARACTER pkChr, LPCHARACTER pkKiller, std::
 			if (iPercent >= number(1, iRandRange))
 			{
 				item = CreateItem(pkChr->GetMobDropItemVnum(), 1, 0, true);
-				if (item) vec_item.push_back(item);
+				if (item) vec_item.push_back(EntityFactory::CreateItemEntity(g_registry, item));
 			}
 		}
 	}
@@ -1433,7 +1433,7 @@ bool ITEM_MANAGER::CreateDropItem(LPCHARACTER pkChr, LPCHARACTER pkKiller, std::
 			{
 				item = CreateItem(pkChr->GetDropMetinStoneVnum(), 1, 0, true);
 				if (item)
-					vec_item.push_back(item);
+					vec_item.push_back(EntityFactory::CreateItemEntity(g_registry, item));
 			}
 		}
 
@@ -1444,7 +1444,7 @@ bool ITEM_MANAGER::CreateDropItem(LPCHARACTER pkChr, LPCHARACTER pkKiller, std::
 		//	{
 		//		item = CreateItem(pkChr->GetDropMetinStofaVnum(), 1, 0, true);
 		//		if (item)
-		//			vec_item.push_back(item);
+		//			vec_item.push_back(EntityFactory::CreateItemEntity(g_registry, item));
 		//	}
 		//}
 
@@ -1455,7 +1455,7 @@ bool ITEM_MANAGER::CreateDropItem(LPCHARACTER pkChr, LPCHARACTER pkKiller, std::
 		//	{
 		//		item = CreateItem(pkChr->GetDropMetinSaccaVnum(), 1, 0, true);
 		//		if (item)
-		//			vec_item.push_back(item);
+		//			vec_item.push_back(EntityFactory::CreateItemEntity(g_registry, item));
 		//	}
 		//}
 	}
@@ -1466,7 +1466,7 @@ bool ITEM_MANAGER::CreateDropItem(LPCHARACTER pkChr, LPCHARACTER pkKiller, std::
 		LOG_INFO("EVENT HORSE_SKILL_BOOK_DROP");
 
 		if ((item = CreateItem(ITEM_HORSE_SKILL_TRAIN_BOOK, 1, 0, true)))
-			vec_item.push_back(item);
+			vec_item.push_back(EntityFactory::CreateItemEntity(g_registry, item));
 	}
 
 
@@ -1505,10 +1505,10 @@ bool ITEM_MANAGER::CreateDropItem(LPCHARACTER pkChr, LPCHARACTER pkKiller, std::
 
 
 
-	for (auto it = vec_item.begin(); it != vec_item.end(); ++it)
+	for (const entt::entity item : vec_item)
 	{
-		LPITEM item = *it;
-		DBManager::instance().SendMoneyLog(MONEY_LOG_DROP, item->GetVnum(), item->GetCount());
+		if (ItemSystem::IsValidItem(item))
+			DBManager::instance().SendMoneyLog(MONEY_LOG_DROP, ItemSystem::GetItemVnum(item), ItemSystem::GetItemCount(item));
 	}
 
 	return !vec_item.empty();
@@ -1572,7 +1572,7 @@ static int __DropEvent_CharStone_GetDropPercent(int killer_level)
 	return gs_dropEvent_charStone.percent_lv31_MX;
 }
 
-static void __DropEvent_CharStone_DropItem(CHARACTER& killer, CHARACTER& victim, ITEM_MANAGER& itemMgr, std::vector<LPITEM>& vec_item)
+static void __DropEvent_CharStone_DropItem(CHARACTER& killer, CHARACTER& victim, ITEM_MANAGER& itemMgr, std::vector<entt::entity>& vec_item)
 {
 #ifdef ENABLE_METINSTONE_DROP_BUGFIX_RAZOR9D
 	if (victim.IsStone())
@@ -1613,7 +1613,7 @@ static void __DropEvent_CharStone_DropItem(CHARACTER& killer, CHARACTER& victim,
 
 		if ((p_item = itemMgr.CreateItem(item_vnum, 1, 0, true)))
 		{
-			vec_item.push_back(p_item);
+			vec_item.push_back(EntityFactory::CreateItemEntity(g_registry, p_item));
 
 			LOG_INFO("dropevent.drop_char_stone.item_drop: killer({}: lv{}), victim({}: lv:{}), item_name({})", killer.GetName(), killer.GetLevel(), victim.GetName(), victim.GetLevel(), p_item->GetName());
 		}
@@ -1729,7 +1729,7 @@ static LPITEM __DropEvent_RefineBox_GetDropItem(CHARACTER& killer, CHARACTER& vi
 	return nullptr;
 }
 
-static void __DropEvent_RefineBox_DropItem(CHARACTER& killer, CHARACTER& victim, ITEM_MANAGER& itemMgr, std::vector<LPITEM>& vec_item)
+static void __DropEvent_RefineBox_DropItem(CHARACTER& killer, CHARACTER& victim, ITEM_MANAGER& itemMgr, std::vector<entt::entity>& vec_item)
 {
 	if (!gs_dropEvent_refineBox.alive)
 		return;
@@ -1740,7 +1740,7 @@ static void __DropEvent_RefineBox_DropItem(CHARACTER& killer, CHARACTER& victim,
 
 	if (p_item)
 	{
-		vec_item.push_back(p_item);
+		vec_item.push_back(EntityFactory::CreateItemEntity(g_registry, p_item));
 
 		LOG_INFO("dropevent.drop_refine_box.item_drop: killer({}: lv{}), victim({}: lv:{}), item_name({})", killer.GetName(), killer.GetLevel(), victim.GetName(), victim.GetLevel(), p_item->GetName());
 	}
@@ -1780,7 +1780,7 @@ bool DropEvent_RefineBox_SetValue(const std::string& name, int value)
 // 개량 아이템 보상 끝.
 
 
-void ITEM_MANAGER::CreateQuestDropItem(LPCHARACTER pkChr, LPCHARACTER pkKiller, std::vector<LPITEM>& vec_item, int iDeltaPercent, int iRandRange)
+void ITEM_MANAGER::CreateQuestDropItem(LPCHARACTER pkChr, LPCHARACTER pkKiller, std::vector<entt::entity>& vec_item, int iDeltaPercent, int iRandRange)
 {
 	LPITEM item = nullptr;
 
@@ -1819,7 +1819,7 @@ void ITEM_MANAGER::CreateQuestDropItem(LPCHARACTER pkChr, LPCHARACTER pkKiller, 
 			if (iPercent >= number(1, iRandRange))
 			{
 				if ((item = CreateItem(ITEM_VNUM, 1, 0, true)))
-					vec_item.push_back(item);
+					vec_item.push_back(EntityFactory::CreateItemEntity(g_registry, item));
 			}
 		}
 	}
@@ -1835,7 +1835,7 @@ void ITEM_MANAGER::CreateQuestDropItem(LPCHARACTER pkChr, LPCHARACTER pkKiller, 
 			if (number(1, 100) <= pct)
 			{
 				if ((item = CreateItem(ITEM_VNUM, 1, 0, true)))
-					vec_item.push_back(item);
+					vec_item.push_back(EntityFactory::CreateItemEntity(g_registry, item));
 			}
 		}
 	}
@@ -1848,7 +1848,7 @@ void ITEM_MANAGER::CreateQuestDropItem(LPCHARACTER pkChr, LPCHARACTER pkKiller, 
 		const static uint32_t dwVnum = 50037;
 
 		if ((item = CreateItem(dwVnum, 1, 0, true)))
-			vec_item.push_back(item);
+			vec_item.push_back(EntityFactory::CreateItemEntity(g_registry, item));
 
 	}
 
@@ -1860,7 +1860,7 @@ void ITEM_MANAGER::CreateQuestDropItem(LPCHARACTER pkChr, LPCHARACTER pkKiller, 
 		const static uint32_t dwVnum = 50043;
 
 		if ((item = CreateItem(dwVnum, 1, 0, true)))
-			vec_item.push_back(item);
+			vec_item.push_back(EntityFactory::CreateItemEntity(g_registry, item));
 	}
 
 	// 새해 폭죽 이벤트
@@ -1870,7 +1870,7 @@ void ITEM_MANAGER::CreateQuestDropItem(LPCHARACTER pkChr, LPCHARACTER pkKiller, 
 		const uint32_t ITEM_VNUM_FIRE = 50107;
 
 		if ((item = CreateItem(ITEM_VNUM_FIRE, 1, 0, true)))
-			vec_item.push_back(item);
+			vec_item.push_back(EntityFactory::CreateItemEntity(g_registry, item));
 	}
 
 	// 새해 대보름 원소 이벤트
@@ -1882,7 +1882,7 @@ void ITEM_MANAGER::CreateQuestDropItem(LPCHARACTER pkChr, LPCHARACTER pkKiller, 
 		uint32_t dwVnum = wonso_items[number(0, 5)];
 
 		if ((item = CreateItem(dwVnum, 1, 0, true)))
-			vec_item.push_back(item);
+			vec_item.push_back(EntityFactory::CreateItemEntity(g_registry, item));
 	}
 
 	// 발렌타인 데이 이벤트. OGE의 요구에 따라 event 최소값을 1로 변경.(다른 이벤트는 일단 그대로 둠.)
@@ -1894,7 +1894,7 @@ void ITEM_MANAGER::CreateQuestDropItem(LPCHARACTER pkChr, LPCHARACTER pkKiller, 
 		uint32_t dwVnum = valentine_items[number(0, 1)];
 
 		if ((item = CreateItem(dwVnum, 1, 0, true)))
-			vec_item.push_back(item);
+			vec_item.push_back(EntityFactory::CreateItemEntity(g_registry, item));
 	}
 
 	// 아이스크림 이벤트
@@ -1903,14 +1903,14 @@ void ITEM_MANAGER::CreateQuestDropItem(LPCHARACTER pkChr, LPCHARACTER pkKiller, 
 		const static uint32_t icecream = 50123;
 
 		if ((item = CreateItem(icecream, 1, 0, true)))
-			vec_item.push_back(item);
+			vec_item.push_back(EntityFactory::CreateItemEntity(g_registry, item));
 	}
 
 	//if (ecs::PointSystem::GetLevel(AIHelpers::EcsOf(pkChr)) >= 30 && (GetDropPerKillPct(50, 100, iDeltaPercent, "ds_drop") >= number(1, iRandRange)))
 	//{
 	//	const static uint32_t dragon_soul_gemstone = 30270;
 	//	if ((item = CreateItem(dragon_soul_gemstone, 1, 0, true)))
-	//		vec_item.push_back(item);
+	//		vec_item.push_back(EntityFactory::CreateItemEntity(g_registry, item));
 	//}
 
 	if (GetDropPerKillPct(100, 2000, iDeltaPercent, "halloween_drop") >= number(1, iRandRange))
@@ -1918,7 +1918,7 @@ void ITEM_MANAGER::CreateQuestDropItem(LPCHARACTER pkChr, LPCHARACTER pkKiller, 
 		const static uint32_t halloween_item = 30321;
 
 		if ((item = CreateItem(halloween_item, 1, 0, true)))
-			vec_item.push_back(item);
+			vec_item.push_back(EntityFactory::CreateItemEntity(g_registry, item));
 	}
 
 	// 2013라마단 이벤트 위해 주석처리함
@@ -1927,7 +1927,7 @@ void ITEM_MANAGER::CreateQuestDropItem(LPCHARACTER pkChr, LPCHARACTER pkKiller, 
 		const static uint32_t ramadan_item = 30315;
 
 		if ((item = CreateItem(ramadan_item, 1, 0, true)))
-			vec_item.push_back(item);
+			vec_item.push_back(EntityFactory::CreateItemEntity(g_registry, item));
 	}
 
 	if (GetDropPerKillPct(100, 2000, iDeltaPercent, "easter_drop") >= number(1, iRandRange))
@@ -1935,7 +1935,7 @@ void ITEM_MANAGER::CreateQuestDropItem(LPCHARACTER pkChr, LPCHARACTER pkKiller, 
 		const static uint32_t easter_item_base = 50160;
 
 		if ((item = CreateItem(easter_item_base + number(0, 19), 1, 0, true)))
-			vec_item.push_back(item);
+			vec_item.push_back(EntityFactory::CreateItemEntity(g_registry, item));
 	}
 
 	// 월드컵 이벤트
@@ -1944,7 +1944,7 @@ void ITEM_MANAGER::CreateQuestDropItem(LPCHARACTER pkChr, LPCHARACTER pkKiller, 
 		const static uint32_t football_item = 50096;
 
 		if ((item = CreateItem(football_item, 1, 0, true)))
-			vec_item.push_back(item);
+			vec_item.push_back(EntityFactory::CreateItemEntity(g_registry, item));
 	}
 
 	// 화이트 데이 이벤트
@@ -1955,7 +1955,7 @@ void ITEM_MANAGER::CreateQuestDropItem(LPCHARACTER pkChr, LPCHARACTER pkKiller, 
 		uint32_t dwVnum = whiteday_items[number(0, 1)];
 
 		if ((item = CreateItem(dwVnum, 1, 0, true)))
-			vec_item.push_back(item);
+			vec_item.push_back(EntityFactory::CreateItemEntity(g_registry, item));
 	}
 
 	// 어린이날 수수께끼 상자 이벤트
@@ -1966,7 +1966,7 @@ void ITEM_MANAGER::CreateQuestDropItem(LPCHARACTER pkChr, LPCHARACTER pkKiller, 
 			uint32_t ITEM_QUIZ_BOX = 50034;
 
 			if ((item = CreateItem(ITEM_QUIZ_BOX, 1, 0, true)))
-				vec_item.push_back(item);
+				vec_item.push_back(EntityFactory::CreateItemEntity(g_registry, item));
 		}
 	}
 	else
@@ -1976,7 +1976,7 @@ void ITEM_MANAGER::CreateQuestDropItem(LPCHARACTER pkChr, LPCHARACTER pkKiller, 
 			uint32_t ITEM_QUIZ_BOX = 50034;
 
 			if ((item = CreateItem(ITEM_QUIZ_BOX, 1, 0, true)))
-				vec_item.push_back(item);
+				vec_item.push_back(EntityFactory::CreateItemEntity(g_registry, item));
 		}
 	}
 
@@ -1987,7 +1987,7 @@ void ITEM_MANAGER::CreateQuestDropItem(LPCHARACTER pkChr, LPCHARACTER pkKiller, 
 		int i = number(0, 4);
 		item = CreateItem(drop_items[i]);
 		if (item != nullptr)
-			vec_item.push_back(item);
+			vec_item.push_back(EntityFactory::CreateItemEntity(g_registry, item));
 	}
 
 	// ADD_GRANDMASTER_SKILL
@@ -1997,7 +1997,7 @@ void ITEM_MANAGER::CreateQuestDropItem(LPCHARACTER pkChr, LPCHARACTER pkKiller, 
 		const uint32_t ITEM_VNUM = 50513;
 
 		if ((item = CreateItem(ITEM_VNUM, 1, 0, true)))
-			vec_item.push_back(item);
+			vec_item.push_back(EntityFactory::CreateItemEntity(g_registry, item));
 	}
 	// END_OF_ADD_GRANDMASTER_SKILL
 
@@ -2009,7 +2009,7 @@ void ITEM_MANAGER::CreateQuestDropItem(LPCHARACTER pkChr, LPCHARACTER pkKiller, 
 		const uint32_t ITEM_SEED = 50085;
 
 		if ((item = CreateItem(ITEM_SEED, 1, 0, true)))
-			vec_item.push_back(item);
+			vec_item.push_back(EntityFactory::CreateItemEntity(g_registry, item));
 	}
 
 	// 무신의 축복서용 만년한철 drop
@@ -2030,7 +2030,7 @@ void ITEM_MANAGER::CreateQuestDropItem(LPCHARACTER pkChr, LPCHARACTER pkKiller, 
 			GetDropPerKillPct(1000, 1500, iDeltaPercent, "mars_drop") >= number(1, iRandRange) * iDropMultiply[pkChr->GetMobRank()])
 		{
 			if ((item = CreateItem(ITEM_HANIRON, 1, 0, true)))
-				vec_item.push_back(item);
+				vec_item.push_back(EntityFactory::CreateItemEntity(g_registry, item));
 		}
 	}
 }

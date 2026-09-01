@@ -1,0 +1,5 @@
+D:\AurigaGlobal\LiveWork\AurigaGlobal\build-asan\SRC\Server\GameServer\RelWithDebInfo\libmariadb.dll
+D:\AurigaGlobal\LiveWork\AurigaGlobal\build-asan\SRC\Server\GameServer\RelWithDebInfo\z.dll
+D:\AurigaGlobal\LiveWork\AurigaGlobal\build-asan\SRC\Server\GameServer\RelWithDebInfo\lz4.dll
+D:\AurigaGlobal\LiveWork\AurigaGlobal\build-asan\SRC\Server\GameServer\RelWithDebInfo\lzo2.dll
+D:\AurigaGlobal\LiveWork\AurigaGlobal\build-asan\SRC\Server\GameServer\GameServer.dir\RelWithDebInfo\GameServ.BF9563D1.Up2Date

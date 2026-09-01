@@ -1,0 +1,204 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Solution>
+	<Configurations>
+		<BuildType Name="Debug"/>
+		<BuildType Name="Release"/>
+		<BuildType Name="MinSizeRel"/>
+		<BuildType Name="RelWithDebInfo"/>
+		<Platform Name="x64"/>
+	</Configurations>
+	<Project Path="SRC/3rd/LUA/LUA.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="d3e443e8-3a1b-3e7f-913b-cd62c10bbc3b">
+		<BuildDependency Project="ZERO_CHECK.vcxproj"/>
+	</Project>
+	<Project Path="SRC/Tools/MSAMaker/MSA.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="a2382616-964c-3bf2-891a-97185bd75010">
+		<BuildDependency Project="ZERO_CHECK.vcxproj"/>
+	</Project>
+	<Project Path="SRC/Tools/Mysql2Proto/Mysql2Proto/Mysql2Proto.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="f6eb7bc7-171d-3c4f-8136-291c9c82b093">
+		<BuildDependency Project="SRC/Launcher/AudioLib/AudioLib.vcxproj"/>
+		<BuildDependency Project="SRC/Launcher/Base/Base.vcxproj"/>
+		<BuildDependency Project="SRC/Launcher/FoxFS/FoxFS.vcxproj"/>
+		<BuildDependency Project="SRC/Launcher/Game/Game.vcxproj"/>
+		<BuildDependency Project="ZERO_CHECK.vcxproj"/>
+	</Project>
+	<Project Path="SRC/Tools/QC/QC.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="59d7032c-63d3-3600-8298-4e852a84d33f">
+		<BuildDependency Project="SRC/Launcher/Base/Base.vcxproj"/>
+		<BuildDependency Project="SRC/3rd/LUA/LUA.vcxproj"/>
+		<BuildDependency Project="ZERO_CHECK.vcxproj"/>
+	</Project>
+	<Project Path="SRC/Server/Base/S_Base.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="49ab63d8-965f-3925-a85b-8b0e8adb48e4">
+		<BuildDependency Project="ZERO_CHECK.vcxproj"/>
+	</Project>
+	<Project Path="SRC/Server/Core/S_Core.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="240e8739-6bf4-3f11-b474-27fe6501fab6">
+		<BuildDependency Project="ZERO_CHECK.vcxproj"/>
+	</Project>
+	<Project Path="SRC/Server/Poly/S_Poly.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="e37f91e5-e49c-33d0-99cf-17cb71c65844">
+		<BuildDependency Project="ZERO_CHECK.vcxproj"/>
+	</Project>
+	<Project Path="SRC/Server/SQL/S_SQL.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="e2690f91-5534-3c63-ad2b-499c284da649">
+		<BuildDependency Project="ZERO_CHECK.vcxproj"/>
+	</Project>
+	<Folder Name="/CMakePredefinedTargets/">
+		<Project Path="ALL_BUILD.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="c07cb612-9e80-3494-a93d-831e8855d400" DefaultStartup="true">
+			<BuildDependency Project="SRC/Launcher/AudioLib/AudioLib.vcxproj"/>
+			<BuildDependency Project="SRC/Launcher/Base/Base.vcxproj"/>
+			<BuildDependency Project="SRC/Server/Database/Database.vcxproj"/>
+			<BuildDependency Project="SRC/Launcher/Effect/Effect.vcxproj"/>
+			<BuildDependency Project="SRC/Launcher/FoxFS/FoxFS.vcxproj"/>
+			<BuildDependency Project="SRC/Launcher/Game/Game.vcxproj"/>
+			<BuildDependency Project="SRC/Server/GameServer/GameServer.vcxproj"/>
+			<BuildDependency Project="SRC/Launcher/Granny/Granny.vcxproj"/>
+			<BuildDependency Project="SRC/Tools/IXAC/IXAC.vcxproj"/>
+			<BuildDependency Project="SRC/Tools/IXAC_Updater/IXAC_Updater.vcxproj"/>
+			<BuildDependency Project="SRC/Launcher/Image/Image.vcxproj"/>
+			<BuildDependency Project="SRC/3rd/LUA/LUA.vcxproj"/>
+			<BuildDependency Project="SRC/Tools/MSAMaker/MSA.vcxproj"/>
+			<BuildDependency Project="SRC/Tools/Mysql2Proto/Mysql2Proto/Mysql2Proto.vcxproj"/>
+			<BuildDependency Project="SRC/Launcher/Pack/Pack.vcxproj"/>
+			<BuildDependency Project="SRC/Launcher/Python/Python.vcxproj"/>
+			<BuildDependency Project="SRC/Tools/QC/QC.vcxproj"/>
+			<BuildDependency Project="SRC/Launcher/Render/Render.vcxproj"/>
+			<BuildDependency Project="SRC/Server/Base/S_Base.vcxproj"/>
+			<BuildDependency Project="SRC/Server/Core/S_Core.vcxproj"/>
+			<BuildDependency Project="SRC/Server/Poly/S_Poly.vcxproj"/>
+			<BuildDependency Project="SRC/Server/SQL/S_SQL.vcxproj"/>
+			<BuildDependency Project="SRC/Launcher/Script/Script.vcxproj"/>
+			<BuildDependency Project="SRC/Launcher/SecureLayer/SecureLayer.vcxproj"/>
+			<BuildDependency Project="SRC/Launcher/SpeedTree/SpeedTree.vcxproj"/>
+			<BuildDependency Project="SRC/Launcher/Sphere/Sphere.vcxproj"/>
+			<BuildDependency Project="SRC/Launcher/Terrain/Terrain.vcxproj"/>
+			<BuildDependency Project="SRC/Launcher/UserInterface/UserInterface.vcxproj"/>
+			<BuildDependency Project="ZERO_CHECK.vcxproj"/>
+			<BuildDependency Project="auriga_root_python_files.vcxproj"/>
+			<Build Solution="Debug|*" Project="false"/>
+			<Build Solution="Release|*" Project="false"/>
+			<Build Solution="MinSizeRel|*" Project="false"/>
+			<Build Solution="RelWithDebInfo|*" Project="false"/>
+		</Project>
+		<Project Path="ZERO_CHECK.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="8dcf6e62-4198-3d54-9d62-3b2bb529300b"/>
+	</Folder>
+	<Folder Name="/Common/">
+		<Project Path="SRC/Server/common/common_headers.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="8b753da4-f812-3146-9d20-ddf187026e7c">
+			<BuildDependency Project="ZERO_CHECK.vcxproj"/>
+			<Build Solution="Debug|*" Project="false"/>
+			<Build Solution="Release|*" Project="false"/>
+			<Build Solution="MinSizeRel|*" Project="false"/>
+			<Build Solution="RelWithDebInfo|*" Project="false"/>
+		</Project>
+	</Folder>
+	<Folder Name="/IXAC/">
+		<Project Path="SRC/Tools/IXAC/IXAC.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="dccdc98f-8c7c-353a-a66c-392034d5f33e">
+			<BuildDependency Project="SRC/Launcher/FoxFS/FoxFS.vcxproj"/>
+			<BuildDependency Project="SRC/Launcher/SecureLayer/SecureLayer.vcxproj"/>
+			<BuildDependency Project="ZERO_CHECK.vcxproj"/>
+		</Project>
+		<Project Path="SRC/Tools/IXAC_Updater/IXAC_Updater.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="1a179d27-f7a2-3e43-b828-d347546dac3a">
+			<BuildDependency Project="ZERO_CHECK.vcxproj"/>
+		</Project>
+	</Folder>
+	<Folder Name="/Launcher/">
+		<Project Path="SRC/Launcher/AudioLib/AudioLib.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="a1f9a30d-ef18-3e42-ad75-f31af9f30188">
+			<BuildDependency Project="SRC/Launcher/FoxFS/FoxFS.vcxproj"/>
+			<BuildDependency Project="ZERO_CHECK.vcxproj"/>
+		</Project>
+		<Project Path="SRC/Launcher/Base/Base.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="b0cbb497-3dd2-3c90-8246-b3cfdd589f28">
+			<BuildDependency Project="ZERO_CHECK.vcxproj"/>
+		</Project>
+		<Project Path="SRC/Launcher/Effect/Effect.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="e60626f0-8067-3a70-8d59-819ccd931851">
+			<BuildDependency Project="SRC/Launcher/AudioLib/AudioLib.vcxproj"/>
+			<BuildDependency Project="SRC/Launcher/FoxFS/FoxFS.vcxproj"/>
+			<BuildDependency Project="ZERO_CHECK.vcxproj"/>
+		</Project>
+		<Project Path="SRC/Launcher/FoxFS/FoxFS.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="abb35c5d-f277-3a6e-ae1a-488a9f233519">
+			<BuildDependency Project="ZERO_CHECK.vcxproj"/>
+		</Project>
+		<Project Path="SRC/Launcher/Game/Game.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="382698cb-56d7-3d23-9f81-aa811c9ef8df">
+			<BuildDependency Project="SRC/Launcher/AudioLib/AudioLib.vcxproj"/>
+			<BuildDependency Project="SRC/Launcher/FoxFS/FoxFS.vcxproj"/>
+			<BuildDependency Project="ZERO_CHECK.vcxproj"/>
+		</Project>
+		<Project Path="SRC/Launcher/Granny/Granny.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="db75065f-e5a1-3547-8ef1-0f283c538926">
+			<BuildDependency Project="ZERO_CHECK.vcxproj"/>
+		</Project>
+		<Project Path="SRC/Launcher/Image/Image.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="aa49b64e-6577-32fb-b846-57696eb3d8e8">
+			<BuildDependency Project="SRC/Launcher/AudioLib/AudioLib.vcxproj"/>
+			<BuildDependency Project="SRC/Launcher/FoxFS/FoxFS.vcxproj"/>
+			<BuildDependency Project="ZERO_CHECK.vcxproj"/>
+		</Project>
+		<Project Path="SRC/Launcher/Pack/Pack.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="dd5be1c0-e616-3e9c-88a3-0d03e58b8184">
+			<BuildDependency Project="SRC/Launcher/AudioLib/AudioLib.vcxproj"/>
+			<BuildDependency Project="SRC/Launcher/FoxFS/FoxFS.vcxproj"/>
+			<BuildDependency Project="ZERO_CHECK.vcxproj"/>
+		</Project>
+		<Project Path="SRC/Launcher/Python/Python.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="6129f91a-dcc3-3e99-80eb-eb869efb87c9">
+			<BuildDependency Project="SRC/Launcher/AudioLib/AudioLib.vcxproj"/>
+			<BuildDependency Project="SRC/Launcher/FoxFS/FoxFS.vcxproj"/>
+			<BuildDependency Project="ZERO_CHECK.vcxproj"/>
+		</Project>
+		<Project Path="SRC/Launcher/Render/Render.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="c493fa2f-9869-3d37-831f-5332e3fc53c8">
+			<BuildDependency Project="SRC/Launcher/AudioLib/AudioLib.vcxproj"/>
+			<BuildDependency Project="SRC/Launcher/FoxFS/FoxFS.vcxproj"/>
+			<BuildDependency Project="ZERO_CHECK.vcxproj"/>
+		</Project>
+		<Project Path="SRC/Launcher/Script/Script.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="1e8a63da-53d1-3b3d-850e-077369aa7783">
+			<BuildDependency Project="SRC/Launcher/AudioLib/AudioLib.vcxproj"/>
+			<BuildDependency Project="SRC/Launcher/FoxFS/FoxFS.vcxproj"/>
+			<BuildDependency Project="ZERO_CHECK.vcxproj"/>
+		</Project>
+		<Project Path="SRC/Launcher/SecureLayer/SecureLayer.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="9c59f5b5-e743-34be-bc05-54f0d3043f86">
+			<BuildDependency Project="SRC/Launcher/FoxFS/FoxFS.vcxproj"/>
+			<BuildDependency Project="ZERO_CHECK.vcxproj"/>
+		</Project>
+		<Project Path="SRC/Launcher/SpeedTree/SpeedTree.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="f323b5d4-88df-369e-b4af-35e0463eafdb">
+			<BuildDependency Project="SRC/Launcher/FoxFS/FoxFS.vcxproj"/>
+			<BuildDependency Project="ZERO_CHECK.vcxproj"/>
+		</Project>
+		<Project Path="SRC/Launcher/Sphere/Sphere.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="5fa4b101-9a87-3c14-a69b-5cc6cef77f24">
+			<BuildDependency Project="ZERO_CHECK.vcxproj"/>
+		</Project>
+		<Project Path="SRC/Launcher/Terrain/Terrain.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="6b7a5e3d-9373-3294-96e6-29791c902072">
+			<BuildDependency Project="SRC/Launcher/AudioLib/AudioLib.vcxproj"/>
+			<BuildDependency Project="SRC/Launcher/FoxFS/FoxFS.vcxproj"/>
+			<BuildDependency Project="ZERO_CHECK.vcxproj"/>
+		</Project>
+		<Project Path="SRC/Launcher/UserInterface/UserInterface.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="0e968171-0aa5-3dce-b59f-561f3303f32a">
+			<BuildDependency Project="SRC/Launcher/AudioLib/AudioLib.vcxproj"/>
+			<BuildDependency Project="SRC/Launcher/Base/Base.vcxproj"/>
+			<BuildDependency Project="SRC/Launcher/Effect/Effect.vcxproj"/>
+			<BuildDependency Project="SRC/Launcher/FoxFS/FoxFS.vcxproj"/>
+			<BuildDependency Project="SRC/Launcher/Game/Game.vcxproj"/>
+			<BuildDependency Project="SRC/Launcher/Granny/Granny.vcxproj"/>
+			<BuildDependency Project="SRC/Launcher/Image/Image.vcxproj"/>
+			<BuildDependency Project="SRC/Launcher/Pack/Pack.vcxproj"/>
+			<BuildDependency Project="SRC/Launcher/Python/Python.vcxproj"/>
+			<BuildDependency Project="SRC/Launcher/Render/Render.vcxproj"/>
+			<BuildDependency Project="SRC/Launcher/Script/Script.vcxproj"/>
+			<BuildDependency Project="SRC/Launcher/SecureLayer/SecureLayer.vcxproj"/>
+			<BuildDependency Project="SRC/Launcher/SpeedTree/SpeedTree.vcxproj"/>
+			<BuildDependency Project="SRC/Launcher/Sphere/Sphere.vcxproj"/>
+			<BuildDependency Project="SRC/Launcher/Terrain/Terrain.vcxproj"/>
+			<BuildDependency Project="ZERO_CHECK.vcxproj"/>
+		</Project>
+	</Folder>
+	<Folder Name="/Root/">
+		<Project Path="auriga_root_python_files.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="e63a97c3-6154-34e1-8564-54afef0fc255">
+			<BuildDependency Project="ZERO_CHECK.vcxproj"/>
+		</Project>
+	</Folder>
+	<Folder Name="/Server/">
+		<Project Path="SRC/Server/Database/Database.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="97db6677-1584-3678-aceb-25082a197dab">
+			<BuildDependency Project="SRC/Server/Base/S_Base.vcxproj"/>
+			<BuildDependency Project="SRC/Server/Core/S_Core.vcxproj"/>
+			<BuildDependency Project="SRC/Server/Poly/S_Poly.vcxproj"/>
+			<BuildDependency Project="SRC/Server/SQL/S_SQL.vcxproj"/>
+			<BuildDependency Project="ZERO_CHECK.vcxproj"/>
+		</Project>
+		<Project Path="SRC/Server/GameServer/GameServer.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="93cbbef8-a988-3fb6-8ccf-1447d5d0bfc3">
+			<BuildDependency Project="SRC/3rd/LUA/LUA.vcxproj"/>
+			<BuildDependency Project="SRC/Server/Base/S_Base.vcxproj"/>
+			<BuildDependency Project="SRC/Server/Core/S_Core.vcxproj"/>
+			<BuildDependency Project="SRC/Server/Poly/S_Poly.vcxproj"/>
+			<BuildDependency Project="SRC/Server/SQL/S_SQL.vcxproj"/>
+			<BuildDependency Project="ZERO_CHECK.vcxproj"/>
+		</Project>
+	</Folder>
+</Solution>

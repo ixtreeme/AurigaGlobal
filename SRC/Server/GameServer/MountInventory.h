@@ -20,8 +20,8 @@ public:
     ~CMountInventory();
 
     bool Add(uint32_t pos, entt::entity item, bool skipSave = false);
-    LPITEM Get(uint32_t pos) const;
-    LPITEM Remove(uint32_t pos, bool skipDbDelete = false);
+    entt::entity Get(uint32_t pos) const;
+    entt::entity Remove(uint32_t pos, bool skipDbDelete = false);
     bool RemoveByItem(entt::entity item, bool skipDbDelete = false);
     bool MoveItem(uint32_t from, uint32_t to);
 
@@ -41,7 +41,7 @@ private:
 
 private:
     LPCHARACTER m_pkOwner;
-    std::vector<LPITEM> m_items;
+    std::vector<entt::entity> m_items;
     std::unique_ptr<CGrid> m_grid;
     int m_iHeight;
 };

@@ -78,13 +78,13 @@ void AttrTransfer_close(LPCHARACTER ch)
 
 void AttrTransfer_clean_item(LPCHARACTER ch)
 {
-	LPITEM* attr_transfer_item = ch->GetAttrTransferItem();
+	auto attr_transfer_item = ch->GetAttrTransferItem();
 	for (int i = 0; i < MAX_ATTR_TRANSFER_SLOT; ++i)
 	{
-		if (attr_transfer_item[i] == nullptr)
+		if (attr_transfer_item[i] == entt::null)
 			continue;
 
-		attr_transfer_item[i] = nullptr;
+		attr_transfer_item[i] = entt::null;
 	}
 
 }
@@ -111,8 +111,8 @@ bool AttrTransfer_make(LPCHARACTER ch)
 		return false;
 	}
 
-	LPITEM* items = ch->GetAttrTransferItem();
-	if (items[0] == nullptr || items[1] == nullptr || items[2] == nullptr)
+	auto items = ch->GetAttrTransferItem();
+	if (items[0] == entt::null || items[1] == entt::null || items[2] == entt::null)
 	{
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 83, "");
@@ -120,7 +120,7 @@ bool AttrTransfer_make(LPCHARACTER ch)
 		return false;
 	}
 
-	if (ItemSystem::GetItemType(EntityFactory::CreateItemEntity(g_registry, items[0])) != ITEM_TRANSFER_SCROLL || ItemSystem::GetItemType(EntityFactory::CreateItemEntity(g_registry, items[1])) != ITEM_COSTUME || ItemSystem::GetItemType(EntityFactory::CreateItemEntity(g_registry, items[2])) != ITEM_COSTUME)
+	if (ItemSystem::GetItemType(items[0]) != ITEM_TRANSFER_SCROLL || ItemSystem::GetItemType(items[1]) != ITEM_COSTUME || ItemSystem::GetItemType(items[2]) != ITEM_COSTUME)
 	{
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 83, "");
@@ -130,7 +130,7 @@ bool AttrTransfer_make(LPCHARACTER ch)
 
 	for (int i = 0; i < ITEM_ATTRIBUTE_MAX_NUM; ++i)
 	{
-		if (has_attr != 1 && items[2]->GetAttributeType(i) > 0 && items[2]->GetAttributeValue(i) > 0)
+		if (has_attr != 1 && ItemSystem::GetItemAttributeType(items[2], i) > 0 && ItemSystem::GetItemAttributeValue(items[2], i) > 0)
 		{
 			has_attr = 1;
 		}
@@ -147,25 +147,23 @@ bool AttrTransfer_make(LPCHARACTER ch)
 	for (int i = 0; i < ITEM_ATTRIBUTE_MAX_NUM; ++i) {
 #ifdef ENABLE_ATTR_COSTUMES
 		if ((i == 5) || (i == 6)) {
-			ItemSystem::SetItemForceAttributeEcs(EntityFactory::CreateItemEntity(g_registry, items[1]), i, 0, 0);
+			ItemSystem::SetItemForceAttributeEcs(items[1], i, 0, 0);
 		}
 		else
-			ItemSystem::SetItemForceAttributeEcs(EntityFactory::CreateItemEntity(g_registry, items[1]), i, items[2]->GetAttributeType(i), items[2]->GetAttributeValue(i));
+			ItemSystem::SetItemForceAttributeEcs(items[1], i, ItemSystem::GetItemAttributeType(items[2], i), ItemSystem::GetItemAttributeValue(items[2], i));
 #else
-		ItemSystem::SetItemForceAttributeEcs(EntityFactory::CreateItemEntity(g_registry, items[1]), i, items[2]->GetAttributeType(i), items[2]->GetAttributeValue(i));
+		ItemSystem::SetItemForceAttributeEcs(items[1], i, ItemSystem::GetItemAttributeType(items[2], i), ItemSystem::GetItemAttributeValue(items[2], i));
 #endif
 	}
 
-	ItemSystem::ConsumeItemEcs(
-		EntityFactory::CreateItemEntity(g_registry, items[0]), 1);
-	items[0] = nullptr;
-	ItemSystem::ConsumeItemEcs(
-		EntityFactory::CreateItemEntity(g_registry, items[2]), 1);
-	items[2] = nullptr;
+	ItemSystem::ConsumeItemEcs(items[0], 1);
+	items[0] = entt::null;
+	ItemSystem::ConsumeItemEcs(items[2], 1);
+	items[2] = entt::null;
 
 
 	ecs::ChatSystem::Send(AIHelpers::EcsOf(ch), CHAT_TYPE_COMMAND, "AttrTransfer success");
-	LogManager::instance().AttrTransferLog((ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))), ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(ch)), ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(ch)), ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, items[1])));
+	LogManager::instance().AttrTransferLog((ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))), ecs::PlayerRuntime::GetX(AIHelpers::EcsOf(ch)), ecs::PlayerRuntime::GetY(AIHelpers::EcsOf(ch)), ItemSystem::GetItemVnum(items[1]));
 #ifdef TEXTS_IMPROVEMENT
 	ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 84, "");
 #endif
@@ -179,17 +177,17 @@ void AttrTransfer_add_item(LPCHARACTER ch, int w_index, int i_index)
 	if (i_index < 0 || INVENTORY_MAX_NUM <= i_index || w_index < 0 || MAX_ATTR_TRANSFER_SLOT <= w_index)
 		return;
 
-	LPITEM item = ItemSystem::GetInventoryItemPtr(AIHelpers::EcsOf(ch), i_index);
-	if (item == nullptr)
+	const entt::entity item = ItemSystem::GetInventoryItem(AIHelpers::EcsOf(ch), i_index);
+	if (item == entt::null)
 		return;
 
-	if (w_index == 0 && ItemSystem::GetItemType(EntityFactory::CreateItemEntity(g_registry, item)) != ITEM_TRANSFER_SCROLL)
+	if (w_index == 0 && ItemSystem::GetItemType(item) != ITEM_TRANSFER_SCROLL)
 		return;
 
-	if (((w_index == 1) || (w_index == 2)) && (ItemSystem::GetItemType(EntityFactory::CreateItemEntity(g_registry, item)) != ITEM_COSTUME))
+	if (((w_index == 1) || (w_index == 2)) && (ItemSystem::GetItemType(item) != ITEM_COSTUME))
 		return;
 
-	int32_t vnum = ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, item));
+	int32_t vnum = ItemSystem::GetItemVnum(item);
 	if (vnum == 73001 ||
 		vnum == 73002 ||
 		vnum == 73003 ||
@@ -290,24 +288,24 @@ void AttrTransfer_add_item(LPCHARACTER ch, int w_index, int i_index)
 		return;
 	}
 
-	if ((ItemSystem::GetItemSubType(EntityFactory::CreateItemEntity(g_registry, item)) != COSTUME_BODY) && (ItemSystem::GetItemSubType(EntityFactory::CreateItemEntity(g_registry, item)) != COSTUME_HAIR) && (ItemSystem::GetItemSubType(EntityFactory::CreateItemEntity(g_registry, item)) != COSTUME_WEAPON)
+	if ((ItemSystem::GetItemSubType(item) != COSTUME_BODY) && (ItemSystem::GetItemSubType(item) != COSTUME_HAIR) && (ItemSystem::GetItemSubType(item) != COSTUME_WEAPON)
 #ifdef ENABLE_STOLE_COSTUME
-	 && (ItemSystem::GetItemSubType(EntityFactory::CreateItemEntity(g_registry, item)) != COSTUME_STOLE)
+	 && (ItemSystem::GetItemSubType(item) != COSTUME_STOLE)
 #endif
 	)
 		return;
 
-	LPITEM* attr_transfer_item = ch->GetAttrTransferItem();
+	auto attr_transfer_item = ch->GetAttrTransferItem();
 	for (int i = 0; i < MAX_ATTR_TRANSFER_SLOT; ++i)
 	{
 		if (item == attr_transfer_item[i])
 		{
-			attr_transfer_item[i] = nullptr;
+			attr_transfer_item[i] = entt::null;
 			break;
 		}
 	}
 
-	if (w_index != 0 && attr_transfer_item[0] == nullptr)
+	if (w_index != 0 && attr_transfer_item[0] == entt::null)
 	{
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 85, "");
@@ -316,13 +314,13 @@ void AttrTransfer_add_item(LPCHARACTER ch, int w_index, int i_index)
 	}
 	else if (w_index == 1)
 	{
-		if (attr_transfer_item[2] == nullptr) {
+		if (attr_transfer_item[2] == entt::null) {
 #ifdef TEXTS_IMPROVEMENT
 			ecs::ChatSystem::SendNew(AIHelpers::EcsOf(ch), CHAT_TYPE_INFO, 79, "");
 #endif
 			return;
 		}
-		else if (ItemSystem::GetItemSubType(EntityFactory::CreateItemEntity(g_registry, item)) != ItemSystem::GetItemSubType(EntityFactory::CreateItemEntity(g_registry, attr_transfer_item[2])))
+		else if (ItemSystem::GetItemSubType(item) != ItemSystem::GetItemSubType(attr_transfer_item[2]))
 			return;
 	}
 
@@ -343,12 +341,12 @@ void AttrTransfer_delete_item(LPCHARACTER ch, int w_index)
 	if (w_index < 0 || MAX_ATTR_TRANSFER_SLOT <= w_index)
 		return;
 
-	LPITEM* attr_transfer_item = ch->GetAttrTransferItem();
-	if (attr_transfer_item[w_index] == nullptr)
+	auto attr_transfer_item = ch->GetAttrTransferItem();
+	if (attr_transfer_item[w_index] == entt::null)
 		return;
 
 	//attr_transfer_item[w_index];
-	attr_transfer_item[w_index] = nullptr;
+	attr_transfer_item[w_index] = entt::null;
 	return;
 }
 

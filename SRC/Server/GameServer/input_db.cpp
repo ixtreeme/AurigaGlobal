@@ -1683,7 +1683,7 @@ void CInputDB::ItemLoad(LPDESC d, const char * c_pData)
 
 	LOG_INFO("ITEM_LOAD: COUNT {} {}", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), dwCount);
 
-	std::vector<LPITEM> v;
+	std::vector<entt::entity> deferredItems;
 	TPlayerItem * p = (TPlayerItem *) c_pData;
 	uint32_t duplicatePurgeCount = 0;
 
@@ -1721,8 +1721,14 @@ void CInputDB::ItemLoad(LPDESC d, const char * c_pData)
 			LOG_ERROR("cannot create item by vnum {} (name {} id {})", p->vnum, ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), p->id);
 			continue;
 		}
+		const entt::entity itemEntity = EntityFactory::CreateItemEntity(g_registry, item);
+		if (!ItemSystem::IsValidItem(itemEntity))
+		{
+			ITEM_MANAGER::instance().RemoveItem(item);
+			continue;
+		}
 
-		ItemSystem::SetItemSkipSave(EntityFactory::CreateItemEntity(g_registry, item), true);
+		ItemSystem::SetItemSkipSave(itemEntity, true);
 		item->SetSockets(p->alSockets);
 		item->SetAttributes(p->aAttr);
 #ifdef ATTR_LOCK
@@ -1736,11 +1742,11 @@ void CInputDB::ItemLoad(LPDESC d, const char * c_pData)
 		}
 #endif
 
-		if ((p->window == INVENTORY && ItemSystem::GetInventoryItemPtr(AIHelpers::EcsOf(ch), p->pos)) ||
-				(p->window == EQUIPMENT && ItemSystem::GetWear(AIHelpers::EcsOf(ch), p->pos)))
+		if ((p->window == INVENTORY && ItemSystem::IsValidItem(ItemSystem::GetInventoryItem(AIHelpers::EcsOf(ch), p->pos))) ||
+				(p->window == EQUIPMENT && ItemSystem::IsValidItem(ItemSystem::GetWearItem(AIHelpers::EcsOf(ch), p->pos))))
 		{
 			LOG_INFO("ITEM_RESTORE: {} {}", ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), item->GetName());
-			v.push_back(item);
+			deferredItems.push_back(itemEntity);
 		}
 		else
 		{
@@ -1757,7 +1763,7 @@ void CInputDB::ItemLoad(LPDESC d, const char * c_pData)
 #ifdef ENABLE_MOUNT_INVENTORY_FIX_RAZOR93_off
 				 case MOUNT_INVENTORY:
 					               // safety: never load these into CHARACTER inventory arrays
-						v.push_back(item);
+						deferredItems.push_back(itemEntity);
 					break;
 #else
 				case MOUNT_INVENTORY:
@@ -1773,21 +1779,21 @@ void CInputDB::ItemLoad(LPDESC d, const char * c_pData)
 					{
 						if (item->EquipTo(ch, p->pos) == false )
 						{
-							v.push_back(item);
+							deferredItems.push_back(itemEntity);
 						}
 					}
 					else
 					{
-						v.push_back(item);
+						deferredItems.push_back(itemEntity);
 					}
 					break;
 			}
 		}
 
 		if (false == item->OnAfterCreatedItem())
-			LOG_ERROR("Failed to call ITEM::OnAfterCreatedItem (vnum: {}, id: {})", ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, item)), ItemSystem::GetItemID(EntityFactory::CreateItemEntity(g_registry, item)));
+			LOG_ERROR("Failed to call ITEM::OnAfterCreatedItem (vnum: {}, id: {})", ItemSystem::GetItemVnum(itemEntity), ItemSystem::GetItemID(itemEntity));
 
-		ItemSystem::SetItemSkipSave(EntityFactory::CreateItemEntity(g_registry, item), false);
+		ItemSystem::SetItemSkipSave(itemEntity, false);
 	}
 
 	if (duplicatePurgeCount > 0)
@@ -1796,14 +1802,16 @@ void CInputDB::ItemLoad(LPDESC d, const char * c_pData)
 			(ecs::PlayerRuntime::GetPlayerID(AIHelpers::EcsOf(ch))), ecs::PlayerRuntime::GetName(AIHelpers::EcsOf(ch)).data(), duplicatePurgeCount, dwCount);
 	}
 
-	auto it = v.begin();
-
-	while (it != v.end())
+	for (const entt::entity itemEntity : deferredItems)
 	{
-		LPITEM item = *(it++);
+		if (!ItemSystem::IsValidItem(itemEntity))
+			continue;
 
-		int pos = ch->GetEmptyInventory(item->GetSize());
+		LPITEM item = ITEM_MANAGER::instance().Find(ItemSystem::GetItemID(itemEntity));
+		if (!item)
+			continue;
 
+		const int pos = ch->GetEmptyInventory(ItemSystem::GetItemSize(itemEntity));
 		if (pos < 0)
 		{
 			PIXEL_POSITION coord;
@@ -1821,8 +1829,6 @@ void CInputDB::ItemLoad(LPDESC d, const char * c_pData)
 			item->AddToCharacter(ch, TItemPos(INVENTORY, pos));
 #endif
 	}
-
-
 	ch->CheckMaximumPoints();
 	NetworkSyncSystem::PointsPacket(AIHelpers::EcsOf(ch));
 

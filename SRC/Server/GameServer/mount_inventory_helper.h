@@ -55,12 +55,10 @@ public:
 		return mount_allowed_items;
 	}
 
-	static bool CanMoveIntoMountInventory(LPITEM item)
+	static bool CanMoveIntoMountInventory(entt::entity item)
 	{
-		if (!item)
-			return false;
-
-		return GetAllowedItems().contains(ItemSystem::GetItemVnum(EntityFactory::CreateItemEntity(g_registry, item)));
+		return ItemSystem::IsValidItem(item) &&
+			GetAllowedItems().contains(ItemSystem::GetItemVnum(item));
 	}
 
 	// Mount bonus: ugyanaz a lista (mint eddig a char.cpp valid_mount_items)
