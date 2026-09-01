@@ -1,6 +1,8 @@
 #ifndef __INC_METIN_II_GAME_INPUT_PROCESSOR__
 #define __INC_METIN_II_GAME_INPUT_PROCESSOR__
 
+#include <entt/entt.hpp>
+
 #include "packet_info.h"
 
 enum
@@ -105,107 +107,107 @@ class CInputMain : public CInputProcessor
 		virtual int	Analyze(LPDESC d, uint8_t bHeader, const char * c_pData);
 
 	protected:
-		void		Attack(LPCHARACTER ch, const uint8_t header, const char* data);
-		int			Whisper(LPCHARACTER ch, const char * data, uint64_t uiBytes);
+		void		Attack(entt::entity character, const uint8_t header, const char* data);
+		int			Whisper(entt::entity character, const char * data, uint64_t uiBytes);
 #ifdef __NEWPET_SYSTEM__
-		void		BraveRequestPetName(LPCHARACTER ch, const char* c_pData);
+		void		BraveRequestPetName(entt::entity character, const char* c_pData);
 #endif
 #ifdef __ENABLE_EXTEND_INVEN_SYSTEM__
-		void		InventoryExpansion(LPCHARACTER ch, const char * data);
+		void		InventoryExpansion(entt::entity character, const char * data);
 #endif
-		int			Chat(LPCHARACTER ch, const char * data, uint32_t uiBytes);
-		void		ItemUse(LPCHARACTER ch, const char * data);
-		void		ItemDrop(LPCHARACTER ch, const char * data);
-		void		ItemDrop2(LPCHARACTER ch, const char * data);
-		void		ItemDestroy(LPCHARACTER ch, const char * data);
-		void		ItemDivision(LPCHARACTER ch, const char * data);
-		void		ItemMove(LPCHARACTER ch, const char * data);
-		void		ItemPickup(LPCHARACTER ch, const char * data);
-		void		ItemToItem(LPCHARACTER ch, const char * pcData);
-		void		QuickslotAdd(LPCHARACTER ch, const char * data);
-		void		QuickslotDelete(LPCHARACTER ch, const char * data);
-		void		QuickslotSwap(LPCHARACTER ch, const char * data);
-		int			Shop(LPCHARACTER ch, const char * data, size_t uiBytes);
-		void		OnClick(LPCHARACTER ch, const char * data);
-		void		Exchange(LPCHARACTER ch, const char * data);
-		void		Position(LPCHARACTER ch, const char * data);
-		void		Move(LPCHARACTER ch, const char * data);
-		int			SyncPosition(LPCHARACTER ch, const char * data, uint64_t uiBytes);
-		void		FlyTarget(LPCHARACTER ch, const char * pcData, uint8_t bHeader);
-		void		UseSkill(LPCHARACTER ch, const char * pcData);
+		int			Chat(entt::entity character, const char * data, uint32_t uiBytes);
+		void		ItemUse(entt::entity character, const char * data);
+		void		ItemDrop(entt::entity character, const char * data);
+		void		ItemDrop2(entt::entity character, const char * data);
+		void		ItemDestroy(entt::entity character, const char * data);
+		void		ItemDivision(entt::entity character, const char * data);
+		void		ItemMove(entt::entity character, const char * data);
+		void		ItemPickup(entt::entity character, const char * data);
+		void		ItemToItem(entt::entity character, const char * pcData);
+		void		QuickslotAdd(entt::entity character, const char * data);
+		void		QuickslotDelete(entt::entity character, const char * data);
+		void		QuickslotSwap(entt::entity character, const char * data);
+		int			Shop(entt::entity character, const char * data, size_t uiBytes);
+		void		OnClick(entt::entity character, const char * data);
+		void		Exchange(entt::entity character, const char * data);
+		void		Position(entt::entity character, const char * data);
+		void		Move(entt::entity character, const char * data);
+		int			SyncPosition(entt::entity character, const char * data, uint64_t uiBytes);
+		void		FlyTarget(entt::entity character, const char * pcData, uint8_t bHeader);
+		void		UseSkill(entt::entity character, const char * pcData);
 
 #ifdef ENABLE_BATTLE_PASS	
-		int 		BattlePass(LPCHARACTER ch, const char * data, size_t uiBytes);
+		int 		BattlePass(entt::entity character, const char * data, size_t uiBytes);
 #endif
 
 #ifdef __SKILL_COLOR_SYSTEM__
-		void		SetSkillColor(LPCHARACTER ch, const char * pcData);
+		void		SetSkillColor(entt::entity character, const char * pcData);
 #endif
 		
 
-		void		ScriptAnswer(LPCHARACTER ch, const void * pvData);
-		void		ScriptButton(LPCHARACTER ch, const void * pvData);
-		void		ScriptSelectItem(LPCHARACTER ch, const void * pvData);
+		void		ScriptAnswer(entt::entity character, const void * pvData);
+		void		ScriptButton(entt::entity character, const void * pvData);
+		void		ScriptSelectItem(entt::entity character, const void * pvData);
 
-		void		QuestInputString(LPCHARACTER ch, const void * pvData);
-		void		QuestConfirm(LPCHARACTER ch, const void* pvData);
-		void		Target(LPCHARACTER ch, const char * pcData);
-		void		Warp(LPCHARACTER ch, const char * pcData);
-		void		SafeboxCheckin(LPCHARACTER ch, const char * c_pData);
-		void		SafeboxCheckout(LPCHARACTER ch, const char * c_pData, bool bMall);
-		void		SafeboxItemMove(LPCHARACTER ch, const char * data);
+		void		QuestInputString(entt::entity character, const void * pvData);
+		void		QuestConfirm(entt::entity character, const void* pvData);
+		void		Target(entt::entity character, const char * pcData);
+		void		Warp(entt::entity character, const char * pcData);
+		void		SafeboxCheckin(entt::entity character, const char * c_pData);
+		void		SafeboxCheckout(entt::entity character, const char * c_pData, bool bMall);
+		void		SafeboxItemMove(entt::entity character, const char * data);
 
-		void            MountInventoryCheckin(LPCHARACTER ch, const char* c_pData);
-		void            MountInventoryCheckout(LPCHARACTER ch, const char* c_pData);
-		static void            MountInventoryItemMove(LPCHARACTER ch, const char* data);
+		void            MountInventoryCheckin(entt::entity character, const char* c_pData);
+		void            MountInventoryCheckout(entt::entity character, const char* c_pData);
+		static void            MountInventoryItemMove(entt::entity character, const char* data);
 
-		int			Messenger(LPCHARACTER ch, const char* c_pData, uint64_t uiBytes);
+		int			Messenger(entt::entity character, const char* c_pData, uint64_t uiBytes);
 
-		void 		PartyInvite(LPCHARACTER ch, const char * c_pData);
-		void 		PartyInviteAnswer(LPCHARACTER ch, const char * c_pData);
-		void		PartyRemove(LPCHARACTER ch, const char * c_pData);
-		void		PartySetState(LPCHARACTER ch, const char * c_pData);
-		void		PartyUseSkill(LPCHARACTER ch, const char * c_pData);
-		void		PartyParameter(LPCHARACTER ch, const char * c_pData);
+		void 		PartyInvite(entt::entity character, const char * c_pData);
+		void 		PartyInviteAnswer(entt::entity character, const char * c_pData);
+		void		PartyRemove(entt::entity character, const char * c_pData);
+		void		PartySetState(entt::entity character, const char * c_pData);
+		void		PartyUseSkill(entt::entity character, const char * c_pData);
+		void		PartyParameter(entt::entity character, const char * c_pData);
 #ifdef __INGAME_WIKI__
-		void		RecvWikiPacket(LPCHARACTER ch, const char * c_pData);
+		void		RecvWikiPacket(entt::entity character, const char * c_pData);
 #endif
-		int			Guild(LPCHARACTER ch, const char * data, size_t uiBytes);
-		void		AnswerMakeGuild(LPCHARACTER ch, const char* c_pData);
+		int			Guild(entt::entity character, const char * data, size_t uiBytes);
+		void		AnswerMakeGuild(entt::entity character, const char* c_pData);
 
-		void		Fishing(LPCHARACTER ch, const char* c_pData);
-		void		ItemGive(LPCHARACTER ch, const char* c_pData);
-		void		Hack(LPCHARACTER ch, const char * c_pData);
-		int			MyShop(LPCHARACTER ch, const char * c_pData, size_t uiBytes);
+		void		Fishing(entt::entity character, const char* c_pData);
+		void		ItemGive(entt::entity character, const char* c_pData);
+		void		Hack(entt::entity character, const char * c_pData);
+		int			MyShop(entt::entity character, const char * c_pData, size_t uiBytes);
 
 #ifdef ENABLE_CUBE_RENEWAL_WORLDARD
-		void 		CubeRenewalSend(LPCHARACTER ch, const char* data);
+		void 		CubeRenewalSend(entt::entity character, const char* data);
 #endif
 
 
-		void		Refine(LPCHARACTER ch, const char* c_pData);
+		void		Refine(entt::entity character, const char* c_pData);
 #ifdef ENABLE_ACCE_SYSTEM
-		void		Acce(LPCHARACTER pkChar, const char* c_pData);
+		void		Acce(entt::entity character, const char* c_pData);
 #endif
 #ifdef ENABLE_MAP_TELEPORTER
-		void		MapTeleporter(LPCHARACTER ch, TPacketCGMapTeleporter* pPack);
+		void		MapTeleporter(entt::entity character, TPacketCGMapTeleporter* pPack);
 #endif
-		void		Roulette(LPCHARACTER ch, const char* c_pData);
+		void		Roulette(entt::entity character, const char* c_pData);
 #ifdef ENABLE_SWITCHBOT
-		int			Switchbot(LPCHARACTER ch, const char* data, size_t uiBytes);
+		int			Switchbot(entt::entity character, const char* data, size_t uiBytes);
 #endif
 #ifdef __SEND_TARGET_INFO__
-		void		TargetInfoLoad(LPCHARACTER ch, const char* c_pData);
+		void		TargetInfoLoad(entt::entity character, const char* c_pData);
 #endif
 #ifdef ENABLE_MULTI_LANGUAGE
-		void	ChangeLanguage(LPCHARACTER ch, uint8_t bLanguage);
-		void	RequestLanguage(LPCHARACTER ch, const char* targetName);
+		void	ChangeLanguage(entt::entity character, uint8_t bLanguage);
+		void	RequestLanguage(entt::entity character, const char* targetName);
 #endif
 #ifdef ENABLE_NEW_FISHING_SYSTEM
-		void FishingNew(LPCHARACTER ch, const char* c_pData);
+		void FishingNew(entt::entity character, const char* c_pData);
 #endif
 #if defined(ENABLE_CHRISTMAS_WHEEL_OF_DESTINY)
-		void WheelDestiny(LPCHARACTER ch, const char* data);
+		void WheelDestiny(entt::entity character, const char* data);
 #endif
 };
 

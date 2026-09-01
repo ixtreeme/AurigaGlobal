@@ -8,6 +8,7 @@
 #include "ecs/systems/SkillSystem.hpp"
 #include "ecs/systems/MovementSystem.hpp"
 #include "ecs/systems/NetworkSyncSystem.hpp"
+#include "ecs/CharacterAccessors.hpp"
 
 
 #include "constants.h"
@@ -120,8 +121,9 @@ static int __deposit_limit()
 	return (1000*10000); // 1Ãµ¸¸
 }
 #ifdef __SEND_TARGET_INFO__
-void CInputMain::TargetInfoLoad(LPCHARACTER ch, const char* c_pData)
+void CInputMain::TargetInfoLoad(entt::entity character, const char* c_pData)
 {
+	LPCHARACTER ch = ecs::LegacyCharOf(character);
 	if (!ch)
 		return;
 
@@ -143,7 +145,7 @@ void CInputMain::TargetInfoLoad(LPCHARACTER ch, const char* c_pData)
 	{
 		info.dwVnum = item.vnum;
 		info.count = item.count;
-		ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null))->Packet(&info, sizeof(info));
+		ecs::PlayerRuntime::GetDesc(character)->Packet(&info, sizeof(info));
 	}
 }
 #endif
@@ -375,8 +377,9 @@ int ProcessTextTag(LPCHARACTER ch, const char * c_pszText, uint64_t len)
 	return 4;
 }
 
-int CInputMain::Whisper(LPCHARACTER ch, const char * data, uint64_t uiBytes)
+int CInputMain::Whisper(entt::entity character, const char * data, uint64_t uiBytes)
 {
+	LPCHARACTER ch = ecs::LegacyCharOf(character);
 // migrated from CHARACTER handler
 // TODO Phase 8: migrate Whisper handler ECS
 // DUAL-PATH: legacy only during migration window
@@ -390,14 +393,14 @@ int CInputMain::Whisper(LPCHARACTER ch, const char * data, uint64_t uiBytes)
 	if (iExtraLen < 0)
 	{
 		LOG_ERROR("invalid packet length (len {} size {} buffer {})", iExtraLen, pinfo->wSize, uiBytes);
-		ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null))->SetPhase(PHASE_CLOSE);
+		ecs::PlayerRuntime::GetDesc(character)->SetPhase(PHASE_CLOSE);
 		return -1;
 	}
 
-	if (AffectSystem::FindAffect(((ch) ? (ch)->GetEntityHandle() : entt::null), AFFECT_BLOCK_CHAT))
+	if (AffectSystem::FindAffect(character, AFFECT_BLOCK_CHAT))
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 639, "");
+		ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 639, "");
 #endif
 		return (iExtraLen);
 	}
@@ -414,21 +417,21 @@ int CInputMain::Whisper(LPCHARACTER ch, const char * data, uint64_t uiBytes)
 	if (test_server)
 	{
 		if (!pkChr)
-			LOG_INFO("Whisper to {}({}) from {}", "Null", pinfo->szNameTo, ecs::PlayerRuntime::GetName(((ch) ? (ch)->GetEntityHandle() : entt::null)).data());
+			LOG_INFO("Whisper to {}({}) from {}", "Null", pinfo->szNameTo, ecs::PlayerRuntime::GetName(character).data());
 		else
-			LOG_INFO("Whisper to {}({}) from {}", ecs::PlayerRuntime::GetName(((pkChr) ? (pkChr)->GetEntityHandle() : entt::null)).data(), pinfo->szNameTo, ecs::PlayerRuntime::GetName(((ch) ? (ch)->GetEntityHandle() : entt::null)).data());
+			LOG_INFO("Whisper to {}({}) from {}", ecs::PlayerRuntime::GetName(((pkChr) ? (pkChr)->GetEntityHandle() : entt::null)).data(), pinfo->szNameTo, ecs::PlayerRuntime::GetName(character).data());
 	}
 
 	if (ch->IsBlockMode(BLOCK_WHISPER))
 	{
-		if (ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null)))
+		if (ecs::PlayerRuntime::GetDesc(character))
 		{
 			TPacketGCWhisper pack;
 			pack.bHeader = HEADER_GC_WHISPER;
 			pack.bType = WHISPER_TYPE_SENDER_BLOCKED;
 			pack.wSize = sizeof(TPacketGCWhisper);
 			strlcpy(pack.szNameFrom, pinfo->szNameTo, sizeof(pack.szNameFrom));
-			ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null))->Packet(&pack, sizeof(pack));
+			ecs::PlayerRuntime::GetDesc(character)->Packet(&pack, sizeof(pack));
 		}
 
 		return iExtraLen;
@@ -445,7 +448,7 @@ int CInputMain::Whisper(LPCHARACTER ch, const char * data, uint64_t uiBytes)
 			bOpponentEmpire = pkCCI->bEmpire;
 
 			if (test_server)
-				LOG_INFO("Whisper to {} from {} (Channel {} Mapindex {})", "Null", ecs::PlayerRuntime::GetName(((ch) ? (ch)->GetEntityHandle() : entt::null)).data(), pkCCI->bChannel, pkCCI->lMapIndex);
+				LOG_INFO("Whisper to {} from {} (Channel {} Mapindex {})", "Null", ecs::PlayerRuntime::GetName(character).data(), pkCCI->bChannel, pkCCI->lMapIndex);
 		}
 	}
 	else
@@ -456,7 +459,7 @@ int CInputMain::Whisper(LPCHARACTER ch, const char * data, uint64_t uiBytes)
 
 	if (!pkDesc)
 	{
-		if (ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null)))
+		if (ecs::PlayerRuntime::GetDesc(character))
 		{
 #if defined(BL_OFFLINE_MESSAGE)
 			const uint8_t bDelay = 10;
@@ -474,10 +477,10 @@ int CInputMain::Whisper(LPCHARACTER ch, const char * data, uint64_t uiBytes)
 					TItemTable* pTable = ITEM_MANAGER::instance().GetTable(ITEM_PRISM);
 					if (pTable) {
 #ifdef ENABLE_MULTI_NAMES
-						int Lang = ch && ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null)) ? ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null))->GetLanguage() : 0;
+						int Lang = ch && ecs::PlayerRuntime::GetDesc(character) ? ecs::PlayerRuntime::GetDesc(character)->GetLanguage() : 0;
 #endif
 #ifdef TEXTS_IMPROVEMENT
-						ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 823, "%s",
+						ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 823, "%s",
 #ifdef ENABLE_MULTI_NAMES
 						pTable->szLocaleName[Lang]
 #else
@@ -513,7 +516,7 @@ int CInputMain::Whisper(LPCHARACTER ch, const char * data, uint64_t uiBytes)
 			TEMP_BUFFER buf;
 			buf.write(&pack, sizeof(TPacketGCWhisper));
 			buf.write(msg, len);
-			ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null))->Packet(buf.read_peek(), buf.size());
+			ecs::PlayerRuntime::GetDesc(character)->Packet(buf.read_peek(), buf.size());
 
 #else
 			TPacketGCWhisper pack;
@@ -521,7 +524,7 @@ int CInputMain::Whisper(LPCHARACTER ch, const char * data, uint64_t uiBytes)
 			pack.bType = WHISPER_TYPE_NOT_EXIST;
 			pack.wSize = sizeof(TPacketGCWhisper);
 			strlcpy(pack.szNameFrom, pinfo->szNameTo, sizeof(pack.szNameFrom));
-			ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null))->Packet(&pack, sizeof(TPacketGCWhisper));
+			ecs::PlayerRuntime::GetDesc(character)->Packet(&pack, sizeof(TPacketGCWhisper));
 			LOG_INFO("WHISPER: no player");
 #endif
 		}
@@ -530,26 +533,26 @@ int CInputMain::Whisper(LPCHARACTER ch, const char * data, uint64_t uiBytes)
 	{
 		if (ch->IsBlockMode(BLOCK_WHISPER))
 		{
-			if (ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null)))
+			if (ecs::PlayerRuntime::GetDesc(character))
 			{
 				TPacketGCWhisper pack;
 				pack.bHeader = HEADER_GC_WHISPER;
 				pack.bType = WHISPER_TYPE_SENDER_BLOCKED;
 				pack.wSize = sizeof(TPacketGCWhisper);
 				strlcpy(pack.szNameFrom, pinfo->szNameTo, sizeof(pack.szNameFrom));
-				ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null))->Packet(&pack, sizeof(pack));
+				ecs::PlayerRuntime::GetDesc(character)->Packet(&pack, sizeof(pack));
 			}
 		}
 		else if (pkChr && pkChr->IsBlockMode(BLOCK_WHISPER))
 		{
-			if (ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null)))
+			if (ecs::PlayerRuntime::GetDesc(character))
 			{
 				TPacketGCWhisper pack;
 				pack.bHeader = HEADER_GC_WHISPER;
 				pack.bType = WHISPER_TYPE_TARGET_BLOCKED;
 				pack.wSize = sizeof(TPacketGCWhisper);
 				strlcpy(pack.szNameFrom, pinfo->szNameTo, sizeof(pack.szNameFrom));
-				ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null))->Packet(&pack, sizeof(pack));
+				ecs::PlayerRuntime::GetDesc(character)->Packet(&pack, sizeof(pack));
 			}
 		}
 		else
@@ -579,34 +582,34 @@ int CInputMain::Whisper(LPCHARACTER ch, const char * data, uint64_t uiBytes)
 			if (g_bEmpireWhisper)
 				if (!ch->IsEquipUniqueGroup(UNIQUE_GROUP_RING_OF_LANGUAGE))
 					if (!(pkChr && pkChr->IsEquipUniqueGroup(UNIQUE_GROUP_RING_OF_LANGUAGE)))
-						if (bOpponentEmpire != ecs::PlayerRuntime::GetEmpire(((ch) ? (ch)->GetEntityHandle() : entt::null)) && ecs::PlayerRuntime::GetEmpire(((ch) ? (ch)->GetEntityHandle() : entt::null)) && bOpponentEmpire // ¼­·Î Á¦±¹ÀÌ ´Ù¸£¸é¼­
-								&& ecs::PlayerRuntime::GetGMLevel(((ch) ? (ch)->GetEntityHandle() : entt::null)) == GM_PLAYER && gm_get_level(pinfo->szNameTo) == GM_PLAYER) // µÑ´Ù ÀÏ¹Ý ÇÃ·¹ÀÌ¾îÀÌ¸é
+						if (bOpponentEmpire != ecs::PlayerRuntime::GetEmpire(character) && ecs::PlayerRuntime::GetEmpire(character) && bOpponentEmpire // ¼­·Î Á¦±¹ÀÌ ´Ù¸£¸é¼­
+								&& ecs::PlayerRuntime::GetGMLevel(character) == GM_PLAYER && gm_get_level(pinfo->szNameTo) == GM_PLAYER) // µÑ´Ù ÀÏ¹Ý ÇÃ·¹ÀÌ¾îÀÌ¸é
 							// ÀÌ¸§ ¹Û¿¡ ¸ð¸£´Ï gm_get_level ÇÔ¼ö¸¦ »ç¿ë
 						{
 							if (!pkChr)
 							{
 								// ´Ù¸¥ ¼­¹ö¿¡ ÀÖÀ¸´Ï Á¦±¹ Ç¥½Ã¸¸ ÇÑ´Ù. bTypeÀÇ »óÀ§ 4ºñÆ®¸¦ Empire¹øÈ£·Î »ç¿ëÇÑ´Ù.
-								bType = ecs::PlayerRuntime::GetEmpire(((ch) ? (ch)->GetEntityHandle() : entt::null)) << 4;
+								bType = ecs::PlayerRuntime::GetEmpire(character) << 4;
 							}
 							else
 							{
-								ConvertEmpireText(ecs::PlayerRuntime::GetEmpire(((ch) ? (ch)->GetEntityHandle() : entt::null)), buf, buflen, 10 + 2 * pkChr->GetSkillPower(SKILL_LANGUAGE1 + ecs::PlayerRuntime::GetEmpire(((ch) ? (ch)->GetEntityHandle() : entt::null)) - 1)/*º¯È¯È®·ü*/);
+								ConvertEmpireText(ecs::PlayerRuntime::GetEmpire(character), buf, buflen, 10 + 2 * pkChr->GetSkillPower(SKILL_LANGUAGE1 + ecs::PlayerRuntime::GetEmpire(character) - 1)/*º¯È¯È®·ü*/);
 							}
 						}
 
 			int processReturn = ProcessTextTag(ch, buf, buflen);
 			if (0!=processReturn)
 			{
-				if (ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null)))
+				if (ecs::PlayerRuntime::GetDesc(character))
 				{
 					TItemTable * pTable = ITEM_MANAGER::instance().GetTable(ITEM_PRISM);
 
 					if (pTable)
 					{
 #ifdef ENABLE_MULTI_NAMES
-						int Lang = ch && ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null)) ? ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null))->GetLanguage() : 0;
+						int Lang = ch && ecs::PlayerRuntime::GetDesc(character) ? ecs::PlayerRuntime::GetDesc(character)->GetLanguage() : 0;
 #endif
-						ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 823, "%s",
+						ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 823, "%s",
 #ifdef ENABLE_MULTI_NAMES
 						pTable->szLocaleName[Lang]
 #else
@@ -631,7 +634,7 @@ int CInputMain::Whisper(LPCHARACTER ch, const char * data, uint64_t uiBytes)
 				pack.bHeader = HEADER_GC_WHISPER;
 				pack.wSize = sizeof(TPacketGCWhisper) + buflen;
 				pack.bType = bType;
-				strlcpy(pack.szNameFrom, ecs::PlayerRuntime::GetName(((ch) ? (ch)->GetEntityHandle() : entt::null)).data(), sizeof(pack.szNameFrom));
+				strlcpy(pack.szNameFrom, ecs::PlayerRuntime::GetName(character).data(), sizeof(pack.szNameFrom));
 				// desc->BufferedPacketÀ» ÇÏÁö ¾Ê°í ¹öÆÛ¿¡ ½á¾ßÇÏ´Â ÀÌÀ¯´Â
 				// P2P relayµÇ¾î ÆÐÅ¶ÀÌ Ä¸½¶È­ µÉ ¼ö ÀÖ±â ¶§¹®ÀÌ´Ù.
 				TEMP_BUFFER tmpbuf;
@@ -642,13 +645,13 @@ int CInputMain::Whisper(LPCHARACTER ch, const char * data, uint64_t uiBytes)
 				pkDesc->Packet(tmpbuf.read_peek(), tmpbuf.size());
 
 				// @warme006
-				// LOG_INFO(0, "WHISPER: %s -> %s : %s", ecs::PlayerRuntime::GetName(((ch) ? (ch)->GetEntityHandle() : entt::null)).data(), pinfo->szNameTo, buf);
+				// LOG_INFO(0, "WHISPER: %s -> %s : %s", ecs::PlayerRuntime::GetName(character).data(), pinfo->szNameTo, buf);
 #ifdef ENABLE_CHAT_LOGGING
 				if (ch->IsGM())
 				{
 					LogManager::instance().EscapeString(__escape_string, sizeof(__escape_string), buf, buflen);
 					LogManager::instance().EscapeString(__escape_string2, sizeof(__escape_string2), pinfo->szNameTo, sizeof(pack.szNameFrom));
-					LogManager::instance().ChatLog(ecs::PlayerRuntime::GetMapIndex(((ch) ? (ch)->GetEntityHandle() : entt::null)), ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null)), ecs::PlayerRuntime::GetName(((ch) ? (ch)->GetEntityHandle() : entt::null)).data(), 0, __escape_string2, "WHISPER", __escape_string, ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null)) ? ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null))->GetHostName() : "");
+					LogManager::instance().ChatLog(ecs::PlayerRuntime::GetMapIndex(character), ecs::PlayerRuntime::GetPlayerID(character), ecs::PlayerRuntime::GetName(character).data(), 0, __escape_string2, "WHISPER", __escape_string, ecs::PlayerRuntime::GetDesc(character) ? ecs::PlayerRuntime::GetDesc(character)->GetHostName() : "");
 				}
 #endif
 			}
@@ -792,12 +795,13 @@ struct FYmirChatPacket
 };
 
 #ifdef __NEWPET_SYSTEM__
-void CInputMain::BraveRequestPetName(LPCHARACTER ch, const char* c_pData)
+void CInputMain::BraveRequestPetName(entt::entity character, const char* c_pData)
 {
+	LPCHARACTER ch = ecs::LegacyCharOf(character);
 	if (!ch)
 		return;
 
-	const entt::entity ownerEntity = ((ch) ? (ch)->GetEntityHandle() : entt::null);
+	const entt::entity ownerEntity = character;
 	if (ownerEntity == entt::null || !g_registry.valid(ownerEntity) ||
 		!ecs::PlayerRuntime::GetDesc(ownerEntity))
 	{
@@ -908,8 +912,9 @@ void CInputMain::BraveRequestPetName(LPCHARACTER ch, const char* c_pData)
 #endif
 }
 #endif
-int CInputMain::Chat(LPCHARACTER ch, const char * data, uint32_t uiBytes)
+int CInputMain::Chat(entt::entity character, const char * data, uint32_t uiBytes)
 {
+	LPCHARACTER ch = ecs::LegacyCharOf(character);
 // migrated from CHARACTER handler
 // TODO Phase 8: migrate Chat handler ECS
 // DUAL-PATH: legacy only during migration window
@@ -925,7 +930,7 @@ int CInputMain::Chat(LPCHARACTER ch, const char * data, uint32_t uiBytes)
 	if (iExtraLen < 0)
 	{
 		LOG_ERROR("invalid packet length (len {} size {} buffer {})", iExtraLen, pinfo->size, uiBytes);
-		ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null))->SetPhase(PHASE_CLOSE);
+		ecs::PlayerRuntime::GetDesc(character)->SetPhase(PHASE_CLOSE);
 		return -1;
 	}
 
@@ -952,20 +957,20 @@ int CInputMain::Chat(LPCHARACTER ch, const char * data, uint32_t uiBytes)
 
 			if (IsCmd("shplink") || IsCmd("shoplink"))
 			{
-				offlineshop::CShop* pkShop = offlineshop::GetManager().GetShopByOwnerID(ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null)));
+				offlineshop::CShop* pkShop = offlineshop::GetManager().GetShopByOwnerID(ecs::PlayerRuntime::GetPlayerID(character));
 				if (!pkShop)
 				{
-					ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "Nincs nyitott offline boltod./ You don't have open shop.");
+					ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "Nincs nyitott offline boltod./ You don't have open shop.");
 					return iExtraLen;
 				}
 
 				// shout rules
-				if (ecs::PointSystem::GetLevel(((ch) ? (ch)->GetEntityHandle() : entt::null)) < g_iShoutLimitLevel)
+				if (ecs::PointSystem::GetLevel(character) < g_iShoutLimitLevel)
 				{
 #ifdef TEXTS_IMPROVEMENT
-					ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 411, "%d", g_iShoutLimitLevel);
+					ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 411, "%d", g_iShoutLimitLevel);
 #else
-					ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "Nem megfelelo szint a kiabalashoz.");
+					ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "Nem megfelelo szint a kiabalashoz.");
 #endif
 					return iExtraLen;
 				}
@@ -1028,7 +1033,7 @@ int CInputMain::Chat(LPCHARACTER ch, const char * data, uint32_t uiBytes)
 						LIGHT_GREEN,
 						(unsigned)linkVnum,
 						0u,
-						(unsigned)ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null)),   // socket0 = OWNER_ID
+						(unsigned)ecs::PlayerRuntime::GetPlayerID(character),   // socket0 = OWNER_ID
 						(unsigned)0x0BADF00D,          // socket1 = SENTINEL
 						0u,
 						0u,
@@ -1044,7 +1049,7 @@ int CInputMain::Chat(LPCHARACTER ch, const char * data, uint32_t uiBytes)
 						LIGHT_GREEN,
 						(unsigned)linkVnum,
 						0u,
-						(unsigned)ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null)),
+						(unsigned)ecs::PlayerRuntime::GetPlayerID(character),
 						(unsigned)0x0BADF00D,
 						0u,
 						0u,
@@ -1059,24 +1064,24 @@ int CInputMain::Chat(LPCHARACTER ch, const char * data, uint32_t uiBytes)
 
 				snprintf(shoutbuf, sizeof(shoutbuf),
 					"|L%s|l|E%d|e %s : %s",
-					langName.c_str(), ecs::PlayerRuntime::GetEmpire(((ch) ? (ch)->GetEntityHandle() : entt::null)), nameWithPrefix.c_str(), body);
+					langName.c_str(), ecs::PlayerRuntime::GetEmpire(character), nameWithPrefix.c_str(), body);
 
 #else
 				snprintf(shoutbuf, sizeof(shoutbuf),
 					"|L%s|l|E%d|e %s : %s",
-					langName.c_str(), ecs::PlayerRuntime::GetEmpire(((ch) ? (ch)->GetEntityHandle() : entt::null)), ecs::PlayerRuntime::GetName(((ch) ? (ch)->GetEntityHandle() : entt::null)).data(), body);
+					langName.c_str(), ecs::PlayerRuntime::GetEmpire(character), ecs::PlayerRuntime::GetName(character).data(), body);
 #endif
 #else
-				snprintf(shoutbuf, sizeof(shoutbuf), "%s : %s", ecs::PlayerRuntime::GetName(((ch) ? (ch)->GetEntityHandle() : entt::null)).data(), body);
+				snprintf(shoutbuf, sizeof(shoutbuf), "%s : %s", ecs::PlayerRuntime::GetName(character).data(), body);
 #endif
 
 				TPacketGGShout p;
 				p.bHeader = HEADER_GG_SHOUT;
-				p.bEmpire = ecs::PlayerRuntime::GetEmpire(((ch) ? (ch)->GetEntityHandle() : entt::null));
+				p.bEmpire = ecs::PlayerRuntime::GetEmpire(character);
 				strlcpy(p.szText, shoutbuf, sizeof(p.szText));
 
 				P2P_MANAGER::instance().Send(&p, sizeof(p));
-				SendShout(shoutbuf, ecs::PlayerRuntime::GetEmpire(((ch) ? (ch)->GetEntityHandle() : entt::null)));
+				SendShout(shoutbuf, ecs::PlayerRuntime::GetEmpire(character));
 #ifdef ENABLE_BATTLE_PASS
 				if (uint8_t bBattlePassId = ch->GetBattlePassId())
 				{
@@ -1104,13 +1109,13 @@ int CInputMain::Chat(LPCHARACTER ch, const char * data, uint32_t uiBytes)
 
 
 
-/* 	if (ecs::PlayerRuntime::GetGMLevel(((ch) ? (ch)->GetEntityHandle() : entt::null)) == GM_PLAYER && ecs::PlayerRuntime::GetMapIndex(((ch) ? (ch)->GetEntityHandle() : entt::null)) == 113)//OX mapon chat letiltva//
+/* 	if (ecs::PlayerRuntime::GetGMLevel(character) == GM_PLAYER && ecs::PlayerRuntime::GetMapIndex(character) == 113)//OX mapon chat letiltva//
 	{
 		return iExtraLen;
 	} */
 
 	// Ã¤ÆÃ ±ÝÁö Affect Ã³¸®
-	const CAffect* pAffect = AffectSystem::FindAffect(((ch) ? (ch)->GetEntityHandle() : entt::null), AFFECT_BLOCK_CHAT);
+	const CAffect* pAffect = AffectSystem::FindAffect(character, AFFECT_BLOCK_CHAT);
 
 	if (pAffect != nullptr)
 	{
@@ -1136,11 +1141,11 @@ int CInputMain::Chat(LPCHARACTER ch, const char * data, uint32_t uiBytes)
 #ifdef ENABLE_MULTI_NAMES
 			int lang = 0;
 			if (ch) {
-				LPDESC desc = ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null));
+				LPDESC desc = ecs::PlayerRuntime::GetDesc(character);
 				lang = desc != nullptr ? desc->GetLanguage() : 0;
 			}
 #endif
-			ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 642, "%s",
+			ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 642, "%s",
 #ifdef ENABLE_MULTI_NAMES
 			pTable->szLocaleName[lang]
 #else
@@ -1205,7 +1210,7 @@ int CInputMain::Chat(LPCHARACTER ch, const char * data, uint32_t uiBytes)
 			int count = qm.GetEventFlag("quiz_count");
 			if (count <= 0) count = 1;
 
-			ItemSystem::AutoGiveItemEcs(((ch) ? (ch)->GetEntityHandle() : entt::null), vnum, count);
+			ItemSystem::AutoGiveItemEcs(character, vnum, count);
 
 			// T?gyn?
 			const TItemTable* pTable = ITEM_MANAGER::instance().GetTable(vnum);
@@ -1227,7 +1232,7 @@ int CInputMain::Chat(LPCHARACTER ch, const char * data, uint32_t uiBytes)
 			//	if (!d || !(rc = d->GetCharacter())) continue;
 			//ecs::ChatSystem::SendNew(((rc) ? (rc)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 2181,
 			//	"%s#%d#",
-			//	ecs::PlayerRuntime::GetName(((ch) ? (ch)->GetEntityHandle() : entt::null)).data(),            // %s (winner)
+			//	ecs::PlayerRuntime::GetName(character).data(),            // %s (winner)
 			//	answer                   // %d (correct answer)
 			//	//(itemName ? itemName : "item"), // %s
 			//	//count                     // %d
@@ -1238,7 +1243,7 @@ int CInputMain::Chat(LPCHARACTER ch, const char * data, uint32_t uiBytes)
 
 			BroadcastNoticeNew(CHAT_TYPE_INFO, 0,0,2181,
 				"%s#%d#",
-				ecs::PlayerRuntime::GetName(((ch) ? (ch)->GetEntityHandle() : entt::null)).data(),            // %s (winner)
+				ecs::PlayerRuntime::GetName(character).data(),            // %s (winner)
 				answer                   // %d (correct answer)
 				//(itemName ? itemName : "item"), // %s
 				//count                     // %d
@@ -1254,7 +1259,7 @@ int CInputMain::Chat(LPCHARACTER ch, const char * data, uint32_t uiBytes)
 			snprintf(msg, sizeof(msg),
 				"%s[Quiz]%s %s%s%s won! %sCorrect answer:%s %s%d%s. %sReward sent:%s %s%s%s x %s%d%s",
 				C_BLUE, C_RST,
-				C_RED, ecs::PlayerRuntime::GetName(((ch) ? (ch)->GetEntityHandle() : entt::null)).data(), C_RST,
+				C_RED, ecs::PlayerRuntime::GetName(character).data(), C_RST,
 				C_GOLD, C_RST, C_GRN, answer, C_RST,
 				C_GOLD, C_RST, C_BLUE, (itemName ? itemName : "item"), C_RST, C_GRN, count, C_RST);
 
@@ -1318,13 +1323,13 @@ int CInputMain::Chat(LPCHARACTER ch, const char * data, uint32_t uiBytes)
 		}
 
 
-		const std::string prefix = NetworkSyncSystem::GetItemOnTitlePrefix(g_registry, ((ch) ? (ch)->GetEntityHandle() : entt::null));
-		const char* name = ecs::PlayerRuntime::GetName(((ch) ? (ch)->GetEntityHandle() : entt::null)).data();
+		const std::string prefix = NetworkSyncSystem::GetItemOnTitlePrefix(g_registry, character);
+		const char* name = ecs::PlayerRuntime::GetName(character).data();
 
 		len = snprintf(chatbuf, sizeof(chatbuf),
 			"|L%s|l|E%d|e |Hmsg:%s|h%s%s |h|r %s%s: %s",
 			langName.c_str(),
-			ecs::PlayerRuntime::GetEmpire(((ch) ? (ch)->GetEntityHandle() : entt::null)),
+			ecs::PlayerRuntime::GetEmpire(character),
 			name,               // whisper target
 			prefix.c_str(),
 			name,
@@ -1338,9 +1343,9 @@ int CInputMain::Chat(LPCHARACTER ch, const char * data, uint32_t uiBytes)
 		len = snprintf(chatbuf, sizeof(chatbuf),
 			"|L%s|l|E%d|e |Hmsg:%s|h%s [PM]|h|r : %s",
 			langName.c_str(),
-			ecs::PlayerRuntime::GetEmpire(((ch) ? (ch)->GetEntityHandle() : entt::null)),
-			ecs::PlayerRuntime::GetName(((ch) ? (ch)->GetEntityHandle() : entt::null)).data(),
-			ecs::PlayerRuntime::GetName(((ch) ? (ch)->GetEntityHandle() : entt::null)).data(),
+			ecs::PlayerRuntime::GetEmpire(character),
+			ecs::PlayerRuntime::GetName(character).data(),
+			ecs::PlayerRuntime::GetName(character).data(),
 			buf);
 #endif
 
@@ -1350,20 +1355,20 @@ int CInputMain::Chat(LPCHARACTER ch, const char * data, uint32_t uiBytes)
 		const std::string nameWithPrefix = MakeNameWithPrefix(ch);
 
 		len = snprintf(chatbuf, sizeof(chatbuf), "|L%s|l|E%d|e %s : %s",
-			langName.c_str(), ecs::PlayerRuntime::GetEmpire(((ch) ? (ch)->GetEntityHandle() : entt::null)), nameWithPrefix.c_str(), buf);
+			langName.c_str(), ecs::PlayerRuntime::GetEmpire(character), nameWithPrefix.c_str(), buf);
 
 // else
-//		len = snprintf(chatbuf, sizeof(chatbuf), "|L%s|l %s %s : %s", langName.c_str(), (ch->IsGM()?colorbuf[0]:colorbuf[MINMAX(0, ecs::PlayerRuntime::GetEmpire(((ch) ? (ch)->GetEntityHandle() : entt::null)), 3)]), ecs::PlayerRuntime::GetName(((ch) ? (ch)->GetEntityHandle() : entt::null)).data(), buf);
-		//len = snprintf(chatbuf, sizeof(chatbuf), "|L%s|l|E%d|e %s : %s", langName.c_str(), ecs::PlayerRuntime::GetEmpire(((ch) ? (ch)->GetEntityHandle() : entt::null)), ecs::PlayerRuntime::GetName(((ch) ? (ch)->GetEntityHandle() : entt::null)).data(), buf);
+//		len = snprintf(chatbuf, sizeof(chatbuf), "|L%s|l %s %s : %s", langName.c_str(), (ch->IsGM()?colorbuf[0]:colorbuf[MINMAX(0, ecs::PlayerRuntime::GetEmpire(character), 3)]), ecs::PlayerRuntime::GetName(character).data(), buf);
+		//len = snprintf(chatbuf, sizeof(chatbuf), "|L%s|l|E%d|e %s : %s", langName.c_str(), ecs::PlayerRuntime::GetEmpire(character), ecs::PlayerRuntime::GetName(character).data(), buf);
 //#endif
 	}
 #else
-	int len = snprintf(chatbuf, sizeof(chatbuf), "%s %s : %s", (ch->IsGM()?colorbuf[0]:colorbuf[MINMAX(0, ecs::PlayerRuntime::GetEmpire(((ch) ? (ch)->GetEntityHandle() : entt::null)), 3)]), ecs::PlayerRuntime::GetName(((ch) ? (ch)->GetEntityHandle() : entt::null)).data(),buf);
+	int len = snprintf(chatbuf, sizeof(chatbuf), "%s %s : %s", (ch->IsGM()?colorbuf[0]:colorbuf[MINMAX(0, ecs::PlayerRuntime::GetEmpire(character), 3)]), ecs::PlayerRuntime::GetName(character).data(),buf);
 #endif
 
 	if (CHAT_TYPE_SHOUT == pinfo->type)
 	{
-		LogManager::instance().ShoutLog(g_bChannel, ecs::PlayerRuntime::GetEmpire(((ch) ? (ch)->GetEntityHandle() : entt::null)), chatbuf);
+		LogManager::instance().ShoutLog(g_bChannel, ecs::PlayerRuntime::GetEmpire(character), chatbuf);
 	}
 
 	if (len < 0 || len >= (int) sizeof(chatbuf))
@@ -1373,9 +1378,9 @@ int CInputMain::Chat(LPCHARACTER ch, const char * data, uint32_t uiBytes)
 	{
 		// const int SHOUT_LIMIT_LEVEL = 15;
 
-		if (ecs::PointSystem::GetLevel(((ch) ? (ch)->GetEntityHandle() : entt::null)) < g_iShoutLimitLevel) {
+		if (ecs::PointSystem::GetLevel(character) < g_iShoutLimitLevel) {
 #ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 411, "%d", g_iShoutLimitLevel);
+			ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 411, "%d", g_iShoutLimitLevel);
 #endif
 			return (iExtraLen);
 		}
@@ -1389,12 +1394,12 @@ int CInputMain::Chat(LPCHARACTER ch, const char * data, uint32_t uiBytes)
 		TPacketGGShout p;
 
 		p.bHeader = HEADER_GG_SHOUT;
-		p.bEmpire = ecs::PlayerRuntime::GetEmpire(((ch) ? (ch)->GetEntityHandle() : entt::null));
+		p.bEmpire = ecs::PlayerRuntime::GetEmpire(character);
 		strlcpy(p.szText, chatbuf, sizeof(p.szText));
 
 		P2P_MANAGER::instance().Send(&p, sizeof(TPacketGGShout));
 
-		SendShout(chatbuf, ecs::PlayerRuntime::GetEmpire(((ch) ? (ch)->GetEntityHandle() : entt::null)));
+		SendShout(chatbuf, ecs::PlayerRuntime::GetEmpire(character));
 
 #ifdef ENABLE_BATTLE_PASS
 		uint8_t bBattlePassId = ch->GetBattlePassId();
@@ -1421,7 +1426,7 @@ int CInputMain::Chat(LPCHARACTER ch, const char * data, uint32_t uiBytes)
 	pack_chat.header = HEADER_GC_CHAT;
 	pack_chat.size = sizeof(TPacketGCChat) + len;
 	pack_chat.type = pinfo->type;
-	pack_chat.id = ecs::PlayerRuntime::GetPacketVID(((ch) ? (ch)->GetEntityHandle() : entt::null));
+	pack_chat.id = ecs::PlayerRuntime::GetPacketVID(character);
 
 	switch (pinfo->type)
 	{
@@ -1435,10 +1440,10 @@ int CInputMain::Chat(LPCHARACTER ch, const char * data, uint32_t uiBytes)
 							FYmirChatPacket(pack_chat,
 								buf,
 								strlen(buf),
-								ecs::PlayerRuntime::GetName(((ch) ? (ch)->GetEntityHandle() : entt::null)).data(),
-								strlen(ecs::PlayerRuntime::GetName(((ch) ? (ch)->GetEntityHandle() : entt::null)).data()),
-								ecs::PlayerRuntime::GetMapIndex(((ch) ? (ch)->GetEntityHandle() : entt::null)),
-								ecs::PlayerRuntime::GetEmpire(((ch) ? (ch)->GetEntityHandle() : entt::null)),
+								ecs::PlayerRuntime::GetName(character).data(),
+								strlen(ecs::PlayerRuntime::GetName(character).data()),
+								ecs::PlayerRuntime::GetMapIndex(character),
+								ecs::PlayerRuntime::GetEmpire(character),
 								ch->IsEquipUniqueGroup(UNIQUE_GROUP_RING_OF_LANGUAGE)));
 				}
 				else
@@ -1447,14 +1452,14 @@ int CInputMain::Chat(LPCHARACTER ch, const char * data, uint32_t uiBytes)
 							FEmpireChatPacket(pack_chat,
 								chatbuf,
 								len,
-								(ecs::PlayerRuntime::GetGMLevel(((ch) ? (ch)->GetEntityHandle() : entt::null)) > GM_PLAYER ||
-								 ch->IsEquipUniqueGroup(UNIQUE_GROUP_RING_OF_LANGUAGE)) ? 0 : ecs::PlayerRuntime::GetEmpire(((ch) ? (ch)->GetEntityHandle() : entt::null)),
-								ecs::PlayerRuntime::GetMapIndex(((ch) ? (ch)->GetEntityHandle() : entt::null)), strlen(ecs::PlayerRuntime::GetName(((ch) ? (ch)->GetEntityHandle() : entt::null)).data())));
+								(ecs::PlayerRuntime::GetGMLevel(character) > GM_PLAYER ||
+								 ch->IsEquipUniqueGroup(UNIQUE_GROUP_RING_OF_LANGUAGE)) ? 0 : ecs::PlayerRuntime::GetEmpire(character),
+								ecs::PlayerRuntime::GetMapIndex(character), strlen(ecs::PlayerRuntime::GetName(character).data())));
 #ifdef ENABLE_CHAT_LOGGING
 					if (ch->IsGM())
 					{
 						LogManager::instance().EscapeString(__escape_string, sizeof(__escape_string), chatbuf, len);
-						LogManager::instance().ChatLog(ecs::PlayerRuntime::GetMapIndex(((ch) ? (ch)->GetEntityHandle() : entt::null)), ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null)), ecs::PlayerRuntime::GetName(((ch) ? (ch)->GetEntityHandle() : entt::null)).data(), 0, "", "NORMAL", __escape_string, ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null)) ? ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null))->GetHostName() : "");
+						LogManager::instance().ChatLog(ecs::PlayerRuntime::GetMapIndex(character), ecs::PlayerRuntime::GetPlayerID(character), ecs::PlayerRuntime::GetName(character).data(), 0, "", "NORMAL", __escape_string, ecs::PlayerRuntime::GetDesc(character) ? ecs::PlayerRuntime::GetDesc(character)->GetHostName() : "");
 					}
 #endif
 				}
@@ -1463,11 +1468,11 @@ int CInputMain::Chat(LPCHARACTER ch, const char * data, uint32_t uiBytes)
 
 		case CHAT_TYPE_PARTY:
 			{
-				if (!ecs::SocialSystem::GetParty(((ch) ? (ch)->GetEntityHandle() : entt::null)))
+				if (!ecs::SocialSystem::GetParty(character))
 #ifdef TEXTS_IMPROVEMENT
-					ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 485, "");
+					ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 485, "");
 #endif
-				if (ecs::SocialSystem::GetParty(((ch) ? (ch)->GetEntityHandle() : entt::null)))
+				if (ecs::SocialSystem::GetParty(character))
 				{
 					TEMP_BUFFER tbuf;
 
@@ -1475,18 +1480,18 @@ int CInputMain::Chat(LPCHARACTER ch, const char * data, uint32_t uiBytes)
 					tbuf.write(chatbuf, len);
 
 					RawPacketToCharacterFunc f(tbuf.read_peek(), tbuf.size());
-					ecs::SocialSystem::GetParty(((ch) ? (ch)->GetEntityHandle() : entt::null))->ForEachOnlineMember(f);
+					ecs::SocialSystem::GetParty(character)->ForEachOnlineMember(f);
 #ifdef ENABLE_CHAT_LOGGING
 					if (ch->IsGM())
 					{
 						LogManager::instance().EscapeString(__escape_string, sizeof(__escape_string), chatbuf, len);
-						LogManager::instance().ChatLog(ecs::PlayerRuntime::GetMapIndex(((ch) ? (ch)->GetEntityHandle() : entt::null)), ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null)), ecs::PlayerRuntime::GetName(((ch) ? (ch)->GetEntityHandle() : entt::null)).data(), ecs::SocialSystem::GetParty(((ch) ? (ch)->GetEntityHandle() : entt::null))->GetLeaderPID(), "", "PARTY", __escape_string, ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null)) ? ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null))->GetHostName() : "");
+						LogManager::instance().ChatLog(ecs::PlayerRuntime::GetMapIndex(character), ecs::PlayerRuntime::GetPlayerID(character), ecs::PlayerRuntime::GetName(character).data(), ecs::SocialSystem::GetParty(character)->GetLeaderPID(), "", "PARTY", __escape_string, ecs::PlayerRuntime::GetDesc(character) ? ecs::PlayerRuntime::GetDesc(character)->GetHostName() : "");
 					}
 #endif
 				}
 #ifdef TEXTS_IMPROVEMENT
 				else {
-					ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 486, "");
+					ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 486, "");
 				}
 #endif
 			}
@@ -1494,19 +1499,19 @@ int CInputMain::Chat(LPCHARACTER ch, const char * data, uint32_t uiBytes)
 
 		case CHAT_TYPE_GUILD:
 			{
-				if (ecs::SocialSystem::GetGuild(((ch) ? (ch)->GetEntityHandle() : entt::null))) {
-					ecs::SocialSystem::GetGuild(((ch) ? (ch)->GetEntityHandle() : entt::null))->Chat(chatbuf);
+				if (ecs::SocialSystem::GetGuild(character)) {
+					ecs::SocialSystem::GetGuild(character)->Chat(chatbuf);
 #ifdef ENABLE_CHAT_LOGGING
 					if (ch->IsGM())
 					{
 						LogManager::instance().EscapeString(__escape_string, sizeof(__escape_string), chatbuf, len);
-						LogManager::instance().ChatLog(ecs::PlayerRuntime::GetMapIndex(((ch) ? (ch)->GetEntityHandle() : entt::null)), ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null)), ecs::PlayerRuntime::GetName(((ch) ? (ch)->GetEntityHandle() : entt::null)).data(), ecs::SocialSystem::GetGuild(((ch) ? (ch)->GetEntityHandle() : entt::null))->GetID(), ecs::SocialSystem::GetGuild(((ch) ? (ch)->GetEntityHandle() : entt::null))->GetName(), "GUILD", __escape_string, ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null)) ? ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null))->GetHostName() : "");
+						LogManager::instance().ChatLog(ecs::PlayerRuntime::GetMapIndex(character), ecs::PlayerRuntime::GetPlayerID(character), ecs::PlayerRuntime::GetName(character).data(), ecs::SocialSystem::GetGuild(character)->GetID(), ecs::SocialSystem::GetGuild(character)->GetName(), "GUILD", __escape_string, ecs::PlayerRuntime::GetDesc(character) ? ecs::PlayerRuntime::GetDesc(character)->GetHostName() : "");
 					}
 #endif
 				}
 #ifdef TEXTS_IMPROVEMENT
 				else {
-					ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 271, "");
+					ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 271, "");
 				}
 #endif
 			}
@@ -1520,44 +1525,47 @@ int CInputMain::Chat(LPCHARACTER ch, const char * data, uint32_t uiBytes)
 	return (iExtraLen);
 }
 
-void CInputMain::ItemUse(LPCHARACTER ch, const char * data)
+void CInputMain::ItemUse(entt::entity character, const char * data)
 {
+	LPCHARACTER ch = ecs::LegacyCharOf(character);
 // migrated from CHARACTER handler
 // TODO Phase 8: migrate ItemUse handler ECS
 // DUAL-PATH: legacy only during migration window
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "input_main.cpp::  CInputMain::ItemUse(");//INGAME_DEBUG_RAZOR93
+	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "input_main.cpp::  CInputMain::ItemUse(");//INGAME_DEBUG_RAZOR93
 #endif
 	ch->UseItem(((struct command_item_use *) data)->Cell);
 }
 
-void CInputMain::ItemToItem(LPCHARACTER ch, const char * pcData)
+void CInputMain::ItemToItem(entt::entity character, const char * pcData)
 {
+	LPCHARACTER ch = ecs::LegacyCharOf(character);
 // migrated from CHARACTER handler
 // TODO Phase 8: migrate ItemToItem handler ECS
 // DUAL-PATH: legacy only during migration window
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "input_main.cpp:: void CInputMain::ItemToItem(");//INGAME_DEBUG_RAZOR93
+	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "input_main.cpp:: void CInputMain::ItemToItem(");//INGAME_DEBUG_RAZOR93
 #endif
 	TPacketCGItemUseToItem * p = (TPacketCGItemUseToItem *) pcData;
 	if (ch)
 		ch->UseItem(p->Cell, p->TargetCell);
 }
 
-void CInputMain::ItemDrop(LPCHARACTER ch, const char * data)
+void CInputMain::ItemDrop(entt::entity character, const char * data)
 {
+	LPCHARACTER ch = ecs::LegacyCharOf(character);
 // migrated from CHARACTER handler
 // TODO Phase 8: migrate ItemDrop handler ECS
 // DUAL-PATH: legacy only during migration window
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "input_main.cpp:: void CInputMain::ItemDrop");//INGAME_DEBUG_RAZOR93
+	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "input_main.cpp:: void CInputMain::ItemDrop");//INGAME_DEBUG_RAZOR93
 #endif
 	struct command_item_drop * pinfo = (struct command_item_drop *) data;
 	if (!ch)
 		return;
 
 #ifdef ENABLE_RESTRICT_GM_PERMISSIONS
-	if (ecs::PlayerRuntime::GetGMLevel(((ch) ? (ch)->GetEntityHandle() : entt::null)) > GM_PLAYER && ecs::PlayerRuntime::GetGMLevel(((ch) ? (ch)->GetEntityHandle() : entt::null)) < GM_IMPLEMENTOR) {
+	if (ecs::PlayerRuntime::GetGMLevel(character) > GM_PLAYER && ecs::PlayerRuntime::GetGMLevel(character) < GM_IMPLEMENTOR) {
 		return;
 	}
 #endif
@@ -1569,20 +1577,21 @@ void CInputMain::ItemDrop(LPCHARACTER ch, const char * data)
 		ch->DropItem(pinfo->Cell);
 }
 
-void CInputMain::ItemDrop2(LPCHARACTER ch, const char * data)
+void CInputMain::ItemDrop2(entt::entity character, const char * data)
 {
+	LPCHARACTER ch = ecs::LegacyCharOf(character);
 // migrated from CHARACTER handler
 // TODO Phase 8: migrate ItemDrop2 handler ECS
 // DUAL-PATH: legacy only during migration window
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "input_main.cpp:: void CInputMain::ItemDrop2");//INGAME_DEBUG_RAZOR93
+	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "input_main.cpp:: void CInputMain::ItemDrop2");//INGAME_DEBUG_RAZOR93
 #endif
 	TPacketCGItemDrop2 * pinfo = (TPacketCGItemDrop2 *) data;
 	if (!ch)
 		return;
 
 #ifdef ENABLE_RESTRICT_GM_PERMISSIONS
-	if (ecs::PlayerRuntime::GetGMLevel(((ch) ? (ch)->GetEntityHandle() : entt::null)) > GM_PLAYER && ecs::PlayerRuntime::GetGMLevel(((ch) ? (ch)->GetEntityHandle() : entt::null)) < GM_IMPLEMENTOR) {
+	if (ecs::PlayerRuntime::GetGMLevel(character) > GM_PLAYER && ecs::PlayerRuntime::GetGMLevel(character) < GM_IMPLEMENTOR) {
 		return;
 	}
 #endif
@@ -1593,13 +1602,14 @@ void CInputMain::ItemDrop2(LPCHARACTER ch, const char * data)
 		ch->DropItem(pinfo->Cell, pinfo->count);
 }
 
-void CInputMain::ItemMove(LPCHARACTER ch, const char * data)
+void CInputMain::ItemMove(entt::entity character, const char * data)
 {
+	LPCHARACTER ch = ecs::LegacyCharOf(character);
 // migrated from CHARACTER handler
 // TODO Phase 8: migrate ItemMove handler ECS
 // DUAL-PATH: legacy only during migration window
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "input_main.cpp:: void CInputMain::ItemMove");//INGAME_DEBUG_RAZOR93
+	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "input_main.cpp:: void CInputMain::ItemMove");//INGAME_DEBUG_RAZOR93
 #endif
 	struct command_item_move * pinfo = (struct command_item_move *) data;
 
@@ -1608,31 +1618,33 @@ void CInputMain::ItemMove(LPCHARACTER ch, const char * data)
 }
 
 #ifdef __ENABLE_EXTEND_INVEN_SYSTEM__
-void CInputMain::InventoryExpansion(LPCHARACTER ch, const char * data)
+void CInputMain::InventoryExpansion(entt::entity character, const char * data)
 {
+	LPCHARACTER ch = ecs::LegacyCharOf(character);
 // migrated from CHARACTER handler
 // TODO Phase 8: migrate InventoryExpansion handler ECS
 // DUAL-PATH: legacy only during migration window
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "input_main.cpp:: void CInputMain::InventoryExpansion");//INGAME_DEBUG_RAZOR93
+	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "input_main.cpp:: void CInputMain::InventoryExpansion");//INGAME_DEBUG_RAZOR93
 #endif
 	if (ch)
 		ch->Update_Inven();
 }
 #endif
 
-void CInputMain::ItemPickup(LPCHARACTER ch, const char * data)
+void CInputMain::ItemPickup(entt::entity character, const char * data)
 {
+	LPCHARACTER ch = ecs::LegacyCharOf(character);
 // migrated from CHARACTER handler
 // TODO Phase 8: migrate ItemPickup handler ECS
 // DUAL-PATH: legacy only during migration window
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "input_main.cpp:: void CInputMain::ItemPickup");//INGAME_DEBUG_RAZOR93
+	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "input_main.cpp:: void CInputMain::ItemPickup");//INGAME_DEBUG_RAZOR93
 #endif
 	struct command_item_pickup * pinfo = (struct command_item_pickup*) data;
 	if (ch) {
 #ifdef ENABLE_RESTRICT_GM_PERMISSIONS
-		if (ecs::PlayerRuntime::GetGMLevel(((ch) ? (ch)->GetEntityHandle() : entt::null)) > GM_PLAYER && ecs::PlayerRuntime::GetGMLevel(((ch) ? (ch)->GetEntityHandle() : entt::null)) < GM_IMPLEMENTOR) {
+		if (ecs::PlayerRuntime::GetGMLevel(character) > GM_PLAYER && ecs::PlayerRuntime::GetGMLevel(character) < GM_IMPLEMENTOR) {
 			return;
 		}
 #endif
@@ -1641,11 +1653,12 @@ void CInputMain::ItemPickup(LPCHARACTER ch, const char * data)
 	ch->PickupItem(pinfo->vid);
 }
 
-void CInputMain::QuickslotAdd(LPCHARACTER ch, const char * data)
+void CInputMain::QuickslotAdd(entt::entity character, const char * data)
 {
+	LPCHARACTER ch = ecs::LegacyCharOf(character);
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
 	ecs::ChatSystem::Send(
-		((ch) ? (ch)->GetEntityHandle() : entt::null),
+		character,
 		CHAT_TYPE_INFO,
 		"input_main.cpp:: void CInputMain::QuickslotAdd");
 #endif
@@ -1671,7 +1684,7 @@ void CInputMain::QuickslotAdd(LPCHARACTER ch, const char * data)
 
 		const TItemPos srcCell(window, pinfo->slot.pos);
 		const entt::entity itemEntity =
-			ItemSystem::GetItem(((ch) ? (ch)->GetEntityHandle() : entt::null), srcCell);
+			ItemSystem::GetItem(character, srcCell);
 		if (!ItemSystem::IsValidItem(itemEntity))
 			return;
 
@@ -1692,37 +1705,40 @@ void CInputMain::QuickslotAdd(LPCHARACTER ch, const char * data)
 
 	ch->SetQuickslot(pinfo->pos, pinfo->slot);
 }
-void CInputMain::QuickslotDelete(LPCHARACTER ch, const char * data)
+void CInputMain::QuickslotDelete(entt::entity character, const char * data)
 {
+	LPCHARACTER ch = ecs::LegacyCharOf(character);
 // migrated from CHARACTER handler
 // TODO Phase 8: migrate QuickslotDelete handler ECS
 // DUAL-PATH: legacy only during migration window
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "input_main.cpp:: void CInputMain::QuickslotDelete");//INGAME_DEBUG_RAZOR93
+	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "input_main.cpp:: void CInputMain::QuickslotDelete");//INGAME_DEBUG_RAZOR93
 #endif
 	struct command_quickslot_del * pinfo = (struct command_quickslot_del *) data;
 	ch->DelQuickslot(pinfo->pos);
 }
 
-void CInputMain::QuickslotSwap(LPCHARACTER ch, const char * data)
+void CInputMain::QuickslotSwap(entt::entity character, const char * data)
 {
+	LPCHARACTER ch = ecs::LegacyCharOf(character);
 // migrated from CHARACTER handler
 // TODO Phase 8: migrate QuickslotSwap handler ECS
 // DUAL-PATH: legacy only during migration window
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "input_main.cpp:: void CInputMain::QuickslotSwap");//INGAME_DEBUG_RAZOR93
+	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "input_main.cpp:: void CInputMain::QuickslotSwap");//INGAME_DEBUG_RAZOR93
 #endif
 	struct command_quickslot_swap * pinfo = (struct command_quickslot_swap *) data;
 	ch->SwapQuickslot(pinfo->pos, pinfo->change_pos);
 }
 
-int CInputMain::Messenger(LPCHARACTER ch, const char* c_pData, uint64_t uiBytes)
+int CInputMain::Messenger(entt::entity character, const char* c_pData, uint64_t uiBytes)
 {
+	LPCHARACTER ch = ecs::LegacyCharOf(character);
 // migrated from CHARACTER handler
 // TODO Phase 8: migrate Messenger handler ECS
 // DUAL-PATH: legacy only during migration window
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "input_main.cpp:: void CInputMain::Messenger");//INGAME_DEBUG_RAZOR93
+	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "input_main.cpp:: void CInputMain::Messenger");//INGAME_DEBUG_RAZOR93
 #endif
 	TPacketCGMessenger* p = (TPacketCGMessenger*) c_pData;
 
@@ -1745,13 +1761,13 @@ int CInputMain::Messenger(LPCHARACTER ch, const char* c_pData, uint64_t uiBytes)
 				if (!ch_companion)
 					return sizeof(TPacketCGMessengerAddByVID);
 
-				if (ecs::PlayerRuntime::IsObserverMode(((ch) ? (ch)->GetEntityHandle() : entt::null)))
+				if (ecs::PlayerRuntime::IsObserverMode(character))
 					return sizeof(TPacketCGMessengerAddByVID);
 
 				if (ch_companion->IsBlockMode(BLOCK_MESSENGER_INVITE))
 				{
 #ifdef TEXTS_IMPROVEMENT
-					ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 370, "%s", ecs::PlayerRuntime::GetName(((ch_companion) ? (ch_companion)->GetEntityHandle() : entt::null)).data());
+					ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 370, "%s", ecs::PlayerRuntime::GetName(((ch_companion) ? (ch_companion)->GetEntityHandle() : entt::null)).data());
 #endif
 					return sizeof(TPacketCGMessengerAddByVID);
 				}
@@ -1761,19 +1777,19 @@ int CInputMain::Messenger(LPCHARACTER ch, const char* c_pData, uint64_t uiBytes)
 				if (!d)
 					return sizeof(TPacketCGMessengerAddByVID);
 
-				if (ecs::PlayerRuntime::GetGMLevel(((ch) ? (ch)->GetEntityHandle() : entt::null)) == GM_PLAYER && ecs::PlayerRuntime::GetGMLevel(((ch_companion) ? (ch_companion)->GetEntityHandle() : entt::null)) != GM_PLAYER)
+				if (ecs::PlayerRuntime::GetGMLevel(character) == GM_PLAYER && ecs::PlayerRuntime::GetGMLevel(((ch_companion) ? (ch_companion)->GetEntityHandle() : entt::null)) != GM_PLAYER)
 				{
 #ifdef TEXTS_IMPROVEMENT
-					ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 184, "");
+					ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 184, "");
 #endif
 					return sizeof(TPacketCGMessengerAddByVID);
 				}
 
-				if (ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null)) == d) // ÀÚ½ÅÀº Ãß°¡ÇÒ ¼ö ¾ø´Ù.
+				if (ecs::PlayerRuntime::GetDesc(character) == d) // ÀÚ½ÅÀº Ãß°¡ÇÒ ¼ö ¾ø´Ù.
 					return sizeof(TPacketCGMessengerAddByVID);
 
 				MessengerManager::instance().RequestToAdd(ch, ch_companion);
-				//MessengerManager::instance().AddToList(ecs::PlayerRuntime::GetName(((ch) ? (ch)->GetEntityHandle() : entt::null)).data(), ecs::PlayerRuntime::GetName(((ch_companion) ? (ch_companion)->GetEntityHandle() : entt::null)).data());
+				//MessengerManager::instance().AddToList(ecs::PlayerRuntime::GetName(character).data(), ecs::PlayerRuntime::GetName(((ch_companion) ? (ch_companion)->GetEntityHandle() : entt::null)).data());
 			}
 			return sizeof(TPacketCGMessengerAddByVID);
 
@@ -1785,10 +1801,10 @@ int CInputMain::Messenger(LPCHARACTER ch, const char* c_pData, uint64_t uiBytes)
 				char name[CHARACTER_NAME_MAX_LEN + 1];
 				strlcpy(name, c_pData, sizeof(name));
 
-				if (ecs::PlayerRuntime::GetGMLevel(((ch) ? (ch)->GetEntityHandle() : entt::null)) == GM_PLAYER && gm_get_level(name) != GM_PLAYER)
+				if (ecs::PlayerRuntime::GetGMLevel(character) == GM_PLAYER && gm_get_level(name) != GM_PLAYER)
 				{
 #ifdef TEXTS_IMPROVEMENT
-					ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 184, "");
+					ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 184, "");
 #endif
 					return CHARACTER_NAME_MAX_LEN;
 				}
@@ -1802,19 +1818,19 @@ int CInputMain::Messenger(LPCHARACTER ch, const char* c_pData, uint64_t uiBytes)
 					if (tch->IsBlockMode(BLOCK_MESSENGER_INVITE) == true)
 					{
 #ifdef TEXTS_IMPROVEMENT
-						ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 370, "%s", ecs::PlayerRuntime::GetName(((tch) ? (tch)->GetEntityHandle() : entt::null)).data());
+						ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 370, "%s", ecs::PlayerRuntime::GetName(((tch) ? (tch)->GetEntityHandle() : entt::null)).data());
 #endif
 					}
 					else
 					{
 						// ¸Þ½ÅÀú°¡ Ä³¸¯ÅÍ´ÜÀ§°¡ µÇ¸é¼­ º¯°æ
 						MessengerManager::instance().RequestToAdd(ch, tch);
-						//MessengerManager::instance().AddToList(ecs::PlayerRuntime::GetName(((ch) ? (ch)->GetEntityHandle() : entt::null)).data(), ecs::PlayerRuntime::GetName(((tch) ? (tch)->GetEntityHandle() : entt::null)).data());
+						//MessengerManager::instance().AddToList(ecs::PlayerRuntime::GetName(character).data(), ecs::PlayerRuntime::GetName(((tch) ? (tch)->GetEntityHandle() : entt::null)).data());
 					}
 				}
 #ifdef TEXTS_IMPROVEMENT
 				else {
-					ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 108, "%s", name);
+					ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 108, "%s", name);
 				}
 #endif
 			}
@@ -1827,15 +1843,15 @@ int CInputMain::Messenger(LPCHARACTER ch, const char* c_pData, uint64_t uiBytes)
 
 				char char_name[CHARACTER_NAME_MAX_LEN + 1];
 				strlcpy(char_name, c_pData, sizeof(char_name));
-				MessengerManager::instance().RemoveFromList(ecs::PlayerRuntime::GetName(((ch) ? (ch)->GetEntityHandle() : entt::null)).data(), char_name);
+				MessengerManager::instance().RemoveFromList(ecs::PlayerRuntime::GetName(character).data(), char_name);
 #ifdef ENABLE_BUG_FIXES
-				MessengerManager::instance().RemoveFromList(char_name, ecs::PlayerRuntime::GetName(((ch) ? (ch)->GetEntityHandle() : entt::null)).data());
+				MessengerManager::instance().RemoveFromList(char_name, ecs::PlayerRuntime::GetName(character).data());
 #endif
 			}
 			return CHARACTER_NAME_MAX_LEN;
 
 		default:
-			LOG_ERROR("CInputMain::Messenger : Unknown subheader {} : {}", p->subheader, ecs::PlayerRuntime::GetName(((ch) ? (ch)->GetEntityHandle() : entt::null)).data());
+			LOG_ERROR("CInputMain::Messenger : Unknown subheader {} : {}", p->subheader, ecs::PlayerRuntime::GetName(character).data());
 			break;
 	}
 
@@ -1843,13 +1859,14 @@ int CInputMain::Messenger(LPCHARACTER ch, const char* c_pData, uint64_t uiBytes)
 }
 
 #ifdef ENABLE_BATTLE_PASS
-int CInputMain::BattlePass(LPCHARACTER ch, const char* data, size_t uiBytes)
+int CInputMain::BattlePass(entt::entity character, const char* data, size_t uiBytes)
 {
+	LPCHARACTER ch = ecs::LegacyCharOf(character);
 // migrated from CHARACTER handler
 // TODO Phase 8: migrate BattlePass handler ECS
 // DUAL-PATH: legacy only during migration window
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "input_main.cpp:: int CInputMain::BattlePas");//INGAME_DEBUG_RAZOR93
+	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "input_main.cpp:: int CInputMain::BattlePas");//INGAME_DEBUG_RAZOR93
 #endif
 	TPacketCGBattlePassAction * p = (TPacketCGBattlePassAction *) data;
 
@@ -1871,10 +1888,10 @@ int CInputMain::BattlePass(LPCHARACTER ch, const char* data, size_t uiBytes)
 
 		case 3:
 		{
-			uint32_t dwPlayerId = ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null));
+			uint32_t dwPlayerId = ecs::PlayerRuntime::GetPlayerID(character);
 			uint8_t bIsGlobal = 0;
 
-			db_clientdesc->DBPacketHeader(HEADER_GD_BATTLE_PASS_RANKING, ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null))->GetHandle(), sizeof(uint32_t) + sizeof(uint8_t));
+			db_clientdesc->DBPacketHeader(HEADER_GD_BATTLE_PASS_RANKING, ecs::PlayerRuntime::GetDesc(character)->GetHandle(), sizeof(uint32_t) + sizeof(uint8_t));
 			db_clientdesc->Packet(&dwPlayerId, sizeof(uint32_t));
 			db_clientdesc->Packet(&bIsGlobal, sizeof(uint8_t));
 		}
@@ -1888,13 +1905,14 @@ int CInputMain::BattlePass(LPCHARACTER ch, const char* data, size_t uiBytes)
 }
 #endif
 
-int CInputMain::Shop(LPCHARACTER ch, const char * data, size_t uiBytes)
+int CInputMain::Shop(entt::entity character, const char * data, size_t uiBytes)
 {
+	LPCHARACTER ch = ecs::LegacyCharOf(character);
 // migrated from CHARACTER handler
 // TODO Phase 8: migrate Shop handler ECS
 // DUAL-PATH: legacy only during migration window
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "input_main.cpp::int CInputMain::Shop");//INGAME_DEBUG_RAZOR93
+	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "input_main.cpp::int CInputMain::Shop");//INGAME_DEBUG_RAZOR93
 #endif
 	TPacketCGShop * p = (TPacketCGShop *) data;
 
@@ -1910,7 +1928,7 @@ int CInputMain::Shop(LPCHARACTER ch, const char * data, size_t uiBytes)
 	switch (p->subheader)
 	{
 		case SHOP_SUBHEADER_CG_END:
-			LOG_INFO("INPUT: {} SHOP: END", ecs::PlayerRuntime::GetName(((ch) ? (ch)->GetEntityHandle() : entt::null)).data());
+			LOG_INFO("INPUT: {} SHOP: END", ecs::PlayerRuntime::GetName(character).data());
 			CShopManager::instance().StopShopping(ch);
 			return 0;
 
@@ -1920,7 +1938,7 @@ int CInputMain::Shop(LPCHARACTER ch, const char * data, size_t uiBytes)
 					return -1;
 
 				uint8_t bPos = *(c_pData + 1);
-				LOG_INFO("INPUT: {} SHOP: BUY {}", ecs::PlayerRuntime::GetName(((ch) ? (ch)->GetEntityHandle() : entt::null)).data(), bPos);
+				LOG_INFO("INPUT: {} SHOP: BUY {}", ecs::PlayerRuntime::GetName(character).data(), bPos);
 				CShopManager::instance().Buy(ch, bPos);
 				return (sizeof(uint8_t) + sizeof(uint8_t));
 			}
@@ -1932,7 +1950,7 @@ int CInputMain::Shop(LPCHARACTER ch, const char * data, size_t uiBytes)
 
 				uint8_t pos = *c_pData;
 
-				LOG_INFO("INPUT: {} SHOP: SELL", ecs::PlayerRuntime::GetName(((ch) ? (ch)->GetEntityHandle() : entt::null)).data());
+				LOG_INFO("INPUT: {} SHOP: SELL", ecs::PlayerRuntime::GetName(character).data());
 				CShopManager::instance().Sell(ch, pos);
 				return sizeof(uint8_t);
 			}
@@ -1965,7 +1983,7 @@ int CInputMain::Shop(LPCHARACTER ch, const char * data, size_t uiBytes)
 				uint8_t count = *(c_pData);
 #endif
 
-				LOG_INFO("INPUT: {} SHOP: SELL2", ecs::PlayerRuntime::GetName(((ch) ? (ch)->GetEntityHandle() : entt::null)).data());
+				LOG_INFO("INPUT: {} SHOP: SELL2", ecs::PlayerRuntime::GetName(character).data());
 				CShopManager::instance().Sell(ch,
 #ifdef ENABLE_EXTRA_INVENTORY
 				TItemPos(window, cell),
@@ -1996,26 +2014,27 @@ int CInputMain::Shop(LPCHARACTER ch, const char * data, size_t uiBytes)
 
 				uint8_t p = *(c_pData++);
 				uint8_t c = *(c_pData);
-				LOG_INFO("INPUT: {} SHOP: MULTIPLE BUY {} COUNT {}", ecs::PlayerRuntime::GetName(((ch) ? (ch)->GetEntityHandle() : entt::null)).data(), p, c);
+				LOG_INFO("INPUT: {} SHOP: MULTIPLE BUY {} COUNT {}", ecs::PlayerRuntime::GetName(character).data(), p, c);
 				CShopManager::instance().MultipleBuy(ch, p, c);
 				return size;
 			}
 #endif
 		default:
-			LOG_ERROR("CInputMain::Shop : Unknown subheader {} : {}", p->subheader, ecs::PlayerRuntime::GetName(((ch) ? (ch)->GetEntityHandle() : entt::null)).data());
+			LOG_ERROR("CInputMain::Shop : Unknown subheader {} : {}", p->subheader, ecs::PlayerRuntime::GetName(character).data());
 			break;
 	}
 
 	return 0;
 }
 
-void CInputMain::OnClick(LPCHARACTER ch, const char * data)
+void CInputMain::OnClick(entt::entity character, const char * data)
 {
+	LPCHARACTER ch = ecs::LegacyCharOf(character);
 // migrated from CHARACTER handler
 // TODO Phase 8: migrate OnClick handler ECS
 // DUAL-PATH: legacy only during migration window
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::OnClick(LPCHARACTER ch, const char * data)");//INGAME_DEBUG_RAZOR93
+	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::OnClick(LPCHARACTER ch, const char * data)");//INGAME_DEBUG_RAZOR93
 #endif
 	struct command_on_click *	pinfo = (struct command_on_click *) data;
 	LPCHARACTER			victim;
@@ -2024,17 +2043,18 @@ void CInputMain::OnClick(LPCHARACTER ch, const char * data)
 		victim->OnClick(ch);
 	else if (test_server)
 	{
-		LOG_ERROR("CInputMain::OnClick {}.Click.NOT_EXIST_VID[{}]", ecs::PlayerRuntime::GetName(((ch) ? (ch)->GetEntityHandle() : entt::null)).data(), pinfo->vid);
+		LOG_ERROR("CInputMain::OnClick {}.Click.NOT_EXIST_VID[{}]", ecs::PlayerRuntime::GetName(character).data(), pinfo->vid);
 	}
 }
 
-void CInputMain::Exchange(LPCHARACTER ch, const char * data)
+void CInputMain::Exchange(entt::entity character, const char * data)
 {
+	LPCHARACTER ch = ecs::LegacyCharOf(character);
 // migrated from CHARACTER handler
 // TODO Phase 8: migrate Exchange handler ECS
 // DUAL-PATH: legacy only during migration window
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::Exchange(LPCHARACTER ch, const char * data)");//INGAME_DEBUG_RAZOR93
+	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::Exchange(LPCHARACTER ch, const char * data)");//INGAME_DEBUG_RAZOR93
 #endif
 	struct command_exchange * pinfo = (struct command_exchange *) data;
 	LPCHARACTER	to_ch = nullptr;
@@ -2065,7 +2085,7 @@ void CInputMain::Exchange(LPCHARACTER ch, const char * data)
 	if (iPulse - ch->GetSafeboxLoadTime() < PASSES_PER_SEC(g_nPortalLimitTime))
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 234, "%d", g_nPortalLimitTime);
+		ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 234, "%d", g_nPortalLimitTime);
 #endif
 		return;
 	}
@@ -2074,14 +2094,14 @@ void CInputMain::Exchange(LPCHARACTER ch, const char * data)
 	switch (pinfo->sub_header)
 	{
 		case EXCHANGE_SUBHEADER_CG_START:	// arg1 == vid of target character
-			if (!ecs::SocialSystem::GetExchange(((ch) ? (ch)->GetEntityHandle() : entt::null)))
+			if (!ecs::SocialSystem::GetExchange(character))
 			{
 				if ((to_ch = CHARACTER_MANAGER::instance().Find(pinfo->arg1)))
 				{
 					if (iPulse - ch->GetSafeboxLoadTime() < PASSES_PER_SEC(g_nPortalLimitTime))
 					{
 #ifdef TEXTS_IMPROVEMENT
-						ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 234, "%d", g_nPortalLimitTime);
+						ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 234, "%d", g_nPortalLimitTime);
 #endif
 						return;
 					}
@@ -2094,9 +2114,9 @@ void CInputMain::Exchange(LPCHARACTER ch, const char * data)
 						return;
 					}
 
-					if (ecs::PointSystem::GetGold(((ch) ? (ch)->GetEntityHandle() : entt::null)) >= GOLD_MAX) {
+					if (ecs::PointSystem::GetGold(character) >= GOLD_MAX) {
 #ifdef TEXTS_IMPROVEMENT
-						ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 406,
+						ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 406,
 
 						"%lld"
 
@@ -2107,9 +2127,9 @@ void CInputMain::Exchange(LPCHARACTER ch, const char * data)
 
 					if (ecs::PlayerRuntime::IsPC(((to_ch) ? (to_ch)->GetEntityHandle() : entt::null)))
 					{
-						if (quest::CQuestManager::instance().GiveItemToPC(ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null)), to_ch))
+						if (quest::CQuestManager::instance().GiveItemToPC(ecs::PlayerRuntime::GetPlayerID(character), to_ch))
 						{
-							LOG_INFO("Exchange canceled by quest {} {}", ecs::PlayerRuntime::GetName(((ch) ? (ch)->GetEntityHandle() : entt::null)).data(), ecs::PlayerRuntime::GetName(((to_ch) ? (to_ch)->GetEntityHandle() : entt::null)).data());
+							LOG_INFO("Exchange canceled by quest {} {}", ecs::PlayerRuntime::GetName(character).data(), ecs::PlayerRuntime::GetName(((to_ch) ? (to_ch)->GetEntityHandle() : entt::null)).data());
 							return;
 						}
 					}
@@ -2123,7 +2143,7 @@ void CInputMain::Exchange(LPCHARACTER ch, const char * data)
 						)
 					{
 #ifdef TEXTS_IMPROVEMENT
-						ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 292, "");
+						ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 292, "");
 #endif
 						return;
 					}
@@ -2132,13 +2152,13 @@ void CInputMain::Exchange(LPCHARACTER ch, const char * data)
 					if (ch->IsAttrTransferOpen())
 					{
 #ifdef TEXTS_IMPROVEMENT
-						ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 292, "");
+						ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 292, "");
 #endif
 						return;
 					}
 #endif
 #ifdef ENABLE_RESTRICT_GM_PERMISSIONS
-					if ((ecs::PlayerRuntime::GetGMLevel(((ch) ? (ch)->GetEntityHandle() : entt::null)) > GM_PLAYER && ecs::PlayerRuntime::GetGMLevel(((ch) ? (ch)->GetEntityHandle() : entt::null)) < GM_IMPLEMENTOR) || (ecs::PlayerRuntime::GetGMLevel(((to_ch) ? (to_ch)->GetEntityHandle() : entt::null)) > GM_PLAYER && ecs::PlayerRuntime::GetGMLevel(((to_ch) ? (to_ch)->GetEntityHandle() : entt::null)) < GM_IMPLEMENTOR)) {
+					if ((ecs::PlayerRuntime::GetGMLevel(character) > GM_PLAYER && ecs::PlayerRuntime::GetGMLevel(character) < GM_IMPLEMENTOR) || (ecs::PlayerRuntime::GetGMLevel(((to_ch) ? (to_ch)->GetEntityHandle() : entt::null)) > GM_PLAYER && ecs::PlayerRuntime::GetGMLevel(((to_ch) ? (to_ch)->GetEntityHandle() : entt::null)) < GM_IMPLEMENTOR)) {
 						return;
 					}
 #endif
@@ -2148,23 +2168,23 @@ void CInputMain::Exchange(LPCHARACTER ch, const char * data)
 			break;
 
 		case EXCHANGE_SUBHEADER_CG_ITEM_ADD:	// arg1 == position of item, arg2 == position in exchange window
-			if (ecs::SocialSystem::GetExchange(((ch) ? (ch)->GetEntityHandle() : entt::null)))
+			if (ecs::SocialSystem::GetExchange(character))
 			{
-				if (ecs::SocialSystem::GetExchange(((ch) ? (ch)->GetEntityHandle() : entt::null))->GetCompany()->GetAcceptStatus() != true)
-					ecs::SocialSystem::GetExchange(((ch) ? (ch)->GetEntityHandle() : entt::null))->AddItem(pinfo->Pos, pinfo->arg2);
+				if (ecs::SocialSystem::GetExchange(character)->GetCompany()->GetAcceptStatus() != true)
+					ecs::SocialSystem::GetExchange(character)->AddItem(pinfo->Pos, pinfo->arg2);
 			}
 			break;
 
 		case EXCHANGE_SUBHEADER_CG_ITEM_DEL:	// arg1 == position of item
-			if (ecs::SocialSystem::GetExchange(((ch) ? (ch)->GetEntityHandle() : entt::null)))
+			if (ecs::SocialSystem::GetExchange(character))
 			{
-				if (ecs::SocialSystem::GetExchange(((ch) ? (ch)->GetEntityHandle() : entt::null))->GetCompany()->GetAcceptStatus() != true)
-					ecs::SocialSystem::GetExchange(((ch) ? (ch)->GetEntityHandle() : entt::null))->RemoveItem(pinfo->arg1);
+				if (ecs::SocialSystem::GetExchange(character)->GetCompany()->GetAcceptStatus() != true)
+					ecs::SocialSystem::GetExchange(character)->RemoveItem(pinfo->arg1);
 			}
 			break;
 
 		case EXCHANGE_SUBHEADER_CG_ELK_ADD:	// arg1 == amount of gold
-			if (ecs::SocialSystem::GetExchange(((ch) ? (ch)->GetEntityHandle() : entt::null)))
+			if (ecs::SocialSystem::GetExchange(character))
 			{
 
 				auto* companyOwner = ecs::SocialSystem::GetExchange(ch->GetEntityHandle())->GetCompany()->GetOwner();
@@ -2174,7 +2194,7 @@ void CInputMain::Exchange(LPCHARACTER ch, const char * data)
 				if (GOLD_MAX <= nTotalGold)
 				{
 #ifdef TEXTS_IMPROVEMENT
-					ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 226,
+					ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 226,
 
 					"%lld"
 
@@ -2183,33 +2203,34 @@ void CInputMain::Exchange(LPCHARACTER ch, const char * data)
 					return;
 				}
 
-				if (ecs::SocialSystem::GetExchange(((ch) ? (ch)->GetEntityHandle() : entt::null))->GetCompany()->GetAcceptStatus() != true)
-					ecs::SocialSystem::GetExchange(((ch) ? (ch)->GetEntityHandle() : entt::null))->AddGold(pinfo->arg1);
+				if (ecs::SocialSystem::GetExchange(character)->GetCompany()->GetAcceptStatus() != true)
+					ecs::SocialSystem::GetExchange(character)->AddGold(pinfo->arg1);
 			}
 			break;
 		case EXCHANGE_SUBHEADER_CG_ACCEPT:	// arg1 == not used
-			if (ecs::SocialSystem::GetExchange(((ch) ? (ch)->GetEntityHandle() : entt::null)))
+			if (ecs::SocialSystem::GetExchange(character))
 			{
 				LOG_INFO("CInputMain()::Exchange() ==> ACCEPT ");
-				ecs::SocialSystem::GetExchange(((ch) ? (ch)->GetEntityHandle() : entt::null))->Accept(true);
+				ecs::SocialSystem::GetExchange(character)->Accept(true);
 			}
 
 			break;
 
 		case EXCHANGE_SUBHEADER_CG_CANCEL:	// arg1 == not used
-			if (ecs::SocialSystem::GetExchange(((ch) ? (ch)->GetEntityHandle() : entt::null)))
-				ecs::SocialSystem::GetExchange(((ch) ? (ch)->GetEntityHandle() : entt::null))->Cancel();
+			if (ecs::SocialSystem::GetExchange(character))
+				ecs::SocialSystem::GetExchange(character)->Cancel();
 			break;
 	}
 }
 
-void CInputMain::Position(LPCHARACTER ch, const char * data)
+void CInputMain::Position(entt::entity character, const char * data)
 {
+	LPCHARACTER ch = ecs::LegacyCharOf(character);
 // migrated from CHARACTER handler
 // TODO Phase 8: migrate Position handler ECS
 // DUAL-PATH: legacy only during migration window
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::Position(LPCHARACTER ch, const char * data)");//INGAME_DEBUG_RAZOR93
+	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::Position(LPCHARACTER ch, const char * data)");//INGAME_DEBUG_RAZOR93
 #endif
 	struct command_position * pinfo = (struct command_position *) data;
 
@@ -2237,10 +2258,11 @@ static const int ComboSequenceBySkillLevel[3][8] =
 	{ 14, 15, 16, 18, 19, 17,  0,  0 },
 };
 
-void CInputMain::Move(LPCHARACTER ch, const char * data)
+void CInputMain::Move(entt::entity character, const char * data)
 {
+	LPCHARACTER ch = ecs::LegacyCharOf(character);
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::Move(LPCHARACTER ch, const char * data)");//INGAME_DEBUG_RAZOR93
+	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::Move(LPCHARACTER ch, const char * data)");//INGAME_DEBUG_RAZOR93
 #endif
 	if (!ch)
 		return;
@@ -2251,7 +2273,7 @@ void CInputMain::Move(LPCHARACTER ch, const char * data)
 
 	if (pinfo->bFunc >= FUNC_MAX_NUM && !(pinfo->bFunc & 0x80))
 	{
-		LOG_ERROR("invalid move type: {}", ecs::PlayerRuntime::GetName(((ch) ? (ch)->GetEntityHandle() : entt::null)).data());
+		LOG_ERROR("invalid move type: {}", ecs::PlayerRuntime::GetName(character).data());
 		return;
 	}
 
@@ -2271,7 +2293,7 @@ void CInputMain::Move(LPCHARACTER ch, const char * data)
 
 //	if (!test_server)
 	{
-		const float fDistFromCurrent = DISTANCE_SQRT((ecs::PlayerRuntime::GetX(((ch) ? (ch)->GetEntityHandle() : entt::null)) - pinfo->lX) / 100, (ecs::PlayerRuntime::GetY(((ch) ? (ch)->GetEntityHandle() : entt::null)) - pinfo->lY) / 100);
+		const float fDistFromCurrent = DISTANCE_SQRT((ecs::PlayerRuntime::GetX(character) - pinfo->lX) / 100, (ecs::PlayerRuntime::GetY(character) - pinfo->lY) / 100);
 		float fDist = fDistFromCurrent;
 
 		// When movement is already in-flight, compare the next client target against the
@@ -2279,17 +2301,17 @@ void CInputMain::Move(LPCHARACTER ch, const char * data)
 		// packets get treated as teleports and the server rubberbands the player.
 		if (pinfo->bFunc == FUNC_MOVE &&
 			ch->GetCurrentMoveDuration() > 0 &&
-			(ch->GetCurrentDestX() != ecs::PlayerRuntime::GetX(((ch) ? (ch)->GetEntityHandle() : entt::null)) || ch->GetCurrentDestY() != ecs::PlayerRuntime::GetY(((ch) ? (ch)->GetEntityHandle() : entt::null))))
+			(ch->GetCurrentDestX() != ecs::PlayerRuntime::GetX(character) || ch->GetCurrentDestY() != ecs::PlayerRuntime::GetY(character)))
 		{
 			const float fDistFromDest = DISTANCE_SQRT((ch->GetCurrentDestX() - pinfo->lX) / 100, (ch->GetCurrentDestY() - pinfo->lY) / 100);
 			fDist = std::min(fDistFromCurrent, fDistFromDest);
 		}
-		if (((false == ch->IsRiding() && fDist > 30) || fDist > 60) && OXEVENT_MAP_INDEX != ecs::PlayerRuntime::GetMapIndex(((ch) ? (ch)->GetEntityHandle() : entt::null)))
+		if (((false == ch->IsRiding() && fDist > 30) || fDist > 60) && OXEVENT_MAP_INDEX != ecs::PlayerRuntime::GetMapIndex(character))
 		{
-			LOG_INFO("MOVE: {} trying to move too far (dist: {:.1f}m current: {:.1f}m) Riding({})", ecs::PlayerRuntime::GetName(((ch) ? (ch)->GetEntityHandle() : entt::null)).data(), fDist, fDistFromCurrent, ch->IsRiding());
+			LOG_INFO("MOVE: {} trying to move too far (dist: {:.1f}m current: {:.1f}m) Riding({})", ecs::PlayerRuntime::GetName(character).data(), fDist, fDistFromCurrent, ch->IsRiding());
 
-			ecs::MovementSystem::Show(((ch) ? (ch)->GetEntityHandle() : entt::null), ecs::PlayerRuntime::GetMapIndex(((ch) ? (ch)->GetEntityHandle() : entt::null)), ecs::PlayerRuntime::GetX(((ch) ? (ch)->GetEntityHandle() : entt::null)), ecs::PlayerRuntime::GetY(((ch) ? (ch)->GetEntityHandle() : entt::null)), ch->GetZ());
-			ecs::MovementSystem::Stop(((ch) ? (ch)->GetEntityHandle() : entt::null));
+			ecs::MovementSystem::Show(character, ecs::PlayerRuntime::GetMapIndex(character), ecs::PlayerRuntime::GetX(character), ecs::PlayerRuntime::GetY(character), ch->GetZ());
+			ecs::MovementSystem::Stop(character);
 // Phase 15E-final.LPENTITY.4-architect H fixup-4:
 			// Anti-cheat backport early-returns BEFORE the line ~2385
 			// PacketAround(GC_MOVE) broadcast, so peers never receive
@@ -2316,29 +2338,29 @@ void CInputMain::Move(LPCHARACTER ch, const char * data)
 		}
 #endif
 #ifdef ENABLE_CHECK_GHOSTMODE
-		if (ecs::PlayerRuntime::IsPC(((ch) ? (ch)->GetEntityHandle() : entt::null)) && CombatSystem::IsDead(((ch) ? (ch)->GetEntityHandle() : entt::null)))
+		if (ecs::PlayerRuntime::IsPC(character) && CombatSystem::IsDead(character))
 		{
-			LOG_INFO("MOVE: {} trying to move as dead", ecs::PlayerRuntime::GetName(((ch) ? (ch)->GetEntityHandle() : entt::null)).data());
+			LOG_INFO("MOVE: {} trying to move as dead", ecs::PlayerRuntime::GetName(character).data());
 
-			ecs::MovementSystem::Show(((ch) ? (ch)->GetEntityHandle() : entt::null), ecs::PlayerRuntime::GetMapIndex(((ch) ? (ch)->GetEntityHandle() : entt::null)), ecs::PlayerRuntime::GetX(((ch) ? (ch)->GetEntityHandle() : entt::null)), ecs::PlayerRuntime::GetY(((ch) ? (ch)->GetEntityHandle() : entt::null)), ch->GetZ());
-			ecs::MovementSystem::Stop(((ch) ? (ch)->GetEntityHandle() : entt::null));
+			ecs::MovementSystem::Show(character, ecs::PlayerRuntime::GetMapIndex(character), ecs::PlayerRuntime::GetX(character), ecs::PlayerRuntime::GetY(character), ch->GetZ());
+			ecs::MovementSystem::Stop(character);
 			return;
 		}
 #endif
 
 		uint32_t dwCurTime = get_dword_time();
-		if (ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null))) {
-			bool CheckSpeedHack = (false == ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null))->IsHandshaking() && dwCurTime - ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null))->GetClientTime() > 7000);
+		if (ecs::PlayerRuntime::GetDesc(character)) {
+			bool CheckSpeedHack = (false == ecs::PlayerRuntime::GetDesc(character)->IsHandshaking() && dwCurTime - ecs::PlayerRuntime::GetDesc(character)->GetClientTime() > 7000);
 			if (CheckSpeedHack)
 			{
 				int iDelta = (int)(dwCurTime - pinfo->dwTime);
-				int iServerDelta = (int)(dwCurTime - ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null))->GetClientTime());
+				int iServerDelta = (int)(dwCurTime - ecs::PlayerRuntime::GetDesc(character)->GetClientTime());
 				if (iDelta >= 30000) {
-					LOG_INFO("SPEEDHACK: slow timer name {} delta {}", ecs::PlayerRuntime::GetName(((ch) ? (ch)->GetEntityHandle() : entt::null)).data(), iDelta);
-					ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null))->DelayedDisconnect(3);
+					LOG_INFO("SPEEDHACK: slow timer name {} delta {}", ecs::PlayerRuntime::GetName(character).data(), iDelta);
+					ecs::PlayerRuntime::GetDesc(character)->DelayedDisconnect(3);
 				} else if (iDelta < -(iServerDelta / 50)) {
-					LOG_INFO("SPEEDHACK: DETECTED! {} (delta {} {})", ecs::PlayerRuntime::GetName(((ch) ? (ch)->GetEntityHandle() : entt::null)).data(), iDelta, iServerDelta);
-					ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null))->DelayedDisconnect(3);
+					LOG_INFO("SPEEDHACK: DETECTED! {} (delta {} {})", ecs::PlayerRuntime::GetName(character).data(), iDelta, iServerDelta);
+					ecs::PlayerRuntime::GetDesc(character)->DelayedDisconnect(3);
 				}
 			}
 
@@ -2350,7 +2372,7 @@ void CInputMain::Move(LPCHARACTER ch, const char * data)
 	}
 
 	// migrated from CHARACTER::Move
-	entt::entity e = (ch && ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null))) ? ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null))->GetEntity() : entt::null;
+	entt::entity e = (ch && ecs::PlayerRuntime::GetDesc(character)) ? ecs::PlayerRuntime::GetDesc(character)->GetEntity() : entt::null;
 	if (e != entt::null && g_registry.valid(e))
 	{
 		g_registry.emplace_or_replace<ecs::MovementDestination>(e, static_cast<int32_t>(pinfo->lX), static_cast<int32_t>(pinfo->lY));
@@ -2365,13 +2387,13 @@ void CInputMain::Move(LPCHARACTER ch, const char * data)
 		ch->SetRotation(pinfo->bRot * 5.0f);
 		ch->ResetStopTime();
 
-		ecs::MovementSystem::Goto(((ch) ? (ch)->GetEntityHandle() : entt::null), pinfo->lX, pinfo->lY);
+		ecs::MovementSystem::Goto(character, pinfo->lX, pinfo->lY);
 	}
 	else
 	{
 		if (pinfo->bFunc == FUNC_ATTACK || pinfo->bFunc == FUNC_COMBO)
 		{
-			ecs::MovementSystem::OnMove(((ch) ? (ch)->GetEntityHandle() : entt::null), true);
+			ecs::MovementSystem::OnMove(character, true);
 		}
 		else if (pinfo->bFunc & FUNC_SKILL)
 		{
@@ -2380,17 +2402,17 @@ void CInputMain::Move(LPCHARACTER ch, const char * data)
 
 			if (!ch->IsUsableSkillMotion(motion))
 			{
-				ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null))->DelayedDisconnect(number(150, 500));
+				ecs::PlayerRuntime::GetDesc(character)->DelayedDisconnect(number(150, 500));
 			}
 
-			ecs::MovementSystem::OnMove(((ch) ? (ch)->GetEntityHandle() : entt::null));
+			ecs::MovementSystem::OnMove(character);
 		}
 
 		ch->SetRotation(pinfo->bRot * 5.0f);
 		ch->ResetStopTime();
 
-		ecs::MovementSystem::Move(((ch) ? (ch)->GetEntityHandle() : entt::null), pinfo->lX, pinfo->lY);
-		ecs::MovementSystem::Stop(((ch) ? (ch)->GetEntityHandle() : entt::null));
+		ecs::MovementSystem::Move(character, pinfo->lX, pinfo->lY);
+		ecs::MovementSystem::Stop(character);
 		ch->StopStaminaConsume();
 	}
 
@@ -2400,7 +2422,7 @@ void CInputMain::Move(LPCHARACTER ch, const char * data)
 	pack.bFunc        = pinfo->bFunc;
 	pack.bArg         = pinfo->bArg;
 	pack.bRot         = pinfo->bRot;
-	pack.dwVID        = ecs::PlayerRuntime::GetPacketVID(((ch) ? (ch)->GetEntityHandle() : entt::null));
+	pack.dwVID        = ecs::PlayerRuntime::GetPacketVID(character);
 	pack.lX           = pinfo->lX;
 	pack.lY           = pinfo->lY;
 	pack.dwTime       = pinfo->dwTime;
@@ -2410,20 +2432,20 @@ void CInputMain::Move(LPCHARACTER ch, const char * data)
 /*
 	if (pinfo->dwTime == 10653691) // µð¹ö°Å ¹ß°ß
 	{
-		if (ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null))->DelayedDisconnect(number(15, 30)))
+		if (ecs::PlayerRuntime::GetDesc(character)->DelayedDisconnect(number(15, 30)))
 			LogManager::instance().HackLog("Debugger", ch);
 
 	}
 	else if (pinfo->dwTime == 10653971) // Softice ¹ß°ß
 	{
-		if (ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null))->DelayedDisconnect(number(15, 30)))
+		if (ecs::PlayerRuntime::GetDesc(character)->DelayedDisconnect(number(15, 30)))
 			LogManager::instance().HackLog("Softice", ch);
 	}
 */
 	/*
 	LOG_INFO(
 			"MOVE: {} Func:{} Arg:{} Pos:{}x{} Time:{} Dist:{:.1f}",
-			ecs::PlayerRuntime::GetName(((ch) ? (ch)->GetEntityHandle() : entt::null)).data(),
+			ecs::PlayerRuntime::GetName(character).data(),
 			pinfo->bFunc,
 			pinfo->bArg,
 			pinfo->lX / 100,
@@ -2434,13 +2456,14 @@ void CInputMain::Move(LPCHARACTER ch, const char * data)
 }
 
 #ifdef __SKILL_COLOR_SYSTEM__
-void CInputMain::SetSkillColor(LPCHARACTER ch, const char* pcData)
+void CInputMain::SetSkillColor(entt::entity character, const char* pcData)
 {
+	LPCHARACTER ch = ecs::LegacyCharOf(character);
 // migrated from CHARACTER handler
 // TODO Phase 8: migrate SetSkillColor handler ECS
 // DUAL-PATH: legacy only during migration window
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::SetSkillColor(LPCHARACTER ch, const char* pcData)");//INGAME_DEBUG_RAZOR93
+	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::SetSkillColor(LPCHARACTER ch, const char* pcData)");//INGAME_DEBUG_RAZOR93
 #endif
 	if (!ch)
 		return;
@@ -2452,7 +2475,7 @@ void CInputMain::SetSkillColor(LPCHARACTER ch, const char* pcData)
 	if ((p->col1 != 0) || (p->col2 != 0) || (p->col3 != 0) || (p->col4 != 0) || (p->col5 != 0)) {
 		if (ch->CountSpecifyItem(164406) < 1) {
 #ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 16, "");
+			ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 16, "");
 #endif
 			return;
 		} else {
@@ -2470,23 +2493,24 @@ void CInputMain::SetSkillColor(LPCHARACTER ch, const char* pcData)
 	data[p->skill][4] = p->col5;
 
 #ifdef TEXTS_IMPROVEMENT
-	ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 15, "");
+	ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 15, "");
 #endif
 
 	ch->SetSkillColor(data[0]);
 
 	TSkillColor db_pack;
 	memcpy(db_pack.dwSkillColor, data, sizeof(data));
-	db_pack.player_id = ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null));
+	db_pack.player_id = ecs::PlayerRuntime::GetPlayerID(character);
 	db_clientdesc->DBPacketHeader(HEADER_GD_SKILL_COLOR_SAVE, 0, sizeof(TSkillColor));
 	db_clientdesc->Packet(&db_pack, sizeof(TSkillColor));
 }
 #endif
 
-void CInputMain::Attack(LPCHARACTER ch, const uint8_t header, const char* data)
+void CInputMain::Attack(entt::entity character, const uint8_t header, const char* data)
 {
+	LPCHARACTER ch = ecs::LegacyCharOf(character);
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::Attack(LPCHARACTER");//INGAME_DEBUG_RAZOR93
+	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::Attack(LPCHARACTER");//INGAME_DEBUG_RAZOR93
 #endif
 	if (nullptr == ch)
 		return;
@@ -2502,7 +2526,7 @@ void CInputMain::Attack(LPCHARACTER ch, const uint8_t header, const char* data)
 
 	if (type->type > 0)
 	{
-		if (false == SkillSystem::CanUseSkill(((ch) ? (ch)->GetEntityHandle() : entt::null), type->type))
+		if (false == SkillSystem::CanUseSkill(character, type->type))
 		{
 			return;
 		}
@@ -2535,14 +2559,14 @@ void CInputMain::Attack(LPCHARACTER ch, const uint8_t header, const char* data)
 	{
 		case HEADER_CG_ATTACK:
 			{
-				if (nullptr == ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null)))
+				if (nullptr == ecs::PlayerRuntime::GetDesc(character))
 				{
 					return;
 				}
 
 				const TPacketCGAttack* const packMelee = reinterpret_cast<const TPacketCGAttack*>(data);
 
-				ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null))->AssembleCRCMagicCube(packMelee->bCRCMagicCubeProcPiece, packMelee->bCRCMagicCubeFilePiece);
+				ecs::PlayerRuntime::GetDesc(character)->AssembleCRCMagicCube(packMelee->bCRCMagicCubeProcPiece, packMelee->bCRCMagicCubeFilePiece);
 
 				LPCHARACTER	victim = CHARACTER_MANAGER::instance().Find(packMelee->dwVID);
 
@@ -2568,7 +2592,7 @@ void CInputMain::Attack(LPCHARACTER ch, const uint8_t header, const char* data)
 				}
 
 				// migrated from CHARACTER::Attack
-				entt::entity attacker = (ch && ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null))) ? ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null))->GetEntity() : entt::null;
+				entt::entity attacker = (ch && ecs::PlayerRuntime::GetDesc(character)) ? ecs::PlayerRuntime::GetDesc(character)->GetEntity() : entt::null;
 				entt::entity target = CVIDRegistry::Instance().Find(packMelee->dwVID);
 				if (attacker != entt::null && target != entt::null && g_registry.valid(attacker) && g_registry.valid(target))
 				{
@@ -2577,7 +2601,7 @@ void CInputMain::Attack(LPCHARACTER ch, const uint8_t header, const char* data)
 					g_registry.emplace_or_replace<ecs::DirtyTag>(attacker);
 				}
 				// DUAL-PATH: ECS + legacy call
-				ecs::MovementSystem::OnMove(((ch) ? (ch)->GetEntityHandle() : entt::null), true);
+				ecs::MovementSystem::OnMove(character, true);
 				ch->Attack(victim, packMelee->bType);
 			}
 			break;
@@ -2592,13 +2616,14 @@ void CInputMain::Attack(LPCHARACTER ch, const uint8_t header, const char* data)
 	}
 }
 
-int CInputMain::SyncPosition(LPCHARACTER ch, const char * c_pcData, uint64_t uiBytes)
+int CInputMain::SyncPosition(entt::entity character, const char * c_pcData, uint64_t uiBytes)
 {
+	LPCHARACTER ch = ecs::LegacyCharOf(character);
 // migrated from CHARACTER handler
 // TODO Phase 8: migrate SyncPosition handler ECS
 // DUAL-PATH: legacy only during migration window
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "input_main.cpp::int CInputMain::SyncPosition");//INGAME_DEBUG_RAZOR93
+	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "input_main.cpp::int CInputMain::SyncPosition");//INGAME_DEBUG_RAZOR93
 #endif
 	const TPacketCGSyncPosition* pinfo = reinterpret_cast<const TPacketCGSyncPosition*>( c_pcData );
 
@@ -2610,13 +2635,13 @@ int CInputMain::SyncPosition(LPCHARACTER ch, const char * c_pcData, uint64_t uiB
 	if (iExtraLen < 0)
 	{
 		LOG_ERROR("invalid packet length (len {} size {} buffer {})", iExtraLen, pinfo->wSize, uiBytes);
-		ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null))->SetPhase(PHASE_CLOSE);
+		ecs::PlayerRuntime::GetDesc(character)->SetPhase(PHASE_CLOSE);
 		return -1;
 	}
 
 	if (0 != (iExtraLen % sizeof(TPacketCGSyncPositionElement)))
 	{
-		LOG_ERROR("invalid packet length {} (name: {})", pinfo->wSize, ecs::PlayerRuntime::GetName(((ch) ? (ch)->GetEntityHandle() : entt::null)).data());
+		LOG_ERROR("invalid packet length {} (name: {})", pinfo->wSize, ecs::PlayerRuntime::GetName(character).data());
 		return iExtraLen;
 	}
 
@@ -2630,8 +2655,8 @@ int CInputMain::SyncPosition(LPCHARACTER ch, const char * c_pcData, uint64_t uiB
 	if( iCount > nCountLimit )
 	{
 		//LogManager::instance().HackLog( "SYNC_POSITION_HACK", ch );
-		LOG_ERROR("Too many SyncPosition Count({}) from Name({})", iCount, ecs::PlayerRuntime::GetName(((ch) ? (ch)->GetEntityHandle() : entt::null)).data());
-		//ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null))->SetPhase(PHASE_CLOSE);
+		LOG_ERROR("Too many SyncPosition Count({}) from Name({})", iCount, ecs::PlayerRuntime::GetName(character).data());
+		//ecs::PlayerRuntime::GetDesc(character)->SetPhase(PHASE_CLOSE);
 		//return -1;
 		iCount = nCountLimit;
 	}
@@ -2666,7 +2691,7 @@ int CInputMain::SyncPosition(LPCHARACTER ch, const char * c_pcData, uint64_t uiB
 		if (!victim->SetSyncOwner(ch))
 			continue;
 
-		const float fDistWithSyncOwner = DISTANCE_SQRT( (ecs::PlayerRuntime::GetX(((victim) ? (victim)->GetEntityHandle() : entt::null)) - ecs::PlayerRuntime::GetX(((ch) ? (ch)->GetEntityHandle() : entt::null))) / 100, (ecs::PlayerRuntime::GetY(((victim) ? (victim)->GetEntityHandle() : entt::null)) - ecs::PlayerRuntime::GetY(((ch) ? (ch)->GetEntityHandle() : entt::null))) / 100 );
+		const float fDistWithSyncOwner = DISTANCE_SQRT( (ecs::PlayerRuntime::GetX(((victim) ? (victim)->GetEntityHandle() : entt::null)) - ecs::PlayerRuntime::GetX(character)) / 100, (ecs::PlayerRuntime::GetY(((victim) ? (victim)->GetEntityHandle() : entt::null)) - ecs::PlayerRuntime::GetY(character)) / 100 );
 		static constexpr float fLimitDistWithSyncOwner = 2500.f + 1000.f;
 
 		if (fDistWithSyncOwner > fLimitDistWithSyncOwner)
@@ -2677,9 +2702,9 @@ int CInputMain::SyncPosition(LPCHARACTER ch, const char * c_pcData, uint64_t uiB
 			} else{
 				LogManager::instance().HackLog( "SYNC_POSITION_HACK", ch );
 
-				LOG_ERROR("Too far SyncPosition DistanceWithSyncOwner({})({}) from Name({}) CH({},{}) VICTIM({},{}) SYNC({},{})", fDistWithSyncOwner, ecs::PlayerRuntime::GetName(((victim) ? (victim)->GetEntityHandle() : entt::null)).data(), ecs::PlayerRuntime::GetName(((ch) ? (ch)->GetEntityHandle() : entt::null)).data(), ecs::PlayerRuntime::GetX(((ch) ? (ch)->GetEntityHandle() : entt::null)), ecs::PlayerRuntime::GetY(((ch) ? (ch)->GetEntityHandle() : entt::null)), ecs::PlayerRuntime::GetX(((victim) ? (victim)->GetEntityHandle() : entt::null)), ecs::PlayerRuntime::GetY(((victim) ? (victim)->GetEntityHandle() : entt::null)), e->lX, e->lY);
+				LOG_ERROR("Too far SyncPosition DistanceWithSyncOwner({})({}) from Name({}) CH({},{}) VICTIM({},{}) SYNC({},{})", fDistWithSyncOwner, ecs::PlayerRuntime::GetName(((victim) ? (victim)->GetEntityHandle() : entt::null)).data(), ecs::PlayerRuntime::GetName(character).data(), ecs::PlayerRuntime::GetX(character), ecs::PlayerRuntime::GetY(character), ecs::PlayerRuntime::GetX(((victim) ? (victim)->GetEntityHandle() : entt::null)), ecs::PlayerRuntime::GetY(((victim) ? (victim)->GetEntityHandle() : entt::null)), e->lX, e->lY);
 
-				ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null))->SetPhase(PHASE_CLOSE);
+				ecs::PlayerRuntime::GetDesc(character)->SetPhase(PHASE_CLOSE);
 
 				return -1;
 			}
@@ -2703,9 +2728,9 @@ int CInputMain::SyncPosition(LPCHARACTER ch, const char * c_pcData, uint64_t uiB
 			{
 				LogManager::instance().HackLog("SYNC_POSITION_HACK", ch);
 
-				LOG_ERROR("Too often SyncPosition Interval({}ms)({}) from Name({}) VICTIM({},{}) SYNC({},{})", tvDiff->tv_sec * 1000 + tvDiff->tv_usec / 1000, ecs::PlayerRuntime::GetName(((victim) ? (victim)->GetEntityHandle() : entt::null)).data(), ecs::PlayerRuntime::GetName(((ch) ? (ch)->GetEntityHandle() : entt::null)).data(), ecs::PlayerRuntime::GetX(((victim) ? (victim)->GetEntityHandle() : entt::null)), ecs::PlayerRuntime::GetY(((victim) ? (victim)->GetEntityHandle() : entt::null)), e->lX, e->lY);
+				LOG_ERROR("Too often SyncPosition Interval({}ms)({}) from Name({}) VICTIM({},{}) SYNC({},{})", tvDiff->tv_sec * 1000 + tvDiff->tv_usec / 1000, ecs::PlayerRuntime::GetName(((victim) ? (victim)->GetEntityHandle() : entt::null)).data(), ecs::PlayerRuntime::GetName(character).data(), ecs::PlayerRuntime::GetX(((victim) ? (victim)->GetEntityHandle() : entt::null)), ecs::PlayerRuntime::GetY(((victim) ? (victim)->GetEntityHandle() : entt::null)), e->lX, e->lY);
 
-				ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null))->SetPhase(PHASE_CLOSE);
+				ecs::PlayerRuntime::GetDesc(character)->SetPhase(PHASE_CLOSE);
 
 				return -1;
 			}
@@ -2714,9 +2739,9 @@ int CInputMain::SyncPosition(LPCHARACTER ch, const char * c_pcData, uint64_t uiB
 
 			LogManager::instance().HackLog( "SYNC_POSITION_HACK", ch );
 
-			LOG_ERROR("Too far SyncPosition Distance({})({}) from Name({}) CH({},{}) VICTIM({},{}) SYNC({},{})", fDist, ecs::PlayerRuntime::GetName(((victim) ? (victim)->GetEntityHandle() : entt::null)).data(), ecs::PlayerRuntime::GetName(((ch) ? (ch)->GetEntityHandle() : entt::null)).data(), ecs::PlayerRuntime::GetX(((ch) ? (ch)->GetEntityHandle() : entt::null)), ecs::PlayerRuntime::GetY(((ch) ? (ch)->GetEntityHandle() : entt::null)), ecs::PlayerRuntime::GetX(((victim) ? (victim)->GetEntityHandle() : entt::null)), ecs::PlayerRuntime::GetY(((victim) ? (victim)->GetEntityHandle() : entt::null)), e->lX, e->lY);
+			LOG_ERROR("Too far SyncPosition Distance({})({}) from Name({}) CH({},{}) VICTIM({},{}) SYNC({},{})", fDist, ecs::PlayerRuntime::GetName(((victim) ? (victim)->GetEntityHandle() : entt::null)).data(), ecs::PlayerRuntime::GetName(character).data(), ecs::PlayerRuntime::GetX(character), ecs::PlayerRuntime::GetY(character), ecs::PlayerRuntime::GetX(((victim) ? (victim)->GetEntityHandle() : entt::null)), ecs::PlayerRuntime::GetY(((victim) ? (victim)->GetEntityHandle() : entt::null)), e->lX, e->lY);
 
-			ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null))->SetPhase(PHASE_CLOSE);
+			ecs::PlayerRuntime::GetDesc(character)->SetPhase(PHASE_CLOSE);
 
 			return -1;
 		} else{
@@ -2737,137 +2762,140 @@ int CInputMain::SyncPosition(LPCHARACTER ch, const char * c_pcData, uint64_t uiB
 	return iExtraLen;
 }
 
-void CInputMain::FlyTarget(LPCHARACTER ch, const char * pcData, uint8_t bHeader)
+void CInputMain::FlyTarget(entt::entity character, const char * pcData, uint8_t bHeader)
 {
+	LPCHARACTER ch = ecs::LegacyCharOf(character);
 // migrated from CHARACTER handler
 // TODO Phase 8: migrate FlyTarget handler ECS
 // DUAL-PATH: legacy only during migration window
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::FlyTarget");//INGAME_DEBUG_RAZOR93
+	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::FlyTarget");//INGAME_DEBUG_RAZOR93
 #endif
 	TPacketCGFlyTargeting * p = (TPacketCGFlyTargeting *) pcData;
 	ch->FlyTarget(p->dwTargetVID, p->x, p->y, bHeader);
 }
 
-void CInputMain::UseSkill(LPCHARACTER ch, const char * pcData)
+void CInputMain::UseSkill(entt::entity character, const char * pcData)
 {
+	LPCHARACTER ch = ecs::LegacyCharOf(character);
 // migrated from CHARACTER handler
 // TODO Phase 8: migrate UseSkill handler ECS
 // DUAL-PATH: legacy only during migration window
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::UseSkill");//INGAME_DEBUG_RAZOR93
+	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::UseSkill");//INGAME_DEBUG_RAZOR93
 #endif
 	TPacketCGUseSkill * p = (TPacketCGUseSkill *) pcData;
 	ch->UseSkill(p->dwVnum, CHARACTER_MANAGER::instance().Find(p->dwVID));
 }
 
-void CInputMain::ScriptButton(LPCHARACTER ch, const void* c_pData)
+void CInputMain::ScriptButton(entt::entity character, const void* c_pData)
 {
 // migrated from CHARACTER handler
 // TODO Phase 8: migrate ScriptButton handler ECS
 // DUAL-PATH: legacy only during migration window
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::ScriptButton");//INGAME_DEBUG_RAZOR93
+	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::ScriptButton");//INGAME_DEBUG_RAZOR93
 #endif
 	TPacketCGScriptButton * p = (TPacketCGScriptButton *) c_pData;
-	LOG_INFO("QUEST ScriptButton pid {} idx {}", ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null)), p->idx);
+	LOG_INFO("QUEST ScriptButton pid {} idx {}", ecs::PlayerRuntime::GetPlayerID(character), p->idx);
 
-	quest::PC* pc = quest::CQuestManager::instance().GetPCForce(ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null)));
+	quest::PC* pc = quest::CQuestManager::instance().GetPCForce(ecs::PlayerRuntime::GetPlayerID(character));
 	if (pc && pc->IsConfirmWait())
 	{
-		quest::CQuestManager::instance().Confirm(ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null)), quest::CONFIRM_TIMEOUT);
+		quest::CQuestManager::instance().Confirm(ecs::PlayerRuntime::GetPlayerID(character), quest::CONFIRM_TIMEOUT);
 	}
 	else if (p->idx & 0x80000000)
 	{
 		//Äù½ºÆ® Ã¢¿¡¼­ Å¬¸¯½Ã(__SelectQuest) ¿©±â·Î
-		quest::CQuestManager::Instance().QuestInfo(ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null)), p->idx & 0x7fffffff);
+		quest::CQuestManager::Instance().QuestInfo(ecs::PlayerRuntime::GetPlayerID(character), p->idx & 0x7fffffff);
 	}
 	else
 	{
-		quest::CQuestManager::Instance().QuestButton(ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null)), p->idx);
+		quest::CQuestManager::Instance().QuestButton(ecs::PlayerRuntime::GetPlayerID(character), p->idx);
 	}
 }
 
-void CInputMain::ScriptAnswer(LPCHARACTER ch, const void* c_pData)
+void CInputMain::ScriptAnswer(entt::entity character, const void* c_pData)
 {
 // migrated from CHARACTER handler
 // TODO Phase 8: migrate ScriptAnswer handler ECS
 // DUAL-PATH: legacy only during migration window
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::ScriptAnswer");//INGAME_DEBUG_RAZOR93
+	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::ScriptAnswer");//INGAME_DEBUG_RAZOR93
 #endif
 	TPacketCGScriptAnswer * p = (TPacketCGScriptAnswer *) c_pData;
-	LOG_INFO("QUEST ScriptAnswer pid {} answer {}", ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null)), p->answer);
+	LOG_INFO("QUEST ScriptAnswer pid {} answer {}", ecs::PlayerRuntime::GetPlayerID(character), p->answer);
 
 	if (p->answer > 250) // ´ÙÀ½ ¹öÆ°¿¡ ´ëÇÑ ÀÀ´äÀ¸·Î ¿Â ÆÐÅ¶ÀÎ °æ¿ì
 	{
-		quest::CQuestManager::Instance().Resume(ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null)));
+		quest::CQuestManager::Instance().Resume(ecs::PlayerRuntime::GetPlayerID(character));
 	}
 	else // ¼±ÅÃ ¹öÆ°À» °ñ¶ó¼­ ¿Â ÆÐÅ¶ÀÎ °æ¿ì
 	{
-		quest::CQuestManager::Instance().Select(ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null)),  p->answer);
+		quest::CQuestManager::Instance().Select(ecs::PlayerRuntime::GetPlayerID(character),  p->answer);
 	}
 }
 
 
 // SCRIPT_SELECT_ITEM
-void CInputMain::ScriptSelectItem(LPCHARACTER ch, const void* c_pData)
+void CInputMain::ScriptSelectItem(entt::entity character, const void* c_pData)
 {
 // migrated from CHARACTER handler
 // TODO Phase 8: migrate ScriptSelectItem handler ECS
 // DUAL-PATH: legacy only during migration window
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::ScriptSelectItem");//INGAME_DEBUG_RAZOR93
+	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::ScriptSelectItem");//INGAME_DEBUG_RAZOR93
 #endif
 	TPacketCGScriptSelectItem* p = (TPacketCGScriptSelectItem*) c_pData;
-	LOG_INFO("QUEST ScriptSelectItem pid {} answer {}", ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null)), p->selection);
-	quest::CQuestManager::Instance().SelectItem(ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null)), p->selection);
+	LOG_INFO("QUEST ScriptSelectItem pid {} answer {}", ecs::PlayerRuntime::GetPlayerID(character), p->selection);
+	quest::CQuestManager::Instance().SelectItem(ecs::PlayerRuntime::GetPlayerID(character), p->selection);
 }
 // END_OF_SCRIPT_SELECT_ITEM
 
-void CInputMain::QuestInputString(LPCHARACTER ch, const void* c_pData)
+void CInputMain::QuestInputString(entt::entity character, const void* c_pData)
 {
 // migrated from CHARACTER handler
 // TODO Phase 8: migrate QuestInputString handler ECS
 // DUAL-PATH: legacy only during migration window
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::QuestInputString");//INGAME_DEBUG_RAZOR93
+	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::QuestInputString");//INGAME_DEBUG_RAZOR93
 #endif
 	TPacketCGQuestInputString * p = (TPacketCGQuestInputString*) c_pData;
 
 	char msg[65];
 	strlcpy(msg, p->msg, sizeof(msg));
-	LOG_INFO("QUEST InputString pid {} msg {}", ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null)), msg);
+	LOG_INFO("QUEST InputString pid {} msg {}", ecs::PlayerRuntime::GetPlayerID(character), msg);
 
-	quest::CQuestManager::Instance().Input(ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null)), msg);
+	quest::CQuestManager::Instance().Input(ecs::PlayerRuntime::GetPlayerID(character), msg);
 }
 
-void CInputMain::QuestConfirm(LPCHARACTER ch, const void* c_pData)
+void CInputMain::QuestConfirm(entt::entity character, const void* c_pData)
 {
 // migrated from CHARACTER handler
 // TODO Phase 8: migrate QuestConfirm handler ECS
 // DUAL-PATH: legacy only during migration window
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::QuestConfirm");//INGAME_DEBUG_RAZOR93
+	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::QuestConfirm");//INGAME_DEBUG_RAZOR93
 #endif
 	TPacketCGQuestConfirm* p = (TPacketCGQuestConfirm*) c_pData;
 	LPCHARACTER ch_wait = CHARACTER_MANAGER::instance().FindByPID(p->requestPID);
 	if (p->answer)
 		p->answer = quest::CONFIRM_YES;
-	LOG_INFO("QuestConfirm from {} pid {} name {} answer {}", ecs::PlayerRuntime::GetName(((ch) ? (ch)->GetEntityHandle() : entt::null)).data(), p->requestPID, (ch_wait)?ecs::PlayerRuntime::GetName(((ch_wait) ? (ch_wait)->GetEntityHandle() : entt::null)).data():"", p->answer);
+	LOG_INFO("QuestConfirm from {} pid {} name {} answer {}", ecs::PlayerRuntime::GetName(character).data(), p->requestPID, (ch_wait)?ecs::PlayerRuntime::GetName(((ch_wait) ? (ch_wait)->GetEntityHandle() : entt::null)).data():"", p->answer);
 	if (ch_wait)
 	{
-		quest::CQuestManager::Instance().Confirm(ecs::PlayerRuntime::GetPlayerID(((ch_wait) ? (ch_wait)->GetEntityHandle() : entt::null)), (quest::EQuestConfirmType) p->answer, ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null)));
+		quest::CQuestManager::Instance().Confirm(ecs::PlayerRuntime::GetPlayerID(((ch_wait) ? (ch_wait)->GetEntityHandle() : entt::null)), (quest::EQuestConfirmType) p->answer, ecs::PlayerRuntime::GetPlayerID(character));
 	}
 }
 
-void CInputMain::Target(LPCHARACTER ch, const char * pcData)
+void CInputMain::Target(entt::entity character, const char * pcData)
 {
+	LPCHARACTER ch = ecs::LegacyCharOf(character);
 // migrated from CHARACTER handler
 // TODO Phase 8: migrate Target handler ECS
 // DUAL-PATH: legacy only during migration window
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::Target");//INGAME_DEBUG_RAZOR93
+	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::Target");//INGAME_DEBUG_RAZOR93
 #endif
 	TPacketCGTarget * p = (TPacketCGTarget *) pcData;
 
@@ -2878,29 +2906,31 @@ void CInputMain::Target(LPCHARACTER ch, const char * pcData)
 		TPacketGCTarget pckTarget;
 		pckTarget.header = HEADER_GC_TARGET;
 		pckTarget.dwVID = p->dwVID;
-		ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null))->Packet(&pckTarget, sizeof(TPacketGCTarget));
+		ecs::PlayerRuntime::GetDesc(character)->Packet(&pckTarget, sizeof(TPacketGCTarget));
 	}
 	else
 		ch->SetTarget(CHARACTER_MANAGER::instance().Find(p->dwVID));
 }
 
-void CInputMain::Warp(LPCHARACTER ch, const char * pcData)
+void CInputMain::Warp(entt::entity character, const char * pcData)
 {
+	LPCHARACTER ch = ecs::LegacyCharOf(character);
 // migrated from CHARACTER handler
 // TODO Phase 8: migrate Warp handler ECS
 // DUAL-PATH: legacy only during migration window
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::Warp");//INGAME_DEBUG_RAZOR93
+	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::Warp");//INGAME_DEBUG_RAZOR93
 #endif
 	ch->WarpEnd();
 }
 
-void CInputMain::SafeboxCheckin(LPCHARACTER ch, const char * c_pData)
+void CInputMain::SafeboxCheckin(entt::entity character, const char * c_pData)
 {
+	LPCHARACTER ch = ecs::LegacyCharOf(character);
 	if (!ch || !ch->CanHandleItem())
 		return;
 
-	const entt::entity ownerEntity = ((ch) ? (ch)->GetEntityHandle() : entt::null);
+	const entt::entity ownerEntity = character;
 	if (ownerEntity == entt::null || !g_registry.valid(ownerEntity))
 		return;
 
@@ -3017,12 +3047,13 @@ void CInputMain::SafeboxCheckin(LPCHARACTER ch, const char * c_pData)
 		ItemSystem::GetItemCount(itemEntity));
 	LogManager::instance().ItemLogEntity(ch, itemEntity, "SAFEBOX PUT", hint);
 }
-void CInputMain::SafeboxCheckout(LPCHARACTER ch, const char * c_pData, bool bMall)
+void CInputMain::SafeboxCheckout(entt::entity character, const char * c_pData, bool bMall)
 {
+	LPCHARACTER ch = ecs::LegacyCharOf(character);
 	if (!ch || !ch->CanHandleItem())
 		return;
 
-	const entt::entity ownerEntity = ((ch) ? (ch)->GetEntityHandle() : entt::null);
+	const entt::entity ownerEntity = character;
 	if (ownerEntity == entt::null || !g_registry.valid(ownerEntity))
 		return;
 
@@ -3132,14 +3163,15 @@ void CInputMain::SafeboxCheckout(LPCHARACTER ch, const char * c_pData, bool bMal
 	LogManager::instance().ItemLogEntity(
 		ch, itemEntity, bMall ? "MALL GET" : "SAFEBOX GET", hint);
 }
-void CInputMain::SafeboxItemMove(LPCHARACTER ch, const char * data)
+void CInputMain::SafeboxItemMove(entt::entity character, const char * data)
 {
+	LPCHARACTER ch = ecs::LegacyCharOf(character);
 // migrated from CHARACTER handler
 // TODO Phase 8: migrate SafeboxItemMove handler ECS
 // DUAL-PATH: legacy only during migration window
 
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::SafeboxItemMove");//INGAME_DEBUG_RAZOR93
+	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::SafeboxItemMove");//INGAME_DEBUG_RAZOR93
 #endif
 	struct command_item_move * pinfo = (struct command_item_move *) data;
 
@@ -3147,7 +3179,7 @@ void CInputMain::SafeboxItemMove(LPCHARACTER ch, const char * data)
 		return;
 
 #ifdef ENABLE_RESTRICT_GM_PERMISSIONS
-	if (ecs::PlayerRuntime::GetGMLevel(((ch) ? (ch)->GetEntityHandle() : entt::null)) > GM_PLAYER && ecs::PlayerRuntime::GetGMLevel(((ch) ? (ch)->GetEntityHandle() : entt::null)) < GM_IMPLEMENTOR) {
+	if (ecs::PlayerRuntime::GetGMLevel(character) > GM_PLAYER && ecs::PlayerRuntime::GetGMLevel(character) < GM_IMPLEMENTOR) {
 		return;
 	}
 #endif
@@ -3158,12 +3190,13 @@ void CInputMain::SafeboxItemMove(LPCHARACTER ch, const char * data)
 	ch->GetSafebox()->MoveItem(pinfo->Cell.cell, pinfo->CellTo.cell, pinfo->count);
 }
 
-void CInputMain::MountInventoryCheckin(LPCHARACTER ch, const char* c_pData)
+void CInputMain::MountInventoryCheckin(entt::entity character, const char* c_pData)
 {
+	LPCHARACTER ch = ecs::LegacyCharOf(character);
 	if (!ch || !ch->CanHandleItem())
 		return;
 
-	const entt::entity ownerEntity = ((ch) ? (ch)->GetEntityHandle() : entt::null);
+	const entt::entity ownerEntity = character;
 	if (ownerEntity == entt::null || !g_registry.valid(ownerEntity))
 		return;
 
@@ -3284,12 +3317,13 @@ void CInputMain::MountInventoryCheckin(LPCHARACTER ch, const char* c_pData)
 
 
 
-void CInputMain::MountInventoryCheckout(LPCHARACTER ch, const char* c_pData)
+void CInputMain::MountInventoryCheckout(entt::entity character, const char* c_pData)
 {
+	LPCHARACTER ch = ecs::LegacyCharOf(character);
 	if (!ch || !ch->CanHandleItem())
 		return;
 
-	const entt::entity ownerEntity = ((ch) ? (ch)->GetEntityHandle() : entt::null);
+	const entt::entity ownerEntity = character;
 	if (ownerEntity == entt::null || !g_registry.valid(ownerEntity))
 		return;
 
@@ -3350,13 +3384,14 @@ void CInputMain::MountInventoryCheckout(LPCHARACTER ch, const char* c_pData)
 
 
 
-void CInputMain::MountInventoryItemMove(LPCHARACTER ch, const char* data)
+void CInputMain::MountInventoryItemMove(entt::entity character, const char* data)
 {
+	LPCHARACTER ch = ecs::LegacyCharOf(character);
 // migrated from CHARACTER handler
 // TODO Phase 8: migrate MountInventoryItemMove handler ECS
 // DUAL-PATH: legacy only during migration window
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::MountInventoryItemMove");
+	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::MountInventoryItemMove");
 #endif
 
 	const auto p = reinterpret_cast<const TPacketCGMountInventoryItemMove*>(data);
@@ -3365,7 +3400,7 @@ void CInputMain::MountInventoryItemMove(LPCHARACTER ch, const char* data)
 		return;
 
 #ifdef ENABLE_RESTRICT_GM_PERMISSIONS
-	if (ecs::PlayerRuntime::GetGMLevel(((ch) ? (ch)->GetEntityHandle() : entt::null)) > GM_PLAYER && ecs::PlayerRuntime::GetGMLevel(((ch) ? (ch)->GetEntityHandle() : entt::null)) < GM_IMPLEMENTOR)
+	if (ecs::PlayerRuntime::GetGMLevel(character) > GM_PLAYER && ecs::PlayerRuntime::GetGMLevel(character) < GM_IMPLEMENTOR)
 		return;
 #endif
 
@@ -3387,22 +3422,23 @@ void CInputMain::MountInventoryItemMove(LPCHARACTER ch, const char* data)
 
 
 #ifdef ENABLE_MAP_TELEPORTER
-void CInputMain::MapTeleporter(LPCHARACTER ch, TPacketCGMapTeleporter* pPack)
+void CInputMain::MapTeleporter(entt::entity character, TPacketCGMapTeleporter* pPack)
 {
+	LPCHARACTER ch = ecs::LegacyCharOf(character);
 // migrated from CHARACTER handler
 // TODO Phase 8: migrate MapTeleporter handler ECS
 // DUAL-PATH: legacy only during migration window
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::MapTeleporter");//INGAME_DEBUG_RAZOR93
+	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::MapTeleporter");//INGAME_DEBUG_RAZOR93
 #endif
-	if (ch->IsHack() || ecs::SocialSystem::GetExchange(((ch) ? (ch)->GetEntityHandle() : entt::null)) || ch->IsOpenSafebox() || ch->IsCubeOpen() || ch->GetShop() || ch->GetMyShop()
+	if (ch->IsHack() || ecs::SocialSystem::GetExchange(character) || ch->IsOpenSafebox() || ch->IsCubeOpen() || ch->GetShop() || ch->GetMyShop()
 #ifdef ENABLE_ACCE_SYSTEM
 		|| ch->IsAcceOpen()
 #endif
 		)
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 647, "");
+		ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 647, "");
 #endif
 		return;
 	}
@@ -3411,7 +3447,7 @@ void CInputMain::MapTeleporter(LPCHARACTER ch, TPacketCGMapTeleporter* pPack)
 	if (ch->IsAttrTransferOpen())
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 647, "");
+		ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 647, "");
 #endif
 		return;
 	}
@@ -3422,7 +3458,7 @@ void CInputMain::MapTeleporter(LPCHARACTER ch, TPacketCGMapTeleporter* pPack)
 //	if (ch->GetDungeon())
 //	{
 //#ifdef TEXTS_IMPROVEMENT
-//		ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 48, "");
+//		ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 48, "");
 //#endif
 //		return;
 //	}
@@ -3433,31 +3469,31 @@ void CInputMain::MapTeleporter(LPCHARACTER ch, TPacketCGMapTeleporter* pPack)
 
 	TMapConfig& rConf = g_vecMapConf[iMapCode];
 
-	if(ecs::PointSystem::GetLevel(((ch) ? (ch)->GetEntityHandle() : entt::null)) < rConf.iLevel)
+	if(ecs::PointSystem::GetLevel(character) < rConf.iLevel)
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 771, "%d", rConf.iLevel);
+		ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 771, "%d", rConf.iLevel);
 #endif
 		return;
 	}
 
-	if(rConf.iLevelMax != 0 && ecs::PointSystem::GetLevel(((ch) ? (ch)->GetEntityHandle() : entt::null)) > rConf.iLevelMax)
+	if(rConf.iLevelMax != 0 && ecs::PointSystem::GetLevel(character) > rConf.iLevelMax)
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 772, "%d", rConf.iLevelMax);
+		ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 772, "%d", rConf.iLevelMax);
 #endif
 		return;
 	}
 
-	if(ecs::PointSystem::GetGold(((ch) ? (ch)->GetEntityHandle() : entt::null)) < rConf.price)
+	if(ecs::PointSystem::GetGold(character) < rConf.price)
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 773, "%d", rConf.price);
+		ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 773, "%d", rConf.price);
 #endif
 		return;
 	}
 
-	ecs::PointSystem::Change(((ch) ? (ch)->GetEntityHandle() : entt::null), POINT_GOLD, -rConf.price);
+	ecs::PointSystem::Change(character, POINT_GOLD, -rConf.price);
 
 	for (auto itemVnum : rConf.items)
 		if (ch->CountSpecifyItem(itemVnum) == 0)
@@ -3471,7 +3507,7 @@ void CInputMain::MapTeleporter(LPCHARACTER ch, TPacketCGMapTeleporter* pPack)
 	// iMapIndex = rConf.iMapIndex;
 
 	// PIXEL_POSITION pos;
-	// SECTREE_MANAGER::instance().GetRecallPositionByEmpire(iMapIndex, ecs::PlayerRuntime::GetEmpire(((ch) ? (ch)->GetEntityHandle() : entt::null)), pos);
+	// SECTREE_MANAGER::instance().GetRecallPositionByEmpire(iMapIndex, ecs::PlayerRuntime::GetEmpire(character), pos);
 
 	// ch->WarpSet(pos.x, pos.y);
 
@@ -3482,24 +3518,25 @@ void CInputMain::MapTeleporter(LPCHARACTER ch, TPacketCGMapTeleporter* pPack)
 	coord_x = rConf.coord_x;
 	coord_y = rConf.coord_y;
 
-	ecs::MovementSystem::WarpSet(((ch) ? (ch)->GetEntityHandle() : entt::null), coord_x, coord_y);
+	ecs::MovementSystem::WarpSet(character, coord_x, coord_y);
 
 }
 #endif
 
 // PARTY_JOIN_BUG_FIX
-void CInputMain::PartyInvite(LPCHARACTER ch, const char * c_pData)
+void CInputMain::PartyInvite(entt::entity character, const char * c_pData)
 {
+	LPCHARACTER ch = ecs::LegacyCharOf(character);
 // migrated from CHARACTER handler
 // TODO Phase 8: migrate PartyInvite handler ECS
 // DUAL-PATH: legacy only during migration window
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::PartyInvite");//INGAME_DEBUG_RAZOR93
+	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::PartyInvite");//INGAME_DEBUG_RAZOR93
 #endif
 	if (ch->GetArena())
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 303, "");
+		ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 303, "");
 #endif
 		return;
 	}
@@ -3508,7 +3545,7 @@ void CInputMain::PartyInvite(LPCHARACTER ch, const char * c_pData)
 
 	LPCHARACTER pInvitee = CHARACTER_MANAGER::instance().Find(p->vid);
 
-	if (!pInvitee || !ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null)) || !ecs::PlayerRuntime::GetDesc(((pInvitee) ? (pInvitee)->GetEntityHandle() : entt::null)))
+	if (!pInvitee || !ecs::PlayerRuntime::GetDesc(character) || !ecs::PlayerRuntime::GetDesc(((pInvitee) ? (pInvitee)->GetEntityHandle() : entt::null)))
 	{
 		LOG_ERROR("PARTY Cannot find invited character");
 		return;
@@ -3517,18 +3554,19 @@ void CInputMain::PartyInvite(LPCHARACTER ch, const char * c_pData)
 	ch->PartyInvite(pInvitee);
 }
 
-void CInputMain::PartyInviteAnswer(LPCHARACTER ch, const char * c_pData)
+void CInputMain::PartyInviteAnswer(entt::entity character, const char * c_pData)
 {
+	LPCHARACTER ch = ecs::LegacyCharOf(character);
 // migrated from CHARACTER handler
 // TODO Phase 8: migrate PartyInviteAnswer handler ECS
 // DUAL-PATH: legacy only during migration window
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::PartyInviteAnswer");//INGAME_DEBUG_RAZOR93
+	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::PartyInviteAnswer");//INGAME_DEBUG_RAZOR93
 #endif
 	if (ch->GetArena())
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 303, "");
+		ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 303, "");
 #endif
 		return;
 	}
@@ -3538,50 +3576,50 @@ void CInputMain::PartyInviteAnswer(LPCHARACTER ch, const char * c_pData)
 	LPCHARACTER pInviter = CHARACTER_MANAGER::instance().Find(p->leader_vid);
 	if (!pInviter || !ecs::PlayerRuntime::GetDesc(((pInviter) ? (pInviter)->GetEntityHandle() : entt::null))) {
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 217, "");
+		ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 217, "");
 #endif
 	}
 	else if (!p->accept) {
-		pInviter->PartyInviteDeny(ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null)));
+		pInviter->PartyInviteDeny(ecs::PlayerRuntime::GetPlayerID(character));
 	} else {
 		pInviter->PartyInviteAccept(ch);
 	}
 }
 // END_OF_PARTY_JOIN_BUG_FIX
 
-void CInputMain::PartySetState(LPCHARACTER ch, const char* c_pData)
+void CInputMain::PartySetState(entt::entity character, const char* c_pData)
 {
 // migrated from CHARACTER handler
 // TODO Phase 8: migrate PartySetState handler ECS
 // DUAL-PATH: legacy only during migration window
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::PartySetState");//INGAME_DEBUG_RAZOR93
+	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::PartySetState");//INGAME_DEBUG_RAZOR93
 #endif
 	if (!CPartyManager::instance().IsEnablePCParty())
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 208, "");
+		ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 208, "");
 #endif
 		return;
 	}
 
 	TPacketCGPartySetState* p = (TPacketCGPartySetState*) c_pData;
 
-	if (!ecs::SocialSystem::GetParty(((ch) ? (ch)->GetEntityHandle() : entt::null)))
+	if (!ecs::SocialSystem::GetParty(character))
 		return;
 
-	if (ecs::SocialSystem::GetParty(((ch) ? (ch)->GetEntityHandle() : entt::null))->GetLeaderPID() != ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null)))
+	if (ecs::SocialSystem::GetParty(character)->GetLeaderPID() != ecs::PlayerRuntime::GetPlayerID(character))
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 206, "");
+		ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 206, "");
 #endif
 		return;
 	}
 
-	if (!ecs::SocialSystem::GetParty(((ch) ? (ch)->GetEntityHandle() : entt::null))->IsMember(p->pid))
+	if (!ecs::SocialSystem::GetParty(character)->IsMember(p->pid))
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 207, "");
+		ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 207, "");
 #endif
 		return;
 	}
@@ -3600,10 +3638,10 @@ void CInputMain::PartySetState(LPCHARACTER ch, const char* c_pData)
 		case PARTY_ROLE_SKILL_MASTER:
 		case PARTY_ROLE_HASTE:
 		case PARTY_ROLE_DEFENDER:
-			if (ecs::SocialSystem::GetParty(((ch) ? (ch)->GetEntityHandle() : entt::null))->SetRole(pid, p->byRole, p->flag))
+			if (ecs::SocialSystem::GetParty(character)->SetRole(pid, p->byRole, p->flag))
 			{
 				TPacketPartyStateChange pack;
-				pack.dwLeaderPID = ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null));
+				pack.dwLeaderPID = ecs::PlayerRuntime::GetPlayerID(character);
 				pack.dwPID = p->pid;
 				pack.bRole = p->byRole;
 				pack.bFlag = p->flag;
@@ -3611,23 +3649,24 @@ void CInputMain::PartySetState(LPCHARACTER ch, const char* c_pData)
 			}
 			break;
 		default:
-			LOG_ERROR("wrong byRole in PartySetState Packet name {} state {}", ecs::PlayerRuntime::GetName(((ch) ? (ch)->GetEntityHandle() : entt::null)).data(), p->byRole);
+			LOG_ERROR("wrong byRole in PartySetState Packet name {} state {}", ecs::PlayerRuntime::GetName(character).data(), p->byRole);
 			break;
 	}
 }
 
-void CInputMain::PartyRemove(LPCHARACTER ch, const char* c_pData)
+void CInputMain::PartyRemove(entt::entity character, const char* c_pData)
 {
+	LPCHARACTER ch = ecs::LegacyCharOf(character);
 // migrated from CHARACTER handler
 // TODO Phase 8: migrate PartyRemove handler ECS
 // DUAL-PATH: legacy only during migration window
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::PartyRemove");//INGAME_DEBUG_RAZOR93
+	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::PartyRemove");//INGAME_DEBUG_RAZOR93
 #endif
 	if (ch->GetArena())
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 303, "");
+		ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 303, "");
 #endif
 		return;
 	}
@@ -3635,7 +3674,7 @@ void CInputMain::PartyRemove(LPCHARACTER ch, const char* c_pData)
 	if (!CPartyManager::instance().IsEnablePCParty())
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 208, "");
+		ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 208, "");
 #endif
 		return;
 	}
@@ -3643,31 +3682,31 @@ void CInputMain::PartyRemove(LPCHARACTER ch, const char* c_pData)
 	if (ch->GetDungeon())
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 203, "");
+		ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 203, "");
 #endif
 		return;
 	}
 
 	TPacketCGPartyRemove* p = (TPacketCGPartyRemove*) c_pData;
 
-	if (!ecs::SocialSystem::GetParty(((ch) ? (ch)->GetEntityHandle() : entt::null)))
+	if (!ecs::SocialSystem::GetParty(character))
 		return;
 
-	LPPARTY pParty = ecs::SocialSystem::GetParty(((ch) ? (ch)->GetEntityHandle() : entt::null));
-	if (pParty->GetLeaderPID() == ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null)))
+	LPPARTY pParty = ecs::SocialSystem::GetParty(character);
+	if (pParty->GetLeaderPID() == ecs::PlayerRuntime::GetPlayerID(character))
 	{
 		if (!ch->GetDungeon()) {
 			// Àû·æ¼º¿¡¼­ ÆÄÆ¼ÀåÀÌ ´øÁ¯ ¹Û¿¡¼­ ÆÄÆ¼ ÇØ»ê ¸øÇÏ°Ô ¸·ÀÚ
 			if(pParty->IsPartyInDungeon(351))
 			{
 #ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 648, "");
+				ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 648, "");
 #endif
 				return;
 			}
 
 			// leader can remove any member
-			if (p->pid == ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null)) || pParty->GetMemberCount() == 2)
+			if (p->pid == ecs::PlayerRuntime::GetPlayerID(character) || pParty->GetMemberCount() == 2)
 			{
 				// party disband
 				CPartyManager::instance().DeleteParty(pParty);
@@ -3688,75 +3727,76 @@ void CInputMain::PartyRemove(LPCHARACTER ch, const char* c_pData)
 		}
 #ifdef TEXTS_IMPROVEMENT
 		else {
-			ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 205, "");
+			ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 205, "");
 		}
 #endif
 	}
 	else
 	{
-		if (p->pid == ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null)))
+		if (p->pid == ecs::PlayerRuntime::GetPlayerID(character))
 		{
 			if (!ch->GetDungeon()) {
 				if (pParty->GetMemberCount() == 2) {
 					CPartyManager::instance().DeleteParty(pParty);
 				} else {
 #ifdef TEXTS_IMPROVEMENT
-					ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 215, "");
+					ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 215, "");
 #endif
 					//pParty->SendPartyRemoveOneToAll(ch);
-					pParty->Quit(ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null)));
+					pParty->Quit(ecs::PlayerRuntime::GetPlayerID(character));
 					//pParty->SendPartyRemoveAllToOne(ch);
-					//CPartyManager::instance().SetPartyMember(ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null)), NULL);
+					//CPartyManager::instance().SetPartyMember(ecs::PlayerRuntime::GetPlayerID(character), NULL);
 				}
 			}
 #ifdef TEXTS_IMPROVEMENT
 			else {
-				ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 204, "");
+				ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 204, "");
 			}
 #endif
 		}
 #ifdef TEXTS_IMPROVEMENT
 		else {
-			ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 197, "");
+			ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 197, "");
 		}
 #endif
 	}
 }
 
-void CInputMain::AnswerMakeGuild(LPCHARACTER ch, const char* c_pData)
+void CInputMain::AnswerMakeGuild(entt::entity character, const char* c_pData)
 {
+	LPCHARACTER ch = ecs::LegacyCharOf(character);
 // migrated from CHARACTER handler
 // TODO Phase 8: migrate AnswerMakeGuild handler ECS
 // DUAL-PATH: legacy only during migration window
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::AnswerMakeGuild");//INGAME_DEBUG_RAZOR93
+	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::AnswerMakeGuild");//INGAME_DEBUG_RAZOR93
 #endif
 	TPacketCGAnswerMakeGuild* p = (TPacketCGAnswerMakeGuild*) c_pData;
 
-	if (ecs::PointSystem::GetGold(((ch) ? (ch)->GetEntityHandle() : entt::null)) < 200000) {
+	if (ecs::PointSystem::GetGold(character) < 200000) {
 		return;
 	}
 #ifdef ENABLE_BUG_FIXES
-	else if (ecs::PointSystem::GetLevel(((ch) ? (ch)->GetEntityHandle() : entt::null)) < 40) {
+	else if (ecs::PointSystem::GetLevel(character) < 40) {
 		return;
 	}
 #endif
 
-	if (get_global_time() - ecs::QuestSystem::GetFlag(((ch) ? (ch)->GetEntityHandle() : entt::null), "guild_manage.new_disband_time") < CGuildManager::instance().GetDisbandDelay()) {
+	if (get_global_time() - ecs::QuestSystem::GetFlag(character, "guild_manage.new_disband_time") < CGuildManager::instance().GetDisbandDelay()) {
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 181, "%d", quest::CQuestManager::instance().GetEventFlag("guild_disband_delay"));
+		ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 181, "%d", quest::CQuestManager::instance().GetEventFlag("guild_disband_delay"));
 #endif
 		return;
 	}
 
-	if (get_global_time() - ecs::QuestSystem::GetFlag(((ch) ? (ch)->GetEntityHandle() : entt::null), "guild_manage.new_withdraw_time") < CGuildManager::instance().GetWithdrawDelay()) {
+	if (get_global_time() - ecs::QuestSystem::GetFlag(character, "guild_manage.new_withdraw_time") < CGuildManager::instance().GetWithdrawDelay()) {
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 179, "%d", quest::CQuestManager::instance().GetEventFlag("guild_withdraw_delay"));
+		ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 179, "%d", quest::CQuestManager::instance().GetEventFlag("guild_withdraw_delay"));
 #endif
 		return;
 	}
 
-	if (ecs::SocialSystem::GetGuild(((ch) ? (ch)->GetEntityHandle() : entt::null)))
+	if (ecs::SocialSystem::GetGuild(character))
 		return;
 
 	CGuildManager& gm = CGuildManager::instance();
@@ -3764,13 +3804,13 @@ void CInputMain::AnswerMakeGuild(LPCHARACTER ch, const char* c_pData)
 	TGuildCreateParameter cp;
 	memset(&cp, 0, sizeof(cp));
 
-	cp.master = ch ? ch->GetEntityHandle() : entt::null;
+	cp.master = character;
 	strlcpy(cp.name, p->guild_name, sizeof(cp.name));
 
 	if (cp.name[0] == 0 || !check_name(cp.name))
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 455, "");
+		ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 455, "");
 #endif
 		return;
 	}
@@ -3780,15 +3820,15 @@ void CInputMain::AnswerMakeGuild(LPCHARACTER ch, const char* c_pData)
 	if (dwGuildID)
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 125, "%s", cp.name);
+		ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 125, "%s", cp.name);
 #endif
 		int GuildCreateFee = 200000;
 
-		ecs::PointSystem::Change(((ch) ? (ch)->GetEntityHandle() : entt::null), POINT_GOLD, -GuildCreateFee);
-		DBManager::instance().SendMoneyLog(MONEY_LOG_GUILD, ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null)), -GuildCreateFee);
+		ecs::PointSystem::Change(character, POINT_GOLD, -GuildCreateFee);
+		DBManager::instance().SendMoneyLog(MONEY_LOG_GUILD, ecs::PlayerRuntime::GetPlayerID(character), -GuildCreateFee);
 
 		char Log[128];
-		snprintf(Log, sizeof(Log), "GUILD_NAME %s MASTER %s", cp.name, ecs::PlayerRuntime::GetName(((ch) ? (ch)->GetEntityHandle() : entt::null)).data());
+		snprintf(Log, sizeof(Log), "GUILD_NAME %s MASTER %s", cp.name, ecs::PlayerRuntime::GetName(character).data());
 		LogManager::instance().CharLog(ch, 0, "MAKE_GUILD", Log);
 
 		ch->RemoveSpecifyItem(GUILD_CREATE_ITEM_VNUM, 1);
@@ -3796,27 +3836,27 @@ void CInputMain::AnswerMakeGuild(LPCHARACTER ch, const char* c_pData)
 	}
 #ifdef TEXTS_IMPROVEMENT
 	else {
-		ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 132, "");
+		ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 132, "");
 	}
 #endif
 }
 
-void CInputMain::PartyUseSkill(LPCHARACTER ch, const char* c_pData)
+void CInputMain::PartyUseSkill(entt::entity character, const char* c_pData)
 {
 // migrated from CHARACTER handler
 // TODO Phase 8: migrate PartyUseSkill handler ECS
 // DUAL-PATH: legacy only during migration window
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::PartyUseSkill");//INGAME_DEBUG_RAZOR93
+	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::PartyUseSkill");//INGAME_DEBUG_RAZOR93
 #endif
 	TPacketCGPartyUseSkill* p = (TPacketCGPartyUseSkill*) c_pData;
-	if (!ecs::SocialSystem::GetParty(((ch) ? (ch)->GetEntityHandle() : entt::null)))
+	if (!ecs::SocialSystem::GetParty(character))
 		return;
 
-	if (ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null)) != ecs::SocialSystem::GetParty(((ch) ? (ch)->GetEntityHandle() : entt::null))->GetLeaderPID())
+	if (ecs::PlayerRuntime::GetPlayerID(character) != ecs::SocialSystem::GetParty(character)->GetLeaderPID())
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 211, "");
+		ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 211, "");
 #endif
 		return;
 	}
@@ -3824,17 +3864,17 @@ void CInputMain::PartyUseSkill(LPCHARACTER ch, const char* c_pData)
 	switch (p->bySkillIndex)
 	{
 		case PARTY_SKILL_HEAL:
-			ecs::SocialSystem::GetParty(((ch) ? (ch)->GetEntityHandle() : entt::null))->HealParty();
+			ecs::SocialSystem::GetParty(character)->HealParty();
 			break;
 		case PARTY_SKILL_WARP:
 			{
 				LPCHARACTER pch = CHARACTER_MANAGER::instance().Find(p->vid);
 				if (pch) {
-					ecs::SocialSystem::GetParty(((ch) ? (ch)->GetEntityHandle() : entt::null))->SummonToLeader(ecs::PlayerRuntime::GetPlayerID(((pch) ? (pch)->GetEntityHandle() : entt::null)));
+					ecs::SocialSystem::GetParty(character)->SummonToLeader(ecs::PlayerRuntime::GetPlayerID(((pch) ? (pch)->GetEntityHandle() : entt::null)));
 				}
 #ifdef TEXTS_IMPROVEMENT
 				else {
-					ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 209, "");
+					ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 209, "");
 				}
 #endif
 			}
@@ -3842,27 +3882,28 @@ void CInputMain::PartyUseSkill(LPCHARACTER ch, const char* c_pData)
 	}
 }
 
-void CInputMain::PartyParameter(LPCHARACTER ch, const char * c_pData)
+void CInputMain::PartyParameter(entt::entity character, const char * c_pData)
 {
 // migrated from CHARACTER handler
 // TODO Phase 8: migrate PartyParameter handler ECS
 // DUAL-PATH: legacy only during migration window
 	TPacketCGPartyParameter * p = (TPacketCGPartyParameter *) c_pData;
 
-	if (ecs::SocialSystem::GetParty(((ch) ? (ch)->GetEntityHandle() : entt::null)))
-		ecs::SocialSystem::GetParty(((ch) ? (ch)->GetEntityHandle() : entt::null))->SetParameter(p->bDistributeMode);
+	if (ecs::SocialSystem::GetParty(character))
+		ecs::SocialSystem::GetParty(character)->SetParameter(p->bDistributeMode);
 }
 
 #ifdef __INGAME_WIKI__
-void CInputMain::RecvWikiPacket(LPCHARACTER ch, const char * c_pData)
+void CInputMain::RecvWikiPacket(entt::entity character, const char * c_pData)
 {
+	LPCHARACTER ch = ecs::LegacyCharOf(character);
 // migrated from CHARACTER handler
 // TODO Phase 8: migrate RecvWikiPacket handler ECS
 // DUAL-PATH: legacy only during migration window
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::RecvWikiPacket");//INGAME_DEBUG_RAZOR93
+	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::RecvWikiPacket");//INGAME_DEBUG_RAZOR93
 #endif
-	if (!ch || (ch && !ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null))))
+	if (!ch || (ch && !ecs::PlayerRuntime::GetDesc(character)))
 		return;
 
 	if (!c_pData)
@@ -3933,7 +3974,7 @@ void CInputMain::RecvWikiPacket(LPCHARACTER ch, const char * c_pData)
 					buf.write(&(_rV[idx]), sizeof(CommonWikiData::TWikiRefineInfo));
 		}
 
-		ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null))->Packet(buf.read_peek(), buf.size());
+		ecs::PlayerRuntime::GetDesc(character)->Packet(buf.read_peek(), buf.size());
 	}
 	else
 	{
@@ -3967,7 +4008,7 @@ void CInputMain::RecvWikiPacket(LPCHARACTER ch, const char * c_pData)
 			}
 		}
 
-		ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null))->Packet(buf.read_peek(), buf.size());
+		ecs::PlayerRuntime::GetDesc(character)->Packet(buf.read_peek(), buf.size());
 	}
 }
 #endif
@@ -3996,13 +4037,14 @@ size_t GetSubPacketSize(const GUILD_SUBHEADER_CG& header)
 	return 0;
 }
 
-int CInputMain::Guild(LPCHARACTER ch, const char * data, size_t uiBytes)
+int CInputMain::Guild(entt::entity character, const char * data, size_t uiBytes)
 {
+	LPCHARACTER ch = ecs::LegacyCharOf(character);
 // migrated from CHARACTER handler
 // TODO Phase 8: migrate Guild handler ECS
 // DUAL-PATH: legacy only during migration window
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "input_main.cpp::int CInputMain::Guild");//INGAME_DEBUG_RAZOR93
+	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "input_main.cpp::int CInputMain::Guild");//INGAME_DEBUG_RAZOR93
 #endif
 	if (uiBytes < sizeof(TPacketCGGuild))
 		return -1;
@@ -4020,14 +4062,14 @@ int CInputMain::Guild(LPCHARACTER ch, const char * data, size_t uiBytes)
 		return -1;
 	}
 
-	CGuild* pGuild = ecs::SocialSystem::GetGuild(((ch) ? (ch)->GetEntityHandle() : entt::null));
+	CGuild* pGuild = ecs::SocialSystem::GetGuild(character);
 
 	if (nullptr == pGuild)
 	{
 		if (SubHeader != GUILD_SUBHEADER_CG_GUILD_INVITE_ANSWER)
 		{
 #ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 138, "");
+			ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 138, "");
 #endif
 			return SubPacketLen;
 		}
@@ -4045,15 +4087,15 @@ int CInputMain::Guild(LPCHARACTER ch, const char * data, size_t uiBytes)
 				if (gold < 0)
 				{
 #ifdef TEXTS_IMPROVEMENT
-					ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 170, "");
+					ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 170, "");
 #endif
 					return SubPacketLen;
 				}
 
-				if (ecs::PointSystem::GetGold(((ch) ? (ch)->GetEntityHandle() : entt::null)) < gold)
+				if (ecs::PointSystem::GetGold(character) < gold)
 				{
 #ifdef TEXTS_IMPROVEMENT
-					ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 126, "");
+					ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 126, "");
 #endif
 					return SubPacketLen;
 				}
@@ -4072,7 +4114,7 @@ int CInputMain::Guild(LPCHARACTER ch, const char * data, size_t uiBytes)
 				if (gold < 0)
 				{
 #ifdef TEXTS_IMPROVEMENT
-					ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 170, "");
+					ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 170, "");
 #endif
 					return SubPacketLen;
 				}
@@ -4089,13 +4131,13 @@ int CInputMain::Guild(LPCHARACTER ch, const char * data, size_t uiBytes)
 				if (!newmember)
 				{
 #ifdef TEXTS_IMPROVEMENT
-					ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 128, "");
+					ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 128, "");
 #endif
 					return SubPacketLen;
 				}
 
 				// @fixme145 BEGIN (+newmember ispc check)
-				if (!ecs::PlayerRuntime::IsPC(((ch) ? (ch)->GetEntityHandle() : entt::null)) || !ecs::PlayerRuntime::IsPC(((newmember) ? (newmember)->GetEntityHandle() : entt::null)))
+				if (!ecs::PlayerRuntime::IsPC(character) || !ecs::PlayerRuntime::IsPC(((newmember) ? (newmember)->GetEntityHandle() : entt::null)))
 					return SubPacketLen;
 				// @fixme145 END
 
@@ -4108,13 +4150,13 @@ int CInputMain::Guild(LPCHARACTER ch, const char * data, size_t uiBytes)
 				if (pGuild->UnderAnyWar() != 0)
 				{
 #ifdef TEXTS_IMPROVEMENT
-					ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 649, "");
+					ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 649, "");
 #endif
 					return SubPacketLen;
 				}
 
 				const uint32_t pid = *reinterpret_cast<const uint32_t*>(c_pData);
-				const TGuildMember* m = pGuild->GetMember(ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null)));
+				const TGuildMember* m = pGuild->GetMember(ecs::PlayerRuntime::GetPlayerID(character));
 
 				if (nullptr == m)
 					return -1;
@@ -4126,7 +4168,7 @@ int CInputMain::Guild(LPCHARACTER ch, const char * data, size_t uiBytes)
 					if (ecs::SocialSystem::GetGuild(((member) ? (member)->GetEntityHandle() : entt::null)) != pGuild)
 					{
 #ifdef TEXTS_IMPROVEMENT
-						ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 161, "");
+						ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 161, "");
 #endif
 						return SubPacketLen;
 					}
@@ -4134,7 +4176,7 @@ int CInputMain::Guild(LPCHARACTER ch, const char * data, size_t uiBytes)
 					if (!pGuild->HasGradeAuth(m->grade, GUILD_AUTH_REMOVE_MEMBER))
 					{
 #ifdef TEXTS_IMPROVEMENT
-						ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 139, "");
+						ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 139, "");
 #endif
 						return SubPacketLen;
 					}
@@ -4152,16 +4194,16 @@ int CInputMain::Guild(LPCHARACTER ch, const char * data, size_t uiBytes)
 					if (!pGuild->HasGradeAuth(m->grade, GUILD_AUTH_REMOVE_MEMBER))
 					{
 #ifdef TEXTS_IMPROVEMENT
-						ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 139, "");
+						ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 139, "");
 #endif
 						return SubPacketLen;
 					}
 
 #ifdef TEXTS_IMPROVEMENT
 					if (pGuild->RequestRemoveMember(pid)) {
-						ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 129, "");
+						ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 129, "");
 					} else {
-						ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 128, "");
+						ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 128, "");
 					}
 #endif
 				}
@@ -4173,23 +4215,23 @@ int CInputMain::Guild(LPCHARACTER ch, const char * data, size_t uiBytes)
 				char gradename[GUILD_GRADE_NAME_MAX_LEN + 1];
 				strlcpy(gradename, c_pData + 1, sizeof(gradename));
 
-				const TGuildMember * m = pGuild->GetMember(ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null)));
+				const TGuildMember * m = pGuild->GetMember(ecs::PlayerRuntime::GetPlayerID(character));
 
 				if (nullptr == m)
 					return -1;
 
 				if (m->grade != GUILD_LEADER_GRADE) {
 #ifdef TEXTS_IMPROVEMENT
-					ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 175, "");
+					ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 175, "");
 #endif
 				} else if (*c_pData == GUILD_LEADER_GRADE) {
 #ifdef TEXTS_IMPROVEMENT
-					ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 143, "");
+					ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 143, "");
 #endif
 				}
 				else if (!check_name(gradename)) {
 #ifdef TEXTS_IMPROVEMENT
-					ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 171, "");
+					ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 171, "");
 #endif
 				}
 				else {
@@ -4200,17 +4242,17 @@ int CInputMain::Guild(LPCHARACTER ch, const char * data, size_t uiBytes)
 
 		case GUILD_SUBHEADER_CG_CHANGE_GRADE_AUTHORITY:
 			{
-				const TGuildMember* m = pGuild->GetMember(ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null)));
+				const TGuildMember* m = pGuild->GetMember(ecs::PlayerRuntime::GetPlayerID(character));
 				if (nullptr == m)
 					return -1;
 
 				if (m->grade != GUILD_LEADER_GRADE) {
 #ifdef TEXTS_IMPROVEMENT
-					ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 174, "");
+					ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 174, "");
 #endif
 				} else if (*c_pData == GUILD_LEADER_GRADE) {
 #ifdef TEXTS_IMPROVEMENT
-					ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 142, "");
+					ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 142, "");
 #endif
 				}
 				else {
@@ -4225,7 +4267,7 @@ int CInputMain::Guild(LPCHARACTER ch, const char * data, size_t uiBytes)
 				if (pGuild->GetLevel() >= GUILD_MAX_LEVEL)
 				{
 #ifdef TEXTS_IMPROVEMENT
-					ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 650, "%d", GUILD_MAX_LEVEL);
+					ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 650, "%d", GUILD_MAX_LEVEL);
 #endif
 				}
 				else
@@ -4233,10 +4275,10 @@ int CInputMain::Guild(LPCHARACTER ch, const char * data, size_t uiBytes)
 					offer /= 100;
 					offer *= 100;
 #ifdef TEXTS_IMPROVEMENT
-					if (pGuild->OfferExp(ch ? ch->GetEntityHandle() : entt::null, offer)) {
-						ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 121, "%u", offer);
+					if (pGuild->OfferExp(character, offer)) {
+						ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 121, "%u", offer);
 					} else {
-						ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 122, "");
+						ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 122, "");
 					}
 #endif
 				}
@@ -4248,17 +4290,17 @@ int CInputMain::Guild(LPCHARACTER ch, const char * data, size_t uiBytes)
 				const int offer = *reinterpret_cast<const int*>(c_pData);
 				const int gold = offer * 100;
 
-				if (offer < 0 || gold < offer || gold < 0 || ecs::PointSystem::GetGold(((ch) ? (ch)->GetEntityHandle() : entt::null)) < gold)
+				if (offer < 0 || gold < offer || gold < 0 || ecs::PointSystem::GetGold(character) < gold)
 				{
 #ifdef TEXTS_IMPROVEMENT
-					ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 151, "");
+					ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 151, "");
 #endif
 					return SubPacketLen;
 				}
 
 #ifdef TEXTS_IMPROVEMENT
 				if (!pGuild->ChargeSP(ch, offer)) {
-					ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 164, "");
+					ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 164, "");
 				}
 #endif
 			}
@@ -4271,15 +4313,15 @@ int CInputMain::Guild(LPCHARACTER ch, const char * data, size_t uiBytes)
 				if (length > GUILD_COMMENT_MAX_LEN)
 				{
 					// Àß¸øµÈ ±æÀÌ.. ²÷¾îÁÖÀÚ.
-					LOG_ERROR("POST_COMMENT: {} comment too long (length: {})", ecs::PlayerRuntime::GetName(((ch) ? (ch)->GetEntityHandle() : entt::null)).data(), length);
-					ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null))->SetPhase(PHASE_CLOSE);
+					LOG_ERROR("POST_COMMENT: {} comment too long (length: {})", ecs::PlayerRuntime::GetName(character).data(), length);
+					ecs::PlayerRuntime::GetDesc(character)->SetPhase(PHASE_CLOSE);
 					return -1;
 				}
 
 				if (uiBytes < 1 + length)
 					return -1;
 
-				const TGuildMember* m = pGuild->GetMember(ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null)));
+				const TGuildMember* m = pGuild->GetMember(ecs::PlayerRuntime::GetPlayerID(character));
 
 				if (nullptr == m)
 					return -1;
@@ -4287,13 +4329,13 @@ int CInputMain::Guild(LPCHARACTER ch, const char * data, size_t uiBytes)
 				if (length && !pGuild->HasGradeAuth(m->grade, GUILD_AUTH_NOTICE) && *(c_pData + 1) == '!')
 				{
 #ifdef TEXTS_IMPROVEMENT
-					ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 127, "");
+					ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 127, "");
 #endif
 				}
 				else
 				{
 					std::string str(c_pData + 1, length);
-					pGuild->AddComment(ch ? ch->GetEntityHandle() : entt::null, str);
+					pGuild->AddComment(character, str);
 				}
 
 				return (1 + length);
@@ -4315,22 +4357,22 @@ int CInputMain::Guild(LPCHARACTER ch, const char * data, size_t uiBytes)
 			{
 				const uint32_t pid = *reinterpret_cast<const uint32_t*>(c_pData);
 				const uint8_t grade = *(c_pData + sizeof(uint32_t));
-				const TGuildMember* m = pGuild->GetMember(ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null)));
+				const TGuildMember* m = pGuild->GetMember(ecs::PlayerRuntime::GetPlayerID(character));
 
 				if (nullptr == m)
 					return -1;
 
 				if (m->grade != GUILD_LEADER_GRADE) {
 #ifdef TEXTS_IMPROVEMENT
-					ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 176, "");
+					ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 176, "");
 #endif
-				} else if (ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null)) == pid) {
+				} else if (ecs::PlayerRuntime::GetPlayerID(character) == pid) {
 #ifdef TEXTS_IMPROVEMENT
-					ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 143, "");
+					ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 143, "");
 #endif
 				} else if (grade == 1) {
 #ifdef TEXTS_IMPROVEMENT
-					ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 141, "");
+					ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 141, "");
 #endif
 				} else {
 					pGuild->ChangeMemberGrade(pid, grade);
@@ -4350,16 +4392,16 @@ int CInputMain::Guild(LPCHARACTER ch, const char * data, size_t uiBytes)
 			{
 				const uint32_t pid = *reinterpret_cast<const uint32_t*>(c_pData);
 				const uint8_t is_general = *(c_pData + sizeof(uint32_t));
-				const TGuildMember* m = pGuild->GetMember(ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null)));
+				const TGuildMember* m = pGuild->GetMember(ecs::PlayerRuntime::GetPlayerID(character));
 
 				if (nullptr == m)
 					return -1;
 
 #ifdef TEXTS_IMPROVEMENT
 				if (m->grade != GUILD_LEADER_GRADE) {
-					ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 150, "");
+					ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 150, "");
 				} else if (!pGuild->ChangeMemberGeneral(pid, is_general)) {
-					ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 149, "");
+					ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 149, "");
 				}
 #endif
 			}
@@ -4377,7 +4419,7 @@ int CInputMain::Guild(LPCHARACTER ch, const char * data, size_t uiBytes)
 					if (accept)
 						g->InviteAccept(ch);
 					else
-						g->InviteDeny(ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null)));
+						g->InviteDeny(ecs::PlayerRuntime::GetPlayerID(character));
 				}
 			}
 			return SubPacketLen;
@@ -4387,13 +4429,14 @@ int CInputMain::Guild(LPCHARACTER ch, const char * data, size_t uiBytes)
 	return 0;
 }
 
-void CInputMain::Fishing(LPCHARACTER ch, const char* c_pData)
+void CInputMain::Fishing(entt::entity character, const char* c_pData)
 {
+	LPCHARACTER ch = ecs::LegacyCharOf(character);
 // migrated from CHARACTER handler
 // TODO Phase 8: migrate Fishing handler ECS
 // DUAL-PATH: legacy only during migration window
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::Fishin");//INGAME_DEBUG_RAZOR93
+	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::Fishin");//INGAME_DEBUG_RAZOR93
 #endif
 	TPacketCGFishing* p = (TPacketCGFishing*)c_pData;
 	ch->SetRotation(p->dir * 5);
@@ -4401,20 +4444,21 @@ void CInputMain::Fishing(LPCHARACTER ch, const char* c_pData)
 	return;
 }
 
-void CInputMain::ItemGive(LPCHARACTER ch, const char* c_pData)
+void CInputMain::ItemGive(entt::entity character, const char* c_pData)
 {
+	LPCHARACTER ch = ecs::LegacyCharOf(character);
 // migrated from CHARACTER handler
 // TODO Phase 8: migrate ItemGive handler ECS
 // DUAL-PATH: legacy only during migration window
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::ItemGive");//INGAME_DEBUG_RAZOR93
+	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::ItemGive");//INGAME_DEBUG_RAZOR93
 #endif
 	TPacketCGGiveItem* p = (TPacketCGGiveItem*) c_pData;
 	LPCHARACTER to_ch = CHARACTER_MANAGER::instance().Find(p->dwTargetVID);
 
 	if (to_ch) {
 #ifdef ENABLE_RESTRICT_GM_PERMISSIONS
-		if ((ecs::PlayerRuntime::GetGMLevel(((to_ch) ? (to_ch)->GetEntityHandle() : entt::null)) > GM_PLAYER && ecs::PlayerRuntime::GetGMLevel(((to_ch) ? (to_ch)->GetEntityHandle() : entt::null)) < GM_IMPLEMENTOR) || (ecs::PlayerRuntime::GetGMLevel(((ch) ? (ch)->GetEntityHandle() : entt::null)) > GM_PLAYER && ecs::PlayerRuntime::GetGMLevel(((ch) ? (ch)->GetEntityHandle() : entt::null)) < GM_IMPLEMENTOR)) {
+		if ((ecs::PlayerRuntime::GetGMLevel(((to_ch) ? (to_ch)->GetEntityHandle() : entt::null)) > GM_PLAYER && ecs::PlayerRuntime::GetGMLevel(((to_ch) ? (to_ch)->GetEntityHandle() : entt::null)) < GM_IMPLEMENTOR) || (ecs::PlayerRuntime::GetGMLevel(character) > GM_PLAYER && ecs::PlayerRuntime::GetGMLevel(character) < GM_IMPLEMENTOR)) {
 			return;
 		}
 #endif
@@ -4423,37 +4467,38 @@ void CInputMain::ItemGive(LPCHARACTER ch, const char* c_pData)
 	}
 #ifdef TEXTS_IMPROVEMENT
 	else {
-		ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 403, "");
+		ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 403, "");
 	}
 #endif
 }
 
-void CInputMain::Hack(LPCHARACTER ch, const char * c_pData)
+void CInputMain::Hack(entt::entity character, const char * c_pData)
 {
 // migrated from CHARACTER handler
 // TODO Phase 8: migrate Hack handler ECS
 // DUAL-PATH: legacy only during migration window
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::Hack");//INGAME_DEBUG_RAZOR93
+	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::Hack");//INGAME_DEBUG_RAZOR93
 #endif
 	TPacketCGHack * p = (TPacketCGHack *) c_pData;
 
 	char buf[sizeof(p->szBuf)];
 	strlcpy(buf, p->szBuf, sizeof(buf));
 
-	LOG_ERROR("HACK_DETECT: {} {}", ecs::PlayerRuntime::GetName(((ch) ? (ch)->GetEntityHandle() : entt::null)).data(), buf);
+	LOG_ERROR("HACK_DETECT: {} {}", ecs::PlayerRuntime::GetName(character).data(), buf);
 
 	// ÇöÀç Å¬¶óÀÌ¾ðÆ®¿¡¼­ ÀÌ ÆÐÅ¶À» º¸³»´Â °æ¿ì°¡ ¾øÀ¸¹Ç·Î ¹«Á¶°Ç ²÷µµ·Ï ÇÑ´Ù
-	ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null))->SetPhase(PHASE_CLOSE);
+	ecs::PlayerRuntime::GetDesc(character)->SetPhase(PHASE_CLOSE);
 }
 
-int CInputMain::MyShop(LPCHARACTER ch, const char * c_pData, size_t uiBytes)
+int CInputMain::MyShop(entt::entity character, const char * c_pData, size_t uiBytes)
 {
+	LPCHARACTER ch = ecs::LegacyCharOf(character);
 // migrated from CHARACTER handler
 // TODO Phase 8: migrate MyShop handler ECS
 // DUAL-PATH: legacy only during migration window
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "input_main.cpp::int CInputMain::MyShop");//INGAME_DEBUG_RAZOR93
+	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "input_main.cpp::int CInputMain::MyShop");//INGAME_DEBUG_RAZOR93
 #endif
 	TPacketCGMyShop * p = (TPacketCGMyShop *) c_pData;
 	int iExtraLen = p->bCount * sizeof(TShopItemTable);
@@ -4461,10 +4506,10 @@ int CInputMain::MyShop(LPCHARACTER ch, const char * c_pData, size_t uiBytes)
 	if (uiBytes < sizeof(TPacketCGMyShop) + iExtraLen)
 		return -1;
 
-	if (ecs::PointSystem::GetGold(((ch) ? (ch)->GetEntityHandle() : entt::null)) >= GOLD_MAX)
+	if (ecs::PointSystem::GetGold(character) >= GOLD_MAX)
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 226,
+		ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 226,
 		"%lld"
 
 		, GOLD_MAX);
@@ -4472,13 +4517,13 @@ int CInputMain::MyShop(LPCHARACTER ch, const char * c_pData, size_t uiBytes)
 		return (iExtraLen);
 	}
 
-	if (CombatSystem::IsStun(((ch) ? (ch)->GetEntityHandle() : entt::null)) || CombatSystem::IsDead(((ch) ? (ch)->GetEntityHandle() : entt::null)))
+	if (CombatSystem::IsStun(character) || CombatSystem::IsDead(character))
 		return (iExtraLen);
 
-	if (ecs::SocialSystem::GetExchange(((ch) ? (ch)->GetEntityHandle() : entt::null)) || ch->IsOpenSafebox() || ch->GetShopOwner() || ch->IsCubeOpen())
+	if (ecs::SocialSystem::GetExchange(character) || ch->IsOpenSafebox() || ch->GetShopOwner() || ch->IsCubeOpen())
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 292, "");
+		ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 292, "");
 #endif
 		return (iExtraLen);
 	}
@@ -4487,7 +4532,7 @@ int CInputMain::MyShop(LPCHARACTER ch, const char * c_pData, size_t uiBytes)
 	if (ch->IsAttrTransferOpen())
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 292, "");
+		ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 292, "");
 #endif
 		return (iExtraLen);
 	}
@@ -4502,26 +4547,27 @@ int CInputMain::MyShop(LPCHARACTER ch, const char * c_pData, size_t uiBytes)
 	return (iExtraLen);
 }
 
-void CInputMain::Refine(LPCHARACTER ch, const char* c_pData)
+void CInputMain::Refine(entt::entity character, const char* c_pData)
 {
+	LPCHARACTER ch = ecs::LegacyCharOf(character);
 // migrated from CHARACTER handler
 // TODO Phase 8: migrate Refine handler ECS
 // DUAL-PATH: legacy only during migration window
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::Refine");//INGAME_DEBUG_RAZOR93
+	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::Refine");//INGAME_DEBUG_RAZOR93
 #endif
 	const TPacketCGRefine* p = reinterpret_cast<const TPacketCGRefine*>(c_pData);
 #ifdef ENABLE_RESTRICT_GM_PERMISSIONS
-	if (ecs::PlayerRuntime::GetGMLevel(((ch) ? (ch)->GetEntityHandle() : entt::null)) > GM_PLAYER && ecs::PlayerRuntime::GetGMLevel(((ch) ? (ch)->GetEntityHandle() : entt::null)) < GM_IMPLEMENTOR) {
+	if (ecs::PlayerRuntime::GetGMLevel(character) > GM_PLAYER && ecs::PlayerRuntime::GetGMLevel(character) < GM_IMPLEMENTOR) {
 		ch->ClearRefineMode();
 		return;
 	}
 #endif
 
-	if (ecs::SocialSystem::GetExchange(((ch) ? (ch)->GetEntityHandle() : entt::null)) || ch->IsOpenSafebox() || ch->GetShopOwner() || ch->GetMyShop() || ch->IsCubeOpen())
+	if (ecs::SocialSystem::GetExchange(character) || ch->IsOpenSafebox() || ch->GetShopOwner() || ch->GetMyShop() || ch->IsCubeOpen())
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 502, "");
+		ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 502, "");
 #endif
 		ch->ClearRefineMode();
 		return;
@@ -4531,7 +4577,7 @@ void CInputMain::Refine(LPCHARACTER ch, const char* c_pData)
 	if (ch->IsAttrTransferOpen())
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 292, "");
+		ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 292, "");
 #endif
 		ch->ClearRefineMode();
 		return;
@@ -4555,7 +4601,7 @@ void CInputMain::Refine(LPCHARACTER ch, const char* c_pData)
 		return;
 	}
 
-	const entt::entity owner = ((ch) ? (ch)->GetEntityHandle() : entt::null);
+	const entt::entity owner = character;
 	const entt::entity itemEntity = ItemSystem::GetInventoryItem(owner, p->pos);
 
 #ifdef ENABLE_FEATURES_REFINE_SYSTEM
@@ -4596,20 +4642,20 @@ void CInputMain::Refine(LPCHARACTER ch, const char* c_pData)
 #endif
 	else if (p->type == REFINE_TYPE_MONEY_ONLY) {
 		if (ItemSystem::IsValidItem(itemEntity)) {
-			if (ecs::QuestSystem::GetFlag(((ch) ? (ch)->GetEntityHandle() : entt::null), "deviltower_zone.can_refine"))
+			if (ecs::QuestSystem::GetFlag(character, "deviltower_zone.can_refine"))
 			{
 #ifdef ENABLE_BUG_FIXES
 				if (ItemSystem::DoRefine(owner, itemEntity, true)) {
-					ecs::QuestSystem::SetFlag(((ch) ? (ch)->GetEntityHandle() : entt::null), "deviltower_zone.can_refine", 0);
+					ecs::QuestSystem::SetFlag(character, "deviltower_zone.can_refine", 0);
 				}
 #else
 				ItemSystem::DoRefine(owner, itemEntity, true);
-				ecs::QuestSystem::SetFlag(((ch) ? (ch)->GetEntityHandle() : entt::null), "deviltower_zone.can_refine", 0);
+				ecs::QuestSystem::SetFlag(character, "deviltower_zone.can_refine", 0);
 #endif
 			}
 #ifdef TEXTS_IMPROVEMENT
 			else {
-				ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 361, "");
+				ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 361, "");
 			}
 #endif
 		}
@@ -4621,13 +4667,14 @@ void CInputMain::Refine(LPCHARACTER ch, const char* c_pData)
 
 
 #ifdef ENABLE_ACCE_SYSTEM
-void CInputMain::Acce(LPCHARACTER pkChar, const char* c_pData)
+void CInputMain::Acce(entt::entity character, const char* c_pData)
 {
+	LPCHARACTER pkChar = ecs::LegacyCharOf(character);
 // migrated from CHARACTER handler
 // TODO Phase 8: migrate Acce handler ECS
 // DUAL-PATH: legacy only during migration window
 
-	quest::PC * pPC = quest::CQuestManager::instance().GetPCForce(ecs::PlayerRuntime::GetPlayerID(((pkChar) ? (pkChar)->GetEntityHandle() : entt::null)));
+	quest::PC * pPC = quest::CQuestManager::instance().GetPCForce(ecs::PlayerRuntime::GetPlayerID(character));
 	if (pPC->IsRunning())
 		return;
 
@@ -4661,13 +4708,14 @@ void CInputMain::Acce(LPCHARACTER pkChar, const char* c_pData)
 #endif
 
 #ifdef ENABLE_CUBE_RENEWAL_WORLDARD
-void CInputMain::CubeRenewalSend(LPCHARACTER ch, const char* data)
+void CInputMain::CubeRenewalSend(entt::entity character, const char* data)
 {
+	LPCHARACTER ch = ecs::LegacyCharOf(character);
 // migrated from CHARACTER handler
 // TODO Phase 8: migrate CubeRenewalSend handler ECS
 // DUAL-PATH: legacy only during migration window
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::CubeRenewalSend");//INGAME_DEBUG_RAZOR93
+	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::CubeRenewalSend");//INGAME_DEBUG_RAZOR93
 #endif
 	struct packet_send_cube_renewal * pinfo = (struct packet_send_cube_renewal *) data;
 	switch (pinfo->subheader)
@@ -5231,18 +5279,19 @@ int OfflineshopPacket(const char* data , LPCHARACTER ch, int32_t iBufferLeft)
 }
 #endif
 
-void CInputMain::ItemDestroy(LPCHARACTER ch, const char * data)
+void CInputMain::ItemDestroy(entt::entity character, const char * data)
 {
+	LPCHARACTER ch = ecs::LegacyCharOf(character);
 // migrated from CHARACTER handler
 // TODO Phase 8: migrate ItemDestroy handler ECS
 // DUAL-PATH: legacy only during migration window
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "input_main.cpp:: void CInputMain::ItemDestroy ");//INGAME_DEBUG_RAZOR93
+	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "input_main.cpp:: void CInputMain::ItemDestroy ");//INGAME_DEBUG_RAZOR93
 #endif
 	struct command_item_destroy * pinfo = (struct command_item_destroy *) data;
 	if (ch) {
 #ifdef ENABLE_RESTRICT_GM_PERMISSIONS
-		if (ecs::PlayerRuntime::GetGMLevel(((ch) ? (ch)->GetEntityHandle() : entt::null)) > GM_PLAYER && ecs::PlayerRuntime::GetGMLevel(((ch) ? (ch)->GetEntityHandle() : entt::null)) < GM_IMPLEMENTOR) {
+		if (ecs::PlayerRuntime::GetGMLevel(character) > GM_PLAYER && ecs::PlayerRuntime::GetGMLevel(character) < GM_IMPLEMENTOR) {
 			return;
 		}
 #endif
@@ -5250,13 +5299,14 @@ void CInputMain::ItemDestroy(LPCHARACTER ch, const char * data)
 	}
 }
 
-void CInputMain::ItemDivision(LPCHARACTER ch, const char * data)
+void CInputMain::ItemDivision(entt::entity character, const char * data)
 {
+	LPCHARACTER ch = ecs::LegacyCharOf(character);
 // migrated from CHARACTER handler
 // TODO Phase 8: migrate ItemDivision handler ECS
 // DUAL-PATH: legacy only during migration window
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "input_main.cpp:: void CInputMain::ItemDivision ");//INGAME_DEBUG_RAZOR93
+	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "input_main.cpp:: void CInputMain::ItemDivision ");//INGAME_DEBUG_RAZOR93
 #endif
 	struct command_item_division * pinfo = (struct command_item_division *) data;
 	if (ch)
@@ -5267,13 +5317,14 @@ void CInputMain::ItemDivision(LPCHARACTER ch, const char * data)
 
 
 #ifdef ENABLE_NEW_FISHING_SYSTEM
-void CInputMain::FishingNew(LPCHARACTER ch, const char* c_pData)
+void CInputMain::FishingNew(entt::entity character, const char* c_pData)
 {
+	LPCHARACTER ch = ecs::LegacyCharOf(character);
 // migrated from CHARACTER handler
 // TODO Phase 8: migrate FishingNew handler ECS
 // DUAL-PATH: legacy only during migration window
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "input_main.cpp:: void CInputMain::FishingNew ");//INGAME_DEBUG_RAZOR93
+	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "input_main.cpp:: void CInputMain::FishingNew ");//INGAME_DEBUG_RAZOR93
 #endif
 	if (!ch) {
 		return;
@@ -5310,8 +5361,9 @@ void CInputMain::FishingNew(LPCHARACTER ch, const char* c_pData)
 #endif
 
 #if defined(ENABLE_CHRISTMAS_WHEEL_OF_DESTINY)
-void CInputMain::WheelDestiny(LPCHARACTER ch, const char* data)
+void CInputMain::WheelDestiny(entt::entity character, const char* data)
 {
+	LPCHARACTER ch = ecs::LegacyCharOf(character);
 // migrated from CHARACTER handler
 // TODO Phase 8: migrate WheelDestiny handler ECS
 // DUAL-PATH: legacy only during migration window
@@ -5320,7 +5372,7 @@ void CInputMain::WheelDestiny(LPCHARACTER ch, const char* data)
 		return;
 	}
 
-	if (ecs::PlayerRuntime::IsObserverMode(((ch) ? (ch)->GetEntityHandle() : entt::null)) || ecs::SocialSystem::GetExchange(((ch) ? (ch)->GetEntityHandle() : entt::null)))
+	if (ecs::PlayerRuntime::IsObserverMode(character) || ecs::SocialSystem::GetExchange(character))
 	{
 		return;
 	}
@@ -5346,7 +5398,7 @@ void CInputMain::WheelDestiny(LPCHARACTER ch, const char* data)
 		{
 			//if (ch->GetWheelDestiny()->IsTurning())
 			//{
-			//	ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "Do not close now!!");
+			//	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "Do not close now!!");
 			//	return;
 			//}
 
@@ -5354,22 +5406,22 @@ void CInputMain::WheelDestiny(LPCHARACTER ch, const char* data)
 			if (ch->GetWheelDestiny()->GetGiftVnum())
 			{
 #ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 1307, "");
+				ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 1307, "");
 #endif
 			}
 			else
 			{
 				ch->SetWheelDestiny(nullptr);
-				ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_COMMAND, "BINARY_WHEEL_CLOSE");
+				ecs::ChatSystem::Send(character, CHAT_TYPE_COMMAND, "BINARY_WHEEL_CLOSE");
 			}
 		}
 	}
 	break;
 	case TURN:
 	{
-		if (ch->GetDungeon() != nullptr || ecs::PlayerRuntime::GetMapIndex(((ch) ? (ch)->GetEntityHandle() : entt::null)) >= 10000)
+		if (ch->GetDungeon() != nullptr || ecs::PlayerRuntime::GetMapIndex(character) >= 10000)
 		{
-			ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "Dungeonban nem tudsz pörgetni./You cannot in dungeon");
+			ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "Dungeonban nem tudsz pörgetni./You cannot in dungeon");
 			return;
 		}
 		if (ch->GetWheelDestiny())
@@ -5379,7 +5431,7 @@ void CInputMain::WheelDestiny(LPCHARACTER ch, const char* data)
 			if (ch->CountSpecifyItem(WHEEL_TICKET_VNUM) < 1)
 			{
 
-				ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "You Dont have Battle Pass Ticket");
+				ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "You Dont have Battle Pass Ticket");
 				return;
 			}
 
@@ -5400,7 +5452,7 @@ void CInputMain::WheelDestiny(LPCHARACTER ch, const char* data)
 	break;
 	default:
 	{
-		LOG_ERROR("CInputMain::WheelDestiny : Unknown option {} : {}", pinfo->option, ecs::PlayerRuntime::GetName(((ch) ? (ch)->GetEntityHandle() : entt::null)).data());
+		LOG_ERROR("CInputMain::WheelDestiny : Unknown option {} : {}", pinfo->option, ecs::PlayerRuntime::GetName(character).data());
 	}
 	break;
 	}
@@ -5418,6 +5470,8 @@ int CInputMain::Analyze(LPDESC d, uint8_t bHeader, const char * c_pData)
 		d->SetPhase(PHASE_CLOSE);
 		return (0);
 	}
+
+	const entt::entity character = ch->GetEntityHandle();
 
 	int iExtraLen = 0;
 
@@ -5441,112 +5495,112 @@ int CInputMain::Analyze(LPDESC d, uint8_t bHeader, const char * c_pData)
 				LOG_INFO("{}", pBuf + sizeof(TPacketCGChat));
 			}
 
-			if ((iExtraLen = Chat(ch, c_pData, m_iBufferLeft)) < 0)
+			if ((iExtraLen = Chat(character, c_pData, m_iBufferLeft)) < 0)
 				return -1;
 			break;
 
 		case HEADER_CG_WHISPER:
-			if ((iExtraLen = Whisper(ch, c_pData, m_iBufferLeft)) < 0)
+			if ((iExtraLen = Whisper(character, c_pData, m_iBufferLeft)) < 0)
 				return -1;
 			break;
 
 		case HEADER_CG_MOVE:
-			Move(ch, c_pData);
+			Move(character, c_pData);
 			// @fixme103 (removed CheckClientVersion since useless in here)
 			break;
 
 		case HEADER_CG_CHARACTER_POSITION:
-			Position(ch, c_pData);
+			Position(character, c_pData);
 			break;
 
 		case HEADER_CG_ITEM_USE:
-			if (!ecs::PlayerRuntime::IsObserverMode(((ch) ? (ch)->GetEntityHandle() : entt::null)))
-				ItemUse(ch, c_pData);
+			if (!ecs::PlayerRuntime::IsObserverMode(character))
+				ItemUse(character, c_pData);
 			break;
 
 		case HEADER_CG_ITEM_DROP:
-			if (!ecs::PlayerRuntime::IsObserverMode(((ch) ? (ch)->GetEntityHandle() : entt::null)))
+			if (!ecs::PlayerRuntime::IsObserverMode(character))
 			{
-				ItemDrop(ch, c_pData);
+				ItemDrop(character, c_pData);
 			}
 			break;
 
 #ifdef ENABLE_ACCE_SYSTEM
 		case HEADER_CG_ACCE:
-			Acce(ch, c_pData);
+			Acce(character, c_pData);
 			break;
 #endif
 
 		case HEADER_CG_ITEM_DROP2:
-			if (!ecs::PlayerRuntime::IsObserverMode(((ch) ? (ch)->GetEntityHandle() : entt::null)))
-				ItemDrop2(ch, c_pData);
+			if (!ecs::PlayerRuntime::IsObserverMode(character))
+				ItemDrop2(character, c_pData);
 			break;
 		case HEADER_CG_ITEM_DESTROY:
-			if (!ecs::PlayerRuntime::IsObserverMode(((ch) ? (ch)->GetEntityHandle() : entt::null)))
-				ItemDestroy(ch, c_pData);
+			if (!ecs::PlayerRuntime::IsObserverMode(character))
+				ItemDestroy(character, c_pData);
 			break;
 		case HEADER_CG_ITEM_DIVISION:
 			{
-				if (!ecs::PlayerRuntime::IsObserverMode(((ch) ? (ch)->GetEntityHandle() : entt::null)))
-					ItemDivision(ch, c_pData);
+				if (!ecs::PlayerRuntime::IsObserverMode(character))
+					ItemDivision(character, c_pData);
 			}
 			break;
 		case HEADER_CG_ITEM_MOVE:
-			if (!ecs::PlayerRuntime::IsObserverMode(((ch) ? (ch)->GetEntityHandle() : entt::null)))
-				ItemMove(ch, c_pData);
+			if (!ecs::PlayerRuntime::IsObserverMode(character))
+				ItemMove(character, c_pData);
 			break;
 
 
 #ifdef __ENABLE_EXTEND_INVEN_SYSTEM__
 		case ENVANTER_BLACK:
-			if (!ecs::PlayerRuntime::IsObserverMode(((ch) ? (ch)->GetEntityHandle() : entt::null)))
-				InventoryExpansion(ch, c_pData);
+			if (!ecs::PlayerRuntime::IsObserverMode(character))
+				InventoryExpansion(character, c_pData);
 		break;
 #endif
 
 		case HEADER_CG_ITEM_PICKUP:
-			if (!ecs::PlayerRuntime::IsObserverMode(((ch) ? (ch)->GetEntityHandle() : entt::null)))
-				ItemPickup(ch, c_pData);
+			if (!ecs::PlayerRuntime::IsObserverMode(character))
+				ItemPickup(character, c_pData);
 			break;
 
 		case HEADER_CG_ITEM_USE_TO_ITEM:
-			if (!ecs::PlayerRuntime::IsObserverMode(((ch) ? (ch)->GetEntityHandle() : entt::null)))
-				ItemToItem(ch, c_pData);
+			if (!ecs::PlayerRuntime::IsObserverMode(character))
+				ItemToItem(character, c_pData);
 			break;
 
 		case HEADER_CG_ITEM_GIVE:
-			if (!ecs::PlayerRuntime::IsObserverMode(((ch) ? (ch)->GetEntityHandle() : entt::null)))
-				ItemGive(ch, c_pData);
+			if (!ecs::PlayerRuntime::IsObserverMode(character))
+				ItemGive(character, c_pData);
 			break;
 
 		case HEADER_CG_EXCHANGE:
-			if (!ecs::PlayerRuntime::IsObserverMode(((ch) ? (ch)->GetEntityHandle() : entt::null)))
-				Exchange(ch, c_pData);
+			if (!ecs::PlayerRuntime::IsObserverMode(character))
+				Exchange(character, c_pData);
 			break;
 
 		case HEADER_CG_ATTACK:
 		case HEADER_CG_SHOOT:
-			if (!ecs::PlayerRuntime::IsObserverMode(((ch) ? (ch)->GetEntityHandle() : entt::null)))
+			if (!ecs::PlayerRuntime::IsObserverMode(character))
 			{
-				Attack(ch, bHeader, c_pData);
+				Attack(character, bHeader, c_pData);
 			}
 			break;
 
 		case HEADER_CG_USE_SKILL:
-			if (!ecs::PlayerRuntime::IsObserverMode(((ch) ? (ch)->GetEntityHandle() : entt::null)))
-				UseSkill(ch, c_pData);
+			if (!ecs::PlayerRuntime::IsObserverMode(character))
+				UseSkill(character, c_pData);
 			break;
 
 #ifdef __SKILL_COLOR_SYSTEM__
 		case HEADER_CG_SKILL_COLOR:
-			SetSkillColor(ch, c_pData);
+			SetSkillColor(character, c_pData);
 			break;
 #endif
 #ifdef ENABLE_OPENSHOP_PACKET
 		case HEADER_CG_OPENSHOP: {
 				TPacketOpenShop* p = reinterpret_cast<TPacketOpenShop*>((void*)c_pData);
 				if (p->shopid > 0) {
-					if (!(ecs::PlayerRuntime::IsObserverMode(((ch) ? (ch)->GetEntityHandle() : entt::null)) || ch->IsOpenSafebox() || ecs::SocialSystem::GetExchange(((ch) ? (ch)->GetEntityHandle() : entt::null)) || ch->IsCubeOpen() || CombatSystem::IsStun(((ch) ? (ch)->GetEntityHandle() : entt::null)) || CombatSystem::IsDead(((ch) ? (ch)->GetEntityHandle() : entt::null))
+					if (!(ecs::PlayerRuntime::IsObserverMode(character) || ch->IsOpenSafebox() || ecs::SocialSystem::GetExchange(character) || ch->IsCubeOpen() || CombatSystem::IsStun(character) || CombatSystem::IsDead(character)
 #ifdef __ATTR_TRANSFER_SYSTEM__
 						 || ch->IsAttrTransferOpen()
 #endif
@@ -5564,167 +5618,167 @@ int CInputMain::Analyze(LPDESC d, uint8_t bHeader, const char * c_pData)
 			} break;
 #endif
 		case HEADER_CG_QUICKSLOT_ADD:
-			QuickslotAdd(ch, c_pData);
+			QuickslotAdd(character, c_pData);
 			break;
 
 		case HEADER_CG_QUICKSLOT_DEL:
-			QuickslotDelete(ch, c_pData);
+			QuickslotDelete(character, c_pData);
 			break;
 
 		case HEADER_CG_QUICKSLOT_SWAP:
-			QuickslotSwap(ch, c_pData);
+			QuickslotSwap(character, c_pData);
 			break;
 
 		case HEADER_CG_SHOP:
-			if ((iExtraLen = Shop(ch, c_pData, m_iBufferLeft)) < 0)
+			if ((iExtraLen = Shop(character, c_pData, m_iBufferLeft)) < 0)
 				return -1;
 			break;
 
 		case HEADER_CG_MESSENGER:
-			if ((iExtraLen = Messenger(ch, c_pData, m_iBufferLeft))<0)
+			if ((iExtraLen = Messenger(character, c_pData, m_iBufferLeft))<0)
 				return -1;
 			break;
 
 #ifdef ENABLE_BATTLE_PASS
 		case HEADER_CG_BATTLE_PASS:
-			if ((iExtraLen = BattlePass(ch, c_pData, m_iBufferLeft)) < 0)
+			if ((iExtraLen = BattlePass(character, c_pData, m_iBufferLeft)) < 0)
 				return -1;
 			break;
 #endif
 
 		case HEADER_CG_ON_CLICK:
-			OnClick(ch, c_pData);
+			OnClick(character, c_pData);
 			break;
 
 		case HEADER_CG_SYNC_POSITION:
-			if ((iExtraLen = SyncPosition(ch, c_pData, m_iBufferLeft)) < 0)
+			if ((iExtraLen = SyncPosition(character, c_pData, m_iBufferLeft)) < 0)
 				return -1;
 			break;
 
 		case HEADER_CG_ADD_FLY_TARGETING:
 		case HEADER_CG_FLY_TARGETING:
-			FlyTarget(ch, c_pData, bHeader);
+			FlyTarget(character, c_pData, bHeader);
 			break;
 
 		case HEADER_CG_SCRIPT_BUTTON:
-			ScriptButton(ch, c_pData);
+			ScriptButton(character, c_pData);
 			break;
 
 			// SCRIPT_SELECT_ITEM
 		case HEADER_CG_SCRIPT_SELECT_ITEM:
-			ScriptSelectItem(ch, c_pData);
+			ScriptSelectItem(character, c_pData);
 			break;
 			// END_OF_SCRIPT_SELECT_ITEM
 
 		case HEADER_CG_SCRIPT_ANSWER:
-			ScriptAnswer(ch, c_pData);
+			ScriptAnswer(character, c_pData);
 			break;
 
 		case HEADER_CG_QUEST_INPUT_STRING:
-			QuestInputString(ch, c_pData);
+			QuestInputString(character, c_pData);
 			break;
 
 		case HEADER_CG_QUEST_CONFIRM:
-			QuestConfirm(ch, c_pData);
+			QuestConfirm(character, c_pData);
 			break;
 
 		case HEADER_CG_TARGET:
-			Target(ch, c_pData);
+			Target(character, c_pData);
 			break;
 
 		case HEADER_CG_WARP:
-			Warp(ch, c_pData);
+			Warp(character, c_pData);
 			break;
 
 		case HEADER_CG_SAFEBOX_CHECKIN:
-			SafeboxCheckin(ch, c_pData);
+			SafeboxCheckin(character, c_pData);
 			break;
 
 		case HEADER_CG_SAFEBOX_CHECKOUT:
-			SafeboxCheckout(ch, c_pData, false);
+			SafeboxCheckout(character, c_pData, false);
 			break;
 
 		case HEADER_CG_SAFEBOX_ITEM_MOVE:
-			SafeboxItemMove(ch, c_pData);
+			SafeboxItemMove(character, c_pData);
 			break;
 
 		case HEADER_CG_MALL_CHECKOUT:
-			SafeboxCheckout(ch, c_pData, true);
+			SafeboxCheckout(character, c_pData, true);
 			break;
 
 
 		case HEADER_CG_MOUNT_INVENTORY_CHECKIN:
-			MountInventoryCheckin(ch, c_pData);
+			MountInventoryCheckin(character, c_pData);
 			break;
 
 		case HEADER_CG_MOUNT_INVENTORY_CHECKOUT:
-			MountInventoryCheckout(ch, c_pData);
+			MountInventoryCheckout(character, c_pData);
 			break;
 
 		case HEADER_CG_MOUNT_INVENTORY_ITEM_MOVE:
-			MountInventoryItemMove(ch, c_pData);
+			MountInventoryItemMove(character, c_pData);
 			break;
 
 		case HEADER_CG_PARTY_INVITE:
-			PartyInvite(ch, c_pData);
+			PartyInvite(character, c_pData);
 			break;
 
 		case HEADER_CG_PARTY_REMOVE:
-			PartyRemove(ch, c_pData);
+			PartyRemove(character, c_pData);
 			break;
 
 		case HEADER_CG_PARTY_INVITE_ANSWER:
-			PartyInviteAnswer(ch, c_pData);
+			PartyInviteAnswer(character, c_pData);
 			break;
 
 		case HEADER_CG_PARTY_SET_STATE:
-			PartySetState(ch, c_pData);
+			PartySetState(character, c_pData);
 			break;
 
 		case HEADER_CG_PARTY_USE_SKILL:
-			PartyUseSkill(ch, c_pData);
+			PartyUseSkill(character, c_pData);
 			break;
 
 		case HEADER_CG_PARTY_PARAMETER:
-			PartyParameter(ch, c_pData);
+			PartyParameter(character, c_pData);
 			break;
 #ifdef __INGAME_WIKI__
 		case InGameWiki::HEADER_CG_WIKI:
-			RecvWikiPacket(ch, c_pData);
+			RecvWikiPacket(character, c_pData);
 			break;
 #endif
 		case HEADER_CG_ANSWER_MAKE_GUILD:
 #ifdef ENABLE_NEWGUILDMAKE
-			ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "<%s> AnswerMakeGuild disabled", __FUNCTION__);
+			ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "<%s> AnswerMakeGuild disabled", __FUNCTION__);
 #else
-			AnswerMakeGuild(ch, c_pData);
+			AnswerMakeGuild(character, c_pData);
 #endif
 			break;
 
 		case HEADER_CG_GUILD:
-			if ((iExtraLen = Guild(ch, c_pData, m_iBufferLeft)) < 0)
+			if ((iExtraLen = Guild(character, c_pData, m_iBufferLeft)) < 0)
 				return -1;
 			break;
 
 		case HEADER_CG_FISHING:
-			Fishing(ch, c_pData);
+			Fishing(character, c_pData);
 			break;
 		case HEADER_CG_HACK:
-			Hack(ch, c_pData);
+			Hack(character, c_pData);
 			break;
 
 #ifdef __NEWPET_SYSTEM__
 		case HEADER_CG_PetSetName:
-			BraveRequestPetName(ch, c_pData);
+			BraveRequestPetName(character, c_pData);
 			break;
 #endif
 		case HEADER_CG_MYSHOP:
-			if ((iExtraLen = MyShop(ch, c_pData, m_iBufferLeft)) < 0)
+			if ((iExtraLen = MyShop(character, c_pData, m_iBufferLeft)) < 0)
 				return -1;
 			break;
 
 		case HEADER_CG_REFINE:
-			Refine(ch, c_pData);
+			Refine(character, c_pData);
 			break;
 
 #ifdef ENABLE_WHISPER_ADMIN_SYSTEM
@@ -5742,26 +5796,26 @@ int CInputMain::Analyze(LPDESC d, uint8_t bHeader, const char * c_pData)
 		case HEADER_CG_CHANGE_LANGUAGE:
 			{
 				TPacketChangeLanguage* p = reinterpret_cast <TPacketChangeLanguage*>((void*)c_pData);
-				ChangeLanguage(ch, p->bLanguage);
+				ChangeLanguage(character, p->bLanguage);
 			}
 			break;
 		case HEADER_CG_REQUEST_LANGUAGE:
 			{
 				TPacketRequestLang* p = reinterpret_cast <TPacketRequestLang*>((void*)c_pData);
-				RequestLanguage(ch, p->targetName);
+				RequestLanguage(character, p->targetName);
 			}
 			break;
 #endif
 #ifdef __SEND_TARGET_INFO__
 		case HEADER_CG_TARGET_INFO_LOAD:
 			{
-				TargetInfoLoad(ch, c_pData);
+				TargetInfoLoad(character, c_pData);
 			}
 			break;
 #endif
 #ifdef ENABLE_SWITCHBOT
 		case HEADER_CG_SWITCHBOT:
-			if ((iExtraLen = Switchbot(ch, c_pData, m_iBufferLeft)) < 0)
+			if ((iExtraLen = Switchbot(character, c_pData, m_iBufferLeft)) < 0)
 			{
 				return -1;
 			}
@@ -5769,7 +5823,7 @@ int CInputMain::Analyze(LPDESC d, uint8_t bHeader, const char * c_pData)
 #endif
 #ifdef ENABLE_MAP_TELEPORTER
 		case HEADER_CG_MAP_TELEPORTER:
-			MapTeleporter(ch, (TPacketCGMapTeleporter*) c_pData);
+			MapTeleporter(character, (TPacketCGMapTeleporter*) c_pData);
 			break;
 #endif
 		case HEADER_CG_DRAGON_SOUL_REFINE:
@@ -5782,17 +5836,17 @@ int CInputMain::Analyze(LPDESC d, uint8_t bHeader, const char * c_pData)
 					break;
 				case DS_SUB_HEADER_DO_REFINE_GRADE:
 					{
-						DSManager::instance().DoRefineGradeEcs(((ch) ? (ch)->GetEntityHandle() : entt::null), p->ItemGrid);
+						DSManager::instance().DoRefineGradeEcs(character, p->ItemGrid);
 					}
 					break;
 				case DS_SUB_HEADER_DO_REFINE_STEP:
 					{
-						DSManager::instance().DoRefineStepEcs(((ch) ? (ch)->GetEntityHandle() : entt::null), p->ItemGrid);
+						DSManager::instance().DoRefineStepEcs(character, p->ItemGrid);
 					}
 					break;
 				case DS_SUB_HEADER_DO_REFINE_STRENGTH:
 					{
-						DSManager::instance().DoRefineStrengthEcs(((ch) ? (ch)->GetEntityHandle() : entt::null), p->ItemGrid);
+						DSManager::instance().DoRefineStrengthEcs(character, p->ItemGrid);
 					}
 					break;
 				}
@@ -5801,7 +5855,7 @@ int CInputMain::Analyze(LPDESC d, uint8_t bHeader, const char * c_pData)
 #ifdef ENABLE_DS_REFINE_ALL
 		case HEADER_CG_DRAGON_SOUL_REFINE_ALL: {
 			TPacketDragonSoulRefineAll* p = reinterpret_cast <TPacketDragonSoulRefineAll*>((void*)c_pData);
-			DSManager::instance().DoRefineAllEcs(((ch) ? (ch)->GetEntityHandle() : entt::null), p->subheader, p->type, p->grade);
+			DSManager::instance().DoRefineAllEcs(character, p->subheader, p->type, p->grade);
 		} break;
 #endif
 #ifdef __ENABLE_NEW_OFFLINESHOP__
@@ -5812,20 +5866,20 @@ int CInputMain::Analyze(LPDESC d, uint8_t bHeader, const char * c_pData)
 #endif
 #ifdef ENABLE_CUBE_RENEWAL_WORLDARD
 		case HEADER_CG_CUBE_RENEWAL:
-			CubeRenewalSend(ch, c_pData);
+			CubeRenewalSend(character, c_pData);
 			break;
 #endif
 #ifdef ENABLE_NEW_FISHING_SYSTEM
 		case HEADER_CG_FISHING_NEW:
 			{
-				FishingNew(ch, c_pData);
+				FishingNew(character, c_pData);
 			}
 			break;
 #endif
 #if defined(ENABLE_CHRISTMAS_WHEEL_OF_DESTINY)
 		case HEADER_CG_WHEEL_DESTINY:
 		{
-			WheelDestiny(ch, c_pData);
+			WheelDestiny(character, c_pData);
 		}
 		break;
 #endif
@@ -5843,6 +5897,8 @@ int CInputDead::Analyze(LPDESC d, uint8_t bHeader, const char * c_pData)
 		return 0;
 	}
 
+	const entt::entity character = ch->GetEntityHandle();
+
 	int iExtraLen = 0;
 
 	switch (bHeader)
@@ -5856,19 +5912,19 @@ int CInputDead::Analyze(LPDESC d, uint8_t bHeader, const char * c_pData)
 			break;
 
 		case HEADER_CG_CHAT:
-			if ((iExtraLen = Chat(ch, c_pData, m_iBufferLeft)) < 0)
+			if ((iExtraLen = Chat(character, c_pData, m_iBufferLeft)) < 0)
 				return -1;
 
 			break;
 
 		case HEADER_CG_WHISPER:
-			if ((iExtraLen = Whisper(ch, c_pData, m_iBufferLeft)) < 0)
+			if ((iExtraLen = Whisper(character, c_pData, m_iBufferLeft)) < 0)
 				return -1;
 
 			break;
 
 		case HEADER_CG_HACK:
-			Hack(ch, c_pData);
+			Hack(character, c_pData);
 			break;
 
 		default:
@@ -5878,13 +5934,13 @@ int CInputDead::Analyze(LPDESC d, uint8_t bHeader, const char * c_pData)
 	return (iExtraLen);
 }
 #ifdef ENABLE_SWITCHBOT
-int CInputMain::Switchbot(LPCHARACTER ch, const char* data, size_t uiBytes)
+int CInputMain::Switchbot(entt::entity character, const char* data, size_t uiBytes)
 {
 // migrated from CHARACTER handler
 // TODO Phase 8: migrate Switchbot handler ECS
 // DUAL-PATH: legacy only during migration window
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "input_main.cpp:: int CInputMain::Switchbot ");//INGAME_DEBUG_RAZOR93
+	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "input_main.cpp:: int CInputMain::Switchbot ");//INGAME_DEBUG_RAZOR93
 #endif
 	const TPacketCGSwitchbot* p = reinterpret_cast<const TPacketCGSwitchbot*>(data);
 
@@ -5916,13 +5972,13 @@ int CInputMain::Switchbot(LPCHARACTER ch, const char* data, size_t uiBytes)
 			vec_alternatives.emplace_back(*pAttr);
 		}
 
-		CSwitchbotManager::Instance().Start(ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null)), p->slot, vec_alternatives);
+		CSwitchbotManager::Instance().Start(ecs::PlayerRuntime::GetPlayerID(character), p->slot, vec_alternatives);
 		return extraLen;
 	}
 
 	case SUBHEADER_CG_SWITCHBOT_STOP:
 	{
-		CSwitchbotManager::Instance().Stop(ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null)), p->slot);
+		CSwitchbotManager::Instance().Stop(ecs::PlayerRuntime::GetPlayerID(character), p->slot);
 		return 0;
 	}
 	}
@@ -5934,21 +5990,22 @@ int CInputMain::Switchbot(LPCHARACTER ch, const char* data, size_t uiBytes)
 
 
 #ifdef ENABLE_MULTI_LANGUAGE
-void CInputMain::ChangeLanguage(LPCHARACTER ch, uint8_t bLanguage)
+void CInputMain::ChangeLanguage(entt::entity character, uint8_t bLanguage)
 {
+	LPCHARACTER ch = ecs::LegacyCharOf(character);
 // migrated from CHARACTER handler
 // TODO Phase 8: migrate ChangeLanguage handler ECS
 // DUAL-PATH: legacy only during migration window
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "input_main.cpp:: void CInputMain::ChangeLanguage ");//INGAME_DEBUG_RAZOR93
+	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "input_main.cpp:: void CInputMain::ChangeLanguage ");//INGAME_DEBUG_RAZOR93
 #endif
 	if (!ch)
 		return;
 
-	if (!ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null)))
+	if (!ecs::PlayerRuntime::GetDesc(character))
 		return;
 
-	uint8_t bCurrentLanguage = ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null))->GetLanguage();
+	uint8_t bCurrentLanguage = ecs::PlayerRuntime::GetDesc(character)->GetLanguage();
 
 	if(bCurrentLanguage == bLanguage)
 		return;
@@ -5956,22 +6013,23 @@ void CInputMain::ChangeLanguage(LPCHARACTER ch, uint8_t bLanguage)
 	if(bLanguage > LANGUAGE_DEFAULT && bLanguage < LANGUAGE_MAX_NUM)
 	{
 		std::unique_ptr<SQLMsg> msg(DBManager::instance().DirectQuery("UPDATE account.account SET language = %d WHERE id = %d;", bLanguage, ch->GetAID()));
-		ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null))->SetLanguage(bLanguage);
+		ecs::PlayerRuntime::GetDesc(character)->SetLanguage(bLanguage);
 	}
 }
 
-void CInputMain::RequestLanguage(LPCHARACTER ch, const char* targetName)
+void CInputMain::RequestLanguage(entt::entity character, const char* targetName)
 {
+	LPCHARACTER ch = ecs::LegacyCharOf(character);
 // migrated from CHARACTER handler
 // TODO Phase 8: migrate RequestLanguage handler ECS
 // DUAL-PATH: legacy only during migration window
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "input_main.cpp:: void CInputMain::RequestLanguage ");//INGAME_DEBUG_RAZOR93
+	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "input_main.cpp:: void CInputMain::RequestLanguage ");//INGAME_DEBUG_RAZOR93
 #endif
 	if (!ch)
 		return;
 
-	LPDESC d = ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null));
+	LPDESC d = ecs::PlayerRuntime::GetDesc(character);
 	if (!d)
 		return;
 

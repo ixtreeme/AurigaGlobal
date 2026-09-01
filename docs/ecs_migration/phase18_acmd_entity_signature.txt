@@ -91,3 +91,32 @@ Build status
 ------------
 cmake --build build --config RelWithDebInfo --target GameServer --parallel 8
 Result: build succeeded, 0 errors, GameServer.exe linked.
+
+
+Phase 18b - CInputMain packet handler entity signature flip
+-----------------------------------------------------------
+Same rule applied to the client packet handler surface.
+
+input.h:
+  64 CInputMain member declarations flipped from LPCHARACTER <p> to
+  entt::entity character (first parameter only). <entt/entt.hpp> added.
+
+input_main.cpp:
+  63 handler definitions transformed; 460 conversion sites removed;
+  265 legacy refs kept alive through 53 single-line
+  "LPCHARACTER <p> = ecs::LegacyCharOf(character);" aliases.
+
+  CInputMain::Analyze and CInputDead::Analyze keep their LPCHARACTER ch (they
+  still need it for the legacy shop/safebox/dragon-soul gates and for
+  CWhisperAdmin::Manager / CInputProcessor::Version / OfflineshopPacket, which
+  are not migrated yet). They now resolve the entity once:
+      const entt::entity character = ch->GetEntityHandle();
+  and dispatch that to the 67 handler call sites; 22 further conversions inside
+  the dispatcher collapsed onto the same local.
+
+  63 conversion sites remain in input_main.cpp; none are in a CInputMain
+  handler - they are file-local helpers and other subjects (target, pkChr,
+  d->GetCharacter()).
+
+Project-wide conversion count: 5400 -> 4917
+Build: RelWithDebInfo GameServer, 0 errors, first attempt.
