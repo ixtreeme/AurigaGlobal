@@ -40,6 +40,7 @@
 #include "battle.h"
 #include "skill.h"
 #include "motion.h"
+#include "ecs/CharacterAccessors.hpp"
 namespace
 {
 #define STR_MULTIPLE 50 //player statja szorozva ennyivel lesz a klon statja (HP/SP/DMG/STAT),
@@ -1264,32 +1265,34 @@ bool CLostCastleDungeon::IsLostCastleMap(int32_t mapIndex) const
 }
 
 
-bool CLostCastleDungeon::SpawnTestClones(CHARACTER* source, CHARACTER* target, int32_t count)
+bool CLostCastleDungeon::SpawnTestClones(entt::entity source, entt::entity target, int32_t count)
 {
-    if (!source || !target)
+    LPCHARACTER pkSource = ecs::LegacyCharOf(source);
+    LPCHARACTER pkTarget = ecs::LegacyCharOf(target);
+    if (!pkSource || !pkTarget)
         return false;
-    if (!ecs::PlayerRuntime::IsPC(((source) ? (source)->GetEntityHandle() : entt::null)) || !ecs::PlayerRuntime::IsPC(((target) ? (target)->GetEntityHandle() : entt::null)))
+    if (!ecs::PlayerRuntime::IsPC(source) || !ecs::PlayerRuntime::IsPC(target))
         return false;
 
     if (count <= 0) count = 1;
     if (count > 20) count = 20;
 
-    const int32_t mapIndex = ecs::PlayerRuntime::GetMapIndex(((target) ? (target)->GetEntityHandle() : entt::null));
+    const int32_t mapIndex = ecs::PlayerRuntime::GetMapIndex(target);
 
     // Spawn near target (global coords)
     int32_t spawned = 0;
     for (int32_t n = 0; n < count; ++n)
     {
-        int32_t gx = ecs::PlayerRuntime::GetX(((target) ? (target)->GetEntityHandle() : entt::null));
-        int32_t gy = ecs::PlayerRuntime::GetY(((target) ? (target)->GetEntityHandle() : entt::null));
+        int32_t gx = ecs::PlayerRuntime::GetX(target);
+        int32_t gy = ecs::PlayerRuntime::GetY(target);
 
         // try random nearby points
         for (int t = 0; t < 25; ++t)
         {
             const int dx = number(-400, 400);
             const int dy = number(-400, 400);
-            const int32_t tx = ecs::PlayerRuntime::GetX(((target) ? (target)->GetEntityHandle() : entt::null)) + dx;
-            const int32_t ty = ecs::PlayerRuntime::GetY(((target) ? (target)->GetEntityHandle() : entt::null)) + dy;
+            const int32_t tx = ecs::PlayerRuntime::GetX(target) + dx;
+            const int32_t ty = ecs::PlayerRuntime::GetY(target) + dy;
             if (SECTREE_MANAGER::instance().Get(mapIndex, tx, ty))
             {
                 gx = tx;
@@ -1300,7 +1303,7 @@ bool CLostCastleDungeon::SpawnTestClones(CHARACTER* source, CHARACTER* target, i
 
         char cloneName[CHARACTER_NAME_MAX_LEN + 1];
         // unique name to avoid collisions
-        snprintf(cloneName, sizeof(cloneName), "Gonosz %s", ecs::PlayerRuntime::GetName(((source) ? (source)->GetEntityHandle() : entt::null)).data());
+        snprintf(cloneName, sizeof(cloneName), "Gonosz %s", ecs::PlayerRuntime::GetName(source).data());
 
         LPCHARACTER clone = CHARACTER_MANAGER::instance().CreateCharacter(cloneName, 0);
         if (!clone)
@@ -1310,44 +1313,44 @@ bool CLostCastleDungeon::SpawnTestClones(CHARACTER* source, CHARACTER* target, i
       //  clone->SetFakePlayer(true);
         clone->SetName(std::string(cloneName));
 
-        clone->SetRace((uint8_t)ecs::PlayerRuntime::GetRaceNum(((source) ? (source)->GetEntityHandle() : entt::null)));
-        clone->SetEmpire(ecs::PlayerRuntime::GetEmpire(((source) ? (source)->GetEntityHandle() : entt::null)));
+        clone->SetRace((uint8_t)ecs::PlayerRuntime::GetRaceNum(source));
+        clone->SetEmpire(ecs::PlayerRuntime::GetEmpire(source));
         clone->SetPKMode(PK_MODE_FREE);
-        clone->SetSkillGroup(source->GetSkillGroup());
+        clone->SetSkillGroup(pkSource->GetSkillGroup());
 
-        clone->SetRotation(source->GetRotation());
+        clone->SetRotation(pkSource->GetRotation());
         clone->SetXYZ(gx, gy, 0);
         clone->SetMapIndex(mapIndex);
 
         // look/parts
-        clone->SetPart(PART_MAIN, source->GetPart(PART_MAIN));
-        clone->SetPart(PART_WEAPON, source->GetPart(PART_WEAPON));
-        clone->SetPart(PART_HEAD, source->GetPart(PART_HEAD));
-        clone->SetPart(PART_HAIR, source->GetPart(PART_HAIR));
+        clone->SetPart(PART_MAIN, pkSource->GetPart(PART_MAIN));
+        clone->SetPart(PART_WEAPON, pkSource->GetPart(PART_WEAPON));
+        clone->SetPart(PART_HEAD, pkSource->GetPart(PART_HEAD));
+        clone->SetPart(PART_HAIR, pkSource->GetPart(PART_HAIR));
 #ifdef ENABLE_ACCE_SYSTEM
-        clone->SetPart(PART_ACCE, source->GetPart(PART_ACCE));
+        clone->SetPart(PART_ACCE, pkSource->GetPart(PART_ACCE));
 #endif
 #ifdef ENABLE_RUNE_SYSTEM
-        clone->SetPart(PART_RUNE, source->GetPart(PART_RUNE));
+        clone->SetPart(PART_RUNE, pkSource->GetPart(PART_RUNE));
 #endif
 #ifdef ENABLE_COSTUME_EFFECT
-        clone->SetPart(PART_EFFECT_BODY, source->GetPart(PART_EFFECT_BODY));
-        clone->SetPart(PART_EFFECT_WEAPON, source->GetPart(PART_EFFECT_WEAPON));
+        clone->SetPart(PART_EFFECT_BODY, pkSource->GetPart(PART_EFFECT_BODY));
+        clone->SetPart(PART_EFFECT_WEAPON, pkSource->GetPart(PART_EFFECT_WEAPON));
 #endif
 
-        CloneEquipWeaponFromSource(clone, source);
+        CloneEquipWeaponFromSource(clone, pkSource);
 
         // copy points (NO 10x here - real PvP test)
         for (int p = 0; p < POINT_MAX_NUM; ++p)
         {
-            clone->SetRealPoint((uint8_t)p, ecs::PointSystem::Get(((source) ? (source)->GetEntityHandle() : entt::null), (uint8_t)p));
-            clone->SetPoint((uint8_t)p, ecs::PointSystem::Get(((source) ? (source)->GetEntityHandle() : entt::null), (uint8_t)p));
+            clone->SetRealPoint((uint8_t)p, ecs::PointSystem::Get(source, (uint8_t)p));
+            clone->SetPoint((uint8_t)p, ecs::PointSystem::Get(source, (uint8_t)p));
         }
-        clone->SetLevel((uint8_t)ecs::PointSystem::GetLevel(((source) ? (source)->GetEntityHandle() : entt::null)));
-        clone->SetMaxHP(ecs::PointSystem::GetMaxHP(((source) ? (source)->GetEntityHandle() : entt::null))* STR_MULTIPLE);
-        clone->SetMaxSP(ecs::PointSystem::GetMaxSP(((source) ? (source)->GetEntityHandle() : entt::null)) * STR_MULTIPLE);
-        clone->SetHP(ecs::PointSystem::GetMaxHP(((source) ? (source)->GetEntityHandle() : entt::null)) * STR_MULTIPLE);
-        clone->SetSP(ecs::PointSystem::GetMaxSP(((source) ? (source)->GetEntityHandle() : entt::null)) * STR_MULTIPLE);
+        clone->SetLevel((uint8_t)ecs::PointSystem::GetLevel(source));
+        clone->SetMaxHP(ecs::PointSystem::GetMaxHP(source)* STR_MULTIPLE);
+        clone->SetMaxSP(ecs::PointSystem::GetMaxSP(source) * STR_MULTIPLE);
+        clone->SetHP(ecs::PointSystem::GetMaxHP(source) * STR_MULTIPLE);
+        clone->SetSP(ecs::PointSystem::GetMaxSP(source) * STR_MULTIPLE);
         clone->SetKillerMode(true);
 
         // Skills (AI uses only ATTACK skills)
@@ -1355,7 +1358,7 @@ bool CLostCastleDungeon::SpawnTestClones(CHARACTER* source, CHARACTER* target, i
         skillList.reserve(32);
         for (uint32_t sv = 1; sv <= 255; ++sv)
         {
-            const int lvl = source->GetSkillLevel(sv);
+            const int lvl = pkSource->GetSkillLevel(sv);
             if (lvl <= 0)
                 continue;
 
@@ -1383,9 +1386,9 @@ bool CLostCastleDungeon::SpawnTestClones(CHARACTER* source, CHARACTER* target, i
         }
 
         // Register: only the target can fight this clone, and the clone targets the target
-	s_lc.m_cloneAllowedPid[ecs::PlayerRuntime::GetPacketVID(((clone) ? (clone)->GetEntityHandle() : entt::null))] = ecs::PlayerRuntime::GetPlayerID(((target) ? (target)->GetEntityHandle() : entt::null));
+	s_lc.m_cloneAllowedPid[ecs::PlayerRuntime::GetPacketVID(((clone) ? (clone)->GetEntityHandle() : entt::null))] = ecs::PlayerRuntime::GetPlayerID(target);
 	s_lc.m_cloneMap[ecs::PlayerRuntime::GetPacketVID(((clone) ? (clone)->GetEntityHandle() : entt::null))] = mapIndex;
-	s_lc.m_cloneTargetVid[ecs::PlayerRuntime::GetPacketVID(((clone) ? (clone)->GetEntityHandle() : entt::null))] = ecs::PlayerRuntime::GetPacketVID(((target) ? (target)->GetEntityHandle() : entt::null));
+	s_lc.m_cloneTargetVid[ecs::PlayerRuntime::GetPacketVID(((clone) ? (clone)->GetEntityHandle() : entt::null))] = ecs::PlayerRuntime::GetPacketVID(target);
 	s_lc.m_cloneSkills[ecs::PlayerRuntime::GetPacketVID(((clone) ? (clone)->GetEntityHandle() : entt::null))] = std::move(skillList);
 
 	s_lc.m_clonePending.erase(ecs::PlayerRuntime::GetPacketVID(((clone) ? (clone)->GetEntityHandle() : entt::null)));
@@ -1461,77 +1464,81 @@ void CLostCastleDungeon::PurgeTestClonesForTargetPID(uint32_t targetPid, int32_t
     }
 }
 
-bool CLostCastleDungeon::OnUseItem30001(CHARACTER* ch)
+bool CLostCastleDungeon::OnUseItem30001(entt::entity character)
 {
-    if (!ch || !ecs::PlayerRuntime::IsPC(((ch) ? (ch)->GetEntityHandle() : entt::null)))
+    LPCHARACTER ch = ecs::LegacyCharOf(character);
+    if (!ch || !ecs::PlayerRuntime::IsPC(character))
         return false;
 
-    const int32_t idx = ecs::PlayerRuntime::GetMapIndex(((ch) ? (ch)->GetEntityHandle() : entt::null));
+    const int32_t idx = ecs::PlayerRuntime::GetMapIndex(character);
 
     // Block inside LostCastle instance maps to avoid skipping dungeon mechanics
     if (IsInRange(idx, kPrivateMin, kPrivateMax))
     {
-        ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "Dungeonban nem hasznalhato.");
+        ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "Dungeonban nem hasznalhato.");
         return false;
     }
 
-    PurgeTestClonesForTargetPID(ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null)), idx);
-    ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "Klonok torolve ezen a mapon.");
+    PurgeTestClonesForTargetPID(ecs::PlayerRuntime::GetPlayerID(character), idx);
+    ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "Klonok torolve ezen a mapon.");
     return true;
 }
 
-void CLostCastleDungeon::OnPlayerDisconnect(CHARACTER* ch)
+void CLostCastleDungeon::OnPlayerDisconnect(entt::entity character)
 {
-    if (!ch || !ecs::PlayerRuntime::IsPC(((ch) ? (ch)->GetEntityHandle() : entt::null)))
+    LPCHARACTER ch = ecs::LegacyCharOf(character);
+    if (!ch || !ecs::PlayerRuntime::IsPC(character))
         return;
 
-    const int32_t idx = ecs::PlayerRuntime::GetMapIndex(((ch) ? (ch)->GetEntityHandle() : entt::null));
+    const int32_t idx = ecs::PlayerRuntime::GetMapIndex(character);
     if (!IsInRange(idx, kPrivateMin, kPrivateMax))
         return;
 
     const int32_t now = get_global_time();
-    ecs::QuestSystem::SetFlag(((ch) ? (ch)->GetEntityHandle() : entt::null), kQfDisconnect, now + kRejoinSeconds);
-    ecs::QuestSystem::SetFlag(((ch) ? (ch)->GetEntityHandle() : entt::null), kQfIdx, idx);
-    ecs::QuestSystem::SetFlag(((ch) ? (ch)->GetEntityHandle() : entt::null), kQfCh, (int32_t)g_bChannel);
+    ecs::QuestSystem::SetFlag(character, kQfDisconnect, now + kRejoinSeconds);
+    ecs::QuestSystem::SetFlag(character, kQfIdx, idx);
+    ecs::QuestSystem::SetFlag(character, kQfCh, (int32_t)g_bChannel);
 }
 
-void CLostCastleDungeon::OnPlayerLogin(CHARACTER* ch)
+void CLostCastleDungeon::OnPlayerLogin(entt::entity character)
 {
-    if (!ch || !ecs::PlayerRuntime::IsPC(((ch) ? (ch)->GetEntityHandle() : entt::null)))
+    LPCHARACTER ch = ecs::LegacyCharOf(character);
+    if (!ch || !ecs::PlayerRuntime::IsPC(character))
         return;
 
-    const int32_t idx = ecs::PlayerRuntime::GetMapIndex(((ch) ? (ch)->GetEntityHandle() : entt::null));
+    const int32_t idx = ecs::PlayerRuntime::GetMapIndex(character);
     if (!IsInRange(idx, kPrivateMin, kPrivateMax))
         return;
 
     // IMPORTANT: don't set warp location to kOriginalMap here.
     // Lobby is set at entry time (npc click) to where the player came from.
-    ecs::QuestSystem::SetFlag(((ch) ? (ch)->GetEntityHandle() : entt::null), kQfIdx, idx);
-    ecs::QuestSystem::SetFlag(((ch) ? (ch)->GetEntityHandle() : entt::null), kQfCh, (int32_t)g_bChannel);
+    ecs::QuestSystem::SetFlag(character, kQfIdx, idx);
+    ecs::QuestSystem::SetFlag(character, kQfCh, (int32_t)g_bChannel);
 }
 
-bool CLostCastleDungeon::OnClickNpc(CHARACTER* ch)
+bool CLostCastleDungeon::OnClickNpc(entt::entity character)
 {
-    if (!ch || !ecs::PlayerRuntime::IsPC(((ch) ? (ch)->GetEntityHandle() : entt::null)))
+    LPCHARACTER ch = ecs::LegacyCharOf(character);
+    if (!ch || !ecs::PlayerRuntime::IsPC(character))
         return false;
 
     // save "lobby" as where the NPC was clicked (like your flow expects)
-    const int32_t lobbyMap = ecs::PlayerRuntime::GetMapIndex(((ch) ? (ch)->GetEntityHandle() : entt::null));
-    const int32_t lobbyX = ecs::PlayerRuntime::GetX(((ch) ? (ch)->GetEntityHandle() : entt::null)) / 100;
-    const int32_t lobbyY = ecs::PlayerRuntime::GetY(((ch) ? (ch)->GetEntityHandle() : entt::null)) / 100;
+    const int32_t lobbyMap = ecs::PlayerRuntime::GetMapIndex(character);
+    const int32_t lobbyX = ecs::PlayerRuntime::GetX(character) / 100;
+    const int32_t lobbyY = ecs::PlayerRuntime::GetY(character) / 100;
 
-    LPPARTY party = ecs::SocialSystem::GetParty(((ch) ? (ch)->GetEntityHandle() : entt::null));
+    LPPARTY party = ecs::SocialSystem::GetParty(character);
 
     if (party)
     {
-        if (party->GetLeaderPID() != ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null)))
+        if (party->GetLeaderPID() != ecs::PlayerRuntime::GetPlayerID(character))
         {
-            ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "Csak a party leader indithatja!");
+            ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "Csak a party leader indithatja!");
             return true;
         }
 
         bool ok = true;
-        const int32_t leaderMap = ecs::PlayerRuntime::GetMapIndex(((ch) ? (ch)->GetEntityHandle() : entt::null));
+        const int32_t leaderMap = ecs::PlayerRuntime::GetMapIndex(character);
 
         auto check = [&](LPCHARACTER m)
             {
@@ -1559,20 +1566,20 @@ bool CLostCastleDungeon::OnClickNpc(CHARACTER* ch)
 
         if (!ok)
         {
-            ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "Feltetelek: minden tagnak itt kell lennie, lvl %d-%d, es kell 1 db %u.", kMinLevel, kMaxLevel, kEntryItemVnum);
+            ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "Feltetelek: minden tagnak itt kell lennie, lvl %d-%d, es kell 1 db %u.", kMinLevel, kMaxLevel, kEntryItemVnum);
             return true;
         }
     }
     else
     {
-        if (ecs::PointSystem::GetLevel(((ch) ? (ch)->GetEntityHandle() : entt::null)) < kMinLevel || ecs::PointSystem::GetLevel(((ch) ? (ch)->GetEntityHandle() : entt::null)) > kMaxLevel)
+        if (ecs::PointSystem::GetLevel(character) < kMinLevel || ecs::PointSystem::GetLevel(character) > kMaxLevel)
         {
-            ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "Csak lvl %d-%d kozott lephetsz be!", kMinLevel, kMaxLevel);
+            ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "Csak lvl %d-%d kozott lephetsz be!", kMinLevel, kMaxLevel);
             return true;
         }
         if (ch->CountSpecifyItem(kEntryItemVnum) < 1)
         {
-            ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "Szukseges belepo item: %u", kEntryItemVnum);
+            ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "Szukseges belepo item: %u", kEntryItemVnum);
             return true;
         }
     }
@@ -1581,7 +1588,7 @@ bool CLostCastleDungeon::OnClickNpc(CHARACTER* ch)
     LPDUNGEON d = CDungeonManager::instance().Create(kOriginalMap);
     if (!d)
     {
-        ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "Elveszett Kastely: nem sikerult letrehozni a dungeont.");
+        ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "Elveszett Kastely: nem sikerult letrehozni a dungeont.");
         return true;
     }
 
@@ -1615,27 +1622,29 @@ bool CLostCastleDungeon::OnClickNpc(CHARACTER* ch)
         applyMember(ch);
 
         // IMPORTANT: Join expects GLOBAL CELL on your core
-        d->Join_Coords(ch, kJoinGlobalX, kJoinGlobalY, ecs::PlayerRuntime::GetMapIndex(((ch) ? (ch)->GetEntityHandle() : entt::null)));
+        d->Join_Coords(ch, kJoinGlobalX, kJoinGlobalY, ecs::PlayerRuntime::GetMapIndex(character));
     }
     else
     {
         auto fn = [&](LPCHARACTER m) { applyMember(m); };
-        party->ForEachOnMapMember(fn, ecs::PlayerRuntime::GetMapIndex(((ch) ? (ch)->GetEntityHandle() : entt::null)));
+        party->ForEachOnMapMember(fn, ecs::PlayerRuntime::GetMapIndex(character));
 
         // IMPORTANT: Join expects GLOBAL CELL on your core
-        d->JoinParty_Coords(party, kJoinGlobalX, kJoinGlobalY, ecs::PlayerRuntime::GetMapIndex(((ch) ? (ch)->GetEntityHandle() : entt::null)));
+        d->JoinParty_Coords(party, kJoinGlobalX, kJoinGlobalY, ecs::PlayerRuntime::GetMapIndex(character));
     }
 
     s_lc.StartFloor1(d->GetMapIndex());
     return true;
 }
 
-void CLostCastleDungeon::OnMobKilled(CHARACTER* killer, CHARACTER* victim)
+void CLostCastleDungeon::OnMobKilled(entt::entity killer, entt::entity victim)
 {
-    if (!victim)
+    LPCHARACTER pkKiller = ecs::LegacyCharOf(killer);
+    LPCHARACTER pkVictim = ecs::LegacyCharOf(victim);
+    if (!pkVictim)
         return;
 
-    const int32_t idx = ecs::PlayerRuntime::GetMapIndex(((victim) ? (victim)->GetEntityHandle() : entt::null));
+    const int32_t idx = ecs::PlayerRuntime::GetMapIndex(victim);
     if (!IsInRange(idx, kPrivateMin, kPrivateMax))
         return;
 
@@ -1645,10 +1654,10 @@ void CLostCastleDungeon::OnMobKilled(CHARACTER* killer, CHARACTER* victim)
 
     const int32_t floor = d->GetFlag(kFlagFloor);
 
-    if (floor == 1 && ecs::PlayerRuntime::GetRaceNum(((victim) ? (victim)->GetEntityHandle() : entt::null)) == kMetinVnum)
+    if (floor == 1 && ecs::PlayerRuntime::GetRaceNum(victim) == kMetinVnum)
     {
         const uint32_t correctVid = (uint32_t)d->GetFlag(kFlagCorrectMetin);
-	if (correctVid && ecs::PlayerRuntime::GetPacketVID(((victim) ? (victim)->GetEntityHandle() : entt::null)) == correctVid)
+	if (correctVid && ecs::PlayerRuntime::GetPacketVID(victim) == correctVid)
         {
             BigNoticeMap(idx, "Elveszett Kastely: Megtalaltatok a megfelelõ metinkõvet! Floor2 kovetkezik.");
             s_lc.StartFloor2(idx);
@@ -1658,7 +1667,7 @@ void CLostCastleDungeon::OnMobKilled(CHARACTER* killer, CHARACTER* victim)
 
     if (floor == 3)
     {
-	const uint32_t vvid = ecs::PlayerRuntime::GetPacketVID(((victim) ? (victim)->GetEntityHandle() : entt::null));
+	const uint32_t vvid = ecs::PlayerRuntime::GetPacketVID(victim);
         if (s_lc.IsClone(vvid))
             s_lc.OnCloneKilled(idx, vvid);
         return;
@@ -1666,25 +1675,27 @@ void CLostCastleDungeon::OnMobKilled(CHARACTER* killer, CHARACTER* victim)
 
     if (floor == 4)
     {
-        if (killer && ecs::PlayerRuntime::IsPC(((killer) ? (killer)->GetEntityHandle() : entt::null)) && victim->IsMonster())
+        if (pkKiller && ecs::PlayerRuntime::IsPC(killer) && pkVictim->IsMonster())
         {
-            const uint16_t vnum = ecs::PlayerRuntime::GetRaceNum(((victim) ? (victim)->GetEntityHandle() : entt::null));
+            const uint16_t vnum = ecs::PlayerRuntime::GetRaceNum(victim);
             if (vnum != kTotemVnum && vnum != kStatueVnum)
             {
                 if (number(1, 100) <= kTileDropChancePct)
-                    DropItemOnGround(victim, killer, kTileItemVnum, 1);
+                    DropItemOnGround(pkVictim, pkKiller, kTileItemVnum, 1);
             }
         }
         return;
     }
 }
 
-bool CLostCastleDungeon::OnNpcTakeItem(CHARACTER* from, CHARACTER* npc, LPITEM item)
+bool CLostCastleDungeon::OnNpcTakeItem(entt::entity from, entt::entity npc, LPITEM item)
 {
-    if (!from || !ecs::PlayerRuntime::IsPC(((from) ? (from)->GetEntityHandle() : entt::null)) || !npc || !item)
+    LPCHARACTER pkFrom = ecs::LegacyCharOf(from);
+    LPCHARACTER pkNpc = ecs::LegacyCharOf(npc);
+    if (!pkFrom || !ecs::PlayerRuntime::IsPC(from) || !pkNpc || !item)
         return false;
 
-    const int32_t idx = ecs::PlayerRuntime::GetMapIndex(((from) ? (from)->GetEntityHandle() : entt::null));
+    const int32_t idx = ecs::PlayerRuntime::GetMapIndex(from);
     if (!IsInRange(idx, kPrivateMin, kPrivateMax))
         return false;
 
@@ -1697,7 +1708,7 @@ bool CLostCastleDungeon::OnNpcTakeItem(CHARACTER* from, CHARACTER* npc, LPITEM i
     if (floor == 2)
     {
         const uint32_t statueVid = (uint32_t)d->GetFlag(kFlagStatueVid);
-	if (statueVid && ecs::PlayerRuntime::GetPacketVID(((npc) ? (npc)->GetEntityHandle() : entt::null)) != statueVid)
+	if (statueVid && ecs::PlayerRuntime::GetPacketVID(npc) != statueVid)
             return false;
 
         const uint32_t vnum = ItemSystem::GetItemVnum((item ? item->GetEntityHandle() : entt::null));
@@ -1713,7 +1724,7 @@ bool CLostCastleDungeon::OnNpcTakeItem(CHARACTER* from, CHARACTER* npc, LPITEM i
         const int32_t bit = 1 << keyIndex;
         if (mask & bit)
         {
-            ecs::ChatSystem::Send(((from) ? (from)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "Ez a kulcs mar be lett adva!");
+            ecs::ChatSystem::Send(from, CHAT_TYPE_INFO, "Ez a kulcs mar be lett adva!");
             return true;
         }
 
@@ -1721,7 +1732,7 @@ bool CLostCastleDungeon::OnNpcTakeItem(CHARACTER* from, CHARACTER* npc, LPITEM i
         mask |= bit;
         d->SetFlag(kFlagKeyMask, mask);
 
-        BigNoticeMap(idx, "Elveszett Kastely: %s megtalalta az egyik kulcsot!", ecs::PlayerRuntime::GetName(((from) ? (from)->GetEntityHandle() : entt::null)).data());
+        BigNoticeMap(idx, "Elveszett Kastely: %s megtalalta az egyik kulcsot!", ecs::PlayerRuntime::GetName(from).data());
 
         if (mask == ((1 << 5) - 1))
         {
@@ -1746,7 +1757,7 @@ bool CLostCastleDungeon::OnNpcTakeItem(CHARACTER* from, CHARACTER* npc, LPITEM i
     if (floor == 4)
     {
         const uint32_t totemVid = (uint32_t)d->GetFlag(kFlagTotemVid);
-	if (totemVid && ecs::PlayerRuntime::GetPacketVID(((npc) ? (npc)->GetEntityHandle() : entt::null)) != totemVid)
+	if (totemVid && ecs::PlayerRuntime::GetPacketVID(npc) != totemVid)
             return false;
 
         if (ItemSystem::GetItemVnum((item ? item->GetEntityHandle() : entt::null)) != kTileItemVnum)
@@ -1755,7 +1766,7 @@ bool CLostCastleDungeon::OnNpcTakeItem(CHARACTER* from, CHARACTER* npc, LPITEM i
         ConsumeOneGivenItem((item ? item->GetEntityHandle() : entt::null), "LOSTCASTLE_TILE");
 
         if (!s_lc.UnlockNextTile(idx))
-            ecs::ChatSystem::Send(((from) ? (from)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "Mar minden csempe le van teve!");
+            ecs::ChatSystem::Send(from, CHAT_TYPE_INFO, "Mar minden csempe le van teve!");
 
         return true;
     }
@@ -1763,13 +1774,15 @@ bool CLostCastleDungeon::OnNpcTakeItem(CHARACTER* from, CHARACTER* npc, LPITEM i
     return false;
 }
 
-bool CLostCastleDungeon::CheckCloneDamage(CHARACTER* attacker, CHARACTER* victim) const
+bool CLostCastleDungeon::CheckCloneDamage(entt::entity attacker, entt::entity victim) const
 {
-    if (!attacker || !victim)
+    LPCHARACTER pkAttacker = ecs::LegacyCharOf(attacker);
+    LPCHARACTER pkVictim = ecs::LegacyCharOf(victim);
+    if (!pkAttacker || !pkVictim)
         return true;
 
-	const uint32_t aVid = ecs::PlayerRuntime::GetPacketVID(((attacker) ? (attacker)->GetEntityHandle() : entt::null));
-	const uint32_t vVid = ecs::PlayerRuntime::GetPacketVID(((victim) ? (victim)->GetEntityHandle() : entt::null));
+	const uint32_t aVid = ecs::PlayerRuntime::GetPacketVID(attacker);
+	const uint32_t vVid = ecs::PlayerRuntime::GetPacketVID(victim);
 
     const bool attackerIsClone = s_lc.IsClone(aVid);
     const bool victimIsClone = s_lc.IsClone(vVid);
@@ -1781,19 +1794,19 @@ bool CLostCastleDungeon::CheckCloneDamage(CHARACTER* attacker, CHARACTER* victim
     // Player/NPC -> Clone
     //if (!attackerIsClone && victimIsClone)
     //{
-    //    if (!(ecs::PlayerRuntime::IsPC(((attacker) ? (attacker)->GetEntityHandle() : entt::null)) || attacker->IsFakePlayer()))
+    //    if (!(ecs::PlayerRuntime::IsPC(attacker) || attacker->IsFakePlayer()))
     //        return false;
 
-    //    return s_lc.IsCloneAttackAllowed(vVid, ecs::PlayerRuntime::GetPlayerID(((attacker) ? (attacker)->GetEntityHandle() : entt::null)));
+    //    return s_lc.IsCloneAttackAllowed(vVid, ecs::PlayerRuntime::GetPlayerID(attacker));
     //}
 
     //// Clone -> Player/NPC
     //if (attackerIsClone && !victimIsClone)
     //{
-    //    if (!(ecs::PlayerRuntime::IsPC(((victim) ? (victim)->GetEntityHandle() : entt::null)) || victim->IsFakePlayer()))
+    //    if (!(ecs::PlayerRuntime::IsPC(victim) || victim->IsFakePlayer()))
     //        return false;
 
-    //    return s_lc.IsCloneAttackAllowed(aVid, ecs::PlayerRuntime::GetPlayerID(((victim) ? (victim)->GetEntityHandle() : entt::null)));
+    //    return s_lc.IsCloneAttackAllowed(aVid, ecs::PlayerRuntime::GetPlayerID(victim));
     //}
 
     // Clone -> Clone tiltás

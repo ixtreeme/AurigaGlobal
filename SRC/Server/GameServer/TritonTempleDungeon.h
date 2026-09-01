@@ -2,6 +2,8 @@
 
 #include <cstdint>
 
+#include <entt/entt.hpp>
+
 class CHARACTER;
 
 // C++ replacement for quest: tritontemple_razor93
@@ -13,10 +15,10 @@ public:
     bool IsTritonTempleMap(int32_t mapIndex) const;
 
     // Hooks (call from existing server flow)
-    void OnPlayerDisconnect(CHARACTER* ch);
-    void OnPlayerLogin(CHARACTER* ch);
-    void OnMobKilled(CHARACTER* killer, CHARACTER* victim);
+    void OnPlayerDisconnect(entt::entity character);
+    void OnPlayerLogin(entt::entity character);
+    void OnMobKilled(entt::entity killer, entt::entity victim);
 
     // Trigger from ON_CLICK_TRITON_TEMPLE
-    bool OnClickNpc(CHARACTER* ch);
+    bool OnClickNpc(entt::entity character);
 };

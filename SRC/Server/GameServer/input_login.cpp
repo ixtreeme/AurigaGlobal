@@ -627,16 +627,16 @@ void CInputLogin::Entergame(LPDESC d, const char* data)
 #endif
 #ifdef ENABLE_CPP_DUNGEON_RAZOR93
 
-	COrcsDungeon::instance().OnPlayerLogin(ch);
-	CTritonTempleDungeon::instance().OnPlayerLogin(ch);
-	CValentineDungeon::instance().OnPlayerLogin(ch);
-	CRuneDungeon::instance().OnPlayerLogin(ch);
-	CPyramidDungeonRazor93::instance().OnPlayerLogin(ch);
-	CNightmareDungeonRazor93::instance().OnPlayerLogin(ch);
-	//CLostCastleDungeon::instance().OnPlayerLogin(ch);
-	CHalloween2022Dungeon::instance().OnPlayerLogin(ch);
-	CVikingDungeon::instance().OnPlayerLogin(ch);
-	CEasterDungeon::instance().OnPlayerLogin(ch);
+	COrcsDungeon::instance().OnPlayerLogin(((ch) ? (ch)->GetEntityHandle() : entt::null));
+	CTritonTempleDungeon::instance().OnPlayerLogin(((ch) ? (ch)->GetEntityHandle() : entt::null));
+	CValentineDungeon::instance().OnPlayerLogin(((ch) ? (ch)->GetEntityHandle() : entt::null));
+	CRuneDungeon::instance().OnPlayerLogin(((ch) ? (ch)->GetEntityHandle() : entt::null));
+	CPyramidDungeonRazor93::instance().OnPlayerLogin(((ch) ? (ch)->GetEntityHandle() : entt::null));
+	CNightmareDungeonRazor93::instance().OnPlayerLogin(((ch) ? (ch)->GetEntityHandle() : entt::null));
+	//CLostCastleDungeon::instance().OnPlayerLogin(((ch) ? (ch)->GetEntityHandle() : entt::null));
+	CHalloween2022Dungeon::instance().OnPlayerLogin(((ch) ? (ch)->GetEntityHandle() : entt::null));
+	CVikingDungeon::instance().OnPlayerLogin(((ch) ? (ch)->GetEntityHandle() : entt::null));
+	CEasterDungeon::instance().OnPlayerLogin(((ch) ? (ch)->GetEntityHandle() : entt::null));
 #endif
 
 #ifdef __HIDE_COSTUME_SYSTEM__

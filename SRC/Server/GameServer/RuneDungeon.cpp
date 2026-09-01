@@ -35,6 +35,7 @@
 
 #ifdef ENABLE_BATTLE_PASS
 #include "battle_pass.h"
+#include "ecs/CharacterAccessors.hpp"
 #endif
 
 namespace
@@ -886,30 +887,32 @@ bool CRuneDungeon::IsRuneDungeonMap(int32_t mapIndex) const
     return IsInRange(mapIndex, kPrivateMin, kPrivateMax);
 }
 
-void CRuneDungeon::OnPlayerDisconnect(CHARACTER* ch)
+void CRuneDungeon::OnPlayerDisconnect(entt::entity character)
 {
-    if (!ch || !ecs::PlayerRuntime::IsPC(((ch) ? (ch)->GetEntityHandle() : entt::null)))
+    LPCHARACTER ch = ecs::LegacyCharOf(character);
+    if (!ch || !ecs::PlayerRuntime::IsPC(character))
         return;
 
-    const int32_t idx = ecs::PlayerRuntime::GetMapIndex(((ch) ? (ch)->GetEntityHandle() : entt::null));
+    const int32_t idx = ecs::PlayerRuntime::GetMapIndex(character);
     if (!IsRuneDungeonMap(idx))
         return;
 
     const int32_t now = get_global_time();
-    ecs::QuestSystem::SetFlag(((ch) ? (ch)->GetEntityHandle() : entt::null), kQfDisconnect, now + kRejoinSeconds);
+    ecs::QuestSystem::SetFlag(character, kQfDisconnect, now + kRejoinSeconds);
 }
 
-void CRuneDungeon::OnPlayerLogin(CHARACTER* ch)
+void CRuneDungeon::OnPlayerLogin(entt::entity character)
 {
-    if (!ch || !ecs::PlayerRuntime::IsPC(((ch) ? (ch)->GetEntityHandle() : entt::null)))
+    LPCHARACTER ch = ecs::LegacyCharOf(character);
+    if (!ch || !ecs::PlayerRuntime::IsPC(character))
         return;
 
-    const int32_t idx = ecs::PlayerRuntime::GetMapIndex(((ch) ? (ch)->GetEntityHandle() : entt::null));
+    const int32_t idx = ecs::PlayerRuntime::GetMapIndex(character);
 
     // If someone logs in on the base map, kick them to default location.
     if (idx == kRuneOriginalMap)
     {
-        ecs::MovementSystem::WarpSet(((ch) ? (ch)->GetEntityHandle() : entt::null), 536900, 1331400);
+        ecs::MovementSystem::WarpSet(character, 536900, 1331400);
         return;
     }
 
@@ -919,8 +922,8 @@ void CRuneDungeon::OnPlayerLogin(CHARACTER* ch)
     // Set return location
     ch->SetWarpLocation(219, 5369, 14292);
 
-    ecs::QuestSystem::SetFlag(((ch) ? (ch)->GetEntityHandle() : entt::null), kQfIdx, idx);
-    ecs::QuestSystem::SetFlag(((ch) ? (ch)->GetEntityHandle() : entt::null), kQfCh, (int32_t)g_bChannel);
+    ecs::QuestSystem::SetFlag(character, kQfIdx, idx);
+    ecs::QuestSystem::SetFlag(character, kQfCh, (int32_t)g_bChannel);
 
     LPDUNGEON d = CDungeonManager::instance().FindByMapIndex(idx);
     if (!d)
@@ -930,9 +933,9 @@ void CRuneDungeon::OnPlayerLogin(CHARACTER* ch)
     if (d->GetFlag(kFlagFloor) == 0)
     {
         bool isLeader = true;
-        if (LPPARTY party = ecs::SocialSystem::GetParty(((ch) ? (ch)->GetEntityHandle() : entt::null)))
+        if (LPPARTY party = ecs::SocialSystem::GetParty(character))
         {
-            if (party->GetLeaderPID() != ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null)))
+            if (party->GetLeaderPID() != ecs::PlayerRuntime::GetPlayerID(character))
                 isLeader = false;
         }
 
@@ -945,12 +948,14 @@ void CRuneDungeon::OnPlayerLogin(CHARACTER* ch)
     }
 }
 
-void CRuneDungeon::OnMobKilled(CHARACTER* killer, CHARACTER* victim)
+void CRuneDungeon::OnMobKilled(entt::entity killer, entt::entity victim)
 {
-    if (!killer || !victim)
+    LPCHARACTER pkKiller = ecs::LegacyCharOf(killer);
+    LPCHARACTER pkVictim = ecs::LegacyCharOf(victim);
+    if (!pkKiller || !pkVictim)
         return;
 
-    const int32_t idx = ecs::PlayerRuntime::GetMapIndex(((victim) ? (victim)->GetEntityHandle() : entt::null));
+    const int32_t idx = ecs::PlayerRuntime::GetMapIndex(victim);
     if (!IsRuneDungeonMap(idx))
         return;
 
@@ -958,7 +963,7 @@ void CRuneDungeon::OnMobKilled(CHARACTER* killer, CHARACTER* victim)
     if (!d)
         return;
 
-    const uint32_t vnum = ecs::PlayerRuntime::GetRaceNum(((victim) ? (victim)->GetEntityHandle() : entt::null));
+    const uint32_t vnum = ecs::PlayerRuntime::GetRaceNum(victim);
     const int32_t floor = d->GetFlag(kFlagFloor);
     const int32_t type = d->GetFlag(kFlagType);
 
@@ -973,7 +978,7 @@ void CRuneDungeon::OnMobKilled(CHARACTER* killer, CHARACTER* victim)
             snprintf(vidFlag, sizeof(vidFlag), "unique_vid%d", i);
             snprintf(doneFlag, sizeof(doneFlag), "done_vid%d", i);
 
-	if ((uint32_t)d->GetFlag(vidFlag) == ecs::PlayerRuntime::GetPacketVID(((victim) ? (victim)->GetEntityHandle() : entt::null)))
+	if ((uint32_t)d->GetFlag(vidFlag) == ecs::PlayerRuntime::GetPacketVID(victim))
             {
                 d->SetFlag(doneFlag, 1);
                 break;
@@ -1032,18 +1037,18 @@ void CRuneDungeon::OnMobKilled(CHARACTER* killer, CHARACTER* victim)
 
         if (isType1Mob && number(1, 100) <= 5)
         {
-            LPPARTY party = ecs::SocialSystem::GetParty(((killer) ? (killer)->GetEntityHandle() : entt::null));
+            LPPARTY party = ecs::SocialSystem::GetParty(killer);
             if (!party)
             {
-                if (killer->CountSpecifyItem(kKeyFragment) < 10 && killer->CountSpecifyItem(kFloorKey) < 1)
-                    killer->AutoGiveItem(kKeyFragment, 1);
+                if (pkKiller->CountSpecifyItem(kKeyFragment) < 10 && pkKiller->CountSpecifyItem(kFloorKey) < 1)
+                    pkKiller->AutoGiveItem(kKeyFragment, 1);
             }
             else
             {
-                if (party->GetLeaderPID() == ecs::PlayerRuntime::GetPlayerID(((killer) ? (killer)->GetEntityHandle() : entt::null)))
+                if (party->GetLeaderPID() == ecs::PlayerRuntime::GetPlayerID(killer))
                 {
-                    if (killer->CountSpecifyItem(kKeyFragment) < 10 && killer->CountSpecifyItem(kFloorKey) < 1)
-                        killer->AutoGiveItem(kKeyFragment, 1);
+                    if (pkKiller->CountSpecifyItem(kKeyFragment) < 10 && pkKiller->CountSpecifyItem(kFloorKey) < 1)
+                        pkKiller->AutoGiveItem(kKeyFragment, 1);
                 }
             }
         }
@@ -1089,7 +1094,7 @@ void CRuneDungeon::OnMobKilled(CHARACTER* killer, CHARACTER* victim)
     if (floor == 5 && type == 6 && (vnum == kKeyDropMobA || vnum == kKeyDropMobB))
     {
         if (number(1, 100) <= 3)
-            DropItemOnGround(victim, killer, kFloorKey, 1);
+            DropItemOnGround(pkVictim, pkKiller, kFloorKey, 1);
         return;
     }
 
@@ -1143,28 +1148,30 @@ void CRuneDungeon::OnMobKilled(CHARACTER* killer, CHARACTER* victim)
             d->SpawnMob(kExitNpcVnum, kExitNpcPos.x, kExitNpcPos.y);
 
         // Global broadcast
-        if (LPPARTY party = ecs::SocialSystem::GetParty(((killer) ? (killer)->GetEntityHandle() : entt::null)))
+        if (LPPARTY party = ecs::SocialSystem::GetParty(killer))
         {
-            const char* leaderName = ecs::PlayerRuntime::GetName(((killer) ? (killer)->GetEntityHandle() : entt::null)).data();
+            const char* leaderName = ecs::PlayerRuntime::GetName(killer).data();
             if (LPCHARACTER leader = party->GetLeaderCharacter())
                 leaderName = ecs::PlayerRuntime::GetName(((leader) ? (leader)->GetEntityHandle() : entt::null)).data();
             BroadcastNoticeNew(CHAT_TYPE_NOTICE, 0, 0, 1283, "%s", leaderName);
         }
         else
         {
-            BroadcastNoticeNew(CHAT_TYPE_NOTICE, 0, 0, 1239, "%s", ecs::PlayerRuntime::GetName(((killer) ? (killer)->GetEntityHandle() : entt::null)).data());
+            BroadcastNoticeNew(CHAT_TYPE_NOTICE, 0, 0, 1239, "%s", ecs::PlayerRuntime::GetName(killer).data());
         }
 
         return;
     }
 }
 
-bool CRuneDungeon::OnNpcTakeItem(CHARACTER* from, CHARACTER* npc, LPITEM item)
+bool CRuneDungeon::OnNpcTakeItem(entt::entity from, entt::entity npc, LPITEM item)
 {
-    if (!from || !ecs::PlayerRuntime::IsPC(((from) ? (from)->GetEntityHandle() : entt::null)) || !npc || !item)
+    LPCHARACTER pkFrom = ecs::LegacyCharOf(from);
+    LPCHARACTER pkNpc = ecs::LegacyCharOf(npc);
+    if (!pkFrom || !ecs::PlayerRuntime::IsPC(from) || !pkNpc || !item)
         return false;
 
-    const int32_t idx = ecs::PlayerRuntime::GetMapIndex(((from) ? (from)->GetEntityHandle() : entt::null));
+    const int32_t idx = ecs::PlayerRuntime::GetMapIndex(from);
     if (!IsRuneDungeonMap(idx))
         return false;
 
@@ -1187,7 +1194,7 @@ bool CRuneDungeon::OnNpcTakeItem(CHARACTER* from, CHARACTER* npc, LPITEM item)
         ItemSystem::DestroyItemEntityEcs(itemEntity, "RUNE_DUNGEON_TAKE");
 
     // Purge the NPC (Lua: npc.purge())
-    M2_DESTROY_CHARACTER(npc);
+    M2_DESTROY_CHARACTER(pkNpc);
 
     int32_t opened = d->GetFlag(kFlagOpened) + 1;
     d->SetFlag(kFlagOpened, opened);
@@ -1222,15 +1229,16 @@ bool CRuneDungeon::OnNpcTakeItem(CHARACTER* from, CHARACTER* npc, LPITEM item)
     return true;
 }
 
-bool CRuneDungeon::OnClickNpc(CHARACTER* ch)
+bool CRuneDungeon::OnClickNpc(entt::entity character)
 {
-    if (!ch || !ecs::PlayerRuntime::IsPC(((ch) ? (ch)->GetEntityHandle() : entt::null)))
+    LPCHARACTER ch = ecs::LegacyCharOf(character);
+    if (!ch || !ecs::PlayerRuntime::IsPC(character))
         return false;
 
     // Rejoin flow
-    const int32_t disconnectUntil = ecs::QuestSystem::GetFlag(((ch) ? (ch)->GetEntityHandle() : entt::null), kQfDisconnect);
-    const int32_t rejoinIdx = ecs::QuestSystem::GetFlag(((ch) ? (ch)->GetEntityHandle() : entt::null), kQfIdx);
-    const int32_t rejoinCh = ecs::QuestSystem::GetFlag(((ch) ? (ch)->GetEntityHandle() : entt::null), kQfCh);
+    const int32_t disconnectUntil = ecs::QuestSystem::GetFlag(character, kQfDisconnect);
+    const int32_t rejoinIdx = ecs::QuestSystem::GetFlag(character, kQfIdx);
+    const int32_t rejoinCh = ecs::QuestSystem::GetFlag(character, kQfCh);
 
     const int32_t now = get_global_time();
 
@@ -1243,17 +1251,17 @@ bool CRuneDungeon::OnClickNpc(CHARACTER* ch)
             {
                 const int32_t floor = d->GetFlag(kFlagFloor);
                 if (floor == 1)
-                    ecs::MovementSystem::WarpSet(((ch) ? (ch)->GetEntityHandle() : entt::null), kEnterFloor1X * 100, kEnterFloor1Y * 100, rejoinIdx);
+                    ecs::MovementSystem::WarpSet(character, kEnterFloor1X * 100, kEnterFloor1Y * 100, rejoinIdx);
                 else if (floor == 2)
-                    ecs::MovementSystem::WarpSet(((ch) ? (ch)->GetEntityHandle() : entt::null), kEnterFloor2X * 100, kEnterFloor2Y * 100, rejoinIdx);
+                    ecs::MovementSystem::WarpSet(character, kEnterFloor2X * 100, kEnterFloor2Y * 100, rejoinIdx);
                 else if (floor == 3)
-                    ecs::MovementSystem::WarpSet(((ch) ? (ch)->GetEntityHandle() : entt::null), kEnterFloor3X * 100, kEnterFloor3Y * 100, rejoinIdx);
+                    ecs::MovementSystem::WarpSet(character, kEnterFloor3X * 100, kEnterFloor3Y * 100, rejoinIdx);
                 else if (floor == 4)
-                    ecs::MovementSystem::WarpSet(((ch) ? (ch)->GetEntityHandle() : entt::null), kEnterFloor4X * 100, kEnterFloor4Y * 100, rejoinIdx);
+                    ecs::MovementSystem::WarpSet(character, kEnterFloor4X * 100, kEnterFloor4Y * 100, rejoinIdx);
                 else if (floor == 5)
-                    ecs::MovementSystem::WarpSet(((ch) ? (ch)->GetEntityHandle() : entt::null), kEnterFloor5X * 100, kEnterFloor5Y * 100, rejoinIdx);
+                    ecs::MovementSystem::WarpSet(character, kEnterFloor5X * 100, kEnterFloor5Y * 100, rejoinIdx);
 
-                ecs::QuestSystem::SetFlag(((ch) ? (ch)->GetEntityHandle() : entt::null), kQfDisconnect, 0);
+                ecs::QuestSystem::SetFlag(character, kQfDisconnect, 0);
                 return true;
             }
         }
@@ -1265,16 +1273,16 @@ bool CRuneDungeon::OnClickNpc(CHARACTER* ch)
     const int32_t antiSpamUntil = quest::CQuestManager::instance().GetEventFlag(flagName);
     if (antiSpamUntil > now)
     {
-        ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "Please wait a moment.");
+        ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "Please wait a moment.");
         return false;
     }
     quest::CQuestManager::instance().SetEventFlag(flagName, now + kAntiSpamDelay);
 
     // Cooldown check
-    const int32_t cooldownUntil = ecs::QuestSystem::GetFlag(((ch) ? (ch)->GetEntityHandle() : entt::null), kQfCooldown);
+    const int32_t cooldownUntil = ecs::QuestSystem::GetFlag(character, kQfCooldown);
     if (cooldownUntil > now)
     {
-        ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "Rune Dungeon is on cooldown.");
+        ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "Rune Dungeon is on cooldown.");
         return false;
     }
 
@@ -1300,15 +1308,15 @@ bool CRuneDungeon::OnClickNpc(CHARACTER* ch)
             pc->RemoveSpecifyItem(kFloorKey, k);
         };
 
-    LPPARTY party = ecs::SocialSystem::GetParty(((ch) ? (ch)->GetEntityHandle() : entt::null));
+    LPPARTY party = ecs::SocialSystem::GetParty(character);
 
     // --- Validate party / solo requirements BEFORE creating the dungeon ---
     if (party)
     {
         // Only leader can start
-        if (party->GetLeaderPID() != ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null)))
+        if (party->GetLeaderPID() != ecs::PlayerRuntime::GetPlayerID(character))
         {
-            ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "Only the party leader can enter.");
+            ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "Only the party leader can enter.");
             return false;
         }
 
@@ -1318,7 +1326,7 @@ bool CRuneDungeon::OnClickNpc(CHARACTER* ch)
         bool missingItem = false;
 
         // Check only players that will be pulled by JoinParty_Coords (same map as leader)
-        ForEachPcOnMap(ecs::PlayerRuntime::GetMapIndex(((ch) ? (ch)->GetEntityHandle() : entt::null)), [&](LPCHARACTER pc) {
+        ForEachPcOnMap(ecs::PlayerRuntime::GetMapIndex(character), [&](LPCHARACTER pc) {
             if (!ok || !pc || !ecs::PlayerRuntime::IsPC(((pc) ? (pc)->GetEntityHandle() : entt::null)))
                 return;
             if (ecs::SocialSystem::GetParty(((pc) ? (pc)->GetEntityHandle() : entt::null)) != party)
@@ -1346,24 +1354,24 @@ bool CRuneDungeon::OnClickNpc(CHARACTER* ch)
         if (!ok)
         {
             if (missingItem)
-                ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "%s doesn't have the entry item.", badName ? badName : "A party member");
+                ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "%s doesn't have the entry item.", badName ? badName : "A party member");
             else
-                ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "%s has an invalid level (Lv%d).", badName ? badName : "A party member", badLevel);
+                ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "%s has an invalid level (Lv%d).", badName ? badName : "A party member", badLevel);
             return false;
         }
     }
     else
     {
         // Solo checks
-        if (ecs::PointSystem::GetLevel(((ch) ? (ch)->GetEntityHandle() : entt::null)) < kMinLevel || ecs::PointSystem::GetLevel(((ch) ? (ch)->GetEntityHandle() : entt::null)) > kMaxLevel)
+        if (ecs::PointSystem::GetLevel(character) < kMinLevel || ecs::PointSystem::GetLevel(character) > kMaxLevel)
         {
-            ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "Invalid level for Rune Dungeon.");
+            ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "Invalid level for Rune Dungeon.");
             return false;
         }
 
         if (ch->CountSpecifyItem(kRequiredItem) < 1)
         {
-            ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "You need the entry item.");
+            ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "You need the entry item.");
             return false;
         }
     }
@@ -1397,29 +1405,30 @@ bool CRuneDungeon::OnClickNpc(CHARACTER* ch)
     // Consume entry items + clear leftovers BEFORE warping, and set rejoin/ranking timers
     if (party)
     {
-        ForEachPcOnMap(ecs::PlayerRuntime::GetMapIndex(((ch) ? (ch)->GetEntityHandle() : entt::null)), [&](LPCHARACTER pc) {
+        ForEachPcOnMap(ecs::PlayerRuntime::GetMapIndex(character), [&](LPCHARACTER pc) {
             if (!pc || !ecs::PlayerRuntime::IsPC(((pc) ? (pc)->GetEntityHandle() : entt::null)) || ecs::SocialSystem::GetParty(((pc) ? (pc)->GetEntityHandle() : entt::null)) != party)
                 return;
             setupMember(pc);
             });
 
-        d->JoinParty_Coords(party, kEnterFloor1X, kEnterFloor1Y, ecs::PlayerRuntime::GetMapIndex(((ch) ? (ch)->GetEntityHandle() : entt::null)));
+        d->JoinParty_Coords(party, kEnterFloor1X, kEnterFloor1Y, ecs::PlayerRuntime::GetMapIndex(character));
     }
     else
     {
         setupMember(ch);
-        d->Join_Coords(ch, kEnterFloor1X, kEnterFloor1Y, ecs::PlayerRuntime::GetMapIndex(((ch) ? (ch)->GetEntityHandle() : entt::null)));
+        d->Join_Coords(ch, kEnterFloor1X, kEnterFloor1Y, ecs::PlayerRuntime::GetMapIndex(character));
     }
 
     return true;
 }
 
-bool CRuneDungeon::OnUseItem89103(CHARACTER* ch)
+bool CRuneDungeon::OnUseItem89103(entt::entity character)
 {
-    if (!ch || !ecs::PlayerRuntime::IsPC(((ch) ? (ch)->GetEntityHandle() : entt::null)))
+    LPCHARACTER ch = ecs::LegacyCharOf(character);
+    if (!ch || !ecs::PlayerRuntime::IsPC(character))
         return false;
 
-    const int32_t idx = ecs::PlayerRuntime::GetMapIndex(((ch) ? (ch)->GetEntityHandle() : entt::null));
+    const int32_t idx = ecs::PlayerRuntime::GetMapIndex(character);
     if (!IsRuneDungeonMap(idx))
         return false;
 
@@ -1435,9 +1444,9 @@ bool CRuneDungeon::OnUseItem89103(CHARACTER* ch)
         return false;
 
     // Only leader (or solo) can progress
-    if (LPPARTY party = ecs::SocialSystem::GetParty(((ch) ? (ch)->GetEntityHandle() : entt::null)))
+    if (LPPARTY party = ecs::SocialSystem::GetParty(character))
     {
-        if (party->GetLeaderPID() != ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null)))
+        if (party->GetLeaderPID() != ecs::PlayerRuntime::GetPlayerID(character))
             return false;
     }
 
@@ -1446,12 +1455,13 @@ bool CRuneDungeon::OnUseItem89103(CHARACTER* ch)
     return true;
 }
 
-bool CRuneDungeon::OnUseItem89102(CHARACTER* ch)
+bool CRuneDungeon::OnUseItem89102(entt::entity character)
 {
-    if (!ch || !ecs::PlayerRuntime::IsPC(((ch) ? (ch)->GetEntityHandle() : entt::null)))
+    LPCHARACTER ch = ecs::LegacyCharOf(character);
+    if (!ch || !ecs::PlayerRuntime::IsPC(character))
         return false;
 
-    const int32_t idx = ecs::PlayerRuntime::GetMapIndex(((ch) ? (ch)->GetEntityHandle() : entt::null));
+    const int32_t idx = ecs::PlayerRuntime::GetMapIndex(character);
     if (!IsRuneDungeonMap(idx))
         return false;
 
@@ -1469,9 +1479,9 @@ bool CRuneDungeon::OnUseItem89102(CHARACTER* ch)
     if (ch->CountSpecifyItem(kKeyFragment) < 10)
         return false;
 
-    if (LPPARTY party = ecs::SocialSystem::GetParty(((ch) ? (ch)->GetEntityHandle() : entt::null)))
+    if (LPPARTY party = ecs::SocialSystem::GetParty(character))
     {
-        if (party->GetLeaderPID() != ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null)))
+        if (party->GetLeaderPID() != ecs::PlayerRuntime::GetPlayerID(character))
             return false;
     }
 
@@ -1480,21 +1490,22 @@ bool CRuneDungeon::OnUseItem89102(CHARACTER* ch)
     return true;
 }
 
-bool CRuneDungeon::OnUseItem89100(CHARACTER* ch)
+bool CRuneDungeon::OnUseItem89100(entt::entity character)
 {
-    if (!ch || !ecs::PlayerRuntime::IsPC(((ch) ? (ch)->GetEntityHandle() : entt::null)))
+    LPCHARACTER ch = ecs::LegacyCharOf(character);
+    if (!ch || !ecs::PlayerRuntime::IsPC(character))
         return false;
 
     const int32_t now = get_global_time();
-    const int32_t cooldownUntil = ecs::QuestSystem::GetFlag(((ch) ? (ch)->GetEntityHandle() : entt::null), kQfCooldown);
+    const int32_t cooldownUntil = ecs::QuestSystem::GetFlag(character, kQfCooldown);
 
     if (cooldownUntil <= now)
         return false;
 
-    ecs::QuestSystem::SetFlag(((ch) ? (ch)->GetEntityHandle() : entt::null), kQfDisconnect, 0);
-    ecs::QuestSystem::SetFlag(((ch) ? (ch)->GetEntityHandle() : entt::null), kQfIdx, 0);
-    ecs::QuestSystem::SetFlag(((ch) ? (ch)->GetEntityHandle() : entt::null), kQfCh, 0);
-    ecs::QuestSystem::SetFlag(((ch) ? (ch)->GetEntityHandle() : entt::null), kQfCooldown, 0);
+    ecs::QuestSystem::SetFlag(character, kQfDisconnect, 0);
+    ecs::QuestSystem::SetFlag(character, kQfIdx, 0);
+    ecs::QuestSystem::SetFlag(character, kQfCh, 0);
+    ecs::QuestSystem::SetFlag(character, kQfCooldown, 0);
     ch->RemoveSpecifyItem(kCooldownReset, 1);
 
     return true;

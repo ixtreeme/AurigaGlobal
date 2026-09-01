@@ -65,7 +65,7 @@ namespace item_change
 		if (!ch || !item)
 			return false;
 #ifdef ENABLE_CPP_DUNGEON_RAZOR93
-		if (CVikingDungeon::instance().OnUseItem(ch, item))
+		if (CVikingDungeon::instance().OnUseItem(((ch) ? (ch)->GetEntityHandle() : entt::null), item))
 			return true;
 #endif
 		switch (ItemSystem::GetItemVnum((item ? item->GetEntityHandle() : entt::null)))

@@ -1242,15 +1242,15 @@ void CHARACTER::Disconnect(const char* c_pszReason)
 
     LOG_INFO("DISCONNECT: {} ({})", GetName(), c_pszReason ? c_pszReason : "unset");
 #ifdef ENABLE_CPP_DUNGEON_RAZOR93
-    COrcsDungeon::instance().OnPlayerDisconnect(this);
-    CTritonTempleDungeon::instance().OnPlayerDisconnect(this);
-    CValentineDungeon::instance().OnPlayerDisconnect(this);
-    CRuneDungeon::instance().OnPlayerDisconnect(this);
-    CPyramidDungeonRazor93::instance().OnPlayerDisconnect(this);
-    CNightmareDungeonRazor93::instance().OnPlayerDisconnect(this);
-    CHalloween2022Dungeon::instance().OnPlayerDisconnect(this);
-    CVikingDungeon::instance().OnPlayerDisconnect(this);
-    CEasterDungeon::instance().OnPlayerDisconnect(this);
+    COrcsDungeon::instance().OnPlayerDisconnect(GetEntityHandle());
+    CTritonTempleDungeon::instance().OnPlayerDisconnect(GetEntityHandle());
+    CValentineDungeon::instance().OnPlayerDisconnect(GetEntityHandle());
+    CRuneDungeon::instance().OnPlayerDisconnect(GetEntityHandle());
+    CPyramidDungeonRazor93::instance().OnPlayerDisconnect(GetEntityHandle());
+    CNightmareDungeonRazor93::instance().OnPlayerDisconnect(GetEntityHandle());
+    CHalloween2022Dungeon::instance().OnPlayerDisconnect(GetEntityHandle());
+    CVikingDungeon::instance().OnPlayerDisconnect(GetEntityHandle());
+    CEasterDungeon::instance().OnPlayerDisconnect(GetEntityHandle());
 #endif
     if (GetShop())
     {

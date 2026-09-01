@@ -5590,16 +5590,16 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 	// 30001: Teszt klonok torlese (dungeon instance-ben blokkolva)
 	//switch (item->GetVnum())
 	//{
-	//	case 30001: return CLostCastleDungeon::instance().OnUseItem30001(this);
+	//	case 30001: return CLostCastleDungeon::instance().OnUseItem30001(GetEntityHandle());
 	//	default: break;
 	//}
 
 #ifdef ENABLE_CPP_DUNGEON_RAZOR93
 	switch (item->GetVnum())
 	{
-	case 89103: return CRuneDungeon::instance().OnUseItem89103(this);
-	case 89102: return CRuneDungeon::instance().OnUseItem89102(this);
-	case 89100: return CRuneDungeon::instance().OnUseItem89100(this);
+	case 89103: return CRuneDungeon::instance().OnUseItem89103(GetEntityHandle());
+	case 89102: return CRuneDungeon::instance().OnUseItem89102(GetEntityHandle());
+	case 89100: return CRuneDungeon::instance().OnUseItem89100(GetEntityHandle());
 	default: break;
 	}
 #endif
@@ -13353,14 +13353,14 @@ void CHARACTER::ReceiveItem(LPCHARACTER from, LPITEM item)
 		return;
 #ifdef ENABLE_CPP_DUNGEON_RAZOR93
 	// Rune Dungeon: key pedestal (20507) consumes 89103 and progresses floor 5
-	if (CRuneDungeon::instance().OnNpcTakeItem(from, this, item))
+	if (CRuneDungeon::instance().OnNpcTakeItem((from ? from->GetEntityHandle() : entt::null), GetEntityHandle(), item))
 		return;
-	if (CHalloween2022Dungeon::instance().OnNpcTakeItem(from, this, item))
+	if (CHalloween2022Dungeon::instance().OnNpcTakeItem((from ? from->GetEntityHandle() : entt::null), GetEntityHandle(), item))
 		return;
-	if (CVikingDungeon::instance().OnNpcTakeItem(from, this, item))
+	if (CVikingDungeon::instance().OnNpcTakeItem((from ? from->GetEntityHandle() : entt::null), GetEntityHandle(), item))
 		return;
 	// LostCastle Dungeon: statue/totem item usage
-	//if (CLostCastleDungeon::instance().OnNpcTakeItem(from, this, item))
+	//if (CLostCastleDungeon::instance().OnNpcTakeItem((from ? from->GetEntityHandle() : entt::null), GetEntityHandle(), item))
 	//	return;
 #endif
 	switch (GetRaceNum())

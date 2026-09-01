@@ -115,7 +115,7 @@ int OnClickOrcsDungeon(TRIGGERPARAM)
 	if (!ch || (ecs::PlayerRuntime::GetRaceNum(((ch) ? (ch)->GetEntityHandle() : entt::null))) != 9239)
 		return 0;
 
-	COrcsDungeon::instance().OnClickNpc(causer);
+	COrcsDungeon::instance().OnClickNpc(((causer) ? (causer)->GetEntityHandle() : entt::null));
 	return 1;
 }
 
@@ -128,7 +128,7 @@ int OnClickTritonTempleDungeon(TRIGGERPARAM)
 	if (!ch || (ecs::PlayerRuntime::GetRaceNum(((ch) ? (ch)->GetEntityHandle() : entt::null))) != 20094)
 		return 0;
 
-	CTritonTempleDungeon::instance().OnClickNpc(causer);
+	CTritonTempleDungeon::instance().OnClickNpc(((causer) ? (causer)->GetEntityHandle() : entt::null));
 	return 1;
 }
 
@@ -141,7 +141,7 @@ int OnClickValentineDungeon(TRIGGERPARAM)
 	if (!ch || (ecs::PlayerRuntime::GetRaceNum(((ch) ? (ch)->GetEntityHandle() : entt::null))) != 20012)
 		return 0;
 
-	CValentineDungeon::instance().OnClickNpc(causer);
+	CValentineDungeon::instance().OnClickNpc(((causer) ? (causer)->GetEntityHandle() : entt::null));
 	return 1;
 }
 
@@ -154,7 +154,7 @@ int OnClickEasterDungeon(TRIGGERPARAM)
     if (!ch || (ecs::PlayerRuntime::GetRaceNum(((ch) ? (ch)->GetEntityHandle() : entt::null))) != 9308)
         return 0;
 
-    CEasterDungeon::instance().OnClickNpc(causer);
+    CEasterDungeon::instance().OnClickNpc(((causer) ? (causer)->GetEntityHandle() : entt::null));
     return 1;
 }
 
@@ -167,7 +167,7 @@ int OnClickRuneDungeon(TRIGGERPARAM)
 	if (!ch || (ecs::PlayerRuntime::GetRaceNum(((ch) ? (ch)->GetEntityHandle() : entt::null))) != 20506)
 		return 0;
 
-	CRuneDungeon::instance().OnClickNpc(causer);
+	CRuneDungeon::instance().OnClickNpc(((causer) ? (causer)->GetEntityHandle() : entt::null));
 	return 1;
 }
 
@@ -180,7 +180,7 @@ int OnClickPyramidDungeon(TRIGGERPARAM)
 	if (!ch || (ecs::PlayerRuntime::GetRaceNum(((ch) ? (ch)->GetEntityHandle() : entt::null))) != 9331)
 		return 0;
 
-	CPyramidDungeonRazor93::instance().OnClickNpc(causer);
+	CPyramidDungeonRazor93::instance().OnClickNpc(((causer) ? (causer)->GetEntityHandle() : entt::null));
 	return 1;
 }
 
@@ -192,7 +192,7 @@ int OnClickNightmareDungeon(TRIGGERPARAM)
 	if (!ch || (ecs::PlayerRuntime::GetRaceNum(((ch) ? (ch)->GetEntityHandle() : entt::null))) != 20088)
 		return 0;
 
-	CNightmareDungeonRazor93::instance().OnClickNpc(causer);
+	CNightmareDungeonRazor93::instance().OnClickNpc(((causer) ? (causer)->GetEntityHandle() : entt::null));
 	return 1;
 }
 int OnClickHalloween2022Dungeon(TRIGGERPARAM)
@@ -206,7 +206,7 @@ int OnClickHalloween2022Dungeon(TRIGGERPARAM)
 	if ((ecs::PlayerRuntime::GetRaceNum(((ch) ? (ch)->GetEntityHandle() : entt::null))) != 9475 && (ecs::PlayerRuntime::GetRaceNum(((ch) ? (ch)->GetEntityHandle() : entt::null))) != 9484)
 		return 0;
 
-	CHalloween2022Dungeon::instance().OnClickNpc(causer, ch);
+	CHalloween2022Dungeon::instance().OnClickNpc(((causer) ? (causer)->GetEntityHandle() : entt::null), ((ch) ? (ch)->GetEntityHandle() : entt::null));
 	return 1;
 }
 
@@ -223,7 +223,7 @@ int OnClickVikingDungeon(TRIGGERPARAM)
 	if ((ecs::PlayerRuntime::GetRaceNum(((ch) ? (ch)->GetEntityHandle() : entt::null))) != 9615 && (ecs::PlayerRuntime::GetRaceNum(((ch) ? (ch)->GetEntityHandle() : entt::null))) != 9626)
 		return 0;
 
-	CVikingDungeon::instance().OnClickNpc(causer, ch);
+	CVikingDungeon::instance().OnClickNpc(((causer) ? (causer)->GetEntityHandle() : entt::null), ((ch) ? (ch)->GetEntityHandle() : entt::null));
 	return 1;
 }
 #ifdef ENABLE_NEW_CRAFT_SYSTEM_RAZOR93
@@ -251,7 +251,7 @@ int OnClickStoneCraft(TRIGGERPARAM)
 //	if (!ch || (ecs::PlayerRuntime::GetRaceNum(((ch) ? (ch)->GetEntityHandle() : entt::null))) != 20021)
 //		return 0;
 //
-//	CLostCastleDungeon::instance().OnClickNpc(causer);
+//	CLostCastleDungeon::instance().OnClickNpc(((causer) ? (causer)->GetEntityHandle() : entt::null));
 //	return 1;
 //}
 #endif

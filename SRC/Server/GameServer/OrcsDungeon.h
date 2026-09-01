@@ -2,6 +2,8 @@
 
 #include <cstdint>
 
+#include <entt/entt.hpp>
+
 class CHARACTER;
 
 // Orc Dungeon (map 355 private instances: 3550000..3560000)
@@ -11,12 +13,12 @@ class COrcsDungeon
 public:
     static COrcsDungeon& instance();
 
-    void OnPlayerDisconnect(CHARACTER* ch);
-    void OnPlayerLogin(CHARACTER* ch);
-    void OnMobKilled(CHARACTER* killer, CHARACTER* victim);
+    void OnPlayerDisconnect(entt::entity character);
+    void OnPlayerLogin(entt::entity character);
+    void OnMobKilled(entt::entity killer, entt::entity victim);
 
     // Used by NPC trigger handler.
-    bool OnClickNpc(CHARACTER* ch);
+    bool OnClickNpc(entt::entity character);
 
     bool IsOrcDungeonMap(int32_t mapIndex) const;
 };

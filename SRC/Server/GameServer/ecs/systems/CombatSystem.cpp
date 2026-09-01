@@ -1932,7 +1932,7 @@ void CHARACTER::Dead(LPCHARACTER pkKiller, bool bImmediateDead)
 	//	event_cancel(&m_pkStunEvent);
 
 	//	if (pkKiller && ecs::PlayerRuntime::IsPC((pkKiller ? pkKiller->GetEntityHandle() : entt::null)))
-	//		CLostCastleDungeon::instance().OnMobKilled(pkKiller, this);
+	//		CLostCastleDungeon::instance().OnMobKilled((pkKiller ? pkKiller->GetEntityHandle() : entt::null), GetEntityHandle());
 
 	//	TPacketGCDead pack;
 	//	pack.header = HEADER_GC_DEAD;
@@ -3589,16 +3589,16 @@ void CHARACTER::Reward(bool bItemDrop)
 		quest::CQuestManager::instance().Kill(ecs::PlayerRuntime::GetPlayerID((pkAttacker ? pkAttacker->GetEntityHandle() : entt::null)), GetRaceNum());
 		CHARACTER_MANAGER::instance().KillLog(GetRaceNum());
 #ifdef ENABLE_CPP_DUNGEON_RAZOR93
-		COrcsDungeon::instance().OnMobKilled(pkAttacker, this);
-		CTritonTempleDungeon::instance().OnMobKilled(pkAttacker, this);
-		CValentineDungeon::instance().OnMobKilled(pkAttacker, this);
-		CRuneDungeon::instance().OnMobKilled(pkAttacker, this);
-		CPyramidDungeonRazor93::instance().OnMobKilled(pkAttacker, this);
-		CNightmareDungeonRazor93::instance().OnMobKilled(pkAttacker, this);
-		//CLostCastleDungeon::instance().OnMobKilled(pkAttacker, this);
-		CHalloween2022Dungeon::instance().OnMobKilled(pkAttacker, this);
-		CVikingDungeon::instance().OnMobKilled(pkAttacker, this);
-		CEasterDungeon::instance().OnMobKilled(pkAttacker, this);
+		COrcsDungeon::instance().OnMobKilled((pkAttacker ? pkAttacker->GetEntityHandle() : entt::null), GetEntityHandle());
+		CTritonTempleDungeon::instance().OnMobKilled((pkAttacker ? pkAttacker->GetEntityHandle() : entt::null), GetEntityHandle());
+		CValentineDungeon::instance().OnMobKilled((pkAttacker ? pkAttacker->GetEntityHandle() : entt::null), GetEntityHandle());
+		CRuneDungeon::instance().OnMobKilled((pkAttacker ? pkAttacker->GetEntityHandle() : entt::null), GetEntityHandle());
+		CPyramidDungeonRazor93::instance().OnMobKilled((pkAttacker ? pkAttacker->GetEntityHandle() : entt::null), GetEntityHandle());
+		CNightmareDungeonRazor93::instance().OnMobKilled((pkAttacker ? pkAttacker->GetEntityHandle() : entt::null), GetEntityHandle());
+		//CLostCastleDungeon::instance().OnMobKilled((pkAttacker ? pkAttacker->GetEntityHandle() : entt::null), GetEntityHandle());
+		CHalloween2022Dungeon::instance().OnMobKilled((pkAttacker ? pkAttacker->GetEntityHandle() : entt::null), GetEntityHandle());
+		CVikingDungeon::instance().OnMobKilled((pkAttacker ? pkAttacker->GetEntityHandle() : entt::null), GetEntityHandle());
+		CEasterDungeon::instance().OnMobKilled((pkAttacker ? pkAttacker->GetEntityHandle() : entt::null), GetEntityHandle());
 #endif
 
 #ifdef ENABLE_BATTLE_PASS

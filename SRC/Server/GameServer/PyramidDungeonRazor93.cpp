@@ -22,6 +22,7 @@
 #include "questmanager.h"
 #include "cmd.h"
 #include "log.h"
+#include "ecs/CharacterAccessors.hpp"
 
 namespace
 {
@@ -320,32 +321,34 @@ bool CPyramidDungeonRazor93::IsPyramidDungeonMap(int32_t mapIndex) const
     return mapIndex >= kPrivateMin && mapIndex < kPrivateMax;
 }
 
-void CPyramidDungeonRazor93::OnPlayerDisconnect(CHARACTER* ch)
+void CPyramidDungeonRazor93::OnPlayerDisconnect(entt::entity character)
 {
-    if (!ch || !ecs::PlayerRuntime::IsPC(((ch) ? (ch)->GetEntityHandle() : entt::null)))
+    LPCHARACTER ch = ecs::LegacyCharOf(character);
+    if (!ch || !ecs::PlayerRuntime::IsPC(character))
         return;
 
-    const int32_t mapIdx = ecs::PlayerRuntime::GetMapIndex(((ch) ? (ch)->GetEntityHandle() : entt::null));
+    const int32_t mapIdx = ecs::PlayerRuntime::GetMapIndex(character);
     if (!IsPyramidDungeonMap(mapIdx))
         return;
 
     const int32_t now = get_global_time();
-    ecs::QuestSystem::SetFlag(((ch) ? (ch)->GetEntityHandle() : entt::null), kQfDisconnect, now + kRejoinSeconds);
-    ecs::QuestSystem::SetFlag(((ch) ? (ch)->GetEntityHandle() : entt::null), kQfIdx, mapIdx);
-    ecs::QuestSystem::SetFlag(((ch) ? (ch)->GetEntityHandle() : entt::null), kQfCh, (int32_t)g_bChannel);
+    ecs::QuestSystem::SetFlag(character, kQfDisconnect, now + kRejoinSeconds);
+    ecs::QuestSystem::SetFlag(character, kQfIdx, mapIdx);
+    ecs::QuestSystem::SetFlag(character, kQfCh, (int32_t)g_bChannel);
 }
 
-void CPyramidDungeonRazor93::OnPlayerLogin(CHARACTER* ch)
+void CPyramidDungeonRazor93::OnPlayerLogin(entt::entity character)
 {
-    if (!ch || !ecs::PlayerRuntime::IsPC(((ch) ? (ch)->GetEntityHandle() : entt::null)))
+    LPCHARACTER ch = ecs::LegacyCharOf(character);
+    if (!ch || !ecs::PlayerRuntime::IsPC(character))
         return;
 
-    const int32_t mapIdx = ecs::PlayerRuntime::GetMapIndex(((ch) ? (ch)->GetEntityHandle() : entt::null));
+    const int32_t mapIdx = ecs::PlayerRuntime::GetMapIndex(character);
 
     // If someone ends up on the original dungeon map, move them out (Lua: idx == 357 -> pc.warp(535400, 1428400))
     if (mapIdx == kOriginalMap)
     {
-        ecs::MovementSystem::WarpSet(((ch) ? (ch)->GetEntityHandle() : entt::null), kLobbyX * 100, kLobbyY * 100);
+        ecs::MovementSystem::WarpSet(character, kLobbyX * 100, kLobbyY * 100);
         return;
     }
 
@@ -354,8 +357,8 @@ void CPyramidDungeonRazor93::OnPlayerLogin(CHARACTER* ch)
 
     // Set exit location as in Lua
     ch->SetWarpLocation(kLobbyMap, kLobbyX, kLobbyY);
-    ecs::QuestSystem::SetFlag(((ch) ? (ch)->GetEntityHandle() : entt::null), kQfIdx, mapIdx);
-    ecs::QuestSystem::SetFlag(((ch) ? (ch)->GetEntityHandle() : entt::null), kQfCh, (int32_t)g_bChannel);
+    ecs::QuestSystem::SetFlag(character, kQfIdx, mapIdx);
+    ecs::QuestSystem::SetFlag(character, kQfCh, (int32_t)g_bChannel);
 
     // Safety: if dungeon is uninitialized, initialize like Lua login does.
     LPDUNGEON d = CDungeonManager::instance().FindByMapIndex(mapIdx);
@@ -364,8 +367,8 @@ void CPyramidDungeonRazor93::OnPlayerLogin(CHARACTER* ch)
 
     if (d->GetFlag(kFlagFloor) == 0)
     {
-        LPPARTY party = ecs::SocialSystem::GetParty(((ch) ? (ch)->GetEntityHandle() : entt::null));
-        if (!party || party->GetLeaderPID() == ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null)))
+        LPPARTY party = ecs::SocialSystem::GetParty(character);
+        if (!party || party->GetLeaderPID() == ecs::PlayerRuntime::GetPlayerID(character))
         {
             d->SetFlag(kFlagFloor, 2);
             d->SetFlag(kFlagWasCompleted, 0);
@@ -375,12 +378,13 @@ void CPyramidDungeonRazor93::OnPlayerLogin(CHARACTER* ch)
     }
 }
 
-bool CPyramidDungeonRazor93::OnClickNpc(CHARACTER* ch)
+bool CPyramidDungeonRazor93::OnClickNpc(entt::entity character)
 {
-    if (!ch || !ecs::PlayerRuntime::IsPC(((ch) ? (ch)->GetEntityHandle() : entt::null)))
+    LPCHARACTER ch = ecs::LegacyCharOf(character);
+    if (!ch || !ecs::PlayerRuntime::IsPC(character))
         return false;
 
-    if (!ecs::PlayerRuntime::CanWarp(((ch) ? (ch)->GetEntityHandle() : entt::null)))
+    if (!ecs::PlayerRuntime::CanWarp(character))
         return true;
 
     const int32_t now = get_global_time();
@@ -388,30 +392,30 @@ bool CPyramidDungeonRazor93::OnClickNpc(CHARACTER* ch)
     // If clicked inside dungeon:
     // - while active: exit to lobby
     // - after completion: allow starting a fresh run
-    const int32_t curMap = ecs::PlayerRuntime::GetMapIndex(((ch) ? (ch)->GetEntityHandle() : entt::null));
+    const int32_t curMap = ecs::PlayerRuntime::GetMapIndex(character);
     if (IsPyramidDungeonMap(curMap))
     {
         LPDUNGEON cur = CDungeonManager::instance().FindByMapIndex(curMap);
         if (cur && cur->GetFlag(kFlagWasCompleted) == 0)
         {
-            ecs::MovementSystem::WarpSet(((ch) ? (ch)->GetEntityHandle() : entt::null), kLobbyX * 100, kLobbyY * 100);
+            ecs::MovementSystem::WarpSet(character, kLobbyX * 100, kLobbyY * 100);
             return true;
         }
         // completed -> continue into fresh entrance flow
     }
 
     // Rejoin flow (Lua: 300 seconds)
-    const int32_t rejoinUntil = ecs::QuestSystem::GetFlag(((ch) ? (ch)->GetEntityHandle() : entt::null), kQfDisconnect);
+    const int32_t rejoinUntil = ecs::QuestSystem::GetFlag(character, kQfDisconnect);
     if (rejoinUntil > now)
     {
-        const int32_t rejoinIdx = ecs::QuestSystem::GetFlag(((ch) ? (ch)->GetEntityHandle() : entt::null), kQfIdx);
-        const int32_t rejoinCh = ecs::QuestSystem::GetFlag(((ch) ? (ch)->GetEntityHandle() : entt::null), kQfCh);
+        const int32_t rejoinIdx = ecs::QuestSystem::GetFlag(character, kQfIdx);
+        const int32_t rejoinCh = ecs::QuestSystem::GetFlag(character, kQfCh);
 
         if (IsPyramidDungeonMap(rejoinIdx))
         {
             if (rejoinCh != 0 && rejoinCh != (int32_t)g_bChannel)
             {
-                ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "You were in Pyramid Dungeon on a different channel: %d", rejoinCh);
+                ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "You were in Pyramid Dungeon on a different channel: %d", rejoinCh);
                 return true;
             }
 
@@ -423,7 +427,7 @@ bool CPyramidDungeonRazor93::OnClickNpc(CHARACTER* ch)
                 {
                     // Lua used pc.warp(218600, 348900, rejoinIDX)
                     ch->SaveExitLocation();
-                    ecs::MovementSystem::WarpSet(((ch) ? (ch)->GetEntityHandle() : entt::null), kRejoinWarpX100, kRejoinWarpY100, rejoinIdx);
+                    ecs::MovementSystem::WarpSet(character, kRejoinWarpX100, kRejoinWarpY100, rejoinIdx);
                     ResetRejoinFlags(ch);
                     return true;
                 }
@@ -437,36 +441,36 @@ bool CPyramidDungeonRazor93::OnClickNpc(CHARACTER* ch)
     const int32_t antiUntil = quest::CQuestManager::instance().GetEventFlag(flagName);
     if (antiUntil > now)
     {
-        ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "Please wait %d seconds.", antiUntil - now);
+        ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "Please wait %d seconds.", antiUntil - now);
         return true;
     }
     quest::CQuestManager::instance().SetEventFlag(flagName, now + kAntiSpamSeconds);
 
     // Leader-only if party
-    LPPARTY party = ecs::SocialSystem::GetParty(((ch) ? (ch)->GetEntityHandle() : entt::null));
-    if (party && party->GetLeaderPID() != ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null)))
+    LPPARTY party = ecs::SocialSystem::GetParty(character);
+    if (party && party->GetLeaderPID() != ecs::PlayerRuntime::GetPlayerID(character))
     {
-        ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "Only the party leader can start the Pyramid Dungeon.");
+        ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "Only the party leader can start the Pyramid Dungeon.");
         return true;
     }
 
     // Level check
     if (!party)
     {
-        const int32_t lv = ecs::PointSystem::GetLevel(((ch) ? (ch)->GetEntityHandle() : entt::null));
+        const int32_t lv = ecs::PointSystem::GetLevel(character);
         if (lv < kMinLevel || lv > kMaxLevel)
         {
-            ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "Pyramid Dungeon requires level %d-%d.", kMinLevel, kMaxLevel);
+            ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "Pyramid Dungeon requires level %d-%d.", kMinLevel, kMaxLevel);
             return true;
         }
     }
     else
     {
         FLevelCheck f;
-        party->ForEachOnMapMember(f, ecs::PlayerRuntime::GetMapIndex(((ch) ? (ch)->GetEntityHandle() : entt::null)));
+        party->ForEachOnMapMember(f, ecs::PlayerRuntime::GetMapIndex(character));
         if (!f.ok)
         {
-            ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "Pyramid Dungeon: %s has an invalid level (Lv%d). Required: %d-%d.",
+            ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "Pyramid Dungeon: %s has an invalid level (Lv%d). Required: %d-%d.",
                 f.name ? f.name : "Someone", f.level, kMinLevel, kMaxLevel);
             return true;
         }
@@ -475,20 +479,20 @@ bool CPyramidDungeonRazor93::OnClickNpc(CHARACTER* ch)
     // Cooldown
     if (!party)
     {
-        const int32_t cdUntil = ecs::QuestSystem::GetFlag(((ch) ? (ch)->GetEntityHandle() : entt::null), kQfCooldown);
+        const int32_t cdUntil = ecs::QuestSystem::GetFlag(character, kQfCooldown);
         if (cdUntil > now)
         {
-            ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "Pyramid Dungeon is on cooldown (%d seconds).", cdUntil - now);
+            ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "Pyramid Dungeon is on cooldown (%d seconds).", cdUntil - now);
             return true;
         }
     }
     else
     {
         FCooldownCheck f(now);
-        party->ForEachOnMapMember(f, ecs::PlayerRuntime::GetMapIndex(((ch) ? (ch)->GetEntityHandle() : entt::null)));
+        party->ForEachOnMapMember(f, ecs::PlayerRuntime::GetMapIndex(character));
         if (!f.ok)
         {
-            ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "Pyramid Dungeon: %s is on cooldown (%d seconds).",
+            ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "Pyramid Dungeon: %s is on cooldown (%d seconds).",
                 f.name ? f.name : "Someone", f.remain);
             return true;
         }
@@ -499,17 +503,17 @@ bool CPyramidDungeonRazor93::OnClickNpc(CHARACTER* ch)
     {
         if (ch->CountSpecifyItem(kEntryItemVnum) < 1)
         {
-            ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "You don't have the entry item.");
+            ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "You don't have the entry item.");
             return true;
         }
     }
     else
     {
         FEntryItemCheck f;
-        party->ForEachOnMapMember(f, ecs::PlayerRuntime::GetMapIndex(((ch) ? (ch)->GetEntityHandle() : entt::null)));
+        party->ForEachOnMapMember(f, ecs::PlayerRuntime::GetMapIndex(character));
         if (!f.ok)
         {
-            ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "%s doesn't have the entry item.", f.name ? f.name : "Someone");
+            ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "%s doesn't have the entry item.", f.name ? f.name : "Someone");
             return true;
         }
     }
@@ -518,7 +522,7 @@ bool CPyramidDungeonRazor93::OnClickNpc(CHARACTER* ch)
     if (party)
     {
         FConsumeEntryItems f;
-        party->ForEachOnMapMember(f, ecs::PlayerRuntime::GetMapIndex(((ch) ? (ch)->GetEntityHandle() : entt::null)));
+        party->ForEachOnMapMember(f, ecs::PlayerRuntime::GetMapIndex(character));
     }
     else
     {
@@ -529,7 +533,7 @@ bool CPyramidDungeonRazor93::OnClickNpc(CHARACTER* ch)
     // Reset rejoin flags for new run
     if (party)
     {
-        struct FResetRejoin { void operator()(LPCHARACTER m) { ResetRejoinFlags(m); } } f; party->ForEachOnMapMember(f, ecs::PlayerRuntime::GetMapIndex(((ch) ? (ch)->GetEntityHandle() : entt::null)));
+        struct FResetRejoin { void operator()(LPCHARACTER m) { ResetRejoinFlags(m); } } f; party->ForEachOnMapMember(f, ecs::PlayerRuntime::GetMapIndex(character));
     }
     else
         ResetRejoinFlags(ch);
@@ -538,7 +542,7 @@ bool CPyramidDungeonRazor93::OnClickNpc(CHARACTER* ch)
     LPDUNGEON d = CDungeonManager::instance().Create(kOriginalMap);
     if (!d)
     {
-        ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "Pyramid Dungeon: failed to create dungeon.");
+        ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "Pyramid Dungeon: failed to create dungeon.");
         return true;
     }
 
@@ -550,11 +554,11 @@ bool CPyramidDungeonRazor93::OnClickNpc(CHARACTER* ch)
     // Join party/solo at cords
     if (party)
     {
-        d->JoinParty_Coords(party, kJoinX, kJoinY, ecs::PlayerRuntime::GetMapIndex(((ch) ? (ch)->GetEntityHandle() : entt::null)));
+        d->JoinParty_Coords(party, kJoinX, kJoinY, ecs::PlayerRuntime::GetMapIndex(character));
     }
     else
     {
-        d->Join_Coords(ch, kJoinX, kJoinY, ecs::PlayerRuntime::GetMapIndex(((ch) ? (ch)->GetEntityHandle() : entt::null)));
+        d->Join_Coords(ch, kJoinX, kJoinY, ecs::PlayerRuntime::GetMapIndex(character));
     }
 
     // Prepare after 1 second (spawn metins etc.)
@@ -563,12 +567,14 @@ bool CPyramidDungeonRazor93::OnClickNpc(CHARACTER* ch)
     return true;
 }
 
-void CPyramidDungeonRazor93::OnMobKilled(CHARACTER* killer, CHARACTER* victim)
+void CPyramidDungeonRazor93::OnMobKilled(entt::entity killer, entt::entity victim)
 {
-    if (!killer || !victim)
+    LPCHARACTER pkKiller = ecs::LegacyCharOf(killer);
+    LPCHARACTER pkVictim = ecs::LegacyCharOf(victim);
+    if (!pkKiller || !pkVictim)
         return;
 
-    const int32_t mapIdx = ecs::PlayerRuntime::GetMapIndex(((killer) ? (killer)->GetEntityHandle() : entt::null));
+    const int32_t mapIdx = ecs::PlayerRuntime::GetMapIndex(killer);
     if (!IsPyramidDungeonMap(mapIdx))
         return;
 
@@ -579,7 +585,7 @@ void CPyramidDungeonRazor93::OnMobKilled(CHARACTER* killer, CHARACTER* victim)
     if (d->GetFlag(kFlagFloor) != 2)
         return;
 
-    const uint32_t vnum = ecs::PlayerRuntime::GetRaceNum(((victim) ? (victim)->GetEntityHandle() : entt::null));
+    const uint32_t vnum = ecs::PlayerRuntime::GetRaceNum(victim);
 
     // Metin killed -> decrement step and spawn stone when done
     if (vnum == kMetinVnum)
@@ -645,14 +651,14 @@ void CPyramidDungeonRazor93::OnMobKilled(CHARACTER* killer, CHARACTER* victim)
             d->SetFlag(kFlagWasCompleted, 1);
 
             // Global notice
-            if (ecs::SocialSystem::GetParty(((killer) ? (killer)->GetEntityHandle() : entt::null)))
+            if (ecs::SocialSystem::GetParty(killer))
             {
-                LPCHARACTER leader = ecs::SocialSystem::GetParty(((killer) ? (killer)->GetEntityHandle() : entt::null))->GetLeaderCharacter();
-                { char buf[256]; snprintf(buf, sizeof(buf), "[Pyramid] %s has completed the dungeon!", (leader ? ecs::PlayerRuntime::GetName(((leader) ? (leader)->GetEntityHandle() : entt::null)).data() : ecs::PlayerRuntime::GetName(((killer) ? (killer)->GetEntityHandle() : entt::null)).data())); SendNotice(buf); }
+                LPCHARACTER leader = ecs::SocialSystem::GetParty(killer)->GetLeaderCharacter();
+                { char buf[256]; snprintf(buf, sizeof(buf), "[Pyramid] %s has completed the dungeon!", (leader ? ecs::PlayerRuntime::GetName(((leader) ? (leader)->GetEntityHandle() : entt::null)).data() : ecs::PlayerRuntime::GetName(killer).data())); SendNotice(buf); }
             }
             else
             {
-                { char buf[256]; snprintf(buf, sizeof(buf), "[Pyramid] %s has completed the dungeon!", ecs::PlayerRuntime::GetName(((killer) ? (killer)->GetEntityHandle() : entt::null)).data()); SendNotice(buf); }
+                { char buf[256]; snprintf(buf, sizeof(buf), "[Pyramid] %s has completed the dungeon!", ecs::PlayerRuntime::GetName(killer).data()); SendNotice(buf); }
             }
 
             d->KillAll();

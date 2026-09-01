@@ -2,6 +2,8 @@
 
 #include <cstdint>
 
+#include <entt/entt.hpp>
+
 class CHARACTER;
 class CItem;
 
@@ -24,13 +26,13 @@ class CVikingDungeon
 public:
     static CVikingDungeon& instance();
 
-    void OnPlayerDisconnect(CHARACTER* ch);
-    void OnPlayerLogin(CHARACTER* ch);
-    void OnMobKilled(CHARACTER* killer, CHARACTER* victim);
+    void OnPlayerDisconnect(entt::entity character);
+    void OnPlayerLogin(entt::entity character);
+    void OnMobKilled(entt::entity killer, entt::entity victim);
 
-    bool OnClickNpc(CHARACTER* ch, CHARACTER* npc);
-    bool OnNpcTakeItem(CHARACTER* from, CHARACTER* npc, CItem* item);
-    bool OnUseItem(CHARACTER* ch, CItem* item);
+    bool OnClickNpc(entt::entity character, entt::entity npc);
+    bool OnNpcTakeItem(entt::entity from, entt::entity npc, CItem* item);
+    bool OnUseItem(entt::entity character, CItem* item);
 
     bool IsVikingDungeonMap(int32_t mapIndex) const;
 };

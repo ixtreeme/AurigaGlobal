@@ -332,3 +332,62 @@ those into entity sets is an identity-level change, not this pass.
 
 Project-wide conversion count: 4568 -> 4350
 Build: RelWithDebInfo GameServer, 0 errors.
+
+
+Phase 18f - dungeon group hook API entity flip
+-----------------------------------------------
+Ten C++ dungeon classes share one hook API. They were migrated as a group.
+
+  CEasterDungeon, CHalloween2022Dungeon, CLostCastleDungeon,
+  CNightmareDungeonRazor93, COrcsDungeon, CPyramidDungeonRazor93,
+  CRuneDungeon, CTritonTempleDungeon, CValentineDungeon, CVikingDungeon
+
+Common shape:
+  OnPlayerLogin(ch) / OnPlayerDisconnect(ch) / OnMobKilled(killer, victim)
+  OnClickNpc(ch[, npc]) / OnNpcTakeItem(from, npc, item) / OnUseItem*(ch)
+plus LostCastle's CheckCloneDamage(attacker, victim) and
+SpawnTestClones(source, target, count).
+
+51 method definitions flipped, 48 declarations across the 10 headers,
+49 hook call sites adapted in 6 files:
+  trigger.cpp (OnClickNpc x10), input_login.cpp (OnPlayerLogin x10),
+  SessionSystem.cpp (OnPlayerDisconnect x9), CombatSystem.cpp (OnMobKilled x11),
+  ItemSystem_LegacyBridge.cpp (OnNpcTakeItem / OnUseItem x8), ItemUse.cpp (x1).
+
+Naming rule for this group
+--------------------------
+These files spell the pointer as `CHARACTER*`, not LPCHARACTER, so the tooling
+had to learn both spellings. The entity keeps the semantic name and the legacy
+alias takes the codebase's pk prefix:
+
+  ch      -> entity `character`, alias stays `ch` (as in every earlier phase)
+  killer  -> entity `killer`,  alias `pkKiller`
+  victim  -> entity `victim`,  alias `pkVictim`
+  npc / from / attacker / source / target likewise.
+
+Every dungeon .cpp gained #include "ecs/CharacterAccessors.hpp", and every
+dungeon .h gained #include <entt/entt.hpp>.
+
+Note on LostCastle
+------------------
+Every CLostCastleDungeon hook call site in the tree is currently commented out
+(trigger.cpp, CombatSystem.cpp, ItemSystem_LegacyBridge.cpp, cmd_gm.cpp). The
+class was migrated anyway so the group stays uniform, and the commented call
+sites were rewritten with it so they still match if re-enabled.
+
+Dungeon group: 819 -> 351 conversion sites
+Project-wide conversion count: 4350 -> 3909
+Build: RelWithDebInfo GameServer, 0 errors.
+
+Still open in this group (351 sites), one shape
+-----------------------------------------------
+Each dungeon file carries its own copy of
+
+  inline void ForEachPcOnMap(int32_t mapIndex,
+                             const std::function<void(LPCHARACTER)>& fn)
+
+and the lambdas passed to it re-convert their LPCHARACTER parameter on every
+line. Flipping that std::function to void(entt::entity) would push the entity
+into every lambda in all ten files at once - that is the natural next step for
+this group, and it is a different shape from the hook flip, so it gets its own
+pass.

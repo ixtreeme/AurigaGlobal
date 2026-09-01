@@ -3,6 +3,8 @@
 
 #include <cstdint>
 
+#include <entt/entt.hpp>
+
 class CHARACTER;
 class CItem; // forward declaration (LPITEM == CItem*)
 
@@ -28,28 +30,28 @@ public:
     // to execute the normal Dead() pipeline.
     bool IsCloneVID(uint32_t vid) const;
 
-    void OnPlayerDisconnect(CHARACTER* ch);
-    void OnPlayerLogin(CHARACTER* ch);
-    void OnMobKilled(CHARACTER* killer, CHARACTER* victim);
+    void OnPlayerDisconnect(entt::entity character);
+    void OnPlayerLogin(entt::entity character);
+    void OnMobKilled(entt::entity killer, entt::entity victim);
 
     // Entry NPC click handler (9006)
-    bool OnClickNpc(CHARACTER* ch);
+    bool OnClickNpc(entt::entity character);
 
     // NPC "take item" handler (drag item onto NPC) - statue/totem
-    bool OnNpcTakeItem(CHARACTER* from, CHARACTER* npc, CItem* item);
+    bool OnNpcTakeItem(entt::entity from, entt::entity npc, CItem* item);
 
     // Floor3 clone sebzes-korlatozas (Damage hook)
-    bool CheckCloneDamage(CHARACTER* attacker, CHARACTER* victim) const;
+    bool CheckCloneDamage(entt::entity attacker, entt::entity victim) const;
 
     bool IsLostCastleMap(int32_t mapIndex) const;
 
     // ---------------- Dungeon-fuggetlen teszt klonok (GM / item) ----------------
     // /spawn_clon sourcePlayer targetPlayer [count]
     // /p_clon [all|targetPlayer]
-    bool SpawnTestClones(CHARACTER* source, CHARACTER* target, int32_t count);
+    bool SpawnTestClones(entt::entity source, entt::entity target, int32_t count);
     void PurgeTestClonesOnMap(int32_t mapIndex);
     void PurgeTestClonesForTargetPID(uint32_t targetPid, int32_t mapIndex /* -1 = all maps */ = -1);
 
     // 30001 item: torli a sajat (targetPid = player) teszt klonjait (dungeon instance-ben blokkolva)
-    bool OnUseItem30001(CHARACTER* ch);
+    bool OnUseItem30001(entt::entity character);
 };

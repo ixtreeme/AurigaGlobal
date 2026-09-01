@@ -25,6 +25,7 @@
 #include "questmanager.h"
 #include "log.h"
 #include "event.h"
+#include "ecs/CharacterAccessors.hpp"
 
 namespace
 {
@@ -358,30 +359,32 @@ CNightmareDungeonRazor93& CNightmareDungeonRazor93::instance()
     return s;
 }
 
-void CNightmareDungeonRazor93::OnPlayerDisconnect(CHARACTER* ch)
+void CNightmareDungeonRazor93::OnPlayerDisconnect(entt::entity character)
 {
-    if (!ch || !ecs::PlayerRuntime::IsPC(((ch) ? (ch)->GetEntityHandle() : entt::null)))
+    LPCHARACTER ch = ecs::LegacyCharOf(character);
+    if (!ch || !ecs::PlayerRuntime::IsPC(character))
         return;
 
-    const int32_t idx = ecs::PlayerRuntime::GetMapIndex(((ch) ? (ch)->GetEntityHandle() : entt::null));
+    const int32_t idx = ecs::PlayerRuntime::GetMapIndex(character);
     if (!IsNightmareDungeonMap(idx))
         return;
 
     SetDisconnectFlags(ch, idx);
 }
 
-void CNightmareDungeonRazor93::OnPlayerLogin(CHARACTER* ch)
+void CNightmareDungeonRazor93::OnPlayerLogin(entt::entity character)
 {
-    if (!ch || !ecs::PlayerRuntime::IsPC(((ch) ? (ch)->GetEntityHandle() : entt::null)))
+    LPCHARACTER ch = ecs::LegacyCharOf(character);
+    if (!ch || !ecs::PlayerRuntime::IsPC(character))
         return;
 
-    const int32_t idx = ecs::PlayerRuntime::GetMapIndex(((ch) ? (ch)->GetEntityHandle() : entt::null));
+    const int32_t idx = ecs::PlayerRuntime::GetMapIndex(character);
     if (!IsNightmareDungeonMap(idx))
         return;
 
     // store for rejoin checks (lua)
-    ecs::QuestSystem::SetFlag(((ch) ? (ch)->GetEntityHandle() : entt::null), kQfIdx, idx);
-    ecs::QuestSystem::SetFlag(((ch) ? (ch)->GetEntityHandle() : entt::null), kQfCh, (int32_t)g_bChannel);
+    ecs::QuestSystem::SetFlag(character, kQfIdx, idx);
+    ecs::QuestSystem::SetFlag(character, kQfCh, (int32_t)g_bChannel);
 
     LPDUNGEON d = CDungeonManager::instance().FindByMapIndex(idx);
     if (!d)
@@ -397,12 +400,14 @@ void CNightmareDungeonRazor93::OnPlayerLogin(CHARACTER* ch)
     }
 }
 
-void CNightmareDungeonRazor93::OnMobKilled(CHARACTER* killer, CHARACTER* victim)
+void CNightmareDungeonRazor93::OnMobKilled(entt::entity killer, entt::entity victim)
 {
-    if (!killer || !victim || !ecs::PlayerRuntime::IsPC(((killer) ? (killer)->GetEntityHandle() : entt::null)))
+    LPCHARACTER pkKiller = ecs::LegacyCharOf(killer);
+    LPCHARACTER pkVictim = ecs::LegacyCharOf(victim);
+    if (!pkKiller || !pkVictim || !ecs::PlayerRuntime::IsPC(killer))
         return;
 
-    const int32_t idx = ecs::PlayerRuntime::GetMapIndex(((killer) ? (killer)->GetEntityHandle() : entt::null));
+    const int32_t idx = ecs::PlayerRuntime::GetMapIndex(killer);
     if (!IsNightmareDungeonMap(idx))
         return;
 
@@ -410,7 +415,7 @@ void CNightmareDungeonRazor93::OnMobKilled(CHARACTER* killer, CHARACTER* victim)
     if (!d || d->GetFlag(kFlagFloor) != 2)
         return;
 
-    const uint32_t vnum = ecs::PlayerRuntime::GetRaceNum(((victim) ? (victim)->GetEntityHandle() : entt::null));
+    const uint32_t vnum = ecs::PlayerRuntime::GetRaceNum(victim);
 
     if (vnum == kBossVnum)
     {
@@ -455,16 +460,17 @@ void CNightmareDungeonRazor93::OnMobKilled(CHARACTER* killer, CHARACTER* victim)
     }
 }
 
-bool CNightmareDungeonRazor93::OnClickNpc(CHARACTER* ch)
+bool CNightmareDungeonRazor93::OnClickNpc(entt::entity character)
 {
-    if (!ch || !ecs::PlayerRuntime::IsPC(((ch) ? (ch)->GetEntityHandle() : entt::null)))
+    LPCHARACTER ch = ecs::LegacyCharOf(character);
+    if (!ch || !ecs::PlayerRuntime::IsPC(character))
         return false;
 
-    if (!ecs::PlayerRuntime::CanWarp(((ch) ? (ch)->GetEntityHandle() : entt::null)))
+    if (!ecs::PlayerRuntime::CanWarp(character))
         return true;
 
     const int32_t now = get_global_time();
-    const int32_t mapIdx = ecs::PlayerRuntime::GetMapIndex(((ch) ? (ch)->GetEntityHandle() : entt::null));
+    const int32_t mapIdx = ecs::PlayerRuntime::GetMapIndex(character);
 
     // We normally warp members from the leader's current map. If the NPC is clicked
     // inside a completed instance, we restart by warping everyone from that instance.
@@ -479,20 +485,20 @@ bool CNightmareDungeonRazor93::OnClickNpc(CHARACTER* ch)
         if (cur && cur->GetFlag(kFlagWasCompleted) != 0)
         {
             fromCompletedInside = true;
-            ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "[Nightmare] Restarting the dungeon...");
+            ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "[Nightmare] Restarting the dungeon...");
             // Continue with the normal entrance flow below.
         }
         else
         {
-            ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "[Nightmare] You are already inside.");
+            ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "[Nightmare] You are already inside.");
             return true;
         }
     }
 
     // Rejoin flow (lua: disconnect window + same channel + not completed)
-    const int32_t disconnectUntil = ecs::QuestSystem::GetFlag(((ch) ? (ch)->GetEntityHandle() : entt::null), kQfDisconnect);
-    const int32_t rejoinIdx = ecs::QuestSystem::GetFlag(((ch) ? (ch)->GetEntityHandle() : entt::null), kQfIdx);
-    const int32_t rejoinCh = ecs::QuestSystem::GetFlag(((ch) ? (ch)->GetEntityHandle() : entt::null), kQfCh);
+    const int32_t disconnectUntil = ecs::QuestSystem::GetFlag(character, kQfDisconnect);
+    const int32_t rejoinIdx = ecs::QuestSystem::GetFlag(character, kQfIdx);
+    const int32_t rejoinCh = ecs::QuestSystem::GetFlag(character, kQfCh);
 
     if (disconnectUntil > now && rejoinIdx > 0 && rejoinCh == (int32_t)g_bChannel)
     {
@@ -501,9 +507,9 @@ bool CNightmareDungeonRazor93::OnClickNpc(CHARACTER* ch)
             LPDUNGEON d = CDungeonManager::instance().FindByMapIndex(rejoinIdx);
             if (d && d->GetFlag(kFlagWasCompleted) == 0 && d->GetFlag(kFlagFloor) == 2)
             {
-                ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "[Nightmare] Rejoining...");
-                ecs::MovementSystem::WarpSet(((ch) ? (ch)->GetEntityHandle() : entt::null), kRejoinX, kRejoinY, rejoinIdx);
-                ecs::QuestSystem::SetFlag(((ch) ? (ch)->GetEntityHandle() : entt::null), kQfDisconnect, 0);
+                ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "[Nightmare] Rejoining...");
+                ecs::MovementSystem::WarpSet(character, kRejoinX, kRejoinY, rejoinIdx);
+                ecs::QuestSystem::SetFlag(character, kQfDisconnect, 0);
                 return true;
             }
         }
@@ -515,16 +521,16 @@ bool CNightmareDungeonRazor93::OnClickNpc(CHARACTER* ch)
     const int32_t antiSpamUntil = quest::CQuestManager::instance().GetEventFlag(antiSpamFlag);
     if (antiSpamUntil > now)
     {
-        ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "[Nightmare] Please wait a moment.");
+        ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "[Nightmare] Please wait a moment.");
         return true;
     }
     quest::CQuestManager::instance().SetEventFlag(antiSpamFlag, now + kAntiSpamDelay);
 
     // Party rules
-    LPPARTY party = ecs::SocialSystem::GetParty(((ch) ? (ch)->GetEntityHandle() : entt::null));
-    if (party && party->GetLeaderPID() != ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null)))
+    LPPARTY party = ecs::SocialSystem::GetParty(character);
+    if (party && party->GetLeaderPID() != ecs::PlayerRuntime::GetPlayerID(character))
     {
-        ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "[Nightmare] Only the party leader can enter.");
+        ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "[Nightmare] Only the party leader can enter.");
         return true;
     }
 
@@ -576,7 +582,7 @@ bool CNightmareDungeonRazor93::OnClickNpc(CHARACTER* ch)
     {
         if (badType == BAD_LEVEL)
         {
-            ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "[Nightmare] %s has an invalid level (Lv%d). Required: %d-%d.",
+            ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "[Nightmare] %s has an invalid level (Lv%d). Required: %d-%d.",
                 badName ? badName : "Someone", badVal, kMinLevel, kMaxLevel);
             return true;
         }
@@ -584,16 +590,16 @@ bool CNightmareDungeonRazor93::OnClickNpc(CHARACTER* ch)
         {
             char cdBuf[64];
             FormatCooldown(badVal, cdBuf, sizeof(cdBuf));
-            ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "[Nightmare] %s is still on cooldown (%s).", badName ? badName : "Someone", cdBuf);
+            ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "[Nightmare] %s is still on cooldown (%s).", badName ? badName : "Someone", cdBuf);
             return true;
         }
         if (badType == BAD_ITEM)
         {
-            ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "[Nightmare] %s doesn't have the entry item.", badName ? badName : "Someone");
+            ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "[Nightmare] %s doesn't have the entry item.", badName ? badName : "Someone");
             return true;
         }
 
-        ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "[Nightmare] Entry check failed.");
+        ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "[Nightmare] Entry check failed.");
         return true;
     }
 
@@ -636,7 +642,7 @@ bool CNightmareDungeonRazor93::OnClickNpc(CHARACTER* ch)
     // Clear rejoin flags for the leader (members will be set on logout if needed)
     ClearRejoinFlags(ch);
 
-    ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "[Nightmare] Entering...");
+    ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "[Nightmare] Entering...");
     return true;
 }
 

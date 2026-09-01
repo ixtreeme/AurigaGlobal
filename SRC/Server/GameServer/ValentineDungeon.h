@@ -2,6 +2,8 @@
 
 #include <cstdint>
 
+#include <entt/entt.hpp>
+
 class CHARACTER;
 
 // Valentine Dungeon (map 377 private instances: 3770000..3780000)
@@ -11,12 +13,12 @@ class CValentineDungeon
 public:
     static CValentineDungeon& instance();
 
-    void OnPlayerDisconnect(CHARACTER* ch);
-    void OnPlayerLogin(CHARACTER* ch);
-    void OnMobKilled(CHARACTER* killer, CHARACTER* victim);
+    void OnPlayerDisconnect(entt::entity character);
+    void OnPlayerLogin(entt::entity character);
+    void OnMobKilled(entt::entity killer, entt::entity victim);
 
     // Used by NPC trigger handler.
-    bool OnClickNpc(CHARACTER* ch);
+    bool OnClickNpc(entt::entity character);
 
     bool IsValentineDungeonMap(int32_t mapIndex) const;
 };

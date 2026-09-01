@@ -1,6 +1,8 @@
 
 #pragma once
 
+#include <entt/entt.hpp>
+
 #ifdef ENABLE_CPP_DUNGEON_RAZOR93
 
 class CHARACTER;
@@ -11,12 +13,12 @@ public:
     static CNightmareDungeonRazor93& instance();
 
     // Called from core hooks
-    void OnPlayerLogin(CHARACTER* ch);
-    void OnPlayerDisconnect(CHARACTER* ch);
-    void OnMobKilled(CHARACTER* killer, CHARACTER* victim);
+    void OnPlayerLogin(entt::entity character);
+    void OnPlayerDisconnect(entt::entity character);
+    void OnMobKilled(entt::entity killer, entt::entity victim);
 
     // Called from trigger.cpp OnClick handler for entry/exit NPC (20088)
-    bool OnClickNpc(CHARACTER* ch);
+    bool OnClickNpc(entt::entity character);
 
 private:
     CNightmareDungeonRazor93() = default;

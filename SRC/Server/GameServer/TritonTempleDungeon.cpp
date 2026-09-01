@@ -32,6 +32,7 @@
 
 #ifdef ENABLE_BATTLE_PASS
 #include "battle_pass.h"
+#include "ecs/CharacterAccessors.hpp"
 #endif
 
 namespace
@@ -428,26 +429,28 @@ bool CTritonTempleDungeon::IsTritonTempleMap(int32_t mapIndex) const
     return IsInRange(mapIndex, kPrivateMin, kPrivateMax);
 }
 
-void CTritonTempleDungeon::OnPlayerDisconnect(CHARACTER* ch)
+void CTritonTempleDungeon::OnPlayerDisconnect(entt::entity character)
 {
-    if (!ch || !ecs::PlayerRuntime::IsPC(((ch) ? (ch)->GetEntityHandle() : entt::null)))
+    LPCHARACTER ch = ecs::LegacyCharOf(character);
+    if (!ch || !ecs::PlayerRuntime::IsPC(character))
         return;
 
-    const int32_t idx = ecs::PlayerRuntime::GetMapIndex(((ch) ? (ch)->GetEntityHandle() : entt::null));
+    const int32_t idx = ecs::PlayerRuntime::GetMapIndex(character);
     if (!IsTritonTempleMap(idx))
         return;
 
-    ecs::QuestSystem::SetFlag(((ch) ? (ch)->GetEntityHandle() : entt::null), kQfDisconnect, get_global_time() + kRejoinSeconds);
-    ecs::QuestSystem::SetFlag(((ch) ? (ch)->GetEntityHandle() : entt::null), kQfIdx, idx);
-    ecs::QuestSystem::SetFlag(((ch) ? (ch)->GetEntityHandle() : entt::null), kQfCh, (int32_t)g_bChannel);
+    ecs::QuestSystem::SetFlag(character, kQfDisconnect, get_global_time() + kRejoinSeconds);
+    ecs::QuestSystem::SetFlag(character, kQfIdx, idx);
+    ecs::QuestSystem::SetFlag(character, kQfCh, (int32_t)g_bChannel);
 }
 
-void CTritonTempleDungeon::OnPlayerLogin(CHARACTER* ch)
+void CTritonTempleDungeon::OnPlayerLogin(entt::entity character)
 {
-    if (!ch || !ecs::PlayerRuntime::IsPC(((ch) ? (ch)->GetEntityHandle() : entt::null)))
+    LPCHARACTER ch = ecs::LegacyCharOf(character);
+    if (!ch || !ecs::PlayerRuntime::IsPC(character))
         return;
 
-    const int32_t idx = ecs::PlayerRuntime::GetMapIndex(((ch) ? (ch)->GetEntityHandle() : entt::null));
+    const int32_t idx = ecs::PlayerRuntime::GetMapIndex(character);
     if (!IsTritonTempleMap(idx))
         return;
 
@@ -456,8 +459,8 @@ void CTritonTempleDungeon::OnPlayerLogin(CHARACTER* ch)
         return;
 
     ch->SetDungeon(d);
-    ecs::QuestSystem::SetFlag(((ch) ? (ch)->GetEntityHandle() : entt::null), kQfIdx, idx);
-    ecs::QuestSystem::SetFlag(((ch) ? (ch)->GetEntityHandle() : entt::null), kQfCh, (int32_t)g_bChannel);
+    ecs::QuestSystem::SetFlag(character, kQfIdx, idx);
+    ecs::QuestSystem::SetFlag(character, kQfCh, (int32_t)g_bChannel);
 
     // Initialize if never started (after server restart)
     if (d->GetFlag(kFlagFloor) == 0)
@@ -468,18 +471,20 @@ void CTritonTempleDungeon::OnPlayerLogin(CHARACTER* ch)
     }
 }
 
-void CTritonTempleDungeon::OnMobKilled(CHARACTER* killer, CHARACTER* victim)
+void CTritonTempleDungeon::OnMobKilled(entt::entity killer, entt::entity victim)
 {
-    if (!killer || !victim)
+    LPCHARACTER pkKiller = ecs::LegacyCharOf(killer);
+    LPCHARACTER pkVictim = ecs::LegacyCharOf(victim);
+    if (!pkKiller || !pkVictim)
         return;
-    if (!ecs::PlayerRuntime::IsPC(((killer) ? (killer)->GetEntityHandle() : entt::null)))
+    if (!ecs::PlayerRuntime::IsPC(killer))
         return;
 
     // 8054 may be STONE on some cores
-    if (!(victim->IsMonster() || ecs::PlayerRuntime::IsStone(((victim) ? (victim)->GetEntityHandle() : entt::null))))
+    if (!(pkVictim->IsMonster() || ecs::PlayerRuntime::IsStone(victim)))
         return;
 
-    const int32_t idx = ecs::PlayerRuntime::GetMapIndex(((victim) ? (victim)->GetEntityHandle() : entt::null));
+    const int32_t idx = ecs::PlayerRuntime::GetMapIndex(victim);
     if (!IsTritonTempleMap(idx))
         return;
 
@@ -487,7 +492,7 @@ void CTritonTempleDungeon::OnMobKilled(CHARACTER* killer, CHARACTER* victim)
     if (!d)
         return;
 
-    const uint32_t vnum = ecs::PlayerRuntime::GetRaceNum(((victim) ? (victim)->GetEntityHandle() : entt::null));
+    const uint32_t vnum = ecs::PlayerRuntime::GetRaceNum(victim);
     const int32_t floor = d->GetFlag(kFlagFloor);
 
     if (vnum == kBossVnum)
@@ -499,14 +504,14 @@ void CTritonTempleDungeon::OnMobKilled(CHARACTER* killer, CHARACTER* victim)
             DungeonCompleteForMap(idx, kTritonOriginalMap, kBossVnum, kCooldownSeconds, kQfEnterTime, kQfCh, kQfCooldown);
 
 #ifdef TEXTS_IMPROVEMENT
-            if (ecs::SocialSystem::GetParty(((killer) ? (killer)->GetEntityHandle() : entt::null)))
+            if (ecs::SocialSystem::GetParty(killer))
             {
-                LPCHARACTER leader = ecs::SocialSystem::GetParty(((killer) ? (killer)->GetEntityHandle() : entt::null))->GetLeaderCharacter();
-                BroadcastNoticeNew(CHAT_TYPE_NOTICE, 0, 0, 2173, "%s", leader ? ecs::PlayerRuntime::GetName(((leader) ? (leader)->GetEntityHandle() : entt::null)).data() : ecs::PlayerRuntime::GetName(((killer) ? (killer)->GetEntityHandle() : entt::null)).data());
+                LPCHARACTER leader = ecs::SocialSystem::GetParty(killer)->GetLeaderCharacter();
+                BroadcastNoticeNew(CHAT_TYPE_NOTICE, 0, 0, 2173, "%s", leader ? ecs::PlayerRuntime::GetName(((leader) ? (leader)->GetEntityHandle() : entt::null)).data() : ecs::PlayerRuntime::GetName(killer).data());
             }
             else
             {
-                BroadcastNoticeNew(CHAT_TYPE_NOTICE, 0, 0, 2174, "%s", ecs::PlayerRuntime::GetName(((killer) ? (killer)->GetEntityHandle() : entt::null)).data());
+                BroadcastNoticeNew(CHAT_TYPE_NOTICE, 0, 0, 2174, "%s", ecs::PlayerRuntime::GetName(killer).data());
             }
 #endif
 
@@ -608,15 +613,16 @@ void CTritonTempleDungeon::OnMobKilled(CHARACTER* killer, CHARACTER* victim)
         d->SetFlag(kFlagStep, s);
     }
 }
-bool CTritonTempleDungeon::OnClickNpc(CHARACTER* ch)
+bool CTritonTempleDungeon::OnClickNpc(entt::entity character)
 {
-    if (!ch || !ecs::PlayerRuntime::IsPC(((ch) ? (ch)->GetEntityHandle() : entt::null)))
+    LPCHARACTER ch = ecs::LegacyCharOf(character);
+    if (!ch || !ecs::PlayerRuntime::IsPC(character))
         return false;
 
-    if (!ecs::PlayerRuntime::CanWarp(((ch) ? (ch)->GetEntityHandle() : entt::null)))
+    if (!ecs::PlayerRuntime::CanWarp(character))
         return true;
 
-    const int32_t mapIdx = ecs::PlayerRuntime::GetMapIndex(((ch) ? (ch)->GetEntityHandle() : entt::null));
+    const int32_t mapIdx = ecs::PlayerRuntime::GetMapIndex(character);
 
     // If clicked inside dungeon:
     // - while run active (was_completed=0): behave as EXIT.
@@ -626,7 +632,7 @@ bool CTritonTempleDungeon::OnClickNpc(CHARACTER* ch)
         LPDUNGEON cur = CDungeonManager::instance().FindByMapIndex(mapIdx);
         if (cur && cur->GetFlag(kFlagWasCompleted) == 0)
         {
-            ecs::MovementSystem::WarpSet(((ch) ? (ch)->GetEntityHandle() : entt::null), 535400, 1428400);
+            ecs::MovementSystem::WarpSet(character, 535400, 1428400);
             return true;
         }
         // completed -> continue below to fresh entrance flow
@@ -635,17 +641,17 @@ bool CTritonTempleDungeon::OnClickNpc(CHARACTER* ch)
     const int32_t now = get_global_time();
 
     // Rejoin flow
-    const int32_t rejoinUntil = ecs::QuestSystem::GetFlag(((ch) ? (ch)->GetEntityHandle() : entt::null), kQfDisconnect);
+    const int32_t rejoinUntil = ecs::QuestSystem::GetFlag(character, kQfDisconnect);
     if (rejoinUntil > now)
     {
-        const int32_t rejoinIdx = ecs::QuestSystem::GetFlag(((ch) ? (ch)->GetEntityHandle() : entt::null), kQfIdx);
-        const int32_t rejoinCh = ecs::QuestSystem::GetFlag(((ch) ? (ch)->GetEntityHandle() : entt::null), kQfCh);
+        const int32_t rejoinIdx = ecs::QuestSystem::GetFlag(character, kQfIdx);
+        const int32_t rejoinCh = ecs::QuestSystem::GetFlag(character, kQfCh);
 
         if (IsInRange(rejoinIdx, kPrivateMin, kPrivateMax))
         {
             if (rejoinCh != 0 && rejoinCh != (int32_t)g_bChannel)
             {
-                ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "You were in Triton Temple on a different channel. Channel: %d", rejoinCh);
+                ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "You were in Triton Temple on a different channel. Channel: %d", rejoinCh);
                 return true;
             }
 
@@ -653,32 +659,32 @@ bool CTritonTempleDungeon::OnClickNpc(CHARACTER* ch)
             if (d && d->GetFlag(kFlagWasCompleted) == 0 && d->GetFlag(kFlagFloor) == 2)
             {
                 ch->SaveExitLocation();
-                ecs::MovementSystem::WarpSet(((ch) ? (ch)->GetEntityHandle() : entt::null), kRejoinWarpX, kRejoinWarpY, rejoinIdx);
+                ecs::MovementSystem::WarpSet(character, kRejoinWarpX, kRejoinWarpY, rejoinIdx);
                 return true;
             }
         }
     }
 
     // Fresh entrance
-    if (ecs::PointSystem::GetLevel(((ch) ? (ch)->GetEntityHandle() : entt::null)) < kMinLevel || ecs::PointSystem::GetLevel(((ch) ? (ch)->GetEntityHandle() : entt::null)) > kMaxLevel)
+    if (ecs::PointSystem::GetLevel(character) < kMinLevel || ecs::PointSystem::GetLevel(character) > kMaxLevel)
     {
-        ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "Triton Temple: level requirement is %d-%d.", kMinLevel, kMaxLevel);
+        ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "Triton Temple: level requirement is %d-%d.", kMinLevel, kMaxLevel);
         return true;
     }
 
     // Cooldown
-    const int32_t cdUntil = ecs::QuestSystem::GetFlag(((ch) ? (ch)->GetEntityHandle() : entt::null), kQfCooldown);
+    const int32_t cdUntil = ecs::QuestSystem::GetFlag(character, kQfCooldown);
     if (cdUntil > now)
     {
         const int32_t remain = cdUntil - now;
-        ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "Triton Temple: you must wait %d seconds.", remain);
+        ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "Triton Temple: you must wait %d seconds.", remain);
         return true;
     }
 
-    LPPARTY party = ecs::SocialSystem::GetParty(((ch) ? (ch)->GetEntityHandle() : entt::null));
-    if (party && party->GetLeaderPID() != ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null)))
+    LPPARTY party = ecs::SocialSystem::GetParty(character);
+    if (party && party->GetLeaderPID() != ecs::PlayerRuntime::GetPlayerID(character))
     {
-        ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "Only the party leader can start Triton Temple.");
+        ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "Only the party leader can start Triton Temple.");
         return true;
     }
 
@@ -686,14 +692,14 @@ bool CTritonTempleDungeon::OnClickNpc(CHARACTER* ch)
     if (party)
     {
         FCooldownCheck f(now, kQfCooldown);
-        ForEachPcOnMap(ecs::PlayerRuntime::GetMapIndex(((ch) ? (ch)->GetEntityHandle() : entt::null)), [&](LPCHARACTER m) {
+        ForEachPcOnMap(ecs::PlayerRuntime::GetMapIndex(character), [&](LPCHARACTER m) {
             if (!m || !ecs::PlayerRuntime::IsPC(((m) ? (m)->GetEntityHandle() : entt::null)) || ecs::SocialSystem::GetParty(((m) ? (m)->GetEntityHandle() : entt::null)) != party)
                 return;
             f(m);
         });
         if (!f.ok)
         {
-            ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "%s is still on cooldown (%d seconds).", f.name ? f.name : "A party member", f.remain);
+            ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "%s is still on cooldown (%d seconds).", f.name ? f.name : "A party member", f.remain);
             return true;
         }
     }
@@ -703,7 +709,7 @@ bool CTritonTempleDungeon::OnClickNpc(CHARACTER* ch)
     {
         if (ch->CountSpecifyItem(kRequiredItem) < 1)
         {
-            ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "Triton Temple: you don't have the entry item.");
+            ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "Triton Temple: you don't have the entry item.");
             return true;
         }
     }
@@ -714,7 +720,7 @@ bool CTritonTempleDungeon::OnClickNpc(CHARACTER* ch)
         int32_t badLevel = 0;
         bool missingItem = false;
 
-        ForEachPcOnMap(ecs::PlayerRuntime::GetMapIndex(((ch) ? (ch)->GetEntityHandle() : entt::null)), [&](LPCHARACTER m) {
+        ForEachPcOnMap(ecs::PlayerRuntime::GetMapIndex(character), [&](LPCHARACTER m) {
             if (!ok || !m || !ecs::PlayerRuntime::IsPC(((m) ? (m)->GetEntityHandle() : entt::null)) || ecs::SocialSystem::GetParty(((m) ? (m)->GetEntityHandle() : entt::null)) != party)
                 return;
 
@@ -740,9 +746,9 @@ bool CTritonTempleDungeon::OnClickNpc(CHARACTER* ch)
         if (!ok)
         {
             if (missingItem)
-                ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "%s doesn't have the entry item.", badName ? badName : "A party member");
+                ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "%s doesn't have the entry item.", badName ? badName : "A party member");
             else
-                ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "%s has an invalid level (Lv%d). Required: %d-%d.", badName ? badName : "A party member", badLevel, kMinLevel, kMaxLevel);
+                ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "%s has an invalid level (Lv%d). Required: %d-%d.", badName ? badName : "A party member", badLevel, kMinLevel, kMaxLevel);
             return true;
         }
     }
@@ -750,7 +756,7 @@ bool CTritonTempleDungeon::OnClickNpc(CHARACTER* ch)
     LPDUNGEON d = CDungeonManager::instance().Create(kTritonOriginalMap);
     if (!d)
     {
-        ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "Triton Temple: failed to create the dungeon.");
+        ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "Triton Temple: failed to create the dungeon.");
         return true;
     }
 
@@ -781,13 +787,13 @@ bool CTritonTempleDungeon::OnClickNpc(CHARACTER* ch)
     if (!party)
     {
         applyMember(ch);
-        d->Join_Coords(ch, kEnterX, kEnterY, ecs::PlayerRuntime::GetMapIndex(((ch) ? (ch)->GetEntityHandle() : entt::null)));
+        d->Join_Coords(ch, kEnterX, kEnterY, ecs::PlayerRuntime::GetMapIndex(character));
     }
     else
     {
         auto fn = [&](LPCHARACTER m) { applyMember(m); };
-        ForEachPcOnMap(ecs::PlayerRuntime::GetMapIndex(((ch) ? (ch)->GetEntityHandle() : entt::null)), [&](LPCHARACTER m){ if(m && ecs::PlayerRuntime::IsPC(((m) ? (m)->GetEntityHandle() : entt::null)) && ecs::SocialSystem::GetParty(((m) ? (m)->GetEntityHandle() : entt::null))==party) fn(m); });
-d->JoinParty_Coords(party, kEnterX, kEnterY, ecs::PlayerRuntime::GetMapIndex(((ch) ? (ch)->GetEntityHandle() : entt::null)));
+        ForEachPcOnMap(ecs::PlayerRuntime::GetMapIndex(character), [&](LPCHARACTER m){ if(m && ecs::PlayerRuntime::IsPC(((m) ? (m)->GetEntityHandle() : entt::null)) && ecs::SocialSystem::GetParty(((m) ? (m)->GetEntityHandle() : entt::null))==party) fn(m); });
+d->JoinParty_Coords(party, kEnterX, kEnterY, ecs::PlayerRuntime::GetMapIndex(character));
     }
 
     s_triton.SchedulePrepare(d->GetMapIndex(), kPrepareDelay);

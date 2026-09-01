@@ -2,6 +2,8 @@
 
 #include <cstdint>
 
+#include <entt/entt.hpp>
+
 class CHARACTER;
 class CItem;
 
@@ -23,15 +25,15 @@ class CHalloween2022Dungeon
 public:
     static CHalloween2022Dungeon& instance();
 
-    void OnPlayerDisconnect(CHARACTER* ch);
-    void OnPlayerLogin(CHARACTER* ch);
-    void OnMobKilled(CHARACTER* killer, CHARACTER* victim);
+    void OnPlayerDisconnect(entt::entity character);
+    void OnPlayerLogin(entt::entity character);
+    void OnMobKilled(entt::entity killer, entt::entity victim);
 
     // Entry NPC (9475) es reward chest (9484)
-    bool OnClickNpc(CHARACTER* ch, CHARACTER* npc);
+    bool OnClickNpc(entt::entity character, entt::entity npc);
 
     // Drag item onto NPC: 9477 / 9478 / 9479 / 9480 / 9482
-    bool OnNpcTakeItem(CHARACTER* from, CHARACTER* npc, CItem* item);
+    bool OnNpcTakeItem(entt::entity from, entt::entity npc, CItem* item);
 
     bool IsHalloweenDungeonMap(int32_t mapIndex) const;
 };
