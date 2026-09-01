@@ -16,26 +16,26 @@ enum EBattleTypes       // 상대방 기준
 	BATTLE_DEAD
 };
 
-extern int	CalcAttBonus(LPCHARACTER pkAttacker, LPCHARACTER pkVictim, int iAtk);
+extern int	CalcAttBonus(entt::entity attacker, entt::entity victim, int iAtk);
 extern int	CalcBattleDamage(int iDam, int iAttackerLev, int iVictimLev);
-extern int	CalcMeleeDamage(LPCHARACTER pAttacker, LPCHARACTER pVictim, bool bIgnoreDefense = false, bool bIgnoreTargetRating = false);
-extern int	CalcMagicDamage(LPCHARACTER pAttacker, LPCHARACTER pVictim);
-extern int	CalcArrowDamage(LPCHARACTER pkAttacker, LPCHARACTER pkVictim, entt::entity bow, entt::entity arrow, bool bIgnoreDefense = false);
-extern float	CalcAttackRating(LPCHARACTER pkAttacker, LPCHARACTER pkVictim, bool bIgnoreTargetRating = false);
+extern int	CalcMeleeDamage(entt::entity attacker, entt::entity victim, bool bIgnoreDefense = false, bool bIgnoreTargetRating = false);
+extern int	CalcMagicDamage(entt::entity attacker, entt::entity victim);
+extern int	CalcArrowDamage(entt::entity attacker, entt::entity victim, entt::entity bow, entt::entity arrow, bool bIgnoreDefense = false);
+extern float	CalcAttackRating(entt::entity attacker, entt::entity victim, bool bIgnoreTargetRating = false);
 
-extern bool	battle_is_attackable(LPCHARACTER ch, LPCHARACTER victim);
-extern int	battle_melee_attack(LPCHARACTER ch, LPCHARACTER victim);
-extern void	battle_end(LPCHARACTER ch);
+extern bool	battle_is_attackable(entt::entity character, entt::entity victim);
+extern int	battle_melee_attack(entt::entity character, entt::entity victim);
+extern void	battle_end(entt::entity character);
 
 extern bool	battle_distance_valid_by_xy(int32_t x, int32_t y, int32_t tx, int32_t ty);
-extern bool	battle_distance_valid(LPCHARACTER ch, LPCHARACTER victim);
+extern bool	battle_distance_valid(entt::entity character, entt::entity victim);
 extern int	battle_count_attackers(LPCHARACTER ch);
 
-extern void	NormalAttackAffect(LPCHARACTER pkAttacker, LPCHARACTER pkVictim);
+extern void	NormalAttackAffect(entt::entity attacker, entt::entity victim);
 
 // 특성 공격
-inline void AttackAffect(LPCHARACTER pkAttacker,
-		LPCHARACTER pkVictim,
+inline void AttackAffect(entt::entity attacker,
+		entt::entity victim,
 		uint8_t att_point,
 		uint32_t immune_flag,
 		uint32_t affect_idx,
@@ -45,25 +45,25 @@ inline void AttackAffect(LPCHARACTER pkAttacker,
 		int time,
 		const char* name)
 {
-	if (ecs::PointSystem::Get(((pkAttacker) ? (pkAttacker)->GetEntityHandle() : entt::null), att_point) && !AffectSystem::IsAffectFlag(((pkVictim) ? (pkVictim)->GetEntityHandle() : entt::null), affect_flag))
+	if (ecs::PointSystem::Get(attacker, att_point) && !AffectSystem::IsAffectFlag(victim, affect_flag))
 	{
-		if (number(1, 100) <= ecs::PointSystem::Get(((pkAttacker) ? (pkAttacker)->GetEntityHandle() : entt::null), att_point) && !AffectSystem::IsImmune(((pkVictim) ? (pkVictim)->GetEntityHandle() : entt::null), immune_flag))
+		if (number(1, 100) <= ecs::PointSystem::Get(attacker, att_point) && !AffectSystem::IsImmune(victim, immune_flag))
 		{
-			AffectSystem::AddAffect(((pkVictim) ? (pkVictim)->GetEntityHandle() : entt::null), affect_idx, affect_point, affect_amount, affect_flag, time, 0, true);
+			AffectSystem::AddAffect(victim, affect_idx, affect_point, affect_amount, affect_flag, time, 0, true);
 
 			if (test_server)
 			{
-				ecs::ChatSystem::Send(((pkVictim) ? (pkVictim)->GetEntityHandle() : entt::null), CHAT_TYPE_PARTY, "%s %s(%ld%%) SUCCESS", ecs::PlayerRuntime::GetName(((pkAttacker) ? (pkAttacker)->GetEntityHandle() : entt::null)).data(), name, ecs::PointSystem::Get(((pkAttacker) ? (pkAttacker)->GetEntityHandle() : entt::null), att_point));
+				ecs::ChatSystem::Send(victim, CHAT_TYPE_PARTY, "%s %s(%ld%%) SUCCESS", ecs::PlayerRuntime::GetName(attacker).data(), name, ecs::PointSystem::Get(attacker, att_point));
 			}
 		}
 		else if (test_server)
 		{
-			ecs::ChatSystem::Send(((pkVictim) ? (pkVictim)->GetEntityHandle() : entt::null), CHAT_TYPE_PARTY, "%s %s(%ld%%) FAIL", ecs::PlayerRuntime::GetName(((pkAttacker) ? (pkAttacker)->GetEntityHandle() : entt::null)).data(), name, ecs::PointSystem::Get(((pkAttacker) ? (pkAttacker)->GetEntityHandle() : entt::null), att_point));
+			ecs::ChatSystem::Send(victim, CHAT_TYPE_PARTY, "%s %s(%ld%%) FAIL", ecs::PlayerRuntime::GetName(attacker).data(), name, ecs::PointSystem::Get(attacker, att_point));
 		}
 	}
 }
 
-inline void SkillAttackAffect(LPCHARACTER pkVictim,
+inline void SkillAttackAffect(entt::entity victim,
 		int success_pct,
 		uint32_t immune_flag,
 		uint32_t affect_idx,
@@ -73,22 +73,22 @@ inline void SkillAttackAffect(LPCHARACTER pkVictim,
 		int time,
 		const char* name)
 {
-	if (success_pct && !AffectSystem::IsAffectFlag(((pkVictim) ? (pkVictim)->GetEntityHandle() : entt::null), affect_flag))
+	if (success_pct && !AffectSystem::IsAffectFlag(victim, affect_flag))
 	{
-		if (number(1, 1000) <= success_pct && !AffectSystem::IsImmune(((pkVictim) ? (pkVictim)->GetEntityHandle() : entt::null), immune_flag))
+		if (number(1, 1000) <= success_pct && !AffectSystem::IsImmune(victim, immune_flag))
 		{
-			AffectSystem::AddAffect(((pkVictim) ? (pkVictim)->GetEntityHandle() : entt::null), affect_idx, affect_point, affect_amount, affect_flag, time, 0, true);
+			AffectSystem::AddAffect(victim, affect_idx, affect_point, affect_amount, affect_flag, time, 0, true);
 
 			// SKILL_ATTACK_NO_LOG_TARGET_NAME_FIX
 			if (test_server)
-				ecs::ChatSystem::Send(((pkVictim) ? (pkVictim)->GetEntityHandle() : entt::null), CHAT_TYPE_PARTY,
+				ecs::ChatSystem::Send(victim, CHAT_TYPE_PARTY,
 						"%s(%d%%) -> %s SUCCESS", name, success_pct, name);
 			// END_OF_SKILL_ATTACK_LOG_NO_TARGET_NAME_FIX
 		}
 		else if (test_server)
 		{
 			// SKILL_ATTACK_NO_LOG_TARGET_NAME_FIX
-			ecs::ChatSystem::Send(((pkVictim) ? (pkVictim)->GetEntityHandle() : entt::null), CHAT_TYPE_PARTY, "%s(%d%%) -> %s FAIL", name, success_pct, name);
+			ecs::ChatSystem::Send(victim, CHAT_TYPE_PARTY, "%s(%d%%) -> %s FAIL", name, success_pct, name);
 			// END_OF_SKILL_ATTACK_LOG_NO_TARGET_NAME_FIX
 		}
 	}
@@ -97,10 +97,10 @@ inline void SkillAttackAffect(LPCHARACTER pkVictim,
 #ifdef ENABLE_ANTICHEAT
 #define GET_SPEED_HACK_COUNT(ch)		((ch)->GetSpeedHackCount())
 #define INCREASE_SPEED_HACK_COUNT(ch)	(++GET_SPEED_HACK_COUNT(ch))
-int32_t GET_ATTACK_SPEED(LPCHARACTER ch);
-void SET_ATTACK_TIME(LPCHARACTER ch, LPCHARACTER victim, int32_t current_time);
-void SET_ATTACKED_TIME(LPCHARACTER ch, LPCHARACTER victim, int32_t current_time);
-bool IS_SPEED_HACK(LPCHARACTER ch, LPCHARACTER victim, int32_t current_time);
+int32_t GET_ATTACK_SPEED(entt::entity character);
+void SET_ATTACK_TIME(entt::entity character, entt::entity victim, int32_t current_time);
+void SET_ATTACKED_TIME(entt::entity character, entt::entity victim, int32_t current_time);
+bool IS_SPEED_HACK(entt::entity character, entt::entity victim, int32_t current_time);
 #endif
 #endif
 

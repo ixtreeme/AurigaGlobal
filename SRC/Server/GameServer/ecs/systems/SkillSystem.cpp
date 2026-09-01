@@ -1740,7 +1740,7 @@ struct FFindNearVictim
 		if (m_pkChrCenter == pkChr)
 			return;
 
-		if (!battle_is_attackable(m_pkChrAttacker, pkChr))
+		if (!battle_is_attackable((m_pkChrAttacker ? m_pkChrAttacker->GetEntityHandle() : entt::null), (pkChr ? pkChr->GetEntityHandle() : entt::null)))
 		{
 			return;
 		}
@@ -1905,7 +1905,7 @@ struct FuncSplashDamage
 			return;
 		}
 
-		if (!battle_is_attackable(m_pkChr, pkChrVictim))
+		if (!battle_is_attackable((m_pkChr ? m_pkChr->GetEntityHandle() : entt::null), (pkChrVictim ? pkChrVictim->GetEntityHandle() : entt::null)))
 		{
 			if(test_server)
 				LOG_INFO("XXX target not attackable {}", ecs::PlayerRuntime::GetName(m_character).data());
@@ -1960,16 +1960,16 @@ struct FuncSplashDamage
 				bIgnoreTargetRating = true;
 		}
 
-		m_pkSk->SetPointVar("ar", CalcAttackRating(m_pkChr, pkChrVictim, bIgnoreTargetRating));
+		m_pkSk->SetPointVar("ar", CalcAttackRating((m_pkChr ? m_pkChr->GetEntityHandle() : entt::null), (pkChrVictim ? pkChrVictim->GetEntityHandle() : entt::null), bIgnoreTargetRating));
 
 		if (IS_SET(m_pkSk->dwFlag, SKILL_FLAG_USE_MELEE_DAMAGE))
-			m_pkSk->SetPointVar("atk", CalcMeleeDamage(m_pkChr, pkChrVictim, true, bIgnoreTargetRating));
+			m_pkSk->SetPointVar("atk", CalcMeleeDamage((m_pkChr ? m_pkChr->GetEntityHandle() : entt::null), (pkChrVictim ? pkChrVictim->GetEntityHandle() : entt::null), true, bIgnoreTargetRating));
 		else if (IS_SET(m_pkSk->dwFlag, SKILL_FLAG_USE_ARROW_DAMAGE))
 		{
 			entt::entity pkBow = entt::null, pkArrow = entt::null;
 
 			if (1 == m_pkChr->GetArrowAndBow(&pkBow, &pkArrow, 1))
-				m_pkSk->SetPointVar("atk", CalcArrowDamage(m_pkChr, pkChrVictim, pkBow, pkArrow, true));
+				m_pkSk->SetPointVar("atk", CalcArrowDamage((m_pkChr ? m_pkChr->GetEntityHandle() : entt::null), (pkChrVictim ? pkChrVictim->GetEntityHandle() : entt::null), pkBow, pkArrow, true));
 			else
 				m_pkSk->SetPointVar("atk", 0);
 		}
@@ -2230,7 +2230,7 @@ struct FuncSplashDamage
 
 			case SKILL_ATTR_TYPE_MAGIC:
 				dt = DAMAGE_TYPE_MAGIC;
-				iDam = CalcAttBonus(m_pkChr, pkChrVictim, iDam);
+				iDam = CalcAttBonus((m_pkChr ? m_pkChr->GetEntityHandle() : entt::null), (pkChrVictim ? pkChrVictim->GetEntityHandle() : entt::null), iDam);
 				// Ŕ¸ľĆľĆľĆľÇ
 				// żąŔüżˇ ŔűżëľČÇß´ř ąö±×°ˇ ŔÖľîĽ­ ąćľî·Â °č»ęŔ» ´Ů˝ĂÇĎ¸é ŔŻŔú°ˇ ł­¸®ł˛
 				//iDam -= ecs::PointSystem::Get(victimEntity, POINT_MAGIC_DEF_GRADE);
@@ -2476,11 +2476,11 @@ struct FuncSplashDamage
 
 				if (IS_SET(m_pkSk->dwFlag, SKILL_FLAG_STUN))
 				{
-					SkillAttackAffect(pkChrVictim, iPct, IMMUNE_STUN, AFFECT_STUN, POINT_NONE, 0, AFF_STUN, iDur, m_pkSk->szName);
+					SkillAttackAffect((pkChrVictim ? pkChrVictim->GetEntityHandle() : entt::null), iPct, IMMUNE_STUN, AFFECT_STUN, POINT_NONE, 0, AFF_STUN, iDur, m_pkSk->szName);
 				}
 				else if (IS_SET(m_pkSk->dwFlag, SKILL_FLAG_SLOW))
 				{
-					SkillAttackAffect(pkChrVictim, iPct, IMMUNE_SLOW, AFFECT_SLOW, POINT_MOV_SPEED, -30, AFF_SLOW, iDur, m_pkSk->szName);
+					SkillAttackAffect((pkChrVictim ? pkChrVictim->GetEntityHandle() : entt::null), iPct, IMMUNE_SLOW, AFFECT_SLOW, POINT_MOV_SPEED, -30, AFF_SLOW, iDur, m_pkSk->szName);
 				}
 				else if (IS_SET(m_pkSk->dwFlag, SKILL_FLAG_FIRE_CONT))
 				{
@@ -2564,7 +2564,7 @@ struct FuncSplashDamage
 
 				if (ecs::PlayerRuntime::IsPC(m_character) && m_pkChr->m_SkillUseInfo[m_pkSk->dwVnum].GetMainTargetVID() == victimEntity)
 				{
-					SkillAttackAffect(pkChrVictim, 1000, IMMUNE_STUN, m_pkSk->dwVnum, POINT_NONE, 0, AFF_STUN, 4, m_pkSk->szName);
+					SkillAttackAffect((pkChrVictim ? pkChrVictim->GetEntityHandle() : entt::null), 1000, IMMUNE_STUN, m_pkSk->dwVnum, POINT_NONE, 0, AFF_STUN, 4, m_pkSk->szName);
 				}
 				else
 				{
@@ -2795,18 +2795,18 @@ int CHARACTER::ComputeSkillAtPosition(uint32_t dwVnum, const PIXEL_POSITION& pos
 
 	if (IS_SET(pkSk->dwFlag, SKILL_FLAG_USE_MELEE_DAMAGE))
 	{
-		pkSk->SetPointVar("atk", CalcMeleeDamage(this, this, true, false));
+		pkSk->SetPointVar("atk", CalcMeleeDamage(GetEntityHandle(), GetEntityHandle(), true, false));
 	}
 	else if (IS_SET(pkSk->dwFlag, SKILL_FLAG_USE_MAGIC_DAMAGE))
 	{
-		pkSk->SetPointVar("atk", CalcMagicDamage(this, this));
+		pkSk->SetPointVar("atk", CalcMagicDamage(GetEntityHandle(), GetEntityHandle()));
 	}
 	else if (IS_SET(pkSk->dwFlag, SKILL_FLAG_USE_ARROW_DAMAGE))
 	{
 		entt::entity pkBow = entt::null, pkArrow = entt::null;
 		if (1 == GetArrowAndBow(&pkBow, &pkArrow, 1))
 		{
-			pkSk->SetPointVar("atk", CalcArrowDamage(this, this, pkBow, pkArrow, true));
+			pkSk->SetPointVar("atk", CalcArrowDamage(GetEntityHandle(), GetEntityHandle(), pkBow, pkArrow, true));
 		}
 		else
 		{
@@ -2827,7 +2827,7 @@ int CHARACTER::ComputeSkillAtPosition(uint32_t dwVnum, const PIXEL_POSITION& pos
 	pkSk->SetPointVar("maxhp", ecs::PointSystem::GetMaxHP(GetEntityHandle()));
 	pkSk->SetPointVar("maxsp", ecs::PointSystem::GetMaxSP(GetEntityHandle()));
 	pkSk->SetPointVar("chain", 0);
-	pkSk->SetPointVar("ar", CalcAttackRating(this, this));
+	pkSk->SetPointVar("ar", CalcAttackRating(GetEntityHandle(), GetEntityHandle()));
 	pkSk->SetPointVar("def", GetPoint(POINT_DEF_GRADE));
 	pkSk->SetPointVar("odef", GetPoint(POINT_DEF_GRADE) - GetPoint(POINT_DEF_GRADE_BONUS));
 	pkSk->SetPointVar("horse_level", GetHorseLevel());
@@ -3115,9 +3115,9 @@ int CHARACTER::ComputeGyeongGongSkill(uint32_t dwVnum, LPCHARACTER pkVictim, uin
 	entt::entity pkBow = entt::null, pkArrow = entt::null;
 
 	if (1 == GetArrowAndBow(&pkBow, &pkArrow, 1)) {
-		pkSk->SetPointVar("atk", CalcArrowDamage(this, pkVictim, pkBow, pkArrow, true));
+		pkSk->SetPointVar("atk", CalcArrowDamage(GetEntityHandle(), (pkVictim ? pkVictim->GetEntityHandle() : entt::null), pkBow, pkArrow, true));
 	} else {
-		pkSk->SetPointVar("atk", CalcMeleeDamage(this, pkVictim, true, false));
+		pkSk->SetPointVar("atk", CalcMeleeDamage(GetEntityHandle(), (pkVictim ? pkVictim->GetEntityHandle() : entt::null), true, false));
 	}
 
 	pkSk->SetPointVar("lv", GetLevel());
@@ -3128,7 +3128,7 @@ int CHARACTER::ComputeGyeongGongSkill(uint32_t dwVnum, LPCHARACTER pkVictim, uin
 	pkSk->SetPointVar("maxhp", ecs::PointSystem::GetMaxHP(victimEntity));
 	pkSk->SetPointVar("maxsp", ecs::PointSystem::GetMaxSP(victimEntity));
 	pkSk->SetPointVar("chain", 0);
-	pkSk->SetPointVar("ar", CalcAttackRating(this, pkVictim));
+	pkSk->SetPointVar("ar", CalcAttackRating(GetEntityHandle(), (pkVictim ? pkVictim->GetEntityHandle() : entt::null)));
 	pkSk->SetPointVar("def", GetPoint(POINT_DEF_GRADE));
 	pkSk->SetPointVar("odef", GetPoint(POINT_DEF_GRADE) - GetPoint(POINT_DEF_GRADE_BONUS));
 	pkSk->SetPointVar("horse_level", GetHorseLevel());
@@ -3254,27 +3254,27 @@ int CHARACTER::ComputeSkill(uint32_t dwVnum, LPCHARACTER pkVictim, uint8_t bSkil
 		entt::entity pkBow = entt::null, pkArrow = entt::null;
 		if (1 == GetArrowAndBow(&pkBow, &pkArrow, 1))
 		{
-			pkSk->SetPointVar("atk", CalcArrowDamage(this, pkVictim, pkBow, pkArrow, true));
+			pkSk->SetPointVar("atk", CalcArrowDamage(GetEntityHandle(), (pkVictim ? pkVictim->GetEntityHandle() : entt::null), pkBow, pkArrow, true));
 		}
 		else
 		{
-			pkSk->SetPointVar("atk", CalcMeleeDamage(this, pkVictim, true, false));
+			pkSk->SetPointVar("atk", CalcMeleeDamage(GetEntityHandle(), (pkVictim ? pkVictim->GetEntityHandle() : entt::null), true, false));
 		}
 	}
 	else if (IS_SET(pkSk->dwFlag, SKILL_FLAG_USE_MELEE_DAMAGE))
 	{
-		pkSk->SetPointVar("atk", CalcMeleeDamage(this, pkVictim, true, false));
+		pkSk->SetPointVar("atk", CalcMeleeDamage(GetEntityHandle(), (pkVictim ? pkVictim->GetEntityHandle() : entt::null), true, false));
 	}
 	else if (IS_SET(pkSk->dwFlag, SKILL_FLAG_USE_MAGIC_DAMAGE))
 	{
-		pkSk->SetPointVar("atk", CalcMagicDamage(this, pkVictim));
+		pkSk->SetPointVar("atk", CalcMagicDamage(GetEntityHandle(), (pkVictim ? pkVictim->GetEntityHandle() : entt::null)));
 	}
 	else if (IS_SET(pkSk->dwFlag, SKILL_FLAG_USE_ARROW_DAMAGE))
 	{
 		entt::entity pkBow = entt::null, pkArrow = entt::null;
 		if (1 == GetArrowAndBow(&pkBow, &pkArrow, 1))
 		{
-			pkSk->SetPointVar("atk", CalcArrowDamage(this, pkVictim, pkBow, pkArrow, true));
+			pkSk->SetPointVar("atk", CalcArrowDamage(GetEntityHandle(), (pkVictim ? pkVictim->GetEntityHandle() : entt::null), pkBow, pkArrow, true));
 		}
 		else
 		{
@@ -3295,7 +3295,7 @@ int CHARACTER::ComputeSkill(uint32_t dwVnum, LPCHARACTER pkVictim, uint8_t bSkil
 	pkSk->SetPointVar("maxhp", ecs::PointSystem::GetMaxHP(victimEntity));
 	pkSk->SetPointVar("maxsp", ecs::PointSystem::GetMaxSP(victimEntity));
 	pkSk->SetPointVar("chain", 0);
-	pkSk->SetPointVar("ar", CalcAttackRating(this, pkVictim));
+	pkSk->SetPointVar("ar", CalcAttackRating(GetEntityHandle(), (pkVictim ? pkVictim->GetEntityHandle() : entt::null)));
 	pkSk->SetPointVar("def", GetPoint(POINT_DEF_GRADE));
 	pkSk->SetPointVar("odef", GetPoint(POINT_DEF_GRADE) - GetPoint(POINT_DEF_GRADE_BONUS));
 	pkSk->SetPointVar("horse_level", GetHorseLevel());

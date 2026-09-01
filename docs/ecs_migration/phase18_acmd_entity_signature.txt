@@ -186,3 +186,66 @@ Left in place (25 sites)
 char_manager.cpp: 219 -> 25 conversion sites
 Project-wide conversion count: 4917 -> 4743
 Build: RelWithDebInfo GameServer, 0 errors, first attempt.
+
+
+Phase 18d - battle.h / battle.cpp full entity flip
+---------------------------------------------------
+The whole battle API is now entity-native. This is the first file in the
+migration that ends at *zero* inlined conversions, header included.
+
+battle.h - 14 declarations + 2 inline definitions flipped:
+  CalcAttBonus, CalcMeleeDamage, CalcMagicDamage, CalcArrowDamage,
+  CalcAttackRating, battle_is_attackable, battle_melee_attack, battle_end,
+  battle_distance_valid, NormalAttackAffect, and the ENABLE_ANTICHEAT quartet
+  GET_ATTACK_SPEED / SET_ATTACK_TIME / SET_ATTACKED_TIME / IS_SPEED_HACK.
+
+  The two inline helpers AttackAffect (11 conversions) and SkillAttackAffect
+  (5) had *zero* legacy pointer uses in their bodies - pure flips, no alias
+  needed. They are now entity-only from signature to last statement.
+
+battle.cpp - 19 definitions, 195 conversion sites removed:
+  CalcAttBonus 56, battle_hit 36, battle_melee_attack 24, CalcMeleeDamage 23,
+  CalcArrowDamage 18, battle_is_attackable 17, IS_SPEED_HACK 10,
+  NormalAttackAffect 8, battle_distance_valid 4, plus 9 smaller ones.
+
+Naming convention settled here
+------------------------------
+After this pass, inside the battle code:
+  attacker / victim / character  always mean entt::entity
+  pkAttacker / pkVictim / ch     always mean LPCHARACTER
+Functions whose parameter was already named `victim` as a pointer had their
+remaining pointer uses renamed to pkVictim, so the entity could take the good
+name. That rename is compiler-checked in both directions: entt::entity is an
+enum class, so it has no operator-> and no implicit conversion to a pointer -
+any mix-up is a hard error, never a silent behaviour change.
+
+Call sites
+----------
+41 external call sites in 5 files were adapted (cmd_gm.cpp, AffectSystem.cpp,
+CombatSystem.cpp, NetworkSyncSystem.cpp, SkillSystem.cpp) plus 24 intra-file
+calls. Each file kept its own local spelling of the conversion.
+NetworkSyncSystem.cpp carried a private `extern bool battle_is_attackable(
+LPCHARACTER, LPCHARACTER);` redeclaration that had to move with the header.
+
+Tooling note
+------------
+The parameter-flip helper had a placeholder collision: it substituted each
+conversion with "\0<entityName>\0", so when a parameter was being renamed to
+its own name (victim -> victim) the later bare-use scan matched the
+placeholders themselves and rewrote entity slots back into pointer uses. The
+first battle.cpp run was reverted and the helper switched to opaque, indexed
+placeholders. Earlier phases were unaffected: their entity names (character,
+killer, attacker) never matched their parameter names (ch, pkChr, pkKiller,
+pkAttacker) as whole words.
+
+Left in place
+-------------
+  - battle.h still declares `extern int battle_count_attackers(LPCHARACTER ch);`
+    That function has no definition and no caller anywhere in the tree; it is a
+    dead declaration, not a migration target.
+  - one conversion inside a commented-out line in CalcArrowDamage, on an LPITEM
+    subject (pkBow).
+
+battle.cpp: 195 -> 0 (1 in a comment)   battle.h: 16 -> 0
+Project-wide conversion count: 4743 -> 4568
+Build: RelWithDebInfo GameServer, 0 errors.

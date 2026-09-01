@@ -96,10 +96,10 @@ void Command_ApplyAffect(LPCHARACTER ch, const char* argument, const char* affec
 	switch (cmdAffect)
 	{
 		case COMMANDAFFECT_STUN:
-			SkillAttackAffect(tch, 1000, IMMUNE_STUN, AFFECT_STUN, POINT_NONE, 0, AFF_STUN, 30, "GM_STUN");
+			SkillAttackAffect(((tch) ? (tch)->GetEntityHandle() : entt::null), 1000, IMMUNE_STUN, AFFECT_STUN, POINT_NONE, 0, AFF_STUN, 30, "GM_STUN");
 			break;
 		case COMMANDAFFECT_SLOW:
-			SkillAttackAffect(tch, 1000, IMMUNE_SLOW, AFFECT_SLOW, POINT_MOV_SPEED, -30, AFF_SLOW, 30, "GM_SLOW");
+			SkillAttackAffect(((tch) ? (tch)->GetEntityHandle() : entt::null), 1000, IMMUNE_SLOW, AFFECT_SLOW, POINT_MOV_SPEED, -30, AFF_SLOW, 30, "GM_SLOW");
 			break;
 	}
 

@@ -2581,14 +2581,14 @@ bool CHARACTER::Attack(LPCHARACTER pkVictim, uint8_t bType)
 	   // return false;
 
    // @fixme131
-	if (!battle_is_attackable(this, pkVictim))
+	if (!battle_is_attackable(GetEntityHandle(), (pkVictim ? pkVictim->GetEntityHandle() : entt::null)))
 		return false;
 
 	uint32_t dwCurrentTime = get_dword_time();
 
 	if (IsPC()) {
 #ifdef ENABLE_ANTICHEAT
-		if (IS_SPEED_HACK(this, pkVictim, dwCurrentTime)) {
+		if (IS_SPEED_HACK(GetEntityHandle(), (pkVictim ? pkVictim->GetEntityHandle() : entt::null), dwCurrentTime)) {
 			return false;
 		}
 #endif
@@ -2617,7 +2617,7 @@ bool CHARACTER::Attack(LPCHARACTER pkVictim, uint8_t bType)
 		case BATTLE_TYPE_TANKER:
 		case BATTLE_TYPE_SUPER_POWER:
 		case BATTLE_TYPE_SUPER_TANKER:
-			iRet = battle_melee_attack(this, pkVictim);
+			iRet = battle_melee_attack(GetEntityHandle(), (pkVictim ? pkVictim->GetEntityHandle() : entt::null));
 			break;
 		case BATTLE_TYPE_RANGE:
 			FlyTarget(ecs::PlayerRuntime::GetPacketVID((pkVictim ? pkVictim->GetEntityHandle() : entt::null)), ecs::PlayerRuntime::GetX((pkVictim ? pkVictim->GetEntityHandle() : entt::null)), ecs::PlayerRuntime::GetY((pkVictim ? pkVictim->GetEntityHandle() : entt::null)), HEADER_CG_FLY_TARGETING);
@@ -6088,7 +6088,7 @@ public:
 			return;
 
 		//  Ұ
-		if (!battle_is_attackable(m_me, pkVictim))
+		if (!battle_is_attackable((m_me ? m_me->GetEntityHandle() : entt::null), (pkVictim ? pkVictim->GetEntityHandle() : entt::null)))
 			return;
 
 		if (ecs::PlayerRuntime::IsNPC((m_me ? m_me->GetEntityHandle() : entt::null)))
@@ -6122,19 +6122,19 @@ public:
 						ecs::PointSystem::Change((m_me ? m_me->GetEntityHandle() : entt::null), POINT_SP, -5);
 					}
 
-				iDam = CalcArrowDamage(m_me, pkVictim, pkBow, pkArrow);
+				iDam = CalcArrowDamage((m_me ? m_me->GetEntityHandle() : entt::null), (pkVictim ? pkVictim->GetEntityHandle() : entt::null), pkBow, pkArrow);
 				m_me->UseArrow(pkArrow, 1);
 
 #ifdef ENABLE_ANTICHEAT
-				if (IS_SPEED_HACK(m_me, pkVictim, get_dword_time())) {
+				if (IS_SPEED_HACK((m_me ? m_me->GetEntityHandle() : entt::null), (pkVictim ? pkVictim->GetEntityHandle() : entt::null), get_dword_time())) {
 					iDam = 0;
 				}
 #endif
 			}
 			else
-				iDam = CalcMeleeDamage(m_me, pkVictim);
+				iDam = CalcMeleeDamage((m_me ? m_me->GetEntityHandle() : entt::null), (pkVictim ? pkVictim->GetEntityHandle() : entt::null));
 
-			NormalAttackAffect(m_me, pkVictim);
+			NormalAttackAffect((m_me ? m_me->GetEntityHandle() : entt::null), (pkVictim ? pkVictim->GetEntityHandle() : entt::null));
 
 			//   (nyl vdelem)
 			int32_t lValue = ecs::PointSystem::Get((pkVictim ? pkVictim->GetEntityHandle() : entt::null), POINT_RESIST_BOW);
@@ -6177,9 +6177,9 @@ public:
 			if (ecs::PlayerRuntime::IsPC((m_me ? m_me->GetEntityHandle() : entt::null)))
 				return;
 
-			iDam = CalcMagicDamage(m_me, pkVictim);
+			iDam = CalcMagicDamage((m_me ? m_me->GetEntityHandle() : entt::null), (pkVictim ? pkVictim->GetEntityHandle() : entt::null));
 
-			NormalAttackAffect(m_me, pkVictim);
+			NormalAttackAffect((m_me ? m_me->GetEntityHandle() : entt::null), (pkVictim ? pkVictim->GetEntityHandle() : entt::null));
 
 			//
 //#ifdef ENABLE_MAGIC_REDUCTION_SYSTEM
@@ -6377,7 +6377,7 @@ public:
 		{
 			if (ecs::PlayerRuntime::IsStone((pkVictim ? pkVictim->GetEntityHandle() : entt::null)) || pkVictim->GetMobRank() >= 4 || ecs::PlayerRuntime::GetRaceNum((pkVictim ? pkVictim->GetEntityHandle() : entt::null)))
 			{
-				int iDam = CalcMeleeDamage(m_me, pkVictim);
+				int iDam = CalcMeleeDamage((m_me ? m_me->GetEntityHandle() : entt::null), (pkVictim ? pkVictim->GetEntityHandle() : entt::null));
 
 				if (m_me->GetJob() == JOB_ASSASSIN &&
 					(ecs::PlayerRuntime::IsStone((pkVictim ? pkVictim->GetEntityHandle() : entt::null)) || pkVictim->GetMobRank() >= 4 || ecs::PlayerRuntime::GetRaceNum((pkVictim ? pkVictim->GetEntityHandle() : entt::null)) == 136))
@@ -6556,7 +6556,7 @@ void CHARACTER::SetVictim(LPCHARACTER pkVictim)
 			MonsterLog("  ");
 
 		m_eVictim = entt::null;
-		battle_end(this);
+		battle_end(GetEntityHandle());
 	}
 	else
 	{
@@ -6864,7 +6864,7 @@ static int64_t CalcReferenceBowHitDamage(LPCHARACTER pAttacker, LPCHARACTER pVic
 	if (0 == pAttacker->GetArrowAndBow(&pkBow, &pkArrow))
 		return 0;
 
-	int64_t dam = CalcArrowDamage(pAttacker, pVictim, pkBow, pkArrow);
+	int64_t dam = CalcArrowDamage((pAttacker ? pAttacker->GetEntityHandle() : entt::null), (pVictim ? pVictim->GetEntityHandle() : entt::null), pkBow, pkArrow);
 	if (dam <= 0)
 		return 0;
 
@@ -6930,7 +6930,7 @@ static int64_t CalcReferenceNormalHitDamage(LPCHARACTER pAttacker, LPCHARACTER p
 	if (!pAttacker || !pVictim)
 		return 0;
 
-	int64_t dam = CalcMeleeDamage(pAttacker, pVictim);
+	int64_t dam = CalcMeleeDamage((pAttacker ? pAttacker->GetEntityHandle() : entt::null), (pVictim ? pVictim->GetEntityHandle() : entt::null));
 	if (dam <= 0)
 		return 0;
 

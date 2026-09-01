@@ -46,7 +46,7 @@
 #include "../services/EntityNetworkDispatch.hpp"
 #include <Core/Logging.hpp>
 
-extern bool battle_is_attackable(LPCHARACTER ch, LPCHARACTER victim);
+extern bool battle_is_attackable(entt::entity character, entt::entity victim);
 
 namespace
 {
@@ -1090,7 +1090,7 @@ bool CHARACTER::SetSyncOwner(LPCHARACTER ch, bool bRemoveFromList)
 
     if (ch)
     {
-        if (!battle_is_attackable(ch, this))
+        if (!battle_is_attackable((ch ? ch->GetEntityHandle() : entt::null), GetEntityHandle()))
         {
             SendDamagePacket(ch, 0, DAMAGE_BLOCK);
             return false;

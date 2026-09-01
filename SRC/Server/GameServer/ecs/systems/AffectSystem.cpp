@@ -1789,7 +1789,7 @@ bool CHARACTER::AddAffect(uint32_t dwType, uint8_t bApplyOn, int32_t lApplyValue
 			// legacy (folds into a function-local in C.5/refactor).
 			m_posStart.x = GetX();
 			m_posStart.y = GetY();
-			battle_end(this);
+			battle_end(GetEntityHandle());
 
 			// Stun forces movement abort. SyncDestinationClear removes ECS
 			// MovementDestination - GetCurrentDestX/Y falls back to GetX/Y
