@@ -695,7 +695,7 @@ void CInputLogin::Entergame(LPDESC d, const char* data)
 
 	marriage::CManager::instance().Login(ch);
 #ifdef ENABLE_EVENT_MANAGER
-	CHARACTER_MANAGER::Instance().SendDataPlayer(ch);
+	CHARACTER_MANAGER::Instance().SendDataPlayer(((ch) ? (ch)->GetEntityHandle() : entt::null));
 #endif
 
 	TPacketGCTime p;

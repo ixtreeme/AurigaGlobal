@@ -4628,7 +4628,7 @@ void CHARACTER::MonsterLog(const char* format, ...)
     buf.write(&pack_chat, sizeof(TPacketGCChat));
     buf.write(chatbuf, len);
 
-    CHARACTER_MANAGER::instance().PacketMonsterLog(this, buf.read_peek(), buf.size());
+    CHARACTER_MANAGER::instance().PacketMonsterLog(GetEntityHandle(), buf.read_peek(), buf.size());
 }
 
 bool CHARACTER::OnIdle()

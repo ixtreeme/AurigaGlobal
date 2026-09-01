@@ -3536,13 +3536,13 @@ void CInputDB::ItemShop(LPDESC d, const char* c_pData)
 	{
 		if (!d)
 			return;
-		CHARACTER_MANAGER::Instance().LoadItemShopLogReal(d->GetCharacter(), c_pData);
+		CHARACTER_MANAGER::Instance().LoadItemShopLogReal(((d->GetCharacter()) ? (d->GetCharacter())->GetEntityHandle() : entt::null), c_pData);
 	}
 	else if (subIndex == ITEMSHOP_BUY)
 	{
 		if (!d)
 			return;
-		CHARACTER_MANAGER::Instance().LoadItemShopBuyReal(d->GetCharacter(), c_pData);
+		CHARACTER_MANAGER::Instance().LoadItemShopBuyReal(((d->GetCharacter()) ? (d->GetCharacter())->GetEntityHandle() : entt::null), c_pData);
 	}
 }
 #endif

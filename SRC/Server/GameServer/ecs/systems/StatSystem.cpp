@@ -682,7 +682,7 @@ void CHARACTER::ComputePoints()
 	// 3AAIAU, 1öÇÁ µî?! °ü·AµE ¸?µç 1Ó1o°aA» Aç°e»eÇI±â ¶§1®?!,
 	// ?ëEY1® 1A1oAUµµ ActiveDeck?! AÖ´Â ¸?µç ?ëEY1®AÇ 1Ó1o°aA» ´U1A Au?ë1AÄN3ß ÇN´U.
 #ifdef ENABLE_EVENT_MANAGER
-	CHARACTER_MANAGER::Instance().CheckBonusEvent(this);
+	CHARACTER_MANAGER::Instance().CheckBonusEvent(GetEntityHandle());
 #endif
 
 	if (DragonSoul_IsDeckActivated())

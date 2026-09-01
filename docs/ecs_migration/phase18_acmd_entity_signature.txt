@@ -120,3 +120,69 @@ input_main.cpp:
 
 Project-wide conversion count: 5400 -> 4917
 Build: RelWithDebInfo GameServer, 0 errors, first attempt.
+
+
+Phase 18c - CHARACTER_MANAGER consumer API entity flip
+-------------------------------------------------------
+char_manager.cpp had 219 conversion sites (the where.py breakdown counts both
+the ((p) ? ...) and the (p ? ...) spellings). They split into two kinds, and
+each kind got the treatment it deserves.
+
+A. Signature flip - methods that only *consume* a character
+   14 declarations in char_manager.h moved to entt::entity:
+
+     CheckEventForDrop(pkChr, pkKiller, ...)  -> (character, killer, ...)   96
+     LoadItemShopBuyReal                                                     8
+     LoadItemShopBuy                                                         6
+     LoadItemShopLog                                                         3
+     LoadItemShopLogReal                                                     2
+     LoadItemShopData(ch, isAll)                                             2
+     PacketMonsterLog                                                        3
+     SendDataPlayer                                                          2
+     CheckBonusEvent                                                         2
+     GetMobDamageRate / GetMobGoldAmountRate / GetMobGoldDropRate /
+     GetMobExpRate / GetUserDamageRate                                       6
+
+   CheckEventForDrop alone was 96 of them - 93 repetitions of the same
+   ((pkChr) ? ...) inside one 380-line boss/metin drop-event chain.
+
+   The four premium-gated rate getters were rewritten rather than aliased:
+   `ch->GetPremiumRemainSeconds(X)` is already a pure forward to
+   ecs::PlayerRuntime::GetPremiumRemainSeconds, which returns 0 for a null or
+   invalid entity - so the `if (!ch) return <base rate>;` guard was exactly
+   redundant with the premium check and could go.
+
+   GetMobItemRate(LPCHARACTER) was a dead forwarder to the entity overload that
+   already existed; its only caller already passed an entity. Deleted.
+
+   62 external call sites were checked; only 14 actually needed touching
+   (battle.cpp, cmd_general.cpp, CombatSystem.cpp x9, PlayerRuntimeSystem.cpp,
+   StatSystem.cpp, input_db.cpp x2, input_login.cpp, item_manager.cpp). Where
+   the caller still holds a real pointer the conversion moved outward to it -
+   that is the point: it now sits at the one place a pointer still lives.
+
+B. Hoist - functions that own a local pointer and re-converted it N times
+   No signature change; the repeated conversion collapses onto one local:
+
+     SpawnMob 12, SpawnMobRandomPosition 11, DestroyCharacter 8, Update 6,
+     SpawnMoveGroup 5, SpawnGroup 4, SpawnMobRange 3, FindSpecifyPC 3,
+     the anonymous-namespace alive-VID sweep 3, FindByPID 2, FindPC 2,
+     SetEventStatus 2, RegisterRaceNumMap 2, UnregisterRaceNumMap 2,
+     RefreshItemShop 1
+
+   These are factory / lookup / lifetime functions. Their LPCHARACTER is the
+   legacy identity boundary itself, so flipping their signature belongs to a
+   later identity phase, not to this one.
+
+Left in place (25 sites)
+------------------------
+  - 18 are LPITEM subjects (rewardItem, extraDrop, item) - a different axis.
+  - 3 are the `c` loop variable over m_set_pkChrMonsterLog, a pointer set.
+  - 4 are lone conversions inside ENABLE_INGAME_DEBUG_RAZOR93 blocks in
+    AddToStateList / RemoveFromStateList / RegisterForMonsterLog /
+    UnregisterForMonsterLog. Those methods genuinely operate on CHARACTER_SET
+    pointer containers; flipping them would only add a LegacyCharOf round-trip.
+
+char_manager.cpp: 219 -> 25 conversion sites
+Project-wide conversion count: 4917 -> 4743
+Build: RelWithDebInfo GameServer, 0 errors, first attempt.

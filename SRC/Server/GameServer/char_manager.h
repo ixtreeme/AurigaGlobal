@@ -25,12 +25,12 @@ class CHARACTER_MANAGER : public singleton<CHARACTER_MANAGER>
 #ifdef ENABLE_ITEMSHOP
 public:
 	void	LoadItemShopData(const char* c_pData);
-	void	LoadItemShopData(LPCHARACTER ch, bool isAll = true);
-	void	LoadItemShopLog(LPCHARACTER ch);
-	void	LoadItemShopLogReal(LPCHARACTER ch, const char* c_pData);
-	void	LoadItemShopBuy(LPCHARACTER ch, int itemID, int itemCount);
+	void	LoadItemShopData(entt::entity character, bool isAll = true);
+	void	LoadItemShopLog(entt::entity character);
+	void	LoadItemShopLogReal(entt::entity character, const char* c_pData);
+	void	LoadItemShopBuy(entt::entity character, int itemID, int itemCount);
 	bool GetItemShopDataByVnum(uint32_t vnum, TIShopData& outData) const;
-	void	LoadItemShopBuyReal(LPCHARACTER ch, const char* c_pData);
+	void	LoadItemShopBuyReal(entt::entity character, const char* c_pData);
 	int		GetItemShopUpdateTime() { return itemshopUpdateTime; }
 
 protected:
@@ -88,7 +88,7 @@ protected:
 
 		void			RegisterForMonsterLog(LPCHARACTER ch);
 		void			UnregisterForMonsterLog(LPCHARACTER ch);
-		void			PacketMonsterLog(LPCHARACTER ch, const void* buf, int size);
+		void			PacketMonsterLog(entt::entity character, const void* buf, int size);
 
 		void			KillLog(uint32_t dwVnum);
 
@@ -112,14 +112,13 @@ protected:
 
 		void			SetUserDamageRatePremium(int value)	{ m_iUserDamageRatePremium = value; }
 		void			SetUserDamageRate(int value ) { m_iUserDamageRate = value; }
-		int			GetMobItemRate(LPCHARACTER ch);
-		int			GetMobItemRate(entt::entity character);
-		int			GetMobDamageRate(LPCHARACTER ch);
-		int			GetMobGoldAmountRate(LPCHARACTER ch);
-		int			GetMobGoldDropRate(LPCHARACTER ch);
-		int			GetMobExpRate(LPCHARACTER ch);
+				int			GetMobItemRate(entt::entity character);
+		int			GetMobDamageRate(entt::entity character);
+		int			GetMobGoldAmountRate(entt::entity character);
+		int			GetMobGoldDropRate(entt::entity character);
+		int			GetMobExpRate(entt::entity character);
 
-		int			GetUserDamageRate(LPCHARACTER ch);
+		int			GetUserDamageRate(entt::entity character);
 		void		SendScriptToMap(int32_t lMapIndex, std::string_view s);
 
 		bool			BeginPendingDestroy();
@@ -130,12 +129,12 @@ protected:
 		bool			CloseEventManuel(uint8_t eventIndex);
 		void			SetEventData(uint8_t dayIndex, const std::vector<TEventManagerData>& m_data);
 		void			SetEventStatus(const uint16_t eventID, const bool eventStatus, const int endTime, const char* endTimeText);
-		void			SendDataPlayer(LPCHARACTER ch);
-		void			CheckBonusEvent(LPCHARACTER ch);
+		void			SendDataPlayer(entt::entity character);
+		void			CheckBonusEvent(entt::entity character);
 		void			UpdateAllPlayerEventData();
 		void			CompareEventSendData(TEMP_BUFFER* buf);
 		const TEventManagerData* CheckEventIsActive(uint8_t eventIndex, uint8_t empireIndex = 0);
-		void			CheckEventForDrop(LPCHARACTER pkChr, LPCHARACTER pkKiller, std::vector<entt::entity>& vec_item);
+		void			CheckEventForDrop(entt::entity character, entt::entity killer, std::vector<entt::entity>& vec_item);
 	protected:
 		std::map<uint8_t, std::vector<TEventManagerData>>	m_eventData;
 #endif

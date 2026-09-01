@@ -1500,7 +1500,7 @@ bool ITEM_MANAGER::CreateDropItem(LPCHARACTER pkChr, LPCHARACTER pkKiller, std::
 	else
 	{
 
-		CHARACTER_MANAGER::Instance().CheckEventForDrop(pkChr, pkKiller, vec_item);
+		CHARACTER_MANAGER::Instance().CheckEventForDrop(((pkChr) ? (pkChr)->GetEntityHandle() : entt::null), ((pkKiller) ? (pkKiller)->GetEntityHandle() : entt::null), vec_item);
 	}
 #endif
 

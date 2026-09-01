@@ -4059,7 +4059,7 @@ ACMD(do_event_manager)
 	if (vecArgs.size() < 2) { return; }
 	else if (vecArgs[1] == "info")
 	{
-		CHARACTER_MANAGER::Instance().SendDataPlayer(ch);
+		CHARACTER_MANAGER::Instance().SendDataPlayer(character);
 	}
 	else if (vecArgs[1] == "remove")
 	{
@@ -4108,7 +4108,7 @@ ACMD(do_ishop)
 		if (vecArgs.size() < 3) { return; }
 		int updateTime;
 		str_to_number(updateTime, vecArgs[2].c_str());
-		CHARACTER_MANAGER::Instance().LoadItemShopData(ch, CHARACTER_MANAGER::Instance().GetItemShopUpdateTime() != updateTime);
+		CHARACTER_MANAGER::Instance().LoadItemShopData(character, CHARACTER_MANAGER::Instance().GetItemShopUpdateTime() != updateTime);
 	}
 	else if (vecArgs[1] == "log")
 	{
@@ -4116,7 +4116,7 @@ ACMD(do_ishop)
 			return;
 		ch->SetProtectTime("itemshop.log", 1);
 
-		CHARACTER_MANAGER::Instance().LoadItemShopLog(ch);
+		CHARACTER_MANAGER::Instance().LoadItemShopLog(character);
 	}
 	else if (vecArgs[1] == "buy")
 	{
@@ -4125,7 +4125,7 @@ ACMD(do_ishop)
 		str_to_number(itemID, vecArgs[2].c_str());
 		int itemCount;
 		str_to_number(itemCount, vecArgs[3].c_str());
-		CHARACTER_MANAGER::Instance().LoadItemShopBuy(ch, itemID, itemCount);
+		CHARACTER_MANAGER::Instance().LoadItemShopBuy(character, itemID, itemCount);
 	}
 }
 #endif

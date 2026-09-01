@@ -1344,7 +1344,7 @@ static void GiveExp(LegacyCharHandle from, LegacyCharHandle to, int iExp)
 	rateFactor += ecs::PointSystem::Get((to ? to->GetEntityHandle() : entt::null), POINT_RAMADAN_CANDY_BONUS_EXP);
 	rateFactor += ecs::PointSystem::Get((to ? to->GetEntityHandle() : entt::null), POINT_MALL_EXPBONUS);
 	// useless (never used except for china intoxication) = always 100
-	rateFactor = rateFactor * static_cast<rate_t>(CHARACTER_MANAGER::instance().GetMobExpRate(to)) / 100.0L;
+	rateFactor = rateFactor * static_cast<rate_t>(CHARACTER_MANAGER::instance().GetMobExpRate(((to) ? (to)->GetEntityHandle() : entt::null))) / 100.0L;
 	// apply calculated rate bonus
 	iExp *= (rateFactor / 100.0L);
 	if (test_server)
@@ -1497,7 +1497,7 @@ static void GiveExp(LegacyCharHandle from, LegacyCharHandle to, int iExp)
 	}
 
 	// ȹ  2005.04.21  85%
-	iExp = iExp * CHARACTER_MANAGER::instance().GetMobExpRate(to) / 100;
+	iExp = iExp * CHARACTER_MANAGER::instance().GetMobExpRate(((to) ? (to)->GetEntityHandle() : entt::null)) / 100;
 
 	// ġ ѹ ȹ淮
 	iExp = MIN(to->GetNextExp() / 10, iExp);
@@ -4365,7 +4365,7 @@ void CHARACTER::RewardGold(LPCHARACTER pkAttacker) {
 				iGoldPercent = iGoldPercent * (100 + CPrivManager::instance().GetPriv(pkAttacker, PRIV_GOLD_DROP)) / 100;
 #endif
 
-			iGoldPercent = iGoldPercent * CHARACTER_MANAGER::instance().GetMobGoldDropRate(pkAttacker) / 100;
+			iGoldPercent = iGoldPercent * CHARACTER_MANAGER::instance().GetMobGoldDropRate(((pkAttacker) ? (pkAttacker)->GetEntityHandle() : entt::null)) / 100;
 
 			// ADD_PREMIUM
 			if (pkAttacker->GetPremiumRemainSeconds(PREMIUM_GOLD) > 0 ||
@@ -4403,7 +4403,7 @@ void CHARACTER::RewardGold(LPCHARACTER pkAttacker) {
 			// ---------     ----------
 			//
 			if (test_server)
-				ecs::ChatSystem::Send((pkAttacker ? pkAttacker->GetEntityHandle() : entt::null), CHAT_TYPE_PARTY, "gold_mul %d rate %d", iGoldMultipler, CHARACTER_MANAGER::instance().GetMobGoldAmountRate(pkAttacker));
+				ecs::ChatSystem::Send((pkAttacker ? pkAttacker->GetEntityHandle() : entt::null), CHAT_TYPE_PARTY, "gold_mul %d rate %d", iGoldMultipler, CHARACTER_MANAGER::instance().GetMobGoldAmountRate(((pkAttacker) ? (pkAttacker)->GetEntityHandle() : entt::null)));
 
 			//
 			// ---------   ó -------------
@@ -4432,7 +4432,7 @@ void CHARACTER::RewardGold(LPCHARACTER pkAttacker) {
 					int iGold = number(GetMobTable().dwGoldMin, GetMobTable().dwGoldMax) / iSplitCount;
 					if (test_server)
 						LOG_INFO("iGold {}", iGold);
-					iGold = iGold * CHARACTER_MANAGER::instance().GetMobGoldAmountRate(pkAttacker) / 100;
+					iGold = iGold * CHARACTER_MANAGER::instance().GetMobGoldAmountRate(((pkAttacker) ? (pkAttacker)->GetEntityHandle() : entt::null)) / 100;
 					iGold *= iGoldMultipler;
 
 					if (iGold == 0)
@@ -4442,7 +4442,7 @@ void CHARACTER::RewardGold(LPCHARACTER pkAttacker) {
 
 					if (test_server)
 					{
-						LOG_TRACE("Drop Moeny MobGoldAmountRate {} {}", CHARACTER_MANAGER::instance().GetMobGoldAmountRate(pkAttacker), iGoldMultipler);
+						LOG_TRACE("Drop Moeny MobGoldAmountRate {} {}", CHARACTER_MANAGER::instance().GetMobGoldAmountRate(((pkAttacker) ? (pkAttacker)->GetEntityHandle() : entt::null)), iGoldMultipler);
 						LOG_TRACE("Drop Money gold {} GoldMin {} GoldMax {}", iGold, GetMobTable().dwGoldMax, GetMobTable().dwGoldMax);
 					}
 
@@ -4473,7 +4473,7 @@ void CHARACTER::RewardGold(LPCHARACTER pkAttacker) {
 				for (int i = 0; i < 10; ++i)
 				{
 					int iGold = number(GetMobTable().dwGoldMin, GetMobTable().dwGoldMax);
-					iGold = iGold * CHARACTER_MANAGER::instance().GetMobGoldAmountRate(pkAttacker) / 100;
+					iGold = iGold * CHARACTER_MANAGER::instance().GetMobGoldAmountRate(((pkAttacker) ? (pkAttacker)->GetEntityHandle() : entt::null)) / 100;
 					iGold *= iGoldMultipler;
 
 					if (iGold == 0)
@@ -4506,7 +4506,7 @@ void CHARACTER::RewardGold(LPCHARACTER pkAttacker) {
 				// Ϲ
 				//
 				int iGold = number(GetMobTable().dwGoldMin, GetMobTable().dwGoldMax);
-				iGold = iGold * CHARACTER_MANAGER::instance().GetMobGoldAmountRate(pkAttacker) / 100;
+				iGold = iGold * CHARACTER_MANAGER::instance().GetMobGoldAmountRate(((pkAttacker) ? (pkAttacker)->GetEntityHandle() : entt::null)) / 100;
 				iGold *= iGoldMultipler;
 
 				int iSplitCount;
@@ -5311,7 +5311,7 @@ bool CHARACTER::Damage(LPCHARACTER pAttacker, int64_t dam, EDamageType type) // 
 	// -----------------------
 	if (pAttacker && ecs::PlayerRuntime::IsPC((pAttacker ? pAttacker->GetEntityHandle() : entt::null)))
 	{
-		int iDmgPct = CHARACTER_MANAGER::instance().GetUserDamageRate(pAttacker);
+		int iDmgPct = CHARACTER_MANAGER::instance().GetUserDamageRate(((pAttacker) ? (pAttacker)->GetEntityHandle() : entt::null));
 		dam = dam * iDmgPct / 100;
 	}
 

@@ -326,7 +326,7 @@ int CalcAttBonus(LPCHARACTER pkAttacker, LPCHARACTER pkVictim, int iAtk)
 
 	if (ecs::PlayerRuntime::IsNPC(((pkAttacker) ? (pkAttacker)->GetEntityHandle() : entt::null)) && ecs::PlayerRuntime::IsPC(((pkVictim) ? (pkVictim)->GetEntityHandle() : entt::null)))
 	{
-		iAtk = (iAtk * CHARACTER_MANAGER::instance().GetMobDamageRate(pkAttacker)) / 100;
+		iAtk = (iAtk * CHARACTER_MANAGER::instance().GetMobDamageRate(((pkAttacker) ? (pkAttacker)->GetEntityHandle() : entt::null))) / 100;
 	}
 
 	if (ecs::PlayerRuntime::IsNPC(((pkVictim) ? (pkVictim)->GetEntityHandle() : entt::null)))
