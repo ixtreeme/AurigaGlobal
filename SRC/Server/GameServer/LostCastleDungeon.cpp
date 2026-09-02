@@ -1116,7 +1116,7 @@ void ClearClonesOnMap(int32_t mapIndex)
                         // NOTE: nálatok az attack skillek (SKILL_FLAG_ATTACK) a UseSkill-ben általában csak
                         // "arm / cooldown"-ot csinálnak, és a tényleges sebzés a kliens attack packetjéből jön.
                         // Mivel a klónnak nincs kliens inputja, itt kézzel lefuttatjuk a ComputeSkill-t.
-                        didAction = clone->UseSkill(p.attackType, target, true);
+                        didAction = clone->UseSkill(p.attackType, (target ? target->GetEntityHandle() : entt::null), true);
 
                         if (didAction)
                         {
@@ -1126,7 +1126,7 @@ void ClearClonesOnMap(int32_t mapIndex)
                                 // Bizonyos attack skillek már a UseSkill-ben ComputeSkill-oznak (pl. charge, MUYEONG, BYEURAK),
                                 // ezeket ne duplázzuk.
                                 if (p.attackType != SKILL_BYEURAK && p.attackType != SKILL_MUYEONG && !sk->IsChargeSkill())
-                                    clone->ComputeSkill(p.attackType, target, 0);
+                                    clone->ComputeSkill(p.attackType, (target ? target->GetEntityHandle() : entt::null), 0);
                             }
                         }
                     }
@@ -1138,7 +1138,7 @@ void ClearClonesOnMap(int32_t mapIndex)
                     if (didAction)
                     {
                         // Force victim hurt animation like real PvP
-                        target->Motion(MOTION_DAMAGE, clone);
+                        target->Motion(MOTION_DAMAGE, (clone ? clone->GetEntityHandle() : entt::null));
                     }
 
                     s_lc.m_clonePending.erase(cloneVid);

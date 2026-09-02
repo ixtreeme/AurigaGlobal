@@ -1049,3 +1049,89 @@ LegacyCharOf on the way in no longer do.
 
 Anyone continuing should judge the remaining clusters on that basis, not on the
 conversion count, which will keep hovering around this level.
+
+
+Phase 19d - setters and skill methods (the last cluster of the plan)
+---------------------------------------------------------------------
+21 methods flipped: SetVictim, SetTarget, SetRider, SetStone, ClearStone,
+SetMarryPartner, CreateFly, Motion, MotionPacketEncode, UseSkill, ComputeSkill,
+ComputeSkillParty, ComputeGyeongGongSkill, UpdateAggrPoint, UpdateAggrPointEx,
+ChangeVictimByAggro, OnClick, IsChangeAttackPosition, GetSoulItemDamage,
+SendLeaderboardDataSkillMob, UpdateMountInventoryCountOverhead.
+17 conversions removed inside the bodies, 21 declarations in char.h,
+45 receiver-qualified call sites adapted.
+
+THE MISTAKE: the character is not always argument 0
+---------------------------------------------------
+The call-site adapter written for 19a-19c assumed the character parameter was
+the first one. That holds for the setters and it is false for half of this
+cluster:
+
+    UseSkill(dwVnum, victim)          ComputeSkill(dwVnum, victim)
+    Motion(motion, victim)            CreateFly(type, victim)
+    ChangeVictimByAggro(aggro, victim)
+
+Run against those, it converted the skill vnum instead - and because a vnum is
+not a plain identifier it fell into the tool's last branch and emitted
+`ecs::PlayerRuntime::EntityOf(dwVnum)`, a helper that does not exist. Cluster 4
+was reverted whole and redone with char_callsites2.py, which carries an
+explicit zero-based index per method name:
+
+    INDEX = {'SetVictim': 0, ..., 'UseSkill': 1, 'ComputeSkill': 1, ...}
+
+The lesson is not "check the index" - it is that a name-keyed rewrite must
+carry the shape of each name, never a shape assumed common to the group.
+
+Two further name collisions had to be reverted by hand, both because other
+classes own a method with the same name and a different signature:
+
+    pGuild->UseSkill(p->dwVnum, character, p->dwPID);   // CGuild::UseSkill
+    UseSkill(character, c_pData);                        // CInputMain::UseSkill
+
+The adapter now only rewrites receiver-qualified calls; a bare `Method(...)` is
+left for the compiler to point at, because the receiver is the only evidence at
+hand of which class is meant.
+
+The alias round-trip, and why it paid here
+-------------------------------------------
+Once a parameter is an entity, its body holds
+
+    LPCHARACTER pkAttacker = ecs::LegacyCharOf(attacker);
+    ...
+    UpdateAggrPointEx(pkAttacker ? pkAttacker->GetEntityHandle() : entt::null, ...);
+
+which is the entity converted to a pointer and straight back. scratchpad/
+alias_roundtrip.py collapses those to the parameter, guarded on neither name
+being reassigned in the body. 20 sites across 8 files - and they are the reason
+this cluster went down instead of up.
+
+Also removed: CounterAttack(LPCHARACTER) and OnAttack(LPCHARACTER), declared in
+char.h and never defined or called anywhere in the tree.
+
+Project-wide conversion count: 1823 -> 1750  (-73)
+Build: RelWithDebInfo GameServer, 0 errors.
+
+
+Where the LPCHARACTER axis stands after phase 19
+-------------------------------------------------
+char.h is down to six declarations that still take an LPCHARACTER, and only
+two of them are ordinary methods:
+
+    Damage / __Profile__Damage      the damage entry point, many callers
+    AddChainLightningExcept         inserts into a CHARACTER_SET member
+    DynamicCharacterPtr::operator=  a smart pointer; a pointer is the point
+    GET_SEX                         a free function, not on the class
+    UpdateMountCountOverhead        inside #ifdef ENABLE_MOUNT_COUNT_ABOVE_
+                                    CHAR_RAZOR93 - written `void CHARACTER::
+                                    UpdateMountCountOverhead(...)` inside the
+                                    class body, with no semicolon. It does not
+                                    compile if that macro is ever defined. Left
+                                    as found; noted so it is not mistaken for
+                                    migration debris.
+
+AddChainLightningExcept is blocked by its container, not by itself:
+m_setExceptChainLighting is a CHARACTER_SET, and CHARACTER_SET is the shared
+typedef used by char_manager, dungeon, war_map and wedding, so the typedef
+cannot move. Giving that one member its own std::unordered_set<entt::entity>
+is a contained job - four sites plus FFindNearVictim in SkillSystem.cpp, whose
+GetVictim() feeds CreateFly and ComputeSkill, both of which now take entities.

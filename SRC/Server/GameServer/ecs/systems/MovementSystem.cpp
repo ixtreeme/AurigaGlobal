@@ -965,8 +965,9 @@ void CHARACTER::SendMovePacket(uint8_t bFunc, uint8_t bArg, uint32_t x, uint32_t
 	PacketView(&pack, sizeof(TPacketGCMove), this);
 }
 
-void CHARACTER::MotionPacketEncode(uint8_t motion, LPCHARACTER victim, struct packet_motion* packet)
+void CHARACTER::MotionPacketEncode(uint8_t motion, entt::entity victimEntity, struct packet_motion* packet)
 {
+	LPCHARACTER victim = ecs::LegacyCharOf(victimEntity);
 	packet->header = HEADER_GC_MOTION;
 	packet->vid = GetPacketVID();
 	packet->motion = motion;
@@ -977,10 +978,11 @@ void CHARACTER::MotionPacketEncode(uint8_t motion, LPCHARACTER victim, struct pa
 		packet->victim_vid = 0;
 }
 
-void CHARACTER::Motion(uint8_t motion, LPCHARACTER victim)
+void CHARACTER::Motion(uint8_t motion, entt::entity victimEntity)
 {
+	LPCHARACTER victim = ecs::LegacyCharOf(victimEntity);
 	struct packet_motion pack_motion;
-	MotionPacketEncode(motion, victim, &pack_motion);
+	MotionPacketEncode(motion, victimEntity, &pack_motion);
 	PacketAround(&pack_motion, sizeof(struct packet_motion));
 }
 

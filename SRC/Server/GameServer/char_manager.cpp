@@ -1000,7 +1000,7 @@ bool CHARACTER_MANAGER::SpawnMoveGroup(uint32_t dwVnum, int32_t lMapIndex, int s
 		ey = ecs::PlayerRuntime::GetY(spawned) + number(300, 500);
 
 		if (m_pkChrSelectedStone)
-			tch->SetStone(m_pkChrSelectedStone);
+			tch->SetStone((m_pkChrSelectedStone ? m_pkChrSelectedStone->GetEntityHandle() : entt::null));
 		else if (pkParty)
 		{
 			pkParty->Join(tch->GetLegacyVID());
@@ -1095,7 +1095,7 @@ LPCHARACTER CHARACTER_MANAGER::SpawnGroup(uint32_t dwVnum, int32_t lMapIndex, in
 		ey = ecs::PlayerRuntime::GetY(spawned) + number(300, 500);
 
 		if (m_pkChrSelectedStone)
-			tch->SetStone(m_pkChrSelectedStone);
+			tch->SetStone((m_pkChrSelectedStone ? m_pkChrSelectedStone->GetEntityHandle() : entt::null));
 		else if (pkParty)
 		{
 			pkParty->Join(tch->GetLegacyVID());
@@ -1928,7 +1928,7 @@ void CHARACTER_MANAGER::CheckEventForDrop(entt::entity character, entt::entity k
 			if (boss)
 			{
 				boss->SetAggressive();
-				boss->SetVictim(pkKiller);
+				boss->SetVictim(killer);
 			}
 		}
 
@@ -1969,7 +1969,7 @@ void CHARACTER_MANAGER::CheckEventForDrop(entt::entity character, entt::entity k
 				if (boss)
 				{
 					boss->SetAggressive();
-					boss->SetVictim(pkKiller);
+					boss->SetVictim(killer);
 				}
 			}
 		}

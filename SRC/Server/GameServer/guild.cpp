@@ -1459,7 +1459,7 @@ void CGuild::UseSkill(uint32_t dwVnum, entt::entity character, uint32_t pid)
 					const entt::entity victim = *it;
 					LPCHARACTER pkVictim = ecs::LegacyCharOf(victim);
 					AffectSystem::RemoveAffect(victim, dwVnum);
-					ch->ComputeSkill(dwVnum, pkVictim, m_data.abySkill[dwRealVnum]);
+					ch->ComputeSkill(dwVnum, (pkVictim ? pkVictim->GetEntityHandle() : entt::null), m_data.abySkill[dwRealVnum]);
 				}
 			}
 			break;

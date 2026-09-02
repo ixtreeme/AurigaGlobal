@@ -1044,7 +1044,7 @@ bool CHARACTER::Show(int32_t lMapIndex, int32_t x, int32_t y, int32_t z, bool bS
     if (GetMapIndex() == 41)
     {
         SendLeaderboardData();
-        SendLeaderboardDataSkillMob(this);
+        SendLeaderboardDataSkillMob(this ? this->GetEntityHandle() : entt::null);
         SendLeaderboardDataGuild();
     }
 #endif
@@ -1228,7 +1228,7 @@ bool CHARACTER::Show(int32_t lMapIndex, int32_t x, int32_t y, int32_t z, bool bS
 
 			const entt::entity viewerEntity = viewer->GetEntityHandle();
             if (ecs::PlayerRuntime::IsPC(viewerEntity) && ecs::PlayerRuntime::GetDesc(viewerEntity))
-                UpdateMountInventoryCountOverhead(viewer);
+                UpdateMountInventoryCountOverhead(viewer ? viewer->GetEntityHandle() : entt::null);
         }
     }
 #endif

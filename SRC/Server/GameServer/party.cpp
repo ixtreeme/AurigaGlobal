@@ -929,7 +929,7 @@ void CParty::SendMessage(entt::entity character, uint8_t bMsg, uint32_t dwArg1, 
 						uint32_t x = dwArg1 + number(-500, 500);
 						uint32_t y = dwArg2 + number(-500, 500);
 
-						pkChr->SetVictim(nullptr);
+						pkChr->SetVictim(entt::null);
 						pkChr->SetRotationToXY(x, y);
 
 						if (ecs::MovementSystem::Goto(((pkChr) ? (pkChr)->GetEntityHandle() : entt::null), x, y))
@@ -987,7 +987,7 @@ void CParty::SendMessage(entt::entity character, uint8_t bMsg, uint32_t dwArg1, 
 
 					if ((pkChr = rMember.pCharacter) && ch != pkChr)
 					{
-						pkChr->UpdateAggrPoint(victim, DAMAGE_TYPE_SPECIAL, dwArg1);
+						pkChr->UpdateAggrPoint((victim ? victim->GetEntityHandle() : entt::null), DAMAGE_TYPE_SPECIAL, dwArg1);
 					}
 				}
 			}

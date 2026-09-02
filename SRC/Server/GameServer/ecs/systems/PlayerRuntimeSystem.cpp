@@ -2444,8 +2444,9 @@ bool CHARACTER::CanTakeInventoryItem(entt::entity item, TItemPos* cell)
 }
 
 #ifdef ENABLE_SOUL_SYSTEM
-int CHARACTER::GetSoulItemDamage(LPCHARACTER pkVictim, int iDamage, uint8_t bSoulType)
+int CHARACTER::GetSoulItemDamage(entt::entity victim, int iDamage, uint8_t bSoulType)
 {
+    LPCHARACTER pkVictim = ecs::LegacyCharOf(victim);
     if (!pkVictim)
         return 0;
 
@@ -2609,8 +2610,9 @@ LPCHARACTER CHARACTER::GetMarryPartner() const
     return m_pkChrMarried;
 }
 
-void CHARACTER::SetMarryPartner(LPCHARACTER ch)
+void CHARACTER::SetMarryPartner(entt::entity chEntity)
 {
+    LPCHARACTER ch = ecs::LegacyCharOf(chEntity);
     m_pkChrMarried = ch;
 }
 
@@ -3970,7 +3972,7 @@ void CHARACTER::Destroy()
     if (m_pkExchange)
         m_pkExchange->Cancel();
 
-    SetVictim(nullptr);
+    SetVictim(entt::null);
 
     if (GetShop())
     {
@@ -4671,44 +4673,44 @@ void CHARACTER::OnMove(bool bIsAttack)
     // END_OF_MINING
 }
 
-void CHARACTER::OnClick(LPCHARACTER pkChrCauser)
+void CHARACTER::OnClick(entt::entity causer)
 {
-    if (!pkChrCauser)
+    LPCHARACTER pkCauser = ecs::LegacyCharOf(causer);
+    if (!pkCauser)
     {
         LOG_ERROR("OnClick {} by NULL", GetName());
         return;
     }
-	const entt::entity causer = pkChrCauser->GetEntityHandle();
 
     uint32_t vid = GetPacketVID();
-    LOG_INFO("OnClick {}[vnum: {} vid: {}] by {}", GetName(), GetRaceNum(), vid, pkChrCauser->GetName());
+    LOG_INFO("OnClick {}[vnum: {} vid: {}] by {}", GetName(), GetRaceNum(), vid, pkCauser->GetName());
 
     {
-        if (pkChrCauser->GetMyShop() && pkChrCauser != this)
+        if (pkCauser->GetMyShop() && pkCauser != this)
         {
-            LOG_ERROR("OnClick Fail ({}->{}) - pc has shop", pkChrCauser->GetName(), GetName());
+            LOG_ERROR("OnClick Fail ({}->{}) - pc has shop", pkCauser->GetName(), GetName());
             return;
         }
     }
 
     {
-        if (pkChrCauser->GetExchange())
+        if (pkCauser->GetExchange())
         {
-            LOG_ERROR("OnClick Fail ({}->{}) - pc is exchanging", pkChrCauser->GetName(), GetName());
+            LOG_ERROR("OnClick Fail ({}->{}) - pc is exchanging", pkCauser->GetName(), GetName());
             return;
         }
     }
 
     if (IsPC())
     {
-        if (!CTargetManager::instance().GetTargetInfo(pkChrCauser->GetPlayerID(), TARGET_TYPE_VID, GetPacketVID()))
+        if (!CTargetManager::instance().GetTargetInfo(pkCauser->GetPlayerID(), TARGET_TYPE_VID, GetPacketVID()))
         {
             if (GetMyShop())
             {
-                if (pkChrCauser->IsDead() == true)
+                if (pkCauser->IsDead() == true)
                     return;
 
-                if (pkChrCauser == this)
+                if (pkCauser == this)
                 {
                     if ((GetExchange() || IsOpenSafebox() || GetShopOwner()) || IsCubeOpen())
                     {
@@ -4730,7 +4732,7 @@ void CHARACTER::OnClick(LPCHARACTER pkChrCauser)
                 }
                 else
                 {
-                    if ((pkChrCauser->GetExchange() || pkChrCauser->IsOpenSafebox() || pkChrCauser->GetMyShop() || pkChrCauser->GetShopOwner()) || pkChrCauser->IsCubeOpen())
+                    if ((pkCauser->GetExchange() || pkCauser->IsOpenSafebox() || pkCauser->GetMyShop() || pkCauser->GetShopOwner()) || pkCauser->IsCubeOpen())
                     {
 #ifdef TEXTS_IMPROVEMENT
                         ecs::ChatSystem::SendNew(causer, CHAT_TYPE_INFO, 291, "");
@@ -4739,7 +4741,7 @@ void CHARACTER::OnClick(LPCHARACTER pkChrCauser)
                     }
 
 #ifdef __ATTR_TRANSFER_SYSTEM__
-                    if (pkChrCauser->IsAttrTransferOpen())
+                    if (pkCauser->IsAttrTransferOpen())
                     {
 #ifdef TEXTS_IMPROVEMENT
                         ecs::ChatSystem::SendNew(causer, CHAT_TYPE_INFO, 291, "");
@@ -4767,27 +4769,27 @@ void CHARACTER::OnClick(LPCHARACTER pkChrCauser)
 #endif
                 }
 
-                if (pkChrCauser->GetShop())
+                if (pkCauser->GetShop())
                 {
-                    pkChrCauser->GetShop()->RemoveGuest(pkChrCauser);
-                    pkChrCauser->SetShop(nullptr);
+                    pkCauser->GetShop()->RemoveGuest(pkCauser);
+                    pkCauser->SetShop(nullptr);
                 }
 
-                GetMyShop()->AddGuest(pkChrCauser, GetPacketVID(), false);
-                pkChrCauser->SetShopOwner(GetEntityHandle());
+                GetMyShop()->AddGuest(pkCauser, GetPacketVID(), false);
+                pkCauser->SetShopOwner(GetEntityHandle());
                 return;
             }
 
             if (test_server)
-                LOG_ERROR("{}.OnClickFailure({}) - target is PC", pkChrCauser->GetName(), GetName());
+                LOG_ERROR("{}.OnClickFailure({}) - target is PC", pkCauser->GetName(), GetName());
 
             return;
         }
     }
 
-    pkChrCauser->SetQuestNPCID(GetPacketVID());
+    pkCauser->SetQuestNPCID(GetPacketVID());
 
-    if (quest::CQuestManager::instance().Click(pkChrCauser->GetPlayerID(), this))
+    if (quest::CQuestManager::instance().Click(pkCauser->GetPlayerID(), this))
     {
         return;
     }
@@ -4799,7 +4801,7 @@ void CHARACTER::OnClick(LPCHARACTER pkChrCauser)
             return;
         }
 
-        m_triggerOnClick.pFunc(this, pkChrCauser);
+        m_triggerOnClick.pFunc(this, pkCauser);
     }
 }
 

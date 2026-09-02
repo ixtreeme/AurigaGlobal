@@ -33,6 +33,7 @@
 #include <common/VnumHelper.h>
 #include <utility>
 #include <Core/Logging.hpp>
+#include "../CharacterAccessors.hpp"
 
 namespace
 {
@@ -220,14 +221,11 @@ int CHARACTER::GetMountCount() const
     return mountItemCount;
 }
 
-void CHARACTER::UpdateMountInventoryCountOverhead(LPCHARACTER viewer)
+void CHARACTER::UpdateMountInventoryCountOverhead(entt::entity viewerEntity)
 {
     if (!IsPC())
         return;
 
-    const entt::entity viewerEntity = viewer
-        ? viewer->GetEntityHandle()
-        : entt::null;
     if (!ecs::PlayerRuntime::IsPC(viewerEntity))
         return;
 
@@ -247,7 +245,7 @@ void CHARACTER::UpdateMountInventoryCountOverhead(LPCHARACTER viewer)
 void CHARACTER::UpdateMountCountOverheadToViewers()
 {
 #ifdef ENABLE_FAKE_SHOP_HEADER
-    UpdateMountInventoryCountOverhead(this);
+    UpdateMountInventoryCountOverhead(this ? this->GetEntityHandle() : entt::null);
 
     for (const auto& it : m_map_view)
     {
@@ -261,7 +259,7 @@ void CHARACTER::UpdateMountCountOverheadToViewers()
 
         const entt::entity viewerEntity = viewer->GetEntityHandle();
         if (ecs::PlayerRuntime::IsPC(viewerEntity) && ecs::PlayerRuntime::GetDesc(viewerEntity))
-            UpdateMountInventoryCountOverhead(viewer);
+            UpdateMountInventoryCountOverhead(viewer ? viewer->GetEntityHandle() : entt::null);
     }
 #endif
 }
@@ -574,8 +572,9 @@ EVENTFUNC(horse_dead_event)
 	return 0;
 }
 
-void CHARACTER::SetRider(LPCHARACTER ch)
+void CHARACTER::SetRider(entt::entity chEntity)
 {
+	LPCHARACTER ch = ecs::LegacyCharOf(chEntity);
 	if (m_chRider)
 		m_chRider->ClearHorseInfo();
 
@@ -681,7 +680,7 @@ void CHARACTER::HorseSummon(bool bSummon, bool bFromFar, uint32_t dwVnum, const 
 			PacketAround(&pack, sizeof(pack));
 		}
 
-		m_chHorse->SetRider(this);
+		m_chHorse->SetRider(GetEntityHandle());
 	}
 	else
 	{
@@ -690,7 +689,7 @@ void CHARACTER::HorseSummon(bool bSummon, bool bFromFar, uint32_t dwVnum, const 
 
 		auto* chHorse = m_chHorse;
 
-		chHorse->SetRider(nullptr);
+		chHorse->SetRider(entt::null);
 
 		if ((GetHorseHealth() <= 0))
 			bFromFar = false;

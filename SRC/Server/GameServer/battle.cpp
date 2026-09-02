@@ -236,7 +236,7 @@ int battle_melee_attack(entt::entity character, entt::entity victim)
 #endif
 
 	ch->SetPosition(POS_FIGHTING);
-	ch->SetVictim(pkVictim);
+	ch->SetVictim(victim);
 
 	const PIXEL_POSITION& vpos = pkVictim->GetXYZ();
 	ch->SetRotationToXY(vpos.x, vpos.y);
@@ -793,13 +793,13 @@ void NormalAttackAffect(entt::entity attacker, entt::entity victim)
 	if (ecs::PointSystem::Get(attacker, POINT_POISON_PCT) && !AffectSystem::IsAffectFlag(victim, AFF_POISON))
 	{
 		if (number(1, 100) <= ecs::PointSystem::Get(attacker, POINT_POISON_PCT))
-			pkVictim->AttackedByPoison((pkAttacker ? pkAttacker->GetEntityHandle() : entt::null));
+			pkVictim->AttackedByPoison(attacker);
 	}
 #ifdef ENABLE_WOLFMAN_CHARACTER
 	if (ecs::PointSystem::Get(attacker, POINT_BLEEDING_PCT) && !AffectSystem::IsAffectFlag(victim, AFF_BLEEDING))
 	{
 		if (number(1, 100) <= ecs::PointSystem::Get(attacker, POINT_BLEEDING_PCT))
-			pkVictim->AttackedByBleeding((pkAttacker ? pkAttacker->GetEntityHandle() : entt::null));
+			pkVictim->AttackedByBleeding(attacker);
 	}
 #endif
 	int iStunDuration = 2;
@@ -965,7 +965,7 @@ int battle_hit(entt::entity attacker, entt::entity victim, int & iRetDam)
 	iDam = attMul * tempIDam + 0.5f;
 
 #ifdef ENABLE_SOUL_SYSTEM
-	iDam += pkAttacker->GetSoulItemDamage(pkVictim, iDam, RED_SOUL);
+	iDam += pkAttacker->GetSoulItemDamage(victim, iDam, RED_SOUL);
 #endif
 
 	iRetDam = iDam;

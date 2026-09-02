@@ -956,8 +956,8 @@ public:
 	void			SetRotationToXY(int32_t x, int32_t y);
 	float			GetRotation() const;
 
-	void			MotionPacketEncode(uint8_t motion, LPCHARACTER victim, struct packet_motion* packet);
-	void			Motion(uint8_t motion, LPCHARACTER victim = nullptr);
+	void			MotionPacketEncode(uint8_t motion, entt::entity victim, struct packet_motion* packet);
+	void			Motion(uint8_t motion, entt::entity victim = entt::null);
 
 	void			SendGreetMessage();
 
@@ -987,7 +987,7 @@ public:
 
 	void			ResetPlayTime(uint32_t dwTimeRemain = 0);
 
-	void			CreateFly(uint8_t bType, LPCHARACTER pkVictim);
+	void			CreateFly(uint8_t bType, entt::entity victim);
 
 	void			ResetChatCounter();
 	uint8_t			IncreaseChatCounter();
@@ -1702,7 +1702,6 @@ public:
 	bool				CanBeginFight() const;
 	void				BeginFight(entt::entity victim); // pkVictimr�� �ο�� �����Ѵ�. (��������, ������ �� �ֳ� üũ�Ϸ��� CanBeginFight�� ���)
 
-	bool				CounterAttack(LPCHARACTER pkChr); // �ݰ��ϱ� (���͸� ���)
 
 	bool				IsStun() const;
 	void				Stun();
@@ -1740,7 +1739,7 @@ public:
 #ifdef LEADERBOARD_RAZOR93
 
 	void SendLeaderboardData();
-	void SendLeaderboardDataSkillMob(LPCHARACTER viewer);
+	void SendLeaderboardDataSkillMob(entt::entity viewer);
 	void SendLeaderboardDataGuild();
 	static std::vector<LeaderboardEntry> FetchTop10SkillMob();
 	static void CheckLeaderboardSkillMobChanges();
@@ -1765,7 +1764,7 @@ public:
 	//int GetBeltCount() const;
 #ifdef ENABLE_FAKE_SHOP_HEADER
 	int GetMountCount() const;
-	void UpdateMountInventoryCountOverhead(LPCHARACTER viewer);
+	void UpdateMountInventoryCountOverhead(entt::entity viewer);
 	void UpdateMountCountOverheadToViewers();
 	//void UpdateMountCountOverhead(LPCHARACTER ch);
 #ifdef DISABLE_CORE_PULSE_RAZOR93
@@ -1788,7 +1787,7 @@ public:
 
 	void				ItemDropPenalty(entt::entity killer);
 
-	void				UpdateAggrPoint(LPCHARACTER ch, EDamageType type, int dam);
+	void				UpdateAggrPoint(entt::entity character, EDamageType type, int dam);
 
 	//
 	// HACK
@@ -1819,8 +1818,8 @@ protected:
 	uint32_t m_dwSkipComboAttackByTime;
 
 protected:
-	void				UpdateAggrPointEx(LPCHARACTER ch, EDamageType type, int dam, TBattleInfo& info);
-	void				ChangeVictimByAggro(int iNewAggro, LPCHARACTER pNewVictim);
+	void				UpdateAggrPointEx(entt::entity character, EDamageType type, int dam, TBattleInfo& info);
+	void				ChangeVictimByAggro(int iNewAggro, entt::entity newVictim);
 
 	uint32_t				m_dwFlyTargetID;
 	std::vector<uint32_t>	m_vec_dwFlyTargets;
@@ -1840,9 +1839,9 @@ protected:
 
 	// Stone
 public:
-	void				SetStone(LPCHARACTER pkChrStone);
+	void				SetStone(entt::entity stone);
 #ifdef ENABLE_STONE_SPAWN_STEP_PROCESSING_RAZOR93
-	void ClearStone(LPCHARACTER pkKiller = nullptr);
+	void ClearStone(entt::entity killer = entt::null);
 	void RegisterDamageForExp(entt::entity attacker, int iDamage = 1);
 #else
 	void				ClearStone();
@@ -1927,7 +1926,7 @@ public:
 	void				SkillLevelUp(uint32_t dwVnum, uint8_t bMethod = SKILL_UP_BY_POINT);
 	bool				SkillLevelDown(uint32_t dwVnum);
 	// ADD_GRANDMASTER_SKILL
-	bool				UseSkill(uint32_t dwVnum, LPCHARACTER pkVictim, bool bUseGrandMaster = true);
+	bool				UseSkill(uint32_t dwVnum, entt::entity victim, bool bUseGrandMaster = true);
 	void				ResetSkill();
 	void				SetSkillLevel(uint32_t dwVnum, uint8_t bLev);
 	int					GetUsedSkillMasterType(uint32_t dwVnum);
@@ -1948,11 +1947,11 @@ public:
 
 	void				ComputePassiveSkill(uint32_t dwVnum);
 #ifdef ENABLE_NEW_GYEONGGONG_SKILL
-	int					ComputeGyeongGongSkill(uint32_t dwVnum, LPCHARACTER pkVictim, uint8_t bSkillLevel = 0);
+	int					ComputeGyeongGongSkill(uint32_t dwVnum, entt::entity victim, uint8_t bSkillLevel = 0);
 #endif
-	int					ComputeSkill(uint32_t dwVnum, LPCHARACTER pkVictim, uint8_t bSkillLevel = 0);
+	int					ComputeSkill(uint32_t dwVnum, entt::entity victim, uint8_t bSkillLevel = 0);
 #ifdef GROUP_BUFF
-	int					ComputeSkillParty(uint32_t dwVnum, LPCHARACTER pkVictim, uint8_t bSkillLevel = 0);
+	int					ComputeSkillParty(uint32_t dwVnum, entt::entity victim, uint8_t bSkillLevel = 0);
 #endif
 	int					ComputeSkillAtPosition(uint32_t dwVnum, const PIXEL_POSITION& posTarget, uint8_t bSkillLevel = 0);
 	void				ComputeSkillPoints();
@@ -2038,7 +2037,7 @@ protected:
 public:
 	void			AssignTriggers(const TMobTable* table);
 	LPCHARACTER		GetVictim() const;	// ������ ��� ����
-	void			SetVictim(LPCHARACTER pkVictim);
+	void			SetVictim(entt::entity victim);
 	LPCHARACTER		GetNearestVictim(entt::entity chr);
 	LPCHARACTER		GetProtege() const;	// ��ȣ�ؾ� �� ��� ����
 	virtual void			StateBattle();
@@ -2052,14 +2051,13 @@ public:
 	bool			Follow(entt::entity chr, float fMinimumDistance = 150.0f);
 	bool			Return();
 	bool			IsGuardNPC() const;
-	bool			IsChangeAttackPosition(LPCHARACTER target) const;
+	bool			IsChangeAttackPosition(entt::entity target) const;
 	void			ResetChangeAttackPositionTime() { m_dwLastChangeAttackPositionTime = get_dword_time() - AI_CHANGE_ATTACK_POISITION_TIME_NEAR; }
 	void			SetChangeAttackPositionTime() { m_dwLastChangeAttackPositionTime = get_dword_time(); }
 
 	bool			OnIdle();
 
-	void			OnAttack(LPCHARACTER pkChrAttacker);
-	void			OnClick(LPCHARACTER pkChrCauser);
+	void			OnClick(entt::entity causer);
 	CTrigger&		GetTriggerOnClick() { return m_triggerOnClick; }
 	const CTrigger&	GetTriggerOnClick() const { return m_triggerOnClick; }
 
@@ -2079,7 +2077,7 @@ protected:
 	CHARACTER_SET	m_set_pkChrTargetedBy;	// ���� Ÿ������ ������ �ִ� �����
 
 public:
-	void				SetTarget(LPCHARACTER pkChrTarget);
+	void				SetTarget(entt::entity target);
 	void				BroadcastTargetPacket();
 	void				ClearTarget();
 	void				CheckTarget();
@@ -2171,7 +2169,7 @@ public:
 
 	LPCHARACTER			GetHorse() const { return m_chHorse; }	 // ���� ��ȯ���� ��
 	LPCHARACTER			GetRider() const; // rider on horse
-	void				SetRider(LPCHARACTER ch);
+	void				SetRider(entt::entity character);
 
 	bool				IsRiding() const;
 #ifdef __ATTR_TRANSFER_SYSTEM__
@@ -2321,7 +2319,7 @@ protected:
 	// Marriage
 public:
 	LPCHARACTER			GetMarryPartner() const;
-	void				SetMarryPartner(LPCHARACTER ch);
+	void				SetMarryPartner(entt::entity character);
 	int					GetMarriageBonus(uint32_t dwItemVnum, bool bSum = true);
 
 	void				SetWeddingMap(marriage::WeddingMap* pMap);
@@ -2789,7 +2787,7 @@ public:
 #ifdef ENABLE_SOUL_SYSTEM
 public:
 	bool 		DoRefineItemSoul(LPITEM item);
-	int 		GetSoulItemDamage(LPCHARACTER pkVictim, int iDamage, uint8_t bSoulType);
+	int 		GetSoulItemDamage(entt::entity victim, int iDamage, uint8_t bSoulType);
 #endif
 
 #ifdef ENABLE_BATTLE_PASS

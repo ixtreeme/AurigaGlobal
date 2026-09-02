@@ -3790,7 +3790,7 @@ ACMD(do_extend_range_npc)
 	if(!shop)
 		return;
 
-	ch->SetShopOwner((ch ? ch->GetEntityHandle() : entt::null));
+	ch->SetShopOwner(character);
 	shop->AddGuest(ch, 0, false);
 
 }

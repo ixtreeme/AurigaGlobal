@@ -1058,7 +1058,7 @@ void CHARACTER::EncodeInsertPacket(LPENTITY entity)
         LPCHARACTER viewer = (LPCHARACTER)entity;
         const entt::entity viewerEntity = viewer->GetEntityHandle();
         if (ecs::PlayerRuntime::IsPC(viewerEntity) && ecs::PlayerRuntime::GetDesc(viewerEntity))
-            UpdateMountInventoryCountOverhead(viewer);
+            UpdateMountInventoryCountOverhead(viewer ? viewer->GetEntityHandle() : entt::null);
     }
 #endif
 }
@@ -1120,7 +1120,7 @@ bool CHARACTER::SetSyncOwner(entt::entity chEntity, bool bRemoveFromList)
     else
     {
 		const entt::entity syncOwner = ch->GetEntityHandle();
-        if (!IsSyncOwner(ch ? ch->GetEntityHandle() : entt::null))
+        if (!IsSyncOwner(chEntity))
             return false;
 
         if (DISTANCE_APPROX(

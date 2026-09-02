@@ -232,7 +232,7 @@ bool Shoot(entt::entity attacker, uint8_t attackType)
 void SetVictim(entt::entity attacker, entt::entity victim)
 {
     if (auto* ch = LegacyCharOf(attacker)) {
-        ch->SetVictim(LegacyCharOf(victim));
+        ch->SetVictim(victim);
     }
 }
 
@@ -513,7 +513,7 @@ void SendLeaderboardData(entt::entity e)
 void SendLeaderboardDataSkillMob(entt::entity e, entt::entity viewer)
 {
     if (auto* ch = LegacyCharOf(e)) {
-        ch->SendLeaderboardDataSkillMob(LegacyCharOf(viewer));
+        ch->SendLeaderboardDataSkillMob(viewer);
     }
 }
 
@@ -959,9 +959,9 @@ void CHARACTER::SendLeaderboardData()
 }
 
 
-void CHARACTER::SendLeaderboardDataSkillMob(LPCHARACTER viewer)
+void CHARACTER::SendLeaderboardDataSkillMob(entt::entity viewerEntity)
 {
-	const entt::entity viewerEntity = viewer ? viewer->GetEntityHandle() : entt::null;
+	LPCHARACTER viewer = ecs::LegacyCharOf(viewerEntity);
 	if (!viewer || !ecs::PlayerRuntime::GetDesc(viewerEntity))
 		return;
 
@@ -1114,8 +1114,9 @@ void CHARACTER::CheckLeaderboardSkillMobChanges()
 
 // char_battle.cpp slice BE2b moved into CombatSystem.cpp
 
-void CHARACTER::UpdateAggrPointEx(LPCHARACTER pAttacker, EDamageType type, int dam, CHARACTER::TBattleInfo& info)
+void CHARACTER::UpdateAggrPointEx(entt::entity attacker, EDamageType type, int dam, CHARACTER::TBattleInfo& info)
 {
+	LPCHARACTER pkAttacker = ecs::LegacyCharOf(attacker);
 	// Ư ŸԿ   ö󰣴
 	switch (type)
 	{
@@ -1136,7 +1137,7 @@ void CHARACTER::UpdateAggrPointEx(LPCHARACTER pAttacker, EDamageType type, int d
 	}
 
 	// ڰ    ʽ ش.
-	if (pAttacker == GetVictim())
+	if (pkAttacker == GetVictim())
 		dam = (int)(dam * 1.2f);
 
 	info.iAggro += dam;
@@ -1157,18 +1158,19 @@ void CHARACTER::UpdateAggrPointEx(LPCHARACTER pAttacker, EDamageType type, int d
 		else
 			iPartyAggroDist /= 3;
 
-		pParty->SendMessage(GetEntityHandle(), PM_AGGRO_INCREASE, iPartyAggroDist, ecs::PlayerRuntime::GetPacketVID((pAttacker ? pAttacker->GetEntityHandle() : entt::null)));
+		pParty->SendMessage(GetEntityHandle(), PM_AGGRO_INCREASE, iPartyAggroDist, ecs::PlayerRuntime::GetPacketVID(attacker));
 	}
 
-	ChangeVictimByAggro(info.iAggro, pAttacker);
+	ChangeVictimByAggro(info.iAggro, attacker);
 }
 
-void CHARACTER::UpdateAggrPoint(LPCHARACTER pAttacker, EDamageType type, int dam)
+void CHARACTER::UpdateAggrPoint(entt::entity attacker, EDamageType type, int dam)
 {
+	LPCHARACTER pkAttacker = ecs::LegacyCharOf(attacker);
 	if (IsDead() || IsStun())
 		return;
 
-	const entt::entity eAttacker = pAttacker ? pAttacker->GetEntityHandle() : entt::null;
+	const entt::entity eAttacker = attacker;
 	if (eAttacker == entt::null)
 		return;
 
@@ -1180,15 +1182,16 @@ void CHARACTER::UpdateAggrPoint(LPCHARACTER pAttacker, EDamageType type, int dam
 		it = m_map_kDamage.find(eAttacker);
 	}
 
-	UpdateAggrPointEx(pAttacker, type, dam, it->second);
+	UpdateAggrPointEx(attacker, type, dam, it->second);
 }
 
-void CHARACTER::ChangeVictimByAggro(int iNewAggro, LPCHARACTER pNewVictim)
+void CHARACTER::ChangeVictimByAggro(int iNewAggro, entt::entity newVictim)
 {
+	LPCHARACTER pkNewVictim = ecs::LegacyCharOf(newVictim);
 	if (get_dword_time() - m_dwLastVictimSetTime < 3000) // 3ʴ ٷѴ
 		return;
 
-	if (pNewVictim == GetVictim())
+	if (pkNewVictim == GetVictim())
 	{
 		if (m_iMaxAggro < iNewAggro)
 		{
@@ -1222,10 +1225,10 @@ void CHARACTER::ChangeVictimByAggro(int iNewAggro, LPCHARACTER pNewVictim)
 #ifdef __DEFENSE_WAVE__
 			if (!IsDefanceWaweMastAttackMob(GetRaceNum()))
 			{
-				SetVictim(LegacyCharOf(itFind->first));
+				SetVictim(itFind->first);
 			}
 #else
-			SetVictim(LegacyCharOf(itFind->first));
+			SetVictim(itFind->first);
 #endif
 			m_dwStateDuration = 1;
 		}
@@ -1238,10 +1241,10 @@ void CHARACTER::ChangeVictimByAggro(int iNewAggro, LPCHARACTER pNewVictim)
 #ifdef __DEFENSE_WAVE__
 			if (!IsDefanceWaweMastAttackMob(GetRaceNum()))
 			{
-				SetVictim(pNewVictim);
+				SetVictim(newVictim);
 			}
 #else
-			SetVictim(pNewVictim);
+			SetVictim(newVictim);
 #endif
 			m_dwStateDuration = 1;
 		}
@@ -1383,7 +1386,7 @@ static void GiveExp(LegacyCharHandle from, LegacyCharHandle to, int iExp)
 		ecs::ChatSystem::Send(toEntity, CHAT_TYPE_INFO, "exp+minGNE+adjust(%d)", iExp);
 	// set
 	ecs::PointSystem::Change(toEntity, POINT_EXP, iExp, true);
-	from->CreateFly(FLY_EXP, to);
+	from->CreateFly(FLY_EXP, (to ? to->GetEntityHandle() : entt::null));
 	// marriage
 	{
 		auto* you = to->GetMarryPartner();
@@ -1533,7 +1536,7 @@ static void GiveExp(LegacyCharHandle from, LegacyCharHandle to, int iExp)
 #endif
 
 	ecs::PointSystem::Change(toEntity, POINT_EXP, iExp, true);
-	from->CreateFly(FLY_EXP, to);
+	from->CreateFly(FLY_EXP, (to ? to->GetEntityHandle() : entt::null));
 
 	{
 		auto* you = to->GetMarryPartner();
@@ -2013,7 +2016,7 @@ void CHARACTER::Dead(entt::entity killer, bool bImmediateDead)
 	if (pkKiller && ecs::PlayerRuntime::IsPC(killer))
 	{
 		if (pkKiller->m_pkChrTarget == this)
-			pkKiller->SetTarget(nullptr);
+			pkKiller->SetTarget(entt::null);
 
 		isAgreedPVP = CPVPManager::instance().Dead(GetEntityHandle(), ecs::PlayerRuntime::GetPlayerID(killer));
 		isDuel = CArenaManager::instance().OnDead(pkKiller, this);
@@ -2126,7 +2129,7 @@ void CHARACTER::Dead(entt::entity killer, bool bImmediateDead)
 	if (IsPC()) {
 #ifdef ENABLE_01092021
 		if (pkKiller && !ecs::PlayerRuntime::IsPC(killer)) {
-			pkKiller->SetTarget(nullptr);
+			pkKiller->SetTarget(entt::null);
 		}
 #endif
 		ClearAffectSkills();
@@ -2403,7 +2406,7 @@ void CHARACTER::Dead(entt::entity killer, bool bImmediateDead)
 		if (IsStone())
 		{
 #ifdef ENABLE_STONE_SPAWN_STEP_PROCESSING_RAZOR93
-			ClearStone(pkKiller);
+			ClearStone(pkKiller ? pkKiller->GetEntityHandle() : entt::null);
 #else
 			ClearStone();
 #endif
@@ -2545,7 +2548,7 @@ bool CHARACTER::CanBeginFight() const
 void CHARACTER::BeginFight(entt::entity victim)
 {
 	LPCHARACTER pkVictim = ecs::LegacyCharOf(victim);
-	SetVictim(pkVictim);
+	SetVictim(victim);
 	SetPosition(POS_FIGHTING);
 	SetNextStatePulse(1);
 }
@@ -2555,14 +2558,14 @@ bool CHARACTER::CanFight() const
 	return GetPosition() >= POS_FIGHTING ? true : false;
 }
 
-void CHARACTER::CreateFly(uint8_t bType, LPCHARACTER pkVictim)
+void CHARACTER::CreateFly(uint8_t bType, entt::entity victim)
 {
 	TPacketGCCreateFly packFly;
 
 	packFly.bHeader = HEADER_GC_CREATE_FLY;
 	packFly.bType = bType;
 	packFly.dwStartVID = GetPacketVID();
-	packFly.dwEndVID = ecs::PlayerRuntime::GetPacketVID((pkVictim ? pkVictim->GetEntityHandle() : entt::null));
+	packFly.dwEndVID = ecs::PlayerRuntime::GetPacketVID(victim);
 
 	PacketAround(&packFly, sizeof(TPacketGCCreateFly));
 }
@@ -2661,7 +2664,7 @@ bool CHARACTER::Attack(entt::entity victim, uint8_t bType)
 		}
 
 		LOG_TRACE("Attack call ComputeSkill {} {}", bType, pkVictim ? ecs::PlayerRuntime::GetName(victim).data() : "");
-		iRet = ComputeSkill(bType, pkVictim);
+		iRet = ComputeSkill(bType, victim);
 	}
 
 	//if (test_server && IsPC())
@@ -2673,7 +2676,7 @@ bool CHARACTER::Attack(entt::entity victim, uint8_t bType)
 
 		// only pc sets victim null. For npc, state machine will reset this.
 		if (BATTLE_DEAD == iRet && IsPC())
-			SetVictim(nullptr);
+			SetVictim(entt::null);
 
 		return true;
 	}
@@ -2746,11 +2749,11 @@ void CHARACTER::DistributeSP(entt::entity killer, int iMethod)
 				iAmount += (iAmount * ecs::PointSystem::Get(killer, POINT_SP_REGEN)) / 100;
 
 				if (iAmount >= 11)
-					CreateFly(FLY_SP_BIG, pkKiller);
+					CreateFly(FLY_SP_BIG, killer);
 				else if (iAmount >= 7)
-					CreateFly(FLY_SP_MEDIUM, pkKiller);
+					CreateFly(FLY_SP_MEDIUM, killer);
 				else
-					CreateFly(FLY_SP_SMALL, pkKiller);
+					CreateFly(FLY_SP_SMALL, killer);
 
 				ecs::PointSystem::Change(killer, POINT_SP, iAmount);
 			}
@@ -3643,14 +3646,14 @@ void CHARACTER::Reward(bool bItemDrop)
 			{
 				int iHP = ecs::PointSystem::GetMaxHP(attacker) * ecs::PointSystem::Get(attacker, POINT_KILL_HP_RECOVERY) / 100;
 				ecs::PointSystem::Change(attacker, POINT_HP, iHP);
-				CreateFly(FLY_HP_SMALL, pkAttacker);
+				CreateFly(FLY_HP_SMALL, pkAttacker ? pkAttacker->GetEntityHandle() : entt::null);
 			}
 
 			if (ecs::PointSystem::Get(attacker, POINT_KILL_SP_RECOVER))
 			{
 				int iSP = ecs::PointSystem::GetMaxSP(attacker) * ecs::PointSystem::Get(attacker, POINT_KILL_SP_RECOVER) / 100;
 				ecs::PointSystem::Change(attacker, POINT_SP, iSP);
-				CreateFly(FLY_SP_SMALL, pkAttacker);
+				CreateFly(FLY_SP_SMALL, pkAttacker ? pkAttacker->GetEntityHandle() : entt::null);
 			}
 		}
 	}
@@ -4975,7 +4978,7 @@ bool CHARACTER::Damage(LPCHARACTER pAttacker, int64_t dam, EDamageType type) // 
 
 
 					if ((pAttacker->GetHP() > 0) && (pAttacker->GetHP() + iHP < ecs::PointSystem::GetMaxHP(attacker)) && (GetHP() > 0) && (iHP > 0)) {
-						CreateFly(FLY_HP_MEDIUM, pAttacker);
+						CreateFly(FLY_HP_MEDIUM, pAttacker ? pAttacker->GetEntityHandle() : entt::null);
 						ecs::PointSystem::Change(attacker, POINT_HP, iHP);
 #if defined(ENABLE_DS_RUNE) || defined(ENABLE_MELEY_LAIR)
 						int32_t racevnum = GetRaceNum();
@@ -5013,7 +5016,7 @@ bool CHARACTER::Damage(LPCHARACTER pAttacker, int64_t dam, EDamageType type) // 
 
 						if ((pAttacker->GetSP() > 0) && (pAttacker->GetSP() + iSP < ecs::PointSystem::GetMaxSP(attacker)) && (GetSP() > 0) && (iSP > 0))
 						{
-							CreateFly(FLY_SP_MEDIUM, pAttacker);
+							CreateFly(FLY_SP_MEDIUM, pAttacker ? pAttacker->GetEntityHandle() : entt::null);
 							ecs::PointSystem::Change(attacker, POINT_SP, iSP);
 							PointChange(POINT_SP, -iSP);
 						}
@@ -5032,7 +5035,7 @@ bool CHARACTER::Damage(LPCHARACTER pAttacker, int64_t dam, EDamageType type) // 
 
 					if (iHP > 0 && GetHP() >= iHP)
 					{
-						CreateFly(FLY_HP_SMALL, pAttacker);
+						CreateFly(FLY_HP_SMALL, pAttacker ? pAttacker->GetEntityHandle() : entt::null);
 						ecs::PointSystem::Change(attacker, POINT_HP, iHP);
 #if defined(ENABLE_DS_RUNE) || defined(ENABLE_MELEY_LAIR)
 						if (
@@ -5079,7 +5082,7 @@ bool CHARACTER::Damage(LPCHARACTER pAttacker, int64_t dam, EDamageType type) // 
 
 					if (iSP > 0 && iCur >= iSP)
 					{
-						CreateFly(FLY_SP_SMALL, pAttacker);
+						CreateFly(FLY_SP_SMALL, pAttacker ? pAttacker->GetEntityHandle() : entt::null);
 						ecs::PointSystem::Change(attacker, POINT_SP, iSP);
 
 						if (IsPC())
@@ -5106,7 +5109,7 @@ bool CHARACTER::Damage(LPCHARACTER pAttacker, int64_t dam, EDamageType type) // 
 				if (number(1, 100) <= iAbsoHP_ptr) {
 					int iHPAbso = std::min(dam, GetHP()) * ecs::PointSystem::Get(attacker, POINT_HIT_HP_RECOVERY) / 100;
 					if ((pAttacker->GetHP() > 0) && (pAttacker->GetHP() + iHPAbso < ecs::PointSystem::GetMaxHP(attacker)) && (GetHP() > 0) && (iHPAbso > 0)) {
-						CreateFly(FLY_HP_SMALL, pAttacker);
+						CreateFly(FLY_HP_SMALL, pAttacker ? pAttacker->GetEntityHandle() : entt::null);
 						ecs::PointSystem::Change(attacker, POINT_HP, iHPAbso);
 					}
 				}
@@ -5117,7 +5120,7 @@ bool CHARACTER::Damage(LPCHARACTER pAttacker, int64_t dam, EDamageType type) // 
 				if (number(1, 100) <= iAbsoSP_ptr) {
 					int64_t iSPAbso = std::min(dam, GetSP()) * ecs::PointSystem::Get(attacker, POINT_HIT_SP_RECOVERY) / 100;
 					if ((pAttacker->GetSP() > 0) && (pAttacker->GetSP() + iSPAbso < ecs::PointSystem::GetMaxSP(attacker)) && (GetSP() > 0) && (iSPAbso > 0)) {
-						CreateFly(FLY_SP_SMALL, pAttacker);
+						CreateFly(FLY_SP_SMALL, pAttacker ? pAttacker->GetEntityHandle() : entt::null);
 						ecs::PointSystem::Change(attacker, POINT_SP, iSPAbso);
 					}
 				}
@@ -5130,7 +5133,7 @@ bool CHARACTER::Damage(LPCHARACTER pAttacker, int64_t dam, EDamageType type) // 
 
 				if (i)
 				{
-					CreateFly(FLY_HP_SMALL, pAttacker);
+					CreateFly(FLY_HP_SMALL, pAttacker ? pAttacker->GetEntityHandle() : entt::null);
 					ecs::PointSystem::Change(attacker, POINT_HP, i);
 				}
 			}
@@ -5142,7 +5145,7 @@ bool CHARACTER::Damage(LPCHARACTER pAttacker, int64_t dam, EDamageType type) // 
 
 				if (i)
 				{
-					CreateFly(FLY_SP_SMALL, pAttacker);
+					CreateFly(FLY_SP_SMALL, pAttacker ? pAttacker->GetEntityHandle() : entt::null);
 					ecs::PointSystem::Change(attacker, POINT_SP, i);
 				}
 			}
@@ -5737,7 +5740,7 @@ bool CHARACTER::Damage(LPCHARACTER pAttacker, int64_t dam, EDamageType type) // 
 			CheckLeaderboardSkillMobChanges();
 			if (GetMapIndex() == 41) {
 				CHARACTER_MANAGER::instance().for_each_pc([](LegacyCharHandle ch) {
-					ch->SendLeaderboardDataSkillMob(ch);
+					ch->SendLeaderboardDataSkillMob((ch ? ch->GetEntityHandle() : entt::null));
 					});
 
 
@@ -5911,7 +5914,7 @@ bool CHARACTER::Damage(LPCHARACTER pAttacker, int64_t dam, EDamageType type) // 
 
 		//PROF_UNIT puRest22("Rest22");
 		if (it != m_map_kDamage.end())
-			UpdateAggrPointEx(pAttacker, type, dam, it->second);
+			UpdateAggrPointEx(pAttacker ? pAttacker->GetEntityHandle() : entt::null, type, dam, it->second);
 		//puRest22.Pop();
 	}
 	//puRest2.Pop();
@@ -6183,7 +6186,7 @@ public:
 			//iDam = (int)((int64_t)iDam * (100 - lValue) * 20 / 10000);
 
 #ifdef ENABLE_SOUL_SYSTEM // Arrow ninja
-			iDam += m_me->GetSoulItemDamage(pkVictim, iDam, RED_SOUL);
+			iDam += m_me->GetSoulItemDamage((pkVictim ? pkVictim->GetEntityHandle() : entt::null), iDam, RED_SOUL);
 #endif
 
 			//LOG_INFO(0, "%s arrow %s dam %d", ecs::PlayerRuntime::GetName((m_me ? m_me->GetEntityHandle() : entt::null)).data(), ecs::PlayerRuntime::GetName((pkVictim ? pkVictim->GetEntityHandle() : entt::null)).data(), iDam);
@@ -6250,7 +6253,7 @@ public:
 					if (pkVictim->CanBeginFight())
 						pkVictim->BeginFight((m_me ? m_me->GetEntityHandle() : entt::null));
 
-					m_me->ComputeSkill(m_bType, pkVictim);
+					m_me->ComputeSkill(m_bType, (pkVictim ? pkVictim->GetEntityHandle() : entt::null));
 					m_me->UseArrow(pkArrow, iUseArrow);
 
 					if (pkVictim->IsDead())
@@ -6277,7 +6280,7 @@ public:
 					pkVictim->BeginFight((m_me ? m_me->GetEntityHandle() : entt::null));
 
 				LOG_INFO("{} kwankeyok {}", ecs::PlayerRuntime::GetName(me).data(), ecs::PlayerRuntime::GetName(victim).data());
-				m_me->ComputeSkill(m_bType, pkVictim);
+				m_me->ComputeSkill(m_bType, (pkVictim ? pkVictim->GetEntityHandle() : entt::null));
 				m_me->UseArrow(pkArrow, iUseArrow);
 			}
 		}
@@ -6295,7 +6298,7 @@ public:
 					pkVictim->BeginFight((m_me ? m_me->GetEntityHandle() : entt::null));
 
 				LOG_INFO("{} gigung {}", ecs::PlayerRuntime::GetName(me).data(), ecs::PlayerRuntime::GetName(victim).data());
-				m_me->ComputeSkill(m_bType, pkVictim);
+				m_me->ComputeSkill(m_bType, (pkVictim ? pkVictim->GetEntityHandle() : entt::null));
 				m_me->UseArrow(pkArrow, iUseArrow);
 			}
 		}
@@ -6313,7 +6316,7 @@ public:
 					pkVictim->BeginFight((m_me ? m_me->GetEntityHandle() : entt::null));
 
 				LOG_INFO("{} hwajo {}", ecs::PlayerRuntime::GetName(me).data(), ecs::PlayerRuntime::GetName(victim).data());
-				m_me->ComputeSkill(m_bType, pkVictim);
+				m_me->ComputeSkill(m_bType, (pkVictim ? pkVictim->GetEntityHandle() : entt::null));
 				m_me->UseArrow(pkArrow, iUseArrow);
 			}
 		}
@@ -6332,7 +6335,7 @@ public:
 					pkVictim->BeginFight((m_me ? m_me->GetEntityHandle() : entt::null));
 
 				LOG_TRACE("{} horse_wildattack {}", ecs::PlayerRuntime::GetName(me).data(), ecs::PlayerRuntime::GetName(victim).data());
-				m_me->ComputeSkill(m_bType, pkVictim);
+				m_me->ComputeSkill(m_bType, (pkVictim ? pkVictim->GetEntityHandle() : entt::null));
 				m_me->UseArrow(pkArrow, iUseArrow);
 			}
 		}
@@ -6361,7 +6364,7 @@ public:
 				pkVictim->BeginFight((m_me ? m_me->GetEntityHandle() : entt::null));
 
 			LOG_INFO("{} - Skill {} -> {}", ecs::PlayerRuntime::GetName(me).data(), m_bType, ecs::PlayerRuntime::GetName(victim).data());
-			m_me->ComputeSkill(m_bType, pkVictim);
+			m_me->ComputeSkill(m_bType, (pkVictim ? pkVictim->GetEntityHandle() : entt::null));
 		}
 		break;
 
@@ -6374,7 +6377,7 @@ public:
 				pkVictim->BeginFight((m_me ? m_me->GetEntityHandle() : entt::null));
 
 			LOG_INFO("{} - Skill {} -> {}", ecs::PlayerRuntime::GetName(me).data(), m_bType, ecs::PlayerRuntime::GetName(victim).data());
-			m_me->ComputeSkill(m_bType, pkVictim);
+			m_me->ComputeSkill(m_bType, (pkVictim ? pkVictim->GetEntityHandle() : entt::null));
 
 			// TODO     ϱ
 		}
@@ -6470,7 +6473,7 @@ public:
 						pkVictim->BeginFight((m_me ? m_me->GetEntityHandle() : entt::null));
 
 					LOG_INFO("{} - Skill {} -> {}", ecs::PlayerRuntime::GetName(me).data(), m_bType, ecs::PlayerRuntime::GetName(victim).data());
-					m_me->ComputeSkill(m_bType, pkVictim);
+					m_me->ComputeSkill(m_bType, (pkVictim ? pkVictim->GetEntityHandle() : entt::null));
 				}
 
 
@@ -6582,8 +6585,9 @@ LPCHARACTER CHARACTER::GetNearestVictim(entt::entity chr)
 	return pkVictim;
 }
 
-void CHARACTER::SetVictim(LPCHARACTER pkVictim)
+void CHARACTER::SetVictim(entt::entity victim)
 {
+	LPCHARACTER pkVictim = ecs::LegacyCharOf(victim);
 	if (!pkVictim)
 	{
 		if (m_eVictim != entt::null)
@@ -6594,7 +6598,6 @@ void CHARACTER::SetVictim(LPCHARACTER pkVictim)
 	}
 	else
 	{
-		const entt::entity victim = pkVictim ? pkVictim->GetEntityHandle() : entt::null;
 		const entt::entity eVictim = victim;
 		if (m_eVictim != eVictim)
 			MonsterLog("  : %s", ecs::PlayerRuntime::GetName(victim).data());
@@ -6924,7 +6927,7 @@ static int64_t CalcReferenceBowHitDamage(LPCHARACTER pAttacker, LPCHARACTER pVic
 	dam = dam * (100 - lValue) / 100;
 
 #ifdef ENABLE_SOUL_SYSTEM
-	dam += pAttacker->GetSoulItemDamage(pVictim, dam, RED_SOUL);
+	dam += pAttacker->GetSoulItemDamage((pVictim ? pVictim->GetEntityHandle() : entt::null), dam, RED_SOUL);
 #endif
 
 	if (ecs::PointSystem::Get(attacker, POINT_NORMAL_HIT_DAMAGE_BONUS))
@@ -7064,7 +7067,7 @@ static int64_t CalcReferenceNormalHitDamage(LPCHARACTER pAttacker, LPCHARACTER p
 	dam = static_cast<int64_t>(pAttacker->GetAttMul() * static_cast<double>(dam) + 0.5);
 
 #ifdef ENABLE_SOUL_SYSTEM
-	dam += pAttacker->GetSoulItemDamage(pVictim, dam, RED_SOUL);
+	dam += pAttacker->GetSoulItemDamage((pVictim ? pVictim->GetEntityHandle() : entt::null), dam, RED_SOUL);
 #endif
 
 	if (ecs::PointSystem::Get(attacker, POINT_NORMAL_HIT_DAMAGE_BONUS))
@@ -7341,14 +7344,15 @@ uint8_t CHARACTER::GetChatCounter() const
 	return m_bChatCounter;
 }
 
-void CHARACTER::SetStone(LPCHARACTER pkChrStone)
+void CHARACTER::SetStone(entt::entity stone)
 {
-	m_pkChrStone = pkChrStone;
+	LPCHARACTER pkStone = ecs::LegacyCharOf(stone);
+	m_pkChrStone = pkStone;
 
 	if (m_pkChrStone)
 	{
-		if (!pkChrStone->m_set_pkChrSpawnedBy.contains(this))
-			pkChrStone->m_set_pkChrSpawnedBy.insert(this);
+		if (!pkStone->m_set_pkChrSpawnedBy.contains(this))
+			pkStone->m_set_pkChrSpawnedBy.insert(this);
 	}
 }
 
@@ -7367,7 +7371,7 @@ struct FuncDeadSpawnedByStone
 		if (auto* flags = RuntimeFlags(ch->GetEntityHandle()))
 			SET_BIT(flags->instantFlag, INSTANT_FLAG_NO_REWARD);
 		ch->Dead(entt::null);
-		ch->SetStone(nullptr);
+		ch->SetStone(entt::null);
 	}
 };
 #else
@@ -7376,14 +7380,15 @@ struct FuncDeadSpawnedByStone
 	void operator () (LegacyCharHandle ch)
 	{
 		ch->Dead(entt::null);
-		ch->SetStone(nullptr);
+		ch->SetStone(entt::null);
 	}
 };
 #endif
 
 #ifdef ENABLE_STONE_SPAWN_STEP_PROCESSING_RAZOR93
-void CHARACTER::ClearStone(LPCHARACTER pkKiller)
+void CHARACTER::ClearStone(entt::entity killer)
 {
+	LPCHARACTER pkKiller = ecs::LegacyCharOf(killer);
 	if (!m_set_pkChrSpawnedBy.empty())
 	{
 		FuncDeadSpawnedByStone f(pkKiller);
@@ -7454,15 +7459,16 @@ void CHARACTER::ClearTarget()
 	m_set_pkChrTargetedBy.clear();
 }
 
-void CHARACTER::SetTarget(LPCHARACTER pkChrTarget)
+void CHARACTER::SetTarget(entt::entity target)
 {
-	if (m_pkChrTarget == pkChrTarget)
+	LPCHARACTER pkTarget = ecs::LegacyCharOf(target);
+	if (m_pkChrTarget == pkTarget)
 		return;
 
 	if (m_pkChrTarget)
 		m_pkChrTarget->m_set_pkChrTargetedBy.erase(this);
 
-	m_pkChrTarget = pkChrTarget;
+	m_pkChrTarget = pkTarget;
 
 	TPacketGCTarget p;
 	p.header = HEADER_GC_TARGET;
@@ -7692,12 +7698,11 @@ void CHARACTER::CheckTarget()
 		return;
 
 	if (DISTANCE_APPROX(GetX() - ecs::PlayerRuntime::GetX(chrTarget), GetY() - ecs::PlayerRuntime::GetY(chrTarget)) >= 4800)
-		SetTarget(nullptr);
+		SetTarget(entt::null);
 }
 
-bool CHARACTER::IsChangeAttackPosition(LPCHARACTER target) const
+bool CHARACTER::IsChangeAttackPosition(entt::entity targetEntity) const
 {
-	const entt::entity targetEntity = target ? target->GetEntityHandle() : entt::null;
 	if (!IsNPC())
 		return true;
 
@@ -7835,7 +7840,7 @@ bool CHARACTER::Return()
 		return false;
 
 	int x, y;
-	SetVictim(nullptr);
+	SetVictim(entt::null);
 
 	x = m_pkMobInst->m_posLastAttacked.x;
 	y = m_pkMobInst->m_posLastAttacked.y;
@@ -7960,7 +7965,7 @@ bool CHARACTER::Follow(entt::entity chr, float fMinDistance)
 
 	float fx, fy;
 
-	if (IsChangeAttackPosition(pkChr) && GetMobRank() < MOB_RANK_BOSS)
+	if (IsChangeAttackPosition(pkChr ? pkChr->GetEntityHandle() : entt::null) && GetMobRank() < MOB_RANK_BOSS)
 	{
 		SetChangeAttackPositionTime();
 

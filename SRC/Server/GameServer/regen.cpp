@@ -330,7 +330,7 @@ static void regen_spawn_dungeon(LPREGEN regen, LPDUNGEON pDungeon, bool bOnce)
 			LPCHARACTER mast = pDungeon->GetMast();
 			if (mast)
 			{
-				ch->SetVictim(mast);
+				ch->SetVictim((mast ? mast->GetEntityHandle() : entt::null));
 			}
 		}
 #endif

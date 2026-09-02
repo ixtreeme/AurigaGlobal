@@ -57,6 +57,7 @@ extern bool RaceToJob(unsigned race, unsigned* ret_job);
 #include "../components/session_components.hpp"
 #include "../components/vital_components.hpp"
 #include "ItemSystem.hpp"
+#include "../CharacterAccessors.hpp"
 
 namespace
 {
@@ -1828,10 +1829,10 @@ EVENTFUNC(ChainLightningEvent)
 
 	if (pkTarget)
 	{
-		pkChrVictim->CreateFly(FLY_CHAIN_LIGHTNING, pkTarget);
+		pkChrVictim->CreateFly(FLY_CHAIN_LIGHTNING, (pkTarget ? pkTarget->GetEntityHandle() : entt::null));
 		if (character != entt::null)
 			g_dispatcher.trigger(ecs::EvSkillUsed { character, SKILL_CHAIN });
-		pkChr->ComputeSkill(SKILL_CHAIN, pkTarget);
+		pkChr->ComputeSkill(SKILL_CHAIN, (pkTarget ? pkTarget->GetEntityHandle() : entt::null));
 		pkChr->AddChainLightningExcept(pkTarget);
 	}
 	else
@@ -2437,7 +2438,7 @@ struct FuncSplashDamage
 		}
 
 #ifdef ENABLE_SOUL_SYSTEM
-		iDam += m_pkChr->GetSoulItemDamage(pkChrVictim, iDam, BLUE_SOUL);
+		iDam += m_pkChr->GetSoulItemDamage((pkChrVictim ? pkChrVictim->GetEntityHandle() : entt::null), iDam, BLUE_SOUL);
 #endif
 
 
@@ -3056,7 +3057,7 @@ struct FComputeSkillParty
 
 	void operator () (LegacyCharHandle ch)
 	{
-		m_pkAttacker->ComputeSkill(m_dwVnum, ch, m_bSkillLevel);
+		m_pkAttacker->ComputeSkill(m_dwVnum, (ch ? ch->GetEntityHandle() : entt::null), m_bSkillLevel);
 	}
 
 	uint32_t m_dwVnum;
@@ -3064,8 +3065,9 @@ struct FComputeSkillParty
 	uint8_t m_bSkillLevel;
 };
 
-int CHARACTER::ComputeSkillParty(uint32_t dwVnum, LPCHARACTER pkVictim, uint8_t bSkillLevel)
+int CHARACTER::ComputeSkillParty(uint32_t dwVnum, entt::entity victim, uint8_t bSkillLevel)
 {
+	LPCHARACTER pkVictim = ecs::LegacyCharOf(victim);
 	FComputeSkillParty f(dwVnum, pkVictim, bSkillLevel);
 	if (GetParty() && GetParty()->GetNearMemberCount())
 		GetParty()->ForEachNearMember(f);
@@ -3077,8 +3079,9 @@ int CHARACTER::ComputeSkillParty(uint32_t dwVnum, LPCHARACTER pkVictim, uint8_t 
 #endif
 
 #ifdef ENABLE_NEW_GYEONGGONG_SKILL
-int CHARACTER::ComputeGyeongGongSkill(uint32_t dwVnum, LPCHARACTER pkVictim, uint8_t bSkillLevel)
+int CHARACTER::ComputeGyeongGongSkill(uint32_t dwVnum, entt::entity victim, uint8_t bSkillLevel)
 {
+	LPCHARACTER pkVictim = ecs::LegacyCharOf(victim);
 	if (IsPolymorphed())
 		return BATTLE_NONE;
 
@@ -3118,9 +3121,9 @@ int CHARACTER::ComputeGyeongGongSkill(uint32_t dwVnum, LPCHARACTER pkVictim, uin
 	entt::entity pkBow = entt::null, pkArrow = entt::null;
 
 	if (1 == GetArrowAndBow(&pkBow, &pkArrow, 1)) {
-		pkSk->SetPointVar("atk", CalcArrowDamage(GetEntityHandle(), (pkVictim ? pkVictim->GetEntityHandle() : entt::null), pkBow, pkArrow, true));
+		pkSk->SetPointVar("atk", CalcArrowDamage(GetEntityHandle(), victim, pkBow, pkArrow, true));
 	} else {
-		pkSk->SetPointVar("atk", CalcMeleeDamage(GetEntityHandle(), (pkVictim ? pkVictim->GetEntityHandle() : entt::null), true, false));
+		pkSk->SetPointVar("atk", CalcMeleeDamage(GetEntityHandle(), victim, true, false));
 	}
 
 	pkSk->SetPointVar("lv", GetLevel());
@@ -3131,7 +3134,7 @@ int CHARACTER::ComputeGyeongGongSkill(uint32_t dwVnum, LPCHARACTER pkVictim, uin
 	pkSk->SetPointVar("maxhp", ecs::PointSystem::GetMaxHP(victimEntity));
 	pkSk->SetPointVar("maxsp", ecs::PointSystem::GetMaxSP(victimEntity));
 	pkSk->SetPointVar("chain", 0);
-	pkSk->SetPointVar("ar", CalcAttackRating(GetEntityHandle(), (pkVictim ? pkVictim->GetEntityHandle() : entt::null)));
+	pkSk->SetPointVar("ar", CalcAttackRating(GetEntityHandle(), victim));
 	pkSk->SetPointVar("def", GetPoint(POINT_DEF_GRADE));
 	pkSk->SetPointVar("odef", GetPoint(POINT_DEF_GRADE) - GetPoint(POINT_DEF_GRADE_BONUS));
 	pkSk->SetPointVar("horse_level", GetHorseLevel());
@@ -3162,8 +3165,9 @@ int CHARACTER::ComputeGyeongGongSkill(uint32_t dwVnum, LPCHARACTER pkVictim, uin
 
 // bSkillLevel ŔÎŔÚ°ˇ 0ŔĚ ľĆ´Ň °ćżěżˇ´Â m_abSkillLevels¸¦ »çżëÇĎÁö ľĘ°í °­Á¦·Î
 // bSkillLevel·Î °č»ęÇŃ´Ů.
-int CHARACTER::ComputeSkill(uint32_t dwVnum, LPCHARACTER pkVictim, uint8_t bSkillLevel)
+int CHARACTER::ComputeSkill(uint32_t dwVnum, entt::entity victim, uint8_t bSkillLevel)
 {
+	LPCHARACTER pkVictim = ecs::LegacyCharOf(victim);
 
 	const bool bCanUseHorseSkill = CanUseHorseSkill();
 #ifdef ENABLE_BUG_FIXES
@@ -3257,27 +3261,27 @@ int CHARACTER::ComputeSkill(uint32_t dwVnum, LPCHARACTER pkVictim, uint8_t bSkil
 		entt::entity pkBow = entt::null, pkArrow = entt::null;
 		if (1 == GetArrowAndBow(&pkBow, &pkArrow, 1))
 		{
-			pkSk->SetPointVar("atk", CalcArrowDamage(GetEntityHandle(), (pkVictim ? pkVictim->GetEntityHandle() : entt::null), pkBow, pkArrow, true));
+			pkSk->SetPointVar("atk", CalcArrowDamage(GetEntityHandle(), victim, pkBow, pkArrow, true));
 		}
 		else
 		{
-			pkSk->SetPointVar("atk", CalcMeleeDamage(GetEntityHandle(), (pkVictim ? pkVictim->GetEntityHandle() : entt::null), true, false));
+			pkSk->SetPointVar("atk", CalcMeleeDamage(GetEntityHandle(), victim, true, false));
 		}
 	}
 	else if (IS_SET(pkSk->dwFlag, SKILL_FLAG_USE_MELEE_DAMAGE))
 	{
-		pkSk->SetPointVar("atk", CalcMeleeDamage(GetEntityHandle(), (pkVictim ? pkVictim->GetEntityHandle() : entt::null), true, false));
+		pkSk->SetPointVar("atk", CalcMeleeDamage(GetEntityHandle(), victim, true, false));
 	}
 	else if (IS_SET(pkSk->dwFlag, SKILL_FLAG_USE_MAGIC_DAMAGE))
 	{
-		pkSk->SetPointVar("atk", CalcMagicDamage(GetEntityHandle(), (pkVictim ? pkVictim->GetEntityHandle() : entt::null)));
+		pkSk->SetPointVar("atk", CalcMagicDamage(GetEntityHandle(), victim));
 	}
 	else if (IS_SET(pkSk->dwFlag, SKILL_FLAG_USE_ARROW_DAMAGE))
 	{
 		entt::entity pkBow = entt::null, pkArrow = entt::null;
 		if (1 == GetArrowAndBow(&pkBow, &pkArrow, 1))
 		{
-			pkSk->SetPointVar("atk", CalcArrowDamage(GetEntityHandle(), (pkVictim ? pkVictim->GetEntityHandle() : entt::null), pkBow, pkArrow, true));
+			pkSk->SetPointVar("atk", CalcArrowDamage(GetEntityHandle(), victim, pkBow, pkArrow, true));
 		}
 		else
 		{
@@ -3298,7 +3302,7 @@ int CHARACTER::ComputeSkill(uint32_t dwVnum, LPCHARACTER pkVictim, uint8_t bSkil
 	pkSk->SetPointVar("maxhp", ecs::PointSystem::GetMaxHP(victimEntity));
 	pkSk->SetPointVar("maxsp", ecs::PointSystem::GetMaxSP(victimEntity));
 	pkSk->SetPointVar("chain", 0);
-	pkSk->SetPointVar("ar", CalcAttackRating(GetEntityHandle(), (pkVictim ? pkVictim->GetEntityHandle() : entt::null)));
+	pkSk->SetPointVar("ar", CalcAttackRating(GetEntityHandle(), victim));
 	pkSk->SetPointVar("def", GetPoint(POINT_DEF_GRADE));
 	pkSk->SetPointVar("odef", GetPoint(POINT_DEF_GRADE) - GetPoint(POINT_DEF_GRADE_BONUS));
 	pkSk->SetPointVar("horse_level", GetHorseLevel());
@@ -3621,11 +3625,10 @@ int CHARACTER::ComputeSkill(uint32_t dwVnum, LPCHARACTER pkVictim, uint8_t bSkil
 	}
 }
 
-bool CHARACTER::UseSkill(uint32_t dwVnum, LPCHARACTER pkVictim, bool bUseGrandMaster)
+bool CHARACTER::UseSkill(uint32_t dwVnum, entt::entity victim, bool bUseGrandMaster)
 {
-	entt::entity victimEntity = pkVictim
-		? pkVictim->GetEntityHandle()
-		: entt::null;
+	LPCHARACTER pkVictim = ecs::LegacyCharOf(victim);
+	entt::entity victimEntity = victim;
 #ifdef ENABLE_BUG_FIXES
 	if ((dwVnum == SKILL_GEOMKYUNG || dwVnum == SKILL_GWIGEOM) &&
 		!ItemSystem::IsValidItem(ItemSystem::GetWearItem(GetEntityHandle(), WEAR_WEAPON)))
@@ -3740,13 +3743,13 @@ bool CHARACTER::UseSkill(uint32_t dwVnum, LPCHARACTER pkVictim, bool bUseGrandMa
 
 			if (!IsAffectFlag(AFF_TANHWAN_DASH))
 			{
-				if (!UseSkill(dwVnum, this))
+				if (!UseSkill(dwVnum, this ? this->GetEntityHandle() : entt::null))
 					return false;
 			}
 
 			m_SkillUseInfo[dwVnum].SetMainTargetVID(victimEntity);
 			// DASH »óĹÂŔÇ ĹşČŻ°ÝŔş °ř°Ý±âĽú
-			ComputeSkill(dwVnum, pkVictim);
+			ComputeSkill(dwVnum, pkVictim ? pkVictim->GetEntityHandle() : entt::null);
 			RemoveAffect(dwVnum);
 			return true;
 		}
@@ -3915,7 +3918,7 @@ bool CHARACTER::UseSkill(uint32_t dwVnum, LPCHARACTER pkVictim, bool bUseGrandMa
 		{
 			LPPARTY party = ecs::SocialSystem::GetParty(victimEntity);
 			if (party && GetParty()) {
-				ComputeSkillParty(dwVnum, this);
+				ComputeSkillParty(dwVnum, this ? this->GetEntityHandle() : entt::null);
 			}
 		}
 	}
@@ -3982,22 +3985,22 @@ bool CHARACTER::UseSkill(uint32_t dwVnum, LPCHARACTER pkVictim, bool bUseGrandMa
 
 		if (ecs::SocialSystem::GetParty(victimEntity)){
 			if (ecs::SocialSystem::GetParty(victimEntity) == GetParty()){
-				ComputeSkillParty(dwVnum, this);
+				ComputeSkillParty(dwVnum, this ? this->GetEntityHandle() : entt::null);
 			}
 		}
 	}//------------------------------------------------------------------2024-12-30------------------------------------------------------------------------------
 	if (IS_SET(pkSk->dwFlag, SKILL_FLAG_SELFONLY))
-		ComputeSkill(dwVnum, this);
+		ComputeSkill(dwVnum, this ? this->GetEntityHandle() : entt::null);
 #ifdef ENABLE_WOLFMAN_CHARACTER
 	else if (IS_SET(pkSk->dwFlag, SKILL_FLAG_PARTY))
-		ComputeSkillParty(dwVnum, this);
+		ComputeSkillParty(dwVnum, this ? this->GetEntityHandle() : entt::null);
 #endif
 	else if (!IS_SET(pkSk->dwFlag, SKILL_FLAG_ATTACK))
-		ComputeSkill(dwVnum, pkVictim);
+		ComputeSkill(dwVnum, pkVictim ? pkVictim->GetEntityHandle() : entt::null);
 	else if (dwVnum == SKILL_BYEURAK)
-		ComputeSkill(dwVnum, pkVictim);
+		ComputeSkill(dwVnum, pkVictim ? pkVictim->GetEntityHandle() : entt::null);
 	else if (dwVnum == SKILL_MUYEONG || pkSk->IsChargeSkill())
-		ComputeSkill(dwVnum, pkVictim);
+		ComputeSkill(dwVnum, pkVictim ? pkVictim->GetEntityHandle() : entt::null);
 
 	m_dwLastSkillTime = get_dword_time();
 
@@ -4096,8 +4099,8 @@ EVENTFUNC(skill_muyoung_event)
 		// 2. Shoot!
 		if (f.GetVictim())
 		{
-			ch->CreateFly(FLY_SKILL_MUYEONG, f.GetVictim());
-			ch->ComputeSkill(SKILL_MUYEONG, f.GetVictim());
+			ch->CreateFly(FLY_SKILL_MUYEONG, f.GetVictim() ? f.GetVictim()->GetEntityHandle() : entt::null);
+			ch->ComputeSkill(SKILL_MUYEONG, f.GetVictim() ? f.GetVictim()->GetEntityHandle() : entt::null);
 		}
 	}
 
@@ -4144,7 +4147,7 @@ EVENTFUNC(skill_gyeongGong_event)
 		return 0;
 	}
 
-	ch->ComputeGyeongGongSkill(SKILL_GYEONGGONG, ch);
+	ch->ComputeGyeongGongSkill(SKILL_GYEONGGONG, (ch ? ch->GetEntityHandle() : entt::null));
 
 	return PASSES_PER_SEC(2);
 }

@@ -4021,9 +4021,9 @@ bool CHARACTER::MoveItem(TItemPos Cell, TItemPos DestCell,
 				//UpdatePacket();
 #ifdef ENABLE_FAKE_SHOP_HEADER
 		// Frissítés saját magunknak
-				UpdateMountInventoryCountOverhead(this);
+				UpdateMountInventoryCountOverhead(this ? this->GetEntityHandle() : entt::null);
 				//SendLeaderboardData();
-				SendLeaderboardDataSkillMob(this);
+				SendLeaderboardDataSkillMob(this ? this->GetEntityHandle() : entt::null);
 
 				// Frissítés a körülöttünk lévő játékosoknak
 				for (const auto& it : m_map_view)
@@ -4037,7 +4037,7 @@ bool CHARACTER::MoveItem(TItemPos Cell, TItemPos DestCell,
 						continue;
 
 					if (viewer->IsPC() && ecs::PlayerRuntime::GetDesc((viewer ? viewer->GetEntityHandle() : entt::null)))
-						UpdateMountInventoryCountOverhead(viewer);
+						UpdateMountInventoryCountOverhead(viewer ? viewer->GetEntityHandle() : entt::null);
 				}
 #endif
 
@@ -7144,7 +7144,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 			break;
 
 			case 71013: // ÃàÁ¦¿ëÆøÁ×
-				CreateFly(number(FLY_FIREWORK1, FLY_FIREWORK6), this);
+				CreateFly(number(FLY_FIREWORK1, FLY_FIREWORK6), GetEntityHandle());
 				ItemSystem::ConsumeItemEcs(itemEntity);
 				break;
 
@@ -7155,7 +7155,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 			case 50104:
 			case 50105:
 			case 50106:
-				CreateFly(item->GetVnum() - 50100 + FLY_FIREWORK1, this);
+				CreateFly(item->GetVnum() - 50100 + FLY_FIREWORK1, GetEntityHandle());
 				ItemSystem::ConsumeItemEcs(itemEntity);
 				break;
 

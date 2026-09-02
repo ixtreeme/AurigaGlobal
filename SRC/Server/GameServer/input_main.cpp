@@ -2050,7 +2050,7 @@ void CInputMain::OnClick(entt::entity character, const char * data)
 	LPCHARACTER			victim;
 
 	if ((victim = CHARACTER_MANAGER::instance().Find(pinfo->vid)))
-		victim->OnClick(ch);
+		victim->OnClick(character);
 	else if (test_server)
 	{
 		LOG_ERROR("CInputMain::OnClick {}.Click.NOT_EXIST_VID[{}]", ecs::PlayerRuntime::GetName(character).data(), pinfo->vid);
@@ -2700,7 +2700,7 @@ int CInputMain::SyncPosition(entt::entity character, const char * c_pcData, uint
 				continue;
 		}
 
-		if (!victim->SetSyncOwner((ch ? ch->GetEntityHandle() : entt::null)))
+		if (!victim->SetSyncOwner(character))
 			continue;
 
 		const float fDistWithSyncOwner = DISTANCE_SQRT( (ecs::PlayerRuntime::GetX(victimEntity) - ecs::PlayerRuntime::GetX(character)) / 100, (ecs::PlayerRuntime::GetY(victimEntity) - ecs::PlayerRuntime::GetY(character)) / 100 );
@@ -2797,7 +2797,7 @@ void CInputMain::UseSkill(entt::entity character, const char * pcData)
 	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::UseSkill");//INGAME_DEBUG_RAZOR93
 #endif
 	TPacketCGUseSkill * p = (TPacketCGUseSkill *) pcData;
-	ch->UseSkill(p->dwVnum, CHARACTER_MANAGER::instance().Find(p->dwVID));
+	ch->UseSkill(p->dwVnum, CHARACTER_MANAGER::instance().FindEntity(p->dwVID));
 }
 
 void CInputMain::ScriptButton(entt::entity character, const void* c_pData)
@@ -2923,7 +2923,7 @@ void CInputMain::Target(entt::entity character, const char * pcData)
 		ecs::PlayerRuntime::GetDesc(character)->Packet(&pckTarget, sizeof(TPacketGCTarget));
 	}
 	else
-		ch->SetTarget(CHARACTER_MANAGER::instance().Find(p->dwVID));
+		ch->SetTarget(CHARACTER_MANAGER::instance().FindEntity(p->dwVID));
 }
 
 void CInputMain::Warp(entt::entity character, const char * pcData)

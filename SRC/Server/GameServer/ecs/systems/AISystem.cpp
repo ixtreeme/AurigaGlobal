@@ -215,7 +215,7 @@ void CHARACTER::__StateIdle_Monster()
 
     LPCHARACTER victim = GetVictim();
     if (!victim || victim->IsDead()) {
-        SetVictim(nullptr);
+        SetVictim(entt::null);
         victim = nullptr;
         m_dwStateDuration = PASSES_PER_SEC(1);
     }
@@ -290,7 +290,7 @@ void CHARACTER::StateBattle()
             return;
         }
 
-        SetVictim(nullptr);
+        SetVictim(entt::null);
         if (number(1, 50) != 1) {
             SetPosition(POS_STANDING);
             m_dwStateDuration = 1;
@@ -307,12 +307,12 @@ void CHARACTER::StateBattle()
         }
 
         if (newVictim) {
-            SetVictim(newVictim);
+            SetVictim(newVictim ? newVictim->GetEntityHandle() : entt::null);
             m_dwStateDuration = PASSES_PER_SEC(1);
             return;
         }
 
-        SetVictim(nullptr);
+        SetVictim(entt::null);
         if (IsGuardNPC()) {
             Return();
         } else {
@@ -329,7 +329,7 @@ void CHARACTER::StateBattle()
         GetY() - ecs::PlayerRuntime::GetY(victimEntity)));
 
     if (dist >= 4000.0f) {
-        SetVictim(nullptr);
+        SetVictim(entt::null);
         if (protege && DISTANCE_APPROX(GetX() - ecs::PlayerRuntime::GetX(protege->GetEntityHandle()), GetY() - ecs::PlayerRuntime::GetY(protege->GetEntityHandle())) > 1000) {
             Follow(protege ? protege->GetEntityHandle() : entt::null, number(150, 400));
         } else {
