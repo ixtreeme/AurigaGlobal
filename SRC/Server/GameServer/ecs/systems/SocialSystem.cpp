@@ -330,8 +330,9 @@ EVENTFUNC(party_request_event)
     return 0;
 }
 
-bool CHARACTER::RequestToParty(LPCHARACTER leader)
+bool CHARACTER::RequestToParty(entt::entity leaderEntity)
 {
+    LPCHARACTER leader = ecs::LegacyCharOf(leaderEntity);
     if (leader->GetParty())
         leader = leader->GetParty()->GetLeaderCharacter();
 
@@ -342,7 +343,6 @@ bool CHARACTER::RequestToParty(LPCHARACTER leader)
 #endif
         return false;
     }
-	const entt::entity leaderEntity = leader->GetEntityHandle();
 
     if (m_pkPartyRequestEvent)
         return false;
@@ -353,7 +353,7 @@ bool CHARACTER::RequestToParty(LPCHARACTER leader)
     if (leader->IsBlockMode(BLOCK_PARTY_REQUEST))
         return false;
 
-    PartyJoinErrCode errcode = IsPartyJoinableCondition(leader, this);
+    PartyJoinErrCode errcode = IsPartyJoinableCondition(leaderEntity, GetEntityHandle());
 
     switch (errcode)
     {
@@ -423,9 +423,9 @@ bool CHARACTER::RequestToParty(LPCHARACTER leader)
     return true;
 }
 
-void CHARACTER::DenyToParty(LPCHARACTER member)
+void CHARACTER::DenyToParty(entt::entity memberEntity)
 {
-	const entt::entity memberEntity = member ? member->GetEntityHandle() : entt::null;
+	LPCHARACTER member = ecs::LegacyCharOf(memberEntity);
     LOG_INFO("DenyToParty {} member {} {}", GetName(), ecs::PlayerRuntime::GetName(memberEntity).data(), static_cast<const void*>(get_pointer(member->m_pkPartyRequestEvent)));
 
     if (!member->m_pkPartyRequestEvent)
@@ -450,9 +450,9 @@ void CHARACTER::DenyToParty(LPCHARACTER member)
     ecs::ChatSystem::Send(memberEntity, CHAT_TYPE_COMMAND, "PartyRequestDenied");
 }
 
-void CHARACTER::AcceptToParty(LPCHARACTER member)
+void CHARACTER::AcceptToParty(entt::entity memberEntity)
 {
-	const entt::entity memberEntity = member ? member->GetEntityHandle() : entt::null;
+	LPCHARACTER member = ecs::LegacyCharOf(memberEntity);
     LOG_INFO("AcceptToParty {} member {} {}", GetName(), ecs::PlayerRuntime::GetName(memberEntity).data(), static_cast<const void*>(get_pointer(member->m_pkPartyRequestEvent)));
 
     if (!member->m_pkPartyRequestEvent)
@@ -479,10 +479,10 @@ void CHARACTER::AcceptToParty(LPCHARACTER member)
         if (GetPlayerID() != GetParty()->GetLeaderPID())
             return;
 
-        PartyJoinErrCode errcode = IsPartyJoinableCondition(this, member);
+        PartyJoinErrCode errcode = IsPartyJoinableCondition(GetEntityHandle(), memberEntity);
         switch (errcode)
         {
-        case PERR_NONE: member->PartyJoin(this); return;
+        case PERR_NONE: member->PartyJoin(GetEntityHandle()); return;
         case PERR_SERVER:
 #ifdef TEXTS_IMPROVEMENT
             ecs::ChatSystem::SendNew(memberEntity, CHAT_TYPE_INFO, 208, "");
@@ -549,9 +549,9 @@ EVENTFUNC(party_invite_event)
     return 0;
 }
 
-void CHARACTER::PartyInvite(LPCHARACTER pchInvitee)
+void CHARACTER::PartyInvite(entt::entity invitee)
 {
-	const entt::entity invitee = pchInvitee ? pchInvitee->GetEntityHandle() : entt::null;
+	LPCHARACTER pkInvitee = ecs::LegacyCharOf(invitee);
     if (GetParty() && GetParty()->GetLeaderPID() != GetPlayerID())
     {
 #ifdef TEXTS_IMPROVEMENT
@@ -559,7 +559,7 @@ void CHARACTER::PartyInvite(LPCHARACTER pchInvitee)
 #endif
         return;
     }
-    else if (pchInvitee->IsBlockMode(BLOCK_PARTY_INVITE))
+    else if (pkInvitee->IsBlockMode(BLOCK_PARTY_INVITE))
     {
 #ifdef TEXTS_IMPROVEMENT
         ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 192, "%s", ecs::PlayerRuntime::GetName(invitee).data());
@@ -576,7 +576,7 @@ void CHARACTER::PartyInvite(LPCHARACTER pchInvitee)
         return;
     }
 
-    else if ((pchInvitee->GetDuel("BlockParty")))
+    else if ((pkInvitee->GetDuel("BlockParty")))
     {
 #ifdef TEXTS_IMPROVEMENT
         ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 517, "%s", ecs::PlayerRuntime::GetName(invitee).data());
@@ -585,7 +585,7 @@ void CHARACTER::PartyInvite(LPCHARACTER pchInvitee)
     }
 #endif
 
-    PartyJoinErrCode errcode = IsPartyJoinableCondition(this, pchInvitee);
+    PartyJoinErrCode errcode = IsPartyJoinableCondition(GetEntityHandle(), invitee);
 
     switch (errcode)
     {
@@ -653,9 +653,9 @@ void CHARACTER::PartyInvite(LPCHARACTER pchInvitee)
     ecs::PlayerRuntime::GetDesc(invitee)->Packet(&p, sizeof(p));
 }
 
-void CHARACTER::PartyInviteAccept(LPCHARACTER pchInvitee)
+void CHARACTER::PartyInviteAccept(entt::entity invitee)
 {
-	const entt::entity invitee = pchInvitee ? pchInvitee->GetEntityHandle() : entt::null;
+	LPCHARACTER pkInvitee = ecs::LegacyCharOf(invitee);
     const auto itFind = m_PartyInviteEventMap.find(ecs::PlayerRuntime::GetPlayerID(invitee));
 
     if (itFind == m_PartyInviteEventMap.end())
@@ -675,7 +675,7 @@ void CHARACTER::PartyInviteAccept(LPCHARACTER pchInvitee)
         return;
     }
 
-    PartyJoinErrCode errcode = IsPartyJoinableMutableCondition(this, pchInvitee);
+    PartyJoinErrCode errcode = IsPartyJoinableMutableCondition(GetEntityHandle(), invitee);
 
     switch (errcode)
     {
@@ -728,13 +728,13 @@ void CHARACTER::PartyInviteAccept(LPCHARACTER pchInvitee)
     }
 
     if (GetParty())
-        pchInvitee->PartyJoin(this);
+        pkInvitee->PartyJoin(GetEntityHandle());
     else
     {
         LPPARTY pParty = CPartyManager::instance().CreateParty(GetEntityHandle());
 
         pParty->Join(ecs::PlayerRuntime::GetPlayerID(invitee));
-        pParty->Link((pchInvitee ? pchInvitee->GetEntityHandle() : entt::null));
+        pParty->Link(invitee);
         pParty->SendPartyInfoAllToOne(GetEntityHandle());
     }
 }
@@ -760,22 +760,23 @@ void CHARACTER::PartyInviteDeny(uint32_t dwPID)
 #endif
 }
 
-void CHARACTER::PartyJoin(LPCHARACTER pLeader)
+void CHARACTER::PartyJoin(entt::entity leader)
 {
-    if (pLeader && pLeader->GetParty()) {
-		const entt::entity leader = pLeader->GetEntityHandle();
+    LPCHARACTER pkLeader = ecs::LegacyCharOf(leader);
+    if (pkLeader && pkLeader->GetParty()) {
+		const entt::entity leader = pkLeader->GetEntityHandle();
 #ifdef TEXTS_IMPROVEMENT
         ecs::ChatSystem::SendNew(leader, CHAT_TYPE_INFO, 1249, "%s", GetName());
         ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 193, "%s", ecs::PlayerRuntime::GetName(leader).data());
 #endif
-        pLeader->GetParty()->Join(GetPlayerID());
-        pLeader->GetParty()->Link(GetEntityHandle());
+        pkLeader->GetParty()->Join(GetPlayerID());
+        pkLeader->GetParty()->Link(GetEntityHandle());
     }
 }
 
-CHARACTER::PartyJoinErrCode CHARACTER::IsPartyJoinableCondition(const LPCHARACTER pchLeader, const LPCHARACTER pchGuest)
+CHARACTER::PartyJoinErrCode CHARACTER::IsPartyJoinableCondition(const entt::entity leader, const entt::entity guest)
 {
-    return IsPartyJoinableMutableCondition(pchLeader, pchGuest);
+    return IsPartyJoinableMutableCondition(leader, guest);
 }
 
 static bool __party_can_join_by_level(entt::entity leader, entt::entity guest)
@@ -784,22 +785,24 @@ static bool __party_can_join_by_level(entt::entity leader, entt::entity guest)
     return (abs(ecs::PointSystem::GetLevel(leader) - ecs::PointSystem::GetLevel(guest)) <= level_limit);
 }
 
-CHARACTER::PartyJoinErrCode CHARACTER::IsPartyJoinableMutableCondition(const LPCHARACTER pchLeader, const LPCHARACTER pchGuest)
+CHARACTER::PartyJoinErrCode CHARACTER::IsPartyJoinableMutableCondition(const entt::entity leader, const entt::entity guest)
 {
+    LPCHARACTER pkLeader = ecs::LegacyCharOf(leader);
+    LPCHARACTER pkGuest = ecs::LegacyCharOf(guest);
     if (!CPartyManager::instance().IsEnablePCParty())
         return PERR_SERVER;
-    else if (pchLeader->GetDungeon())
+    else if (pkLeader->GetDungeon())
         return PERR_DUNGEON;
-    else if (pchGuest->IsObserverMode())
+    else if (pkGuest->IsObserverMode())
         return PERR_OBSERVER;
     else if (false == __party_can_join_by_level(
-		pchLeader->GetEntityHandle(), pchGuest->GetEntityHandle()))
+		pkLeader->GetEntityHandle(), pkGuest->GetEntityHandle()))
         return PERR_LVBOUNDARY;
-    else if (pchGuest->GetParty())
+    else if (pkGuest->GetParty())
         return PERR_ALREADYJOIN;
-    else if (pchLeader->GetParty())
+    else if (pkLeader->GetParty())
     {
-        if (pchLeader->GetParty()->GetMemberCount() == PARTY_MAX_MEMBER)
+        if (pkLeader->GetParty()->GetMemberCount() == PARTY_MAX_MEMBER)
             return PERR_PARTYISFULL;
     }
 

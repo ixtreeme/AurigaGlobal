@@ -974,3 +974,34 @@ Build: RelWithDebInfo GameServer, 0 errors.
 The count barely moves, and that is expected: 52 conversions left the method
 bodies but most call sites had to take one on instead. The gain is structural,
 not numeric - the char.h combat surface now speaks entities.
+
+
+Phase 19b - party and sync-owner cluster
+-----------------------------------------
+10 methods flipped: RequestToParty, DenyToParty, AcceptToParty, PartyInvite,
+PartyInviteAccept, PartyJoin, IsPartyJoinableCondition,
+IsPartyJoinableMutableCondition, SetSyncOwner, IsSyncOwner.
+7 conversions removed, 10 declarations in char.h, ~15 call sites adapted.
+
+Only 7 conversions - this cluster is on the unfavourable end, as the audit
+predicted. It was done for coherence: the party API on char.h now speaks one
+language, and several call sites that used to pass `this` now pass
+GetEntityHandle() with no conversion at all.
+
+The two static predicates (IsPartyJoinable*Condition) had zero conversions and
+were initially skipped as pure churn. They had to be flipped anyway once
+RequestToParty's parameter became an entity - a reminder that in a cluster the
+members are not independent: flipping one forces its collaborators.
+
+Same collision as 19a, more of it: five `const entt::entity X = X;` lines left
+over from the phase 18k/18l hoists, now superseded by the parameter. The
+generic remover handled four; one more was a hoist with a different right-hand
+side and needed deleting by hand.
+
+Also: NetworkSyncSystem.cpp needed the CharacterAccessors include, and it uses
+the relative form ("../CharacterAccessors.hpp") like its sibling systems - the
+"ecs/..." spelling that works from the GameServer root does not resolve from
+inside ecs/systems/.
+
+Project-wide conversion count: 1823 -> 1816
+Build: RelWithDebInfo GameServer, 0 errors.

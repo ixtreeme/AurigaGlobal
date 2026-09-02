@@ -2639,7 +2639,7 @@ ACMD(do_party_request)
 	auto* tch = CHARACTER_MANAGER::instance().Find(vid);
 
 	if (tch)
-		if (!ch->RequestToParty(tch))
+		if (!ch->RequestToParty((tch ? tch->GetEntityHandle() : entt::null)))
 			ecs::ChatSystem::Send(character, CHAT_TYPE_COMMAND, "PartyRequestDenied");
 }
 
@@ -2657,7 +2657,7 @@ ACMD(do_party_request_accept)
 	auto* tch = CHARACTER_MANAGER::instance().Find(vid);
 
 	if (tch)
-		ch->AcceptToParty(tch);
+		ch->AcceptToParty((tch ? tch->GetEntityHandle() : entt::null));
 }
 
 ACMD(do_party_request_deny)
@@ -2674,7 +2674,7 @@ ACMD(do_party_request_deny)
 	auto* tch = CHARACTER_MANAGER::instance().Find(vid);
 
 	if (tch)
-		ch->DenyToParty(tch);
+		ch->DenyToParty((tch ? tch->GetEntityHandle() : entt::null));
 }
 
 // LUA_ADD_GOTO_INFO

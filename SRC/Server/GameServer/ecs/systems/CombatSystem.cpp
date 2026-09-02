@@ -2614,7 +2614,7 @@ bool CHARACTER::Attack(entt::entity victim, uint8_t bType)
 			return false;
 	}
 
-	pkVictim->SetSyncOwner(this);
+	pkVictim->SetSyncOwner(GetEntityHandle());
 
 	if (pkVictim->CanBeginFight())
 		pkVictim->BeginFight(GetEntityHandle());

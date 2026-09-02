@@ -2700,7 +2700,7 @@ int CInputMain::SyncPosition(entt::entity character, const char * c_pcData, uint
 				continue;
 		}
 
-		if (!victim->SetSyncOwner(ch))
+		if (!victim->SetSyncOwner((ch ? ch->GetEntityHandle() : entt::null)))
 			continue;
 
 		const float fDistWithSyncOwner = DISTANCE_SQRT( (ecs::PlayerRuntime::GetX(victimEntity) - ecs::PlayerRuntime::GetX(character)) / 100, (ecs::PlayerRuntime::GetY(victimEntity) - ecs::PlayerRuntime::GetY(character)) / 100 );
@@ -3565,7 +3565,7 @@ void CInputMain::PartyInvite(entt::entity character, const char * c_pData)
 		return;
 	}
 
-	ch->PartyInvite(pInvitee);
+	ch->PartyInvite((pInvitee ? pInvitee->GetEntityHandle() : entt::null));
 }
 
 void CInputMain::PartyInviteAnswer(entt::entity character, const char * c_pData)
@@ -3596,7 +3596,7 @@ void CInputMain::PartyInviteAnswer(entt::entity character, const char * c_pData)
 	else if (!p->accept) {
 		pInviter->PartyInviteDeny(ecs::PlayerRuntime::GetPlayerID(character));
 	} else {
-		pInviter->PartyInviteAccept(ch);
+		pInviter->PartyInviteAccept(character);
 	}
 }
 // END_OF_PARTY_JOIN_BUG_FIX

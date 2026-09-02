@@ -45,6 +45,7 @@
 #include "../services/SpatialService.hpp"
 #include "../services/EntityNetworkDispatch.hpp"
 #include <Core/Logging.hpp>
+#include "../CharacterAccessors.hpp"
 
 extern bool battle_is_attackable(entt::entity character, entt::entity victim);
 
@@ -218,7 +219,7 @@ struct FuncClearSync
     void operator()(LPCHARACTER ch)
     {
         assert(ch != NULL);
-        ch->SetSyncOwner(nullptr, false);
+        ch->SetSyncOwner(entt::null, false);
     }
 };
 
@@ -1083,16 +1084,17 @@ void CHARACTER::EncodeRemovePacket(LPENTITY entity)
         LOG_TRACE("EntityRemove {}({}) FROM {}", GetName(), GetPacketVID(), ecs::PlayerRuntime::GetName(static_cast<LPCHARACTER>(entity)->GetEntityHandle()).data());
 }
 
-bool CHARACTER::SetSyncOwner(LPCHARACTER ch, bool bRemoveFromList)
+bool CHARACTER::SetSyncOwner(entt::entity chEntity, bool bRemoveFromList)
 {
+    LPCHARACTER ch = ecs::LegacyCharOf(chEntity);
     if (IS_SET(GetAIFlag(), AIFLAG_NOMOVE))
         return false;
 
     if (ch)
     {
-        if (!battle_is_attackable((ch ? ch->GetEntityHandle() : entt::null), GetEntityHandle()))
+        if (!battle_is_attackable(chEntity, GetEntityHandle()))
         {
-            SendDamagePacket(ch ? ch->GetEntityHandle() : entt::null, 0, DAMAGE_BLOCK);
+            SendDamagePacket(chEntity, 0, DAMAGE_BLOCK);
             return false;
         }
     }
@@ -1118,7 +1120,7 @@ bool CHARACTER::SetSyncOwner(LPCHARACTER ch, bool bRemoveFromList)
     else
     {
 		const entt::entity syncOwner = ch->GetEntityHandle();
-        if (!IsSyncOwner(ch))
+        if (!IsSyncOwner(ch ? ch->GetEntityHandle() : entt::null))
             return false;
 
         if (DISTANCE_APPROX(
@@ -1167,13 +1169,14 @@ bool CHARACTER::SetSyncOwner(LPCHARACTER ch, bool bRemoveFromList)
 
 void CHARACTER::ClearSync()
 {
-    SetSyncOwner(nullptr);
+    SetSyncOwner(entt::null);
     std::for_each(m_kLst_pkChrSyncOwned.begin(), m_kLst_pkChrSyncOwned.end(), FuncClearSync());
     m_kLst_pkChrSyncOwned.clear();
 }
 
-bool CHARACTER::IsSyncOwner(LPCHARACTER ch) const
+bool CHARACTER::IsSyncOwner(entt::entity chEntity) const
 {
+    LPCHARACTER ch = ecs::LegacyCharOf(chEntity);
     if (m_pkChrSyncOwner == ch)
         return true;
 

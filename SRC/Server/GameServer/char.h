@@ -1108,8 +1108,8 @@ public:
 
 	void			SetLastAttacked(uint32_t time);	// ���������� ���ݹ��� �ð� �� ��ġ�� ������
 
-	bool			SetSyncOwner(LPCHARACTER ch, bool bRemoveFromList = true);
-	bool			IsSyncOwner(LPCHARACTER ch) const;
+	bool			SetSyncOwner(entt::entity character, bool bRemoveFromList = true);
+	bool			IsSyncOwner(entt::entity character) const;
 
 	bool			WarpSet(int32_t x, int32_t y, int32_t lRealMapIndex = 0);
 
@@ -1261,9 +1261,9 @@ public:
 	void			SetParty(LPPARTY pkParty);
 	LPPARTY			GetParty() const { return m_pkParty; }
 
-	bool			RequestToParty(LPCHARACTER leader);
-	void			DenyToParty(LPCHARACTER member);
-	void			AcceptToParty(LPCHARACTER member);
+	bool			RequestToParty(entt::entity leader);
+	void			DenyToParty(entt::entity member);
+	void			AcceptToParty(entt::entity member);
 
 	/// �ڽ��� ��Ƽ�� �ٸ� character �� �ʴ��Ѵ�.
 	/**
@@ -1271,7 +1271,7 @@ public:
 	 *
 	 * ���� character �� ���°� ��Ƽ�� �ʴ��ϰ� �ʴ���� �� �ִ� ���°� �ƴ϶�� �ʴ��ϴ� ĳ���Ϳ��� �ش��ϴ� ä�� �޼����� �����Ѵ�.
 	 */
-	void			PartyInvite(LPCHARACTER pchInvitee);
+	void			PartyInvite(entt::entity invitee);
 
 	/// �ʴ��ߴ� character �� ������ ó���Ѵ�.
 	/**
@@ -1279,7 +1279,7 @@ public:
 	 *
 	 * pchInvitee �� ��Ƽ�� ������ �� �ִ� ��Ȳ�� �ƴ϶�� �ش��ϴ� ä�� �޼����� �����Ѵ�.
 	 */
-	void			PartyInviteAccept(LPCHARACTER pchInvitee);
+	void			PartyInviteAccept(entt::entity invitee);
 
 	/// �ʴ��ߴ� character �� �ʴ� �źθ� ó���Ѵ�.
 	/**
@@ -1299,7 +1299,7 @@ protected:
 	/**
 	 * @param	pkLeader ������ ��Ƽ�� ����
 	 */
-	void			PartyJoin(LPCHARACTER pkLeader);
+	void			PartyJoin(entt::entity leader);
 
 	/**
 	 * ��Ƽ ������ �� �� ���� ����� �����ڵ�.
@@ -1327,7 +1327,7 @@ protected:
 	 * @param	pchGuest �ʴ�޴� character
 	 * @return	��� PartyJoinErrCode �� ��ȯ�� �� �ִ�.
 	 */
-	static PartyJoinErrCode	IsPartyJoinableCondition(const LPCHARACTER pchLeader, const LPCHARACTER pchGuest);
+	static PartyJoinErrCode	IsPartyJoinableCondition(entt::entity leader, entt::entity guest);
 
 	/// ��Ƽ �����̳� �Ἲ ������ ������ ������ �˻��Ѵ�.
 	/**
@@ -1335,7 +1335,7 @@ protected:
 	 * @param	pchGuest �ʴ�޴� character
 	 * @return	mutable type �� code �� ��ȯ�Ѵ�.
 	 */
-	static PartyJoinErrCode	IsPartyJoinableMutableCondition(const LPCHARACTER pchLeader, const LPCHARACTER pchGuest);
+	static PartyJoinErrCode	IsPartyJoinableMutableCondition(entt::entity leader, entt::entity guest);
 
 	LPPARTY			m_pkParty;
 	uint32_t			m_dwLastDeadTime;
