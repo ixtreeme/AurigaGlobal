@@ -1593,3 +1593,66 @@ wrapping these four would be the SetPKMode mistake, deliberately.
 
 Live conversion sites: 1685 -> 1681.
 Build: RelWithDebInfo GameServer, 0 errors.
+
+
+Phase 19l - two pieces of state moved, and where arena.cpp actually stops
+--------------------------------------------------------------------------
+The goal was arena.cpp with no LPCHARACTER, natively, no wrappers. Five method
+names stood in the way. Two of them were state that could simply move:
+
+  m_nPotionLimit  ->  ArenaMembership.potionLimit, beside the arena pointer it
+                      belongs with. The member is gone; the five direct uses in
+                      ItemSystem_LegacyBridge go through the accessors.
+  m_bPKMode       ->  CombatStats.pkMode, which already existed - several sites
+                      were writing both. The member is gone.
+
+CombatSystem::SetPKMode is now the real implementation rather than the
+LegacyCharOf wrapper caught in 19k: range and equality checks, the guild
+fallback through ecs::SocialSystem::GetGuild, the component write, DirtyTag,
+UpdatePacket. CHARACTER::SetPKMode and GetPKMode forward to it.
+
+One detail that would have been a silent bug: the four init paths in
+PlayerRuntimeSystem set the starting PK mode with try_get, which quietly did
+nothing when the component was absent - harmless while m_bPKMode still held
+the value, a lost write once it does not. They use get_or_emplace now.
+
+WHERE IT STOPS, AND WHY IT IS NOT A WRAPPER PROBLEM
+-----------------------------------------------------
+Three method names remain in arena.cpp: StartRecoveryEvent (x4), SetPosition
+(x4), ViewReencode (x2). None of them is blocked by anything on this axis.
+Each bottoms out in a different legacy subsystem:
+
+  SetPosition          event_cancel(&m_pkDeadEvent), event_cancel(&m_pkStunEvent)
+                       GotoState(m_stateBattle), GotoState(m_stateIdle)
+                       -> legacy event pointers AND the CFSM state machine.
+                       The rest of the body is already component-native:
+                       StatusFlags, DeadTag, StunTag, DirtyTag, and position
+                       itself lives in CharacterRuntimeFlags.
+
+  StartRecoveryEvent   info->ch = this;  m_pkRecoveryEvent = event_create(...)
+                       -> char_event_info holds a DynamicCharacterPtr. That
+                       type is already ID-based (is_pc + id, resolved through
+                       CHARACTER_MANAGER), so an entity assignment is a small
+                       job; the event pointer needs a component. This is the
+                       closest of the three to being reachable.
+
+  ViewReencode         DispatchRemove(this, this, ...), DispatchInsert(...)
+                       -> LPENTITY, both parameters. The audit above concluded
+                       that axis finishes from the component side, not by
+                       retyping LPENTITY. Its own body already walks the ECS
+                       ViewMap; only the dispatch pair still needs the object.
+
+An accessor for any of these whose body is LegacyCharOf(e)->Same() would take
+the pointer out of arena.cpp and leave the identical conversion one frame
+down. That is the SetPKMode mistake from 19k, and doing it deliberately after
+catching it accidentally would be worse. arena.cpp keeps three visible
+pointers instead.
+
+Getting arena.cpp to zero is therefore not an arena job. It needs the legacy
+event pointers in components (35 references across the three), the CFSM, and
+the LPENTITY view dispatch. Each is its own axis.
+
+Live conversion sites: 1681 -> 1684 (+3: the SetPotionLimit and SetPKMode call
+sites in arena.cpp now pass entities that the surrounding bodies still derive
+from pointers, until GetPlayerA/GetPlayerB can flip).
+Build: RelWithDebInfo GameServer, 0 errors.
