@@ -57,6 +57,13 @@ enum class CharEvent : uint8_t { Dead, Stun, Recovery };
 LPEVENT GetCharEvent(entt::entity e, CharEvent slot);
 void SetCharEvent(entt::entity e, CharEvent slot, LPEVENT ev);
 void CancelCharEvent(entt::entity e, CharEvent slot);
+
+// Test-server monster diagnostics. Plain text, no varargs: the callers
+// that needed formatting are still CHARACTER::MonsterLog.
+void MonsterLog(entt::entity e, const char* text);
+
+void SetPosition(entt::entity e, int pos);
+void StartRecoveryEvent(entt::entity e);
 int GetPotionLimit(entt::entity e);
 bool IsStone(entt::entity e);
 bool IsMonster(entt::entity e);

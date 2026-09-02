@@ -63,8 +63,8 @@ class CArena
 	uint32_t GetPlayerAPID() { return m_dwPIDA; }
 	uint32_t GetPlayerBPID() { return m_dwPIDB; }
 
-	LPCHARACTER GetPlayerA() { return CHARACTER_MANAGER::instance().FindByPID(m_dwPIDA); }
-	LPCHARACTER GetPlayerB() { return CHARACTER_MANAGER::instance().FindByPID(m_dwPIDB); }
+	entt::entity GetPlayerA() { return CHARACTER_MANAGER::instance().FindEntityByPID(m_dwPIDA); }
+	entt::entity GetPlayerB() { return CHARACTER_MANAGER::instance().FindEntityByPID(m_dwPIDB); }
 
 	PIXEL_POSITION GetStartPointA() { return m_StartPointA; }
 	PIXEL_POSITION GetStartPointB() { return m_StartPointB; }

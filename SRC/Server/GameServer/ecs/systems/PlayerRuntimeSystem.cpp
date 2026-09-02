@@ -640,6 +640,37 @@ void CancelCharEvent(entt::entity e, CharEvent slot)
         event_cancel(p);
 }
 
+void MonsterLog(entt::entity e, const char* text)
+{
+    if (!test_server)
+        return;
+
+    // CHARACTER::MonsterLog skipped PCs via IsPC(), which is GetDesc() != nullptr
+    // - a client is attached - not the TagPC component. Keep that test.
+    if (e == entt::null || !g_registry.valid(e) || GetDesc(e))
+        return;
+
+    char chatbuf[CHAT_MAX_LEN + 1];
+    int len = snprintf(chatbuf, sizeof(chatbuf), "%lu)%s",
+        static_cast<unsigned long>(GetPacketVID(e)), text ? text : "");
+    if (len < 0 || len >= static_cast<int>(sizeof(chatbuf)))
+        len = sizeof(chatbuf) - 1;
+    ++len;
+
+    TPacketGCChat pack_chat;
+    pack_chat.header = HEADER_GC_CHAT;
+    pack_chat.size = sizeof(TPacketGCChat) + len;
+    pack_chat.type = CHAT_TYPE_TALKING;
+    pack_chat.id = GetPacketVID(e);
+    pack_chat.bEmpire = 0;
+
+    TEMP_BUFFER buf;
+    buf.write(&pack_chat, sizeof(TPacketGCChat));
+    buf.write(chatbuf, len);
+
+    CHARACTER_MANAGER::instance().PacketMonsterLog(e, buf.read_peek(), buf.size());
+}
+
 void SetPotionLimit(entt::entity e, int count)
 {
     if (e == entt::null || !g_registry.valid(e))
@@ -5884,6 +5915,25 @@ LPCHARACTER DynamicCharacterPtr::Get() const {
         p = CHARACTER_MANAGER::instance().Find(id);
     }
     return p;
+}
+
+DynamicCharacterPtr& DynamicCharacterPtr::operator=(entt::entity e) {
+	if (e == entt::null || !g_registry.valid(e)) {
+		Reset();
+		return *this;
+	}
+	// CHARACTER::IsPC() is GetDesc() != nullptr, not the TagPC component, and
+	// Get() below resolves the two ids through different maps - so the test
+	// has to stay the descriptor one.
+	if (ecs::PlayerRuntime::GetDesc(e)) {
+		is_pc = true;
+		id = ecs::PlayerRuntime::GetPlayerID(e);
+	}
+	else {
+		is_pc = false;
+		id = ecs::PlayerRuntime::GetPacketVID(e);
+	}
+	return *this;
 }
 
 DynamicCharacterPtr& DynamicCharacterPtr::operator=(LPCHARACTER character) {

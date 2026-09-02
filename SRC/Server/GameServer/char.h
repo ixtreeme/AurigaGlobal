@@ -503,6 +503,8 @@ struct DynamicCharacterPtr {
 	}
 	// Supports assignment with LPCHARACTER type.
 	DynamicCharacterPtr& operator=(LPCHARACTER character);
+	// Same, from the entity side.
+	DynamicCharacterPtr& operator=(entt::entity e);
 	// Supports type casting to LPCHARACTER.
 	operator LPCHARACTER() const {
 		return Get();

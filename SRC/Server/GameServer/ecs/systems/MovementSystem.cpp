@@ -4,6 +4,7 @@
 #include "PlayerRuntimeSystem.hpp"
 #include "MovementSystem.hpp"
 #include "AISystem.hpp"
+#include "CombatSystem.hpp"
 #include "../components/ai_components.hpp"
 
 #include "PlayerRuntimeSystem.hpp"
@@ -487,33 +488,54 @@ void MovementSystem_Update(entt::registry& reg, uint32_t tick)
     });
 }
 
-void CHARACTER::StartRecoveryEvent()
+namespace ecs::PlayerRuntime {
+
+void StartRecoveryEvent(entt::entity e)
 {
-	if (ecs::PlayerRuntime::GetCharEvent(GetEntityHandle(), ecs::PlayerRuntime::CharEvent::Recovery))
+	if (e == entt::null || !g_registry.valid(e))
 		return;
 
-	if (IsDead() || IsStun())
+	if (GetCharEvent(e, CharEvent::Recovery))
 		return;
 
-	if (IsNPC() && GetHP() >= GetMaxHP()) // ��1oAʹ?A1��AI �U ��A?��?1AAU 3E?�U.
+	if (CombatSystem::IsDead(e) || CombatSystem::IsStun(e))
 		return;
 
+	// CHARACTER::IsNPC() is m_bCharType != CHAR_TYPE_PC - monsters and stones
+	// included - so this reads the CharacterType component, not TagNPC.
+	const auto* type = g_registry.try_get<ecs::CharacterType>(e);
+	const bool isNotPCType = type && type->value != CHAR_TYPE_PC;
+	if (isNotPCType && ecs::PointSystem::Get(e, POINT_HP) >= ecs::PointSystem::GetMaxHP(e))
+		return;
 
 #ifdef ENABLE_MELEY_LAIR
-	int32_t racenum = GetRaceNum();
+	const uint32_t racenum = GetRaceNum(e);
 	if (racenum == 6193 || racenum == 6118)
-	{
 		return;
-	}
 #endif
 
 	char_event_info* info = AllocEventInfo<char_event_info>();
+	info->ch = e;
 
-	info->ch = this;
+	// CHARACTER::IsPC() is the descriptor test, as everywhere else here.
+	// The regen cycle comes off the mob table MobDataRef already points at,
+	// so no legacy object is needed for it.
+	int iSec = 3;
+	if (!GetDesc(e))
+	{
+		const auto* mob = g_registry.try_get<ecs::MobDataRef>(e);
+		iSec = (mob && mob->data) ? std::max<uint8_t>(1, mob->data->m_table.bRegenCycle) : 1;
+	}
 
-	int iSec = IsPC() ? 3 : (std::max((uint8_t)1, GetMobTable().bRegenCycle));
-	ecs::PlayerRuntime::SetCharEvent(GetEntityHandle(), ecs::PlayerRuntime::CharEvent::Recovery,
+	SetCharEvent(e, CharEvent::Recovery,
 		event_create(recovery_event, info, PASSES_PER_SEC(iSec)));
+}
+
+} // namespace ecs::PlayerRuntime
+
+void CHARACTER::StartRecoveryEvent()
+{
+	ecs::PlayerRuntime::StartRecoveryEvent(GetEntityHandle());
 }
 
 void CHARACTER::Standup()
@@ -1223,71 +1245,78 @@ void CHARACTER::GoHome()
     WarpSet(EMPIRE_START_X(GetEmpire()), EMPIRE_START_Y(GetEmpire()));
 }
 
-void CHARACTER::SetPosition(int pos)
+namespace ecs::PlayerRuntime {
+
+void SetPosition(entt::entity e, int pos)
 {
+	if (e == entt::null || !g_registry.valid(e))
+		return;
+
 	if (pos == POS_STANDING)
 	{
 		// Phase C.4: legacy REMOVE_BIT(m_bAddChrState, DEAD/SPAWN) removed;
 		// ECS StatusFlags.isDead/isSpawnState below are the sole writes.
-		if (auto* runtime = ecs::TryGetRuntimeFlags(GetEntityHandle()))
+		if (auto* runtime = ecs::TryGetRuntimeFlags(e))
 			REMOVE_BIT(runtime->instantFlag, INSTANT_FLAG_STUN);
-		const auto e = GetEntityHandle();
-		if (e != entt::null && g_registry.valid(e))
-		{
-			if (g_registry.all_of<ecs::DeadTag>(e))
-				g_registry.remove<ecs::DeadTag>(e);
-			if (g_registry.all_of<ecs::StunTag>(e))
-				g_registry.remove<ecs::StunTag>(e);
-			if (auto* status = g_registry.try_get<ecs::StatusFlags>(e))
-			{
-				status->isDead = false;
-				status->isStunned = false;
-				status->isSpawnState = false;
-			}
-			g_registry.emplace_or_replace<ecs::DirtyTag>(e);
-		}
 
-		ecs::PlayerRuntime::CancelCharEvent(GetEntityHandle(), ecs::PlayerRuntime::CharEvent::Dead);
-		ecs::PlayerRuntime::CancelCharEvent(GetEntityHandle(), ecs::PlayerRuntime::CharEvent::Stun);
+		if (g_registry.all_of<ecs::DeadTag>(e))
+			g_registry.remove<ecs::DeadTag>(e);
+		if (g_registry.all_of<ecs::StunTag>(e))
+			g_registry.remove<ecs::StunTag>(e);
+		if (auto* status = g_registry.try_get<ecs::StatusFlags>(e))
+		{
+			status->isDead = false;
+			status->isStunned = false;
+			status->isSpawnState = false;
+		}
+		g_registry.emplace_or_replace<ecs::DirtyTag>(e);
+
+		CancelCharEvent(e, CharEvent::Dead);
+		CancelCharEvent(e, CharEvent::Stun);
 	}
 	else if (pos == POS_DEAD)
 	{
 		// Phase C.4: legacy SET_BIT(m_bAddChrState, DEAD) removed;
 		// ECS StatusFlags.isDead below is the sole write.
-		const auto e = GetEntityHandle();
-		if (e != entt::null && g_registry.valid(e))
-		{
-			g_registry.emplace_or_replace<ecs::DeadTag>(e);
-			if (auto* status = g_registry.try_get<ecs::StatusFlags>(e))
-				status->isDead = true;
-			g_registry.emplace_or_replace<ecs::DirtyTag>(e);
-		}
+		g_registry.emplace_or_replace<ecs::DeadTag>(e);
+		if (auto* status = g_registry.try_get<ecs::StatusFlags>(e))
+			status->isDead = true;
+		g_registry.emplace_or_replace<ecs::DirtyTag>(e);
 	}
 
-	if (!IsStone() && !IsPC())
+	// CHARACTER::IsPC() is GetDesc() != nullptr - a client is attached - and
+	// not the TagPC component, so this keeps the descriptor test.
+	if (!IsStone(e) && !GetDesc(e))
 	{
 		switch (pos)
 		{
-		case POS_FIGHTING:
-			if (!HasCombatState(GetEntityHandle()))
-				MonsterLog("[BATTLE] enter fighting state");
+			case POS_FIGHTING:
+				if (!HasCombatState(e))
+					MonsterLog(e, "[BATTLE] enter fighting state");
 
-			EnterBattleState(GetEntityHandle());
-			AISystem::GotoState(GetEntityHandle(), ecs::AIFSMState::Battle);
-			break;
+				EnterBattleState(e);
+				AISystem::GotoState(e, ecs::AIFSMState::Battle);
+				break;
 
-		default:
-			if (!HasIdleState(GetEntityHandle()))
-				MonsterLog("[IDLE] enter idle state");
+			default:
+				if (!HasIdleState(e))
+					MonsterLog(e, "[IDLE] enter idle state");
 
-			EnterIdleState(GetEntityHandle());
-			AISystem::GotoState(GetEntityHandle(), ecs::AIFSMState::Idle);
-			break;
+				EnterIdleState(e);
+				AISystem::GotoState(e, ecs::AIFSMState::Idle);
+				break;
 		}
 	}
 
-	if (auto* runtime = ecs::TryGetRuntimeFlags(GetEntityHandle()))
+	if (auto* runtime = ecs::TryGetRuntimeFlags(e))
 		runtime->position = pos;
+}
+
+} // namespace ecs::PlayerRuntime
+
+void CHARACTER::SetPosition(int pos)
+{
+	ecs::PlayerRuntime::SetPosition(GetEntityHandle(), pos);
 }
 
 bool CHARACTER::IsPosition(int pos) const

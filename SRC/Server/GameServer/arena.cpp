@@ -227,18 +227,16 @@ EVENTFUNC(ready_to_start_event)
 		return 0;
 	}
 
-	LPCHARACTER chA = pArena->GetPlayerA();
-	const entt::entity chAEntity = chA ? chA->GetEntityHandle() : entt::null;
+	const entt::entity chAEntity = pArena->GetPlayerA();
 
-	LPCHARACTER chB = pArena->GetPlayerB();
-	const entt::entity chBEntity = chB ? chB->GetEntityHandle() : entt::null;
+	const entt::entity chBEntity = pArena->GetPlayerB();
 
 
-	if (chA == nullptr || chB == nullptr)
+	if (chAEntity == entt::null || chBEntity == entt::null)
 	{
 		LOG_ERROR("ARENA: Player err in event func ready_start_event");
 
-		if (chA != nullptr)
+		if (chAEntity != entt::null)
 		{
 #ifdef TEXTS_IMPROVEMENT
 			ecs::ChatSystem::SendNew(chAEntity, CHAT_TYPE_INFO, 299, "");
@@ -246,7 +244,7 @@ EVENTFUNC(ready_to_start_event)
 			LOG_INFO("ARENA: Oppernent is disappered. MyPID({}) OppPID({})", pArena->GetPlayerAPID(), pArena->GetPlayerBPID());
 		}
 
-		if (chB != nullptr)
+		if (chBEntity != entt::null)
 		{
 #ifdef TEXTS_IMPROVEMENT
 			ecs::ChatSystem::SendNew(chBEntity, CHAT_TYPE_INFO, 299, "");
@@ -343,15 +341,15 @@ EVENTFUNC(ready_to_start_event)
 				ecs::MovementSystem::Show(chBEntity, ecs::PlayerRuntime::GetMapIndex(chBEntity), pArena->GetStartPointB().x * 100, pArena->GetStartPointB().y * 100);
 
 				ecs::PlayerRuntime::GetDesc(chAEntity)->SetPhase(PHASE_GAME);
-				chA->StartRecoveryEvent();
-				chA->SetPosition(POS_STANDING);
+				ecs::PlayerRuntime::StartRecoveryEvent(chAEntity);
+				ecs::PlayerRuntime::SetPosition(chAEntity, POS_STANDING);
 				ecs::PointSystem::Change(chAEntity, POINT_HP, ecs::PointSystem::GetMaxHP(chAEntity) - ecs::PointSystem::Get(chAEntity, POINT_HP));
 				ecs::PointSystem::Change(chAEntity, POINT_SP, ecs::PointSystem::GetMaxSP(chAEntity) - ecs::PointSystem::Get(chAEntity, POINT_SP));
 				ecs::VisibilitySystem::Reencode(chAEntity);
 
 				ecs::PlayerRuntime::GetDesc(chBEntity)->SetPhase(PHASE_GAME);
-				chB->StartRecoveryEvent();
-				chB->SetPosition(POS_STANDING);
+				ecs::PlayerRuntime::StartRecoveryEvent(chBEntity);
+				ecs::PlayerRuntime::SetPosition(chBEntity, POS_STANDING);
 				ecs::PointSystem::Change(chBEntity, POINT_HP, ecs::PointSystem::GetMaxHP(chBEntity) - ecs::PointSystem::Get(chBEntity, POINT_HP));
 				ecs::PointSystem::Change(chBEntity, POINT_SP, ecs::PointSystem::GetMaxSP(chBEntity) - ecs::PointSystem::Get(chBEntity, POINT_SP));
 				ecs::VisibilitySystem::Reencode(chBEntity);
@@ -419,16 +417,14 @@ EVENTFUNC(duel_time_out)
 		return 0;
 	}
 
-	LPCHARACTER chA = pArena->GetPlayerA();
-	const entt::entity chAEntity = chA ? chA->GetEntityHandle() : entt::null;
+	const entt::entity chAEntity = pArena->GetPlayerA();
 
-	LPCHARACTER chB = pArena->GetPlayerB();
-	const entt::entity chBEntity = chB ? chB->GetEntityHandle() : entt::null;
+	const entt::entity chBEntity = pArena->GetPlayerB();
 
 
-	if (chA == nullptr || chB == nullptr)
+	if (chAEntity == entt::null || chBEntity == entt::null)
 	{
-		if (chA != nullptr)
+		if (chAEntity != entt::null)
 		{
 #ifdef TEXTS_IMPROVEMENT
 			ecs::ChatSystem::SendNew(chAEntity, CHAT_TYPE_INFO, 299, "");
@@ -436,7 +432,7 @@ EVENTFUNC(duel_time_out)
 			LOG_INFO("ARENA: Oppernent is disappered. MyPID({}) OppPID({})", pArena->GetPlayerAPID(), pArena->GetPlayerBPID());
 		}
 
-		if (chB != nullptr)
+		if (chBEntity != entt::null)
 		{
 #ifdef TEXTS_IMPROVEMENT
 			ecs::ChatSystem::SendNew(chBEntity, CHAT_TYPE_INFO, 299, "");
@@ -556,18 +552,16 @@ void CArena::EndDuel()
 		event_cancel(&m_pTimeOutEvent);
 	}
 
-	LPCHARACTER playerA = GetPlayerA();
-	const entt::entity playerAEntity = playerA ? playerA->GetEntityHandle() : entt::null;
+	const entt::entity playerAEntity = GetPlayerA();
 
-	LPCHARACTER playerB = GetPlayerB();
-	const entt::entity playerBEntity = playerB ? playerB->GetEntityHandle() : entt::null;
+	const entt::entity playerBEntity = GetPlayerB();
 
 
-	if (playerA != nullptr)
+	if (playerAEntity != entt::null)
 	{
 		CombatSystem::SetPKMode(playerAEntity, PK_MODE_PEACE);
-		playerA->StartRecoveryEvent();
-		playerA->SetPosition(POS_STANDING);
+		ecs::PlayerRuntime::StartRecoveryEvent(playerAEntity);
+		ecs::PlayerRuntime::SetPosition(playerAEntity, POS_STANDING);
 		ecs::PointSystem::Change(playerAEntity, POINT_HP, ecs::PointSystem::GetMaxHP(playerAEntity) - ecs::PointSystem::Get(playerAEntity, POINT_HP));
 		ecs::PointSystem::Change(playerAEntity, POINT_SP, ecs::PointSystem::GetMaxSP(playerAEntity) - ecs::PointSystem::Get(playerAEntity, POINT_SP));
 
@@ -576,11 +570,11 @@ void CArena::EndDuel()
 		ecs::MovementSystem::WarpSet(playerAEntity, ARENA_RETURN_POINT_X(ecs::PlayerRuntime::GetEmpire(playerAEntity)), ARENA_RETURN_POINT_Y(ecs::PlayerRuntime::GetEmpire(playerAEntity)));
 	}
 
-	if (playerB != nullptr)
+	if (playerBEntity != entt::null)
 	{
 		CombatSystem::SetPKMode(playerBEntity, PK_MODE_PEACE);
-		playerB->StartRecoveryEvent();
-		playerB->SetPosition(POS_STANDING);
+		ecs::PlayerRuntime::StartRecoveryEvent(playerBEntity);
+		ecs::PlayerRuntime::SetPosition(playerBEntity, POS_STANDING);
 		ecs::PointSystem::Change(playerBEntity, POINT_HP, ecs::PointSystem::GetMaxHP(playerBEntity) - ecs::PointSystem::Get(playerBEntity, POINT_HP));
 		ecs::PointSystem::Change(playerBEntity, POINT_SP, ecs::PointSystem::GetMaxSP(playerBEntity) - ecs::PointSystem::Get(playerBEntity, POINT_SP));
 
@@ -632,17 +626,17 @@ int CArenaMap::GetDuelList(lua_State* L, int index)
 
 		if (pArena->IsEmpty() == false)
 		{
-			LPCHARACTER chA = pArena->GetPlayerA();
-			LPCHARACTER chB = pArena->GetPlayerB();
+			const entt::entity chAEntity = pArena->GetPlayerA();
+			const entt::entity chBEntity = pArena->GetPlayerB();
 
-			if (chA != nullptr && chB != nullptr)
+			if (chAEntity != entt::null && chBEntity != entt::null)
 			{
 				lua_newtable(L);
 
-				lua_pushstring(L, ecs::PlayerRuntime::GetName(((chA) ? (chA)->GetEntityHandle() : entt::null)).data());
+				lua_pushstring(L, ecs::PlayerRuntime::GetName(chAEntity).data());
 				lua_rawseti(L, -2, 1);
 
-				lua_pushstring(L, ecs::PlayerRuntime::GetName(((chB) ? (chB)->GetEntityHandle() : entt::null)).data());
+				lua_pushstring(L, ecs::PlayerRuntime::GetName(chBEntity).data());
 				lua_rawseti(L, -2, 2);
 
 				lua_pushnumber(L, m_dwMapIndex);
@@ -742,35 +736,33 @@ bool CArena::OnDead(uint32_t dwPIDA, uint32_t dwPIDB)
 {
 	bool restart = false;
 
-	LPCHARACTER pCharA = GetPlayerA();
-	const entt::entity charA = pCharA ? pCharA->GetEntityHandle() : entt::null;
+	const entt::entity charA = GetPlayerA();
 
-	LPCHARACTER pCharB = GetPlayerB();
-	const entt::entity charB = pCharB ? pCharB->GetEntityHandle() : entt::null;
+	const entt::entity charB = GetPlayerB();
 
 
-	if (pCharA == nullptr && pCharB == nullptr)
+	if (charA == entt::null && charB == entt::null)
 	{
 #ifdef TEXTS_IMPROVEMENT
 		SendChatPacketToObserver(CHAT_TYPE_NOTICE, 707, "");
 #endif
 		restart = false;
 	}
-	else if (pCharA == nullptr && pCharB != nullptr)
+	else if (charA == entt::null && charB != entt::null)
 	{
 #ifdef TEXTS_IMPROVEMENT
 		SendChatPacketToObserver(CHAT_TYPE_NOTICE, 708, "");
 #endif
 		restart = false;
 	}
-	else if (pCharA != nullptr && pCharB == nullptr)
+	else if (charA != entt::null && charB == entt::null)
 	{
 #ifdef TEXTS_IMPROVEMENT
 		SendChatPacketToObserver(CHAT_TYPE_NOTICE, 708, "");
 #endif
 		restart = false;
 	}
-	else if (pCharA != nullptr && pCharB != nullptr)
+	else if (charA != entt::null && charB != entt::null)
 	{
 		if (m_dwPIDA == dwPIDA)
 		{
@@ -843,10 +835,10 @@ bool CArena::OnDead(uint32_t dwPIDA, uint32_t dwPIDB)
 	if (restart == false)
 	{
 #ifdef TEXTS_IMPROVEMENT
-		if (pCharA != nullptr) {
+		if (charA != entt::null) {
 			ecs::ChatSystem::SendNew(charA, CHAT_TYPE_INFO, 223, "");
 		}
-		if (pCharB != nullptr) {
+		if (charB != entt::null) {
 			ecs::ChatSystem::SendNew(charB, CHAT_TYPE_INFO, 223, "");
 		}
 
@@ -866,11 +858,11 @@ bool CArena::OnDead(uint32_t dwPIDA, uint32_t dwPIDB)
 	else
 	{
 #ifdef TEXTS_IMPROVEMENT
-		if (pCharA != nullptr) {
+		if (charA != entt::null) {
 			ecs::ChatSystem::SendNew(charA, CHAT_TYPE_INFO, 221, "");
 		}
 
-		if (pCharB != nullptr) {
+		if (charB != entt::null) {
 			ecs::ChatSystem::SendNew(charB, CHAT_TYPE_INFO, 221, "");
 		}
 
@@ -978,8 +970,8 @@ void CArena::OnDisconnect(uint32_t pid)
 	if (m_dwPIDA == pid)
 	{
 #ifdef TEXTS_IMPROVEMENT
-		if (GetPlayerB() != nullptr) {
-			ecs::ChatSystem::SendNew(((GetPlayerB()) ? (GetPlayerB())->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 232, "");
+		if (GetPlayerB() != entt::null) {
+			ecs::ChatSystem::SendNew(GetPlayerB(), CHAT_TYPE_INFO, 232, "");
 		}
 #endif
 		LOG_INFO("ARENA : Duel is end because of Opp({}) is disconnect. MyPID({})", GetPlayerAPID(), GetPlayerBPID());
@@ -988,8 +980,8 @@ void CArena::OnDisconnect(uint32_t pid)
 	else if (m_dwPIDB == pid)
 	{
 #ifdef TEXTS_IMPROVEMENT
-		if (GetPlayerA() != nullptr) {
-			ecs::ChatSystem::SendNew(((GetPlayerA()) ? (GetPlayerA())->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 232, "");
+		if (GetPlayerA() != entt::null) {
+			ecs::ChatSystem::SendNew(GetPlayerA(), CHAT_TYPE_INFO, 232, "");
 		}
 #endif
 		LOG_INFO("ARENA : Duel is end because of Opp({}) is disconnect. MyPID({})", GetPlayerBPID(), GetPlayerAPID());

@@ -1760,3 +1760,56 @@ SetPosition, and both are now within reach - the events moved into a component
 in 19m and the CFSM went in 19l, which were their two blockers.
 
 Build: RelWithDebInfo GameServer, 0 errors.
+
+
+Phase 19o - arena.cpp reaches zero LPCHARACTER
+------------------------------------------------
+SetPosition and StartRecoveryEvent are ecs::PlayerRuntime functions taking an
+entity; the CHARACTER methods forward. GetPlayerA and GetPlayerB return
+entt::entity through FindEntityByPID, which stopped being a round trip in 19k
+when CPIDRegistry gave the ECS side a PID index. arena.cpp and arena.h contain
+no LPCHARACTER at all.
+
+It took four phases to get here, and none of them were arena work:
+
+    19k  CPIDRegistry        FindEntityByPID stops going through the pointer map
+    19l  CFSM removed        GotoState becomes entity-native
+    19m  event component     CancelCharEvent becomes entity-native
+    19n  VisibilitySystem    ViewReencode's character branch moves
+
+That is the shape of this migration. A file is never blocked by itself.
+
+THE PREDICATE TRAP, THREE MORE TIMES
+--------------------------------------
+CHARACTER::IsPC() is `GetDesc() != nullptr` - a client is attached. It is NOT
+ecs::PlayerRuntime::IsPC, which is the TagPC component. Three of the bodies
+moved here test it:
+
+    SetPosition          if (!IsStone() && !IsPC())        -> !IsStone(e) && !GetDesc(e)
+    StartRecoveryEvent   iSec = IsPC() ? 3 : ...           -> GetDesc(e) ? 3 : ...
+    MonsterLog           if (IsPC()) return;               -> if (GetDesc(e)) return;
+
+Using the ECS namesake would have compiled and quietly changed who counts as a
+player in three separate places. Same trap as IsGuardNPC in 19h, and it will
+keep appearing: the legacy predicates were named before the components existed
+and do not mean what the components mean.
+
+StartRecoveryEvent's IsNPC() is the other half of that trap - m_bCharType !=
+CHAR_TYPE_PC - and reads the CharacterType component, as IsGuardNPC does.
+
+WHAT DID NOT NEED A POINTER AFTER ALL
+---------------------------------------
+StartRecoveryEvent looked like it needed one for GetMobTable().bRegenCycle.
+It does not: MobDataRef already holds the CMob*, so the regen cycle comes off
+the component. And char_event_info's DynamicCharacterPtr was never a pointer
+either - it stores is_pc plus an id and resolves through CHARACTER_MANAGER -
+so it took an operator=(entt::entity) that fills the same two fields. Its
+PC branch uses GetDesc for the same reason as above, because Get() resolves
+is_pc through FindByPID and the other through Find.
+
+MonsterLog got an entity form for the plain-text callers. Its varargs
+signature stays on CHARACTER for everyone else; PacketMonsterLog already took
+an entity, so the tail needed nothing.
+
+Live conversion sites: 1684 -> 1672.
+Build: RelWithDebInfo GameServer, 0 errors.
