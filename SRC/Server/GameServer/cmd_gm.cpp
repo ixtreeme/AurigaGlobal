@@ -1833,7 +1833,7 @@ ACMD(do_poison)
 		return;
 	}
 
-	tch->AttackedByPoison(nullptr);
+	tch->AttackedByPoison(entt::null);
 }
 #endif
 #ifdef ENABLE_WOLFMAN_CHARACTER
@@ -1857,7 +1857,7 @@ ACMD(do_bleeding)
 		return;
 	}
 
-	tch->AttackedByBleeding(NULL);
+	tch->AttackedByBleeding(entt::null);
 }
 #endif
 

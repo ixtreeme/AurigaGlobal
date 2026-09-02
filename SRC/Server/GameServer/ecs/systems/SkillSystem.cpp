@@ -2285,7 +2285,7 @@ struct FuncSplashDamage
 			dt = DAMAGE_TYPE_MAGIC;
 
 		if (pkChrVictim->CanBeginFight())
-			pkChrVictim->BeginFight(m_pkChr);
+			pkChrVictim->BeginFight((m_pkChr ? m_pkChr->GetEntityHandle() : entt::null));
 
 		if (m_pkSk->dwVnum == SKILL_CHAIN)
 			LOG_INFO("{} CHAIN INDEX {} DAM {} DT {}", ecs::PlayerRuntime::GetName(m_character).data(), m_pkChr->GetChainLightningIndex() - 1, iDam, static_cast<int>(dt));
@@ -2500,19 +2500,19 @@ struct FuncSplashDamage
 
 					if (number(1, 100) <= iDur)
 					{
-						pkChrVictim->AttackedByFire(m_pkChr, iPct, 5);
+						pkChrVictim->AttackedByFire((m_pkChr ? m_pkChr->GetEntityHandle() : entt::null), iPct, 5);
 					}
 				}
 				else if (IS_SET(m_pkSk->dwFlag, SKILL_FLAG_POISON))
 				{
 					if (number(1, 100) <= iPct)
-						pkChrVictim->AttackedByPoison(m_pkChr);
+						pkChrVictim->AttackedByPoison((m_pkChr ? m_pkChr->GetEntityHandle() : entt::null));
 				}
 #ifdef ENABLE_WOLFMAN_CHARACTER
 				else if (IS_SET(m_pkSk->dwFlag, SKILL_FLAG_BLEEDING))
 				{
 					if (number(1, 100) <= iPct)
-						pkChrVictim->AttackedByBleeding(m_pkChr);
+						pkChrVictim->AttackedByBleeding((m_pkChr ? m_pkChr->GetEntityHandle() : entt::null));
 				}
 #endif
 			}
@@ -2671,7 +2671,7 @@ struct FuncSplashAffect
 					LOG_INFO("FuncSplashAffect step 2 : name:{} vnum:{} iDur:{}", ecs::PlayerRuntime::GetName(target).data(), m_dwVnum, m_iDuration);
 				if (m_dwVnum == SKILL_TUSOK)
 					if (pkChr->CanBeginFight())
-						pkChr->BeginFight(m_pkChrAttacker);
+						pkChr->BeginFight((m_pkChrAttacker ? m_pkChrAttacker->GetEntityHandle() : entt::null));
 
 				if (ecs::PlayerRuntime::IsPC(target) && m_dwVnum == SKILL_TUSOK)
 					AffectSystem::AddAffect(target, m_dwVnum, m_bPointOn, m_iAmount, m_dwAffectFlag, m_iDuration/3, m_iSPCost, m_bOverride);

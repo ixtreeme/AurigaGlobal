@@ -910,3 +910,67 @@ Where the elimination ended
 ---------------------------
   6354 -> 1831 conversion sites, 71% removed, across 15 phases.
   Every phase built clean (RelWithDebInfo GameServer, 0 errors).
+
+
+Phase 19 - LPCHARACTER -> entity on the CHARACTER method surface
+=================================================================
+This is the axis that was deferred through every earlier phase as "premature",
+now taken deliberately. The audit is unfavourable and was reported as such
+before starting; the direction was chosen anyway, so it is being done in
+clusters that each build and commit on their own.
+
+Audit (54 CHARACTER:: definitions taking LPCHARACTER parameters):
+    82 conversions would go
+   165 pointer uses would stay, behind one alias per body
+   239 call sites for those method names
+
+The shape of the change
+-----------------------
+The method STAYS on CHARACTER. Its body is `this`-relative - member access is
+implicit everywhere - so it cannot be moved into an ECS system mechanically.
+Only the parameter becomes an entity, with one pk-prefixed alias where the
+body still needs the pointer. Exactly the playbook of phases 3-7, applied to
+char.h at last.
+
+The payoff that makes it worthwhile is not the conversion count. It is that
+the ECS-side wrappers stop converting:
+
+  -    legacyVictim->Dead(LegacyCharOf(killer), immediate);
+  +    legacyVictim->Dead(killer, immediate);
+
+Seven such wrappers in CombatSystem.cpp are now genuinely thin. That is the
+direction of the whole migration: the entity flows through, and the pointer is
+resolved once, at the boundary.
+
+Phase 19a - combat cluster
+--------------------------
+14 methods flipped: Dead (38 conversions on its own), Attack, Follow,
+RewardGold, DistributeSP, DistributeHP, RegisterDamageForExp,
+GetNearestVictim, SendDamagePacket, BeginFight, AttackedByPoison,
+AttackedByBleeding, AttackedByFire, ItemDropPenalty.
+52 conversions removed, 14 declarations in char.h, ~50 call sites adapted.
+
+What the mechanical pass could NOT be trusted with
+--------------------------------------------------
+A name-based call-site rewrite is unsafe here, and the report mode showed why
+before anything was written: arena.cpp has its own CArena::Attack and
+CArena::Dead with completely different parameters, dungeon.cpp has
+CDungeon::Dead, and the pattern also matched the definitions themselves. The
+script was narrowed to receiver-qualified member calls with no type keywords
+in the argument list, and everything else was left to the compiler to point
+at - four rounds of it.
+
+Two further things the compiler found:
+  * `ENTITYISH` guessing. The script assumed arguments named target/victim/
+    killer were already entities. In LostCastleDungeon and AISystem they were
+    pointers. Guessing a type from a name does not work; those five sites were
+    fixed individually.
+  * Six `const entt::entity X = X;` lines - the entity locals hoisted in
+    phases 18k/18l, now superseded by the parameter itself. Deleted.
+
+Project-wide conversion count: 1831 -> 1823
+Build: RelWithDebInfo GameServer, 0 errors.
+
+The count barely moves, and that is expected: 52 conversions left the method
+bodies but most call sites had to take one on instead. The gain is structural,
+not numeric - the char.h combat surface now speaks entities.

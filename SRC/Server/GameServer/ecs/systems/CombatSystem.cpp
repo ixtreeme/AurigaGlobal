@@ -193,7 +193,7 @@ bool CanBeginFight(entt::entity e)
 void BeginFight(entt::entity attacker, entt::entity victim)
 {
     if (auto* ch = LegacyCharOf(attacker)) {
-        ch->BeginFight(LegacyCharOf(victim));
+        ch->BeginFight(victim);
     }
 }
 
@@ -214,7 +214,7 @@ bool Attack(entt::entity attacker, entt::entity victim, uint8_t attackType)
     ecs::Invariants::ValidateCommonIdentity(g_registry, victim, "combat.attack.victim");
 
     if (auto* ch = LegacyCharOf(attacker)) {
-        return ch->Attack(LegacyCharOf(victim), attackType);
+        return ch->Attack(victim, attackType);
     }
 
     return false;
@@ -249,7 +249,7 @@ entt::entity GetVictim(entt::entity attacker)
 entt::entity GetNearestVictim(entt::entity attacker, entt::entity from)
 {
     if (auto* ch = LegacyCharOf(attacker)) {
-        auto* victim = ch->GetNearestVictim(LegacyCharOf(from));
+        auto* victim = ch->GetNearestVictim(from);
         return victim ? victim->GetEntityHandle() : entt::null;
     }
 
@@ -309,7 +309,7 @@ void Dead(entt::entity victim, entt::entity killer, bool immediate)
 {
     // Compatibility boundary until the complete death pipeline is component-native.
     if (auto* legacyVictim = LegacyCharOf(victim))
-        legacyVictim->Dead(LegacyCharOf(killer), immediate);
+        legacyVictim->Dead(killer, immediate);
 }
 
 void SetLastAttacked(entt::entity e, uint32_t tick)
@@ -331,7 +331,7 @@ void DeathPenalty(entt::entity e, uint8_t bTown)
 void RewardGold(entt::entity victim, entt::entity attacker)
 {
     if (auto* ch = LegacyCharOf(victim)) {
-        ch->RewardGold(LegacyCharOf(attacker));
+        ch->RewardGold(attacker);
     }
 }
 
@@ -347,7 +347,7 @@ void Reward(entt::entity victim, bool bItemDrop)
 void ItemDropPenalty(entt::entity victim, entt::entity killer)
 {
     if (auto* ch = LegacyCharOf(victim)) {
-        ch->ItemDropPenalty(LegacyCharOf(killer));
+        ch->ItemDropPenalty(killer);
     }
 }
 
@@ -355,7 +355,7 @@ void ItemDropPenalty(entt::entity victim, entt::entity killer)
 void DistributeSP(entt::entity victim, entt::entity killer, int iMethod)
 {
     if (auto* ch = LegacyCharOf(victim)) {
-        ch->DistributeSP(LegacyCharOf(killer), iMethod);
+        ch->DistributeSP(killer, iMethod);
     }
 }
 
@@ -1254,8 +1254,9 @@ void CHARACTER::ChangeVictimByAggro(int iNewAggro, LPCHARACTER pNewVictim)
 static uint32_t __GetPartyExpNP(const uint32_t level);
 static uint32_t AdjustExpByLevel_Combat(const LegacyCharHandle ch, const uint32_t exp);
 
-void CHARACTER::DistributeHP(LPCHARACTER pkKiller)
+void CHARACTER::DistributeHP(entt::entity killer)
 {
+	LPCHARACTER pkKiller = ecs::LegacyCharOf(killer);
 	if (pkKiller->GetDungeon()) //  ΰʴ´
 		return;
 }
@@ -1771,7 +1772,7 @@ LPCHARACTER CHARACTER::DistributeExp()
 		return nullptr;
 
 	//      HP ȸ Ѵ.
-	DistributeHP(pkChrMostAttacked);	//  ý
+	DistributeHP(pkChrMostAttacked ? pkChrMostAttacked->GetEntityHandle() : entt::null);	//  ý
 
 	{
 		//     ̳ Ƽ  ġ 20% + ڱⰡ ŭ ġ Դ´.
@@ -1913,8 +1914,9 @@ EVENTFUNC(dead_event)
 }
 
 
-void CHARACTER::Dead(LPCHARACTER pkKiller, bool bImmediateDead)
+void CHARACTER::Dead(entt::entity killer, bool bImmediateDead)
 {
+	LPCHARACTER pkKiller = ecs::LegacyCharOf(killer);
 	// FakePlayers are normally excluded from death handling, but LostCastle clones must die.
 	//if (IsFakePlayer() && !CLostCastleDungeon::instance().IsCloneVID(GetVID()))
 	//	return;
@@ -2008,12 +2010,12 @@ void CHARACTER::Dead(LPCHARACTER pkKiller, bool bImmediateDead)
 	bool isUnderGuildWar = false;
 	bool isDuel = false;
 
-	if (pkKiller && ecs::PlayerRuntime::IsPC((pkKiller ? pkKiller->GetEntityHandle() : entt::null)))
+	if (pkKiller && ecs::PlayerRuntime::IsPC(killer))
 	{
 		if (pkKiller->m_pkChrTarget == this)
 			pkKiller->SetTarget(nullptr);
 
-		isAgreedPVP = CPVPManager::instance().Dead(GetEntityHandle(), ecs::PlayerRuntime::GetPlayerID((pkKiller ? pkKiller->GetEntityHandle() : entt::null)));
+		isAgreedPVP = CPVPManager::instance().Dead(GetEntityHandle(), ecs::PlayerRuntime::GetPlayerID(killer));
 		isDuel = CArenaManager::instance().OnDead(pkKiller, this);
 #ifdef ENABLE_PVP_ADVANCED
 		if (isAgreedPVP || isDuel)
@@ -2021,13 +2023,13 @@ void CHARACTER::Dead(LPCHARACTER pkKiller, bool bImmediateDead)
 			const char* szTableStaticPvP[] = { BLOCK_CHANGEITEM, BLOCK_BUFF, BLOCK_POTION, BLOCK_RIDE, BLOCK_PET, BLOCK_POLY, BLOCK_PARTY, BLOCK_EXCHANGE_, BET_WINNER, CHECK_IS_FIGHT };
 
 			int betMoneyDead = GetQuestFlag(szTableStaticPvP[8]);
-			int betMoneyKiller = ecs::QuestSystem::GetFlag((pkKiller ? pkKiller->GetEntityHandle() : entt::null), szTableStaticPvP[8]);
+			int betMoneyKiller = ecs::QuestSystem::GetFlag(killer, szTableStaticPvP[8]);
 
 			if (betMoneyDead > 0 && betMoneyKiller > 0)
 			{
-				ecs::PointSystem::Change((pkKiller ? pkKiller->GetEntityHandle() : entt::null), POINT_GOLD, betMoneyDead * 2, true);
+				ecs::PointSystem::Change(killer, POINT_GOLD, betMoneyDead * 2, true);
 #ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew((pkKiller ? pkKiller->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 515, "%d", betMoneyDead);
+				ecs::ChatSystem::SendNew(killer, CHAT_TYPE_INFO, 515, "%d", betMoneyDead);
 #endif
 			}
 
@@ -2040,8 +2042,8 @@ void CHARACTER::Dead(LPCHARACTER pkKiller, bool bImmediateDead)
 				ecs::ChatSystem::Send(GetEntityHandle(), CHAT_TYPE_COMMAND, pkCh_Buf);
 				SetQuestFlag(szTableStaticPvP[i], 0);
 
-				ecs::ChatSystem::Send((pkKiller ? pkKiller->GetEntityHandle() : entt::null), CHAT_TYPE_COMMAND, pkKiller_Buf);
-				ecs::QuestSystem::SetFlag((pkKiller ? pkKiller->GetEntityHandle() : entt::null), szTableStaticPvP[i], 0);
+				ecs::ChatSystem::Send(killer, CHAT_TYPE_COMMAND, pkKiller_Buf);
+				ecs::QuestSystem::SetFlag(killer, szTableStaticPvP[i], 0);
 			}
 		}
 #endif
@@ -2049,14 +2051,14 @@ void CHARACTER::Dead(LPCHARACTER pkKiller, bool bImmediateDead)
 		if (IsPC())
 		{
 			CGuild* g1 = GetGuild();
-			CGuild* g2 = ecs::SocialSystem::GetGuild((pkKiller ? pkKiller->GetEntityHandle() : entt::null));
+			CGuild* g2 = ecs::SocialSystem::GetGuild(killer);
 
 			if (g1 && g2)
 				if (g1->UnderWar(g2->GetID()))
 					isUnderGuildWar = true;
 
 			pkKiller->SetQuestNPCID(GetPacketVID());
-			quest::CQuestManager::instance().Kill(ecs::PlayerRuntime::GetPlayerID((pkKiller ? pkKiller->GetEntityHandle() : entt::null)), quest::QUEST_NO_NPC);
+			quest::CQuestManager::instance().Kill(ecs::PlayerRuntime::GetPlayerID(killer), quest::QUEST_NO_NPC);
 			CGuildManager::instance().Kill(pkKiller, this);
 		}
 	}
@@ -2072,10 +2074,10 @@ void CHARACTER::Dead(LPCHARACTER pkKiller, bool bImmediateDead)
 	if (IsPC())
 	{
 		if (pkKiller) {
-			SetQuestNPCID(ecs::PlayerRuntime::GetPacketVID((pkKiller ? pkKiller->GetEntityHandle() : entt::null)));
+			SetQuestNPCID(ecs::PlayerRuntime::GetPacketVID(killer));
 		}
 
-		quest::CQuestManager::instance().Die(GetPlayerID(), (pkKiller) ? ecs::PlayerRuntime::GetRaceNum((pkKiller ? pkKiller->GetEntityHandle() : entt::null)) : quest::QUEST_NO_NPC);
+		quest::CQuestManager::instance().Die(GetPlayerID(), (pkKiller) ? ecs::PlayerRuntime::GetRaceNum(killer) : quest::QUEST_NO_NPC);
 	}
 #endif
 
@@ -2091,7 +2093,7 @@ void CHARACTER::Dead(LPCHARACTER pkKiller, bool bImmediateDead)
 	}
 
 	if (pkKiller) {
-		if (ecs::PlayerRuntime::IsPC((pkKiller ? pkKiller->GetEntityHandle() : entt::null))) {
+		if (ecs::PlayerRuntime::IsPC(killer)) {
 			if (IsStone()) {
 				if (pkKiller)
 					pkKiller->SetRankPoints(5, pkKiller->GetRankPoints(5) + 1);
@@ -2123,7 +2125,7 @@ void CHARACTER::Dead(LPCHARACTER pkKiller, bool bImmediateDead)
 #ifdef ENABLE_SKILLS_BUFF_ALTERNATIVE
 	if (IsPC()) {
 #ifdef ENABLE_01092021
-		if (pkKiller && !ecs::PlayerRuntime::IsPC((pkKiller ? pkKiller->GetEntityHandle() : entt::null))) {
+		if (pkKiller && !ecs::PlayerRuntime::IsPC(killer)) {
 			pkKiller->SetTarget(nullptr);
 		}
 #endif
@@ -2135,7 +2137,7 @@ void CHARACTER::Dead(LPCHARACTER pkKiller, bool bImmediateDead)
 
 	if (pkKiller && IsPC())
 	{
-		if (!ecs::PlayerRuntime::IsPC((pkKiller ? pkKiller->GetEntityHandle() : entt::null)))
+		if (!ecs::PlayerRuntime::IsPC(killer))
 		{
 #ifdef ENABLE_REVIVE_WITH_HALF_HP_IF_MONSTER_KILLED_YOU
 			SetDeadByMonster(true);
@@ -2144,32 +2146,32 @@ void CHARACTER::Dead(LPCHARACTER pkKiller, bool bImmediateDead)
 			LOG_TRACE("DEAD: {} {} WITH PENALTY", GetName(), static_cast<const void*>(this));
 						if (auto* flags = RuntimeFlags(GetEntityHandle()))
 				SET_BIT(flags->instantFlag, INSTANT_FLAG_DEATH_PENALTY);
-			LogManager::instance().CharLog(this, ecs::PlayerRuntime::GetRaceNum((pkKiller ? pkKiller->GetEntityHandle() : entt::null)), "DEAD_BY_NPC", ecs::PlayerRuntime::GetName((pkKiller ? pkKiller->GetEntityHandle() : entt::null)).data());
+			LogManager::instance().CharLog(this, ecs::PlayerRuntime::GetRaceNum(killer), "DEAD_BY_NPC", ecs::PlayerRuntime::GetName(killer).data());
 		}
 		else
 		{
 #ifdef ENABLE_REVIVE_WITH_HALF_HP_IF_MONSTER_KILLED_YOU
 			SetDeadByMonster(false);
 #endif
-			LOG_TRACE("DEAD_BY_PC: {} {} KILLER {} {}", GetName(), static_cast<const void*>(this), ecs::PlayerRuntime::GetName((pkKiller ? pkKiller->GetEntityHandle() : entt::null)).data(), static_cast<const void*>(get_pointer(pkKiller)));
+			LOG_TRACE("DEAD_BY_PC: {} {} KILLER {} {}", GetName(), static_cast<const void*>(this), ecs::PlayerRuntime::GetName(killer).data(), static_cast<const void*>(get_pointer(pkKiller)));
 						if (auto* flags = RuntimeFlags(GetEntityHandle()))
 				REMOVE_BIT(flags->instantFlag, INSTANT_FLAG_DEATH_PENALTY);
 
-			if (GetEmpire() != ecs::PlayerRuntime::GetEmpire((pkKiller ? pkKiller->GetEntityHandle() : entt::null)))
+			if (GetEmpire() != ecs::PlayerRuntime::GetEmpire(killer))
 			{
-				int64_t iEP = std::min(GetPoint(POINT_EMPIRE_POINT), ecs::PointSystem::Get((pkKiller ? pkKiller->GetEntityHandle() : entt::null), POINT_EMPIRE_POINT));
+				int64_t iEP = std::min(GetPoint(POINT_EMPIRE_POINT), ecs::PointSystem::Get(killer, POINT_EMPIRE_POINT));
 
 				PointChange(POINT_EMPIRE_POINT, -(iEP / 10));
-				ecs::PointSystem::Change((pkKiller ? pkKiller->GetEntityHandle() : entt::null), POINT_EMPIRE_POINT, iEP / 5);
+				ecs::PointSystem::Change(killer, POINT_EMPIRE_POINT, iEP / 5);
 
 
 				char buf[256];
 				snprintf(buf, sizeof(buf),
 					"%d %u %d %s %d %u %d %s",
 					GetEmpire(), GetAlignment(), GetPKMode(), GetName(),
-					ecs::PlayerRuntime::GetEmpire((pkKiller ? pkKiller->GetEntityHandle() : entt::null)), pkKiller->GetAlignment(), pkKiller->GetPKMode(), ecs::PlayerRuntime::GetName((pkKiller ? pkKiller->GetEntityHandle() : entt::null)).data());
+					ecs::PlayerRuntime::GetEmpire(killer), pkKiller->GetAlignment(), pkKiller->GetPKMode(), ecs::PlayerRuntime::GetName(killer).data());
 
-				LogManager::instance().CharLog(this, ecs::PlayerRuntime::GetPlayerID((pkKiller ? pkKiller->GetEntityHandle() : entt::null)), "DEAD_BY_PC", buf);
+				LogManager::instance().CharLog(this, ecs::PlayerRuntime::GetPlayerID(killer), "DEAD_BY_PC", buf);
 			}
 			else
 			{
@@ -2212,9 +2214,9 @@ void CHARACTER::Dead(LPCHARACTER pkKiller, bool bImmediateDead)
 				snprintf(buf, sizeof(buf),
 					"%d %u %d %s %d %u %d %s",
 					GetEmpire(), GetAlignment(), GetPKMode(), GetName(),
-					ecs::PlayerRuntime::GetEmpire((pkKiller ? pkKiller->GetEntityHandle() : entt::null)), pkKiller->GetAlignment(), pkKiller->GetPKMode(), ecs::PlayerRuntime::GetName((pkKiller ? pkKiller->GetEntityHandle() : entt::null)).data());
+					ecs::PlayerRuntime::GetEmpire(killer), pkKiller->GetAlignment(), pkKiller->GetPKMode(), ecs::PlayerRuntime::GetName(killer).data());
 
-				LogManager::instance().CharLog(this, ecs::PlayerRuntime::GetPlayerID((pkKiller ? pkKiller->GetEntityHandle() : entt::null)), "DEAD_BY_PC", buf);
+				LogManager::instance().CharLog(this, ecs::PlayerRuntime::GetPlayerID(killer), "DEAD_BY_PC", buf);
 			}
 
 #ifdef ENABLE_BATTLE_PASS
@@ -2226,12 +2228,12 @@ void CHARACTER::Dead(LPCHARACTER pkKiller, bool bImmediateDead)
 				if (CBattlePass::instance().BattlePassMissionGetInfo(bBattlePassId, PLAYER_KILL, &dwMinLevel, &dwToKillCount))
 				{
 #ifdef ENABLE_BATTLE_PASS_SECURITY_KILL
-					if ((GetDesc()->GetHostName() != ecs::PlayerRuntime::GetDesc((pkKiller ? pkKiller->GetEntityHandle() : entt::null))->GetHostName()) && CBattlePass::instance().IsEligibleForPlayerKill(ecs::PlayerRuntime::GetPlayerID((pkKiller ? pkKiller->GetEntityHandle() : entt::null)), GetPlayerID()))
+					if ((GetDesc()->GetHostName() != ecs::PlayerRuntime::GetDesc(killer)->GetHostName()) && CBattlePass::instance().IsEligibleForPlayerKill(ecs::PlayerRuntime::GetPlayerID(killer), GetPlayerID()))
 					{
 						if (dwLevel >= dwMinLevel && pkKiller->GetMissionProgress(PLAYER_KILL, bBattlePassId) < dwToKillCount)
 						{
 							pkKiller->UpdateMissionProgress(PLAYER_KILL, bBattlePassId, 1, dwToKillCount);
-							CBattlePass::instance().RegisterPlayerKill(ecs::PlayerRuntime::GetPlayerID((pkKiller ? pkKiller->GetEntityHandle() : entt::null)), GetPlayerID());
+							CBattlePass::instance().RegisterPlayerKill(ecs::PlayerRuntime::GetPlayerID(killer), GetPlayerID());
 						}
 					}
 #else
@@ -2240,7 +2242,7 @@ void CHARACTER::Dead(LPCHARACTER pkKiller, bool bImmediateDead)
 #endif
 				}
 			}
-			if (pkKiller && ecs::PlayerRuntime::IsPC((pkKiller ? pkKiller->GetEntityHandle() : entt::null)) && IsPC())
+			if (pkKiller && ecs::PlayerRuntime::IsPC(killer) && IsPC())
 			{
 				const char* szMapName;
 				switch (GetMapIndex())
@@ -2276,13 +2278,13 @@ void CHARACTER::Dead(LPCHARACTER pkKiller, bool bImmediateDead)
 					int iRankPoints = pkKiller->GetRankPoints(0); // PvP rangpont
 					snprintf(szMsg, sizeof(szMsg),
 						"|cff00ff00%s|r has killed |cffff0000%s|r Map: %s, PVP-Mode: DUEL (Winned duels: %d)",
-						ecs::PlayerRuntime::GetName((pkKiller ? pkKiller->GetEntityHandle() : entt::null)).data(), GetName(), szMapName, iRankPoints);
+						ecs::PlayerRuntime::GetName(killer).data(), GetName(), szMapName, iRankPoints);
 				}
 				else
 				{
 					snprintf(szMsg, sizeof(szMsg),
 						"|cff00ff00%s|r has killed |cffff0000%s|r Map: %s, PVP-Mode: FREE!",
-						ecs::PlayerRuntime::GetName((pkKiller ? pkKiller->GetEntityHandle() : entt::null)).data(), GetName(), szMapName);
+						ecs::PlayerRuntime::GetName(killer).data(), GetName(), szMapName);
 				}
 
 				BroadcastNotice(szMsg);
@@ -2316,7 +2318,7 @@ void CHARACTER::Dead(LPCHARACTER pkKiller, bool bImmediateDead)
 		// 忡 ݹ ʹ   Ѵ.
 		if (!(RuntimeFlags(GetEntityHandle()) && IS_SET(RuntimeFlags(GetEntityHandle())->instantFlag, INSTANT_FLAG_NO_REWARD)))
 		{
-			if (!(pkKiller && ecs::PlayerRuntime::IsPC((pkKiller ? pkKiller->GetEntityHandle() : entt::null)) && ecs::SocialSystem::GetGuild((pkKiller ? pkKiller->GetEntityHandle() : entt::null)) && ecs::SocialSystem::GetGuild((pkKiller ? pkKiller->GetEntityHandle() : entt::null))->UnderAnyWar(GUILD_WAR_TYPE_FIELD)))
+			if (!(pkKiller && ecs::PlayerRuntime::IsPC(killer) && ecs::SocialSystem::GetGuild(killer) && ecs::SocialSystem::GetGuild(killer)->UnderAnyWar(GUILD_WAR_TYPE_FIELD)))
 			{
 				// Ȱϴ ʹ   ʴ´.
 				if (GetMobTable().dwResurrectionVnum)
@@ -2346,7 +2348,7 @@ void CHARACTER::Dead(LPCHARACTER pkKiller, bool bImmediateDead)
 				{
 					pkKiller->m_dwUnderGuildWarInfoMessageTime = get_dword_time() + 60000;
 #ifdef TEXTS_IMPROVEMENT
-					ecs::ChatSystem::SendNew((pkKiller ? pkKiller->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 147, "");
+					ecs::ChatSystem::SendNew(killer, CHAT_TYPE_INFO, 147, "");
 #endif
 				}
 			}
@@ -2354,10 +2356,10 @@ void CHARACTER::Dead(LPCHARACTER pkKiller, bool bImmediateDead)
 	}
 
 	// BOSS_KILL_LOG
-	if (GetMobRank() >= MOB_RANK_BOSS && pkKiller && ecs::PlayerRuntime::IsPC((pkKiller ? pkKiller->GetEntityHandle() : entt::null)))
+	if (GetMobRank() >= MOB_RANK_BOSS && pkKiller && ecs::PlayerRuntime::IsPC(killer))
 	{
 		char buf[51];
-		snprintf(buf, sizeof(buf), "%d %ld", g_bChannel, ecs::PlayerRuntime::GetMapIndex((pkKiller ? pkKiller->GetEntityHandle() : entt::null)));
+		snprintf(buf, sizeof(buf), "%d %ld", g_bChannel, ecs::PlayerRuntime::GetMapIndex(killer));
 		if (IsStone())
 			LogManager::instance().CharLog(pkKiller, GetRaceNum(), "STONE_KILL", buf);
 		else
@@ -2540,8 +2542,9 @@ bool CHARACTER::CanBeginFight() const
 	return GetPosition() == POS_STANDING && !IsDead() && !IsStun();
 }
 
-void CHARACTER::BeginFight(LPCHARACTER pkVictim)
+void CHARACTER::BeginFight(entt::entity victim)
 {
+	LPCHARACTER pkVictim = ecs::LegacyCharOf(victim);
 	SetVictim(pkVictim);
 	SetPosition(POS_FIGHTING);
 	SetNextStatePulse(1);
@@ -2564,9 +2567,9 @@ void CHARACTER::CreateFly(uint8_t bType, LPCHARACTER pkVictim)
 	PacketAround(&packFly, sizeof(TPacketGCCreateFly));
 }
 
-bool CHARACTER::Attack(LPCHARACTER pkVictim, uint8_t bType)
+bool CHARACTER::Attack(entt::entity victim, uint8_t bType)
 {
-	const entt::entity victim = pkVictim ? pkVictim->GetEntityHandle() : entt::null;
+	LPCHARACTER pkVictim = ecs::LegacyCharOf(victim);
 #ifdef ENABLE_BUG_FIXES
 	if (pkVictim->GetMyShop())
 		return false;
@@ -2614,7 +2617,7 @@ bool CHARACTER::Attack(LPCHARACTER pkVictim, uint8_t bType)
 	pkVictim->SetSyncOwner(this);
 
 	if (pkVictim->CanBeginFight())
-		pkVictim->BeginFight(this);
+		pkVictim->BeginFight(GetEntityHandle());
 
 	int iRet;
 
@@ -2713,9 +2716,9 @@ int CHARACTER::GetArrowAndBow(entt::entity* ppkBow, entt::entity* ppkArrow, int 
 }
 // char_battle.cpp slice BD1 moved into CombatSystem.cpp
 
-void CHARACTER::DistributeSP(LPCHARACTER pkKiller, int iMethod)
+void CHARACTER::DistributeSP(entt::entity killer, int iMethod)
 {
-	const entt::entity killer = pkKiller ? pkKiller->GetEntityHandle() : entt::null;
+	LPCHARACTER pkKiller = ecs::LegacyCharOf(killer);
 	if (pkKiller->GetSP() >= ecs::PointSystem::GetMaxSP(killer))
 		return;
 
@@ -2932,7 +2935,7 @@ TItemDropPenalty aItemDropPenalty_kor[9] =
 	{ 100,   8, 20,  1 },	// п
 };
 
-void CHARACTER::ItemDropPenalty(LPCHARACTER pkKiller)
+void CHARACTER::ItemDropPenalty(entt::entity killer)
 {
 
 #ifdef ENABLE_RESTRICT_GM_PERMISSIONS
@@ -3673,7 +3676,7 @@ void CHARACTER::Reward(bool bItemDrop)
 	//PROF_UNIT pu2("r2");
 	if (test_server)
 		LOG_TRACE("Drop money : Attacker {}", ecs::PlayerRuntime::GetName(attacker).data());
-	RewardGold(pkAttacker);
+	RewardGold(pkAttacker ? pkAttacker->GetEntityHandle() : entt::null);
 	//pu2.Pop();
 
 	//
@@ -4297,8 +4300,8 @@ void CHARACTER::Reward(bool bItemDrop)
 
 // char_battle.cpp slice BC2 moved into CombatSystem.cpp
 
-void CHARACTER::RewardGold(LPCHARACTER pkAttacker) {
-	const entt::entity attacker = pkAttacker ? pkAttacker->GetEntityHandle() : entt::null;
+void CHARACTER::RewardGold(entt::entity attacker) {
+	LPCHARACTER pkAttacker = ecs::LegacyCharOf(attacker);
 
 	if (!pkAttacker || !ecs::PlayerRuntime::IsPC(attacker))
 		return;
@@ -4635,7 +4638,7 @@ bool CHARACTER::Damage(LPCHARACTER pAttacker, int64_t dam, EDamageType type) // 
 	{
 		if (GetEmpire() && GetEmpire() == ecs::PlayerRuntime::GetEmpire(attacker))
 		{
-			SendDamagePacket(pAttacker, 0, DAMAGE_BLOCK);
+			SendDamagePacket(pAttacker ? pAttacker->GetEntityHandle() : entt::null, 0, DAMAGE_BLOCK);
 			return false;
 		}
 	}
@@ -4670,7 +4673,7 @@ bool CHARACTER::Damage(LPCHARACTER pAttacker, int64_t dam, EDamageType type) // 
 		if (weaponProto && weaponProto->bSubType == WEAPON_BOW)
 		{
 
-			SendDamagePacket(pAttacker, 0, DAMAGE_BLOCK);
+			SendDamagePacket(pAttacker ? pAttacker->GetEntityHandle() : entt::null, 0, DAMAGE_BLOCK);
 			return false;
 		}
 #endif // !DISABLE_DAMAGE_TYPE_NORMAL_RANGE_EVENT_MAP
@@ -4696,13 +4699,13 @@ bool CHARACTER::Damage(LPCHARACTER pAttacker, int64_t dam, EDamageType type) // 
 
 
 
-		SendDamagePacket(pAttacker, fixed_dam, DAMAGE_NORMAL);
+		SendDamagePacket(pAttacker ? pAttacker->GetEntityHandle() : entt::null, fixed_dam, DAMAGE_NORMAL);
 
 
 		if (GetHP() <= fixed_dam)
 		{
 			SetHP(0);
-			Dead(pAttacker);
+			Dead(pAttacker ? pAttacker->GetEntityHandle() : entt::null);
 			return true; // nem megy tovbb
 		}
 		else
@@ -4844,7 +4847,7 @@ bool CHARACTER::Damage(LPCHARACTER pAttacker, int64_t dam, EDamageType type) // 
 					ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 95, "%s#%d", ecs::PlayerRuntime::GetName(attacker).data(), ecs::PointSystem::Get(attacker, POINT_BLOCK));
 				}
 #endif
-				SendDamagePacket(pAttacker, 0, DAMAGE_BLOCK);
+				SendDamagePacket(pAttacker ? pAttacker->GetEntityHandle() : entt::null, 0, DAMAGE_BLOCK);
 				return false;
 			}
 		}
@@ -4859,7 +4862,7 @@ bool CHARACTER::Damage(LPCHARACTER pAttacker, int64_t dam, EDamageType type) // 
 					ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 96, "%s#%d", ecs::PlayerRuntime::GetName(attacker).data(), ecs::PointSystem::Get(attacker, POINT_DODGE));
 				}
 #endif
-				SendDamagePacket(pAttacker, 0, DAMAGE_DODGE);
+				SendDamagePacket(pAttacker ? pAttacker->GetEntityHandle() : entt::null, 0, DAMAGE_DODGE);
 				return false;
 			}
 		}
@@ -5307,7 +5310,7 @@ bool CHARACTER::Damage(LPCHARACTER pAttacker, int64_t dam, EDamageType type) // 
 
 	if (IsStun())
 	{
-		Dead(pAttacker);
+		Dead(pAttacker ? pAttacker->GetEntityHandle() : entt::null);
 		return true;
 	}
 
@@ -5712,7 +5715,7 @@ bool CHARACTER::Damage(LPCHARACTER pAttacker, int64_t dam, EDamageType type) // 
 #endif
 
 		if (pAttacker)
-			SendDamagePacket(pAttacker, dam, damageFlag);
+			SendDamagePacket(pAttacker ? pAttacker->GetEntityHandle() : entt::null, dam, damageFlag);
 #ifdef LEADERBOARD_RAZOR93
 
 		if (pAttacker && ecs::PlayerRuntime::IsPC(attacker) && pAttacker->IsSkillHit() && IsPC())
@@ -5925,7 +5928,7 @@ bool CHARACTER::Damage(LPCHARACTER pAttacker, int64_t dam, EDamageType type) // 
 
 		if (!IsPC())
 		{
-			Dead(pAttacker, true);
+			Dead(pAttacker ? pAttacker->GetEntityHandle() : entt::null, true);
 			return true;
 		}
 
@@ -6189,7 +6192,7 @@ public:
 			pkVictim->OnMove();
 
 			if (pkVictim->CanBeginFight())
-				pkVictim->BeginFight(m_me);
+				pkVictim->BeginFight((m_me ? m_me->GetEntityHandle() : entt::null));
 
 			pkVictim->Damage(m_me, iDam, DAMAGE_TYPE_NORMAL_RANGE);
 			// Ÿġ
@@ -6225,7 +6228,7 @@ public:
 			pkVictim->OnMove();
 
 			if (pkVictim->CanBeginFight())
-				pkVictim->BeginFight(m_me);
+				pkVictim->BeginFight((m_me ? m_me->GetEntityHandle() : entt::null));
 
 			pkVictim->Damage(m_me, iDam, DAMAGE_TYPE_MAGIC);
 			// Ÿġ
@@ -6245,7 +6248,7 @@ public:
 					pkVictim->OnMove();
 
 					if (pkVictim->CanBeginFight())
-						pkVictim->BeginFight(m_me);
+						pkVictim->BeginFight((m_me ? m_me->GetEntityHandle() : entt::null));
 
 					m_me->ComputeSkill(m_bType, pkVictim);
 					m_me->UseArrow(pkArrow, iUseArrow);
@@ -6271,7 +6274,7 @@ public:
 				pkVictim->OnMove();
 
 				if (pkVictim->CanBeginFight())
-					pkVictim->BeginFight(m_me);
+					pkVictim->BeginFight((m_me ? m_me->GetEntityHandle() : entt::null));
 
 				LOG_INFO("{} kwankeyok {}", ecs::PlayerRuntime::GetName(me).data(), ecs::PlayerRuntime::GetName(victim).data());
 				m_me->ComputeSkill(m_bType, pkVictim);
@@ -6289,7 +6292,7 @@ public:
 				pkVictim->OnMove();
 
 				if (pkVictim->CanBeginFight())
-					pkVictim->BeginFight(m_me);
+					pkVictim->BeginFight((m_me ? m_me->GetEntityHandle() : entt::null));
 
 				LOG_INFO("{} gigung {}", ecs::PlayerRuntime::GetName(me).data(), ecs::PlayerRuntime::GetName(victim).data());
 				m_me->ComputeSkill(m_bType, pkVictim);
@@ -6307,7 +6310,7 @@ public:
 				pkVictim->OnMove();
 
 				if (pkVictim->CanBeginFight())
-					pkVictim->BeginFight(m_me);
+					pkVictim->BeginFight((m_me ? m_me->GetEntityHandle() : entt::null));
 
 				LOG_INFO("{} hwajo {}", ecs::PlayerRuntime::GetName(me).data(), ecs::PlayerRuntime::GetName(victim).data());
 				m_me->ComputeSkill(m_bType, pkVictim);
@@ -6326,7 +6329,7 @@ public:
 				pkVictim->OnMove();
 
 				if (pkVictim->CanBeginFight())
-					pkVictim->BeginFight(m_me);
+					pkVictim->BeginFight((m_me ? m_me->GetEntityHandle() : entt::null));
 
 				LOG_TRACE("{} horse_wildattack {}", ecs::PlayerRuntime::GetName(me).data(), ecs::PlayerRuntime::GetName(victim).data());
 				m_me->ComputeSkill(m_bType, pkVictim);
@@ -6355,7 +6358,7 @@ public:
 			pkVictim->OnMove();
 
 			if (pkVictim->CanBeginFight())
-				pkVictim->BeginFight(m_me);
+				pkVictim->BeginFight((m_me ? m_me->GetEntityHandle() : entt::null));
 
 			LOG_INFO("{} - Skill {} -> {}", ecs::PlayerRuntime::GetName(me).data(), m_bType, ecs::PlayerRuntime::GetName(victim).data());
 			m_me->ComputeSkill(m_bType, pkVictim);
@@ -6368,7 +6371,7 @@ public:
 			pkVictim->OnMove();
 
 			if (pkVictim->CanBeginFight())
-				pkVictim->BeginFight(m_me);
+				pkVictim->BeginFight((m_me ? m_me->GetEntityHandle() : entt::null));
 
 			LOG_INFO("{} - Skill {} -> {}", ecs::PlayerRuntime::GetName(me).data(), m_bType, ecs::PlayerRuntime::GetName(victim).data());
 			m_me->ComputeSkill(m_bType, pkVictim);
@@ -6464,7 +6467,7 @@ public:
 					pkVictim->OnMove();
 
 					if (pkVictim->CanBeginFight())
-						pkVictim->BeginFight(m_me);
+						pkVictim->BeginFight((m_me ? m_me->GetEntityHandle() : entt::null));
 
 					LOG_INFO("{} - Skill {} -> {}", ecs::PlayerRuntime::GetName(me).data(), m_bType, ecs::PlayerRuntime::GetName(victim).data());
 					m_me->ComputeSkill(m_bType, pkVictim);
@@ -6538,8 +6541,9 @@ void CHARACTER::FlyTarget(uint32_t dwTargetVID, int32_t x, int32_t y, uint8_t bH
 	PacketAround(&pack, sizeof(pack), this);
 }
 
-LPCHARACTER CHARACTER::GetNearestVictim(LPCHARACTER pkChr)
+LPCHARACTER CHARACTER::GetNearestVictim(entt::entity chr)
 {
+	LPCHARACTER pkChr = ecs::LegacyCharOf(chr);
 	if (nullptr == pkChr)
 		pkChr = this;
 
@@ -6566,7 +6570,7 @@ LPCHARACTER CHARACTER::GetNearestVictim(LPCHARACTER pkChr)
 			AffectSystem::IsAffectFlag(attacker, AFF_REVIVE_INVISIBLE))
 			continue;
 
-		float fDist = DISTANCE_APPROX(ecs::PlayerRuntime::GetX(attacker) - ecs::PlayerRuntime::GetX((pkChr ? pkChr->GetEntityHandle() : entt::null)), ecs::PlayerRuntime::GetY(attacker) - ecs::PlayerRuntime::GetY((pkChr ? pkChr->GetEntityHandle() : entt::null)));
+		float fDist = DISTANCE_APPROX(ecs::PlayerRuntime::GetX(attacker) - ecs::PlayerRuntime::GetX(chr), ecs::PlayerRuntime::GetY(attacker) - ecs::PlayerRuntime::GetY(chr));
 
 		if (fDist < fMinDist)
 		{
@@ -6734,16 +6738,16 @@ struct FuncSetLastAttacked
 };
 
 #ifdef ENABLE_STONE_SPAWN_STEP_PROCESSING_RAZOR93
-void CHARACTER::RegisterDamageForExp(LPCHARACTER pkAttacker, int iDamage)
+void CHARACTER::RegisterDamageForExp(entt::entity attacker, int iDamage)
 {
-	const entt::entity attacker = pkAttacker ? pkAttacker->GetEntityHandle() : entt::null;
+	LPCHARACTER pkAttacker = ecs::LegacyCharOf(attacker);
 	if (!pkAttacker || !ecs::PlayerRuntime::IsPC(attacker))
 		return;
 
 	if (iDamage <= 0)
 		iDamage = 1;
 
-	const entt::entity eAttacker = pkAttacker ? pkAttacker->GetEntityHandle() : entt::null;
+	const entt::entity eAttacker = attacker;
 	if (eAttacker == entt::null)
 		return;
 
@@ -6769,10 +6773,10 @@ void CHARACTER::SetLastAttacked(uint32_t dwTime)
 	m_pkMobInst->m_posLastAttacked = GetXYZ();
 }
 
-void CHARACTER::SendDamagePacket(LPCHARACTER pAttacker, int Damage, uint8_t DamageFlag)
+void CHARACTER::SendDamagePacket(entt::entity attacker, int Damage, uint8_t DamageFlag)
 {
-	const entt::entity attacker = pAttacker ? pAttacker->GetEntityHandle() : entt::null;
-	if (IsPC() == true || (ecs::PlayerRuntime::IsPC(attacker) == true && pAttacker->GetTarget() == this))
+	LPCHARACTER pkAttacker = ecs::LegacyCharOf(attacker);
+	if (IsPC() == true || (ecs::PlayerRuntime::IsPC(attacker) == true && pkAttacker->GetTarget() == this))
 	{
 		TPacketGCDamageInfo damageInfo;
 		memset(&damageInfo, 0, sizeof(TPacketGCDamageInfo));
@@ -7362,7 +7366,7 @@ struct FuncDeadSpawnedByStone
 	{
 		if (auto* flags = RuntimeFlags(ch->GetEntityHandle()))
 			SET_BIT(flags->instantFlag, INSTANT_FLAG_NO_REWARD);
-		ch->Dead(nullptr);
+		ch->Dead(entt::null);
 		ch->SetStone(nullptr);
 	}
 };
@@ -7371,7 +7375,7 @@ struct FuncDeadSpawnedByStone
 {
 	void operator () (LegacyCharHandle ch)
 	{
-		ch->Dead(nullptr);
+		ch->Dead(entt::null);
 		ch->SetStone(nullptr);
 	}
 };
@@ -7852,9 +7856,9 @@ bool CHARACTER::Return()
 	return true;
 }
 
-bool CHARACTER::Follow(LPCHARACTER pkChr, float fMinDistance)
+bool CHARACTER::Follow(entt::entity chr, float fMinDistance)
 {
-	const entt::entity chr = pkChr ? pkChr->GetEntityHandle() : entt::null;
+	LPCHARACTER pkChr = ecs::LegacyCharOf(chr);
 	if (IsPC())
 	{
 		LOG_ERROR("CHARACTER::Follow : PC cannot use this method", GetName());
@@ -7904,12 +7908,12 @@ bool CHARACTER::Follow(LPCHARACTER pkChr, float fMinDistance)
 #endif
 
 #ifdef __NEWPET_SYSTEM__
-	if (HasMoveState(pkChr ? pkChr->GetEntityHandle() : entt::null) &&
+	if (HasMoveState(chr) &&
 		GetMobBattleType() != BATTLE_TYPE_RANGE &&
 		GetMobBattleType() != BATTLE_TYPE_MAGIC &&
 		false == IsPet() && false == IsNewPet()
 #else
-	if (HasMoveState(pkChr ? pkChr->GetEntityHandle() : entt::null) &&
+	if (HasMoveState(chr) &&
 		GetMobBattleType() != BATTLE_TYPE_RANGE &&
 		GetMobBattleType() != BATTLE_TYPE_MAGIC &&
 		false == IsPet()

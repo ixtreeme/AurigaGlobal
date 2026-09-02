@@ -1132,7 +1132,7 @@ void ClearClonesOnMap(int32_t mapIndex)
                     }
                     else
                     {
-                        didAction = clone->Attack(target, 0);
+                        didAction = clone->Attack(target ? target->GetEntityHandle() : entt::null, 0);
                     }
 
                     if (didAction)

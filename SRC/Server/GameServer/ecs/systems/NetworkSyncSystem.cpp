@@ -1092,7 +1092,7 @@ bool CHARACTER::SetSyncOwner(LPCHARACTER ch, bool bRemoveFromList)
     {
         if (!battle_is_attackable((ch ? ch->GetEntityHandle() : entt::null), GetEntityHandle()))
         {
-            SendDamagePacket(ch, 0, DAMAGE_BLOCK);
+            SendDamagePacket(ch ? ch->GetEntityHandle() : entt::null, 0, DAMAGE_BLOCK);
             return false;
         }
     }

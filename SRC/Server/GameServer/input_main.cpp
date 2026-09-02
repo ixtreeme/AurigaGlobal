@@ -2612,7 +2612,7 @@ void CInputMain::Attack(entt::entity character, const uint8_t header, const char
 				}
 				// DUAL-PATH: ECS + legacy call
 				ecs::MovementSystem::OnMove(character, true);
-				ch->Attack(victim, packMelee->bType);
+				ch->Attack(victim ? victim->GetEntityHandle() : entt::null, packMelee->bType);
 			}
 			break;
 

@@ -912,7 +912,7 @@ void CWarMap::RemoveFlag(uint8_t bIdx)
 
 	LOG_INFO("WarMap::RemoveFlag {} {}", static_cast<int>(bIdx), static_cast<const void*>(get_pointer(r.pkChrFlag)));
 
-	r.pkChrFlag->Dead(nullptr, true);
+	r.pkChrFlag->Dead(entt::null, true);
 	r.pkChrFlag = nullptr;
 }
 

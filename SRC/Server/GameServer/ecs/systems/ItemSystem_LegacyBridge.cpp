@@ -7080,7 +7080,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 
 			case 27996: // µ¶º´
 				ItemSystem::ConsumeItemEcs(itemEntity);
-				AttackedByPoison(nullptr); // @warme008
+				AttackedByPoison(entt::null); // @warme008
 				break;
 
 			case 27987: // Á¶°³
@@ -13611,7 +13611,7 @@ bool CHARACTER::GiveItemFromSpecialItemGroup(uint32_t dwGroupNum, std::vector<ui
 		break;
 		case CSpecialItemGroup::POISON:
 		{
-			AttackedByPoison(nullptr);
+			AttackedByPoison(entt::null);
 			bSuccess = true;
 		}
 		break;

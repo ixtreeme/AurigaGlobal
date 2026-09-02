@@ -96,19 +96,19 @@ bool LegacyGotoNearTarget(LPCHARACTER self, LPCHARACTER victim)
     switch (self->GetMobBattleType()) {
     case BATTLE_TYPE_RANGE:
     case BATTLE_TYPE_MAGIC:
-        if (self->Follow(victim, self->GetMobAttackRange() * 8 / 10)) {
+        if (self->Follow(victim ? victim->GetEntityHandle() : entt::null, self->GetMobAttackRange() * 8 / 10)) {
             return true;
         }
         break;
 
     default:
-        if (self->Follow(victim, self->GetMobAttackRange() * 9 / 10)) {
+        if (self->Follow(victim ? victim->GetEntityHandle() : entt::null, self->GetMobAttackRange() * 9 / 10)) {
             return true;
         }
         break;
     }
 
-    return self->Follow(victim, self->GetMobAttackRange() * 9 / 10);
+    return self->Follow(victim ? victim->GetEntityHandle() : entt::null, self->GetMobAttackRange() * 9 / 10);
 }
 
 } // namespace
@@ -165,7 +165,7 @@ void CHARACTER::__StateIdle_NPC()
 
     LPCHARACTER protege = GetProtege();
     if (protege && DISTANCE_APPROX(GetX() - ecs::PlayerRuntime::GetX(protege->GetEntityHandle()), GetY() - ecs::PlayerRuntime::GetY(protege->GetEntityHandle())) > 500) {
-        if (Follow(protege, number(100, 300))) {
+        if (Follow(protege ? protege->GetEntityHandle() : entt::null, number(100, 300))) {
             return;
         }
     }
@@ -222,7 +222,7 @@ void CHARACTER::__StateIdle_Monster()
 
     if (!victim || victim->IsBuilding()) {
         if (m_pkChrStone) {
-            victim = m_pkChrStone->GetNearestVictim(m_pkChrStone);
+            victim = m_pkChrStone->GetNearestVictim((m_pkChrStone ? m_pkChrStone->GetEntityHandle() : entt::null));
         } else if (!no_wander && IsAggressive()) {
             victim = FindVictim(this, m_pkMobData->m_table.wAggressiveSight);
         }
@@ -230,7 +230,7 @@ void CHARACTER::__StateIdle_Monster()
 
     if (victim && !victim->IsDead()) {
         if (CanBeginFight()) {
-            BeginFight(victim);
+            BeginFight(victim ? victim->GetEntityHandle() : entt::null);
         }
         return;
     }
@@ -241,7 +241,7 @@ void CHARACTER::__StateIdle_Monster()
 
     LPCHARACTER protege = GetProtege();
     if (protege && DISTANCE_APPROX(GetX() - ecs::PlayerRuntime::GetX(protege->GetEntityHandle()), GetY() - ecs::PlayerRuntime::GetY(protege->GetEntityHandle())) > 1000) {
-        if (Follow(protege, number(150, 400))) {
+        if (Follow(protege ? protege->GetEntityHandle() : entt::null, number(150, 400))) {
             MonsterLog("[IDLE] returning to protege");
             return;
         }
@@ -331,7 +331,7 @@ void CHARACTER::StateBattle()
     if (dist >= 4000.0f) {
         SetVictim(nullptr);
         if (protege && DISTANCE_APPROX(GetX() - ecs::PlayerRuntime::GetX(protege->GetEntityHandle()), GetY() - ecs::PlayerRuntime::GetY(protege->GetEntityHandle())) > 1000) {
-            Follow(protege, number(150, 400));
+            Follow(protege ? protege->GetEntityHandle() : entt::null, number(150, 400));
         } else {
             SetPosition(POS_STANDING);
         }
@@ -403,7 +403,7 @@ void CHARACTER::StateBattle()
 #endif
     }
 
-    if (!Attack(victim, 0)) {
+    if (!Attack(victim ? victim->GetEntityHandle() : entt::null, 0)) {
         m_dwStateDuration = passes_per_sec / 2;
         return;
     }

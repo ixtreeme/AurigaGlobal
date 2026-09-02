@@ -793,13 +793,13 @@ void NormalAttackAffect(entt::entity attacker, entt::entity victim)
 	if (ecs::PointSystem::Get(attacker, POINT_POISON_PCT) && !AffectSystem::IsAffectFlag(victim, AFF_POISON))
 	{
 		if (number(1, 100) <= ecs::PointSystem::Get(attacker, POINT_POISON_PCT))
-			pkVictim->AttackedByPoison(pkAttacker);
+			pkVictim->AttackedByPoison((pkAttacker ? pkAttacker->GetEntityHandle() : entt::null));
 	}
 #ifdef ENABLE_WOLFMAN_CHARACTER
 	if (ecs::PointSystem::Get(attacker, POINT_BLEEDING_PCT) && !AffectSystem::IsAffectFlag(victim, AFF_BLEEDING))
 	{
 		if (number(1, 100) <= ecs::PointSystem::Get(attacker, POINT_BLEEDING_PCT))
-			pkVictim->AttackedByBleeding(pkAttacker);
+			pkVictim->AttackedByBleeding((pkAttacker ? pkAttacker->GetEntityHandle() : entt::null));
 	}
 #endif
 	int iStunDuration = 2;

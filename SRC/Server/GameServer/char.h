@@ -846,8 +846,8 @@ public:
 	LPCHARACTER		DistributeExp();
 
 	// ���� ���� ���� ����� �����Ѵ�.
-	void			DistributeHP(LPCHARACTER pkKiller);
-	void			DistributeSP(LPCHARACTER pkKiller, int iMethod = 0);
+	void			DistributeHP(entt::entity killer);
+	void			DistributeSP(entt::entity killer, int iMethod = 0);
 
 	void			SetPosition(int pos);
 	bool			IsPosition(int pos) const;
@@ -1695,19 +1695,19 @@ public:
 	void				DeathPenalty(uint8_t bExpLossPercent);
 	void				ReviveInvisible(int iDur);
 
-	bool				Attack(LPCHARACTER pkVictim, uint8_t bType = 0);
+	bool				Attack(entt::entity victim, uint8_t bType = 0);
 	bool				IsAlive() const;
 	bool				CanFight() const;
 
 	bool				CanBeginFight() const;
-	void				BeginFight(LPCHARACTER pkVictim); // pkVictimr�� �ο�� �����Ѵ�. (��������, ������ �� �ֳ� üũ�Ϸ��� CanBeginFight�� ���)
+	void				BeginFight(entt::entity victim); // pkVictimr�� �ο�� �����Ѵ�. (��������, ������ �� �ֳ� üũ�Ϸ��� CanBeginFight�� ���)
 
 	bool				CounterAttack(LPCHARACTER pkChr); // �ݰ��ϱ� (���͸� ���)
 
 	bool				IsStun() const;
 	void				Stun();
 	bool				IsDead() const;
-	void				Dead(LPCHARACTER pkKiller = nullptr, bool bImmediateDead = false);
+	void				Dead(entt::entity killer = entt::null, bool bImmediateDead = false);
 #ifdef __NEWPET_SYSTEM__
 	//int GetBeltCount() const;//#ifdef ENABLE_MOUNT_COUNT_ABOVE_CHAR_RAZOR93
 	void				SetImmortal(int st) { m_stImmortalSt = st; };
@@ -1716,7 +1716,7 @@ public:
 	uint32_t				GetNewPetSkillCD(int s) { return m_newpetskillcd[s]; };
 #endif
 	void				Reward(bool bItemDrop);
-	void				RewardGold(LPCHARACTER pkAttacker);
+	void				RewardGold(entt::entity attacker);
 
 	bool				Shoot(uint8_t bType);
 	void				FlyTarget(uint32_t dwTargetVID, int32_t x, int32_t y, uint8_t bHeader);
@@ -1745,13 +1745,13 @@ public:
 	static std::vector<LeaderboardEntry> FetchTop10SkillMob();
 	static void CheckLeaderboardSkillMobChanges();
 #endif
-	void				AttackedByPoison(LPCHARACTER pkAttacker);
+	void				AttackedByPoison(entt::entity attacker);
 	void				RemovePoison();
 #ifdef ENABLE_WOLFMAN_CHARACTER
-	void				AttackedByBleeding(LPCHARACTER pkAttacker);
+	void				AttackedByBleeding(entt::entity attacker);
 	void				RemoveBleeding();
 #endif
-	void				AttackedByFire(LPCHARACTER pkAttacker, int amount, int count);
+	void				AttackedByFire(entt::entity attacker, int amount, int count);
 	void				RemoveFire();
 
 	uint8_t GetAlignmentGrade() const;
@@ -1786,7 +1786,7 @@ public:
 	uint8_t				GetPKMode() const;
 	void				SetPKMode(uint8_t bPKMode);
 
-	void				ItemDropPenalty(LPCHARACTER pkKiller);
+	void				ItemDropPenalty(entt::entity killer);
 
 	void				UpdateAggrPoint(LPCHARACTER ch, EDamageType type, int dam);
 
@@ -1843,7 +1843,7 @@ public:
 	void				SetStone(LPCHARACTER pkChrStone);
 #ifdef ENABLE_STONE_SPAWN_STEP_PROCESSING_RAZOR93
 	void ClearStone(LPCHARACTER pkKiller = nullptr);
-	void RegisterDamageForExp(LPCHARACTER pkAttacker, int iDamage = 1);
+	void RegisterDamageForExp(entt::entity attacker, int iDamage = 1);
 #else
 	void				ClearStone();
 #endif
@@ -2039,7 +2039,7 @@ public:
 	void			AssignTriggers(const TMobTable* table);
 	LPCHARACTER		GetVictim() const;	// ������ ��� ����
 	void			SetVictim(LPCHARACTER pkVictim);
-	LPCHARACTER		GetNearestVictim(LPCHARACTER pkChr);
+	LPCHARACTER		GetNearestVictim(entt::entity chr);
 	LPCHARACTER		GetProtege() const;	// ��ȣ�ؾ� �� ��� ����
 	virtual void			StateBattle();
 	virtual void			StateIdle();
@@ -2049,7 +2049,7 @@ protected:
 	void				__StateIdle_NPC();
 
 public:
-	bool			Follow(LPCHARACTER pkChr, float fMinimumDistance = 150.0f);
+	bool			Follow(entt::entity chr, float fMinimumDistance = 150.0f);
 	bool			Return();
 	bool			IsGuardNPC() const;
 	bool			IsChangeAttackPosition(LPCHARACTER target) const;
@@ -2413,7 +2413,7 @@ public:
 	// END_RESET_ONE_SKILL
 
 private:
-	void SendDamagePacket(LPCHARACTER pAttacker, int Damage, uint8_t DamageFlag);
+	void SendDamagePacket(entt::entity attacker, int Damage, uint8_t DamageFlag);
 
 	// ARENA
 private:

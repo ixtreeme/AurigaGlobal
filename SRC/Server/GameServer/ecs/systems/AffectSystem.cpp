@@ -801,28 +801,28 @@ void UpdateAffect(entt::registry& reg, uint32_t tick)
 
 } // namespace AffectSystem
 
-void CHARACTER::AttackedByFire(LPCHARACTER pkAttacker, int amount, int count)
+void CHARACTER::AttackedByFire(entt::entity attacker, int amount, int count)
 {
     AffectSystem::ApplyFire
         (GetEntityHandle(),
-        pkAttacker ? pkAttacker->GetEntityHandle() : entt::null,
+        attacker,
         amount,
         count);
 }
 
-void CHARACTER::AttackedByPoison(LPCHARACTER pkAttacker)
+void CHARACTER::AttackedByPoison(entt::entity attacker)
 {
     AffectSystem::ApplyPoison(
         GetEntityHandle(),
-        pkAttacker ? pkAttacker->GetEntityHandle() : entt::null);
+        attacker);
 }
 
 #ifdef ENABLE_WOLFMAN_CHARACTER
-void CHARACTER::AttackedByBleeding(LPCHARACTER pkAttacker)
+void CHARACTER::AttackedByBleeding(entt::entity attacker)
 {
     AffectSystem::ApplyBleeding(
         GetEntityHandle(),
-        pkAttacker ? pkAttacker->GetEntityHandle() : entt::null);
+        attacker);
 }
 #endif
 
