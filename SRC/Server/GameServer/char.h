@@ -2004,16 +2004,21 @@ private:
 
 	// for SKILL_CHAIN lighting
 public:
+	// Not CHARACTER_SET: that typedef is shared with char_manager, dungeon, war_map
+	// and wedding. Not ENTITY_SET either - typedef.h uses that name for the
+	// sectree entity, std::unordered_set<LPENTITY>.
+	typedef std::unordered_set<entt::entity> TChainLightningExceptContainer;
+
 	int					GetChainLightningIndex() const { return m_iChainLightingIndex; }
 	void				IncChainLightningIndex() { ++m_iChainLightingIndex; }
-	void				AddChainLightningExcept(LPCHARACTER ch) { m_setExceptChainLighting.insert(ch); }
+	void				AddChainLightningExcept(entt::entity ch) { m_setExceptChainLighting.insert(ch); }
 	void				ResetChainLightningIndex() { m_iChainLightingIndex = 0; m_setExceptChainLighting.clear(); }
 	int					GetChainLightningMaxCount() const;
-	const CHARACTER_SET& GetChainLightingExcept() const { return m_setExceptChainLighting; }
+	const TChainLightningExceptContainer& GetChainLightingExcept() const { return m_setExceptChainLighting; }
 
 private:
 	int					m_iChainLightingIndex;
-	CHARACTER_SET m_setExceptChainLighting;
+	TChainLightningExceptContainer m_setExceptChainLighting;
 
 	// for SKILL_EUNHYUNG
 public:

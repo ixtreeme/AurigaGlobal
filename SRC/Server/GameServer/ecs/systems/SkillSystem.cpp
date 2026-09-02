@@ -1715,11 +1715,11 @@ void CHARACTER::ComputePassiveSkill(uint32_t dwVnum)
 
 struct FFindNearVictim
 {
-	FFindNearVictim(LegacyCharHandle center, LegacyCharHandle attacker, const CHARACTER_SET& excepts_set = empty_set_)
-		: m_pkChrCenter(center),
-	m_center(center ? center->GetEntityHandle() : entt::null),
-	m_pkChrNextTarget(nullptr),
-	m_pkChrAttacker(attacker),
+	FFindNearVictim(entt::entity center, entt::entity attacker,
+		const CHARACTER::TChainLightningExceptContainer& excepts_set = empty_set_)
+		: m_center(center),
+	m_nextTarget(entt::null),
+	m_attacker(attacker),
 	m_count(0),
 	m_excepts_set(excepts_set)
 	{
@@ -1734,14 +1734,14 @@ struct FFindNearVictim
 		const entt::entity candidate = pkChr->GetEntityHandle();
 
 		if (!m_excepts_set.empty()) {
-			if (m_excepts_set.find(pkChr) != m_excepts_set.end())
+			if (m_excepts_set.find(candidate) != m_excepts_set.end())
 				return;
 		}
 
-		if (m_pkChrCenter == pkChr)
+		if (m_center == candidate)
 			return;
 
-		if (!battle_is_attackable((m_pkChrAttacker ? m_pkChrAttacker->GetEntityHandle() : entt::null), (pkChr ? pkChr->GetEntityHandle() : entt::null)))
+		if (!battle_is_attackable(m_attacker, candidate))
 		{
 			return;
 		}
@@ -1756,26 +1756,25 @@ struct FFindNearVictim
 			++m_count;
 
 			if ((m_count == 1) || number(1, m_count) == 1)
-				m_pkChrNextTarget = pkChr;
+				m_nextTarget = candidate;
 		}
 	}
 
-	LegacyCharHandle GetVictim()
+	entt::entity GetVictim() const
 	{
-		return m_pkChrNextTarget;
+		return m_nextTarget;
 	}
 
-	LegacyCharHandle m_pkChrCenter;
 	entt::entity m_center;
-	LegacyCharHandle m_pkChrNextTarget;
-	LegacyCharHandle m_pkChrAttacker;
+	entt::entity m_nextTarget;
+	entt::entity m_attacker;
 	int		m_count;
-	const CHARACTER_SET & m_excepts_set;
+	const CHARACTER::TChainLightningExceptContainer & m_excepts_set;
 private:
-	static CHARACTER_SET empty_set_;
+	static CHARACTER::TChainLightningExceptContainer empty_set_;
 };
 
-CHARACTER_SET FFindNearVictim::empty_set_;
+CHARACTER::TChainLightningExceptContainer FFindNearVictim::empty_set_;
 
 EVENTINFO(chain_lightning_event_info)
 {
@@ -1797,7 +1796,7 @@ EVENTFUNC(ChainLightningEvent)
 
 	auto* pkChrVictim = LegacyCharOf(victimEntity);
 	auto* pkChr = LegacyCharOf(character);
-	LegacyCharHandle pkTarget = nullptr;
+	entt::entity target = entt::null;
 
 	if (!pkChr || !pkChrVictim)
 	{
@@ -1809,31 +1808,32 @@ EVENTFUNC(ChainLightningEvent)
 
 	if (ecs::SocialSystem::GetParty(victimEntity)) // ĆÄĆĽ ¸ŐŔú
 	{
-		pkTarget = ecs::SocialSystem::GetParty(victimEntity)->GetNextOwnership(nullptr, ecs::PlayerRuntime::GetX(victimEntity), ecs::PlayerRuntime::GetY(victimEntity));
-		if (pkTarget == pkChrVictim || !number(0, 2) || pkChr->GetChainLightingExcept().find(pkTarget) != pkChr->GetChainLightingExcept().end())
-			pkTarget = nullptr;
+		LPCHARACTER pkTarget = ecs::SocialSystem::GetParty(victimEntity)->GetNextOwnership(nullptr, ecs::PlayerRuntime::GetX(victimEntity), ecs::PlayerRuntime::GetY(victimEntity));
+		target = pkTarget ? pkTarget->GetEntityHandle() : entt::null;
+		if (target == victimEntity || !number(0, 2) || pkChr->GetChainLightingExcept().find(target) != pkChr->GetChainLightingExcept().end())
+			target = entt::null;
 	}
 
-	if (!pkTarget)
+	if (target == entt::null)
 	{
 		// 1. Find Next victim
-		FFindNearVictim f(pkChrVictim, pkChr, pkChr->GetChainLightingExcept());
+		FFindNearVictim f(victimEntity, character, pkChr->GetChainLightingExcept());
 
 		if (ecs::PlayerRuntime::GetSectree(victimEntity))
 		{
 			ecs::PlayerRuntime::GetSectree(victimEntity)->ForEachAround(f);
 			// 2. If exist, compute it again
-			pkTarget = f.GetVictim();
+			target = f.GetVictim();
 		}
 	}
 
-	if (pkTarget)
+	if (target != entt::null)
 	{
-		pkChrVictim->CreateFly(FLY_CHAIN_LIGHTNING, (pkTarget ? pkTarget->GetEntityHandle() : entt::null));
+		pkChrVictim->CreateFly(FLY_CHAIN_LIGHTNING, target);
 		if (character != entt::null)
 			g_dispatcher.trigger(ecs::EvSkillUsed { character, SKILL_CHAIN });
-		pkChr->ComputeSkill(SKILL_CHAIN, (pkTarget ? pkTarget->GetEntityHandle() : entt::null));
-		pkChr->AddChainLightningExcept(pkTarget);
+		pkChr->ComputeSkill(SKILL_CHAIN, target);
+		pkChr->AddChainLightningExcept(target);
 	}
 	else
 	{
@@ -2637,7 +2637,7 @@ struct FuncSplashDamage
 
 struct FuncSplashAffect
 {
-	FuncSplashAffect(LegacyCharHandle ch, int x, int y, int iDist, uint32_t dwVnum, uint8_t bPointOn, int iAmount, uint32_t dwAffectFlag, int iDuration, int iSPCost, bool bOverride, int iMaxHit)
+	FuncSplashAffect(entt::entity ch, int x, int y, int iDist, uint32_t dwVnum, uint8_t bPointOn, int iAmount, uint32_t dwAffectFlag, int iDuration, int iSPCost, bool bOverride, int iMaxHit)
 	{
 		m_x = x;
 		m_y = y;
@@ -2649,7 +2649,7 @@ struct FuncSplashAffect
 		m_iDuration = iDuration;
 		m_iSPCost = iSPCost;
 		m_bOverride = bOverride;
-		m_pkChrAttacker = ch;
+		m_attacker = ch;
 		m_iMaxHit = iMaxHit;
 		m_iCount = 0;
 	}
@@ -2672,7 +2672,7 @@ struct FuncSplashAffect
 					LOG_INFO("FuncSplashAffect step 2 : name:{} vnum:{} iDur:{}", ecs::PlayerRuntime::GetName(target).data(), m_dwVnum, m_iDuration);
 				if (m_dwVnum == SKILL_TUSOK)
 					if (pkChr->CanBeginFight())
-						pkChr->BeginFight((m_pkChrAttacker ? m_pkChrAttacker->GetEntityHandle() : entt::null));
+						pkChr->BeginFight(m_attacker);
 
 				if (ecs::PlayerRuntime::IsPC(target) && m_dwVnum == SKILL_TUSOK)
 					AffectSystem::AddAffect(target, m_dwVnum, m_bPointOn, m_iAmount, m_dwAffectFlag, m_iDuration/3, m_iSPCost, m_bOverride);
@@ -2684,7 +2684,7 @@ struct FuncSplashAffect
 		}
 	}
 
-	LegacyCharHandle m_pkChrAttacker;
+	entt::entity m_attacker;
 	int		m_x;
 	int		m_y;
 	int		m_iDist;
@@ -2919,7 +2919,7 @@ int CHARACTER::ComputeSkillAtPosition(uint32_t dwVnum, const PIXEL_POSITION& pos
 				{
 					if (GetSectree())
 					{
-						FuncSplashAffect f(this, posTarget.x, posTarget.y, pkSk->iSplashRange, pkSk->dwVnum, pkSk->bPointOn, iAmount, pkSk->dwAffectFlag, iDur, 0, true, pkSk->lMaxHit);
+						FuncSplashAffect f(GetEntityHandle(), posTarget.x, posTarget.y, pkSk->iSplashRange, pkSk->dwVnum, pkSk->bPointOn, iAmount, pkSk->dwAffectFlag, iDur, 0, true, pkSk->lMaxHit);
 						GetSectree()->ForEachAround(f);
 					}
 				}
@@ -2943,7 +2943,7 @@ int CHARACTER::ComputeSkillAtPosition(uint32_t dwVnum, const PIXEL_POSITION& pos
 				{
 					if (GetSectree())
 					{
-						FuncSplashAffect f(this, posTarget.x, posTarget.y, pkSk->iSplashRange, pkSk->dwVnum, pkSk->bPointOn2, iAmount2, pkSk->dwAffectFlag2, iDur, 0, !bAdded, pkSk->lMaxHit);
+						FuncSplashAffect f(GetEntityHandle(), posTarget.x, posTarget.y, pkSk->iSplashRange, pkSk->dwVnum, pkSk->bPointOn2, iAmount2, pkSk->dwAffectFlag2, iDur, 0, !bAdded, pkSk->lMaxHit);
 						GetSectree()->ForEachAround(f);
 					}
 				}
@@ -2970,7 +2970,7 @@ int CHARACTER::ComputeSkillAtPosition(uint32_t dwVnum, const PIXEL_POSITION& pos
 				{
 					if (GetSectree())
 					{
-						FuncSplashAffect f(this, posTarget.x, posTarget.y, pkSk->iSplashRange, pkSk->dwVnum, pkSk->bPointOn3, iAmount3, 0 /*pkSk->dwAffectFlag3*/, iDur, 0, !bAdded, pkSk->lMaxHit);
+						FuncSplashAffect f(GetEntityHandle(), posTarget.x, posTarget.y, pkSk->iSplashRange, pkSk->dwVnum, pkSk->bPointOn3, iAmount3, 0 /*pkSk->dwAffectFlag3*/, iDur, 0, !bAdded, pkSk->lMaxHit);
 						GetSectree()->ForEachAround(f);
 					}
 				}
@@ -3392,7 +3392,7 @@ int CHARACTER::ComputeSkill(uint32_t dwVnum, entt::entity victim, uint8_t bSkill
 				{
 					if (ecs::PlayerRuntime::GetSectree(victimEntity))
 					{
-						FuncSplashAffect f(this, ecs::PlayerRuntime::GetX(victimEntity), ecs::PlayerRuntime::GetY(victimEntity), pkSk->iSplashRange, pkSk->dwVnum, pkSk->bPointOn, iAmount, pkSk->dwAffectFlag, iDur, 0, true, pkSk->lMaxHit);
+						FuncSplashAffect f(GetEntityHandle(), ecs::PlayerRuntime::GetX(victimEntity), ecs::PlayerRuntime::GetY(victimEntity), pkSk->iSplashRange, pkSk->dwVnum, pkSk->bPointOn, iAmount, pkSk->dwAffectFlag, iDur, 0, true, pkSk->lMaxHit);
 						ecs::PlayerRuntime::GetSectree(victimEntity)->ForEachAround(f);
 					}
 				}
@@ -3415,7 +3415,7 @@ int CHARACTER::ComputeSkill(uint32_t dwVnum, entt::entity victim, uint8_t bSkill
 				{
 					if (ecs::PlayerRuntime::GetSectree(victimEntity))
 					{
-						FuncSplashAffect f(this, ecs::PlayerRuntime::GetX(victimEntity), ecs::PlayerRuntime::GetY(victimEntity), pkSk->iSplashRange, pkSk->dwVnum, pkSk->bPointOn2, iAmount2, pkSk->dwAffectFlag2, iDur, 0, !bAdded, pkSk->lMaxHit);
+						FuncSplashAffect f(GetEntityHandle(), ecs::PlayerRuntime::GetX(victimEntity), ecs::PlayerRuntime::GetY(victimEntity), pkSk->iSplashRange, pkSk->dwVnum, pkSk->bPointOn2, iAmount2, pkSk->dwAffectFlag2, iDur, 0, !bAdded, pkSk->lMaxHit);
 						ecs::PlayerRuntime::GetSectree(victimEntity)->ForEachAround(f);
 					}
 				}
@@ -3445,7 +3445,7 @@ int CHARACTER::ComputeSkill(uint32_t dwVnum, entt::entity victim, uint8_t bSkill
 				{
 					if (ecs::PlayerRuntime::GetSectree(victimEntity))
 					{
-						FuncSplashAffect f(this, ecs::PlayerRuntime::GetX(victimEntity), ecs::PlayerRuntime::GetY(victimEntity), pkSk->iSplashRange, pkSk->dwVnum, pkSk->bPointOn3, iAmount3, /*pkSk->dwAffectFlag3*/ 0, iDur, 0, !bAdded, pkSk->lMaxHit);
+						FuncSplashAffect f(GetEntityHandle(), ecs::PlayerRuntime::GetX(victimEntity), ecs::PlayerRuntime::GetY(victimEntity), pkSk->iSplashRange, pkSk->dwVnum, pkSk->bPointOn3, iAmount3, /*pkSk->dwAffectFlag3*/ 0, iDur, 0, !bAdded, pkSk->lMaxHit);
 						ecs::PlayerRuntime::GetSectree(victimEntity)->ForEachAround(f);
 					}
 				}
@@ -3591,7 +3591,7 @@ int CHARACTER::ComputeSkill(uint32_t dwVnum, entt::entity victim, uint8_t bSkill
 				{
 					if (ecs::PlayerRuntime::GetSectree(victimEntity))
 					{
-						FuncSplashAffect f(this, ecs::PlayerRuntime::GetX(victimEntity), ecs::PlayerRuntime::GetY(victimEntity), pkSk->iSplashRange, pkSk->dwVnum, pkSk->bPointOn3, iAmount3, /*pkSk->dwAffectFlag3*/ 0, iDur, 0, !bAdded, pkSk->lMaxHit);
+						FuncSplashAffect f(GetEntityHandle(), ecs::PlayerRuntime::GetX(victimEntity), ecs::PlayerRuntime::GetY(victimEntity), pkSk->iSplashRange, pkSk->dwVnum, pkSk->bPointOn3, iAmount3, /*pkSk->dwAffectFlag3*/ 0, iDur, 0, !bAdded, pkSk->lMaxHit);
 						ecs::PlayerRuntime::GetSectree(victimEntity)->ForEachAround(f);
 					}
 				}
@@ -3909,7 +3909,7 @@ bool CHARACTER::UseSkill(uint32_t dwVnum, entt::entity victim, bool bUseGrandMas
 	if (dwVnum == SKILL_CHAIN)
 	{
 		ResetChainLightningIndex();
-		AddChainLightningExcept(pkVictim);
+		AddChainLightningExcept(victimEntity);
 	}
 
 #ifdef GROUP_BUFF
@@ -4092,15 +4092,15 @@ EVENTFUNC(skill_muyoung_event)
 	}
 
 	// 1. Find Victim
-	FFindNearVictim f(ch, ch);
+	FFindNearVictim f(character, character);
 	if (ecs::PlayerRuntime::GetSectree(character))
 	{
 		ecs::PlayerRuntime::GetSectree(character)->ForEachAround(f);
 		// 2. Shoot!
-		if (f.GetVictim())
+		if (f.GetVictim() != entt::null)
 		{
-			ch->CreateFly(FLY_SKILL_MUYEONG, f.GetVictim() ? f.GetVictim()->GetEntityHandle() : entt::null);
-			ch->ComputeSkill(SKILL_MUYEONG, f.GetVictim() ? f.GetVictim()->GetEntityHandle() : entt::null);
+			ch->CreateFly(FLY_SKILL_MUYEONG, f.GetVictim());
+			ch->ComputeSkill(SKILL_MUYEONG, f.GetVictim());
 		}
 	}
 

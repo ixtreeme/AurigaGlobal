@@ -1135,3 +1135,60 @@ typedef used by char_manager, dungeon, war_map and wedding, so the typedef
 cannot move. Giving that one member its own std::unordered_set<entt::entity>
 is a contained job - four sites plus FFindNearVictim in SkillSystem.cpp, whose
 GetVictim() feeds CreateFly and ComputeSkill, both of which now take entities.
+
+
+Phase 19e - the chain lightning container
+------------------------------------------
+m_setExceptChainLighting now holds entities, and AddChainLightningExcept takes
+one. This is the container that blocked the last LPCHARACTER method on the
+char.h combat surface.
+
+THE NAMING TRAP: ENTITY_SET is already taken
+---------------------------------------------
+The obvious name for std::unordered_set<entt::entity> is ENTITY_SET, and
+typedef.h already has it:
+
+    typedef std::unordered_set<LPENTITY> ENTITY_SET;      // typedef.h:57
+
+That is the *sectree* entity - CEntity*, the thing ForEachAround walks - not
+the ECS entity. sectree.h and sectree.cpp use it for m_set_entity. Reusing the
+name, or shadowing it, would have produced a header that compiles and means
+something else entirely. The container got a class-local name instead, the way
+guild.h already names TGuildMemberOnlineContainer:
+
+    // in CHARACTER, public
+    typedef std::unordered_set<entt::entity> TChainLightningExceptContainer;
+
+CHARACTER_SET itself still cannot move: char_manager, dungeon, war_map and
+wedding all use it. One member at a time is the only way through this.
+
+The functors were the real prize
+---------------------------------
+FFindNearVictim held three legacy pointers - center, attacker and the next
+target - and every one of them existed only to be converted:
+
+    m_center(center ? center->GetEntityHandle() : entt::null)      // ctor
+    battle_is_attackable((m_pkChrAttacker ? ... : entt::null), ...)
+    m_pkChrNextTarget = pkChr;   then GetVictim() -> caller converts again
+
+All three are entities now, the functor keeps no legacy pointer at all, and
+GetVictim() returns an entity - which is what its two callers, CreateFly and
+ComputeSkill, have taken since 19d. The ChainLightningEvent body follows: its
+pkTarget became `entt::entity target`, and the one place that still produces a
+pointer (CParty::GetNextOwnership) converts once, on the spot.
+
+FuncSplashAffect in the same file had the identical shape - one pointer member,
+one conversion, seven call sites all passing `this`. Flipped with it.
+
+The second AddChainLightningExcept call site, inside CHARACTER::UseSkill, cost
+nothing either: that body already keeps `victimEntity` in step with pkVictim at
+all three `pkVictim = this;` reassignments, from an earlier phase. alias_
+roundtrip.py had refused this one - correctly, it only looks at unreassigned
+aliases - but the mirror was there to use by hand.
+
+Project-wide conversion count: 1750 -> 1744  (-6)
+Build: RelWithDebInfo GameServer, 0 errors, first attempt.
+
+char.h now has four LPCHARACTER declarations left: Damage/__Profile__Damage,
+DynamicCharacterPtr::operator=, GET_SEX, and the broken one inside
+#ifdef ENABLE_MOUNT_COUNT_ABOVE_CHAR_RAZOR93.
