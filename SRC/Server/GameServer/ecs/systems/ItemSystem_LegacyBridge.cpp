@@ -5230,6 +5230,7 @@ int CalculateConsumeSP(LegacyCharHandle lpChar)
 #define ENABLE_ADDSTONE_FAILURE
 bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 {
+	entt::entity itemEntity = item ? item->GetEntityHandle() : entt::null;
 	int iLimitRealtimeStartFirstUseFlagIndex = -1;
 	//int iLimitTimerBasedOnWearFlagIndex = -1;
 
@@ -5374,7 +5375,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 				ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 788, "");
 #endif
 			}
-			ItemSystem::ConsumeItemEcs((item ? item->GetEntityHandle() : entt::null));
+			ItemSystem::ConsumeItemEcs(itemEntity);
 			return true;
 		}
 		else
@@ -5624,7 +5625,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 			return false;
 		}
 
-		ItemSystem::ConsumeItemEcs((item ? item->GetEntityHandle() : entt::null));
+		ItemSystem::ConsumeItemEcs(itemEntity);
 		return true;
 	}
 	break;
@@ -5651,11 +5652,11 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 		{
 			if (item->GetSIGVnum() == 0)
 			{
-				quest::CQuestManager::instance().UseItem(GetPlayerID(), (item ? item->GetEntityHandle() : entt::null), false);
+				quest::CQuestManager::instance().UseItem(GetPlayerID(), itemEntity, false);
 			}
 			else
 			{
-				quest::CQuestManager::instance().SIGUse(GetPlayerID(), item->GetSIGVnum(), (item ? item->GetEntityHandle() : entt::null), false);
+				quest::CQuestManager::instance().SIGUse(GetPlayerID(), item->GetSIGVnum(), itemEntity, false);
 			}
 		}
 
@@ -5671,7 +5672,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 			}
 			ecs::ChatSystem::Send(GetEntityHandle(), CHAT_TYPE_INFO, "Affect successfully added.");
 			AddAffect(AFFECT_AUTO_METIN_FARM, 0, 0, AFF_NONE, item->GetValue(0) == 999 ? INFINITE_AFFECT_DURATION : 60 * 60 * 24 * item->GetValue(0), 0, false);
-			ItemSystem::ConsumeItemEcs((item ? item->GetEntityHandle() : entt::null));
+			ItemSystem::ConsumeItemEcs(itemEntity);
 			return true;
 		}
 #endif
@@ -5720,7 +5721,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 
 		campfire->m_pkMiningEvent = event_create(kill_campfire_event, info, PASSES_PER_SEC(40));
 
-		ItemSystem::ConsumeItemEcs((item ? item->GetEntityHandle() : entt::null));
+		ItemSystem::ConsumeItemEcs(itemEntity);
 	}
 	break;
 
@@ -5779,7 +5780,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 		if (GetWarMap())
 			GetWarMap()->UsePotion(this, item);
 
-		ItemSystem::ConsumeItemEcs((item ? item->GetEntityHandle() : entt::null));
+		ItemSystem::ConsumeItemEcs(itemEntity);
 		break;
 
 		default:
@@ -5864,7 +5865,6 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 	{
 		if (!item->IsEquipped())
 			return false;
-		entt::entity itemEntity = (item ? item->GetEntityHandle() : entt::null);
 		return DSManager::instance().PullOut(this, NPOS, itemEntity);
 		break;
 	}
@@ -5895,7 +5895,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 #endif
 
 		if (item->GetSubType() == FISH_ALIVE)
-			fishing::UseFishEcs(GetEntityHandle(), (item ? item->GetEntityHandle() : entt::null));
+			fishing::UseFishEcs(GetEntityHandle(), itemEntity);
 	}
 	break;
 
@@ -6032,7 +6032,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 
 		if (GiveItemFromSpecialItemGroup(dwBoxVnum, dwVnums, dwCounts, item_gets, count))
 		{
-			ItemSystem::ConsumeItemEcs((item ? item->GetEntityHandle() : entt::null));
+			ItemSystem::ConsumeItemEcs(itemEntity);
 #ifdef ENABLE_RANKING
 			SetRankPoints(17, GetRankPoints(17) + 1);
 #endif
@@ -6177,7 +6177,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 		if (true == LearnSkillByBook(dwVnum))
 		{
 #ifdef ENABLE_BOOKS_STACKFIX
-			ItemSystem::ConsumeItemEcs((item ? item->GetEntityHandle() : entt::null));
+			ItemSystem::ConsumeItemEcs(itemEntity);
 #else
 			ITEM_MANAGER::instance().RemoveItem(item);
 #endif
@@ -6193,7 +6193,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 			return false;
 
 		if (GetNewPetSystem()->IsActivePet()) {
-			GetNewPetSystem()->IncreasePetSkillByBook((item ? item->GetEntityHandle() : entt::null));
+			GetNewPetSystem()->IncreasePetSkillByBook(itemEntity);
 		}
 #ifdef TEXTS_IMPROVEMENT
 		else {
@@ -6253,7 +6253,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 				if (GetWarMap())
 					GetWarMap()->UsePotion(this, item);
 
-				ItemSystem::ConsumeItemEcs((item ? item->GetEntityHandle() : entt::null));
+				ItemSystem::ConsumeItemEcs(itemEntity);
 				break;
 
 			case USE_AFFECT:
@@ -6282,7 +6282,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 					// END_PC_BANG_ITEM_ADD
 
 					AddAffect(AFFECT_EXP_BONUS_EURO_FREE, aApplyInfo[item->GetValue(1)].bPointType, item->GetValue(2), 0, item->GetValue(3), 0, false, true);
-					ItemSystem::ConsumeItemEcs((item ? item->GetEntityHandle() : entt::null));
+					ItemSystem::ConsumeItemEcs(itemEntity);
 				}
 			}
 			break;
@@ -6388,7 +6388,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 					m_nPotionLimit--;
 
 					//RESTRICT_USE_SEED_OR_MOONBOTTLE
-					ItemSystem::ConsumeItemEcs((item ? item->GetEntityHandle() : entt::null));
+					ItemSystem::ConsumeItemEcs(itemEntity);
 					//END_RESTRICT_USE_SEED_OR_MOONBOTTLE
 				}
 			}
@@ -6444,7 +6444,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 				return false;
 			}
 			else {
-				ItemSystem::ConsumeItemEcs((item ? item->GetEntityHandle() : entt::null));
+				ItemSystem::ConsumeItemEcs(itemEntity);
 
 				for (int i = 0; i < ITEM_APPLY_MAX_NUM; i++) {
 					type = item->GetApplyType(i);
@@ -6475,13 +6475,14 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 						return false;
 					}
 
-					ItemSystem::ConsumeItemEcs((item ? item->GetEntityHandle() : entt::null));
+					ItemSystem::ConsumeItemEcs(itemEntity);
 					LPITEM item2 = ITEM_MANAGER::instance().CreateItem(item->GetVnum(), 1);
 					if (!item2)
 						return false;
 
 					item2->AddToCharacter(this, TItemPos(INVENTORY, pos), false);
 					item = item2;
+					itemEntity = item ? item->GetEntityHandle() : entt::null;
 				}
 
 				if (item->GetSocket(0) <= 0) {
@@ -6538,7 +6539,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 #ifdef TEXTS_IMPROVEMENT
 					ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 670, "%s#%d", pDestItem->GetName(), ret);
 #endif
-					ItemSystem::ConsumeItemEcs((item ? item->GetEntityHandle() : entt::null));
+					ItemSystem::ConsumeItemEcs(itemEntity);
 					LogManager::instance().ItemLog(this, item, "DS_CHARGING_SUCCESS", buf);
 					return true;
 				}
@@ -6584,7 +6585,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 #endif
 					sprintf(buf, "Increase %ds by item{VN:%d VAL%d:%ld}", ret, item->GetVnum(), ITEM_VALUE_CHARGING_AMOUNT_IDX, item->GetValue(ITEM_VALUE_CHARGING_AMOUNT_IDX));
 					LogManager::instance().ItemLog(this, item, "DS_CHARGING_SUCCESS", buf);
-					ItemSystem::ConsumeItemEcs((item ? item->GetEntityHandle() : entt::null));
+					ItemSystem::ConsumeItemEcs(itemEntity);
 					return true;
 				}
 				else
@@ -6655,7 +6656,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 					break;
 				}
 
-				ItemSystem::ConsumeItemEcs((item ? item->GetEntityHandle() : entt::null));
+				ItemSystem::ConsumeItemEcs(itemEntity);
 				LPITEM item2 = ITEM_MANAGER::instance().CreateItem(item->GetVnum(), 1);
 				if (!item2)
 					return true;
@@ -6668,6 +6669,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 					item2->AddToCharacter(this, TItemPos(INVENTORY, pos), false);
 
 				item = item2;
+				itemEntity = item ? item->GetEntityHandle() : entt::null;
 			}
 
 			uint8_t bApplyOn = item->GetApplyType(0);
@@ -6678,7 +6680,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 				uint32_t dwItemID = pAffect->dwFlag;
 				if (item->GetID() == dwItemID) {
 					item->Lock(false);
-					ItemSystem::SetItemSocketEcs((item ? item->GetEntityHandle() : entt::null), 1, 0);
+					ItemSystem::SetItemSocketEcs(itemEntity, 1, 0);
 					RemoveAffect(dwType);
 #ifdef TEXTS_IMPROVEMENT
 					ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 28, "%s", item->GetName());
@@ -6693,7 +6695,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 
 					RemoveAffect(dwType);
 					item->Lock(true);
-					ItemSystem::SetItemSocketEcs((item ? item->GetEntityHandle() : entt::null), 1, 1);
+					ItemSystem::SetItemSocketEcs(itemEntity, 1, 1);
 					AddAffect(dwType, aApplyInfo[bApplyOn].bPointType, lApplyValue, item->GetID(), INFINITE_AFFECT_DURATION, 0, true, false);
 #ifdef TEXTS_IMPROVEMENT
 					ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 29, "%s", item->GetName());
@@ -6751,7 +6753,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 				}
 
 				item->Lock(true);
-				ItemSystem::SetItemSocketEcs((item ? item->GetEntityHandle() : entt::null), 1, 1);
+				ItemSystem::SetItemSocketEcs(itemEntity, 1, 1);
 				AddAffect(dwType, aApplyInfo[bApplyOn].bPointType, lApplyValue, item->GetID(), INFINITE_AFFECT_DURATION, 0, true, false);
 #ifdef TEXTS_IMPROVEMENT
 				ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 29, "%s", item->GetName());
@@ -6790,7 +6792,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 				AddAffect(AFFECT_NOG_ABILITY, POINT_MOV_SPEED, moveSpeedPer, AFF_MOV_SPEED_POTION, time, 0, true, true);
 				AddAffect(AFFECT_NOG_ABILITY, POINT_MALL_ATTBONUS, attPer, AFF_NONE, time, 0, true, true);
 				AddAffect(AFFECT_NOG_ABILITY, POINT_MALL_EXPBONUS, expPer, AFF_NONE, time, 0, true, true);
-				ItemSystem::ConsumeItemEcs((item ? item->GetEntityHandle() : entt::null));
+				ItemSystem::ConsumeItemEcs(itemEntity);
 			}
 			break;
 
@@ -6823,7 +6825,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 				AddAffect(AFFECT_RAMADAN_ABILITY, POINT_MOV_SPEED, moveSpeedPer, AFF_MOV_SPEED_POTION, time, 0, true, true);
 				AddAffect(AFFECT_RAMADAN_ABILITY, POINT_MALL_ATTBONUS, attPer, AFF_NONE, time, 0, true, true);
 				AddAffect(AFFECT_RAMADAN_ABILITY, POINT_MALL_EXPBONUS, expPer, AFF_NONE, time, 0, true, true);
-				ItemSystem::ConsumeItemEcs((item ? item->GetEntityHandle() : entt::null));
+				ItemSystem::ConsumeItemEcs(itemEntity);
 			}
 			break;
 			case ITEM_MARRIAGE_RING:
@@ -6921,13 +6923,13 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 
 #endif
 #endif
-				ItemSystem::ConsumeItemEcs((item ? item->GetEntityHandle() : entt::null));//@Razor93 (batorsag kopi fogyjon)
+				ItemSystem::ConsumeItemEcs(itemEntity);//@Razor93 (batorsag kopi fogyjon)
 				//UpdateMountCountOverhead(this);
 				break;
 
 			case UNIQUE_ITEM_WHITE_FLAG:
 				ForgetMyAttacker();
-				ItemSystem::ConsumeItemEcs((item ? item->GetEntityHandle() : entt::null));
+				ItemSystem::ConsumeItemEcs(itemEntity);
 				break;
 
 			case UNIQUE_ITEM_TREASURE_BOX:
@@ -6968,7 +6970,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 				 
 				CBattlePass::instance().BattlePassRequestOpen(this);
 
-				ItemSystem::ConsumeItemEcs((item ? item->GetEntityHandle() : entt::null));
+				ItemSystem::ConsumeItemEcs(itemEntity);
 			}
 			break;
 #endif
@@ -7005,7 +7007,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 					m_dwBattlePassEndTime = get_global_time() + iSeconds;
 
 					AddAffect(AFFECT_BATTLE_PASS, POINT_BATTLE_PASS_ID, 1, 0, iSeconds, 0, true);
-					ItemSystem::ConsumeItemEcs((item ? item->GetEntityHandle() : entt::null));
+					ItemSystem::ConsumeItemEcs(itemEntity);
 				}
 			}
 			break;
@@ -7018,7 +7020,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 
 				if (pMap != nullptr)
 				{
-					ItemSystem::SetItemSocketEcs((item ? item->GetEntityHandle() : entt::null), 0, item->GetSocket(0) + 1);
+					ItemSystem::SetItemSocketEcs(itemEntity, 0, item->GetSocket(0) + 1);
 
 					FFindStone f;
 
@@ -7077,7 +7079,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 			break;
 
 			case 27996: // µ¶º´
-				ItemSystem::ConsumeItemEcs((item ? item->GetEntityHandle() : entt::null));
+				ItemSystem::ConsumeItemEcs(itemEntity);
 				AttackedByPoison(nullptr); // @warme008
 				break;
 
@@ -7088,7 +7090,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 				// 7   Ã»ÁøÁÖ 47993
 				// 3   ÇÇÁøÁÖ 47994
 			{
-				ItemSystem::ConsumeItemEcs((item ? item->GetEntityHandle() : entt::null));
+				ItemSystem::ConsumeItemEcs(itemEntity);
 
 				int r = number(1, 100);
 
@@ -7140,7 +7142,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 
 			case 71013: // ÃàÁ¦¿ëÆøÁ×
 				CreateFly(number(FLY_FIREWORK1, FLY_FIREWORK6), this);
-				ItemSystem::ConsumeItemEcs((item ? item->GetEntityHandle() : entt::null));
+				ItemSystem::ConsumeItemEcs(itemEntity);
 				break;
 
 			case 50100: // ÆøÁ×
@@ -7151,7 +7153,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 			case 50105:
 			case 50106:
 				CreateFly(item->GetVnum() - 50100 + FLY_FIREWORK1, this);
-				ItemSystem::ConsumeItemEcs((item ? item->GetEntityHandle() : entt::null));
+				ItemSystem::ConsumeItemEcs(itemEntity);
 				break;
 
 			case 50200: // º¸µû¸®
@@ -7191,7 +7193,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 #endif
 
 				AddAffect(AFFECT_FISH_MIND_PILL, POINT_NONE, 0, AFF_FISH_MIND, 20 * 60, 0, true);
-				ItemSystem::ConsumeItemEcs((item ? item->GetEntityHandle() : entt::null));
+				ItemSystem::ConsumeItemEcs(itemEntity);
 			}
 			break;
 
@@ -7236,7 +7238,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 				if (LearnSkillByBook(SKILL_COMBO, iPct))
 				{
 #ifdef ENABLE_BOOKS_STACKFIX
-					ItemSystem::ConsumeItemEcs((item ? item->GetEntityHandle() : entt::null));
+					ItemSystem::ConsumeItemEcs(itemEntity);
 #else
 					ITEM_MANAGER::instance().RemoveItem(item);
 #endif
@@ -7269,7 +7271,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 				}
 
 				if (LearnSkillByBook(dwSkillVnum, 0)) {
-					ItemSystem::ConsumeItemEcs((item ? item->GetEntityHandle() : entt::null));
+					ItemSystem::ConsumeItemEcs(itemEntity);
 					SetSkillNextReadTime(dwSkillVnum, get_global_time() + 10800);
 				}
 			}
@@ -7301,7 +7303,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 				if (LearnSkillByBook(dwSkillVnum, iPct))
 				{
 #ifdef ENABLE_BOOKS_STACKFIX
-					ItemSystem::ConsumeItemEcs((item ? item->GetEntityHandle() : entt::null));
+					ItemSystem::ConsumeItemEcs(itemEntity);
 #else
 					ITEM_MANAGER::instance().RemoveItem(item);
 #endif
@@ -7337,7 +7339,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 				if (LearnSkillByBook(dwSkillVnum, iPct))
 				{
 #ifdef ENABLE_BOOKS_STACKFIX
-					ItemSystem::ConsumeItemEcs((item ? item->GetEntityHandle() : entt::null));
+					ItemSystem::ConsumeItemEcs(itemEntity);
 #else
 					ITEM_MANAGER::instance().RemoveItem(item);
 #endif
@@ -7424,7 +7426,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 				if (LearnSkillByBook(dwSkillVnum, iPct))
 				{
 #ifdef ENABLE_BOOKS_STACKFIX
-					ItemSystem::ConsumeItemEcs((item ? item->GetEntityHandle() : entt::null));
+					ItemSystem::ConsumeItemEcs(itemEntity);
 #else
 					ITEM_MANAGER::instance().RemoveItem(item);
 #endif
@@ -7461,7 +7463,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 				if (LearnSkillByBook(dwSkillVnum, iPct))
 				{
 #ifdef ENABLE_BOOKS_STACKFIX
-					ItemSystem::ConsumeItemEcs((item ? item->GetEntityHandle() : entt::null));
+					ItemSystem::ConsumeItemEcs(itemEntity);
 #else
 					ITEM_MANAGER::instance().RemoveItem(item);
 #endif
@@ -7496,7 +7498,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 				if (LearnSkillByBook(dwSkillVnum, iPct))
 				{
 #ifdef ENABLE_BOOKS_STACKFIX
-					ItemSystem::ConsumeItemEcs((item ? item->GetEntityHandle() : entt::null));
+					ItemSystem::ConsumeItemEcs(itemEntity);
 #else
 					ITEM_MANAGER::instance().RemoveItem(item);
 #endif
@@ -7573,7 +7575,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 				}
 #endif
 #ifdef ENABLE_BOOKS_STACKFIX
-				ItemSystem::ConsumeItemEcs((item ? item->GetEntityHandle() : entt::null));
+				ItemSystem::ConsumeItemEcs(itemEntity);
 #else
 				ITEM_MANAGER::instance().RemoveItem(item);
 #endif
@@ -7600,7 +7602,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 				uint32_t real_add = std::min(add_value, remaining);
 
 				UpdateAlignment(real_add);
-				ItemSystem::ConsumeItemEcs((item ? item->GetEntityHandle() : entt::null));
+				ItemSystem::ConsumeItemEcs(itemEntity);
 
 				ecs::ChatSystem::Send(GetEntityHandle(), CHAT_TYPE_INFO, " +500 point.");
 			}
@@ -7622,7 +7624,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 				const uint32_t real_add = std::min(add_value, max_limit - current);
 
 				UpdateAlignment(real_add);
-				ItemSystem::ConsumeItemEcs((item ? item->GetEntityHandle() : entt::null));
+				ItemSystem::ConsumeItemEcs(itemEntity);
 
 				ecs::ChatSystem::Send(GetEntityHandle(), CHAT_TYPE_INFO, "+5.000 point.");
 			}
@@ -7665,7 +7667,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 
 				SetDragonCoin(curCoins + (uint32_t)canAdd);
 
-				ItemSystem::ConsumeItemEcs((item ? item->GetEntityHandle() : entt::null), count); // teljes stack felhasznalasa
+				ItemSystem::ConsumeItemEcs(itemEntity, count); // teljes stack felhasznalasa
 				ecs::ChatSystem::Send(GetEntityHandle(), CHAT_TYPE_INFO, "Kaptal %u Sarkanyermet.", (uint32_t)canAdd);
 #else
 				ecs::ChatSystem::Send(GetEntityHandle(), CHAT_TYPE_INFO, "ItemShop ki van kapcsolva.");
@@ -7692,7 +7694,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 				const uint32_t real_add = std::min(add_value, max_limit - current);
 
 				UpdateAlignment(real_add);
-				ItemSystem::ConsumeItemEcs((item ? item->GetEntityHandle() : entt::null));
+				ItemSystem::ConsumeItemEcs(itemEntity);
 
 				ecs::ChatSystem::Send(GetEntityHandle(), CHAT_TYPE_INFO, "+2000 point");
 			}
@@ -7721,7 +7723,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 				const uint32_t real_add = std::min(add_value, max_limit - current);
 
 				UpdateAlignment(real_add);
-				ItemSystem::ConsumeItemEcs((item ? item->GetEntityHandle() : entt::null));
+				ItemSystem::ConsumeItemEcs(itemEntity);
 
 				ecs::ChatSystem::Send(GetEntityHandle(), CHAT_TYPE_INFO, "+30.000 point addaed.");
 			}
@@ -7744,7 +7746,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 				const uint32_t real_add = std::min(add_value, max_limit - current);
 
 				UpdateAlignment(real_add);
-				ItemSystem::ConsumeItemEcs((item ? item->GetEntityHandle() : entt::null));
+				ItemSystem::ConsumeItemEcs(itemEntity);
 
 				ecs::ChatSystem::Send(GetEntityHandle(), CHAT_TYPE_INFO, "+10.000.");
 			}
@@ -7790,7 +7792,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 				GiveGold((long long)canAdd);
 
 				 
-				ItemSystem::ConsumeItemEcs((item ? item->GetEntityHandle() : entt::null), canUse);
+				ItemSystem::ConsumeItemEcs(itemEntity, canUse);
 			}
 			break;
 
@@ -7827,7 +7829,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 //
 //				UpdateAlignment(val * 10);
 //
-//				ItemSystem::ConsumeItemEcs((item ? item->GetEntityHandle() : entt::null));
+//				ItemSystem::ConsumeItemEcs(itemEntity);
 //				pPC->SetFlag("mythical_peach.last_use_time", get_global_time());
 //
 //#ifdef TEXTS_IMPROVEMENT
@@ -7916,7 +7918,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 						item2->GetName(), item2->GetID(), pItemReward->GetName(), pItemReward->GetID());
 					LogManager::instance().ItemLog(this, item, "USE_DETACHMENT_ONE", buf);
 
-					ItemSystem::ConsumeItemEcs((item ? item->GetEntityHandle() : entt::null));
+					ItemSystem::ConsumeItemEcs(itemEntity);
 				}
 			}
 			break;
@@ -7949,7 +7951,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 							else
 								pPC->SetFlag("dyeing_hair.last_dye_level", GetLevel());
 
-							ItemSystem::ConsumeItemEcs((item ? item->GetEntityHandle() : entt::null));
+							ItemSystem::ConsumeItemEcs(itemEntity);
 							NetworkSyncSystem::UpdatePacket(GetEntityHandle());
 						}
 #ifdef TEXTS_IMPROVEMENT
@@ -7984,7 +7986,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 						}
 					}
 #endif
-					ItemSystem::ConsumeItemEcs((item ? item->GetEntityHandle() : entt::null));
+					ItemSystem::ConsumeItemEcs(itemEntity);
 				}
 			}
 			break;
@@ -8012,7 +8014,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 				}
 
 				if (GiveItemFromSpecialItemGroup(dwBoxVnum, dwVnums, dwCounts, item_gets, count))
-					ItemSystem::ConsumeItemEcs((item ? item->GetEntityHandle() : entt::null));
+					ItemSystem::ConsumeItemEcs(itemEntity);
 			}
 			break;
 
@@ -8039,7 +8041,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 				}
 
 				if (GiveItemFromSpecialItemGroup(dwBoxVnum, dwVnums, dwCounts, item_gets, count))
-					ItemSystem::ConsumeItemEcs((item ? item->GetEntityHandle() : entt::null));
+					ItemSystem::ConsumeItemEcs(itemEntity);
 			}
 			break;
 
@@ -8060,7 +8062,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 						LogManager::instance().ItemLog(this, item, "MOONLIGHT_GET", buf);
 
 						//ITEM_MANAGER::instance().RemoveItem(item);
-						ItemSystem::ConsumeItemEcs((item ? item->GetEntityHandle() : entt::null));
+						ItemSystem::ConsumeItemEcs(itemEntity);
 
 						switch (dwVnums[i])
 						{
@@ -8133,7 +8135,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 			{
 				//PointChange(POINT_GOLD, -iCost);
 				PointChange(POINT_STAT_RESET_COUNT, 1);
-				ItemSystem::ConsumeItemEcs((item ? item->GetEntityHandle() : entt::null));
+				ItemSystem::ConsumeItemEcs(itemEntity);
 			}
 			break;
 
@@ -8162,7 +8164,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 // Ï °ø°ÝÀ» ¿Ã·ÁÁØ´Ù
 				AddAffect(AFFECT_CHINA_FIREWORK, POINT_STUN_PCT, 30, AFF_CHINA_FIREWORK, 5 * 60, 0, true);
 #endif
-				ItemSystem::ConsumeItemEcs((item ? item->GetEntityHandle() : entt::null));
+				ItemSystem::ConsumeItemEcs(itemEntity);
 			}
 			break;
 
@@ -8191,23 +8193,23 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 // Ï °ø°ÝÀ» ¿Ã·ÁÁØ´Ù
 				AddAffect(AFFECT_CHINA_FIREWORK, POINT_STUN_PCT, 30, AFF_CHINA_FIREWORK, 5 * 60, 0, true);
 #endif
-				ItemSystem::ConsumeItemEcs((item ? item->GetEntityHandle() : entt::null));
+				ItemSystem::ConsumeItemEcs(itemEntity);
 			}
 			break;
 
 			case ITEM_WONSO_BEAN_VNUM:
 				PointChange(POINT_HP, GetMaxHP() - GetHP());
-				ItemSystem::ConsumeItemEcs((item ? item->GetEntityHandle() : entt::null));
+				ItemSystem::ConsumeItemEcs(itemEntity);
 				break;
 
 			case ITEM_WONSO_SUGAR_VNUM:
 				PointChange(POINT_SP, GetMaxSP() - GetSP());
-				ItemSystem::ConsumeItemEcs((item ? item->GetEntityHandle() : entt::null));
+				ItemSystem::ConsumeItemEcs(itemEntity);
 				break;
 
 			case ITEM_WONSO_FRUIT_VNUM:
 				PointChange(POINT_STAMINA, GetMaxStamina() - GetStamina());
-				ItemSystem::ConsumeItemEcs((item ? item->GetEntityHandle() : entt::null));
+				ItemSystem::ConsumeItemEcs(itemEntity);
 				break;
 
 			case 90008: // VCARD
@@ -8295,7 +8297,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 						GetDesc()->GetHostName(),
 						item->GetOriginalVnum());
 
-					ItemSystem::ConsumeItemEcs((item ? item->GetEntityHandle() : entt::null));
+					ItemSystem::ConsumeItemEcs(itemEntity);
 				}
 #ifdef TEXTS_IMPROVEMENT
 				else {
@@ -8338,7 +8340,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 					snprintf(buf, sizeof(buf), "%u", item2->GetID());
 					LogManager::instance().ItemLog(this, item, "CHANGE_RARE_ATTR", buf);
 
-					ItemSystem::ConsumeItemEcs((item ? item->GetEntityHandle() : entt::null));
+					ItemSystem::ConsumeItemEcs(itemEntity);
 				}
 #ifdef TEXTS_IMPROVEMENT
 				else {
@@ -8381,7 +8383,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 					snprintf(buf, sizeof(buf), "%u", item2->GetID());
 					LogManager::instance().ItemLog(this, item, "CHANGE_RARE_ATTR21", buf);
 
-					ItemSystem::ConsumeItemEcs((item ? item->GetEntityHandle() : entt::null));
+					ItemSystem::ConsumeItemEcs(itemEntity);
 				}
 #ifdef TEXTS_IMPROVEMENT
 				else {
@@ -8481,7 +8483,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 						break;
 					}
 
-					ItemSystem::ConsumeItemEcs((item ? item->GetEntityHandle() : entt::null));
+					ItemSystem::ConsumeItemEcs(itemEntity);
 
 					LPITEM item2 = ITEM_MANAGER::instance().CreateItem(item->GetVnum(), 1);
 
@@ -8506,6 +8508,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 					}
 
 					item = item2;
+					itemEntity = item ? item->GetEntityHandle() : entt::null;
 				}
 
 #ifdef ENABLE_NEW_USE_POTION
@@ -8550,7 +8553,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 						{
 							RemoveAffect(pAffect2);
 							item->Lock(false);
-							ItemSystem::SetItemSocketEcs((item ? item->GetEntityHandle() : entt::null), 0, false);
+							ItemSystem::SetItemSocketEcs(itemEntity, 0, false);
 						}
 						else
 						{
@@ -8571,7 +8574,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 							{
 								RemoveAffect(pAffect2);
 								item->Lock(false);
-								ItemSystem::SetItemSocketEcs((item ? item->GetEntityHandle() : entt::null), 0, false);
+								ItemSystem::SetItemSocketEcs(itemEntity, 0, false);
 								return true;
 							}
 							else {
@@ -8588,7 +8591,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 
 					AddAffect(type, bonus, 4, item->GetID(), INFINITE_AFFECT_DURATION, 0, true, false);
 					item->Lock(true);
-					ItemSystem::SetItemSocketEcs((item ? item->GetEntityHandle() : entt::null), 0, true);
+					ItemSystem::SetItemSocketEcs(itemEntity, 0, true);
 					AutoRecoveryItemProcess(type);
 				}
 				else
@@ -8598,7 +8601,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 						RemoveAffect(pAffect);
 
 						item->Lock(false);
-						ItemSystem::SetItemSocketEcs((item ? item->GetEntityHandle() : entt::null), 0, false);
+						ItemSystem::SetItemSocketEcs(itemEntity, 0, false);
 					}
 					else
 					{
@@ -8647,7 +8650,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 							{
 								RemoveAffect(pAffect2);
 								item->Lock(false);
-								ItemSystem::SetItemSocketEcs((item ? item->GetEntityHandle() : entt::null), 0, false);
+								ItemSystem::SetItemSocketEcs(itemEntity, 0, false);
 							}
 							else
 							{
@@ -8666,7 +8669,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 						AddAffect(type, bonus, 4, item->GetID(), INFINITE_AFFECT_DURATION, 0, true, false);
 
 						item->Lock(true);
-						ItemSystem::SetItemSocketEcs((item ? item->GetEntityHandle() : entt::null), 0, true);
+						ItemSystem::SetItemSocketEcs(itemEntity, 0, true);
 
 						AutoRecoveryItemProcess(type);
 					}
@@ -8690,7 +8693,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 				RemoveBadAffect();
 				break;
 			}
-			ItemSystem::ConsumeItem((item ? item->GetEntityHandle() : entt::null));
+			ItemSystem::ConsumeItem(itemEntity);
 		}
 		break;
 
@@ -8718,7 +8721,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 			}
 
 			AddAffect(AFFECT_INVISIBILITY, POINT_NONE, 0, AFF_INVISIBILITY, 300, 0, true);
-			ItemSystem::ConsumeItemEcs((item ? item->GetEntityHandle() : entt::null));
+			ItemSystem::ConsumeItemEcs(itemEntity);
 		}
 		break;
 
@@ -8823,7 +8826,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 				m_nPotionLimit--;
 
 				//RESTRICT_USE_SEED_OR_MOONBOTTLE
-				ItemSystem::ConsumeItemEcs((item ? item->GetEntityHandle() : entt::null));
+				ItemSystem::ConsumeItemEcs(itemEntity);
 				//END_RESTRICT_USE_SEED_OR_MOONBOTTLE
 			}
 		}
@@ -8877,7 +8880,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 			if (GetWarMap())
 				GetWarMap()->UsePotion(this, item);
 
-			ItemSystem::ConsumeItem((item ? item->GetEntityHandle() : entt::null));
+			ItemSystem::ConsumeItem(itemEntity);
 			m_nPotionLimit--;
 			break;
 
@@ -8898,7 +8901,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 		if (GetWarMap())
 			GetWarMap()->UsePotion(this, item);
 
-		ItemSystem::ConsumeItem((item ? item->GetEntityHandle() : entt::null));
+		ItemSystem::ConsumeItem(itemEntity);
 		break;
 
 		case USE_ABILITY_UP:
@@ -8954,7 +8957,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 		if (GetWarMap())
 			GetWarMap()->UsePotion(this, item);
 
-		ItemSystem::ConsumeItem((item ? item->GetEntityHandle() : entt::null));
+		ItemSystem::ConsumeItem(itemEntity);
 		break;
 
 		case USE_TALISMAN:
@@ -9117,7 +9120,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 #ifdef TEXTS_IMPROVEMENT
 			ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 392, "");
 #endif
-			ItemSystem::ConsumeItemEcs((item ? item->GetEntityHandle() : entt::null));
+			ItemSystem::ConsumeItemEcs(itemEntity);
 			break;
 		}
 		case USE_ADD_ATTR_COSTUME1:
@@ -9185,7 +9188,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 #ifdef TEXTS_IMPROVEMENT
 			ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 677, "");
 #endif
-			ItemSystem::ConsumeItemEcs((item ? item->GetEntityHandle() : entt::null));
+			ItemSystem::ConsumeItemEcs(itemEntity);
 			break;
 		}
 		case USE_REMOVE_ATTR_COSTUME:
@@ -9249,7 +9252,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 #ifdef TEXTS_IMPROVEMENT
 			ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 90, "");
 #endif
-			ItemSystem::ConsumeItemEcs((item ? item->GetEntityHandle() : entt::null));
+			ItemSystem::ConsumeItemEcs(itemEntity);
 			break;
 		}
 #endif
@@ -9282,7 +9285,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 #ifdef TEXTS_IMPROVEMENT
 			ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 21, "%s", item2->GetName());
 #endif
-			ItemSystem::ConsumeItemEcs((item ? item->GetEntityHandle() : entt::null));
+			ItemSystem::ConsumeItemEcs(itemEntity);
 			break;
 		}
 #endif
@@ -9339,7 +9342,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 #ifdef TEXTS_IMPROVEMENT
 			ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 74, "");
 #endif
-			ItemSystem::ConsumeItemEcs((item ? item->GetEntityHandle() : entt::null));
+			ItemSystem::ConsumeItemEcs(itemEntity);
 			break;
 		}
 #endif
@@ -9360,7 +9363,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 					return false;
 				}
 
-				bool bClean = CleanAcceAttr((item ? item->GetEntityHandle() : entt::null), (item2 ? item2->GetEntityHandle() : entt::null));
+				bool bClean = CleanAcceAttr(itemEntity, (item2 ? item2->GetEntityHandle() : entt::null));
 				if (bClean) {
 					{
 						char buf[21];
@@ -9448,7 +9451,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 #ifdef TEXTS_IMPROVEMENT
 			ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 65, "");
 #endif
-			ItemSystem::ConsumeItemEcs((item ? item->GetEntityHandle() : entt::null));
+			ItemSystem::ConsumeItemEcs(itemEntity);
 			break;
 		}
 		case USE_PET_ENCHANT: {
@@ -9525,7 +9528,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 			}
 #endif
 
-			ItemSystem::ConsumeItemEcs((item ? item->GetEntityHandle() : entt::null));
+			ItemSystem::ConsumeItemEcs(itemEntity);
 			break;
 		}
 #endif
@@ -9556,7 +9559,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 #ifdef ENABLE_ACCE_SYSTEM
 			if (item->GetValue(0) == ACCE_CLEAN_ATTR_VALUE0)
 			{
-				if (!CleanAcceAttr((item ? item->GetEntityHandle() : entt::null), (item2 ? item2->GetEntityHandle() : entt::null)))
+				if (!CleanAcceAttr(itemEntity, (item2 ? item2->GetEntityHandle() : entt::null)))
 					return false;
 
 				return true;
@@ -9620,7 +9623,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 				return false;
 
 			item2->AddLockedAttr();
-			ItemSystem::ConsumeItemEcs((item ? item->GetEntityHandle() : entt::null));
+			ItemSystem::ConsumeItemEcs(itemEntity);
 		}
 		break;
 		case USE_CHANGE_ATTRIBUTE_LOCK:
@@ -9657,7 +9660,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 
 
 			item2->ChangeLockedAttr();
-			ItemSystem::ConsumeItemEcs((item ? item->GetEntityHandle() : entt::null));
+			ItemSystem::ConsumeItemEcs(itemEntity);
 		}
 		break;
 		case USE_DELETE_ATTRIBUTE_LOCK:
@@ -9691,7 +9694,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 				return false;
 
 			item2->RemoveLockedAttr();
-			ItemSystem::ConsumeItemEcs((item ? item->GetEntityHandle() : entt::null));
+			ItemSystem::ConsumeItemEcs(itemEntity);
 		}
 		break;
 #endif
@@ -9771,7 +9774,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 #ifdef TEXTS_IMPROVEMENT
 			ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 392, "");
 #endif
-			ItemSystem::ConsumeItemEcs((item ? item->GetEntityHandle() : entt::null));
+			ItemSystem::ConsumeItemEcs(itemEntity);
 			break;
 		}
 
@@ -9852,7 +9855,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 					LogManager::instance().ItemLog(this, item, "CLEAN_SOCKET", buf);
 				}
 
-				ItemSystem::ConsumeItemEcs((item ? item->GetEntityHandle() : entt::null));
+				ItemSystem::ConsumeItemEcs(itemEntity);
 
 			}
 			break;
@@ -9992,7 +9995,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 					if (item2->GetType() == ITEM_ARMOR && item2->GetSubType() == ARMOR_PENDANT)
 					{
 						item2->ChangeAttribute();
-						ItemSystem::ConsumeItemEcs((item ? item->GetEntityHandle() : entt::null));
+						ItemSystem::ConsumeItemEcs(itemEntity);
 #ifdef ENABLE_RANKING
 						SetRankPoints(13, GetRankPoints(13) + 1);
 #endif
@@ -10126,7 +10129,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 					LogManager::instance().ItemLog(this, item, "CHANGE_ATTRIBUTE", buf);
 				}
 
-				ItemSystem::ConsumeItemEcs((item ? item->GetEntityHandle() : entt::null));
+				ItemSystem::ConsumeItemEcs(itemEntity);
 #ifdef ENABLE_RANKING
 				if (item->GetVnum() == 86051 || item->GetVnum() == 88965)
 					SetRankPoints(13, GetRankPoints(13) + 1);
@@ -10161,7 +10164,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 #endif
 
 							ItemSystem::AddItemAttributeEcs((item2 ? item2->GetEntityHandle() : entt::null));
-							ItemSystem::ConsumeItemEcs((item ? item->GetEntityHandle() : entt::null));
+							ItemSystem::ConsumeItemEcs(itemEntity);
 							return true;
 						}
 						else
@@ -10242,7 +10245,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 						short AttributeCount = abs(1 - item->GetAttributeCount());//1 bonuszt ad hozz?a z?d er?
 						for (int i = 0; i < AttributeCount; i++)
 							ItemSystem::AddItemAttributeEcs((item2 ? item2->GetEntityHandle() : entt::null));
-						ItemSystem::ConsumeItemEcs((item ? item->GetEntityHandle() : entt::null));// elvesz 1 db ot
+						ItemSystem::ConsumeItemEcs(itemEntity);// elvesz 1 db ot
 #else
 						ItemSystem::AddItemAttributeEcs((item2 ? item2->GetEntityHandle() : entt::null));
 #endif
@@ -10269,7 +10272,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 						LogManager::instance().ItemLog(this, item, "ADD_ATTRIBUTE_FAIL", buf);
 					}
 
-					ItemSystem::ConsumeItemEcs((item ? item->GetEntityHandle() : entt::null));
+					ItemSystem::ConsumeItemEcs(itemEntity);
 #endif
 				}
 #ifdef TEXTS_IMPROVEMENT
@@ -10304,12 +10307,12 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 							if (number(1, 100) <= 75) // % Successo di inserimeno Sfera Benedetta 75%
 							{
 								ItemSystem::AddItemAttributeEcs((item2 ? item2->GetEntityHandle() : entt::null));
-								ItemSystem::ConsumeItemEcs((item ? item->GetEntityHandle() : entt::null));
+								ItemSystem::ConsumeItemEcs(itemEntity);
 								return true;
 							}
 							else
 							{
-								ItemSystem::ConsumeItemEcs((item ? item->GetEntityHandle() : entt::null));
+								ItemSystem::ConsumeItemEcs(itemEntity);
 #ifdef TEXTS_IMPROVEMENT
 								ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 390, "");
 #endif
@@ -10368,7 +10371,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 						LogManager::instance().ItemLog(this, item, "ADD_ATTRIBUTE2_FAIL", buf);
 					}
 
-					ItemSystem::ConsumeItemEcs((item ? item->GetEntityHandle() : entt::null));
+					ItemSystem::ConsumeItemEcs(itemEntity);
 				}
 				else if (item2->GetAttributeCount() == 5)
 				{
@@ -10423,7 +10426,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 							LogManager::instance().ItemLog(this, item, "ADD_SOCKET_FAIL", buf);
 						}
 
-						ItemSystem::ConsumeItemEcs((item ? item->GetEntityHandle() : entt::null));
+						ItemSystem::ConsumeItemEcs(itemEntity);
 					}
 #ifdef TEXTS_IMPROVEMENT
 					else {
@@ -10474,7 +10477,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 													//LogManager::instance().ItemLog(this, item, "PUT_SOCKET_FAIL", buf);
 												//}
 
-							ItemSystem::ConsumeItemEcs((item ? item->GetEntityHandle() : entt::null));
+							ItemSystem::ConsumeItemEcs(itemEntity);
 						}
 						else
 						{
@@ -10520,7 +10523,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 								LogManager::instance().ItemLog(this, item, "PUT_SOCKET_FAIL", buf);
 							}
 
-							ItemSystem::ConsumeItemEcs((item ? item->GetEntityHandle() : entt::null));
+							ItemSystem::ConsumeItemEcs(itemEntity);
 						}
 						else
 						{
@@ -10584,7 +10587,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 			}
 #endif
 			ItemSystem::SetItemSocketEcs((weapon ? weapon->GetEntityHandle() : entt::null), 2, item->GetValue(0));
-			ItemSystem::ConsumeItemEcs((item ? item->GetEntityHandle() : entt::null));
+			ItemSystem::ConsumeItemEcs(itemEntity);
 		}
 		break;
 
@@ -10618,14 +10621,14 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 				// END_PC_BANG_ITEM_ADD
 
 				AddAffect(item->GetValue(0), aApplyInfo[item->GetValue(1)].bPointType, item->GetValue(2), 0, item->GetValue(3), 0, false);
-				ItemSystem::ConsumeItemEcs((item ? item->GetEntityHandle() : entt::null));
+				ItemSystem::ConsumeItemEcs(itemEntity);
 			}
 		}
 		break;
 
 		case USE_CREATE_STONE:
 			ItemSystem::AutoGiveItemEcs(GetEntityHandle(), number(28000, 28013));
-			ItemSystem::ConsumeItemEcs((item ? item->GetEntityHandle() : entt::null));
+			ItemSystem::ConsumeItemEcs(itemEntity);
 			break;
 
 			// ¹°¾à Á¦Á¶ ½º�
@@ -10820,10 +10823,10 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 
 				LogManager::instance().ItemLog(this, item2, "SOCKET", item->GetName());
 #ifdef ENABLE_BUG_FIXES
-				ItemSystem::ConsumeItemEcs((item ? item->GetEntityHandle() : entt::null));
+				ItemSystem::ConsumeItemEcs(itemEntity);
 #else
 #ifdef ENABLE_STONE_STACKFIX
-				ItemSystem::ConsumeItemEcs((item ? item->GetEntityHandle() : entt::null));
+				ItemSystem::ConsumeItemEcs(itemEntity);
 #else
 				ITEM_MANAGER::instance().RemoveItem(item, "REMOVE (METIN)");
 #endif
@@ -10883,7 +10886,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 #endif
 
 					AddAffect(affect_type, apply_type, apply_value, 0, apply_duration, 0, false);
-					ItemSystem::ConsumeItemEcs((item ? item->GetEntityHandle() : entt::null));
+					ItemSystem::ConsumeItemEcs(itemEntity);
 				}
 			}
 		}
@@ -10901,13 +10904,13 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 			if (pDestItem->IsDragonSoul())
 			{
 				entt::entity destItemEntity = (pDestItem ? pDestItem->GetEntityHandle() : entt::null);
-				return DSManager::instance().PullOut(this, NPOS, destItemEntity, (item ? item->GetEntityHandle() : entt::null));
+				return DSManager::instance().PullOut(this, NPOS, destItemEntity, itemEntity);
 			}
 			return false;
 		case EXTRACT_DRAGON_HEART:
 			if (pDestItem->IsDragonSoul())
 			{
-				return DSManager::instance().ExtractDragonHeart(this, (pDestItem ? pDestItem->GetEntityHandle() : entt::null), (item ? item->GetEntityHandle() : entt::null));
+				return DSManager::instance().ExtractDragonHeart(this, (pDestItem ? pDestItem->GetEntityHandle() : entt::null), itemEntity);
 			}
 			return false;
 		default:
@@ -10968,7 +10971,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 		if (!blockUse)
 		{
 			item->Lock(true);
-			ItemSystem::SetItemSocketEcs((item ? item->GetEntityHandle() : entt::null), 1, true);
+			ItemSystem::SetItemSocketEcs(itemEntity, 1, true);
 
 			AddAffect(iAffectID, APPLY_NONE, 0, iAffID, INFINITE_AFFECT_DURATION, item->GetID(), true, false);
 		}

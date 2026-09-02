@@ -786,3 +786,58 @@ Where the remaining 1940 sit
 Roughly half are single-use conversions, which a hoist cannot help - they need
 the surrounding method migrated. The other half are the LPITEM axis, which has
 not been touched at all yet.
+
+
+Phase 18m - UseItemEx: the one function the hoist had to refuse
+----------------------------------------------------------------
+After the tree-wide sweep, an audit of LPITEM-parameter functions showed 149
+conversions across 36 functions - and 113 of them in a single one:
+
+    bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)   // 5759 lines
+
+The generic hoist refused it, and the refusal was right: the body reassigns
+`item` three times (`item = item2;`), so one hoisted value would be stale
+afterwards. But three assignments against 113 conversions is worth doing by
+hand.
+
+Checked before writing anything:
+  * `item` is a by-value LPITEM parameter, not a reference;
+  * exactly three assignments, all the plain `item = item2;`;
+  * no `&item`, no LPITEM& parameter in the body, no `goto`.
+
+So one MUTABLE entity, refreshed immediately after each assignment, is exactly
+equivalent. A redundant inner `entt::entity itemEntity` in a nested block was
+folded into it.
+
+The ordering bug this exposed
+-----------------------------
+The first attempt inserted the three refresh lines and THEN replaced the
+conversions. A refresh line is itself spelled
+
+    itemEntity = item ? item->GetEntityHandle() : entt::null;
+
+so the conversion pass matched the refreshes and rewrote them into
+
+    itemEntity = itemEntity;
+
+A no-op. It compiles, links, and silently leaves the entity stale after every
+reassignment - the first bug in this whole migration that the compiler would
+NOT have caught. It was found by reading the three assignment sites after the
+transform rather than trusting the count. The script now does the replacement
+first, inserts refreshes second, and asserts that no `itemEntity = itemEntity;`
+survives.
+
+Worth generalising: whenever a rewrite inserts text that the same rewrite's
+own pattern can match, order matters and an explicit assertion is cheap.
+
+ItemSystem_LegacyBridge.cpp: 252 -> 146
+Project-wide conversion count: 1940 -> 1831
+Build: RelWithDebInfo GameServer, 0 errors.
+
+Remaining LPITEM work
+---------------------
+The other 36 item-parameter functions carry one conversion each - single uses
+that a hoist cannot improve. Reducing those means flipping LPITEM parameters
+to entt::entity the way the character surface was flipped, which is a separate
+axis and should get its own audit first (CItemRegistry already provides
+Find / FindByVID / FindByLegacy, so the entity side exists).
