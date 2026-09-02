@@ -70,15 +70,15 @@ EVENTFUNC(target_event)
 
 // <Factor> Raplaced direct pointer reference with key searching.
 	//LPCHARACTER pkChr = info->pkChr;
-	LPCHARACTER pkChr = CHARACTER_MANAGER::instance().FindByPID(info->dwPID);
-	if (pkChr == nullptr) {
+	const entt::entity pkChr = CHARACTER_MANAGER::instance().FindEntityByPID(info->dwPID);
+	if (pkChr == entt::null) {
 		return 0; // <Factor> need to be confirmed
 	}
 	LPCHARACTER tch = nullptr;
 	int x = 0, y = 0;
 	int iDist = 5000;
 
-	if (info->iMapIndex != ecs::PlayerRuntime::GetMapIndex(((pkChr) ? (pkChr)->GetEntityHandle() : entt::null)))
+	if (info->iMapIndex != ecs::PlayerRuntime::GetMapIndex(pkChr))
 		return MINMAX(passes_per_sec / 2, iDist / (1500 / passes_per_sec), passes_per_sec * 5);
 
 	switch (info->iType)
@@ -86,18 +86,18 @@ EVENTFUNC(target_event)
 		case TARGET_TYPE_POS:
 			x = info->iArg1;
 			y = info->iArg2;
-			iDist = DISTANCE_APPROX(ecs::PlayerRuntime::GetX(((pkChr) ? (pkChr)->GetEntityHandle() : entt::null)) - x, ecs::PlayerRuntime::GetY(((pkChr) ? (pkChr)->GetEntityHandle() : entt::null)) - y);
+			iDist = DISTANCE_APPROX(ecs::PlayerRuntime::GetX(pkChr) - x, ecs::PlayerRuntime::GetY(pkChr) - y);
 			break;
 
 		case TARGET_TYPE_VID:
 			{
 				tch = CHARACTER_MANAGER::instance().Find(info->iArg1);
 
-				if (tch && ecs::PlayerRuntime::GetMapIndex(((tch) ? (tch)->GetEntityHandle() : entt::null)) == ecs::PlayerRuntime::GetMapIndex(((pkChr) ? (pkChr)->GetEntityHandle() : entt::null)))
+				if (tch && ecs::PlayerRuntime::GetMapIndex(((tch) ? (tch)->GetEntityHandle() : entt::null)) == ecs::PlayerRuntime::GetMapIndex(pkChr))
 				{
 					x = ecs::PlayerRuntime::GetX(((tch) ? (tch)->GetEntityHandle() : entt::null));
 					y = ecs::PlayerRuntime::GetY(((tch) ? (tch)->GetEntityHandle() : entt::null));
-					iDist = DISTANCE_APPROX(ecs::PlayerRuntime::GetX(((pkChr) ? (pkChr)->GetEntityHandle() : entt::null)) - x, ecs::PlayerRuntime::GetY(((pkChr) ? (pkChr)->GetEntityHandle() : entt::null)) - y);
+					iDist = DISTANCE_APPROX(ecs::PlayerRuntime::GetX(pkChr) - x, ecs::PlayerRuntime::GetY(pkChr) - y);
 				}
 			}
 			break;
@@ -106,12 +106,12 @@ EVENTFUNC(target_event)
 	bool bRet = true;
 
 	if (iDist <= 500)
-		bRet = quest::CQuestManager::instance().Target((ecs::PlayerRuntime::GetPlayerID(((pkChr) ? (pkChr)->GetEntityHandle() : entt::null))), info->dwQuestIndex, info->szTargetName, "arrive");
+		bRet = quest::CQuestManager::instance().Target((ecs::PlayerRuntime::GetPlayerID(pkChr)), info->dwQuestIndex, info->szTargetName, "arrive");
 
 	if (!tch && info->iType == TARGET_TYPE_VID)
 	{
-		quest::CQuestManager::instance().Target((ecs::PlayerRuntime::GetPlayerID(((pkChr) ? (pkChr)->GetEntityHandle() : entt::null))), info->dwQuestIndex, info->szTargetName, "die");
-		CTargetManager::instance().DeleteTarget((ecs::PlayerRuntime::GetPlayerID(((pkChr) ? (pkChr)->GetEntityHandle() : entt::null))), info->dwQuestIndex, info->szTargetName);
+		quest::CQuestManager::instance().Target((ecs::PlayerRuntime::GetPlayerID(pkChr)), info->dwQuestIndex, info->szTargetName, "die");
+		CTargetManager::instance().DeleteTarget((ecs::PlayerRuntime::GetPlayerID(pkChr)), info->dwQuestIndex, info->szTargetName);
 	}
 
 	if (event->is_force_to_end)
@@ -123,7 +123,7 @@ EVENTFUNC(target_event)
 	if (x != info->iOldX || y != info->iOldY)
 	{
 		if (info->bSendToClient)
-			SendTargetUpdatePacket(ecs::PlayerRuntime::GetDesc(((pkChr) ? (pkChr)->GetEntityHandle() : entt::null)), info->iID, x, y);
+			SendTargetUpdatePacket(ecs::PlayerRuntime::GetDesc(pkChr), info->iID, x, y);
 
 		info->iOldX = x;
 		info->iOldY = y;
@@ -147,15 +147,15 @@ void CTargetManager::CreateTarget(uint32_t dwPID,
 {
 	LOG_TRACE("CreateTarget : target pid {} quest {} name {} arg {} {} {}", dwPID, dwQuestIndex, c_pszTargetName, iType, iArg1, iArg2);
 
-	LPCHARACTER pkChr = CHARACTER_MANAGER::instance().FindByPID(dwPID);
+	const entt::entity pkChr = CHARACTER_MANAGER::instance().FindEntityByPID(dwPID);
 
-	if (!pkChr)
+	if (pkChr == entt::null)
 	{
 		LOG_ERROR("Cannot find character ptr by PID {}", dwPID);
 		return;
 	}
 
-	if (ecs::PlayerRuntime::GetMapIndex(((pkChr) ? (pkChr)->GetEntityHandle() : entt::null)) != iMapIndex)
+	if (ecs::PlayerRuntime::GetMapIndex(pkChr) != iMapIndex)
 		return;
 
 	auto it = m_map_kListEvent.find(dwPID);
@@ -180,7 +180,7 @@ void CTargetManager::CreateTarget(uint32_t dwPID,
 				LOG_TRACE("CreateTarget : same target will be replaced");
 
 				if (existInfo->bSendToClient)
-					SendTargetDeletePacket(ecs::PlayerRuntime::GetDesc(((pkChr) ? (pkChr)->GetEntityHandle() : entt::null)), existInfo->iID);
+					SendTargetDeletePacket(ecs::PlayerRuntime::GetDesc(pkChr), existInfo->iID);
 
 				if (c_pszTargetDesc)
 				{
@@ -199,7 +199,7 @@ void CTargetManager::CreateTarget(uint32_t dwPID,
 				existInfo->iOldY = 0;
 				existInfo->bSendToClient = iSendFlag ? true : false;
 
-				SendTargetCreatePacket(ecs::PlayerRuntime::GetDesc(((pkChr) ? (pkChr)->GetEntityHandle() : entt::null)), existInfo);
+				SendTargetCreatePacket(ecs::PlayerRuntime::GetDesc(pkChr), existInfo);
 				return;
 			}
 		}
@@ -236,7 +236,7 @@ void CTargetManager::CreateTarget(uint32_t dwPID,
 	{
 		m_map_kListEvent[dwPID].push_back(event);
 
-		SendTargetCreatePacket(ecs::PlayerRuntime::GetDesc(((pkChr) ? (pkChr)->GetEntityHandle() : entt::null)), newInfo);
+		SendTargetCreatePacket(ecs::PlayerRuntime::GetDesc(pkChr), newInfo);
 	}
 }
 
@@ -268,9 +268,9 @@ void CTargetManager::DeleteTarget(uint32_t dwPID, uint32_t dwQuestIndex, const c
 				if (info->bSendToClient) {
 					// <Factor> Removed pkChr
 					// SendTargetDeletePacket for info->pkChr was replaced with PlayerRuntime::GetDesc.
-					LPCHARACTER pkChr = CHARACTER_MANAGER::instance().FindByPID(info->dwPID);
-					if (pkChr != nullptr) {
-						SendTargetDeletePacket(ecs::PlayerRuntime::GetDesc(((pkChr) ? (pkChr)->GetEntityHandle() : entt::null)), info->iID);
+					const entt::entity pkChr = CHARACTER_MANAGER::instance().FindEntityByPID(info->dwPID);
+					if (pkChr != entt::null) {
+						SendTargetDeletePacket(ecs::PlayerRuntime::GetDesc(pkChr), info->iID);
 					}
 				}
 

@@ -1797,21 +1797,21 @@ namespace quest
 
 		int32_t statue_vid = (int32_t)lua_tonumber(L, 2);
 
-		LPCHARACTER statue = CHARACTER_MANAGER::instance().Find(statue_vid);
-		if (!statue)
+		const entt::entity statue = CHARACTER_MANAGER::instance().FindEntity(statue_vid);
+		if (statue == entt::null)
 		{
 			sys_err("The vid {} not exist.", statue_vid);
 			return 0;
 		}
 
-		if (ecs::PlayerRuntime::GetRaceNum(((statue) ? (statue)->GetEntityHandle() : entt::null)) == 6118)
+		if (ecs::PlayerRuntime::GetRaceNum(statue) == 6118)
 		{
-			if (AffectSystem::FindAffect(((statue) ? (statue)->GetEntityHandle() : entt::null), AFFECT_STATUE))
+			if (AffectSystem::FindAffect(statue, AFFECT_STATUE))
 			{
-				AffectSystem::RemoveAffect(((statue) ? (statue)->GetEntityHandle() : entt::null), AFFECT_STATUE);
+				AffectSystem::RemoveAffect(statue, AFFECT_STATUE);
 			}
 
-			AffectSystem::AddAffect(((statue) ? (statue)->GetEntityHandle() : entt::null), AFFECT_STATUE, POINT_NONE, 0, AFF_STATUE4, 3600, 0, true);
+			AffectSystem::AddAffect(statue, AFFECT_STATUE, POINT_NONE, 0, AFF_STATUE4, 3600, 0, true);
 		}
 
 		return 0;

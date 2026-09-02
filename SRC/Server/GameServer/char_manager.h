@@ -74,6 +74,13 @@ protected:
 		LPCHARACTER		FindPC(const char * name);
 		LPCHARACTER		FindByPID(uint32_t dwPID);
 
+		// Entity-returning counterparts. Prefer these where the caller only
+		// needs the ECS handle; they keep the OOP->ECS conversion inside the
+		// manager instead of at every call site.
+		entt::entity		FindEntity(uint32_t dwVID);
+		entt::entity		FindPCEntity(const char * name);
+		entt::entity		FindEntityByPID(uint32_t dwPID);
+
 		bool			AddToStateList(LPCHARACTER ch);
 		void			RemoveFromStateList(LPCHARACTER ch);
 

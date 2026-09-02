@@ -1119,8 +1119,8 @@ void CGuild::RefreshComment(entt::entity character)
 
 void CGuild::RefreshCommentForce(uint32_t player_id)
 {
-	auto* ch = CHARACTER_MANAGER::instance().FindByPID(player_id);
-	if (ch == nullptr) {
+	const entt::entity ch = CHARACTER_MANAGER::instance().FindEntityByPID(player_id);
+	if (ch == entt::null) {
 		return;
 	}
 
@@ -1133,7 +1133,7 @@ void CGuild::RefreshCommentForce(uint32_t player_id)
 
 	uint8_t count = pmsg->Get()->uiNumRows;
 
-	LPDESC d = ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null));
+	LPDESC d = ecs::PlayerRuntime::GetDesc(ch);
 
 	if (!d)
 		return;

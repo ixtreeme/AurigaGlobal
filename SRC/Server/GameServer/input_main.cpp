@@ -3714,12 +3714,12 @@ void CInputMain::PartyRemove(entt::entity character, const char* c_pData)
 			else
 			{
 #ifdef TEXTS_IMPROVEMENT
-				LPCHARACTER B = CHARACTER_MANAGER::instance().FindByPID(p->pid);
-				if (B) {
+				const entt::entity B = CHARACTER_MANAGER::instance().FindEntityByPID(p->pid);
+				if (B != entt::null) {
 					//pParty->SendPartyRemoveOneToAll(B);
-					ecs::ChatSystem::SendNew(((B) ? (B)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 216, "");
+					ecs::ChatSystem::SendNew(B, CHAT_TYPE_INFO, 216, "");
 					//pParty->Unlink(B);
-					//CPartyManager::instance().SetPartyMember(ecs::PlayerRuntime::GetPlayerID(((B) ? (B)->GetEntityHandle() : entt::null)), NULL);
+					//CPartyManager::instance().SetPartyMember(ecs::PlayerRuntime::GetPlayerID(B), NULL);
 				}
 #endif
 				pParty->Quit(p->pid);
@@ -3868,9 +3868,9 @@ void CInputMain::PartyUseSkill(entt::entity character, const char* c_pData)
 			break;
 		case PARTY_SKILL_WARP:
 			{
-				LPCHARACTER pch = CHARACTER_MANAGER::instance().Find(p->vid);
-				if (pch) {
-					ecs::SocialSystem::GetParty(character)->SummonToLeader(ecs::PlayerRuntime::GetPlayerID(((pch) ? (pch)->GetEntityHandle() : entt::null)));
+				const entt::entity pch = CHARACTER_MANAGER::instance().FindEntity(p->vid);
+				if (pch != entt::null) {
+					ecs::SocialSystem::GetParty(character)->SummonToLeader(ecs::PlayerRuntime::GetPlayerID(pch));
 				}
 #ifdef TEXTS_IMPROVEMENT
 				else {
@@ -4126,9 +4126,9 @@ int CInputMain::Guild(entt::entity character, const char * data, size_t uiBytes)
 		case GUILD_SUBHEADER_CG_ADD_MEMBER:
 			{
 				const uint32_t vid = *reinterpret_cast<const uint32_t*>(c_pData);
-				LPCHARACTER newmember = CHARACTER_MANAGER::instance().Find(vid);
+				const entt::entity newmember = CHARACTER_MANAGER::instance().FindEntity(vid);
 
-				if (!newmember)
+				if (newmember == entt::null)
 				{
 #ifdef TEXTS_IMPROVEMENT
 					ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 128, "");
@@ -4137,11 +4137,11 @@ int CInputMain::Guild(entt::entity character, const char * data, size_t uiBytes)
 				}
 
 				// @fixme145 BEGIN (+newmember ispc check)
-				if (!ecs::PlayerRuntime::IsPC(character) || !ecs::PlayerRuntime::IsPC(((newmember) ? (newmember)->GetEntityHandle() : entt::null)))
+				if (!ecs::PlayerRuntime::IsPC(character) || !ecs::PlayerRuntime::IsPC(newmember))
 					return SubPacketLen;
 				// @fixme145 END
 
-				pGuild->Invite(character, ((newmember) ? (newmember)->GetEntityHandle() : entt::null));
+				pGuild->Invite(character, newmember);
 			}
 			return SubPacketLen;
 
@@ -4161,11 +4161,11 @@ int CInputMain::Guild(entt::entity character, const char * data, size_t uiBytes)
 				if (nullptr == m)
 					return -1;
 
-				LPCHARACTER member = CHARACTER_MANAGER::instance().FindByPID(pid);
+				const entt::entity member = CHARACTER_MANAGER::instance().FindEntityByPID(pid);
 
-				if (member)
+				if (member != entt::null)
 				{
-					if (ecs::SocialSystem::GetGuild(((member) ? (member)->GetEntityHandle() : entt::null)) != pGuild)
+					if (ecs::SocialSystem::GetGuild(member) != pGuild)
 					{
 #ifdef TEXTS_IMPROVEMENT
 						ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 161, "");
@@ -4181,8 +4181,8 @@ int CInputMain::Guild(entt::entity character, const char * data, size_t uiBytes)
 						return SubPacketLen;
 					}
 
-					ecs::QuestSystem::SetFlag(((member) ? (member)->GetEntityHandle() : entt::null), "guild_manage.new_withdraw_time", get_global_time());
-					pGuild->RequestRemoveMember(ecs::PlayerRuntime::GetPlayerID(((member) ? (member)->GetEntityHandle() : entt::null)));
+					ecs::QuestSystem::SetFlag(member, "guild_manage.new_withdraw_time", get_global_time());
+					pGuild->RequestRemoveMember(ecs::PlayerRuntime::GetPlayerID(member));
 
 					if (g_bGuildInviteLimit)
 					{

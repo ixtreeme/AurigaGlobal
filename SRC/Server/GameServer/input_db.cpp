@@ -1162,12 +1162,12 @@ EVENTFUNC(quest_login_event)
 
 	uint32_t dwPID = info->dwPID;
 
-	auto* ch = CHARACTER_MANAGER::instance().FindByPID(dwPID);
+	const entt::entity ch = CHARACTER_MANAGER::instance().FindEntityByPID(dwPID);
 
-	if (!ch)
+	if (ch == entt::null)
 		return 0;
 
-	LPDESC d = ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null));
+	LPDESC d = ecs::PlayerRuntime::GetDesc(ch);
 
 	if (!d)
 		return 0;
@@ -1186,13 +1186,13 @@ EVENTFUNC(quest_login_event)
 	}
 	else if (d->IsPhase(PHASE_GAME))
 	{
-		LOG_INFO("QUEST_LOAD: Login pc {} by event", (ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null))));
-		quest::CQuestManager::instance().Login((ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null))));
+		LOG_INFO("QUEST_LOAD: Login pc {} by event", (ecs::PlayerRuntime::GetPlayerID(ch)));
+		quest::CQuestManager::instance().Login((ecs::PlayerRuntime::GetPlayerID(ch)));
 		return 0;
 	}
 	else
 	{
-		LOG_ERROR("input_db.cpp:quest_login_event INVALID PHASE pid {}", (ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null))));
+		LOG_ERROR("input_db.cpp:quest_login_event INVALID PHASE pid {}", (ecs::PlayerRuntime::GetPlayerID(ch)));
 		return 0;
 	}
 }

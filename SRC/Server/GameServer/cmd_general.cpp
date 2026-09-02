@@ -1839,17 +1839,17 @@ ACMD(do_decline_pvp)
 	uint32_t vid = 0;
 	str_to_number(vid, arg1);
 
-	LPCHARACTER pkVictim = CHARACTER_MANAGER::instance().Find(vid);
+	const entt::entity pkVictim = CHARACTER_MANAGER::instance().FindEntity(vid);
 
-	if (!pkVictim)
+	if (pkVictim == entt::null)
 		return;
 
-	if (ecs::PlayerRuntime::IsNPC(((pkVictim) ? (pkVictim)->GetEntityHandle() : entt::null)))
+	if (ecs::PlayerRuntime::IsNPC(pkVictim))
 		return;
 
-	CPVPManager::instance().Decline(character, ((pkVictim) ? (pkVictim)->GetEntityHandle() : entt::null));
+	CPVPManager::instance().Decline(character, pkVictim);
 	ecs::QuestSystem::SetFlag(character, "pvp.timed", 0);
-	ecs::QuestSystem::SetFlag(((pkVictim) ? (pkVictim)->GetEntityHandle() : entt::null), "pvp.timed", 0);
+	ecs::QuestSystem::SetFlag(pkVictim, "pvp.timed", 0);
 }
 ACMD(do_block_equipment)
 {
@@ -2471,10 +2471,10 @@ ACMD(do_messenger_auth)
 	bool bIsAdded = MessengerManager::instance().AuthToAdd(ecs::PlayerRuntime::GetName(character).data(), arg2, bIsDenied); // DENY
 	if (bIsAdded && bIsDenied)
 	{
-		LPCHARACTER tch = CHARACTER_MANAGER::instance().FindPC(arg2);
+		const entt::entity tch = CHARACTER_MANAGER::instance().FindPCEntity(arg2);
 #ifdef TEXTS_IMPROVEMENT
-		if (tch) {
-			ecs::ChatSystem::SendNew(((tch) ? (tch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 107, "%s", ecs::PlayerRuntime::GetName(character).data());
+		if (tch != entt::null) {
+			ecs::ChatSystem::SendNew(tch, CHAT_TYPE_INFO, 107, "%s", ecs::PlayerRuntime::GetName(character).data());
 		}
 #endif
 	}
@@ -2589,15 +2589,15 @@ ACMD(do_view_equip)
 	{
 		uint32_t vid = 0;
 		str_to_number(vid, arg1);
-		auto* tch = CHARACTER_MANAGER::instance().Find(vid);
+		const entt::entity tch = CHARACTER_MANAGER::instance().FindEntity(vid);
 
-		if (!tch)
+		if (tch == entt::null)
 			return;
 
-		if (!ecs::PlayerRuntime::IsPC(((tch) ? (tch)->GetEntityHandle() : entt::null)))
+		if (!ecs::PlayerRuntime::IsPC(tch))
 			return;
 
-		NetworkSyncSystem::SendEquipmentToViewer(g_registry, ((tch) ? (tch)->GetEntityHandle() : entt::null), character);
+		NetworkSyncSystem::SendEquipmentToViewer(g_registry, tch, character);
 	}
 }
 

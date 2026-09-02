@@ -1118,13 +1118,13 @@ void CSwitchbotManager::SendSwitchbotUpdate(uint32_t player_id)
 		return;
 	}
 
-	LPCHARACTER ch = CHARACTER_MANAGER::Instance().FindByPID(player_id);
-	if (!ch)
+	const entt::entity ch = CHARACTER_MANAGER::Instance().FindEntityByPID(player_id);
+	if (ch == entt::null)
 	{
 		return;
 	}
 
-	LPDESC desc = ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null));
+	LPDESC desc = ecs::PlayerRuntime::GetDesc(ch);
 	if (!desc)
 	{
 		return;

@@ -223,10 +223,10 @@ void MessengerManager::__AddToList(MessengerManager::keyA account, MessengerMana
 	m_Relation[account].insert(companion);
 	m_InverseRelation[companion].insert(account);
 
-	LPCHARACTER ch = CHARACTER_MANAGER::instance().FindPC(account.c_str());
+	const entt::entity ch = CHARACTER_MANAGER::instance().FindPCEntity(account.c_str());
 #ifdef TEXTS_IMPROVEMENT
-	if (ch) {
-		ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 183, "%s", companion.c_str());
+	if (ch != entt::null) {
+		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 183, "%s", companion.c_str());
 	}
 #endif
 	LPCHARACTER tch = CHARACTER_MANAGER::instance().FindPC(companion.c_str());
@@ -298,12 +298,12 @@ void MessengerManager::LoadTeamList(SQLMsg * msg)
 
 void MessengerManager::SendTeamList(MessengerManager::keyA account)
 {
-	LPCHARACTER ch = CHARACTER_MANAGER::instance().FindPC(account.c_str());
+	const entt::entity ch = CHARACTER_MANAGER::instance().FindPCEntity(account.c_str());
 
-	if (!ch)
+	if (ch == entt::null)
 		return;
 
-	LPDESC d = ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null));
+	LPDESC d = ecs::PlayerRuntime::GetDesc(ch);
 
 	if (!d)
 		return;
@@ -391,8 +391,8 @@ void MessengerManager::SendTeamList(MessengerManager::keyA account)
 
 void MessengerManager::SendTeamLogin(MessengerManager::keyA account, MessengerManager::keyA companion)
 {
-	LPCHARACTER ch = CHARACTER_MANAGER::instance().FindPC(account.c_str());
-	LPDESC d = ch ? ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null)) : nullptr;
+	const entt::entity ch = CHARACTER_MANAGER::instance().FindPCEntity(account.c_str());
+	LPDESC d = ch != entt::null ? ecs::PlayerRuntime::GetDesc(ch) : nullptr;
 
 	if (!d)
 		return;
@@ -417,8 +417,8 @@ void MessengerManager::SendTeamLogout(MessengerManager::keyA account, MessengerM
 	if (!companion.size())
 		return;
 
-	LPCHARACTER ch = CHARACTER_MANAGER::instance().FindPC(account.c_str());
-	LPDESC d = ch ? ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null)) : nullptr;
+	const entt::entity ch = CHARACTER_MANAGER::instance().FindPCEntity(account.c_str());
+	LPDESC d = ch != entt::null ? ecs::PlayerRuntime::GetDesc(ch) : nullptr;
 
 	if (!d)
 		return;
@@ -469,11 +469,11 @@ void MessengerManager::LoadHelperList(SQLMsg * msg)
 
 void MessengerManager::SendHelperList(MessengerManager::keyA account)
 {
-	LPCHARACTER ch = CHARACTER_MANAGER::instance().FindPC(account.c_str());
-	if (!ch)
+	const entt::entity ch = CHARACTER_MANAGER::instance().FindPCEntity(account.c_str());
+	if (ch == entt::null)
 		return;
 
-	LPDESC d = ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null));
+	LPDESC d = ecs::PlayerRuntime::GetDesc(ch);
 	if (!d)
 		return;
 
@@ -562,8 +562,8 @@ void MessengerManager::SendHelperList(MessengerManager::keyA account)
 
 void MessengerManager::SendHelperLogin(MessengerManager::keyA account, MessengerManager::keyA companion)
 {
-	LPCHARACTER ch = CHARACTER_MANAGER::instance().FindPC(account.c_str());
-	LPDESC d = ch ? ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null)) : nullptr;
+	const entt::entity ch = CHARACTER_MANAGER::instance().FindPCEntity(account.c_str());
+	LPDESC d = ch != entt::null ? ecs::PlayerRuntime::GetDesc(ch) : nullptr;
 	if (!d)
 	{
 		return;
@@ -593,8 +593,8 @@ void MessengerManager::SendHelperLogout(MessengerManager::keyA account, Messenge
 		return;
 	}
 
-	LPCHARACTER ch = CHARACTER_MANAGER::instance().FindPC(account.c_str());
-	LPDESC d = ch ? ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null)) : nullptr;
+	const entt::entity ch = CHARACTER_MANAGER::instance().FindPCEntity(account.c_str());
+	LPDESC d = ch != entt::null ? ecs::PlayerRuntime::GetDesc(ch) : nullptr;
 
 	if (!d)
 	{
@@ -619,10 +619,10 @@ void MessengerManager::__RemoveFromList(MessengerManager::keyA account, Messenge
 	m_Relation[account].erase(companion);
 	m_InverseRelation[companion].erase(account);
 
-	LPCHARACTER ch = CHARACTER_MANAGER::instance().FindPC(account.c_str());
+	const entt::entity ch = CHARACTER_MANAGER::instance().FindPCEntity(account.c_str());
 #ifdef TEXTS_IMPROVEMENT
-	if (ch) {
-		ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 182, "%s", companion.c_str());
+	if (ch != entt::null) {
+		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 182, "%s", companion.c_str());
 	}
 #endif
 }
@@ -689,12 +689,12 @@ void MessengerManager::RemoveAllList(keyA account)
 
 void MessengerManager::SendList(MessengerManager::keyA account)
 {
-	LPCHARACTER ch = CHARACTER_MANAGER::instance().FindPC(account.c_str());
+	const entt::entity ch = CHARACTER_MANAGER::instance().FindPCEntity(account.c_str());
 
-	if (!ch)
+	if (ch == entt::null)
 		return;
 
-	LPDESC d = ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null));
+	LPDESC d = ecs::PlayerRuntime::GetDesc(ch);
 
 	if (!d)
 		return;
@@ -752,8 +752,8 @@ void MessengerManager::SendList(MessengerManager::keyA account)
 
 void MessengerManager::SendLogin(MessengerManager::keyA account, MessengerManager::keyA companion)
 {
-	LPCHARACTER ch = CHARACTER_MANAGER::instance().FindPC(account.c_str());
-	LPDESC d = ch ? ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null)) : nullptr;
+	const entt::entity ch = CHARACTER_MANAGER::instance().FindPCEntity(account.c_str());
+	LPDESC d = ch != entt::null ? ecs::PlayerRuntime::GetDesc(ch) : nullptr;
 
 	if (!d)
 		return;
@@ -761,7 +761,7 @@ void MessengerManager::SendLogin(MessengerManager::keyA account, MessengerManage
 	if (!d->GetCharacter())
 		return;
 
-	if (ecs::PlayerRuntime::GetGMLevel(((ch) ? (ch)->GetEntityHandle() : entt::null)) == GM_PLAYER && gm_get_level(companion.c_str()) != GM_PLAYER)
+	if (ecs::PlayerRuntime::GetGMLevel(ch) == GM_PLAYER && gm_get_level(companion.c_str()) != GM_PLAYER)
 		return;
 
 	uint8_t bLen = companion.size();
@@ -782,8 +782,8 @@ void MessengerManager::SendLogout(MessengerManager::keyA account, MessengerManag
 	if (!companion.size())
 		return;
 
-	LPCHARACTER ch = CHARACTER_MANAGER::instance().FindPC(account.c_str());
-	LPDESC d = ch ? ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null)) : nullptr;
+	const entt::entity ch = CHARACTER_MANAGER::instance().FindPCEntity(account.c_str());
+	LPDESC d = ch != entt::null ? ecs::PlayerRuntime::GetDesc(ch) : nullptr;
 
 	if (!d)
 		return;

@@ -6481,18 +6481,18 @@ bool CHARACTER::Shoot(uint8_t bType)
 
 void CHARACTER::FlyTarget(uint32_t dwTargetVID, int32_t x, int32_t y, uint8_t bHeader)
 {
-	auto* pkVictim = CHARACTER_MANAGER::instance().Find(dwTargetVID);
+	const entt::entity pkVictim = CHARACTER_MANAGER::instance().FindEntity(dwTargetVID);
 	TPacketGCFlyTargeting pack;
 
 	//pack.bHeader	= HEADER_GC_FLY_TARGETING;
 	pack.bHeader = (bHeader == HEADER_CG_FLY_TARGETING) ? HEADER_GC_FLY_TARGETING : HEADER_GC_ADD_FLY_TARGETING;
 	pack.dwShooterVID = GetPacketVID();
 
-	if (pkVictim)
+	if (pkVictim != entt::null)
 	{
-		pack.dwTargetVID = ecs::PlayerRuntime::GetPacketVID((pkVictim ? pkVictim->GetEntityHandle() : entt::null));
-		pack.x = ecs::PlayerRuntime::GetX((pkVictim ? pkVictim->GetEntityHandle() : entt::null));
-		pack.y = ecs::PlayerRuntime::GetY((pkVictim ? pkVictim->GetEntityHandle() : entt::null));
+		pack.dwTargetVID = ecs::PlayerRuntime::GetPacketVID(pkVictim);
+		pack.x = ecs::PlayerRuntime::GetX(pkVictim);
+		pack.y = ecs::PlayerRuntime::GetY(pkVictim);
 
 		if (bHeader == HEADER_CG_FLY_TARGETING)
 			m_dwFlyTargetID = dwTargetVID;

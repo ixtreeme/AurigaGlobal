@@ -573,6 +573,30 @@ LPCHARACTER CHARACTER_MANAGER::FindByPID(uint32_t dwPID)
 	return found;
 }
 
+entt::entity CHARACTER_MANAGER::FindEntity(uint32_t dwVID)
+{
+	// CVIDRegistry is the ECS-side authority for VID -> entity; Find() only
+	// falls back to the legacy map (and logs VID_DRIFT) when they disagree.
+	if (const entt::entity entity = CVIDRegistry::Instance().Find(dwVID);
+		entity != entt::null && g_registry.valid(entity))
+		return entity;
+
+	LPCHARACTER found = Find(dwVID);
+	return found ? found->GetEntityHandle() : entt::null;
+}
+
+entt::entity CHARACTER_MANAGER::FindPCEntity(const char* name)
+{
+	LPCHARACTER found = FindPC(name);
+	return found ? found->GetEntityHandle() : entt::null;
+}
+
+entt::entity CHARACTER_MANAGER::FindEntityByPID(uint32_t dwPID)
+{
+	LPCHARACTER found = FindByPID(dwPID);
+	return found ? found->GetEntityHandle() : entt::null;
+}
+
 LPCHARACTER CHARACTER_MANAGER::FindPC(const char* name)
 {
 	char szName[CHARACTER_NAME_MAX_LEN + 1];

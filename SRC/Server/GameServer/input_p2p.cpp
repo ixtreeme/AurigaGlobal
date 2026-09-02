@@ -305,21 +305,21 @@ void CInputP2P::MessengerRemove(const char * c_pData)
 void CInputP2P::FindPosition(LPDESC d, const char* c_pData)
 {
 	TPacketGGFindPosition* p = (TPacketGGFindPosition*) c_pData;
-	LPCHARACTER ch = CHARACTER_MANAGER::instance().FindByPID(p->dwTargetPID);
+	const entt::entity ch = CHARACTER_MANAGER::instance().FindEntityByPID(p->dwTargetPID);
 
 #ifdef __CMD_WARP_IN_DUNGEON__
-	if (ch)
+	if (ch != entt::null)
 #else
-	if (ch && ecs::PlayerRuntime::GetMapIndex(((ch) ? (ch)->GetEntityHandle() : entt::null)) < 10000)
+	if (ch != entt::null && ecs::PlayerRuntime::GetMapIndex(ch) < 10000)
 #endif
 	{
 		TPacketGGWarpCharacter pw;
 		pw.header = HEADER_GG_WARP_CHARACTER;
 		pw.pid = p->dwFromPID;
-		pw.x = ecs::PlayerRuntime::GetX(((ch) ? (ch)->GetEntityHandle() : entt::null));
-		pw.y = ecs::PlayerRuntime::GetY(((ch) ? (ch)->GetEntityHandle() : entt::null));
+		pw.x = ecs::PlayerRuntime::GetX(ch);
+		pw.y = ecs::PlayerRuntime::GetY(ch);
 #ifdef __CMD_WARP_IN_DUNGEON__
-		pw.mapIndex = (ecs::PlayerRuntime::GetMapIndex(((ch) ? (ch)->GetEntityHandle() : entt::null)) < 10000) ? 0 : ecs::PlayerRuntime::GetMapIndex(((ch) ? (ch)->GetEntityHandle() : entt::null));
+		pw.mapIndex = (ecs::PlayerRuntime::GetMapIndex(ch) < 10000) ? 0 : ecs::PlayerRuntime::GetMapIndex(ch);
 #endif
 		d->Packet(&pw, sizeof(pw));
 	}
@@ -331,16 +331,16 @@ void CInputP2P::FindPosition(LPDESC d, const char* c_pData)
 void CInputP2P::WarpCharacter(const char* c_pData)
 {
 	TPacketGGWarpCharacter* p = (TPacketGGWarpCharacter*) c_pData;
-	LPCHARACTER ch = CHARACTER_MANAGER::instance().FindByPID(p->pid);
+	const entt::entity ch = CHARACTER_MANAGER::instance().FindEntityByPID(p->pid);
 #ifdef __CMD_WARP_IN_DUNGEON__
-	if (ch)
+	if (ch != entt::null)
 	{
-		ecs::MovementSystem::WarpSet(((ch) ? (ch)->GetEntityHandle() : entt::null), p->x, p->y, p->mapIndex);
+		ecs::MovementSystem::WarpSet(ch, p->x, p->y, p->mapIndex);
 	}
 #else
-	if (ch)
+	if (ch != entt::null)
 	{
-		ecs::MovementSystem::WarpSet(((ch) ? (ch)->GetEntityHandle() : entt::null), p->x, p->y);
+		ecs::MovementSystem::WarpSet(ch, p->x, p->y);
 	}
 #endif
 }
@@ -369,10 +369,10 @@ void CInputP2P::Transfer(const char * c_pData)
 {
 	TPacketGGTransfer * p = (TPacketGGTransfer *) c_pData;
 
-	LPCHARACTER ch = CHARACTER_MANAGER::instance().FindPC(p->szName);
+	const entt::entity ch = CHARACTER_MANAGER::instance().FindPCEntity(p->szName);
 
-	if (ch)
-		ecs::MovementSystem::WarpSet(((ch) ? (ch)->GetEntityHandle() : entt::null), p->lX, p->lY);
+	if (ch != entt::null)
+		ecs::MovementSystem::WarpSet(ch, p->lX, p->lY);
 }
 
 void CInputP2P::LoginPing(LPDESC d, const char * c_pData)
@@ -393,12 +393,12 @@ void CInputP2P::BlockChat(const char * c_pData)
 {
 	TPacketGGBlockChat * p = (TPacketGGBlockChat *) c_pData;
 
-	LPCHARACTER ch = CHARACTER_MANAGER::instance().FindPC(p->szName);
+	const entt::entity ch = CHARACTER_MANAGER::instance().FindPCEntity(p->szName);
 
-	if (ch)
+	if (ch != entt::null)
 	{
 		LOG_INFO("BLOCK CHAT apply name {} dur {}", p->szName, p->lBlockDuration);
-		AffectSystem::AddAffect(((ch) ? (ch)->GetEntityHandle() : entt::null), AFFECT_BLOCK_CHAT, POINT_NONE, 0, AFF_NONE, p->lBlockDuration, 0, true);
+		AffectSystem::AddAffect(ch, AFFECT_BLOCK_CHAT, POINT_NONE, 0, AFF_NONE, p->lBlockDuration, 0, true);
 	}
 	else
 	{

@@ -84,8 +84,8 @@ void Command_ApplyAffect(LPCHARACTER ch, const char* argument, const char* affec
 		return;
 	}
 
-	LPCHARACTER tch = CHARACTER_MANAGER::instance().FindPC(arg1);
-	if (!tch)
+	const entt::entity tch = CHARACTER_MANAGER::instance().FindPCEntity(arg1);
+	if (tch == entt::null)
 	{
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 800, "%s", arg1);
@@ -96,10 +96,10 @@ void Command_ApplyAffect(LPCHARACTER ch, const char* argument, const char* affec
 	switch (cmdAffect)
 	{
 		case COMMANDAFFECT_STUN:
-			SkillAttackAffect(((tch) ? (tch)->GetEntityHandle() : entt::null), 1000, IMMUNE_STUN, AFFECT_STUN, POINT_NONE, 0, AFF_STUN, 30, "GM_STUN");
+			SkillAttackAffect(tch, 1000, IMMUNE_STUN, AFFECT_STUN, POINT_NONE, 0, AFF_STUN, 30, "GM_STUN");
 			break;
 		case COMMANDAFFECT_SLOW:
-			SkillAttackAffect(((tch) ? (tch)->GetEntityHandle() : entt::null), 1000, IMMUNE_SLOW, AFFECT_SLOW, POINT_MOV_SPEED, -30, AFF_SLOW, 30, "GM_SLOW");
+			SkillAttackAffect(tch, 1000, IMMUNE_SLOW, AFFECT_SLOW, POINT_MOV_SPEED, -30, AFF_SLOW, 30, "GM_SLOW");
 			break;
 	}
 
@@ -3864,8 +3864,8 @@ ACMD(do_end_duel)
 
 	one_argument(argument, szName, sizeof(szName));
 
-	LPCHARACTER pChar = CHARACTER_MANAGER::instance().FindPC(szName);
-	if (pChar == nullptr)
+	const entt::entity pChar = CHARACTER_MANAGER::instance().FindPCEntity(szName);
+	if (pChar == entt::null)
 	{
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 463, "");
@@ -3873,7 +3873,7 @@ ACMD(do_end_duel)
 		return;
 	}
 
-	CArenaManager::instance().EndDuel(ecs::PlayerRuntime::GetPlayerID(((pChar) ? (pChar)->GetEntityHandle() : entt::null)));
+	CArenaManager::instance().EndDuel(ecs::PlayerRuntime::GetPlayerID(pChar));
 }
 
 ACMD(do_duel)

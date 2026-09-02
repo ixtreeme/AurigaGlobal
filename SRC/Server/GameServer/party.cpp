@@ -270,11 +270,11 @@ EVENTFUNC(party_update_event)
 	}
 
 	uint32_t pid = info->pid;
-	auto* leader = CHARACTER_MANAGER::instance().FindByPID(pid);
+	const entt::entity leader = CHARACTER_MANAGER::instance().FindEntityByPID(pid);
 
-	if (leader && ecs::PlayerRuntime::GetDesc(((leader) ? (leader)->GetEntityHandle() : entt::null)))
+	if (leader != entt::null && ecs::PlayerRuntime::GetDesc(leader))
 	{
-		LPPARTY pParty = ecs::SocialSystem::GetParty(((leader) ? (leader)->GetEntityHandle() : entt::null));
+		LPPARTY pParty = ecs::SocialSystem::GetParty(leader);
 
 		if (pParty)
 			pParty->Update();

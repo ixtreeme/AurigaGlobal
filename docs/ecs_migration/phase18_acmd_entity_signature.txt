@@ -452,3 +452,89 @@ These come from CHARACTER_MANAGER::SpawnMob, which still returns LPCHARACTER -
 the same identity boundary that phase 18c deliberately left alone. They cannot
 move until the spawn/lookup API returns entities.
 LostCastleDungeon keeps 76 of the 196 because it is the clone-heavy one.
+
+
+Phase 18h - identity boundary: entity-returning lookups
+--------------------------------------------------------
+AUDIT FIRST. Before touching anything, every site that assigns from a
+CHARACTER_MANAGER lookup or factory was measured:
+
+  api                     sites   conversions   remaining pointer uses
+  FindByPID                  40           222                      495
+  Find                       40           170                      237
+  CreateCharacter             5            51                      135
+  FindPC                     30            44                       68
+  SpawnMob                   30            33                       73
+  (+ SpawnMobRange, SpawnMobRandomPosition, FindSpecifyPC)
+  TOTAL                     150           531                     1035
+
+The conclusion matters more than the numbers: flipping the whole lookup API's
+return type would remove 531 conversions but leave 1035 real legacy CHARACTER
+method calls behind, each needing a LegacyCharOf alias. It would relocate work
+rather than remove it, and it would make ~118 sites temporarily *worse*
+(entity + immediate alias + split null handling).
+
+So the identity boundary is being opened where it is genuinely free, not
+big-bang. What actually blocks those 1035 uses is the legacy method surface,
+not the lookup API.
+
+What was added
+--------------
+char_manager.h/.cpp gained three entity-returning counterparts:
+
+  entt::entity FindEntity(uint32_t dwVID);
+  entt::entity FindPCEntity(const char* name);
+  entt::entity FindEntityByPID(uint32_t dwPID);
+
+FindEntity goes straight to CVIDRegistry - which is already the ECS-side
+authority for VID -> entity, and which Find() already consults first, logging
+VID_DRIFT when it has to fall back. The other two convert once inside the
+manager. No new bookkeeping, no second source of truth, no drift risk.
+
+What was migrated
+-----------------
+33 sites in 12 files where the looked-up local is *only* ever fed to
+conversions and null tests. At those sites the pointer disappears completely:
+
+  -  LPCHARACTER pkChr = CHARACTER_MANAGER::instance().FindByPID(info->dwPID);
+  -  if (pkChr == nullptr) return 0;
+  -  ... GetMapIndex(((pkChr) ? (pkChr)->GetEntityHandle() : entt::null)) ...
+  +  const entt::entity pkChr = CHARACTER_MANAGER::instance().FindEntityByPID(info->dwPID);
+  +  if (pkChr == entt::null) return 0;
+  +  ... GetMapIndex(pkChr) ...
+
+68 conversions removed, plus 20 boolean uses made explicit (entt::entity has
+no conversion to bool, so `if (v)` had to become `if (v != entt::null)`).
+
+Three tooling failures on the way, all reverted whole rather than patched
+------------------------------------------------------------------------
+This pass was rewritten from scratch three times. Worth recording, because the
+first two mistakes are the kind that can land silently:
+
+1. Multiple edits inside one function body: the driver spliced the file per
+   edit while other recorded edits still pointed into the old text. Now one
+   edit per body per pass, and the driver re-runs until a pass is empty.
+
+2. The "is this local only used through conversions?" test accepted any use
+   preceded by "(", so `if (pkVictim->GetArena())` and
+   `make_pair(key, ch)` counted as null tests. It is now a strict whitelist of
+   exact null/truth-test shapes; anything else disqualifies the site.
+
+3. The conversion regex allowed the parentheses to be optional on both sides,
+   so against the single-paren spelling it swallowed the *enclosing call's*
+   parenthesis:
+       GetPacketVID(v ? v->GetEntityHandle() : entt::null)  ->  GetPacketVIDv
+   It now matches three explicit shapes and never consumes a paren that
+   belongs to a caller. Earlier phases were checked and are unaffected - their
+   helpers only ever matched the fully-parenthesised double form.
+
+Project-wide conversion count: 3730 -> 3665
+Build: RelWithDebInfo GameServer, 0 errors.
+
+Next, in the order the audit suggests
+-------------------------------------
+Do NOT flip the lookup return types wholesale yet. The 1035 pointer uses are
+legacy CHARACTER methods; migrate that surface first (new_offlineshop_manager
+127, party 113, item_manager 80, ...). Every method that moves shrinks the
+pointer count at the lookup sites, and the identity flip gets cheaper each
+time. Re-run the audit to decide when it has tipped.
