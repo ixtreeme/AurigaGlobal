@@ -971,7 +971,7 @@ int battle_hit(entt::entity attacker, entt::entity victim, int & iRetDam)
 	iRetDam = iDam;
 
 	//PROF_UNIT puDam("Dam");
-	if (pkVictim->Damage(pkAttacker, iDam, DAMAGE_TYPE_NORMAL))
+	if (pkVictim->Damage(attacker, iDam, DAMAGE_TYPE_NORMAL))
 		return (BATTLE_DEAD);
 //#ifdef ENABLE_MAP1_SKILL_MOB
 //	if (ecs::PlayerRuntime::IsPC(attacker) /*&& pkAttacker->IsSkillHit()*/

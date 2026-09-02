@@ -301,8 +301,7 @@ bool Damage(entt::entity target, entt::entity attacker, int damage, uint8_t dama
     if (!legacyTarget)
         return false;
 
-    return legacyTarget->Damage(
-        LegacyCharOf(attacker), damage, static_cast<EDamageType>(damageType));
+    return legacyTarget->Damage(attacker, damage, static_cast<EDamageType>(damageType));
 }
 
 void Dead(entt::entity victim, entt::entity killer, bool immediate)
@@ -4599,11 +4598,11 @@ static int64_t CalcReferenceBowHitDamage(LegacyCharHandle pAttacker, LegacyCharH
 static int64_t CalcReferenceBasicHitDamage(LegacyCharHandle pAttacker, LegacyCharHandle pVictim);
 static int64_t CalcReferenceNormalHitDamage(LegacyCharHandle pAttacker, LegacyCharHandle pVictim);
 
-bool CHARACTER::Damage(LPCHARACTER pAttacker, int64_t dam, EDamageType type) // returns true if dead
+bool CHARACTER::Damage(entt::entity attacker, int64_t dam, EDamageType type) // returns true if dead
 {
-	const entt::entity attacker = pAttacker ? pAttacker->GetEntityHandle() : entt::null;
+	LPCHARACTER pkAttacker = ecs::LegacyCharOf(attacker);
 #ifdef DISABLE_PC_ATTACK_PC_ON_MAPIDEX1
-	if (pAttacker && ecs::PlayerRuntime::IsPC(attacker) && IsPC() && GetMapIndex() == 1)
+	if (pkAttacker && ecs::PlayerRuntime::IsPC(attacker) && IsPC() && GetMapIndex() == 1)
 		return false;
 #endif
 	if (GetInvincible())
@@ -4614,7 +4613,7 @@ bool CHARACTER::Damage(LPCHARACTER pAttacker, int64_t dam, EDamageType type) // 
 		return false;
 #endif
 
-	if (pAttacker)
+	if (pkAttacker)
 	{
 		const entt::entity attackerEntity = attacker;
 		const bool hasWeapon = ItemSystem::IsValidItem(
@@ -4633,15 +4632,15 @@ bool CHARACTER::Damage(LPCHARACTER pAttacker, int64_t dam, EDamageType type) // 
 
 	}
 
-	if ((IsPC() && IsAffectFlag(AFF_REVIVE_INVISIBLE)) || (pAttacker && (ecs::PlayerRuntime::IsPC(attacker) && AffectSystem::IsAffectFlag(attacker, AFF_REVIVE_INVISIBLE))))
+	if ((IsPC() && IsAffectFlag(AFF_REVIVE_INVISIBLE)) || (pkAttacker && (ecs::PlayerRuntime::IsPC(attacker) && AffectSystem::IsAffectFlag(attacker, AFF_REVIVE_INVISIBLE))))
 		return false;
 
 #ifdef ENABLE_NEWSTUFF
-	if (pAttacker && IsStone() && ecs::PlayerRuntime::IsPC(attacker))
+	if (pkAttacker && IsStone() && ecs::PlayerRuntime::IsPC(attacker))
 	{
 		if (GetEmpire() && GetEmpire() == ecs::PlayerRuntime::GetEmpire(attacker))
 		{
-			SendDamagePacket(pAttacker ? pAttacker->GetEntityHandle() : entt::null, 0, DAMAGE_BLOCK);
+			SendDamagePacket(attacker, 0, DAMAGE_BLOCK);
 			return false;
 		}
 	}
@@ -4664,7 +4663,7 @@ bool CHARACTER::Damage(LPCHARACTER pAttacker, int64_t dam, EDamageType type) // 
 		}
 	}
 #ifdef ENABLE_MAX_100K_DMG_ON_EVENT_MAP_RAZOR93
-	if (pAttacker && ecs::PlayerRuntime::IsPC(attacker) && GetMapIndex() == 1 && (IsMonster() || IsStone()))
+	if (pkAttacker && ecs::PlayerRuntime::IsPC(attacker) && GetMapIndex() == 1 && (IsMonster() || IsStone()))
 	{
 #ifdef DISABLE_DAMAGE_TYPE_NORMAL_RANGE_EVENT_MAP
 
@@ -4676,14 +4675,14 @@ bool CHARACTER::Damage(LPCHARACTER pAttacker, int64_t dam, EDamageType type) // 
 		if (weaponProto && weaponProto->bSubType == WEAPON_BOW)
 		{
 
-			SendDamagePacket(pAttacker ? pAttacker->GetEntityHandle() : entt::null, 0, DAMAGE_BLOCK);
+			SendDamagePacket(attacker, 0, DAMAGE_BLOCK);
 			return false;
 		}
 #endif // !DISABLE_DAMAGE_TYPE_NORMAL_RANGE_EVENT_MAP
 		const int64_t fixed_dam = 100000;
 
 		// [1] Regisztrljuk a sebzst a dropphoz
-		const entt::entity eAttacker = pAttacker ? pAttacker->GetEntityHandle() : entt::null;
+		const entt::entity eAttacker = attacker;
 		if (eAttacker == entt::null)
 			return false;
 
@@ -4702,13 +4701,13 @@ bool CHARACTER::Damage(LPCHARACTER pAttacker, int64_t dam, EDamageType type) // 
 
 
 
-		SendDamagePacket(pAttacker ? pAttacker->GetEntityHandle() : entt::null, fixed_dam, DAMAGE_NORMAL);
+		SendDamagePacket(attacker, fixed_dam, DAMAGE_NORMAL);
 
 
 		if (GetHP() <= fixed_dam)
 		{
 			SetHP(0);
-			Dead(pAttacker ? pAttacker->GetEntityHandle() : entt::null);
+			Dead(attacker);
 			return true; // nem megy tovbb
 		}
 		else
@@ -4746,13 +4745,13 @@ bool CHARACTER::Damage(LPCHARACTER pAttacker, int64_t dam, EDamageType type) // 
 
 	if (type == DAMAGE_TYPE_MELEE || type == DAMAGE_TYPE_RANGE || type == DAMAGE_TYPE_MAGIC)
 	{
-		if (pAttacker)
+		if (pkAttacker)
 		{
 			// ũƼ
 			int iCriticalPct = ecs::PointSystem::Get(attacker, POINT_CRITICAL_PCT);
 
 			if (!IsPC()) {
-				iCriticalPct += pAttacker->GetMarriageBonus(UNIQUE_ITEM_MARRIAGE_CRITICAL_BONUS);
+				iCriticalPct += pkAttacker->GetMarriageBonus(UNIQUE_ITEM_MARRIAGE_CRITICAL_BONUS);
 				iCriticalPct += ecs::PointSystem::Get(attacker, POINT_PVM_CRITICAL_PCT);
 			}
 
@@ -4783,7 +4782,7 @@ bool CHARACTER::Damage(LPCHARACTER pAttacker, int64_t dam, EDamageType type) // 
 			int iPenetratePct = ecs::PointSystem::Get(attacker, POINT_PENETRATE_PCT);
 
 			if (!IsPC())
-				iPenetratePct += pAttacker->GetMarriageBonus(UNIQUE_ITEM_MARRIAGE_PENETRATE_BONUS);
+				iPenetratePct += pkAttacker->GetMarriageBonus(UNIQUE_ITEM_MARRIAGE_PENETRATE_BONUS);
 
 
 			if (iPenetratePct)
@@ -4850,7 +4849,7 @@ bool CHARACTER::Damage(LPCHARACTER pAttacker, int64_t dam, EDamageType type) // 
 					ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 95, "%s#%d", ecs::PlayerRuntime::GetName(attacker).data(), ecs::PointSystem::Get(attacker, POINT_BLOCK));
 				}
 #endif
-				SendDamagePacket(pAttacker ? pAttacker->GetEntityHandle() : entt::null, 0, DAMAGE_BLOCK);
+				SendDamagePacket(attacker, 0, DAMAGE_BLOCK);
 				return false;
 			}
 		}
@@ -4865,7 +4864,7 @@ bool CHARACTER::Damage(LPCHARACTER pAttacker, int64_t dam, EDamageType type) // 
 					ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 96, "%s#%d", ecs::PlayerRuntime::GetName(attacker).data(), ecs::PointSystem::Get(attacker, POINT_DODGE));
 				}
 #endif
-				SendDamagePacket(pAttacker ? pAttacker->GetEntityHandle() : entt::null, 0, DAMAGE_DODGE);
+				SendDamagePacket(attacker, 0, DAMAGE_DODGE);
 				return false;
 			}
 		}
@@ -4889,16 +4888,16 @@ bool CHARACTER::Damage(LPCHARACTER pAttacker, int64_t dam, EDamageType type) // 
 			if (resist > 100) resist = 100;
 
 			// PvP: csak fele hasson
-			if (pAttacker && ecs::PlayerRuntime::IsPC(attacker) && IsPC())
+			if (pkAttacker && ecs::PlayerRuntime::IsPC(attacker) && IsPC())
 				resist = (resist + 1) / 2; // kerekítve: 1->1, 2->1, 3->2...
-			if (pAttacker && pAttacker->IsMonster() && IsPC())
+			if (pkAttacker && pkAttacker->IsMonster() && IsPC())
 				resist = (resist + 1) / 2; // kerekítve: 1->1, 2->1, 3->2...
 			dam = dam * (100 - resist) / 100;
 		}
 		//
 		//  Ӽ
 		//
-		if (pAttacker)
+		if (pkAttacker)
 		{
 			if (type == DAMAGE_TYPE_NORMAL)
 			{
@@ -4909,10 +4908,10 @@ bool CHARACTER::Damage(LPCHARACTER pAttacker, int64_t dam, EDamageType type) // 
 
 					// NOTE: ڰ IMMUNE_REFLECT Ӽ ִٸ ݻ縦  ϴ
 					// ƴ϶ 1/3  ؼ  ȹ û.
-					if (pAttacker->IsImmune(IMMUNE_REFLECT))
+					if (pkAttacker->IsImmune(IMMUNE_REFLECT))
 						reflectDamage = int(reflectDamage / 3.0f + 0.5f);
 
-					pAttacker->Damage(this, reflectDamage, DAMAGE_TYPE_SPECIAL);
+					pkAttacker->Damage(GetEntityHandle(), reflectDamage, DAMAGE_TYPE_SPECIAL);
 				}
 			}
 
@@ -4920,7 +4919,7 @@ bool CHARACTER::Damage(LPCHARACTER pAttacker, int64_t dam, EDamageType type) // 
 			int iCriticalPct = ecs::PointSystem::Get(attacker, POINT_CRITICAL_PCT);
 
 			if (!IsPC()) {
-				iCriticalPct += pAttacker->GetMarriageBonus(UNIQUE_ITEM_MARRIAGE_CRITICAL_BONUS);
+				iCriticalPct += pkAttacker->GetMarriageBonus(UNIQUE_ITEM_MARRIAGE_CRITICAL_BONUS);
 				iCriticalPct += ecs::PointSystem::Get(attacker, POINT_PVM_CRITICAL_PCT);
 			}
 
@@ -4941,7 +4940,7 @@ bool CHARACTER::Damage(LPCHARACTER pAttacker, int64_t dam, EDamageType type) // 
 			int iPenetratePct = ecs::PointSystem::Get(attacker, POINT_PENETRATE_PCT);
 
 			if (!IsPC())
-				iPenetratePct += pAttacker->GetMarriageBonus(UNIQUE_ITEM_MARRIAGE_PENETRATE_BONUS);
+				iPenetratePct += pkAttacker->GetMarriageBonus(UNIQUE_ITEM_MARRIAGE_PENETRATE_BONUS);
 
 			{
 				CSkillProto* pkSk = CSkillManager::instance().Get(SKILL_RESIST_PENETRATE);
@@ -4977,8 +4976,8 @@ bool CHARACTER::Damage(LPCHARACTER pAttacker, int64_t dam, EDamageType type) // 
 					int64_t iHP = std::min((int64_t)dam, std::max((int64_t)0, GetHP())) * ecs::PointSystem::Get(attacker, POINT_STEAL_HP) / 100;
 
 
-					if ((pAttacker->GetHP() > 0) && (pAttacker->GetHP() + iHP < ecs::PointSystem::GetMaxHP(attacker)) && (GetHP() > 0) && (iHP > 0)) {
-						CreateFly(FLY_HP_MEDIUM, pAttacker ? pAttacker->GetEntityHandle() : entt::null);
+					if ((pkAttacker->GetHP() > 0) && (pkAttacker->GetHP() + iHP < ecs::PointSystem::GetMaxHP(attacker)) && (GetHP() > 0) && (iHP > 0)) {
+						CreateFly(FLY_HP_MEDIUM, attacker);
 						ecs::PointSystem::Change(attacker, POINT_HP, iHP);
 #if defined(ENABLE_DS_RUNE) || defined(ENABLE_MELEY_LAIR)
 						int32_t racevnum = GetRaceNum();
@@ -5014,9 +5013,9 @@ bool CHARACTER::Damage(LPCHARACTER pAttacker, int64_t dam, EDamageType type) // 
 						int64_t iSP = std::min((int64_t)dam, std::max((int64_t)0, GetSP())) * ecs::PointSystem::Get(attacker, POINT_STEAL_SP) / 100;
 
 
-						if ((pAttacker->GetSP() > 0) && (pAttacker->GetSP() + iSP < ecs::PointSystem::GetMaxSP(attacker)) && (GetSP() > 0) && (iSP > 0))
+						if ((pkAttacker->GetSP() > 0) && (pkAttacker->GetSP() + iSP < ecs::PointSystem::GetMaxSP(attacker)) && (GetSP() > 0) && (iSP > 0))
 						{
-							CreateFly(FLY_SP_MEDIUM, pAttacker ? pAttacker->GetEntityHandle() : entt::null);
+							CreateFly(FLY_SP_MEDIUM, attacker);
 							ecs::PointSystem::Change(attacker, POINT_SP, iSP);
 							PointChange(POINT_SP, -iSP);
 						}
@@ -5035,7 +5034,7 @@ bool CHARACTER::Damage(LPCHARACTER pAttacker, int64_t dam, EDamageType type) // 
 
 					if (iHP > 0 && GetHP() >= iHP)
 					{
-						CreateFly(FLY_HP_SMALL, pAttacker ? pAttacker->GetEntityHandle() : entt::null);
+						CreateFly(FLY_HP_SMALL, attacker);
 						ecs::PointSystem::Change(attacker, POINT_HP, iHP);
 #if defined(ENABLE_DS_RUNE) || defined(ENABLE_MELEY_LAIR)
 						if (
@@ -5082,7 +5081,7 @@ bool CHARACTER::Damage(LPCHARACTER pAttacker, int64_t dam, EDamageType type) // 
 
 					if (iSP > 0 && iCur >= iSP)
 					{
-						CreateFly(FLY_SP_SMALL, pAttacker ? pAttacker->GetEntityHandle() : entt::null);
+						CreateFly(FLY_SP_SMALL, attacker);
 						ecs::PointSystem::Change(attacker, POINT_SP, iSP);
 
 						if (IsPC())
@@ -5108,8 +5107,8 @@ bool CHARACTER::Damage(LPCHARACTER pAttacker, int64_t dam, EDamageType type) // 
 			if (iAbsoHP_ptr > 0) {
 				if (number(1, 100) <= iAbsoHP_ptr) {
 					int iHPAbso = std::min(dam, GetHP()) * ecs::PointSystem::Get(attacker, POINT_HIT_HP_RECOVERY) / 100;
-					if ((pAttacker->GetHP() > 0) && (pAttacker->GetHP() + iHPAbso < ecs::PointSystem::GetMaxHP(attacker)) && (GetHP() > 0) && (iHPAbso > 0)) {
-						CreateFly(FLY_HP_SMALL, pAttacker ? pAttacker->GetEntityHandle() : entt::null);
+					if ((pkAttacker->GetHP() > 0) && (pkAttacker->GetHP() + iHPAbso < ecs::PointSystem::GetMaxHP(attacker)) && (GetHP() > 0) && (iHPAbso > 0)) {
+						CreateFly(FLY_HP_SMALL, attacker);
 						ecs::PointSystem::Change(attacker, POINT_HP, iHPAbso);
 					}
 				}
@@ -5119,8 +5118,8 @@ bool CHARACTER::Damage(LPCHARACTER pAttacker, int64_t dam, EDamageType type) // 
 			if (iAbsoSP_ptr > 0) {
 				if (number(1, 100) <= iAbsoSP_ptr) {
 					int64_t iSPAbso = std::min(dam, GetSP()) * ecs::PointSystem::Get(attacker, POINT_HIT_SP_RECOVERY) / 100;
-					if ((pAttacker->GetSP() > 0) && (pAttacker->GetSP() + iSPAbso < ecs::PointSystem::GetMaxSP(attacker)) && (GetSP() > 0) && (iSPAbso > 0)) {
-						CreateFly(FLY_SP_SMALL, pAttacker ? pAttacker->GetEntityHandle() : entt::null);
+					if ((pkAttacker->GetSP() > 0) && (pkAttacker->GetSP() + iSPAbso < ecs::PointSystem::GetMaxSP(attacker)) && (GetSP() > 0) && (iSPAbso > 0)) {
+						CreateFly(FLY_SP_SMALL, attacker);
 						ecs::PointSystem::Change(attacker, POINT_SP, iSPAbso);
 					}
 				}
@@ -5133,7 +5132,7 @@ bool CHARACTER::Damage(LPCHARACTER pAttacker, int64_t dam, EDamageType type) // 
 
 				if (i)
 				{
-					CreateFly(FLY_HP_SMALL, pAttacker ? pAttacker->GetEntityHandle() : entt::null);
+					CreateFly(FLY_HP_SMALL, attacker);
 					ecs::PointSystem::Change(attacker, POINT_HP, i);
 				}
 			}
@@ -5145,7 +5144,7 @@ bool CHARACTER::Damage(LPCHARACTER pAttacker, int64_t dam, EDamageType type) // 
 
 				if (i)
 				{
-					CreateFly(FLY_SP_SMALL, pAttacker ? pAttacker->GetEntityHandle() : entt::null);
+					CreateFly(FLY_SP_SMALL, attacker);
 					ecs::PointSystem::Change(attacker, POINT_SP, i);
 				}
 			}
@@ -5168,7 +5167,7 @@ bool CHARACTER::Damage(LPCHARACTER pAttacker, int64_t dam, EDamageType type) // 
 	case DAMAGE_TYPE_NORMAL:
 	case DAMAGE_TYPE_NORMAL_RANGE:
 	{
-		if (pAttacker) {
+		if (pkAttacker) {
 			if (ecs::PointSystem::Get(attacker, POINT_NORMAL_HIT_DAMAGE_BONUS))
 				dam = dam * (100 + ecs::PointSystem::Get(attacker, POINT_NORMAL_HIT_DAMAGE_BONUS)) / 100;
 #ifdef ENABLE_MEDI_PVM
@@ -5187,7 +5186,7 @@ bool CHARACTER::Damage(LPCHARACTER pAttacker, int64_t dam, EDamageType type) // 
 	case DAMAGE_TYPE_ELEC:
 	case DAMAGE_TYPE_MAGIC:
 	{
-		if (pAttacker) {
+		if (pkAttacker) {
 			const int64_t skillBonus = ecs::PointSystem::Get(attacker, POINT_SKILL_DAMAGE_BONUS);
 			if (skillBonus)
 				dam = dam * (100 + skillBonus) / 100;
@@ -5196,15 +5195,15 @@ bool CHARACTER::Damage(LPCHARACTER pAttacker, int64_t dam, EDamageType type) // 
 		int64_t def = GetPoint(POINT_SKILL_DEFEND_BONUS);
 		def = std::clamp<int64_t>(def, 0, 100);
 
-		if (pAttacker && ecs::PlayerRuntime::IsPC(attacker) && IsPC())
+		if (pkAttacker && ecs::PlayerRuntime::IsPC(attacker) && IsPC())
 			def = (def * 75 + 50) / 100;
 
 		dam = dam * (100 - def) / 100;
 
 
-		if (pAttacker && ecs::PlayerRuntime::IsPC(attacker) && IsNPC())
+		if (pkAttacker && ecs::PlayerRuntime::IsPC(attacker) && IsNPC())
 		{
-			const int64_t normalRef = CalcReferenceBasicHitDamage(pAttacker, this);
+			const int64_t normalRef = CalcReferenceBasicHitDamage(pkAttacker, this);
 			if (normalRef > 0)
 			{
 				int64_t minSkillDam = normalRef * 10;
@@ -5253,14 +5252,14 @@ bool CHARACTER::Damage(LPCHARACTER pAttacker, int64_t dam, EDamageType type) // 
 	//	dam -= dec_dam;
 	//}
 
-	if (pAttacker)
+	if (pkAttacker)
 	{
 		//
 		// ü ݷ  ( )
 		//
 		if (ecs::PointSystem::Get(attacker, POINT_MALL_ATTBONUS) > 0)
 		{
-			int64_t add_dam = std::min((int64_t)300, dam * pAttacker->GetLimitPoint(POINT_MALL_ATTBONUS) / 100);
+			int64_t add_dam = std::min((int64_t)300, dam * pkAttacker->GetLimitPoint(POINT_MALL_ATTBONUS) / 100);
 			dam += add_dam;
 		}
 
@@ -5280,17 +5279,17 @@ bool CHARACTER::Damage(LPCHARACTER pAttacker, int64_t dam, EDamageType type) // 
 			{
 				int iDrain = GetMonsterDrainSPPoint();
 
-				if (iDrain <= pAttacker->GetSP())
+				if (iDrain <= pkAttacker->GetSP())
 					ecs::PointSystem::Change(attacker, POINT_SP, -iDrain);
 				else
 				{
-					int iSP = pAttacker->GetSP();
+					int iSP = pkAttacker->GetSP();
 					ecs::PointSystem::Change(attacker, POINT_SP, -iSP);
 				}
 			}
 
 		}
-		else if (pAttacker->IsGuardNPC())
+		else if (pkAttacker->IsGuardNPC())
 		{
 						if (auto* flags = RuntimeFlags(GetEntityHandle()))
 				SET_BIT(flags->instantFlag, INSTANT_FLAG_NO_REWARD);
@@ -5313,7 +5312,7 @@ bool CHARACTER::Damage(LPCHARACTER pAttacker, int64_t dam, EDamageType type) // 
 
 	if (IsStun())
 	{
-		Dead(pAttacker ? pAttacker->GetEntityHandle() : entt::null);
+		Dead(attacker);
 		return true;
 	}
 
@@ -5340,7 +5339,7 @@ bool CHARACTER::Damage(LPCHARACTER pAttacker, int64_t dam, EDamageType type) // 
 	// ------------------------
 	//  ̾
 	// -----------------------
-	if (pAttacker && ecs::PlayerRuntime::IsPC(attacker))
+	if (pkAttacker && ecs::PlayerRuntime::IsPC(attacker))
 	{
 		int iDmgPct = CHARACTER_MANAGER::instance().GetUserDamageRate(attacker);
 		dam = dam * iDmgPct / 100;
@@ -5354,12 +5353,12 @@ bool CHARACTER::Damage(LPCHARACTER pAttacker, int64_t dam, EDamageType type) // 
 	}
 
 	//PROF_UNIT puRest1("Rest1");
-	if (pAttacker)
+	if (pkAttacker)
 	{
 		// DEATH BLOW : Ȯ  4  (!?  ̺Ʈ  ͸ )
-		if (pAttacker->IsMonster() && pAttacker->IsDeathBlower())
+		if (pkAttacker->IsMonster() && pkAttacker->IsDeathBlower())
 		{
-			if (pAttacker->IsDeathBlow())
+			if (pkAttacker->IsDeathBlow())
 			{
 				if (number(1, 4) == GetJob())
 				{
@@ -5398,7 +5397,7 @@ bool CHARACTER::Damage(LPCHARACTER pAttacker, int64_t dam, EDamageType type) // 
 #ifdef ENABLE_BATTLE_PASS
 		if (dam > 0)
 		{
-			uint8_t bBattlePassId = pAttacker->GetBattlePassId();
+			uint8_t bBattlePassId = pkAttacker->GetBattlePassId();
 			if (bBattlePassId)
 			{
 				if (IsPC())
@@ -5407,12 +5406,12 @@ bool CHARACTER::Damage(LPCHARACTER pAttacker, int64_t dam, EDamageType type) // 
 					uint32_t dwLevel = GetLevel();
 					if (CBattlePass::instance().BattlePassMissionGetInfo(bBattlePassId, PLAYER_DAMAGE, &dwMinLevel, &dwDamage))
 					{
-						if (!pAttacker->IsCompletedMission(PLAYER_DAMAGE))
+						if (!pkAttacker->IsCompletedMission(PLAYER_DAMAGE))
 						{
 							uint32_t dwDam = dam;
 							if (dwLevel >= dwMinLevel && GetMissionProgress(PLAYER_DAMAGE, bBattlePassId) < dwDam)
 							{
-								pAttacker->UpdateMissionProgress(PLAYER_DAMAGE, bBattlePassId, dwDam, dwDamage);
+								pkAttacker->UpdateMissionProgress(PLAYER_DAMAGE, bBattlePassId, dwDam, dwDamage);
 							}
 						}
 					}
@@ -5423,12 +5422,12 @@ bool CHARACTER::Damage(LPCHARACTER pAttacker, int64_t dam, EDamageType type) // 
 					if (CBattlePass::instance().BattlePassMissionGetInfo(bBattlePassId, MONSTER_DAMAGE, &dwMonsterVnum, &dwDamage))
 					{
 						uint32_t dwRaceNum = GetRaceNum();
-						if (!pAttacker->IsCompletedMission(MONSTER_DAMAGE))
+						if (!pkAttacker->IsCompletedMission(MONSTER_DAMAGE))
 						{
 							uint32_t dwDam = dam;
 							if (dwMonsterVnum == dwRaceNum && GetMissionProgress(MONSTER_DAMAGE, bBattlePassId) < dwDam)
 							{
-								pAttacker->UpdateMissionProgress(MONSTER_DAMAGE, bBattlePassId, dwDam, dwDamage);
+								pkAttacker->UpdateMissionProgress(MONSTER_DAMAGE, bBattlePassId, dwDam, dwDamage);
 							}
 						}
 					}
@@ -5438,7 +5437,7 @@ bool CHARACTER::Damage(LPCHARACTER pAttacker, int64_t dam, EDamageType type) // 
 #endif
 
 #if defined(ENABLE_DS_RUNE) || defined(ENABLE_MELEY_LAIR)
-		if (!IsPC() && pAttacker && ecs::PlayerRuntime::IsPC(attacker))
+		if (!IsPC() && pkAttacker && ecs::PlayerRuntime::IsPC(attacker))
 		{
 			int32_t racevnum = GetRaceNum();
 			LPDUNGEON dungeon = GetDungeon();
@@ -5717,11 +5716,11 @@ bool CHARACTER::Damage(LPCHARACTER pAttacker, int64_t dam, EDamageType type) // 
 		}
 #endif
 
-		if (pAttacker)
-			SendDamagePacket(pAttacker ? pAttacker->GetEntityHandle() : entt::null, dam, damageFlag);
+		if (pkAttacker)
+			SendDamagePacket(attacker, dam, damageFlag);
 #ifdef LEADERBOARD_RAZOR93
 
-		if (pAttacker && ecs::PlayerRuntime::IsPC(attacker) && pAttacker->IsSkillHit() && IsPC())
+		if (pkAttacker && ecs::PlayerRuntime::IsPC(attacker) && pkAttacker->IsSkillHit() && IsPC())
 		{
 			char szVictimEsc[CHARACTER_NAME_MAX_LEN * 2 + 1];
 			DBManager::instance().EscapeString(szVictimEsc, sizeof(szVictimEsc), GetName(), strnlen(GetName(), CHARACTER_NAME_MAX_LEN));
@@ -5757,7 +5756,7 @@ bool CHARACTER::Damage(LPCHARACTER pAttacker, int64_t dam, EDamageType type) // 
 			if (GetMaxHP() >= 0)
 				iTmpPercent = (GetHP() * 100) / GetMaxHP();
 
-			if (pAttacker)
+			if (pkAttacker)
 			{
 				ecs::ChatSystem::Send(attacker, CHAT_TYPE_INFO, "-> %s, DAM %d HP %d(%d%%) %s%s",
 					GetName(),
@@ -5770,7 +5769,7 @@ bool CHARACTER::Damage(LPCHARACTER pAttacker, int64_t dam, EDamageType type) // 
 			}
 
 			ecs::ChatSystem::Send(GetEntityHandle(), CHAT_TYPE_PARTY, "<- %s, DAM %d HP %d(%d%%) %s%s",
-				pAttacker ? ecs::PlayerRuntime::GetName(attacker).data() : nullptr,
+				pkAttacker ? ecs::PlayerRuntime::GetName(attacker).data() : nullptr,
 				dam,
 				GetHP(),
 				iTmpPercent,
@@ -5785,8 +5784,8 @@ bool CHARACTER::Damage(LPCHARACTER pAttacker, int64_t dam, EDamageType type) // 
 				switch (type) {
 				case DAMAGE_TYPE_NORMAL:
 				case DAMAGE_TYPE_NORMAL_RANGE: {
-					if (dam > pAttacker->GetRankPoints(3))
-						pAttacker->SetRankPoints(3, dam);
+					if (dam > pkAttacker->GetRankPoints(3))
+						pkAttacker->SetRankPoints(3, dam);
 				}
 											 break;
 				case DAMAGE_TYPE_MELEE:
@@ -5795,8 +5794,8 @@ bool CHARACTER::Damage(LPCHARACTER pAttacker, int64_t dam, EDamageType type) // 
 				case DAMAGE_TYPE_ICE:
 				case DAMAGE_TYPE_ELEC:
 				case DAMAGE_TYPE_MAGIC: {
-					if (dam > pAttacker->GetRankPoints(4))
-						pAttacker->SetRankPoints(4, dam);
+					if (dam > pkAttacker->GetRankPoints(4))
+						pkAttacker->SetRankPoints(4, dam);
 				}
 									  break;
 				default:
@@ -5808,8 +5807,8 @@ bool CHARACTER::Damage(LPCHARACTER pAttacker, int64_t dam, EDamageType type) // 
 					switch (type) {
 					case DAMAGE_TYPE_NORMAL:
 					case DAMAGE_TYPE_NORMAL_RANGE: {
-						if (dam > pAttacker->GetRankPoints(8))
-							pAttacker->SetRankPoints(8, dam);
+						if (dam > pkAttacker->GetRankPoints(8))
+							pkAttacker->SetRankPoints(8, dam);
 					}
 												 break;
 					case DAMAGE_TYPE_MELEE:
@@ -5818,8 +5817,8 @@ bool CHARACTER::Damage(LPCHARACTER pAttacker, int64_t dam, EDamageType type) // 
 					case DAMAGE_TYPE_ICE:
 					case DAMAGE_TYPE_ELEC:
 					case DAMAGE_TYPE_MAGIC: {
-						if (dam > pAttacker->GetRankPoints(9))
-							pAttacker->SetRankPoints(9, dam);
+						if (dam > pkAttacker->GetRankPoints(9))
+							pkAttacker->SetRankPoints(9, dam);
 					}
 										  break;
 					default:
@@ -5830,8 +5829,8 @@ bool CHARACTER::Damage(LPCHARACTER pAttacker, int64_t dam, EDamageType type) // 
 					switch (type) {
 					case DAMAGE_TYPE_NORMAL:
 					case DAMAGE_TYPE_NORMAL_RANGE: {
-						if (dam > pAttacker->GetRankPoints(18))
-							pAttacker->SetRankPoints(18, dam);
+						if (dam > pkAttacker->GetRankPoints(18))
+							pkAttacker->SetRankPoints(18, dam);
 					}
 												 break;
 					case DAMAGE_TYPE_MELEE:
@@ -5840,8 +5839,8 @@ bool CHARACTER::Damage(LPCHARACTER pAttacker, int64_t dam, EDamageType type) // 
 					case DAMAGE_TYPE_ICE:
 					case DAMAGE_TYPE_ELEC:
 					case DAMAGE_TYPE_MAGIC: {
-						if (dam > pAttacker->GetRankPoints(19))
-							pAttacker->SetRankPoints(19, dam);
+						if (dam > pkAttacker->GetRankPoints(19))
+							pkAttacker->SetRankPoints(19, dam);
 					}
 										  break;
 					default:
@@ -5859,10 +5858,10 @@ bool CHARACTER::Damage(LPCHARACTER pAttacker, int64_t dam, EDamageType type) // 
 	if (!cannot_dead)
 	{
 #ifdef __DUNGEON_INFO_SYSTEM__
-		if (!IsPC() && pAttacker && ecs::PlayerRuntime::IsPC(attacker))
+		if (!IsPC() && pkAttacker && ecs::PlayerRuntime::IsPC(attacker))
 		{
-			pAttacker->SetQuestDamage(GetRaceNum(), dam);
-			pAttacker->SetQuestNPCID(GetPacketVID());
+			pkAttacker->SetQuestDamage(GetRaceNum(), dam);
+			pkAttacker->SetQuestNPCID(GetPacketVID());
 			quest::CQuestManager::instance().QuestDamage(ecs::PlayerRuntime::GetPlayerID(attacker), GetRaceNum());
 		}
 #endif
@@ -5880,10 +5879,10 @@ bool CHARACTER::Damage(LPCHARACTER pAttacker, int64_t dam, EDamageType type) // 
 	//puRest1.Pop();
 
 	//PROF_UNIT puRest2("Rest2");
-	if (pAttacker && dam > 0 && IsNPC())
+	if (pkAttacker && dam > 0 && IsNPC())
 	{
 		//PROF_UNIT puRest20("Rest20");
-		const entt::entity eAttacker = pAttacker ? pAttacker->GetEntityHandle() : entt::null;
+		const entt::entity eAttacker = attacker;
 		TDamageMap::iterator it = m_map_kDamage.end();
 		if (eAttacker != entt::null)
 		{
@@ -5914,7 +5913,7 @@ bool CHARACTER::Damage(LPCHARACTER pAttacker, int64_t dam, EDamageType type) // 
 
 		//PROF_UNIT puRest22("Rest22");
 		if (it != m_map_kDamage.end())
-			UpdateAggrPointEx(pAttacker ? pAttacker->GetEntityHandle() : entt::null, type, dam, it->second);
+			UpdateAggrPointEx(attacker, type, dam, it->second);
 		//puRest22.Pop();
 	}
 	//puRest2.Pop();
@@ -5924,14 +5923,14 @@ bool CHARACTER::Damage(LPCHARACTER pAttacker, int64_t dam, EDamageType type) // 
 #ifdef ENABLE_STONE_SPAWN_STEP_PROCESSING_RAZOR93
 	if (GetHP() <= 0)
 	{
-		if (pAttacker && !ecs::PlayerRuntime::IsNPC(attacker))
+		if (pkAttacker && !ecs::PlayerRuntime::IsNPC(attacker))
 			m_dwKillerPID = ecs::PlayerRuntime::GetPlayerID(attacker);
 		else
 			m_dwKillerPID = 0;
 
 		if (!IsPC())
 		{
-			Dead(pAttacker ? pAttacker->GetEntityHandle() : entt::null, true);
+			Dead(attacker, true);
 			return true;
 		}
 
@@ -5945,7 +5944,7 @@ bool CHARACTER::Damage(LPCHARACTER pAttacker, int64_t dam, EDamageType type) // 
 	{
 		Stun();
 
-		if (pAttacker && !ecs::PlayerRuntime::IsNPC(attacker))
+		if (pkAttacker && !ecs::PlayerRuntime::IsNPC(attacker))
 			m_dwKillerPID = ecs::PlayerRuntime::GetPlayerID(attacker);
 		else
 			m_dwKillerPID = 0;
@@ -6197,7 +6196,7 @@ public:
 			if (pkVictim->CanBeginFight())
 				pkVictim->BeginFight((m_me ? m_me->GetEntityHandle() : entt::null));
 
-			pkVictim->Damage(m_me, iDam, DAMAGE_TYPE_NORMAL_RANGE);
+			pkVictim->Damage(me, iDam, DAMAGE_TYPE_NORMAL_RANGE);
 			// Ÿġ
 		}
 		break;
@@ -6233,7 +6232,7 @@ public:
 			if (pkVictim->CanBeginFight())
 				pkVictim->BeginFight((m_me ? m_me->GetEntityHandle() : entt::null));
 
-			pkVictim->Damage(m_me, iDam, DAMAGE_TYPE_MAGIC);
+			pkVictim->Damage(me, iDam, DAMAGE_TYPE_MAGIC);
 			// Ÿġ
 		}
 		break;
@@ -6461,7 +6460,7 @@ public:
 					}
 				}
 
-				pkVictim->Damage(m_me, iDam, DAMAGE_TYPE_NORMAL);
+				pkVictim->Damage(me, iDam, DAMAGE_TYPE_NORMAL);
 
 
 				if (ecs::PlayerRuntime::IsPC(victim))

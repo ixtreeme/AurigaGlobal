@@ -1192,3 +1192,109 @@ Build: RelWithDebInfo GameServer, 0 errors, first attempt.
 char.h now has four LPCHARACTER declarations left: Damage/__Profile__Damage,
 DynamicCharacterPtr::operator=, GET_SEX, and the broken one inside
 #ifdef ENABLE_MOUNT_COUNT_ABOVE_CHAR_RAZOR93.
+
+
+AUDIT - LPENTITY cannot be flipped, and the reason is not size
+----------------------------------------------------------------
+Asked whether LPENTITY could go to entt::entity at zero conversion cost.
+It cannot. Recording the numbers so the question is not reopened.
+
+274 occurrences in 66 files. The usage split looks encouraging at first:
+
+      147  dereferenced (entity->Method(...))
+      864  identity only (passed, stored, compared)
+
+and of the 147, 89 are IsType/GetType - type discrimination, which in ECS is
+a component check, not a conversion. So on shape alone this axis reads better
+than LPCHARACTER did.
+
+The blocker is what the boundary costs. LPCHARACTER->entity is a member read,
+`ch->GetEntityHandle()`. LPENTITY->entity is this, in SpatialService.cpp:
+
+    entt::entity EntityFromLPENTITY(LPENTITY entity)
+    {
+        switch (entity->GetType()) {
+        case ENTITY_CHARACTER:  return static_cast<LPCHARACTER>(entity)->GetEntityHandle();
+        case ENTITY_ITEM:       ... CItemRegistry::Find(item->GetID())
+                                ... then FindByVID(item->GetVID()) as fallback
+        case ENTITY_OBJECT:     return CBuildingRegistry::FindByID(...->GetID());
+        case ENTITY_NEWSHOPS:   return OfflineShopEntityRegistry::FindByVID(...);
+        }
+    }
+
+A virtual call plus a hash lookup - two, for items. Only CHARACTER and CItem
+carry an m_entity at all; building::CObject and offlineshop::ShopEntity have
+no handle member and are reachable only through their side registries. So
+writing entt::entity where LPENTITY stands today does not remove conversions:
+it removes cheap ones on characters and creates expensive ones everywhere
+else. That is the opposite of every phase so far.
+
+And the direction that does pay is already under way from the other end.
+entity_view.cpp mirrors every view insert and remove into ViewMap / ViewerMap
+/ ViewAgeMap components, building.cpp registers objects with SpatialService,
+and VisibilitySystem runs component-native. The endgame on this axis is
+deleting CEntity::m_map_view and the mirror in entity_view.cpp once the ECS
+view is authoritative - not retyping LPENTITY ahead of it. Retyping first
+would freeze the expensive lookup into 274 call sites and make that deletion
+harder, not easier.
+
+Verdict: leave LPENTITY alone. Finish the view system from the component side.
+
+
+Phase 19f - Damage, and the end of the LPCHARACTER parameter axis
+------------------------------------------------------------------
+CHARACTER::Damage takes an entity. 21 conversions removed from one body -
+the largest single-method win of the whole phase - against 7 call sites.
+
+The body was already most of the way there: it opened with
+
+    const entt::entity attacker = pAttacker ? pAttacker->GetEntityHandle() : entt::null;
+
+and then used `attacker` 83 times, while still writing the full conversion out
+at 21 other places. Flipping the parameter to `entt::entity attacker` landed
+exactly on the name the body already used; the hoist line collapsed to
+`const entt::entity attacker = attacker;` and was deleted, and the alias
+`pkAttacker` covers the remaining legacy calls.
+
+Every call site had an entity in reach without inventing one:
+  * battle.cpp     inside battle_hit(entt::entity attacker, ...) - the parameter
+  * CombatSystem   the ECS wrapper stopped calling LegacyCharOf(attacker) on
+                   the way in; it now passes the entity straight through
+  * CFuncShoot     operator() already computes `me` from m_me at its top
+  * SkillSystem    the functor already keeps m_character beside m_pkChr
+  * the reflect-damage site      `this` -> GetEntityHandle()
+
+__Profile__Damage went with it: declared in char.h, never defined, never
+called - the same shape as CounterAttack and OnAttack in 19d.
+
+TOOL BUG: the definition regex could not see this method
+---------------------------------------------------------
+char_flip.py reported Damage as NOT FOUND. The definition exists; the finder
+required the body's brace to follow the parameter list across at most a
+newline:
+
+    r'\)\s*(?:const\s*)?\n?[ \t]*\{'
+
+and this one signature ends with a trailing comment:
+
+    bool CHARACTER::Damage(LPCHARACTER pAttacker, ...) // returns true if dead
+    {
+
+The pattern now tolerates `(?://[^\n]*)?` before the newline. Worth noting
+because a NOT FOUND from that tool reads like "nothing to do here" and for
+one phase it silently meant "the biggest method on the list is invisible".
+
+Project-wide conversion count: 1744 -> 1723  (-21)
+Build: RelWithDebInfo GameServer, 0 errors, first attempt.
+
+The axis is finished. char.h has exactly one LPCHARACTER parameter left,
+`ESex GET_SEX(LPCHARACTER ch)`, and it is a free function declared at the
+bottom of the header, not a member of CHARACTER. Everything else that still
+says LPCHARACTER in char.h is a return type (GetVictim, GetTarget, GetHorse,
+GetMarryPartner, ...), a member field, the DynamicCharacterPtr smart pointer,
+the TRIGGERPARAM macro, or the broken declaration inside
+#ifdef ENABLE_MOUNT_COUNT_ABOVE_CHAR_RAZOR93.
+
+Return types are the next axis and they are a different problem: a caller that
+receives an entity cannot call legacy methods on it, so flipping GetVictim()
+moves work to every caller rather than removing it. Audit before starting.

@@ -2443,7 +2443,7 @@ struct FuncSplashDamage
 
 
 
-		if (!pkChrVictim->Damage(m_pkChr, iDam, dt) && !pkChrVictim->IsStun())
+		if (!pkChrVictim->Damage(m_character, iDam, dt) && !pkChrVictim->IsStun())
 		{
 
 			if (IS_SET(m_pkSk->dwFlag, SKILL_FLAG_REMOVE_GOOD_AFFECT))

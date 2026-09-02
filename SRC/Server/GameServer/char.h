@@ -1690,8 +1690,7 @@ public:
 #endif
 
 
-	bool				Damage(LPCHARACTER pAttacker, int64_t dam, EDamageType type = DAMAGE_TYPE_NORMAL);
-	bool				__Profile__Damage(LPCHARACTER pAttacker, int dam, EDamageType type = DAMAGE_TYPE_NORMAL);
+	bool				Damage(entt::entity attacker, int64_t dam, EDamageType type = DAMAGE_TYPE_NORMAL);
 	void				DeathPenalty(uint8_t bExpLossPercent);
 	void				ReviveInvisible(int iDur);
 
