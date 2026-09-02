@@ -723,11 +723,11 @@ void CHARACTER::mining_cancel()
     ActivitySystem::CancelMining(GetEntityHandle());
 }
 
-void CHARACTER::mining(LPCHARACTER chLoad)
+void CHARACTER::mining(entt::entity load)
 {
     ActivitySystem::StartMining(
         GetEntityHandle(),
-        chLoad ? chLoad->GetEntityHandle() : entt::null);
+        load);
 }
 
 void CHARACTER::fishing()

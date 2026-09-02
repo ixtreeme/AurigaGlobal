@@ -3071,10 +3071,10 @@ static bool ReceiveItemLegacyBoundary(entt::entity receiver,
     LPCHARACTER legacyFrom = LegacyCharOf(from);
     LPITEM legacyItem = LegacyItemBoundary(item);
     if (!legacyReceiver || !legacyFrom || !legacyItem ||
-        !legacyReceiver->CanReceiveItem(legacyFrom, legacyItem))
+        !legacyReceiver->CanReceiveItem((legacyFrom ? legacyFrom->GetEntityHandle() : entt::null), legacyItem))
         return false;
 
-    legacyReceiver->ReceiveItem(legacyFrom, legacyItem);
+    legacyReceiver->ReceiveItem((legacyFrom ? legacyFrom->GetEntityHandle() : entt::null), legacyItem);
     return true;
 }
 

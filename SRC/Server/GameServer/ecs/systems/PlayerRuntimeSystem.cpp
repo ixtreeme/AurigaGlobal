@@ -2519,10 +2519,11 @@ void CHARACTER::SetShop(LPSHOP pkShop)
         m_pkChrShopOwner = nullptr;
 }
 
-void CHARACTER::SetShopOwner(LPCHARACTER ch)
+void CHARACTER::SetShopOwner(entt::entity chEntity)
 {
+    LPCHARACTER ch = ecs::LegacyCharOf(chEntity);
     const auto e = GetEntityHandle();
-    ecs::SocialSystem::SetShopOwner(e, ch ? ch->GetEntityHandle() : entt::null);
+    ecs::SocialSystem::SetShopOwner(e, chEntity);
     m_pkChrShopOwner = ch;
 }
 
@@ -4773,7 +4774,7 @@ void CHARACTER::OnClick(LPCHARACTER pkChrCauser)
                 }
 
                 GetMyShop()->AddGuest(pkChrCauser, GetPacketVID(), false);
-                pkChrCauser->SetShopOwner(this);
+                pkChrCauser->SetShopOwner(GetEntityHandle());
                 return;
             }
 

@@ -980,7 +980,7 @@ public:
 	// END_OF_FISHING
 
 	// MINING
-	void			mining(LPCHARACTER chLoad);
+	void			mining(entt::entity load);
 	void			mining_cancel();
 	void			mining_take();
 	// END_OF_MINING
@@ -1441,7 +1441,7 @@ public:
 	CGuild* GetRefineGuild() const;
 	int64_t				ComputeRefineFee(int64_t iCost, int64_t iMultiply = 5) const;
 	void			PayRefineFee(int64_t iTotalMoney);
-	void			SetRefineNPC(LPCHARACTER ch);
+	void			SetRefineNPC(entt::entity character);
 	// END_OF_ADD_REFINE_BUILDING
 
 	bool			RefineItem(LPITEM pkItem, LPITEM pkTarget);
@@ -1471,9 +1471,9 @@ public:
 	void			SetRefineMode(int iAdditionalCell = -1);
 	void			ClearRefineMode();
 
-	bool			GiveItem(LPCHARACTER victim, TItemPos Cell);
-	bool			CanReceiveItem(LPCHARACTER from, LPITEM item) const;
-	void			ReceiveItem(LPCHARACTER from, LPITEM item);
+	bool			GiveItem(entt::entity victim, TItemPos Cell);
+	bool			CanReceiveItem(entt::entity from, LPITEM item) const;
+	void			ReceiveItem(entt::entity from, LPITEM item);
 	bool			GiveItemFromSpecialItemGroup(uint32_t dwGroupNum, std::vector <uint32_t>& dwItemVnums,
 		std::vector <uint32_t>& dwItemCounts, std::vector<entt::entity>& item_gets, int& count);
 
@@ -1596,7 +1596,7 @@ public:
 	LPSHOP			GetShop() const { return m_pkShop; }
 	void			ShopPacket(uint8_t bSubHeader);
 
-	void			SetShopOwner(LPCHARACTER ch);
+	void			SetShopOwner(entt::entity character);
 	LPCHARACTER		GetShopOwner() const { return m_pkChrShopOwner; }
 
 	void			OpenMyShop(const char* c_pszSign, TShopItemTable* pTable, uint8_t bItemCount
@@ -1637,7 +1637,7 @@ protected:
 	////////////////////////////////////////////////////////////////////////////////////////
 	// Exchange related
 public:
-	bool			ExchangeStart(LPCHARACTER victim);
+	bool			ExchangeStart(entt::entity victim);
 	void			SetExchange(CExchange* pkExchange);
 	CExchange* GetExchange() const { return m_pkExchange; }
 #if defined(ENABLE_CHRISTMAS_WHEEL_OF_DESTINY)
@@ -2178,7 +2178,7 @@ public:
 public:
 	std::span<entt::entity> GetAttrTransferItem();
 	bool IsAttrTransferOpen() const;
-	void SetAttrTransferNpc(LPCHARACTER npc);
+	void SetAttrTransferNpc(entt::entity npc);
 	bool CanDoAttrTransfer() const;
 #endif
 #ifdef __PET_SYSTEM__
@@ -2479,7 +2479,7 @@ public:
 	// by mhh
 	std::span<entt::entity> GetCubeItem();
 	bool IsCubeOpen() const;
-	void SetCubeNpc(LPCHARACTER npc);
+	void SetCubeNpc(entt::entity npc);
 	bool CanDoCube() const;
 
 

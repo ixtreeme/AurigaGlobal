@@ -59,7 +59,7 @@ void AttrTransfer_open(LPCHARACTER ch)
 	}
 
 	AttrTransfer_clean_item(ch);
-	ch->SetAttrTransferNpc(npc);
+	ch->SetAttrTransferNpc((npc ? npc->GetEntityHandle() : entt::null));
 	ecs::ChatSystem::Send(chEntity, CHAT_TYPE_COMMAND, "AttrTransfer open");
 	if (test_server == true)
 	{
@@ -72,7 +72,7 @@ void AttrTransfer_close(LPCHARACTER ch)
 	const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
 	RETURN_IF_ATTR_TRANSFER_IS_NOT_OPENED(ch);
 	AttrTransfer_clean_item(ch);
-	ch->SetAttrTransferNpc(nullptr);
+	ch->SetAttrTransferNpc(entt::null);
 	ecs::ChatSystem::Send(chEntity, CHAT_TYPE_COMMAND, "AttrTransfer close");
 	if (test_server == true)
 	{

@@ -1005,3 +1005,21 @@ inside ecs/systems/.
 
 Project-wide conversion count: 1823 -> 1816
 Build: RelWithDebInfo GameServer, 0 errors.
+
+
+Phase 19c - item, exchange and NPC-setter cluster
+--------------------------------------------------
+9 methods flipped: GiveItem, CanReceiveItem, ReceiveItem, ExchangeStart,
+SetShopOwner, SetRefineNPC, SetAttrTransferNpc, SetCubeNpc, mining.
+7 conversions removed, 9 declarations in char.h, 15 call sites adapted.
+
+Nothing new went wrong here - the same three shapes as the first two clusters,
+now recognised on sight:
+  * `X(nullptr)` -> `X(entt::null)` at every setter that clears its slot;
+  * four `const entt::entity X = X;` leftovers from the 18k/18l hoists;
+  * two files needed the CharacterAccessors include - and the spelling differs
+    by location: "../CharacterAccessors.hpp" from inside ecs/systems/,
+    "ecs/CharacterAccessors.hpp" from the GameServer root.
+
+Project-wide conversion count: 1816 -> 1812
+Build: RelWithDebInfo GameServer, 0 errors.

@@ -22,6 +22,7 @@
 #include "exchange.h"
 #include "DragonSoul.h"
 #include "questmanager.h" // @fixme150
+#include "ecs/CharacterAccessors.hpp"
 
 namespace
 {
@@ -79,10 +80,10 @@ void exchange_packet(LPCHARACTER ch, uint8_t sub_header, bool is_me, int64_t arg
 	ecs::PlayerRuntime::GetDesc(chEntity)->Packet(&pack_exchg, sizeof(pack_exchg));
 }
 
-bool CHARACTER::ExchangeStart(LPCHARACTER victim)
+bool CHARACTER::ExchangeStart(entt::entity victimEntity)
 {
+	LPCHARACTER victim = ecs::LegacyCharOf(victimEntity);
 	const entt::entity thisEntity = this ? this->GetEntityHandle() : entt::null;
-	const entt::entity victimEntity = victim ? victim->GetEntityHandle() : entt::null;
 	if (this == victim)	// 자기 자신과는 교환을 못한다.
 		return false;
 

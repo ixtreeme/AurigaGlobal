@@ -2172,7 +2172,7 @@ void CInputMain::Exchange(entt::entity character, const char * data)
 						return;
 					}
 #endif
-					ch->ExchangeStart(to_ch);
+					ch->ExchangeStart((to_ch ? to_ch->GetEntityHandle() : entt::null));
 				}
 			}
 			break;
@@ -4479,7 +4479,7 @@ void CInputMain::ItemGive(entt::entity character, const char* c_pData)
 		}
 #endif
 
-		ch->GiveItem(to_ch, p->ItemPos);
+		ch->GiveItem((to_ch ? to_ch->GetEntityHandle() : entt::null), p->ItemPos);
 	}
 #ifdef TEXTS_IMPROVEMENT
 	else {
@@ -5630,7 +5630,7 @@ int CInputMain::Analyze(LPDESC d, uint8_t bHeader, const char * c_pData)
 						LPSHOP shop = CShopManager::instance().Get(p->shopid);
 						if (shop) {
 							shop->AddGuest(ch, 0, false);
-							ch->SetShopOwner(nullptr);
+							ch->SetShopOwner(entt::null);
 						}
 					}
 				}

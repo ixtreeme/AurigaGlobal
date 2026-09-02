@@ -163,7 +163,7 @@ bool CShopManager::StartShopping(LPCHARACTER pkChr, LPCHARACTER pkChrShopKeeper,
 		bOtherEmpire = true;
 
 	pkShop->AddGuest(pkChr, ecs::PlayerRuntime::GetPacketVID(chrShopKeeper), bOtherEmpire);
-	pkChr->SetShopOwner(pkChrShopKeeper);
+	pkChr->SetShopOwner((pkChrShopKeeper ? pkChrShopKeeper->GetEntityHandle() : entt::null));
 	LOG_INFO("SHOP: START: {}", ecs::PlayerRuntime::GetName(chr).data());
 	return true;
 }

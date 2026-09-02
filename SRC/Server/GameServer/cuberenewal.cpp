@@ -409,12 +409,12 @@ void Cube_open (LPCHARACTER ch)
 	SendDateCubeRenewalPackets(ch,CUBE_RENEWAL_SUB_HEADER_DATES_LOADING);
 	SendDateCubeRenewalPackets(ch,CUBE_RENEWAL_SUB_HEADER_OPEN_RECEIVE);
 
-	ch->SetCubeNpc(npc);
+	ch->SetCubeNpc((npc ? npc->GetEntityHandle() : entt::null));
 }
 
 void Cube_close(LPCHARACTER ch)
 {
-	ch->SetCubeNpc(nullptr);
+	ch->SetCubeNpc(entt::null);
 }
 
 void Cube_Make(LPCHARACTER ch, int index, int count_item, int index_item_improve)

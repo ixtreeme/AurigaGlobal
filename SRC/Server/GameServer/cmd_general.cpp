@@ -3790,7 +3790,7 @@ ACMD(do_extend_range_npc)
 	if(!shop)
 		return;
 
-	ch->SetShopOwner(ch);
+	ch->SetShopOwner((ch ? ch->GetEntityHandle() : entt::null));
 	shop->AddGuest(ch, 0, false);
 
 }
@@ -4031,7 +4031,7 @@ ACMD(do_rune_shop)
 	LPSHOP pkShop = CShopManager::instance().Get(RUNE_SHOP);
 	if (pkShop) {
 		pkShop->AddGuest(ch, 0, false);
-		ch->SetShopOwner(nullptr);
+		ch->SetShopOwner(entt::null);
 	}
 }
 

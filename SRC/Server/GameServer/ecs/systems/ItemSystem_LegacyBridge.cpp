@@ -93,6 +93,7 @@
 #include "../EventDispatcher.hpp"
 #include "../components/item_components.hpp"
 #include "../ItemRegistry.hpp"
+#include "../CharacterAccessors.hpp"
 
 bool IS_SUMMONABLE_ZONE(int map_index);
 bool IS_BOTARYABLE_ZONE(int nMapIndex);
@@ -2100,8 +2101,9 @@ LPITEM CHARACTER::GetInventoryItem(uint16_t wCell) const
 
 
 #ifdef ENABLE_EXTRA_INVENTORY
-void CHARACTER::SetCubeNpc(LPCHARACTER npc)
+void CHARACTER::SetCubeNpc(entt::entity npcEntity)
 {
+    LPCHARACTER npc = ecs::LegacyCharOf(npcEntity);
     if (auto* comp = EnsureCubeWindowComponent(GetEntityHandle()))
         comp->pNpc = npc;
 
@@ -2124,8 +2126,9 @@ bool CHARACTER::IsCubeOpen() const
 }
 
 #ifdef __ATTR_TRANSFER_SYSTEM__
-void CHARACTER::SetAttrTransferNpc(LPCHARACTER npc)
+void CHARACTER::SetAttrTransferNpc(entt::entity npcEntity)
 {
+    LPCHARACTER npc = ecs::LegacyCharOf(npcEntity);
     if (auto* comp = EnsureAttrTransferWindowComponent(GetEntityHandle()))
         comp->pNpc = npc;
 
@@ -11002,9 +11005,9 @@ void CHARACTER::ItemDivision(TItemPos Cell)
 	ItemSystem::ItemDivision(GetEntityHandle(), Cell);
 }
 
-void CHARACTER::SetRefineNPC(LPCHARACTER ch)
+void CHARACTER::SetRefineNPC(entt::entity chEntity)
 {
-	const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
+	LPCHARACTER ch = ecs::LegacyCharOf(chEntity);
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
 	ecs::ChatSystem::Send(chEntity, CHAT_TYPE_INFO, "char_item.cpp:: void CHARACTER::SetRefineNPC ");//INGAME_DEBUG_RAZOR93
 #endif
@@ -12545,7 +12548,7 @@ void CHARACTER::SetRefineMode(int iAdditionalCell)
 void CHARACTER::ClearRefineMode()
 {
 	m_bUnderRefine = false;
-	SetRefineNPC(nullptr);
+	SetRefineNPC(entt::null);
 }
 
 
@@ -13138,7 +13141,7 @@ LPITEM CHARACTER::AutoGiveItem(uint32_t dwItemVnum,
 	return item;
 }
 
-bool CHARACTER::GiveItem(LPCHARACTER victim, TItemPos Cell)
+bool CHARACTER::GiveItem(entt::entity victimEntity, TItemPos Cell)
 {
 	if (!CanHandleItem())
 		return false;
@@ -13159,7 +13162,7 @@ bool CHARACTER::GiveItem(LPCHARACTER victim, TItemPos Cell)
 	{
 		const entt::entity itemEntity =
 			(item ? item->GetEntityHandle() : entt::null);
-		if (ItemSystem::ReceiveItemEcs((victim ? victim->GetEntityHandle() : entt::null),
+		if (ItemSystem::ReceiveItemEcs(victimEntity,
 				GetEntityHandle(), itemEntity))
 			return true;
 	}
@@ -13167,9 +13170,9 @@ bool CHARACTER::GiveItem(LPCHARACTER victim, TItemPos Cell)
 	return false;
 }
 
-bool CHARACTER::CanReceiveItem(LPCHARACTER from, LPITEM item) const
+bool CHARACTER::CanReceiveItem(entt::entity fromEntity, LPITEM item) const
 {
-	const entt::entity fromEntity = from ? from->GetEntityHandle() : entt::null;
+	LPCHARACTER from = ecs::LegacyCharOf(fromEntity);
 	if (IsPC())
 		return false;
 
@@ -13360,9 +13363,9 @@ bool CHARACTER::CanReceiveItem(LPCHARACTER from, LPITEM item) const
 	return false;
 }
 
-void CHARACTER::ReceiveItem(LPCHARACTER from, LPITEM item)
+void CHARACTER::ReceiveItem(entt::entity fromEntity, LPITEM item)
 {
-	const entt::entity fromEntity = from ? from->GetEntityHandle() : entt::null;
+	LPCHARACTER from = ecs::LegacyCharOf(fromEntity);
 	if (IsPC())
 		return;
 #ifdef ENABLE_CPP_DUNGEON_RAZOR93
@@ -13471,7 +13474,7 @@ void CHARACTER::ReceiveItem(LPCHARACTER from, LPITEM item)
 #endif
 			)
 		{
-			from->SetRefineNPC(this);
+			from->SetRefineNPC(GetEntityHandle());
 			from->RefineInformation(item->GetCell(), REFINE_TYPE_MONEY_ONLY);
 		}
 #ifdef TEXTS_IMPROVEMENT
@@ -13490,7 +13493,7 @@ void CHARACTER::ReceiveItem(LPCHARACTER from, LPITEM item)
 	case BLACKSMITH_ACCESSORY_MOB:
 		if (item->GetRefinedVnum())
 		{
-			from->SetRefineNPC(this);
+			from->SetRefineNPC(GetEntityHandle());
 			from->RefineInformation(item->GetCell(), REFINE_TYPE_NORMAL);
 		}
 #ifdef TEXTS_IMPROVEMENT
