@@ -602,6 +602,44 @@ CArena* GetArena(entt::entity e)
 	return membership ? membership->arena : nullptr;
 }
 
+namespace {
+
+LPEVENT* CharEventSlot(entt::entity e, ecs::PlayerRuntime::CharEvent slot)
+{
+    if (e == entt::null || !g_registry.valid(e))
+        return nullptr;
+
+    auto& events = g_registry.get_or_emplace<ecs::LegacyCharEvents>(e);
+    switch (slot) {
+    case ecs::PlayerRuntime::CharEvent::Dead:     return &events.dead;
+    case ecs::PlayerRuntime::CharEvent::Stun:     return &events.stun;
+    case ecs::PlayerRuntime::CharEvent::Recovery: return &events.recovery;
+    }
+    return nullptr;
+}
+
+} // namespace
+
+LPEVENT GetCharEvent(entt::entity e, CharEvent slot)
+{
+    LPEVENT* p = CharEventSlot(e, slot);
+    return p ? *p : nullptr;
+}
+
+void SetCharEvent(entt::entity e, CharEvent slot, LPEVENT ev)
+{
+    if (LPEVENT* p = CharEventSlot(e, slot))
+        *p = ev;
+}
+
+void CancelCharEvent(entt::entity e, CharEvent slot)
+{
+    // event_cancel takes the address of the slot and nulls it, which is why
+    // this hands out the address rather than a copy.
+    if (LPEVENT* p = CharEventSlot(e, slot))
+        event_cancel(p);
+}
+
 void SetPotionLimit(entt::entity e, int count)
 {
     if (e == entt::null || !g_registry.valid(e))
@@ -4090,11 +4128,11 @@ void CHARACTER::Destroy()
     StopGyeongGongEvent();
 #endif
     event_cancel(&m_pkWarpNPCEvent);
-    event_cancel(&m_pkRecoveryEvent);
-    event_cancel(&m_pkDeadEvent);
+    ecs::PlayerRuntime::CancelCharEvent(GetEntityHandle(), ecs::PlayerRuntime::CharEvent::Recovery);
+    ecs::PlayerRuntime::CancelCharEvent(GetEntityHandle(), ecs::PlayerRuntime::CharEvent::Dead);
     event_cancel(&m_pkSaveEvent);
     event_cancel(&m_pkTimedEvent);
-    event_cancel(&m_pkStunEvent);
+    ecs::PlayerRuntime::CancelCharEvent(GetEntityHandle(), ecs::PlayerRuntime::CharEvent::Stun);
     event_cancel(&m_pkFishingEvent);
     AffectSystem::CancelDamageEvents(GetEntityHandle());
     event_cancel(&m_pkPartyRequestEvent);
@@ -5517,10 +5555,7 @@ void CHARACTER::Initialize()
     m_pkGyeongGongEvent = nullptr;
 #endif
     m_pkWarpNPCEvent = nullptr;
-    m_pkDeadEvent = nullptr;
-    m_pkStunEvent = nullptr;
     m_pkSaveEvent = nullptr;
-    m_pkRecoveryEvent = nullptr;
     m_pkTimedEvent = nullptr;
     m_pkFishingEvent = nullptr;
     m_pkWarpEvent = nullptr;

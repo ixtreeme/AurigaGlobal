@@ -641,7 +641,8 @@ void CHARACTER::HorseSummon(bool bSummon, bool bFromFar, uint32_t dwVnum, const 
 
 			char_event_info* info = AllocEventInfo<char_event_info>();
 			info->ch = this;
-			m_chHorse->m_pkDeadEvent = event_create(horse_dead_event, info, PASSES_PER_SEC(60));
+			ecs::PlayerRuntime::SetCharEvent(m_chHorse->GetEntityHandle(), ecs::PlayerRuntime::CharEvent::Dead,
+				event_create(horse_dead_event, info, PASSES_PER_SEC(60)));
 		}
 
 		m_chHorse->SetLevel(GetHorseLevel());

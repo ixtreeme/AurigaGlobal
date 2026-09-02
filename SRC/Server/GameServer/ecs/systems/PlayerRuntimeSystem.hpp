@@ -50,6 +50,13 @@ bool IsNPC(entt::entity e);
 // includes monsters and stones, while IsNPC above is the TagNPC component.
 bool IsGuardNPC(entt::entity e);
 void SetPotionLimit(entt::entity e, int count);
+
+// The three timed events that used to be CHARACTER members. Slot names the
+// one being addressed; Cancel runs event_cancel on it, Set stores or clears.
+enum class CharEvent : uint8_t { Dead, Stun, Recovery };
+LPEVENT GetCharEvent(entt::entity e, CharEvent slot);
+void SetCharEvent(entt::entity e, CharEvent slot, LPEVENT ev);
+void CancelCharEvent(entt::entity e, CharEvent slot);
 int GetPotionLimit(entt::entity e);
 bool IsStone(entt::entity e);
 bool IsMonster(entt::entity e);

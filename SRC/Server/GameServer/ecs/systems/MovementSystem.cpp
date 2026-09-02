@@ -489,7 +489,7 @@ void MovementSystem_Update(entt::registry& reg, uint32_t tick)
 
 void CHARACTER::StartRecoveryEvent()
 {
-	if (m_pkRecoveryEvent)
+	if (ecs::PlayerRuntime::GetCharEvent(GetEntityHandle(), ecs::PlayerRuntime::CharEvent::Recovery))
 		return;
 
 	if (IsDead() || IsStun())
@@ -512,7 +512,8 @@ void CHARACTER::StartRecoveryEvent()
 	info->ch = this;
 
 	int iSec = IsPC() ? 3 : (std::max((uint8_t)1, GetMobTable().bRegenCycle));
-	m_pkRecoveryEvent = event_create(recovery_event, info, PASSES_PER_SEC(iSec));
+	ecs::PlayerRuntime::SetCharEvent(GetEntityHandle(), ecs::PlayerRuntime::CharEvent::Recovery,
+		event_create(recovery_event, info, PASSES_PER_SEC(iSec)));
 }
 
 void CHARACTER::Standup()
@@ -1246,8 +1247,8 @@ void CHARACTER::SetPosition(int pos)
 			g_registry.emplace_or_replace<ecs::DirtyTag>(e);
 		}
 
-		event_cancel(&m_pkDeadEvent);
-		event_cancel(&m_pkStunEvent);
+		ecs::PlayerRuntime::CancelCharEvent(GetEntityHandle(), ecs::PlayerRuntime::CharEvent::Dead);
+		ecs::PlayerRuntime::CancelCharEvent(GetEntityHandle(), ecs::PlayerRuntime::CharEvent::Stun);
 	}
 	else if (pos == POS_DEAD)
 	{
@@ -1405,7 +1406,7 @@ EVENTFUNC(recovery_event)
 
 		if (ch->GetHP() >= ecs::PointSystem::GetMaxHP(character))
 		{
-			ch->m_pkRecoveryEvent = nullptr;
+			ecs::PlayerRuntime::SetCharEvent(ch->GetEntityHandle(), ecs::PlayerRuntime::CharEvent::Recovery, nullptr);
 			return 0;
 		}
 

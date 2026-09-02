@@ -2338,10 +2338,7 @@ public:
 	void				StartRecoveryEvent();
 	void				StartDestroyWhenIdleEvent();
 
-	LPEVENT				m_pkDeadEvent;
-	LPEVENT				m_pkStunEvent;
 	LPEVENT				m_pkSaveEvent;
-	LPEVENT				m_pkRecoveryEvent;
 	LPEVENT				m_pkTimedEvent;
 	LPEVENT				m_pkFishingEvent;
 	LPEVENT				m_pkAffectEvent;

@@ -2,10 +2,23 @@
 
 #include <cstdint>
 
+#include "../../event.h"
+
 class CPetSystem;
 class CNewPetSystem;
 
 namespace ecs {
+
+// The dead, stun and recovery events CHARACTER used to hold as members.
+// They stay legacy LPEVENTs - this is where they live, not what they are -
+// so that the functions that cancel and recreate them can take an entity.
+// The code carried "deferred until ECS component covers this" notes for
+// exactly this move.
+struct LegacyCharEvents {
+    LPEVENT dead { nullptr };
+    LPEVENT stun { nullptr };
+    LPEVENT recovery { nullptr };
+};
 
 struct CharacterRuntimeFlagsComponent {
     uint32_t aiFlag = 0;

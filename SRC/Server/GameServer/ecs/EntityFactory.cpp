@@ -347,6 +347,7 @@ entt::entity CreateMobEntity(entt::registry& reg, const TMobTable& data, int x, 
     runtimeFlags.aiFlag = data.dwAIFlag;
     reg.emplace_or_replace<ecs::CharacterRuntimeFlagsComponent>(entity, runtimeFlags);
     reg.emplace_or_replace<ecs::CombatStats>(entity, MakeDefaultCombatStats(0));
+    reg.emplace_or_replace<ecs::LegacyCharEvents>(entity);
     reg.emplace_or_replace<ecs::AttackCooldown>(entity, MakeDefaultAttackCooldown(now));
     reg.emplace_or_replace<ecs::DamageMap>(entity, ecs::DamageMap {});
     reg.emplace_or_replace<ecs::AffectList>(entity, MakeDefaultAffectList());
@@ -662,6 +663,7 @@ entt::entity EntityFactory::CreatePC(entt::registry& reg, const TPlayerTable& da
     SeedCharacterStatsComponentFromLegacy(reg, entity);
 
     reg.emplace_or_replace<ecs::CombatStats>(entity, MakeDefaultCombatStats(data.lAlignment));
+    reg.emplace_or_replace<ecs::LegacyCharEvents>(entity);
     reg.emplace_or_replace<ecs::AttackCooldown>(entity, MakeDefaultAttackCooldown(now));
     reg.emplace_or_replace<ecs::DamageMap>(entity, ecs::DamageMap {});
 

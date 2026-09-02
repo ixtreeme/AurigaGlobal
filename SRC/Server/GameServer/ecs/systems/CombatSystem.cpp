@@ -1908,8 +1908,7 @@ EVENTFUNC(dead_event)
 		return 0;
 	}
 
-	// Phase 10: WRITES_STATE - deferred until ECS component covers m_pkDeadEvent
-	ch->m_pkDeadEvent = nullptr;
+	ecs::PlayerRuntime::SetCharEvent(chEntity, ecs::PlayerRuntime::CharEvent::Dead, nullptr);
 	{
 		const entt::entity victimEntity = chEntity;
 		if (victimEntity != entt::null)
@@ -2331,7 +2330,7 @@ void CHARACTER::Dead(entt::entity killer, bool bImmediateDead)
 	ClearSync();
 
 	//LOG_INFO(1, "stun cancel %s[%d]", GetName(), (uint32_t)GetVID());
-	event_cancel(&m_pkStunEvent); //  ̺Ʈ δ.
+	ecs::PlayerRuntime::CancelCharEvent(GetEntityHandle(), ecs::PlayerRuntime::CharEvent::Stun); //  ̺Ʈ δ.
 
 	if (IsPC())
 	{
@@ -2421,10 +2420,11 @@ void CHARACTER::Dead(entt::entity killer, bool bImmediateDead)
 	//   , ⼭    ޴´.
 	if (isDuel == false)
 	{
-		if (m_pkDeadEvent)
+		if (ecs::PlayerRuntime::GetCharEvent(GetEntityHandle(), ecs::PlayerRuntime::CharEvent::Dead))
 		{
-			LOG_TRACE("DEAD_EVENT_CANCEL: {} {} {}", GetName(), static_cast<const void*>(this), static_cast<const void*>(get_pointer(m_pkDeadEvent)));
-			event_cancel(&m_pkDeadEvent);
+			LOG_TRACE("DEAD_EVENT_CANCEL: {} {} {}", GetName(), static_cast<const void*>(this), static_cast<const void*>(get_pointer(
+				ecs::PlayerRuntime::GetCharEvent(GetEntityHandle(), ecs::PlayerRuntime::CharEvent::Dead))));
+			ecs::PlayerRuntime::CancelCharEvent(GetEntityHandle(), ecs::PlayerRuntime::CharEvent::Dead);
 		}
 
 		if (IsStone())
@@ -2448,20 +2448,24 @@ void CHARACTER::Dead(entt::entity killer, bool bImmediateDead)
 
 			if (IsRevive() == false && HasReviverInParty() == true)
 			{
-				m_pkDeadEvent = event_create(dead_event, pEventInfo, bImmediateDead ? 1 : PASSES_PER_SEC(1));
+				ecs::PlayerRuntime::SetCharEvent(GetEntityHandle(), ecs::PlayerRuntime::CharEvent::Dead,
+					event_create(dead_event, pEventInfo, bImmediateDead ? 1 : PASSES_PER_SEC(1)));
 			}
 #ifdef __DEFENSE_WAVE__
 			else if (GetRaceNum() >= 3950 && GetRaceNum() <= 3964)
 			{
-				m_pkDeadEvent = event_create(dead_event, pEventInfo, bImmediateDead ? 1 : PASSES_PER_SEC(1));
+				ecs::PlayerRuntime::SetCharEvent(GetEntityHandle(), ecs::PlayerRuntime::CharEvent::Dead,
+					event_create(dead_event, pEventInfo, bImmediateDead ? 1 : PASSES_PER_SEC(1)));
 			}
 #endif
 			else
 			{
-				m_pkDeadEvent = event_create(dead_event, pEventInfo, bImmediateDead ? 1 : PASSES_PER_SEC(1));
+				ecs::PlayerRuntime::SetCharEvent(GetEntityHandle(), ecs::PlayerRuntime::CharEvent::Dead,
+					event_create(dead_event, pEventInfo, bImmediateDead ? 1 : PASSES_PER_SEC(1)));
 			}
 
-			LOG_TRACE("DEAD_EVENT_CREATE: {} {} {}", GetName(), static_cast<const void*>(this), static_cast<const void*>(get_pointer(m_pkDeadEvent)));
+			LOG_TRACE("DEAD_EVENT_CREATE: {} {} {}", GetName(), static_cast<const void*>(this), static_cast<const void*>(get_pointer(
+				ecs::PlayerRuntime::GetCharEvent(GetEntityHandle(), ecs::PlayerRuntime::CharEvent::Dead))));
 		}
 	}
 
@@ -6678,9 +6682,8 @@ EVENTFUNC(StunEvent)
 	if (ch == nullptr) { // <Factor>
 		return 0;
 	}
-	// Phase 10: WRITES_STATE - deferred until ECS component covers m_pkStunEvent
-	ch->m_pkStunEvent = nullptr;
 	const entt::entity e = (ch ? ch->GetEntityHandle() : entt::null);
+	ecs::PlayerRuntime::SetCharEvent(e, ecs::PlayerRuntime::CharEvent::Stun, nullptr);
 	if (e != entt::null && g_registry.valid(e))
 	{
 		if (g_registry.all_of<ecs::StunTag>(e))
@@ -6714,7 +6717,7 @@ void CHARACTER::Stun()
 
 	CloseMyShop();
 
-	event_cancel(&m_pkRecoveryEvent); // ȸ ̺Ʈ δ.
+	ecs::PlayerRuntime::CancelCharEvent(GetEntityHandle(), ecs::PlayerRuntime::CharEvent::Recovery); // ȸ ̺Ʈ δ.
 
 	TPacketGCStun pack;
 	pack.header = HEADER_GC_STUN;
@@ -6732,14 +6735,15 @@ void CHARACTER::Stun()
 		g_registry.emplace_or_replace<ecs::DirtyTag>(e);
 	}
 
-	if (m_pkStunEvent)
+	if (ecs::PlayerRuntime::GetCharEvent(GetEntityHandle(), ecs::PlayerRuntime::CharEvent::Stun))
 		return;
 
 	char_event_info* info = AllocEventInfo<char_event_info>();
 
 	info->ch = this;
 
-	m_pkStunEvent = event_create(StunEvent, info, PASSES_PER_SEC(3));
+	ecs::PlayerRuntime::SetCharEvent(GetEntityHandle(), ecs::PlayerRuntime::CharEvent::Stun,
+		event_create(StunEvent, info, PASSES_PER_SEC(3)));
 }
 
 bool CHARACTER::IsDead() const
