@@ -38,6 +38,7 @@
 #include "ecs/Registry.hpp"
 #include "ecs/VIDRegistry.hpp"
 #include "ecs/PIDRegistry.hpp"
+#include "ecs/systems/AISystem.hpp"
 #include "ecs/CharacterAccessors.hpp"
 #include "ecs/systems/ItemSystem.hpp"
 #include "ecs/components/identity_components.hpp"
@@ -1133,7 +1134,7 @@ struct FuncUpdateAndResetChatCounter
 	void operator () (LPCHARACTER ch)
 	{
 		ch->ResetChatCounter();
-		ch->CFSM::Update();
+		AISystem::UpdateStateMachine(ch->GetEntityHandle());
 	}
 };
 

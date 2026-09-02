@@ -1656,3 +1656,60 @@ Live conversion sites: 1681 -> 1684 (+3: the SetPotionLimit and SetPKMode call
 sites in arena.cpp now pass entities that the surrounding bodies still derive
 from pointers, until GetPlayerA/GetPlayerB can flip).
 Build: RelWithDebInfo GameServer, 0 errors.
+
+
+Phase 19m - CFSM is gone
+--------------------------
+CHARACTER no longer inherits from CFSM. FSM.h, FSM.cpp and state.h are deleted;
+nothing else in the tree used them.
+
+The machine had exactly two states on CHARACTER, m_stateIdle and m_stateBattle,
+and every GotoState call already sat directly beside its ECS twin:
+
+        EnterIdleState(GetEntityHandle());
+        if (!IsPC())
+            GotoState(m_stateIdle);
+
+The tags were being maintained in lockstep with the FSM the whole time. So the
+FSM's own data moves into a component and its two entry points become entity
+functions:
+
+    ecs::AIFSMState        Initial / Idle / Battle
+    ecs::AIStateMachine    current, pending, hasPending
+    AISystem::GotoState(entt::entity, ecs::AIFSMState)
+    AISystem::UpdateStateMachine(entt::entity)
+
+GotoState is now entity-native, which is what SetPosition needed. The state
+bodies (StateIdle, StateBattle) are still CHARACTER methods, so
+UpdateStateMachine resolves the legacy object once per tick at the pump. That
+is the boundary the pump already crosses for everything else, not a wrapper
+standing between an entity call and a conversion.
+
+FOUR THINGS THAT WOULD HAVE BEEN SILENT
+-----------------------------------------
+1. CFSM deferred transitions by one Update through m_pNewState. Dispatching
+   straight off CombatActiveTag would have made them immediate - a one-tick
+   difference in AI behaviour that no build error would show. The component
+   keeps current and pending separately.
+
+2. BeginStateEmpty is NOT empty. It logs. CFSM ran it on every transition, so
+   UpdateStateMachine calls it when one applies. EndStateEmpty really is empty
+   and is dropped.
+
+3. ecs::AIState already existed - a struct holding derived state for network
+   sync (currentState, nextStatePulse, stateDuration), a different concern
+   entirely. The new enum had to be AIFSMState. The compiler caught this one.
+
+4. There was a SECOND pump. Grepping for "CFSM::Update" found char_manager.cpp
+   and CHARACTER::UpdateCharacter, but CHARACTER::UpdateStateMachine called a
+   bare `Update()` that resolved through the base class. Removing the base
+   turned it into an error - which is the good outcome, and the reason to drop
+   the inheritance rather than leave CFSM sitting there unused.
+
+Build note, again: killing racing builds left three truncated .obj files.
+LNK1136 "invalid or corrupt file" names one at a time; deleting the
+zero-length objects under GameServer.dir/RelWithDebInfo clears it.
+
+SetPosition still is not entity-native. Its remaining legacy dependency is
+event_cancel(&m_pkDeadEvent) and event_cancel(&m_pkStunEvent).
+Build: RelWithDebInfo GameServer, 0 errors.

@@ -40,6 +40,8 @@
 #include "../../ecs/components/combat_components.hpp"
 #include "../../ecs/components/dirty_components.hpp"
 #include "../../ecs/components/identity_components.hpp"
+#include "AISystem.hpp"
+#include "../components/ai_components.hpp"
 #include "../../ecs/components/inventory_components.hpp"
 #include "../../ecs/components/movement_components.hpp"
 #include "../../ecs/components/quest_components.hpp"
@@ -4610,7 +4612,7 @@ void CHARACTER::UpdateStateMachine(uint32_t dwPulse)
     if (IsDead())
         return;
 
-    Update();
+    AISystem::UpdateStateMachine(GetEntityHandle());
     m_dwNextStatePulse = dwPulse + m_dwStateDuration;
 }
 
@@ -4625,7 +4627,7 @@ void CHARACTER::SetNextStatePulse(int iNextPulse)
 
 void CHARACTER::UpdateCharacter(uint32_t dwPulse)
 {
-    CFSM::Update();
+    AISystem::UpdateStateMachine(GetEntityHandle());
 }
 
 void CHARACTER::MonsterLog(const char* format, ...)
@@ -5546,7 +5548,7 @@ void CHARACTER::Initialize()
     m_dwPlayStartTime = m_dwLastMoveTime = get_dword_time();
 
     EnterIdleState(GetEntityHandle());
-    GotoState(m_stateIdle);
+    AISystem::GotoState(GetEntityHandle(), ecs::AIFSMState::Idle);
     m_dwStateDuration = 1;
 
     m_dwLastAttackTime = get_dword_time() - 20000;
@@ -5867,8 +5869,6 @@ DynamicCharacterPtr& DynamicCharacterPtr::operator=(LPCHARACTER character) {
 
 CHARACTER::CHARACTER()
 {
-    m_stateIdle.Set(this, &CHARACTER::BeginStateEmpty, &CHARACTER::StateIdle, &CHARACTER::EndStateEmpty);
-    m_stateBattle.Set(this, &CHARACTER::BeginStateEmpty, &CHARACTER::StateBattle, &CHARACTER::EndStateEmpty);
     Initialize();
 }
 

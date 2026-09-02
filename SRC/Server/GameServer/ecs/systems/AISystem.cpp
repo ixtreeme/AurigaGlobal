@@ -12,6 +12,7 @@
 #include "../../motion.h"
 #include "../../vector.h"
 #include "../VIDRegistry.hpp"
+#include "../CharacterAccessors.hpp"
 #include "../components/ai_components.hpp"
 #include "../components/combat_components.hpp"
 #include "../components/dirty_components.hpp"
@@ -114,6 +115,64 @@ bool LegacyGotoNearTarget(LPCHARACTER self, LPCHARACTER victim)
 } // namespace
 
 extern LPCHARACTER FindVictim(LPCHARACTER pkChr, int iMaxDistance);
+
+namespace AISystem {
+
+void GotoState(entt::entity e, ecs::AIFSMState state)
+{
+    if (e == entt::null || !g_registry.valid(e))
+        return;
+
+    auto& fsm = g_registry.get_or_emplace<ecs::AIStateMachine>(e);
+
+    // CFSM::GotoState returned early when the machine was already in the state
+    // and that same state was queued; anything else just replaced the pending
+    // slot, so a transition never took effect before the next Update.
+    if (fsm.current == state && fsm.hasPending && fsm.pending == state)
+        return;
+
+    fsm.pending = state;
+    fsm.hasPending = true;
+}
+
+void UpdateStateMachine(entt::entity e)
+{
+    if (e == entt::null || !g_registry.valid(e))
+        return;
+
+    auto& fsm = g_registry.get_or_emplace<ecs::AIStateMachine>(e);
+    const bool transitioned = fsm.hasPending;
+    if (transitioned) {
+        fsm.current = fsm.pending;
+        fsm.hasPending = false;
+    }
+
+    // The state bodies are still CHARACTER methods. This is the once-per-tick
+    // boundary the pump already crosses for everything else, not a wrapper
+    // hiding a conversion behind an entity-shaped call.
+    LPCHARACTER ch = ecs::LegacyCharOf(e);
+    if (!ch)
+        return;
+
+    // CFSM ran the old state's End hook then the new state's Begin hook on a
+    // transition. EndStateEmpty is genuinely empty; BeginStateEmpty is not -
+    // it logs - so it has to keep firing.
+    if (transitioned)
+        ch->BeginStateEmpty();
+
+    switch (fsm.current) {
+    case ecs::AIFSMState::Battle:
+        ch->StateBattle();
+        break;
+    case ecs::AIFSMState::Idle:
+        ch->StateIdle();
+        break;
+    case ecs::AIFSMState::Initial:
+        break;  // CFSM's m_stateInitial had empty hooks on CHARACTER
+    }
+}
+
+} // namespace AISystem
 
 void CHARACTER::StateIdle()
 {

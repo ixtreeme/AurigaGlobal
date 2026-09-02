@@ -3,6 +3,8 @@
 
 #include "PlayerRuntimeSystem.hpp"
 #include "MovementSystem.hpp"
+#include "AISystem.hpp"
+#include "../components/ai_components.hpp"
 
 #include "PlayerRuntimeSystem.hpp"
 #include <cmath>
@@ -709,7 +711,7 @@ void CHARACTER::Stop()
 		MonsterLog("[IDLE] stop");
 	EnterIdleState(GetEntityHandle());
 	if (!IsPC())
-		GotoState(m_stateIdle);
+		AISystem::GotoState(GetEntityHandle(), ecs::AIFSMState::Idle);
 
 	// Phase C.3: legacy destination field write removed. SyncDestinationClear
 	// drops ECS MovementDestination so GetCurrentDestX/Y returns current
@@ -1270,7 +1272,7 @@ void CHARACTER::SetPosition(int pos)
 				MonsterLog("[BATTLE] enter fighting state");
 
 			EnterBattleState(GetEntityHandle());
-			GotoState(m_stateBattle);
+			AISystem::GotoState(GetEntityHandle(), ecs::AIFSMState::Battle);
 			break;
 
 		default:
@@ -1278,7 +1280,7 @@ void CHARACTER::SetPosition(int pos)
 				MonsterLog("[IDLE] enter idle state");
 
 			EnterIdleState(GetEntityHandle());
-			GotoState(m_stateIdle);
+			AISystem::GotoState(GetEntityHandle(), ecs::AIFSMState::Idle);
 			break;
 		}
 	}

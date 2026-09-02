@@ -10,7 +10,6 @@
 #include <common/CommonDefines.h>
 #include <common/stl.h>
 #include "entity.h"
-#include "FSM.h"
 #include "horse_rider.h"
 #include "constants.h"
 #include "affect.h"
@@ -655,7 +654,7 @@ struct LeaderboardEntry
 
 #endif
 
-class CHARACTER : public CEntity, public CFSM, public CHorseRider
+class CHARACTER : public CEntity, public CHorseRider
 {
 protected:
 	time_t m_lastFruitUse;
@@ -2315,8 +2314,6 @@ public:
 	void				UpdateCharacter(uint32_t dwPulse);
 
 protected:
-	CStateTemplate<CHARACTER>	m_stateBattle;
-	CStateTemplate<CHARACTER>	m_stateIdle;
 	uint32_t				m_dwNextStatePulse;
 
 	// Marriage

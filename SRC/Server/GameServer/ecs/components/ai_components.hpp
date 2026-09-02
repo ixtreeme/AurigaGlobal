@@ -13,6 +13,18 @@
 
 namespace ecs {
 
+// The two-state machine CHARACTER used to inherit from CFSM. Transitions
+// are deferred by one update, which is what CFSM did through m_pNewState;
+// its Begin/End hooks were BeginStateEmpty/EndStateEmpty on CHARACTER, so
+// nothing else is lost. Initial was a no-op state and stays one.
+enum class AIFSMState : uint8_t { Initial = 0, Idle, Battle };
+
+struct AIStateMachine {
+    AIFSMState current { AIFSMState::Initial };
+    AIFSMState pending { AIFSMState::Initial };
+    bool hasPending { false };
+};
+
 struct AIFlags {
     bool isAggressive : 1;
     bool isCoward : 1;
