@@ -14,6 +14,14 @@ namespace ecs::VisibilitySystem {
 // Init() is idempotent (multiple calls do nothing on the second hit).
 // Shutdown() disconnects the handler - intended for unit tests and
 // orderly process exit.
+// Re-encodes what one character sees: a self-resync pair, then a refresh
+// of every peer in its ViewMap. This is CEntity::ViewReencode's character
+// branch, which already walked ViewMap.visible - it only converted each
+// entity back to an LPENTITY so DispatchInsert could convert it forward
+// again. Non-characters still go through CEntity::ViewReencode, which
+// walks the legacy m_map_view they still maintain.
+void Reencode(entt::entity self);
+
 void Init(entt::registry& reg);
 void Shutdown(entt::registry& reg);
 

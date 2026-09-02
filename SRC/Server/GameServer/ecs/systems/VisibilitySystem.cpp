@@ -12,6 +12,8 @@
 #include "../components/transform_components.hpp"
 #include "../components/visibility_components.hpp"
 #include "../components/status_components.hpp"
+#include "../services/EntityNetworkDispatch.hpp"
+#include "PlayerRuntimeSystem.hpp"
 #include "../events.hpp"
 #include "../services/EntityNetworkDispatch.hpp"
 
@@ -45,6 +47,38 @@ void Reencode(entt::registry& reg, entt::entity character)
 		if (!otherStatus || !otherStatus->isObserverMode)
 			ecs::EntityNetworkDispatch::SendInsert(reg, other, character);
 	}
+}
+
+void Reencode(entt::entity self)
+{
+    if (self == entt::null || !g_registry.valid(self))
+        return;
+
+    if (ecs::PlayerRuntime::IsObserverMode(self))
+        return;
+
+    ecs::EntityNetworkDispatch::SendRemove(g_registry, self, self);
+    ecs::EntityNetworkDispatch::SendInsert(g_registry, self, self);
+
+    const auto* viewMap = g_registry.try_get<ecs::ViewMap>(self);
+    if (!viewMap)
+        return;
+
+    const auto visible = viewMap->visible;  // snapshot: the loop dispatches
+    for (const entt::entity other : visible) {
+        if (other == entt::null || !g_registry.valid(other))
+            continue;
+
+        if (ecs::PlayerRuntime::IsObserverMode(other))
+            continue;
+
+        // Only the reverse direction. The peer-direction pair was removed
+        // in fixup-5 because it forced every peer client to despawn and
+        // respawn the character, resetting its movement animation; this
+        // one refreshes the SELF client's render of the peer, which is
+        // what ViewReencode is for.
+        ecs::EntityNetworkDispatch::SendInsert(g_registry, other, self);
+    }
 }
 
 namespace {

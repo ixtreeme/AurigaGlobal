@@ -2,6 +2,7 @@
 #include <Core/Logging.hpp>
 #include "ecs/systems/PlayerRuntimeSystem.hpp"
 #include "ecs/systems/PointSystem.hpp"
+#include "ecs/systems/VisibilitySystem.hpp"
 #include "ecs/systems/CombatSystem.hpp"
 #include "ecs/systems/MovementSystem.hpp"
 #include "ecs/AIHelpers.hpp"
@@ -346,14 +347,14 @@ EVENTFUNC(ready_to_start_event)
 				chA->SetPosition(POS_STANDING);
 				ecs::PointSystem::Change(chAEntity, POINT_HP, ecs::PointSystem::GetMaxHP(chAEntity) - ecs::PointSystem::Get(chAEntity, POINT_HP));
 				ecs::PointSystem::Change(chAEntity, POINT_SP, ecs::PointSystem::GetMaxSP(chAEntity) - ecs::PointSystem::Get(chAEntity, POINT_SP));
-				chA->ViewReencode();
+				ecs::VisibilitySystem::Reencode(chAEntity);
 
 				ecs::PlayerRuntime::GetDesc(chBEntity)->SetPhase(PHASE_GAME);
 				chB->StartRecoveryEvent();
 				chB->SetPosition(POS_STANDING);
 				ecs::PointSystem::Change(chBEntity, POINT_HP, ecs::PointSystem::GetMaxHP(chBEntity) - ecs::PointSystem::Get(chBEntity, POINT_HP));
 				ecs::PointSystem::Change(chBEntity, POINT_SP, ecs::PointSystem::GetMaxSP(chBEntity) - ecs::PointSystem::Get(chBEntity, POINT_SP));
-				chB->ViewReencode();
+				ecs::VisibilitySystem::Reencode(chBEntity);
 
 				TEMP_BUFFER buf;
 				TEMP_BUFFER buf2;

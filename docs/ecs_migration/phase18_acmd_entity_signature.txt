@@ -1713,3 +1713,50 @@ zero-length objects under GameServer.dir/RelWithDebInfo clears it.
 SetPosition still is not entity-native. Its remaining legacy dependency is
 event_cancel(&m_pkDeadEvent) and event_cancel(&m_pkStunEvent).
 Build: RelWithDebInfo GameServer, 0 errors.
+
+
+Phase 19n - the view reencode goes component-native
+-----------------------------------------------------
+ecs::VisibilitySystem::Reencode(entt::entity) is CEntity::ViewReencode's
+character branch, moved out and made entity-native. CEntity::ViewReencode now
+delegates for characters and keeps the legacy m_map_view walk only for
+non-characters, which are the ones that still maintain that map.
+
+The branch was already reading the ECS ViewMap. What it was doing on top of
+that is the interesting part:
+
+    for (const entt::entity otherE : viewMap->visible) {
+        LPENTITY other = ecs::SpatialService::LPENTITYFromEntity(g_registry, otherE);
+        if (!other) continue;
+        if (!other->m_bIsObserver)
+            DispatchInsert(other, this, "view.reencode.reverse");   // converts back
+
+It took an entity out of a component, turned it into an LPENTITY, and handed
+it to DispatchInsert, whose first act is EntityOf(source) - turning it back.
+Two hops per visible peer, per reencode. Reencode calls
+EntityNetworkDispatch::SendInsert directly with the entities it already has.
+
+WHY THIS IS NOT THE SetPKMode MISTAKE
+---------------------------------------
+SendInsert's character case still resolves both entities to LPENTITYs and
+calls EncodeInsertPacket, with a comment saying why: the native packet builder
+can diverge from legacy movement state and leave two clients disagreeing about
+where a character is. So a conversion does still happen down there.
+
+The difference from the wrapper rejected in 19k is that SendInsert is the
+dispatch service's real entry point, entity-shaped by design, with a staged
+internal that is documented and owned. CombatSystem::SetPKMode was a function
+whose entire body was LegacyCharOf(e)->SetPKMode(mode) and which existed only
+to look entity-shaped. Routing through the first removes two conversions and
+leaves one where the codebase has decided it belongs; routing through the
+second removed none and hid one.
+
+m_bIsObserver vs ecs::PlayerRuntime::IsObserverMode was checked rather than
+assumed: CEntity::SetObserverMode writes the field and the ObserverModeTag at
+the same single point, so they cannot drift.
+
+arena.cpp: ViewReencode is gone. Two method names left, StartRecoveryEvent and
+SetPosition, and both are now within reach - the events moved into a component
+in 19m and the CFSM went in 19l, which were their two blockers.
+
+Build: RelWithDebInfo GameServer, 0 errors.

@@ -9,6 +9,7 @@
 #include "ecs/Registry.hpp"
 #include "ecs/services/EntityNetworkDispatch.hpp"
 #include "ecs/services/SpatialService.hpp"
+#include "ecs/systems/VisibilitySystem.hpp"
 #include "ecs/components/visibility_components.hpp"
 #include "sectree_manager.h"
 #include "config.h"
@@ -300,48 +301,19 @@ void CEntity::ViewReencode()
 	if (m_bIsObserver)
 		return;
 
-	DispatchRemove(this, this, "view.reencode.self");
-	DispatchInsert(this, this, "view.reencode.self");
-
-	// Phase 15E-final.LPENTITY.4-architect.D.6:
-	// For characters, walk the ECS ViewMap.visible (what this character
-	// currently sees) rather than the now-unmaintained m_map_view.
+	// The character branch is ecs::VisibilitySystem::Reencode now. It used to
+	// live here, walking ViewMap.visible and turning each entity back into an
+	// LPENTITY purely so DispatchInsert could turn it forward again. Only
+	// non-characters fall through to the legacy m_map_view walk below - they
+	// are the ones that still maintain it.
 	if (IsType(ENTITY_CHARACTER))
 	{
-		const entt::entity selfE = EntityOf(this);
-		if (selfE != entt::null && g_registry.valid(selfE))
-		{
-			if (auto* viewMap = g_registry.try_get<ecs::ViewMap>(selfE))
-			{
-				const auto visible = viewMap->visible; // snapshot
-				for (const entt::entity otherE : visible)
-				{
-					if (otherE == entt::null || !g_registry.valid(otherE))
-						continue;
-					LPENTITY other = ecs::SpatialService::LPENTITYFromEntity(g_registry, otherE);
-					if (!other)
-						continue;
-
-					// Phase 15E-final.LPENTITY.4-architect H fixup-5:
-					// Peer-direction respawn burst removed. The pre-fixup-5 body
-					// emitted DispatchRemove + DispatchInsert(this, other) which
-					// forced every peer client to despawn-then-respawn the moving
-					// character, resetting any in-progress movement animation
-					// render-side. Pre-Phase D the per-tick polling re-emitted
-					// GC_MOVE which papered over the reset; after D.6 stubbed
-					// the polling, peers got stuck rendering the post-reset
-					// idle pose. The DispatchInsert(other, this) reverse below
-					// stays - it refreshes the SELF client's render of the peer,
-					// which is the legitimate purpose of ViewReencode for the
-					// re-encoding character.
-
-					if (!other->m_bIsObserver)
-						DispatchInsert(other, this, "view.reencode.reverse");
-				}
-			}
-		}
+		ecs::VisibilitySystem::Reencode(EntityOf(this));
 		return;
 	}
+
+	DispatchRemove(this, this, "view.reencode.self");
+	DispatchInsert(this, this, "view.reencode.self");
 
 	auto it = m_map_view.begin();
 
