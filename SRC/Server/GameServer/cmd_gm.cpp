@@ -3861,8 +3861,7 @@ ACMD(do_add_rare_attr)
 
 ACMD(do_show_arena_list)
 {
-	LPCHARACTER ch = ecs::LegacyCharOf(character);
-	CArenaManager::instance().SendArenaMapListTo(ch);
+	CArenaManager::instance().SendArenaMapListTo(character);
 }
 
 ACMD(do_end_all_duel)

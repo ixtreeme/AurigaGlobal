@@ -94,7 +94,7 @@ class CArenaMap
 	void Destroy();
 
 	bool AddArena(uint32_t mapIdx, uint16_t startA_X, uint16_t startA_Y, uint16_t startB_X, uint16_t startB_Y);
-	void SendArenaMapListTo(LPCHARACTER pChar, uint32_t dwMapIndex);
+	void SendArenaMapListTo(entt::entity character, uint32_t dwMapIndex);
 
 	bool StartDuel(entt::entity charFrom, entt::entity charTo, int nSetPoint, int nMinute = 5);
 	void EndAllDuel();
@@ -102,8 +102,8 @@ class CArenaMap
 
 	int GetDuelList(lua_State* L, int index);
 
-	bool CanAttack(LPCHARACTER pCharAttacker, LPCHARACTER pCharVictim);
-	bool OnDead(LPCHARACTER pCharKiller, LPCHARACTER pCharVictim);
+	bool CanAttack(entt::entity attacker, entt::entity victim);
+	bool OnDead(entt::entity killer, entt::entity victim);
 
 	bool AddObserver(entt::entity character, uint16_t ObserverX, uint16_t ObserverY);
 	bool RegisterObserverPtr(entt::entity character, uint32_t mapIdx, uint16_t ObserverX, uint16_t ObserverY);
@@ -124,16 +124,16 @@ class CArenaManager : public singleton<CArenaManager>
 
 		bool AddArena(uint32_t mapIdx, uint16_t startA_X, uint16_t startA_Y, uint16_t startB_X, uint16_t startB_Y);
 
-		void SendArenaMapListTo(LPCHARACTER pChar);
+		void SendArenaMapListTo(entt::entity character);
 
 		void EndAllDuel();
 		bool EndDuel(uint32_t pid);
 
 		void GetDuelList(lua_State* L);
 
-		bool CanAttack(LPCHARACTER pCharAttacker, LPCHARACTER pCharVictim);
+		bool CanAttack(entt::entity attacker, entt::entity victim);
 
-		bool OnDead(LPCHARACTER pCharKiller, LPCHARACTER pCharVictim);
+		bool OnDead(entt::entity killer, entt::entity victim);
 
 		bool AddObserver(entt::entity character, uint32_t mapIdx, uint16_t ObserverX, uint16_t ObserverY);
 		bool RegisterObserverPtr(entt::entity character, uint32_t mapIdx, uint16_t ObserverX, uint16_t ObserverY);

@@ -130,7 +130,7 @@ bool battle_is_attackable(entt::entity character, entt::entity victim)
 		}
 	}
 
-	if (CArenaManager::instance().CanAttack(ch, pkVictim) == true)
+	if (CArenaManager::instance().CanAttack(character, victim) == true)
 		return true;
 
 #ifdef __DEFENSE_WAVE__

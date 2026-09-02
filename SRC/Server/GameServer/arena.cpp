@@ -138,22 +138,22 @@ bool CArena::CheckArea(uint16_t startA_X, uint16_t startA_Y, uint16_t startB_X, 
 	return true;
 }
 
-void CArenaManager::SendArenaMapListTo(LPCHARACTER pChar)
+void CArenaManager::SendArenaMapListTo(entt::entity character)
 {
 	for (auto iter = m_mapArenaMap.begin(); iter != m_mapArenaMap.end(); ++iter)
 	{
 		CArenaMap* pArena = iter->second;
-		pArena->SendArenaMapListTo(pChar, (iter->first));
+		pArena->SendArenaMapListTo(character, (iter->first));
 	}
 }
 
-void CArenaMap::SendArenaMapListTo(LPCHARACTER pChar, uint32_t mapIdx)
+void CArenaMap::SendArenaMapListTo(entt::entity character, uint32_t mapIdx)
 {
-	if (pChar == nullptr) return;
+	if (character == entt::null) return;
 
 	for (auto iter = m_listArena.begin(); iter != m_listArena.end(); ++iter)
 	{
-		ecs::ChatSystem::Send(((pChar) ? (pChar)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "ArenaMapInfo Map: %d stA(%d, %d) stB(%d, %d)", mapIdx,
+		ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "ArenaMapInfo Map: %d stA(%d, %d) stB(%d, %d)", mapIdx,
 				(CArena*)(*iter)->GetStartPointA().x, (CArena*)(*iter)->GetStartPointA().y,
 				(CArena*)(*iter)->GetStartPointB().x, (CArena*)(*iter)->GetStartPointB().y);
 	}
@@ -660,29 +660,29 @@ int CArenaMap::GetDuelList(lua_State* L, int index)
 	return index;
 }
 
-bool CArenaManager::CanAttack(LPCHARACTER pCharAttacker, LPCHARACTER pCharVictim)
+bool CArenaManager::CanAttack(entt::entity attacker, entt::entity victim)
 {
-	if (pCharAttacker == nullptr || pCharVictim == nullptr) return false;
+	if (attacker == entt::null || victim == entt::null) return false;
 
-	if (pCharAttacker == pCharVictim) return false;
+	if (attacker == victim) return false;
 
-	int32_t mapIndex = ecs::PlayerRuntime::GetMapIndex(((pCharAttacker) ? (pCharAttacker)->GetEntityHandle() : entt::null));
-	if (mapIndex != ecs::PlayerRuntime::GetMapIndex(((pCharVictim) ? (pCharVictim)->GetEntityHandle() : entt::null))) return false;
+	int32_t mapIndex = ecs::PlayerRuntime::GetMapIndex(attacker);
+	if (mapIndex != ecs::PlayerRuntime::GetMapIndex(victim)) return false;
 
 	auto iter = m_mapArenaMap.find(mapIndex);
 
 	if (iter == m_mapArenaMap.end()) return false;
 
 	CArenaMap* pArenaMap = iter->second;
-	return pArenaMap->CanAttack(pCharAttacker, pCharVictim);
+	return pArenaMap->CanAttack(attacker, victim);
 }
 
-bool CArenaMap::CanAttack(LPCHARACTER pCharAttacker, LPCHARACTER pCharVictim)
+bool CArenaMap::CanAttack(entt::entity attacker, entt::entity victim)
 {
-	if (pCharAttacker == nullptr || pCharVictim == nullptr) return false;
+	if (attacker == entt::null || victim == entt::null) return false;
 
-	uint32_t dwPIDA = ecs::PlayerRuntime::GetPlayerID(((pCharAttacker) ? (pCharAttacker)->GetEntityHandle() : entt::null));
-	uint32_t dwPIDB = ecs::PlayerRuntime::GetPlayerID(((pCharVictim) ? (pCharVictim)->GetEntityHandle() : entt::null));
+	uint32_t dwPIDA = ecs::PlayerRuntime::GetPlayerID(attacker);
+	uint32_t dwPIDB = ecs::PlayerRuntime::GetPlayerID(victim);
 
 	for (auto iter = m_listArena.begin(); iter != m_listArena.end(); ++iter)
 	{
@@ -704,24 +704,24 @@ bool CArena::CanAttack(uint32_t dwPIDA, uint32_t dwPIDB)
 	return false;
 }
 
-bool CArenaManager::OnDead(LPCHARACTER pCharKiller, LPCHARACTER pCharVictim)
+bool CArenaManager::OnDead(entt::entity killer, entt::entity victim)
 {
-	if (pCharKiller == nullptr || pCharVictim == nullptr) return false;
+	if (killer == entt::null || victim == entt::null) return false;
 
-	int32_t mapIndex = ecs::PlayerRuntime::GetMapIndex(((pCharKiller) ? (pCharKiller)->GetEntityHandle() : entt::null));
-	if (mapIndex != ecs::PlayerRuntime::GetMapIndex(((pCharVictim) ? (pCharVictim)->GetEntityHandle() : entt::null))) return false;
+	int32_t mapIndex = ecs::PlayerRuntime::GetMapIndex(killer);
+	if (mapIndex != ecs::PlayerRuntime::GetMapIndex(victim)) return false;
 
 	const auto iter = m_mapArenaMap.find(mapIndex);
 	if (iter == m_mapArenaMap.end()) return false;
 
 	CArenaMap* pArenaMap = iter->second;
-	return pArenaMap->OnDead(pCharKiller,  pCharVictim);
+	return pArenaMap->OnDead(killer, victim);
 }
 
-bool CArenaMap::OnDead(LPCHARACTER pCharKiller, LPCHARACTER pCharVictim)
+bool CArenaMap::OnDead(entt::entity killer, entt::entity victim)
 {
-	uint32_t dwPIDA = ecs::PlayerRuntime::GetPlayerID(((pCharKiller) ? (pCharKiller)->GetEntityHandle() : entt::null));
-	uint32_t dwPIDB = ecs::PlayerRuntime::GetPlayerID(((pCharVictim) ? (pCharVictim)->GetEntityHandle() : entt::null));
+	uint32_t dwPIDA = ecs::PlayerRuntime::GetPlayerID(killer);
+	uint32_t dwPIDB = ecs::PlayerRuntime::GetPlayerID(victim);
 
 	for (auto iter = m_listArena.begin(); iter != m_listArena.end(); ++iter)
 	{

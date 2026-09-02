@@ -1484,3 +1484,43 @@ the default anyway. The new form just leaves earlier.
 
 Live conversion sites: 1694 -> 1690.
 Build: RelWithDebInfo GameServer, 0 errors.
+
+
+Phase 19j - arena.cpp
+----------------------
+Six methods across CArenaManager and CArenaMap take entities: CanAttack,
+OnDead and SendArenaMapListTo, one of each per class. 9 conversions removed,
+zero aliases needed.
+
+This is the cleanest case the migration has produced, and it is worth saying
+why. Every one of the six bodies used its LPCHARACTER for exactly two things -
+comparing it against nullptr, and converting it - and for nothing else. There
+was not a single legacy method call among them:
+
+    uint32_t dwPIDA = GetPlayerID(((pCharKiller) ? (pCharKiller)->GetEntityHandle() : entt::null));
+    uint32_t dwPIDB = GetPlayerID(((pCharVictim) ? (pCharVictim)->GetEntityHandle() : entt::null));
+
+The class had already migrated underneath: CArena itself works in PIDs
+(CanAttack(uint32_t, uint32_t), OnDead(uint32_t, uint32_t), IsMember(uint32_t)),
+so the pointers only ever survived in the two dispatch layers above it, purely
+to be turned into entities on arrival.
+
+All three call sites were free - each already held an entity:
+  battle.cpp        inside battle_is_attackable, `character` and `victim`
+  CombatSystem.cpp  `killer` in scope, and `this` -> GetEntityHandle()
+  cmd_gm.cpp        do_show_arena_list's LPCHARACTER alias existed only to
+                    feed this one call, and is gone with it
+
+Name collision worth noting: CPVPManager::CanAttack(entt::entity, entt::entity,
+bool) already exists, and CArena has its own CanAttack/OnDead taking PIDs.
+Three CanAttack and three OnDead in the same translation units. Every call site
+here is receiver-qualified, which is what keeps them apart - the same reason
+char_callsites2.py refuses to rewrite bare calls.
+
+What is left in arena.h is GetPlayerA/GetPlayerB, which RETURN LPCHARACTER.
+Different axis, and they are the interesting kind: both are one-liners over
+CHARACTER_MANAGER::FindByPID, and FindPCEntity already exists beside it from
+the phase 10 identity work.
+
+Live conversion sites: 1690 -> 1685.
+Build: RelWithDebInfo GameServer, 0 errors, first attempt.

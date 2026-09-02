@@ -2047,7 +2047,7 @@ void CHARACTER::Dead(entt::entity killer, bool bImmediateDead)
 			pkKiller->SetTarget(entt::null);
 
 		isAgreedPVP = CPVPManager::instance().Dead(GetEntityHandle(), ecs::PlayerRuntime::GetPlayerID(killer));
-		isDuel = CArenaManager::instance().OnDead(pkKiller, this);
+		isDuel = CArenaManager::instance().OnDead(killer, GetEntityHandle());
 #ifdef ENABLE_PVP_ADVANCED
 		if (isAgreedPVP || isDuel)
 		{
