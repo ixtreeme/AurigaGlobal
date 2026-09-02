@@ -1003,7 +1003,7 @@ the relative form ("../CharacterAccessors.hpp") like its sibling systems - the
 "ecs/..." spelling that works from the GameServer root does not resolve from
 inside ecs/systems/.
 
-Project-wide conversion count: 1823 -> 1816
+Project-wide conversion count: 1823 -> 1822
 Build: RelWithDebInfo GameServer, 0 errors.
 
 
@@ -1021,5 +1021,31 @@ now recognised on sight:
     by location: "../CharacterAccessors.hpp" from inside ecs/systems/,
     "ecs/CharacterAccessors.hpp" from the GameServer root.
 
-Project-wide conversion count: 1816 -> 1812
+Project-wide conversion count: 1822 -> 1823  (yes, up by one)
 Build: RelWithDebInfo GameServer, 0 errors.
+
+
+CORRECTION - the phase 19 counts
+---------------------------------
+The numbers quoted in 19b and 19c when they were written were wrong; they were
+read off the wrong command output. Measured from the commits themselves:
+
+    ff46684  1831   before phase 19
+    8e8b06c  1823   19a combat         -8
+    8946356  1822   19b party          -1
+    b88d081  1823   19c item/exchange  +1
+
+19c made the project-wide count go UP by one. That is not a defect - it is the
+arithmetic of this axis stated plainly. Flipping a parameter removes the
+conversions inside the body and adds one at every call site that still holds a
+pointer; when a method has more callers than internal conversions, the total
+rises.
+
+Three clusters, 33 methods, net movement 1831 -> 1823: eight sites. The audit
+predicted exactly this before the work started. What was bought is structural
+and does not show up in this metric at all: char.h's combat, party and item
+surfaces take entities, and the ECS-side wrappers that used to call
+LegacyCharOf on the way in no longer do.
+
+Anyone continuing should judge the remaining clusters on that basis, not on the
+conversion count, which will keep hovering around this level.
