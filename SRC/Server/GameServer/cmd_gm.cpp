@@ -73,6 +73,7 @@ enum
 
 void Command_ApplyAffect(LPCHARACTER ch, const char* argument, const char* affectName, int cmdAffect)
 {
+	const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
 	char arg1[256];
 	one_argument(argument, arg1, sizeof(arg1));
 
@@ -80,7 +81,7 @@ void Command_ApplyAffect(LPCHARACTER ch, const char* argument, const char* affec
 
 	if (!*arg1)
 	{
-		ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "Usage: %s <name>", affectName);
+		ecs::ChatSystem::Send(chEntity, CHAT_TYPE_INFO, "Usage: %s <name>", affectName);
 		return;
 	}
 
@@ -88,7 +89,7 @@ void Command_ApplyAffect(LPCHARACTER ch, const char* argument, const char* affec
 	if (tch == entt::null)
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 800, "%s", arg1);
+		ecs::ChatSystem::SendNew(chEntity, CHAT_TYPE_INFO, 800, "%s", arg1);
 #endif
 		return;
 	}
@@ -427,13 +428,14 @@ bool CHARACTER_GoToName(LPCHARACTER ch, uint8_t empire, int mapIndex, const char
 
 		if (c_eachGotoInfo.empire == 0 || c_eachGotoInfo.empire == empire)
 		{
+			const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
 			int x = c_eachGotoInfo.x * 100;
 			int y = c_eachGotoInfo.y * 100;
 #ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 737, "%d#%d", x, y);
+			ecs::ChatSystem::SendNew(chEntity, CHAT_TYPE_INFO, 737, "%d#%d", x, y);
 #endif
-			ecs::MovementSystem::WarpSet(((ch) ? (ch)->GetEntityHandle() : entt::null), x, y);
-			ecs::MovementSystem::Stop(((ch) ? (ch)->GetEntityHandle() : entt::null));
+			ecs::MovementSystem::WarpSet(chEntity, x, y);
+			ecs::MovementSystem::Stop(chEntity);
 			return true;
 		}
 	}
@@ -529,6 +531,8 @@ ACMD(do_warp)
 	else
 	{
 		LPCHARACTER tch = CHARACTER_MANAGER::instance().FindPC(arg1);
+		const entt::entity tchEntity = tch ? tch->GetEntityHandle() : entt::null;
+
 
 		if (nullptr == tch)
 		{
@@ -555,10 +559,10 @@ ACMD(do_warp)
 		}
 		else
 		{
-			x = ecs::PlayerRuntime::GetX(((tch) ? (tch)->GetEntityHandle() : entt::null)) / 100;
-			y = ecs::PlayerRuntime::GetY(((tch) ? (tch)->GetEntityHandle() : entt::null)) / 100;
+			x = ecs::PlayerRuntime::GetX(tchEntity) / 100;
+			y = ecs::PlayerRuntime::GetY(tchEntity) / 100;
 #ifdef __CMD_WARP_IN_DUNGEON__
-			mapIndex = ecs::PlayerRuntime::GetMapIndex(((tch) ? (tch)->GetEntityHandle() : entt::null));
+			mapIndex = ecs::PlayerRuntime::GetMapIndex(tchEntity);
 #endif
 		}
 	}
@@ -807,9 +811,11 @@ ACMD(do_mob_map)
 	uint32_t vnum = 0;
 	str_to_number(vnum, arg1);
 	LPCHARACTER tch = CHARACTER_MANAGER::instance().SpawnMobRandomPosition(vnum, ecs::PlayerRuntime::GetMapIndex(character));
+	const entt::entity tchEntity = tch ? tch->GetEntityHandle() : entt::null;
+
 
 	if (tch)
-		ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "%s spawned in %dx%d", ecs::PlayerRuntime::GetName(((tch) ? (tch)->GetEntityHandle() : entt::null)).data(), ecs::PlayerRuntime::GetX(((tch) ? (tch)->GetEntityHandle() : entt::null)), ecs::PlayerRuntime::GetY(((tch) ? (tch)->GetEntityHandle() : entt::null)));
+		ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "%s spawned in %dx%d", ecs::PlayerRuntime::GetName(tchEntity).data(), ecs::PlayerRuntime::GetX(tchEntity), ecs::PlayerRuntime::GetY(tchEntity));
 	else
 		ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "Spawn failed.");
 }
@@ -1008,22 +1014,25 @@ struct FuncPurge
 
 	void operator () (LPENTITY ent)
 	{
+		const entt::entity gM = m_pkGM ? m_pkGM->GetEntityHandle() : entt::null;
 		if (!ent->IsType(ENTITY_CHARACTER))
 			return;
 
 		LPCHARACTER pkChr = (LPCHARACTER) ent;
+		const entt::entity chr = pkChr ? pkChr->GetEntityHandle() : entt::null;
 
-		int iDist = DISTANCE_APPROX(ecs::PlayerRuntime::GetX(((pkChr) ? (pkChr)->GetEntityHandle() : entt::null)) - ecs::PlayerRuntime::GetX(((m_pkGM) ? (m_pkGM)->GetEntityHandle() : entt::null)), ecs::PlayerRuntime::GetY(((pkChr) ? (pkChr)->GetEntityHandle() : entt::null)) - ecs::PlayerRuntime::GetY(((m_pkGM) ? (m_pkGM)->GetEntityHandle() : entt::null)));
+
+		int iDist = DISTANCE_APPROX(ecs::PlayerRuntime::GetX(chr) - ecs::PlayerRuntime::GetX(gM), ecs::PlayerRuntime::GetY(chr) - ecs::PlayerRuntime::GetY(gM));
 
 		if (!m_bAll && iDist >= 1000)	// 10 ̻ ִ ͵ purge  ʴ´.
 			return;
 
-		LOG_INFO("PURGE: {} {}", ecs::PlayerRuntime::GetName(((pkChr) ? (pkChr)->GetEntityHandle() : entt::null)).data(), iDist);
+		LOG_INFO("PURGE: {} {}", ecs::PlayerRuntime::GetName(chr).data(), iDist);
 
 #ifdef __NEWPET_SYSTEM__
-		if (ecs::PlayerRuntime::IsNPC(((pkChr) ? (pkChr)->GetEntityHandle() : entt::null)) && !pkChr->IsPet() && !pkChr->IsNewPet() && !pkChr->IsMount() && pkChr->GetRider() == nullptr
+		if (ecs::PlayerRuntime::IsNPC(chr) && !pkChr->IsPet() && !pkChr->IsNewPet() && !pkChr->IsMount() && pkChr->GetRider() == nullptr
 #else
-		if (ecs::PlayerRuntime::IsNPC(((pkChr) ? (pkChr)->GetEntityHandle() : entt::null)) && !pkChr->IsPet() && pkChr->GetRider() == NULL
+		if (ecs::PlayerRuntime::IsNPC(chr) && !pkChr->IsPet() && pkChr->GetRider() == NULL
 #endif
 		)
 		{
@@ -2718,18 +2727,21 @@ struct FuncWeaken
 
 	void operator () (LPENTITY ent)
 	{
+		const entt::entity gM = m_pkGM ? m_pkGM->GetEntityHandle() : entt::null;
 		if (!ent->IsType(ENTITY_CHARACTER))
 			return;
 
 		LPCHARACTER pkChr = (LPCHARACTER) ent;
+		const entt::entity chr = pkChr ? pkChr->GetEntityHandle() : entt::null;
 
-		int iDist = DISTANCE_APPROX(ecs::PlayerRuntime::GetX(((pkChr) ? (pkChr)->GetEntityHandle() : entt::null)) - ecs::PlayerRuntime::GetX(((m_pkGM) ? (m_pkGM)->GetEntityHandle() : entt::null)), ecs::PlayerRuntime::GetY(((pkChr) ? (pkChr)->GetEntityHandle() : entt::null)) - ecs::PlayerRuntime::GetY(((m_pkGM) ? (m_pkGM)->GetEntityHandle() : entt::null)));
+
+		int iDist = DISTANCE_APPROX(ecs::PlayerRuntime::GetX(chr) - ecs::PlayerRuntime::GetX(gM), ecs::PlayerRuntime::GetY(chr) - ecs::PlayerRuntime::GetY(gM));
 
 		if (!m_bAll && iDist >= 1000)	// 10 ̻ ִ ͵ purge  ʴ´.
 			return;
 
-		if (ecs::PlayerRuntime::IsNPC(((pkChr) ? (pkChr)->GetEntityHandle() : entt::null)))
-			ecs::PointSystem::Change(((pkChr) ? (pkChr)->GetEntityHandle() : entt::null), POINT_HP, (10 - pkChr->GetHP()));
+		if (ecs::PlayerRuntime::IsNPC(chr))
+			ecs::PointSystem::Change(chr, POINT_HP, (10 - pkChr->GetHP()));
 	}
 };
 
@@ -3900,7 +3912,11 @@ ACMD(do_duel)
 		minute = 5;
 
 	LPCHARACTER pChar1 = CHARACTER_MANAGER::instance().FindPC(szName1);
+	const entt::entity char1 = pChar1 ? pChar1->GetEntityHandle() : entt::null;
+
 	LPCHARACTER pChar2 = CHARACTER_MANAGER::instance().FindPC(szName2);
+	const entt::entity char2 = pChar2 ? pChar2->GetEntityHandle() : entt::null;
+
 
 	if (pChar1 != nullptr && pChar2 != nullptr)
 	{
@@ -3910,7 +3926,7 @@ ACMD(do_duel)
 		pChar1->RemoveBadAffect();
 		pChar2->RemoveBadAffect();
 
-		LPPARTY pParty = ecs::SocialSystem::GetParty(((pChar1) ? (pChar1)->GetEntityHandle() : entt::null));
+		LPPARTY pParty = ecs::SocialSystem::GetParty(char1);
 		if (pParty != nullptr)
 		{
 			if (pParty->GetMemberCount() == 2)
@@ -3920,13 +3936,13 @@ ACMD(do_duel)
 			else
 			{
 #ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(((pChar1) ? (pChar1)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 215, "");
+				ecs::ChatSystem::SendNew(char1, CHAT_TYPE_INFO, 215, "");
 #endif
-				pParty->Quit(ecs::PlayerRuntime::GetPlayerID(((pChar1) ? (pChar1)->GetEntityHandle() : entt::null)));
+				pParty->Quit(ecs::PlayerRuntime::GetPlayerID(char1));
 			}
 		}
 
-		pParty = ecs::SocialSystem::GetParty(((pChar2) ? (pChar2)->GetEntityHandle() : entt::null));
+		pParty = ecs::SocialSystem::GetParty(char2);
 		if (pParty != nullptr)
 		{
 			if (pParty->GetMemberCount() == 2)
@@ -3936,9 +3952,9 @@ ACMD(do_duel)
 			else
 			{
 #ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(((pChar2) ? (pChar2)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 215, "");
+				ecs::ChatSystem::SendNew(char2, CHAT_TYPE_INFO, 215, "");
 #endif
-				pParty->Quit(ecs::PlayerRuntime::GetPlayerID(((pChar2) ? (pChar2)->GetEntityHandle() : entt::null)));
+				pParty->Quit(ecs::PlayerRuntime::GetPlayerID(char2));
 			}
 		}
 
@@ -4099,8 +4115,10 @@ struct FCountInMap
 		if (ent->IsType(ENTITY_CHARACTER))
 		{
 			LPCHARACTER ch = (LPCHARACTER) ent;
-			if (ch && (ecs::PlayerRuntime::IsPC(((ch) ? (ch)->GetEntityHandle() : entt::null))))
-				++m_Count[(ecs::PlayerRuntime::GetEmpire(((ch) ? (ch)->GetEntityHandle() : entt::null)))];
+			const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
+
+			if (ch && (ecs::PlayerRuntime::IsPC(chEntity)))
+				++m_Count[(ecs::PlayerRuntime::GetEmpire(chEntity))];
 		}
 	}
 	int GetCount(uint8_t bEmpire) { return m_Count[bEmpire]; }
@@ -4225,6 +4243,8 @@ ACMD(do_set_stat)
 	}
 
 	LPCHARACTER tch = CHARACTER_MANAGER::instance().FindPC(szName);
+	const entt::entity tchEntity = tch ? tch->GetEntityHandle() : entt::null;
+
 
 	if (!tch)
 	{
@@ -4258,8 +4278,8 @@ ACMD(do_set_stat)
 #endif
 			return;
 		}
-		int nRemainPoint = ecs::PointSystem::Get(((tch) ? (tch)->GetEntityHandle() : entt::null), POINT_STAT);
-		int nCurPoint = ecs::PointSystem::GetReal(((tch) ? (tch)->GetEntityHandle() : entt::null), subcmd);
+		int nRemainPoint = ecs::PointSystem::Get(tchEntity, POINT_STAT);
+		int nCurPoint = ecs::PointSystem::GetReal(tchEntity, subcmd);
 		int nChangeAmount = 0;
 		str_to_number(nChangeAmount, szChangeAmount);
 		int nPoint = nCurPoint + nChangeAmount;
@@ -4312,11 +4332,11 @@ ACMD(do_set_stat)
 		}
 
 		tch->SetRealPoint(subcmd, nPoint);
-		tch->SetPoint(subcmd, ecs::PointSystem::Get(((tch) ? (tch)->GetEntityHandle() : entt::null), subcmd) + nChangeAmount);
+		tch->SetPoint(subcmd, ecs::PointSystem::Get(tchEntity, subcmd) + nChangeAmount);
 		tch->ComputePoints();
-		ecs::PointSystem::Change(((tch) ? (tch)->GetEntityHandle() : entt::null), subcmd, 0);
+		ecs::PointSystem::Change(tchEntity, subcmd, 0);
 
-		ecs::PointSystem::Change(((tch) ? (tch)->GetEntityHandle() : entt::null), POINT_STAT, -nChangeAmount);
+		ecs::PointSystem::Change(tchEntity, POINT_STAT, -nChangeAmount);
 		tch->ComputePoints();
 
 		const char* stat_name[4] = {"con", "int", "str", "dex"};

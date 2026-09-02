@@ -266,20 +266,22 @@ namespace
 
     void SetOutsideWarpLocation(LPCHARACTER ch)
     {
+        const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
         if (!ch)
             return;
         int32_t x = 0, y = 0;
-        GetOutsideCellByEmpire(ecs::PlayerRuntime::GetEmpire(((ch) ? (ch)->GetEntityHandle() : entt::null)), x, y);
-        ch->SetWarpLocation(GetOutsideMapByEmpire(ecs::PlayerRuntime::GetEmpire(((ch) ? (ch)->GetEntityHandle() : entt::null))), x, y);
+        GetOutsideCellByEmpire(ecs::PlayerRuntime::GetEmpire(chEntity), x, y);
+        ch->SetWarpLocation(GetOutsideMapByEmpire(ecs::PlayerRuntime::GetEmpire(chEntity)), x, y);
     }
 
     void WarpOut(LPCHARACTER ch)
     {
+        const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
         if (!ch)
             return;
         int32_t x = 0, y = 0;
-        GetOutsideCellByEmpire(ecs::PlayerRuntime::GetEmpire(((ch) ? (ch)->GetEntityHandle() : entt::null)), x, y);
-        ecs::MovementSystem::WarpSet(((ch) ? (ch)->GetEntityHandle() : entt::null), x * 100, y * 100, GetOutsideMapByEmpire(ecs::PlayerRuntime::GetEmpire(((ch) ? (ch)->GetEntityHandle() : entt::null))));
+        GetOutsideCellByEmpire(ecs::PlayerRuntime::GetEmpire(chEntity), x, y);
+        ecs::MovementSystem::WarpSet(chEntity, x * 100, y * 100, GetOutsideMapByEmpire(ecs::PlayerRuntime::GetEmpire(chEntity)));
     }
 
     void WarpAllOut(int32_t mapIndex)
@@ -302,6 +304,7 @@ namespace
 
     void DropItemOnGround(LPCHARACTER victim, LPCHARACTER owner, uint32_t vnum, uint32_t count)
     {
+        const entt::entity victimEntity = victim ? victim->GetEntityHandle() : entt::null;
         if (!victim)
             return;
 
@@ -310,11 +313,11 @@ namespace
             return;
 
         PIXEL_POSITION pos;
-        pos.x = ecs::PlayerRuntime::GetX(((victim) ? (victim)->GetEntityHandle() : entt::null)) + number(-200, 200);
-        pos.y = ecs::PlayerRuntime::GetY(((victim) ? (victim)->GetEntityHandle() : entt::null)) + number(-200, 200);
+        pos.x = ecs::PlayerRuntime::GetX(victimEntity) + number(-200, 200);
+        pos.y = ecs::PlayerRuntime::GetY(victimEntity) + number(-200, 200);
         pos.z = victim->GetZ();
 
-        item->AddToGround(ecs::PlayerRuntime::GetMapIndex(((victim) ? (victim)->GetEntityHandle() : entt::null)), pos);
+        item->AddToGround(ecs::PlayerRuntime::GetMapIndex(victimEntity), pos);
         item->StartDestroyEvent();
 
         if (owner)
@@ -345,20 +348,22 @@ namespace
 
     void SetRejoinFlags(LPCHARACTER ch, int32_t mapIndex)
     {
+        const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
         if (!ch)
             return;
-        ecs::QuestSystem::SetFlag(((ch) ? (ch)->GetEntityHandle() : entt::null), kQfDisconnect, get_global_time() + kRejoinSec);
-        ecs::QuestSystem::SetFlag(((ch) ? (ch)->GetEntityHandle() : entt::null), kQfIdx, mapIndex);
-        ecs::QuestSystem::SetFlag(((ch) ? (ch)->GetEntityHandle() : entt::null), kQfCh, (int32_t)g_bChannel);
+        ecs::QuestSystem::SetFlag(chEntity, kQfDisconnect, get_global_time() + kRejoinSec);
+        ecs::QuestSystem::SetFlag(chEntity, kQfIdx, mapIndex);
+        ecs::QuestSystem::SetFlag(chEntity, kQfCh, (int32_t)g_bChannel);
     }
 
     void ClearRejoinFlags(LPCHARACTER ch)
     {
+        const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
         if (!ch)
             return;
-        ecs::QuestSystem::SetFlag(((ch) ? (ch)->GetEntityHandle() : entt::null), kQfDisconnect, 0);
-        ecs::QuestSystem::SetFlag(((ch) ? (ch)->GetEntityHandle() : entt::null), kQfIdx, 0);
-        ecs::QuestSystem::SetFlag(((ch) ? (ch)->GetEntityHandle() : entt::null), kQfCh, 0);
+        ecs::QuestSystem::SetFlag(chEntity, kQfDisconnect, 0);
+        ecs::QuestSystem::SetFlag(chEntity, kQfIdx, 0);
+        ecs::QuestSystem::SetFlag(chEntity, kQfCh, 0);
     }
 
     int32_t GetPartyOnlineCountOnMap(LPPARTY party, int32_t mapIndex)
@@ -1095,6 +1100,7 @@ void CHalloween2022Dungeon::OnMobKilled(entt::entity killer, entt::entity victim
 
 bool CHalloween2022Dungeon::OnNpcTakeItem(entt::entity from, entt::entity npc, CItem* item)
 {
+    const entt::entity itemEntity = item ? item->GetEntityHandle() : entt::null;
     LPCHARACTER pkFrom = ecs::LegacyCharOf(from);
     LPCHARACTER pkNpc = ecs::LegacyCharOf(npc);
     if (!pkFrom || !ecs::PlayerRuntime::IsPC(from) || !pkNpc || !item)
@@ -1110,12 +1116,12 @@ bool CHalloween2022Dungeon::OnNpcTakeItem(entt::entity from, entt::entity npc, C
 
     const int32_t floor = d->GetFlag(kFlagFloor);
     const uint32_t npcVnum = ecs::PlayerRuntime::GetRaceNum(npc);
-    const uint32_t itemVnum = ItemSystem::GetItemVnum((item ? item->GetEntityHandle() : entt::null));
+    const uint32_t itemVnum = ItemSystem::GetItemVnum(itemEntity);
 
     // Angel statue
     if (floor == 1 && npcVnum == kAngelStatueNpc && d->GetFlag(kFlagCanDestroyStatue) == 1 && itemVnum == kStatueItemVnum)
     {
-        RemoveOneGivenItem((item ? item->GetEntityHandle() : entt::null), "HALLOWEEN22_STATUE");
+        RemoveOneGivenItem(itemEntity, "HALLOWEEN22_STATUE");
         d->SetFlag(kFlagCanDestroyStatue, 0);
         d->SetFlag(kFlagAngelStatueCount, d->GetFlag(kFlagAngelStatueCount) + 1);
         M2_DESTROY_CHARACTER(pkNpc);
@@ -1144,7 +1150,7 @@ bool CHalloween2022Dungeon::OnNpcTakeItem(entt::entity from, entt::entity npc, C
     // Small seal -> starts wave 1
     if (floor == 1 && npcVnum == kSealSmallNpc && d->GetFlag(kFlagCanActivateSeal) == 1 && itemVnum == kActivateItemVnum)
     {
-        RemoveOneGivenItem((item ? item->GetEntityHandle() : entt::null), "HALLOWEEN22_SEAL_SMALL");
+        RemoveOneGivenItem(itemEntity, "HALLOWEEN22_SEAL_SMALL");
         d->SetFlag(kFlagCanActivateSeal, 0);
         d->SetFlag(kFlagSealState, d->GetFlag(kFlagSealState) + 1);
         d->SetFlag(kFlagFloor1Monsters, 1);
@@ -1158,7 +1164,7 @@ bool CHalloween2022Dungeon::OnNpcTakeItem(entt::entity from, entt::entity npc, C
     // Middle seal -> spawn boss again
     if (floor == 1 && npcVnum == kSealMiddleNpc && d->GetFlag(kFlagCanActivateSeal) == 1 && itemVnum == kActivateItemVnum)
     {
-        RemoveOneGivenItem((item ? item->GetEntityHandle() : entt::null), "HALLOWEEN22_SEAL_MIDDLE");
+        RemoveOneGivenItem(itemEntity, "HALLOWEEN22_SEAL_MIDDLE");
         d->SetFlag(kFlagCanActivateSeal, 0);
         d->SetFlag(kFlagSealState, d->GetFlag(kFlagSealState) + 1);
         d->SetFlag(kFlagKillFirstBoss, 1);
@@ -1171,7 +1177,7 @@ bool CHalloween2022Dungeon::OnNpcTakeItem(entt::entity from, entt::entity npc, C
     // Full seal -> transition to floor 2
     if (floor == 1 && npcVnum == kSealFullNpc && d->GetFlag(kFlagCanActivateSeal) == 1 && itemVnum == kActivateItemVnum)
     {
-        RemoveOneGivenItem((item ? item->GetEntityHandle() : entt::null), "HALLOWEEN22_SEAL_FULL");
+        RemoveOneGivenItem(itemEntity, "HALLOWEEN22_SEAL_FULL");
         d->SetFlag(kFlagCanActivateSeal, 0);
         d->SetFlag(kFlagFloor, 2);
         d->KillAll();
@@ -1199,7 +1205,7 @@ bool CHalloween2022Dungeon::OnNpcTakeItem(entt::entity from, entt::entity npc, C
     // Empty calyx -> floor 2 progression
     if (floor == 2 && npcVnum == kCalyxEmptyNpc && d->GetFlag(kFlagCanFillCalyx) == 1 && itemVnum == kSecondFloorItem)
     {
-        RemoveOneGivenItem((item ? item->GetEntityHandle() : entt::null), "HALLOWEEN22_CALYX");
+        RemoveOneGivenItem(itemEntity, "HALLOWEEN22_CALYX");
         d->SetFlag(kFlagCanFillCalyx, 0);
         d->SetFlag(kFlagCalyxFilled, d->GetFlag(kFlagCalyxFilled) + 1);
         ReplaceUniqueCalyx(d, pkNpc);

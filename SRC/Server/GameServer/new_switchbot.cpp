@@ -273,6 +273,7 @@ static const char* GetHighAvgDmgFmtByLang(int lang)
 // ---
 std::string MakeFullItemLink(entt::entity item, LPCHARACTER pkKiller)
 {
+	const entt::entity killer = pkKiller ? pkKiller->GetEntityHandle() : entt::null;
 	char itemlink[512];
 	int len = 0;
 
@@ -295,14 +296,14 @@ std::string MakeFullItemLink(entt::entity item, LPCHARACTER pkKiller)
 
 	// killer nyelve (fallback: EN)
 	int lang = LANGUAGE_EN;
-	if (pkKiller && ecs::PlayerRuntime::GetDesc(((pkKiller) ? (pkKiller)->GetEntityHandle() : entt::null)))
-		lang = ecs::PlayerRuntime::GetDesc(((pkKiller) ? (pkKiller)->GetEntityHandle() : entt::null))->GetLanguage();
+	if (pkKiller && ecs::PlayerRuntime::GetDesc(killer))
+		lang = ecs::PlayerRuntime::GetDesc(killer)->GetLanguage();
 
 	const char* fmt = GetHighAvgDmgFmtByLang(lang);
 
 	char szChat[1024];
 	snprintf(szChat, sizeof(szChat), fmt,
-		pkKiller ? ecs::PlayerRuntime::GetName(((pkKiller) ? (pkKiller)->GetEntityHandle() : entt::null)).data() : "Player",
+		pkKiller ? ecs::PlayerRuntime::GetName(killer).data() : "Player",
 		itemlink,
 		item != entt::null ? ItemSystem::GetItemName(item) : "item");
 
@@ -334,6 +335,8 @@ void CSwitchbot::SwitchItems()
 		const TItemTable* itemProto = ItemSystem::GetItemProto(itemEntity);
 		const entt::entity ownerEntity = ItemSystem::GetItemOwnerEntity(itemEntity);
 		LPCHARACTER pkOwner = ecs::LegacyCharOf(ownerEntity);
+		const entt::entity owner = pkOwner ? pkOwner->GetEntityHandle() : entt::null;
+
 		if (!pkOwner)
 		{
 			return;
@@ -341,7 +344,7 @@ void CSwitchbot::SwitchItems()
 
 		if (CheckItem(itemEntity, bSlot))
 		{
-			LPDESC desc = ecs::PlayerRuntime::GetDesc(((pkOwner) ? (pkOwner)->GetEntityHandle() : entt::null));
+			LPDESC desc = ecs::PlayerRuntime::GetDesc(owner);
 			if (desc)
 			{
 				char buf[512];
@@ -406,8 +409,8 @@ void CSwitchbot::SwitchItems()
 				int len = snprintf(buf, sizeof(buf), LC_TEXT("Bonuschange of %s (Slot: %d) successfully finished."), ItemSystem::GetItemName(itemEntity), bSlot + 1);
 #endif
 				pack.wSize = sizeof(TPacketGCWhisper) + len;
-				ecs::PlayerRuntime::GetDesc(((pkOwner) ? (pkOwner)->GetEntityHandle() : entt::null))->BufferedPacket(&pack, sizeof(pack));
-				ecs::PlayerRuntime::GetDesc(((pkOwner) ? (pkOwner)->GetEntityHandle() : entt::null))->Packet(buf, len);
+				ecs::PlayerRuntime::GetDesc(owner)->BufferedPacket(&pack, sizeof(pack));
+				ecs::PlayerRuntime::GetDesc(owner)->Packet(buf, len);
 			}
 
 			SetActive(bSlot, false);
@@ -661,7 +664,7 @@ void CSwitchbot::SwitchItems()
 			}
 			else if (SWITCHBOT_PRICE_TYPE == 2)
 			{
-				if (ecs::PointSystem::GetGold(((pkOwner) ? (pkOwner)->GetEntityHandle() : entt::null)) >= SWITCHBOT_PRICE_AMOUNT)
+				if (ecs::PointSystem::GetGold(owner) >= SWITCHBOT_PRICE_AMOUNT)
 				{
 					stop = false;
 				}
@@ -673,14 +676,14 @@ void CSwitchbot::SwitchItems()
 				if (!HasActiveSlots()) {
 					Stop();
 				} else {
-					CSwitchbotManager::Instance().SendSwitchbotUpdate(ecs::PlayerRuntime::GetPlayerID(((pkOwner) ? (pkOwner)->GetEntityHandle() : entt::null)));
+					CSwitchbotManager::Instance().SendSwitchbotUpdate(ecs::PlayerRuntime::GetPlayerID(owner));
 				}
 
 #ifdef TEXTS_IMPROVEMENT
 				if (SWITCHBOT_PRICE_TYPE == 1) {
-					ecs::ChatSystem::SendNew(((pkOwner) ? (pkOwner)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 754, "");
+					ecs::ChatSystem::SendNew(owner, CHAT_TYPE_INFO, 754, "");
 				} else {
-					ecs::ChatSystem::SendNew(((pkOwner) ? (pkOwner)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 755, "");
+					ecs::ChatSystem::SendNew(owner, CHAT_TYPE_INFO, 755, "");
 				}
 #endif
 				return;
@@ -1143,11 +1146,12 @@ void CSwitchbotManager::SendSwitchbotUpdate(uint32_t player_id)
 
 void CSwitchbotManager::EnterGame(LPCHARACTER ch)
 {
+	const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
 	SendItemAttributeInformations(ch);
-	SetIsWarping(ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null)), false);
-	SendSwitchbotUpdate(ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null)));
+	SetIsWarping(ecs::PlayerRuntime::GetPlayerID(chEntity), false);
+	SendSwitchbotUpdate(ecs::PlayerRuntime::GetPlayerID(chEntity));
 
-	CSwitchbot* pkSwitchbot = FindSwitchbot(ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null)));
+	CSwitchbot* pkSwitchbot = FindSwitchbot(ecs::PlayerRuntime::GetPlayerID(chEntity));
 	if (pkSwitchbot && pkSwitchbot->HasActiveSlots() && !pkSwitchbot->IsSwitching())
 	{
 		pkSwitchbot->Start();

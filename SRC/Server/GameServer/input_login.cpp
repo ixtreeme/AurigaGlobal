@@ -98,6 +98,7 @@ inline uint32_t LYCAN_CREATE_START_Y(uint8_t e, uint8_t job)
 
 static void _send_bonus_info(LPCHARACTER ch)
 {
+	const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
 	int	item_drop_bonus = 0;
 	int gold_drop_bonus = 0;
 	int gold10_drop_bonus = 0;
@@ -109,16 +110,16 @@ static void _send_bonus_info(LPCHARACTER ch)
 	exp_bonus = CPrivManager::instance().GetPriv(ch, PRIV_EXP_PCT);
 #ifdef TEXTS_IMPROVEMENT
 	if (item_drop_bonus) {
-		ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 243, "%d", item_drop_bonus);
+		ecs::ChatSystem::SendNew(chEntity, CHAT_TYPE_INFO, 243, "%d", item_drop_bonus);
 	}
 	if (gold_drop_bonus) {
-		ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 244, "%d", item_drop_bonus);
+		ecs::ChatSystem::SendNew(chEntity, CHAT_TYPE_INFO, 244, "%d", item_drop_bonus);
 	}
 	if (gold10_drop_bonus) {
-		ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 245, "%d", item_drop_bonus);
+		ecs::ChatSystem::SendNew(chEntity, CHAT_TYPE_INFO, 245, "%d", item_drop_bonus);
 	}
 	if (exp_bonus) {
-		ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 246, "%d", item_drop_bonus);
+		ecs::ChatSystem::SendNew(chEntity, CHAT_TYPE_INFO, 246, "%d", item_drop_bonus);
 	}
 #endif
 }

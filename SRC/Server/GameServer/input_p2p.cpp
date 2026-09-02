@@ -69,6 +69,8 @@ int CInputP2P::Relay(LPDESC d, const char * c_pData, size_t uiBytes)
 	LOG_TRACE("InputP2P::Relay : {} size {}", p->szName, p->lSize);
 
 	LPCHARACTER pkChr = CHARACTER_MANAGER::instance().FindPC(p->szName);
+	const entt::entity chr = pkChr ? pkChr->GetEntityHandle() : entt::null;
+
 
 	const uint8_t* c_pbData = (const uint8_t *) (c_pData + sizeof(TPacketGGRelay));
 
@@ -96,7 +98,7 @@ int CInputP2P::Relay(LPDESC d, const char * c_pData, size_t uiBytes)
 			p2->bType = WHISPER_TYPE_SYSTEM;
 		} else {
 			if (!pkChr->IsEquipUniqueGroup(UNIQUE_GROUP_RING_OF_LANGUAGE))
-				if (bToEmpire >= 1 && bToEmpire <= 3 && ecs::PlayerRuntime::GetEmpire(((pkChr) ? (pkChr)->GetEntityHandle() : entt::null)) != bToEmpire)
+				if (bToEmpire >= 1 && bToEmpire <= 3 && ecs::PlayerRuntime::GetEmpire(chr) != bToEmpire)
 				{
 					ConvertEmpireText(bToEmpire,
 							buf + sizeof(TPacketGCWhisper),
@@ -105,10 +107,10 @@ int CInputP2P::Relay(LPDESC d, const char * c_pData, size_t uiBytes)
 				}
 		}
 
-		ecs::PlayerRuntime::GetDesc(((pkChr) ? (pkChr)->GetEntityHandle() : entt::null))->Packet(buf, p->lSize);
+		ecs::PlayerRuntime::GetDesc(chr)->Packet(buf, p->lSize);
 	}
 	else
-		ecs::PlayerRuntime::GetDesc(((pkChr) ? (pkChr)->GetEntityHandle() : entt::null))->Packet(c_pbData, p->lSize);
+		ecs::PlayerRuntime::GetDesc(chr)->Packet(c_pbData, p->lSize);
 
 	return (p->lSize);
 }

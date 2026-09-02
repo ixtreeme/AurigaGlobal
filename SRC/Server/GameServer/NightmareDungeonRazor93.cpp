@@ -339,16 +339,18 @@ namespace
 
     inline void SetDisconnectFlags(LPCHARACTER ch, int32_t mapIndex)
     {
-        ecs::QuestSystem::SetFlag(((ch) ? (ch)->GetEntityHandle() : entt::null), kQfDisconnect, get_global_time() + kRejoinSeconds);
-        ecs::QuestSystem::SetFlag(((ch) ? (ch)->GetEntityHandle() : entt::null), kQfIdx, mapIndex);
-        ecs::QuestSystem::SetFlag(((ch) ? (ch)->GetEntityHandle() : entt::null), kQfCh, (int32_t)g_bChannel);
+        const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
+        ecs::QuestSystem::SetFlag(chEntity, kQfDisconnect, get_global_time() + kRejoinSeconds);
+        ecs::QuestSystem::SetFlag(chEntity, kQfIdx, mapIndex);
+        ecs::QuestSystem::SetFlag(chEntity, kQfCh, (int32_t)g_bChannel);
     }
 
     inline void ClearRejoinFlags(LPCHARACTER ch)
     {
-        ecs::QuestSystem::SetFlag(((ch) ? (ch)->GetEntityHandle() : entt::null), kQfDisconnect, 0);
-        ecs::QuestSystem::SetFlag(((ch) ? (ch)->GetEntityHandle() : entt::null), kQfIdx, 0);
-        ecs::QuestSystem::SetFlag(((ch) ? (ch)->GetEntityHandle() : entt::null), kQfCh, 0);
+        const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
+        ecs::QuestSystem::SetFlag(chEntity, kQfDisconnect, 0);
+        ecs::QuestSystem::SetFlag(chEntity, kQfIdx, 0);
+        ecs::QuestSystem::SetFlag(chEntity, kQfCh, 0);
     }
 } // anon namespace
 

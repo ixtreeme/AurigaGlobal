@@ -42,13 +42,15 @@ void P2P_MANAGER::Boot(LPDESC d)
 	while (it != map.end())
 	{
 		LPCHARACTER ch = it->second;
+		const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
+
 		it++;
 
 		p.bHeader = HEADER_GG_LOGIN;
-		strlcpy(p.szName, ecs::PlayerRuntime::GetName(((ch) ? (ch)->GetEntityHandle() : entt::null)).data(), sizeof(p.szName));
-		p.dwPID = (ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null)));
-		p.bEmpire = ecs::PlayerRuntime::GetEmpire(((ch) ? (ch)->GetEntityHandle() : entt::null));
-		p.lMapIndex = SECTREE_MANAGER::instance().GetMapIndex(ecs::PlayerRuntime::GetX(((ch) ? (ch)->GetEntityHandle() : entt::null)), ecs::PlayerRuntime::GetY(((ch) ? (ch)->GetEntityHandle() : entt::null)));
+		strlcpy(p.szName, ecs::PlayerRuntime::GetName(chEntity).data(), sizeof(p.szName));
+		p.dwPID = (ecs::PlayerRuntime::GetPlayerID(chEntity));
+		p.bEmpire = ecs::PlayerRuntime::GetEmpire(chEntity);
+		p.lMapIndex = SECTREE_MANAGER::instance().GetMapIndex(ecs::PlayerRuntime::GetX(chEntity), ecs::PlayerRuntime::GetY(chEntity));
 		p.bChannel = g_bChannel;
 
 		d->Packet(&p, sizeof(p));

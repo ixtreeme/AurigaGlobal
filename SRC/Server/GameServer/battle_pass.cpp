@@ -585,16 +585,17 @@ void CBattlePass::GetMissionSearchName(uint8_t bMissionType, std::string * st_na
 
 void CBattlePass::BattlePassRequestOpen(LPCHARACTER pkChar)
 {
+	const entt::entity charEntity = pkChar ? pkChar->GetEntityHandle() : entt::null;
 	if(!pkChar)
 		return;
 
-	if(!ecs::PlayerRuntime::GetDesc(((pkChar) ? (pkChar)->GetEntityHandle() : entt::null)))
+	if(!ecs::PlayerRuntime::GetDesc(charEntity))
 		return;
 
 	if(!pkChar->IsLoadedBattlePass())
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(((pkChar) ? (pkChar)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 776, "");
+		ecs::ChatSystem::SendNew(charEntity, CHAT_TYPE_INFO, 776, "");
 #endif
 		return;
 	}
@@ -612,7 +613,7 @@ void CBattlePass::BattlePassRequestOpen(LPCHARACTER pkChar)
 	if(it == m_map_battle_pass_name.end())
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(((pkChar) ? (pkChar)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 777, "%d", bBattlePassId);
+		ecs::ChatSystem::SendNew(charEntity, CHAT_TYPE_INFO, 777, "%d", bBattlePassId);
 #endif
 		return;
 	}
@@ -623,7 +624,7 @@ void CBattlePass::BattlePassRequestOpen(LPCHARACTER pkChar)
 	if(itInfo == m_map_battle_pass_mission_info.end())
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(((pkChar) ? (pkChar)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 778, "%s", battlePassName.c_str());
+		ecs::ChatSystem::SendNew(charEntity, CHAT_TYPE_INFO, 778, "%s", battlePassName.c_str());
 #endif
 		return;
 	}
@@ -632,7 +633,7 @@ void CBattlePass::BattlePassRequestOpen(LPCHARACTER pkChar)
 	if(itReward == m_map_battle_pass_reward.end())
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(((pkChar) ? (pkChar)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 779, "%s", battlePassName.c_str());
+		ecs::ChatSystem::SendNew(charEntity, CHAT_TYPE_INFO, 779, "%s", battlePassName.c_str());
 #endif
 		return;
 	}
@@ -668,24 +669,25 @@ void CBattlePass::BattlePassRequestOpen(LPCHARACTER pkChar)
 		packet.wSize = sizeof(packet) + sizeof(TBattlePassMissionInfo) * missionInfo.size();
 		packet.wRewardSize = sizeof(TBattlePassRewardItem) * rewardInfo.size();
 
-		ecs::PlayerRuntime::GetDesc(((pkChar) ? (pkChar)->GetEntityHandle() : entt::null))->BufferedPacket(&packet, sizeof(packet));
-		ecs::PlayerRuntime::GetDesc(((pkChar) ? (pkChar)->GetEntityHandle() : entt::null))->BufferedPacket(missionInfo.data(), sizeof(TBattlePassMissionInfo) * missionInfo.size());
-		ecs::PlayerRuntime::GetDesc(((pkChar) ? (pkChar)->GetEntityHandle() : entt::null))->Packet(rewardInfo.data(), sizeof(TBattlePassRewardItem) * rewardInfo.size());
+		ecs::PlayerRuntime::GetDesc(charEntity)->BufferedPacket(&packet, sizeof(packet));
+		ecs::PlayerRuntime::GetDesc(charEntity)->BufferedPacket(missionInfo.data(), sizeof(TBattlePassMissionInfo) * missionInfo.size());
+		ecs::PlayerRuntime::GetDesc(charEntity)->Packet(rewardInfo.data(), sizeof(TBattlePassRewardItem) * rewardInfo.size());
 	}
 }
 
 void CBattlePass::BattlePassRewardMission(LPCHARACTER pkChar, uint32_t bMissionType, uint32_t bBattlePassId)
 {
+	const entt::entity charEntity = pkChar ? pkChar->GetEntityHandle() : entt::null;
 	if(!pkChar)
 		return;
 
-	if(!ecs::PlayerRuntime::GetDesc(((pkChar) ? (pkChar)->GetEntityHandle() : entt::null)))
+	if(!ecs::PlayerRuntime::GetDesc(charEntity))
 		return;
 
 	if (!bBattlePassId)
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(((pkChar) ? (pkChar)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 780, "");
+		ecs::ChatSystem::SendNew(charEntity, CHAT_TYPE_INFO, 780, "");
 #endif
 		return;
 	}
@@ -695,7 +697,7 @@ void CBattlePass::BattlePassRewardMission(LPCHARACTER pkChar, uint32_t bMissionT
 	if(it == m_map_battle_pass_name.end())
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(((pkChar) ? (pkChar)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 777, "%d", bBattlePassId);
+		ecs::ChatSystem::SendNew(charEntity, CHAT_TYPE_INFO, 777, "%d", bBattlePassId);
 #endif
 		return;
 	}
@@ -706,7 +708,7 @@ void CBattlePass::BattlePassRewardMission(LPCHARACTER pkChar, uint32_t bMissionT
 	if(itInfo == m_map_battle_pass_mission_info.end())
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(((pkChar) ? (pkChar)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 778, "%d", battlePassName.c_str());
+		ecs::ChatSystem::SendNew(charEntity, CHAT_TYPE_INFO, 778, "%d", battlePassName.c_str());
 #endif
 		return;
 	}
@@ -730,10 +732,11 @@ void CBattlePass::BattlePassRewardMission(LPCHARACTER pkChar, uint32_t bMissionT
 
 void CBattlePass::BattlePassRequestReward(LPCHARACTER pkChar)
 {
+	const entt::entity charEntity = pkChar ? pkChar->GetEntityHandle() : entt::null;
 	if(!pkChar)
 		return;
 
-	if(!ecs::PlayerRuntime::GetDesc(((pkChar) ? (pkChar)->GetEntityHandle() : entt::null)))
+	if(!ecs::PlayerRuntime::GetDesc(charEntity))
 		return;
 
 	uint8_t bBattlePassId = pkChar->GetBattlePassId();
@@ -743,7 +746,7 @@ void CBattlePass::BattlePassRequestReward(LPCHARACTER pkChar)
 	// mar atvette a vegso jutalmat ebben a ciklusban (honap)
 	if (IsBattlePassFinalRewardTaken(pkChar, bBattlePassId))
 	{
-		ecs::ChatSystem::Send(((pkChar) ? (pkChar)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "A Battle Pass vegso jutalmat ebben a honapban mar atvetted.");
+		ecs::ChatSystem::Send(charEntity, CHAT_TYPE_INFO, "A Battle Pass vegso jutalmat ebben a honapban mar atvetted.");
 		return;
 	}
 
@@ -772,7 +775,7 @@ void CBattlePass::BattlePassRequestReward(LPCHARACTER pkChar)
 	if(bIsCompleted)
 	{
 #ifdef TEXTS_IMPROVEMENT
-		BroadcastNoticeNew(CHAT_TYPE_NOTICE, 0, 0, 548, "%s", ecs::PlayerRuntime::GetName(((pkChar) ? (pkChar)->GetEntityHandle() : entt::null)).data(), battlePassName.c_str());
+		BroadcastNoticeNew(CHAT_TYPE_NOTICE, 0, 0, 548, "%s", ecs::PlayerRuntime::GetName(charEntity).data(), battlePassName.c_str());
 #endif
 		BattlePassReward(pkChar);
 	}
@@ -780,17 +783,18 @@ void CBattlePass::BattlePassRequestReward(LPCHARACTER pkChar)
 
 void CBattlePass::BattlePassReward(LPCHARACTER pkChar)
 {
+	const entt::entity charEntity = pkChar ? pkChar->GetEntityHandle() : entt::null;
 	if(!pkChar)
 		return;
 
-	if(!ecs::PlayerRuntime::GetDesc(((pkChar) ? (pkChar)->GetEntityHandle() : entt::null)))
+	if(!ecs::PlayerRuntime::GetDesc(charEntity))
 		return;
 
 	uint8_t bBattlePassId = pkChar->GetBattlePassId();
 	if (!bBattlePassId)
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(((pkChar) ? (pkChar)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 780, "");
+		ecs::ChatSystem::SendNew(charEntity, CHAT_TYPE_INFO, 780, "");
 #endif
 		return;
 	}
@@ -798,7 +802,7 @@ void CBattlePass::BattlePassReward(LPCHARACTER pkChar)
 	// plusz vedelem: ujra login / karaktervaltas utan se tudja ujra felvenni
 	if (IsBattlePassFinalRewardTaken(pkChar, bBattlePassId))
 	{
-		ecs::ChatSystem::Send(((pkChar) ? (pkChar)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "A Battle Pass vegso jutalmat ebben a honapban mar atvetted.");
+		ecs::ChatSystem::Send(charEntity, CHAT_TYPE_INFO, "A Battle Pass vegso jutalmat ebben a honapban mar atvetted.");
 		return;
 	}
 
@@ -807,7 +811,7 @@ void CBattlePass::BattlePassReward(LPCHARACTER pkChar)
 	if(it == m_map_battle_pass_name.end())
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(((pkChar) ? (pkChar)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 777, "%d", bBattlePassId);
+		ecs::ChatSystem::SendNew(charEntity, CHAT_TYPE_INFO, 777, "%d", bBattlePassId);
 #endif
 		return;
 	}
@@ -817,12 +821,12 @@ void CBattlePass::BattlePassReward(LPCHARACTER pkChar)
 	if(itReward == m_map_battle_pass_reward.end())
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(((pkChar) ? (pkChar)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 778, "%d", battlePassName.c_str());
+		ecs::ChatSystem::SendNew(charEntity, CHAT_TYPE_INFO, 778, "%d", battlePassName.c_str());
 #endif
 		return;
 	}
 
-	AffectSystem::RemoveAffect(((pkChar) ? (pkChar)->GetEntityHandle() : entt::null), AFFECT_BATTLE_PASS);
+	AffectSystem::RemoveAffect(charEntity, AFFECT_BATTLE_PASS);
 
 	std::vector<TBattlePassRewardItem> rewardInfo = itReward->second;
 
@@ -833,7 +837,7 @@ void CBattlePass::BattlePassReward(LPCHARACTER pkChar)
 
 	TBattlePassRegisterRanking ranking;
 	ranking.bBattlePassId = bBattlePassId;
-	strlcpy(ranking.playerName, ecs::PlayerRuntime::GetName(((pkChar) ? (pkChar)->GetEntityHandle() : entt::null)).data(), sizeof(ranking.playerName));
+	strlcpy(ranking.playerName, ecs::PlayerRuntime::GetName(charEntity).data(), sizeof(ranking.playerName));
 	db_clientdesc->DBPacket(HEADER_GD_REGISTER_BP_RANKING, 0, &ranking, sizeof(TBattlePassRegisterRanking));
 	SetBattlePassFinalRewardTaken(pkChar, bBattlePassId);
 }

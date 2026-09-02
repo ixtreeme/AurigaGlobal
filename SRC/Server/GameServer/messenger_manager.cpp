@@ -166,22 +166,24 @@ void MessengerManager::Logout(MessengerManager::keyA account)
 
 void MessengerManager::RequestToAdd(LPCHARACTER ch, LPCHARACTER target)
 {
-	if (!(ecs::PlayerRuntime::IsPC(((ch) ? (ch)->GetEntityHandle() : entt::null))) || !ecs::PlayerRuntime::IsPC(((target) ? (target)->GetEntityHandle() : entt::null)))
+	const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
+	const entt::entity targetEntity = target ? target->GetEntityHandle() : entt::null;
+	if (!(ecs::PlayerRuntime::IsPC(chEntity)) || !ecs::PlayerRuntime::IsPC(targetEntity))
 		return;
 
-	if (quest::CQuestManager::instance().GetPCForce((ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null))))->IsRunning() == true)
+	if (quest::CQuestManager::instance().GetPCForce((ecs::PlayerRuntime::GetPlayerID(chEntity)))->IsRunning() == true)
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 607, "");
+		ecs::ChatSystem::SendNew(chEntity, CHAT_TYPE_INFO, 607, "");
 #endif
 		return;
 	}
 
-	if (quest::CQuestManager::instance().GetPCForce(ecs::PlayerRuntime::GetPlayerID(((target) ? (target)->GetEntityHandle() : entt::null)))->IsRunning() == true)
+	if (quest::CQuestManager::instance().GetPCForce(ecs::PlayerRuntime::GetPlayerID(targetEntity))->IsRunning() == true)
 		return;
 
-	uint32_t dw1 = GetCRC32(ecs::PlayerRuntime::GetName(((ch) ? (ch)->GetEntityHandle() : entt::null)).data(), strlen(ecs::PlayerRuntime::GetName(((ch) ? (ch)->GetEntityHandle() : entt::null)).data()));
-	uint32_t dw2 = GetCRC32(ecs::PlayerRuntime::GetName(((target) ? (target)->GetEntityHandle() : entt::null)).data(), strlen(ecs::PlayerRuntime::GetName(((target) ? (target)->GetEntityHandle() : entt::null)).data()));
+	uint32_t dw1 = GetCRC32(ecs::PlayerRuntime::GetName(chEntity).data(), strlen(ecs::PlayerRuntime::GetName(chEntity).data()));
+	uint32_t dw2 = GetCRC32(ecs::PlayerRuntime::GetName(targetEntity).data(), strlen(ecs::PlayerRuntime::GetName(targetEntity).data()));
 
 	char buf[64];
 	snprintf(buf, sizeof(buf), "%u:%u", dw1, dw2);
@@ -189,7 +191,7 @@ void MessengerManager::RequestToAdd(LPCHARACTER ch, LPCHARACTER target)
 
 	m_set_requestToAdd.insert(dwComplex);
 
-	ecs::ChatSystem::Send(((target) ? (target)->GetEntityHandle() : entt::null), CHAT_TYPE_COMMAND, "messenger_auth %s", ecs::PlayerRuntime::GetName(((ch) ? (ch)->GetEntityHandle() : entt::null)).data());
+	ecs::ChatSystem::Send(targetEntity, CHAT_TYPE_COMMAND, "messenger_auth %s", ecs::PlayerRuntime::GetName(chEntity).data());
 }
 
 // @fixme130 void -> bool

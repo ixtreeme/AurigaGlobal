@@ -2176,11 +2176,13 @@ void CGuild::RecvMoneyChange(int iGold)
 void CGuild::RecvWithdrawMoneyGive(int iChangeGold)
 {
 	auto* ch = GetMasterCharacter();
+	const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
+
 
 	if (ch)
 	{
-		ecs::PointSystem::Change(((ch) ? (ch)->GetEntityHandle() : entt::null), POINT_GOLD, iChangeGold);
-		LOG_INFO("GUILD: WITHDRAW {}:{} player {}[{}] gold {}", GetName(), GetID(), ecs::PlayerRuntime::GetName(((ch) ? (ch)->GetEntityHandle() : entt::null)).data(), ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null)), iChangeGold);
+		ecs::PointSystem::Change(chEntity, POINT_GOLD, iChangeGold);
+		LOG_INFO("GUILD: WITHDRAW {}:{} player {}[{}] gold {}", GetName(), GetID(), ecs::PlayerRuntime::GetName(chEntity).data(), ecs::PlayerRuntime::GetPlayerID(chEntity), iChangeGold);
 	}
 
 	TPacketGDGuildMoneyWithdrawGiveReply p;

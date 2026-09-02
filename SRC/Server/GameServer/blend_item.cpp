@@ -202,14 +202,15 @@ bool	Blend_Item_set_value(LPITEM item)
 
 	DO_ALL_BLEND_INFO(iter)
 	{
+		const entt::entity itemEntity = item ? item->GetEntityHandle() : entt::null;
 		blend_info = *iter;
-		if (blend_info->item_vnum == ItemSystem::GetItemVnum((item ? item->GetEntityHandle() : entt::null)))
+		if (blend_info->item_vnum == ItemSystem::GetItemVnum(itemEntity))
 		{
 			int	apply_type;
 			int	apply_value;
 			int	apply_duration;
 
-			if (ItemSystem::GetItemVnum((item ? item->GetEntityHandle() : entt::null)) == 51002)
+			if (ItemSystem::GetItemVnum(itemEntity) == 51002)
 			{
 				apply_type		= blend_info->apply_type;
 				apply_value		= blend_info->apply_value		[FN_ECS_random_index()];
@@ -222,9 +223,9 @@ bool	Blend_Item_set_value(LPITEM item)
 				apply_duration	= blend_info->apply_duration	[FN_random_index()];
 			}
 			LOG_INFO("blend_item : type : {}, value : {}, du : {}", apply_type, apply_value, apply_duration);
-			ItemSystem::SetItemSocket((item ? item->GetEntityHandle() : entt::null), 0, apply_type);
-			ItemSystem::SetItemSocket((item ? item->GetEntityHandle() : entt::null), 1, apply_value);
-			ItemSystem::SetItemSocket((item ? item->GetEntityHandle() : entt::null), 2, apply_duration);
+			ItemSystem::SetItemSocket(itemEntity, 0, apply_type);
+			ItemSystem::SetItemSocket(itemEntity, 1, apply_value);
+			ItemSystem::SetItemSocket(itemEntity, 2, apply_duration);
 			return true;
 		}
 

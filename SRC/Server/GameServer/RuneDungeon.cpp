@@ -208,6 +208,7 @@ namespace
 
     void DropItemOnGround(LPCHARACTER victim, LPCHARACTER owner, uint32_t vnum, uint32_t count)
     {
+        const entt::entity victimEntity = victim ? victim->GetEntityHandle() : entt::null;
         if (!victim)
             return;
 
@@ -216,11 +217,11 @@ namespace
             return;
 
         PIXEL_POSITION pos;
-        pos.x = ecs::PlayerRuntime::GetX(((victim) ? (victim)->GetEntityHandle() : entt::null)) + number(-200, 200);
-        pos.y = ecs::PlayerRuntime::GetY(((victim) ? (victim)->GetEntityHandle() : entt::null)) + number(-200, 200);
+        pos.x = ecs::PlayerRuntime::GetX(victimEntity) + number(-200, 200);
+        pos.y = ecs::PlayerRuntime::GetY(victimEntity) + number(-200, 200);
         pos.z = victim->GetZ();
 
-        item->AddToGround(ecs::PlayerRuntime::GetMapIndex(((victim) ? (victim)->GetEntityHandle() : entt::null)), pos);
+        item->AddToGround(ecs::PlayerRuntime::GetMapIndex(victimEntity), pos);
         item->StartDestroyEvent();
 
         if (owner)
@@ -1167,6 +1168,7 @@ void CRuneDungeon::OnMobKilled(entt::entity killer, entt::entity victim)
 
 bool CRuneDungeon::OnNpcTakeItem(entt::entity from, entt::entity npc, LPITEM item)
 {
+    const entt::entity itemEntity = item ? item->GetEntityHandle() : entt::null;
     LPCHARACTER pkFrom = ecs::LegacyCharOf(from);
     LPCHARACTER pkNpc = ecs::LegacyCharOf(npc);
     if (!pkFrom || !ecs::PlayerRuntime::IsPC(from) || !pkNpc || !item)
@@ -1183,12 +1185,11 @@ bool CRuneDungeon::OnNpcTakeItem(entt::entity from, entt::entity npc, LPITEM ite
     if (d->GetFlag(kFlagFloor) != 5 || d->GetFlag(kFlagType) != 6)
         return false;
 
-    if (ItemSystem::GetItemVnum((item ? item->GetEntityHandle() : entt::null)) != kFloorKey)
+    if (ItemSystem::GetItemVnum(itemEntity) != kFloorKey)
         return false;
 
     // Consume the exact item that was given (Lua: item.remove())
     // NOTE: ReceiveItem() is triggered by dragging the item onto the NPC, so `item` is the actual stack being given.
-    const entt::entity itemEntity = (item ? item->GetEntityHandle() : entt::null);
     if (ItemSystem::GetItemCount(itemEntity) > 1)
         ItemSystem::ConsumeItemEcs(itemEntity);
     else

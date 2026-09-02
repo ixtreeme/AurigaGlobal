@@ -1383,11 +1383,13 @@ void CHARACTER_MANAGER::PacketMonsterLog(entt::entity character, const void* buf
 	for (auto it = m_set_pkChrMonsterLog.begin(); it != m_set_pkChrMonsterLog.end(); ++it)
 	{
 		LPCHARACTER c = *it;
+		const entt::entity cEntity = c ? c->GetEntityHandle() : entt::null;
 
-		if (ch && DISTANCE_APPROX(ecs::PlayerRuntime::GetX(((c) ? (c)->GetEntityHandle() : entt::null)) - ecs::PlayerRuntime::GetX(character), ecs::PlayerRuntime::GetY(((c) ? (c)->GetEntityHandle() : entt::null)) - ecs::PlayerRuntime::GetY(character)) > 6000)
+
+		if (ch && DISTANCE_APPROX(ecs::PlayerRuntime::GetX(cEntity) - ecs::PlayerRuntime::GetX(character), ecs::PlayerRuntime::GetY(cEntity) - ecs::PlayerRuntime::GetY(character)) > 6000)
 			continue;
 
-		LPDESC d = ecs::PlayerRuntime::GetDesc(((c) ? (c)->GetEntityHandle() : entt::null));
+		LPDESC d = ecs::PlayerRuntime::GetDesc(cEntity);
 
 		if (d)
 			d->Packet(buf, size);

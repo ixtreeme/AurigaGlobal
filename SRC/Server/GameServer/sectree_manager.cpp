@@ -1027,10 +1027,12 @@ struct FDestroyPrivateMapEntity
 		if (ent->IsType(ENTITY_CHARACTER))
 		{
 			LPCHARACTER ch = (LPCHARACTER) ent;
+			const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
+
 			//0, "PRIVAE_MAP: removing character %s", ecs::PlayerRuntime::GetName(((ch) ? (ch)->GetEntityHandle() : entt::null)).data());
 
-			if (ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null)))
-				DESC_MANAGER::instance().DestroyDesc(ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null)));
+			if (ecs::PlayerRuntime::GetDesc(chEntity))
+				DESC_MANAGER::instance().DestroyDesc(ecs::PlayerRuntime::GetDesc(chEntity));
 			else
 				M2_DESTROY_CHARACTER(ch);
 		}
@@ -1097,11 +1099,12 @@ TAreaMap& SECTREE_MANAGER::GetDungeonArea(int32_t lMapIndex)
 
 void SECTREE_MANAGER::SendNPCPosition(LPCHARACTER ch)
 {
-	LPDESC d = ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null));
+	const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
+	LPDESC d = ecs::PlayerRuntime::GetDesc(chEntity);
 	if (!d)
 		return;
 
-	int32_t lMapIndex = ecs::PlayerRuntime::GetMapIndex(((ch) ? (ch)->GetEntityHandle() : entt::null));
+	int32_t lMapIndex = ecs::PlayerRuntime::GetMapIndex(chEntity);
 
 	if (m_mapNPCPosition[lMapIndex].empty())
 		return;
@@ -1160,11 +1163,12 @@ const char* szName
 #ifdef ENABLE_ATLAS_BOSS
 void SECTREE_MANAGER::SendBossPosition(LPCHARACTER ch)
 {
-	LPDESC d = ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null));
+	const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
+	LPDESC d = ecs::PlayerRuntime::GetDesc(chEntity);
 	if (!d)
 		return;
 
-	int32_t lMapIndex = ecs::PlayerRuntime::GetMapIndex(((ch) ? (ch)->GetEntityHandle() : entt::null));
+	int32_t lMapIndex = ecs::PlayerRuntime::GetMapIndex(chEntity);
 
 	TEMP_BUFFER buf;
 	TPacketGCBossPosition p;
@@ -1265,15 +1269,17 @@ class FRemoveIfAttr
 			else if (entity->IsType(ENTITY_CHARACTER))
 			{
 				LPCHARACTER ch = (LPCHARACTER) entity;
+				const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
 
-				if ((ecs::PlayerRuntime::IsPC(((ch) ? (ch)->GetEntityHandle() : entt::null))))
+
+				if ((ecs::PlayerRuntime::IsPC(chEntity)))
 				{
 					PIXEL_POSITION pos;
 
-					if (SECTREE_MANAGER::instance().GetRecallPositionByEmpire(ecs::PlayerRuntime::GetMapIndex(((ch) ? (ch)->GetEntityHandle() : entt::null)), ecs::PlayerRuntime::GetEmpire(((ch) ? (ch)->GetEntityHandle() : entt::null)), pos))
-						ecs::MovementSystem::WarpSet(((ch) ? (ch)->GetEntityHandle() : entt::null), pos.x, pos.y);
+					if (SECTREE_MANAGER::instance().GetRecallPositionByEmpire(ecs::PlayerRuntime::GetMapIndex(chEntity), ecs::PlayerRuntime::GetEmpire(chEntity), pos))
+						ecs::MovementSystem::WarpSet(chEntity, pos.x, pos.y);
 					else
-						ecs::MovementSystem::WarpSet(((ch) ? (ch)->GetEntityHandle() : entt::null), EMPIRE_START_X(ecs::PlayerRuntime::GetEmpire(((ch) ? (ch)->GetEntityHandle() : entt::null))), EMPIRE_START_Y(ecs::PlayerRuntime::GetEmpire(((ch) ? (ch)->GetEntityHandle() : entt::null))));
+						ecs::MovementSystem::WarpSet(chEntity, EMPIRE_START_X(ecs::PlayerRuntime::GetEmpire(chEntity)), EMPIRE_START_Y(ecs::PlayerRuntime::GetEmpire(chEntity)));
 				}
 				else
 					ch->Dead();
@@ -1620,11 +1626,13 @@ struct FPurgeNPCs
 		if ( ent->IsType(ENTITY_CHARACTER) == true )
 		{
 			LPCHARACTER lpChar = (LPCHARACTER)ent;
+			const entt::entity lpCharEntity = lpChar ? lpChar->GetEntityHandle() : entt::null;
+
 
 #ifdef __NEWPET_SYSTEM__
-			if (ecs::PlayerRuntime::IsNPC(((lpChar) ? (lpChar)->GetEntityHandle() : entt::null)) == true && !lpChar->IsPet() && !lpChar->IsNewPet())
+			if (ecs::PlayerRuntime::IsNPC(lpCharEntity) == true && !lpChar->IsPet() && !lpChar->IsNewPet())
 #else
-			if ( ecs::PlayerRuntime::IsNPC(((lpChar) ? (lpChar)->GetEntityHandle() : entt::null)) == true && !lpChar->IsPet())
+			if ( ecs::PlayerRuntime::IsNPC(lpCharEntity) == true && !lpChar->IsPet())
 #endif
 			{
 				M2_DESTROY_CHARACTER(lpChar);

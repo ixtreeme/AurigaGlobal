@@ -187,15 +187,16 @@ void CWhisperAdmin::SaveLog(LPCHARACTER ch, const char* c_pszText, const char* c
 
 void CWhisperAdmin::Manager(LPCHARACTER ch, const char* c_pData)
 {
+	const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
 	TPacketCGWhisperAdmin * f = (TPacketCGWhisperAdmin *)c_pData;
 
 	if (!ch)
 		return;
 
-	if (ecs::PlayerRuntime::GetGMLevel(((ch) ? (ch)->GetEntityHandle() : entt::null)) != GM_IMPLEMENTOR)
+	if (ecs::PlayerRuntime::GetGMLevel(chEntity) != GM_IMPLEMENTOR)
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 774, "");
+		ecs::ChatSystem::SendNew(chEntity, CHAT_TYPE_INFO, 774, "");
 #endif
 		return;
 	}
@@ -203,7 +204,7 @@ void CWhisperAdmin::Manager(LPCHARACTER ch, const char* c_pData)
 	if (strlen(f->szText) <= 0 || strlen(f->szLang) <= 0 || f->color < 0)
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 775, "");
+		ecs::ChatSystem::SendNew(chEntity, CHAT_TYPE_INFO, 775, "");
 #endif
 		return;
 	}

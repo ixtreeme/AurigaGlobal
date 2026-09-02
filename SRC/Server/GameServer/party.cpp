@@ -22,6 +22,7 @@
 #ifdef ENABLE_DICE_SYSTEM
 void FPartyDropDiceRoll::Process(const LPCHARACTER mobVictim)
 {
+	const entt::entity itemOwner = m_itemOwner ? m_itemOwner->GetEntityHandle() : entt::null;
 	if (!m_itemOwner || !ItemSystem::IsValidItem(m_itemDrop))
 		return;
 
@@ -39,15 +40,15 @@ void FPartyDropDiceRoll::Process(const LPCHARACTER mobVictim)
 		if (!m_itemOwner)
 			return;
 
-		ItemSystem::SetGroundOwnershipLegacyBoundary(m_itemDrop, ((m_itemOwner) ? (m_itemOwner)->GetEntityHandle() : entt::null));
+		ItemSystem::SetGroundOwnershipLegacyBoundary(m_itemDrop, itemOwner);
 #ifdef TEXTS_IMPROVEMENT
 		party->ChatPacketToAllMemberNew(CHAT_TYPE_DICE_INFO, 903, "%s#%s",
-			ecs::PlayerRuntime::GetName(((m_itemOwner) ? (m_itemOwner)->GetEntityHandle() : entt::null)).data(), ItemSystem::GetItemName(m_itemDrop));
+			ecs::PlayerRuntime::GetName(itemOwner).data(), ItemSystem::GetItemName(m_itemDrop));
 #endif
 		return;
 	}
 
-	ItemSystem::SetGroundOwnershipLegacyBoundary(m_itemDrop, ((m_itemOwner) ? (m_itemOwner)->GetEntityHandle() : entt::null));
+	ItemSystem::SetGroundOwnershipLegacyBoundary(m_itemDrop, itemOwner);
 }
 #endif
 CPartyManager::CPartyManager()
@@ -77,13 +78,14 @@ void CPartyManager::DeleteAllParty()
 
 bool CPartyManager::SetParty(LPCHARACTER ch)	// PC�� ����ؾ� �Ѵ�!!
 {
-	TPartyMap::iterator it = m_map_pkParty.find((ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null))));
+	const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
+	TPartyMap::iterator it = m_map_pkParty.find((ecs::PlayerRuntime::GetPlayerID(chEntity)));
 
 	if (it == m_map_pkParty.end())
 		return false;
 
 	LPPARTY pParty = it->second;
-	pParty->Link(((ch) ? (ch)->GetEntityHandle() : entt::null));
+	pParty->Link(chEntity);
 	return true;
 }
 
@@ -1008,6 +1010,8 @@ bool CParty::SetRole(uint32_t dwPID, uint8_t bRole, bool bSet)
 	}
 
 	auto* ch = it->second.pCharacter;
+	const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
+
 
 	if (bSet)
 	{
@@ -1020,7 +1024,7 @@ bool CParty::SetRole(uint32_t dwPID, uint8_t bRole, bool bSet)
 		it->second.bRole = bRole;
 
 		if (ch && GetLeader())
-			ComputeRolePoint(((ch) ? (ch)->GetEntityHandle() : entt::null), bRole, true);
+			ComputeRolePoint(chEntity, bRole, true);
 
 		if (bRole < PARTY_ROLE_MAX_NUM)
 		{
@@ -1042,7 +1046,7 @@ bool CParty::SetRole(uint32_t dwPID, uint8_t bRole, bool bSet)
 		it->second.bRole = PARTY_ROLE_NORMAL;
 
 		if (ch && GetLeader())
-			ComputeRolePoint(((ch) ? (ch)->GetEntityHandle() : entt::null), PARTY_ROLE_NORMAL, false);
+			ComputeRolePoint(chEntity, PARTY_ROLE_NORMAL, false);
 
 		if (bRole < PARTY_ROLE_MAX_NUM)
 		{
@@ -1119,6 +1123,8 @@ void CParty::HealParty()
 
 	TMemberMap::iterator it;
 	auto* l = GetLeaderCharacter();
+	const entt::entity lEntity = l ? l->GetEntityHandle() : entt::null;
+
 
 	for (it = m_memberMap.begin(); it != m_memberMap.end(); ++it)
 	{
@@ -1126,11 +1132,13 @@ void CParty::HealParty()
 			continue;
 
 		auto* ch = it->second.pCharacter;
+		const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
 
-		if (DISTANCE_APPROX(ecs::PlayerRuntime::GetX(((l) ? (l)->GetEntityHandle() : entt::null))-ecs::PlayerRuntime::GetX(((ch) ? (ch)->GetEntityHandle() : entt::null)), ecs::PlayerRuntime::GetY(((l) ? (l)->GetEntityHandle() : entt::null))-ecs::PlayerRuntime::GetY(((ch) ? (ch)->GetEntityHandle() : entt::null))) < PARTY_DEFAULT_RANGE)
+
+		if (DISTANCE_APPROX(ecs::PlayerRuntime::GetX(lEntity)-ecs::PlayerRuntime::GetX(chEntity), ecs::PlayerRuntime::GetY(lEntity)-ecs::PlayerRuntime::GetY(chEntity)) < PARTY_DEFAULT_RANGE)
 		{
-			ecs::PointSystem::Change(((ch) ? (ch)->GetEntityHandle() : entt::null), POINT_HP, ecs::PointSystem::GetMaxHP(((ch) ? (ch)->GetEntityHandle() : entt::null))-ch->GetHP());
-			ecs::PointSystem::Change(((ch) ? (ch)->GetEntityHandle() : entt::null), POINT_SP, ecs::PointSystem::GetMaxSP(((ch) ? (ch)->GetEntityHandle() : entt::null))-ch->GetSP());
+			ecs::PointSystem::Change(chEntity, POINT_HP, ecs::PointSystem::GetMaxHP(chEntity)-ch->GetHP());
+			ecs::PointSystem::Change(chEntity, POINT_SP, ecs::PointSystem::GetMaxSP(chEntity)-ch->GetSP());
 		}
 	}
 
@@ -1161,21 +1169,25 @@ void CParty::SummonToLeader(uint32_t pid)
 
 	SECTREE_MANAGER & s = SECTREE_MANAGER::instance();
 	auto* l = GetLeaderCharacter();
+	const entt::entity lEntity = l ? l->GetEntityHandle() : entt::null;
+
 
 	if (m_memberMap.find(pid) == m_memberMap.end())
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(((l) ? (l)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 209, "");
+		ecs::ChatSystem::SendNew(lEntity, CHAT_TYPE_INFO, 209, "");
 #endif
 		return;
 	}
 
 	auto* ch = m_memberMap[pid].pCharacter;
+	const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
+
 
 	if (!ch)
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(((l) ? (l)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 209, "");
+		ecs::ChatSystem::SendNew(lEntity, CHAT_TYPE_INFO, 209, "");
 #endif
 		return;
 	}
@@ -1183,7 +1195,7 @@ void CParty::SummonToLeader(uint32_t pid)
 	if (!ch->CanSummon(m_iLeadership))
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(((l) ? (l)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 198, "");
+		ecs::ChatSystem::SendNew(lEntity, CHAT_TYPE_INFO, 198, "");
 #endif
 		return;
 	}
@@ -1192,7 +1204,7 @@ void CParty::SummonToLeader(uint32_t pid)
 	{
 		PIXEL_POSITION p;
 
-		if (s.GetMovablePosition(ecs::PlayerRuntime::GetMapIndex(((l) ? (l)->GetEntityHandle() : entt::null)), ecs::PlayerRuntime::GetX(((l) ? (l)->GetEntityHandle() : entt::null)) + xy [i][0], ecs::PlayerRuntime::GetY(((l) ? (l)->GetEntityHandle() : entt::null)) + xy[i][1], p))
+		if (s.GetMovablePosition(ecs::PlayerRuntime::GetMapIndex(lEntity), ecs::PlayerRuntime::GetX(lEntity) + xy [i][0], ecs::PlayerRuntime::GetY(lEntity) + xy[i][1], p))
 		{
 			x[n] = p.x;
 			y[n] = p.y;
@@ -1202,12 +1214,12 @@ void CParty::SummonToLeader(uint32_t pid)
 
 	if (n != 0) {
 		int i = number(0, n - 1);
-		ecs::MovementSystem::Show(((ch) ? (ch)->GetEntityHandle() : entt::null), ecs::PlayerRuntime::GetMapIndex(((l) ? (l)->GetEntityHandle() : entt::null)), x[i], y[i]);
-		ecs::MovementSystem::Stop(((ch) ? (ch)->GetEntityHandle() : entt::null));
+		ecs::MovementSystem::Show(chEntity, ecs::PlayerRuntime::GetMapIndex(lEntity), x[i], y[i]);
+		ecs::MovementSystem::Stop(chEntity);
 	}
 #ifdef TEXTS_IMPROVEMENT
 	else {
-		ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 219, "");
+		ecs::ChatSystem::SendNew(chEntity, CHAT_TYPE_INFO, 219, "");
 	}
 #endif
 }
@@ -1241,8 +1253,10 @@ LPCHARACTER CParty::GetNextOwnership(LPCHARACTER ch, int32_t x, int32_t y)
 	while (size-- > 0)
 	{
 		auto* pkMember = m_itNextOwner->second.pCharacter;
+		const entt::entity member = pkMember ? pkMember->GetEntityHandle() : entt::null;
 
-		if (pkMember && DISTANCE_APPROX(ecs::PlayerRuntime::GetX(((pkMember) ? (pkMember)->GetEntityHandle() : entt::null)) - x, ecs::PlayerRuntime::GetY(((pkMember) ? (pkMember)->GetEntityHandle() : entt::null)) - y) < 3000)
+
+		if (pkMember && DISTANCE_APPROX(ecs::PlayerRuntime::GetX(member) - x, ecs::PlayerRuntime::GetY(member) - y) < 3000)
 		{
 			IncreaseOwnership();
 			return pkMember;
@@ -1353,6 +1367,8 @@ void CParty::Update()
 	LOG_TRACE("PARTY::Update");
 
 	auto* l = GetLeaderCharacter();
+	const entt::entity lEntity = l ? l->GetEntityHandle() : entt::null;
+
 
 	if (!l)
 		return;
@@ -1374,7 +1390,7 @@ void CParty::Update()
 		if (l->GetDungeon())
 			it->second.bNear = l->GetDungeon() == ch->GetDungeon();
 		else
-			it->second.bNear = (DISTANCE_APPROX(ecs::PlayerRuntime::GetX(((l) ? (l)->GetEntityHandle() : entt::null))-ecs::PlayerRuntime::GetX(((ch) ? (ch)->GetEntityHandle() : entt::null)), ecs::PlayerRuntime::GetY(((l) ? (l)->GetEntityHandle() : entt::null))-ecs::PlayerRuntime::GetY(((ch) ? (ch)->GetEntityHandle() : entt::null))) < PARTY_DEFAULT_RANGE);
+			it->second.bNear = (DISTANCE_APPROX(ecs::PlayerRuntime::GetX(lEntity)-ecs::PlayerRuntime::GetX(((ch) ? (ch)->GetEntityHandle() : entt::null)), ecs::PlayerRuntime::GetY(lEntity)-ecs::PlayerRuntime::GetY(((ch) ? (ch)->GetEntityHandle() : entt::null))) < PARTY_DEFAULT_RANGE);
 
 		if (it->second.bNear)
 		{
@@ -1572,10 +1588,11 @@ LPDUNGEON CParty::GetDungeon_for_Only_party()
 
 bool CParty::IsPositionNearLeader(entt::entity character)
 {
+	const entt::entity chrLeader = m_pkChrLeader ? m_pkChrLeader->GetEntityHandle() : entt::null;
 	if (!m_pkChrLeader)
 		return false;
 
-	if (DISTANCE_APPROX(ecs::PlayerRuntime::GetX(character) - ecs::PlayerRuntime::GetX(((m_pkChrLeader) ? (m_pkChrLeader)->GetEntityHandle() : entt::null)), ecs::PlayerRuntime::GetY(character) - ecs::PlayerRuntime::GetY(((m_pkChrLeader) ? (m_pkChrLeader)->GetEntityHandle() : entt::null))) >= PARTY_DEFAULT_RANGE)
+	if (DISTANCE_APPROX(ecs::PlayerRuntime::GetX(character) - ecs::PlayerRuntime::GetX(chrLeader), ecs::PlayerRuntime::GetY(character) - ecs::PlayerRuntime::GetY(chrLeader)) >= PARTY_DEFAULT_RANGE)
 		return false;
 
 	return true;
@@ -1734,6 +1751,8 @@ int CParty::ComputePartyBonusExpPercent()
 		return 0;
 
 	auto* leader = GetLeaderCharacter();
+	const entt::entity leaderEntity = leader ? leader->GetEntityHandle() : entt::null;
+
 
 	int iBonusPartyExpFromItem = 0;
 
@@ -1748,8 +1767,8 @@ int CParty::ComputePartyBonusExpPercent()
 	}
 
 #ifdef ENABLE_NEW_USE_POTION
-	if (leader && ecs::PointSystem::Get(((leader) ? (leader)->GetEntityHandle() : entt::null), POINT_PARTY_DROPEXP) > 0) {
-		iBonusPartyExpFromItem += ecs::PointSystem::Get(((leader) ? (leader)->GetEntityHandle() : entt::null), POINT_PARTY_DROPEXP);
+	if (leader && ecs::PointSystem::Get(leaderEntity, POINT_PARTY_DROPEXP) > 0) {
+		iBonusPartyExpFromItem += ecs::PointSystem::Get(leaderEntity, POINT_PARTY_DROPEXP);
 	}
 #endif
 

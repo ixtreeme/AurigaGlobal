@@ -695,6 +695,8 @@ namespace quest
 		int32_t vid = (int32_t)lua_tonumber(L, 1);
 
 		LPCHARACTER ch = CHARACTER_MANAGER::instance().Find(vid);
+		const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
+
 		if (!ch) {
 			sys_err("The vid {} not exist.", vid);
 			lua_pushboolean(L, 0);
@@ -707,9 +709,9 @@ namespace quest
 		bool what = lua_toboolean(L, 2);
 		if (what == false && !lastmeley)
 		{
-			if ((ecs::PlayerRuntime::GetRaceNum(((ch) ? (ch)->GetEntityHandle() : entt::null))) == 6118 && AffectSystem::FindAffect(((ch) ? (ch)->GetEntityHandle() : entt::null), AFFECT_STATUE))
+			if ((ecs::PlayerRuntime::GetRaceNum(chEntity)) == 6118 && AffectSystem::FindAffect(chEntity, AFFECT_STATUE))
 			{
-				AffectSystem::RemoveAffect(((ch) ? (ch)->GetEntityHandle() : entt::null), AFFECT_STATUE);
+				AffectSystem::RemoveAffect(chEntity, AFFECT_STATUE);
 			}
 		}
 
@@ -719,7 +721,7 @@ namespace quest
 		}
 		else
 		{
-			if ((ecs::PlayerRuntime::GetRaceNum(((ch) ? (ch)->GetEntityHandle() : entt::null))) == 6118 && !AffectSystem::FindAffect(((ch) ? (ch)->GetEntityHandle() : entt::null), AFFECT_STATUE))
+			if ((ecs::PlayerRuntime::GetRaceNum(chEntity)) == 6118 && !AffectSystem::FindAffect(chEntity, AFFECT_STATUE))
 			{
 				lua_pushboolean(L, ch->SetInvincible(what));
 			}
@@ -937,9 +939,10 @@ namespace quest
 
 		void operator () (LPCHARACTER ch)
 		{
-			if (ch && (ecs::PlayerRuntime::IsPC(((ch) ? (ch)->GetEntityHandle() : entt::null))))
+			const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
+			if (ch && (ecs::PlayerRuntime::IsPC(chEntity)))
 			{
-				vecPIDs.push_back((ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null))));
+				vecPIDs.push_back((ecs::PlayerRuntime::GetPlayerID(chEntity)));
 			}
 		}
 	};
@@ -1734,6 +1737,8 @@ namespace quest
 		int32_t statue_vid1 = dungeon->GetFlag("statue_vid1"), statue_vid2 = dungeon->GetFlag("statue_vid2"), statue_vid3 = dungeon->GetFlag("statue_vid3"), statue_vid4 = dungeon->GetFlag("statue_vid4");
 
 		LPCHARACTER statue1 = CHARACTER_MANAGER::instance().Find(statue_vid1);
+		const entt::entity statue1Entity = statue1 ? statue1->GetEntityHandle() : entt::null;
+
 		if (!statue1)
 		{
 			sys_err("The vid {} not exist.", statue_vid1);
@@ -1741,6 +1746,8 @@ namespace quest
 		}
 
 		LPCHARACTER statue2 = CHARACTER_MANAGER::instance().Find(statue_vid2);
+		const entt::entity statue2Entity = statue2 ? statue2->GetEntityHandle() : entt::null;
+
 		if (!statue2)
 		{
 			sys_err("The vid {} not exist.", statue_vid2);
@@ -1748,6 +1755,8 @@ namespace quest
 		}
 
 		LPCHARACTER statue3 = CHARACTER_MANAGER::instance().Find(statue_vid3);
+		const entt::entity statue3Entity = statue3 ? statue3->GetEntityHandle() : entt::null;
+
 		if (!statue3)
 		{
 			sys_err("The vid {} not exist.", statue_vid3);
@@ -1755,6 +1764,8 @@ namespace quest
 		}
 
 		LPCHARACTER statue4 = CHARACTER_MANAGER::instance().Find(statue_vid4);
+		const entt::entity statue4Entity = statue4 ? statue4->GetEntityHandle() : entt::null;
+
 		if (!statue4)
 		{
 			sys_err("The vid {} not exist.", statue_vid4);
@@ -1768,10 +1779,10 @@ namespace quest
 
 		int32_t time = get_dword_time();
 
-		statue1->SendMovePacket(FUNC_MOB_SKILL, 0, ecs::PlayerRuntime::GetX(((statue1) ? (statue1)->GetEntityHandle() : entt::null)), ecs::PlayerRuntime::GetY(((statue1) ? (statue1)->GetEntityHandle() : entt::null)), 0, time);
-		statue2->SendMovePacket(FUNC_MOB_SKILL, 0, ecs::PlayerRuntime::GetX(((statue2) ? (statue2)->GetEntityHandle() : entt::null)), ecs::PlayerRuntime::GetY(((statue2) ? (statue2)->GetEntityHandle() : entt::null)), 0, time);
-		statue3->SendMovePacket(FUNC_MOB_SKILL, 0, ecs::PlayerRuntime::GetX(((statue3) ? (statue3)->GetEntityHandle() : entt::null)), ecs::PlayerRuntime::GetY(((statue3) ? (statue3)->GetEntityHandle() : entt::null)), 0, time);
-		statue4->SendMovePacket(FUNC_MOB_SKILL, 0, ecs::PlayerRuntime::GetX(((statue4) ? (statue4)->GetEntityHandle() : entt::null)), ecs::PlayerRuntime::GetY(((statue4) ? (statue4)->GetEntityHandle() : entt::null)), 0, time);
+		statue1->SendMovePacket(FUNC_MOB_SKILL, 0, ecs::PlayerRuntime::GetX(statue1Entity), ecs::PlayerRuntime::GetY(statue1Entity), 0, time);
+		statue2->SendMovePacket(FUNC_MOB_SKILL, 0, ecs::PlayerRuntime::GetX(statue2Entity), ecs::PlayerRuntime::GetY(statue2Entity), 0, time);
+		statue3->SendMovePacket(FUNC_MOB_SKILL, 0, ecs::PlayerRuntime::GetX(statue3Entity), ecs::PlayerRuntime::GetY(statue3Entity), 0, time);
+		statue4->SendMovePacket(FUNC_MOB_SKILL, 0, ecs::PlayerRuntime::GetX(statue4Entity), ecs::PlayerRuntime::GetY(statue4Entity), 0, time);
 
 		return 0;
 	}

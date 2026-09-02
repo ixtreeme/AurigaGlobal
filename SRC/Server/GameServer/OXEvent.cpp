@@ -157,20 +157,21 @@ bool COXEventManager::AddQuiz(unsigned char level, const char* pszQuestion, bool
 
 bool COXEventManager::ShowQuizList(LPCHARACTER pkChar)
 {
+	const entt::entity charEntity = pkChar ? pkChar->GetEntityHandle() : entt::null;
 #ifdef TEXTS_IMPROVEMENT
 	int c = 0;
 
 	for (size_t i = 0; i < m_vec_quiz.size(); ++i) {
 		for (size_t j = 0; j < m_vec_quiz[i].size(); ++j, ++c) {
 			if (m_vec_quiz[i][j].answer) {
-				ecs::ChatSystem::SendNew(((pkChar) ? (pkChar)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 608, "%s", m_vec_quiz[i][j].Quiz);
+				ecs::ChatSystem::SendNew(charEntity, CHAT_TYPE_INFO, 608, "%s", m_vec_quiz[i][j].Quiz);
 			} else {
-				ecs::ChatSystem::SendNew(((pkChar) ? (pkChar)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 609, "%s", m_vec_quiz[i][j].Quiz);
+				ecs::ChatSystem::SendNew(charEntity, CHAT_TYPE_INFO, 609, "%s", m_vec_quiz[i][j].Quiz);
 			}
 		}
 	}
 
-	ecs::ChatSystem::SendNew(((pkChar) ? (pkChar)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 610, "%d", c);
+	ecs::ChatSystem::SendNew(charEntity, CHAT_TYPE_INFO, 610, "%d", c);
 #endif
 	return true;
 }
@@ -444,16 +445,18 @@ count)
 	for (; iter != m_map_attender.end(); ++iter)
 	{
 		LPCHARACTER pkChar = CHARACTER_MANAGER::instance().FindByPID(iter->second);
-		if (pkChar && ecs::PlayerRuntime::IsPC(((pkChar) ? (pkChar)->GetEntityHandle() : entt::null)))
+		const entt::entity charEntity = pkChar ? pkChar->GetEntityHandle() : entt::null;
+
+		if (pkChar && ecs::PlayerRuntime::IsPC(charEntity))
 		{
 #ifdef ENABLE_BLOCK_MULTIFARM
-			if (AffectSystem::FindAffect(((pkChar) ? (pkChar)->GetEntityHandle() : entt::null), AFFECT_DROP_UNBLOCK, APPLY_NONE)) {
+			if (AffectSystem::FindAffect(charEntity, AFFECT_DROP_UNBLOCK, APPLY_NONE)) {
 				pkChar->AutoGiveItem(dwItemVnum, count);
-				LogManager::instance().ItemLog((ecs::PlayerRuntime::GetPlayerID(((pkChar) ? (pkChar)->GetEntityHandle() : entt::null))), 0, count, dwItemVnum, "OXEVENT_REWARD", "", ecs::PlayerRuntime::GetDesc(((pkChar) ? (pkChar)->GetEntityHandle() : entt::null))->GetHostName(), dwItemVnum);
+				LogManager::instance().ItemLog((ecs::PlayerRuntime::GetPlayerID(charEntity)), 0, count, dwItemVnum, "OXEVENT_REWARD", "", ecs::PlayerRuntime::GetDesc(charEntity)->GetHostName(), dwItemVnum);
 			}
 #else
 			pkChar->AutoGiveItem(dwItemVnum, count);
-			LogManager::instance().ItemLog((ecs::PlayerRuntime::GetPlayerID(((pkChar) ? (pkChar)->GetEntityHandle() : entt::null))), 0, count, dwItemVnum, "OXEVENT_REWARD", "", ecs::PlayerRuntime::GetDesc(((pkChar) ? (pkChar)->GetEntityHandle() : entt::null))->GetHostName(), dwItemVnum);
+			LogManager::instance().ItemLog((ecs::PlayerRuntime::GetPlayerID(charEntity)), 0, count, dwItemVnum, "OXEVENT_REWARD", "", ecs::PlayerRuntime::GetDesc(charEntity)->GetHostName(), dwItemVnum);
 #endif
 		}
 	}

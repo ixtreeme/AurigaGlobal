@@ -90,10 +90,12 @@ namespace marriage
 		for (auto it = m_set_pkChr.begin(); it != m_set_pkChr.end(); ++it)
 		{
 			LPCHARACTER ch = *it;
-			if (ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null)) == dwPID1 || ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null)) == dwPID2)
+			const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
+
+			if (ecs::PlayerRuntime::GetPlayerID(chEntity) == dwPID1 || ecs::PlayerRuntime::GetPlayerID(chEntity) == dwPID2)
 				continue;
 
-			if (ecs::PointSystem::GetLevel(((ch) ? (ch)->GetEntityHandle() : entt::null)) < 10) // 10 레벨이하는 주지않는다.
+			if (ecs::PointSystem::GetLevel(chEntity) < 10) // 10 레벨이하는 주지않는다.
 				continue;
 
 			//ch->AutoGiveItem(27003, 5);
@@ -133,12 +135,13 @@ namespace marriage
 	{
 		void operator() (LPCHARACTER ch)
 		{
-			if (ecs::PlayerRuntime::IsPC(((ch) ? (ch)->GetEntityHandle() : entt::null)))
+			const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
+			if (ecs::PlayerRuntime::IsPC(chEntity))
 			{
 				// ExitToSavedLocation은 WarpSet을 부르는데 이 함수에서
 				// Sectree가 NULL이 된다. 추 후 SectreeManager로 부터는
 				// 이 캐릭터를 찾을 수 없으므로 아래 DestroyAll에서 별도 처리함
-				ecs::MovementSystem::ExitToSavedLocation(((ch) ? (ch)->GetEntityHandle() : entt::null));
+				ecs::MovementSystem::ExitToSavedLocation(chEntity);
 			}
 		}
 	};
@@ -153,10 +156,11 @@ namespace marriage
 	{
 		void operator() (LPCHARACTER ch)
 		{
-			LOG_INFO("WeddingMap::DestroyAll: {}", ecs::PlayerRuntime::GetName(((ch) ? (ch)->GetEntityHandle() : entt::null)).data());
+			const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
+			LOG_INFO("WeddingMap::DestroyAll: {}", ecs::PlayerRuntime::GetName(chEntity).data());
 
-			if (ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null)))
-				DESC_MANAGER::instance().DestroyDesc(ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null)));
+			if (ecs::PlayerRuntime::GetDesc(chEntity))
+				DESC_MANAGER::instance().DestroyDesc(ecs::PlayerRuntime::GetDesc(chEntity));
 			else
 				M2_DESTROY_CHARACTER(ch);
 		}
@@ -271,14 +275,15 @@ namespace marriage
 
 	void WeddingMap::SendLocalEvent(LPCHARACTER ch)
 	{
+		const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
 		char szCommand[256];
 
 		if (m_isDark)
-			ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_COMMAND, "DayMode dark");
+			ecs::ChatSystem::Send(chEntity, CHAT_TYPE_COMMAND, "DayMode dark");
 		if (m_isSnow)
-			ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_COMMAND, "xmas_snow 1");
+			ecs::ChatSystem::Send(chEntity, CHAT_TYPE_COMMAND, "xmas_snow 1");
 		if (m_isMusic)
-			ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_COMMAND, __BuildCommandPlayMusic(szCommand, sizeof(szCommand), 1, m_stMusicFileName.c_str()));
+			ecs::ChatSystem::Send(chEntity, CHAT_TYPE_COMMAND, __BuildCommandPlayMusic(szCommand, sizeof(szCommand), 1, m_stMusicFileName.c_str()));
 	}
 
 	const char* WeddingMap::__BuildCommandPlayMusic(char* szCommand, size_t nCmdLen, uint8_t bSet, const char* c_szMusicFileName)

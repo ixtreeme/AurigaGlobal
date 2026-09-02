@@ -79,14 +79,15 @@ namespace offlineshop
 		//setting info
 		if (pItem)
 		{
+			const entt::entity item = pItem ? pItem->GetEntityHandle() : entt::null;
 			//basic info
-			m_itemInfo.dwCount	= ItemSystem::GetItemCount((pItem ? pItem->GetEntityHandle() : entt::null));
+			m_itemInfo.dwCount	= ItemSystem::GetItemCount(item);
 			{
-				const entt::entity ownerEntity = ItemSystem::GetItemOwnerEntity((pItem ? pItem->GetEntityHandle() : entt::null));
+				const entt::entity ownerEntity = ItemSystem::GetItemOwnerEntity(item);
 				auto* owner = ecs::LegacyCharOf(ownerEntity);
 				m_dwOwnerID			= owner ? ecs::PlayerRuntime::GetPlayerID(((owner) ? (owner)->GetEntityHandle() : entt::null)) : 0;
 			}
-			m_itemInfo.dwVnum	= ItemSystem::GetItemVnum((pItem ? pItem->GetEntityHandle() : entt::null));
+			m_itemInfo.dwVnum	= ItemSystem::GetItemVnum(item);
 			//patch 08-03-2020
 			m_itemInfo.expiration = GetItemExpiration(pItem->GetEntityHandle());
 
@@ -161,14 +162,15 @@ namespace offlineshop
 	{
 		if (pItem)
 		{
+			const entt::entity item = pItem ? pItem->GetEntityHandle() : entt::null;
 			//basic info
-			m_itemInfo.dwCount	= ItemSystem::GetItemCount((pItem ? pItem->GetEntityHandle() : entt::null));
+			m_itemInfo.dwCount	= ItemSystem::GetItemCount(item);
 			{
-				const entt::entity ownerEntity = ItemSystem::GetItemOwnerEntity((pItem ? pItem->GetEntityHandle() : entt::null));
+				const entt::entity ownerEntity = ItemSystem::GetItemOwnerEntity(item);
 				auto* owner = ecs::LegacyCharOf(ownerEntity);
 				m_dwOwnerID			= owner ? ecs::PlayerRuntime::GetPlayerID(((owner) ? (owner)->GetEntityHandle() : entt::null)) : 0;
 			}
-			m_itemInfo.dwVnum	= ItemSystem::GetItemVnum((pItem ? pItem->GetEntityHandle() : entt::null));
+			m_itemInfo.dwVnum	= ItemSystem::GetItemVnum(item);
 
 			//attributes
 			const TPlayerItemAttribute* pAttributes = pItem->GetAttributes();

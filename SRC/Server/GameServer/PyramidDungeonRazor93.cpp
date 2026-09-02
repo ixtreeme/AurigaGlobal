@@ -229,14 +229,15 @@ namespace
 
         void operator()(LPCHARACTER m)
         {
-            if (!ok || !m || !ecs::PlayerRuntime::IsPC(((m) ? (m)->GetEntityHandle() : entt::null)))
+            const entt::entity mEntity = m ? m->GetEntityHandle() : entt::null;
+            if (!ok || !m || !ecs::PlayerRuntime::IsPC(mEntity))
                 return;
 
-            const int32_t lv = ecs::PointSystem::GetLevel(((m) ? (m)->GetEntityHandle() : entt::null));
+            const int32_t lv = ecs::PointSystem::GetLevel(mEntity);
             if (lv < kMinLevel || lv > kMaxLevel)
             {
                 ok = false;
-                name = ecs::PlayerRuntime::GetName(((m) ? (m)->GetEntityHandle() : entt::null)).data();
+                name = ecs::PlayerRuntime::GetName(mEntity).data();
                 level = lv;
             }
         }
@@ -253,14 +254,15 @@ namespace
 
         void operator()(LPCHARACTER m)
         {
-            if (!ok || !m || !ecs::PlayerRuntime::IsPC(((m) ? (m)->GetEntityHandle() : entt::null)))
+            const entt::entity mEntity = m ? m->GetEntityHandle() : entt::null;
+            if (!ok || !m || !ecs::PlayerRuntime::IsPC(mEntity))
                 return;
 
-            const int32_t until = ecs::QuestSystem::GetFlag(((m) ? (m)->GetEntityHandle() : entt::null), kQfCooldown);
+            const int32_t until = ecs::QuestSystem::GetFlag(mEntity, kQfCooldown);
             if (until > now)
             {
                 ok = false;
-                name = ecs::PlayerRuntime::GetName(((m) ? (m)->GetEntityHandle() : entt::null)).data();
+                name = ecs::PlayerRuntime::GetName(mEntity).data();
                 remain = until - now;
             }
         }
@@ -273,13 +275,14 @@ namespace
 
         void operator()(LPCHARACTER m)
         {
-            if (!ok || !m || !ecs::PlayerRuntime::IsPC(((m) ? (m)->GetEntityHandle() : entt::null)))
+            const entt::entity mEntity = m ? m->GetEntityHandle() : entt::null;
+            if (!ok || !m || !ecs::PlayerRuntime::IsPC(mEntity))
                 return;
 
             if (m->CountSpecifyItem(kEntryItemVnum) < 1)
             {
                 ok = false;
-                name = ecs::PlayerRuntime::GetName(((m) ? (m)->GetEntityHandle() : entt::null)).data();
+                name = ecs::PlayerRuntime::GetName(mEntity).data();
             }
         }
     };
@@ -288,7 +291,8 @@ namespace
     {
         void operator()(LPCHARACTER m)
         {
-            if (!m || !ecs::PlayerRuntime::IsPC(((m) ? (m)->GetEntityHandle() : entt::null)))
+            const entt::entity mEntity = m ? m->GetEntityHandle() : entt::null;
+            if (!m || !ecs::PlayerRuntime::IsPC(mEntity))
                 return;
 
             m->RemoveSpecifyItem(kEntryItemVnum, 1);
@@ -298,16 +302,17 @@ namespace
             if (cnt > 0)
                 m->RemoveSpecifyItem(kRemoveAllItem, cnt > 255 ? 255 : cnt);
 
-            ecs::QuestSystem::SetFlag(((m) ? (m)->GetEntityHandle() : entt::null), kQfCooldown, get_global_time() + kCooldownSeconds);
+            ecs::QuestSystem::SetFlag(mEntity, kQfCooldown, get_global_time() + kCooldownSeconds);
         }
     };
 
     inline void ResetRejoinFlags(LPCHARACTER ch)
     {
+        const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
         if (!ch) return;
-        ecs::QuestSystem::SetFlag(((ch) ? (ch)->GetEntityHandle() : entt::null), kQfDisconnect, 0);
-        ecs::QuestSystem::SetFlag(((ch) ? (ch)->GetEntityHandle() : entt::null), kQfIdx, 0);
-        ecs::QuestSystem::SetFlag(((ch) ? (ch)->GetEntityHandle() : entt::null), kQfCh, 0);
+        ecs::QuestSystem::SetFlag(chEntity, kQfDisconnect, 0);
+        ecs::QuestSystem::SetFlag(chEntity, kQfIdx, 0);
+        ecs::QuestSystem::SetFlag(chEntity, kQfCh, 0);
     }
 }
 

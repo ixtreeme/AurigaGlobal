@@ -989,6 +989,7 @@ bool DSManager::DoRefineStrengthEcs(entt::entity owner, TItemPos (&aItemPoses)[D
 #ifdef ENABLE_DS_REFINE_ALL
 void DSManager::DoRefineAll(LPCHARACTER ch, uint8_t subheader, uint8_t type, uint8_t requestedGrade)
 {
+	const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
 	if (!ch || (subheader != DS_SUB_HEADER_DO_REFINE_GRADE && subheader != DS_SUB_HEADER_DO_REFINE_STEP))
 		return;
 	if (type > 5 || requestedGrade > 5)
@@ -1003,14 +1004,14 @@ void DSManager::DoRefineAll(LPCHARACTER ch, uint8_t subheader, uint8_t type, uin
 	if (remainingDelay > 0)
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 234, "%d", remainingDelay);
+		ecs::ChatSystem::SendNew(chEntity, CHAT_TYPE_INFO, 234, "%d", remainingDelay);
 #endif
 		return;
 	}
 	ch->SetLastDSREfine();
 #endif
 
-	const entt::entity owner = ((ch) ? (ch)->GetEntityHandle() : entt::null);
+	const entt::entity owner = chEntity;
 	const int32_t firstCell = 300 + (192 * type) + (requestedGrade * DRAGON_SOUL_BOX_SIZE);
 	const bool gradeMode = subheader == DS_SUB_HEADER_DO_REFINE_GRADE;
 	const int firstIndex = gradeMode ? DRAGON_SOUL_GRADE_NORMAL : DRAGON_SOUL_STEP_LOWEST;

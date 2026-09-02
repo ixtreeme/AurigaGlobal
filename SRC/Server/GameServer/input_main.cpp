@@ -94,11 +94,12 @@
 #ifdef ENABLE_ITEM_ON_TITLE_RAZOR93
 static inline std::string MakeNameWithPrefix(LPCHARACTER ch)
 {
-	const char* name = ch ? ecs::PlayerRuntime::GetName(((ch) ? (ch)->GetEntityHandle() : entt::null)).data() : "";
+	const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
+	const char* name = ch ? ecs::PlayerRuntime::GetName(chEntity).data() : "";
 
 	std::string out;
 	if (ch)
-		out = NetworkSyncSystem::GetItemOnTitlePrefix(g_registry, ((ch) ? (ch)->GetEntityHandle() : entt::null)); // std::string
+		out = NetworkSyncSystem::GetItemOnTitlePrefix(g_registry, chEntity); // std::string
 
 
 	if (!out.empty() && out.back() != ' ')
@@ -129,7 +130,9 @@ void CInputMain::TargetInfoLoad(entt::entity character, const char* c_pData)
 
 	const auto* request = reinterpret_cast<const TPacketCGTargetInfoLoad*>(c_pData);
 	LPCHARACTER target = CHARACTER_MANAGER::instance().Find(request->dwVID);
-	if (!target || (!target->IsMonster() && !ecs::PlayerRuntime::IsStone(((target) ? (target)->GetEntityHandle() : entt::null))))
+	const entt::entity targetEntity = target ? target->GetEntityHandle() : entt::null;
+
+	if (!target || (!target->IsMonster() && !ecs::PlayerRuntime::IsStone(targetEntity)))
 		return;
 
 	std::vector<TargetInfoItem> items;
@@ -138,8 +141,8 @@ void CInputMain::TargetInfoLoad(entt::entity character, const char* c_pData)
 
 	TPacketGCTargetInfo info{};
 	info.header = HEADER_GC_TARGET_INFO;
-	info.dwVID = ecs::PlayerRuntime::GetPacketVID(((target) ? (target)->GetEntityHandle() : entt::null));
-	info.race = ecs::PlayerRuntime::GetRaceNum(((target) ? (target)->GetEntityHandle() : entt::null));
+	info.dwVID = ecs::PlayerRuntime::GetPacketVID(targetEntity);
+	info.race = ecs::PlayerRuntime::GetRaceNum(targetEntity);
 
 	for (const TargetInfoItem& item : items)
 	{
@@ -151,13 +154,14 @@ void CInputMain::TargetInfoLoad(entt::entity character, const char* c_pData)
 #endif
 void SendBlockChatInfo(LPCHARACTER ch, int sec)
 {
+	const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "input_main.cpp::  SendBlockChatInfo(");//INGAME_DEBUG_RAZOR93
+	ecs::ChatSystem::Send(chEntity, CHAT_TYPE_INFO, "input_main.cpp::  SendBlockChatInfo(");//INGAME_DEBUG_RAZOR93
 #endif
 	if (sec <= 0)
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 473, "");
+		ecs::ChatSystem::SendNew(chEntity, CHAT_TYPE_INFO, 473, "");
 #endif
 		return;
 	}
@@ -168,16 +172,16 @@ void SendBlockChatInfo(LPCHARACTER ch, int sec)
 	int32_t min = (sec / 60);
 	sec -= min * 60;
 	if (hour > 0 && min > 0) {
-		ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 475, "%d#%d#%d", hour, min, sec);
+		ecs::ChatSystem::SendNew(chEntity, CHAT_TYPE_INFO, 475, "%d#%d#%d", hour, min, sec);
 	}
 	else if (hour > 0 && min == 0) {
-		ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 476, "%d#%d", hour, sec);
+		ecs::ChatSystem::SendNew(chEntity, CHAT_TYPE_INFO, 476, "%d#%d", hour, sec);
 	}
 	else if (hour == 0 && min > 0) {
-		ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 477, "%d#%d", min, sec);
+		ecs::ChatSystem::SendNew(chEntity, CHAT_TYPE_INFO, 477, "%d#%d", min, sec);
 	}
 	else {
-		ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 478, "%d", sec);
+		ecs::ChatSystem::SendNew(chEntity, CHAT_TYPE_INFO, 478, "%d", sec);
 	}
 #endif
 }
@@ -220,17 +224,18 @@ EVENTFUNC(block_chat_by_ip_event)
 
 bool SpamBlockCheck(LPCHARACTER ch, const char* const buf, const size_t buflen)
 {
+	const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "input_main.cpp::  bool SpamBlockCheck(LPCHARACTER ch, const char* const buf, const size_t buflen)(");//INGAME_DEBUG_RAZOR93
+	ecs::ChatSystem::Send(chEntity, CHAT_TYPE_INFO, "input_main.cpp::  bool SpamBlockCheck(LPCHARACTER ch, const char* const buf, const size_t buflen)(");//INGAME_DEBUG_RAZOR93
 #endif
-	if (ecs::PointSystem::GetLevel(((ch) ? (ch)->GetEntityHandle() : entt::null)) < g_iSpamBlockMaxLevel)
+	if (ecs::PointSystem::GetLevel(chEntity) < g_iSpamBlockMaxLevel)
 	{
-		auto it = spam_score_of_ip.find(ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null))->GetHostName());
+		auto it = spam_score_of_ip.find(ecs::PlayerRuntime::GetDesc(chEntity)->GetHostName());
 
 		if (it == spam_score_of_ip.end())
 		{
-			spam_score_of_ip.insert(std::make_pair(ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null))->GetHostName(), std::make_pair(0, (LPEVENT)nullptr)));
-			it = spam_score_of_ip.find(ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null))->GetHostName());
+			spam_score_of_ip.insert(std::make_pair(ecs::PlayerRuntime::GetDesc(chEntity)->GetHostName(), std::make_pair(0, (LPEVENT)nullptr)));
+			it = spam_score_of_ip.find(ecs::PlayerRuntime::GetDesc(chEntity)->GetHostName());
 		}
 
 		if (it->second.second)
@@ -245,12 +250,12 @@ bool SpamBlockCheck(LPCHARACTER ch, const char* const buf, const size_t buflen)
 		it->second.first += score;
 
 		if (word)
-			LOG_INFO("SPAM_SCORE: {} text: {} score: {} total: {} word: {}", ecs::PlayerRuntime::GetName(((ch) ? (ch)->GetEntityHandle() : entt::null)).data(), buf, score, it->second.first, word);
+			LOG_INFO("SPAM_SCORE: {} text: {} score: {} total: {} word: {}", ecs::PlayerRuntime::GetName(chEntity).data(), buf, score, it->second.first, word);
 
 		if (it->second.first >= g_uiSpamBlockScore)
 		{
 			spam_event_info* info = AllocEventInfo<spam_event_info>();
-			strlcpy(info->host, ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null))->GetHostName(), sizeof(info->host));
+			strlcpy(info->host, ecs::PlayerRuntime::GetDesc(chEntity)->GetHostName(), sizeof(info->host));
 
 			it->second.second = event_create(block_chat_by_ip_event, info, PASSES_PER_SEC(g_uiSpamBlockDuration));
 			LOG_INFO("SPAM_IP: {} for {} seconds", info->host, g_uiSpamBlockDuration);
@@ -406,6 +411,8 @@ int CInputMain::Whisper(entt::entity character, const char * data, uint64_t uiBy
 	}
 
 	LPCHARACTER pkChr = CHARACTER_MANAGER::instance().FindPC(pinfo->szNameTo);
+	const entt::entity chr = pkChr ? pkChr->GetEntityHandle() : entt::null;
+
 
 	if (pkChr == ch)
 		return (iExtraLen);
@@ -419,7 +426,7 @@ int CInputMain::Whisper(entt::entity character, const char * data, uint64_t uiBy
 		if (!pkChr)
 			LOG_INFO("Whisper to {}({}) from {}", "Null", pinfo->szNameTo, ecs::PlayerRuntime::GetName(character).data());
 		else
-			LOG_INFO("Whisper to {}({}) from {}", ecs::PlayerRuntime::GetName(((pkChr) ? (pkChr)->GetEntityHandle() : entt::null)).data(), pinfo->szNameTo, ecs::PlayerRuntime::GetName(character).data());
+			LOG_INFO("Whisper to {}({}) from {}", ecs::PlayerRuntime::GetName(chr).data(), pinfo->szNameTo, ecs::PlayerRuntime::GetName(character).data());
 	}
 
 	if (ch->IsBlockMode(BLOCK_WHISPER))
@@ -453,8 +460,8 @@ int CInputMain::Whisper(entt::entity character, const char * data, uint64_t uiBy
 	}
 	else
 	{
-		pkDesc = ecs::PlayerRuntime::GetDesc(((pkChr) ? (pkChr)->GetEntityHandle() : entt::null));
-		bOpponentEmpire = ecs::PlayerRuntime::GetEmpire(((pkChr) ? (pkChr)->GetEntityHandle() : entt::null));
+		pkDesc = ecs::PlayerRuntime::GetDesc(chr);
+		bOpponentEmpire = ecs::PlayerRuntime::GetEmpire(chr);
 	}
 
 	if (!pkDesc)
@@ -675,10 +682,11 @@ struct RawPacketToCharacterFunc
 
 	void operator () (LPCHARACTER c)
 	{
-		if (!ecs::PlayerRuntime::GetDesc(((c) ? (c)->GetEntityHandle() : entt::null)))
+		const entt::entity cEntity = c ? c->GetEntityHandle() : entt::null;
+		if (!ecs::PlayerRuntime::GetDesc(cEntity))
 			return;
 
-		ecs::PlayerRuntime::GetDesc(((c) ? (c)->GetEntityHandle() : entt::null))->Packet(m_buf, m_buf_len);
+		ecs::PlayerRuntime::GetDesc(cEntity)->Packet(m_buf, m_buf_len);
 	}
 };
 
@@ -1757,6 +1765,8 @@ int CInputMain::Messenger(entt::entity character, const char* c_pData, uint64_t 
 
 				TPacketCGMessengerAddByVID * p2 = (TPacketCGMessengerAddByVID *) c_pData;
 				LPCHARACTER ch_companion = CHARACTER_MANAGER::instance().Find(p2->vid);
+				const entt::entity ch_companionEntity = ch_companion ? ch_companion->GetEntityHandle() : entt::null;
+
 
 				if (!ch_companion)
 					return sizeof(TPacketCGMessengerAddByVID);
@@ -1767,17 +1777,17 @@ int CInputMain::Messenger(entt::entity character, const char* c_pData, uint64_t 
 				if (ch_companion->IsBlockMode(BLOCK_MESSENGER_INVITE))
 				{
 #ifdef TEXTS_IMPROVEMENT
-					ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 370, "%s", ecs::PlayerRuntime::GetName(((ch_companion) ? (ch_companion)->GetEntityHandle() : entt::null)).data());
+					ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 370, "%s", ecs::PlayerRuntime::GetName(ch_companionEntity).data());
 #endif
 					return sizeof(TPacketCGMessengerAddByVID);
 				}
 
-				LPDESC d = ecs::PlayerRuntime::GetDesc(((ch_companion) ? (ch_companion)->GetEntityHandle() : entt::null));
+				LPDESC d = ecs::PlayerRuntime::GetDesc(ch_companionEntity);
 
 				if (!d)
 					return sizeof(TPacketCGMessengerAddByVID);
 
-				if (ecs::PlayerRuntime::GetGMLevel(character) == GM_PLAYER && ecs::PlayerRuntime::GetGMLevel(((ch_companion) ? (ch_companion)->GetEntityHandle() : entt::null)) != GM_PLAYER)
+				if (ecs::PlayerRuntime::GetGMLevel(character) == GM_PLAYER && ecs::PlayerRuntime::GetGMLevel(ch_companionEntity) != GM_PLAYER)
 				{
 #ifdef TEXTS_IMPROVEMENT
 					ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 184, "");
@@ -2676,6 +2686,8 @@ int CInputMain::SyncPosition(entt::entity character, const char * c_pcData, uint
 	for (int i = 0; i < iCount; ++i, ++e)
 	{
 		LPCHARACTER victim = CHARACTER_MANAGER::instance().Find(e->dwVID);
+		const entt::entity victimEntity = victim ? victim->GetEntityHandle() : entt::null;
+
 
 		if (!victim)
 			continue;
@@ -2691,7 +2703,7 @@ int CInputMain::SyncPosition(entt::entity character, const char * c_pcData, uint
 		if (!victim->SetSyncOwner(ch))
 			continue;
 
-		const float fDistWithSyncOwner = DISTANCE_SQRT( (ecs::PlayerRuntime::GetX(((victim) ? (victim)->GetEntityHandle() : entt::null)) - ecs::PlayerRuntime::GetX(character)) / 100, (ecs::PlayerRuntime::GetY(((victim) ? (victim)->GetEntityHandle() : entt::null)) - ecs::PlayerRuntime::GetY(character)) / 100 );
+		const float fDistWithSyncOwner = DISTANCE_SQRT( (ecs::PlayerRuntime::GetX(victimEntity) - ecs::PlayerRuntime::GetX(character)) / 100, (ecs::PlayerRuntime::GetY(victimEntity) - ecs::PlayerRuntime::GetY(character)) / 100 );
 		static constexpr float fLimitDistWithSyncOwner = 2500.f + 1000.f;
 
 		if (fDistWithSyncOwner > fLimitDistWithSyncOwner)
@@ -2702,7 +2714,7 @@ int CInputMain::SyncPosition(entt::entity character, const char * c_pcData, uint
 			} else{
 				LogManager::instance().HackLog( "SYNC_POSITION_HACK", ch );
 
-				LOG_ERROR("Too far SyncPosition DistanceWithSyncOwner({})({}) from Name({}) CH({},{}) VICTIM({},{}) SYNC({},{})", fDistWithSyncOwner, ecs::PlayerRuntime::GetName(((victim) ? (victim)->GetEntityHandle() : entt::null)).data(), ecs::PlayerRuntime::GetName(character).data(), ecs::PlayerRuntime::GetX(character), ecs::PlayerRuntime::GetY(character), ecs::PlayerRuntime::GetX(((victim) ? (victim)->GetEntityHandle() : entt::null)), ecs::PlayerRuntime::GetY(((victim) ? (victim)->GetEntityHandle() : entt::null)), e->lX, e->lY);
+				LOG_ERROR("Too far SyncPosition DistanceWithSyncOwner({})({}) from Name({}) CH({},{}) VICTIM({},{}) SYNC({},{})", fDistWithSyncOwner, ecs::PlayerRuntime::GetName(victimEntity).data(), ecs::PlayerRuntime::GetName(character).data(), ecs::PlayerRuntime::GetX(character), ecs::PlayerRuntime::GetY(character), ecs::PlayerRuntime::GetX(victimEntity), ecs::PlayerRuntime::GetY(victimEntity), e->lX, e->lY);
 
 				ecs::PlayerRuntime::GetDesc(character)->SetPhase(PHASE_CLOSE);
 
@@ -2710,7 +2722,7 @@ int CInputMain::SyncPosition(entt::entity character, const char * c_pcData, uint
 			}
 		}
 
-		const float fDist = DISTANCE_SQRT( (ecs::PlayerRuntime::GetX(((victim) ? (victim)->GetEntityHandle() : entt::null)) - e->lX) / 100, (ecs::PlayerRuntime::GetY(((victim) ? (victim)->GetEntityHandle() : entt::null)) - e->lY) / 100 );
+		const float fDist = DISTANCE_SQRT( (ecs::PlayerRuntime::GetX(victimEntity) - e->lX) / 100, (ecs::PlayerRuntime::GetY(victimEntity) - e->lY) / 100 );
 
 
 		static constexpr int32_t g_lValidSyncInterval = 50 * 1000;
@@ -2728,7 +2740,7 @@ int CInputMain::SyncPosition(entt::entity character, const char * c_pcData, uint
 			{
 				LogManager::instance().HackLog("SYNC_POSITION_HACK", ch);
 
-				LOG_ERROR("Too often SyncPosition Interval({}ms)({}) from Name({}) VICTIM({},{}) SYNC({},{})", tvDiff->tv_sec * 1000 + tvDiff->tv_usec / 1000, ecs::PlayerRuntime::GetName(((victim) ? (victim)->GetEntityHandle() : entt::null)).data(), ecs::PlayerRuntime::GetName(character).data(), ecs::PlayerRuntime::GetX(((victim) ? (victim)->GetEntityHandle() : entt::null)), ecs::PlayerRuntime::GetY(((victim) ? (victim)->GetEntityHandle() : entt::null)), e->lX, e->lY);
+				LOG_ERROR("Too often SyncPosition Interval({}ms)({}) from Name({}) VICTIM({},{}) SYNC({},{})", tvDiff->tv_sec * 1000 + tvDiff->tv_usec / 1000, ecs::PlayerRuntime::GetName(victimEntity).data(), ecs::PlayerRuntime::GetName(character).data(), ecs::PlayerRuntime::GetX(victimEntity), ecs::PlayerRuntime::GetY(victimEntity), e->lX, e->lY);
 
 				ecs::PlayerRuntime::GetDesc(character)->SetPhase(PHASE_CLOSE);
 
@@ -2739,7 +2751,7 @@ int CInputMain::SyncPosition(entt::entity character, const char * c_pcData, uint
 
 			LogManager::instance().HackLog( "SYNC_POSITION_HACK", ch );
 
-			LOG_ERROR("Too far SyncPosition Distance({})({}) from Name({}) CH({},{}) VICTIM({},{}) SYNC({},{})", fDist, ecs::PlayerRuntime::GetName(((victim) ? (victim)->GetEntityHandle() : entt::null)).data(), ecs::PlayerRuntime::GetName(character).data(), ecs::PlayerRuntime::GetX(character), ecs::PlayerRuntime::GetY(character), ecs::PlayerRuntime::GetX(((victim) ? (victim)->GetEntityHandle() : entt::null)), ecs::PlayerRuntime::GetY(((victim) ? (victim)->GetEntityHandle() : entt::null)), e->lX, e->lY);
+			LOG_ERROR("Too far SyncPosition Distance({})({}) from Name({}) CH({},{}) VICTIM({},{}) SYNC({},{})", fDist, ecs::PlayerRuntime::GetName(victimEntity).data(), ecs::PlayerRuntime::GetName(character).data(), ecs::PlayerRuntime::GetX(character), ecs::PlayerRuntime::GetY(character), ecs::PlayerRuntime::GetX(victimEntity), ecs::PlayerRuntime::GetY(victimEntity), e->lX, e->lY);
 
 			ecs::PlayerRuntime::GetDesc(character)->SetPhase(PHASE_CLOSE);
 
@@ -2879,12 +2891,14 @@ void CInputMain::QuestConfirm(entt::entity character, const void* c_pData)
 #endif
 	TPacketCGQuestConfirm* p = (TPacketCGQuestConfirm*) c_pData;
 	LPCHARACTER ch_wait = CHARACTER_MANAGER::instance().FindByPID(p->requestPID);
+	const entt::entity ch_waitEntity = ch_wait ? ch_wait->GetEntityHandle() : entt::null;
+
 	if (p->answer)
 		p->answer = quest::CONFIRM_YES;
-	LOG_INFO("QuestConfirm from {} pid {} name {} answer {}", ecs::PlayerRuntime::GetName(character).data(), p->requestPID, (ch_wait)?ecs::PlayerRuntime::GetName(((ch_wait) ? (ch_wait)->GetEntityHandle() : entt::null)).data():"", p->answer);
+	LOG_INFO("QuestConfirm from {} pid {} name {} answer {}", ecs::PlayerRuntime::GetName(character).data(), p->requestPID, (ch_wait)?ecs::PlayerRuntime::GetName(ch_waitEntity).data():"", p->answer);
 	if (ch_wait)
 	{
-		quest::CQuestManager::Instance().Confirm(ecs::PlayerRuntime::GetPlayerID(((ch_wait) ? (ch_wait)->GetEntityHandle() : entt::null)), (quest::EQuestConfirmType) p->answer, ecs::PlayerRuntime::GetPlayerID(character));
+		quest::CQuestManager::Instance().Confirm(ecs::PlayerRuntime::GetPlayerID(ch_waitEntity), (quest::EQuestConfirmType) p->answer, ecs::PlayerRuntime::GetPlayerID(character));
 	}
 }
 
@@ -4455,10 +4469,12 @@ void CInputMain::ItemGive(entt::entity character, const char* c_pData)
 #endif
 	TPacketCGGiveItem* p = (TPacketCGGiveItem*) c_pData;
 	LPCHARACTER to_ch = CHARACTER_MANAGER::instance().Find(p->dwTargetVID);
+	const entt::entity to_chEntity = to_ch ? to_ch->GetEntityHandle() : entt::null;
+
 
 	if (to_ch) {
 #ifdef ENABLE_RESTRICT_GM_PERMISSIONS
-		if ((ecs::PlayerRuntime::GetGMLevel(((to_ch) ? (to_ch)->GetEntityHandle() : entt::null)) > GM_PLAYER && ecs::PlayerRuntime::GetGMLevel(((to_ch) ? (to_ch)->GetEntityHandle() : entt::null)) < GM_IMPLEMENTOR) || (ecs::PlayerRuntime::GetGMLevel(character) > GM_PLAYER && ecs::PlayerRuntime::GetGMLevel(character) < GM_IMPLEMENTOR)) {
+		if ((ecs::PlayerRuntime::GetGMLevel(to_chEntity) > GM_PLAYER && ecs::PlayerRuntime::GetGMLevel(to_chEntity) < GM_IMPLEMENTOR) || (ecs::PlayerRuntime::GetGMLevel(character) > GM_PLAYER && ecs::PlayerRuntime::GetGMLevel(character) < GM_IMPLEMENTOR)) {
 			return;
 		}
 #endif
@@ -4780,8 +4796,9 @@ const char* Decode(T*& pObj, const char* data, int* pbufferLeng = nullptr, int* 
 
 int OfflineshopPacketCreateNewShop(LPCHARACTER ch, const char* data, int iBufferLeft)
 {
+	const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "input_main.cpp:: int OfflineshopPacketCreateNewShop");//INGAME_DEBUG_RAZOR93
+	ecs::ChatSystem::Send(chEntity, CHAT_TYPE_INFO, "input_main.cpp:: int OfflineshopPacketCreateNewShop");//INGAME_DEBUG_RAZOR93
 #endif
 	TSubPacketCGShopCreate* pack = nullptr;
 	if(!CanDecode(pack, iBufferLeft))
@@ -4814,10 +4831,10 @@ int OfflineshopPacketCreateNewShop(LPCHARACTER ch, const char* data, int iBuffer
 	}
 
 	offlineshop::CShopManager& rManager = offlineshop::GetManager();
-	if(!rManager.RecvShopCreateNewClientPacket(((ch) ? (ch)->GetEntityHandle() : entt::null), rShopInfo, vec)) {
+	if(!rManager.RecvShopCreateNewClientPacket(chEntity, rShopInfo, vec)) {
 		if (ch) {
 			offlineshop::SendChatPacket(ch, offlineshop::CHAT_PACKET_CANNOT_CREATE_SHOP);
-			ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_COMMAND, "RefreshOfflineShop");
+			ecs::ChatSystem::Send(chEntity, CHAT_TYPE_COMMAND, "RefreshOfflineShop");
 		}
 	}
 
@@ -4827,8 +4844,9 @@ int OfflineshopPacketCreateNewShop(LPCHARACTER ch, const char* data, int iBuffer
 
 int OfflineshopPacketChangeShopName(LPCHARACTER ch, const char* data, int iBufferLeft)
 {
+	const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "input_main.cpp:: int OfflineshopPacketChangeShopName");//INGAME_DEBUG_RAZOR93
+	ecs::ChatSystem::Send(chEntity, CHAT_TYPE_INFO, "input_main.cpp:: int OfflineshopPacketChangeShopName");//INGAME_DEBUG_RAZOR93
 #endif
 	TSubPacketCGShopChangeName* pack = nullptr;
 	if(!CanDecode(pack, iBufferLeft))
@@ -4838,7 +4856,7 @@ int OfflineshopPacketChangeShopName(LPCHARACTER ch, const char* data, int iBuffe
 	data = Decode(pack,data, &iExtra, &iBufferLeft);
 
 	offlineshop::CShopManager& rManager = offlineshop::GetManager();
-	if(!rManager.RecvShopChangeNameClientPacket(((ch) ? (ch)->GetEntityHandle() : entt::null), pack->szName))
+	if(!rManager.RecvShopChangeNameClientPacket(chEntity, pack->szName))
 		offlineshop::SendChatPacket(ch, offlineshop::CHAT_PACKET_CANNOT_CHANGE_NAME);
 
 	return iExtra;
@@ -4847,11 +4865,12 @@ int OfflineshopPacketChangeShopName(LPCHARACTER ch, const char* data, int iBuffe
 
 int OfflineshopPacketForceCloseShop(LPCHARACTER ch, const char* data, int iBufferLeft)
 {
+	const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "input_main.cpp:: int OfflineshopPacketForceCloseShop");//INGAME_DEBUG_RAZOR93
+	ecs::ChatSystem::Send(chEntity, CHAT_TYPE_INFO, "input_main.cpp:: int OfflineshopPacketForceCloseShop");//INGAME_DEBUG_RAZOR93
 #endif
 	offlineshop::CShopManager& rManager = offlineshop::GetManager();
-	if(!rManager.RecvShopForceCloseClientPacket(((ch) ? (ch)->GetEntityHandle() : entt::null)))
+	if(!rManager.RecvShopForceCloseClientPacket(chEntity))
 		offlineshop::SendChatPacket(ch, offlineshop::CHAT_PACKET_CANNOT_FORCE_CLOSE);
 
 	return 0;

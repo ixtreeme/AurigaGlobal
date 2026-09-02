@@ -50,17 +50,18 @@ LPITEM LegacyItemFromEntity(entt::entity item)
 
 bool SnapFollowerToOwner(LPCHARACTER follower, LPCHARACTER owner, int32_t x, int32_t y, int32_t z = 0)
 {
+	const entt::entity followerEntity = follower ? follower->GetEntityHandle() : entt::null;
 	if (!follower || !owner)
 		return false;
 
 	if (follower->Sync(x, y))
 	{
-		ecs::MovementSystem::Stop(((follower) ? (follower)->GetEntityHandle() : entt::null));
+		ecs::MovementSystem::Stop(followerEntity);
 		follower->SendMovePacket(FUNC_WAIT, 0, 0, 0, 0, 0);
 		return true;
 	}
 
-	return ecs::MovementSystem::Show(((follower) ? (follower)->GetEntityHandle() : entt::null), ecs::PlayerRuntime::GetMapIndex(((owner) ? (owner)->GetEntityHandle() : entt::null)), x, y, z);
+	return ecs::MovementSystem::Show(followerEntity, ecs::PlayerRuntime::GetMapIndex(((owner) ? (owner)->GetEntityHandle() : entt::null)), x, y, z);
 }
 }
 
@@ -144,13 +145,14 @@ void CPetActor::SetName(const char* name)
 
 bool CPetActor::Mount()
 {
+	const entt::entity owner = m_pkOwner ? m_pkOwner->GetEntityHandle() : entt::null;
 	if (nullptr == m_pkOwner)
 		return false;
 
 	if (true == HasOption(EPetOption_Mountable))
-		MountSystem::SetMountVnum(((m_pkOwner) ? (m_pkOwner)->GetEntityHandle() : entt::null), m_dwVnum);
+		MountSystem::SetMountVnum(owner, m_dwVnum);
 
-	return MountSystem::GetMountVnum(((m_pkOwner) ? (m_pkOwner)->GetEntityHandle() : entt::null)) == m_dwVnum;;
+	return MountSystem::GetMountVnum(owner) == m_dwVnum;;
 }
 
 void CPetActor::Unmount()
@@ -211,11 +213,12 @@ void CPetActor::Unsummon()
 
 uint32_t CPetActor::Summon(const char* petName, entt::entity pSummonItemEntity, bool bSpawnFar)
 {
+	const entt::entity owner = m_pkOwner ? m_pkOwner->GetEntityHandle() : entt::null;
 	LPITEM pSummonItem = LegacyItemFromEntity(pSummonItemEntity);
 	if (!pSummonItem)
 		return 0;
-	int32_t x = ecs::PlayerRuntime::GetX(((m_pkOwner) ? (m_pkOwner)->GetEntityHandle() : entt::null));
-	int32_t y = ecs::PlayerRuntime::GetY(((m_pkOwner) ? (m_pkOwner)->GetEntityHandle() : entt::null));
+	int32_t x = ecs::PlayerRuntime::GetX(owner);
+	int32_t y = ecs::PlayerRuntime::GetY(owner);
 	int32_t z = m_pkOwner->GetZ();
 
 	if (true == bSpawnFar)
@@ -249,13 +252,13 @@ uint32_t CPetActor::Summon(const char* petName, entt::entity pSummonItemEntity, 
 #ifdef ENABLE_COSTUME_PET
 	m_pkChar = CHARACTER_MANAGER::instance().SpawnMob(
 		vnumToSpawn,
-		ecs::PlayerRuntime::GetMapIndex(((m_pkOwner) ? (m_pkOwner)->GetEntityHandle() : entt::null)),
+		ecs::PlayerRuntime::GetMapIndex(owner),
 		x, y, z,
 		false, (int)(m_pkOwner->GetRotation() + 180), false);
 #else
 	m_pkChar = CHARACTER_MANAGER::instance().SpawnMob(
 				m_dwVnum,
-				ecs::PlayerRuntime::GetMapIndex(((m_pkOwner) ? (m_pkOwner)->GetEntityHandle() : entt::null)),
+				ecs::PlayerRuntime::GetMapIndex(owner),
 				x, y, z,
 				false, (int)(m_pkOwner->GetRotation()+180), false);
 #endif
@@ -275,7 +278,7 @@ uint32_t CPetActor::Summon(const char* petName, entt::entity pSummonItemEntity, 
 //	m_pkChar->DetailLog();
 
 	//펫의 국가를 주인의 국가로 설정함.
-	m_pkChar->SetEmpire(ecs::PlayerRuntime::GetEmpire(((m_pkOwner) ? (m_pkOwner)->GetEntityHandle() : entt::null)));
+	m_pkChar->SetEmpire(ecs::PlayerRuntime::GetEmpire(owner));
 
 	m_dwVID = m_pkChar->GetLegacyVID();
 
@@ -284,16 +287,16 @@ uint32_t CPetActor::Summon(const char* petName, entt::entity pSummonItemEntity, 
 	// SetSummonItem(pSummonItem)를 부른 후에 ComputePoints를 부르면 버프 적용됨.
 	this->SetSummonItem(pSummonItemEntity);
 	m_pkOwner->ComputePoints();
-	ecs::MovementSystem::Show(((m_pkChar) ? (m_pkChar)->GetEntityHandle() : entt::null), ecs::PlayerRuntime::GetMapIndex(((m_pkOwner) ? (m_pkOwner)->GetEntityHandle() : entt::null)), x, y, z);
+	ecs::MovementSystem::Show(((m_pkChar) ? (m_pkChar)->GetEntityHandle() : entt::null), ecs::PlayerRuntime::GetMapIndex(owner), x, y, z);
 	ItemSystem::SetItemSocket((pSummonItem ? pSummonItem->GetEntityHandle() : entt::null), 2, true);
 	ItemSystem::LockItem((pSummonItem ? pSummonItem->GetEntityHandle() : entt::null));
 #ifdef ENABLE_RECALL
-	const CAffect* pAffect = AffectSystem::FindAffect(((m_pkOwner) ? (m_pkOwner)->GetEntityHandle() : entt::null), AFFECT_RECALL1);
+	const CAffect* pAffect = AffectSystem::FindAffect(owner, AFFECT_RECALL1);
 	if (pAffect) {
-		AffectSystem::RemoveAffect(((m_pkOwner) ? (m_pkOwner)->GetEntityHandle() : entt::null), const_cast<CAffect*>(pAffect));
+		AffectSystem::RemoveAffect(owner, const_cast<CAffect*>(pAffect));
 	}
 
-	AffectSystem::AddAffect(((m_pkOwner) ? (m_pkOwner)->GetEntityHandle() : entt::null), AFFECT_RECALL1, APPLY_NONE, 0, ItemSystem::GetItemID((pSummonItem ? pSummonItem->GetEntityHandle() : entt::null)), INFINITE_AFFECT_DURATION, 0, true, false);
+	AffectSystem::AddAffect(owner, AFFECT_RECALL1, APPLY_NONE, 0, ItemSystem::GetItemID((pSummonItem ? pSummonItem->GetEntityHandle() : entt::null)), INFINITE_AFFECT_DURATION, 0, true, false);
 #endif
 #ifdef ENABLE_COSTUME_PET
 	uint32_t dwPetSkinvnum = m_pkOwner->GetPetSkinVnum();
@@ -304,6 +307,7 @@ uint32_t CPetActor::Summon(const char* petName, entt::entity pSummonItemEntity, 
 
 bool CPetActor::_UpdatAloneActionAI(float fMinDist, float fMaxDist)
 {
+	const entt::entity charEntity = m_pkChar ? m_pkChar->GetEntityHandle() : entt::null;
 	float fDist = number(fMinDist, fMaxDist);
 	float r = (float)number (0, 359);
 	float dest_x = ecs::PlayerRuntime::GetX(((GetOwner()) ? (GetOwner())->GetEntityHandle() : entt::null)) + fDist * cos(r);
@@ -322,11 +326,11 @@ bool CPetActor::_UpdatAloneActionAI(float fMinDist, float fMaxDist)
 
 	//if (ecs::MovementSystem::Goto(((m_pkChar) ? (m_pkChar)->GetEntityHandle() : entt::null), ecs::PlayerRuntime::GetX(((m_pkChar) ? (m_pkChar)->GetEntityHandle() : entt::null)) + (int) fx, ecs::PlayerRuntime::GetY(((m_pkChar) ? (m_pkChar)->GetEntityHandle() : entt::null)) + (int) fy))
 	//	m_pkChar->SendMovePacket(FUNC_WAIT, 0, 0, 0, 0);
-	const entt::entity petEntity = ((m_pkChar) ? (m_pkChar)->GetEntityHandle() : entt::null);
+	const entt::entity petEntity = charEntity;
 	const bool isMoving = petEntity != entt::null
 		&& g_registry.valid(petEntity)
 		&& g_registry.all_of<ecs::MovementDestination>(petEntity);
-	if (!isMoving && ecs::MovementSystem::Goto(((m_pkChar) ? (m_pkChar)->GetEntityHandle() : entt::null), dest_x, dest_y))
+	if (!isMoving && ecs::MovementSystem::Goto(charEntity, dest_x, dest_y))
 	{
 		if (petEntity != entt::null && g_registry.valid(petEntity))
 			g_registry.emplace_or_replace<ecs::MovementDestination>(petEntity, static_cast<int32_t>(dest_x), static_cast<int32_t>(dest_y));
@@ -341,6 +345,8 @@ bool CPetActor::_UpdatAloneActionAI(float fMinDist, float fMaxDist)
 // StateHorse함수 그냥 C&P -_-;
 bool CPetActor::_UpdateFollowAI()
 {
+	const entt::entity owner = m_pkOwner ? m_pkOwner->GetEntityHandle() : entt::null;
+	const entt::entity charEntity = m_pkChar ? m_pkChar->GetEntityHandle() : entt::null;
 	if (nullptr == m_pkChar->GetMobData())
 	{
 		// LOG_ERROR("[CPetActor::_UpdateFollowAI] m_pkChar->m_pkMobData is NULL");
@@ -368,8 +374,8 @@ bool CPetActor::_UpdateFollowAI()
 
 	uint32_t currentTime = get_dword_time();
 
-	int32_t ownerX = ecs::PlayerRuntime::GetX(((m_pkOwner) ? (m_pkOwner)->GetEntityHandle() : entt::null));		int32_t ownerY = ecs::PlayerRuntime::GetY(((m_pkOwner) ? (m_pkOwner)->GetEntityHandle() : entt::null));
-	int32_t charX = ecs::PlayerRuntime::GetX(((m_pkChar) ? (m_pkChar)->GetEntityHandle() : entt::null));			int32_t charY = ecs::PlayerRuntime::GetY(((m_pkChar) ? (m_pkChar)->GetEntityHandle() : entt::null));
+	int32_t ownerX = ecs::PlayerRuntime::GetX(owner);		int32_t ownerY = ecs::PlayerRuntime::GetY(owner);
+	int32_t charX = ecs::PlayerRuntime::GetX(charEntity);			int32_t charY = ecs::PlayerRuntime::GetY(charEntity);
 
 	float fDist = DISTANCE_APPROX(charX - ownerX, charY - ownerY);
 
@@ -443,15 +449,17 @@ bool CPetActor::Update(uint32_t deltaTime)
 //NOTE : 주의!!! MinDistance를 크게 잡으면 그 변위만큼의 변화동안은 follow하지 않는다,
 bool CPetActor::Follow(float fMinDistance)
 {
+	const entt::entity owner = m_pkOwner ? m_pkOwner->GetEntityHandle() : entt::null;
+	const entt::entity charEntity = m_pkChar ? m_pkChar->GetEntityHandle() : entt::null;
 	// 가려는 위치를 바라봐야 한다.
 	if( !m_pkOwner || !m_pkChar)
 		return false;
 
-	float fOwnerX = ecs::PlayerRuntime::GetX(((m_pkOwner) ? (m_pkOwner)->GetEntityHandle() : entt::null));
-	float fOwnerY = ecs::PlayerRuntime::GetY(((m_pkOwner) ? (m_pkOwner)->GetEntityHandle() : entt::null));
+	float fOwnerX = ecs::PlayerRuntime::GetX(owner);
+	float fOwnerY = ecs::PlayerRuntime::GetY(owner);
 
-	float fPetX = ecs::PlayerRuntime::GetX(((m_pkChar) ? (m_pkChar)->GetEntityHandle() : entt::null));
-	float fPetY = ecs::PlayerRuntime::GetY(((m_pkChar) ? (m_pkChar)->GetEntityHandle() : entt::null));
+	float fPetX = ecs::PlayerRuntime::GetX(charEntity);
+	float fPetY = ecs::PlayerRuntime::GetY(charEntity);
 
 	float fDist = DISTANCE_SQRT(fOwnerX - fPetX, fOwnerY - fPetY);
 	if (fDist <= fMinDistance)
@@ -464,7 +472,7 @@ bool CPetActor::Follow(float fMinDistance)
 	float fDistToGo = fDist - fMinDistance;
 	GetDeltaByDegree(m_pkChar->GetRotation(), fDistToGo, &fx, &fy);
 
-	if (!ecs::MovementSystem::Goto(((m_pkChar) ? (m_pkChar)->GetEntityHandle() : entt::null), (int)(fPetX+fx+0.5f), (int)(fPetY+fy+0.5f)) )
+	if (!ecs::MovementSystem::Goto(charEntity, (int)(fPetX+fx+0.5f), (int)(fPetY+fy+0.5f)) )
 		return false;
 
 	m_pkChar->SendMovePacket(FUNC_WAIT, 0, 0, 0, 0, 0);

@@ -45,20 +45,22 @@ struct FWarpToHome
 		if ( ent->IsType(ENTITY_CHARACTER) == true )
 		{
 			LPCHARACTER lpChar = (LPCHARACTER)ent;
+			const entt::entity lpCharEntity = lpChar ? lpChar->GetEntityHandle() : entt::null;
 
-			if ( ecs::PlayerRuntime::IsPC(((lpChar) ? (lpChar)->GetEntityHandle() : entt::null)) == true )
+
+			if ( ecs::PlayerRuntime::IsPC(lpCharEntity) == true )
 			{
 				if ( !test_server )
 				{
-					if ( ecs::PlayerRuntime::GetGMLevel(((lpChar) ? (lpChar)->GetEntityHandle() : entt::null)) != GM_PLAYER ) return;
+					if ( ecs::PlayerRuntime::GetGMLevel(lpCharEntity) != GM_PLAYER ) return;
 				}
 
-				int nEmpire = ecs::PlayerRuntime::GetEmpire(((lpChar) ? (lpChar)->GetEntityHandle() : entt::null));
+				int nEmpire = ecs::PlayerRuntime::GetEmpire(lpCharEntity);
 				int nMapIndex = EMPIRE_START_MAP(nEmpire);
 				int x = EMPIRE_START_X(nEmpire);
 				int y = EMPIRE_START_Y(nEmpire);
 
-				ecs::MovementSystem::WarpSet(((lpChar) ? (lpChar)->GetEntityHandle() : entt::null), x, y, nMapIndex);
+				ecs::MovementSystem::WarpSet(lpCharEntity, x, y, nMapIndex);
 			}
 		}
 	}

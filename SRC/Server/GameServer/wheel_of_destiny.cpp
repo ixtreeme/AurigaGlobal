@@ -37,9 +37,10 @@ static constexpr std::tuple<uint32_t, std::uint8_t, std::uint8_t> m_Data[WheelIt
 CWheelDestiny::CWheelDestiny(LPCHARACTER m_ch)
 	: ch(m_ch), gift_vnum(0), gift_count(1), turn_count(0)
 {
+	const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
 	for (auto i = 0; i < WheelItemMax; i++)
-		ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_COMMAND, "BINARY_WHEEL_ICON %lu %d %d", std::get<0>(m_Data[i]), std::get<1>(m_Data[i]), i);
-	ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_COMMAND, "BINARY_WHEEL_OPEN %d %d", WheelPrice, ch->GetWheelFreeCount());
+		ecs::ChatSystem::Send(chEntity, CHAT_TYPE_COMMAND, "BINARY_WHEEL_ICON %lu %d %d", std::get<0>(m_Data[i]), std::get<1>(m_Data[i]), i);
+	ecs::ChatSystem::Send(chEntity, CHAT_TYPE_COMMAND, "BINARY_WHEEL_OPEN %d %d", WheelPrice, ch->GetWheelFreeCount());
 }
 
 CWheelDestiny::~CWheelDestiny() {
@@ -63,6 +64,7 @@ template <typename T> std::string NumberToMoneyString(T val)
 
 void CWheelDestiny::TurnWheel()
 {
+	const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
 	//if (m_bTurning)
 	//{
 	//	ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "Already spinning!");
@@ -76,32 +78,32 @@ void CWheelDestiny::TurnWheel()
 
 
 	if (GetGiftVnum()) {
-		ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "Please wait!");
+		ecs::ChatSystem::Send(chEntity, CHAT_TYPE_INFO, "Please wait!");
 		return;
 	}
 
 	const auto WheelFreeCount = ch->GetWheelFreeCount();
 
-	if (WheelFreeCount < 1 && ecs::PointSystem::GetGold(((ch) ? (ch)->GetEntityHandle() : entt::null)) < WheelPrice) {
-		ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "You need %s yang for <Turning Wheel>", NumberToMoneyString(WheelPrice).c_str());
+	if (WheelFreeCount < 1 && ecs::PointSystem::GetGold(chEntity) < WheelPrice) {
+		ecs::ChatSystem::Send(chEntity, CHAT_TYPE_INFO, "You need %s yang for <Turning Wheel>", NumberToMoneyString(WheelPrice).c_str());
 		return;
 	}
 
 	auto Rand = PickAGift();
 	if (Rand == -1) {
-		LOG_ERROR("CWheelDestiny::TurnWheel() Error Pick Gift ({})", ecs::PlayerRuntime::GetName(((ch) ? (ch)->GetEntityHandle() : entt::null)).data());
+		LOG_ERROR("CWheelDestiny::TurnWheel() Error Pick Gift ({})", ecs::PlayerRuntime::GetName(chEntity).data());
 		return;
 	}
 
 	if (WheelFreeCount > 0) {
 		ch->SetWheelFreeCount(-1);
-		ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "FREE");
+		ecs::ChatSystem::Send(chEntity, CHAT_TYPE_INFO, "FREE");
 	}
 	else
-		ecs::PointSystem::Change(((ch) ? (ch)->GetEntityHandle() : entt::null), POINT_GOLD, -WheelPrice);
+		ecs::PointSystem::Change(chEntity, POINT_GOLD, -WheelPrice);
 
 	//vnum, count, spin count, pos
-	ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_COMMAND, "BINARY_WHEEL_TURN %lu %d %d %d", GetGiftVnum(), GetGiftCount(), number(1, 8), Rand);
+	ecs::ChatSystem::Send(chEntity, CHAT_TYPE_COMMAND, "BINARY_WHEEL_TURN %lu %d %d %d", GetGiftVnum(), GetGiftCount(), number(1, 8), Rand);
 
 	turn_count++;
 }

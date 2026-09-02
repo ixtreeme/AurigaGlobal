@@ -157,6 +157,8 @@ namespace marriage
 	// �ݽ� ��ġ
 	int TMarriage::GetBonus(uint32_t dwItemVnum, bool bShare, LPCHARACTER me)
 	{
+		const entt::entity ch1Entity = ch1 ? ch1->GetEntityHandle() : entt::null;
+		const entt::entity ch2Entity = ch2 ? ch2->GetEntityHandle() : entt::null;
 		if (!is_married)
 			return 0;
 
@@ -208,7 +210,7 @@ namespace marriage
 			int count = 0;
 			if (nullptr != ch1 &&
 #ifdef ENABLE_NEW_USE_POTION
-			affetIdx != 0 && AffectSystem::FindAffect(((ch1) ? (ch1)->GetEntityHandle() : entt::null), affetIdx) != nullptr
+			affetIdx != 0 && AffectSystem::FindAffect(ch1Entity, affetIdx) != nullptr
 #else
 			ch1->IsEquipUniqueItem(dwItemVnum)
 #endif
@@ -216,7 +218,7 @@ namespace marriage
 				count ++;
 			if (nullptr != ch2 &&
 #ifdef ENABLE_NEW_USE_POTION
-			affetIdx != 0 && AffectSystem::FindAffect(((ch2) ? (ch2)->GetEntityHandle() : entt::null), affetIdx) != nullptr
+			affetIdx != 0 && AffectSystem::FindAffect(ch2Entity, affetIdx) != nullptr
 #else
 			ch2->IsEquipUniqueItem(dwItemVnum)
 #endif
@@ -235,7 +237,7 @@ namespace marriage
 			int count = 0;
 			if (me != ch1 && nullptr != ch1 &&
 #ifdef ENABLE_NEW_USE_POTION
-			affetIdx != 0 && AffectSystem::FindAffect(((ch1) ? (ch1)->GetEntityHandle() : entt::null), affetIdx) != nullptr
+			affetIdx != 0 && AffectSystem::FindAffect(ch1Entity, affetIdx) != nullptr
 #else
 			ch1->IsEquipUniqueItem(dwItemVnum)
 #endif
@@ -243,7 +245,7 @@ namespace marriage
 				count ++;
 			if (me != ch2 && nullptr != ch2 &&
 #ifdef ENABLE_NEW_USE_POTION
-			affetIdx != 0 && AffectSystem::FindAffect(((ch2) ? (ch2)->GetEntityHandle() : entt::null), affetIdx) != nullptr
+			affetIdx != 0 && AffectSystem::FindAffect(ch2Entity, affetIdx) != nullptr
 #else
 			ch2->IsEquipUniqueItem(dwItemVnum)
 #endif
@@ -260,13 +262,14 @@ namespace marriage
 
 	void TMarriage::Login(LPCHARACTER ch)
 	{
-		if ((ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null))) == m_pid1)
+		const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
+		if ((ecs::PlayerRuntime::GetPlayerID(chEntity)) == m_pid1)
 		{
 			ch1 = ch;
 			if (is_married)
 				SendLoverInfo(ch1, name2, GetMarriagePoint());
 		}
-		else if ((ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null))) == m_pid2)
+		else if ((ecs::PlayerRuntime::GetPlayerID(chEntity)) == m_pid2)
 		{
 			ch2 = ch;
 			if (is_married)
@@ -386,6 +389,8 @@ namespace marriage
 
 	void TMarriage::NearCheck()
 	{
+		const entt::entity ch1Entity = ch1 ? ch1->GetEntityHandle() : entt::null;
+		const entt::entity ch2Entity = ch2 ? ch2->GetEntityHandle() : entt::null;
 		if (!is_married)
 			return;
 
@@ -399,14 +404,14 @@ namespace marriage
 		if (IsNear() && !isLastNear)
 		{
 			isLastNear = true;
-			ecs::ChatSystem::Send(((ch1) ? (ch1)->GetEntityHandle() : entt::null), CHAT_TYPE_COMMAND, "lover_near");
-			ecs::ChatSystem::Send(((ch2) ? (ch2)->GetEntityHandle() : entt::null), CHAT_TYPE_COMMAND, "lover_near");
+			ecs::ChatSystem::Send(ch1Entity, CHAT_TYPE_COMMAND, "lover_near");
+			ecs::ChatSystem::Send(ch2Entity, CHAT_TYPE_COMMAND, "lover_near");
 		}
 		else if (!IsNear() && isLastNear)
 		{
 			isLastNear = false;
-			ecs::ChatSystem::Send(((ch1) ? (ch1)->GetEntityHandle() : entt::null), CHAT_TYPE_COMMAND, "lover_far");
-			ecs::ChatSystem::Send(((ch2) ? (ch2)->GetEntityHandle() : entt::null), CHAT_TYPE_COMMAND, "lover_far");
+			ecs::ChatSystem::Send(ch1Entity, CHAT_TYPE_COMMAND, "lover_far");
+			ecs::ChatSystem::Send(ch2Entity, CHAT_TYPE_COMMAND, "lover_far");
 		}
 
 		if (byLastLovePoint != GetMarriagePoint())
@@ -416,8 +421,8 @@ namespace marriage
 			p.header = HEADER_GC_LOVE_POINT_UPDATE;
 			p.love_point = byLastLovePoint;
 
-			ecs::PlayerRuntime::GetDesc(((ch1) ? (ch1)->GetEntityHandle() : entt::null))->Packet(&p, sizeof(p));
-			ecs::PlayerRuntime::GetDesc(((ch2) ? (ch2)->GetEntityHandle() : entt::null))->Packet(&p, sizeof(p));
+			ecs::PlayerRuntime::GetDesc(ch1Entity)->Packet(&p, sizeof(p));
+			ecs::PlayerRuntime::GetDesc(ch2Entity)->Packet(&p, sizeof(p));
 		}
 	}
 
@@ -701,12 +706,14 @@ namespace marriage
 #ifdef ENABLE_NEW_USE_POTION
 		uint32_t dwAffect = 0;
 		LPCHARACTER p1 = CHARACTER_MANAGER::instance().FindByPID(dwPID1);
+		const entt::entity p1Entity = p1 ? p1->GetEntityHandle() : entt::null;
+
 		CAffect* pAffect = nullptr;
 		LPITEM pkItem = nullptr;
 		if (p1) {
 			for (int i = 0; i < 6; i++) {
 				dwAffect = AFFECT_NEW_POTION24 + i;
-				pAffect = AffectSystem::FindAffect(((p1) ? (p1)->GetEntityHandle() : entt::null), dwAffect);
+				pAffect = AffectSystem::FindAffect(p1Entity, dwAffect);
 				if (pAffect != nullptr) {
 					pkItem = p1->FindItemByID(pAffect->dwFlag);
 					if (pkItem) {
@@ -714,16 +721,18 @@ namespace marriage
 						ItemSystem::SetItemSocket((pkItem ? pkItem->GetEntityHandle() : entt::null), 1, 0);
 					}
 
-					AffectSystem::RemoveAffect(((p1) ? (p1)->GetEntityHandle() : entt::null), dwAffect);
+					AffectSystem::RemoveAffect(p1Entity, dwAffect);
 				}
 			}
 		}
 
 		LPCHARACTER p2 = CHARACTER_MANAGER::instance().FindByPID(dwPID2);
+		const entt::entity p2Entity = p2 ? p2->GetEntityHandle() : entt::null;
+
 		if (p2) {
 			for (int i = 0; i < 6; i++) {
 				dwAffect = AFFECT_NEW_POTION24 + i;
-				pAffect = AffectSystem::FindAffect(((p2) ? (p2)->GetEntityHandle() : entt::null), dwAffect);
+				pAffect = AffectSystem::FindAffect(p2Entity, dwAffect);
 				if (pAffect != nullptr) {
 					pkItem = p2->FindItemByID(pAffect->dwFlag);
 					if (pkItem) {
@@ -731,7 +740,7 @@ namespace marriage
 						ItemSystem::SetItemSocket((pkItem ? pkItem->GetEntityHandle() : entt::null), 1, 0);
 					}
 
-					AffectSystem::RemoveAffect(((p2) ? (p2)->GetEntityHandle() : entt::null), dwAffect);
+					AffectSystem::RemoveAffect(p2Entity, dwAffect);
 				}
 			}
 		}

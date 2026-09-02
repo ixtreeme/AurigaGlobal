@@ -1889,6 +1889,7 @@ struct FuncSplashDamage
 
 	void operator () (LPENTITY ent)
 	{
+		const entt::entity chr = m_pkChr ? m_pkChr->GetEntityHandle() : entt::null;
 		if (!ent->IsType(ENTITY_CHARACTER))
 		{
 			//if (m_pkSk->dwVnum == SKILL_CHAIN) LOG_INFO(0, "CHAIN target not character %s", ecs::PlayerRuntime::GetName(m_character).data());
@@ -1896,6 +1897,8 @@ struct FuncSplashDamage
 		}
 
 		auto* pkChrVictim = static_cast<LegacyCharHandle>(ent);
+		const entt::entity chrVictim = pkChrVictim ? pkChrVictim->GetEntityHandle() : entt::null;
+
 		const entt::entity victimEntity = pkChrVictim->GetEntityHandle();
 
 		if (DISTANCE_APPROX(m_x - ecs::PlayerRuntime::GetX(victimEntity), m_y - ecs::PlayerRuntime::GetY(victimEntity)) > m_pkSk->iSplashRange)
@@ -1905,7 +1908,7 @@ struct FuncSplashDamage
 			return;
 		}
 
-		if (!battle_is_attackable((m_pkChr ? m_pkChr->GetEntityHandle() : entt::null), (pkChrVictim ? pkChrVictim->GetEntityHandle() : entt::null)))
+		if (!battle_is_attackable(chr, chrVictim))
 		{
 			if(test_server)
 				LOG_INFO("XXX target not attackable {}", ecs::PlayerRuntime::GetName(m_character).data());
@@ -1960,16 +1963,16 @@ struct FuncSplashDamage
 				bIgnoreTargetRating = true;
 		}
 
-		m_pkSk->SetPointVar("ar", CalcAttackRating((m_pkChr ? m_pkChr->GetEntityHandle() : entt::null), (pkChrVictim ? pkChrVictim->GetEntityHandle() : entt::null), bIgnoreTargetRating));
+		m_pkSk->SetPointVar("ar", CalcAttackRating(chr, chrVictim, bIgnoreTargetRating));
 
 		if (IS_SET(m_pkSk->dwFlag, SKILL_FLAG_USE_MELEE_DAMAGE))
-			m_pkSk->SetPointVar("atk", CalcMeleeDamage((m_pkChr ? m_pkChr->GetEntityHandle() : entt::null), (pkChrVictim ? pkChrVictim->GetEntityHandle() : entt::null), true, bIgnoreTargetRating));
+			m_pkSk->SetPointVar("atk", CalcMeleeDamage(chr, chrVictim, true, bIgnoreTargetRating));
 		else if (IS_SET(m_pkSk->dwFlag, SKILL_FLAG_USE_ARROW_DAMAGE))
 		{
 			entt::entity pkBow = entt::null, pkArrow = entt::null;
 
 			if (1 == m_pkChr->GetArrowAndBow(&pkBow, &pkArrow, 1))
-				m_pkSk->SetPointVar("atk", CalcArrowDamage((m_pkChr ? m_pkChr->GetEntityHandle() : entt::null), (pkChrVictim ? pkChrVictim->GetEntityHandle() : entt::null), pkBow, pkArrow, true));
+				m_pkSk->SetPointVar("atk", CalcArrowDamage(chr, chrVictim, pkBow, pkArrow, true));
 			else
 				m_pkSk->SetPointVar("atk", 0);
 		}
@@ -2230,7 +2233,7 @@ struct FuncSplashDamage
 
 			case SKILL_ATTR_TYPE_MAGIC:
 				dt = DAMAGE_TYPE_MAGIC;
-				iDam = CalcAttBonus((m_pkChr ? m_pkChr->GetEntityHandle() : entt::null), (pkChrVictim ? pkChrVictim->GetEntityHandle() : entt::null), iDam);
+				iDam = CalcAttBonus(chr, chrVictim, iDam);
 				// Ŕ¸ľĆľĆľĆľÇ
 				// żąŔüżˇ ŔűżëľČÇß´ř ąö±×°ˇ ŔÖľîĽ­ ąćľî·Â °č»ęŔ» ´Ů˝ĂÇĎ¸é ŔŻŔú°ˇ ł­¸®ł˛
 				//iDam -= ecs::PointSystem::Get(victimEntity, POINT_MAGIC_DEF_GRADE);
@@ -2476,11 +2479,11 @@ struct FuncSplashDamage
 
 				if (IS_SET(m_pkSk->dwFlag, SKILL_FLAG_STUN))
 				{
-					SkillAttackAffect((pkChrVictim ? pkChrVictim->GetEntityHandle() : entt::null), iPct, IMMUNE_STUN, AFFECT_STUN, POINT_NONE, 0, AFF_STUN, iDur, m_pkSk->szName);
+					SkillAttackAffect(chrVictim, iPct, IMMUNE_STUN, AFFECT_STUN, POINT_NONE, 0, AFF_STUN, iDur, m_pkSk->szName);
 				}
 				else if (IS_SET(m_pkSk->dwFlag, SKILL_FLAG_SLOW))
 				{
-					SkillAttackAffect((pkChrVictim ? pkChrVictim->GetEntityHandle() : entt::null), iPct, IMMUNE_SLOW, AFFECT_SLOW, POINT_MOV_SPEED, -30, AFF_SLOW, iDur, m_pkSk->szName);
+					SkillAttackAffect(chrVictim, iPct, IMMUNE_SLOW, AFFECT_SLOW, POINT_MOV_SPEED, -30, AFF_SLOW, iDur, m_pkSk->szName);
 				}
 				else if (IS_SET(m_pkSk->dwFlag, SKILL_FLAG_FIRE_CONT))
 				{
@@ -2564,7 +2567,7 @@ struct FuncSplashDamage
 
 				if (ecs::PlayerRuntime::IsPC(m_character) && m_pkChr->m_SkillUseInfo[m_pkSk->dwVnum].GetMainTargetVID() == victimEntity)
 				{
-					SkillAttackAffect((pkChrVictim ? pkChrVictim->GetEntityHandle() : entt::null), 1000, IMMUNE_STUN, m_pkSk->dwVnum, POINT_NONE, 0, AFF_STUN, 4, m_pkSk->szName);
+					SkillAttackAffect(chrVictim, 1000, IMMUNE_STUN, m_pkSk->dwVnum, POINT_NONE, 0, AFF_STUN, 4, m_pkSk->szName);
 				}
 				else
 				{

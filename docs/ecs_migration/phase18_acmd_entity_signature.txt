@@ -728,3 +728,61 @@ Cosmetic, fixed by hand.
 CombatSystem.cpp: 449 -> 150
 Project-wide conversion count: 3499 -> 3130
 Build: RelWithDebInfo GameServer, 0 errors.
+
+
+Phase 18l - tree-wide hoist sweep
+----------------------------------
+The hoist tool from phase 18k, once hardened, applies to the whole tree. It
+was run in report mode over every remaining .cpp first, then applied.
+
+  71 files changed, 1190 conversion sites removed, no signature changes.
+
+  New_PetSystem 92, arena 90, exchange 66, LostCastleDungeon 63,
+  ItemSystem_LegacyBridge 54, guild_renewal 52, cmd_general 43, item_manager 38,
+  input_main 37, MountSystem 34, trigger 32, war_map 30, shop_manager 29,
+  log 28, shop 26, questlua_global 26, cmd_gm 25, party 22, attr_transfer 22,
+  fishing 21, dungeon 17, PetSystem 16, ... and 49 smaller files.
+
+Four new failure modes, all caught by the compiler
+--------------------------------------------------
+A sweep this wide found edge cases a single file never would. Each is now a
+guard in the tool, not a note:
+
+1. Keyword collision. `m_pkChar` produced a local named `char`. The name
+    generator now appends Entity for any C++ keyword. 111 identifiers had to be
+    renamed after the fact (charEntity), verified not to have touched a single
+    real `char` type.
+
+2. switch scope. A declaration inserted at the top of a switch body sits before
+    the first `case`, so its initialization is "skipped by case label".
+    Two sites (ItemSystem_LegacyBridge, New_PetSystem) - moved above the switch.
+
+3. if-init statement. `if (const auto ch = ...; cond)` - the tool found the
+    init-statement's `;` and inserted there, splitting the condition in half.
+    Three sites in questlua.cpp - rewritten as two plain statements plus the if.
+
+4. Name collision with a pre-existing local. trigger.cpp already had
+    `const entt::entity chr` built from a different subject in the same body;
+    the hoist of m_pkChr wanted the same name. Renamed to ownerChr.
+
+Plus one non-code failure: several builds stopped mid-flight during the earlier
+phases left orphaned cl.exe processes holding the PDB, which surfaced as
+"cannot open program database ... vc145.pdb". Not a code problem - the
+stragglers had to be cleared before the build could run.
+
+Project-wide conversion count: 3130 -> 1940
+That is 6354 -> 1940 since the OOP->ECS elimination began: 69% removed.
+Build: RelWithDebInfo GameServer, 0 errors.
+
+Where the remaining 1940 sit
+----------------------------
+  ItemSystem_LegacyBridge  252   legacy CHARACTER/ITEM method bodies
+  cmd_gm                   216   tch / victim subjects (only `ch` was flipped)
+  CombatSystem             150   the 80 refused (reassigned) + singles
+  input_login               87
+  party                     58   m_memberMap's struct value type
+  input_main / item_manager / New_PetSystem / offlineshop / char_manager ~50 each
+
+Roughly half are single-use conversions, which a hoist cannot help - they need
+the surrounding method migrated. The other half are the LPITEM axis, which has
+not been touched at all yet.

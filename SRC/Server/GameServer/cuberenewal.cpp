@@ -352,6 +352,7 @@ bool Cube_InformationInitialize()
 
 void Cube_open (LPCHARACTER ch)
 {
+	const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
 	LPCHARACTER	npc;
 	npc = ch->GetQuestNPC();
 
@@ -376,7 +377,7 @@ void Cube_open (LPCHARACTER ch)
 	}
 
 
-	if (ecs::SocialSystem::GetExchange(((ch) ? (ch)->GetEntityHandle() : entt::null)) || ch->GetMyShop() || ch->GetShopOwner() || ch->IsOpenSafebox() || ch->IsCubeOpen()
+	if (ecs::SocialSystem::GetExchange(chEntity) || ch->GetMyShop() || ch->GetShopOwner() || ch->IsOpenSafebox() || ch->IsCubeOpen()
 #ifdef ENABLE_ACCE_SYSTEM
 		 || ch->IsAcceOpen()
 #endif
@@ -389,16 +390,16 @@ void Cube_open (LPCHARACTER ch)
 	)
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 815, "");
+		ecs::ChatSystem::SendNew(chEntity, CHAT_TYPE_INFO, 815, "");
 #endif
 		return;
 	}
 
-	int32_t distance = DISTANCE_APPROX(ecs::PlayerRuntime::GetX(((ch) ? (ch)->GetEntityHandle() : entt::null)) - ecs::PlayerRuntime::GetX(((npc) ? (npc)->GetEntityHandle() : entt::null)), ecs::PlayerRuntime::GetY(((ch) ? (ch)->GetEntityHandle() : entt::null)) - ecs::PlayerRuntime::GetY(((npc) ? (npc)->GetEntityHandle() : entt::null)));
+	int32_t distance = DISTANCE_APPROX(ecs::PlayerRuntime::GetX(chEntity) - ecs::PlayerRuntime::GetX(((npc) ? (npc)->GetEntityHandle() : entt::null)), ecs::PlayerRuntime::GetY(chEntity) - ecs::PlayerRuntime::GetY(((npc) ? (npc)->GetEntityHandle() : entt::null)));
 
 	if (distance >= CUBE_MAX_DISTANCE)
 	{
-		LOG_INFO("CUBE: TOO_FAR: {} distance {}", ecs::PlayerRuntime::GetName(((ch) ? (ch)->GetEntityHandle() : entt::null)).data(), distance);
+		LOG_INFO("CUBE: TOO_FAR: {} distance {}", ecs::PlayerRuntime::GetName(chEntity).data(), distance);
 		return;
 	}
 
@@ -718,6 +719,7 @@ void Cube_Make(LPCHARACTER ch, int index, int count_item, int index_item_improve
 
 void SendDateCubeRenewalPackets(LPCHARACTER ch, uint8_t subheader, uint32_t npcVNUM)
 {
+	const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
 
 	TPacketGCCubeRenewalReceive pack;
 	pack.subheader = subheader;
@@ -764,11 +766,11 @@ void SendDateCubeRenewalPackets(LPCHARACTER ch, uint8_t subheader, uint32_t npcV
 
 			memcpy (pack.date_cube_renewal.category, 	materialInfo.category.c_str(), 		sizeof(pack.date_cube_renewal.category));
 
-			LPDESC d = ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null));
+			LPDESC d = ecs::PlayerRuntime::GetDesc(chEntity);
 
 			if (nullptr == d)
 			{
-				LOG_ERROR("User SendDateCubeRenewalPackets ({})'s DESC is NULL POINT.", ecs::PlayerRuntime::GetName(((ch) ? (ch)->GetEntityHandle() : entt::null)).data());
+				LOG_ERROR("User SendDateCubeRenewalPackets ({})'s DESC is NULL POINT.", ecs::PlayerRuntime::GetName(chEntity).data());
 				return ;
 			}
 
@@ -777,11 +779,11 @@ void SendDateCubeRenewalPackets(LPCHARACTER ch, uint8_t subheader, uint32_t npcV
 	}
 	else{
 
-		LPDESC d = ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null));
+		LPDESC d = ecs::PlayerRuntime::GetDesc(chEntity);
 
 		if (nullptr == d)
 		{
-			LOG_ERROR("User SendDateCubeRenewalPackets ({})'s DESC is NULL POINT.", ecs::PlayerRuntime::GetName(((ch) ? (ch)->GetEntityHandle() : entt::null)).data());
+			LOG_ERROR("User SendDateCubeRenewalPackets ({})'s DESC is NULL POINT.", ecs::PlayerRuntime::GetName(chEntity).data());
 			return ;
 		}
 

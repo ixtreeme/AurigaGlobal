@@ -307,11 +307,12 @@ namespace
 
     void WarpOut(LPCHARACTER ch)
     {
+        const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
         if (!ch)
             return;
         int32_t mapIdx = 1, x = 0, y = 0;
-        GetOutsideWarpByEmpire(ecs::PlayerRuntime::GetEmpire(((ch) ? (ch)->GetEntityHandle() : entt::null)), mapIdx, x, y);
-        ecs::MovementSystem::WarpSet(((ch) ? (ch)->GetEntityHandle() : entt::null), x * 100, y * 100, mapIdx);
+        GetOutsideWarpByEmpire(ecs::PlayerRuntime::GetEmpire(chEntity), mapIdx, x, y);
+        ecs::MovementSystem::WarpSet(chEntity, x * 100, y * 100, mapIdx);
     }
 
     void WarpAllOut(int32_t mapIndex)
@@ -330,11 +331,12 @@ namespace
 
     void SetRejoinFlags(LPCHARACTER ch, int32_t mapIndex)
     {
+        const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
         if (!ch)
             return;
-        ecs::QuestSystem::SetFlag(((ch) ? (ch)->GetEntityHandle() : entt::null), kQfIdx, mapIndex);
-        ecs::QuestSystem::SetFlag(((ch) ? (ch)->GetEntityHandle() : entt::null), kQfCh, (int32_t)g_bChannel);
-        ecs::QuestSystem::SetFlag(((ch) ? (ch)->GetEntityHandle() : entt::null), kQfDisconnect, get_global_time() + kRejoinSec);
+        ecs::QuestSystem::SetFlag(chEntity, kQfIdx, mapIndex);
+        ecs::QuestSystem::SetFlag(chEntity, kQfCh, (int32_t)g_bChannel);
+        ecs::QuestSystem::SetFlag(chEntity, kQfDisconnect, get_global_time() + kRejoinSec);
     }
 
     void ClearRejoinFlags(LPCHARACTER ch)

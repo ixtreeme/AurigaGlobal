@@ -856,7 +856,8 @@ void CGuildManager::ShowGuildWarList(LPCHARACTER ch)
 
 void CGuildManager::SendGuildWar(LPCHARACTER ch)
 {
-	if (!ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null)))
+	const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
+	if (!ecs::PlayerRuntime::GetDesc(chEntity))
 		return;
 
 	TEMP_BUFFER buf;
@@ -872,7 +873,7 @@ void CGuildManager::SendGuildWar(LPCHARACTER ch)
 		buf.write(&it->second, sizeof(uint32_t));
 	}
 
-	ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null))->Packet(buf.read_peek(), buf.size());
+	ecs::PlayerRuntime::GetDesc(chEntity)->Packet(buf.read_peek(), buf.size());
 }
 
 void SendGuildWarScore(uint32_t dwGuild, uint32_t dwGuildOpp, int iDelta, int iBetScoreDelta)
@@ -890,10 +891,12 @@ void SendGuildWarScore(uint32_t dwGuild, uint32_t dwGuildOpp, int iDelta, int iB
 
 void CGuildManager::Kill(LPCHARACTER killer, LPCHARACTER victim)
 {
-	if (!ecs::PlayerRuntime::IsPC(((killer) ? (killer)->GetEntityHandle() : entt::null)))
+	const entt::entity killerEntity = killer ? killer->GetEntityHandle() : entt::null;
+	const entt::entity victimEntity = victim ? victim->GetEntityHandle() : entt::null;
+	if (!ecs::PlayerRuntime::IsPC(killerEntity))
 		return;
 
-	if (!(ecs::PlayerRuntime::IsPC(((victim) ? (victim)->GetEntityHandle() : entt::null))))
+	if (!(ecs::PlayerRuntime::IsPC(victimEntity)))
 		return;
 
 	if (killer->GetWarMap())
@@ -902,8 +905,8 @@ void CGuildManager::Kill(LPCHARACTER killer, LPCHARACTER victim)
 		return;
 	}
 
-	CGuild * gAttack = ecs::SocialSystem::GetGuild(((killer) ? (killer)->GetEntityHandle() : entt::null));
-	CGuild * gDefend = ecs::SocialSystem::GetGuild(((victim) ? (victim)->GetEntityHandle() : entt::null));
+	CGuild * gAttack = ecs::SocialSystem::GetGuild(killerEntity);
+	CGuild * gDefend = ecs::SocialSystem::GetGuild(victimEntity);
 
 	if (!gAttack || !gDefend)
 		return;
@@ -914,7 +917,7 @@ void CGuildManager::Kill(LPCHARACTER killer, LPCHARACTER victim)
 	if (!gAttack->UnderWar(gDefend->GetID()))
 		return;
 
-	SendGuildWarScore(gAttack->GetID(), gDefend->GetID(), (ecs::PointSystem::GetLevel(((victim) ? (victim)->GetEntityHandle() : entt::null))));
+	SendGuildWarScore(gAttack->GetID(), gDefend->GetID(), (ecs::PointSystem::GetLevel(victimEntity)));
 }
 
 void CGuildManager::StopAllGuildWar()

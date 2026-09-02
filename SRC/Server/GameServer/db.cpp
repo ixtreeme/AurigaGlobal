@@ -1230,25 +1230,28 @@ void DBManager::SendMoneyLog(uint8_t type, uint32_t vnum, int64_t gold)
 
 void VCardUse(LPCHARACTER CardOwner, LPCHARACTER CardTaker, LPITEM item)
 {
+	const entt::entity itemEntity = item ? item->GetEntityHandle() : entt::null;
+	const entt::entity cardOwner = CardOwner ? CardOwner->GetEntityHandle() : entt::null;
+	const entt::entity cardTaker = CardTaker ? CardTaker->GetEntityHandle() : entt::null;
 	TPacketGDVCard p;
 
-	p.dwID = ItemSystem::GetItemSocket((item ? item->GetEntityHandle() : entt::null), 0);
-	strlcpy(p.szSellCharacter, ecs::PlayerRuntime::GetName(((CardOwner) ? (CardOwner)->GetEntityHandle() : entt::null)).data(), sizeof(p.szSellCharacter));
-	strlcpy(p.szSellAccount, ecs::PlayerRuntime::GetDesc(((CardOwner) ? (CardOwner)->GetEntityHandle() : entt::null))->GetAccountTable().login, sizeof(p.szSellAccount));
-	strlcpy(p.szBuyCharacter, ecs::PlayerRuntime::GetName(((CardTaker) ? (CardTaker)->GetEntityHandle() : entt::null)).data(), sizeof(p.szBuyCharacter));
-	strlcpy(p.szBuyAccount, ecs::PlayerRuntime::GetDesc(((CardTaker) ? (CardTaker)->GetEntityHandle() : entt::null))->GetAccountTable().login, sizeof(p.szBuyAccount));
+	p.dwID = ItemSystem::GetItemSocket(itemEntity, 0);
+	strlcpy(p.szSellCharacter, ecs::PlayerRuntime::GetName(cardOwner).data(), sizeof(p.szSellCharacter));
+	strlcpy(p.szSellAccount, ecs::PlayerRuntime::GetDesc(cardOwner)->GetAccountTable().login, sizeof(p.szSellAccount));
+	strlcpy(p.szBuyCharacter, ecs::PlayerRuntime::GetName(cardTaker).data(), sizeof(p.szBuyCharacter));
+	strlcpy(p.szBuyAccount, ecs::PlayerRuntime::GetDesc(cardTaker)->GetAccountTable().login, sizeof(p.szBuyAccount));
 
 	db_clientdesc->DBPacket(HEADER_GD_VCARD, 0, &p, sizeof(TPacketGDVCard));
 #ifdef TEXTS_IMPROVEMENT
-	ecs::ChatSystem::SendNew(((CardTaker) ? (CardTaker)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 101, "%d", ItemSystem::GetItemSocket((item ? item->GetEntityHandle() : entt::null), 1) / 60, ItemSystem::GetItemSocket((item ? item->GetEntityHandle() : entt::null), 0));
+	ecs::ChatSystem::SendNew(cardTaker, CHAT_TYPE_INFO, 101, "%d", ItemSystem::GetItemSocket(itemEntity, 1) / 60, ItemSystem::GetItemSocket(itemEntity, 0));
 #endif
-	LogManager::instance().VCardLog(p.dwID, ecs::PlayerRuntime::GetX(((CardTaker) ? (CardTaker)->GetEntityHandle() : entt::null)), ecs::PlayerRuntime::GetY(((CardTaker) ? (CardTaker)->GetEntityHandle() : entt::null)), g_stHostname.c_str(),
-			ecs::PlayerRuntime::GetName(((CardOwner) ? (CardOwner)->GetEntityHandle() : entt::null)).data(), ecs::PlayerRuntime::GetDesc(((CardOwner) ? (CardOwner)->GetEntityHandle() : entt::null))->GetHostName(),
-			ecs::PlayerRuntime::GetName(((CardTaker) ? (CardTaker)->GetEntityHandle() : entt::null)).data(), ecs::PlayerRuntime::GetDesc(((CardTaker) ? (CardTaker)->GetEntityHandle() : entt::null))->GetHostName());
+	LogManager::instance().VCardLog(p.dwID, ecs::PlayerRuntime::GetX(cardTaker), ecs::PlayerRuntime::GetY(cardTaker), g_stHostname.c_str(),
+			ecs::PlayerRuntime::GetName(cardOwner).data(), ecs::PlayerRuntime::GetDesc(cardOwner)->GetHostName(),
+			ecs::PlayerRuntime::GetName(cardTaker).data(), ecs::PlayerRuntime::GetDesc(cardTaker)->GetHostName());
 
 	ITEM_MANAGER::instance().RemoveItem(item);
 
-	LOG_INFO("VCARD_TAKE: {} {} -> {}", p.dwID, ecs::PlayerRuntime::GetName(((CardOwner) ? (CardOwner)->GetEntityHandle() : entt::null)).data(), ecs::PlayerRuntime::GetName(((CardTaker) ? (CardTaker)->GetEntityHandle() : entt::null)).data());
+	LOG_INFO("VCARD_TAKE: {} {} -> {}", p.dwID, ecs::PlayerRuntime::GetName(cardOwner).data(), ecs::PlayerRuntime::GetName(cardTaker).data());
 }
 
 void DBManager::StopAllBilling()

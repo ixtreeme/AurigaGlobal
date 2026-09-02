@@ -278,14 +278,15 @@ struct FCooldownCheck
 
     void operator()(LPCHARACTER ch)
     {
-        if (!ch || !ecs::PlayerRuntime::IsPC(((ch) ? (ch)->GetEntityHandle() : entt::null)))
+        const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
+        if (!ch || !ecs::PlayerRuntime::IsPC(chEntity))
             return;
 
-        const int32_t until = ecs::QuestSystem::GetFlag(((ch) ? (ch)->GetEntityHandle() : entt::null), qfCooldown);
+        const int32_t until = ecs::QuestSystem::GetFlag(chEntity, qfCooldown);
         if (until > now && ok)
         {
             ok = false;
-            name = ecs::PlayerRuntime::GetName(((ch) ? (ch)->GetEntityHandle() : entt::null)).data();
+            name = ecs::PlayerRuntime::GetName(chEntity).data();
             remain = until - now;
         }
     }

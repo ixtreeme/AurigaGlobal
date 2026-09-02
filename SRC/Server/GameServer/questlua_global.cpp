@@ -1088,16 +1088,18 @@ namespace quest
 			if (ent->IsType(ENTITY_CHARACTER))
 			{
 				LPCHARACTER ch = (LPCHARACTER) ent;
-				if ((ecs::PlayerRuntime::IsPC(((ch) ? (ch)->GetEntityHandle() : entt::null))))
+				const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
+
+				if ((ecs::PlayerRuntime::IsPC(chEntity)))
 				{
-					uint8_t bEmpire =  ecs::PlayerRuntime::GetEmpire(((ch) ? (ch)->GetEntityHandle() : entt::null));
+					uint8_t bEmpire =  ecs::PlayerRuntime::GetEmpire(chEntity);
 					if ( bEmpire == 0 )
 					{
-						sys_err("Unkonwn Empire {} {} ", ecs::PlayerRuntime::GetName(((ch) ? (ch)->GetEntityHandle() : entt::null)).data(), (ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null))));
+						sys_err("Unkonwn Empire {} {} ", ecs::PlayerRuntime::GetName(chEntity).data(), (ecs::PlayerRuntime::GetPlayerID(chEntity)));
 						return;
 					}
 
-					ecs::MovementSystem::WarpSet(((ch) ? (ch)->GetEntityHandle() : entt::null),  g_start_position[bEmpire][0], g_start_position[bEmpire][1] );
+					ecs::MovementSystem::WarpSet(chEntity,  g_start_position[bEmpire][0], g_start_position[bEmpire][1] );
 				}
 			}
 		}
@@ -1194,10 +1196,12 @@ namespace quest
 			if (ent->IsType(ENTITY_CHARACTER))
 			{
 				LPCHARACTER ch = (LPCHARACTER) ent;
+				const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
+
 #ifdef __NEWPET_SYSTEM__
-				if (!(ecs::PlayerRuntime::IsPC(((ch) ? (ch)->GetEntityHandle() : entt::null))) && !ch->IsPet() && !ch->IsNewPet())
+				if (!(ecs::PlayerRuntime::IsPC(chEntity)) && !ch->IsPet() && !ch->IsNewPet())
 #else
-				if (!(ecs::PlayerRuntime::IsPC(((ch) ? (ch)->GetEntityHandle() : entt::null))) && !ch->IsPet())
+				if (!(ecs::PlayerRuntime::IsPC(chEntity)) && !ch->IsPet())
 #endif
 					ch->Dead();
 			}
@@ -1376,18 +1380,22 @@ namespace quest
 		if(nullptr != pMonster )
 		{
 			const LPCHARACTER pChar = CQuestManager::instance().GetCurrentCharacterPtr();
+			const entt::entity charEntity = pChar ? pChar->GetEntityHandle() : entt::null;
+
 
 			for( uint32_t i=0 ; i < count ; ++i )
 			{
 				const LPCHARACTER pSpawnMonster = CHARACTER_MANAGER::instance().SpawnMobRange( dwVnum,
-						ecs::PlayerRuntime::GetMapIndex(((pChar) ? (pChar)->GetEntityHandle() : entt::null)),
-						ecs::PlayerRuntime::GetX(((pChar) ? (pChar)->GetEntityHandle() : entt::null)) - number(200, 750),
-						ecs::PlayerRuntime::GetY(((pChar) ? (pChar)->GetEntityHandle() : entt::null)) - number(200, 750),
-						ecs::PlayerRuntime::GetX(((pChar) ? (pChar)->GetEntityHandle() : entt::null)) + number(200, 750),
-						ecs::PlayerRuntime::GetY(((pChar) ? (pChar)->GetEntityHandle() : entt::null)) + number(200, 750),
+						ecs::PlayerRuntime::GetMapIndex(charEntity),
+						ecs::PlayerRuntime::GetX(charEntity) - number(200, 750),
+						ecs::PlayerRuntime::GetY(charEntity) - number(200, 750),
+						ecs::PlayerRuntime::GetX(charEntity) + number(200, 750),
+						ecs::PlayerRuntime::GetY(charEntity) + number(200, 750),
 						true,
 						pMonster->m_table.bType == CHAR_TYPE_STONE,
 						isAggresive );
+						const entt::entity spawnMonster = pSpawnMonster ? pSpawnMonster->GetEntityHandle() : entt::null;
+
 
 				if(nullptr != pSpawnMonster )
 				{
@@ -1397,10 +1405,10 @@ namespace quest
 					EntityFactory::CreateMonster(
 						g_registry,
 						pSpawnMonster->GetMobTable(),
-						ecs::PlayerRuntime::GetX(((pSpawnMonster) ? (pSpawnMonster)->GetEntityHandle() : entt::null)),
-						ecs::PlayerRuntime::GetY(((pSpawnMonster) ? (pSpawnMonster)->GetEntityHandle() : entt::null)),
-						ecs::PlayerRuntime::GetMapIndex(((pSpawnMonster) ? (pSpawnMonster)->GetEntityHandle() : entt::null)),
-						ecs::PlayerRuntime::GetPacketVID(((pSpawnMonster) ? (pSpawnMonster)->GetEntityHandle() : entt::null)));
+						ecs::PlayerRuntime::GetX(spawnMonster),
+						ecs::PlayerRuntime::GetY(spawnMonster),
+						ecs::PlayerRuntime::GetMapIndex(spawnMonster),
+						ecs::PlayerRuntime::GetPacketVID(spawnMonster));
 				}
 				}
 			}
@@ -1457,6 +1465,8 @@ namespace quest
 						pMonster->m_table.bType == CHAR_TYPE_STONE,
 						isAggressive
 				);
+				const entt::entity spawnMonster = pSpawnMonster ? pSpawnMonster->GetEntityHandle() : entt::null;
+
 
 				if(nullptr != pSpawnMonster )
 				{
@@ -1466,10 +1476,10 @@ namespace quest
 					EntityFactory::CreateMonster(
 						g_registry,
 						pSpawnMonster->GetMobTable(),
-						ecs::PlayerRuntime::GetX(((pSpawnMonster) ? (pSpawnMonster)->GetEntityHandle() : entt::null)),
-						ecs::PlayerRuntime::GetY(((pSpawnMonster) ? (pSpawnMonster)->GetEntityHandle() : entt::null)),
-						ecs::PlayerRuntime::GetMapIndex(((pSpawnMonster) ? (pSpawnMonster)->GetEntityHandle() : entt::null)),
-						ecs::PlayerRuntime::GetPacketVID(((pSpawnMonster) ? (pSpawnMonster)->GetEntityHandle() : entt::null)));
+						ecs::PlayerRuntime::GetX(spawnMonster),
+						ecs::PlayerRuntime::GetY(spawnMonster),
+						ecs::PlayerRuntime::GetMapIndex(spawnMonster),
+						ecs::PlayerRuntime::GetPacketVID(spawnMonster));
 				}
 				}
 			}
@@ -1488,6 +1498,8 @@ namespace quest
 		// migrated from CHARACTER::notice_in_map
 		// DUAL-PATH: legacy only during migration window
 		const LPCHARACTER pChar = CQuestManager::instance().GetCurrentCharacterPtr();
+		const entt::entity charEntity = pChar ? pChar->GetEntityHandle() : entt::null;
+
 
 		if (nullptr != pChar)
 		{
@@ -1500,9 +1512,9 @@ namespace quest
 				return 0;
 			}
 
-			SendNoticeNew(CHAT_TYPE_NOTICE, 0, ecs::PlayerRuntime::GetMapIndex(((pChar) ? (pChar)->GetEntityHandle() : entt::null)), (uint32_t)lua_tonumber(L, 1), lua_tostring(L, 2));
+			SendNoticeNew(CHAT_TYPE_NOTICE, 0, ecs::PlayerRuntime::GetMapIndex(charEntity), (uint32_t)lua_tonumber(L, 1), lua_tostring(L, 2));
 #else
-			SendNoticeMap( lua_tostring(L,1), ecs::PlayerRuntime::GetMapIndex(((pChar) ? (pChar)->GetEntityHandle() : entt::null)), lua_toboolean(L,2) );
+			SendNoticeMap( lua_tostring(L,1), ecs::PlayerRuntime::GetMapIndex(charEntity), lua_toboolean(L,2) );
 #endif
 		}
 
@@ -1533,16 +1545,18 @@ namespace quest
 			if (true == ent->IsType(ENTITY_CHARACTER))
 			{
 				LPCHARACTER pChar = static_cast<LPCHARACTER>(ent);
+				const entt::entity charEntity = pChar ? pChar->GetEntityHandle() : entt::null;
+
 
 				if (pChar == ExceptChar)
 					return;
 #ifdef __NEWPET_SYSTEM__
-				if (!pChar->IsPet() && !pChar->IsNewPet() && (true == pChar->IsMonster() || true == ecs::PlayerRuntime::IsStone(((pChar) ? (pChar)->GetEntityHandle() : entt::null))))
+				if (!pChar->IsPet() && !pChar->IsNewPet() && (true == pChar->IsMonster() || true == ecs::PlayerRuntime::IsStone(charEntity)))
 #else
-				if (!pChar->IsPet() && (true == pChar->IsMonster() || true == ecs::PlayerRuntime::IsStone(((pChar) ? (pChar)->GetEntityHandle() : entt::null))))
+				if (!pChar->IsPet() && (true == pChar->IsMonster() || true == ecs::PlayerRuntime::IsStone(charEntity)))
 #endif
 				{
-					if (x1 <= ecs::PlayerRuntime::GetX(((pChar) ? (pChar)->GetEntityHandle() : entt::null)) && ecs::PlayerRuntime::GetX(((pChar) ? (pChar)->GetEntityHandle() : entt::null)) <= x2 && y1 <= ecs::PlayerRuntime::GetY(((pChar) ? (pChar)->GetEntityHandle() : entt::null)) && ecs::PlayerRuntime::GetY(((pChar) ? (pChar)->GetEntityHandle() : entt::null)) <= y2)
+					if (x1 <= ecs::PlayerRuntime::GetX(charEntity) && ecs::PlayerRuntime::GetX(charEntity) <= x2 && y1 <= ecs::PlayerRuntime::GetY(charEntity) && ecs::PlayerRuntime::GetY(charEntity) <= y2)
 					{
 						M2_DESTROY_CHARACTER(pChar);
 					}
@@ -1597,14 +1611,16 @@ namespace quest
 			if (true == ent->IsType(ENTITY_CHARACTER))
 			{
 				LPCHARACTER pChar = static_cast<LPCHARACTER>(ent);
+				const entt::entity charEntity = pChar ? pChar->GetEntityHandle() : entt::null;
 
-				if (true == (ecs::PlayerRuntime::IsPC(((pChar) ? (pChar)->GetEntityHandle() : entt::null))))
+
+				if (true == (ecs::PlayerRuntime::IsPC(charEntity)))
 				{
-					if (from_x1 <= ecs::PlayerRuntime::GetX(((pChar) ? (pChar)->GetEntityHandle() : entt::null)) && ecs::PlayerRuntime::GetX(((pChar) ? (pChar)->GetEntityHandle() : entt::null)) <= from_x2 && from_y1 <= ecs::PlayerRuntime::GetY(((pChar) ? (pChar)->GetEntityHandle() : entt::null)) && ecs::PlayerRuntime::GetY(((pChar) ? (pChar)->GetEntityHandle() : entt::null)) <= from_y2)
+					if (from_x1 <= ecs::PlayerRuntime::GetX(charEntity) && ecs::PlayerRuntime::GetX(charEntity) <= from_x2 && from_y1 <= ecs::PlayerRuntime::GetY(charEntity) && ecs::PlayerRuntime::GetY(charEntity) <= from_y2)
 					{
 						++warpCount;
 
-						ecs::MovementSystem::WarpSet(((pChar) ? (pChar)->GetEntityHandle() : entt::null),  number(to_x1, to_x2), number(to_y1, to_y2) );
+						ecs::MovementSystem::WarpSet(charEntity,  number(to_x1, to_x2), number(to_y1, to_y2) );
 					}
 				}
 			}

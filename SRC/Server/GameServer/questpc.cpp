@@ -421,6 +421,8 @@ namespace quest
 	void PC::DoQuestStateChange()
 	{
 		LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
+		const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
+
 
 		std::vector<TQuestStateChangeInfo> vecQuestStateChange;
 		m_QuestStateChange.swap(vecQuestStateChange);
@@ -449,14 +451,14 @@ namespace quest
 
 			assert(it->second.st == rInfo.prev_state);
 
-			CQuestManager::instance().LeaveState((ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null))), dwQuestIdx, rInfo.prev_state);
+			CQuestManager::instance().LeaveState((ecs::PlayerRuntime::GetPlayerID(chEntity)), dwQuestIdx, rInfo.prev_state);
 			it->second.st = rInfo.next_state;
 			SetFlag(stQuestName + ".__status", rInfo.next_state);
 
-			CQuestManager::instance().EnterState((ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null))), dwQuestIdx, rInfo.next_state);
+			CQuestManager::instance().EnterState((ecs::PlayerRuntime::GetPlayerID(chEntity)), dwQuestIdx, rInfo.next_state);
 
 			if (GetFlag(stQuestName + ".__status")==rInfo.next_state)
-				CQuestManager::instance().Letter((ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null))), dwQuestIdx, rInfo.next_state);
+				CQuestManager::instance().Letter((ecs::PlayerRuntime::GetPlayerID(chEntity)), dwQuestIdx, rInfo.next_state);
 		}
 	}
 
@@ -670,10 +672,11 @@ namespace quest
 
 	void PC::Reward(LPCHARACTER ch)
 	{
+		const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
 		if (m_bIsGivenReward)
 		{
 #ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 191, "");
+			ecs::ChatSystem::SendNew(chEntity, CHAT_TYPE_INFO, 191, "");
 #endif
 			m_bIsGivenReward = false;
 		}
@@ -686,9 +689,9 @@ namespace quest
 					LOG_INFO("EXP cur {} add {} next {}", ch->GetExp(), it->value1, ch->GetNextExp());
 
 					if (ch->GetExp() + it->value1 > ch->GetNextExp())
-						ecs::PointSystem::Change(((ch) ? (ch)->GetEntityHandle() : entt::null), POINT_EXP, ch->GetNextExp() - 1 - ch->GetExp());
+						ecs::PointSystem::Change(chEntity, POINT_EXP, ch->GetNextExp() - 1 - ch->GetExp());
 					else
-						ecs::PointSystem::Change(((ch) ? (ch)->GetEntityHandle() : entt::null), POINT_EXP, it->value1);
+						ecs::PointSystem::Change(chEntity, POINT_EXP, it->value1);
 
 					break;
 
@@ -756,17 +759,18 @@ namespace quest
 	{
 		for (auto it = m_FlagMap.begin(); it!= m_FlagMap.end(); ++it)
 		{
+			const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
 			if (it->first.size()>9 && it->first.compare(it->first.size()-9,9, ".__status") == 0)
 			{
 				const string quest_name = it->first.substr(0, it->first.size()-9);
 				const char* state_name = CQuestManager::instance().GetQuestStateName(quest_name, it->second);
 #ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 758, "%s#%s#%d", quest_name.c_str(), state_name, it->second);
+				ecs::ChatSystem::SendNew(chEntity, CHAT_TYPE_INFO, 758, "%s#%s#%d", quest_name.c_str(), state_name, it->second);
 #endif
 			}
 #ifdef TEXTS_IMPROVEMENT
 			else {
-				ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 757, "%s#%d", it->first.c_str(), it->second);
+				ecs::ChatSystem::SendNew(chEntity, CHAT_TYPE_INFO, 757, "%s#%d", it->first.c_str(), it->second);
 			}
 #endif
 		}

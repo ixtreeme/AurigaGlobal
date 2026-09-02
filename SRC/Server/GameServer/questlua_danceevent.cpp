@@ -16,10 +16,12 @@ namespace quest
 			if ( ent->IsType(ENTITY_CHARACTER) )
 			{
 				LPCHARACTER ch = (LPCHARACTER) ent;
+				const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
 
-				if ( (ecs::PlayerRuntime::IsPC(((ch) ? (ch)->GetEntityHandle() : entt::null))) == true && ch->IsGM() != true )
+
+				if ( (ecs::PlayerRuntime::IsPC(chEntity)) == true && ch->IsGM() != true )
 				{
-					if ( ((ecs::PlayerRuntime::GetX(((ch) ? (ch)->GetEntityHandle() : entt::null)) >= 764503 && ecs::PlayerRuntime::GetX(((ch) ? (ch)->GetEntityHandle() : entt::null)) <= 772362) && (ecs::PlayerRuntime::GetY(((ch) ? (ch)->GetEntityHandle() : entt::null)) >= 22807 && ecs::PlayerRuntime::GetY(((ch) ? (ch)->GetEntityHandle() : entt::null)) <= 26499)) == false )
+					if ( ((ecs::PlayerRuntime::GetX(chEntity) >= 764503 && ecs::PlayerRuntime::GetX(chEntity) <= 772362) && (ecs::PlayerRuntime::GetY(chEntity) >= 22807 && ecs::PlayerRuntime::GetY(chEntity) <= 26499)) == false )
 					{
 						ch->GoHome();
 					}

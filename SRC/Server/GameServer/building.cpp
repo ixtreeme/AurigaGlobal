@@ -374,12 +374,14 @@ void CLand::PutData(const TLand * data)
 				while (it != i.end())
 				{
 					LPCHARACTER ch = *(it++);
+					const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
 
-					if (ecs::PlayerRuntime::GetMapIndex(((ch) ? (ch)->GetEntityHandle() : entt::null)) != m_data.lMapIndex)
+
+					if (ecs::PlayerRuntime::GetMapIndex(chEntity) != m_data.lMapIndex)
 						continue;
 
-					int x = ecs::PlayerRuntime::GetX(((ch) ? (ch)->GetEntityHandle() : entt::null)) - r->sx;
-					int y = ecs::PlayerRuntime::GetY(((ch) ? (ch)->GetEntityHandle() : entt::null)) - r->sy;
+					int x = ecs::PlayerRuntime::GetX(chEntity) - r->sx;
+					int y = ecs::PlayerRuntime::GetY(chEntity) - r->sy;
 
 					if (x > m_data.x + m_data.width || x < m_data.x)
 						continue;
@@ -495,12 +497,14 @@ struct FIsIn
 		if (ent->IsType(ENTITY_CHARACTER))
 		{
 			LPCHARACTER ch = (LPCHARACTER) ent;
+			const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
+
 			if (ch->IsMonster())
 			{
 				return;
 			}
-			if (sx <= ecs::PlayerRuntime::GetX(((ch) ? (ch)->GetEntityHandle() : entt::null)) && ecs::PlayerRuntime::GetX(((ch) ? (ch)->GetEntityHandle() : entt::null)) <= ex
-				&& sy <= ecs::PlayerRuntime::GetY(((ch) ? (ch)->GetEntityHandle() : entt::null)) && ecs::PlayerRuntime::GetY(((ch) ? (ch)->GetEntityHandle() : entt::null)) <= ey)
+			if (sx <= ecs::PlayerRuntime::GetX(chEntity) && ecs::PlayerRuntime::GetX(chEntity) <= ex
+				&& sy <= ecs::PlayerRuntime::GetY(chEntity) && ecs::PlayerRuntime::GetY(chEntity) <= ey)
 			{
 				bIn = true;
 			}

@@ -226,7 +226,11 @@ EVENTFUNC(ready_to_start_event)
 	}
 
 	LPCHARACTER chA = pArena->GetPlayerA();
+	const entt::entity chAEntity = chA ? chA->GetEntityHandle() : entt::null;
+
 	LPCHARACTER chB = pArena->GetPlayerB();
+	const entt::entity chBEntity = chB ? chB->GetEntityHandle() : entt::null;
+
 
 	if (chA == nullptr || chB == nullptr)
 	{
@@ -235,7 +239,7 @@ EVENTFUNC(ready_to_start_event)
 		if (chA != nullptr)
 		{
 #ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(((chA) ? (chA)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 299, "");
+			ecs::ChatSystem::SendNew(chAEntity, CHAT_TYPE_INFO, 299, "");
 #endif
 			LOG_INFO("ARENA: Oppernent is disappered. MyPID({}) OppPID({})", pArena->GetPlayerAPID(), pArena->GetPlayerBPID());
 		}
@@ -243,7 +247,7 @@ EVENTFUNC(ready_to_start_event)
 		if (chB != nullptr)
 		{
 #ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(((chB) ? (chB)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 299, "");
+			ecs::ChatSystem::SendNew(chBEntity, CHAT_TYPE_INFO, 299, "");
 #endif
 			LOG_INFO("ARENA: Oppernent is disappered. MyPID({}) OppPID({})", pArena->GetPlayerBPID(), pArena->GetPlayerAPID());
 		}
@@ -267,8 +271,8 @@ EVENTFUNC(ready_to_start_event)
 				if (count > 10000)
 				{
 #ifdef TEXTS_IMPROVEMENT
-					ecs::ChatSystem::SendNew(((chA) ? (chA)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 348, "");
-					ecs::ChatSystem::SendNew(((chB) ? (chB)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 348, "");
+					ecs::ChatSystem::SendNew(chAEntity, CHAT_TYPE_INFO, 348, "");
+					ecs::ChatSystem::SendNew(chBEntity, CHAT_TYPE_INFO, 348, "");
 #endif
 				}
 				else
@@ -276,14 +280,14 @@ EVENTFUNC(ready_to_start_event)
 					chA->SetPotionLimit(count);
 					chB->SetPotionLimit(count);
 #ifdef TEXTS_IMPROVEMENT
-					ecs::ChatSystem::SendNew(((chA) ? (chA)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 349, "%d", count);
-					ecs::ChatSystem::SendNew(((chB) ? (chB)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 349, "%d", count);
+					ecs::ChatSystem::SendNew(chAEntity, CHAT_TYPE_INFO, 349, "%d", count);
+					ecs::ChatSystem::SendNew(chBEntity, CHAT_TYPE_INFO, 349, "%d", count);
 #endif
 				}
 
 #ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(((chA) ? (chA)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 222, "");
-				ecs::ChatSystem::SendNew(((chB) ? (chB)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 222, "");
+				ecs::ChatSystem::SendNew(chAEntity, CHAT_TYPE_INFO, 222, "");
+				ecs::ChatSystem::SendNew(chBEntity, CHAT_TYPE_INFO, 222, "");
 				pArena->SendChatPacketToObserver(CHAT_TYPE_INFO, 222, "");
 #endif
 
@@ -295,8 +299,8 @@ EVENTFUNC(ready_to_start_event)
 		case 1:
 			{
 #ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(((chA) ? (chA)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 301, "");
-				ecs::ChatSystem::SendNew(((chB) ? (chB)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 301, "");
+				ecs::ChatSystem::SendNew(chAEntity, CHAT_TYPE_INFO, 301, "");
+				ecs::ChatSystem::SendNew(chBEntity, CHAT_TYPE_INFO, 301, "");
 				pArena->SendChatPacketToObserver(CHAT_TYPE_INFO, 301, "");
 #endif
 				TPacketGCDuelStart duelStart;
@@ -305,20 +309,20 @@ EVENTFUNC(ready_to_start_event)
 
 				uint32_t dwOppList[8]; // �ִ� ��Ƽ�� 8�� �̹Ƿ�..
 
-				dwOppList[0] = ecs::PlayerRuntime::GetPacketVID(((chB) ? (chB)->GetEntityHandle() : entt::null));
+				dwOppList[0] = ecs::PlayerRuntime::GetPacketVID(chBEntity);
 				TEMP_BUFFER buf;
 
 				buf.write(&duelStart, sizeof(TPacketGCDuelStart));
 				buf.write(&dwOppList[0], 4);
-				ecs::PlayerRuntime::GetDesc(((chA) ? (chA)->GetEntityHandle() : entt::null))->Packet(buf.read_peek(), buf.size());
+				ecs::PlayerRuntime::GetDesc(chAEntity)->Packet(buf.read_peek(), buf.size());
 
 
-				dwOppList[0] = ecs::PlayerRuntime::GetPacketVID(((chA) ? (chA)->GetEntityHandle() : entt::null));
+				dwOppList[0] = ecs::PlayerRuntime::GetPacketVID(chAEntity);
 				TEMP_BUFFER buf2;
 
 				buf2.write(&duelStart, sizeof(TPacketGCDuelStart));
 				buf2.write(&dwOppList[0], 4);
-				ecs::PlayerRuntime::GetDesc(((chB) ? (chB)->GetEntityHandle() : entt::null))->Packet(buf2.read_peek(), buf2.size());
+				ecs::PlayerRuntime::GetDesc(chBEntity)->Packet(buf2.read_peek(), buf2.size());
 
 				return 0;
 			}
@@ -333,21 +337,21 @@ EVENTFUNC(ready_to_start_event)
 
 		case 3:
 			{
-				ecs::MovementSystem::Show(((chA) ? (chA)->GetEntityHandle() : entt::null), ecs::PlayerRuntime::GetMapIndex(((chA) ? (chA)->GetEntityHandle() : entt::null)), pArena->GetStartPointA().x * 100, pArena->GetStartPointA().y * 100);
-				ecs::MovementSystem::Show(((chB) ? (chB)->GetEntityHandle() : entt::null), ecs::PlayerRuntime::GetMapIndex(((chB) ? (chB)->GetEntityHandle() : entt::null)), pArena->GetStartPointB().x * 100, pArena->GetStartPointB().y * 100);
+				ecs::MovementSystem::Show(chAEntity, ecs::PlayerRuntime::GetMapIndex(chAEntity), pArena->GetStartPointA().x * 100, pArena->GetStartPointA().y * 100);
+				ecs::MovementSystem::Show(chBEntity, ecs::PlayerRuntime::GetMapIndex(chBEntity), pArena->GetStartPointB().x * 100, pArena->GetStartPointB().y * 100);
 
-				ecs::PlayerRuntime::GetDesc(((chA) ? (chA)->GetEntityHandle() : entt::null))->SetPhase(PHASE_GAME);
+				ecs::PlayerRuntime::GetDesc(chAEntity)->SetPhase(PHASE_GAME);
 				chA->StartRecoveryEvent();
 				chA->SetPosition(POS_STANDING);
-				ecs::PointSystem::Change(((chA) ? (chA)->GetEntityHandle() : entt::null), POINT_HP, ecs::PointSystem::GetMaxHP(((chA) ? (chA)->GetEntityHandle() : entt::null)) - chA->GetHP());
-				ecs::PointSystem::Change(((chA) ? (chA)->GetEntityHandle() : entt::null), POINT_SP, ecs::PointSystem::GetMaxSP(((chA) ? (chA)->GetEntityHandle() : entt::null)) - chA->GetSP());
+				ecs::PointSystem::Change(chAEntity, POINT_HP, ecs::PointSystem::GetMaxHP(chAEntity) - chA->GetHP());
+				ecs::PointSystem::Change(chAEntity, POINT_SP, ecs::PointSystem::GetMaxSP(chAEntity) - chA->GetSP());
 				chA->ViewReencode();
 
-				ecs::PlayerRuntime::GetDesc(((chB) ? (chB)->GetEntityHandle() : entt::null))->SetPhase(PHASE_GAME);
+				ecs::PlayerRuntime::GetDesc(chBEntity)->SetPhase(PHASE_GAME);
 				chB->StartRecoveryEvent();
 				chB->SetPosition(POS_STANDING);
-				ecs::PointSystem::Change(((chB) ? (chB)->GetEntityHandle() : entt::null), POINT_HP, ecs::PointSystem::GetMaxHP(((chB) ? (chB)->GetEntityHandle() : entt::null)) - chB->GetHP());
-				ecs::PointSystem::Change(((chB) ? (chB)->GetEntityHandle() : entt::null), POINT_SP, ecs::PointSystem::GetMaxSP(((chB) ? (chB)->GetEntityHandle() : entt::null)) - chB->GetSP());
+				ecs::PointSystem::Change(chBEntity, POINT_HP, ecs::PointSystem::GetMaxHP(chBEntity) - chB->GetHP());
+				ecs::PointSystem::Change(chBEntity, POINT_SP, ecs::PointSystem::GetMaxSP(chBEntity) - chB->GetSP());
 				chB->ViewReencode();
 
 				TEMP_BUFFER buf;
@@ -357,19 +361,19 @@ EVENTFUNC(ready_to_start_event)
 				duelStart.header = HEADER_GC_DUEL_START;
 				duelStart.wSize = sizeof(TPacketGCDuelStart) + 4;
 
-				dwOppList[0] = ecs::PlayerRuntime::GetPacketVID(((chB) ? (chB)->GetEntityHandle() : entt::null));
+				dwOppList[0] = ecs::PlayerRuntime::GetPacketVID(chBEntity);
 				buf.write(&duelStart, sizeof(TPacketGCDuelStart));
 				buf.write(&dwOppList[0], 4);
-				ecs::PlayerRuntime::GetDesc(((chA) ? (chA)->GetEntityHandle() : entt::null))->Packet(buf.read_peek(), buf.size());
+				ecs::PlayerRuntime::GetDesc(chAEntity)->Packet(buf.read_peek(), buf.size());
 
-				dwOppList[0] = ecs::PlayerRuntime::GetPacketVID(((chA) ? (chA)->GetEntityHandle() : entt::null));
+				dwOppList[0] = ecs::PlayerRuntime::GetPacketVID(chAEntity);
 				buf2.write(&duelStart, sizeof(TPacketGCDuelStart));
 				buf2.write(&dwOppList[0], 4);
-				ecs::PlayerRuntime::GetDesc(((chB) ? (chB)->GetEntityHandle() : entt::null))->Packet(buf2.read_peek(), buf2.size());
+				ecs::PlayerRuntime::GetDesc(chBEntity)->Packet(buf2.read_peek(), buf2.size());
 
 #ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(((chA) ? (chA)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 301, "");
-				ecs::ChatSystem::SendNew(((chB) ? (chB)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 301, "");
+				ecs::ChatSystem::SendNew(chAEntity, CHAT_TYPE_INFO, 301, "");
+				ecs::ChatSystem::SendNew(chBEntity, CHAT_TYPE_INFO, 301, "");
 				pArena->SendChatPacketToObserver(CHAT_TYPE_INFO, 301, "");
 #endif
 				pArena->ClearEvent();
@@ -414,14 +418,18 @@ EVENTFUNC(duel_time_out)
 	}
 
 	LPCHARACTER chA = pArena->GetPlayerA();
+	const entt::entity chAEntity = chA ? chA->GetEntityHandle() : entt::null;
+
 	LPCHARACTER chB = pArena->GetPlayerB();
+	const entt::entity chBEntity = chB ? chB->GetEntityHandle() : entt::null;
+
 
 	if (chA == nullptr || chB == nullptr)
 	{
 		if (chA != nullptr)
 		{
 #ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(((chA) ? (chA)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 299, "");
+			ecs::ChatSystem::SendNew(chAEntity, CHAT_TYPE_INFO, 299, "");
 #endif
 			LOG_INFO("ARENA: Oppernent is disappered. MyPID({}) OppPID({})", pArena->GetPlayerAPID(), pArena->GetPlayerBPID());
 		}
@@ -429,7 +437,7 @@ EVENTFUNC(duel_time_out)
 		if (chB != nullptr)
 		{
 #ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(((chB) ? (chB)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 299, "");
+			ecs::ChatSystem::SendNew(chBEntity, CHAT_TYPE_INFO, 299, "");
 #endif
 			LOG_INFO("ARENA: Oppernent is disappered. MyPID({}) OppPID({})", pArena->GetPlayerBPID(), pArena->GetPlayerAPID());
 		}
@@ -446,8 +454,8 @@ EVENTFUNC(duel_time_out)
 		{
 			case 0:
 #ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(((chA) ? (chA)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 224, "");
-				ecs::ChatSystem::SendNew(((chB) ? (chB)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 224, "");
+				ecs::ChatSystem::SendNew(chAEntity, CHAT_TYPE_INFO, 224, "");
+				ecs::ChatSystem::SendNew(chBEntity, CHAT_TYPE_INFO, 224, "");
 				pArena->SendChatPacketToObserver(CHAT_TYPE_INFO, 224, "");
 #endif
 
@@ -455,8 +463,8 @@ EVENTFUNC(duel_time_out)
 				duelStart.header = HEADER_GC_DUEL_START;
 				duelStart.wSize = sizeof(TPacketGCDuelStart);
 
-				ecs::PlayerRuntime::GetDesc(((chA) ? (chA)->GetEntityHandle() : entt::null))->Packet(&duelStart, sizeof(TPacketGCDuelStart));
-				ecs::PlayerRuntime::GetDesc(((chA) ? (chA)->GetEntityHandle() : entt::null))->Packet(&duelStart, sizeof(TPacketGCDuelStart));
+				ecs::PlayerRuntime::GetDesc(chAEntity)->Packet(&duelStart, sizeof(TPacketGCDuelStart));
+				ecs::PlayerRuntime::GetDesc(chAEntity)->Packet(&duelStart, sizeof(TPacketGCDuelStart));
 
 				info->state++;
 
@@ -547,19 +555,23 @@ void CArena::EndDuel()
 	}
 
 	LPCHARACTER playerA = GetPlayerA();
+	const entt::entity playerAEntity = playerA ? playerA->GetEntityHandle() : entt::null;
+
 	LPCHARACTER playerB = GetPlayerB();
+	const entt::entity playerBEntity = playerB ? playerB->GetEntityHandle() : entt::null;
+
 
 	if (playerA != nullptr)
 	{
 		playerA->SetPKMode(PK_MODE_PEACE);
 		playerA->StartRecoveryEvent();
 		playerA->SetPosition(POS_STANDING);
-		ecs::PointSystem::Change(((playerA) ? (playerA)->GetEntityHandle() : entt::null), POINT_HP, ecs::PointSystem::GetMaxHP(((playerA) ? (playerA)->GetEntityHandle() : entt::null)) - playerA->GetHP());
-		ecs::PointSystem::Change(((playerA) ? (playerA)->GetEntityHandle() : entt::null), POINT_SP, ecs::PointSystem::GetMaxSP(((playerA) ? (playerA)->GetEntityHandle() : entt::null)) - playerA->GetSP());
+		ecs::PointSystem::Change(playerAEntity, POINT_HP, ecs::PointSystem::GetMaxHP(playerAEntity) - playerA->GetHP());
+		ecs::PointSystem::Change(playerAEntity, POINT_SP, ecs::PointSystem::GetMaxSP(playerAEntity) - playerA->GetSP());
 
 		playerA->SetArena(nullptr);
 
-		ecs::MovementSystem::WarpSet(((playerA) ? (playerA)->GetEntityHandle() : entt::null), ARENA_RETURN_POINT_X(ecs::PlayerRuntime::GetEmpire(((playerA) ? (playerA)->GetEntityHandle() : entt::null))), ARENA_RETURN_POINT_Y(ecs::PlayerRuntime::GetEmpire(((playerA) ? (playerA)->GetEntityHandle() : entt::null))));
+		ecs::MovementSystem::WarpSet(playerAEntity, ARENA_RETURN_POINT_X(ecs::PlayerRuntime::GetEmpire(playerAEntity)), ARENA_RETURN_POINT_Y(ecs::PlayerRuntime::GetEmpire(playerAEntity)));
 	}
 
 	if (playerB != nullptr)
@@ -567,12 +579,12 @@ void CArena::EndDuel()
 		playerB->SetPKMode(PK_MODE_PEACE);
 		playerB->StartRecoveryEvent();
 		playerB->SetPosition(POS_STANDING);
-		ecs::PointSystem::Change(((playerB) ? (playerB)->GetEntityHandle() : entt::null), POINT_HP, ecs::PointSystem::GetMaxHP(((playerB) ? (playerB)->GetEntityHandle() : entt::null)) - playerB->GetHP());
-		ecs::PointSystem::Change(((playerB) ? (playerB)->GetEntityHandle() : entt::null), POINT_SP, ecs::PointSystem::GetMaxSP(((playerB) ? (playerB)->GetEntityHandle() : entt::null)) - playerB->GetSP());
+		ecs::PointSystem::Change(playerBEntity, POINT_HP, ecs::PointSystem::GetMaxHP(playerBEntity) - playerB->GetHP());
+		ecs::PointSystem::Change(playerBEntity, POINT_SP, ecs::PointSystem::GetMaxSP(playerBEntity) - playerB->GetSP());
 
 		playerB->SetArena(nullptr);
 
-		ecs::MovementSystem::WarpSet(((playerB) ? (playerB)->GetEntityHandle() : entt::null), ARENA_RETURN_POINT_X(ecs::PlayerRuntime::GetEmpire(((playerB) ? (playerB)->GetEntityHandle() : entt::null))), ARENA_RETURN_POINT_Y(ecs::PlayerRuntime::GetEmpire(((playerB) ? (playerB)->GetEntityHandle() : entt::null))));
+		ecs::MovementSystem::WarpSet(playerBEntity, ARENA_RETURN_POINT_X(ecs::PlayerRuntime::GetEmpire(playerBEntity)), ARENA_RETURN_POINT_Y(ecs::PlayerRuntime::GetEmpire(playerBEntity)));
 	}
 
 	for (auto iter = m_mapObserver.begin(); iter != m_mapObserver.end(); ++iter)
@@ -729,7 +741,11 @@ bool CArena::OnDead(uint32_t dwPIDA, uint32_t dwPIDB)
 	bool restart = false;
 
 	LPCHARACTER pCharA = GetPlayerA();
+	const entt::entity charA = pCharA ? pCharA->GetEntityHandle() : entt::null;
+
 	LPCHARACTER pCharB = GetPlayerB();
+	const entt::entity charB = pCharB ? pCharB->GetEntityHandle() : entt::null;
+
 
 	if (pCharA == nullptr && pCharB == nullptr)
 	{
@@ -761,24 +777,24 @@ bool CArena::OnDead(uint32_t dwPIDA, uint32_t dwPIDB)
 			if (m_dwSetPointOfA >= m_dwSetCount)
 			{
 #ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(((pCharA) ? (pCharA)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 109, "%s", ecs::PlayerRuntime::GetName(((pCharA) ? (pCharA)->GetEntityHandle() : entt::null)).data());
-				ecs::ChatSystem::SendNew(((pCharB) ? (pCharB)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 109, "%s", ecs::PlayerRuntime::GetName(((pCharA) ? (pCharA)->GetEntityHandle() : entt::null)).data());
-				SendChatPacketToObserver(CHAT_TYPE_NOTICE, 109, "%s", ecs::PlayerRuntime::GetName(((pCharA) ? (pCharA)->GetEntityHandle() : entt::null)).data());
+				ecs::ChatSystem::SendNew(charA, CHAT_TYPE_INFO, 109, "%s", ecs::PlayerRuntime::GetName(charA).data());
+				ecs::ChatSystem::SendNew(charB, CHAT_TYPE_INFO, 109, "%s", ecs::PlayerRuntime::GetName(charA).data());
+				SendChatPacketToObserver(CHAT_TYPE_NOTICE, 109, "%s", ecs::PlayerRuntime::GetName(charA).data());
 #endif
-				LOG_INFO("ARENA: Duel is end. Winner {}({}) Loser {}({})", ecs::PlayerRuntime::GetName(((pCharA) ? (pCharA)->GetEntityHandle() : entt::null)).data(), GetPlayerAPID(), ecs::PlayerRuntime::GetName(((pCharB) ? (pCharB)->GetEntityHandle() : entt::null)).data(), GetPlayerBPID());
+				LOG_INFO("ARENA: Duel is end. Winner {}({}) Loser {}({})", ecs::PlayerRuntime::GetName(charA).data(), GetPlayerAPID(), ecs::PlayerRuntime::GetName(charB).data(), GetPlayerBPID());
 			}
 			else
 			{
 				restart = true;
 #ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(((pCharA) ? (pCharA)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 110, "%s", ecs::PlayerRuntime::GetName(((pCharA) ? (pCharA)->GetEntityHandle() : entt::null)).data());
-				ecs::ChatSystem::SendNew(((pCharB) ? (pCharB)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 110, "%s", ecs::PlayerRuntime::GetName(((pCharA) ? (pCharA)->GetEntityHandle() : entt::null)).data());
-				SendChatPacketToObserver(CHAT_TYPE_NOTICE, 110, "%s", ecs::PlayerRuntime::GetName(((pCharA) ? (pCharA)->GetEntityHandle() : entt::null)).data());
-				ecs::ChatSystem::SendNew(((pCharA) ? (pCharA)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 709, "%s#%d#%s#%d", ecs::PlayerRuntime::GetName(((pCharA) ? (pCharA)->GetEntityHandle() : entt::null)).data(), GetPlayerAPID(), ecs::PlayerRuntime::GetName(((pCharB) ? (pCharB)->GetEntityHandle() : entt::null)).data(), GetPlayerBPID());
-				ecs::ChatSystem::SendNew(((pCharA) ? (pCharA)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 709, "%s#%d#%s#%d", ecs::PlayerRuntime::GetName(((pCharA) ? (pCharA)->GetEntityHandle() : entt::null)).data(), GetPlayerAPID(), ecs::PlayerRuntime::GetName(((pCharB) ? (pCharB)->GetEntityHandle() : entt::null)).data(), GetPlayerBPID());
-				SendChatPacketToObserver(CHAT_TYPE_NOTICE, 709, "%s#%d#%s#%d", ecs::PlayerRuntime::GetName(((pCharA) ? (pCharA)->GetEntityHandle() : entt::null)).data(), GetPlayerAPID(), ecs::PlayerRuntime::GetName(((pCharB) ? (pCharB)->GetEntityHandle() : entt::null)).data(), GetPlayerBPID());
+				ecs::ChatSystem::SendNew(charA, CHAT_TYPE_INFO, 110, "%s", ecs::PlayerRuntime::GetName(charA).data());
+				ecs::ChatSystem::SendNew(charB, CHAT_TYPE_INFO, 110, "%s", ecs::PlayerRuntime::GetName(charA).data());
+				SendChatPacketToObserver(CHAT_TYPE_NOTICE, 110, "%s", ecs::PlayerRuntime::GetName(charA).data());
+				ecs::ChatSystem::SendNew(charA, CHAT_TYPE_INFO, 709, "%s#%d#%s#%d", ecs::PlayerRuntime::GetName(charA).data(), GetPlayerAPID(), ecs::PlayerRuntime::GetName(charB).data(), GetPlayerBPID());
+				ecs::ChatSystem::SendNew(charA, CHAT_TYPE_INFO, 709, "%s#%d#%s#%d", ecs::PlayerRuntime::GetName(charA).data(), GetPlayerAPID(), ecs::PlayerRuntime::GetName(charB).data(), GetPlayerBPID());
+				SendChatPacketToObserver(CHAT_TYPE_NOTICE, 709, "%s#%d#%s#%d", ecs::PlayerRuntime::GetName(charA).data(), GetPlayerAPID(), ecs::PlayerRuntime::GetName(charB).data(), GetPlayerBPID());
 #endif
-				LOG_INFO("ARENA: {}({}) won a round vs {}({})", ecs::PlayerRuntime::GetName(((pCharA) ? (pCharA)->GetEntityHandle() : entt::null)).data(), GetPlayerAPID(), ecs::PlayerRuntime::GetName(((pCharB) ? (pCharB)->GetEntityHandle() : entt::null)).data(), GetPlayerBPID());
+				LOG_INFO("ARENA: {}({}) won a round vs {}({})", ecs::PlayerRuntime::GetName(charA).data(), GetPlayerAPID(), ecs::PlayerRuntime::GetName(charB).data(), GetPlayerBPID());
 			}
 		}
 		else if (m_dwPIDB == dwPIDA)
@@ -787,9 +803,9 @@ bool CArena::OnDead(uint32_t dwPIDA, uint32_t dwPIDB)
 			if (m_dwSetPointOfB >= m_dwSetCount)
 			{
 #ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(((pCharA) ? (pCharA)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 109, "%s", ecs::PlayerRuntime::GetName(((pCharB) ? (pCharB)->GetEntityHandle() : entt::null)).data());
-				ecs::ChatSystem::SendNew(((pCharB) ? (pCharB)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 109, "%s", ecs::PlayerRuntime::GetName(((pCharB) ? (pCharB)->GetEntityHandle() : entt::null)).data());
-				SendChatPacketToObserver(CHAT_TYPE_NOTICE, 109, "%s", ecs::PlayerRuntime::GetName(((pCharB) ? (pCharB)->GetEntityHandle() : entt::null)).data());
+				ecs::ChatSystem::SendNew(charA, CHAT_TYPE_INFO, 109, "%s", ecs::PlayerRuntime::GetName(charB).data());
+				ecs::ChatSystem::SendNew(charB, CHAT_TYPE_INFO, 109, "%s", ecs::PlayerRuntime::GetName(charB).data());
+				SendChatPacketToObserver(CHAT_TYPE_NOTICE, 109, "%s", ecs::PlayerRuntime::GetName(charB).data());
 #endif
 				LOG_INFO("ARENA: Duel is end. Winner({}) Loser({})", GetPlayerBPID(), GetPlayerAPID());
 			}
@@ -797,12 +813,12 @@ bool CArena::OnDead(uint32_t dwPIDA, uint32_t dwPIDB)
 			{
 				restart = true;
 #ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(((pCharA) ? (pCharA)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 110, "%s", ecs::PlayerRuntime::GetName(((pCharB) ? (pCharB)->GetEntityHandle() : entt::null)).data());
-				ecs::ChatSystem::SendNew(((pCharB) ? (pCharB)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 110, "%s", ecs::PlayerRuntime::GetName(((pCharB) ? (pCharB)->GetEntityHandle() : entt::null)).data());
-				SendChatPacketToObserver(CHAT_TYPE_NOTICE, 110, "%s", ecs::PlayerRuntime::GetName(((pCharB) ? (pCharB)->GetEntityHandle() : entt::null)).data());
-				ecs::ChatSystem::SendNew(((pCharA) ? (pCharA)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 709, "%s#%d#%s#%d", ecs::PlayerRuntime::GetName(((pCharA) ? (pCharA)->GetEntityHandle() : entt::null)).data(), GetPlayerAPID(), ecs::PlayerRuntime::GetName(((pCharB) ? (pCharB)->GetEntityHandle() : entt::null)).data(), GetPlayerBPID());
-				ecs::ChatSystem::SendNew(((pCharA) ? (pCharA)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 709, "%s#%d#%s#%d", ecs::PlayerRuntime::GetName(((pCharA) ? (pCharA)->GetEntityHandle() : entt::null)).data(), GetPlayerAPID(), ecs::PlayerRuntime::GetName(((pCharB) ? (pCharB)->GetEntityHandle() : entt::null)).data(), GetPlayerBPID());
-				SendChatPacketToObserver(CHAT_TYPE_NOTICE, 709, "%s#%d#%s#%d", ecs::PlayerRuntime::GetName(((pCharA) ? (pCharA)->GetEntityHandle() : entt::null)).data(), GetPlayerAPID(), ecs::PlayerRuntime::GetName(((pCharB) ? (pCharB)->GetEntityHandle() : entt::null)).data(), GetPlayerBPID());
+				ecs::ChatSystem::SendNew(charA, CHAT_TYPE_INFO, 110, "%s", ecs::PlayerRuntime::GetName(charB).data());
+				ecs::ChatSystem::SendNew(charB, CHAT_TYPE_INFO, 110, "%s", ecs::PlayerRuntime::GetName(charB).data());
+				SendChatPacketToObserver(CHAT_TYPE_NOTICE, 110, "%s", ecs::PlayerRuntime::GetName(charB).data());
+				ecs::ChatSystem::SendNew(charA, CHAT_TYPE_INFO, 709, "%s#%d#%s#%d", ecs::PlayerRuntime::GetName(charA).data(), GetPlayerAPID(), ecs::PlayerRuntime::GetName(charB).data(), GetPlayerBPID());
+				ecs::ChatSystem::SendNew(charA, CHAT_TYPE_INFO, 709, "%s#%d#%s#%d", ecs::PlayerRuntime::GetName(charA).data(), GetPlayerAPID(), ecs::PlayerRuntime::GetName(charB).data(), GetPlayerBPID());
+				SendChatPacketToObserver(CHAT_TYPE_NOTICE, 709, "%s#%d#%s#%d", ecs::PlayerRuntime::GetName(charA).data(), GetPlayerAPID(), ecs::PlayerRuntime::GetName(charB).data(), GetPlayerBPID());
 #endif
 				LOG_INFO("ARENA : PID({}) won a round. Opp({})", GetPlayerBPID(), GetPlayerAPID());
 			}
@@ -826,10 +842,10 @@ bool CArena::OnDead(uint32_t dwPIDA, uint32_t dwPIDB)
 	{
 #ifdef TEXTS_IMPROVEMENT
 		if (pCharA != nullptr) {
-			ecs::ChatSystem::SendNew(((pCharA) ? (pCharA)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 223, "");
+			ecs::ChatSystem::SendNew(charA, CHAT_TYPE_INFO, 223, "");
 		}
 		if (pCharB != nullptr) {
-			ecs::ChatSystem::SendNew(((pCharB) ? (pCharB)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 223, "");
+			ecs::ChatSystem::SendNew(charB, CHAT_TYPE_INFO, 223, "");
 		}
 
 		SendChatPacketToObserver(CHAT_TYPE_INFO, 223, "");
@@ -849,11 +865,11 @@ bool CArena::OnDead(uint32_t dwPIDA, uint32_t dwPIDB)
 	{
 #ifdef TEXTS_IMPROVEMENT
 		if (pCharA != nullptr) {
-			ecs::ChatSystem::SendNew(((pCharA) ? (pCharA)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 221, "");
+			ecs::ChatSystem::SendNew(charA, CHAT_TYPE_INFO, 221, "");
 		}
 
 		if (pCharB != nullptr) {
-			ecs::ChatSystem::SendNew(((pCharB) ? (pCharB)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 221, "");
+			ecs::ChatSystem::SendNew(charB, CHAT_TYPE_INFO, 221, "");
 		}
 
 		SendChatPacketToObserver(CHAT_TYPE_INFO, 221, "");

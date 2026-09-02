@@ -33,16 +33,17 @@ void CBuffOnAttributes::RemoveBuffFromItem(LPITEM pItem)
 		return ;
 	if (nullptr != pItem)
 	{
-		if (ItemSystem::GetItemCell((pItem ? pItem->GetEntityHandle() : entt::null)) < INVENTORY_MAX_NUM)
+		const entt::entity item = pItem ? pItem->GetEntityHandle() : entt::null;
+		if (ItemSystem::GetItemCell(item) < INVENTORY_MAX_NUM)
 			return;
-		std::vector <uint8_t>::iterator it = find (m_p_vec_buff_wear_targets->begin(), m_p_vec_buff_wear_targets->end(), ItemSystem::GetItemCell((pItem ? pItem->GetEntityHandle() : entt::null)) - INVENTORY_MAX_NUM);
+		std::vector <uint8_t>::iterator it = find (m_p_vec_buff_wear_targets->begin(), m_p_vec_buff_wear_targets->end(), ItemSystem::GetItemCell(item) - INVENTORY_MAX_NUM);
 		if (m_p_vec_buff_wear_targets->end() == it)
 			return;
 
 		int m = pItem->GetAttributeCount();
 		for (int j = 0; j < m; j++)
 		{
-			TPlayerItemAttribute attr = ItemSystem::GetItemAttribute((pItem ? pItem->GetEntityHandle() : entt::null), j);
+			TPlayerItemAttribute attr = ItemSystem::GetItemAttribute(item, j);
 			TMapAttr::iterator it = m_map_additional_attrs.find(attr.bType);
 			// m_map_additional_attrs에서 해당 attribute type에 대한 값을 제거하고,
 			// 변경된 값의 (m_bBuffValue)%만큼의 버프 효과 감소
@@ -56,7 +57,7 @@ void CBuffOnAttributes::RemoveBuffFromItem(LPITEM pItem)
 			}
 			else
 			{
-				LOG_ERROR("Buff ERROR(type {}). This item({}) attr_type({}) was not in buff pool", m_bPointType, ItemSystem::GetItemVnum((pItem ? pItem->GetEntityHandle() : entt::null)), attr.bType);
+				LOG_ERROR("Buff ERROR(type {}). This item({}) attr_type({}) was not in buff pool", m_bPointType, ItemSystem::GetItemVnum(item), attr.bType);
 				return;
 			}
 		}
@@ -69,16 +70,17 @@ void CBuffOnAttributes::AddBuffFromItem(LPITEM pItem)
 		return ;
 	if (nullptr != pItem)
 	{
-		if (ItemSystem::GetItemCell((pItem ? pItem->GetEntityHandle() : entt::null)) < INVENTORY_MAX_NUM)
+		const entt::entity item = pItem ? pItem->GetEntityHandle() : entt::null;
+		if (ItemSystem::GetItemCell(item) < INVENTORY_MAX_NUM)
 			return;
-		std::vector <uint8_t>::iterator it = find (m_p_vec_buff_wear_targets->begin(), m_p_vec_buff_wear_targets->end(), ItemSystem::GetItemCell((pItem ? pItem->GetEntityHandle() : entt::null)) - INVENTORY_MAX_NUM);
+		std::vector <uint8_t>::iterator it = find (m_p_vec_buff_wear_targets->begin(), m_p_vec_buff_wear_targets->end(), ItemSystem::GetItemCell(item) - INVENTORY_MAX_NUM);
 		if (m_p_vec_buff_wear_targets->end() == it)
 			return;
 
 		int m = pItem->GetAttributeCount();
 		for (int j = 0; j < m; j++)
 		{
-			TPlayerItemAttribute attr = ItemSystem::GetItemAttribute((pItem ? pItem->GetEntityHandle() : entt::null), j);
+			TPlayerItemAttribute attr = ItemSystem::GetItemAttribute(item, j);
 			TMapAttr::iterator it = m_map_additional_attrs.find(attr.bType);
 
 			// m_map_additional_attrs에서 해당 attribute type에 대한 값이 없다면 추가.

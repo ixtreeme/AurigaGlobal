@@ -161,11 +161,13 @@ CWarMap::~CWarMap()
 	while (it != m_set_pkChr.end())
 	{
 		LPCHARACTER ch = *(it++);
+		const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
 
-		if (ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null)))
+
+		if (ecs::PlayerRuntime::GetDesc(chEntity))
 		{
-			LOG_INFO("WarMap::~WarMap : disconnecting {}", ecs::PlayerRuntime::GetName(((ch) ? (ch)->GetEntityHandle() : entt::null)).data());
-			DESC_MANAGER::instance().DestroyDesc(ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null)));
+			LOG_INFO("WarMap::~WarMap : disconnecting {}", ecs::PlayerRuntime::GetName(chEntity).data());
+			DESC_MANAGER::instance().DestroyDesc(ecs::PlayerRuntime::GetDesc(chEntity));
 		}
 	}
 
@@ -251,9 +253,10 @@ uint8_t CWarMap::GetType()
 
 uint32_t CWarMap::GetGuildOpponent(LPCHARACTER ch)
 {
-	if (ecs::SocialSystem::GetGuild(((ch) ? (ch)->GetEntityHandle() : entt::null)))
+	const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
+	if (ecs::SocialSystem::GetGuild(chEntity))
 	{
-		uint32_t gid = ecs::SocialSystem::GetGuild(((ch) ? (ch)->GetEntityHandle() : entt::null))->GetID();
+		uint32_t gid = ecs::SocialSystem::GetGuild(chEntity)->GetID();
 		uint8_t idx;
 
 		if (GetTeamIndex(gid, idx))
@@ -280,13 +283,14 @@ uint32_t CWarMap::GetWinnerGuild()
 
 void CWarMap::UsePotion(LPCHARACTER ch, LPITEM item)
 {
+	const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
 	if (m_pkEndEvent)
 		return;
 
-	if (ecs::PlayerRuntime::IsObserverMode(((ch) ? (ch)->GetEntityHandle() : entt::null)))
+	if (ecs::PlayerRuntime::IsObserverMode(chEntity))
 		return;
 
-	if (!ecs::SocialSystem::GetGuild(((ch) ? (ch)->GetEntityHandle() : entt::null)))
+	if (!ecs::SocialSystem::GetGuild(chEntity))
 		return;
 
 	const TItemTable* itemProto = ItemSystem::GetItemProto((item ? item->GetEntityHandle() : entt::null));
@@ -295,7 +299,7 @@ void CWarMap::UsePotion(LPCHARACTER ch, LPITEM item)
 
 	int iPrice = itemProto->dwGold;
 
-	uint32_t gid = ecs::SocialSystem::GetGuild(((ch) ? (ch)->GetEntityHandle() : entt::null))->GetID();
+	uint32_t gid = ecs::SocialSystem::GetGuild(chEntity)->GetID();
 
 	if (gid == m_TeamData[0].dwID)
 		m_TeamData[0].iUsePotionPrice += iPrice;
@@ -339,8 +343,9 @@ struct FSendUserCount
 
 	void operator() (LPCHARACTER ch)
 	{
-		ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_COMMAND, buf1);
-		ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_COMMAND, buf2);
+		const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
+		ecs::ChatSystem::Send(chEntity, CHAT_TYPE_COMMAND, buf1);
+		ecs::ChatSystem::Send(chEntity, CHAT_TYPE_COMMAND, buf2);
 	}
 };
 
@@ -358,20 +363,21 @@ void CWarMap::UpdateUserCount()
 
 void CWarMap::IncMember(LPCHARACTER ch)
 {
-	if (!ecs::PlayerRuntime::IsPC(((ch) ? (ch)->GetEntityHandle() : entt::null)))
+	const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
+	if (!ecs::PlayerRuntime::IsPC(chEntity))
 		return;
 
 	LOG_TRACE("WarMap::IncMember");
 	uint32_t gid = 0;
 
-	if (ecs::SocialSystem::GetGuild(((ch) ? (ch)->GetEntityHandle() : entt::null)))
-		gid = ecs::SocialSystem::GetGuild(((ch) ? (ch)->GetEntityHandle() : entt::null))->GetID();
+	if (ecs::SocialSystem::GetGuild(chEntity))
+		gid = ecs::SocialSystem::GetGuild(chEntity)->GetID();
 
-	bool isWarMember = ecs::QuestSystem::GetFlag(((ch) ? (ch)->GetEntityHandle() : entt::null), "war.is_war_member") > 0 ? true : false;
+	bool isWarMember = ecs::QuestSystem::GetFlag(chEntity, "war.is_war_member") > 0 ? true : false;
 
 	if (isWarMember && gid != m_TeamData[0].dwID && gid != m_TeamData[1].dwID)
 	{
-		ecs::QuestSystem::SetFlag(((ch) ? (ch)->GetEntityHandle() : entt::null), "war.is_war_member", 0);
+		ecs::QuestSystem::SetFlag(chEntity, "war.is_war_member", 0);
 		isWarMember = false;
 	}
 
@@ -398,8 +404,8 @@ void CWarMap::IncMember(LPCHARACTER ch)
 		LOG_TRACE("WarMap +o {}", m_iObserverCount);
 		ch->SetObserverMode(true);
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 255, "");
-		ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 448, "");
+		ecs::ChatSystem::SendNew(chEntity, CHAT_TYPE_INFO, 255, "");
+		ecs::ChatSystem::SendNew(chEntity, CHAT_TYPE_INFO, 448, "");
 #endif
 	}
 
@@ -407,7 +413,7 @@ void CWarMap::IncMember(LPCHARACTER ch)
 
 	m_set_pkChr.insert(ch);
 
-	LPDESC d = ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null));
+	LPDESC d = ecs::PlayerRuntime::GetDesc(chEntity);
 
 	SendWarPacket(d);
 	SendScorePacket(0, d);
@@ -416,16 +422,17 @@ void CWarMap::IncMember(LPCHARACTER ch)
 
 void CWarMap::DecMember(LPCHARACTER ch)
 {
-	if (!ecs::PlayerRuntime::IsPC(((ch) ? (ch)->GetEntityHandle() : entt::null)))
+	const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
+	if (!ecs::PlayerRuntime::IsPC(chEntity))
 		return;
 
 	LOG_TRACE("WarMap::DecMember");
 	uint32_t gid = 0;
 
-	if (ecs::SocialSystem::GetGuild(((ch) ? (ch)->GetEntityHandle() : entt::null)))
-		gid = ecs::SocialSystem::GetGuild(((ch) ? (ch)->GetEntityHandle() : entt::null))->GetID();
+	if (ecs::SocialSystem::GetGuild(chEntity))
+		gid = ecs::SocialSystem::GetGuild(chEntity)->GetID();
 
-	if (!ecs::PlayerRuntime::IsObserverMode(((ch) ? (ch)->GetEntityHandle() : entt::null)))
+	if (!ecs::PlayerRuntime::IsObserverMode(chEntity))
 	{
 		if (gid == m_TeamData[0].dwID)
 			m_TeamData[0].RemoveMember(ch);
@@ -434,23 +441,23 @@ void CWarMap::DecMember(LPCHARACTER ch)
 
 		if (m_kMapInfo.bType == WAR_MAP_TYPE_FLAG)
 		{
-			CAffect * pkAff = AffectSystem::FindAffect(((ch) ? (ch)->GetEntityHandle() : entt::null), AFFECT_WAR_FLAG);
+			CAffect * pkAff = AffectSystem::FindAffect(chEntity, AFFECT_WAR_FLAG);
 
 			if (pkAff)
 			{
 				uint8_t idx;
 
 				if (GetTeamIndex(pkAff->lApplyValue, idx))
-					AddFlag(idx, ecs::PlayerRuntime::GetX(((ch) ? (ch)->GetEntityHandle() : entt::null)), ecs::PlayerRuntime::GetY(((ch) ? (ch)->GetEntityHandle() : entt::null)));
+					AddFlag(idx, ecs::PlayerRuntime::GetX(chEntity), ecs::PlayerRuntime::GetY(chEntity));
 
-				AffectSystem::RemoveAffect(((ch) ? (ch)->GetEntityHandle() : entt::null), AFFECT_WAR_FLAG);
+				AffectSystem::RemoveAffect(chEntity, AFFECT_WAR_FLAG);
 			}
 		}
 
 		LOG_TRACE("WarMap -m {}(cur:{}, acc:{}) vs {}(cur:{}, acc:{})", m_TeamData[0].dwID, m_TeamData[0].GetCurJointerCount(), m_TeamData[0].GetAccumulatedJoinerCount(), m_TeamData[1].dwID, m_TeamData[1].GetCurJointerCount(), m_TeamData[1].GetAccumulatedJoinerCount());
 
 		CheckWarEnd();
-		ecs::QuestSystem::SetFlag(((ch) ? (ch)->GetEntityHandle() : entt::null), "war.is_war_member", 0);
+		ecs::QuestSystem::SetFlag(chEntity, "war.is_war_member", 0);
 	}
 	else
 	{
@@ -469,9 +476,10 @@ struct FExitGuildWar
 {
 	void operator() (LPCHARACTER ch)
 	{
-		if (ecs::PlayerRuntime::IsPC(((ch) ? (ch)->GetEntityHandle() : entt::null)))
+		const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
+		if (ecs::PlayerRuntime::IsPC(chEntity))
 		{
-			ecs::MovementSystem::ExitToSavedLocation(((ch) ? (ch)->GetEntityHandle() : entt::null));
+			ecs::MovementSystem::ExitToSavedLocation(chEntity);
 		}
 	}
 };
@@ -793,17 +801,19 @@ bool CWarMap::SetEnded()
 
 void CWarMap::OnKill(LPCHARACTER killer, LPCHARACTER ch)
 {
+	const entt::entity killerEntity = killer ? killer->GetEntityHandle() : entt::null;
+	const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
 	if (m_bEnded)
 		return;
 
 	uint32_t dwKillerGuild = 0;
 	uint32_t dwDeadGuild = 0;
 
-	if (ecs::SocialSystem::GetGuild(((killer) ? (killer)->GetEntityHandle() : entt::null)))
-		dwKillerGuild = ecs::SocialSystem::GetGuild(((killer) ? (killer)->GetEntityHandle() : entt::null))->GetID();
+	if (ecs::SocialSystem::GetGuild(killerEntity))
+		dwKillerGuild = ecs::SocialSystem::GetGuild(killerEntity)->GetID();
 
-	if (ecs::SocialSystem::GetGuild(((ch) ? (ch)->GetEntityHandle() : entt::null)))
-		dwDeadGuild = ecs::SocialSystem::GetGuild(((ch) ? (ch)->GetEntityHandle() : entt::null))->GetID();
+	if (ecs::SocialSystem::GetGuild(chEntity))
+		dwDeadGuild = ecs::SocialSystem::GetGuild(chEntity)->GetID();
 
 	uint8_t idx;
 
@@ -818,19 +828,19 @@ void CWarMap::OnKill(LPCHARACTER killer, LPCHARACTER ch)
 	switch (m_kMapInfo.bType)
 	{
 		case WAR_MAP_TYPE_NORMAL:
-			SendGuildWarScore(dwKillerGuild, dwDeadGuild, 1, ecs::PointSystem::GetLevel(((ch) ? (ch)->GetEntityHandle() : entt::null)));
+			SendGuildWarScore(dwKillerGuild, dwDeadGuild, 1, ecs::PointSystem::GetLevel(chEntity));
 			break;
 
 		case WAR_MAP_TYPE_FLAG:
 			{
-				CAffect * pkAff = AffectSystem::FindAffect(((ch) ? (ch)->GetEntityHandle() : entt::null), AFFECT_WAR_FLAG);
+				CAffect * pkAff = AffectSystem::FindAffect(chEntity, AFFECT_WAR_FLAG);
 
 				if (pkAff)
 				{
 					if (GetTeamIndex(pkAff->lApplyValue, idx))
-						AddFlag(idx, ecs::PlayerRuntime::GetX(((ch) ? (ch)->GetEntityHandle() : entt::null)), ecs::PlayerRuntime::GetY(((ch) ? (ch)->GetEntityHandle() : entt::null)));
+						AddFlag(idx, ecs::PlayerRuntime::GetX(chEntity), ecs::PlayerRuntime::GetY(chEntity));
 
-					AffectSystem::RemoveAffect(((ch) ? (ch)->GetEntityHandle() : entt::null), AFFECT_WAR_FLAG);
+					AffectSystem::RemoveAffect(chEntity, AFFECT_WAR_FLAG);
 				}
 			}
 			break;
@@ -946,8 +956,9 @@ struct FRemoveFlagAffect
 {
 	void operator() (LPCHARACTER ch)
 	{
-		if (AffectSystem::FindAffect(((ch) ? (ch)->GetEntityHandle() : entt::null), AFFECT_WAR_FLAG))
-			AffectSystem::RemoveAffect(((ch) ? (ch)->GetEntityHandle() : entt::null), AFFECT_WAR_FLAG);
+		const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
+		if (AffectSystem::FindAffect(chEntity, AFFECT_WAR_FLAG))
+			AffectSystem::RemoveAffect(chEntity, AFFECT_WAR_FLAG);
 	}
 };
 

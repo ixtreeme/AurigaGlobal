@@ -539,6 +539,8 @@ void CInputDB::PlayerLoad(LPDESC d, const char * data)
 	}
 
 	auto* ch = CHARACTER_MANAGER::instance().CreateCharacter(pTab->name, pTab->id);
+	const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
+
 
 	ch->BindDesc(d);
 	ch->SetPlayerProto(pTab);
@@ -554,28 +556,28 @@ void CInputDB::PlayerLoad(LPDESC d, const char * data)
             d,
             ch->GetLegacyVID());
         d->SetEntity(ecs_e);
-        LOG_INFO("ECS: PC entity created VID={} pid={}", ch->GetLegacyVID(), ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null)));
+        LOG_INFO("ECS: PC entity created VID={} pid={}", ch->GetLegacyVID(), ecs::PlayerRuntime::GetPlayerID(chEntity));
 
 
         // Phase 7: sync ECS vital components from DB result
         if (g_registry.valid(ecs_e)) {
             auto& h = g_registry.get_or_emplace<ecs::Health>(ecs_e);
             h.current = ch->GetHP();
-            h.max     = ecs::PointSystem::GetMaxHP(((ch) ? (ch)->GetEntityHandle() : entt::null));
+            h.max     = ecs::PointSystem::GetMaxHP(chEntity);
 
             auto& m = g_registry.get_or_emplace<ecs::Mana>(ecs_e);
             m.current = ch->GetSP();
-            m.max     = ecs::PointSystem::GetMaxSP(((ch) ? (ch)->GetEntityHandle() : entt::null));
+            m.max     = ecs::PointSystem::GetMaxSP(chEntity);
 
             auto& lv = g_registry.get_or_emplace<ecs::LevelComponent>(ecs_e);
-            lv.value = ecs::PointSystem::GetLevel(((ch) ? (ch)->GetEntityHandle() : entt::null));
+            lv.value = ecs::PointSystem::GetLevel(chEntity);
 
             auto& exp = g_registry.get_or_emplace<ecs::Experience>(ecs_e);
             exp.current = ch->GetExp();
             exp.next    = ch->GetNextExp();
 
             auto& gold = g_registry.get_or_emplace<ecs::GoldAmount>(ecs_e);
-            gold.amount = ecs::PointSystem::GetGold(((ch) ? (ch)->GetEntityHandle() : entt::null));
+            gold.amount = ecs::PointSystem::GetGold(chEntity);
         }
     }
 
@@ -584,10 +586,10 @@ void CInputDB::PlayerLoad(LPDESC d, const char * data)
 		TPacketGGLogin p;
 
 		p.bHeader = HEADER_GG_LOGIN;
-		strlcpy(p.szName, ecs::PlayerRuntime::GetName(((ch) ? (ch)->GetEntityHandle() : entt::null)).data(), sizeof(p.szName));
-		p.dwPID = (ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null)));
-		p.bEmpire = ecs::PlayerRuntime::GetEmpire(((ch) ? (ch)->GetEntityHandle() : entt::null));
-		p.lMapIndex = SECTREE_MANAGER::instance().GetMapIndex(ecs::PlayerRuntime::GetX(((ch) ? (ch)->GetEntityHandle() : entt::null)), ecs::PlayerRuntime::GetY(((ch) ? (ch)->GetEntityHandle() : entt::null)));
+		strlcpy(p.szName, ecs::PlayerRuntime::GetName(chEntity).data(), sizeof(p.szName));
+		p.dwPID = (ecs::PlayerRuntime::GetPlayerID(chEntity));
+		p.bEmpire = ecs::PlayerRuntime::GetEmpire(chEntity);
+		p.lMapIndex = SECTREE_MANAGER::instance().GetMapIndex(ecs::PlayerRuntime::GetX(chEntity), ecs::PlayerRuntime::GetY(chEntity));
 		p.bChannel = g_bChannel;
 
 		P2P_MANAGER::instance().Send(&p, sizeof(TPacketGGLogin));
@@ -596,22 +598,22 @@ void CInputDB::PlayerLoad(LPDESC d, const char * data)
 
 		snprintf(buf, sizeof(buf), "%s %lld %d %d %u",
 
-				inet_ntoa(ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null))->GetAddr().sin_addr), ecs::PointSystem::GetGold(((ch) ? (ch)->GetEntityHandle() : entt::null)), g_bChannel, ecs::PlayerRuntime::GetMapIndex(((ch) ? (ch)->GetEntityHandle() : entt::null)), ch->GetAlignment());
+				inet_ntoa(ecs::PlayerRuntime::GetDesc(chEntity)->GetAddr().sin_addr), ecs::PointSystem::GetGold(chEntity), g_bChannel, ecs::PlayerRuntime::GetMapIndex(chEntity), ch->GetAlignment());
 		LogManager::instance().CharLog(ch, 0, "LOGIN", buf);
 
 #ifdef ENABLE_PCBANG_FEATURE // @warme006
 		{
 			LogManager::instance().LoginLog(true,
-					ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null))->GetAccountTable().id, (ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null))), (ecs::PointSystem::GetLevel(((ch) ? (ch)->GetEntityHandle() : entt::null))), ch->GetJob(), ecs::PointSystem::GetReal(((ch) ? (ch)->GetEntityHandle() : entt::null), POINT_PLAYTIME));
+					ecs::PlayerRuntime::GetDesc(chEntity)->GetAccountTable().id, (ecs::PlayerRuntime::GetPlayerID(chEntity)), (ecs::PointSystem::GetLevel(chEntity)), ch->GetJob(), ecs::PointSystem::GetReal(chEntity, POINT_PLAYTIME));
 
 			if (0)
-				ch->SetPCBang(CPCBangManager::instance().IsPCBangIP(ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null))->GetHostName()));
+				ch->SetPCBang(CPCBangManager::instance().IsPCBangIP(ecs::PlayerRuntime::GetDesc(chEntity)->GetHostName()));
 		}
 #endif
 	}
 
 	d->SetPhase(PHASE_LOADING);
-	NetworkSyncSystem::MainCharacterPacket(((ch) ? (ch)->GetEntityHandle() : entt::null));
+	NetworkSyncSystem::MainCharacterPacket(chEntity);
 
 	int32_t lPublicMapIndex = lMapIndex >= 10000 ? lMapIndex / 10000 : lMapIndex;
 	//if (!map_allow_find(lMapIndex >= 10000 ? lMapIndex / 10000 : lMapIndex) || !CheckEmpire(ch, lMapIndex))
@@ -632,10 +634,10 @@ void CInputDB::PlayerLoad(LPDESC d, const char * data)
 	for (int i = 0; i < QUICKSLOT_MAX_NUM; ++i)
 		ch->SetQuickslot(i, pTab->quickslot[i]);
 
-	NetworkSyncSystem::PointsPacket(((ch) ? (ch)->GetEntityHandle() : entt::null));
+	NetworkSyncSystem::PointsPacket(chEntity);
 	ch->SkillLevelPacket();
 
-	LOG_INFO("InputDB: player_load {} {}x{}x{} LEVEL {} MOV_SPEED {} JOB {} ATG {} DFG {} GMLv {}", pTab->name, ecs::PlayerRuntime::GetX(((ch) ? (ch)->GetEntityHandle() : entt::null)), ecs::PlayerRuntime::GetY(((ch) ? (ch)->GetEntityHandle() : entt::null)), ch->GetZ(), (ecs::PointSystem::GetLevel(((ch) ? (ch)->GetEntityHandle() : entt::null))), ecs::PointSystem::Get(((ch) ? (ch)->GetEntityHandle() : entt::null), POINT_MOV_SPEED), ch->GetJob(), ecs::PointSystem::Get(((ch) ? (ch)->GetEntityHandle() : entt::null), POINT_ATT_GRADE), ecs::PointSystem::Get(((ch) ? (ch)->GetEntityHandle() : entt::null), POINT_DEF_GRADE), ecs::PlayerRuntime::GetGMLevel(((ch) ? (ch)->GetEntityHandle() : entt::null)));
+	LOG_INFO("InputDB: player_load {} {}x{}x{} LEVEL {} MOV_SPEED {} JOB {} ATG {} DFG {} GMLv {}", pTab->name, ecs::PlayerRuntime::GetX(chEntity), ecs::PlayerRuntime::GetY(chEntity), ch->GetZ(), (ecs::PointSystem::GetLevel(chEntity)), ecs::PointSystem::Get(chEntity, POINT_MOV_SPEED), ch->GetJob(), ecs::PointSystem::Get(chEntity, POINT_ATT_GRADE), ecs::PointSystem::Get(chEntity, POINT_DEF_GRADE), ecs::PlayerRuntime::GetGMLevel(chEntity));
 
 	ch->QuerySafeboxSize();
 	ch->QueryMountInventory();
@@ -1203,6 +1205,8 @@ void CInputDB::QuestLoad(LPDESC d, const char * c_pData)
 		return;
 
 	auto* ch = d->GetCharacter();
+	const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
+
 
 	if (nullptr == ch)
 		return;
@@ -1215,16 +1219,16 @@ void CInputDB::QuestLoad(LPDESC d, const char * c_pData)
 	{
 		if (dwCount != 0)
 		{
-			if ((ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null))) != pQuestTable[0].dwPID)
+			if ((ecs::PlayerRuntime::GetPlayerID(chEntity)) != pQuestTable[0].dwPID)
 			{
-				LOG_ERROR("PID differs {} {}", (ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null))), pQuestTable[0].dwPID);
+				LOG_ERROR("PID differs {} {}", (ecs::PlayerRuntime::GetPlayerID(chEntity)), pQuestTable[0].dwPID);
 				return;
 			}
 		}
 
 		LOG_INFO("QUEST_LOAD: count {}", dwCount);
 
-		quest::PC * pkPC = quest::CQuestManager::instance().GetPCForce((ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null))));
+		quest::PC * pkPC = quest::CQuestManager::instance().GetPCForce((ecs::PlayerRuntime::GetPlayerID(chEntity)));
 
 		if (!pkPC)
 		{
@@ -1271,7 +1275,7 @@ void CInputDB::QuestLoad(LPDESC d, const char * c_pData)
 		pkPC->SetLoaded();
 		pkPC->Build();
 
-		if (ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null))->IsPhase(PHASE_GAME))
+		if (ecs::PlayerRuntime::GetDesc(chEntity)->IsPhase(PHASE_GAME))
 		{
 			LOG_INFO("QUEST_LOAD: Login pc {}", pQuestTable[0].dwPID);
 			quest::CQuestManager::instance().Login(pQuestTable[0].dwPID);
@@ -1279,7 +1283,7 @@ void CInputDB::QuestLoad(LPDESC d, const char * c_pData)
 		else
 		{
 			quest_login_event_info* info = AllocEventInfo<quest_login_event_info>();
-			info->dwPID = (ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null)));
+			info->dwPID = (ecs::PlayerRuntime::GetPlayerID(chEntity));
 
 			event_create(quest_login_event, info, PASSES_PER_SEC(1));
 		}
@@ -1305,12 +1309,14 @@ void CInputDB::SafeboxLoad(LPDESC d, const char * c_pData)
 	uint8_t bSize = 1;
 
 	auto* ch = d->GetCharacter();
+	const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
+
 
 	//PREVENT_TRADE_WINDOW
-	if (ch->GetShopOwner() || ecs::SocialSystem::GetExchange(((ch) ? (ch)->GetEntityHandle() : entt::null)) || ch->GetMyShop() || ch->IsCubeOpen() )
+	if (ch->GetShopOwner() || ecs::SocialSystem::GetExchange(chEntity) || ch->GetMyShop() || ch->IsCubeOpen() )
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 296, "");
+		ecs::ChatSystem::SendNew(chEntity, CHAT_TYPE_INFO, 296, "");
 #endif
 		d->GetCharacter()->CancelSafeboxLoad();
 		return;
@@ -1320,7 +1326,7 @@ void CInputDB::SafeboxLoad(LPDESC d, const char * c_pData)
 	if (ch->IsAttrTransferOpen())
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 296, "");
+		ecs::ChatSystem::SendNew(chEntity, CHAT_TYPE_INFO, 296, "");
 #endif
 		d->GetCharacter()->CancelSafeboxLoad();
 		return;
@@ -1865,6 +1871,8 @@ void CInputDB::BattlePassLoadRanking(LPDESC d, const char * c_pData)
 		return;
 
 	auto* ch = d->GetCharacter();
+	const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
+
 	if (!ch)
 		return;
 
@@ -1879,7 +1887,7 @@ void CInputDB::BattlePassLoadRanking(LPDESC d, const char * c_pData)
 
 	//LOG_ERROR("BattlePassLoadRanking count {} playerid {}", dwCount, dwPID);
 
-	if (ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null)) != dwPID)
+	if (ecs::PlayerRuntime::GetPlayerID(chEntity) != dwPID)
 		return;
 
 	if(dwCount)
@@ -1906,13 +1914,13 @@ void CInputDB::BattlePassLoadRanking(LPDESC d, const char * c_pData)
 			packet.wSize = sizeof(packet) + sizeof(TBattlePassRanking) * sendVector.size();
 			packet.bIsGlobal = bIsGlobal;
 
-			ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null))->BufferedPacket(&packet, sizeof(packet));
-			ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null))->Packet(&sendVector[0], sizeof(TBattlePassRanking) * sendVector.size());
+			ecs::PlayerRuntime::GetDesc(chEntity)->BufferedPacket(&packet, sizeof(packet));
+			ecs::PlayerRuntime::GetDesc(chEntity)->Packet(&sendVector[0], sizeof(TBattlePassRanking) * sendVector.size());
 		}
 	}
 #ifdef TEXTS_IMPROVEMENT
 	else {
-		ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 762, "");
+		ecs::ChatSystem::SendNew(chEntity, CHAT_TYPE_INFO, 762, "");
 	}
 #endif
 }

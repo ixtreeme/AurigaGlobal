@@ -44,6 +44,7 @@ CRefineManager::~CRefineManager()
 
 	bool CRefineManager::GetPercentage(LPCHARACTER ch, uint8_t lLow, uint8_t lMedium, uint8_t lExtra, uint8_t lTotal, entt::entity item)
 	{
+		const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
 		if (!ItemSystem::IsValidItem(item)) {
 			return false;
 		}
@@ -62,9 +63,9 @@ CRefineManager::~CRefineManager()
 				if (ch->CountSpecifyItem(EXTRA_REFINE_POTIONS_GRADE[it]) < 1)
 				{
 #ifdef TEXTS_IMPROVEMENT
-					ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 620, "%s",
+					ecs::ChatSystem::SendNew(chEntity, CHAT_TYPE_INFO, 620, "%s",
 #ifdef ENABLE_MULTI_NAMES
-					ITEM_MANAGER::instance().GetTable(EXTRA_REFINE_POTIONS_GRADE[it])->szLocaleName[ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null))->GetLanguage()]
+					ITEM_MANAGER::instance().GetTable(EXTRA_REFINE_POTIONS_GRADE[it])->szLocaleName[ecs::PlayerRuntime::GetDesc(chEntity)->GetLanguage()]
 #else
 					ITEM_MANAGER::instance().GetTable(EXTRA_REFINE_POTIONS_GRADE[it])->szLocaleName)
 #endif
@@ -78,7 +79,7 @@ CRefineManager::~CRefineManager()
 		if (lTotal > 100 )
 		{
 #ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 621, "");
+			ecs::ChatSystem::SendNew(chEntity, CHAT_TYPE_INFO, 621, "");
 #endif
 			return false;
 		}
@@ -90,14 +91,15 @@ CRefineManager::~CRefineManager()
 	{
 		for (int it = 0; it <= JOURNAL_MAX_NUM; it++)
 		{
+			const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
 			char buf[MAX_HOST_LENGTH + 1];
 			snprintf(buf, sizeof(buf), "refine.mode_%d", it);
 			
-			if (ecs::QuestSystem::GetFlag(((ch) ? (ch)->GetEntityHandle() : entt::null), buf) > 0)
+			if (ecs::QuestSystem::GetFlag(chEntity, buf) > 0)
 			{
 				ch->RemoveSpecifyItem(EXTRA_REFINE_POTIONS_GRADE[it], 1);
-				ecs::QuestSystem::SetFlag(((ch) ? (ch)->GetEntityHandle() : entt::null), REFINE_INCREASE, 0);
-				ecs::QuestSystem::SetFlag(((ch) ? (ch)->GetEntityHandle() : entt::null), buf, 0);
+				ecs::QuestSystem::SetFlag(chEntity, REFINE_INCREASE, 0);
+				ecs::QuestSystem::SetFlag(chEntity, buf, 0);
 			}
 		}
 	}	
@@ -105,19 +107,21 @@ CRefineManager::~CRefineManager()
 	{
 		for (int it = 0; it <= JOURNAL_MAX_NUM; it++)
 		{
+			const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
 			char buf[MAX_HOST_LENGTH + 1];
 			snprintf(buf, sizeof(buf), "refine.mode_%d", it);
 
-			if (ecs::QuestSystem::GetFlag(((ch) ? (ch)->GetEntityHandle() : entt::null), buf) > 0)
+			if (ecs::QuestSystem::GetFlag(chEntity, buf) > 0)
 			{
 				//ch->RemoveSpecifyItem(EXTRA_REFINE_POTIONS_GRADE[it], 1);
-				ecs::QuestSystem::SetFlag(((ch) ? (ch)->GetEntityHandle() : entt::null), REFINE_INCREASE, 0);
-				ecs::QuestSystem::SetFlag(((ch) ? (ch)->GetEntityHandle() : entt::null), buf, 0);
+				ecs::QuestSystem::SetFlag(chEntity, REFINE_INCREASE, 0);
+				ecs::QuestSystem::SetFlag(chEntity, buf, 0);
 			}
 		}
 	}
 	void CRefineManager::Increase(LPCHARACTER ch, uint8_t lLow, uint8_t lMedium, uint8_t lExtra)
 	{
+		const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
 		int calcPercentage = 0;
 
 		uint8_t ar_ListType[3] = {lLow, lMedium, lExtra};
@@ -129,19 +133,19 @@ CRefineManager::~CRefineManager()
 			{
 				char buf[MAX_HOST_LENGTH + 1];
 				snprintf(buf, sizeof(buf), "refine.mode_%d", it);
-				ecs::QuestSystem::SetFlag(((ch) ? (ch)->GetEntityHandle() : entt::null), buf, 1);
+				ecs::QuestSystem::SetFlag(chEntity, buf, 1);
 
 				calcPercentage += ar_ListPercentage[it];		
 			}
 		}
 		
-		if (ecs::QuestSystem::GetFlag(((ch) ? (ch)->GetEntityHandle() : entt::null), REFINE_INCREASE) < 1)
+		if (ecs::QuestSystem::GetFlag(chEntity, REFINE_INCREASE) < 1)
 		{
-			ecs::QuestSystem::SetFlag(((ch) ? (ch)->GetEntityHandle() : entt::null), REFINE_INCREASE, calcPercentage);
+			ecs::QuestSystem::SetFlag(chEntity, REFINE_INCREASE, calcPercentage);
 		}
 #ifdef TEXTS_IMPROVEMENT
 		else {
-			ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 622, "");
+			ecs::ChatSystem::SendNew(chEntity, CHAT_TYPE_INFO, 622, "");
 		}
 #endif
 	}

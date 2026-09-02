@@ -503,7 +503,8 @@ namespace quest
 
 	void CQuestManager::LogoutPC(LPCHARACTER ch)
 	{
-		PC * pPC = GetPC(ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null)));
+		const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
+		PC * pPC = GetPC(ecs::PlayerRuntime::GetPlayerID(chEntity));
 
 		if (pPC && pPC->IsRunning())
 		{
@@ -512,7 +513,7 @@ namespace quest
 		}
 
 		// 지우기 전에 로그아웃 한다.
-		Logout(ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null)));
+		Logout(ecs::PlayerRuntime::GetPlayerID(chEntity));
 
 		if (ch == m_pCurrentCharacter)
 		{
@@ -585,13 +586,15 @@ namespace quest
 			LPCHARACTER ch = GetCurrentCharacterPtr();
 			LPPARTY pParty = ecs::SocialSystem::GetParty(((ch) ? (ch)->GetEntityHandle() : entt::null));
 			LPCHARACTER leader = pParty ? pParty->GetLeaderCharacter() : ch;
+			const entt::entity leaderEntity = leader ? leader->GetEntityHandle() : entt::null;
+
 			if (leader)
 			{
 				m_pCurrentPartyMember = ch;
 				if (npc >= MAIN_RACE_MAX_NUM) //@fixme109
-					m_mapNPC[npc].OnPartyKill(*GetPC(ecs::PlayerRuntime::GetPlayerID(((leader) ? (leader)->GetEntityHandle() : entt::null)))); //@warme004
+					m_mapNPC[npc].OnPartyKill(*GetPC(ecs::PlayerRuntime::GetPlayerID(leaderEntity))); //@warme004
 
-				m_mapNPC[QUEST_NO_NPC].OnPartyKill(*GetPC(ecs::PlayerRuntime::GetPlayerID(((leader) ? (leader)->GetEntityHandle() : entt::null))));
+				m_mapNPC[QUEST_NO_NPC].OnPartyKill(*GetPC(ecs::PlayerRuntime::GetPlayerID(leaderEntity)));
 				pPC = GetPC(pc);
 			}
 #endif
@@ -898,7 +901,8 @@ namespace quest
 
 	bool CQuestManager::GiveItemToPC(unsigned int pc, LPCHARACTER pkChr)
 	{
-		if (!ecs::PlayerRuntime::IsPC(((pkChr) ? (pkChr)->GetEntityHandle() : entt::null)))
+		const entt::entity chr = pkChr ? pkChr->GetEntityHandle() : entt::null;
+		if (!ecs::PlayerRuntime::IsPC(chr))
 			return false;
 
 		PC * pPC = GetPC(pc);
@@ -908,7 +912,7 @@ namespace quest
 			if (!CheckQuestLoaded(pPC))
 				return false;
 
-			TargetInfo * pInfo = CTargetManager::instance().GetTargetInfo(pc, TARGET_TYPE_VID, ecs::PlayerRuntime::GetPacketVID(((pkChr) ? (pkChr)->GetEntityHandle() : entt::null)));
+			TargetInfo * pInfo = CTargetManager::instance().GetTargetInfo(pc, TARGET_TYPE_VID, ecs::PlayerRuntime::GetPacketVID(chr));
 
 			if (pInfo)
 			{
@@ -928,6 +932,7 @@ namespace quest
 
 		if (pPC)
 		{
+			const entt::entity chrTarget = pkChrTarget ? pkChrTarget->GetEntityHandle() : entt::null;
 			if (!CheckQuestLoaded(pPC))
 			{
 #ifdef TEXTS_IMPROVEMENT
@@ -939,10 +944,10 @@ namespace quest
 				return false;
 			}
 
-			TargetInfo * pInfo = CTargetManager::instance().GetTargetInfo(pc, TARGET_TYPE_VID, ecs::PlayerRuntime::GetPacketVID(((pkChrTarget) ? (pkChrTarget)->GetEntityHandle() : entt::null)));
+			TargetInfo * pInfo = CTargetManager::instance().GetTargetInfo(pc, TARGET_TYPE_VID, ecs::PlayerRuntime::GetPacketVID(chrTarget));
 			if (test_server)
 			{
-				LOG_INFO("CQuestManager::Click(pid={}, npc_name={}) - target_info({:x})", pc, ecs::PlayerRuntime::GetName(((pkChrTarget) ? (pkChrTarget)->GetEntityHandle() : entt::null)).data(), reinterpret_cast<uintptr_t>(pInfo));
+				LOG_INFO("CQuestManager::Click(pid={}, npc_name={}) - target_info({:x})", pc, ecs::PlayerRuntime::GetName(chrTarget).data(), reinterpret_cast<uintptr_t>(pInfo));
 			}
 
 			if (pInfo)
@@ -952,15 +957,15 @@ namespace quest
 					return bRet;
 			}
 
-			uint32_t dwCurrentNPCRace = ecs::PlayerRuntime::GetRaceNum(((pkChrTarget) ? (pkChrTarget)->GetEntityHandle() : entt::null));
+			uint32_t dwCurrentNPCRace = ecs::PlayerRuntime::GetRaceNum(chrTarget);
 
-			if (ecs::PlayerRuntime::IsNPC(((pkChrTarget) ? (pkChrTarget)->GetEntityHandle() : entt::null)))
+			if (ecs::PlayerRuntime::IsNPC(chrTarget))
 			{
 				const auto it = m_mapNPC.find(dwCurrentNPCRace);
 
 				if (it == m_mapNPC.end())
 				{
-					LOG_INFO("CQuestManager::Click(pid={}, target_npc_name={}) - NOT EXIST NPC RACE VNUM[{}]", pc, ecs::PlayerRuntime::GetName(((pkChrTarget) ? (pkChrTarget)->GetEntityHandle() : entt::null)).data(), dwCurrentNPCRace); // @warme012
+					LOG_INFO("CQuestManager::Click(pid={}, target_npc_name={}) - NOT EXIST NPC RACE VNUM[{}]", pc, ecs::PlayerRuntime::GetName(chrTarget).data(), dwCurrentNPCRace); // @warme012
 					return false;
 				}
 
@@ -1616,31 +1621,32 @@ namespace quest
 
 	void CQuestManager::BroadcastEventFlagOnLogin(LPCHARACTER ch)
 	{
+		const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
 		int iEventFlagValue;
 
 		if ((iEventFlagValue = quest::CQuestManager::instance().GetEventFlag("xmas_snow")))
 		{
-			ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_COMMAND, "xmas_snow %d", iEventFlagValue);
+			ecs::ChatSystem::Send(chEntity, CHAT_TYPE_COMMAND, "xmas_snow %d", iEventFlagValue);
 		}
 
 		if ((iEventFlagValue = quest::CQuestManager::instance().GetEventFlag("xmas_boom")))
 		{
-			ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_COMMAND, "xmas_boom %d", iEventFlagValue);
+			ecs::ChatSystem::Send(chEntity, CHAT_TYPE_COMMAND, "xmas_boom %d", iEventFlagValue);
 		}
 
 		if ((iEventFlagValue = quest::CQuestManager::instance().GetEventFlag("xmas_tree")))
 		{
-			ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_COMMAND, "xmas_tree %d", iEventFlagValue);
+			ecs::ChatSystem::Send(chEntity, CHAT_TYPE_COMMAND, "xmas_tree %d", iEventFlagValue);
 		}
 
 		if ((iEventFlagValue = quest::CQuestManager::instance().GetEventFlag("day")))
 		{
-			ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_COMMAND, "DayMode dark");
+			ecs::ChatSystem::Send(chEntity, CHAT_TYPE_COMMAND, "DayMode dark");
 		}
 
 		if ((iEventFlagValue = quest::CQuestManager::instance().GetEventFlag("newyear_boom")))
 		{
-			ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_COMMAND, "newyear_boom %d", iEventFlagValue);
+			ecs::ChatSystem::Send(chEntity, CHAT_TYPE_COMMAND, "newyear_boom %d", iEventFlagValue);
 		}
 
 		if ( (iEventFlagValue = quest::CQuestManager::instance().GetEventFlag("eclipse")) )
@@ -1650,7 +1656,7 @@ namespace quest
 			if ( iEventFlagValue == 1 ) mode = "dark";
 			else mode = "light";
 
-			ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_COMMAND, "DayMode %s", mode.c_str());
+			ecs::ChatSystem::Send(chEntity, CHAT_TYPE_COMMAND, "DayMode %s", mode.c_str());
 		}
 	}
 
@@ -1792,10 +1798,12 @@ namespace quest
 		if (test_server)
 		{
 			LPCHARACTER ch = GetCurrentCharacterPtr();
+			const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
+
 			if (ch)
 			{
-				ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_PARTY, "error occurred on [%s:%d]", func,line);
-				ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_PARTY, "%s", msg.c_str());
+				ecs::ChatSystem::Send(chEntity, CHAT_TYPE_PARTY, "error occurred on [%s:%d]", func,line);
+				ecs::ChatSystem::Send(chEntity, CHAT_TYPE_PARTY, "%s", msg.c_str());
 			}
 		}
 	}

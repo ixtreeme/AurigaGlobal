@@ -54,11 +54,13 @@ void SECTREE::Destroy()
 			if (ent->IsType(ENTITY_CHARACTER))
 			{
 				LPCHARACTER ch = (LPCHARACTER)ent;
+				const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
 
-				LOG_ERROR("Sectree: destroying character: {} is_pc {}", ecs::PlayerRuntime::GetName(((ch) ? (ch)->GetEntityHandle() : entt::null)).data(), (ecs::PlayerRuntime::IsPC(((ch) ? (ch)->GetEntityHandle() : entt::null))) ? 1 : 0);
 
-				if (ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null)))
-					DESC_MANAGER::instance().DestroyDesc(ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null)));
+				LOG_ERROR("Sectree: destroying character: {} is_pc {}", ecs::PlayerRuntime::GetName(chEntity).data(), (ecs::PlayerRuntime::IsPC(chEntity)) ? 1 : 0);
+
+				if (ecs::PlayerRuntime::GetDesc(chEntity))
+					DESC_MANAGER::instance().DestroyDesc(ecs::PlayerRuntime::GetDesc(chEntity));
 				else
 					M2_DESTROY_CHARACTER(ch);
 			}

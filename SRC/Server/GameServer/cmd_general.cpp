@@ -61,10 +61,11 @@
 #ifdef ENABLE_DAILY_REWARD_HWID_LIMIT_RAZOR93
 static std::string MakeDailyRewardHWKey(LPCHARACTER ch)
 {
-	if (!ch || !(ecs::PlayerRuntime::IsPC(((ch) ? (ch)->GetEntityHandle() : entt::null))) || !ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null)))
+	const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
+	if (!ch || !(ecs::PlayerRuntime::IsPC(chEntity)) || !ecs::PlayerRuntime::GetDesc(chEntity))
 		return std::string();
 
-	DESC* d = ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null));
+	DESC* d = ecs::PlayerRuntime::GetDesc(chEntity);
 	const char* hwid = d->GetHwid();
 	const char* host = d->GetHostName();
 
@@ -88,7 +89,8 @@ static std::string MakeDailyRewardHWKey(LPCHARACTER ch)
 
 static bool DailyReward_CheckHWIDLimit(LPCHARACTER ch)
 {
-	if (!ch || !(ecs::PlayerRuntime::IsPC(((ch) ? (ch)->GetEntityHandle() : entt::null))) || !ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null)))
+	const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
+	if (!ch || !(ecs::PlayerRuntime::IsPC(chEntity)) || !ecs::PlayerRuntime::GetDesc(chEntity))
 		return false;
 
 	std::string key = MakeDailyRewardHWKey(ch);
@@ -107,8 +109,8 @@ static bool DailyReward_CheckHWIDLimit(LPCHARACTER ch)
 		"INSERT INTO player.daily_reward_claim_hwid (hwkey, claim_day, pid, account_id) "
 		"VALUES('%s', CURDATE(), %u, %u)",
 		key.c_str(),
-		(ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null))),
-		ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null))->GetAccountTable().id
+		(ecs::PlayerRuntime::GetPlayerID(chEntity)),
+		ecs::PlayerRuntime::GetDesc(chEntity)->GetAccountTable().id
 	));
 
 	return true;
@@ -601,10 +603,12 @@ EVENTFUNC(timed_event)
 	}
 
 	LPCHARACTER	ch = info->ch;
+	const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
+
 	if (ch == nullptr) { // <Factor>
 		return 0;
 	}
-	LPDESC d = ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null));
+	LPDESC d = ecs::PlayerRuntime::GetDesc(chEntity);
 
 	if (info->left_second <= 0)
 	{
@@ -617,7 +621,7 @@ EVENTFUNC(timed_event)
 			case SCMD_PHASE_SELECT:
 				{
 					TPacketNeedLoginLogInfo acc_info;
-					acc_info.dwPlayerID = ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null))->GetAccountTable().id;
+					acc_info.dwPlayerID = ecs::PlayerRuntime::GetDesc(chEntity)->GetAccountTable().id;
 
 					db_clientdesc->DBPacket( HEADER_GD_VALID_LOGOUT, 0, &acc_info, sizeof(acc_info) );
 
@@ -634,7 +638,7 @@ EVENTFUNC(timed_event)
 				break;
 
 			case SCMD_QUIT:
-				ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_COMMAND, "quit");
+				ecs::ChatSystem::Send(chEntity, CHAT_TYPE_COMMAND, "quit");
 				break;
 
 			case SCMD_PHASE_SELECT:
@@ -654,7 +658,7 @@ EVENTFUNC(timed_event)
 	else
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 103, "%d", info->left_second);
+		ecs::ChatSystem::SendNew(chEntity, CHAT_TYPE_INFO, 103, "%d", info->left_second);
 #endif
 		--info->left_second;
 	}
@@ -1590,6 +1594,8 @@ ACMD(do_pvp)
 	uint32_t vid = 0;
 	str_to_number(vid, arg1);
 	LPCHARACTER pkVictim = CHARACTER_MANAGER::instance().Find(vid);
+	const entt::entity victim = pkVictim ? pkVictim->GetEntityHandle() : entt::null;
+
 	//// Fake PC / non-real target => ignore
 	//if (pkVictim->IsFakePlayer() || !ecs::PlayerRuntime::GetDesc(((pkVictim) ? (pkVictim)->GetEntityHandle() : entt::null)))
 	//{
@@ -1599,47 +1605,47 @@ ACMD(do_pvp)
 	if (!pkVictim)
 		return;
 
-	if (ecs::PlayerRuntime::IsNPC(((pkVictim) ? (pkVictim)->GetEntityHandle() : entt::null)))
+	if (ecs::PlayerRuntime::IsNPC(victim))
 		return;
 
 	if (pkVictim->GetArena() != nullptr) {
 		return;
 	}
 
-	int mytime = ecs::QuestSystem::GetFlag(((pkVictim) ? (pkVictim)->GetEntityHandle() : entt::null), "pvp.timed");
+	int mytime = ecs::QuestSystem::GetFlag(victim, "pvp.timed");
 	int itime = mytime <= 0 ? 0 : mytime - get_global_time();
 	if (itime > 0) {
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(character, CHAT_TYPE_DIALOG, 888, "%d", itime);
-		ecs::ChatSystem::SendNew(((pkVictim) ? (pkVictim)->GetEntityHandle() : entt::null), CHAT_TYPE_DIALOG, 889, "%s", ecs::PlayerRuntime::GetName(character).data());
+		ecs::ChatSystem::SendNew(victim, CHAT_TYPE_DIALOG, 889, "%s", ecs::PlayerRuntime::GetName(character).data());
 #endif
 		return;
 	}
 	else {
-		ecs::QuestSystem::SetFlag(((pkVictim) ? (pkVictim)->GetEntityHandle() : entt::null), "pvp.timed", get_global_time() + 30);
+		ecs::QuestSystem::SetFlag(victim, "pvp.timed", get_global_time() + 30);
 	}
 
-	if (ecs::SocialSystem::GetExchange(character) || ecs::SocialSystem::GetExchange(((pkVictim) ? (pkVictim)->GetEntityHandle() : entt::null)))
+	if (ecs::SocialSystem::GetExchange(character) || ecs::SocialSystem::GetExchange(victim))
 	{
-		CPVPManager::instance().Decline(character, ((pkVictim) ? (pkVictim)->GetEntityHandle() : entt::null));
-		CPVPManager::instance().Decline(((pkVictim) ? (pkVictim)->GetEntityHandle() : entt::null), character);
+		CPVPManager::instance().Decline(character, victim);
+		CPVPManager::instance().Decline(victim, character);
 		return;
 	}
 
 	if (*arg2 && !strcmp(arg2, "accept"))
 	{
 		int64_t chA_nBetMoney = ecs::QuestSystem::GetFlag(character, szTableStaticPvP[8]);
-		int64_t  chB_nBetMoney = ecs::QuestSystem::GetFlag(((pkVictim) ? (pkVictim)->GetEntityHandle() : entt::null), szTableStaticPvP[8]);
+		int64_t  chB_nBetMoney = ecs::QuestSystem::GetFlag(victim, szTableStaticPvP[8]);
 		int64_t  limit = 2000000000;
 
 
-		if ((ecs::PointSystem::GetGold(character) < chA_nBetMoney) || (ecs::PointSystem::GetGold(((pkVictim) ? (pkVictim)->GetEntityHandle() : entt::null)) < chB_nBetMoney ) || (chA_nBetMoney > limit) || (chB_nBetMoney > limit)) {
+		if ((ecs::PointSystem::GetGold(character) < chA_nBetMoney) || (ecs::PointSystem::GetGold(victim) < chB_nBetMoney ) || (chA_nBetMoney > limit) || (chB_nBetMoney > limit)) {
 #ifdef TEXTS_IMPROVEMENT
 			ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 722, "");
-			ecs::ChatSystem::SendNew(((pkVictim) ? (pkVictim)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 722, "");
+			ecs::ChatSystem::SendNew(victim, CHAT_TYPE_INFO, 722, "");
 #endif
-			CPVPManager::instance().Decline(character, ((pkVictim) ? (pkVictim)->GetEntityHandle() : entt::null));
-			CPVPManager::instance().Decline(((pkVictim) ? (pkVictim)->GetEntityHandle() : entt::null), character);
+			CPVPManager::instance().Decline(character, victim);
+			CPVPManager::instance().Decline(victim, character);
 			return;
 		}
 
@@ -1649,10 +1655,10 @@ ACMD(do_pvp)
 		if (chA_nBetMoney > 0 && chA_nBetMoney > 0)
 		{
 			ecs::PointSystem::Change(character, POINT_GOLD, - chA_nBetMoney, true);
-			ecs::PointSystem::Change(((pkVictim) ? (pkVictim)->GetEntityHandle() : entt::null), POINT_GOLD, - chB_nBetMoney, true);
+			ecs::PointSystem::Change(victim, POINT_GOLD, - chB_nBetMoney, true);
 		}
 
-		CPVPManager::instance().Insert(character, ((pkVictim) ? (pkVictim)->GetEntityHandle() : entt::null));
+		CPVPManager::instance().Insert(character, victim);
 		return;
 	}
 
@@ -1708,7 +1714,7 @@ ACMD(do_pvp)
 		return;
 	}
 
-	if ((ecs::PointSystem::GetGold(((pkVictim) ? (pkVictim)->GetEntityHandle() : entt::null)) + m_BetMoney) > GOLD_MAX)
+	if ((ecs::PointSystem::GetGold(victim) + m_BetMoney) > GOLD_MAX)
 	{
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(character, CHAT_TYPE_DIALOG, 878, "");
@@ -1716,7 +1722,7 @@ ACMD(do_pvp)
 		return;
 	}
 
-	if (ecs::PointSystem::GetGold(((pkVictim) ? (pkVictim)->GetEntityHandle() : entt::null)) < m_BetMoney)
+	if (ecs::PointSystem::GetGold(victim) < m_BetMoney)
 	{
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(character, CHAT_TYPE_DIALOG, 879, "");
@@ -1738,7 +1744,7 @@ ACMD(do_pvp)
 		pkVictim->SetDuel("BlockParty", m_BlockParty);				pkVictim->SetDuel("BlockExchange", m_BlockExchange);
 		pkVictim->SetDuel("BetMoney", m_BetMoney);
 
-		CPVPManager::instance().Insert(character, ((pkVictim) ? (pkVictim)->GetEntityHandle() : entt::null));
+		CPVPManager::instance().Insert(character, victim);
 	}
 }
 
@@ -1762,6 +1768,8 @@ ACMD(do_pvp_advanced)
 	uint32_t vid = 0;
 	str_to_number(vid, arg1);
 	LPCHARACTER pkVictim = CHARACTER_MANAGER::instance().Find(vid);
+	const entt::entity victim = pkVictim ? pkVictim->GetEntityHandle() : entt::null;
+
 	// Fake PC / non-real target => ignore
 	//if (pkVictim->IsFakePlayer() || !ecs::PlayerRuntime::GetDesc(((pkVictim) ? (pkVictim)->GetEntityHandle() : entt::null)))
 	//{
@@ -1771,7 +1779,7 @@ ACMD(do_pvp_advanced)
 	if (!pkVictim)
 		return;
 
-	if (ecs::PlayerRuntime::IsNPC(((pkVictim) ? (pkVictim)->GetEntityHandle() : entt::null)))
+	if (ecs::PlayerRuntime::IsNPC(victim))
 		return;
 
 	if (pkVictim->GetArena() != nullptr) {
@@ -1786,7 +1794,7 @@ ACMD(do_pvp_advanced)
 		return;
 	}
 
-	if (ecs::QuestSystem::GetFlag(((pkVictim) ? (pkVictim)->GetEntityHandle() : entt::null), szTableStaticPvP[9]) > 0)
+	if (ecs::QuestSystem::GetFlag(victim, szTableStaticPvP[9]) > 0)
 	{
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(character, CHAT_TYPE_DIALOG, 882, "");
@@ -1794,33 +1802,33 @@ ACMD(do_pvp_advanced)
 		return;
 	}
 
-	int statusEq = ecs::QuestSystem::GetFlag(((pkVictim) ? (pkVictim)->GetEntityHandle() : entt::null), BLOCK_EQUIPMENT_);
+	int statusEq = ecs::QuestSystem::GetFlag(victim, BLOCK_EQUIPMENT_);
 
-	CGuild * g = ecs::SocialSystem::GetGuild(((pkVictim) ? (pkVictim)->GetEntityHandle() : entt::null));
+	CGuild * g = ecs::SocialSystem::GetGuild(victim);
 
-	const char* m_Name = ecs::PlayerRuntime::GetName(((pkVictim) ? (pkVictim)->GetEntityHandle() : entt::null)).data();
+	const char* m_Name = ecs::PlayerRuntime::GetName(victim).data();
 	const char* m_GuildName = "-";
 
-	int m_Vid = ecs::PlayerRuntime::GetPacketVID(((pkVictim) ? (pkVictim)->GetEntityHandle() : entt::null));
-	int m_Level = ecs::PointSystem::GetLevel(((pkVictim) ? (pkVictim)->GetEntityHandle() : entt::null));
-	int m_PlayTime = ecs::PointSystem::GetReal(((pkVictim) ? (pkVictim)->GetEntityHandle() : entt::null), POINT_PLAYTIME);
-	int m_MaxHP = ecs::PointSystem::GetMaxHP(((pkVictim) ? (pkVictim)->GetEntityHandle() : entt::null));
-	int m_MaxSP = ecs::PointSystem::GetMaxSP(((pkVictim) ? (pkVictim)->GetEntityHandle() : entt::null));
+	int m_Vid = ecs::PlayerRuntime::GetPacketVID(victim);
+	int m_Level = ecs::PointSystem::GetLevel(victim);
+	int m_PlayTime = ecs::PointSystem::GetReal(victim, POINT_PLAYTIME);
+	int m_MaxHP = ecs::PointSystem::GetMaxHP(victim);
+	int m_MaxSP = ecs::PointSystem::GetMaxSP(victim);
 
-	uint32_t m_Race = ecs::PlayerRuntime::GetRaceNum(((pkVictim) ? (pkVictim)->GetEntityHandle() : entt::null));
+	uint32_t m_Race = ecs::PlayerRuntime::GetRaceNum(victim);
 
 	if (g)
 	{
 		ecs::ChatSystem::Send(character, CHAT_TYPE_COMMAND, "BINARY_Duel_GetInfo %d %s %s %d %d %d %d %d", m_Vid, m_Name, g->GetName(), m_Level, m_Race, m_PlayTime, m_MaxHP, m_MaxSP);
 
 		if (statusEq < 1)
-			NetworkSyncSystem::SendEquipmentToViewer(g_registry, ((pkVictim) ? (pkVictim)->GetEntityHandle() : entt::null), character);
+			NetworkSyncSystem::SendEquipmentToViewer(g_registry, victim, character);
 	}
 	else {
 		ecs::ChatSystem::Send(character, CHAT_TYPE_COMMAND, "BINARY_Duel_GetInfo %d %s %s %d %d %d %d %d", m_Vid, m_Name, m_GuildName, m_Level, m_Race, m_PlayTime, m_MaxHP, m_MaxSP);
 
 		if (statusEq < 1)
-			NetworkSyncSystem::SendEquipmentToViewer(g_registry, ((pkVictim) ? (pkVictim)->GetEntityHandle() : entt::null), character);
+			NetworkSyncSystem::SendEquipmentToViewer(g_registry, victim, character);
 	}
 }
 
@@ -3108,19 +3116,21 @@ namespace
 
 	static bool CanUseStoneCraft(LPCHARACTER ch, LPCHARACTER npc)
 	{
+		const entt::entity npcEntity = npc ? npc->GetEntityHandle() : entt::null;
+		const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
 		if (!ch || !npc)
 			return false;
 
-		if (ecs::PlayerRuntime::GetRaceNum(((npc) ? (npc)->GetEntityHandle() : entt::null)) != STONE_CRAFT_NPC_VNUM)
+		if (ecs::PlayerRuntime::GetRaceNum(npcEntity) != STONE_CRAFT_NPC_VNUM)
 			return false;
 
-	if (CombatSystem::IsDead(((ch) ? (ch)->GetEntityHandle() : entt::null)) || CombatSystem::IsStun(((ch) ? (ch)->GetEntityHandle() : entt::null)) || ecs::PlayerRuntime::IsObserverMode(((ch) ? (ch)->GetEntityHandle() : entt::null)))
+	if (CombatSystem::IsDead(chEntity) || CombatSystem::IsStun(chEntity) || ecs::PlayerRuntime::IsObserverMode(chEntity))
 			return false;
 
-		if (ecs::SocialSystem::GetExchange(((ch) ? (ch)->GetEntityHandle() : entt::null)) || ch->GetMyShop() || ch->GetShopOwner() || ch->IsOpenSafebox() || ch->IsCubeOpen())
+		if (ecs::SocialSystem::GetExchange(chEntity) || ch->GetMyShop() || ch->GetShopOwner() || ch->IsOpenSafebox() || ch->IsCubeOpen())
 			return false;
 
-		const int32_t distance = DISTANCE_APPROX(ecs::PlayerRuntime::GetX(((ch) ? (ch)->GetEntityHandle() : entt::null)) - ecs::PlayerRuntime::GetX(((npc) ? (npc)->GetEntityHandle() : entt::null)), ecs::PlayerRuntime::GetY(((ch) ? (ch)->GetEntityHandle() : entt::null)) - ecs::PlayerRuntime::GetY(((npc) ? (npc)->GetEntityHandle() : entt::null)));
+		const int32_t distance = DISTANCE_APPROX(ecs::PlayerRuntime::GetX(chEntity) - ecs::PlayerRuntime::GetX(npcEntity), ecs::PlayerRuntime::GetY(chEntity) - ecs::PlayerRuntime::GetY(npcEntity));
 		if (distance >= STONE_CRAFT_MAX_DISTANCE)
 			return false;
 

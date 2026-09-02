@@ -108,111 +108,122 @@ int OnClickShop(TRIGGERPARAM)
 
 int OnClickOrcsDungeon(TRIGGERPARAM)
 {
-	if (!causer || !ecs::PlayerRuntime::IsPC(((causer) ? (causer)->GetEntityHandle() : entt::null)))
+	const entt::entity causerEntity = causer ? causer->GetEntityHandle() : entt::null;
+	if (!causer || !ecs::PlayerRuntime::IsPC(causerEntity))
 		return 0;
 
 	// NPC vnum 9239
 	if (!ch || (ecs::PlayerRuntime::GetRaceNum(((ch) ? (ch)->GetEntityHandle() : entt::null))) != 9239)
 		return 0;
 
-	COrcsDungeon::instance().OnClickNpc(((causer) ? (causer)->GetEntityHandle() : entt::null));
+	COrcsDungeon::instance().OnClickNpc(causerEntity);
 	return 1;
 }
 
 int OnClickTritonTempleDungeon(TRIGGERPARAM)
 {
-	if (!causer || !ecs::PlayerRuntime::IsPC(((causer) ? (causer)->GetEntityHandle() : entt::null)))
+	const entt::entity causerEntity = causer ? causer->GetEntityHandle() : entt::null;
+	if (!causer || !ecs::PlayerRuntime::IsPC(causerEntity))
 		return 0;
 
 	// NPC vnum 20094
 	if (!ch || (ecs::PlayerRuntime::GetRaceNum(((ch) ? (ch)->GetEntityHandle() : entt::null))) != 20094)
 		return 0;
 
-	CTritonTempleDungeon::instance().OnClickNpc(((causer) ? (causer)->GetEntityHandle() : entt::null));
+	CTritonTempleDungeon::instance().OnClickNpc(causerEntity);
 	return 1;
 }
 
 int OnClickValentineDungeon(TRIGGERPARAM)
 {
-	if (!causer || !ecs::PlayerRuntime::IsPC(((causer) ? (causer)->GetEntityHandle() : entt::null)))
+	const entt::entity causerEntity = causer ? causer->GetEntityHandle() : entt::null;
+	if (!causer || !ecs::PlayerRuntime::IsPC(causerEntity))
 		return 0;
 
 	// NPC vnum 20012
 	if (!ch || (ecs::PlayerRuntime::GetRaceNum(((ch) ? (ch)->GetEntityHandle() : entt::null))) != 20012)
 		return 0;
 
-	CValentineDungeon::instance().OnClickNpc(((causer) ? (causer)->GetEntityHandle() : entt::null));
+	CValentineDungeon::instance().OnClickNpc(causerEntity);
 	return 1;
 }
 
 int OnClickEasterDungeon(TRIGGERPARAM)
 {
-    if (!causer || !ecs::PlayerRuntime::IsPC(((causer) ? (causer)->GetEntityHandle() : entt::null)))
+    const entt::entity causerEntity = causer ? causer->GetEntityHandle() : entt::null;
+    if (!causer || !ecs::PlayerRuntime::IsPC(causerEntity))
         return 0;
 
     // NPC vnum 21
     if (!ch || (ecs::PlayerRuntime::GetRaceNum(((ch) ? (ch)->GetEntityHandle() : entt::null))) != 9308)
         return 0;
 
-    CEasterDungeon::instance().OnClickNpc(((causer) ? (causer)->GetEntityHandle() : entt::null));
+    CEasterDungeon::instance().OnClickNpc(causerEntity);
     return 1;
 }
 
 int OnClickRuneDungeon(TRIGGERPARAM)
 {
-	if (!causer || !ecs::PlayerRuntime::IsPC(((causer) ? (causer)->GetEntityHandle() : entt::null)))
+	const entt::entity causerEntity = causer ? causer->GetEntityHandle() : entt::null;
+	if (!causer || !ecs::PlayerRuntime::IsPC(causerEntity))
 		return 0;
 
 	// NPC vnum 20506
 	if (!ch || (ecs::PlayerRuntime::GetRaceNum(((ch) ? (ch)->GetEntityHandle() : entt::null))) != 20506)
 		return 0;
 
-	CRuneDungeon::instance().OnClickNpc(((causer) ? (causer)->GetEntityHandle() : entt::null));
+	CRuneDungeon::instance().OnClickNpc(causerEntity);
 	return 1;
 }
 
 int OnClickPyramidDungeon(TRIGGERPARAM)
 {
-	if (!causer || !ecs::PlayerRuntime::IsPC(((causer) ? (causer)->GetEntityHandle() : entt::null)))
+	const entt::entity causerEntity = causer ? causer->GetEntityHandle() : entt::null;
+	if (!causer || !ecs::PlayerRuntime::IsPC(causerEntity))
 		return 0;
 
 	// NPC vnum 9331
 	if (!ch || (ecs::PlayerRuntime::GetRaceNum(((ch) ? (ch)->GetEntityHandle() : entt::null))) != 9331)
 		return 0;
 
-	CPyramidDungeonRazor93::instance().OnClickNpc(((causer) ? (causer)->GetEntityHandle() : entt::null));
+	CPyramidDungeonRazor93::instance().OnClickNpc(causerEntity);
 	return 1;
 }
 
 int OnClickNightmareDungeon(TRIGGERPARAM)
 {
-	if (!causer || !ecs::PlayerRuntime::IsPC(((causer) ? (causer)->GetEntityHandle() : entt::null)))
+	const entt::entity causerEntity = causer ? causer->GetEntityHandle() : entt::null;
+	if (!causer || !ecs::PlayerRuntime::IsPC(causerEntity))
 		return 0;
 
 	if (!ch || (ecs::PlayerRuntime::GetRaceNum(((ch) ? (ch)->GetEntityHandle() : entt::null))) != 20088)
 		return 0;
 
-	CNightmareDungeonRazor93::instance().OnClickNpc(((causer) ? (causer)->GetEntityHandle() : entt::null));
+	CNightmareDungeonRazor93::instance().OnClickNpc(causerEntity);
 	return 1;
 }
 int OnClickHalloween2022Dungeon(TRIGGERPARAM)
 {
-	if (!causer || !ecs::PlayerRuntime::IsPC(((causer) ? (causer)->GetEntityHandle() : entt::null)))
+	const entt::entity causerEntity = causer ? causer->GetEntityHandle() : entt::null;
+	const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
+	if (!causer || !ecs::PlayerRuntime::IsPC(causerEntity))
 		return 0;
 
 	if (!ch)
 		return 0;
 
-	if ((ecs::PlayerRuntime::GetRaceNum(((ch) ? (ch)->GetEntityHandle() : entt::null))) != 9475 && (ecs::PlayerRuntime::GetRaceNum(((ch) ? (ch)->GetEntityHandle() : entt::null))) != 9484)
+	if ((ecs::PlayerRuntime::GetRaceNum(chEntity)) != 9475 && (ecs::PlayerRuntime::GetRaceNum(chEntity)) != 9484)
 		return 0;
 
-	CHalloween2022Dungeon::instance().OnClickNpc(((causer) ? (causer)->GetEntityHandle() : entt::null), ((ch) ? (ch)->GetEntityHandle() : entt::null));
+	CHalloween2022Dungeon::instance().OnClickNpc(causerEntity, chEntity);
 	return 1;
 }
 
 int OnClickVikingDungeon(TRIGGERPARAM)
 {
-	if (!causer || !ecs::PlayerRuntime::IsPC(((causer) ? (causer)->GetEntityHandle() : entt::null)))
+	const entt::entity causerEntity = causer ? causer->GetEntityHandle() : entt::null;
+	const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
+	if (!causer || !ecs::PlayerRuntime::IsPC(causerEntity))
 		return 0;
 
 	if (!ch)
@@ -220,26 +231,27 @@ int OnClickVikingDungeon(TRIGGERPARAM)
 
 	// entry npc: 9615
 	// reward chest: 9626
-	if ((ecs::PlayerRuntime::GetRaceNum(((ch) ? (ch)->GetEntityHandle() : entt::null))) != 9615 && (ecs::PlayerRuntime::GetRaceNum(((ch) ? (ch)->GetEntityHandle() : entt::null))) != 9626)
+	if ((ecs::PlayerRuntime::GetRaceNum(chEntity)) != 9615 && (ecs::PlayerRuntime::GetRaceNum(chEntity)) != 9626)
 		return 0;
 
-	CVikingDungeon::instance().OnClickNpc(((causer) ? (causer)->GetEntityHandle() : entt::null), ((ch) ? (ch)->GetEntityHandle() : entt::null));
+	CVikingDungeon::instance().OnClickNpc(causerEntity, chEntity);
 	return 1;
 }
 #ifdef ENABLE_NEW_CRAFT_SYSTEM_RAZOR93
 int OnClickStoneCraft(TRIGGERPARAM)
 {
-	if (!causer || !ecs::PlayerRuntime::IsPC(((causer) ? (causer)->GetEntityHandle() : entt::null)))
+	const entt::entity causerEntity = causer ? causer->GetEntityHandle() : entt::null;
+	if (!causer || !ecs::PlayerRuntime::IsPC(causerEntity))
 		return 0;
 
 	if (!ch || (ecs::PlayerRuntime::GetRaceNum(((ch) ? (ch)->GetEntityHandle() : entt::null))) != 9005)
 		return 0;
 
-	if (ecs::SocialSystem::GetExchange(((causer) ? (causer)->GetEntityHandle() : entt::null)) || causer->GetMyShop() || causer->GetShopOwner() || causer->IsOpenSafebox() || causer->IsCubeOpen())
+	if (ecs::SocialSystem::GetExchange(causerEntity) || causer->GetMyShop() || causer->GetShopOwner() || causer->IsOpenSafebox() || causer->IsCubeOpen())
 		return 0;
 
 	causer->SetQuestNPCID(((ch)->GetLegacyVID()));
-	ecs::ChatSystem::Send(((causer) ? (causer)->GetEntityHandle() : entt::null), CHAT_TYPE_COMMAND, "stone_craft_open");
+	ecs::ChatSystem::Send(causerEntity, CHAT_TYPE_COMMAND, "stone_craft_open");
 	return 1;
 }
 #endif
@@ -283,60 +295,63 @@ public:
 
 	bool operator () (LPENTITY ent)
 	{
+		const entt::entity ownerChr = m_pkChr ? m_pkChr->GetEntityHandle() : entt::null;
 		if (!ent->IsType(ENTITY_CHARACTER))
 			return false;
 
 		LPCHARACTER pkChr = (LPCHARACTER)ent;
+		const entt::entity chr = pkChr ? pkChr->GetEntityHandle() : entt::null;
+
 
 		if (pkChr->IsBuilding() &&
-			(AffectSystem::IsAffectFlag(((pkChr) ? (pkChr)->GetEntityHandle() : entt::null), AFF_BUILDING_CONSTRUCTION_SMALL) ||
-				AffectSystem::IsAffectFlag(((pkChr) ? (pkChr)->GetEntityHandle() : entt::null), AFF_BUILDING_CONSTRUCTION_LARGE) ||
-				AffectSystem::IsAffectFlag(((pkChr) ? (pkChr)->GetEntityHandle() : entt::null), AFF_BUILDING_UPGRADE)))
+			(AffectSystem::IsAffectFlag(chr, AFF_BUILDING_CONSTRUCTION_SMALL) ||
+				AffectSystem::IsAffectFlag(chr, AFF_BUILDING_CONSTRUCTION_LARGE) ||
+				AffectSystem::IsAffectFlag(chr, AFF_BUILDING_UPGRADE)))
 		{
 			m_pkChrBuilding = pkChr;
 		}
 
-		if (ecs::PlayerRuntime::IsNPC(((pkChr) ? (pkChr)->GetEntityHandle() : entt::null)))
+		if (ecs::PlayerRuntime::IsNPC(chr))
 		{
-			const entt::entity ownerEntity = ((m_pkChr) ? (m_pkChr)->GetEntityHandle() : entt::null);
+			const entt::entity ownerEntity = chr;
 			if (!pkChr->IsMonster() || !AIHelpers::IsAttackMob(ownerEntity) || AIHelpers::IsAggressive(ownerEntity))
 				return false;
 
 		}
 
-		if (CombatSystem::IsDead(((pkChr) ? (pkChr)->GetEntityHandle() : entt::null)))
+		if (CombatSystem::IsDead(chr))
 			return false;
 
-		if (AffectSystem::IsAffectFlag(((pkChr) ? (pkChr)->GetEntityHandle() : entt::null), AFF_EUNHYUNG) ||
-			AffectSystem::IsAffectFlag(((pkChr) ? (pkChr)->GetEntityHandle() : entt::null), AFF_INVISIBILITY) ||
-			AffectSystem::IsAffectFlag(((pkChr) ? (pkChr)->GetEntityHandle() : entt::null), AFF_REVIVE_INVISIBLE))
+		if (AffectSystem::IsAffectFlag(chr, AFF_EUNHYUNG) ||
+			AffectSystem::IsAffectFlag(chr, AFF_INVISIBILITY) ||
+			AffectSystem::IsAffectFlag(chr, AFF_REVIVE_INVISIBLE))
 			return false;
 
-		if (AffectSystem::IsAffectFlag(((pkChr) ? (pkChr)->GetEntityHandle() : entt::null), AFF_TERROR) && AffectSystem::IsImmune(((m_pkChr) ? (m_pkChr)->GetEntityHandle() : entt::null), IMMUNE_TERROR) == false)	// \xb0\xf8\xc6\xf7 �\xb8\xae
+		if (AffectSystem::IsAffectFlag(chr, AFF_TERROR) && AffectSystem::IsImmune(chr, IMMUNE_TERROR) == false)	// \xb0\xf8\xc6\xf7 �\xb8\xae
 		{
-			if ((ecs::PointSystem::GetLevel(((pkChr) ? (pkChr)->GetEntityHandle() : entt::null))) >= ecs::PointSystem::GetLevel(((m_pkChr) ? (m_pkChr)->GetEntityHandle() : entt::null)))
+			if ((ecs::PointSystem::GetLevel(chr)) >= ecs::PointSystem::GetLevel(chr))
 				return false;
 		}
 
 		if (m_pkChr->IsNoAttackShinsu())
 		{
-			if (ecs::PlayerRuntime::GetEmpire(((pkChr) ? (pkChr)->GetEntityHandle() : entt::null)) == 1)
+			if (ecs::PlayerRuntime::GetEmpire(chr) == 1)
 				return false;
 		}
 
 		if (m_pkChr->IsNoAttackChunjo())
 		{
-			if (ecs::PlayerRuntime::GetEmpire(((pkChr) ? (pkChr)->GetEntityHandle() : entt::null)) == 2)
+			if (ecs::PlayerRuntime::GetEmpire(chr) == 2)
 				return false;
 		}
 
 		if (m_pkChr->IsNoAttackJinno())
 		{
-			if (ecs::PlayerRuntime::GetEmpire(((pkChr) ? (pkChr)->GetEntityHandle() : entt::null)) == 3)
+			if (ecs::PlayerRuntime::GetEmpire(chr) == 3)
 				return false;
 		}
 
-		int iDistance = DISTANCE_APPROX(m_lx - ecs::PlayerRuntime::GetX(((pkChr) ? (pkChr)->GetEntityHandle() : entt::null)), m_ly - ecs::PlayerRuntime::GetY(((pkChr) ? (pkChr)->GetEntityHandle() : entt::null)));
+		int iDistance = DISTANCE_APPROX(m_lx - ecs::PlayerRuntime::GetX(chr), m_ly - ecs::PlayerRuntime::GetY(chr));
 
 		if (iDistance < m_iMinDistance && iDistance <= m_iMaxDistance)
 		{
@@ -371,9 +386,10 @@ private:
 
 LPCHARACTER FindVictim(LPCHARACTER pkChr, int iMaxDistance)
 {
+	const entt::entity chr = pkChr ? pkChr->GetEntityHandle() : entt::null;
 	FuncFindMobVictim f(pkChr, iMaxDistance);
-	if (ecs::PlayerRuntime::GetSectree(((pkChr) ? (pkChr)->GetEntityHandle() : entt::null)) != nullptr) {
-		ecs::PlayerRuntime::GetSectree(((pkChr) ? (pkChr)->GetEntityHandle() : entt::null))->ForEachAround(f);
+	if (ecs::PlayerRuntime::GetSectree(chr) != nullptr) {
+		ecs::PlayerRuntime::GetSectree(chr)->ForEachAround(f);
 	}
 	return f.GetVictim();
 }

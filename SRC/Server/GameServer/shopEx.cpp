@@ -127,15 +127,16 @@ bool CShopEx::AddGuest(entt::entity guest, uint32_t owner_vid, bool bOtherEmpire
 
 int64_t CShopEx::Buy(LPCHARACTER ch, uint8_t pos)
 {
+	const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
 	uint8_t tabIdx = pos / SHOP_HOST_ITEM_MAX_NUM;
 	uint8_t slotPos = pos % SHOP_HOST_ITEM_MAX_NUM;
 	if (tabIdx >= GetTabCount())
 	{
-		LOG_INFO("ShopEx::Buy : invalid position {} : {}", pos, ecs::PlayerRuntime::GetName(((ch) ? (ch)->GetEntityHandle() : entt::null)).data());
+		LOG_INFO("ShopEx::Buy : invalid position {} : {}", pos, ecs::PlayerRuntime::GetName(chEntity).data());
 		return SHOP_SUBHEADER_GC_INVALID_POS;
 	}
 
-	LOG_INFO("ShopEx::Buy : name {} pos {}", ecs::PlayerRuntime::GetName(((ch) ? (ch)->GetEntityHandle() : entt::null)).data(), pos);
+	LOG_INFO("ShopEx::Buy : name {} pos {}", ecs::PlayerRuntime::GetName(chEntity).data(), pos);
 
 	GuestMapType::iterator it = m_map_guest.find(ch ? ch->GetEntityHandle() : entt::null);
 
@@ -159,9 +160,9 @@ int64_t CShopEx::Buy(LPCHARACTER ch, uint8_t pos)
 		if (it->second)	// if other empire, price is triple
 			dwPrice *= 3;
 
-		if (ecs::PointSystem::GetGold(((ch) ? (ch)->GetEntityHandle() : entt::null)) < dwPrice)
+		if (ecs::PointSystem::GetGold(chEntity) < dwPrice)
 		{
-			LOG_INFO("ShopEx::Buy : Not enough money : {} has {}, price {}", ecs::PlayerRuntime::GetName(((ch) ? (ch)->GetEntityHandle() : entt::null)).data(), ecs::PointSystem::GetGold(((ch) ? (ch)->GetEntityHandle() : entt::null)), dwPrice);
+			LOG_INFO("ShopEx::Buy : Not enough money : {} has {}, price {}", ecs::PlayerRuntime::GetName(chEntity).data(), ecs::PointSystem::GetGold(chEntity), dwPrice);
 			return SHOP_SUBHEADER_GC_NOT_ENOUGH_MONEY;
 		}
 
@@ -171,7 +172,7 @@ int64_t CShopEx::Buy(LPCHARACTER ch, uint8_t pos)
 			uint32_t count = ch->CountSpecifyTypeItem(ITEM_SECONDARY_COIN);
 			if (count < dwPrice)
 			{
-				LOG_INFO("ShopEx::Buy : Not enough myeongdojun : {} has {}, price {}", ecs::PlayerRuntime::GetName(((ch) ? (ch)->GetEntityHandle() : entt::null)).data(), count, dwPrice);
+				LOG_INFO("ShopEx::Buy : Not enough myeongdojun : {} has {}, price {}", ecs::PlayerRuntime::GetName(chEntity).data(), count, dwPrice);
 				return SHOP_SUBHEADER_GC_NOT_ENOUGH_MONEY_EX;
 			}
 		}
@@ -203,7 +204,7 @@ int64_t CShopEx::Buy(LPCHARACTER ch, uint8_t pos)
 
 	if (iEmptyPos < 0)
 	{
-		LOG_INFO("ShopEx::Buy : Inventory full : {} size {}", ecs::PlayerRuntime::GetName(((ch) ? (ch)->GetEntityHandle() : entt::null)).data(), item->GetSize());
+		LOG_INFO("ShopEx::Buy : Inventory full : {} size {}", ecs::PlayerRuntime::GetName(chEntity).data(), item->GetSize());
 		ItemSystem::DestroyItemEntityEcs(
 			(item ? item->GetEntityHandle() : entt::null),
 			"SHOP_EX_TRANSACTION");
@@ -213,7 +214,7 @@ int64_t CShopEx::Buy(LPCHARACTER ch, uint8_t pos)
 	switch (shopTab.coinType)
 	{
 	case SHOP_COIN_TYPE_GOLD:
-		ecs::PointSystem::Change(((ch) ? (ch)->GetEntityHandle() : entt::null), POINT_GOLD, -dwPrice, false);
+		ecs::PointSystem::Change(chEntity, POINT_GOLD, -dwPrice, false);
 		break;
 	case SHOP_COIN_TYPE_SECONDARY_COIN:
 		ch->RemoveSpecifyTypeItem(ITEM_SECONDARY_COIN, dwPrice);
@@ -235,19 +236,19 @@ int64_t CShopEx::Buy(LPCHARACTER ch, uint8_t pos)
 
 	if (ItemSystem::GetItemVnum((item ? item->GetEntityHandle() : entt::null)) >= 80003 && ItemSystem::GetItemVnum((item ? item->GetEntityHandle() : entt::null)) <= 80007)
 	{
-		LogManager::instance().GoldBarLog((ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null))), ItemSystem::GetItemID((item ? item->GetEntityHandle() : entt::null)), PERSONAL_SHOP_BUY, "");
+		LogManager::instance().GoldBarLog((ecs::PlayerRuntime::GetPlayerID(chEntity)), ItemSystem::GetItemID((item ? item->GetEntityHandle() : entt::null)), PERSONAL_SHOP_BUY, "");
 	}
 
 	DBManager::instance().SendMoneyLog(MONEY_LOG_SHOP, ItemSystem::GetItemVnum((item ? item->GetEntityHandle() : entt::null)), -dwPrice);
 
 	if (item)
-		LOG_INFO("ShopEx: BUY: name {} {}(x {}):{} price {}", ecs::PlayerRuntime::GetName(((ch) ? (ch)->GetEntityHandle() : entt::null)).data(), item->GetName(), ItemSystem::GetItemCount((item ? item->GetEntityHandle() : entt::null)), ItemSystem::GetItemID((item ? item->GetEntityHandle() : entt::null)), dwPrice);
+		LOG_INFO("ShopEx: BUY: name {} {}(x {}):{} price {}", ecs::PlayerRuntime::GetName(chEntity).data(), item->GetName(), ItemSystem::GetItemCount((item ? item->GetEntityHandle() : entt::null)), ItemSystem::GetItemID((item ? item->GetEntityHandle() : entt::null)), dwPrice);
 
 #ifdef ENABLE_FLUSH_CACHE_FEATURE // @warme006
 	{
 		ch->SaveReal();
 		db_clientdesc->DBPacketHeader(HEADER_GD_FLUSH_CACHE, 0, sizeof(uint32_t));
-		uint32_t pid = (ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null)));
+		uint32_t pid = (ecs::PlayerRuntime::GetPlayerID(chEntity));
 		db_clientdesc->Packet(&pid, sizeof(uint32_t));
 	}
 #else
