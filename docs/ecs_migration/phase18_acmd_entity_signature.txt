@@ -662,3 +662,69 @@ CWarMap and wedding. Those are iterated to call legacy CHARACTER methods
 (UpdateStateMachine, Save, ...), so their element type cannot move before those
 methods do. Same for party's m_memberMap, whose value type is a struct holding
 LPCHARACTER, and offlineshop's LISTGUEST.
+
+
+Phase 18k - CombatSystem.cpp: hoisting repeated conversions
+------------------------------------------------------------
+CombatSystem.cpp holds 105 legacy CHARACTER:: method bodies that were moved
+into the ECS system file but never migrated. Their signatures belong to the
+legacy class, so flipping them would mean editing char.h - premature. What the
+file actually suffers from is repetition: the same local converted over and
+over inside one function.
+
+Measured before deciding: 481 conversion sites, of which 436 are repeats of a
+subject already converted earlier in the same function. Hoisting each repeated
+subject onto one local removes them with NO signature change and no effect
+outside this file. That is the whole of this phase.
+
+  Damage(pAttacker)               86 sites -> 1
+  Reward()                        pkAttacker 39, ch 16, rch 6, mch 5
+  CFuncShoot                      pkVictim 38, m_me 24
+  RewardGold(pkAttacker)          26 -> 1
+  CalcReferenceNormalHitDamage    pAttacker 17, pVictim 9
+  ProcessStoneSpawnStep(ch)       22 -> 1
+  GiveExp(from, to) x2            to 19 and 18
+  ... 38 subjects in all
+
+Refused on purpose (the guard, not an oversight)
+------------------------------------------------
+A subject that the body ASSIGNS cannot be hoisted - the hoisted value would be
+the one from before the assignment. The tool refuses those and says so:
+
+  m_pkChrTarget  18 sites  (SetTarget assigns the member it converts)
+  pkKiller       38 sites  (Dead reassigns it)
+  ch             16 sites
+  pAttacker       6 sites
+  pkChr           2 sites
+
+Those 80 sites stay. They need the surrounding method migrated, not a hoist.
+
+Three tool bugs, each reverted whole and fixed
+----------------------------------------------
+This pass was rewritten three times. All three were mechanical, all three were
+caught by the compiler, and two of them are repeats of mistakes recorded
+earlier in this document - which is why the fixes are now shared code:
+
+1. The loose conversion regex again (phase 18h). Matching with optional parens
+   swallowed the enclosing call's parenthesis and produced things like
+   `ecs::PlayerRuntime::IsPCattacker)`. The three safe patterns now live in
+   scratchpad/convmatch.py and every tool uses them.
+
+2. Stale offsets again (phases 18g, 18h). Several subjects can be hoisted
+   inside one function; editing the body once per subject left every later
+   plan pointing into text that had already moved. All edits for one body are
+   now computed on the original text and applied in a single ordered pass,
+   with an assertion that they never overlap.
+
+3. New one: a `namespace { }` block was treated as a function body, so
+   declarations naming a constructor parameter were hoisted to namespace
+   scope. A function body's `{` is preceded by the parameter list's `)`; the
+   tool now requires that, which also excludes struct, class and enum blocks.
+
+Also: three declarations landed at column 0 because the line following the
+opening brace was a preprocessor directive, which carries no indentation.
+Cosmetic, fixed by hand.
+
+CombatSystem.cpp: 449 -> 150
+Project-wide conversion count: 3499 -> 3130
+Build: RelWithDebInfo GameServer, 0 errors.

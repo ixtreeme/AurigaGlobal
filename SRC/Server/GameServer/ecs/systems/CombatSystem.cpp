@@ -961,7 +961,8 @@ void CHARACTER::SendLeaderboardData()
 
 void CHARACTER::SendLeaderboardDataSkillMob(LPCHARACTER viewer)
 {
-	if (!viewer || !ecs::PlayerRuntime::GetDesc((viewer ? viewer->GetEntityHandle() : entt::null)))
+	const entt::entity viewerEntity = viewer ? viewer->GetEntityHandle() : entt::null;
+	if (!viewer || !ecs::PlayerRuntime::GetDesc(viewerEntity))
 		return;
 
 	std::unique_ptr<SQLMsg> pMsg(DBManager::instance().DirectQuery(
@@ -991,7 +992,7 @@ void CHARACTER::SendLeaderboardDataSkillMob(LPCHARACTER viewer)
 	p.header = HEADER_GC_LEADERBOARD_NEWS;
 	strlcpy(p.data, result.c_str(), sizeof(p.data));
 
-	ecs::PlayerRuntime::GetDesc((viewer ? viewer->GetEntityHandle() : entt::null))->Packet(&p, sizeof(p));
+	ecs::PlayerRuntime::GetDesc(viewerEntity)->Packet(&p, sizeof(p));
 }
 
 #ifdef LEADERBOARD_RAZOR93
@@ -1204,8 +1205,10 @@ void CHARACTER::ChangeVictimByAggro(int iNewAggro, LPCHARACTER pNewVictim)
 			if (it->second.iAggro > iNewAggro)
 			{
 				auto* ch = LegacyCharOf(it->first);
+				const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
 
-				if (ch && !ch->IsDead() && DISTANCE_APPROX(ecs::PlayerRuntime::GetX((ch ? ch->GetEntityHandle() : entt::null)) - GetX(), ecs::PlayerRuntime::GetY((ch ? ch->GetEntityHandle() : entt::null)) - GetY()) < 5000)
+
+				if (ch && !ch->IsDead() && DISTANCE_APPROX(ecs::PlayerRuntime::GetX(chEntity) - GetX(), ecs::PlayerRuntime::GetY(chEntity) - GetY()) < 5000)
 				{
 					itFind = it;
 					iNewAggro = it->second.iAggro;
@@ -1262,13 +1265,14 @@ void CHARACTER::DistributeHP(LPCHARACTER pkKiller)
 typedef long double rate_t;
 static void GiveExp(LegacyCharHandle from, LegacyCharHandle to, int iExp)
 {
+	const entt::entity toEntity = to ? to->GetEntityHandle() : entt::null;
 	if (test_server && iExp < 0)
 	{
-		ecs::ChatSystem::Send((to ? to->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "exp(%d) overflow", iExp);
+		ecs::ChatSystem::Send(toEntity, CHAT_TYPE_INFO, "exp(%d) overflow", iExp);
 		return;
 	}
 	// decrease/increase exp based on player<>mob level
-	rate_t lvFactor = static_cast<rate_t>(NEW_GET_LVDELTA(ecs::PointSystem::GetLevel((to ? to->GetEntityHandle() : entt::null)), ecs::PointSystem::GetLevel((from ? from->GetEntityHandle() : entt::null)))) / 100.0L;
+	rate_t lvFactor = static_cast<rate_t>(NEW_GET_LVDELTA(ecs::PointSystem::GetLevel(toEntity), ecs::PointSystem::GetLevel((from ? from->GetEntityHandle() : entt::null)))) / 100.0L;
 	iExp *= lvFactor;
 	// start calculating rate exp bonus
 	int iBaseExp = iExp;
@@ -1277,13 +1281,13 @@ static void GiveExp(LegacyCharHandle from, LegacyCharHandle to, int iExp)
 	rateFactor += CPrivManager::instance().GetPriv(to, PRIV_EXP_PCT);
 	if (to->IsEquipUniqueItem(UNIQUE_ITEM_LARBOR_MEDAL))
 		rateFactor += 20;
-	if (ecs::PlayerRuntime::GetMapIndex((to ? to->GetEntityHandle() : entt::null)) >= 660000 && ecs::PlayerRuntime::GetMapIndex((to ? to->GetEntityHandle() : entt::null)) < 670000)
+	if (ecs::PlayerRuntime::GetMapIndex(toEntity) >= 660000 && ecs::PlayerRuntime::GetMapIndex(toEntity) < 670000)
 		rateFactor += 20;
 #ifdef NEW_POINT_EXP_DOUBLE_BONUS_RAZOR93
 
 
 
-	int expDoubleBonus = ecs::PointSystem::Get((to ? to->GetEntityHandle() : entt::null), POINT_EXP_DOUBLE_BONUS);
+	int expDoubleBonus = ecs::PointSystem::Get(toEntity, POINT_EXP_DOUBLE_BONUS);
 
 	if (expDoubleBonus > 0)
 	{
@@ -1300,8 +1304,8 @@ static void GiveExp(LegacyCharHandle from, LegacyCharHandle to, int iExp)
 	}
 
 #else
-	if (ecs::PointSystem::Get((to ? to->GetEntityHandle() : entt::null), POINT_EXP_DOUBLE_BONUS))
-		if (number(1, 100) <= ecs::PointSystem::Get((to ? to->GetEntityHandle() : entt::null), POINT_EXP_DOUBLE_BONUS))
+	if (ecs::PointSystem::Get(toEntity, POINT_EXP_DOUBLE_BONUS))
+		if (number(1, 100) <= ecs::PointSystem::Get(toEntity, POINT_EXP_DOUBLE_BONUS))
 			rateFactor += 30;
 #endif
 	if (to->IsEquipUniqueItem(UNIQUE_ITEM_DOUBLE_EXP))
@@ -1335,20 +1339,20 @@ static void GiveExp(LegacyCharHandle from, LegacyCharHandle to, int iExp)
 		rateFactor += 50;
 	if (to->IsEquipUniqueGroup(UNIQUE_GROUP_RING_OF_EXP))
 		rateFactor += 50;
-	if (ecs::PointSystem::Get((to ? to->GetEntityHandle() : entt::null), POINT_PC_BANG_EXP_BONUS) > 0)
+	if (ecs::PointSystem::Get(toEntity, POINT_PC_BANG_EXP_BONUS) > 0)
 	{
 		if (to->IsPCBang())
-			rateFactor += ecs::PointSystem::Get((to ? to->GetEntityHandle() : entt::null), POINT_PC_BANG_EXP_BONUS);
+			rateFactor += ecs::PointSystem::Get(toEntity, POINT_PC_BANG_EXP_BONUS);
 	}
 	rateFactor += to->GetMarriageBonus(UNIQUE_ITEM_MARRIAGE_EXP_BONUS);
-	rateFactor += ecs::PointSystem::Get((to ? to->GetEntityHandle() : entt::null), POINT_RAMADAN_CANDY_BONUS_EXP);
-	rateFactor += ecs::PointSystem::Get((to ? to->GetEntityHandle() : entt::null), POINT_MALL_EXPBONUS);
+	rateFactor += ecs::PointSystem::Get(toEntity, POINT_RAMADAN_CANDY_BONUS_EXP);
+	rateFactor += ecs::PointSystem::Get(toEntity, POINT_MALL_EXPBONUS);
 	// useless (never used except for china intoxication) = always 100
-	rateFactor = rateFactor * static_cast<rate_t>(CHARACTER_MANAGER::instance().GetMobExpRate(((to) ? (to)->GetEntityHandle() : entt::null))) / 100.0L;
+	rateFactor = rateFactor * static_cast<rate_t>(CHARACTER_MANAGER::instance().GetMobExpRate(toEntity)) / 100.0L;
 	// apply calculated rate bonus
 	iExp *= (rateFactor / 100.0L);
 	if (test_server)
-		ecs::ChatSystem::Send((to ? to->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "base_exp(%d) * rate(%Lf) = exp(%d)", iBaseExp, rateFactor / 100.0L, iExp);
+		ecs::ChatSystem::Send(toEntity, CHAT_TYPE_INFO, "base_exp(%d) * rate(%Lf) = exp(%d)", iBaseExp, rateFactor / 100.0L, iExp);
 	// you can get at maximum only 10% of the total required exp at once (so, you need to kill at least 10 mobs to level up) (useless)
 	iExp = std::min(to->GetNextExp() / 10, (uint32_t)iExp);
 	// it recalculate the given exp if the player level is greater than the exp_table size (useless)
@@ -1375,9 +1379,9 @@ static void GiveExp(LegacyCharHandle from, LegacyCharHandle to, int iExp)
 #endif
 
 	if (test_server)
-		ecs::ChatSystem::Send((to ? to->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "exp+minGNE+adjust(%d)", iExp);
+		ecs::ChatSystem::Send(toEntity, CHAT_TYPE_INFO, "exp+minGNE+adjust(%d)", iExp);
 	// set
-	ecs::PointSystem::Change((to ? to->GetEntityHandle() : entt::null), POINT_EXP, iExp, true);
+	ecs::PointSystem::Change(toEntity, POINT_EXP, iExp, true);
 	from->CreateFly(FLY_EXP, to);
 	// marriage
 	{
@@ -1385,13 +1389,13 @@ static void GiveExp(LegacyCharHandle from, LegacyCharHandle to, int iExp)
 		if (you)
 		{
 			// sometimes, this overflows
-			uint32_t dwUpdatePoint = (2000.0L / ecs::PointSystem::GetLevel((to ? to->GetEntityHandle() : entt::null)) / ecs::PointSystem::GetLevel((to ? to->GetEntityHandle() : entt::null)) / 3) * iExp;
+			uint32_t dwUpdatePoint = (2000.0L / ecs::PointSystem::GetLevel(toEntity) / ecs::PointSystem::GetLevel(toEntity) / 3) * iExp;
 
 			if (to->GetPremiumRemainSeconds(PREMIUM_MARRIAGE_FAST) > 0 ||
 				you->GetPremiumRemainSeconds(PREMIUM_MARRIAGE_FAST) > 0)
 				dwUpdatePoint *= 3;
 
-			marriage::TMarriage* pMarriage = marriage::CManager::instance().Get(ecs::PlayerRuntime::GetPlayerID((to ? to->GetEntityHandle() : entt::null)));
+			marriage::TMarriage* pMarriage = marriage::CManager::instance().Get(ecs::PlayerRuntime::GetPlayerID(toEntity));
 
 			// DIVORCE_NULL_BUG_FIX
 			if (pMarriage && pMarriage->IsNear())
@@ -1403,14 +1407,15 @@ static void GiveExp(LegacyCharHandle from, LegacyCharHandle to, int iExp)
 #else
 static void GiveExp(LegacyCharHandle from, LegacyCharHandle to, int iExp)
 {
+	const entt::entity toEntity = to ? to->GetEntityHandle() : entt::null;
 	//  ġ
-	iExp = CALCULATE_VALUE_LVDELTA(ecs::PointSystem::GetLevel((to ? to->GetEntityHandle() : entt::null)), ecs::PointSystem::GetLevel((from ? from->GetEntityHandle() : entt::null)), iExp);
+	iExp = CALCULATE_VALUE_LVDELTA(ecs::PointSystem::GetLevel(toEntity), ecs::PointSystem::GetLevel((from ? from->GetEntityHandle() : entt::null)), iExp);
 
 	int iBaseExp = iExp;
 
 	// , ȸ ġ ̺Ʈ
 #ifdef ENABLE_EVENT_MANAGER
-	const auto event = CHARACTER_MANAGER::Instance().CheckEventIsActive(EXP_EVENT, ecs::PlayerRuntime::GetEmpire((to ? to->GetEntityHandle() : entt::null)));
+	const auto event = CHARACTER_MANAGER::Instance().CheckEventIsActive(EXP_EVENT, ecs::PlayerRuntime::GetEmpire(toEntity));
 	if (event != 0)
 		iExp = iExp * (100 + (event->value[0] + CPrivManager::instance().GetPriv(to, PRIV_EXP_PCT))) / 100;
 	else
@@ -1426,12 +1431,12 @@ static void GiveExp(LegacyCharHandle from, LegacyCharHandle to, int iExp)
 			iExp += iExp * 20 / 100;
 
 		// Ÿ ġ ʽ
-		if (ecs::PlayerRuntime::GetMapIndex((to ? to->GetEntityHandle() : entt::null)) >= 660000 && ecs::PlayerRuntime::GetMapIndex((to ? to->GetEntityHandle() : entt::null)) < 670000)
+		if (ecs::PlayerRuntime::GetMapIndex(toEntity) >= 660000 && ecs::PlayerRuntime::GetMapIndex(toEntity) < 670000)
 			iExp += iExp * 20 / 100; // 1.2 (20%)
 
 		//  ġ ι Ӽ
-		if (ecs::PointSystem::Get((to ? to->GetEntityHandle() : entt::null), POINT_EXP_DOUBLE_BONUS))
-			if (number(1, 100) <= ecs::PointSystem::Get((to ? to->GetEntityHandle() : entt::null), POINT_EXP_DOUBLE_BONUS))
+		if (ecs::PointSystem::Get(toEntity, POINT_EXP_DOUBLE_BONUS))
+			if (number(1, 100) <= ecs::PointSystem::Get(toEntity, POINT_EXP_DOUBLE_BONUS))
 				iExp += iExp * 30 / 100; // 1.3 (30%)
 
 		//   (2ð¥)
@@ -1478,26 +1483,26 @@ static void GiveExp(LegacyCharHandle from, LegacyCharHandle to, int iExp)
 		}
 
 		// PC  ġ ʽ
-		if (ecs::PointSystem::Get((to ? to->GetEntityHandle() : entt::null), POINT_PC_BANG_EXP_BONUS) > 0)
+		if (ecs::PointSystem::Get(toEntity, POINT_PC_BANG_EXP_BONUS) > 0)
 		{
 			if (to->IsPCBang() == true)
-				iExp += (iExp * ecs::PointSystem::Get((to ? to->GetEntityHandle() : entt::null), POINT_PC_BANG_EXP_BONUS) / 100);
+				iExp += (iExp * ecs::PointSystem::Get(toEntity, POINT_PC_BANG_EXP_BONUS) / 100);
 		}
 
 		// ȥ ʽ
 		iExp += iExp * to->GetMarriageBonus(UNIQUE_ITEM_MARRIAGE_EXP_BONUS) / 100;
 	}
 
-	iExp += (iExp * ecs::PointSystem::Get((to ? to->GetEntityHandle() : entt::null), POINT_RAMADAN_CANDY_BONUS_EXP) / 100);
-	iExp += (iExp * ecs::PointSystem::Get((to ? to->GetEntityHandle() : entt::null), POINT_MALL_EXPBONUS) / 100);
+	iExp += (iExp * ecs::PointSystem::Get(toEntity, POINT_RAMADAN_CANDY_BONUS_EXP) / 100);
+	iExp += (iExp * ecs::PointSystem::Get(toEntity, POINT_MALL_EXPBONUS) / 100);
 
 	if (test_server)
 	{
-		LOG_INFO("Bonus Exp : Ramadan Candy: {} MallExp: {}", ecs::PointSystem::Get((to ? to->GetEntityHandle() : entt::null), POINT_RAMADAN_CANDY_BONUS_EXP), ecs::PointSystem::Get((to ? to->GetEntityHandle() : entt::null), POINT_MALL_EXPBONUS));
+		LOG_INFO("Bonus Exp : Ramadan Candy: {} MallExp: {}", ecs::PointSystem::Get(toEntity, POINT_RAMADAN_CANDY_BONUS_EXP), ecs::PointSystem::Get(toEntity, POINT_MALL_EXPBONUS));
 	}
 
 	// ȹ  2005.04.21  85%
-	iExp = iExp * CHARACTER_MANAGER::instance().GetMobExpRate(((to) ? (to)->GetEntityHandle() : entt::null)) / 100;
+	iExp = iExp * CHARACTER_MANAGER::instance().GetMobExpRate(toEntity) / 100;
 
 	// ġ ѹ ȹ淮
 	iExp = MIN(to->GetNextExp() / 10, iExp);
@@ -1505,8 +1510,8 @@ static void GiveExp(LegacyCharHandle from, LegacyCharHandle to, int iExp)
 	if (test_server)
 	{
 		if (quest::CQuestManager::instance().GetEventFlag("exp_bonus_log") && iBaseExp > 0)
-			ecs::ChatSystem::Send((to ? to->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "exp bonus %d%%", (iExp - iBaseExp) * 100 / iBaseExp);
-		ecs::ChatSystem::Send((to ? to->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "exp(%d) base_exp(%d)", iExp, iBaseExp);
+			ecs::ChatSystem::Send(toEntity, CHAT_TYPE_INFO, "exp bonus %d%%", (iExp - iBaseExp) * 100 / iBaseExp);
+		ecs::ChatSystem::Send(toEntity, CHAT_TYPE_INFO, "exp(%d) base_exp(%d)", iExp, iBaseExp);
 	}
 
 	iExp = AdjustExpByLevel_Combat(to, iExp);
@@ -1526,7 +1531,7 @@ static void GiveExp(LegacyCharHandle from, LegacyCharHandle to, int iExp)
 	}
 #endif
 
-	ecs::PointSystem::Change((to ? to->GetEntityHandle() : entt::null), POINT_EXP, iExp, true);
+	ecs::PointSystem::Change(toEntity, POINT_EXP, iExp, true);
 	from->CreateFly(FLY_EXP, to);
 
 	{
@@ -1535,13 +1540,13 @@ static void GiveExp(LegacyCharHandle from, LegacyCharHandle to, int iExp)
 		if (you)
 		{
 			// 1 100%
-			uint32_t dwUpdatePoint = 2000 * iExp / ecs::PointSystem::GetLevel((to ? to->GetEntityHandle() : entt::null)) / ecs::PointSystem::GetLevel((to ? to->GetEntityHandle() : entt::null)) / 3;
+			uint32_t dwUpdatePoint = 2000 * iExp / ecs::PointSystem::GetLevel(toEntity) / ecs::PointSystem::GetLevel(toEntity) / 3;
 
 			if (to->GetPremiumRemainSeconds(PREMIUM_MARRIAGE_FAST) > 0 ||
 				you->GetPremiumRemainSeconds(PREMIUM_MARRIAGE_FAST) > 0)
 				dwUpdatePoint = (uint32_t)(dwUpdatePoint * 3);
 
-			marriage::TMarriage* pMarriage = marriage::CManager::instance().Get(ecs::PlayerRuntime::GetPlayerID((to ? to->GetEntityHandle() : entt::null)));
+			marriage::TMarriage* pMarriage = marriage::CManager::instance().Get(ecs::PlayerRuntime::GetPlayerID(toEntity));
 
 			// DIVORCE_NULL_BUG_FIX
 			if (pMarriage && pMarriage->IsNear())
@@ -1567,9 +1572,10 @@ namespace NPartyExpDistribute
 
 		void operator () (LegacyCharHandle ch)
 		{
-			if (DISTANCE_APPROX(ecs::PlayerRuntime::GetX((ch ? ch->GetEntityHandle() : entt::null)) - x, ecs::PlayerRuntime::GetY((ch ? ch->GetEntityHandle() : entt::null)) - y) <= PARTY_DEFAULT_RANGE)
+			const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
+			if (DISTANCE_APPROX(ecs::PlayerRuntime::GetX(chEntity) - x, ecs::PlayerRuntime::GetY(chEntity) - y) <= PARTY_DEFAULT_RANGE)
 			{
-				total += __GetPartyExpNP(ecs::PointSystem::GetLevel((ch ? ch->GetEntityHandle() : entt::null)));
+				total += __GetPartyExpNP(ecs::PointSystem::GetLevel(chEntity));
 
 				++member_count;
 			}
@@ -1594,14 +1600,15 @@ namespace NPartyExpDistribute
 
 		void operator () (LegacyCharHandle ch)
 		{
-			if (DISTANCE_APPROX(ecs::PlayerRuntime::GetX((ch ? ch->GetEntityHandle() : entt::null)) - x, ecs::PlayerRuntime::GetY((ch ? ch->GetEntityHandle() : entt::null)) - y) <= PARTY_DEFAULT_RANGE)
+			const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
+			if (DISTANCE_APPROX(ecs::PlayerRuntime::GetX(chEntity) - x, ecs::PlayerRuntime::GetY(chEntity) - y) <= PARTY_DEFAULT_RANGE)
 			{
 				uint32_t iExp2 = 0;
 
 				switch (m_iMode)
 				{
 				case PARTY_EXP_DISTRIBUTION_NON_PARITY:
-					iExp2 = (uint32_t)(_iExp * (float)__GetPartyExpNP(ecs::PointSystem::GetLevel((ch ? ch->GetEntityHandle() : entt::null))) / total);
+					iExp2 = (uint32_t)(_iExp * (float)__GetPartyExpNP(ecs::PointSystem::GetLevel(chEntity)) / total);
 					break;
 
 				case PARTY_EXP_DISTRIBUTION_PARITY:
@@ -1637,18 +1644,21 @@ typedef struct SDamageInfo
 			GiveExp(ch, pAttacker, iExp);
 		else if (pParty)
 		{
+			const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
 			NPartyExpDistribute::FPartyTotaler f(ch);
 			pParty->ForEachOnlineMember(f);
 
-			if (pParty->IsPositionNearLeader((ch ? ch->GetEntityHandle() : entt::null)))
+			if (pParty->IsPositionNearLeader(chEntity))
 				iExp = iExp * (100 + pParty->GetExpBonusPercent()) / 100;
 
 			// ġ ֱ (Ƽ ȹ ġ 5%   )
 			if (pParty->GetExpCentralizeCharacter())
 			{
 				auto* tch = pParty->GetExpCentralizeCharacter();
+				const entt::entity tchEntity = tch ? tch->GetEntityHandle() : entt::null;
 
-				if (DISTANCE_APPROX(ecs::PlayerRuntime::GetX((ch ? ch->GetEntityHandle() : entt::null)) - ecs::PlayerRuntime::GetX((tch ? tch->GetEntityHandle() : entt::null)), ecs::PlayerRuntime::GetY((ch ? ch->GetEntityHandle() : entt::null)) - ecs::PlayerRuntime::GetY((tch ? tch->GetEntityHandle() : entt::null))) <= PARTY_DEFAULT_RANGE)
+
+				if (DISTANCE_APPROX(ecs::PlayerRuntime::GetX(chEntity) - ecs::PlayerRuntime::GetX(tchEntity), ecs::PlayerRuntime::GetY(chEntity) - ecs::PlayerRuntime::GetY(tchEntity)) <= PARTY_DEFAULT_RANGE)
 				{
 					int iExpCenteralize = (int)(iExp * 0.05f);
 					iExp -= iExpCenteralize;
@@ -1862,6 +1872,8 @@ EVENTFUNC(dead_event)
 	}
 
 	auto* ch = LegacyCharOf(info->entity);
+	const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
+
 	if (ch == nullptr)
 	{
 		LOG_ERROR("DEAD_EVENT: cannot find char pointer with MOB entity({})", static_cast<uint32_t>(info->entity));
@@ -1871,19 +1883,19 @@ EVENTFUNC(dead_event)
 	// Phase 10: WRITES_STATE - deferred until ECS component covers m_pkDeadEvent
 	ch->m_pkDeadEvent = nullptr;
 	{
-		const entt::entity victimEntity = (ch ? ch->GetEntityHandle() : entt::null);
+		const entt::entity victimEntity = chEntity;
 		if (victimEntity != entt::null)
 			g_dispatcher.trigger(ecs::EvCharDead { entt::null, victimEntity });
 	}
 
-	if (!ecs::PlayerRuntime::IsPC((ch ? ch->GetEntityHandle() : entt::null)))
+	if (!ecs::PlayerRuntime::IsPC(chEntity))
 	{
 		if (ch->IsMonster() == true)
 		{
 			if (ch->IsRevive() == false && ch->HasReviverInParty() == true)
 			{
 				ch->SetPosition(POS_STANDING);
-				ch->SetHP(ecs::PointSystem::GetMaxHP((ch ? ch->GetEntityHandle() : entt::null)));
+				ch->SetHP(ecs::PointSystem::GetMaxHP(chEntity));
 
 				ch->ViewReencode();
 
@@ -2554,6 +2566,7 @@ void CHARACTER::CreateFly(uint8_t bType, LPCHARACTER pkVictim)
 
 bool CHARACTER::Attack(LPCHARACTER pkVictim, uint8_t bType)
 {
+	const entt::entity victim = pkVictim ? pkVictim->GetEntityHandle() : entt::null;
 #ifdef ENABLE_BUG_FIXES
 	if (pkVictim->GetMyShop())
 		return false;
@@ -2566,10 +2579,10 @@ bool CHARACTER::Attack(LPCHARACTER pkVictim, uint8_t bType)
 		return false;
 #ifdef ENABLE_ANTICHEAT
 	SECTREE* sectree = GetSectree();
-	SECTREE* vsectree = ecs::PlayerRuntime::GetSectree((pkVictim ? pkVictim->GetEntityHandle() : entt::null));
+	SECTREE* vsectree = ecs::PlayerRuntime::GetSectree(victim);
 
 	if (sectree && vsectree) {
-		if (sectree->IsAttr(GetX(), GetY(), ATTR_BANPK) || vsectree->IsAttr(ecs::PlayerRuntime::GetX((pkVictim ? pkVictim->GetEntityHandle() : entt::null)), ecs::PlayerRuntime::GetY((pkVictim ? pkVictim->GetEntityHandle() : entt::null)), ATTR_BANPK)) {
+		if (sectree->IsAttr(GetX(), GetY(), ATTR_BANPK) || vsectree->IsAttr(ecs::PlayerRuntime::GetX(victim), ecs::PlayerRuntime::GetY(victim), ATTR_BANPK)) {
 			if (GetDesc()) {
 				LogManager::instance().HackLog("ANTISAFEZONE", this);
 				GetDesc()->DelayedDisconnect(3);
@@ -2581,14 +2594,14 @@ bool CHARACTER::Attack(LPCHARACTER pkVictim, uint8_t bType)
 	   // return false;
 
    // @fixme131
-	if (!battle_is_attackable(GetEntityHandle(), (pkVictim ? pkVictim->GetEntityHandle() : entt::null)))
+	if (!battle_is_attackable(GetEntityHandle(), victim))
 		return false;
 
 	uint32_t dwCurrentTime = get_dword_time();
 
 	if (IsPC()) {
 #ifdef ENABLE_ANTICHEAT
-		if (IS_SPEED_HACK(GetEntityHandle(), (pkVictim ? pkVictim->GetEntityHandle() : entt::null), dwCurrentTime)) {
+		if (IS_SPEED_HACK(GetEntityHandle(), victim, dwCurrentTime)) {
 			return false;
 		}
 #endif
@@ -2617,14 +2630,14 @@ bool CHARACTER::Attack(LPCHARACTER pkVictim, uint8_t bType)
 		case BATTLE_TYPE_TANKER:
 		case BATTLE_TYPE_SUPER_POWER:
 		case BATTLE_TYPE_SUPER_TANKER:
-			iRet = battle_melee_attack(GetEntityHandle(), (pkVictim ? pkVictim->GetEntityHandle() : entt::null));
+			iRet = battle_melee_attack(GetEntityHandle(), victim);
 			break;
 		case BATTLE_TYPE_RANGE:
-			FlyTarget(ecs::PlayerRuntime::GetPacketVID((pkVictim ? pkVictim->GetEntityHandle() : entt::null)), ecs::PlayerRuntime::GetX((pkVictim ? pkVictim->GetEntityHandle() : entt::null)), ecs::PlayerRuntime::GetY((pkVictim ? pkVictim->GetEntityHandle() : entt::null)), HEADER_CG_FLY_TARGETING);
+			FlyTarget(ecs::PlayerRuntime::GetPacketVID(victim), ecs::PlayerRuntime::GetX(victim), ecs::PlayerRuntime::GetY(victim), HEADER_CG_FLY_TARGETING);
 			iRet = Shoot(0) ? BATTLE_DAMAGE : BATTLE_NONE;
 			break;
 		case BATTLE_TYPE_MAGIC:
-			FlyTarget(ecs::PlayerRuntime::GetPacketVID((pkVictim ? pkVictim->GetEntityHandle() : entt::null)), ecs::PlayerRuntime::GetX((pkVictim ? pkVictim->GetEntityHandle() : entt::null)), ecs::PlayerRuntime::GetY((pkVictim ? pkVictim->GetEntityHandle() : entt::null)), HEADER_CG_FLY_TARGETING);
+			FlyTarget(ecs::PlayerRuntime::GetPacketVID(victim), ecs::PlayerRuntime::GetX(victim), ecs::PlayerRuntime::GetY(victim), HEADER_CG_FLY_TARGETING);
 			iRet = Shoot(1) ? BATTLE_DAMAGE : BATTLE_NONE;
 			break;
 		default:
@@ -2644,7 +2657,7 @@ bool CHARACTER::Attack(LPCHARACTER pkVictim, uint8_t bType)
 			}
 		}
 
-		LOG_TRACE("Attack call ComputeSkill {} {}", bType, pkVictim ? ecs::PlayerRuntime::GetName((pkVictim ? pkVictim->GetEntityHandle() : entt::null)).data() : "");
+		LOG_TRACE("Attack call ComputeSkill {} {}", bType, pkVictim ? ecs::PlayerRuntime::GetName(victim).data() : "");
 		iRet = ComputeSkill(bType, pkVictim);
 	}
 
@@ -2702,7 +2715,8 @@ int CHARACTER::GetArrowAndBow(entt::entity* ppkBow, entt::entity* ppkArrow, int 
 
 void CHARACTER::DistributeSP(LPCHARACTER pkKiller, int iMethod)
 {
-	if (pkKiller->GetSP() >= ecs::PointSystem::GetMaxSP((pkKiller ? pkKiller->GetEntityHandle() : entt::null)))
+	const entt::entity killer = pkKiller ? pkKiller->GetEntityHandle() : entt::null;
+	if (pkKiller->GetSP() >= ecs::PointSystem::GetMaxSP(killer))
 		return;
 
 	bool bAttacking = (get_dword_time() - GetLastAttackTime()) < 3000;
@@ -2714,7 +2728,7 @@ void CHARACTER::DistributeSP(LPCHARACTER pkKiller, int iMethod)
 
 		if (!num)
 		{
-			int iLvDelta = GetLevel() - ecs::PointSystem::GetLevel((pkKiller ? pkKiller->GetEntityHandle() : entt::null));
+			int iLvDelta = GetLevel() - ecs::PointSystem::GetLevel(killer);
 			int iAmount = 0;
 
 			if (iLvDelta >= 5)
@@ -2726,7 +2740,7 @@ void CHARACTER::DistributeSP(LPCHARACTER pkKiller, int iMethod)
 
 			if (iAmount != 0)
 			{
-				iAmount += (iAmount * ecs::PointSystem::Get((pkKiller ? pkKiller->GetEntityHandle() : entt::null), POINT_SP_REGEN)) / 100;
+				iAmount += (iAmount * ecs::PointSystem::Get(killer, POINT_SP_REGEN)) / 100;
 
 				if (iAmount >= 11)
 					CreateFly(FLY_SP_BIG, pkKiller);
@@ -2735,7 +2749,7 @@ void CHARACTER::DistributeSP(LPCHARACTER pkKiller, int iMethod)
 				else
 					CreateFly(FLY_SP_SMALL, pkKiller);
 
-				ecs::PointSystem::Change((pkKiller ? pkKiller->GetEntityHandle() : entt::null), POINT_SP, iAmount);
+				ecs::PointSystem::Change(killer, POINT_SP, iAmount);
 			}
 		}
 	}
@@ -2752,28 +2766,28 @@ void CHARACTER::DistributeSP(LPCHARACTER pkKiller, int iMethod)
 			else
 				iAmount = 10 + GetMaxSP() * 3 / 100; //
 
-			iAmount += (iAmount * ecs::PointSystem::Get((pkKiller ? pkKiller->GetEntityHandle() : entt::null), POINT_SP_REGEN)) / 100;
-			ecs::PointSystem::Change((pkKiller ? pkKiller->GetEntityHandle() : entt::null), POINT_SP, iAmount);
+			iAmount += (iAmount * ecs::PointSystem::Get(killer, POINT_SP_REGEN)) / 100;
+			ecs::PointSystem::Change(killer, POINT_SP, iAmount);
 		}
 		else
 		{
 			int iAmount;
 
 			if (bAttacking)
-				iAmount = 2 + ecs::PointSystem::GetMaxSP((pkKiller ? pkKiller->GetEntityHandle() : entt::null)) / 200;
+				iAmount = 2 + ecs::PointSystem::GetMaxSP(killer) / 200;
 			else if (bMoving)
-				iAmount = 2 + ecs::PointSystem::GetMaxSP((pkKiller ? pkKiller->GetEntityHandle() : entt::null)) / 100;
+				iAmount = 2 + ecs::PointSystem::GetMaxSP(killer) / 100;
 			else
 			{
 				//
-				if (pkKiller->GetHP() < ecs::PointSystem::GetMaxHP((pkKiller ? pkKiller->GetEntityHandle() : entt::null)))
-					iAmount = 2 + (ecs::PointSystem::GetMaxSP((pkKiller ? pkKiller->GetEntityHandle() : entt::null)) / 100); //   á
+				if (pkKiller->GetHP() < ecs::PointSystem::GetMaxHP(killer))
+					iAmount = 2 + (ecs::PointSystem::GetMaxSP(killer) / 100); //   á
 				else
-					iAmount = 9 + (ecs::PointSystem::GetMaxSP((pkKiller ? pkKiller->GetEntityHandle() : entt::null)) / 100); // ⺻
+					iAmount = 9 + (ecs::PointSystem::GetMaxSP(killer) / 100); // ⺻
 			}
 
-			iAmount += (iAmount * ecs::PointSystem::Get((pkKiller ? pkKiller->GetEntityHandle() : entt::null), POINT_SP_REGEN)) / 100;
-			ecs::PointSystem::Change((pkKiller ? pkKiller->GetEntityHandle() : entt::null), POINT_SP, iAmount);
+			iAmount += (iAmount * ecs::PointSystem::Get(killer, POINT_SP_REGEN)) / 100;
+			ecs::PointSystem::Change(killer, POINT_SP, iAmount);
 		}
 	}
 }
@@ -2792,12 +2806,13 @@ static uint32_t __GetPartyExpNP(const uint32_t level)
 
 static uint32_t AdjustExpByLevel_Combat(const LegacyCharHandle ch, const uint32_t exp)
 {
-	if (PLAYER_MAX_LEVEL_CONST < ecs::PointSystem::GetLevel((ch ? ch->GetEntityHandle() : entt::null)))
+	const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
+	if (PLAYER_MAX_LEVEL_CONST < ecs::PointSystem::GetLevel(chEntity))
 	{
 		double ret = 0.95;
 		double factor = 0.1;
 
-		for (int64_t i = 0; i < ecs::PointSystem::GetLevel((ch ? ch->GetEntityHandle() : entt::null)) - 100; ++i)
+		for (int64_t i = 0; i < ecs::PointSystem::GetLevel(chEntity) - 100; ++i)
 		{
 			if ((i % 10) == 0)
 				factor /= 2.0;
@@ -3283,6 +3298,8 @@ static bool __TryAutoGiveRewardItem(LegacyCharHandle ch, entt::entity itemEntity
 
 static void __GiveRewardItemToCharacterOrDrop(LegacyCharHandle ch, LegacyCharHandle pkVictim, entt::entity itemEntity, const PIXEL_POSITION& pos, bool bTrackBattlePass)
 {
+	const entt::entity victim = pkVictim ? pkVictim->GetEntityHandle() : entt::null;
+	const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
 	if (!ItemSystem::IsValidItem(itemEntity))
 		return;
 
@@ -3301,16 +3318,16 @@ static void __GiveRewardItemToCharacterOrDrop(LegacyCharHandle ch, LegacyCharHan
 
 	if (!ItemSystem::PlaceItemOnGroundLegacyBoundary(
 			itemEntity,
-			ecs::PlayerRuntime::GetMapIndex((pkVictim ? pkVictim->GetEntityHandle() : entt::null)),
+			ecs::PlayerRuntime::GetMapIndex(victim),
 			pos, 300))
 		return;
 
-	if (ch && CBattleArena::instance().IsBattleArenaMap(ecs::PlayerRuntime::GetMapIndex((ch ? ch->GetEntityHandle() : entt::null))) == false)
+	if (ch && CBattleArena::instance().IsBattleArenaMap(ecs::PlayerRuntime::GetMapIndex(chEntity)) == false)
 		ItemSystem::SetGroundOwnershipLegacyBoundary(
-			itemEntity, (ch ? ch->GetEntityHandle() : entt::null), 60);
+			itemEntity, chEntity, 60);
 
 	LOG_INFO("DROP_ITEM: {} {} {} from {}", ItemSystem::GetItemName(itemEntity),
-		pos.x, pos.y, ecs::PlayerRuntime::GetName((pkVictim ? pkVictim->GetEntityHandle() : entt::null)).data());
+		pos.x, pos.y, ecs::PlayerRuntime::GetName(victim).data());
 }
 #endif
 
@@ -3318,6 +3335,7 @@ static void __GiveRewardItemToCharacterOrDrop(LegacyCharHandle ch, LegacyCharHan
 #ifdef ENABLE_RARE_DROP_NOTICE_RAZOR93
 static std::string MakeItemLink(entt::entity item, LegacyCharHandle pkKiller, LegacyCharHandle pkMob)
 {
+	const entt::entity killer = pkKiller ? pkKiller->GetEntityHandle() : entt::null;
 	char itemlink[512];
 	int len = 0;
 
@@ -3339,8 +3357,8 @@ static std::string MakeItemLink(entt::entity item, LegacyCharHandle pkKiller, Le
 
 
 	int lang = LANGUAGE_EN;
-	if (pkKiller && ecs::PlayerRuntime::GetDesc((pkKiller ? pkKiller->GetEntityHandle() : entt::null)))
-		lang = ecs::PlayerRuntime::GetDesc((pkKiller ? pkKiller->GetEntityHandle() : entt::null))->GetLanguage();
+	if (pkKiller && ecs::PlayerRuntime::GetDesc(killer))
+		lang = ecs::PlayerRuntime::GetDesc(killer)->GetLanguage();
 
 
 	const char* fmt = "|cffc71585[%s]|r looted a special item from |cff87ceeb[%s]|r: |cffffd700|H%s|h[%s]|h|r"; // EN default
@@ -3379,7 +3397,7 @@ static std::string MakeItemLink(entt::entity item, LegacyCharHandle pkKiller, Le
 
 	char szChat[1024];
 	snprintf(szChat, sizeof(szChat), fmt,
-		pkKiller ? ecs::PlayerRuntime::GetName((pkKiller ? pkKiller->GetEntityHandle() : entt::null)).data() : "Player",
+		pkKiller ? ecs::PlayerRuntime::GetName(killer).data() : "Player",
 		pkMob ? ecs::PlayerRuntime::GetName((pkMob ? pkMob->GetEntityHandle() : entt::null)).data() : "Mob",
 		itemlink,
 		item != entt::null ? ItemSystem::GetItemName(item) : "item");
@@ -3558,6 +3576,8 @@ void CHARACTER::Reward(bool bItemDrop)
 {
 	//PROF_UNIT puReward("Reward");
 	auto* pkAttacker = DistributeExp();
+	const entt::entity attacker = pkAttacker ? pkAttacker->GetEntityHandle() : entt::null;
+
 
 	if (!pkAttacker)
 		return;
@@ -3565,14 +3585,14 @@ void CHARACTER::Reward(bool bItemDrop)
 
 	if (!IsPC() && !m_pkMobData)
 	{
-		LOG_ERROR("Reward: NULL mob data (vid={} race={} name={} map={} x={} y={} attacker={})", GetPacketVID(), GetRaceNum(), GetName(), GetMapIndex(), GetX(), GetY(), pkAttacker ? ecs::PlayerRuntime::GetName((pkAttacker ? pkAttacker->GetEntityHandle() : entt::null)).data() : "<null>");
+		LOG_ERROR("Reward: NULL mob data (vid={} race={} name={} map={} x={} y={} attacker={})", GetPacketVID(), GetRaceNum(), GetName(), GetMapIndex(), GetX(), GetY(), pkAttacker ? ecs::PlayerRuntime::GetName(attacker).data() : "<null>");
 		m_map_kDamage.clear();
 		return;
 	}
 	//PROF_UNIT pu1("r1");
-	if (ecs::PlayerRuntime::IsPC((pkAttacker ? pkAttacker->GetEntityHandle() : entt::null)))
+	if (ecs::PlayerRuntime::IsPC(attacker))
 	{
-		if ((GetLevel() - ecs::PointSystem::GetLevel((pkAttacker ? pkAttacker->GetEntityHandle() : entt::null))) >= -10)
+		if ((GetLevel() - ecs::PointSystem::GetLevel(attacker)) >= -10)
 		{
 			/*if (pkAttacker->GetRealAlignment() < 0) // trsra: minden gyilkols 2 pontot ad
 			{
@@ -3586,19 +3606,19 @@ void CHARACTER::Reward(bool bItemDrop)
 		}
 
 		pkAttacker->SetQuestNPCID(GetPacketVID());
-		quest::CQuestManager::instance().Kill(ecs::PlayerRuntime::GetPlayerID((pkAttacker ? pkAttacker->GetEntityHandle() : entt::null)), GetRaceNum());
+		quest::CQuestManager::instance().Kill(ecs::PlayerRuntime::GetPlayerID(attacker), GetRaceNum());
 		CHARACTER_MANAGER::instance().KillLog(GetRaceNum());
 #ifdef ENABLE_CPP_DUNGEON_RAZOR93
-		COrcsDungeon::instance().OnMobKilled((pkAttacker ? pkAttacker->GetEntityHandle() : entt::null), GetEntityHandle());
-		CTritonTempleDungeon::instance().OnMobKilled((pkAttacker ? pkAttacker->GetEntityHandle() : entt::null), GetEntityHandle());
-		CValentineDungeon::instance().OnMobKilled((pkAttacker ? pkAttacker->GetEntityHandle() : entt::null), GetEntityHandle());
-		CRuneDungeon::instance().OnMobKilled((pkAttacker ? pkAttacker->GetEntityHandle() : entt::null), GetEntityHandle());
-		CPyramidDungeonRazor93::instance().OnMobKilled((pkAttacker ? pkAttacker->GetEntityHandle() : entt::null), GetEntityHandle());
-		CNightmareDungeonRazor93::instance().OnMobKilled((pkAttacker ? pkAttacker->GetEntityHandle() : entt::null), GetEntityHandle());
+		COrcsDungeon::instance().OnMobKilled(attacker, GetEntityHandle());
+		CTritonTempleDungeon::instance().OnMobKilled(attacker, GetEntityHandle());
+		CValentineDungeon::instance().OnMobKilled(attacker, GetEntityHandle());
+		CRuneDungeon::instance().OnMobKilled(attacker, GetEntityHandle());
+		CPyramidDungeonRazor93::instance().OnMobKilled(attacker, GetEntityHandle());
+		CNightmareDungeonRazor93::instance().OnMobKilled(attacker, GetEntityHandle());
 		//CLostCastleDungeon::instance().OnMobKilled((pkAttacker ? pkAttacker->GetEntityHandle() : entt::null), GetEntityHandle());
-		CHalloween2022Dungeon::instance().OnMobKilled((pkAttacker ? pkAttacker->GetEntityHandle() : entt::null), GetEntityHandle());
-		CVikingDungeon::instance().OnMobKilled((pkAttacker ? pkAttacker->GetEntityHandle() : entt::null), GetEntityHandle());
-		CEasterDungeon::instance().OnMobKilled((pkAttacker ? pkAttacker->GetEntityHandle() : entt::null), GetEntityHandle());
+		CHalloween2022Dungeon::instance().OnMobKilled(attacker, GetEntityHandle());
+		CVikingDungeon::instance().OnMobKilled(attacker, GetEntityHandle());
+		CEasterDungeon::instance().OnMobKilled(attacker, GetEntityHandle());
 #endif
 
 #ifdef ENABLE_BATTLE_PASS
@@ -3616,17 +3636,17 @@ void CHARACTER::Reward(bool bItemDrop)
 
 		if (!number(0, 9))
 		{
-			if (ecs::PointSystem::Get((pkAttacker ? pkAttacker->GetEntityHandle() : entt::null), POINT_KILL_HP_RECOVERY))
+			if (ecs::PointSystem::Get(attacker, POINT_KILL_HP_RECOVERY))
 			{
-				int iHP = ecs::PointSystem::GetMaxHP((pkAttacker ? pkAttacker->GetEntityHandle() : entt::null)) * ecs::PointSystem::Get((pkAttacker ? pkAttacker->GetEntityHandle() : entt::null), POINT_KILL_HP_RECOVERY) / 100;
-				ecs::PointSystem::Change((pkAttacker ? pkAttacker->GetEntityHandle() : entt::null), POINT_HP, iHP);
+				int iHP = ecs::PointSystem::GetMaxHP(attacker) * ecs::PointSystem::Get(attacker, POINT_KILL_HP_RECOVERY) / 100;
+				ecs::PointSystem::Change(attacker, POINT_HP, iHP);
 				CreateFly(FLY_HP_SMALL, pkAttacker);
 			}
 
-			if (ecs::PointSystem::Get((pkAttacker ? pkAttacker->GetEntityHandle() : entt::null), POINT_KILL_SP_RECOVER))
+			if (ecs::PointSystem::Get(attacker, POINT_KILL_SP_RECOVER))
 			{
-				int iSP = ecs::PointSystem::GetMaxSP((pkAttacker ? pkAttacker->GetEntityHandle() : entt::null)) * ecs::PointSystem::Get((pkAttacker ? pkAttacker->GetEntityHandle() : entt::null), POINT_KILL_SP_RECOVER) / 100;
-				ecs::PointSystem::Change((pkAttacker ? pkAttacker->GetEntityHandle() : entt::null), POINT_SP, iSP);
+				int iSP = ecs::PointSystem::GetMaxSP(attacker) * ecs::PointSystem::Get(attacker, POINT_KILL_SP_RECOVER) / 100;
+				ecs::PointSystem::Change(attacker, POINT_SP, iSP);
 				CreateFly(FLY_SP_SMALL, pkAttacker);
 			}
 		}
@@ -3634,7 +3654,7 @@ void CHARACTER::Reward(bool bItemDrop)
 	//pu1.Pop();
 
 #ifdef ENABLE_BLOCK_MULTIFARM
-	if (AffectSystem::FindAffect((pkAttacker ? pkAttacker->GetEntityHandle() : entt::null), AFFECT_DROP_BLOCK, APPLY_NONE)) {
+	if (AffectSystem::FindAffect(attacker, AFFECT_DROP_BLOCK, APPLY_NONE)) {
 		return;
 	}
 #endif
@@ -3652,7 +3672,7 @@ void CHARACTER::Reward(bool bItemDrop)
 	//
 	//PROF_UNIT pu2("r2");
 	if (test_server)
-		LOG_TRACE("Drop money : Attacker {}", ecs::PlayerRuntime::GetName((pkAttacker ? pkAttacker->GetEntityHandle() : entt::null)).data());
+		LOG_TRACE("Drop money : Attacker {}", ecs::PlayerRuntime::GetName(attacker).data());
 	RewardGold(pkAttacker);
 	//pu2.Pop();
 
@@ -3691,7 +3711,7 @@ void CHARACTER::Reward(bool bItemDrop)
 		// - ugyanazt a dropot kapja minden jogosult (kulon item peldany, ownershipelve)
 		// - azonos HWID+HOST eseten csak 1 karakter kap (a legtobb dmg a mobra)
 
-		if (GetDungeon() && pkAttacker && ecs::PlayerRuntime::IsPC((pkAttacker ? pkAttacker->GetEntityHandle() : entt::null)) && !s_vec_item.empty())
+		if (GetDungeon() && pkAttacker && ecs::PlayerRuntime::IsPC(attacker) && !s_vec_item.empty())
 		{
 			const long lMapIndex = GetMapIndex(); // a megolt mob mapindexe
 
@@ -3718,7 +3738,7 @@ void CHARACTER::Reward(bool bItemDrop)
 				|| (lMapIndex >= 1790000 && lMapIndex < 1800000)  // viking
 				)
 			{
-				if (ecs::SocialSystem::GetParty((pkAttacker ? pkAttacker->GetEntityHandle() : entt::null))) // CSAK partyra
+				if (ecs::SocialSystem::GetParty(attacker)) // CSAK partyra
 				{
 					CDungeon* pDungeon = GetDungeon();
 
@@ -3754,7 +3774,8 @@ void CHARACTER::Reward(bool bItemDrop)
 
 						pDungeon->ForEachMember([&](LegacyCharHandle mch)
 							{
-								if (!mch || !ecs::PlayerRuntime::IsPC((mch ? mch->GetEntityHandle() : entt::null)) || !ecs::PlayerRuntime::GetDesc((mch ? mch->GetEntityHandle() : entt::null)))
+								const entt::entity mchEntity = mch ? mch->GetEntityHandle() : entt::null;
+								if (!mch || !ecs::PlayerRuntime::IsPC(mchEntity) || !ecs::PlayerRuntime::GetDesc(mchEntity))
 									return;
 
 								// ugyanabban a dungeon instance-ben kell legyen
@@ -3762,18 +3783,18 @@ void CHARACTER::Reward(bool bItemDrop)
 									return;
 
 								//   ugyanazon a mapindexen legyen (INSTANCE) -> NINCS hibas normalizalas
-								if (ecs::PlayerRuntime::GetMapIndex((mch ? mch->GetEntityHandle() : entt::null)) != lMapIndex)
+								if (ecs::PlayerRuntime::GetMapIndex(mchEntity) != lMapIndex)
 									return;
 
 								// ugyanabban a partyban legyen
-								if (ecs::SocialSystem::GetParty((mch ? mch->GetEntityHandle() : entt::null)) != ecs::SocialSystem::GetParty((pkAttacker ? pkAttacker->GetEntityHandle() : entt::null)))
+								if (ecs::SocialSystem::GetParty(mchEntity) != ecs::SocialSystem::GetParty(attacker))
 									return;
 
 								std::string key = MakeHwidHostKey(mch);
 
 								// ha nincs hwid/host, fallback: account (ne kapjon duplan)
 								if (key.empty())
-									key = "ACC:" + std::to_string(ecs::PlayerRuntime::GetDesc((mch ? mch->GetEntityHandle() : entt::null))->GetAccountTable().id);
+									key = "ACC:" + std::to_string(ecs::PlayerRuntime::GetDesc(mchEntity)->GetAccountTable().id);
 
 								auto it = mapWinnerByKey.find(key);
 								if (it == mapWinnerByKey.end())
@@ -3834,7 +3855,9 @@ void CHARACTER::Reward(bool bItemDrop)
 							for (const auto& kv : mapWinnerByKey)
 							{
 								auto* rch = kv.second;
-								if (!rch || !ecs::PlayerRuntime::IsPC((rch ? rch->GetEntityHandle() : entt::null)) || !ecs::PlayerRuntime::GetDesc((rch ? rch->GetEntityHandle() : entt::null)))
+								const entt::entity rchEntity = rch ? rch->GetEntityHandle() : entt::null;
+
+								if (!rch || !ecs::PlayerRuntime::IsPC(rchEntity) || !ecs::PlayerRuntime::GetDesc(rchEntity))
 									continue;
 
 								PIXEL_POSITION mpos = pos;
@@ -3872,9 +3895,9 @@ void CHARACTER::Reward(bool bItemDrop)
 											continue;
 										}
 
-										if (CBattleArena::instance().IsBattleArenaMap(ecs::PlayerRuntime::GetMapIndex((rch ? rch->GetEntityHandle() : entt::null))) == false)
+										if (CBattleArena::instance().IsBattleArenaMap(ecs::PlayerRuntime::GetMapIndex(rchEntity)) == false)
 											ItemSystem::SetGroundOwnershipLegacyBoundary(
-												newItem, (rch ? rch->GetEntityHandle() : entt::null));
+												newItem, rchEntity);
 									}
 #else
 									if (!ItemSystem::PlaceItemOnGroundLegacyBoundary(
@@ -3885,9 +3908,9 @@ void CHARACTER::Reward(bool bItemDrop)
 										continue;
 									}
 
-									if (CBattleArena::instance().IsBattleArenaMap(ecs::PlayerRuntime::GetMapIndex((rch ? rch->GetEntityHandle() : entt::null))) == false)
+									if (CBattleArena::instance().IsBattleArenaMap(ecs::PlayerRuntime::GetMapIndex(rchEntity)) == false)
 										ItemSystem::SetGroundOwnershipLegacyBoundary(
-											newItem, (rch ? rch->GetEntityHandle() : entt::null));
+											newItem, rchEntity);
 #endif
 								}
 							}
@@ -3927,7 +3950,7 @@ void CHARACTER::Reward(bool bItemDrop)
 				}
 
 #ifdef ENABLE_DICE_SYSTEM_OFFOLVA
-				const bool bKeepGroundDrop = (pkAttacker && ecs::SocialSystem::GetParty((pkAttacker ? pkAttacker->GetEntityHandle() : entt::null)));
+				const bool bKeepGroundDrop = (pkAttacker && ecs::SocialSystem::GetParty(attacker));
 #else
 				const bool bKeepGroundDrop = false;
 #endif
@@ -3947,20 +3970,20 @@ void CHARACTER::Reward(bool bItemDrop)
 						return;
 					}
 
-					if (CBattleArena::instance().IsBattleArenaMap(ecs::PlayerRuntime::GetMapIndex((pkAttacker ? pkAttacker->GetEntityHandle() : entt::null))) == false)
+					if (CBattleArena::instance().IsBattleArenaMap(ecs::PlayerRuntime::GetMapIndex(attacker)) == false)
 					{
 #ifdef ENABLE_DICE_SYSTEM_OFFOLVA
-						if (ecs::SocialSystem::GetParty((pkAttacker ? pkAttacker->GetEntityHandle() : entt::null)))
+						if (ecs::SocialSystem::GetParty(attacker))
 						{
 							FPartyDropDiceRoll f(itemEntity, pkAttacker);
 							f.Process(this);
 						}
 						else
 							ItemSystem::SetGroundOwnershipLegacyBoundary(
-								itemEntity, (pkAttacker ? pkAttacker->GetEntityHandle() : entt::null));
+								itemEntity, attacker);
 #else
 						ItemSystem::SetGroundOwnershipLegacyBoundary(
-							itemEntity, (pkAttacker ? pkAttacker->GetEntityHandle() : entt::null));
+							itemEntity, attacker);
 #endif
 					}
 
@@ -4020,9 +4043,9 @@ void CHARACTER::Reward(bool bItemDrop)
 								itemEntity, GetMapIndex(), pos, 300))
 							continue;
 
-						if (pkAttacker && CBattleArena::instance().IsBattleArenaMap(ecs::PlayerRuntime::GetMapIndex((pkAttacker ? pkAttacker->GetEntityHandle() : entt::null))) == false)
+						if (pkAttacker && CBattleArena::instance().IsBattleArenaMap(ecs::PlayerRuntime::GetMapIndex(attacker)) == false)
 							ItemSystem::SetGroundOwnershipLegacyBoundary(
-								itemEntity, (pkAttacker ? pkAttacker->GetEntityHandle() : entt::null));
+								itemEntity, attacker);
 
 						LOG_INFO("DROP_ITEM: {} {} {} by {}",
 							ItemSystem::GetItemName(itemEntity), pos.x, pos.y, GetName());
@@ -4123,20 +4146,20 @@ void CHARACTER::Reward(bool bItemDrop)
 					return;
 				}
 
-				if (CBattleArena::instance().IsBattleArenaMap(ecs::PlayerRuntime::GetMapIndex((pkAttacker ? pkAttacker->GetEntityHandle() : entt::null))) == false)
+				if (CBattleArena::instance().IsBattleArenaMap(ecs::PlayerRuntime::GetMapIndex(attacker)) == false)
 				{
 #ifdef ENABLE_DICE_SYSTEM_OFFOLVA
-					if (ecs::SocialSystem::GetParty((pkAttacker ? pkAttacker->GetEntityHandle() : entt::null)))
+					if (ecs::SocialSystem::GetParty(attacker))
 					{
 						FPartyDropDiceRoll f(itemEntity, pkAttacker);
 						f.Process(this);
 					}
 					else
 						ItemSystem::SetGroundOwnershipLegacyBoundary(
-							itemEntity, (pkAttacker ? pkAttacker->GetEntityHandle() : entt::null));
+							itemEntity, attacker);
 #else
 					ItemSystem::SetGroundOwnershipLegacyBoundary(
-						itemEntity, (pkAttacker ? pkAttacker->GetEntityHandle() : entt::null));
+						itemEntity, attacker);
 #endif
 				}
 
@@ -4195,9 +4218,9 @@ void CHARACTER::Reward(bool bItemDrop)
 								itemEntity, GetMapIndex(), pos, 300))
 							continue;
 
-						if (pkAttacker && CBattleArena::instance().IsBattleArenaMap(ecs::PlayerRuntime::GetMapIndex((pkAttacker ? pkAttacker->GetEntityHandle() : entt::null))) == false)
+						if (pkAttacker && CBattleArena::instance().IsBattleArenaMap(ecs::PlayerRuntime::GetMapIndex(attacker)) == false)
 							ItemSystem::SetGroundOwnershipLegacyBoundary(
-								itemEntity, (pkAttacker ? pkAttacker->GetEntityHandle() : entt::null));
+								itemEntity, attacker);
 
 						pos.x = number(-7, 7) * 20;
 						pos.y = number(-7, 7) * 20;
@@ -4275,19 +4298,20 @@ void CHARACTER::Reward(bool bItemDrop)
 // char_battle.cpp slice BC2 moved into CombatSystem.cpp
 
 void CHARACTER::RewardGold(LPCHARACTER pkAttacker) {
+	const entt::entity attacker = pkAttacker ? pkAttacker->GetEntityHandle() : entt::null;
 
-	if (!pkAttacker || !ecs::PlayerRuntime::IsPC((pkAttacker ? pkAttacker->GetEntityHandle() : entt::null)))
+	if (!pkAttacker || !ecs::PlayerRuntime::IsPC(attacker))
 		return;
 
 	if (!m_pkMobData)
 	{
-		LOG_ERROR("RewardGold: NULL mob data (vid={} race={} name={} map={} x={} y={} attacker={})", GetPacketVID(), GetRaceNum(), GetName(), GetMapIndex(), GetX(), GetY(), pkAttacker ? ecs::PlayerRuntime::GetName((pkAttacker ? pkAttacker->GetEntityHandle() : entt::null)).data() : "<null>");
+		LOG_ERROR("RewardGold: NULL mob data (vid={} race={} name={} map={} x={} y={} attacker={})", GetPacketVID(), GetRaceNum(), GetName(), GetMapIndex(), GetX(), GetY(), pkAttacker ? ecs::PlayerRuntime::GetName(attacker).data() : "<null>");
 		return;
 	}
-	if (pkAttacker && ecs::PlayerRuntime::IsPC((pkAttacker ? pkAttacker->GetEntityHandle() : entt::null))) {
+	if (pkAttacker && ecs::PlayerRuntime::IsPC(attacker)) {
 		if (IsStone()) {
 #ifdef ENABLE_ANTICHEAT
-			if (ecs::PlayerRuntime::GetMapIndex((pkAttacker ? pkAttacker->GetEntityHandle() : entt::null)) < 1000) {
+			if (ecs::PlayerRuntime::GetMapIndex(attacker) < 1000) {
 				pkAttacker->ProcessCheatCheck(get_global_time());
 			}
 #endif
@@ -4297,13 +4321,13 @@ void CHARACTER::RewardGold(LPCHARACTER pkAttacker) {
 			}
 #endif
 #ifdef ENABLE_BLOCK_MULTIFARM
-			if (AffectSystem::FindAffect((pkAttacker ? pkAttacker->GetEntityHandle() : entt::null), AFFECT_DROP_BLOCK, APPLY_NONE)) {
+			if (AffectSystem::FindAffect(attacker, AFFECT_DROP_BLOCK, APPLY_NONE)) {
 				return;
 			}
 #endif
 
 			bool drop = true;
-			int mylvl = ecs::PointSystem::GetLevel((pkAttacker ? pkAttacker->GetEntityHandle() : entt::null)), targetlvl = GetLevel();
+			int mylvl = ecs::PointSystem::GetLevel(attacker), targetlvl = GetLevel();
 			if (mylvl > targetlvl) {
 				drop = mylvl - targetlvl <= 15 ? true : false;
 			}
@@ -4315,16 +4339,16 @@ void CHARACTER::RewardGold(LPCHARACTER pkAttacker) {
 					return;
 				}
 
-				if (ecs::PointSystem::Get((pkAttacker ? pkAttacker->GetEntityHandle() : entt::null), POINT_MALL_GOLDBONUS)) {
-					gold += (gold * ecs::PointSystem::Get((pkAttacker ? pkAttacker->GetEntityHandle() : entt::null), POINT_MALL_GOLDBONUS) / 100);
+				if (ecs::PointSystem::Get(attacker, POINT_MALL_GOLDBONUS)) {
+					gold += (gold * ecs::PointSystem::Get(attacker, POINT_MALL_GOLDBONUS) / 100);
 				}
 
-				ecs::PointSystem::Change((pkAttacker ? pkAttacker->GetEntityHandle() : entt::null), POINT_GOLD, gold, true);
+				ecs::PointSystem::Change(attacker, POINT_GOLD, gold, true);
 			}
 		}
 		else {
 #ifdef ENABLE_BLOCK_MULTIFARM
-			if (AffectSystem::FindAffect((pkAttacker ? pkAttacker->GetEntityHandle() : entt::null), AFFECT_DROP_BLOCK, APPLY_NONE)) {
+			if (AffectSystem::FindAffect(attacker, AFFECT_DROP_BLOCK, APPLY_NONE)) {
 				return;
 			}
 #endif
@@ -4348,24 +4372,24 @@ void CHARACTER::RewardGold(LPCHARACTER pkAttacker) {
 			//
 			int iGoldPercent = MobRankStats[GetMobRank()].iGoldPercent;
 
-			if (ecs::PlayerRuntime::IsPC((pkAttacker ? pkAttacker->GetEntityHandle() : entt::null)))
+			if (ecs::PlayerRuntime::IsPC(attacker))
 				iGoldPercent = iGoldPercent * (100 + CPrivManager::instance().GetPriv(pkAttacker, PRIV_GOLD_DROP)) / 100;
 
 #ifdef ENABLE_EVENT_MANAGER
-			if (ecs::PlayerRuntime::IsPC((pkAttacker ? pkAttacker->GetEntityHandle() : entt::null)))
+			if (ecs::PlayerRuntime::IsPC(attacker))
 			{
-				const auto event = CHARACTER_MANAGER::Instance().CheckEventIsActive(YANG_DROP_EVENT, ecs::PlayerRuntime::GetEmpire((pkAttacker ? pkAttacker->GetEntityHandle() : entt::null)));
+				const auto event = CHARACTER_MANAGER::Instance().CheckEventIsActive(YANG_DROP_EVENT, ecs::PlayerRuntime::GetEmpire(attacker));
 				if (event != nullptr)
 					iGoldPercent = iGoldPercent * (100 + (event->value[0] + CPrivManager::instance().GetPriv(pkAttacker, PRIV_GOLD_DROP))) / 100;
 				else
 					iGoldPercent = iGoldPercent * (100 + CPrivManager::instance().GetPriv(pkAttacker, PRIV_GOLD_DROP)) / 100;
 			}
 #else
-			if (ecs::PlayerRuntime::IsPC((pkAttacker ? pkAttacker->GetEntityHandle() : entt::null)))
+			if (ecs::PlayerRuntime::IsPC(attacker))
 				iGoldPercent = iGoldPercent * (100 + CPrivManager::instance().GetPriv(pkAttacker, PRIV_GOLD_DROP)) / 100;
 #endif
 
-			iGoldPercent = iGoldPercent * CHARACTER_MANAGER::instance().GetMobGoldDropRate(((pkAttacker) ? (pkAttacker)->GetEntityHandle() : entt::null)) / 100;
+			iGoldPercent = iGoldPercent * CHARACTER_MANAGER::instance().GetMobGoldDropRate(attacker) / 100;
 
 			// ADD_PREMIUM
 			if (pkAttacker->GetPremiumRemainSeconds(PREMIUM_GOLD) > 0 ||
@@ -4379,9 +4403,9 @@ void CHARACTER::RewardGold(LPCHARACTER pkAttacker) {
 			int iPercent;
 
 			if (GetMobRank() >= MOB_RANK_BOSS)
-				iPercent = ((iGoldPercent * PERCENT_LVDELTA_BOSS(ecs::PointSystem::GetLevel((pkAttacker ? pkAttacker->GetEntityHandle() : entt::null)), GetLevel())) / 100);
+				iPercent = ((iGoldPercent * PERCENT_LVDELTA_BOSS(ecs::PointSystem::GetLevel(attacker), GetLevel())) / 100);
 			else
-				iPercent = ((iGoldPercent * PERCENT_LVDELTA(ecs::PointSystem::GetLevel((pkAttacker ? pkAttacker->GetEntityHandle() : entt::null)), GetLevel())) / 100);
+				iPercent = ((iGoldPercent * PERCENT_LVDELTA(ecs::PointSystem::GetLevel(attacker), GetLevel())) / 100);
 			//int iPercent = CALCULATE_VALUE_LVDELTA(ecs::PointSystem::GetLevel((pkAttacker ? pkAttacker->GetEntityHandle() : entt::null)), GetLevel(), iGoldPercent);
 
 			if (number(1, 100) > iPercent)
@@ -4395,22 +4419,22 @@ void CHARACTER::RewardGold(LPCHARACTER pkAttacker) {
 				iGoldMultipler *= 5;
 
 			//
-			if (ecs::PointSystem::Get((pkAttacker ? pkAttacker->GetEntityHandle() : entt::null), POINT_GOLD_DOUBLE_BONUS))
-				if (number(1, 100) <= ecs::PointSystem::Get((pkAttacker ? pkAttacker->GetEntityHandle() : entt::null), POINT_GOLD_DOUBLE_BONUS))
+			if (ecs::PointSystem::Get(attacker, POINT_GOLD_DOUBLE_BONUS))
+				if (number(1, 100) <= ecs::PointSystem::Get(attacker, POINT_GOLD_DOUBLE_BONUS))
 					iGoldMultipler *= 2;
 
 			//
 			// ---------     ----------
 			//
 			if (test_server)
-				ecs::ChatSystem::Send((pkAttacker ? pkAttacker->GetEntityHandle() : entt::null), CHAT_TYPE_PARTY, "gold_mul %d rate %d", iGoldMultipler, CHARACTER_MANAGER::instance().GetMobGoldAmountRate(((pkAttacker) ? (pkAttacker)->GetEntityHandle() : entt::null)));
+				ecs::ChatSystem::Send(attacker, CHAT_TYPE_PARTY, "gold_mul %d rate %d", iGoldMultipler, CHARACTER_MANAGER::instance().GetMobGoldAmountRate(attacker));
 
 			//
 			// ---------   ó -------------
 			//
 			int iGold10DropPct = 100;
 #ifdef ENABLE_EVENT_MANAGER
-			const auto event = CHARACTER_MANAGER::Instance().CheckEventIsActive(YANG_DROP_EVENT, ecs::PlayerRuntime::GetEmpire((pkAttacker ? pkAttacker->GetEntityHandle() : entt::null)));
+			const auto event = CHARACTER_MANAGER::Instance().CheckEventIsActive(YANG_DROP_EVENT, ecs::PlayerRuntime::GetEmpire(attacker));
 			if (event != nullptr)
 				iGold10DropPct = (iGold10DropPct * 100) / (100 + event->value[0] + CPrivManager::instance().GetPriv(pkAttacker, PRIV_GOLD10_DROP));
 			else
@@ -4432,7 +4456,7 @@ void CHARACTER::RewardGold(LPCHARACTER pkAttacker) {
 					int iGold = number(GetMobTable().dwGoldMin, GetMobTable().dwGoldMax) / iSplitCount;
 					if (test_server)
 						LOG_INFO("iGold {}", iGold);
-					iGold = iGold * CHARACTER_MANAGER::instance().GetMobGoldAmountRate(((pkAttacker) ? (pkAttacker)->GetEntityHandle() : entt::null)) / 100;
+					iGold = iGold * CHARACTER_MANAGER::instance().GetMobGoldAmountRate(attacker) / 100;
 					iGold *= iGoldMultipler;
 
 					if (iGold == 0)
@@ -4442,7 +4466,7 @@ void CHARACTER::RewardGold(LPCHARACTER pkAttacker) {
 
 					if (test_server)
 					{
-						LOG_TRACE("Drop Moeny MobGoldAmountRate {} {}", CHARACTER_MANAGER::instance().GetMobGoldAmountRate(((pkAttacker) ? (pkAttacker)->GetEntityHandle() : entt::null)), iGoldMultipler);
+						LOG_TRACE("Drop Moeny MobGoldAmountRate {} {}", CHARACTER_MANAGER::instance().GetMobGoldAmountRate(attacker), iGoldMultipler);
 						LOG_TRACE("Drop Money gold {} GoldMin {} GoldMax {}", iGold, GetMobTable().dwGoldMax, GetMobTable().dwGoldMax);
 					}
 
@@ -4473,7 +4497,7 @@ void CHARACTER::RewardGold(LPCHARACTER pkAttacker) {
 				for (int i = 0; i < 10; ++i)
 				{
 					int iGold = number(GetMobTable().dwGoldMin, GetMobTable().dwGoldMax);
-					iGold = iGold * CHARACTER_MANAGER::instance().GetMobGoldAmountRate(((pkAttacker) ? (pkAttacker)->GetEntityHandle() : entt::null)) / 100;
+					iGold = iGold * CHARACTER_MANAGER::instance().GetMobGoldAmountRate(attacker) / 100;
 					iGold *= iGoldMultipler;
 
 					if (iGold == 0)
@@ -4506,7 +4530,7 @@ void CHARACTER::RewardGold(LPCHARACTER pkAttacker) {
 				// Ϲ
 				//
 				int iGold = number(GetMobTable().dwGoldMin, GetMobTable().dwGoldMax);
-				iGold = iGold * CHARACTER_MANAGER::instance().GetMobGoldAmountRate(((pkAttacker) ? (pkAttacker)->GetEntityHandle() : entt::null)) / 100;
+				iGold = iGold * CHARACTER_MANAGER::instance().GetMobGoldAmountRate(attacker) / 100;
 				iGold *= iGoldMultipler;
 
 				int iSplitCount;
@@ -4571,8 +4595,9 @@ static int64_t CalcReferenceNormalHitDamage(LegacyCharHandle pAttacker, LegacyCh
 
 bool CHARACTER::Damage(LPCHARACTER pAttacker, int64_t dam, EDamageType type) // returns true if dead
 {
+	const entt::entity attacker = pAttacker ? pAttacker->GetEntityHandle() : entt::null;
 #ifdef DISABLE_PC_ATTACK_PC_ON_MAPIDEX1
-	if (pAttacker && ecs::PlayerRuntime::IsPC((pAttacker ? pAttacker->GetEntityHandle() : entt::null)) && IsPC() && GetMapIndex() == 1)
+	if (pAttacker && ecs::PlayerRuntime::IsPC(attacker) && IsPC() && GetMapIndex() == 1)
 		return false;
 #endif
 	if (GetInvincible())
@@ -4585,7 +4610,7 @@ bool CHARACTER::Damage(LPCHARACTER pAttacker, int64_t dam, EDamageType type) // 
 
 	if (pAttacker)
 	{
-		const entt::entity attackerEntity = (pAttacker ? pAttacker->GetEntityHandle() : entt::null);
+		const entt::entity attackerEntity = attacker;
 		const bool hasWeapon = ItemSystem::IsValidItem(
 			ItemSystem::GetWearItem(attackerEntity, WEAR_WEAPON));
 		if (AffectSystem::IsAffectFlag(attackerEntity, AFF_GWIGUM) && !hasWeapon)
@@ -4602,13 +4627,13 @@ bool CHARACTER::Damage(LPCHARACTER pAttacker, int64_t dam, EDamageType type) // 
 
 	}
 
-	if ((IsPC() && IsAffectFlag(AFF_REVIVE_INVISIBLE)) || (pAttacker && (ecs::PlayerRuntime::IsPC((pAttacker ? pAttacker->GetEntityHandle() : entt::null)) && AffectSystem::IsAffectFlag((pAttacker ? pAttacker->GetEntityHandle() : entt::null), AFF_REVIVE_INVISIBLE))))
+	if ((IsPC() && IsAffectFlag(AFF_REVIVE_INVISIBLE)) || (pAttacker && (ecs::PlayerRuntime::IsPC(attacker) && AffectSystem::IsAffectFlag(attacker, AFF_REVIVE_INVISIBLE))))
 		return false;
 
 #ifdef ENABLE_NEWSTUFF
-	if (pAttacker && IsStone() && ecs::PlayerRuntime::IsPC((pAttacker ? pAttacker->GetEntityHandle() : entt::null)))
+	if (pAttacker && IsStone() && ecs::PlayerRuntime::IsPC(attacker))
 	{
-		if (GetEmpire() && GetEmpire() == ecs::PlayerRuntime::GetEmpire((pAttacker ? pAttacker->GetEntityHandle() : entt::null)))
+		if (GetEmpire() && GetEmpire() == ecs::PlayerRuntime::GetEmpire(attacker))
 		{
 			SendDamagePacket(pAttacker, 0, DAMAGE_BLOCK);
 			return false;
@@ -4618,7 +4643,7 @@ bool CHARACTER::Damage(LPCHARACTER pAttacker, int64_t dam, EDamageType type) // 
 
 	if (DAMAGE_TYPE_MAGIC == type)
 	{
-		dam = (int)((float)dam * (100 + (ecs::PointSystem::Get((pAttacker ? pAttacker->GetEntityHandle() : entt::null), POINT_MAGIC_ATT_BONUS_PER) + ecs::PointSystem::Get((pAttacker ? pAttacker->GetEntityHandle() : entt::null), POINT_MELEE_MAGIC_ATT_BONUS_PER))) / 100.f + 0.5f);
+		dam = (int)((float)dam * (100 + (ecs::PointSystem::Get(attacker, POINT_MAGIC_ATT_BONUS_PER) + ecs::PointSystem::Get(attacker, POINT_MELEE_MAGIC_ATT_BONUS_PER))) / 100.f + 0.5f);
 	}
 
 	// Ÿ ƴ   ó
@@ -4633,14 +4658,14 @@ bool CHARACTER::Damage(LPCHARACTER pAttacker, int64_t dam, EDamageType type) // 
 		}
 	}
 #ifdef ENABLE_MAX_100K_DMG_ON_EVENT_MAP_RAZOR93
-	if (pAttacker && ecs::PlayerRuntime::IsPC((pAttacker ? pAttacker->GetEntityHandle() : entt::null)) && GetMapIndex() == 1 && (IsMonster() || IsStone()))
+	if (pAttacker && ecs::PlayerRuntime::IsPC(attacker) && GetMapIndex() == 1 && (IsMonster() || IsStone()))
 	{
 #ifdef DISABLE_DAMAGE_TYPE_NORMAL_RANGE_EVENT_MAP
 
 
 
 		const entt::entity weapon = ItemSystem::GetWearItem(
-			(pAttacker ? pAttacker->GetEntityHandle() : entt::null), WEAR_WEAPON);
+			attacker, WEAR_WEAPON);
 		const TItemTable* weaponProto = ItemSystem::GetItemProto(weapon);
 		if (weaponProto && weaponProto->bSubType == WEAPON_BOW)
 		{
@@ -4718,11 +4743,11 @@ bool CHARACTER::Damage(LPCHARACTER pAttacker, int64_t dam, EDamageType type) // 
 		if (pAttacker)
 		{
 			// ũƼ
-			int iCriticalPct = ecs::PointSystem::Get((pAttacker ? pAttacker->GetEntityHandle() : entt::null), POINT_CRITICAL_PCT);
+			int iCriticalPct = ecs::PointSystem::Get(attacker, POINT_CRITICAL_PCT);
 
 			if (!IsPC()) {
 				iCriticalPct += pAttacker->GetMarriageBonus(UNIQUE_ITEM_MARRIAGE_CRITICAL_BONUS);
-				iCriticalPct += ecs::PointSystem::Get((pAttacker ? pAttacker->GetEntityHandle() : entt::null), POINT_PVM_CRITICAL_PCT);
+				iCriticalPct += ecs::PointSystem::Get(attacker, POINT_PVM_CRITICAL_PCT);
 			}
 
 			if (iCriticalPct)
@@ -4749,7 +4774,7 @@ bool CHARACTER::Damage(LPCHARACTER pAttacker, int64_t dam, EDamageType type) // 
 			}
 
 			//
-			int iPenetratePct = ecs::PointSystem::Get((pAttacker ? pAttacker->GetEntityHandle() : entt::null), POINT_PENETRATE_PCT);
+			int iPenetratePct = ecs::PointSystem::Get(attacker, POINT_PENETRATE_PCT);
 
 			if (!IsPC())
 				iPenetratePct += pAttacker->GetMarriageBonus(UNIQUE_ITEM_MARRIAGE_PENETRATE_BONUS);
@@ -4815,8 +4840,8 @@ bool CHARACTER::Damage(LPCHARACTER pAttacker, int64_t dam, EDamageType type) // 
 			{
 #ifdef TEXTS_IMPROVEMENT
 				if (test_server) {
-					ecs::ChatSystem::SendNew((pAttacker ? pAttacker->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 95, "%s#%d", GetName(), GetPoint(POINT_BLOCK));
-					ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 95, "%s#%d", ecs::PlayerRuntime::GetName((pAttacker ? pAttacker->GetEntityHandle() : entt::null)).data(), ecs::PointSystem::Get((pAttacker ? pAttacker->GetEntityHandle() : entt::null), POINT_BLOCK));
+					ecs::ChatSystem::SendNew(attacker, CHAT_TYPE_INFO, 95, "%s#%d", GetName(), GetPoint(POINT_BLOCK));
+					ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 95, "%s#%d", ecs::PlayerRuntime::GetName(attacker).data(), ecs::PointSystem::Get(attacker, POINT_BLOCK));
 				}
 #endif
 				SendDamagePacket(pAttacker, 0, DAMAGE_BLOCK);
@@ -4830,8 +4855,8 @@ bool CHARACTER::Damage(LPCHARACTER pAttacker, int64_t dam, EDamageType type) // 
 			{
 #ifdef TEXTS_IMPROVEMENT
 				if (test_server) {
-					ecs::ChatSystem::SendNew((pAttacker ? pAttacker->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 96, "%s#%d", GetName(), GetPoint(POINT_DODGE));
-					ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 96, "%s#%d", ecs::PlayerRuntime::GetName((pAttacker ? pAttacker->GetEntityHandle() : entt::null)).data(), ecs::PointSystem::Get((pAttacker ? pAttacker->GetEntityHandle() : entt::null), POINT_DODGE));
+					ecs::ChatSystem::SendNew(attacker, CHAT_TYPE_INFO, 96, "%s#%d", GetName(), GetPoint(POINT_DODGE));
+					ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 96, "%s#%d", ecs::PlayerRuntime::GetName(attacker).data(), ecs::PointSystem::Get(attacker, POINT_DODGE));
 				}
 #endif
 				SendDamagePacket(pAttacker, 0, DAMAGE_DODGE);
@@ -4858,7 +4883,7 @@ bool CHARACTER::Damage(LPCHARACTER pAttacker, int64_t dam, EDamageType type) // 
 			if (resist > 100) resist = 100;
 
 			// PvP: csak fele hasson
-			if (pAttacker && ecs::PlayerRuntime::IsPC((pAttacker ? pAttacker->GetEntityHandle() : entt::null)) && IsPC())
+			if (pAttacker && ecs::PlayerRuntime::IsPC(attacker) && IsPC())
 				resist = (resist + 1) / 2; // kerekítve: 1->1, 2->1, 3->2...
 			if (pAttacker && pAttacker->IsMonster() && IsPC())
 				resist = (resist + 1) / 2; // kerekítve: 1->1, 2->1, 3->2...
@@ -4886,11 +4911,11 @@ bool CHARACTER::Damage(LPCHARACTER pAttacker, int64_t dam, EDamageType type) // 
 			}
 
 			// ũƼ
-			int iCriticalPct = ecs::PointSystem::Get((pAttacker ? pAttacker->GetEntityHandle() : entt::null), POINT_CRITICAL_PCT);
+			int iCriticalPct = ecs::PointSystem::Get(attacker, POINT_CRITICAL_PCT);
 
 			if (!IsPC()) {
 				iCriticalPct += pAttacker->GetMarriageBonus(UNIQUE_ITEM_MARRIAGE_CRITICAL_BONUS);
-				iCriticalPct += ecs::PointSystem::Get((pAttacker ? pAttacker->GetEntityHandle() : entt::null), POINT_PVM_CRITICAL_PCT);
+				iCriticalPct += ecs::PointSystem::Get(attacker, POINT_PVM_CRITICAL_PCT);
 			}
 
 			if (iCriticalPct)
@@ -4907,7 +4932,7 @@ bool CHARACTER::Damage(LPCHARACTER pAttacker, int64_t dam, EDamageType type) // 
 			}
 
 			//
-			int iPenetratePct = ecs::PointSystem::Get((pAttacker ? pAttacker->GetEntityHandle() : entt::null), POINT_PENETRATE_PCT);
+			int iPenetratePct = ecs::PointSystem::Get(attacker, POINT_PENETRATE_PCT);
 
 			if (!IsPC())
 				iPenetratePct += pAttacker->GetMarriageBonus(UNIQUE_ITEM_MARRIAGE_PENETRATE_BONUS);
@@ -4941,14 +4966,14 @@ bool CHARACTER::Damage(LPCHARACTER pAttacker, int64_t dam, EDamageType type) // 
 			}
 
 #ifdef ENABLE_BUG_FIXES
-			if (int64_t iStealHP_ptr = ecs::PointSystem::Get((pAttacker ? pAttacker->GetEntityHandle() : entt::null), POINT_STEAL_HP)) {
+			if (int64_t iStealHP_ptr = ecs::PointSystem::Get(attacker, POINT_STEAL_HP)) {
 				if (number(1, 100) <= iStealHP_ptr) {
-					int64_t iHP = std::min((int64_t)dam, std::max((int64_t)0, GetHP())) * ecs::PointSystem::Get((pAttacker ? pAttacker->GetEntityHandle() : entt::null), POINT_STEAL_HP) / 100;
+					int64_t iHP = std::min((int64_t)dam, std::max((int64_t)0, GetHP())) * ecs::PointSystem::Get(attacker, POINT_STEAL_HP) / 100;
 
 
-					if ((pAttacker->GetHP() > 0) && (pAttacker->GetHP() + iHP < ecs::PointSystem::GetMaxHP((pAttacker ? pAttacker->GetEntityHandle() : entt::null))) && (GetHP() > 0) && (iHP > 0)) {
+					if ((pAttacker->GetHP() > 0) && (pAttacker->GetHP() + iHP < ecs::PointSystem::GetMaxHP(attacker)) && (GetHP() > 0) && (iHP > 0)) {
 						CreateFly(FLY_HP_MEDIUM, pAttacker);
-						ecs::PointSystem::Change((pAttacker ? pAttacker->GetEntityHandle() : entt::null), POINT_HP, iHP);
+						ecs::PointSystem::Change(attacker, POINT_HP, iHP);
 #if defined(ENABLE_DS_RUNE) || defined(ENABLE_MELEY_LAIR)
 						int32_t racevnum = GetRaceNum();
 						if (
@@ -4977,16 +5002,16 @@ bool CHARACTER::Damage(LPCHARACTER pAttacker, int64_t dam, EDamageType type) // 
 				}
 			}
 
-			if (int64_t iStealSP_ptr = ecs::PointSystem::Get((pAttacker ? pAttacker->GetEntityHandle() : entt::null), POINT_STEAL_SP)) {
-				if (IsPC() && ecs::PlayerRuntime::IsPC((pAttacker ? pAttacker->GetEntityHandle() : entt::null))) {
+			if (int64_t iStealSP_ptr = ecs::PointSystem::Get(attacker, POINT_STEAL_SP)) {
+				if (IsPC() && ecs::PlayerRuntime::IsPC(attacker)) {
 					if (number(1, 100) <= iStealSP_ptr) {
-						int64_t iSP = std::min((int64_t)dam, std::max((int64_t)0, GetSP())) * ecs::PointSystem::Get((pAttacker ? pAttacker->GetEntityHandle() : entt::null), POINT_STEAL_SP) / 100;
+						int64_t iSP = std::min((int64_t)dam, std::max((int64_t)0, GetSP())) * ecs::PointSystem::Get(attacker, POINT_STEAL_SP) / 100;
 
 
-						if ((pAttacker->GetSP() > 0) && (pAttacker->GetSP() + iSP < ecs::PointSystem::GetMaxSP((pAttacker ? pAttacker->GetEntityHandle() : entt::null))) && (GetSP() > 0) && (iSP > 0))
+						if ((pAttacker->GetSP() > 0) && (pAttacker->GetSP() + iSP < ecs::PointSystem::GetMaxSP(attacker)) && (GetSP() > 0) && (iSP > 0))
 						{
 							CreateFly(FLY_SP_MEDIUM, pAttacker);
-							ecs::PointSystem::Change((pAttacker ? pAttacker->GetEntityHandle() : entt::null), POINT_SP, iSP);
+							ecs::PointSystem::Change(attacker, POINT_SP, iSP);
 							PointChange(POINT_SP, -iSP);
 						}
 					}
@@ -4994,18 +5019,18 @@ bool CHARACTER::Damage(LPCHARACTER pAttacker, int64_t dam, EDamageType type) // 
 			}
 #else
 			// HP ƿ
-			if (ecs::PointSystem::Get((pAttacker ? pAttacker->GetEntityHandle() : entt::null), POINT_STEAL_HP))
+			if (ecs::PointSystem::Get(attacker, POINT_STEAL_HP))
 			{
 				int pct = 1;
 
 				if (number(1, 10) <= pct)
 				{
-					int iHP = MIN(dam, MAX(0, iCurHP)) * ecs::PointSystem::Get((pAttacker ? pAttacker->GetEntityHandle() : entt::null), POINT_STEAL_HP) / 100;
+					int iHP = MIN(dam, MAX(0, iCurHP)) * ecs::PointSystem::Get(attacker, POINT_STEAL_HP) / 100;
 
 					if (iHP > 0 && GetHP() >= iHP)
 					{
 						CreateFly(FLY_HP_SMALL, pAttacker);
-						ecs::PointSystem::Change((pAttacker ? pAttacker->GetEntityHandle() : entt::null), POINT_HP, iHP);
+						ecs::PointSystem::Change(attacker, POINT_HP, iHP);
 #if defined(ENABLE_DS_RUNE) || defined(ENABLE_MELEY_LAIR)
 						if (
 #if defined(ENABLE_DS_RUNE)
@@ -5034,7 +5059,7 @@ bool CHARACTER::Damage(LPCHARACTER pAttacker, int64_t dam, EDamageType type) // 
 			}
 
 			// SP ƿ
-			if (ecs::PointSystem::Get((pAttacker ? pAttacker->GetEntityHandle() : entt::null), POINT_STEAL_SP))
+			if (ecs::PointSystem::Get(attacker, POINT_STEAL_SP))
 			{
 				int pct = 1;
 
@@ -5047,12 +5072,12 @@ bool CHARACTER::Damage(LPCHARACTER pAttacker, int64_t dam, EDamageType type) // 
 					else
 						iCur = iCurHP;
 
-					int iSP = MIN(dam, MAX(0, iCur)) * ecs::PointSystem::Get((pAttacker ? pAttacker->GetEntityHandle() : entt::null), POINT_STEAL_SP) / 100;
+					int iSP = MIN(dam, MAX(0, iCur)) * ecs::PointSystem::Get(attacker, POINT_STEAL_SP) / 100;
 
 					if (iSP > 0 && iCur >= iSP)
 					{
 						CreateFly(FLY_SP_SMALL, pAttacker);
-						ecs::PointSystem::Change((pAttacker ? pAttacker->GetEntityHandle() : entt::null), POINT_SP, iSP);
+						ecs::PointSystem::Change(attacker, POINT_SP, iSP);
 
 						if (IsPC())
 							PointChange(POINT_SP, -iSP);
@@ -5062,68 +5087,68 @@ bool CHARACTER::Damage(LPCHARACTER pAttacker, int64_t dam, EDamageType type) // 
 #endif
 
 			//  ƿ
-			if (ecs::PointSystem::Get((pAttacker ? pAttacker->GetEntityHandle() : entt::null), POINT_STEAL_GOLD))
+			if (ecs::PointSystem::Get(attacker, POINT_STEAL_GOLD))
 			{
-				if (number(1, 100) <= ecs::PointSystem::Get((pAttacker ? pAttacker->GetEntityHandle() : entt::null), POINT_STEAL_GOLD))
+				if (number(1, 100) <= ecs::PointSystem::Get(attacker, POINT_STEAL_GOLD))
 				{
 					int iAmount = number(1, GetLevel());
-					ecs::PointSystem::Change((pAttacker ? pAttacker->GetEntityHandle() : entt::null), POINT_GOLD, iAmount);
+					ecs::PointSystem::Change(attacker, POINT_GOLD, iAmount);
 					DBManager::instance().SendMoneyLog(MONEY_LOG_MISC, 1, iAmount);
 				}
 			}
 
 #ifdef ENABLE_BUG_FIXES
-			int iAbsoHP_ptr = ecs::PointSystem::Get((pAttacker ? pAttacker->GetEntityHandle() : entt::null), POINT_HIT_HP_RECOVERY);
+			int iAbsoHP_ptr = ecs::PointSystem::Get(attacker, POINT_HIT_HP_RECOVERY);
 			if (iAbsoHP_ptr > 0) {
 				if (number(1, 100) <= iAbsoHP_ptr) {
-					int iHPAbso = std::min(dam, GetHP()) * ecs::PointSystem::Get((pAttacker ? pAttacker->GetEntityHandle() : entt::null), POINT_HIT_HP_RECOVERY) / 100;
-					if ((pAttacker->GetHP() > 0) && (pAttacker->GetHP() + iHPAbso < ecs::PointSystem::GetMaxHP((pAttacker ? pAttacker->GetEntityHandle() : entt::null))) && (GetHP() > 0) && (iHPAbso > 0)) {
+					int iHPAbso = std::min(dam, GetHP()) * ecs::PointSystem::Get(attacker, POINT_HIT_HP_RECOVERY) / 100;
+					if ((pAttacker->GetHP() > 0) && (pAttacker->GetHP() + iHPAbso < ecs::PointSystem::GetMaxHP(attacker)) && (GetHP() > 0) && (iHPAbso > 0)) {
 						CreateFly(FLY_HP_SMALL, pAttacker);
-						ecs::PointSystem::Change((pAttacker ? pAttacker->GetEntityHandle() : entt::null), POINT_HP, iHPAbso);
+						ecs::PointSystem::Change(attacker, POINT_HP, iHPAbso);
 					}
 				}
 			}
 
-			int64_t iAbsoSP_ptr = ecs::PointSystem::Get((pAttacker ? pAttacker->GetEntityHandle() : entt::null), POINT_HIT_SP_RECOVERY);
+			int64_t iAbsoSP_ptr = ecs::PointSystem::Get(attacker, POINT_HIT_SP_RECOVERY);
 			if (iAbsoSP_ptr > 0) {
 				if (number(1, 100) <= iAbsoSP_ptr) {
-					int64_t iSPAbso = std::min(dam, GetSP()) * ecs::PointSystem::Get((pAttacker ? pAttacker->GetEntityHandle() : entt::null), POINT_HIT_SP_RECOVERY) / 100;
-					if ((pAttacker->GetSP() > 0) && (pAttacker->GetSP() + iSPAbso < ecs::PointSystem::GetMaxSP((pAttacker ? pAttacker->GetEntityHandle() : entt::null))) && (GetSP() > 0) && (iSPAbso > 0)) {
+					int64_t iSPAbso = std::min(dam, GetSP()) * ecs::PointSystem::Get(attacker, POINT_HIT_SP_RECOVERY) / 100;
+					if ((pAttacker->GetSP() > 0) && (pAttacker->GetSP() + iSPAbso < ecs::PointSystem::GetMaxSP(attacker)) && (GetSP() > 0) && (iSPAbso > 0)) {
 						CreateFly(FLY_SP_SMALL, pAttacker);
-						ecs::PointSystem::Change((pAttacker ? pAttacker->GetEntityHandle() : entt::null), POINT_SP, iSPAbso);
+						ecs::PointSystem::Change(attacker, POINT_SP, iSPAbso);
 					}
 				}
 			}
 #else
 			// ĥ  HPȸ
-			if (ecs::PointSystem::Get((pAttacker ? pAttacker->GetEntityHandle() : entt::null), POINT_HIT_HP_RECOVERY) && number(0, 4) > 0) // 80% Ȯ
+			if (ecs::PointSystem::Get(attacker, POINT_HIT_HP_RECOVERY) && number(0, 4) > 0) // 80% Ȯ
 			{
-				int i = ((iCurHP >= 0) ? MIN(dam, iCurHP) : dam) * ecs::PointSystem::Get((pAttacker ? pAttacker->GetEntityHandle() : entt::null), POINT_HIT_HP_RECOVERY) / 100; //@fixme107
+				int i = ((iCurHP >= 0) ? MIN(dam, iCurHP) : dam) * ecs::PointSystem::Get(attacker, POINT_HIT_HP_RECOVERY) / 100; //@fixme107
 
 				if (i)
 				{
 					CreateFly(FLY_HP_SMALL, pAttacker);
-					ecs::PointSystem::Change((pAttacker ? pAttacker->GetEntityHandle() : entt::null), POINT_HP, i);
+					ecs::PointSystem::Change(attacker, POINT_HP, i);
 				}
 			}
 
 			// ĥ  SPȸ
-			if (ecs::PointSystem::Get((pAttacker ? pAttacker->GetEntityHandle() : entt::null), POINT_HIT_SP_RECOVERY) && number(0, 4) > 0) // 80% Ȯ
+			if (ecs::PointSystem::Get(attacker, POINT_HIT_SP_RECOVERY) && number(0, 4) > 0) // 80% Ȯ
 			{
-				int i = ((iCurHP >= 0) ? MIN(dam, iCurHP) : dam) * ecs::PointSystem::Get((pAttacker ? pAttacker->GetEntityHandle() : entt::null), POINT_HIT_SP_RECOVERY) / 100; //@fixme107
+				int i = ((iCurHP >= 0) ? MIN(dam, iCurHP) : dam) * ecs::PointSystem::Get(attacker, POINT_HIT_SP_RECOVERY) / 100; //@fixme107
 
 				if (i)
 				{
 					CreateFly(FLY_SP_SMALL, pAttacker);
-					ecs::PointSystem::Change((pAttacker ? pAttacker->GetEntityHandle() : entt::null), POINT_SP, i);
+					ecs::PointSystem::Change(attacker, POINT_SP, i);
 				}
 			}
 #endif
 
 			//   ش.
-			if (ecs::PointSystem::Get((pAttacker ? pAttacker->GetEntityHandle() : entt::null), POINT_MANA_BURN_PCT))
+			if (ecs::PointSystem::Get(attacker, POINT_MANA_BURN_PCT))
 			{
-				if (number(1, 100) <= ecs::PointSystem::Get((pAttacker ? pAttacker->GetEntityHandle() : entt::null), POINT_MANA_BURN_PCT))
+				if (number(1, 100) <= ecs::PointSystem::Get(attacker, POINT_MANA_BURN_PCT))
 					PointChange(POINT_SP, -50);
 			}
 		}
@@ -5138,11 +5163,11 @@ bool CHARACTER::Damage(LPCHARACTER pAttacker, int64_t dam, EDamageType type) // 
 	case DAMAGE_TYPE_NORMAL_RANGE:
 	{
 		if (pAttacker) {
-			if (ecs::PointSystem::Get((pAttacker ? pAttacker->GetEntityHandle() : entt::null), POINT_NORMAL_HIT_DAMAGE_BONUS))
-				dam = dam * (100 + ecs::PointSystem::Get((pAttacker ? pAttacker->GetEntityHandle() : entt::null), POINT_NORMAL_HIT_DAMAGE_BONUS)) / 100;
+			if (ecs::PointSystem::Get(attacker, POINT_NORMAL_HIT_DAMAGE_BONUS))
+				dam = dam * (100 + ecs::PointSystem::Get(attacker, POINT_NORMAL_HIT_DAMAGE_BONUS)) / 100;
 #ifdef ENABLE_MEDI_PVM
 			if (IsNPC())
-				dam = dam * (100 + ecs::PointSystem::Get((pAttacker ? pAttacker->GetEntityHandle() : entt::null), POINT_ATTBONUS_MEDI_PVM)) / 100;
+				dam = dam * (100 + ecs::PointSystem::Get(attacker, POINT_ATTBONUS_MEDI_PVM)) / 100;
 #endif
 		}
 
@@ -5157,7 +5182,7 @@ bool CHARACTER::Damage(LPCHARACTER pAttacker, int64_t dam, EDamageType type) // 
 	case DAMAGE_TYPE_MAGIC:
 	{
 		if (pAttacker) {
-			const int64_t skillBonus = ecs::PointSystem::Get((pAttacker ? pAttacker->GetEntityHandle() : entt::null), POINT_SKILL_DAMAGE_BONUS);
+			const int64_t skillBonus = ecs::PointSystem::Get(attacker, POINT_SKILL_DAMAGE_BONUS);
 			if (skillBonus)
 				dam = dam * (100 + skillBonus) / 100;
 		}
@@ -5165,13 +5190,13 @@ bool CHARACTER::Damage(LPCHARACTER pAttacker, int64_t dam, EDamageType type) // 
 		int64_t def = GetPoint(POINT_SKILL_DEFEND_BONUS);
 		def = std::clamp<int64_t>(def, 0, 100);
 
-		if (pAttacker && ecs::PlayerRuntime::IsPC((pAttacker ? pAttacker->GetEntityHandle() : entt::null)) && IsPC())
+		if (pAttacker && ecs::PlayerRuntime::IsPC(attacker) && IsPC())
 			def = (def * 75 + 50) / 100;
 
 		dam = dam * (100 - def) / 100;
 
 
-		if (pAttacker && ecs::PlayerRuntime::IsPC((pAttacker ? pAttacker->GetEntityHandle() : entt::null)) && IsNPC())
+		if (pAttacker && ecs::PlayerRuntime::IsPC(attacker) && IsNPC())
 		{
 			const int64_t normalRef = CalcReferenceBasicHitDamage(pAttacker, this);
 			if (normalRef > 0)
@@ -5227,16 +5252,16 @@ bool CHARACTER::Damage(LPCHARACTER pAttacker, int64_t dam, EDamageType type) // 
 		//
 		// ü ݷ  ( )
 		//
-		if (ecs::PointSystem::Get((pAttacker ? pAttacker->GetEntityHandle() : entt::null), POINT_MALL_ATTBONUS) > 0)
+		if (ecs::PointSystem::Get(attacker, POINT_MALL_ATTBONUS) > 0)
 		{
 			int64_t add_dam = std::min((int64_t)300, dam * pAttacker->GetLimitPoint(POINT_MALL_ATTBONUS) / 100);
 			dam += add_dam;
 		}
 
-		if (ecs::PlayerRuntime::IsPC((pAttacker ? pAttacker->GetEntityHandle() : entt::null)))
+		if (ecs::PlayerRuntime::IsPC(attacker))
 		{
-			int iEmpire = ecs::PlayerRuntime::GetEmpire((pAttacker ? pAttacker->GetEntityHandle() : entt::null));
-			int32_t lMapIndex = ecs::PlayerRuntime::GetMapIndex((pAttacker ? pAttacker->GetEntityHandle() : entt::null));
+			int iEmpire = ecs::PlayerRuntime::GetEmpire(attacker);
+			int32_t lMapIndex = ecs::PlayerRuntime::GetMapIndex(attacker);
 			int iMapEmpire = ecs::GetEmpireFromMap(lMapIndex);
 
 			// ٸ     10%
@@ -5250,11 +5275,11 @@ bool CHARACTER::Damage(LPCHARACTER pAttacker, int64_t dam, EDamageType type) // 
 				int iDrain = GetMonsterDrainSPPoint();
 
 				if (iDrain <= pAttacker->GetSP())
-					ecs::PointSystem::Change((pAttacker ? pAttacker->GetEntityHandle() : entt::null), POINT_SP, -iDrain);
+					ecs::PointSystem::Change(attacker, POINT_SP, -iDrain);
 				else
 				{
 					int iSP = pAttacker->GetSP();
-					ecs::PointSystem::Change((pAttacker ? pAttacker->GetEntityHandle() : entt::null), POINT_SP, -iSP);
+					ecs::PointSystem::Change(attacker, POINT_SP, -iSP);
 				}
 			}
 
@@ -5309,9 +5334,9 @@ bool CHARACTER::Damage(LPCHARACTER pAttacker, int64_t dam, EDamageType type) // 
 	// ------------------------
 	//  ̾
 	// -----------------------
-	if (pAttacker && ecs::PlayerRuntime::IsPC((pAttacker ? pAttacker->GetEntityHandle() : entt::null)))
+	if (pAttacker && ecs::PlayerRuntime::IsPC(attacker))
 	{
-		int iDmgPct = CHARACTER_MANAGER::instance().GetUserDamageRate(((pAttacker) ? (pAttacker)->GetEntityHandle() : entt::null));
+		int iDmgPct = CHARACTER_MANAGER::instance().GetUserDamageRate(attacker);
 		dam = dam * iDmgPct / 100;
 	}
 
@@ -5407,7 +5432,7 @@ bool CHARACTER::Damage(LPCHARACTER pAttacker, int64_t dam, EDamageType type) // 
 #endif
 
 #if defined(ENABLE_DS_RUNE) || defined(ENABLE_MELEY_LAIR)
-		if (!IsPC() && pAttacker && ecs::PlayerRuntime::IsPC((pAttacker ? pAttacker->GetEntityHandle() : entt::null)))
+		if (!IsPC() && pAttacker && ecs::PlayerRuntime::IsPC(attacker))
 		{
 			int32_t racevnum = GetRaceNum();
 			LPDUNGEON dungeon = GetDungeon();
@@ -5489,10 +5514,10 @@ bool CHARACTER::Damage(LPCHARACTER pAttacker, int64_t dam, EDamageType type) // 
 					}
 					else if (type == 3 && step == 0)
 					{
-						LPPARTY party = ecs::SocialSystem::GetParty((pAttacker ? pAttacker->GetEntityHandle() : entt::null));
+						LPPARTY party = ecs::SocialSystem::GetParty(attacker);
 						if (party)
 						{
-							if (party->GetLeaderPID() == ecs::PlayerRuntime::GetPlayerID((pAttacker ? pAttacker->GetEntityHandle() : entt::null)))
+							if (party->GetLeaderPID() == ecs::PlayerRuntime::GetPlayerID(attacker))
 							{
 								int32_t per = (GetMaxHP() / 100) * 70;
 								if (GetHP() - dam <= per)
@@ -5690,7 +5715,7 @@ bool CHARACTER::Damage(LPCHARACTER pAttacker, int64_t dam, EDamageType type) // 
 			SendDamagePacket(pAttacker, dam, damageFlag);
 #ifdef LEADERBOARD_RAZOR93
 
-		if (pAttacker && ecs::PlayerRuntime::IsPC((pAttacker ? pAttacker->GetEntityHandle() : entt::null)) && pAttacker->IsSkillHit() && IsPC())
+		if (pAttacker && ecs::PlayerRuntime::IsPC(attacker) && pAttacker->IsSkillHit() && IsPC())
 		{
 			char szVictimEsc[CHARACTER_NAME_MAX_LEN * 2 + 1];
 			DBManager::instance().EscapeString(szVictimEsc, sizeof(szVictimEsc), GetName(), strnlen(GetName(), CHARACTER_NAME_MAX_LEN));
@@ -5704,7 +5729,7 @@ bool CHARACTER::Damage(LPCHARACTER pAttacker, int64_t dam, EDamageType type) // 
 				dam,
 				szVictimEsc,
 				dam,
-				ecs::PlayerRuntime::GetPlayerID((pAttacker ? pAttacker->GetEntityHandle() : entt::null))
+				ecs::PlayerRuntime::GetPlayerID(attacker)
 			);
 			CheckLeaderboardSkillMobChanges();
 			if (GetMapIndex() == 41) {
@@ -5717,7 +5742,7 @@ bool CHARACTER::Damage(LPCHARACTER pAttacker, int64_t dam, EDamageType type) // 
 
 
 
-			ecs::ChatSystem::Send((pAttacker ? pAttacker->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "Skill damage recorded: %d vs %s", dam, GetName());
+			ecs::ChatSystem::Send(attacker, CHAT_TYPE_INFO, "Skill damage recorded: %d vs %s", dam, GetName());
 		}
 #endif
 		if (test_server)
@@ -5728,7 +5753,7 @@ bool CHARACTER::Damage(LPCHARACTER pAttacker, int64_t dam, EDamageType type) // 
 
 			if (pAttacker)
 			{
-				ecs::ChatSystem::Send((pAttacker ? pAttacker->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "-> %s, DAM %d HP %d(%d%%) %s%s",
+				ecs::ChatSystem::Send(attacker, CHAT_TYPE_INFO, "-> %s, DAM %d HP %d(%d%%) %s%s",
 					GetName(),
 					dam,
 					GetHP(),
@@ -5739,7 +5764,7 @@ bool CHARACTER::Damage(LPCHARACTER pAttacker, int64_t dam, EDamageType type) // 
 			}
 
 			ecs::ChatSystem::Send(GetEntityHandle(), CHAT_TYPE_PARTY, "<- %s, DAM %d HP %d(%d%%) %s%s",
-				pAttacker ? ecs::PlayerRuntime::GetName((pAttacker ? pAttacker->GetEntityHandle() : entt::null)).data() : nullptr,
+				pAttacker ? ecs::PlayerRuntime::GetName(attacker).data() : nullptr,
 				dam,
 				GetHP(),
 				iTmpPercent,
@@ -5749,7 +5774,7 @@ bool CHARACTER::Damage(LPCHARACTER pAttacker, int64_t dam, EDamageType type) // 
 		}
 
 #ifdef ENABLE_RANKING
-		if (ecs::PlayerRuntime::IsPC((pAttacker ? pAttacker->GetEntityHandle() : entt::null))) {
+		if (ecs::PlayerRuntime::IsPC(attacker)) {
 			if (IsPC()) {
 				switch (type) {
 				case DAMAGE_TYPE_NORMAL:
@@ -5828,11 +5853,11 @@ bool CHARACTER::Damage(LPCHARACTER pAttacker, int64_t dam, EDamageType type) // 
 	if (!cannot_dead)
 	{
 #ifdef __DUNGEON_INFO_SYSTEM__
-		if (!IsPC() && pAttacker && ecs::PlayerRuntime::IsPC((pAttacker ? pAttacker->GetEntityHandle() : entt::null)))
+		if (!IsPC() && pAttacker && ecs::PlayerRuntime::IsPC(attacker))
 		{
 			pAttacker->SetQuestDamage(GetRaceNum(), dam);
 			pAttacker->SetQuestNPCID(GetPacketVID());
-			quest::CQuestManager::instance().QuestDamage(ecs::PlayerRuntime::GetPlayerID((pAttacker ? pAttacker->GetEntityHandle() : entt::null)), GetRaceNum());
+			quest::CQuestManager::instance().QuestDamage(ecs::PlayerRuntime::GetPlayerID(attacker), GetRaceNum());
 		}
 #endif
 
@@ -5893,8 +5918,8 @@ bool CHARACTER::Damage(LPCHARACTER pAttacker, int64_t dam, EDamageType type) // 
 #ifdef ENABLE_STONE_SPAWN_STEP_PROCESSING_RAZOR93
 	if (GetHP() <= 0)
 	{
-		if (pAttacker && !ecs::PlayerRuntime::IsNPC((pAttacker ? pAttacker->GetEntityHandle() : entt::null)))
-			m_dwKillerPID = ecs::PlayerRuntime::GetPlayerID((pAttacker ? pAttacker->GetEntityHandle() : entt::null));
+		if (pAttacker && !ecs::PlayerRuntime::IsNPC(attacker))
+			m_dwKillerPID = ecs::PlayerRuntime::GetPlayerID(attacker);
 		else
 			m_dwKillerPID = 0;
 
@@ -5914,8 +5939,8 @@ bool CHARACTER::Damage(LPCHARACTER pAttacker, int64_t dam, EDamageType type) // 
 	{
 		Stun();
 
-		if (pAttacker && !ecs::PlayerRuntime::IsNPC((pAttacker ? pAttacker->GetEntityHandle() : entt::null)))
-			m_dwKillerPID = ecs::PlayerRuntime::GetPlayerID((pAttacker ? pAttacker->GetEntityHandle() : entt::null));
+		if (pAttacker && !ecs::PlayerRuntime::IsNPC(attacker))
+			m_dwKillerPID = ecs::PlayerRuntime::GetPlayerID(attacker);
 		else
 			m_dwKillerPID = 0;
 	}
@@ -6072,6 +6097,7 @@ public:
 
 	void operator () (uint32_t dwTargetVID)
 	{
+		const entt::entity me = m_me ? m_me->GetEntityHandle() : entt::null;
 		if (m_bType > 1)
 		{
 			if (g_bSkillDisable)
@@ -6083,17 +6109,19 @@ public:
 		}
 
 		auto* pkVictim = CHARACTER_MANAGER::instance().Find(dwTargetVID);
+		const entt::entity victim = pkVictim ? pkVictim->GetEntityHandle() : entt::null;
+
 
 		if (!pkVictim)
 			return;
 
 		//  Ұ
-		if (!battle_is_attackable((m_me ? m_me->GetEntityHandle() : entt::null), (pkVictim ? pkVictim->GetEntityHandle() : entt::null)))
+		if (!battle_is_attackable(me, victim))
 			return;
 
-		if (ecs::PlayerRuntime::IsNPC((m_me ? m_me->GetEntityHandle() : entt::null)))
+		if (ecs::PlayerRuntime::IsNPC(me))
 		{
-			if (DISTANCE_APPROX(ecs::PlayerRuntime::GetX((m_me ? m_me->GetEntityHandle() : entt::null)) - ecs::PlayerRuntime::GetX((pkVictim ? pkVictim->GetEntityHandle() : entt::null)), ecs::PlayerRuntime::GetY((m_me ? m_me->GetEntityHandle() : entt::null)) - ecs::PlayerRuntime::GetY((pkVictim ? pkVictim->GetEntityHandle() : entt::null))) > 5000)
+			if (DISTANCE_APPROX(ecs::PlayerRuntime::GetX(me) - ecs::PlayerRuntime::GetX(victim), ecs::PlayerRuntime::GetY(me) - ecs::PlayerRuntime::GetY(victim)) > 5000)
 				return;
 		}
 
@@ -6105,7 +6133,7 @@ public:
 		{
 			int iDam = 0;
 
-			if (ecs::PlayerRuntime::IsPC((m_me ? m_me->GetEntityHandle() : entt::null)))
+			if (ecs::PlayerRuntime::IsPC(me))
 			{
 				if (m_me->GetJob() != JOB_ASSASSIN)
 					return;
@@ -6114,35 +6142,35 @@ public:
 					return;
 
 				if (m_me->GetSkillGroup() != 0)
-					if (!ecs::PlayerRuntime::IsNPC((m_me ? m_me->GetEntityHandle() : entt::null)) && m_me->GetSkillGroup() != 2)
+					if (!ecs::PlayerRuntime::IsNPC(me) && m_me->GetSkillGroup() != 2)
 					{
 						if (m_me->GetSP() < 5)
 							return;
 
-						ecs::PointSystem::Change((m_me ? m_me->GetEntityHandle() : entt::null), POINT_SP, -5);
+						ecs::PointSystem::Change(me, POINT_SP, -5);
 					}
 
-				iDam = CalcArrowDamage((m_me ? m_me->GetEntityHandle() : entt::null), (pkVictim ? pkVictim->GetEntityHandle() : entt::null), pkBow, pkArrow);
+				iDam = CalcArrowDamage(me, victim, pkBow, pkArrow);
 				m_me->UseArrow(pkArrow, 1);
 
 #ifdef ENABLE_ANTICHEAT
-				if (IS_SPEED_HACK((m_me ? m_me->GetEntityHandle() : entt::null), (pkVictim ? pkVictim->GetEntityHandle() : entt::null), get_dword_time())) {
+				if (IS_SPEED_HACK(me, victim, get_dword_time())) {
 					iDam = 0;
 				}
 #endif
 			}
 			else
-				iDam = CalcMeleeDamage((m_me ? m_me->GetEntityHandle() : entt::null), (pkVictim ? pkVictim->GetEntityHandle() : entt::null));
+				iDam = CalcMeleeDamage(me, victim);
 
-			NormalAttackAffect((m_me ? m_me->GetEntityHandle() : entt::null), (pkVictim ? pkVictim->GetEntityHandle() : entt::null));
+			NormalAttackAffect(me, victim);
 
 			//   (nyl vdelem)
-			int32_t lValue = ecs::PointSystem::Get((pkVictim ? pkVictim->GetEntityHandle() : entt::null), POINT_RESIST_BOW);
+			int32_t lValue = ecs::PointSystem::Get(victim, POINT_RESIST_BOW);
 #ifdef ENABLE_NEW_BONUS_TALISMAN
-			lValue -= ecs::PointSystem::Get((m_me ? m_me->GetEntityHandle() : entt::null), POINT_ATTBONUS_IRR_FRECCIA);
+			lValue -= ecs::PointSystem::Get(me, POINT_ATTBONUS_IRR_FRECCIA);
 #endif
 #ifdef ENABLE_NEW_COMMON_BONUSES
-			lValue -= ecs::PointSystem::Get((m_me ? m_me->GetEntityHandle() : entt::null), POINT_IRR_WEAPON_DEFENSE);
+			lValue -= ecs::PointSystem::Get(me, POINT_IRR_WEAPON_DEFENSE);
 #endif
 
 			if (lValue < 0)   lValue = 0;
@@ -6174,12 +6202,12 @@ public:
 		{
 			int iDam;
 
-			if (ecs::PlayerRuntime::IsPC((m_me ? m_me->GetEntityHandle() : entt::null)))
+			if (ecs::PlayerRuntime::IsPC(me))
 				return;
 
-			iDam = CalcMagicDamage((m_me ? m_me->GetEntityHandle() : entt::null), (pkVictim ? pkVictim->GetEntityHandle() : entt::null));
+			iDam = CalcMagicDamage(me, victim);
 
-			NormalAttackAffect((m_me ? m_me->GetEntityHandle() : entt::null), (pkVictim ? pkVictim->GetEntityHandle() : entt::null));
+			NormalAttackAffect(me, victim);
 
 			//
 //#ifdef ENABLE_MAGIC_REDUCTION_SYSTEM
@@ -6188,7 +6216,7 @@ public:
 //						const int total_res_magic = MINMAX(0, resist_magic - resist_magic_reduction, 100);
 //						iDam = iDam * (100 - total_res_magic) / 100;
 //#else
-			iDam = iDam * (100 - (int)(ecs::PointSystem::Get((pkVictim ? pkVictim->GetEntityHandle() : entt::null), POINT_RESIST_MAGIC) / 2)) / 100;
+			iDam = iDam * (100 - (int)(ecs::PointSystem::Get(victim, POINT_RESIST_MAGIC) / 2)) / 100;
 			//#endif
 
 									//LOG_INFO(0, "%s arrow %s dam %d", ecs::PlayerRuntime::GetName((m_me ? m_me->GetEntityHandle() : entt::null)).data(), ecs::PlayerRuntime::GetName((pkVictim ? pkVictim->GetEntityHandle() : entt::null)).data(), iDam);
@@ -6245,7 +6273,7 @@ public:
 				if (pkVictim->CanBeginFight())
 					pkVictim->BeginFight(m_me);
 
-				LOG_INFO("{} kwankeyok {}", ecs::PlayerRuntime::GetName((m_me ? m_me->GetEntityHandle() : entt::null)).data(), ecs::PlayerRuntime::GetName((pkVictim ? pkVictim->GetEntityHandle() : entt::null)).data());
+				LOG_INFO("{} kwankeyok {}", ecs::PlayerRuntime::GetName(me).data(), ecs::PlayerRuntime::GetName(victim).data());
 				m_me->ComputeSkill(m_bType, pkVictim);
 				m_me->UseArrow(pkArrow, iUseArrow);
 			}
@@ -6263,7 +6291,7 @@ public:
 				if (pkVictim->CanBeginFight())
 					pkVictim->BeginFight(m_me);
 
-				LOG_INFO("{} gigung {}", ecs::PlayerRuntime::GetName((m_me ? m_me->GetEntityHandle() : entt::null)).data(), ecs::PlayerRuntime::GetName((pkVictim ? pkVictim->GetEntityHandle() : entt::null)).data());
+				LOG_INFO("{} gigung {}", ecs::PlayerRuntime::GetName(me).data(), ecs::PlayerRuntime::GetName(victim).data());
 				m_me->ComputeSkill(m_bType, pkVictim);
 				m_me->UseArrow(pkArrow, iUseArrow);
 			}
@@ -6281,7 +6309,7 @@ public:
 				if (pkVictim->CanBeginFight())
 					pkVictim->BeginFight(m_me);
 
-				LOG_INFO("{} hwajo {}", ecs::PlayerRuntime::GetName((m_me ? m_me->GetEntityHandle() : entt::null)).data(), ecs::PlayerRuntime::GetName((pkVictim ? pkVictim->GetEntityHandle() : entt::null)).data());
+				LOG_INFO("{} hwajo {}", ecs::PlayerRuntime::GetName(me).data(), ecs::PlayerRuntime::GetName(victim).data());
 				m_me->ComputeSkill(m_bType, pkVictim);
 				m_me->UseArrow(pkArrow, iUseArrow);
 			}
@@ -6300,7 +6328,7 @@ public:
 				if (pkVictim->CanBeginFight())
 					pkVictim->BeginFight(m_me);
 
-				LOG_TRACE("{} horse_wildattack {}", ecs::PlayerRuntime::GetName((m_me ? m_me->GetEntityHandle() : entt::null)).data(), ecs::PlayerRuntime::GetName((pkVictim ? pkVictim->GetEntityHandle() : entt::null)).data());
+				LOG_TRACE("{} horse_wildattack {}", ecs::PlayerRuntime::GetName(me).data(), ecs::PlayerRuntime::GetName(victim).data());
 				m_me->ComputeSkill(m_bType, pkVictim);
 				m_me->UseArrow(pkArrow, iUseArrow);
 			}
@@ -6329,7 +6357,7 @@ public:
 			if (pkVictim->CanBeginFight())
 				pkVictim->BeginFight(m_me);
 
-			LOG_INFO("{} - Skill {} -> {}", ecs::PlayerRuntime::GetName((m_me ? m_me->GetEntityHandle() : entt::null)).data(), m_bType, ecs::PlayerRuntime::GetName((pkVictim ? pkVictim->GetEntityHandle() : entt::null)).data());
+			LOG_INFO("{} - Skill {} -> {}", ecs::PlayerRuntime::GetName(me).data(), m_bType, ecs::PlayerRuntime::GetName(victim).data());
 			m_me->ComputeSkill(m_bType, pkVictim);
 		}
 		break;
@@ -6342,7 +6370,7 @@ public:
 			if (pkVictim->CanBeginFight())
 				pkVictim->BeginFight(m_me);
 
-			LOG_INFO("{} - Skill {} -> {}", ecs::PlayerRuntime::GetName((m_me ? m_me->GetEntityHandle() : entt::null)).data(), m_bType, ecs::PlayerRuntime::GetName((pkVictim ? pkVictim->GetEntityHandle() : entt::null)).data());
+			LOG_INFO("{} - Skill {} -> {}", ecs::PlayerRuntime::GetName(me).data(), m_bType, ecs::PlayerRuntime::GetName(victim).data());
 			m_me->ComputeSkill(m_bType, pkVictim);
 
 			// TODO     ϱ
@@ -6375,49 +6403,49 @@ public:
 #ifdef ENABLE_NINJA_SANGONG_X30_RAZOR93
 		case SKILL_SANGONG:
 		{
-			if (ecs::PlayerRuntime::IsStone((pkVictim ? pkVictim->GetEntityHandle() : entt::null)) || pkVictim->GetMobRank() >= 4 || ecs::PlayerRuntime::GetRaceNum((pkVictim ? pkVictim->GetEntityHandle() : entt::null)))
+			if (ecs::PlayerRuntime::IsStone(victim) || pkVictim->GetMobRank() >= 4 || ecs::PlayerRuntime::GetRaceNum(victim))
 			{
-				int iDam = CalcMeleeDamage((m_me ? m_me->GetEntityHandle() : entt::null), (pkVictim ? pkVictim->GetEntityHandle() : entt::null));
+				int iDam = CalcMeleeDamage(me, victim);
 
 				if (m_me->GetJob() == JOB_ASSASSIN &&
-					(ecs::PlayerRuntime::IsStone((pkVictim ? pkVictim->GetEntityHandle() : entt::null)) || pkVictim->GetMobRank() >= 4 || ecs::PlayerRuntime::GetRaceNum((pkVictim ? pkVictim->GetEntityHandle() : entt::null)) == 136))
+					(ecs::PlayerRuntime::IsStone(victim) || pkVictim->GetMobRank() >= 4 || ecs::PlayerRuntime::GetRaceNum(victim) == 136))
 				{
 					int multiplier = 36; // alap multiplier
 
 
-					if (ecs::PlayerRuntime::GetRaceNum((pkVictim ? pkVictim->GetEntityHandle() : entt::null)) == 331)
+					if (ecs::PlayerRuntime::GetRaceNum(victim) == 331)
 					{
 						iDam = 0;
 					}
 					else
 					{
 
-						if (ecs::PlayerRuntime::GetRaceNum((pkVictim ? pkVictim->GetEntityHandle() : entt::null)) == 8055)
+						if (ecs::PlayerRuntime::GetRaceNum(victim) == 8055)
 						{
 							multiplier = 34;
 						}
-						else if (ecs::PlayerRuntime::GetRaceNum((pkVictim ? pkVictim->GetEntityHandle() : entt::null)) == 6193)
+						else if (ecs::PlayerRuntime::GetRaceNum(victim) == 6193)
 						{
 							multiplier = 20;
 						}
-						else if (ecs::PlayerRuntime::GetRaceNum((pkVictim ? pkVictim->GetEntityHandle() : entt::null)) == 8010 ||
-							ecs::PlayerRuntime::GetRaceNum((pkVictim ? pkVictim->GetEntityHandle() : entt::null)) == 8020 ||
-							ecs::PlayerRuntime::GetRaceNum((pkVictim ? pkVictim->GetEntityHandle() : entt::null)) == 180 ||
-							ecs::PlayerRuntime::GetRaceNum((pkVictim ? pkVictim->GetEntityHandle() : entt::null)) == 181 ||
-							ecs::PlayerRuntime::GetRaceNum((pkVictim ? pkVictim->GetEntityHandle() : entt::null)) == 182)
+						else if (ecs::PlayerRuntime::GetRaceNum(victim) == 8010 ||
+							ecs::PlayerRuntime::GetRaceNum(victim) == 8020 ||
+							ecs::PlayerRuntime::GetRaceNum(victim) == 180 ||
+							ecs::PlayerRuntime::GetRaceNum(victim) == 181 ||
+							ecs::PlayerRuntime::GetRaceNum(victim) == 182)
 						{
 							multiplier = 20;
 						}
-						else if (ecs::PlayerRuntime::GetRaceNum((pkVictim ? pkVictim->GetEntityHandle() : entt::null)) == 180 ||
-							ecs::PlayerRuntime::GetRaceNum((pkVictim ? pkVictim->GetEntityHandle() : entt::null)) == 181 ||
-							ecs::PlayerRuntime::GetRaceNum((pkVictim ? pkVictim->GetEntityHandle() : entt::null)) == 182
+						else if (ecs::PlayerRuntime::GetRaceNum(victim) == 180 ||
+							ecs::PlayerRuntime::GetRaceNum(victim) == 181 ||
+							ecs::PlayerRuntime::GetRaceNum(victim) == 182
 							)
 						{
 							multiplier = 100;
 						}
-						else if (ecs::PlayerRuntime::GetRaceNum((pkVictim ? pkVictim->GetEntityHandle() : entt::null)) == 4582 ||
-							ecs::PlayerRuntime::GetRaceNum((pkVictim ? pkVictim->GetEntityHandle() : entt::null)) == 4583 ||
-							ecs::PlayerRuntime::GetRaceNum((pkVictim ? pkVictim->GetEntityHandle() : entt::null)) == 4584
+						else if (ecs::PlayerRuntime::GetRaceNum(victim) == 4582 ||
+							ecs::PlayerRuntime::GetRaceNum(victim) == 4583 ||
+							ecs::PlayerRuntime::GetRaceNum(victim) == 4584
 							)
 						{
 							multiplier = 80	;
@@ -6430,7 +6458,7 @@ public:
 				pkVictim->Damage(m_me, iDam, DAMAGE_TYPE_NORMAL);
 
 
-				if (ecs::PlayerRuntime::IsPC((pkVictim ? pkVictim->GetEntityHandle() : entt::null)))
+				if (ecs::PlayerRuntime::IsPC(victim))
 				{
 					m_me->OnMove(true);
 					pkVictim->OnMove();
@@ -6438,7 +6466,7 @@ public:
 					if (pkVictim->CanBeginFight())
 						pkVictim->BeginFight(m_me);
 
-					LOG_INFO("{} - Skill {} -> {}", ecs::PlayerRuntime::GetName((m_me ? m_me->GetEntityHandle() : entt::null)).data(), m_bType, ecs::PlayerRuntime::GetName((pkVictim ? pkVictim->GetEntityHandle() : entt::null)).data());
+					LOG_INFO("{} - Skill {} -> {}", ecs::PlayerRuntime::GetName(me).data(), m_bType, ecs::PlayerRuntime::GetName(victim).data());
 					m_me->ComputeSkill(m_bType, pkVictim);
 				}
 
@@ -6527,16 +6555,18 @@ LPCHARACTER CHARACTER::GetNearestVictim(LPCHARACTER pkChr)
 		++it;
 
 		auto* pAttacker = LegacyCharOf(eAttacker);
+		const entt::entity attacker = pAttacker ? pAttacker->GetEntityHandle() : entt::null;
+
 
 		if (!pAttacker)
 			continue;
 
-		if (AffectSystem::IsAffectFlag((pAttacker ? pAttacker->GetEntityHandle() : entt::null), AFF_EUNHYUNG) ||
-			AffectSystem::IsAffectFlag((pAttacker ? pAttacker->GetEntityHandle() : entt::null), AFF_INVISIBILITY) ||
-			AffectSystem::IsAffectFlag((pAttacker ? pAttacker->GetEntityHandle() : entt::null), AFF_REVIVE_INVISIBLE))
+		if (AffectSystem::IsAffectFlag(attacker, AFF_EUNHYUNG) ||
+			AffectSystem::IsAffectFlag(attacker, AFF_INVISIBILITY) ||
+			AffectSystem::IsAffectFlag(attacker, AFF_REVIVE_INVISIBLE))
 			continue;
 
-		float fDist = DISTANCE_APPROX(ecs::PlayerRuntime::GetX((pAttacker ? pAttacker->GetEntityHandle() : entt::null)) - ecs::PlayerRuntime::GetX((pkChr ? pkChr->GetEntityHandle() : entt::null)), ecs::PlayerRuntime::GetY((pAttacker ? pAttacker->GetEntityHandle() : entt::null)) - ecs::PlayerRuntime::GetY((pkChr ? pkChr->GetEntityHandle() : entt::null)));
+		float fDist = DISTANCE_APPROX(ecs::PlayerRuntime::GetX(attacker) - ecs::PlayerRuntime::GetX((pkChr ? pkChr->GetEntityHandle() : entt::null)), ecs::PlayerRuntime::GetY(attacker) - ecs::PlayerRuntime::GetY((pkChr ? pkChr->GetEntityHandle() : entt::null)));
 
 		if (fDist < fMinDist)
 		{
@@ -6560,9 +6590,10 @@ void CHARACTER::SetVictim(LPCHARACTER pkVictim)
 	}
 	else
 	{
-		const entt::entity eVictim = (pkVictim ? pkVictim->GetEntityHandle() : entt::null);
+		const entt::entity victim = pkVictim ? pkVictim->GetEntityHandle() : entt::null;
+		const entt::entity eVictim = victim;
 		if (m_eVictim != eVictim)
-			MonsterLog("  : %s", ecs::PlayerRuntime::GetName((pkVictim ? pkVictim->GetEntityHandle() : entt::null)).data());
+			MonsterLog("  : %s", ecs::PlayerRuntime::GetName(victim).data());
 
 		m_eVictim = eVictim;
 		m_dwLastVictimSetTime = get_dword_time();
@@ -6705,7 +6736,8 @@ struct FuncSetLastAttacked
 #ifdef ENABLE_STONE_SPAWN_STEP_PROCESSING_RAZOR93
 void CHARACTER::RegisterDamageForExp(LPCHARACTER pkAttacker, int iDamage)
 {
-	if (!pkAttacker || !ecs::PlayerRuntime::IsPC((pkAttacker ? pkAttacker->GetEntityHandle() : entt::null)))
+	const entt::entity attacker = pkAttacker ? pkAttacker->GetEntityHandle() : entt::null;
+	if (!pkAttacker || !ecs::PlayerRuntime::IsPC(attacker))
 		return;
 
 	if (iDamage <= 0)
@@ -6722,7 +6754,7 @@ void CHARACTER::RegisterDamageForExp(LPCHARACTER pkAttacker, int iDamage)
 		it->second.iTotalDamage += iDamage;
 
 	// hogy Dead() vissza tudja keresni a killert, ha kell
-	m_dwKillerPID = ecs::PlayerRuntime::GetPlayerID((pkAttacker ? pkAttacker->GetEntityHandle() : entt::null));
+	m_dwKillerPID = ecs::PlayerRuntime::GetPlayerID(attacker);
 }
 
 
@@ -6739,7 +6771,8 @@ void CHARACTER::SetLastAttacked(uint32_t dwTime)
 
 void CHARACTER::SendDamagePacket(LPCHARACTER pAttacker, int Damage, uint8_t DamageFlag)
 {
-	if (IsPC() == true || (ecs::PlayerRuntime::IsPC((pAttacker ? pAttacker->GetEntityHandle() : entt::null)) == true && pAttacker->GetTarget() == this))
+	const entt::entity attacker = pAttacker ? pAttacker->GetEntityHandle() : entt::null;
+	if (IsPC() == true || (ecs::PlayerRuntime::IsPC(attacker) == true && pAttacker->GetTarget() == this))
 	{
 		TPacketGCDamageInfo damageInfo;
 		memset(&damageInfo, 0, sizeof(TPacketGCDamageInfo));
@@ -6758,9 +6791,9 @@ void CHARACTER::SendDamagePacket(LPCHARACTER pAttacker, int Damage, uint8_t Dama
 			GetDesc()->Packet(&damageInfo, sizeof(TPacketGCDamageInfo));
 		}
 
-		if (ecs::PlayerRuntime::GetDesc((pAttacker ? pAttacker->GetEntityHandle() : entt::null)) != nullptr)
+		if (ecs::PlayerRuntime::GetDesc(attacker) != nullptr)
 		{
-			ecs::PlayerRuntime::GetDesc((pAttacker ? pAttacker->GetEntityHandle() : entt::null))->Packet(&damageInfo, sizeof(TPacketGCDamageInfo));
+			ecs::PlayerRuntime::GetDesc(attacker)->Packet(&damageInfo, sizeof(TPacketGCDamageInfo));
 		}
 
 		if (GetArenaObserverMode() == false && GetArena() != nullptr) {
@@ -6812,10 +6845,11 @@ static int64_t CalcReferenceNormalHitDamage(LegacyCharHandle pAttacker, LegacyCh
 #ifdef ENABLE_STONE_SPAWN_STEP_PROCESSING_RAZOR93
 static void ProcessStoneSpawnStep(LegacyCharHandle ch)
 {
-	if (!ch || !ecs::PlayerRuntime::IsStone((ch ? ch->GetEntityHandle() : entt::null)) || ecs::PointSystem::GetMaxHP((ch ? ch->GetEntityHandle() : entt::null)) <= 0)
+	const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
+	if (!ch || !ecs::PlayerRuntime::IsStone(chEntity) || ecs::PointSystem::GetMaxHP(chEntity) <= 0)
 		return;
 
-	const int iPercent = (ch->GetHP() * 100) / ecs::PointSystem::GetMaxHP((ch ? ch->GetEntityHandle() : entt::null));
+	const int iPercent = (ch->GetHP() * 100) / ecs::PointSystem::GetMaxHP(chEntity);
 	const uint32_t dwVnum = number(
 		MIN(ch->GetMobTable().sAttackSpeed, ch->GetMobTable().sMovingSpeed),
 		MAX(ch->GetMobTable().sAttackSpeed, ch->GetMobTable().sMovingSpeed));
@@ -6833,28 +6867,30 @@ static void ProcessStoneSpawnStep(LegacyCharHandle ch)
 	else if (iPercent <= 99) wantStep = 1;
 	else return;
 
-	for (int step = ecs::PointSystem::GetMaxSP((ch ? ch->GetEntityHandle() : entt::null)) + 1; step <= wantStep; ++step)
+	for (int step = ecs::PointSystem::GetMaxSP(chEntity) + 1; step <= wantStep; ++step)
 	{
 		ch->SetMaxSP(step);
-		ch->SendMovePacket(FUNC_ATTACK, 0, ecs::PlayerRuntime::GetX((ch ? ch->GetEntityHandle() : entt::null)), ecs::PlayerRuntime::GetY((ch ? ch->GetEntityHandle() : entt::null)), 0);
+		ch->SendMovePacket(FUNC_ATTACK, 0, ecs::PlayerRuntime::GetX(chEntity), ecs::PlayerRuntime::GetY(chEntity), 0);
 
 		CHARACTER_MANAGER::instance().SelectStone(ch);
 
 		if (step == 10 || step == 9)
-			CHARACTER_MANAGER::instance().SpawnGroup(dwVnum, ecs::PlayerRuntime::GetMapIndex((ch ? ch->GetEntityHandle() : entt::null)), ecs::PlayerRuntime::GetX((ch ? ch->GetEntityHandle() : entt::null)) - 1500, ecs::PlayerRuntime::GetY((ch ? ch->GetEntityHandle() : entt::null)) - 1500, ecs::PlayerRuntime::GetX((ch ? ch->GetEntityHandle() : entt::null)) + 1500, ecs::PlayerRuntime::GetY((ch ? ch->GetEntityHandle() : entt::null)) + 1500);
+			CHARACTER_MANAGER::instance().SpawnGroup(dwVnum, ecs::PlayerRuntime::GetMapIndex(chEntity), ecs::PlayerRuntime::GetX(chEntity) - 1500, ecs::PlayerRuntime::GetY(chEntity) - 1500, ecs::PlayerRuntime::GetX(chEntity) + 1500, ecs::PlayerRuntime::GetY(chEntity) + 1500);
 		else if (step == 8 || step == 7 || step == 6 || step == 3 || step == 1)
-			CHARACTER_MANAGER::instance().SpawnGroup(dwVnum, ecs::PlayerRuntime::GetMapIndex((ch ? ch->GetEntityHandle() : entt::null)), ecs::PlayerRuntime::GetX((ch ? ch->GetEntityHandle() : entt::null)) - 1000, ecs::PlayerRuntime::GetY((ch ? ch->GetEntityHandle() : entt::null)) - 1000, ecs::PlayerRuntime::GetX((ch ? ch->GetEntityHandle() : entt::null)) + 1000, ecs::PlayerRuntime::GetY((ch ? ch->GetEntityHandle() : entt::null)) + 1000);
+			CHARACTER_MANAGER::instance().SpawnGroup(dwVnum, ecs::PlayerRuntime::GetMapIndex(chEntity), ecs::PlayerRuntime::GetX(chEntity) - 1000, ecs::PlayerRuntime::GetY(chEntity) - 1000, ecs::PlayerRuntime::GetX(chEntity) + 1000, ecs::PlayerRuntime::GetY(chEntity) + 1000);
 		else if (step == 5 || step == 4 || step == 2)
-			CHARACTER_MANAGER::instance().SpawnGroup(dwVnum, ecs::PlayerRuntime::GetMapIndex((ch ? ch->GetEntityHandle() : entt::null)), ecs::PlayerRuntime::GetX((ch ? ch->GetEntityHandle() : entt::null)) - 500, ecs::PlayerRuntime::GetY((ch ? ch->GetEntityHandle() : entt::null)) - 500, ecs::PlayerRuntime::GetX((ch ? ch->GetEntityHandle() : entt::null)) + 500, ecs::PlayerRuntime::GetY((ch ? ch->GetEntityHandle() : entt::null)) + 500);
+			CHARACTER_MANAGER::instance().SpawnGroup(dwVnum, ecs::PlayerRuntime::GetMapIndex(chEntity), ecs::PlayerRuntime::GetX(chEntity) - 500, ecs::PlayerRuntime::GetY(chEntity) - 500, ecs::PlayerRuntime::GetX(chEntity) + 500, ecs::PlayerRuntime::GetY(chEntity) + 500);
 
 		CHARACTER_MANAGER::instance().SelectStone(nullptr);
 	}
 
-	NetworkSyncSystem::UpdatePacket((ch ? ch->GetEntityHandle() : entt::null));
+	NetworkSyncSystem::UpdatePacket(chEntity);
 }
 #endif
 static int64_t CalcReferenceBowHitDamage(LPCHARACTER pAttacker, LPCHARACTER pVictim)
 {
+	const entt::entity attacker = pAttacker ? pAttacker->GetEntityHandle() : entt::null;
+	const entt::entity victim = pVictim ? pVictim->GetEntityHandle() : entt::null;
 	if (!pAttacker || !pVictim)
 		return 0;
 
@@ -6864,16 +6900,16 @@ static int64_t CalcReferenceBowHitDamage(LPCHARACTER pAttacker, LPCHARACTER pVic
 	if (0 == pAttacker->GetArrowAndBow(&pkBow, &pkArrow))
 		return 0;
 
-	int64_t dam = CalcArrowDamage((pAttacker ? pAttacker->GetEntityHandle() : entt::null), (pVictim ? pVictim->GetEntityHandle() : entt::null), pkBow, pkArrow);
+	int64_t dam = CalcArrowDamage(attacker, victim, pkBow, pkArrow);
 	if (dam <= 0)
 		return 0;
 
-	int32_t lValue = ecs::PointSystem::Get((pVictim ? pVictim->GetEntityHandle() : entt::null), POINT_RESIST_BOW);
+	int32_t lValue = ecs::PointSystem::Get(victim, POINT_RESIST_BOW);
 #ifdef ENABLE_NEW_BONUS_TALISMAN
-	lValue -= ecs::PointSystem::Get((pAttacker ? pAttacker->GetEntityHandle() : entt::null), POINT_ATTBONUS_IRR_FRECCIA);
+	lValue -= ecs::PointSystem::Get(attacker, POINT_ATTBONUS_IRR_FRECCIA);
 #endif
 #ifdef ENABLE_NEW_COMMON_BONUSES
-	lValue -= ecs::PointSystem::Get((pAttacker ? pAttacker->GetEntityHandle() : entt::null), POINT_IRR_WEAPON_DEFENSE);
+	lValue -= ecs::PointSystem::Get(attacker, POINT_IRR_WEAPON_DEFENSE);
 #endif
 
 	if (lValue < 0)
@@ -6887,28 +6923,29 @@ static int64_t CalcReferenceBowHitDamage(LPCHARACTER pAttacker, LPCHARACTER pVic
 	dam += pAttacker->GetSoulItemDamage(pVictim, dam, RED_SOUL);
 #endif
 
-	if (ecs::PointSystem::Get((pAttacker ? pAttacker->GetEntityHandle() : entt::null), POINT_NORMAL_HIT_DAMAGE_BONUS))
-		dam = dam * (100 + ecs::PointSystem::Get((pAttacker ? pAttacker->GetEntityHandle() : entt::null), POINT_NORMAL_HIT_DAMAGE_BONUS)) / 100;
+	if (ecs::PointSystem::Get(attacker, POINT_NORMAL_HIT_DAMAGE_BONUS))
+		dam = dam * (100 + ecs::PointSystem::Get(attacker, POINT_NORMAL_HIT_DAMAGE_BONUS)) / 100;
 
 #ifdef ENABLE_MEDI_PVM
-	if (ecs::PlayerRuntime::IsNPC((pVictim ? pVictim->GetEntityHandle() : entt::null)))
-		dam = dam * (100 + ecs::PointSystem::Get((pAttacker ? pAttacker->GetEntityHandle() : entt::null), POINT_ATTBONUS_MEDI_PVM)) / 100;
+	if (ecs::PlayerRuntime::IsNPC(victim))
+		dam = dam * (100 + ecs::PointSystem::Get(attacker, POINT_ATTBONUS_MEDI_PVM)) / 100;
 #endif
 
-	dam = dam * (100 - std::min((int64_t)99, ecs::PointSystem::Get((pVictim ? pVictim->GetEntityHandle() : entt::null), POINT_NORMAL_HIT_DEFEND_BONUS))) / 100;
+	dam = dam * (100 - std::min((int64_t)99, ecs::PointSystem::Get(victim, POINT_NORMAL_HIT_DEFEND_BONUS))) / 100;
 
 	return std::max<int64_t>(0, dam);
 }
 
 static int64_t CalcReferenceBasicHitDamage(LPCHARACTER pAttacker, LPCHARACTER pVictim)
 {
+	const entt::entity attacker = pAttacker ? pAttacker->GetEntityHandle() : entt::null;
 	if (!pAttacker || !pVictim)
 		return 0;
 
 	int64_t dam = 0;
 
 	const entt::entity weapon = ItemSystem::GetWearItem(
-		(pAttacker ? pAttacker->GetEntityHandle() : entt::null), WEAR_WEAPON);
+		attacker, WEAR_WEAPON);
 	if (ItemSystem::IsValidItem(weapon) &&
 		ItemSystem::GetItemType(weapon) == ITEM_WEAPON &&
 		ItemSystem::GetItemSubType(weapon) == WEAPON_BOW)
@@ -6919,7 +6956,7 @@ static int64_t CalcReferenceBasicHitDamage(LPCHARACTER pAttacker, LPCHARACTER pV
 	if (dam <= 0)
 		return 0;
 
-	const int64_t skillBonus = std::max<int64_t>(0, ecs::PointSystem::Get((pAttacker ? pAttacker->GetEntityHandle() : entt::null), POINT_SKILL_DAMAGE_BONUS));
+	const int64_t skillBonus = std::max<int64_t>(0, ecs::PointSystem::Get(attacker, POINT_SKILL_DAMAGE_BONUS));
 	if (skillBonus)
 		dam = dam * (100 + skillBonus) / 100;
 
@@ -6927,15 +6964,17 @@ static int64_t CalcReferenceBasicHitDamage(LPCHARACTER pAttacker, LPCHARACTER pV
 }
 static int64_t CalcReferenceNormalHitDamage(LPCHARACTER pAttacker, LPCHARACTER pVictim)
 {
+	const entt::entity attacker = pAttacker ? pAttacker->GetEntityHandle() : entt::null;
+	const entt::entity victim = pVictim ? pVictim->GetEntityHandle() : entt::null;
 	if (!pAttacker || !pVictim)
 		return 0;
 
-	int64_t dam = CalcMeleeDamage((pAttacker ? pAttacker->GetEntityHandle() : entt::null), (pVictim ? pVictim->GetEntityHandle() : entt::null));
+	int64_t dam = CalcMeleeDamage(attacker, victim);
 	if (dam <= 0)
 		return 0;
 
 	const entt::entity weapon = ItemSystem::GetWearItem(
-		(pAttacker ? pAttacker->GetEntityHandle() : entt::null), WEAR_WEAPON);
+		attacker, WEAR_WEAPON);
 	if (ItemSystem::IsValidItem(weapon))
 	{
 		int32_t lValue = 0;
@@ -6943,22 +6982,22 @@ static int64_t CalcReferenceNormalHitDamage(LPCHARACTER pAttacker, LPCHARACTER p
 		switch (ItemSystem::GetItemSubType(weapon))
 		{
 		case WEAPON_SWORD:
-			lValue = ecs::PointSystem::Get((pVictim ? pVictim->GetEntityHandle() : entt::null), POINT_RESIST_SWORD);
+			lValue = ecs::PointSystem::Get(victim, POINT_RESIST_SWORD);
 #ifdef ENABLE_NEW_BONUS_TALISMAN
-			lValue -= ecs::PointSystem::Get((pAttacker ? pAttacker->GetEntityHandle() : entt::null), POINT_ATTBONUS_IRR_SPADA);
+			lValue -= ecs::PointSystem::Get(attacker, POINT_ATTBONUS_IRR_SPADA);
 #endif
 #ifdef ENABLE_NEW_COMMON_BONUSES
-			lValue -= ecs::PointSystem::Get((pAttacker ? pAttacker->GetEntityHandle() : entt::null), POINT_IRR_WEAPON_DEFENSE);
+			lValue -= ecs::PointSystem::Get(attacker, POINT_IRR_WEAPON_DEFENSE);
 #endif
 			break;
 
 		case WEAPON_TWO_HANDED:
-			lValue = ecs::PointSystem::Get((pVictim ? pVictim->GetEntityHandle() : entt::null), POINT_RESIST_TWOHAND);
+			lValue = ecs::PointSystem::Get(victim, POINT_RESIST_TWOHAND);
 #ifdef ENABLE_NEW_BONUS_TALISMAN
-			lValue -= ecs::PointSystem::Get((pAttacker ? pAttacker->GetEntityHandle() : entt::null), POINT_ATTBONUS_IRR_SPADONE);
+			lValue -= ecs::PointSystem::Get(attacker, POINT_ATTBONUS_IRR_SPADONE);
 #endif
 #ifdef ENABLE_NEW_COMMON_BONUSES
-			lValue -= ecs::PointSystem::Get((pAttacker ? pAttacker->GetEntityHandle() : entt::null), POINT_IRR_WEAPON_DEFENSE);
+			lValue -= ecs::PointSystem::Get(attacker, POINT_IRR_WEAPON_DEFENSE);
 #endif
 			break;
 
@@ -6966,42 +7005,42 @@ static int64_t CalcReferenceNormalHitDamage(LPCHARACTER pAttacker, LPCHARACTER p
 #ifdef ENABLE_WOLFMAN_CHARACTER
 		case WEAPON_CLAW:
 #endif
-			lValue = ecs::PointSystem::Get((pVictim ? pVictim->GetEntityHandle() : entt::null), POINT_RESIST_DAGGER);
+			lValue = ecs::PointSystem::Get(victim, POINT_RESIST_DAGGER);
 #ifdef ENABLE_NEW_BONUS_TALISMAN
-			lValue -= ecs::PointSystem::Get((pAttacker ? pAttacker->GetEntityHandle() : entt::null), POINT_ATTBONUS_IRR_PUGNALE);
+			lValue -= ecs::PointSystem::Get(attacker, POINT_ATTBONUS_IRR_PUGNALE);
 #endif
 #ifdef ENABLE_NEW_COMMON_BONUSES
-			lValue -= ecs::PointSystem::Get((pAttacker ? pAttacker->GetEntityHandle() : entt::null), POINT_IRR_WEAPON_DEFENSE);
+			lValue -= ecs::PointSystem::Get(attacker, POINT_IRR_WEAPON_DEFENSE);
 #endif
 			break;
 
 		case WEAPON_BELL:
-			lValue = ecs::PointSystem::Get((pVictim ? pVictim->GetEntityHandle() : entt::null), POINT_RESIST_BELL);
+			lValue = ecs::PointSystem::Get(victim, POINT_RESIST_BELL);
 #ifdef ENABLE_NEW_BONUS_TALISMAN
-			lValue -= ecs::PointSystem::Get((pAttacker ? pAttacker->GetEntityHandle() : entt::null), POINT_ATTBONUS_IRR_CAMPANA);
+			lValue -= ecs::PointSystem::Get(attacker, POINT_ATTBONUS_IRR_CAMPANA);
 #endif
 #ifdef ENABLE_NEW_COMMON_BONUSES
-			lValue -= ecs::PointSystem::Get((pAttacker ? pAttacker->GetEntityHandle() : entt::null), POINT_IRR_WEAPON_DEFENSE);
+			lValue -= ecs::PointSystem::Get(attacker, POINT_IRR_WEAPON_DEFENSE);
 #endif
 			break;
 
 		case WEAPON_FAN:
-			lValue = ecs::PointSystem::Get((pVictim ? pVictim->GetEntityHandle() : entt::null), POINT_RESIST_FAN);
+			lValue = ecs::PointSystem::Get(victim, POINT_RESIST_FAN);
 #ifdef ENABLE_NEW_BONUS_TALISMAN
-			lValue -= ecs::PointSystem::Get((pAttacker ? pAttacker->GetEntityHandle() : entt::null), POINT_ATTBONUS_IRR_VENTAGLIO);
+			lValue -= ecs::PointSystem::Get(attacker, POINT_ATTBONUS_IRR_VENTAGLIO);
 #endif
 #ifdef ENABLE_NEW_COMMON_BONUSES
-			lValue -= ecs::PointSystem::Get((pAttacker ? pAttacker->GetEntityHandle() : entt::null), POINT_IRR_WEAPON_DEFENSE);
+			lValue -= ecs::PointSystem::Get(attacker, POINT_IRR_WEAPON_DEFENSE);
 #endif
 			break;
 
 		case WEAPON_BOW:
-			lValue = ecs::PointSystem::Get((pVictim ? pVictim->GetEntityHandle() : entt::null), POINT_RESIST_BOW);
+			lValue = ecs::PointSystem::Get(victim, POINT_RESIST_BOW);
 #ifdef ENABLE_NEW_BONUS_TALISMAN
-			lValue -= ecs::PointSystem::Get((pAttacker ? pAttacker->GetEntityHandle() : entt::null), POINT_ATTBONUS_IRR_FRECCIA);
+			lValue -= ecs::PointSystem::Get(attacker, POINT_ATTBONUS_IRR_FRECCIA);
 #endif
 #ifdef ENABLE_NEW_COMMON_BONUSES
-			lValue -= ecs::PointSystem::Get((pAttacker ? pAttacker->GetEntityHandle() : entt::null), POINT_IRR_WEAPON_DEFENSE);
+			lValue -= ecs::PointSystem::Get(attacker, POINT_IRR_WEAPON_DEFENSE);
 #endif
 			break;
 
@@ -7024,15 +7063,15 @@ static int64_t CalcReferenceNormalHitDamage(LPCHARACTER pAttacker, LPCHARACTER p
 	dam += pAttacker->GetSoulItemDamage(pVictim, dam, RED_SOUL);
 #endif
 
-	if (ecs::PointSystem::Get((pAttacker ? pAttacker->GetEntityHandle() : entt::null), POINT_NORMAL_HIT_DAMAGE_BONUS))
-		dam = dam * (100 + ecs::PointSystem::Get((pAttacker ? pAttacker->GetEntityHandle() : entt::null), POINT_NORMAL_HIT_DAMAGE_BONUS)) / 100;
+	if (ecs::PointSystem::Get(attacker, POINT_NORMAL_HIT_DAMAGE_BONUS))
+		dam = dam * (100 + ecs::PointSystem::Get(attacker, POINT_NORMAL_HIT_DAMAGE_BONUS)) / 100;
 
 #ifdef ENABLE_MEDI_PVM
-	if (ecs::PlayerRuntime::IsNPC((pVictim ? pVictim->GetEntityHandle() : entt::null)))
-		dam = dam * (100 + ecs::PointSystem::Get((pAttacker ? pAttacker->GetEntityHandle() : entt::null), POINT_ATTBONUS_MEDI_PVM)) / 100;
+	if (ecs::PlayerRuntime::IsNPC(victim))
+		dam = dam * (100 + ecs::PointSystem::Get(attacker, POINT_ATTBONUS_MEDI_PVM)) / 100;
 #endif
 
-	dam = dam * (100 - std::min((int64_t)99, ecs::PointSystem::Get((pVictim ? pVictim->GetEntityHandle() : entt::null), POINT_NORMAL_HIT_DEFEND_BONUS))) / 100;
+	dam = dam * (100 - std::min((int64_t)99, ecs::PointSystem::Get(victim, POINT_NORMAL_HIT_DEFEND_BONUS))) / 100;
 
 	return std::max<int64_t>(0, dam);
 }
@@ -7395,15 +7434,17 @@ void CHARACTER::ClearTarget()
 	while (it != m_set_pkChrTargetedBy.end())
 	{
 		LPCHARACTER pkChr = *(it++);
+		const entt::entity chr = pkChr ? pkChr->GetEntityHandle() : entt::null;
+
 		pkChr->m_pkChrTarget = nullptr;
 
-		if (!ecs::PlayerRuntime::GetDesc((pkChr ? pkChr->GetEntityHandle() : entt::null)))
+		if (!ecs::PlayerRuntime::GetDesc(chr))
 		{
-			LOG_ERROR("{} {} does not have desc", ecs::PlayerRuntime::GetName((pkChr ? pkChr->GetEntityHandle() : entt::null)).data(), static_cast<const void*>(get_pointer(pkChr)));
+			LOG_ERROR("{} {} does not have desc", ecs::PlayerRuntime::GetName(chr).data(), static_cast<const void*>(get_pointer(pkChr)));
 			abort();
 		}
 
-		ecs::PlayerRuntime::GetDesc((pkChr ? pkChr->GetEntityHandle() : entt::null))->Packet(&p, sizeof(TPacketGCTarget));
+		ecs::PlayerRuntime::GetDesc(chr)->Packet(&p, sizeof(TPacketGCTarget));
 	}
 
 	m_set_pkChrTargetedBy.clear();
@@ -7539,9 +7580,10 @@ void CHARACTER::SetTarget(LPCHARACTER pkChrTarget)
 #ifdef ELEMENT_TARGET
 	p.bElement = 0;
 	if (m_pkChrTarget) {
-		if (ecs::PlayerRuntime::IsPC((m_pkChrTarget ? m_pkChrTarget->GetEntityHandle() : entt::null))) {
+		const entt::entity chrTarget = m_pkChrTarget ? m_pkChrTarget->GetEntityHandle() : entt::null;
+		if (ecs::PlayerRuntime::IsPC(chrTarget)) {
 			const entt::entity item = ItemSystem::GetWearItem(
-				(m_pkChrTarget ? m_pkChrTarget->GetEntityHandle() : entt::null), WEAR_PENDANT);
+				chrTarget, WEAR_PENDANT);
 			if (ItemSystem::IsValidItem(item)) {
 				uint32_t vnum = ItemSystem::GetItemVnum(item);
 				if (vnum >= 10750 && vnum <= 10950) {
@@ -7564,7 +7606,7 @@ void CHARACTER::SetTarget(LPCHARACTER pkChrTarget)
 				}
 			}
 		}
-		else if (m_pkChrTarget->IsMonster() || ecs::PlayerRuntime::IsStone((m_pkChrTarget ? m_pkChrTarget->GetEntityHandle() : entt::null))) {
+		else if (m_pkChrTarget->IsMonster() || ecs::PlayerRuntime::IsStone(chrTarget)) {
 			if (m_pkChrTarget->IsRaceFlag(RACE_FLAG_ATT_ELEC)) {
 				p.bElement = 1;
 			}
@@ -7626,34 +7668,38 @@ void CHARACTER::BroadcastTargetPacket()
 	while (it != m_set_pkChrTargetedBy.end())
 	{
 		LPCHARACTER pkChr = *it++;
+		const entt::entity chr = pkChr ? pkChr->GetEntityHandle() : entt::null;
 
-		if (!ecs::PlayerRuntime::GetDesc((pkChr ? pkChr->GetEntityHandle() : entt::null)))
+
+		if (!ecs::PlayerRuntime::GetDesc(chr))
 		{
-			LOG_ERROR("{} {} does not have desc", ecs::PlayerRuntime::GetName((pkChr ? pkChr->GetEntityHandle() : entt::null)).data(), static_cast<const void*>(get_pointer(pkChr)));
+			LOG_ERROR("{} {} does not have desc", ecs::PlayerRuntime::GetName(chr).data(), static_cast<const void*>(get_pointer(pkChr)));
 			abort();
 		}
 
-		ecs::PlayerRuntime::GetDesc((pkChr ? pkChr->GetEntityHandle() : entt::null))->Packet(&p, sizeof(TPacketGCTarget));
+		ecs::PlayerRuntime::GetDesc(chr)->Packet(&p, sizeof(TPacketGCTarget));
 	}
 }
 
 void CHARACTER::CheckTarget()
 {
+	const entt::entity chrTarget = m_pkChrTarget ? m_pkChrTarget->GetEntityHandle() : entt::null;
 	if (!m_pkChrTarget)
 		return;
 
-	if (DISTANCE_APPROX(GetX() - ecs::PlayerRuntime::GetX((m_pkChrTarget ? m_pkChrTarget->GetEntityHandle() : entt::null)), GetY() - ecs::PlayerRuntime::GetY((m_pkChrTarget ? m_pkChrTarget->GetEntityHandle() : entt::null))) >= 4800)
+	if (DISTANCE_APPROX(GetX() - ecs::PlayerRuntime::GetX(chrTarget), GetY() - ecs::PlayerRuntime::GetY(chrTarget)) >= 4800)
 		SetTarget(nullptr);
 }
 
 bool CHARACTER::IsChangeAttackPosition(LPCHARACTER target) const
 {
+	const entt::entity targetEntity = target ? target->GetEntityHandle() : entt::null;
 	if (!IsNPC())
 		return true;
 
 	uint32_t dwChangeTime = AI_CHANGE_ATTACK_POISITION_TIME_NEAR;
 
-	if (DISTANCE_APPROX(GetX() - ecs::PlayerRuntime::GetX((target ? target->GetEntityHandle() : entt::null)), GetY() - ecs::PlayerRuntime::GetY((target ? target->GetEntityHandle() : entt::null))) >
+	if (DISTANCE_APPROX(GetX() - ecs::PlayerRuntime::GetX(targetEntity), GetY() - ecs::PlayerRuntime::GetY(targetEntity)) >
 		AI_CHANGE_ATTACK_POISITION_DISTANCE + GetMobAttackRange())
 		dwChangeTime = AI_CHANGE_ATTACK_POISITION_TIME_FAR;
 
@@ -7808,6 +7854,7 @@ bool CHARACTER::Return()
 
 bool CHARACTER::Follow(LPCHARACTER pkChr, float fMinDistance)
 {
+	const entt::entity chr = pkChr ? pkChr->GetEntityHandle() : entt::null;
 	if (IsPC())
 	{
 		LOG_ERROR("CHARACTER::Follow : PC cannot use this method", GetName());
@@ -7816,13 +7863,13 @@ bool CHARACTER::Follow(LPCHARACTER pkChr, float fMinDistance)
 
 	if (IS_SET(GetAIFlag(), AIFLAG_NOMOVE))
 	{
-		if (ecs::PlayerRuntime::IsPC((pkChr ? pkChr->GetEntityHandle() : entt::null)))
+		if (ecs::PlayerRuntime::IsPC(chr))
 		{
 			if (!GetParty() || !GetParty()->GetLeader() || GetParty()->GetLeader() == this)
 			{
 				if (get_dword_time() - m_pkMobInst->m_dwLastAttackedTime >= 15000)
 				{
-					if (m_pkMobData->m_table.wAttackRange < DISTANCE_APPROX(ecs::PlayerRuntime::GetX((pkChr ? pkChr->GetEntityHandle() : entt::null)) - GetX(), ecs::PlayerRuntime::GetY((pkChr ? pkChr->GetEntityHandle() : entt::null)) - GetY()))
+					if (m_pkMobData->m_table.wAttackRange < DISTANCE_APPROX(ecs::PlayerRuntime::GetX(chr) - GetX(), ecs::PlayerRuntime::GetY(chr) - GetY()))
 						if (Return())
 							return true;
 				}
@@ -7831,10 +7878,10 @@ bool CHARACTER::Follow(LPCHARACTER pkChr, float fMinDistance)
 		return false;
 	}
 
-	int32_t x = ecs::PlayerRuntime::GetX((pkChr ? pkChr->GetEntityHandle() : entt::null));
-	int32_t y = ecs::PlayerRuntime::GetY((pkChr ? pkChr->GetEntityHandle() : entt::null));
+	int32_t x = ecs::PlayerRuntime::GetX(chr);
+	int32_t y = ecs::PlayerRuntime::GetY(chr);
 
-	if (ecs::PlayerRuntime::IsPC((pkChr ? pkChr->GetEntityHandle() : entt::null)))
+	if (ecs::PlayerRuntime::IsPC(chr))
 	{
 		if (!GetParty() || !GetParty()->GetLeader() || GetParty()->GetLeader() == this)
 		{
@@ -7870,7 +7917,7 @@ bool CHARACTER::Follow(LPCHARACTER pkChr, float fMinDistance)
 		)
 	{
 		float rot = pkChr->GetRotation();
-		float rot_delta = GetDegreeDelta(rot, GetDegreeFromPositionXY(GetX(), GetY(), ecs::PlayerRuntime::GetX((pkChr ? pkChr->GetEntityHandle() : entt::null)), ecs::PlayerRuntime::GetY((pkChr ? pkChr->GetEntityHandle() : entt::null))));
+		float rot_delta = GetDegreeDelta(rot, GetDegreeFromPositionXY(GetX(), GetY(), ecs::PlayerRuntime::GetX(chr), ecs::PlayerRuntime::GetY(chr)));
 
 		float yourSpeed = pkChr->GetMoveSpeed();
 		float mySpeed = GetMoveSpeed();
