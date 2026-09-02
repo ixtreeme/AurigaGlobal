@@ -556,7 +556,7 @@ namespace offlineshop
 				if (pkOwner->GetOfflineShop() && pkOwner->GetOfflineShop() == pkOwner->GetOfflineShopGuest())
 				{
 					NotifyOffers(pkOwner);
-					GetManager().SendShopOpenMyShopClientPacket(pkOwner);
+					GetManager().SendShopOpenMyShopClientPacket(((pkOwner) ? (pkOwner)->GetEntityHandle() : entt::null));
 				}
 			}
 		}
@@ -617,10 +617,10 @@ namespace offlineshop
 					continue;
 
 				if ((ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null))) == m_dwPID)
-					GetManager().SendShopOpenMyShopClientPacket(ch);
+					GetManager().SendShopOpenMyShopClientPacket(((ch) ? (ch)->GetEntityHandle() : entt::null));
 
 				else
-					GetManager().SendShopOpenClientPacket(ch, this);
+					GetManager().SendShopOpenClientPacket(((ch) ? (ch)->GetEntityHandle() : entt::null), this);
 			}
 		}
 
@@ -628,10 +628,10 @@ namespace offlineshop
 		else
 		{
 			if((ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null))) == m_dwPID)
-				GetManager().SendShopOpenMyShopClientPacket(ch);
+				GetManager().SendShopOpenMyShopClientPacket(((ch) ? (ch)->GetEntityHandle() : entt::null));
 
 			else
-				GetManager().SendShopOpenClientPacket(ch , this);
+				GetManager().SendShopOpenClientPacket(((ch) ? (ch)->GetEntityHandle() : entt::null), this);
 		}
 	}
 
@@ -717,7 +717,7 @@ namespace offlineshop
 		if(!ch)
 			return;
 
-		GetManager().SendShopOpenMyShopClientPacket(ch);
+		GetManager().SendShopOpenMyShopClientPacket(((ch) ? (ch)->GetEntityHandle() : entt::null));
 	}
 
 
@@ -772,7 +772,7 @@ namespace offlineshop
 
 		m_guestsList.push_back(AS_GUESTID(ch));
 		ch->SetAuctionGuest(this);
-		GetManager().SendAuctionOpenAuctionClientPacket(ch, m_info, m_offersVec);
+		GetManager().SendAuctionOpenAuctionClientPacket(((ch) ? (ch)->GetEntityHandle() : entt::null), m_info, m_offersVec);
 		return true;
 	}
 
@@ -848,7 +848,7 @@ namespace offlineshop
 			if (!ch)
 				continue;
 
-			GetManager().SendAuctionOpenAuctionClientPacket(ch, m_info, m_offersVec);
+			GetManager().SendAuctionOpenAuctionClientPacket(((ch) ? (ch)->GetEntityHandle() : entt::null), m_info, m_offersVec);
 		}
 	}
 

@@ -526,8 +526,9 @@ namespace offlineshop
 
 
 
-	void CShopManager::RemoveGuestFromShops(LPCHARACTER ch)
+	void CShopManager::RemoveGuestFromShops(entt::entity character)
 	{
+		LPCHARACTER ch = ecs::LegacyCharOf(character);
 		if(ch->GetOfflineShopGuest())
 			ch->GetOfflineShopGuest()->RemoveGuest(ch);
 
@@ -807,9 +808,9 @@ namespace offlineshop
 
 
 
-	void CShopManager::EncodeInsertShopEntity(ShopEntity& shop, LPCHARACTER ch)
+	void CShopManager::EncodeInsertShopEntity(ShopEntity& shop, entt::entity character)
 	{
-		if (!ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null)))
+		if (!ecs::PlayerRuntime::GetDesc(character))
 			return;
 
 		TPacketGCNewOfflineshop pack;
@@ -832,16 +833,16 @@ namespace offlineshop
 
 		strncpy(subpack.szName, shop.GetShopName(), sizeof(subpack.szName));
 
-		ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null))->BufferedPacket(&pack, sizeof(pack));
-		ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null))->Packet(&subpack, sizeof(subpack));
+		ecs::PlayerRuntime::GetDesc(character)->BufferedPacket(&pack, sizeof(pack));
+		ecs::PlayerRuntime::GetDesc(character)->Packet(&subpack, sizeof(subpack));
 	}
 
 
 
 
-	void CShopManager::EncodeRemoveShopEntity(ShopEntity& shop, LPCHARACTER ch)
+	void CShopManager::EncodeRemoveShopEntity(ShopEntity& shop, entt::entity character)
 	{
-		if (!ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null)))
+		if (!ecs::PlayerRuntime::GetDesc(character))
 			return;
 
 		TPacketGCNewOfflineshop pack;
@@ -852,8 +853,8 @@ namespace offlineshop
 		TSubPacketGCRemoveShopEntity subpack;
 		subpack.dwVID = shop.GetVID();
 
-		ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null))->BufferedPacket(&pack, sizeof(pack));
-		ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null))->Packet(&subpack, sizeof(subpack));
+		ecs::PlayerRuntime::GetDesc(character)->BufferedPacket(&pack, sizeof(pack));
+		ecs::PlayerRuntime::GetDesc(character)->Packet(&subpack, sizeof(subpack));
 	}
 
 
@@ -1019,8 +1020,9 @@ namespace offlineshop
 	}
 
 	//topatch
-	bool CShopManager::RecvShopEditItemClientPacket(LPCHARACTER ch, uint32_t dwItemID, const TPriceInfo& price)
+	bool CShopManager::RecvShopEditItemClientPacket(entt::entity character, uint32_t dwItemID, const TPriceInfo& price)
 	{
+		LPCHARACTER ch = ecs::LegacyCharOf(character);
 		if(!ch || !ch->GetOfflineShop())
 			return false;
 
@@ -1168,10 +1170,10 @@ namespace offlineshop
 			}
 
 			if (ch && ch == chGuest)
-				SendShopOpenMyShopNoShopClientPacket(chGuest);
+				SendShopOpenMyShopNoShopClientPacket(((chGuest) ? (chGuest)->GetEntityHandle() : entt::null));
 
 			else
-				SendShopListClientPacket(chGuest);
+				SendShopListClientPacket(((chGuest) ? (chGuest)->GetEntityHandle() : entt::null));
 
 			chGuest->SetOfflineShopGuest(nullptr);
 		}
@@ -1209,7 +1211,7 @@ namespace offlineshop
 		{
 			LPCHARACTER chBuyer = CHARACTER_MANAGER::instance().FindByPID(*itpid);
 			if(chBuyer)
-				RecvOfferListRequestPacket(chBuyer);
+				RecvOfferListRequestPacket(((chBuyer) ? (chBuyer)->GetEntityHandle() : entt::null));
 		}
 
 
@@ -1343,7 +1345,7 @@ namespace offlineshop
 		{
 			LPCHARACTER chBuyer = CHARACTER_MANAGER::instance().FindByPID(*itpid);
 			if (chBuyer)
-				RecvOfferListRequestPacket(chBuyer);
+				RecvOfferListRequestPacket(((chBuyer) ? (chBuyer)->GetEntityHandle() : entt::null));
 		}
 
 
@@ -1363,10 +1365,10 @@ namespace offlineshop
 			}
 
 			if (ch && ch == chGuest)
-				SendShopOpenMyShopNoShopClientPacket(chGuest);
+				SendShopOpenMyShopNoShopClientPacket(((chGuest) ? (chGuest)->GetEntityHandle() : entt::null));
 
 			else
-				SendShopListClientPacket(chGuest);
+				SendShopListClientPacket(((chGuest) ? (chGuest)->GetEntityHandle() : entt::null));
 
 			chGuest->SetOfflineShopGuest(nullptr);
 		}
@@ -1447,7 +1449,7 @@ namespace offlineshop
 			chOwner->SetOfflineShopGuest(&(it->second));
 
 			it->second.AddGuest(chOwner);
-			SendShopOpenMyShopClientPacket(chOwner);
+			SendShopOpenMyShopClientPacket(((chOwner) ? (chOwner)->GetEntityHandle() : entt::null));
 		}
 
 		return true;
@@ -1724,13 +1726,13 @@ namespace offlineshop
 		{
 			LPCHARACTER chOwner = CHARACTER_MANAGER::Instance().FindByPID(dwOwnerID);
 			if(chOwner && chOwner->GetOfflineShopGuest() && chOwner->GetOfflineShopGuest()==chOwner->GetOfflineShop())
-				SendShopOpenMyShopClientPacket(chOwner);
+				SendShopOpenMyShopClientPacket(((chOwner) ? (chOwner)->GetEntityHandle() : entt::null));
 		}
 
 
 		LPCHARACTER chBuyer = CHARACTER_MANAGER::Instance().FindByPID(dwBuyerID);
 		if (chBuyer && chBuyer->IsLookingOfflineshopOfferList())
-			RecvOfferListRequestPacket(chBuyer);
+			RecvOfferListRequestPacket(((chBuyer) ? (chBuyer)->GetEntityHandle() : entt::null));
 
 
 		//end
@@ -1771,7 +1773,7 @@ namespace offlineshop
 		//checking about owner refreshing info
 		LPCHARACTER chOwner = CHARACTER_MANAGER::instance().FindByPID(pkShop->GetOwnerPID());
 		if(chOwner && chOwner->GetOfflineShop()==pkShop && chOwner->GetOfflineShopGuest()==pkShop)
-			SendShopOpenMyShopClientPacket(chOwner);
+			SendShopOpenMyShopClientPacket(((chOwner) ? (chOwner)->GetEntityHandle() : entt::null));
 
 
 
@@ -1791,7 +1793,7 @@ namespace offlineshop
 					itVec->bAccepted = true;
 
 					if(chBuyer && chBuyer->IsLookingOfflineshopOfferList())
-						RecvOfferListRequestPacket(chBuyer);
+						RecvOfferListRequestPacket(((chBuyer) ? (chBuyer)->GetEntityHandle() : entt::null));
 
 					break;
 				}
@@ -1998,7 +2000,7 @@ namespace offlineshop
 		if (ch)
 		{
 			ch->SetAuction(&obj);
-			SendAuctionOpenAuctionClientPacket(ch, obj.GetInfo(), std::vector<TAuctionOfferInfo>());
+			SendAuctionOpenAuctionClientPacket(((ch) ? (ch)->GetEntityHandle() : entt::null), obj.GetInfo(), std::vector<TAuctionOfferInfo>());
 		}
 
 		return true;
@@ -2062,7 +2064,7 @@ namespace offlineshop
 		LPCHARACTER owner = CHARACTER_MANAGER::instance().FindByPID(dwID);
 		if(owner) {
 			dwOwnerID = (ecs::PlayerRuntime::GetPlayerID(((owner) ? (owner)->GetEntityHandle() : entt::null)));
-			RecvAuctionListRequestClientPacket(owner, true);
+			RecvAuctionListRequestClientPacket(((owner) ? (owner)->GetEntityHandle() : entt::null), true);
 			owner->SetAuction(nullptr);
 		}
 
@@ -2078,7 +2080,7 @@ namespace offlineshop
 				continue;
 			}
 
-			RecvAuctionListRequestClientPacket(chGuest);
+			RecvAuctionListRequestClientPacket(((chGuest) ? (chGuest)->GetEntityHandle() : entt::null));
 		}
 
 		return false;
@@ -2105,8 +2107,9 @@ namespace offlineshop
 
 
 	//client packets exchanging
-	bool CShopManager::RecvShopCreateNewClientPacket(LPCHARACTER ch, TShopInfo& rShopInfo, std::vector<TShopItemInfo> & vec)
+	bool CShopManager::RecvShopCreateNewClientPacket(entt::entity character, TShopInfo& rShopInfo, std::vector<TShopItemInfo> & vec)
 	{
+		LPCHARACTER ch = ecs::LegacyCharOf(character);
 		if(!ch || ch->GetOfflineShop())
 			return false;
 
@@ -2125,13 +2128,13 @@ namespace offlineshop
 
 		if ((rShopInfo.dwKasmirNpc != 30000) && (ch->CountSpecifyItem(88902) < 1)) {
 #ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 45, "");
+			ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 45, "");
 #endif
 			return false;
 		}
 #endif
 
-		OFFSHOP_DEBUG("ch name %s , item count %u , duration %u ", ecs::PlayerRuntime::GetName(((ch) ? (ch)->GetEntityHandle() : entt::null)).data(), rShopInfo.dwCount, rShopInfo.dwDuration);
+		OFFSHOP_DEBUG("ch name %s , item count %u , duration %u ", ecs::PlayerRuntime::GetName(character).data(), rShopInfo.dwCount, rShopInfo.dwDuration);
 
 		static char szNameChecked[OFFLINE_SHOP_NAME_MAX_LEN];
 
@@ -2143,12 +2146,12 @@ namespace offlineshop
 		ch->SetOfflineShopUseTime();
 
 		//making full name
-		snprintf(rShopInfo.szName, sizeof(rShopInfo.szName), "%s@%s" , ecs::PlayerRuntime::GetName(((ch) ? (ch)->GetEntityHandle() : entt::null)).data(), szNameChecked );
+		snprintf(rShopInfo.szName, sizeof(rShopInfo.szName), "%s@%s" , ecs::PlayerRuntime::GetName(character).data(), szNameChecked );
 
 		std::vector<TItemInfo> vecItem;
 		vecItem.reserve(vec.size());
 
-		rShopInfo.dwOwnerID = (ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null)));
+		rShopInfo.dwOwnerID = (ecs::PlayerRuntime::GetPlayerID(character));
 		TItemInfo itemInfo;
 
 #ifdef KASMIR_PAKET_SYSTEM
@@ -2202,7 +2205,7 @@ namespace offlineshop
 
 			ZeroObject(itemInfo);
 
-			itemInfo.dwOwnerID = (ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null)));
+			itemInfo.dwOwnerID = (ecs::PlayerRuntime::GetPlayerID(character));
 			memcpy(itemInfo.item.aAttr ,	item->GetAttributes(),	sizeof(itemInfo.item.aAttr));
 			memcpy(itemInfo.item.alSockets,	item->GetSockets(),		sizeof(itemInfo.item.alSockets));
 
@@ -2218,7 +2221,7 @@ namespace offlineshop
 			itemInfo.item.iLockedAttr = item->GetLockedAttr();
 #endif
 #ifdef ENABLE_NEW_OFFLINESHOP_LOGS
-			LogManager::instance().OfflineshopLog((ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null))), 0, "trying to open shop , adding item vnum %u count %u original id %u ", itemInfo.item.dwVnum, itemInfo.item.dwCount, ItemSystem::GetItemID((item ? item->GetEntityHandle() : entt::null)));
+			LogManager::instance().OfflineshopLog((ecs::PlayerRuntime::GetPlayerID(character)), 0, "trying to open shop , adding item vnum %u count %u original id %u ", itemInfo.item.dwVnum, itemInfo.item.dwCount, ItemSystem::GetItemID((item ? item->GetEntityHandle() : entt::null)));
 #endif
 			CopyObject(itemInfo.price, rShopItem.price);
 			vecItem.push_back(itemInfo);
@@ -2227,7 +2230,7 @@ namespace offlineshop
 #ifdef KASMIR_PAKET_SYSTEM
 		if ((rShopInfo.dwKasmirNpc != 30000) && (dwCountStyle1 <= dwCountStyle2)) {
 #ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 45, "");
+			ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 45, "");
 #endif
 			return false;
 		}
@@ -2243,7 +2246,7 @@ namespace offlineshop
 			"OFFLINESHOP_SELL");
 		}
 
-		OFFSHOP_DEBUG("ch name %s , checked successful , send to db ", ecs::PlayerRuntime::GetName(((ch) ? (ch)->GetEntityHandle() : entt::null)).data());
+		OFFSHOP_DEBUG("ch name %s , checked successful , send to db ", ecs::PlayerRuntime::GetName(character).data());
 
 
 
@@ -2258,8 +2261,9 @@ namespace offlineshop
 		return true;
 	}
 
-	bool CShopManager::RecvShopChangeNameClientPacket(LPCHARACTER ch, const char* szName)
+	bool CShopManager::RecvShopChangeNameClientPacket(entt::entity character, const char* szName)
 	{
+		LPCHARACTER ch = ecs::LegacyCharOf(character);
 		if(!ch || !ch->GetOfflineShop())
 			return false;
 
@@ -2272,44 +2276,47 @@ namespace offlineshop
 			return false;
 
 		//making full name
-		snprintf(szFullName, sizeof(szFullName), "%s@%s" , ecs::PlayerRuntime::GetName(((ch) ? (ch)->GetEntityHandle() : entt::null)).data(), szNameChecked );
+		snprintf(szFullName, sizeof(szFullName), "%s@%s" , ecs::PlayerRuntime::GetName(character).data(), szNameChecked );
 #ifdef ENABLE_NEW_OFFLINESHOP_LOGS
-		LogManager::instance().OfflineshopLog((ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null))), 0, "changing shop name : %s -> %s ", ch->GetOfflineShop()->GetName(), szFullName);
+		LogManager::instance().OfflineshopLog((ecs::PlayerRuntime::GetPlayerID(character)), 0, "changing shop name : %s -> %s ", ch->GetOfflineShop()->GetName(), szFullName);
 #endif
 
-		SendShopChangeNameDBPacket((ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null))), szFullName);
+		SendShopChangeNameDBPacket((ecs::PlayerRuntime::GetPlayerID(character)), szFullName);
 		return true;
 	}
 
 
-	bool CShopManager::RecvShopForceCloseClientPacket(LPCHARACTER ch)
+	bool CShopManager::RecvShopForceCloseClientPacket(entt::entity character)
 	{
+		LPCHARACTER ch = ecs::LegacyCharOf(character);
 		if(!ch || !ch->GetOfflineShop())
 			return false;
 
 #ifdef ENABLE_NEW_OFFLINESHOP_LOGS
-		LogManager::instance().OfflineshopLog((ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null))), 0, "player asked to close shop (remain items count %u) ", ch->GetOfflineShop()->GetItems()->size());
+		LogManager::instance().OfflineshopLog((ecs::PlayerRuntime::GetPlayerID(character)), 0, "player asked to close shop (remain items count %u) ", ch->GetOfflineShop()->GetItems()->size());
 #endif
 
 		ch->SetOfflineShopUseTime();
-		SendShopForceCloseDBPacket((ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null))));
+		SendShopForceCloseDBPacket((ecs::PlayerRuntime::GetPlayerID(character)));
 		return true;
 	}
 
 
-	bool CShopManager::RecvShopRequestListClientPacket(LPCHARACTER ch)
+	bool CShopManager::RecvShopRequestListClientPacket(entt::entity character)
 	{
-		if(!ch || !ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null)))
+		LPCHARACTER ch = ecs::LegacyCharOf(character);
+		if(!ch || !ecs::PlayerRuntime::GetDesc(character))
 			return false;
 
-		SendShopListClientPacket(ch);
+		SendShopListClientPacket(character);
 		return true;
 	}
 
 
-	bool CShopManager::RecvShopOpenClientPacket(LPCHARACTER ch, uint32_t dwOwnerID)
+	bool CShopManager::RecvShopOpenClientPacket(entt::entity character, uint32_t dwOwnerID)
 	{
-		if(!ch || !ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null)))
+		LPCHARACTER ch = ecs::LegacyCharOf(character);
+		if(!ch || !ecs::PlayerRuntime::GetDesc(character))
 			return false;
 
 		CShop* pkShop = GetShopByOwnerID(dwOwnerID);
@@ -2322,10 +2329,10 @@ namespace offlineshop
 			ch->GetOfflineShopGuest()->RemoveGuest(ch);
 
 		//offlineshop-updated 04/08/19
-		if((ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null))) == dwOwnerID)
-			SendShopOpenMyShopClientPacket(ch);
+		if((ecs::PlayerRuntime::GetPlayerID(character)) == dwOwnerID)
+			SendShopOpenMyShopClientPacket(character);
 		else
-			SendShopOpenClientPacket(ch , pkShop);
+			SendShopOpenClientPacket(character, pkShop);
 
 
 		pkShop->AddGuest(ch);
@@ -2334,22 +2341,23 @@ namespace offlineshop
 	}
 
 
-	bool CShopManager::RecvShopOpenMyShopClientPacket(LPCHARACTER ch)
+	bool CShopManager::RecvShopOpenMyShopClientPacket(entt::entity character)
 	{
-		if(!ch || !ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null)))
+		LPCHARACTER ch = ecs::LegacyCharOf(character);
+		if(!ch || !ecs::PlayerRuntime::GetDesc(character))
 			return false;
 
 		ch->SetOfflineShopUseTime();
 
 		if (!ch->GetOfflineShop())
 		{
-			SendShopOpenMyShopNoShopClientPacket(ch);
+			SendShopOpenMyShopNoShopClientPacket(character);
 		}
 
 
 		else
 		{
-			SendShopOpenMyShopClientPacket(ch);
+			SendShopOpenMyShopClientPacket(character);
 			ch->GetOfflineShop()->AddGuest(ch);
 			ch->SetOfflineShopGuest(ch->GetOfflineShop());
 		}
@@ -2358,8 +2366,9 @@ namespace offlineshop
 		return true;
 	}
 
-	bool CShopManager::RecvShopBuyItemClientPacket(LPCHARACTER ch, uint32_t dwOwnerID, uint32_t dwItemID, bool isSearch, int64_t TotalPriceSeen)
+	bool CShopManager::RecvShopBuyItemClientPacket(entt::entity character, uint32_t dwOwnerID, uint32_t dwItemID, bool isSearch, int64_t TotalPriceSeen)
 	{
+		LPCHARACTER ch = ecs::LegacyCharOf(character);
 		OFFSHOP_DEBUG("owner %u , item id %u ", dwOwnerID, dwItemID);
 
 		if(!ch)
@@ -2390,12 +2399,12 @@ namespace offlineshop
 
 		ch->SetOfflineShopUseTime();
 
-		OFFSHOP_DEBUG("sending packet to db (buyer %u , owner %u , item %u )",(ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null))) , dwOwnerID, dwItemID);
+		OFFSHOP_DEBUG("sending packet to db (buyer %u , owner %u , item %u )",(ecs::PlayerRuntime::GetPlayerID(character)) , dwOwnerID, dwItemID);
 
 		if(isSearch)
-			SendShopBuyItemFromSearchClientPacket(ch, dwOwnerID, dwItemID);
+			SendShopBuyItemFromSearchClientPacket(character, dwOwnerID, dwItemID);
 
-		SendShopLockBuyItemDBPacket((ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null))), dwOwnerID, dwItemID, TotalPriceSeen);
+		SendShopLockBuyItemDBPacket((ecs::PlayerRuntime::GetPlayerID(character)), dwOwnerID, dwItemID, TotalPriceSeen);
 		return true;
 	}
 
@@ -2403,8 +2412,9 @@ namespace offlineshop
 
 
 #ifdef ENABLE_NEW_SHOP_IN_CITIES
-	bool CShopManager::RecvShopClickEntity(LPCHARACTER ch, uint32_t dwShopEntityVID)
+	bool CShopManager::RecvShopClickEntity(entt::entity character, uint32_t dwShopEntityVID)
 	{
+		LPCHARACTER ch = ecs::LegacyCharOf(character);
 		for (auto it = m_vecCities.begin(); it != m_vecCities.end(); it++)
 		{
 
@@ -2416,11 +2426,11 @@ namespace offlineshop
 			uint32_t dwPID = iterMap->second->GetShop()->GetOwnerPID();
 
 
-			RecvShopOpenClientPacket(ch, dwPID);
+			RecvShopOpenClientPacket(character, dwPID);
 			return true;
 		}
 
-		LOG_ERROR("cannot found clicked entity , {} vid {} ", ecs::PlayerRuntime::GetName(((ch) ? (ch)->GetEntityHandle() : entt::null)).data(), dwShopEntityVID);
+		LOG_ERROR("cannot found clicked entity , {} vid {} ", ecs::PlayerRuntime::GetName(character).data(), dwShopEntityVID);
 		return false;
 	}
 #endif
@@ -2428,9 +2438,9 @@ namespace offlineshop
 
 
 
-	void CShopManager::SendShopListClientPacket(LPCHARACTER ch)
+	void CShopManager::SendShopListClientPacket(entt::entity character)
 	{
-		if (!ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null)))
+		if (!ecs::PlayerRuntime::GetDesc(character))
 			return;
 
 		TEMP_BUFFER buff;
@@ -2464,13 +2474,13 @@ namespace offlineshop
 			buff.write(&shopInfo, sizeof(shopInfo));
 		}
 
-		ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null))->Packet(buff.read_peek() , buff.size());
+		ecs::PlayerRuntime::GetDesc(character)->Packet(buff.read_peek() , buff.size());
 	}
 
 
-	void CShopManager::SendShopOpenClientPacket(LPCHARACTER ch, CShop* pkShop)
+	void CShopManager::SendShopOpenClientPacket(entt::entity character, CShop* pkShop)
 	{
-		if (!ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null)))
+		if (!ecs::PlayerRuntime::GetDesc(character))
 			return;
 
 		CShop::VECSHOPITEM* pVec = pkShop->GetItems();
@@ -2507,13 +2517,13 @@ namespace offlineshop
 			buff.write(&itemInfo, sizeof(itemInfo));
 		}
 
-		ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null))->Packet(buff.read_peek(), buff.size());
+		ecs::PlayerRuntime::GetDesc(character)->Packet(buff.read_peek(), buff.size());
 	}
 
 
-	void CShopManager::SendShopOpenMyShopNoShopClientPacket(LPCHARACTER ch)
+	void CShopManager::SendShopOpenMyShopNoShopClientPacket(entt::entity character)
 	{
-		if (!ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null)))
+		if (!ecs::PlayerRuntime::GetDesc(character))
 			return;
 
 		TPacketGCNewOfflineshop pack;
@@ -2522,12 +2532,12 @@ namespace offlineshop
 		pack.wSize		= sizeof(pack);
 
 
-		ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null))->Packet(&pack, sizeof(pack));
+		ecs::PlayerRuntime::GetDesc(character)->Packet(&pack, sizeof(pack));
 	}
 
-	void CShopManager::SendShopBuyItemFromSearchClientPacket(LPCHARACTER ch, uint32_t dwOwnerID, uint32_t dwItemID)
+	void CShopManager::SendShopBuyItemFromSearchClientPacket(entt::entity character, uint32_t dwOwnerID, uint32_t dwItemID)
 	{
-		if (!ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null)))
+		if (!ecs::PlayerRuntime::GetDesc(character))
 			return;
 
 		TPacketGCNewOfflineshop pack;
@@ -2543,20 +2553,21 @@ namespace offlineshop
 		buff.write(&pack,		sizeof(pack));
 		buff.write(&subpack,	sizeof(subpack));
 
-		ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null))->Packet(buff.read_peek(), buff.size());
+		ecs::PlayerRuntime::GetDesc(character)->Packet(buff.read_peek(), buff.size());
 	}
 
 
-	void CShopManager::SendShopOpenMyShopClientPacket(LPCHARACTER ch)
+	void CShopManager::SendShopOpenMyShopClientPacket(entt::entity character)
 	{
-		if (!ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null)))
+		LPCHARACTER ch = ecs::LegacyCharOf(character);
+		if (!ecs::PlayerRuntime::GetDesc(character))
 			return;
 
 		if(!ch->GetOfflineShop())
 			return;
 
 		CShop* pkShop	= ch->GetOfflineShop();
-		uint32_t dwOwnerID	= (ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null)));
+		uint32_t dwOwnerID	= (ecs::PlayerRuntime::GetPlayerID(character));
 
 		CShop::VECSHOPITEM*  pVec		= pkShop->GetItems();
 		CShop::VECSHOPITEM*  pVecSold	= pkShop->GetItemsSold();
@@ -2623,7 +2634,7 @@ namespace offlineshop
 		if(!pVecOffer->empty())
 			buff.write(&pVecOffer->at(0), sizeof(TOfferInfo) * pVecOffer->size());
 
-		ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null))->Packet(buff.read_peek(), buff.size());
+		ecs::PlayerRuntime::GetDesc(character)->Packet(buff.read_peek(), buff.size());
 
 
 		for (auto it = pVecOffer->begin(); it != pVecOffer->end(); it++)
@@ -2655,8 +2666,9 @@ namespace offlineshop
 
 
 	//ITEMS
-	bool CShopManager::RecvShopAddItemClientPacket(LPCHARACTER ch, const TItemPos& pos, const TPriceInfo& price)
+	bool CShopManager::RecvShopAddItemClientPacket(entt::entity character, const TItemPos& pos, const TPriceInfo& price)
 	{
+		LPCHARACTER ch = ecs::LegacyCharOf(character);
 		if(!ch || !ch->GetOfflineShop())
 			return false;
 
@@ -2703,7 +2715,7 @@ namespace offlineshop
 		TItemInfo itemInfo;
 		ZeroObject(itemInfo);
 
-		itemInfo.dwOwnerID		= (ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null)));
+		itemInfo.dwOwnerID		= (ecs::PlayerRuntime::GetPlayerID(character));
 		itemInfo.item.dwVnum	= ItemSystem::GetItemVnum((pkItem ? pkItem->GetEntityHandle() : entt::null));
 		itemInfo.item.dwCount	= ItemSystem::GetItemCount((pkItem ? pkItem->GetEntityHandle() : entt::null));
 		//patch 08-03-2020
@@ -2721,7 +2733,7 @@ namespace offlineshop
 		CopyObject(itemInfo.price, price);
 
 #ifdef ENABLE_NEW_OFFLINESHOP_LOGS
-		LogManager::instance().OfflineshopLog((ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null))), 0, "adding new item to the shop vnum %u count %u (original item ID %u) ", itemInfo.item.dwVnum, itemInfo.item.dwCount, ItemSystem::GetItemID((pkItem ? pkItem->GetEntityHandle() : entt::null)));
+		LogManager::instance().OfflineshopLog((ecs::PlayerRuntime::GetPlayerID(character)), 0, "adding new item to the shop vnum %u count %u (original item ID %u) ", itemInfo.item.dwVnum, itemInfo.item.dwCount, ItemSystem::GetItemID((pkItem ? pkItem->GetEntityHandle() : entt::null)));
 #endif
 
 		LPITEM removed = pkItem->RemoveFromCharacter();
@@ -2729,13 +2741,14 @@ namespace offlineshop
 		(removed ? removed->GetEntityHandle() : entt::null),
 		"OFFLINESHOP_SELL");
 
-		SendShopAddItemDBPacket((ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null))), itemInfo);
+		SendShopAddItemDBPacket((ecs::PlayerRuntime::GetPlayerID(character)), itemInfo);
 		return true;
 	}
 
 
-	bool CShopManager::RecvShopRemoveItemClientPacket(LPCHARACTER ch, uint32_t dwItemID)
+	bool CShopManager::RecvShopRemoveItemClientPacket(entt::entity character, uint32_t dwItemID)
 	{
+		LPCHARACTER ch = ecs::LegacyCharOf(character);
 		if(!ch || !ch->GetOfflineShop())
 			return false;
 
@@ -2745,7 +2758,7 @@ namespace offlineshop
 		CShop* pkShop		= ch->GetOfflineShop();
 		CShopItem* pItem = nullptr;
 
-		OFFSHOP_DEBUG("owner %u , item id %u ",(ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null))) , dwItemID);
+		OFFSHOP_DEBUG("owner %u , item id %u ",(ecs::PlayerRuntime::GetPlayerID(character)) , dwItemID);
 
 		if (pkShop->GetItems()->size() == 1)
 		{
@@ -2783,17 +2796,18 @@ namespace offlineshop
 
 
 	//FILTER
-	bool CShopManager::RecvShopFilterRequestClientPacket(LPCHARACTER ch, const TFilterInfo& filter)
+	bool CShopManager::RecvShopFilterRequestClientPacket(entt::entity character, const TFilterInfo& filter)
 	{
+		LPCHARACTER ch = ecs::LegacyCharOf(character);
 		if(!ch)
 			return false;
 
 		//offlineshop-updated 03/08/2019
 		std::vector<TItemInfo> vec;
 
-		if (!CheckSearchTime((ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null)))))
+		if (!CheckSearchTime((ecs::PlayerRuntime::GetPlayerID(character))))
 		{
-			SendShopFilterResultClientPacket(ch, vec);
+			SendShopFilterResultClientPacket(character, vec);
 			SendChatPacket(ch,CHAT_PACKET_CANNOT_SEARCH_YET);
 			return true;
 		}
@@ -2810,7 +2824,7 @@ namespace offlineshop
 			const CShop& rcShop = cit->second;
 
 			//offlineshop-updated 04/08/19
-			if(rcShop.GetOwnerPID() == (ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null))))
+			if(rcShop.GetOwnerPID() == (ecs::PlayerRuntime::GetPlayerID(character)))
 				continue;
 
 
@@ -2875,7 +2889,7 @@ namespace offlineshop
 
 
 #ifdef ENABLE_MULTI_NAMES
-				if(strnlen(filter.szName, sizeof(filter.szName)) != 0 && !MatchItemName(stName , pTable->szLocaleName[ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null))->GetLanguage()] , strnlen(pTable->szLocaleName[ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null))->GetLanguage()], ITEM_NAME_MAX_LEN)))
+				if(strnlen(filter.szName, sizeof(filter.szName)) != 0 && !MatchItemName(stName , pTable->szLocaleName[ecs::PlayerRuntime::GetDesc(character)->GetLanguage()] , strnlen(pTable->szLocaleName[ecs::PlayerRuntime::GetDesc(character)->GetLanguage()], ITEM_NAME_MAX_LEN)))
 #else
 				if(strnlen(filter.szName, sizeof(filter.szName)) != 0 && !MatchItemName(stName , pTable->szLocaleName , strnlen(pTable->szLocaleName, ITEM_NAME_MAX_LEN)))
 #endif
@@ -2907,14 +2921,15 @@ namespace offlineshop
 		}
 
 
-		SendShopFilterResultClientPacket(ch, vec);
+		SendShopFilterResultClientPacket(character, vec);
 		return true;
 	}
 
 
-	void CShopManager::SendShopFilterResultClientPacket(LPCHARACTER ch, const std::vector<TItemInfo>& items)
+	void CShopManager::SendShopFilterResultClientPacket(entt::entity character, const std::vector<TItemInfo>& items)
 	{
-		if(!ch || !ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null)))
+		LPCHARACTER ch = ecs::LegacyCharOf(character);
+		if(!ch || !ecs::PlayerRuntime::GetDesc(character))
 			return;
 
 		TEMP_BUFFER buff;
@@ -2936,15 +2951,16 @@ namespace offlineshop
 		}
 
 
-		ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null))->Packet(buff.read_peek(), buff.size());
+		ecs::PlayerRuntime::GetDesc(character)->Packet(buff.read_peek(), buff.size());
 	}
 
 
 
 
 	//OFFERS
-	bool CShopManager::RecvShopCreateOfferClientPacket(LPCHARACTER ch, TOfferInfo& offer)
+	bool CShopManager::RecvShopCreateOfferClientPacket(entt::entity character, TOfferInfo& offer)
 	{
+		LPCHARACTER ch = ecs::LegacyCharOf(character);
 		if(!ch)
 			return false;
 
@@ -2952,7 +2968,7 @@ namespace offlineshop
 			return false;
 
 		//offlineshop-updated 03/08/19
-		if((ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null))) == offer.dwOwnerID)
+		if((ecs::PlayerRuntime::GetPlayerID(character)) == offer.dwOwnerID)
 			return false;
 
 		//offlineshop-updated 04/08/19
@@ -2961,7 +2977,7 @@ namespace offlineshop
 			return false;
 
 		// fix flooding offers
-		if (!CheckOfferCooldown((ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null)))))
+		if (!CheckOfferCooldown((ecs::PlayerRuntime::GetPlayerID(character))))
 			return false;
 
 		CShopItem* item = nullptr;
@@ -2979,7 +2995,7 @@ namespace offlineshop
 			return false;
 #endif
 
-		if(ecs::PointSystem::GetGold(((ch) ? (ch)->GetEntityHandle() : entt::null)) < offer.price.illYang)
+		if(ecs::PointSystem::GetGold(character) < offer.price.illYang)
 			return false;
 
 #ifdef __ENABLE_CHEQUE_SYSTEM__
@@ -2989,9 +3005,9 @@ namespace offlineshop
 
 		ch->SetOfflineShopUseTime();
 
-		ecs::PointSystem::Change(((ch) ? (ch)->GetEntityHandle() : entt::null), POINT_GOLD, -offer.price.illYang);
+		ecs::PointSystem::Change(character, POINT_GOLD, -offer.price.illYang);
 #ifdef __ENABLE_CHEQUE_SYSTEM__
-		ecs::PointSystem::Change(((ch) ? (ch)->GetEntityHandle() : entt::null), POINT_CHEQUE, -offer.price.iCheque);
+		ecs::PointSystem::Change(character, POINT_CHEQUE, -offer.price.iCheque);
 
 		// converting won to yang
 		offer.price.illYang = offer.price.GetTotalYangAmount();
@@ -3000,18 +3016,19 @@ namespace offlineshop
 
 		offer.bAccepted		= false;
 		offer.bNoticed		= false;
-		offer.dwOffererID	= (ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null)));
+		offer.dwOffererID	= (ecs::PlayerRuntime::GetPlayerID(character));
 
 		//offlineshop-updated 03/08/19
-		strncpy(offer.szBuyerName, ecs::PlayerRuntime::GetName(((ch) ? (ch)->GetEntityHandle() : entt::null)).data(), sizeof(offer.szBuyerName));
+		strncpy(offer.szBuyerName, ecs::PlayerRuntime::GetName(character).data(), sizeof(offer.szBuyerName));
 
 		SendShopOfferNewDBPacket(offer);
 		return true;
 	}
 
 
-	bool CShopManager::RecvShopEditOfferClientPacket(LPCHARACTER ch, const TOfferInfo& offer)
+	bool CShopManager::RecvShopEditOfferClientPacket(entt::entity character, const TOfferInfo& offer)
 	{
+		LPCHARACTER ch = ecs::LegacyCharOf(character);
 		if(!ch)
 			return false;
 
@@ -3023,8 +3040,9 @@ namespace offlineshop
 	}
 
 
-	bool CShopManager::RecvShopAcceptOfferClientPacket(LPCHARACTER ch, uint32_t dwOfferID)
+	bool CShopManager::RecvShopAcceptOfferClientPacket(entt::entity character, uint32_t dwOfferID)
 	{
+		LPCHARACTER ch = ecs::LegacyCharOf(character);
 		if(!ch || !ch->GetOfflineShop())
 			return false;
 
@@ -3050,7 +3068,7 @@ namespace offlineshop
 			return false;
 
 
-		if((ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null))) != info->dwOwnerID)
+		if((ecs::PlayerRuntime::GetPlayerID(character)) != info->dwOwnerID)
 			return false;
 
 
@@ -3066,8 +3084,9 @@ namespace offlineshop
 
 
 
-	bool CShopManager::RecvShopCancelOfferClientPacket(LPCHARACTER ch, uint32_t dwOfferID, uint32_t dwOwnerID)
+	bool CShopManager::RecvShopCancelOfferClientPacket(entt::entity character, uint32_t dwOfferID, uint32_t dwOwnerID)
 	{
+		LPCHARACTER ch = ecs::LegacyCharOf(character);
 		if(!ch)
 			return false;
 
@@ -3102,7 +3121,7 @@ namespace offlineshop
 			return false;
 
 
-		if((ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null))) != pkShop->GetOwnerPID() && (ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null))) != info->dwOffererID)
+		if((ecs::PlayerRuntime::GetPlayerID(character)) != pkShop->GetOwnerPID() && (ecs::PlayerRuntime::GetPlayerID(character)) != info->dwOffererID)
 			return false;
 
 		ch->SetOfflineShopUseTime();
@@ -3113,9 +3132,10 @@ namespace offlineshop
 	}
 
 
-	bool CShopManager::RecvOfferListRequestPacket(LPCHARACTER ch) //offlineshop-updated 03/08/19
+	bool CShopManager::RecvOfferListRequestPacket(entt::entity character) //offlineshop-updated 03/08/19
 	{
-		if (!ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null)))
+		LPCHARACTER ch = ecs::LegacyCharOf(character);
+		if (!ecs::PlayerRuntime::GetDesc(character))
 			return false;
 
 		TPacketGCNewOfflineshop pack;
@@ -3130,15 +3150,15 @@ namespace offlineshop
 
 
 
-		OFFERSMAP::iterator it = m_mapOffer.find((ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null))));
+		OFFERSMAP::iterator it = m_mapOffer.find((ecs::PlayerRuntime::GetPlayerID(character)));
 		if (it == m_mapOffer.end() || it->second.empty())
 		{
 			buff.write(&pack, sizeof(pack));
 			buff.write(&subpack, sizeof(subpack));
 
-			OFFSHOP_DEBUG("return because not found or empty vec : found > %s  (id %u) ",it!=m_mapOffer.end()?"TRUE":"FALSE" , (ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null))));
+			OFFSHOP_DEBUG("return because not found or empty vec : found > %s  (id %u) ",it!=m_mapOffer.end()?"TRUE":"FALSE" , (ecs::PlayerRuntime::GetPlayerID(character)));
 
-			ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null))->Packet(buff.read_peek() , buff.size());
+			ecs::PlayerRuntime::GetDesc(character)->Packet(buff.read_peek() , buff.size());
 			return true;
 		}
 
@@ -3151,7 +3171,7 @@ namespace offlineshop
 		extrainfo.resize(vec.size());
 		subpack.dwOfferCount = vec.size();
 
-		OFFSHOP_DEBUG("found %u in map, size %u ",(ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null))), vec.size());
+		OFFSHOP_DEBUG("found %u in map, size %u ",(ecs::PlayerRuntime::GetPlayerID(character)), vec.size());
 
 		for (uint32_t i = 0; i < vec.size(); i++)
 		{
@@ -3189,7 +3209,7 @@ namespace offlineshop
 
 		//offlineshop-updated 05/08/19
 		ch->SetLookingOfflineshopOfferList(true);
-		ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null))->Packet(buff.read_peek(), buff.size());
+		ecs::PlayerRuntime::GetDesc(character)->Packet(buff.read_peek(), buff.size());
 		return true;
 	}
 
@@ -3197,12 +3217,13 @@ namespace offlineshop
 
 
 	//SAFEBOX
-	bool CShopManager::RecvShopSafeboxOpenClientPacket(LPCHARACTER ch)
+	bool CShopManager::RecvShopSafeboxOpenClientPacket(entt::entity character)
 	{
+		LPCHARACTER ch = ecs::LegacyCharOf(character);
 		if(!ch || ch->GetShopSafebox())
 			return false;
 
-		CShopSafebox* pkSafebox = GetShopSafeboxByOwnerID((ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null))));
+		CShopSafebox* pkSafebox = GetShopSafeboxByOwnerID((ecs::PlayerRuntime::GetPlayerID(character)));
 		if(!pkSafebox)
 			return false;
 
@@ -3215,8 +3236,9 @@ namespace offlineshop
 
 
 
-	bool CShopManager::RecvShopSafeboxGetItemClientPacket(LPCHARACTER ch, uint32_t dwItemID)
+	bool CShopManager::RecvShopSafeboxGetItemClientPacket(entt::entity character, uint32_t dwItemID)
 	{
+		LPCHARACTER ch = ecs::LegacyCharOf(character);
 		if(!ch || !ch->GetShopSafebox())
 			return false;
 
@@ -3248,13 +3270,14 @@ namespace offlineshop
 			pkItem->AddToCharacter(ch, itemPos);
 		}
 
-		SendShopSafeboxGetItemDBPacket((ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null))), dwItemID);
+		SendShopSafeboxGetItemDBPacket((ecs::PlayerRuntime::GetPlayerID(character)), dwItemID);
 		return true;
 	}
 
 
-	bool CShopManager::RecvShopSafeboxGetValutesClientPacket(LPCHARACTER ch, const TValutesInfo& valutes)
+	bool CShopManager::RecvShopSafeboxGetValutesClientPacket(entt::entity character, const TValutesInfo& valutes)
 	{
+		LPCHARACTER ch = ecs::LegacyCharOf(character);
 		if(!ch ||!ch->GetShopSafebox())
 			return false;
 
@@ -3266,7 +3289,7 @@ namespace offlineshop
 #endif
 
 #if !defined(ENABLE_FULL_YANG) && !defined(FULL_YANG)
-		if(ecs::PointSystem::GetGold(((ch) ? (ch)->GetEntityHandle() : entt::null)) + valutes.illYang > GOLD_MAX)
+		if(ecs::PointSystem::GetGold(character) + valutes.illYang > GOLD_MAX)
 			return false;
 #endif
 #ifdef __ENABLE_CHEQUE_SYSTEM__
@@ -3282,20 +3305,21 @@ namespace offlineshop
 
 		ch->SetOfflineShopUseTime();
 
-		ecs::PointSystem::Change(((ch) ? (ch)->GetEntityHandle() : entt::null), POINT_GOLD, valutes.illYang);
+		ecs::PointSystem::Change(character, POINT_GOLD, valutes.illYang);
 #ifdef __ENABLE_CHEQUE_SYSTEM__
-		ecs::PointSystem::Change(((ch) ? (ch)->GetEntityHandle() : entt::null), POINT_CHEQUE, valutes.iCheque);
+		ecs::PointSystem::Change(character, POINT_CHEQUE, valutes.iCheque);
 #endif
 
 		pkSafebox->RefreshToOwner();
-		SendShopSafeboxGetValutesDBPacket((ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null))), valutes);
+		SendShopSafeboxGetValutesDBPacket((ecs::PlayerRuntime::GetPlayerID(character)), valutes);
 		return true;
 	}
 
 
 
-	bool CShopManager::RecvShopSafeboxCloseClientPacket(LPCHARACTER ch)
+	bool CShopManager::RecvShopSafeboxCloseClientPacket(entt::entity character)
 	{
+		LPCHARACTER ch = ecs::LegacyCharOf(character);
 		if(!ch || !ch->GetShopSafebox())
 			return false;
 
@@ -3306,9 +3330,10 @@ namespace offlineshop
 
 
 
-	void CShopManager::SendShopSafeboxRefresh(LPCHARACTER ch, const TValutesInfo& valute, const std::vector<CShopItem>& vec)
+	void CShopManager::SendShopSafeboxRefresh(entt::entity character, const TValutesInfo& valute, const std::vector<CShopItem>& vec)
 	{
-		if (!ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null)))
+		LPCHARACTER ch = ecs::LegacyCharOf(character);
+		if (!ecs::PlayerRuntime::GetDesc(character))
 			return;
 
 		if(!ch || !ch->GetShopSafebox())
@@ -3345,13 +3370,14 @@ namespace offlineshop
 			buff.write(&item,		sizeof(item));
 		}
 
-		ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null))->Packet(buff.read_peek() , buff.size());
+		ecs::PlayerRuntime::GetDesc(character)->Packet(buff.read_peek() , buff.size());
 	}
 
 
 
-	bool CShopManager::RecvAuctionListRequestClientPacket(LPCHARACTER ch, bool owner)
+	bool CShopManager::RecvAuctionListRequestClientPacket(entt::entity character, bool owner)
 	{
+		LPCHARACTER ch = ecs::LegacyCharOf(character);
 		if(!ch)
 			return false;
 
@@ -3370,14 +3396,15 @@ namespace offlineshop
 			vec.push_back(temp);
 		}
 
-		SendAuctionListClientPacket(ch, vec, owner);
+		SendAuctionListClientPacket(character, vec, owner);
 		return true;
 	}
 
 
 
-	bool CShopManager::RecvAuctionOpenRequestClientPacket(LPCHARACTER ch, uint32_t dwOwnerID)
+	bool CShopManager::RecvAuctionOpenRequestClientPacket(entt::entity character, uint32_t dwOwnerID)
 	{
+		LPCHARACTER ch = ecs::LegacyCharOf(character);
 		auto it = m_mapAuctions.find(dwOwnerID);
 		if(it == m_mapAuctions.end())
 			return false;
@@ -3391,18 +3418,19 @@ namespace offlineshop
 
 
 
-	bool CShopManager::RecvMyAuctionOpenRequestClientPacket(LPCHARACTER ch)
+	bool CShopManager::RecvMyAuctionOpenRequestClientPacket(entt::entity character)
 	{
-		OFFSHOP_DEBUG("pid %u , exist %s ",(ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null))), m_mapAuctions.find((ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null)))) != m_mapAuctions.end() ? "TRUE" : "FALSE" );
+		LPCHARACTER ch = ecs::LegacyCharOf(character);
+		OFFSHOP_DEBUG("pid %u , exist %s ",(ecs::PlayerRuntime::GetPlayerID(character)), m_mapAuctions.find((ecs::PlayerRuntime::GetPlayerID(character))) != m_mapAuctions.end() ? "TRUE" : "FALSE" );
 
 		ch->SetOfflineShopUseTime();
 
 		if (!ch->GetAuction())
 		{
-			auto it = m_mapAuctions.find((ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null))));
+			auto it = m_mapAuctions.find((ecs::PlayerRuntime::GetPlayerID(character)));
 
 			if (it == m_mapAuctions.end())
-				SendAuctionOpenMyAuctionNoAuctionClientPacket(ch);
+				SendAuctionOpenMyAuctionNoAuctionClientPacket(character);
 
 			else
 			{
@@ -3424,8 +3452,9 @@ namespace offlineshop
 
 
 
-	bool CShopManager::RecvAuctionCreateClientPacket(LPCHARACTER ch, uint32_t dwDuration, const TPriceInfo& init_price, const TItemPos& pos)
+	bool CShopManager::RecvAuctionCreateClientPacket(entt::entity character, uint32_t dwDuration, const TPriceInfo& init_price, const TItemPos& pos)
 	{
+		LPCHARACTER ch = ecs::LegacyCharOf(character);
 		//checking about duplicate item :D
 		if(!ch || ch->GetAuction())
 			return false;
@@ -3440,7 +3469,7 @@ namespace offlineshop
 		}
 
 
-		OFFSHOP_DEBUG("owner %u , duration %u ",(ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null))), dwDuration);
+		OFFSHOP_DEBUG("owner %u , duration %u ",(ecs::PlayerRuntime::GetPlayerID(character)), dwDuration);
 
 		//checking about hacking duration
 		dwDuration = MIN(OFFLINESHOP_DURATION_MAX_MINUTES, dwDuration);
@@ -3474,8 +3503,8 @@ namespace offlineshop
 		//making info
 		TAuctionInfo auction;
 		auction.dwDuration = dwDuration;
-		auction.dwOwnerID  = (ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null)));
-		strncpy(auction.szOwnerName, ecs::PlayerRuntime::GetName(((ch) ? (ch)->GetEntityHandle() : entt::null)).data(), sizeof(auction.szOwnerName));
+		auction.dwOwnerID  = (ecs::PlayerRuntime::GetPlayerID(character));
+		strncpy(auction.szOwnerName, ecs::PlayerRuntime::GetName(character).data(), sizeof(auction.szOwnerName));
 		CopyObject(auction.init_price, init_price);
 
 
@@ -3507,8 +3536,9 @@ namespace offlineshop
 
 
 
-	bool CShopManager::RecvAuctionAddOfferClientPacket(LPCHARACTER ch, uint32_t dwOwnerID, const TPriceInfo& price)
+	bool CShopManager::RecvAuctionAddOfferClientPacket(entt::entity character, uint32_t dwOwnerID, const TPriceInfo& price)
 	{
+		LPCHARACTER ch = ecs::LegacyCharOf(character);
 		//checking about guesting
 		if(!ch || !ch->GetAuctionGuest() || ch->GetAuctionGuest()->GetInfo().dwOwnerID != dwOwnerID)
 			return false;
@@ -3517,11 +3547,11 @@ namespace offlineshop
 			return false;
 
 		//check anti auto-offer
-		if((ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null))) == dwOwnerID)
+		if((ecs::PlayerRuntime::GetPlayerID(character)) == dwOwnerID)
 			return false;
 
 		//check about enough money
-		if(ecs::PointSystem::GetGold(((ch) ? (ch)->GetEntityHandle() : entt::null)) < price.illYang)
+		if(ecs::PointSystem::GetGold(character) < price.illYang)
 			return false;
 
 #ifdef __ENABLE_CHEQUE_SYSTEM__
@@ -3536,14 +3566,14 @@ namespace offlineshop
 		}
 #endif
 
-		if (!CheckLastOfferTime((ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null))))) {
+		if (!CheckLastOfferTime((ecs::PlayerRuntime::GetPlayerID(character)))) {
 			SendChatPacket(ch, CHAT_PACKET_CANNOT_DO_NOW);
 			return false;
 		}
 
 		//checking about raise from best buyer
 		CAuction* pAuction = ch->GetAuctionGuest();
-		if(pAuction->GetBestBuyer() == (ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null))))
+		if(pAuction->GetBestBuyer() == (ecs::PlayerRuntime::GetPlayerID(character)))
 			return false;
 
 		OFFSHOP_DEBUG("pAuction->GetBestBuyer() = %u ",pAuction->GetBestBuyer());
@@ -3564,13 +3594,13 @@ namespace offlineshop
 
 		ch->SetOfflineShopUseTime();
 
-		ecs::PointSystem::Change(((ch) ? (ch)->GetEntityHandle() : entt::null), POINT_GOLD,-price.illYang);
+		ecs::PointSystem::Change(character, POINT_GOLD,-price.illYang);
 #ifdef __ENABLE_CHEQUE_SYSTEM__
-		ecs::PointSystem::Change(((ch) ? (ch)->GetEntityHandle() : entt::null), POINT_CHEQUE, -price.iCheque);
+		ecs::PointSystem::Change(character, POINT_CHEQUE, -price.iCheque);
 #endif
 
 		TAuctionOfferInfo offer;
-		offer.dwBuyerID	= (ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null)));
+		offer.dwBuyerID	= (ecs::PlayerRuntime::GetPlayerID(character));
 		offer.dwOwnerID	= dwOwnerID;
 		CopyObject(offer.price	, price);
 #ifdef __ENABLE_CHEQUE_SYSTEM__
@@ -3579,7 +3609,7 @@ namespace offlineshop
 		offer.price.iCheque=0;
 #endif
 
-		strncpy(offer.szBuyerName, ecs::PlayerRuntime::GetName(((ch) ? (ch)->GetEntityHandle() : entt::null)).data(), sizeof(offer.szBuyerName));
+		strncpy(offer.szBuyerName, ecs::PlayerRuntime::GetName(character).data(), sizeof(offer.szBuyerName));
 
 
 		SendAuctionAddOfferDBPacket(offer);
@@ -3588,9 +3618,10 @@ namespace offlineshop
 
 
 
-	bool CShopManager::RecvAuctionExitFromAuction(LPCHARACTER ch, uint32_t dwOwnerID)
+	bool CShopManager::RecvAuctionExitFromAuction(entt::entity character, uint32_t dwOwnerID)
 	{
-		auto it = m_mapAuctions.find((ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null))));
+		LPCHARACTER ch = ecs::LegacyCharOf(character);
+		auto it = m_mapAuctions.find((ecs::PlayerRuntime::GetPlayerID(character)));
 		if(it == m_mapAuctions.end())
 			return false;
 
@@ -3603,9 +3634,9 @@ namespace offlineshop
 
 
 
-	void CShopManager::SendAuctionListClientPacket(LPCHARACTER ch, const std::vector<TAuctionListElement>& auctionVec, bool owner)
+	void CShopManager::SendAuctionListClientPacket(entt::entity character, const std::vector<TAuctionListElement>& auctionVec, bool owner)
 	{
-		if (!ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null)))
+		if (!ecs::PlayerRuntime::GetDesc(character))
 			return;
 
 		TPacketGCNewOfflineshop pack;
@@ -3624,20 +3655,20 @@ namespace offlineshop
 		if(!auctionVec.empty())
 			buff.write(&auctionVec[0], sizeof(auctionVec[0]) * auctionVec.size());
 
-		ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null))->Packet(buff.read_peek(), buff.size());
+		ecs::PlayerRuntime::GetDesc(character)->Packet(buff.read_peek(), buff.size());
 	}
 
 
 
 
-	void CShopManager::SendAuctionOpenAuctionClientPacket(LPCHARACTER ch, const TAuctionInfo& auction, const std::vector<TAuctionOfferInfo>& vec)
+	void CShopManager::SendAuctionOpenAuctionClientPacket(entt::entity character, const TAuctionInfo& auction, const std::vector<TAuctionOfferInfo>& vec)
 	{
-		if (!ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null)))
+		if (!ecs::PlayerRuntime::GetDesc(character))
 			return;
 
 		TPacketGCNewOfflineshop pack;
 		pack.bHeader	= HEADER_GC_NEW_OFFLINESHOP;
-		pack.bSubHeader	= (ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null)))!=auction.dwOwnerID ? SUBHEADER_GC_OPEN_AUCTION: SUBHEADER_GC_OPEN_MY_AUCTION;
+		pack.bSubHeader	= (ecs::PlayerRuntime::GetPlayerID(character))!=auction.dwOwnerID ? SUBHEADER_GC_OPEN_AUCTION: SUBHEADER_GC_OPEN_MY_AUCTION;
 		pack.wSize		= sizeof(pack)+ sizeof(TSubPacketGCAuctionOpen) + (sizeof(TAuctionOfferInfo) * vec.size());
 
 		TSubPacketGCAuctionOpen subpack;
@@ -3652,14 +3683,14 @@ namespace offlineshop
 		if(!vec.empty())
 			buff.write(&vec[0], sizeof(vec[0]) * vec.size());
 
-		ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null))->Packet(buff.read_peek(), buff.size());
+		ecs::PlayerRuntime::GetDesc(character)->Packet(buff.read_peek(), buff.size());
 	}
 
 
 
-	void CShopManager::SendAuctionOpenMyAuctionNoAuctionClientPacket(LPCHARACTER ch)
+	void CShopManager::SendAuctionOpenMyAuctionNoAuctionClientPacket(entt::entity character)
 	{
-		if (!ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null)))
+		if (!ecs::PlayerRuntime::GetDesc(character))
 			return;
 
 		TPacketGCNewOfflineshop pack;
@@ -3667,15 +3698,16 @@ namespace offlineshop
 		pack.bSubHeader	= SUBHEADER_GC_OPEN_MY_AUCTION_NO_AUCTION;
 		pack.wSize		= sizeof(pack);
 
-		ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null))->Packet(&pack, sizeof(pack));
+		ecs::PlayerRuntime::GetDesc(character)->Packet(&pack, sizeof(pack));
 	}
 
 
 
 
-	void CShopManager::RecvCloseBoardClientPacket(LPCHARACTER ch)
+	void CShopManager::RecvCloseBoardClientPacket(entt::entity character)
 	{
-		if(!ch || !ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null)))
+		LPCHARACTER ch = ecs::LegacyCharOf(character);
+		if(!ch || !ecs::PlayerRuntime::GetDesc(character))
 			return;
 
 		//auction
@@ -3705,9 +3737,10 @@ namespace offlineshop
 		ch->SetLookingOfflineshopOfferList(false);
 	}
 
-	void CShopManager::RecvCloseMyAuction(LPCHARACTER ch)
+	void CShopManager::RecvCloseMyAuction(entt::entity character)
 	{
-		if(!ch || !ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null)))
+		LPCHARACTER ch = ecs::LegacyCharOf(character);
+		if(!ch || !ecs::PlayerRuntime::GetDesc(character))
 			return;
 
 		if (ch->GetAuction())
@@ -3716,7 +3749,7 @@ namespace offlineshop
 			pack.bSubHeader = SUBHEADER_GD_AUCTION_CLOSE;
 
 			TSubPacketGDAuctionClose subpack;
-			CopyObject(subpack.dwOwnerID , (ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null))));
+			CopyObject(subpack.dwOwnerID , (ecs::PlayerRuntime::GetPlayerID(character)));
 
 			TEMP_BUFFER buff;
 			buff.write(&pack, sizeof(pack));

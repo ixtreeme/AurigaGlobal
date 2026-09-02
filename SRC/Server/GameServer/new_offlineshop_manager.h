@@ -74,7 +74,7 @@ namespace offlineshop
 		bool					PutsNewOffer(const TOfferInfo* pInfo);
 
 		void					RemoveSafeboxFromCache(uint32_t dwOwnerID);
-		void					RemoveGuestFromShops(LPCHARACTER ch);
+		void					RemoveGuestFromShops(entt::entity character);
 
 
 
@@ -83,8 +83,8 @@ namespace offlineshop
 		void		CreateNewShopEntities(offlineshop::CShop& rShop);
 		void		DestroyNewShopEntities(const offlineshop::CShop& rShop);
 
-		void		EncodeInsertShopEntity(ShopEntity& shop, LPCHARACTER ch);
-		void		EncodeRemoveShopEntity(ShopEntity& shop, LPCHARACTER ch);
+		void		EncodeInsertShopEntity(ShopEntity& shop, entt::entity character);
+		void		EncodeRemoveShopEntity(ShopEntity& shop, entt::entity character);
 
 	private:
 		bool		__CanUseCity(size_t index);
@@ -163,68 +163,68 @@ namespace offlineshop
 
 //packets echanging clients
 //SHOPS
-/*cli.*/bool		RecvShopCreateNewClientPacket(LPCHARACTER ch, TShopInfo& rShopInfo, std::vector<TShopItemInfo> & vec);
-/*cli.*/bool		RecvShopChangeNameClientPacket(LPCHARACTER ch, const char* szName);
-/*cli.*/bool		RecvShopForceCloseClientPacket(LPCHARACTER ch);
-/*cli.*/bool		RecvShopRequestListClientPacket(LPCHARACTER ch);
-/*cli.*/bool		RecvShopOpenClientPacket(LPCHARACTER ch, uint32_t dwOwnerID);
-/*cli.*/bool		RecvShopOpenMyShopClientPacket(LPCHARACTER ch);
-/*cli.*/bool		RecvShopBuyItemClientPacket(LPCHARACTER ch, uint32_t dwOwnerID, uint32_t dwItemID, bool isSearch, int64_t TotalPriceSeen);
+/*cli.*/bool		RecvShopCreateNewClientPacket(entt::entity character, TShopInfo& rShopInfo, std::vector<TShopItemInfo> & vec);
+/*cli.*/bool		RecvShopChangeNameClientPacket(entt::entity character, const char* szName);
+/*cli.*/bool		RecvShopForceCloseClientPacket(entt::entity character);
+/*cli.*/bool		RecvShopRequestListClientPacket(entt::entity character);
+/*cli.*/bool		RecvShopOpenClientPacket(entt::entity character, uint32_t dwOwnerID);
+/*cli.*/bool		RecvShopOpenMyShopClientPacket(entt::entity character);
+/*cli.*/bool		RecvShopBuyItemClientPacket(entt::entity character, uint32_t dwOwnerID, uint32_t dwItemID, bool isSearch, int64_t TotalPriceSeen);
 #ifdef ENABLE_NEW_SHOP_IN_CITIES
-/*cli.*/bool		RecvShopClickEntity(LPCHARACTER ch, uint32_t dwShopEntityVID);
+/*cli.*/bool		RecvShopClickEntity(entt::entity character, uint32_t dwShopEntityVID);
 #endif
 
-/*cli.*/void		SendShopListClientPacket(LPCHARACTER ch);
-/*cli.*/void		SendShopOpenClientPacket(LPCHARACTER ch, CShop* pkShop);
-/*cli.*/void		SendShopOpenMyShopClientPacket(LPCHARACTER ch);
-/*cli.*/void		SendShopOpenMyShopNoShopClientPacket(LPCHARACTER ch);
-/*cli.*/void		SendShopBuyItemFromSearchClientPacket(LPCHARACTER ch, uint32_t dwOwnerID, uint32_t dwItemID);
+/*cli.*/void		SendShopListClientPacket(entt::entity character);
+/*cli.*/void		SendShopOpenClientPacket(entt::entity character, CShop* pkShop);
+/*cli.*/void		SendShopOpenMyShopClientPacket(entt::entity character);
+/*cli.*/void		SendShopOpenMyShopNoShopClientPacket(entt::entity character);
+/*cli.*/void		SendShopBuyItemFromSearchClientPacket(entt::entity character, uint32_t dwOwnerID, uint32_t dwItemID);
 		
 /*cli.*/void		SendShopForceClosedClientPacket(uint32_t dwOwnerID);
 
 
 		//ITEMS
-/*cli.*/bool		RecvShopAddItemClientPacket(LPCHARACTER ch, const TItemPos& item, const TPriceInfo& price);
-/*cli.*/bool		RecvShopRemoveItemClientPacket(LPCHARACTER ch, uint32_t dwItemID);
-/*cli.*/bool		RecvShopEditItemClientPacket(LPCHARACTER ch, uint32_t dwItemID, const TPriceInfo& price);
+/*cli.*/bool		RecvShopAddItemClientPacket(entt::entity character, const TItemPos& item, const TPriceInfo& price);
+/*cli.*/bool		RecvShopRemoveItemClientPacket(entt::entity character, uint32_t dwItemID);
+/*cli.*/bool		RecvShopEditItemClientPacket(entt::entity character, uint32_t dwItemID, const TPriceInfo& price);
 
 		//FILTER
-/*cli.*/bool		RecvShopFilterRequestClientPacket(LPCHARACTER ch, const TFilterInfo& filter);
-/*cli.*/void		SendShopFilterResultClientPacket(LPCHARACTER ch, const std::vector<TItemInfo>& items);
+/*cli.*/bool		RecvShopFilterRequestClientPacket(entt::entity character, const TFilterInfo& filter);
+/*cli.*/void		SendShopFilterResultClientPacket(entt::entity character, const std::vector<TItemInfo>& items);
 
 
 		//OFFERS
-/*cli.*/bool		RecvShopCreateOfferClientPacket(LPCHARACTER ch, TOfferInfo& offer);
-/*cli.*/bool		RecvShopEditOfferClientPacket(LPCHARACTER ch, const TOfferInfo& offer);/*unused*/
-/*cli.*/bool		RecvShopAcceptOfferClientPacket(LPCHARACTER ch, uint32_t dwOfferID);
-/*cli.*/bool		RecvShopCancelOfferClientPacket(LPCHARACTER ch, uint32_t dwOfferID, uint32_t dwOwnerID);
-/*cli.*/bool		RecvOfferListRequestPacket(LPCHARACTER ch);
+/*cli.*/bool		RecvShopCreateOfferClientPacket(entt::entity character, TOfferInfo& offer);
+/*cli.*/bool		RecvShopEditOfferClientPacket(entt::entity character, const TOfferInfo& offer);/*unused*/
+/*cli.*/bool		RecvShopAcceptOfferClientPacket(entt::entity character, uint32_t dwOfferID);
+/*cli.*/bool		RecvShopCancelOfferClientPacket(entt::entity character, uint32_t dwOfferID, uint32_t dwOwnerID);
+/*cli.*/bool		RecvOfferListRequestPacket(entt::entity character);
 
 		
 		//SAFEBOX
-/*cli.*/bool		RecvShopSafeboxOpenClientPacket(LPCHARACTER ch);
-/*cli.*/bool		RecvShopSafeboxGetItemClientPacket(LPCHARACTER ch, uint32_t dwItemID);
-/*cli.*/bool		RecvShopSafeboxGetValutesClientPacket(LPCHARACTER ch, const TValutesInfo& valutes);
-/*cli.*/bool		RecvShopSafeboxCloseClientPacket(LPCHARACTER ch);
+/*cli.*/bool		RecvShopSafeboxOpenClientPacket(entt::entity character);
+/*cli.*/bool		RecvShopSafeboxGetItemClientPacket(entt::entity character, uint32_t dwItemID);
+/*cli.*/bool		RecvShopSafeboxGetValutesClientPacket(entt::entity character, const TValutesInfo& valutes);
+/*cli.*/bool		RecvShopSafeboxCloseClientPacket(entt::entity character);
 		
 
 		//AUCTION
-/*cli.*/bool		RecvAuctionListRequestClientPacket(LPCHARACTER ch, bool owner = false);
-/*cli.*/bool		RecvAuctionOpenRequestClientPacket(LPCHARACTER ch, uint32_t dwOwnerID);
-/*cli.*/bool		RecvMyAuctionOpenRequestClientPacket(LPCHARACTER ch);
-/*cli.*/bool		RecvAuctionCreateClientPacket(LPCHARACTER ch, uint32_t dwDuration, const TPriceInfo& init_price, const TItemPos& pos);
-/*cli.*/bool		RecvAuctionAddOfferClientPacket(LPCHARACTER ch, uint32_t dwOwnerID, const TPriceInfo& price);
-/*cli.*/bool		RecvAuctionExitFromAuction(LPCHARACTER ch, uint32_t dwOwnerID);
+/*cli.*/bool		RecvAuctionListRequestClientPacket(entt::entity character, bool owner = false);
+/*cli.*/bool		RecvAuctionOpenRequestClientPacket(entt::entity character, uint32_t dwOwnerID);
+/*cli.*/bool		RecvMyAuctionOpenRequestClientPacket(entt::entity character);
+/*cli.*/bool		RecvAuctionCreateClientPacket(entt::entity character, uint32_t dwDuration, const TPriceInfo& init_price, const TItemPos& pos);
+/*cli.*/bool		RecvAuctionAddOfferClientPacket(entt::entity character, uint32_t dwOwnerID, const TPriceInfo& price);
+/*cli.*/bool		RecvAuctionExitFromAuction(entt::entity character, uint32_t dwOwnerID);
 
-/*cli.*/void		SendAuctionListClientPacket(LPCHARACTER ch, const std::vector<TAuctionListElement>& auctionVec, bool owner);
-/*cli.*/void		SendAuctionOpenAuctionClientPacket(LPCHARACTER ch, const TAuctionInfo& auction, const std::vector<TAuctionOfferInfo>& vec); 
-/*cli.*/void		SendAuctionOpenMyAuctionNoAuctionClientPacket(LPCHARACTER ch);
+/*cli.*/void		SendAuctionListClientPacket(entt::entity character, const std::vector<TAuctionListElement>& auctionVec, bool owner);
+/*cli.*/void		SendAuctionOpenAuctionClientPacket(entt::entity character, const TAuctionInfo& auction, const std::vector<TAuctionOfferInfo>& vec); 
+/*cli.*/void		SendAuctionOpenMyAuctionNoAuctionClientPacket(entt::entity character);
 
 
-/*cli.*/void		SendShopSafeboxRefresh(LPCHARACTER ch, const TValutesInfo& valute, const std::vector<CShopItem>& vec);
+/*cli.*/void		SendShopSafeboxRefresh(entt::entity character, const TValutesInfo& valute, const std::vector<CShopItem>& vec);
 		
-/*cli.*/void		RecvCloseBoardClientPacket(LPCHARACTER ch);
-		void		RecvCloseMyAuction(LPCHARACTER ch);
+/*cli.*/void		RecvCloseBoardClientPacket(entt::entity character);
+		void		RecvCloseMyAuction(entt::entity character);
 		//other
 		void		UpdateShopsDuration();
 		void		UpdateAuctionsDuration();

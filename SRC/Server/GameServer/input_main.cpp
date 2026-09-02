@@ -4814,7 +4814,7 @@ int OfflineshopPacketCreateNewShop(LPCHARACTER ch, const char* data, int iBuffer
 	}
 
 	offlineshop::CShopManager& rManager = offlineshop::GetManager();
-	if(!rManager.RecvShopCreateNewClientPacket(ch, rShopInfo, vec)) {
+	if(!rManager.RecvShopCreateNewClientPacket(((ch) ? (ch)->GetEntityHandle() : entt::null), rShopInfo, vec)) {
 		if (ch) {
 			offlineshop::SendChatPacket(ch, offlineshop::CHAT_PACKET_CANNOT_CREATE_SHOP);
 			ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_COMMAND, "RefreshOfflineShop");
@@ -4838,7 +4838,7 @@ int OfflineshopPacketChangeShopName(LPCHARACTER ch, const char* data, int iBuffe
 	data = Decode(pack,data, &iExtra, &iBufferLeft);
 
 	offlineshop::CShopManager& rManager = offlineshop::GetManager();
-	if(!rManager.RecvShopChangeNameClientPacket(ch, pack->szName))
+	if(!rManager.RecvShopChangeNameClientPacket(((ch) ? (ch)->GetEntityHandle() : entt::null), pack->szName))
 		offlineshop::SendChatPacket(ch, offlineshop::CHAT_PACKET_CANNOT_CHANGE_NAME);
 
 	return iExtra;
@@ -4851,7 +4851,7 @@ int OfflineshopPacketForceCloseShop(LPCHARACTER ch, const char* data, int iBuffe
 	ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "input_main.cpp:: int OfflineshopPacketForceCloseShop");//INGAME_DEBUG_RAZOR93
 #endif
 	offlineshop::CShopManager& rManager = offlineshop::GetManager();
-	if(!rManager.RecvShopForceCloseClientPacket(ch))
+	if(!rManager.RecvShopForceCloseClientPacket(((ch) ? (ch)->GetEntityHandle() : entt::null)))
 		offlineshop::SendChatPacket(ch, offlineshop::CHAT_PACKET_CANNOT_FORCE_CLOSE);
 
 	return 0;
@@ -4861,7 +4861,7 @@ int OfflineshopPacketForceCloseShop(LPCHARACTER ch, const char* data, int iBuffe
 int OfflineshopPacketRequestShopList(LPCHARACTER ch, const char* data, int iBufferLeft)
 {
 	offlineshop::CShopManager& rManager = offlineshop::GetManager();
-	rManager.RecvShopRequestListClientPacket(ch);
+	rManager.RecvShopRequestListClientPacket(((ch) ? (ch)->GetEntityHandle() : entt::null));
 	return 0;
 }
 
@@ -4876,7 +4876,7 @@ int OfflineshopPacketOpenShop(LPCHARACTER ch, const char* data, int iBufferLeft)
 	data = Decode(pack,data, &iExtra, &iBufferLeft);
 
 	offlineshop::CShopManager& rManager = offlineshop::GetManager();
-	if(!rManager.RecvShopOpenClientPacket(ch,pack->dwOwnerID))
+	if(!rManager.RecvShopOpenClientPacket(((ch) ? (ch)->GetEntityHandle() : entt::null),pack->dwOwnerID))
 		offlineshop::SendChatPacket(ch, offlineshop::CHAT_PACKET_CANNOT_OPEN_SHOP);
 
 	return iExtra;
@@ -4886,7 +4886,7 @@ int OfflineshopPacketOpenShop(LPCHARACTER ch, const char* data, int iBufferLeft)
 int OfflineshopPacketOpenShowOwner(LPCHARACTER ch, const char* data, int iBufferLeft)
 {
 	offlineshop::CShopManager& rManager = offlineshop::GetManager();
-	if(!rManager.RecvShopOpenMyShopClientPacket(ch))
+	if(!rManager.RecvShopOpenMyShopClientPacket(((ch) ? (ch)->GetEntityHandle() : entt::null)))
 		offlineshop::SendChatPacket(ch, offlineshop::CHAT_PACKET_CANNOT_OPEN_SHOP_OWNER);
 
 	return 0;
@@ -4903,7 +4903,7 @@ int OfflineshopPacketBuyItem(LPCHARACTER ch, const char* data, int iBufferLeft)
 	data = Decode(pack,data, &iExtra, &iBufferLeft);
 
 	offlineshop::CShopManager& rManager = offlineshop::GetManager();
-	if(!rManager.RecvShopBuyItemClientPacket(ch , pack->dwOwnerID, pack->dwItemID, pack->bIsSearch, pack->TotalPriceSeen)) //patch seen price check
+	if(!rManager.RecvShopBuyItemClientPacket(((ch) ? (ch)->GetEntityHandle() : entt::null), pack->dwOwnerID, pack->dwItemID, pack->bIsSearch, pack->TotalPriceSeen)) //patch seen price check
 		offlineshop::SendChatPacket(ch, offlineshop::CHAT_PACKET_CANNOT_BUY_ITEM);
 
 	return iExtra;
@@ -4920,7 +4920,7 @@ int OfflineshopPacketAddItem(LPCHARACTER ch, const char* data, int iBufferLeft)
 	data = Decode(pack,data, &iExtra, &iBufferLeft);
 
 	offlineshop::CShopManager& rManager = offlineshop::GetManager();
-	if(!rManager.RecvShopAddItemClientPacket(ch, pack->pos, pack->price))
+	if(!rManager.RecvShopAddItemClientPacket(((ch) ? (ch)->GetEntityHandle() : entt::null), pack->pos, pack->price))
 		offlineshop::SendChatPacket(ch, offlineshop::CHAT_PACKET_CANNOT_ADD_ITEM);
 
 	return iExtra;
@@ -4937,7 +4937,7 @@ int OfflineshopPacketRemoveItem(LPCHARACTER ch, const char* data, int iBufferLef
 	data = Decode(pack,data, &iExtra, &iBufferLeft);
 
 	offlineshop::CShopManager& rManager = offlineshop::GetManager();
-	if(!rManager.RecvShopRemoveItemClientPacket(ch, pack->dwItemID))
+	if(!rManager.RecvShopRemoveItemClientPacket(((ch) ? (ch)->GetEntityHandle() : entt::null), pack->dwItemID))
 		offlineshop::SendChatPacket(ch, offlineshop::CHAT_PACKET_CANNOT_REMOVE_ITEM);
 
 	return iExtra;
@@ -4954,7 +4954,7 @@ int OfflineshopPacketEditItem(LPCHARACTER ch, const char* data, int iBufferLeft)
 	data = Decode(pack,data, &iExtra, &iBufferLeft);
 
 	offlineshop::CShopManager& rManager = offlineshop::GetManager();
-	if(!rManager.RecvShopEditItemClientPacket(ch, pack->dwItemID, pack->price))
+	if(!rManager.RecvShopEditItemClientPacket(((ch) ? (ch)->GetEntityHandle() : entt::null), pack->dwItemID, pack->price))
 		offlineshop::SendChatPacket(ch, offlineshop::CHAT_PACKET_CANNOT_EDIT_ITEM);
 
 	return iExtra;
@@ -4971,7 +4971,7 @@ int OfflineshopPacketFilterRequest(LPCHARACTER ch, const char* data, int iBuffer
 	data = Decode(pack,data, &iExtra, &iBufferLeft);
 
 	offlineshop::CShopManager& rManager = offlineshop::GetManager();
-	if(!rManager.RecvShopFilterRequestClientPacket(ch, pack->filter))
+	if(!rManager.RecvShopFilterRequestClientPacket(((ch) ? (ch)->GetEntityHandle() : entt::null), pack->filter))
 		offlineshop::SendChatPacket(ch, offlineshop::CHAT_PACKET_CANNOT_FILTER);
 
 	return iExtra;
@@ -4988,7 +4988,7 @@ int OfflineshopPacketCreateOffer(LPCHARACTER ch, const char* data, int iBufferLe
 	data = Decode(pack,data, &iExtra, &iBufferLeft);
 
 	offlineshop::CShopManager& rManager = offlineshop::GetManager();
-	if(!rManager.RecvShopCreateOfferClientPacket(ch, pack->offer))
+	if(!rManager.RecvShopCreateOfferClientPacket(((ch) ? (ch)->GetEntityHandle() : entt::null), pack->offer))
 		offlineshop::SendChatPacket(ch, offlineshop::CHAT_PACKET_CANNOT_CREATE_OFFER);
 
 	return iExtra;
@@ -5005,7 +5005,7 @@ int OfflineshopPacketAcceptOffer(LPCHARACTER ch, const char* data, int iBufferLe
 	data = Decode(pack,data, &iExtra, &iBufferLeft);
 
 	offlineshop::CShopManager& rManager = offlineshop::GetManager();
-	if(!rManager.RecvShopAcceptOfferClientPacket(ch, pack->dwOfferID))
+	if(!rManager.RecvShopAcceptOfferClientPacket(((ch) ? (ch)->GetEntityHandle() : entt::null), pack->dwOfferID))
 		offlineshop::SendChatPacket(ch, offlineshop::CHAT_PACKET_CANNOT_ACCEPT_OFFER);
 
 	return iExtra;
@@ -5023,7 +5023,7 @@ int OfflineshopPacketOfferCancel(LPCHARACTER ch, const char* data, int iBufferLe
 	data = Decode(pack,data, &iExtra, &iBufferLeft);
 
 	offlineshop::CShopManager& rManager = offlineshop::GetManager();
-	if(!rManager.RecvShopCancelOfferClientPacket(ch, pack->dwOfferID, pack->dwOwnerID))
+	if(!rManager.RecvShopCancelOfferClientPacket(((ch) ? (ch)->GetEntityHandle() : entt::null), pack->dwOfferID, pack->dwOwnerID))
 		offlineshop::SendChatPacket(ch, offlineshop::CHAT_PACKET_CANNOT_ACCEPT_OFFER);
 
 	return iExtra;
@@ -5033,7 +5033,7 @@ int OfflineshopPacketOfferCancel(LPCHARACTER ch, const char* data, int iBufferLe
 int OfflineshopPacketOfferListRequest(LPCHARACTER ch)
 {
 	offlineshop::CShopManager& rManager = offlineshop::GetManager();
-	rManager.RecvOfferListRequestPacket(ch);
+	rManager.RecvOfferListRequestPacket(((ch) ? (ch)->GetEntityHandle() : entt::null));
 	return 0;
 }
 
@@ -5041,7 +5041,7 @@ int OfflineshopPacketOfferListRequest(LPCHARACTER ch)
 int OfflineshopPacketOpenSafebox(LPCHARACTER ch, const char* data, int iBufferLeft)
 {
 	offlineshop::CShopManager& rManager = offlineshop::GetManager();
-	if(!rManager.RecvShopSafeboxOpenClientPacket(ch))
+	if(!rManager.RecvShopSafeboxOpenClientPacket(((ch) ? (ch)->GetEntityHandle() : entt::null)))
 		offlineshop::SendChatPacket(ch, offlineshop::CHAT_PACKET_CANNOT_OPEN_SAFEBOX);
 
 	return 0;
@@ -5051,14 +5051,14 @@ int OfflineshopPacketOpenSafebox(LPCHARACTER ch, const char* data, int iBufferLe
 int OfflineshopPacketCloseBoard(LPCHARACTER ch)
 {
 	offlineshop::CShopManager& rManager = offlineshop::GetManager();
-	rManager.RecvCloseBoardClientPacket(ch);
+	rManager.RecvCloseBoardClientPacket(((ch) ? (ch)->GetEntityHandle() : entt::null));
 	return 0;
 }
 
 int OfflineshopPacketCloseMyAuction(LPCHARACTER ch)
 {
 	offlineshop::CShopManager& rManager = offlineshop::GetManager();
-	rManager.RecvCloseMyAuction(ch);
+	rManager.RecvCloseMyAuction(((ch) ? (ch)->GetEntityHandle() : entt::null));
 	return 0;
 }
 
@@ -5072,7 +5072,7 @@ int OfflineshopPacketGetItemSafebox(LPCHARACTER ch, const char* data, int iBuffe
 	data = Decode(pack,data, &iExtra, &iBufferLeft);
 
 	offlineshop::CShopManager& rManager = offlineshop::GetManager();
-	if(!rManager.RecvShopSafeboxGetItemClientPacket(ch, pack->dwItemID))
+	if(!rManager.RecvShopSafeboxGetItemClientPacket(((ch) ? (ch)->GetEntityHandle() : entt::null), pack->dwItemID))
 		offlineshop::SendChatPacket(ch, offlineshop::CHAT_PACKET_CANNOT_SAFEBOX_GET_ITEM);
 
 	return iExtra;
@@ -5090,7 +5090,7 @@ int OfflineshopPacketGetValutesSafebox(LPCHARACTER ch, const char* data, int iBu
 	data = Decode(pack,data, &iExtra, &iBufferLeft);
 
 	offlineshop::CShopManager& rManager = offlineshop::GetManager();
-	if(!rManager.RecvShopSafeboxGetValutesClientPacket(ch, pack->valutes))
+	if(!rManager.RecvShopSafeboxGetValutesClientPacket(((ch) ? (ch)->GetEntityHandle() : entt::null), pack->valutes))
 		offlineshop::SendChatPacket(ch, offlineshop::CHAT_PACKET_CANNOT_SAFEBOX_GET_VALUTES);
 
 	return iExtra;
@@ -5100,7 +5100,7 @@ int OfflineshopPacketGetValutesSafebox(LPCHARACTER ch, const char* data, int iBu
 int OfflineshopPacketCloseSafebox(LPCHARACTER ch, const char* data, int iBufferLeft)
 {
 	offlineshop::CShopManager& rManager = offlineshop::GetManager();
-	if(!rManager.RecvShopSafeboxCloseClientPacket(ch))
+	if(!rManager.RecvShopSafeboxCloseClientPacket(((ch) ? (ch)->GetEntityHandle() : entt::null)))
 		offlineshop::SendChatPacket(ch, offlineshop::CHAT_PACKET_CANNOT_SAFEBOX_CLOSE);
 
 	return 0;
@@ -5110,7 +5110,7 @@ int OfflineshopPacketCloseSafebox(LPCHARACTER ch, const char* data, int iBufferL
 int OfflineshopPacketListRequest(LPCHARACTER ch, const char* data, int iBufferLeft)
 {
 	offlineshop::CShopManager& rManager = offlineshop::GetManager();
-	if(!rManager.RecvAuctionListRequestClientPacket(ch))
+	if(!rManager.RecvAuctionListRequestClientPacket(((ch) ? (ch)->GetEntityHandle() : entt::null)))
 		offlineshop::SendChatPacket(ch, offlineshop::CHAT_PACKET_AUCTION_CANNOT_SEND_LIST);
 
 	return 0;
@@ -5128,7 +5128,7 @@ int OfflineshopPacketOpenAuctionRequest(LPCHARACTER ch, const char* data, int iB
 	data = Decode(pack,data, &iExtra, &iBufferLeft);
 
 	offlineshop::CShopManager& rManager = offlineshop::GetManager();
-	if(!rManager.RecvAuctionOpenRequestClientPacket(ch, pack->dwOwnerID))
+	if(!rManager.RecvAuctionOpenRequestClientPacket(((ch) ? (ch)->GetEntityHandle() : entt::null), pack->dwOwnerID))
 		offlineshop::SendChatPacket(ch, offlineshop::CHAT_PACKET_AUCTION_CANNOT_OPEN_AUCTION);
 
 	return iExtra;
@@ -5139,7 +5139,7 @@ int OfflineshopPacketOpenAuctionRequest(LPCHARACTER ch, const char* data, int iB
 int OfflineshopPacketOpenMyAuctionRequest(LPCHARACTER ch, const char* data, int iBufferLeft)
 {
 	offlineshop::CShopManager& rManager = offlineshop::GetManager();
-	if(!rManager.RecvMyAuctionOpenRequestClientPacket(ch))
+	if(!rManager.RecvMyAuctionOpenRequestClientPacket(((ch) ? (ch)->GetEntityHandle() : entt::null)))
 		offlineshop::SendChatPacket(ch, offlineshop::CHAT_PACKET_AUCTION_CANNOT_SEND_LIST);
 
 	return 0;
@@ -5157,7 +5157,7 @@ int OfflineshopPacketCreateAuction(LPCHARACTER ch, const char* data, int iBuffer
 	data = Decode(pack,data, &iExtra, &iBufferLeft);
 
 	offlineshop::CShopManager& rManager = offlineshop::GetManager();
-	if(!rManager.RecvAuctionCreateClientPacket(ch, pack->dwDuration, pack->init_price, pack->pos))
+	if(!rManager.RecvAuctionCreateClientPacket(((ch) ? (ch)->GetEntityHandle() : entt::null), pack->dwDuration, pack->init_price, pack->pos))
 		offlineshop::SendChatPacket(ch, offlineshop::CHAT_PACKET_AUCTION_CANNOT_CREATE_AUCTION);
 
 	return iExtra;
@@ -5175,7 +5175,7 @@ int OfflineshopPacketAddOffer(LPCHARACTER ch, const char* data, int iBufferLeft)
 	data = Decode(pack,data, &iExtra, &iBufferLeft);
 
 	offlineshop::CShopManager& rManager = offlineshop::GetManager();
-	if(!rManager.RecvAuctionAddOfferClientPacket(ch, pack->dwOwnerID, pack->price))
+	if(!rManager.RecvAuctionAddOfferClientPacket(((ch) ? (ch)->GetEntityHandle() : entt::null), pack->dwOwnerID, pack->price))
 		offlineshop::SendChatPacket(ch, offlineshop::CHAT_PACKET_AUCTION_CANNOT_ADD_OFFER);
 
 	return iExtra;
@@ -5193,7 +5193,7 @@ int OfflineshopPacketExitFromAuction(LPCHARACTER ch, const char* data, int iBuff
 	data = Decode(pack,data, &iExtra, &iBufferLeft);
 
 	offlineshop::CShopManager& rManager = offlineshop::GetManager();
-	rManager.RecvAuctionExitFromAuction(ch, pack->dwOwnerID);
+	rManager.RecvAuctionExitFromAuction(((ch) ? (ch)->GetEntityHandle() : entt::null), pack->dwOwnerID);
 	return iExtra;
 }
 
@@ -5210,7 +5210,7 @@ int OfflineshopPacketClickEntity(LPCHARACTER ch, const char* data, int iBufferLe
 
 
 	offlineshop::CShopManager& rManager = offlineshop::GetManager();
-	rManager.RecvShopClickEntity(ch, pack->dwShopVID);
+	rManager.RecvShopClickEntity(((ch) ? (ch)->GetEntityHandle() : entt::null), pack->dwShopVID);
 	return iExtra;
 }
 

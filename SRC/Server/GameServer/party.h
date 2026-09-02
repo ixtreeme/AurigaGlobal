@@ -58,7 +58,7 @@ class CPartyManager : public singleton<CPartyManager>
 		void		DisablePCParty() { m_bEnablePCParty = false; LOG_INFO("PARTY Disable"); }
 		bool		IsEnablePCParty() { return m_bEnablePCParty; }
 
-		LPPARTY		CreateParty(LPCHARACTER pkLeader);
+		LPPARTY		CreateParty(entt::entity leader);
 		void		DeleteParty(LPPARTY pParty);
 		void		DeleteAllParty();
 		bool		SetParty(LPCHARACTER pkChr);
@@ -114,8 +114,8 @@ class CParty
 		void		P2PQuit(uint32_t dwPID);
 		virtual void	Join(uint32_t dwPID);
 		void		Quit(uint32_t dwPID);
-		void		Link(LPCHARACTER pkChr);
-		void		Unlink(LPCHARACTER pkChr);
+		void		Link(entt::entity character);
+		void		Unlink(entt::entity character);
 #ifdef TEXTS_IMPROVEMENT
 		void	ChatPacketToAllMemberNew(uint8_t type, uint32_t idx, const char * format, ...);
 #endif
@@ -133,21 +133,21 @@ class CParty
 
 		bool		IsNearLeader(uint32_t pid);
 
-		bool		IsPositionNearLeader(LPCHARACTER ch);
+		bool		IsPositionNearLeader(entt::entity character);
 
-		void		SendMessage(LPCHARACTER ch, uint8_t bMsg, uint32_t dwArg1, uint32_t dwArg2);
+		void		SendMessage(entt::entity character, uint8_t bMsg, uint32_t dwArg1, uint32_t dwArg2);
 
 		void		SendPartyJoinOneToAll(uint32_t dwPID);
-		void		SendPartyJoinAllToOne(LPCHARACTER ch);
+		void		SendPartyJoinAllToOne(entt::entity character);
 		void		SendPartyRemoveOneToAll(uint32_t dwPID);
 
 		void		SendPartyInfoOneToAll(uint32_t pid);
-		void		SendPartyInfoOneToAll(LPCHARACTER ch);
-		void		SendPartyInfoAllToOne(LPCHARACTER ch);
+		void		SendPartyInfoOneToAll(entt::entity character);
+		void		SendPartyInfoAllToOne(entt::entity character);
 
-		void		SendPartyLinkOneToAll(LPCHARACTER ch);
-		void		SendPartyLinkAllToOne(LPCHARACTER ch);
-		void		SendPartyUnlinkOneToAll(LPCHARACTER ch);
+		void		SendPartyLinkOneToAll(entt::entity character);
+		void		SendPartyLinkAllToOne(entt::entity character);
+		void		SendPartyUnlinkOneToAll(entt::entity character);
 
 		int		GetPartyBonusExpPercent()	{ return m_iExpBonus; }
 		int		GetPartyBonusAttackGrade()	{ return m_iAttBonus; }
@@ -175,7 +175,7 @@ class CParty
 		uint8_t		GetMemberMaxLevel();
 		uint8_t		GetMemberMinLevel();
 
-		void		ComputeRolePoint(LPCHARACTER ch, uint8_t bRole, bool bAdd);
+		void		ComputeRolePoint(entt::entity character, uint8_t bRole, bool bAdd);
 
 		void		HealParty();
 		void		SummonToLeader(uint32_t pid);
@@ -213,7 +213,7 @@ class CParty
 		void		RemoveBonus();
 		void		RemoveBonusForOne(uint32_t pid);
 
-		void		SendParameter(LPCHARACTER ch);
+		void		SendParameter(entt::entity character);
 		void		SendParameterToAll();
 
 		TMemberMap	m_memberMap;

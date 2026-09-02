@@ -731,11 +731,11 @@ void CHARACTER::PartyInviteAccept(LPCHARACTER pchInvitee)
         pchInvitee->PartyJoin(this);
     else
     {
-        LPPARTY pParty = CPartyManager::instance().CreateParty(this);
+        LPPARTY pParty = CPartyManager::instance().CreateParty(GetEntityHandle());
 
         pParty->Join(ecs::PlayerRuntime::GetPlayerID(invitee));
-        pParty->Link(pchInvitee);
-        pParty->SendPartyInfoAllToOne(this);
+        pParty->Link((pchInvitee ? pchInvitee->GetEntityHandle() : entt::null));
+        pParty->SendPartyInfoAllToOne(GetEntityHandle());
     }
 }
 
@@ -769,7 +769,7 @@ void CHARACTER::PartyJoin(LPCHARACTER pLeader)
         ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 193, "%s", ecs::PlayerRuntime::GetName(leader).data());
 #endif
         pLeader->GetParty()->Join(GetPlayerID());
-        pLeader->GetParty()->Link(this);
+        pLeader->GetParty()->Link(GetEntityHandle());
     }
 }
 

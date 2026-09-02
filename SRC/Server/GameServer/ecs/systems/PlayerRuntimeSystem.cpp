@@ -3996,7 +3996,7 @@ void CHARACTER::Destroy()
         }
         else
         {
-            party->Unlink(this);
+            party->Unlink(GetEntityHandle());
 
             if (!IsPC())
                 party->Quit(GetLegacyVID());

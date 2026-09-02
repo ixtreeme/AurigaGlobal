@@ -538,3 +538,66 @@ legacy CHARACTER methods; migrate that surface first (new_offlineshop_manager
 127, party 113, item_manager 80, ...). Every method that moves shrinks the
 pointer count at the lookup sites, and the identity flip gets cheaper each
 time. Re-run the audit to decide when it has tipped.
+
+
+Phase 18i - party and offlineshop manager
+------------------------------------------
+Note on scope: new_offlineshop_manager.cpp is part of the OLD offline shop,
+which SRC/Server/OfflineShop/ is being written to replace, and the recorded
+rollout plan has these files deleted once that integration lands. That was
+raised before starting; the user chose to migrate them anyway, so the old
+surface stays uniform with the rest of the tree for as long as it runs.
+
+party
+-----
+party.h: 13 declarations flipped.
+party.cpp: 13 methods, 75 conversion sites removed.
+
+  ComputeRolePoint 30, Link 10, CreateParty 8, SendPartyInfoOneToAll 4,
+  SendPartyInfoAllToOne 4, Unlink 4, SendPartyLinkOneToAll 3,
+  SendPartyUnlinkOneToAll 3, SendPartyLinkAllToOne 2, SendPartyJoinAllToOne 2,
+  IsPositionNearLeader 2, SendMessage 2, SendParameter 1.
+
+  Six of the Send* methods had zero legacy pointer uses - pure flips.
+  14 external call sites adapted (char_manager, AISystem, CombatSystem,
+  PlayerRuntimeSystem, PointSystem, SessionSystem, SocialSystem) plus 21
+  intra-file calls.
+
+  Checked for std::bind over CParty before starting - none, unlike CGuild in
+  phase 18e. The CParty::ForEach*Member templates still call back with an
+  LPCHARACTER and were deliberately left alone; the dungeon adapters from
+  phase 18g depend on that and are unaffected.
+
+  party.cpp: 114 -> 49. What is left sits in SummonToLeader / HealParty /
+  Update / P2PJoin on `l` and `ch` locals pulled out of m_memberMap, whose
+  value type is a struct holding LPCHARACTER pCharacter - the same
+  container-boundary category as guild's m_memberOnline.
+
+offlineshop
+-----------
+new_offlineshop_manager.h: 42 declarations flipped.
+new_offlineshop_manager.cpp: 42 methods (the whole Recv*/Send*/Encode* client
+packet surface), ~100 conversion sites removed.
+
+  28 call sites in input_main.cpp's OfflineshopPacket* handlers, 9 in the
+  sibling files (new_offlineshop.cpp, new_offlineshop_safebox.cpp), 15
+  intra-file calls, and SessionSystem's RemoveGuestFromShops.
+
+  One definition was missed by the first sweep because it carries a trailing
+  comment between the parameter list and the brace:
+
+      bool CShopManager::RecvOfferListRequestPacket(LPCHARACTER ch) //offlineshop-updated 03/08/19
+      {
+
+  Same shape as the ACMD trailing-comment case in phase 18; the header had
+  already been flipped, so it surfaced as "overloaded member function not
+  found" rather than a type error. Worth remembering: a header-first sweep
+  turns a missed definition into a confusing diagnostic.
+
+  new_offlineshop_manager.cpp: 133 -> 50. The remainder is on chGuest /
+  chBuyer / chOwner / owner locals that come from FindByPID and are still
+  passed to legacy CHARACTER methods, plus the guest lists (LISTGUEST is a
+  std::list<LPCHARACTER>).
+
+Project-wide conversion count: 3665 -> 3563
+Build: RelWithDebInfo GameServer, 0 errors.

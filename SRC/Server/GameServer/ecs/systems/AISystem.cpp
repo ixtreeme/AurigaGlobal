@@ -346,7 +346,7 @@ void CHARACTER::StateBattle()
     }
 
     if (m_pkParty) {
-        m_pkParty->SendMessage(this, PM_ATTACKED_BY, 0, 0);
+        m_pkParty->SendMessage(GetEntityHandle(), PM_ATTACKED_BY, 0, 0);
     }
 
     const uint32_t curTime = get_dword_time();

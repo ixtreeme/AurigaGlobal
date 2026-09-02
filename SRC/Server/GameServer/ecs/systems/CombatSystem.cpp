@@ -1156,7 +1156,7 @@ void CHARACTER::UpdateAggrPointEx(LPCHARACTER pAttacker, EDamageType type, int d
 		else
 			iPartyAggroDist /= 3;
 
-		pParty->SendMessage(this, PM_AGGRO_INCREASE, iPartyAggroDist, ecs::PlayerRuntime::GetPacketVID((pAttacker ? pAttacker->GetEntityHandle() : entt::null)));
+		pParty->SendMessage(GetEntityHandle(), PM_AGGRO_INCREASE, iPartyAggroDist, ecs::PlayerRuntime::GetPacketVID((pAttacker ? pAttacker->GetEntityHandle() : entt::null)));
 	}
 
 	ChangeVictimByAggro(info.iAggro, pAttacker);
@@ -1640,7 +1640,7 @@ typedef struct SDamageInfo
 			NPartyExpDistribute::FPartyTotaler f(ch);
 			pParty->ForEachOnlineMember(f);
 
-			if (pParty->IsPositionNearLeader(ch))
+			if (pParty->IsPositionNearLeader((ch ? ch->GetEntityHandle() : entt::null)))
 				iExp = iExp * (100 + pParty->GetExpBonusPercent()) / 100;
 
 			// ġ ֱ (Ƽ ȹ ġ 5%   )
@@ -6642,7 +6642,7 @@ void CHARACTER::Stun()
 
 	if (!IsPC() && m_pkParty)
 	{
-		m_pkParty->SendMessage(this, PM_ATTACKED_BY, 0, 0);
+		m_pkParty->SendMessage(GetEntityHandle(), PM_ATTACKED_BY, 0, 0);
 	}
 
 	LOG_INFO("{}: Stun {}", GetName(), static_cast<const void*>(this));
@@ -7801,7 +7801,7 @@ bool CHARACTER::Return()
 		LOG_INFO("{} {} A÷±âÇI°í µ13A°!AÚ! {} {}", GetName(), static_cast<const void*>(this), x, y);
 
 	if (GetParty())
-		GetParty()->SendMessage(this, PM_RETURN, x, y);
+		GetParty()->SendMessage(GetEntityHandle(), PM_RETURN, x, y);
 
 	return true;
 }

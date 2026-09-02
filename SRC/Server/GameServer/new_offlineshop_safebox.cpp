@@ -188,7 +188,7 @@ namespace offlineshop
 
 		OFFSHOP_DEBUG("valute %lld , items count %u", valute.illYang, m_vecItems.size());
 
-		GetManager().SendShopSafeboxRefresh(ch , valute, m_vecItems);
+		GetManager().SendShopSafeboxRefresh(((ch) ? (ch)->GetEntityHandle() : entt::null), valute, m_vecItems);
 		return true;
 	}
 

@@ -1004,14 +1004,14 @@ bool CHARACTER_MANAGER::SpawnMoveGroup(uint32_t dwVnum, int32_t lMapIndex, int s
 		else if (pkParty)
 		{
 			pkParty->Join(tch->GetLegacyVID());
-			pkParty->Link(tch);
+			pkParty->Link(((tch) ? (tch)->GetEntityHandle() : entt::null));
 		}
 		else if (!pkChrMaster)
 		{
 			pkChrMaster = tch;
 			pkChrMaster->SetRegen(pkRegen);
 
-			pkParty = CPartyManager::instance().CreateParty(pkChrMaster);
+			pkParty = CPartyManager::instance().CreateParty(((pkChrMaster) ? (pkChrMaster)->GetEntityHandle() : entt::null));
 		}
 		if (bAggressive)
 			tch->SetAggressive();
@@ -1099,14 +1099,14 @@ LPCHARACTER CHARACTER_MANAGER::SpawnGroup(uint32_t dwVnum, int32_t lMapIndex, in
 		else if (pkParty)
 		{
 			pkParty->Join(tch->GetLegacyVID());
-			pkParty->Link(tch);
+			pkParty->Link(((tch) ? (tch)->GetEntityHandle() : entt::null));
 		}
 		else if (!pkChrMaster)
 		{
 			pkChrMaster = tch;
 			pkChrMaster->SetRegen(pkRegen);
 
-			pkParty = CPartyManager::instance().CreateParty(pkChrMaster);
+			pkParty = CPartyManager::instance().CreateParty(((pkChrMaster) ? (pkChrMaster)->GetEntityHandle() : entt::null));
 		}
 
 		if (bAggressive)

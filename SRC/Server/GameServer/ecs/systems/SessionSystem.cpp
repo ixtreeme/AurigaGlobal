@@ -1294,7 +1294,7 @@ void CHARACTER::Disconnect(const char* c_pszReason)
 
 #ifdef __ENABLE_NEW_OFFLINESHOP__
     offlineshop::GetManager().RemoveSafeboxFromCache(GetPlayerID());
-    offlineshop::GetManager().RemoveGuestFromShops(this);
+    offlineshop::GetManager().RemoveGuestFromShops(GetEntityHandle());
 
     if (m_pkAuctionGuest)
         m_pkAuctionGuest->RemoveGuest(this);
@@ -1319,7 +1319,7 @@ void CHARACTER::Disconnect(const char* c_pszReason)
 #endif
 
     if (GetParty())
-        GetParty()->Unlink(this);
+        GetParty()->Unlink(GetEntityHandle());
 
     if (IsStun() || IsDead())
     {

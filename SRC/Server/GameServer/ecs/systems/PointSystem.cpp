@@ -1045,7 +1045,7 @@ void CHARACTER::PointChange(uint8_t type, int64_t amount, bool bAmount, bool bBr
 		BroadcastTargetPacket();
 
 		if (GetParty() && IsPC() && val != prev_hp)
-			GetParty()->SendPartyInfoOneToAll(this);
+			GetParty()->SendPartyInfoOneToAll(GetEntityHandle());
 	}
 	break;
 
