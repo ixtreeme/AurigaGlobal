@@ -1298,3 +1298,63 @@ the TRIGGERPARAM macro, or the broken declaration inside
 Return types are the next axis and they are a different problem: a caller that
 receives an entity cannot call legacy methods on it, so flipping GetVictim()
 moves work to every caller rather than removing it. Audit before starting.
+
+
+Phase 19g - CHARACTER::Damage reads its components directly
+------------------------------------------------------------
+19f flipped the parameter and left one alias behind:
+
+    LPCHARACTER pkAttacker = ecs::LegacyCharOf(attacker);
+
+Asked what that alias was actually for, and the answer was worth having.
+It served 42 legacy calls - and 29 of them went straight back into ECS:
+
+    CHARACTER::GetHP()          { TryGetHealthComponent(GetEntityHandle())->current }
+    CHARACTER::GetSP()          { TryGetManaComponent(GetEntityHandle())->current }
+    CHARACTER::GetRankPoints(i) { return ecs::PlayerRuntime::GetRankPoints(entity, i); }
+    CHARACTER::IsImmune(f)      { return AffectSystem::IsImmune(GetEntityHandle(), f); }
+
+So `pkAttacker->GetHP()` was: entity -> LegacyCharOf -> pointer ->
+GetEntityHandle() -> entity -> component read. The same round trip that
+alias_roundtrip.py collapses in the open, except hidden one level down inside
+a method body where no conversion-site count can see it.
+
+29 calls now go to the component directly:
+
+     10  GetHP / GetSP        -> ecs::PointSystem::Get(attacker, POINT_HP / POINT_SP)
+     12  Get/SetRankPoints    -> ecs::PlayerRuntime::*(attacker, ...)
+      2  IsMonster            -> ecs::PlayerRuntime::IsMonster(attacker)
+      2  UpdateMissionProgress-> ecs::PlayerRuntime::*(attacker, ...)
+      1  IsImmune             -> AffectSystem::IsImmune(attacker, IMMUNE_REFLECT)
+      1  SetQuestNPCID        -> ecs::PlayerRuntime::SetQuestNPCID(attacker, ...)
+      1  Damage               -> CombatSystem::Damage(attacker, GetEntityHandle(), ...)
+
+POINT_HP and POINT_SP were checked against PointRouter, not assumed: they map
+to SRC_HP_CURRENT and SRC_SP_CURRENT, the same Health::current and Mana::current
+the legacy getters read. The Damage call had to be written CombatSystem::Damage
+- unqualified, name lookup inside a CHARACTER member finds CHARACTER::Damage,
+the function it is standing in.
+
+The substitution was scoped to this one body. pkAttacker is a common name in
+CombatSystem.cpp, and a file-wide replacement is exactly how guild_war.cpp was
+broken in phase 18.
+
+A CORRECTION to my own split: I said 29 could go now and 13 were genuinely
+legacy. The classifier answered "does the CHARACTER body reach into ECS",
+which is not the same question as "is there an entity-side entry point to call
+instead". Four of the 29 - IsGuardNPC, IsDeathBlow, IsDeathBlower,
+SetQuestDamage - do round-trip internally but have no entity accessor, so they
+belong with the other group. IsMonster and UpdateMissionProgress went the other
+way: classified legacy, but accessors exist. The count came out at 29 either
+way; the membership was wrong in both directions.
+
+13 legacy calls remain on the alias: GetMarriageBonus x4, IsCompletedMission
+x2, GetLimitPoint, IsGuardNPC, IsDeathBlow, IsDeathBlower, GetBattlePassId,
+IsSkillHit, SetQuestDamage. Removing the alias entirely needs an accessor for
+each, plus a decision on the 24 null checks - `pkAttacker &&` is a stricter
+test than `attacker != entt::null`, because LegacyCharOf also returns null for
+a valid entity that carries no LegacyCharPtr component. Those are not a rename.
+
+Conversion count unchanged at 1723 - this phase removes coupling the counter
+cannot see, which is the point of recording it here.
+Build: RelWithDebInfo GameServer, 0 errors.
