@@ -841,3 +841,72 @@ that a hoist cannot improve. Reducing those means flipping LPITEM parameters
 to entt::entity the way the character surface was flipped, which is a separate
 axis and should get its own audit first (CItemRegistry already provides
 Find / FindByVID / FindByLegacy, so the entity side exists).
+
+
+Phase 18n - LPITEM signature axis: AUDITED AND NOT DONE
+--------------------------------------------------------
+The previous phase ended by recommending the LPITEM signature axis as "the one
+remaining structural gain". The audit says otherwise, so it was not done. The
+numbers are recorded here so nobody repeats the analysis.
+
+LPITEM parameters, across the whole tree
+----------------------------------------
+  pure    15 parameters,  15 conversions   (pointer would disappear)
+  alias   20 parameters,  23 conversions   (one alias line each)
+  none    54 parameters,   0 conversions   (flipping buys nothing at all)
+
+38 conversions in total. Against them stand the pointer uses those same
+parameters carry:
+
+  UseItemEx     item      4 conversions vs 449 pointer uses
+  EquipItem     item      1  vs  62
+  AutoGiveItem  item      1  vs  36
+  ReceiveItem   item      1  vs  19
+
+Flipping these would remove 38 conversion sites and force ~600 legacy CItem
+method calls through LegacyItemOf aliases. That is the identity-boundary
+conclusion of phase 18h all over again, only with a far worse ratio - and more
+than half the LPITEM parameters in the tree carry no conversion at all, so for
+them the flip is pure churn.
+
+Phase 18m already took the only part of this axis that paid: UseItemEx's 112
+repeats.
+
+Item lookup locals
+------------------
+The item counterpart of phase 18h's FindEntity work needs no new API -
+ItemSystem::FindItemByID / FindItemByVID and CItemRegistry::Find / FindByVID /
+FindByLegacy already return entities. But of the item locals assigned from a
+lookup, only 2 sites (3 conversions) are conversion-only. The rest are used as
+pointers immediately.
+
+Mechanical work is exhausted
+----------------------------
+The hoist tool was re-run in report mode over every remaining .cpp:
+zero hoistable subjects anywhere in the tree.
+
+Classification of the remainder (1080 sites the classifier can attribute):
+
+    405  38%  subject is reassigned in its function - the hoist refuses these
+              on purpose; each needs the UseItemEx treatment, examined by hand
+    402  37%  repeats the tool declines for scope reasons (subject belongs to a
+              nested lambda or functor, or is declared more than once)
+    245  23%  a single conversion in its function - nothing to collapse
+     28   3%  file scope / macro bodies
+
+None of these are transformation problems any more. Removing them means moving
+the surrounding legacy CHARACTER:: and CItem:: methods into the ECS systems -
+design work, not rewriting. cmd_gm.cpp is the clearest illustration: its 64
+remaining item sites are ~60 copies of
+
+    item = ITEM_MANAGER::instance().CreateItem(<vnum>);
+    if (!item || !item->EquipTo(ch, item->FindEquipCell(ch)))
+        ItemSystem::DestroyItemEntityEcs((item ? item->GetEntityHandle() : entt::null), ...);
+
+one conversion per distinct item, with the item reassigned between them. There
+is nothing to hoist and nothing to flip; the block itself has to go.
+
+Where the elimination ended
+---------------------------
+  6354 -> 1831 conversion sites, 71% removed, across 15 phases.
+  Every phase built clean (RelWithDebInfo GameServer, 0 errors).
