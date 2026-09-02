@@ -46,6 +46,9 @@ float GetRotation(entt::entity e);
 LPSECTREE GetSectree(entt::entity e);
 bool IsPC(entt::entity e);
 bool IsNPC(entt::entity e);
+// Not IsNPC: CHARACTER::IsGuardNPC tests m_bCharType != CHAR_TYPE_PC, which
+// includes monsters and stones, while IsNPC above is the TagNPC component.
+bool IsGuardNPC(entt::entity e);
 bool IsStone(entt::entity e);
 bool IsMonster(entt::entity e);
 uint8_t GetMobRank(entt::entity e);

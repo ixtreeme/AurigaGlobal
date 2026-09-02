@@ -57,6 +57,9 @@ int GetValidComboInterval(entt::entity e);
 uint8_t GetComboIndex(entt::entity e);
 uint8_t ToggleComboIndex(entt::entity e, uint8_t skillLevel);
 
+bool IsDeathBlow(entt::entity e);
+bool IsDeathBlower(entt::entity e);
+
 } // namespace CombatSystem
 
 void CombatSystem_Update(entt::registry& reg, uint32_t tick);

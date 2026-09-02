@@ -516,6 +516,23 @@ bool IsNPC(entt::entity e)
 	return e != entt::null && g_registry.valid(e) && g_registry.all_of<ecs::TagNPC>(e);
 }
 
+bool IsGuardNPC(entt::entity e)
+{
+    // CHARACTER::IsNPC() is m_bCharType != CHAR_TYPE_PC - "not a PC", which
+    // takes in monsters and stones. That is not IsNPC(e) above, which reads
+    // the TagNPC component and means CHAR_TYPE_NPC alone, so this goes to the
+    // CharacterType component the factory fills from m_bCharType directly.
+    if (e == entt::null || !g_registry.valid(e))
+        return false;
+
+    const auto* type = g_registry.try_get<ecs::CharacterType>(e);
+    if (!type || type->value == CHAR_TYPE_PC)
+        return false;
+
+    const uint32_t race = GetRaceNum(e);
+    return race == 11000 || race == 11002 || race == 11004;
+}
+
 bool IsStone(entt::entity e)
 {
 	return e != entt::null && g_registry.valid(e) && g_registry.all_of<ecs::TagStone>(e);
@@ -1781,7 +1798,7 @@ uint32_t CHARACTER::GetImmuneFlag() const
 
 bool CHARACTER::IsGuardNPC() const
 {
-    return IsNPC() && (GetRaceNum() == 11000 || GetRaceNum() == 11002 || GetRaceNum() == 11004);
+    return ecs::PlayerRuntime::IsGuardNPC(GetEntityHandle());
 }
 
 int CHARACTER::GetQuestFlag(const std::string& flag) const

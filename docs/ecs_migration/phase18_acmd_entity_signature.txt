@@ -1358,3 +1358,62 @@ a valid entity that carries no LegacyCharPtr component. Those are not a rename.
 Conversion count unchanged at 1723 - this phase removes coupling the counter
 cannot see, which is the point of recording it here.
 Build: RelWithDebInfo GameServer, 0 errors.
+
+
+Phase 19h - three component-native accessors
+----------------------------------------------
+IsGuardNPC, IsDeathBlow and IsDeathBlower now exist as entity functions that
+read components, and the CHARACTER methods forward to them. Three more calls
+come off the Damage alias; ten remain.
+
+These three were picked because their data is already in components. The other
+six on the alias - GetMarriageBonus, IsCompletedMission, GetBattlePassId,
+IsSkillHit, GetLimitPoint, SetQuestDamage - are not, and no accessor was
+written for them. An accessor whose body is LegacyCharOf(e)->Same() would make
+the alias disappear from this file while leaving the identical round trip one
+level down. That is what 19g was about; repeating it as a fix would be worse
+than leaving the alias visible.
+
+TWO PREDICATES THAT LOOK THE SAME AND ARE NOT
+-----------------------------------------------
+IsGuardNPC nearly went in wrong twice.
+
+    bool CHARACTER::IsGuardNPC() const
+    { return IsNPC() && (GetRaceNum() == 11000 || 11002 || 11004); }
+
+The obvious translation is ecs::PlayerRuntime::IsNPC(e). It is wrong:
+
+    CHARACTER::IsNPC()              m_bCharType != CHAR_TYPE_PC   -> also monsters, stones
+    ecs::PlayerRuntime::IsNPC(e)    TagNPC component              -> CHAR_TYPE_NPC alone
+
+The second candidate was !IsPC(e). Also wrong, and differently:
+
+    CHARACTER::IsPC()               GetDesc() ? true : false      -> has a client attached
+    ecs::PlayerRuntime::IsPC(e)     TagPC component               -> spawned as a PC
+
+Neither legacy predicate means what its ECS namesake means, and the two legacy
+ones do not even mean the same as each other. The faithful primitive turned out
+to be the CharacterType component, which EntityFactory fills with the raw
+m_bCharType on every spawn path, so IsGuardNPC compares against CHAR_TYPE_PC
+directly and leaves both IsNPC functions out of it.
+
+There is a third near-match worth recording: AIHelpers::IsGuard(e) reads an
+AIFlags bit the factory sets as
+    (data.bType == CHAR_TYPE_NPC) && (dwVnum == 11000 || 11002 || 11004)
+which is IsGuardNPC's shape with the stricter type test. It gives the same
+answer for real guard vnums and is still not the same predicate. Not used.
+
+IsDeathBlow got a guard it did not have: the legacy body dereferenced
+m_pkMobData with no null check, so calling it on anything without mob data was
+a crash. The entity version returns false. The only behaviour that changes is
+behaviour that used to be a crash.
+
+IsDeathBlower keeps both of its branches in order - the live aiFlag from
+CharacterRuntimeFlagsComponent first, then the AIFlags bit EntityFactory
+derives from that same flag at spawn. They are written from the same source at
+two different times and PlayerRuntimeSystem.cpp:4522 refreshes one of them, so
+collapsing them to one read was not justified.
+
+Alias load on CHARACTER::Damage: 42 -> 13 (19g) -> 10.
+Conversion count unchanged at 1723.
+Build: RelWithDebInfo GameServer, 0 errors.

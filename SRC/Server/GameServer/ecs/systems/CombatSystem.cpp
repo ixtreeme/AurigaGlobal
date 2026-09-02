@@ -530,6 +530,35 @@ void CheckLeaderboardSkillMobChanges(entt::entity e)
     }
 }
 
+bool IsDeathBlow(entt::entity e)
+{
+    // The legacy method dereferenced m_pkMobData unguarded, so calling it on
+    // anything without mob data was a crash. Absent data is false here.
+    if (e == entt::null || !g_registry.valid(e))
+        return false;
+
+    const auto* mob = g_registry.try_get<ecs::MobDataRef>(e);
+    if (!mob || !mob->data)
+        return false;
+
+    return number(1, 100) <= mob->data->m_table.bDeathBlowPoint;
+}
+
+bool IsDeathBlower(entt::entity e)
+{
+    // Both branches of the legacy method, kept in order: the live AI flag
+    // first, then the AIFlags bit EntityFactory derives from it at spawn.
+    if (e == entt::null || !g_registry.valid(e))
+        return false;
+
+    if (const auto* runtime = g_registry.try_get<ecs::CharacterRuntimeFlagsComponent>(e))
+        if (IS_SET(runtime->aiFlag, AIFLAG_DEATHBLOW))
+            return true;
+
+    const auto* flags = AIHelpers::TryGetFlags(e);
+    return flags && flags->isDeathBlower;
+}
+
 } // namespace CombatSystem
 
 // char_battle.cpp slice BE1 moved into CombatSystem.cpp
@@ -5289,7 +5318,7 @@ bool CHARACTER::Damage(entt::entity attacker, int64_t dam, EDamageType type) // 
 			}
 
 		}
-		else if (pkAttacker->IsGuardNPC())
+		else if (ecs::PlayerRuntime::IsGuardNPC(attacker))
 		{
 						if (auto* flags = RuntimeFlags(GetEntityHandle()))
 				SET_BIT(flags->instantFlag, INSTANT_FLAG_NO_REWARD);
@@ -5356,9 +5385,9 @@ bool CHARACTER::Damage(entt::entity attacker, int64_t dam, EDamageType type) // 
 	if (pkAttacker)
 	{
 		// DEATH BLOW : Ȯ  4  (!?  ̺Ʈ  ͸ )
-		if (ecs::PlayerRuntime::IsMonster(attacker) && pkAttacker->IsDeathBlower())
+		if (ecs::PlayerRuntime::IsMonster(attacker) && CombatSystem::IsDeathBlower(attacker))
 		{
-			if (pkAttacker->IsDeathBlow())
+			if (CombatSystem::IsDeathBlow(attacker))
 			{
 				if (number(1, 4) == GetJob())
 				{
@@ -7141,13 +7170,7 @@ bool CHARACTER::IsGodSpeeder() const
 
 bool CHARACTER::IsDeathBlower() const
 {
-	if (IS_SET(GetAIFlag(), AIFLAG_DEATHBLOW))
-		return true;
-
-	if (auto* flags = AIHelpers::TryGetFlags(GetEntityHandle()))
-		return flags->isDeathBlower;
-
-	return false;
+	return CombatSystem::IsDeathBlower(GetEntityHandle());
 }
 
 bool CHARACTER::IsReviver() const
@@ -7248,7 +7271,7 @@ void CHARACTER::SetGodSpeed(bool mode)
 
 bool CHARACTER::IsDeathBlow() const
 {
-	return number(1, 100) <= m_pkMobData->m_table.bDeathBlowPoint;
+	return CombatSystem::IsDeathBlow(GetEntityHandle());
 }
 
 bool CHARACTER::IsRevive() const
