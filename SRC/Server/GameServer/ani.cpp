@@ -16,6 +16,7 @@
 #include "ecs/EntityFactory.hpp"
 #include "ecs/Registry.hpp"
 #include "ecs/systems/ItemSystem.hpp"
+#include "ecs/systems/MountSystem.hpp"
 #include "item.h"
 #include "ani.h"
 #include "dev_log.h"
@@ -343,14 +344,13 @@ void ani_init()
 	s_ANI.load();
 }
 
-uint32_t ani_attack_speed(LPCHARACTER ch)
+uint32_t ani_attack_speed(entt::entity character)
 {
 	uint32_t speed = 1000;
 
-	if (nullptr == ch)
+	if (character == entt::null)
 		return speed;
 
-	const entt::entity character = ((ch) ? (ch)->GetEntityHandle() : entt::null);
 	const entt::entity item = ItemSystem::GetWearItem(character, WEAR_WEAPON);
 
 	if (!ItemSystem::IsValidItem(item))
@@ -364,10 +364,10 @@ uint32_t ani_attack_speed(LPCHARACTER ch)
 
 	/*
 	dev_log(LOG_DEB0, "%s : (race,weapon) = (%s,%s) POINT_ATT_SPEED = %d",
-			ecs::PlayerRuntime::GetName(((ch) ? (ch)->GetEntityHandle() : entt::null)).data(),
+			ecs::PlayerRuntime::GetName(character).data(),
 			FN_race_name(race),
 			FN_weapon_type(weapon),
-			ecs::PointSystem::Get(((ch) ? (ch)->GetEntityHandle() : entt::null), POINT_ATT_SPEED));
+			ecs::PointSystem::Get(character, POINT_ATT_SPEED));
 	*/
 
 	/* ���ڵ�� �ҵ��� ��� �￬�����ݰ� �¸��� */
@@ -378,19 +378,18 @@ uint32_t ani_attack_speed(LPCHARACTER ch)
 	return s_ANI.attack_speed(race, weapon);
 }
 
-uint32_t ani_combo_speed(LPCHARACTER ch, uint8_t combo)
+uint32_t ani_combo_speed(entt::entity character, uint8_t combo)
 {
-	if (!ch)
+	if (character == entt::null)
 		return 1000;
 
-	const entt::entity character = ((ch) ? (ch)->GetEntityHandle() : entt::null);
 	const entt::entity item = ItemSystem::GetWearItem(character, WEAR_WEAPON);
 
 	if (!ItemSystem::IsValidItem(item) || combo > 8)
 		return 1000;
 
 	return s_ANI.attack_speed(ecs::PlayerRuntime::GetRaceNum(character),
-		ItemSystem::GetItemSubType(item), combo, ch->IsRiding());
+		ItemSystem::GetItemSubType(item), combo, MountSystem::IsRiding(character));
 }
 
 void ani_print_attack_speed()

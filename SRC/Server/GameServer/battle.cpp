@@ -1011,7 +1011,7 @@ int32_t GET_ATTACK_SPEED(entt::entity character) {
 
 	int32_t default_bonus = 100;
 	int32_t riding_bonus = ch->IsRiding() ? 50 : 0;
-	int32_t ani_speed = ani_attack_speed(ch);
+	int32_t ani_speed = ani_attack_speed(character);
 	int32_t real_speed = (ani_speed * 100) / (default_bonus + ecs::PointSystem::Get(character, POINT_ATT_SPEED) + riding_bonus);
 
 	const entt::entity item = ItemSystem::GetWearItem(character, WEAR_WEAPON);

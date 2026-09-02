@@ -1417,3 +1417,70 @@ collapsing them to one read was not justified.
 Alias load on CHARACTER::Damage: 42 -> 13 (19g) -> 10.
 Conversion count unchanged at 1723.
 Build: RelWithDebInfo GameServer, 0 errors.
+
+
+CORRECTION - every conversion count in this log was measured wrong
+--------------------------------------------------------------------
+The running "project-wide conversion count" was produced by
+
+    grep -rc "GetEntityHandle() : entt::null" --include=*.cpp ... . |
+        awk -F: '{s+=$2} END {print s}'
+
+and that is wrong three separate ways:
+
+  * grep -c counts matching LINES, not matches. A line carrying two
+    conversions counted once.                              (undercount, ~113)
+  * comments are counted. 141 conversions sit in commented-out debug
+    blocks - 26 in CombatSystem.cpp alone, 18 in cmd_gm.cpp, 17 in
+    New_PetSystem.cpp.                                      (overcount, 141)
+  * the literal string misses conversions spelled with different spacing
+    or wrapped across a line.                                (undercount, ~3)
+
+The first two nearly cancel, which is exactly why this survived nineteen
+phases without looking wrong.
+
+Measured properly - whitespace-tolerant pattern, comments stripped - the count
+at the end of phase 19h is 1694 live sites, not the 1723 reported. Every
+absolute number above 19f is off by a similar margin. The DELTAS are sound:
+the same wrong method was applied throughout, so the phase-to-phase movement
+is real; only the level was misstated.
+
+scratchpad/count_conversions.py is the counter from here on. It reuses the
+strip_map from acmd_tool, the same comment-stripping every rewriting tool in
+this migration already relied on - the counter was the one place that did not.
+
+That gap is the lesson worth keeping. Every tool that CHANGED code was careful
+about comments, because a rewrite inside a comment would have been visible.
+The tool that only MEASURED was not, because a wrong measurement looks exactly
+like a right one.
+
+
+Phase 19i - ani.cpp
+--------------------
+ani_attack_speed and ani_combo_speed take entities. Both bodies were already
+entity-shaped: the LPCHARACTER existed only to be null-checked and to yield a
+handle on the next line.
+
+The single caller cost nothing - GET_ATTACK_SPEED in battle.cpp is already
+GET_ATTACK_SPEED(entt::entity character), so the argument was in scope.
+ani_combo_speed needed no alias either: its last legacy call, ch->IsRiding(),
+has an entity form in MountSystem. It has no callers anywhere in the tree, and
+was flipped rather than deleted - unlike __Profile__Damage it has a real
+implementation behind it, and s_ANI.attack_speed carries the combo overload.
+
+Two dead things went with it, and they are the reason this phase exists:
+
+  * `//const entt::entity character = ((ch) ? (ch)->GetEntityHandle() : ...);`
+    left commented out rather than deleted after the flip.
+  * a commented-out dev_log block still naming `ch`, three times, in a
+    function that no longer has a `ch`. It compiles because it is a comment;
+    it would stop compiling the moment anyone switched it back on for
+    debugging, which is the worst possible time to find out.
+
+The guard changed from `nullptr == ch` to `character == entt::null`. Not the
+same test, same outcome: with a valid pointer whose handle is null, the old
+code fell through to GetWearItem(entt::null), failed IsValidItem, and returned
+the default anyway. The new form just leaves earlier.
+
+Live conversion sites: 1694 -> 1690.
+Build: RelWithDebInfo GameServer, 0 errors.
