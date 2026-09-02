@@ -48,18 +48,19 @@ void CGuild::GuildWarPacket(uint32_t dwOppGID, uint8_t bWarType, uint8_t bWarSta
 
 	for (auto it = m_memberOnline.begin(); it != m_memberOnline.end(); ++it)
 	{
-		LPCHARACTER ch = *it;
+		const entt::entity ch = *it;
+		LPCHARACTER pkCh = ecs::LegacyCharOf(ch);
 #ifdef TEXTS_IMPROVEMENT
 		if (bWarState == GUILD_WAR_ON_WAR) {
-			ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 147, "");
+			ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 147, "");
 		}
 #endif
 		
-		LPDESC d = ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null));
+		LPDESC d = ecs::PlayerRuntime::GetDesc(ch);
 
 		if (d)
 		{
-			ch->SendGuildName( dwOppGID );
+			pkCh->SendGuildName( dwOppGID );
 
 			d->BufferedPacket(&pack, sizeof(pack));
 			d->Packet(&pack2, sizeof(pack2));
@@ -291,7 +292,7 @@ void CGuild::NotifyGuildMaster(uint8_t type, uint32_t idx, const char * format, 
 		vsnprintf(chatbuf, sizeof(chatbuf), format, args);
 		va_end(args);
 
-		ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), type, idx, chatbuf);
+		ecs::ChatSystem::SendNew(ch ? ch->GetEntityHandle() : entt::null, type, idx, chatbuf);
 	}
 }
 #endif
@@ -630,15 +631,16 @@ void CGuild::EndWar(uint32_t dwOppGID)
 		{
 			for (auto it = m_memberOnline.begin(); it != m_memberOnline.end(); ++it)
 			{
-				LPCHARACTER ch = *it;
-				AffectSystem::RemoveAffect(((ch) ? (ch)->GetEntityHandle() : entt::null), GUILD_SKILL_BLOOD);
-				AffectSystem::RemoveAffect(((ch) ? (ch)->GetEntityHandle() : entt::null), GUILD_SKILL_BLESS);
-				AffectSystem::RemoveAffect(((ch) ? (ch)->GetEntityHandle() : entt::null), GUILD_SKILL_SEONGHWI);
-				AffectSystem::RemoveAffect(((ch) ? (ch)->GetEntityHandle() : entt::null), GUILD_SKILL_ACCEL);
-				AffectSystem::RemoveAffect(((ch) ? (ch)->GetEntityHandle() : entt::null), GUILD_SKILL_BUNNO);
-				AffectSystem::RemoveAffect(((ch) ? (ch)->GetEntityHandle() : entt::null), GUILD_SKILL_JUMUN);
+				const entt::entity ch = *it;
+				LPCHARACTER pkCh = ecs::LegacyCharOf(ch);
+				AffectSystem::RemoveAffect(ch, GUILD_SKILL_BLOOD);
+				AffectSystem::RemoveAffect(ch, GUILD_SKILL_BLESS);
+				AffectSystem::RemoveAffect(ch, GUILD_SKILL_SEONGHWI);
+				AffectSystem::RemoveAffect(ch, GUILD_SKILL_ACCEL);
+				AffectSystem::RemoveAffect(ch, GUILD_SKILL_BUNNO);
+				AffectSystem::RemoveAffect(ch, GUILD_SKILL_JUMUN);
 
-				ch->RemoveBadAffect();
+				pkCh->RemoveBadAffect();
 			}
 		}
 	}
@@ -728,18 +730,18 @@ void CGuild::GuildWarEntryAsk(uint32_t dwOppGID)
 
 	while (it != m_memberOnline.end())
 	{
-		LPCHARACTER ch = *it++;
+		const entt::entity ch = *it++;
 
 		using namespace quest;
 		unsigned int questIndex=CQuestManager::instance().GetQuestIndexByName("guild_war_join");
 		if (questIndex)
 		{
-			LOG_INFO("GuildWar.GuildWarEntryAsk.SendLetterToMember pid({}), qid({})", (ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null))), questIndex);
-			CQuestManager::instance().Letter((ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null))), questIndex, 0);
+			LOG_INFO("GuildWar.GuildWarEntryAsk.SendLetterToMember pid({}), qid({})", (ecs::PlayerRuntime::GetPlayerID(ch)), questIndex);
+			CQuestManager::instance().Letter((ecs::PlayerRuntime::GetPlayerID(ch)), questIndex, 0);
 		}
 		else
 		{
-			LOG_ERROR("GuildWar.GuildWarEntryAsk.SendLetterToMember.QUEST_ERROR pid({}), quest_name('guild_war_join.quest')", (ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null))), questIndex);
+			LOG_ERROR("GuildWar.GuildWarEntryAsk.SendLetterToMember.QUEST_ERROR pid({}), quest_name('guild_war_join.quest')", (ecs::PlayerRuntime::GetPlayerID(ch)), questIndex);
 			break;
 		}
 	}
@@ -753,17 +755,17 @@ void CGuild::SetLadderPoint(int point)
 #ifdef TEXTS_IMPROVEMENT
 	if (m_data.ladder_point != point) {
 		for (auto it = m_memberOnline.begin(); it!=m_memberOnline.end();++it) {
-			LPCHARACTER ch = (*it);
+			const entt::entity ch = *it;
 			int i;
 			if (point > m_data.ladder_point) {
 				i = point - m_data.ladder_point;
 				if (i > 0) {
-					ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 152, "%d", i);
+					ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 152, "%d", i);
 				}
 			} else {
 				i = m_data.ladder_point - point;
 				if (i > 0) {
-					ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 1284, "%d", i);
+					ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 1284, "%d", i);
 				}
 			}
 		}

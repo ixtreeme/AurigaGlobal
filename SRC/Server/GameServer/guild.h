@@ -3,6 +3,7 @@
 
 #include "skill.h"
 #include <string_view>
+#include <unordered_set>
 #include <entt/entt.hpp>
 
 typedef struct _SQLMsg SQLMsg;
@@ -392,7 +393,9 @@ void		Reset() { m_data.power = m_data.max_power; }
 		typedef std::map<uint32_t, TGuildMember> TGuildMemberContainer;
 		TGuildMemberContainer m_member;
 
-		typedef CHARACTER_SET TGuildMemberOnlineContainer;
+		// Online members are held as ECS entities: nothing in the guild code
+		// needs the legacy pointer, it only ever asked for the handle.
+		typedef std::unordered_set<entt::entity> TGuildMemberOnlineContainer;
 		TGuildMemberOnlineContainer m_memberOnline;
 
 		typedef std::set<uint32_t>	TGuildMemberP2POnlineContainer;

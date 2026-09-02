@@ -255,7 +255,7 @@ bool CGuild::RemoveMember(uint32_t pid)
 	if (ch)
 	{
 		//GuildRemoveAffect(ch);
-		m_memberOnline.erase(ch);
+		m_memberOnline.erase(ch ? ch->GetEntityHandle() : entt::null);
 		ch->SetGuild(nullptr);
 #ifdef ENABLE_GUILD_ATTRIBUTE
 		RemoveGuildBuff(ch ? ch->GetEntityHandle() : entt::null);
@@ -282,7 +282,7 @@ void CGuild::P2PLoginMember(uint32_t pid)
 	TGuildMemberOnlineContainer::iterator it;
 
 	for (it = m_memberOnline.begin(); it!=m_memberOnline.end();++it)
-		SendLoginPacket(((*it) ? (*it)->GetEntityHandle() : entt::null), pid);
+		SendLoginPacket(*it, pid);
 }
 
 void CGuild::LoginMember(entt::entity character)
@@ -300,9 +300,9 @@ void CGuild::LoginMember(entt::entity character)
 	TGuildMemberOnlineContainer::iterator it;
 
 	for (it = m_memberOnline.begin(); it!=m_memberOnline.end();++it)
-		SendLoginPacket(((*it) ? (*it)->GetEntityHandle() : entt::null), character);
+		SendLoginPacket(*it, character);
 
-	m_memberOnline.insert(ch);
+	m_memberOnline.insert(character);
 
 	SendAllGradePacket(character);
 	SendGuildInfoPacket(character);
@@ -327,7 +327,7 @@ void CGuild::P2PLogoutMember(uint32_t pid)
 	TGuildMemberOnlineContainer::iterator it;
 	for (it = m_memberOnline.begin(); it!=m_memberOnline.end();++it)
 	{
-		SendLogoutPacket(((*it) ? (*it)->GetEntityHandle() : entt::null), pid);
+		SendLogoutPacket(*it, pid);
 	}
 }
 
@@ -343,13 +343,13 @@ void CGuild::LogoutMember(entt::entity character)
 	//GuildRemoveAffect(ch);
 
 	//ch->SetGuild(NULL);
-	m_memberOnline.erase(ch);
+	m_memberOnline.erase(character);
 
 	// Logout event occur
 	TGuildMemberOnlineContainer::iterator it;
 	for (it = m_memberOnline.begin(); it!=m_memberOnline.end();++it)
 	{
-		SendLogoutPacket(((*it) ? (*it)->GetEntityHandle() : entt::null), character);
+		SendLogoutPacket(*it, character);
 	}
 }
 
@@ -368,7 +368,7 @@ void CGuild::SendOnlineRemoveOnePacket(uint32_t pid)
 
 	for (it = m_memberOnline.begin(); it!=m_memberOnline.end();++it)
 	{
-		LPDESC d = ecs::PlayerRuntime::GetDesc(((*it) ? (*it)->GetEntityHandle() : entt::null));
+		LPDESC d = ecs::PlayerRuntime::GetDesc(*it);
 
 		if (d)
 			d->Packet(buf.read_peek(), buf.size());
@@ -426,7 +426,7 @@ void CGuild::SendListOneToAll(uint32_t pid)
 
 	for (TGuildMemberOnlineContainer::iterator it = m_memberOnline.begin(); it!= m_memberOnline.end(); ++it)
 	{
-		LPDESC d = ecs::PlayerRuntime::GetDesc(((*it) ? (*it)->GetEntityHandle() : entt::null));
+		LPDESC d = ecs::PlayerRuntime::GetDesc(*it);
 		if (!d)
 			continue;
 
@@ -493,7 +493,7 @@ void CGuild::SendListPacket(entt::entity character)
 
 	for (TGuildMemberOnlineContainer::iterator it = m_memberOnline.begin(); it != m_memberOnline.end(); ++it)
 	{
-		SendLoginPacket(character, ((*it) ? (*it)->GetEntityHandle() : entt::null));
+		SendLoginPacket(character, *it);
 	}
 
 	for (TGuildMemberP2POnlineContainer::iterator it = m_memberP2POnline.begin(); it != m_memberP2POnline.end(); ++it)
@@ -774,7 +774,7 @@ void CGuild::__P2PUpdateGrade(SQLMsg* pmsg)
 
 			for (TGuildMemberOnlineContainer::iterator it = m_memberOnline.begin(); it!=m_memberOnline.end(); ++it)
 			{
-				LPDESC d = ecs::PlayerRuntime::GetDesc(((*it) ? (*it)->GetEntityHandle() : entt::null));
+				LPDESC d = ecs::PlayerRuntime::GetDesc(*it);
 
 				if (d)
 					d->Packet(buf.read_peek(), buf.size());
@@ -801,7 +801,7 @@ void CGuild::__P2PUpdateGrade(SQLMsg* pmsg)
 
 			for (TGuildMemberOnlineContainer::iterator it = m_memberOnline.begin(); it!=m_memberOnline.end(); ++it)
 			{
-				LPDESC d = ecs::PlayerRuntime::GetDesc(((*it) ? (*it)->GetEntityHandle() : entt::null));
+				LPDESC d = ecs::PlayerRuntime::GetDesc(*it);
 				if (d)
 				{
 					d->Packet(buf.read_peek(), buf.size());
@@ -878,7 +878,7 @@ void CGuild::ChangeGradeName(uint8_t grade, const char* grade_name)
 
 	for (TGuildMemberOnlineContainer::iterator it = m_memberOnline.begin(); it!=m_memberOnline.end(); ++it)
 	{
-		LPDESC d = ecs::PlayerRuntime::GetDesc(((*it) ? (*it)->GetEntityHandle() : entt::null));
+		LPDESC d = ecs::PlayerRuntime::GetDesc(*it);
 
 		if (d)
 			d->Packet(buf.read_peek(), buf.size());
@@ -918,7 +918,7 @@ void CGuild::ChangeGradeAuth(uint8_t grade, uint8_t auth)
 
 	for (TGuildMemberOnlineContainer::iterator it = m_memberOnline.begin(); it != m_memberOnline.end(); ++it)
 	{
-		LPDESC d = ecs::PlayerRuntime::GetDesc(((*it) ? (*it)->GetEntityHandle() : entt::null));
+		LPDESC d = ecs::PlayerRuntime::GetDesc(*it);
 
 		if (d)
 			d->Packet(buf.read_peek(), buf.size());
@@ -1012,7 +1012,7 @@ bool CGuild::OfferExp(entt::entity character, int amount)
 
 	for (TGuildMemberOnlineContainer::iterator it = m_memberOnline.begin(); it != m_memberOnline.end(); ++it)
 	{
-		LPDESC d = ecs::PlayerRuntime::GetDesc(((*it) ? (*it)->GetEntityHandle() : entt::null));
+		LPDESC d = ecs::PlayerRuntime::GetDesc(*it);
 		if (d)
 		{
 			pack.subheader = GUILD_SUBHEADER_GC_LIST;
@@ -1046,11 +1046,12 @@ void CGuild::Disband()
 
 	for (TGuildMemberOnlineContainer::iterator it = m_memberOnline.begin(); it != m_memberOnline.end(); ++it)
 	{
-		auto* ch = *it;
-		ch->SetGuild(nullptr);
-		SendOnlineRemoveOnePacket(ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null)));
+		const entt::entity ch = *it;
+		LPCHARACTER pkCh = ecs::LegacyCharOf(ch);
+		pkCh->SetGuild(nullptr);
+		SendOnlineRemoveOnePacket(ecs::PlayerRuntime::GetPlayerID(ch));
 		// @fixme401
-		ecs::QuestSystem::SetFlag(((ch) ? (ch)->GetEntityHandle() : entt::null), "guild_manage.new_disband_time", get_global_time());
+		ecs::QuestSystem::SetFlag(ch, "guild_manage.new_disband_time", get_global_time());
 	}
 
 	for (TGuildMemberContainer::iterator it = m_member.begin(); it != m_member.end(); ++it)
@@ -1059,7 +1060,7 @@ void CGuild::Disband()
 	}
 #ifdef ENABLE_GUILD_ATTRIBUTE
 	for (auto it = m_memberOnline.begin(); it != m_memberOnline.end(); ++it)
-		RemoveGuildBuff(((*it) ? (*it)->GetEntityHandle() : entt::null));
+		RemoveGuildBuff(*it);
 #endif
 
 }
@@ -1196,8 +1197,7 @@ bool CGuild::ChangeMemberGeneral(uint32_t pid, uint8_t is_general)
 
 	while (itOnline != m_memberOnline.end())
 	{
-		auto* onlineMember = *(itOnline++);
-		const entt::entity member = onlineMember ? onlineMember->GetEntityHandle() : entt::null;
+		const entt::entity member = *(itOnline++);
 		LPDESC d = ecs::PlayerRuntime::GetDesc(member);
 
 		if (!d)
@@ -1233,8 +1233,7 @@ void CGuild::ChangeMemberGrade(uint32_t pid, uint8_t grade)
 
 	while (itOnline != m_memberOnline.end())
 	{
-		auto* onlineMember = *(itOnline++);
-		const entt::entity member = onlineMember ? onlineMember->GetEntityHandle() : entt::null;
+		const entt::entity member = *(itOnline++);
 		LPDESC d = ecs::PlayerRuntime::GetDesc(member);
 
 		if (!d)
@@ -1307,7 +1306,7 @@ void CGuild::SkillLevelUp(uint32_t dwVnum)
 	  }*/
 
 	for (auto it = m_memberOnline.begin(); it != m_memberOnline.end(); ++it)
-		SendSkillInfoPacket(((*it) ? (*it)->GetEntityHandle() : entt::null));
+		SendSkillInfoPacket(*it);
 
 	LOG_INFO("Guild SkillUp: {} {} level {} type {}", GetName(), pkSk->dwVnum, m_data.abySkill[dwRealVnum], pkSk->dwType);
 }
@@ -1457,9 +1456,10 @@ void CGuild::UseSkill(uint32_t dwVnum, entt::entity character, uint32_t pid)
 
 				for (auto it = m_memberOnline.begin(); it != m_memberOnline.end(); ++it)
 				{
-					auto* victim = *it;
-					AffectSystem::RemoveAffect(((victim) ? (victim)->GetEntityHandle() : entt::null), dwVnum);
-					ch->ComputeSkill(dwVnum, victim, m_data.abySkill[dwRealVnum]);
+					const entt::entity victim = *it;
+					LPCHARACTER pkVictim = ecs::LegacyCharOf(victim);
+					AffectSystem::RemoveAffect(victim, dwVnum);
+					ch->ComputeSkill(dwVnum, pkVictim, m_data.abySkill[dwRealVnum]);
 				}
 			}
 			break;
@@ -1564,7 +1564,7 @@ void CGuild::ResetAllStats()
 	m_data.trophies = 0;
 	for (TGuildMemberOnlineContainer::iterator it = m_memberOnline.begin(); it != m_memberOnline.end(); ++it)
 	{
-		SendGuildInfoPacket(((*it) ? (*it)->GetEntityHandle() : entt::null));
+		SendGuildInfoPacket(*it);
 	}
 }
 
@@ -1663,7 +1663,7 @@ void CGuild::ChangeTrophies(bool bWinner, bool bDraw)
 
 	for (TGuildMemberOnlineContainer::iterator it = m_memberOnline.begin(); it != m_memberOnline.end(); ++it)
 	{
-		LPDESC d = ecs::PlayerRuntime::GetDesc(((*it) ? (*it)->GetEntityHandle() : entt::null));
+		LPDESC d = ecs::PlayerRuntime::GetDesc(*it);
 
 		if (d)
 			d->Packet(buf.read_peek(), buf.size());
@@ -1683,20 +1683,21 @@ namespace
 			: iRewardR(iReward)
 			{}
 
-		void operator()(LPCHARACTER ch)
+		void operator()(entt::entity character)
 		{
+			LPCHARACTER ch = ecs::LegacyCharOf(character);
 #ifdef TEXTS_IMPROVEMENT
 			if (iRewardR > 0) {
-				ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 760, "%d", iRewardR);
+				ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 760, "%d", iRewardR);
 			} else {
-				ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 761, "%d", iRewardR);
+				ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 761, "%d", iRewardR);
 			}
 #endif
 
-			if (ecs::PointSystem::GetGold(((ch) ? (ch)->GetEntityHandle() : entt::null)) + iRewardR < 0)
+			if (ecs::PointSystem::GetGold(character) + iRewardR < 0)
 				ch->SetGold(0);
 			else
-				ecs::PointSystem::Change(((ch) ? (ch)->GetEntityHandle() : entt::null), POINT_GOLD, iRewardR);
+				ecs::PointSystem::Change(character, POINT_GOLD, iRewardR);
 		}
 	};
 }
@@ -1752,7 +1753,7 @@ void CGuild::GuildPointChange(uint8_t type, int amount, bool save)
 			}
 
 			for (auto it = m_memberOnline.begin(); it != m_memberOnline.end(); ++it)
-				SendSkillInfoPacket(((*it) ? (*it)->GetEntityHandle() : entt::null));
+				SendSkillInfoPacket(*it);
 			break;
 
 		case POINT_EXP:
@@ -1772,7 +1773,7 @@ void CGuild::GuildPointChange(uint8_t type, int amount, bool save)
 				buf.write(&m_data.exp,4);
 				for (TGuildMemberOnlineContainer::iterator it = m_memberOnline.begin(); it != m_memberOnline.end(); ++it)
 				{
-					LPDESC d = ecs::PlayerRuntime::GetDesc(((*it) ? (*it)->GetEntityHandle() : entt::null));
+					LPDESC d = ecs::PlayerRuntime::GetDesc(*it);
 					if (d) d->Packet(buf.read_peek(), buf.size());
 				}
 				if (save)
@@ -1803,8 +1804,8 @@ void CGuild::GuildPointChange(uint8_t type, int amount, bool save)
 #ifdef ENABLE_GUILD_ATTRIBUTE
 						for (auto it = m_memberOnline.begin(); it != m_memberOnline.end(); ++it)
 						{
-							RemoveGuildBuff(((*it) ? (*it)->GetEntityHandle() : entt::null));
-							GiveGuildBuff(((*it) ? (*it)->GetEntityHandle() : entt::null));
+							RemoveGuildBuff(*it);
+							GiveGuildBuff(*it);
 						}
 #endif
 
@@ -1819,7 +1820,7 @@ void CGuild::GuildPointChange(uint8_t type, int amount, bool save)
 
 						// NOTIFY_GUILD_EXP_CHANGE
 						for (auto it = m_memberOnline.begin(); it != m_memberOnline.end(); ++it)
-							SendGuildInfoPacket(((*it) ? (*it)->GetEntityHandle() : entt::null));
+							SendGuildInfoPacket(*it);
 						// END_OF_NOTIFY_GUILD_EXP_CHANGE
 					}
 
@@ -1842,7 +1843,7 @@ void CGuild::GuildPointChange(uint8_t type, int amount, bool save)
 
 			for (TGuildMemberOnlineContainer::iterator it = m_memberOnline.begin(); it != m_memberOnline.end(); ++it)
 			{
-				LPDESC d = ecs::PlayerRuntime::GetDesc(((*it) ? (*it)->GetEntityHandle() : entt::null));
+				LPDESC d = ecs::PlayerRuntime::GetDesc(*it);
 
 				if (d)
 					d->Packet(buf.read_peek(), buf.size());
@@ -1898,7 +1899,7 @@ void CGuild::LevelChange(uint32_t pid, uint8_t level)
 
 	for (TGuildMemberOnlineContainer::iterator it = m_memberOnline.begin(); it != m_memberOnline.end(); ++it)
 	{
-		LPDESC d = ecs::PlayerRuntime::GetDesc(((*it) ? (*it)->GetEntityHandle() : entt::null));
+		LPDESC d = ecs::PlayerRuntime::GetDesc(*it);
 
 		if (d)
 		{
@@ -1928,7 +1929,7 @@ void CGuild::ChangeMemberData(uint32_t pid, uint32_t offer, uint8_t level, uint8
 
 	for (TGuildMemberOnlineContainer::iterator it = m_memberOnline.begin(); it != m_memberOnline.end(); ++it)
 	{
-		LPDESC d = ecs::PlayerRuntime::GetDesc(((*it) ? (*it)->GetEntityHandle() : entt::null));
+		LPDESC d = ecs::PlayerRuntime::GetDesc(*it);
 		if (d)
 		{
 			pack.subheader = GUILD_SUBHEADER_GC_LIST;
@@ -1949,9 +1950,9 @@ namespace
 			: c_pszText(c_pszText)
 			{}
 
-		void operator()(LPCHARACTER ch)
+		void operator()(entt::entity character)
 		{
-			ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_GUILD, "%s", c_pszText);
+			ecs::ChatSystem::Send(character, CHAT_TYPE_GUILD, "%s", c_pszText);
 		}
 	};
 }
@@ -1986,7 +1987,7 @@ void CGuild::Packet(const void* buf, int size)
 {
 	for (auto it = m_memberOnline.begin(); it!=m_memberOnline.end();++it)
 	{
-		LPDESC d = ecs::PlayerRuntime::GetDesc(((*it) ? (*it)->GetEntityHandle() : entt::null));
+		LPDESC d = ecs::PlayerRuntime::GetDesc(*it);
 
 		if (d)
 			d->Packet(buf, size);
@@ -2165,8 +2166,8 @@ void CGuild::RecvMoneyChange(int iGold)
 
 	for (auto it = m_memberOnline.begin(); it != m_memberOnline.end(); ++it)
 	{
-		auto* ch = *it;
-		LPDESC d = ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null));
+		const entt::entity ch = *it;
+		LPDESC d = ecs::PlayerRuntime::GetDesc(ch);
 		d->BufferedPacket(&p, sizeof(p));
 		d->Packet(&iGold, sizeof(int));
 	}
@@ -2484,8 +2485,8 @@ void CGuild::SendGuildDataUpdateToAllMember(SQLMsg* pmsg)
 
 	for (; iter != m_memberOnline.end(); iter++ )
 	{
-		SendGuildInfoPacket(((*iter) ? (*iter)->GetEntityHandle() : entt::null));
-		SendAllGradePacket(((*iter) ? (*iter)->GetEntityHandle() : entt::null));
+		SendGuildInfoPacket(*iter);
+		SendAllGradePacket(*iter);
 	}
 }
 
@@ -2522,7 +2523,7 @@ void CGuild::SetSkillLevel(uint32_t dwVnum, uint8_t level, uint8_t point)
 	SendDBSkillUpdate();
 
 	for (auto it = m_memberOnline.begin(); it != m_memberOnline.end(); ++it)
-		SendSkillInfoPacket(((*it) ? (*it)->GetEntityHandle() : entt::null));
+		SendSkillInfoPacket(*it);
 
 	LOG_INFO("Guild SetSkillLevel: {} {} level {} type {}", GetName(), pkSk->dwVnum, m_data.abySkill[dwRealVnum], pkSk->dwType);
 }
@@ -2537,7 +2538,7 @@ void CGuild::SetSkillPoint(uint8_t point)
 	m_data.skill_point = point;
 	SendDBSkillUpdate();
 	for (auto it = m_memberOnline.begin(); it != m_memberOnline.end(); ++it)
-		SendSkillInfoPacket(((*it) ? (*it)->GetEntityHandle() : entt::null));
+		SendSkillInfoPacket(*it);
 }
 
 #endif
@@ -2610,7 +2611,7 @@ bool CGuild::RenewalSetLevel(uint8_t level)
 
 	// Update online members: guild info + guild name cache
 	for (auto it = m_memberOnline.begin(); it != m_memberOnline.end(); ++it)
-		SendGuildInfoPacket(((*it) ? (*it)->GetEntityHandle() : entt::null));
+		SendGuildInfoPacket(*it);
 	// Force-refresh guild name/level cache for everyone (SendGuildName() is cached per character)
 	CHARACTER_MANAGER::instance().for_each_pc(FGuildNameSender(GetID(), GetName(), GetLevel()));
 
@@ -2628,7 +2629,7 @@ bool CGuild::RenewalSetLevel(uint8_t level)
 
 	for (TGuildMemberOnlineContainer::iterator it = m_memberOnline.begin(); it != m_memberOnline.end(); ++it)
 	{
-		LPDESC d = ecs::PlayerRuntime::GetDesc(((*it) ? (*it)->GetEntityHandle() : entt::null));
+		LPDESC d = ecs::PlayerRuntime::GetDesc(*it);
 		if (d)
 			d->Packet(buf.read_peek(), buf.size());
 	}
@@ -2637,20 +2638,21 @@ bool CGuild::RenewalSetLevel(uint8_t level)
 
 	for (auto it = m_memberOnline.begin(); it != m_memberOnline.end(); ++it)
 	{
-		RemoveGuildBuff(((*it) ? (*it)->GetEntityHandle() : entt::null));
-		GiveGuildBuff(((*it) ? (*it)->GetEntityHandle() : entt::null));
+		RemoveGuildBuff(*it);
+		GiveGuildBuff(*it);
 	}
 #endif
 
 
 	for (auto it = m_memberOnline.begin(); it != m_memberOnline.end(); ++it)
 	{
-		auto* ch = *it;
-		if (!ch)
+		const entt::entity ch = *it;
+		LPCHARACTER pkCh = ecs::LegacyCharOf(ch);
+		if (ch == entt::null)
 			continue;
 
-		ch->ComputePoints();
-		NetworkSyncSystem::PointsPacket(((ch) ? (ch)->GetEntityHandle() : entt::null));
+		pkCh->ComputePoints();
+		NetworkSyncSystem::PointsPacket(ch);
 	}
 
 
@@ -2658,9 +2660,9 @@ bool CGuild::RenewalSetLevel(uint8_t level)
 	{
 		for (auto it = m_memberOnline.begin(); it != m_memberOnline.end(); ++it)
 		{
-			auto* ch = *it;
-			if (ch)
-				NetworkSyncSystem::BroadcastSpecificEffect(g_registry, ((ch) ? (ch)->GetEntityHandle() : entt::null), "D:/ymir work/ui/game/pvp_advanced/3.mse");
+			const entt::entity ch = *it;
+			if (ch != entt::null)
+				NetworkSyncSystem::BroadcastSpecificEffect(g_registry, ch, "D:/ymir work/ui/game/pvp_advanced/3.mse");
 		}
 	}
 
@@ -2685,7 +2687,7 @@ void CGuild::RenewalSetLevelP2P(uint8_t level)
 
 	// Update online members on THIS core
 	for (auto it = m_memberOnline.begin(); it != m_memberOnline.end(); ++it)
-		SendGuildInfoPacket(((*it) ? (*it)->GetEntityHandle() : entt::null));
+		SendGuildInfoPacket(*it);
 	CHARACTER_MANAGER::instance().for_each_pc(FGuildNameSender(GetID(), GetName(), GetLevel()));
 
 	TPacketGCGuild pack;
@@ -2700,7 +2702,7 @@ void CGuild::RenewalSetLevelP2P(uint8_t level)
 
 	for (TGuildMemberOnlineContainer::iterator it = m_memberOnline.begin(); it != m_memberOnline.end(); ++it)
 	{
-		LPDESC d = ecs::PlayerRuntime::GetDesc(((*it) ? (*it)->GetEntityHandle() : entt::null));
+		LPDESC d = ecs::PlayerRuntime::GetDesc(*it);
 		if (d)
 			d->Packet(buf.read_peek(), buf.size());
 	}
@@ -2708,28 +2710,29 @@ void CGuild::RenewalSetLevelP2P(uint8_t level)
 #ifdef ENABLE_GUILD_ATTRIBUTE
 	for (auto it = m_memberOnline.begin(); it != m_memberOnline.end(); ++it)
 	{
-		RemoveGuildBuff(((*it) ? (*it)->GetEntityHandle() : entt::null));
-		GiveGuildBuff(((*it) ? (*it)->GetEntityHandle() : entt::null));
+		RemoveGuildBuff(*it);
+		GiveGuildBuff(*it);
 	}
 #endif
 
 	for (auto it = m_memberOnline.begin(); it != m_memberOnline.end(); ++it)
 	{
-		auto* ch = *it;
-		if (!ch)
+		const entt::entity ch = *it;
+		LPCHARACTER pkCh = ecs::LegacyCharOf(ch);
+		if (ch == entt::null)
 			continue;
 
-		ch->ComputePoints();
-		NetworkSyncSystem::PointsPacket(((ch) ? (ch)->GetEntityHandle() : entt::null));
+		pkCh->ComputePoints();
+		NetworkSyncSystem::PointsPacket(ch);
 	}
 
 	if (m_data.level >= 40)
 	{
 		for (auto it = m_memberOnline.begin(); it != m_memberOnline.end(); ++it)
 		{
-			auto* ch = *it;
-			if (ch)
-				NetworkSyncSystem::BroadcastSpecificEffect(g_registry, ((ch) ? (ch)->GetEntityHandle() : entt::null), "D:/ymir work/ui/game/pvp_advanced/3.mse");
+			const entt::entity ch = *it;
+			if (ch != entt::null)
+				NetworkSyncSystem::BroadcastSpecificEffect(g_registry, ch, "D:/ymir work/ui/game/pvp_advanced/3.mse");
 		}
 	}
 }

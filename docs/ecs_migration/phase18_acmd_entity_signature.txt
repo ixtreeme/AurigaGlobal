@@ -601,3 +601,64 @@ packet surface), ~100 conversion sites removed.
 
 Project-wide conversion count: 3665 -> 3563
 Build: RelWithDebInfo GameServer, 0 errors.
+
+
+Phase 18j - container boundary: CGuild's online-member set
+-----------------------------------------------------------
+MEASURED FIRST, and the measurement narrowed the job considerably.
+
+"The container boundary" sounded like one large shared problem. It is not.
+Counting conversions whose subject is a dereferenced iterator gives 51 sites
+project-wide, and 41 of them are in guild.cpp. The LPCHARACTER-holding
+containers are spread across many owners (CHARACTER's own m_set_pkChrSpawnedBy
+/ m_setExceptChainLighting / m_set_pkChrTargetedBy, CHARACTER_MANAGER's five
+sets and maps, CDungeon, CWarMap, wedding, offlineshop's LISTGUEST), and most
+of them are iterated to call legacy CHARACTER methods, so flipping their
+element type would buy nothing.
+
+CGuild::m_memberOnline is the exception, and it is a clean one: every single
+dereference of that container in guild.cpp and guild_war.cpp is
+`(*it)->GetEntityHandle()`. 37 of them. The pointer is never used for anything
+else - not one legacy method call - so the element type can simply become the
+entity.
+
+  guild.h:  typedef CHARACTER_SET TGuildMemberOnlineContainer;
+         -> typedef std::unordered_set<entt::entity> TGuildMemberOnlineContainer;
+
+Set membership is unchanged: GetEntityHandle() is a stable per-character value,
+insert and erase use the same value, and distinct characters still map to
+distinct keys. The one remaining pointer-shaped mutation (RemoveMember, where
+only the pointer is in hand) converts at the call.
+
+Also converted, because the element type forced it:
+  - 9 loops that pulled the element into a named local (`auto* ch = *it;`).
+    Four of those bodies still call a legacy method, so they keep one
+    pk-prefixed alias; the rest are entity-only now.
+  - two while-loops whose next line already did
+    `const entt::entity member = onlineMember ? onlineMember->GetEntityHandle() : ...`
+    - the local collapsed into that entity outright.
+  - FGuildChat::operator() - pure, no alias needed.
+  - FGuildReward::operator() - keeps one alias, it calls ch->SetGold(0).
+
+A mistake worth recording
+-------------------------
+While clearing the last loops I ran a file-wide substitution of the `ch`
+conversion in guild_war.cpp instead of scoping it to the loops I had just
+changed. It hit CGuild::GuildChat's own `ch = GetMasterCharacter()`, which is
+still a pointer. The compiler caught it immediately (argument 1 cannot convert
+from LPCHARACTER to entt::entity) and it was the only casualty, but the lesson
+is the same one as phase 18h: scope every rewrite to the block being changed,
+never to the file.
+
+guild.cpp: 67 -> 16   guild_war.cpp: 14 -> 1
+Project-wide conversion count: 3563 -> 3499
+Build: RelWithDebInfo GameServer, 0 errors.
+
+The rest of the container boundary, and why it stays
+----------------------------------------------------
+CHARACTER_SET is used by CHARACTER itself, CHARACTER_MANAGER (state list,
+delayed-save set, monster-log set, race-num map, pending-destroy set), CDungeon,
+CWarMap and wedding. Those are iterated to call legacy CHARACTER methods
+(UpdateStateMachine, Save, ...), so their element type cannot move before those
+methods do. Same for party's m_memberMap, whose value type is a struct holding
+LPCHARACTER, and offlineshop's LISTGUEST.
