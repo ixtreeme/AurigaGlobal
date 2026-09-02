@@ -49,6 +49,8 @@ bool IsNPC(entt::entity e);
 // Not IsNPC: CHARACTER::IsGuardNPC tests m_bCharType != CHAR_TYPE_PC, which
 // includes monsters and stones, while IsNPC above is the TagNPC component.
 bool IsGuardNPC(entt::entity e);
+void SetPotionLimit(entt::entity e, int count);
+int GetPotionLimit(entt::entity e);
 bool IsStone(entt::entity e);
 bool IsMonster(entt::entity e);
 uint8_t GetMobRank(entt::entity e);

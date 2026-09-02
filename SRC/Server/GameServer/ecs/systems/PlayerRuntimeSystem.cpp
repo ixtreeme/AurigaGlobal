@@ -600,6 +600,23 @@ CArena* GetArena(entt::entity e)
 	return membership ? membership->arena : nullptr;
 }
 
+void SetPotionLimit(entt::entity e, int count)
+{
+    if (e == entt::null || !g_registry.valid(e))
+        return;
+
+    g_registry.get_or_emplace<ecs::ArenaMembership>(e).potionLimit = count;
+}
+
+int GetPotionLimit(entt::entity e)
+{
+    if (e == entt::null || !g_registry.valid(e))
+        return 0;
+
+    const auto* membership = g_registry.try_get<ecs::ArenaMembership>(e);
+    return membership ? membership->potionLimit : 0;
+}
+
 void SetArena(entt::entity e, CArena* arena)
 {
 	if (e == entt::null || !g_registry.valid(e))
@@ -1498,7 +1515,7 @@ void CHARACTER::SetLevel(uint8_t level)
             SetPKMode(PK_MODE_PROTECT);
         else if (GetGMLevel() != GM_PLAYER)
             SetPKMode(PK_MODE_PROTECT);
-        else if (m_bPKMode == PK_MODE_PROTECT)
+        else if (GetPKMode() == PK_MODE_PROTECT)
             SetPKMode(PK_MODE_PEACE);
     }
 }
@@ -1794,6 +1811,16 @@ uint32_t CHARACTER::GetImmuneFlag() const
         return flags->immuneFlag;
 
     return 0;
+}
+
+void CHARACTER::SetPotionLimit(int count)
+{
+    ecs::PlayerRuntime::SetPotionLimit(GetEntityHandle(), count);
+}
+
+int CHARACTER::GetPotionLimit() const
+{
+    return ecs::PlayerRuntime::GetPotionLimit(GetEntityHandle());
 }
 
 bool CHARACTER::IsGuardNPC() const
@@ -4428,16 +4455,12 @@ void CHARACTER::SetPlayerProto(const TPlayerTable* t)
 #endif
         {
             m_afAffectFlag.Set(AFF_YMIR);
-            m_bPKMode = PK_MODE_PROTECT;
-            if (auto* combat = g_registry.try_get<ecs::CombatStats>(GetEntityHandle()))
-                combat->pkMode = m_bPKMode;
+            g_registry.get_or_emplace<ecs::CombatStats>(GetEntityHandle()).pkMode = PK_MODE_PROTECT;
         }
     }
 
     if (GetLevel() < PK_PROTECT_LEVEL) {
-        m_bPKMode = PK_MODE_PROTECT;
-        if (auto* combat = g_registry.try_get<ecs::CombatStats>(GetEntityHandle()))
-            combat->pkMode = m_bPKMode;
+        g_registry.get_or_emplace<ecs::CombatStats>(GetEntityHandle()).pkMode = PK_MODE_PROTECT;
     }
 
     m_stMobile = t->szMobile;
@@ -4514,9 +4537,7 @@ void CHARACTER::SetProto(const CMob* pkMob)
     m_pkMobData = pkMob;
     m_pkMobInst = M2_NEW CMobInstance;
 
-    m_bPKMode = PK_MODE_FREE;
-    if (auto* combat = g_registry.try_get<ecs::CombatStats>(GetEntityHandle()))
-        combat->pkMode = m_bPKMode;
+    g_registry.get_or_emplace<ecs::CombatStats>(GetEntityHandle()).pkMode = PK_MODE_FREE;
 
     const TMobTable* t = &m_pkMobData->m_table;
 
@@ -5592,7 +5613,7 @@ void CHARACTER::Initialize()
     m_iRealAlignment = 0;
 
     m_iKillerModePulse = 0;
-    m_bPKMode = PK_MODE_PEACE;
+    g_registry.get_or_emplace<ecs::CombatStats>(GetEntityHandle()).pkMode = PK_MODE_PEACE;
 
     m_dwQuestNPCVID = 0;
     m_dwQuestByVnum = 0;
@@ -5655,7 +5676,7 @@ void CHARACTER::Initialize()
     m_isinPCBang = false;
 
     m_pArena = nullptr;
-    m_nPotionLimit = quest::CQuestManager::instance().GetEventFlag("arena_potion_limit_count");
+    SetPotionLimit(quest::CQuestManager::instance().GetEventFlag("arena_potion_limit_count"));
 
     m_isOpenSafebox = 0;
 

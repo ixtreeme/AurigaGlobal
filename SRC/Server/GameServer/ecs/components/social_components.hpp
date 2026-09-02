@@ -59,6 +59,7 @@ struct DungeonMembership {
 
 struct ArenaMembership {
     CArena* arena { nullptr };
+    int potionLimit { 0 };
 };
 
 struct MarriageState {

@@ -425,15 +425,26 @@ void UpdateKillerMode(entt::entity e)
 
 void SetPKMode(entt::entity e, uint8_t bPKMode)
 {
-    if (auto* ch = LegacyCharOf(e)) {
-        ch->SetPKMode(bPKMode);
-    }
+    if (bPKMode >= PK_MODE_MAX_NUM || e == entt::null || !g_registry.valid(e))
+        return;
+
+    auto& combat = g_registry.get_or_emplace<ecs::CombatStats>(e);
+    if (combat.pkMode == bPKMode)
+        return;
+
+    if (bPKMode == PK_MODE_GUILD && !ecs::SocialSystem::GetGuild(e))
+        bPKMode = PK_MODE_FREE;
+
+    combat.pkMode = bPKMode;
+    g_registry.emplace_or_replace<ecs::DirtyTag>(e);
+    NetworkSyncSystem::UpdatePacket(e);
+    LOG_INFO("PK_MODE: {} {}", ecs::PlayerRuntime::GetName(e).data(), bPKMode);
 }
 
 uint8_t GetPKMode(entt::entity e)
 {
-    if (auto* ch = LegacyCharOf(e)) {
-        return ch->GetPKMode();
+    if (const auto* combat = g_registry.try_get<ecs::CombatStats>(e)) {
+        return combat->pkMode;
     }
 
     return PK_MODE_PROTECT;
@@ -730,27 +741,12 @@ void CHARACTER::UpdateKillerMode()
 
 void CHARACTER::SetPKMode(uint8_t bPKMode)
 {
-	if (bPKMode >= PK_MODE_MAX_NUM)
-		return;
-
-	if (m_bPKMode == bPKMode)
-		return;
-
-	if (bPKMode == PK_MODE_GUILD && !GetGuild())
-		bPKMode = PK_MODE_FREE;
-
-	m_bPKMode = bPKMode;
-	if (auto* combat = g_registry.try_get<ecs::CombatStats>(GetEntityHandle())) {
-		combat->pkMode = bPKMode;
-		g_registry.emplace_or_replace<ecs::DirtyTag>(GetEntityHandle());
-	}
-	NetworkSyncSystem::UpdatePacket(GetEntityHandle());
-	LOG_INFO("PK_MODE: {} {}", GetName(), m_bPKMode);
+	CombatSystem::SetPKMode(GetEntityHandle(), bPKMode);
 }
 
 uint8_t CHARACTER::GetPKMode() const
 {
-	return m_bPKMode;
+	return CombatSystem::GetPKMode(GetEntityHandle());
 }
 
 struct FuncForgetMyAttacker

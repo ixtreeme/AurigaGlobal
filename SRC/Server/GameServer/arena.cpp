@@ -2,6 +2,7 @@
 #include <Core/Logging.hpp>
 #include "ecs/systems/PlayerRuntimeSystem.hpp"
 #include "ecs/systems/PointSystem.hpp"
+#include "ecs/systems/CombatSystem.hpp"
 #include "ecs/systems/MovementSystem.hpp"
 #include "ecs/AIHelpers.hpp"
 #include "constants.h"
@@ -277,8 +278,8 @@ EVENTFUNC(ready_to_start_event)
 				}
 				else
 				{
-					chA->SetPotionLimit(count);
-					chB->SetPotionLimit(count);
+					ecs::PlayerRuntime::SetPotionLimit(chAEntity, count);
+					ecs::PlayerRuntime::SetPotionLimit(chBEntity, count);
 #ifdef TEXTS_IMPROVEMENT
 					ecs::ChatSystem::SendNew(chAEntity, CHAT_TYPE_INFO, 349, "%d", count);
 					ecs::ChatSystem::SendNew(chBEntity, CHAT_TYPE_INFO, 349, "%d", count);
@@ -563,7 +564,7 @@ void CArena::EndDuel()
 
 	if (playerA != nullptr)
 	{
-		playerA->SetPKMode(PK_MODE_PEACE);
+		CombatSystem::SetPKMode(playerAEntity, PK_MODE_PEACE);
 		playerA->StartRecoveryEvent();
 		playerA->SetPosition(POS_STANDING);
 		ecs::PointSystem::Change(playerAEntity, POINT_HP, ecs::PointSystem::GetMaxHP(playerAEntity) - ecs::PointSystem::Get(playerAEntity, POINT_HP));
@@ -576,7 +577,7 @@ void CArena::EndDuel()
 
 	if (playerB != nullptr)
 	{
-		playerB->SetPKMode(PK_MODE_PEACE);
+		CombatSystem::SetPKMode(playerBEntity, PK_MODE_PEACE);
 		playerB->StartRecoveryEvent();
 		playerB->SetPosition(POS_STANDING);
 		ecs::PointSystem::Change(playerBEntity, POINT_HP, ecs::PointSystem::GetMaxHP(playerBEntity) - ecs::PointSystem::Get(playerBEntity, POINT_HP));
@@ -830,8 +831,8 @@ bool CArena::OnDead(uint32_t dwPIDA, uint32_t dwPIDB)
 		}
 
 		int potion = quest::CQuestManager::instance().GetEventFlag("arena_potion_limit_count");
-		pCharA->SetPotionLimit(potion);
-		pCharB->SetPotionLimit(potion);
+		ecs::PlayerRuntime::SetPotionLimit(charA, potion);
+		ecs::PlayerRuntime::SetPotionLimit(charB, potion);
 	}
 	else
 	{

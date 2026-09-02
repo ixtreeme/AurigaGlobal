@@ -1829,7 +1829,6 @@ protected:
 	uint32_t					m_iAlignment;
 	uint32_t					m_iRealAlignment;
 	int					m_iKillerModePulse;
-	uint8_t				m_bPKMode;
 
 	// Aggro
 	uint32_t				m_dwLastVictimSetTime;
@@ -2421,7 +2420,6 @@ private:
 private:
 	CArena* m_pArena;
 	bool m_ArenaObserver;
-	int m_nPotionLimit;
 
 public:
 	void 	SetArena(CArena* pArena);
@@ -2430,8 +2428,8 @@ public:
 	CArena* GetArena() const;
 	bool	GetArenaObserverMode() const;
 
-	void	SetPotionLimit(int count) { m_nPotionLimit = count; }
-	int		GetPotionLimit() const { return m_nPotionLimit; }
+	void	SetPotionLimit(int count);
+	int		GetPotionLimit() const;
 	// END_ARENA
 
 		//PREVENT_TRADE_WINDOW

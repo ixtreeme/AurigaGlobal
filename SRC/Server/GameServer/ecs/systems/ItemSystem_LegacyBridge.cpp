@@ -6309,7 +6309,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 					case 71020:
 						if (quest::CQuestManager::instance().GetEventFlag("arena_potion_limit_count") < 10000)
 						{
-							if (m_nPotionLimit <= 0)
+							if (GetPotionLimit() <= 0)
 							{
 #ifdef TEXTS_IMPROVEMENT
 								ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 362, "");
@@ -6388,7 +6388,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 					if (GetWarMap())
 						GetWarMap()->UsePotion(this, item);
 
-					m_nPotionLimit--;
+					SetPotionLimit(GetPotionLimit() - 1);
 
 					//RESTRICT_USE_SEED_OR_MOONBOTTLE
 					ItemSystem::ConsumeItemEcs(itemEntity);
@@ -8748,7 +8748,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 				case 71020:
 					if (quest::CQuestManager::instance().GetEventFlag("arena_potion_limit_count") < 10000)
 					{
-						if (m_nPotionLimit <= 0)
+						if (GetPotionLimit() <= 0)
 						{
 #ifdef TEXTS_IMPROVEMENT
 							ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 362, "");
@@ -8826,7 +8826,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 				if (GetWarMap())
 					GetWarMap()->UsePotion(this, item);
 
-				m_nPotionLimit--;
+				SetPotionLimit(GetPotionLimit() - 1);
 
 				//RESTRICT_USE_SEED_OR_MOONBOTTLE
 				ItemSystem::ConsumeItemEcs(itemEntity);
@@ -8884,7 +8884,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 				GetWarMap()->UsePotion(this, item);
 
 			ItemSystem::ConsumeItem(itemEntity);
-			m_nPotionLimit--;
+			SetPotionLimit(GetPotionLimit() - 1);
 			break;
 
 		case USE_POTION_CONTINUE:
