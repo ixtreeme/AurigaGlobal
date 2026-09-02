@@ -263,8 +263,8 @@ EVENTFUNC(ready_to_start_event)
 	{
 		case 0:
 			{
-				chA->SetArena(pArena);
-				chB->SetArena(pArena);
+				ecs::PlayerRuntime::SetArena(chAEntity, pArena);
+				ecs::PlayerRuntime::SetArena(chBEntity, pArena);
 
 				int count = quest::CQuestManager::instance().GetEventFlag("arena_potion_limit_count");
 
@@ -343,15 +343,15 @@ EVENTFUNC(ready_to_start_event)
 				ecs::PlayerRuntime::GetDesc(chAEntity)->SetPhase(PHASE_GAME);
 				chA->StartRecoveryEvent();
 				chA->SetPosition(POS_STANDING);
-				ecs::PointSystem::Change(chAEntity, POINT_HP, ecs::PointSystem::GetMaxHP(chAEntity) - chA->GetHP());
-				ecs::PointSystem::Change(chAEntity, POINT_SP, ecs::PointSystem::GetMaxSP(chAEntity) - chA->GetSP());
+				ecs::PointSystem::Change(chAEntity, POINT_HP, ecs::PointSystem::GetMaxHP(chAEntity) - ecs::PointSystem::Get(chAEntity, POINT_HP));
+				ecs::PointSystem::Change(chAEntity, POINT_SP, ecs::PointSystem::GetMaxSP(chAEntity) - ecs::PointSystem::Get(chAEntity, POINT_SP));
 				chA->ViewReencode();
 
 				ecs::PlayerRuntime::GetDesc(chBEntity)->SetPhase(PHASE_GAME);
 				chB->StartRecoveryEvent();
 				chB->SetPosition(POS_STANDING);
-				ecs::PointSystem::Change(chBEntity, POINT_HP, ecs::PointSystem::GetMaxHP(chBEntity) - chB->GetHP());
-				ecs::PointSystem::Change(chBEntity, POINT_SP, ecs::PointSystem::GetMaxSP(chBEntity) - chB->GetSP());
+				ecs::PointSystem::Change(chBEntity, POINT_HP, ecs::PointSystem::GetMaxHP(chBEntity) - ecs::PointSystem::Get(chBEntity, POINT_HP));
+				ecs::PointSystem::Change(chBEntity, POINT_SP, ecs::PointSystem::GetMaxSP(chBEntity) - ecs::PointSystem::Get(chBEntity, POINT_SP));
 				chB->ViewReencode();
 
 				TEMP_BUFFER buf;
@@ -566,10 +566,10 @@ void CArena::EndDuel()
 		playerA->SetPKMode(PK_MODE_PEACE);
 		playerA->StartRecoveryEvent();
 		playerA->SetPosition(POS_STANDING);
-		ecs::PointSystem::Change(playerAEntity, POINT_HP, ecs::PointSystem::GetMaxHP(playerAEntity) - playerA->GetHP());
-		ecs::PointSystem::Change(playerAEntity, POINT_SP, ecs::PointSystem::GetMaxSP(playerAEntity) - playerA->GetSP());
+		ecs::PointSystem::Change(playerAEntity, POINT_HP, ecs::PointSystem::GetMaxHP(playerAEntity) - ecs::PointSystem::Get(playerAEntity, POINT_HP));
+		ecs::PointSystem::Change(playerAEntity, POINT_SP, ecs::PointSystem::GetMaxSP(playerAEntity) - ecs::PointSystem::Get(playerAEntity, POINT_SP));
 
-		playerA->SetArena(nullptr);
+		ecs::PlayerRuntime::SetArena(playerAEntity, nullptr);
 
 		ecs::MovementSystem::WarpSet(playerAEntity, ARENA_RETURN_POINT_X(ecs::PlayerRuntime::GetEmpire(playerAEntity)), ARENA_RETURN_POINT_Y(ecs::PlayerRuntime::GetEmpire(playerAEntity)));
 	}
@@ -579,10 +579,10 @@ void CArena::EndDuel()
 		playerB->SetPKMode(PK_MODE_PEACE);
 		playerB->StartRecoveryEvent();
 		playerB->SetPosition(POS_STANDING);
-		ecs::PointSystem::Change(playerBEntity, POINT_HP, ecs::PointSystem::GetMaxHP(playerBEntity) - playerB->GetHP());
-		ecs::PointSystem::Change(playerBEntity, POINT_SP, ecs::PointSystem::GetMaxSP(playerBEntity) - playerB->GetSP());
+		ecs::PointSystem::Change(playerBEntity, POINT_HP, ecs::PointSystem::GetMaxHP(playerBEntity) - ecs::PointSystem::Get(playerBEntity, POINT_HP));
+		ecs::PointSystem::Change(playerBEntity, POINT_SP, ecs::PointSystem::GetMaxSP(playerBEntity) - ecs::PointSystem::Get(playerBEntity, POINT_SP));
 
-		playerB->SetArena(nullptr);
+		ecs::PlayerRuntime::SetArena(playerBEntity, nullptr);
 
 		ecs::MovementSystem::WarpSet(playerBEntity, ARENA_RETURN_POINT_X(ecs::PlayerRuntime::GetEmpire(playerBEntity)), ARENA_RETURN_POINT_Y(ecs::PlayerRuntime::GetEmpire(playerBEntity)));
 	}

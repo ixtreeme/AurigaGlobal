@@ -12,6 +12,7 @@
 #include "PointSemantic.hpp"
 #include "Registry.hpp"
 #include "VIDRegistry.hpp"
+#include "PIDRegistry.hpp"
 #include "components/appearance_components.hpp"
 #include "components/ai_components.hpp"
 #include "components/character_runtime_components.hpp"
@@ -620,6 +621,7 @@ entt::entity EntityFactory::CreatePC(entt::registry& reg, const TPlayerTable& da
     }
 
     reg.emplace_or_replace<ecs::PlayerID>(entity, data.id);
+    CPIDRegistry::Instance().Register(data.id, entity);
     reg.emplace_or_replace<ecs::AccountID>(entity, ecs::AccountID { desc ? desc->GetAccountTable().id : 0u });
     reg.emplace_or_replace<ecs::EmpireComponent>(entity, ecs::EmpireComponent { static_cast<uint8_t>(desc ? desc->GetEmpire() : 0u) });
     reg.emplace_or_replace<ecs::RaceComponent>(entity, ecs::RaceComponent { data.job });
@@ -811,6 +813,10 @@ void EntityFactory::Destroy(entt::registry& reg, entt::entity e)
 
     if (const auto* vid = reg.try_get<ecs::VIDComponent>(e)) {
         CVIDRegistry::Instance().Unregister(vid->value);
+    }
+
+    if (const auto* pid = reg.try_get<ecs::PlayerID>(e); pid && pid->pid) {
+        CPIDRegistry::Instance().Unregister(pid->pid);
     }
 
     if (const auto* legacy = reg.try_get<ecs::LegacyCharPtr>(e); legacy && legacy->ptr) {

@@ -1524,3 +1524,72 @@ the phase 10 identity work.
 
 Live conversion sites: 1690 -> 1685.
 Build: RelWithDebInfo GameServer, 0 errors, first attempt.
+
+
+Phase 19k - CPIDRegistry, and a wrapper caught before it shipped
+------------------------------------------------------------------
+FindEntityByPID was itself a round trip:
+
+    entt::entity CHARACTER_MANAGER::FindEntityByPID(uint32_t dwPID)
+    {
+        LPCHARACTER found = FindByPID(dwPID);
+        return found ? found->GetEntityHandle() : entt::null;
+    }
+
+A lookup in the legacy pointer map followed by a conversion off the pointer it
+returned. Anything built on it inherited that, so it had to be fixed at the
+source rather than routed around.
+
+The ECS side had a VID index (CVIDRegistry) and no PID index at all. It has
+one now, on the same shape, written at the single place ecs::PlayerID is
+emplaced (EntityFactory.cpp) and dropped in the destroy path beside the VID
+unregister. FindEntityByPID reads it directly and only falls back to the
+legacy map - logging PID_DRIFT - when the two disagree, exactly as FindEntity
+does for VID.
+
+Note for anyone adding a file here: the source glob is CONFIGURE_DEPENDS, but
+the build did not pick up PIDRegistry.cpp until `cmake -S . -B build` was run
+by hand. The symptom is LNK2001 on the new symbol, not a missing-file error.
+
+Fourteen calls in arena.cpp went component-native with it: GetHP/GetSP through
+PointSystem::Get, and SetArena through ecs::PlayerRuntime::SetArena, which
+writes an ArenaMembership component.
+
+THE WRAPPER I ALMOST USED
+--------------------------
+CombatSystem::SetPKMode(entt::entity, uint8_t) exists, and I had already
+routed arena.cpp's two SetPKMode calls through it before reading it:
+
+    void SetPKMode(entt::entity e, uint8_t bPKMode)
+    {
+        if (auto* ch = LegacyCharOf(e)) { ch->SetPKMode(bPKMode); }
+    }
+
+That is a round trip with a namespace in front of it. Using it would have
+taken the pointer out of arena.cpp and left the identical conversion one frame
+down, where no count and no grep in this migration would ever show it. Both
+calls were put back to playerA->SetPKMode(...). A visible pointer is worth
+more than a hidden conversion.
+
+The rule this settles: before replacing a legacy call with an ecs:: one, read
+the ecs:: implementation. SetArena writes a component and is real progress;
+SetPKMode forwards and is not. They sit in the same style of header and are
+indistinguishable from the call site.
+
+WHY GetPlayerA/GetPlayerB DID NOT FLIP
+----------------------------------------
+They return LPCHARACTER, and with a PID index available the flip looks free.
+It is not. Their callers still make twelve genuinely legacy calls:
+
+    SetPotionLimit      m_nPotionLimit, a plain CHARACTER member
+    StartRecoveryEvent  m_pkRecoveryEvent, legacy event machinery
+    SetPosition         legacy, and carries a known ECS/legacy drift note
+    ViewReencode        the m_map_view view system, mid-migration from the
+                        component side per the LPENTITY audit above
+
+Flipping the return type today buys aliases in three of the six bodies and
+frees three. That is churn. The state has to move into components first;
+wrapping these four would be the SetPKMode mistake, deliberately.
+
+Live conversion sites: 1685 -> 1681.
+Build: RelWithDebInfo GameServer, 0 errors.

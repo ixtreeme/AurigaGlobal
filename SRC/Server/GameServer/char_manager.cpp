@@ -37,6 +37,7 @@
 #include "ecs/EntityFactory.hpp"
 #include "ecs/Registry.hpp"
 #include "ecs/VIDRegistry.hpp"
+#include "ecs/PIDRegistry.hpp"
 #include "ecs/CharacterAccessors.hpp"
 #include "ecs/systems/ItemSystem.hpp"
 #include "ecs/components/identity_components.hpp"
@@ -593,8 +594,19 @@ entt::entity CHARACTER_MANAGER::FindPCEntity(const char* name)
 
 entt::entity CHARACTER_MANAGER::FindEntityByPID(uint32_t dwPID)
 {
+	// CPIDRegistry is the ECS-side authority for PID -> entity, written where
+	// the PlayerID component is. The legacy map is only a fallback, and a hit
+	// there means the two indexes have drifted apart.
+	if (const entt::entity entity = CPIDRegistry::Instance().Find(dwPID);
+		entity != entt::null && g_registry.valid(entity))
+		return entity;
+
 	LPCHARACTER found = FindByPID(dwPID);
-	return found ? found->GetEntityHandle() : entt::null;
+	if (!found)
+		return entt::null;
+
+	LOG_ERROR("PID_DRIFT: {} resolves through the legacy map but not CPIDRegistry", dwPID);
+	return found->GetEntityHandle();
 }
 
 LPCHARACTER CHARACTER_MANAGER::FindPC(const char* name)
