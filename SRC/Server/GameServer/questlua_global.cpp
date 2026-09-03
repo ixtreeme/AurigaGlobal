@@ -874,19 +874,16 @@ namespace quest
 
 		uint32_t race = (uint32_t) lua_tonumber(L, 1);
 
-		CharacterVectorInteractor i;
+		std::vector<entt::entity> i;
 
 		if (CHARACTER_MANAGER::instance().GetCharactersByRaceNum(race, i))
 		{
-			CharacterVectorInteractor::iterator it = i.begin();
-
-			while (it != i.end())
+			for (const entt::entity tch : i)
 			{
-				LPCHARACTER tch = *(it++);
 
-				if (ecs::PlayerRuntime::GetMapIndex(((tch) ? (tch)->GetEntityHandle() : entt::null)) == ecs::PlayerRuntime::GetMapIndex(((CQuestManager::instance().GetCurrentCharacterPtr()) ? (CQuestManager::instance().GetCurrentCharacterPtr())->GetEntityHandle() : entt::null)))
+				if (ecs::PlayerRuntime::GetMapIndex(tch) == ecs::PlayerRuntime::GetMapIndex(((CQuestManager::instance().GetCurrentCharacterPtr()) ? (CQuestManager::instance().GetCurrentCharacterPtr())->GetEntityHandle() : entt::null)))
 				{
-					lua_pushnumber(L, ((tch)->GetLegacyVID()));
+					lua_pushnumber(L, ecs::PlayerRuntime::GetPacketVID(tch));
 					return 1;
 				}
 			}

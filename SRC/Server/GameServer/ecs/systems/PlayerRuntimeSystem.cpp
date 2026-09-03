@@ -4673,7 +4673,7 @@ void CHARACTER::SetProto(const CMob* pkMob)
         StartWarpNPCEvent();
     }
 
-    CHARACTER_MANAGER::instance().RegisterRaceNumMap(this);
+    CHARACTER_MANAGER::instance().RegisterRaceNumMap(GetEntityHandle());
 
     if (mining::IsVeinOfOre(GetRaceNum()))
     {

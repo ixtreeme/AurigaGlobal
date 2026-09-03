@@ -18,7 +18,6 @@
 
 class CDungeon;
 class CHARACTER;
-class CharacterVectorInteractor;
 
 class CHARACTER_MANAGER : public singleton<CHARACTER_MANAGER>
 {
@@ -100,9 +99,12 @@ protected:
 		void			KillLog(uint32_t dwVnum);
 
 		void			RegisterRaceNum(uint32_t dwVnum);
-		void			RegisterRaceNumMap(LPCHARACTER ch);
-		void			UnregisterRaceNumMap(LPCHARACTER ch);
-		bool			GetCharactersByRaceNum(uint32_t dwRaceNum, CharacterVectorInteractor & i);
+		void			RegisterRaceNumMap(entt::entity character);
+		void			UnregisterRaceNumMap(entt::entity character);
+		// Fills a snapshot of the entities registered under this race. Callers
+		// destroy characters while walking it, and a destroyed character's
+		// entity simply stops resolving, where a dangling LPCHARACTER did not.
+		bool			GetCharactersByRaceNum(uint32_t dwRaceNum, std::vector<entt::entity>& out);
 
 		LPCHARACTER		FindSpecifyPC(unsigned int uiJobFlag, int32_t lMapIndex, LPCHARACTER except= nullptr, int iMinLevel = 1, int iMaxLevel = PLAYER_MAX_LEVEL_CONST);
 
@@ -186,7 +188,7 @@ protected:
 		std::map<uint32_t, uint32_t> m_map_dwMobKillCount;
 
 		std::set<uint32_t>		m_set_dwRegisteredRaceNum;
-		std::map<uint32_t, CHARACTER_SET> m_map_pkChrByRaceNum;
+		std::map<uint32_t, std::unordered_set<entt::entity>> m_map_pkChrByRaceNum;
 
 		bool				m_bUsePendingDestroy;
 		CHARACTER_SET		m_set_pkChrPendingDestroy;
@@ -205,17 +207,6 @@ Func CHARACTER_MANAGER::for_each_pc(Func f)
 	return f;
 }
 
-class CharacterVectorInteractor : public CHARACTER_VECTOR
-{
-	public:
-		CharacterVectorInteractor() : m_bMyBegin(false) { }
-
-		CharacterVectorInteractor(const CHARACTER_SET & r);
-		virtual ~CharacterVectorInteractor();
-
-	private:
-		bool m_bMyBegin;
-};
 
 #ifndef DEBUG_ALLOC
 #define M2_DESTROY_CHARACTER(ptr) CHARACTER_MANAGER::instance().DestroyCharacter(ptr)

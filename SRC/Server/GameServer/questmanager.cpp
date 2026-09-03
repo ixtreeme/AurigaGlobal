@@ -28,6 +28,7 @@
 
 #ifdef __QUEST_RENEWAL__
 #include <boost/tokenizer.hpp>
+#include "ecs/CharacterAccessors.hpp"
 #endif
 
 uint32_t g_GoldDropTimeLimitValue = 0;
@@ -1551,21 +1552,18 @@ namespace quest
 			}
 			else if (!value && prev_value)
 			{
-				CharacterVectorInteractor i;
+				std::vector<entt::entity> i;
 
 				if (CHARACTER_MANAGER::instance().GetCharactersByRaceNum(EventNPC, i))
 				{
-					CharacterVectorInteractor::iterator it = i.begin();
-
-					while (it != i.end())
+					for (const entt::entity chEntity : i)
 					{
-						LPCHARACTER ch = *it++;
-
-						switch (ecs::PlayerRuntime::GetMapIndex(((ch) ? (ch)->GetEntityHandle() : entt::null)))
+						switch (ecs::PlayerRuntime::GetMapIndex(chEntity))
 						{
 							case 3:
 							case 23:
 							case 43:
+								if (LPCHARACTER ch = ecs::LegacyCharOf(chEntity))
 								M2_DESTROY_CHARACTER(ch);
 								break;
 						}

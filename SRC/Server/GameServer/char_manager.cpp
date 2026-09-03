@@ -478,7 +478,7 @@ void CHARACTER_MANAGER::DestroyCharacter(LPCHARACTER ch, const char* file, size_
 			ch->SaveReal();
 	}
 
-	UnregisterRaceNumMap(ch);
+	UnregisterRaceNumMap(character);
 
 	RemoveFromStateList(ch->GetEntityHandle());
 
@@ -1408,41 +1408,39 @@ void CHARACTER_MANAGER::RegisterRaceNum(uint32_t dwVnum)
 	m_set_dwRegisteredRaceNum.insert(dwVnum);
 }
 
-void CHARACTER_MANAGER::RegisterRaceNumMap(LPCHARACTER ch)
+void CHARACTER_MANAGER::RegisterRaceNumMap(entt::entity character)
 {
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
 	ecs::ChatSystem::Send(ch ? ch->GetEntityHandle() : entt::null, CHAT_TYPE_INFO, "char_manager.cpp::CHARACTER_MANAGER::RegisterRaceNumMap");//INGAME_DEBUG_RAZOR93
 #endif
-	const auto entity = ch ? ch->GetEntityHandle() : entt::null;
-	uint32_t dwVnum = ecs::PlayerRuntime::GetRaceNum(entity);
+	const uint32_t dwVnum = ecs::PlayerRuntime::GetRaceNum(character);
 
 	if (m_set_dwRegisteredRaceNum.contains(dwVnum)) // ϵ ȣ ̸
 	{
-		LOG_INFO("RegisterRaceNumMap {} {}", ecs::PlayerRuntime::GetName(entity), dwVnum);
-		m_map_pkChrByRaceNum[dwVnum].insert(ch);
+		LOG_INFO("RegisterRaceNumMap {} {}", ecs::PlayerRuntime::GetName(character), dwVnum);
+		m_map_pkChrByRaceNum[dwVnum].insert(character);
 	}
 }
 
-void CHARACTER_MANAGER::UnregisterRaceNumMap(LPCHARACTER ch)
+void CHARACTER_MANAGER::UnregisterRaceNumMap(entt::entity character)
 {
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
 	ecs::ChatSystem::Send(ch ? ch->GetEntityHandle() : entt::null, CHAT_TYPE_INFO, "char_manager.cpp::CHARACTER_MANAGER::UnregisterRaceNumMap");//INGAME_DEBUG_RAZOR93
 #endif
-	const entt::entity character = ch ? ch->GetEntityHandle() : entt::null;
-	uint32_t dwVnum = ecs::PlayerRuntime::GetRaceNum(character);
+	const uint32_t dwVnum = ecs::PlayerRuntime::GetRaceNum(character);
 
 	if (const auto it = m_map_pkChrByRaceNum.find(dwVnum); it != m_map_pkChrByRaceNum.end())
-		it->second.erase(ch);
+		it->second.erase(character);
 }
 
-bool CHARACTER_MANAGER::GetCharactersByRaceNum(uint32_t dwRaceNum, CharacterVectorInteractor& i)
+bool CHARACTER_MANAGER::GetCharactersByRaceNum(uint32_t dwRaceNum, std::vector<entt::entity>& out)
 {
 	const auto it = m_map_pkChrByRaceNum.find(dwRaceNum);
 
 	if (it == m_map_pkChrByRaceNum.end())
 		return false;
 
-	i = it->second;
+	out.assign(it->second.begin(), it->second.end());
 	return true;
 }
 
@@ -1624,20 +1622,6 @@ void CHARACTER_MANAGER::FlushPendingDestroy()
 	}
 }
 
-CharacterVectorInteractor::CharacterVectorInteractor(const CHARACTER_SET& r)
-{
-	reserve(r.size());
-	insert(end(), r.begin(), r.end());
-
-	if (CHARACTER_MANAGER::instance().BeginPendingDestroy())
-		m_bMyBegin = true;
-}
-
-CharacterVectorInteractor::~CharacterVectorInteractor()
-{
-	if (m_bMyBegin)
-		CHARACTER_MANAGER::instance().FlushPendingDestroy();
-}
 
 #ifdef ENABLE_EVENT_MANAGER
 #include "item_manager.h"

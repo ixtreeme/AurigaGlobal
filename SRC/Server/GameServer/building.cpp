@@ -365,16 +365,12 @@ void CLand::PutData(const TLand * data)
 
 		if (r)
 		{
-			CharacterVectorInteractor i;
+			std::vector<entt::entity> i;
 
 			if (CHARACTER_MANAGER::instance().GetCharactersByRaceNum(20040, i))
 			{
-				CharacterVectorInteractor::iterator it = i.begin();
-
-				while (it != i.end())
+				for (const entt::entity chEntity : i)
 				{
-					LPCHARACTER ch = *(it++);
-					const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
 
 
 					if (ecs::PlayerRuntime::GetMapIndex(chEntity) != m_data.lMapIndex)
@@ -389,7 +385,8 @@ void CLand::PutData(const TLand * data)
 					if (y > m_data.y + m_data.height || y < m_data.y)
 						continue;
 
-					M2_DESTROY_CHARACTER(ch);
+					if (LPCHARACTER ch = ecs::LegacyCharOf(chEntity))
+						M2_DESTROY_CHARACTER(ch);
 				}
 			}
 		}
