@@ -3557,15 +3557,15 @@ void CInputMain::PartyInvite(entt::entity character, const char * c_pData)
 
 	TPacketCGPartyInvite * p = (TPacketCGPartyInvite*) c_pData;
 
-	LPCHARACTER pInvitee = CHARACTER_MANAGER::instance().Find(p->vid);
+	const entt::entity pInvitee = CHARACTER_MANAGER::instance().FindEntity(p->vid);
 
-	if (!pInvitee || !ecs::PlayerRuntime::GetDesc(character) || !ecs::PlayerRuntime::GetDesc(((pInvitee) ? (pInvitee)->GetEntityHandle() : entt::null)))
+	if (pInvitee == entt::null || !ecs::PlayerRuntime::GetDesc(character) || !ecs::PlayerRuntime::GetDesc(pInvitee))
 	{
 		LOG_ERROR("PARTY Cannot find invited character");
 		return;
 	}
 
-	ch->PartyInvite((pInvitee ? pInvitee->GetEntityHandle() : entt::null));
+	ch->PartyInvite(pInvitee);
 }
 
 void CInputMain::PartyInviteAnswer(entt::entity character, const char * c_pData)

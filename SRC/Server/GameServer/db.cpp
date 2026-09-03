@@ -1100,21 +1100,21 @@ void DBManager::AnalyzeReturnQuery(SQLMsg * pMsg)
 			// BLOCK_CHAT
 		case QID_BLOCK_CHAT_LIST:
 			{
-				LPCHARACTER ch = CHARACTER_MANAGER::instance().FindByPID(qi->dwIdent);
+				const entt::entity ch = CHARACTER_MANAGER::instance().FindEntityByPID(qi->dwIdent);
 
-				if (ch == nullptr)
+				if (ch == entt::null)
 					break;
 				if (pMsg->Get()->uiNumRows)
 				{
 					MYSQL_ROW row;
 					while ((row = mysql_fetch_row(pMsg->Get()->pSQLResult)))
 					{
-						ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "%s %s sec", row[0], row[1]);
+						ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "%s %s sec", row[0], row[1]);
 					}
 				}
 #ifdef TEXTS_IMPROVEMENT
 				else {
-					ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 820, "");
+					ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 820, "");
 				}
 #endif
 			}

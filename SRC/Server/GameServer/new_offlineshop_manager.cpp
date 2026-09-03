@@ -2660,10 +2660,10 @@ namespace offlineshop
 
 	void CShopManager::SendShopForceClosedClientPacket(uint32_t dwOwnerID)
 	{
-		LPCHARACTER ch = CHARACTER_MANAGER::instance().FindByPID(dwOwnerID);
-		const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
+		const entt::entity ch = CHARACTER_MANAGER::instance().FindEntityByPID(dwOwnerID);
+		const entt::entity chEntity = ch;
 
-		if(!ch || !ecs::PlayerRuntime::GetDesc(chEntity))
+		if(ch == entt::null || !ecs::PlayerRuntime::GetDesc(chEntity))
 			return;
 
 		TPacketGCNewOfflineshop pack;

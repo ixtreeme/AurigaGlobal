@@ -1095,9 +1095,9 @@ void CPVPManager::SendList(LPDESC d)
 
 		if (pkPVP->m_players[0].dwVID == dwVID)
 		{
-			LPCHARACTER ch = CHARACTER_MANAGER::instance().Find(pkPVP->m_players[1].dwVID);
-			const entt::entity character = ch ? ch->GetEntityHandle() : entt::null;
-			if (ch && ecs::PlayerRuntime::GetDesc(character))
+			const entt::entity ch = CHARACTER_MANAGER::instance().FindEntity(pkPVP->m_players[1].dwVID);
+			const entt::entity character = ch;
+			if (ch != entt::null && ecs::PlayerRuntime::GetDesc(character))
 			{
 				LPDESC d = ecs::PlayerRuntime::GetDesc(character);
 				d->Packet(&pack, sizeof(pack));
@@ -1105,9 +1105,9 @@ void CPVPManager::SendList(LPDESC d)
 		}
 		else if (pkPVP->m_players[1].dwVID == dwVID)
 		{
-			LPCHARACTER ch = CHARACTER_MANAGER::instance().Find(pkPVP->m_players[0].dwVID);
-			const entt::entity character = ch ? ch->GetEntityHandle() : entt::null;
-			if (ch && ecs::PlayerRuntime::GetDesc(character))
+			const entt::entity ch = CHARACTER_MANAGER::instance().FindEntity(pkPVP->m_players[0].dwVID);
+			const entt::entity character = ch;
+			if (ch != entt::null && ecs::PlayerRuntime::GetDesc(character))
 			{
 				LPDESC d = ecs::PlayerRuntime::GetDesc(character);
 				d->Packet(&pack, sizeof(pack));

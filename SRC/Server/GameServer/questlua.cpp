@@ -935,15 +935,15 @@ namespace quest
 
 		LOG_INFO("GotoConfirmState vid {} msg '{}', timeout {}", dwVID, szMsg, iTimeout);
 
-		LPCHARACTER ch = CHARACTER_MANAGER::instance().Find(dwVID);
-		const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
+		const entt::entity ch = CHARACTER_MANAGER::instance().FindEntity(dwVID);
+		const entt::entity chEntity = ch;
 
-		if (ch && (ecs::PlayerRuntime::IsPC(chEntity)))
+		if (ch != entt::null && (ecs::PlayerRuntime::IsPC(chEntity)))
 		{
 			NetworkSyncSystem::SendConfirmWithMsg(g_registry, chEntity, szMsg, iTimeout, ecs::PlayerRuntime::GetPlayerID(((GetCurrentCharacterPtr()) ? (GetCurrentCharacterPtr())->GetEntityHandle() : entt::null)));
 		}
 
-		GetCurrentPC()->SetConfirmWait((ch && (ecs::PlayerRuntime::IsPC(chEntity)))?(ecs::PlayerRuntime::GetPlayerID(chEntity)):0);
+		GetCurrentPC()->SetConfirmWait((ch != entt::null && (ecs::PlayerRuntime::IsPC(chEntity)))?(ecs::PlayerRuntime::GetPlayerID(chEntity)):0);
 		ostringstream os;
 		os << "[CONFIRM_WAIT timeout;" << iTimeout << "]";
 		AddScript(os.str());
@@ -952,7 +952,7 @@ namespace quest
 		confirm_timeout_event_info* info = AllocEventInfo<confirm_timeout_event_info>();
 
 		info->dwWaitPID = ecs::PlayerRuntime::GetPlayerID(((GetCurrentCharacterPtr()) ? (GetCurrentCharacterPtr())->GetEntityHandle() : entt::null));
-		info->dwReplyPID = (ch && (ecs::PlayerRuntime::IsPC(chEntity))) ? (ecs::PlayerRuntime::GetPlayerID(chEntity)) : 0;
+		info->dwReplyPID = (ch != entt::null && (ecs::PlayerRuntime::IsPC(chEntity))) ? (ecs::PlayerRuntime::GetPlayerID(chEntity)) : 0;
 
 		event_create(confirm_timeout_event, info, PASSES_PER_SEC(iTimeout));
 	}
