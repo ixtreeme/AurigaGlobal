@@ -1813,3 +1813,55 @@ an entity, so the tail needed nothing.
 
 Live conversion sites: 1684 -> 1672.
 Build: RelWithDebInfo GameServer, 0 errors.
+
+
+Phase 19p - the stale m_map_view walks, and what they were reading
+--------------------------------------------------------------------
+Every m_map_view reader outside entity_view.cpp now walks ecs::ViewMap. There
+were four, and all four were inside CHARACTER methods:
+
+    ItemSystem_LegacyBridge   mount inventory overhead, to nearby players
+    MountSystem               same, the fake-shop-header variant
+    SessionSystem             same again
+    PlayerRuntimeSystem       CHARACTER::RestartAtSamePos
+
+THIS IS A BUG FIX, NOT ONLY A MIGRATION
+-----------------------------------------
+entity_view.cpp says, in its own words:
+
+    // For characters, m_map_view is no longer maintained - the legacy
+    // CFuncViewInsert polling in UpdateSectree was disabled in D.6
+
+and ValidateViewMapMirror returns early for characters for exactly that
+reason. So a character's m_map_view is frozen at whatever it held when D.6
+landed. All four of these loops are in CHARACTER methods. They have been
+iterating that frozen map: the three overhead updates were notifying a stale
+set of viewers, and RestartAtSamePos was resyncing one.
+
+The comments recording that the map was dead for characters were right there
+in entity_view.cpp; nothing connected them to the four places still reading it.
+That is the failure mode worth naming - a fact was documented at the source and
+never propagated to the consumers.
+
+RestartAtSamePos kept both packet directions
+----------------------------------------------
+It looks like ViewReencode and it is not. ViewReencode dropped the peer
+direction in fixup-5 because refreshing peers reset a moving character's
+animation; RestartAtSamePos is a deliberate full respawn, so the peer refresh
+is its whole purpose. It walks ViewMap now through EntityNetworkDispatch
+Send/Remove, but keeps both directions.
+
+Its peer filter was preserved rather than simplified. The original let every
+non-character through and filtered characters to IsPC() || IsNPC() ||
+IsMonster() - which, since IsPC() is the descriptor test and IsNPC() is
+m_bCharType != CHAR_TYPE_PC, excludes exactly one thing: a CHAR_TYPE_PC entity
+with no descriptor, a link-dead player. The rewrite tests SpatialKindTag for
+character-ness and then reproduces that condition, rather than collapsing it
+to "always true", which is what it looks like at a glance.
+
+m_map_view now has readers only inside entity_view.cpp: ViewCleanup,
+ViewReencode's non-character branch, ViewInsert, ViewRemove and UpdateSectree.
+Those are the last ones before the member, the MirrorView* functions and
+ValidateViewMapMirror can go.
+
+Build: RelWithDebInfo GameServer, 0 errors.

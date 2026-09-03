@@ -57,6 +57,7 @@
 #endif
 #ifdef ENABLE_BATTLE_PASS
 #include "../../battle_pass.h"
+#include "../components/visibility_components.hpp"
 #endif
 #include "../../DragonSoul.h"
 #include "../../buff_on_attributes.h"
@@ -4026,18 +4027,23 @@ bool CHARACTER::MoveItem(TItemPos Cell, TItemPos DestCell,
 				SendLeaderboardDataSkillMob(this ? this->GetEntityHandle() : entt::null);
 
 				// Frissítés a körülöttünk lévő játékosoknak
-				for (const auto& it : m_map_view)
+				// The ECS ViewMap, not m_map_view: this is a CHARACTER, and for characters
+				// the legacy map stopped being maintained when D.6 disabled the polling in
+				// UpdateSectree. It is frozen at whatever it held then, so this loop was
+				// walking stale contents.
+				const entt::entity selfEntity = GetEntityHandle();
+				if (const auto* viewMap = g_registry.try_get<ecs::ViewMap>(selfEntity))
 				{
-					LPENTITY ent = it.first;
-					if (!ent || !ent->IsType(ENTITY_CHARACTER))
-						continue;
+					for (const entt::entity viewerEntity : viewMap->visible)
+					{
+						if (viewerEntity == selfEntity)
+							continue;
 
-					auto* viewer = static_cast<LegacyCharHandle>(ent);
-					if (viewer == this)
-						continue;
-
-					if (viewer->IsPC() && ecs::PlayerRuntime::GetDesc((viewer ? viewer->GetEntityHandle() : entt::null)))
-						UpdateMountInventoryCountOverhead(viewer ? viewer->GetEntityHandle() : entt::null);
+						// CHARACTER::IsPC() is the descriptor test, which the original
+						// spelled out alongside it - one check covers both.
+						if (ecs::PlayerRuntime::GetDesc(viewerEntity))
+							UpdateMountInventoryCountOverhead(viewerEntity);
+					}
 				}
 #endif
 

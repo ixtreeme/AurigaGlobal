@@ -34,6 +34,7 @@
 #include <utility>
 #include <Core/Logging.hpp>
 #include "../CharacterAccessors.hpp"
+#include "../components/visibility_components.hpp"
 
 namespace
 {
@@ -247,19 +248,21 @@ void CHARACTER::UpdateMountCountOverheadToViewers()
 #ifdef ENABLE_FAKE_SHOP_HEADER
     UpdateMountInventoryCountOverhead(this ? this->GetEntityHandle() : entt::null);
 
-    for (const auto& it : m_map_view)
+    // The ECS ViewMap, not m_map_view: this is a CHARACTER, and for characters
+    // the legacy map stopped being maintained when D.6 disabled the polling in
+    // UpdateSectree. It is frozen at whatever it held then, so this loop was
+    // walking stale contents.
+    const entt::entity selfEntity = GetEntityHandle();
+    if (const auto* viewMap = g_registry.try_get<ecs::ViewMap>(selfEntity))
     {
-        LPENTITY ent = it.first;
-        if (!ent || !ent->IsType(ENTITY_CHARACTER))
-            continue;
+        for (const entt::entity viewerEntity : viewMap->visible)
+        {
+            if (viewerEntity == selfEntity)
+                continue;
 
-        auto* viewer = static_cast<LegacyCharHandle>(ent);
-        if (!viewer || viewer == this)
-            continue;
-
-        const entt::entity viewerEntity = viewer->GetEntityHandle();
-        if (ecs::PlayerRuntime::IsPC(viewerEntity) && ecs::PlayerRuntime::GetDesc(viewerEntity))
-            UpdateMountInventoryCountOverhead(viewer ? viewer->GetEntityHandle() : entt::null);
+            if (ecs::PlayerRuntime::IsPC(viewerEntity) && ecs::PlayerRuntime::GetDesc(viewerEntity))
+                UpdateMountInventoryCountOverhead(viewerEntity);
+        }
     }
 #endif
 }

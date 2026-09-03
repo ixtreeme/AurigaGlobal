@@ -58,6 +58,8 @@
 #include "../../item_manager.h"
 #include "../../log.h"
 #include "../../marriage.h"
+#include "../components/spatial_components.hpp"
+#include "../services/EntityNetworkDispatch.hpp"
 #include "../../messenger_manager.h"
 #include "../../mining.h"
 #include "../../mob_manager.h"
@@ -4947,35 +4949,49 @@ void CHARACTER::RestartAtSamePos()
     if (m_bIsObserver)
         return;
 
-    EncodeRemovePacket(this);
-    EncodeInsertPacket(this);
+    const entt::entity self = GetEntityHandle();
+    if (self == entt::null || !g_registry.valid(self))
+        return;
 
-    ENTITY_MAP::iterator it = m_map_view.begin();
+    // The ECS ViewMap, not m_map_view: this is a CHARACTER, and the legacy map
+    // stopped being maintained for characters when D.6 disabled the polling in
+    // UpdateSectree, so this walk was reading whatever it was frozen with.
+    //
+    // Unlike ViewReencode this keeps BOTH packet directions. Fixup-5 dropped
+    // the peer direction there because a moving character's animation was
+    // being reset on every peer; a restart is a deliberate full respawn, so
+    // the peer refresh is the point of it.
+    ecs::EntityNetworkDispatch::SendRemove(g_registry, self, self);
+    ecs::EntityNetworkDispatch::SendInsert(g_registry, self, self);
 
-    while (it != m_map_view.end())
+    const auto* viewMap = g_registry.try_get<ecs::ViewMap>(self);
+    if (!viewMap)
+        return;
+
+    const auto visible = viewMap->visible;  // snapshot: the loop dispatches
+    for (const entt::entity other : visible)
     {
-        LPENTITY entity = (it++)->first;
+        if (other == entt::null || !g_registry.valid(other) || other == self)
+            continue;
 
-        EncodeRemovePacket(entity);
+        ecs::EntityNetworkDispatch::SendRemove(g_registry, self, other);
         if (!m_bIsObserver)
-            EncodeInsertPacket(entity);
+            ecs::EntityNetworkDispatch::SendInsert(g_registry, self, other);
 
-        if (entity->IsType(ENTITY_CHARACTER))
+        // The original let every non-character through and filtered characters
+        // to PC || NPC || monster - which excludes only a CHAR_TYPE_PC entity
+        // with no descriptor, i.e. a link-dead player. Keep that.
+        bool reverse = true;
+        if (const auto* kind = g_registry.try_get<ecs::SpatialKindTag>(other);
+            kind && kind->kind == ecs::SpatialKind::Character)
         {
-            LPCHARACTER lpChar = (LPCHARACTER)entity;
-            if (lpChar->IsPC() || lpChar->IsNPC() || lpChar->IsMonster())
-            {
-                if (!entity->IsObserverMode())
-                    entity->EncodeInsertPacket(this);
-            }
+            const auto* type = g_registry.try_get<ecs::CharacterType>(other);
+            reverse = ecs::PlayerRuntime::GetDesc(other) != nullptr
+                || (type && type->value != CHAR_TYPE_PC);
         }
-        else
-        {
-            if (!entity->IsObserverMode())
-            {
-                entity->EncodeInsertPacket(this);
-            }
-        }
+
+        if (reverse && !ecs::PlayerRuntime::IsObserverMode(other))
+            ecs::EntityNetworkDispatch::SendInsert(g_registry, other, self);
     }
 }
 
