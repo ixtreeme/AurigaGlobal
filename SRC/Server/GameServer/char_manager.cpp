@@ -40,6 +40,7 @@
 #include "ecs/PIDRegistry.hpp"
 #include "ecs/systems/AISystem.hpp"
 #include "ecs/systems/SocialSystem.hpp"
+#include "ecs/systems/SkillSystem.hpp"
 #include "ecs/CharacterAccessors.hpp"
 #include "ecs/systems/ItemSystem.hpp"
 #include "ecs/components/identity_components.hpp"
@@ -1470,19 +1471,25 @@ bool CHARACTER_MANAGER::GetCharactersByRaceNum(uint32_t dwRaceNum, std::vector<e
 //
 // (job+1)*3+(skill_group)
 //
-LPCHARACTER CHARACTER_MANAGER::FindSpecifyPC(unsigned int uiJobFlag, int32_t lMapIndex, LPCHARACTER except, int iMinLevel, int iMaxLevel)
+entt::entity CHARACTER_MANAGER::FindSpecifyPC(unsigned int uiJobFlag, int32_t lMapIndex, entt::entity except, int iMinLevel, int iMaxLevel)
 {
-	LPCHARACTER chFind = nullptr;
+	entt::entity chFind = entt::null;
 	int n = 0;
 
+	// Still the PID map, deliberately: a view over TagPC would be the native
+	// iteration but is not provably the same population, and this function
+	// picks a random winner - a different candidate set is not something a
+	// build would catch.
 	for (auto it = m_map_pkChrByPID.begin(); it != m_map_pkChrByPID.end(); ++it)
 	{
 		auto* ch = it->second;
-
-		if (ch == except)
+		if (!ch)
 			continue;
 
 		const entt::entity character = ch->GetEntityHandle();
+		if (character == except)
+			continue;
+
 		const int32_t level = ecs::PointSystem::GetLevel(character);
 
 		if (level < iMinLevel)
@@ -1496,14 +1503,15 @@ LPCHARACTER CHARACTER_MANAGER::FindSpecifyPC(unsigned int uiJobFlag, int32_t lMa
 
 		if (uiJobFlag)
 		{
-			unsigned int uiChrJob = 1 << ((ch->GetJob() + 1) * 3 + ch->GetSkillGroup());
+			unsigned int uiChrJob = 1 << ((ecs::PlayerRuntime::GetJob(character) + 1) * 3
+				+ SkillSystem::GetSkillGroup(character));
 
 			if (!IS_SET(uiJobFlag, uiChrJob))
 				continue;
 		}
 
-		if (!chFind || number(1, ++n) == 1)
-			chFind = ch;
+		if (chFind == entt::null || number(1, ++n) == 1)
+			chFind = character;
 	}
 
 	return chFind;

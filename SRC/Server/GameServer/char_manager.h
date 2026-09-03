@@ -106,7 +106,7 @@ protected:
 		// entity simply stops resolving, where a dangling LPCHARACTER did not.
 		bool			GetCharactersByRaceNum(uint32_t dwRaceNum, std::vector<entt::entity>& out);
 
-		LPCHARACTER		FindSpecifyPC(unsigned int uiJobFlag, int32_t lMapIndex, LPCHARACTER except= nullptr, int iMinLevel = 1, int iMaxLevel = PLAYER_MAX_LEVEL_CONST);
+		entt::entity		FindSpecifyPC(unsigned int uiJobFlag, int32_t lMapIndex, entt::entity except = entt::null, int iMinLevel = 1, int iMaxLevel = PLAYER_MAX_LEVEL_CONST);
 
 		void			SetMobItemRate(int value)	{ m_iMobItemRate = value; }
 		void			SetMobDamageRate(int value)	{ m_iMobDamageRate = value; }

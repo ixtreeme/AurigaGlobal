@@ -147,16 +147,8 @@ entt::entity FindByVID(uint32_t vid)
 entt::entity FindSpecifyPC(uint32_t jobFlag, int32_t mapIndex, entt::entity except,
 	int minLevel, int maxLevel)
 {
-	LPCHARACTER legacyExcept = nullptr;
-	if (except != entt::null && g_registry.valid(except))
-	{
-		if (const auto* legacy = g_registry.try_get<ecs::LegacyCharPtr>(except))
-			legacyExcept = legacy->ptr;
-	}
-
-	LPCHARACTER found = CHARACTER_MANAGER::instance().FindSpecifyPC(
-		jobFlag, mapIndex, legacyExcept, minLevel, maxLevel);
-	return found ? found->GetEntityHandle() : entt::null;
+	return CHARACTER_MANAGER::instance().FindSpecifyPC(
+		jobFlag, mapIndex, except, minLevel, maxLevel);
 }
 
 LPDESC GetDesc(entt::entity e)
