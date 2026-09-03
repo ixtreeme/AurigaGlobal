@@ -1,5 +1,6 @@
 #include "../../stdafx.h"
 #include "PlayerRuntimeSystem.hpp"
+#include "PointSystem.hpp"
 
 #include "InventorySystem.hpp"
 #include "ItemSystem.hpp"
@@ -1057,7 +1058,7 @@ bool CItem::EquipTo(LPCHARACTER ch, uint8_t bWearCell)
 		}
 	}
 
-	m_pOwner->SetImmuneFlag(dwImmuneFlag);
+	ecs::PlayerRuntime::SetImmuneFlag(charEntity, dwImmuneFlag);
 #endif
 
 	if (IsDragonSoul())
@@ -1184,7 +1185,7 @@ bool CItem::Unequip()
 		}
 	}
 
-	m_pOwner->SetImmuneFlag(dwImmuneFlag);
+	ecs::PlayerRuntime::SetImmuneFlag(charEntity, dwImmuneFlag);
 #endif
 
 	m_pOwner->ComputeBattlePoints();
@@ -1248,9 +1249,9 @@ void CItem::ModifyPoints(bool bAdd)
 							continue;
 
 						if (aApplie.bType == APPLY_SKILL)
-							m_pOwner->ApplyPoint(aApplie.bType, bAdd ? aApplie.lValue : aApplie.lValue ^ 0x00800000);
+							ecs::PointSystem::ApplyPoint(ownerEntity, aApplie.bType, bAdd ? aApplie.lValue : aApplie.lValue ^ 0x00800000);
 						else
-							m_pOwner->ApplyPoint(aApplie.bType, bAdd ? aApplie.lValue : -aApplie.lValue);
+							ecs::PointSystem::ApplyPoint(ownerEntity, aApplie.bType, bAdd ? aApplie.lValue : -aApplie.lValue);
 					}
 				}
 			}
@@ -1282,7 +1283,7 @@ void CItem::ModifyPoints(bool bAdd)
 							else if ((pkItemAbsorbed->alValues[1] > 0) || (pkItemAbsorbed->alValues[5] > 0))
 								lDefGrade += 1;
 
-							m_pOwner->ApplyPoint(APPLY_DEF_GRADE_BONUS, bAdd ? lDefGrade : -lDefGrade);
+							ecs::PointSystem::ApplyPoint(ownerEntity, APPLY_DEF_GRADE_BONUS, bAdd ? lDefGrade : -lDefGrade);
 
 							int32_t lDefMagicBonus = pkItemAbsorbed->alValues[0];
 							dValue = lDefMagicBonus * GetSocket(ACCE_ABSORPTION_SOCKET);
@@ -1294,7 +1295,7 @@ void CItem::ModifyPoints(bool bAdd)
 							else if (pkItemAbsorbed->alValues[0] > 0)
 								lDefMagicBonus += 1;
 
-							m_pOwner->ApplyPoint(APPLY_MAGIC_DEF_GRADE, bAdd ? lDefMagicBonus : -lDefMagicBonus);
+							ecs::PointSystem::ApplyPoint(ownerEntity, APPLY_MAGIC_DEF_GRADE, bAdd ? lDefMagicBonus : -lDefMagicBonus);
 						} */
 			/* else  */if (pkItemAbsorbed->bType == ITEM_WEAPON)
 			{
@@ -1311,7 +1312,7 @@ void CItem::ModifyPoints(bool bAdd)
 				else if ((pkItemAbsorbed->alValues[3] > 0) || (pkItemAbsorbed->alValues[4] > 0))
 					lAttGrade += 1;
 
-				m_pOwner->ApplyPoint(APPLY_ATT_GRADE_BONUS, bAdd ? lAttGrade : -lAttGrade);
+				ecs::PointSystem::ApplyPoint(ownerEntity, APPLY_ATT_GRADE_BONUS, bAdd ? lAttGrade : -lAttGrade);
 
 				int32_t lAttMagicGrade = pkItemAbsorbed->alValues[2] + pkItemAbsorbed->alValues[5];
 				if (pkItemAbsorbed->alValues[1] > pkItemAbsorbed->alValues[2])
@@ -1326,7 +1327,7 @@ void CItem::ModifyPoints(bool bAdd)
 				else if ((pkItemAbsorbed->alValues[1] > 0) || (pkItemAbsorbed->alValues[2] > 0))
 					lAttMagicGrade += 1;
 
-				m_pOwner->ApplyPoint(APPLY_MAGIC_ATT_GRADE, bAdd ? lAttMagicGrade : -lAttMagicGrade);
+				ecs::PointSystem::ApplyPoint(ownerEntity, APPLY_MAGIC_ATT_GRADE, bAdd ? lAttMagicGrade : -lAttMagicGrade);
 			}
 		}
 	}
@@ -1374,14 +1375,14 @@ void CItem::ModifyPoints(bool bAdd)
 #endif
 		if (m_pProto->aApplies[i].bType == APPLY_SKILL)
 		{
-			m_pOwner->ApplyPoint(m_pProto->aApplies[i].bType, bAdd ? value : value ^ 0x00800000);
+			ecs::PointSystem::ApplyPoint(ownerEntity, m_pProto->aApplies[i].bType, bAdd ? value : value ^ 0x00800000);
 		}
 		else
 		{
 			if (0 != accessoryGrade)
 				value += MAX(accessoryGrade, value * aiAccessorySocketEffectivePct[accessoryGrade] / 100);
 
-			m_pOwner->ApplyPoint(m_pProto->aApplies[i].bType, bAdd ? value : -value);
+			ecs::PointSystem::ApplyPoint(ownerEntity, m_pProto->aApplies[i].bType, bAdd ? value : -value);
 		}
 	}
 
@@ -1394,7 +1395,7 @@ void CItem::ModifyPoints(bool bAdd)
 			auto type = m_ExtraProto->ExtraBonus[i].bType;
 			if (type != APPLY_NONE) {
 				auto value = m_ExtraProto->ExtraBonus[i].lValue;
-				m_pOwner->ApplyPoint(m_ExtraProto->ExtraBonus[i].bType, bAdd ? value : -value);
+				ecs::PointSystem::ApplyPoint(ownerEntity, m_ExtraProto->ExtraBonus[i].bType, bAdd ? value : -value);
 			}
 		}
 #endif
@@ -1432,9 +1433,9 @@ void CItem::ModifyPoints(bool bAdd)
 #endif
 
 				if (ia.bType == APPLY_SKILL)
-					m_pOwner->ApplyPoint(ia.bType, bAdd ? sValue : sValue ^ 0x00800000);
+					ecs::PointSystem::ApplyPoint(ownerEntity, ia.bType, bAdd ? sValue : sValue ^ 0x00800000);
 				else
-					m_pOwner->ApplyPoint(ia.bType, bAdd ? sValue : -sValue);
+					ecs::PointSystem::ApplyPoint(ownerEntity, ia.bType, bAdd ? sValue : -sValue);
 			}
 		}
 	}
@@ -1764,7 +1765,7 @@ void CItem::ModifyPoints(bool bAdd)
 				break;
 			for (auto it = pAttrGroup->m_vecAttrs.begin(); it != pAttrGroup->m_vecAttrs.end(); ++it)
 			{
-				m_pOwner->ApplyPoint(it->apply_type, bAdd ? it->apply_value : it->apply_value); // -it->apply_value
+				ecs::PointSystem::ApplyPoint(ownerEntity, it->apply_type, bAdd ? it->apply_value : it->apply_value); // -it->apply_value
 			}
 		}
 	}
