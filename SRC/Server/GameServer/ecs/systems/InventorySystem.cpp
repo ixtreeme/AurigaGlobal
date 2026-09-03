@@ -1,6 +1,7 @@
 #include "../../stdafx.h"
 #include "PlayerRuntimeSystem.hpp"
 #include "PointSystem.hpp"
+#include "MountSystem.hpp"
 
 #include "InventorySystem.hpp"
 #include "ItemSystem.hpp"
@@ -1100,12 +1101,12 @@ bool CItem::EquipTo(LPCHARACTER ch, uint8_t bWearCell)
 
 #ifdef ENABLE_COSTUME_PET
 	if ((GetType() == ITEM_COSTUME) && (GetSubType() == COSTUME_PET_SKIN)) {
-		m_pOwner->UpdatePetSkin();
+		MountSystem::UpdatePetSkin(charEntity);
 	}
 #endif
 #ifdef ENABLE_COSTUME_MOUNT
 	if ((GetType() == ITEM_COSTUME) && (GetSubType() == COSTUME_MOUNT_SKIN)) {
-		m_pOwner->UpdateMountSkin();
+		MountSystem::UpdateMountSkin(charEntity);
 	}
 #endif
 
@@ -1141,7 +1142,7 @@ bool CItem::Unequip()
 
 #ifdef ENABLE_MOUNT_COSTUME_SYSTEM
 	if (IsMountItem())
-		m_pOwner->MountUnsummon(GetEntityHandle());
+		MountSystem::MountUnsummon(charEntity, GetEntityHandle());
 #endif
 
 	if (IsRideItem())
@@ -1193,12 +1194,12 @@ bool CItem::Unequip()
 	NetworkSyncSystem::UpdatePacket(charEntity);
 #ifdef ENABLE_COSTUME_PET
 	if ((GetType() == ITEM_COSTUME) && (GetSubType() == COSTUME_PET_SKIN)) {
-		m_pOwner->UpdatePetSkin();
+		MountSystem::UpdatePetSkin(charEntity);
 	}
 #endif
 #ifdef ENABLE_COSTUME_MOUNT
 	if ((GetType() == ITEM_COSTUME) && (GetSubType() == COSTUME_MOUNT_SKIN)) {
-		m_pOwner->UpdateMountSkin();
+		MountSystem::UpdateMountSkin(charEntity);
 	}
 #endif
 	m_pOwner = nullptr;
@@ -1560,7 +1561,7 @@ void CItem::ModifyPoints(bool bAdd)
 			else
 			{
 				if (GetProto()->bSubType == ARMOR_BODY)
-					ecs::PlayerRuntime::SetPart(ownerEntity, PART_MAIN, m_pOwner->GetOriginalPart(PART_MAIN));
+					ecs::PlayerRuntime::SetPart(ownerEntity, PART_MAIN, ecs::PlayerRuntime::GetOriginalPart(ownerEntity, PART_MAIN));
 			}
 		}
 	}
@@ -1593,14 +1594,14 @@ void CItem::ModifyPoints(bool bAdd)
 				const entt::entity armor = ItemSystem::GetWearItem(ownerEntity, WEAR_BODY);
 				toSetValue = ItemSystem::IsValidItem(armor)
 					? ItemSystem::GetItemVnum(armor)
-					: m_pOwner->GetOriginalPart(PART_MAIN);
+					: ecs::PlayerRuntime::GetOriginalPart(ownerEntity, PART_MAIN);
 			}
 		}
 #ifdef ENABLE_RUNE_SYSTEM
 		else if (GetSubType() == RUNE_SLOT7)
 		{
 			toSetPart = PART_RUNE;
-			toSetValue = (true == bAdd) ? m_pOwner->GetRuneEffect() : 0;
+			toSetValue = (true == bAdd) ? ecs::PlayerRuntime::GetRuneEffect(ownerEntity) : 0;
 		}
 #endif
 		else if (GetSubType() == COSTUME_HAIR)

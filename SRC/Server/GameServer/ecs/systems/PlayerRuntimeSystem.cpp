@@ -2626,11 +2626,15 @@ void CHARACTER::ReadOfflineMessages()
 #endif
 
 #ifdef ENABLE_RUNE_SYSTEM
-uint16_t CHARACTER::GetRuneEffect() {
-    if (!IsPC())
+namespace ecs::PlayerRuntime {
+
+uint16_t GetRuneEffect(entt::entity e)
+{
+
+    if (!(GetDesc(e) != nullptr))
         return 0;
 
-    if (GetQuestFlag("rune.hide_effect") == 1)
+    if (ecs::QuestSystem::GetFlag(e, "rune.hide_effect") == 1)
         return 0;
 
     uint16_t r = 1;
@@ -2640,7 +2644,7 @@ uint16_t CHARACTER::GetRuneEffect() {
     int32_t lRemainPercent = 0;
 
     for (int i = 0; i < iMaxSubTypes; i++) {
-        const entt::entity item = ItemSystem::GetWearItem(GetEntityHandle(), WEAR_RUNE1 + i);
+        const entt::entity item = ItemSystem::GetWearItem(e, WEAR_RUNE1 + i);
         if (!ItemSystem::IsValidItem(item)) {
             r = 0;
             break;
@@ -2667,6 +2671,13 @@ uint16_t CHARACTER::GetRuneEffect() {
     }
 
     return r;
+}
+
+} // namespace ecs::PlayerRuntime
+
+uint16_t CHARACTER::GetRuneEffect()
+{
+	return ecs::PlayerRuntime::GetRuneEffect(GetEntityHandle());
 }
 #endif
 
@@ -3975,15 +3986,17 @@ void CHARACTER::SetPart(uint8_t bPartPos, uint16_t wVal)
     ecs::PlayerRuntime::SetPart(GetEntityHandle(), bPartPos, wVal);
 }
 
-uint16_t CHARACTER::GetPart(uint8_t bPartPos) const
+namespace ecs::PlayerRuntime {
+
+uint16_t GetPart(entt::entity e, uint8_t bPartPos)
 {
     assert(bPartPos < PART_MAX_NUM);
-	const entt::entity character = GetEntityHandle();
+	const entt::entity character = e;
 
 #ifdef __HIDE_COSTUME_SYSTEM__
     if (bPartPos == PART_MAIN &&
 		ItemSystem::IsValidItem(ItemSystem::GetWearItem(character, WEAR_COSTUME_BODY)) &&
-		IsBodyCostumeHidden() == true) {
+		IsCostumeHidden(e, 1) == true) {
 		const entt::entity armor = ItemSystem::GetWearItem(character, WEAR_BODY);
 		if (!ItemSystem::IsValidItem(armor))
 			return 0;
@@ -3992,12 +4005,12 @@ uint16_t CHARACTER::GetPart(uint8_t bPartPos) const
     }
     else if (bPartPos == PART_HAIR &&
 		ItemSystem::IsValidItem(ItemSystem::GetWearItem(character, WEAR_COSTUME_HAIR)) &&
-		IsHairCostumeHidden() == true)
+		IsCostumeHidden(e, 2) == true)
         return 0;
 #ifdef ENABLE_STOLE_COSTUME
     else if (bPartPos == PART_ACCE &&
 		ItemSystem::IsValidItem(ItemSystem::GetWearItem(character, WEAR_COSTUME_ACCE)) &&
-		IsAcceCostumeHidden() == true) {
+		IsCostumeHidden(e, 3) == true) {
 		const entt::entity acce = ItemSystem::GetWearItem(character, WEAR_COSTUME_ACCE_SLOT);
         if (ItemSystem::IsValidItem(acce)) {
             uint32_t toSetValue = ItemSystem::GetItemVnum(acce);
@@ -4013,12 +4026,12 @@ uint16_t CHARACTER::GetPart(uint8_t bPartPos) const
 #else
     else if (bPartPos == PART_ACCE &&
 		ItemSystem::IsValidItem(ItemSystem::GetWearItem(character, WEAR_COSTUME_ACCE_SLOT)) &&
-		IsAcceCostumeHidden() == true)
+		IsCostumeHidden(e, 3) == true)
         return 0;
 #endif
     else if (bPartPos == PART_WEAPON &&
 		ItemSystem::IsValidItem(ItemSystem::GetWearItem(character, WEAR_COSTUME_WEAPON)) &&
-		IsWeaponCostumeHidden() == true)
+		IsCostumeHidden(e, 4) == true)
     {
 		const entt::entity weapon = ItemSystem::GetWearItem(character, WEAR_WEAPON);
 		if (!ItemSystem::IsValidItem(weapon))
@@ -4028,32 +4041,41 @@ uint16_t CHARACTER::GetPart(uint8_t bPartPos) const
     }
 #endif
 
-    if (const auto* appearance = TryGetAppearancePartsComponent(GetEntityHandle()))
+    if (const auto* appearance = TryGetAppearancePartsComponent(e))
         return appearance->parts[bPartPos];
 
     return 0;
 }
 
-uint16_t CHARACTER::GetOriginalPart(uint8_t bPartPos) const
+} // namespace ecs::PlayerRuntime
+
+uint16_t CHARACTER::GetPart(uint8_t bPartPos) const
 {
-	const entt::entity character = GetEntityHandle();
+	return ecs::PlayerRuntime::GetPart(GetEntityHandle(), bPartPos);
+}
+
+namespace ecs::PlayerRuntime {
+
+uint16_t GetOriginalPart(entt::entity e, uint8_t bPartPos)
+{
+	const entt::entity character = e;
     switch (bPartPos)
     {
     case PART_MAIN:
     {
-        if (!IsPC())
-            return GetPart(PART_MAIN);
+        if (!(GetDesc(e) != nullptr))
+            return GetPart(e, PART_MAIN);
 
 #ifdef __HIDE_COSTUME_SYSTEM__
         if (ItemSystem::IsValidItem(ItemSystem::GetWearItem(character, WEAR_COSTUME_BODY)) &&
-			IsBodyCostumeHidden() == true) {
+			IsCostumeHidden(e, 1) == true) {
 			const entt::entity armor = ItemSystem::GetWearItem(character, WEAR_BODY);
 			if (ItemSystem::IsValidItem(armor))
 				return ItemSystem::GetItemVnum(armor);
         }
 #endif
 
-        if (const auto* appearance = TryGetAppearancePartsComponent(GetEntityHandle()))
+        if (const auto* appearance = TryGetAppearancePartsComponent(e))
             return appearance->basePart;
 
         return 0;
@@ -4062,11 +4084,11 @@ uint16_t CHARACTER::GetOriginalPart(uint8_t bPartPos) const
     {
 #ifdef __HIDE_COSTUME_SYSTEM__
         if (ItemSystem::IsValidItem(ItemSystem::GetWearItem(character, WEAR_COSTUME_HAIR)) &&
-			IsHairCostumeHidden() == true)
+			IsCostumeHidden(e, 2) == true)
             return 0;
 #endif
 
-        return GetPart(PART_HAIR);
+        return GetPart(e, PART_HAIR);
     }
 #ifdef ENABLE_ACCE_SYSTEM
     case PART_ACCE:
@@ -4074,7 +4096,7 @@ uint16_t CHARACTER::GetOriginalPart(uint8_t bPartPos) const
 #ifdef __HIDE_COSTUME_SYSTEM__
 #ifdef ENABLE_STOLE_COSTUME
         if (ItemSystem::IsValidItem(ItemSystem::GetWearItem(character, WEAR_COSTUME_ACCE)) &&
-			IsAcceCostumeHidden() == true) {
+			IsCostumeHidden(e, 3) == true) {
 			const entt::entity acce = ItemSystem::GetWearItem(character, WEAR_COSTUME_ACCE_SLOT);
             if (ItemSystem::IsValidItem(acce)) {
                 uint32_t toSetValue = ItemSystem::GetItemVnum(acce);
@@ -4089,14 +4111,14 @@ uint16_t CHARACTER::GetOriginalPart(uint8_t bPartPos) const
         }
 #else
         if (ItemSystem::IsValidItem(ItemSystem::GetWearItem(character, WEAR_COSTUME_ACCE_SLOT)) &&
-			IsAcceCostumeHidden() == true)
+			IsCostumeHidden(e, 3) == true)
             return 0;
 #endif
 #else
         if (ItemSystem::IsValidItem(ItemSystem::GetWearItem(character, WEAR_COSTUME_ACCE_SLOT)))
             return 0;
 #endif
-        return GetPart(PART_ACCE);
+        return GetPart(e, PART_ACCE);
     }
 #endif
 #ifdef ENABLE_WEAPON_COSTUME_SYSTEM
@@ -4104,18 +4126,25 @@ uint16_t CHARACTER::GetOriginalPart(uint8_t bPartPos) const
     {
 #ifdef __HIDE_COSTUME_SYSTEM__
         if (ItemSystem::IsValidItem(ItemSystem::GetWearItem(character, WEAR_COSTUME_WEAPON)) &&
-			IsWeaponCostumeHidden() == true) {
+			IsCostumeHidden(e, 4) == true) {
 			const entt::entity weapon = ItemSystem::GetWearItem(character, WEAR_WEAPON);
 			if (ItemSystem::IsValidItem(weapon))
 				return ItemSystem::GetItemVnum(weapon);
         }
 #endif
-        return GetPart(PART_WEAPON);
+        return GetPart(e, PART_WEAPON);
 #endif
     }
     default:
         return 0;
     }
+}
+
+} // namespace ecs::PlayerRuntime
+
+uint16_t CHARACTER::GetOriginalPart(uint8_t bPartPos) const
+{
+	return ecs::PlayerRuntime::GetOriginalPart(GetEntityHandle(), bPartPos);
 }
 
 void CHARACTER::SetMaxHP(int64_t iVal)
@@ -4194,6 +4223,8 @@ void CHARACTER::Destroy()
         delete m_mountSystem;
 
         m_mountSystem = nullptr;
+        if (GetEntityHandle() != entt::null && g_registry.valid(GetEntityHandle()))
+            g_registry.get_or_emplace<ecs::MountRuntimeRefs>(GetEntityHandle()).mountSystem = nullptr;
     }
 
     if (GetMountVnum())
@@ -4738,6 +4769,8 @@ void CHARACTER::SetPlayerProto(const TPlayerTable* t)
     }
 
     m_mountSystem = M2_NEW CMountSystem(this);
+    if (GetEntityHandle() != entt::null && g_registry.valid(GetEntityHandle()))
+        g_registry.get_or_emplace<ecs::MountRuntimeRefs>(GetEntityHandle()).mountSystem = m_mountSystem;
 #endif
 
 #ifdef __NEWPET_SYSTEM__

@@ -7,6 +7,13 @@
 namespace MountSystem {
 
 bool IsRiding(entt::entity rider);
+
+// Skin and unsummon, reached from an entity. The subsystem pointers come
+// from MountRuntimeRefs / PetRuntimeRefs, not from CHARACTER members.
+
+void UpdateMountSkin(entt::entity e);
+void MountUnsummon(entt::entity e, entt::entity mountItem);
+void UpdatePetSkin(entt::entity e);
 bool IsSummoned(entt::entity rider);
 bool IsRidingCostume(entt::entity rider);
 bool IsOwnedHorse(entt::entity rider, entt::entity horse);

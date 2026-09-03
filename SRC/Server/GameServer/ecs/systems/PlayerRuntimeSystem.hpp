@@ -54,6 +54,9 @@ void SetPotionLimit(entt::entity e, int count);
 // The appearance part write. CHARACTER::SetPart was already nothing but
 // this - EnsureAppearancePartsComponent then one array store.
 void SetPart(entt::entity e, uint8_t partPos, uint16_t value);
+uint16_t GetPart(entt::entity e, uint8_t bPartPos);
+uint16_t GetOriginalPart(entt::entity e, uint8_t bPartPos);
+uint16_t GetRuneEffect(entt::entity e);
 
 // The point writers and readers PointSystem::Change needs.
 void SetHP(entt::entity e, int64_t hp);

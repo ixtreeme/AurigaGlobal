@@ -970,6 +970,70 @@ bool CHARACTER::IsRidingMount()
 #endif
 
 #ifdef ENABLE_COSTUME_PET
+namespace MountSystem {
+
+// The skin and unsummon paths, entity-native. The subsystem pointers come from
+// MountRuntimeRefs / PetRuntimeRefs rather than CHARACTER members, so CItem
+// can drive them without holding an owner pointer.
+
+static ::CMountSystem* GetMountSystem(entt::entity e)
+{
+    if (e == entt::null || !g_registry.valid(e))
+        return nullptr;
+
+    const auto* refs = g_registry.try_get<ecs::MountRuntimeRefs>(e);
+    return refs ? refs->mountSystem : nullptr;
+}
+
+void UpdateMountSkin(entt::entity e)
+{
+    ::CMountSystem* mountSystem = GetMountSystem(e);
+    if (!mountSystem)
+        return;
+
+    mountSystem->UpdateMountSkin();
+
+    if (!IsRiding(e))
+        return;
+
+    const entt::entity item = ItemSystem::GetWearItem(e, WEAR_COSTUME_MOUNT);
+    if (!ItemSystem::IsValidItem(item))
+        return;
+
+    const uint32_t mobVnum = GetMountMobVnum(item);
+
+    mountSystem->Unmount(mobVnum);
+    mountSystem->Mount(mobVnum, item);
+}
+
+void MountUnsummon(entt::entity e, entt::entity mountItem)
+{
+    ::CMountSystem* mountSystem = GetMountSystem(e);
+    if (!mountSystem || !ItemSystem::IsValidItem(mountItem))
+        return;
+
+    const uint32_t mobVnum = GetMountMobVnum(mountItem);
+
+    if (GetMountVnum(e) == mobVnum)
+        mountSystem->Unmount(mobVnum);
+
+    mountSystem->Unsummon(mobVnum);
+}
+
+void UpdatePetSkin(entt::entity e)
+{
+#ifdef __PET_SYSTEM__
+    if (e == entt::null || !g_registry.valid(e))
+        return;
+
+    const auto* refs = g_registry.try_get<ecs::PetRuntimeRefs>(e);
+    if (refs && refs->petSystem)
+        refs->petSystem->UpdatePetSkin();
+#endif
+}
+
+} // namespace MountSystem
+
 void CHARACTER::UpdatePetSkin() {
 	if (!m_petSystem)
 		return;

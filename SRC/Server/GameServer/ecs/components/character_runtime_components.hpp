@@ -5,6 +5,7 @@
 #include "../../event.h"
 
 class CPetSystem;
+class CMountSystem;
 class CNewPetSystem;
 
 namespace ecs {
@@ -29,6 +30,12 @@ struct CharacterRuntimeFlagsComponent {
     uint8_t gmLevel = 0;
     uint8_t blockMode = 0;
     float rotation = 0.0f;
+};
+
+// The mount subsystem, so the skin and unsummon paths can be reached from an
+// entity. Kept beside PetRuntimeRefs, which already does this for pets.
+struct MountRuntimeRefs {
+    CMountSystem* mountSystem { nullptr };
 };
 
 struct PetRuntimeRefs {
