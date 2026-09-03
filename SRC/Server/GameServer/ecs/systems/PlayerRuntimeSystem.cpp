@@ -1896,6 +1896,32 @@ int CHARACTER::GetPotionLimit() const
     return ecs::PlayerRuntime::GetPotionLimit(GetEntityHandle());
 }
 
+// The pet / mount creature markers. These write both stores at one point so
+// they cannot drift: the legacy bit that EncodeInsertPacket reads, and the
+// StatusFlags bit the native character-insert builder reads. Before this they
+// had no ECS writer at all, so the native builder's pet and mount detection
+// was dead while legacy's worked.
+void CHARACTER::SetPet()
+{
+    m_bIsPet = true;
+    if (auto* status = g_registry.try_get<ecs::StatusFlags>(GetEntityHandle()))
+        status->isPet = true;
+}
+
+void CHARACTER::SetMount()
+{
+    m_bIsMount = true;
+    if (auto* status = g_registry.try_get<ecs::StatusFlags>(GetEntityHandle()))
+        status->isMount = true;
+}
+
+void CHARACTER::SetNewPet()
+{
+    m_bIsNewPet = true;
+    if (auto* status = g_registry.try_get<ecs::StatusFlags>(GetEntityHandle()))
+        status->isNewPet = true;
+}
+
 bool CHARACTER::IsGuardNPC() const
 {
     return ecs::PlayerRuntime::IsGuardNPC(GetEntityHandle());

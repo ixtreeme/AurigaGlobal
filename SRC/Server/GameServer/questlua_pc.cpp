@@ -1562,7 +1562,7 @@ namespace quest
 		const auto* mount = ECS_TryGet<ecs::MountState>(e);
 		if (sf || mount)
 		{
-			const bool ret = (sf && sf->isMount) || (mount && mount->mountVnum != 0);
+			const bool ret = (sf && sf->isMountActive) || (mount && mount->mountVnum != 0);
 			lua_pushboolean(L, ret ? 1 : 0);
 			return 1;
 		}
@@ -1650,8 +1650,10 @@ namespace quest
         }
         if (auto* sf = ECS_TryGet<ecs::StatusFlags>(e))
         {
+            // The rider bit. isMount belongs to the creature - see
+            // ecs::StatusFlags - and setting it here made the native
+            // character-insert builder treat riding players as mounts.
             sf->isMountActive = (mount_vnum != 0);
-            sf->isMount = (mount_vnum != 0);
         }
         return 0;
     }
@@ -1686,7 +1688,6 @@ namespace quest
         if (auto* sf = ECS_TryGet<ecs::StatusFlags>(e))
         {
             sf->isMountActive = false;
-            sf->isMount = false;
         }
         const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
 

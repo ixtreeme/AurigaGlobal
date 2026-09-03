@@ -1973,3 +1973,60 @@ audit running on a populated server with no [INSERT_PARITY] output, plus
 bMovingSpeed's inputs unified.
 
 Build: RelWithDebInfo GameServer, 0 errors.
+
+
+Phase 19s - the pet/mount flags meant two different things
+------------------------------------------------------------
+19r left bMovingSpeed and transname uncompared because the two packet builders
+read the pet/mount test from different stores. Unifying them turned up why
+that mattered.
+
+    legacy   m_bIsMount, set by CHARACTER::SetMount()
+             called from CMountActor::Summon on m_pkChar - the SUMMONED MOUNT
+             "this character IS a mount"
+
+    ECS      StatusFlags::isMount, set in questlua_pc pc_mount
+             on the PC doing the mounting - the RIDER
+             "this player IS RIDING"
+
+Opposite subjects, same name, and the native character-insert builder reads the
+ECS one as though it meant the legacy one. A riding player would have been
+packed as a mount: transname false instead of true, and the mount branch of
+bMovingSpeed. Multi-language names would have broken for every mounted player
+the moment packet authority moved.
+
+isPet and isNewPet were worse in a quieter way: no ECS writer at all. Legacy
+PetSystem and New_PetSystem call SetPet()/SetNewPet() on the creature, nothing
+ever set the StatusFlags bits, so the native builder's pet detection was dead
+code that always evaluated false.
+
+And isMountActive - the bit whose name actually describes the rider state - had
+no readers. Written twice in questlua_pc, read nowhere.
+
+WHAT CHANGED
+-------------
+  * StatusFlags now says which bits belong to the creature and which to the
+    rider, at the declaration.
+  * SetPet / SetMount / SetNewPet stop being inline one-liners and write both
+    stores from one place, so they cannot drift.
+  * pc_mount writes isMountActive only, and pc_is_mount reads it. The rider
+    state uses the bit named for it; isMount goes back to meaning the creature.
+
+MY FIRST READING OF THIS WAS WRONG
+------------------------------------
+Worth recording. The first grep - for `SetPet()|SetMount()|->SetPet` and so on -
+came back with nothing but declarations, and the conclusion drawn from it was
+that all three legacy flags were dead and always false. They are not: the calls
+are `m_pkChar->SetMount();` inside the pet and mount actors, which the pattern
+missed. A wider grep found them.
+
+Had that first reading been acted on, the "fix" would have deleted three live
+flags. The lesson is narrow and practical: when a grep says a thing is dead,
+widen the pattern before believing it - absence of evidence from one regex is
+not evidence of absence.
+
+bMovingSpeed and transname can be added to CheckCharacterInsertParity now that
+both builders read the same store, but they should be added by whoever can run
+the audit on a populated server, together with the rest of the parity evidence.
+
+Build: RelWithDebInfo GameServer, 0 errors.

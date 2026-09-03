@@ -27,6 +27,10 @@ struct StatusFlags {
     bool isPolymorph : 1;
     bool isDead : 1;
     bool isInvincible : 1;
+    // isMountActive is about the RIDER: this player is currently riding.
+    // isPet / isMount / isNewPet are about the CREATURE: this character IS
+    // a pet or a mount. Opposite subjects - they were being conflated, see
+    // CHARACTER::SetMount and pc_is_mount.
     bool isMountActive : 1;
     bool isPet : 1;
     bool isMount : 1;

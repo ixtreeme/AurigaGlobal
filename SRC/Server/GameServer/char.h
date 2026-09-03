@@ -2576,7 +2576,7 @@ private:
 private:
 	bool m_bIsPet;
 public:
-	void SetPet() { m_bIsPet = true; }
+	void SetPet();
 	bool IsPet() { return m_bIsPet; }
 #endif
 
@@ -2584,7 +2584,7 @@ public:
 private:
 	bool m_bIsMount;
 public:
-	void SetMount() { m_bIsMount = true; }
+	void SetMount();
 	bool IsMount() { return m_bIsMount; }
 #endif
 
@@ -2593,7 +2593,7 @@ private:
 	bool m_bIsNewPet;
 	int m_eggvid;
 public:
-	void SetNewPet() { m_bIsNewPet = true; }
+	void SetNewPet();
 	bool IsNewPet() const { return m_bIsNewPet ? true : false; }
 	void SetEggVid(int vid);
 	int GetEggVid() const;
