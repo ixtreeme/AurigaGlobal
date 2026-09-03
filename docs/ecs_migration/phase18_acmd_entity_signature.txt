@@ -1865,3 +1865,49 @@ Those are the last ones before the member, the MirrorView* functions and
 ValidateViewMapMirror can go.
 
 Build: RelWithDebInfo GameServer, 0 errors.
+
+
+Phase 19q - m_map_view is deleted
+-----------------------------------
+CEntity::m_map_view and the ENTITY_MAP typedef are gone. ViewInsert and
+ViewRemove write ecs::ViewMap directly; the ECS view is the view, not a mirror
+of a legacy structure.
+
+This is the "Phase G" the file kept referring to. UpdateSectree said it in so
+many words:
+
+    // m_map_view, m_iViewAge, and the ValidateViewMapMirror audit are all
+    // unmaintained for characters until Phase G deletes them outright.
+
+What went with it:
+  * MirrorViewInsert / MirrorViewRemove - ViewInsert and ViewRemove ARE those
+    functions now, plus the presence test m_map_view used to answer
+  * ValidateViewMapMirror, 80 lines - it compared two structures and there is
+    one left, so there is nothing to drift
+  * FuncPacketView in entity.cpp - defined, never instantiated; PacketView has
+    walked ViewerMap since D.8
+
+The three UpdateSectree stale sweeps and the ViewCleanup / ViewReencode
+non-character walks read SnapshotView(), which takes the (peer, age) pairs out
+of ViewMap + ViewAgeMap. They still yield LPENTITYs, because the loop bodies
+call CEntity::ViewRemove and the LPENTITY dispatchers - that is honest and it
+is written down at the helper. What moved is the AUTHORITY: nothing reads a
+legacy container to decide what an entity can see any more.
+
+THE ORDERING THAT WOULD HAVE BROKEN IT
+----------------------------------------
+Doing only what was asked - pointing ViewInsert and ViewRemove at ViewMap -
+would have left UpdateSectree's three stale sweeps iterating an m_map_view that
+nothing filled any more. Items, buildings and offline shops are the only
+entities that still run that polling, and their stale-view cleanup would have
+silently stopped: no crash, no warning, just peers never being removed from
+each other's view. The whole set had to move together or not at all.
+
+One deliberate behaviour change, logged rather than hidden: ViewInsert now
+returns early with [VIEW_UNTRACKED] if either side has no ECS handle, where
+before it would have tracked the pair in m_map_view. Every entity that reaches
+ViewInsert is an item, building or offline shop, and all three are registered
+in their own ECS registry, so this should never fire - which is exactly why it
+logs instead of failing quietly.
+
+Build: RelWithDebInfo GameServer, 0 errors.

@@ -35,7 +35,6 @@ void CEntity::Initialize(int type)
 	m_iType = type;
 	m_iViewAge = 0;
 	m_pos.x = m_pos.y = m_pos.z = 0;
-	m_map_view.clear();
 
 	// Phase 15E-final.LPENTITY.4-architect.H.3:
 	// m_pSectree was deleted - the ECS SectorPlacement component owned
@@ -164,17 +163,6 @@ struct FuncPacketAround
 
 		if (ent->GetDesc())
 			ent->GetDesc()->Packet(m_data, m_bytes);
-	}
-};
-
-struct FuncPacketView : public FuncPacketAround
-{
-	FuncPacketView(const void * data, int bytes, LPENTITY except = nullptr) : FuncPacketAround(data, bytes, except)
-	{}
-
-	void operator() (const CEntity::ENTITY_MAP::value_type& v)
-	{
-		FuncPacketAround::operator() (v.first);
 	}
 };
 

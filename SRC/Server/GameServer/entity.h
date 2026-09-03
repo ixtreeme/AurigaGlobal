@@ -6,8 +6,7 @@ class SECTREE;
 class CEntity
 {
 	public:
-		typedef std::unordered_map<LPENTITY, int> ENTITY_MAP;
-
+	
 	public:
 		CEntity();
 		virtual	~CEntity();
@@ -78,8 +77,7 @@ class CEntity
 	protected:
 		bool			m_bIsObserver;
 		bool			m_bObserverModeChange;
-		ENTITY_MAP		m_map_view;
-		int32_t			m_lMapIndex;
+			int32_t			m_lMapIndex;
 
 	private:
 		LPDESC			m_lpDesc;

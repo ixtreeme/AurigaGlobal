@@ -35,44 +35,7 @@ void EnsureVisibilityComponents(entt::entity e)
 	(void)g_registry.get_or_emplace<ecs::ViewAgeMap>(e);
 }
 
-void MirrorViewInsert(LPENTITY owner, LPENTITY other, uint32_t generation)
-{
-	const entt::entity ownerE = EntityOf(owner);
-	const entt::entity otherE = EntityOf(other);
-	if (ownerE == entt::null || otherE == entt::null || !g_registry.valid(ownerE) || !g_registry.valid(otherE))
-		return;
 
-	EnsureVisibilityComponents(ownerE);
-	EnsureVisibilityComponents(otherE);
-
-	auto& view = g_registry.get<ecs::ViewMap>(ownerE);
-	view.visible.insert(otherE);
-	view.generation = generation;
-
-	auto& ageMap = g_registry.get<ecs::ViewAgeMap>(ownerE);
-	ageMap.ageByEntity[otherE] = generation;
-
-	auto& reverse = g_registry.get<ecs::ViewerMap>(otherE);
-	reverse.viewers.insert(ownerE);
-}
-
-void MirrorViewRemove(LPENTITY owner, LPENTITY other)
-{
-	const entt::entity ownerE = EntityOf(owner);
-	const entt::entity otherE = EntityOf(other);
-	if (ownerE == entt::null || otherE == entt::null || !g_registry.valid(ownerE))
-		return;
-
-	if (auto* view = g_registry.try_get<ecs::ViewMap>(ownerE))
-		view->visible.erase(otherE);
-	if (auto* ageMap = g_registry.try_get<ecs::ViewAgeMap>(ownerE))
-		ageMap->ageByEntity.erase(otherE);
-
-	if (g_registry.valid(otherE)) {
-		if (auto* reverse = g_registry.try_get<ecs::ViewerMap>(otherE))
-			reverse->viewers.erase(ownerE);
-	}
-}
 
 void MirrorViewClear(LPENTITY owner)
 {
@@ -106,85 +69,44 @@ void MirrorViewClear(LPENTITY owner)
 	}
 }
 
-void ValidateViewMapMirror(LPENTITY owner, const CEntity::ENTITY_MAP& legacyView, const char* context)
+
+// The (peer, age) pairs UpdateSectree used to read out of m_map_view, taken
+// from ViewMap + ViewAgeMap instead. Snapshotted because every caller erases
+// and dispatches while walking. The LPENTITY in the pair is unavoidable here:
+// the loop bodies call CEntity::ViewRemove and the LPENTITY dispatchers, which
+// still need the object. UpdateSectree only runs for items, buildings and
+// offline shops - characters returned early since D.6.
+std::vector<std::pair<LPENTITY, uint32_t>> SnapshotView(entt::entity ownerE)
 {
-#ifdef AURIGA_LPENTITY_FIXUP_AUDIT
-	const entt::entity ownerE = EntityOf(owner);
-	if (ownerE == entt::null || !g_registry.valid(ownerE))
-		return;
+    std::vector<std::pair<LPENTITY, uint32_t>> out;
+    if (ownerE == entt::null || !g_registry.valid(ownerE))
+        return out;
 
-	// Phase 15E-final.LPENTITY.4-architect.D.6:
-	// For characters, m_map_view is no longer maintained - the legacy
-	// CFuncViewInsert polling in UpdateSectree was disabled in D.6, and
-	// ViewCleanup / ViewReencode now read ECS ViewMap/ViewerMap directly.
-	// The dual-mirror invariant only holds for non-character entities;
-	// silencing the drift log here for characters avoids 30K-warning
-	// log floods that would otherwise stall the game thread (the same
-	// crash mode 261e74d guarded against).
-	if (owner && owner->IsType(ENTITY_CHARACTER))
-		return;
+    const auto* view = g_registry.try_get<ecs::ViewMap>(ownerE);
+    if (!view)
+        return out;
 
-	// LPENTITY.4-fixup-B + audit: O(N^2) validation gated and rate-limited
-	// per entity. Without throttling this fires once per ViewInsert refresh
-	// (hundreds per second per entity) - 35K log warnings in 30 seconds
-	// drowned the async log queue and slowed the game thread enough that
-	// regen / spawn events stalled and the client connection timed out.
-	//
-	// The drift information is still useful: log once per entity per
-	// 30 seconds. If drift state stays unchanged the log is suppressed;
-	// state changes still surface because we record on first observation.
-	static thread_local std::unordered_map<uint64_t, uint32_t> s_lastLogTick;
-	const uint32_t nowMs = static_cast<uint32_t>(get_dword_time());
-	const uint64_t key = static_cast<uint64_t>(ownerE);
-	if (auto it = s_lastLogTick.find(key); it != s_lastLogTick.end()) {
-		if (nowMs - it->second < 30000u)
-			return;
-	}
+    const auto* ageMap = g_registry.try_get<ecs::ViewAgeMap>(ownerE);
+    out.reserve(view->visible.size());
 
-	EnsureVisibilityComponents(ownerE);
+    for (const entt::entity otherE : view->visible)
+    {
+        if (otherE == entt::null || !g_registry.valid(otherE))
+            continue;
 
-	const auto& view = g_registry.get<ecs::ViewMap>(ownerE);
-	size_t legacySize = 0;
-	size_t missingInEcs = 0;
+        LPENTITY other = ecs::SpatialService::LPENTITYFromEntity(g_registry, otherE);
+        if (!other)
+            continue;
 
-	for (const auto& [legacyOther, age] : legacyView) {
-		const entt::entity otherE = EntityOf(legacyOther);
-		if (otherE == entt::null || !g_registry.valid(otherE))
-			continue;
-
-		++legacySize;
-		if (view.visible.find(otherE) == view.visible.end())
-			++missingInEcs;
-	}
-
-	size_t missingInLegacy = 0;
-	for (const entt::entity visibleE : view.visible) {
-		bool found = false;
-		for (const auto& [legacyOther, age] : legacyView) {
-			if (EntityOf(legacyOther) == visibleE) {
-				found = true;
-				break;
-			}
-		}
-		if (!found)
-			++missingInLegacy;
-	}
-
-	if (missingInEcs != 0 || missingInLegacy != 0 || legacySize != view.visible.size()) {
-		s_lastLogTick[key] = nowMs;
-		LOG_WARN("[VIEWMAP_DRIFT] entity={} ctx={} legacy_size={} ecs_size={} missing_in_ecs={} missing_in_legacy={}",
-			static_cast<uint32_t>(ownerE),
-			context ? context : "unknown",
-			legacySize,
-			view.visible.size(),
-			missingInEcs,
-			missingInLegacy);
-	}
-#else
-	(void)owner;
-	(void)legacyView;
-	(void)context;
-#endif
+        uint32_t age = 0;
+        if (ageMap)
+        {
+            if (const auto it = ageMap->ageByEntity.find(otherE); it != ageMap->ageByEntity.end())
+                age = it->second;
+        }
+        out.emplace_back(other, age);
+    }
+    return out;
 }
 
 void DispatchInsert(LPENTITY source, LPENTITY viewer, const char* context)
@@ -274,26 +196,13 @@ void CEntity::ViewCleanup()
 			}
 		}
 		MirrorViewClear(this);
-		// m_map_view may still hold stale entries from before D.6 - clear
-		// it so the legacy structure does not leak entries into post-Phase-D
-		// reads (PacketView f76a3f1 hybrid, ViewReencode, etc.).
-		m_map_view.clear();
 		return;
 	}
 
-	auto it = m_map_view.begin();
-
-	while (it != m_map_view.end())
-	{
-		LPENTITY entity = it->first;
-		++it;
-
+	for (const auto& [entity, age] : SnapshotView(EntityOf(this)))
 		entity->ViewRemove(this, false);
-	}
 
-	m_map_view.clear();
 	MirrorViewClear(this);
-	ValidateViewMapMirror(this, m_map_view, "view.cleanup");
 }
 
 void CEntity::ViewReencode()
@@ -315,12 +224,8 @@ void CEntity::ViewReencode()
 	DispatchRemove(this, this, "view.reencode.self");
 	DispatchInsert(this, this, "view.reencode.self");
 
-	auto it = m_map_view.begin();
-
-	while (it != m_map_view.end())
+	for (const auto& [entity, age] : SnapshotView(EntityOf(this)))
 	{
-		LPENTITY entity = it++->first;
-
 		DispatchRemove(this, entity, "view.reencode.visible");
 		if (!m_bIsObserver)
 			DispatchInsert(this, entity, "view.reencode.visible");
@@ -336,43 +241,66 @@ void CEntity::ViewInsert(LPENTITY entity, bool recursive)
 	if (this == entity)
 		return;
 
-	if (auto it = m_map_view.find(entity); m_map_view.end() != it)
+	// Phase G: the ECS ViewMap is the view, not a mirror of m_map_view. This
+	// body is the old MirrorViewInsert plus the presence test m_map_view used
+	// to answer.
+	const entt::entity self = EntityOf(this);
+	const entt::entity other = EntityOf(entity);
+	if (self == entt::null || other == entt::null
+		|| !g_registry.valid(self) || !g_registry.valid(other))
 	{
-		it->second = m_iViewAge;
-		MirrorViewInsert(this, entity, static_cast<uint32_t>(m_iViewAge));
-		ValidateViewMapMirror(this, m_map_view, "view.insert.refresh");
+		LOG_WARN("[VIEW_UNTRACKED] insert with no entity handle: self={} other={}",
+			static_cast<const void*>(this), static_cast<const void*>(entity));
 		return;
 	}
 
-	m_map_view.insert(ENTITY_MAP::value_type(entity, m_iViewAge));
-	MirrorViewInsert(this, entity, static_cast<uint32_t>(m_iViewAge));
+	EnsureVisibilityComponents(self);
+	EnsureVisibilityComponents(other);
+
+	auto& view = g_registry.get<ecs::ViewMap>(self);
+	const bool wasVisible = view.visible.find(other) != view.visible.end();
+
+	view.visible.insert(other);
+	view.generation = static_cast<uint32_t>(m_iViewAge);
+	g_registry.get<ecs::ViewAgeMap>(self).ageByEntity[other] = static_cast<uint32_t>(m_iViewAge);
+	g_registry.get<ecs::ViewerMap>(other).viewers.insert(self);
+
+	if (wasVisible)
+		return;  // refresh: the age moved, nothing to announce
 
 	if (!entity->m_bIsObserver)
 		DispatchInsert(entity, this, "view.insert");
 
 	if (recursive)
 		entity->ViewInsert(this, false);
-
-	ValidateViewMapMirror(this, m_map_view, "view.insert");
 }
 
 void CEntity::ViewRemove(LPENTITY entity, bool recursive)
 {
-	const auto it = m_map_view.find(entity);
-
-	if (it == m_map_view.end())
+	const entt::entity self = EntityOf(this);
+	const entt::entity other = EntityOf(entity);
+	if (self == entt::null || other == entt::null || !g_registry.valid(self))
 		return;
 
-	m_map_view.erase(it);
-	MirrorViewRemove(this, entity);
+	// The erase doubles as the "was it there?" early-out m_map_view provided.
+	auto* view = g_registry.try_get<ecs::ViewMap>(self);
+	if (!view || view->visible.erase(other) == 0)
+		return;
+
+	if (auto* ageMap = g_registry.try_get<ecs::ViewAgeMap>(self))
+		ageMap->ageByEntity.erase(other);
+
+	if (g_registry.valid(other))
+	{
+		if (auto* reverse = g_registry.try_get<ecs::ViewerMap>(other))
+			reverse->viewers.erase(self);
+	}
 
 	if (!entity->m_bIsObserver)
 		DispatchRemove(entity, this, "view.remove");
 
 	if (recursive)
 		entity->ViewRemove(this, false);
-
-	ValidateViewMapMirror(this, m_map_view, "view.remove");
 }
 
 class CFuncViewInsert
@@ -445,60 +373,38 @@ void CEntity::UpdateSectree()
 	CFuncViewInsert f(this);
 	GetSectree()->ForEachAround(f);
 
-	ENTITY_MAP::iterator it, this_it;
-
 	if (m_bObserverModeChange)
 	{
 		if (m_bIsObserver)
 		{
-			it = m_map_view.begin();
-
-			while (it != m_map_view.end())
+			for (const auto& [ent, age] : SnapshotView(EntityOf(this)))
 			{
-				this_it = it++;
-				if (this_it->second < m_iViewAge)
+				if (age < static_cast<uint32_t>(m_iViewAge))
 				{
-					LPENTITY ent = this_it->first;
-
 					DispatchRemove(ent, this, "view.update.observer.remove_stale");
-					m_map_view.erase(this_it);
-					MirrorViewRemove(this, ent);
+					ViewRemove(ent, false);
 
 					ent->ViewRemove(this, false);
 				}
 				else
 				{
-
-					LPENTITY ent = this_it->first;
-					//ent->EncodeRemovePacket(this);
-					//m_map_view.erase(this_it);
-
-					//ent->ViewRemove(this, false);
 					DispatchRemove(this, ent, "view.update.observer.remove_self");
 				}
 			}
 		}
 		else
 		{
-			it = m_map_view.begin();
-
-			while (it != m_map_view.end())
+			for (const auto& [ent, age] : SnapshotView(EntityOf(this)))
 			{
-				this_it = it++;
-
-				if (this_it->second < m_iViewAge)
+				if (age < static_cast<uint32_t>(m_iViewAge))
 				{
-					LPENTITY ent = this_it->first;
-
 					DispatchRemove(ent, this, "view.update.observer_exit.remove_stale");
-					m_map_view.erase(this_it);
-					MirrorViewRemove(this, ent);
+					ViewRemove(ent, false);
 
 					ent->ViewRemove(this, false);
 				}
 				else
 				{
-					LPENTITY ent = this_it->first;
 					DispatchInsert(ent, this, "view.update.observer_exit.insert_reverse");
 					DispatchInsert(this, ent, "view.update.observer_exit.insert_self");
 
@@ -513,19 +419,12 @@ void CEntity::UpdateSectree()
 	{
 		if (!m_bIsObserver)
 		{
-			it = m_map_view.begin();
-
-			while (it != m_map_view.end())
+			for (const auto& [ent, age] : SnapshotView(EntityOf(this)))
 			{
-				this_it = it++;
-
-				if (this_it->second < m_iViewAge)
+				if (age < static_cast<uint32_t>(m_iViewAge))
 				{
-					LPENTITY ent = this_it->first;
-
 					DispatchRemove(ent, this, "view.update.remove_stale");
-					m_map_view.erase(this_it);
-					MirrorViewRemove(this, ent);
+					ViewRemove(ent, false);
 
 					ent->ViewRemove(this, false);
 				}
@@ -533,7 +432,6 @@ void CEntity::UpdateSectree()
 		}
 	}
 
-	ValidateViewMapMirror(this, m_map_view, "view.update_sectree");
 }
 
 
