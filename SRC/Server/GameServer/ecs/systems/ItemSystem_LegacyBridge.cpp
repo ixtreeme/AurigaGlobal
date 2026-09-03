@@ -2364,7 +2364,7 @@ LPITEM CHARACTER::GetWear(uint8_t bCell) const
 }
 
 
-void CHARACTER::SetWear(uint8_t bCell, LPITEM item)
+void CHARACTER::SetWear(uint8_t bCell, entt::entity item)
 {
 	// > WEAR_MAX_NUM : ?�EY1� 11�Ե�.
 	if (bCell >= WEAR_MAX_NUM + DRAGON_SOUL_DECK_MAX_NUM * DS_SLOT_MAX)
@@ -2380,7 +2380,7 @@ void CHARACTER::SetWear(uint8_t bCell, LPITEM item)
 #endif
 
 #ifndef ENABLE_BUG_FIXES
-	if (!item && bCell == WEAR_WEAPON) {
+	if (item == entt::null && bCell == WEAR_WEAPON) {
 		if (IsAffectFlag(AFF_GWIGUM))
 			RemoveAffect(SKILL_GWIGEOM);
 
@@ -3768,8 +3768,11 @@ bool CHARACTER::MoveItem(TItemPos Cell, TItemPos DestCell,
 			}
 
 
+			// Taken before RemoveFromCharacter, which can clear the item state
+			// this handle is read from.
+			const entt::entity movedEntity = item ? item->GetEntityHandle() : entt::null;
 			item->RemoveFromCharacter();
-			SetItem(DestCell, item
+			SetItem(DestCell, movedEntity
 
 #ifdef __HIGHLIGHT_SYSTEM__
 				, false
@@ -13701,9 +13704,9 @@ bool CHARACTER::CanHandleItem(bool bSkipCheckRefine, bool bSkipObserver)
 #endif
 
 #ifdef __HIGHLIGHT_SYSTEM__
-void CHARACTER::SetItem(TItemPos Cell, LPITEM pItem, bool isHighLight)
+void CHARACTER::SetItem(TItemPos Cell, entt::entity itemEntity, bool isHighLight)
 #else
-void CHARACTER::SetItem(TItemPos Cell, LPITEM pItem)
+void CHARACTER::SetItem(TItemPos Cell, entt::entity itemEntity)
 #endif
 {
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
@@ -13711,25 +13714,20 @@ void CHARACTER::SetItem(TItemPos Cell, LPITEM pItem)
 #endif
 	uint16_t wCell = Cell.cell;
 	uint8_t window_type = Cell.window_type;
-	if ((unsigned long)((CItem*)pItem) == 0xff || (unsigned long)((CItem*)pItem) == 0xffffffff)
+	// The 0xff / 0xffffffff pointer sentinel check is gone with the pointer.
+	// An entt::entity cannot hold a scribbled pointer value, and an invalid
+	// one is caught by IsValidItem below rather than by core_dump().
+	const bool hasItem = itemEntity != entt::null && ItemSystem::IsValidItem(itemEntity);
+	if (itemEntity != entt::null && !hasItem)
 	{
-		LOG_ERROR("!!! FATAL ERROR !!! item == 0xff (char: {} cell: {})", GetName(), wCell);
-		core_dump();
+		LOG_ERROR("CHARACTER::SetItem: item entity {} is not a valid item (char: {} cell: {})",
+			static_cast<uint32_t>(itemEntity), GetName(), wCell);
 		return;
 	}
 
-	if (pItem && pItem->GetOwner())
+	if (hasItem && ItemSystem::GetItemOwner(itemEntity) != entt::null)
 	{
 		assert(!"GetOwner exist");
-		return;
-	}
-
-	const entt::entity itemEntity = pItem
-		? (pItem ? pItem->GetEntityHandle() : entt::null)
-		: entt::null;
-	if (pItem && itemEntity == entt::null)
-	{
-		LOG_ERROR("CHARACTER::SetItem: item {} has no ECS entity", pItem->GetID());
 		return;
 	}
 	// ��o� A�oYA丮
@@ -13774,7 +13772,7 @@ void CHARACTER::SetItem(TItemPos Cell, LPITEM pItem)
 				pMainInventory->itemGrid[storageCell] = 0;
 		}
 
-		if (pItem)
+		if (hasItem)
 		{
 			if (storageCell < INVENTORY_MAX_NUM)
 			{
@@ -13816,7 +13814,7 @@ void CHARACTER::SetItem(TItemPos Cell, LPITEM pItem)
 		if (pOld != entt::null)
 			pMainInventory->itemGrid[storageCell] = 0;
 
-		if (pItem)
+		if (hasItem)
 			pMainInventory->itemGrid[storageCell] = storageCell + 1;
 
 		pMainInventory->items[storageCell] = itemEntity;
@@ -13856,7 +13854,7 @@ void CHARACTER::SetItem(TItemPos Cell, LPITEM pItem)
 			}
 		}
 
-		if (pItem)
+		if (hasItem)
 		{
 			for (int i = 0; i < ItemSystem::GetItemSize(itemEntity); ++i)
 			{
@@ -13918,10 +13916,10 @@ void CHARACTER::SetItem(TItemPos Cell, LPITEM pItem)
 				pExtraInventory->itemGrid[wCell] = 0;
 		}
 
-		if (pItem)
+		if (hasItem)
 		{
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
-			ecs::ChatSystem::Send(GetEntityHandle(), CHAT_TYPE_INFO, "char_item.cpp::if (pItem)");//INGAME_DEBUG_RAZOR93
+			ecs::ChatSystem::Send(GetEntityHandle(), CHAT_TYPE_INFO, "char_item.cpp::if (hasItem)");//INGAME_DEBUG_RAZOR93
 #endif
 			if (wCell < EXTRA_INVENTORY_MAX_NUM)
 			{
@@ -13948,7 +13946,7 @@ void CHARACTER::SetItem(TItemPos Cell, LPITEM pItem)
 	case SWITCHBOT:
 	{
 		const entt::entity oldItem = ItemSystem::GetItem(GetEntityHandle(), TItemPos(SWITCHBOT, wCell));
-		if (pItem && oldItem != entt::null)
+		if (hasItem && oldItem != entt::null)
 		{
 			return;
 		}
@@ -13959,9 +13957,9 @@ void CHARACTER::SetItem(TItemPos Cell, LPITEM pItem)
 			return;
 		}
 
-		if (pItem)
+		if (hasItem)
 		{
-			CSwitchbotManager::Instance().RegisterItem(GetPlayerID(), pItem->GetID(), wCell);
+			CSwitchbotManager::Instance().RegisterItem(GetPlayerID(), ItemSystem::GetItemID(itemEntity), wCell);
 		}
 		else
 		{
@@ -13985,27 +13983,31 @@ void CHARACTER::SetItem(TItemPos Cell, LPITEM pItem)
 	if (GetDesc())
 	{
 		// E�Aa 3AAIAU: 1�1�?!1� 3AAIAU �A�!�� ��o��� o�31�U
-		if (pItem)
+		if (hasItem)
 		{
 			TPacketGCItemSet pack;
 			pack.header = HEADER_GC_ITEM_SET;
 			pack.Cell = packetCell;
 
-			pack.count = pItem->GetCount();
+			pack.count = ItemSystem::GetItemCount(itemEntity);
 #ifdef ATTR_LOCK
-			pack.lockedattr = pItem->GetLockedAttr();
+			pack.lockedattr = ItemSystem::GetItemLockedAttributeIndex(itemEntity);
 #endif
-			pack.vnum = pItem->GetVnum();
-			pack.flags = pItem->GetFlag();
-			pack.anti_flags = pItem->GetAntiFlag();
+			pack.vnum = ItemSystem::GetItemVnum(itemEntity);
+			pack.flags = ItemSystem::GetItemFlags(itemEntity);
+			pack.anti_flags = ItemSystem::GetItemAntiFlag(itemEntity);
 #ifdef __HIGHLIGHT_SYSTEM__
 			pack.highlight = isHighLight;
 #else
 			pack.highlight = (Cell.window_type == DRAGON_SOUL_INVENTORY);
 #endif
 
-			memcpy(pack.alSockets, pItem->GetSockets(), sizeof(pack.alSockets));
-			memcpy(pack.aAttr, pItem->GetAttributes(), sizeof(pack.aAttr));
+			// Per index rather than memcpy: the components are the source now, and
+			// they are not laid out as one block behind a pointer.
+			for (int i = 0; i < ITEM_SOCKET_MAX_NUM; ++i)
+				pack.alSockets[i] = ItemSystem::GetItemSocket(itemEntity, i);
+			for (int i = 0; i < ITEM_ATTRIBUTE_MAX_NUM; ++i)
+				pack.aAttr[i] = ItemSystem::GetItemAttribute(itemEntity, i);
 
 			GetDesc()->Packet(&pack, sizeof(TPacketGCItemSet));
 		}
@@ -14026,49 +14028,49 @@ void CHARACTER::SetItem(TItemPos Cell, LPITEM pItem)
 		}
 	}
 
-	if (pItem)
+	if (hasItem)
 	{
 		const uint16_t storageCell = (window_type == EQUIPMENT)
 			? static_cast<uint16_t>(INVENTORY_MAX_NUM + wCell)
 			: wCell;
-		pItem->SetCell(this, storageCell);
+		ItemSystem::SetItemCell(itemEntity, GetEntityHandle(), storageCell);
 		switch (window_type)
 		{
 		case INVENTORY:
 			if (wCell >= BELT_INVENTORY_SLOT_START && wCell < BELT_INVENTORY_SLOT_END)
 			{
-				if (CBeltInventoryHelper::CanMoveIntoBeltInventory((pItem ? pItem->GetEntityHandle() : entt::null)))
-					pItem->SetWindow(INVENTORY);
+				if (CBeltInventoryHelper::CanMoveIntoBeltInventory(itemEntity))
+					ItemSystem::SetItemWindow(itemEntity, INVENTORY);
 				else
-					pItem->SetWindow(EQUIPMENT); // vagy return is lehet, ha nem engedelyezett
+					ItemSystem::SetItemWindow(itemEntity, EQUIPMENT); // vagy return is lehet, ha nem engedelyezett
 			}
 			else if (wCell < INVENTORY_MAX_NUM)
 			{
-				pItem->SetWindow(INVENTORY);
+				ItemSystem::SetItemWindow(itemEntity, INVENTORY);
 			}
 			else
 			{
-				pItem->SetWindow(EQUIPMENT);
+				ItemSystem::SetItemWindow(itemEntity, EQUIPMENT);
 			}
 
 			break;
 		case EQUIPMENT:
-			pItem->SetWindow(EQUIPMENT);
+			ItemSystem::SetItemWindow(itemEntity, EQUIPMENT);
 			break;
 		case DRAGON_SOUL_INVENTORY:
-			pItem->SetWindow(DRAGON_SOUL_INVENTORY);
+			ItemSystem::SetItemWindow(itemEntity, DRAGON_SOUL_INVENTORY);
 			break;
 #ifdef ENABLE_EXTRA_INVENTORY
 		case EXTRA_INVENTORY:
-			pItem->SetWindow(EXTRA_INVENTORY);
+			ItemSystem::SetItemWindow(itemEntity, EXTRA_INVENTORY);
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
-			LOG_INFO("Razor93 LOG:: Called: Char_item.cpp line :653: case switch :pItem->SetWindow(EXTRA_INVENTORY);");
+			LOG_INFO("Razor93 LOG:: Called: Char_item.cpp line :653: case switch :ItemSystem::SetItemWindow(itemEntity, EXTRA_INVENTORY);");
 #endif
 			break;
 #endif
 #ifdef ENABLE_SWITCHBOT
 		case SWITCHBOT:
-			pItem->SetWindow(SWITCHBOT);
+			ItemSystem::SetItemWindow(itemEntity, SWITCHBOT);
 			break;
 #endif
 		}

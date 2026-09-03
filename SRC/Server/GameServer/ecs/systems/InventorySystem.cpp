@@ -369,7 +369,7 @@ LPITEM CItem::RemoveFromCharacter()
 				if (m_wCell >= DRAGON_SOUL_INVENTORY_MAX_NUM)
 					LOG_ERROR("CItem::RemoveFromCharacter: pos >= DRAGON_SOUL_INVENTORY_MAX_NUM");
 				else
-					pOwner->SetItem(TItemPos(m_bWindow, m_wCell), nullptr);
+					pOwner->SetItem(TItemPos(m_bWindow, m_wCell), entt::null);
 			}
 #ifdef ENABLE_EXTRA_INVENTORY
 			else if (IsExtraItem())
@@ -377,7 +377,7 @@ LPITEM CItem::RemoveFromCharacter()
 				if (m_wCell >= EXTRA_INVENTORY_MAX_NUM)
 					LOG_ERROR("CItem::RemoveFromCharacter: pos >= EXTRA_INVENTORY_MAX_NUM");
 				else
-					pOwner->SetItem(TItemPos(m_bWindow, m_wCell), nullptr);
+					pOwner->SetItem(TItemPos(m_bWindow, m_wCell), entt::null);
 			}
 #endif
 #ifdef ENABLE_SWITCHBOT
@@ -389,7 +389,7 @@ LPITEM CItem::RemoveFromCharacter()
 				}
 				else
 				{
-					pOwner->SetItem(TItemPos(SWITCHBOT, m_wCell), nullptr);
+					pOwner->SetItem(TItemPos(SWITCHBOT, m_wCell), entt::null);
 				}
 			}
 #endif
@@ -400,7 +400,7 @@ LPITEM CItem::RemoveFromCharacter()
 				if (false == cell.IsDefaultInventoryPosition() && false == cell.IsBeltInventoryPosition())
 					LOG_ERROR("CItem::RemoveFromCharacter: Invalid Item Position");
 				else
-					pOwner->SetItem(cell, nullptr);
+					pOwner->SetItem(cell, entt::null);
 			}
 		}
 
@@ -460,7 +460,7 @@ bool CItem::AddToCharacter(LPCHARACTER ch, TItemPos Cell)
 
 				event_cancel(&m_pkDestroyEvent);
 
-				ch->SetItem(TItemPos(EQUIPMENT, iFindCell), this);
+				ch->SetItem(TItemPos(EQUIPMENT, iFindCell), GetEntityHandle());
 				m_pOwner = ch;
 				Save();
 
@@ -551,9 +551,9 @@ bool CItem::AddToCharacter(LPCHARACTER ch, TItemPos Cell)
 	event_cancel(&m_pkDestroyEvent);
 
 #ifdef __HIGHLIGHT_SYSTEM__
-	ch->SetItem(TItemPos(window_type, pos), this, isHighLight);
+	ch->SetItem(TItemPos(window_type, pos), GetEntityHandle(), isHighLight);
 #else
-	ch->SetItem(TItemPos(window_type, pos), this);
+	ch->SetItem(TItemPos(window_type, pos), GetEntityHandle());
 #endif
 	m_pOwner = ch;
 
@@ -1039,7 +1039,7 @@ bool CItem::EquipTo(LPCHARACTER ch, uint8_t bWearCell)
 	if (GetOwner())
 		RemoveFromCharacter();
 
-	ch->SetWear(bWearCell, this);
+	ch->SetWear(bWearCell, GetEntityHandle());
 
 	m_pOwner = ch;
 	m_bEquipped = true;
@@ -1170,7 +1170,7 @@ bool CItem::Unequip()
 
 	m_pOwner->BuffOnAttr_RemoveBuffsFromItem(this);
 
-	m_pOwner->SetWear(GetCell() - INVENTORY_MAX_NUM, nullptr);
+	m_pOwner->SetWear(GetCell() - INVENTORY_MAX_NUM, entt::null);
 
 #ifndef ENABLE_IMMUNE_FIX
 	uint32_t dwImmuneFlag = 0;

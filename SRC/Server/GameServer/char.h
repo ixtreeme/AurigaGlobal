@@ -1394,9 +1394,9 @@ public:
 #endif
 
 #ifdef __HIGHLIGHT_SYSTEM__
-	void			SetItem(TItemPos Cell, LPITEM item, bool isHighLight = false);
+	void			SetItem(TItemPos Cell, entt::entity item, bool isHighLight = false);
 #else
-	void			SetItem(TItemPos Cell, LPITEM item);
+	void			SetItem(TItemPos Cell, entt::entity item);
 #endif
 	LPITEM			GetItem(TItemPos Cell) const;
 	LPITEM			GetInventoryItem(uint16_t wCell) const;
@@ -1418,7 +1418,7 @@ public:
 #endif
 	bool			IsEmptyItemGrid(TItemPos Cell, uint8_t size, int iExceptionCell = -1) const;
 
-	void			SetWear(uint8_t bCell, LPITEM item);
+	void			SetWear(uint8_t bCell, entt::entity item);
 	LPITEM			GetWear(uint8_t bCell) const;
 
 	// MYSHOP_PRICE_LIST
