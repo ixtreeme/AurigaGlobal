@@ -1275,23 +1275,6 @@ void CItem::EncodeRemovePacket(LPENTITY ent)
         ecs::PlayerRuntime::GetName(recipient).data());
 }
 
-void CItem::UsePacketEncode(LPCHARACTER ch, LPCHARACTER victim, packet_item_use* packet)
-{
-    if (!packet)
-        return;
-
-    const entt::entity item = ecs::ItemNetworkSystem::ResolveItemEntity(this);
-    if (item == entt::null)
-        return;
-
-    ecs::ItemNetworkSystem::EncodeItemUse(
-        g_registry,
-        ch ? ch->GetEntityHandle() : entt::null,
-        victim ? victim->GetEntityHandle() : entt::null,
-        item,
-        *packet);
-}
-
 void CItem::UpdatePacket()
 {
     const entt::entity item = ecs::ItemNetworkSystem::ResolveItemEntity(this);

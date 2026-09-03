@@ -456,7 +456,6 @@ class ITEM_MANAGER : public singleton<ITEM_MANAGER>
 
 	protected:
 		int                     RealNumber( uint32_t vnum) const;
-		void			CreateQuestDropItem(LPCHARACTER pkChr, LPCHARACTER pkKiller, std::vector<entt::entity>& vec_item, int iDeltaPercent, int iRandRange);
 
 	protected:
 		typedef std::map<uint32_t, entt::entity> ITEM_VID_MAP;

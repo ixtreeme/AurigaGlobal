@@ -21,8 +21,6 @@ class CItem : public CEntity
 
 		bool		IsPCBangItem();
 
-		int32_t		FindApplyValue(uint8_t bApplyType);
-
 		bool		IsStackable()		{ return (GetFlag() & ITEM_FLAG_STACKABLE)?true:false; }
 
 		void		Initialize();
@@ -51,7 +49,6 @@ class CItem : public CEntity
 		void	AddLockedAttr();
 		void	ChangeLockedAttr();
 		void	RemoveLockedAttr();
-		bool	CheckHumanApply();
 #endif
 
 		int64_t		GetGold();
@@ -121,18 +118,13 @@ class CItem : public CEntity
 		bool		DistanceValid(LPCHARACTER ch);
 
 		void		UpdatePacket();
-		void		UsePacketEncode(LPCHARACTER ch, LPCHARACTER victim, struct packet_item_use * packet);
 
 		void		SetExchanging(bool isOn = true);
 		bool		IsExchanging()		{ return m_bExchanging;	}
 
 		bool		IsTwohanded();
 
-		bool		IsPolymorphItem();
-
 		void		ModifyPoints(bool bAdd);	// 아이템의 효과를 캐릭터에 부여 한다. bAdd가 false이면 제거함
-
-		bool		CreateSocket(uint8_t bSlot, uint8_t bGold);
 		const int32_t*	GetSockets()		{ return &m_alSockets[0];	}
 		int32_t		GetSocket(int i)	{ return m_alSockets[i];	}
 
@@ -140,7 +132,6 @@ class CItem : public CEntity
 		void		SetSocket(int i, int32_t v, bool bLog = true);
 
 		int		GetSocketCount();
-		bool		AddSocket();
 
 		const TPlayerItemAttribute* GetAttributes()		{ return m_aAttr;	}
 		const TPlayerItemAttribute& GetAttribute(int i)	{ return m_aAttr[i];	}
@@ -151,7 +142,6 @@ class CItem : public CEntity
 		void		SetAttributes(const TPlayerItemAttribute* c_pAttribute);
 
 		int		FindAttribute(uint8_t bType);
-		bool		RemoveAttributeAt(int index);
 		bool		RemoveAttributeType(uint8_t bType);
 
 		bool		HasAttr(uint8_t bApply);
@@ -207,7 +197,6 @@ class CItem : public CEntity
 		void		ChangeAttribute(const int* aiChangeProb= nullptr);
 #ifdef ENABLE_CHANGE_NORMAL_HIT_RAZOR93
 		bool ChangeKKAK(int iAddonType = 0);
-		void		AddAttribute2(uint8_t bType, short sValue);
 #endif
 		void		AddAttribute();
 		void		AddAttribute(uint8_t bType, short sValue);
@@ -246,7 +235,6 @@ class CItem : public CEntity
 		// END_OF_ACCESSORY_REFINE
 
 		void		CopyAttributeTo(LPITEM pItem);
-		void		CopySocketTo(LPITEM pItem);
 
 		int			GetRareAttrCount();
 		bool		AddRareAttribute();
@@ -260,8 +248,6 @@ class CItem : public CEntity
 	private :
 		void		SetAttribute(int i, uint8_t bType, short sValue);
 #ifdef ENABLE_CHANGE_NORMAL_HIT_RAZOR93
-		void		SetAttribute2(int i, uint8_t bType, short sValue);
-		bool		AddRareAttribute3(uint8_t bApply, short sValue);
 #endif
 	public:
 		void		SetForceAttribute(int i, uint8_t bType, short sValue);
@@ -276,20 +262,12 @@ class CItem : public CEntity
 		void		PutAttribute(const int * aiAttrPercentTable);
 		void		PutAttributeWithLevel(uint8_t bLevel);
 
-	public:
-		void		AddRareAttribute2(const int * aiAttrPercentTable = nullptr);
-	protected:
-		void		AddRareAttr(uint8_t bApply, uint8_t bLevel);
-		void		PutRareAttribute(const int * aiAttrPercentTable);
-		void		PutRareAttributeWithLevel(uint8_t bLevel);
-
 	protected:
 		friend class CInputDB;
 		bool		OnAfterCreatedItem();			// 서버상에 아이템이 모든 정보와 함께 완전히 생성(로드)된 후 불리우는 함수.
 
 	public:
 		bool		IsRideItem();
-		bool		IsRamadanRing();
 
 		void		ClearMountAttributeAndAffect();
 		bool		IsNewMountItem();

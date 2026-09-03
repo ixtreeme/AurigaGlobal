@@ -834,16 +834,6 @@ int CItem::GetSocketCount()
 	return ITEM_SOCKET_MAX_NUM;
 }
 
-bool CItem::AddSocket()
-{
-	int count = GetSocketCount();
-	if (count == ITEM_SOCKET_MAX_NUM)
-		return false;
-	m_alSockets[count] = 1;
-	SyncItemSocketsComponent(this);
-	return true;
-}
-
 // Phase 11: migrated from item_attribute.cpp batch A
 
 int CItem::GetAttributeSetIndex()
@@ -1108,32 +1098,6 @@ int CItem::FindAttribute(uint8_t bType)
 
 }
 
-bool CItem::RemoveAttributeAt(int index)
-
-{
-
-	if (GetAttributeCount() <= index)
-
-		return false;
-
-
-
-	for (int i = index; i < MAX_NORM_ATTR_NUM - 1; ++i)
-
-	{
-
-		SetAttribute(i, GetAttributeType(i + 1), GetAttributeValue(i + 1));
-
-	}
-
-
-
-	SetAttribute(MAX_NORM_ATTR_NUM - 1, APPLY_NONE, 0);
-
-	return true;
-
-}
-
 bool CItem::RemoveAttributeType(uint8_t bType)
 
 {
@@ -1179,44 +1143,6 @@ void CItem::SetAttribute(int i, uint8_t bType, short sValue)
 		if (GetOwner() && ecs::PlayerRuntime::GetDesc((GetOwner() ? GetOwner()->GetEntityHandle() : entt::null)))
 
 			pszIP = ecs::PlayerRuntime::GetDesc((GetOwner() ? GetOwner()->GetEntityHandle() : entt::null))->GetHostName();
-
-		LOG_LEVEL_CHECK(LOG_LEVEL_MAX, LogManager::instance().ItemLog(i, bType, sValue, GetID(), "SET_ATTR", "", pszIP ? pszIP : "", GetOriginalVnum()));
-
-	}
-
-}
-
-void CItem::SetAttribute2(int i, uint8_t bType, short sValue)
-
-{
-
-	assert(i < MAX_NORM_ATTR_NUM+2);
-
-
-
-	m_aAttr[i].bType = bType;
-
-	m_aAttr[i].sValue = sValue;
-
-	UpdatePacket();
-
-	Save();
-
-
-
-	if (bType)
-
-	{
-
-		const char* pszIP = nullptr;
-
-
-
-		if (GetOwner() && ecs::PlayerRuntime::GetDesc((GetOwner() ? GetOwner()->GetEntityHandle() : entt::null)))
-
-			pszIP = ecs::PlayerRuntime::GetDesc((GetOwner() ? GetOwner()->GetEntityHandle() : entt::null))->GetHostName();
-
-
 
 		LOG_LEVEL_CHECK(LOG_LEVEL_MAX, LogManager::instance().ItemLog(i, bType, sValue, GetID(), "SET_ATTR", "", pszIP ? pszIP : "", GetOriginalVnum()));
 
@@ -1300,22 +1226,6 @@ void CItem::AddAttribute(uint8_t bApply, short sValue)
 	}
 }
 
-void CItem::AddAttribute2(uint8_t bApply, short sValue)
-{
-	if (HasAttr(bApply))
-		return;
-
-	int i = GetAttributeCount();
-
-	if (i >= MAX_NORM_ATTR_NUM+2)
-		LOG_ERROR("item attribute overflow!");
-	else
-	{
-		if (sValue)
-			SetAttribute2(i, bApply, sValue);
-	}
-}
-
 bool CItem::ChangeKKAK(int iAddonType)
 {
 	(void)iAddonType; // 
@@ -1335,30 +1245,6 @@ bool CItem::ChangeKKAK(int iAddonType)
 	AddAttr4(APPLY_SKILL_DAMAGE_BONUS, iSkillBonus);
 
 	return true;
-}
-
-bool CItem::AddRareAttribute3(uint8_t bApply, short sValue)
-{
-	int count = GetRareAttrCount();
-
-	if (count >= ITEM_ATTRIBUTE_RARE_NUM+2)
-		return false;
-
-	int pos = count + ITEM_ATTRIBUTE_RARE_START;
-	TPlayerItemAttribute& attr = m_aAttr[pos];
-
-	int nAttrSet = GetAttributeSetIndex();
-	std::vector<int> avail;
-
-	for (int i = 0; i < MAX_APPLY_NUM; ++i)
-	{
-		const TItemAttrTable& r = g_map_itemRare[i];
-
-		if (r.dwApplyIndex != 0 && r.bMaxLevelBySet[nAttrSet] > 0 && HasRareAttr(i) != true)
-		{
-			avail.push_back(i);
-		}
-	}
 }
 
 void CItem::AddAttr4(uint8_t bApply, uint8_t bLevel)
@@ -1680,119 +1566,6 @@ bool CItem::AddRareAttribute()
 
 	LOG_LEVEL_CHECK(LOG_LEVEL_MAX, LogManager::instance().ItemLog(pos, attr.bType, attr.sValue, GetID(), "SET_RARE", "", pszIP ? pszIP : "", GetOriginalVnum()));
 	return true;
-}
-
-void CItem::AddRareAttribute2(const int * aiAttrPercentTable)
-{
-	static const int aiItemAddAttributePercent[ITEM_ATTRIBUTE_MAX_LEVEL] =
-	{
-		40, 50, 10, 0, 0
-	};
-	if (aiAttrPercentTable == nullptr)
-		aiAttrPercentTable = aiItemAddAttributePercent;
-
-	if (GetRareAttrCount() < MAX_RARE_ATTR_NUM)
-		PutRareAttribute(aiAttrPercentTable);
-}
-
-void CItem::PutRareAttribute(const int * aiAttrPercentTable)
-{
-	int iAttrLevelPercent = number(1, 100);
-	int i;
-
-	for (i = 0; i < ITEM_ATTRIBUTE_MAX_LEVEL; ++i)
-	{
-		if (iAttrLevelPercent <= aiAttrPercentTable[i])
-			break;
-
-		iAttrLevelPercent -= aiAttrPercentTable[i];
-	}
-
-	PutRareAttributeWithLevel(i + 1);
-}
-
-void CItem::PutRareAttributeWithLevel(uint8_t bLevel)
-{
-	int iAttributeSet = GetAttributeSetIndex();
-	if (iAttributeSet < 0)
-		return;
-
-	if (bLevel > ITEM_ATTRIBUTE_MAX_LEVEL)
-		return;
-
-	std::vector<int> avail;
-
-	int total = 0;
-
-	// ???? ?� ?ִ� ?�?? ???�?� ��??
-	for (int i = 0; i < MAX_APPLY_NUM; ++i)
-	{
-		const TItemAttrTable & r = g_map_itemRare[i];
-
-		if (r.bMaxLevelBySet[iAttributeSet] && !HasRareAttr(i))
-		{
-			avail.push_back(i);
-			total += r.dwProb;
-		}
-	}
-
-	if (avail.empty())
-	{
-		return;
-	}
-
-	// ��??�? ???��� ?��� �?�??� ?��? ???? ?�?? ?���
-	unsigned int prob = number(1, total);
-	int attr_idx = APPLY_NONE;
-
-	for (uint32_t i = 0; i < avail.size(); ++i)
-	{
-		const TItemAttrTable & r = g_map_itemRare[avail[i]];
-
-		if (prob <= r.dwProb)
-		{
-			attr_idx = avail[i];
-			break;
-		}
-
-		prob -= r.dwProb;
-	}
-
-	if (!attr_idx)
-	{
-		LOG_ERROR("Cannot put item rare attribute {} {}", iAttributeSet, bLevel);
-		return;
-	}
-
-	const TItemAttrTable & r = g_map_itemRare[attr_idx];
-
-	// �?�??� ?�?? �??� ?ִ�? ���?
-	if (bLevel > r.bMaxLevelBySet[iAttributeSet])
-		bLevel = r.bMaxLevelBySet[iAttributeSet];
-
-	AddRareAttr(attr_idx, bLevel);
-}
-
-void CItem::AddRareAttr(uint8_t bApply, uint8_t bLevel)
-{
-	if (HasRareAttr(bApply))
-		return;
-
-	if (bLevel <= 0)
-		return;
-
-	int i = ITEM_ATTRIBUTE_RARE_START + GetRareAttrCount();
-
-	if (i == ITEM_ATTRIBUTE_RARE_END)
-		LOG_ERROR("item rare attribute overflow!");
-	else
-	{
-		const TItemAttrTable & r = g_map_itemRare[bApply];
-		int32_t lVal = r.lValues[MIN(4, bLevel - 1)];
-
-		if (lVal)
-			SetForceAttribute(i, bApply, lVal);
-	}
 }
 
 // char_item.cpp slice A moved into ItemSystem.cpp
@@ -16518,27 +16291,6 @@ int CItem::GetAccessorySocketDownGradeTime()
 #endif
 }
 
-bool CItem::CreateSocket(uint8_t bSlot, uint8_t bGold)
-{
-	assert(bSlot < ITEM_SOCKET_MAX_NUM);
-
-	if (m_alSockets[bSlot] != 0)
-	{
-		LOG_ERROR("Item::CreateSocket : socket already exist {} {}", GetName(), bSlot);
-		return false;
-	}
-
-	if (bGold)
-		m_alSockets[bSlot] = 2;
-	else
-		m_alSockets[bSlot] = 1;
-
-	UpdatePacket();
-
-	Save();
-	return true;
-}
-
 void CItem::AlterToSocketItem(int iSocketCount)
 {
 	if (iSocketCount >= ITEM_SOCKET_MAX_NUM)
@@ -16631,14 +16383,6 @@ void CItem::ApplyAddon(int iAddonType)
 	CItemAddonManager::instance().ApplyAddonTo(iAddonType, this);
 }
 
-void CItem::CopySocketTo(LPITEM pItem)
-{
-	for (int i = 0; i < ITEM_SOCKET_MAX_NUM; ++i)
-	{
-		pItem->m_alSockets[i] = m_alSockets[i];
-	}
-}
-
 void CItem::AttrLog()
 {
 	const char* pszIP = nullptr;
@@ -16672,11 +16416,6 @@ void CItem::AttrLog()
 	}
 }
 
-
-bool CItem::IsPolymorphItem()
-{
-	return GetType() == ITEM_POLYMORPH;
-}
 
 bool CItem::IsRealTimeItem()
 {
@@ -16714,13 +16453,6 @@ bool CItem::IsUnlimitedTimeUnique()
 		}
 	}
 
-	return false;
-}
-
-bool CItem::IsRamadanRing()
-{
-	if (GetVnum() == UNIQUE_ITEM_RAMADAN_RING)
-		return true;
 	return false;
 }
 
@@ -16794,17 +16526,6 @@ int	CItem::GetDuration()
 }
 
 
-bool CItem::CheckHumanApply()
-{
-	bool bHaveHuman = false;
-	TItemTable* p = ITEM_MANAGER::instance().GetTable(GetVnum());
-	for (int i = 0; i < ITEM_APPLY_MAX_NUM; ++i)
-		if (p->aApplies[i].bType == APPLY_ATTBONUS_HUMAN)
-			bHaveHuman = true;
-
-	return bHaveHuman;
-}
-
 uint32_t CItem::GetRefineFromVnum()
 {
 	return ITEM_MANAGER::instance().GetRefineFromVnum(GetVnum());
@@ -16853,21 +16574,6 @@ void CItem::ClearMountAttributeAndAffect()
 	ecs::PointSystem::Change(chEntity, POINT_HT, 0);
 	ecs::PointSystem::Change(chEntity, POINT_IQ, 0);
 }
-
-int32_t CItem::FindApplyValue(uint8_t bApplyType)
-{
-	if (m_pProto == nullptr)
-		return 0;
-
-	for (int i = 0; i < ITEM_APPLY_MAX_NUM; ++i)
-	{
-		if (m_pProto->aApplies[i].bType == bApplyType)
-			return m_pProto->aApplies[i].lValue;
-	}
-
-	return 0;
-}
-
 
 void CItem::AddLockedAttr()
 {
