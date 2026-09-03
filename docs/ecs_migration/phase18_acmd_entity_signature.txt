@@ -2071,3 +2071,49 @@ running on a populated server with no [INSERT_PARITY] output. That needs a
 server, which this seat does not have.
 
 Build: RelWithDebInfo GameServer, 0 errors.
+
+
+Phase 19u - SendRemove goes native, and why this one could
+------------------------------------------------------------
+The character branch of SendRemove no longer resolves two LPENTITYs to call
+CHARACTER::EncodeRemovePacket. It calls SendCharacterRemove, and that is the
+authoritative path now.
+
+I argued against doing this for SendInsert two phases ago. The difference is
+not confidence, it is what could be settled by reading. Insert has ten fields,
+a side packet, and branches on flags the two builders read from different
+stores - and reading it turned up a real gap. Remove has one field and one
+recipient test, and every difference between the two paths was closed
+statically:
+
+  the VID          legacy sends GetPacketVID() -> GetLegacyVID() -> m_dwLegacyVID,
+                   native sends VIDComponent.value. Not assumed equal:
+                   CHARACTER_MANAGER::CreateCharacter DESTROYS the character
+                   when dwVID != ch->GetLegacyVID(), and m_dwLegacyVID is
+                   written once in CHARACTER::Create and never again. The same
+                   dwVID goes to RegisterEntityVID. They cannot differ.
+
+  the recipient    legacy needs entity->GetDesc(), i.e. CEntity::m_lpDesc;
+                   native needs NetworkSession::desc. Both are bound from the
+                   same LPDESC in input_db.cpp - BindDesc(d) a few lines above
+                   the factory call that emplaces NetworkSession(desc) - and
+                   neither is ever cleared anywhere in the tree.
+
+  the type guard   legacy returned early unless the VIEWER was a character.
+                   Nothing but a character has a NetworkSession, so Send()
+                   returning false covers it.
+
+  the log line     kept. LOG_TRACE("EntityRemove ...") now fires from the
+                   native path with the same three values, so even the trace
+                   output is unchanged.
+
+That middle point is worth keeping for its own sake: ecs::PlayerRuntime::GetDesc
+reads NetworkSession, and this migration has now substituted it for
+CHARACTER::GetDesc() in five places as the faithful spelling of IsPC(). That
+substitution rests entirely on those two fields tracking each other. They do,
+and now it is written down instead of assumed.
+
+SendInsert stays legacy-authoritative. Its remaining blocker is unchanged and
+is not code: the widened audit needs to run on a populated server.
+
+Build: RelWithDebInfo GameServer, 0 errors.

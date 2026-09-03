@@ -264,7 +264,16 @@ void SendCharacterRemove(entt::registry& reg, entt::entity source, entt::entity 
     TPacketGCCharacterDelete packet {};
     packet.header = HEADER_GC_CHARACTER_DEL;
     packet.id = vid->value;
-    ecs::NetworkService::Send(viewer, &packet, sizeof(packet));
+
+    // Legacy EncodeRemovePacket also required the viewer to BE a character
+    // before looking for its descriptor. Send() needs a NetworkSession with
+    // a desc, which no item, building or shop has, so that guard is covered.
+    if (!ecs::NetworkService::Send(viewer, &packet, sizeof(packet)))
+        return;
+
+    LOG_TRACE("EntityRemove {}({}) FROM {}",
+        ecs::PlayerRuntime::GetName(source).data(), vid->value,
+        ecs::PlayerRuntime::GetName(viewer).data());
 }
 
 bool EncodeItemGroundInsert(entt::registry& reg, entt::entity item, TPacketGCItemGroundAdd& packet)
@@ -465,12 +474,14 @@ void SendRemove(entt::registry& reg, entt::entity source, entt::entity viewer)
 
     switch (kind->kind) {
     case ecs::SpatialKind::Character:
-        if (LPENTITY sourceLegacy = ecs::LPENTITYFromEntity(reg, source)) {
-            if (LPENTITY viewerLegacy = ecs::LPENTITYFromEntity(reg, viewer)) {
-                sourceLegacy->EncodeRemovePacket(viewerLegacy);
-                break;
-            }
-        }
+        // Native-authoritative. Unlike the insert packet this one carries a
+        // single field, has no side packet and no flag branching, and every
+        // difference from legacy EncodeRemovePacket was checked statically:
+        // the VID sources are enforced equal at creation (CreateCharacter
+        // destroys the character when dwVID != GetLegacyVID()), and the
+        // recipient test is the same descriptor - NetworkSession::desc and
+        // CEntity::m_lpDesc are both bound from the same LPDESC in
+        // input_db.cpp and neither is ever cleared.
         SendCharacterRemove(reg, source, viewer);
         break;
     case ecs::SpatialKind::Item:
