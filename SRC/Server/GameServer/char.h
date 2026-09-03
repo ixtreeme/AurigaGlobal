@@ -2525,7 +2525,6 @@ public:
 	void GoHome();
 
 private:
-	std::set<uint32_t>	m_known_guild;
 
 public:
 	void SendGuildName(CGuild* pGuild);

@@ -199,6 +199,12 @@ void SendCharacterInsert(entt::registry& reg, entt::entity source, entt::entity 
     if (!BuildCharacterInsert(reg, source, packet))
         return;
 
+    // Parity with legacy EncodeInsertPacket, which opens with
+    // ch->SendGuildName(GetGuild()). Without it the viewer never learns the
+    // name and draws the character with none. The field-by-field insert
+    // parity audit cannot see this: it is a separate packet, not a field.
+    ecs::SocialSystem::SendGuildName(viewer, ecs::SocialSystem::GetGuild(source));
+
     ecs::NetworkService::Send(viewer, &packet, sizeof(packet));
     NetworkSyncSystem::SendCharAdditionalInfo(reg, source, viewer);
 
@@ -423,7 +429,6 @@ void SendInsert(entt::registry& reg, entt::entity source, entt::entity viewer)
 #ifdef AURIGA_LPENTITY_FIXUP_AUDIT
                 // 4-fixup.3 + 4-fixup.4: validate ECS shadow state and
                 // packet parity AFTER the legacy authoritative emission.
-                ecs::EntityNetworkDispatchAudit::CheckMovementDrift(reg, source);
                 ecs::EntityNetworkDispatchAudit::CheckCharacterInsertParity(reg, source);
 #endif
                 break;

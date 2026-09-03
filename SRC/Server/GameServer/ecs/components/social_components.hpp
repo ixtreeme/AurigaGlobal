@@ -57,6 +57,13 @@ struct DungeonMembership {
     CWarMap* warMap { nullptr };
 };
 
+// Guild ids whose name this viewer has already been sent. The client only
+// needs each name once; this is the dedup set that used to be
+// CHARACTER::m_known_guild.
+struct KnownGuilds {
+    std::set<uint32_t> ids;
+};
+
 struct ArenaMembership {
     CArena* arena { nullptr };
     int potionLimit { 0 };

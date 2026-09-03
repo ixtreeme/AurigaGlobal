@@ -19,6 +19,11 @@ void ForEachOnlinePartyMember(entt::entity e, const std::function<void(entt::ent
 void ForEachPartyMemberOnMap(entt::entity e, int32_t mapIndex,
     const std::function<void(entt::entity)>& visitor);
 CGuild* GetGuild(entt::entity e);
+
+// Tells one viewer a guild's name, once. Legacy EncodeInsertPacket opens
+// with this; the native character-insert path has to as well, or the
+// viewer renders the character with no guild name.
+void SendGuildName(entt::entity viewer, CGuild* pGuild);
 LPDUNGEON GetDungeon(entt::entity e);
 CWarMap* GetWarMap(entt::entity e);
 CExchange* GetExchange(entt::entity e);

@@ -1911,3 +1911,65 @@ in their own ECS registry, so this should never fire - which is exactly why it
 logs instead of failing quietly.
 
 Build: RelWithDebInfo GameServer, 0 errors.
+
+
+Phase 19r - packet parity: a real gap, and an audit that could not see it
+--------------------------------------------------------------------------
+SendInsert's character case still calls legacy EncodeInsertPacket. The plan
+was to flip it to the native builder. Reading the two side by side first found
+a reason not to, yet.
+
+THE GAP
+--------
+Legacy CHARACTER::EncodeInsertPacket opens with
+
+    ch->SendGuildName(GetGuild());
+
+telling the VIEWER the name of the SOURCE's guild, deduplicated per viewer.
+SendCharacterInsert, the native path, never did. Flipping authority would have
+meant viewers stop learning guild names and characters render without one -
+a visible bug, shipped on the strength of a green audit.
+
+CheckCharacterInsertParity could not have caught it. It compares fields of
+TPacketGCCharacterAdd; SendGuildName is a different packet entirely. An audit
+scoped to one struct cannot see a missing sibling.
+
+Closed by moving the send: ecs::SocialSystem::SendGuildName(viewer, guild) is
+the implementation now, CHARACTER::SendGuildName forwards, and the dedup set
+m_known_guild is an ecs::KnownGuilds component. SendCharacterInsert calls it.
+
+WHAT ELSE THE AUDIT WAS NOT TELLING US
+----------------------------------------
+Three of its nine comparisons cannot fail. GetRotation, GetAddChrStateFlag and
+GetCurrentDestX/Y are already component-backed, so those lines compare a
+component with itself. Kept - they mean something again the moment either side
+moves - but annotated, because "the parity audit is clean" was resting partly
+on lines that are clean by construction.
+
+Four packet fields were never compared at all: dwAffectFlag[0], dwAffectFlag[1],
+bMovingSpeed and transname. dwAffectFlag now is. It is the one where the two
+builders genuinely do independent work - both apply the SOUL_RED + SOUL_BLUE
+-> SOUL_MIX collapse, from different sources - so it is worth watching.
+
+bMovingSpeed and transname are left uncompared and it is worth saying why:
+both branch on a pet/mount/special-race test that the two builders spell
+differently. Legacy reads IsPet() / IsNewPet() / m_bIsMount; native reads
+StatusFlags isPet / isNewPet / isMount. Comparing the outputs would tell us
+they agree today without telling us the inputs are two separate stores. That
+needs the flags consolidated, not a log line.
+
+CheckMovementDrift is deleted. It had been an empty no-op shim since C.4, with
+a comment saying the shim and its call site delete in Phase G. This is Phase G.
+
+AUTHORITY NOT FLIPPED, DELIBERATELY
+-------------------------------------
+The native builder is not authoritative for character inserts yet, and this
+phase is the argument for why not. Reading two builders against each other
+found a gap in minutes that the automated check was structurally incapable of
+reporting. The remaining evidence - a partly tautological field audit that only
+runs under AURIGA_LPENTITY_FIXUP_AUDIT and only logs - is not enough to move
+every character-insert packet on a live server. What would be: the widened
+audit running on a populated server with no [INSERT_PARITY] output, plus
+bMovingSpeed's inputs unified.
+
+Build: RelWithDebInfo GameServer, 0 errors.

@@ -28,17 +28,6 @@
 
 namespace ecs::EntityNetworkDispatchAudit {
 
-void CheckMovementDrift(entt::registry& /*reg*/, entt::entity /*source*/)
-{
-    // Phase C.4: state_flags comparison removed. Legacy m_bAddChrState is
-    // no longer written by char paths after C.4; the ECS StatusFlags 4
-    // bits are the sole source. CheckMovementDrift body is now empty -
-    // function retained as a no-op shim because EntityNetworkDispatch.cpp
-    // SendInsert character branch still emits the call site under
-    // AURIGA_LPENTITY_FIXUP_AUDIT. The shim and the call site delete in
-    // Phase G alongside the legacy field declarations.
-}
-
 void CheckCharacterInsertParity(entt::registry& reg, entt::entity source)
 {
     // Only inspect characters; non-characters do not have a parallel legacy
@@ -61,10 +50,20 @@ void CheckCharacterInsertParity(entt::registry& reg, entt::entity source)
 
     const auto entityIdx = static_cast<uint32_t>(source);
 
-    // Compare native packet field-by-field against the values legacy
-    // EncodeInsertPacket would have written. This is a sanity check: with
-    // movement state in sync (verified by CheckMovementDrift), all packet
-    // fields should already match.
+    // Compare the native packet field by field against what legacy
+    // EncodeInsertPacket would have written.
+    //
+    // Two things to know before trusting a clean run of this.
+    //
+    // First, some of these comparisons cannot fail. GetRotation,
+    // GetAddChrStateFlag and GetCurrentDestX/Y are already component-backed,
+    // so those lines compare a component against itself. They are kept
+    // because they will start meaning something again the moment either
+    // side changes, but they are not evidence today.
+    //
+    // Second, a field-by-field check cannot see a missing SIDE packet.
+    // Legacy EncodeInsertPacket opens with SendGuildName; the native path
+    // did not, and no field here would ever have shown it.
 
     if (nativePack.dwVID != ch->GetPacketVID())
         LOG_WARN("[INSERT_PARITY] dwVID entity={} native={} legacy={}", entityIdx, nativePack.dwVID, ch->GetPacketVID());
@@ -88,6 +87,26 @@ void CheckCharacterInsertParity(entt::registry& reg, entt::entity source)
         LOG_WARN("[INSERT_PARITY] bStateFlag entity={} native={} legacy={}", entityIdx,
             static_cast<int>(nativePack.bStateFlag),
             static_cast<int>(ch->GetAddChrStateFlag()));
+
+    // These four were never compared. bMovingSpeed and transname both branch
+    // on the pet/mount/special-race test, which the two builders spell
+    // differently - legacy reads IsPet/IsNewPet/m_bIsMount, native reads
+    // StatusFlags - so they are exactly where a divergence would hide.
+    {
+        TAffectFlag legacyAffect = ch->GetAffectFlags();
+#ifdef ENABLE_SOUL_SYSTEM
+        if (legacyAffect.IsSet(AFF_SOUL_RED) && legacyAffect.IsSet(AFF_SOUL_BLUE)) {
+            legacyAffect.Reset(AFF_SOUL_RED);
+            legacyAffect.Reset(AFF_SOUL_BLUE);
+            legacyAffect.Set(AFF_SOUL_MIX);
+        }
+#endif
+        if (nativePack.dwAffectFlag[0] != legacyAffect.bits[0]
+            || nativePack.dwAffectFlag[1] != legacyAffect.bits[1])
+            LOG_WARN("[INSERT_PARITY] dwAffectFlag entity={} native=[{},{}] legacy=[{},{}]",
+                entityIdx, nativePack.dwAffectFlag[0], nativePack.dwAffectFlag[1],
+                legacyAffect.bits[0], legacyAffect.bits[1]);
+    }
 
     // Native may snap pack.x/y to the active destination if the move duration has
     // expired. Legacy applies the same logic. With movement state in sync

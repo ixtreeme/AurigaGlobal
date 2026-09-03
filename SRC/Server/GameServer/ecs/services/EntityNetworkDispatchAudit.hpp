@@ -18,7 +18,6 @@ namespace ecs::EntityNetworkDispatchAudit {
 //
 // This file is scheduled for deletion in LPENTITY.6 along with the legacy
 // CHARACTER bodies it observes.
-void CheckMovementDrift(entt::registry& reg, entt::entity source);
 
 // LPENTITY.4-fixup.4: runtime byte-parity verifier for the character insert
 // packet. Builds the native TPacketGCCharacterAdd via BuildCharacterInsert,

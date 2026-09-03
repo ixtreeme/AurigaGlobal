@@ -5774,7 +5774,6 @@ void CHARACTER::Initialize()
 
     m_strNewName = "";
 
-    m_known_guild.clear();
 
     m_dwLogOffInterval = 0;
 

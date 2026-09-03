@@ -897,19 +897,20 @@ bool CHARACTER::HasReviverInParty() const
     return false;
 }
 
-void CHARACTER::SendGuildName(CGuild* pGuild)
+namespace ecs::SocialSystem {
+
+void SendGuildName(entt::entity viewer, CGuild* pGuild)
 {
-    if (nullptr == pGuild)
+    if (nullptr == pGuild || viewer == entt::null || !g_registry.valid(viewer))
         return;
 
-    DESC* desc = GetDesc();
-
+    LPDESC desc = ecs::PlayerRuntime::GetDesc(viewer);
     if (nullptr == desc)
         return;
-    if (m_known_guild.contains(pGuild->GetID()))
-        return;
 
-    m_known_guild.insert(pGuild->GetID());
+    auto& known = g_registry.get_or_emplace<ecs::KnownGuilds>(viewer);
+    if (!known.ids.insert(pGuild->GetID()).second)
+        return;  // already sent to this viewer
 
     TPacketGCGuildName pack = {};
 
@@ -923,6 +924,13 @@ void CHARACTER::SendGuildName(CGuild* pGuild)
 #endif
 
     desc->Packet(&pack, sizeof(pack));
+}
+
+} // namespace ecs::SocialSystem
+
+void CHARACTER::SendGuildName(CGuild* pGuild)
+{
+    ecs::SocialSystem::SendGuildName(GetEntityHandle(), pGuild);
 }
 
 void CHARACTER::SendGuildName(uint32_t dwGuildID)
