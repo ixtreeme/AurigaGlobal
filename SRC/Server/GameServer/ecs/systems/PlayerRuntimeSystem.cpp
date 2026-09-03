@@ -41,6 +41,7 @@
 #include "../../ecs/components/dirty_components.hpp"
 #include "../../ecs/components/identity_components.hpp"
 #include "AISystem.hpp"
+#include "CombatSystem.hpp"
 #include "../components/ai_components.hpp"
 #include "../../ecs/components/inventory_components.hpp"
 #include "../../ecs/components/movement_components.hpp"
@@ -1644,6 +1645,129 @@ uint32_t CHARACTER::GetAIFlag() const
 
     return 0;
 }
+
+namespace ecs::PlayerRuntime {
+
+// The small point writers and readers, entity-native. Each was already nothing
+// but Ensure*/TryGet* on GetEntityHandle() plus one component field, so this
+// only moves them where PointSystem::Change can reach them without a pointer.
+
+void SetHP(entt::entity e, int64_t hp)
+{
+    if (auto* health = EnsureHealthComponent(e))
+        health->current = static_cast<int32_t>(std::clamp<int64_t>(hp, 0, INT32_MAX));
+}
+
+void SetMaxHP(entt::entity e, int64_t value)
+{
+    if (auto* health = EnsureHealthComponent(e))
+        health->max = static_cast<int32_t>(std::clamp<int64_t>(value, 0, INT32_MAX));
+}
+
+void SetSP(entt::entity e, int64_t sp)
+{
+    if (auto* mana = EnsureManaComponent(e))
+        mana->current = static_cast<int32_t>(std::clamp<int64_t>(sp, 0, INT32_MAX));
+}
+
+void SetMaxSP(entt::entity e, int64_t value)
+{
+    if (auto* mana = EnsureManaComponent(e))
+        mana->max = static_cast<int32_t>(std::clamp<int64_t>(value, 0, INT32_MAX));
+}
+
+void SetStamina(entt::entity e, int64_t value)
+{
+    if (auto* stamina = EnsureStaminaComponent(e))
+        stamina->current = static_cast<int32_t>(std::clamp<int64_t>(value, 0, INT32_MAX));
+}
+
+void SetMaxStamina(entt::entity e, int64_t value)
+{
+    if (auto* stamina = EnsureStaminaComponent(e))
+        stamina->max = static_cast<int32_t>(std::clamp<int64_t>(value, 0, INT32_MAX));
+}
+
+int GetStamina(entt::entity e)
+{
+    if (const auto* stamina = TryGetStaminaComponent(e))
+        return stamina->current;
+
+    return 0;
+}
+
+int64_t GetMaxStamina(entt::entity e)
+{
+    if (const auto* stamina = TryGetStaminaComponent(e))
+        return stamina->max;
+
+    return 0;
+}
+
+void SetExp(entt::entity e, uint32_t exp)
+{
+    if (auto* ecsExp = EnsureExperienceComponent(e))
+        ecsExp->current = exp;
+}
+
+uint32_t GetExp(entt::entity e)
+{
+    if (const auto* exp = TryGetExperienceComponent(e))
+        return static_cast<uint32_t>(std::clamp<int64_t>(exp->current, 0, UINT32_MAX));
+
+    return 0;
+}
+
+uint32_t GetNextExp(entt::entity e)
+{
+    const int level = ecs::PointSystem::GetLevel(e);
+    if (PLAYER_MAX_LEVEL_CONST < level)
+        return 2500000000u;
+
+    return exp_table[level];
+}
+
+void SetGold(entt::entity e, int64_t gold)
+{
+    if (auto* wallet = EnsureGoldAmountComponent(e))
+        wallet->amount = gold;
+}
+
+uint32_t GetImmuneFlag(entt::entity e)
+{
+    if (const auto* flags = TryGetRuntimeFlagsComponent(e))
+        return flags->immuneFlag;
+
+    return 0;
+}
+
+void SetImmuneFlag(entt::entity e, uint32_t value)
+{
+    if (auto* flags = EnsureRuntimeFlagsComponent(e))
+        flags->immuneFlag = value;
+
+    if (e != entt::null && g_registry.valid(e))
+        g_registry.get_or_emplace<ecs::ImmunityFlags>(e).flags = value;
+}
+
+void SetLevel(entt::entity e, uint8_t level)
+{
+    if (auto* ecsLevel = EnsureLevelComponent(e))
+        ecsLevel->value = level;
+
+    // CHARACTER::IsPC() is the descriptor test, not the TagPC component.
+    if (GetDesc(e))
+    {
+        if (level < PK_PROTECT_LEVEL)
+            CombatSystem::SetPKMode(e, PK_MODE_PROTECT);
+        else if (GetGMLevel(e) != GM_PLAYER)
+            CombatSystem::SetPKMode(e, PK_MODE_PROTECT);
+        else if (CombatSystem::GetPKMode(e) == PK_MODE_PROTECT)
+            CombatSystem::SetPKMode(e, PK_MODE_PEACE);
+    }
+}
+
+} // namespace ecs::PlayerRuntime
 
 void CHARACTER::SetHP(int64_t hp)
 {

@@ -5,6 +5,9 @@
 #include "QuestSystem.hpp"
 #include "PlayerRuntimeSystem.hpp"
 #include "SkillSystem.hpp"
+#include "CombatSystem.hpp"
+#include "SocialSystem.hpp"
+#include "../components/skill_components.hpp"
 #include "NetworkSyncSystem.hpp"
 
 #include <array>
@@ -525,22 +528,6 @@ bool SetExperienceBlocked(entt::entity e, bool blocked)
 }
 #endif
 
-void Change(entt::entity e, uint8_t type, int64_t amount, bool bAmount, bool bBroadcast
-#ifdef __ENABLE_BLOCK_EXP__
-    , bool bForceExp
-#endif
-)
-{
-    auto* ch = ecs::LegacyCharOf(e);
-    if (!ch)
-        return;
-
-    ch->PointChange(type, amount, bAmount, bBroadcast
-#ifdef __ENABLE_BLOCK_EXP__
-        , bForceExp
-#endif
-    );
-}
 
 } // namespace ecs::PointSystem
 
@@ -763,16 +750,22 @@ void CHARACTER::CheckMaximumPoints()
 }
 
 
-void CHARACTER::PointChange(uint8_t type, int64_t amount, bool bAmount, bool bBroadcast
+namespace ecs::PointSystem {
+
+void Change(entt::entity e, uint8_t type, int64_t amount, bool bAmount, bool bBroadcast
 #ifdef __ENABLE_BLOCK_EXP__
 	, bool bForceExp
 #endif
 )
 {
+	// Resolved once for the leaves below that still own legacy state -
+	// ComputePoints, Save, the packet senders, gaya and the inventory point.
+	// Every point read and write in this body goes through components.
+	LPCHARACTER ch = ecs::LegacyCharOf(e);
 	int64_t val = 0;
 
 
-	//LOG_TRACE("PointChange {} {} | {} -> {} cHP {} mHP {}", type, amount, GetPoint(type), GetPoint(type)+amount, GetHP(), GetMaxHP());
+	//LOG_TRACE("PointChange {} {} | {} -> {} cHP {} mHP {}", type, amount, Get(e, type), Get(e, type)+amount, Get(e, POINT_HP), GetMaxHP(e));
 
 	switch (type)
 	{
@@ -785,32 +778,32 @@ void CHARACTER::PointChange(uint8_t type, int64_t amount, bool bAmount, bool bBr
 		return;
 
 	case POINT_LEVEL:
-		if ((GetLevel() + amount) > gPlayerMaxLevel)
+		if ((GetLevel(e) + amount) > gPlayerMaxLevel)
 			return;
 
-		SetLevel(GetLevel() + amount);
-		val = GetLevel();
+		ecs::PlayerRuntime::SetLevel(e, GetLevel(e) + amount);
+		val = GetLevel(e);
 
-		LOG_INFO("LEVELUP: {} {} NEXT EXP {}", GetName(), GetLevel(), GetNextExp());
+		LOG_INFO("LEVELUP: {} {} NEXT EXP {}", ecs::PlayerRuntime::GetName(e).data(), GetLevel(e), ecs::PlayerRuntime::GetNextExp(e));
 #ifdef ENABLE_WOLFMAN_CHARACTER
-		if (GetJob() == JOB_WOLFMAN)
+		if (ecs::PlayerRuntime::GetJob(e) == JOB_WOLFMAN)
 		{
-			if ((5 <= val) && (GetSkillGroup() != 1))
+			if ((5 <= val) && (SkillSystem::GetSkillGroup(e) != 1))
 			{
 				ClearSkill();
 				// set skill group
 				SetSkillGroup(1);
 				// set skill points
-				SetRealPoint(POINT_SKILL, GetLevel() - 1);
-				SetPoint(POINT_SKILL, GetRealPoint(POINT_SKILL));
-				PointChange(POINT_SKILL, 0);
+				SetReal(e, POINT_SKILL, GetLevel(e) - 1);
+				Set(e, POINT_SKILL, GetReal(e, POINT_SKILL));
+				Change(e, POINT_SKILL, 0);
 				// update points (not required)
-				// ComputePoints();
+				// if (ch) ch->ComputePoints();
 				// PointsPacket();
 			}
 		}
 #endif
-		PointChange(POINT_NEXT_EXP, GetNextExp(), false);
+		Change(e, POINT_NEXT_EXP, ecs::PlayerRuntime::GetNextExp(e), false);
 #ifdef ENABLE_ANNOUNCEMENT_LEVELUP
 #ifdef TEXTS_IMPROVEMENT
 		switch (val) {
@@ -835,7 +828,7 @@ void CHARACTER::PointChange(uint8_t type, int64_t amount, bool bAmount, bool bBr
 		case 137:
 		case 138:
 		case 139:
-			BroadcastNoticeNew(CHAT_TYPE_NOTICE, 0, 0, 546, "%s#%d", GetName(), val);
+			BroadcastNoticeNew(CHAT_TYPE_NOTICE, 0, 0, 546, "%s#%d", ecs::PlayerRuntime::GetName(e).data(), val);
 			break;
 		default:
 			break;
@@ -844,48 +837,48 @@ void CHARACTER::PointChange(uint8_t type, int64_t amount, bool bAmount, bool bBr
 #endif
 		if (amount)
 		{
-			quest::CQuestManager::instance().LevelUp(GetPlayerID());
+			quest::CQuestManager::instance().LevelUp(ecs::PlayerRuntime::GetPlayerID(e));
 
-			LogManager::instance().LevelLog(this, val, GetRealPoint(POINT_PLAYTIME) + (get_dword_time() - m_dwPlayStartTime) / 60000);
+			LogManager::instance().LevelLog(ch, val, GetReal(e, POINT_PLAYTIME) + (get_dword_time() - (ch ? ch->GetPlayStartTime() : 0u)) / 60000);
 
-			if (GetGuild())
+			if ((ch ? ch->GetGuild() : nullptr))
 			{
-				GetGuild()->LevelChange(GetPlayerID(), GetLevel());
+				(ch ? ch->GetGuild() : nullptr)->LevelChange(ecs::PlayerRuntime::GetPlayerID(e), GetLevel(e));
 			}
 
-			if (GetParty())
+			if (::ecs::SocialSystem::GetParty(e))
 			{
-				GetParty()->RequestSetMemberLevel(GetPlayerID(), GetLevel());
+				::ecs::SocialSystem::GetParty(e)->RequestSetMemberLevel(ecs::PlayerRuntime::GetPlayerID(e), GetLevel(e));
 			}
 		}
 		break;
 
 	case POINT_NEXT_EXP:
-		val = GetNextExp();
+		val = ecs::PlayerRuntime::GetNextExp(e);
 		bAmount = false;	// 1����� bAmount�� false ?�3� �N�U.
 		break;
 
 	case POINT_EXP:
 	{
-		uint32_t exp = GetExp();
-		uint32_t next_exp = GetNextExp();
+		uint32_t exp = ecs::PlayerRuntime::GetExp(e);
+		uint32_t next_exp = ecs::PlayerRuntime::GetNextExp(e);
 
 		// exp�! 0 AI�I�� �!�� 3E���I �N�U
 		if ((amount < 0) && (exp < (uint32_t)(-amount)))
 		{
-			LOG_TRACE("{} AMOUNT < 0 {}, CUR EXP: {}", GetName(), -amount, exp);
+			LOG_TRACE("{} AMOUNT < 0 {}, CUR EXP: {}", ecs::PlayerRuntime::GetName(e).data(), -amount, exp);
 			amount = exp; // -exp
 
-			SetExp(exp + amount);
-			val = GetExp();
+			ecs::PlayerRuntime::SetExp(e, exp + amount);
+			val = ecs::PlayerRuntime::GetExp(e);
 		}
 		else
 		{
-			if (gPlayerMaxLevel <= GetLevel())
+			if (gPlayerMaxLevel <= GetLevel(e))
 				return;
 
 #ifdef __ENABLE_BLOCK_EXP__
-			if (ecs::PointSystem::IsExperienceBlocked(GetEntityHandle()) && !bForceExp)
+			if (ecs::PointSystem::IsExperienceBlocked(e) && !bForceExp)
 			{
 				return;
 			}
@@ -901,7 +894,7 @@ void CHARACTER::PointChange(uint8_t type, int64_t amount, bool bAmount, bool bBr
 			//							n -= 3;
 			//						}
 			//
-			//						ecs::ChatSystem::SendNew(GetEntityHandle(),
+			//						ecs::ChatSystem::SendNew(e,
 			//#ifdef ENABLE_NEW_CHAT
 			//						CHAT_TYPE_INFO_EXP
 			//#else
@@ -918,49 +911,49 @@ void CHARACTER::PointChange(uint8_t type, int64_t amount, bool bAmount, bool bBr
 				iExpBalance = (exp + amount) - next_exp;
 				amount = next_exp - exp;
 
-				SetExp(0);
+				ecs::PlayerRuntime::SetExp(e, 0);
 				exp = next_exp;
 			}
 			else
 			{
-				SetExp(exp + amount);
-				exp = GetExp();
+				ecs::PlayerRuntime::SetExp(e, exp + amount);
+				exp = ecs::PlayerRuntime::GetExp(e);
 			}
 
 			uint32_t q = uint32_t(next_exp / 4.0f);
-			int iLevStep = GetRealPoint(POINT_LEVEL_STEP);
+			int iLevStep = GetReal(e, POINT_LEVEL_STEP);
 
 			// iLevStepAI 4 AI��AI�� �1o�AI ?A��3�3� �I1Ƿ� ?���?! ?A 1� 3o�� �aAI�U.
 			if (iLevStep >= 4)
 			{
-				LOG_ERROR("{} LEVEL_STEP bigger than 4! ({})", GetName(), iLevStep);
+				LOG_ERROR("{} LEVEL_STEP bigger than 4! ({})", ecs::PlayerRuntime::GetName(e).data(), iLevStep);
 				iLevStep = 4;
 			}
 
 			if (exp >= next_exp && iLevStep < 4)
 			{
 				for (int i = 0; i < 4 - iLevStep; ++i)
-					PointChange(POINT_LEVEL_STEP, 1, false, true);
+					Change(e, POINT_LEVEL_STEP, 1, false, true);
 			}
 			else if (exp >= q * 3 && iLevStep < 3)
 			{
 				for (int i = 0; i < 3 - iLevStep; ++i)
-					PointChange(POINT_LEVEL_STEP, 1, false, true);
+					Change(e, POINT_LEVEL_STEP, 1, false, true);
 			}
 			else if (exp >= q * 2 && iLevStep < 2)
 			{
 				for (int i = 0; i < 2 - iLevStep; ++i)
-					PointChange(POINT_LEVEL_STEP, 1, false, true);
+					Change(e, POINT_LEVEL_STEP, 1, false, true);
 			}
 			else if (exp >= q && iLevStep < 1)
-				PointChange(POINT_LEVEL_STEP, 1);
+				Change(e, POINT_LEVEL_STEP, 1);
 
 			if (iExpBalance)
 			{
-				PointChange(POINT_EXP, iExpBalance);
+				Change(e, POINT_EXP, iExpBalance);
 			}
 
-			val = GetExp();
+			val = ecs::PlayerRuntime::GetExp(e);
 		}
 	}
 	break;
@@ -968,7 +961,7 @@ void CHARACTER::PointChange(uint8_t type, int64_t amount, bool bAmount, bool bBr
 	case POINT_LEVEL_STEP:
 		if (amount > 0)
 		{
-			val = GetPoint(POINT_LEVEL_STEP) + amount;
+			val = Get(e, POINT_LEVEL_STEP) + amount;
 
 			switch (val)
 			{
@@ -976,109 +969,109 @@ void CHARACTER::PointChange(uint8_t type, int64_t amount, bool bAmount, bool bBr
 			case 2:
 			case 3:
 			{
-				int iLvl = GetLevel();
+				int iLvl = GetLevel(e);
 #ifdef ENABLE_STATUS_MAX_344_POINTS
 				if (iLvl > 115)
 					break;
 				else if ((iLvl == 115) && (val == 3))
 					break;
 
-				PointChange(POINT_STAT, 1);
+				Change(e, POINT_STAT, 1);
 #else
 				if ((iLvl <= g_iStatusPointGetLevelLimit) && (iLvl <= gPlayerMaxLevel))
-					PointChange(POINT_STAT, 1);
+					Change(e, POINT_STAT, 1);
 #endif
 			}
 			break;
 
 			case 4:
 			{
-				int iHP = number(JobInitialPoints[GetJob()].hp_per_lv_begin, JobInitialPoints[GetJob()].hp_per_lv_end);
-				int iSP = number(JobInitialPoints[GetJob()].sp_per_lv_begin, JobInitialPoints[GetJob()].sp_per_lv_end);
+				int iHP = number(JobInitialPoints[ecs::PlayerRuntime::GetJob(e)].hp_per_lv_begin, JobInitialPoints[ecs::PlayerRuntime::GetJob(e)].hp_per_lv_end);
+				int iSP = number(JobInitialPoints[ecs::PlayerRuntime::GetJob(e)].sp_per_lv_begin, JobInitialPoints[ecs::PlayerRuntime::GetJob(e)].sp_per_lv_end);
 
-				SetRandomHP(GetRandomHP() + iHP);
-				SetRandomSP(GetRandomSP() + iSP);
+				SetRandomHP(e, GetRandomHP(e) + iHP);
+				SetRandomSP(e, GetRandomSP(e) + iSP);
 
-				if (GetSkillGroup())
+				if (SkillSystem::GetSkillGroup(e))
 				{
-					if (GetLevel() >= 5)
-						PointChange(POINT_SKILL, 1);
+					if (GetLevel(e) >= 5)
+						Change(e, POINT_SKILL, 1);
 
-					if (GetLevel() >= 9)
-						PointChange(POINT_SUB_SKILL, 1);
+					if (GetLevel(e) >= 9)
+						Change(e, POINT_SUB_SKILL, 1);
 				}
 
-				PointChange(POINT_MAX_HP, iHP);
-				PointChange(POINT_MAX_SP, iSP);
-				PointChange(POINT_LEVEL, 1, false, true);
+				Change(e, POINT_MAX_HP, iHP);
+				Change(e, POINT_MAX_SP, iSP);
+				Change(e, POINT_LEVEL, 1, false, true);
 
 				val = 0;
 			}
 			break;
 			}
 
-			PointChange(POINT_HP, GetMaxHP() - GetHP());
-			PointChange(POINT_SP, GetMaxSP() - GetSP());
-			PointChange(POINT_STAMINA, GetMaxStamina() - GetStamina());
+			Change(e, POINT_HP, GetMaxHP(e) - Get(e, POINT_HP));
+			Change(e, POINT_SP, GetMaxSP(e) - Get(e, POINT_SP));
+			Change(e, POINT_STAMINA, ecs::PlayerRuntime::GetMaxStamina(e) - ecs::PlayerRuntime::GetStamina(e));
 
-			SetPoint(POINT_LEVEL_STEP, val);
-			SetRealPoint(POINT_LEVEL_STEP, val);
+			Set(e, POINT_LEVEL_STEP, val);
+			SetReal(e, POINT_LEVEL_STEP, val);
 
-			Save();
+			if (ch) ch->Save();
 		}
 		else
-			val = GetPoint(POINT_LEVEL_STEP);
+			val = Get(e, POINT_LEVEL_STEP);
 
 		break;
 
 	case POINT_HP:
 	{
-		if (IsDead() || IsStun())
+		if (::CombatSystem::IsDead(e) || ::CombatSystem::IsStun(e))
 			return;
 
-		int64_t prev_hp = GetHP();
+		int64_t prev_hp = Get(e, POINT_HP);
 
-		amount = std::min(GetMaxHP() - GetHP(), amount);
-		SetHP(GetHP() + amount);
-		val = GetHP();
+		amount = std::min(GetMaxHP(e) - Get(e, POINT_HP), amount);
+		ecs::PlayerRuntime::SetHP(e, Get(e, POINT_HP) + amount);
+		val = Get(e, POINT_HP);
 
-		BroadcastTargetPacket();
+		if (ch) ch->BroadcastTargetPacket();
 
-		if (GetParty() && IsPC() && val != prev_hp)
-			GetParty()->SendPartyInfoOneToAll(GetEntityHandle());
+		if (::ecs::SocialSystem::GetParty(e) && (ecs::PlayerRuntime::GetDesc(e) != nullptr) && val != prev_hp)
+			::ecs::SocialSystem::GetParty(e)->SendPartyInfoOneToAll(e);
 	}
 	break;
 
 	case POINT_SP:
 	{
-		if (IsDead() || IsStun())
+		if (::CombatSystem::IsDead(e) || ::CombatSystem::IsStun(e))
 			return;
 
-		amount = std::min(GetMaxSP() - GetSP(), amount);
-		SetSP(GetSP() + amount);
-		val = GetSP();
+		amount = std::min(GetMaxSP(e) - Get(e, POINT_SP), amount);
+		ecs::PlayerRuntime::SetSP(e, Get(e, POINT_SP) + amount);
+		val = Get(e, POINT_SP);
 	}
 	break;
 
 	case POINT_STAMINA:
 	{
-		if (IsDead() || IsStun())
+		if (::CombatSystem::IsDead(e) || ::CombatSystem::IsStun(e))
 			return;
 
-		int prev_val = GetStamina();
-		amount = std::min(GetMaxStamina() - GetStamina(), amount);
-		SetStamina(GetStamina() + amount);
-		val = GetStamina();
+		int prev_val = ecs::PlayerRuntime::GetStamina(e);
+		amount = std::min(ecs::PlayerRuntime::GetMaxStamina(e) - ecs::PlayerRuntime::GetStamina(e), amount);
+		ecs::PlayerRuntime::SetStamina(e, ecs::PlayerRuntime::GetStamina(e) + amount);
+		val = ecs::PlayerRuntime::GetStamina(e);
 
 		if (val == 0)
 		{
 			// Stamina�! 3oA��I �EA�!
-			SetNowWalking(true);
+			if (ch) ch->SetNowWalking(true);
 		}
 		else if (prev_val == 0)
 		{
 			// 3o�o 1oA�1I3a�! ���aA��I AIA� �?�a o1��
-			ResetWalking();
+			if (ch) ch->ResetWalking();
 		}
 
 		if (amount < 0 && val != 0) // ��1O�� o�3���3E�´U.
@@ -1088,12 +1081,12 @@ void CHARACTER::PointChange(uint8_t type, int64_t amount, bool bAmount, bool bBr
 
 	case POINT_MAX_HP:
 	{
-		SetPoint(type, GetPoint(type) + amount);
+		Set(e, type, Get(e, type) + amount);
 
-		const int64_t base = GetRealPoint(POINT_MAX_HP);              // 20-30k
-		const int64_t flat = GetPoint(POINT_MAX_HP);                  // �kszerek stb. fix +HP (ett�l lesz 350k)
-		const int64_t party = GetPoint(POINT_PARTY_TANKER_BONUS);
-		const int64_t pct = GetPoint(POINT_MAX_HP_PCT);              // +20
+		const int64_t base = GetReal(e, POINT_MAX_HP);              // 20-30k
+		const int64_t flat = Get(e, POINT_MAX_HP);                  // �kszerek stb. fix +HP (ett�l lesz 350k)
+		const int64_t party = Get(e, POINT_PARTY_TANKER_BONUS);
+		const int64_t pct = Get(e, POINT_MAX_HP_PCT);              // +20
 
 		const int64_t totalNoPct = base + flat + party;                // pl 350k
 		int64_t newMax = totalNoPct + (totalNoPct * pct) / 100;        // 350k + 20% = 420k
@@ -1101,69 +1094,69 @@ void CHARACTER::PointChange(uint8_t type, int64_t amount, bool bAmount, bool bBr
 		if (newMax < 1)
 			newMax = 1;
 
-		SetMaxHP(newMax);
-		val = GetMaxHP();
+		ecs::PlayerRuntime::SetMaxHP(e, newMax);
+		val = GetMaxHP(e);
 	}
 	break;
 
 	case POINT_MAX_SP:
 	{
-		SetPoint(type, GetPoint(type) + amount);
+		Set(e, type, Get(e, type) + amount);
 
-		//SetMaxSP(GetMaxSP() + amount);
+		//ecs::PlayerRuntime::SetMaxSP(e, GetMaxSP(e) + amount);
 		// Aִ� ��1A�� = (��o� Aִ� ��1A�� + A߰!) * Aִ���1A��%
-		int64_t sp = GetRealPoint(POINT_MAX_SP);
-		int64_t add_sp = std::min((int64_t)800, sp * GetPoint(POINT_MAX_SP_PCT) / 100);
-		add_sp += GetPoint(POINT_MAX_SP);
-		add_sp += GetPoint(POINT_PARTY_SKILL_MASTER_BONUS);
+		int64_t sp = GetReal(e, POINT_MAX_SP);
+		int64_t add_sp = std::min((int64_t)800, sp * Get(e, POINT_MAX_SP_PCT) / 100);
+		add_sp += Get(e, POINT_MAX_SP);
+		add_sp += Get(e, POINT_PARTY_SKILL_MASTER_BONUS);
 
-		SetMaxSP(sp + add_sp);
+		ecs::PlayerRuntime::SetMaxSP(e, sp + add_sp);
 
-		val = GetMaxSP();
+		val = GetMaxSP(e);
 	}
 	break;
 	case POINT_MAX_HP_PCT:
-		SetPoint(type, GetPoint(type) + amount);
-		val = GetPoint(type);
-		PointChange(POINT_MAX_HP, 0);
+		Set(e, type, Get(e, type) + amount);
+		val = Get(e, type);
+		Change(e, POINT_MAX_HP, 0);
 		break;
 
 	case POINT_MAX_SP_PCT:
-		SetPoint(type, GetPoint(type) + amount);
-		val = GetPoint(type);
-		PointChange(POINT_MAX_SP, 0);
+		Set(e, type, Get(e, type) + amount);
+		val = Get(e, type);
+		Change(e, POINT_MAX_SP, 0);
 		break;
 
 	case POINT_MAX_STAMINA:
-		SetMaxStamina(GetMaxStamina() + amount);
-		val = GetMaxStamina();
+		ecs::PlayerRuntime::SetMaxStamina(e, ecs::PlayerRuntime::GetMaxStamina(e) + amount);
+		val = ecs::PlayerRuntime::GetMaxStamina(e);
 		break;
 
 
 #ifdef __ENABLE_EXTEND_INVEN_SYSTEM__
 	case POINT_INVEN:
 	{
-		const int64_t Envantertoplami = static_cast<int64_t>(Inven_Point()) + amount;
+		const int64_t Envantertoplami = static_cast<int64_t>((ch ? ch->Inven_Point() : 0)) + amount;
 		if (Envantertoplami > 18)
 		{
 			LOG_ERROR("[ENVANTER ERROR!]");
 			return;
 		}
-		Set_Inventory_Point(Inven_Point() + amount);
-		val = Inven_Point();
+		if (ch) ch->Set_Inventory_Point((ch ? ch->Inven_Point() : 0) + amount);
+		val = (ch ? ch->Inven_Point() : 0);
 	}
 	break;
 #endif
 
 	case POINT_GOLD:
 	{
-		const int64_t nTotalMoney = GetGold() + amount;
+		const int64_t nTotalMoney = GetGold(e) + amount;
 
 		if (GOLD_MAX <= nTotalMoney)
 		{
-			LOG_ERROR("[OVERFLOW_GOLD] OriGold {} AddedGold {} id {} Name {} ", GetGold(), amount, GetPlayerID(), GetName());
+			LOG_ERROR("[OVERFLOW_GOLD] OriGold {} AddedGold {} id {} Name {} ", GetGold(e), amount, ecs::PlayerRuntime::GetPlayerID(e), ecs::PlayerRuntime::GetName(e).data());
 
-			LogManager::instance().CharLog(this, GetGold() + amount, "OVERFLOW_GOLD", "");
+			LogManager::instance().CharLog(ch, GetGold(e) + amount, "OVERFLOW_GOLD", "");
 			return;
 		}
 
@@ -1176,7 +1169,7 @@ void CHARACTER::PointChange(uint8_t type, int64_t amount, bool bAmount, bool bBr
 		//						n -= 3;
 		//					}
 		//
-		//					ecs::ChatSystem::SendNew(GetEntityHandle(),
+		//					ecs::ChatSystem::SendNew(e,
 		//#ifdef ENABLE_NEW_CHAT
 		//					CHAT_TYPE_INFO_VALUE
 		//#else
@@ -1185,30 +1178,30 @@ void CHARACTER::PointChange(uint8_t type, int64_t amount, bool bAmount, bool bBr
 		//					, 3, "%s", s.c_str());
 		//				}
 		//#endif
-		SetGold(GetGold() + amount);
-		val = GetGold();
+		ecs::PlayerRuntime::SetGold(e, GetGold(e) + amount);
+		val = GetGold(e);
 	}
 	break;
 
 #ifdef ENABLE_GAYA_SYSTEM
 	case POINT_GAYA:
 	{
-		const int64_t nTotalGaya = static_cast<int64_t>(GetGaya()) + static_cast<int64_t>(amount);
+		const int64_t nTotalGaya = static_cast<int64_t>((ch ? ch->GetGaya() : 0)) + static_cast<int64_t>(amount);
 
 		if (GAYA_MAX <= nTotalGaya)
 		{
-			LOG_ERROR("[OVERFLOW_GAYA] Gaya max seviyede {} Name {} ", GetGaya(), GetName());
+			LOG_ERROR("[OVERFLOW_GAYA] Gaya max seviyede {} Name {} ", (ch ? ch->GetGaya() : 0), ecs::PlayerRuntime::GetName(e).data());
 			return;
 		}
 
 		if (nTotalGaya < 0)
 		{
-			LOG_ERROR("Gaya eksiye dusecekti. PID::[{}]", GetPlayerID());
+			LOG_ERROR("Gaya eksiye dusecekti. PID::[{}]", ecs::PlayerRuntime::GetPlayerID(e));
 			return;
 		}
 
-		SetGaya(GetGaya() + amount);
-		val = GetGaya();
+		if (ch) ch->SetGaya((ch ? ch->GetGaya() : 0) + amount);
+		val = (ch ? ch->GetGaya() : 0);
 	}
 	break;
 #endif
@@ -1220,28 +1213,28 @@ void CHARACTER::PointChange(uint8_t type, int64_t amount, bool bAmount, bool bBr
 	case POINT_STAT_RESET_COUNT:
 	case POINT_HORSE_SKILL:
 	{
-		int32_t total = GetPoint(type) + amount;
+		int32_t total = Get(e, type) + amount;
 #ifdef ENABLE_STATUS_MAX_344_POINTS
 		if (type == POINT_STAT)
 			total = total > 344 ? 344 : total;
 #endif
 
-		SetPoint(type, total);
-		val = GetPoint(type);
+		Set(e, type, total);
+		val = Get(e, type);
 
-		SetRealPoint(type, val);
+		SetReal(e, type, val);
 	}
 	break;
 	case POINT_DEF_GRADE:
-		SetPoint(type, GetPoint(type) + amount);
-		val = GetPoint(type);
+		Set(e, type, Get(e, type) + amount);
+		val = Get(e, type);
 
-		PointChange(POINT_CLIENT_DEF_GRADE, amount);
+		Change(e, POINT_CLIENT_DEF_GRADE, amount);
 		break;
 
 	case POINT_CLIENT_DEF_GRADE:
-		SetPoint(type, GetPoint(type) + amount);
-		val = GetPoint(type);
+		Set(e, type, Get(e, type) + amount);
+		val = Get(e, type);
 		break;
 
 	case POINT_ST:
@@ -1345,8 +1338,8 @@ void CHARACTER::PointChange(uint8_t type, int64_t amount, bool bAmount, bool bBr
 	case POINT_DOUBLE_DROP_ITEM:
 	case POINT_IRR_WEAPON_DEFENSE:
 #endif
-		SetPoint(type, GetPoint(type) + amount);
-		val = GetPoint(type);
+		Set(e, type, Get(e, type) + amount);
+		val = Get(e, type);
 		break;
 #ifdef ELEMENT_NEW_BONUSES
 	case POINT_ATTBONUS_ELEC:
@@ -1372,8 +1365,8 @@ void CHARACTER::PointChange(uint8_t type, int64_t amount, bool bAmount, bool bBr
 #ifdef ENABLE_NEW_USE_POTION
 	case POINT_PARTY_DROPEXP:
 #endif
-		SetPoint(type, GetPoint(type) + amount);
-		val = GetPoint(type);
+		Set(e, type, Get(e, type) + amount);
+		val = Get(e, type);
 		break;
 
 #endif
@@ -1404,8 +1397,8 @@ void CHARACTER::PointChange(uint8_t type, int64_t amount, bool bAmount, bool bBr
 #ifdef ENABLE_WOLFMAN_CHARACTER
 	case POINT_RESIST_WOLFMAN:
 #endif
-		SetPoint(type, GetPoint(type) + amount);
-		val = GetPoint(type);
+		Set(e, type, Get(e, type) + amount);
+		val = Get(e, type);
 		break;
 	case POINT_MALL_EXPBONUS:
 	case POINT_MALL_ITEMBONUS:
@@ -1413,20 +1406,20 @@ void CHARACTER::PointChange(uint8_t type, int64_t amount, bool bAmount, bool bBr
 	case POINT_MALL_ATTBONUS:
 	case POINT_MALL_DEFBONUS:
 	case POINT_MELEE_MAGIC_ATT_BONUS_PER:
-		if (GetPoint(type) + amount > 100)
+		if (Get(e, type) + amount > 100)
 		{
 			if (type != POINT_MALL_EXPBONUS && type != POINT_MALL_ITEMBONUS) {
-				LOG_ERROR("MALL_BONUS exceeded over 100!! point type: {} name: {} amount {}", type, GetName(), amount);
+				LOG_ERROR("MALL_BONUS exceeded over 100!! point type: {} name: {} amount {}", type, ecs::PlayerRuntime::GetName(e).data(), amount);
 			}
 
-			amount = 100 - GetPoint(type);
+			amount = 100 - Get(e, type);
 		}
 
-		SetPoint(type, GetPoint(type) + amount);
-		val = GetPoint(type);
+		Set(e, type, Get(e, type) + amount);
+		val = Get(e, type);
 
 		if (type == POINT_MALL_DEFBONUS)
-			ComputeBattlePoints();
+			if (ch) ch->ComputeBattlePoints();
 
 		break;
 
@@ -1442,8 +1435,8 @@ void CHARACTER::PointChange(uint8_t type, int64_t amount, bool bAmount, bool bBr
 	case POINT_EXTRA_INVENTORY5:
 	case POINT_EXTRA_INVENTORY6:
 #endif
-		SetPoint(type, amount);
-		val = GetPoint(type);
+		Set(e, type, amount);
+		val = Get(e, type);
 		break;
 		// END_PC_BANG_ITEM_ADD
 
@@ -1451,24 +1444,24 @@ void CHARACTER::PointChange(uint8_t type, int64_t amount, bool bAmount, bool bBr
 	case POINT_GOLD_DOUBLE_BONUS:	// 72
 	case POINT_ITEM_DROP_BONUS:	// 73
 	case POINT_POTION_BONUS:	// 74
-		if (GetPoint(type) + amount > 254)
+		if (Get(e, type) + amount > 254)
 		{
 			if (type != POINT_EXP_DOUBLE_BONUS && type != POINT_GOLD_DOUBLE_BONUS) {
-				LOG_ERROR("BONUS exceeded over 100!! point type: {} name: {} amount {}", type, GetName(), amount);
+				LOG_ERROR("BONUS exceeded over 100!! point type: {} name: {} amount {}", type, ecs::PlayerRuntime::GetName(e).data(), amount);
 			}
 
-			amount = 254 - GetPoint(type);
+			amount = 254 - Get(e, type);
 		}
 
-		SetPoint(type, GetPoint(type) + amount);
-		val = GetPoint(type);
+		Set(e, type, Get(e, type) + amount);
+		val = Get(e, type);
 		break;
 
 	case POINT_IMMUNE_STUN:		// 76
 	{
-		SetPoint(type, GetPoint(type) + amount);
-		val = GetPoint(type);
-		uint32_t immuneFlag = GetImmuneFlag();
+		Set(e, type, Get(e, type) + amount);
+		val = Get(e, type);
+		uint32_t immuneFlag = ecs::PlayerRuntime::GetImmuneFlag(e);
 		if (val)
 		{
 			SET_BIT(immuneFlag, IMMUNE_STUN);
@@ -1477,15 +1470,15 @@ void CHARACTER::PointChange(uint8_t type, int64_t amount, bool bAmount, bool bBr
 		{
 			REMOVE_BIT(immuneFlag, IMMUNE_STUN);
 		}
-		SetImmuneFlag(immuneFlag);
+		ecs::PlayerRuntime::SetImmuneFlag(e, immuneFlag);
 		break;
 	}
 
 	case POINT_IMMUNE_SLOW:		// 77
 	{
-		SetPoint(type, GetPoint(type) + amount);
-		val = GetPoint(type);
-		uint32_t immuneFlag = GetImmuneFlag();
+		Set(e, type, Get(e, type) + amount);
+		val = Get(e, type);
+		uint32_t immuneFlag = ecs::PlayerRuntime::GetImmuneFlag(e);
 		if (val)
 		{
 			SET_BIT(immuneFlag, IMMUNE_SLOW);
@@ -1494,15 +1487,15 @@ void CHARACTER::PointChange(uint8_t type, int64_t amount, bool bAmount, bool bBr
 		{
 			REMOVE_BIT(immuneFlag, IMMUNE_SLOW);
 		}
-		SetImmuneFlag(immuneFlag);
+		ecs::PlayerRuntime::SetImmuneFlag(e, immuneFlag);
 		break;
 	}
 
 	case POINT_IMMUNE_FALL:	// 78
 	{
-		SetPoint(type, GetPoint(type) + amount);
-		val = GetPoint(type);
-		uint32_t immuneFlag = GetImmuneFlag();
+		Set(e, type, Get(e, type) + amount);
+		val = Get(e, type);
+		uint32_t immuneFlag = ecs::PlayerRuntime::GetImmuneFlag(e);
 		if (val)
 		{
 			SET_BIT(immuneFlag, IMMUNE_FALL);
@@ -1511,64 +1504,64 @@ void CHARACTER::PointChange(uint8_t type, int64_t amount, bool bAmount, bool bBr
 		{
 			REMOVE_BIT(immuneFlag, IMMUNE_FALL);
 		}
-		SetImmuneFlag(immuneFlag);
+		ecs::PlayerRuntime::SetImmuneFlag(e, immuneFlag);
 		break;
 	}
 
 	case POINT_ATT_GRADE_BONUS:
-		SetPoint(type, GetPoint(type) + amount);
-		PointChange(POINT_ATT_GRADE, amount);
-		val = GetPoint(type);
+		Set(e, type, Get(e, type) + amount);
+		Change(e, POINT_ATT_GRADE, amount);
+		val = Get(e, type);
 		break;
 
 	case POINT_DEF_GRADE_BONUS:
-		SetPoint(type, GetPoint(type) + amount);
-		PointChange(POINT_DEF_GRADE, amount);
-		val = GetPoint(type);
+		Set(e, type, Get(e, type) + amount);
+		Change(e, POINT_DEF_GRADE, amount);
+		val = Get(e, type);
 		break;
 
 	case POINT_MAGIC_ATT_GRADE_BONUS:
-		SetPoint(type, GetPoint(type) + amount);
-		PointChange(POINT_MAGIC_ATT_GRADE, amount);
-		val = GetPoint(type);
+		Set(e, type, Get(e, type) + amount);
+		Change(e, POINT_MAGIC_ATT_GRADE, amount);
+		val = Get(e, type);
 		break;
 
 	case POINT_MAGIC_DEF_GRADE_BONUS:
-		SetPoint(type, GetPoint(type) + amount);
-		PointChange(POINT_MAGIC_DEF_GRADE, amount);
-		val = GetPoint(type);
+		Set(e, type, Get(e, type) + amount);
+		Change(e, POINT_MAGIC_DEF_GRADE, amount);
+		val = Get(e, type);
 		break;
 
 	case POINT_VOICE:
 	case POINT_EMPIRE_POINT:
-		//"CHARACTER::PointChange: %s: point cannot be changed. use SetPoint instead (type: %d)", GetName(), type);
-		val = GetRealPoint(type);
+		//"CHARACTER::PointChange: %s: point cannot be changed. use SetPoint instead (type: %d)", ecs::PlayerRuntime::GetName(e).data(), type);
+		val = GetReal(e, type);
 		break;
 
 	case POINT_POLYMORPH:
-		SetPoint(type, GetPoint(type) + amount);
-		val = GetPoint(type);
-		SetPolymorph(val);
+		Set(e, type, Get(e, type) + amount);
+		val = Get(e, type);
+		if (ch) ch->SetPolymorph(val);
 		break;
 
 	case POINT_MOUNT:
-		SetPoint(type, GetPoint(type) + amount);
-		val = GetPoint(type);
-		MountVnum(val);
+		Set(e, type, Get(e, type) + amount);
+		val = Get(e, type);
+		if (ch) ch->MountVnum(val);
 		break;
 
 	case POINT_ENERGY:
 	case POINT_COSTUME_ATTR_BONUS:
 	{
-		int old_val = GetPoint(type);
-		SetPoint(type, old_val + amount);
-		val = GetPoint(type);
-		BuffOnAttr_ValueChange(type, old_val, val);
+		int old_val = Get(e, type);
+		Set(e, type, old_val + amount);
+		val = Get(e, type);
+		if (ch) ch->BuffOnAttr_ValueChange(type, old_val, val);
 	}
 	break;
 
 	default:
-		LOG_ERROR("CHARACTER::PointChange: {}: unknown point change type {}", GetName(), type);
+		LOG_ERROR("CHARACTER::PointChange: {}: unknown point change type {}", ecs::PlayerRuntime::GetName(e).data(), type);
 		return;
 	}
 
@@ -1579,7 +1572,7 @@ void CHARACTER::PointChange(uint8_t type, int64_t amount, bool bAmount, bool bBr
 	case POINT_DX:
 	case POINT_IQ:
 	case POINT_HT:
-		ComputeBattlePoints();
+		if (ch) ch->ComputeBattlePoints();
 		break;
 	case POINT_MAX_HP:
 	case POINT_MAX_SP:
@@ -1590,12 +1583,12 @@ void CHARACTER::PointChange(uint8_t type, int64_t amount, bool bAmount, bool bBr
 	if (type == POINT_HP && amount == 0)
 		return;
 
-	if (GetDesc())
+	if (ecs::PlayerRuntime::GetDesc(e))
 	{
 		struct packet_point_change pack;
 
 		pack.header = HEADER_GC_CHARACTER_POINT_CHANGE;
-		pack.dwVID = GetPacketVID();
+		pack.dwVID = ecs::PlayerRuntime::GetPacketVID(e);
 		pack.type = type;
 		pack.value = val;
 
@@ -1605,10 +1598,25 @@ void CHARACTER::PointChange(uint8_t type, int64_t amount, bool bAmount, bool bBr
 			pack.amount = 0;
 
 		if (!bBroadcast)
-			GetDesc()->Packet(&pack, sizeof(struct packet_point_change));
+			ecs::PlayerRuntime::GetDesc(e)->Packet(&pack, sizeof(struct packet_point_change));
 		else
-			PacketAround(&pack, sizeof(pack));
+			if (ch) ch->PacketAround(&pack, sizeof(pack));
 	}
+}
+
+} // namespace ecs::PointSystem
+
+void CHARACTER::PointChange(uint8_t type, int64_t amount, bool bAmount, bool bBroadcast
+#ifdef __ENABLE_BLOCK_EXP__
+	, bool bForceExp
+#endif
+)
+{
+	ecs::PointSystem::Change(GetEntityHandle(), type, amount, bAmount, bBroadcast
+#ifdef __ENABLE_BLOCK_EXP__
+		, bForceExp
+#endif
+	);
 }
 
 #ifdef __NEWPET_SYSTEM__
@@ -1624,22 +1632,27 @@ void CHARACTER::SendPetLevelUpEffect(int vid, int type, int value, int amount) {
 }
 #endif
 
-void CHARACTER::ApplyPoint(uint8_t bApplyType, int iVal)
+namespace ecs::PointSystem {
+
+void ApplyPoint(entt::entity e, uint8_t bApplyType, int iVal)
 {
+	// The skill damage bonus map is a component; the legacy m_SkillDamageBonus
+	// was the same table on CHARACTER.
+	auto& bonus = g_registry.get_or_emplace<ecs::SkillDamageBonus>(e);
 	switch (bApplyType)
 	{
 	case APPLY_NONE:			// 0
 		break;;
 
 	case APPLY_CON:
-		PointChange(POINT_HT, iVal);
-		PointChange(POINT_MAX_HP, (iVal * JobInitialPoints[GetJob()].hp_per_ht));
-		PointChange(POINT_MAX_STAMINA, (iVal * JobInitialPoints[GetJob()].stamina_per_con));
+		Change(e, POINT_HT, iVal);
+		Change(e, POINT_MAX_HP, (iVal * JobInitialPoints[ecs::PlayerRuntime::GetJob(e)].hp_per_ht));
+		Change(e, POINT_MAX_STAMINA, (iVal * JobInitialPoints[ecs::PlayerRuntime::GetJob(e)].stamina_per_con));
 		break;
 
 	case APPLY_INT:
-		PointChange(POINT_IQ, iVal);
-		PointChange(POINT_MAX_SP, (iVal * JobInitialPoints[GetJob()].sp_per_iq));
+		Change(e, POINT_IQ, iVal);
+		Change(e, POINT_MAX_SP, (iVal * JobInitialPoints[ecs::PlayerRuntime::GetJob(e)].sp_per_iq));
 		break;
 
 	case APPLY_SKILL:
@@ -1658,10 +1671,10 @@ void CHARACTER::ApplyPoint(uint8_t bApplyType, int iVal)
 		if (0 == iAdd)
 			iChange = -iChange;
 
-		const auto iter = m_SkillDamageBonus.find(bSkillVnum);
+		const auto iter = bonus.bySkill.find(bSkillVnum);
 
-		if (iter == m_SkillDamageBonus.end())
-			m_SkillDamageBonus.insert(std::make_pair(bSkillVnum, iChange));
+		if (iter == bonus.bySkill.end())
+			bonus.bySkill.insert(std::make_pair(bSkillVnum, iChange));
 		else
 			iter->second += iChange;
 	}
@@ -1677,27 +1690,27 @@ void CHARACTER::ApplyPoint(uint8_t bApplyType, int iVal)
 	case APPLY_MAX_HP:
 	case APPLY_MAX_HP_PCT:
 	{
-		int i = GetMaxHP();
+		int i = GetMaxHP(e);
 		if (i == 0) {
 			break;
 		}
 
-		PointChange(aApplyInfo[bApplyType].bPointType, iVal);
-		float fRatio = (float)GetMaxHP() / (float)i;
-		PointChange(POINT_HP, GetHP() * fRatio - GetHP());
+		Change(e, aApplyInfo[bApplyType].bPointType, iVal);
+		float fRatio = (float)GetMaxHP(e) / (float)i;
+		Change(e, POINT_HP, Get(e, POINT_HP) * fRatio - Get(e, POINT_HP));
 	}
 	break;
 	case APPLY_MAX_SP:
 	case APPLY_MAX_SP_PCT:
 	{
-		int i = GetMaxSP();
+		int i = GetMaxSP(e);
 		if (i == 0) {
 			break;
 		}
 
-		PointChange(aApplyInfo[bApplyType].bPointType, iVal);
-		float fRatio = (float)GetMaxSP() / (float)i;
-		PointChange(POINT_SP, GetSP() * fRatio - GetSP());
+		Change(e, aApplyInfo[bApplyType].bPointType, iVal);
+		float fRatio = (float)GetMaxSP(e) / (float)i;
+		Change(e, POINT_SP, Get(e, POINT_SP) * fRatio - Get(e, POINT_SP));
 	}
 	break;
 	case APPLY_STR:
@@ -1848,11 +1861,11 @@ void CHARACTER::ApplyPoint(uint8_t bApplyType, int iVal)
 #ifdef ENABLE_NEW_USE_POTION
 	case APPLY_PARTY_DROPEXP:
 #endif
-		PointChange(aApplyInfo[bApplyType].bPointType, iVal);
+		Change(e, aApplyInfo[bApplyType].bPointType, iVal);
 		break;
 
 	default:
-		LOG_ERROR("Unknown apply type {} name {}", bApplyType, GetName());
+		LOG_ERROR("Unknown apply type {} name {}", bApplyType, ecs::PlayerRuntime::GetName(e).data());
 		break;
 
 	case APPLY_ATTBONUS_IRR_SPADA:
@@ -1863,11 +1876,19 @@ void CHARACTER::ApplyPoint(uint8_t bApplyType, int iVal)
 	case APPLY_ATTBONUS_IRR_CAMPANA:
 	{
 		int v = iVal / 5; // 5 -> 1, 10 -> 2, ...
-		PointChange(aApplyInfo[bApplyType].bPointType, v);
+		Change(e, aApplyInfo[bApplyType].bPointType, v);
 		break;
 	}
 	}
 }
+
+} // namespace ecs::PointSystem
+
+void CHARACTER::ApplyPoint(uint8_t bApplyType, int iVal)
+{
+	ecs::PointSystem::ApplyPoint(GetEntityHandle(), bApplyType, iVal);
+}
+
 
 
 

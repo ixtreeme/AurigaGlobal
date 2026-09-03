@@ -2561,7 +2561,11 @@ public:
 	void BuffOnAttr_RemoveBuffsFromItem(LPITEM pItem);
 
 private:
+public:
+	// Driven by the point-change flow, which lives in ecs::PointSystem now.
 	void BuffOnAttr_ValueChange(uint8_t bType, uint8_t bOldValue, uint8_t bNewValue);
+	uint32_t GetPlayStartTime() const { return m_dwPlayStartTime; }
+private:
 	void BuffOnAttr_ClearAll();
 
 	typedef std::map <uint8_t, CBuffOnAttributes*> TMapBuffOnAttrs;

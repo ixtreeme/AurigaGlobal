@@ -28,6 +28,8 @@ bool IsExperienceBlocked(entt::entity e);
 bool SetExperienceBlocked(entt::entity e, bool blocked);
 #endif
 
+void ApplyPoint(entt::entity e, uint8_t bApplyType, int iVal);
+
 void Change(entt::entity e, uint8_t type, int64_t amount,
     bool bAmount = false, bool bBroadcast = false
 #ifdef __ENABLE_BLOCK_EXP__

@@ -55,6 +55,23 @@ void SetPotionLimit(entt::entity e, int count);
 // this - EnsureAppearancePartsComponent then one array store.
 void SetPart(entt::entity e, uint8_t partPos, uint16_t value);
 
+// The point writers and readers PointSystem::Change needs.
+void SetHP(entt::entity e, int64_t hp);
+void SetMaxHP(entt::entity e, int64_t value);
+void SetSP(entt::entity e, int64_t sp);
+void SetMaxSP(entt::entity e, int64_t value);
+void SetStamina(entt::entity e, int64_t value);
+void SetMaxStamina(entt::entity e, int64_t value);
+int GetStamina(entt::entity e);
+int64_t GetMaxStamina(entt::entity e);
+void SetExp(entt::entity e, uint32_t exp);
+uint32_t GetExp(entt::entity e);
+uint32_t GetNextExp(entt::entity e);
+void SetGold(entt::entity e, int64_t gold);
+void SetLevel(entt::entity e, uint8_t level);
+uint32_t GetImmuneFlag(entt::entity e);
+void SetImmuneFlag(entt::entity e, uint32_t value);
+
 // The three timed events that used to be CHARACTER members. Slot names the
 // one being addressed; Cancel runs event_cancel on it, Set stores or clears.
 enum class CharEvent : uint8_t { Dead, Stun, Recovery };
