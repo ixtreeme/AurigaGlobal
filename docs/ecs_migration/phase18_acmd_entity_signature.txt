@@ -2030,3 +2030,44 @@ both builders read the same store, but they should be added by whoever can run
 the audit on a populated server, together with the rest of the parity evidence.
 
 Build: RelWithDebInfo GameServer, 0 errors.
+
+
+Phase 19t - bMovingSpeed and transname, and two more of the same trap
+-----------------------------------------------------------------------
+Both fields are compared in CheckCharacterInsertParity now. With the creature
+flags unified in 19s the comparison finally measures the builders rather than
+the confusion between the two flag stores.
+
+Adding it meant reading the two branches against each other line by line, and
+that turned up two more divergences - both the SAME predicate trap that has now
+appeared five times in this migration:
+
+    CHARACTER::IsPC()               GetDesc() != nullptr   a client is attached
+    ecs::PlayerRuntime::IsPC(e)     TagPC component        spawned as a PC
+
+  1. LimitedPoint caps POINT_ATT_SPEED at 170 for a PC and 250 otherwise, and
+     was asking TagPC. CHARACTER::GetLimitPoint asks IsPC(). A link-dead
+     player - TagPC set, descriptor gone - was capped at 170 natively and 250
+     legacily. bAttackSpeed IS in the audit, so this one would eventually have
+     been caught by a running server; it was caught by reading instead.
+
+  2. BuildCharacterInsert's bMovingSpeed ternary had it too, in the branch the
+     audit did not cover. That one would not have been caught at all.
+
+Both now use GetDesc(). This is the fifth occurrence - SetPosition,
+StartRecoveryEvent, MonsterLog, IsGuardNPC and now these two - and the pattern
+is worth stating once more: the legacy predicates were named before the
+components existed, and every ECS function with a matching name means something
+narrower. IsPC, IsNPC, IsMount: all three have this problem.
+
+One thing checked and cleared: LimitedPoint reads ecs::PointSystem::Get while
+GetLimitPoint reads m_pointsInstant.points directly. Not a divergence -
+PointRouter maps every type to SRC_INSTANT_ARRAY by default and neither
+MOV_SPEED nor ATT_SPEED overrides it, so both read the same array.
+
+Every field of TPacketGCCharacterAdd that either builder writes is compared
+now. What is still missing to flip authority is not more code: it is the audit
+running on a populated server with no [INSERT_PARITY] output. That needs a
+server, which this seat does not have.
+
+Build: RelWithDebInfo GameServer, 0 errors.

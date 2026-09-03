@@ -128,7 +128,11 @@ uint16_t LimitedPoint(entt::entity e, uint8_t type)
     int64_t limit = INT64_MAX;
     switch (type) {
     case POINT_ATT_SPEED:
-        limit = ecs::PlayerRuntime::IsPC(e) ? 170 : 250;
+        // CHARACTER::GetLimitPoint caps this by IsPC(), which is
+        // GetDesc() != nullptr - a client is attached - not the TagPC
+        // component. A link-dead player would otherwise be capped at 170
+        // here and 250 there.
+        limit = ecs::PlayerRuntime::GetDesc(e) != nullptr ? 170 : 250;
         break;
     case POINT_MOV_SPEED:
         limit = 350;
@@ -169,7 +173,9 @@ bool BuildCharacterInsert(entt::registry& reg, entt::entity source, TPacketGCCha
         if (status && status->isMount)
             packet.bMovingSpeed = LimitedPoint(source, POINT_MOV_SPEED);
         else
-            packet.bMovingSpeed = ecs::PlayerRuntime::IsPC(source) ? LimitedPoint(source, POINT_MOV_SPEED) : 150;
+            // Legacy spells this IsPC(), the descriptor test, not TagPC.
+            packet.bMovingSpeed = ecs::PlayerRuntime::GetDesc(source) != nullptr
+                ? LimitedPoint(source, POINT_MOV_SPEED) : 150;
     } else {
         packet.bMovingSpeed = LimitedPoint(source, POINT_MOV_SPEED);
     }

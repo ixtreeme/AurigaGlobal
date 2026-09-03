@@ -64,6 +64,10 @@ void CheckCharacterInsertParity(entt::registry& reg, entt::entity source)
     // Second, a field-by-field check cannot see a missing SIDE packet.
     // Legacy EncodeInsertPacket opens with SendGuildName; the native path
     // did not, and no field here would ever have shown it.
+    //
+    // Every field of TPacketGCCharacterAdd that either builder sets is
+    // compared here now. If this stays silent on a populated server, that
+    // is the evidence the native builder needs to take authority.
 
     if (nativePack.dwVID != ch->GetPacketVID())
         LOG_WARN("[INSERT_PARITY] dwVID entity={} native={} legacy={}", entityIdx, nativePack.dwVID, ch->GetPacketVID());
@@ -106,6 +110,51 @@ void CheckCharacterInsertParity(entt::registry& reg, entt::entity source)
             LOG_WARN("[INSERT_PARITY] dwAffectFlag entity={} native=[{},{}] legacy=[{},{}]",
                 entityIdx, nativePack.dwAffectFlag[0], nativePack.dwAffectFlag[1],
                 legacyAffect.bits[0], legacyAffect.bits[1]);
+    }
+
+    // bMovingSpeed and transname. Both branch on the same pet/mount/special-race
+    // test, and until the flags were unified the two builders read that test
+    // from different stores - legacy from m_bIsPet/m_bIsNewPet/m_bIsMount on the
+    // creature, native from StatusFlags, whose isMount was being set on the
+    // RIDER. Comparing them before that was fixed would only have measured the
+    // confusion. Now both read the creature flags, so this means something.
+    {
+        const bool legacySpecial = (ch->GetRaceNum() >= 20101 && ch->GetRaceNum() <= 20109)
+            || ch->IsPet()
+#ifdef __NEWPET_SYSTEM__
+            || ch->IsNewPet()
+#endif
+#ifdef ENABLE_MOUNT_COSTUME_SYSTEM
+            || ch->IsMount()
+#endif
+            ;
+
+#ifdef ENABLE_MULTI_NAMES
+        if (nativePack.transname != !legacySpecial)
+            LOG_WARN("[INSERT_PARITY] transname entity={} native={} legacy={}", entityIdx,
+                static_cast<int>(nativePack.transname), static_cast<int>(!legacySpecial));
+#endif
+
+        uint16_t legacySpeed = 0;
+        if (legacySpecial)
+        {
+#ifdef ENABLE_MOUNT_COSTUME_SYSTEM
+            legacySpeed = ch->IsMount()
+                ? static_cast<uint16_t>(ch->GetLimitPoint(POINT_MOV_SPEED))
+                : static_cast<uint16_t>(ch->IsPC() ? ch->GetLimitPoint(POINT_MOV_SPEED) : 150);
+#else
+            legacySpeed = 150;
+#endif
+        }
+        else
+        {
+            legacySpeed = static_cast<uint16_t>(ch->GetLimitPoint(POINT_MOV_SPEED));
+        }
+
+        if (nativePack.bMovingSpeed != legacySpeed)
+            LOG_WARN("[INSERT_PARITY] bMovingSpeed entity={} native={} legacy={} special={}",
+                entityIdx, nativePack.bMovingSpeed, legacySpeed,
+                static_cast<int>(legacySpecial));
     }
 
     // Native may snap pack.x/y to the active destination if the move duration has
