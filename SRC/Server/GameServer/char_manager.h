@@ -66,7 +66,7 @@ protected:
 		bool			SpawnMoveGroup(uint32_t dwVnum, int32_t lMapIndex, int sx, int sy, int ex, int ey, int tx, int ty, LPREGEN pkRegen = nullptr, bool bAggressive_ = false);
 		LPCHARACTER		SpawnMobRandomPosition(uint32_t dwVnum, int32_t lMapIndex);
 
-		void			SelectStone(LPCHARACTER pkChrStone);
+		void			SelectStone(entt::entity stone);
 
 		NAME_MAP &		GetPCMap() { return m_map_pkPCChr; }
 
@@ -87,8 +87,8 @@ protected:
 		// DelayedSave: 어떠한 루틴 내에서 저장을 해야 할 짓을 많이 하면 저장
 		// 쿼리가 너무 많아지므로 "저장을 한다" 라고 표시만 해두고 잠깐
 		// (예: 1 frame) 후에 저장시킨다.
-		void                    DelayedSave(LPCHARACTER ch);
-		bool                    FlushDelayedSave(LPCHARACTER ch); // Delayed 리스트에 있다면 지우고 저장한다. 끊김 처리시 사용 됨.
+		void                    DelayedSave(entt::entity character);
+		bool                    FlushDelayedSave(entt::entity character); // Delayed 리스트에 있다면 지우고 저장한다. 끊김 처리시 사용 됨.
 		void			ProcessDelayedSave();
 
 		template<class Func>	Func for_each_pc(Func f);
@@ -171,12 +171,17 @@ protected:
 		// Membership only: the update pump calls AISystem::UpdateStateMachine
 		// with the entity, nothing here dereferences a character.
 		std::unordered_set<entt::entity>	m_set_pkChrState;	// FSM이 돌아가고 있는 놈들
-		CHARACTER_SET		m_set_pkChrForDelayedSave;
+		// Membership only. SaveReal is still a CHARACTER method, so the flush
+		// resolves once per entry - the same shape ITEM_MANAGER already uses for
+		// m_set_pkItemForDelayedSave.
+		std::unordered_set<entt::entity>	m_set_pkChrForDelayedSave;
 		// Membership only: PacketMonsterLog reads position and descriptor off
 		// the entity.
 		std::unordered_set<entt::entity>	m_set_pkChrMonsterLog;
 
-		LPCHARACTER			m_pkChrSelectedStone;
+		// The stone a spawn is attributed to. Only null-checked, asked for its
+		// dungeon, and handed to SetStone - all of which take an entity.
+		entt::entity			m_selectedStone;
 
 		std::map<uint32_t, uint32_t> m_map_dwMobKillCount;
 

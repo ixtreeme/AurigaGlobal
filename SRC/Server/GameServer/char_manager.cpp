@@ -39,6 +39,7 @@
 #include "ecs/VIDRegistry.hpp"
 #include "ecs/PIDRegistry.hpp"
 #include "ecs/systems/AISystem.hpp"
+#include "ecs/systems/SocialSystem.hpp"
 #include "ecs/CharacterAccessors.hpp"
 #include "ecs/systems/ItemSystem.hpp"
 #include "ecs/components/identity_components.hpp"
@@ -311,7 +312,7 @@ void Map1MassSpawnEvent_OnMobDead(uint32_t vid)
 
 CHARACTER_MANAGER::CHARACTER_MANAGER() : itemshopUpdateTime(0),
 m_iVIDCount(0), dummy1{},
-m_pkChrSelectedStone(nullptr),
+m_selectedStone(entt::null),
 m_bUsePendingDestroy(false)
 {
 	m_iMobItemRate = 100;
@@ -442,10 +443,8 @@ void CHARACTER_MANAGER::DestroyCharacter(LPCHARACTER ch, const char* file, size_
 		return;
 	}
 
-	if (const auto it2 = m_set_pkChrForDelayedSave.find(ch); it2 != m_set_pkChrForDelayedSave.end()) {
+	if (m_set_pkChrForDelayedSave.erase(character) != 0)
 		ch->SaveReal();
-		m_set_pkChrForDelayedSave.erase(it2);
-	}
 
 	//if (ecs::PlayerRuntime::IsPC(character))											   // Ixtreeme fix -- ITEM_SAVE invalid owner pointer
 	//	ITEM_MANAGER::instance().FlushDelayedSaveByOwner(ch);  // Ixtreeme fix -- ITEM_SAVE invalid owner pointer
@@ -475,12 +474,8 @@ void CHARACTER_MANAGER::DestroyCharacter(LPCHARACTER ch, const char* file, size_
 	}
 
 	if (ecs::PlayerRuntime::IsPC(character)) {
-		auto it = m_set_pkChrForDelayedSave.find(ch);
-		if (m_set_pkChrForDelayedSave.end() != it)
-		{
+		if (m_set_pkChrForDelayedSave.erase(character) != 0)
 			ch->SaveReal();
-			m_set_pkChrForDelayedSave.erase(it);
-		}
 	}
 
 	UnregisterRaceNumMap(ch);
@@ -958,10 +953,9 @@ LPCHARACTER CHARACTER_MANAGER::SpawnMobRange(uint32_t dwVnum, int32_t lMapIndex,
 	return nullptr;
 }
 
-void CHARACTER_MANAGER::SelectStone(LPCHARACTER pkChr)
+void CHARACTER_MANAGER::SelectStone(entt::entity stone)
 {
-
-	m_pkChrSelectedStone = pkChr;
+	m_selectedStone = stone;
 }
 
 bool CHARACTER_MANAGER::SpawnMoveGroup(uint32_t dwVnum, int32_t lMapIndex, int sx, int sy, int ex, int ey, int tx, int ty, LPREGEN pkRegen, bool bAggressive_)
@@ -986,10 +980,10 @@ bool CHARACTER_MANAGER::SpawnMoveGroup(uint32_t dwVnum, int32_t lMapIndex, int s
 	bool bSpawnedByStone = false;
 	bool bAggressive = bAggressive_;
 
-	if (m_pkChrSelectedStone)
+	if (m_selectedStone != entt::null)
 	{
 		bSpawnedByStone = true;
-		if (m_pkChrSelectedStone->GetDungeon())
+		if (ecs::SocialSystem::GetDungeon(m_selectedStone))
 			bAggressive = true;
 	}
 
@@ -1012,8 +1006,8 @@ bool CHARACTER_MANAGER::SpawnMoveGroup(uint32_t dwVnum, int32_t lMapIndex, int s
 		ex = ecs::PlayerRuntime::GetX(spawned) + number(300, 500);
 		ey = ecs::PlayerRuntime::GetY(spawned) + number(300, 500);
 
-		if (m_pkChrSelectedStone)
-			tch->SetStone((m_pkChrSelectedStone ? m_pkChrSelectedStone->GetEntityHandle() : entt::null));
+		if (m_selectedStone != entt::null)
+			tch->SetStone(m_selectedStone);
 		else if (pkParty)
 		{
 			pkParty->Join(tch->GetLegacyVID());
@@ -1073,11 +1067,11 @@ LPCHARACTER CHARACTER_MANAGER::SpawnGroup(uint32_t dwVnum, int32_t lMapIndex, in
 	bool bSpawnedByStone = false;
 	bool bAggressive = bAggressive_;
 
-	if (m_pkChrSelectedStone)
+	if (m_selectedStone != entt::null)
 	{
 		bSpawnedByStone = true;
 
-		if (m_pkChrSelectedStone->GetDungeon())
+		if (ecs::SocialSystem::GetDungeon(m_selectedStone))
 			bAggressive = true;
 	}
 
@@ -1107,8 +1101,8 @@ LPCHARACTER CHARACTER_MANAGER::SpawnGroup(uint32_t dwVnum, int32_t lMapIndex, in
 		ex = ecs::PlayerRuntime::GetX(spawned) + number(300, 500);
 		ey = ecs::PlayerRuntime::GetY(spawned) + number(300, 500);
 
-		if (m_pkChrSelectedStone)
-			tch->SetStone((m_pkChrSelectedStone ? m_pkChrSelectedStone->GetEntityHandle() : entt::null));
+		if (m_selectedStone != entt::null)
+			tch->SetStone(m_selectedStone);
 		else if (pkParty)
 		{
 			pkParty->Join(tch->GetLegacyVID());
@@ -1305,11 +1299,12 @@ void CHARACTER_MANAGER::Update(int iPulse)
 
 void CHARACTER_MANAGER::ProcessDelayedSave()
 {
-	auto it = m_set_pkChrForDelayedSave.begin();
-	while (it != m_set_pkChrForDelayedSave.end())
+	// SaveReal is still a CHARACTER method; this is the one place per entry
+	// where the entity is resolved, not a wrapper hiding a conversion.
+	for (const entt::entity e : m_set_pkChrForDelayedSave)
 	{
-		LPCHARACTER pkChr = *it++;
-		pkChr->SaveReal();
+		if (LPCHARACTER pkChr = ecs::LegacyCharOf(e))
+			pkChr->SaveReal();
 	}
 
 	m_set_pkChrForDelayedSave.clear();
@@ -1333,30 +1328,24 @@ void CHARACTER_MANAGER::RemoveFromStateList(entt::entity character)
 	m_set_pkChrState.erase(character);
 }
 
-void CHARACTER_MANAGER::DelayedSave(LPCHARACTER ch) {
+void CHARACTER_MANAGER::DelayedSave(entt::entity character) {
 	//#ifdef ENABLE_INGAME_DEBUG_RAZOR93d
 	//	ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "char_manager.cpp::void CHARACTER_MANAGER::DelayedSave");//INGAME_DEBUG_RAZOR93
 	//#endif
 		//////////FIX m_set_pkChrForDelayedSave.insert(ch);
-	if (const auto it = m_set_pkChrForDelayedSave.find(ch); it != m_set_pkChrForDelayedSave.end()) {
-		m_set_pkChrForDelayedSave.erase(it);
-	}
-
-	m_set_pkChrForDelayedSave.insert(ch);
+	m_set_pkChrForDelayedSave.insert(character);
 }
 
-bool CHARACTER_MANAGER::FlushDelayedSave(LPCHARACTER ch)
+bool CHARACTER_MANAGER::FlushDelayedSave(entt::entity character)
 {
 	//#ifdef ENABLE_INGAME_DEBUG_RAZOR93d
 	//	ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "char_manager.cpp::CHARACTER_MANAGER::FlushDelayedSave");//INGAME_DEBUG_RAZOR93
 	//#endif
-	const auto it = m_set_pkChrForDelayedSave.find(ch);
-
-	if (it == m_set_pkChrForDelayedSave.end())
+	if (m_set_pkChrForDelayedSave.erase(character) == 0)
 		return false;
 
-	m_set_pkChrForDelayedSave.erase(it);
-	ch->SaveReal();
+	if (LPCHARACTER ch = ecs::LegacyCharOf(character))
+		ch->SaveReal();
 	return true;
 }
 

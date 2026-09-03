@@ -209,7 +209,7 @@ bool CAN_ENTER_ZONE(entt::entity character, int map_index)
 void CHARACTER::Save()
 {
     if (!m_bSkipSave)
-        CHARACTER_MANAGER::instance().DelayedSave(this);
+        CHARACTER_MANAGER::instance().DelayedSave(GetEntityHandle());
 }
 
 void CHARACTER::CreatePlayerProto(TPlayerTable& tab)
@@ -1332,7 +1332,7 @@ void CHARACTER::Disconnect(const char* c_pszReason)
 
     ITEM_MANAGER::instance().FlushDelayedSaveByOwner(this);
 
-    if (!CHARACTER_MANAGER::instance().FlushDelayedSave(this))
+    if (!CHARACTER_MANAGER::instance().FlushDelayedSave(GetEntityHandle()))
         SaveReal();
 
     FlushDelayedSaveItem();

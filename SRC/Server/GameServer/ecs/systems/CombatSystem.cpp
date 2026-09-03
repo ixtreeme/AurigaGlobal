@@ -6907,7 +6907,7 @@ static void ProcessStoneSpawnStep(LegacyCharHandle ch)
 		ch->SetMaxSP(step);
 		ch->SendMovePacket(FUNC_ATTACK, 0, ecs::PlayerRuntime::GetX(chEntity), ecs::PlayerRuntime::GetY(chEntity), 0);
 
-		CHARACTER_MANAGER::instance().SelectStone(ch);
+		CHARACTER_MANAGER::instance().SelectStone(ch ? ch->GetEntityHandle() : entt::null);
 
 		if (step == 10 || step == 9)
 			CHARACTER_MANAGER::instance().SpawnGroup(dwVnum, ecs::PlayerRuntime::GetMapIndex(chEntity), ecs::PlayerRuntime::GetX(chEntity) - 1500, ecs::PlayerRuntime::GetY(chEntity) - 1500, ecs::PlayerRuntime::GetX(chEntity) + 1500, ecs::PlayerRuntime::GetY(chEntity) + 1500);
@@ -6916,7 +6916,7 @@ static void ProcessStoneSpawnStep(LegacyCharHandle ch)
 		else if (step == 5 || step == 4 || step == 2)
 			CHARACTER_MANAGER::instance().SpawnGroup(dwVnum, ecs::PlayerRuntime::GetMapIndex(chEntity), ecs::PlayerRuntime::GetX(chEntity) - 500, ecs::PlayerRuntime::GetY(chEntity) - 500, ecs::PlayerRuntime::GetX(chEntity) + 500, ecs::PlayerRuntime::GetY(chEntity) + 500);
 
-		CHARACTER_MANAGER::instance().SelectStone(nullptr);
+		CHARACTER_MANAGER::instance().SelectStone(entt::null);
 	}
 
 	NetworkSyncSystem::UpdatePacket(chEntity);
