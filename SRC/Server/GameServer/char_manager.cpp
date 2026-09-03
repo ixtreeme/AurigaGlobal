@@ -485,7 +485,7 @@ void CHARACTER_MANAGER::DestroyCharacter(LPCHARACTER ch, const char* file, size_
 
 	UnregisterRaceNumMap(ch);
 
-	RemoveFromStateList(ch);
+	RemoveFromStateList(ch->GetEntityHandle());
 
 	if (const entt::entity entity = ch->GetEntityHandle();
 		entity != entt::null && g_registry.valid(entity))
@@ -1273,14 +1273,13 @@ void CHARACTER_MANAGER::Update(int iPulse)
 	{
 		if (!m_set_pkChrState.empty())
 		{
-			CHARACTER_VECTOR v;
-			v.reserve(m_set_pkChrState.size());
-			//#ifdef __GNUC__
-			//			transform(m_set_pkChrState.begin(), m_set_pkChrState.end(), back_inserter(v), identity<CHARACTER_SET::value_type>());
-			//#else
-			v.insert(v.end(), m_set_pkChrState.begin(), m_set_pkChrState.end());
-			//#endif
-			for_each(v.begin(), v.end(), bind(&CHARACTER::UpdateStateMachine, std::placeholders::_1, iPulse));
+			// Snapshot: the update can add to or remove from the set. An explicit
+			// loop rather than std::bind over a member - binding one whose
+			// parameter has been flipped produces errors inside <algorithm>
+			// with no line in our code, which cost a day in phase 18e.
+			const std::vector<entt::entity> v(m_set_pkChrState.begin(), m_set_pkChrState.end());
+			for (const entt::entity e : v)
+				AISystem::UpdateStateMachine(e);
 		}
 	}
 
@@ -1316,32 +1315,22 @@ void CHARACTER_MANAGER::ProcessDelayedSave()
 	m_set_pkChrForDelayedSave.clear();
 }
 
-bool CHARACTER_MANAGER::AddToStateList(LPCHARACTER ch)
+bool CHARACTER_MANAGER::AddToStateList(entt::entity character)
 {
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "char_manager.cpp::bool CHARACTER_MANAGER::AddToStateList");//INGAME_DEBUG_RAZOR93
+	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "char_manager.cpp::bool CHARACTER_MANAGER::AddToStateList");//INGAME_DEBUG_RAZOR93
 #endif
-	assert(ch != NULL);
+	assert(character != entt::null);
 
-	if (const auto it = m_set_pkChrState.find(ch); it == m_set_pkChrState.end())
-	{
-		m_set_pkChrState.insert(ch);
-		return true;
-	}
-
-	return false;
+	return m_set_pkChrState.insert(character).second;
 }
 
-void CHARACTER_MANAGER::RemoveFromStateList(LPCHARACTER ch)
+void CHARACTER_MANAGER::RemoveFromStateList(entt::entity character)
 {
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "char_manager.cpp::void CHARACTER_MANAGER::RemoveFromStateList");//INGAME_DEBUG_RAZOR93
+	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "char_manager.cpp::void CHARACTER_MANAGER::RemoveFromStateList");//INGAME_DEBUG_RAZOR93
 #endif
-	if (const auto it = m_set_pkChrState.find(ch); it != m_set_pkChrState.end())
-	{
-		//0, "RemoveFromStateList %p", ch);
-		m_set_pkChrState.erase(it);
-	}
+	m_set_pkChrState.erase(character);
 }
 
 void CHARACTER_MANAGER::DelayedSave(LPCHARACTER ch) {
@@ -1371,20 +1360,20 @@ bool CHARACTER_MANAGER::FlushDelayedSave(LPCHARACTER ch)
 	return true;
 }
 
-void CHARACTER_MANAGER::RegisterForMonsterLog(LPCHARACTER ch)
+void CHARACTER_MANAGER::RegisterForMonsterLog(entt::entity character)
 {
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "char_manager.cpp::CHARACTER_MANAGER::RegisterForMonsterLog");//INGAME_DEBUG_RAZOR93
+	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "char_manager.cpp::CHARACTER_MANAGER::RegisterForMonsterLog");//INGAME_DEBUG_RAZOR93
 #endif
-	m_set_pkChrMonsterLog.insert(ch);
+	m_set_pkChrMonsterLog.insert(character);
 }
 
-void CHARACTER_MANAGER::UnregisterForMonsterLog(LPCHARACTER ch)
+void CHARACTER_MANAGER::UnregisterForMonsterLog(entt::entity character)
 {
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "char_manager.cpp::CHARACTER_MANAGER::UnregisterForMonsterLog");//INGAME_DEBUG_RAZOR93
+	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "char_manager.cpp::CHARACTER_MANAGER::UnregisterForMonsterLog");//INGAME_DEBUG_RAZOR93
 #endif
-	m_set_pkChrMonsterLog.erase(ch);
+	m_set_pkChrMonsterLog.erase(character);
 }
 
 void CHARACTER_MANAGER::PacketMonsterLog(entt::entity character, const void* buf, int size)
@@ -1393,10 +1382,8 @@ void CHARACTER_MANAGER::PacketMonsterLog(entt::entity character, const void* buf
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
 	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "char_manager.cpp::CHARACTER_MANAGER::PacketMonsterLog");//INGAME_DEBUG_RAZOR93
 #endif
-	for (auto it = m_set_pkChrMonsterLog.begin(); it != m_set_pkChrMonsterLog.end(); ++it)
+	for (const entt::entity cEntity : m_set_pkChrMonsterLog)
 	{
-		LPCHARACTER c = *it;
-		const entt::entity cEntity = c ? c->GetEntityHandle() : entt::null;
 
 
 		if (ch && DISTANCE_APPROX(ecs::PlayerRuntime::GetX(cEntity) - ecs::PlayerRuntime::GetX(character), ecs::PlayerRuntime::GetY(cEntity) - ecs::PlayerRuntime::GetY(character)) > 6000)

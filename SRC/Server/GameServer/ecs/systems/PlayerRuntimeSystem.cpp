@@ -4256,7 +4256,7 @@ void CHARACTER::Destroy()
     }
 
 	if (m_bMonsterLog)
-		CHARACTER_MANAGER::instance().UnregisterForMonsterLog(this);
+		CHARACTER_MANAGER::instance().UnregisterForMonsterLog(GetEntityHandle());
 
 	if (entityToDestroy != entt::null && g_registry.valid(entityToDestroy))
 		EntityFactory::Destroy(g_registry, entityToDestroy);
@@ -4289,11 +4289,11 @@ void CHARACTER::ToggleMonsterLog()
 
     if (m_bMonsterLog)
     {
-        CHARACTER_MANAGER::instance().RegisterForMonsterLog(this);
+        CHARACTER_MANAGER::instance().RegisterForMonsterLog(GetEntityHandle());
     }
     else
     {
-        CHARACTER_MANAGER::instance().UnregisterForMonsterLog(this);
+        CHARACTER_MANAGER::instance().UnregisterForMonsterLog(GetEntityHandle());
     }
 }
 
@@ -4687,7 +4687,7 @@ void CHARACTER::SetProto(const CMob* pkMob)
 
 bool CHARACTER::StartStateMachine(int iNextPulse)
 {
-    if (CHARACTER_MANAGER::instance().AddToStateList(this))
+    if (CHARACTER_MANAGER::instance().AddToStateList(GetEntityHandle()))
     {
         m_dwNextStatePulse = thecore_heart->pulse + iNextPulse;
         return true;
@@ -4698,7 +4698,7 @@ bool CHARACTER::StartStateMachine(int iNextPulse)
 
 void CHARACTER::StopStateMachine()
 {
-    CHARACTER_MANAGER::instance().RemoveFromStateList(this);
+    CHARACTER_MANAGER::instance().RemoveFromStateList(GetEntityHandle());
 }
 
 void CHARACTER::UpdateStateMachine(uint32_t dwPulse)
@@ -4715,7 +4715,7 @@ void CHARACTER::UpdateStateMachine(uint32_t dwPulse)
 
 void CHARACTER::SetNextStatePulse(int iNextPulse)
 {
-    CHARACTER_MANAGER::instance().AddToStateList(this);
+    CHARACTER_MANAGER::instance().AddToStateList(GetEntityHandle());
     m_dwNextStatePulse = iNextPulse;
 
     if (iNextPulse < 10)

@@ -81,8 +81,8 @@ protected:
 		entt::entity		FindPCEntity(const char * name);
 		entt::entity		FindEntityByPID(uint32_t dwPID);
 
-		bool			AddToStateList(LPCHARACTER ch);
-		void			RemoveFromStateList(LPCHARACTER ch);
+		bool			AddToStateList(entt::entity character);
+		void			RemoveFromStateList(entt::entity character);
 
 		// DelayedSave: 어떠한 루틴 내에서 저장을 해야 할 짓을 많이 하면 저장
 		// 쿼리가 너무 많아지므로 "저장을 한다" 라고 표시만 해두고 잠깐
@@ -93,8 +93,8 @@ protected:
 
 		template<class Func>	Func for_each_pc(Func f);
 
-		void			RegisterForMonsterLog(LPCHARACTER ch);
-		void			UnregisterForMonsterLog(LPCHARACTER ch);
+		void			RegisterForMonsterLog(entt::entity character);
+		void			UnregisterForMonsterLog(entt::entity character);
 		void			PacketMonsterLog(entt::entity character, const void* buf, int size);
 
 		void			KillLog(uint32_t dwVnum);
@@ -168,9 +168,13 @@ protected:
 		NAME_MAP			m_map_pkPCChr;
 
 		char				dummy1[1024];	// memory barrier
-		CHARACTER_SET		m_set_pkChrState;	// FSM이 돌아가고 있는 놈들
+		// Membership only: the update pump calls AISystem::UpdateStateMachine
+		// with the entity, nothing here dereferences a character.
+		std::unordered_set<entt::entity>	m_set_pkChrState;	// FSM이 돌아가고 있는 놈들
 		CHARACTER_SET		m_set_pkChrForDelayedSave;
-		CHARACTER_SET		m_set_pkChrMonsterLog;
+		// Membership only: PacketMonsterLog reads position and descriptor off
+		// the entity.
+		std::unordered_set<entt::entity>	m_set_pkChrMonsterLog;
 
 		LPCHARACTER			m_pkChrSelectedStone;
 
