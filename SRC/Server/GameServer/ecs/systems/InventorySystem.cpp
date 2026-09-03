@@ -1447,12 +1447,12 @@ void CItem::ModifyPoints(bool bAdd)
 		if (bAdd)
 		{
 			if (m_wCell == INVENTORY_MAX_NUM + WEAR_WEAPON)
-				m_pOwner->SetPart(PART_WEAPON, GetVnum());
+				ecs::PlayerRuntime::SetPart(ownerEntity, PART_WEAPON, GetVnum());
 		}
 		else
 		{
 			if (m_wCell == INVENTORY_MAX_NUM + WEAR_WEAPON)
-				m_pOwner->SetPart(PART_WEAPON, 0);
+				ecs::PlayerRuntime::SetPart(ownerEntity, PART_WEAPON, 0);
 		}
 	}
 	break;
@@ -1506,7 +1506,7 @@ void CItem::ModifyPoints(bool bAdd)
 				if (!bAdd)
 					toSetValueEffect = 0;
 
-				m_pOwner->SetPart(PART_EFFECT_WEAPON, toSetValueEffect);
+				ecs::PlayerRuntime::SetPart(ownerEntity, PART_EFFECT_WEAPON, toSetValueEffect);
 			}
 		}
 #endif
@@ -1518,12 +1518,12 @@ void CItem::ModifyPoints(bool bAdd)
 		if (bAdd)
 		{
 			if (m_wCell == INVENTORY_MAX_NUM + WEAR_WEAPON)
-				m_pOwner->SetPart(PART_WEAPON, GetVnum());
+				ecs::PlayerRuntime::SetPart(ownerEntity, PART_WEAPON, GetVnum());
 		}
 		else
 		{
 			if (m_wCell == INVENTORY_MAX_NUM + WEAR_WEAPON)
-				m_pOwner->SetPart(PART_WEAPON, 0);
+				ecs::PlayerRuntime::SetPart(ownerEntity, PART_WEAPON, 0);
 		}
 	}
 	break;
@@ -1541,7 +1541,7 @@ void CItem::ModifyPoints(bool bAdd)
 					!ItemSystem::IsValidItem(ItemSystem::GetWearItem(ownerEntity, WEAR_COSTUME_BODY)))
 					toSetValueEffect = 0;
 
-				m_pOwner->SetPart(PART_EFFECT_BODY, toSetValueEffect);
+				ecs::PlayerRuntime::SetPart(ownerEntity, PART_EFFECT_BODY, toSetValueEffect);
 			}
 		}
 #endif
@@ -1554,12 +1554,12 @@ void CItem::ModifyPoints(bool bAdd)
 			if (bAdd)
 			{
 				if (GetProto()->bSubType == ARMOR_BODY)
-					m_pOwner->SetPart(PART_MAIN, GetVnum());
+					ecs::PlayerRuntime::SetPart(ownerEntity, PART_MAIN, GetVnum());
 			}
 			else
 			{
 				if (GetProto()->bSubType == ARMOR_BODY)
-					m_pOwner->SetPart(PART_MAIN, m_pOwner->GetOriginalPart(PART_MAIN));
+					ecs::PlayerRuntime::SetPart(ownerEntity, PART_MAIN, m_pOwner->GetOriginalPart(PART_MAIN));
 			}
 		}
 	}
@@ -1582,7 +1582,7 @@ void CItem::ModifyPoints(bool bAdd)
 					!ItemSystem::IsValidItem(ItemSystem::GetWearItem(ownerEntity, WEAR_BODY)))
 					toSetValueEffect = 0;
 
-				m_pOwner->SetPart(PART_EFFECT_BODY, toSetValueEffect);
+				ecs::PlayerRuntime::SetPart(ownerEntity, PART_EFFECT_BODY, toSetValueEffect);
 			}
 #endif
 			toSetPart = PART_MAIN;
@@ -1745,7 +1745,7 @@ void CItem::ModifyPoints(bool bAdd)
 
 		if (PART_MAX_NUM != toSetPart)
 		{
-			m_pOwner->SetPart((uint8_t)toSetPart, toSetValue);
+			ecs::PlayerRuntime::SetPart(ownerEntity, (uint8_t)toSetPart, toSetValue);
 			NetworkSyncSystem::UpdatePacket(ownerEntity);
 
 		}

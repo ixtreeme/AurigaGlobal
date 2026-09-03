@@ -3834,12 +3834,21 @@ void CHARACTER::SetDuel(const char* type, int value)
 }
 #endif
 
+namespace ecs::PlayerRuntime {
+
+void SetPart(entt::entity e, uint8_t partPos, uint16_t value)
+{
+    assert(partPos < PART_MAX_NUM);
+
+    if (auto* appearance = EnsureAppearancePartsComponent(e))
+        appearance->parts[partPos] = value;
+}
+
+} // namespace ecs::PlayerRuntime
+
 void CHARACTER::SetPart(uint8_t bPartPos, uint16_t wVal)
 {
-    assert(bPartPos < PART_MAX_NUM);
-
-    if (auto* appearance = EnsureAppearancePartsComponent(GetEntityHandle()))
-        appearance->parts[bPartPos] = wVal;
+    ecs::PlayerRuntime::SetPart(GetEntityHandle(), bPartPos, wVal);
 }
 
 uint16_t CHARACTER::GetPart(uint8_t bPartPos) const

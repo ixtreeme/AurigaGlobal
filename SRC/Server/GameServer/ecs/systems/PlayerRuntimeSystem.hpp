@@ -51,6 +51,10 @@ bool IsNPC(entt::entity e);
 bool IsGuardNPC(entt::entity e);
 void SetPotionLimit(entt::entity e, int count);
 
+// The appearance part write. CHARACTER::SetPart was already nothing but
+// this - EnsureAppearancePartsComponent then one array store.
+void SetPart(entt::entity e, uint8_t partPos, uint16_t value);
+
 // The three timed events that used to be CHARACTER members. Slot names the
 // one being addressed; Cancel runs event_cancel on it, Set stores or clears.
 enum class CharEvent : uint8_t { Dead, Stun, Recovery };
