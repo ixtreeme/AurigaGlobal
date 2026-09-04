@@ -4,6 +4,9 @@
 #include "MountSystem.hpp"
 #include "ItemSystem.hpp"
 #include "NetworkSyncSystem.hpp"
+#include "PointSystem.hpp"
+#include "SocialSystem.hpp"
+#include "VisibilitySystem.hpp"
 
 #include "../../config.h"
 #include "../../char.h"
@@ -61,19 +64,16 @@ ecs::MountState* GetMountState(entt::entity e)
     return &g_registry.get_or_emplace<ecs::MountState>(e);
 }
 
-void SyncMountState(entt::entity e, uint32_t mountVnum, uint32_t mountTime,
-    uint8_t sendHorseLevel, uint8_t sendHorseHealthGrade, uint8_t sendHorseStaminaGrade, int mountPulse)
+// Was SyncMountState, taking all six fields from CHARACTER members and copying
+// them in. Those members are gone - MountState is the only copy, and MountVnum
+// writes it directly - so every one of the fourteen calls had become the
+// component written back onto itself. Marking it dirty is what they were
+// actually still doing.
+void MarkMountDirty(entt::entity e)
 {
-    auto* state = GetMountState(e);
-    if (!state)
+    if (e == entt::null || !g_registry.valid(e))
         return;
 
-    state->mountVnum = mountVnum;
-    state->mountTime = mountTime;
-    state->sendHorseLevel = sendHorseLevel;
-    state->sendHorseHealthGrade = sendHorseHealthGrade;
-    state->sendHorseStaminaGrade = sendHorseStaminaGrade;
-    state->mountPulse = mountPulse;
     g_registry.emplace_or_replace<ecs::DirtyTag>(e);
 }
 
@@ -332,6 +332,250 @@ void SetMountVnum(entt::entity rider, uint32_t vnum)
         ch->MountVnum(vnum);
 }
 
+} // namespace MountSystem
+
+LPCHARACTER CHARACTER::GetHorse() const
+{
+	return ecs::LegacyCharOf(MountSystem::GetSummonedHorse(GetEntityHandle()));
+}
+
+EVENTFUNC(horse_dead_event);
+
+namespace MountSystem {
+
+void HorseSummon(entt::entity rider, bool bSummon, bool bFromFar = false,
+    uint32_t dwVnum = 0, const char* pPetName = nullptr);
+static ::CMountSystem* GetMountSystem(entt::entity e);
+
+void MountSummon(entt::entity rider, entt::entity mountItem)
+{
+#define MOUNT_SYSTEM_FIX_POLY
+#ifdef MOUNT_SYSTEM_FIX_POLY
+	if (AffectSystem::IsPolymorphed(rider) == true)
+	{
+#ifdef TEXTS_IMPROVEMENT
+		ecs::ChatSystem::SendNew(rider, CHAT_TYPE_INFO, 732, "");
+#endif
+		return;
+	}
+#endif
+	if (ecs::PlayerRuntime::GetMapIndex(rider) == 113)
+		return;
+
+	if (CArenaManager::instance().IsArenaMap(ecs::PlayerRuntime::GetMapIndex(rider)) == true)
+		return;
+
+	CMountSystem* mountSystem = GetMountSystem(rider);
+
+	if (!mountSystem || !ItemSystem::IsValidItem(mountItem))
+		return;
+
+	const uint32_t mobVnum = GetMountMobVnum(mountItem);
+
+	if (IsHorseRiding(rider))
+		StopRiding(rider);
+
+	if (GetSummonedHorse(rider) != entt::null)
+		HorseSummon(rider, false);
+
+	mountSystem->Summon(mobVnum, mountItem, false);
+}
+
+void HorseSummon(entt::entity rider, bool bSummon, bool bFromFar, uint32_t dwVnum, const char* pPetName)
+{
+	if ( bSummon )
+	{
+		if( ecs::LegacyCharOf(GetSummonedHorse(rider)) != nullptr)
+			return;
+
+		if (GetHorseLevel(rider) <= 0)
+			return;
+
+		if (IsRiding(rider))
+			return;
+
+		LOG_INFO("HorseSummon : {} lv:{} bSummon:{} fromFar:{}", ecs::PlayerRuntime::GetName(rider), ecs::PointSystem::GetLevel(rider), bSummon, bFromFar);
+
+		int32_t x = ecs::PlayerRuntime::GetX(rider);
+		int32_t y = ecs::PlayerRuntime::GetY(rider);
+
+		if (GetHorseHealth(rider) <= 0)
+			bFromFar = false;
+
+		if (bFromFar)
+		{
+			x += (number(0, 1) * 2 - 1) * number(2000, 2500);
+			y += (number(0, 1) * 2 - 1) * number(2000, 2500);
+		}
+		else
+		{
+			x += number(-100, 100);
+			y += number(-100, 100);
+		}
+
+		SetSummonedHorse(rider, CHARACTER_MANAGER::instance().SpawnMob(
+				(0 == dwVnum) ? GetMyHorseVnum(rider) : dwVnum,
+				ecs::PlayerRuntime::GetMapIndex(rider),
+				x, y,
+				ecs::PlayerRuntime::GetZ(rider), false, (int)(ecs::PlayerRuntime::GetRotation(rider)+180), false) ? CHARACTER_MANAGER::instance().SpawnMob(
+				(0 == dwVnum) ? GetMyHorseVnum(rider) : dwVnum,
+				ecs::PlayerRuntime::GetMapIndex(rider),
+				x, y,
+				ecs::PlayerRuntime::GetZ(rider), false, (int)(ecs::PlayerRuntime::GetRotation(rider)+180), false)->GetEntityHandle() : entt::null);
+
+		if (!ecs::LegacyCharOf(GetSummonedHorse(rider)))
+		{
+#ifdef TEXTS_IMPROVEMENT
+			ecs::ChatSystem::SendNew(rider, CHAT_TYPE_INFO, 328, "");
+#endif
+			return;
+		}
+
+		if (GetHorseHealth(rider) <= 0)
+		{
+			ecs::LegacyCharOf(GetSummonedHorse(rider))->SetPosition(POS_DEAD);
+
+			char_event_info* info = AllocEventInfo<char_event_info>();
+			info->ch = ecs::LegacyCharOf(rider);
+			ecs::PlayerRuntime::SetCharEvent(ecs::LegacyCharOf(GetSummonedHorse(rider))->GetEntityHandle(), ecs::PlayerRuntime::CharEvent::Dead,
+				event_create(horse_dead_event, info, PASSES_PER_SEC(60)));
+		}
+
+		ecs::LegacyCharOf(GetSummonedHorse(rider))->SetLevel(GetHorseLevel(rider));
+
+		const char* pHorseName = CHorseNameManager::instance().GetHorseName(ecs::PlayerRuntime::GetPlayerID(rider));
+
+		if ( pHorseName != nullptr && strlen(pHorseName) != 0 )
+		{
+			ecs::LegacyCharOf(GetSummonedHorse(rider))->SetName(pHorseName);
+		}
+		else
+		{
+			uint8_t bLang = 0;
+			if (ecs::PlayerRuntime::GetDesc(rider)) {
+				bLang = ecs::PlayerRuntime::GetDesc(rider)->GetLanguage(); 
+			}
+			
+			ecs::LegacyCharOf(GetSummonedHorse(rider))->SetName(std::string(ecs::PlayerRuntime::GetName(rider)));
+			ecs::LegacyCharOf(GetSummonedHorse(rider))->SetName(
+				std::string(ecs::LegacyCharOf(GetSummonedHorse(rider))->GetName()) + " ");
+			ecs::LegacyCharOf(GetSummonedHorse(rider))->SetName(
+				std::string(ecs::LegacyCharOf(GetSummonedHorse(rider))->GetName()) + m_horseText[bLang]);
+		}
+
+		if (!ecs::LegacyCharOf(GetSummonedHorse(rider))->Show(ecs::PlayerRuntime::GetMapIndex(rider), x, y, ecs::PlayerRuntime::GetZ(rider)))
+		{
+			M2_DESTROY_CHARACTER(ecs::LegacyCharOf(GetSummonedHorse(rider)));
+			LOG_ERROR("cannot show monster");
+			SetSummonedHorse(rider, entt::null);
+			return;
+		}
+
+		if ((GetHorseHealth(rider) <= 0))
+		{
+			TPacketGCDead pack;
+			pack.header	= HEADER_GC_DEAD;
+			pack.vid    = ecs::PlayerRuntime::GetPacketVID(ecs::LegacyCharOf(GetSummonedHorse(rider))->GetEntityHandle());
+			ecs::LegacyCharOf(rider)->PacketAround(&pack, sizeof(pack));
+		}
+
+		ecs::LegacyCharOf(GetSummonedHorse(rider))->SetRider(rider);
+	}
+	else
+	{
+		if (!ecs::LegacyCharOf(GetSummonedHorse(rider)))
+			return;
+
+		auto* chHorse = ecs::LegacyCharOf(GetSummonedHorse(rider));
+
+		chHorse->SetRider(entt::null);
+
+		if ((GetHorseHealth(rider) <= 0))
+			bFromFar = false;
+
+		if (!bFromFar)
+		{
+			M2_DESTROY_CHARACTER(chHorse);
+		}
+		else
+		{
+			chHorse->SetNowWalking(false);
+			const entt::entity horseEntity = chHorse->GetEntityHandle();
+			float fx, fy;
+			chHorse->SetRotation(GetDegreeFromPositionXY(
+				ecs::PlayerRuntime::GetX(horseEntity),
+				ecs::PlayerRuntime::GetY(horseEntity), ecs::PlayerRuntime::GetX(rider), ecs::PlayerRuntime::GetY(rider)) + 180);
+			GetDeltaByDegree(chHorse->GetRotation(), 3500, &fx, &fy);
+			chHorse->Goto(
+				static_cast<int32_t>(ecs::PlayerRuntime::GetX(horseEntity) + fx),
+				static_cast<int32_t>(ecs::PlayerRuntime::GetY(horseEntity) + fy));
+			chHorse->SendMovePacket(FUNC_WAIT, 0, 0, 0, 0);
+		}
+
+		SetSummonedHorse(rider, entt::null);
+	}
+
+	MarkMountDirty(rider);
+}
+
+// The packet-dedup counters and the pulse gate. They were four CHARACTER
+// members mirrored into MountState by every SyncMountState call; the component
+// is the only copy now, so the mirror argument list goes away with them.
+ecs::MountState& GetMountStateRef(entt::entity rider)
+{
+    static ecs::MountState detached;
+    if (rider == entt::null || !g_registry.valid(rider)) {
+        detached = ecs::MountState {};
+        return detached;
+    }
+
+    return g_registry.get_or_emplace<ecs::MountState>(rider);
+}
+
+uint32_t GetLastMountTime(entt::entity rider)
+{
+    if (rider == entt::null || !g_registry.valid(rider))
+        return 0;
+
+    const auto* state = g_registry.try_get<ecs::MountState>(rider);
+    return state ? state->mountTime : 0;
+}
+
+uint32_t GetMyHorseVnum(entt::entity rider)
+{
+    int delta = 0;
+
+    if (CGuild* guild = ecs::SocialSystem::GetGuild(rider))
+    {
+        ++delta;
+
+        if (guild->GetMasterPID() == ecs::PlayerRuntime::GetPlayerID(rider))
+            ++delta;
+    }
+
+    return c_aHorseStat[GetHorseLevel(rider)].iNPCRace + delta;
+}
+
+entt::entity GetSummonedHorse(entt::entity rider)
+{
+    if (rider == entt::null || !g_registry.valid(rider))
+        return entt::null;
+
+    const auto* summoned = g_registry.try_get<ecs::SummonedHorse>(rider);
+    if (!summoned || summoned->horse == entt::null || !g_registry.valid(summoned->horse))
+        return entt::null;
+
+    return summoned->horse;
+}
+
+void SetSummonedHorse(entt::entity rider, entt::entity horse)
+{
+    if (rider == entt::null || !g_registry.valid(rider))
+        return;
+
+    g_registry.get_or_emplace<ecs::SummonedHorse>(rider).horse = horse;
+}
+
 bool IsHorseRiding(entt::entity rider)
 {
     // Strictly the riding flag, not IsRiding - that one also answers true for a
@@ -504,8 +748,8 @@ bool CHARACTER::StartRiding()
 	if (CArenaManager::instance().IsArenaMap(GetMapIndex()) == true)
 		return false;
 
-	uint32_t dwMountVnum = m_chHorse
-		? ecs::PlayerRuntime::GetRaceNum(m_chHorse->GetEntityHandle())
+	uint32_t dwMountVnum = GetHorse()
+		? ecs::PlayerRuntime::GetRaceNum(GetHorse()->GetEntityHandle())
 		: GetMyHorseVnum();
 
 	if (false == CHorseRider::StartRiding())
@@ -529,11 +773,7 @@ bool CHARACTER::StartRiding()
 	if(test_server)
 		LOG_INFO("Ride Horse : {} ", GetName());
 
-#ifdef DISABLE_CORE_PULSE_RAZOR93
-	SyncMountState(rider, GetMountVnum(), GetLastMountTime(), m_bSendHorseLevel, m_bSendHorseHealthGrade, m_bSendHorseStaminaGrade, m_mountPulse);
-#else
-	SyncMountState(rider, GetMountVnum(), GetLastMountTime(), m_bSendHorseLevel, m_bSendHorseHealthGrade, m_bSendHorseStaminaGrade, 0);
-#endif
+		MarkMountDirty(GetEntityHandle());
 	SyncHorseRiding(rider, true);
 	return true;
 }
@@ -564,11 +804,7 @@ bool CHARACTER::StopRiding()
 		PointChange(POINT_DX, 0);
 		PointChange(POINT_HT, 0);
 		PointChange(POINT_IQ, 0);
-#ifdef DISABLE_CORE_PULSE_RAZOR93
-		SyncMountState(rider, GetMountVnum(), GetLastMountTime(), m_bSendHorseLevel, m_bSendHorseHealthGrade, m_bSendHorseStaminaGrade, m_mountPulse);
-#else
-		SyncMountState(rider, GetMountVnum(), GetLastMountTime(), m_bSendHorseLevel, m_bSendHorseHealthGrade, m_bSendHorseStaminaGrade, 0);
-#endif
+		MarkMountDirty(GetEntityHandle());
 		SyncHorseRiding(rider, false);
 		return true;
 	}
@@ -613,152 +849,12 @@ LPCHARACTER CHARACTER::GetRider() const
 
 void CHARACTER::HorseSummon(bool bSummon, bool bFromFar, uint32_t dwVnum, const char* pPetName)
 {
-	if ( bSummon )
-	{
-		if( m_chHorse != nullptr)
-			return;
-
-		if (GetHorseLevel() <= 0)
-			return;
-
-		if (IsRiding())
-			return;
-
-		LOG_INFO("HorseSummon : {} lv:{} bSummon:{} fromFar:{}", GetName(), GetLevel(), bSummon, bFromFar);
-
-		int32_t x = GetX();
-		int32_t y = GetY();
-
-		if (GetHorseHealth() <= 0)
-			bFromFar = false;
-
-		if (bFromFar)
-		{
-			x += (number(0, 1) * 2 - 1) * number(2000, 2500);
-			y += (number(0, 1) * 2 - 1) * number(2000, 2500);
-		}
-		else
-		{
-			x += number(-100, 100);
-			y += number(-100, 100);
-		}
-
-		m_chHorse = CHARACTER_MANAGER::instance().SpawnMob(
-				(0 == dwVnum) ? GetMyHorseVnum() : dwVnum,
-				GetMapIndex(),
-				x, y,
-				GetZ(), false, (int)(GetRotation()+180), false);
-
-		if (!m_chHorse)
-		{
-#ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 328, "");
-#endif
-			return;
-		}
-
-		if (GetHorseHealth() <= 0)
-		{
-			m_chHorse->SetPosition(POS_DEAD);
-
-			char_event_info* info = AllocEventInfo<char_event_info>();
-			info->ch = this;
-			ecs::PlayerRuntime::SetCharEvent(m_chHorse->GetEntityHandle(), ecs::PlayerRuntime::CharEvent::Dead,
-				event_create(horse_dead_event, info, PASSES_PER_SEC(60)));
-		}
-
-		m_chHorse->SetLevel(GetHorseLevel());
-
-		const char* pHorseName = CHorseNameManager::instance().GetHorseName(GetPlayerID());
-
-		if ( pHorseName != nullptr && strlen(pHorseName) != 0 )
-		{
-			m_chHorse->m_stName = pHorseName;
-		}
-		else
-		{
-			uint8_t bLang = 0;
-			if (GetDesc()) {
-				bLang = GetDesc()->GetLanguage(); 
-			}
-			
-			m_chHorse->m_stName = GetName();
-			m_chHorse->m_stName += " ";
-			m_chHorse->m_stName += m_horseText[bLang];
-		}
-
-		if (!m_chHorse->Show(GetMapIndex(), x, y, GetZ()))
-		{
-			M2_DESTROY_CHARACTER(m_chHorse);
-			LOG_ERROR("cannot show monster");
-			m_chHorse = nullptr;
-			return;
-		}
-
-		if ((GetHorseHealth() <= 0))
-		{
-			TPacketGCDead pack;
-			pack.header	= HEADER_GC_DEAD;
-			pack.vid    = ecs::PlayerRuntime::GetPacketVID(m_chHorse->GetEntityHandle());
-			PacketAround(&pack, sizeof(pack));
-		}
-
-		m_chHorse->SetRider(GetEntityHandle());
-	}
-	else
-	{
-		if (!m_chHorse)
-			return;
-
-		auto* chHorse = m_chHorse;
-
-		chHorse->SetRider(entt::null);
-
-		if ((GetHorseHealth() <= 0))
-			bFromFar = false;
-
-		if (!bFromFar)
-		{
-			M2_DESTROY_CHARACTER(chHorse);
-		}
-		else
-		{
-			chHorse->SetNowWalking(false);
-			const entt::entity horseEntity = chHorse->GetEntityHandle();
-			float fx, fy;
-			chHorse->SetRotation(GetDegreeFromPositionXY(
-				ecs::PlayerRuntime::GetX(horseEntity),
-				ecs::PlayerRuntime::GetY(horseEntity), GetX(), GetY()) + 180);
-			GetDeltaByDegree(chHorse->GetRotation(), 3500, &fx, &fy);
-			chHorse->Goto(
-				static_cast<int32_t>(ecs::PlayerRuntime::GetX(horseEntity) + fx),
-				static_cast<int32_t>(ecs::PlayerRuntime::GetY(horseEntity) + fy));
-			chHorse->SendMovePacket(FUNC_WAIT, 0, 0, 0, 0);
-		}
-
-		m_chHorse = nullptr;
-	}
-
-#ifdef DISABLE_CORE_PULSE_RAZOR93
-	SyncMountState(GetEntityHandle(), GetMountVnum(), GetLastMountTime(), m_bSendHorseLevel, m_bSendHorseHealthGrade, m_bSendHorseStaminaGrade, m_mountPulse);
-#else
-	SyncMountState(GetEntityHandle(), GetMountVnum(), GetLastMountTime(), m_bSendHorseLevel, m_bSendHorseHealthGrade, m_bSendHorseStaminaGrade, 0);
-#endif
+	MountSystem::HorseSummon(GetEntityHandle(), bSummon, bFromFar, dwVnum, pPetName);
 }
 
 uint32_t CHARACTER::GetMyHorseVnum() const
 {
-	int delta = 0;
-
-	if (GetGuild())
-	{
-		++delta;
-
-		if (GetGuild()->GetMasterPID() == GetPlayerID())
-			++delta;
-	}
-
-	return c_aHorseStat[GetHorseLevel()].iNPCRace + delta;
+	return MountSystem::GetMyHorseVnum(GetEntityHandle());
 }
 
 void CHARACTER::HorseDie()
@@ -773,11 +869,7 @@ bool CHARACTER::ReviveHorse()
 	{
 		HorseSummon(false);
 		HorseSummon(true);
-#ifdef DISABLE_CORE_PULSE_RAZOR93
-		SyncMountState(GetEntityHandle(), GetMountVnum(), GetLastMountTime(), m_bSendHorseLevel, m_bSendHorseHealthGrade, m_bSendHorseStaminaGrade, m_mountPulse);
-#else
-		SyncMountState(GetEntityHandle(), GetMountVnum(), GetLastMountTime(), m_bSendHorseLevel, m_bSendHorseHealthGrade, m_bSendHorseStaminaGrade, 0);
-#endif
+		MarkMountDirty(GetEntityHandle());
 		return true;
 	}
 	return false;
@@ -789,22 +881,18 @@ void CHARACTER::ClearHorseInfo()
 	{
 		ecs::ChatSystem::Send(GetEntityHandle(), CHAT_TYPE_COMMAND, "hide_horse_state");
 
-		m_bSendHorseLevel = 0;
-		m_bSendHorseHealthGrade = 0;
-		m_bSendHorseStaminaGrade = 0;
+		MountSystem::GetMountStateRef(GetEntityHandle()).sendHorseLevel = 0;
+		MountSystem::GetMountStateRef(GetEntityHandle()).sendHorseHealthGrade = 0;
+		MountSystem::GetMountStateRef(GetEntityHandle()).sendHorseStaminaGrade = 0;
 	}
 
-	m_chHorse = nullptr;
-#ifdef DISABLE_CORE_PULSE_RAZOR93
-	SyncMountState(GetEntityHandle(), GetMountVnum(), GetLastMountTime(), m_bSendHorseLevel, m_bSendHorseHealthGrade, m_bSendHorseStaminaGrade, m_mountPulse);
-#else
-	SyncMountState(GetEntityHandle(), GetMountVnum(), GetLastMountTime(), m_bSendHorseLevel, m_bSendHorseHealthGrade, m_bSendHorseStaminaGrade, 0);
-#endif
+	MountSystem::SetSummonedHorse(GetEntityHandle(), entt::null);
+	MarkMountDirty(GetEntityHandle());
 }
 
 void CHARACTER::SendHorseInfo()
 {
-	if (m_chHorse || IsHorseRiding())
+	if (GetHorse() || IsHorseRiding())
 	{
 		int iHealthGrade;
 		int iStaminaGrade;
@@ -826,20 +914,16 @@ void CHARACTER::SendHorseInfo()
 		else
 			iStaminaGrade = 3;
 
-		if (m_bSendHorseLevel != GetHorseLevel() ||
-				m_bSendHorseHealthGrade != iHealthGrade ||
-				m_bSendHorseStaminaGrade != iStaminaGrade)
+		if (MountSystem::GetMountStateRef(GetEntityHandle()).sendHorseLevel != GetHorseLevel() ||
+				MountSystem::GetMountStateRef(GetEntityHandle()).sendHorseHealthGrade != iHealthGrade ||
+				MountSystem::GetMountStateRef(GetEntityHandle()).sendHorseStaminaGrade != iStaminaGrade)
 		{
 			ecs::ChatSystem::Send(GetEntityHandle(), CHAT_TYPE_COMMAND, "horse_state %d %d %d", GetHorseLevel(), iHealthGrade, iStaminaGrade);
 
-			m_bSendHorseLevel = GetHorseLevel();
-			m_bSendHorseHealthGrade = iHealthGrade;
-			m_bSendHorseStaminaGrade = iStaminaGrade;
-#ifdef DISABLE_CORE_PULSE_RAZOR93
-			SyncMountState(GetEntityHandle(), GetMountVnum(), GetLastMountTime(), m_bSendHorseLevel, m_bSendHorseHealthGrade, m_bSendHorseStaminaGrade, m_mountPulse);
-#else
-			SyncMountState(GetEntityHandle(), GetMountVnum(), GetLastMountTime(), m_bSendHorseLevel, m_bSendHorseHealthGrade, m_bSendHorseStaminaGrade, 0);
-#endif
+			MountSystem::GetMountStateRef(GetEntityHandle()).sendHorseLevel = GetHorseLevel();
+			MountSystem::GetMountStateRef(GetEntityHandle()).sendHorseHealthGrade = iHealthGrade;
+			MountSystem::GetMountStateRef(GetEntityHandle()).sendHorseStaminaGrade = iStaminaGrade;
+			MarkMountDirty(GetEntityHandle());
 		}
 	}
 }
@@ -873,23 +957,19 @@ void CHARACTER::SetHorseLevel(int iLevel)
 {
 	CHorseRider::SetHorseLevel(iLevel);
 	SetSkillLevel(SKILL_HORSE, GetHorseLevel());
-#ifdef DISABLE_CORE_PULSE_RAZOR93
-	SyncMountState(GetEntityHandle(), GetMountVnum(), GetLastMountTime(), m_bSendHorseLevel, m_bSendHorseHealthGrade, m_bSendHorseStaminaGrade, m_mountPulse);
-#else
-	SyncMountState(GetEntityHandle(), GetMountVnum(), GetLastMountTime(), m_bSendHorseLevel, m_bSendHorseHealthGrade, m_bSendHorseStaminaGrade, 0);
-#endif
+	MarkMountDirty(GetEntityHandle());
 }
 
 #ifdef ENABLE_FAKE_SHOP_HEADER
 #ifdef DISABLE_CORE_PULSE_RAZOR93
 bool CHARACTER::IsNextMountPulse() const
 {
-	return (m_mountPulse == 0 || (m_mountPulse < thecore_pulse()));
+	return (MountSystem::GetMountStateRef(GetEntityHandle()).mountPulse == 0 || (MountSystem::GetMountStateRef(GetEntityHandle()).mountPulse < thecore_pulse()));
 }
 
 void CHARACTER::UpdateMountPulse()
 {
-	m_mountPulse = thecore_pulse() + THECORE_SECS_TO_PASSES(1);
+	MountSystem::GetMountStateRef(GetEntityHandle()).mountPulse = thecore_pulse() + THECORE_SECS_TO_PASSES(1);
 }
 #endif
 #endif
@@ -917,36 +997,7 @@ bool CHARACTER::IsRiding() const
 #ifdef ENABLE_MOUNT_COSTUME_SYSTEM
 void CHARACTER::MountSummon(entt::entity mountItem)
 {
-#define MOUNT_SYSTEM_FIX_POLY
-#ifdef MOUNT_SYSTEM_FIX_POLY
-	if (IsPolymorphed() == true)
-	{
-#ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 732, "");
-#endif
-		return;
-	}
-#endif
-	if (GetMapIndex() == 113)
-		return;
-
-	if (CArenaManager::instance().IsArenaMap(GetMapIndex()) == true)
-		return;
-
-	CMountSystem* mountSystem = GetMountSystem();
-
-	if (!mountSystem || !ItemSystem::IsValidItem(mountItem))
-		return;
-
-	const uint32_t mobVnum = GetMountMobVnum(mountItem);
-
-	if (IsHorseRiding())
-		StopRiding();
-
-	if (GetHorse())
-		HorseSummon(false);
-
-	mountSystem->Summon(mobVnum, mountItem, false);
+	MountSystem::MountSummon(GetEntityHandle(), mountItem);
 }
 
 void CHARACTER::MountUnsummon(entt::entity mountItem)

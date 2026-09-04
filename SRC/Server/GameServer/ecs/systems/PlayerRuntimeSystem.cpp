@@ -6,6 +6,7 @@
 #include "SocialSystem.hpp"
 
 #include "PlayerRuntimeSystem.hpp"
+#include "MountSystem.hpp"
 #include "QuestSystem.hpp"
 #include "NetworkSyncSystem.hpp"
 #include "MovementSystem.hpp"
@@ -473,6 +474,16 @@ int32_t GetX(entt::entity e)
 	if (e != entt::null && g_registry.valid(e)) {
 		if (const auto* pos = g_registry.try_get<ecs::Position>(e))
 			return pos->x;
+	}
+
+	return 0;
+}
+
+int32_t GetZ(entt::entity e)
+{
+	if (e != entt::null && g_registry.valid(e)) {
+		if (const auto* pos = g_registry.try_get<ecs::Position>(e))
+			return pos->z;
 	}
 
 	return 0;
@@ -5910,7 +5921,7 @@ void CHARACTER::Initialize()
     ResetChainLightningIndex();
 
     m_dwMountVnum = 0;
-    m_chHorse = nullptr;
+    MountSystem::SetSummonedHorse(GetEntityHandle(), entt::null);
     m_chRider = nullptr;
 
     m_pWarMap = nullptr;
@@ -5935,9 +5946,9 @@ void CHARACTER::Initialize()
     m_dwLastVictimSetTime = get_dword_time() - 3000;
     m_iMaxAggro = -100;
 
-    m_bSendHorseLevel = 0;
-    m_bSendHorseHealthGrade = 0;
-    m_bSendHorseStaminaGrade = 0;
+    MountSystem::GetMountStateRef(GetEntityHandle()).sendHorseLevel = 0;
+    MountSystem::GetMountStateRef(GetEntityHandle()).sendHorseHealthGrade = 0;
+    MountSystem::GetMountStateRef(GetEntityHandle()).sendHorseStaminaGrade = 0;
 
     m_dwLoginPlayTime = 0;
 

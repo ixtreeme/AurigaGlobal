@@ -4,6 +4,8 @@
 
 #include <entt/entt.hpp>
 
+#include "../components/social_components.hpp"
+
 namespace MountSystem {
 
 bool IsRiding(entt::entity rider);
@@ -23,6 +25,12 @@ void SummonHorse(entt::entity rider, bool summon, bool fromFar = false,
     uint32_t vnum = 0, const char* name = nullptr);
 uint32_t GetMountVnum(entt::entity rider);
 void SetMountVnum(entt::entity rider, uint32_t vnum);
+void MountSummon(entt::entity rider, entt::entity mountItem);
+ecs::MountState& GetMountStateRef(entt::entity rider);
+uint32_t GetLastMountTime(entt::entity rider);
+uint32_t GetMyHorseVnum(entt::entity rider);
+entt::entity GetSummonedHorse(entt::entity rider);
+void SetSummonedHorse(entt::entity rider, entt::entity horse);
 bool IsHorseRiding(entt::entity rider);
 int GetHorseArmor(entt::entity rider);
 int GetHorseLevel(entt::entity rider);

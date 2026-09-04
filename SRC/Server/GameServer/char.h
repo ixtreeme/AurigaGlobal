@@ -1972,7 +1972,6 @@ private:
 	// End of Skill
 #ifdef DISABLE_CORE_PULSE_RAZOR93
 
-	int m_mountPulse = 0;//razor93
 #endif
 	// MOB_SKILL
 public:
@@ -2171,7 +2170,7 @@ public:
 
 	void				HorseSummon(bool bSummon, bool bFromFar = false, uint32_t dwVnum = 0, const char* name = nullptr);
 
-	LPCHARACTER			GetHorse() const { return m_chHorse; }	 // ���� ��ȯ���� ��
+	LPCHARACTER			GetHorse() const;
 	LPCHARACTER			GetRider() const; // rider on horse
 	void				SetRider(entt::entity character);
 
@@ -2227,15 +2226,11 @@ public:
 	uint32_t	GetMountSkinVnum();
 #endif
 protected:
-	LPCHARACTER			m_chHorse;
 	LPCHARACTER			m_chRider;
 
 	uint32_t				m_dwMountVnum;
 	uint32_t				m_dwMountTime;
 
-	uint8_t				m_bSendHorseLevel;
-	uint8_t				m_bSendHorseHealthGrade;
-	uint8_t				m_bSendHorseStaminaGrade;
 
 	////////////////////////////////////////////////////////////////////////////////////////
 	// Detailed Log

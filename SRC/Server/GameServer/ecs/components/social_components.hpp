@@ -105,6 +105,12 @@ struct WarpBlockState {
     int refineTime { 0 };
 };
 
+// The horse a rider currently has summoned, as an entity. Null when none is
+// out. Spawned and destroyed by CHARACTER::HorseSummon, which owns its life.
+struct SummonedHorse {
+    entt::entity horse { entt::null };
+};
+
 struct MountState {
     uint32_t mountVnum { 0 };
     uint32_t mountTime { 0 };
