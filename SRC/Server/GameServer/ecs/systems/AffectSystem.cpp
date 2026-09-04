@@ -991,7 +991,7 @@ EVENTFUNC(affect_event)
 		return 0;
 	}
 
-	auto* ch = info->ch.Get();
+	auto* ch = ecs::LegacyCharOf(info->ch);
 
 	if (ch == nullptr) { // <Factor>
 		return 0;
@@ -1093,7 +1093,7 @@ void CHARACTER::StartAffectEvent()
 		return;
 
 	char_event_info* info = AllocEventInfo<char_event_info>();
-	info->ch = this;
+	info->ch = GetEntityHandle();
 	m_pkAffectEvent = event_create(affect_event, info, passes_per_sec);
 	LOG_TRACE("StartAffectEvent {} {} {}", GetName(), static_cast<const void*>(this), static_cast<const void*>(get_pointer(m_pkAffectEvent)));
 }

@@ -4675,7 +4675,7 @@ void CHARACTER::StartDestroyWhenIdleEvent()
 
     char_event_info* info = AllocEventInfo<char_event_info>();
 
-    info->ch = this;
+    info->ch = GetEntityHandle();
 
     m_pkDestroyWhenIdleEvent = event_create(destroy_when_idle_event, info, PASSES_PER_SEC(300));
 }
@@ -4921,7 +4921,7 @@ void CHARACTER::SetProto(const CMob* pkMob)
     {
         char_event_info* info = AllocEventInfo<char_event_info>();
 
-        info->ch = this;
+        info->ch = GetEntityHandle();
 
         m_pkMiningEvent = event_create(kill_ore_load_event, info, PASSES_PER_SEC(number(7 * 60, 15 * 60)));
     }
@@ -5180,7 +5180,8 @@ void CHARACTER::OnClick(entt::entity causer)
             return;
         }
 
-        m_triggerOnClick.pFunc(this, pkCauser);
+        m_triggerOnClick.pFunc(GetEntityHandle(),
+			pkCauser ? pkCauser->GetEntityHandle() : entt::null);
     }
 }
 
@@ -5329,7 +5330,7 @@ bool CHARACTER::SwitchChannel(int32_t newAddr, uint16_t newPort)
 
 EVENTINFO(switch_channel_info)
 {
-    DynamicCharacterPtr ch;
+    entt::entity ch { entt::null };
     int secs;
     int32_t newAddr;
     uint16_t newPort;
@@ -5351,7 +5352,7 @@ EVENTFUNC(switch_channel)
         return 0;
     }
 
-    LPCHARACTER ch = info->ch;
+    LPCHARACTER ch = ecs::LegacyCharOf(info->ch);
     if (!ch)
     {
         LOG_ERROR("No char to work on for the switch.");
@@ -5384,7 +5385,7 @@ bool CHARACTER::StartChannelSwitch(int32_t newAddr, uint16_t newPort)
         return false;
 
     switch_channel_info* info = AllocEventInfo<switch_channel_info>();
-    info->ch = this;
+    info->ch = GetEntityHandle();
     info->secs = CanWarp() && !IsPosition(POS_FIGHTING) ? 3 : 10;
     info->newAddr = newAddr;
     info->newPort = newPort;
@@ -5431,7 +5432,7 @@ void CHARACTER::BlockDrop()
     }
 
     drop_event_info* info = AllocEventInfo<drop_event_info>();
-    info->ch = this;
+    info->ch = GetEntityHandle();
     info->time = get_global_time() + 5;
     info->drop = false;
     m_pkDropEvent = event_create(drop_event, info, PASSES_PER_SEC(1));
@@ -5457,7 +5458,7 @@ void CHARACTER::UnblockDrop()
     }
 
     drop_event_info* info = AllocEventInfo<drop_event_info>();
-    info->ch = this;
+    info->ch = GetEntityHandle();
     info->time = get_global_time() + 5;
     info->drop = true;
     m_pkDropEvent = event_create(drop_event, info, PASSES_PER_SEC(1));
@@ -6188,51 +6189,8 @@ void CHARACTER::Create(const char* c_pszName, uint32_t vid, bool isPC)
         m_stName = c_pszName;
 }
 
-LPCHARACTER DynamicCharacterPtr::Get() const {
-    LPCHARACTER p = nullptr;
-    if (is_pc) {
-        p = CHARACTER_MANAGER::instance().FindByPID(id);
-    }
-    else {
-        p = CHARACTER_MANAGER::instance().Find(id);
-    }
-    return p;
-}
 
-DynamicCharacterPtr& DynamicCharacterPtr::operator=(entt::entity e) {
-	if (e == entt::null || !g_registry.valid(e)) {
-		Reset();
-		return *this;
-	}
-	// CHARACTER::IsPC() is GetDesc() != nullptr, not the TagPC component, and
-	// Get() below resolves the two ids through different maps - so the test
-	// has to stay the descriptor one.
-	if (ecs::PlayerRuntime::GetDesc(e)) {
-		is_pc = true;
-		id = ecs::PlayerRuntime::GetPlayerID(e);
-	}
-	else {
-		is_pc = false;
-		id = ecs::PlayerRuntime::GetPacketVID(e);
-	}
-	return *this;
-}
 
-DynamicCharacterPtr& DynamicCharacterPtr::operator=(LPCHARACTER character) {
-    if (character == nullptr) {
-        Reset();
-        return *this;
-    }
-    if (character->IsPC()) {
-        is_pc = true;
-        id = character->GetPlayerID();
-    }
-    else {
-        is_pc = false;
-        id = character->GetLegacyVID();
-    }
-    return *this;
-}
 
 CHARACTER::CHARACTER()
 {
@@ -6253,7 +6211,7 @@ EVENTFUNC(kill_ore_load_event)
         return 0;
     }
 
-    LPCHARACTER ch = info->ch;
+    LPCHARACTER ch = ecs::LegacyCharOf(info->ch);
     if (ch == nullptr) {
         return 0;
     }
@@ -6297,7 +6255,7 @@ EVENTFUNC(destroy_when_idle_event)
         return 0;
     }
 
-    LPCHARACTER ch = info->ch;
+    LPCHARACTER ch = ecs::LegacyCharOf(info->ch);
     if (ch == nullptr) {
         return 0;
     }
@@ -6325,7 +6283,7 @@ EVENTFUNC(drop_event)
         return 0;
     }
 
-    LPCHARACTER ch = info->ch;
+    LPCHARACTER ch = ecs::LegacyCharOf(info->ch);
     if (!ch) {
         LOG_ERROR("<drop_event> ch is null.");
         return 0;

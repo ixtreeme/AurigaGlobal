@@ -162,10 +162,10 @@ bool CheckAndHandleSameHwid(entt::entity character)
 EVENTFUNC(battle_pass_stay_online_event_session)
 {
     char_event_info* info = dynamic_cast<char_event_info*>(event->info);
-    if (!info || !info->ch)
+    if (!info || info->ch == entt::null)
         return 0;
 
-    LPCHARACTER ch = info->ch;
+    LPCHARACTER ch = ecs::LegacyCharOf(info->ch);
 	const entt::entity character = ch->GetEntityHandle();
 
     if (!ecs::PlayerRuntime::GetDesc(character))
@@ -402,7 +402,7 @@ void CHARACTER::StartSaveEvent()
 
     char_event_info* info = AllocEventInfo<char_event_info>();
 
-    info->ch = this;
+    info->ch = GetEntityHandle();
     m_pkSaveEvent = event_create(save_event, info, save_event_second_cycle);
 }
 
@@ -850,7 +850,7 @@ EVENTFUNC(warp_npc_event)
         return 0;
     }
 
-    LPCHARACTER ch = info->ch;
+    LPCHARACTER ch = ecs::LegacyCharOf(info->ch);
 
     if (ch == nullptr) {
         return 0;
@@ -893,7 +893,7 @@ void CHARACTER::StartWarpNPCEvent()
 
     char_event_info* info = AllocEventInfo<char_event_info>();
 
-    info->ch = this;
+    info->ch = GetEntityHandle();
 
     m_pkWarpNPCEvent = event_create(warp_npc_event, info, passes_per_sec / 2);
 }
@@ -1015,7 +1015,7 @@ bool CHARACTER::Show(int32_t lMapIndex, int32_t x, int32_t y, int32_t z, bool bS
     if (!m_pkBattlePassStayOnlineEvent)
     {
         char_event_info* info = AllocEventInfo<char_event_info>();
-        info->ch = this;
+        info->ch = GetEntityHandle();
         m_pkBattlePassStayOnlineEvent = event_create(battle_pass_stay_online_event_session, info, PASSES_PER_SEC(60));
     }
 #endif

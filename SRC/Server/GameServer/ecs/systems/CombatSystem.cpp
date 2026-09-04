@@ -6680,7 +6680,7 @@ EVENTFUNC(StunEvent)
 		return 0;
 	}
 
-	LPCHARACTER ch = info->ch;
+	LPCHARACTER ch = ecs::LegacyCharOf(info->ch);
 
 	if (ch == nullptr) { // <Factor>
 		return 0;
@@ -6743,7 +6743,7 @@ void CHARACTER::Stun()
 
 	char_event_info* info = AllocEventInfo<char_event_info>();
 
-	info->ch = this;
+	info->ch = GetEntityHandle();
 
 	ecs::PlayerRuntime::SetCharEvent(GetEntityHandle(), ecs::PlayerRuntime::CharEvent::Stun,
 		event_create(StunEvent, info, PASSES_PER_SEC(3)));

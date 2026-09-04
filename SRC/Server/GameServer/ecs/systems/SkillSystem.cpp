@@ -4078,7 +4078,7 @@ EVENTFUNC(skill_muyoung_event)
 		return 0;
 	}
 
-	auto*	ch = info->ch.Get();
+	auto*	ch = ecs::LegacyCharOf(info->ch);
 
 	if (ch == nullptr) { // <Factor>
 		return 0;
@@ -4114,7 +4114,7 @@ void CHARACTER::StartMuyeongEvent()
 
 	char_event_info* info = AllocEventInfo<char_event_info>();
 
-	info->ch = this;
+	info->ch = GetEntityHandle();
 	m_pkMuyeongEvent = event_create(skill_muyoung_event, info, PASSES_PER_SEC(1));
 }
 
@@ -4134,7 +4134,7 @@ EVENTFUNC(skill_gyeongGong_event)
 		return 0;
 	}
 
-	auto*	ch = info->ch.Get();
+	auto*	ch = ecs::LegacyCharOf(info->ch);
 
 	if (ch == nullptr) { // <Factor>
 		return 0;
@@ -4159,7 +4159,7 @@ void CHARACTER::StartGyeongGongEvent()
 
 	char_event_info* info = AllocEventInfo<char_event_info>();
 
-	info->ch = this;
+	info->ch = GetEntityHandle();
 	m_pkGyeongGongEvent = event_create(skill_gyeongGong_event, info, PASSES_PER_SEC(1));
 }
 
@@ -4235,7 +4235,7 @@ const TMobSkillInfo* CHARACTER::GetMobSkill(unsigned int idx) const
 
 EVENTINFO(mob_skill_event_info)
 {
-	DynamicCharacterPtr ch;
+	entt::entity ch { entt::null };
 	PIXEL_POSITION pos;
 	uint32_t vnum;
 	int index;
@@ -4262,7 +4262,7 @@ EVENTFUNC(mob_skill_hit_event)
 	}
 
 	// <Factor>
-	auto* ch = info->ch.Get();
+	auto* ch = ecs::LegacyCharOf(info->ch);
 	if (ch == nullptr) {
 		return 0;
 	}
@@ -4373,7 +4373,7 @@ bool CHARACTER::UseMobSkill(unsigned int idx)
 
 			mob_skill_event_info* info = AllocEventInfo<mob_skill_event_info>();
 
-			info->ch = this;
+			info->ch = GetEntityHandle();
 			info->pos = pos;
 			info->level = pInfo->bSkillLevel;
 			info->vnum = dwVnum;

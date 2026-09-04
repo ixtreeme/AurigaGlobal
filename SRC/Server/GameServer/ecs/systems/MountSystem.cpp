@@ -403,7 +403,7 @@ void HorseSummon(entt::entity rider, bool bSummon, bool bFromFar, uint32_t dwVnu
 			ecs::LegacyCharOf(GetSummonedHorse(rider))->SetPosition(POS_DEAD);
 
 			char_event_info* info = AllocEventInfo<char_event_info>();
-			info->ch = ecs::LegacyCharOf(rider);
+			info->ch = rider;
 			ecs::PlayerRuntime::SetCharEvent(ecs::LegacyCharOf(GetSummonedHorse(rider))->GetEntityHandle(), ecs::PlayerRuntime::CharEvent::Dead,
 				event_create(horse_dead_event, info, PASSES_PER_SEC(60)));
 		}
@@ -856,7 +856,7 @@ EVENTFUNC(horse_dead_event)
 		return 0;
 	}
 
-	auto* ch = info->ch.Get();
+	auto* ch = ecs::LegacyCharOf(info->ch);
 	if (ch == nullptr) {
 		return 0;
 	}

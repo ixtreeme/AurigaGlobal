@@ -100,7 +100,8 @@ void CHARACTER::AssignTriggers(const TMobTable* table)
  */
 int OnClickShop(TRIGGERPARAM)
 {
-	CShopManager::instance().StartShopping(causer, ch);
+	CShopManager::instance().StartShopping(
+		ecs::LegacyCharOf(causer), ecs::LegacyCharOf(ch));
 	return 1;
 }
 
@@ -108,150 +109,144 @@ int OnClickShop(TRIGGERPARAM)
 
 int OnClickOrcsDungeon(TRIGGERPARAM)
 {
-	const entt::entity causerEntity = causer ? causer->GetEntityHandle() : entt::null;
-	if (!causer || !ecs::PlayerRuntime::IsPC(causerEntity))
+	if (causer == entt::null || !ecs::PlayerRuntime::IsPC(causer))
 		return 0;
 
 	// NPC vnum 9239
-	if (!ch || (ecs::PlayerRuntime::GetRaceNum(((ch) ? (ch)->GetEntityHandle() : entt::null))) != 9239)
+	if (ch == entt::null || (ecs::PlayerRuntime::GetRaceNum(ch)) != 9239)
 		return 0;
 
-	COrcsDungeon::instance().OnClickNpc(causerEntity);
+	COrcsDungeon::instance().OnClickNpc(causer);
 	return 1;
 }
 
 int OnClickTritonTempleDungeon(TRIGGERPARAM)
 {
-	const entt::entity causerEntity = causer ? causer->GetEntityHandle() : entt::null;
-	if (!causer || !ecs::PlayerRuntime::IsPC(causerEntity))
+	if (causer == entt::null || !ecs::PlayerRuntime::IsPC(causer))
 		return 0;
 
 	// NPC vnum 20094
-	if (!ch || (ecs::PlayerRuntime::GetRaceNum(((ch) ? (ch)->GetEntityHandle() : entt::null))) != 20094)
+	if (ch == entt::null || (ecs::PlayerRuntime::GetRaceNum(ch)) != 20094)
 		return 0;
 
-	CTritonTempleDungeon::instance().OnClickNpc(causerEntity);
+	CTritonTempleDungeon::instance().OnClickNpc(causer);
 	return 1;
 }
 
 int OnClickValentineDungeon(TRIGGERPARAM)
 {
-	const entt::entity causerEntity = causer ? causer->GetEntityHandle() : entt::null;
-	if (!causer || !ecs::PlayerRuntime::IsPC(causerEntity))
+	if (causer == entt::null || !ecs::PlayerRuntime::IsPC(causer))
 		return 0;
 
 	// NPC vnum 20012
-	if (!ch || (ecs::PlayerRuntime::GetRaceNum(((ch) ? (ch)->GetEntityHandle() : entt::null))) != 20012)
+	if (ch == entt::null || (ecs::PlayerRuntime::GetRaceNum(ch)) != 20012)
 		return 0;
 
-	CValentineDungeon::instance().OnClickNpc(causerEntity);
+	CValentineDungeon::instance().OnClickNpc(causer);
 	return 1;
 }
 
 int OnClickEasterDungeon(TRIGGERPARAM)
 {
-    const entt::entity causerEntity = causer ? causer->GetEntityHandle() : entt::null;
-    if (!causer || !ecs::PlayerRuntime::IsPC(causerEntity))
+    if (causer == entt::null || !ecs::PlayerRuntime::IsPC(causer))
         return 0;
 
     // NPC vnum 21
-    if (!ch || (ecs::PlayerRuntime::GetRaceNum(((ch) ? (ch)->GetEntityHandle() : entt::null))) != 9308)
+    if (ch == entt::null || (ecs::PlayerRuntime::GetRaceNum(ch)) != 9308)
         return 0;
 
-    CEasterDungeon::instance().OnClickNpc(causerEntity);
+    CEasterDungeon::instance().OnClickNpc(causer);
     return 1;
 }
 
 int OnClickRuneDungeon(TRIGGERPARAM)
 {
-	const entt::entity causerEntity = causer ? causer->GetEntityHandle() : entt::null;
-	if (!causer || !ecs::PlayerRuntime::IsPC(causerEntity))
+	if (causer == entt::null || !ecs::PlayerRuntime::IsPC(causer))
 		return 0;
 
 	// NPC vnum 20506
-	if (!ch || (ecs::PlayerRuntime::GetRaceNum(((ch) ? (ch)->GetEntityHandle() : entt::null))) != 20506)
+	if (ch == entt::null || (ecs::PlayerRuntime::GetRaceNum(ch)) != 20506)
 		return 0;
 
-	CRuneDungeon::instance().OnClickNpc(causerEntity);
+	CRuneDungeon::instance().OnClickNpc(causer);
 	return 1;
 }
 
 int OnClickPyramidDungeon(TRIGGERPARAM)
 {
-	const entt::entity causerEntity = causer ? causer->GetEntityHandle() : entt::null;
-	if (!causer || !ecs::PlayerRuntime::IsPC(causerEntity))
+	if (causer == entt::null || !ecs::PlayerRuntime::IsPC(causer))
 		return 0;
 
 	// NPC vnum 9331
-	if (!ch || (ecs::PlayerRuntime::GetRaceNum(((ch) ? (ch)->GetEntityHandle() : entt::null))) != 9331)
+	if (ch == entt::null || (ecs::PlayerRuntime::GetRaceNum(ch)) != 9331)
 		return 0;
 
-	CPyramidDungeonRazor93::instance().OnClickNpc(causerEntity);
+	CPyramidDungeonRazor93::instance().OnClickNpc(causer);
 	return 1;
 }
 
 int OnClickNightmareDungeon(TRIGGERPARAM)
 {
-	const entt::entity causerEntity = causer ? causer->GetEntityHandle() : entt::null;
-	if (!causer || !ecs::PlayerRuntime::IsPC(causerEntity))
+	if (causer == entt::null || !ecs::PlayerRuntime::IsPC(causer))
 		return 0;
 
-	if (!ch || (ecs::PlayerRuntime::GetRaceNum(((ch) ? (ch)->GetEntityHandle() : entt::null))) != 20088)
+	if (ch == entt::null || (ecs::PlayerRuntime::GetRaceNum(ch)) != 20088)
 		return 0;
 
-	CNightmareDungeonRazor93::instance().OnClickNpc(causerEntity);
+	CNightmareDungeonRazor93::instance().OnClickNpc(causer);
 	return 1;
 }
 int OnClickHalloween2022Dungeon(TRIGGERPARAM)
 {
-	const entt::entity causerEntity = causer ? causer->GetEntityHandle() : entt::null;
-	const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
-	if (!causer || !ecs::PlayerRuntime::IsPC(causerEntity))
+	if (causer == entt::null || !ecs::PlayerRuntime::IsPC(causer))
 		return 0;
 
-	if (!ch)
+	if (ch == entt::null)
 		return 0;
 
-	if ((ecs::PlayerRuntime::GetRaceNum(chEntity)) != 9475 && (ecs::PlayerRuntime::GetRaceNum(chEntity)) != 9484)
+	if ((ecs::PlayerRuntime::GetRaceNum(ch)) != 9475 && (ecs::PlayerRuntime::GetRaceNum(ch)) != 9484)
 		return 0;
 
-	CHalloween2022Dungeon::instance().OnClickNpc(causerEntity, chEntity);
+	CHalloween2022Dungeon::instance().OnClickNpc(causer, ch);
 	return 1;
 }
 
 int OnClickVikingDungeon(TRIGGERPARAM)
 {
-	const entt::entity causerEntity = causer ? causer->GetEntityHandle() : entt::null;
-	const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
-	if (!causer || !ecs::PlayerRuntime::IsPC(causerEntity))
+	if (causer == entt::null || !ecs::PlayerRuntime::IsPC(causer))
 		return 0;
 
-	if (!ch)
+	if (ch == entt::null)
 		return 0;
 
 	// entry npc: 9615
 	// reward chest: 9626
-	if ((ecs::PlayerRuntime::GetRaceNum(chEntity)) != 9615 && (ecs::PlayerRuntime::GetRaceNum(chEntity)) != 9626)
+	if ((ecs::PlayerRuntime::GetRaceNum(ch)) != 9615 && (ecs::PlayerRuntime::GetRaceNum(ch)) != 9626)
 		return 0;
 
-	CVikingDungeon::instance().OnClickNpc(causerEntity, chEntity);
+	CVikingDungeon::instance().OnClickNpc(causer, ch);
 	return 1;
 }
 #ifdef ENABLE_NEW_CRAFT_SYSTEM_RAZOR93
 int OnClickStoneCraft(TRIGGERPARAM)
 {
-	const entt::entity causerEntity = causer ? causer->GetEntityHandle() : entt::null;
-	if (!causer || !ecs::PlayerRuntime::IsPC(causerEntity))
+	if (causer == entt::null || !ecs::PlayerRuntime::IsPC(causer))
 		return 0;
 
-	if (!ch || (ecs::PlayerRuntime::GetRaceNum(((ch) ? (ch)->GetEntityHandle() : entt::null))) != 9005)
+	if (ch == entt::null || (ecs::PlayerRuntime::GetRaceNum(ch)) != 9005)
 		return 0;
 
-	if (ecs::SocialSystem::GetExchange(causerEntity) || causer->GetMyShop() || causer->GetShopOwner() || causer->IsOpenSafebox() || causer->IsCubeOpen())
+	// IsOpenSafebox and IsCubeOpen have no entity form; one resolve for the
+	// pair, as in cmd_general's copy of this same guard.
+	LPCHARACTER pkCauser = ecs::LegacyCharOf(causer);
+	if (ecs::SocialSystem::GetExchange(causer)
+		|| ecs::SocialSystem::GetMyShop(causer)
+		|| ecs::SocialSystem::GetShopOwner(causer) != entt::null
+		|| (pkCauser && (pkCauser->IsOpenSafebox() || pkCauser->IsCubeOpen())))
 		return 0;
 
-	causer->SetQuestNPCID(((ch)->GetLegacyVID()));
-	ecs::ChatSystem::Send(causerEntity, CHAT_TYPE_COMMAND, "stone_craft_open");
+	ecs::PlayerRuntime::SetQuestNPCID(causer, ecs::PlayerRuntime::GetPacketVID(ch));
+	ecs::ChatSystem::Send(causer, CHAT_TYPE_COMMAND, "stone_craft_open");
 	return 1;
 }
 #endif
@@ -260,7 +255,7 @@ int OnClickStoneCraft(TRIGGERPARAM)
 //	if (!causer || !ecs::PlayerRuntime::IsPC(((causer) ? (causer)->GetEntityHandle() : entt::null)))
 //		return 0;
 //
-//	if (!ch || (ecs::PlayerRuntime::GetRaceNum(((ch) ? (ch)->GetEntityHandle() : entt::null))) != 20021)
+//	if (ch == entt::null || (ecs::PlayerRuntime::GetRaceNum(ch)) != 20021)
 //		return 0;
 //
 //	CLostCastleDungeon::instance().OnClickNpc(((causer) ? (causer)->GetEntityHandle() : entt::null));
@@ -273,8 +268,9 @@ int OnClickStoneCraft(TRIGGERPARAM)
  */
 int OnIdleDefault(TRIGGERPARAM)
 {
-	if (ch->OnIdle())
-		return PASSES_PER_SEC(1);
+	// Both arms return the same thing; the call is kept for its side effects.
+	if (LPCHARACTER pkChr = ecs::LegacyCharOf(ch))
+		(void)pkChr->OnIdle();
 
 	return PASSES_PER_SEC(1);
 }

@@ -4957,7 +4957,7 @@ EVENTFUNC(kill_campfire_event)
 		return 0;
 	}
 
-	auto*	ch = info->ch.Get();
+	auto*	ch = ecs::LegacyCharOf(info->ch);
 
 	if (ch == nullptr) { // <Factor>
 		return 0;
@@ -5518,7 +5518,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 
 		char_event_info* info = AllocEventInfo<char_event_info>();
 
-		info->ch = campfire;
+		info->ch = campfire->GetEntityHandle();
 
 		campfire->m_pkMiningEvent = event_create(kill_campfire_event, info, PASSES_PER_SEC(40));
 

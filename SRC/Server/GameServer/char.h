@@ -481,38 +481,6 @@ enum EBlockAction
 
 // <Factor> Dynamically evaluated CHARACTER* equivalent.
 // Referring to SCharDeadEventInfo.
-struct DynamicCharacterPtr {
-	DynamicCharacterPtr() : is_pc(false), id(0) {}
-	DynamicCharacterPtr(const DynamicCharacterPtr& o)
-		: is_pc(o.is_pc), id(o.id) {
-	}
-
-	// Returns the LPCHARACTER found in CHARACTER_MANAGER.
-	LPCHARACTER Get() const;
-	// Clears the current settings.
-	void Reset() {
-		is_pc = false;
-		id = 0;
-	}
-
-	// Basic assignment operator.
-	DynamicCharacterPtr& operator=(const DynamicCharacterPtr& rhs) {
-		is_pc = rhs.is_pc;
-		id = rhs.id;
-		return *this;
-	}
-	// Supports assignment with LPCHARACTER type.
-	DynamicCharacterPtr& operator=(LPCHARACTER character);
-	// Same, from the entity side.
-	DynamicCharacterPtr& operator=(entt::entity e);
-	// Supports type casting to LPCHARACTER.
-	operator LPCHARACTER() const {
-		return Get();
-	}
-
-	bool is_pc;
-	uint32_t id;
-};
 
 
 /* �����ϴ� ������ */
@@ -558,18 +526,11 @@ typedef struct character_point_instant
 #endif
 #ifdef ENABLE_ACCE_SYSTEM
 #endif
-	LPCHARACTER			battle_victim;
 
 } CHARACTER_POINT_INSTANT;
 
-#define TRIGGERPARAM		LPCHARACTER ch, LPCHARACTER causer
+#define TRIGGERPARAM		entt::entity ch, entt::entity causer
 
-typedef struct trigger
-{
-	uint8_t	type;
-	int		(*func) (TRIGGERPARAM);
-	int32_t	value;
-} TRIGGER;
 
 class CTrigger
 {
@@ -584,7 +545,7 @@ public:
 
 EVENTINFO(char_event_info)
 {
-	DynamicCharacterPtr ch;
+	entt::entity ch { entt::null };
 };
 
 typedef std::map<entt::entity, size_t> target_map;
@@ -2929,7 +2890,7 @@ ESex GET_SEX(LPCHARACTER ch);
 
 #ifdef ENABLE_BLOCK_MULTIFARM
 EVENTINFO(drop_event_info) {
-	DynamicCharacterPtr ch;
+	entt::entity ch { entt::null };
 	time_t time;
 	bool drop;
 };

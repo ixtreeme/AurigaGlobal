@@ -1155,7 +1155,7 @@ EVENTFUNC(save_event)
 		return 0;
 	}
 
-	LPCHARACTER ch = info->ch;
+	LPCHARACTER ch = ecs::LegacyCharOf(info->ch);
 
 	if (ch == nullptr) { // <Factor>
 		return 0;
@@ -1358,7 +1358,7 @@ EVENTFUNC(recovery_event)
 		return 0;
 	}
 
-	LPCHARACTER	ch = info->ch;
+	LPCHARACTER	ch = ecs::LegacyCharOf(info->ch);
 
 	if (ch == nullptr) {
 		return 0;

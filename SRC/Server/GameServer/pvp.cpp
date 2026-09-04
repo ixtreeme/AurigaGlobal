@@ -48,8 +48,8 @@ using namespace std;
 
 EVENTINFO(TPVPDuelEventInfo)
 {
-	DynamicCharacterPtr ch;
-	DynamicCharacterPtr victim;
+	entt::entity ch { entt::null };
+	entt::entity victim { entt::null };
 	CPVP * pvp;
 	uint8_t state;
 
@@ -58,8 +58,8 @@ EVENTINFO(TPVPDuelEventInfo)
 
 EVENTINFO(TPVPCheckDisconnect)
 {
-	DynamicCharacterPtr ch;
-	DynamicCharacterPtr victim;
+	entt::entity ch { entt::null };
+	entt::entity victim { entt::null };
 
 	TPVPCheckDisconnect() : ch(), victim() {}
 };
@@ -82,8 +82,8 @@ EVENTFUNC(pvp_check_disconnect)
 		return 0;
 	}
 
-	LPCHARACTER chA = info->ch;
-	LPCHARACTER chB = info->victim;
+	LPCHARACTER chA = ecs::LegacyCharOf(info->ch);
+	LPCHARACTER chB = ecs::LegacyCharOf(info->victim);
 
 	const entt::entity characterA = chA ? chA->GetEntityHandle() : entt::null;
 	const entt::entity characterB = chB ? chB->GetEntityHandle() : entt::null;
@@ -173,8 +173,8 @@ EVENTFUNC(pvp_duel_counter)
 		return 0;
 	}
 
-	LPCHARACTER chA = info->ch;
-	LPCHARACTER chB = info->victim;
+	LPCHARACTER chA = ecs::LegacyCharOf(info->ch);
+	LPCHARACTER chB = ecs::LegacyCharOf(info->victim);
 
 	const entt::entity characterA = chA ? chA->GetEntityHandle() : entt::null;
 	const entt::entity characterB = chB ? chB->GetEntityHandle() : entt::null;
@@ -491,8 +491,8 @@ bool CPVP::Agree(uint32_t dwPID)
 
 		{
 			TPVPDuelEventInfo* info = AllocEventInfo<TPVPDuelEventInfo>();
-			info->ch = chA;
-			info->victim = chB;
+			info->ch = chA->GetEntityHandle();
+			info->victim = chB->GetEntityHandle();
 			info->state = 0;
 			info->pvp = this;
 
@@ -501,8 +501,8 @@ bool CPVP::Agree(uint32_t dwPID)
 
 		{
 			TPVPCheckDisconnect* info = AllocEventInfo<TPVPCheckDisconnect>();
-			info->ch = chA;
-			info->victim = chB;
+			info->ch = chA->GetEntityHandle();
+			info->victim = chB->GetEntityHandle();
 
 			m_pCheckDisconnect = event_create(pvp_check_disconnect, info, PASSES_PER_SEC(1));
 		}

@@ -362,7 +362,7 @@ ACMD(do_user_horse_feed)
 
 EVENTINFO(TimedEventInfo)
 {
-	DynamicCharacterPtr ch;
+	entt::entity ch { entt::null };
 	int		subcmd;
 	int         	left_second;
 	char		szReason[MAX_REASON_LEN];
@@ -602,7 +602,7 @@ EVENTFUNC(timed_event)
 		return 0;
 	}
 
-	LPCHARACTER	ch = info->ch;
+	LPCHARACTER	ch = ecs::LegacyCharOf(info->ch);
 	const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
 
 	if (ch == nullptr) { // <Factor>
@@ -716,7 +716,7 @@ ACMD(do_cmd)
 						info->left_second = 3;
 				}
 
-				info->ch		= ch;
+				info->ch		= ch->GetEntityHandle();
 				info->subcmd		= subcmd;
 				strlcpy(info->szReason, argument, sizeof(info->szReason));
 
