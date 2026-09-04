@@ -3098,27 +3098,25 @@ namespace
 		return false;
 	}
 
-	static LPCHARACTER GetStoneCraftNpc(LPCHARACTER ch)
+	static entt::entity GetStoneCraftNpc(entt::entity ch)
 	{
-		if (!ch)
-			return nullptr;
+		if (ch == entt::null)
+			return entt::null;
 
-		auto* npc = ch->GetQuestNPC();
-		if (npc && ecs::PlayerRuntime::GetRaceNum(((npc) ? (npc)->GetEntityHandle() : entt::null)) == STONE_CRAFT_NPC_VNUM)
+		entt::entity npc = ecs::PlayerRuntime::GetQuestNPC(ch);
+		if (npc != entt::null && ecs::PlayerRuntime::GetRaceNum(npc) == STONE_CRAFT_NPC_VNUM)
 			return npc;
 
-		npc = ch->GetTarget();
-		if (npc && ecs::PlayerRuntime::GetRaceNum(((npc) ? (npc)->GetEntityHandle() : entt::null)) == STONE_CRAFT_NPC_VNUM)
+		npc = CombatSystem::GetSelectedTarget(ch);
+		if (npc != entt::null && ecs::PlayerRuntime::GetRaceNum(npc) == STONE_CRAFT_NPC_VNUM)
 			return npc;
 
-		return nullptr;
+		return entt::null;
 	}
 
-	static bool CanUseStoneCraft(LPCHARACTER ch, LPCHARACTER npc)
+	static bool CanUseStoneCraft(entt::entity chEntity, entt::entity npcEntity)
 	{
-		const entt::entity npcEntity = npc ? npc->GetEntityHandle() : entt::null;
-		const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
-		if (!ch || !npc)
+		if (chEntity == entt::null || npcEntity == entt::null)
 			return false;
 
 		if (ecs::PlayerRuntime::GetRaceNum(npcEntity) != STONE_CRAFT_NPC_VNUM)
@@ -3127,7 +3125,13 @@ namespace
 	if (CombatSystem::IsDead(chEntity) || CombatSystem::IsStun(chEntity) || ecs::PlayerRuntime::IsObserverMode(chEntity))
 			return false;
 
-		if (ecs::SocialSystem::GetExchange(chEntity) || ch->GetMyShop() || ch->GetShopOwner() || ch->IsOpenSafebox() || ch->IsCubeOpen())
+		// IsOpenSafebox and IsCubeOpen have no entity form; one resolve for the
+		// pair rather than two, and only on the branch that needs them.
+		LPCHARACTER ch = ecs::LegacyCharOf(chEntity);
+		if (ecs::SocialSystem::GetExchange(chEntity)
+			|| ecs::SocialSystem::GetMyShop(chEntity)
+			|| ecs::SocialSystem::GetShopOwner(chEntity) != entt::null
+			|| (ch && (ch->IsOpenSafebox() || ch->IsCubeOpen())))
 			return false;
 
 		const int32_t distance = DISTANCE_APPROX(ecs::PlayerRuntime::GetX(chEntity) - ecs::PlayerRuntime::GetX(npcEntity), ecs::PlayerRuntime::GetY(chEntity) - ecs::PlayerRuntime::GetY(npcEntity));
@@ -3151,8 +3155,8 @@ ACMD(do_stonecraft)
 
 	if (!str_cmp(arg1, "open"))
 	{
-		auto* npc = GetStoneCraftNpc(ch);
-		if (!CanUseStoneCraft(ch, npc))
+		const entt::entity npc = GetStoneCraftNpc(character);
+		if (!CanUseStoneCraft(character, npc))
 		{
 			ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "You need to be closer to npc.");
 			return;
@@ -3175,8 +3179,8 @@ ACMD(do_stonecraft)
 			return;
 		}
 
-		auto* npc = GetStoneCraftNpc(ch);
-		if (!CanUseStoneCraft(ch, npc))
+		const entt::entity npc = GetStoneCraftNpc(character);
+		if (!CanUseStoneCraft(character, npc))
 		{
 			ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "You are too far from npc.");
 			return;
@@ -3202,8 +3206,8 @@ ACMD(do_stonecraft)
 	}
 	if (!str_cmp(arg1, "makeall"))
 	{
-		auto* npc = GetStoneCraftNpc(ch);
-		if (!CanUseStoneCraft(ch, npc))
+		const entt::entity npc = GetStoneCraftNpc(character);
+		if (!CanUseStoneCraft(character, npc))
 		{
 			ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "You are too far from npc");
 			return;

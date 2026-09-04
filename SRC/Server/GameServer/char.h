@@ -2077,7 +2077,6 @@ public:
 	void				BroadcastTargetPacket();
 	void				ClearTarget();
 	void				CheckTarget();
-	LPCHARACTER			GetTarget() const;
 
 	////////////////////////////////////////////////////////////////////////////////////////
 	// Safebox

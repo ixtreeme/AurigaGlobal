@@ -7748,11 +7748,6 @@ void CheckTarget(entt::entity e)
 
 } // namespace CombatSystem
 
-LPCHARACTER CHARACTER::GetTarget() const
-{
-	return ecs::LegacyCharOf(CombatSystem::GetSelectedTarget(GetEntityHandle()));
-}
-
 void CHARACTER::ClearTarget()
 {
 	CombatSystem::ClearTarget(GetEntityHandle());
