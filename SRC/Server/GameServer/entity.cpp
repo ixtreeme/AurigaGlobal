@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "ecs/systems/ViewSystem.hpp"
 #include "char_interface.hpp"
 #include "config.h"
 #include "desc.h"
@@ -50,7 +51,7 @@ void CEntity::Destroy()
 	if (m_bIsDestroyed) {
 		return;
 	}
-	ViewCleanup();
+	ecs::ViewSystem::ViewCleanup(ecs::SpatialService::EntityFromLPENTITY(this));
 	m_bIsDestroyed = true;
 }
 

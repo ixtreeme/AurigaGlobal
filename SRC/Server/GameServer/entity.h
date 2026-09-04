@@ -24,9 +24,7 @@ class CEntity
 		int				GetType() const;
 		bool			IsType(int type) const;
 
-		void			ViewCleanup();
 		void			ViewInsert(LPENTITY entity, bool recursive = true);
-		void			ViewRemove(LPENTITY entity, bool recursive = true);
 		void			ViewReencode();	// ���� Entity�� ��Ŷ�� �ٽ� ������.
 
 		int				GetViewAge() const	{ return m_iViewAge;	}

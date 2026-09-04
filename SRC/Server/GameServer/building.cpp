@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "ecs/systems/ViewSystem.hpp"
 #include "ecs/systems/PlayerRuntimeSystem.hpp"
 #include "ecs/AIHelpers.hpp"
 #include <Core/Logging.hpp>
@@ -147,7 +148,7 @@ bool CObject::Show(int32_t lMapIndex, int32_t x, int32_t y)
 			ecs::SpatialService::RemoveEntity(g_registry, existing);
 		else
 			GetSectree()->RemoveEntity(this);
-		ViewCleanup();
+		ecs::ViewSystem::ViewCleanup(existing);
 	}
 
 	m_data.lMapIndex = lMapIndex;

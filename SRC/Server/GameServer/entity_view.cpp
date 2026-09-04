@@ -76,6 +76,39 @@ void MirrorViewClear(entt::entity ownerE)
 // the loop bodies call CEntity::ViewRemove and the LPENTITY dispatchers, which
 // still need the object. UpdateSectree only runs for items, buildings and
 // offline shops - characters returned early since D.6.
+// SnapshotView without the per-element LPENTITY resolve. It exists because
+// every caller that still needs pointers goes through the original.
+std::vector<std::pair<entt::entity, uint32_t>> SnapshotViewEcs(entt::entity ownerE)
+{
+    std::vector<std::pair<entt::entity, uint32_t>> out;
+    if (ownerE == entt::null || !g_registry.valid(ownerE))
+        return out;
+
+    const auto* view = g_registry.try_get<ecs::ViewMap>(ownerE);
+    if (!view)
+        return out;
+
+    const auto* ageMap = g_registry.try_get<ecs::ViewAgeMap>(ownerE);
+    out.reserve(view->visible.size());
+
+    for (const entt::entity otherE : view->visible)
+    {
+        if (otherE == entt::null || !g_registry.valid(otherE))
+            continue;
+
+        uint32_t age = 0;
+        if (ageMap)
+        {
+            if (const auto it = ageMap->ageByEntity.find(otherE); it != ageMap->ageByEntity.end())
+                age = it->second;
+        }
+
+        out.emplace_back(otherE, age);
+    }
+
+    return out;
+}
+
 std::vector<std::pair<LPENTITY, uint32_t>> SnapshotView(entt::entity ownerE)
 {
     std::vector<std::pair<LPENTITY, uint32_t>> out;
@@ -109,6 +142,12 @@ std::vector<std::pair<LPENTITY, uint32_t>> SnapshotView(entt::entity ownerE)
     return out;
 }
 
+void DispatchInsert(entt::entity sourceE, entt::entity viewerE)
+{
+	if (sourceE != entt::null && viewerE != entt::null && g_registry.valid(sourceE) && g_registry.valid(viewerE))
+		ecs::EntityNetworkDispatch::SendInsert(g_registry, sourceE, viewerE);
+}
+
 void DispatchInsert(LPENTITY source, LPENTITY viewer, const char* context)
 {
 	const entt::entity sourceE = EntityOf(source);
@@ -123,6 +162,12 @@ void DispatchInsert(LPENTITY source, LPENTITY viewer, const char* context)
 		static_cast<const void*>(source),
 		static_cast<const void*>(viewer));
 	source->EncodeInsertPacket(viewer);
+}
+
+void DispatchRemove(entt::entity sourceE, entt::entity viewerE)
+{
+	if (sourceE != entt::null && viewerE != entt::null && g_registry.valid(sourceE) && g_registry.valid(viewerE))
+		ecs::EntityNetworkDispatch::SendRemove(g_registry, sourceE, viewerE);
 }
 
 void DispatchRemove(LPENTITY source, LPENTITY viewer, const char* context)
@@ -216,10 +261,6 @@ void ViewCleanup(entt::entity selfE)
 
 } // namespace ecs::ViewSystem
 
-void CEntity::ViewCleanup()
-{
-	ecs::ViewSystem::ViewCleanup(EntityOf(this));
-}
 
 void CEntity::ViewReencode()
 {
@@ -324,10 +365,6 @@ void ViewRemove(entt::entity self, entt::entity other, bool recursive)
 
 } // namespace ecs::ViewSystem
 
-void CEntity::ViewRemove(LPENTITY entity, bool recursive)
-{
-	ecs::ViewSystem::ViewRemove(EntityOf(this), EntityOf(entity), recursive);
-}
 
 class CFuncViewInsert
 {
@@ -364,6 +401,7 @@ public:
 
 void CEntity::UpdateSectree()
 {
+	const entt::entity selfE = EntityOf(this);
 	if (!GetSectree())
 	{
 		if (IsType(ENTITY_CHARACTER))
@@ -403,38 +441,39 @@ void CEntity::UpdateSectree()
 	{
 		if (m_bIsObserver)
 		{
-			for (const auto& [ent, age] : SnapshotView(EntityOf(this)))
+			for (const auto& [entE, age] : SnapshotViewEcs(selfE))
 			{
 				if (age < static_cast<uint32_t>(m_iViewAge))
 				{
-					DispatchRemove(ent, this, "view.update.observer.remove_stale");
-					ViewRemove(ent, false);
-
-					ent->ViewRemove(this, false);
+					DispatchRemove(entE, selfE);
+					ecs::ViewSystem::ViewRemove(selfE, entE, false);
+					ecs::ViewSystem::ViewRemove(entE, selfE, false);
 				}
 				else
 				{
-					DispatchRemove(this, ent, "view.update.observer.remove_self");
+					DispatchRemove(selfE, entE);
 				}
 			}
 		}
 		else
 		{
-			for (const auto& [ent, age] : SnapshotView(EntityOf(this)))
+			for (const auto& [entE, age] : SnapshotViewEcs(selfE))
 			{
 				if (age < static_cast<uint32_t>(m_iViewAge))
 				{
-					DispatchRemove(ent, this, "view.update.observer_exit.remove_stale");
-					ViewRemove(ent, false);
-
-					ent->ViewRemove(this, false);
+					DispatchRemove(entE, selfE);
+					ecs::ViewSystem::ViewRemove(selfE, entE, false);
+					ecs::ViewSystem::ViewRemove(entE, selfE, false);
 				}
 				else
 				{
-					DispatchInsert(ent, this, "view.update.observer_exit.insert_reverse");
-					DispatchInsert(this, ent, "view.update.observer_exit.insert_self");
+					DispatchInsert(entE, selfE);
+					DispatchInsert(selfE, entE);
 
-					ent->ViewInsert(this, true);
+					// ViewInsert is still a CEntity method; this is the one
+					// pointer left in the loop.
+					if (LPENTITY ent = ecs::SpatialService::LPENTITYFromEntity(g_registry, entE))
+						ent->ViewInsert(this, true);
 				}
 			}
 		}
@@ -445,14 +484,13 @@ void CEntity::UpdateSectree()
 	{
 		if (!m_bIsObserver)
 		{
-			for (const auto& [ent, age] : SnapshotView(EntityOf(this)))
+			for (const auto& [entE, age] : SnapshotViewEcs(selfE))
 			{
 				if (age < static_cast<uint32_t>(m_iViewAge))
 				{
-					DispatchRemove(ent, this, "view.update.remove_stale");
-					ViewRemove(ent, false);
-
-					ent->ViewRemove(this, false);
+					DispatchRemove(entE, selfE);
+					ecs::ViewSystem::ViewRemove(selfE, entE, false);
+					ecs::ViewSystem::ViewRemove(entE, selfE, false);
 				}
 			}
 		}

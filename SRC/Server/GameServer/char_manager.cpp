@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "ecs/systems/ViewSystem.hpp"
 #include "ecs/systems/PointSystem.hpp"
 #include <Core/Logging.hpp>
 #include "ecs/systems/PlayerRuntimeSystem.hpp"
@@ -509,7 +510,7 @@ void CHARACTER_MANAGER::DestroyCharacter(LPCHARACTER ch, const char* file, size_
 		// then m_map_view is empty (legacy clear) and the ECS handle is
 		// null - both branches of the D.6 ViewCleanup are no-ops on the
 		// second pass.
-		ch->ViewCleanup();
+		ecs::ViewSystem::ViewCleanup(ch->GetEntityHandle());
 		// The CHARACTER destructor still needs the ECS-backed inventory,
 		// session and social components while it tears the legacy shell down.
 		// EntityFactory::Destroy is deliberately deferred to the end of

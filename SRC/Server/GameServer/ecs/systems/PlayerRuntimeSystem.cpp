@@ -1,4 +1,5 @@
 #include "../../stdafx.h"
+#include "ViewSystem.hpp"
 #include "AffectSystem.hpp"
 #include "ActivitySystem.hpp"
 #include "ChatSystem.hpp"
@@ -5236,7 +5237,7 @@ bool CHARACTER::SwitchChannel(int32_t newAddr, uint16_t newPort)
             g_registry.remove<ecs::SectorPlacement>(e);
             g_registry.remove<ecs::ViewActiveTag>(e);
         }
-        ViewCleanup();
+        ecs::ViewSystem::ViewCleanup(e);
         EncodeRemovePacket(this);
     }
 

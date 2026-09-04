@@ -1,4 +1,5 @@
 #include "../../stdafx.h"
+#include "ViewSystem.hpp"
 #include "PointSystem.hpp"
 #include "PlayerRuntimeSystem.hpp"
 
@@ -664,7 +665,7 @@ bool CHARACTER::WarpSet(int32_t x, int32_t y, int32_t lPrivateMapIndex)
             g_registry.remove<ecs::SectorPlacement>(e);
             g_registry.remove<ecs::ViewActiveTag>(e);
         }
-        ViewCleanup();
+        ecs::ViewSystem::ViewCleanup(e);
 
         EncodeRemovePacket(this);
     }
@@ -1039,7 +1040,7 @@ bool CHARACTER::Show(int32_t lMapIndex, int32_t x, int32_t y, int32_t z, bool bS
             }
         }
 
-        ViewCleanup();
+        ecs::ViewSystem::ViewCleanup(GetEntityHandle());
     }
 #ifdef LEADERBOARD_RAZOR93
     if (GetMapIndex() == 41)

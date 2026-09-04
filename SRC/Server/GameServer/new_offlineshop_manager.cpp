@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "ecs/systems/ViewSystem.hpp"
 #include "ecs/systems/InventorySystem.hpp"
 #include <Core/Logging.hpp>
 #include "ecs/systems/PlayerRuntimeSystem.hpp"
@@ -782,7 +783,7 @@ namespace offlineshop
 
 			if (entity->GetSectree())
 			{
-				entity->ViewCleanup();
+				ecs::ViewSystem::ViewCleanup(shopEntity);
 				if (shopEntity != entt::null && g_registry.valid(shopEntity))
 				{
 					ecs::SpatialService::RemoveEntity(g_registry, shopEntity);
