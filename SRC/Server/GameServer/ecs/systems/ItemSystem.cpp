@@ -2493,7 +2493,12 @@ bool CopyItemAttributesEcs(entt::entity source, entt::entity target)
         return false;
 
     g_registry.emplace_or_replace<ecs::ItemAttributes>(target, *sourceAttributes);
-    return SyncLegacyAttributesFromEcs(target);
+    if (!SyncLegacyAttributesFromEcs(target))
+        return false;
+
+    // CItem::SetAttributes, which CopyAttributeTo called, ended with Save().
+    SaveItem(target);
+    return true;
 }
 
 bool CopyItemSocketsEcs(entt::entity source, entt::entity target)
@@ -2514,30 +2519,21 @@ bool CopyAllAttrToEcs(entt::entity source, entt::entity target)
     if (!IsValidItem(source) || !IsValidItem(target))
         return false;
 
-    const auto* sourceSockets = g_registry.try_get<ecs::ItemSockets>(source);
-    const auto* sourceAttributes = g_registry.try_get<ecs::ItemAttributes>(source);
-    if (!sourceSockets || !sourceAttributes)
-        return false;
-
-    auto& targetSockets = g_registry.get_or_emplace<ecs::ItemSockets>(target);
-    const uint8_t type = GetItemType(source);
-    const uint8_t subType = GetItemSubType(source);
-    const bool isAccessoryForSocket =
-        (type == ITEM_ARMOR &&
-         (subType == ARMOR_WRIST || subType == ARMOR_NECK || subType == ARMOR_EAR)) ||
-        type == ITEM_BELT;
-
-    if (isAccessoryForSocket)
+    // Writes go through SetItemSocket rather than straight into the component,
+    // because the legacy CopyAllAttrTo called CItem::SetSocket - which also
+    // does UpdatePacket and Save. Touching the component alone would drop both.
+    if (IsAccessoryForSocket(source))
     {
-        targetSockets = *sourceSockets;
+        for (int index = 0; index < ITEM_SOCKET_MAX_NUM; ++index)
+            SetItemSocket(target, index, GetItemSocket(source, index));
     }
     else
     {
         for (int index = 0; index < ITEM_SOCKET_MAX_NUM; ++index)
         {
-            if (sourceSockets->sockets[index] == 0)
+            if (GetItemSocket(source, index) == 0)
                 break;
-            targetSockets.sockets[index] = 1;
+            SetItemSocket(target, index, 1);
         }
 
         constexpr int32_t brokenMetinVnum = 28960;
@@ -2546,14 +2542,13 @@ bool CopyAllAttrToEcs(entt::entity source, entt::entity target)
              index < ITEM_SOCKET_MAX_NUM && targetSlot < ITEM_SOCKET_MAX_NUM;
              ++index)
         {
-            const int32_t socket = sourceSockets->sockets[index];
+            const int32_t socket = GetItemSocket(source, index);
             if (socket > 2 && socket != brokenMetinVnum)
-                targetSockets.sockets[targetSlot++] = socket;
+                SetItemSocket(target, targetSlot++, socket);
         }
     }
 
-    g_registry.emplace_or_replace<ecs::ItemAttributes>(target, *sourceAttributes);
-    return SyncLegacySocketsFromEcs(target) && SyncLegacyAttributesFromEcs(target);
+    return CopyItemAttributesEcs(source, target);
 }
 
 int GetItemAttributeCount(entt::entity item)

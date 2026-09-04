@@ -1191,13 +1191,6 @@ void CItem::SetForceAttribute(int i, uint8_t bType, short sValue)
 
 }
 
-void CItem::CopyAttributeTo(LPITEM pItem)
-
-{
-
-	pItem->SetAttributes(m_aAttr);
-
-}
 
 // Phase 11: migrated from item_attribute.cpp batch B
 
@@ -10925,7 +10918,7 @@ bool CHARACTER::DoRefine(LPITEM item, bool bMoneyOnly)
 
 		if (pkNewItem)
 		{
-			ITEM_MANAGER::CopyAllAttrTo(item, pkNewItem);
+			ItemSystem::CopyAllAttrToEcs(item->GetEntityHandle(), pkNewItem->GetEntityHandle());
 			LogManager::instance().ItemLog(this, pkNewItem, "REFINE SUCCESS", pkNewItem->GetName());
 
 			uint8_t bCell = item->GetCell();
@@ -11303,7 +11296,7 @@ bool CHARACTER::DoRefineWithScroll(LPITEM item)
 
 		if (pkNewItem)
 		{
-			ITEM_MANAGER::CopyAllAttrTo(item, pkNewItem);
+			ItemSystem::CopyAllAttrToEcs(item->GetEntityHandle(), pkNewItem->GetEntityHandle());
 			LogManager::instance().ItemLog(this, pkNewItem, "REFINE SUCCESS", pkNewItem->GetName());
 
 			uint8_t bCell = item->GetCell();
@@ -11434,7 +11427,7 @@ bool CHARACTER::DoRefineWithScroll(LPITEM item)
 
 		if (pkNewItem)
 		{
-			ITEM_MANAGER::CopyAllAttrTo(item, pkNewItem);
+			ItemSystem::CopyAllAttrToEcs(item->GetEntityHandle(), pkNewItem->GetEntityHandle());
 			LogManager::instance().ItemLog(this, pkNewItem, "REFINE FAIL", pkNewItem->GetName());
 
 			uint8_t bCell = item->GetCell();
@@ -11700,7 +11693,7 @@ bool CHARACTER::DoRefineWithScroll(LPITEM item)
 
 		if (pkNewItem)
 		{
-			ITEM_MANAGER::CopyAllAttrTo(item, pkNewItem);
+			ItemSystem::CopyAllAttrToEcs(item->GetEntityHandle(), pkNewItem->GetEntityHandle());
 			LogManager::instance().ItemLog(this, pkNewItem, "REFINE SUCCESS", pkNewItem->GetName());
 
 			uint8_t bCell = item->GetCell();
@@ -11831,7 +11824,7 @@ bool CHARACTER::DoRefineWithScroll(LPITEM item)
 
 		if (pkNewItem)
 		{
-			ITEM_MANAGER::CopyAllAttrTo(item, pkNewItem);
+			ItemSystem::CopyAllAttrToEcs(item->GetEntityHandle(), pkNewItem->GetEntityHandle());
 			LogManager::instance().ItemLog(this, pkNewItem, "REFINE FAIL", pkNewItem->GetName());
 
 			uint8_t bCell = item->GetCell();
@@ -12386,7 +12379,7 @@ void TransformRefineItem(LPITEM pkOldItem, LPITEM pkNewItem)
 	// ¸�
 // Á÷ ¾ÆÀÌ�
 // Û ¼³Á¤
-	pkOldItem->CopyAttributeTo(pkNewItem);
+	ItemSystem::CopyItemAttributesEcs(pkOldItem->GetEntityHandle(), pkNewItem->GetEntityHandle());
 }
 
 void NotifyRefineSuccess(LPCHARACTER ch, LPITEM item, const char* way)

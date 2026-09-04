@@ -442,7 +442,6 @@ class ITEM_MANAGER : public singleton<ITEM_MANAGER>
 
 		uint32_t			GetRefineFromVnum(uint32_t dwVnum);
 
-		static void		CopyAllAttrTo(LPITEM pkOldItem, LPITEM pkNewItem);		// pkNewItem으로 모든 속성과 소켓 값들을 목사하는 함수.
 
 
 		const CSpecialItemGroup* GetSpecialItemGroup(uint32_t dwVnum);

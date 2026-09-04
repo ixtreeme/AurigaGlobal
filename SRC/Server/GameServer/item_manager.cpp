@@ -1826,42 +1826,6 @@ uint32_t ITEM_MANAGER::GetMaskVnum(uint32_t dwVnum)
 		return 0;
 }
 
-void ITEM_MANAGER::CopyAllAttrTo(LPITEM pkOldItem, LPITEM pkNewItem)
-{
-	// ACCESSORY_REFINE
-	if (pkOldItem->IsAccessoryForSocket())
-	{
-		for (int i = 0; i < ITEM_SOCKET_MAX_NUM; ++i)
-		{
-			pkNewItem->SetSocket(i, pkOldItem->GetSocket(i));
-		}
-		//pkNewItem->StartAccessorySocketExpireEvent();
-	}
-	// END_OF_ACCESSORY_REFINE
-	else
-	{
-		for (int i = 0; i < ITEM_SOCKET_MAX_NUM; ++i)
-		{
-			if (!pkOldItem->GetSocket(i))
-				break;
-			else
-				pkNewItem->SetSocket(i, 1);
-		}
-
-		int slot = 0;
-
-		for (int i = 0; i < ITEM_SOCKET_MAX_NUM; ++i)
-		{
-			int32_t socket = pkOldItem->GetSocket(i);
-			const int ITEM_BROKEN_METIN_VNUM = 28960;
-			if (socket > 2 && socket != ITEM_BROKEN_METIN_VNUM)
-				pkNewItem->SetSocket(slot++, socket);
-		}
-
-	}
-
-	pkOldItem->CopyAttributeTo(pkNewItem);
-}
 
 
 #ifdef ENABLE_EXTRA_INVENTORY

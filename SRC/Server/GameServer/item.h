@@ -228,7 +228,6 @@ class CItem : public CEntity
 #endif
 		// END_OF_ACCESSORY_REFINE
 
-		void		CopyAttributeTo(LPITEM pItem);
 
 		int			GetRareAttrCount();
 		bool		AddRareAttribute();
