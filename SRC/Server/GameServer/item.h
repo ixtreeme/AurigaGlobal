@@ -97,11 +97,6 @@ class CItem : public CEntity
 		void		SetCell(LPCHARACTER ch, uint16_t pos);
 		uint16_t	GetCell() const;
 
-#ifdef __HIGHLIGHT_SYSTEM__
-		bool	AddToCharacter(LPCHARACTER ch, TItemPos Cell, bool isHighLight = true);
-#else
-		bool	AddToCharacter(LPCHARACTER ch, TItemPos Cell);
-#endif
 		LPCHARACTER	GetOwner() const;
 		entt::entity	GetOwnerEntity() const;
 		void		SetOwnerEntity(entt::entity owner);

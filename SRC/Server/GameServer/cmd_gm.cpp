@@ -641,7 +641,7 @@ ACMD(do_item)
 
 			if (iEmptyPos != -1)
 			{
-				item->AddToCharacter(ch, TItemPos(DRAGON_SOUL_INVENTORY, iEmptyPos));
+				InventorySystem::AddToCharacter(item->GetEntityHandle(), ch->GetEntityHandle(), TItemPos(DRAGON_SOUL_INVENTORY, iEmptyPos));
 				LogManager::instance().ItemLog(ch, item, "GM", item->GetName());
 			}
 			else
@@ -661,7 +661,7 @@ ACMD(do_item)
 
 			if (iEmptyPos != -1)
 			{
-				item->AddToCharacter(ch, TItemPos(EXTRA_INVENTORY, iEmptyPos));
+				InventorySystem::AddToCharacter(item->GetEntityHandle(), ch->GetEntityHandle(), TItemPos(EXTRA_INVENTORY, iEmptyPos));
 				LogManager::instance().ItemLog(ch, item, "GM", item->GetName());
 			}
 			else
@@ -681,7 +681,7 @@ ACMD(do_item)
 
 			if (iEmptyPos != -1)
 			{
-				item->AddToCharacter(ch, TItemPos(INVENTORY, iEmptyPos));
+				InventorySystem::AddToCharacter(item->GetEntityHandle(), ch->GetEntityHandle(), TItemPos(INVENTORY, iEmptyPos));
 				LogManager::instance().ItemLog(ch, item, "GM", item->GetName());
 			}
 			else
@@ -2996,7 +2996,7 @@ ACMD(do_polymorph_item)
 
 			if (iEmptyPos != -1)
 			{
-				item->AddToCharacter(ch, TItemPos(INVENTORY, iEmptyPos));
+				InventorySystem::AddToCharacter(item->GetEntityHandle(), ch->GetEntityHandle(), TItemPos(INVENTORY, iEmptyPos));
 				LogManager::instance().ItemLog(ch, item, "GM", item->GetName());
 			}
 			else

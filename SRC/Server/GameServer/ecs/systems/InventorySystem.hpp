@@ -5,6 +5,11 @@
 
 namespace InventorySystem {
 
+#ifdef __HIGHLIGHT_SYSTEM__
+bool AddToCharacter(entt::entity item, entt::entity ch, TItemPos Cell, bool isHighLight = true);
+#else
+bool AddToCharacter(entt::entity item, entt::entity ch, TItemPos Cell);
+#endif
 bool EquipTo(entt::entity item, entt::entity ch, uint8_t bWearCell);
 bool Unequip(entt::entity item);
 entt::entity RemoveFromCharacter(entt::entity item);

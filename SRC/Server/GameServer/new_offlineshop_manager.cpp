@@ -972,7 +972,7 @@ namespace offlineshop
 
 			else
 			{
-				pkItem->AddToCharacter(ch, pos);
+				InventorySystem::AddToCharacter(pkItem->GetEntityHandle(), ch->GetEntityHandle(), pos);
 			}
 
 			uint32_t dwItemID = pItem->GetID();
@@ -3276,7 +3276,7 @@ namespace offlineshop
 		if (pkSafebox->RemoveItem(dwItemID))
 		{
 			pkSafebox->RefreshToOwner();
-			pkItem->AddToCharacter(ch, itemPos);
+			InventorySystem::AddToCharacter(pkItem->GetEntityHandle(), ch->GetEntityHandle(), itemPos);
 		}
 
 		SendShopSafeboxGetItemDBPacket((ecs::PlayerRuntime::GetPlayerID(character)), dwItemID);

@@ -436,7 +436,7 @@ int64_t CShop::Buy(LPCHARACTER ch, uint8_t pos
 			InventorySystem::RemoveFromCharacter(item->GetEntityHandle());
 
 			if (item->IsDragonSoul()) {
-				item->AddToCharacter(ch, TItemPos(DRAGON_SOUL_INVENTORY, iEmptyPos));
+				InventorySystem::AddToCharacter(item->GetEntityHandle(), ch->GetEntityHandle(), TItemPos(DRAGON_SOUL_INVENTORY, iEmptyPos));
 			}
 #ifdef ENABLE_EXTRA_INVENTORY
 			else if (item->IsExtraItem()) {
@@ -487,13 +487,13 @@ int64_t CShop::Buy(LPCHARACTER ch, uint8_t pos
 						ItemSystem::SetItemCountEcs(
 						itemEntity,
 						bCount);
-						item->AddToCharacter(ch, TItemPos(EXTRA_INVENTORY, iEmptyPos));
+						InventorySystem::AddToCharacter(item->GetEntityHandle(), ch->GetEntityHandle(), TItemPos(EXTRA_INVENTORY, iEmptyPos));
 					}
 				} else {
-					item->AddToCharacter(ch, TItemPos(EXTRA_INVENTORY, iEmptyPos));
+					InventorySystem::AddToCharacter(item->GetEntityHandle(), ch->GetEntityHandle(), TItemPos(EXTRA_INVENTORY, iEmptyPos));
 				}
 #else
-				item->AddToCharacter(ch, TItemPos(EXTRA_INVENTORY, iEmptyPos));
+				InventorySystem::AddToCharacter(item->GetEntityHandle(), ch->GetEntityHandle(), TItemPos(EXTRA_INVENTORY, iEmptyPos));
 #endif
 			}
 #endif
@@ -545,13 +545,13 @@ int64_t CShop::Buy(LPCHARACTER ch, uint8_t pos
 						ItemSystem::SetItemCountEcs(
 						itemEntity,
 						bCount);
-						item->AddToCharacter(ch, TItemPos(INVENTORY, iEmptyPos));
+						InventorySystem::AddToCharacter(item->GetEntityHandle(), ch->GetEntityHandle(), TItemPos(INVENTORY, iEmptyPos));
 					}
 				} else {
-					item->AddToCharacter(ch, TItemPos(INVENTORY, iEmptyPos));
+					InventorySystem::AddToCharacter(item->GetEntityHandle(), ch->GetEntityHandle(), TItemPos(INVENTORY, iEmptyPos));
 				}
 #else
-				item->AddToCharacter(ch, TItemPos(INVENTORY, iEmptyPos));
+				InventorySystem::AddToCharacter(item->GetEntityHandle(), ch->GetEntityHandle(), TItemPos(INVENTORY, iEmptyPos));
 #endif
 			}
 
@@ -568,7 +568,7 @@ int64_t CShop::Buy(LPCHARACTER ch, uint8_t pos
 	else
 	{
 		if (item->IsDragonSoul()) {
-			item->AddToCharacter(ch, TItemPos(DRAGON_SOUL_INVENTORY, iEmptyPos));
+			InventorySystem::AddToCharacter(item->GetEntityHandle(), ch->GetEntityHandle(), TItemPos(DRAGON_SOUL_INVENTORY, iEmptyPos));
 		}
 #ifdef ENABLE_EXTRA_INVENTORY
 		else if (item->IsExtraItem()) {
@@ -619,13 +619,13 @@ int64_t CShop::Buy(LPCHARACTER ch, uint8_t pos
 					ItemSystem::SetItemCountEcs(
 						itemEntity,
 						bCount);
-					item->AddToCharacter(ch, TItemPos(EXTRA_INVENTORY, iEmptyPos));
+					InventorySystem::AddToCharacter(item->GetEntityHandle(), ch->GetEntityHandle(), TItemPos(EXTRA_INVENTORY, iEmptyPos));
 				}
 			} else {
-				item->AddToCharacter(ch, TItemPos(EXTRA_INVENTORY, iEmptyPos));
+				InventorySystem::AddToCharacter(item->GetEntityHandle(), ch->GetEntityHandle(), TItemPos(EXTRA_INVENTORY, iEmptyPos));
 			}
 #else
-			item->AddToCharacter(ch, TItemPos(EXTRA_INVENTORY, iEmptyPos));
+			InventorySystem::AddToCharacter(item->GetEntityHandle(), ch->GetEntityHandle(), TItemPos(EXTRA_INVENTORY, iEmptyPos));
 #endif
 		}
 #endif
@@ -677,13 +677,13 @@ int64_t CShop::Buy(LPCHARACTER ch, uint8_t pos
 					ItemSystem::SetItemCountEcs(
 						itemEntity,
 						bCount);
-					item->AddToCharacter(ch, TItemPos(INVENTORY, iEmptyPos));
+					InventorySystem::AddToCharacter(item->GetEntityHandle(), ch->GetEntityHandle(), TItemPos(INVENTORY, iEmptyPos));
 				}
 			} else {
-				item->AddToCharacter(ch, TItemPos(INVENTORY, iEmptyPos));
+				InventorySystem::AddToCharacter(item->GetEntityHandle(), ch->GetEntityHandle(), TItemPos(INVENTORY, iEmptyPos));
 			}
 #else
-			item->AddToCharacter(ch, TItemPos(INVENTORY, iEmptyPos));
+			InventorySystem::AddToCharacter(item->GetEntityHandle(), ch->GetEntityHandle(), TItemPos(INVENTORY, iEmptyPos));
 #endif
 		}
 

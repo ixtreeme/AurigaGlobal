@@ -2439,15 +2439,15 @@ bool CHARACTER::UnequipItem(LPITEM item)
 	InventorySystem::RemoveFromCharacter(item->GetEntityHandle());
 	if (item->IsDragonSoul())
 #ifdef __HIGHLIGHT_SYSTEM__
-		item->AddToCharacter(this, TItemPos(DRAGON_SOUL_INVENTORY, pos), false);
+		InventorySystem::AddToCharacter(item->GetEntityHandle(), GetEntityHandle(), TItemPos(DRAGON_SOUL_INVENTORY, pos), false);
 #else
-		item->AddToCharacter(this, TItemPos(DRAGON_SOUL_INVENTORY, pos));
+		InventorySystem::AddToCharacter(item->GetEntityHandle(), GetEntityHandle(), TItemPos(DRAGON_SOUL_INVENTORY, pos));
 #endif
 	else
 #ifdef __HIGHLIGHT_SYSTEM__
-		item->AddToCharacter(this, TItemPos(INVENTORY, pos), false);
+		InventorySystem::AddToCharacter(item->GetEntityHandle(), GetEntityHandle(), TItemPos(INVENTORY, pos), false);
 #else
-		item->AddToCharacter(this, TItemPos(INVENTORY, pos));
+		InventorySystem::AddToCharacter(item->GetEntityHandle(), GetEntityHandle(), TItemPos(INVENTORY, pos));
 #endif
 
 	CheckMaximumPoints();
@@ -3863,7 +3863,7 @@ bool CHARACTER::MoveItem(TItemPos Cell, TItemPos DestCell,
 			// copy socket -- by mhh
 			FN_copy_item_socket(item2, item);
 
-			item2->AddToCharacter(this, DestCell
+			InventorySystem::AddToCharacter(item2->GetEntityHandle(), GetEntityHandle(), DestCell
 #ifdef __HIGHLIGHT_SYSTEM__
 				, false
 #endif
@@ -4240,13 +4240,13 @@ bool CHARACTER::PickupItem(uint32_t dwVID)
 				item->RemoveFromGround();
 
 				if (item->IsDragonSoul())
-					item->AddToCharacter(this, TItemPos(DRAGON_SOUL_INVENTORY, iEmptyCell));
+					InventorySystem::AddToCharacter(item->GetEntityHandle(), GetEntityHandle(), TItemPos(DRAGON_SOUL_INVENTORY, iEmptyCell));
 #ifdef ENABLE_EXTRA_INVENTORY
 				else if (item->IsExtraItem())
-					item->AddToCharacter(this, TItemPos(EXTRA_INVENTORY, iEmptyCell));
+					InventorySystem::AddToCharacter(item->GetEntityHandle(), GetEntityHandle(), TItemPos(EXTRA_INVENTORY, iEmptyCell));
 #endif
 				else
-					item->AddToCharacter(this, TItemPos(INVENTORY, iEmptyCell));
+					InventorySystem::AddToCharacter(item->GetEntityHandle(), GetEntityHandle(), TItemPos(INVENTORY, iEmptyCell));
 
 #ifdef ENABLE_BATTLE_PASS
 				if (bIsBattlePass)
@@ -4553,13 +4553,13 @@ bool CHARACTER::PickupItem(uint32_t dwVID)
 			item->RemoveFromGround();
 
 			if (item->IsDragonSoul())
-				item->AddToCharacter(owner, TItemPos(DRAGON_SOUL_INVENTORY, iEmptyCell));
+				InventorySystem::AddToCharacter(item->GetEntityHandle(), owner->GetEntityHandle(), TItemPos(DRAGON_SOUL_INVENTORY, iEmptyCell));
 #ifdef ENABLE_EXTRA_INVENTORY
 			else if (item->IsExtraItem())
-				item->AddToCharacter(owner, TItemPos(EXTRA_INVENTORY, iEmptyCell));
+				InventorySystem::AddToCharacter(item->GetEntityHandle(), owner->GetEntityHandle(), TItemPos(EXTRA_INVENTORY, iEmptyCell));
 #endif
 			else
-				item->AddToCharacter(owner, TItemPos(INVENTORY, iEmptyCell));
+				InventorySystem::AddToCharacter(item->GetEntityHandle(), owner->GetEntityHandle(), TItemPos(INVENTORY, iEmptyCell));
 
 #ifdef ENABLE_BATTLE_PASS
 			if (bIsBattlePass)
@@ -6277,7 +6277,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 					if (!item2)
 						return false;
 
-					item2->AddToCharacter(this, TItemPos(INVENTORY, pos), false);
+					InventorySystem::AddToCharacter(item2->GetEntityHandle(), GetEntityHandle(), TItemPos(INVENTORY, pos), false);
 					item = item2;
 					itemEntity = item ? item->GetEntityHandle() : entt::null;
 				}
@@ -6460,10 +6460,10 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 
 #ifdef ENABLE_EXTRA_INVENTORY
 				if (bFromExtraInventory)
-					item2->AddToCharacter(this, TItemPos(EXTRA_INVENTORY, pos), false);
+					InventorySystem::AddToCharacter(item2->GetEntityHandle(), GetEntityHandle(), TItemPos(EXTRA_INVENTORY, pos), false);
 				else
 #endif
-					item2->AddToCharacter(this, TItemPos(INVENTORY, pos), false);
+					InventorySystem::AddToCharacter(item2->GetEntityHandle(), GetEntityHandle(), TItemPos(INVENTORY, pos), false);
 
 				item = item2;
 				itemEntity = item ? item->GetEntityHandle() : entt::null;
@@ -8286,10 +8286,10 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 
 #ifdef ENABLE_EXTRA_INVENTORY
 					if (bFromExtraInventory)
-						item2->AddToCharacter(this, TItemPos(EXTRA_INVENTORY, pos));
+						InventorySystem::AddToCharacter(item2->GetEntityHandle(), GetEntityHandle(), TItemPos(EXTRA_INVENTORY, pos));
 					else
 #endif
-						item2->AddToCharacter(this, TItemPos(INVENTORY, pos));
+						InventorySystem::AddToCharacter(item2->GetEntityHandle(), GetEntityHandle(), TItemPos(INVENTORY, pos));
 
 					if (item->GetSocket(1) != 0)
 					{
@@ -10950,7 +10950,7 @@ bool CHARACTER::DoRefine(LPITEM item, bool bMoneyOnly)
 			ITEM_MANAGER::instance().RemoveItem(item, "REMOVE (REFINE SUCCESS)");
 			// END_OF_DETAIL_REFINE_LOG
 
-			pkNewItem->AddToCharacter(this, TItemPos(INVENTORY, bCell));
+			InventorySystem::AddToCharacter(pkNewItem->GetEntityHandle(), GetEntityHandle(), TItemPos(INVENTORY, bCell));
 			ITEM_MANAGER::instance().FlushDelayedSave(pkNewItem);
 
 			LOG_INFO("Refine Success {}", (long long)cost);
@@ -11327,7 +11327,7 @@ bool CHARACTER::DoRefineWithScroll(LPITEM item)
 			DBManager::instance().SendMoneyLog(MONEY_LOG_REFINE, item->GetVnum(), -prt->cost);
 			ITEM_MANAGER::instance().RemoveItem(item, "REMOVE (REFINE SUCCESS)");
 
-			pkNewItem->AddToCharacter(this, TItemPos(INVENTORY, bCell));
+			InventorySystem::AddToCharacter(pkNewItem->GetEntityHandle(), GetEntityHandle(), TItemPos(INVENTORY, bCell));
 			ITEM_MANAGER::instance().FlushDelayedSave(pkNewItem);
 
 
@@ -11457,7 +11457,7 @@ bool CHARACTER::DoRefineWithScroll(LPITEM item)
 			NotifyRefineFail(this, item, szRefineType, -1);
 			ITEM_MANAGER::instance().RemoveItem(item, "REMOVE (REFINE FAIL)");
 
-			pkNewItem->AddToCharacter(this, TItemPos(INVENTORY, bCell));
+			InventorySystem::AddToCharacter(pkNewItem->GetEntityHandle(), GetEntityHandle(), TItemPos(INVENTORY, bCell));
 			ITEM_MANAGER::instance().FlushDelayedSave(pkNewItem);
 
 			pkNewItem->AttrLog();
@@ -11724,7 +11724,7 @@ bool CHARACTER::DoRefineWithScroll(LPITEM item)
 			DBManager::instance().SendMoneyLog(MONEY_LOG_REFINE, item->GetVnum(), -prt->cost);
 			ITEM_MANAGER::instance().RemoveItem(item, "REMOVE (REFINE SUCCESS)");
 
-			pkNewItem->AddToCharacter(this, TItemPos(INVENTORY, bCell));
+			InventorySystem::AddToCharacter(pkNewItem->GetEntityHandle(), GetEntityHandle(), TItemPos(INVENTORY, bCell));
 			ITEM_MANAGER::instance().FlushDelayedSave(pkNewItem);
 
 
@@ -11854,7 +11854,7 @@ bool CHARACTER::DoRefineWithScroll(LPITEM item)
 			NotifyRefineFail(this, item, szRefineType, -1);
 			ITEM_MANAGER::instance().RemoveItem(item, "REMOVE (REFINE FAIL)");
 
-			pkNewItem->AddToCharacter(this, TItemPos(INVENTORY, bCell));
+			InventorySystem::AddToCharacter(pkNewItem->GetEntityHandle(), GetEntityHandle(), TItemPos(INVENTORY, bCell));
 			ITEM_MANAGER::instance().FlushDelayedSave(pkNewItem);
 
 			pkNewItem->AttrLog();
@@ -11952,7 +11952,7 @@ bool CHARACTER::DoRefineItemSoul(LPITEM item)
 			ecs::ChatSystem::Send(GetEntityHandle(), CHAT_TYPE_COMMAND, "RefineSoulSuceeded");
 			ITEM_MANAGER::instance().RemoveItem(item, "REMOVE (REFINE SUCCESS)");
 
-			pkNewItem->AddToCharacter(this, TItemPos(INVENTORY, bCell));
+			InventorySystem::AddToCharacter(pkNewItem->GetEntityHandle(), GetEntityHandle(), TItemPos(INVENTORY, bCell));
 			ITEM_MANAGER::instance().FlushDelayedSave(pkNewItem);
 		}
 		else
@@ -12583,21 +12583,21 @@ void CHARACTER::AutoGiveItem(LPITEM item, bool longOwnerShip
 	if (cell != -1)
 	{
 		if (item->IsDragonSoul())
-			item->AddToCharacter(this, TItemPos(DRAGON_SOUL_INVENTORY, cell)
+			InventorySystem::AddToCharacter(item->GetEntityHandle(), GetEntityHandle(), TItemPos(DRAGON_SOUL_INVENTORY, cell)
 #ifdef __HIGHLIGHT_SYSTEM__
 				, isHighLight
 #endif
 			);
 #ifdef ENABLE_EXTRA_INVENTORY
 		else if (item->IsExtraItem())
-			item->AddToCharacter(this, TItemPos(EXTRA_INVENTORY, cell)
+			InventorySystem::AddToCharacter(item->GetEntityHandle(), GetEntityHandle(), TItemPos(EXTRA_INVENTORY, cell)
 #ifdef __HIGHLIGHT_SYSTEM__
 				, isHighLight
 #endif
 			);
 #endif
 		else
-			item->AddToCharacter(this, TItemPos(INVENTORY, cell)
+			InventorySystem::AddToCharacter(item->GetEntityHandle(), GetEntityHandle(), TItemPos(INVENTORY, cell)
 #ifdef __HIGHLIGHT_SYSTEM__
 				, isHighLight
 #endif
@@ -12655,7 +12655,7 @@ bool CHARACTER::AutoGiveDS(LPITEM item, bool longOwnerShip) {
 	int cell = GetEmptyDragonSoulInventory(item);
 	if (cell != -1)
 	{
-		item->AddToCharacter(this, TItemPos(DRAGON_SOUL_INVENTORY, cell)
+		InventorySystem::AddToCharacter(item->GetEntityHandle(), GetEntityHandle(), TItemPos(DRAGON_SOUL_INVENTORY, cell)
 #ifdef __HIGHLIGHT_SYSTEM__
 			, true
 #endif
@@ -12876,14 +12876,14 @@ LPITEM CHARACTER::AutoGiveItem(uint32_t dwItemVnum,
 #endif
 
 		if (item->IsDragonSoul())
-			item->AddToCharacter(this, TItemPos(DRAGON_SOUL_INVENTORY, iEmptyCell)
+			InventorySystem::AddToCharacter(item->GetEntityHandle(), GetEntityHandle(), TItemPos(DRAGON_SOUL_INVENTORY, iEmptyCell)
 #ifdef __HIGHLIGHT_SYSTEM__
 				, isHighLight
 #endif
 			);
 #ifdef ENABLE_EXTRA_INVENTORY
 		else if (item->IsExtraItem())
-			item->AddToCharacter(this, TItemPos(EXTRA_INVENTORY, iEmptyCell)
+			InventorySystem::AddToCharacter(item->GetEntityHandle(), GetEntityHandle(), TItemPos(EXTRA_INVENTORY, iEmptyCell)
 
 #ifdef __HIGHLIGHT_SYSTEM__
 				, isHighLight
@@ -12891,7 +12891,7 @@ LPITEM CHARACTER::AutoGiveItem(uint32_t dwItemVnum,
 			);
 #endif
 		else
-			item->AddToCharacter(this, TItemPos(INVENTORY, iEmptyCell)
+			InventorySystem::AddToCharacter(item->GetEntityHandle(), GetEntityHandle(), TItemPos(INVENTORY, iEmptyCell)
 #ifdef __HIGHLIGHT_SYSTEM__
 				, isHighLight
 #endif
@@ -14896,7 +14896,7 @@ bool CHARACTER::GiveRecallItem(LPITEM item)
 		{
 			item2->SetSocket(0, GetX());
 			item2->SetSocket(1, GetY());
-			item2->AddToCharacter(this, TItemPos(INVENTORY, pos));
+			InventorySystem::AddToCharacter(item2->GetEntityHandle(), GetEntityHandle(), TItemPos(INVENTORY, pos));
 
 			ItemSystem::ConsumeItemEcs((item ? item->GetEntityHandle() : entt::null));
 		}
@@ -15042,7 +15042,7 @@ bool CHARACTER::SwapItem(uint8_t bCell, uint8_t bDestCell)
 
 		if (InventorySystem::EquipTo(item1->GetEntityHandle(), this->GetEntityHandle(), bEquipCell))
 		{
-			item2->AddToCharacter(this, TItemPos(INVENTORY, bInvenCell)
+			InventorySystem::AddToCharacter(item2->GetEntityHandle(), GetEntityHandle(), TItemPos(INVENTORY, bInvenCell)
 #ifdef __HIGHLIGHT_SYSTEM__
 				, false
 #endif
@@ -15063,11 +15063,11 @@ bool CHARACTER::SwapItem(uint8_t bCell, uint8_t bDestCell)
 		InventorySystem::RemoveFromCharacter(item2->GetEntityHandle());
 
 #ifdef __HIGHLIGHT_SYSTEM__
-		item1->AddToCharacter(this, TItemPos(INVENTORY, bCell2), false);
-		item2->AddToCharacter(this, TItemPos(INVENTORY, bCell1), false);
+		InventorySystem::AddToCharacter(item1->GetEntityHandle(), GetEntityHandle(), TItemPos(INVENTORY, bCell2), false);
+		InventorySystem::AddToCharacter(item2->GetEntityHandle(), GetEntityHandle(), TItemPos(INVENTORY, bCell1), false);
 #else
-		item1->AddToCharacter(this, TItemPos(INVENTORY, bCell2));
-		item2->AddToCharacter(this, TItemPos(INVENTORY, bCell1));
+		InventorySystem::AddToCharacter(item1->GetEntityHandle(), GetEntityHandle(), TItemPos(INVENTORY, bCell2));
+		InventorySystem::AddToCharacter(item2->GetEntityHandle(), GetEntityHandle(), TItemPos(INVENTORY, bCell1));
 #endif
 	}
 

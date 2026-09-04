@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "ecs/systems/InventorySystem.hpp"
 #include <Core/Logging.hpp>
 #include "ecs/systems/PlayerRuntimeSystem.hpp"
 #include "ecs/systems/SocialSystem.hpp"
@@ -223,13 +224,13 @@ int64_t CShopEx::Buy(LPCHARACTER ch, uint8_t pos)
 
 
 	if (item->IsDragonSoul())
-		item->AddToCharacter(ch, TItemPos(DRAGON_SOUL_INVENTORY, iEmptyPos));
+		InventorySystem::AddToCharacter(item->GetEntityHandle(), ch->GetEntityHandle(), TItemPos(DRAGON_SOUL_INVENTORY, iEmptyPos));
 #ifdef ENABLE_EXTRA_INVENTORY
 	else if (item->IsExtraItem())
-		item->AddToCharacter(ch, TItemPos(EXTRA_INVENTORY, iEmptyPos));
+		InventorySystem::AddToCharacter(item->GetEntityHandle(), ch->GetEntityHandle(), TItemPos(EXTRA_INVENTORY, iEmptyPos));
 #endif
 	else
-		item->AddToCharacter(ch, TItemPos(INVENTORY, iEmptyPos));
+		InventorySystem::AddToCharacter(item->GetEntityHandle(), ch->GetEntityHandle(), TItemPos(INVENTORY, iEmptyPos));
 
 	ITEM_MANAGER::instance().FlushDelayedSave(item);
 	LogManager::instance().ItemLog(ch, item, "BUY", item->GetName());

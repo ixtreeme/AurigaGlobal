@@ -334,153 +334,6 @@ void CHARACTER::ChainQuickslotItem(entt::entity item, uint8_t bType, uint8_t bOl
 	}
 }
 
-#ifdef __HIGHLIGHT_SYSTEM__
-bool CItem::AddToCharacter(LPCHARACTER ch, TItemPos Cell, bool isHighLight)
-#else
-bool CItem::AddToCharacter(LPCHARACTER ch, TItemPos Cell)
-#endif
-{
-	assert(GetSectree() == NULL);
-	assert(GetOwnerEntity() == entt::null);
-	const entt::entity character = ch
-		? ch->GetEntityHandle()
-		: entt::null;
-	const entt::entity itemEntity = GetEntityHandle();
-	if (itemEntity == entt::null)
-	{
-		LOG_ERROR("CItem::AddToCharacter: item {} has no ECS entity", GetID());
-		return false;
-	}
-	uint16_t pos = Cell.cell;
-	uint8_t window_type = Cell.window_type;
-
-	if (INVENTORY == window_type)
-	{
-#ifdef ENABLE_RUNE_SYSTEM
-		if ((IsRune()) && (ch)) {
-			int iFindCell = ItemSystem::FindEquipCell(ch->GetEntityHandle(), GetEntityHandle());
-			const entt::entity equipped = ItemSystem::GetWearItem(character, iFindCell);
-			if (ItemSystem::IsValidItem(equipped)) {
-#ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 35, "%s", GetName());
-#endif
-				ItemSystem::DestroyItemEntityEcs(
-					GetEntityHandle(),
-					"INVENTORY_RUNE_ADD_FAILED");
-				return false;
-			}
-			else {
-				InventorySystem::EquipTo(GetEntityHandle(), character, iFindCell);
-				if (ecs::PlayerRuntime::GetDesc(character))
-					ItemSystem::SetItemLastOwnerPID(GetEntityHandle(), ecs::PlayerRuntime::GetPlayerID(character));
-
-				event_cancel(&ItemSystem::GetItemEvents(GetEntityHandle()).destroy);
-
-				ch->SetItem(TItemPos(EQUIPMENT, iFindCell), GetEntityHandle());
-				SetOwnerEntity(character);
-				Save();
-
-				const entt::entity itemEntity = GetEntityHandle();
-				SyncItemOwner(itemEntity, character, ecs::PlayerRuntime::GetPlayerID(character));
-				EnsureItemLocation(itemEntity);
-				SyncItemEquipped(itemEntity, true);
-				return true;
-			}
-		}
-#endif
-#ifdef ENABLE_MOUNT_INVENTORY_FIX_RAZOR93_egyenlore_kikapcsolva
-
-		if (pos >= INVENTORY_MAX_NUM && BELT_INVENTORY_SLOT_START > pos)
-#else
-		if (ItemSystem::GetItemCell(itemEntity) >= INVENTORY_MAX_NUM && BELT_INVENTORY_SLOT_START > ItemSystem::GetItemCell(itemEntity))
-#endif
-		{
-			LOG_ERROR("CItem::AddToCharacter: cell overflow: {} to {} cell {}", m_pProto->szName, ecs::PlayerRuntime::GetName(character).data(), ItemSystem::GetItemCell(itemEntity));
-			return false;
-		}
-	}
-	else if (DRAGON_SOUL_INVENTORY == window_type)
-	{
-		if (ItemSystem::GetItemCell(itemEntity) >= DRAGON_SOUL_INVENTORY_MAX_NUM)
-		{
-			LOG_ERROR("CItem::AddToCharacter: cell overflow: {} to {} cell {}", m_pProto->szName, ecs::PlayerRuntime::GetName(character).data(), ItemSystem::GetItemCell(itemEntity));
-			return false;
-		}
-	}
-#ifdef ENABLE_EXTRA_INVENTORY
-	else if (window_type == EXTRA_INVENTORY)
-	{
-		if (ItemSystem::GetItemCell(itemEntity) >= EXTRA_INVENTORY_MAX_NUM)
-		{
-			LOG_ERROR("CItem::AddToCharacter: EXTRA cell overflow: {} to {} cell {}", m_pProto->szName, ecs::PlayerRuntime::GetName(character).data(), ItemSystem::GetItemCell(itemEntity));
-			return false;
-		}
-	}
-#endif
-#ifdef ENABLE_SWITCHBOT
-	else if (SWITCHBOT == window_type)
-	{
-		if (ItemSystem::GetItemCell(itemEntity) >= SWITCHBOT_SLOT_COUNT)
-		{
-			LOG_ERROR("CItem::AddToCharacter:switchbot cell overflow: {} to {} cell {}", m_pProto->szName, ecs::PlayerRuntime::GetName(character).data(), ItemSystem::GetItemCell(itemEntity));
-			return false;
-		}
-	}
-#endif
-	if (ecs::PlayerRuntime::GetDesc(character))
-		ItemSystem::SetItemLastOwnerPID(GetEntityHandle(), ecs::PlayerRuntime::GetPlayerID(character));
-
-
-#ifdef ENABLE_ACCE_SYSTEM
-	if ((GetType() == ITEM_COSTUME) && (GetSubType() == COSTUME_ACCE) && (GetSocket(ACCE_ABSORPTION_SOCKET) == 0))
-	{
-		int32_t lVal = GetValue(ACCE_GRADE_VALUE_FIELD);
-		switch (lVal)
-		{
-		case 2:
-		{
-			lVal = ACCE_GRADE_2_ABS;
-		}
-		break;
-		case 3:
-		{
-			lVal = ACCE_GRADE_3_ABS;
-		}
-		break;
-		case 4:
-		{
-			lVal = number(ACCE_GRADE_4_ABS_MIN, ACCE_GRADE_4_ABS_MAX_COMB);
-		}
-		break;
-		default:
-		{
-			lVal = ACCE_GRADE_1_ABS;
-		}
-		break;
-		}
-
-		SetSocket(ACCE_ABSORPTION_SOCKET, lVal);
-	}
-#endif
-
-
-	event_cancel(&ItemSystem::GetItemEvents(GetEntityHandle()).destroy);
-
-#ifdef __HIGHLIGHT_SYSTEM__
-	ch->SetItem(TItemPos(window_type, pos), GetEntityHandle(), isHighLight);
-#else
-	ch->SetItem(TItemPos(window_type, pos), GetEntityHandle());
-#endif
-	SetOwnerEntity(character);
-
-	Save();
-
-	SyncItemOwner(itemEntity, character, ecs::PlayerRuntime::GetPlayerID(character));
-	EnsureItemLocation(itemEntity);
-	SyncItemEquipped(itemEntity, false);
-	return true;
-}
-
 LPITEM CItem::RemoveFromGround()
 {
 	if (GetSectree())
@@ -807,6 +660,152 @@ uint16_t CItem::GetCell() const
 {
 	return ItemSystem::GetItemCell(GetEntityHandle());
 }
+
+namespace InventorySystem {
+
+#ifdef __HIGHLIGHT_SYSTEM__
+bool AddToCharacter(entt::entity itemEntity, entt::entity character, TItemPos Cell, bool isHighLight)
+#else
+bool AddToCharacter(entt::entity itemEntity, entt::entity character, TItemPos Cell)
+#endif
+{
+	assert(ecs::PlayerRuntime::GetSectree(itemEntity) == NULL);
+	assert(ItemSystem::GetItemOwner(itemEntity) == entt::null);
+	if (itemEntity == entt::null)
+	{
+		LOG_ERROR("AddToCharacter: item {} has no ECS entity", ItemSystem::GetItemID(itemEntity));
+		return false;
+	}
+	uint16_t pos = Cell.cell;
+	uint8_t window_type = Cell.window_type;
+
+	if (INVENTORY == window_type)
+	{
+#ifdef ENABLE_RUNE_SYSTEM
+		if (ItemSystem::IsRuneItem(itemEntity) && character != entt::null) {
+			int iFindCell = ItemSystem::FindEquipCell(character, itemEntity);
+			const entt::entity equipped = ItemSystem::GetWearItem(character, iFindCell);
+			if (ItemSystem::IsValidItem(equipped)) {
+#ifdef TEXTS_IMPROVEMENT
+				ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 35, "%s", ItemSystem::GetItemName(itemEntity));
+#endif
+				ItemSystem::DestroyItemEntityEcs(
+					itemEntity,
+					"INVENTORY_RUNE_ADD_FAILED");
+				return false;
+			}
+			else {
+				InventorySystem::EquipTo(itemEntity, character, iFindCell);
+				if (ecs::PlayerRuntime::GetDesc(character))
+					ItemSystem::SetItemLastOwnerPID(itemEntity, ecs::PlayerRuntime::GetPlayerID(character));
+
+				event_cancel(&ItemSystem::GetItemEvents(itemEntity).destroy);
+
+				ecs::PlayerRuntime::SetItem(character, TItemPos(EQUIPMENT, iFindCell), itemEntity);
+				ItemSystem::SetItemOwnerEntity(itemEntity, character);
+				ItemSystem::SaveItem(itemEntity);
+
+				SyncItemOwner(itemEntity, character, ecs::PlayerRuntime::GetPlayerID(character));
+				EnsureItemLocation(itemEntity);
+				SyncItemEquipped(itemEntity, true);
+				return true;
+			}
+		}
+#endif
+#ifdef ENABLE_MOUNT_INVENTORY_FIX_RAZOR93_egyenlore_kikapcsolva
+
+		if (pos >= INVENTORY_MAX_NUM && BELT_INVENTORY_SLOT_START > pos)
+#else
+		if (ItemSystem::GetItemCell(itemEntity) >= INVENTORY_MAX_NUM && BELT_INVENTORY_SLOT_START > ItemSystem::GetItemCell(itemEntity))
+#endif
+		{
+			LOG_ERROR("AddToCharacter: cell overflow: {} to {} cell {}", ItemSystem::GetItemProto(itemEntity)->szName, ecs::PlayerRuntime::GetName(character).data(), ItemSystem::GetItemCell(itemEntity));
+			return false;
+		}
+	}
+	else if (DRAGON_SOUL_INVENTORY == window_type)
+	{
+		if (ItemSystem::GetItemCell(itemEntity) >= DRAGON_SOUL_INVENTORY_MAX_NUM)
+		{
+			LOG_ERROR("AddToCharacter: cell overflow: {} to {} cell {}", ItemSystem::GetItemProto(itemEntity)->szName, ecs::PlayerRuntime::GetName(character).data(), ItemSystem::GetItemCell(itemEntity));
+			return false;
+		}
+	}
+#ifdef ENABLE_EXTRA_INVENTORY
+	else if (window_type == EXTRA_INVENTORY)
+	{
+		if (ItemSystem::GetItemCell(itemEntity) >= EXTRA_INVENTORY_MAX_NUM)
+		{
+			LOG_ERROR("AddToCharacter: EXTRA cell overflow: {} to {} cell {}", ItemSystem::GetItemProto(itemEntity)->szName, ecs::PlayerRuntime::GetName(character).data(), ItemSystem::GetItemCell(itemEntity));
+			return false;
+		}
+	}
+#endif
+#ifdef ENABLE_SWITCHBOT
+	else if (SWITCHBOT == window_type)
+	{
+		if (ItemSystem::GetItemCell(itemEntity) >= SWITCHBOT_SLOT_COUNT)
+		{
+			LOG_ERROR("AddToCharacter:switchbot cell overflow: {} to {} cell {}", ItemSystem::GetItemProto(itemEntity)->szName, ecs::PlayerRuntime::GetName(character).data(), ItemSystem::GetItemCell(itemEntity));
+			return false;
+		}
+	}
+#endif
+	if (ecs::PlayerRuntime::GetDesc(character))
+		ItemSystem::SetItemLastOwnerPID(itemEntity, ecs::PlayerRuntime::GetPlayerID(character));
+
+
+#ifdef ENABLE_ACCE_SYSTEM
+	if ((ItemSystem::GetItemType(itemEntity) == ITEM_COSTUME) && (ItemSystem::GetItemSubType(itemEntity) == COSTUME_ACCE) && (ItemSystem::GetItemSocket(itemEntity, ACCE_ABSORPTION_SOCKET) == 0))
+	{
+		int32_t lVal = ItemSystem::GetItemValue(itemEntity, ACCE_GRADE_VALUE_FIELD);
+		switch (lVal)
+		{
+		case 2:
+		{
+			lVal = ACCE_GRADE_2_ABS;
+		}
+		break;
+		case 3:
+		{
+			lVal = ACCE_GRADE_3_ABS;
+		}
+		break;
+		case 4:
+		{
+			lVal = number(ACCE_GRADE_4_ABS_MIN, ACCE_GRADE_4_ABS_MAX_COMB);
+		}
+		break;
+		default:
+		{
+			lVal = ACCE_GRADE_1_ABS;
+		}
+		break;
+		}
+
+		ItemSystem::SetItemSocket(itemEntity, ACCE_ABSORPTION_SOCKET, lVal);
+	}
+#endif
+
+
+	event_cancel(&ItemSystem::GetItemEvents(itemEntity).destroy);
+
+#ifdef __HIGHLIGHT_SYSTEM__
+	ecs::PlayerRuntime::SetItem(character, TItemPos(window_type, pos), itemEntity, isHighLight);
+#else
+	ecs::PlayerRuntime::SetItem(character, TItemPos(window_type, pos), itemEntity);
+#endif
+	ItemSystem::SetItemOwnerEntity(itemEntity, character);
+
+	ItemSystem::SaveItem(itemEntity);
+
+	SyncItemOwner(itemEntity, character, ecs::PlayerRuntime::GetPlayerID(character));
+	EnsureItemLocation(itemEntity);
+	SyncItemEquipped(itemEntity, false);
+	return true;
+}
+
+} // namespace InventorySystem
 
 namespace InventorySystem {
 

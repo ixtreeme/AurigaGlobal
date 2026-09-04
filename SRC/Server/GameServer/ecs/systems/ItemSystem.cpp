@@ -2869,7 +2869,7 @@ static bool AddItemToCharacterLegacyBoundary(entt::entity owner,
     LPCHARACTER legacyOwner = LegacyCharOf(owner);
     LPITEM legacyItem = LegacyItemBoundary(item);
     return legacyOwner && legacyItem &&
-        legacyItem->AddToCharacter(legacyOwner, TItemPos(window, cell));
+        InventorySystem::AddToCharacter(legacyItem->GetEntityHandle(), legacyOwner->GetEntityHandle(), TItemPos(window, cell));
 }
 
 bool PlaceItemEcs(entt::entity owner, entt::entity item, uint8_t window, uint16_t cell)

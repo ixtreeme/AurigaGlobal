@@ -1775,9 +1775,9 @@ void CInputDB::ItemLoad(LPDESC d, const char * c_pData)
 #else
 				case MOUNT_INVENTORY:
 #ifdef __HIGHLIGHT_SYSTEM__
-					item->AddToCharacter(ch, TItemPos(p->window, p->pos), false);
+					InventorySystem::AddToCharacter(item->GetEntityHandle(), ch->GetEntityHandle(), TItemPos(p->window, p->pos), false);
 #else
-					item->AddToCharacter(ch, TItemPos(p->window, p->pos));
+					InventorySystem::AddToCharacter(item->GetEntityHandle(), ch->GetEntityHandle(), TItemPos(p->window, p->pos));
 #endif
 					break;
 #endif
@@ -1831,9 +1831,9 @@ void CInputDB::ItemLoad(LPDESC d, const char * c_pData)
 		}
 		else
 #ifdef __HIGHLIGHT_SYSTEM__
-			item->AddToCharacter(ch, TItemPos(INVENTORY, pos), false);
+			InventorySystem::AddToCharacter(item->GetEntityHandle(), ch->GetEntityHandle(), TItemPos(INVENTORY, pos), false);
 #else
-			item->AddToCharacter(ch, TItemPos(INVENTORY, pos));
+			InventorySystem::AddToCharacter(item->GetEntityHandle(), ch->GetEntityHandle(), TItemPos(INVENTORY, pos));
 #endif
 	}
 	ch->CheckMaximumPoints();

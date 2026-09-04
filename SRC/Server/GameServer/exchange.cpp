@@ -1059,13 +1059,13 @@ bool CExchange::Done()
 
 		InventorySystem::RemoveFromCharacter(item->GetEntityHandle());
 		if (item->IsDragonSoul())
-			item->AddToCharacter(victim, TItemPos(DRAGON_SOUL_INVENTORY, empty_pos));
+			InventorySystem::AddToCharacter(item->GetEntityHandle(), victim->GetEntityHandle(), TItemPos(DRAGON_SOUL_INVENTORY, empty_pos));
 #ifdef ENABLE_EXTRA_INVENTORY
 		else if (item->IsExtraItem())
-			item->AddToCharacter(victim, TItemPos(EXTRA_INVENTORY, empty_pos));
+			InventorySystem::AddToCharacter(item->GetEntityHandle(), victim->GetEntityHandle(), TItemPos(EXTRA_INVENTORY, empty_pos));
 #endif
 		else
-			item->AddToCharacter(victim, TItemPos(INVENTORY, empty_pos));
+			InventorySystem::AddToCharacter(item->GetEntityHandle(), victim->GetEntityHandle(), TItemPos(INVENTORY, empty_pos));
 		ITEM_MANAGER::instance().FlushDelayedSave(item);
 
 		ItemSystem::SetItemExchanging(itemEntity, false);

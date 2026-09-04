@@ -1,5 +1,6 @@
 //#define __FISHING_MAIN__
 #include "stdafx.h"
+#include "ecs/systems/InventorySystem.hpp"
 #include "ecs/systems/PointSystem.hpp"
 #include "ecs/systems/AffectSystem.hpp"
 #include <Core/Logging.hpp>
@@ -818,7 +819,7 @@ int RealRefineRod(LPCHARACTER ch, LPITEM item)
 
 		uint8_t bCell = ItemSystem::GetItemCell((rod ? rod->GetEntityHandle() : entt::null));
 		ITEM_MANAGER::instance().RemoveItem(rod, "REMOVE (REFINE FISH_ROD)");
-		pkNewItem->AddToCharacter(ch, TItemPos (INVENTORY, bCell));
+		InventorySystem::AddToCharacter(pkNewItem->GetEntityHandle(), ch->GetEntityHandle(), TItemPos (INVENTORY, bCell));
 		LogManager::instance().ItemLog(ch, pkNewItem, "REFINE FISH_ROD SUCCESS", pkNewItem->GetName());
 		return 1;
 	} else {
@@ -834,7 +835,7 @@ int RealRefineRod(LPCHARACTER ch, LPITEM item)
 
 		uint8_t bCell = ItemSystem::GetItemCell((rod ? rod->GetEntityHandle() : entt::null));
 		ITEM_MANAGER::instance().RemoveItem(rod, "REMOVE (REFINE FISH_ROD)");
-		pkNewItem->AddToCharacter(ch, TItemPos(INVENTORY, bCell));
+		InventorySystem::AddToCharacter(pkNewItem->GetEntityHandle(), ch->GetEntityHandle(), TItemPos(INVENTORY, bCell));
 		LogManager::instance().ItemLog(ch, pkNewItem, "REFINE FISH_ROD FAIL", pkNewItem->GetName());
 #endif
 		return 2;
