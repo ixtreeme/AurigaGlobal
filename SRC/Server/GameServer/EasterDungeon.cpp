@@ -99,9 +99,9 @@ namespace
     inline bool IsInRange(int32_t v, int32_t lo, int32_t hi) { return v >= lo && v < hi; }
 
     // ---- Chat helpers ----
-    inline void ChatToChar(LPCHARACTER ch, const char* fmt, ...)
+    inline void ChatToChar(entt::entity ch, const char* fmt, ...)
     {
-        if (!ch)
+        if (!ecs::PlayerRuntime::IsValid(ch))
             return;
 
         char buf[512];
@@ -110,7 +110,7 @@ namespace
         std::vsnprintf(buf, sizeof(buf), fmt, ap);
         va_end(ap);
 
-        ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "%s", buf);
+        ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "%s", buf);
     }
 
     struct FForEachPC
@@ -671,7 +671,7 @@ void CEasterDungeon::OnPlayerLogin(entt::entity character)
         const int floor = d->GetFlag(kFlagFloor);
         if (floor == 1)
         {
-            ChatToChar(ch, "Easter: Task #1: Destroy all stones. Remaining: %d", d->GetFlag(kFlagStep));
+            ChatToChar(character, "Easter: Task #1: Destroy all stones. Remaining: %d", d->GetFlag(kFlagStep));
         }
         else if (floor == 2)
         {
@@ -681,12 +681,12 @@ void CEasterDungeon::OnPlayerLogin(entt::entity character)
         }
         else if (floor == 3)
         {
-            ChatToChar(ch, "Easter: Task #3: Kill the boss!");
+            ChatToChar(character, "Easter: Task #3: Kill the boss!");
         }
     }
     else
     {
-        ChatToChar(ch, "Easter: Dungeon complete. Click the NPC to start again.");
+        ChatToChar(character, "Easter: Dungeon complete. Click the NPC to start again.");
     }
 
     if (d->GetFlag(kFlagFloor) == 0)
@@ -964,7 +964,7 @@ if (!it.ok)
     }
 
     // Small hint right after enter
-    ChatToChar(ch, "Easter: The dungeon is starting. Please wait 1 second...");
+    ChatToChar(character, "Easter: The dungeon is starting. Please wait 1 second...");
 
     // Start floor1 after short delay
     s_easter.SchedulePrepare(d->GetMapIndex(), kPrepareDelay);

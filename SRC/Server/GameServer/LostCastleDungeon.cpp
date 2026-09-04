@@ -173,8 +173,7 @@ namespace
         va_end(ap);
 
         ForEachPcOnMap(mapIndex, [&](entt::entity pc){
-            LPCHARACTER pkPc = ecs::LegacyCharOf(pc);
-            if (pkPc && ecs::PlayerRuntime::GetDesc(pc))
+            if (ecs::PlayerRuntime::GetDesc(pc))
                 ecs::ChatSystem::Send(pc, CHAT_TYPE_COMMAND, "%s", buf);
             });
     }

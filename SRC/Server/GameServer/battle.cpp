@@ -1017,8 +1017,7 @@ int32_t GET_ATTACK_SPEED(entt::entity character) {
 
 void SET_ATTACK_TIME(entt::entity character, entt::entity victim, int32_t current_time) {
 	LPCHARACTER ch = ecs::LegacyCharOf(character);
-	LPCHARACTER pkVictim = ecs::LegacyCharOf(victim);
-	if (pkVictim && ch && ecs::PlayerRuntime::IsPC(character)) {
+	if (ecs::PlayerRuntime::IsValid(victim) && ch && ecs::PlayerRuntime::IsPC(character)) {
 		ch->GetAttackLogRef().dwVID = ecs::PlayerRuntime::GetPacketVID(victim);
 		ch->GetAttackLogRef().dwTime = current_time;
 	}
@@ -1026,8 +1025,7 @@ void SET_ATTACK_TIME(entt::entity character, entt::entity victim, int32_t curren
 
 void SET_ATTACKED_TIME(entt::entity character, entt::entity victim, int32_t current_time) {
 	LPCHARACTER ch = ecs::LegacyCharOf(character);
-	LPCHARACTER pkVictim = ecs::LegacyCharOf(victim);
-	if (pkVictim && ch && ecs::PlayerRuntime::IsPC(character)) {
+	if (ecs::PlayerRuntime::IsValid(victim) && ch && ecs::PlayerRuntime::IsPC(character)) {
 		pkVictim->GetAttackedLogRef().dwPID = (ecs::PlayerRuntime::GetPlayerID(character));
 		pkVictim->GetAttackedLogRef().dwAttackedTime = current_time;
 	}

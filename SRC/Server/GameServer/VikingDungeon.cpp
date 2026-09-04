@@ -291,9 +291,9 @@ namespace
         y = 14350;
     }//536904	1435017
 
-    bool IsEntryMapForEmpire(LPCHARACTER ch)
+    bool IsEntryMapForEmpire(entt::entity ch)
     {
-        return ch && ecs::PlayerRuntime::GetMapIndex(((ch) ? (ch)->GetEntityHandle() : entt::null)) == 219;
+        return ecs::PlayerRuntime::IsValid(ch) && ecs::PlayerRuntime::GetMapIndex(ch) == 219;
     }
 
     void SetOutsideWarpLocation(LPCHARACTER ch)
@@ -305,45 +305,42 @@ namespace
         ch->SetWarpLocation(mapIdx, x, y);
     }
 
-    void WarpOut(LPCHARACTER ch)
+    void WarpOut(entt::entity ch)
     {
-        const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
-        if (!ch)
+        if (!ecs::PlayerRuntime::IsValid(ch))
             return;
         int32_t mapIdx = 1, x = 0, y = 0;
-        GetOutsideWarpByEmpire(ecs::PlayerRuntime::GetEmpire(chEntity), mapIdx, x, y);
-        ecs::MovementSystem::WarpSet(chEntity, x * 100, y * 100, mapIdx);
+        GetOutsideWarpByEmpire(ecs::PlayerRuntime::GetEmpire(ch), mapIdx, x, y);
+        ecs::MovementSystem::WarpSet(ch, x * 100, y * 100, mapIdx);
     }
 
     void WarpAllOut(int32_t mapIndex)
     {
         ForEachPcOnMap(mapIndex, [&](entt::entity ch){
-            LPCHARACTER pkCh = ecs::LegacyCharOf(ch);
-            WarpOut(pkCh);
+            WarpOut(ch);
         });
     }
 
-    void SetCooldown(LPCHARACTER ch)
+    void SetCooldown(entt::entity ch)
     {
-        if (ch)
-            ecs::QuestSystem::SetFlag(((ch) ? (ch)->GetEntityHandle() : entt::null), kQfCooldown, get_global_time() + kEntranceCooldownSec);
+        if (ecs::PlayerRuntime::IsValid(ch))
+            ecs::QuestSystem::SetFlag(ch, kQfCooldown, get_global_time() + kEntranceCooldownSec);
     }
 
-    void SetRejoinFlags(LPCHARACTER ch, int32_t mapIndex)
+    void SetRejoinFlags(entt::entity ch, int32_t mapIndex)
     {
-        const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
-        if (!ch)
+        if (!ecs::PlayerRuntime::IsValid(ch))
             return;
-        ecs::QuestSystem::SetFlag(chEntity, kQfIdx, mapIndex);
-        ecs::QuestSystem::SetFlag(chEntity, kQfCh, (int32_t)g_bChannel);
-        ecs::QuestSystem::SetFlag(chEntity, kQfDisconnect, get_global_time() + kRejoinSec);
+        ecs::QuestSystem::SetFlag(ch, kQfIdx, mapIndex);
+        ecs::QuestSystem::SetFlag(ch, kQfCh, (int32_t)g_bChannel);
+        ecs::QuestSystem::SetFlag(ch, kQfDisconnect, get_global_time() + kRejoinSec);
     }
 
-    void ClearRejoinFlags(LPCHARACTER ch)
+    void ClearRejoinFlags(entt::entity ch)
     {
-        if (!ch)
+        if (!ecs::PlayerRuntime::IsValid(ch))
             return;
-        ecs::QuestSystem::SetFlag(((ch) ? (ch)->GetEntityHandle() : entt::null), kQfDisconnect, 0);
+        ecs::QuestSystem::SetFlag(ch, kQfDisconnect, 0);
     }
 
     void ClearDungeonNonPlayers(LPDUNGEON d)
@@ -872,8 +869,7 @@ namespace
             CancelAll(idx);
 
             ForEachPcOnMap(idx, [&](entt::entity member){
-                LPCHARACTER pkMember = ecs::LegacyCharOf(member);
-                SetCooldown(pkMember);
+                SetCooldown(member);
             });
 
             ClearDungeonNonPlayers(d);
@@ -1026,7 +1022,7 @@ void CVikingDungeon::OnPlayerDisconnect(entt::entity character)
 
     SetOutsideWarpLocation(ch);
     if (d->GetFlag(kFlagCompleted) == 0 && d->GetFlag(kFlagBlockRejoin) == 0)
-        SetRejoinFlags(ch, idx);
+        SetRejoinFlags(character, idx);
 }
 
 void CVikingDungeon::OnPlayerLogin(entt::entity character)
@@ -1039,7 +1035,7 @@ void CVikingDungeon::OnPlayerLogin(entt::entity character)
 
     if (idx == kOriginalMap)
     {
-        WarpOut(ch);
+        WarpOut(character);
         return;
     }
 
@@ -1049,7 +1045,7 @@ void CVikingDungeon::OnPlayerLogin(entt::entity character)
     LPDUNGEON d = CDungeonManager::instance().FindByMapIndex(idx);
     if (!d)
     {
-        WarpOut(ch);
+        WarpOut(character);
         return;
     }
 
@@ -1059,7 +1055,7 @@ void CVikingDungeon::OnPlayerLogin(entt::entity character)
 
     if (d->GetFlag(kFlagBlockRejoin) != 0)
     {
-        WarpOut(ch);
+        WarpOut(character);
         return;
     }
 
@@ -1096,7 +1092,7 @@ void CVikingDungeon::OnPlayerLogin(entt::entity character)
         }
     }
 
-    SetCooldown(ch);
+    SetCooldown(character);
 }
 
 bool CVikingDungeon::OnUseItem(entt::entity character, CItem* item)
@@ -1336,13 +1332,13 @@ bool CVikingDungeon::OnClickNpc(entt::entity character, entt::entity npc)
             return;
 
         SetOutsideWarpLocation(pkM);
-        ClearRejoinFlags(pkM);
+        ClearRejoinFlags(m);
         ecs::QuestSystem::SetFlag(m, kQfIdx, dungeonMapIdx);
         ecs::QuestSystem::SetFlag(m, kQfCh, (int32_t)g_bChannel);
 
         if (!quickRestart)
         {
-            SetCooldown(pkM);
+            SetCooldown(m);
             pkM->RemoveSpecifyItem(kEntryItemVnum, kEntryItemCount);
         }
     };

@@ -151,8 +151,7 @@ ACMD(do_user_horse_ride)
 	}
 }
 ACMD(do_daily_reward_reload){
-	LPCHARACTER ch = ecs::LegacyCharOf(character);
-	if (!ch) {
+	if (!ecs::PlayerRuntime::IsValid(character)) {
 		return;
 	}
 

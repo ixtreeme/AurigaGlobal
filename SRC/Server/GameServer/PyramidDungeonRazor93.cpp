@@ -197,8 +197,7 @@ namespace
 
             // English notice
             ForEachPcOnMap(mapIndex, [](entt::entity pc){
-                LPCHARACTER pkPc = ecs::LegacyCharOf(pc);
-                if (pkPc) ecs::ChatSystem::Send(pc, CHAT_TYPE_NOTICE, "[Pyramid] Destroy all metins!");
+                if (ecs::PlayerRuntime::IsValid(pc)) ecs::ChatSystem::Send(pc, CHAT_TYPE_NOTICE, "[Pyramid] Destroy all metins!");
                 });
         }
 
@@ -306,13 +305,12 @@ namespace
         }
     };
 
-    inline void ResetRejoinFlags(LPCHARACTER ch)
+    inline void ResetRejoinFlags(entt::entity ch)
     {
-        const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
-        if (!ch) return;
-        ecs::QuestSystem::SetFlag(chEntity, kQfDisconnect, 0);
-        ecs::QuestSystem::SetFlag(chEntity, kQfIdx, 0);
-        ecs::QuestSystem::SetFlag(chEntity, kQfCh, 0);
+        if (!ecs::PlayerRuntime::IsValid(ch)) return;
+        ecs::QuestSystem::SetFlag(ch, kQfDisconnect, 0);
+        ecs::QuestSystem::SetFlag(ch, kQfIdx, 0);
+        ecs::QuestSystem::SetFlag(ch, kQfCh, 0);
     }
 }
 
@@ -433,7 +431,7 @@ bool CPyramidDungeonRazor93::OnClickNpc(entt::entity character)
                     // Lua used pc.warp(218600, 348900, rejoinIDX)
                     ch->SaveExitLocation();
                     ecs::MovementSystem::WarpSet(character, kRejoinWarpX100, kRejoinWarpY100, rejoinIdx);
-                    ResetRejoinFlags(ch);
+                    ResetRejoinFlags(character);
                     return true;
                 }
             }
@@ -538,10 +536,10 @@ bool CPyramidDungeonRazor93::OnClickNpc(entt::entity character)
     // Reset rejoin flags for new run
     if (party)
     {
-        struct FResetRejoin { void operator()(LPCHARACTER m) { ResetRejoinFlags(m); } } f; party->ForEachOnMapMember(f, ecs::PlayerRuntime::GetMapIndex(character));
+        struct FResetRejoin { void operator()(LPCHARACTER m) { ResetRejoinFlags(m ? m->GetEntityHandle() : entt::null); } } f; party->ForEachOnMapMember(f, ecs::PlayerRuntime::GetMapIndex(character));
     }
     else
-        ResetRejoinFlags(ch);
+        ResetRejoinFlags(character);
 
     // Create + join
     LPDUNGEON d = CDungeonManager::instance().Create(kOriginalMap);
@@ -601,16 +599,14 @@ void CPyramidDungeonRazor93::OnMobKilled(entt::entity killer, entt::entity victi
         d->SetFlag(kFlagStep, s);
 
         ForEachPcOnMap(mapIdx, [s](entt::entity pc){
-            LPCHARACTER pkPc = ecs::LegacyCharOf(pc);
-            if (pkPc) ecs::ChatSystem::Send(pc, CHAT_TYPE_NOTICE, "[Pyramid] Metins remaining: %d", s);
+            if (ecs::PlayerRuntime::IsValid(pc)) ecs::ChatSystem::Send(pc, CHAT_TYPE_NOTICE, "[Pyramid] Metins remaining: %d", s);
             });
 
         if (s == 0)
         {
             d->SpawnMob(kStoneVnum, kStoneX, kStoneY);
             ForEachPcOnMap(mapIdx, [](entt::entity pc){
-                LPCHARACTER pkPc = ecs::LegacyCharOf(pc);
-                if (pkPc) ecs::ChatSystem::Send(pc, CHAT_TYPE_NOTICE, "[Pyramid] The stone has appeared!");
+                if (ecs::PlayerRuntime::IsValid(pc)) ecs::ChatSystem::Send(pc, CHAT_TYPE_NOTICE, "[Pyramid] The stone has appeared!");
                 });
         }
         return;
@@ -623,8 +619,7 @@ void CPyramidDungeonRazor93::OnMobKilled(entt::entity killer, entt::entity victi
         d->SpawnRegen(kRegen3, true);
 
         ForEachPcOnMap(mapIdx, [](entt::entity pc){
-            LPCHARACTER pkPc = ecs::LegacyCharOf(pc);
-            if (pkPc) ecs::ChatSystem::Send(pc, CHAT_TYPE_NOTICE, "[Pyramid] Kill all monsters!");
+            if (ecs::PlayerRuntime::IsValid(pc)) ecs::ChatSystem::Send(pc, CHAT_TYPE_NOTICE, "[Pyramid] Kill all monsters!");
             });
         return;
     }
@@ -643,8 +638,7 @@ void CPyramidDungeonRazor93::OnMobKilled(entt::entity killer, entt::entity victi
             d->SetFlag(kFlagBossSpawned, 1);
             d->SpawnMob(kBossVnum, kBossX, kBossY);
             ForEachPcOnMap(mapIdx, [](entt::entity pc){
-                LPCHARACTER pkPc = ecs::LegacyCharOf(pc);
-                if (pkPc) ecs::ChatSystem::Send(pc, CHAT_TYPE_NOTICE, "-------- Kill the Boss! --------");
+                if (ecs::PlayerRuntime::IsValid(pc)) ecs::ChatSystem::Send(pc, CHAT_TYPE_NOTICE, "-------- Kill the Boss! --------");
                 });
         }
         return;
@@ -679,8 +673,7 @@ void CPyramidDungeonRazor93::OnMobKilled(entt::entity killer, entt::entity victi
                 d->SpawnMob(kBonusMobVnum, kStoneX, kStoneY);
 
             ForEachPcOnMap(mapIdx, [](entt::entity pc){
-                LPCHARACTER pkPc = ecs::LegacyCharOf(pc);
-                if (pkPc) ecs::ChatSystem::Send(pc, CHAT_TYPE_NOTICE, "[Pyramid] Dungeon completed!");
+                if (ecs::PlayerRuntime::IsValid(pc)) ecs::ChatSystem::Send(pc, CHAT_TYPE_NOTICE, "[Pyramid] Dungeon completed!");
                 });
         }
     }

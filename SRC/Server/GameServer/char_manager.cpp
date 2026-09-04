@@ -1359,7 +1359,6 @@ void CHARACTER_MANAGER::UnregisterForMonsterLog(entt::entity character)
 
 void CHARACTER_MANAGER::PacketMonsterLog(entt::entity character, const void* buf, int size)
 {
-	LPCHARACTER ch = ecs::LegacyCharOf(character);
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
 	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "char_manager.cpp::CHARACTER_MANAGER::PacketMonsterLog");//INGAME_DEBUG_RAZOR93
 #endif
@@ -1367,7 +1366,7 @@ void CHARACTER_MANAGER::PacketMonsterLog(entt::entity character, const void* buf
 	{
 
 
-		if (ch && DISTANCE_APPROX(ecs::PlayerRuntime::GetX(cEntity) - ecs::PlayerRuntime::GetX(character), ecs::PlayerRuntime::GetY(cEntity) - ecs::PlayerRuntime::GetY(character)) > 6000)
+		if (ecs::PlayerRuntime::IsValid(character) && DISTANCE_APPROX(ecs::PlayerRuntime::GetX(cEntity) - ecs::PlayerRuntime::GetX(character), ecs::PlayerRuntime::GetY(cEntity) - ecs::PlayerRuntime::GetY(character)) > 6000)
 			continue;
 
 		LPDESC d = ecs::PlayerRuntime::GetDesc(cEntity);

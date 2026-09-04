@@ -300,24 +300,24 @@ namespace
     }
 
     // ---------------- Entrance checks ----------------
-    inline bool CheckLevel(LPCHARACTER ch)
+    inline bool CheckLevel(entt::entity ch)
     {
-        if (!ch)
+        if (!ecs::PlayerRuntime::IsValid(ch))
             return false;
-        const int32_t lv = ecs::PointSystem::GetLevel(((ch) ? (ch)->GetEntityHandle() : entt::null));
+        const int32_t lv = ecs::PointSystem::GetLevel(ch);
         return (lv >= kMinLevel && lv <= kMaxLevel);
     }
 
-    inline int32_t CooldownRemain(LPCHARACTER ch)
+    inline int32_t CooldownRemain(entt::entity ch)
     {
         const int32_t now = get_global_time();
-        const int32_t until = ecs::QuestSystem::GetFlag(((ch) ? (ch)->GetEntityHandle() : entt::null), kQfCooldown);
+        const int32_t until = ecs::QuestSystem::GetFlag(ch, kQfCooldown);
         return (until > now) ? (until - now) : 0;
     }
 
-    inline void SetCooldown(LPCHARACTER ch)
+    inline void SetCooldown(entt::entity ch)
     {
-        ecs::QuestSystem::SetFlag(((ch) ? (ch)->GetEntityHandle() : entt::null), kQfCooldown, get_global_time() + kCooldownSeconds);
+        ecs::QuestSystem::SetFlag(ch, kQfCooldown, get_global_time() + kCooldownSeconds);
     }
 
     inline bool HasEntryItem(LPCHARACTER ch)
@@ -337,20 +337,18 @@ namespace
         snprintf(out, outSz, "%dh %dm", h, m);
     }
 
-    inline void SetDisconnectFlags(LPCHARACTER ch, int32_t mapIndex)
+    inline void SetDisconnectFlags(entt::entity ch, int32_t mapIndex)
     {
-        const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
-        ecs::QuestSystem::SetFlag(chEntity, kQfDisconnect, get_global_time() + kRejoinSeconds);
-        ecs::QuestSystem::SetFlag(chEntity, kQfIdx, mapIndex);
-        ecs::QuestSystem::SetFlag(chEntity, kQfCh, (int32_t)g_bChannel);
+        ecs::QuestSystem::SetFlag(ch, kQfDisconnect, get_global_time() + kRejoinSeconds);
+        ecs::QuestSystem::SetFlag(ch, kQfIdx, mapIndex);
+        ecs::QuestSystem::SetFlag(ch, kQfCh, (int32_t)g_bChannel);
     }
 
-    inline void ClearRejoinFlags(LPCHARACTER ch)
+    inline void ClearRejoinFlags(entt::entity ch)
     {
-        const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
-        ecs::QuestSystem::SetFlag(chEntity, kQfDisconnect, 0);
-        ecs::QuestSystem::SetFlag(chEntity, kQfIdx, 0);
-        ecs::QuestSystem::SetFlag(chEntity, kQfCh, 0);
+        ecs::QuestSystem::SetFlag(ch, kQfDisconnect, 0);
+        ecs::QuestSystem::SetFlag(ch, kQfIdx, 0);
+        ecs::QuestSystem::SetFlag(ch, kQfCh, 0);
     }
 } // anon namespace
 
@@ -362,15 +360,14 @@ CNightmareDungeonRazor93& CNightmareDungeonRazor93::instance()
 
 void CNightmareDungeonRazor93::OnPlayerDisconnect(entt::entity character)
 {
-    LPCHARACTER ch = ecs::LegacyCharOf(character);
-    if (!ch || !ecs::PlayerRuntime::IsPC(character))
+    if (!ecs::PlayerRuntime::IsPC(character))
         return;
 
     const int32_t idx = ecs::PlayerRuntime::GetMapIndex(character);
     if (!IsNightmareDungeonMap(idx))
         return;
 
-    SetDisconnectFlags(ch, idx);
+    SetDisconnectFlags(character, idx);
 }
 
 void CNightmareDungeonRazor93::OnPlayerLogin(entt::entity character)
@@ -543,7 +540,7 @@ bool CNightmareDungeonRazor93::OnClickNpc(entt::entity character)
             if (!ok || !pkM || !ecs::PlayerRuntime::IsPC(m))
                 return;
 
-            if (!CheckLevel(pkM))
+            if (!CheckLevel(m))
             {
                 ok = false;
                 badName = ecs::PlayerRuntime::GetName(m).data();
@@ -552,7 +549,7 @@ bool CNightmareDungeonRazor93::OnClickNpc(entt::entity character)
                 return;
             }
 
-            const int32_t rem = CooldownRemain(pkM);
+            const int32_t rem = CooldownRemain(m);
             if (rem > 0)
             {
                 ok = false;
@@ -619,7 +616,7 @@ bool CNightmareDungeonRazor93::OnClickNpc(entt::entity character)
                 return;
 
             RemoveEntryItem(pkM);
-            SetCooldown(pkM);
+            SetCooldown(m);
 
             // Save current position as return point for ExitAllLobby.
             // When restarting from inside a completed instance, keep the original return point.
@@ -640,7 +637,7 @@ bool CNightmareDungeonRazor93::OnClickNpc(entt::entity character)
     }
 
     // Clear rejoin flags for the leader (members will be set on logout if needed)
-    ClearRejoinFlags(ch);
+    ClearRejoinFlags(character);
 
     ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "[Nightmare] Entering...");
     return true;

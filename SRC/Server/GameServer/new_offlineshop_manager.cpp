@@ -2424,7 +2424,6 @@ namespace offlineshop
 #ifdef ENABLE_NEW_SHOP_IN_CITIES
 	bool CShopManager::RecvShopClickEntity(entt::entity character, uint32_t dwShopEntityVID)
 	{
-		LPCHARACTER ch = ecs::LegacyCharOf(character);
 		for (auto it = m_vecCities.begin(); it != m_vecCities.end(); it++)
 		{
 

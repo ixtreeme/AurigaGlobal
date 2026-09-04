@@ -273,21 +273,19 @@ namespace
         ch->SetWarpLocation(GetOutsideMapByEmpire(ecs::PlayerRuntime::GetEmpire(chEntity)), x, y);
     }
 
-    void WarpOut(LPCHARACTER ch)
+    void WarpOut(entt::entity ch)
     {
-        const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
-        if (!ch)
+        if (!ecs::PlayerRuntime::IsValid(ch))
             return;
         int32_t x = 0, y = 0;
-        GetOutsideCellByEmpire(ecs::PlayerRuntime::GetEmpire(chEntity), x, y);
-        ecs::MovementSystem::WarpSet(chEntity, x * 100, y * 100, GetOutsideMapByEmpire(ecs::PlayerRuntime::GetEmpire(chEntity)));
+        GetOutsideCellByEmpire(ecs::PlayerRuntime::GetEmpire(ch), x, y);
+        ecs::MovementSystem::WarpSet(ch, x * 100, y * 100, GetOutsideMapByEmpire(ecs::PlayerRuntime::GetEmpire(ch)));
     }
 
     void WarpAllOut(int32_t mapIndex)
     {
         ForEachPcOnMap(mapIndex, [&](entt::entity pc){
-            LPCHARACTER pkPc = ecs::LegacyCharOf(pc);
-            WarpOut(pkPc);
+            WarpOut(pc);
         });
     }
 
@@ -323,46 +321,44 @@ namespace
             InventorySystem::SetOwnership(item->GetEntityHandle(), owner->GetEntityHandle(), 60 * 3);
     }
 
-    bool IsEntryMapForEmpire(LPCHARACTER ch)
+    bool IsEntryMapForEmpire(entt::entity ch)
     {
-        if (!ch)
+        if (!ecs::PlayerRuntime::IsValid(ch))
             return false;
-        return ecs::PlayerRuntime::GetMapIndex(((ch) ? (ch)->GetEntityHandle() : entt::null)) == 219;
+        return ecs::PlayerRuntime::GetMapIndex(ch) == 219;
     }
 
-    int32_t CooldownRemain(LPCHARACTER ch)
+    int32_t CooldownRemain(entt::entity ch)
     {
-        if (!ch)
+        if (!ecs::PlayerRuntime::IsValid(ch))
             return 0;
         const int32_t now = get_global_time();
-        const int32_t until = ecs::QuestSystem::GetFlag(((ch) ? (ch)->GetEntityHandle() : entt::null), kQfCooldown);
+        const int32_t until = ecs::QuestSystem::GetFlag(ch, kQfCooldown);
         return (until > now) ? (until - now) : 0;
     }
 
-    void SetCooldown(LPCHARACTER ch)
+    void SetCooldown(entt::entity ch)
     {
-        if (ch)
-            ecs::QuestSystem::SetFlag(((ch) ? (ch)->GetEntityHandle() : entt::null), kQfCooldown, get_global_time() + kEntranceCooldownSec);
+        if (ecs::PlayerRuntime::IsValid(ch))
+            ecs::QuestSystem::SetFlag(ch, kQfCooldown, get_global_time() + kEntranceCooldownSec);
     }
 
-    void SetRejoinFlags(LPCHARACTER ch, int32_t mapIndex)
+    void SetRejoinFlags(entt::entity ch, int32_t mapIndex)
     {
-        const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
-        if (!ch)
+        if (!ecs::PlayerRuntime::IsValid(ch))
             return;
-        ecs::QuestSystem::SetFlag(chEntity, kQfDisconnect, get_global_time() + kRejoinSec);
-        ecs::QuestSystem::SetFlag(chEntity, kQfIdx, mapIndex);
-        ecs::QuestSystem::SetFlag(chEntity, kQfCh, (int32_t)g_bChannel);
+        ecs::QuestSystem::SetFlag(ch, kQfDisconnect, get_global_time() + kRejoinSec);
+        ecs::QuestSystem::SetFlag(ch, kQfIdx, mapIndex);
+        ecs::QuestSystem::SetFlag(ch, kQfCh, (int32_t)g_bChannel);
     }
 
-    void ClearRejoinFlags(LPCHARACTER ch)
+    void ClearRejoinFlags(entt::entity ch)
     {
-        const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
-        if (!ch)
+        if (!ecs::PlayerRuntime::IsValid(ch))
             return;
-        ecs::QuestSystem::SetFlag(chEntity, kQfDisconnect, 0);
-        ecs::QuestSystem::SetFlag(chEntity, kQfIdx, 0);
-        ecs::QuestSystem::SetFlag(chEntity, kQfCh, 0);
+        ecs::QuestSystem::SetFlag(ch, kQfDisconnect, 0);
+        ecs::QuestSystem::SetFlag(ch, kQfIdx, 0);
+        ecs::QuestSystem::SetFlag(ch, kQfCh, 0);
     }
 
     int32_t GetPartyOnlineCountOnMap(LPPARTY party, int32_t mapIndex)
@@ -371,8 +367,7 @@ namespace
         if (!party)
             return 0;
         auto fn = [&](entt::entity pc){
-            LPCHARACTER pkPc = ecs::LegacyCharOf(pc);
-            if (pkPc && ecs::SocialSystem::GetParty(pc) == party)
+            if (ecs::PlayerRuntime::IsValid(pc) && ecs::SocialSystem::GetParty(pc) == party)
                 ++count;
         };
         auto fnPtr = [&](LPCHARACTER pkMember) { fn(pkMember ? pkMember->GetEntityHandle() : entt::null); };
@@ -441,16 +436,16 @@ namespace
         NoticeMap(mapIndex, "<Bloody cathedral> Kill the first boss to obtain the required item.");
     }
 
-    void ReplaceUniqueCalyx(LPDUNGEON d, LPCHARACTER npc)
+    void ReplaceUniqueCalyx(LPDUNGEON d, entt::entity npc)
     {
-        if (!d || !npc)
+        if (!d || !ecs::PlayerRuntime::IsValid(npc))
             return;
 
         for (int i = 0; i < 4; ++i)
         {
             char key[32];
             snprintf(key, sizeof(key), "hw22_calyx_%d", i + 1);
-		if (ecs::PlayerRuntime::GetPacketVID(((npc) ? (npc)->GetEntityHandle() : entt::null)) == (uint32_t)d->GetUniqueVid(key))
+		if (ecs::PlayerRuntime::GetPacketVID(npc) == (uint32_t)d->GetUniqueVid(key))
             {
                 d->SpawnMob(kCalyxFullNpc, kCalyxPos[i].x, kCalyxPos[i].y, kCalyxPos[i].dir);
                 d->KillUnique(key);
@@ -623,8 +618,7 @@ bool CHalloween2022Dungeon::IsHalloweenDungeonMap(int32_t mapIndex) const
 
 void CHalloween2022Dungeon::OnPlayerDisconnect(entt::entity character)
 {
-    LPCHARACTER ch = ecs::LegacyCharOf(character);
-    if (!ch || !ecs::PlayerRuntime::IsPC(character))
+    if (!ecs::PlayerRuntime::IsPC(character))
         return;
 
     const int32_t idx = ecs::PlayerRuntime::GetMapIndex(character);
@@ -635,7 +629,7 @@ void CHalloween2022Dungeon::OnPlayerDisconnect(entt::entity character)
     if (!d || d->GetFlag(kFlagCompleted) != 0)
         return;
 
-    SetRejoinFlags(ch, idx);
+    SetRejoinFlags(character, idx);
 }
 
 void CHalloween2022Dungeon::OnPlayerLogin(entt::entity character)
@@ -651,7 +645,7 @@ void CHalloween2022Dungeon::OnPlayerLogin(entt::entity character)
         LPDUNGEON d = CDungeonManager::instance().FindByMapIndex(idx);
         if (!d)
         {
-            WarpOut(ch);
+            WarpOut(character);
             return;
         }
 
@@ -740,7 +734,7 @@ bool CHalloween2022Dungeon::OnClickNpc(entt::entity character, entt::entity npc)
         }
     }
 
-    if (!fromCompletedInside && !IsEntryMapForEmpire(ch))
+    if (!fromCompletedInside && !IsEntryMapForEmpire(character))
     {
         ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "You must be in the correct map to enter Bloody cathedral.");
         return true;
@@ -803,7 +797,7 @@ bool CHalloween2022Dungeon::OnClickNpc(entt::entity character, entt::entity npc)
             return;
         }
 
-        const int32_t rem = CooldownRemain(pkM);
+        const int32_t rem = CooldownRemain(m);
         if (rem > 0)
         {
             ok = false;
@@ -869,10 +863,10 @@ bool CHalloween2022Dungeon::OnClickNpc(entt::entity character, entt::entity npc)
         if (!fromCompletedInside)
             SetOutsideWarpLocation(pkM);
 
-        ClearRejoinFlags(pkM);
+        ClearRejoinFlags(m);
         ecs::QuestSystem::SetFlag(m, kQfIdx, dungeonMapIdx);
         ecs::QuestSystem::SetFlag(m, kQfCh, (int32_t)g_bChannel);
-        SetCooldown(pkM);
+        SetCooldown(m);
         pkM->RemoveSpecifyItem(kEntryItemVnum, kEntryItemCount);
     };
     auto prepareMemberPtr = [&](LPCHARACTER pkMember) { prepareMember(pkMember ? pkMember->GetEntityHandle() : entt::null); };
@@ -1080,9 +1074,8 @@ void CHalloween2022Dungeon::OnMobKilled(entt::entity killer, entt::entity victim
         s_hw22.Cancel(s_hw22.m_evTimeout, idx);
 
         ForEachPcOnMap(idx, [&](entt::entity pc){
-            LPCHARACTER pkPc = ecs::LegacyCharOf(pc);
-            SetCooldown(pkPc);
-            ClearRejoinFlags(pkPc);
+            SetCooldown(pc);
+            ClearRejoinFlags(pc);
         });
 
         d->SpawnMob(kEntryNpcVnum, kRewardChestPos.x, kRewardChestPos.y, kRewardChestPos.dir);
@@ -1206,7 +1199,7 @@ bool CHalloween2022Dungeon::OnNpcTakeItem(entt::entity from, entt::entity npc, C
         RemoveOneGivenItem(itemEntity, "HALLOWEEN22_CALYX");
         d->SetFlag(kFlagCanFillCalyx, 0);
         d->SetFlag(kFlagCalyxFilled, d->GetFlag(kFlagCalyxFilled) + 1);
-        ReplaceUniqueCalyx(d, pkNpc);
+        ReplaceUniqueCalyx(d, npc);
 
         const int32_t filled = d->GetFlag(kFlagCalyxFilled);
         if (filled == 1)
