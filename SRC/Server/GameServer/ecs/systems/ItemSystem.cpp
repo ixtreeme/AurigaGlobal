@@ -1905,6 +1905,17 @@ int GetItemAccessorySocketGrade(entt::entity item)
     return MINMAX(0, GetItemSocket(item, 0), GetItemAccessorySocketMaxGrade(item));
 }
 
+bool IsItemStackable(entt::entity item)
+{
+    return (GetItemFlags(item) & ITEM_FLAG_STACKABLE) != 0;
+}
+
+uint32_t GetItemRefinedVnum(entt::entity item)
+{
+    const TItemTable* proto = GetItemProto(item);
+    return proto ? proto->dwRefinedVnum : 0;
+}
+
 bool IsRealTimeItem(entt::entity item)
 {
     return HasLimitType(item, LIMIT_REAL_TIME);

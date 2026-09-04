@@ -2240,37 +2240,37 @@ void CHARACTER::RemoveSpecifyItem(uint32_t vnum, int count, bool cuberenewal)
 	{
 		for (uint16_t i = 0; i < EXTRA_INVENTORY_MAX_NUM; ++i)
 		{
-			LPITEM item = GetExtraInventoryItem(i);
+			const entt::entity item = ItemSystem::GetExtraInventoryItem(GetEntityHandle(), i);
 
-			if (!item)
+			if (item == entt::null)
 				continue;
 
-			if (item->GetVnum() != vnum)
+			if (ItemSystem::GetItemVnum(item) != vnum)
 				continue;
 
 			if (m_pkMyShop)
 			{
-				if (m_pkMyShop->IsSellingItem(item->GetID()))
+				if (m_pkMyShop->IsSellingItem(ItemSystem::GetItemID(item)))
 					continue;
 			}
 
 			if (cuberenewal) {
-				if (item->GetLockedAttr() != -1) {
+				if (ItemSystem::GetItemLockedAttr(item) != -1) {
 					continue;
 				}
 			}
 
-			if (count >= item->GetCount())
+			if (count >= ItemSystem::GetItemCount(item))
 			{
-				count -= item->GetCount();
-				ItemSystem::ConsumeItemEcs((item ? item->GetEntityHandle() : entt::null), item->GetCount());
+				count -= ItemSystem::GetItemCount(item);
+				ItemSystem::ConsumeItemEcs(item, ItemSystem::GetItemCount(item));
 
 				if (0 == count)
 					return;
 			}
 			else
 			{
-				ItemSystem::ConsumeItemEcs((item ? item->GetEntityHandle() : entt::null), count);
+				ItemSystem::ConsumeItemEcs(item, count);
 				return;
 			}
 		}
@@ -2284,34 +2284,34 @@ void CHARACTER::RemoveSpecifyItem(uint32_t vnum, int count, bool cuberenewal)
 		for (UINT i = 0; i < INVENTORY_MAX_NUM; ++i)
 #endif
 		{
-			LPITEM item = GetInventoryItem(i);
-			if (!item)
+			const entt::entity item = ItemSystem::GetInventoryItem(GetEntityHandle(), i);
+			if (item == entt::null)
 				continue;
 
-			if (item->GetVnum() != vnum)
+			if (ItemSystem::GetItemVnum(item) != vnum)
 				continue;
 
-			if (m_pkMyShop && m_pkMyShop->IsSellingItem(item->GetID()))
+			if (m_pkMyShop && m_pkMyShop->IsSellingItem(ItemSystem::GetItemID(item)))
 				continue;
 
-			if (cuberenewal && item->GetLockedAttr() != -1)
+			if (cuberenewal && ItemSystem::GetItemLockedAttr(item) != -1)
 				continue;
 
 			if (vnum >= 80003 && vnum <= 80007)
-				LogManager::instance().GoldBarLog(GetPlayerID(), item->GetID(), QUEST, "RemoveSpecifyItem");
+				LogManager::instance().GoldBarLog(GetPlayerID(), ItemSystem::GetItemID(item), QUEST, "RemoveSpecifyItem");
 
-			const int itemCount = item->GetCount();
+			const int itemCount = ItemSystem::GetItemCount(item);
 			if (count >= itemCount)
 			{
 				count -= itemCount;
-				ItemSystem::ConsumeItemEcs((item ? item->GetEntityHandle() : entt::null), itemCount);
+				ItemSystem::ConsumeItemEcs(item, itemCount);
 
 				if (0 == count)
 					return;
 			}
 			else
 			{
-				ItemSystem::ConsumeItemEcs((item ? item->GetEntityHandle() : entt::null), count);
+				ItemSystem::ConsumeItemEcs(item, count);
 				return;
 			}
 		}
@@ -2331,10 +2331,10 @@ int CHARACTER::CountSpecifyTypeItem(uint8_t type) const
 	for (UINT i = 0; i < INVENTORY_MAX_NUM; ++i)
 #endif
 	{
-		LPITEM pItem = GetInventoryItem(i);
-		if (pItem != nullptr && pItem->GetType() == type)
+		const entt::entity pItem = ItemSystem::GetInventoryItem(GetEntityHandle(), i);
+		if (pItem != entt::null && ItemSystem::GetItemType(pItem) == type)
 		{
-			count += pItem->GetCount();
+			count += ItemSystem::GetItemCount(pItem);
 		}
 	}
 
@@ -2390,6 +2390,13 @@ void SetWear(entt::entity e, uint8_t bCell, entt::entity item)
 }
 
 } // namespace ecs::PlayerRuntime
+// Entity overload. The pointer one keeps its thirteen callers; this is what
+// the converted locals in this file reach.
+bool CHARACTER::UnequipItem(entt::entity item)
+{
+	return UnequipItem(LegacyItemBoundary(item));
+}
+
 bool CHARACTER::UnequipItem(LPITEM item)
 {
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
@@ -2399,8 +2406,8 @@ bool CHARACTER::UnequipItem(LPITEM item)
 	int iWearCell = ItemSystem::FindEquipCell(GetEntityHandle(), item->GetEntityHandle());
 	if (iWearCell == WEAR_WEAPON)
 	{
-		LPITEM costumeWeapon = GetWear(WEAR_COSTUME_WEAPON);
-		if (costumeWeapon && !UnequipItem(costumeWeapon))
+		const entt::entity costumeWeapon = ItemSystem::GetWearItem(GetEntityHandle(), WEAR_COSTUME_WEAPON);
+		if (costumeWeapon != entt::null && !UnequipItem(costumeWeapon))
 		{
 #ifdef TEXTS_IMPROVEMENT
 			ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 366, "");
@@ -2523,8 +2530,8 @@ bool CHARACTER::EquipItem(LPITEM item, int iCandidateCell)
 	{
 		if (item->GetType() == ITEM_WEAPON)
 		{
-			LPITEM costumeWeapon = GetWear(WEAR_COSTUME_WEAPON);
-			if (costumeWeapon && costumeWeapon->GetValue(3) != item->GetSubType() && !UnequipItem(costumeWeapon))
+			const entt::entity costumeWeapon = ItemSystem::GetWearItem(GetEntityHandle(), WEAR_COSTUME_WEAPON);
+			if (costumeWeapon != entt::null && ItemSystem::GetItemValue(costumeWeapon, 3) != item->GetSubType() && !UnequipItem(costumeWeapon))
 			{
 #ifdef TEXTS_IMPROVEMENT
 				ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 366, "");
@@ -2534,8 +2541,8 @@ bool CHARACTER::EquipItem(LPITEM item, int iCandidateCell)
 		}
 		else //fishrod/pickaxe
 		{
-			LPITEM costumeWeapon = GetWear(WEAR_COSTUME_WEAPON);
-			if (costumeWeapon && !UnequipItem(costumeWeapon))
+			const entt::entity costumeWeapon = ItemSystem::GetWearItem(GetEntityHandle(), WEAR_COSTUME_WEAPON);
+			if (costumeWeapon != entt::null && !UnequipItem(costumeWeapon))
 			{
 #ifdef TEXTS_IMPROVEMENT
 				ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 366, "");
@@ -2548,8 +2555,8 @@ bool CHARACTER::EquipItem(LPITEM item, int iCandidateCell)
 	{
 		if (item->GetType() == ITEM_COSTUME && item->GetSubType() == COSTUME_WEAPON)
 		{
-			LPITEM pkWeapon = GetWear(WEAR_WEAPON);
-			if (!pkWeapon || pkWeapon->GetType() != ITEM_WEAPON || item->GetValue(3) != pkWeapon->GetSubType())
+			const entt::entity pkWeapon = ItemSystem::GetWearItem(GetEntityHandle(), WEAR_WEAPON);
+			if (pkWeapon == entt::null || ItemSystem::GetItemType(pkWeapon) != ITEM_WEAPON || item->GetValue(3) != ItemSystem::GetItemSubType(pkWeapon))
 			{
 #ifdef TEXTS_IMPROVEMENT
 				ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 694, "");
@@ -2720,23 +2727,23 @@ bool CHARACTER::EquipItem(LPITEM item, int iCandidateCell)
 bool CHARACTER::IsEquipUniqueItem(uint32_t dwItemVnum) const
 {
 	{
-		LPITEM u = GetWear(WEAR_UNIQUE1);
+		const entt::entity u = ItemSystem::GetWearItem(GetEntityHandle(), WEAR_UNIQUE1);
 
-		if (u && u->GetVnum() == dwItemVnum)
+		if (u != entt::null && ItemSystem::GetItemVnum(u) == dwItemVnum)
 			return true;
 	}
 
 	{
-		LPITEM u = GetWear(WEAR_UNIQUE2);
+		const entt::entity u = ItemSystem::GetWearItem(GetEntityHandle(), WEAR_UNIQUE2);
 
-		if (u && u->GetVnum() == dwItemVnum)
+		if (u != entt::null && ItemSystem::GetItemVnum(u) == dwItemVnum)
 			return true;
 	}
 
 	{
-		LPITEM u = GetWear(WEAR_COSTUME_MOUNT);
+		const entt::entity u = ItemSystem::GetWearItem(GetEntityHandle(), WEAR_COSTUME_MOUNT);
 
-		if (u && u->GetVnum() == dwItemVnum)
+		if (u != entt::null && ItemSystem::GetItemVnum(u) == dwItemVnum)
 			return true;
 	}
 
@@ -2751,23 +2758,23 @@ bool CHARACTER::IsEquipUniqueItem(uint32_t dwItemVnum) const
 bool CHARACTER::IsEquipUniqueGroup(uint32_t dwGroupVnum) const
 {
 	{
-		LPITEM u = GetWear(WEAR_UNIQUE1);
+		const entt::entity u = ItemSystem::GetWearItem(GetEntityHandle(), WEAR_UNIQUE1);
 
-		if (u && u->GetSpecialGroup() == (int)dwGroupVnum)
+		if (u != entt::null && ItemSystem::GetItemSpecialGroup(u) == (int)dwGroupVnum)
 			return true;
 	}
 
 	{
-		LPITEM u = GetWear(WEAR_UNIQUE2);
+		const entt::entity u = ItemSystem::GetWearItem(GetEntityHandle(), WEAR_UNIQUE2);
 
-		if (u && u->GetSpecialGroup() == (int)dwGroupVnum)
+		if (u != entt::null && ItemSystem::GetItemSpecialGroup(u) == (int)dwGroupVnum)
 			return true;
 	}
 
 	{
-		LPITEM u = GetWear(WEAR_COSTUME_MOUNT);
+		const entt::entity u = ItemSystem::GetWearItem(GetEntityHandle(), WEAR_COSTUME_MOUNT);
 
-		if (u && u->GetSpecialGroup() == (int)dwGroupVnum)
+		if (u != entt::null && ItemSystem::GetItemSpecialGroup(u) == (int)dwGroupVnum)
 			return true;
 	}
 
@@ -2777,41 +2784,41 @@ bool CHARACTER::IsEquipUniqueGroup(uint32_t dwGroupVnum) const
 
 bool CHARACTER::UnEquipSpecialRideUniqueItem()
 {
-	LPITEM Unique1 = GetWear(WEAR_UNIQUE1);
-	LPITEM Unique2 = GetWear(WEAR_UNIQUE2);
-	LPITEM Unique3 = GetWear(WEAR_COSTUME_MOUNT);
+	const entt::entity Unique1 = ItemSystem::GetWearItem(GetEntityHandle(), WEAR_UNIQUE1);
+	const entt::entity Unique2 = ItemSystem::GetWearItem(GetEntityHandle(), WEAR_UNIQUE2);
+	const entt::entity Unique3 = ItemSystem::GetWearItem(GetEntityHandle(), WEAR_COSTUME_MOUNT);
 
 #ifdef ENABLE_MOUNT_COSTUME_SYSTEM
-	LPITEM MountCostume = GetWear(WEAR_COSTUME_MOUNT);
+	const entt::entity MountCostume = ItemSystem::GetWearItem(GetEntityHandle(), WEAR_COSTUME_MOUNT);
 #endif
 
 
-	if (nullptr != Unique1)
+	if (Unique1 != entt::null)
 	{
-		if (UNIQUE_GROUP_SPECIAL_RIDE == Unique1->GetSpecialGroup())
+		if (UNIQUE_GROUP_SPECIAL_RIDE == ItemSystem::GetItemSpecialGroup(Unique1))
 		{
 			return UnequipItem(Unique1);
 		}
 	}
 
-	if (nullptr != Unique2)
+	if (Unique2 != entt::null)
 	{
-		if (UNIQUE_GROUP_SPECIAL_RIDE == Unique2->GetSpecialGroup())
+		if (UNIQUE_GROUP_SPECIAL_RIDE == ItemSystem::GetItemSpecialGroup(Unique2))
 		{
 			return UnequipItem(Unique2);
 		}
 	}
 
-	if (nullptr != Unique3)
+	if (Unique3 != entt::null)
 	{
-		if (UNIQUE_GROUP_SPECIAL_RIDE == Unique3->GetSpecialGroup())
+		if (UNIQUE_GROUP_SPECIAL_RIDE == ItemSystem::GetItemSpecialGroup(Unique3))
 		{
 			return UnequipItem(Unique3);
 		}
 	}
 
 	/*#ifdef ENABLE_MOUNT_COSTUME_SYSTEM
-		if (MountCostume)
+		if (MountCostume != entt::null)
 			return UnequipItem(MountCostume);
 	#endif*/
 
@@ -2947,8 +2954,8 @@ bool CHARACTER::CanEquipNow(const LPITEM item, const TItemPos & srcCell, const T
 #ifdef ENABLE_BUG_FIXES
 	if (item->GetType() == ITEM_COSTUME && item->GetSubType() == COSTUME_BODY)
 	{
-		LPITEM atakanxd = GetWear(WEAR_BODY);
-		if (atakanxd && (atakanxd->GetVnum() >= 11901 && atakanxd->GetVnum() <= 11914))
+		const entt::entity atakanxd = ItemSystem::GetWearItem(GetEntityHandle(), WEAR_BODY);
+		if (atakanxd != entt::null && (ItemSystem::GetItemVnum(atakanxd) >= 11901 && ItemSystem::GetItemVnum(atakanxd) <= 11914))
 		{
 #ifdef TEXTS_IMPROVEMENT
 			ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 1129, "");
@@ -2959,8 +2966,8 @@ bool CHARACTER::CanEquipNow(const LPITEM item, const TItemPos & srcCell, const T
 
 	if (item->GetVnum() >= 11901 && item->GetVnum() <= 11914)
 	{
-		LPITEM atakan = GetWear(WEAR_COSTUME_BODY);
-		if (atakan && (atakan->GetType() == ITEM_COSTUME && atakan->GetSubType() == COSTUME_BODY))
+		const entt::entity atakan = ItemSystem::GetWearItem(GetEntityHandle(), WEAR_COSTUME_BODY);
+		if (atakan != entt::null && (ItemSystem::GetItemType(atakan) == ITEM_COSTUME && ItemSystem::GetItemSubType(atakan) == COSTUME_BODY))
 		{
 #ifdef TEXTS_IMPROVEMENT
 			ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 1129, "");
@@ -12424,29 +12431,29 @@ void CHARACTER::RemoveSpecifyTypeItem(uint8_t type, int count)
 	for (UINT i = 0; i < INVENTORY_MAX_NUM; ++i)
 #endif
 	{
-		LPITEM item = GetInventoryItem(i);
-		if (!item)
+		const entt::entity item = ItemSystem::GetInventoryItem(GetEntityHandle(), i);
+		if (item == entt::null)
 			continue;
 
 		if (GetInventoryItem(i)->GetType() != type)
 			continue;
 
 
-		if (m_pkMyShop && m_pkMyShop->IsSellingItem(item->GetID()))
+		if (m_pkMyShop && m_pkMyShop->IsSellingItem(ItemSystem::GetItemID(item)))
 			continue;
 
-		const int itemCount = item->GetCount();
+		const int itemCount = ItemSystem::GetItemCount(item);
 		if (count >= itemCount)
 		{
 			count -= itemCount;
-			ItemSystem::ConsumeItemEcs((item ? item->GetEntityHandle() : entt::null), itemCount);
+			ItemSystem::ConsumeItemEcs(item, itemCount);
 
 			if (0 == count)
 				return;
 		}
 		else
 		{
-			ItemSystem::ConsumeItemEcs((item ? item->GetEntityHandle() : entt::null), count);
+			ItemSystem::ConsumeItemEcs(item, count);
 			return;
 		}
 	}
@@ -12487,15 +12494,15 @@ void CHARACTER::AutoGiveItem(LPITEM item, bool longOwnerShip
 			bCount = item->GetCount();
 		for (int i = 0; i < EXTRA_INVENTORY_MAX_NUM; ++i)
 		{
-			LPITEM item2 = GetExtraInventoryItem(i);
-			if (!item2)
+			const entt::entity item2 = ItemSystem::GetExtraInventoryItem(GetEntityHandle(), i);
+			if (item2 == entt::null)
 				continue;
 
-			if (item2->GetVnum() == item->GetVnum())
+			if (ItemSystem::GetItemVnum(item2) == item->GetVnum())
 			{
 				int j = 0;
 				for (j = 0; j < ITEM_SOCKET_MAX_NUM; ++j)
-					if (item2->GetSocket(j) != item->GetSocket(j))
+					if (ItemSystem::GetItemSocket(item2, j) != item->GetSocket(j))
 						break;
 
 				if (j != ITEM_SOCKET_MAX_NUM)
@@ -12506,9 +12513,10 @@ void CHARACTER::AutoGiveItem(LPITEM item, bool longOwnerShip
 #else
 				uint8_t
 #endif
-					bCount2 = std::min(g_bItemCountLimit - item2->GetCount(), bCount); // change type for some
+					bCount2 = static_cast<uint8_t>(std::min<int64_t>(
+							g_bItemCountLimit - ItemSystem::GetItemCount(item2), bCount)); // change type for some
 				bCount -= bCount2;
-				ItemSystem::AddItemCountEcs((item2 ? item2->GetEntityHandle() : entt::null), bCount2);
+				ItemSystem::AddItemCountEcs(item2, bCount2);
 				ItemSystem::ConsumeItemEcs(itemEntity, bCount2);
 				if (bCount == 0) {
 					return;
@@ -12529,15 +12537,15 @@ void CHARACTER::AutoGiveItem(LPITEM item, bool longOwnerShip
 			bCount = item->GetCount();
 		for (int i = 0; i < INVENTORY_MAX_NUM; ++i)
 		{
-			LPITEM item2 = GetInventoryItem(i);
-			if (!item2)
+			const entt::entity item2 = ItemSystem::GetInventoryItem(GetEntityHandle(), i);
+			if (item2 == entt::null)
 				continue;
 
-			if (item2->GetVnum() == item->GetVnum())
+			if (ItemSystem::GetItemVnum(item2) == item->GetVnum())
 			{
 				int j = 0;
 				for (j = 0; j < ITEM_SOCKET_MAX_NUM; ++j)
-					if (item2->GetSocket(j) != item->GetSocket(j))
+					if (ItemSystem::GetItemSocket(item2, j) != item->GetSocket(j))
 						break;
 
 				if (j != ITEM_SOCKET_MAX_NUM)
@@ -12548,9 +12556,10 @@ void CHARACTER::AutoGiveItem(LPITEM item, bool longOwnerShip
 #else
 				uint8_t
 #endif
-					bCount2 = std::min(g_bItemCountLimit - item2->GetCount(), bCount); // change type for some
+					bCount2 = static_cast<uint8_t>(std::min<int64_t>(
+							g_bItemCountLimit - ItemSystem::GetItemCount(item2), bCount)); // change type for some
 				bCount -= bCount2;
-				ItemSystem::AddItemCountEcs((item2 ? item2->GetEntityHandle() : entt::null), bCount2);
+				ItemSystem::AddItemCountEcs(item2, bCount2);
 				ItemSystem::ConsumeItemEcs(itemEntity, bCount2);
 				if (bCount == 0) {
 					return;
@@ -12945,12 +12954,12 @@ bool CHARACTER::GiveItem(entt::entity victimEntity, TItemPos Cell)
 	}
 	// @fixme150 END
 
-	LPITEM item = GetItem(Cell);
+	const entt::entity item = ItemSystem::GetItem(GetEntityHandle(), Cell);
 
-	if (item && !item->IsExchanging())
+	if (item != entt::null && !ItemSystem::IsItemExchanging(item))
 	{
 		const entt::entity itemEntity =
-			(item ? item->GetEntityHandle() : entt::null);
+			item;
 		if (ItemSystem::ReceiveItemEcs(victimEntity,
 				GetEntityHandle(), itemEntity))
 			return true;
@@ -15424,13 +15433,13 @@ void CHARACTER::AutoRecallProcess()
 	{
 		const CAffect* pAffect = FindAffect(AFFECT_RECALL1);
 		if (pAffect) {
-			LPITEM pItem = FindItemByID(pAffect->dwFlag);
-			if (pItem) {
-				if (pItem->GetSocket(2) == false) {
+			const entt::entity pItem = ItemSystem::FindItemByID(GetEntityHandle(), pAffect->dwFlag);
+			if (pItem != entt::null) {
+				if (ItemSystem::GetItemSocket(pItem, 2) == false) {
 					CPetSystem* petSystem = GetPetSystem();
 					if (petSystem) {
 						if (petSystem->CountSummoned() < 1) {
-							CPetActor* pPet = petSystem->Summon(pItem->GetValue(1), (pItem ? pItem->GetEntityHandle() : entt::null), "", false);
+							CPetActor* pPet = petSystem->Summon(ItemSystem::GetItemValue(pItem, 1), pItem, "", false);
 							if (!pPet)
 								RemoveAffect(const_cast<CAffect*>(pAffect));
 						}
@@ -15448,13 +15457,13 @@ void CHARACTER::AutoRecallProcess()
 	{
 		const CAffect* pAffect = FindAffect(AFFECT_RECALL2);
 		if (pAffect) {
-			LPITEM pItem = FindItemByID(pAffect->dwFlag);
-			if (pItem) {
-				if (pItem->GetSocket(0) == false) {
+			const entt::entity pItem = ItemSystem::FindItemByID(GetEntityHandle(), pAffect->dwFlag);
+			if (pItem != entt::null) {
+				if (ItemSystem::GetItemSocket(pItem, 0) == false) {
 					CNewPetSystem* petSystem = GetNewPetSystem();
 					if (petSystem) {
 						if (petSystem->CountSummoned() < 1) {
-							CNewPetActor* pPet = petSystem->Summon(pItem->GetValue(0), (pItem ? pItem->GetEntityHandle() : entt::null), "", false);
+							CNewPetActor* pPet = petSystem->Summon(ItemSystem::GetItemValue(pItem, 0), pItem, "", false);
 							if (!pPet)
 								RemoveAffect(const_cast<CAffect*>(pAffect));
 						}

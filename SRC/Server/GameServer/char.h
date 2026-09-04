@@ -1483,6 +1483,7 @@ public:
 	bool			PickupItem(uint32_t vid);
 	bool			EquipItem(LPITEM item, int iCandidateCell = -1);
 	bool			UnequipItem(LPITEM item);
+	bool			UnequipItem(entt::entity item);
 
 	// ���� item�� ������ �� �ִ� �� Ȯ���ϰ�, �Ұ��� �ϴٸ� ĳ���Ϳ��� ������ �˷��ִ� �Լ�
 	bool			CanEquipNow(const LPITEM item, const TItemPos& srcCell = NPOS, const TItemPos& destCell = NPOS);
