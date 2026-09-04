@@ -1130,8 +1130,7 @@ bool CVikingDungeon::OnUseItem(entt::entity character, CItem* item)
 bool CVikingDungeon::OnClickNpc(entt::entity character, entt::entity npc)
 {
     LPCHARACTER ch = ecs::LegacyCharOf(character);
-    LPCHARACTER pkNpc = ecs::LegacyCharOf(npc);
-    if (!ch || !pkNpc || !ecs::PlayerRuntime::IsPC(character))
+    if (!ch || !ecs::PlayerRuntime::IsValid(npc) || !ecs::PlayerRuntime::IsPC(character))
         return false;
 
     const uint32_t race = ecs::PlayerRuntime::GetRaceNum(npc);
@@ -1466,8 +1465,7 @@ bool CVikingDungeon::OnNpcTakeItem(entt::entity from, entt::entity npc, CItem* i
 void CVikingDungeon::OnMobKilled(entt::entity killer, entt::entity victim)
 {
     LPCHARACTER pkKiller = ecs::LegacyCharOf(killer);
-    LPCHARACTER pkVictim = ecs::LegacyCharOf(victim);
-    if (!pkKiller || !pkVictim || !ecs::PlayerRuntime::IsPC(killer))
+    if (!pkKiller || !ecs::PlayerRuntime::IsValid(victim) || !ecs::PlayerRuntime::IsPC(killer))
         return;
 
     const int32_t idx = ecs::PlayerRuntime::GetMapIndex(killer);

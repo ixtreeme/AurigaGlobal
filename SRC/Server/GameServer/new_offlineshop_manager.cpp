@@ -3386,8 +3386,7 @@ namespace offlineshop
 
 	bool CShopManager::RecvAuctionListRequestClientPacket(entt::entity character, bool owner)
 	{
-		LPCHARACTER ch = ecs::LegacyCharOf(character);
-		if(!ch)
+		if(!ecs::PlayerRuntime::IsValid(character))
 			return false;
 
 		TAuctionListElement temp;

@@ -6037,14 +6037,13 @@ void CInputMain::ChangeLanguage(entt::entity character, uint8_t bLanguage)
 
 void CInputMain::RequestLanguage(entt::entity character, const char* targetName)
 {
-	LPCHARACTER ch = ecs::LegacyCharOf(character);
 // migrated from CHARACTER handler
 // TODO Phase 8: migrate RequestLanguage handler ECS
 // DUAL-PATH: legacy only during migration window
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
 	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "input_main.cpp:: void CInputMain::RequestLanguage ");//INGAME_DEBUG_RAZOR93
 #endif
-	if (!ch)
+	if (!ecs::PlayerRuntime::IsValid(character))
 		return;
 
 	LPDESC d = ecs::PlayerRuntime::GetDesc(character);

@@ -473,9 +473,8 @@ void CTritonTempleDungeon::OnPlayerLogin(entt::entity character)
 
 void CTritonTempleDungeon::OnMobKilled(entt::entity killer, entt::entity victim)
 {
-    LPCHARACTER pkKiller = ecs::LegacyCharOf(killer);
     LPCHARACTER pkVictim = ecs::LegacyCharOf(victim);
-    if (!pkKiller || !pkVictim)
+    if (!ecs::PlayerRuntime::IsValid(killer) || !pkVictim)
         return;
     if (!ecs::PlayerRuntime::IsPC(killer))
         return;

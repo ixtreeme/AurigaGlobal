@@ -3185,9 +3185,8 @@ ACMD(do_socket_item)
 // BLOCK_CHAT
 ACMD(do_block_chat_list)
 {
-	LPCHARACTER ch = ecs::LegacyCharOf(character);
 	// GM ƴϰų block_chat_privilege   ɾ  Ұ
-	if (!ch || ((ecs::PlayerRuntime::GetGMLevel(character)) < GM_HIGH_WIZARD && ecs::QuestSystem::GetFlag(character, "chat_privilege.block") <= 0))
+	if (!ecs::PlayerRuntime::IsValid(character) || ((ecs::PlayerRuntime::GetGMLevel(character)) < GM_HIGH_WIZARD && ecs::QuestSystem::GetFlag(character, "chat_privilege.block") <= 0))
 	{
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 266, "");

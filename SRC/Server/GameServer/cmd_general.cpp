@@ -480,8 +480,7 @@ void Shutdown(int iSec)
 
 ACMD(do_shutdown)
 {
-	LPCHARACTER ch = ecs::LegacyCharOf(character);
-	if (nullptr == ch)
+	if (!ecs::PlayerRuntime::IsValid(character))
 	{
 		LOG_ERROR("Accept shutdown command from {}.", ecs::PlayerRuntime::GetName(character).data());
 	}
@@ -1834,8 +1833,7 @@ ACMD(do_pvp_advanced)
 
 ACMD(do_decline_pvp)
 {
-	LPCHARACTER ch = ecs::LegacyCharOf(character);
-	if (!ch)
+	if (!ecs::PlayerRuntime::IsValid(character))
 		return;
 
 	char arg1[256];
@@ -3857,8 +3855,7 @@ ACMD(do_hide_costume)
 
 ACMD(do_rune)
 {
-	LPCHARACTER ch = ecs::LegacyCharOf(character);
-	if (!ch)
+	if (!ecs::PlayerRuntime::IsValid(character))
 		return;
 	const entt::entity owner = character;
 
@@ -3921,8 +3918,7 @@ ACMD(do_rune)
 
 ACMD(do_rune_charge)
 {
-	LPCHARACTER ch = ecs::LegacyCharOf(character);
-	if (!ch)
+	if (!ecs::PlayerRuntime::IsValid(character))
 		return;
 	const entt::entity owner = character;
 

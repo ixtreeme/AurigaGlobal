@@ -159,8 +159,7 @@ namespace
         va_end(ap);
 
         ForEachPcOnMap(mapIndex, [&](entt::entity pc){
-            LPCHARACTER pkPc = ecs::LegacyCharOf(pc);
-            if (pkPc)
+            if (ecs::PlayerRuntime::IsValid(pc))
                 ecs::ChatSystem::Send(pc, CHAT_TYPE_BIG_NOTICE, "%s", buf);
             });
     }
@@ -1291,8 +1290,7 @@ bool CLostCastleDungeon::IsLostCastleMap(int32_t mapIndex) const
 bool CLostCastleDungeon::SpawnTestClones(entt::entity source, entt::entity target, int32_t count)
 {
     LPCHARACTER pkSource = ecs::LegacyCharOf(source);
-    LPCHARACTER pkTarget = ecs::LegacyCharOf(target);
-    if (!pkSource || !pkTarget)
+    if (!pkSource || !ecs::PlayerRuntime::IsValid(target))
         return false;
     if (!ecs::PlayerRuntime::IsPC(source) || !ecs::PlayerRuntime::IsPC(target))
         return false;
@@ -1716,8 +1714,7 @@ void CLostCastleDungeon::OnMobKilled(entt::entity killer, entt::entity victim)
 bool CLostCastleDungeon::OnNpcTakeItem(entt::entity from, entt::entity npc, LPITEM item)
 {
     const entt::entity itemEntity = item ? item->GetEntityHandle() : entt::null;
-    LPCHARACTER pkNpc = ecs::LegacyCharOf(npc);
-    if (!ecs::PlayerRuntime::IsPC(from) || !pkNpc || !item)
+    if (!ecs::PlayerRuntime::IsPC(from) || !ecs::PlayerRuntime::IsValid(npc) || !item)
         return false;
 
     const int32_t idx = ecs::PlayerRuntime::GetMapIndex(from);
@@ -1802,9 +1799,7 @@ bool CLostCastleDungeon::OnNpcTakeItem(entt::entity from, entt::entity npc, LPIT
 
 bool CLostCastleDungeon::CheckCloneDamage(entt::entity attacker, entt::entity victim) const
 {
-    LPCHARACTER pkAttacker = ecs::LegacyCharOf(attacker);
-    LPCHARACTER pkVictim = ecs::LegacyCharOf(victim);
-    if (!pkAttacker || !pkVictim)
+    if (!ecs::PlayerRuntime::IsValid(attacker) || !ecs::PlayerRuntime::IsValid(victim))
         return true;
 
 	const uint32_t aVid = ecs::PlayerRuntime::GetPacketVID(attacker);

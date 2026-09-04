@@ -144,8 +144,7 @@ namespace
         va_end(ap);
 
         ForEachPcOnMap(mapIndex, [&](entt::entity pc){
-                LPCHARACTER pkPc = ecs::LegacyCharOf(pc);
-                if (pkPc)
+                if (ecs::PlayerRuntime::IsValid(pc))
                     ecs::ChatSystem::Send(pc, CHAT_TYPE_INFO, "%s", buf);
             });
     }
@@ -443,8 +442,7 @@ public:
 
         const int32_t now = get_global_time();
         ForEachPcOnMap(mapIndex, [&](entt::entity ch){
-                LPCHARACTER pkCh = ecs::LegacyCharOf(ch);
-                if (!pkCh)
+                if (!ecs::PlayerRuntime::IsValid(ch))
                     return;
 
                 ecs::QuestSystem::SetFlag(ch, "easter_dungeon.disconnect", 0);
@@ -697,9 +695,8 @@ void CEasterDungeon::OnPlayerLogin(entt::entity character)
 
 void CEasterDungeon::OnMobKilled(entt::entity killer, entt::entity victim)
 {
-    LPCHARACTER pkKiller = ecs::LegacyCharOf(killer);
     LPCHARACTER pkVictim = ecs::LegacyCharOf(victim);
-    if (!pkKiller || !pkVictim)
+    if (!ecs::PlayerRuntime::IsValid(killer) || !pkVictim)
         return;
     if (!ecs::PlayerRuntime::IsPC(killer))
         return;

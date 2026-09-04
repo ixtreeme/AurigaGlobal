@@ -574,9 +574,7 @@ bool CPyramidDungeonRazor93::OnClickNpc(entt::entity character)
 
 void CPyramidDungeonRazor93::OnMobKilled(entt::entity killer, entt::entity victim)
 {
-    LPCHARACTER pkKiller = ecs::LegacyCharOf(killer);
-    LPCHARACTER pkVictim = ecs::LegacyCharOf(victim);
-    if (!pkKiller || !pkVictim)
+    if (!ecs::PlayerRuntime::IsValid(killer) || !ecs::PlayerRuntime::IsValid(victim))
         return;
 
     const int32_t mapIdx = ecs::PlayerRuntime::GetMapIndex(killer);

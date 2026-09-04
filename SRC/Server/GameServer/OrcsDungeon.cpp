@@ -476,9 +476,8 @@ static void OrcDungeon_CompleteRankingForMap(int32_t dungeonMapIdx)
 
 void COrcsDungeon::OnMobKilled(entt::entity killer, entt::entity victim)
 {
-    LPCHARACTER pkKiller = ecs::LegacyCharOf(killer);
     LPCHARACTER pkVictim = ecs::LegacyCharOf(victim);
-    if (!pkKiller || !pkVictim)
+    if (!ecs::PlayerRuntime::IsValid(killer) || !pkVictim)
         return;
     if (!ecs::PlayerRuntime::IsPC(killer))
         return;
@@ -541,8 +540,7 @@ void COrcsDungeon::OnMobKilled(entt::entity killer, entt::entity victim)
                 d->SpawnMob(kBonusMobVnum, kBossX, kBossY);
                 // mimic Lua syschat (send to all players in this dungeon map)
                 ForEachPcOnMap(idx, [&](entt::entity p){
-                        LPCHARACTER pkP = ecs::LegacyCharOf(p);
-                        if (pkP)
+                        if (ecs::PlayerRuntime::IsValid(p))
                             ecs::ChatSystem::Send(p, CHAT_TYPE_INFO, "Dungeon bonus spawn: Nemere ");
                     });
             }

@@ -17,6 +17,7 @@
 #include "desc_manager.h"
 #include "guild.h"
 #include "guild_renewal.h"
+#include "ecs/systems/PlayerRuntimeSystem.hpp"
 
 namespace
 {
@@ -134,8 +135,7 @@ ACMD(do_gr_deposit_yang)
 
 ACMD(do_gr_set_tax)
 {
-	LPCHARACTER ch = ecs::LegacyCharOf(character);
-	if (!ch)
+	if (!ecs::PlayerRuntime::IsValid(character))
 		return;
 
 	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "A kivetett ado rendszer ki van kapcsolva (kis ado rendszer van ervenyben).");

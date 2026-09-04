@@ -515,6 +515,11 @@ LPSECTREE GetSectree(entt::entity e)
 	return ecs::SpatialService::GetSectree(g_registry, e);
 }
 
+bool IsValid(entt::entity e)
+{
+	return e != entt::null && g_registry.valid(e);
+}
+
 bool IsPC(entt::entity e)
 {
 	return e != entt::null && g_registry.valid(e) && g_registry.all_of<ecs::TagPC>(e);

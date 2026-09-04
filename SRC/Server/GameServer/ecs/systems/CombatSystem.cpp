@@ -6615,8 +6615,7 @@ LPCHARACTER CHARACTER::GetNearestVictim(entt::entity chr)
 
 void CHARACTER::SetVictim(entt::entity victim)
 {
-	LPCHARACTER pkVictim = ecs::LegacyCharOf(victim);
-	if (!pkVictim)
+	if (!ecs::PlayerRuntime::IsValid(victim))
 	{
 		if (m_eVictim != entt::null)
 			MonsterLog("  ");

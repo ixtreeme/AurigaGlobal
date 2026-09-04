@@ -2251,11 +2251,10 @@ void CHARACTER_MANAGER::SetEventData(uint8_t dayIndex, const std::vector<TEventM
 #ifdef ENABLE_ITEMSHOP
 void CHARACTER_MANAGER::LoadItemShopLogReal(entt::entity character, const char* c_pData)
 {
-	LPCHARACTER ch = ecs::LegacyCharOf(character);
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
 	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "char_manager.cpp::CHARACTER_MANAGER::LoadItemShopLogReal");//INGAME_DEBUG_RAZOR93
 #endif
-	if (!ch)
+	if (!ecs::PlayerRuntime::IsValid(character))
 		return;
 
 	uint8_t subIndex = ITEMSHOP_LOG;

@@ -402,8 +402,7 @@ void CNightmareDungeonRazor93::OnPlayerLogin(entt::entity character)
 
 void CNightmareDungeonRazor93::OnMobKilled(entt::entity killer, entt::entity victim)
 {
-    LPCHARACTER pkVictim = ecs::LegacyCharOf(victim);
-    if (!pkVictim || !ecs::PlayerRuntime::IsPC(killer))
+    if (!ecs::PlayerRuntime::IsValid(victim) || !ecs::PlayerRuntime::IsPC(killer))
         return;
 
     const int32_t idx = ecs::PlayerRuntime::GetMapIndex(killer);

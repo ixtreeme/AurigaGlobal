@@ -36,8 +36,7 @@ ACMD(do_drop_unblock) {
 
 ACMD(do_remove_affect)
 {
-	LPCHARACTER ch = ecs::LegacyCharOf(character);
-	if (!ch)
+	if (!ecs::PlayerRuntime::IsValid(character))
 		return;
 
 	char arg1[256];
@@ -204,8 +203,7 @@ ACMD(do_stat2)
 
 #ifdef ENABLE_BIOLOGIST_UI
 ACMD(do_open_biologist) {
-	LPCHARACTER ch = ecs::LegacyCharOf(character);
-	if (!ch)
+	if (!ecs::PlayerRuntime::IsValid(character))
 		return;
 
 	int stat = ecs::QuestSystem::GetFlag(character, "biologist.stat");
@@ -337,8 +335,7 @@ ACMD(do_delivery_biologist) {
 }
 
 ACMD(do_reward_biologist) {
-	LPCHARACTER ch = ecs::LegacyCharOf(character);
-	if (!ch)
+	if (!ecs::PlayerRuntime::IsValid(character))
 		return;
 
 	char arg1[256];

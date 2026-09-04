@@ -207,8 +207,7 @@ namespace
         va_end(ap);
 
         ForEachPcOnMap(mapIndex, [&](entt::entity pc){
-            LPCHARACTER pkPc = ecs::LegacyCharOf(pc);
-            if (pkPc)
+            if (ecs::PlayerRuntime::IsValid(pc))
                 ecs::ChatSystem::Send(pc, CHAT_TYPE_NOTICE, "%s", buf);
         });
     }
@@ -222,8 +221,7 @@ namespace
         va_end(ap);
 
         ForEachPcOnMap(mapIndex, [&](entt::entity pc){
-            LPCHARACTER pkPc = ecs::LegacyCharOf(pc);
-            if (pkPc)
+            if (ecs::PlayerRuntime::IsValid(pc))
                 ecs::ChatSystem::Send(pc, CHAT_TYPE_BIG_NOTICE, "%s", buf);
         });
     }
@@ -670,8 +668,7 @@ void CHalloween2022Dungeon::OnPlayerLogin(entt::entity character)
 bool CHalloween2022Dungeon::OnClickNpc(entt::entity character, entt::entity npc)
 {
     LPCHARACTER ch = ecs::LegacyCharOf(character);
-    LPCHARACTER pkNpc = ecs::LegacyCharOf(npc);
-    if (!ch || !ecs::PlayerRuntime::IsPC(character) || !pkNpc)
+    if (!ch || !ecs::PlayerRuntime::IsPC(character) || !ecs::PlayerRuntime::IsValid(npc))
         return false;
 
     const uint32_t race = ecs::PlayerRuntime::GetRaceNum(npc);
