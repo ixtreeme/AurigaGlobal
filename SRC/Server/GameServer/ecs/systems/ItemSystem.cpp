@@ -2520,6 +2520,63 @@ static bool CanPutIntoRing(entt::entity ring, entt::entity item)
 	return false;
 }
 
+bool DistanceValid(entt::entity itemEntity, entt::entity character)
+{
+	if (!ecs::PlayerRuntime::GetSectree(itemEntity))
+		return false;
+
+	int iDist = DISTANCE_APPROX(
+		ecs::PlayerRuntime::GetX(itemEntity) - ecs::PlayerRuntime::GetX(character),
+		ecs::PlayerRuntime::GetY(itemEntity) - ecs::PlayerRuntime::GetY(character));
+	if (iDist > 2400)
+		return false;
+
+	return true;
+}
+
+bool CanUsedBy(entt::entity itemEntity, entt::entity character)
+{
+	// Anti flag check
+	switch (ecs::PlayerRuntime::GetJob(character))
+	{
+	case JOB_WARRIOR:
+		if (ItemSystem::GetItemAntiFlag(itemEntity) & ITEM_ANTIFLAG_WARRIOR)
+			return false;
+		break;
+
+	case JOB_ASSASSIN:
+		if (ItemSystem::GetItemAntiFlag(itemEntity) & ITEM_ANTIFLAG_ASSASSIN)
+			return false;
+		break;
+
+	case JOB_SHAMAN:
+		if (ItemSystem::GetItemAntiFlag(itemEntity) & ITEM_ANTIFLAG_SHAMAN)
+			return false;
+		break;
+
+	case JOB_SURA:
+		if (ItemSystem::GetItemAntiFlag(itemEntity) & ITEM_ANTIFLAG_SURA)
+			return false;
+		break;
+#ifdef ENABLE_WOLFMAN_CHARACTER
+	case JOB_WOLFMAN:
+		if (ItemSystem::GetItemAntiFlag(itemEntity) & ITEM_ANTIFLAG_WOLFMAN)
+			return false;
+		break;
+#endif
+	}
+
+	return true;
+}
+
+bool IsOwnership(entt::entity itemEntity, entt::entity character)
+{
+	if (!ItemSystem::GetItemEvents(itemEntity).ownership)
+		return true;
+
+	return ItemSystem::GetItemOwnershipPID(itemEntity) == ecs::PlayerRuntime::GetPlayerID(character);
+}
+
 bool CanPutInto(entt::entity item, entt::entity container)
 {
 	//if (GetItemType(container) == ITEM_BELT) {

@@ -107,9 +107,7 @@ class CItem : public CEntity
 		bool		IsEquipped() const;
 		bool		IsEquipable() ;
 
-		bool		CanUsedBy(LPCHARACTER ch);
 
-		bool		DistanceValid(LPCHARACTER ch);
 
 		void		UpdatePacket();
 
@@ -151,7 +149,6 @@ class CItem : public CEntity
 		void		SetSkipSave(bool b);
 		bool		GetSkipSave() const;
 
-		bool		IsOwnership(LPCHARACTER ch);
 		void		SetOwnership(LPCHARACTER ch, int iSec = 10);
 		void		SetOwnershipEvent(LPEVENT pkEvent);
 

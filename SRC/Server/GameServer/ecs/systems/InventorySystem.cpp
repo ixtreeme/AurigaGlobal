@@ -433,29 +433,7 @@ bool CItem::AddToGround(int32_t lMapIndex, const PIXEL_POSITION& pos, bool skipO
 	return true;
 }
 
-bool CItem::DistanceValid(LPCHARACTER ch)
-{
-	if (!GetSectree())
-		return false;
 
-	const entt::entity character = ch ? ch->GetEntityHandle() : entt::null;
-	int iDist = DISTANCE_APPROX(
-		GetX() - ecs::PlayerRuntime::GetX(character),
-		GetY() - ecs::PlayerRuntime::GetY(character));
-	if (iDist > 2400)
-		return false;
-
-	return true;
-}
-
-bool CItem::IsOwnership(LPCHARACTER ch)
-{
-	if (!ItemSystem::GetItemEvents(GetEntityHandle()).ownership)
-		return true;
-
-	const entt::entity character = ch ? ch->GetEntityHandle() : entt::null;
-	return ItemSystem::GetItemOwnershipPID(GetEntityHandle()) == ecs::PlayerRuntime::GetPlayerID(character);
-}
 
 void CItem::SetOwnershipEvent(LPEVENT pkEvent)
 {
@@ -518,40 +496,6 @@ void CItem::SetOwnership(LPCHARACTER ch, int iSec)
 			itemEntity, ecs::ItemOwnershipDisplay{ecs::PlayerRuntime::GetName(character).data()});
 }
 
-bool CItem::CanUsedBy(LPCHARACTER ch)
-{
-	// Anti flag check
-	switch (ch->GetJob())
-	{
-	case JOB_WARRIOR:
-		if (GetAntiFlag() & ITEM_ANTIFLAG_WARRIOR)
-			return false;
-		break;
-
-	case JOB_ASSASSIN:
-		if (GetAntiFlag() & ITEM_ANTIFLAG_ASSASSIN)
-			return false;
-		break;
-
-	case JOB_SHAMAN:
-		if (GetAntiFlag() & ITEM_ANTIFLAG_SHAMAN)
-			return false;
-		break;
-
-	case JOB_SURA:
-		if (GetAntiFlag() & ITEM_ANTIFLAG_SURA)
-			return false;
-		break;
-#ifdef ENABLE_WOLFMAN_CHARACTER
-	case JOB_WOLFMAN:
-		if (GetAntiFlag() & ITEM_ANTIFLAG_WOLFMAN)
-			return false;
-		break;
-#endif
-	}
-
-	return true;
-}
 
 
 bool CItem::IsEquipable()

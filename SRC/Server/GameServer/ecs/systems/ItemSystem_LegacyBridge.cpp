@@ -3043,7 +3043,7 @@ namespace NPartyPickupDistribute
 
 		void operator () (LegacyCharHandle ch)
 		{
-			if (item->IsOwnership(ch))
+			if (ItemSystem::IsOwnership(item->GetEntityHandle(), ch->GetEntityHandle()))
 				owner = ch;
 		}
 	};
@@ -3974,7 +3974,7 @@ bool CHARACTER::PickupItem(uint32_t dwVID)
 	bool bIsBattlePass = item->HaveOwnership();
 #endif
 
-	if (item->DistanceValid(this))
+	if (ItemSystem::DistanceValid(item->GetEntityHandle(), GetEntityHandle()))
 	{
 		// @fixme150 BEGIN
 		if (item->GetType() == ITEM_QUEST)
@@ -3989,7 +3989,7 @@ bool CHARACTER::PickupItem(uint32_t dwVID)
 		}
 		// @fixme150 END
 
-		if (item->IsOwnership(this))
+		if (ItemSystem::IsOwnership(item->GetEntityHandle(), GetEntityHandle()))
 		{
 			// ¸¸¾à ÁÖÀ¸·Á ÇÏ´Â ¾ÆÀÌ�
 // ÛÀÌ ¿¤�
@@ -4714,7 +4714,7 @@ bool CHARACTER::UseItem(TItemPos Cell, TItemPos DestCell)
 		return true;
 	}
 #endif
-	if (!item->CanUsedBy(this))
+	if (!ItemSystem::CanUsedBy(item->GetEntityHandle(), GetEntityHandle()))
 	{
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 495, "");
