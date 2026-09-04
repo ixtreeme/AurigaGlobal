@@ -6,6 +6,13 @@
 
 namespace CombatSystem {
 
+entt::entity GetSelectedTarget(entt::entity e);
+void SetTarget(entt::entity e, entt::entity target);
+void ClearTarget(entt::entity e);
+void CheckTarget(entt::entity e);
+void BroadcastTargetPacket(entt::entity e);
+
+
 bool CanBeginFight(entt::entity e);
 void BeginFight(entt::entity attacker, entt::entity victim);
 bool CanFight(entt::entity e);

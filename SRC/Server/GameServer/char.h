@@ -2071,15 +2071,13 @@ protected:
 	////////////////////////////////////////////////////////////////////////////////////////
 	// Target
 protected:
-	LPCHARACTER				m_pkChrTarget;		// �� Ÿ��
-	CHARACTER_SET	m_set_pkChrTargetedBy;	// ���� Ÿ������ ������ �ִ� �����
 
 public:
 	void				SetTarget(entt::entity target);
 	void				BroadcastTargetPacket();
 	void				ClearTarget();
 	void				CheckTarget();
-	LPCHARACTER			GetTarget() const { return m_pkChrTarget; }
+	LPCHARACTER			GetTarget() const;
 
 	////////////////////////////////////////////////////////////////////////////////////////
 	// Safebox

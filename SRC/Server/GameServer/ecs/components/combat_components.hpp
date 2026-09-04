@@ -1,11 +1,25 @@
 #pragma once
 
+#include <unordered_set>
+
 #include <cstdint>
 #include <unordered_map>
 
 #include <entt/entt.hpp>
 
 namespace ecs {
+
+// The target the player has selected - what drives the client's target window
+// and its HP bar. Distinct from CombatTarget below, which mirrors GetVictim,
+// the character this one is fighting. Legacy kept these as m_pkChrTarget and
+// the reverse set m_set_pkChrTargetedBy.
+struct SelectedTarget {
+    entt::entity target { entt::null };
+};
+
+struct SelectedBy {
+    std::unordered_set<entt::entity> selectors;
+};
 
 struct CombatTarget {
     entt::entity target { entt::null };

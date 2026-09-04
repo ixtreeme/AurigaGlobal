@@ -2211,8 +2211,35 @@ const TMobTable* GetMobTable(entt::entity e)
 
 bool CHARACTER::IsRaceFlag(uint32_t dwBit) const
 {
-    return m_pkMobData ? IS_SET(m_pkMobData->m_table.dwRaceFlag, dwBit) : 0;
+    return ecs::PlayerRuntime::IsRaceFlag(GetEntityHandle(), dwBit);
 }
+
+namespace ecs::PlayerRuntime {
+
+bool IsRaceFlag(entt::entity e, uint32_t dwBit)
+{
+    const TMobTable* table = GetMobTable(e);
+    return table && IS_SET(table->dwRaceFlag, dwBit);
+}
+
+int64_t GetHP(entt::entity e)
+{
+    if (const auto* health = TryGetHealthComponent(e))
+        return health->current;
+
+    return 0;
+}
+
+int GetHPPct(entt::entity e)
+{
+    const int64_t maxHP = ecs::PointSystem::GetMaxHP(e);
+    if (maxHP <= 0)
+        return 0;
+
+    return static_cast<int>((GetHP(e) * 100) / maxHP);
+}
+
+} // namespace ecs::PlayerRuntime
 
 uint32_t CHARACTER::GetMobDamageMin() const
 {
@@ -5836,7 +5863,7 @@ void CHARACTER::Initialize()
 
     m_pGuild = nullptr;
 
-    m_pkChrTarget = nullptr;
+    g_registry.get_or_emplace<ecs::SelectedTarget>(GetEntityHandle()).target = entt::null;
 
     m_pkMuyeongEvent = nullptr;
 #ifdef ENABLE_NEW_GYEONGGONG_SKILL

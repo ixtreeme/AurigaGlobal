@@ -6,6 +6,7 @@
 
 #include "ItemSystem.hpp"
 #include "InventorySystem.hpp"
+#include "CombatSystem.hpp"
 #include "MountSystem.hpp"
 #include "QuestSystem.hpp"
 #include "PointSystem.hpp"
@@ -8021,12 +8022,14 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 			case 71092: // º¯½�
  // ÇØÃ¼ºÎ ÀÓ½Ã
 			{
-				if (m_pkChrTarget != nullptr)
+				const entt::entity selectedTarget =
+					CombatSystem::GetSelectedTarget(GetEntityHandle());
+				if (selectedTarget != entt::null)
 				{
-					if (m_pkChrTarget->IsPolymorphed())
+					if (AffectSystem::IsPolymorphed(selectedTarget))
 					{
-						m_pkChrTarget->SetPolymorph(0);
-						AffectSystem::RemoveAffect((m_pkChrTarget ? m_pkChrTarget->GetEntityHandle() : entt::null), AFFECT_POLYMORPH);
+						AffectSystem::SetPolymorph(selectedTarget, 0, false);
+						AffectSystem::RemoveAffect(selectedTarget, AFFECT_POLYMORPH);
 					}
 				}
 				else

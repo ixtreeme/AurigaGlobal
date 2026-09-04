@@ -8,6 +8,7 @@
 #include "NetworkSyncSystem.hpp"
 
 #include "CombatSystem.hpp"
+#include "MountSystem.hpp"
 
 #include <algorithm>
 #include <boost/algorithm/string/find.hpp>
@@ -2039,7 +2040,8 @@ void CHARACTER::Dead(entt::entity killer, bool bImmediateDead)
 
 	if (pkKiller && ecs::PlayerRuntime::IsPC(killer))
 	{
-		if (pkKiller->m_pkChrTarget == this)
+		if (const auto* killerTarget = g_registry.try_get<ecs::SelectedTarget>(killer);
+			killerTarget && killerTarget->target == GetEntityHandle())
 			pkKiller->SetTarget(entt::null);
 
 		isAgreedPVP = CPVPManager::instance().Dead(GetEntityHandle(), ecs::PlayerRuntime::GetPlayerID(killer));
@@ -7443,12 +7445,76 @@ void CHARACTER::ClearStone()
 }
 #endif
 
-void CHARACTER::ClearTarget()
+namespace CombatSystem {
+
+entt::entity GetSelectedTarget(entt::entity e)
 {
-	if (m_pkChrTarget)
+    if (e == entt::null || !g_registry.valid(e))
+        return entt::null;
+
+    const auto* selected = g_registry.try_get<ecs::SelectedTarget>(e);
+    if (!selected || selected->target == entt::null || !g_registry.valid(selected->target))
+        return entt::null;
+
+    return selected->target;
+}
+
+void BroadcastTargetPacket(entt::entity e)
+{
+	auto* selectedBy = g_registry.try_get<ecs::SelectedBy>(e);
+	if (!selectedBy || selectedBy->selectors.empty())
+		return;
+
+	TPacketGCTarget p;
+
+	p.header = HEADER_GC_TARGET;
+	p.dwVID = ecs::PlayerRuntime::GetPacketVID(e);
+
+#ifdef __VIEW_TARGET_DECIMAL_HP__
+	if (ecs::PointSystem::GetMaxHP(e) <= 0)
 	{
-		m_pkChrTarget->m_set_pkChrTargetedBy.erase(this);
-		m_pkChrTarget = nullptr;
+		p.bHPPercent = 0;
+		p.iMinHP = 0;
+		p.iMaxHP = 0;
+	}
+	else
+	{
+		p.bHPPercent = std::min((ecs::PlayerRuntime::GetHP(e) * 100) / ecs::PointSystem::GetMaxHP(e), (int64_t)100);
+		p.iMinHP = ecs::PlayerRuntime::GetHP(e);
+		p.iMaxHP = ecs::PointSystem::GetMaxHP(e);
+	}
+#else
+	if (ecs::PlayerRuntime::GetDesc(e) != nullptr)
+		p.bHPPercent = 0;
+	else if (ecs::PointSystem::GetMaxHP(e) <= 0)
+		p.bHPPercent = 0;
+	else
+		p.bHPPercent = MINMAX(0, ecs::PlayerRuntime::GetHPPct(e), 100);
+#endif
+
+	for (const entt::entity chr : selectedBy->selectors)
+	{
+		if (chr == entt::null || !g_registry.valid(chr))
+			continue;
+
+		// Legacy aborted on a missing descriptor here too; same reasoning as
+		// ClearTarget - the set is filled by SetTarget, which never asked for
+		// one.
+		if (LPDESC desc = ecs::PlayerRuntime::GetDesc(chr))
+			desc->Packet(&p, sizeof(TPacketGCTarget));
+		else
+			LOG_ERROR("BroadcastTargetPacket: selector {} has no desc",
+				ecs::PlayerRuntime::GetName(chr).data());
+	}
+}
+
+void ClearTarget(entt::entity e)
+{
+	if (auto* selected = g_registry.try_get<ecs::SelectedTarget>(e);
+		selected && selected->target != entt::null)
+	{
+		g_registry.get_or_emplace<ecs::SelectedBy>(selected->target).selectors.erase(e);
+		selected->target = entt::null;
 	}
 
 	TPacketGCTarget p;
@@ -7461,48 +7527,52 @@ void CHARACTER::ClearTarget()
 	p.iMaxHP = 0;
 #endif
 
-	CHARACTER_SET::iterator it = m_set_pkChrTargetedBy.begin();
-
-	while (it != m_set_pkChrTargetedBy.end())
-	{
-		LPCHARACTER pkChr = *(it++);
-		const entt::entity chr = pkChr ? pkChr->GetEntityHandle() : entt::null;
-
-		pkChr->m_pkChrTarget = nullptr;
-
-		if (!ecs::PlayerRuntime::GetDesc(chr))
-		{
-			LOG_ERROR("{} {} does not have desc", ecs::PlayerRuntime::GetName(chr).data(), static_cast<const void*>(get_pointer(pkChr)));
-			abort();
-		}
-
-		ecs::PlayerRuntime::GetDesc(chr)->Packet(&p, sizeof(TPacketGCTarget));
-	}
-
-	m_set_pkChrTargetedBy.clear();
-}
-
-void CHARACTER::SetTarget(entt::entity target)
-{
-	LPCHARACTER pkTarget = ecs::LegacyCharOf(target);
-	if (m_pkChrTarget == pkTarget)
+	auto* selectedBy = g_registry.try_get<ecs::SelectedBy>(e);
+	if (!selectedBy)
 		return;
 
-	if (m_pkChrTarget)
-		m_pkChrTarget->m_set_pkChrTargetedBy.erase(this);
+	for (const entt::entity chr : selectedBy->selectors)
+	{
+		if (chr == entt::null || !g_registry.valid(chr))
+			continue;
 
-	m_pkChrTarget = pkTarget;
+		g_registry.get_or_emplace<ecs::SelectedTarget>(chr).target = entt::null;
+
+		// Legacy called abort() here. A selector is in this set because
+		// SetTarget put it there, and SetTarget never required a descriptor,
+		// so reaching one without is possible and is not worth killing the
+		// server over.
+		if (LPDESC desc = ecs::PlayerRuntime::GetDesc(chr))
+			desc->Packet(&p, sizeof(TPacketGCTarget));
+		else
+			LOG_ERROR("ClearTarget: selector {} has no desc",
+				ecs::PlayerRuntime::GetName(chr).data());
+	}
+
+	selectedBy->selectors.clear();
+}
+
+void SetTarget(entt::entity e, entt::entity target)
+{
+	auto& selected = g_registry.get_or_emplace<ecs::SelectedTarget>(e);
+	if (selected.target == target)
+		return;
+
+	if (selected.target != entt::null && g_registry.valid(selected.target))
+		g_registry.get_or_emplace<ecs::SelectedBy>(selected.target).selectors.erase(e);
+
+	selected.target = target;
 
 	TPacketGCTarget p;
 	p.header = HEADER_GC_TARGET;
 
-	if (m_pkChrTarget)
+	if (target != entt::null && g_registry.valid(target))
 	{
-		m_pkChrTarget->m_set_pkChrTargetedBy.insert(this);
-	p.dwVID = ecs::PlayerRuntime::GetPacketVID((m_pkChrTarget ? m_pkChrTarget->GetEntityHandle() : entt::null));
+		g_registry.get_or_emplace<ecs::SelectedBy>(target).selectors.insert(e);
+	p.dwVID = ecs::PlayerRuntime::GetPacketVID(target);
 
 #ifdef __VIEW_TARGET_PLAYER_HP__
-		if ((ecs::PointSystem::GetMaxHP((m_pkChrTarget ? m_pkChrTarget->GetEntityHandle() : entt::null)) <= 0))
+		if ((ecs::PointSystem::GetMaxHP(target) <= 0))
 		{
 			p.bHPPercent = 0;
 #ifdef __VIEW_TARGET_DECIMAL_HP__
@@ -7510,36 +7580,36 @@ void CHARACTER::SetTarget(entt::entity target)
 			p.iMaxHP = 0;
 #endif
 		}
-		else if (ecs::PlayerRuntime::IsPC((m_pkChrTarget ? m_pkChrTarget->GetEntityHandle() : entt::null)) && !m_pkChrTarget->IsPolymorphed())
+		else if (ecs::PlayerRuntime::IsPC(target) && !AffectSystem::IsPolymorphed(target))
 		{
-			p.bHPPercent = MINMAX(0, m_pkChrTarget->GetHPPct(), 100);
+			p.bHPPercent = MINMAX(0, ecs::PlayerRuntime::GetHPPct(target), 100);
 #ifdef __VIEW_TARGET_DECIMAL_HP__
-			p.iMinHP = m_pkChrTarget->GetHP();
-			p.iMaxHP = ecs::PointSystem::GetMaxHP((m_pkChrTarget ? m_pkChrTarget->GetEntityHandle() : entt::null));
+			p.iMinHP = ecs::PlayerRuntime::GetHP(target);
+			p.iMaxHP = ecs::PointSystem::GetMaxHP(target);
 #endif
 		}
 #else
-		if ((ecs::PlayerRuntime::IsPC((m_pkChrTarget ? m_pkChrTarget->GetEntityHandle() : entt::null)) && !m_pkChrTarget->IsPolymorphed()) || (ecs::PointSystem::GetMaxHP((m_pkChrTarget ? m_pkChrTarget->GetEntityHandle() : entt::null)) <= 0))
+		if ((ecs::PlayerRuntime::IsPC(target) && !AffectSystem::IsPolymorphed(target)) || (ecs::PointSystem::GetMaxHP(target) <= 0))
 			p.bHPPercent = 0;
 #endif
 		else
 		{
-			if (ecs::PlayerRuntime::GetRaceNum((m_pkChrTarget ? m_pkChrTarget->GetEntityHandle() : entt::null)) == 20101 ||
-				ecs::PlayerRuntime::GetRaceNum((m_pkChrTarget ? m_pkChrTarget->GetEntityHandle() : entt::null)) == 20102 ||
-				ecs::PlayerRuntime::GetRaceNum((m_pkChrTarget ? m_pkChrTarget->GetEntityHandle() : entt::null)) == 20103 ||
-				ecs::PlayerRuntime::GetRaceNum((m_pkChrTarget ? m_pkChrTarget->GetEntityHandle() : entt::null)) == 20104 ||
-				ecs::PlayerRuntime::GetRaceNum((m_pkChrTarget ? m_pkChrTarget->GetEntityHandle() : entt::null)) == 20105 ||
-				ecs::PlayerRuntime::GetRaceNum((m_pkChrTarget ? m_pkChrTarget->GetEntityHandle() : entt::null)) == 20106 ||
-				ecs::PlayerRuntime::GetRaceNum((m_pkChrTarget ? m_pkChrTarget->GetEntityHandle() : entt::null)) == 20107 ||
-				ecs::PlayerRuntime::GetRaceNum((m_pkChrTarget ? m_pkChrTarget->GetEntityHandle() : entt::null)) == 20108 ||
-				ecs::PlayerRuntime::GetRaceNum((m_pkChrTarget ? m_pkChrTarget->GetEntityHandle() : entt::null)) == 20109)
+			if (ecs::PlayerRuntime::GetRaceNum(target) == 20101 ||
+				ecs::PlayerRuntime::GetRaceNum(target) == 20102 ||
+				ecs::PlayerRuntime::GetRaceNum(target) == 20103 ||
+				ecs::PlayerRuntime::GetRaceNum(target) == 20104 ||
+				ecs::PlayerRuntime::GetRaceNum(target) == 20105 ||
+				ecs::PlayerRuntime::GetRaceNum(target) == 20106 ||
+				ecs::PlayerRuntime::GetRaceNum(target) == 20107 ||
+				ecs::PlayerRuntime::GetRaceNum(target) == 20108 ||
+				ecs::PlayerRuntime::GetRaceNum(target) == 20109)
 			{
-				LPCHARACTER owner = m_pkChrTarget->GetVictim();
+				const entt::entity owner = CombatSystem::GetVictim(target);
 
-				if (owner)
+				if (owner != entt::null)
 				{
-					int iHorseHealth = owner->GetHorseHealth();
-					int iHorseMaxHealth = owner->GetHorseMaxHealth();
+					int iHorseHealth = MountSystem::GetHorseHealth(owner);
+					int iHorseMaxHealth = MountSystem::GetHorseMaxHealth(owner);
 #ifdef __VIEW_TARGET_DECIMAL_HP__
 					if (iHorseMaxHealth)
 					{
@@ -7563,7 +7633,7 @@ void CHARACTER::SetTarget(entt::entity target)
 			}
 			else
 			{
-				if (ecs::PointSystem::GetMaxHP((m_pkChrTarget ? m_pkChrTarget->GetEntityHandle() : entt::null)) <= 0)
+				if (ecs::PointSystem::GetMaxHP(target) <= 0)
 				{
 					p.bHPPercent = 0;
 					p.iMinHP = 0;
@@ -7571,9 +7641,9 @@ void CHARACTER::SetTarget(entt::entity target)
 				}
 				else
 				{
-					p.bHPPercent = std::min((m_pkChrTarget->GetHP() * 100) / ecs::PointSystem::GetMaxHP((m_pkChrTarget ? m_pkChrTarget->GetEntityHandle() : entt::null)), (int64_t)100);
-					p.iMinHP = m_pkChrTarget->GetHP();
-					p.iMaxHP = ecs::PointSystem::GetMaxHP((m_pkChrTarget ? m_pkChrTarget->GetEntityHandle() : entt::null));
+					p.bHPPercent = std::min((ecs::PlayerRuntime::GetHP(target) * 100) / ecs::PointSystem::GetMaxHP(target), (int64_t)100);
+					p.iMinHP = ecs::PlayerRuntime::GetHP(target);
+					p.iMaxHP = ecs::PointSystem::GetMaxHP(target);
 				}
 			}
 		}
@@ -7597,10 +7667,10 @@ void CHARACTER::SetTarget(entt::entity target)
 			}
 			else
 			{
-				if (ecs::PointSystem::GetMaxHP((m_pkChrTarget ? m_pkChrTarget->GetEntityHandle() : entt::null)) <= 0)
+				if (ecs::PointSystem::GetMaxHP(target) <= 0)
 					p.bHPPercent = 0;
 				else
-					p.bHPPercent = MINMAX(0, (m_pkChrTarget->GetHP() * 100) / ecs::PointSystem::GetMaxHP((m_pkChrTarget ? m_pkChrTarget->GetEntityHandle() : entt::null)), 100);
+					p.bHPPercent = MINMAX(0, (ecs::PlayerRuntime::GetHP(target) * 100) / ecs::PointSystem::GetMaxHP(target), 100);
 			}
 		}
 	}
@@ -7612,8 +7682,8 @@ void CHARACTER::SetTarget(entt::entity target)
 #endif
 #ifdef ELEMENT_TARGET
 	p.bElement = 0;
-	if (m_pkChrTarget) {
-		const entt::entity chrTarget = m_pkChrTarget ? m_pkChrTarget->GetEntityHandle() : entt::null;
+	if (target != entt::null && g_registry.valid(target)) {
+		const entt::entity chrTarget = target;
 		if (ecs::PlayerRuntime::IsPC(chrTarget)) {
 			const entt::entity item = ItemSystem::GetWearItem(
 				chrTarget, WEAR_PENDANT);
@@ -7639,89 +7709,68 @@ void CHARACTER::SetTarget(entt::entity target)
 				}
 			}
 		}
-		else if (m_pkChrTarget->IsMonster() || ecs::PlayerRuntime::IsStone(chrTarget)) {
-			if (m_pkChrTarget->IsRaceFlag(RACE_FLAG_ATT_ELEC)) {
+		else if (ecs::PlayerRuntime::IsMonster(target) || ecs::PlayerRuntime::IsStone(chrTarget)) {
+			if (ecs::PlayerRuntime::IsRaceFlag(target, RACE_FLAG_ATT_ELEC)) {
 				p.bElement = 1;
 			}
-			else if (m_pkChrTarget->IsRaceFlag(RACE_FLAG_ATT_FIRE)) {
+			else if (ecs::PlayerRuntime::IsRaceFlag(target, RACE_FLAG_ATT_FIRE)) {
 				p.bElement = 2;
 			}
-			else if (m_pkChrTarget->IsRaceFlag(RACE_FLAG_ATT_ICE)) {
+			else if (ecs::PlayerRuntime::IsRaceFlag(target, RACE_FLAG_ATT_ICE)) {
 				p.bElement = 3;
 			}
-			else if (m_pkChrTarget->IsRaceFlag(RACE_FLAG_ATT_WIND)) {
+			else if (ecs::PlayerRuntime::IsRaceFlag(target, RACE_FLAG_ATT_WIND)) {
 				p.bElement = 4;
 			}
-			else if (m_pkChrTarget->IsRaceFlag(RACE_FLAG_ATT_EARTH)) {
+			else if (ecs::PlayerRuntime::IsRaceFlag(target, RACE_FLAG_ATT_EARTH)) {
 				p.bElement = 5;
 			}
-			else if (m_pkChrTarget->IsRaceFlag(RACE_FLAG_ATT_DARK)) {
+			else if (ecs::PlayerRuntime::IsRaceFlag(target, RACE_FLAG_ATT_DARK)) {
 				p.bElement = 6;
 			}
 		}
 	}
 #endif
-	GetDesc()->Packet(&p, sizeof(TPacketGCTarget));
+	ecs::PlayerRuntime::GetDesc(e)->Packet(&p, sizeof(TPacketGCTarget));
+}
+
+void CheckTarget(entt::entity e)
+{
+	const auto* selected = g_registry.try_get<ecs::SelectedTarget>(e);
+	if (!selected || selected->target == entt::null || !g_registry.valid(selected->target))
+		return;
+
+	const entt::entity chrTarget = selected->target;
+
+	if (DISTANCE_APPROX(ecs::PlayerRuntime::GetX(e) - ecs::PlayerRuntime::GetX(chrTarget), ecs::PlayerRuntime::GetY(e) - ecs::PlayerRuntime::GetY(chrTarget)) >= 4800)
+		SetTarget(e, entt::null);
+}
+
+} // namespace CombatSystem
+
+LPCHARACTER CHARACTER::GetTarget() const
+{
+	return ecs::LegacyCharOf(CombatSystem::GetSelectedTarget(GetEntityHandle()));
+}
+
+void CHARACTER::ClearTarget()
+{
+	CombatSystem::ClearTarget(GetEntityHandle());
+}
+
+void CHARACTER::SetTarget(entt::entity target)
+{
+	CombatSystem::SetTarget(GetEntityHandle(), target);
 }
 
 void CHARACTER::BroadcastTargetPacket()
 {
-	if (m_set_pkChrTargetedBy.empty())
-		return;
-
-	TPacketGCTarget p;
-
-	p.header = HEADER_GC_TARGET;
-	p.dwVID = GetPacketVID();
-
-#ifdef __VIEW_TARGET_DECIMAL_HP__
-	if (GetMaxHP() <= 0)
-	{
-		p.bHPPercent = 0;
-		p.iMinHP = 0;
-		p.iMaxHP = 0;
-	}
-	else
-	{
-		p.bHPPercent = std::min((GetHP() * 100) / GetMaxHP(), (int64_t)100);
-		p.iMinHP = GetHP();
-		p.iMaxHP = GetMaxHP();
-	}
-#else
-	if (IsPC())
-		p.bHPPercent = 0;
-	else if (GetMaxHP() <= 0)
-		p.bHPPercent = 0;
-	else
-		p.bHPPercent = MINMAX(0, GetHPPct(), 100);
-#endif
-
-	CHARACTER_SET::iterator it = m_set_pkChrTargetedBy.begin();
-
-	while (it != m_set_pkChrTargetedBy.end())
-	{
-		LPCHARACTER pkChr = *it++;
-		const entt::entity chr = pkChr ? pkChr->GetEntityHandle() : entt::null;
-
-
-		if (!ecs::PlayerRuntime::GetDesc(chr))
-		{
-			LOG_ERROR("{} {} does not have desc", ecs::PlayerRuntime::GetName(chr).data(), static_cast<const void*>(get_pointer(pkChr)));
-			abort();
-		}
-
-		ecs::PlayerRuntime::GetDesc(chr)->Packet(&p, sizeof(TPacketGCTarget));
-	}
+	CombatSystem::BroadcastTargetPacket(GetEntityHandle());
 }
 
 void CHARACTER::CheckTarget()
 {
-	const entt::entity chrTarget = m_pkChrTarget ? m_pkChrTarget->GetEntityHandle() : entt::null;
-	if (!m_pkChrTarget)
-		return;
-
-	if (DISTANCE_APPROX(GetX() - ecs::PlayerRuntime::GetX(chrTarget), GetY() - ecs::PlayerRuntime::GetY(chrTarget)) >= 4800)
-		SetTarget(entt::null);
+	CombatSystem::CheckTarget(GetEntityHandle());
 }
 
 bool CHARACTER::IsChangeAttackPosition(entt::entity targetEntity) const

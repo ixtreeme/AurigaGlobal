@@ -971,10 +971,15 @@ bool SetSyncOwner(entt::entity e, entt::entity chEntity, bool bRemoveFromList)
     {
         if (!battle_is_attackable(chEntity, e))
         {
-            // The target axis is not migrated - CHARACTER::SetTarget writes
-            // m_pkChrTarget and never touches ecs::CombatTarget, so that
-            // component is not authoritative and SendDamagePacket cannot read
-            // it. One resolve, named, until SetTarget moves.
+            // SendDamagePacket tests the attacker's selected target, which
+            // lives in ecs::SelectedTarget. One resolve, named, because the
+            // packet builder itself is still a CHARACTER method.
+            //
+            // Correcting the earlier version of this comment: ecs::CombatTarget
+            // is NOT an unsynced mirror of m_pkChrTarget. It mirrors GetVictim,
+            // the character this one is fighting, which is a different thing
+            // from GetTarget, the one the player selected. Syncing them
+            // together would be wrong.
             if (LPCHARACTER victim = ecs::LegacyCharOf(e))
                 victim->SendDamagePacket(chEntity, 0, DAMAGE_BLOCK);
             return false;
