@@ -222,9 +222,7 @@ class CItem : public CEntity
 		void		StartAccessorySocketExpireEvent();
 		void		SetAccessorySocketExpireEvent(LPEVENT pkEvent);
 
-		bool		CanPutInto(LPITEM item);
 #ifdef ENABLE_INFINITE_RAFINES
-		bool		CanPutInto2(LPITEM item);
 #endif
 		// END_OF_ACCESSORY_REFINE
 

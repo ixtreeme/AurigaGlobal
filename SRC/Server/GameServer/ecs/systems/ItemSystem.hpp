@@ -163,6 +163,8 @@ bool ChangeItemRareAttributeEcs(entt::entity item);
 bool ClearItemAttributesEcs(entt::entity item);
 bool CopyItemAttributesEcs(entt::entity source, entt::entity target);
 bool CopyItemSocketsEcs(entt::entity source, entt::entity target);
+bool CanPutInto(entt::entity item, entt::entity container);
+bool CanPutInto2(entt::entity item, entt::entity container);
 bool CopyAllAttrToEcs(entt::entity source, entt::entity target);
 bool AttrLogEcs(entt::entity item);
 bool SyncItemAttributesFromLegacy(entt::entity item);

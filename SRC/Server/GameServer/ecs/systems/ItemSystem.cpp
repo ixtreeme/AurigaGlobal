@@ -2514,6 +2514,307 @@ bool CopyItemSocketsEcs(entt::entity source, entt::entity target)
     return SyncLegacySocketsFromEcs(target);
 }
 
+static bool CanPutIntoRing(entt::entity ring, entt::entity item)
+{
+	//const uint32_t vnum = item->GetVnum();
+	return false;
+}
+
+bool CanPutInto(entt::entity item, entt::entity container)
+{
+	//if (GetItemType(container) == ITEM_BELT) {
+	//	if (GetItemSubType(item) == USE_PUT_INTO_BELT_SOCKET && GetItemValue(item, 0) != 1) {
+	//		return true;
+	//	}
+	//	else {
+	//		return false;
+	//	}
+	//}
+	/*else*/ if (GetItemType(container) == ITEM_RING)
+		return CanPutIntoRing(container, item);
+
+	else if (GetItemType(container) != ITEM_ARMOR)
+		return false;
+
+	uint32_t vnum = GetItemVnum(container);
+
+	if (GetItemVnum(item) == 50634) {
+		return (vnum >= 14220 && vnum <= 14233) || (vnum >= 16220 && vnum <= 16233) || (vnum >= 17220 && vnum <= 17233) ? true : false;
+	}
+
+	if (GetItemVnum(item) == 50640) {
+		return (vnum >= 14580 && vnum <= 14589) || (vnum >= 15010 && vnum <= 15013) || (vnum >= 16580 && vnum <= 16593) || (vnum >= 17570 && vnum <= 17583) ? true : false;
+	}
+
+	if (GetItemVnum(item) == 50641) //limites koho aqua
+	{
+		return (vnum >= 8210 && vnum <= 8223) || (vnum >= 8250 && vnum <= 8263) || (vnum >= 8270 && vnum <= 8283) ? true : false;
+	}
+
+	if (GetItemVnum(item) == 50645) //limites koho aqua
+	{
+		return (vnum >= 8780 && vnum <= 8789) || (vnum >= 8760 && vnum <= 8769) || (vnum >= 8790 && vnum <= 8799) ? true : false;//Fagyos aqua itemek
+	}
+
+
+	if (GetItemVnum(item) == 50646) //limites koho isteni
+	{
+		return (vnum >= 8730 && vnum <= 8739) || (vnum >= 8700 && vnum <= 8709) || (vnum >= 8780 && vnum <= 8789) ? true : false;//véres zodiák itemek
+	}
+
+
+
+
+	if (GetItemVnum(item) == 50643) //limites koho isteni
+	{
+		return (vnum >= 1740 && vnum <= 1753) || (vnum >= 1780 && vnum <= 1793) || (vnum >= 1800 && vnum <= 1813) ? true : false;
+	}
+	struct JewelAccessoryInfo
+	{
+		uint32_t jewel;
+		uint32_t wrist;
+		uint32_t neck;
+		uint32_t ear;
+	};
+	const static JewelAccessoryInfo infos[] = {
+		{ 50634, 14220, 16220, 17220 },
+		{ 50635, 14500, 16500, 17500 },
+		{ 50636, 14520, 16520, 17520 },
+		{ 50637, 14540, 16540, 17540 },
+		{ 50638, 14560, 16560, 17560 },
+		{ 50639, 14570, 16570, 17570 },
+		{ 50641, 8210, 8250, 8270 },
+		{ 50645, 8780, 8760, 8790 },
+		{ 50643, 1740, 1780, 1800 },
+		{ 50646, 8730, 8720, 8730 },
+	};
+
+	uint32_t item_type = (GetItemVnum(container) / 10) * 10;
+	for (size_t i = 0; i < sizeof(infos) / sizeof(infos[0]); i++)
+	{
+		const JewelAccessoryInfo& info = infos[i];
+		switch (GetItemSubType(container))
+		{
+		case ARMOR_WRIST:
+			if (info.wrist == item_type)
+			{
+				if (info.jewel == GetItemVnum(item))
+				{
+					return true;
+				}
+				else
+				{
+					return false;
+				}
+			}
+			break;
+		case ARMOR_NECK:
+			if (info.neck == item_type)
+			{
+				if (info.jewel == GetItemVnum(item))
+				{
+					return true;
+				}
+				else
+				{
+					return false;
+				}
+			}
+			break;
+		case ARMOR_EAR:
+			if (info.ear == item_type)
+			{
+				if (info.jewel == GetItemVnum(item))
+				{
+					return true;
+				}
+				else
+				{
+					return false;
+				}
+			}
+			break;
+		}
+	}
+	if (GetItemSubType(container) == ARMOR_WRIST)
+		vnum -= 14000;
+	else if (GetItemSubType(container) == ARMOR_NECK)
+		vnum -= 16000;
+	else if (GetItemSubType(container) == ARMOR_EAR)
+		vnum -= 17000;
+	else
+		return false;
+
+	uint32_t type = vnum / 20;
+
+	if (type < 0 || type > 11)
+	{
+		type = (vnum - 170) / 20;
+
+		if (50623 + type != GetItemVnum(item))
+			return false;
+		else
+			return true;
+	}
+	else if (GetItemVnum(container) >= 16210 && GetItemVnum(container) <= 16219)
+	{
+		if (50625 != GetItemVnum(item))
+			return false;
+		else
+			return true;
+	}
+	else if (GetItemVnum(container) >= 16230 && GetItemVnum(container) <= 16239)
+	{
+		if (50626 != GetItemVnum(item))
+			return false;
+		else
+			return true;
+	}
+
+	return 50623 + type == GetItemVnum(item);
+}
+
+bool CanPutInto2(entt::entity item, entt::entity container)
+{
+/*	if (GetItemType(container) == ITEM_BELT) {
+		if (GetItemSubType(item) == USE_PUT_INTO_BELT_SOCKET && GetItemValue(item, 0) == 1) {
+			return true;
+		}
+		else {
+			return false;
+		}
+	}
+
+	else*/ if (GetItemType(container) == ITEM_RING)
+		return CanPutIntoRing(container, item);
+
+	else if (GetItemType(container) != ITEM_ARMOR)
+		return false;
+
+	uint32_t vnum = GetItemVnum(container);
+
+	if (GetItemVnum(item) == 50684) {
+		return (vnum >= 14220 && vnum <= 14233) || (vnum >= 16220 && vnum <= 16233) || (vnum >= 17220 && vnum <= 17233) ? true : false;
+	}
+
+	if (GetItemVnum(item) == 50690) {
+		return (vnum >= 14580 && vnum <= 14589) || (vnum >= 15010 && vnum <= 15013) || (vnum >= 16580 && vnum <= 16593) || (vnum >= 17570 && vnum <= 17583) ? true : false;
+	}
+
+	if (GetItemVnum(item) == 50642) //perma koho aqua
+	{
+		return (vnum >= 8210 && vnum <= 8223) || (vnum >= 8250 && vnum <= 8263) || (vnum >= 8270 && vnum <= 8283) ? true : false;
+	}
+
+
+	if (GetItemVnum(item) == 50644) //perma koho isteni
+	{
+		return (vnum >= 1740 && vnum <= 1753) || (vnum >= 1780 && vnum <= 1793) || (vnum >= 1800 && vnum <= 1813) ? true : false;
+	}
+
+	struct JewelAccessoryInfo
+	{
+		uint32_t jewel;
+		uint32_t wrist;
+		uint32_t neck;
+		uint32_t ear;
+	};
+	const static JewelAccessoryInfo infos[] = {
+		{ 50684, 14220, 16220, 17220 },
+		{ 50685, 14500, 16500, 17500 },
+		{ 50686, 14520, 16520, 17520 },
+		{ 50687, 14540, 16540, 17540 },
+		{ 50688, 14560, 16560, 17560 },
+		{ 50689, 14570, 16570, 17570 },
+		{ 50642, 8210, 8250, 8270 },
+		{ 50644, 1740, 1780, 1800 },
+	};
+
+	uint32_t item_type = (GetItemVnum(container) / 10) * 10;
+	for (size_t i = 0; i < sizeof(infos) / sizeof(infos[0]); i++)
+	{
+		const JewelAccessoryInfo& info = infos[i];
+		switch (GetItemSubType(container))
+		{
+		case ARMOR_WRIST:
+			if (info.wrist == item_type)
+			{
+				if (info.jewel == GetItemVnum(item))
+				{
+					return true;
+				}
+				else
+				{
+					return false;
+				}
+			}
+			break;
+		case ARMOR_NECK:
+			if (info.neck == item_type)
+			{
+				if (info.jewel == GetItemVnum(item))
+				{
+					return true;
+				}
+				else
+				{
+					return false;
+				}
+			}
+			break;
+		case ARMOR_EAR:
+			if (info.ear == item_type)
+			{
+				if (info.jewel == GetItemVnum(item))
+				{
+					return true;
+				}
+				else
+				{
+					return false;
+				}
+			}
+			break;
+		}
+	}
+	if (GetItemSubType(container) == ARMOR_WRIST)
+		vnum -= 14000;
+	else if (GetItemSubType(container) == ARMOR_NECK)
+		vnum -= 16000;
+	else if (GetItemSubType(container) == ARMOR_EAR)
+		vnum -= 17000;
+	else
+		return false;
+
+	uint32_t type = vnum / 20;
+
+	if (type < 0 || type > 11)
+	{
+		type = (vnum - 170) / 20;
+
+		if (50673 + type != GetItemVnum(item))
+			return false;
+		else
+			return true;
+	}
+	else if (GetItemVnum(container) >= 16210 && GetItemVnum(container) <= 16219)
+	{
+		if (50675 != GetItemVnum(item))
+			return false;
+		else
+			return true;
+	}
+	else if (GetItemVnum(container) >= 16230 && GetItemVnum(container) <= 16239)
+	{
+		if (50676 != GetItemVnum(item))
+			return false;
+		else
+			return true;
+	}
+
+	return 50673 + type == GetItemVnum(item);
+}
+
 bool CopyAllAttrToEcs(entt::entity source, entt::entity target)
 {
     if (!IsValidItem(source) || !IsValidItem(target))
