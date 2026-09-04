@@ -41,14 +41,18 @@ ecs::QuickSlots* GetQuickSlots(entt::entity e)
 	return &g_registry.get_or_emplace<ecs::QuickSlots>(e);
 }
 
-void SyncItemLocation(entt::entity e)
+// Despite the name this copies nothing: GetItemWindow and GetItemCell read
+// ecs::ItemLocation, so the old body wrote the component back onto itself. All
+// it ever did was create the component, zeroed, when it was missing - and
+// EquipItemEcs checks all_of<ItemLocation> for its rollback, so that presence
+// is load-bearing. Kept as the ensure it actually is. The values come from
+// ItemSystem::SetItemCell and SetItemWindow.
+void EnsureItemLocation(entt::entity e)
 {
 	if (e == entt::null || !g_registry.valid(e))
 		return;
 
-	g_registry.emplace_or_replace<ecs::ItemLocation>(e,
-		static_cast<uint8_t>(ItemSystem::GetItemWindow(e)),
-		static_cast<uint16_t>(ItemSystem::GetItemCell(e)));
+	(void)g_registry.get_or_emplace<ecs::ItemLocation>(e);
 }
 
 void SyncItemOwner(entt::entity e, uint32_t ownerPID, uint32_t lastOwnerPID, uint32_t ownershipPID)
@@ -333,14 +337,14 @@ LPITEM CItem::RemoveFromCharacter()
 
 	LPCHARACTER pOwner = m_pOwner;
 
-	if (m_bEquipped)
+	if (IsEquipped())
 	{
 		Unequip();
 		SetWindow(RESERVED_WINDOW);
 		Save();
 
 		const entt::entity itemEntity = GetEntityHandle();
-		SyncItemLocation(itemEntity);
+		EnsureItemLocation(itemEntity);
 		SyncItemOwner(itemEntity, 0, m_dwLastOwnerPID, m_dwOwnershipPID);
 		g_registry.remove<ecs::ItemEquipped>(itemEntity);
 		return (this);
@@ -358,7 +362,7 @@ LPITEM CItem::RemoveFromCharacter()
 			Save();
 
 			const entt::entity itemEntity = GetEntityHandle();
-			SyncItemLocation(itemEntity);
+			EnsureItemLocation(itemEntity);
 			SyncItemOwner(itemEntity, 0, m_dwLastOwnerPID, m_dwOwnershipPID);
 			g_registry.remove<ecs::ItemEquipped>(itemEntity);
 			return (this);
@@ -413,7 +417,7 @@ LPITEM CItem::RemoveFromCharacter()
 		Save();
 
 		const entt::entity itemEntity = GetEntityHandle();
-		SyncItemLocation(itemEntity);
+		EnsureItemLocation(itemEntity);
 		SyncItemOwner(itemEntity, 0, m_dwLastOwnerPID, m_dwOwnershipPID);
 		g_registry.remove<ecs::ItemEquipped>(itemEntity);
 		return (this);
@@ -468,7 +472,7 @@ bool CItem::AddToCharacter(LPCHARACTER ch, TItemPos Cell)
 
 				const entt::entity itemEntity = GetEntityHandle();
 				SyncItemOwner(itemEntity, ecs::PlayerRuntime::GetPlayerID(character), m_dwLastOwnerPID, m_dwOwnershipPID);
-				SyncItemLocation(itemEntity);
+				EnsureItemLocation(itemEntity);
 				SyncItemEquipped(itemEntity, true);
 				return true;
 			}
@@ -562,7 +566,7 @@ bool CItem::AddToCharacter(LPCHARACTER ch, TItemPos Cell)
 	Save();
 
 	SyncItemOwner(itemEntity, ecs::PlayerRuntime::GetPlayerID(character), m_dwLastOwnerPID, m_dwOwnershipPID);
-	SyncItemLocation(itemEntity);
+	EnsureItemLocation(itemEntity);
 	SyncItemEquipped(itemEntity, false);
 	return true;
 }
@@ -596,7 +600,7 @@ LPITEM CItem::RemoveFromGround()
 
 		Save();
 
-		SyncItemLocation(itemEntity);
+		EnsureItemLocation(itemEntity);
 		g_registry.remove<ecs::ItemOwner>(itemEntity);
 		g_registry.remove<ecs::ItemEquipped>(itemEntity);
 	}
@@ -649,7 +653,7 @@ bool CItem::AddToGround(int32_t lMapIndex, const PIXEL_POSITION& pos, bool skipO
 		(void)g_registry.get_or_emplace<ecs::ViewMap>(itemEntity);
 		(void)g_registry.get_or_emplace<ecs::ViewerMap>(itemEntity);
 		(void)g_registry.get_or_emplace<ecs::ViewAgeMap>(itemEntity);
-		SyncItemLocation(itemEntity);
+		EnsureItemLocation(itemEntity);
 		g_registry.remove<ecs::ItemOwner>(itemEntity);
 		g_registry.remove<ecs::ItemEquipped>(itemEntity);
 		ecs::Invariants::ValidateSpatialCoverage(g_registry, itemEntity, "item.add_to_ground");
@@ -816,6 +820,11 @@ bool CItem::IsEquipable()
 
 #define ENABLE_IMMUNE_FIX
 // return false on error state
+bool CItem::IsEquipped() const
+{
+	return ItemSystem::IsItemEquipped(GetEntityHandle());
+}
+
 bool CItem::EquipTo(LPCHARACTER ch, uint8_t bWearCell)
 {
 	if (!ch)
@@ -856,8 +865,9 @@ bool CItem::EquipTo(LPCHARACTER ch, uint8_t bWearCell)
 	ch->SetWear(bWearCell, GetEntityHandle());
 
 	m_pOwner = ch;
-	m_bEquipped = true;
-	m_wCell = INVENTORY_MAX_NUM + bWearCell;
+	// SetWear above already routed the cell through ItemSystem::SetItemCell,
+	// which writes ecs::ItemLocation and mirrors it back into m_wCell.
+	SyncItemEquipped(GetEntityHandle(), true);
 
 #ifndef ENABLE_IMMUNE_FIX
 	uint32_t dwImmuneFlag = 0;
@@ -923,8 +933,7 @@ bool CItem::EquipTo(LPCHARACTER ch, uint8_t bWearCell)
 #endif
 
 	const entt::entity itemEntity = GetEntityHandle();
-	SyncItemEquipped(itemEntity, true);
-	SyncItemLocation(itemEntity);
+	EnsureItemLocation(itemEntity);
 	SyncItemOwner(itemEntity, ecs::PlayerRuntime::GetPlayerID(charEntity), m_dwLastOwnerPID, m_dwOwnershipPID);
 	g_dispatcher.trigger(ecs::EvItemEquipped { charEntity, itemEntity });
 
@@ -1015,11 +1024,13 @@ bool CItem::Unequip()
 	}
 #endif
 	m_pOwner = nullptr;
-	m_wCell = 0;
-	m_bEquipped = false;
+	// SetWear(.., entt::null) leaves the cell alone - SetItem only writes it on
+	// the has-item branch - so ecs::ItemLocation kept the equipment cell while
+	// m_wCell went to 0. Writing through the component fixes both at once.
+	ItemSystem::SetItemCell(itemEntity, charEntity, 0);
 
 	SyncItemEquipped(itemEntity, false);
-	SyncItemLocation(itemEntity);
+	EnsureItemLocation(itemEntity);
 	g_dispatcher.trigger(ecs::EvItemUnequipped { charEntity, itemEntity });
 	return true;
 }

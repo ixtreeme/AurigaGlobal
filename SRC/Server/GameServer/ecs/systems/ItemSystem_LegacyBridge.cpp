@@ -15705,7 +15705,6 @@ void CItem::Initialize()
 	m_bWindow = RESERVED_WINDOW;
 	m_pOwner = nullptr;
 	m_dwID = 0;
-	m_bEquipped = false;
 	m_dwVID = m_wCell = m_dwCount = m_lFlag = 0;
 	m_pProto = nullptr;
 	m_bExchanging = false;
@@ -17070,7 +17069,7 @@ int32_t CItem::GetRuneAttrValue(int c, int32_t lTime) {
 
 
 CItem::CItem(uint32_t dwVnum)
-	: m_pProto(nullptr), m_dwVnum(dwVnum), m_pOwner(nullptr), m_bWindow(0), m_dwID(0), m_bEquipped(false), m_dwVID(0),
+	: m_pProto(nullptr), m_dwVnum(dwVnum), m_pOwner(nullptr), m_bWindow(0), m_dwID(0), m_dwVID(0),
 	m_wCell(0),
 	m_dwCount(0),
 	m_sLockedAttr(0),

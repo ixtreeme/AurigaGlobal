@@ -108,7 +108,7 @@ class CItem : public CEntity
 		LPITEM		RemoveFromGround();
 		bool		AddToGround(int32_t lMapIndex, const PIXEL_POSITION & pos, bool skipOwnerCheck = false);
 
-		bool		IsEquipped() const		{ return m_bEquipped;	}
+		bool		IsEquipped() const;
 		bool		EquipTo(LPCHARACTER ch, uint8_t bWearCell);
 		bool		IsEquipable() ;
 
@@ -307,7 +307,6 @@ class CItem : public CEntity
 
 		uint8_t		m_bWindow;		// 현재 아이템이 위치한 윈도우
 		uint32_t		m_dwID;			// 고유번호
-		bool		m_bEquipped;	// 장착 되었는가?
 		uint32_t		m_dwVID;		// VID
 		uint16_t		m_wCell;		// 위치
 		int		m_dwCount;		// 개수
