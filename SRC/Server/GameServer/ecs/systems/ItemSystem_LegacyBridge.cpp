@@ -4001,7 +4001,7 @@ bool CHARACTER::PickupItem(uint32_t dwVID)
 			if (item->GetType() == ITEM_ELK)
 			{
 				GiveGold((int64_t)item->GetCount());
-				item->RemoveFromGround();
+				InventorySystem::RemoveFromGround(item->GetEntityHandle());
 #ifdef ENABLE_RANKING
 				SetRankPoints(10, GetRankPoints(10) + item->GetCount());
 #endif
@@ -4234,7 +4234,7 @@ bool CHARACTER::PickupItem(uint32_t dwVID)
 					}
 				}
 
-				item->RemoveFromGround();
+				InventorySystem::RemoveFromGround(item->GetEntityHandle());
 
 				if (item->IsDragonSoul())
 					InventorySystem::AddToCharacter(item->GetEntityHandle(), GetEntityHandle(), TItemPos(DRAGON_SOUL_INVENTORY, iEmptyCell));
@@ -4547,7 +4547,7 @@ bool CHARACTER::PickupItem(uint32_t dwVID)
 				}
 			}
 
-			item->RemoveFromGround();
+			InventorySystem::RemoveFromGround(item->GetEntityHandle());
 
 			if (item->IsDragonSoul())
 				InventorySystem::AddToCharacter(item->GetEntityHandle(), owner->GetEntityHandle(), TItemPos(DRAGON_SOUL_INVENTORY, iEmptyCell));

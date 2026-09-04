@@ -787,7 +787,7 @@ void ITEM_MANAGER::DestroyItem(LPITEM item, const char* file, size_t line)
 		return;
 
 	if (item->GetSectree())
-		item->RemoveFromGround();
+		InventorySystem::RemoveFromGround(item->GetEntityHandle());
 
 	if (const entt::entity owner = item->GetOwnerEntity(); owner != entt::null)
 	{

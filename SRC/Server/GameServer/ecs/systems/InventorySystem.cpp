@@ -334,42 +334,6 @@ void CHARACTER::ChainQuickslotItem(entt::entity item, uint8_t bType, uint8_t bOl
 	}
 }
 
-LPITEM CItem::RemoveFromGround()
-{
-	if (GetSectree())
-	{
-		SetOwnership(nullptr);
-
-		const entt::entity itemEntity = GetEntityHandle();
-		if (itemEntity != entt::null && g_registry.valid(itemEntity))
-			ecs::SpatialService::RemoveEntity(g_registry, itemEntity);
-		else
-			GetSectree()->RemoveEntity(this);
-
-		if (itemEntity != entt::null && g_registry.valid(itemEntity))
-		{
-			g_registry.remove<ecs::SectorPlacement>(itemEntity);
-			g_registry.remove<ecs::ViewActiveTag>(itemEntity);
-			g_registry.remove<ecs::SpatialEntity>(itemEntity);
-			// LPENTITY.4-fixup-item: keep SpatialKindTag intact. Removing it
-			// here breaks any subsequent EntityNetworkDispatch::SendRemove
-			// (e.g. PC UpdateSectree age-out) since SendRemove returns
-			// silently on missing SpatialKindTag. SpatialEntity is the
-			// gating tag for spatial queries; the kind tag is identity.
-			g_registry.remove<ecs::ItemGroundPosition>(itemEntity);
-		}
-
-		ViewCleanup();
-
-		Save();
-
-		EnsureItemLocation(itemEntity);
-		g_registry.remove<ecs::ItemOwner>(itemEntity);
-		g_registry.remove<ecs::ItemEquipped>(itemEntity);
-	}
-
-	return (this);
-}
 
 bool CItem::AddToGround(int32_t lMapIndex, const PIXEL_POSITION& pos, bool skipOwnerCheck)
 {
@@ -590,6 +554,59 @@ uint16_t CItem::GetCell() const
 }
 
 namespace InventorySystem {
+
+entt::entity RemoveFromGround(entt::entity itemEntity)
+{
+	if (itemEntity == entt::null || !g_registry.valid(itemEntity))
+	{
+		// The method this replaced fell through to GetSectree()->RemoveEntity(this)
+		// here. That path removed the item from the sectree but emitted no
+		// SendRemove, so the item stayed rendered on every client in range -
+		// the exact symptom the fixup-5 note in DestroyItemEntityAndLegacy
+		// describes. Nothing can broadcast without a valid entity either way,
+		// so this says so instead of doing it quietly.
+		LOG_ERROR("RemoveFromGround: no valid entity ({}), skipping",
+			static_cast<uint32_t>(itemEntity));
+		return itemEntity;
+	}
+
+	if (!ecs::PlayerRuntime::GetSectree(itemEntity))
+		return itemEntity;
+
+	// Leaving the world is the view layer's business, and that layer still
+	// speaks LPENTITY: SetOwnership broadcasts through CEntity::PacketAround,
+	// and ViewCleanup walks the view map calling ViewRemove(this) on each
+	// viewer. One resolve here covers both. It goes when PacketView does.
+	LPITEM legacyItem = nullptr;
+	if (const auto* legacy = g_registry.try_get<ecs::LegacyItemPtr>(itemEntity))
+		legacyItem = legacy->ptr;
+	if (!legacyItem)
+		return itemEntity;
+
+	legacyItem->SetOwnership(nullptr);
+
+	ecs::SpatialService::RemoveEntity(g_registry, itemEntity);
+
+	g_registry.remove<ecs::SectorPlacement>(itemEntity);
+	g_registry.remove<ecs::ViewActiveTag>(itemEntity);
+	g_registry.remove<ecs::SpatialEntity>(itemEntity);
+	// LPENTITY.4-fixup-item: keep SpatialKindTag intact. Removing it
+	// here breaks any subsequent EntityNetworkDispatch::SendRemove
+	// (e.g. PC UpdateSectree age-out) since SendRemove returns
+	// silently on missing SpatialKindTag. SpatialEntity is the
+	// gating tag for spatial queries; the kind tag is identity.
+	g_registry.remove<ecs::ItemGroundPosition>(itemEntity);
+
+	legacyItem->ViewCleanup();
+
+	ItemSystem::SaveItem(itemEntity);
+
+	EnsureItemLocation(itemEntity);
+	g_registry.remove<ecs::ItemOwner>(itemEntity);
+	g_registry.remove<ecs::ItemEquipped>(itemEntity);
+
+	return itemEntity;
+}
 
 #ifdef __HIGHLIGHT_SYSTEM__
 bool AddToCharacter(entt::entity itemEntity, entt::entity character, TItemPos Cell, bool isHighLight)

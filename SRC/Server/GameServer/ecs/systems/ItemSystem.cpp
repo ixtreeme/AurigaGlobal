@@ -279,15 +279,14 @@ static bool DestroyItemEntityAndLegacy(entt::entity itemEntity, const char* reas
     if (legacyItem) {
         // Phase 15E-final.LPENTITY.4-architect.D.6.fixup-5:
         // Order matters. The legacy ITEM_MANAGER::RemoveItem path ultimately
-        // calls CItem::RemoveFromGround for ground items, which is the
-        // function that broadcasts SendRemove to every viewer in range via
-        // SpatialService::RemoveEntity. RemoveFromGround checks
-        // g_registry.valid(itemEntity) before calling SpatialService - if
-        // the ECS entity has already been destroyed it falls through to a
-        // bare GetSectree()->RemoveEntity(this), which removes the item
-        // from the sectree but emits NO SendRemove packets, leaving the
-        // item rendered on every peer's client until they relog or move
-        // out of range.
+        // reaches InventorySystem::RemoveFromGround for ground items, which is
+        // what broadcasts SendRemove to every viewer in range via
+        // SpatialService::RemoveEntity. It needs a valid entity to do that;
+        // once the ECS entity is gone there is nothing left to broadcast from,
+        // and the item stays rendered on every peer's client until they relog
+        // or move out of range. (The old CItem method fell through to a bare
+        // GetSectree()->RemoveEntity(this) in that case, which had the same
+        // effect silently; it logs now.)
         //
         // Pre-fixup-5 the ECS destroy ran first, so RemoveFromGround
         // always hit the silent legacy fallback. The user-visible symptom

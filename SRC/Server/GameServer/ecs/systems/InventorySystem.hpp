@@ -10,6 +10,7 @@ bool AddToCharacter(entt::entity item, entt::entity ch, TItemPos Cell, bool isHi
 #else
 bool AddToCharacter(entt::entity item, entt::entity ch, TItemPos Cell);
 #endif
+entt::entity RemoveFromGround(entt::entity item);
 bool EquipTo(entt::entity item, entt::entity ch, uint8_t bWearCell);
 bool Unequip(entt::entity item);
 entt::entity RemoveFromCharacter(entt::entity item);
