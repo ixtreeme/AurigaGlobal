@@ -103,7 +103,9 @@ class CItem : public CEntity
 #else
 		bool	AddToCharacter(LPCHARACTER ch, TItemPos Cell);
 #endif
-		LPCHARACTER	GetOwner()		{ return m_pOwner; }
+		LPCHARACTER	GetOwner() const;
+		entt::entity	GetOwnerEntity() const;
+		void		SetOwnerEntity(entt::entity owner);
 
 		LPITEM		RemoveFromGround();
 		bool		AddToGround(int32_t lMapIndex, const PIXEL_POSITION & pos, bool skipOwnerCheck = false);
@@ -303,7 +305,6 @@ class CItem : public CEntity
 		TItemTable const * m_pProto;		// 프로토 타잎
 
 		uint32_t		m_dwVnum;
-		LPCHARACTER	m_pOwner;
 
 		uint32_t		m_dwID;			// 고유번호
 		uint32_t		m_dwVID;		// VID

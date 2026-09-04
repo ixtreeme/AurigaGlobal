@@ -465,13 +465,16 @@ ecs::ItemPrototypeMeta MakeItemPrototypeMeta(LPITEM item)
 
 ecs::ItemOwner MakeItemOwner(LPITEM item)
 {
+    entt::entity ownerEntity = entt::null;
     uint32_t ownerPID = 0;
 
     if (const auto* owner = item->GetOwner()) {
-		ownerPID = ecs::PlayerRuntime::GetPlayerID(owner->GetEntityHandle());
+        ownerEntity = owner->GetEntityHandle();
+        ownerPID = ecs::PlayerRuntime::GetPlayerID(ownerEntity);
     }
 
     return ecs::ItemOwner {
+        ownerEntity,
         ownerPID,
         item->GetLastOwnerPID(),
         ownerPID,

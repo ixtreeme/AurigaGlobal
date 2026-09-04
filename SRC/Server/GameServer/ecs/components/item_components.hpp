@@ -47,6 +47,11 @@ struct ItemPrototypeMeta {
 };
 
 struct ItemOwner {
+    // The owner entity is the identity; ownerPID is the persisted form of it.
+    // They are not interchangeable - a character carrying an item before its
+    // PID is known, or one that has none at all, has a valid entity and a zero
+    // PID - so the entity is stored rather than derived from the PID.
+    entt::entity owner { entt::null };
     uint32_t ownerPID { 0 };
     uint32_t lastOwnerPID { 0 };
     uint32_t ownershipPID { 0 };

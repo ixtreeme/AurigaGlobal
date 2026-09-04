@@ -1866,10 +1866,15 @@ bool SaveItemEcs(entt::entity item, bool flush)
 
 entt::entity GetItemOwner(entt::entity item)
 {
-    if (const auto* owner = g_registry.try_get<ecs::ItemOwner>(item))
-        return ecs::PlayerRuntime::FindByPlayerID(owner->ownerPID);
+    const auto* owner = g_registry.try_get<ecs::ItemOwner>(item);
+    if (!owner)
+        return entt::null;
 
-    return entt::null;
+    // Was FindByPlayerID(ownerPID), which answered null for every owner with no
+    // PID yet - and for any character that never has one.
+    return (owner->owner != entt::null && g_registry.valid(owner->owner))
+        ? owner->owner
+        : entt::null;
 }
 
 entt::entity GetItemOwnerEntity(entt::entity item)
@@ -2350,21 +2355,6 @@ bool SetItemWindow(entt::entity item, uint8_t window)
     return true;
 }
 
-static bool MirrorItemCellToLegacyBoundary(entt::entity item,
-                                           entt::entity owner,
-                                           uint16_t cell)
-{
-    LPITEM legacyItem = LegacyItemBoundary(item);
-    if (!legacyItem)
-        return false;
-
-    LPCHARACTER legacyOwner = LegacyCharOf(owner);
-    if (!legacyOwner)
-        legacyOwner = legacyItem->GetOwner();
-    legacyItem->SetCell(legacyOwner, cell);
-    return true;
-}
-
 bool SetItemCell(entt::entity item, entt::entity owner, uint16_t cell)
 {
     if (item == entt::null || !g_registry.valid(item))
@@ -2374,9 +2364,14 @@ bool SetItemCell(entt::entity item, entt::entity owner, uint16_t cell)
     location.cell = cell;
 
     auto& itemOwner = g_registry.get_or_emplace<ecs::ItemOwner>(item);
+    itemOwner.owner = owner;
     itemOwner.ownerPID = ecs::PlayerRuntime::GetPlayerID(owner);
 
-    return MirrorItemCellToLegacyBoundary(item, owner, cell);
+    // The mirror that used to follow called CItem::SetCell, which since m_wCell
+    // and m_pOwner went away writes these same two fields - and derived its
+    // owner from LegacyCharOf(owner), so an owner entity carrying no
+    // LegacyCharPtr would have had the assignment above undone one line later.
+    return true;
 }
 
 bool AlterItemToMagicItem(entt::entity item)
@@ -2543,7 +2538,7 @@ bool RemoveItemEcs(entt::entity item)
     g_registry.emplace_or_replace<ecs::ItemLocation>(
         item, ecs::ItemLocation{RESERVED_WINDOW, 0});
     g_registry.emplace_or_replace<ecs::ItemOwner>(
-        item, ecs::ItemOwner{0, legacyItem->GetLastOwnerPID(), 0});
+        item, ecs::ItemOwner{entt::null, 0, legacyItem->GetLastOwnerPID(), 0});
     g_registry.remove<ecs::ItemEquipped>(item);
 
     if (legacyItem->GetOwner()) {
@@ -3111,12 +3106,15 @@ bool SyncItemOwnerFromLegacy(entt::entity item)
     if (!legacyItem || item == entt::null || !g_registry.valid(item))
         return false;
 
+    entt::entity ownerEntity = entt::null;
     uint32_t ownerPID = 0;
-    if (const auto* owner = legacyItem->GetOwner())
-        ownerPID = ecs::PlayerRuntime::GetPlayerID(owner->GetEntityHandle());
+    if (const auto* owner = legacyItem->GetOwner()) {
+        ownerEntity = owner->GetEntityHandle();
+        ownerPID = ecs::PlayerRuntime::GetPlayerID(ownerEntity);
+    }
 
     g_registry.emplace_or_replace<ecs::ItemOwner>(
-        item, ecs::ItemOwner{ownerPID, legacyItem->GetLastOwnerPID(), ownerPID});
+        item, ecs::ItemOwner{ownerEntity, ownerPID, legacyItem->GetLastOwnerPID(), ownerPID});
     return true;
 }
 

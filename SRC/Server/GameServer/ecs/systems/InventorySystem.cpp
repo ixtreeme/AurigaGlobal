@@ -6,6 +6,7 @@
 #include "InventorySystem.hpp"
 #include "ItemSystem.hpp"
 #include "NetworkSyncSystem.hpp"
+#include "../CharacterAccessors.hpp"
 
 #include "../../config.h"
 #include "../../char.h"
@@ -55,12 +56,13 @@ void EnsureItemLocation(entt::entity e)
 	(void)g_registry.get_or_emplace<ecs::ItemLocation>(e);
 }
 
-void SyncItemOwner(entt::entity e, uint32_t ownerPID, uint32_t lastOwnerPID, uint32_t ownershipPID)
+void SyncItemOwner(entt::entity e, entt::entity owner, uint32_t ownerPID,
+	uint32_t lastOwnerPID, uint32_t ownershipPID)
 {
 	if (e == entt::null || !g_registry.valid(e))
 		return;
 
-	g_registry.emplace_or_replace<ecs::ItemOwner>(e, ownerPID, lastOwnerPID, ownershipPID);
+	g_registry.emplace_or_replace<ecs::ItemOwner>(e, owner, ownerPID, lastOwnerPID, ownershipPID);
 }
 
 void SyncItemEquipped(entt::entity e, bool equipped)
@@ -329,14 +331,14 @@ void CHARACTER::ChainQuickslotItem(entt::entity item, uint8_t bType, uint8_t bOl
 
 LPITEM CItem::RemoveFromCharacter()
 {
-	if (!m_pOwner)
+	if (GetOwnerEntity() == entt::null)
 	{
 		LOG_ERROR("Item::RemoveFromCharacter owner null");
 		return (this);
 	}
 
 	const entt::entity itemEntity = GetEntityHandle();
-	const entt::entity ownerEntity = m_pOwner->GetEntityHandle();
+	const entt::entity ownerEntity = GetOwnerEntity();
 
 	// Detaching means three component writes, and each one used to be a bare
 	// field assignment plus a call to the old SyncItemLocation, which copied
@@ -346,11 +348,11 @@ LPITEM CItem::RemoveFromCharacter()
 	const auto detach = [&]() {
 		ItemSystem::SetItemCell(itemEntity, ownerEntity, 0);
 		ItemSystem::SetItemWindow(itemEntity, RESERVED_WINDOW);
-		m_pOwner = nullptr;
+		SetOwnerEntity(entt::null);
 		Save();
 
 		EnsureItemLocation(itemEntity);
-		SyncItemOwner(itemEntity, 0, m_dwLastOwnerPID, m_dwOwnershipPID);
+		SyncItemOwner(itemEntity, entt::null, 0, m_dwLastOwnerPID, m_dwOwnershipPID);
 		g_registry.remove<ecs::ItemEquipped>(itemEntity);
 	};
 
@@ -361,7 +363,7 @@ LPITEM CItem::RemoveFromCharacter()
 		Save();
 
 		EnsureItemLocation(itemEntity);
-		SyncItemOwner(itemEntity, 0, m_dwLastOwnerPID, m_dwOwnershipPID);
+		SyncItemOwner(itemEntity, entt::null, 0, m_dwLastOwnerPID, m_dwOwnershipPID);
 		g_registry.remove<ecs::ItemEquipped>(itemEntity);
 		return (this);
 	}
@@ -371,7 +373,7 @@ LPITEM CItem::RemoveFromCharacter()
 
 	if (window == MOUNT_INVENTORY)
 	{
-		if (CMountInventory* mi = m_pOwner->GetMountInventory())
+		if (CMountInventory* mi = ecs::LegacyCharOf(ownerEntity)->GetMountInventory())
 			mi->RemoveByItem(itemEntity);
 
 		detach();
@@ -431,7 +433,7 @@ bool CItem::AddToCharacter(LPCHARACTER ch, TItemPos Cell)
 #endif
 {
 	assert(GetSectree() == NULL);
-	assert(m_pOwner == NULL);
+	assert(GetOwnerEntity() == entt::null);
 	const entt::entity character = ch
 		? ch->GetEntityHandle()
 		: entt::null;
@@ -467,11 +469,11 @@ bool CItem::AddToCharacter(LPCHARACTER ch, TItemPos Cell)
 				event_cancel(&m_pkDestroyEvent);
 
 				ch->SetItem(TItemPos(EQUIPMENT, iFindCell), GetEntityHandle());
-				m_pOwner = ch;
+				SetOwnerEntity(character);
 				Save();
 
 				const entt::entity itemEntity = GetEntityHandle();
-				SyncItemOwner(itemEntity, ecs::PlayerRuntime::GetPlayerID(character), m_dwLastOwnerPID, m_dwOwnershipPID);
+				SyncItemOwner(itemEntity, character, ecs::PlayerRuntime::GetPlayerID(character), m_dwLastOwnerPID, m_dwOwnershipPID);
 				EnsureItemLocation(itemEntity);
 				SyncItemEquipped(itemEntity, true);
 				return true;
@@ -561,11 +563,11 @@ bool CItem::AddToCharacter(LPCHARACTER ch, TItemPos Cell)
 #else
 	ch->SetItem(TItemPos(window_type, pos), GetEntityHandle());
 #endif
-	m_pOwner = ch;
+	SetOwnerEntity(character);
 
 	Save();
 
-	SyncItemOwner(itemEntity, ecs::PlayerRuntime::GetPlayerID(character), m_dwLastOwnerPID, m_dwOwnershipPID);
+	SyncItemOwner(itemEntity, character, ecs::PlayerRuntime::GetPlayerID(character), m_dwLastOwnerPID, m_dwOwnershipPID);
 	EnsureItemLocation(itemEntity);
 	SyncItemEquipped(itemEntity, false);
 	return true;
@@ -622,7 +624,7 @@ bool CItem::AddToGround(int32_t lMapIndex, const PIXEL_POSITION& pos, bool skipO
 		return false;
 	}
 
-	if (!skipOwnerCheck && m_pOwner)
+	if (!skipOwnerCheck && GetOwnerEntity() != entt::null)
 	{
 		LOG_ERROR("owner pointer not null");
 		return false;
@@ -717,7 +719,7 @@ void CItem::SetOwnership(LPCHARACTER ch, int iSec)
 			PacketAround(&p, sizeof(p));
 
 			const entt::entity itemEntity = GetEntityHandle();
-			SyncItemOwner(itemEntity, 0, m_dwLastOwnerPID, m_dwOwnershipPID);
+			SyncItemOwner(itemEntity, entt::null, 0, m_dwLastOwnerPID, m_dwOwnershipPID);
 			if (itemEntity != entt::null && g_registry.valid(itemEntity))
 				g_registry.remove<ecs::ItemOwnershipDisplay>(itemEntity);
 		}
@@ -748,9 +750,11 @@ void CItem::SetOwnership(LPCHARACTER ch, int iSec)
 	PacketAround(&p, sizeof(p));
 
 	const entt::entity itemEntity = GetEntityHandle();
+	const entt::entity ownerEntity = GetOwnerEntity();
 	SyncItemOwner(
 		itemEntity,
-		m_pOwner ? ecs::PlayerRuntime::GetPlayerID(m_pOwner->GetEntityHandle()) : 0,
+		ownerEntity,
+		ecs::PlayerRuntime::GetPlayerID(ownerEntity),
 		m_dwLastOwnerPID,
 		m_dwOwnershipPID);
 	if (itemEntity != entt::null && g_registry.valid(itemEntity))
@@ -822,6 +826,30 @@ bool CItem::IsEquipable()
 // return false on error state
 // The cell lives in ecs::ItemLocation. SetCell is the legacy-facing name for
 // what SetItemCell already does, so it forwards rather than mirroring a field.
+// The owner lives in ecs::ItemOwner. GetOwner keeps returning a pointer
+// because that is what its callers are typed on; GetOwnerEntity is the form
+// this migration moves them to.
+entt::entity CItem::GetOwnerEntity() const
+{
+	return ItemSystem::GetItemOwner(GetEntityHandle());
+}
+
+LPCHARACTER CItem::GetOwner() const
+{
+	return ecs::LegacyCharOf(GetOwnerEntity());
+}
+
+void CItem::SetOwnerEntity(entt::entity owner)
+{
+	const entt::entity itemEntity = GetEntityHandle();
+	if (itemEntity == entt::null || !g_registry.valid(itemEntity))
+		return;
+
+	auto& itemOwner = g_registry.get_or_emplace<ecs::ItemOwner>(itemEntity);
+	itemOwner.owner = owner;
+	itemOwner.ownerPID = ecs::PlayerRuntime::GetPlayerID(owner);
+}
+
 void CItem::SetCell(LPCHARACTER ch, uint16_t pos)
 {
 	// The component directly, not ItemSystem::SetItemCell: that one mirrors
@@ -830,7 +858,7 @@ void CItem::SetCell(LPCHARACTER ch, uint16_t pos)
 	if (itemEntity != entt::null && g_registry.valid(itemEntity))
 		g_registry.get_or_emplace<ecs::ItemLocation>(itemEntity).cell = pos;
 
-	m_pOwner = ch;
+	SetOwnerEntity(ch ? ch->GetEntityHandle() : entt::null);
 }
 
 // Same shape as SetCell: ItemSystem::SetItemWindow mirrors through this
@@ -896,7 +924,7 @@ bool CItem::EquipTo(LPCHARACTER ch, uint8_t bWearCell)
 
 	ch->SetWear(bWearCell, GetEntityHandle());
 
-	m_pOwner = ch;
+	SetOwnerEntity(charEntity);
 	// SetWear above already routed the cell through ItemSystem::SetItemCell,
 	// which writes ecs::ItemLocation and mirrors it back into m_wCell.
 	SyncItemEquipped(GetEntityHandle(), true);
@@ -966,7 +994,7 @@ bool CItem::EquipTo(LPCHARACTER ch, uint8_t bWearCell)
 
 	const entt::entity itemEntity = GetEntityHandle();
 	EnsureItemLocation(itemEntity);
-	SyncItemOwner(itemEntity, ecs::PlayerRuntime::GetPlayerID(charEntity), m_dwLastOwnerPID, m_dwOwnershipPID);
+	SyncItemOwner(itemEntity, charEntity, ecs::PlayerRuntime::GetPlayerID(charEntity), m_dwLastOwnerPID, m_dwOwnershipPID);
 	g_dispatcher.trigger(ecs::EvItemEquipped { charEntity, itemEntity });
 
 	Save();
@@ -975,22 +1003,22 @@ bool CItem::EquipTo(LPCHARACTER ch, uint8_t bWearCell)
 
 bool CItem::Unequip()
 {
-	if (!m_pOwner || GetCell() < INVENTORY_MAX_NUM)
+	if (GetOwnerEntity() == entt::null || GetCell() < INVENTORY_MAX_NUM)
 	{
-		LOG_ERROR("{} {} m_pOwner {}, GetCell {}", GetName(), GetID(), static_cast<const void*>(get_pointer(m_pOwner)), GetCell());
+		LOG_ERROR("{} {} owner {}, GetCell {}", GetName(), GetID(), static_cast<uint32_t>(GetOwnerEntity()), GetCell());
 		return false;
 	}
 
 	const entt::entity itemEntity = GetEntityHandle();
-	const entt::entity charEntity = m_pOwner->GetEntityHandle();
+	const entt::entity charEntity = GetOwnerEntity();
 	if (ItemSystem::GetWearItem(
 			charEntity, static_cast<uint8_t>(GetCell() - INVENTORY_MAX_NUM)) != itemEntity)
 	{
-		LOG_ERROR("m_pOwner->GetWear() != this");
+		LOG_ERROR("GetWearItem(owner, cell) != this");
 		return false;
 	}
 
-	LPCHARACTER owner = m_pOwner;
+	LPCHARACTER owner = ecs::LegacyCharOf(charEntity);
 	const uint8_t wearCell = static_cast<uint8_t>(GetCell() - INVENTORY_MAX_NUM);
 
 #ifdef ENABLE_MOUNT_COSTUME_SYSTEM
@@ -1055,7 +1083,7 @@ bool CItem::Unequip()
 		MountSystem::UpdateMountSkin(charEntity);
 	}
 #endif
-	m_pOwner = nullptr;
+	SetOwnerEntity(entt::null);
 	// SetWear(.., entt::null) leaves the cell alone - SetItem only writes it on
 	// the has-item branch - so ecs::ItemLocation kept the equipment cell while
 	// m_wCell went to 0. Writing through the component fixes both at once.
@@ -1070,12 +1098,12 @@ bool CItem::Unequip()
 void CItem::ModifyPoints(bool bAdd)
 {
 #ifdef ENABLE_BUG_FIXES
-	if (!m_pOwner) {
+	if (GetOwnerEntity() == entt::null) {
 		return;
 	}
 #endif
 
-	const entt::entity ownerEntity = m_pOwner->GetEntityHandle();
+	const entt::entity ownerEntity = GetOwnerEntity();
 	const entt::entity itemEntity = GetEntityHandle();
 	int accessoryGrade;
 

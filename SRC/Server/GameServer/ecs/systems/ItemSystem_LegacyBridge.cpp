@@ -641,9 +641,9 @@ const char* CItem::GetName(uint8_t Lang)
 	{
 		idx = fallbackIndex;
 
-		if (m_pOwner)
+		if (GetOwnerEntity() != entt::null)
 		{
-			if (LPDESC d = ecs::PlayerRuntime::GetDesc((m_pOwner ? m_pOwner->GetEntityHandle() : entt::null)))
+			if (LPDESC d = ecs::PlayerRuntime::GetDesc(GetOwnerEntity()))
 			{
 				const uint8_t dlang = d->GetLanguage();
 				if (dlang != 0)
@@ -729,7 +729,7 @@ bool CItem::SetCount(int count)
 	}
 #endif
 	SyncItemCountComponent(this, m_dwCount);
-	if (count == 0 && m_pOwner)
+	if (count == 0 && GetOwnerEntity() != entt::null)
 	{
 		if (GetSubType() == USE_ABILITY_UP || GetSubType() == USE_POTION || GetVnum() == 70020)
 		{
@@ -15702,7 +15702,6 @@ void CItem::Initialize()
 	CEntity::Initialize(ENTITY_ITEM);
 	SetEntityHandle(entt::null);
 
-	m_pOwner = nullptr;
 	m_dwID = 0;
 	m_dwVID = m_dwCount = m_lFlag = 0;
 	m_pProto = nullptr;
@@ -16106,11 +16105,11 @@ void CItem::ChangeRuneAttr(int32_t lTime) {
 }
 
 void CItem::ActivateRuneBonus() {
-	const entt::entity pOwner = m_pOwner ? m_pOwner->GetEntityHandle() : entt::null;
-	if (!m_pOwner)
+	const entt::entity pOwner = GetOwnerEntity();
+	if (pOwner == entt::null)
 		return;
 
-	LPITEM pkItem1 = m_pOwner->GetWear(WEAR_RUNE7);
+	LPITEM pkItem1 = LegacyItemBoundary(ItemSystem::GetWearItem(pOwner, WEAR_RUNE7));
 	if (!pkItem1)
 		return;
 
@@ -16121,7 +16120,7 @@ void CItem::ActivateRuneBonus() {
 	int iMaxSubTypes = RUNE_SUBTYPES - 1;
 	LPITEM pkItem2 = nullptr;
 	for (int i = 0; i < iMaxSubTypes; i++) {
-		pkItem2 = m_pOwner->GetWear(WEAR_RUNE1 + i);
+		pkItem2 = LegacyItemBoundary(ItemSystem::GetWearItem(pOwner, WEAR_RUNE1 + i));
 		if (pkItem2) {
 			if (pkItem2->GetSocket(1) != 1) {
 				bCan = false;
@@ -16166,11 +16165,11 @@ void CItem::ActivateRuneBonus() {
 }
 
 void CItem::DeactivateRuneBonus() {
-	const entt::entity pOwner = m_pOwner ? m_pOwner->GetEntityHandle() : entt::null;
-	if (!m_pOwner)
+	const entt::entity pOwner = GetOwnerEntity();
+	if (pOwner == entt::null)
 		return;
 
-	LPITEM pkItem1 = m_pOwner->GetWear(WEAR_RUNE7);
+	LPITEM pkItem1 = LegacyItemBoundary(ItemSystem::GetWearItem(pOwner, WEAR_RUNE7));
 	if (!pkItem1)
 		return;
 
@@ -16189,13 +16188,13 @@ void CItem::DeactivateRuneBonus() {
 }
 
 void CItem::DeactivateRuneBonusRefresh() {
-	const entt::entity pOwner = m_pOwner ? m_pOwner->GetEntityHandle() : entt::null;
+	const entt::entity pOwner = GetOwnerEntity();
 	int iMaxSubTypes = RUNE_SUBTYPES - 1;
 	bool bAdd = false;
 	LPITEM pkItem2 = nullptr;
 	if (!AffectSystem::FindAffect(pOwner, AFFECT_RUNE1)) {
 		for (int i = 0; i < iMaxSubTypes; i++) {
-			pkItem2 = m_pOwner->GetWear(WEAR_RUNE1 + i);
+			pkItem2 = LegacyItemBoundary(ItemSystem::GetWearItem(pOwner, WEAR_RUNE1 + i));
 			if (pkItem2) {
 				if (pkItem2->GetSocket(1) != 0) {
 					bAdd = true;
@@ -16213,7 +16212,7 @@ void CItem::DeactivateRuneBonusRefresh() {
 	}
 	else {
 		for (int i = 0; i < iMaxSubTypes; i++) {
-			pkItem2 = m_pOwner->GetWear(WEAR_RUNE1 + i);
+			pkItem2 = LegacyItemBoundary(ItemSystem::GetWearItem(pOwner, WEAR_RUNE1 + i));
 			if (pkItem2) {
 				if (pkItem2->GetSocket(1) != 0) {
 					bAdd = true;
@@ -16232,7 +16231,7 @@ void CItem::DeactivateRuneBonusRefresh() {
 }
 
 void CItem::ActivateRune() {
-	const entt::entity pOwner = m_pOwner ? m_pOwner->GetEntityHandle() : entt::null;
+	const entt::entity pOwner = GetOwnerEntity();
 	if (!IsRune())
 		return;
 
@@ -16241,7 +16240,7 @@ void CItem::ActivateRune() {
 
 	if (GetSocket(ITEM_SOCKET_REMAIN_SEC) <= 0) {
 #ifdef TEXTS_IMPROVEMENT
-		if (m_pOwner) {
+		if (pOwner != entt::null) {
 			ecs::ChatSystem::SendNew(pOwner, CHAT_TYPE_INFO, 30, "%s", GetName());
 		}
 #endif
@@ -16252,7 +16251,7 @@ void CItem::ActivateRune() {
 	ModifyPoints(true);
 	UpdatePacket();
 #ifdef TEXTS_IMPROVEMENT
-	if (m_pOwner) {
+	if (pOwner != entt::null) {
 		ecs::ChatSystem::SendNew(pOwner, CHAT_TYPE_INFO, 31, "%s", GetName());
 	}
 #endif
@@ -16267,6 +16266,7 @@ void CItem::DeactivateRune() {
 	if (GetSocket(1) == 0)
 		return;
 
+	const entt::entity pOwner = GetOwnerEntity();
 	DeactivateRuneBonus();
 
 	SetSocket(1, 0);
@@ -16274,8 +16274,8 @@ void CItem::DeactivateRune() {
 	UpdatePacket();
 	DeactivateRuneBonusRefresh();
 #ifdef TEXTS_IMPROVEMENT
-	if (m_pOwner) {
-		ecs::ChatSystem::SendNew((m_pOwner ? m_pOwner->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 32, "%s", GetName());
+	if (pOwner != entt::null) {
+		ecs::ChatSystem::SendNew(pOwner, CHAT_TYPE_INFO, 32, "%s", GetName());
 	}
 #endif
 }
@@ -17068,7 +17068,7 @@ int32_t CItem::GetRuneAttrValue(int c, int32_t lTime) {
 
 
 CItem::CItem(uint32_t dwVnum)
-	: m_pProto(nullptr), m_dwVnum(dwVnum), m_pOwner(nullptr), m_dwID(0), m_dwVID(0),
+	: m_pProto(nullptr), m_dwVnum(dwVnum), m_dwID(0), m_dwVID(0),
 	m_dwCount(0),
 	m_sLockedAttr(0),
 	m_ExtraProto(nullptr), m_lFlag(0), m_dwLastOwnerPID(0),
