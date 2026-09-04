@@ -11,8 +11,6 @@ class CEntity
 		CEntity();
 		virtual	~CEntity();
 
-		virtual void	EncodeInsertPacket(LPENTITY entity) = 0;
-		virtual	void	EncodeRemovePacket(LPENTITY entity) = 0;
 
 	protected:
 		void			Initialize(int type = -1);

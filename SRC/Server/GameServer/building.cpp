@@ -110,21 +110,7 @@ void CObject::Reconstruct(uint32_t dwVnum)
 }
 // END_OF_BUILDING_NPC
 
-void CObject::EncodeInsertPacket(LPENTITY entity)
-{
-	const entt::entity source = ecs::CBuildingRegistry::FindByID(GetID());
-	const entt::entity viewer = ecs::EntityFromLPENTITY(entity);
-	if (source != entt::null && viewer != entt::null)
-		ecs::EntityNetworkDispatch::SendInsert(g_registry, source, viewer);
-}
 
-void CObject::EncodeRemovePacket(LPENTITY entity)
-{
-	const entt::entity source = ecs::CBuildingRegistry::FindByID(GetID());
-	const entt::entity viewer = ecs::EntityFromLPENTITY(entity);
-	if (source != entt::null && viewer != entt::null)
-		ecs::EntityNetworkDispatch::SendRemove(g_registry, source, viewer);
-}
 
 void CObject::SetVID(uint32_t dwVID)
 {

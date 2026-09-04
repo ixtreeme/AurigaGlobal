@@ -488,6 +488,14 @@ void SendInsert(entt::registry& reg, entt::entity source, entt::entity viewer)
     case ecs::SpatialKind::OfflineShop:
         SendShopInsert(reg, source, viewer);
         break;
+    default:
+        // CEntity::EncodeInsertPacket used to be pure virtual, so a new entity
+        // kind could not compile without saying how it announces itself. That
+        // contract lives here now, and a switch cannot enforce it at compile
+        // time - so an unhandled kind says so instead of going quiet.
+        LOG_ERROR("SendInsert: no builder for SpatialKind {} (entity {})",
+            static_cast<int>(kind->kind), static_cast<uint32_t>(source));
+        break;
     }
 }
 
@@ -520,6 +528,14 @@ void SendRemove(entt::registry& reg, entt::entity source, entt::entity viewer)
         break;
     case ecs::SpatialKind::OfflineShop:
         SendShopRemove(reg, source, viewer);
+        break;
+    default:
+        // CEntity::EncodeRemovePacket used to be pure virtual, so a new entity
+        // kind could not compile without saying how it announces itself. That
+        // contract lives here now, and a switch cannot enforce it at compile
+        // time - so an unhandled kind says so instead of going quiet.
+        LOG_ERROR("SendRemove: no builder for SpatialKind {} (entity {})",
+            static_cast<int>(kind->kind), static_cast<uint32_t>(source));
         break;
     }
 }

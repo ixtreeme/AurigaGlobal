@@ -66,8 +66,11 @@ void CheckCharacterInsertParity(entt::registry& reg, entt::entity source)
     // did not, and no field here would ever have shown it.
     //
     // Every field of TPacketGCCharacterAdd that either builder sets is
-    // compared here now. If this stays silent on a populated server, that
-    // is the evidence the native builder needs to take authority.
+    // compared here. The native builder has taken authority since, so this no
+    // longer gates anything - it now watches for the reverse, a component
+    // drifting away from the legacy getter it is supposed to back. The legacy
+    // side of each comparison is rebuilt from getters here; CHARACTER's
+    // EncodeInsertPacket itself is gone.
 
     if (nativePack.dwVID != ch->GetPacketVID())
         LOG_WARN("[INSERT_PARITY] dwVID entity={} native={} legacy={}", entityIdx, nativePack.dwVID, ch->GetPacketVID());

@@ -8,8 +8,6 @@ class CItem : public CEntity
 {
 	protected:
 		// override methods from ENTITY class
-		virtual void	EncodeInsertPacket(LPENTITY entity);
-		virtual void	EncodeRemovePacket(LPENTITY entity);
 
 	public:
 		CItem(uint32_t dwVnum);

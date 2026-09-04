@@ -16,8 +16,6 @@ namespace building
 
 			void	Destroy();
 
-			virtual void EncodeInsertPacket(LPENTITY entity);
-			virtual void EncodeRemovePacket(LPENTITY entity);
 
 			uint32_t	GetID() { return m_data.dwID; }
 

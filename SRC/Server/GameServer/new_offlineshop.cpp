@@ -897,22 +897,8 @@ namespace offlineshop
 
 
 	//NEW ENTITY
-	void ShopEntity::EncodeInsertPacket(LPENTITY entity)
-	{
-		const entt::entity source = ecs::OfflineShopEntityRegistry::FindByVID(GetVID());
-		const entt::entity viewer = ecs::EntityFromLPENTITY(entity);
-		if (source != entt::null && viewer != entt::null)
-			ecs::EntityNetworkDispatch::SendInsert(g_registry, source, viewer);
-	}
 
 
-	void ShopEntity::EncodeRemovePacket(LPENTITY entity)
-	{
-		const entt::entity source = ecs::OfflineShopEntityRegistry::FindByVID(GetVID());
-		const entt::entity viewer = ecs::EntityFromLPENTITY(entity);
-		if (source != entt::null && viewer != entt::null)
-			ecs::EntityNetworkDispatch::SendRemove(g_registry, source, viewer);
-	}
 
 
 	const char* ShopEntity::GetShopName() const

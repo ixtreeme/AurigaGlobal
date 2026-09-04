@@ -126,21 +126,6 @@ void DispatchInsert(entt::entity sourceE, entt::entity viewerE)
 		ecs::EntityNetworkDispatch::SendInsert(g_registry, sourceE, viewerE);
 }
 
-void DispatchInsert(LPENTITY source, LPENTITY viewer, const char* context)
-{
-	const entt::entity sourceE = EntityOf(source);
-	const entt::entity viewerE = EntityOf(viewer);
-	if (sourceE != entt::null && viewerE != entt::null && g_registry.valid(sourceE) && g_registry.valid(viewerE)) {
-		ecs::EntityNetworkDispatch::SendInsert(g_registry, sourceE, viewerE);
-		return;
-	}
-
-	LOG_WARN("[DISPATCH_FALLBACK] ctx={} op=insert source={} viewer={}",
-		context ? context : "unknown",
-		static_cast<const void*>(source),
-		static_cast<const void*>(viewer));
-	source->EncodeInsertPacket(viewer);
-}
 
 void DispatchRemove(entt::entity sourceE, entt::entity viewerE)
 {
@@ -148,21 +133,6 @@ void DispatchRemove(entt::entity sourceE, entt::entity viewerE)
 		ecs::EntityNetworkDispatch::SendRemove(g_registry, sourceE, viewerE);
 }
 
-void DispatchRemove(LPENTITY source, LPENTITY viewer, const char* context)
-{
-	const entt::entity sourceE = EntityOf(source);
-	const entt::entity viewerE = EntityOf(viewer);
-	if (sourceE != entt::null && viewerE != entt::null && g_registry.valid(sourceE) && g_registry.valid(viewerE)) {
-		ecs::EntityNetworkDispatch::SendRemove(g_registry, sourceE, viewerE);
-		return;
-	}
-
-	LOG_WARN("[DISPATCH_FALLBACK] ctx={} op=remove source={} viewer={}",
-		context ? context : "unknown",
-		static_cast<const void*>(source),
-		static_cast<const void*>(viewer));
-	source->EncodeRemovePacket(viewer);
-}
 
 } // namespace
 

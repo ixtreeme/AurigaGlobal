@@ -554,8 +554,6 @@ namespace offlineshop
 		ShopEntity();
 
 		//overriding virtual CEntity methods
-		void	EncodeInsertPacket(LPENTITY entity);
-		void	EncodeRemovePacket(LPENTITY entity);
 
 		
 		const char*			GetShopName() const;
