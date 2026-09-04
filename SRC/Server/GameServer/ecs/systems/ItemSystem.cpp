@@ -1929,6 +1929,244 @@ bool IsAccessoryForSocket(entt::entity item)
         || (proto->bType == ITEM_BELT);
 }
 
+void AccessorySocketDegrade(entt::entity item)
+{
+	if (GetItemAccessorySocketGrade(item) > 0)
+	{
+		const entt::entity owner = GetItemOwner(item);
+#ifdef TEXTS_IMPROVEMENT
+		if (owner != entt::null) {
+			ecs::ChatSystem::SendNew(owner, CHAT_TYPE_INFO, 117, "%s", GetItemName(item));
+		}
+#endif
+
+		ModifyPoints(item, false);
+		SetItemAccessorySocketGrade(item, GetItemAccessorySocketGrade(item) - 1);
+		ModifyPoints(item, true);
+
+		int iDownTime = aiAccessorySocketDegradeTime[GetItemAccessorySocketGrade(item)];
+
+		if (test_server)
+			iDownTime /= 60;
+
+		SetItemAccessorySocketDownGradeTime(item, iDownTime);
+
+		if (iDownTime)
+			StartAccessorySocketExpireEvent(item);
+	}
+}
+
+void SetItemAccessorySocketGrade(entt::entity item, int iGrade
+#ifdef ENABLE_INFINITE_RAFINES
+    , bool infinite
+#endif
+)
+{
+    SetItemSocket(item, 0, MINMAX(0, iGrade, GetItemAccessorySocketMaxGrade(item)));
+
+    const int iDownTime =
+#ifdef ENABLE_INFINITE_RAFINES
+        infinite == true ? 86410 : aiAccessorySocketDegradeTime[GetItemAccessorySocketGrade(item)];
+#else
+        aiAccessorySocketDegradeTime[GetItemAccessorySocketGrade(item)]
+#endif
+        ;
+
+    SetItemAccessorySocketDownGradeTime(item, iDownTime);
+}
+
+void SetItemAccessorySocketMaxGrade(entt::entity item, int iMaxGrade)
+{
+    SetItemSocket(item, 1, MINMAX(0, iMaxGrade, ITEM_ACCESSORY_SOCKET_MAX_NUM));
+}
+
+int GetItemAccessorySocketDownGradeTime(entt::entity item)
+{
+#ifdef ENABLE_INFINITE_RAFINES
+    return GetItemSocket(item, 2);
+#else
+    return MINMAX(0, GetItemSocket(item, 2),
+        aiAccessorySocketDegradeTime[GetItemAccessorySocketGrade(item)]);
+#endif
+}
+
+void SetItemAccessorySocketDownGradeTime(entt::entity item, uint32_t time)
+{
+    SetItemSocket(item, 2, time);
+}
+
+void StartDestroyEvent(entt::entity item, int iSec)
+{
+	auto& events = GetItemEvents(item);
+	if (events.destroy)
+		return;
+
+	item_event_info* info = AllocEventInfo<item_event_info>();
+	info->item = item;
+
+	events.destroy = event_create(item_destroy_event, info, PASSES_PER_SEC(iSec));
+}
+
+void StartUniqueExpireEvent(entt::entity item)
+{
+	auto& events = GetItemEvents(item);
+	if (GetItemType(item) != ITEM_UNIQUE)
+		return;
+
+	if (events.uniqueExpire)
+		return;
+
+	if (IsRealTimeItem(item) || IsRealTimeFirstUseItem(item) || IsUnlimitedTimeUnique(item))
+		return;
+
+	// HARD CODING
+	/*if (GetVnum() == UNIQUE_ITEM_HIDE_ALIGNMENT_TITLE)
+		m_pOwner->ShowAlignment(false);*/
+
+	int iSec = GetItemSocket(item, ITEM_SOCKET_UNIQUE_SAVE_TIME);
+
+	if (iSec == 0)
+		iSec = 60;
+	else
+		iSec = MIN(iSec, 60);
+
+	SetItemSocket(item, ITEM_SOCKET_UNIQUE_SAVE_TIME, 0);
+
+	item_event_info* info = AllocEventInfo<item_event_info>();
+	info->item = item;
+
+	events.uniqueExpire = event_create(unique_expire_event, info, PASSES_PER_SEC(iSec));
+
+	const entt::entity e = item;
+	if (e != entt::null)
+		g_dispatcher.trigger(ecs::EvItemExpired { e, GetItemID(item) });
+}
+
+void StopUniqueExpireEvent(entt::entity item)
+{
+	auto& events = GetItemEvents(item);
+	if (!events.uniqueExpire)
+		return;
+
+	if (GetItemValue(item, 2) != 0)
+		return;
+
+	// HARD CODING
+	/*if (GetVnum() == UNIQUE_ITEM_HIDE_ALIGNMENT_TITLE)
+		m_pOwner->ShowAlignment(true);*/
+
+	SetItemSocket(item, ITEM_SOCKET_UNIQUE_SAVE_TIME, event_time(events.uniqueExpire) / passes_per_sec);
+	event_cancel(&events.uniqueExpire);
+
+	ITEM_MANAGER::instance().SaveSingleItem(LegacyItemBoundary(item));
+}
+
+void StartTimerBasedOnWearExpireEvent(entt::entity item)
+{
+	auto& events = GetItemEvents(item);
+	if (events.timerBasedOnWearExpire)
+		return;
+
+	if (IsRealTimeItem(item))
+		return;
+
+	if (-1 == GetItemProto(item)->cLimitTimerBasedOnWearIndex)
+		return;
+
+	int iSec = GetItemSocket(item, 0);
+
+	if (0 != iSec)
+	{
+		iSec %= 60;
+		if (0 == iSec)
+			iSec = 60;
+	}
+
+	item_event_info* info = AllocEventInfo<item_event_info>();
+	info->item = item;
+
+	events.timerBasedOnWearExpire = event_create(timer_based_on_wear_expire_event, info, PASSES_PER_SEC(iSec));
+
+	const entt::entity e = item;
+	if (e != entt::null)
+		g_dispatcher.trigger(ecs::EvItemExpired { e, GetItemID(item) });
+}
+
+void StopTimerBasedOnWearExpireEvent(entt::entity item)
+{
+	auto& events = GetItemEvents(item);
+	if (!events.timerBasedOnWearExpire)
+		return;
+
+	int remain_time = GetItemSocket(item, ITEM_SOCKET_REMAIN_SEC) - event_processing_time(events.timerBasedOnWearExpire) / passes_per_sec;
+
+	SetItemSocket(item, ITEM_SOCKET_REMAIN_SEC, remain_time);
+	event_cancel(&events.timerBasedOnWearExpire);
+
+	ITEM_MANAGER::instance().SaveSingleItem(LegacyItemBoundary(item));
+}
+
+void StartAccessorySocketExpireEvent(entt::entity item)
+{
+	auto& events = GetItemEvents(item);
+	if (!IsAccessoryForSocket(item))
+		return;
+
+	if (events.accessorySocketExpire)
+		return;
+
+	if (GetItemAccessorySocketMaxGrade(item) == 0)
+		return;
+
+	if (GetItemAccessorySocketGrade(item) == 0)
+		return;
+
+	int iSec = GetItemAccessorySocketDownGradeTime(item);
+#ifdef ENABLE_INFINITE_RAFINES
+	if (iSec > 86400) {
+		return;
+	}
+#endif
+	events.accessorySocketExpire = nullptr;
+
+	if (iSec <= 1)
+		iSec = 5;
+	else
+		iSec = MIN(iSec, 60);
+
+	item_vid_event_info* info = AllocEventInfo<item_vid_event_info>();
+	info->item = item;
+
+	events.accessorySocketExpire = event_create(accessory_socket_expire_event, info, PASSES_PER_SEC(iSec));
+
+	const entt::entity e = item;
+	if (e != entt::null)
+		g_dispatcher.trigger(ecs::EvItemExpired { e, GetItemID(item) });
+}
+
+void StopAccessorySocketExpireEvent(entt::entity item)
+{
+	auto& events = GetItemEvents(item);
+	if (!events.accessorySocketExpire)
+		return;
+
+	if (!IsAccessoryForSocket(item))
+		return;
+
+	int new_time = GetItemAccessorySocketDownGradeTime(item) - (60 - event_time(events.accessorySocketExpire) / passes_per_sec);
+
+	event_cancel(&events.accessorySocketExpire);
+
+	if (new_time <= 1)
+	{
+		AccessorySocketDegrade(item);
+	}
+	else
+	{
+		SetItemAccessorySocketDownGradeTime(item, new_time);
+	}
+}
+
 ecs::ItemEvents& GetItemEvents(entt::entity item)
 {
     static ecs::ItemEvents detached;

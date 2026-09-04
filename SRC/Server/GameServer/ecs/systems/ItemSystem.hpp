@@ -119,6 +119,23 @@ bool IsRealTimeItem(entt::entity item);
 bool IsRealTimeFirstUseItem(entt::entity item);
 bool IsUnlimitedTimeUnique(entt::entity item);
 bool IsAccessoryForSocket(entt::entity item);
+void SetItemAccessorySocketGrade(entt::entity item, int iGrade
+#ifdef ENABLE_INFINITE_RAFINES
+    , bool infinite = false
+#endif
+);
+void SetItemAccessorySocketMaxGrade(entt::entity item, int iMaxGrade);
+int GetItemAccessorySocketDownGradeTime(entt::entity item);
+void SetItemAccessorySocketDownGradeTime(entt::entity item, uint32_t time);
+void AccessorySocketDegrade(entt::entity item);
+
+void StartDestroyEvent(entt::entity item, int iSec);
+void StartUniqueExpireEvent(entt::entity item);
+void StopUniqueExpireEvent(entt::entity item);
+void StartTimerBasedOnWearExpireEvent(entt::entity item);
+void StopTimerBasedOnWearExpireEvent(entt::entity item);
+void StartAccessorySocketExpireEvent(entt::entity item);
+void StopAccessorySocketExpireEvent(entt::entity item);
 ecs::ItemEvents& GetItemEvents(entt::entity item);
 bool SaveItemEcs(entt::entity item, bool flush = true);
 bool FlushDelayedSaveEcs(entt::entity item);

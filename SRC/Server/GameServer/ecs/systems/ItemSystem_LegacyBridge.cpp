@@ -15793,13 +15793,7 @@ void CItem::SetDestroyEvent(LPEVENT pkEvent)
 
 void CItem::StartDestroyEvent(int iSec)
 {
-	if (ItemSystem::GetItemEvents(GetEntityHandle()).destroy)
-		return;
-
-	item_event_info* info = AllocEventInfo<item_event_info>();
-	info->item = GetEntityHandle();
-
-	SetDestroyEvent(event_create(item_destroy_event, info, PASSES_PER_SEC(iSec)));
+	ItemSystem::StartDestroyEvent(GetEntityHandle(), iSec);
 }
 
 void CItem::SetUniqueExpireEvent(LPEVENT pkEvent)
@@ -15809,54 +15803,12 @@ void CItem::SetUniqueExpireEvent(LPEVENT pkEvent)
 
 void CItem::StartUniqueExpireEvent()
 {
-	if (GetType() != ITEM_UNIQUE)
-		return;
-
-	if (ItemSystem::GetItemEvents(GetEntityHandle()).uniqueExpire)
-		return;
-
-	if (IsRealTimeItem() || IsRealTimeFirstUseItem() || IsUnlimitedTimeUnique())
-		return;
-
-	// HARD CODING
-	/*if (GetVnum() == UNIQUE_ITEM_HIDE_ALIGNMENT_TITLE)
-		m_pOwner->ShowAlignment(false);*/
-
-	int iSec = GetSocket(ITEM_SOCKET_UNIQUE_SAVE_TIME);
-
-	if (iSec == 0)
-		iSec = 60;
-	else
-		iSec = MIN(iSec, 60);
-
-	SetSocket(ITEM_SOCKET_UNIQUE_SAVE_TIME, 0);
-
-	item_event_info* info = AllocEventInfo<item_event_info>();
-	info->item = GetEntityHandle();
-
-	SetUniqueExpireEvent(event_create(unique_expire_event, info, PASSES_PER_SEC(iSec)));
-
-	const entt::entity e = GetEntityHandle();
-	if (e != entt::null)
-		g_dispatcher.trigger(ecs::EvItemExpired { e, GetID() });
+	ItemSystem::StartUniqueExpireEvent(GetEntityHandle());
 }
 
 void CItem::StopUniqueExpireEvent()
 {
-	if (!ItemSystem::GetItemEvents(GetEntityHandle()).uniqueExpire)
-		return;
-
-	if (GetValue(2) != 0)
-		return;
-
-	// HARD CODING
-	/*if (GetVnum() == UNIQUE_ITEM_HIDE_ALIGNMENT_TITLE)
-		m_pOwner->ShowAlignment(true);*/
-
-	SetSocket(ITEM_SOCKET_UNIQUE_SAVE_TIME, event_time(ItemSystem::GetItemEvents(GetEntityHandle()).uniqueExpire) / passes_per_sec);
-	event_cancel(&ItemSystem::GetItemEvents(GetEntityHandle()).uniqueExpire);
-
-	ITEM_MANAGER::instance().SaveSingleItem(this);
+	ItemSystem::StopUniqueExpireEvent(GetEntityHandle());
 }
 
 void CItem::SetTimerBasedOnWearExpireEvent(LPEVENT pkEvent)
@@ -15866,45 +15818,12 @@ void CItem::SetTimerBasedOnWearExpireEvent(LPEVENT pkEvent)
 
 void CItem::StartTimerBasedOnWearExpireEvent()
 {
-	if (ItemSystem::GetItemEvents(GetEntityHandle()).timerBasedOnWearExpire)
-		return;
-
-	if (IsRealTimeItem())
-		return;
-
-	if (-1 == GetProto()->cLimitTimerBasedOnWearIndex)
-		return;
-
-	int iSec = GetSocket(0);
-
-	if (0 != iSec)
-	{
-		iSec %= 60;
-		if (0 == iSec)
-			iSec = 60;
-	}
-
-	item_event_info* info = AllocEventInfo<item_event_info>();
-	info->item = GetEntityHandle();
-
-	SetTimerBasedOnWearExpireEvent(event_create(timer_based_on_wear_expire_event, info, PASSES_PER_SEC(iSec)));
-
-	const entt::entity e = GetEntityHandle();
-	if (e != entt::null)
-		g_dispatcher.trigger(ecs::EvItemExpired { e, GetID() });
+	ItemSystem::StartTimerBasedOnWearExpireEvent(GetEntityHandle());
 }
 
 void CItem::StopTimerBasedOnWearExpireEvent()
 {
-	if (!ItemSystem::GetItemEvents(GetEntityHandle()).timerBasedOnWearExpire)
-		return;
-
-	int remain_time = GetSocket(ITEM_SOCKET_REMAIN_SEC) - event_processing_time(ItemSystem::GetItemEvents(GetEntityHandle()).timerBasedOnWearExpire) / passes_per_sec;
-
-	SetSocket(ITEM_SOCKET_REMAIN_SEC, remain_time);
-	event_cancel(&ItemSystem::GetItemEvents(GetEntityHandle()).timerBasedOnWearExpire);
-
-	ITEM_MANAGER::instance().SaveSingleItem(this);
+	ItemSystem::StopTimerBasedOnWearExpireEvent(GetEntityHandle());
 }
 
 void CItem::StartRealTimeExpireEvent()
@@ -15971,61 +15890,12 @@ void CItem::StartRealTimeExpireEvent()
 
 void CItem::StartAccessorySocketExpireEvent()
 {
-	if (!IsAccessoryForSocket())
-		return;
-
-	if (ItemSystem::GetItemEvents(GetEntityHandle()).accessorySocketExpire)
-		return;
-
-	if (GetAccessorySocketMaxGrade() == 0)
-		return;
-
-	if (GetAccessorySocketGrade() == 0)
-		return;
-
-	int iSec = GetAccessorySocketDownGradeTime();
-#ifdef ENABLE_INFINITE_RAFINES
-	if (iSec > 86400) {
-		return;
-	}
-#endif
-	SetAccessorySocketExpireEvent(nullptr);
-
-	if (iSec <= 1)
-		iSec = 5;
-	else
-		iSec = MIN(iSec, 60);
-
-	item_vid_event_info* info = AllocEventInfo<item_vid_event_info>();
-	info->item = GetEntityHandle();
-
-	SetAccessorySocketExpireEvent(event_create(accessory_socket_expire_event, info, PASSES_PER_SEC(iSec)));
-
-	const entt::entity e = GetEntityHandle();
-	if (e != entt::null)
-		g_dispatcher.trigger(ecs::EvItemExpired { e, GetID() });
+	ItemSystem::StartAccessorySocketExpireEvent(GetEntityHandle());
 }
 
 void CItem::StopAccessorySocketExpireEvent()
 {
-	if (!ItemSystem::GetItemEvents(GetEntityHandle()).accessorySocketExpire)
-		return;
-
-	if (!IsAccessoryForSocket())
-		return;
-
-	int new_time = GetAccessorySocketDownGradeTime() - (60 - event_time(ItemSystem::GetItemEvents(GetEntityHandle()).accessorySocketExpire) / passes_per_sec);
-
-	event_cancel(&ItemSystem::GetItemEvents(GetEntityHandle()).accessorySocketExpire);
-
-	if (new_time <= 1)
-	{
-		AccessorySocketDegrade();
-	}
-	else
-	{
-		SetAccessorySocketDownGradeTime(new_time);
-	}
+	ItemSystem::StopAccessorySocketExpireEvent(GetEntityHandle());
 }
 
 void CItem::SetAccessorySocketExpireEvent(LPEVENT pkEvent)
@@ -16292,76 +16162,41 @@ void CItem::SetAccessorySocketGrade(int iGrade
 #endif
 )
 {
-	SetSocket(0, MINMAX(0, iGrade, GetAccessorySocketMaxGrade()));
-
-	int iDownTime =
+	ItemSystem::SetItemAccessorySocketGrade(GetEntityHandle(), iGrade
 #ifdef ENABLE_INFINITE_RAFINES
-		infinite == true ? 86410 : aiAccessorySocketDegradeTime[GetAccessorySocketGrade()];
-#else
-		aiAccessorySocketDegradeTime[GetAccessorySocketGrade()]
+		, infinite
 #endif
-		;
-
-	//if (test_server)
-	//	iDownTime /= 60;
-
-	SetAccessorySocketDownGradeTime(iDownTime);
+	);
 }
 
 void CItem::SetAccessorySocketMaxGrade(int iMaxGrade)
 {
-	SetSocket(1, MINMAX(0, iMaxGrade, ITEM_ACCESSORY_SOCKET_MAX_NUM));
+	ItemSystem::SetItemAccessorySocketMaxGrade(GetEntityHandle(), iMaxGrade);
 }
 
 void CItem::SetAccessorySocketDownGradeTime(uint32_t time)
 {
-	SetSocket(2, time);
+	ItemSystem::SetItemAccessorySocketDownGradeTime(GetEntityHandle(), time);
 }
 
 void CItem::AccessorySocketDegrade()
 {
-	if (GetAccessorySocketGrade() > 0)
-	{
-		auto* ch = GetOwner();
-#ifdef TEXTS_IMPROVEMENT
-		if (ch) {
-			ecs::ChatSystem::SendNew((ch ? ch->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 117, "%s", GetName());
-		}
-#endif
-
-		ModifyPoints(false);
-		SetAccessorySocketGrade(GetAccessorySocketGrade() - 1);
-		ModifyPoints(true);
-
-		int iDownTime = aiAccessorySocketDegradeTime[GetAccessorySocketGrade()];
-
-		if (test_server)
-			iDownTime /= 60;
-
-		SetAccessorySocketDownGradeTime(iDownTime);
-
-		if (iDownTime)
-			StartAccessorySocketExpireEvent();
-	}
+	ItemSystem::AccessorySocketDegrade(GetEntityHandle());
 }
 
 int CItem::GetAccessorySocketGrade()
 {
-	return MINMAX(0, GetSocket(0), GetAccessorySocketMaxGrade());
+	return ItemSystem::GetItemAccessorySocketGrade(GetEntityHandle());
 }
 
 int CItem::GetAccessorySocketMaxGrade()
 {
-	return MINMAX(0, GetSocket(1), ITEM_ACCESSORY_SOCKET_MAX_NUM);
+	return ItemSystem::GetItemAccessorySocketMaxGrade(GetEntityHandle());
 }
 
 int CItem::GetAccessorySocketDownGradeTime()
 {
-#ifdef ENABLE_INFINITE_RAFINES
-	return GetSocket(2);
-#else
-	return MINMAX(0, GetSocket(2), aiAccessorySocketDegradeTime[GetAccessorySocketGrade()]);
-#endif
+	return ItemSystem::GetItemAccessorySocketDownGradeTime(GetEntityHandle());
 }
 
 void CItem::AlterToSocketItem(int iSocketCount)
