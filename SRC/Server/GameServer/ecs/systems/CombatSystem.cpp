@@ -7089,10 +7089,20 @@ bool CHARACTER::IsAggressive() const
 
 void CHARACTER::SetAggressive()
 {
-		if (auto* flags = RuntimeFlags(GetEntityHandle()))
-		SET_BIT(flags->aiFlag, AIFLAG_AGGRESSIVE);
-	AIHelpers::SetAggressive(GetEntityHandle(), true);
+	CombatSystem::SetAggressive(GetEntityHandle());
 }
+
+namespace CombatSystem {
+
+void SetAggressive(entt::entity e)
+{
+	if (auto* flags = RuntimeFlags(e))
+		SET_BIT(flags->aiFlag, AIFLAG_AGGRESSIVE);
+
+	AIHelpers::SetAggressive(e, true);
+}
+
+} // namespace CombatSystem
 
 bool CHARACTER::IsCoward() const
 {
@@ -7320,6 +7330,18 @@ uint32_t CHARACTER::GetSkipComboAttackByTime() const
 {
 	return m_dwSkipComboAttackByTime;
 }
+
+namespace CombatSystem {
+
+// m_bChatCounter and m_bMountCounter are still CHARACTER members with no
+// component, so this resolves. The spawn path that calls it does not.
+void ResetChatCounter(entt::entity e)
+{
+	if (LPCHARACTER ch = ecs::LegacyCharOf(e))
+		ch->ResetChatCounter();
+}
+
+} // namespace CombatSystem
 
 void CHARACTER::ResetChatCounter()
 {

@@ -7,6 +7,17 @@
 
 namespace ecs::MovementSystem {
 
+void SendMovePacket(entt::entity e, uint8_t bFunc, uint8_t bArg, uint32_t x, uint32_t y,
+                    uint32_t dwDuration, uint32_t dwTime = 0, float iRot = -1.0f);
+
+
+#ifdef ENABLE_ANCIENT_PYRAMID
+void SetRotation(entt::entity e, float fRot, bool bForce = false);
+#else
+void SetRotation(entt::entity e, float fRot);
+#endif
+
+
 bool Show(entt::entity e, int32_t mapIndex, int32_t x, int32_t y, int32_t z = LONG_MAX, bool showSpawnMotion = false);
 bool WarpSet(entt::entity e, int32_t x, int32_t y, int32_t privateMapIndex = 0);
 void SaveExitLocation(entt::entity e);

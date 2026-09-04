@@ -781,8 +781,8 @@ public:
 	//		bool			IsPet() const		{ return m_bCharType == CHAR_TYPE_PET; }
 #ifdef ENABLE_EVENT_MANAGER
 	// DUNGEON_TICKET_LOOT_EVENT extra metin marker
-	void SetDungeonTicketExtraMetin(bool b) { m_bDungeonTicketExtraMetin = b; }
-	bool IsDungeonTicketExtraMetin() const { return m_bDungeonTicketExtraMetin; }
+	void SetDungeonTicketExtraMetin(bool b);
+	bool IsDungeonTicketExtraMetin() const;
 #endif
 
 	uint32_t			GetLastShoutPulse() const;
@@ -968,7 +968,6 @@ protected:
 #endif
 	uint8_t			m_bCharType;
 #ifdef ENABLE_EVENT_MANAGER
-	bool			m_bDungeonTicketExtraMetin;
 #endif
 
 #ifdef __NEWPET_SYSTEM__

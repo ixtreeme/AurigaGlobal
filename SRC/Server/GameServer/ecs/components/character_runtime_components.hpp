@@ -56,6 +56,10 @@ struct LastSyncTime {
     timeval tv { 0, 0 };
 };
 
+struct DungeonTicketExtraMetin {
+    bool value { false };
+};
+
 struct SyncOwner {
     entt::entity owner { entt::null };
     float syncTime { 0.0f };

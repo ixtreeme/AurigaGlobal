@@ -574,14 +574,28 @@ void CHARACTER::Sitdown(int is_ground)
 }
 
 #ifdef ENABLE_ANCIENT_PYRAMID
+#ifdef ENABLE_ANCIENT_PYRAMID
 void CHARACTER::SetRotation(float fRot, bool bForce)
+{
+	ecs::MovementSystem::SetRotation(GetEntityHandle(), fRot, bForce);
+}
 #else
 void CHARACTER::SetRotation(float fRot)
+{
+	ecs::MovementSystem::SetRotation(GetEntityHandle(), fRot);
+}
+#endif
+
+namespace ecs::MovementSystem {
+
+void SetRotation(entt::entity e, float fRot, bool bForce)
+#else
+void SetRotation(entt::entity e, float fRot)
 #endif
 {
-	if (!IsPC())
+	if (ecs::PlayerRuntime::GetDesc(e) == nullptr)
 	{
-		int32_t vnum = GetRaceNum();
+		int32_t vnum = ecs::PlayerRuntime::GetRaceNum(e);
 #ifdef ENABLE_ANCIENT_PYRAMID
 		if (vnum == PYRAMID_BOSSVNUM && (!bForce))
 		{
@@ -597,15 +611,17 @@ void CHARACTER::SetRotation(float fRot)
 #endif
 	}
 
-		if (auto* runtime = ecs::TryGetRuntimeFlags(GetEntityHandle()))
+		if (auto* runtime = ecs::TryGetRuntimeFlags(e))
 		runtime->rotation = fRot;
 
-	if (const entt::entity e = GetEntityHandle(); e != entt::null && g_registry.valid(e))
+	if (e != entt::null && g_registry.valid(e))
 	{
 		if (auto* rotation = g_registry.try_get<ecs::RotationComponent>(e))
 			rotation->yaw = fRot;
 	}
 }
+
+} // namespace ecs::MovementSystem
 
 // x, y 1a��A��?o��?1��U.
 void CHARACTER::SetRotationToXY(int32_t x, int32_t y)
@@ -972,6 +988,20 @@ bool CHARACTER::Move(int32_t x, int32_t y)
 	OnMove();
 	return Sync(x, y);
 }
+
+namespace ecs::MovementSystem {
+
+// The packet builder reads a dozen CHARACTER members that have no component
+// yet, so this resolves rather than duplicating it. The spawn path above it
+// holds an entity either way.
+void SendMovePacket(entt::entity e, uint8_t bFunc, uint8_t bArg, uint32_t x, uint32_t y,
+	uint32_t dwDuration, uint32_t dwTime, float iRot)
+{
+	if (LPCHARACTER ch = ecs::LegacyCharOf(e))
+		ch->SendMovePacket(bFunc, bArg, x, y, dwDuration, dwTime, iRot);
+}
+
+} // namespace ecs::MovementSystem
 
 void CHARACTER::SendMovePacket(uint8_t bFunc, uint8_t bArg, uint32_t x, uint32_t y, uint32_t dwDuration, uint32_t dwTime, float iRot)
 {

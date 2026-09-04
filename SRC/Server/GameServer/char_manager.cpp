@@ -818,21 +818,21 @@ LPCHARACTER CHARACTER_MANAGER::SpawnMob(uint32_t dwVnum, int32_t lMapIndex, int3
 	if (iRot == -1)
 		iRot = number(0, 360);
 
-	ch->SetProto(pkMob);
+	ecs::PlayerRuntime::SetProto(character, pkMob);
 #ifdef ENABLE_EVENT_MANAGER
 	if (g_bDungeonTicketExtraMetinSpawn && pkMob->m_table.bType == CHAR_TYPE_STONE)
-		ch->SetDungeonTicketExtraMetin(true);
+		ecs::PlayerRuntime::SetDungeonTicketExtraMetin(character, true);
 #endif
 
 	// if mob is npc with no empire assigned, assign to empire of map
 	if (pkMob->m_table.bType == CHAR_TYPE_NPC)
 		if (ecs::PlayerRuntime::GetEmpire(character) == 0)
-			ch->SetEmpire(SECTREE_MANAGER::instance().GetEmpireFromMapIndex(lMapIndex));
+			ecs::PlayerRuntime::SetEmpire(character, SECTREE_MANAGER::instance().GetEmpireFromMapIndex(lMapIndex));
 
 #ifdef ENABLE_ANCIENT_PYRAMID
-	ch->SetRotation(iRot, true);
+	ecs::MovementSystem::SetRotation(character, iRot, true);
 #else
-	ch->SetRotation(iRot);
+	ecs::MovementSystem::SetRotation(character, iRot);
 #endif
 
 	if (bShow && !ecs::MovementSystem::Show(character, lMapIndex, x, y, z, bSpawnMotion))
@@ -844,7 +844,7 @@ LPCHARACTER CHARACTER_MANAGER::SpawnMob(uint32_t dwVnum, int32_t lMapIndex, int3
 	}
 #ifdef ENABLE_EVENT_MANAGER
 	// DUNGEON_TICKET_LOOT_EVENT: minden metin kapjon +value1 extra metint (dungeon mapok kivve)
-	if (!g_bDungeonTicketExtraMetinSpawn && ch && pkMob->m_table.bType == CHAR_TYPE_STONE && !ch->IsDungeonTicketExtraMetin())
+	if (!g_bDungeonTicketExtraMetinSpawn && ch && pkMob->m_table.bType == CHAR_TYPE_STONE && !ecs::PlayerRuntime::IsDungeonTicketExtraMetin(character))
 	{
 		const TEventManagerData* ev = CheckEventIsActive(DUNGEON_TICKET_LOOT_EVENT, 0);
 		if (ev)
@@ -886,15 +886,15 @@ LPCHARACTER CHARACTER_MANAGER::SpawnMob(uint32_t dwVnum, int32_t lMapIndex, int3
 	{
 		if (pkMob->m_table.bType == CHAR_TYPE_STONE)
 		{
-			EntityFactory::CreateStone(g_registry, ch->GetMobTable(), ecs::PlayerRuntime::GetX(character), ecs::PlayerRuntime::GetY(character), ecs::PlayerRuntime::GetMapIndex(character), ch->GetLegacyVID());
+			EntityFactory::CreateStone(g_registry, *ecs::PlayerRuntime::GetMobTable(character), ecs::PlayerRuntime::GetX(character), ecs::PlayerRuntime::GetY(character), ecs::PlayerRuntime::GetMapIndex(character), ecs::PlayerRuntime::GetPacketVID(character));
 		}
 		else if (pkMob->m_table.bType == CHAR_TYPE_MONSTER)
 		{
-			EntityFactory::CreateMonster(g_registry, ch->GetMobTable(), ecs::PlayerRuntime::GetX(character), ecs::PlayerRuntime::GetY(character), ecs::PlayerRuntime::GetMapIndex(character), ch->GetLegacyVID());
+			EntityFactory::CreateMonster(g_registry, *ecs::PlayerRuntime::GetMobTable(character), ecs::PlayerRuntime::GetX(character), ecs::PlayerRuntime::GetY(character), ecs::PlayerRuntime::GetMapIndex(character), ecs::PlayerRuntime::GetPacketVID(character));
 		}
 		else if (pkMob->m_table.bType == CHAR_TYPE_NPC || pkMob->m_table.bType == CHAR_TYPE_WARP || pkMob->m_table.bType == CHAR_TYPE_GOTO)
 		{
-			EntityFactory::CreateNPC(g_registry, ch->GetMobTable(), ecs::PlayerRuntime::GetX(character), ecs::PlayerRuntime::GetY(character), ecs::PlayerRuntime::GetMapIndex(character), ch->GetLegacyVID());
+			EntityFactory::CreateNPC(g_registry, *ecs::PlayerRuntime::GetMobTable(character), ecs::PlayerRuntime::GetX(character), ecs::PlayerRuntime::GetY(character), ecs::PlayerRuntime::GetMapIndex(character), ecs::PlayerRuntime::GetPacketVID(character));
 		}
 	}
 
@@ -936,9 +936,9 @@ LPCHARACTER CHARACTER_MANAGER::SpawnMobRange(uint32_t dwVnum, int32_t lMapIndex,
 		if (ch)
 		{
 			const entt::entity character = ch->GetEntityHandle();
-			LOG_TRACE("MOB_SPAWN: {}({}) {}x{}", ecs::PlayerRuntime::GetName(character).data(), ch->GetLegacyVID(), ecs::PlayerRuntime::GetX(character), ecs::PlayerRuntime::GetY(character));
+			LOG_TRACE("MOB_SPAWN: {}({}) {}x{}", ecs::PlayerRuntime::GetName(character).data(), ecs::PlayerRuntime::GetPacketVID(character), ecs::PlayerRuntime::GetX(character), ecs::PlayerRuntime::GetY(character));
 			if (bAggressive)
-				ch->SetAggressive();
+				CombatSystem::SetAggressive(character);
 			return ch;
 		}
 	}
@@ -1003,7 +1003,7 @@ bool CHARACTER_MANAGER::SpawnMoveGroup(uint32_t dwVnum, int32_t lMapIndex, int s
 			tch->SetStone(m_selectedStone);
 		else if (pkParty)
 		{
-			pkParty->Join(tch->GetLegacyVID());
+			pkParty->Join(ecs::PlayerRuntime::GetPacketVID(spawned));
 			pkParty->Link(((tch) ? (tch)->GetEntityHandle() : entt::null));
 		}
 		else if (!pkChrMaster)
@@ -1014,10 +1014,10 @@ bool CHARACTER_MANAGER::SpawnMoveGroup(uint32_t dwVnum, int32_t lMapIndex, int s
 			pkParty = CPartyManager::instance().CreateParty(((pkChrMaster) ? (pkChrMaster)->GetEntityHandle() : entt::null));
 		}
 		if (bAggressive)
-			tch->SetAggressive();
+			CombatSystem::SetAggressive(spawned);
 
 		if (ecs::MovementSystem::Goto(spawned, tx, ty))
-			tch->SendMovePacket(FUNC_WAIT, 0, 0, 0, 0);
+			ecs::MovementSystem::SendMovePacket(spawned, FUNC_WAIT, 0, 0, 0, 0);
 	}
 
 	return true;
@@ -1098,7 +1098,7 @@ LPCHARACTER CHARACTER_MANAGER::SpawnGroup(uint32_t dwVnum, int32_t lMapIndex, in
 			tch->SetStone(m_selectedStone);
 		else if (pkParty)
 		{
-			pkParty->Join(tch->GetLegacyVID());
+			pkParty->Join(ecs::PlayerRuntime::GetPacketVID(spawned));
 			pkParty->Link(((tch) ? (tch)->GetEntityHandle() : entt::null));
 		}
 		else if (!pkChrMaster)
@@ -1110,7 +1110,7 @@ LPCHARACTER CHARACTER_MANAGER::SpawnGroup(uint32_t dwVnum, int32_t lMapIndex, in
 		}
 
 		if (bAggressive)
-			tch->SetAggressive();
+			CombatSystem::SetAggressive(spawned);
 	}
 
 	return chLeader;
@@ -1120,7 +1120,7 @@ struct FuncUpdateAndResetChatCounter
 {
 	void operator () (LPCHARACTER ch)
 	{
-		ch->ResetChatCounter();
+		CombatSystem::ResetChatCounter(ch->GetEntityHandle());
 		AISystem::UpdateStateMachine(ch->GetEntityHandle());
 	}
 };

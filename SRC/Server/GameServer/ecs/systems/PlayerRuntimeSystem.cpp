@@ -1660,12 +1660,45 @@ const timeval& CHARACTER::GetLastSyncTime() const
     return ecs::PlayerRuntime::GetLastSyncTime(GetEntityHandle());
 }
 
+void CHARACTER::SetDungeonTicketExtraMetin(bool b)
+{
+    ecs::PlayerRuntime::SetDungeonTicketExtraMetin(GetEntityHandle(), b);
+}
+
+bool CHARACTER::IsDungeonTicketExtraMetin() const
+{
+    return ecs::PlayerRuntime::IsDungeonTicketExtraMetin(GetEntityHandle());
+}
+
 uint32_t CHARACTER::GetAIFlag() const
 {
     return ecs::PlayerRuntime::GetAIFlag(GetEntityHandle());
 }
 
 namespace ecs::PlayerRuntime {
+
+void SetDungeonTicketExtraMetin(entt::entity e, bool value)
+{
+    if (e == entt::null || !g_registry.valid(e))
+        return;
+
+    g_registry.get_or_emplace<ecs::DungeonTicketExtraMetin>(e).value = value;
+}
+
+bool IsDungeonTicketExtraMetin(entt::entity e)
+{
+    const auto* flag = g_registry.try_get<ecs::DungeonTicketExtraMetin>(e);
+    return flag && flag->value;
+}
+
+// The proto assignment still allocates CMobInstance on the CHARACTER, so this
+// resolves. What it gains is that the spawn path no longer holds a pointer for
+// it - ecs::MobDataRef is the component side and EntityFactory writes that.
+void SetProto(entt::entity e, const CMob* pkMob)
+{
+    if (LPCHARACTER ch = ecs::LegacyCharOf(e))
+        ch->SetProto(pkMob);
+}
 
 uint32_t GetAIFlag(entt::entity e)
 {
@@ -5803,7 +5836,6 @@ void CHARACTER::Initialize()
 
     m_bNoOpenedShop = true;
 #ifdef ENABLE_EVENT_MANAGER
-    m_bDungeonTicketExtraMetin = false;
 #endif
 
 #ifdef ENABLE_MAP1_SKILL_MOB
