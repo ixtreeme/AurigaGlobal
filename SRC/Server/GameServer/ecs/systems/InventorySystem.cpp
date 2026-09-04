@@ -559,11 +559,6 @@ entt::entity CItem::GetOwnerEntity() const
 	return ItemSystem::GetItemOwner(GetEntityHandle());
 }
 
-LPCHARACTER CItem::GetOwner() const
-{
-	return ecs::LegacyCharOf(GetOwnerEntity());
-}
-
 void CItem::SetOwnerEntity(entt::entity owner)
 {
 	const entt::entity itemEntity = GetEntityHandle();
@@ -573,17 +568,6 @@ void CItem::SetOwnerEntity(entt::entity owner)
 	auto& itemOwner = g_registry.get_or_emplace<ecs::ItemOwner>(itemEntity);
 	itemOwner.owner = owner;
 	itemOwner.ownerPID = ecs::PlayerRuntime::GetPlayerID(owner);
-}
-
-void CItem::SetCell(LPCHARACTER ch, uint16_t pos)
-{
-	// The component directly, not ItemSystem::SetItemCell: that one mirrors
-	// back through this method, which would recurse.
-	const entt::entity itemEntity = GetEntityHandle();
-	if (itemEntity != entt::null && g_registry.valid(itemEntity))
-		g_registry.get_or_emplace<ecs::ItemLocation>(itemEntity).cell = pos;
-
-	SetOwnerEntity(ch ? ch->GetEntityHandle() : entt::null);
 }
 
 // Same shape as SetCell: ItemSystem::SetItemWindow mirrors through this

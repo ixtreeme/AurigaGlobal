@@ -734,8 +734,7 @@ bool CItem::SetCount(int count)
 	{
 		if (GetSubType() == USE_ABILITY_UP || GetSubType() == USE_POTION || GetVnum() == 70020)
 		{
-			auto* pOwner = GetOwner();
-			const entt::entity owner = pOwner ? pOwner->GetEntityHandle() : entt::null;
+			const entt::entity owner = GetOwnerEntity();
 
 			uint16_t wCell = GetCell();
 
@@ -743,10 +742,15 @@ bool CItem::SetCount(int count)
 
 			if (!IsDragonSoul())
 			{
-				LPITEM pItem = pOwner->FindSpecifyItem(GetVnum());
-				if (nullptr != pItem)
+				const entt::entity stack =
+					ItemSystem::FindSpecifyItem(owner, ItemSystem::GetItemVnum(GetEntityHandle())
+#ifdef ENABLE_EXTRA_INVENTORY
+						, false
+#endif
+					);
+				if (entt::null != stack)
 				{
-					pItem->SetCount(pItem->GetCount() + count);
+					ItemSystem::SetItemCount(stack, ItemSystem::GetItemCount(stack) + count);
 					M2_DESTROY_ITEM(this);
 					return false;
 				}
@@ -759,12 +763,12 @@ bool CItem::SetCount(int count)
 			if (IsDragonSoul())
 			{
 				if (bType == 0)
-					pOwner->DragonSoul_RefineWindow_Close();
+					ecs::LegacyCharOf(owner)->DragonSoul_RefineWindow_Close();
 				else if (bType == 1)
-					pOwner->DragonSoul_RefineWindow_Close();
+					ecs::LegacyCharOf(owner)->DragonSoul_RefineWindow_Close();
 			}
 
-			LogManager::instance().ItemLog(pOwner, this, "REMOVE", "DELETED (set count to 0)");
+			LogManager::instance().ItemLogEntity(owner, GetEntityHandle(), "REMOVE", "DELETED (set count to 0)");
 
 			return false;
 		}
@@ -1143,9 +1147,9 @@ void CItem::SetAttribute(int i, uint8_t bType, short sValue)
 
 		const char * pszIP = nullptr;
 
-		if (GetOwner() && ecs::PlayerRuntime::GetDesc((GetOwner() ? GetOwner()->GetEntityHandle() : entt::null)))
+		if (GetOwnerEntity() != entt::null && ecs::PlayerRuntime::GetDesc(GetOwnerEntity()))
 
-			pszIP = ecs::PlayerRuntime::GetDesc((GetOwner() ? GetOwner()->GetEntityHandle() : entt::null))->GetHostName();
+			pszIP = ecs::PlayerRuntime::GetDesc(GetOwnerEntity())->GetHostName();
 
 		LOG_LEVEL_CHECK(LOG_LEVEL_MAX, LogManager::instance().ItemLog(i, bType, sValue, GetID(), "SET_ATTR", "", pszIP ? pszIP : "", GetOriginalVnum()));
 
@@ -1179,9 +1183,9 @@ void CItem::SetForceAttribute(int i, uint8_t bType, short sValue)
 
 
 
-		if (GetOwner() && ecs::PlayerRuntime::GetDesc((GetOwner() ? GetOwner()->GetEntityHandle() : entt::null)))
+		if (GetOwnerEntity() != entt::null && ecs::PlayerRuntime::GetDesc(GetOwnerEntity()))
 
-			pszIP = ecs::PlayerRuntime::GetDesc((GetOwner() ? GetOwner()->GetEntityHandle() : entt::null))->GetHostName();
+			pszIP = ecs::PlayerRuntime::GetDesc(GetOwnerEntity())->GetHostName();
 
 
 
@@ -1499,8 +1503,8 @@ bool CItem::ChangeRareAttribute()
 
 	SyncItemAttributesComponent(this);
 
-	if (GetOwner() && ecs::PlayerRuntime::GetDesc((GetOwner() ? GetOwner()->GetEntityHandle() : entt::null)))
-		LOG_LEVEL_CHECK(LOG_LEVEL_MAX, LogManager::instance().ItemLog(GetOwner(), this, "SET_RARE_CHANGE", ""))
+	if (GetOwnerEntity() != entt::null && ecs::PlayerRuntime::GetDesc(GetOwnerEntity()))
+		LOG_LEVEL_CHECK(LOG_LEVEL_MAX, LogManager::instance().ItemLogEntity(GetOwnerEntity(), GetEntityHandle(), "SET_RARE_CHANGE", ""))
 	else
 		LOG_LEVEL_CHECK(LOG_LEVEL_MAX, LogManager::instance().ItemLog(0, 0, 0, GetID(), "SET_RARE_CHANGE", "", "", GetOriginalVnum()))
 
@@ -1557,8 +1561,8 @@ bool CItem::AddRareAttribute()
 
 	const char * pszIP = nullptr;
 
-	if (GetOwner() && ecs::PlayerRuntime::GetDesc((GetOwner() ? GetOwner()->GetEntityHandle() : entt::null)))
-		pszIP = ecs::PlayerRuntime::GetDesc((GetOwner() ? GetOwner()->GetEntityHandle() : entt::null))->GetHostName();
+	if (GetOwnerEntity() != entt::null && ecs::PlayerRuntime::GetDesc(GetOwnerEntity()))
+		pszIP = ecs::PlayerRuntime::GetDesc(GetOwnerEntity())->GetHostName();
 
 	LOG_LEVEL_CHECK(LOG_LEVEL_MAX, LogManager::instance().ItemLog(pos, attr.bType, attr.sValue, GetID(), "SET_RARE", "", pszIP ? pszIP : "", GetOriginalVnum()));
 	return true;
@@ -12468,7 +12472,7 @@ void CHARACTER::AutoGiveItem(LPITEM item, bool longOwnerShip
 		LOG_ERROR("NULL point.");
 		return;
 	}
-	if (item->GetOwner())
+	if (item->GetOwnerEntity() != entt::null)
 	{
 		LOG_ERROR("item {} 's owner exists!", item->GetID());
 		return;
@@ -12635,7 +12639,7 @@ bool CHARACTER::AutoGiveDS(LPITEM item, bool longOwnerShip) {
 		return false;
 	}
 
-	if (item->GetOwner()) {
+	if (item->GetOwnerEntity() != entt::null) {
 		LOG_ERROR("item {} 's owner exists!", item->GetID());
 		return false;
 	}
@@ -15832,10 +15836,9 @@ void CItem::StartRealTimeExpireEvent()
 				int32_t remainSec = GetSocket(0);
 				if (remainSec <= 0) {
 					if (GetSocket(1) == 1) {
-						auto* pkOwner = GetOwner();
-						const entt::entity owner = pkOwner ? pkOwner->GetEntityHandle() : entt::null;
+						const entt::entity owner = GetOwnerEntity();
 
-						if (pkOwner) {
+						if (owner != entt::null) {
 							if (AffectSystem::FindAffect(owner, GetValue(0))) {
 								AffectSystem::RemoveAffect(owner, GetValue(0));
 							}
@@ -16285,8 +16288,8 @@ void CItem::AttrLog()
 {
 	const char* pszIP = nullptr;
 
-	if (GetOwner() && ecs::PlayerRuntime::GetDesc((GetOwner() ? GetOwner()->GetEntityHandle() : entt::null)))
-		pszIP = ecs::PlayerRuntime::GetDesc((GetOwner() ? GetOwner()->GetEntityHandle() : entt::null))->GetHostName();
+	if (GetOwnerEntity() != entt::null && ecs::PlayerRuntime::GetDesc(GetOwnerEntity()))
+		pszIP = ecs::PlayerRuntime::GetDesc(GetOwnerEntity())->GetHostName();
 
 	for (int i = 0; i < ITEM_SOCKET_MAX_NUM; ++i)
 	{
@@ -16590,8 +16593,8 @@ EVENTFUNC(item_destroy_event)
 	if (!pkItem)
 		return 0;
 
-	if (pkItem->GetOwner())
-		LOG_ERROR("item_destroy_event: Owner exist. (item {} owner {})", pkItem->GetName(), pkItem->GetOwner()->GetName());
+	if (pkItem->GetOwnerEntity() != entt::null)
+		LOG_ERROR("item_destroy_event: Owner exist. (item {} owner {})", pkItem->GetName(), ecs::PlayerRuntime::GetName(pkItem->GetOwnerEntity()));
 
 	pkItem->SetDestroyEvent(nullptr);
 	ItemSystem::DestroyItemEntityEcs(
@@ -16752,14 +16755,14 @@ EVENTFUNC(real_time_expire_event)
 		int32_t remainSec = item->GetSocket(0);
 		if (remainSec <= 0) {
 			if (item->GetSocket(1) == 1) {
-				auto* pkOwner = item->GetOwner();
-				if (pkOwner) {
-					if (AffectSystem::FindAffect((pkOwner ? pkOwner->GetEntityHandle() : entt::null), item->GetValue(0))) {
-						AffectSystem::RemoveAffect((pkOwner ? pkOwner->GetEntityHandle() : entt::null), item->GetValue(0));
+				const entt::entity pkOwner = item->GetOwnerEntity();
+				if (pkOwner != entt::null) {
+					if (AffectSystem::FindAffect(pkOwner, item->GetValue(0))) {
+						AffectSystem::RemoveAffect(pkOwner, item->GetValue(0));
 					}
 
 #ifdef TEXTS_IMPROVEMENT
-					ecs::ChatSystem::SendNew((pkOwner ? pkOwner->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 27, "%s", item->GetName());
+					ecs::ChatSystem::SendNew(pkOwner, CHAT_TYPE_INFO, 27, "%s", item->GetName());
 #endif
 				}
 			}
@@ -16775,14 +16778,14 @@ EVENTFUNC(real_time_expire_event)
 			int32_t nextSec = (remainSec - 60) > 0 ? (remainSec - 60) : 0;
 			item->SetSocket(0, nextSec);
 			if (nextSec <= 0) {
-				auto* pkOwner = item->GetOwner();
-				if (pkOwner) {
-					if (AffectSystem::FindAffect((pkOwner ? pkOwner->GetEntityHandle() : entt::null), item->GetValue(0))) {
-						AffectSystem::RemoveAffect((pkOwner ? pkOwner->GetEntityHandle() : entt::null), item->GetValue(0));
+				const entt::entity pkOwner = item->GetOwnerEntity();
+				if (pkOwner != entt::null) {
+					if (AffectSystem::FindAffect(pkOwner, item->GetValue(0))) {
+						AffectSystem::RemoveAffect(pkOwner, item->GetValue(0));
 					}
 
 #ifdef TEXTS_IMPROVEMENT
-					ecs::ChatSystem::SendNew((pkOwner ? pkOwner->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 27, "%s", item->GetName());
+					ecs::ChatSystem::SendNew(pkOwner, CHAT_TYPE_INFO, 27, "%s", item->GetName());
 #endif
 				}
 
@@ -16799,9 +16802,9 @@ EVENTFUNC(real_time_expire_event)
 	const time_t current = get_global_time();
 	if (current > item->GetSocket(0))
 	{
-		auto* pkOwner = item->GetOwner();
+		const entt::entity pkOwner = item->GetOwnerEntity();
 
-		if (pkOwner && ecs::PlayerRuntime::GetDesc((pkOwner ? pkOwner->GetEntityHandle() : entt::null)) && item->GetWindow() == MOUNT_INVENTORY)
+		if (pkOwner != entt::null && ecs::PlayerRuntime::GetDesc(pkOwner) && item->GetWindow() == MOUNT_INVENTORY)
 		{
 			TPacketGCWhisper pack;
 			char msg[CHAT_MAX_LEN + 1];
@@ -16813,8 +16816,8 @@ EVENTFUNC(real_time_expire_event)
 			pack.wSize = static_cast<uint16_t>(sizeof(TPacketGCWhisper) + len + 1);
 			strlcpy(pack.szNameFrom, "[MountInventory]", sizeof(pack.szNameFrom));
 
-			ecs::PlayerRuntime::GetDesc((pkOwner ? pkOwner->GetEntityHandle() : entt::null))->BufferedPacket(&pack, sizeof(pack));
-			ecs::PlayerRuntime::GetDesc((pkOwner ? pkOwner->GetEntityHandle() : entt::null))->Packet(msg, len + 1);
+			ecs::PlayerRuntime::GetDesc(pkOwner)->BufferedPacket(&pack, sizeof(pack));
+			ecs::PlayerRuntime::GetDesc(pkOwner)->Packet(msg, len + 1);
 		}
 
 		if (item->IsNewMountItem()) {

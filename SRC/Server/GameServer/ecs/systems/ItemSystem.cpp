@@ -3285,7 +3285,7 @@ bool RemoveItemEcs(entt::entity item)
         item, ecs::ItemOwner{entt::null, 0, legacyItem->GetLastOwnerPID(), 0});
     g_registry.remove<ecs::ItemEquipped>(item);
 
-    if (legacyItem->GetOwner()) {
+    if (legacyItem->GetOwnerEntity() != entt::null) {
         InventorySystem::RemoveFromCharacter(legacyItem->GetEntityHandle());
         SyncItemStateFromLegacy(item);
     }
@@ -3296,7 +3296,7 @@ bool RemoveItemEcs(entt::entity item)
 bool RemoveItemFromCharacterLegacyBoundary(entt::entity item)
 {
     LPITEM legacyItem = LegacyItemBoundary(item);
-    if (!legacyItem || !legacyItem->GetOwner())
+    if (!legacyItem || legacyItem->GetOwnerEntity() == entt::null)
         return false;
 
     InventorySystem::RemoveFromCharacter(legacyItem->GetEntityHandle());
@@ -3852,10 +3852,8 @@ bool SyncItemOwnerFromLegacy(entt::entity item)
 
     entt::entity ownerEntity = entt::null;
     uint32_t ownerPID = 0;
-    if (const auto* owner = legacyItem->GetOwner()) {
-        ownerEntity = owner->GetEntityHandle();
-        ownerPID = ecs::PlayerRuntime::GetPlayerID(ownerEntity);
-    }
+    ownerEntity = legacyItem->GetOwnerEntity();
+    ownerPID = ecs::PlayerRuntime::GetPlayerID(ownerEntity);
 
     g_registry.emplace_or_replace<ecs::ItemOwner>(
         item, ecs::ItemOwner{ownerEntity, ownerPID, legacyItem->GetLastOwnerPID(), ownerPID});
@@ -3926,18 +3924,19 @@ bool DestroyLoadedDuplicateItem(entt::entity item)
 
     const auto* ownerState = g_registry.try_get<ecs::ItemOwner>(item);
     const uint32_t ownerPID = ownerState ? ownerState->ownerPID : 0;
-    LPCHARACTER legacyOwner = legacyItem->GetOwner();
-    LPCHARACTER liveOwner = ownerPID != 0 ? CHARACTER_MANAGER::instance().FindByPID(ownerPID) : nullptr;
+    const entt::entity legacyOwner = legacyItem->GetOwnerEntity();
+    const entt::entity liveOwner =
+        ownerPID != 0 ? ecs::PlayerRuntime::FindByPlayerID(ownerPID) : entt::null;
     LOG_ERROR("DUP_ITEM_DESTROY_OWNER entity={} id={} owner_pid={} legacy_owner={} live_owner={}",
-        static_cast<uint32_t>(item), itemID, ownerPID, static_cast<const void*>(legacyOwner),
-        static_cast<const void*>(liveOwner));
+        static_cast<uint32_t>(item), itemID, ownerPID,
+        static_cast<uint32_t>(legacyOwner), static_cast<uint32_t>(liveOwner));
 
-    if (legacyOwner) {
+    if (legacyOwner != entt::null) {
         LOG_ERROR("DUP_ITEM_DESTROY_REMOVE_FROM_CHARACTER_BEGIN entity={} id={} stale_owner={}",
             static_cast<uint32_t>(item), itemID, liveOwner != legacyOwner);
         InventorySystem::RemoveFromCharacter(legacyItem->GetEntityHandle());
         LOG_ERROR("DUP_ITEM_DESTROY_REMOVE_FROM_CHARACTER_END entity={} id={} owner_after={}",
-            static_cast<uint32_t>(item), itemID, static_cast<const void*>(legacyItem->GetOwner()));
+            static_cast<uint32_t>(item), itemID, static_cast<uint32_t>(legacyItem->GetOwnerEntity()));
     }
 
     LOG_ERROR("DUP_ITEM_DESTROY_LEGACY_BEGIN item={} id={}", static_cast<const void*>(legacyItem), itemID);

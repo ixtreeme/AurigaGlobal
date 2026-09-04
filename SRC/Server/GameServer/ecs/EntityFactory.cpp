@@ -468,10 +468,8 @@ ecs::ItemOwner MakeItemOwner(LPITEM item)
     entt::entity ownerEntity = entt::null;
     uint32_t ownerPID = 0;
 
-    if (const auto* owner = item->GetOwner()) {
-        ownerEntity = owner->GetEntityHandle();
-        ownerPID = ecs::PlayerRuntime::GetPlayerID(ownerEntity);
-    }
+    ownerEntity = item->GetOwnerEntity();
+    ownerPID = ecs::PlayerRuntime::GetPlayerID(ownerEntity);
 
     return ecs::ItemOwner {
         ownerEntity,

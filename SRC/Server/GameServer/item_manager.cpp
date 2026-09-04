@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "ecs/CharacterAccessors.hpp"
 #include "ecs/systems/InventorySystem.hpp"
 #include "ecs/systems/PointSystem.hpp"
 #include "ecs/systems/PlayerRuntimeSystem.hpp"
@@ -271,12 +272,12 @@ LPITEM ITEM_MANAGER::CreateItem(uint32_t vnum, uint32_t count, uint32_t id, bool
 		item = ResolveManagedItem(duplicate->second);
 		if (item)
 		{
-			if (LPCHARACTER owner = item->GetOwner())
+			if (const entt::entity owner = item->GetOwnerEntity(); owner != entt::null)
 			{
 				const TItemTable* proto = item->GetProto();
 				const char* itemName = (proto && proto->szName[0]) ? proto->szName : "UNKNOWN";
 				LOG_ERROR("ITEM_ID_DUP: {} vnum={} {} owner {}", id, item->GetVnum(), itemName,
-					static_cast<const void*>(get_pointer(owner)));
+					static_cast<uint32_t>(owner));
 			}
 			return nullptr;
 		}
@@ -608,7 +609,7 @@ void ITEM_MANAGER::FlushDelayedSaveByOwner(LPCHARACTER owner)
 			continue;
 		}
 
-		if (item->GetOwner() == owner)
+		if (item->GetOwnerEntity() == owner->GetEntityHandle())
 		{
 			it = m_set_pkItemForDelayedSave.erase(it);
 			SaveSingleItem(item);
@@ -623,7 +624,7 @@ void ITEM_MANAGER::SaveSingleItem(LPITEM item)
 	if (!item)
 		return;
 
-	if (!item->GetOwner())
+	if (item->GetOwnerEntity() == entt::null)
 	{
 		uint32_t dwID = item->GetID();
 		uint32_t dwOwnerID = item->GetLastOwnerPID();
@@ -665,7 +666,7 @@ void ITEM_MANAGER::SaveSingleItem(LPITEM item)
 	}
 	t.count = (uint32_t)item->GetCount();
 	t.vnum = item->GetOriginalVnum();
-	t.owner = (t.window == SAFEBOX || t.window == MALL) ? ecs::PlayerRuntime::GetDesc(((item->GetOwner()) ? (item->GetOwner())->GetEntityHandle() : entt::null))->GetAccountTable().id : ecs::PlayerRuntime::GetPlayerID(((item->GetOwner()) ? (item->GetOwner())->GetEntityHandle() : entt::null));
+	t.owner = (t.window == SAFEBOX || t.window == MALL) ? ecs::PlayerRuntime::GetDesc(item->GetOwnerEntity())->GetAccountTable().id : ecs::PlayerRuntime::GetPlayerID(item->GetOwnerEntity());
 	memcpy(t.alSockets, item->GetSockets(), sizeof(t.alSockets));
 	memcpy(t.aAttr, item->GetAttributes(), sizeof(t.aAttr));
 
@@ -685,7 +686,7 @@ void ITEM_MANAGER::Update()
 			continue;
 		}
 
-		if (item->GetOwner() && IS_SET(item->GetFlag(), ITEM_FLAG_SLOW_QUERY))
+		if (item->GetOwnerEntity() != entt::null && IS_SET(item->GetFlag(), ITEM_FLAG_SLOW_QUERY))
 		{
 			++it;
 			continue;
@@ -715,14 +716,15 @@ void ITEM_MANAGER::RemoveItem(LPITEM item, const char* c_pszReason)
 	if (!item)
 		return;
 
-	LPCHARACTER o = nullptr;
 	const bool bWasMountInventory = item->GetWindow() == MOUNT_INVENTORY;
 
-	if ((o = item->GetOwner()))
+	if (const entt::entity ownerEntity = item->GetOwnerEntity(); ownerEntity != entt::null)
 	{
+		LPCHARACTER o = ecs::LegacyCharOf(ownerEntity);
 		char szHint[64];
 		snprintf(szHint, sizeof(szHint), "%s %u ", item->GetName(), item->GetCount());
-		LogManager::instance().ItemLog(o, item, c_pszReason ? c_pszReason : "REMOVE", szHint);
+		LogManager::instance().ItemLogEntity(ownerEntity, item->GetEntityHandle(),
+			c_pszReason ? c_pszReason : "REMOVE", szHint);
 
 		if (item->GetWindow() == MALL || item->GetWindow() == SAFEBOX)
 		{
@@ -787,21 +789,21 @@ void ITEM_MANAGER::DestroyItem(LPITEM item, const char* file, size_t line)
 	if (item->GetSectree())
 		item->RemoveFromGround();
 
-	if (LPCHARACTER owner = item->GetOwner())
+	if (const entt::entity owner = item->GetOwnerEntity(); owner != entt::null)
 	{
-		LPCHARACTER liveOwner = item->GetLastOwnerPID() != 0
-			? CHARACTER_MANAGER::instance().FindByPID(item->GetLastOwnerPID())
-			: nullptr;
+		const entt::entity liveOwner = item->GetLastOwnerPID() != 0
+			? ecs::PlayerRuntime::FindByPlayerID(item->GetLastOwnerPID())
+			: entt::null;
 
 		if (liveOwner == owner)
 		{
-			LOG_ERROR("DestroyItem: GetOwner {} {}!!", item->GetName(), ecs::PlayerRuntime::GetName(((owner) ? (owner)->GetEntityHandle() : entt::null)).data());
+			LOG_ERROR("DestroyItem: GetOwner {} {}!!", item->GetName(), ecs::PlayerRuntime::GetName(owner).data());
 			InventorySystem::RemoveFromCharacter(item->GetEntityHandle());
 		}
 		else
 		{
-			LOG_ERROR("WTH! Invalid item owner. owner pointer : {} last_owner_pid {}", static_cast<const void*>(owner), item->GetLastOwnerPID());
-			item->SetCell(nullptr, item->GetCell());
+			LOG_ERROR("WTH! Invalid item owner. owner entity : {} last_owner_pid {}", static_cast<uint32_t>(owner), item->GetLastOwnerPID());
+			ItemSystem::SetItemOwnerEntity(item->GetEntityHandle(), entt::null);
 		}
 	}
 

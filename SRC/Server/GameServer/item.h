@@ -94,10 +94,8 @@ class CItem : public CEntity
 #endif
 		int32_t		GetValue(uint32_t idx);
 
-		void		SetCell(LPCHARACTER ch, uint16_t pos);
 		uint16_t	GetCell() const;
 
-		LPCHARACTER	GetOwner() const;
 		entt::entity	GetOwnerEntity() const;
 		void		SetOwnerEntity(entt::entity owner);
 
