@@ -24,10 +24,7 @@ class CEntity
 		int				GetType() const;
 		bool			IsType(int type) const;
 
-		void			ViewInsert(LPENTITY entity, bool recursive = true);
-		void			ViewReencode();	// ���� Entity�� ��Ŷ�� �ٽ� ������.
 
-		int				GetViewAge() const	{ return m_iViewAge;	}
 
 		// Phase 15E-final.LPENTITY.4-architect.B.1.1:
 		// GetX/Y/Z/GetXYZ now read the ECS Position component as the
@@ -85,7 +82,6 @@ class CEntity
 
 		PIXEL_POSITION		m_pos;
 
-		int			m_iViewAge;
 };
 
 #endif

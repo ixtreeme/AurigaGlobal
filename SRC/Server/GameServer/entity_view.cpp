@@ -34,6 +34,7 @@ void EnsureVisibilityComponents(entt::entity e)
 	(void)g_registry.get_or_emplace<ecs::ViewMap>(e);
 	(void)g_registry.get_or_emplace<ecs::ViewerMap>(e);
 	(void)g_registry.get_or_emplace<ecs::ViewAgeMap>(e);
+	(void)g_registry.get_or_emplace<ecs::ViewAge>(e);
 }
 
 
@@ -76,9 +77,18 @@ void MirrorViewClear(entt::entity ownerE)
 // the loop bodies call CEntity::ViewRemove and the LPENTITY dispatchers, which
 // still need the object. UpdateSectree only runs for items, buildings and
 // offline shops - characters returned early since D.6.
-// SnapshotView without the per-element LPENTITY resolve. It exists because
-// every caller that still needs pointers goes through the original.
-std::vector<std::pair<entt::entity, uint32_t>> SnapshotViewEcs(entt::entity ownerE)
+// The view set with the ages that go with it. This was SnapshotView, which
+// resolved every element to an LPENTITY; nothing needs that any more.
+int ViewAgeOf(entt::entity e)
+{
+    if (e == entt::null || !g_registry.valid(e))
+        return 0;
+
+    const auto* age = g_registry.try_get<ecs::ViewAge>(e);
+    return age ? age->age : 0;
+}
+
+std::vector<std::pair<entt::entity, uint32_t>> SnapshotView(entt::entity ownerE)
 {
     std::vector<std::pair<entt::entity, uint32_t>> out;
     if (ownerE == entt::null || !g_registry.valid(ownerE))
@@ -109,38 +119,6 @@ std::vector<std::pair<entt::entity, uint32_t>> SnapshotViewEcs(entt::entity owne
     return out;
 }
 
-std::vector<std::pair<LPENTITY, uint32_t>> SnapshotView(entt::entity ownerE)
-{
-    std::vector<std::pair<LPENTITY, uint32_t>> out;
-    if (ownerE == entt::null || !g_registry.valid(ownerE))
-        return out;
-
-    const auto* view = g_registry.try_get<ecs::ViewMap>(ownerE);
-    if (!view)
-        return out;
-
-    const auto* ageMap = g_registry.try_get<ecs::ViewAgeMap>(ownerE);
-    out.reserve(view->visible.size());
-
-    for (const entt::entity otherE : view->visible)
-    {
-        if (otherE == entt::null || !g_registry.valid(otherE))
-            continue;
-
-        LPENTITY other = ecs::SpatialService::LPENTITYFromEntity(g_registry, otherE);
-        if (!other)
-            continue;
-
-        uint32_t age = 0;
-        if (ageMap)
-        {
-            if (const auto it = ageMap->ageByEntity.find(otherE); it != ageMap->ageByEntity.end())
-                age = it->second;
-        }
-        out.emplace_back(other, age);
-    }
-    return out;
-}
 
 void DispatchInsert(entt::entity sourceE, entt::entity viewerE)
 {
@@ -262,75 +240,86 @@ void ViewCleanup(entt::entity selfE)
 } // namespace ecs::ViewSystem
 
 
-void CEntity::ViewReencode()
+namespace ecs::ViewSystem {
+
+void ViewReencode(entt::entity self)
 {
-	if (m_bIsObserver)
+	if (self == entt::null || !g_registry.valid(self))
 		return;
 
-	// The character branch is ecs::VisibilitySystem::Reencode now. It used to
-	// live here, walking ViewMap.visible and turning each entity back into an
+	if (ecs::PlayerRuntime::IsObserverMode(self))
+		return;
+
+	// The character branch is ecs::VisibilitySystem::Reencode. It used to live
+	// here, walking ViewMap.visible and turning each entity back into an
 	// LPENTITY purely so DispatchInsert could turn it forward again. Only
-	// non-characters fall through to the legacy m_map_view walk below - they
-	// are the ones that still maintain it.
-	if (IsType(ENTITY_CHARACTER))
+	// non-characters fall through to the walk below.
+	const auto* kind = g_registry.try_get<ecs::SpatialKindTag>(self);
+	if (kind && kind->kind == ecs::SpatialKind::Character)
 	{
-		ecs::VisibilitySystem::Reencode(EntityOf(this));
+		ecs::VisibilitySystem::Reencode(self);
 		return;
 	}
 
-	DispatchRemove(this, this, "view.reencode.self");
-	DispatchInsert(this, this, "view.reencode.self");
+	DispatchRemove(self, self);
+	DispatchInsert(self, self);
 
-	for (const auto& [entity, age] : SnapshotView(EntityOf(this)))
+	for (const auto& [otherE, age] : SnapshotView(self))
 	{
-		DispatchRemove(this, entity, "view.reencode.visible");
-		if (!m_bIsObserver)
-			DispatchInsert(this, entity, "view.reencode.visible");
+		DispatchRemove(self, otherE);
+		DispatchInsert(self, otherE);
 
-		if (!entity->m_bIsObserver)
-			DispatchInsert(entity, this, "view.reencode.reverse");
+		if (!ecs::PlayerRuntime::IsObserverMode(otherE))
+			DispatchInsert(otherE, self);
 	}
-
 }
 
-void CEntity::ViewInsert(LPENTITY entity, bool recursive)
+} // namespace ecs::ViewSystem
+
+
+namespace ecs::ViewSystem {
+
+void ViewInsert(entt::entity self, entt::entity other, bool recursive)
 {
-	if (this == entity)
+	if (self == other)
 		return;
 
 	// Phase G: the ECS ViewMap is the view, not a mirror of m_map_view. This
 	// body is the old MirrorViewInsert plus the presence test m_map_view used
 	// to answer.
-	const entt::entity self = EntityOf(this);
-	const entt::entity other = EntityOf(entity);
 	if (self == entt::null || other == entt::null
 		|| !g_registry.valid(self) || !g_registry.valid(other))
 	{
 		LOG_WARN("[VIEW_UNTRACKED] insert with no entity handle: self={} other={}",
-			static_cast<const void*>(this), static_cast<const void*>(entity));
+			static_cast<uint32_t>(self), static_cast<uint32_t>(other));
 		return;
 	}
 
 	EnsureVisibilityComponents(self);
 	EnsureVisibilityComponents(other);
 
+	const uint32_t age = static_cast<uint32_t>(ViewAgeOf(self));
+
 	auto& view = g_registry.get<ecs::ViewMap>(self);
 	const bool wasVisible = view.visible.find(other) != view.visible.end();
 
 	view.visible.insert(other);
-	view.generation = static_cast<uint32_t>(m_iViewAge);
-	g_registry.get<ecs::ViewAgeMap>(self).ageByEntity[other] = static_cast<uint32_t>(m_iViewAge);
+	view.generation = age;
+	g_registry.get<ecs::ViewAgeMap>(self).ageByEntity[other] = age;
 	g_registry.get<ecs::ViewerMap>(other).viewers.insert(self);
 
 	if (wasVisible)
 		return;  // refresh: the age moved, nothing to announce
 
-	if (!entity->m_bIsObserver)
-		DispatchInsert(entity, this, "view.insert");
+	if (!ecs::PlayerRuntime::IsObserverMode(other))
+		DispatchInsert(other, self);
 
 	if (recursive)
-		entity->ViewInsert(this, false);
+		ViewInsert(other, self, false);
 }
+
+} // namespace ecs::ViewSystem
+
 
 namespace ecs::ViewSystem {
 
@@ -386,7 +375,7 @@ public:
 			if (DISTANCE_APPROX(ent->GetX() - m_me->GetX(), ent->GetY() - m_me->GetY()) > dwViewRange)
 				return;
 
-		m_me->ViewInsert(ent);
+		ecs::ViewSystem::ViewInsert(EntityOf(m_me), EntityOf(ent), true);
 
 		if (ent->IsType(ENTITY_CHARACTER) && m_me->IsType(ENTITY_CHARACTER))
 		{
@@ -416,7 +405,7 @@ void CEntity::UpdateSectree()
 	// Phase 15E-final.LPENTITY.4-architect.D.6:
 	// Character visibility maintenance is now event-driven via the
 	// PositionChangedEvent + VisibilitySystem handler (D.4). The legacy
-	// polling loop here (++m_iViewAge; CFuncViewInsert; m_map_view stale
+	// polling loop here (g_registry.get_or_emplace<ecs::ViewAge>(selfE).age += 1; CFuncViewInsert; m_map_view stale
 	// cleanup) is the original f76a3f1 root cause: idle characters do
 	// not re-poll, so their m_map_view goes stale during their stillness
 	// window. Skipping the polling for characters delegates entirely to
@@ -432,7 +421,7 @@ void CEntity::UpdateSectree()
 	if (IsType(ENTITY_CHARACTER))
 		return;
 
-	++m_iViewAge;
+	g_registry.get_or_emplace<ecs::ViewAge>(selfE).age += 1;
 
 	CFuncViewInsert f(this);
 	GetSectree()->ForEachAround(f);
@@ -441,9 +430,9 @@ void CEntity::UpdateSectree()
 	{
 		if (m_bIsObserver)
 		{
-			for (const auto& [entE, age] : SnapshotViewEcs(selfE))
+			for (const auto& [entE, age] : SnapshotView(selfE))
 			{
-				if (age < static_cast<uint32_t>(m_iViewAge))
+				if (age < static_cast<uint32_t>(ViewAgeOf(selfE)))
 				{
 					DispatchRemove(entE, selfE);
 					ecs::ViewSystem::ViewRemove(selfE, entE, false);
@@ -457,9 +446,9 @@ void CEntity::UpdateSectree()
 		}
 		else
 		{
-			for (const auto& [entE, age] : SnapshotViewEcs(selfE))
+			for (const auto& [entE, age] : SnapshotView(selfE))
 			{
-				if (age < static_cast<uint32_t>(m_iViewAge))
+				if (age < static_cast<uint32_t>(ViewAgeOf(selfE)))
 				{
 					DispatchRemove(entE, selfE);
 					ecs::ViewSystem::ViewRemove(selfE, entE, false);
@@ -470,10 +459,7 @@ void CEntity::UpdateSectree()
 					DispatchInsert(entE, selfE);
 					DispatchInsert(selfE, entE);
 
-					// ViewInsert is still a CEntity method; this is the one
-					// pointer left in the loop.
-					if (LPENTITY ent = ecs::SpatialService::LPENTITYFromEntity(g_registry, entE))
-						ent->ViewInsert(this, true);
+					ecs::ViewSystem::ViewInsert(entE, selfE, true);
 				}
 			}
 		}
@@ -484,9 +470,9 @@ void CEntity::UpdateSectree()
 	{
 		if (!m_bIsObserver)
 		{
-			for (const auto& [entE, age] : SnapshotViewEcs(selfE))
+			for (const auto& [entE, age] : SnapshotView(selfE))
 			{
-				if (age < static_cast<uint32_t>(m_iViewAge))
+				if (age < static_cast<uint32_t>(ViewAgeOf(selfE)))
 				{
 					DispatchRemove(entE, selfE);
 					ecs::ViewSystem::ViewRemove(selfE, entE, false);

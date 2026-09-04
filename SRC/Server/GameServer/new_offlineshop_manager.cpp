@@ -657,7 +657,8 @@ namespace offlineshop
 			}
 
 			if (ent.GetSectree())
-				ent.ViewReencode();
+				ecs::ViewSystem::ViewReencode(
+					ecs::OfflineShopEntityRegistry::FindByVID(ent.GetVID()));
 
 #ifdef ENABLE_OFFLINESHOP_DEBUG
 			else

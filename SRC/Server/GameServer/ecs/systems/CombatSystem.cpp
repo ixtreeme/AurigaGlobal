@@ -1,4 +1,5 @@
 #include "../../stdafx.h"
+#include "ViewSystem.hpp"
 #include "PlayerRuntimeSystem.hpp"
 #include "AffectSystem.hpp"
 #include "PointSystem.hpp"
@@ -1924,7 +1925,7 @@ EVENTFUNC(dead_event)
 				ch->SetPosition(POS_STANDING);
 				ch->SetHP(ecs::PointSystem::GetMaxHP(chEntity));
 
-				ch->ViewReencode();
+				ecs::ViewSystem::ViewReencode(chEntity);
 
 				ch->SetAggressive();
 				ch->SetRevive(true);

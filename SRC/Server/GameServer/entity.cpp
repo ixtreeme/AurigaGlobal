@@ -34,7 +34,6 @@ void CEntity::Initialize(int type)
 	m_bIsDestroyed = false;
 
 	m_iType = type;
-	m_iViewAge = 0;
 	m_pos.x = m_pos.y = m_pos.z = 0;
 
 	// Phase 15E-final.LPENTITY.4-architect.H.3:
