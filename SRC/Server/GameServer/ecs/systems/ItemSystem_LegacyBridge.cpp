@@ -739,7 +739,7 @@ bool CItem::SetCount(int count)
 
 			uint16_t wCell = GetCell();
 
-			RemoveFromCharacter();
+			InventorySystem::RemoveFromCharacter(GetEntityHandle());
 
 			if (!IsDragonSoul())
 			{
@@ -752,7 +752,8 @@ bool CItem::SetCount(int count)
 				}
 			}
 
-			M2_DESTROY_ITEM(RemoveFromCharacter());
+			InventorySystem::RemoveFromCharacter(GetEntityHandle());
+			M2_DESTROY_ITEM(this);
 
 			const uint8_t bType = ecs::QuestSystem::GetFlag(owner, "main_quest_flame_lv7.reward")*1 + ecs::QuestSystem::GetFlag(owner, "main_quest_flame_lv7.reward")*2;
 			if (IsDragonSoul())
@@ -768,7 +769,8 @@ bool CItem::SetCount(int count)
 			return false;
 		}
 
-		M2_DESTROY_ITEM(RemoveFromCharacter());
+		InventorySystem::RemoveFromCharacter(GetEntityHandle());
+		M2_DESTROY_ITEM(this);
 		return false;
 	}
 
@@ -2434,7 +2436,7 @@ bool CHARACTER::UnequipItem(LPITEM item)
 	/*if (item->GetVnum() == UNIQUE_ITEM_HIDE_ALIGNMENT_TITLE)
 		ShowAlignment(true);*/
 
-	item->RemoveFromCharacter();
+	InventorySystem::RemoveFromCharacter(item->GetEntityHandle());
 	if (item->IsDragonSoul())
 #ifdef __HIGHLIGHT_SYSTEM__
 		item->AddToCharacter(this, TItemPos(DRAGON_SOUL_INVENTORY, pos), false);
@@ -3197,7 +3199,7 @@ bool CHARACTER::DropItem(TItemPos Cell,
 
 	if (bCount == item->GetCount())
 	{
-		item->RemoveFromCharacter();
+		InventorySystem::RemoveFromCharacter(item->GetEntityHandle());
 		pkItemToDrop = item;
 	}
 	else
@@ -3781,7 +3783,7 @@ bool CHARACTER::MoveItem(TItemPos Cell, TItemPos DestCell,
 			// Taken before RemoveFromCharacter, which can clear the item state
 			// this handle is read from.
 			const entt::entity movedEntity = item ? item->GetEntityHandle() : entt::null;
-			item->RemoveFromCharacter();
+			InventorySystem::RemoveFromCharacter(item->GetEntityHandle());
 			SetItem(DestCell, movedEntity
 
 #ifdef __HIGHLIGHT_SYSTEM__
@@ -6281,7 +6283,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 				}
 
 				if (item->GetSocket(0) <= 0) {
-					item->RemoveFromCharacter();
+					InventorySystem::RemoveFromCharacter(item->GetEntityHandle());
 					return false;
 				}
 				else {
@@ -6305,7 +6307,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 
 					item->SetSocket(0, dwBottlePercent - dif);
 					if (item->GetSocket(0) < 1)
-						item->RemoveFromCharacter();
+						InventorySystem::RemoveFromCharacter(item->GetEntityHandle());
 
 					return true;
 				}
@@ -14118,7 +14120,7 @@ void CHARACTER::ClearItem()
 			item->SetSkipSave(true);
 			ITEM_MANAGER::instance().FlushDelayedSave(item);
 
-			item->RemoveFromCharacter();
+			InventorySystem::RemoveFromCharacter(item->GetEntityHandle());
 			ItemSystem::DestroyItemEntityEcs(
 				(item ? item->GetEntityHandle() : entt::null),
 				"CLEAR_ITEM_INVENTORY");
@@ -14133,7 +14135,7 @@ void CHARACTER::ClearItem()
 			item->SetSkipSave(true);
 			ITEM_MANAGER::instance().FlushDelayedSave(item);
 
-			item->RemoveFromCharacter();
+			InventorySystem::RemoveFromCharacter(item->GetEntityHandle());
 			ItemSystem::DestroyItemEntityEcs(
 				(item ? item->GetEntityHandle() : entt::null),
 				"CLEAR_ITEM_DRAGON_SOUL");
@@ -14151,7 +14153,7 @@ void CHARACTER::ClearItem()
 			item->SetSkipSave(true);
 			ITEM_MANAGER::instance().FlushDelayedSave(item);
 
-			item->RemoveFromCharacter();
+			InventorySystem::RemoveFromCharacter(item->GetEntityHandle());
 			ItemSystem::DestroyItemEntityEcs(
 				(item ? item->GetEntityHandle() : entt::null),
 				"CLEAR_ITEM_EXTRA_INVENTORY");
@@ -14169,7 +14171,7 @@ void CHARACTER::ClearItem()
 			item->SetSkipSave(true);
 			ITEM_MANAGER::instance().FlushDelayedSave(item);
 
-			item->RemoveFromCharacter();
+			InventorySystem::RemoveFromCharacter(item->GetEntityHandle());
 			ItemSystem::DestroyItemEntityEcs(
 				(item ? item->GetEntityHandle() : entt::null),
 				"CLEAR_ITEM_SWITCHBOT");
@@ -15036,7 +15038,7 @@ bool CHARACTER::SwapItem(uint8_t bCell, uint8_t bDestCell)
 		if (bEquipCell != ItemSystem::FindEquipCell(GetEntityHandle(), item1->GetEntityHandle(), bEquipCell))
 			return false;
 
-		item2->RemoveFromCharacter();
+		InventorySystem::RemoveFromCharacter(item2->GetEntityHandle());
 
 		if (InventorySystem::EquipTo(item1->GetEntityHandle(), this->GetEntityHandle(), bEquipCell))
 		{
@@ -15057,8 +15059,8 @@ bool CHARACTER::SwapItem(uint8_t bCell, uint8_t bDestCell)
 		uint8_t bCell1 = item1->GetCell();
 		uint8_t bCell2 = item2->GetCell();
 
-		item1->RemoveFromCharacter();
-		item2->RemoveFromCharacter();
+		InventorySystem::RemoveFromCharacter(item1->GetEntityHandle());
+		InventorySystem::RemoveFromCharacter(item2->GetEntityHandle());
 
 #ifdef __HIGHLIGHT_SYSTEM__
 		item1->AddToCharacter(this, TItemPos(INVENTORY, bCell2), false);

@@ -97,7 +97,6 @@ class CItem : public CEntity
 		void		SetCell(LPCHARACTER ch, uint16_t pos);
 		uint16_t	GetCell() const;
 
-		LPITEM		RemoveFromCharacter();
 #ifdef __HIGHLIGHT_SYSTEM__
 		bool	AddToCharacter(LPCHARACTER ch, TItemPos Cell, bool isHighLight = true);
 #else

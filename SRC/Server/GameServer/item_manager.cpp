@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "ecs/systems/InventorySystem.hpp"
 #include "ecs/systems/PointSystem.hpp"
 #include "ecs/systems/PlayerRuntimeSystem.hpp"
 #include "ecs/systems/NetworkSyncSystem.hpp"
@@ -743,7 +744,7 @@ void ITEM_MANAGER::RemoveItem(LPITEM item, const char* c_pszReason)
 #endif
 			}
 
-			item->RemoveFromCharacter();
+			InventorySystem::RemoveFromCharacter(item->GetEntityHandle());
 
 			if (bWasMountInventory)
 			{
@@ -795,7 +796,7 @@ void ITEM_MANAGER::DestroyItem(LPITEM item, const char* file, size_t line)
 		if (liveOwner == owner)
 		{
 			LOG_ERROR("DestroyItem: GetOwner {} {}!!", item->GetName(), ecs::PlayerRuntime::GetName(((owner) ? (owner)->GetEntityHandle() : entt::null)).data());
-			item->RemoveFromCharacter();
+			InventorySystem::RemoveFromCharacter(item->GetEntityHandle());
 		}
 		else
 		{

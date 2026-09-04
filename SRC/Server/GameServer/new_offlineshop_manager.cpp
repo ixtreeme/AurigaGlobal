@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "ecs/systems/InventorySystem.hpp"
 #include <Core/Logging.hpp>
 #include "ecs/systems/PlayerRuntimeSystem.hpp"
 #include "ecs/systems/SocialSystem.hpp"
@@ -2250,10 +2251,8 @@ namespace offlineshop
 		{
 			TShopItemInfo& rShopItem = vec[i];
 			LPITEM item = ch->GetItem(rShopItem.pos);
-			LPITEM removed = item->RemoveFromCharacter();
-		ItemSystem::DestroyItemEntityEcs(
-			(removed ? removed->GetEntityHandle() : entt::null),
-			"OFFLINESHOP_SELL");
+			const entt::entity removed = InventorySystem::RemoveFromCharacter(item->GetEntityHandle());
+		ItemSystem::DestroyItemEntityEcs(removed, "OFFLINESHOP_SELL");
 		}
 
 		OFFSHOP_DEBUG("ch name %s , checked successful , send to db ", ecs::PlayerRuntime::GetName(character).data());
@@ -2748,10 +2747,8 @@ namespace offlineshop
 		LogManager::instance().OfflineshopLog((ecs::PlayerRuntime::GetPlayerID(character)), 0, "adding new item to the shop vnum %u count %u (original item ID %u) ", itemInfo.item.dwVnum, itemInfo.item.dwCount, ItemSystem::GetItemID((pkItem ? pkItem->GetEntityHandle() : entt::null)));
 #endif
 
-		LPITEM removed = pkItem->RemoveFromCharacter();
-	ItemSystem::DestroyItemEntityEcs(
-		(removed ? removed->GetEntityHandle() : entt::null),
-		"OFFLINESHOP_SELL");
+		const entt::entity removed = InventorySystem::RemoveFromCharacter(pkItem->GetEntityHandle());
+		ItemSystem::DestroyItemEntityEcs(removed, "OFFLINESHOP_SELL");
 
 		SendShopAddItemDBPacket((ecs::PlayerRuntime::GetPlayerID(character)), itemInfo);
 		return true;
@@ -3538,10 +3535,8 @@ namespace offlineshop
 #endif
 
 		//destroy/remove/send
-		LPITEM removed = item->RemoveFromCharacter();
-		ItemSystem::DestroyItemEntityEcs(
-			(removed ? removed->GetEntityHandle() : entt::null),
-			"OFFLINESHOP_SELL");
+		const entt::entity removed = InventorySystem::RemoveFromCharacter(item->GetEntityHandle());
+		ItemSystem::DestroyItemEntityEcs(removed, "OFFLINESHOP_SELL");
 		SendAuctionCreateDBPacket(auction);
 		return true;
 	}

@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "ecs/systems/InventorySystem.hpp"
 #include <Core/Logging.hpp>
 #include "ecs/systems/PlayerRuntimeSystem.hpp"
 #include "ecs/systems/SocialSystem.hpp"
@@ -432,7 +433,7 @@ int64_t CShop::Buy(LPCHARACTER ch, uint8_t pos
 				LogManager::instance().GoldBarLog(ecs::PlayerRuntime::GetPlayerID(pC), ItemSystem::GetItemID(itemEntity), SHOP_SELL, buf);
 			}
 
-			item->RemoveFromCharacter();
+			InventorySystem::RemoveFromCharacter(item->GetEntityHandle());
 
 			if (item->IsDragonSoul()) {
 				item->AddToCharacter(ch, TItemPos(DRAGON_SOUL_INVENTORY, iEmptyPos));

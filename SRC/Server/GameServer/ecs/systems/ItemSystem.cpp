@@ -2933,7 +2933,7 @@ bool RemoveItemEcs(entt::entity item)
     g_registry.remove<ecs::ItemEquipped>(item);
 
     if (legacyItem->GetOwner()) {
-        legacyItem->RemoveFromCharacter();
+        InventorySystem::RemoveFromCharacter(legacyItem->GetEntityHandle());
         SyncItemStateFromLegacy(item);
     }
 
@@ -2946,7 +2946,7 @@ bool RemoveItemFromCharacterLegacyBoundary(entt::entity item)
     if (!legacyItem || !legacyItem->GetOwner())
         return false;
 
-    legacyItem->RemoveFromCharacter();
+    InventorySystem::RemoveFromCharacter(legacyItem->GetEntityHandle());
     return SyncItemStateFromLegacy(item);
 }
 
@@ -3582,7 +3582,7 @@ bool DestroyLoadedDuplicateItem(entt::entity item)
     if (legacyOwner) {
         LOG_ERROR("DUP_ITEM_DESTROY_REMOVE_FROM_CHARACTER_BEGIN entity={} id={} stale_owner={}",
             static_cast<uint32_t>(item), itemID, liveOwner != legacyOwner);
-        legacyItem->RemoveFromCharacter();
+        InventorySystem::RemoveFromCharacter(legacyItem->GetEntityHandle());
         LOG_ERROR("DUP_ITEM_DESTROY_REMOVE_FROM_CHARACTER_END entity={} id={} owner_after={}",
             static_cast<uint32_t>(item), itemID, static_cast<const void*>(legacyItem->GetOwner()));
     }

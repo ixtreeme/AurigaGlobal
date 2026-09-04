@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "ecs/systems/InventorySystem.hpp"
 #include <Core/Logging.hpp>
 #include "ecs/systems/PlayerRuntimeSystem.hpp"
 #include "ecs/systems/SocialSystem.hpp"
@@ -1056,7 +1057,7 @@ bool CExchange::Done()
 		m_pOwner->SyncQuickslot(QUICKSLOT_TYPE_ITEM, ItemSystem::GetItemCell(itemEntity), 255);
 #endif
 
-		item->RemoveFromCharacter();
+		InventorySystem::RemoveFromCharacter(item->GetEntityHandle());
 		if (item->IsDragonSoul())
 			item->AddToCharacter(victim, TItemPos(DRAGON_SOUL_INVENTORY, empty_pos));
 #ifdef ENABLE_EXTRA_INVENTORY

@@ -334,12 +334,6 @@ void CHARACTER::ChainQuickslotItem(entt::entity item, uint8_t bType, uint8_t bOl
 	}
 }
 
-LPITEM CItem::RemoveFromCharacter()
-{
-	InventorySystem::RemoveFromCharacter(GetEntityHandle());
-	return (this);
-}
-
 #ifdef __HIGHLIGHT_SYSTEM__
 bool CItem::AddToCharacter(LPCHARACTER ch, TItemPos Cell, bool isHighLight)
 #else
@@ -1026,7 +1020,7 @@ entt::entity RemoveFromCharacter(entt::entity itemEntity)
 {
 	if (ItemSystem::GetItemOwner(itemEntity) == entt::null)
 	{
-		LOG_ERROR("Item::RemoveFromCharacter owner null");
+		LOG_ERROR("RemoveFromCharacter: owner null");
 		return itemEntity;
 	}
 
@@ -1077,7 +1071,7 @@ entt::entity RemoveFromCharacter(entt::entity itemEntity)
 		if (ItemSystem::IsDragonSoulItem(itemEntity))
 		{
 			if (cell >= DRAGON_SOUL_INVENTORY_MAX_NUM)
-				LOG_ERROR("CItem::RemoveFromCharacter: pos >= DRAGON_SOUL_INVENTORY_MAX_NUM");
+				LOG_ERROR("RemoveFromCharacter: pos >= DRAGON_SOUL_INVENTORY_MAX_NUM");
 			else
 				ecs::PlayerRuntime::SetItem(ownerEntity, TItemPos(window, cell), entt::null);
 		}
@@ -1085,7 +1079,7 @@ entt::entity RemoveFromCharacter(entt::entity itemEntity)
 		else if (ItemSystem::IsExtraItem(itemEntity))
 		{
 			if (cell >= EXTRA_INVENTORY_MAX_NUM)
-				LOG_ERROR("CItem::RemoveFromCharacter: pos >= EXTRA_INVENTORY_MAX_NUM");
+				LOG_ERROR("RemoveFromCharacter: pos >= EXTRA_INVENTORY_MAX_NUM");
 			else
 				ecs::PlayerRuntime::SetItem(ownerEntity, TItemPos(window, cell), entt::null);
 		}
@@ -1095,7 +1089,7 @@ entt::entity RemoveFromCharacter(entt::entity itemEntity)
 		{
 			if (cell >= SWITCHBOT_SLOT_COUNT)
 			{
-				LOG_ERROR("CItem::RemoveFromCharacter: pos >= SWITCHBOT_SLOT_COUNT");
+				LOG_ERROR("RemoveFromCharacter: pos >= SWITCHBOT_SLOT_COUNT");
 			}
 			else
 			{
@@ -1108,7 +1102,7 @@ entt::entity RemoveFromCharacter(entt::entity itemEntity)
 			TItemPos pos(INVENTORY, cell);
 
 			if (false == pos.IsDefaultInventoryPosition() && false == pos.IsBeltInventoryPosition())
-				LOG_ERROR("CItem::RemoveFromCharacter: Invalid Item Position");
+				LOG_ERROR("RemoveFromCharacter: Invalid Item Position");
 			else
 				ecs::PlayerRuntime::SetItem(ownerEntity, pos, entt::null);
 		}
