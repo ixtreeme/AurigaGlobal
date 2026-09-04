@@ -2568,8 +2568,6 @@ public:
 private:
 	void BuffOnAttr_ClearAll();
 
-	typedef std::map <uint8_t, CBuffOnAttributes*> TMapBuffOnAttrs;
-	TMapBuffOnAttrs m_map_buff_on_attrs;
 	// ���� : ��Ȱ�� �׽�Ʈ�� ���Ͽ�.
 public:
 	void SetArmada() { cannot_dead = true; }

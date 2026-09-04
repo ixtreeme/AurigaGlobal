@@ -23,6 +23,8 @@ void SummonHorse(entt::entity rider, bool summon, bool fromFar = false,
     uint32_t vnum = 0, const char* name = nullptr);
 uint32_t GetMountVnum(entt::entity rider);
 void SetMountVnum(entt::entity rider, uint32_t vnum);
+bool IsHorseRiding(entt::entity rider);
+int GetHorseArmor(entt::entity rider);
 int GetHorseLevel(entt::entity rider);
 void SetHorseLevel(entt::entity rider, int level);
 int GetHorseHealth(entt::entity rider);

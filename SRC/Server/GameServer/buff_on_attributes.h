@@ -6,13 +6,13 @@ class CHARACTER;
 class CBuffOnAttributes
 {
 public:
-	CBuffOnAttributes(LPCHARACTER pOwner, uint8_t m_point_type, std::vector <uint8_t>* vec_buff_targets);
+	CBuffOnAttributes(entt::entity owner, uint8_t m_point_type, std::vector <uint8_t>* vec_buff_targets);
 	~CBuffOnAttributes();
 
 	// 장착 중 이면서, m_p_vec_buff_wear_targets에 해당하는 아이템인 경우, 해당 아이템으로 인해 붙은 효과를 제거.
-	void RemoveBuffFromItem(LPITEM pItem);
+	void RemoveBuffFromItem(entt::entity item);
 	// m_p_vec_buff_wear_targets에 해당하는 아이템인 경우, 해당 아이템의 attribute에 대한 효과 추가.
-	void AddBuffFromItem(LPITEM pItem);
+	void AddBuffFromItem(entt::entity item);
 	// m_bBuffValue를 바꾸고, 버프의 값도 바꿈.
 	void ChangeBuffValue(uint8_t bNewValue);
 
@@ -24,7 +24,7 @@ public:
 
 	void Initialize();
 private:
-	LPCHARACTER m_pBuffOwner;
+	entt::entity m_buffOwner;
 	uint8_t m_bPointType;
 	uint8_t m_bBuffValue;
 	std::vector <uint8_t>* m_p_vec_buff_wear_targets;

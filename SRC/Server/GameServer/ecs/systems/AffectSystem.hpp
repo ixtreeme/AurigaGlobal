@@ -36,6 +36,7 @@ void ClearAffect(entt::entity e, bool save);
 void RefreshAffect(entt::entity e);
 void SetPolymorph(entt::entity e, uint32_t raceVnum, bool maintainStats = false);
 bool IsPolymorphed(entt::entity e);
+int GetPolymorphPower(entt::entity e);
 bool IsPolyMaintainStat(entt::entity e);
 uint32_t GetPolymorphVnum(entt::entity e);
 void UpdateAffect(entt::registry& reg, uint32_t tick);

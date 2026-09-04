@@ -9,6 +9,7 @@
 #include "CombatSystem.hpp"
 #include "MountSystem.hpp"
 #include "VisibilitySystem.hpp"
+#include "SkillSystem.hpp"
 
 #include "../../affect.h"
 #include "../../arena.h"
@@ -712,6 +713,18 @@ void RefreshAffect(entt::entity e)
 bool IsPolymorphed(entt::entity e)
 {
 	return GetPolymorphVnum(e) != 0;
+}
+
+int GetPolymorphPower(entt::entity e)
+{
+    if (test_server)
+    {
+        const int value = quest::CQuestManager::instance().GetEventFlag("poly");
+        if (value)
+            return value;
+    }
+
+    return aiPolymorphPowerByLevel[MINMAX(0, SkillSystem::GetSkillLevel(e, SKILL_POLYMORPH), 40)];
 }
 
 bool IsPolyMaintainStat(entt::entity e)
@@ -2100,13 +2113,7 @@ void CHARACTER::RemoveBadAffect()
 
 int CHARACTER::GetPolymorphPower() const
 {
-	if (test_server)
-	{
-		int value = quest::CQuestManager::instance().GetEventFlag("poly");
-		if (value)
-			return value;
-	}
-	return aiPolymorphPowerByLevel[MINMAX(0, GetSkillLevel(SKILL_POLYMORPH), 40)];
+	return AffectSystem::GetPolymorphPower(GetEntityHandle());
 }
 void CHARACTER::SetPolymorph(uint32_t dwRaceNum, bool bMaintainStat)
 {

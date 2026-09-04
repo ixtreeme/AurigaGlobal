@@ -9,6 +9,9 @@
 #include "SocialSystem.hpp"
 #include "../components/skill_components.hpp"
 #include "NetworkSyncSystem.hpp"
+#include "MountSystem.hpp"
+#include "AffectSystem.hpp"
+#include "ItemSystem.hpp"
 
 #include <array>
 #include <common/VnumHelper.h>
@@ -598,34 +601,7 @@ void CHARACTER::SetRealPoint(uint8_t type, int64_t val)
 
 int CHARACTER::GetPolymorphPoint(uint8_t type) const
 {
-	if (IsPolymorphed() && !IsPolyMaintainStat())
-	{
-		uint32_t dwMobVnum = GetPolymorphVnum();
-		const CMob* pMob = CMobManager::instance().Get(dwMobVnum);
-		int iPower = GetPolymorphPower();
-
-		if (pMob)
-		{
-			switch (type)
-			{
-			case POINT_ST:
-				if ((GetJob() == JOB_SHAMAN) || ((GetJob() == JOB_SURA) && (GetSkillGroup() == 2)))
-					return pMob->m_table.bStr * iPower / 100 + GetPoint(POINT_IQ);
-				return pMob->m_table.bStr * iPower / 100 + GetPoint(POINT_ST);
-
-			case POINT_HT:
-				return pMob->m_table.bCon * iPower / 100 + GetPoint(POINT_HT);
-
-			case POINT_IQ:
-				return pMob->m_table.bInt * iPower / 100 + GetPoint(POINT_IQ);
-
-			case POINT_DX:
-				return pMob->m_table.bDex * iPower / 100 + GetPoint(POINT_DX);
-			}
-		}
-	}
-
-	return GetPoint(type);
+	return ecs::PointSystem::GetPolymorphPoint(GetEntityHandle(), type);
 }
 
 int64_t CHARACTER::GetPoint(uint8_t type) const
@@ -1633,6 +1609,197 @@ void CHARACTER::SendPetLevelUpEffect(int vid, int type, int value, int amount) {
 #endif
 
 namespace ecs::PointSystem {
+
+int GetPolymorphPoint(entt::entity e, uint8_t type)
+{
+	if (AffectSystem::IsPolymorphed(e) && !AffectSystem::IsPolyMaintainStat(e))
+	{
+		uint32_t dwMobVnum = AffectSystem::GetPolymorphVnum(e);
+		const CMob* pMob = CMobManager::instance().Get(dwMobVnum);
+		int iPower = AffectSystem::GetPolymorphPower(e);
+
+		if (pMob)
+		{
+			switch (type)
+			{
+			case POINT_ST:
+				if ((ecs::PlayerRuntime::GetJob(e) == JOB_SHAMAN) || ((ecs::PlayerRuntime::GetJob(e) == JOB_SURA) && (SkillSystem::GetSkillGroup(e) == 2)))
+					return pMob->m_table.bStr * iPower / 100 + Get(e, POINT_IQ);
+				return pMob->m_table.bStr * iPower / 100 + Get(e, POINT_ST);
+
+			case POINT_HT:
+				return pMob->m_table.bCon * iPower / 100 + Get(e, POINT_HT);
+
+			case POINT_IQ:
+				return pMob->m_table.bInt * iPower / 100 + Get(e, POINT_IQ);
+
+			case POINT_DX:
+				return pMob->m_table.bDex * iPower / 100 + Get(e, POINT_DX);
+			}
+		}
+	}
+
+	return Get(e, type);
+}
+
+void ComputeBattlePoints(entt::entity e)
+{
+	if (AffectSystem::IsPolymorphed(e))
+	{
+		uint32_t dwMobVnum = AffectSystem::GetPolymorphVnum(e);
+		const CMob* pMob = CMobManager::instance().Get(dwMobVnum);
+		int iAtt = 0;
+		int iDef = 0;
+
+		if (pMob)
+		{
+			iAtt = GetLevel(e) * 2 + GetPolymorphPoint(e, POINT_ST) * 2;
+			// lev + con
+			iDef = GetLevel(e) + GetPolymorphPoint(e, POINT_HT) + pMob->m_table.wDef;
+		}
+
+		Set(e, POINT_ATT_GRADE, iAtt);
+		Set(e, POINT_DEF_GRADE, iDef);
+		Set(e, POINT_MAGIC_ATT_GRADE, Get(e, POINT_ATT_GRADE));
+		Set(e, POINT_MAGIC_DEF_GRADE, Get(e, POINT_DEF_GRADE));
+	}
+	else if (ecs::PlayerRuntime::GetDesc(e) != nullptr)
+	{
+		Set(e, POINT_ATT_GRADE, 0);
+		Set(e, POINT_DEF_GRADE, 0);
+		Set(e, POINT_CLIENT_DEF_GRADE, 0);
+		Set(e, POINT_MAGIC_ATT_GRADE, Get(e, POINT_ATT_GRADE));
+		Set(e, POINT_MAGIC_DEF_GRADE, Get(e, POINT_DEF_GRADE));
+
+		//
+		// ±âo» ATK = 2lev + 2str, Á÷3÷?! ¸¶´U 2strAo 1U2? 1ö AÖA1
+		//
+		int iAtk = GetLevel(e) * 2;
+		int iStatAtk = 0;
+
+		switch (ecs::PlayerRuntime::GetJob(e))
+		{
+		case JOB_WARRIOR:
+		case JOB_SURA:
+			iStatAtk = (2 * Get(e, POINT_ST));
+			break;
+
+		case JOB_ASSASSIN:
+			iStatAtk = (4 * Get(e, POINT_ST) + 2 * Get(e, POINT_DX)) / 3;
+			break;
+
+		case JOB_SHAMAN:
+			iStatAtk = (4 * Get(e, POINT_ST) + 2 * Get(e, POINT_IQ)) / 3;
+			break;
+#ifdef ENABLE_WOLFMAN_CHARACTER
+		case JOB_WOLFMAN:
+			// TODO: 1öAÎÁ· °o°Ý·Â °o1Ä ±âE1AÚ?!°Ô ?äA»
+			iStatAtk = (2 * Get(e, POINT_ST));
+			break;
+#endif
+		default:
+			LOG_ERROR("invalid job {}", ecs::PlayerRuntime::GetJob(e));
+			iStatAtk = (2 * Get(e, POINT_ST));
+			break;
+		}
+
+		// ¸»A» A¸°í AÖ°í, 1oAEA¸·Î AÎÇN °o°Ý·ÂAI ST*2 o¸´U 3·A¸¸é ST*2·Î ÇN´U.
+		// 1oAEA» Aß¸o ÂiAo »ç¶÷ °o°Ý·ÂAI ´o 3·Áö 3E°Ô ÇI±â A§ÇO1­´U.
+		if (MountSystem::GetMountVnum(e) && iStatAtk < 2 * Get(e, POINT_ST))
+			iStatAtk = (2 * Get(e, POINT_ST));
+
+		iAtk += iStatAtk;
+
+		// 1Â¸¶(¸») : °Ë1ö¶ó µY1IÁö °¨1O
+		if (MountSystem::GetMountVnum(e))
+		{
+			if (ecs::PlayerRuntime::GetJob(e) == JOB_SURA && SkillSystem::GetSkillGroup(e) == 1)
+			{
+				iAtk += (iAtk * MountSystem::GetHorseLevel(e)) / 60;
+			}
+			else
+			{
+				iAtk += (iAtk * MountSystem::GetHorseLevel(e)) / 30;
+			}
+		}
+
+		//
+		// ATK Setting
+		//
+		iAtk += Get(e, POINT_ATT_GRADE_BONUS);
+
+		Change(e, POINT_ATT_GRADE, iAtk);
+
+		// DEF = LEV + CON + ARMOR
+		int iShowDef = GetLevel(e) + Get(e, POINT_HT); // For Ymir(Aµ¸¶)
+		int iDef = GetLevel(e) + (int)(Get(e, POINT_HT) / 1.25); // For Other
+		int iArmor = 0;
+
+		for (int i = 0; i < WEAR_MAX_NUM; ++i)
+		{
+			const entt::entity worn = ItemSystem::GetWearItem(e, i);
+			if (ItemSystem::GetItemType(worn) == ITEM_ARMOR)
+			{
+#ifdef ENABLE_PENDANT
+				if (ItemSystem::GetItemSubType(worn) == ARMOR_BODY || ItemSystem::GetItemSubType(worn) == ARMOR_HEAD || ItemSystem::GetItemSubType(worn) == ARMOR_FOOTS || ItemSystem::GetItemSubType(worn) == ARMOR_SHIELD || ItemSystem::GetItemSubType(worn) == ARMOR_PENDANT)
+#else
+				if (ItemSystem::GetItemSubType(worn) == ARMOR_BODY || ItemSystem::GetItemSubType(worn) == ARMOR_HEAD || ItemSystem::GetItemSubType(worn) == ARMOR_FOOTS || ItemSystem::GetItemSubType(worn) == ARMOR_SHIELD)
+#endif
+				{
+					iArmor += ItemSystem::GetItemValue(worn, 1);
+					iArmor += (2 * ItemSystem::GetItemValue(worn, 5));
+				}
+			}
+		}
+
+		// ¸» A¸°í AÖA» ¶§ 1a3î·ÂAI ¸»AÇ ±âÁO 1a3î·Âo¸´U 3·A¸¸é ±âÁO 1a3î·ÂA¸·Î 13Á¤
+		if (true == MountSystem::IsHorseRiding(e))
+		{
+			if (iArmor < MountSystem::GetHorseArmor(e))
+				iArmor = MountSystem::GetHorseArmor(e);
+
+			const char* pHorseName = CHorseNameManager::instance().GetHorseName(ecs::PlayerRuntime::GetPlayerID(e));
+
+			if (pHorseName != nullptr && strlen(pHorseName))
+			{
+				iArmor += 20;
+			}
+		}
+
+		iArmor += Get(e, POINT_DEF_GRADE_BONUS);
+		iArmor += Get(e, POINT_PARTY_DEFENDER_BONUS);
+
+		int iServerDef = iDef + iArmor;
+		int iClientDef = iShowDef + iArmor;
+
+		if (Get(e, POINT_MALL_DEFBONUS) > 0)
+		{
+			const int iPct = Get(e, POINT_MALL_DEFBONUS);
+			iServerDef += (iServerDef * iPct) / 100;
+			iClientDef += (iClientDef * iPct) / 100;
+		}
+
+		Change(e, POINT_DEF_GRADE, iServerDef - Get(e, POINT_DEF_GRADE));
+		Change(e, POINT_CLIENT_DEF_GRADE, iClientDef - Get(e, POINT_CLIENT_DEF_GRADE));
+
+		Change(e, POINT_MAGIC_ATT_GRADE, GetLevel(e) * 2 + Get(e, POINT_IQ) * 2 + Get(e, POINT_MAGIC_ATT_GRADE_BONUS));
+		Change(e, POINT_MAGIC_DEF_GRADE, GetLevel(e) + (Get(e, POINT_IQ) * 3 + Get(e, POINT_HT)) / 3 + iArmor / 2 + Get(e, POINT_MAGIC_DEF_GRADE_BONUS));
+	}
+	else
+	{
+		// 2lev + str * 2
+		int iAtt = GetLevel(e) * 2 + Get(e, POINT_ST) * 2;
+		// lev + con
+		const TMobTable* pTable = ecs::PlayerRuntime::GetMobTable(e);
+		int iDef = GetLevel(e) + Get(e, POINT_HT) + (pTable ? pTable->wDef : 0);
+
+		Set(e, POINT_ATT_GRADE, iAtt);
+		Set(e, POINT_DEF_GRADE, iDef);
+		Set(e, POINT_MAGIC_ATT_GRADE, Get(e, POINT_ATT_GRADE));
+		Set(e, POINT_MAGIC_DEF_GRADE, Get(e, POINT_DEF_GRADE));
+	}
+}
+
 
 void ApplyPoint(entt::entity e, uint8_t bApplyType, int iVal)
 {

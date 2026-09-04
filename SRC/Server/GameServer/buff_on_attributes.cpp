@@ -8,11 +8,13 @@
 #include "ecs/EntityFactory.hpp"
 #include "ecs/Registry.hpp"
 #include "ecs/systems/ItemSystem.hpp"
+#include "ecs/systems/PointSystem.hpp"
+#include "ecs/systems/ChatSystem.hpp"
 #include "buff_on_attributes.h"
 #include <algorithm>
 
-CBuffOnAttributes::CBuffOnAttributes(LPCHARACTER pOwner, uint8_t point_type, std::vector <uint8_t>* p_vec_buff_wear_targets)
-:	m_pBuffOwner(pOwner), m_bPointType(point_type), m_p_vec_buff_wear_targets(p_vec_buff_wear_targets)
+CBuffOnAttributes::CBuffOnAttributes(entt::entity owner, uint8_t point_type, std::vector <uint8_t>* p_vec_buff_wear_targets)
+:	m_buffOwner(owner), m_bPointType(point_type), m_p_vec_buff_wear_targets(p_vec_buff_wear_targets)
 {
 	Initialize();
 }
@@ -27,20 +29,19 @@ void CBuffOnAttributes::Initialize()
 	m_map_additional_attrs.clear();
 }
 
-void CBuffOnAttributes::RemoveBuffFromItem(LPITEM pItem)
+void CBuffOnAttributes::RemoveBuffFromItem(entt::entity item)
 {
 	if (0 == m_bBuffValue)
 		return ;
-	if (nullptr != pItem)
+	if (entt::null != item)
 	{
-		const entt::entity item = pItem ? pItem->GetEntityHandle() : entt::null;
 		if (ItemSystem::GetItemCell(item) < INVENTORY_MAX_NUM)
 			return;
 		std::vector <uint8_t>::iterator it = find (m_p_vec_buff_wear_targets->begin(), m_p_vec_buff_wear_targets->end(), ItemSystem::GetItemCell(item) - INVENTORY_MAX_NUM);
 		if (m_p_vec_buff_wear_targets->end() == it)
 			return;
 
-		int m = pItem->GetAttributeCount();
+		const int m = ItemSystem::GetItemAttributeCount(item);
 		for (int j = 0; j < m; j++)
 		{
 			TPlayerItemAttribute attr = ItemSystem::GetItemAttribute(item, j);
@@ -52,7 +53,7 @@ void CBuffOnAttributes::RemoveBuffFromItem(LPITEM pItem)
 				int& sum_of_attr_value = it->second;
 				int old_value = sum_of_attr_value * m_bBuffValue / 100;
 				int new_value = (sum_of_attr_value - attr.sValue) * m_bBuffValue / 100;
-				m_pBuffOwner->ApplyPoint(attr.bType, new_value - old_value);
+				ecs::PointSystem::ApplyPoint(m_buffOwner, attr.bType, new_value - old_value);
 				sum_of_attr_value -= attr.sValue;
 			}
 			else
@@ -64,20 +65,19 @@ void CBuffOnAttributes::RemoveBuffFromItem(LPITEM pItem)
 	}
 }
 
-void CBuffOnAttributes::AddBuffFromItem(LPITEM pItem)
+void CBuffOnAttributes::AddBuffFromItem(entt::entity item)
 {
 	if (0 == m_bBuffValue)
 		return ;
-	if (nullptr != pItem)
+	if (entt::null != item)
 	{
-		const entt::entity item = pItem ? pItem->GetEntityHandle() : entt::null;
 		if (ItemSystem::GetItemCell(item) < INVENTORY_MAX_NUM)
 			return;
 		std::vector <uint8_t>::iterator it = find (m_p_vec_buff_wear_targets->begin(), m_p_vec_buff_wear_targets->end(), ItemSystem::GetItemCell(item) - INVENTORY_MAX_NUM);
 		if (m_p_vec_buff_wear_targets->end() == it)
 			return;
 
-		int m = pItem->GetAttributeCount();
+		const int m = ItemSystem::GetItemAttributeCount(item);
 		for (int j = 0; j < m; j++)
 		{
 			TPlayerItemAttribute attr = ItemSystem::GetItemAttribute(item, j);
@@ -87,7 +87,7 @@ void CBuffOnAttributes::AddBuffFromItem(LPITEM pItem)
 			// 추가된 값의 (m_bBuffValue)%만큼의 버프 효과 추가
 			if (it == m_map_additional_attrs.end())
 			{
-				m_pBuffOwner->ApplyPoint(attr.bType, attr.sValue * m_bBuffValue / 100);
+				ecs::PointSystem::ApplyPoint(m_buffOwner, attr.bType, attr.sValue * m_bBuffValue / 100);
 				m_map_additional_attrs.insert(TMapAttr::value_type(attr.bType, attr.sValue));
 			}
 			// m_map_additional_attrs에서 해당 attribute type에 대한 값이 있다면, 그 값을 증가시키고,
@@ -97,7 +97,7 @@ void CBuffOnAttributes::AddBuffFromItem(LPITEM pItem)
 				int& sum_of_attr_value = it->second;
 				int old_value = sum_of_attr_value * m_bBuffValue / 100;
 				int new_value = (sum_of_attr_value + attr.sValue) * m_bBuffValue / 100;
-				m_pBuffOwner->ApplyPoint(attr.bType, new_value - old_value);
+				ecs::PointSystem::ApplyPoint(m_buffOwner, attr.bType, new_value - old_value);
 				sum_of_attr_value += attr.sValue;
 			}
 		}
@@ -120,7 +120,7 @@ void CBuffOnAttributes::ChangeBuffValue(uint8_t bNewValue)
 			//int old_value = sum_of_attr_value * m_bBuffValue / 100;
 			//int new_value = sum_of_attr_value * bNewValue / 100;
 
-			m_pBuffOwner->ApplyPoint(it->first, -sum_of_attr_value * m_bBuffValue / 100);
+			ecs::PointSystem::ApplyPoint(m_buffOwner, it->first, -sum_of_attr_value * m_bBuffValue / 100);
 		}
 		m_bBuffValue = bNewValue;
 	}
@@ -133,10 +133,9 @@ bool CBuffOnAttributes::On(uint8_t bValue)
 
 	int n = m_p_vec_buff_wear_targets->size();
 	m_map_additional_attrs.clear();
-	const entt::entity owner = m_pBuffOwner ? m_pBuffOwner->GetEntityHandle() : entt::null;
 	for (int i = 0; i < n; i++)
 	{
-		const entt::entity item = ItemSystem::GetWearItem(owner, m_p_vec_buff_wear_targets->at(i));
+		const entt::entity item = ItemSystem::GetWearItem(m_buffOwner, m_p_vec_buff_wear_targets->at(i));
 		if (item != entt::null)
 		{
 			const int m = ItemSystem::GetItemAttributeCount(item);
@@ -170,7 +169,7 @@ bool CBuffOnAttributes::On(uint8_t bValue)
 
 	for (auto it = m_map_additional_attrs.begin(); it != m_map_additional_attrs.end(); ++it)
 	{
-		m_pBuffOwner->ApplyPoint(it->first, it->second * bValue / 100);
+		ecs::PointSystem::ApplyPoint(m_buffOwner, it->first, it->second * bValue / 100);
 	}
 
 	m_bBuffValue = bValue;
@@ -185,7 +184,7 @@ void CBuffOnAttributes::Off()
 
 	for (auto it = m_map_additional_attrs.begin(); it != m_map_additional_attrs.end(); ++it)
 	{
-		m_pBuffOwner->ApplyPoint(it->first, -it->second * m_bBuffValue / 100);
+		ecs::PointSystem::ApplyPoint(m_buffOwner, it->first, -it->second * m_bBuffValue / 100);
 	}
 	Initialize();
 }

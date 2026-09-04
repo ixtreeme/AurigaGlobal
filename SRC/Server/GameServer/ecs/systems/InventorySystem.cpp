@@ -1087,7 +1087,7 @@ bool CItem::EquipTo(LPCHARACTER ch, uint8_t bWearCell)
 
 	ch->BuffOnAttr_AddBuffsFromItem(this);
 
-	m_pOwner->ComputeBattlePoints();
+	ecs::PointSystem::ComputeBattlePoints(charEntity);
 
 #ifdef ENABLE_MOUNT_COSTUME_SYSTEM
 	if (IsMountItem())
@@ -1170,9 +1170,9 @@ bool CItem::Unequip()
 
 	StopAccessorySocketExpireEvent();
 
-	m_pOwner->BuffOnAttr_RemoveBuffsFromItem(this);
+	ecs::PlayerRuntime::BuffOnAttr_RemoveBuffsFromItem(charEntity, itemEntity);
 
-	m_pOwner->SetWear(GetCell() - INVENTORY_MAX_NUM, entt::null);
+	ecs::PlayerRuntime::SetWear(charEntity, wearCell, entt::null);
 
 #ifndef ENABLE_IMMUNE_FIX
 	uint32_t dwImmuneFlag = 0;
@@ -1189,7 +1189,7 @@ bool CItem::Unequip()
 	ecs::PlayerRuntime::SetImmuneFlag(charEntity, dwImmuneFlag);
 #endif
 
-	m_pOwner->ComputeBattlePoints();
+	ecs::PointSystem::ComputeBattlePoints(charEntity);
 
 	NetworkSyncSystem::UpdatePacket(charEntity);
 #ifdef ENABLE_COSTUME_PET

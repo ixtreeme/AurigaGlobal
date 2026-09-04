@@ -2143,6 +2143,22 @@ const TMobTable& CHARACTER::GetMobTable() const
     return m_pkMobData->m_table;
 }
 
+namespace ecs::PlayerRuntime {
+
+const TMobTable* GetMobTable(entt::entity e)
+{
+    // The class version dereferences m_pkMobData unguarded and is only ever
+    // called behind an IsPC/IsNPC test. This one returns null instead of
+    // crashing, so callers that cannot prove the test can check.
+    if (e == entt::null || !g_registry.valid(e))
+        return nullptr;
+
+    const auto* mob = g_registry.try_get<ecs::MobDataRef>(e);
+    return (mob && mob->data) ? &mob->data->m_table : nullptr;
+}
+
+} // namespace ecs::PlayerRuntime
+
 bool CHARACTER::IsRaceFlag(uint32_t dwBit) const
 {
     return m_pkMobData ? IS_SET(m_pkMobData->m_table.dwRaceFlag, dwBit) : 0;
@@ -4327,14 +4343,7 @@ void CHARACTER::Destroy()
         m_pkMall = nullptr;
     }
 
-    for (TMapBuffOnAttrs::iterator it = m_map_buff_on_attrs.begin(); it != m_map_buff_on_attrs.end(); it++)
-    {
-        if (nullptr != it->second)
-        {
-            M2_DELETE(it->second);
-        }
-    }
-    m_map_buff_on_attrs.clear();
+    ecs::PlayerRuntime::BuffOnAttr_Destroy(GetEntityHandle());
 
     m_set_pkChrSpawnedBy.clear();
 

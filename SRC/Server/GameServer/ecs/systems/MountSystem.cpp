@@ -332,6 +332,25 @@ void SetMountVnum(entt::entity rider, uint32_t vnum)
         ch->MountVnum(vnum);
 }
 
+bool IsHorseRiding(entt::entity rider)
+{
+    // Strictly the riding flag, not IsRiding - that one also answers true for a
+    // summoned mount. MountState::horseRiding is written by SyncHorseRiding at
+    // both ends of CHARACTER::StartRiding / StopRiding, the only paths that
+    // reach CHorseRider's field.
+    if (rider == entt::null || !g_registry.valid(rider))
+        return false;
+
+    const auto* state = g_registry.try_get<ecs::MountState>(rider);
+    return state && state->horseRiding;
+}
+
+int GetHorseArmor(entt::entity rider)
+{
+    // Pure table lookup off the level, exactly as CHorseRider spells it.
+    return c_aHorseStat[GetHorseLevel(rider)].iArmor;
+}
+
 int GetHorseLevel(entt::entity rider)
 {
     auto* character = ResolveLegacyMountOwnerBoundary(rider);

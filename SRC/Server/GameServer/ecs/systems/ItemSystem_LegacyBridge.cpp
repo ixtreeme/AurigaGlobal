@@ -2366,29 +2366,38 @@ LPITEM CHARACTER::GetWear(uint8_t bCell) const
 
 void CHARACTER::SetWear(uint8_t bCell, entt::entity item)
 {
-	// > WEAR_MAX_NUM : ?�EY1� 11�Ե�.
+	ecs::PlayerRuntime::SetWear(GetEntityHandle(), bCell, item);
+}
+
+namespace ecs::PlayerRuntime {
+
+void SetWear(entt::entity e, uint8_t bCell, entt::entity item)
+{
+	// > WEAR_MAX_NUM : ?¡EY1¢ 11µÐµµ.
 	if (bCell >= WEAR_MAX_NUM + DRAGON_SOUL_DECK_MAX_NUM * DS_SLOT_MAX)
 	{
-		LOG_ERROR("CHARACTER::SetItem: invalid item cell {}", bCell);
+		LOG_ERROR("SetWear: invalid item cell {}", bCell);
 		return;
 	}
 
 #ifdef __HIGHLIGHT_SYSTEM__
-	SetItem(TItemPos(EQUIPMENT, bCell), item, false);
+	SetItem(e, TItemPos(EQUIPMENT, bCell), item, false);
 #else
-	SetItem(TItemPos(EQUIPMENT, bCell), item);
+	SetItem(e, TItemPos(EQUIPMENT, bCell), item);
 #endif
 
 #ifndef ENABLE_BUG_FIXES
 	if (item == entt::null && bCell == WEAR_WEAPON) {
-		if (IsAffectFlag(AFF_GWIGUM))
-			RemoveAffect(SKILL_GWIGEOM);
+		if (AffectSystem::IsAffectFlag(e, AFF_GWIGUM))
+			AffectSystem::RemoveAffect(e, SKILL_GWIGEOM);
 
-		if (IsAffectFlag(AFF_GEOMGYEONG))
-			RemoveAffect(SKILL_GEOMKYUNG);
+		if (AffectSystem::IsAffectFlag(e, AFF_GEOMGYEONG))
+			AffectSystem::RemoveAffect(e, SKILL_GEOMKYUNG);
 	}
 #endif
 }
+
+} // namespace ecs::PlayerRuntime
 bool CHARACTER::UnequipItem(LPITEM item)
 {
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
@@ -13705,12 +13714,26 @@ bool CHARACTER::CanHandleItem(bool bSkipCheckRefine, bool bSkipObserver)
 
 #ifdef __HIGHLIGHT_SYSTEM__
 void CHARACTER::SetItem(TItemPos Cell, entt::entity itemEntity, bool isHighLight)
+{
+	ecs::PlayerRuntime::SetItem(GetEntityHandle(), Cell, itemEntity, isHighLight);
+}
 #else
 void CHARACTER::SetItem(TItemPos Cell, entt::entity itemEntity)
+{
+	ecs::PlayerRuntime::SetItem(GetEntityHandle(), Cell, itemEntity);
+}
+#endif
+
+namespace ecs::PlayerRuntime {
+
+#ifdef __HIGHLIGHT_SYSTEM__
+void SetItem(entt::entity e, TItemPos Cell, entt::entity itemEntity, bool isHighLight)
+#else
+void SetItem(entt::entity e, TItemPos Cell, entt::entity itemEntity)
 #endif
 {
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(GetEntityHandle(), CHAT_TYPE_INFO, "input_main.cpp:: void CInputMain::RequestLanguage ");//INGAME_DEBUG_RAZOR93
+	ecs::ChatSystem::Send(e, CHAT_TYPE_INFO, "input_main.cpp:: void CInputMain::RequestLanguage ");//INGAME_DEBUG_RAZOR93
 #endif
 	uint16_t wCell = Cell.cell;
 	uint8_t window_type = Cell.window_type;
@@ -13721,7 +13744,7 @@ void CHARACTER::SetItem(TItemPos Cell, entt::entity itemEntity)
 	if (itemEntity != entt::null && !hasItem)
 	{
 		LOG_ERROR("CHARACTER::SetItem: item entity {} is not a valid item (char: {} cell: {})",
-			static_cast<uint32_t>(itemEntity), GetName(), wCell);
+			static_cast<uint32_t>(itemEntity), ecs::PlayerRuntime::GetName(e), wCell);
 		return;
 	}
 
@@ -13742,7 +13765,7 @@ void CHARACTER::SetItem(TItemPos Cell, entt::entity itemEntity)
 			return;
 		}
 
-		auto* pMainInventory = EnsureMainInventoryRuntimeComponent(GetEntityHandle());
+		auto* pMainInventory = EnsureMainInventoryRuntimeComponent(e);
 		if (!pMainInventory)
 		{
 			LOG_ERROR("CHARACTER::SetItem: missing MainInventoryRuntimeComponent");
@@ -13802,7 +13825,7 @@ void CHARACTER::SetItem(TItemPos Cell, entt::entity itemEntity)
 			return;
 		}
 
-		auto* pMainInventory = EnsureMainInventoryRuntimeComponent(GetEntityHandle());
+		auto* pMainInventory = EnsureMainInventoryRuntimeComponent(e);
 		if (!pMainInventory)
 		{
 			LOG_ERROR("CHARACTER::SetItem: missing MainInventoryRuntimeComponent");
@@ -13829,7 +13852,7 @@ void CHARACTER::SetItem(TItemPos Cell, entt::entity itemEntity)
 			return;
 		}
 
-		auto* pDragonSoulInventory = EnsureDragonSoulInventoryComponent(GetEntityHandle());
+		auto* pDragonSoulInventory = EnsureDragonSoulInventoryComponent(e);
 		if (!pDragonSoulInventory)
 		{
 			LOG_ERROR("CHARACTER::SetItem: missing DragonSoulInventoryComponent");
@@ -13876,13 +13899,13 @@ void CHARACTER::SetItem(TItemPos Cell, entt::entity itemEntity)
 		if (wCell >= EXTRA_INVENTORY_MAX_NUM)
 		{
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
-			ecs::ChatSystem::Send(GetEntityHandle(), CHAT_TYPE_INFO, "char_item.cpp::if (wCell >= EXTRA_INVENTORY_MAX_NUM)");//INGAME_DEBUG_RAZOR93
+			ecs::ChatSystem::Send(e, CHAT_TYPE_INFO, "char_item.cpp::if (wCell >= EXTRA_INVENTORY_MAX_NUM)");//INGAME_DEBUG_RAZOR93
 #endif
 			LOG_ERROR("CHARACTER::SetItem: invalid EXTRA item cell {}", wCell);
 			return;
 		}
 
-		auto* pExtraInventory = EnsureExtraInventoryRuntimeComponent(GetEntityHandle());
+		auto* pExtraInventory = EnsureExtraInventoryRuntimeComponent(e);
 		if (!pExtraInventory)
 		{
 			LOG_ERROR("CHARACTER::SetItem: missing ExtraInventoryRuntimeComponent");
@@ -13894,7 +13917,7 @@ void CHARACTER::SetItem(TItemPos Cell, entt::entity itemEntity)
 		if (pOld != entt::null)
 		{
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
-			ecs::ChatSystem::Send(GetEntityHandle(), CHAT_TYPE_INFO, "char_item.cpp::if (pOld != entt::null)");//INGAME_DEBUG_RAZOR93
+			ecs::ChatSystem::Send(e, CHAT_TYPE_INFO, "char_item.cpp::if (pOld != entt::null)");//INGAME_DEBUG_RAZOR93
 #endif
 
 			if (wCell < EXTRA_INVENTORY_MAX_NUM)
@@ -13919,7 +13942,7 @@ void CHARACTER::SetItem(TItemPos Cell, entt::entity itemEntity)
 		if (hasItem)
 		{
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
-			ecs::ChatSystem::Send(GetEntityHandle(), CHAT_TYPE_INFO, "char_item.cpp::if (hasItem)");//INGAME_DEBUG_RAZOR93
+			ecs::ChatSystem::Send(e, CHAT_TYPE_INFO, "char_item.cpp::if (hasItem)");//INGAME_DEBUG_RAZOR93
 #endif
 			if (wCell < EXTRA_INVENTORY_MAX_NUM)
 			{
@@ -13945,7 +13968,7 @@ void CHARACTER::SetItem(TItemPos Cell, entt::entity itemEntity)
 #ifdef ENABLE_SWITCHBOT
 	case SWITCHBOT:
 	{
-		const entt::entity oldItem = ItemSystem::GetItem(GetEntityHandle(), TItemPos(SWITCHBOT, wCell));
+		const entt::entity oldItem = ItemSystem::GetItem(e, TItemPos(SWITCHBOT, wCell));
 		if (hasItem && oldItem != entt::null)
 		{
 			return;
@@ -13959,14 +13982,14 @@ void CHARACTER::SetItem(TItemPos Cell, entt::entity itemEntity)
 
 		if (hasItem)
 		{
-			CSwitchbotManager::Instance().RegisterItem(GetPlayerID(), ItemSystem::GetItemID(itemEntity), wCell);
+			CSwitchbotManager::Instance().RegisterItem(ecs::PlayerRuntime::GetPlayerID(e), ItemSystem::GetItemID(itemEntity), wCell);
 		}
 		else
 		{
-			CSwitchbotManager::Instance().UnregisterItem(GetPlayerID(), wCell);
+			CSwitchbotManager::Instance().UnregisterItem(ecs::PlayerRuntime::GetPlayerID(e), wCell);
 		}
 
-		if (auto* switchbot = EnsureSwitchbotRuntimeComponent(GetEntityHandle()))
+		if (auto* switchbot = EnsureSwitchbotRuntimeComponent(e))
 			switchbot->items[wCell] = itemEntity;
 	}
 	break;
@@ -13980,7 +14003,7 @@ void CHARACTER::SetItem(TItemPos Cell, entt::entity itemEntity)
 	if (window_type == EQUIPMENT)
 		packetCell = TItemPos(EQUIPMENT, static_cast<uint16_t>(INVENTORY_MAX_NUM + wCell));
 
-	if (GetDesc())
+	if (ecs::PlayerRuntime::GetDesc(e))
 	{
 		// E�Aa 3AAIAU: 1�1�?!1� 3AAIAU �A�!�� ��o��� o�31�U
 		if (hasItem)
@@ -14009,7 +14032,7 @@ void CHARACTER::SetItem(TItemPos Cell, entt::entity itemEntity)
 			for (int i = 0; i < ITEM_ATTRIBUTE_MAX_NUM; ++i)
 				pack.aAttr[i] = ItemSystem::GetItemAttribute(itemEntity, i);
 
-			GetDesc()->Packet(&pack, sizeof(TPacketGCItemSet));
+			ecs::PlayerRuntime::GetDesc(e)->Packet(&pack, sizeof(TPacketGCItemSet));
 		}
 		else
 		{
@@ -14024,7 +14047,7 @@ void CHARACTER::SetItem(TItemPos Cell, entt::entity itemEntity)
 			memset(pack.alSockets, 0, sizeof(pack.alSockets));
 			memset(pack.aAttr, 0, sizeof(pack.aAttr));
 
-			GetDesc()->Packet(&pack, sizeof(TPacketGCItemDelDeprecated));
+			ecs::PlayerRuntime::GetDesc(e)->Packet(&pack, sizeof(TPacketGCItemDelDeprecated));
 		}
 	}
 
@@ -14033,7 +14056,7 @@ void CHARACTER::SetItem(TItemPos Cell, entt::entity itemEntity)
 		const uint16_t storageCell = (window_type == EQUIPMENT)
 			? static_cast<uint16_t>(INVENTORY_MAX_NUM + wCell)
 			: wCell;
-		ItemSystem::SetItemCell(itemEntity, GetEntityHandle(), storageCell);
+		ItemSystem::SetItemCell(itemEntity, e, storageCell);
 		switch (window_type)
 		{
 		case INVENTORY:
@@ -14076,6 +14099,9 @@ void CHARACTER::SetItem(TItemPos Cell, entt::entity itemEntity)
 		}
 	}
 }
+
+
+} // namespace ecs::PlayerRuntime
 void CHARACTER::ClearItem()
 {
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
@@ -15050,47 +15076,95 @@ bool CHARACTER::SwapItem(uint8_t bCell, uint8_t bDestCell)
 //
 void CHARACTER::BuffOnAttr_AddBuffsFromItem(LPITEM pItem)
 {
-	for (size_t i = 0; i < sizeof(g_aBuffOnAttrPoints) / sizeof(g_aBuffOnAttrPoints[0]); i++)
-	{
-		TMapBuffOnAttrs::iterator it = m_map_buff_on_attrs.find(g_aBuffOnAttrPoints[i]);
-		if (it != m_map_buff_on_attrs.end())
-		{
-			it->second->AddBuffFromItem(pItem);
-		}
-	}
+	ecs::PlayerRuntime::BuffOnAttr_AddBuffsFromItem(
+		GetEntityHandle(), pItem ? pItem->GetEntityHandle() : entt::null);
 }
 
 void CHARACTER::BuffOnAttr_RemoveBuffsFromItem(LPITEM pItem)
 {
-	for (size_t i = 0; i < sizeof(g_aBuffOnAttrPoints) / sizeof(g_aBuffOnAttrPoints[0]); i++)
-	{
-		TMapBuffOnAttrs::iterator it = m_map_buff_on_attrs.find(g_aBuffOnAttrPoints[i]);
-		if (it != m_map_buff_on_attrs.end())
-		{
-			it->second->RemoveBuffFromItem(pItem);
-		}
-	}
+	ecs::PlayerRuntime::BuffOnAttr_RemoveBuffsFromItem(
+		GetEntityHandle(), pItem ? pItem->GetEntityHandle() : entt::null);
 }
 
 void CHARACTER::BuffOnAttr_ClearAll()
 {
-	for (TMapBuffOnAttrs::iterator it = m_map_buff_on_attrs.begin(); it != m_map_buff_on_attrs.end(); it++)
-	{
-		CBuffOnAttributes* pBuff = it->second;
-		if (pBuff)
-		{
-			pBuff->Initialize();
-		}
-	}
+	ecs::PlayerRuntime::BuffOnAttr_ClearAll(GetEntityHandle());
 }
 
 void CHARACTER::BuffOnAttr_ValueChange(uint8_t bType, uint8_t bOldValue, uint8_t bNewValue)
 {
-	TMapBuffOnAttrs::iterator it = m_map_buff_on_attrs.find(bType);
+	ecs::PlayerRuntime::BuffOnAttr_ValueChange(GetEntityHandle(), bType, bOldValue, bNewValue);
+}
+
+namespace ecs::PlayerRuntime {
+
+// The buff pools live in ecs::BuffOnAttrs. Reads tolerate a missing component -
+// a character that never triggered a buff simply has none - while ValueChange
+// creates it on the first pool it needs.
+void BuffOnAttr_AddBuffsFromItem(entt::entity e, entt::entity item)
+{
+	auto* buffs = g_registry.try_get<ecs::BuffOnAttrs>(e);
+	if (!buffs)
+		return;
+
+	for (size_t i = 0; i < _countof(g_aBuffOnAttrPoints); i++)
+	{
+		auto it = buffs->pools.find(g_aBuffOnAttrPoints[i]);
+		if (it != buffs->pools.end() && it->second)
+			it->second->AddBuffFromItem(item);
+	}
+}
+
+void BuffOnAttr_RemoveBuffsFromItem(entt::entity e, entt::entity item)
+{
+	auto* buffs = g_registry.try_get<ecs::BuffOnAttrs>(e);
+	if (!buffs)
+		return;
+
+	for (size_t i = 0; i < _countof(g_aBuffOnAttrPoints); i++)
+	{
+		auto it = buffs->pools.find(g_aBuffOnAttrPoints[i]);
+		if (it != buffs->pools.end() && it->second)
+			it->second->RemoveBuffFromItem(item);
+	}
+}
+
+void BuffOnAttr_ClearAll(entt::entity e)
+{
+	auto* buffs = g_registry.try_get<ecs::BuffOnAttrs>(e);
+	if (!buffs)
+		return;
+
+	for (auto& entry : buffs->pools)
+	{
+		if (entry.second)
+			entry.second->Initialize();
+	}
+}
+
+void BuffOnAttr_Destroy(entt::entity e)
+{
+	auto* buffs = g_registry.try_get<ecs::BuffOnAttrs>(e);
+	if (!buffs)
+		return;
+
+	for (auto& entry : buffs->pools)
+		M2_DELETE(entry.second);
+
+	buffs->pools.clear();
+}
+
+void BuffOnAttr_ValueChange(entt::entity e, uint8_t bType, uint8_t bOldValue, uint8_t bNewValue)
+{
+	if (e == entt::null || !g_registry.valid(e))
+		return;
+
+	auto& buffs = g_registry.get_or_emplace<ecs::BuffOnAttrs>(e);
+	auto it = buffs.pools.find(bType);
 
 	if (0 == bNewValue)
 	{
-		if (m_map_buff_on_attrs.end() == it)
+		if (buffs.pools.end() == it)
 			return;
 		else
 			it->second->Off();
@@ -15098,7 +15172,7 @@ void CHARACTER::BuffOnAttr_ValueChange(uint8_t bType, uint8_t bOldValue, uint8_t
 	else if (0 == bOldValue)
 	{
 		CBuffOnAttributes* pBuff = nullptr;
-		if (m_map_buff_on_attrs.end() == it)
+		if (buffs.pools.end() == it)
 		{
 			switch (bType)
 			{
@@ -15106,7 +15180,7 @@ void CHARACTER::BuffOnAttr_ValueChange(uint8_t bType, uint8_t bOldValue, uint8_t
 			{
 				static uint8_t abSlot[] = { WEAR_BODY, WEAR_HEAD, WEAR_FOOTS, WEAR_WRIST, WEAR_WEAPON, WEAR_NECK, WEAR_EAR, WEAR_SHIELD };
 				static std::vector <uint8_t> vec_slots(abSlot, abSlot + _countof(abSlot));
-				pBuff = M2_NEW CBuffOnAttributes(this, bType, &vec_slots);
+				pBuff = M2_NEW CBuffOnAttributes(e, bType, &vec_slots);
 			}
 			break;
 			case POINT_COSTUME_ATTR_BONUS:
@@ -15116,8 +15190,6 @@ void CHARACTER::BuffOnAttr_ValueChange(uint8_t bType, uint8_t bOldValue, uint8_t
 					WEAR_COSTUME_HAIR,
 					WEAR_COSTUME_MOUNT,
 #ifdef ENABLE_COSTUME_EFFECT_ATTR_BONUS_RAZOR93
-
-
 						WEAR_COSTUME_PET_SKIN,
 						WEAR_COSTUME_EFFECT_BODY,
 						WEAR_COSTUME_EFFECT_WEAPON,
@@ -15132,14 +15204,13 @@ void CHARACTER::BuffOnAttr_ValueChange(uint8_t bType, uint8_t bOldValue, uint8_t
 				};
 
 				static std::vector <uint8_t> vec_slots(abSlot, abSlot + _countof(abSlot));
-				pBuff = M2_NEW CBuffOnAttributes(this, bType, &vec_slots);
+				pBuff = M2_NEW CBuffOnAttributes(e, bType, &vec_slots);
 			}
 			break;
 			default:
 				break;
 			}
-			m_map_buff_on_attrs.insert(TMapBuffOnAttrs::value_type(bType, pBuff));
-
+			buffs.pools.insert(std::make_pair(bType, pBuff));
 		}
 		else
 			pBuff = it->second;
@@ -15148,10 +15219,12 @@ void CHARACTER::BuffOnAttr_ValueChange(uint8_t bType, uint8_t bOldValue, uint8_t
 	}
 	else
 	{
-		assert(m_map_buff_on_attrs.end() != it);
+		assert(buffs.pools.end() != it);
 		it->second->ChangeBuffValue(bNewValue);
 	}
 }
+
+} // namespace ecs::PlayerRuntime
 
 
 // CHECK_UNIQUE_GROUP

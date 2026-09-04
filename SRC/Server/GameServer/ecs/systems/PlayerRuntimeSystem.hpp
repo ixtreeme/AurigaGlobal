@@ -30,6 +30,18 @@ void SetBlockModeForce(entt::entity e, uint8_t flags);
 uint32_t GetPacketVID(entt::entity e);
 uint32_t GetRaceNum(entt::entity e);
 uint8_t GetSex(entt::entity e);
+void BuffOnAttr_AddBuffsFromItem(entt::entity e, entt::entity item);
+void BuffOnAttr_RemoveBuffsFromItem(entt::entity e, entt::entity item);
+void BuffOnAttr_ClearAll(entt::entity e);
+void BuffOnAttr_Destroy(entt::entity e);
+void BuffOnAttr_ValueChange(entt::entity e, uint8_t bType, uint8_t bOldValue, uint8_t bNewValue);
+#ifdef __HIGHLIGHT_SYSTEM__
+void SetItem(entt::entity e, TItemPos Cell, entt::entity item, bool isHighLight = false);
+#else
+void SetItem(entt::entity e, TItemPos Cell, entt::entity item);
+#endif
+void SetWear(entt::entity e, uint8_t bCell, entt::entity item);
+const TMobTable* GetMobTable(entt::entity e);
 uint8_t GetJob(entt::entity e);
 bool ChangeSex(entt::entity e);
 bool SetRace(entt::entity e, uint8_t race);
