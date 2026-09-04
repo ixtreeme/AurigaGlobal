@@ -1,5 +1,7 @@
 #pragma once
 
+#include "../components/item_components.hpp"
+
 #include <cstdint>
 #include <vector>
 
@@ -104,6 +106,7 @@ bool SetItemCountEcs(entt::entity item, uint32_t count);
 bool AddItemCountEcs(entt::entity item, int delta);
 bool ConsumeItemEcs(entt::entity item, uint32_t amount = 1);
 bool DestroyItemEntityEcs(entt::entity item, const char* reason = nullptr);
+ecs::ItemEvents& GetItemEvents(entt::entity item);
 bool SaveItemEcs(entt::entity item, bool flush = true);
 bool FlushDelayedSaveEcs(entt::entity item);
 entt::entity GetItemOwner(entt::entity item);

@@ -466,7 +466,7 @@ bool CItem::AddToCharacter(LPCHARACTER ch, TItemPos Cell)
 				if (ecs::PlayerRuntime::GetDesc(character))
 					m_dwLastOwnerPID = ecs::PlayerRuntime::GetPlayerID(character);
 
-				event_cancel(&m_pkDestroyEvent);
+				event_cancel(&ItemSystem::GetItemEvents(GetEntityHandle()).destroy);
 
 				ch->SetItem(TItemPos(EQUIPMENT, iFindCell), GetEntityHandle());
 				SetOwnerEntity(character);
@@ -556,7 +556,7 @@ bool CItem::AddToCharacter(LPCHARACTER ch, TItemPos Cell)
 #endif
 
 
-	event_cancel(&m_pkDestroyEvent);
+	event_cancel(&ItemSystem::GetItemEvents(GetEntityHandle()).destroy);
 
 #ifdef __HIGHLIGHT_SYSTEM__
 	ch->SetItem(TItemPos(window_type, pos), GetEntityHandle(), isHighLight);
@@ -689,7 +689,7 @@ bool CItem::DistanceValid(LPCHARACTER ch)
 
 bool CItem::IsOwnership(LPCHARACTER ch)
 {
-	if (!m_pkOwnershipEvent)
+	if (!ItemSystem::GetItemEvents(GetEntityHandle()).ownership)
 		return true;
 
 	const entt::entity character = ch ? ch->GetEntityHandle() : entt::null;
@@ -698,16 +698,16 @@ bool CItem::IsOwnership(LPCHARACTER ch)
 
 void CItem::SetOwnershipEvent(LPEVENT pkEvent)
 {
-	m_pkOwnershipEvent = pkEvent;
+	ItemSystem::GetItemEvents(GetEntityHandle()).ownership = pkEvent;
 }
 
 void CItem::SetOwnership(LPCHARACTER ch, int iSec)
 {
 	if (!ch)
 	{
-		if (m_pkOwnershipEvent)
+		if (ItemSystem::GetItemEvents(GetEntityHandle()).ownership)
 		{
-			event_cancel(&m_pkOwnershipEvent);
+			event_cancel(&ItemSystem::GetItemEvents(GetEntityHandle()).ownership);
 			m_dwOwnershipPID = 0;
 
 			TPacketGCItemOwnership p;
@@ -726,7 +726,7 @@ void CItem::SetOwnership(LPCHARACTER ch, int iSec)
 		return;
 	}
 
-	if (m_pkOwnershipEvent)
+	if (ItemSystem::GetItemEvents(GetEntityHandle()).ownership)
 		return;
 
 	if (iSec <= 10)
@@ -829,6 +829,11 @@ bool CItem::IsEquipable()
 // The owner lives in ecs::ItemOwner. GetOwner keeps returning a pointer
 // because that is what its callers are typed on; GetOwnerEntity is the form
 // this migration moves them to.
+bool CItem::HaveOwnership() const
+{
+	return ItemSystem::GetItemEvents(GetEntityHandle()).ownership != nullptr;
+}
+
 entt::entity CItem::GetOwnerEntity() const
 {
 	return ItemSystem::GetItemOwner(GetEntityHandle());

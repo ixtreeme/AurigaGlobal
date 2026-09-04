@@ -166,7 +166,7 @@ class CItem : public CEntity
 		
 
 #ifdef ENABLE_BATTLE_PASS
-		bool		HaveOwnership() { return (m_pkOwnershipEvent ? true : false); }
+		bool		HaveOwnership() const;
 #endif
 
 		int		GetAttributeSetIndex(); // 속성 붙는것을 지정한 배열의 어느 인덱스를 사용하는지 돌려준다.
@@ -323,16 +323,8 @@ class CItem : public CEntity
 		int32_t		m_alSockets[ITEM_SOCKET_MAX_NUM];	// 아이템 소캣
 		TPlayerItemAttribute	m_aAttr[ITEM_ATTRIBUTE_MAX_NUM];
 
-		LPEVENT		m_pkDestroyEvent;
-		LPEVENT		m_pkExpireEvent;
 #ifdef ENABLE_SOUL_SYSTEM
-		LPEVENT		m_pkSoulItemEvent;
 #endif
-		LPEVENT		m_pkUniqueExpireEvent;
-		LPEVENT		m_pkTimerBasedOnWearExpireEvent;
-		LPEVENT		m_pkRealTimeExpireEvent;
-		LPEVENT		m_pkAccessorySocketExpireEvent;
-		LPEVENT		m_pkOwnershipEvent;
 		uint32_t		m_dwOwnershipPID;
 
 		bool		m_bSkipSave;

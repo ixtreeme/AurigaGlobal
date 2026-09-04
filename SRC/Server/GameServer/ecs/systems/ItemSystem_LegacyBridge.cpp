@@ -15707,23 +15707,23 @@ void CItem::Initialize()
 	m_pProto = nullptr;
 	m_bExchanging = false;
 #ifdef ENABLE_SOUL_SYSTEM
-	m_pkSoulItemEvent = nullptr;
+	ItemSystem::GetItemEvents(GetEntityHandle()).soulItem = nullptr;
 #endif
-	m_pkUniqueExpireEvent = nullptr;
+	ItemSystem::GetItemEvents(GetEntityHandle()).uniqueExpire = nullptr;
 	memset(&m_alSockets, 0, sizeof(m_alSockets));
 	memset(&m_aAttr, 0, sizeof(m_aAttr));
 #ifdef ATTR_LOCK
 	m_sLockedAttr = -1;
 #endif
 
-	m_pkDestroyEvent = nullptr;
-	m_pkOwnershipEvent = nullptr;
+	ItemSystem::GetItemEvents(GetEntityHandle()).destroy = nullptr;
+	ItemSystem::GetItemEvents(GetEntityHandle()).ownership = nullptr;
 	m_dwOwnershipPID = 0;
 
-	m_pkTimerBasedOnWearExpireEvent = nullptr;
-	m_pkRealTimeExpireEvent = nullptr;
+	ItemSystem::GetItemEvents(GetEntityHandle()).timerBasedOnWearExpire = nullptr;
+	ItemSystem::GetItemEvents(GetEntityHandle()).realTimeExpire = nullptr;
 
-	m_pkAccessorySocketExpireEvent = nullptr;
+	ItemSystem::GetItemEvents(GetEntityHandle()).accessorySocketExpire = nullptr;
 
 	m_bSkipSave = false;
 	m_dwLastOwnerPID = 0;
@@ -15731,17 +15731,17 @@ void CItem::Initialize()
 
 void CItem::Destroy()
 {
-	event_cancel(&m_pkDestroyEvent);
-	event_cancel(&m_pkOwnershipEvent);
-	event_cancel(&m_pkUniqueExpireEvent);
+	event_cancel(&ItemSystem::GetItemEvents(GetEntityHandle()).destroy);
+	event_cancel(&ItemSystem::GetItemEvents(GetEntityHandle()).ownership);
+	event_cancel(&ItemSystem::GetItemEvents(GetEntityHandle()).uniqueExpire);
 
 #ifdef ENABLE_SOUL_SYSTEM
-	event_cancel(&m_pkSoulItemEvent);
+	event_cancel(&ItemSystem::GetItemEvents(GetEntityHandle()).soulItem);
 #endif
 
-	event_cancel(&m_pkTimerBasedOnWearExpireEvent);
-	event_cancel(&m_pkRealTimeExpireEvent);
-	event_cancel(&m_pkAccessorySocketExpireEvent);
+	event_cancel(&ItemSystem::GetItemEvents(GetEntityHandle()).timerBasedOnWearExpire);
+	event_cancel(&ItemSystem::GetItemEvents(GetEntityHandle()).realTimeExpire);
+	event_cancel(&ItemSystem::GetItemEvents(GetEntityHandle()).accessorySocketExpire);
 
 	CEntity::Destroy();
 
@@ -15788,12 +15788,12 @@ TItemExtraProto* CItem::GetExtraProto()
 
 void CItem::SetDestroyEvent(LPEVENT pkEvent)
 {
-	m_pkDestroyEvent = pkEvent;
+	ItemSystem::GetItemEvents(GetEntityHandle()).destroy = pkEvent;
 }
 
 void CItem::StartDestroyEvent(int iSec)
 {
-	if (m_pkDestroyEvent)
+	if (ItemSystem::GetItemEvents(GetEntityHandle()).destroy)
 		return;
 
 	item_event_info* info = AllocEventInfo<item_event_info>();
@@ -15804,7 +15804,7 @@ void CItem::StartDestroyEvent(int iSec)
 
 void CItem::SetUniqueExpireEvent(LPEVENT pkEvent)
 {
-	m_pkUniqueExpireEvent = pkEvent;
+	ItemSystem::GetItemEvents(GetEntityHandle()).uniqueExpire = pkEvent;
 }
 
 void CItem::StartUniqueExpireEvent()
@@ -15812,7 +15812,7 @@ void CItem::StartUniqueExpireEvent()
 	if (GetType() != ITEM_UNIQUE)
 		return;
 
-	if (m_pkUniqueExpireEvent)
+	if (ItemSystem::GetItemEvents(GetEntityHandle()).uniqueExpire)
 		return;
 
 	if (IsRealTimeItem() || IsRealTimeFirstUseItem() || IsUnlimitedTimeUnique())
@@ -15843,7 +15843,7 @@ void CItem::StartUniqueExpireEvent()
 
 void CItem::StopUniqueExpireEvent()
 {
-	if (!m_pkUniqueExpireEvent)
+	if (!ItemSystem::GetItemEvents(GetEntityHandle()).uniqueExpire)
 		return;
 
 	if (GetValue(2) != 0)
@@ -15853,20 +15853,20 @@ void CItem::StopUniqueExpireEvent()
 	/*if (GetVnum() == UNIQUE_ITEM_HIDE_ALIGNMENT_TITLE)
 		m_pOwner->ShowAlignment(true);*/
 
-	SetSocket(ITEM_SOCKET_UNIQUE_SAVE_TIME, event_time(m_pkUniqueExpireEvent) / passes_per_sec);
-	event_cancel(&m_pkUniqueExpireEvent);
+	SetSocket(ITEM_SOCKET_UNIQUE_SAVE_TIME, event_time(ItemSystem::GetItemEvents(GetEntityHandle()).uniqueExpire) / passes_per_sec);
+	event_cancel(&ItemSystem::GetItemEvents(GetEntityHandle()).uniqueExpire);
 
 	ITEM_MANAGER::instance().SaveSingleItem(this);
 }
 
 void CItem::SetTimerBasedOnWearExpireEvent(LPEVENT pkEvent)
 {
-	m_pkTimerBasedOnWearExpireEvent = pkEvent;
+	ItemSystem::GetItemEvents(GetEntityHandle()).timerBasedOnWearExpire = pkEvent;
 }
 
 void CItem::StartTimerBasedOnWearExpireEvent()
 {
-	if (m_pkTimerBasedOnWearExpireEvent)
+	if (ItemSystem::GetItemEvents(GetEntityHandle()).timerBasedOnWearExpire)
 		return;
 
 	if (IsRealTimeItem())
@@ -15896,20 +15896,20 @@ void CItem::StartTimerBasedOnWearExpireEvent()
 
 void CItem::StopTimerBasedOnWearExpireEvent()
 {
-	if (!m_pkTimerBasedOnWearExpireEvent)
+	if (!ItemSystem::GetItemEvents(GetEntityHandle()).timerBasedOnWearExpire)
 		return;
 
-	int remain_time = GetSocket(ITEM_SOCKET_REMAIN_SEC) - event_processing_time(m_pkTimerBasedOnWearExpireEvent) / passes_per_sec;
+	int remain_time = GetSocket(ITEM_SOCKET_REMAIN_SEC) - event_processing_time(ItemSystem::GetItemEvents(GetEntityHandle()).timerBasedOnWearExpire) / passes_per_sec;
 
 	SetSocket(ITEM_SOCKET_REMAIN_SEC, remain_time);
-	event_cancel(&m_pkTimerBasedOnWearExpireEvent);
+	event_cancel(&ItemSystem::GetItemEvents(GetEntityHandle()).timerBasedOnWearExpire);
 
 	ITEM_MANAGER::instance().SaveSingleItem(this);
 }
 
 void CItem::StartRealTimeExpireEvent()
 {
-	if (m_pkRealTimeExpireEvent)
+	if (ItemSystem::GetItemEvents(GetEntityHandle()).realTimeExpire)
 		return;
 
 	for (auto aLimit : GetProto()->aLimits)
@@ -15942,7 +15942,7 @@ void CItem::StartRealTimeExpireEvent()
 				}
 
 				info->newpotion = true;
-				m_pkRealTimeExpireEvent = event_create(real_time_expire_event, info, PASSES_PER_SEC(remainSec > 60 ? 60 : remainSec));
+				ItemSystem::GetItemEvents(GetEntityHandle()).realTimeExpire = event_create(real_time_expire_event, info, PASSES_PER_SEC(remainSec > 60 ? 60 : remainSec));
 
 				const entt::entity e = GetEntityHandle();
 				if (e != entt::null)
@@ -15950,13 +15950,13 @@ void CItem::StartRealTimeExpireEvent()
 			}
 			else {
 				info->newpotion = false;
-				m_pkRealTimeExpireEvent = event_create(real_time_expire_event, info, PASSES_PER_SEC(1));
+				ItemSystem::GetItemEvents(GetEntityHandle()).realTimeExpire = event_create(real_time_expire_event, info, PASSES_PER_SEC(1));
 				const entt::entity e = GetEntityHandle();
 				if (e != entt::null)
 					g_dispatcher.trigger(ecs::EvItemExpired { e, GetID() });
 			}
 #else
-			m_pkRealTimeExpireEvent = event_create(real_time_expire_event, info, PASSES_PER_SEC(1));
+			ItemSystem::GetItemEvents(GetEntityHandle()).realTimeExpire = event_create(real_time_expire_event, info, PASSES_PER_SEC(1));
 
 			const entt::entity e = GetEntityHandle();
 			if (e != entt::null)
@@ -15974,7 +15974,7 @@ void CItem::StartAccessorySocketExpireEvent()
 	if (!IsAccessoryForSocket())
 		return;
 
-	if (m_pkAccessorySocketExpireEvent)
+	if (ItemSystem::GetItemEvents(GetEntityHandle()).accessorySocketExpire)
 		return;
 
 	if (GetAccessorySocketMaxGrade() == 0)
@@ -16008,15 +16008,15 @@ void CItem::StartAccessorySocketExpireEvent()
 
 void CItem::StopAccessorySocketExpireEvent()
 {
-	if (!m_pkAccessorySocketExpireEvent)
+	if (!ItemSystem::GetItemEvents(GetEntityHandle()).accessorySocketExpire)
 		return;
 
 	if (!IsAccessoryForSocket())
 		return;
 
-	int new_time = GetAccessorySocketDownGradeTime() - (60 - event_time(m_pkAccessorySocketExpireEvent) / passes_per_sec);
+	int new_time = GetAccessorySocketDownGradeTime() - (60 - event_time(ItemSystem::GetItemEvents(GetEntityHandle()).accessorySocketExpire) / passes_per_sec);
 
-	event_cancel(&m_pkAccessorySocketExpireEvent);
+	event_cancel(&ItemSystem::GetItemEvents(GetEntityHandle()).accessorySocketExpire);
 
 	if (new_time <= 1)
 	{
@@ -16030,13 +16030,13 @@ void CItem::StopAccessorySocketExpireEvent()
 
 void CItem::SetAccessorySocketExpireEvent(LPEVENT pkEvent)
 {
-	m_pkAccessorySocketExpireEvent = pkEvent;
+	ItemSystem::GetItemEvents(GetEntityHandle()).accessorySocketExpire = pkEvent;
 }
 
 #ifdef ENABLE_SOUL_SYSTEM
 void CItem::SetSoulItemEvent(LPEVENT pkEvent)
 {
-	m_pkSoulItemEvent = pkEvent;
+	ItemSystem::GetItemEvents(GetEntityHandle()).soulItem = pkEvent;
 }
 
 void CItem::StartSoulItemEvent()
@@ -16044,7 +16044,7 @@ void CItem::StartSoulItemEvent()
 	if (GetType() != ITEM_SOUL)
 		return;
 
-	if (m_pkSoulItemEvent)
+	if (ItemSystem::GetItemEvents(GetEntityHandle()).soulItem)
 		return;
 
 	int iMinutes = (GetSocket(2) / 10000);
@@ -17072,14 +17072,8 @@ CItem::CItem(uint32_t dwVnum)
 	m_dwCount(0),
 	m_sLockedAttr(0),
 	m_ExtraProto(nullptr), m_lFlag(0), m_dwLastOwnerPID(0),
-	m_bExchanging(false), m_pkDestroyEvent(nullptr), m_pkExpireEvent(nullptr),
-
-#ifdef ENABLE_SOUL_SYSTEM
-	m_pkSoulItemEvent(nullptr),
-#endif
-
-	m_pkUniqueExpireEvent(nullptr), m_pkTimerBasedOnWearExpireEvent(nullptr), m_pkRealTimeExpireEvent(nullptr),
-	m_pkAccessorySocketExpireEvent(nullptr), m_pkOwnershipEvent(nullptr), m_dwOwnershipPID(0), m_bSkipSave(false),
+	m_bExchanging(false),
+	m_dwOwnershipPID(0), m_bSkipSave(false),
 	m_isLocked(false),
 	m_dwMaskVnum(0), m_dwSIGVnum(0)
 {

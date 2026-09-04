@@ -1851,6 +1851,19 @@ bool FlushDelayedSaveEcs(entt::entity item)
     return true;
 }
 
+// Handed out by reference so callers can event_cancel(&events.field) the way
+// they used to take the address of the member.
+ecs::ItemEvents& GetItemEvents(entt::entity item)
+{
+    static ecs::ItemEvents detached;
+    if (item == entt::null || !g_registry.valid(item)) {
+        detached = ecs::ItemEvents {};
+        return detached;
+    }
+
+    return g_registry.get_or_emplace<ecs::ItemEvents>(item);
+}
+
 bool SaveItemEcs(entt::entity item, bool flush)
 {
     LPITEM legacyItem = LegacyItemBoundary(item);
