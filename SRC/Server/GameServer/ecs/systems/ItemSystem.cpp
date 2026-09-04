@@ -2785,14 +2785,192 @@ bool StartRealTimeExpireEventEcs(entt::entity item)
     return true;
 }
 
-static int FindEquipCellLegacyBoundary(entt::entity owner, entt::entity item,
-                                       int candidateCell)
+int FindEquipCell(entt::entity ownerEntity, entt::entity item, int iCandidateCell)
 {
-    LPCHARACTER legacyOwner = LegacyCharOf(owner);
-    LPITEM legacyItem = LegacyItemBoundary(item);
-    return legacyOwner && legacyItem
-        ? legacyItem->FindEquipCell(legacyOwner, candidateCell)
-        : -1;
+	const auto hasWearItem = [ownerEntity](uint8_t wearCell) {
+		return ItemSystem::IsValidItem(ItemSystem::GetWearItem(ownerEntity, wearCell));
+	};
+
+	if ((0 == GetItemWearFlag(item) || ITEM_TOTEM == GetItemType(item)) && ITEM_COSTUME != GetItemType(item) && ITEM_DS != GetItemType(item) && ITEM_SPECIAL_DS != GetItemType(item) && ITEM_RING != GetItemType(item) && ITEM_BELT != GetItemType(item))
+		return -1;
+
+	if (GetItemType(item) == ITEM_DS || GetItemType(item) == ITEM_SPECIAL_DS)
+	{
+		if (iCandidateCell < 0)
+		{
+			return WEAR_MAX_NUM + GetItemSubType(item);
+		}
+		else
+		{
+			for (int i = 0; i < DRAGON_SOUL_DECK_MAX_NUM; i++)
+			{
+				if (WEAR_MAX_NUM + i * DS_SLOT_MAX + GetItemSubType(item) == iCandidateCell)
+				{
+					return iCandidateCell;
+				}
+			}
+			return -1;
+		}
+	}
+	else if (GetItemType(item) == ITEM_COSTUME)
+	{
+		if (GetItemSubType(item) == COSTUME_BODY)
+			return WEAR_COSTUME_BODY;
+		else if (GetItemSubType(item) == COSTUME_HAIR)
+			return WEAR_COSTUME_HAIR;
+#ifdef ENABLE_MOUNT_COSTUME_SYSTEM
+		else if (GetItemSubType(item) == COSTUME_MOUNT)
+			return WEAR_COSTUME_MOUNT;
+#endif
+#ifdef ENABLE_ACCE_SYSTEM
+		else if (GetItemSubType(item) == COSTUME_ACCE)
+			return WEAR_COSTUME_ACCE_SLOT;
+#endif
+#ifdef ENABLE_WEAPON_COSTUME_SYSTEM
+		else if (GetItemSubType(item) == COSTUME_WEAPON)
+			return WEAR_COSTUME_WEAPON;
+#endif
+#ifdef ENABLE_STOLE_COSTUME
+		else if (GetItemSubType(item) == COSTUME_STOLE)
+			return WEAR_COSTUME_ACCE;
+#endif
+#ifdef ENABLE_COSTUME_PET
+		else if (GetItemSubType(item) == COSTUME_PET_SKIN)
+			return WEAR_COSTUME_PET_SKIN;
+#endif
+#ifdef ENABLE_COSTUME_MOUNT
+		else if (GetItemSubType(item) == COSTUME_MOUNT_SKIN)
+			return WEAR_COSTUME_MOUNT_SKIN;
+#endif
+#ifdef ENABLE_COSTUME_EFFECT
+		else if (GetItemSubType(item) == COSTUME_EFFECT_BODY)
+			return WEAR_COSTUME_EFFECT_BODY;
+		else if (GetItemSubType(item) == COSTUME_EFFECT_WEAPON)
+			return WEAR_COSTUME_EFFECT_WEAPON;
+#endif
+#ifdef ENABLE_RUNE_SYSTEM
+		else if (GetItemSubType(item) == RUNE_SLOT1)
+			return WEAR_RUNE1;
+		else if (GetItemSubType(item) == RUNE_SLOT2)
+			return WEAR_RUNE2;
+		else if (GetItemSubType(item) == RUNE_SLOT3)
+			return WEAR_RUNE3;
+		else if (GetItemSubType(item) == RUNE_SLOT4)
+			return WEAR_RUNE4;
+		else if (GetItemSubType(item) == RUNE_SLOT5)
+			return WEAR_RUNE5;
+		else if (GetItemSubType(item) == RUNE_SLOT6)
+			return WEAR_RUNE6;
+		else if (GetItemSubType(item) == RUNE_SLOT7)
+			return WEAR_RUNE7;
+#endif
+	}
+#if !defined(ENABLE_MOUNT_COSTUME_SYSTEM) && !defined(ENABLE_ACCE_SYSTEM)
+	else if (GetItemType(item) == ITEM_RING)
+	{
+		if (hasWearItem(WEAR_RING1))
+			return WEAR_RING2;
+		else
+			return WEAR_RING1;
+	}
+#endif
+	else if (GetItemType(item) == ITEM_BELT)
+		return WEAR_BELT;
+	else if (GetItemWearFlag(item) & WEARABLE_BODY)
+		return WEAR_BODY;
+	else if (GetItemWearFlag(item) & WEARABLE_HEAD)
+		return WEAR_HEAD;
+	else if (GetItemWearFlag(item) & WEARABLE_FOOTS)
+		return WEAR_FOOTS;
+	else if (GetItemWearFlag(item) & WEARABLE_WRIST)
+		return WEAR_WRIST;
+	else if (GetItemWearFlag(item) & WEARABLE_WEAPON)
+		return WEAR_WEAPON;
+	else if (GetItemWearFlag(item) & WEARABLE_SHIELD)
+		return WEAR_SHIELD;
+	else if (GetItemWearFlag(item) & WEARABLE_NECK)
+		return WEAR_NECK;
+	else if (GetItemWearFlag(item) & WEARABLE_EAR)
+		return WEAR_EAR;
+	else if (GetItemWearFlag(item) & WEARABLE_ARROW)
+		return WEAR_ARROW;
+	else if (GetItemWearFlag(item) & WEARABLE_UNIQUE)
+	{
+#ifdef ENABLE_NEW_UNIQUE_WEAR_LIMITED
+		if (GetItemSubType(item) == UNIQUE_PVM || GetItemSubType(item) == UNIQUE_PVP || GetItemSubType(item) == UNIQUE_NONE)
+		{
+			const int iSlot1 = WEAR_UNIQUE1;
+			const int iSlot2 = WEAR_UNIQUE2;
+
+			if (iCandidateCell == iSlot1 || iCandidateCell == iSlot2)
+				return iCandidateCell;
+
+			if (!hasWearItem(iSlot1))
+				return iSlot1;
+
+			if (!hasWearItem(iSlot2))
+				return iSlot2;
+
+			return -1;
+		}
+		else
+		{
+			return -1;
+		}
+#else
+		if (hasWearItem(WEAR_UNIQUE1))
+			return WEAR_UNIQUE2;
+		else
+			return WEAR_UNIQUE1;
+#endif
+	}
+#ifdef ENABLE_PENDANT
+	else if (GetItemSubType(item) == ARMOR_PENDANT || GetItemWearFlag(item) & WEARABLE_PENDANT)
+		return WEAR_PENDANT;
+#endif
+
+	else if (GetItemWearFlag(item) & WEARABLE_ABILITY)
+	{
+		if (!hasWearItem(WEAR_ABILITY1))
+		{
+			return WEAR_ABILITY1;
+		}
+		else if (!hasWearItem(WEAR_ABILITY2))
+		{
+			return WEAR_ABILITY2;
+		}
+		else if (!hasWearItem(WEAR_ABILITY3))
+		{
+			return WEAR_ABILITY3;
+		}
+		else if (!hasWearItem(WEAR_ABILITY4))
+		{
+			return WEAR_ABILITY4;
+		}
+		else if (!hasWearItem(WEAR_ABILITY5))
+		{
+			return WEAR_ABILITY5;
+		}
+		else if (!hasWearItem(WEAR_ABILITY6))
+		{
+			return WEAR_ABILITY6;
+		}
+		else if (!hasWearItem(WEAR_ABILITY7))
+		{
+			return WEAR_ABILITY7;
+		}
+#ifndef ENABLE_STOLE_REAL
+		else if (!hasWearItem(WEAR_ABILITY8))
+		{
+			return WEAR_ABILITY8;
+		}
+#endif
+		else
+		{
+			return -1;
+		}
+	}
+	return -1;
 }
 
 static bool EquipItemLegacyBoundary(entt::entity owner, entt::entity item,
@@ -2816,7 +2994,7 @@ bool EquipItemEcs(entt::entity owner, entt::entity item, int candidateCell)
     if (owner == entt::null || !g_registry.valid(owner) || !IsValidItem(item))
         return false;
 
-    const int wearCell = FindEquipCellLegacyBoundary(owner, item, candidateCell);
+    const int wearCell = FindEquipCell(owner, item, candidateCell);
     if (wearCell < 0)
         return false;
 

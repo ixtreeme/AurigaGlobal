@@ -2404,7 +2404,7 @@ bool CHARACTER::UnequipItem(LPITEM item)
 	ecs::ChatSystem::Send(GetEntityHandle(), CHAT_TYPE_INFO, "char_item.cpp:: CHARACTER::UnequipItem ");//INGAME_DEBUG_RAZOR93
 #endif
 #ifdef ENABLE_WEAPON_COSTUME_SYSTEM
-	int iWearCell = item->FindEquipCell(this);
+	int iWearCell = ItemSystem::FindEquipCell(GetEntityHandle(), item->GetEntityHandle());
 	if (iWearCell == WEAR_WEAPON)
 	{
 		LPITEM costumeWeapon = GetWear(WEAR_COSTUME_WEAPON);
@@ -2417,7 +2417,7 @@ bool CHARACTER::UnequipItem(LPITEM item)
 		}
 	}
 #elif defined(ENABLE_BUG_FIXES)
-	int iWearCell = item->FindEquipCell(this);
+	int iWearCell = ItemSystem::FindEquipCell(GetEntityHandle(), item->GetEntityHandle());
 #endif
 
 	if (false == CanUnequipNow(item))
@@ -2485,7 +2485,7 @@ bool CHARACTER::EquipItem(LPITEM item, int iCandidateCell)
 	if (false == CanEquipNow(item))
 		return false;
 
-	int iWearCell = item->FindEquipCell(this, iCandidateCell);
+	int iWearCell = ItemSystem::FindEquipCell(GetEntityHandle(), item->GetEntityHandle(), iCandidateCell);
 
 	if (iWearCell < 0)
 		return false;
@@ -3501,7 +3501,7 @@ bool CHARACTER::MoveItem(TItemPos Cell, TItemPos DestCell,
 			return false;
 
 #ifdef ENABLE_WEAPON_COSTUME_SYSTEM
-		int iWearCell = item->FindEquipCell(this);
+		int iWearCell = ItemSystem::FindEquipCell(GetEntityHandle(), item->GetEntityHandle());
 		if (iWearCell == WEAR_WEAPON)
 		{
 			LPITEM costumeWeapon = GetWear(WEAR_COSTUME_WEAPON);
@@ -15032,7 +15032,7 @@ bool CHARACTER::SwapItem(uint8_t bCell, uint8_t bDestCell)
 			if (false == CanUnequipNow(item2) || false == CanEquipNow(item1))
 				return false;
 		}
-		if (bEquipCell != item1->FindEquipCell(this, bEquipCell))
+		if (bEquipCell != ItemSystem::FindEquipCell(GetEntityHandle(), item1->GetEntityHandle(), bEquipCell))
 			return false;
 
 		item2->RemoveFromCharacter();

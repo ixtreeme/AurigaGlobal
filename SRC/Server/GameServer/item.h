@@ -108,7 +108,6 @@ class CItem : public CEntity
 		LPITEM		RemoveFromGround();
 		bool		AddToGround(int32_t lMapIndex, const PIXEL_POSITION & pos, bool skipOwnerCheck = false);
 
-		int			FindEquipCell(LPCHARACTER ch, int bCandidateCell = -1);
 		bool		IsEquipped() const		{ return m_bEquipped;	}
 		bool		EquipTo(LPCHARACTER ch, uint8_t bWearCell);
 		bool		IsEquipable() ;

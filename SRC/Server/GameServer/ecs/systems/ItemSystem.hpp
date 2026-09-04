@@ -92,6 +92,8 @@ int GetItemDuration(entt::entity item);
 int32_t GetItemFlags(entt::entity item);
 uint32_t GetItemWearFlags(entt::entity item);
 uint32_t GetItemWearFlag(entt::entity item);
+
+int FindEquipCell(entt::entity owner, entt::entity item, int candidateCell = -1);
 uint32_t GetItemAntiFlags(entt::entity item);
 uint32_t GetItemAntiFlag(entt::entity item);
 uint32_t GetItemImmuneFlags(entt::entity item);
