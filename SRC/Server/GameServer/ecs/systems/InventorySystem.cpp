@@ -6,6 +6,7 @@
 #include "InventorySystem.hpp"
 #include "ItemSystem.hpp"
 #include "NetworkSyncSystem.hpp"
+#include "ViewSystem.hpp"
 #include "../CharacterAccessors.hpp"
 
 #include "../../config.h"
@@ -573,14 +574,6 @@ entt::entity RemoveFromGround(entt::entity itemEntity)
 
 	SetOwnership(itemEntity, entt::null, 10);
 
-	// The one thing here that is still the view layer's: ViewCleanup walks the
-	// view map calling ViewRemove(this) on each viewer, so it needs an
-	// LPENTITY. It goes when that walk does.
-	LPITEM legacyItem = nullptr;
-	if (const auto* legacy = g_registry.try_get<ecs::LegacyItemPtr>(itemEntity))
-		legacyItem = legacy->ptr;
-	if (!legacyItem)
-		return itemEntity;
 
 	ecs::SpatialService::RemoveEntity(g_registry, itemEntity);
 
@@ -594,7 +587,7 @@ entt::entity RemoveFromGround(entt::entity itemEntity)
 	// gating tag for spatial queries; the kind tag is identity.
 	g_registry.remove<ecs::ItemGroundPosition>(itemEntity);
 
-	legacyItem->ViewCleanup();
+	ecs::ViewSystem::ViewCleanup(itemEntity);
 
 	ItemSystem::SaveItem(itemEntity);
 

@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "ecs/systems/PlayerRuntimeSystem.hpp"
+#include "ecs/systems/ViewSystem.hpp"
 #include "ecs/AIHelpers.hpp"
 #include <Core/Logging.hpp>
 
@@ -37,9 +38,8 @@ void EnsureVisibilityComponents(entt::entity e)
 
 
 
-void MirrorViewClear(LPENTITY owner)
+void MirrorViewClear(entt::entity ownerE)
 {
-	const entt::entity ownerE = EntityOf(owner);
 	if (ownerE == entt::null || !g_registry.valid(ownerE))
 		return;
 
@@ -143,8 +143,13 @@ void DispatchRemove(LPENTITY source, LPENTITY viewer, const char* context)
 
 } // namespace
 
-void CEntity::ViewCleanup()
+namespace ecs::ViewSystem {
+
+void ViewCleanup(entt::entity selfE)
 {
+	if (selfE == entt::null || !g_registry.valid(selfE))
+		return;
+
 	// Phase 15E-final.LPENTITY.4-architect.D.6 + fixup-7:
 	// For characters, m_map_view is no longer maintained (the legacy
 	// CFuncViewInsert poll in UpdateSectree was disabled in D.6). Walk
@@ -177,32 +182,43 @@ void CEntity::ViewCleanup()
 	// Direct SendRemove sidesteps the stale-mirror check entirely. The
 	// MirrorViewClear call below handles the ECS-side ViewMap/ViewerMap
 	// cleanup (both for self and for every reverse pair).
-	if (IsType(ENTITY_CHARACTER))
+	const auto* kind = g_registry.try_get<ecs::SpatialKindTag>(selfE);
+	if (kind && kind->kind == ecs::SpatialKind::Character)
 	{
-		const entt::entity selfE = EntityOf(this);
-		if (selfE != entt::null && g_registry.valid(selfE))
+		if (auto* viewerMap = g_registry.try_get<ecs::ViewerMap>(selfE))
 		{
-			if (auto* viewerMap = g_registry.try_get<ecs::ViewerMap>(selfE))
+			const auto viewers = viewerMap->viewers;
+			for (const entt::entity viewerE : viewers)
 			{
-				// Snapshot - the loop body mutates ViewerMap via
-				// MirrorViewClear at the end.
-				const auto viewers = viewerMap->viewers;
-				for (const entt::entity viewerE : viewers)
-				{
-					if (viewerE == entt::null || !g_registry.valid(viewerE))
-						continue;
-					ecs::EntityNetworkDispatch::SendRemove(g_registry, selfE, viewerE);
-				}
+				if (viewerE == entt::null || !g_registry.valid(viewerE))
+					continue;
+				ecs::EntityNetworkDispatch::SendRemove(g_registry, selfE, viewerE);
 			}
 		}
-		MirrorViewClear(this);
+		MirrorViewClear(selfE);
 		return;
 	}
 
-	for (const auto& [entity, age] : SnapshotView(EntityOf(this)))
-		entity->ViewRemove(this, false);
+	// Non-character sources still go the other way round: walk what this
+	// entity can see and drop itself from each of those views. ViewRemove is
+	// entity-native now, so the LPENTITY resolve SnapshotView did for every
+	// element is gone - the ViewMap set is walked directly, on a copy because
+	// ViewRemove erases from the reverse side.
+	if (const auto* view = g_registry.try_get<ecs::ViewMap>(selfE))
+	{
+		const auto visible = view->visible;
+		for (const entt::entity otherE : visible)
+			ViewRemove(otherE, selfE, false);
+	}
 
-	MirrorViewClear(this);
+	MirrorViewClear(selfE);
+}
+
+} // namespace ecs::ViewSystem
+
+void CEntity::ViewCleanup()
+{
+	ecs::ViewSystem::ViewCleanup(EntityOf(this));
 }
 
 void CEntity::ViewReencode()
@@ -275,10 +291,13 @@ void CEntity::ViewInsert(LPENTITY entity, bool recursive)
 		entity->ViewInsert(this, false);
 }
 
-void CEntity::ViewRemove(LPENTITY entity, bool recursive)
+namespace ecs::ViewSystem {
+
+// Was CEntity::ViewRemove. Every line of it was already component work apart
+// from the observer test and the dispatch fallback, and both of those have
+// entity forms - IsObserverMode reads StatusFlags, SendRemove takes entities.
+void ViewRemove(entt::entity self, entt::entity other, bool recursive)
 {
-	const entt::entity self = EntityOf(this);
-	const entt::entity other = EntityOf(entity);
 	if (self == entt::null || other == entt::null || !g_registry.valid(self))
 		return;
 
@@ -296,11 +315,18 @@ void CEntity::ViewRemove(LPENTITY entity, bool recursive)
 			reverse->viewers.erase(self);
 	}
 
-	if (!entity->m_bIsObserver)
-		DispatchRemove(entity, this, "view.remove");
+	if (!ecs::PlayerRuntime::IsObserverMode(other))
+		ecs::EntityNetworkDispatch::SendRemove(g_registry, self, other);
 
 	if (recursive)
-		entity->ViewRemove(this, false);
+		ViewRemove(other, self, false);
+}
+
+} // namespace ecs::ViewSystem
+
+void CEntity::ViewRemove(LPENTITY entity, bool recursive)
+{
+	ecs::ViewSystem::ViewRemove(EntityOf(this), EntityOf(entity), recursive);
 }
 
 class CFuncViewInsert
