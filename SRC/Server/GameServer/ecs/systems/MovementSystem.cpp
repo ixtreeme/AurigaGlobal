@@ -628,7 +628,8 @@ bool CHARACTER::CanMove() const
 
 	// 0.2AE A?I��� ?o��AI 1?3o�U.
 	/*
-	   if (get_float_time() - m_fSyncTime < 0.2f)
+	   if (const auto* sync = g_registry.try_get<ecs::SyncOwner>(GetEntityHandle());
+		   sync && get_float_time() - sync->syncTime < 0.2f)
 	   return false;
 	 */
 	return true;

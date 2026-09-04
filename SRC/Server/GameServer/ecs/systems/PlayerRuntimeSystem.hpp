@@ -41,6 +41,9 @@ void SetItem(entt::entity e, TItemPos Cell, entt::entity item, bool isHighLight 
 void SetItem(entt::entity e, TItemPos Cell, entt::entity item);
 #endif
 void SetWear(entt::entity e, uint8_t bCell, entt::entity item);
+uint32_t GetAIFlag(entt::entity e);
+void SetLastSyncTime(entt::entity e, const timeval& tv);
+const timeval& GetLastSyncTime(entt::entity e);
 const TMobTable* GetMobTable(entt::entity e);
 uint8_t GetJob(entt::entity e);
 bool ChangeSex(entt::entity e);

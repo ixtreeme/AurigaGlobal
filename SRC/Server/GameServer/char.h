@@ -1137,9 +1137,6 @@ public:
 protected:
 	void			ClearSync();
 
-	float			m_fSyncTime;
-	LPCHARACTER		m_pkChrSyncOwner;
-	CHARACTER_LIST	m_kLst_pkChrSyncOwned;	// ���� SyncOwner�� �ڵ�
 
 	PIXEL_POSITION	m_posStart;
 	PIXEL_POSITION	m_posWarp;
@@ -2401,8 +2398,11 @@ public:
 	bool ResetOneSkill(uint32_t dwVnum);
 	// END_RESET_ONE_SKILL
 
-private:
+public:
+	// Public for NetworkSyncSystem::SetSyncOwner, which is entity-native apart
+	// from this one call - it needs the target axis, which is not migrated.
 	void SendDamagePacket(entt::entity attacker, int Damage, uint8_t DamageFlag);
+private:
 
 	// ARENA
 private:
@@ -2670,11 +2670,10 @@ public:
 private:
 	// SyncPosition�� �ǿ��Ͽ� Ÿ������ �̻��� ������ ������ �� ����ϱ� ���Ͽ�,
 	// SyncPosition�� �Ͼ ���� ���.
-	timeval			m_tvLastSyncTime;
 	int			m_iSyncHackCount;
 public:
-	void			SetLastSyncTime(const timeval& tv) { memcpy(&m_tvLastSyncTime, &tv, sizeof(timeval)); }
-	const timeval& GetLastSyncTime() { return m_tvLastSyncTime; }
+	void			SetLastSyncTime(const timeval& tv);
+	const timeval& GetLastSyncTime() const;
 	void			SetSyncHackCount(int iCount) { m_iSyncHackCount = iCount; }
 	int				GetSyncHackCount() { return m_iSyncHackCount; }
 

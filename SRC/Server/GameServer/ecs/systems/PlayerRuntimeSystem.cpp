@@ -1650,13 +1650,51 @@ uint8_t CHARACTER::GetCharType() const
     return m_bCharType;
 }
 
+void CHARACTER::SetLastSyncTime(const timeval& tv)
+{
+    ecs::PlayerRuntime::SetLastSyncTime(GetEntityHandle(), tv);
+}
+
+const timeval& CHARACTER::GetLastSyncTime() const
+{
+    return ecs::PlayerRuntime::GetLastSyncTime(GetEntityHandle());
+}
+
 uint32_t CHARACTER::GetAIFlag() const
 {
-    if (const auto* flags = TryGetRuntimeFlagsComponent(GetEntityHandle()))
+    return ecs::PlayerRuntime::GetAIFlag(GetEntityHandle());
+}
+
+namespace ecs::PlayerRuntime {
+
+uint32_t GetAIFlag(entt::entity e)
+{
+    if (const auto* flags = TryGetRuntimeFlagsComponent(e))
         return flags->aiFlag;
 
     return 0;
 }
+
+// m_tvLastSyncTime had one reader and one writer and no component; it is
+// ecs::LastSyncTime now.
+void SetLastSyncTime(entt::entity e, const timeval& tv)
+{
+    if (e == entt::null || !g_registry.valid(e))
+        return;
+
+    g_registry.get_or_emplace<ecs::LastSyncTime>(e).tv = tv;
+}
+
+const timeval& GetLastSyncTime(entt::entity e)
+{
+    static const timeval zero { 0, 0 };
+    if (e == entt::null || !g_registry.valid(e))
+        return zero;
+
+    return g_registry.get_or_emplace<ecs::LastSyncTime>(e).tv;
+}
+
+} // namespace ecs::PlayerRuntime
 
 namespace ecs::PlayerRuntime {
 
@@ -5762,7 +5800,7 @@ void CHARACTER::Initialize()
     m_alignAppliedNormal = 0;
     m_alignAppliedSkill = 0;
 
-    m_fSyncTime = get_float_time() - 3;
+    g_registry.get_or_emplace<ecs::SyncOwner>(GetEntityHandle()).syncTime = get_float_time() - 3;
     m_dwPlayerID = 0;
 #ifdef __NEWPET_SYSTEM__
     m_stImmortalSt = 0;
@@ -5820,7 +5858,7 @@ void CHARACTER::Initialize()
 
     m_pkDestroyWhenIdleEvent = nullptr;
 
-    m_pkChrSyncOwner = nullptr;
+    g_registry.get_or_emplace<ecs::SyncOwner>(GetEntityHandle()).owner = entt::null;
 
     memset(&m_points, 0, sizeof(m_points));
     memset(&m_pointsInstant, 0, sizeof(m_pointsInstant));
@@ -6019,7 +6057,6 @@ void CHARACTER::Initialize()
     m_dwCmdAntiFloodCount = 0;
     m_dwCmdAntiFloodPulse = 0;
 #endif
-    memset(&m_tvLastSyncTime, 0, sizeof(m_tvLastSyncTime));
     m_iSyncHackCount = 0;
 #ifdef ENABLE_RANKING
     for (int i = 0; i < RANKING_MAX_CATEGORIES; ++i)

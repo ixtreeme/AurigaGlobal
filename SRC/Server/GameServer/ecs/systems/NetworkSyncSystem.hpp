@@ -9,6 +9,11 @@
 
 namespace NetworkSyncSystem {
 
+bool SetSyncOwner(entt::entity e, entt::entity owner, bool bRemoveFromList = true);
+bool IsSyncOwner(entt::entity e, entt::entity candidate);
+void ClearSync(entt::entity e);
+
+
 void UpdatePacket(entt::entity e);
 void MainCharacterPacket(entt::entity e);
 void PointsPacket(entt::entity e);

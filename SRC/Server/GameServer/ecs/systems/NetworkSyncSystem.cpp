@@ -925,106 +925,159 @@ void SendItemUpdate(entt::registry& reg, entt::entity item)
 
 
 
-bool CHARACTER::SetSyncOwner(entt::entity chEntity, bool bRemoveFromList)
+namespace NetworkSyncSystem {
+
+namespace {
+
+ecs::SyncOwner& SyncOwnerOf(entt::entity e)
 {
-    LPCHARACTER ch = ecs::LegacyCharOf(chEntity);
-    if (IS_SET(GetAIFlag(), AIFLAG_NOMOVE))
+    return g_registry.get_or_emplace<ecs::SyncOwner>(e);
+}
+
+entt::entity CurrentSyncOwner(entt::entity e)
+{
+    if (e == entt::null || !g_registry.valid(e))
+        return entt::null;
+
+    const auto* sync = g_registry.try_get<ecs::SyncOwner>(e);
+    if (!sync || sync->owner == entt::null || !g_registry.valid(sync->owner))
+        return entt::null;
+
+    return sync->owner;
+}
+
+} // namespace
+
+bool IsSyncOwner(entt::entity e, entt::entity candidate)
+{
+    if (CurrentSyncOwner(e) == candidate)
+        return true;
+
+    const auto* sync = g_registry.try_get<ecs::SyncOwner>(e);
+    return !sync || get_float_time() - sync->syncTime >= 3.0f;
+}
+
+bool SetSyncOwner(entt::entity e, entt::entity chEntity, bool bRemoveFromList)
+{
+    if (e == entt::null || !g_registry.valid(e))
         return false;
 
-    if (ch)
+    if (IS_SET(ecs::PlayerRuntime::GetAIFlag(e), AIFLAG_NOMOVE))
+        return false;
+
+    const bool hasOwner = chEntity != entt::null && g_registry.valid(chEntity);
+
+    if (hasOwner)
     {
-        if (!battle_is_attackable(chEntity, GetEntityHandle()))
+        if (!battle_is_attackable(chEntity, e))
         {
-            SendDamagePacket(chEntity, 0, DAMAGE_BLOCK);
+            // The target axis is not migrated - CHARACTER::SetTarget writes
+            // m_pkChrTarget and never touches ecs::CombatTarget, so that
+            // component is not authoritative and SendDamagePacket cannot read
+            // it. One resolve, named, until SetTarget moves.
+            if (LPCHARACTER victim = ecs::LegacyCharOf(e))
+                victim->SendDamagePacket(chEntity, 0, DAMAGE_BLOCK);
             return false;
         }
     }
 
-    if (ch == this)
+    if (chEntity == e)
     {
-        LOG_ERROR("SetSyncOwner owner == this ({})", static_cast<const void*>(this));
+        LOG_ERROR("SetSyncOwner owner == this ({})", static_cast<uint32_t>(e));
         return false;
     }
 
-    if (!ch)
+    if (!hasOwner)
     {
-        if (bRemoveFromList && m_pkChrSyncOwner)
+        const entt::entity previous = CurrentSyncOwner(e);
+        if (previous != entt::null)
         {
-            m_pkChrSyncOwner->m_kLst_pkChrSyncOwned.remove(this);
+            if (bRemoveFromList)
+                g_registry.get_or_emplace<ecs::SyncOwned>(previous).owned.erase(e);
+
+            LOG_TRACE("SyncRelease {} {} from {}", ecs::PlayerRuntime::GetName(e),
+                static_cast<uint32_t>(e), ecs::PlayerRuntime::GetName(previous).data());
         }
 
-        if (m_pkChrSyncOwner)
-            LOG_TRACE("SyncRelease {} {} from {}", GetName(), static_cast<const void*>(this), ecs::PlayerRuntime::GetName(m_pkChrSyncOwner->GetEntityHandle()).data());
-
-        m_pkChrSyncOwner = nullptr;
+        SyncOwnerOf(e).owner = entt::null;
     }
     else
     {
-		const entt::entity syncOwner = ch->GetEntityHandle();
-        if (!IsSyncOwner(chEntity))
+        if (!IsSyncOwner(e, chEntity))
             return false;
 
         if (DISTANCE_APPROX(
-				GetX() - ecs::PlayerRuntime::GetX(syncOwner),
-				GetY() - ecs::PlayerRuntime::GetY(syncOwner)) > 250)
+                ecs::PlayerRuntime::GetX(e) - ecs::PlayerRuntime::GetX(chEntity),
+                ecs::PlayerRuntime::GetY(e) - ecs::PlayerRuntime::GetY(chEntity)) > 250)
         {
-            LOG_TRACE("SetSyncOwner distance over than 250 {} {}", GetName(), ecs::PlayerRuntime::GetName(syncOwner).data());
+            LOG_TRACE("SetSyncOwner distance over than 250 {} {}",
+                ecs::PlayerRuntime::GetName(e), ecs::PlayerRuntime::GetName(chEntity).data());
 
-            if (m_pkChrSyncOwner == ch)
-                return true;
-
-            return false;
+            return CurrentSyncOwner(e) == chEntity;
         }
 
-        if (m_pkChrSyncOwner != ch)
+        if (CurrentSyncOwner(e) != chEntity)
         {
-            if (m_pkChrSyncOwner)
+            if (const entt::entity previous = CurrentSyncOwner(e); previous != entt::null)
             {
-                LOG_TRACE("SyncRelease {} {} from {}", GetName(), static_cast<const void*>(this), ecs::PlayerRuntime::GetName(m_pkChrSyncOwner->GetEntityHandle()).data());
-                m_pkChrSyncOwner->m_kLst_pkChrSyncOwned.remove(this);
+                LOG_TRACE("SyncRelease {} {} from {}", ecs::PlayerRuntime::GetName(e),
+                    static_cast<uint32_t>(e), ecs::PlayerRuntime::GetName(previous).data());
+                g_registry.get_or_emplace<ecs::SyncOwned>(previous).owned.erase(e);
             }
 
-            m_pkChrSyncOwner = ch;
-            m_pkChrSyncOwner->m_kLst_pkChrSyncOwned.push_back(this);
+            SyncOwnerOf(e).owner = chEntity;
+            g_registry.get_or_emplace<ecs::SyncOwned>(chEntity).owned.insert(e);
 
             static const timeval zero_tv = { 0, 0 };
-            SetLastSyncTime(zero_tv);
+            ecs::PlayerRuntime::SetLastSyncTime(e, zero_tv);
 
-            LOG_TRACE("SetSyncOwner set {} {} to {}", GetName(), static_cast<const void*>(this), ecs::PlayerRuntime::GetName(syncOwner).data());
+            LOG_TRACE("SetSyncOwner set {} {} to {}", ecs::PlayerRuntime::GetName(e),
+                static_cast<uint32_t>(e), ecs::PlayerRuntime::GetName(chEntity).data());
         }
 
-        m_fSyncTime = get_float_time();
+        SyncOwnerOf(e).syncTime = get_float_time();
     }
 
     TPacketGCOwnership pack;
 
     pack.bHeader = HEADER_GC_OWNERSHIP;
-    pack.dwOwnerVID = ch
-		? ecs::PlayerRuntime::GetPacketVID(ch->GetEntityHandle())
-		: 0;
-    pack.dwVictimVID = GetPacketVID();
+    pack.dwOwnerVID = hasOwner ? ecs::PlayerRuntime::GetPacketVID(chEntity) : 0;
+    pack.dwVictimVID = ecs::PlayerRuntime::GetPacketVID(e);
 
-    ecs::NetworkService::BroadcastToView(g_registry, GetEntityHandle(), &pack, sizeof(pack), false);
+    ecs::NetworkService::BroadcastToView(g_registry, e, &pack, sizeof(pack), false);
     return true;
+}
+
+void ClearSync(entt::entity e)
+{
+    SetSyncOwner(e, entt::null, true);
+
+    if (auto* owned = g_registry.try_get<ecs::SyncOwned>(e))
+    {
+        // Copied: each SetSyncOwner erases from this very set.
+        const auto members = owned->owned;
+        for (const entt::entity member : members)
+            SetSyncOwner(member, entt::null, false);
+
+        owned->owned.clear();
+    }
+}
+
+} // namespace NetworkSyncSystem
+
+bool CHARACTER::SetSyncOwner(entt::entity chEntity, bool bRemoveFromList)
+{
+    return NetworkSyncSystem::SetSyncOwner(GetEntityHandle(), chEntity, bRemoveFromList);
 }
 
 void CHARACTER::ClearSync()
 {
-    SetSyncOwner(entt::null);
-    std::for_each(m_kLst_pkChrSyncOwned.begin(), m_kLst_pkChrSyncOwned.end(), FuncClearSync());
-    m_kLst_pkChrSyncOwned.clear();
+    NetworkSyncSystem::ClearSync(GetEntityHandle());
 }
 
 bool CHARACTER::IsSyncOwner(entt::entity chEntity) const
 {
-    LPCHARACTER ch = ecs::LegacyCharOf(chEntity);
-    if (m_pkChrSyncOwner == ch)
-        return true;
-
-    if (get_float_time() - m_fSyncTime >= 3.0f)
-        return true;
-
-    return false;
+    return NetworkSyncSystem::IsSyncOwner(GetEntityHandle(), chEntity);
 }
 
 void NetworkSyncSystem_Update(entt::registry& reg, uint32_t tick)

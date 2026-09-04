@@ -1,6 +1,7 @@
 #pragma once
 
 #include <map>
+#include <unordered_set>
 
 #include <cstdint>
 
@@ -45,6 +46,23 @@ struct CharacterRuntimeFlagsComponent {
 // the character is torn down, the same job CHARACTER's destructor used to do.
 struct BuffOnAttrs {
     std::map<uint8_t, CBuffOnAttributes*> pools;
+};
+
+// Who currently owns this character's movement sync, and the reverse edge.
+// Legacy kept these as m_pkChrSyncOwner plus a CHARACTER_LIST of the characters
+// this one owns; the list was only ever iterated, appended to and removed from
+// by identity, so a set says the same thing and makes the removal O(1).
+struct LastSyncTime {
+    timeval tv { 0, 0 };
+};
+
+struct SyncOwner {
+    entt::entity owner { entt::null };
+    float syncTime { 0.0f };
+};
+
+struct SyncOwned {
+    std::unordered_set<entt::entity> owned;
 };
 
 struct MountInventoryRef {
