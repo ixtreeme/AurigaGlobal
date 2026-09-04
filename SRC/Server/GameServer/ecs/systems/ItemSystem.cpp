@@ -2519,6 +2519,21 @@ static bool CanPutIntoRing(entt::entity ring, entt::entity item)
 	return false;
 }
 
+bool IsSameSpecialGroup(entt::entity item, entt::entity other)
+{
+    // Answers false for an absent item rather than crashing: the three call
+    // sites are wear slots, which are routinely empty. The method version was
+    // guarded by a GetWear null test at each one.
+    if (!IsValidItem(item) || !IsValidItem(other))
+        return false;
+
+    if (GetItemVnum(item) == GetItemVnum(other))
+        return true;
+
+    const int group = GetItemSpecialGroup(item);
+    return group != 0 && GetItemSpecialGroup(other) == group;
+}
+
 bool DistanceValid(entt::entity itemEntity, entt::entity character)
 {
 	if (!ecs::PlayerRuntime::GetSectree(itemEntity))

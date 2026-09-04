@@ -1650,16 +1650,6 @@ bool CItem::IsDragonSoul()
 	return GetType() == ITEM_DS;
 }
 
-bool CItem::IsSameSpecialGroup(const LPITEM item) const
-{
-	if (ItemVnumOrLegacy(const_cast<LPITEM>(this)) == ItemVnumOrLegacy(item))
-		return true;
-
-	if (GetSpecialGroup() && (item->GetSpecialGroup() == GetSpecialGroup()))
-		return true;
-
-	return false;
-}
 
 bool CItem::IsExtraItem()
 {
@@ -2829,6 +2819,7 @@ bool CHARACTER::UnEquipSpecialRideUniqueItem()
 
 bool CHARACTER::CanEquipNow(const LPITEM item, const TItemPos & srcCell, const TItemPos & destCell) /*const*/
 {
+	const entt::entity itemEntity = item ? item->GetEntityHandle() : entt::null;
 	const TItemTable* itemTable = item->GetProto();
 	//uint8_t itemType = item->GetType();
 	//uint8_t itemSubType = item->GetSubType();
@@ -2928,9 +2919,12 @@ bool CHARACTER::CanEquipNow(const LPITEM item, const TItemPos & srcCell, const T
 			item->GetSubType() == 5;
 
 		if (!bAllowDualUnique &&
-			((GetWear(WEAR_UNIQUE1) && GetWear(WEAR_UNIQUE1)->IsSameSpecialGroup(item)) ||
-				(GetWear(WEAR_UNIQUE2) && GetWear(WEAR_UNIQUE2)->IsSameSpecialGroup(item)) ||
-				(GetWear(WEAR_COSTUME_MOUNT) && GetWear(WEAR_COSTUME_MOUNT)->IsSameSpecialGroup(item))))
+			(ItemSystem::IsSameSpecialGroup(
+					ItemSystem::GetWearItem(GetEntityHandle(), WEAR_UNIQUE1), itemEntity) ||
+				ItemSystem::IsSameSpecialGroup(
+					ItemSystem::GetWearItem(GetEntityHandle(), WEAR_UNIQUE2), itemEntity) ||
+				ItemSystem::IsSameSpecialGroup(
+					ItemSystem::GetWearItem(GetEntityHandle(), WEAR_COSTUME_MOUNT), itemEntity)))
 		{
 #ifdef TEXTS_IMPROVEMENT
 			ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 695, "");

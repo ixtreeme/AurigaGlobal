@@ -192,7 +192,6 @@ class CItem : public CEntity
 		void		ApplyAddon(int iAddonType);
 
 		int		GetSpecialGroup() const;
-		bool	IsSameSpecialGroup(const LPITEM item) const;
 
 		// ACCESSORY_REFINE
 		// 액세서리에 광산을 통해 소켓을 추가
