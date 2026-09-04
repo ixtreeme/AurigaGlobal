@@ -57,8 +57,6 @@ class CEntity
 		LPSECTREE		GetSectree() const;
 
 		void			UpdateSectree();
-		void			PacketAround(const void * data, int bytes, LPENTITY except = nullptr);
-		void			PacketView(const void * data, int bytes, LPENTITY except = nullptr);
 
 		void			BindDesc(LPDESC _d)     { m_lpDesc = _d; }
 		LPDESC			GetDesc() const			{ return m_lpDesc; }

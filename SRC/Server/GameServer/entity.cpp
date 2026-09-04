@@ -148,11 +148,6 @@ bool CEntity::IsType(int type) const
 }
 
 
-void CEntity::PacketAround(const void * data, int bytes, LPENTITY except)
-{
-
-	PacketView(data, bytes, except);
-}
 
 namespace ecs::ViewSystem {
 
@@ -267,12 +262,6 @@ void PacketView(entt::entity self, const void* data, int bytes, entt::entity exc
 
 } // namespace ecs::ViewSystem
 
-void CEntity::PacketView(const void * data, int bytes, LPENTITY except)
-{
-	ecs::ViewSystem::PacketView(
-		ecs::SpatialService::EntityFromLPENTITY(this), data, bytes,
-		ecs::SpatialService::EntityFromLPENTITY(except));
-}
 
 void CEntity::SetObserverMode(bool bFlag)
 {

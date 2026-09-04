@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "ecs/systems/ViewSystem.hpp"
 #include "ecs/systems/AffectSystem.hpp"
 #include <Core/Logging.hpp>
 #include "ecs/systems/PlayerRuntimeSystem.hpp"
@@ -346,7 +347,7 @@ bool COXEventManager::CheckAnswer(bool answer)
 				buf.write(&pack_chat, sizeof(TPacketGCChat));
 				buf.write(chatbuf, len);
 
-				pkChar->PacketAround(buf.read_peek(), buf.size());
+				ecs::ViewSystem::PacketView(pkChar->GetEntityHandle(), buf.read_peek(), buf.size());
 			NetworkSyncSystem::BroadcastEffect(g_registry, ((pkChar) ? (pkChar)->GetEntityHandle() : entt::null), SE_SUCCESS);
 
 				++iter;

@@ -1,4 +1,5 @@
 #include "../../stdafx.h"
+#include "ViewSystem.hpp"
 #include "AffectSystem.hpp"
 
 #include "PlayerRuntimeSystem.hpp"
@@ -553,7 +554,7 @@ void CHARACTER::Standup()
 	pack_position.vid = GetPacketVID();
 	pack_position.position = POSITION_GENERAL;
 
-	PacketAround(&pack_position, sizeof(pack_position));
+	ecs::ViewSystem::PacketView(GetEntityHandle(), &pack_position, sizeof(pack_position));
 }
 
 void CHARACTER::Sitdown(int is_ground)
@@ -569,7 +570,7 @@ void CHARACTER::Sitdown(int is_ground)
 	pack_position.header = HEADER_GC_CHARACTER_POSITION;
 	pack_position.vid = GetPacketVID();
 	pack_position.position = POSITION_SITTING_GROUND;
-	PacketAround(&pack_position, sizeof(pack_position));
+	ecs::ViewSystem::PacketView(GetEntityHandle(), &pack_position, sizeof(pack_position));
 }
 
 #ifdef ENABLE_ANCIENT_PYRAMID
@@ -987,7 +988,7 @@ void CHARACTER::SendMovePacket(uint8_t bFunc, uint8_t bArg, uint32_t x, uint32_t
 		EncodeMovePacket(pack, GetPacketVID(), bFunc, bArg, x, y, dwDuration, dwTime, GetRotation() / 5.0f);
 	else
 		EncodeMovePacket(pack, GetPacketVID(), bFunc, bArg, x, y, dwDuration, dwTime, iRot);
-	PacketView(&pack, sizeof(TPacketGCMove), this);
+	ecs::ViewSystem::PacketView(GetEntityHandle(), &pack, sizeof(TPacketGCMove), GetEntityHandle());
 }
 
 void CHARACTER::MotionPacketEncode(uint8_t motion, entt::entity victimEntity, struct packet_motion* packet)
@@ -1008,7 +1009,7 @@ void CHARACTER::Motion(uint8_t motion, entt::entity victimEntity)
 	LPCHARACTER victim = ecs::LegacyCharOf(victimEntity);
 	struct packet_motion pack_motion;
 	MotionPacketEncode(motion, victimEntity, &pack_motion);
-	PacketAround(&pack_motion, sizeof(struct packet_motion));
+	ecs::ViewSystem::PacketView(GetEntityHandle(), &pack_motion, sizeof(struct packet_motion));
 }
 
 // Phase 15E-final.LPENTITY.4-architect.B.1.2:
@@ -1186,7 +1187,7 @@ void CHARACTER::SetNowWalking(bool bWalkFlag)
             p.header = HEADER_GC_WALK_MODE;
             p.mode = bWalkFlag ? WALKMODE_WALK : WALKMODE_RUN;
 
-            PacketView(&p, sizeof(p));
+            ecs::ViewSystem::PacketView(GetEntityHandle(), &p, sizeof(p));
         }
 
         if (IsNPC())

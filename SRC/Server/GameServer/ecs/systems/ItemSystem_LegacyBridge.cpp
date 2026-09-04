@@ -1,4 +1,5 @@
 #include "../../stdafx.h"
+#include "ViewSystem.hpp"
 #include "PlayerRuntimeSystem.hpp"
 #include "AffectSystem.hpp"
 #include "ActivitySystem.hpp"
@@ -16620,7 +16621,7 @@ EVENTFUNC(ownership_event)
 	p.dwVID = pkItem->GetVID();
 	p.szName[0] = '\0';
 
-	pkItem->PacketAround(&p, sizeof(p));
+	ecs::ViewSystem::PacketView(pkItem->GetEntityHandle(), &p, sizeof(p));
 	return 0;
 }
 

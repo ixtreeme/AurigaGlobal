@@ -1,4 +1,5 @@
 #include "../../stdafx.h"
+#include "ViewSystem.hpp"
 
 #include "PointSystem.hpp"
 #include "PointRouter.hpp"
@@ -1576,7 +1577,7 @@ void Change(entt::entity e, uint8_t type, int64_t amount, bool bAmount, bool bBr
 		if (!bBroadcast)
 			ecs::PlayerRuntime::GetDesc(e)->Packet(&pack, sizeof(struct packet_point_change));
 		else
-			if (ch) ch->PacketAround(&pack, sizeof(pack));
+			if (ch) ecs::ViewSystem::PacketView(ch->GetEntityHandle(), &pack, sizeof(pack));
 	}
 }
 
@@ -1604,7 +1605,7 @@ void CHARACTER::SendPetLevelUpEffect(int vid, int type, int value, int amount) {
 	pack.type = type;
 	pack.value = value;
 	pack.amount = amount;
-	PacketAround(&pack, sizeof(pack));
+	ecs::ViewSystem::PacketView(GetEntityHandle(), &pack, sizeof(pack));
 }
 #endif
 

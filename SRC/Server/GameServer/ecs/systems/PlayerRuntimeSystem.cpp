@@ -5609,7 +5609,7 @@ void CHARACTER::OpenMyShop(const char* c_pszSign, TShopItemTable* pTable, uint8_
 #ifdef KASMIR_PAKET_SYSTEM
     p.bShopKasmirTitle = KasmirBaslik;
 #endif
-    PacketAround(&p, sizeof(TPacketGCShopSign));
+    ecs::ViewSystem::PacketView(GetEntityHandle(), &p, sizeof(TPacketGCShopSign));
 
     m_pkMyShop = CShopManager::instance().CreatePCShop(this, pTable, bItemCount);
     if (const auto e = GetEntityHandle(); e != entt::null && g_registry.valid(e))
@@ -5671,7 +5671,7 @@ void CHARACTER::CloseMyShop()
 #endif
         p.szSign[0] = '\0';
 
-        PacketAround(&p, sizeof(p));
+        ecs::ViewSystem::PacketView(GetEntityHandle(), &p, sizeof(p));
 #ifdef ENABLE_WOLFMAN_CHARACTER
         SetPolymorph(m_points.job, true);
 #else

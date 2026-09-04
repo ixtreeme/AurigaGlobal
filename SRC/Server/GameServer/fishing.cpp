@@ -1,5 +1,6 @@
 //#define __FISHING_MAIN__
 #include "stdafx.h"
+#include "ecs/systems/ViewSystem.hpp"
 #include "ecs/systems/InventorySystem.hpp"
 #include "ecs/systems/PointSystem.hpp"
 #include "ecs/systems/AffectSystem.hpp"
@@ -332,7 +333,7 @@ void FishingReact(LPCHARACTER ch)
 	p.header = HEADER_GC_FISHING;
 	p.subheader = FISHING_SUBHEADER_GC_REACT;
 	p.info = ecs::PlayerRuntime::GetPacketVID(((ch) ? (ch)->GetEntityHandle() : entt::null));
-	ch->PacketAround(&p, sizeof(p));
+	ecs::ViewSystem::PacketView(ch->GetEntityHandle(), &p, sizeof(p));
 }
 
 void FishingSuccess(LPCHARACTER ch)
@@ -341,7 +342,7 @@ void FishingSuccess(LPCHARACTER ch)
 	p.header = HEADER_GC_FISHING;
 	p.subheader = FISHING_SUBHEADER_GC_SUCCESS;
 	p.info = ecs::PlayerRuntime::GetPacketVID(((ch) ? (ch)->GetEntityHandle() : entt::null));
-	ch->PacketAround(&p, sizeof(p));
+	ecs::ViewSystem::PacketView(ch->GetEntityHandle(), &p, sizeof(p));
 }
 
 void FishingFail(LPCHARACTER ch)
@@ -350,7 +351,7 @@ void FishingFail(LPCHARACTER ch)
 	p.header = HEADER_GC_FISHING;
 	p.subheader = FISHING_SUBHEADER_GC_FAIL;
 	p.info = ecs::PlayerRuntime::GetPacketVID(((ch) ? (ch)->GetEntityHandle() : entt::null));
-	ch->PacketAround(&p, sizeof(p));
+	ecs::ViewSystem::PacketView(ch->GetEntityHandle(), &p, sizeof(p));
 }
 
 void FishingPractice(LPCHARACTER ch)
@@ -466,7 +467,7 @@ LPEVENT CreateFishingEvent(LPCHARACTER ch)
 	p.subheader	= FISHING_SUBHEADER_GC_START;
 	p.info		= ecs::PlayerRuntime::GetPacketVID(chEntity);
 	p.dir		= (uint8_t)(ch->GetRotation()/5);
-	ch->PacketAround(&p, sizeof(TPacketGCFishing));
+	ecs::ViewSystem::PacketView(ch->GetEntityHandle(), &p, sizeof(TPacketGCFishing));
 
 	return event_create(fishing_event, info, PASSES_PER_SEC(time));
 }
@@ -641,7 +642,7 @@ void Take(fishing_event_info* info, LPCHARACTER ch)
 		p.header = HEADER_GC_FISHING;
 		p.subheader = FISHING_SUBHEADER_GC_STOP;
 		p.info = ecs::PlayerRuntime::GetPacketVID(chEntity);
-		ch->PacketAround(&p, sizeof(p));
+		ecs::ViewSystem::PacketView(ch->GetEntityHandle(), &p, sizeof(p));
 	}
 
 	if (info->step)

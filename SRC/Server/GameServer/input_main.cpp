@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "ecs/systems/ViewSystem.hpp"
 #include "ecs/systems/AffectSystem.hpp"
 #include <Core/Logging.hpp>
 #include "ecs/systems/PlayerRuntimeSystem.hpp"
@@ -2438,7 +2439,7 @@ void CInputMain::Move(entt::entity character, const char * data)
 	pack.dwTime       = pinfo->dwTime;
 	pack.dwDuration   = (pinfo->bFunc == FUNC_MOVE) ? ch->GetCurrentMoveDuration() : 0;
 
-	ch->PacketAround(&pack, sizeof(TPacketGCMove), ch);
+	ecs::ViewSystem::PacketView(ch->GetEntityHandle(), &pack, sizeof(TPacketGCMove), ch->GetEntityHandle());
 /*
 	if (pinfo->dwTime == 10653691) // 디버거 발견
 	{
@@ -2768,7 +2769,7 @@ int CInputMain::SyncPosition(entt::entity character, const char * c_pcData, uint
 		pHeader->bHeader = HEADER_GC_SYNC_POSITION;
 		pHeader->wSize = buffer_size(lpBuf);
 
-		ch->PacketAround(buffer_read_peek(lpBuf), buffer_size(lpBuf), ch);
+		ecs::ViewSystem::PacketView(ch->GetEntityHandle(), buffer_read_peek(lpBuf), buffer_size(lpBuf), ch->GetEntityHandle());
 	}
 
 	return iExtraLen;

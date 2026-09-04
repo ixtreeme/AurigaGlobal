@@ -1,4 +1,5 @@
 #include "../../stdafx.h"
+#include "ViewSystem.hpp"
 #include "PlayerRuntimeSystem.hpp"
 
 #include "MountSystem.hpp"
@@ -476,7 +477,7 @@ void HorseSummon(entt::entity rider, bool bSummon, bool bFromFar, uint32_t dwVnu
 			TPacketGCDead pack;
 			pack.header	= HEADER_GC_DEAD;
 			pack.vid    = ecs::PlayerRuntime::GetPacketVID(ecs::LegacyCharOf(GetSummonedHorse(rider))->GetEntityHandle());
-			ecs::LegacyCharOf(rider)->PacketAround(&pack, sizeof(pack));
+			ecs::ViewSystem::PacketView(rider, &pack, sizeof(pack));
 		}
 
 		ecs::LegacyCharOf(GetSummonedHorse(rider))->SetRider(rider);

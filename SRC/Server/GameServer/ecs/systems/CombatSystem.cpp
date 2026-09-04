@@ -1978,7 +1978,7 @@ void CHARACTER::Dead(entt::entity killer, bool bImmediateDead)
 	//	TPacketGCDead pack;
 	//	pack.header = HEADER_GC_DEAD;
 	//	pack.vid = GetPacketVID();
-	//	PacketAround(&pack, sizeof(pack));
+	//	ecs::ViewSystem::PacketView(GetEntityHandle(), &pack, sizeof(pack));
 
 	//	if (auto* flags = RuntimeFlags(GetEntityHandle()))
 	//		REMOVE_BIT(flags->instantFlag, INSTANT_FLAG_STUN);
@@ -2397,7 +2397,7 @@ void CHARACTER::Dead(entt::entity killer, bool bImmediateDead)
 	TPacketGCDead pack;
 	pack.header = HEADER_GC_DEAD;
 	pack.vid = GetPacketVID();
-	PacketAround(&pack, sizeof(pack));
+	ecs::ViewSystem::PacketView(GetEntityHandle(), &pack, sizeof(pack));
 
 		if (auto* flags = RuntimeFlags(GetEntityHandle()))
 		REMOVE_BIT(flags->instantFlag, INSTANT_FLAG_STUN);
@@ -2596,7 +2596,7 @@ void CHARACTER::CreateFly(uint8_t bType, entt::entity victim)
 	packFly.dwStartVID = GetPacketVID();
 	packFly.dwEndVID = ecs::PlayerRuntime::GetPacketVID(victim);
 
-	PacketAround(&packFly, sizeof(TPacketGCCreateFly));
+	ecs::ViewSystem::PacketView(GetEntityHandle(), &packFly, sizeof(TPacketGCCreateFly));
 }
 
 bool CHARACTER::Attack(entt::entity victim, uint8_t bType)
@@ -6570,7 +6570,7 @@ void CHARACTER::FlyTarget(uint32_t dwTargetVID, int32_t x, int32_t y, uint8_t bH
 	}
 
 	LOG_INFO("FlyTarget {} vid {} x {} y {}", GetName(), pack.dwTargetVID, pack.x, pack.y);
-	PacketAround(&pack, sizeof(pack), this);
+	ecs::ViewSystem::PacketView(GetEntityHandle(), &pack, sizeof(pack), GetEntityHandle());
 }
 
 LPCHARACTER CHARACTER::GetNearestVictim(entt::entity chr)
@@ -6723,7 +6723,7 @@ void CHARACTER::Stun()
 	TPacketGCStun pack;
 	pack.header = HEADER_GC_STUN;
 	pack.vid = GetPacketVID();
-	PacketAround(&pack, sizeof(pack));
+	ecs::ViewSystem::PacketView(GetEntityHandle(), &pack, sizeof(pack));
 
 		if (auto* flags = RuntimeFlags(GetEntityHandle()))
 		SET_BIT(flags->instantFlag, INSTANT_FLAG_STUN);
@@ -6818,7 +6818,7 @@ void CHARACTER::SendDamagePacket(entt::entity attacker, int Damage, uint8_t Dama
 		damageInfo.flag = DamageFlag;
 		damageInfo.damage = Damage;
 #ifdef ENABLE_TARGET_DAMAGE_RAZOR93
-		PacketAround(&damageInfo, sizeof(TPacketGCDamageInfo));
+		ecs::ViewSystem::PacketView(GetEntityHandle(), &damageInfo, sizeof(TPacketGCDamageInfo));
 		return;
 #endif
 

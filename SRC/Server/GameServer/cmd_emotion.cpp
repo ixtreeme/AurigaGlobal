@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "ecs/systems/ViewSystem.hpp"
 #include "ecs/AIHelpers.hpp"
 #include "ecs/systems/PlayerRuntimeSystem.hpp"
 #include "ecs/systems/NetworkSyncSystem.hpp"
@@ -302,7 +303,7 @@ ACMD(do_emotion)
 	buf.write(&pack_chat, sizeof(TPacketGCChat));
 	buf.write(chatbuf, len);
 
-	ch->PacketAround(buf.read_peek(), buf.size());
+	ecs::ViewSystem::PacketView(ch->GetEntityHandle(), buf.read_peek(), buf.size());
 
 	if (victim)
 		LOG_INFO("ACTION: {} TO {}", emotion_types[i].command, ecs::PlayerRuntime::GetName(((victim) ? (victim)->GetEntityHandle() : entt::null)).data());
