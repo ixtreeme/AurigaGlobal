@@ -2269,7 +2269,6 @@ ACMD(do_max_pick)
 
 ACMD(do_fishing_simul)
 {
-	LPCHARACTER ch = ecs::LegacyCharOf(character);
 	char arg1[256];
 	char arg2[256];
 	char arg3[256];
@@ -2291,7 +2290,7 @@ ACMD(do_fishing_simul)
 	if (*arg3)
 		str_to_number(count, arg3);
 
-	fishing::Simulation(level, count, prob_idx, ch);
+	fishing::Simulation(level, count, prob_idx, character);
 }
 
 ACMD(do_invisibility)

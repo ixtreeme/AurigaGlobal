@@ -626,6 +626,7 @@ LPEVENT* CharEventSlot(entt::entity e, ecs::PlayerRuntime::CharEvent slot)
     case ecs::PlayerRuntime::CharEvent::Dead:     return &events.dead;
     case ecs::PlayerRuntime::CharEvent::Stun:     return &events.stun;
     case ecs::PlayerRuntime::CharEvent::Recovery: return &events.recovery;
+    case ecs::PlayerRuntime::CharEvent::Fishing:  return &events.fishing;
     }
     return nullptr;
 }
@@ -2702,6 +2703,14 @@ void CHARACTER::UpdateMissionProgress(uint32_t dwMissionID, uint32_t dwBattlePas
     GetDesc()->Packet(&packet, sizeof(TPacketGCBattlePassUpdate));
 }
 
+namespace ecs::PlayerRuntime {
+uint8_t GetBattlePassId(entt::entity e)
+{
+    const CAffect* affect = AffectSystem::FindAffect(e, AFFECT_BATTLE_PASS, POINT_BATTLE_PASS_ID);
+    return affect ? static_cast<uint8_t>(affect->lApplyValue) : 0;
+}
+}
+
 uint8_t CHARACTER::GetBattlePassId()
 {
     CAffect* pAffect = FindAffect(AFFECT_BATTLE_PASS, POINT_BATTLE_PASS_ID);
@@ -4498,7 +4507,7 @@ void CHARACTER::Destroy()
     event_cancel(&m_pkSaveEvent);
     event_cancel(&m_pkTimedEvent);
     ecs::PlayerRuntime::CancelCharEvent(GetEntityHandle(), ecs::PlayerRuntime::CharEvent::Stun);
-    event_cancel(&m_pkFishingEvent);
+    ecs::PlayerRuntime::CancelCharEvent(GetEntityHandle(), ecs::PlayerRuntime::CharEvent::Fishing);
     AffectSystem::CancelDamageEvents(GetEntityHandle());
     event_cancel(&m_pkPartyRequestEvent);
     event_cancel(&m_pkWarpEvent);
@@ -5936,7 +5945,7 @@ void CHARACTER::Initialize()
     m_pkWarpNPCEvent = nullptr;
     m_pkSaveEvent = nullptr;
     m_pkTimedEvent = nullptr;
-    m_pkFishingEvent = nullptr;
+    ecs::PlayerRuntime::SetCharEvent(GetEntityHandle(), ecs::PlayerRuntime::CharEvent::Fishing, nullptr);
     m_pkWarpEvent = nullptr;
 #ifdef ENABLE_BATTLE_PASS_STAY_ONLINE
     m_pkBattlePassStayOnlineEvent = nullptr;

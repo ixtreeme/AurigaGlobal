@@ -10364,7 +10364,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 		case USE_BAIT:
 		{
 
-			if (m_pkFishingEvent
+			if (ecs::PlayerRuntime::GetCharEvent(GetEntityHandle(), ecs::PlayerRuntime::CharEvent::Fishing)
 #ifdef ENABLE_NEW_FISHING_SYSTEM
 				|| ActivitySystem::IsFishing(GetEntityHandle())
 #endif

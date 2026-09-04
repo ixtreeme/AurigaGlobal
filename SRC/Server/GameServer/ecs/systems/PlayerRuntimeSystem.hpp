@@ -107,7 +107,7 @@ void SetImmuneFlag(entt::entity e, uint32_t value);
 
 // The three timed events that used to be CHARACTER members. Slot names the
 // one being addressed; Cancel runs event_cancel on it, Set stores or clears.
-enum class CharEvent : uint8_t { Dead, Stun, Recovery };
+enum class CharEvent : uint8_t { Dead, Stun, Recovery, Fishing };
 LPEVENT GetCharEvent(entt::entity e, CharEvent slot);
 void SetCharEvent(entt::entity e, CharEvent slot, LPEVENT ev);
 void CancelCharEvent(entt::entity e, CharEvent slot);
@@ -123,6 +123,7 @@ bool IsStone(entt::entity e);
 bool IsMonster(entt::entity e);
 uint8_t GetMobRank(entt::entity e);
 int GetPremiumRemainSeconds(entt::entity e, uint8_t premiumType);
+uint8_t GetBattlePassId(entt::entity e);
 bool IsPCBang(entt::entity e);
 bool IsObserverMode(entt::entity e);
 bool IsArenaObserverMode(entt::entity e);

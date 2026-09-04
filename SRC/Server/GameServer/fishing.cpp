@@ -287,16 +287,15 @@ int GetProbIndexByMapIndex(int index)
 }
 
 #ifndef __FISHING_MAIN__
-int DetermineFish(LPCHARACTER ch) {
-	const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
-	int map_idx = ecs::PlayerRuntime::GetMapIndex(chEntity);
+int DetermineFish(entt::entity ch) {
+	int map_idx = ecs::PlayerRuntime::GetMapIndex(ch);
 	int prob_idx = GetProbIndexByMapIndex(map_idx);
 
 	if (prob_idx < 0)
 		return 0;
 
 	// ADD_PREMIUM
-	if (ch->GetPremiumRemainSeconds(PREMIUM_FISH_MIND) > 0 || ch->IsEquipUniqueGroup(UNIQUE_GROUP_FISH_MIND) || ecs::PointSystem::Get(chEntity, POINT_FISHING_RARE) > 0)
+	if (ecs::PlayerRuntime::GetPremiumRemainSeconds(ch, PREMIUM_FISH_MIND) > 0 || ItemSystem::IsEquipUniqueGroup(ch, UNIQUE_GROUP_FISH_MIND) || ecs::PointSystem::Get(ch, POINT_FISHING_RARE) > 0)
 	{
 		if (quest::CQuestManager::instance().GetEventFlag("manwoo") != 0)
 			prob_idx = 3;
@@ -327,53 +326,52 @@ int DetermineFish(LPCHARACTER ch) {
 	return (fish_idx);
 }
 
-void FishingReact(LPCHARACTER ch)
+void FishingReact(entt::entity ch)
 {
 	TPacketGCFishing p;
 	p.header = HEADER_GC_FISHING;
 	p.subheader = FISHING_SUBHEADER_GC_REACT;
-	p.info = ecs::PlayerRuntime::GetPacketVID(((ch) ? (ch)->GetEntityHandle() : entt::null));
-	ecs::ViewSystem::PacketView(ch->GetEntityHandle(), &p, sizeof(p));
+	p.info = ecs::PlayerRuntime::GetPacketVID(ch);
+	ecs::ViewSystem::PacketView(ch, &p, sizeof(p));
 }
 
-void FishingSuccess(LPCHARACTER ch)
+void FishingSuccess(entt::entity ch)
 {
 	TPacketGCFishing p;
 	p.header = HEADER_GC_FISHING;
 	p.subheader = FISHING_SUBHEADER_GC_SUCCESS;
-	p.info = ecs::PlayerRuntime::GetPacketVID(((ch) ? (ch)->GetEntityHandle() : entt::null));
-	ecs::ViewSystem::PacketView(ch->GetEntityHandle(), &p, sizeof(p));
+	p.info = ecs::PlayerRuntime::GetPacketVID(ch);
+	ecs::ViewSystem::PacketView(ch, &p, sizeof(p));
 }
 
-void FishingFail(LPCHARACTER ch)
+void FishingFail(entt::entity ch)
 {
 	TPacketGCFishing p;
 	p.header = HEADER_GC_FISHING;
 	p.subheader = FISHING_SUBHEADER_GC_FAIL;
-	p.info = ecs::PlayerRuntime::GetPacketVID(((ch) ? (ch)->GetEntityHandle() : entt::null));
-	ecs::ViewSystem::PacketView(ch->GetEntityHandle(), &p, sizeof(p));
+	p.info = ecs::PlayerRuntime::GetPacketVID(ch);
+	ecs::ViewSystem::PacketView(ch, &p, sizeof(p));
 }
 
-void FishingPractice(LPCHARACTER ch)
+void FishingPractice(entt::entity ch)
 {
-	if (!ch)
+	if (!ecs::PlayerRuntime::IsValid(ch))
 		return;
 
-	const entt::entity rod = ItemSystem::GetWearItem(ch ? ch->GetEntityHandle() : entt::null, WEAR_WEAPON);
+	const entt::entity rod = ItemSystem::GetWearItem(ch, WEAR_WEAPON);
 	if (rod != entt::null && ItemSystem::GetItemType(rod) == ITEM_ROD)
 	{
 		// AÖ´ë 1ö·Aµµ°! 3A´N °a?i 3¬1A´ë 1ö·A
 		if ( ItemSystem::GetItemRefineVnum(rod)>0 && ItemSystem::GetItemSocket(rod, 0) < ItemSystem::GetItemValue(rod, 2) && number(1,ItemSystem::GetItemValue(rod, 1))==1 )
 		{
-			const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
 			ItemSystem::SetItemSocket(rod, 0, ItemSystem::GetItemSocket(rod, 0) + 1);
 #ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(chEntity, CHAT_TYPE_INFO, 283, "%d#%d", ItemSystem::GetItemSocket(rod, 0), ItemSystem::GetItemValue(rod, 2));
+			ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 283, "%d#%d", ItemSystem::GetItemSocket(rod, 0), ItemSystem::GetItemValue(rod, 2));
 #endif
 			if (ItemSystem::GetItemSocket(rod, 0) == ItemSystem::GetItemValue(rod, 2)) {
 #ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(chEntity, CHAT_TYPE_INFO, 279, "");
-				ecs::ChatSystem::SendNew(chEntity, CHAT_TYPE_INFO, 280, "");
+				ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 279, "");
+				ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 280, "");
 #endif
 			}
 		}
@@ -382,13 +380,13 @@ void FishingPractice(LPCHARACTER ch)
 	ItemSystem::SetItemSocket(rod, 2, 0);
 }
 
-bool PredictFish(LPCHARACTER ch)
+bool PredictFish(entt::entity ch)
 {
 	// ADD_PREMIUM
 	// 3î1ÉE—
-	if (AffectSystem::FindAffect(((ch) ? (ch)->GetEntityHandle() : entt::null), AFFECT_FISH_MIND_PILL) ||
-			ch->GetPremiumRemainSeconds(PREMIUM_FISH_MIND) > 0 ||
-			ch->IsEquipUniqueGroup(UNIQUE_GROUP_FISH_MIND))
+	if (AffectSystem::FindAffect(ch, AFFECT_FISH_MIND_PILL) ||
+			ecs::PlayerRuntime::GetPremiumRemainSeconds(ch, PREMIUM_FISH_MIND) > 0 ||
+			ItemSystem::IsEquipUniqueGroup(ch, UNIQUE_GROUP_FISH_MIND))
 		return true;
 	// END_OF_ADD_PREMIUM
 
@@ -405,17 +403,17 @@ EVENTFUNC(fishing_event)
 		return 0;
 	}
 
-	LPCHARACTER ch = CHARACTER_MANAGER::instance().FindByPID(info->pid);
+	const entt::entity ch = CHARACTER_MANAGER::instance().FindEntityByPID(info->pid);
 
-	if (!ch)
+	if (!ecs::PlayerRuntime::IsValid(ch))
 		return 0;
 
 
-	const entt::entity rod = ItemSystem::GetWearItem(ch ? ch->GetEntityHandle() : entt::null, WEAR_WEAPON);
+	const entt::entity rod = ItemSystem::GetWearItem(ch, WEAR_WEAPON);
 
 	if (!(rod != entt::null && ItemSystem::GetItemType(rod) == ITEM_ROD))
 	{
-		ch->GetFishingEventRef() = nullptr;
+		ecs::PlayerRuntime::SetCharEvent(ch, ecs::PlayerRuntime::CharEvent::Fishing, nullptr);
 		return 0;
 	}
 
@@ -435,7 +433,7 @@ EVENTFUNC(fishing_event)
 				p.header	= HEADER_GC_FISHING;
 				p.subheader	= FISHING_SUBHEADER_GC_FISH;
 				p.info	= fish_info[info->fish_id].vnum;
-				ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null))->Packet(&p, sizeof(TPacketGCFishing));
+				ecs::PlayerRuntime::GetDesc(ch)->Packet(&p, sizeof(TPacketGCFishing));
 			}
 			return (PASSES_PER_SEC(6));
 
@@ -445,18 +443,17 @@ EVENTFUNC(fishing_event)
 			if (info->step > 5)
 				info->step = 5;
 
-			ch->GetFishingEventRef() = nullptr;
+			ecs::PlayerRuntime::SetCharEvent(ch, ecs::PlayerRuntime::CharEvent::Fishing, nullptr);
 			FishingFail(ch);
 			ItemSystem::SetItemSocket(rod, 2, 0);
 			return 0;
 	}
 }
 
-LPEVENT CreateFishingEvent(LPCHARACTER ch)
+LPEVENT CreateFishingEvent(entt::entity ch)
 {
-	const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
 	fishing_event_info* info = AllocEventInfo<fishing_event_info>();
-	info->pid	= ecs::PlayerRuntime::GetPlayerID(chEntity);
+	info->pid	= ecs::PlayerRuntime::GetPlayerID(ch);
 	info->step	= 0;
 	info->hang_time	= 0;
 
@@ -465,16 +462,16 @@ LPEVENT CreateFishingEvent(LPCHARACTER ch)
 	TPacketGCFishing p;
 	p.header	= HEADER_GC_FISHING;
 	p.subheader	= FISHING_SUBHEADER_GC_START;
-	p.info		= ecs::PlayerRuntime::GetPacketVID(chEntity);
-	p.dir		= (uint8_t)(ch->GetRotation()/5);
-	ecs::ViewSystem::PacketView(ch->GetEntityHandle(), &p, sizeof(TPacketGCFishing));
+	p.info		= ecs::PlayerRuntime::GetPacketVID(ch);
+	p.dir		= (uint8_t)(ecs::PlayerRuntime::GetRotation(ch)/5);
+	ecs::ViewSystem::PacketView(ch, &p, sizeof(TPacketGCFishing));
 
 	return event_create(fishing_event, info, PASSES_PER_SEC(time));
 }
 
-int GetFishingLevel(LPCHARACTER ch)
+int GetFishingLevel(entt::entity ch)
 {
-	const entt::entity rod = ItemSystem::GetWearItem(ch ? ch->GetEntityHandle() : entt::null, WEAR_WEAPON);
+	const entt::entity rod = ItemSystem::GetWearItem(ch, WEAR_WEAPON);
 
 	if (rod == entt::null || ItemSystem::GetItemType(rod)!= ITEM_ROD)
 		return 0;
@@ -510,9 +507,8 @@ int Compute(uint32_t fish_id, uint32_t ms, uint32_t* item, int level) {
 	return -1;
 }
 
-void Take(fishing_event_info* info, LPCHARACTER ch)
+void Take(fishing_event_info* info, entt::entity ch)
 {
-	const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
 	if (info->step == 1)	// °í±â°! °É¸° »óAÂ¸é..
 	{
 		int32_t ms = (int32_t) ((get_dword_time() - info->hang_time));
@@ -524,11 +520,11 @@ void Take(fishing_event_info* info, LPCHARACTER ch)
 			case -3: // 3­AIµµ ¶§1®?! 1ÇA?
 			case -1: // 1A°L E®·ü ¶§1®?! 1ÇA?
 				{
-					int map_idx = ecs::PlayerRuntime::GetMapIndex(chEntity);
+					int map_idx = ecs::PlayerRuntime::GetMapIndex(ch);
 					int prob_idx = GetProbIndexByMapIndex(map_idx);
 
 					LogManager::instance().FishLog(
-							ecs::PlayerRuntime::GetPlayerID(chEntity),
+							ecs::PlayerRuntime::GetPlayerID(ch),
 							prob_idx,
 							info->fish_id,
 							GetFishingLevel(ch),
@@ -546,40 +542,45 @@ void Take(fishing_event_info* info, LPCHARACTER ch)
 					p.header = HEADER_GC_FISHING;
 					p.subheader = FISHING_SUBHEADER_GC_FISH;
 					p.info = item_vnum;
-					ecs::PlayerRuntime::GetDesc(chEntity)->Packet(&p, sizeof(TPacketGCFishing));
+					ecs::PlayerRuntime::GetDesc(ch)->Packet(&p, sizeof(TPacketGCFishing));
 
 #ifdef ENABLE_BATTLE_PASS
-						uint8_t bBattlePassId = ch->GetBattlePassId();
+						uint8_t bBattlePassId = ecs::PlayerRuntime::GetBattlePassId(ch);
 						if(bBattlePassId)
 						{
 							uint32_t dwCount, dwNotUsed;
 							if(CBattlePass::instance().BattlePassMissionGetInfo(bBattlePassId, CATCH_FISH, &dwNotUsed, &dwCount))
 							{
-								if(ch->GetMissionProgress(CATCH_FISH, bBattlePassId) < dwCount)
-									ch->UpdateMissionProgress(CATCH_FISH, bBattlePassId, 1, dwCount);
+								// The battle pass still keeps its mission list on CHARACTER, so this one
+								// call crosses to the legacy object on purpose.
+								if (LPCHARACTER legacy = ecs::LegacyCharOf(ch))
+								{
+									if (legacy->GetMissionProgress(CATCH_FISH, bBattlePassId) < dwCount)
+										legacy->UpdateMissionProgress(CATCH_FISH, bBattlePassId, 1, dwCount);
+								}
 							}
 						}
 #endif
-					LPITEM item = ch->AutoGiveItem(item_vnum, 1, -1, false);
-					if (item)
+					const entt::entity item = ItemSystem::AutoGiveItemEcs(ch, item_vnum, 1, -1, false);
+					if (item != entt::null)
 					{
 #ifdef ENABLE_RANKING
-						if ((ItemSystem::GetItemType((item ? item->GetEntityHandle() : entt::null)) == ITEM_FISH) || (ItemSystem::GetItemVnum((item ? item->GetEntityHandle() : entt::null)) == 27802)) {
-							ch->SetRankPoints(14, ch->GetRankPoints(14) + 1);
+						if ((ItemSystem::GetItemType(item) == ITEM_FISH) || (ItemSystem::GetItemVnum(item) == 27802)) {
+							ecs::PlayerRuntime::SetRankPoints(ch, 14, ecs::PlayerRuntime::GetRankPoints(ch, 14) + 1);
 						}
 #endif
 
 
 #ifndef ENABLE_NEW_FISHING_SYSTEM
-						ItemSystem::SetItemSocket((item ? item->GetEntityHandle() : entt::null), 0, GetFishLength(info->fish_id));
+						ItemSystem::SetItemSocket(item, 0, GetFishLength(info->fish_id));
 #endif
 						if (quest::CQuestManager::instance().GetEventFlag("fishevent") > 0 && (info->fish_id == 5 || info->fish_id == 6))
 						{
 							// AIoYA® ÁßAI1Ç·Î ±â·IÇN´U.
 
 							TPacketGDHighscore p;
-							p.dwPID = ecs::PlayerRuntime::GetPlayerID(chEntity);
-							p.lValue = ItemSystem::GetItemSocket((item ? item->GetEntityHandle() : entt::null), 0);
+							p.dwPID = ecs::PlayerRuntime::GetPlayerID(ch);
+							p.lValue = ItemSystem::GetItemSocket(item, 0);
 
 							if (info->fish_id == 5)
 							{
@@ -594,26 +595,26 @@ void Take(fishing_event_info* info, LPCHARACTER ch)
 						}
 					}
 
-					int map_idx = ecs::PlayerRuntime::GetMapIndex(chEntity);
+					int map_idx = ecs::PlayerRuntime::GetMapIndex(ch);
 					int prob_idx = GetProbIndexByMapIndex(map_idx);
 
 					LogManager::instance().FishLog(
-							ecs::PlayerRuntime::GetPlayerID(chEntity),
+							ecs::PlayerRuntime::GetPlayerID(ch),
 							prob_idx,
 							info->fish_id,
 							GetFishingLevel(ch),
 							ms,
 							true,
-							item ? ItemSystem::GetItemSocket((item ? item->GetEntityHandle() : entt::null), 0) : 0);
+							item != entt::null ? ItemSystem::GetItemSocket(item, 0) : 0);
 
 				}
 				else
 				{
-					int map_idx = ecs::PlayerRuntime::GetMapIndex(chEntity);
+					int map_idx = ecs::PlayerRuntime::GetMapIndex(ch);
 					int prob_idx = GetProbIndexByMapIndex(map_idx);
 
 					LogManager::instance().FishLog(
-							ecs::PlayerRuntime::GetPlayerID(chEntity),
+							ecs::PlayerRuntime::GetPlayerID(ch),
 							prob_idx,
 							info->fish_id,
 							GetFishingLevel(ch),
@@ -625,11 +626,11 @@ void Take(fishing_event_info* info, LPCHARACTER ch)
 	}
 	else if (info->step > 1)
 	{
-		int map_idx = ecs::PlayerRuntime::GetMapIndex(chEntity);
+		int map_idx = ecs::PlayerRuntime::GetMapIndex(ch);
 		int prob_idx = GetProbIndexByMapIndex(map_idx);
 
 		LogManager::instance().FishLog(
-				ecs::PlayerRuntime::GetPlayerID(chEntity),
+				ecs::PlayerRuntime::GetPlayerID(ch),
 				prob_idx,
 				info->fish_id,
 				GetFishingLevel(ch),
@@ -641,8 +642,8 @@ void Take(fishing_event_info* info, LPCHARACTER ch)
 		TPacketGCFishing p;
 		p.header = HEADER_GC_FISHING;
 		p.subheader = FISHING_SUBHEADER_GC_STOP;
-		p.info = ecs::PlayerRuntime::GetPacketVID(chEntity);
-		ecs::ViewSystem::PacketView(ch->GetEntityHandle(), &p, sizeof(p));
+		p.info = ecs::PlayerRuntime::GetPacketVID(ch);
+		ecs::ViewSystem::PacketView(ch, &p, sizeof(p));
 	}
 
 	if (info->step)
@@ -652,7 +653,7 @@ void Take(fishing_event_info* info, LPCHARACTER ch)
 	//Motion(MOTION_FISHING_PULL);
 }
 
-void Simulation(int level, int count, int prob_idx, LPCHARACTER ch)
+void Simulation(int level, int count, int prob_idx, entt::entity ch)
 {
 	std::map<std::string, int> fished;
 	int total_count = 0;
@@ -671,7 +672,7 @@ void Simulation(int level, int count, int prob_idx, LPCHARACTER ch)
 	}
 
 #ifdef TEXTS_IMPROVEMENT
-	ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 98, "%d#%d", fished.size(), total_count);
+	ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 98, "%d#%d", fished.size(), total_count);
 #endif
 }
 
@@ -741,7 +742,7 @@ void Grill(entt::entity owner, entt::entity itemEntity)
 	LPCHARACTER ch = ecs::LegacyCharOf(owner);
 	if (!ch)
 		return;
-	uint8_t bBattlePassId = ch->GetBattlePassId();
+	uint8_t bBattlePassId = ecs::PlayerRuntime::GetBattlePassId(owner);
 	if(bBattlePassId)
 	{
 		uint32_t dwCount, dwNotUsed;

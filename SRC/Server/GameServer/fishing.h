@@ -31,9 +31,9 @@ namespace fishing
 	};
 
 	extern void Initialize();
-	extern LPEVENT CreateFishingEvent(LPCHARACTER ch);
-	extern void Take(fishing_event_info* info, LPCHARACTER ch);
-	extern void Simulation(int level, int count, int map_grade, LPCHARACTER ch);
+	extern LPEVENT CreateFishingEvent(entt::entity ch);
+	extern void Take(fishing_event_info* info, entt::entity ch);
+	extern void Simulation(int level, int count, int map_grade, entt::entity ch);
 	extern void UseFish(entt::entity owner, entt::entity item);
 	extern bool UseFishEcs(entt::entity owner, entt::entity item);
 	extern void Grill(entt::entity owner, entt::entity item);

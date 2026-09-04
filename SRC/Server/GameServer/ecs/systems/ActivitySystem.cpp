@@ -734,7 +734,7 @@ void CHARACTER::fishing()
 {
     const entt::entity character = GetEntityHandle();
 
-    if (m_pkFishingEvent)
+    if (ecs::PlayerRuntime::GetCharEvent(character, ecs::PlayerRuntime::CharEvent::Fishing))
     {
         fishing_take();
         return;
@@ -777,7 +777,7 @@ void CHARACTER::fishing()
     float fx, fy;
     GetDeltaByDegree(GetRotation(), 400.0f, &fx, &fy);
 
-    m_pkFishingEvent = fishing::CreateFishingEvent(this);
+    ecs::PlayerRuntime::SetCharEvent(character, ecs::PlayerRuntime::CharEvent::Fishing, fishing::CreateFishingEvent(character));
 }
 
 void CHARACTER::fishing_take()
@@ -787,12 +787,12 @@ void CHARACTER::fishing_take()
     if (ItemSystem::IsValidItem(rod) && ItemSystem::GetItemType(rod) == ITEM_ROD)
     {
         using fishing::fishing_event_info;
-        if (m_pkFishingEvent)
+        if (const LPEVENT fishingEvent = ecs::PlayerRuntime::GetCharEvent(character, ecs::PlayerRuntime::CharEvent::Fishing))
         {
-            struct fishing_event_info* info = dynamic_cast<struct fishing_event_info*>(m_pkFishingEvent->info);
+            struct fishing_event_info* info = dynamic_cast<struct fishing_event_info*>(fishingEvent->info);
 
             if (info)
-                fishing::Take(info, this);
+                fishing::Take(info, character);
         }
     }
 }

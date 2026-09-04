@@ -2289,12 +2289,9 @@ public:
 
 	LPEVENT				m_pkSaveEvent;
 	LPEVENT				m_pkTimedEvent;
-	LPEVENT				m_pkFishingEvent;
 	LPEVENT				m_pkAffectEvent;
 	LPEVENT				GetTimedEvent() const { return m_pkTimedEvent; }
 	LPEVENT&			GetTimedEventRef() { return m_pkTimedEvent; }
-	LPEVENT				GetFishingEvent() const { return m_pkFishingEvent; }
-	LPEVENT&			GetFishingEventRef() { return m_pkFishingEvent; }
 	LPEVENT				m_pkWarpNPCEvent;
 	//DELAYED_WARP
 	//END_DELAYED_WARP
