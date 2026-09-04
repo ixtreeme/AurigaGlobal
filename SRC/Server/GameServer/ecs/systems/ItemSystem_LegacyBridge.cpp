@@ -5579,7 +5579,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 		}
 
 		if (GetWarMap())
-			GetWarMap()->UsePotion(this, item);
+			GetWarMap()->UsePotion(GetEntityHandle(), itemEntity);
 
 		ItemSystem::ConsumeItemEcs(itemEntity);
 		break;
@@ -6052,7 +6052,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 				}
 
 				if (GetWarMap())
-					GetWarMap()->UsePotion(this, item);
+					GetWarMap()->UsePotion(GetEntityHandle(), itemEntity);
 
 				ItemSystem::ConsumeItemEcs(itemEntity);
 				break;
@@ -6184,7 +6184,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 					}
 
 					if (GetWarMap())
-						GetWarMap()->UsePotion(this, item);
+						GetWarMap()->UsePotion(GetEntityHandle(), itemEntity);
 
 					SetPotionLimit(GetPotionLimit() - 1);
 
@@ -8624,7 +8624,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 				}
 
 				if (GetWarMap())
-					GetWarMap()->UsePotion(this, item);
+					GetWarMap()->UsePotion(GetEntityHandle(), itemEntity);
 
 				SetPotionLimit(GetPotionLimit() - 1);
 
@@ -8681,7 +8681,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 			}
 
 			if (GetWarMap())
-				GetWarMap()->UsePotion(this, item);
+				GetWarMap()->UsePotion(GetEntityHandle(), itemEntity);
 
 			ItemSystem::ConsumeItem(itemEntity);
 			SetPotionLimit(GetPotionLimit() - 1);
@@ -8702,7 +8702,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 		}
 
 		if (GetWarMap())
-			GetWarMap()->UsePotion(this, item);
+			GetWarMap()->UsePotion(GetEntityHandle(), itemEntity);
 
 		ItemSystem::ConsumeItem(itemEntity);
 		break;
@@ -8758,7 +8758,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 		}
 
 		if (GetWarMap())
-			GetWarMap()->UsePotion(this, item);
+			GetWarMap()->UsePotion(GetEntityHandle(), itemEntity);
 
 		ItemSystem::ConsumeItem(itemEntity);
 		break;

@@ -63,10 +63,10 @@ class CWarMap
 
 		uint8_t	GetType();
 		int32_t	GetMapIndex();
-		uint32_t	GetGuildOpponent(LPCHARACTER ch);
+		uint32_t	GetGuildOpponent(entt::entity ch);
 
 		uint32_t	GetWinnerGuild();
-		void	UsePotion(LPCHARACTER ch, LPITEM item);
+		void	UsePotion(entt::entity ch, entt::entity item);
 
 		void	Draw();	// 강제 무승부 처리
 		void	Timeout();
@@ -130,8 +130,8 @@ class CWarMap
 			int GetAccumulatedJoinerCount(); // 누적된 참가자 수
 			int GetCurJointerCount(); // 현재 참가자 수
 
-			void AppendMember(LPCHARACTER ch);
-			void RemoveMember(LPCHARACTER ch);
+			void AppendMember(entt::entity ch);
+			void RemoveMember(entt::entity ch);
 		} TeamData;
 
 		TeamData	m_TeamData[2];

@@ -774,7 +774,7 @@ ACMD(do_restart)
 	if (ch->GetWarMap() && !ecs::PlayerRuntime::IsObserverMode(character))
 	{
 		CWarMap * pMap = ch->GetWarMap();
-		uint32_t dwGuildOpponent = pMap ? pMap->GetGuildOpponent(ch) : 0;
+		uint32_t dwGuildOpponent = pMap ? pMap->GetGuildOpponent(character) : 0;
 		if (dwGuildOpponent)
 		{
 			switch (subcmd)

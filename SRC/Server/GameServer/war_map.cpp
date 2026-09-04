@@ -251,12 +251,11 @@ uint8_t CWarMap::GetType()
 	return m_kMapInfo.bType;
 }
 
-uint32_t CWarMap::GetGuildOpponent(LPCHARACTER ch)
+uint32_t CWarMap::GetGuildOpponent(entt::entity ch)
 {
-	const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
-	if (ecs::SocialSystem::GetGuild(chEntity))
+	if (ecs::SocialSystem::GetGuild(ch))
 	{
-		uint32_t gid = ecs::SocialSystem::GetGuild(chEntity)->GetID();
+		uint32_t gid = ecs::SocialSystem::GetGuild(ch)->GetID();
 		uint8_t idx;
 
 		if (GetTeamIndex(gid, idx))
@@ -281,25 +280,24 @@ uint32_t CWarMap::GetWinnerGuild()
 	return (win_gid);
 }
 
-void CWarMap::UsePotion(LPCHARACTER ch, LPITEM item)
+void CWarMap::UsePotion(entt::entity ch, entt::entity item)
 {
-	const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
 	if (m_pkEndEvent)
 		return;
 
-	if (ecs::PlayerRuntime::IsObserverMode(chEntity))
+	if (ecs::PlayerRuntime::IsObserverMode(ch))
 		return;
 
-	if (!ecs::SocialSystem::GetGuild(chEntity))
+	if (!ecs::SocialSystem::GetGuild(ch))
 		return;
 
-	const TItemTable* itemProto = ItemSystem::GetItemProto((item ? item->GetEntityHandle() : entt::null));
+	const TItemTable* itemProto = ItemSystem::GetItemProto(item);
 	if (!itemProto)
 		return;
 
 	int iPrice = itemProto->dwGold;
 
-	uint32_t gid = ecs::SocialSystem::GetGuild(chEntity)->GetID();
+	uint32_t gid = ecs::SocialSystem::GetGuild(ch)->GetID();
 
 	if (gid == m_TeamData[0].dwID)
 		m_TeamData[0].iUsePotionPrice += iPrice;
@@ -317,13 +315,13 @@ int CWarMap::STeamData::GetCurJointerCount()
 	return iMemberCount;
 }
 
-void CWarMap::STeamData::AppendMember(LPCHARACTER ch)
+void CWarMap::STeamData::AppendMember(entt::entity ch)
 {
-	set_pidJoiner.insert(ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null)));
+	set_pidJoiner.insert(ecs::PlayerRuntime::GetPlayerID(ch));
 	++iMemberCount;
 }
 
-void CWarMap::STeamData::RemoveMember(LPCHARACTER ch)
+void CWarMap::STeamData::RemoveMember(entt::entity ch)
 {
 	// set_pidJoiner 는 누적 인원을 계산하기 때문에 제거하지 않는다
 	--iMemberCount;
@@ -385,12 +383,12 @@ void CWarMap::IncMember(LPCHARACTER ch)
 	{
 		if (gid == m_TeamData[0].dwID)
 		{
-			m_TeamData[0].AppendMember(ch);
+			m_TeamData[0].AppendMember(chEntity);
 
 		}
 		else if (gid == m_TeamData[1].dwID)
 		{
-			m_TeamData[1].AppendMember(ch);
+			m_TeamData[1].AppendMember(chEntity);
 
 		}
 
@@ -435,9 +433,9 @@ void CWarMap::DecMember(LPCHARACTER ch)
 	if (!ecs::PlayerRuntime::IsObserverMode(chEntity))
 	{
 		if (gid == m_TeamData[0].dwID)
-			m_TeamData[0].RemoveMember(ch);
+			m_TeamData[0].RemoveMember(chEntity);
 		else if (gid == m_TeamData[1].dwID)
-			m_TeamData[1].RemoveMember(ch);
+			m_TeamData[1].RemoveMember(chEntity);
 
 		if (m_kMapInfo.bType == WAR_MAP_TYPE_FLAG)
 		{
