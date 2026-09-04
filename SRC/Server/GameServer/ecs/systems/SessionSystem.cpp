@@ -667,7 +667,7 @@ bool CHARACTER::WarpSet(int32_t x, int32_t y, int32_t lPrivateMapIndex)
         }
         ecs::ViewSystem::ViewCleanup(e);
 
-        EncodeRemovePacket(this);
+        ecs::EntityNetworkDispatch::SendRemove(g_registry, e, e);
     }
 
     m_lWarpMapIndex = lMapIndex;

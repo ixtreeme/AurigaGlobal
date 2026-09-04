@@ -4555,9 +4555,7 @@ void CHARACTER::MountVnum(uint32_t vnum)
             {
                 if (viewerE == entt::null || !g_registry.valid(viewerE))
                     continue;
-                LPENTITY viewer = ecs::SpatialService::LPENTITYFromEntity(g_registry, viewerE);
-                if (viewer)
-                    EncodeInsertPacket(viewer);
+                ecs::EntityNetworkDispatch::SendInsert(g_registry, GetEntityHandle(), viewerE);
             }
         }
     }
@@ -5238,7 +5236,7 @@ bool CHARACTER::SwitchChannel(int32_t newAddr, uint16_t newPort)
             g_registry.remove<ecs::ViewActiveTag>(e);
         }
         ecs::ViewSystem::ViewCleanup(e);
-        EncodeRemovePacket(this);
+        ecs::EntityNetworkDispatch::SendRemove(g_registry, e, e);
     }
 
     m_lWarpMapIndex = lMapIndex;
