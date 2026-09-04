@@ -4672,7 +4672,7 @@ bool CHARACTER::Damage(entt::entity attacker, int64_t dam, EDamageType type) // 
 	{
 		if (GetEmpire() && GetEmpire() == ecs::PlayerRuntime::GetEmpire(attacker))
 		{
-			SendDamagePacket(attacker, 0, DAMAGE_BLOCK);
+			CombatSystem::SendDamagePacket(GetEntityHandle(), attacker, 0, DAMAGE_BLOCK);
 			return false;
 		}
 	}
@@ -4707,7 +4707,7 @@ bool CHARACTER::Damage(entt::entity attacker, int64_t dam, EDamageType type) // 
 		if (weaponProto && weaponProto->bSubType == WEAPON_BOW)
 		{
 
-			SendDamagePacket(attacker, 0, DAMAGE_BLOCK);
+			CombatSystem::SendDamagePacket(GetEntityHandle(), attacker, 0, DAMAGE_BLOCK);
 			return false;
 		}
 #endif // !DISABLE_DAMAGE_TYPE_NORMAL_RANGE_EVENT_MAP
@@ -4733,7 +4733,7 @@ bool CHARACTER::Damage(entt::entity attacker, int64_t dam, EDamageType type) // 
 
 
 
-		SendDamagePacket(attacker, fixed_dam, DAMAGE_NORMAL);
+		CombatSystem::SendDamagePacket(GetEntityHandle(), attacker, fixed_dam, DAMAGE_NORMAL);
 
 
 		if (GetHP() <= fixed_dam)
@@ -4881,7 +4881,7 @@ bool CHARACTER::Damage(entt::entity attacker, int64_t dam, EDamageType type) // 
 					ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 95, "%s#%d", ecs::PlayerRuntime::GetName(attacker).data(), ecs::PointSystem::Get(attacker, POINT_BLOCK));
 				}
 #endif
-				SendDamagePacket(attacker, 0, DAMAGE_BLOCK);
+				CombatSystem::SendDamagePacket(GetEntityHandle(), attacker, 0, DAMAGE_BLOCK);
 				return false;
 			}
 		}
@@ -4896,7 +4896,7 @@ bool CHARACTER::Damage(entt::entity attacker, int64_t dam, EDamageType type) // 
 					ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 96, "%s#%d", ecs::PlayerRuntime::GetName(attacker).data(), ecs::PointSystem::Get(attacker, POINT_DODGE));
 				}
 #endif
-				SendDamagePacket(attacker, 0, DAMAGE_DODGE);
+				CombatSystem::SendDamagePacket(GetEntityHandle(), attacker, 0, DAMAGE_DODGE);
 				return false;
 			}
 		}
@@ -5749,7 +5749,7 @@ bool CHARACTER::Damage(entt::entity attacker, int64_t dam, EDamageType type) // 
 #endif
 
 		if (pkAttacker)
-			SendDamagePacket(attacker, dam, damageFlag);
+			CombatSystem::SendDamagePacket(GetEntityHandle(), attacker, dam, damageFlag);
 #ifdef LEADERBOARD_RAZOR93
 
 		if (pkAttacker && ecs::PlayerRuntime::IsPC(attacker) && pkAttacker->IsSkillHit() && IsPC())
@@ -6807,38 +6807,6 @@ void CHARACTER::SetLastAttacked(uint32_t dwTime)
 	m_pkMobInst->m_posLastAttacked = GetXYZ();
 }
 
-void CHARACTER::SendDamagePacket(entt::entity attacker, int Damage, uint8_t DamageFlag)
-{
-	LPCHARACTER pkAttacker = ecs::LegacyCharOf(attacker);
-	if (IsPC() == true || (ecs::PlayerRuntime::IsPC(attacker) == true && pkAttacker->GetTarget() == this))
-	{
-		TPacketGCDamageInfo damageInfo;
-		memset(&damageInfo, 0, sizeof(TPacketGCDamageInfo));
-
-		damageInfo.header = HEADER_GC_DAMAGE_INFO;
-		damageInfo.dwVID = GetPacketVID();
-		damageInfo.flag = DamageFlag;
-		damageInfo.damage = Damage;
-#ifdef ENABLE_TARGET_DAMAGE_RAZOR93
-		ecs::ViewSystem::PacketView(GetEntityHandle(), &damageInfo, sizeof(TPacketGCDamageInfo));
-		return;
-#endif
-
-		if (GetDesc() != nullptr)
-		{
-			GetDesc()->Packet(&damageInfo, sizeof(TPacketGCDamageInfo));
-		}
-
-		if (ecs::PlayerRuntime::GetDesc(attacker) != nullptr)
-		{
-			ecs::PlayerRuntime::GetDesc(attacker)->Packet(&damageInfo, sizeof(TPacketGCDamageInfo));
-		}
-
-		if (GetArenaObserverMode() == false && GetArena() != nullptr) {
-			GetArena()->SendPacketToObserver(&damageInfo, sizeof(TPacketGCDamageInfo));
-		}
-	}
-}
 
 //
 // CHARACTER::Damage ޼ҵ this  ԰ Ѵ.
@@ -7446,6 +7414,38 @@ void CHARACTER::ClearStone()
 #endif
 
 namespace CombatSystem {
+
+void SendDamagePacket(entt::entity e, entt::entity attacker, int Damage, uint8_t DamageFlag)
+{
+	if (ecs::PlayerRuntime::GetDesc(e) != nullptr || (ecs::PlayerRuntime::IsPC(attacker) == true && GetSelectedTarget(attacker) == e))
+	{
+		TPacketGCDamageInfo damageInfo;
+		memset(&damageInfo, 0, sizeof(TPacketGCDamageInfo));
+
+		damageInfo.header = HEADER_GC_DAMAGE_INFO;
+		damageInfo.dwVID = ecs::PlayerRuntime::GetPacketVID(e);
+		damageInfo.flag = DamageFlag;
+		damageInfo.damage = Damage;
+#ifdef ENABLE_TARGET_DAMAGE_RAZOR93
+		ecs::ViewSystem::PacketView(e, &damageInfo, sizeof(TPacketGCDamageInfo));
+		return;
+#endif
+
+		if (ecs::PlayerRuntime::GetDesc(e) != nullptr)
+		{
+			ecs::PlayerRuntime::GetDesc(e)->Packet(&damageInfo, sizeof(TPacketGCDamageInfo));
+		}
+
+		if (ecs::PlayerRuntime::GetDesc(attacker) != nullptr)
+		{
+			ecs::PlayerRuntime::GetDesc(attacker)->Packet(&damageInfo, sizeof(TPacketGCDamageInfo));
+		}
+
+		if (ecs::PlayerRuntime::IsArenaObserverMode(e) == false && ecs::PlayerRuntime::GetArena(e) != nullptr) {
+			ecs::PlayerRuntime::GetArena(e)->SendPacketToObserver(&damageInfo, sizeof(TPacketGCDamageInfo));
+		}
+	}
+}
 
 entt::entity GetSelectedTarget(entt::entity e)
 {

@@ -7,6 +7,7 @@
 namespace CombatSystem {
 
 entt::entity GetSelectedTarget(entt::entity e);
+void SendDamagePacket(entt::entity e, entt::entity attacker, int Damage, uint8_t DamageFlag);
 void SetTarget(entt::entity e, entt::entity target);
 void ClearTarget(entt::entity e);
 void CheckTarget(entt::entity e);

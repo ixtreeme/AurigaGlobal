@@ -2396,11 +2396,6 @@ public:
 	bool ResetOneSkill(uint32_t dwVnum);
 	// END_RESET_ONE_SKILL
 
-public:
-	// Public for NetworkSyncSystem::SetSyncOwner, which is entity-native apart
-	// from this one call - it needs the target axis, which is not migrated.
-	void SendDamagePacket(entt::entity attacker, int Damage, uint8_t DamageFlag);
-private:
 
 	// ARENA
 private:

@@ -2,6 +2,7 @@
 #include "PlayerRuntimeSystem.hpp"
 
 #include "NetworkSyncSystem.hpp"
+#include "CombatSystem.hpp"
 
 #include <algorithm>
 #include <cstring>
@@ -971,17 +972,7 @@ bool SetSyncOwner(entt::entity e, entt::entity chEntity, bool bRemoveFromList)
     {
         if (!battle_is_attackable(chEntity, e))
         {
-            // SendDamagePacket tests the attacker's selected target, which
-            // lives in ecs::SelectedTarget. One resolve, named, because the
-            // packet builder itself is still a CHARACTER method.
-            //
-            // Correcting the earlier version of this comment: ecs::CombatTarget
-            // is NOT an unsynced mirror of m_pkChrTarget. It mirrors GetVictim,
-            // the character this one is fighting, which is a different thing
-            // from GetTarget, the one the player selected. Syncing them
-            // together would be wrong.
-            if (LPCHARACTER victim = ecs::LegacyCharOf(e))
-                victim->SendDamagePacket(chEntity, 0, DAMAGE_BLOCK);
+            CombatSystem::SendDamagePacket(e, chEntity, 0, DAMAGE_BLOCK);
             return false;
         }
     }
