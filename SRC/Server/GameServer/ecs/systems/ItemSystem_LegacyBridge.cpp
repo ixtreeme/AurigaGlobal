@@ -15702,10 +15702,9 @@ void CItem::Initialize()
 	CEntity::Initialize(ENTITY_ITEM);
 	SetEntityHandle(entt::null);
 
-	m_bWindow = RESERVED_WINDOW;
 	m_pOwner = nullptr;
 	m_dwID = 0;
-	m_dwVID = m_wCell = m_dwCount = m_lFlag = 0;
+	m_dwVID = m_dwCount = m_lFlag = 0;
 	m_pProto = nullptr;
 	m_bExchanging = false;
 #ifdef ENABLE_SOUL_SYSTEM
@@ -17069,8 +17068,7 @@ int32_t CItem::GetRuneAttrValue(int c, int32_t lTime) {
 
 
 CItem::CItem(uint32_t dwVnum)
-	: m_pProto(nullptr), m_dwVnum(dwVnum), m_pOwner(nullptr), m_bWindow(0), m_dwID(0), m_dwVID(0),
-	m_wCell(0),
+	: m_pProto(nullptr), m_dwVnum(dwVnum), m_pOwner(nullptr), m_dwID(0), m_dwVID(0),
 	m_dwCount(0),
 	m_sLockedAttr(0),
 	m_ExtraProto(nullptr), m_lFlag(0), m_dwLastOwnerPID(0),

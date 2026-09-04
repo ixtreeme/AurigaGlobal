@@ -335,93 +335,93 @@ LPITEM CItem::RemoveFromCharacter()
 		return (this);
 	}
 
-	LPCHARACTER pOwner = m_pOwner;
+	const entt::entity itemEntity = GetEntityHandle();
+	const entt::entity ownerEntity = m_pOwner->GetEntityHandle();
+
+	// Detaching means three component writes, and each one used to be a bare
+	// field assignment plus a call to the old SyncItemLocation, which copied
+	// nothing - so ecs::ItemLocation kept the cell and window the item had
+	// while it was still carried. SetItemCell and SetItemWindow write the
+	// component and mirror into m_wCell / m_bWindow, so both agree.
+	const auto detach = [&]() {
+		ItemSystem::SetItemCell(itemEntity, ownerEntity, 0);
+		ItemSystem::SetItemWindow(itemEntity, RESERVED_WINDOW);
+		m_pOwner = nullptr;
+		Save();
+
+		EnsureItemLocation(itemEntity);
+		SyncItemOwner(itemEntity, 0, m_dwLastOwnerPID, m_dwOwnershipPID);
+		g_registry.remove<ecs::ItemEquipped>(itemEntity);
+	};
 
 	if (IsEquipped())
 	{
 		Unequip();
-		SetWindow(RESERVED_WINDOW);
+		ItemSystem::SetItemWindow(itemEntity, RESERVED_WINDOW);
 		Save();
 
-		const entt::entity itemEntity = GetEntityHandle();
 		EnsureItemLocation(itemEntity);
 		SyncItemOwner(itemEntity, 0, m_dwLastOwnerPID, m_dwOwnershipPID);
 		g_registry.remove<ecs::ItemEquipped>(itemEntity);
 		return (this);
 	}
-	else
+
+	const uint8_t window = ItemSystem::GetItemWindow(itemEntity);
+	const uint16_t cell = ItemSystem::GetItemCell(itemEntity);
+
+	if (window == MOUNT_INVENTORY)
 	{
-		if (GetWindow() == MOUNT_INVENTORY)
+		if (CMountInventory* mi = m_pOwner->GetMountInventory())
+			mi->RemoveByItem(itemEntity);
+
+		detach();
+		return (this);
+	}
+
+	if (window != SAFEBOX && window != MALL)
+	{
+		if (IsDragonSoul())
 		{
-			if (CMountInventory* mi = pOwner->GetMountInventory())
-				mi->RemoveByItem(GetEntityHandle());
-
-			m_pOwner = nullptr;
-			m_wCell = 0;
-			SetWindow(RESERVED_WINDOW);
-			Save();
-
-			const entt::entity itemEntity = GetEntityHandle();
-			EnsureItemLocation(itemEntity);
-			SyncItemOwner(itemEntity, 0, m_dwLastOwnerPID, m_dwOwnershipPID);
-			g_registry.remove<ecs::ItemEquipped>(itemEntity);
-			return (this);
+			if (cell >= DRAGON_SOUL_INVENTORY_MAX_NUM)
+				LOG_ERROR("CItem::RemoveFromCharacter: pos >= DRAGON_SOUL_INVENTORY_MAX_NUM");
+			else
+				ecs::PlayerRuntime::SetItem(ownerEntity, TItemPos(window, cell), entt::null);
 		}
-
-		if (GetWindow() != SAFEBOX && GetWindow() != MALL)
-		{
-			if (IsDragonSoul())
-			{
-				if (m_wCell >= DRAGON_SOUL_INVENTORY_MAX_NUM)
-					LOG_ERROR("CItem::RemoveFromCharacter: pos >= DRAGON_SOUL_INVENTORY_MAX_NUM");
-				else
-					pOwner->SetItem(TItemPos(m_bWindow, m_wCell), entt::null);
-			}
 #ifdef ENABLE_EXTRA_INVENTORY
-			else if (IsExtraItem())
-			{
-				if (m_wCell >= EXTRA_INVENTORY_MAX_NUM)
-					LOG_ERROR("CItem::RemoveFromCharacter: pos >= EXTRA_INVENTORY_MAX_NUM");
-				else
-					pOwner->SetItem(TItemPos(m_bWindow, m_wCell), entt::null);
-			}
+		else if (IsExtraItem())
+		{
+			if (cell >= EXTRA_INVENTORY_MAX_NUM)
+				LOG_ERROR("CItem::RemoveFromCharacter: pos >= EXTRA_INVENTORY_MAX_NUM");
+			else
+				ecs::PlayerRuntime::SetItem(ownerEntity, TItemPos(window, cell), entt::null);
+		}
 #endif
 #ifdef ENABLE_SWITCHBOT
-			else if (m_bWindow == SWITCHBOT)
+		else if (window == SWITCHBOT)
+		{
+			if (cell >= SWITCHBOT_SLOT_COUNT)
 			{
-				if (m_wCell >= SWITCHBOT_SLOT_COUNT)
-				{
-					LOG_ERROR("CItem::RemoveFromCharacter: pos >= SWITCHBOT_SLOT_COUNT");
-				}
-				else
-				{
-					pOwner->SetItem(TItemPos(SWITCHBOT, m_wCell), entt::null);
-				}
+				LOG_ERROR("CItem::RemoveFromCharacter: pos >= SWITCHBOT_SLOT_COUNT");
 			}
-#endif
 			else
 			{
-				TItemPos cell(INVENTORY, m_wCell);
-
-				if (false == cell.IsDefaultInventoryPosition() && false == cell.IsBeltInventoryPosition())
-					LOG_ERROR("CItem::RemoveFromCharacter: Invalid Item Position");
-				else
-					pOwner->SetItem(cell, entt::null);
+				ecs::PlayerRuntime::SetItem(ownerEntity, TItemPos(SWITCHBOT, cell), entt::null);
 			}
 		}
+#endif
+		else
+		{
+			TItemPos pos(INVENTORY, cell);
 
-		m_pOwner = nullptr;
-		m_wCell = 0;
-
-		SetWindow(RESERVED_WINDOW);
-		Save();
-
-		const entt::entity itemEntity = GetEntityHandle();
-		EnsureItemLocation(itemEntity);
-		SyncItemOwner(itemEntity, 0, m_dwLastOwnerPID, m_dwOwnershipPID);
-		g_registry.remove<ecs::ItemEquipped>(itemEntity);
-		return (this);
+			if (false == pos.IsDefaultInventoryPosition() && false == pos.IsBeltInventoryPosition())
+				LOG_ERROR("CItem::RemoveFromCharacter: Invalid Item Position");
+			else
+				ecs::PlayerRuntime::SetItem(ownerEntity, pos, entt::null);
+		}
 	}
+
+	detach();
+	return (this);
 }
 
 #ifdef __HIGHLIGHT_SYSTEM__
@@ -482,27 +482,27 @@ bool CItem::AddToCharacter(LPCHARACTER ch, TItemPos Cell)
 
 		if (pos >= INVENTORY_MAX_NUM && BELT_INVENTORY_SLOT_START > pos)
 #else
-		if (m_wCell >= INVENTORY_MAX_NUM && BELT_INVENTORY_SLOT_START > m_wCell)
+		if (ItemSystem::GetItemCell(itemEntity) >= INVENTORY_MAX_NUM && BELT_INVENTORY_SLOT_START > ItemSystem::GetItemCell(itemEntity))
 #endif
 		{
-			LOG_ERROR("CItem::AddToCharacter: cell overflow: {} to {} cell {}", m_pProto->szName, ecs::PlayerRuntime::GetName(character).data(), m_wCell);
+			LOG_ERROR("CItem::AddToCharacter: cell overflow: {} to {} cell {}", m_pProto->szName, ecs::PlayerRuntime::GetName(character).data(), ItemSystem::GetItemCell(itemEntity));
 			return false;
 		}
 	}
 	else if (DRAGON_SOUL_INVENTORY == window_type)
 	{
-		if (m_wCell >= DRAGON_SOUL_INVENTORY_MAX_NUM)
+		if (ItemSystem::GetItemCell(itemEntity) >= DRAGON_SOUL_INVENTORY_MAX_NUM)
 		{
-			LOG_ERROR("CItem::AddToCharacter: cell overflow: {} to {} cell {}", m_pProto->szName, ecs::PlayerRuntime::GetName(character).data(), m_wCell);
+			LOG_ERROR("CItem::AddToCharacter: cell overflow: {} to {} cell {}", m_pProto->szName, ecs::PlayerRuntime::GetName(character).data(), ItemSystem::GetItemCell(itemEntity));
 			return false;
 		}
 	}
 #ifdef ENABLE_EXTRA_INVENTORY
 	else if (window_type == EXTRA_INVENTORY)
 	{
-		if (m_wCell >= EXTRA_INVENTORY_MAX_NUM)
+		if (ItemSystem::GetItemCell(itemEntity) >= EXTRA_INVENTORY_MAX_NUM)
 		{
-			LOG_ERROR("CItem::AddToCharacter: EXTRA cell overflow: {} to {} cell {}", m_pProto->szName, ecs::PlayerRuntime::GetName(character).data(), m_wCell);
+			LOG_ERROR("CItem::AddToCharacter: EXTRA cell overflow: {} to {} cell {}", m_pProto->szName, ecs::PlayerRuntime::GetName(character).data(), ItemSystem::GetItemCell(itemEntity));
 			return false;
 		}
 	}
@@ -510,9 +510,9 @@ bool CItem::AddToCharacter(LPCHARACTER ch, TItemPos Cell)
 #ifdef ENABLE_SWITCHBOT
 	else if (SWITCHBOT == window_type)
 	{
-		if (m_wCell >= SWITCHBOT_SLOT_COUNT)
+		if (ItemSystem::GetItemCell(itemEntity) >= SWITCHBOT_SLOT_COUNT)
 		{
-			LOG_ERROR("CItem::AddToCharacter:switchbot cell overflow: {} to {} cell {}", m_pProto->szName, ecs::PlayerRuntime::GetName(character).data(), m_wCell);
+			LOG_ERROR("CItem::AddToCharacter:switchbot cell overflow: {} to {} cell {}", m_pProto->szName, ecs::PlayerRuntime::GetName(character).data(), ItemSystem::GetItemCell(itemEntity));
 			return false;
 		}
 	}
@@ -820,6 +820,38 @@ bool CItem::IsEquipable()
 
 #define ENABLE_IMMUNE_FIX
 // return false on error state
+// The cell lives in ecs::ItemLocation. SetCell is the legacy-facing name for
+// what SetItemCell already does, so it forwards rather than mirroring a field.
+void CItem::SetCell(LPCHARACTER ch, uint16_t pos)
+{
+	// The component directly, not ItemSystem::SetItemCell: that one mirrors
+	// back through this method, which would recurse.
+	const entt::entity itemEntity = GetEntityHandle();
+	if (itemEntity != entt::null && g_registry.valid(itemEntity))
+		g_registry.get_or_emplace<ecs::ItemLocation>(itemEntity).cell = pos;
+
+	m_pOwner = ch;
+}
+
+// Same shape as SetCell: ItemSystem::SetItemWindow mirrors through this
+// method, so the component is written here directly.
+void CItem::SetWindow(uint8_t b)
+{
+	const entt::entity itemEntity = GetEntityHandle();
+	if (itemEntity != entt::null && g_registry.valid(itemEntity))
+		g_registry.get_or_emplace<ecs::ItemLocation>(itemEntity).window = b;
+}
+
+uint8_t CItem::GetWindow() const
+{
+	return ItemSystem::GetItemWindow(GetEntityHandle());
+}
+
+uint16_t CItem::GetCell() const
+{
+	return ItemSystem::GetItemCell(GetEntityHandle());
+}
+
 bool CItem::IsEquipped() const
 {
 	return ItemSystem::IsItemEquipped(GetEntityHandle());
@@ -1044,6 +1076,7 @@ void CItem::ModifyPoints(bool bAdd)
 #endif
 
 	const entt::entity ownerEntity = m_pOwner->GetEntityHandle();
+	const entt::entity itemEntity = GetEntityHandle();
 	int accessoryGrade;
 
 	if (false == IsAccessoryForSocket())
@@ -1271,12 +1304,12 @@ void CItem::ModifyPoints(bool bAdd)
 	{
 		if (bAdd)
 		{
-			if (m_wCell == INVENTORY_MAX_NUM + WEAR_WEAPON)
+			if (ItemSystem::GetItemCell(itemEntity) == INVENTORY_MAX_NUM + WEAR_WEAPON)
 				ecs::PlayerRuntime::SetPart(ownerEntity, PART_WEAPON, GetVnum());
 		}
 		else
 		{
-			if (m_wCell == INVENTORY_MAX_NUM + WEAR_WEAPON)
+			if (ItemSystem::GetItemCell(itemEntity) == INVENTORY_MAX_NUM + WEAR_WEAPON)
 				ecs::PlayerRuntime::SetPart(ownerEntity, PART_WEAPON, 0);
 		}
 	}
@@ -1342,12 +1375,12 @@ void CItem::ModifyPoints(bool bAdd)
 
 		if (bAdd)
 		{
-			if (m_wCell == INVENTORY_MAX_NUM + WEAR_WEAPON)
+			if (ItemSystem::GetItemCell(itemEntity) == INVENTORY_MAX_NUM + WEAR_WEAPON)
 				ecs::PlayerRuntime::SetPart(ownerEntity, PART_WEAPON, GetVnum());
 		}
 		else
 		{
-			if (m_wCell == INVENTORY_MAX_NUM + WEAR_WEAPON)
+			if (ItemSystem::GetItemCell(itemEntity) == INVENTORY_MAX_NUM + WEAR_WEAPON)
 				ecs::PlayerRuntime::SetPart(ownerEntity, PART_WEAPON, 0);
 		}
 	}

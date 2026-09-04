@@ -28,8 +28,8 @@ class CItem : public CEntity
 
 		void		Save();
 
-		void		SetWindow(uint8_t b)	{ m_bWindow = b; }
-		uint8_t		GetWindow()		{ return m_bWindow; }
+		void		SetWindow(uint8_t b);
+		uint8_t		GetWindow() const;
 
 		void		SetID(uint32_t id)		{ m_dwID = id;	}
 		uint32_t		GetID()			{ return m_dwID; }
@@ -94,8 +94,8 @@ class CItem : public CEntity
 #endif
 		int32_t		GetValue(uint32_t idx);
 
-		void		SetCell(LPCHARACTER ch, uint16_t pos)	{ m_pOwner = ch, m_wCell = pos;	}
-		uint16_t		GetCell()				{ return m_wCell;	}
+		void		SetCell(LPCHARACTER ch, uint16_t pos);
+		uint16_t	GetCell() const;
 
 		LPITEM		RemoveFromCharacter();
 #ifdef __HIGHLIGHT_SYSTEM__
@@ -305,10 +305,8 @@ class CItem : public CEntity
 		uint32_t		m_dwVnum;
 		LPCHARACTER	m_pOwner;
 
-		uint8_t		m_bWindow;		// 현재 아이템이 위치한 윈도우
 		uint32_t		m_dwID;			// 고유번호
 		uint32_t		m_dwVID;		// VID
-		uint16_t		m_wCell;		// 위치
 		int		m_dwCount;		// 개수
 #ifdef ATTR_LOCK
 		short		m_sLockedAttr;
