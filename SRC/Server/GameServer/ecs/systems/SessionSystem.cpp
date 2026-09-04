@@ -1090,7 +1090,12 @@ bool CHARACTER::Show(int32_t lMapIndex, int32_t x, int32_t y, int32_t z, bool bS
 
     if (bChangeTree)
     {
-        EncodeInsertPacket(this);
+        // Routed through the dispatch, which needs a SpatialKindTag that this
+        // line runs before sectree->InsertEntity would set. It is already
+        // there: CreatePC applies the spatial state at character creation, and
+        // the packet only does anything for an entity with a descriptor - which
+        // is a PC, so it came through CreatePC.
+        ecs::EntityNetworkDispatch::SendInsert(g_registry, GetEntityHandle(), GetEntityHandle());
         sectree->InsertEntity(this);
 
         const entt::entity e = GetEntityHandle();

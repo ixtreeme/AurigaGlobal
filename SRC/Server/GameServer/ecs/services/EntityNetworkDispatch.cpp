@@ -217,8 +217,16 @@ void SendCharacterInsert(entt::registry& reg, entt::entity source, entt::entity 
     const auto* dest = reg.try_get<ecs::MovementDestination>(source);
     const auto* movement = reg.try_get<ecs::MovementState>(source);
     const auto* vid = reg.try_get<ecs::VIDComponent>(source);
-    if (dest && movement && vid) {
+    // Legacy computes the duration only when the destination differs from the
+    // position it just wrote into the packet; a character standing on its own
+    // destination gets no follow-up move packet.
+    if (dest && movement && vid && (dest->x != packet.x || dest->y != packet.y)) {
         const int duration = static_cast<int>((movement->moveStartTime + movement->moveDuration) - get_dword_time());
+        // Legacy's guard here is `iDur != 0`, so a move whose timer has already
+        // expired still sends a packet - with a negative duration cast to
+        // uint32_t, i.e. about 49 days. That is a bug, not a behaviour to
+        // reproduce; the builder above has already snapped x/y to the
+        // destination for that case, which is what the client needs.
         if (duration > 0) {
             TPacketGCMove move {};
             EncodeMovePacket(move, vid->value, FUNC_MOVE, 0, dest->x, dest->y, static_cast<uint32_t>(duration), 0, RotationFor(reg, source) / 5.0f);
@@ -232,14 +240,22 @@ void SendCharacterInsert(entt::registry& reg, entt::entity source, entt::entity 
         }
     }
 
+    // Legacy gates this on the viewer's IsWalking(), which is
+    // IsNowWalking() || GetStamina() <= 0 - so an exhausted viewer who is not
+    // walking still gets a packet, carrying RUN. Testing isNowWalking alone
+    // sent nothing in that case.
     const auto* viewerMovement = reg.try_get<ecs::MovementState>(viewer);
     const auto* viewerVID = reg.try_get<ecs::VIDComponent>(viewer);
-    if (viewerMovement && viewerMovement->isNowWalking && viewerVID) {
-        TPacketGCWalkMode walk {};
-        walk.header = HEADER_GC_WALK_MODE;
-        walk.vid = viewerVID->value;
-        walk.mode = WALKMODE_WALK;
-        ecs::NetworkService::Send(source, &walk, sizeof(walk));
+    if (viewerMovement && viewerVID) {
+        const bool viewerWalking = viewerMovement->isNowWalking
+            || ecs::PlayerRuntime::GetStamina(viewer) <= 0;
+        if (viewerWalking) {
+            TPacketGCWalkMode walk {};
+            walk.header = HEADER_GC_WALK_MODE;
+            walk.vid = viewerVID->value;
+            walk.mode = viewerMovement->isNowWalking ? WALKMODE_WALK : WALKMODE_RUN;
+            ecs::NetworkService::Send(source, &walk, sizeof(walk));
+        }
     }
 
     if (const auto* shop = reg.try_get<ecs::ShopState>(source); shop && shop->myShop && !shop->shopSign.empty()) {
@@ -253,6 +269,12 @@ void SendCharacterInsert(entt::registry& reg, entt::entity source, entt::entity 
         strlcpy(sign.szSign, shop->shopSign.c_str(), sizeof(sign.szSign));
         ecs::NetworkService::Send(viewer, &sign, sizeof(sign));
     }
+
+#ifdef ENABLE_FAKE_SHOP_HEADER
+    // The last thing legacy EncodeInsertPacket does. Both sides must be a PC
+    // with a descriptor, as they were there.
+    MountSystem::UpdateMountInventoryCountOverhead(source, viewer);
+#endif
 }
 
 void SendCharacterRemove(entt::registry& reg, entt::entity source, entt::entity viewer)
@@ -435,21 +457,27 @@ void SendInsert(entt::registry& reg, entt::entity source, entt::entity viewer)
 
     switch (kind->kind) {
     case ecs::SpatialKind::Character:
-        // Character spawn/movement insert remains legacy-authoritative for now.
-        // The native builder can diverge from legacy movement destination state
-        // and leave two clients with different perceived character positions.
-        if (LPENTITY sourceLegacy = ecs::LPENTITYFromEntity(reg, source)) {
-            if (LPENTITY viewerLegacy = ecs::LPENTITYFromEntity(reg, viewer)) {
-                sourceLegacy->EncodeInsertPacket(viewerLegacy);
-#ifdef AURIGA_LPENTITY_FIXUP_AUDIT
-                // 4-fixup.3 + 4-fixup.4: validate ECS shadow state and
-                // packet parity AFTER the legacy authoritative emission.
-                ecs::EntityNetworkDispatchAudit::CheckCharacterInsertParity(reg, source);
-#endif
-                break;
-            }
-        }
+        // Native-authoritative. The deferral note that stood here said the
+        // native builder could diverge from legacy movement destination state
+        // and leave two clients disagreeing about where a character is. The
+        // packet fields were never the risk - the audit beside this compares
+        // every one of them, and the destination snap is the same expression on
+        // both sides. What actually differed were three things the audit says
+        // outright it cannot see, because they are side packets rather than
+        // fields:
+        //
+        //   - the follow-up move packet, which legacy sends only when the
+        //     destination differs from the position it just wrote;
+        //   - the viewer walk-mode packet, gated on the viewer's IsWalking()
+        //     (walking OR out of stamina) and carrying RUN in the second case,
+        //     where the native path tested isNowWalking alone and sent nothing;
+        //   - the fake-shop overhead packet, which the native path never sent.
+        //
+        // All three are closed. The audit stays, and still runs.
         SendCharacterInsert(reg, source, viewer);
+#ifdef AURIGA_LPENTITY_FIXUP_AUDIT
+        ecs::EntityNetworkDispatchAudit::CheckCharacterInsertParity(reg, source);
+#endif
         break;
     case ecs::SpatialKind::Item:
         SendItemInsert(reg, source, viewer);

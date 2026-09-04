@@ -4535,7 +4535,7 @@ void CHARACTER::MountVnum(uint32_t vnum)
     m_posStart.y = GetY();
     ecs::MovementSystem::SyncDestinationClear(GetEntityHandle());
 
-    EncodeInsertPacket(this);
+    ecs::EntityNetworkDispatch::SendInsert(g_registry, GetEntityHandle(), GetEntityHandle());
 
     // Phase 15E-final.LPENTITY.4-architect H fixup-6:
     // Replace stale m_map_view walk with ECS ViewerMap.viewers walk.

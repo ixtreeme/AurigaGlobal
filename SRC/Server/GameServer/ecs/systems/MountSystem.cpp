@@ -197,51 +197,17 @@ void CHARACTER::SendMountInventory()
 
 int CHARACTER::GetBeltCount() const
 {
-    int beltItemCount = 0;
-    for (int i = BELT_INVENTORY_SLOT_START; i < BELT_INVENTORY_SLOT_END; ++i)
-    {
-        if (GetInventoryItem(i))
-            ++beltItemCount;
-    }
-
-    return beltItemCount;
+    return MountSystem::GetBeltCount(GetEntityHandle());
 }
 
 int CHARACTER::GetMountCount() const
 {
-    int mountItemCount = 0;
-    if (CMountInventory* mi = GetMountInventory())
-    {
-        const int total = mi->GetWidth() * mi->GetSize();
-        for (int pos = 0; pos < total; ++pos)
-        {
-            if (mi->Get(pos) != entt::null)
-                ++mountItemCount;
-        }
-    }
-
-    return mountItemCount;
+    return MountSystem::GetMountCount(GetEntityHandle());
 }
 
 void CHARACTER::UpdateMountInventoryCountOverhead(entt::entity viewerEntity)
 {
-    if (!IsPC())
-        return;
-
-    if (!ecs::PlayerRuntime::IsPC(viewerEntity))
-        return;
-
-    LPDESC viewerDesc = ecs::PlayerRuntime::GetDesc(viewerEntity);
-    if (!viewerDesc)
-        return;
-
-    TPacketGCFakeShopSign p;
-    p.bHeader = HEADER_GC_FAKE_SHOP_SIGN;
-    p.dwVID = GetPacketVID();
-    p.iMountCount = GetMountCount();
-    p.iBeltCount = GetBeltCount();
-
-    viewerDesc->Packet(&p, sizeof(p));
+    MountSystem::UpdateMountInventoryCountOverhead(GetEntityHandle(), viewerEntity);
 }
 
 void CHARACTER::UpdateMountCountOverheadToViewers()
@@ -572,6 +538,56 @@ uint32_t GetMyHorseVnum(entt::entity rider)
     }
 
     return c_aHorseStat[GetHorseLevel(rider)].iNPCRace + delta;
+}
+
+int GetBeltCount(entt::entity e)
+{
+    int beltItemCount = 0;
+    for (int i = BELT_INVENTORY_SLOT_START; i < BELT_INVENTORY_SLOT_END; ++i)
+    {
+        if (ItemSystem::GetInventoryItem(e, i) != entt::null)
+            ++beltItemCount;
+    }
+
+    return beltItemCount;
+}
+
+int GetMountCount(entt::entity e)
+{
+    int mountItemCount = 0;
+    if (CMountInventory* mi = GetMountInventory(e))
+    {
+        const int total = mi->GetWidth() * mi->GetSize();
+        for (int pos = 0; pos < total; ++pos)
+        {
+            if (mi->Get(pos) != entt::null)
+                ++mountItemCount;
+        }
+    }
+
+    return mountItemCount;
+}
+
+void UpdateMountInventoryCountOverhead(entt::entity source, entt::entity viewerEntity)
+{
+    // Both sides must be a PC with a descriptor, as in the legacy method.
+    if (!ecs::PlayerRuntime::GetDesc(source))
+        return;
+
+    if (!ecs::PlayerRuntime::IsPC(viewerEntity))
+        return;
+
+    LPDESC viewerDesc = ecs::PlayerRuntime::GetDesc(viewerEntity);
+    if (!viewerDesc)
+        return;
+
+    TPacketGCFakeShopSign p;
+    p.bHeader = HEADER_GC_FAKE_SHOP_SIGN;
+    p.dwVID = ecs::PlayerRuntime::GetPacketVID(source);
+    p.iMountCount = GetMountCount(source);
+    p.iBeltCount = GetBeltCount(source);
+
+    viewerDesc->Packet(&p, sizeof(p));
 }
 
 entt::entity GetSummonedHorse(entt::entity rider)
