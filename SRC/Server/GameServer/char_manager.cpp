@@ -447,14 +447,14 @@ void CHARACTER_MANAGER::DestroyCharacter(LPCHARACTER ch, const char* file, size_
 	const entt::entity character = ch->GetEntityHandle();
 
 #ifdef __NEWPET_SYSTEM__
-	if (ecs::PlayerRuntime::IsNPC(character) && !ch->IsPet() && !ch->IsNewPet() && ch->GetRider() == nullptr)
+	if (ecs::PlayerRuntime::IsNPC(character) && !ecs::PlayerRuntime::IsPet(character) && !ecs::PlayerRuntime::IsNewPet(character) && ecs::LegacyCharOf(character)->GetRider() == nullptr)
 #else
-	if (ecs::PlayerRuntime::IsNPC(character) && !ch->IsPet() && ch->GetRider() == NULL)
+	if (ecs::PlayerRuntime::IsNPC(character) && !ecs::PlayerRuntime::IsPet(character) && ecs::LegacyCharOf(character)->GetRider() == NULL)
 #endif
 	{
-		if (ch->GetDungeon())
+		if (ecs::SocialSystem::GetDungeon(character))
 		{
-			ch->GetDungeon()->DeadCharacter(ch);
+			ecs::SocialSystem::GetDungeon(character)->DeadCharacter(ch);
 		}
 	}
 
@@ -489,9 +489,9 @@ void CHARACTER_MANAGER::DestroyCharacter(LPCHARACTER ch, const char* file, size_
 
 	UnregisterRaceNumMap(character);
 
-	RemoveFromStateList(ch->GetEntityHandle());
+	RemoveFromStateList(character);
 
-	if (const entt::entity entity = ch->GetEntityHandle();
+	if (const entt::entity entity = character;
 		entity != entt::null && g_registry.valid(entity))
 	{
 		// Phase 15E-final.LPENTITY.4-architect.D.6.fixup-6:
@@ -517,7 +517,7 @@ void CHARACTER_MANAGER::DestroyCharacter(LPCHARACTER ch, const char* file, size_
 		// then m_map_view is empty (legacy clear) and the ECS handle is
 		// null - both branches of the D.6 ViewCleanup are no-ops on the
 		// second pass.
-		ecs::ViewSystem::ViewCleanup(ch->GetEntityHandle());
+		ecs::ViewSystem::ViewCleanup(character);
 		// The CHARACTER destructor still needs the ECS-backed inventory,
 		// session and social components while it tears the legacy shell down.
 		// EntityFactory::Destroy is deliberately deferred to the end of
@@ -1000,7 +1000,7 @@ bool CHARACTER_MANAGER::SpawnMoveGroup(uint32_t dwVnum, int32_t lMapIndex, int s
 		ey = ecs::PlayerRuntime::GetY(spawned) + number(300, 500);
 
 		if (m_selectedStone != entt::null)
-			tch->SetStone(m_selectedStone);
+			CombatSystem::SetStone(spawned, m_selectedStone);
 		else if (pkParty)
 		{
 			pkParty->Join(ecs::PlayerRuntime::GetPacketVID(spawned));
@@ -1085,9 +1085,9 @@ LPCHARACTER CHARACTER_MANAGER::SpawnGroup(uint32_t dwVnum, int32_t lMapIndex, in
 		if (i == 0)
 			chLeader = tch;
 
-		tch->SetDungeon(pDungeon);
-
 		const entt::entity spawned = tch->GetEntityHandle();
+
+		ecs::PlayerRuntime::SetDungeon(spawned, pDungeon);
 
 		sx = ecs::PlayerRuntime::GetX(spawned) - number(300, 500);
 		sy = ecs::PlayerRuntime::GetY(spawned) - number(300, 500);
@@ -1095,7 +1095,7 @@ LPCHARACTER CHARACTER_MANAGER::SpawnGroup(uint32_t dwVnum, int32_t lMapIndex, in
 		ey = ecs::PlayerRuntime::GetY(spawned) + number(300, 500);
 
 		if (m_selectedStone != entt::null)
-			tch->SetStone(m_selectedStone);
+			CombatSystem::SetStone(spawned, m_selectedStone);
 		else if (pkParty)
 		{
 			pkParty->Join(ecs::PlayerRuntime::GetPacketVID(spawned));

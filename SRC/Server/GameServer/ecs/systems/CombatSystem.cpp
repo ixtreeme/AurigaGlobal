@@ -7359,6 +7359,18 @@ uint8_t CHARACTER::GetChatCounter() const
 	return m_bChatCounter;
 }
 
+namespace CombatSystem {
+
+// m_pkChrStone and the spawned-by set on the stone are CHARACTER members with
+// no component; this resolves for them. The spawn path calling it does not.
+void SetStone(entt::entity e, entt::entity stone)
+{
+	if (LPCHARACTER ch = ecs::LegacyCharOf(e))
+		ch->SetStone(stone);
+}
+
+} // namespace CombatSystem
+
 void CHARACTER::SetStone(entt::entity stone)
 {
 	LPCHARACTER pkStone = ecs::LegacyCharOf(stone);

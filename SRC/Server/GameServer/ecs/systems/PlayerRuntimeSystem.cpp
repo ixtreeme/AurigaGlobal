@@ -1694,6 +1694,20 @@ bool IsDungeonTicketExtraMetin(entt::entity e)
 // The proto assignment still allocates CMobInstance on the CHARACTER, so this
 // resolves. What it gains is that the spawn path no longer holds a pointer for
 // it - ecs::MobDataRef is the component side and EntityFactory writes that.
+// The creature flags, straight off StatusFlags. The comment on that component
+// spells out that these are about the creature itself, not its owner.
+bool IsPet(entt::entity e)
+{
+    const auto* status = g_registry.try_get<ecs::StatusFlags>(e);
+    return status && status->isPet;
+}
+
+bool IsNewPet(entt::entity e)
+{
+    const auto* status = g_registry.try_get<ecs::StatusFlags>(e);
+    return status && status->isNewPet;
+}
+
 void SetProto(entt::entity e, const CMob* pkMob)
 {
     if (LPCHARACTER ch = ecs::LegacyCharOf(e))
@@ -3011,6 +3025,18 @@ void CHARACTER::SetMarryPartner(entt::entity chEntity)
     LPCHARACTER ch = ecs::LegacyCharOf(chEntity);
     m_pkChrMarried = ch;
 }
+
+namespace ecs::PlayerRuntime {
+
+// m_pkDungeon is a CHARACTER member and CDungeon keeps a character list, so
+// this resolves. The dungeon axis is its own.
+void SetDungeon(entt::entity e, LPDUNGEON pkDungeon)
+{
+    if (LPCHARACTER ch = ecs::LegacyCharOf(e))
+        ch->SetDungeon(pkDungeon);
+}
+
+} // namespace ecs::PlayerRuntime
 
 void CHARACTER::SetDungeon(LPDUNGEON pkDungeon)
 {
