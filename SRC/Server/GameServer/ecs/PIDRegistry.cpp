@@ -21,3 +21,13 @@ void CPIDRegistry::Unregister(uint32_t pid)
 {
     m_map.erase(pid);
 }
+
+std::vector<entt::entity> CPIDRegistry::Snapshot() const
+{
+    std::vector<entt::entity> out;
+    out.reserve(m_map.size());
+    for (const auto& [key, entity] : m_map)
+        out.push_back(entity);
+
+    return out;
+}

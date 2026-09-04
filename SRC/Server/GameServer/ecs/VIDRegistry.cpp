@@ -21,3 +21,13 @@ void CVIDRegistry::Unregister(uint32_t vid)
 {
     m_map.erase(vid);
 }
+
+std::vector<entt::entity> CVIDRegistry::Snapshot() const
+{
+    std::vector<entt::entity> out;
+    out.reserve(m_map.size());
+    for (const auto& [key, entity] : m_map)
+        out.push_back(entity);
+
+    return out;
+}

@@ -3,6 +3,9 @@
 
 #include <entt/entity/entity.hpp>
 
+#include "ecs/PIDRegistry.hpp"
+#include "ecs/CharacterAccessors.hpp"
+
 #ifdef M2_USE_POOL
 #include "pool.h"
 #endif
@@ -165,8 +168,6 @@ protected:
 		int					m_iUserDamageRatePremium;
 		uint32_t				m_iVIDCount;
 
-		std::unordered_map<uint32_t, LPCHARACTER> m_map_pkChrByVID;
-		std::unordered_map<uint32_t, LPCHARACTER> m_map_pkChrByPID;
 		NAME_MAP			m_map_pkPCChr;
 
 		char				dummy1[1024];	// memory barrier
@@ -201,8 +202,9 @@ protected:
 	template<class Func>
 Func CHARACTER_MANAGER::for_each_pc(Func f)
 {
-	for (auto it = m_map_pkChrByPID.begin(); it != m_map_pkChrByPID.end(); ++it)
-		f(it->second);
+	for (const entt::entity entity : CPIDRegistry::Instance().Snapshot())
+		if (LPCHARACTER ch = ecs::LegacyCharOf(entity))
+			f(ch);
 
 	return f;
 }

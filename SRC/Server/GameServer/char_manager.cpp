@@ -344,11 +344,24 @@ void CHARACTER_MANAGER::Destroy()
 	m_IShopManager.clear();
 #endif
 
-	auto it = m_map_pkChrByVID.begin();
-	while (it != m_map_pkChrByVID.end()) {
-		LPCHARACTER ch = it->second;
-		M2_DESTROY_CHARACTER(ch); // m_map_pkChrByVID is changed here
-		it = m_map_pkChrByVID.begin();
+	// Re-snapshotting each round rather than walking one list: destroying a
+	// character can destroy others (a rider takes its mount), so a list taken
+	// once would hold entities that are already gone.
+	for (auto snapshot = CVIDRegistry::Instance().Snapshot(); !snapshot.empty();
+		snapshot = CVIDRegistry::Instance().Snapshot())
+	{
+		const entt::entity entity = snapshot.front();
+		LPCHARACTER ch = ecs::LegacyCharOf(entity);
+		if (!ch)
+		{
+			// No legacy shell to destroy, so nothing would unregister it and
+			// the next snapshot would be identical. Drop it here.
+			CVIDRegistry::Instance().Unregister(
+				ecs::PlayerRuntime::GetPacketVID(entity));
+			continue;
+		}
+
+		M2_DESTROY_CHARACTER(ch);
 	}
 }
 
@@ -395,15 +408,20 @@ LPCHARACTER CHARACTER_MANAGER::CreateCharacter(const char* name, uint32_t dwPID)
 	}
 #endif
 
-	m_map_pkChrByVID.insert(std::make_pair(dwVID, ch));
-
 	if (dwPID)
 	{
 		char szName[CHARACTER_NAME_MAX_LEN + 1];
 		str_lower(name, szName, sizeof(szName));
 
 		m_map_pkPCChr.insert(NAME_MAP::value_type(szName, ch));
-		m_map_pkChrByPID.insert(std::make_pair(dwPID, ch));
+
+		// CPIDRegistry was only written by EntityFactory::CreatePC, which is
+		// the login path - a character given a PID here and not through that
+		// path existed in the legacy map and not the registry, which is
+		// exactly the PID_DRIFT that FindEntityByPID logs. Registering here
+		// writes both indexes at the same point. Register overwrites, so
+		// CreatePC doing it again later costs nothing.
+		CPIDRegistry::Instance().Register(dwPID, ch->GetEntityHandle());
 	}
 
 	return ch;
@@ -419,8 +437,9 @@ void CHARACTER_MANAGER::DestroyCharacter(LPCHARACTER ch, const char* file, size_
 		return;
 
 	// <Factor> Check whether it has been already deleted or not.
-	const auto it = m_map_pkChrByVID.find(ch->GetLegacyVID());
-	if (it == m_map_pkChrByVID.end()) {
+	// Was a lookup in the legacy VID map; the registry answers the same
+	// question, and EntityFactory::Destroy is what unregisters.
+	if (CVIDRegistry::Instance().Find(ch->GetLegacyVID()) == entt::null) {
 		LOG_ERROR("[CHARACTER_MANAGER::DestroyCharacter] <Factor> {} not found", ch->GetLegacyVID());
 		return; // prevent duplicated destrunction
 	}
@@ -451,8 +470,6 @@ void CHARACTER_MANAGER::DestroyCharacter(LPCHARACTER ch, const char* file, size_
 	//if (ecs::PlayerRuntime::IsPC(character))											   // Ixtreeme fix -- ITEM_SAVE invalid owner pointer
 	//	ITEM_MANAGER::instance().FlushDelayedSaveByOwner(ch);  // Ixtreeme fix -- ITEM_SAVE invalid owner pointer
 
-	m_map_pkChrByVID.erase(it);
-
 	if (true == ecs::PlayerRuntime::IsPC(character))
 	{
 		char szName[CHARACTER_NAME_MAX_LEN + 1];
@@ -463,16 +480,6 @@ void CHARACTER_MANAGER::DestroyCharacter(LPCHARACTER ch, const char* file, size_
 
 		if (m_map_pkPCChr.end() != it)
 			m_map_pkPCChr.erase(it);
-	}
-
-	if (0 != ecs::PlayerRuntime::GetPlayerID(character))
-	{
-		auto it = m_map_pkChrByPID.find(ecs::PlayerRuntime::GetPlayerID(character));
-
-		if (m_map_pkChrByPID.end() != it)
-		{
-			m_map_pkChrByPID.erase(it);
-		}
 	}
 
 	if (ecs::PlayerRuntime::IsPC(character)) {
@@ -539,37 +546,21 @@ LPCHARACTER CHARACTER_MANAGER::Find(uint32_t dwVID)
 		}
 	}
 
-	const auto it = m_map_pkChrByVID.find(dwVID);
-
-	if (m_map_pkChrByVID.end() == it)
-		return nullptr;
-
-	LOG_ERROR("VID_DRIFT fallback in CHARACTER_MANAGER::Find({})", dwVID);
-
-	// <Factor> Added sanity check
-	LPCHARACTER found = it->second;
-	if (found != nullptr && dwVID != found->GetLegacyVID()) {
-		LOG_ERROR("[CHARACTER_MANAGER::Find] <Factor> {} != {}", dwVID, found->GetLegacyVID());
-		return nullptr;
-	}
-	return found;
+	return nullptr;
 }
 
 LPCHARACTER CHARACTER_MANAGER::FindByPID(uint32_t dwPID)
 {
-	const auto it = m_map_pkChrByPID.find(dwPID);
-
-	if (m_map_pkChrByPID.end() == it)
-		return nullptr;
-
-	// <Factor> Added sanity check
-	LPCHARACTER found = it->second;
-	const entt::entity character = found ? found->GetEntityHandle() : entt::null;
-	if (found != nullptr && dwPID != ecs::PlayerRuntime::GetPlayerID(character)) {
-		LOG_ERROR("[CHARACTER_MANAGER::FindByPID] <Factor> {} != {}", dwPID, ecs::PlayerRuntime::GetPlayerID(character));
-		return nullptr;
+	// Registry first, as Find and FindEntityByPID already do. This was the one
+	// PID lookup that read the legacy map alone.
+	if (const entt::entity entity = CPIDRegistry::Instance().Find(dwPID);
+		entity != entt::null && g_registry.valid(entity))
+	{
+		if (const auto* legacy = g_registry.try_get<ecs::LegacyCharPtr>(entity); legacy && legacy->ptr)
+			return legacy->ptr;
 	}
-	return found;
+
+	return nullptr;
 }
 
 entt::entity CHARACTER_MANAGER::FindEntity(uint32_t dwVID)
@@ -1162,10 +1153,9 @@ void CHARACTER_MANAGER::Update(int iPulse)
 	{
 
 		CHARACTER_VECTOR all;
-		all.reserve(m_map_pkChrByVID.size());
-		for (const auto& it : m_map_pkChrByVID)
-			if (it.second)
-				all.push_back(it.second);
+		for (const entt::entity entity : CVIDRegistry::Instance().Snapshot())
+			if (LPCHARACTER ch = ecs::LegacyCharOf(entity))
+				all.push_back(ch);
 
 		for (LPCHARACTER ch : all)
 		{
@@ -1179,10 +1169,9 @@ void CHARACTER_MANAGER::Update(int iPulse)
 		{
 
 			all.clear();
-			all.reserve(m_map_pkChrByVID.size());
-			for (const auto& it : m_map_pkChrByVID)
-				if (it.second)
-					all.push_back(it.second);
+			for (const entt::entity entity : CVIDRegistry::Instance().Snapshot())
+				if (LPCHARACTER ch = ecs::LegacyCharOf(entity))
+					all.push_back(ch);
 
 			for (LPCHARACTER ch : all)
 			{
@@ -1290,7 +1279,8 @@ void CHARACTER_MANAGER::Update(int iPulse)
 
 	// ׽Ʈ  60ʸ ĳ
 	if (test_server && 0 == iPulse % PASSES_PER_SEC(60))
-		LOG_INFO("CHARACTER COUNT vid {} pid {}", m_map_pkChrByVID.size(), m_map_pkChrByPID.size());
+		LOG_INFO("CHARACTER COUNT vid {} pid {}", CVIDRegistry::Instance().Snapshot().size(),
+			CPIDRegistry::Instance().Snapshot().size());
 
 	//  DestroyCharacter ϱ
 	FlushPendingDestroy();
@@ -1477,13 +1467,14 @@ entt::entity CHARACTER_MANAGER::FindSpecifyPC(unsigned int uiJobFlag, int32_t lM
 	entt::entity chFind = entt::null;
 	int n = 0;
 
-	// Still the PID map, deliberately: a view over TagPC would be the native
-	// iteration but is not provably the same population, and this function
-	// picks a random winner - a different candidate set is not something a
-	// build would catch.
-	for (auto it = m_map_pkChrByPID.begin(); it != m_map_pkChrByPID.end(); ++it)
+	// The PID registry, not a TagPC view. The earlier note here rejected a view
+	// because it is not provably the same population and this function picks a
+	// random winner, so a different candidate set would not show up in a build.
+	// The registry is the same population: CreateCharacter writes it and the
+	// legacy map together, and EntityFactory::Destroy unregisters.
+	for (const entt::entity entity : CPIDRegistry::Instance().Snapshot())
 	{
-		auto* ch = it->second;
+		auto* ch = ecs::LegacyCharOf(entity);
 		if (!ch)
 			continue;
 
