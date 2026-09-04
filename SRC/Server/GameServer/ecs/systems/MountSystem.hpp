@@ -6,6 +6,8 @@
 
 #include "../components/social_components.hpp"
 
+class CMountInventory;
+
 namespace MountSystem {
 
 bool IsRiding(entt::entity rider);
@@ -26,6 +28,8 @@ void SummonHorse(entt::entity rider, bool summon, bool fromFar = false,
 uint32_t GetMountVnum(entt::entity rider);
 void SetMountVnum(entt::entity rider, uint32_t vnum);
 void MountSummon(entt::entity rider, entt::entity mountItem);
+CMountInventory* GetMountInventory(entt::entity rider);
+void SetMountInventory(entt::entity rider, CMountInventory* inventory);
 ecs::MountState& GetMountStateRef(entt::entity rider);
 uint32_t GetLastMountTime(entt::entity rider);
 uint32_t GetMyHorseVnum(entt::entity rider);

@@ -4413,10 +4413,10 @@ void CHARACTER::Destroy()
         m_pSkillLevels = nullptr;
     }
 
-    if (m_pkMountInventory)
+    if (MountSystem::GetMountInventory(GetEntityHandle()))
     {
-        M2_DELETE(m_pkMountInventory);
-        m_pkMountInventory = nullptr;
+        M2_DELETE(MountSystem::GetMountInventory(GetEntityHandle()));
+        MountSystem::SetMountInventory(GetEntityHandle(), nullptr);
     }
     m_bMountInventoryLoaded = false;
 
@@ -5851,7 +5851,7 @@ void CHARACTER::Initialize()
     m_iSafeboxSize = -1;
     m_iSafeboxLoadTime = 0;
 
-    m_pkMountInventory = nullptr;
+    MountSystem::SetMountInventory(GetEntityHandle(), nullptr);
     m_bMountInventoryLoaded = false;
 
     m_pkMall = nullptr;

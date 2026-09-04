@@ -5,6 +5,10 @@
 
 namespace InventorySystem {
 
+bool EquipTo(entt::entity item, entt::entity ch, uint8_t bWearCell);
+bool Unequip(entt::entity item);
+entt::entity RemoveFromCharacter(entt::entity item);
+
 void SyncQuickslot(entt::entity e, uint8_t bType, uint8_t bOldPos, uint8_t bNewPos);
 bool GetQuickslot(entt::entity e, uint8_t pos, TQuickslot& out);
 void SetQuickslot(entt::entity e, uint8_t pos, const TQuickslot& slot);

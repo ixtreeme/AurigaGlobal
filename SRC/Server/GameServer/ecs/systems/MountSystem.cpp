@@ -112,7 +112,7 @@ namespace MountSystem {
 
 CMountInventory* CHARACTER::GetMountInventory() const
 {
-    return m_pkMountInventory;
+    return MountSystem::GetMountInventory(GetEntityHandle());
 }
 
 void CHARACTER::QueryMountInventory()
@@ -136,7 +136,7 @@ void CHARACTER::LoadMountInventory(const std::vector<TMountInventoryItemTable>& 
         return;
 
     const int iHeight = 16;
-    m_pkMountInventory = M2_NEW CMountInventory(GetEntityHandle(), iHeight);
+    MountSystem::SetMountInventory(GetEntityHandle(), M2_NEW CMountInventory(GetEntityHandle(), iHeight));
 
     for (const auto& entry : items)
     {
@@ -153,7 +153,7 @@ void CHARACTER::LoadMountInventory(const std::vector<TMountInventoryItemTable>& 
                 item, attribute, entry.aAttr[attribute].bType,
                 entry.aAttr[attribute].sValue);
 
-        if (!m_pkMountInventory->Add(entry.slot, item, true))
+        if (!MountSystem::GetMountInventory(GetEntityHandle())->Add(entry.slot, item, true))
             ItemSystem::DestroyItemEntityEcs(item, "MOUNT_INVENTORY_LOAD_ADD_FAILED");
     }
 
@@ -164,17 +164,17 @@ void CHARACTER::LoadMountInventory(const std::vector<TMountInventoryItemTable>& 
 
 void CHARACTER::SendMountInventory()
 {
-    if (!GetDesc() || !m_pkMountInventory)
+    if (!GetDesc() || !MountSystem::GetMountInventory(GetEntityHandle()))
         return;
 
     std::vector<TMountInventoryItemTable> items;
-    m_pkMountInventory->CollectItems(items);
+    MountSystem::GetMountInventory(GetEntityHandle())->CollectItems(items);
 
     TPacketGCMountInventory header{};
     header.bHeader = HEADER_GC_MOUNT_INVENTORY;
     header.size = sizeof(TPacketGCMountInventory) + static_cast<uint16_t>(items.size() * sizeof(TMountInventoryItemData));
-    header.bWidth = m_pkMountInventory->GetWidth();
-    header.bHeight = m_pkMountInventory->GetSize();
+    header.bWidth = MountSystem::GetMountInventory(GetEntityHandle())->GetWidth();
+    header.bHeight = MountSystem::GetMountInventory(GetEntityHandle())->GetSize();
     header.wCount = static_cast<uint16_t>(items.size());
 
     TEMP_BUFFER buf;
@@ -521,6 +521,23 @@ void HorseSummon(entt::entity rider, bool bSummon, bool bFromFar, uint32_t dwVnu
 // The packet-dedup counters and the pulse gate. They were four CHARACTER
 // members mirrored into MountState by every SyncMountState call; the component
 // is the only copy now, so the mirror argument list goes away with them.
+CMountInventory* GetMountInventory(entt::entity rider)
+{
+    if (rider == entt::null || !g_registry.valid(rider))
+        return nullptr;
+
+    const auto* ref = g_registry.try_get<ecs::MountInventoryRef>(rider);
+    return ref ? ref->inventory : nullptr;
+}
+
+void SetMountInventory(entt::entity rider, CMountInventory* inventory)
+{
+    if (rider == entt::null || !g_registry.valid(rider))
+        return;
+
+    g_registry.get_or_emplace<ecs::MountInventoryRef>(rider).inventory = inventory;
+}
+
 ecs::MountState& GetMountStateRef(entt::entity rider)
 {
     static ecs::MountState detached;

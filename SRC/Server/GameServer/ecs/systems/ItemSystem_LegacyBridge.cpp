@@ -4,6 +4,7 @@
 #include "ActivitySystem.hpp"
 
 #include "ItemSystem.hpp"
+#include "InventorySystem.hpp"
 #include "MountSystem.hpp"
 #include "QuestSystem.hpp"
 #include "PointSystem.hpp"
@@ -2581,7 +2582,7 @@ bool CHARACTER::EquipItem(LPITEM item, int iCandidateCell)
 			return false;
 		}
 
-		if (!item->EquipTo(this, iWearCell))
+		if (!InventorySystem::EquipTo(item->GetEntityHandle(), this->GetEntityHandle(), iWearCell))
 		{
 			return false;
 		}
@@ -2605,7 +2606,7 @@ bool CHARACTER::EquipItem(LPITEM item, int iCandidateCell)
 		{
 			uint8_t bOldCell = item->GetCell();
 
-			if (item->EquipTo(this, iWearCell))
+			if (InventorySystem::EquipTo(item->GetEntityHandle(), this->GetEntityHandle(), iWearCell))
 			{
 				SyncQuickslot(QUICKSLOT_TYPE_ITEM, bOldCell, iWearCell);
 			}
@@ -15037,7 +15038,7 @@ bool CHARACTER::SwapItem(uint8_t bCell, uint8_t bDestCell)
 
 		item2->RemoveFromCharacter();
 
-		if (item1->EquipTo(this, bEquipCell))
+		if (InventorySystem::EquipTo(item1->GetEntityHandle(), this->GetEntityHandle(), bEquipCell))
 		{
 			item2->AddToCharacter(this, TItemPos(INVENTORY, bInvenCell)
 #ifdef __HIGHLIGHT_SYSTEM__
@@ -15718,15 +15719,12 @@ void CItem::Initialize()
 
 	ItemSystem::GetItemEvents(GetEntityHandle()).destroy = nullptr;
 	ItemSystem::GetItemEvents(GetEntityHandle()).ownership = nullptr;
-	m_dwOwnershipPID = 0;
 
 	ItemSystem::GetItemEvents(GetEntityHandle()).timerBasedOnWearExpire = nullptr;
 	ItemSystem::GetItemEvents(GetEntityHandle()).realTimeExpire = nullptr;
 
 	ItemSystem::GetItemEvents(GetEntityHandle()).accessorySocketExpire = nullptr;
 
-	m_bSkipSave = false;
-	m_dwLastOwnerPID = 0;
 }
 
 void CItem::Destroy()
@@ -15761,10 +15759,7 @@ void CItem::Destroy()
 
 void CItem::Save()
 {
-	if (m_bSkipSave)
-		return;
-
-	ITEM_MANAGER::instance().DelayedSave(this);
+	ItemSystem::SaveItem(GetEntityHandle());
 }
 
 void CItem::SetProto(const TItemTable* table)
@@ -16444,19 +16439,7 @@ int CItem::GetRefineLevel()
 
 void CItem::ClearMountAttributeAndAffect()
 {
-	auto* ch = GetOwner();
-	const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
-
-
-	AffectSystem::RemoveAffect(chEntity, AFFECT_MOUNT);
-	AffectSystem::RemoveAffect(chEntity, AFFECT_MOUNT_BONUS);
-
-	MountSystem::ForceClearRidingState(chEntity);
-
-	ecs::PointSystem::Change(chEntity, POINT_ST, 0);
-	ecs::PointSystem::Change(chEntity, POINT_DX, 0);
-	ecs::PointSystem::Change(chEntity, POINT_HT, 0);
-	ecs::PointSystem::Change(chEntity, POINT_IQ, 0);
+	ItemSystem::ClearMountAttributeAndAffect(GetEntityHandle());
 }
 
 void CItem::AddLockedAttr()
@@ -16882,9 +16865,8 @@ CItem::CItem(uint32_t dwVnum)
 	: m_pProto(nullptr), m_dwVnum(dwVnum), m_dwID(0), m_dwVID(0),
 	m_dwCount(0),
 	m_sLockedAttr(0),
-	m_lFlag(0), m_dwLastOwnerPID(0),
+	m_lFlag(0),
 	m_bExchanging(false),
-	m_dwOwnershipPID(0), m_bSkipSave(false),
 	m_isLocked(false),
 	m_dwMaskVnum(0), m_dwSIGVnum(0)
 {

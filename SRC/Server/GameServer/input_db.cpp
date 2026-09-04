@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "ecs/systems/InventorySystem.hpp"
 #include "ecs/systems/PointSystem.hpp"
 #include "ecs/systems/PlayerRuntimeSystem.hpp"
 #include "ecs/systems/SocialSystem.hpp"
@@ -1783,7 +1784,7 @@ void CInputDB::ItemLoad(LPDESC d, const char * c_pData)
 				case EQUIPMENT:
 					if (item->CheckItemUseLevel((ecs::PointSystem::GetLevel(((ch) ? (ch)->GetEntityHandle() : entt::null)))) == true )
 					{
-						if (item->EquipTo(ch, p->pos) == false )
+						if (InventorySystem::EquipTo(item->GetEntityHandle(), ch->GetEntityHandle(), p->pos) == false )
 						{
 							deferredItems.push_back(itemEntity);
 						}

@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "ecs/systems/InventorySystem.hpp"
 #include <Core/Logging.hpp>
 #include "ecs/systems/PlayerRuntimeSystem.hpp"
 #include "ecs/systems/MovementSystem.hpp"
@@ -4442,66 +4443,66 @@ ACMD (do_item_full_set)
 		{
 
 			item = ITEM_MANAGER::instance().CreateItem(19712);
-			if (!item || !item->EquipTo(ch, ItemSystem::FindEquipCell(ch->GetEntityHandle(), item->GetEntityHandle())))
+			if (!item || !InventorySystem::EquipTo(item->GetEntityHandle(), ch->GetEntityHandle(), ItemSystem::FindEquipCell(ch->GetEntityHandle(), item->GetEntityHandle())))
 				ItemSystem::DestroyItemEntityEcs(
 			(item ? item->GetEntityHandle() : entt::null),
 			"GM_CMD_DESTROY");
 			item = ITEM_MANAGER::instance().CreateItem(1733);//pajzs
-			if (!item || !item->EquipTo(ch, ItemSystem::FindEquipCell(ch->GetEntityHandle(), item->GetEntityHandle())))
+			if (!item || !InventorySystem::EquipTo(item->GetEntityHandle(), ch->GetEntityHandle(), ItemSystem::FindEquipCell(ch->GetEntityHandle(), item->GetEntityHandle())))
 				ItemSystem::DestroyItemEntityEcs(
 			(item ? item->GetEntityHandle() : entt::null),
 			"GM_CMD_DESTROY");
 			item = ITEM_MANAGER::instance().CreateItem(1773 );//cipi
-			if (!item || !item->EquipTo(ch, ItemSystem::FindEquipCell(ch->GetEntityHandle(), item->GetEntityHandle())))
+			if (!item || !InventorySystem::EquipTo(item->GetEntityHandle(), ch->GetEntityHandle(), ItemSystem::FindEquipCell(ch->GetEntityHandle(), item->GetEntityHandle())))
 				ItemSystem::DestroyItemEntityEcs(
 			(item ? item->GetEntityHandle() : entt::null),
 			"GM_CMD_DESTROY");
 			item = ITEM_MANAGER::instance().CreateItem(399 );//kard
-			if (!item || !item->EquipTo(ch, ItemSystem::FindEquipCell(ch->GetEntityHandle(), item->GetEntityHandle())))
+			if (!item || !InventorySystem::EquipTo(item->GetEntityHandle(), ch->GetEntityHandle(), ItemSystem::FindEquipCell(ch->GetEntityHandle(), item->GetEntityHandle())))
 				ItemSystem::DestroyItemEntityEcs(
 			(item ? item->GetEntityHandle() : entt::null),
 			"GM_CMD_DESTROY");
 			item = ITEM_MANAGER::instance().CreateItem(1713 );//sisak
-			if (!item || !item->EquipTo(ch, ItemSystem::FindEquipCell(ch->GetEntityHandle(), item->GetEntityHandle())))
+			if (!item || !InventorySystem::EquipTo(item->GetEntityHandle(), ch->GetEntityHandle(), ItemSystem::FindEquipCell(ch->GetEntityHandle(), item->GetEntityHandle())))
 				ItemSystem::DestroyItemEntityEcs(
 			(item ? item->GetEntityHandle() : entt::null),
 			"GM_CMD_DESTROY");
 			item = ITEM_MANAGER::instance().CreateItem(1753 );//karos
-			if (!item || !item->EquipTo(ch, ItemSystem::FindEquipCell(ch->GetEntityHandle(), item->GetEntityHandle())))
+			if (!item || !InventorySystem::EquipTo(item->GetEntityHandle(), ch->GetEntityHandle(), ItemSystem::FindEquipCell(ch->GetEntityHandle(), item->GetEntityHandle())))
 				ItemSystem::DestroyItemEntityEcs(
 			(item ? item->GetEntityHandle() : entt::null),
 			"GM_CMD_DESTROY");
 			item = ITEM_MANAGER::instance().CreateItem(1813 );//fli
-			if (!item || !item->EquipTo(ch, ItemSystem::FindEquipCell(ch->GetEntityHandle(), item->GetEntityHandle())))
+			if (!item || !InventorySystem::EquipTo(item->GetEntityHandle(), ch->GetEntityHandle(), ItemSystem::FindEquipCell(ch->GetEntityHandle(), item->GetEntityHandle())))
 				ItemSystem::DestroyItemEntityEcs(
 			(item ? item->GetEntityHandle() : entt::null),
 			"GM_CMD_DESTROY");
 			item = ITEM_MANAGER::instance().CreateItem(1793 );//nyaki
-			if (!item || !item->EquipTo(ch, ItemSystem::FindEquipCell(ch->GetEntityHandle(), item->GetEntityHandle())))
+			if (!item || !InventorySystem::EquipTo(item->GetEntityHandle(), ch->GetEntityHandle(), ItemSystem::FindEquipCell(ch->GetEntityHandle(), item->GetEntityHandle())))
 				ItemSystem::DestroyItemEntityEcs(
 			(item ? item->GetEntityHandle() : entt::null),
 			"GM_CMD_DESTROY");
 
 
 			item = ITEM_MANAGER::instance().CreateItem(85153);//SZARNY
-			if (!item || !item->EquipTo(ch, ItemSystem::FindEquipCell(ch->GetEntityHandle(), item->GetEntityHandle())))
+			if (!item || !InventorySystem::EquipTo(item->GetEntityHandle(), ch->GetEntityHandle(), ItemSystem::FindEquipCell(ch->GetEntityHandle(), item->GetEntityHandle())))
 				ItemSystem::DestroyItemEntityEcs(
 			(item ? item->GetEntityHandle() : entt::null),
 			"GM_CMD_DESTROY");
 
 			item = ITEM_MANAGER::instance().CreateItem(88211);//EFFECT FEGYO
-			if (!item || !item->EquipTo(ch, ItemSystem::FindEquipCell(ch->GetEntityHandle(), item->GetEntityHandle())))
+			if (!item || !InventorySystem::EquipTo(item->GetEntityHandle(), ch->GetEntityHandle(), ItemSystem::FindEquipCell(ch->GetEntityHandle(), item->GetEntityHandle())))
 				ItemSystem::DestroyItemEntityEcs(
 			(item ? item->GetEntityHandle() : entt::null),
 			"GM_CMD_DESTROY");
 			item = ITEM_MANAGER::instance().CreateItem(88213);//EFFETC VERT
-			if (!item || !item->EquipTo(ch, ItemSystem::FindEquipCell(ch->GetEntityHandle(), item->GetEntityHandle())))
+			if (!item || !InventorySystem::EquipTo(item->GetEntityHandle(), ch->GetEntityHandle(), ItemSystem::FindEquipCell(ch->GetEntityHandle(), item->GetEntityHandle())))
 				ItemSystem::DestroyItemEntityEcs(
 			(item ? item->GetEntityHandle() : entt::null),
 			"GM_CMD_DESTROY");
 
 			item = ITEM_MANAGER::instance().CreateItem(10810);//tali
-			if (!item || !item->EquipTo(ch, ItemSystem::FindEquipCell(ch->GetEntityHandle(), item->GetEntityHandle())))
+			if (!item || !InventorySystem::EquipTo(item->GetEntityHandle(), ch->GetEntityHandle(), ItemSystem::FindEquipCell(ch->GetEntityHandle(), item->GetEntityHandle())))
 				ItemSystem::DestroyItemEntityEcs(
 			(item ? item->GetEntityHandle() : entt::null),
 			"GM_CMD_DESTROY");
@@ -4511,65 +4512,65 @@ ACMD (do_item_full_set)
 		{
 
 			item = ITEM_MANAGER::instance().CreateItem(19312);
-			if (!item || !item->EquipTo(ch, ItemSystem::FindEquipCell(ch->GetEntityHandle(), item->GetEntityHandle())))
+			if (!item || !InventorySystem::EquipTo(item->GetEntityHandle(), ch->GetEntityHandle(), ItemSystem::FindEquipCell(ch->GetEntityHandle(), item->GetEntityHandle())))
 				ItemSystem::DestroyItemEntityEcs(
 			(item ? item->GetEntityHandle() : entt::null),
 			"GM_CMD_DESTROY");
 			item = ITEM_MANAGER::instance().CreateItem(1733);
-			if (!item || !item->EquipTo(ch, ItemSystem::FindEquipCell(ch->GetEntityHandle(), item->GetEntityHandle())))
+			if (!item || !InventorySystem::EquipTo(item->GetEntityHandle(), ch->GetEntityHandle(), ItemSystem::FindEquipCell(ch->GetEntityHandle(), item->GetEntityHandle())))
 				ItemSystem::DestroyItemEntityEcs(
 			(item ? item->GetEntityHandle() : entt::null),
 			"GM_CMD_DESTROY");
 			item = ITEM_MANAGER::instance().CreateItem(1773 );
-			if (!item || !item->EquipTo(ch, ItemSystem::FindEquipCell(ch->GetEntityHandle(), item->GetEntityHandle())))
+			if (!item || !InventorySystem::EquipTo(item->GetEntityHandle(), ch->GetEntityHandle(), ItemSystem::FindEquipCell(ch->GetEntityHandle(), item->GetEntityHandle())))
 				ItemSystem::DestroyItemEntityEcs(
 			(item ? item->GetEntityHandle() : entt::null),
 			"GM_CMD_DESTROY");
 			item = ITEM_MANAGER::instance().CreateItem(3269);//2kezes
-			if (!item || !item->EquipTo(ch, ItemSystem::FindEquipCell(ch->GetEntityHandle(), item->GetEntityHandle())))
+			if (!item || !InventorySystem::EquipTo(item->GetEntityHandle(), ch->GetEntityHandle(), ItemSystem::FindEquipCell(ch->GetEntityHandle(), item->GetEntityHandle())))
 				ItemSystem::DestroyItemEntityEcs(
 			(item ? item->GetEntityHandle() : entt::null),
 			"GM_CMD_DESTROY");
 			item = ITEM_MANAGER::instance().CreateItem(1713);//sisak
-			if (!item || !item->EquipTo(ch, ItemSystem::FindEquipCell(ch->GetEntityHandle(), item->GetEntityHandle())))
+			if (!item || !InventorySystem::EquipTo(item->GetEntityHandle(), ch->GetEntityHandle(), ItemSystem::FindEquipCell(ch->GetEntityHandle(), item->GetEntityHandle())))
 				ItemSystem::DestroyItemEntityEcs(
 			(item ? item->GetEntityHandle() : entt::null),
 			"GM_CMD_DESTROY");
 			item = ITEM_MANAGER::instance().CreateItem(1753 );
-			if (!item || !item->EquipTo(ch, ItemSystem::FindEquipCell(ch->GetEntityHandle(), item->GetEntityHandle())))
+			if (!item || !InventorySystem::EquipTo(item->GetEntityHandle(), ch->GetEntityHandle(), ItemSystem::FindEquipCell(ch->GetEntityHandle(), item->GetEntityHandle())))
 				ItemSystem::DestroyItemEntityEcs(
 			(item ? item->GetEntityHandle() : entt::null),
 			"GM_CMD_DESTROY");
 			item = ITEM_MANAGER::instance().CreateItem(1813 );
-			if (!item || !item->EquipTo(ch, ItemSystem::FindEquipCell(ch->GetEntityHandle(), item->GetEntityHandle())))
+			if (!item || !InventorySystem::EquipTo(item->GetEntityHandle(), ch->GetEntityHandle(), ItemSystem::FindEquipCell(ch->GetEntityHandle(), item->GetEntityHandle())))
 				ItemSystem::DestroyItemEntityEcs(
 			(item ? item->GetEntityHandle() : entt::null),
 			"GM_CMD_DESTROY");
 			item = ITEM_MANAGER::instance().CreateItem(1793 );
-			if (!item || !item->EquipTo(ch, ItemSystem::FindEquipCell(ch->GetEntityHandle(), item->GetEntityHandle())))
+			if (!item || !InventorySystem::EquipTo(item->GetEntityHandle(), ch->GetEntityHandle(), ItemSystem::FindEquipCell(ch->GetEntityHandle(), item->GetEntityHandle())))
 				ItemSystem::DestroyItemEntityEcs(
 			(item ? item->GetEntityHandle() : entt::null),
 			"GM_CMD_DESTROY");
 			item = ITEM_MANAGER::instance().CreateItem(399);//kard
 			item = ITEM_MANAGER::instance().CreateItem(85153);//SZARNY
-			if (!item || !item->EquipTo(ch, ItemSystem::FindEquipCell(ch->GetEntityHandle(), item->GetEntityHandle())))
+			if (!item || !InventorySystem::EquipTo(item->GetEntityHandle(), ch->GetEntityHandle(), ItemSystem::FindEquipCell(ch->GetEntityHandle(), item->GetEntityHandle())))
 				ItemSystem::DestroyItemEntityEcs(
 			(item ? item->GetEntityHandle() : entt::null),
 			"GM_CMD_DESTROY");
 
 			item = ITEM_MANAGER::instance().CreateItem(88211);//EFFECT FEGYO
-			if (!item || !item->EquipTo(ch, ItemSystem::FindEquipCell(ch->GetEntityHandle(), item->GetEntityHandle())))
+			if (!item || !InventorySystem::EquipTo(item->GetEntityHandle(), ch->GetEntityHandle(), ItemSystem::FindEquipCell(ch->GetEntityHandle(), item->GetEntityHandle())))
 				ItemSystem::DestroyItemEntityEcs(
 			(item ? item->GetEntityHandle() : entt::null),
 			"GM_CMD_DESTROY");
 			item = ITEM_MANAGER::instance().CreateItem(88213);//EFFETC VERT
-			if (!item || !item->EquipTo(ch, ItemSystem::FindEquipCell(ch->GetEntityHandle(), item->GetEntityHandle())))
+			if (!item || !InventorySystem::EquipTo(item->GetEntityHandle(), ch->GetEntityHandle(), ItemSystem::FindEquipCell(ch->GetEntityHandle(), item->GetEntityHandle())))
 				ItemSystem::DestroyItemEntityEcs(
 			(item ? item->GetEntityHandle() : entt::null),
 			"GM_CMD_DESTROY");
 
 			item = ITEM_MANAGER::instance().CreateItem(10810);//tali
-			if (!item || !item->EquipTo(ch, ItemSystem::FindEquipCell(ch->GetEntityHandle(), item->GetEntityHandle())))
+			if (!item || !InventorySystem::EquipTo(item->GetEntityHandle(), ch->GetEntityHandle(), ItemSystem::FindEquipCell(ch->GetEntityHandle(), item->GetEntityHandle())))
 				ItemSystem::DestroyItemEntityEcs(
 			(item ? item->GetEntityHandle() : entt::null),
 			"GM_CMD_DESTROY");
@@ -4579,66 +4580,66 @@ ACMD (do_item_full_set)
 		{
 
 			item = ITEM_MANAGER::instance().CreateItem(19912);
-			if (!item || !item->EquipTo(ch, ItemSystem::FindEquipCell(ch->GetEntityHandle(), item->GetEntityHandle())))
+			if (!item || !InventorySystem::EquipTo(item->GetEntityHandle(), ch->GetEntityHandle(), ItemSystem::FindEquipCell(ch->GetEntityHandle(), item->GetEntityHandle())))
 				ItemSystem::DestroyItemEntityEcs(
 			(item ? item->GetEntityHandle() : entt::null),
 			"GM_CMD_DESTROY");
 			item = ITEM_MANAGER::instance().CreateItem(1733);
-			if (!item || !item->EquipTo(ch, ItemSystem::FindEquipCell(ch->GetEntityHandle(), item->GetEntityHandle())))
+			if (!item || !InventorySystem::EquipTo(item->GetEntityHandle(), ch->GetEntityHandle(), ItemSystem::FindEquipCell(ch->GetEntityHandle(), item->GetEntityHandle())))
 				ItemSystem::DestroyItemEntityEcs(
 			(item ? item->GetEntityHandle() : entt::null),
 			"GM_CMD_DESTROY");
 			item = ITEM_MANAGER::instance().CreateItem(1773 );
-			if (!item || !item->EquipTo(ch, ItemSystem::FindEquipCell(ch->GetEntityHandle(), item->GetEntityHandle())))
+			if (!item || !InventorySystem::EquipTo(item->GetEntityHandle(), ch->GetEntityHandle(), ItemSystem::FindEquipCell(ch->GetEntityHandle(), item->GetEntityHandle())))
 				ItemSystem::DestroyItemEntityEcs(
 			(item ? item->GetEntityHandle() : entt::null),
 			"GM_CMD_DESTROY");
 			item = ITEM_MANAGER::instance().CreateItem(7349);
-			if (!item || !item->EquipTo(ch, ItemSystem::FindEquipCell(ch->GetEntityHandle(), item->GetEntityHandle())))
+			if (!item || !InventorySystem::EquipTo(item->GetEntityHandle(), ch->GetEntityHandle(), ItemSystem::FindEquipCell(ch->GetEntityHandle(), item->GetEntityHandle())))
 				ItemSystem::DestroyItemEntityEcs(
 			(item ? item->GetEntityHandle() : entt::null),
 			"GM_CMD_DESTROY");
 			item = ITEM_MANAGER::instance().CreateItem(1713);//sisak
-			if (!item || !item->EquipTo(ch, ItemSystem::FindEquipCell(ch->GetEntityHandle(), item->GetEntityHandle())))
+			if (!item || !InventorySystem::EquipTo(item->GetEntityHandle(), ch->GetEntityHandle(), ItemSystem::FindEquipCell(ch->GetEntityHandle(), item->GetEntityHandle())))
 				ItemSystem::DestroyItemEntityEcs(
 			(item ? item->GetEntityHandle() : entt::null),
 			"GM_CMD_DESTROY");
 			item = ITEM_MANAGER::instance().CreateItem(1753 );
-			if (!item || !item->EquipTo(ch, ItemSystem::FindEquipCell(ch->GetEntityHandle(), item->GetEntityHandle())))
+			if (!item || !InventorySystem::EquipTo(item->GetEntityHandle(), ch->GetEntityHandle(), ItemSystem::FindEquipCell(ch->GetEntityHandle(), item->GetEntityHandle())))
 				ItemSystem::DestroyItemEntityEcs(
 			(item ? item->GetEntityHandle() : entt::null),
 			"GM_CMD_DESTROY");
 			item = ITEM_MANAGER::instance().CreateItem(1813 );
-			if (!item || !item->EquipTo(ch, ItemSystem::FindEquipCell(ch->GetEntityHandle(), item->GetEntityHandle())))
+			if (!item || !InventorySystem::EquipTo(item->GetEntityHandle(), ch->GetEntityHandle(), ItemSystem::FindEquipCell(ch->GetEntityHandle(), item->GetEntityHandle())))
 				ItemSystem::DestroyItemEntityEcs(
 			(item ? item->GetEntityHandle() : entt::null),
 			"GM_CMD_DESTROY");
 			item = ITEM_MANAGER::instance().CreateItem(1793 );
-			if (!item || !item->EquipTo(ch, ItemSystem::FindEquipCell(ch->GetEntityHandle(), item->GetEntityHandle())))
+			if (!item || !InventorySystem::EquipTo(item->GetEntityHandle(), ch->GetEntityHandle(), ItemSystem::FindEquipCell(ch->GetEntityHandle(), item->GetEntityHandle())))
 				ItemSystem::DestroyItemEntityEcs(
 			(item ? item->GetEntityHandle() : entt::null),
 			"GM_CMD_DESTROY");
 			item = ITEM_MANAGER::instance().CreateItem(5209);
 
 			item = ITEM_MANAGER::instance().CreateItem(85153);//SZARNY
-			if (!item || !item->EquipTo(ch, ItemSystem::FindEquipCell(ch->GetEntityHandle(), item->GetEntityHandle())))
+			if (!item || !InventorySystem::EquipTo(item->GetEntityHandle(), ch->GetEntityHandle(), ItemSystem::FindEquipCell(ch->GetEntityHandle(), item->GetEntityHandle())))
 				ItemSystem::DestroyItemEntityEcs(
 			(item ? item->GetEntityHandle() : entt::null),
 			"GM_CMD_DESTROY");
 
 			item = ITEM_MANAGER::instance().CreateItem(88211);//EFFECT FEGYO
-			if (!item || !item->EquipTo(ch, ItemSystem::FindEquipCell(ch->GetEntityHandle(), item->GetEntityHandle())))
+			if (!item || !InventorySystem::EquipTo(item->GetEntityHandle(), ch->GetEntityHandle(), ItemSystem::FindEquipCell(ch->GetEntityHandle(), item->GetEntityHandle())))
 				ItemSystem::DestroyItemEntityEcs(
 			(item ? item->GetEntityHandle() : entt::null),
 			"GM_CMD_DESTROY");
 			item = ITEM_MANAGER::instance().CreateItem(88213);//EFFETC VERT
-			if (!item || !item->EquipTo(ch, ItemSystem::FindEquipCell(ch->GetEntityHandle(), item->GetEntityHandle())))
+			if (!item || !InventorySystem::EquipTo(item->GetEntityHandle(), ch->GetEntityHandle(), ItemSystem::FindEquipCell(ch->GetEntityHandle(), item->GetEntityHandle())))
 				ItemSystem::DestroyItemEntityEcs(
 			(item ? item->GetEntityHandle() : entt::null),
 			"GM_CMD_DESTROY");
 
 			item = ITEM_MANAGER::instance().CreateItem(10810);//tali
-			if (!item || !item->EquipTo(ch, ItemSystem::FindEquipCell(ch->GetEntityHandle(), item->GetEntityHandle())))
+			if (!item || !InventorySystem::EquipTo(item->GetEntityHandle(), ch->GetEntityHandle(), ItemSystem::FindEquipCell(ch->GetEntityHandle(), item->GetEntityHandle())))
 				ItemSystem::DestroyItemEntityEcs(
 			(item ? item->GetEntityHandle() : entt::null),
 			"GM_CMD_DESTROY");
@@ -4648,42 +4649,42 @@ ACMD (do_item_full_set)
 		{
 
 			item = ITEM_MANAGER::instance().CreateItem(19512);
-			if (!item || !item->EquipTo(ch, ItemSystem::FindEquipCell(ch->GetEntityHandle(), item->GetEntityHandle())))
+			if (!item || !InventorySystem::EquipTo(item->GetEntityHandle(), ch->GetEntityHandle(), ItemSystem::FindEquipCell(ch->GetEntityHandle(), item->GetEntityHandle())))
 				ItemSystem::DestroyItemEntityEcs(
 			(item ? item->GetEntityHandle() : entt::null),
 			"GM_CMD_DESTROY");
 			item = ITEM_MANAGER::instance().CreateItem(1733);
-			if (!item || !item->EquipTo(ch, ItemSystem::FindEquipCell(ch->GetEntityHandle(), item->GetEntityHandle())))
+			if (!item || !InventorySystem::EquipTo(item->GetEntityHandle(), ch->GetEntityHandle(), ItemSystem::FindEquipCell(ch->GetEntityHandle(), item->GetEntityHandle())))
 				ItemSystem::DestroyItemEntityEcs(
 			(item ? item->GetEntityHandle() : entt::null),
 			"GM_CMD_DESTROY");
 			item = ITEM_MANAGER::instance().CreateItem(1773 );
-			if (!item || !item->EquipTo(ch, ItemSystem::FindEquipCell(ch->GetEntityHandle(), item->GetEntityHandle())))
+			if (!item || !InventorySystem::EquipTo(item->GetEntityHandle(), ch->GetEntityHandle(), ItemSystem::FindEquipCell(ch->GetEntityHandle(), item->GetEntityHandle())))
 				ItemSystem::DestroyItemEntityEcs(
 			(item ? item->GetEntityHandle() : entt::null),
 			"GM_CMD_DESTROY");
 			item = ITEM_MANAGER::instance().CreateItem(1229);//tr
-			if (!item || !item->EquipTo(ch, ItemSystem::FindEquipCell(ch->GetEntityHandle(), item->GetEntityHandle())))
+			if (!item || !InventorySystem::EquipTo(item->GetEntityHandle(), ch->GetEntityHandle(), ItemSystem::FindEquipCell(ch->GetEntityHandle(), item->GetEntityHandle())))
 				ItemSystem::DestroyItemEntityEcs(
 			(item ? item->GetEntityHandle() : entt::null),
 			"GM_CMD_DESTROY");
 			item = ITEM_MANAGER::instance().CreateItem(1713);//sisak
-			if (!item || !item->EquipTo(ch, ItemSystem::FindEquipCell(ch->GetEntityHandle(), item->GetEntityHandle())))
+			if (!item || !InventorySystem::EquipTo(item->GetEntityHandle(), ch->GetEntityHandle(), ItemSystem::FindEquipCell(ch->GetEntityHandle(), item->GetEntityHandle())))
 				ItemSystem::DestroyItemEntityEcs(
 			(item ? item->GetEntityHandle() : entt::null),
 			"GM_CMD_DESTROY");
 			item = ITEM_MANAGER::instance().CreateItem(1753);
-			if (!item || !item->EquipTo(ch, ItemSystem::FindEquipCell(ch->GetEntityHandle(), item->GetEntityHandle())))
+			if (!item || !InventorySystem::EquipTo(item->GetEntityHandle(), ch->GetEntityHandle(), ItemSystem::FindEquipCell(ch->GetEntityHandle(), item->GetEntityHandle())))
 				ItemSystem::DestroyItemEntityEcs(
 			(item ? item->GetEntityHandle() : entt::null),
 			"GM_CMD_DESTROY");
 			item = ITEM_MANAGER::instance().CreateItem(1813);//fli
-			if (!item || !item->EquipTo(ch, ItemSystem::FindEquipCell(ch->GetEntityHandle(), item->GetEntityHandle())))
+			if (!item || !InventorySystem::EquipTo(item->GetEntityHandle(), ch->GetEntityHandle(), ItemSystem::FindEquipCell(ch->GetEntityHandle(), item->GetEntityHandle())))
 				ItemSystem::DestroyItemEntityEcs(
 			(item ? item->GetEntityHandle() : entt::null),
 			"GM_CMD_DESTROY");
 			item = ITEM_MANAGER::instance().CreateItem(1793);//nyaki
-			if (!item || !item->EquipTo(ch, ItemSystem::FindEquipCell(ch->GetEntityHandle(), item->GetEntityHandle())))
+			if (!item || !InventorySystem::EquipTo(item->GetEntityHandle(), ch->GetEntityHandle(), ItemSystem::FindEquipCell(ch->GetEntityHandle(), item->GetEntityHandle())))
 				ItemSystem::DestroyItemEntityEcs(
 			(item ? item->GetEntityHandle() : entt::null),
 			"GM_CMD_DESTROY");
@@ -4691,24 +4692,24 @@ ACMD (do_item_full_set)
 			item = ITEM_MANAGER::instance().CreateItem(2249);//j
 
 			item = ITEM_MANAGER::instance().CreateItem(85153);//SZARNY
-			if (!item || !item->EquipTo(ch, ItemSystem::FindEquipCell(ch->GetEntityHandle(), item->GetEntityHandle())))
+			if (!item || !InventorySystem::EquipTo(item->GetEntityHandle(), ch->GetEntityHandle(), ItemSystem::FindEquipCell(ch->GetEntityHandle(), item->GetEntityHandle())))
 				ItemSystem::DestroyItemEntityEcs(
 			(item ? item->GetEntityHandle() : entt::null),
 			"GM_CMD_DESTROY");
 
 			item = ITEM_MANAGER::instance().CreateItem(88211);//EFFECT FEGYO
-			if (!item || !item->EquipTo(ch, ItemSystem::FindEquipCell(ch->GetEntityHandle(), item->GetEntityHandle())))
+			if (!item || !InventorySystem::EquipTo(item->GetEntityHandle(), ch->GetEntityHandle(), ItemSystem::FindEquipCell(ch->GetEntityHandle(), item->GetEntityHandle())))
 				ItemSystem::DestroyItemEntityEcs(
 			(item ? item->GetEntityHandle() : entt::null),
 			"GM_CMD_DESTROY");
 			item = ITEM_MANAGER::instance().CreateItem(88213);//EFFETC VERT
-			if (!item || !item->EquipTo(ch, ItemSystem::FindEquipCell(ch->GetEntityHandle(), item->GetEntityHandle())))
+			if (!item || !InventorySystem::EquipTo(item->GetEntityHandle(), ch->GetEntityHandle(), ItemSystem::FindEquipCell(ch->GetEntityHandle(), item->GetEntityHandle())))
 				ItemSystem::DestroyItemEntityEcs(
 			(item ? item->GetEntityHandle() : entt::null),
 			"GM_CMD_DESTROY");
 
 			item = ITEM_MANAGER::instance().CreateItem(10810);//tali
-			if (!item || !item->EquipTo(ch, ItemSystem::FindEquipCell(ch->GetEntityHandle(), item->GetEntityHandle())))
+			if (!item || !InventorySystem::EquipTo(item->GetEntityHandle(), ch->GetEntityHandle(), ItemSystem::FindEquipCell(ch->GetEntityHandle(), item->GetEntityHandle())))
 				ItemSystem::DestroyItemEntityEcs(
 			(item ? item->GetEntityHandle() : entt::null),
 			"GM_CMD_DESTROY");
@@ -4719,42 +4720,42 @@ ACMD (do_item_full_set)
 		{
 
 			item = ITEM_MANAGER::instance().CreateItem(21049);
-			if (!item || !item->EquipTo(ch, ItemSystem::FindEquipCell(ch->GetEntityHandle(), item->GetEntityHandle())))
+			if (!item || !InventorySystem::EquipTo(item->GetEntityHandle(), ch->GetEntityHandle(), ItemSystem::FindEquipCell(ch->GetEntityHandle(), item->GetEntityHandle())))
 				ItemSystem::DestroyItemEntityEcs(
 			(item ? item->GetEntityHandle() : entt::null),
 			"GM_CMD_DESTROY");
 			item = ITEM_MANAGER::instance().CreateItem(13049);
-			if (!item || !item->EquipTo(ch, ItemSystem::FindEquipCell(ch->GetEntityHandle(), item->GetEntityHandle())))
+			if (!item || !InventorySystem::EquipTo(item->GetEntityHandle(), ch->GetEntityHandle(), ItemSystem::FindEquipCell(ch->GetEntityHandle(), item->GetEntityHandle())))
 				ItemSystem::DestroyItemEntityEcs(
 			(item ? item->GetEntityHandle() : entt::null),
 			"GM_CMD_DESTROY");
 			item = ITEM_MANAGER::instance().CreateItem(1773);
-			if (!item || !item->EquipTo(ch, ItemSystem::FindEquipCell(ch->GetEntityHandle(), item->GetEntityHandle())))
+			if (!item || !InventorySystem::EquipTo(item->GetEntityHandle(), ch->GetEntityHandle(), ItemSystem::FindEquipCell(ch->GetEntityHandle(), item->GetEntityHandle())))
 				ItemSystem::DestroyItemEntityEcs(
 			(item ? item->GetEntityHandle() : entt::null),
 			"GM_CMD_DESTROY");
 			item = ITEM_MANAGER::instance().CreateItem(6049);
-			if (!item || !item->EquipTo(ch, ItemSystem::FindEquipCell(ch->GetEntityHandle(), item->GetEntityHandle())))
+			if (!item || !InventorySystem::EquipTo(item->GetEntityHandle(), ch->GetEntityHandle(), ItemSystem::FindEquipCell(ch->GetEntityHandle(), item->GetEntityHandle())))
 				ItemSystem::DestroyItemEntityEcs(
 			(item ? item->GetEntityHandle() : entt::null),
 			"GM_CMD_DESTROY");
 			item = ITEM_MANAGER::instance().CreateItem(21559);
-			if (!item || !item->EquipTo(ch, ItemSystem::FindEquipCell(ch->GetEntityHandle(), item->GetEntityHandle())))
+			if (!item || !InventorySystem::EquipTo(item->GetEntityHandle(), ch->GetEntityHandle(), ItemSystem::FindEquipCell(ch->GetEntityHandle(), item->GetEntityHandle())))
 				ItemSystem::DestroyItemEntityEcs(
 			(item ? item->GetEntityHandle() : entt::null),
 			"GM_CMD_DESTROY");
 			item = ITEM_MANAGER::instance().CreateItem(1753);
-			if (!item || !item->EquipTo(ch, ItemSystem::FindEquipCell(ch->GetEntityHandle(), item->GetEntityHandle())))
+			if (!item || !InventorySystem::EquipTo(item->GetEntityHandle(), ch->GetEntityHandle(), ItemSystem::FindEquipCell(ch->GetEntityHandle(), item->GetEntityHandle())))
 				ItemSystem::DestroyItemEntityEcs(
 			(item ? item->GetEntityHandle() : entt::null),
 			"GM_CMD_DESTROY");
 			item = ITEM_MANAGER::instance().CreateItem(1813);
-			if (!item || !item->EquipTo(ch, ItemSystem::FindEquipCell(ch->GetEntityHandle(), item->GetEntityHandle())))
+			if (!item || !InventorySystem::EquipTo(item->GetEntityHandle(), ch->GetEntityHandle(), ItemSystem::FindEquipCell(ch->GetEntityHandle(), item->GetEntityHandle())))
 				ItemSystem::DestroyItemEntityEcs(
 			(item ? item->GetEntityHandle() : entt::null),
 			"GM_CMD_DESTROY");
 			item = ITEM_MANAGER::instance().CreateItem(1793);
-			if (!item || !item->EquipTo(ch, ItemSystem::FindEquipCell(ch->GetEntityHandle(), item->GetEntityHandle())))
+			if (!item || !InventorySystem::EquipTo(item->GetEntityHandle(), ch->GetEntityHandle(), ItemSystem::FindEquipCell(ch->GetEntityHandle(), item->GetEntityHandle())))
 				ItemSystem::DestroyItemEntityEcs(
 			(item ? item->GetEntityHandle() : entt::null),
 			"GM_CMD_DESTROY");

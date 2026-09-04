@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "ecs/systems/InventorySystem.hpp"
 #include <Core/Logging.hpp>
 #include "questmanager.h"
 #include "char_interface.hpp"
@@ -686,7 +687,7 @@ namespace quest
 		// entt::entity item = q.GetCurrentItemEntity();
 		// LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
 
-		// lua_pushboolean((item && ch)?item->EquipTo(ch, lua_tonumber(L, 1)):false);
+		// lua_pushboolean((item && ch)?InventorySystem::EquipTo(item->GetEntityHandle(), ch->GetEntityHandle(), lua_tonumber(L, 1)):false);
 
 		// return 1;
 	// }

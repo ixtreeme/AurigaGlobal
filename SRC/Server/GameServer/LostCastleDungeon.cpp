@@ -1,5 +1,6 @@
 // LostCastleDungeon.cpp
 #include "stdafx.h"
+#include "ecs/systems/InventorySystem.hpp"
 #include "ecs/systems/CombatSystem.hpp"
 #include "ecs/systems/PointSystem.hpp"
 #include <Core/Logging.hpp>
@@ -363,7 +364,7 @@ namespace
 		ItemSystem::CopyItemAttributesEcs(sourceWeapon, cloneWeapon);
 
         // Equip without inventory (direct wear)
-        w->EquipTo(clone, WEAR_WEAPON);
+        InventorySystem::EquipTo(w->GetEntityHandle(), clone->GetEntityHandle(), WEAR_WEAPON);
     }
 
     inline void LostCastleCloneStartMove(LPCHARACTER clone, int32_t tx, int32_t ty, uint32_t now)

@@ -5,6 +5,9 @@
 #include "InventorySystem.hpp"
 
 #include "ItemSystem.hpp"
+#include "MountSystem.hpp"
+#include "PointSystem.hpp"
+#include "AffectSystem.hpp"
 #include "../EntityFactory.hpp"
 #include "../ItemInvariants.hpp"
 #include "../VIDRegistry.hpp"
@@ -2261,6 +2264,16 @@ entt::entity RollPartyDropOwnership(entt::entity item, entt::entity initialOwner
     return selected;
 }
 
+void SetItemOwnerEntity(entt::entity item, entt::entity owner)
+{
+    if (item == entt::null || !g_registry.valid(item))
+        return;
+
+    auto& itemOwner = g_registry.get_or_emplace<ecs::ItemOwner>(item);
+    itemOwner.owner = owner;
+    itemOwner.ownerPID = ecs::PlayerRuntime::GetPlayerID(owner);
+}
+
 uint32_t GetItemLastOwnerPID(entt::entity item)
 {
     if (const auto* owner = g_registry.try_get<ecs::ItemOwner>(item))
@@ -2654,6 +2667,61 @@ bool UnlockItem(entt::entity item)
     return LockItem(item, false);
 }
 
+// ITEM_MANAGER's queue is keyed on LPITEM and the persistence layer has not
+// moved, so this is where the pointer comes back. Callers above never see one.
+void ClearMountAttributeAndAffect(entt::entity item)
+{
+	const entt::entity chEntity = GetItemOwner(item);
+
+
+	AffectSystem::RemoveAffect(chEntity, AFFECT_MOUNT);
+	AffectSystem::RemoveAffect(chEntity, AFFECT_MOUNT_BONUS);
+
+	::MountSystem::ForceClearRidingState(chEntity);
+
+	ecs::PointSystem::Change(chEntity, POINT_ST, 0);
+	ecs::PointSystem::Change(chEntity, POINT_DX, 0);
+	ecs::PointSystem::Change(chEntity, POINT_HT, 0);
+	ecs::PointSystem::Change(chEntity, POINT_IQ, 0);
+}
+
+void SaveItem(entt::entity item)
+{
+    if (GetItemSkipSave(item))
+        return;
+
+    if (LPITEM legacyItem = LegacyItemBoundary(item))
+        ITEM_MANAGER::instance().DelayedSave(legacyItem);
+}
+
+bool GetItemSkipSave(entt::entity item)
+{
+    const auto* flags = g_registry.try_get<ecs::ItemFlags>(item);
+    return flags && flags->skipSave;
+}
+
+void SetItemLastOwnerPID(entt::entity item, uint32_t pid)
+{
+    if (item == entt::null || !g_registry.valid(item))
+        return;
+
+    g_registry.get_or_emplace<ecs::ItemOwner>(item).lastOwnerPID = pid;
+}
+
+uint32_t GetItemOwnershipPID(entt::entity item)
+{
+    const auto* owner = g_registry.try_get<ecs::ItemOwner>(item);
+    return owner ? owner->ownershipPID : 0;
+}
+
+void SetItemOwnershipPID(entt::entity item, uint32_t pid)
+{
+    if (item == entt::null || !g_registry.valid(item))
+        return;
+
+    g_registry.get_or_emplace<ecs::ItemOwner>(item).ownershipPID = pid;
+}
+
 bool SetItemSkipSave(entt::entity item, bool flag)
 {
     if (item == entt::null || !g_registry.valid(item))
@@ -2661,10 +2729,6 @@ bool SetItemSkipSave(entt::entity item, bool flag)
 
     auto& flags = g_registry.get_or_emplace<ecs::ItemFlags>(item);
     flags.skipSave = flag;
-
-    if (LPITEM legacyItem = LegacyItemBoundary(item))
-        legacyItem->SetSkipSave(flag);
-
     return true;
 }
 

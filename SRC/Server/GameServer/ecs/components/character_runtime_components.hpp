@@ -12,6 +12,8 @@ class CNewPetSystem;
 
 class CBuffOnAttributes;
 
+class CMountInventory;
+
 namespace ecs {
 
 // The dead, stun and recovery events CHARACTER used to hold as members.
@@ -43,6 +45,10 @@ struct CharacterRuntimeFlagsComponent {
 // the character is torn down, the same job CHARACTER's destructor used to do.
 struct BuffOnAttrs {
     std::map<uint8_t, CBuffOnAttributes*> pools;
+};
+
+struct MountInventoryRef {
+    CMountInventory* inventory { nullptr };
 };
 
 struct MountRuntimeRefs {

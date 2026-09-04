@@ -2135,7 +2135,6 @@ protected:
 	int					m_iSafeboxLoadTime;
 	bool				m_bOpeningSafebox;	///< â���� ���� ��û ���̰ų� �����ִ°� ����, true �� ��� �����û�̰ų� ��������.
 
-	CMountInventory* m_pkMountInventory;
 	bool				 m_bMountInventoryLoaded;
 
 	CSafebox* m_pkMall;

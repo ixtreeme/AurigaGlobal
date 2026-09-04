@@ -111,7 +111,6 @@ class CItem : public CEntity
 		bool		AddToGround(int32_t lMapIndex, const PIXEL_POSITION & pos, bool skipOwnerCheck = false);
 
 		bool		IsEquipped() const;
-		bool		EquipTo(LPCHARACTER ch, uint8_t bWearCell);
 		bool		IsEquipable() ;
 
 		bool		CanUsedBy(LPCHARACTER ch);
@@ -155,14 +154,14 @@ class CItem : public CEntity
 		uint32_t		GetRefineFromVnum();
 		int		GetRefineLevel();
 
-		void		SetSkipSave(bool b)	{ m_bSkipSave = b; }
-		bool		GetSkipSave()		{ return m_bSkipSave; }
+		void		SetSkipSave(bool b);
+		bool		GetSkipSave() const;
 
 		bool		IsOwnership(LPCHARACTER ch);
 		void		SetOwnership(LPCHARACTER ch, int iSec = 10);
 		void		SetOwnershipEvent(LPEVENT pkEvent);
 
-		uint32_t		GetLastOwnerPID()	{ return m_dwLastOwnerPID; }
+		uint32_t	GetLastOwnerPID() const;
 		
 
 #ifdef ENABLE_BATTLE_PASS
@@ -255,7 +254,6 @@ class CItem : public CEntity
 
 	protected:
 		bool		EquipEx(bool is_equip);
-		bool		Unequip();
 #ifdef ENABLE_CHANGE_NORMAL_HIT_RAZOR93
 		void		AddAttr4(uint8_t bApply, uint8_t bLevel);
 #endif
@@ -315,7 +313,6 @@ class CItem : public CEntity
 #ifdef ENABLE_ITEM_EXTRA_PROTO
 #endif
 		int32_t		m_lFlag;		// 추가 flag
-		uint32_t		m_dwLastOwnerPID;	// 마지막 가지고 있었던 사람의 PID
 
 		bool		m_bExchanging;	///< 현재 교환중 상태
 
@@ -324,9 +321,7 @@ class CItem : public CEntity
 
 #ifdef ENABLE_SOUL_SYSTEM
 #endif
-		uint32_t		m_dwOwnershipPID;
 
-		bool		m_bSkipSave;
 
 		bool		m_isLocked;
 

@@ -56,13 +56,18 @@ void EnsureItemLocation(entt::entity e)
 	(void)g_registry.get_or_emplace<ecs::ItemLocation>(e);
 }
 
-void SyncItemOwner(entt::entity e, entt::entity owner, uint32_t ownerPID,
-	uint32_t lastOwnerPID, uint32_t ownershipPID)
+// lastOwnerPID and ownershipPID used to be passed in from CItem members and
+// written back into the component alongside the owner. Those members are gone
+// and the component is their only home, so this writes just the two fields it
+// actually changes rather than rewriting the other two with themselves.
+void SyncItemOwner(entt::entity e, entt::entity owner, uint32_t ownerPID)
 {
 	if (e == entt::null || !g_registry.valid(e))
 		return;
 
-	g_registry.emplace_or_replace<ecs::ItemOwner>(e, owner, ownerPID, lastOwnerPID, ownershipPID);
+	auto& itemOwner = g_registry.get_or_emplace<ecs::ItemOwner>(e);
+	itemOwner.owner = owner;
+	itemOwner.ownerPID = ownerPID;
 }
 
 void SyncItemEquipped(entt::entity e, bool equipped)
@@ -331,98 +336,7 @@ void CHARACTER::ChainQuickslotItem(entt::entity item, uint8_t bType, uint8_t bOl
 
 LPITEM CItem::RemoveFromCharacter()
 {
-	if (GetOwnerEntity() == entt::null)
-	{
-		LOG_ERROR("Item::RemoveFromCharacter owner null");
-		return (this);
-	}
-
-	const entt::entity itemEntity = GetEntityHandle();
-	const entt::entity ownerEntity = GetOwnerEntity();
-
-	// Detaching means three component writes, and each one used to be a bare
-	// field assignment plus a call to the old SyncItemLocation, which copied
-	// nothing - so ecs::ItemLocation kept the cell and window the item had
-	// while it was still carried. SetItemCell and SetItemWindow write the
-	// component and mirror into m_wCell / m_bWindow, so both agree.
-	const auto detach = [&]() {
-		ItemSystem::SetItemCell(itemEntity, ownerEntity, 0);
-		ItemSystem::SetItemWindow(itemEntity, RESERVED_WINDOW);
-		SetOwnerEntity(entt::null);
-		Save();
-
-		EnsureItemLocation(itemEntity);
-		SyncItemOwner(itemEntity, entt::null, 0, m_dwLastOwnerPID, m_dwOwnershipPID);
-		g_registry.remove<ecs::ItemEquipped>(itemEntity);
-	};
-
-	if (IsEquipped())
-	{
-		Unequip();
-		ItemSystem::SetItemWindow(itemEntity, RESERVED_WINDOW);
-		Save();
-
-		EnsureItemLocation(itemEntity);
-		SyncItemOwner(itemEntity, entt::null, 0, m_dwLastOwnerPID, m_dwOwnershipPID);
-		g_registry.remove<ecs::ItemEquipped>(itemEntity);
-		return (this);
-	}
-
-	const uint8_t window = ItemSystem::GetItemWindow(itemEntity);
-	const uint16_t cell = ItemSystem::GetItemCell(itemEntity);
-
-	if (window == MOUNT_INVENTORY)
-	{
-		if (CMountInventory* mi = ecs::LegacyCharOf(ownerEntity)->GetMountInventory())
-			mi->RemoveByItem(itemEntity);
-
-		detach();
-		return (this);
-	}
-
-	if (window != SAFEBOX && window != MALL)
-	{
-		if (IsDragonSoul())
-		{
-			if (cell >= DRAGON_SOUL_INVENTORY_MAX_NUM)
-				LOG_ERROR("CItem::RemoveFromCharacter: pos >= DRAGON_SOUL_INVENTORY_MAX_NUM");
-			else
-				ecs::PlayerRuntime::SetItem(ownerEntity, TItemPos(window, cell), entt::null);
-		}
-#ifdef ENABLE_EXTRA_INVENTORY
-		else if (IsExtraItem())
-		{
-			if (cell >= EXTRA_INVENTORY_MAX_NUM)
-				LOG_ERROR("CItem::RemoveFromCharacter: pos >= EXTRA_INVENTORY_MAX_NUM");
-			else
-				ecs::PlayerRuntime::SetItem(ownerEntity, TItemPos(window, cell), entt::null);
-		}
-#endif
-#ifdef ENABLE_SWITCHBOT
-		else if (window == SWITCHBOT)
-		{
-			if (cell >= SWITCHBOT_SLOT_COUNT)
-			{
-				LOG_ERROR("CItem::RemoveFromCharacter: pos >= SWITCHBOT_SLOT_COUNT");
-			}
-			else
-			{
-				ecs::PlayerRuntime::SetItem(ownerEntity, TItemPos(SWITCHBOT, cell), entt::null);
-			}
-		}
-#endif
-		else
-		{
-			TItemPos pos(INVENTORY, cell);
-
-			if (false == pos.IsDefaultInventoryPosition() && false == pos.IsBeltInventoryPosition())
-				LOG_ERROR("CItem::RemoveFromCharacter: Invalid Item Position");
-			else
-				ecs::PlayerRuntime::SetItem(ownerEntity, pos, entt::null);
-		}
-	}
-
-	detach();
+	InventorySystem::RemoveFromCharacter(GetEntityHandle());
 	return (this);
 }
 
@@ -462,9 +376,9 @@ bool CItem::AddToCharacter(LPCHARACTER ch, TItemPos Cell)
 				return false;
 			}
 			else {
-				this->EquipTo(ch, iFindCell);
+				InventorySystem::EquipTo(GetEntityHandle(), character, iFindCell);
 				if (ecs::PlayerRuntime::GetDesc(character))
-					m_dwLastOwnerPID = ecs::PlayerRuntime::GetPlayerID(character);
+					ItemSystem::SetItemLastOwnerPID(GetEntityHandle(), ecs::PlayerRuntime::GetPlayerID(character));
 
 				event_cancel(&ItemSystem::GetItemEvents(GetEntityHandle()).destroy);
 
@@ -473,7 +387,7 @@ bool CItem::AddToCharacter(LPCHARACTER ch, TItemPos Cell)
 				Save();
 
 				const entt::entity itemEntity = GetEntityHandle();
-				SyncItemOwner(itemEntity, character, ecs::PlayerRuntime::GetPlayerID(character), m_dwLastOwnerPID, m_dwOwnershipPID);
+				SyncItemOwner(itemEntity, character, ecs::PlayerRuntime::GetPlayerID(character));
 				EnsureItemLocation(itemEntity);
 				SyncItemEquipped(itemEntity, true);
 				return true;
@@ -520,7 +434,7 @@ bool CItem::AddToCharacter(LPCHARACTER ch, TItemPos Cell)
 	}
 #endif
 	if (ecs::PlayerRuntime::GetDesc(character))
-		m_dwLastOwnerPID = ecs::PlayerRuntime::GetPlayerID(character);
+		ItemSystem::SetItemLastOwnerPID(GetEntityHandle(), ecs::PlayerRuntime::GetPlayerID(character));
 
 
 #ifdef ENABLE_ACCE_SYSTEM
@@ -567,7 +481,7 @@ bool CItem::AddToCharacter(LPCHARACTER ch, TItemPos Cell)
 
 	Save();
 
-	SyncItemOwner(itemEntity, character, ecs::PlayerRuntime::GetPlayerID(character), m_dwLastOwnerPID, m_dwOwnershipPID);
+	SyncItemOwner(itemEntity, character, ecs::PlayerRuntime::GetPlayerID(character));
 	EnsureItemLocation(itemEntity);
 	SyncItemEquipped(itemEntity, false);
 	return true;
@@ -693,7 +607,7 @@ bool CItem::IsOwnership(LPCHARACTER ch)
 		return true;
 
 	const entt::entity character = ch ? ch->GetEntityHandle() : entt::null;
-	return m_dwOwnershipPID == ecs::PlayerRuntime::GetPlayerID(character);
+	return ItemSystem::GetItemOwnershipPID(GetEntityHandle()) == ecs::PlayerRuntime::GetPlayerID(character);
 }
 
 void CItem::SetOwnershipEvent(LPEVENT pkEvent)
@@ -708,7 +622,7 @@ void CItem::SetOwnership(LPCHARACTER ch, int iSec)
 		if (ItemSystem::GetItemEvents(GetEntityHandle()).ownership)
 		{
 			event_cancel(&ItemSystem::GetItemEvents(GetEntityHandle()).ownership);
-			m_dwOwnershipPID = 0;
+			ItemSystem::SetItemOwnershipPID(GetEntityHandle(), 0);
 
 			TPacketGCItemOwnership p;
 
@@ -719,7 +633,7 @@ void CItem::SetOwnership(LPCHARACTER ch, int iSec)
 			PacketAround(&p, sizeof(p));
 
 			const entt::entity itemEntity = GetEntityHandle();
-			SyncItemOwner(itemEntity, entt::null, 0, m_dwLastOwnerPID, m_dwOwnershipPID);
+			SyncItemOwner(itemEntity, entt::null, 0);
 			if (itemEntity != entt::null && g_registry.valid(itemEntity))
 				g_registry.remove<ecs::ItemOwnershipDisplay>(itemEntity);
 		}
@@ -733,7 +647,7 @@ void CItem::SetOwnership(LPCHARACTER ch, int iSec)
 		iSec = 30;
 
 	const entt::entity character = ch->GetEntityHandle();
-	m_dwOwnershipPID = ecs::PlayerRuntime::GetPlayerID(character);
+	ItemSystem::SetItemOwnershipPID(GetEntityHandle(), ecs::PlayerRuntime::GetPlayerID(character));
 
 	item_event_info* info = AllocEventInfo<item_event_info>();
 	strlcpy(info->szOwnerName, ecs::PlayerRuntime::GetName(character).data(), sizeof(info->szOwnerName));
@@ -751,12 +665,7 @@ void CItem::SetOwnership(LPCHARACTER ch, int iSec)
 
 	const entt::entity itemEntity = GetEntityHandle();
 	const entt::entity ownerEntity = GetOwnerEntity();
-	SyncItemOwner(
-		itemEntity,
-		ownerEntity,
-		ecs::PlayerRuntime::GetPlayerID(ownerEntity),
-		m_dwLastOwnerPID,
-		m_dwOwnershipPID);
+	SyncItemOwner(itemEntity, ownerEntity, ecs::PlayerRuntime::GetPlayerID(ownerEntity));
 	if (itemEntity != entt::null && g_registry.valid(itemEntity))
 		g_registry.emplace_or_replace<ecs::ItemOwnershipDisplay>(
 			itemEntity, ecs::ItemOwnershipDisplay{ecs::PlayerRuntime::GetName(character).data()});
@@ -829,6 +738,21 @@ bool CItem::IsEquipable()
 // The owner lives in ecs::ItemOwner. GetOwner keeps returning a pointer
 // because that is what its callers are typed on; GetOwnerEntity is the form
 // this migration moves them to.
+void CItem::SetSkipSave(bool b)
+{
+	ItemSystem::SetItemSkipSave(GetEntityHandle(), b);
+}
+
+bool CItem::GetSkipSave() const
+{
+	return ItemSystem::GetItemSkipSave(GetEntityHandle());
+}
+
+uint32_t CItem::GetLastOwnerPID() const
+{
+	return ItemSystem::GetItemLastOwnerPID(GetEntityHandle());
+}
+
 bool CItem::HasExtraProto() const
 {
 	return ItemSystem::GetItemExtraProto(GetEntityHandle()) != nullptr;
@@ -889,6 +813,312 @@ uint16_t CItem::GetCell() const
 {
 	return ItemSystem::GetItemCell(GetEntityHandle());
 }
+
+namespace InventorySystem {
+
+bool Unequip(entt::entity itemEntity)
+{
+	if (ItemSystem::GetItemOwner(itemEntity) == entt::null || ItemSystem::GetItemCell(itemEntity) < INVENTORY_MAX_NUM)
+	{
+		LOG_ERROR("{} {} owner {}, GetCell {}", ItemSystem::GetItemName(itemEntity), ItemSystem::GetItemID(itemEntity), static_cast<uint32_t>(ItemSystem::GetItemOwner(itemEntity)), ItemSystem::GetItemCell(itemEntity));
+		return false;
+	}
+
+	const entt::entity charEntity = ItemSystem::GetItemOwner(itemEntity);
+	if (ItemSystem::GetWearItem(
+			charEntity, static_cast<uint8_t>(ItemSystem::GetItemCell(itemEntity) - INVENTORY_MAX_NUM)) != itemEntity)
+	{
+		LOG_ERROR("GetWearItem(owner, cell) is not this item");
+		return false;
+	}
+
+	const uint8_t wearCell = static_cast<uint8_t>(ItemSystem::GetItemCell(itemEntity) - INVENTORY_MAX_NUM);
+
+#ifdef ENABLE_MOUNT_COSTUME_SYSTEM
+	if (ItemSystem::IsMountItem(itemEntity))
+		MountSystem::MountUnsummon(charEntity, itemEntity);
+#endif
+
+	if (ItemSystem::IsRideItem(itemEntity))
+		ItemSystem::ClearMountAttributeAndAffect(itemEntity);
+
+	if (ItemSystem::IsDragonSoulItem(itemEntity))
+	{
+		DSManager::instance().DeactivateDragonSoul(itemEntity);
+	}
+#ifdef ENABLE_RUNE_SYSTEM
+	else if (ItemSystem::IsRuneItem(itemEntity)) {
+		if (ItemSystem::GetItemSocket(itemEntity, 1) == 1)
+			ItemSystem::ModifyPoints(itemEntity, false);
+	}
+#endif
+	else
+	{
+		ItemSystem::ModifyPoints(itemEntity, false);
+	}
+
+	ItemSystem::StopUniqueExpireEvent(itemEntity);
+
+	if (-1 != ItemSystem::GetItemProto(itemEntity)->cLimitTimerBasedOnWearIndex)
+		ItemSystem::StopTimerBasedOnWearExpireEvent(itemEntity);
+
+	ItemSystem::StopAccessorySocketExpireEvent(itemEntity);
+
+	ecs::PlayerRuntime::BuffOnAttr_RemoveBuffsFromItem(charEntity, itemEntity);
+
+	ecs::PlayerRuntime::SetWear(charEntity, wearCell, entt::null);
+
+#ifndef ENABLE_IMMUNE_FIX
+	uint32_t dwImmuneFlag = 0;
+
+	for (int i = 0; i < WEAR_MAX_NUM; ++i)
+	{
+		const entt::entity item = ItemSystem::GetWearItem(charEntity, i);
+		if (ItemSystem::IsValidItem(item))
+		{
+			SET_BIT(dwImmuneFlag, ItemSystem::GetItemImmuneFlags(item));
+		}
+	}
+
+	ecs::PlayerRuntime::SetImmuneFlag(charEntity, dwImmuneFlag);
+#endif
+
+	ecs::PointSystem::ComputeBattlePoints(charEntity);
+
+	NetworkSyncSystem::UpdatePacket(charEntity);
+#ifdef ENABLE_COSTUME_PET
+	if ((ItemSystem::GetItemType(itemEntity) == ITEM_COSTUME) && (ItemSystem::GetItemSubType(itemEntity) == COSTUME_PET_SKIN)) {
+		MountSystem::UpdatePetSkin(charEntity);
+	}
+#endif
+#ifdef ENABLE_COSTUME_MOUNT
+	if ((ItemSystem::GetItemType(itemEntity) == ITEM_COSTUME) && (ItemSystem::GetItemSubType(itemEntity) == COSTUME_MOUNT_SKIN)) {
+		MountSystem::UpdateMountSkin(charEntity);
+	}
+#endif
+	ItemSystem::SetItemOwnerEntity(itemEntity, entt::null);
+	// SetWear(.., entt::null) leaves the cell alone - SetItem only writes it on
+	// the has-item branch - so ecs::ItemLocation kept the equipment cell while
+	// m_wCell went to 0. Writing through the component fixes both at once.
+	ItemSystem::SetItemCell(itemEntity, charEntity, 0);
+
+	SyncItemEquipped(itemEntity, false);
+	EnsureItemLocation(itemEntity);
+	g_dispatcher.trigger(ecs::EvItemUnequipped { charEntity, itemEntity });
+	return true;
+}
+
+bool EquipTo(entt::entity itemEntity, entt::entity charEntity, uint8_t bWearCell)
+{
+	if (charEntity == entt::null || !g_registry.valid(charEntity))
+	{
+		LOG_ERROR("EquipTo: nil character");
+		return false;
+	}
+
+	if (ItemSystem::IsDragonSoulItem(itemEntity))
+	{
+		if (bWearCell < WEAR_MAX_NUM || bWearCell >= WEAR_MAX_NUM + DRAGON_SOUL_DECK_MAX_NUM * DS_SLOT_MAX)
+		{
+			LOG_ERROR("EquipTo: invalid dragon soul cell (item: #{} {} wearflag: {} cell: {})", ItemSystem::GetItemOriginalVnum(itemEntity), ItemSystem::GetItemName(itemEntity), ItemSystem::GetItemSubType(itemEntity), bWearCell - WEAR_MAX_NUM);
+			return false;
+		}
+	}
+	else
+	{
+		if (bWearCell >= WEAR_MAX_NUM)
+		{
+			LOG_ERROR("EquipTo: invalid wear cell (item: #{} {} wearflag: {} cell: {})", ItemSystem::GetItemOriginalVnum(itemEntity), ItemSystem::GetItemName(itemEntity), ItemSystem::GetItemWearFlag(itemEntity), bWearCell);
+			return false;
+		}
+	}
+
+	const entt::entity occupied = ItemSystem::GetWearItem(charEntity, bWearCell);
+	if (ItemSystem::IsValidItem(occupied))
+	{
+		LOG_ERROR("EquipTo: item already exist (item: #{} {} cell: {} {})",
+			ItemSystem::GetItemOriginalVnum(itemEntity), ItemSystem::GetItemName(itemEntity), bWearCell, ItemSystem::GetItemName(occupied));
+		return false;
+	}
+
+	if (ItemSystem::GetItemOwner(itemEntity) != entt::null)
+		RemoveFromCharacter(itemEntity);
+
+	ecs::PlayerRuntime::SetWear(charEntity, bWearCell, itemEntity);
+
+	ItemSystem::SetItemOwnerEntity(itemEntity, charEntity);
+	// SetWear above already routed the cell through ItemSystem::SetItemCell,
+	// which writes ecs::ItemLocation and mirrors it back into m_wCell.
+	SyncItemEquipped(itemEntity, true);
+
+#ifndef ENABLE_IMMUNE_FIX
+	uint32_t dwImmuneFlag = 0;
+
+	for (int i = 0; i < WEAR_MAX_NUM; ++i)
+	{
+		const entt::entity item = ItemSystem::GetWearItem(charEntity, i);
+		if (ItemSystem::IsValidItem(item))
+		{
+			SET_BIT(dwImmuneFlag, ItemSystem::GetItemImmuneFlags(item));
+		}
+	}
+
+	ecs::PlayerRuntime::SetImmuneFlag(charEntity, dwImmuneFlag);
+#endif
+
+	if (ItemSystem::IsDragonSoulItem(itemEntity))
+	{
+		DSManager::instance().ActivateDragonSoul(itemEntity);
+	}
+	else
+	{
+#ifdef ENABLE_RUNE_SYSTEM
+		if (!ItemSystem::IsRuneItem(itemEntity))
+			ItemSystem::ModifyPoints(itemEntity, true);
+		else if (ItemSystem::GetItemSocket(itemEntity, 1) == 1)
+			ItemSystem::ModifyPoints(itemEntity, true);
+#else
+		ItemSystem::ModifyPoints(itemEntity, true);
+#endif
+		ItemSystem::StartUniqueExpireEvent(itemEntity);
+		if (-1 != ItemSystem::GetItemProto(itemEntity)->cLimitTimerBasedOnWearIndex)
+			ItemSystem::StartTimerBasedOnWearExpireEvent(itemEntity);
+
+		// ACCESSORY_REFINE
+		ItemSystem::StartAccessorySocketExpireEvent(itemEntity);
+		// END_OF_ACCESSORY_REFINE
+	}
+
+	ecs::PlayerRuntime::BuffOnAttr_AddBuffsFromItem(charEntity, itemEntity);
+
+	ecs::PointSystem::ComputeBattlePoints(charEntity);
+
+#ifdef ENABLE_MOUNT_COSTUME_SYSTEM
+	if (ItemSystem::IsMountItem(itemEntity))
+		MountSystem::MountSummon(charEntity, itemEntity);
+#endif
+	NetworkSyncSystem::UpdatePacket(charEntity);
+#ifdef ENABLE_ITEM_ON_TITLE_RAZOR93
+	if (bWearCell == WEAR_BELT)
+		NetworkSyncSystem::UpdateItemOnTitleName(g_registry, charEntity, true);
+#endif
+
+#ifdef ENABLE_COSTUME_PET
+	if ((ItemSystem::GetItemType(itemEntity) == ITEM_COSTUME) && (ItemSystem::GetItemSubType(itemEntity) == COSTUME_PET_SKIN)) {
+		MountSystem::UpdatePetSkin(charEntity);
+	}
+#endif
+#ifdef ENABLE_COSTUME_MOUNT
+	if ((ItemSystem::GetItemType(itemEntity) == ITEM_COSTUME) && (ItemSystem::GetItemSubType(itemEntity) == COSTUME_MOUNT_SKIN)) {
+		MountSystem::UpdateMountSkin(charEntity);
+	}
+#endif
+
+	EnsureItemLocation(itemEntity);
+	SyncItemOwner(itemEntity, charEntity, ecs::PlayerRuntime::GetPlayerID(charEntity));
+	g_dispatcher.trigger(ecs::EvItemEquipped { charEntity, itemEntity });
+
+	ItemSystem::SaveItem(itemEntity);
+	return (true);
+}
+
+entt::entity RemoveFromCharacter(entt::entity itemEntity)
+{
+	if (ItemSystem::GetItemOwner(itemEntity) == entt::null)
+	{
+		LOG_ERROR("Item::RemoveFromCharacter owner null");
+		return itemEntity;
+	}
+
+	const entt::entity ownerEntity = ItemSystem::GetItemOwner(itemEntity);
+
+	// Detaching means three component writes, and each one used to be a bare
+	// field assignment plus a call to the old SyncItemLocation, which copied
+	// nothing - so ecs::ItemLocation kept the cell and window the item had
+	// while it was still carried. SetItemCell and SetItemWindow write the
+	// component and mirror into m_wCell / m_bWindow, so both agree.
+	const auto detach = [&]() {
+		ItemSystem::SetItemCell(itemEntity, ownerEntity, 0);
+		ItemSystem::SetItemWindow(itemEntity, RESERVED_WINDOW);
+		ItemSystem::SetItemOwnerEntity(itemEntity, entt::null);
+		ItemSystem::SaveItem(itemEntity);
+
+		EnsureItemLocation(itemEntity);
+		SyncItemOwner(itemEntity, entt::null, 0);
+		g_registry.remove<ecs::ItemEquipped>(itemEntity);
+	};
+
+	if (ItemSystem::IsItemEquipped(itemEntity))
+	{
+		Unequip(itemEntity);
+		ItemSystem::SetItemWindow(itemEntity, RESERVED_WINDOW);
+		ItemSystem::SaveItem(itemEntity);
+
+		EnsureItemLocation(itemEntity);
+		SyncItemOwner(itemEntity, entt::null, 0);
+		g_registry.remove<ecs::ItemEquipped>(itemEntity);
+		return itemEntity;
+	}
+
+	const uint8_t window = ItemSystem::GetItemWindow(itemEntity);
+	const uint16_t cell = ItemSystem::GetItemCell(itemEntity);
+
+	if (window == MOUNT_INVENTORY)
+	{
+		if (CMountInventory* mi = ecs::LegacyCharOf(ownerEntity)->GetMountInventory())
+			mi->RemoveByItem(itemEntity);
+
+		detach();
+		return itemEntity;
+	}
+
+	if (window != SAFEBOX && window != MALL)
+	{
+		if (ItemSystem::IsDragonSoulItem(itemEntity))
+		{
+			if (cell >= DRAGON_SOUL_INVENTORY_MAX_NUM)
+				LOG_ERROR("CItem::RemoveFromCharacter: pos >= DRAGON_SOUL_INVENTORY_MAX_NUM");
+			else
+				ecs::PlayerRuntime::SetItem(ownerEntity, TItemPos(window, cell), entt::null);
+		}
+#ifdef ENABLE_EXTRA_INVENTORY
+		else if (ItemSystem::IsExtraItem(itemEntity))
+		{
+			if (cell >= EXTRA_INVENTORY_MAX_NUM)
+				LOG_ERROR("CItem::RemoveFromCharacter: pos >= EXTRA_INVENTORY_MAX_NUM");
+			else
+				ecs::PlayerRuntime::SetItem(ownerEntity, TItemPos(window, cell), entt::null);
+		}
+#endif
+#ifdef ENABLE_SWITCHBOT
+		else if (window == SWITCHBOT)
+		{
+			if (cell >= SWITCHBOT_SLOT_COUNT)
+			{
+				LOG_ERROR("CItem::RemoveFromCharacter: pos >= SWITCHBOT_SLOT_COUNT");
+			}
+			else
+			{
+				ecs::PlayerRuntime::SetItem(ownerEntity, TItemPos(SWITCHBOT, cell), entt::null);
+			}
+		}
+#endif
+		else
+		{
+			TItemPos pos(INVENTORY, cell);
+
+			if (false == pos.IsDefaultInventoryPosition() && false == pos.IsBeltInventoryPosition())
+				LOG_ERROR("CItem::RemoveFromCharacter: Invalid Item Position");
+			else
+				ecs::PlayerRuntime::SetItem(ownerEntity, pos, entt::null);
+		}
+	}
+
+	detach();
+	return itemEntity;
+}
+
+} // namespace InventorySystem
 
 namespace ItemSystem {
 
@@ -1460,216 +1690,6 @@ void ModifyPoints(entt::entity itemEntity, bool bAdd)
 bool CItem::IsEquipped() const
 {
 	return ItemSystem::IsItemEquipped(GetEntityHandle());
-}
-
-bool CItem::EquipTo(LPCHARACTER ch, uint8_t bWearCell)
-{
-	if (!ch)
-	{
-		LOG_ERROR("EquipTo: nil character");
-		return false;
-	}
-
-	if (IsDragonSoul())
-	{
-		if (bWearCell < WEAR_MAX_NUM || bWearCell >= WEAR_MAX_NUM + DRAGON_SOUL_DECK_MAX_NUM * DS_SLOT_MAX)
-		{
-			LOG_ERROR("EquipTo: invalid dragon soul cell (this: #{} {} wearflag: {} cell: {})", GetOriginalVnum(), GetName(), GetSubType(), bWearCell - WEAR_MAX_NUM);
-			return false;
-		}
-	}
-	else
-	{
-		if (bWearCell >= WEAR_MAX_NUM)
-		{
-			LOG_ERROR("EquipTo: invalid wear cell (this: #{} {} wearflag: {} cell: {})", GetOriginalVnum(), GetName(), GetWearFlag(), bWearCell);
-			return false;
-		}
-	}
-
-	const entt::entity charEntity = ch->GetEntityHandle();
-	const entt::entity occupied = ItemSystem::GetWearItem(charEntity, bWearCell);
-	if (ItemSystem::IsValidItem(occupied))
-	{
-		LOG_ERROR("EquipTo: item already exist (this: #{} {} cell: {} {})",
-			GetOriginalVnum(), GetName(), bWearCell, ItemSystem::GetItemName(occupied));
-		return false;
-	}
-
-	if (GetOwner())
-		RemoveFromCharacter();
-
-	ch->SetWear(bWearCell, GetEntityHandle());
-
-	SetOwnerEntity(charEntity);
-	// SetWear above already routed the cell through ItemSystem::SetItemCell,
-	// which writes ecs::ItemLocation and mirrors it back into m_wCell.
-	SyncItemEquipped(GetEntityHandle(), true);
-
-#ifndef ENABLE_IMMUNE_FIX
-	uint32_t dwImmuneFlag = 0;
-
-	for (int i = 0; i < WEAR_MAX_NUM; ++i)
-	{
-		const entt::entity item = ItemSystem::GetWearItem(charEntity, i);
-		if (ItemSystem::IsValidItem(item))
-		{
-			SET_BIT(dwImmuneFlag, ItemSystem::GetItemImmuneFlags(item));
-		}
-	}
-
-	ecs::PlayerRuntime::SetImmuneFlag(charEntity, dwImmuneFlag);
-#endif
-
-	if (IsDragonSoul())
-	{
-		DSManager::instance().ActivateDragonSoul(GetEntityHandle());
-	}
-	else
-	{
-#ifdef ENABLE_RUNE_SYSTEM
-		if (!IsRune())
-			ModifyPoints(true);
-		else if (GetSocket(1) == 1)
-			ModifyPoints(true);
-#else
-		ModifyPoints(true);
-#endif
-		StartUniqueExpireEvent();
-		if (-1 != GetProto()->cLimitTimerBasedOnWearIndex)
-			StartTimerBasedOnWearExpireEvent();
-
-		// ACCESSORY_REFINE
-		StartAccessorySocketExpireEvent();
-		// END_OF_ACCESSORY_REFINE
-	}
-
-	ch->BuffOnAttr_AddBuffsFromItem(this);
-
-	ecs::PointSystem::ComputeBattlePoints(charEntity);
-
-#ifdef ENABLE_MOUNT_COSTUME_SYSTEM
-	if (IsMountItem())
-		ch->MountSummon(GetEntityHandle());
-#endif
-	NetworkSyncSystem::UpdatePacket(charEntity);
-#ifdef ENABLE_ITEM_ON_TITLE_RAZOR93
-	if (bWearCell == WEAR_BELT)
-		NetworkSyncSystem::UpdateItemOnTitleName(g_registry, charEntity, true);
-#endif
-
-#ifdef ENABLE_COSTUME_PET
-	if ((GetType() == ITEM_COSTUME) && (GetSubType() == COSTUME_PET_SKIN)) {
-		MountSystem::UpdatePetSkin(charEntity);
-	}
-#endif
-#ifdef ENABLE_COSTUME_MOUNT
-	if ((GetType() == ITEM_COSTUME) && (GetSubType() == COSTUME_MOUNT_SKIN)) {
-		MountSystem::UpdateMountSkin(charEntity);
-	}
-#endif
-
-	const entt::entity itemEntity = GetEntityHandle();
-	EnsureItemLocation(itemEntity);
-	SyncItemOwner(itemEntity, charEntity, ecs::PlayerRuntime::GetPlayerID(charEntity), m_dwLastOwnerPID, m_dwOwnershipPID);
-	g_dispatcher.trigger(ecs::EvItemEquipped { charEntity, itemEntity });
-
-	Save();
-	return (true);
-}
-
-bool CItem::Unequip()
-{
-	if (GetOwnerEntity() == entt::null || GetCell() < INVENTORY_MAX_NUM)
-	{
-		LOG_ERROR("{} {} owner {}, GetCell {}", GetName(), GetID(), static_cast<uint32_t>(GetOwnerEntity()), GetCell());
-		return false;
-	}
-
-	const entt::entity itemEntity = GetEntityHandle();
-	const entt::entity charEntity = GetOwnerEntity();
-	if (ItemSystem::GetWearItem(
-			charEntity, static_cast<uint8_t>(GetCell() - INVENTORY_MAX_NUM)) != itemEntity)
-	{
-		LOG_ERROR("GetWearItem(owner, cell) != this");
-		return false;
-	}
-
-	LPCHARACTER owner = ecs::LegacyCharOf(charEntity);
-	const uint8_t wearCell = static_cast<uint8_t>(GetCell() - INVENTORY_MAX_NUM);
-
-#ifdef ENABLE_MOUNT_COSTUME_SYSTEM
-	if (IsMountItem())
-		MountSystem::MountUnsummon(charEntity, GetEntityHandle());
-#endif
-
-	if (IsRideItem())
-		ClearMountAttributeAndAffect();
-
-	if (IsDragonSoul())
-	{
-		DSManager::instance().DeactivateDragonSoul(itemEntity);
-	}
-#ifdef ENABLE_RUNE_SYSTEM
-	else if (IsRune()) {
-		if (GetSocket(1) == 1)
-			ModifyPoints(false);
-	}
-#endif
-	else
-	{
-		ModifyPoints(false);
-	}
-
-	StopUniqueExpireEvent();
-
-	if (-1 != GetProto()->cLimitTimerBasedOnWearIndex)
-		StopTimerBasedOnWearExpireEvent();
-
-	StopAccessorySocketExpireEvent();
-
-	ecs::PlayerRuntime::BuffOnAttr_RemoveBuffsFromItem(charEntity, itemEntity);
-
-	ecs::PlayerRuntime::SetWear(charEntity, wearCell, entt::null);
-
-#ifndef ENABLE_IMMUNE_FIX
-	uint32_t dwImmuneFlag = 0;
-
-	for (int i = 0; i < WEAR_MAX_NUM; ++i)
-	{
-		const entt::entity item = ItemSystem::GetWearItem(charEntity, i);
-		if (ItemSystem::IsValidItem(item))
-		{
-			SET_BIT(dwImmuneFlag, ItemSystem::GetItemImmuneFlags(item));
-		}
-	}
-
-	ecs::PlayerRuntime::SetImmuneFlag(charEntity, dwImmuneFlag);
-#endif
-
-	ecs::PointSystem::ComputeBattlePoints(charEntity);
-
-	NetworkSyncSystem::UpdatePacket(charEntity);
-#ifdef ENABLE_COSTUME_PET
-	if ((GetType() == ITEM_COSTUME) && (GetSubType() == COSTUME_PET_SKIN)) {
-		MountSystem::UpdatePetSkin(charEntity);
-	}
-#endif
-#ifdef ENABLE_COSTUME_MOUNT
-	if ((GetType() == ITEM_COSTUME) && (GetSubType() == COSTUME_MOUNT_SKIN)) {
-		MountSystem::UpdateMountSkin(charEntity);
-	}
-#endif
-	SetOwnerEntity(entt::null);
-	// SetWear(.., entt::null) leaves the cell alone - SetItem only writes it on
-	// the has-item branch - so ecs::ItemLocation kept the equipment cell while
-	// m_wCell went to 0. Writing through the component fixes both at once.
-	ItemSystem::SetItemCell(itemEntity, charEntity, 0);
-
-	SyncItemEquipped(itemEntity, false);
-	EnsureItemLocation(itemEntity);
-	g_dispatcher.trigger(ecs::EvItemUnequipped { charEntity, itemEntity });
-	return true;
 }
 
 void CItem::ModifyPoints(bool bAdd)
