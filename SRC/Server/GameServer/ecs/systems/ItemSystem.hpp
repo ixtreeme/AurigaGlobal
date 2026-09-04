@@ -115,6 +115,8 @@ void SetItemExtraProto(entt::entity item, TItemExtraProto* proto);
 short GetItemLockedAttr(entt::entity item);
 int GetItemAccessorySocketMaxGrade(entt::entity item);
 int GetItemAccessorySocketGrade(entt::entity item);
+uint16_t GetItemRefineSet(entt::entity item);
+void SetItemLock(entt::entity item, bool locked);
 bool IsItemStackable(entt::entity item);
 uint32_t GetItemRefinedVnum(entt::entity item);
 bool IsRealTimeItem(entt::entity item);

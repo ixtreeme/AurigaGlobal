@@ -3367,8 +3367,8 @@ bool CHARACTER::MoveItem(TItemPos Cell, TItemPos DestCell,
 			return false;
 		}
 
-		LPITEM targetItem = GetItem(DestCell);
-		if (targetItem)
+		const entt::entity targetItem = ItemSystem::GetItem(GetEntityHandle(), DestCell);
+		if (targetItem != entt::null)
 		{
 			//LOG_INFO("BELT_SLOT_OCCUPIED: Attempt to move item to occupied slot cell={}", DestCell.cell);
 			ecs::ChatSystem::Send(GetEntityHandle(), CHAT_TYPE_INFO, "This place is already taken.");
@@ -3387,11 +3387,11 @@ bool CHARACTER::MoveItem(TItemPos Cell, TItemPos DestCell,
 	{
 		for (int i = BELT_INVENTORY_SLOT_START; i < BELT_INVENTORY_SLOT_END; ++i)
 		{
-			LPITEM beltItem = GetInventoryItem(i);
-			if (!beltItem)
+			const entt::entity beltItem = ItemSystem::GetInventoryItem(GetEntityHandle(), i);
+			if (beltItem == entt::null)
 				continue;
 
-			if (beltItem->GetVnum() == item->GetVnum() && beltItem != item)
+			if (ItemSystem::GetItemVnum(beltItem) == item->GetVnum() && beltItem != item->GetEntityHandle())
 			{
 				ecs::ChatSystem::Send(GetEntityHandle(), CHAT_TYPE_INFO, "This mount already added,you can't add two time!");
 				return false;
@@ -3416,14 +3416,14 @@ bool CHARACTER::MoveItem(TItemPos Cell, TItemPos DestCell,
 
 			for (int i = BELT_INVENTORY_SLOT_START; i < BELT_INVENTORY_SLOT_END; ++i)
 			{
-				LPITEM beltItem = GetInventoryItem(i);
-				if (!beltItem)
+				const entt::entity beltItem = ItemSystem::GetInventoryItem(GetEntityHandle(), i);
+				if (beltItem == entt::null)
 					continue;
 
-				const uint32_t otherVnum = beltItem->GetVnum();
+				const uint32_t otherVnum = ItemSystem::GetItemVnum(beltItem);
 				const uint32_t otherGroup = otherVnum / 10;
 
-				if (itemGroup == otherGroup && beltItem != item)
+				if (itemGroup == otherGroup && beltItem != item->GetEntityHandle())
 				{
 					ecs::ChatSystem::Send(GetEntityHandle(), CHAT_TYPE_INFO, "You already have a belt of this type in your inventory.");
 					return false;
@@ -3507,8 +3507,8 @@ bool CHARACTER::MoveItem(TItemPos Cell, TItemPos DestCell,
 		int iWearCell = ItemSystem::FindEquipCell(GetEntityHandle(), item->GetEntityHandle());
 		if (iWearCell == WEAR_WEAPON)
 		{
-			LPITEM costumeWeapon = GetWear(WEAR_COSTUME_WEAPON);
-			if (costumeWeapon && !UnequipItem(costumeWeapon))
+			const entt::entity costumeWeapon = ItemSystem::GetWearItem(GetEntityHandle(), WEAR_COSTUME_WEAPON);
+			if (costumeWeapon != entt::null && !UnequipItem(costumeWeapon))
 			{
 #ifdef TEXTS_IMPROVEMENT
 				ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 366, "");
@@ -4036,17 +4036,17 @@ bool CHARACTER::PickupItem(uint32_t dwVID)
 
 					for (int i = 0; i < EXTRA_INVENTORY_MAX_NUM; ++i)
 					{
-						LPITEM item2 = GetExtraInventoryItem(i);
+						const entt::entity item2 = ItemSystem::GetExtraInventoryItem(GetEntityHandle(), i);
 
-						if (!item2)
+						if (item2 == entt::null)
 							continue;
 
-						if (item2->GetVnum() == item->GetVnum())
+						if (ItemSystem::GetItemVnum(item2) == item->GetVnum())
 						{
 							int j = 0;
 
 							for (j = 0; j < ITEM_SOCKET_MAX_NUM; ++j)
-								if (item2->GetSocket(j) != item->GetSocket(j))
+								if (ItemSystem::GetItemSocket(item2, j) != item->GetSocket(j))
 									break;
 
 							if (j != ITEM_SOCKET_MAX_NUM)
@@ -4057,7 +4057,8 @@ bool CHARACTER::PickupItem(uint32_t dwVID)
 #else
 							uint8_t
 #endif
-								bCount2 = std::min(g_bItemCountLimit - item2->GetCount(), bCount); // change type for some
+								bCount2 = static_cast<uint8_t>(std::min<int64_t>(
+						g_bItemCountLimit - ItemSystem::GetItemCount(item2), bCount)); // change type for some
 							bCount -= bCount2;
 
 #ifdef ENABLE_BATTLE_PASS
@@ -4088,7 +4089,7 @@ bool CHARACTER::PickupItem(uint32_t dwVID)
 							}
 #endif
 
-							ItemSystem::AddItemCountEcs((item2 ? item2->GetEntityHandle() : entt::null), bCount2);
+							ItemSystem::AddItemCountEcs(item2, bCount2);
 							ItemSystem::ConsumeItemEcs((item ? item->GetEntityHandle() : entt::null), bCount2);
 
 							if (bCount == 0)
@@ -4100,7 +4101,7 @@ bool CHARACTER::PickupItem(uint32_t dwVID)
 #else
 									CHAT_TYPE_INFO
 #endif
-									, 102, "%d#%s", bCount2, item2->GetName(GetDesc() ? GetDesc()->GetLanguage() : 0));
+									, 102, "%d#%s", bCount2, ItemSystem::GetItemName(item2));
 								//ecs::ChatSystem::Send(GetEntityHandle(), CHAT_TYPE_INFO, "|cffffc700[Kaptál:]|r 01 |cffffff00%u x %s|r", item->GetCount(), item->GetName());
 
 #endif
@@ -4124,17 +4125,17 @@ bool CHARACTER::PickupItem(uint32_t dwVID)
 
 					for (int i = 0; i < INVENTORY_MAX_NUM; ++i)
 					{
-						LPITEM item2 = GetInventoryItem(i);
+						const entt::entity item2 = ItemSystem::GetInventoryItem(GetEntityHandle(), i);
 
-						if (!item2)
+						if (item2 == entt::null)
 							continue;
 
-						if (item2->GetVnum() == item->GetVnum())
+						if (ItemSystem::GetItemVnum(item2) == item->GetVnum())
 						{
 							int j;
 
 							for (j = 0; j < ITEM_SOCKET_MAX_NUM; ++j)
-								if (item2->GetSocket(j) != item->GetSocket(j))
+								if (ItemSystem::GetItemSocket(item2, j) != item->GetSocket(j))
 									break;
 
 							if (j != ITEM_SOCKET_MAX_NUM)
@@ -4145,7 +4146,8 @@ bool CHARACTER::PickupItem(uint32_t dwVID)
 #else
 							uint8_t
 #endif
-								bCount2 = std::min(g_bItemCountLimit - item2->GetCount(), bCount);
+								bCount2 = static_cast<uint8_t>(std::min<int64_t>(
+						g_bItemCountLimit - ItemSystem::GetItemCount(item2), bCount));
 							bCount -= bCount2;
 #ifdef ENABLE_BATTLE_PASS
 							if (bIsBattlePass)
@@ -4174,7 +4176,7 @@ bool CHARACTER::PickupItem(uint32_t dwVID)
 								}
 							}
 #endif
-							ItemSystem::AddItemCountEcs((item2 ? item2->GetEntityHandle() : entt::null), bCount2);
+							ItemSystem::AddItemCountEcs(item2, bCount2);
 							ItemSystem::ConsumeItemEcs((item ? item->GetEntityHandle() : entt::null), bCount2);
 
 							if (bCount == 0)
@@ -4186,7 +4188,7 @@ bool CHARACTER::PickupItem(uint32_t dwVID)
 #else
 									CHAT_TYPE_INFO
 #endif
-									, 102, "%d#%s", bCount2, item2->GetName(GetDesc() ? GetDesc()->GetLanguage() : 0));
+									, 102, "%d#%s", bCount2, ItemSystem::GetItemName(item2));
 								//ecs::ChatSystem::Send(GetEntityHandle(), CHAT_TYPE_INFO, "|cffffc700[Kaptál:]|r 02 |cffffff00%u x %s|r", item->GetCount(), item->GetName());
 
 #endif
@@ -4320,17 +4322,17 @@ bool CHARACTER::PickupItem(uint32_t dwVID)
 
 				for (int i = 0; i < EXTRA_INVENTORY_MAX_NUM; ++i)
 				{
-					LPITEM item2 = owner->GetExtraInventoryItem(i);
+					const entt::entity item2 = ItemSystem::GetExtraInventoryItem(owner->GetEntityHandle(), i);
 
-					if (!item2)
+					if (item2 == entt::null)
 						continue;
 
-					if (item2->GetVnum() == item->GetVnum())
+					if (ItemSystem::GetItemVnum(item2) == item->GetVnum())
 					{
 						int j = 0;
 
 						for (j = 0; j < ITEM_SOCKET_MAX_NUM; ++j)
-							if (item2->GetSocket(j) != item->GetSocket(j))
+							if (ItemSystem::GetItemSocket(item2, j) != item->GetSocket(j))
 								break;
 
 						if (j != ITEM_SOCKET_MAX_NUM)
@@ -4341,7 +4343,8 @@ bool CHARACTER::PickupItem(uint32_t dwVID)
 #else
 						uint8_t
 #endif
-							bCount2 = std::min(g_bItemCountLimit - item2->GetCount(), bCount); // change type for some
+							bCount2 = static_cast<uint8_t>(std::min<int64_t>(
+						g_bItemCountLimit - ItemSystem::GetItemCount(item2), bCount)); // change type for some
 						bCount -= bCount2;
 #ifdef ENABLE_BATTLE_PASS
 						if (bIsBattlePass)
@@ -4370,7 +4373,7 @@ bool CHARACTER::PickupItem(uint32_t dwVID)
 							}
 						}
 #endif
-						ItemSystem::AddItemCountEcs((item2 ? item2->GetEntityHandle() : entt::null), bCount2);
+						ItemSystem::AddItemCountEcs(item2, bCount2);
 						ItemSystem::ConsumeItemEcs((item ? item->GetEntityHandle() : entt::null), bCount2);
 
 						if (bCount == 0)
@@ -4382,7 +4385,7 @@ bool CHARACTER::PickupItem(uint32_t dwVID)
 #else
 								CHAT_TYPE_INFO
 #endif
-								, 102, "%d#%s", item2->GetCount(), item2->GetName(GetDesc() ? GetDesc()->GetLanguage() : 0));
+								, 102, "%d#%s", ItemSystem::GetItemCount(item2), ItemSystem::GetItemName(item2));
 							//ecs::ChatSystem::Send(GetEntityHandle(), CHAT_TYPE_INFO, "|cffffc700[Kaptál:]|r 04 |cffffff00%u x %s|r", item->GetCount(), item->GetName());
 
 #endif
@@ -4406,17 +4409,17 @@ bool CHARACTER::PickupItem(uint32_t dwVID)
 
 				for (int i = 0; i < INVENTORY_MAX_NUM; ++i)
 				{
-					LPITEM item2 = owner->GetInventoryItem(i);
+					const entt::entity item2 = ItemSystem::GetInventoryItem(owner->GetEntityHandle(), i);
 
-					if (!item2)
+					if (item2 == entt::null)
 						continue;
 
-					if (item2->GetVnum() == item->GetVnum())
+					if (ItemSystem::GetItemVnum(item2) == item->GetVnum())
 					{
 						int j;
 
 						for (j = 0; j < ITEM_SOCKET_MAX_NUM; ++j)
-							if (item2->GetSocket(j) != item->GetSocket(j))
+							if (ItemSystem::GetItemSocket(item2, j) != item->GetSocket(j))
 								break;
 
 						if (j != ITEM_SOCKET_MAX_NUM)
@@ -4427,7 +4430,8 @@ bool CHARACTER::PickupItem(uint32_t dwVID)
 #else
 						uint8_t
 #endif
-							bCount2 = std::min(g_bItemCountLimit - item2->GetCount(), bCount);
+							bCount2 = static_cast<uint8_t>(std::min<int64_t>(
+						g_bItemCountLimit - ItemSystem::GetItemCount(item2), bCount));
 						bCount -= bCount2;
 #ifdef ENABLE_BATTLE_PASS
 						if (bIsBattlePass)
@@ -4456,7 +4460,7 @@ bool CHARACTER::PickupItem(uint32_t dwVID)
 							}
 						}
 #endif
-						ItemSystem::AddItemCountEcs((item2 ? item2->GetEntityHandle() : entt::null), bCount2);
+						ItemSystem::AddItemCountEcs(item2, bCount2);
 						ItemSystem::ConsumeItemEcs((item ? item->GetEntityHandle() : entt::null), bCount2);
 
 						if (bCount == 0)
@@ -4468,7 +4472,7 @@ bool CHARACTER::PickupItem(uint32_t dwVID)
 #else
 								CHAT_TYPE_INFO
 #endif
-								, 102, "%d#%s", bCount2, item2->GetName(GetDesc() ? GetDesc()->GetLanguage() : 0));
+								, 102, "%d#%s", bCount2, ItemSystem::GetItemName(item2));
 							//ecs::ChatSystem::Send(GetEntityHandle(), CHAT_TYPE_INFO, "|cffffc700[Kaptál:]|r 05 |cffffff00%u x %s|r", item->GetCount(), item->GetName());
 
 #endif
@@ -4671,8 +4675,8 @@ bool CHARACTER::UseItem(TItemPos Cell, TItemPos DestCell)
 	}
 #endif
 
-	LPITEM destItem = GetItem(DestCell);
-	if (destItem && item != destItem && destItem->IsStackable() && !IS_SET(destItem->GetAntiFlag(), ITEM_ANTIFLAG_STACK) && destItem->GetVnum() == item->GetVnum())
+	const entt::entity destItem = ItemSystem::GetItem(GetEntityHandle(), DestCell);
+	if (destItem != entt::null && item->GetEntityHandle() != destItem && ItemSystem::IsItemStackable(destItem) && !IS_SET(ItemSystem::GetItemAntiFlags(destItem), ITEM_ANTIFLAG_STACK) && ItemSystem::GetItemVnum(destItem) == item->GetVnum())
 	{
 		if (MoveItem(Cell, DestCell, 0))
 			return false;
@@ -11977,15 +11981,15 @@ bool CHARACTER::RefineInformation(uint8_t bCell, uint8_t bType, int iAdditionalC
 	if (bCell > INVENTORY_MAX_NUM)
 		return false;
 
-	LPITEM item = GetInventoryItem(bCell);
+	const entt::entity item = ItemSystem::GetInventoryItem(GetEntityHandle(), bCell);
 
 
 
-	if (!item)
+	if (item == entt::null)
 		return false;
 
 #ifdef ATTR_LOCK
-	if (item->GetLockedAttr() != -1)
+	if (ItemSystem::GetItemLockedAttr(item) != -1)
 	{
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 784, "");
@@ -12008,8 +12012,8 @@ bool CHARACTER::RefineInformation(uint8_t bCell, uint8_t bType, int iAdditionalC
 
 	p.header = HEADER_GC_REFINE_INFORMATION;
 	p.pos = bCell;
-	p.src_vnum = item->GetVnum();
-	p.result_vnum = item->GetRefinedVnum();
+	p.src_vnum = ItemSystem::GetItemVnum(item);
+	p.result_vnum = ItemSystem::GetItemRefinedVnum(item);
 	p.type = bType;
 
 	if (p.result_vnum == 0)
@@ -12020,7 +12024,7 @@ bool CHARACTER::RefineInformation(uint8_t bCell, uint8_t bType, int iAdditionalC
 		return false;
 	}
 
-	if (item->GetType() == ITEM_USE && item->GetSubType() == USE_TUNING)
+	if (ItemSystem::GetItemType(item) == ITEM_USE && ItemSystem::GetItemSubType(item) == USE_TUNING)
 	{
 		if (bType == 0)
 		{
@@ -12031,8 +12035,8 @@ bool CHARACTER::RefineInformation(uint8_t bCell, uint8_t bType, int iAdditionalC
 		}
 		else
 		{
-			LPITEM itemScroll = GetInventoryItem(iAdditionalCell);
-			if (!itemScroll || item->GetVnum() == itemScroll->GetVnum())
+			const entt::entity itemScroll = ItemSystem::GetInventoryItem(GetEntityHandle(), iAdditionalCell);
+			if (itemScroll == entt::null || ItemSystem::GetItemVnum(item) == ItemSystem::GetItemVnum(itemScroll))
 			{
 #ifdef TEXTS_IMPROVEMENT
 				ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 229, "");
@@ -12045,12 +12049,12 @@ bool CHARACTER::RefineInformation(uint8_t bCell, uint8_t bType, int iAdditionalC
 #ifdef ENABLE_SOUL_SYSTEM
 	if (bType == REFINE_TYPE_SOUL)
 	{
-		LPITEM itemScroll = GetInventoryItem(iAdditionalCell);
-		if (!itemScroll)
+		const entt::entity itemScroll = ItemSystem::GetInventoryItem(GetEntityHandle(), iAdditionalCell);
+		if (itemScroll == entt::null)
 			return false;
 
 		p.cost = 0;
-		p.prob = itemScroll->GetValue(1);
+		p.prob = ItemSystem::GetItemValue(itemScroll, 1);
 		p.material_count = 0;
 		memset(p.materials, 0, sizeof(p.materials));
 
@@ -12063,7 +12067,7 @@ bool CHARACTER::RefineInformation(uint8_t bCell, uint8_t bType, int iAdditionalC
 
 	CRefineManager& rm = CRefineManager::instance();
 
-	const TRefineTable* prt = rm.GetRefineRecipe(item->GetRefineSet());
+	const TRefineTable* prt = rm.GetRefineRecipe(ItemSystem::GetItemRefineSet(item));
 
 	if (!prt)
 	{
@@ -12080,10 +12084,10 @@ bool CHARACTER::RefineInformation(uint8_t bCell, uint8_t bType, int iAdditionalC
 	// Kijelzett esély igazítása scroll típus alapján (hogy a kliens ugyanazt lássa, mint amit a szerver használ)
 	if (bType != REFINE_TYPE_MONEY_ONLY)
 	{
-		LPITEM pkScroll = GetInventoryItem(iAdditionalCell);
-		if (pkScroll && pkScroll->GetType() == ITEM_USE && pkScroll->GetSubType() == USE_TUNING)
+		const entt::entity pkScroll = ItemSystem::GetInventoryItem(GetEntityHandle(), iAdditionalCell);
+		if (pkScroll != entt::null && ItemSystem::GetItemType(pkScroll) == ITEM_USE && ItemSystem::GetItemSubType(pkScroll) == USE_TUNING)
 		{
-			const int scrollType = pkScroll->GetValue(0);
+			const int scrollType = ItemSystem::GetItemValue(pkScroll, 0);
 
 			if (scrollType == YONGSIN_SCROLL || scrollType == YAGONG_SCROLL || scrollType == HYUNIRON_CHN)
 			{
@@ -12091,14 +12095,14 @@ bool CHARACTER::RefineInformation(uint8_t bCell, uint8_t bType, int iAdditionalC
 				const char yagong_prob[9] = { 100, 100, 90, 80, 70, 60, 50, 30, 20 };
 
 				if (scrollType == YONGSIN_SCROLL)
-					success_prob = hyuniron_prob[MINMAX(0, item->GetRefineLevel(), 8)];
+					success_prob = hyuniron_prob[MINMAX(0, ItemSystem::GetItemRefineLevel(item), 8)];
 				else if (scrollType == YAGONG_SCROLL)
-					success_prob = yagong_prob[MINMAX(0, item->GetRefineLevel(), 8)];
+					success_prob = yagong_prob[MINMAX(0, ItemSystem::GetItemRefineLevel(item), 8)];
 				// HYUNIRON_CHN: marad a prt->prob
 			}
 			else if (scrollType == MUSIN_SCROLL)
 			{
-				//if (item->GetRefineLevel() >= 9)
+				//if (ItemSystem::GetItemRefineLevel(item) >= 9)
 				//{
 				//	ecs::ChatSystem::Send(GetEntityHandle(), CHAT_TYPE_INFO, "MAX +9 with this scroll!");
 				//	return false;
@@ -12109,13 +12113,13 @@ bool CHARACTER::RefineInformation(uint8_t bCell, uint8_t bType, int iAdditionalC
 			}
 			else if (scrollType == MEMO_SCROLL)
 			{
-				if (item->GetRefineLevel() != pkScroll->GetValue(1))
+				if (ItemSystem::GetItemRefineLevel(item) != ItemSystem::GetItemValue(pkScroll, 1))
 					return false;
 				success_prob = 100;
 			}
 			else if (scrollType == BDRAGON_SCROLL)
 			{
-				if (item->GetType() != ITEM_METIN || item->GetRefineLevel() != 4)
+				if (ItemSystem::GetItemType(item) != ITEM_METIN || ItemSystem::GetItemRefineLevel(item) != 4)
 					return false;
 				success_prob = 80;
 			}
@@ -14202,12 +14206,12 @@ bool CHARACTER::IsEmptyItemGrid(TItemPos Cell, uint8_t bSize, int iExceptionCell
 
 		/* 			if (Cell.IsBeltInventoryPosition())
 					{
-						LPITEM beltItem = GetWear(WEAR_BELT);
+						const entt::entity beltItem = ItemSystem::GetWearItem(GetEntityHandle(), WEAR_BELT);
 
 						if (NULL == beltItem)
 							return false;
 
-						if (false == CBeltInventoryHelper::IsAvailableCell(bCell - BELT_INVENTORY_SLOT_START, beltItem->GetValue(0)))
+						if (false == CBeltInventoryHelper::IsAvailableCell(bCell - BELT_INVENTORY_SLOT_START, ItemSystem::GetItemValue(beltItem, 0)))
 							return false;
 
 						if (GetMainInventoryGrid(GetEntityHandle(), bCell))
@@ -14384,12 +14388,12 @@ bool CHARACTER::IsEmptyItemGrid(TItemPos Cell, uint8_t bSize, int iExceptionCell
 
 		if (Cell.IsBeltInventoryPosition())
 		{
-			LPITEM beltItem = GetWear(WEAR_BELT);
+			const entt::entity beltItem = ItemSystem::GetWearItem(GetEntityHandle(), WEAR_BELT);
 
 			if (NULL == beltItem)
 				return false;
 
-			if (false == CBeltInventoryHelper::IsAvailableCell(bCell - BELT_INVENTORY_SLOT_START, beltItem->GetValue(0)))
+			if (false == CBeltInventoryHelper::IsAvailableCell(bCell - BELT_INVENTORY_SLOT_START, ItemSystem::GetItemValue(beltItem, 0)))
 				return false;
 
 			if (GetMainInventoryGrid(GetEntityHandle(), bCell))
@@ -15529,18 +15533,18 @@ void CHARACTER::AutoRecoveryItemProcess(const EAffectTypes type)
 
 	if (nullptr != pAffect)
 	{
-		LPITEM pItem = FindItemByID(pAffect->dwFlag);
+		const entt::entity pItem = ItemSystem::FindItemByID(GetEntityHandle(), pAffect->dwFlag);
 
-		if (nullptr != pItem && true == pItem->GetSocket(0))
+		if (pItem != entt::null && true == ItemSystem::GetItemSocket(pItem, 0))
 		{
 			if (!CArenaManager::instance().IsArenaMap(GetMapIndex())
 #ifdef ENABLE_NEWSTUFF
-				&& !(g_NoPotionsOnPVP && CPVPManager::instance().IsFighting(GetPlayerID()) && !IsAllowedPotionOnPVP(pItem->GetVnum()))
+				&& !(g_NoPotionsOnPVP && CPVPManager::instance().IsFighting(GetPlayerID()) && !IsAllowedPotionOnPVP(ItemSystem::GetItemVnum(pItem)))
 #endif
 				)
 			{
-				const int32_t amount_of_used = pItem->GetSocket(idx_of_amount_of_used);
-				const int32_t amount_of_full = pItem->GetSocket(idx_of_amount_of_full);
+				const int32_t amount_of_used = ItemSystem::GetItemSocket(pItem, idx_of_amount_of_used);
+				const int32_t amount_of_full = ItemSystem::GetItemSocket(pItem, idx_of_amount_of_full);
 
 				const int32_t avail = amount_of_full - amount_of_used;
 
@@ -15576,17 +15580,17 @@ void CHARACTER::AutoRecoveryItemProcess(const EAffectTypes type)
 							bLog = true;
 
 #ifdef ENABLE_NEW_USE_POTION
-						if (pItem->GetVnum() != ITEM_AUTO_HP_RECOVERY_X && pItem->GetVnum() != ITEM_AUTO_SP_RECOVERY_X)
-							pItem->SetSocket(idx_of_amount_of_used, amount_of_used + amount, bLog);
+						if (ItemSystem::GetItemVnum(pItem) != ITEM_AUTO_HP_RECOVERY_X && ItemSystem::GetItemVnum(pItem) != ITEM_AUTO_SP_RECOVERY_X)
+							ItemSystem::SetItemSocket(pItem, idx_of_amount_of_used, amount_of_used + amount);
 #else
-						pItem->SetSocket(idx_of_amount_of_used, amount_of_used + amount, bLog);
+						ItemSystem::SetItemSocket(pItem, idx_of_amount_of_used, amount_of_used + amount, bLog);
 #endif
 					}
-					else if (pItem->GetVnum() != ITEM_AUTO_HP_RECOVERY_X && pItem->GetVnum() != ITEM_AUTO_SP_RECOVERY_X)
+					else if (ItemSystem::GetItemVnum(pItem) != ITEM_AUTO_HP_RECOVERY_X && ItemSystem::GetItemVnum(pItem) != ITEM_AUTO_SP_RECOVERY_X)
 					{
 						amount = avail;
 
-						ITEM_MANAGER::instance().RemoveItem(pItem);
+						ItemSystem::DestroyItemEntityEcs(pItem, "AUTO_RECOVERY_USED_UP");
 					}
 
 #ifdef ENABLE_NEW_USE_POTION
@@ -15611,8 +15615,8 @@ void CHARACTER::AutoRecoveryItemProcess(const EAffectTypes type)
 			}
 			else
 			{
-				pItem->Lock(false);
-				ItemSystem::SetItemSocketEcs((pItem ? pItem->GetEntityHandle() : entt::null), 0, false);
+				ItemSystem::SetItemLock(pItem, false);
+				ItemSystem::SetItemSocketEcs(pItem, 0, false);
 				RemoveAffect(const_cast<CAffect*>(pAffect));
 			}
 		}
