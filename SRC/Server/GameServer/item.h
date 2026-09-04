@@ -40,7 +40,7 @@ class CItem : public CEntity
 #ifdef ENABLE_ITEM_EXTRA_PROTO
 		void		SetExtraProto(TItemExtraProto* Proto);
 		TItemExtraProto* GetExtraProto();
-		bool		HasExtraProto() { return m_ExtraProto != nullptr; }
+		bool		HasExtraProto() const;
 #endif
 
 #ifdef ATTR_LOCK
@@ -313,7 +313,6 @@ class CItem : public CEntity
 		short		m_sLockedAttr;
 #endif
 #ifdef ENABLE_ITEM_EXTRA_PROTO
-		TItemExtraProto* m_ExtraProto;
 #endif
 		int32_t		m_lFlag;		// 추가 flag
 		uint32_t		m_dwLastOwnerPID;	// 마지막 가지고 있었던 사람의 PID

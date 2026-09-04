@@ -829,6 +829,11 @@ bool CItem::IsEquipable()
 // The owner lives in ecs::ItemOwner. GetOwner keeps returning a pointer
 // because that is what its callers are typed on; GetOwnerEntity is the form
 // this migration moves them to.
+bool CItem::HasExtraProto() const
+{
+	return ItemSystem::GetItemExtraProto(GetEntityHandle()) != nullptr;
+}
+
 bool CItem::HaveOwnership() const
 {
 	return ItemSystem::GetItemEvents(GetEntityHandle()).ownership != nullptr;
@@ -884,6 +889,573 @@ uint16_t CItem::GetCell() const
 {
 	return ItemSystem::GetItemCell(GetEntityHandle());
 }
+
+namespace ItemSystem {
+
+void ModifyPoints(entt::entity itemEntity, bool bAdd)
+{
+	const entt::entity ownerEntity = ItemSystem::GetItemOwner(itemEntity);
+#ifdef ENABLE_BUG_FIXES
+	if (ownerEntity == entt::null) {
+		return;
+	}
+#endif
+
+	const TItemTable* proto = ItemSystem::GetItemProto(itemEntity);
+	int accessoryGrade;
+
+	if (false == ItemSystem::IsAccessoryForSocket(itemEntity))
+	{
+		if (proto->bType == ITEM_WEAPON || proto->bType == ITEM_ARMOR)
+		{
+			for (int i = 0; i < ITEM_SOCKET_MAX_NUM; ++i)
+			{
+				uint32_t dwVnum;
+
+				if ((dwVnum = ItemSystem::GetItemSocket(itemEntity, i)) <= 2)
+					continue;
+
+				TItemTable* p = ITEM_MANAGER::instance().GetTable(dwVnum);
+
+				if (!p)
+				{
+					LOG_ERROR("cannot find table by vnum {}", dwVnum);
+					continue;
+				}
+
+				if (ITEM_METIN == p->bType)
+				{
+					for (auto& aApplie : p->aApplies)
+					{
+						if (aApplie.bType == APPLY_NONE)
+							continue;
+
+						if (aApplie.bType == APPLY_SKILL)
+							ecs::PointSystem::ApplyPoint(ownerEntity, aApplie.bType, bAdd ? aApplie.lValue : aApplie.lValue ^ 0x00800000);
+						else
+							ecs::PointSystem::ApplyPoint(ownerEntity, aApplie.bType, bAdd ? aApplie.lValue : -aApplie.lValue);
+					}
+				}
+			}
+		}
+
+		accessoryGrade = 0;
+	}
+	else
+	{
+		accessoryGrade = MIN(ItemSystem::GetItemAccessorySocketGrade(itemEntity), ITEM_ACCESSORY_SOCKET_MAX_NUM);
+	}
+
+
+#ifdef ENABLE_ACCE_SYSTEM
+	if ((ItemSystem::GetItemType(itemEntity) == ITEM_COSTUME) && (ItemSystem::GetItemSubType(itemEntity) == COSTUME_ACCE) && (ItemSystem::GetItemSocket(itemEntity, ACCE_ABSORBED_SOCKET)))
+	{
+		TItemTable* pkItemAbsorbed = ITEM_MANAGER::instance().GetTable(ItemSystem::GetItemSocket(itemEntity, ACCE_ABSORBED_SOCKET));
+		if (pkItemAbsorbed)
+		{
+			/* 			if ((pkItemAbsorbed->bType == ITEM_ARMOR) && (pkItemAbsorbed->bSubType == ARMOR_BODY))
+						{
+							int32_t lDefGrade = pkItemAbsorbed->alValues[1] + int32_t(pkItemAbsorbed->alValues[5] * 2);
+							double dValue = lDefGrade * ItemSystem::GetItemSocket(itemEntity, ACCE_ABSORPTION_SOCKET);
+							dValue = (double)dValue / 100;
+							dValue = (double)dValue + .5;
+							lDefGrade = (int32_t) dValue;
+							if ((pkItemAbsorbed->alValues[1] > 0 && (lDefGrade <= 0)) || (pkItemAbsorbed->alValues[5] > 0 && (lDefGrade < 1)))
+								lDefGrade += 1;
+							else if ((pkItemAbsorbed->alValues[1] > 0) || (pkItemAbsorbed->alValues[5] > 0))
+								lDefGrade += 1;
+
+							ecs::PointSystem::ApplyPoint(ownerEntity, APPLY_DEF_GRADE_BONUS, bAdd ? lDefGrade : -lDefGrade);
+
+							int32_t lDefMagicBonus = pkItemAbsorbed->alValues[0];
+							dValue = lDefMagicBonus * ItemSystem::GetItemSocket(itemEntity, ACCE_ABSORPTION_SOCKET);
+							dValue = (double)dValue / 100;
+							dValue = (double)dValue + .5;
+							lDefMagicBonus = (int32_t) dValue;
+							if ((pkItemAbsorbed->alValues[0] > 0) && (lDefMagicBonus < 1))
+								lDefMagicBonus += 1;
+							else if (pkItemAbsorbed->alValues[0] > 0)
+								lDefMagicBonus += 1;
+
+							ecs::PointSystem::ApplyPoint(ownerEntity, APPLY_MAGIC_DEF_GRADE, bAdd ? lDefMagicBonus : -lDefMagicBonus);
+						} */
+			/* else  */if (pkItemAbsorbed->bType == ITEM_WEAPON)
+			{
+				int32_t lAttGrade = pkItemAbsorbed->alValues[4] + pkItemAbsorbed->alValues[5];
+				if (pkItemAbsorbed->alValues[3] > pkItemAbsorbed->alValues[4])
+					lAttGrade = pkItemAbsorbed->alValues[3] + pkItemAbsorbed->alValues[5];
+
+				double dValue = lAttGrade * ItemSystem::GetItemSocket(itemEntity, ACCE_ABSORPTION_SOCKET);
+				dValue = dValue / 100;
+				dValue = dValue + .5;
+				lAttGrade = (int32_t)dValue;
+				if (((pkItemAbsorbed->alValues[3] > 0) && (lAttGrade < 1)) || ((pkItemAbsorbed->alValues[4] > 0) && (lAttGrade < 1)))
+					lAttGrade += 1;
+				else if ((pkItemAbsorbed->alValues[3] > 0) || (pkItemAbsorbed->alValues[4] > 0))
+					lAttGrade += 1;
+
+				ecs::PointSystem::ApplyPoint(ownerEntity, APPLY_ATT_GRADE_BONUS, bAdd ? lAttGrade : -lAttGrade);
+
+				int32_t lAttMagicGrade = pkItemAbsorbed->alValues[2] + pkItemAbsorbed->alValues[5];
+				if (pkItemAbsorbed->alValues[1] > pkItemAbsorbed->alValues[2])
+					lAttMagicGrade = pkItemAbsorbed->alValues[1] + pkItemAbsorbed->alValues[5];
+
+				dValue = lAttMagicGrade * ItemSystem::GetItemSocket(itemEntity, ACCE_ABSORPTION_SOCKET);
+				dValue = dValue / 100;
+				dValue = dValue + .5;
+				lAttMagicGrade = (int32_t)dValue;
+				if (((pkItemAbsorbed->alValues[1] > 0) && (lAttMagicGrade < 1)) || ((pkItemAbsorbed->alValues[2] > 0) && (lAttMagicGrade < 1)))
+					lAttMagicGrade += 1;
+				else if ((pkItemAbsorbed->alValues[1] > 0) || (pkItemAbsorbed->alValues[2] > 0))
+					lAttMagicGrade += 1;
+
+				ecs::PointSystem::ApplyPoint(ownerEntity, APPLY_MAGIC_ATT_GRADE, bAdd ? lAttMagicGrade : -lAttMagicGrade);
+			}
+		}
+	}
+#endif
+
+
+	for (int i = 0; i < ITEM_APPLY_MAX_NUM; ++i)
+	{
+#ifdef ENABLE_ACCE_SYSTEM
+		if ((proto->aApplies[i].bType == APPLY_NONE) && (ItemSystem::GetItemType(itemEntity) != ITEM_COSTUME) && (ItemSystem::GetItemSubType(itemEntity) != COSTUME_ACCE))
+#else
+		if (proto->aApplies[i].bType == APPLY_NONE)
+#endif
+			continue;
+
+#ifdef ENABLE_MOUNT_COSTUME_SYSTEM
+		if (ItemSystem::IsMountItem(itemEntity))
+			continue;
+#endif
+
+		int32_t value = proto->aApplies[i].lValue;
+#ifdef ENABLE_ACCE_SYSTEM
+		if ((ItemSystem::GetItemType(itemEntity) == ITEM_COSTUME) && (ItemSystem::GetItemSubType(itemEntity) == COSTUME_ACCE))
+		{
+			TItemTable* pkItemAbsorbed = ITEM_MANAGER::instance().GetTable(ItemSystem::GetItemSocket(itemEntity, ACCE_ABSORBED_SOCKET));
+			if (pkItemAbsorbed)
+			{
+				if (pkItemAbsorbed->aApplies[i].bType == APPLY_NONE)
+					continue;
+
+				value = pkItemAbsorbed->aApplies[i].lValue;
+				if (value < 0)
+					continue;
+
+				double dValue = value * ItemSystem::GetItemSocket(itemEntity, ACCE_ABSORPTION_SOCKET);
+				dValue = dValue / 100;
+				dValue = dValue + .5;
+				value = (int32_t)dValue;
+				if ((pkItemAbsorbed->aApplies[i].lValue > 0) && (value <= 0))
+					value += 1;
+			}
+			else
+				continue;
+		}
+#endif
+		if (proto->aApplies[i].bType == APPLY_SKILL)
+		{
+			ecs::PointSystem::ApplyPoint(ownerEntity, proto->aApplies[i].bType, bAdd ? value : value ^ 0x00800000);
+		}
+		else
+		{
+			if (0 != accessoryGrade)
+				value += MAX(accessoryGrade, value * aiAccessorySocketEffectivePct[accessoryGrade] / 100);
+
+			ecs::PointSystem::ApplyPoint(ownerEntity, proto->aApplies[i].bType, bAdd ? value : -value);
+		}
+	}
+
+#ifdef ENABLE_ITEM_EXTRA_PROTO
+	if (ItemSystem::GetItemExtraProto(itemEntity) != nullptr)
+	{
+#ifdef ENABLE_NEW_EXTRA_BONUS
+		for (int i = 0; i < NEW_EXTRA_BONUS_COUNT; i++)
+		{
+			auto type = ItemSystem::GetItemExtraProto(itemEntity)->ExtraBonus[i].bType;
+			if (type != APPLY_NONE) {
+				auto value = ItemSystem::GetItemExtraProto(itemEntity)->ExtraBonus[i].lValue;
+				ecs::PointSystem::ApplyPoint(ownerEntity, ItemSystem::GetItemExtraProto(itemEntity)->ExtraBonus[i].bType, bAdd ? value : -value);
+			}
+		}
+#endif
+	}
+#endif
+
+	if (true == CItemVnumHelper::IsRamadanMoonRing(ItemSystem::GetItemVnum(itemEntity)) || true == CItemVnumHelper::IsHalloweenCandy(ItemSystem::GetItemVnum(itemEntity))
+		|| true == CItemVnumHelper::IsHappinessRing(ItemSystem::GetItemVnum(itemEntity)) || true == CItemVnumHelper::IsLovePendant(ItemSystem::GetItemVnum(itemEntity)))
+	{
+		// Do not anything.
+	}
+	else
+	{
+		for (int i = 0; i < ITEM_ATTRIBUTE_MAX_NUM; ++i)
+		{
+			if (ItemSystem::GetItemAttributeType(itemEntity, i))
+			{
+				const TPlayerItemAttribute& ia = ItemSystem::GetItemAttribute(itemEntity, i);
+				int32_t sValue = ia.sValue;
+#ifdef ENABLE_ACCE_SYSTEM
+				if ((ItemSystem::GetItemType(itemEntity) == ITEM_COSTUME) && (ItemSystem::GetItemSubType(itemEntity) == COSTUME_ACCE)) {
+					double dValue = sValue * ItemSystem::GetItemSocket(itemEntity, ACCE_ABSORPTION_SOCKET);
+					dValue = dValue / 100;
+					dValue = dValue + .5;
+					sValue = (int32_t)dValue;
+					if ((ia.sValue > 0) && (sValue <= 0))
+						sValue += 1;
+				}
+#endif
+
+#ifdef ATTR_LOCK
+				if (ItemSystem::GetItemLockedAttr(itemEntity) == i) {
+					continue;
+				}
+#endif
+
+				if (ia.bType == APPLY_SKILL)
+					ecs::PointSystem::ApplyPoint(ownerEntity, ia.bType, bAdd ? sValue : sValue ^ 0x00800000);
+				else
+					ecs::PointSystem::ApplyPoint(ownerEntity, ia.bType, bAdd ? sValue : -sValue);
+			}
+		}
+	}
+
+	switch (proto->bType)
+	{
+	case ITEM_PICK:
+	case ITEM_ROD:
+	{
+		if (bAdd)
+		{
+			if (ItemSystem::GetItemCell(itemEntity) == INVENTORY_MAX_NUM + WEAR_WEAPON)
+				ecs::PlayerRuntime::SetPart(ownerEntity, PART_WEAPON, ItemSystem::GetItemVnum(itemEntity));
+		}
+		else
+		{
+			if (ItemSystem::GetItemCell(itemEntity) == INVENTORY_MAX_NUM + WEAR_WEAPON)
+				ecs::PlayerRuntime::SetPart(ownerEntity, PART_WEAPON, 0);
+		}
+	}
+	break;
+
+	case ITEM_WEAPON:
+	{
+#ifdef ENABLE_COSTUME_EFFECT
+		if ((ItemSystem::GetItemSubType(itemEntity) == WEAPON_SWORD) || (ItemSystem::GetItemSubType(itemEntity) == WEAPON_DAGGER) || (ItemSystem::GetItemSubType(itemEntity) == WEAPON_BOW) || (ItemSystem::GetItemSubType(itemEntity) == WEAPON_TWO_HANDED) || (ItemSystem::GetItemSubType(itemEntity) == WEAPON_BELL) || (ItemSystem::GetItemSubType(itemEntity) == WEAPON_FAN)) {
+			const entt::entity item = ItemSystem::GetWearItem(
+				ownerEntity, WEAR_COSTUME_EFFECT_WEAPON);
+			if (ItemSystem::IsValidItem(item)) {
+				uint32_t toSetValueEffect;
+				switch (ItemSystem::GetItemSubType(itemEntity)) {
+				case WEAPON_SWORD:
+					toSetValueEffect = ItemSystem::GetItemValue(item, 0);
+					break;
+				case WEAPON_DAGGER:
+					toSetValueEffect = ItemSystem::GetItemValue(item, 2);
+					break;
+				case WEAPON_BOW:
+					toSetValueEffect = ItemSystem::GetItemValue(item, 3);
+					break;
+				case WEAPON_TWO_HANDED:
+					toSetValueEffect = ItemSystem::GetItemValue(item, 1);
+					break;
+				case WEAPON_BELL:
+					toSetValueEffect = ItemSystem::GetItemValue(item, 4);
+					break;
+				case WEAPON_FAN:
+					toSetValueEffect = ItemSystem::GetItemValue(item, 5);
+					break;
+				default:
+					toSetValueEffect = 0;
+					break;
+				}
+
+				if (toSetValueEffect > 0) {
+					uint32_t dwWeaponVnum = ItemSystem::GetItemVnum(itemEntity);
+					if (((dwWeaponVnum >= 1180) && (dwWeaponVnum <= 1189)) ||
+						((dwWeaponVnum >= 1090) && (dwWeaponVnum <= 1099)) ||
+						(dwWeaponVnum == 1199) ||
+						(dwWeaponVnum == 1209) ||
+						(dwWeaponVnum == 1219) ||
+						(dwWeaponVnum == 1229) ||
+						(dwWeaponVnum == 40099) ||
+						((dwWeaponVnum >= 7190) && (dwWeaponVnum <= 7199))
+						)
+						toSetValueEffect += 500;
+				}
+
+				if (!bAdd)
+					toSetValueEffect = 0;
+
+				ecs::PlayerRuntime::SetPart(ownerEntity, PART_EFFECT_WEAPON, toSetValueEffect);
+			}
+		}
+#endif
+#ifdef ENABLE_WEAPON_COSTUME_SYSTEM
+		if (ItemSystem::IsValidItem(ItemSystem::GetWearItem(ownerEntity, WEAR_COSTUME_WEAPON)))
+			break;
+#endif
+
+		if (bAdd)
+		{
+			if (ItemSystem::GetItemCell(itemEntity) == INVENTORY_MAX_NUM + WEAR_WEAPON)
+				ecs::PlayerRuntime::SetPart(ownerEntity, PART_WEAPON, ItemSystem::GetItemVnum(itemEntity));
+		}
+		else
+		{
+			if (ItemSystem::GetItemCell(itemEntity) == INVENTORY_MAX_NUM + WEAR_WEAPON)
+				ecs::PlayerRuntime::SetPart(ownerEntity, PART_WEAPON, 0);
+		}
+	}
+	break;
+
+	case ITEM_ARMOR:
+	{
+#ifdef ENABLE_COSTUME_EFFECT
+		if (ItemSystem::GetItemSubType(itemEntity) == ARMOR_BODY) {
+			const entt::entity item = ItemSystem::GetWearItem(
+				ownerEntity, WEAR_COSTUME_EFFECT_BODY);
+			if (ItemSystem::IsValidItem(item)) {
+				uint32_t toSetValueEffect;
+				toSetValueEffect = ItemSystem::GetItemValue(item, 0);
+				if ((!bAdd) &&
+					!ItemSystem::IsValidItem(ItemSystem::GetWearItem(ownerEntity, WEAR_COSTUME_BODY)))
+					toSetValueEffect = 0;
+
+				ecs::PlayerRuntime::SetPart(ownerEntity, PART_EFFECT_BODY, toSetValueEffect);
+			}
+		}
+#endif
+
+		if (ItemSystem::IsValidItem(ItemSystem::GetWearItem(ownerEntity, WEAR_COSTUME_BODY)))
+			break;
+
+		if (ItemSystem::GetItemSubType(itemEntity) == ARMOR_BODY || ItemSystem::GetItemSubType(itemEntity) == ARMOR_HEAD || ItemSystem::GetItemSubType(itemEntity) == ARMOR_FOOTS || ItemSystem::GetItemSubType(itemEntity) == ARMOR_SHIELD)
+		{
+			if (bAdd)
+			{
+				if (ItemSystem::GetItemProto(itemEntity)->bSubType == ARMOR_BODY)
+					ecs::PlayerRuntime::SetPart(ownerEntity, PART_MAIN, ItemSystem::GetItemVnum(itemEntity));
+			}
+			else
+			{
+				if (ItemSystem::GetItemProto(itemEntity)->bSubType == ARMOR_BODY)
+					ecs::PlayerRuntime::SetPart(ownerEntity, PART_MAIN, ecs::PlayerRuntime::GetOriginalPart(ownerEntity, PART_MAIN));
+			}
+		}
+	}
+	break;
+
+	case ITEM_COSTUME:
+	{
+		uint32_t toSetValue = ItemSystem::GetItemVnum(itemEntity);
+		EParts toSetPart = PART_MAX_NUM;
+
+		if (ItemSystem::GetItemSubType(itemEntity) == COSTUME_BODY)
+		{
+#ifdef ENABLE_COSTUME_EFFECT
+			const entt::entity item = ItemSystem::GetWearItem(
+				ownerEntity, WEAR_COSTUME_EFFECT_BODY);
+			if (ItemSystem::IsValidItem(item)) {
+				uint32_t toSetValueEffect;
+				toSetValueEffect = ItemSystem::GetItemValue(item, 0);
+				if ((!bAdd) &&
+					!ItemSystem::IsValidItem(ItemSystem::GetWearItem(ownerEntity, WEAR_BODY)))
+					toSetValueEffect = 0;
+
+				ecs::PlayerRuntime::SetPart(ownerEntity, PART_EFFECT_BODY, toSetValueEffect);
+			}
+#endif
+			toSetPart = PART_MAIN;
+
+			if (false == bAdd)
+			{
+				const entt::entity armor = ItemSystem::GetWearItem(ownerEntity, WEAR_BODY);
+				toSetValue = ItemSystem::IsValidItem(armor)
+					? ItemSystem::GetItemVnum(armor)
+					: ecs::PlayerRuntime::GetOriginalPart(ownerEntity, PART_MAIN);
+			}
+		}
+#ifdef ENABLE_RUNE_SYSTEM
+		else if (ItemSystem::GetItemSubType(itemEntity) == RUNE_SLOT7)
+		{
+			toSetPart = PART_RUNE;
+			toSetValue = (true == bAdd) ? ecs::PlayerRuntime::GetRuneEffect(ownerEntity) : 0;
+		}
+#endif
+		else if (ItemSystem::GetItemSubType(itemEntity) == COSTUME_HAIR)
+		{
+			toSetPart = PART_HAIR;
+			toSetValue = (true == bAdd) ? ItemSystem::GetItemValue(itemEntity, 3) : 0;
+		}
+
+#ifdef ENABLE_ACCE_SYSTEM
+		else if (ItemSystem::GetItemSubType(itemEntity) == COSTUME_ACCE)
+		{
+			toSetValue -= 85000;
+			if (ItemSystem::GetItemSocket(itemEntity, ACCE_ABSORPTION_SOCKET) >= ACCE_EFFECT_FROM_ABS)
+				toSetValue += 1000;
+
+			toSetValue = (bAdd == true) ? toSetValue : 0;
+
+#ifdef ENABLE_STOLE_COSTUME
+			const entt::entity acce = ItemSystem::GetWearItem(ownerEntity, WEAR_COSTUME_ACCE);
+			if (ItemSystem::IsValidItem(acce)) {
+				toSetValue = ItemSystem::GetItemVnum(acce);
+				toSetValue -= 85000;
+				toSetValue += 1000;
+			}
+#endif
+
+			toSetPart = PART_ACCE;
+		}
+#endif
+#ifdef ENABLE_STOLE_COSTUME
+		else if (ItemSystem::GetItemSubType(itemEntity) == COSTUME_STOLE)
+		{
+			toSetValue -= 85000;
+			if (!bAdd) {
+				const entt::entity acce = ItemSystem::GetWearItem(
+					ownerEntity, WEAR_COSTUME_ACCE_SLOT);
+				if (!ItemSystem::IsValidItem(acce))
+					toSetValue = 0;
+				else {
+					toSetValue = ItemSystem::GetItemVnum(acce);
+					toSetValue -= 85000;
+					if (ItemSystem::GetItemSocket(acce, ACCE_ABSORPTION_SOCKET) >= ACCE_EFFECT_FROM_ABS)
+						toSetValue += 1000;
+				}
+			}
+			else
+				toSetValue += 1000;
+
+			toSetPart = PART_ACCE;
+		}
+#endif
+#ifdef ENABLE_COSTUME_EFFECT
+		else if (ItemSystem::GetItemSubType(itemEntity) == COSTUME_EFFECT_BODY)
+		{
+			if (bAdd) {
+				entt::entity item = ItemSystem::GetWearItem(ownerEntity, WEAR_BODY);
+				toSetValue = ItemSystem::IsValidItem(item) ? ItemSystem::GetItemValue(itemEntity, 0) : 0;
+				if (toSetValue == 0) {
+					item = ItemSystem::GetWearItem(ownerEntity, WEAR_COSTUME_BODY);
+					toSetValue = ItemSystem::IsValidItem(item) ? ItemSystem::GetItemValue(itemEntity, 0) : 0;
+				}
+			}
+			else
+				toSetValue = 0;
+
+			toSetPart = PART_EFFECT_BODY;
+		}
+		else if (ItemSystem::GetItemSubType(itemEntity) == COSTUME_EFFECT_WEAPON)
+		{
+			if (bAdd) {
+				const entt::entity item = ItemSystem::GetWearItem(ownerEntity, WEAR_WEAPON);
+				if (ItemSystem::IsValidItem(item)) {
+					switch (ItemSystem::GetItemSubType(item)) {
+					case WEAPON_SWORD:
+						toSetValue = ItemSystem::GetItemValue(itemEntity, 0);
+						break;
+					case WEAPON_DAGGER:
+						toSetValue = ItemSystem::GetItemValue(itemEntity, 2);
+						break;
+					case WEAPON_BOW:
+						toSetValue = ItemSystem::GetItemValue(itemEntity, 3);
+						break;
+					case WEAPON_TWO_HANDED:
+						toSetValue = ItemSystem::GetItemValue(itemEntity, 1);
+						break;
+					case WEAPON_BELL:
+						toSetValue = ItemSystem::GetItemValue(itemEntity, 4);
+						break;
+					case WEAPON_FAN:
+						toSetValue = ItemSystem::GetItemValue(itemEntity, 5);
+						break;
+					default:
+						toSetValue = 0;
+						break;
+					}
+
+					if (toSetValue > 0) {
+					uint32_t dwWeaponVnum = ItemSystem::GetItemVnum(item);
+						if (((dwWeaponVnum >= 1180) && (dwWeaponVnum <= 1189)) ||
+							((dwWeaponVnum >= 1090) && (dwWeaponVnum <= 1099)) ||
+							(dwWeaponVnum == 1199) ||
+							(dwWeaponVnum == 1209) ||
+							(dwWeaponVnum == 1219) ||
+							(dwWeaponVnum == 1229) ||
+							(dwWeaponVnum == 40099) ||
+							((dwWeaponVnum >= 7190) && (dwWeaponVnum <= 7199))
+							)
+							toSetValue += 500;
+					}
+				}
+				else
+					toSetValue = 0;
+			}
+			else
+				toSetValue = 0;
+
+			toSetPart = PART_EFFECT_WEAPON;
+		}
+#endif
+#ifdef ENABLE_MOUNT_COSTUME_SYSTEM
+		else if (ItemSystem::GetItemSubType(itemEntity) == COSTUME_MOUNT)
+		{
+			// not need to do a thing in here
+		}
+#endif
+
+#ifdef ENABLE_WEAPON_COSTUME_SYSTEM
+		else if (ItemSystem::GetItemSubType(itemEntity) == COSTUME_WEAPON)
+		{
+			toSetPart = PART_WEAPON;
+			if (false == bAdd)
+			{
+				const entt::entity weapon = ItemSystem::GetWearItem(ownerEntity, WEAR_WEAPON);
+				if (ItemSystem::IsValidItem(weapon)) {
+					toSetValue = ItemSystem::GetItemVnum(weapon);
+				}
+				else {
+					toSetValue = 0;
+				}
+			}
+		}
+#endif
+
+		if (PART_MAX_NUM != toSetPart)
+		{
+			ecs::PlayerRuntime::SetPart(ownerEntity, (uint8_t)toSetPart, toSetValue);
+			NetworkSyncSystem::UpdatePacket(ownerEntity);
+
+		}
+	}
+	break;
+	case ITEM_UNIQUE:
+	{
+		if (0 != ItemSystem::GetItemSIGVnum(itemEntity))
+		{
+			const CSpecialItemGroup* pItemGroup = ITEM_MANAGER::instance().GetSpecialItemGroup(ItemSystem::GetItemSIGVnum(itemEntity));
+			if (nullptr == pItemGroup)
+				break;
+			uint32_t dwAttrVnum = pItemGroup->GetAttrVnum(ItemSystem::GetItemVnum(itemEntity));
+			const CSpecialAttrGroup* pAttrGroup = ITEM_MANAGER::instance().GetSpecialAttrGroup(dwAttrVnum);
+			if (nullptr == pAttrGroup)
+				break;
+			for (auto it = pAttrGroup->m_vecAttrs.begin(); it != pAttrGroup->m_vecAttrs.end(); ++it)
+			{
+				ecs::PointSystem::ApplyPoint(ownerEntity, it->apply_type, bAdd ? it->apply_value : it->apply_value); // -it->apply_value
+			}
+		}
+	}
+	break;
+	}
+}
+
+} // namespace ItemSystem
 
 bool CItem::IsEquipped() const
 {
@@ -1102,563 +1674,5 @@ bool CItem::Unequip()
 
 void CItem::ModifyPoints(bool bAdd)
 {
-#ifdef ENABLE_BUG_FIXES
-	if (GetOwnerEntity() == entt::null) {
-		return;
-	}
-#endif
-
-	const entt::entity ownerEntity = GetOwnerEntity();
-	const entt::entity itemEntity = GetEntityHandle();
-	int accessoryGrade;
-
-	if (false == IsAccessoryForSocket())
-	{
-		if (m_pProto->bType == ITEM_WEAPON || m_pProto->bType == ITEM_ARMOR)
-		{
-			for (int i = 0; i < ITEM_SOCKET_MAX_NUM; ++i)
-			{
-				uint32_t dwVnum;
-
-				if ((dwVnum = GetSocket(i)) <= 2)
-					continue;
-
-				TItemTable* p = ITEM_MANAGER::instance().GetTable(dwVnum);
-
-				if (!p)
-				{
-					LOG_ERROR("cannot find table by vnum {}", dwVnum);
-					continue;
-				}
-
-				if (ITEM_METIN == p->bType)
-				{
-					for (auto& aApplie : p->aApplies)
-					{
-						if (aApplie.bType == APPLY_NONE)
-							continue;
-
-						if (aApplie.bType == APPLY_SKILL)
-							ecs::PointSystem::ApplyPoint(ownerEntity, aApplie.bType, bAdd ? aApplie.lValue : aApplie.lValue ^ 0x00800000);
-						else
-							ecs::PointSystem::ApplyPoint(ownerEntity, aApplie.bType, bAdd ? aApplie.lValue : -aApplie.lValue);
-					}
-				}
-			}
-		}
-
-		accessoryGrade = 0;
-	}
-	else
-	{
-		accessoryGrade = MIN(GetAccessorySocketGrade(), ITEM_ACCESSORY_SOCKET_MAX_NUM);
-	}
-
-
-#ifdef ENABLE_ACCE_SYSTEM
-	if ((GetType() == ITEM_COSTUME) && (GetSubType() == COSTUME_ACCE) && (GetSocket(ACCE_ABSORBED_SOCKET)))
-	{
-		TItemTable* pkItemAbsorbed = ITEM_MANAGER::instance().GetTable(GetSocket(ACCE_ABSORBED_SOCKET));
-		if (pkItemAbsorbed)
-		{
-			/* 			if ((pkItemAbsorbed->bType == ITEM_ARMOR) && (pkItemAbsorbed->bSubType == ARMOR_BODY))
-						{
-							int32_t lDefGrade = pkItemAbsorbed->alValues[1] + int32_t(pkItemAbsorbed->alValues[5] * 2);
-							double dValue = lDefGrade * GetSocket(ACCE_ABSORPTION_SOCKET);
-							dValue = (double)dValue / 100;
-							dValue = (double)dValue + .5;
-							lDefGrade = (int32_t) dValue;
-							if ((pkItemAbsorbed->alValues[1] > 0 && (lDefGrade <= 0)) || (pkItemAbsorbed->alValues[5] > 0 && (lDefGrade < 1)))
-								lDefGrade += 1;
-							else if ((pkItemAbsorbed->alValues[1] > 0) || (pkItemAbsorbed->alValues[5] > 0))
-								lDefGrade += 1;
-
-							ecs::PointSystem::ApplyPoint(ownerEntity, APPLY_DEF_GRADE_BONUS, bAdd ? lDefGrade : -lDefGrade);
-
-							int32_t lDefMagicBonus = pkItemAbsorbed->alValues[0];
-							dValue = lDefMagicBonus * GetSocket(ACCE_ABSORPTION_SOCKET);
-							dValue = (double)dValue / 100;
-							dValue = (double)dValue + .5;
-							lDefMagicBonus = (int32_t) dValue;
-							if ((pkItemAbsorbed->alValues[0] > 0) && (lDefMagicBonus < 1))
-								lDefMagicBonus += 1;
-							else if (pkItemAbsorbed->alValues[0] > 0)
-								lDefMagicBonus += 1;
-
-							ecs::PointSystem::ApplyPoint(ownerEntity, APPLY_MAGIC_DEF_GRADE, bAdd ? lDefMagicBonus : -lDefMagicBonus);
-						} */
-			/* else  */if (pkItemAbsorbed->bType == ITEM_WEAPON)
-			{
-				int32_t lAttGrade = pkItemAbsorbed->alValues[4] + pkItemAbsorbed->alValues[5];
-				if (pkItemAbsorbed->alValues[3] > pkItemAbsorbed->alValues[4])
-					lAttGrade = pkItemAbsorbed->alValues[3] + pkItemAbsorbed->alValues[5];
-
-				double dValue = lAttGrade * GetSocket(ACCE_ABSORPTION_SOCKET);
-				dValue = dValue / 100;
-				dValue = dValue + .5;
-				lAttGrade = (int32_t)dValue;
-				if (((pkItemAbsorbed->alValues[3] > 0) && (lAttGrade < 1)) || ((pkItemAbsorbed->alValues[4] > 0) && (lAttGrade < 1)))
-					lAttGrade += 1;
-				else if ((pkItemAbsorbed->alValues[3] > 0) || (pkItemAbsorbed->alValues[4] > 0))
-					lAttGrade += 1;
-
-				ecs::PointSystem::ApplyPoint(ownerEntity, APPLY_ATT_GRADE_BONUS, bAdd ? lAttGrade : -lAttGrade);
-
-				int32_t lAttMagicGrade = pkItemAbsorbed->alValues[2] + pkItemAbsorbed->alValues[5];
-				if (pkItemAbsorbed->alValues[1] > pkItemAbsorbed->alValues[2])
-					lAttMagicGrade = pkItemAbsorbed->alValues[1] + pkItemAbsorbed->alValues[5];
-
-				dValue = lAttMagicGrade * GetSocket(ACCE_ABSORPTION_SOCKET);
-				dValue = dValue / 100;
-				dValue = dValue + .5;
-				lAttMagicGrade = (int32_t)dValue;
-				if (((pkItemAbsorbed->alValues[1] > 0) && (lAttMagicGrade < 1)) || ((pkItemAbsorbed->alValues[2] > 0) && (lAttMagicGrade < 1)))
-					lAttMagicGrade += 1;
-				else if ((pkItemAbsorbed->alValues[1] > 0) || (pkItemAbsorbed->alValues[2] > 0))
-					lAttMagicGrade += 1;
-
-				ecs::PointSystem::ApplyPoint(ownerEntity, APPLY_MAGIC_ATT_GRADE, bAdd ? lAttMagicGrade : -lAttMagicGrade);
-			}
-		}
-	}
-#endif
-
-
-	for (int i = 0; i < ITEM_APPLY_MAX_NUM; ++i)
-	{
-#ifdef ENABLE_ACCE_SYSTEM
-		if ((m_pProto->aApplies[i].bType == APPLY_NONE) && (GetType() != ITEM_COSTUME) && (GetSubType() != COSTUME_ACCE))
-#else
-		if (m_pProto->aApplies[i].bType == APPLY_NONE)
-#endif
-			continue;
-
-#ifdef ENABLE_MOUNT_COSTUME_SYSTEM
-		if (IsMountItem())
-			continue;
-#endif
-
-		int32_t value = m_pProto->aApplies[i].lValue;
-#ifdef ENABLE_ACCE_SYSTEM
-		if ((GetType() == ITEM_COSTUME) && (GetSubType() == COSTUME_ACCE))
-		{
-			TItemTable* pkItemAbsorbed = ITEM_MANAGER::instance().GetTable(GetSocket(ACCE_ABSORBED_SOCKET));
-			if (pkItemAbsorbed)
-			{
-				if (pkItemAbsorbed->aApplies[i].bType == APPLY_NONE)
-					continue;
-
-				value = pkItemAbsorbed->aApplies[i].lValue;
-				if (value < 0)
-					continue;
-
-				double dValue = value * GetSocket(ACCE_ABSORPTION_SOCKET);
-				dValue = dValue / 100;
-				dValue = dValue + .5;
-				value = (int32_t)dValue;
-				if ((pkItemAbsorbed->aApplies[i].lValue > 0) && (value <= 0))
-					value += 1;
-			}
-			else
-				continue;
-		}
-#endif
-		if (m_pProto->aApplies[i].bType == APPLY_SKILL)
-		{
-			ecs::PointSystem::ApplyPoint(ownerEntity, m_pProto->aApplies[i].bType, bAdd ? value : value ^ 0x00800000);
-		}
-		else
-		{
-			if (0 != accessoryGrade)
-				value += MAX(accessoryGrade, value * aiAccessorySocketEffectivePct[accessoryGrade] / 100);
-
-			ecs::PointSystem::ApplyPoint(ownerEntity, m_pProto->aApplies[i].bType, bAdd ? value : -value);
-		}
-	}
-
-#ifdef ENABLE_ITEM_EXTRA_PROTO
-	if (HasExtraProto())
-	{
-#ifdef ENABLE_NEW_EXTRA_BONUS
-		for (int i = 0; i < NEW_EXTRA_BONUS_COUNT; i++)
-		{
-			auto type = m_ExtraProto->ExtraBonus[i].bType;
-			if (type != APPLY_NONE) {
-				auto value = m_ExtraProto->ExtraBonus[i].lValue;
-				ecs::PointSystem::ApplyPoint(ownerEntity, m_ExtraProto->ExtraBonus[i].bType, bAdd ? value : -value);
-			}
-		}
-#endif
-	}
-#endif
-
-	if (true == CItemVnumHelper::IsRamadanMoonRing(GetVnum()) || true == CItemVnumHelper::IsHalloweenCandy(GetVnum())
-		|| true == CItemVnumHelper::IsHappinessRing(GetVnum()) || true == CItemVnumHelper::IsLovePendant(GetVnum()))
-	{
-		// Do not anything.
-	}
-	else
-	{
-		for (int i = 0; i < ITEM_ATTRIBUTE_MAX_NUM; ++i)
-		{
-			if (GetAttributeType(i))
-			{
-				const TPlayerItemAttribute& ia = GetAttribute(i);
-				int32_t sValue = ia.sValue;
-#ifdef ENABLE_ACCE_SYSTEM
-				if ((GetType() == ITEM_COSTUME) && (GetSubType() == COSTUME_ACCE)) {
-					double dValue = sValue * GetSocket(ACCE_ABSORPTION_SOCKET);
-					dValue = dValue / 100;
-					dValue = dValue + .5;
-					sValue = (int32_t)dValue;
-					if ((ia.sValue > 0) && (sValue <= 0))
-						sValue += 1;
-				}
-#endif
-
-#ifdef ATTR_LOCK
-				if (GetLockedAttr() == i) {
-					continue;
-				}
-#endif
-
-				if (ia.bType == APPLY_SKILL)
-					ecs::PointSystem::ApplyPoint(ownerEntity, ia.bType, bAdd ? sValue : sValue ^ 0x00800000);
-				else
-					ecs::PointSystem::ApplyPoint(ownerEntity, ia.bType, bAdd ? sValue : -sValue);
-			}
-		}
-	}
-
-	switch (m_pProto->bType)
-	{
-	case ITEM_PICK:
-	case ITEM_ROD:
-	{
-		if (bAdd)
-		{
-			if (ItemSystem::GetItemCell(itemEntity) == INVENTORY_MAX_NUM + WEAR_WEAPON)
-				ecs::PlayerRuntime::SetPart(ownerEntity, PART_WEAPON, GetVnum());
-		}
-		else
-		{
-			if (ItemSystem::GetItemCell(itemEntity) == INVENTORY_MAX_NUM + WEAR_WEAPON)
-				ecs::PlayerRuntime::SetPart(ownerEntity, PART_WEAPON, 0);
-		}
-	}
-	break;
-
-	case ITEM_WEAPON:
-	{
-#ifdef ENABLE_COSTUME_EFFECT
-		if ((GetSubType() == WEAPON_SWORD) || (GetSubType() == WEAPON_DAGGER) || (GetSubType() == WEAPON_BOW) || (GetSubType() == WEAPON_TWO_HANDED) || (GetSubType() == WEAPON_BELL) || (GetSubType() == WEAPON_FAN)) {
-			const entt::entity item = ItemSystem::GetWearItem(
-				ownerEntity, WEAR_COSTUME_EFFECT_WEAPON);
-			if (ItemSystem::IsValidItem(item)) {
-				uint32_t toSetValueEffect;
-				switch (this->GetSubType()) {
-				case WEAPON_SWORD:
-					toSetValueEffect = ItemSystem::GetItemValue(item, 0);
-					break;
-				case WEAPON_DAGGER:
-					toSetValueEffect = ItemSystem::GetItemValue(item, 2);
-					break;
-				case WEAPON_BOW:
-					toSetValueEffect = ItemSystem::GetItemValue(item, 3);
-					break;
-				case WEAPON_TWO_HANDED:
-					toSetValueEffect = ItemSystem::GetItemValue(item, 1);
-					break;
-				case WEAPON_BELL:
-					toSetValueEffect = ItemSystem::GetItemValue(item, 4);
-					break;
-				case WEAPON_FAN:
-					toSetValueEffect = ItemSystem::GetItemValue(item, 5);
-					break;
-				default:
-					toSetValueEffect = 0;
-					break;
-				}
-
-				if (toSetValueEffect > 0) {
-					uint32_t dwWeaponVnum = GetVnum();
-					if (((dwWeaponVnum >= 1180) && (dwWeaponVnum <= 1189)) ||
-						((dwWeaponVnum >= 1090) && (dwWeaponVnum <= 1099)) ||
-						(dwWeaponVnum == 1199) ||
-						(dwWeaponVnum == 1209) ||
-						(dwWeaponVnum == 1219) ||
-						(dwWeaponVnum == 1229) ||
-						(dwWeaponVnum == 40099) ||
-						((dwWeaponVnum >= 7190) && (dwWeaponVnum <= 7199))
-						)
-						toSetValueEffect += 500;
-				}
-
-				if (!bAdd)
-					toSetValueEffect = 0;
-
-				ecs::PlayerRuntime::SetPart(ownerEntity, PART_EFFECT_WEAPON, toSetValueEffect);
-			}
-		}
-#endif
-#ifdef ENABLE_WEAPON_COSTUME_SYSTEM
-		if (ItemSystem::IsValidItem(ItemSystem::GetWearItem(ownerEntity, WEAR_COSTUME_WEAPON)))
-			break;
-#endif
-
-		if (bAdd)
-		{
-			if (ItemSystem::GetItemCell(itemEntity) == INVENTORY_MAX_NUM + WEAR_WEAPON)
-				ecs::PlayerRuntime::SetPart(ownerEntity, PART_WEAPON, GetVnum());
-		}
-		else
-		{
-			if (ItemSystem::GetItemCell(itemEntity) == INVENTORY_MAX_NUM + WEAR_WEAPON)
-				ecs::PlayerRuntime::SetPart(ownerEntity, PART_WEAPON, 0);
-		}
-	}
-	break;
-
-	case ITEM_ARMOR:
-	{
-#ifdef ENABLE_COSTUME_EFFECT
-		if (GetSubType() == ARMOR_BODY) {
-			const entt::entity item = ItemSystem::GetWearItem(
-				ownerEntity, WEAR_COSTUME_EFFECT_BODY);
-			if (ItemSystem::IsValidItem(item)) {
-				uint32_t toSetValueEffect;
-				toSetValueEffect = ItemSystem::GetItemValue(item, 0);
-				if ((!bAdd) &&
-					!ItemSystem::IsValidItem(ItemSystem::GetWearItem(ownerEntity, WEAR_COSTUME_BODY)))
-					toSetValueEffect = 0;
-
-				ecs::PlayerRuntime::SetPart(ownerEntity, PART_EFFECT_BODY, toSetValueEffect);
-			}
-		}
-#endif
-
-		if (ItemSystem::IsValidItem(ItemSystem::GetWearItem(ownerEntity, WEAR_COSTUME_BODY)))
-			break;
-
-		if (GetSubType() == ARMOR_BODY || GetSubType() == ARMOR_HEAD || GetSubType() == ARMOR_FOOTS || GetSubType() == ARMOR_SHIELD)
-		{
-			if (bAdd)
-			{
-				if (GetProto()->bSubType == ARMOR_BODY)
-					ecs::PlayerRuntime::SetPart(ownerEntity, PART_MAIN, GetVnum());
-			}
-			else
-			{
-				if (GetProto()->bSubType == ARMOR_BODY)
-					ecs::PlayerRuntime::SetPart(ownerEntity, PART_MAIN, ecs::PlayerRuntime::GetOriginalPart(ownerEntity, PART_MAIN));
-			}
-		}
-	}
-	break;
-
-	case ITEM_COSTUME:
-	{
-		uint32_t toSetValue = this->GetVnum();
-		EParts toSetPart = PART_MAX_NUM;
-
-		if (GetSubType() == COSTUME_BODY)
-		{
-#ifdef ENABLE_COSTUME_EFFECT
-			const entt::entity item = ItemSystem::GetWearItem(
-				ownerEntity, WEAR_COSTUME_EFFECT_BODY);
-			if (ItemSystem::IsValidItem(item)) {
-				uint32_t toSetValueEffect;
-				toSetValueEffect = ItemSystem::GetItemValue(item, 0);
-				if ((!bAdd) &&
-					!ItemSystem::IsValidItem(ItemSystem::GetWearItem(ownerEntity, WEAR_BODY)))
-					toSetValueEffect = 0;
-
-				ecs::PlayerRuntime::SetPart(ownerEntity, PART_EFFECT_BODY, toSetValueEffect);
-			}
-#endif
-			toSetPart = PART_MAIN;
-
-			if (false == bAdd)
-			{
-				const entt::entity armor = ItemSystem::GetWearItem(ownerEntity, WEAR_BODY);
-				toSetValue = ItemSystem::IsValidItem(armor)
-					? ItemSystem::GetItemVnum(armor)
-					: ecs::PlayerRuntime::GetOriginalPart(ownerEntity, PART_MAIN);
-			}
-		}
-#ifdef ENABLE_RUNE_SYSTEM
-		else if (GetSubType() == RUNE_SLOT7)
-		{
-			toSetPart = PART_RUNE;
-			toSetValue = (true == bAdd) ? ecs::PlayerRuntime::GetRuneEffect(ownerEntity) : 0;
-		}
-#endif
-		else if (GetSubType() == COSTUME_HAIR)
-		{
-			toSetPart = PART_HAIR;
-			toSetValue = (true == bAdd) ? this->GetValue(3) : 0;
-		}
-
-#ifdef ENABLE_ACCE_SYSTEM
-		else if (GetSubType() == COSTUME_ACCE)
-		{
-			toSetValue -= 85000;
-			if (GetSocket(ACCE_ABSORPTION_SOCKET) >= ACCE_EFFECT_FROM_ABS)
-				toSetValue += 1000;
-
-			toSetValue = (bAdd == true) ? toSetValue : 0;
-
-#ifdef ENABLE_STOLE_COSTUME
-			const entt::entity acce = ItemSystem::GetWearItem(ownerEntity, WEAR_COSTUME_ACCE);
-			if (ItemSystem::IsValidItem(acce)) {
-				toSetValue = ItemSystem::GetItemVnum(acce);
-				toSetValue -= 85000;
-				toSetValue += 1000;
-			}
-#endif
-
-			toSetPart = PART_ACCE;
-		}
-#endif
-#ifdef ENABLE_STOLE_COSTUME
-		else if (GetSubType() == COSTUME_STOLE)
-		{
-			toSetValue -= 85000;
-			if (!bAdd) {
-				const entt::entity acce = ItemSystem::GetWearItem(
-					ownerEntity, WEAR_COSTUME_ACCE_SLOT);
-				if (!ItemSystem::IsValidItem(acce))
-					toSetValue = 0;
-				else {
-					toSetValue = ItemSystem::GetItemVnum(acce);
-					toSetValue -= 85000;
-					if (ItemSystem::GetItemSocket(acce, ACCE_ABSORPTION_SOCKET) >= ACCE_EFFECT_FROM_ABS)
-						toSetValue += 1000;
-				}
-			}
-			else
-				toSetValue += 1000;
-
-			toSetPart = PART_ACCE;
-		}
-#endif
-#ifdef ENABLE_COSTUME_EFFECT
-		else if (GetSubType() == COSTUME_EFFECT_BODY)
-		{
-			if (bAdd) {
-				entt::entity item = ItemSystem::GetWearItem(ownerEntity, WEAR_BODY);
-				toSetValue = ItemSystem::IsValidItem(item) ? this->GetValue(0) : 0;
-				if (toSetValue == 0) {
-					item = ItemSystem::GetWearItem(ownerEntity, WEAR_COSTUME_BODY);
-					toSetValue = ItemSystem::IsValidItem(item) ? this->GetValue(0) : 0;
-				}
-			}
-			else
-				toSetValue = 0;
-
-			toSetPart = PART_EFFECT_BODY;
-		}
-		else if (GetSubType() == COSTUME_EFFECT_WEAPON)
-		{
-			if (bAdd) {
-				const entt::entity item = ItemSystem::GetWearItem(ownerEntity, WEAR_WEAPON);
-				if (ItemSystem::IsValidItem(item)) {
-					switch (ItemSystem::GetItemSubType(item)) {
-					case WEAPON_SWORD:
-						toSetValue = this->GetValue(0);
-						break;
-					case WEAPON_DAGGER:
-						toSetValue = this->GetValue(2);
-						break;
-					case WEAPON_BOW:
-						toSetValue = this->GetValue(3);
-						break;
-					case WEAPON_TWO_HANDED:
-						toSetValue = this->GetValue(1);
-						break;
-					case WEAPON_BELL:
-						toSetValue = this->GetValue(4);
-						break;
-					case WEAPON_FAN:
-						toSetValue = this->GetValue(5);
-						break;
-					default:
-						toSetValue = 0;
-						break;
-					}
-
-					if (toSetValue > 0) {
-					uint32_t dwWeaponVnum = ItemSystem::GetItemVnum(item);
-						if (((dwWeaponVnum >= 1180) && (dwWeaponVnum <= 1189)) ||
-							((dwWeaponVnum >= 1090) && (dwWeaponVnum <= 1099)) ||
-							(dwWeaponVnum == 1199) ||
-							(dwWeaponVnum == 1209) ||
-							(dwWeaponVnum == 1219) ||
-							(dwWeaponVnum == 1229) ||
-							(dwWeaponVnum == 40099) ||
-							((dwWeaponVnum >= 7190) && (dwWeaponVnum <= 7199))
-							)
-							toSetValue += 500;
-					}
-				}
-				else
-					toSetValue = 0;
-			}
-			else
-				toSetValue = 0;
-
-			toSetPart = PART_EFFECT_WEAPON;
-		}
-#endif
-#ifdef ENABLE_MOUNT_COSTUME_SYSTEM
-		else if (GetSubType() == COSTUME_MOUNT)
-		{
-			// not need to do a thing in here
-		}
-#endif
-
-#ifdef ENABLE_WEAPON_COSTUME_SYSTEM
-		else if (GetSubType() == COSTUME_WEAPON)
-		{
-			toSetPart = PART_WEAPON;
-			if (false == bAdd)
-			{
-				const entt::entity weapon = ItemSystem::GetWearItem(ownerEntity, WEAR_WEAPON);
-				if (ItemSystem::IsValidItem(weapon)) {
-					toSetValue = ItemSystem::GetItemVnum(weapon);
-				}
-				else {
-					toSetValue = 0;
-				}
-			}
-		}
-#endif
-
-		if (PART_MAX_NUM != toSetPart)
-		{
-			ecs::PlayerRuntime::SetPart(ownerEntity, (uint8_t)toSetPart, toSetValue);
-			NetworkSyncSystem::UpdatePacket(ownerEntity);
-
-		}
-	}
-	break;
-	case ITEM_UNIQUE:
-	{
-		if (0 != GetSIGVnum())
-		{
-			const CSpecialItemGroup* pItemGroup = ITEM_MANAGER::instance().GetSpecialItemGroup(GetSIGVnum());
-			if (nullptr == pItemGroup)
-				break;
-			uint32_t dwAttrVnum = pItemGroup->GetAttrVnum(GetVnum());
-			const CSpecialAttrGroup* pAttrGroup = ITEM_MANAGER::instance().GetSpecialAttrGroup(dwAttrVnum);
-			if (nullptr == pAttrGroup)
-				break;
-			for (auto it = pAttrGroup->m_vecAttrs.begin(); it != pAttrGroup->m_vecAttrs.end(); ++it)
-			{
-				ecs::PointSystem::ApplyPoint(ownerEntity, it->apply_type, bAdd ? it->apply_value : it->apply_value); // -it->apply_value
-			}
-		}
-	}
-	break;
-	}
+	ItemSystem::ModifyPoints(GetEntityHandle(), bAdd);
 }

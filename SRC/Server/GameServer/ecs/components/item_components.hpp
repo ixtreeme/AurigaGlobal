@@ -53,6 +53,11 @@ struct ItemPrototypeMeta {
 // every use is one of four shapes - a null test, an assignment, event_cancel
 // on the address, or event_time - so they move together into one component
 // handed out by reference.
+// Optional per-item bonus table, set once from the extra-proto manager.
+struct ItemExtraProtoRef {
+    TItemExtraProto* proto { nullptr };
+};
+
 struct ItemEvents {
     LPEVENT destroy { nullptr };
     LPEVENT expire { nullptr };

@@ -1010,7 +1010,7 @@ bool CItem::HasAttr(uint8_t bApply)
 
 			for (int i = 0; i < NEW_EXTRA_BONUS_COUNT; ++i)
 
-				if (m_ExtraProto->ExtraBonus[i].bType == bApply)
+				if (ItemSystem::GetItemExtraProto(GetEntityHandle())->ExtraBonus[i].bType == bApply)
 
 					return true;
 
@@ -15777,12 +15777,12 @@ void CItem::SetProto(const TItemTable* table)
 #ifdef ENABLE_ITEM_EXTRA_PROTO
 void CItem::SetExtraProto(TItemExtraProto* Proto)
 {
-	m_ExtraProto = Proto;
+	ItemSystem::SetItemExtraProto(GetEntityHandle(), Proto);
 }
 
 TItemExtraProto* CItem::GetExtraProto()
 {
-	return m_ExtraProto;
+	return ItemSystem::GetItemExtraProto(GetEntityHandle());
 }
 #endif
 
@@ -16283,7 +16283,7 @@ void CItem::DeactivateRune() {
 
 bool CItem::IsAccessoryForSocket()
 {
-	return (m_pProto->bType == ITEM_ARMOR && (m_pProto->bSubType == ARMOR_WRIST || m_pProto->bSubType == ARMOR_NECK || m_pProto->bSubType == ARMOR_EAR)) || (m_pProto->bType == ITEM_BELT);	
+	return ItemSystem::IsAccessoryForSocket(GetEntityHandle());
 }
 
 void CItem::SetAccessorySocketGrade(int iGrade
@@ -16492,41 +16492,17 @@ void CItem::AttrLog()
 
 bool CItem::IsRealTimeItem()
 {
-	if (!GetProto())
-		return false;
-
-	for (auto aLimit : GetProto()->aLimits)
-	{
-		if (LIMIT_REAL_TIME == aLimit.bType)
-			return true;
-	}
-	return false;
+	return ItemSystem::IsRealTimeItem(GetEntityHandle());
 }
 
 bool CItem::IsRealTimeFirstUseItem()
 {
-	if (GetProto()) {
-		for (auto aLimit : GetProto()->aLimits)
-		{
-			if (LIMIT_REAL_TIME_START_FIRST_USE == aLimit.bType)
-				return true;
-		}
-	}
-
-	return false;
+	return ItemSystem::IsRealTimeFirstUseItem(GetEntityHandle());
 }
 
 bool CItem::IsUnlimitedTimeUnique()
 {
-	if (GetProto()) {
-		for (auto aLimit : GetProto()->aLimits)
-		{
-			if (LIMIT_UNIQUE_UNLIMITED == aLimit.bType)
-				return true;
-		}
-	}
-
-	return false;
+	return ItemSystem::IsUnlimitedTimeUnique(GetEntityHandle());
 }
 
 int CItem::GiveMoreTime_Per(float fPercent)
@@ -17071,7 +17047,7 @@ CItem::CItem(uint32_t dwVnum)
 	: m_pProto(nullptr), m_dwVnum(dwVnum), m_dwID(0), m_dwVID(0),
 	m_dwCount(0),
 	m_sLockedAttr(0),
-	m_ExtraProto(nullptr), m_lFlag(0), m_dwLastOwnerPID(0),
+	m_lFlag(0), m_dwLastOwnerPID(0),
 	m_bExchanging(false),
 	m_dwOwnershipPID(0), m_bSkipSave(false),
 	m_isLocked(false),

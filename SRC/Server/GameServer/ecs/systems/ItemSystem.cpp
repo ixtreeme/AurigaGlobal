@@ -1549,6 +1549,23 @@ uint32_t GetItemOriginalVnum(entt::entity item)
     return 0;
 }
 
+TItemExtraProto* GetItemExtraProto(entt::entity item)
+{
+    if (item == entt::null || !g_registry.valid(item))
+        return nullptr;
+
+    const auto* ref = g_registry.try_get<ecs::ItemExtraProtoRef>(item);
+    return ref ? ref->proto : nullptr;
+}
+
+void SetItemExtraProto(entt::entity item, TItemExtraProto* proto)
+{
+    if (item == entt::null || !g_registry.valid(item))
+        return;
+
+    g_registry.get_or_emplace<ecs::ItemExtraProtoRef>(item).proto = proto;
+}
+
 uint32_t GetItemSIGVnum(entt::entity item)
 {
     if (const auto* identity = g_registry.try_get<ecs::ItemIdentity>(item))
@@ -1853,6 +1870,65 @@ bool FlushDelayedSaveEcs(entt::entity item)
 
 // Handed out by reference so callers can event_cancel(&events.field) the way
 // they used to take the address of the member.
+// The three limit-table predicates and the socket-accessory test are pure
+// proto reads; they were on CItem only because GetProto() was.
+static bool HasLimitType(entt::entity item, uint8_t limitType)
+{
+    const TItemTable* proto = GetItemProto(item);
+    if (!proto)
+        return false;
+
+    for (const auto& limit : proto->aLimits) {
+        if (limitType == limit.bType)
+            return true;
+    }
+
+    return false;
+}
+
+short GetItemLockedAttr(entt::entity item)
+{
+    const auto* locked = g_registry.try_get<ecs::ItemLockedAttribute>(item);
+    return locked ? locked->index : -1;
+}
+
+int GetItemAccessorySocketMaxGrade(entt::entity item)
+{
+    return MINMAX(0, GetItemSocket(item, 1), ITEM_ACCESSORY_SOCKET_MAX_NUM);
+}
+
+int GetItemAccessorySocketGrade(entt::entity item)
+{
+    return MINMAX(0, GetItemSocket(item, 0), GetItemAccessorySocketMaxGrade(item));
+}
+
+bool IsRealTimeItem(entt::entity item)
+{
+    return HasLimitType(item, LIMIT_REAL_TIME);
+}
+
+bool IsRealTimeFirstUseItem(entt::entity item)
+{
+    return HasLimitType(item, LIMIT_REAL_TIME_START_FIRST_USE);
+}
+
+bool IsUnlimitedTimeUnique(entt::entity item)
+{
+    return HasLimitType(item, LIMIT_UNIQUE_UNLIMITED);
+}
+
+bool IsAccessoryForSocket(entt::entity item)
+{
+    const TItemTable* proto = GetItemProto(item);
+    if (!proto)
+        return false;
+
+    return (proto->bType == ITEM_ARMOR
+            && (proto->bSubType == ARMOR_WRIST || proto->bSubType == ARMOR_NECK
+                || proto->bSubType == ARMOR_EAR))
+        || (proto->bType == ITEM_BELT);
+}
+
 ecs::ItemEvents& GetItemEvents(entt::entity item)
 {
     static ecs::ItemEvents detached;
