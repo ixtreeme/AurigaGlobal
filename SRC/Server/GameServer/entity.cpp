@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "ecs/systems/ViewSystem.hpp"
+#include "ecs/systems/PlayerRuntimeSystem.hpp"
 #include "char_interface.hpp"
 #include "config.h"
 #include "desc.h"
@@ -146,25 +147,6 @@ bool CEntity::IsType(int type) const
 	return (m_iType == type ? true : false);
 }
 
-struct FuncPacketAround
-{
-	const void *        m_data;
-	int                 m_bytes;
-	LPENTITY            m_except;
-
-	FuncPacketAround(const void * data, int bytes, LPENTITY except = nullptr) :m_data(data), m_bytes(bytes), m_except(except)
-	{
-	}
-
-	void operator () (LPENTITY ent)
-	{
-		if (ent == m_except)
-			return;
-
-		if (ent->GetDesc())
-			ent->GetDesc()->Packet(m_data, m_bytes);
-	}
-};
 
 void CEntity::PacketAround(const void * data, int bytes, LPENTITY except)
 {
@@ -172,9 +154,14 @@ void CEntity::PacketAround(const void * data, int bytes, LPENTITY except)
 	PacketView(data, bytes, except);
 }
 
-void CEntity::PacketView(const void * data, int bytes, LPENTITY except)
+namespace ecs::ViewSystem {
+
+void PacketView(entt::entity self, const void* data, int bytes, entt::entity except)
 {
-	if (!GetSectree())
+	if (self == entt::null || !g_registry.valid(self))
+		return;
+
+	if (!ecs::SpatialService::GetSectree(g_registry, self))
 		return;
 
 	// Phase 15E-final.LPENTITY.4-architect.D.8:
@@ -194,11 +181,27 @@ void CEntity::PacketView(const void * data, int bytes, LPENTITY except)
 	// the practical recipient set is unaffected. If a future caller
 	// invokes PacketView on a non-char source and finds the ViewerMap
 	// empty, the fallback below catches it via a one-time sectree walk.
-	FuncPacketAround f(data, bytes, except);
-	std::unordered_set<LPENTITY> sent;
+	std::unordered_set<entt::entity> sent;
 
-	if (!m_bIsObserver)
+	const auto send = [&](entt::entity target) {
+		if (target == except)
+			return;
+
+		if (LPDESC desc = ecs::PlayerRuntime::GetDesc(target))
+			desc->Packet(data, bytes);
+	};
+
+	const auto isCharacter = [](entt::entity e) {
+		const auto* kind = g_registry.try_get<ecs::SpatialKindTag>(e);
+		return kind && kind->kind == ecs::SpatialKind::Character;
+	};
+
+	if (!ecs::PlayerRuntime::IsObserverMode(self))
 	{
+		bool walkedViewerMap = false;
+
+		if (isCharacter(self))
+		{
 		// Phase 15E-final.LPENTITY.4-architect H fixup-2:
 		// Self-heal ViewerMap before the broadcast walk. The D.4 event
 		// handler is supposed to keep self.ViewerMap.viewers in sync with
@@ -216,102 +219,59 @@ void CEntity::PacketView(const void * data, int bytes, LPENTITY except)
 		// sectree query per PacketView call on character sources (~9
 		// neighbour cells, range filter); cheap relative to packet
 		// construction and network send.
-		const entt::entity selfE = ecs::SpatialService::EntityFromLPENTITY(this);
-		bool walkedViewerMap = false;
+			const int32_t range = VIEW_RANGE + VIEW_BONUS_RANGE;
+			ecs::SpatialService::ForEachAround(g_registry, self, range,
+				[&](entt::entity other) {
+					if (other == self || !isCharacter(other))
+						return;
 
-		if (selfE != entt::null && g_registry.valid(selfE))
+					g_registry.get_or_emplace<ecs::ViewerMap>(self).viewers.insert(other);
+					if (auto* otherView = g_registry.try_get<ecs::ViewMap>(other))
+						otherView->visible.insert(self);
+				});
+		}
+
+		if (auto* viewerMap = g_registry.try_get<ecs::ViewerMap>(self))
 		{
-			// Self-heal: add missing nearby characters to the ViewerMap.
-			// Only run when the source is a character (other entity kinds
-			// hit the legacy fallback below).
-			if (const auto* kind = g_registry.try_get<ecs::SpatialKindTag>(selfE);
-				kind && kind->kind == ecs::SpatialKind::Character)
+			walkedViewerMap = true;
+			for (const entt::entity viewer : viewerMap->viewers)
 			{
-				if (LPSECTREE sectree = ecs::SectorOf(g_registry, selfE))
-				{
-					const int32_t range = VIEW_RANGE + VIEW_BONUS_RANGE;
-					const int32_t selfX = GetX();
-					const int32_t selfY = GetY();
-					struct HealCollector {
-						entt::entity self;
-						int32_t selfX;
-						int32_t selfY;
-						int32_t range;
-						ecs::ViewerMap& selfViewerMap;
-						void operator()(LPENTITY ent)
-						{
-							if (!ent || !ent->IsType(ENTITY_CHARACTER))
-								return;
-							const entt::entity e = ecs::SpatialService::EntityFromLPENTITY(ent);
-							if (e == entt::null || !g_registry.valid(e) || e == self)
-								return;
-							if (DISTANCE_APPROX(ent->GetX() - selfX, ent->GetY() - selfY) > range)
-								return;
-							selfViewerMap.viewers.insert(e);
-							if (auto* otherView = g_registry.try_get<ecs::ViewMap>(e))
-								otherView->visible.insert(self);
-						}
-					} healer { selfE, selfX, selfY, range,
-						g_registry.get_or_emplace<ecs::ViewerMap>(selfE) };
-					sectree->ForEachAround(healer);
-				}
-			}
+				if (viewer == entt::null || !g_registry.valid(viewer))
+					continue;
 
-			if (auto* viewerMap = g_registry.try_get<ecs::ViewerMap>(selfE))
-			{
-				walkedViewerMap = true;
-				for (const entt::entity viewerE : viewerMap->viewers)
-				{
-					if (viewerE == entt::null || !g_registry.valid(viewerE))
-						continue;
-					LPENTITY viewer = ecs::SpatialService::LPENTITYFromEntity(g_registry, viewerE);
-					if (!viewer || viewer == except)
-						continue;
-					if (sent.insert(viewer).second)
-						f(viewer);
-				}
+				if (sent.insert(viewer).second)
+					send(viewer);
 			}
 		}
 
-		// Fallback for non-character sources whose ViewerMap is incomplete
-		// (the path that pre-D.6 fed them from chars' UpdateSectree polling
-		// is gone; PacketView usage on non-chars is currently nil but the
-		// safety net guards against silent regressions). For chars whose
-		// ViewerMap was iterated above, this walk is skipped entirely.
 		if (!walkedViewerMap)
 		{
 			const int32_t range = VIEW_RANGE + VIEW_BONUS_RANGE;
-			const int32_t selfX = GetX();
-			const int32_t selfY = GetY();
-			struct RangeCollector {
-				LPENTITY self;
-				LPENTITY except;
-				int32_t selfX;
-				int32_t selfY;
-				int32_t range;
-				std::unordered_set<LPENTITY>& sent;
-				FuncPacketAround& f;
-				void operator()(LPENTITY ent)
-				{
-					if (!ent || ent == self || ent == except)
+			ecs::SpatialService::ForEachAround(g_registry, self, range,
+				[&](entt::entity other) {
+					if (other == self || other == except || !isCharacter(other))
 						return;
-					if (!ent->IsType(ENTITY_CHARACTER))
-						return;
-					if (!ent->GetDesc())
-						return;
-					if (DISTANCE_APPROX(ent->GetX() - selfX, ent->GetY() - selfY) > range)
-						return;
-					if (sent.insert(ent).second)
-						f(ent);
-				}
-			} collector { this, except, selfX, selfY, range, sent, f };
 
-			GetSectree()->ForEachAround(collector);
+					if (!ecs::PlayerRuntime::GetDesc(other))
+						return;
+
+					if (sent.insert(other).second)
+						send(other);
+				});
 		}
 	}
 
-	if (sent.insert(this).second)
-		f(this);
+	if (sent.insert(self).second)
+		send(self);
+}
+
+} // namespace ecs::ViewSystem
+
+void CEntity::PacketView(const void * data, int bytes, LPENTITY except)
+{
+	ecs::ViewSystem::PacketView(
+		ecs::SpatialService::EntityFromLPENTITY(this), data, bytes,
+		ecs::SpatialService::EntityFromLPENTITY(except));
 }
 
 void CEntity::SetObserverMode(bool bFlag)

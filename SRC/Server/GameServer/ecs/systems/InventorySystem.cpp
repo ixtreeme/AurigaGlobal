@@ -516,7 +516,7 @@ void SetOwnership(entt::entity itemEntity, entt::entity character, int iSec)
 			p.dwVID = ItemSystem::GetItemVID(itemEntity);
 			p.szName[0] = '\0';
 
-			ItemSystem::BroadcastToViewers(itemEntity, &p, sizeof(p));
+			ecs::ViewSystem::PacketView(itemEntity, &p, sizeof(p));
 
 					SyncItemOwner(itemEntity, entt::null, 0);
 			if (itemEntity != entt::null && g_registry.valid(itemEntity))
@@ -545,7 +545,7 @@ void SetOwnership(entt::entity itemEntity, entt::entity character, int iSec)
 	p.dwVID = ItemSystem::GetItemVID(itemEntity);
 	strlcpy(p.szName, ecs::PlayerRuntime::GetName(character).data(), sizeof(p.szName));
 
-	ItemSystem::BroadcastToViewers(itemEntity, &p, sizeof(p));
+	ecs::ViewSystem::PacketView(itemEntity, &p, sizeof(p));
 
 	const entt::entity ownerEntity = ItemSystem::GetItemOwner(itemEntity);
 	SyncItemOwner(itemEntity, ownerEntity, ecs::PlayerRuntime::GetPlayerID(ownerEntity));

@@ -19,4 +19,9 @@ void ViewInsert(entt::entity self, entt::entity other, bool recursive);
 // Re-send this entity's view state: itself, then every entity it can see.
 void ViewReencode(entt::entity self);
 
+// Broadcast to everyone who can see this entity, plus itself. `except` is
+// skipped; pass entt::null for none.
+void PacketView(entt::entity self, const void* data, int bytes,
+                entt::entity except = entt::null);
+
 } // namespace ecs::ViewSystem

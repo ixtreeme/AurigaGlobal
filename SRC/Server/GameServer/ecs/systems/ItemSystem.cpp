@@ -2520,34 +2520,6 @@ static bool CanPutIntoRing(entt::entity ring, entt::entity item)
 	return false;
 }
 
-// The item half of CEntity::PacketAround. PacketView's other branches do not
-// apply to an item source: the self-heal walk is gated on SpatialKindTag
-// Character, the range-walk fallback runs only when the ViewerMap component is
-// absent - AddToGround emplaces it before InsertEntity populates it, so it
-// never is for a grounded item - and the final send-to-self is a no-op because
-// an item has no descriptor. What is left is the ViewerMap walk.
-void BroadcastToViewers(entt::entity item, const void* data, int bytes)
-{
-    if (!IsValidItem(item) || !ecs::PlayerRuntime::GetSectree(item))
-        return;
-
-    const auto* viewerMap = g_registry.try_get<ecs::ViewerMap>(item);
-    if (!viewerMap)
-    {
-        LOG_ERROR("BroadcastToViewers: item {} has no ViewerMap, nothing sent",
-            static_cast<uint32_t>(item));
-        return;
-    }
-
-    for (const entt::entity viewer : viewerMap->viewers)
-    {
-        if (viewer == entt::null || !g_registry.valid(viewer))
-            continue;
-
-        if (LPDESC desc = ecs::PlayerRuntime::GetDesc(viewer))
-            desc->Packet(data, bytes);
-    }
-}
 
 bool IsSameSpecialGroup(entt::entity item, entt::entity other)
 {
