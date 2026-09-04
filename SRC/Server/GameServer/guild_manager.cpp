@@ -192,7 +192,6 @@ void CGuildManager::P2PLoginMember(uint32_t pid)
 
 void CGuildManager::LoginMember(entt::entity character)
 {
-	LPCHARACTER ch = ecs::LegacyCharOf(character);
 	TGuildMap::iterator it = m_map_pkGuildByPID.find((ecs::PlayerRuntime::GetPlayerID(character)));
 
 	if (it != m_map_pkGuildByPID.end())

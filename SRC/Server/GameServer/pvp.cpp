@@ -770,7 +770,6 @@ void CPVPManager::ConnectEx(entt::entity character, bool bDisconnect)
 
 void CPVPManager::Connect(entt::entity character)
 {
-	LPCHARACTER pkChr = ecs::LegacyCharOf(character);
 	ConnectEx(character, false);
 }
 

@@ -3911,14 +3911,13 @@ void CInputMain::PartyParameter(entt::entity character, const char * c_pData)
 #ifdef __INGAME_WIKI__
 void CInputMain::RecvWikiPacket(entt::entity character, const char * c_pData)
 {
-	LPCHARACTER ch = ecs::LegacyCharOf(character);
 // migrated from CHARACTER handler
 // TODO Phase 8: migrate RecvWikiPacket handler ECS
 // DUAL-PATH: legacy only during migration window
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
 	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::RecvWikiPacket");//INGAME_DEBUG_RAZOR93
 #endif
-	if (!ch || (ch && !ecs::PlayerRuntime::GetDesc(character)))
+	if (!ecs::PlayerRuntime::GetDesc(character))
 		return;
 
 	if (!c_pData)
@@ -4054,7 +4053,6 @@ size_t GetSubPacketSize(const GUILD_SUBHEADER_CG& header)
 
 int CInputMain::Guild(entt::entity character, const char * data, size_t uiBytes)
 {
-	LPCHARACTER ch = ecs::LegacyCharOf(character);
 // migrated from CHARACTER handler
 // TODO Phase 8: migrate Guild handler ECS
 // DUAL-PATH: legacy only during migration window

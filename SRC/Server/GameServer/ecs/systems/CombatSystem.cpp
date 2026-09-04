@@ -987,8 +987,7 @@ void CHARACTER::SendLeaderboardData()
 
 void CHARACTER::SendLeaderboardDataSkillMob(entt::entity viewerEntity)
 {
-	LPCHARACTER viewer = ecs::LegacyCharOf(viewerEntity);
-	if (!viewer || !ecs::PlayerRuntime::GetDesc(viewerEntity))
+	if (!ecs::PlayerRuntime::GetDesc(viewerEntity))
 		return;
 
 	std::unique_ptr<SQLMsg> pMsg(DBManager::instance().DirectQuery(
@@ -1192,7 +1191,6 @@ void CHARACTER::UpdateAggrPointEx(entt::entity attacker, EDamageType type, int d
 
 void CHARACTER::UpdateAggrPoint(entt::entity attacker, EDamageType type, int dam)
 {
-	LPCHARACTER pkAttacker = ecs::LegacyCharOf(attacker);
 	if (IsDead() || IsStun())
 		return;
 
@@ -2578,7 +2576,6 @@ bool CHARACTER::CanBeginFight() const
 
 void CHARACTER::BeginFight(entt::entity victim)
 {
-	LPCHARACTER pkVictim = ecs::LegacyCharOf(victim);
 	SetVictim(victim);
 	SetPosition(POS_FIGHTING);
 	SetNextStatePulse(1);
@@ -6774,8 +6771,7 @@ struct FuncSetLastAttacked
 #ifdef ENABLE_STONE_SPAWN_STEP_PROCESSING_RAZOR93
 void CHARACTER::RegisterDamageForExp(entt::entity attacker, int iDamage)
 {
-	LPCHARACTER pkAttacker = ecs::LegacyCharOf(attacker);
-	if (!pkAttacker || !ecs::PlayerRuntime::IsPC(attacker))
+	if (!ecs::PlayerRuntime::IsPC(attacker))
 		return;
 
 	if (iDamage <= 0)

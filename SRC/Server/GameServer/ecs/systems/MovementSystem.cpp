@@ -1037,7 +1037,6 @@ void CHARACTER::MotionPacketEncode(uint8_t motion, entt::entity victimEntity, st
 
 void CHARACTER::Motion(uint8_t motion, entt::entity victimEntity)
 {
-	LPCHARACTER victim = ecs::LegacyCharOf(victimEntity);
 	struct packet_motion pack_motion;
 	MotionPacketEncode(motion, victimEntity, &pack_motion);
 	ecs::ViewSystem::PacketView(GetEntityHandle(), &pack_motion, sizeof(struct packet_motion));

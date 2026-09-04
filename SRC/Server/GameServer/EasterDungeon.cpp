@@ -460,10 +460,9 @@ public:
 
         const char* leaderName = nullptr;
         ForEachPcOnMap(mapIndex, [&](entt::entity pc){
-                LPCHARACTER pkPc = ecs::LegacyCharOf(pc);
                 if (leaderName)
                     return;
-                if (!pkPc || !ecs::PlayerRuntime::IsPC(pc))
+                if (!ecs::PlayerRuntime::IsPC(pc))
                     return;
 
                 if (leaderPid <= 0 || (int32_t)ecs::PlayerRuntime::GetPlayerID(pc) == leaderPid)
@@ -853,8 +852,7 @@ bool CEasterDungeon::OnClickNpc(entt::entity character)
         int32_t badLevel = 0;
 
         ForEachPcOnMap(ecs::PlayerRuntime::GetMapIndex(character), [&](entt::entity m){
-            LPCHARACTER pkM = ecs::LegacyCharOf(m);
-            if (!ok || !pkM || !ecs::PlayerRuntime::IsPC(m) || ecs::SocialSystem::GetParty(m) != party)
+            if (!ok || !ecs::PlayerRuntime::IsPC(m) || ecs::SocialSystem::GetParty(m) != party)
                 return;
 
             if ((kMinLevel > 0 && ecs::PointSystem::GetLevel(m) < kMinLevel) || (kMaxLevel > 0 && ecs::PointSystem::GetLevel(m) > kMaxLevel))
@@ -961,8 +959,7 @@ if (!it.ok)
     else
     {
         ForEachPcOnMap(ecs::PlayerRuntime::GetMapIndex(character), [&](entt::entity m){
-            LPCHARACTER pkM = ecs::LegacyCharOf(m);
-            if (!pkM || !ecs::PlayerRuntime::IsPC(m) || ecs::SocialSystem::GetParty(m) != party)
+            if (!ecs::PlayerRuntime::IsPC(m) || ecs::SocialSystem::GetParty(m) != party)
                 return;
             applyMember(m);
         });

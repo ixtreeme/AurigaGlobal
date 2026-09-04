@@ -257,7 +257,6 @@ void battle_end_ex(entt::entity character)
 
 void battle_end(entt::entity character)
 {
-	LPCHARACTER ch = ecs::LegacyCharOf(character);
 	battle_end_ex(character);
 }
 
@@ -279,8 +278,6 @@ int CalcMagicDamageWithValue(int iDam, entt::entity attacker, entt::entity victi
 
 int CalcMagicDamage(entt::entity attacker, entt::entity victim)
 {
-	LPCHARACTER pkAttacker = ecs::LegacyCharOf(attacker);
-	LPCHARACTER pkVictim = ecs::LegacyCharOf(victim);
 	int iDam = 0;
 
 	if (ecs::PlayerRuntime::IsNPC(attacker))
@@ -720,7 +717,6 @@ int CalcMeleeDamage(entt::entity attacker, entt::entity victim, bool bIgnoreDefe
 int CalcArrowDamage(entt::entity attacker, entt::entity victim, entt::entity bow, entt::entity arrow, bool bIgnoreDefense)
 {
 	LPCHARACTER pkAttacker = ecs::LegacyCharOf(attacker);
-	LPCHARACTER pkVictim = ecs::LegacyCharOf(victim);
 	if (bow == entt::null || ItemSystem::GetItemType(bow) != ITEM_WEAPON || ItemSystem::GetItemSubType(bow) != WEAPON_BOW)
 		return 0;
 
@@ -787,7 +783,6 @@ int CalcArrowDamage(entt::entity attacker, entt::entity victim, entt::entity bow
 
 void NormalAttackAffect(entt::entity attacker, entt::entity victim)
 {
-	LPCHARACTER pkAttacker = ecs::LegacyCharOf(attacker);
 	LPCHARACTER pkVictim = ecs::LegacyCharOf(victim);
 	// ?? ?????? U?????? U?? �??
 	if (ecs::PointSystem::Get(attacker, POINT_POISON_PCT) && !AffectSystem::IsAffectFlag(victim, AFF_POISON))

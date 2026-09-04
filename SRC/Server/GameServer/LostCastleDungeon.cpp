@@ -1491,8 +1491,7 @@ void CLostCastleDungeon::PurgeTestClonesForTargetPID(uint32_t targetPid, int32_t
 
 bool CLostCastleDungeon::OnUseItem30001(entt::entity character)
 {
-    LPCHARACTER ch = ecs::LegacyCharOf(character);
-    if (!ch || !ecs::PlayerRuntime::IsPC(character))
+    if (!ecs::PlayerRuntime::IsPC(character))
         return false;
 
     const int32_t idx = ecs::PlayerRuntime::GetMapIndex(character);
@@ -1511,8 +1510,7 @@ bool CLostCastleDungeon::OnUseItem30001(entt::entity character)
 
 void CLostCastleDungeon::OnPlayerDisconnect(entt::entity character)
 {
-    LPCHARACTER ch = ecs::LegacyCharOf(character);
-    if (!ch || !ecs::PlayerRuntime::IsPC(character))
+    if (!ecs::PlayerRuntime::IsPC(character))
         return;
 
     const int32_t idx = ecs::PlayerRuntime::GetMapIndex(character);
@@ -1527,8 +1525,7 @@ void CLostCastleDungeon::OnPlayerDisconnect(entt::entity character)
 
 void CLostCastleDungeon::OnPlayerLogin(entt::entity character)
 {
-    LPCHARACTER ch = ecs::LegacyCharOf(character);
-    if (!ch || !ecs::PlayerRuntime::IsPC(character))
+    if (!ecs::PlayerRuntime::IsPC(character))
         return;
 
     const int32_t idx = ecs::PlayerRuntime::GetMapIndex(character);
@@ -1719,9 +1716,8 @@ void CLostCastleDungeon::OnMobKilled(entt::entity killer, entt::entity victim)
 bool CLostCastleDungeon::OnNpcTakeItem(entt::entity from, entt::entity npc, LPITEM item)
 {
     const entt::entity itemEntity = item ? item->GetEntityHandle() : entt::null;
-    LPCHARACTER pkFrom = ecs::LegacyCharOf(from);
     LPCHARACTER pkNpc = ecs::LegacyCharOf(npc);
-    if (!pkFrom || !ecs::PlayerRuntime::IsPC(from) || !pkNpc || !item)
+    if (!ecs::PlayerRuntime::IsPC(from) || !pkNpc || !item)
         return false;
 
     const int32_t idx = ecs::PlayerRuntime::GetMapIndex(from);

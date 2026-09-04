@@ -375,8 +375,7 @@ void CNightmareDungeonRazor93::OnPlayerDisconnect(entt::entity character)
 
 void CNightmareDungeonRazor93::OnPlayerLogin(entt::entity character)
 {
-    LPCHARACTER ch = ecs::LegacyCharOf(character);
-    if (!ch || !ecs::PlayerRuntime::IsPC(character))
+    if (!ecs::PlayerRuntime::IsPC(character))
         return;
 
     const int32_t idx = ecs::PlayerRuntime::GetMapIndex(character);
@@ -403,9 +402,8 @@ void CNightmareDungeonRazor93::OnPlayerLogin(entt::entity character)
 
 void CNightmareDungeonRazor93::OnMobKilled(entt::entity killer, entt::entity victim)
 {
-    LPCHARACTER pkKiller = ecs::LegacyCharOf(killer);
     LPCHARACTER pkVictim = ecs::LegacyCharOf(victim);
-    if (!pkKiller || !pkVictim || !ecs::PlayerRuntime::IsPC(killer))
+    if (!pkVictim || !ecs::PlayerRuntime::IsPC(killer))
         return;
 
     const int32_t idx = ecs::PlayerRuntime::GetMapIndex(killer);

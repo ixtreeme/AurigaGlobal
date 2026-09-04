@@ -892,8 +892,7 @@ bool CRuneDungeon::IsRuneDungeonMap(int32_t mapIndex) const
 
 void CRuneDungeon::OnPlayerDisconnect(entt::entity character)
 {
-    LPCHARACTER ch = ecs::LegacyCharOf(character);
-    if (!ch || !ecs::PlayerRuntime::IsPC(character))
+    if (!ecs::PlayerRuntime::IsPC(character))
         return;
 
     const int32_t idx = ecs::PlayerRuntime::GetMapIndex(character);
@@ -1170,9 +1169,8 @@ void CRuneDungeon::OnMobKilled(entt::entity killer, entt::entity victim)
 bool CRuneDungeon::OnNpcTakeItem(entt::entity from, entt::entity npc, LPITEM item)
 {
     const entt::entity itemEntity = item ? item->GetEntityHandle() : entt::null;
-    LPCHARACTER pkFrom = ecs::LegacyCharOf(from);
     LPCHARACTER pkNpc = ecs::LegacyCharOf(npc);
-    if (!pkFrom || !ecs::PlayerRuntime::IsPC(from) || !pkNpc || !item)
+    if (!ecs::PlayerRuntime::IsPC(from) || !pkNpc || !item)
         return false;
 
     const int32_t idx = ecs::PlayerRuntime::GetMapIndex(from);
@@ -1411,8 +1409,7 @@ bool CRuneDungeon::OnClickNpc(entt::entity character)
     if (party)
     {
         ForEachPcOnMap(ecs::PlayerRuntime::GetMapIndex(character), [&](entt::entity pc){
-            LPCHARACTER pkPc = ecs::LegacyCharOf(pc);
-            if (!pkPc || !ecs::PlayerRuntime::IsPC(pc) || ecs::SocialSystem::GetParty(pc) != party)
+            if (!ecs::PlayerRuntime::IsPC(pc) || ecs::SocialSystem::GetParty(pc) != party)
                 return;
             setupMember(pc);
             });

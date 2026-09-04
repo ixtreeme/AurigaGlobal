@@ -445,7 +445,6 @@ void CGuild::SendListOneToAll(uint32_t pid)
 
 void CGuild::SendListPacket(entt::entity character)
 {
-	LPCHARACTER ch = ecs::LegacyCharOf(character);
 	/*
 	   List Packet
 
@@ -2347,7 +2346,6 @@ void CGuild::Invite( entt::entity inviter, entt::entity invitee )
 
 void CGuild::InviteAccept( entt::entity invitee )
 {
-	LPCHARACTER pchInvitee = ecs::LegacyCharOf(invitee);
 	EventMap::iterator itFind = m_GuildInviteEventMap.find( ecs::PlayerRuntime::GetPlayerID(invitee) );
 	if ( itFind == m_GuildInviteEventMap.end() )
 	{
@@ -2576,7 +2574,6 @@ void CGuild::GiveGuildBuff(entt::entity character)
 
 void CGuild::RemoveGuildBuff(entt::entity character)
 {
-	LPCHARACTER ch = ecs::LegacyCharOf(character);
 	CGuildManager::Instance().RemoveGuildBuff(character);
 }
 #endif

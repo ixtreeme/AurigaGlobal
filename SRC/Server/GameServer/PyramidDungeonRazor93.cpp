@@ -329,8 +329,7 @@ bool CPyramidDungeonRazor93::IsPyramidDungeonMap(int32_t mapIndex) const
 
 void CPyramidDungeonRazor93::OnPlayerDisconnect(entt::entity character)
 {
-    LPCHARACTER ch = ecs::LegacyCharOf(character);
-    if (!ch || !ecs::PlayerRuntime::IsPC(character))
+    if (!ecs::PlayerRuntime::IsPC(character))
         return;
 
     const int32_t mapIdx = ecs::PlayerRuntime::GetMapIndex(character);

@@ -349,8 +349,7 @@ bool COrcsDungeon::IsOrcDungeonMap(int32_t mapIndex) const
 
 void COrcsDungeon::OnPlayerDisconnect(entt::entity character)
 {
-    LPCHARACTER ch = ecs::LegacyCharOf(character);
-    if (!ch || !ecs::PlayerRuntime::IsPC(character))
+    if (!ecs::PlayerRuntime::IsPC(character))
         return;
 
     const int32_t idx = ecs::PlayerRuntime::GetMapIndex(character);
@@ -811,8 +810,7 @@ bool COrcsDungeon::OnClickNpc(entt::entity character)
     else
     {
         ForEachPcOnMap(ecs::PlayerRuntime::GetMapIndex(character), [&](entt::entity m){
-            LPCHARACTER pkM = ecs::LegacyCharOf(m);
-            if (!pkM || !ecs::PlayerRuntime::IsPC(m) || ecs::SocialSystem::GetParty(m) != party)
+            if (!ecs::PlayerRuntime::IsPC(m) || ecs::SocialSystem::GetParty(m) != party)
                 return;
             applyMember(m);
         });

@@ -2315,8 +2315,7 @@ namespace offlineshop
 
 	bool CShopManager::RecvShopRequestListClientPacket(entt::entity character)
 	{
-		LPCHARACTER ch = ecs::LegacyCharOf(character);
-		if(!ch || !ecs::PlayerRuntime::GetDesc(character))
+		if(!ecs::PlayerRuntime::GetDesc(character))
 			return false;
 
 		SendShopListClientPacket(character);
@@ -2939,8 +2938,7 @@ namespace offlineshop
 
 	void CShopManager::SendShopFilterResultClientPacket(entt::entity character, const std::vector<TItemInfo>& items)
 	{
-		LPCHARACTER ch = ecs::LegacyCharOf(character);
-		if(!ch || !ecs::PlayerRuntime::GetDesc(character))
+		if(!ecs::PlayerRuntime::GetDesc(character))
 			return;
 
 		TEMP_BUFFER buff;

@@ -432,8 +432,7 @@ bool CTritonTempleDungeon::IsTritonTempleMap(int32_t mapIndex) const
 
 void CTritonTempleDungeon::OnPlayerDisconnect(entt::entity character)
 {
-    LPCHARACTER ch = ecs::LegacyCharOf(character);
-    if (!ch || !ecs::PlayerRuntime::IsPC(character))
+    if (!ecs::PlayerRuntime::IsPC(character))
         return;
 
     const int32_t idx = ecs::PlayerRuntime::GetMapIndex(character);
