@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "ecs/systems/InventorySystem.hpp"
 #include "ecs/systems/PointSystem.hpp"
 #include "ecs/systems/MovementSystem.hpp"
 #include "ecs/systems/PlayerRuntimeSystem.hpp"
@@ -225,7 +226,7 @@ namespace
         item->StartDestroyEvent();
 
         if (owner)
-            item->SetOwnership(owner, 60 * 3);
+            InventorySystem::SetOwnership(item->GetEntityHandle(), owner->GetEntityHandle(), 60 * 3);
     }
     static void RuneDungeon_CompleteRankingForMap(int32_t dungeonMapIdx)
     {

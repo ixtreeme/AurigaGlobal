@@ -163,6 +163,7 @@ bool ChangeItemRareAttributeEcs(entt::entity item);
 bool ClearItemAttributesEcs(entt::entity item);
 bool CopyItemAttributesEcs(entt::entity source, entt::entity target);
 bool CopyItemSocketsEcs(entt::entity source, entt::entity target);
+void BroadcastToViewers(entt::entity item, const void* data, int bytes);
 bool IsSameSpecialGroup(entt::entity item, entt::entity other);
 bool DistanceValid(entt::entity item, entt::entity character);
 bool CanUsedBy(entt::entity item, entt::entity character);

@@ -404,61 +404,6 @@ void CItem::SetOwnershipEvent(LPEVENT pkEvent)
 	ItemSystem::GetItemEvents(GetEntityHandle()).ownership = pkEvent;
 }
 
-void CItem::SetOwnership(LPCHARACTER ch, int iSec)
-{
-	if (!ch)
-	{
-		if (ItemSystem::GetItemEvents(GetEntityHandle()).ownership)
-		{
-			event_cancel(&ItemSystem::GetItemEvents(GetEntityHandle()).ownership);
-			ItemSystem::SetItemOwnershipPID(GetEntityHandle(), 0);
-
-			TPacketGCItemOwnership p;
-
-			p.bHeader = HEADER_GC_ITEM_OWNERSHIP;
-			p.dwVID = m_dwVID;
-			p.szName[0] = '\0';
-
-			PacketAround(&p, sizeof(p));
-
-			const entt::entity itemEntity = GetEntityHandle();
-			SyncItemOwner(itemEntity, entt::null, 0);
-			if (itemEntity != entt::null && g_registry.valid(itemEntity))
-				g_registry.remove<ecs::ItemOwnershipDisplay>(itemEntity);
-		}
-		return;
-	}
-
-	if (ItemSystem::GetItemEvents(GetEntityHandle()).ownership)
-		return;
-
-	if (iSec <= 10)
-		iSec = 30;
-
-	const entt::entity character = ch->GetEntityHandle();
-	ItemSystem::SetItemOwnershipPID(GetEntityHandle(), ecs::PlayerRuntime::GetPlayerID(character));
-
-	item_event_info* info = AllocEventInfo<item_event_info>();
-	strlcpy(info->szOwnerName, ecs::PlayerRuntime::GetName(character).data(), sizeof(info->szOwnerName));
-	info->item = GetEntityHandle();
-
-	SetOwnershipEvent(event_create(ownership_event, info, PASSES_PER_SEC(iSec)));
-
-	TPacketGCItemOwnership p;
-
-	p.bHeader = HEADER_GC_ITEM_OWNERSHIP;
-	p.dwVID = m_dwVID;
-	strlcpy(p.szName, ecs::PlayerRuntime::GetName(character).data(), sizeof(p.szName));
-
-	PacketAround(&p, sizeof(p));
-
-	const entt::entity itemEntity = GetEntityHandle();
-	const entt::entity ownerEntity = GetOwnerEntity();
-	SyncItemOwner(itemEntity, ownerEntity, ecs::PlayerRuntime::GetPlayerID(ownerEntity));
-	if (itemEntity != entt::null && g_registry.valid(itemEntity))
-		g_registry.emplace_or_replace<ecs::ItemOwnershipDisplay>(
-			itemEntity, ecs::ItemOwnershipDisplay{ecs::PlayerRuntime::GetName(character).data()});
-}
 
 
 
@@ -555,6 +500,59 @@ uint16_t CItem::GetCell() const
 
 namespace InventorySystem {
 
+void SetOwnership(entt::entity itemEntity, entt::entity character, int iSec)
+{
+	if (character == entt::null)
+	{
+		if (ItemSystem::GetItemEvents(itemEntity).ownership)
+		{
+			event_cancel(&ItemSystem::GetItemEvents(itemEntity).ownership);
+			ItemSystem::SetItemOwnershipPID(itemEntity, 0);
+
+			TPacketGCItemOwnership p;
+
+			p.bHeader = HEADER_GC_ITEM_OWNERSHIP;
+			p.dwVID = ItemSystem::GetItemVID(itemEntity);
+			p.szName[0] = '\0';
+
+			ItemSystem::BroadcastToViewers(itemEntity, &p, sizeof(p));
+
+					SyncItemOwner(itemEntity, entt::null, 0);
+			if (itemEntity != entt::null && g_registry.valid(itemEntity))
+				g_registry.remove<ecs::ItemOwnershipDisplay>(itemEntity);
+		}
+		return;
+	}
+
+	if (ItemSystem::GetItemEvents(itemEntity).ownership)
+		return;
+
+	if (iSec <= 10)
+		iSec = 30;
+
+	ItemSystem::SetItemOwnershipPID(itemEntity, ecs::PlayerRuntime::GetPlayerID(character));
+
+	item_event_info* info = AllocEventInfo<item_event_info>();
+	strlcpy(info->szOwnerName, ecs::PlayerRuntime::GetName(character).data(), sizeof(info->szOwnerName));
+	info->item = itemEntity;
+
+	ItemSystem::GetItemEvents(itemEntity).ownership = event_create(ownership_event, info, PASSES_PER_SEC(iSec));
+
+	TPacketGCItemOwnership p;
+
+	p.bHeader = HEADER_GC_ITEM_OWNERSHIP;
+	p.dwVID = ItemSystem::GetItemVID(itemEntity);
+	strlcpy(p.szName, ecs::PlayerRuntime::GetName(character).data(), sizeof(p.szName));
+
+	ItemSystem::BroadcastToViewers(itemEntity, &p, sizeof(p));
+
+	const entt::entity ownerEntity = ItemSystem::GetItemOwner(itemEntity);
+	SyncItemOwner(itemEntity, ownerEntity, ecs::PlayerRuntime::GetPlayerID(ownerEntity));
+	if (itemEntity != entt::null && g_registry.valid(itemEntity))
+		g_registry.emplace_or_replace<ecs::ItemOwnershipDisplay>(
+			itemEntity, ecs::ItemOwnershipDisplay{ecs::PlayerRuntime::GetName(character).data()});
+}
+
 entt::entity RemoveFromGround(entt::entity itemEntity)
 {
 	if (itemEntity == entt::null || !g_registry.valid(itemEntity))
@@ -573,17 +571,16 @@ entt::entity RemoveFromGround(entt::entity itemEntity)
 	if (!ecs::PlayerRuntime::GetSectree(itemEntity))
 		return itemEntity;
 
-	// Leaving the world is the view layer's business, and that layer still
-	// speaks LPENTITY: SetOwnership broadcasts through CEntity::PacketAround,
-	// and ViewCleanup walks the view map calling ViewRemove(this) on each
-	// viewer. One resolve here covers both. It goes when PacketView does.
+	SetOwnership(itemEntity, entt::null, 10);
+
+	// The one thing here that is still the view layer's: ViewCleanup walks the
+	// view map calling ViewRemove(this) on each viewer, so it needs an
+	// LPENTITY. It goes when that walk does.
 	LPITEM legacyItem = nullptr;
 	if (const auto* legacy = g_registry.try_get<ecs::LegacyItemPtr>(itemEntity))
 		legacyItem = legacy->ptr;
 	if (!legacyItem)
 		return itemEntity;
-
-	legacyItem->SetOwnership(nullptr);
 
 	ecs::SpatialService::RemoveEntity(g_registry, itemEntity);
 

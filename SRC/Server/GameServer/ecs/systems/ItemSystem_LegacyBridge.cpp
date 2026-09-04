@@ -12619,9 +12619,9 @@ void CHARACTER::AutoGiveItem(LPITEM item, bool longOwnerShip
 #endif
 
 		if (longOwnerShip)
-			item->SetOwnership(this, 300);
+			InventorySystem::SetOwnership(item->GetEntityHandle(), GetEntityHandle(), 300);
 		else
-			item->SetOwnership(this, 60);
+			InventorySystem::SetOwnership(item->GetEntityHandle(), GetEntityHandle(), 60);
 		LogManager::instance().ItemLog(this, item, "SYSTEM_DROP", item->GetName());
 	}
 }
@@ -12664,10 +12664,10 @@ bool CHARACTER::AutoGiveDS(LPITEM item, bool longOwnerShip) {
 #endif
 
 		if (longOwnerShip) {
-			item->SetOwnership(this, 300);
+			InventorySystem::SetOwnership(item->GetEntityHandle(), GetEntityHandle(), 300);
 		}
 		else {
-			item->SetOwnership(this, 60);
+			InventorySystem::SetOwnership(item->GetEntityHandle(), GetEntityHandle(), 60);
 		}
 
 		LogManager::instance().ItemLog(this, item, "SYSTEM_DROP", item->GetName());
@@ -12916,9 +12916,9 @@ LPITEM CHARACTER::AutoGiveItem(uint32_t dwItemVnum,
 		// ownershipÀ» ¾ÆÀÌ�
 // ÛÀÌ »ç¶óÁú ¶§±îÁö(300ÃÊ) À¯ÁöÇÑ´Ù.
 		if (IS_SET(item->GetAntiFlag(), ITEM_ANTIFLAG_DROP))
-			item->SetOwnership(this, 300);
+			InventorySystem::SetOwnership(item->GetEntityHandle(), GetEntityHandle(), 300);
 		else
-			item->SetOwnership(this, 60);
+			InventorySystem::SetOwnership(item->GetEntityHandle(), GetEntityHandle(), 60);
 		LogManager::instance().ItemLog(this, item, "SYSTEM_DROP", item->GetName());
 	}
 

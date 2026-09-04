@@ -1826,7 +1826,7 @@ void CInputDB::ItemLoad(LPDESC d, const char * c_pData)
 			coord.y = ecs::PlayerRuntime::GetY(((ch) ? (ch)->GetEntityHandle() : entt::null));
 
 			item->AddToGround(ecs::PlayerRuntime::GetMapIndex(((ch) ? (ch)->GetEntityHandle() : entt::null)), coord);
-			item->SetOwnership(ch, 180);
+			InventorySystem::SetOwnership(item->GetEntityHandle(), ch->GetEntityHandle(), 180);
 			item->StartDestroyEvent();
 		}
 		else

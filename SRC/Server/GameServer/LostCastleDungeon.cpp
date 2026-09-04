@@ -199,7 +199,7 @@ namespace
         item->StartDestroyEvent();
 
         if (owner)
-            item->SetOwnership(owner, 60 * 3);
+            InventorySystem::SetOwnership(item->GetEntityHandle(), owner->GetEntityHandle(), 60 * 3);
     }
 
     bool ConsumeOneGivenItem(entt::entity itemEntity, const char* reason)

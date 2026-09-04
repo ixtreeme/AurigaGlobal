@@ -146,7 +146,6 @@ class CItem : public CEntity
 		void		SetSkipSave(bool b);
 		bool		GetSkipSave() const;
 
-		void		SetOwnership(LPCHARACTER ch, int iSec = 10);
 		void		SetOwnershipEvent(LPEVENT pkEvent);
 
 		uint32_t	GetLastOwnerPID() const;
