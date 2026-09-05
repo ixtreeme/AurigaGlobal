@@ -580,16 +580,6 @@ void CHARACTER::SetRandomSP(int value)
 	ecs::PointSystem::SetRandomSP(GetEntityHandle(), value);
 }
 
-int CHARACTER::GetRandomHP() const
-{
-	return ecs::PointSystem::GetRandomHP(GetEntityHandle());
-}
-
-int CHARACTER::GetRandomSP() const
-{
-	return ecs::PointSystem::GetRandomSP(GetEntityHandle());
-}
-
 void CHARACTER::SetRealPoint(uint8_t type, int64_t val)
 {
 	m_points.points[type] = val;

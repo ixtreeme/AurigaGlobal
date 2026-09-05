@@ -78,6 +78,8 @@
 #include "../../shop.h"
 #include "../../shop_manager.h"
 #include "../../start_position.h"
+#include "DragonSoulSystem.hpp"
+#include "GayaSystem.hpp"
 #include "../../skill_power.h"
 #include "../../target.h"
 #include "../../war_map.h"
@@ -1666,11 +1668,6 @@ const timeval& CHARACTER::GetLastSyncTime() const
     return ecs::PlayerRuntime::GetLastSyncTime(GetEntityHandle());
 }
 
-void CHARACTER::SetDungeonTicketExtraMetin(bool b)
-{
-    ecs::PlayerRuntime::SetDungeonTicketExtraMetin(GetEntityHandle(), b);
-}
-
 bool CHARACTER::IsDungeonTicketExtraMetin() const
 {
     return ecs::PlayerRuntime::IsDungeonTicketExtraMetin(GetEntityHandle());
@@ -1988,11 +1985,6 @@ void CHARACTER::SetQuestNPCID(uint32_t vid)
     }
 }
 
-const std::string CHARACTER::GetNewName() const
-{
-	return std::string(ecs::PlayerRuntime::GetPendingName(GetEntityHandle()));
-}
-
 void CHARACTER::SetNewName(const std::string name)
 {
 	m_strNewName = name;
@@ -2071,11 +2063,6 @@ void CHARACTER::SetBlockMode(uint8_t bFlag)
     SetQuestFlag("game_option.block_party_request", bFlag & BLOCK_PARTY_REQUEST ? 1 : 0);
 }
 
-void CHARACTER::SetBlockModeForce(uint8_t bFlag)
-{
-	ecs::PlayerRuntime::SetBlockModeForce(GetEntityHandle(), bFlag);
-}
-
 uint8_t CHARACTER::GetBlockMode() const
 {
     if (const auto* flags = TryGetRuntimeFlagsComponent(GetEntityHandle()))
@@ -2103,16 +2090,6 @@ uint32_t CHARACTER::GetImmuneFlag() const
         return flags->immuneFlag;
 
     return 0;
-}
-
-void CHARACTER::SetPotionLimit(int count)
-{
-    ecs::PlayerRuntime::SetPotionLimit(GetEntityHandle(), count);
-}
-
-int CHARACTER::GetPotionLimit() const
-{
-    return ecs::PlayerRuntime::GetPotionLimit(GetEntityHandle());
 }
 
 // The pet / mount creature markers. These write both stores at one point so
@@ -4308,11 +4285,6 @@ uint16_t GetOriginalPart(entt::entity e, uint8_t bPartPos)
 
 } // namespace ecs::PlayerRuntime
 
-uint16_t CHARACTER::GetOriginalPart(uint8_t bPartPos) const
-{
-	return ecs::PlayerRuntime::GetOriginalPart(GetEntityHandle(), bPartPos);
-}
-
 void CHARACTER::SetMaxHP(int64_t iVal)
 {
     if (auto* health = EnsureHealthComponent(GetEntityHandle()))
@@ -4446,12 +4418,12 @@ void CHARACTER::Destroy()
     }
 
     ClearStone();
-    ClearSync();
-    ClearTarget();
+    NetworkSyncSystem::ClearSync(GetEntityHandle());
+    CombatSystem::ClearTarget(GetEntityHandle());
 
     if (nullptr == m_pkMobData)
     {
-        DragonSoul_CleanUp();
+        DragonSoulSystem::CleanUp(GetEntityHandle());
         ClearItem();
     }
 
@@ -4627,21 +4599,6 @@ void CHARACTER::BeginStateEmpty()
     MonsterLog("!");
 }
 
-int CHARACTER::ChangeEmpire(uint8_t empire)
-{
-	return ecs::PlayerRuntime::ChangeEmpire(GetEntityHandle(), empire);
-}
-
-int CHARACTER::GetChangeEmpireCount() const
-{
-	return ecs::PlayerRuntime::GetChangeEmpireCount(GetEntityHandle());
-}
-
-void CHARACTER::SetChangeEmpireCount()
-{
-	ecs::PlayerRuntime::IncrementChangeEmpireCount(GetEntityHandle());
-}
-
 void CHARACTER::MountVnum(uint32_t vnum)
 {
     if (m_dwMountVnum == vnum)
@@ -4698,8 +4655,8 @@ void CHARACTER::MountVnum(uint32_t vnum)
         }
     }
 
-    SetValidComboInterval(0);
-    SetComboSequence(0);
+    CombatSystem::SetValidComboInterval(GetEntityHandle(), 0);
+    CombatSystem::SetComboSequence(GetEntityHandle(), 0);
 
     ComputePoints();
 }
@@ -4976,7 +4933,7 @@ void CHARACTER::SetProto(const CMob* pkMob)
 
     AssignTriggers(t);
 
-    ApplyMobAttribute(t);
+    AffectSystem::ApplyMobAttribute(GetEntityHandle(), t);
 
     if (IsStone())
     {
@@ -5035,11 +4992,6 @@ void CHARACTER::SetNextStatePulse(int iNextPulse)
 
     if (iNextPulse < 10)
         MonsterLog("´UA1»óAÂ·Î3î1­°!AÚ");
-}
-
-void CHARACTER::UpdateCharacter(uint32_t dwPulse)
-{
-    AISystem::UpdateStateMachine(GetEntityHandle());
 }
 
 void CHARACTER::MonsterLog(const char* format, ...)
@@ -5121,7 +5073,7 @@ void CHARACTER::OnMove(bool bIsAttack)
       RemoveAffect(SKILL_GUNGON);*/
 
     // MINING
-    mining_cancel();
+    ActivitySystem::CancelMining(GetEntityHandle());
     // END_OF_MINING
 }
 
@@ -5824,20 +5776,10 @@ void CHARACTER::SetBodyCostumeHidden(bool hidden, bool pass)
 	ecs::PlayerRuntime::SetCostumeHidden(GetEntityHandle(), 1, hidden, pass);
 }
 
-bool CHARACTER::IsBodyCostumeHidden() const
-{
-	return ecs::PlayerRuntime::IsCostumeHidden(GetEntityHandle(), 1);
-}
-
 void CHARACTER::SetHairCostumeHidden(bool hidden, bool pass)
 {
     m_bHideHairCostume = hidden;
 	ecs::PlayerRuntime::SetCostumeHidden(GetEntityHandle(), 2, hidden, pass);
-}
-
-bool CHARACTER::IsHairCostumeHidden() const
-{
-	return ecs::PlayerRuntime::IsCostumeHidden(GetEntityHandle(), 2);
 }
 
 #ifdef ENABLE_ACCE_SYSTEM
@@ -5847,10 +5789,6 @@ void CHARACTER::SetAcceCostumeHidden(bool hidden, bool pass)
 	ecs::PlayerRuntime::SetCostumeHidden(GetEntityHandle(), 3, hidden, pass);
 }
 
-bool CHARACTER::IsAcceCostumeHidden() const
-{
-	return ecs::PlayerRuntime::IsCostumeHidden(GetEntityHandle(), 3);
-}
 #endif
 
 #ifdef ENABLE_WEAPON_COSTUME_SYSTEM
@@ -5860,10 +5798,6 @@ void CHARACTER::SetWeaponCostumeHidden(bool hidden, bool pass)
 	ecs::PlayerRuntime::SetCostumeHidden(GetEntityHandle(), 4, hidden, pass);
 }
 
-bool CHARACTER::IsWeaponCostumeHidden() const
-{
-	return ecs::PlayerRuntime::IsCostumeHidden(GetEntityHandle(), 4);
-}
 #endif
 #endif
 
@@ -6078,7 +6012,7 @@ void CHARACTER::Initialize()
 
     ResetStopTime();
 #ifdef ENABLE_GAYA_SYSTEM
-    LOAD_GAYA();
+    GayaSystem::Load(GetEntityHandle());
 #endif
     m_dwLastVictimSetTime = get_dword_time() - 3000;
     m_iMaxAggro = -100;
@@ -6101,7 +6035,7 @@ void CHARACTER::Initialize()
     m_isinPCBang = false;
 
     m_pArena = nullptr;
-    SetPotionLimit(quest::CQuestManager::instance().GetEventFlag("arena_potion_limit_count"));
+    ecs::PlayerRuntime::SetPotionLimit(GetEntityHandle(), quest::CQuestManager::instance().GetEventFlag("arena_potion_limit_count"));
 
     m_isOpenSafebox = 0;
 

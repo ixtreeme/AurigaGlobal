@@ -469,11 +469,6 @@ bool ResetOneSkill(entt::entity e, uint32_t skillId)
 
 } // namespace SkillSystem
 
-int CHARACTER::ComputeCooltime(int time)
-{
-    return SkillSystem::ComputeCooltime(GetEntityHandle(), time);
-}
-
 void CHARACTER::SetSkillGroup(uint8_t bSkillGroup)
 {
     if (bSkillGroup > 2)
@@ -589,11 +584,6 @@ void CHARACTER::DisableCooltime()
 {
     m_bDisableCooltime = true;
     SkillSystem::DisableCooltime(GetEntityHandle());
-}
-
-void CHARACTER::ComputeSkillPoints()
-{
-    SkillSystem::ComputeSkillPoints(GetEntityHandle());
 }
 
 bool CHARACTER::IsLearnableSkill(uint32_t dwSkillVnum) const
@@ -3866,7 +3856,7 @@ bool CHARACTER::UseSkill(uint32_t dwVnum, entt::entity victim, bool bUseGrandMas
 		{
 			if (false ==
 					m_SkillUseInfo[dwVnum].UseSkill(
-						bUseGrandMaster, (nullptr != pkVictim && SKILL_HORSE_WILDATTACK != dwVnum) ? victimEntity : entt::null, ComputeCooltime(iCooltime * 1000), iSplashCount, 25000))
+						bUseGrandMaster, (nullptr != pkVictim && SKILL_HORSE_WILDATTACK != dwVnum) ? victimEntity : entt::null, SkillSystem::ComputeCooltime(GetEntityHandle(), iCooltime * 1000), iSplashCount, 25000))
 			{
 				if (test_server)
 					ecs::ChatSystem::Send(GetEntityHandle(), CHAT_TYPE_NOTICE, "cooltime not finished %s %d", pkSk->szName, iCooltime);
@@ -3879,7 +3869,7 @@ bool CHARACTER::UseSkill(uint32_t dwVnum, entt::entity victim, bool bUseGrandMas
 					m_SkillUseInfo[dwVnum].UseSkill(
 						bUseGrandMaster,
 						(nullptr != pkVictim && SKILL_HORSE_WILDATTACK != dwVnum) ? victimEntity : entt::null,
-				   		ComputeCooltime(iCooltime * 1000),
+				   		SkillSystem::ComputeCooltime(GetEntityHandle(), iCooltime * 1000),
 				   		iSplashCount,
 				   		lMaxHit))
 			{
@@ -4880,11 +4870,6 @@ void CHARACTER::ClearSkill()
 void CHARACTER::ClearSubSkill()
 {
 	SkillSystem::ClearSubSkill(GetEntityHandle());
-}
-
-bool CHARACTER::ResetOneSkill(uint32_t dwVnum)
-{
-	return SkillSystem::ResetOneSkill(GetEntityHandle(), dwVnum);
 }
 
 eMountType GetMountLevelByVnum(uint32_t dwMountVnum, bool IsNew) // updated to 2014/12/10

@@ -590,56 +590,6 @@ void StartCheckTimeMarket(entt::entity pc)
 
 } // namespace GayaSystem
 
-void CHARACTER::LOAD_GAYA()
-{
-	GayaSystem::Load(GetEntityHandle());
-}
-
-bool CHARACTER::CheckItemsFull()
-{
-	return GayaSystem::CheckItemsFull(GetEntityHandle());
-}
-
-void CHARACTER::ClearGayaMarket()
-{
-	GayaSystem::ClearMarket(GetEntityHandle());
-}
-
-void CHARACTER::InfoGayaMarker()
-{
-	GayaSystem::InfoMarket(GetEntityHandle());
-}
-
-bool CHARACTER::CheckSlotGayaMarket(int slot)
-{
-	return GayaSystem::CheckSlot(GetEntityHandle(), slot);
-}
-
-void CHARACTER::BuyItemsGayaMarket(int slot)
-{
-	GayaSystem::BuyItems(GetEntityHandle(), slot);
-}
-
-void CHARACTER::RefreshItemsGayaMarket()
-{
-	GayaSystem::RefreshItemsMarket(GetEntityHandle());
-}
-
-void CHARACTER::UpdateSlotGayaMarket(int slot)
-{
-	GayaSystem::UpdateSlot(GetEntityHandle(), slot);
-}
-
-void CHARACTER::UpdateItemsGayaMarker0()
-{
-	GayaSystem::UpdateItems0(GetEntityHandle());
-}
-
-void CHARACTER::UpdateItemsGayaMarker()
-{
-	GayaSystem::UpdateItems(GetEntityHandle());
-}
-
 void CHARACTER::CraftGayaItems(int slot)
 {
 	GayaSystem::CraftItems(GetEntityHandle(), slot);
@@ -653,19 +603,4 @@ void CHARACTER::MarketGayaItems(int slot)
 void CHARACTER::RefreshGayaItems()
 {
 	GayaSystem::RefreshItems(GetEntityHandle());
-}
-
-int CHARACTER::GetGayaState(const std::string& state) const
-{
-	return GayaSystem::GetState(GetEntityHandle(), state);
-}
-
-void CHARACTER::SetGayaState(const std::string& state, int szValue)
-{
-	GayaSystem::SetState(GetEntityHandle(), state, szValue);
-}
-
-void CHARACTER::StartCheckTimeMarket()
-{
-	GayaSystem::StartCheckTimeMarket(GetEntityHandle());
 }

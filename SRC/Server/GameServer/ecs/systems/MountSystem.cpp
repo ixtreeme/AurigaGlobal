@@ -205,15 +205,10 @@ int CHARACTER::GetMountCount() const
     return MountSystem::GetMountCount(GetEntityHandle());
 }
 
-void CHARACTER::UpdateMountInventoryCountOverhead(entt::entity viewerEntity)
-{
-    MountSystem::UpdateMountInventoryCountOverhead(GetEntityHandle(), viewerEntity);
-}
-
 void CHARACTER::UpdateMountCountOverheadToViewers()
 {
 #ifdef ENABLE_FAKE_SHOP_HEADER
-    UpdateMountInventoryCountOverhead(this ? this->GetEntityHandle() : entt::null);
+    MountSystem::UpdateMountInventoryCountOverhead(GetEntityHandle(), GetEntityHandle());
 
     // The ECS ViewMap, not m_map_view: this is a CHARACTER, and for characters
     // the legacy map stopped being maintained when D.6 disabled the polling in
@@ -228,7 +223,7 @@ void CHARACTER::UpdateMountCountOverheadToViewers()
                 continue;
 
             if (ecs::PlayerRuntime::IsPC(viewerEntity) && ecs::PlayerRuntime::GetDesc(viewerEntity))
-                UpdateMountInventoryCountOverhead(viewerEntity);
+                MountSystem::UpdateMountInventoryCountOverhead(GetEntityHandle(), viewerEntity);
         }
     }
 #endif
@@ -1001,10 +996,6 @@ bool CHARACTER::IsNextMountPulse() const
 	return (MountSystem::GetMountStateRef(GetEntityHandle()).mountPulse == 0 || (MountSystem::GetMountStateRef(GetEntityHandle()).mountPulse < thecore_pulse()));
 }
 
-void CHARACTER::UpdateMountPulse()
-{
-	MountSystem::GetMountStateRef(GetEntityHandle()).mountPulse = thecore_pulse() + THECORE_SECS_TO_PASSES(1);
-}
 #endif
 #endif
 
@@ -1029,11 +1020,6 @@ bool CHARACTER::IsRiding() const
 }
 
 #ifdef ENABLE_MOUNT_COSTUME_SYSTEM
-void CHARACTER::MountSummon(entt::entity mountItem)
-{
-	MountSystem::MountSummon(GetEntityHandle(), mountItem);
-}
-
 void CHARACTER::MountUnsummon(entt::entity mountItem)
 {
 	CMountSystem* mountSystem = GetMountSystem();

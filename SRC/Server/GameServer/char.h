@@ -763,9 +763,6 @@ public:
 	bool			ChangeSex();
 
 	uint32_t			GetAID() const;
-	int				GetChangeEmpireCount() const;
-	void			SetChangeEmpireCount();
-	int				ChangeEmpire(uint8_t empire);
 
 	uint8_t			GetJob() const;
 	uint8_t			GetCharType() const;
@@ -781,7 +778,6 @@ public:
 	//		bool			IsPet() const		{ return m_bCharType == CHAR_TYPE_PET; }
 #ifdef ENABLE_EVENT_MANAGER
 	// DUNGEON_TICKET_LOOT_EVENT extra metin marker
-	void SetDungeonTicketExtraMetin(bool b);
 	bool IsDungeonTicketExtraMetin() const;
 #endif
 
@@ -815,7 +811,6 @@ public:
 
 	void			SetPart(uint8_t bPartPos, uint16_t wVal);
 	uint16_t			GetPart(uint8_t bPartPos) const;
-	uint16_t			GetOriginalPart(uint8_t bPartPos) const;
 
 	void			SetHP(int64_t hp);
 	int64_t				GetHP() const;
@@ -835,8 +830,6 @@ public:
 	void			SetRandomHP(int v);
 	void			SetRandomSP(int v);
 
-	int				GetRandomHP() const;
-	int				GetRandomSP() const;
 
 	int				GetHPPct() const;
 
@@ -871,7 +864,6 @@ public:
 	bool			IsGodSpeed() const;
 	void			SetGodSpeed(bool mode);
 
-	bool			IsDeathBlower() const;
 	bool			IsDeathBlow() const;
 
 	bool			IsReviver() const;
@@ -924,7 +916,6 @@ public:
 	void			ResetPoint(int iLv);
 
 	void			SetBlockMode(uint8_t bFlag);
-	void			SetBlockModeForce(uint8_t bFlag);
 	uint8_t			GetBlockMode() const;
 	bool			IsBlockMode(uint8_t bFlag) const;
 
@@ -941,8 +932,6 @@ public:
 
 	// MINING
 	void			mining(entt::entity load);
-	void			mining_cancel();
-	void			mining_take();
 	// END_OF_MINING
 
 	void			ResetPlayTime(uint32_t dwTimeRemain = 0);
@@ -1068,7 +1057,6 @@ public:
 	void			SetLastAttacked(uint32_t time);	// ���������� ���ݹ��� �ð� �� ��ġ�� ������
 
 	bool			SetSyncOwner(entt::entity character, bool bRemoveFromList = true);
-	bool			IsSyncOwner(entt::entity character) const;
 
 	bool			WarpSet(int32_t x, int32_t y, int32_t lRealMapIndex = 0);
 
@@ -1095,7 +1083,6 @@ public:
 	uint32_t			GetStopTime() const;
 
 protected:
-	void			ClearSync();
 
 
 	PIXEL_POSITION	m_posStart;
@@ -1373,7 +1360,6 @@ public:
 #endif
 	bool			IsEmptyItemGrid(TItemPos Cell, uint8_t size, int iExceptionCell = -1) const;
 
-	void			SetWear(uint8_t bCell, entt::entity item);
 	LPITEM			GetWear(uint8_t bCell) const;
 
 	// MYSHOP_PRICE_LIST
@@ -1416,7 +1402,6 @@ public:
 	//	void			PotionPacket(int iPotionType);
 
 	void			EffectPacket(uint8_t enumEffectType);
-	void			SpecificEffectPacket(const char filename[128]);
 	// ADD_MONSTER_REFINE
 	bool			DoRefine(LPITEM item, bool bMoneyOnly = false);
 	// END_OF_ADD_MONSTER_REFINE
@@ -1701,13 +1686,10 @@ public:
 	static void CheckLeaderboardSkillMobChanges();
 #endif
 	void				AttackedByPoison(entt::entity attacker);
-	void				RemovePoison();
 #ifdef ENABLE_WOLFMAN_CHARACTER
 	void				AttackedByBleeding(entt::entity attacker);
-	void				RemoveBleeding();
 #endif
 	void				AttackedByFire(entt::entity attacker, int amount, int count);
-	void				RemoveFire();
 
 	uint8_t GetAlignmentGrade() const;
 
@@ -1720,14 +1702,12 @@ public:
 	//int GetBeltCount() const;
 #ifdef ENABLE_FAKE_SHOP_HEADER
 	int GetMountCount() const;
-	void UpdateMountInventoryCountOverhead(entt::entity viewer);
 	void UpdateMountCountOverheadToViewers();
 	//void UpdateMountCountOverhead(LPCHARACTER ch);
 #ifdef DISABLE_CORE_PULSE_RAZOR93
 
 	bool IsNextMountPulse() const;
 
-	void UpdateMountPulse();
 #endif
 #endif
 	//����ġ ���
@@ -1749,16 +1729,9 @@ public:
 	// HACK
 	//
 public:
-	void SetComboSequence(uint8_t seq);
-	uint8_t GetComboSequence() const;
 
-	void SetLastComboTime(uint32_t time);
-	uint32_t GetLastComboTime() const;
 
-	int GetValidComboInterval() const;
-	void SetValidComboInterval(int interval);
 
-	uint8_t GetComboIndex() const;
 
 	void IncreaseComboHackCount(int k = 1);
 	void ResetComboHackCount();
@@ -1909,12 +1882,10 @@ public:
 	int					ComputeSkillParty(uint32_t dwVnum, entt::entity victim, uint8_t bSkillLevel = 0);
 #endif
 	int					ComputeSkillAtPosition(uint32_t dwVnum, const PIXEL_POSITION& posTarget, uint8_t bSkillLevel = 0);
-	void				ComputeSkillPoints();
 
 	void				SetSkillGroup(uint8_t bSkillGroup);
 	uint8_t				GetSkillGroup() const;
 
-	int					ComputeCooltime(int time);
 
 	void				GiveRandomSkillBook();
 
@@ -2036,13 +2007,11 @@ protected:
 public:
 	void				SetTarget(entt::entity target);
 	void				BroadcastTargetPacket();
-	void				ClearTarget();
 	void				CheckTarget();
 
 	////////////////////////////////////////////////////////////////////////////////////////
 	// Safebox
 public:
-	int					GetSafeboxSize() const;
 	void				QuerySafeboxSize();
 	void				SetSafeboxSize(int size);
 
@@ -2080,7 +2049,6 @@ public:
 	void				CloseMall();
 
 	void				SetSafeboxOpenPosition();
-	float				GetDistanceFromSafeboxOpen() const;
 
 protected:
 	CSafebox* m_pkSafebox;
@@ -2148,7 +2116,6 @@ public:
 public:
 	CMountSystem* GetMountSystem() { return m_mountSystem; }
 
-	void 				MountSummon(entt::entity mountItem);
 	void 				MountUnsummon(entt::entity mountItem);
 	void 				CheckMount();
 	bool 				IsRidingMount();
@@ -2220,12 +2187,10 @@ protected:
 	// Resists & Proofs
 public:
 	bool				CannotMoveByAffect() const;	// Ư�� ȿ���� ���� ������ �� ���� �����ΰ�?
-	bool				IsImmune(uint32_t dwImmuneFlag);
 	void			SetImmuneFlag(uint32_t dw);
 	uint32_t			GetImmuneFlag() const;
 
 protected:
-	void				ApplyMobAttribute(const TMobTable* table);
 	// End of Resists & Proofs
 
 	////////////////////////////////////////////////////////////////////////////////////////
@@ -2260,7 +2225,6 @@ public:
 	void				SetNextStatePulse(int iPulseNext);
 
 	// ĳ���� �ν��Ͻ� ������Ʈ �Լ�. ������ �̻��� ��ӱ����� CFSM::Update �Լ��� ȣ���ϰų� UpdateStateMachine �Լ��� ����ߴµ�, ������ ������Ʈ �Լ� �߰���.
-	void				UpdateCharacter(uint32_t dwPulse);
 
 protected:
 	uint32_t				m_dwNextStatePulse;
@@ -2350,7 +2314,6 @@ public:
 	void ClearSubSkill();
 
 	// RESET_ONE_SKILL
-	bool ResetOneSkill(uint32_t dwVnum);
 	// END_RESET_ONE_SKILL
 
 
@@ -2366,8 +2329,6 @@ public:
 	CArena* GetArena() const;
 	bool	GetArenaObserverMode() const;
 
-	void	SetPotionLimit(int count);
-	int		GetPotionLimit() const;
 	// END_ARENA
 
 		//PREVENT_TRADE_WINDOW
@@ -2460,7 +2421,6 @@ private:
 	std::string m_strNewName;
 
 public:
-	const std::string GetNewName() const;
 	void SetNewName(const std::string name);
 
 public:
@@ -2508,7 +2468,6 @@ public:
 	void BuffOnAttr_ValueChange(uint8_t bType, uint8_t bOldValue, uint8_t bNewValue);
 	uint32_t GetPlayStartTime() const { return m_dwPlayStartTime; }
 private:
-	void BuffOnAttr_ClearAll();
 
 	// ���� : ��Ȱ�� �׽�Ʈ�� ���Ͽ�.
 public:
@@ -2565,7 +2524,6 @@ public:
 	void	DragonSoul_Initialize();
 
 	int		DragonSoul_GetActiveDeck() const;
-	bool	DragonSoul_IsDeckActivated() const;
 	bool	DragonSoul_ActivateDeck(int deck_idx);
 
 	void	DragonSoul_DeactivateAll();
@@ -2578,13 +2536,10 @@ public:
 	// ��ȥ�� Affect�� ���ŵǰ�, �ᱹ �α��� ��, ��ȥ���� Ȱ��ȭ���� �ʴ´�.
 	// (Unequip�� ������ �α׾ƿ� ��������, �ƴ��� �� �� ����.)
 	// ��ȥ���� deactivate��Ű�� ĳ������ ��ȥ�� �� Ȱ�� ���´� �ǵ帮�� �ʴ´�.
-	void	DragonSoul_CleanUp();
 	// ��ȥ�� ��ȭâ
 public:
 	bool		DragonSoul_RefineWindow_Open(LPENTITY pEntity);
 	bool		DragonSoul_RefineWindow_Close();
-	LPENTITY	DragonSoul_RefineWindow_GetOpener();
-	bool		DragonSoul_RefineWindow_CanRefine();
 #if defined(BL_OFFLINE_MESSAGE)
 protected:
 	uint32_t				dwLastOfflinePMTime;
@@ -2658,10 +2613,8 @@ public:
 #ifdef __HIDE_COSTUME_SYSTEM__
 public:
 	void SetBodyCostumeHidden(bool hidden, bool pass = false);
-	bool IsBodyCostumeHidden() const;
 
 	void SetHairCostumeHidden(bool hidden, bool pass = false);
-	bool IsHairCostumeHidden() const;
 #ifdef ENABLE_FREE_PASS_RAZOR93
 
 	bool HasBattlePassBoost(uint8_t bBattlePassId);
@@ -2674,12 +2627,10 @@ public:
 
 #ifdef ENABLE_ACCE_SYSTEM
 	void SetAcceCostumeHidden(bool hidden, bool pass = false);
-	bool IsAcceCostumeHidden() const;
 #endif
 
 #ifdef ENABLE_WEAPON_COSTUME_SYSTEM
 	void SetWeaponCostumeHidden(bool hidden, bool pass = false);
-	bool IsWeaponCostumeHidden() const;
 #endif
 
 private:
@@ -2704,22 +2655,9 @@ private:
 
 #ifdef ENABLE_GAYA_SYSTEM
 public:
-	bool CheckItemsFull();
-	void UpdateItemsGayaMarker0();
-	void UpdateItemsGayaMarker();
-	void InfoGayaMarker();
-	void ClearGayaMarket();
-	bool CheckSlotGayaMarket(int slot);
-	void UpdateSlotGayaMarket(int slot);
-	void BuyItemsGayaMarket(int slot);
-	void RefreshItemsGayaMarket();
 	void CraftGayaItems(int slot);
 	void MarketGayaItems(int slot);
 	void RefreshGayaItems();
-	void LOAD_GAYA();
-	int GetGayaState(const std::string& state) const;
-	void SetGayaState(const std::string& state, int szValue);
-	void StartCheckTimeMarket();
 #endif
 
 
@@ -2773,7 +2711,6 @@ public:
 	void fishing_new_stop();
 	void fishing_new_catch();
 	void fishing_new_catch_failed();
-	void fishing_catch_decision(uint32_t itemVnum);
 #endif
 public:
 	int		GetGoToXYTime() const { return m_iGoToXYTime; }

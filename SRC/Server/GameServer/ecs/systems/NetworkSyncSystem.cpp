@@ -1066,16 +1066,6 @@ bool CHARACTER::SetSyncOwner(entt::entity chEntity, bool bRemoveFromList)
     return NetworkSyncSystem::SetSyncOwner(GetEntityHandle(), chEntity, bRemoveFromList);
 }
 
-void CHARACTER::ClearSync()
-{
-    NetworkSyncSystem::ClearSync(GetEntityHandle());
-}
-
-bool CHARACTER::IsSyncOwner(entt::entity chEntity) const
-{
-    return NetworkSyncSystem::IsSyncOwner(GetEntityHandle(), chEntity);
-}
-
 void NetworkSyncSystem_Update(entt::registry& reg, uint32_t tick)
 {
     auto view = reg.view<ecs::TagPC, ecs::NetworkSession, ecs::Position, ecs::Health, ecs::Mana, ecs::VIDComponent, ecs::DirtyTag>();
@@ -1136,13 +1126,6 @@ void CHARACTER::EffectPacket(uint8_t enumEffectType)
 {
     NetworkSyncSystem::BroadcastEffect(g_registry, GetEntityHandle(), enumEffectType);
 }
-
-void CHARACTER::SpecificEffectPacket(const char filename[MAX_EFFECT_FILE_NAME])
-{
-    NetworkSyncSystem::BroadcastSpecificEffect(g_registry, GetEntityHandle(), filename);
-}
-
-
 
 void CItem::UpdatePacket()
 {

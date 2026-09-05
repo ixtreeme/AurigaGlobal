@@ -255,11 +255,6 @@ int CHARACTER::DragonSoul_GetActiveDeck() const
     return DragonSoulSystem::GetActiveDeck(GetEntityHandle());
 }
 
-bool CHARACTER::DragonSoul_IsDeckActivated() const
-{
-    return DragonSoulSystem::IsDeckActivated(GetEntityHandle());
-}
-
 bool CHARACTER::DragonSoul_ActivateDeck(int deck_idx)
 {
     const entt::entity e = GetEntityHandle();
@@ -271,11 +266,6 @@ void CHARACTER::DragonSoul_DeactivateAll()
     DragonSoulSystem::DeactivateAll(GetEntityHandle());
 }
 
-void CHARACTER::DragonSoul_CleanUp()
-{
-    DragonSoulSystem::CleanUp(GetEntityHandle());
-}
-
 bool CHARACTER::DragonSoul_RefineWindow_Open(LPENTITY pEntity)
 {
     return DragonSoulSystem::OpenRefineWindow(GetEntityHandle(), pEntity);
@@ -284,11 +274,6 @@ bool CHARACTER::DragonSoul_RefineWindow_Open(LPENTITY pEntity)
 bool CHARACTER::DragonSoul_RefineWindow_Close()
 {
     return DragonSoulSystem::CloseRefineWindow(GetEntityHandle());
-}
-
-LPENTITY CHARACTER::DragonSoul_RefineWindow_GetOpener()
-{
-    return DragonSoulSystem::GetRefineWindowOpener(GetEntityHandle());
 }
 
 namespace DragonSoulSystem {
@@ -306,9 +291,4 @@ void SetLastRefineTime(entt::entity owner)
         return;
     g_registry.get_or_emplace<ecs::DragonSoulState>(owner).lastRefineTime = get_global_time() + 3;
 }
-}
-
-bool CHARACTER::DragonSoul_RefineWindow_CanRefine()
-{
-    return DragonSoulSystem::CanRefine(GetEntityHandle());
 }

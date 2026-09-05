@@ -454,11 +454,6 @@ uint32_t CItem::GetLastOwnerPID() const
 	return ItemSystem::GetItemLastOwnerPID(GetEntityHandle());
 }
 
-bool CItem::HasExtraProto() const
-{
-	return ItemSystem::GetItemExtraProto(GetEntityHandle()) != nullptr;
-}
-
 bool CItem::HaveOwnership() const
 {
 	return ItemSystem::GetItemEvents(GetEntityHandle()).ownership != nullptr;

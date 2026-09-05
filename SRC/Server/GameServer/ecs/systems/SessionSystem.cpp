@@ -73,6 +73,8 @@
 #ifdef ENABLE_SWITCHBOT
 #include "../../new_switchbot.h"
 #include <Core/Logging.hpp>
+#include "CombatSystem.hpp"
+#include "MountSystem.hpp"
 #endif
 
 EVENTFUNC(save_event);
@@ -217,13 +219,13 @@ void CHARACTER::CreatePlayerProto(TPlayerTable& tab)
 {
     memset(&tab, 0, sizeof(TPlayerTable));
 
-    if (GetNewName().empty())
+    if (ecs::PlayerRuntime::GetPendingName(GetEntityHandle()).empty())
     {
         strlcpy(tab.name, GetName(), sizeof(tab.name));
     }
     else
     {
-        strlcpy(tab.name, GetNewName().c_str(), sizeof(tab.name));
+        strlcpy(tab.name, ecs::PlayerRuntime::GetPendingName(GetEntityHandle()).data(), sizeof(tab.name));
     }
 
     strlcpy(tab.ip, GetDesc() ? GetDesc()->GetHostName() : "", sizeof(tab.ip));
@@ -315,8 +317,8 @@ void CHARACTER::CreatePlayerProto(TPlayerTable& tab)
 
     tab.stamina = GetStamina();
 
-    tab.sRandomHP = GetRandomHP();
-    tab.sRandomSP = GetRandomSP();
+    tab.sRandomHP = ecs::PointSystem::GetRandomHP(GetEntityHandle());
+    tab.sRandomSP = ecs::PointSystem::GetRandomSP(GetEntityHandle());
 
     for (int i = 0; i < QUICKSLOT_MAX_NUM; ++i)
         tab.quickslot[i] = m_quickslot[i];
@@ -1218,7 +1220,7 @@ bool CHARACTER::Show(int32_t lMapIndex, int32_t x, int32_t y, int32_t z, bool bS
         g_registry.emplace_or_replace<ecs::DirtyTag>(GetEntityHandle());
     }
 
-    SetValidComboInterval(0);
+    CombatSystem::SetValidComboInterval(GetEntityHandle(), 0);
     ComputePoints();
 #ifdef ENABLE_FAKE_SHOP_HEADER
     if (IsPC())
@@ -1236,7 +1238,7 @@ bool CHARACTER::Show(int32_t lMapIndex, int32_t x, int32_t y, int32_t z, bool bS
                     continue;
 
                 if (ecs::PlayerRuntime::IsPC(viewerEntity) && ecs::PlayerRuntime::GetDesc(viewerEntity))
-                    UpdateMountInventoryCountOverhead(viewerEntity);
+                    MountSystem::UpdateMountInventoryCountOverhead(GetEntityHandle(), viewerEntity);
             }
         }
     }
@@ -1384,11 +1386,6 @@ void CHARACTER::Disconnect(const char* c_pszReason)
         GetDesc()->BindCharacter(nullptr);
 
     M2_DESTROY_CHARACTER(this);
-}
-
-float CHARACTER::GetDistanceFromSafeboxOpen() const
-{
-    return ecs::SessionSystem::GetDistanceFromSafeboxOpen(GetEntityHandle());
 }
 
 void CHARACTER::SetSafeboxOpenPosition()
@@ -1643,9 +1640,3 @@ void CHARACTER::SetSafeboxSize(int iSize)
     }
     ecs::SessionSystem::SetSafeboxSize(GetEntityHandle(), iSize);
 }
-
-int CHARACTER::GetSafeboxSize() const
-{
-    return ecs::SessionSystem::GetSafeboxSize(GetEntityHandle());
-}
-

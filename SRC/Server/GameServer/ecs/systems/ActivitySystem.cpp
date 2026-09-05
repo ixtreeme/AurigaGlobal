@@ -708,21 +708,6 @@ void CHARACTER::fishing_new_catch_failed()
     ActivitySystem::CatchFishingFailed(GetEntityHandle());
 }
 
-void CHARACTER::fishing_catch_decision(uint32_t itemVnum)
-{
-    ActivitySystem::CatchDecision(GetEntityHandle(), itemVnum);
-}
-
-void CHARACTER::mining_take()
-{
-    ActivitySystem::FinishMining(GetEntityHandle());
-}
-
-void CHARACTER::mining_cancel()
-{
-    ActivitySystem::CancelMining(GetEntityHandle());
-}
-
 void CHARACTER::mining(entt::entity load)
 {
     ActivitySystem::StartMining(

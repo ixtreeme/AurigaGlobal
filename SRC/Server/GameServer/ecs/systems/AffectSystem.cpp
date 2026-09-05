@@ -839,32 +839,8 @@ void CHARACTER::AttackedByBleeding(entt::entity attacker)
 }
 #endif
 
-void CHARACTER::RemoveFire()
-{
-    AffectSystem::RemoveFire(GetEntityHandle());
-}
-
-void CHARACTER::RemovePoison()
-{
-    AffectSystem::RemovePoison(GetEntityHandle());
-}
-
 #ifdef ENABLE_WOLFMAN_CHARACTER
-void CHARACTER::RemoveBleeding()
-{
-    AffectSystem::RemoveBleeding(GetEntityHandle());
-}
 #endif
-
-bool CHARACTER::IsImmune(uint32_t dwImmuneFlag)
-{
-    return AffectSystem::IsImmune(GetEntityHandle(), dwImmuneFlag);
-}
-
-void CHARACTER::ApplyMobAttribute(const TMobTable* table)
-{
-    AffectSystem::ApplyMobAttribute(GetEntityHandle(), table);
-}
 
 void AffectSystem_Update(entt::registry& reg, uint32_t tick)
 {
@@ -2071,11 +2047,11 @@ void CHARACTER::RemoveBadAffect()
 {
 	LOG_INFO("RemoveBadAffect {}", GetName());
 	// ��
-	RemovePoison();
+	AffectSystem::RemovePoison(GetEntityHandle());
 #ifdef ENABLE_WOLFMAN_CHARACTER
 	RemoveBleeding();
 #endif
-	RemoveFire();
+	AffectSystem::RemoveFire(GetEntityHandle());
 
 	// ����           : Value%�� ������ 5�ʰ� �Ӹ� ���� ���� ���ư���. (������ 1/2 Ȯ���� Ǯ��)               AFF_STUN
 	RemoveAffect(AFFECT_STUN);

@@ -2328,7 +2328,7 @@ void CHARACTER::Dead(entt::entity killer, bool bImmediateDead)
 			REMOVE_BIT(flags->instantFlag, INSTANT_FLAG_DEATH_PENALTY);
 	}
 
-	ClearSync();
+	NetworkSyncSystem::ClearSync(GetEntityHandle());
 
 	//LOG_INFO(1, "stun cancel %s[%d]", GetName(), (uint32_t)GetVID());
 	ecs::PlayerRuntime::CancelCharEvent(GetEntityHandle(), ecs::PlayerRuntime::CharEvent::Stun); //  ̺Ʈ δ.
@@ -7144,11 +7144,6 @@ bool CHARACTER::IsGodSpeeder() const
 	return false;
 }
 
-bool CHARACTER::IsDeathBlower() const
-{
-	return CombatSystem::IsDeathBlower(GetEntityHandle());
-}
-
 bool CHARACTER::IsReviver() const
 {
 	if (IS_SET(GetAIFlag(), AIFLAG_REVIVE))
@@ -7259,41 +7254,6 @@ void CHARACTER::SetRevive(bool mode)
 {
 	if (m_pkMobInst != nullptr)
 		m_pkMobInst->m_IsRevive = mode;
-}
-
-void CHARACTER::SetComboSequence(uint8_t seq)
-{
-	CombatSystem::SetComboSequence(GetEntityHandle(), seq);
-}
-
-uint8_t CHARACTER::GetComboSequence() const
-{
-	return CombatSystem::GetComboSequence(GetEntityHandle());
-}
-
-void CHARACTER::SetLastComboTime(uint32_t time)
-{
-	CombatSystem::SetLastComboTime(GetEntityHandle(), time);
-}
-
-uint32_t CHARACTER::GetLastComboTime() const
-{
-	return CombatSystem::GetLastComboTime(GetEntityHandle());
-}
-
-void CHARACTER::SetValidComboInterval(int interval)
-{
-	CombatSystem::SetValidComboInterval(GetEntityHandle(), interval);
-}
-
-int CHARACTER::GetValidComboInterval() const
-{
-	return CombatSystem::GetValidComboInterval(GetEntityHandle());
-}
-
-uint8_t CHARACTER::GetComboIndex() const
-{
-	return CombatSystem::GetComboIndex(GetEntityHandle());
 }
 
 void CHARACTER::IncreaseComboHackCount(int k)
@@ -7776,11 +7736,6 @@ void CheckTarget(entt::entity e)
 }
 
 } // namespace CombatSystem
-
-void CHARACTER::ClearTarget()
-{
-	CombatSystem::ClearTarget(GetEntityHandle());
-}
 
 void CHARACTER::SetTarget(entt::entity target)
 {

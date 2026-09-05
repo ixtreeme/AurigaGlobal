@@ -78,6 +78,7 @@
 #endif
 #ifdef ENABLE_CPP_DUNGEON_RAZOR93
 #include "../../RuneDungeon.h"
+#include "DragonSoulSystem.hpp"
 #include "../../Halloween2022Dungeon.h"
 #include "../../VikingDungeon.h"
 #endif
@@ -1120,7 +1121,7 @@ bool CItem::HasAttr(uint8_t bApply)
 
 #ifdef ENABLE_ITEM_EXTRA_PROTO
 
-		if (HasExtraProto())
+		if (ItemSystem::GetItemExtraProto(GetEntityHandle()))
 
 		{
 
@@ -2488,11 +2489,6 @@ LPITEM CHARACTER::GetWear(uint8_t bCell) const
 }
 
 
-void CHARACTER::SetWear(uint8_t bCell, entt::entity item)
-{
-	ecs::PlayerRuntime::SetWear(GetEntityHandle(), bCell, item);
-}
-
 namespace ecs::PlayerRuntime {
 
 void SetWear(entt::entity e, uint8_t bCell, entt::entity item)
@@ -2800,7 +2796,7 @@ bool CHARACTER::EquipItem(LPITEM item, int iCandidateCell)
 				if (nullptr != pAttrGroup)
 				{
 					const std::string& std = pAttrGroup->m_stEffectFileName;
-					SpecificEffectPacket(std.c_str());
+					NetworkSyncSystem::BroadcastSpecificEffect(g_registry, GetEntityHandle(), std.c_str());
 				}
 			}
 		}
@@ -3110,7 +3106,7 @@ bool CHARACTER::CanEquipNow(const LPITEM item, const TItemPos & srcCell, const T
 #endif
 
 #ifdef ENABLE_DS_SET
-	if ((DragonSoul_IsDeckActivated()) && (item->IsDragonSoul())) {
+	if ((DragonSoulSystem::IsDeckActivated(GetEntityHandle())) && (item->IsDragonSoul())) {
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 76, "");
 #endif
@@ -3152,7 +3148,7 @@ bool CHARACTER::CanUnequipNow(const LPITEM item, const TItemPos & srcCell, const
 	}
 
 #ifdef ENABLE_DS_SET
-	if ((DragonSoul_IsDeckActivated()) && (item->IsDragonSoul())) {
+	if ((DragonSoulSystem::IsDeckActivated(GetEntityHandle())) && (item->IsDragonSoul())) {
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 76, "");
 #endif
@@ -3259,7 +3255,7 @@ bool CHARACTER::DropItem(TItemPos Cell,
 	if (!CanHandleItem())
 	{
 #ifdef TEXTS_IMPROVEMENT
-		if (nullptr != DragonSoul_RefineWindow_GetOpener()) {
+		if (nullptr != DragonSoulSystem::GetRefineWindowOpener(GetEntityHandle())) {
 			ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 232, "");
 		}
 #endif
@@ -3583,7 +3579,7 @@ bool CHARACTER::MoveItem(TItemPos Cell, TItemPos DestCell,
 	if (!CanHandleItem())
 	{
 #ifdef TEXTS_IMPROVEMENT
-		if (nullptr != DragonSoul_RefineWindow_GetOpener()) {
+		if (nullptr != DragonSoulSystem::GetRefineWindowOpener(GetEntityHandle())) {
 			ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 232, "");
 		}
 #endif
@@ -3942,7 +3938,7 @@ bool CHARACTER::MoveItem(TItemPos Cell, TItemPos DestCell,
 				//UpdatePacket();
 #ifdef ENABLE_FAKE_SHOP_HEADER
 		// Frissítés saját magunknak
-				UpdateMountInventoryCountOverhead(this ? this->GetEntityHandle() : entt::null);
+				MountSystem::UpdateMountInventoryCountOverhead(GetEntityHandle(), this ? this->GetEntityHandle() : entt::null);
 				//SendLeaderboardData();
 				SendLeaderboardDataSkillMob(this ? this->GetEntityHandle() : entt::null);
 
@@ -3962,7 +3958,7 @@ bool CHARACTER::MoveItem(TItemPos Cell, TItemPos DestCell,
 						// CHARACTER::IsPC() is the descriptor test, which the original
 						// spelled out alongside it - one check covers both.
 						if (ecs::PlayerRuntime::GetDesc(viewerEntity))
-							UpdateMountInventoryCountOverhead(viewerEntity);
+							MountSystem::UpdateMountInventoryCountOverhead(GetEntityHandle(), viewerEntity);
 					}
 				}
 #endif
@@ -6239,7 +6235,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 					case 71020:
 						if (quest::CQuestManager::instance().GetEventFlag("arena_potion_limit_count") < 10000)
 						{
-							if (GetPotionLimit() <= 0)
+							if (ecs::PlayerRuntime::GetPotionLimit(GetEntityHandle()) <= 0)
 							{
 #ifdef TEXTS_IMPROVEMENT
 								ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 362, "");
@@ -6318,7 +6314,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 					if (GetWarMap())
 						GetWarMap()->UsePotion(GetEntityHandle(), itemEntity);
 
-					SetPotionLimit(GetPotionLimit() - 1);
+					ecs::PlayerRuntime::SetPotionLimit(GetEntityHandle(), ecs::PlayerRuntime::GetPotionLimit(GetEntityHandle()) - 1);
 
 					//RESTRICT_USE_SEED_OR_MOONBOTTLE
 					ItemSystem::ConsumeItemEcs(itemEntity);
@@ -8680,7 +8676,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 				case 71020:
 					if (quest::CQuestManager::instance().GetEventFlag("arena_potion_limit_count") < 10000)
 					{
-						if (GetPotionLimit() <= 0)
+						if (ecs::PlayerRuntime::GetPotionLimit(GetEntityHandle()) <= 0)
 						{
 #ifdef TEXTS_IMPROVEMENT
 							ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 362, "");
@@ -8758,7 +8754,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 				if (GetWarMap())
 					GetWarMap()->UsePotion(GetEntityHandle(), itemEntity);
 
-				SetPotionLimit(GetPotionLimit() - 1);
+				ecs::PlayerRuntime::SetPotionLimit(GetEntityHandle(), ecs::PlayerRuntime::GetPotionLimit(GetEntityHandle()) - 1);
 
 				//RESTRICT_USE_SEED_OR_MOONBOTTLE
 				ItemSystem::ConsumeItemEcs(itemEntity);
@@ -8816,7 +8812,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 				GetWarMap()->UsePotion(GetEntityHandle(), itemEntity);
 
 			ItemSystem::ConsumeItem(itemEntity);
-			SetPotionLimit(GetPotionLimit() - 1);
+			ecs::PlayerRuntime::SetPotionLimit(GetEntityHandle(), ecs::PlayerRuntime::GetPotionLimit(GetEntityHandle()) - 1);
 			break;
 
 		case USE_POTION_CONTINUE:
@@ -9237,7 +9233,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 				return false;
 			}
 
-			if ((DragonSoul_IsDeckActivated()) && (item2->IsEquipped())) {
+			if ((DragonSoulSystem::IsDeckActivated(GetEntityHandle())) && (item2->IsEquipped())) {
 #ifdef TEXTS_IMPROVEMENT
 				ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 76, "");
 #endif
@@ -13619,7 +13615,7 @@ bool CHARACTER::DestroyItem(TItemPos Cell)
 	LPITEM item = nullptr;
 	if (!CanHandleItem()) {
 #ifdef TEXTS_IMPROVEMENT
-		if (nullptr != DragonSoul_RefineWindow_GetOpener()) {
+		if (nullptr != DragonSoulSystem::GetRefineWindowOpener(GetEntityHandle())) {
 			ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 232, "");
 		}
 #endif
@@ -13845,7 +13841,7 @@ bool CHARACTER::CanHandleItem(bool bSkipCheckRefine, bool bSkipObserver)
 		if (m_bUnderRefine)
 			return false;
 
-	if (IsCubeOpen() || nullptr != DragonSoul_RefineWindow_GetOpener())
+	if (IsCubeOpen() || nullptr != DragonSoulSystem::GetRefineWindowOpener(GetEntityHandle()))
 		return false;
 
 #ifdef __ATTR_TRANSFER_SYSTEM__
@@ -15252,11 +15248,6 @@ void CHARACTER::BuffOnAttr_RemoveBuffsFromItem(LPITEM pItem)
 		GetEntityHandle(), pItem ? pItem->GetEntityHandle() : entt::null);
 }
 
-void CHARACTER::BuffOnAttr_ClearAll()
-{
-	ecs::PlayerRuntime::BuffOnAttr_ClearAll(GetEntityHandle());
-}
-
 void CHARACTER::BuffOnAttr_ValueChange(uint8_t bType, uint8_t bOldValue, uint8_t bNewValue)
 {
 	ecs::PlayerRuntime::BuffOnAttr_ValueChange(GetEntityHandle(), bType, bOldValue, bNewValue);
@@ -15964,11 +15955,6 @@ void CItem::StartUniqueExpireEvent()
 	ItemSystem::StartUniqueExpireEvent(GetEntityHandle());
 }
 
-void CItem::StopUniqueExpireEvent()
-{
-	ItemSystem::StopUniqueExpireEvent(GetEntityHandle());
-}
-
 void CItem::SetTimerBasedOnWearExpireEvent(LPEVENT pkEvent)
 {
 	ItemSystem::GetItemEvents(GetEntityHandle()).timerBasedOnWearExpire = pkEvent;
@@ -16048,11 +16034,6 @@ void CItem::StartRealTimeExpireEvent()
 void CItem::StartAccessorySocketExpireEvent()
 {
 	ItemSystem::StartAccessorySocketExpireEvent(GetEntityHandle());
-}
-
-void CItem::StopAccessorySocketExpireEvent()
-{
-	ItemSystem::StopAccessorySocketExpireEvent(GetEntityHandle());
 }
 
 void CItem::SetAccessorySocketExpireEvent(LPEVENT pkEvent)
@@ -16498,16 +16479,6 @@ void CItem::AttrLog()
 }
 
 
-bool CItem::IsRealTimeItem()
-{
-	return ItemSystem::IsRealTimeItem(GetEntityHandle());
-}
-
-bool CItem::IsRealTimeFirstUseItem()
-{
-	return ItemSystem::IsRealTimeFirstUseItem(GetEntityHandle());
-}
-
 bool CItem::IsUnlimitedTimeUnique()
 {
 	return ItemSystem::IsUnlimitedTimeUnique(GetEntityHandle());
@@ -16565,16 +16536,6 @@ int GiveMoreTime_Fix(entt::entity item, uint32_t dwTime)
 }
 
 } // namespace ItemSystem
-
-int CItem::GiveMoreTime_Per(float fPercent)
-{
-	return ItemSystem::GiveMoreTime_Per(GetEntityHandle(), fPercent);
-}
-
-int CItem::GiveMoreTime_Fix(uint32_t dwTime)
-{
-	return ItemSystem::GiveMoreTime_Fix(GetEntityHandle(), dwTime);
-}
 
 int	CItem::GetDuration()
 {

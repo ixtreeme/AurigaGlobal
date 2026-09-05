@@ -77,6 +77,8 @@
 #ifdef __PET_SYSTEM__
 #include "../../PetSystem.h"
 #include <Core/Logging.hpp>
+#include "DragonSoulSystem.hpp"
+#include "SkillSystem.hpp"
 #endif
 #ifdef __NEWPET_SYSTEM__
 #include "../../New_PetSystem.h"
@@ -150,7 +152,7 @@ void CHARACTER::ComputePoints()
 	m_alignAppliedNormal = 0;
 	m_alignAppliedSkill = 0;
 
-	BuffOnAttr_ClearAll();
+	ecs::PlayerRuntime::BuffOnAttr_ClearAll(GetEntityHandle());
 	// Mount bonuszok eltavolitasa
 	for (int i = 0; i < POINT_MAX_NUM; ++i) {
 		if (i == POINT_ATTBONUS_MONSTER || i == POINT_RESIST_MAGIC || i == POINT_CRITICAL_PCT ||
@@ -178,18 +180,18 @@ void CHARACTER::ComputePoints()
 #else
 	SetPart(PART_MAIN, GetOriginalPart(PART_MAIN));
 #endif
-	SetPart(PART_WEAPON, GetOriginalPart(PART_WEAPON));
-	SetPart(PART_HEAD, GetOriginalPart(PART_HEAD));
-	SetPart(PART_HAIR, GetOriginalPart(PART_HAIR));
+	SetPart(PART_WEAPON, ecs::PlayerRuntime::GetOriginalPart(GetEntityHandle(), PART_WEAPON));
+	SetPart(PART_HEAD, ecs::PlayerRuntime::GetOriginalPart(GetEntityHandle(), PART_HEAD));
+	SetPart(PART_HAIR, ecs::PlayerRuntime::GetOriginalPart(GetEntityHandle(), PART_HAIR));
 #ifdef ENABLE_RUNE_SYSTEM
-	SetPart(PART_RUNE, GetOriginalPart(PART_RUNE));
+	SetPart(PART_RUNE, ecs::PlayerRuntime::GetOriginalPart(GetEntityHandle(), PART_RUNE));
 #endif
 #ifdef ENABLE_ACCE_SYSTEM
-	SetPart(PART_ACCE, GetOriginalPart(PART_ACCE));
+	SetPart(PART_ACCE, ecs::PlayerRuntime::GetOriginalPart(GetEntityHandle(), PART_ACCE));
 #endif
 #ifdef ENABLE_COSTUME_EFFECT
-	SetPart(PART_EFFECT_BODY, GetOriginalPart(PART_EFFECT_BODY));
-	SetPart(PART_EFFECT_WEAPON, GetOriginalPart(PART_EFFECT_WEAPON));
+	SetPart(PART_EFFECT_BODY, ecs::PlayerRuntime::GetOriginalPart(GetEntityHandle(), PART_EFFECT_BODY));
+	SetPart(PART_EFFECT_WEAPON, ecs::PlayerRuntime::GetOriginalPart(GetEntityHandle(), PART_EFFECT_WEAPON));
 #endif
 	SetPoint(POINT_PARTY_ATTACKER_BONUS, lAttackerBonus);
 	SetPoint(POINT_PARTY_TANKER_BONUS, lTankerBonus);
@@ -217,8 +219,8 @@ void CHARACTER::ComputePoints()
 	if (IsPC())
 	{
 		// AÖ´ë »ý¸í·Â/Á¤1A·Â
-		iMaxHP = JobInitialPoints[GetJob()].max_hp + GetRandomHP() + GetPoint(POINT_HT) * JobInitialPoints[GetJob()].hp_per_ht;
-		iMaxSP = JobInitialPoints[GetJob()].max_sp + GetRandomSP() + GetPoint(POINT_IQ) * JobInitialPoints[GetJob()].sp_per_iq;
+		iMaxHP = JobInitialPoints[GetJob()].max_hp + ecs::PointSystem::GetRandomHP(GetEntityHandle()) + GetPoint(POINT_HT) * JobInitialPoints[GetJob()].hp_per_ht;
+		iMaxSP = JobInitialPoints[GetJob()].max_sp + ecs::PointSystem::GetRandomSP(GetEntityHandle()) + GetPoint(POINT_IQ) * JobInitialPoints[GetJob()].sp_per_iq;
 		iMaxStamina = JobInitialPoints[GetJob()].max_stamina + GetPoint(POINT_HT) * JobInitialPoints[GetJob()].stamina_per_con;
 
 		{
@@ -533,7 +535,7 @@ void CHARACTER::ComputePoints()
 	CHARACTER_MANAGER::Instance().CheckBonusEvent(GetEntityHandle());
 #endif
 
-	if (DragonSoul_IsDeckActivated())
+	if (DragonSoulSystem::IsDeckActivated(GetEntityHandle()))
 	{
 		for (int i = WEAR_MAX_NUM + DS_SLOT_MAX * DragonSoul_GetActiveDeck();
 			i < WEAR_MAX_NUM + DS_SLOT_MAX * (DragonSoul_GetActiveDeck() + 1); i++)
@@ -553,7 +555,7 @@ void CHARACTER::ComputePoints()
 	if (GetSP() > GetMaxSP())
 		PointChange(POINT_SP, GetMaxSP() - GetSP());
 
-	ComputeSkillPoints();
+	SkillSystem::ComputeSkillPoints(GetEntityHandle());
 
 	RefreshAffect();
 

@@ -38,7 +38,6 @@ class CItem : public CEntity
 #ifdef ENABLE_ITEM_EXTRA_PROTO
 		void		SetExtraProto(TItemExtraProto* Proto);
 		TItemExtraProto* GetExtraProto();
-		bool		HasExtraProto() const;
 #endif
 
 #ifdef ATTR_LOCK
@@ -166,13 +165,9 @@ class CItem : public CEntity
 		void		SetTimerBasedOnWearExpireEvent(LPEVENT pkEvent);
 
 		void		StartRealTimeExpireEvent();
-		bool		IsRealTimeItem();
-		bool		IsRealTimeFirstUseItem();
 		bool		IsUnlimitedTimeUnique();
 
-		void		StopUniqueExpireEvent();
 		void		StopTimerBasedOnWearExpireEvent();
-		void		StopAccessorySocketExpireEvent();
 
 		//			일단 REAL_TIME과 TIMER_BASED_ON_WEAR 아이템에 대해서만 제대로 동작함.
 		int			GetDuration();
@@ -270,8 +265,6 @@ class CItem : public CEntity
 
 		// 용혼석
 		bool		IsDragonSoul();
-		int		GiveMoreTime_Per(float fPercent);
-		int		GiveMoreTime_Fix(uint32_t dwTime);
 #ifdef ENABLE_SOUL_SYSTEM
 	public:
 		void		StartSoulItemEvent();

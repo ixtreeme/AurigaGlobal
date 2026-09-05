@@ -1237,7 +1237,11 @@ void CHARACTER_MANAGER::Update(int iPulse)
 			else
 			{
 				//for_each(v.begin(), v.end(), mem_fun(&CFSM::Update));
-				for_each(v.begin(), v.end(), bind(&CHARACTER::UpdateCharacter, std::placeholders::_1, iPulse));
+				// m_map_pkPCChr is still keyed on the pointer, so the entity comes from it here.
+				for_each(v.begin(), v.end(), [](LPCHARACTER ch) {
+					if (ch)
+						AISystem::UpdateStateMachine(ch->GetEntityHandle());
+				});
 			}
 		}
 		//#ifdef ENABLE_FAKE_SHOP_HEADER
