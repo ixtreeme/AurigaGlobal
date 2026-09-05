@@ -73,8 +73,19 @@ if(WIN32)
 endif()
 add_test(NAME combat_state COMMAND CombatStateTests)
 
+add_executable(AffectLifecycleTests EXCLUDE_FROM_ALL
+    ${CMAKE_SOURCE_DIR}/tests/server/AffectLifecycleTests.cpp
+    ecs/systems/AffectSystem.cpp
+    affect.cpp
+)
+target_link_libraries(AffectLifecycleTests PRIVATE SERVER EnTT::EnTT LUA)
+if(WIN32)
+    target_link_libraries(AffectLifecycleTests PRIVATE ws2_32 bcrypt secur32 crypt32 shlwapi)
+endif()
+add_test(NAME affect_lifecycle COMMAND AffectLifecycleTests)
+
 if(ENABLE_ASAN AND EXISTS "${AURIGA_ASAN_RUNTIME_DLL}")
-    foreach(_asan_target GameServer ItemAttributeTests MountLifecycleTests SafeboxLifecycleTests ItemManagerLifecycleTests QuickslotTests PointCalculationTests CombatStateTests)
+    foreach(_asan_target GameServer ItemAttributeTests MountLifecycleTests SafeboxLifecycleTests ItemManagerLifecycleTests QuickslotTests PointCalculationTests CombatStateTests AffectLifecycleTests)
         add_custom_command(TARGET ${_asan_target} POST_BUILD
             COMMAND ${CMAKE_COMMAND} -E copy_if_different
                 "${AURIGA_ASAN_RUNTIME_DLL}"

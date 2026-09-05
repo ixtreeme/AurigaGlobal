@@ -10,6 +10,9 @@
 #include "MountSystem.hpp"
 #include "VisibilitySystem.hpp"
 #include "SkillSystem.hpp"
+#include "SocialSystem.hpp"
+#include "../EntityInvariants.hpp"
+#include <unordered_set>
 
 #include "../../affect.h"
 #include "../../arena.h"
@@ -42,6 +45,8 @@
 #include "../events.hpp"
 #include "../EventDispatcher.hpp"
 #include <Core/Logging.hpp>
+
+void SendAffectRemovePacket(LPDESC d, uint32_t pid, uint32_t type, uint8_t point);
 
 namespace {
 
@@ -303,16 +308,19 @@ void MarkFire(entt::entity e, bool value)
     g_registry.emplace_or_replace<ecs::DirtyTag>(e);
 }
 
-void SyncAffectList(entt::entity e, LegacyCharHandle ch)
+ecs::AffectList* AffectState(entt::entity e)
 {
-    if (!ch || e == entt::null || !g_registry.valid(e)) {
-        return;
-    }
+    if (e == entt::null || !g_registry.valid(e) ||
+        !ecs::Invariants::HasAnyTypeTag(g_registry, e))
+        return nullptr;
+    return g_registry.try_get<ecs::AffectList>(e);
+}
 
-    auto& affectList = g_registry.get_or_emplace<ecs::AffectList>(e);
-    affectList.affects.assign(ch->GetAffectContainer().begin(), ch->GetAffectContainer().end());
-    affectList.flags = ch->GetAffectFlags();
-    affectList.isLoaded = true;
+bool SameAffect(const CAffect& a, const CAffect& b)
+{
+    return a.dwType == b.dwType && a.bApplyOn == b.bApplyOn &&
+        a.lApplyValue == b.lApplyValue && a.dwFlag == b.dwFlag &&
+        a.lDuration == b.lDuration && a.lSPCost == b.lSPCost;
 }
 
 } // namespace
@@ -582,6 +590,109 @@ void ApplyMobAttribute(entt::entity target, const TMobTable* table)
     }
 }
 
+AffectLease Attach(entt::entity e, const CAffect& value)
+{
+    auto* state = AffectState(e);
+    if (!state || value.bApplyOn >= POINT_MAX_NUM)
+        return {};
+    AffectLease affect(CAffect::Acquire(), &CAffect::Release);
+    *affect = value;
+    state->affects.push_back(affect);
+    return affect;
+}
+
+AffectLease Lease(entt::entity e, const CAffect* affect)
+{
+    const auto* state = AffectState(e);
+    if (!state || !affect)
+        return {};
+    for (const auto& entry : state->affects)
+        if (entry.get() == affect)
+            return entry;
+    return {};
+}
+
+AffectLease Detach(entt::entity e, const CAffect* affect)
+{
+    auto lease = Lease(e, affect);
+    if (lease)
+        AffectState(e)->affects.remove(lease);
+    return lease;
+}
+
+std::vector<AffectLease> Snapshot(entt::entity e)
+{
+    const auto* state = AffectState(e);
+    if (!state)
+        return {};
+    return {state->affects.begin(), state->affects.end()};
+}
+
+TAffectFlag GetFlags(entt::entity e)
+{
+    const auto* state = AffectState(e);
+    return state ? state->flags : TAffectFlag{};
+}
+
+void SetFlag(entt::entity e, uint32_t flag, bool enabled)
+{
+    // Some affect types store an item ID in dwFlag. It is not a bit index.
+    if (flag == 0 || flag >= AFF_BITS_MAX)
+        return;
+    if (auto* state = AffectState(e)) {
+        if (enabled)
+            state->flags.Set(static_cast<int>(flag));
+        else
+            state->flags.Reset(static_cast<int>(flag));
+    }
+}
+
+bool IsLoaded(entt::entity e)
+{
+    const auto* state = AffectState(e);
+    return state && state->isLoaded;
+}
+
+void SetLoaded(entt::entity e, bool loaded)
+{
+    if (auto* state = AffectState(e))
+        state->isLoaded = loaded;
+}
+
+void ComputeAffect(entt::entity e, CAffect affect, bool add)
+{
+    if (!AffectState(e) || affect.bApplyOn >= POINT_MAX_NUM)
+        return;
+    if (add && affect.dwType >= GUILD_SKILL_START && affect.dwType <= GUILD_SKILL_END) {
+        auto* guild = ecs::SocialSystem::GetGuild(e);
+        if (!guild || !guild->UnderAnyWar())
+            return;
+    }
+
+    SetFlag(e, affect.dwFlag, add);
+    const int64_t value = affect.lApplyValue;
+    ecs::PointSystem::Change(e, affect.bApplyOn, add ? value : -value);
+    if (!AffectState(e))
+        return;
+
+    // Only these unmigrated skill timers still need a CHARACTER leaf.
+    // No component references or borrowed affect pointers cross PointChange.
+    if (affect.dwType == SKILL_MUYEONG) {
+        if (auto* ch = LegacyCharOf(e)) {
+            if (add) ch->StartMuyeongEvent();
+            else ch->StopMuyeongEvent();
+        }
+    }
+#ifdef ENABLE_NEW_GYEONGGONG_SKILL
+    if (affect.dwType == SKILL_GYEONGGONG) {
+        if (auto* ch = LegacyCharOf(e)) {
+            if (add) ch->StartGyeongGongEvent();
+            else ch->StopGyeongGongEvent();
+        }
+    }
+#endif
+}
+
 CAffect* FindAffect(entt::entity e, uint32_t type, uint8_t apply)
 {
     if (e == entt::null || !g_registry.valid(e)) {
@@ -593,13 +704,13 @@ CAffect* FindAffect(entt::entity e, uint32_t type, uint8_t apply)
         return nullptr;
     }
 
-    for (auto* affect : affectList->affects) {
+    for (const auto& affect : affectList->affects) {
         if (!affect) {
             continue;
         }
 
         if (affect->dwType == type && (apply == APPLY_NONE || affect->bApplyOn == apply)) {
-            return affect;
+            return affect.get();
         }
     }
 
@@ -613,23 +724,18 @@ CAffect* FindAffect(entt::entity e, uint32_t type, uint8_t apply, int32_t value)
     const auto* affectList = g_registry.try_get<ecs::AffectList>(e);
     if (!affectList)
         return nullptr;
-    for (auto* affect : affectList->affects)
+    for (const auto& affect : affectList->affects)
     {
         if (affect && affect->dwType == type && affect->bApplyOn == apply &&
             affect->lApplyValue == value)
-            return affect;
+            return affect.get();
     }
     return nullptr;
 }
 
 bool IsAffectFlag(entt::entity e, uint32_t flag)
 {
-    if (e == entt::null || !g_registry.valid(e)) {
-        return false;
-    }
-
-    const auto* affectList = g_registry.try_get<ecs::AffectList>(e);
-    return affectList ? affectList->flags.IsSet(flag) : false;
+    return flag > 0 && flag < AFF_BITS_MAX && GetFlags(e).IsSet(static_cast<int>(flag));
 }
 
 bool AddAffect(entt::entity e, uint32_t type, uint8_t applyOn, int32_t applyValue,
@@ -642,50 +748,102 @@ bool AddAffect(entt::entity e, uint32_t type, uint8_t applyOn, int32_t applyValu
     }
 
     const bool result = ch->AddAffect(type, applyOn, applyValue, flag, duration, spCost, overwrite, isCube);
-    SyncAffectList(e, ch);
+
     return result;
 }
 
 bool RemoveAffect(entt::entity e, uint32_t type)
 {
-    auto* ch = LegacyCharOf(e);
-    if (!ch) {
+    if (!AffectState(e))
         return false;
-    }
-
-    const bool result = ch->RemoveAffect(type);
-    SyncAffectList(e, ch);
-    return result;
+#ifdef TEXTS_IMPROVEMENT
+    if (type == AFFECT_BLOCK_CHAT)
+        ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 474, "");
+#endif
+    bool removed = false;
+    // Finite batch: an effect added by a removal callback belongs to the next
+    // operation, not to an unbounded Find/Remove loop.
+    for (const auto& affect : Snapshot(e))
+        if (affect && affect->dwType == type)
+            removed = RemoveAffect(e, affect.get()) || removed;
+    return removed;
 }
 
 bool RemoveAffect(entt::entity e, CAffect* affect)
 {
-    auto* ch = LegacyCharOf(e);
-    if (!ch || !affect) {
+    const auto lease = Detach(e, affect);
+    if (!lease)
         return false;
-    }
+    const CAffect value = *lease;
+    ComputeAffect(e, value, false);
+    if (!AffectState(e))
+        return true;
 
-    const bool result = ch->RemoveAffect(affect);
-    SyncAffectList(e, ch);
-    return result;
+    // Preserve the revive-invisibility/mount exceptions: their removal must
+    // not reapply all the other buffs through a full point recalculation.
+    if (value.dwType != AFFECT_REVIVE_INVISIBLE
+#ifdef ENABLE_BUG_FIXES
+        && value.dwType != AFFECT_MOUNT
+#endif
+    )
+        ecs::PointSystem::Compute(e);
+    else
+        NetworkSyncSystem::UpdatePacket(e);
+    if (!AffectState(e))
+        return true;
+
+    const auto hp = ecs::PointSystem::Get(e, POINT_HP);
+    const auto maxHP = ecs::PointSystem::GetMaxHP(e);
+    if (hp > maxHP)
+        ecs::PointSystem::Change(e, POINT_HP, static_cast<int64_t>(maxHP) - hp);
+    if (!AffectState(e))
+        return true;
+    const auto sp = ecs::PointSystem::Get(e, POINT_SP);
+    const auto maxSP = ecs::PointSystem::GetMaxSP(e);
+    if (sp > maxSP)
+        ecs::PointSystem::Change(e, POINT_SP, static_cast<int64_t>(maxSP) - sp);
+    if (!AffectState(e))
+        return true;
+
+    if (test_server)
+        LOG_TRACE("AFFECT_REMOVE: {} (flag {} apply: {})",
+            ecs::PlayerRuntime::GetName(e), value.dwFlag, static_cast<int>(value.bApplyOn));
+    if (ecs::PlayerRuntime::IsPC(e))
+        if (auto* desc = ecs::PlayerRuntime::GetDesc(e))
+            SendAffectRemovePacket(desc, ecs::PlayerRuntime::GetPlayerID(e),
+                value.dwType, value.bApplyOn);
+    return true;
 }
 
 void RemoveBadAffects(entt::entity e)
 {
-    if (auto* ch = LegacyCharOf(e))
-    {
-        ch->RemoveBadAffect();
-        SyncAffectList(e, ch);
-    }
+    if (!AffectState(e))
+        return;
+    RemovePoison(e);
+#ifdef ENABLE_WOLFMAN_CHARACTER
+    RemoveBleeding(e);
+#endif
+    RemoveFire(e);
+    RemoveAffect(e, AFFECT_STUN);
+    RemoveAffect(e, AFFECT_SLOW);
+    RemoveAffect(e, SKILL_TUSOK);
 }
 
 void RemoveGoodAffects(entt::entity e)
 {
-    if (auto* ch = LegacyCharOf(e))
-    {
-        ch->RemoveGoodAffect();
-        SyncAffectList(e, ch);
-    }
+    constexpr uint32_t types[] = {
+        AFFECT_MOV_SPEED, AFFECT_ATT_SPEED, AFFECT_STR, AFFECT_DEX,
+        AFFECT_INT, AFFECT_CON, AFFECT_CHINA_FIREWORK, SKILL_JEONGWI,
+        SKILL_GEOMKYUNG, SKILL_GYEONGGONG, SKILL_GWIGEOM, SKILL_TERROR,
+        SKILL_JUMAGAP, SKILL_MANASHILED, SKILL_HOSIN, SKILL_REFLECT,
+        SKILL_GICHEON, SKILL_KWAESOK, SKILL_JEUNGRYEOK, SKILL_CHUNKEON,
+        SKILL_EUNHYUNG,
+#ifdef ENABLE_WOLFMAN_CHARACTER
+        SKILL_JEOKRANG, SKILL_CHEONGRANG,
+#endif
+    };
+    for (const auto type : types)
+        RemoveAffect(e, type);
 }
 
 void ClearAffect(entt::entity e, bool save)
@@ -696,18 +854,45 @@ void ClearAffect(entt::entity e, bool save)
     }
 
     ch->ClearAffect(save);
-    SyncAffectList(e, ch);
+
 }
 
 void RefreshAffect(entt::entity e)
 {
-    auto* ch = LegacyCharOf(e);
-    if (!ch) {
+    auto* state = AffectState(e);
+    if (!state || state->refreshToken)
         return;
-    }
 
-    ch->RefreshAffect();
-    SyncAffectList(e, ch);
+    // A unique pass token also detects remove/re-emplace of the component on
+    // the same entity. Nested refresh must not recursively apply the bonuses.
+    static uint64_t nextToken = 0;
+    const uint64_t token = ++nextToken;
+    state->refreshToken = token;
+    struct RefreshGuard {
+        entt::entity entity;
+        uint64_t token;
+        ~RefreshGuard() {
+            if (auto* current = AffectState(entity); current && current->refreshToken == token)
+                current->refreshToken = 0;
+        }
+    } guard{e, token};
+
+    struct Entry { AffectLease lease; CAffect value; };
+    std::vector<Entry> snapshot;
+    std::unordered_set<const CAffect*> seen;
+    for (const auto& affect : state->affects)
+        if (affect && seen.insert(affect.get()).second)
+            snapshot.push_back({affect, *affect});
+
+    for (const auto& entry : snapshot) {
+        const auto* current = AffectState(e);
+        if (!current || current->refreshToken != token)
+            return;
+        // A callback may remove/replace the next affect. Keep its allocation
+        // alive, but never apply an obsolete snapshot or a newly added entry.
+        if (Lease(e, entry.lease.get()) && SameAffect(*entry.lease, entry.value))
+            ComputeAffect(e, entry.value, true);
+    }
 }
 
 bool IsPolymorphed(entt::entity e)
@@ -791,25 +976,10 @@ void SetPolymorph(entt::entity e, uint32_t raceVnum, bool maintainStats)
 	g_registry.emplace_or_replace<ecs::DirtyTag>(e);
 }
 
-void UpdateAffect(entt::registry& reg, uint32_t tick)
+void UpdateAffect(entt::registry&, uint32_t)
 {
-    if ((tick % PASSES_PER_SEC(1)) != 0) {
-        return;
-    }
-
-    auto view = reg.view<ecs::AffectList, ecs::LegacyCharPtr>();
-    view.each([&](entt::entity e, ecs::AffectList& affectList, const ecs::LegacyCharPtr& legacy) {
-        if (affectList.affects.empty() && affectList.skillAffects.empty()) {
-            return;
-        }
-
-        auto* ch = legacy.ptr;
-        if (!ch) {
-            return;
-        }
-
-        SyncAffectList(e, ch);
-    });
+    // Expiry is still scheduled by affect_event/ProcessAffect exactly once.
+    // AffectList is authoritative now; no CHARACTER-to-ECS mirror pass exists.
 }
 
 } // namespace AffectSystem
@@ -844,68 +1014,7 @@ void CHARACTER::AttackedByBleeding(entt::entity attacker)
 
 void AffectSystem_Update(entt::registry& reg, uint32_t tick)
 {
-    if ((tick % PASSES_PER_SEC(1)) != 0) {
-        return;
-    }
-
     AffectSystem::UpdateAffect(reg, tick);
-
-    // Legacy CHARACTER::ProcessAffect owns CAffect* lifetime. The ECS
-    // component is a mirror only; releasing those pointers here races the
-    // legacy affect event and corrupts the heap on login/tick boundaries.
-    return;
-
-    auto view = reg.view<ecs::AffectList, ecs::LegacyCharPtr>();
-    view.each([&](const entt::entity entity, ecs::AffectList& affectList, const ecs::LegacyCharPtr& legacy) {
-        (void)legacy;
-        if (affectList.affects.empty() && affectList.skillAffects.empty()) {
-            return;
-        }
-        bool dirty = false;
-
-        for (auto it = affectList.affects.begin(); it != affectList.affects.end();) {
-            CAffect* affect = *it;
-            if (!affect) {
-                it = affectList.affects.erase(it);
-                dirty = true;
-                continue;
-            }
-
-            if (affect->lDuration != INFINITE_AFFECT_DURATION) {
-                --affect->lDuration;
-            }
-
-            if (affect->lDuration > 0 || affect->lDuration == INFINITE_AFFECT_DURATION) {
-                ++it;
-                continue;
-            }
-
-            g_dispatcher.trigger(ecs::EvAffectExpired { entity, affect->dwType });
-            CAffect::Release(affect);
-            it = affectList.affects.erase(it);
-            dirty = true;
-        }
-
-        affectList.skillAffects.erase(
-            std::remove_if(affectList.skillAffects.begin(), affectList.skillAffects.end(), [&](TAffectSkills& affect) {
-                if (affect.lDuration != INFINITE_AFFECT_DURATION) {
-                    --affect.lDuration;
-                }
-
-                if (affect.lDuration > 0 || affect.lDuration == INFINITE_AFFECT_DURATION) {
-                    return false;
-                }
-
-                g_dispatcher.trigger(ecs::EvAffectExpired { entity, affect.dwType });
-                dirty = true;
-                return true;
-            }),
-            affectList.skillAffects.end());
-
-        if (dirty) {
-            reg.emplace_or_replace<ecs::DirtyTag>(entity);
-        }
-    });
 }
 
 // char_affect.cpp moved into AffectSystem.cpp
@@ -944,17 +1053,22 @@ void SendAffectAddPacket(LPDESC d, CAffect * pkAff)
 // Affect
 CAffect * CHARACTER::FindAffect(uint32_t dwType, uint8_t bApply) const
 {
-	auto it = m_list_pkAffect.begin();
+    return AffectSystem::FindAffect(GetEntityHandle(), dwType, bApply);
+}
 
-	while (it != m_list_pkAffect.end())
-	{
-		CAffect * pkAffect = *it++;
+std::vector<std::shared_ptr<CAffect>> CHARACTER::GetAffectContainer() const
+{
+    return AffectSystem::Snapshot(GetEntityHandle());
+}
 
-		if (pkAffect->dwType == dwType && (bApply == APPLY_NONE || bApply == pkAffect->bApplyOn))
-			return pkAffect;
-	}
+TAffectFlag CHARACTER::GetAffectFlags() const
+{
+    return AffectSystem::GetFlags(GetEntityHandle());
+}
 
-	return nullptr;
+bool CHARACTER::IsLoadedAffect() const
+{
+    return AffectSystem::IsLoaded(GetEntityHandle());
 }
 
 EVENTFUNC(affect_event)
@@ -1075,69 +1189,66 @@ void CHARACTER::StartAffectEvent()
 }
 
 #ifdef ENABLE_SKILLS_BUFF_ALTERNATIVE
-void CHARACTER::ClearAffectSkills() {
-	size_t j = m_list_pkAffectSkills.size();
-	if (j < 1)
-		return;
-
-	m_list_pkAffectSkills.erase(m_list_pkAffectSkills.begin(), m_list_pkAffectSkills.end());
-	m_list_pkAffectSkills.shrink_to_fit();
+void CHARACTER::ClearAffectSkills()
+{
+    if (auto* state = AffectState(GetEntityHandle()))
+        state->skillAffects.clear();
 }
 
-void CHARACTER::SaveAffectSkills(uint32_t dwType, uint8_t bApplyOn, int32_t lApplyValue, uint32_t dwFlag, int32_t lDuration, int32_t lSPCost) {
-	TAffectSkills t;
-	t.dwType = dwType;
-	t.bApplyOn = bApplyOn;
-	t.lApplyValue = lApplyValue;
-	t.dwFlag = dwFlag;
-	t.lDuration = lDuration;
-	t.lSPCost = lSPCost;
-	t.dwTime = get_global_time();
-
-	m_list_pkAffectSkills.push_back(t);
+void CHARACTER::SaveAffectSkills(uint32_t dwType, uint8_t bApplyOn, int32_t lApplyValue, uint32_t dwFlag, int32_t lDuration, int32_t lSPCost)
+{
+    if (auto* state = AffectState(GetEntityHandle()))
+        state->skillAffects.push_back({dwType, bApplyOn, lApplyValue, dwFlag,
+            lDuration, lSPCost, static_cast<uint32_t>(get_global_time())});
 }
 
-void CHARACTER::LoadAffectSkills() {
-	size_t j = m_list_pkAffectSkills.size();
-	if (j < 1)
-		return;
-
-	int32_t lDuration = 0;
-	for (size_t i = 0; i < j; ++i) {
-		lDuration = m_list_pkAffectSkills[i].lDuration - (get_global_time() - m_list_pkAffectSkills[i].dwTime);
-		if (lDuration > 0)
-			AddAffect(m_list_pkAffectSkills[i].dwType, m_list_pkAffectSkills[i].bApplyOn, m_list_pkAffectSkills[i].lApplyValue, m_list_pkAffectSkills[i].dwFlag, lDuration, m_list_pkAffectSkills[i].lSPCost, false);
-	}
-
-	ClearAffectSkills();
+void CHARACTER::LoadAffectSkills()
+{
+    const auto entity = GetEntityHandle();
+    auto* state = AffectState(entity);
+    if (!state)
+        return;
+    // Consume the saved batch before callbacks; nested loads cannot replay it.
+    auto saved = std::move(state->skillAffects);
+    state->skillAffects.clear();
+    for (const auto& affect : saved) {
+        const int64_t remaining = static_cast<int64_t>(affect.lDuration) -
+            (static_cast<int64_t>(get_global_time()) - affect.dwTime);
+        if (remaining > 0 && remaining <= INT32_MAX)
+            AffectSystem::AddAffect(entity, affect.dwType, affect.bApplyOn,
+                affect.lApplyValue, affect.dwFlag, static_cast<int32_t>(remaining),
+                affect.lSPCost, false);
+        if (!AffectState(entity))
+            return;
+    }
 }
 #endif
 
 void CHARACTER::ClearAffect(bool bSave)
 {
-	TAffectFlag afOld = m_afAffectFlag;
-	uint16_t	wMovSpd = GetPoint(POINT_MOV_SPEED);
-	uint16_t	wAttSpd = GetPoint(POINT_ATT_SPEED);
+	const auto entity = GetEntityHandle();
+	if (!AffectState(entity))
+		return;
 
-	auto it = m_list_pkAffect.begin();
-
-	while (it != m_list_pkAffect.end())
+	for (const auto& lease : AffectSystem::Snapshot(entity))
 	{
-		CAffect * pkAff = *it;
+		if (!AffectSystem::Lease(entity, lease.get()))
+			continue;
+		CAffect* pkAff = lease.get();
 
 		if (bSave)
 		{
 #ifdef ENABLE_SOUL_SYSTEM
 			if ( pkAff->dwType == AFFECT_SOUL_RED || pkAff->dwType == AFFECT_SOUL_BLUE )
 			{
-				++it;
+
 				continue;
 			}
 #endif
 
 			if ( IS_NO_CLEAR_ON_DEATH_AFFECT(pkAff->dwType) || IS_NO_SAVE_AFFECT(pkAff->dwType) )
 			{
-				++it;
+
 				continue;
 			}
 #ifdef ENABLE_SKILLS_BUFF_ALTERNATIVE
@@ -1159,13 +1270,12 @@ void CHARACTER::ClearAffect(bool bSave)
 			))
 			{
 				SaveAffectSkills(pkAff->dwType, pkAff->bApplyOn, pkAff->lApplyValue, pkAff->dwFlag, pkAff->lDuration, pkAff->lSPCost);
-				//++it;
 				//continue;
 			}
 #endif
 #ifdef ENABLE_BLOCK_MULTIFARM
 			else if ((pkAff->dwType == AFFECT_DROP_BLOCK) || (pkAff->dwType == AFFECT_DROP_UNBLOCK)) {
-				++it;
+
 				continue;
 			}
 #endif
@@ -1173,14 +1283,14 @@ void CHARACTER::ClearAffect(bool bSave)
 #ifdef __AUTO_QUQUE_ATTACK__
 			if (pkAff->dwType == AFFECT_AUTO_METIN_FARM)
 			{
-				++it;
+
 				continue;
 			}
 #endif
 #ifdef ENABLE_GUILD_ATTRIBUTE
 			if (AFFECT_GUILD_ATTRIBUTE == pkAff->dwType)
 			{
-				++it;
+
 				continue;
 			}
 #endif
@@ -1190,26 +1300,29 @@ void CHARACTER::ClearAffect(bool bSave)
 			}
 		}
 
-		ComputeAffect(pkAff, false);
-
-		it = m_list_pkAffect.erase(it);
-		CAffect::Release(pkAff);
+		if (AffectSystem::Detach(entity, pkAff))
+			AffectSystem::ComputeAffect(entity, *lease, false);
+		if (!AffectState(entity))
+			return;
 	}
 
-	if (afOld != m_afAffectFlag ||
-			wMovSpd != GetPoint(POINT_MOV_SPEED) ||
-			wAttSpd != GetPoint(POINT_ATT_SPEED))
-		SyncAffectList(GetEntityHandle(), this);
-	NetworkSyncSystem::UpdatePacket(GetEntityHandle());
+	NetworkSyncSystem::UpdatePacket(entity);
+	if (!AffectState(entity))
+		return;
 
 	CheckMaximumPoints();
+	if (!AffectState(entity))
+		return;
 
-	if (m_list_pkAffect.empty())
+	if (AffectSystem::Snapshot(entity).empty())
 		event_cancel(&m_pkAffectEvent);
 }
 
 int CHARACTER::ProcessAffect()
 {
+	const auto entity = GetEntityHandle();
+	if (!AffectState(entity))
+		return true;
 	bool	bDiff	= false;
 	CAffect	*pkAff;
 
@@ -1289,14 +1402,14 @@ int CHARACTER::ProcessAffect()
 
 	CHorseNameManager::instance().Validate(this);
 
-	TAffectFlag afOld = m_afAffectFlag;
+	TAffectFlag afOld = GetAffectFlags();
 	int64_t lMovSpd = GetPoint(POINT_MOV_SPEED);
 	int64_t lAttSpd = GetPoint(POINT_ATT_SPEED);
-	auto it = m_list_pkAffect.begin();
-
-	while (it != m_list_pkAffect.end())
+	for (const auto& lease : AffectSystem::Snapshot(entity))
 	{
-		pkAff = *it;
+		if (!AffectSystem::Lease(entity, lease.get()))
+			continue;
+		pkAff = lease.get();
 
 		bool bEnd = false;
 
@@ -1318,10 +1431,15 @@ int CHARACTER::ProcessAffect()
 				PointChange(POINT_SP, -pkAff->lSPCost);
 		}
 
+		if (!AffectState(entity))
+			return true;
+		if (!AffectSystem::Lease(entity, pkAff))
+			continue;
+
 		// AFFECT_DURATION_BUG_FIX
 		// ���� ȿ�� �����۵� �ð��� ���δ�.
 		// �ð��� �ſ� ũ�� ��� ������ ��� ���� ���̶� ������.
-		if ( --pkAff->lDuration <= 0 )
+		if (pkAff->lDuration <= 0 || --pkAff->lDuration <= 0)
 		{
 			bEnd = true;
 		}
@@ -1329,36 +1447,37 @@ int CHARACTER::ProcessAffect()
 
 		if (bEnd)
 		{
-			it = m_list_pkAffect.erase(it);
-			ComputeAffect(pkAff, false);
+			AffectSystem::Detach(entity, pkAff);
+			AffectSystem::ComputeAffect(entity, *lease, false);
+			if (!AffectState(entity))
+				return true;
 			bDiff = true;
 			if (IsPC())
 			{
 				SendAffectRemovePacket(GetDesc(), GetPlayerID(), pkAff->dwType, pkAff->bApplyOn);
 			}
 
-			CAffect::Release(pkAff);
 
 			continue;
 		}
 
-		++it;
 	}
 
 	if (bDiff)
 	{
-		if (afOld != m_afAffectFlag ||
+		if (afOld != GetAffectFlags() ||
 				lMovSpd != GetPoint(POINT_MOV_SPEED) ||
 				lAttSpd != GetPoint(POINT_ATT_SPEED))
 		{
-			SyncAffectList(GetEntityHandle(), this);
-	NetworkSyncSystem::UpdatePacket(GetEntityHandle());
+			NetworkSyncSystem::UpdatePacket(entity);
+			if (!AffectState(entity))
+				return true;
 		}
 
 		CheckMaximumPoints();
 	}
 
-	if (m_list_pkAffect.empty())
+	if (AffectSystem::Snapshot(entity).empty())
 		return true;
 
 	return false;
@@ -1368,11 +1487,9 @@ void CHARACTER::SaveAffect()
 {
 	TPacketGDAddAffect p;
 
-	auto it = m_list_pkAffect.begin();
-
-	while (it != m_list_pkAffect.end())
+	for (const auto& lease : GetAffectContainer())
 	{
-		CAffect * pkAff = *it++;
+		const CAffect* pkAff = lease.get();
 		if (IS_NO_SAVE_AFFECT(pkAff->dwType))
 			continue;
 
@@ -1507,11 +1624,16 @@ void CHARACTER::CheckBiologistReward() {
 
 void CHARACTER::LoadAffect(uint32_t dwCount, TPacketAffectElement * pElements)
 {
-	m_bIsLoadedAffect = false;
+	const auto entity = GetEntityHandle();
+	if (!AffectState(entity) || (dwCount && !pElements))
+		return;
+	AffectState(entity)->isLoaded = false;
 	LPDESC desc = GetDesc();
 	LOG_ERROR("LOAD_AFFECT_BEGIN pid={} name={} count={} elements={} desc={}",
 		GetPlayerID(), GetName(), dwCount, static_cast<const void*>(pElements), static_cast<const void*>(desc));
 
+	if (!desc)
+		return;
 	if (!desc->IsPhase(PHASE_GAME))
 	{
 		if (test_server)
@@ -1531,14 +1653,14 @@ void CHARACTER::LoadAffect(uint32_t dwCount, TPacketAffectElement * pElements)
 		return;
 	}
 
-	LOG_ERROR("LOAD_AFFECT_CLEAR_BEGIN pid={} name={} existing_affects={}", GetPlayerID(), GetName(), m_list_pkAffect.size());
+	LOG_ERROR("LOAD_AFFECT_CLEAR_BEGIN pid={} name={} existing_affects={}", GetPlayerID(), GetName(), GetAffectContainer().size());
 	ClearAffect(true);
-	LOG_ERROR("LOAD_AFFECT_CLEAR_END pid={} name={} remaining_affects={}", GetPlayerID(), GetName(), m_list_pkAffect.size());
+	LOG_ERROR("LOAD_AFFECT_CLEAR_END pid={} name={} remaining_affects={}", GetPlayerID(), GetName(), GetAffectContainer().size());
 
 	if (test_server)
 		LOG_INFO("LOAD_AFFECT: {} count {}", GetName(), dwCount);
 
-	TAffectFlag afOld = m_afAffectFlag;
+	TAffectFlag afOld = GetAffectFlags();
 
 	int64_t lMovSpd = GetPoint(POINT_MOV_SPEED);
 	int64_t lAttSpd = GetPoint(POINT_ATT_SPEED);
@@ -1641,23 +1763,20 @@ void CHARACTER::LoadAffect(uint32_t dwCount, TPacketAffectElement * pElements)
 			LOG_INFO("Load Affect : Affect {} {} {}", GetName(), pElements->dwType, static_cast<int>(pElements->bApplyOn));
 		}
 
-		CAffect* pkAff = CAffect::Acquire();
-		m_list_pkAffect.push_back(pkAff);
-
-		pkAff->dwType		= pElements->dwType;
-		pkAff->bApplyOn		= pElements->bApplyOn;
-		pkAff->lApplyValue	= pElements->lApplyValue;
-		pkAff->dwFlag		= pElements->dwFlag;
-		pkAff->lDuration	= pElements->lDuration;
-		pkAff->lSPCost		= pElements->lSPCost;
+		auto lease = AffectSystem::Attach(entity, {pElements->dwType,
+			pElements->bApplyOn, pElements->lApplyValue, pElements->dwFlag,
+			pElements->lDuration, pElements->lSPCost});
+		if (!lease)
+			return;
+		CAffect* pkAff = lease.get();
 
 		SendAffectAddPacket(GetDesc(), pkAff);
 
-		ComputeAffect(pkAff, true);
-
-
+		AffectSystem::ComputeAffect(entity, *lease, true);
+		if (!AffectState(entity))
+			return;
 	}
-	LOG_ERROR("LOAD_AFFECT_LOOP_END pid={} name={} loaded_affects={}", GetPlayerID(), GetName(), m_list_pkAffect.size());
+	LOG_ERROR("LOAD_AFFECT_LOOP_END pid={} name={} loaded_affects={}", GetPlayerID(), GetName(), GetAffectContainer().size());
 
 	if ( CArenaManager::instance().IsArenaMap(GetMapIndex()) == true )
 	{
@@ -1674,9 +1793,9 @@ void CHARACTER::LoadAffect(uint32_t dwCount, TPacketAffectElement * pElements)
 #endif
 #endif
 
-	if (afOld != m_afAffectFlag || lMovSpd != GetPoint(POINT_MOV_SPEED) || lAttSpd != GetPoint(POINT_ATT_SPEED))
+	if (afOld != GetAffectFlags() || lMovSpd != GetPoint(POINT_MOV_SPEED) || lAttSpd != GetPoint(POINT_ATT_SPEED))
 	{
-		SyncAffectList(GetEntityHandle(), this);
+
 	NetworkSyncSystem::UpdatePacket(GetEntityHandle());
 	}
 
@@ -1684,7 +1803,9 @@ void CHARACTER::LoadAffect(uint32_t dwCount, TPacketAffectElement * pElements)
 	StartAffectEvent();
 	LOG_ERROR("LOAD_AFFECT_START_EVENT_END pid={} name={}", GetPlayerID(), GetName());
 
-	m_bIsLoadedAffect = true;
+	if (!AffectState(entity))
+		return;
+	AffectState(entity)->isLoaded = true;
 
 	// ��ȥ�� ���� �ε� �� �ʱ�ȭ
 	LOG_ERROR("LOAD_AFFECT_DRAGONSOUL_BEGIN pid={} name={}", GetPlayerID(), GetName());
@@ -1722,18 +1843,19 @@ void CHARACTER::LoadAffect(uint32_t dwCount, TPacketAffectElement * pElements)
 	CheckBiologistReward();
 	LOG_ERROR("LOAD_AFFECT_BIOLOGIST_END pid={} name={}", GetPlayerID(), GetName());
 #endif
-	LOG_ERROR("LOAD_AFFECT_END pid={} name={} count={} final_affects={}", GetPlayerID(), GetName(), dwCount, m_list_pkAffect.size());
+	LOG_ERROR("LOAD_AFFECT_END pid={} name={} count={} final_affects={}", GetPlayerID(), GetName(), dwCount, GetAffectContainer().size());
 }
 
 bool CHARACTER::AddAffect(uint32_t dwType, uint8_t bApplyOn, int32_t lApplyValue, uint32_t dwFlag, int32_t lDuration, int32_t lSPCost, bool bOverride, bool IsCube )
 {
-#ifdef ENABLE_BUG_FIXES
+	const auto entity = GetEntityHandle();
+	if (!AffectState(entity))
+		return false;
 	if (bApplyOn >= POINT_MAX_NUM)
 	{
 		LOG_ERROR("Character::AddAffect invalid ApplyOn {} for affect {} on {}", static_cast<int>(bApplyOn), dwType, GetName());
 		return false;
 	}
-#endif
 
 #ifdef ENABLE_BUG_FIXES
 	if (dwType == AFFECT_POLYMORPH) {
@@ -1789,45 +1911,30 @@ bool CHARACTER::AddAffect(uint32_t dwType, uint8_t bApplyOn, int32_t lApplyValue
 		}
 	}
 
-	// �̹� �ִ� ȿ���� ���� ���� ó��
-	if (pkAff && bOverride)
-	{
-		ComputeAffect(pkAff, false); // �ϴ� ȿ���� �����ϰ�
+    if (pkAff && bOverride) {
+        const auto old = AffectSystem::Detach(entity, pkAff);
+        if (old) {
+            AffectSystem::ComputeAffect(entity, *old, false);
+            if (!AffectState(entity))
+                return false;
+            if (auto* desc = ecs::PlayerRuntime::GetDesc(entity))
+                SendAffectRemovePacket(desc, ecs::PlayerRuntime::GetPlayerID(entity),
+                    old->dwType, old->bApplyOn);
+        }
+    }
+    const auto lease = AffectSystem::Attach(entity,
+        {dwType, bApplyOn, lApplyValue, dwFlag, lDuration, lSPCost});
+    if (!lease)
+        return false;
+    pkAff = lease.get();
 
-		if (GetDesc()) {
-			SendAffectRemovePacket(GetDesc(), GetPlayerID(), pkAff->dwType, pkAff->bApplyOn);
-		}
-	}
-	else
-	{
-		//
-		// �� ���带 �߰�
-		//
-		// NOTE: ���� ���� type ���ε� ���� ����Ʈ�� ���� �� �ִ�.
-		//
-		pkAff = CAffect::Acquire();
-		m_list_pkAffect.push_back(pkAff);
+	AffectSystem::ComputeAffect(entity, *lease, true);
+	if (!AffectSystem::Lease(entity, pkAff))
+		return false;
 
-	}
-
-	//LOG_TRACE("AddAffect {} type {} apply {} {} flag {} duration {}", GetName(), dwType, static_cast<int>(bApplyOn), lApplyValue, dwFlag, lDuration);
-	//LOG_TRACE("AddAffect {} type {} apply {} {} flag {} duration {}", GetName(), dwType, static_cast<int>(bApplyOn), lApplyValue, dwFlag, lDuration);
-
-	pkAff->dwType	= dwType;
-	pkAff->bApplyOn	= bApplyOn;
-	pkAff->lApplyValue	= lApplyValue;
-	pkAff->dwFlag	= dwFlag;
-	pkAff->lDuration	= lDuration;
-	pkAff->lSPCost	= lSPCost;
-
-	uint16_t wMovSpd = GetPoint(POINT_MOV_SPEED);
-	uint16_t wAttSpd = GetPoint(POINT_ATT_SPEED);
-
-	ComputeAffect(pkAff, true);
-
-	if (pkAff->dwFlag || wMovSpd != GetPoint(POINT_MOV_SPEED) || wAttSpd != GetPoint(POINT_ATT_SPEED))
-		SyncAffectList(GetEntityHandle(), this);
-	NetworkSyncSystem::UpdatePacket(GetEntityHandle());
+	NetworkSyncSystem::UpdatePacket(entity);
+	if (!AffectSystem::Lease(entity, pkAff))
+		return false;
 
 	StartAffectEvent();
 
@@ -1854,157 +1961,33 @@ bool CHARACTER::AddAffect(uint32_t dwType, uint8_t bApplyOn, int32_t lApplyValue
 
 void CHARACTER::RefreshAffect()
 {
-	auto it = m_list_pkAffect.begin();
-
-	while (it != m_list_pkAffect.end())
-	{
-		CAffect * pkAff = *it++;
-		ComputeAffect(pkAff, true);
-	}
+    AffectSystem::RefreshAffect(GetEntityHandle());
 }
 
-void CHARACTER::ComputeAffect(CAffect * pkAff, bool bAdd)
+void CHARACTER::ComputeAffect(CAffect* affect, bool add)
 {
-	if (bAdd && pkAff->dwType >= GUILD_SKILL_START && pkAff->dwType <= GUILD_SKILL_END)
-	{
-		if (!GetGuild())
-			return;
-
-		if (!GetGuild()->UnderAnyWar())
-			return;
-	}
-
-	if (pkAff->dwFlag)
-	{
-		if (!bAdd)
-			m_afAffectFlag.Reset(pkAff->dwFlag);
-		else
-			m_afAffectFlag.Set(pkAff->dwFlag);
-	}
-
-	if (bAdd)
-		PointChange(pkAff->bApplyOn, pkAff->lApplyValue);
-	else
-		PointChange(pkAff->bApplyOn, -pkAff->lApplyValue);
-
-	if (pkAff->dwType == SKILL_MUYEONG)
-	{
-		if (bAdd)
-			StartMuyeongEvent();
-		else
-			StopMuyeongEvent();
-	}
-
-#ifdef ENABLE_NEW_GYEONGGONG_SKILL
-	if (pkAff->dwType == SKILL_GYEONGGONG)
-	{
-		if (bAdd)
-			StartGyeongGongEvent();
-		else
-			StopGyeongGongEvent();
-	}
-#endif
+    if (affect)
+        AffectSystem::ComputeAffect(GetEntityHandle(), *affect, add);
 }
 
-bool CHARACTER::RemoveAffect(CAffect * pkAff)
+bool CHARACTER::RemoveAffect(CAffect* affect)
 {
-	if (!pkAff)
-		return false;
-
-	// AFFECT_BUF_FIX
-	m_list_pkAffect.remove(pkAff);
-	// END_OF_AFFECT_BUF_FIX
-
-	ComputeAffect(pkAff, false);
-
-	// ��� ���� ����.
-	// ��� ���״� ���� ��ų ����->�а�->��� ���(AFFECT_REVIVE_INVISIBLE) �� �ٷ� ���� �� ��쿡 �߻��Ѵ�.
-	// ������ �а��� �����ϴ� ������, ���� ��ų ȿ���� �����ϰ� �а� ȿ���� ����ǰ� �Ǿ��ִµ�,
-	// ��� ��� �� �ٷ� �����ϸ� RemoveAffect�� �Ҹ��� �ǰ�, ComputePoints�ϸ鼭 �а� ȿ�� + ���� ��ų ȿ���� �ȴ�.
-	// ComputePoints���� �а� ���¸� ���� ��ų ȿ�� �� �������� �ϸ� �Ǳ� �ϴµ�,
-	// ComputePoints�� �������ϰ� ���ǰ� �־ ū ��ȭ�� �ִ� ���� ��������.(� side effect�� �߻����� �˱� �����.)
-	// ���� AFFECT_REVIVE_INVISIBLE�� RemoveAffect�� �����Ǵ� ��츸 �����Ѵ�.
-	// �ð��� �� �Ǿ� ��� ȿ���� Ǯ���� ���� ���װ� �߻����� �����Ƿ� �׿� �Ȱ��� ��.
-	//		(ProcessAffect�� ���� �ð��� �� �Ǿ Affect�� �����Ǵ� ���, ComputePoints�� �θ��� �ʴ´�.)
-	if (AFFECT_REVIVE_INVISIBLE != pkAff->dwType
-#ifdef ENABLE_BUG_FIXES
-	&& AFFECT_MOUNT != pkAff->dwType
-#endif
-	) {
-		ComputePoints();
-	} else {
-		SyncAffectList(GetEntityHandle(), this);
-	NetworkSyncSystem::UpdatePacket(GetEntityHandle());
-	}
-
-	CheckMaximumPoints();
-
-	if (test_server)
-		LOG_TRACE("AFFECT_REMOVE: {} (flag {} apply: {})", GetName(), pkAff->dwFlag, static_cast<int>(pkAff->bApplyOn));
-
-	if (IsPC())
-	{
-		SendAffectRemovePacket(GetDesc(), GetPlayerID(), pkAff->dwType, pkAff->bApplyOn);
-	}
-
-	CAffect::Release(pkAff);
-	return true;
+    return AffectSystem::RemoveAffect(GetEntityHandle(), affect);
 }
 
-bool CHARACTER::RemoveAffect(uint32_t dwType)
+bool CHARACTER::RemoveAffect(uint32_t type)
 {
-#ifdef TEXTS_IMPROVEMENT
-	if (dwType == AFFECT_BLOCK_CHAT) {
-		ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 474, "");
-	}
-#endif
-
-	bool flag = false;
-
-	CAffect * pkAff;
-
-	while ((pkAff = FindAffect(dwType)))
-	{
-		RemoveAffect(pkAff);
-		flag = true;
-	}
-
-	return flag;
+    return AffectSystem::RemoveAffect(GetEntityHandle(), type);
 }
 
 bool CHARACTER::IsAffectFlag(uint32_t dwAff) const
 {
-	return m_afAffectFlag.IsSet(dwAff);
+	return AffectSystem::IsAffectFlag(GetEntityHandle(), dwAff);
 }
 
 void CHARACTER::RemoveGoodAffect()
 {
-	RemoveAffect(AFFECT_MOV_SPEED);
-	RemoveAffect(AFFECT_ATT_SPEED);
-	RemoveAffect(AFFECT_STR);
-	RemoveAffect(AFFECT_DEX);
-	RemoveAffect(AFFECT_INT);
-	RemoveAffect(AFFECT_CON);
-	RemoveAffect(AFFECT_CHINA_FIREWORK);
-	RemoveAffect(SKILL_JEONGWI);
-	RemoveAffect(SKILL_GEOMKYUNG);
-	RemoveAffect(SKILL_GYEONGGONG);
-	RemoveAffect(SKILL_GWIGEOM);
-	RemoveAffect(SKILL_TERROR);
-	RemoveAffect(SKILL_JUMAGAP);
-	RemoveAffect(SKILL_MANASHILED);
-	RemoveAffect(SKILL_HOSIN);
-	RemoveAffect(SKILL_REFLECT);
-	RemoveAffect(SKILL_GICHEON);
-	RemoveAffect(SKILL_KWAESOK);
-	RemoveAffect(SKILL_JEUNGRYEOK);
-	RemoveAffect(SKILL_CHUNKEON);
-	RemoveAffect(SKILL_EUNHYUNG);
-#ifdef ENABLE_WOLFMAN_CHARACTER
-	// ������(WOLFMEN) ���� �߰�
-	RemoveAffect(SKILL_JEOKRANG);
-	RemoveAffect(SKILL_CHEONGRANG);
-#endif
+    AffectSystem::RemoveGoodAffects(GetEntityHandle());
 }
 
 bool CHARACTER::IsGoodAffect(uint8_t bAffectType) const
@@ -2045,46 +2028,7 @@ bool CHARACTER::IsGoodAffect(uint8_t bAffectType) const
 
 void CHARACTER::RemoveBadAffect()
 {
-	LOG_INFO("RemoveBadAffect {}", GetName());
-	// ��
-	AffectSystem::RemovePoison(GetEntityHandle());
-#ifdef ENABLE_WOLFMAN_CHARACTER
-	RemoveBleeding();
-#endif
-	AffectSystem::RemoveFire(GetEntityHandle());
-
-	// ����           : Value%�� ������ 5�ʰ� �Ӹ� ���� ���� ���ư���. (������ 1/2 Ȯ���� Ǯ��)               AFF_STUN
-	RemoveAffect(AFFECT_STUN);
-
-	// ���ο�         : Value%�� ������ ����/�̼� ��� ��������. ���õ��� ���� �޶��� ����� ��� �� ��쿡   AFF_SLOW
-	RemoveAffect(AFFECT_SLOW);
-
-	// ���Ӹ���
-	RemoveAffect(SKILL_TUSOK);
-
-	// ����
-	//RemoveAffect(SKILL_CURSE);
-
-	// �Ĺ���
-	//RemoveAffect(SKILL_PABUP);
-
-	// ����           : Value%�� ������ ������Ų��. 2��                                                       AFF_FAINT
-	//RemoveAffect(AFFECT_FAINT);
-
-	// �ٸ�����       : Value%�� ������ �̵��ӵ��� ����Ʈ����. 5�ʰ� -40                                      AFF_WEB
-	//RemoveAffect(AFFECT_WEB);
-
-	// ����         : Value%�� ������ 10�ʰ� ������. (������ Ǯ��)                                        AFF_SLEEP
-	//RemoveAffect(AFFECT_SLEEP);
-
-	// ����           : Value%�� ������ ����/��� ��� ����Ʈ����. ���õ��� ���� �޶��� ����� ��� �� ��쿡 AFF_CURSE
-	//RemoveAffect(AFFECT_CURSE);
-
-	// ����           : Value%�� ������ 4�ʰ� �����Ų��.                                                     AFF_PARA
-	//RemoveAffect(AFFECT_PARALYZE);
-
-	// �ε��ں�       : ���� ���
-	//RemoveAffect(SKILL_BUDONG);
+    AffectSystem::RemoveBadAffects(GetEntityHandle());
 }
 
 void CHARACTER::SetPolymorph(uint32_t dwRaceNum, bool bMaintainStat)
@@ -2114,5 +2058,3 @@ int32_t CHARACTER::IncreaseMobRigHP(int32_t lArg)
 	PointChange(POINT_HP_REGEN, GetPoint(POINT_HP_REGEN) + lArg, true);
 	return 1;
 }
-
-

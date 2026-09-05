@@ -1112,7 +1112,7 @@ public:
 	void			SaveAffect();
 
 	// Affect loading�� ���� �����ΰ�?
-	bool			IsLoadedAffect() const { return m_bIsLoadedAffect; }
+	bool			IsLoadedAffect() const;
 
 	bool			IsGoodAffect(uint8_t bAffectType) const;
 
@@ -1120,14 +1120,9 @@ public:
 	void			RemoveBadAffect();
 
 	CAffect* FindAffect(uint32_t dwType, uint8_t bApply = APPLY_NONE) const;
-	const std::list<CAffect*>& GetAffectContainer() const { return m_list_pkAffect; }
-	const TAffectFlag& GetAffectFlags() const { return m_afAffectFlag; }
+	std::vector<std::shared_ptr<CAffect>> GetAffectContainer() const;
+	TAffectFlag GetAffectFlags() const;
 	bool			RemoveAffect(CAffect* pkAff);
-
-protected:
-	bool			m_bIsLoadedAffect;
-	TAffectFlag		m_afAffectFlag;
-	std::list<CAffect*>	m_list_pkAffect;
 
 #ifdef ENABLE_SKILLS_BUFF_ALTERNATIVE
 public:
@@ -1135,8 +1130,6 @@ public:
 	void						SaveAffectSkills(uint32_t dwType, uint8_t bApplyOn, int32_t lApplyValue, uint32_t dwFlag, int32_t lDuration, int32_t lSPCost);
 	void						LoadAffectSkills();
 
-protected:
-	std::vector<TAffectSkills>	m_list_pkAffectSkills;
 #endif
 
 public:

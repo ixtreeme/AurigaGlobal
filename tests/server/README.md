@@ -1,5 +1,52 @@
 # Server ECS regression tests
 
+## Affect ownership and point application
+
+`AffectLifecycleTests` compiles the complete existing `AffectSystem.cpp` and
+`affect.cpp`, using entity-only fixtures with no CHARACTER or CItem allocation.
+`AffectList` owns the live records, saved skill buffs, flags and loaded state.
+There is no CHARACTER list/flag mirror or periodic copying. Storage insertion
+initializes the entire record before publication, and removal detaches it before
+point callbacks. Short-lived shared leases keep removed records alive only while
+an operation/snapshot still uses them; the registry owns normal live membership.
+
+Point application/refresh, lookup, flags, individual/type removal and good/bad
+affect removal are native entity operations. Checks cover foreign/repeated
+removal, destruction and recycled entity handles, shared allocation lifetime,
+both flag words and item IDs in the flag field, loaded-state transitions,
+INT32_MIN bonus reversal, invalid apply values, the missing-guild gate,
+deduplicated snapshots, nested refresh, removal/replacement/addition during a
+refresh, replacement of the component on the same entity, exceptions, HP/SP
+clamping, revive/mount exceptions, finite type-removal batches and 1,000 repeated
+allocation/refresh/removal cycles. The obsolete ECS expiry pass is a no-op: the
+legacy affect event still decrements duration exactly once.
+
+```powershell
+cmake --build build --config Release --target GameServer AffectLifecycleTests
+ctest --test-dir build -C Release -R '^affect_lifecycle$' --output-on-failure
+cmake --build build-asan --config RelWithDebInfo --target AffectLifecycleTests
+ctest --test-dir build-asan -C RelWithDebInfo -R '^affect_lifecycle$' --output-on-failure
+```
+
+Point changes/recomputation, guild lookup, descriptors and update packets are
+service doubles; unrelated legacy services fail if called. This does not execute
+the complete point/affect feedback cycle, live guild-war rules, DB packets,
+login hydration, clear-on-death policy, expiry/recovery or skill timer callbacks.
+Add/load/clear/expiry and Muyeong/Gyeonggong timer internals still include legacy
+CHARACTER work, although they now use the same owning ECS storage. Raw CAffect*
+lookup remains a borrowed compatibility API: do not retain it across callbacks,
+and do not release it directly. A lease prevents deallocation, not logical
+membership changes or arbitrary mutations of a retained record.
+
+Refresh suppresses recursive refresh and skips removed/changed snapshot entries;
+it does not transactionally roll back point changes or queue/rebuild all effects
+after arbitrary reentrant mutations. Newly added records are not replayed in the
+current batch. Before deployment verify login/logout and character selection,
+death/revive saved buffs, poison/fire/bleeding expiry, recovery item locks, guild
+war buffs, repeated equipment/point recomputation and both skill timers against
+the real client and DB. This is a bounded ECS migration, not a claim that every
+affect lifecycle path or the original core crashes have been resolved.
+
 ## Combat state
 
 `CombatStateTests` compiles the complete existing `CombatSystem.cpp`. Alignment,

@@ -1,13 +1,29 @@
 #pragma once
 
 #include <cstdint>
+#include <memory>
+#include <vector>
 
 #include <entt/entt.hpp>
 #include <common/tables.h>
 
 #include "../../affect.h"
+#include "../../affect_flag.h"
 
 namespace AffectSystem {
+
+using AffectLease = std::shared_ptr<CAffect>;
+// Storage operations do not apply points or send packets. Raw CAffect* lookup
+// remains a borrowed compatibility API; never retain it across callbacks.
+AffectLease Attach(entt::entity e, const CAffect& value);
+AffectLease Detach(entt::entity e, const CAffect* affect);
+AffectLease Lease(entt::entity e, const CAffect* affect);
+std::vector<AffectLease> Snapshot(entt::entity e);
+TAffectFlag GetFlags(entt::entity e);
+void SetFlag(entt::entity e, uint32_t flag, bool enabled = true);
+bool IsLoaded(entt::entity e);
+void SetLoaded(entt::entity e, bool loaded);
+void ComputeAffect(entt::entity e, CAffect affect, bool add);
 
 void ApplyFire(entt::entity target, entt::entity attacker, int amount, int count);
 void RemoveFire(entt::entity e);

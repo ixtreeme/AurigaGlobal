@@ -1072,7 +1072,7 @@ bool CHARACTER::Show(int32_t lMapIndex, int32_t x, int32_t y, int32_t z, bool bS
         // Phase C.4: legacy SET_BIT(m_bAddChrState, SPAWN) removed.
         if (auto* status = g_registry.try_get<ecs::StatusFlags>(GetEntityHandle()))
             status->isSpawnState = true;
-        m_afAffectFlag.Set(AFF_SPAWN);
+        AffectSystem::SetFlag(GetEntityHandle(), AFF_SPAWN);
     }
 
     // Phase C.1: legacy m_pos write removed - ECS Position via
@@ -1348,7 +1348,7 @@ void CHARACTER::Disconnect(const char* c_pszReason)
     FlushDelayedSaveItem();
 
     SaveAffect();
-    m_bIsLoadedAffect = false;
+    AffectSystem::SetLoaded(GetEntityHandle(), false);
 
 #ifdef ENABLE_BATTLE_PASS
     auto it = m_listBattlePass.begin();

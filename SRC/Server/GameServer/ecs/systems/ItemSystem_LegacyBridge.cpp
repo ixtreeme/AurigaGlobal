@@ -9782,7 +9782,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 				else
 				{
 #ifdef ENABLE_BUG_FIXES
-					if (!m_bIsLoadedAffect) {
+					if (!AffectSystem::IsLoaded(GetEntityHandle())) {
 						return false;
 					}
 #endif

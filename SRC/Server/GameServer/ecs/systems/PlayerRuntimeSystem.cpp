@@ -4763,7 +4763,7 @@ void CHARACTER::SetPlayerProto(const TPlayerTable* t)
         if (GetGMLevel() > GM_LOW_WIZARD)
 #endif
         {
-            m_afAffectFlag.Set(AFF_YMIR);
+            AffectSystem::SetFlag(GetEntityHandle(), AFF_YMIR);
             g_registry.get_or_emplace<ecs::CombatStats>(GetEntityHandle()).pkMode = PK_MODE_PROTECT;
         }
     }
@@ -5796,7 +5796,6 @@ void CHARACTER::Initialize()
     m_pkMiningEvent = nullptr;
 
     m_pkAffectEvent = nullptr;
-    m_afAffectFlag = TAffectFlag(0, 0);
 
     m_pkDestroyWhenIdleEvent = nullptr;
 
@@ -5968,7 +5967,6 @@ void CHARACTER::Initialize()
     m_dwLastBuySellTime = 0;
 #endif
 
-    m_bIsLoadedAffect = false;
     cannot_dead = false;
 
 #ifdef __PET_SYSTEM__

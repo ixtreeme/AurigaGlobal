@@ -2290,10 +2290,9 @@ void CHARACTER::Dead(entt::entity killer, bool bImmediateDead)
 		//
 		// Ŭ̾Ʈ Ʈ Ŷ ٽ .
 		//
-		auto it = m_list_pkAffect.begin();
-
-		while (it != m_list_pkAffect.end())
-			SendAffectAddPacket(GetDesc(), *it++);
+		for (const auto& affect : AffectSystem::Snapshot(GetEntityHandle()))
+			if (affect)
+				SendAffectAddPacket(GetDesc(), affect.get());
 	}
 
 	//

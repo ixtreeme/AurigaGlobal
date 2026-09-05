@@ -3784,13 +3784,11 @@ ACMD(do_affect_remove)
 		ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "-- Affect List of %s -------------------------------", ecs::PlayerRuntime::GetName(((tch) ? (tch)->GetEntityHandle() : entt::null)).data());
 		ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "Type Point Modif Duration Flag");
 
-		const std::list<CAffect *> & cont = tch->GetAffectContainer();
-
-		auto it = cont.begin();
-
-		while (it != cont.end())
+		const auto affects = AffectSystem::Snapshot(tch->GetEntityHandle());
+		for (const auto& pkAff : affects)
 		{
-			CAffect * pkAff = *it++;
+			if (!pkAff)
+				continue;
 
 			ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "%4d %5d %5d %8d %u",
 					pkAff->dwType, pkAff->bApplyOn, pkAff->lApplyValue, pkAff->lDuration, pkAff->dwFlag);

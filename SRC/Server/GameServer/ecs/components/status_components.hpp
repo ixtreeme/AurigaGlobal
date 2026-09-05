@@ -14,10 +14,13 @@ struct DungeonDamage {
 };
 
 struct AffectList {
-    std::list<CAffect*> affects;
+    // The registry owns live affects. Short-lived leases protect a callback's
+    // input when a nested operation removes an affect or destroys its owner.
+    std::list<std::shared_ptr<CAffect>> affects;
     std::vector<TAffectSkills> skillAffects;
     TAffectFlag flags;
-    bool isLoaded;
+    bool isLoaded { false };
+    uint64_t refreshToken { 0 };
 };
 
 struct StatusFlags {

@@ -310,6 +310,9 @@ bool ecs::PlayerRuntime::SetRankPoints(entt::entity,int,int64_t) { UnexpectedSer
 void SendAffectAddPacket(DESC *,CAffect *) { UnexpectedService(__func__); }
 bool AffectSystem::IsImmune(entt::entity,unsigned int) { UnexpectedService(__func__); }
 CAffect * AffectSystem::FindAffect(entt::entity,unsigned int,unsigned char) { UnexpectedService(__func__); }
+std::vector<AffectSystem::AffectLease> AffectSystem::Snapshot(entt::entity) {
+    UnexpectedService(__func__);
+}
 bool AffectSystem::IsAffectFlag(entt::entity,unsigned int) { UnexpectedService(__func__); }
 bool AffectSystem::AddAffect(entt::entity,unsigned int,unsigned char,int,unsigned int,int,int,bool,bool) { UnexpectedService(__func__); }
 bool AffectSystem::RemoveAffect(entt::entity,unsigned int) { UnexpectedService(__func__); }
