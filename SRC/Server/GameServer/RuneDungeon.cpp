@@ -213,8 +213,8 @@ namespace
         if (!victim)
             return;
 
-        LPITEM item = ITEM_MANAGER::instance().CreateItem(vnum, count);
-        if (!item)
+        const entt::entity item = ITEM_MANAGER::instance().CreateItem(vnum, count);
+        if (!ItemSystem::IsValidItem(item))
             return;
 
         PIXEL_POSITION pos;
@@ -222,11 +222,10 @@ namespace
         pos.y = ecs::PlayerRuntime::GetY(victimEntity) + number(-200, 200);
         pos.z = victim->GetZ();
 
-        item->AddToGround(ecs::PlayerRuntime::GetMapIndex(victimEntity), pos);
-        item->StartDestroyEvent();
+        ItemSystem::PlaceItemOnGroundLegacyBoundary(item, ecs::PlayerRuntime::GetMapIndex(victimEntity), pos);
 
         if (owner)
-            InventorySystem::SetOwnership(item->GetEntityHandle(), owner->GetEntityHandle(), 60 * 3);
+            InventorySystem::SetOwnership(item, owner->GetEntityHandle(), 60 * 3);
     }
     static void RuneDungeon_CompleteRankingForMap(int32_t dungeonMapIdx)
     {

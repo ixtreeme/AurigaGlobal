@@ -242,8 +242,7 @@ class CItem : public CEntity
 		void		PutAttribute(const int * aiAttrPercentTable);
 		void		PutAttributeWithLevel(uint8_t bLevel);
 
-	protected:
-		friend class CInputDB;
+	public:
 		bool		OnAfterCreatedItem();			// 서버상에 아이템이 모든 정보와 함께 완전히 생성(로드)된 후 불리우는 함수.
 
 	public:

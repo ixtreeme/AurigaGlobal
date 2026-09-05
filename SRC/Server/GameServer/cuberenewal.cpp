@@ -563,7 +563,7 @@ void Cube_Make(LPCHARACTER ch, int index, int count_item, int index_item_improve
 		: static_cast<uint32_t>(materialInfo.reward.count);
 
 	entt::entity rewardItem =
-		ItemSystem::CreateItemEcs(materialInfo.reward.vnum, rewardCount);
+		ITEM_MANAGER::instance().CreateItem(materialInfo.reward.vnum, rewardCount);
 	if (!ItemSystem::IsValidItem(rewardItem))
 		return;
 

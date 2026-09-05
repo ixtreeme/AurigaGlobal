@@ -1483,24 +1483,24 @@ void CHARACTER::LoadSafebox(int iSize, uint32_t dwGold, int iItemCount, TPlayerI
             if (!m_pkSafebox->IsValidPosition(pItems->pos))
                 continue;
 
-            LPITEM item = ITEM_MANAGER::instance().CreateItem(pItems->vnum, pItems->count, pItems->id);
+            const entt::entity item = ITEM_MANAGER::instance().CreateItem(pItems->vnum, pItems->count, pItems->id);
 
-            if (!item)
+            if (!ItemSystem::IsValidItem(item))
             {
                 LOG_ERROR("cannot create item vnum {} id {} (name: {})", pItems->vnum, pItems->id, GetName());
                 continue;
             }
 
-            ItemSystem::SetItemSkipSave((item ? item->GetEntityHandle() : entt::null), true);
-            item->SetSockets(pItems->alSockets);
-            item->SetAttributes(pItems->aAttr);
+            ItemSystem::SetItemSkipSave(item, true);
+            ItemSystem::SetItemSockets(item, pItems->alSockets);
+            ItemSystem::SetItemAttributes(item, pItems->aAttr);
 
-			if (!m_pkSafebox->Add(pItems->pos, (item ? item->GetEntityHandle() : entt::null)))
+			if (!m_pkSafebox->Add(pItems->pos, item))
                 ItemSystem::DestroyItemEntityEcs(
-                    (item ? item->GetEntityHandle() : entt::null),
+                    item,
                     "SAFEBOX_LOAD_ADD_FAILED");
             else
-                ItemSystem::SetItemSkipSave((item ? item->GetEntityHandle() : entt::null), false);
+                ItemSystem::SetItemSkipSave(item, false);
         }
     }
 }
@@ -1585,24 +1585,24 @@ void CHARACTER::LoadMall(int iItemCount, TPlayerItem* pItems)
             if (!m_pkMall->IsValidPosition(pItems->pos))
                 continue;
 
-            LPITEM item = ITEM_MANAGER::instance().CreateItem(pItems->vnum, pItems->count, pItems->id);
+            const entt::entity item = ITEM_MANAGER::instance().CreateItem(pItems->vnum, pItems->count, pItems->id);
 
-            if (!item)
+            if (!ItemSystem::IsValidItem(item))
             {
                 LOG_ERROR("cannot create item vnum {} id {} (name: {})", pItems->vnum, pItems->id, GetName());
                 continue;
             }
 
-            ItemSystem::SetItemSkipSave((item ? item->GetEntityHandle() : entt::null), true);
-            item->SetSockets(pItems->alSockets);
-            item->SetAttributes(pItems->aAttr);
+            ItemSystem::SetItemSkipSave(item, true);
+            ItemSystem::SetItemSockets(item, pItems->alSockets);
+            ItemSystem::SetItemAttributes(item, pItems->aAttr);
 
-			if (!m_pkMall->Add(pItems->pos, (item ? item->GetEntityHandle() : entt::null)))
+			if (!m_pkMall->Add(pItems->pos, item))
                 ItemSystem::DestroyItemEntityEcs(
-                    (item ? item->GetEntityHandle() : entt::null),
+                    item,
                     "MALL_LOAD_ADD_FAILED");
             else
-                ItemSystem::SetItemSkipSave((item ? item->GetEntityHandle() : entt::null), false);
+                ItemSystem::SetItemSkipSave(item, false);
         }
     }
 }

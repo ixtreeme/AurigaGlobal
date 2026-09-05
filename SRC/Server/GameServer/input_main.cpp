@@ -858,7 +858,7 @@ void CInputMain::BraveRequestPetName(entt::entity character, const char* c_pData
 #endif
 
 	const entt::entity petItem =
-		ItemSystem::CreateItemEcs(static_cast<uint32_t>(eggVnum + 300), 1);
+		ITEM_MANAGER::instance().CreateItem(static_cast<uint32_t>(eggVnum + 300), 1);
 	if (!ItemSystem::IsValidItem(petItem))
 		return;
 

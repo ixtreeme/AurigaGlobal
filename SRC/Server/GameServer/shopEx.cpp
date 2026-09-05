@@ -180,34 +180,34 @@ int64_t CShopEx::Buy(LPCHARACTER ch, uint8_t pos)
 		break;
 	}
 
-	LPITEM item;
+	entt::entity item = entt::null;
 
 	item = ITEM_MANAGER::instance().CreateItem(r_item.vnum, r_item.count);
 
-	if (!item)
+	if (!ItemSystem::IsValidItem(item))
 		return SHOP_SUBHEADER_GC_SOLD_OUT;
 
 	int iEmptyPos;
-	if (item->IsDragonSoul())
+	if (ItemSystem::IsDragonSoulItem(item))
 	{
-		iEmptyPos = ch->GetEmptyDragonSoulInventory(item);
+		iEmptyPos = ItemSystem::GetEmptyDragonSoulInventory(chEntity, item);
 	}
 #ifdef ENABLE_EXTRA_INVENTORY
-	else if (item->IsExtraItem())
+	else if (ItemSystem::IsExtraItem(item))
 	{
-		iEmptyPos = ch->GetEmptyExtraInventory(item);
+		iEmptyPos = ItemSystem::GetEmptyExtraInventory(chEntity, item);
 	}
 #endif
 	else
 	{
-		iEmptyPos = ch->GetEmptyInventory(item->GetSize());
+		iEmptyPos = ch->GetEmptyInventory(ItemSystem::GetItemSize(item));
 	}
 
 	if (iEmptyPos < 0)
 	{
-		LOG_INFO("ShopEx::Buy : Inventory full : {} size {}", ecs::PlayerRuntime::GetName(chEntity).data(), item->GetSize());
+		LOG_INFO("ShopEx::Buy : Inventory full : {} size {}", ecs::PlayerRuntime::GetName(chEntity).data(), ItemSystem::GetItemSize(item));
 		ItemSystem::DestroyItemEntityEcs(
-			(item ? item->GetEntityHandle() : entt::null),
+			item,
 			"SHOP_EX_TRANSACTION");
 		return SHOP_SUBHEADER_GC_INVENTORY_FULL;
 	}
@@ -223,27 +223,27 @@ int64_t CShopEx::Buy(LPCHARACTER ch, uint8_t pos)
 	}
 
 
-	if (item->IsDragonSoul())
-		InventorySystem::AddToCharacter(item->GetEntityHandle(), ch->GetEntityHandle(), TItemPos(DRAGON_SOUL_INVENTORY, iEmptyPos));
+	if (ItemSystem::IsDragonSoulItem(item))
+		InventorySystem::AddToCharacter(item, ch->GetEntityHandle(), TItemPos(DRAGON_SOUL_INVENTORY, iEmptyPos));
 #ifdef ENABLE_EXTRA_INVENTORY
-	else if (item->IsExtraItem())
-		InventorySystem::AddToCharacter(item->GetEntityHandle(), ch->GetEntityHandle(), TItemPos(EXTRA_INVENTORY, iEmptyPos));
+	else if (ItemSystem::IsExtraItem(item))
+		InventorySystem::AddToCharacter(item, ch->GetEntityHandle(), TItemPos(EXTRA_INVENTORY, iEmptyPos));
 #endif
 	else
-		InventorySystem::AddToCharacter(item->GetEntityHandle(), ch->GetEntityHandle(), TItemPos(INVENTORY, iEmptyPos));
+		InventorySystem::AddToCharacter(item, ch->GetEntityHandle(), TItemPos(INVENTORY, iEmptyPos));
 
-	ITEM_MANAGER::instance().FlushDelayedSave(item);
-	LogManager::instance().ItemLog(ch, item, "BUY", item->GetName());
+	ItemSystem::FlushDelayedSaveEcs(item);
+	LogManager::instance().ItemLogEntity(chEntity, item, "BUY", ItemSystem::GetItemName(item));
 
-	if (ItemSystem::GetItemVnum((item ? item->GetEntityHandle() : entt::null)) >= 80003 && ItemSystem::GetItemVnum((item ? item->GetEntityHandle() : entt::null)) <= 80007)
+	if (ItemSystem::GetItemVnum(item) >= 80003 && ItemSystem::GetItemVnum(item) <= 80007)
 	{
-		LogManager::instance().GoldBarLog((ecs::PlayerRuntime::GetPlayerID(chEntity)), ItemSystem::GetItemID((item ? item->GetEntityHandle() : entt::null)), PERSONAL_SHOP_BUY, "");
+		LogManager::instance().GoldBarLog((ecs::PlayerRuntime::GetPlayerID(chEntity)), ItemSystem::GetItemID(item), PERSONAL_SHOP_BUY, "");
 	}
 
-	DBManager::instance().SendMoneyLog(MONEY_LOG_SHOP, ItemSystem::GetItemVnum((item ? item->GetEntityHandle() : entt::null)), -dwPrice);
+	DBManager::instance().SendMoneyLog(MONEY_LOG_SHOP, ItemSystem::GetItemVnum(item), -dwPrice);
 
-	if (item)
-		LOG_INFO("ShopEx: BUY: name {} {}(x {}):{} price {}", ecs::PlayerRuntime::GetName(chEntity).data(), item->GetName(), ItemSystem::GetItemCount((item ? item->GetEntityHandle() : entt::null)), ItemSystem::GetItemID((item ? item->GetEntityHandle() : entt::null)), dwPrice);
+	if (ItemSystem::IsValidItem(item))
+		LOG_INFO("ShopEx: BUY: name {} {}(x {}):{} price {}", ecs::PlayerRuntime::GetName(chEntity).data(), ItemSystem::GetItemName(item), ItemSystem::GetItemCount(item), ItemSystem::GetItemID(item), dwPrice);
 
 #ifdef ENABLE_FLUSH_CACHE_FEATURE // @warme006
 	{

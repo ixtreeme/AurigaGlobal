@@ -150,7 +150,7 @@ namespace quest
 		int32_t x = ecs::PlayerRuntime::GetX(chEntity);
 		int32_t y = ecs::PlayerRuntime::GetY(chEntity);
 
-		const entt::entity item = ItemSystem::CreateItemEcs(item_vnum, count);
+		const entt::entity item = ITEM_MANAGER::instance().CreateItem(item_vnum, count);
 
 		if (!ItemSystem::IsValidItem(item))
 		{
@@ -178,11 +178,11 @@ namespace quest
 		switch (lua_gettop(L))
 		{
 		case 1:
-			item = ItemSystem::CreateItemEcs((uint32_t) lua_tonumber(L, 1));
+			item = ITEM_MANAGER::instance().CreateItem((uint32_t) lua_tonumber(L, 1));
 			break;
 		case 2:
 		case 3:
-			item = ItemSystem::CreateItemEcs((uint32_t) lua_tonumber(L, 1), (int) lua_tonumber(L, 2));
+			item = ITEM_MANAGER::instance().CreateItem((uint32_t) lua_tonumber(L, 1), (int) lua_tonumber(L, 2));
 			break;
 		default:
 			return 0;
@@ -228,11 +228,11 @@ namespace quest
 		switch (lua_gettop(L))
 		{
 		case 1:
-			item = ItemSystem::CreateItemEcs((uint32_t) lua_tonumber(L, 1));
+			item = ITEM_MANAGER::instance().CreateItem((uint32_t) lua_tonumber(L, 1));
 			break;
 		case 2:
 		case 3:
-			item = ItemSystem::CreateItemEcs((uint32_t) lua_tonumber(L, 1), (int) lua_tonumber(L, 2));
+			item = ITEM_MANAGER::instance().CreateItem((uint32_t) lua_tonumber(L, 1), (int) lua_tonumber(L, 2));
 			break;
 		default:
 			return 0;

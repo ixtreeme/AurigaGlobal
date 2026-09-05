@@ -133,20 +133,20 @@ namespace offlineshop
 		return const_cast<TPriceInfo*>(&m_priceInfo);
 	}
 
-	LPITEM CShopItem::CreateItem() const
+	entt::entity CShopItem::CreateItem() const
 	{
-		LPITEM item = ITEM_MANAGER::instance().CreateItem(m_itemInfo.dwVnum, m_itemInfo.dwCount);
-		if (!item)
+		const entt::entity item = ITEM_MANAGER::instance().CreateItem(m_itemInfo.dwVnum, m_itemInfo.dwCount);
+		if (!ItemSystem::IsValidItem(item))
 			return item;
 
 
-		item->SetAttributes(m_itemInfo.aAttr);
-		item->SetSockets(m_itemInfo.alSockets);
+		ItemSystem::SetItemAttributes(item, m_itemInfo.aAttr);
+		ItemSystem::SetItemSockets(item, m_itemInfo.alSockets);
 #ifdef __ENABLE_CHANGELOOK_SYSTEM__
-		item->SetTransmutation(m_itemInfo.dwTransmutation);
+		ItemSystem::SetItemTransmutation(item, m_itemInfo.dwTransmutation);
 #endif
 #ifdef ATTR_LOCK
-		item->SetLockedAttr(m_itemInfo.iLockedAttr);
+		ItemSystem::SetItemLockedAttr(item, m_itemInfo.iLockedAttr);
 #endif
 
 

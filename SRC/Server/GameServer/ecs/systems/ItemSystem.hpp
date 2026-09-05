@@ -55,12 +55,12 @@ bool AutoGiveDS(entt::entity e, entt::entity item, bool longOwnerShip = false);
 entt::entity AutoGiveItemEcs(entt::entity owner, uint32_t itemVnum,
                              uint32_t count = 1, int rarePct = -1,
                              bool sendMessage = true);
-entt::entity CreateItemEcs(uint32_t itemVnum, uint32_t count = 1,
-                           uint32_t id = 0, bool tryMagic = false,
-                           int rarePct = -1, bool skipSave = false);
 bool IsValidItem(entt::entity item);
 bool IsDragonSoulItem(entt::entity item);
 bool IsExtraItem(entt::entity item);
+bool CheckItemUseLevel(entt::entity item, int level);
+bool OnAfterCreatedItem(entt::entity item);
+void AttrLog(entt::entity item);
 bool IsRideItem(entt::entity item);
 bool IsMountItem(entt::entity item);
 #ifdef ENABLE_RUNE_SYSTEM
@@ -86,6 +86,7 @@ uint32_t GetItemCount(entt::entity item);
 int32_t GetItemValue(entt::entity item, uint32_t index);
 int64_t GetItemShopBuyPrice(entt::entity item);
 const char* GetItemName(entt::entity item);
+const char* GetItemName(entt::entity item, uint8_t language);
 const char* GetItemNameByVnum(uint32_t vnum);
 uint8_t GetItemSize(entt::entity item);
 uint8_t GetItemExtraCategory(entt::entity item);
@@ -153,6 +154,16 @@ bool HasItemSocket(entt::entity item, int index);
 TPlayerItemAttribute GetItemAttribute(entt::entity item, int index);
 int GetItemAttributeType(entt::entity item, int index);
 int GetItemAttributeValue(entt::entity item, int index);
+// The socket and attribute arrays still live on CItem, mirrored into
+// components; these write the whole array through it in one step.
+void SetItemSockets(entt::entity item, const int32_t* sockets);
+void SetItemAttributes(entt::entity item, const TPlayerItemAttribute* attributes);
+#ifdef __ENABLE_CHANGELOOK_SYSTEM__
+void SetItemTransmutation(entt::entity item, uint32_t vnum);
+#endif
+#ifdef ATTR_LOCK
+void SetItemLockedAttr(entt::entity item, short index);
+#endif
 bool SetItemSocket(entt::entity item, int index, uint32_t value);
 bool SetItemSocketEcs(entt::entity item, int index, uint32_t value);
 bool SyncItemSocketsFromLegacy(entt::entity item);
@@ -216,6 +227,9 @@ bool PlaceItemOnGroundLegacyBoundary(entt::entity item, int32_t mapIndex,
                                      const PIXEL_POSITION& position,
                                      int destroySeconds = 300);
 int GetEmptyDragonSoulInventory(entt::entity owner, entt::entity item);
+#ifdef ENABLE_EXTRA_INVENTORY
+int GetEmptyExtraInventory(entt::entity owner, entt::entity item);
+#endif
 bool IsItemVnumStackable(uint32_t vnum);
 bool ModifyItemPointsEcs(entt::entity item, bool add);
 bool StartTimerBasedOnWearExpireEventEcs(entt::entity item);

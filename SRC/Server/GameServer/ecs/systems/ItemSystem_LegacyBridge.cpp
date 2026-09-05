@@ -314,9 +314,9 @@ static bool DestroyItemEntityAndLegacy(entt::entity itemEntity, const char* reas
     if (legacyItem) {
         EntityFactory::DestroyItemEntity(g_registry, legacyItem);
         if (reason && *reason)
-            ITEM_MANAGER::instance().RemoveItem(legacyItem, reason);
+            ITEM_MANAGER::instance().RemoveItem(itemEntity, reason);
         else
-            ITEM_MANAGER::instance().RemoveItem(legacyItem);
+            ITEM_MANAGER::instance().RemoveItem(itemEntity);
         return true;
     }
 
@@ -505,11 +505,11 @@ bool IsExtraPotionUseSubtype(uint8_t subtype)
 	return false;
 }
 
-static void FN_copy_item_socket(LPITEM dest, LPITEM src)
+static void FN_copy_item_socket(entt::entity dest, entt::entity src)
 {
 	for (int i = 0; i < ITEM_SOCKET_MAX_NUM; ++i)
 	{
-		ItemSystem::SetItemSocketEcs((dest ? dest->GetEntityHandle() : entt::null), i, src->GetSocket(i));
+		ItemSystem::SetItemSocketEcs(dest, i, ItemSystem::GetItemSocket(src, i));
 	}
 }
 
@@ -791,6 +791,36 @@ int32_t CItem::GetValue(uint32_t idx)
 	assert(idx < ITEM_VALUES_MAX_NUM);
 	return GetProto()->alValues[idx];
 }
+
+namespace ItemSystem {
+void SetItemSockets(entt::entity item, const int32_t* sockets)
+{
+	if (LPITEM legacy = LegacyItemBoundary(item))
+		legacy->SetSockets(sockets);
+}
+
+void SetItemAttributes(entt::entity item, const TPlayerItemAttribute* attributes)
+{
+	if (LPITEM legacy = LegacyItemBoundary(item))
+		legacy->SetAttributes(attributes);
+}
+
+#ifdef __ENABLE_CHANGELOOK_SYSTEM__
+void SetItemTransmutation(entt::entity item, uint32_t vnum)
+{
+	if (LPITEM legacy = LegacyItemBoundary(item))
+		legacy->SetTransmutation(vnum);
+}
+#endif
+
+#ifdef ATTR_LOCK
+void SetItemLockedAttr(entt::entity item, short index)
+{
+	if (LPITEM legacy = LegacyItemBoundary(item))
+		legacy->SetLockedAttr(index);
+}
+#endif
+} // namespace ItemSystem
 
 void CItem::SetSockets(const int32_t* c_al)
 {
@@ -1601,6 +1631,20 @@ bool CItem::IsPCBangItem()
 	}
 	return false;
 }
+
+namespace ItemSystem {
+bool CheckItemUseLevel(entt::entity item, int level)
+{
+	LPITEM legacy = LegacyItemBoundary(item);
+	return legacy ? legacy->CheckItemUseLevel(level) : false;
+}
+
+bool OnAfterCreatedItem(entt::entity item)
+{
+	LPITEM legacy = LegacyItemBoundary(item);
+	return legacy ? legacy->OnAfterCreatedItem() : false;
+}
+} // namespace ItemSystem
 
 bool CItem::CheckItemUseLevel(int nLevel)
 {
@@ -3195,12 +3239,12 @@ bool CHARACTER::DropItem(TItemPos Cell,
 	SyncQuickslot(QUICKSLOT_TYPE_ITEM, Cell.cell, 255);
 #endif
 
-	LPITEM pkItemToDrop;
+	entt::entity pkItemToDrop = entt::null;
 
 	if (bCount == item->GetCount())
 	{
 		InventorySystem::RemoveFromCharacter(item->GetEntityHandle());
-		pkItemToDrop = item;
+		pkItemToDrop = item->GetEntityHandle();
 	}
 	else
 	{
@@ -3217,16 +3261,21 @@ bool CHARACTER::DropItem(TItemPos Cell,
 		pkItemToDrop = ITEM_MANAGER::instance().CreateItem(item->GetVnum(), bCount);
 
 		// copy item socket -- by mhh
-		FN_copy_item_socket(pkItemToDrop, item);
+		FN_copy_item_socket(pkItemToDrop, item->GetEntityHandle());
 
 		char szBuf[51 + 1];
-		snprintf(szBuf, sizeof(szBuf), "%u %u", pkItemToDrop->GetID(), pkItemToDrop->GetCount());
-		LogManager::instance().ItemLog(this, item, "ITEM_SPLIT", szBuf);
+		snprintf(szBuf, sizeof(szBuf), "%u %u", ItemSystem::GetItemID(pkItemToDrop), ItemSystem::GetItemCount(pkItemToDrop));
+		LogManager::instance().ItemLogEntity(GetEntityHandle(), item->GetEntityHandle(), "ITEM_SPLIT", szBuf);
 	}
 
 	PIXEL_POSITION pxPos = GetXYZ();
 
-	if (pkItemToDrop->AddToGround(GetMapIndex(), pxPos))
+#ifdef ENABLE_NEWSTUFF
+	const int dropDestroySeconds = g_aiItemDestroyTime[ITEM_DESTROY_TIME_DROPITEM];
+#else
+	const int dropDestroySeconds = 300;
+#endif
+	if (ItemSystem::PlaceItemOnGroundLegacyBoundary(pkItemToDrop, GetMapIndex(), pxPos, dropDestroySeconds))
 	{
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 321, "%d",
@@ -3237,17 +3286,12 @@ bool CHARACTER::DropItem(TItemPos Cell,
 #endif
 		);
 #endif
-		pkItemToDrop->StartDestroyEvent(
-#ifdef ENABLE_NEWSTUFF
-			g_aiItemDestroyTime[ITEM_DESTROY_TIME_DROPITEM]
-#endif
-		);
 
-		ITEM_MANAGER::instance().FlushDelayedSave(pkItemToDrop);
+		ItemSystem::FlushDelayedSaveEcs(pkItemToDrop);
 
 		char szHint[32 + 1];
-		snprintf(szHint, sizeof(szHint), "%s %u %u", pkItemToDrop->GetName(), pkItemToDrop->GetCount(), pkItemToDrop->GetOriginalVnum());
-		LogManager::instance().ItemLog(this, pkItemToDrop, "DROP", szHint);
+		snprintf(szHint, sizeof(szHint), "%s %u %u", ItemSystem::GetItemName(pkItemToDrop), ItemSystem::GetItemCount(pkItemToDrop), ItemSystem::GetItemOriginalVnum(pkItemToDrop));
+		LogManager::instance().ItemLogEntity(GetEntityHandle(), pkItemToDrop, "DROP", szHint);
 		//Motion(MOTION_PICKUP);
 #ifdef ENABLE_ANTICHEAT
 		m_lastdropitem = thecore_pulse();
@@ -3279,13 +3323,18 @@ bool CHARACTER::DropGold(int64_t gold)
 
 	m_dwLastGoldDropTime = get_dword_time();
 
-	LPITEM item = ITEM_MANAGER::instance().CreateItem(1, gold);
+	const entt::entity item = ITEM_MANAGER::instance().CreateItem(1, gold);
 
-	if (item)
+	if (ItemSystem::IsValidItem(item))
 	{
 		PIXEL_POSITION pos = GetXYZ();
 
-		if (item->AddToGround(GetMapIndex(), pos))
+#ifdef ENABLE_NEWSTUFF
+		const int goldDestroySeconds = g_aiItemDestroyTime[ITEM_DESTROY_TIME_DROPGOLD];
+#else
+		const int goldDestroySeconds = 300;
+#endif
+		if (ItemSystem::PlaceItemOnGroundLegacyBoundary(item, GetMapIndex(), pos, goldDestroySeconds))
 		{
 			//Motion(MOTION_PICKUP);
 			PointChange(POINT_GOLD, -gold, true);
@@ -3293,11 +3342,6 @@ bool CHARACTER::DropGold(int64_t gold)
 			if (gold > 1000) // Ãµ¿ø ÀÌ»ó¸¸ ±â·ÏÇÑ´Ù.
 				LogManager::instance().CharLog(GetEntityHandle(), gold, "DROP_GOLD", "");
 
-#ifdef ENABLE_NEWSTUFF
-			item->StartDestroyEvent(g_aiItemDestroyTime[ITEM_DESTROY_TIME_DROPGOLD]);
-#else
-			item->StartDestroyEvent();
-#endif
 #ifdef TEXTS_IMPROVEMENT
 			ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 321, "%d", (150 / 60));
 #endif
@@ -3858,19 +3902,19 @@ bool CHARACTER::MoveItem(TItemPos Cell, TItemPos DestCell,
 			LOG_INFO("{}: ITEM_SPLIT {} (window: {}, cell : {}) -> (window:{}, cell {}) count {}", GetName(), item->GetName(), Cell.window_type, Cell.cell, DestCell.window_type, DestCell.cell, count);
 
 			ItemSystem::ConsumeItemEcs((item ? item->GetEntityHandle() : entt::null), count);
-			LPITEM item2 = ITEM_MANAGER::instance().CreateItem(item->GetVnum(), count);
+			const entt::entity item2 = ITEM_MANAGER::instance().CreateItem(item->GetVnum(), count);
 
 			// copy socket -- by mhh
-			FN_copy_item_socket(item2, item);
+			FN_copy_item_socket(item2, item->GetEntityHandle());
 
-			InventorySystem::AddToCharacter(item2->GetEntityHandle(), GetEntityHandle(), DestCell
+			InventorySystem::AddToCharacter(item2, GetEntityHandle(), DestCell
 #ifdef __HIGHLIGHT_SYSTEM__
 				, false
 #endif
 			);
 
 			char szBuf[51 + 1];
-			snprintf(szBuf, sizeof(szBuf), "%u %u %u %u ", item2->GetID(), item2->GetCount(), item->GetCount(), item->GetCount() + item2->GetCount());
+			snprintf(szBuf, sizeof(szBuf), "%u %u %u %u ", ItemSystem::GetItemID(item2), ItemSystem::GetItemCount(item2), item->GetCount(), item->GetCount() + ItemSystem::GetItemCount(item2));
 			LogManager::instance().ItemLog(this, item, "ITEM_SPLIT", szBuf);
 		}
 #ifdef ENABLE_EXTRA_INVENTORY
@@ -5263,7 +5307,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 
 						ItemSystem::SetItemSocket(box, 1, item->GetID());
 						ItemSystem::SetItemSocket(box, 0, petVnum);
-						ITEM_MANAGER::instance().RemoveItem(item);
+						ITEM_MANAGER::instance().RemoveItem(itemEntity);
 #ifdef ENABLE_NEW_PET_EDITS
 						ItemSystem::SetItemSocket(box, 2, atoi(row[1]));
 #endif
@@ -5350,15 +5394,15 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 				return false;
 			}
 
-			LPITEM petItem = AutoGiveItem(itemVnum, 1);
-			if (!petItem) {
+			const entt::entity petItem = AutoGiveItem(itemVnum, 1);
+			if (!ItemSystem::IsValidItem(petItem)) {
 				return false;
 			}
 
-			petItem->SetSocket(0, 0);
-			petItem->SetForceAttribute(0, 1, item->GetAttributeType(1));
-			petItem->SetForceAttribute(1, 1, item->GetAttributeValue(1));
-			petItem->SetForceAttribute(2, 1, item->GetAttributeType(2));
+			ItemSystem::SetItemSocket(petItem, 0, 0);
+			ItemSystem::SetItemForceAttributeEcs(petItem, 0, 1, item->GetAttributeType(1));
+			ItemSystem::SetItemForceAttributeEcs(petItem, 1, 1, item->GetAttributeValue(1));
+			ItemSystem::SetItemForceAttributeEcs(petItem, 2, 1, item->GetAttributeType(2));
 
 			char query[256];
 			snprintf(query, sizeof(query), "SELECT tduration FROM player.new_petsystem WHERE id = %ld", item->GetSocket(1));
@@ -5366,20 +5410,20 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 			if (pmsg->Get()->uiNumRows > 0) {
 				MYSQL_ROW row = mysql_fetch_row(pmsg->Get()->pSQLResult);
 #ifdef ENABLE_NEW_PET_EDITS
-				petItem->SetSocket(1, atoi(row[0]));
-				petItem->SetSocket(2, atoi(row[0]));
+				ItemSystem::SetItemSocket(petItem, 1, atoi(row[0]));
+				ItemSystem::SetItemSocket(petItem, 2, atoi(row[0]));
 #else
-				petItem->SetForceAttribute(3, 1, atoi(row[0]));
-				petItem->SetForceAttribute(4, 1, atoi(row[0]));
+				ItemSystem::SetItemForceAttributeEcs(petItem, 3, 1, atoi(row[0]));
+				ItemSystem::SetItemForceAttributeEcs(petItem, 4, 1, atoi(row[0]));
 #endif
 			}
 #ifdef ENABLE_NEW_PET_EDITS
-			petItem->SetForceAttribute(3, 1, item->GetAttributeType(0));
+			ItemSystem::SetItemForceAttributeEcs(petItem, 3, 1, item->GetAttributeType(0));
 #else
-			petItem->SetSocket(1, item->GetAttributeType(0));
+			ItemSystem::SetItemSocket(petItem, 1, item->GetAttributeType(0));
 #endif
-			std::unique_ptr<SQLMsg> msg(DBManager::instance().DirectQuery("UPDATE player.new_petsystem SET id = %d WHERE id = %ld", petItem->GetID(), item->GetSocket(1)));
-			ITEM_MANAGER::instance().RemoveItem(item);
+			std::unique_ptr<SQLMsg> msg(DBManager::instance().DirectQuery("UPDATE player.new_petsystem SET id = %d WHERE id = %ld", ItemSystem::GetItemID(petItem), item->GetSocket(1)));
+			ITEM_MANAGER::instance().RemoveItem(itemEntity);
 #ifdef TEXTS_IMPROVEMENT
 			ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 857, "%s", item->GetName());
 			return true;
@@ -5421,8 +5465,8 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 			return false;
 		}
 
-		LPITEM reward = AutoGiveItem(vnum, 1);
-		if (!reward) {
+		const entt::entity reward = AutoGiveItem(vnum, 1);
+		if (!ItemSystem::IsValidItem(reward)) {
 			return false;
 		}
 
@@ -5734,8 +5778,8 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 
 			if (GiveItemFromSpecialItemGroup(dwBoxVnum, dwVnums, dwCounts, item_gets, count))
 			{
-				ITEM_MANAGER::instance().RemoveItem(item);
-				ITEM_MANAGER::instance().RemoveItem(item2);
+				ITEM_MANAGER::instance().RemoveItem(itemEntity);
+				ITEM_MANAGER::instance().RemoveItem(item2->GetEntityHandle());
 
 				for (int i = 0; i < count; i++) {
 					switch (dwVnums[i])
@@ -5905,14 +5949,14 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 	{
 		if (!item->GetSocket(0))
 		{
-			ITEM_MANAGER::instance().RemoveItem(item);
+			ITEM_MANAGER::instance().RemoveItem(itemEntity);
 			return false;
 		}
 
 		uint32_t dwVnum = item->GetSocket(0);
 
 		if (SkillLevelDown(dwVnum)) {
-			ITEM_MANAGER::instance().RemoveItem(item);
+			ITEM_MANAGER::instance().RemoveItem(itemEntity);
 #ifdef TEXTS_IMPROVEMENT
 			ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 399, "");
 #endif
@@ -5953,7 +5997,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 
 		if (0 == dwVnum)
 		{
-			ITEM_MANAGER::instance().RemoveItem(item);
+			ITEM_MANAGER::instance().RemoveItem(itemEntity);
 
 			return false;
 		}
@@ -5980,7 +6024,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 #ifdef ENABLE_BOOKS_STACKFIX
 			ItemSystem::ConsumeItemEcs(itemEntity);
 #else
-			ITEM_MANAGER::instance().RemoveItem(item);
+			ITEM_MANAGER::instance().RemoveItem(itemEntity);
 #endif
 			int iReadDelay = number(SKILLBOOK_DELAY_MIN, SKILLBOOK_DELAY_MAX);
 			SetSkillNextReadTime(dwVnum, dwVnum == SKILL_LEADERSHIP ? get_global_time() + 18000 : get_global_time() + iReadDelay);
@@ -6277,13 +6321,13 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 					}
 
 					ItemSystem::ConsumeItemEcs(itemEntity);
-					LPITEM item2 = ITEM_MANAGER::instance().CreateItem(item->GetVnum(), 1);
-					if (!item2)
+					const entt::entity item2 = ITEM_MANAGER::instance().CreateItem(item->GetVnum(), 1);
+					if (!ItemSystem::IsValidItem(item2))
 						return false;
 
-					InventorySystem::AddToCharacter(item2->GetEntityHandle(), GetEntityHandle(), TItemPos(INVENTORY, pos), false);
-					item = item2;
-					itemEntity = item ? item->GetEntityHandle() : entt::null;
+					InventorySystem::AddToCharacter(item2, GetEntityHandle(), TItemPos(INVENTORY, pos), false);
+					itemEntity = item2;
+					item = LegacyItemBoundary(itemEntity);
 				}
 
 				if (item->GetSocket(0) <= 0) {
@@ -6458,19 +6502,19 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 				}
 
 				ItemSystem::ConsumeItemEcs(itemEntity);
-				LPITEM item2 = ITEM_MANAGER::instance().CreateItem(item->GetVnum(), 1);
-				if (!item2)
+				const entt::entity item2 = ITEM_MANAGER::instance().CreateItem(item->GetVnum(), 1);
+				if (!ItemSystem::IsValidItem(item2))
 					return true;
 
 #ifdef ENABLE_EXTRA_INVENTORY
 				if (bFromExtraInventory)
-					InventorySystem::AddToCharacter(item2->GetEntityHandle(), GetEntityHandle(), TItemPos(EXTRA_INVENTORY, pos), false);
+					InventorySystem::AddToCharacter(item2, GetEntityHandle(), TItemPos(EXTRA_INVENTORY, pos), false);
 				else
 #endif
-					InventorySystem::AddToCharacter(item2->GetEntityHandle(), GetEntityHandle(), TItemPos(INVENTORY, pos), false);
+					InventorySystem::AddToCharacter(item2, GetEntityHandle(), TItemPos(INVENTORY, pos), false);
 
-				item = item2;
-				itemEntity = item ? item->GetEntityHandle() : entt::null;
+				itemEntity = item2;
+				item = LegacyItemBoundary(itemEntity);
 			}
 
 			uint8_t bApplyOn = item->GetApplyType(0);
@@ -6872,7 +6916,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 					if (item->GetSocket(0) >= 6)
 					{
 						ecs::ChatSystem::Send(GetEntityHandle(), CHAT_TYPE_COMMAND, "StoneDetect %u 0 0", GetPacketVID());
-						ITEM_MANAGER::instance().RemoveItem(item);
+						ITEM_MANAGER::instance().RemoveItem(itemEntity);
 					}
 				}
 				break;
@@ -7041,7 +7085,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 #ifdef ENABLE_BOOKS_STACKFIX
 					ItemSystem::ConsumeItemEcs(itemEntity);
 #else
-					ITEM_MANAGER::instance().RemoveItem(item);
+					ITEM_MANAGER::instance().RemoveItem(itemEntity);
 #endif
 
 					int iReadDelay = number(SKILLBOOK_DELAY_MIN, SKILLBOOK_DELAY_MAX);
@@ -7106,7 +7150,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 #ifdef ENABLE_BOOKS_STACKFIX
 					ItemSystem::ConsumeItemEcs(itemEntity);
 #else
-					ITEM_MANAGER::instance().RemoveItem(item);
+					ITEM_MANAGER::instance().RemoveItem(itemEntity);
 #endif
 
 					int iReadDelay = number(SKILLBOOK_DELAY_MIN, SKILLBOOK_DELAY_MAX);
@@ -7142,7 +7186,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 #ifdef ENABLE_BOOKS_STACKFIX
 					ItemSystem::ConsumeItemEcs(itemEntity);
 #else
-					ITEM_MANAGER::instance().RemoveItem(item);
+					ITEM_MANAGER::instance().RemoveItem(itemEntity);
 #endif
 
 					int iReadDelay = number(SKILLBOOK_DELAY_MIN, SKILLBOOK_DELAY_MAX);
@@ -7229,7 +7273,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 #ifdef ENABLE_BOOKS_STACKFIX
 					ItemSystem::ConsumeItemEcs(itemEntity);
 #else
-					ITEM_MANAGER::instance().RemoveItem(item);
+					ITEM_MANAGER::instance().RemoveItem(itemEntity);
 #endif
 
 					int iReadDelay = number(SKILLBOOK_DELAY_MIN, SKILLBOOK_DELAY_MAX);
@@ -7266,7 +7310,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 #ifdef ENABLE_BOOKS_STACKFIX
 					ItemSystem::ConsumeItemEcs(itemEntity);
 #else
-					ITEM_MANAGER::instance().RemoveItem(item);
+					ITEM_MANAGER::instance().RemoveItem(itemEntity);
 #endif
 
 					int iReadDelay = number(SKILLBOOK_DELAY_MIN, SKILLBOOK_DELAY_MAX);
@@ -7301,7 +7345,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 #ifdef ENABLE_BOOKS_STACKFIX
 					ItemSystem::ConsumeItemEcs(itemEntity);
 #else
-					ITEM_MANAGER::instance().RemoveItem(item);
+					ITEM_MANAGER::instance().RemoveItem(itemEntity);
 #endif
 
 					int iReadDelay = number(SKILLBOOK_DELAY_MIN, SKILLBOOK_DELAY_MAX);
@@ -7378,7 +7422,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 #ifdef ENABLE_BOOKS_STACKFIX
 				ItemSystem::ConsumeItemEcs(itemEntity);
 #else
-				ITEM_MANAGER::instance().RemoveItem(item);
+				ITEM_MANAGER::instance().RemoveItem(itemEntity);
 #endif
 			}
 			break;
@@ -7708,15 +7752,15 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 					return false;
 				}
 
-				LPITEM pItemReward = AutoGiveItem(socket.top());
+				const entt::entity pItemReward = AutoGiveItem(socket.top());
 
-				if (pItemReward != nullptr)
+				if (ItemSystem::IsValidItem(pItemReward))
 				{
 					ItemSystem::SetItemSocketEcs((item2 ? item2->GetEntityHandle() : entt::null), idx, 1);
 
 					char buf[256 + 1];
 					snprintf(buf, sizeof(buf), "%s(%u) %s(%u)",
-						item2->GetName(), item2->GetID(), pItemReward->GetName(), pItemReward->GetID());
+						item2->GetName(), item2->GetID(), ItemSystem::GetItemName(pItemReward), ItemSystem::GetItemID(pItemReward));
 					LogManager::instance().ItemLog(this, item, "USE_DETACHMENT_ONE", buf);
 
 					ItemSystem::ConsumeItemEcs(itemEntity);
@@ -8015,13 +8059,13 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 
 			case 90008: // VCARD
 			case 90009: // VCARD
-				VCardUse(this, this, item);
+				VCardUse(GetEntityHandle(), GetEntityHandle(), itemEntity);
 				break;
 
 			case ITEM_ELK_VNUM: // µ·²Ù·¯¹Ì
 			{
 				int iGold = item->GetSocket(0);
-				ITEM_MANAGER::instance().RemoveItem(item);
+				ITEM_MANAGER::instance().RemoveItem(itemEntity);
 				PointChange(POINT_GOLD, iGold);
 			}
 			break;
@@ -8288,18 +8332,18 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 
 					ItemSystem::ConsumeItemEcs(itemEntity);
 
-					LPITEM item2 = ITEM_MANAGER::instance().CreateItem(item->GetVnum(), 1);
+					const entt::entity item2 = ITEM_MANAGER::instance().CreateItem(item->GetVnum(), 1);
 
 #ifdef ENABLE_EXTRA_INVENTORY
 					if (bFromExtraInventory)
-						InventorySystem::AddToCharacter(item2->GetEntityHandle(), GetEntityHandle(), TItemPos(EXTRA_INVENTORY, pos));
+						InventorySystem::AddToCharacter(item2, GetEntityHandle(), TItemPos(EXTRA_INVENTORY, pos));
 					else
 #endif
-						InventorySystem::AddToCharacter(item2->GetEntityHandle(), GetEntityHandle(), TItemPos(INVENTORY, pos));
+						InventorySystem::AddToCharacter(item2, GetEntityHandle(), TItemPos(INVENTORY, pos));
 
 					if (item->GetSocket(1) != 0)
 					{
-						ItemSystem::SetItemSocketEcs((item2 ? item2->GetEntityHandle() : entt::null), 1, item->GetSocket(1));
+						ItemSystem::SetItemSocketEcs(item2, 1, item->GetSocket(1));
 					}
 
 					if (FindAffect(type))
@@ -8310,8 +8354,8 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 							return true;
 					}
 
-					item = item2;
-					itemEntity = item ? item->GetEntityHandle() : entt::null;
+					itemEntity = item2;
+					item = LegacyItemBoundary(itemEntity);
 				}
 
 #ifdef ENABLE_NEW_USE_POTION
@@ -10939,12 +10983,12 @@ bool CHARACTER::DoRefine(LPITEM item, bool bMoneyOnly)
 		// ¼º°ø! ¸ðµç ¾ÆÀÌ�
 // ÛÀÌ »ç¶óÁö°í, °°Àº ¼Ó¼ºÀÇ ´Ù¸¥ ¾ÆÀÌ�
 // Û È¹µæ
-		LPITEM pkNewItem = ITEM_MANAGER::instance().CreateItem(result_vnum, 1, 0, false);
+		const entt::entity pkNewItem = ITEM_MANAGER::instance().CreateItem(result_vnum, 1, 0, false);
 
-		if (pkNewItem)
+		if (ItemSystem::IsValidItem(pkNewItem))
 		{
-			ItemSystem::CopyAllAttrToEcs(item->GetEntityHandle(), pkNewItem->GetEntityHandle());
-			LogManager::instance().ItemLog(this, pkNewItem, "REFINE SUCCESS", pkNewItem->GetName());
+			ItemSystem::CopyAllAttrToEcs(item->GetEntityHandle(), pkNewItem);
+			LogManager::instance().ItemLogEntity(GetEntityHandle(), pkNewItem, "REFINE SUCCESS", ItemSystem::GetItemName(pkNewItem));
 
 			uint8_t bCell = item->GetCell();
 
@@ -10965,14 +11009,14 @@ bool CHARACTER::DoRefine(LPITEM item, bool bMoneyOnly)
 			// DETAIL_REFINE_LOG
 			NotifyRefineSuccess(this, item, IsRefineThroughGuild() ? "GUILD" : "POWER");
 			DBManager::instance().SendMoneyLog(MONEY_LOG_REFINE, item->GetVnum(), -cost);
-			ITEM_MANAGER::instance().RemoveItem(item, "REMOVE (REFINE SUCCESS)");
+			ITEM_MANAGER::instance().RemoveItem(item->GetEntityHandle(), "REMOVE (REFINE SUCCESS)");
 			// END_OF_DETAIL_REFINE_LOG
 
-			InventorySystem::AddToCharacter(pkNewItem->GetEntityHandle(), GetEntityHandle(), TItemPos(INVENTORY, bCell));
-			ITEM_MANAGER::instance().FlushDelayedSave(pkNewItem);
+			InventorySystem::AddToCharacter(pkNewItem, GetEntityHandle(), TItemPos(INVENTORY, bCell));
+			ItemSystem::FlushDelayedSaveEcs(pkNewItem);
 
 			LOG_INFO("Refine Success {}", (long long)cost);
-			pkNewItem->AttrLog();
+			ItemSystem::AttrLog(pkNewItem);
 			//PointChange(POINT_GOLD, -cost);
 			LOG_INFO("PayPee {}", (long long)cost);
 #ifdef ENABLE_FEATURES_REFINE_SYSTEM
@@ -10998,7 +11042,7 @@ bool CHARACTER::DoRefine(LPITEM item, bool bMoneyOnly)
 		DBManager::instance().SendMoneyLog(MONEY_LOG_REFINE, item->GetVnum(), -cost);
 		NotifyRefineFail(this, item, IsRefineThroughGuild() ? "GUILD" : "POWER");
 		item->AttrLog();
-		ITEM_MANAGER::instance().RemoveItem(item, "REMOVE (REFINE FAIL)");
+		ITEM_MANAGER::instance().RemoveItem(item->GetEntityHandle(), "REMOVE (REFINE FAIL)");
 
 		//PointChange(POINT_GOLD, -cost);
 #ifdef ENABLE_FEATURES_REFINE_SYSTEM
@@ -11317,12 +11361,12 @@ bool CHARACTER::DoRefineWithScroll(LPITEM item)
 		// ¼º°ø! ¸ðµç ¾ÆÀÌ�
 // ÛÀÌ »ç¶óÁö°í, °°Àº ¼Ó¼ºÀÇ ´Ù¸¥ ¾ÆÀÌ�
 // Û È¹µæ
-		LPITEM pkNewItem = ITEM_MANAGER::instance().CreateItem(result_vnum, 1, 0, false);
+		const entt::entity pkNewItem = ITEM_MANAGER::instance().CreateItem(result_vnum, 1, 0, false);
 
-		if (pkNewItem)
+		if (ItemSystem::IsValidItem(pkNewItem))
 		{
-			ItemSystem::CopyAllAttrToEcs(item->GetEntityHandle(), pkNewItem->GetEntityHandle());
-			LogManager::instance().ItemLog(this, pkNewItem, "REFINE SUCCESS", pkNewItem->GetName());
+			ItemSystem::CopyAllAttrToEcs(item->GetEntityHandle(), pkNewItem);
+			LogManager::instance().ItemLogEntity(GetEntityHandle(), pkNewItem, "REFINE SUCCESS", ItemSystem::GetItemName(pkNewItem));
 
 			uint8_t bCell = item->GetCell();
 
@@ -11343,30 +11387,30 @@ bool CHARACTER::DoRefineWithScroll(LPITEM item)
 			NotifyRefineSuccess(this, item, szRefineType);
 
 			DBManager::instance().SendMoneyLog(MONEY_LOG_REFINE, item->GetVnum(), -prt->cost);
-			ITEM_MANAGER::instance().RemoveItem(item, "REMOVE (REFINE SUCCESS)");
+			ITEM_MANAGER::instance().RemoveItem(item->GetEntityHandle(), "REMOVE (REFINE SUCCESS)");
 
-			InventorySystem::AddToCharacter(pkNewItem->GetEntityHandle(), GetEntityHandle(), TItemPos(INVENTORY, bCell));
-			ITEM_MANAGER::instance().FlushDelayedSave(pkNewItem);
+			InventorySystem::AddToCharacter(pkNewItem, GetEntityHandle(), TItemPos(INVENTORY, bCell));
+			ItemSystem::FlushDelayedSaveEcs(pkNewItem);
 
 
 
-			pkNewItem->AttrLog();
+			ItemSystem::AttrLog(pkNewItem);
 			//PointChange(POINT_GOLD, -prt->cost);
 #ifdef ENABLE_FEATURES_REFINE_SYSTEM
 			CRefineManager::instance().Reset(this);
 #endif
 			PayRefineFee(prt->cost);
 #ifdef ENABLE_UPGRADE_NOTICE_BY_RAZOR93
-			if (pkNewItem->GetRefineLevel() >= 8)
+			if (ItemSystem::GetItemRefineLevel(pkNewItem) >= 8)
 			{
 				char itemlink[512];
 				int len = 0;
 
 				len += snprintf(itemlink + len, sizeof(itemlink) - len, "item:%x:%x:%x:%x:%x:%x",
-					pkNewItem->GetVnum(),
-					pkNewItem->GetSocket(0),
-					pkNewItem->GetSocket(1),
-					pkNewItem->GetSocket(2),
+					ItemSystem::GetItemVnum(pkNewItem),
+					ItemSystem::GetItemSocket(pkNewItem, 0),
+					ItemSystem::GetItemSocket(pkNewItem, 1),
+					ItemSystem::GetItemSocket(pkNewItem, 2),
 					0, // transmute
 					0  // transmute2 
 				);
@@ -11374,8 +11418,8 @@ bool CHARACTER::DoRefineWithScroll(LPITEM item)
 				// Bónuszok
 				for (int i = 0; i < ITEM_ATTRIBUTE_MAX_NUM; ++i)
 				{
-					uint8_t type = pkNewItem->GetAttributeType(i);
-					short val = pkNewItem->GetAttributeValue(i);
+					uint8_t type = ItemSystem::GetItemAttributeType(pkNewItem, i);
+					short val = ItemSystem::GetItemAttributeValue(pkNewItem, i);
 
 					if (type != 0 && val != 0)
 						len += snprintf(itemlink + len, sizeof(itemlink) - len, ":%x:%d", type, val);
@@ -11384,14 +11428,14 @@ bool CHARACTER::DoRefineWithScroll(LPITEM item)
 				// debug log:
 				//LOG_INFO("ItemLink Debug: {}", itemlink);
 				//LOG_INFO(0, "Socket0=%d Socket1=%d Socket2=%d",
-					//pkNewItem->GetSocket(0),
-					//pkNewItem->GetSocket(1),
-					//pkNewItem->GetSocket(2));
+					//ItemSystem::GetItemSocket(pkNewItem, 0),
+					//ItemSystem::GetItemSocket(pkNewItem, 1),
+					//ItemSystem::GetItemSocket(pkNewItem, 2));
 
 				char szChat[2048];
 				snprintf(szChat, sizeof(szChat),
 					"|cff00ff00[%s]|r Successfully upgraded:|cffffd700|H%s|h[%s]|h|r",
-					GetName(), itemlink, pkNewItem->GetName());
+					GetName(), itemlink, ItemSystem::GetItemName(pkNewItem));
 
 				SPacketGGNotice packet;
 				strlcpy(packet.szText, szChat, sizeof(packet.szText));
@@ -11402,24 +11446,24 @@ bool CHARACTER::DoRefineWithScroll(LPITEM item)
 			}
 
 
-			if (allowedVnums.find(pkNewItem->GetVnum()) != allowedVnums.end())
+			if (allowedVnums.find(ItemSystem::GetItemVnum(pkNewItem)) != allowedVnums.end())
 			{
 				char itemlink[512];
 				int len = 0;
 
 				len += snprintf(itemlink + len, sizeof(itemlink) - len, "item:%x:%x:%x:%x:%x:%x",
-					pkNewItem->GetVnum(),
-					pkNewItem->GetSocket(0),
-					pkNewItem->GetSocket(1),
-					pkNewItem->GetSocket(2),
+					ItemSystem::GetItemVnum(pkNewItem),
+					ItemSystem::GetItemSocket(pkNewItem, 0),
+					ItemSystem::GetItemSocket(pkNewItem, 1),
+					ItemSystem::GetItemSocket(pkNewItem, 2),
 					0, // transmute
 					0  // transmute2 
 				);
 
 				for (int i = 0; i < ITEM_ATTRIBUTE_MAX_NUM; ++i)
 				{
-					uint8_t type = pkNewItem->GetAttributeType(i);
-					short val = pkNewItem->GetAttributeValue(i);
+					uint8_t type = ItemSystem::GetItemAttributeType(pkNewItem, i);
+					short val = ItemSystem::GetItemAttributeValue(pkNewItem, i);
 
 					if (type != 0 && val != 0)
 						len += snprintf(itemlink + len, sizeof(itemlink) - len, ":%x:%d", type, val);
@@ -11428,7 +11472,7 @@ bool CHARACTER::DoRefineWithScroll(LPITEM item)
 				char szChat[2048];
 				snprintf(szChat, sizeof(szChat),
 					"|cff00ff00[%s]|r Successfully upgraded:|cffffd700|H%s|h[%s]|h|r",
-					GetName(), itemlink, pkNewItem->GetName());
+					GetName(), itemlink, ItemSystem::GetItemName(pkNewItem));
 
 				ecs::ChatSystem::Send(GetEntityHandle(), CHAT_TYPE_INFO, szChat);
 			}
@@ -11448,12 +11492,12 @@ bool CHARACTER::DoRefineWithScroll(LPITEM item)
 		// ½ÇÆÐ! ¸ðµç ¾ÆÀÌ�
 // ÛÀÌ »ç¶óÁö°í, °°Àº ¼Ó¼ºÀÇ ³·Àº µî±ÞÀÇ ¾ÆÀÌ�
 // Û È¹µæ
-		LPITEM pkNewItem = ITEM_MANAGER::instance().CreateItem(result_fail_vnum, 1, 0, false);
+		const entt::entity pkNewItem = ITEM_MANAGER::instance().CreateItem(result_fail_vnum, 1, 0, false);
 
-		if (pkNewItem)
+		if (ItemSystem::IsValidItem(pkNewItem))
 		{
-			ItemSystem::CopyAllAttrToEcs(item->GetEntityHandle(), pkNewItem->GetEntityHandle());
-			LogManager::instance().ItemLog(this, pkNewItem, "REFINE FAIL", pkNewItem->GetName());
+			ItemSystem::CopyAllAttrToEcs(item->GetEntityHandle(), pkNewItem);
+			LogManager::instance().ItemLogEntity(GetEntityHandle(), pkNewItem, "REFINE FAIL", ItemSystem::GetItemName(pkNewItem));
 
 			uint8_t bCell = item->GetCell();
 
@@ -11473,12 +11517,12 @@ bool CHARACTER::DoRefineWithScroll(LPITEM item)
 
 			DBManager::instance().SendMoneyLog(MONEY_LOG_REFINE, item->GetVnum(), -prt->cost);
 			NotifyRefineFail(this, item, szRefineType, -1);
-			ITEM_MANAGER::instance().RemoveItem(item, "REMOVE (REFINE FAIL)");
+			ITEM_MANAGER::instance().RemoveItem(item->GetEntityHandle(), "REMOVE (REFINE FAIL)");
 
-			InventorySystem::AddToCharacter(pkNewItem->GetEntityHandle(), GetEntityHandle(), TItemPos(INVENTORY, bCell));
-			ITEM_MANAGER::instance().FlushDelayedSave(pkNewItem);
+			InventorySystem::AddToCharacter(pkNewItem, GetEntityHandle(), TItemPos(INVENTORY, bCell));
+			ItemSystem::FlushDelayedSaveEcs(pkNewItem);
 
-			pkNewItem->AttrLog();
+			ItemSystem::AttrLog(pkNewItem);
 
 			//PointChange(POINT_GOLD, -prt->cost);
 #ifdef ENABLE_FEATURES_REFINE_SYSTEM
@@ -11719,7 +11763,7 @@ bool CHARACTER::DoRefineWithScroll(LPITEM item)
 		if (pkNewItem)
 		{
 			ItemSystem::CopyAllAttrToEcs(item->GetEntityHandle(), pkNewItem->GetEntityHandle());
-			LogManager::instance().ItemLog(this, pkNewItem, "REFINE SUCCESS", pkNewItem->GetName());
+			LogManager::instance().ItemLogEntity(GetEntityHandle(), pkNewItem, "REFINE SUCCESS", ItemSystem::GetItemName(pkNewItem));
 
 			uint8_t bCell = item->GetCell();
 
@@ -11743,27 +11787,27 @@ bool CHARACTER::DoRefineWithScroll(LPITEM item)
 			ITEM_MANAGER::instance().RemoveItem(item, "REMOVE (REFINE SUCCESS)");
 
 			InventorySystem::AddToCharacter(pkNewItem->GetEntityHandle(), GetEntityHandle(), TItemPos(INVENTORY, bCell));
-			ITEM_MANAGER::instance().FlushDelayedSave(pkNewItem);
+			ItemSystem::FlushDelayedSaveEcs(pkNewItem);
 
 
 
-			pkNewItem->AttrLog();
+			ItemSystem::AttrLog(pkNewItem);
 			//PointChange(POINT_GOLD, -prt->cost);
 #ifdef ENABLE_FEATURES_REFINE_SYSTEM
 			CRefineManager::instance().Reset(this);
 #endif
 			PayRefineFee(prt->cost);
 #ifdef ENABLE_UPGRADE_NOTICE_BY_RAZOR93
-			if (pkNewItem->GetRefineLevel() >= 8)
+			if (ItemSystem::GetItemRefineLevel(pkNewItem) >= 8)
 			{
 				char itemlink[512];
 				int len = 0;
 
 				len += snprintf(itemlink + len, sizeof(itemlink) - len, "item:%x:%x:%x:%x:%x:%x",
-					pkNewItem->GetVnum(),
-					pkNewItem->GetSocket(0),
-					pkNewItem->GetSocket(1),
-					pkNewItem->GetSocket(2),
+					ItemSystem::GetItemVnum(pkNewItem),
+					ItemSystem::GetItemSocket(pkNewItem, 0),
+					ItemSystem::GetItemSocket(pkNewItem, 1),
+					ItemSystem::GetItemSocket(pkNewItem, 2),
 					0, // transmute
 					0  // transmute2 
 				);
@@ -11771,8 +11815,8 @@ bool CHARACTER::DoRefineWithScroll(LPITEM item)
 				// Bónuszok
 				for (int i = 0; i < ITEM_ATTRIBUTE_MAX_NUM; ++i)
 				{
-					uint8_t type = pkNewItem->GetAttributeType(i);
-					short val = pkNewItem->GetAttributeValue(i);
+					uint8_t type = ItemSystem::GetItemAttributeType(pkNewItem, i);
+					short val = ItemSystem::GetItemAttributeValue(pkNewItem, i);
 
 					if (type != 0 && val != 0)
 						len += snprintf(itemlink + len, sizeof(itemlink) - len, ":%x:%d", type, val);
@@ -11781,14 +11825,14 @@ bool CHARACTER::DoRefineWithScroll(LPITEM item)
 				// debug log:
 				//LOG_INFO(0, "ItemLink Debug: %s", itemlink);
 				//LOG_INFO(0, "Socket0=%d Socket1=%d Socket2=%d",
-					//pkNewItem->GetSocket(0),
-					//pkNewItem->GetSocket(1),
-					//pkNewItem->GetSocket(2));
+					//ItemSystem::GetItemSocket(pkNewItem, 0),
+					//ItemSystem::GetItemSocket(pkNewItem, 1),
+					//ItemSystem::GetItemSocket(pkNewItem, 2));
 
 				char szChat[2048];
 				snprintf(szChat, sizeof(szChat),
 					"|cff00ff00[%s]|r Successfully upgraded:|cffffd700|H%s|h[%s]|h|r",
-					GetName(), itemlink, pkNewItem->GetName());
+					GetName(), itemlink, ItemSystem::GetItemName(pkNewItem));
 
 				SPacketGGNotice packet;
 				strlcpy(packet.szText, szChat, sizeof(packet.szText));
@@ -11799,24 +11843,24 @@ bool CHARACTER::DoRefineWithScroll(LPITEM item)
 			}
 
 
-			if (allowedVnums.find(pkNewItem->GetVnum()) != allowedVnums.end())
+			if (allowedVnums.find(ItemSystem::GetItemVnum(pkNewItem)) != allowedVnums.end())
 			{
 				char itemlink[512];
 				int len = 0;
 
 				len += snprintf(itemlink + len, sizeof(itemlink) - len, "item:%x:%x:%x:%x:%x:%x",
-					pkNewItem->GetVnum(),
-					pkNewItem->GetSocket(0),
-					pkNewItem->GetSocket(1),
-					pkNewItem->GetSocket(2),
+					ItemSystem::GetItemVnum(pkNewItem),
+					ItemSystem::GetItemSocket(pkNewItem, 0),
+					ItemSystem::GetItemSocket(pkNewItem, 1),
+					ItemSystem::GetItemSocket(pkNewItem, 2),
 					0, // transmute
 					0  // transmute2 
 				);
 
 				for (int i = 0; i < ITEM_ATTRIBUTE_MAX_NUM; ++i)
 				{
-					uint8_t type = pkNewItem->GetAttributeType(i);
-					short val = pkNewItem->GetAttributeValue(i);
+					uint8_t type = ItemSystem::GetItemAttributeType(pkNewItem, i);
+					short val = ItemSystem::GetItemAttributeValue(pkNewItem, i);
 
 					if (type != 0 && val != 0)
 						len += snprintf(itemlink + len, sizeof(itemlink) - len, ":%x:%d", type, val);
@@ -11825,7 +11869,7 @@ bool CHARACTER::DoRefineWithScroll(LPITEM item)
 				char szChat[2048];
 				snprintf(szChat, sizeof(szChat),
 					"|cff00ff00[%s]|r Successfully upgraded:|cffffd700|H%s|h[%s]|h|r",
-					GetName(), itemlink, pkNewItem->GetName());
+					GetName(), itemlink, ItemSystem::GetItemName(pkNewItem));
 
 				ecs::ChatSystem::Send(GetEntityHandle(), CHAT_TYPE_INFO, szChat);
 			}
@@ -11850,7 +11894,7 @@ bool CHARACTER::DoRefineWithScroll(LPITEM item)
 		if (pkNewItem)
 		{
 			ItemSystem::CopyAllAttrToEcs(item->GetEntityHandle(), pkNewItem->GetEntityHandle());
-			LogManager::instance().ItemLog(this, pkNewItem, "REFINE FAIL", pkNewItem->GetName());
+			LogManager::instance().ItemLogEntity(GetEntityHandle(), pkNewItem, "REFINE FAIL", ItemSystem::GetItemName(pkNewItem));
 
 			uint8_t bCell = item->GetCell();
 
@@ -11873,9 +11917,9 @@ bool CHARACTER::DoRefineWithScroll(LPITEM item)
 			ITEM_MANAGER::instance().RemoveItem(item, "REMOVE (REFINE FAIL)");
 
 			InventorySystem::AddToCharacter(pkNewItem->GetEntityHandle(), GetEntityHandle(), TItemPos(INVENTORY, bCell));
-			ITEM_MANAGER::instance().FlushDelayedSave(pkNewItem);
+			ItemSystem::FlushDelayedSaveEcs(pkNewItem);
 
-			pkNewItem->AttrLog();
+			ItemSystem::AttrLog(pkNewItem);
 
 			//PointChange(POINT_GOLD, -prt->cost);
 #ifdef ENABLE_FEATURES_REFINE_SYSTEM
@@ -11963,15 +12007,15 @@ bool CHARACTER::DoRefineItemSoul(LPITEM item)
 
 	if (prob <= successProb)
 	{
-		LPITEM pkNewItem = ITEM_MANAGER::instance().CreateItem(resultVnum, 1, 0, false);
-		if (pkNewItem)
+		const entt::entity pkNewItem = ITEM_MANAGER::instance().CreateItem(resultVnum, 1, 0, false);
+		if (ItemSystem::IsValidItem(pkNewItem))
 		{
 			uint8_t bCell = item->GetCell();
 			ecs::ChatSystem::Send(GetEntityHandle(), CHAT_TYPE_COMMAND, "RefineSoulSuceeded");
-			ITEM_MANAGER::instance().RemoveItem(item, "REMOVE (REFINE SUCCESS)");
+			ITEM_MANAGER::instance().RemoveItem(item->GetEntityHandle(), "REMOVE (REFINE SUCCESS)");
 
-			InventorySystem::AddToCharacter(pkNewItem->GetEntityHandle(), GetEntityHandle(), TItemPos(INVENTORY, bCell));
-			ITEM_MANAGER::instance().FlushDelayedSave(pkNewItem);
+			InventorySystem::AddToCharacter(pkNewItem, GetEntityHandle(), TItemPos(INVENTORY, bCell));
+			ItemSystem::FlushDelayedSaveEcs(pkNewItem);
 		}
 		else
 		{
@@ -12706,7 +12750,7 @@ bool CHARACTER::AutoGiveDS(LPITEM item, bool longOwnerShip) {
 }
 #endif
 
-LPITEM CHARACTER::AutoGiveItem(uint32_t dwItemVnum,
+entt::entity CHARACTER::AutoGiveItem(uint32_t dwItemVnum,
 #ifdef ENABLE_NEW_STACK_LIMIT
 	int
 #else
@@ -12724,7 +12768,7 @@ LPITEM CHARACTER::AutoGiveItem(uint32_t dwItemVnum,
 	TItemTable* p = ITEM_MANAGER::instance().GetTable(dwItemVnum);
 
 	if (!p)
-		return nullptr;
+		return entt::null;
 
 	DBManager::instance().SendMoneyLog(MONEY_LOG_DROP, dwItemVnum, bCount);
 
@@ -12773,7 +12817,7 @@ LPITEM CHARACTER::AutoGiveItem(uint32_t dwItemVnum,
 					}
 #endif
 
-					return item;
+					return item->GetEntityHandle();
 				}
 			}
 		}
@@ -12828,21 +12872,21 @@ LPITEM CHARACTER::AutoGiveItem(uint32_t dwItemVnum,
 					}
 #endif
 
-					return item;
+					return item->GetEntityHandle();
 				}
 			}
 		}
 	}
 
-	LPITEM item = ITEM_MANAGER::instance().CreateItem(dwItemVnum, bCount, 0, true);
+	const entt::entity item = ITEM_MANAGER::instance().CreateItem(dwItemVnum, bCount, 0, true);
 
-	if (!item)
+	if (!ItemSystem::IsValidItem(item))
 	{
 		LOG_ERROR("cannot create item by vnum {} (name: {})", dwItemVnum, GetName());
-		return nullptr;
+		return entt::null;
 	}
 
-	if (item->GetType() == ITEM_BLEND)
+	if (ItemSystem::GetItemType(item) == ITEM_BLEND)
 	{
 		for (int i = 0; i < INVENTORY_MAX_NUM; i++)
 		{
@@ -12852,15 +12896,15 @@ LPITEM CHARACTER::AutoGiveItem(uint32_t dwItemVnum,
 
 			if (inv_item->GetType() == ITEM_BLEND)
 			{
-				if (inv_item->GetVnum() == item->GetVnum())
+				if (inv_item->GetVnum() == ItemSystem::GetItemVnum(item))
 				{
-					if (inv_item->GetSocket(0) == item->GetSocket(0) &&
-						inv_item->GetSocket(1) == item->GetSocket(1) &&
-						inv_item->GetSocket(2) == item->GetSocket(2) &&
+					if (inv_item->GetSocket(0) == ItemSystem::GetItemSocket(item, 0) &&
+						inv_item->GetSocket(1) == ItemSystem::GetItemSocket(item, 1) &&
+						inv_item->GetSocket(2) == ItemSystem::GetItemSocket(item, 2) &&
 						inv_item->GetCount() < g_bItemCountLimit)
 					{
-						ItemSystem::AddItemCountEcs((inv_item ? inv_item->GetEntityHandle() : entt::null), item->GetCount());
-						return inv_item;
+						ItemSystem::AddItemCountEcs((inv_item ? inv_item->GetEntityHandle() : entt::null), ItemSystem::GetItemCount(item));
+						return inv_item->GetEntityHandle();
 					}
 				}
 			}
@@ -12868,16 +12912,16 @@ LPITEM CHARACTER::AutoGiveItem(uint32_t dwItemVnum,
 	}
 
 	int iEmptyCell;
-	if (item->IsDragonSoul())
+	if (ItemSystem::IsDragonSoulItem(item))
 	{
-		iEmptyCell = GetEmptyDragonSoulInventory(item);
+		iEmptyCell = ItemSystem::GetEmptyDragonSoulInventory(GetEntityHandle(), item);
 	}
 #ifdef ENABLE_EXTRA_INVENTORY
-	else if (item->IsExtraItem())
-		iEmptyCell = GetEmptyExtraInventory(item);
+	else if (ItemSystem::IsExtraItem(item))
+		iEmptyCell = ItemSystem::GetEmptyExtraInventory(GetEntityHandle(), item);
 #endif
 	else
-		iEmptyCell = GetEmptyInventory(item->GetSize());
+		iEmptyCell = GetEmptyInventory(ItemSystem::GetItemSize(item));
 
 	if (iEmptyCell != -1)
 	{
@@ -12889,21 +12933,21 @@ LPITEM CHARACTER::AutoGiveItem(uint32_t dwItemVnum,
 #else
 				CHAT_TYPE_INFO
 #endif
-				, 102, "%d#%s", bCount, item->GetName(GetDesc() ? GetDesc()->GetLanguage() : 0));
+				, 102, "%d#%s", bCount, ItemSystem::GetItemName(item, GetDesc() ? GetDesc()->GetLanguage() : 0));
 			//ecs::ChatSystem::Send(GetEntityHandle(), CHAT_TYPE_INFO, "|cffffc700[10:]|r 10 ");
 
 		}
 #endif
 
-		if (item->IsDragonSoul())
-			InventorySystem::AddToCharacter(item->GetEntityHandle(), GetEntityHandle(), TItemPos(DRAGON_SOUL_INVENTORY, iEmptyCell)
+		if (ItemSystem::IsDragonSoulItem(item))
+			InventorySystem::AddToCharacter(item, GetEntityHandle(), TItemPos(DRAGON_SOUL_INVENTORY, iEmptyCell)
 #ifdef __HIGHLIGHT_SYSTEM__
 				, isHighLight
 #endif
 			);
 #ifdef ENABLE_EXTRA_INVENTORY
-		else if (item->IsExtraItem())
-			InventorySystem::AddToCharacter(item->GetEntityHandle(), GetEntityHandle(), TItemPos(EXTRA_INVENTORY, iEmptyCell)
+		else if (ItemSystem::IsExtraItem(item))
+			InventorySystem::AddToCharacter(item, GetEntityHandle(), TItemPos(EXTRA_INVENTORY, iEmptyCell)
 
 #ifdef __HIGHLIGHT_SYSTEM__
 				, isHighLight
@@ -12911,14 +12955,14 @@ LPITEM CHARACTER::AutoGiveItem(uint32_t dwItemVnum,
 			);
 #endif
 		else
-			InventorySystem::AddToCharacter(item->GetEntityHandle(), GetEntityHandle(), TItemPos(INVENTORY, iEmptyCell)
+			InventorySystem::AddToCharacter(item, GetEntityHandle(), TItemPos(INVENTORY, iEmptyCell)
 #ifdef __HIGHLIGHT_SYSTEM__
 				, isHighLight
 #endif
 			);
-		LogManager::instance().ItemLog(this, item, "SYSTEM", item->GetName());
+		LogManager::instance().ItemLogEntity(GetEntityHandle(), item, "SYSTEM", ItemSystem::GetItemName(item));
 
-		if (item->GetType() == ITEM_USE && item->GetSubType() == USE_POTION)
+		if (ItemSystem::GetItemType(item) == ITEM_USE && ItemSystem::GetItemSubType(item) == USE_POTION)
 		{
 			TQuickslot* pSlot;
 
@@ -12933,22 +12977,22 @@ LPITEM CHARACTER::AutoGiveItem(uint32_t dwItemVnum,
 	}
 	else
 	{
-		item->AddToGround(GetMapIndex(), GetXYZ());
 #ifdef ENABLE_NEWSTUFF
-		item->StartDestroyEvent(g_aiItemDestroyTime[ITEM_DESTROY_TIME_AUTOGIVE]);
+		const int autoGiveDestroySeconds = g_aiItemDestroyTime[ITEM_DESTROY_TIME_AUTOGIVE];
 #else
-		item->StartDestroyEvent();
+		const int autoGiveDestroySeconds = 300;
 #endif
+		ItemSystem::PlaceItemOnGroundLegacyBoundary(item, GetMapIndex(), GetXYZ(), autoGiveDestroySeconds);
 		// ¾ÈÆ¼ µå¶ø flag°¡ °É·ÁÀÖ´Â ¾ÆÀÌ�
 // ÛÀÇ °æ¿ì,
 		// ÀÎº¥¿¡ ºó °ø°£ÀÌ ¾ø¾î¼­ ¾îÂ¿ ¼ö ¾øÀÌ ¶³¾îÆ®¸®°Ô µÇ¸é,
 		// ownershipÀ» ¾ÆÀÌ�
 // ÛÀÌ »ç¶óÁú ¶§±îÁö(300ÃÊ) À¯ÁöÇÑ´Ù.
-		if (IS_SET(item->GetAntiFlag(), ITEM_ANTIFLAG_DROP))
-			InventorySystem::SetOwnership(item->GetEntityHandle(), GetEntityHandle(), 300);
+		if (IS_SET(ItemSystem::GetItemAntiFlag(item), ITEM_ANTIFLAG_DROP))
+			InventorySystem::SetOwnership(item, GetEntityHandle(), 300);
 		else
-			InventorySystem::SetOwnership(item->GetEntityHandle(), GetEntityHandle(), 60);
-		LogManager::instance().ItemLog(this, item, "SYSTEM_DROP", item->GetName());
+			InventorySystem::SetOwnership(item, GetEntityHandle(), 60);
+		LogManager::instance().ItemLogEntity(GetEntityHandle(), item, "SYSTEM_DROP", ItemSystem::GetItemName(item));
 	}
 
 	LOG_INFO("7: {} {}", dwItemVnum, bCount);
@@ -13379,7 +13423,7 @@ bool CHARACTER::GiveItemFromSpecialItemGroup(uint32_t dwGroupNum, std::vector<ui
 		uint32_t dwVnum = pGroup->GetVnum(idx);
 		uint32_t dwCount = pGroup->GetCount(idx);
 		int	iRarePct = pGroup->GetRarePct(idx);
-		LPITEM item_get = nullptr;
+		entt::entity item_get = entt::null;
 		switch (dwVnum)
 		{
 		case CSpecialItemGroup::GOLD:
@@ -13455,7 +13499,7 @@ bool CHARACTER::GiveItemFromSpecialItemGroup(uint32_t dwGroupNum, std::vector<ui
 		{
 			item_get = AutoGiveItem(dwVnum, dwCount, iRarePct);
 
-			if (item_get)
+			if (ItemSystem::IsValidItem(item_get))
 			{
 				bSuccess = true;
 			}
@@ -13467,7 +13511,7 @@ bool CHARACTER::GiveItemFromSpecialItemGroup(uint32_t dwGroupNum, std::vector<ui
 		{
 			dwItemVnums.push_back(dwVnum);
 			dwItemCounts.push_back(dwCount);
-			item_gets.push_back(item_get ? (item_get ? item_get->GetEntityHandle() : entt::null) : entt::null);
+			item_gets.push_back(item_get);
 			count++;
 
 		}
@@ -13545,7 +13589,7 @@ bool CHARACTER::DestroyItem(TItemPos Cell)
 #ifdef TEXTS_IMPROVEMENT
 	ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 47, "%s", item->GetName());
 #endif
-	ITEM_MANAGER::instance().RemoveItem(item, "DESTROY");
+	ITEM_MANAGER::instance().RemoveItem(item->GetEntityHandle(), "DESTROY");
 	return true;
 }
 
@@ -14791,6 +14835,17 @@ void CHARACTER::UnlockExtraInventory(uint8_t category) {
 #endif
 
 #ifdef ENABLE_EXTRA_INVENTORY
+#ifdef ENABLE_EXTRA_INVENTORY
+namespace ItemSystem {
+int GetEmptyExtraInventory(entt::entity owner, entt::entity item)
+{
+	LPCHARACTER legacyOwner = ecs::LegacyCharOf(owner);
+	LPITEM legacyItem = LegacyItemBoundary(item);
+	return (legacyOwner && legacyItem) ? legacyOwner->GetEmptyExtraInventory(legacyItem) : -1;
+}
+} // namespace ItemSystem
+#endif
+
 int CHARACTER::GetEmptyExtraInventory(LPITEM pItem) const
 {
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
@@ -14910,13 +14965,13 @@ bool CHARACTER::GiveRecallItem(LPITEM item)
 	else if ((pos = GetEmptyInventory(item->GetSize())) != -1) // ±×·¸Áö ¾Ê´Ù¸é ´Ù¸¥ ÀÎº¥�
 // ä¸® ½½·ÔÀ» Ã£´Â´Ù.
 	{
-		LPITEM item2 = ITEM_MANAGER::instance().CreateItem(item->GetVnum(), 1);
+		const entt::entity item2 = ITEM_MANAGER::instance().CreateItem(item->GetVnum(), 1);
 
-		if (nullptr != item2)
+		if (ItemSystem::IsValidItem(item2))
 		{
-			item2->SetSocket(0, GetX());
-			item2->SetSocket(1, GetY());
-			InventorySystem::AddToCharacter(item2->GetEntityHandle(), GetEntityHandle(), TItemPos(INVENTORY, pos));
+			ItemSystem::SetItemSocket(item2, 0, GetX());
+			ItemSystem::SetItemSocket(item2, 1, GetY());
+			InventorySystem::AddToCharacter(item2, GetEntityHandle(), TItemPos(INVENTORY, pos));
 
 			ItemSystem::ConsumeItemEcs((item ? item->GetEntityHandle() : entt::null));
 		}
@@ -15872,7 +15927,7 @@ void CItem::StartRealTimeExpireEvent()
 						}
 					}
 
-					ITEM_MANAGER::instance().RemoveItem(this, "REAL_TIME_EXPIRE");
+					ITEM_MANAGER::instance().RemoveItem(GetEntityHandle(), "REAL_TIME_EXPIRE");
 					return;
 				}
 
@@ -16307,6 +16362,22 @@ void CItem::ApplyAddon(int iAddonType)
 	CItemAddonManager::instance().ApplyAddonTo(iAddonType, this);
 }
 
+namespace ItemSystem {
+void AttrLog(entt::entity item)
+{
+	if (LPITEM legacy = LegacyItemBoundary(item))
+		legacy->AttrLog();
+}
+} // namespace ItemSystem
+
+namespace ItemSystem {
+const char* GetItemName(entt::entity item, uint8_t language)
+{
+	LPITEM legacy = LegacyItemBoundary(item);
+	return legacy ? legacy->GetName(language) : "";
+}
+} // namespace ItemSystem
+
 void CItem::AttrLog()
 {
 	const char* pszIP = nullptr;
@@ -16688,7 +16759,7 @@ EVENTFUNC(unique_expire_event)
 		{
 			LOG_INFO("UNIQUE_ITEM: expire {} {}", pkItem->GetName(), pkItem->GetID());
 			pkItem->SetUniqueExpireEvent(nullptr);
-			ITEM_MANAGER::instance().RemoveItem(pkItem, "UNIQUE_EXPIRE");
+			ITEM_MANAGER::instance().RemoveItem(itemEntity, "UNIQUE_EXPIRE");
 			return 0;
 		}
 		else
@@ -16704,7 +16775,7 @@ EVENTFUNC(unique_expire_event)
 		if (pkItem->GetSocket(ITEM_SOCKET_UNIQUE_REMAIN_TIME) <= cur)
 		{
 			pkItem->SetUniqueExpireEvent(nullptr);
-			ITEM_MANAGER::instance().RemoveItem(pkItem, "UNIQUE_EXPIRE");
+			ITEM_MANAGER::instance().RemoveItem(itemEntity, "UNIQUE_EXPIRE");
 			return 0;
 		}
 		else
@@ -16764,7 +16835,7 @@ EVENTFUNC(timer_based_on_wear_expire_event)
 		}
 		else
 		{
-			ITEM_MANAGER::instance().RemoveItem(pkItem, "TIMER_BASED_ON_WEAR_EXPIRE");
+			ITEM_MANAGER::instance().RemoveItem(itemEntity, "TIMER_BASED_ON_WEAR_EXPIRE");
 		}
 		return 0;
 	}
@@ -16804,7 +16875,7 @@ EVENTFUNC(real_time_expire_event)
 				}
 			}
 
-			ITEM_MANAGER::instance().RemoveItem(item, "REAL_TIME_EXPIRE");
+			ITEM_MANAGER::instance().RemoveItem(info->item, "REAL_TIME_EXPIRE");
 			return 0;
 		}
 
@@ -16826,7 +16897,7 @@ EVENTFUNC(real_time_expire_event)
 #endif
 				}
 
-				ITEM_MANAGER::instance().RemoveItem(item, "REAL_TIME_EXPIRE");
+				ITEM_MANAGER::instance().RemoveItem(info->item, "REAL_TIME_EXPIRE");
 				return 0;
 			}
 			else {
@@ -16862,7 +16933,7 @@ EVENTFUNC(real_time_expire_event)
 				item->ClearMountAttributeAndAffect();
 		}
 
-		ITEM_MANAGER::instance().RemoveItem(item, "REAL_TIME_EXPIRE");
+		ITEM_MANAGER::instance().RemoveItem(info->item, "REAL_TIME_EXPIRE");
 		return 0;
 	}
 

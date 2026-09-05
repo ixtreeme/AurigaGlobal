@@ -301,9 +301,9 @@ static bool DestroyItemEntityAndLegacy(entt::entity itemEntity, const char* reas
         // the ECS entity internally. Never pass legacyItem anywhere after
         // RemoveItem returns: at that point CItem may already be freed.
         if (reason && *reason)
-            ITEM_MANAGER::instance().RemoveItem(legacyItem, reason);
+            ITEM_MANAGER::instance().RemoveItem(itemEntity, reason);
         else
-            ITEM_MANAGER::instance().RemoveItem(legacyItem);
+            ITEM_MANAGER::instance().RemoveItem(itemEntity);
         if (g_registry.valid(itemEntity)) {
             CItemRegistry::Instance().Unregister(itemID, itemEntity);
             g_registry.destroy(itemEntity);
@@ -1401,7 +1401,7 @@ entt::entity AutoGiveItemEcs(entt::entity owner, uint32_t itemVnum,
         }
     }
 
-    entt::entity created = CreateItemEcs(itemVnum, count, 0, true, rarePct);
+    entt::entity created = ITEM_MANAGER::instance().CreateItem(itemVnum, count, 0, true, rarePct);
     if (created == entt::null)
         return entt::null;
 
@@ -1410,22 +1410,6 @@ entt::entity AutoGiveItemEcs(entt::entity owner, uint32_t itemVnum,
         return mergedBlend;
 
     return PlaceItemInInventory(owner, created, false, sendMessage, count);
-}
-
-entt::entity CreateItemEcs(uint32_t itemVnum, uint32_t count, uint32_t id,
-                           bool tryMagic, int rarePct, bool skipSave)
-{
-    LPITEM legacyItem = ITEM_MANAGER::instance().CreateItem(
-        itemVnum, count, id, tryMagic, rarePct, skipSave);
-    if (!legacyItem)
-        return entt::null;
-
-    const entt::entity item = (legacyItem ? legacyItem->GetEntityHandle() : entt::null);
-    if (!IsValidItem(item))
-        return entt::null;
-
-    SyncItemStateFromLegacy(item);
-    return item;
 }
 
 bool IsValidItem(entt::entity item)

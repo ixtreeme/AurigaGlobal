@@ -141,7 +141,7 @@ void CHARACTER::LoadMountInventory(const std::vector<TMountInventoryItemTable>& 
 
     for (const auto& entry : items)
     {
-        const entt::entity item = ItemSystem::CreateItemEcs(
+        const entt::entity item = ITEM_MANAGER::instance().CreateItem(
             entry.vnum, entry.count, entry.id);
         if (!ItemSystem::IsValidItem(item))
             continue;

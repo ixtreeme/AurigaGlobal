@@ -6,6 +6,7 @@
 #include "char_interface.hpp"
 #include "ecs/CharacterAccessors.hpp"
 #include "over9refine.h"
+#include "item_manager.h"
 
 namespace
 {
@@ -20,7 +21,7 @@ bool ReplaceItemWith(entt::entity character, entt::entity source, uint32_t resul
 	if (!legacyCharacter)
 		return false;
 
-	const entt::entity result = ItemSystem::CreateItemEcs(resultVnum, 1);
+	const entt::entity result = ITEM_MANAGER::instance().CreateItem(resultVnum, 1);
 	if (!ItemSystem::IsValidItem(result))
 		return false;
 

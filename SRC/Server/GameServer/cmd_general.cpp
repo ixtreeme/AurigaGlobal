@@ -3961,7 +3961,7 @@ ACMD(do_rune_charge)
 
 		const uint32_t bottleVnum = ItemSystem::GetItemVnum(bottle);
 		ItemSystem::ConsumeItemEcs(bottle, 1);
-		const entt::entity splitBottle = ItemSystem::CreateItemEcs(bottleVnum, 1);
+		const entt::entity splitBottle = ITEM_MANAGER::instance().CreateItem(bottleVnum, 1);
 		if (!ItemSystem::IsValidItem(splitBottle))
 			return;
 		if (!ItemSystem::PlaceItemEcs(owner, splitBottle, INVENTORY, pos)) {

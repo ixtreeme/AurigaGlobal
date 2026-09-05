@@ -184,8 +184,8 @@ namespace
         if (!victim)
             return;
 
-        LPITEM item = ITEM_MANAGER::instance().CreateItem(vnum, count);
-        if (!item)
+        const entt::entity item = ITEM_MANAGER::instance().CreateItem(vnum, count);
+        if (!ItemSystem::IsValidItem(item))
             return;
 
         PIXEL_POSITION pos;
@@ -193,11 +193,10 @@ namespace
         pos.y = ecs::PlayerRuntime::GetY(victimEntity) + number(-200, 200);
         pos.z = victim->GetZ();
 
-        item->AddToGround(ecs::PlayerRuntime::GetMapIndex(victimEntity), pos);
-        item->StartDestroyEvent();
+        ItemSystem::PlaceItemOnGroundLegacyBoundary(item, ecs::PlayerRuntime::GetMapIndex(victimEntity), pos);
 
         if (owner)
-            InventorySystem::SetOwnership(item->GetEntityHandle(), owner->GetEntityHandle(), 60 * 3);
+            InventorySystem::SetOwnership(item, owner->GetEntityHandle(), 60 * 3);
     }
 
     bool ConsumeOneGivenItem(entt::entity itemEntity, const char* reason)
@@ -348,11 +347,9 @@ namespace
 		// (Nincs SetRefineLevel API nalatok.)
 		const uint32_t vnum = ItemSystem::GetItemOriginalVnum(sourceWeapon);
 
-		LPITEM w = ITEM_MANAGER::instance().CreateItem(vnum, 1, 0, true);
-        if (!w)
+		const entt::entity cloneWeapon = ITEM_MANAGER::instance().CreateItem(vnum, 1, 0, true);
+        if (!ItemSystem::IsValidItem(cloneWeapon))
             return;
-		const entt::entity cloneWeapon =
-			(w ? w->GetEntityHandle() : entt::null);
 
 		// klon item: ne menjen DB save/DelayedSave
 		ItemSystem::SetItemSkipSave(cloneWeapon, true);
@@ -362,7 +359,7 @@ namespace
 		ItemSystem::CopyItemAttributesEcs(sourceWeapon, cloneWeapon);
 
         // Equip without inventory (direct wear)
-        InventorySystem::EquipTo(w->GetEntityHandle(), clone->GetEntityHandle(), WEAR_WEAPON);
+        InventorySystem::EquipTo(cloneWeapon, clone->GetEntityHandle(), WEAR_WEAPON);
     }
 
     inline void LostCastleCloneStartMove(LPCHARACTER clone, int32_t tx, int32_t ty, uint32_t now)

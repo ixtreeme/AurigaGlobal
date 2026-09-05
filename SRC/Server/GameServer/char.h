@@ -1453,7 +1453,7 @@ public:
 
 	bool			SwapItem(uint8_t bCell, uint8_t bDestCell);
 
-	LPITEM			AutoGiveItem(uint32_t dwItemVnum,
+	entt::entity		AutoGiveItem(uint32_t dwItemVnum,
 #ifdef ENABLE_NEW_STACK_LIMIT
 		int
 #else

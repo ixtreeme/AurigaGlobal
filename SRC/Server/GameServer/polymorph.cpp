@@ -14,6 +14,7 @@
 #include "affect.h"
 #include "item.h"
 #include "polymorph.h"
+#include "item_manager.h"
 
 CPolymorphUtils::CPolymorphUtils()
 {
@@ -156,7 +157,7 @@ bool CPolymorphUtils::GiveBook(entt::entity character, uint32_t dwMobVnum, uint3
 		return false;
 	}
 
-	const entt::entity item = ItemSystem::CreateItemEcs(POLYMORPH_BOOK_ID, 1);
+	const entt::entity item = ITEM_MANAGER::instance().CreateItem(POLYMORPH_BOOK_ID, 1);
 	if (!ItemSystem::IsValidItem(item))
 		return false;
 

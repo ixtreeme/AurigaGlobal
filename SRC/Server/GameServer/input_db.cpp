@@ -1721,14 +1721,14 @@ void CInputDB::ItemLoad(LPDESC d, const char * c_pData)
 			}
 		}
 
-		LPITEM item = ITEM_MANAGER::instance().CreateItem(p->vnum, p->count, p->id);
+		const entt::entity item = ITEM_MANAGER::instance().CreateItem(p->vnum, p->count, p->id);
 
-		if (!item)
+		if (!ItemSystem::IsValidItem(item))
 		{
 			LOG_ERROR("cannot create item by vnum {} (name {} id {})", p->vnum, ecs::PlayerRuntime::GetName(((ch) ? (ch)->GetEntityHandle() : entt::null)).data(), p->id);
 			continue;
 		}
-		const entt::entity itemEntity = (item ? item->GetEntityHandle() : entt::null);
+		const entt::entity itemEntity = item;
 		if (!ItemSystem::IsValidItem(itemEntity))
 		{
 			ITEM_MANAGER::instance().RemoveItem(item);
@@ -1736,10 +1736,10 @@ void CInputDB::ItemLoad(LPDESC d, const char * c_pData)
 		}
 
 		ItemSystem::SetItemSkipSave(itemEntity, true);
-		item->SetSockets(p->alSockets);
-		item->SetAttributes(p->aAttr);
+		ItemSystem::SetItemSockets(item, p->alSockets);
+		ItemSystem::SetItemAttributes(item, p->aAttr);
 #ifdef ATTR_LOCK
-		item->SetLockedAttr(p->lockedattr);
+		ItemSystem::SetItemLockedAttr(item, p->lockedattr);
 #endif
 #ifdef ENABLE_BELT_INVENTORY_EX
 		if (p->window == BELT_INVENTORY)
@@ -1752,7 +1752,7 @@ void CInputDB::ItemLoad(LPDESC d, const char * c_pData)
 		if ((p->window == INVENTORY && ItemSystem::IsValidItem(ItemSystem::GetInventoryItem(((ch) ? (ch)->GetEntityHandle() : entt::null), p->pos))) ||
 				(p->window == EQUIPMENT && ItemSystem::IsValidItem(ItemSystem::GetWearItem(((ch) ? (ch)->GetEntityHandle() : entt::null), p->pos))))
 		{
-			LOG_INFO("ITEM_RESTORE: {} {}", ecs::PlayerRuntime::GetName(((ch) ? (ch)->GetEntityHandle() : entt::null)).data(), item->GetName());
+			LOG_INFO("ITEM_RESTORE: {} {}", ecs::PlayerRuntime::GetName(((ch) ? (ch)->GetEntityHandle() : entt::null)).data(), ItemSystem::GetItemName(item));
 			deferredItems.push_back(itemEntity);
 		}
 		else
@@ -1775,16 +1775,16 @@ void CInputDB::ItemLoad(LPDESC d, const char * c_pData)
 #else
 				case MOUNT_INVENTORY:
 #ifdef __HIGHLIGHT_SYSTEM__
-					InventorySystem::AddToCharacter(item->GetEntityHandle(), ch->GetEntityHandle(), TItemPos(p->window, p->pos), false);
+					InventorySystem::AddToCharacter(item, ch->GetEntityHandle(), TItemPos(p->window, p->pos), false);
 #else
-					InventorySystem::AddToCharacter(item->GetEntityHandle(), ch->GetEntityHandle(), TItemPos(p->window, p->pos));
+					InventorySystem::AddToCharacter(item, ch->GetEntityHandle(), TItemPos(p->window, p->pos));
 #endif
 					break;
 #endif
 				case EQUIPMENT:
-					if (item->CheckItemUseLevel((ecs::PointSystem::GetLevel(((ch) ? (ch)->GetEntityHandle() : entt::null)))) == true )
+					if (ItemSystem::CheckItemUseLevel(item, (ecs::PointSystem::GetLevel(((ch) ? (ch)->GetEntityHandle() : entt::null)))) == true )
 					{
-						if (InventorySystem::EquipTo(item->GetEntityHandle(), ch->GetEntityHandle(), p->pos) == false )
+						if (InventorySystem::EquipTo(item, ch->GetEntityHandle(), p->pos) == false )
 						{
 							deferredItems.push_back(itemEntity);
 						}
@@ -1797,7 +1797,7 @@ void CInputDB::ItemLoad(LPDESC d, const char * c_pData)
 			}
 		}
 
-		if (false == item->OnAfterCreatedItem())
+		if (false == ItemSystem::OnAfterCreatedItem(item))
 			LOG_ERROR("Failed to call ITEM::OnAfterCreatedItem (vnum: {}, id: {})", ItemSystem::GetItemVnum(itemEntity), ItemSystem::GetItemID(itemEntity));
 
 		ItemSystem::SetItemSkipSave(itemEntity, false);

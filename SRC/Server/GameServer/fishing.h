@@ -39,8 +39,8 @@ namespace fishing
 	extern void Grill(entt::entity owner, entt::entity item);
 	extern bool GrillFishEcs(entt::entity owner, entt::entity item);
 
-	extern bool RefinableRod(LPITEM rod);
-	extern int RealRefineRod(LPCHARACTER ch, LPITEM rod);
+	extern bool RefinableRod(entt::entity rod);
+	extern int RealRefineRod(entt::entity ch, entt::entity rod);
 }
 
 #ifdef ENABLE_NEW_FISHING_SYSTEM

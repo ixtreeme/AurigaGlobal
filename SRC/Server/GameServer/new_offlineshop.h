@@ -275,7 +275,7 @@ namespace offlineshop
 		bool			GetTable(TItemTable** ppTable) const;
 		TPriceInfo*		GetPrice() const;
 		
-		LPITEM			CreateItem() const;
+		entt::entity	CreateItem() const;
 		TItemInfoEx*	GetInfo() const;
 
 		void			SetInfo(LPITEM pItem);

@@ -310,11 +310,7 @@ int64_t CShop::Buy(LPCHARACTER ch, uint8_t pos
 	}
 #endif
 
-	LPITEM item = m_pkPC ? ResolveShopItem(r_item.pkItem) : ITEM_MANAGER::instance().CreateItem(r_item.vnum, r_item.count, 0, true);
-	if (!item) {
-		return SHOP_SUBHEADER_GC_SOLD_OUT;
-	}
-	const entt::entity itemEntity = (item ? item->GetEntityHandle() : entt::null);
+	entt::entity itemEntity = m_pkPC ? r_item.pkItem : ITEM_MANAGER::instance().CreateItem(r_item.vnum, r_item.count, 0, true);
 	if (!ItemSystem::IsValidItem(itemEntity))
 		return SHOP_SUBHEADER_GC_SOLD_OUT;
 
@@ -333,31 +329,31 @@ int64_t CShop::Buy(LPCHARACTER ch, uint8_t pos
 #endif
 
 	int iEmptyPos;
-	if (item->IsDragonSoul())
+	if (ItemSystem::IsDragonSoulItem(itemEntity))
 	{
-		iEmptyPos = ch->GetEmptyDragonSoulInventory(item);
+		iEmptyPos = ItemSystem::GetEmptyDragonSoulInventory(chEntity, itemEntity);
 	}
 #ifdef ENABLE_EXTRA_INVENTORY
-	else if (item->IsExtraItem())
+	else if (ItemSystem::IsExtraItem(itemEntity))
 	{
-		iEmptyPos = ch->GetEmptyExtraInventory(item);
+		iEmptyPos = ItemSystem::GetEmptyExtraInventory(chEntity, itemEntity);
 	}
 #endif
 	else
 	{
-		iEmptyPos = ch->GetEmptyInventory(item->GetSize());
+		iEmptyPos = ch->GetEmptyInventory(ItemSystem::GetItemSize(itemEntity));
 	}
 
 	if (iEmptyPos < 0)
 	{
 		if (m_pkPC)
 		{
-			LOG_INFO("Shop::Buy at PC Shop : Inventory full : {} size {}", ecs::PlayerRuntime::GetName(chEntity).data(), item->GetSize());
+			LOG_INFO("Shop::Buy at PC Shop : Inventory full : {} size {}", ecs::PlayerRuntime::GetName(chEntity).data(), ItemSystem::GetItemSize(itemEntity));
 			return SHOP_SUBHEADER_GC_INVENTORY_FULL;
 		}
 		else
 		{
-			LOG_INFO("Shop::Buy : Inventory full : {} size {}", ecs::PlayerRuntime::GetName(chEntity).data(), item->GetSize());
+			LOG_INFO("Shop::Buy : Inventory full : {} size {}", ecs::PlayerRuntime::GetName(chEntity).data(), ItemSystem::GetItemSize(itemEntity));
 			ItemSystem::DestroyItemEntityEcs(
 				itemEntity,
 				"SHOP_TRANSACTION");
@@ -408,7 +404,7 @@ int64_t CShop::Buy(LPCHARACTER ch, uint8_t pos
 	if (m_pkPC)
 	{
 #ifdef ENABLE_EXTRA_INVENTORY
-		if (item->IsExtraItem()) {
+		if (ItemSystem::IsExtraItem(itemEntity)) {
 			m_pkPC->SyncQuickslot(QUICKSLOT_TYPE_ITEM_EXTRA, ItemSystem::GetItemCell(itemEntity), 255);
 		} else {
 			m_pkPC->SyncQuickslot(QUICKSLOT_TYPE_ITEM, ItemSystem::GetItemCell(itemEntity), 255);
@@ -419,8 +415,8 @@ int64_t CShop::Buy(LPCHARACTER ch, uint8_t pos
 
 		if (ItemSystem::GetItemVnum(itemEntity) == 90008 || ItemSystem::GetItemVnum(itemEntity) == 90009) // VCARD
 		{
-			VCardUse(m_pkPC, ch, item);
-			item = nullptr;
+			VCardUse(m_pkPC ? m_pkPC->GetEntityHandle() : entt::null, chEntity, itemEntity);
+			itemEntity = entt::null;
 		}
 		else
 		{
@@ -428,20 +424,20 @@ int64_t CShop::Buy(LPCHARACTER ch, uint8_t pos
 
 			if (ItemSystem::GetItemVnum(itemEntity) >= 80003 && ItemSystem::GetItemVnum(itemEntity) <= 80007)
 			{
-				snprintf(buf, sizeof(buf), "%s FROM: %u TO: %u PRICE: %lld", item->GetName(), ecs::PlayerRuntime::GetPlayerID(chEntity), ecs::PlayerRuntime::GetPlayerID(pC), dwPrice);
+				snprintf(buf, sizeof(buf), "%s FROM: %u TO: %u PRICE: %lld", ItemSystem::GetItemName(itemEntity), ecs::PlayerRuntime::GetPlayerID(chEntity), ecs::PlayerRuntime::GetPlayerID(pC), dwPrice);
 				LogManager::instance().GoldBarLog(ecs::PlayerRuntime::GetPlayerID(chEntity), ItemSystem::GetItemID(itemEntity), SHOP_BUY, buf);
 				LogManager::instance().GoldBarLog(ecs::PlayerRuntime::GetPlayerID(pC), ItemSystem::GetItemID(itemEntity), SHOP_SELL, buf);
 			}
 
-			InventorySystem::RemoveFromCharacter(item->GetEntityHandle());
+			InventorySystem::RemoveFromCharacter(itemEntity);
 
-			if (item->IsDragonSoul()) {
-				InventorySystem::AddToCharacter(item->GetEntityHandle(), ch->GetEntityHandle(), TItemPos(DRAGON_SOUL_INVENTORY, iEmptyPos));
+			if (ItemSystem::IsDragonSoulItem(itemEntity)) {
+				InventorySystem::AddToCharacter(itemEntity, ch->GetEntityHandle(), TItemPos(DRAGON_SOUL_INVENTORY, iEmptyPos));
 			}
 #ifdef ENABLE_EXTRA_INVENTORY
-			else if (item->IsExtraItem()) {
+			else if (ItemSystem::IsExtraItem(itemEntity)) {
 #ifdef ENABLE_25082021
-				if (item->IsStackable() && !IS_SET(ItemSystem::GetItemAntiFlag(itemEntity), ITEM_ANTIFLAG_STACK)) {
+				if (ItemSystem::IsItemStackable(itemEntity) && !IS_SET(ItemSystem::GetItemAntiFlag(itemEntity), ITEM_ANTIFLAG_STACK)) {
 #ifdef ENABLE_NEW_STACK_LIMIT
 					int
 #else
@@ -477,29 +473,29 @@ int64_t CShop::Buy(LPCHARACTER ch, uint8_t pos
 								ItemSystem::DestroyItemEntityEcs(
 				itemEntity,
 				"SHOP_TRANSACTION");
-								item = nullptr;
+								itemEntity = entt::null;
 								break;
 							}
 						}
 					}
 
-					if (item != nullptr) {
+					if (ItemSystem::IsValidItem(itemEntity)) {
 						ItemSystem::SetItemCountEcs(
 						itemEntity,
 						bCount);
-						InventorySystem::AddToCharacter(item->GetEntityHandle(), ch->GetEntityHandle(), TItemPos(EXTRA_INVENTORY, iEmptyPos));
+						InventorySystem::AddToCharacter(itemEntity, ch->GetEntityHandle(), TItemPos(EXTRA_INVENTORY, iEmptyPos));
 					}
 				} else {
-					InventorySystem::AddToCharacter(item->GetEntityHandle(), ch->GetEntityHandle(), TItemPos(EXTRA_INVENTORY, iEmptyPos));
+					InventorySystem::AddToCharacter(itemEntity, ch->GetEntityHandle(), TItemPos(EXTRA_INVENTORY, iEmptyPos));
 				}
 #else
-				InventorySystem::AddToCharacter(item->GetEntityHandle(), ch->GetEntityHandle(), TItemPos(EXTRA_INVENTORY, iEmptyPos));
+				InventorySystem::AddToCharacter(itemEntity, ch->GetEntityHandle(), TItemPos(EXTRA_INVENTORY, iEmptyPos));
 #endif
 			}
 #endif
 			else {
 #ifdef ENABLE_25082021
-				if (item->IsStackable() && !IS_SET(ItemSystem::GetItemAntiFlag(itemEntity), ITEM_ANTIFLAG_STACK)) {
+				if (ItemSystem::IsItemStackable(itemEntity) && !IS_SET(ItemSystem::GetItemAntiFlag(itemEntity), ITEM_ANTIFLAG_STACK)) {
 #ifdef ENABLE_NEW_STACK_LIMIT
 					int
 #else
@@ -535,28 +531,28 @@ int64_t CShop::Buy(LPCHARACTER ch, uint8_t pos
 								ItemSystem::DestroyItemEntityEcs(
 				itemEntity,
 				"SHOP_TRANSACTION");
-								item = nullptr;
+								itemEntity = entt::null;
 								break;
 							}
 						}
 					}
 
-					if (item != nullptr) {
+					if (ItemSystem::IsValidItem(itemEntity)) {
 						ItemSystem::SetItemCountEcs(
 						itemEntity,
 						bCount);
-						InventorySystem::AddToCharacter(item->GetEntityHandle(), ch->GetEntityHandle(), TItemPos(INVENTORY, iEmptyPos));
+						InventorySystem::AddToCharacter(itemEntity, ch->GetEntityHandle(), TItemPos(INVENTORY, iEmptyPos));
 					}
 				} else {
-					InventorySystem::AddToCharacter(item->GetEntityHandle(), ch->GetEntityHandle(), TItemPos(INVENTORY, iEmptyPos));
+					InventorySystem::AddToCharacter(itemEntity, ch->GetEntityHandle(), TItemPos(INVENTORY, iEmptyPos));
 				}
 #else
-				InventorySystem::AddToCharacter(item->GetEntityHandle(), ch->GetEntityHandle(), TItemPos(INVENTORY, iEmptyPos));
+				InventorySystem::AddToCharacter(itemEntity, ch->GetEntityHandle(), TItemPos(INVENTORY, iEmptyPos));
 #endif
 			}
 
-			if (item != nullptr) {
-				ITEM_MANAGER::instance().FlushDelayedSave(item);
+			if (ItemSystem::IsValidItem(itemEntity)) {
+				ItemSystem::FlushDelayedSaveEcs(itemEntity);
 			}
 		}
 
@@ -567,13 +563,13 @@ int64_t CShop::Buy(LPCHARACTER ch, uint8_t pos
 	}
 	else
 	{
-		if (item->IsDragonSoul()) {
-			InventorySystem::AddToCharacter(item->GetEntityHandle(), ch->GetEntityHandle(), TItemPos(DRAGON_SOUL_INVENTORY, iEmptyPos));
+		if (ItemSystem::IsDragonSoulItem(itemEntity)) {
+			InventorySystem::AddToCharacter(itemEntity, ch->GetEntityHandle(), TItemPos(DRAGON_SOUL_INVENTORY, iEmptyPos));
 		}
 #ifdef ENABLE_EXTRA_INVENTORY
-		else if (item->IsExtraItem()) {
+		else if (ItemSystem::IsExtraItem(itemEntity)) {
 #ifdef ENABLE_25082021
-			if (item->IsStackable() && !IS_SET(ItemSystem::GetItemAntiFlag(itemEntity), ITEM_ANTIFLAG_STACK)) {
+			if (ItemSystem::IsItemStackable(itemEntity) && !IS_SET(ItemSystem::GetItemAntiFlag(itemEntity), ITEM_ANTIFLAG_STACK)) {
 #ifdef ENABLE_NEW_STACK_LIMIT
 				int
 #else
@@ -609,29 +605,29 @@ int64_t CShop::Buy(LPCHARACTER ch, uint8_t pos
 							ItemSystem::DestroyItemEntityEcs(
 				itemEntity,
 				"SHOP_TRANSACTION");
-							item = nullptr;
+							itemEntity = entt::null;
 							break;
 						}
 					}
 				}
 
-				if (item != nullptr) {
+				if (ItemSystem::IsValidItem(itemEntity)) {
 					ItemSystem::SetItemCountEcs(
 						itemEntity,
 						bCount);
-					InventorySystem::AddToCharacter(item->GetEntityHandle(), ch->GetEntityHandle(), TItemPos(EXTRA_INVENTORY, iEmptyPos));
+					InventorySystem::AddToCharacter(itemEntity, ch->GetEntityHandle(), TItemPos(EXTRA_INVENTORY, iEmptyPos));
 				}
 			} else {
-				InventorySystem::AddToCharacter(item->GetEntityHandle(), ch->GetEntityHandle(), TItemPos(EXTRA_INVENTORY, iEmptyPos));
+				InventorySystem::AddToCharacter(itemEntity, ch->GetEntityHandle(), TItemPos(EXTRA_INVENTORY, iEmptyPos));
 			}
 #else
-			InventorySystem::AddToCharacter(item->GetEntityHandle(), ch->GetEntityHandle(), TItemPos(EXTRA_INVENTORY, iEmptyPos));
+			InventorySystem::AddToCharacter(itemEntity, ch->GetEntityHandle(), TItemPos(EXTRA_INVENTORY, iEmptyPos));
 #endif
 		}
 #endif
 		else {
 #ifdef ENABLE_25082021
-			if (item->IsStackable() && !IS_SET(ItemSystem::GetItemAntiFlag(itemEntity), ITEM_ANTIFLAG_STACK)) {
+			if (ItemSystem::IsItemStackable(itemEntity) && !IS_SET(ItemSystem::GetItemAntiFlag(itemEntity), ITEM_ANTIFLAG_STACK)) {
 #ifdef ENABLE_NEW_STACK_LIMIT
 				int
 #else
@@ -667,28 +663,28 @@ int64_t CShop::Buy(LPCHARACTER ch, uint8_t pos
 							ItemSystem::DestroyItemEntityEcs(
 				itemEntity,
 				"SHOP_TRANSACTION");
-							item = nullptr;
+							itemEntity = entt::null;
 							break;
 						}
 					}
 				}
 
-				if (item != nullptr) {
+				if (ItemSystem::IsValidItem(itemEntity)) {
 					ItemSystem::SetItemCountEcs(
 						itemEntity,
 						bCount);
-					InventorySystem::AddToCharacter(item->GetEntityHandle(), ch->GetEntityHandle(), TItemPos(INVENTORY, iEmptyPos));
+					InventorySystem::AddToCharacter(itemEntity, ch->GetEntityHandle(), TItemPos(INVENTORY, iEmptyPos));
 				}
 			} else {
-				InventorySystem::AddToCharacter(item->GetEntityHandle(), ch->GetEntityHandle(), TItemPos(INVENTORY, iEmptyPos));
+				InventorySystem::AddToCharacter(itemEntity, ch->GetEntityHandle(), TItemPos(INVENTORY, iEmptyPos));
 			}
 #else
-			InventorySystem::AddToCharacter(item->GetEntityHandle(), ch->GetEntityHandle(), TItemPos(INVENTORY, iEmptyPos));
+			InventorySystem::AddToCharacter(itemEntity, ch->GetEntityHandle(), TItemPos(INVENTORY, iEmptyPos));
 #endif
 		}
 
-		if (item != nullptr) {
-			ITEM_MANAGER::instance().FlushDelayedSave(item);
+		if (ItemSystem::IsValidItem(itemEntity)) {
+			ItemSystem::FlushDelayedSaveEcs(itemEntity);
 		}
 	}
 

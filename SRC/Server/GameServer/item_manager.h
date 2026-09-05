@@ -410,13 +410,13 @@ class ITEM_MANAGER : public singleton<ITEM_MANAGER>
 		void FlushDelayedSaveByOwner(entt::entity owner);
 		void			SaveSingleItem(LPITEM item);
 
-		LPITEM                  CreateItem(uint32_t vnum, uint32_t count = 1, uint32_t dwID = 0, bool bTryMagic = false, int iRarePct = -1, bool bSkipSave = false);
+		entt::entity            CreateItem(uint32_t vnum, uint32_t count = 1, uint32_t dwID = 0, bool bTryMagic = false, int iRarePct = -1, bool bSkipSave = false);
 #ifndef DEBUG_ALLOC
 		void DestroyItem(LPITEM item);
 #else
 		void DestroyItem(LPITEM item, const char* file, size_t line);
 #endif
-		void			RemoveItem(LPITEM item, const char * c_pszReason= nullptr); // 사용자로 부터 아이템을 제거
+		void			RemoveItem(entt::entity item, const char * c_pszReason = nullptr); // 사용자로 부터 아이템을 제거
 
 		LPITEM			Find(uint32_t id);
 		LPITEM                  FindByVID(uint32_t vid);

@@ -398,7 +398,7 @@ namespace quest
 			return 1;
 
 		const uint16_t sourceCell = ItemSystem::GetItemCell(source);
-		const entt::entity replacement = ItemSystem::CreateItemEcs(
+		const entt::entity replacement = ITEM_MANAGER::instance().CreateItem(
 			static_cast<uint32_t>(lua_tonumber(L, 1)), 1, 0, false);
 		if (!ItemSystem::IsValidItem(replacement))
 			return 1;

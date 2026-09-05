@@ -1043,7 +1043,7 @@ bool CExchange::Done()
 		{
 			ItemSystem::SetItemExchanging(itemEntity, false);
 			m_items[i] = entt::null;
-			VCardUse(m_pOwner, victim, item);
+			VCardUse(m_pOwner ? m_pOwner->GetEntityHandle() : entt::null, victimEntity, item ? item->GetEntityHandle() : entt::null);
 			continue;
 		}
 

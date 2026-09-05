@@ -645,7 +645,7 @@ int RefineFishingRod(entt::entity owner, entt::entity rod)
 
     if (success)
     {
-        const entt::entity newRod = ItemSystem::CreateItemEcs(
+        const entt::entity newRod = ITEM_MANAGER::instance().CreateItem(
             ItemSystem::GetItemRefineVnum(rod), 1);
         if (!ItemSystem::IsValidItem(newRod))
             return 4;
@@ -669,7 +669,7 @@ int RefineFishingRod(entt::entity owner, entt::entity rod)
     LogManager::instance().ItemLogEntity(
         owner, rod, "REFINE FISH_ROD FAIL", ItemSystem::GetItemName(rod));
 #else
-    const entt::entity newRod = ItemSystem::CreateItemEcs(
+    const entt::entity newRod = ITEM_MANAGER::instance().CreateItem(
         ItemSystem::GetItemValue(rod, 4), 1);
     if (!ItemSystem::IsValidItem(newRod))
         return 3;

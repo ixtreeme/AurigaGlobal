@@ -651,7 +651,7 @@ namespace quest
 
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
 
-		const entt::entity item = ItemSystem::CreateItemEcs(dwVnum, icount);
+		const entt::entity item = ITEM_MANAGER::instance().CreateItem(dwVnum, icount);
 		if (chEntity == entt::null || !g_registry.valid(chEntity) ||
 			!ItemSystem::IsValidItem(item))
 		{
@@ -1916,7 +1916,7 @@ namespace quest
 			return 1;
 		}
 
-		const entt::entity replacement = ItemSystem::CreateItemEcs(refinedVnum, 1, 0, false);
+		const entt::entity replacement = ITEM_MANAGER::instance().CreateItem(refinedVnum, 1, 0, false);
 		if (!ItemSystem::IsValidItem(replacement))
 		{
 			lua_pushboolean(L, 0);
@@ -2961,7 +2961,7 @@ teleport_area:
 			return 1;
 		}
 
-		const entt::entity item = ItemSystem::CreateItemEcs(MobInfo->m_table.dwPolymorphItemVnum);
+		const entt::entity item = ITEM_MANAGER::instance().CreateItem(MobInfo->m_table.dwPolymorphItemVnum);
 
 		if (!ItemSystem::IsValidItem(item))
 		{
@@ -3255,7 +3255,7 @@ teleport_area:
 		if ((m_state = lua_tonumber(L, 4))>=PCMI0_MAX)
 			return 0;
 
-		const entt::entity newItem = ItemSystem::CreateItemEcs(m_vnum, m_count, 0, false);
+		const entt::entity newItem = ITEM_MANAGER::instance().CreateItem(m_vnum, m_count, 0, false);
 		if (ItemSystem::IsValidItem(newItem))
 		{
 			// socket
@@ -3836,7 +3836,7 @@ teleport_area:
 	ALUA(pc_give_random_book0)
 	{
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
-		const entt::entity item = ItemSystem::CreateItemEcs(50300);
+		const entt::entity item = ITEM_MANAGER::instance().CreateItem(50300);
 		const uint32_t skillVnum = lua_isnumber(L, 1)
 			? ::GetRandomSkillVnum(lua_tonumber(L, 1))
 			: ::GetRandomSkillVnum();

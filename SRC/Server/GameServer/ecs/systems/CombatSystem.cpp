@@ -3903,7 +3903,7 @@ void CHARACTER::Reward(bool bItemDrop)
 								for (const auto& di : drops)
 								{
 									const entt::entity newItem =
-										ItemSystem::CreateItemEcs(di.vnum, di.count);
+										ITEM_MANAGER::instance().CreateItem(di.vnum, di.count);
 									if (!ItemSystem::IsValidItem(newItem))
 										continue;
 
@@ -4508,7 +4508,7 @@ void CHARACTER::RewardGold(entt::entity attacker) {
 					pkAttacker->GiveGold(iGold);
 					iTotalGold += iGold;
 #else
-					const entt::entity gold = ItemSystem::CreateItemEcs(1, iGold);
+					const entt::entity gold = ITEM_MANAGER::instance().CreateItem(1, iGold);
 					if (ItemSystem::IsValidItem(gold))
 					{
 						pos.x = GetX() + ((number(-14, 14) + number(-14, 14)) * 23);
@@ -4543,7 +4543,7 @@ void CHARACTER::RewardGold(entt::entity attacker) {
 					pkAttacker->GiveGold(iGold);
 					iTotalGold += iGold;
 #else
-					const entt::entity gold = ItemSystem::CreateItemEcs(1, iGold);
+					const entt::entity gold = ITEM_MANAGER::instance().CreateItem(1, iGold);
 					if (ItemSystem::IsValidItem(gold))
 					{
 						pos.x = GetX() + (number(-7, 7) * 20);
@@ -4597,7 +4597,7 @@ void CHARACTER::RewardGold(entt::entity attacker) {
 #ifdef ENABLE_YANG_INSTANT_INVENTORY_RAZOR93
 							pkAttacker->GiveGold(splitGold);
 #else
-							const entt::entity gold = ItemSystem::CreateItemEcs(1, splitGold);
+							const entt::entity gold = ITEM_MANAGER::instance().CreateItem(1, splitGold);
 							if (ItemSystem::IsValidItem(gold))
 							{
 								pos.x = GetX() + (number(-7, 7) * 20);

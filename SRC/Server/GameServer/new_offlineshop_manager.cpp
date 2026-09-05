@@ -945,18 +945,18 @@ namespace offlineshop
 		{
 			OFFSHOP_DEBUG("buyer is online , name %s , item id %u ",ecs::PlayerRuntime::GetName(chEntity).data(), dwItemID);
 
-			LPITEM pkItem = pItem->CreateItem();
-			if (!pkItem)
+			const entt::entity pkItem = pItem->CreateItem();
+			if (!ItemSystem::IsValidItem(pkItem))
 			{
 				LOG_ERROR("cannot create item ( dwItemID {} , dwVnum {}, dwShopOwner {}, dwBuyer {} ) ", dwItemID, pItem->GetInfo()->dwVnum, dwOwnerID, dwBuyerID);
 				return false;
 			}
 
 			TItemPos pos;
-			if (!ch->CanTakeInventoryItem((pkItem ? pkItem->GetEntityHandle() : entt::null), &pos))
+			if (!ch->CanTakeInventoryItem(pkItem, &pos))
 			{
 				ItemSystem::DestroyItemEntityEcs(
-			(pkItem ? pkItem->GetEntityHandle() : entt::null),
+			pkItem,
 			"OFFLINESHOP_TEMP");
 
 				CShopSafebox* pSafebox = ch->GetShopSafebox()? ch->GetShopSafebox() : GetShopSafeboxByOwnerID((ecs::PlayerRuntime::GetPlayerID(chEntity)));
@@ -974,7 +974,7 @@ namespace offlineshop
 
 			else
 			{
-				InventorySystem::AddToCharacter(pkItem->GetEntityHandle(), ch->GetEntityHandle(), pos);
+				InventorySystem::AddToCharacter(pkItem, ch->GetEntityHandle(), pos);
 			}
 
 			uint32_t dwItemID = pItem->GetID();
@@ -3256,16 +3256,16 @@ namespace offlineshop
 		if(!pkSafebox->GetItem(dwItemID, &pItem))
 			return false;
 
-		LPITEM pkItem = pItem->CreateItem();
-		if(!pkItem)
+		const entt::entity pkItem = pItem->CreateItem();
+		if (!ItemSystem::IsValidItem(pkItem))
 			return false;
 
 
 		TItemPos itemPos;
-		if (!ch->CanTakeInventoryItem((pkItem ? pkItem->GetEntityHandle() : entt::null), &itemPos))
+		if (!ch->CanTakeInventoryItem(pkItem, &itemPos))
 		{
 			ItemSystem::DestroyItemEntityEcs(
-			(pkItem ? pkItem->GetEntityHandle() : entt::null),
+			pkItem,
 			"OFFLINESHOP_TEMP");
 			return false;
 		}
@@ -3275,7 +3275,7 @@ namespace offlineshop
 		if (pkSafebox->RemoveItem(dwItemID))
 		{
 			pkSafebox->RefreshToOwner();
-			InventorySystem::AddToCharacter(pkItem->GetEntityHandle(), ch->GetEntityHandle(), itemPos);
+			InventorySystem::AddToCharacter(pkItem, ch->GetEntityHandle(), itemPos);
 		}
 
 		SendShopSafeboxGetItemDBPacket((ecs::PlayerRuntime::GetPlayerID(character)), dwItemID);

@@ -782,63 +782,60 @@ bool GrillFishEcs(entt::entity owner, entt::entity fishItem)
 	return true;
 }
 
-bool RefinableRod(LPITEM rod)
+bool RefinableRod(entt::entity rod)
 {
-	const entt::entity rodEntity = rod ? rod->GetEntityHandle() : entt::null;
-	if (ItemSystem::GetItemType(rodEntity) != ITEM_ROD)
+	if (ItemSystem::GetItemType(rod) != ITEM_ROD)
 		return false;
 
-	if (ItemSystem::IsItemEquipped(rodEntity))
+	if (ItemSystem::IsItemEquipped(rod))
 		return false;
 
-	return (ItemSystem::GetItemSocket(rodEntity, 0) == ItemSystem::GetItemValue(rodEntity, 2));
+	return (ItemSystem::GetItemSocket(rod, 0) == ItemSystem::GetItemValue(rod, 2));
 }
 
-int RealRefineRod(LPCHARACTER ch, LPITEM item)
+int RealRefineRod(entt::entity ch, entt::entity item)
 {
-	const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
-	if (!ch || !item)
+	if (!ecs::PlayerRuntime::IsValid(ch) || !ItemSystem::IsValidItem(item))
 		return 2;
 
 	if (!RefinableRod(item))
 	{
-		const entt::entity itemEntity = item ? item->GetEntityHandle() : entt::null;
-		LOG_ERROR("REFINE_ROD_HACK pid({}) item({}:{})", ecs::PlayerRuntime::GetPlayerID(chEntity), item->GetName(), ItemSystem::GetItemID(itemEntity));
-		LogManager::instance().RefineLog(ecs::PlayerRuntime::GetPlayerID(chEntity), item->GetName(), ItemSystem::GetItemID(itemEntity), -1, 1, "ROD_HACK");
+		LOG_ERROR("REFINE_ROD_HACK pid({}) item({}:{})", ecs::PlayerRuntime::GetPlayerID(ch), ItemSystem::GetItemName(item), ItemSystem::GetItemID(item));
+		LogManager::instance().RefineLog(ecs::PlayerRuntime::GetPlayerID(ch), ItemSystem::GetItemName(item), ItemSystem::GetItemID(item), -1, 1, "ROD_HACK");
 		return 6;
 	}
 
-	LPITEM rod = item;
+	const entt::entity rod = item;
 
-	int iAdv = ItemSystem::GetItemValue((rod ? rod->GetEntityHandle() : entt::null), 0) / 10;
+	int iAdv = ItemSystem::GetItemValue(rod, 0) / 10;
 
-	if (number(1, 100) <= ItemSystem::GetItemValue((rod ? rod->GetEntityHandle() : entt::null), 3))
+	if (number(1, 100) <= ItemSystem::GetItemValue(rod, 3))
 	{
-		LogManager::instance().RefineLog(ecs::PlayerRuntime::GetPlayerID(chEntity), rod->GetName(), ItemSystem::GetItemID((rod ? rod->GetEntityHandle() : entt::null)), iAdv, 1, "ROD");
-		LPITEM pkNewItem = ITEM_MANAGER::instance().CreateItem(rod->GetRefinedVnum(), 1);
-		if (!pkNewItem)
+		LogManager::instance().RefineLog(ecs::PlayerRuntime::GetPlayerID(ch), ItemSystem::GetItemName(rod), ItemSystem::GetItemID(rod), iAdv, 1, "ROD");
+		const entt::entity pkNewItem = ITEM_MANAGER::instance().CreateItem(ItemSystem::GetItemRefinedVnum(rod), 1);
+		if (!ItemSystem::IsValidItem(pkNewItem))
 			return 4;
 
-		uint8_t bCell = ItemSystem::GetItemCell((rod ? rod->GetEntityHandle() : entt::null));
+		uint8_t bCell = ItemSystem::GetItemCell(rod);
 		ITEM_MANAGER::instance().RemoveItem(rod, "REMOVE (REFINE FISH_ROD)");
-		InventorySystem::AddToCharacter(pkNewItem->GetEntityHandle(), ch->GetEntityHandle(), TItemPos (INVENTORY, bCell));
-		LogManager::instance().ItemLog(ch, pkNewItem, "REFINE FISH_ROD SUCCESS", pkNewItem->GetName());
+		InventorySystem::AddToCharacter(pkNewItem, ch, TItemPos (INVENTORY, bCell));
+		LogManager::instance().ItemLogEntity(ch, pkNewItem, "REFINE FISH_ROD SUCCESS", ItemSystem::GetItemName(pkNewItem));
 		return 1;
 	} else {
-		LogManager::instance().RefineLog(ecs::PlayerRuntime::GetPlayerID(chEntity), rod->GetName(), ItemSystem::GetItemID((rod ? rod->GetEntityHandle() : entt::null)), iAdv, 0, "ROD");
+		LogManager::instance().RefineLog(ecs::PlayerRuntime::GetPlayerID(ch), ItemSystem::GetItemName(rod), ItemSystem::GetItemID(rod), iAdv, 0, "ROD");
 #ifdef ENABLE_FISHINGROD_RENEWAL
-		int cur = ItemSystem::GetItemSocket((rod ? rod->GetEntityHandle() : entt::null), 0);
-		ItemSystem::SetItemSocket((rod ? rod->GetEntityHandle() : entt::null), 0, (cur > 0) ? (cur - (cur * 20 / 100)) : 0);
-		LogManager::instance().ItemLog(ch, rod, "REFINE FISH_ROD FAIL", rod->GetName());
+		int cur = ItemSystem::GetItemSocket(rod, 0);
+		ItemSystem::SetItemSocket(rod, 0, (cur > 0) ? (cur - (cur * 20 / 100)) : 0);
+		LogManager::instance().ItemLogEntity(ch, rod, "REFINE FISH_ROD FAIL", ItemSystem::GetItemName(rod));
 #else
-		LPITEM pkNewItem = ITEM_MANAGER::instance().CreateItem(ItemSystem::GetItemValue((rod ? rod->GetEntityHandle() : entt::null), 4), 1);
-		if (!pkNewItem)
+		const entt::entity pkNewItem = ITEM_MANAGER::instance().CreateItem(ItemSystem::GetItemValue(rod, 4), 1);
+		if (!ItemSystem::IsValidItem(pkNewItem))
 			return 3;
 
-		uint8_t bCell = ItemSystem::GetItemCell((rod ? rod->GetEntityHandle() : entt::null));
+		uint8_t bCell = ItemSystem::GetItemCell(rod);
 		ITEM_MANAGER::instance().RemoveItem(rod, "REMOVE (REFINE FISH_ROD)");
-		InventorySystem::AddToCharacter(pkNewItem->GetEntityHandle(), ch->GetEntityHandle(), TItemPos(INVENTORY, bCell));
-		LogManager::instance().ItemLog(ch, pkNewItem, "REFINE FISH_ROD FAIL", pkNewItem->GetName());
+		InventorySystem::AddToCharacter(pkNewItem, ch, TItemPos(INVENTORY, bCell));
+		LogManager::instance().ItemLogEntity(ch, pkNewItem, "REFINE FISH_ROD FAIL", ItemSystem::GetItemName(pkNewItem));
 #endif
 		return 2;
 	}

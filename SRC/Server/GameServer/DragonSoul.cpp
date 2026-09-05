@@ -426,7 +426,7 @@ bool DSManager::ExtractDragonHeart(LPCHARACTER ch, entt::entity item, entt::enti
 		return false;
 	}
 
-	const entt::entity dragonHeart = ItemSystem::CreateItemEcs(DRAGON_HEART_VNUM);
+	const entt::entity dragonHeart = ITEM_MANAGER::instance().CreateItem(DRAGON_HEART_VNUM);
 	if (dragonHeart == entt::null)
 	{
 		LOG_ERROR("Cannot create DRAGON_HEART({}).", DRAGON_HEART_VNUM);
@@ -663,7 +663,7 @@ bool DSManager::DoRefineGrade(entt::entity ch, TItemPos (&aItemPoses)[DRAGON_SOU
 	}
 
 	const uint32_t resultVnum = MakeDragonSoulVnum(dsType, static_cast<uint8_t>(resultGrade), 0, 0);
-	const entt::entity resultItem = ItemSystem::CreateItemEcs(resultVnum);
+	const entt::entity resultItem = ITEM_MANAGER::instance().CreateItem(resultVnum);
 	if (resultItem == entt::null)
 	{
 		LOG_ERROR("INVALID DRAGON SOUL({})", resultVnum);
@@ -788,7 +788,7 @@ bool DSManager::DoRefineStep(entt::entity ch, TItemPos (&aItemPoses)[DRAGON_SOUL
 	}
 
 	const uint32_t resultVnum = MakeDragonSoulVnum(dsType, grade, static_cast<uint8_t>(resultStep), 0);
-	const entt::entity resultItem = ItemSystem::CreateItemEcs(resultVnum);
+	const entt::entity resultItem = ITEM_MANAGER::instance().CreateItem(resultVnum);
 	if (resultItem == entt::null)
 	{
 		LOG_ERROR("INVALID DRAGON SOUL({})", resultVnum);
@@ -932,7 +932,7 @@ bool DSManager::DoRefineStrength(entt::entity ch, TItemPos (&aItemPoses)[DRAGON_
 	{
 		const uint8_t resultStrength = success ? strength + 1 : strength - 1;
 		const uint32_t resultVnum = MakeDragonSoulVnum(type, grade, step, resultStrength);
-		result = ItemSystem::CreateItemEcs(resultVnum);
+		result = ITEM_MANAGER::instance().CreateItem(resultVnum);
 		if (result == entt::null)
 		{
 			LOG_ERROR("INVALID DRAGON SOUL({})", resultVnum);
@@ -1089,7 +1089,7 @@ void DSManager::DoRefineAll(entt::entity ch, uint8_t subheader, uint8_t type, ui
 			const uint32_t resultVnum = gradeMode
 				? MakeDragonSoulVnum(dsType, static_cast<uint8_t>(resultIndex), 0, 0)
 				: MakeDragonSoulVnum(dsType, grade, static_cast<uint8_t>(resultIndex), 0);
-			const entt::entity result = ItemSystem::CreateItemEcs(resultVnum);
+			const entt::entity result = ITEM_MANAGER::instance().CreateItem(resultVnum);
 			if (result == entt::null)
 			{
 				LOG_ERROR("INVALID DRAGON SOUL({})", resultVnum);

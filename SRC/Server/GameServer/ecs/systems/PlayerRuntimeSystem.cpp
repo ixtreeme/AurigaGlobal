@@ -3739,7 +3739,7 @@ void CHARACTER::RefineAcceMaterials()
         if (bSucces)
         {
 			const entt::entity resultItem =
-				ItemSystem::CreateItemEcs(dwItemVnum, 1, 0, false);
+				ITEM_MANAGER::instance().CreateItem(dwItemVnum, 1, 0, false);
 			if (!ItemSystem::IsValidItem(resultItem))
             {
                 LOG_ERROR("{} can't be created.", dwItemVnum);

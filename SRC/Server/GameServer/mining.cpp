@@ -142,7 +142,7 @@ namespace mining
 			return;
 		}
 
-		const entt::entity item = ItemSystem::CreateItemEcs(dwRawOreVnum, iFractionCount);
+		const entt::entity item = ITEM_MANAGER::instance().CreateItem(dwRawOreVnum, iFractionCount);
 
 		if (!ItemSystem::IsValidItem(item))
 		{
@@ -275,7 +275,7 @@ namespace mining
 			rkLogMgr.RefineLog(ecs::PlayerRuntime::GetPlayerID(character),
 				ItemSystem::GetItemName(item), ItemSystem::GetItemID(item), iAdv, 1, "PICK");
 
-			const entt::entity newPick = ItemSystem::CreateItemEcs(ItemSystem::GetItemRefineVnum(item), 1);
+			const entt::entity newPick = ITEM_MANAGER::instance().CreateItem(ItemSystem::GetItemRefineVnum(item), 1);
 			if (!ItemSystem::IsValidItem(newPick))
 				return 2;
 
@@ -313,7 +313,7 @@ namespace mining
 				return 0;
 			}
 #else
-			const entt::entity newPick = ItemSystem::CreateItemEcs(ItemSystem::GetItemValue(item, 4), 1);
+			const entt::entity newPick = ITEM_MANAGER::instance().CreateItem(ItemSystem::GetItemValue(item, 4), 1);
 
 			if (ItemSystem::IsValidItem(newPick))
 			{

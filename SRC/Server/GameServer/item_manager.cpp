@@ -248,10 +248,10 @@ TItemExtraProto* ITEM_MANAGER::GetExtraProto(uint32_t vnum)
 
 
 
-LPITEM ITEM_MANAGER::CreateItem(uint32_t vnum, uint32_t count, uint32_t id, bool bTryMagic, int iRarePct, bool bSkipSave)
+entt::entity ITEM_MANAGER::CreateItem(uint32_t vnum, uint32_t count, uint32_t id, bool bTryMagic, int iRarePct, bool bSkipSave)
 {
 	if (0 == vnum)
-		return nullptr;
+		return entt::null;
 
 	uint32_t dwMaskVnum = 0;
 	if (GetMaskVnum(vnum))
@@ -262,7 +262,7 @@ LPITEM ITEM_MANAGER::CreateItem(uint32_t vnum, uint32_t count, uint32_t id, bool
 	const TItemTable* table = GetTable(vnum);
 
 	if (nullptr == table)
-		return nullptr;
+		return entt::null;
 
 	LPITEM item = nullptr;
 
@@ -279,7 +279,7 @@ LPITEM ITEM_MANAGER::CreateItem(uint32_t vnum, uint32_t count, uint32_t id, bool
 				LOG_ERROR("ITEM_ID_DUP: {} vnum={} {} owner {}", id, item->GetVnum(), itemName,
 					static_cast<uint32_t>(owner));
 			}
-			return nullptr;
+			return entt::null;
 		}
 
 		m_map_pkItemByID.erase(duplicate);
@@ -370,7 +370,7 @@ LPITEM ITEM_MANAGER::CreateItem(uint32_t vnum, uint32_t count, uint32_t id, bool
 #else
 		M2_DELETE(item);
 #endif
-		return nullptr;
+		return entt::null;
 	}
 
 	if (!bSkipSave)
@@ -380,7 +380,7 @@ LPITEM ITEM_MANAGER::CreateItem(uint32_t vnum, uint32_t count, uint32_t id, bool
 			m_map_pkItemByID.insert_or_assign(item->GetID(), itemEntity);
 	}
 	if (!item->SetCount(count))
-		return nullptr;
+		return entt::null;
 
 	item->SetSkipSave(false);
 
@@ -448,7 +448,8 @@ LPITEM ITEM_MANAGER::CreateItem(uint32_t vnum, uint32_t count, uint32_t id, bool
 			if (Blend_Item_find(item->GetVnum()))
 			{
 				Blend_Item_set_value(item);
-				return item;
+				ItemSystem::SyncItemStateFromLegacy(itemEntity);
+				return itemEntity;
 			}
 		}
 
@@ -566,7 +567,8 @@ LPITEM ITEM_MANAGER::CreateItem(uint32_t vnum, uint32_t count, uint32_t id, bool
 	}
 #endif
 
-	return item;
+	ItemSystem::SyncItemStateFromLegacy(itemEntity);
+	return itemEntity;
 }
 
 
@@ -697,22 +699,15 @@ void ITEM_MANAGER::Update()
 	}
 }
 
-void ITEM_MANAGER::RemoveItem(LPITEM item, const char* c_pszReason)
+void ITEM_MANAGER::RemoveItem(entt::entity itemEntity, const char* c_pszReason)
 {
-	if (!item)
+	if (!ItemSystem::IsValidItem(itemEntity))
 	{
-		LOG_ERROR("ITEM_MANAGER::RemoveItem called with null item");
+		LOG_ERROR("ITEM_MANAGER::RemoveItem called with an invalid item entity");
 		return;
 	}
 
-	const entt::entity itemEntity = CItemRegistry::Instance().FindByLegacy(item);
-	if (itemEntity == entt::null)
-	{
-		LOG_ERROR("ITEM_MANAGER::RemoveItem rejected stale item pointer {}", static_cast<const void*>(item));
-		return;
-	}
-
-	item = ResolveManagedItem(itemEntity);
+	LPITEM item = ResolveManagedItem(itemEntity);
 	if (!item)
 		return;
 
@@ -1253,7 +1248,7 @@ bool ITEM_MANAGER::CreateDropItem(LPCHARACTER pkChr, LPCHARACTER pkKiller, std::
 		return false;
 
 	uint8_t bRank = pkChr->GetMobRank();
-	LPITEM item = nullptr;
+	entt::entity item = entt::null;
 
 	// Common Drop Items
 	auto it = g_vec_pkCommonDropItem[bRank].begin();
@@ -1276,7 +1271,7 @@ bool ITEM_MANAGER::CreateDropItem(LPCHARACTER pkChr, LPCHARACTER pkKiller, std::
 			if (!table)
 				continue;
 
-			item = nullptr;
+			item = entt::null;
 
 			if (table->bType == ITEM_POLYMORPH)
 			{
@@ -1284,14 +1279,14 @@ bool ITEM_MANAGER::CreateDropItem(LPCHARACTER pkChr, LPCHARACTER pkKiller, std::
 				{
 					item = CreateItem(c_rInfo.m_dwVnum, 1, 0, true);
 
-					if (item)
-						item->SetSocket(0, ecs::PlayerRuntime::GetRaceNum(chr));
+					if (ItemSystem::IsValidItem(item))
+						ItemSystem::SetItemSocket(item, 0, ecs::PlayerRuntime::GetRaceNum(chr));
 				}
 			}
 			else
 				item = CreateItem(c_rInfo.m_dwVnum, 1, 0, true);
 
-			if (item) vec_item.push_back((item ? item->GetEntityHandle() : entt::null));
+			if (ItemSystem::IsValidItem(item)) vec_item.push_back(item);
 		}
 	}
 
@@ -1316,20 +1311,20 @@ bool ITEM_MANAGER::CreateDropItem(LPCHARACTER pkChr, LPCHARACTER pkKiller, std::
 				{
 
 					item = CreateItem(v[i].dwVnum, v[i].iCount, 0, true);
-					if (item)
+					if (ItemSystem::IsValidItem(item))
 					{
-						if (item->GetType() == ITEM_POLYMORPH)
+						if (ItemSystem::GetItemType(item) == ITEM_POLYMORPH)
 						{
-							if (item->GetVnum() == pkChr->GetPolymorphItemVnum())
+							if (ItemSystem::GetItemVnum(item) == pkChr->GetPolymorphItemVnum())
 							{
-								item->SetSocket(0, ecs::PlayerRuntime::GetRaceNum(chr));
+								ItemSystem::SetItemSocket(item, 0, ecs::PlayerRuntime::GetRaceNum(chr));
 							}
 						}
 						if (ecs::PlayerRuntime::GetRaceNum(chr) == 4815)
 						{
 							LOG_ERROR("VIKING DROP ROLL: item={} pct_raw={} final={} count={}", v[i].dwVnum, v[i].dwPct, iPercent, v[i].iCount);
 						}
-						vec_item.push_back((item ? item->GetEntityHandle() : entt::null));
+						vec_item.push_back(item);
 					}
 				}
 			}
@@ -1354,7 +1349,7 @@ bool ITEM_MANAGER::CreateDropItem(LPCHARACTER pkChr, LPCHARACTER pkKiller, std::
 
 					const CMobItemGroup::SMobItemGroupInfo& info = pGroup->GetOne();
 					item = CreateItem(info.dwItemVnum, info.iCount, 0, true, info.iRarePct);
-					if (item) vec_item.push_back((item ? item->GetEntityHandle() : entt::null));
+					if (ItemSystem::IsValidItem(item)) vec_item.push_back(item);
 				}
 
 			}
@@ -1378,7 +1373,7 @@ bool ITEM_MANAGER::CreateDropItem(LPCHARACTER pkChr, LPCHARACTER pkKiller, std::
 					{
 						uint32_t dwVnum = v[i].dwVNum;
 						item = CreateItem(dwVnum, v[i].iCount, 0, true);
-						if (item) vec_item.push_back((item ? item->GetEntityHandle() : entt::null));
+						if (ItemSystem::IsValidItem(item)) vec_item.push_back(item);
 					}
 				}
 			}
@@ -1406,7 +1401,7 @@ bool ITEM_MANAGER::CreateDropItem(LPCHARACTER pkChr, LPCHARACTER pkKiller, std::
 					{
 						uint32_t dwVnum = v[i].dwVnum;
 						item = CreateItem(dwVnum, v[i].iCount, 0, true);
-						if (item) vec_item.push_back((item ? item->GetEntityHandle() : entt::null));
+						if (ItemSystem::IsValidItem(item)) vec_item.push_back(item);
 					}
 				}
 			}
@@ -1425,7 +1420,7 @@ bool ITEM_MANAGER::CreateDropItem(LPCHARACTER pkChr, LPCHARACTER pkKiller, std::
 			if (iPercent >= number(1, iRandRange))
 			{
 				item = CreateItem(pkChr->GetMobDropItemVnum(), 1, 0, true);
-				if (item) vec_item.push_back((item ? item->GetEntityHandle() : entt::null));
+				if (ItemSystem::IsValidItem(item)) vec_item.push_back(item);
 			}
 		}
 	}
@@ -1442,8 +1437,8 @@ bool ITEM_MANAGER::CreateDropItem(LPCHARACTER pkChr, LPCHARACTER pkKiller, std::
 			if (iPercent >= number(1, iRandRange))
 			{
 				item = CreateItem(pkChr->GetDropMetinStoneVnum(), 1, 0, true);
-				if (item)
-					vec_item.push_back((item ? item->GetEntityHandle() : entt::null));
+				if (ItemSystem::IsValidItem(item))
+					vec_item.push_back(item);
 			}
 		}
 
@@ -1453,8 +1448,8 @@ bool ITEM_MANAGER::CreateDropItem(LPCHARACTER pkChr, LPCHARACTER pkKiller, std::
 		//	if (iPercent >= number(1, iRandRange))
 		//	{
 		//		item = CreateItem(pkChr->GetDropMetinStofaVnum(), 1, 0, true);
-		//		if (item)
-		//			vec_item.push_back((item ? item->GetEntityHandle() : entt::null));
+		//		if (ItemSystem::IsValidItem(item))
+		//			vec_item.push_back(item);
 		//	}
 		//}
 
@@ -1464,8 +1459,8 @@ bool ITEM_MANAGER::CreateDropItem(LPCHARACTER pkChr, LPCHARACTER pkKiller, std::
 		//	if (iPercent >= number(1, iRandRange))
 		//	{
 		//		item = CreateItem(pkChr->GetDropMetinSaccaVnum(), 1, 0, true);
-		//		if (item)
-		//			vec_item.push_back((item ? item->GetEntityHandle() : entt::null));
+		//		if (ItemSystem::IsValidItem(item))
+		//			vec_item.push_back(item);
 		//	}
 		//}
 	}
@@ -1475,8 +1470,8 @@ bool ITEM_MANAGER::CreateDropItem(LPCHARACTER pkChr, LPCHARACTER pkKiller, std::
 	{
 		LOG_INFO("EVENT HORSE_SKILL_BOOK_DROP");
 
-		if ((item = CreateItem(ITEM_HORSE_SKILL_TRAIN_BOOK, 1, 0, true)))
-			vec_item.push_back((item ? item->GetEntityHandle() : entt::null));
+		if (ItemSystem::IsValidItem(item = CreateItem(ITEM_HORSE_SKILL_TRAIN_BOOK, 1, 0, true)))
+			vec_item.push_back(item);
 	}
 
 
@@ -1619,13 +1614,13 @@ static void __DropEvent_CharStone_DropItem(CHARACTER& killer, CHARACTER& victim,
 		static const int Stones[] = { 30210, 30211, 30212, 30213, 30214, 30215, 30216, 30217, 30218, 30219, 30258, 30259, 30260, 30261, 30262, 30263 };
 		int item_vnum = Stones[number(0, _countof(Stones))];
 
-		LPITEM p_item = nullptr;
+		entt::entity p_item = entt::null;
 
-		if ((p_item = itemMgr.CreateItem(item_vnum, 1, 0, true)))
+		if (ItemSystem::IsValidItem(p_item = itemMgr.CreateItem(item_vnum, 1, 0, true)))
 		{
-			vec_item.push_back((p_item ? p_item->GetEntityHandle() : entt::null));
+			vec_item.push_back(p_item);
 
-			LOG_INFO("dropevent.drop_char_stone.item_drop: killer({}: lv{}), victim({}: lv:{}), item_name({})", killer.GetName(), killer.GetLevel(), victim.GetName(), victim.GetLevel(), p_item->GetName());
+			LOG_INFO("dropevent.drop_char_stone.item_drop: killer({}: lv{}), victim({}: lv:{}), item_name({})", killer.GetName(), killer.GetLevel(), victim.GetName(), victim.GetLevel(), ItemSystem::GetItemName(p_item));
 		}
 	}
 }
@@ -1692,7 +1687,7 @@ static struct DropEvent_RefineBox
 	}
 } gs_dropEvent_refineBox;
 
-static LPITEM __DropEvent_RefineBox_GetDropItem(CHARACTER& killer, CHARACTER& victim, ITEM_MANAGER& itemMgr)
+static entt::entity __DropEvent_RefineBox_GetDropItem(CHARACTER& killer, CHARACTER& victim, ITEM_MANAGER& itemMgr)
 {
 	static const int lowerBox[] = { 50197, 50198, 50199 };
 	static const int lowerBox_range = 3;
@@ -1702,7 +1697,7 @@ static LPITEM __DropEvent_RefineBox_GetDropItem(CHARACTER& killer, CHARACTER& vi
 	static const int higherBox_range = 5;
 
 	if (victim.GetMobRank() < MOB_RANK_KNIGHT)
-		return nullptr;
+		return entt::null;
 
 	int killer_level = killer.GetLevel();
 	//int level_diff = victim_level - killer_level;
@@ -1736,7 +1731,7 @@ static LPITEM __DropEvent_RefineBox_GetDropItem(CHARACTER& killer, CHARACTER& vi
 			return itemMgr.CreateItem(higherBox[number(1, higherBox_range) - 1], 1, 0, true);
 		}
 	}
-	return nullptr;
+	return entt::null;
 }
 
 static void __DropEvent_RefineBox_DropItem(CHARACTER& killer, CHARACTER& victim, ITEM_MANAGER& itemMgr, std::vector<entt::entity>& vec_item)
@@ -1746,13 +1741,13 @@ static void __DropEvent_RefineBox_DropItem(CHARACTER& killer, CHARACTER& victim,
 
 	int log_level = (test_server || ecs::PlayerRuntime::GetGMLevel(((&killer) ? (&killer)->GetEntityHandle() : entt::null)) >= GM_LOW_WIZARD) ? 0 : 1;
 
-	LPITEM p_item = __DropEvent_RefineBox_GetDropItem(killer, victim, itemMgr);
+	const entt::entity p_item = __DropEvent_RefineBox_GetDropItem(killer, victim, itemMgr);
 
-	if (p_item)
+	if (ItemSystem::IsValidItem(p_item))
 	{
-		vec_item.push_back((p_item ? p_item->GetEntityHandle() : entt::null));
+		vec_item.push_back(p_item);
 
-		LOG_INFO("dropevent.drop_refine_box.item_drop: killer({}: lv{}), victim({}: lv:{}), item_name({})", killer.GetName(), killer.GetLevel(), victim.GetName(), victim.GetLevel(), p_item->GetName());
+		LOG_INFO("dropevent.drop_refine_box.item_drop: killer({}: lv{}), victim({}: lv:{}), item_name({})", killer.GetName(), killer.GetLevel(), victim.GetName(), victim.GetLevel(), ItemSystem::GetItemName(p_item));
 	}
 }
 

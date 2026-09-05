@@ -1675,7 +1675,7 @@ void CHARACTER_MANAGER::CheckEventForDrop(entt::entity character, entt::entity k
 	LPCHARACTER pkKiller = ecs::LegacyCharOf(killer);
 	const uint8_t killerEmpire = ecs::PlayerRuntime::GetEmpire(killer);
 	const TEventManagerData* eventPtr = nullptr;
-	LPITEM rewardItem = nullptr;
+	entt::entity rewardItem = entt::null;
 
 	if (ecs::PlayerRuntime::IsStone(character))
 	{
@@ -1688,7 +1688,7 @@ void CHARACTER_MANAGER::CheckEventForDrop(entt::entity character, entt::entity k
 			for (const auto& vItem : vec_item)
 			{
 				rewardItem = ITEM_MANAGER::Instance().CreateItem(ItemSystem::GetItemVnum(vItem), ItemSystem::GetItemCount(vItem), 0, true);
-				if (rewardItem) m_cache.emplace_back((rewardItem ? rewardItem->GetEntityHandle() : entt::null));
+				if (ItemSystem::IsValidItem(rewardItem)) m_cache.emplace_back(rewardItem);
 			}
 			for (const auto& rItem : m_cache)
 				vec_item.emplace_back(rItem);
@@ -1726,8 +1726,8 @@ void CHARACTER_MANAGER::CheckEventForDrop(entt::entity character, entt::entity k
 			for (const auto& vItem : vec_item)
 			{
 				rewardItem = ITEM_MANAGER::Instance().CreateItem(ItemSystem::GetItemVnum(vItem), ItemSystem::GetItemCount(vItem), 0, true);
-				if (rewardItem)
-					m_cache.emplace_back((rewardItem ? rewardItem->GetEntityHandle() : entt::null));
+				if (ItemSystem::IsValidItem(rewardItem))
+					m_cache.emplace_back(rewardItem);
 			}
 
 			for (const auto& rItem : m_cache)
@@ -1736,9 +1736,9 @@ void CHARACTER_MANAGER::CheckEventForDrop(entt::entity character, entt::entity k
 		}
 		if (ecs::PlayerRuntime::GetRaceNum(character) == 4011)
 		{
-			LPITEM extraDrop = ITEM_MANAGER::Instance().CreateItem(50101, 1, 0, true);
-			if (extraDrop)
-				vec_item.emplace_back((extraDrop ? extraDrop->GetEntityHandle() : entt::null));
+			const entt::entity extraDrop = ITEM_MANAGER::Instance().CreateItem(50101, 1, 0, true);
+			if (ItemSystem::IsValidItem(extraDrop))
+				vec_item.emplace_back(extraDrop);
 		}
 	}
 	else if (ecs::PlayerRuntime::GetRaceNum(character) == 491//map1
@@ -1773,8 +1773,8 @@ void CHARACTER_MANAGER::CheckEventForDrop(entt::entity character, entt::entity k
 			for (const auto& vItem : vec_item)
 			{
 				rewardItem = ITEM_MANAGER::Instance().CreateItem(ItemSystem::GetItemVnum(vItem), ItemSystem::GetItemCount(vItem), 0, true);
-				if (rewardItem)
-					m_cache.emplace_back((rewardItem ? rewardItem->GetEntityHandle() : entt::null));
+				if (ItemSystem::IsValidItem(rewardItem))
+					m_cache.emplace_back(rewardItem);
 			}
 
 			for (const auto& rItem : m_cache)
@@ -1798,7 +1798,7 @@ void CHARACTER_MANAGER::CheckEventForDrop(entt::entity character, entt::entity k
 				if (missionBook == itemVnum)
 				{
 					rewardItem = ITEM_MANAGER::Instance().CreateItem(itemVnum, ItemSystem::GetItemCount(vItem), 0, true);
-					if (rewardItem) m_cache.emplace_back((rewardItem ? rewardItem->GetEntityHandle() : entt::null));
+					if (ItemSystem::IsValidItem(rewardItem)) m_cache.emplace_back(rewardItem);
 
 					break;
 				}
@@ -1822,7 +1822,7 @@ void CHARACTER_MANAGER::CheckEventForDrop(entt::entity character, entt::entity k
 				if (ticketItem == itemVnum)
 				{
 					rewardItem = ITEM_MANAGER::Instance().CreateItem(itemVnum, ItemSystem::GetItemCount(vItem), 0, true);
-					if (rewardItem) m_cache.emplace_back((rewardItem ? rewardItem->GetEntityHandle() : entt::null));
+					if (ItemSystem::IsValidItem(rewardItem)) m_cache.emplace_back(rewardItem);
 
 					break;
 				}
@@ -1836,8 +1836,8 @@ void CHARACTER_MANAGER::CheckEventForDrop(entt::entity character, entt::entity k
 	{
 
 		// If your moonlight item vnum is different change 50011!
-		LPITEM item = ITEM_MANAGER::Instance().CreateItem(50011, 1, 0, true);
-		if (item) vec_item.emplace_back((item ? item->GetEntityHandle() : entt::null));
+		const entt::entity item = ITEM_MANAGER::Instance().CreateItem(50011, 1, 0, true);
+		if (ItemSystem::IsValidItem(item)) vec_item.emplace_back(item);
 
 	}
 	eventPtr = CheckEventIsActive(LELEKGOMB_EVENT, killerEmpire);
@@ -1845,8 +1845,8 @@ void CHARACTER_MANAGER::CheckEventForDrop(entt::entity character, entt::entity k
 	{
 
 		// If your moonlight item vnum is different change 50011!
-		LPITEM item = ITEM_MANAGER::Instance().CreateItem(30135, 1, 0, true);
-		if (item) vec_item.emplace_back((item ? item->GetEntityHandle() : entt::null));
+		const entt::entity item = ITEM_MANAGER::Instance().CreateItem(30135, 1, 0, true);
+		if (ItemSystem::IsValidItem(item)) vec_item.emplace_back(item);
 
 	}
 
@@ -1855,8 +1855,8 @@ void CHARACTER_MANAGER::CheckEventForDrop(entt::entity character, entt::entity k
 	{
 
 		// If your moonlight item vnum is different change 50011!
-		LPITEM item = ITEM_MANAGER::Instance().CreateItem(50037, 1, 0, true);
-		if (item) vec_item.emplace_back((item ? item->GetEntityHandle() : entt::null));
+		const entt::entity item = ITEM_MANAGER::Instance().CreateItem(50037, 1, 0, true);
+		if (ItemSystem::IsValidItem(item)) vec_item.emplace_back(item);
 
 	}
 	eventPtr = CheckEventIsActive(MIKI_EVENT, killerEmpire);
@@ -1864,8 +1864,8 @@ void CHARACTER_MANAGER::CheckEventForDrop(entt::entity character, entt::entity k
 	{
 
 		// If your moonlight item vnum is different change 50011!
-		LPITEM item = ITEM_MANAGER::Instance().CreateItem(50010, 1, 0, true);
-		if (item) vec_item.emplace_back((item ? item->GetEntityHandle() : entt::null));
+		const entt::entity item = ITEM_MANAGER::Instance().CreateItem(50010, 1, 0, true);
+		if (ItemSystem::IsValidItem(item)) vec_item.emplace_back(item);
 
 	}
 
@@ -1948,9 +1948,9 @@ void CHARACTER_MANAGER::CheckEventForDrop(entt::entity character, entt::entity k
 
 		if (RollEventChance(eventPtr->value[2]))
 		{
-			LPITEM item = ITEM_MANAGER::instance().CreateItem(50181, 1, 0, true);//egy néger kosár fasz
-			if (item)
-				vec_item.emplace_back((item ? item->GetEntityHandle() : entt::null));
+			const entt::entity item = ITEM_MANAGER::instance().CreateItem(50181, 1, 0, true);//egy néger kosár fasz
+			if (ItemSystem::IsValidItem(item))
+				vec_item.emplace_back(item);
 		}
 	}
 	eventPtr = CheckEventIsActive(KARI_EVENT, killerEmpire);
@@ -1963,8 +1963,8 @@ void CHARACTER_MANAGER::CheckEventForDrop(entt::entity character, entt::entity k
 	{
 
 		// If your moonlight item vnum is different change 50011!
-		LPITEM item = ITEM_MANAGER::Instance().CreateItem(39068, 1, 0, true);
-		if (item) vec_item.emplace_back((item ? item->GetEntityHandle() : entt::null));
+		const entt::entity item = ITEM_MANAGER::Instance().CreateItem(39068, 1, 0, true);
+		if (ItemSystem::IsValidItem(item)) vec_item.emplace_back(item);
 
 	}
 	eventPtr = CheckEventIsActive(DUPLA_BOSS_PONT_EVENT, killerEmpire);
@@ -1996,9 +1996,9 @@ void CHARACTER_MANAGER::CheckEventForDrop(entt::entity character, entt::entity k
 			)
 		{
 			// === DROP ===
-			LPITEM item = ITEM_MANAGER::Instance().CreateItem(99998, 1, 0, true);
-			if (item)
-				vec_item.emplace_back((item ? item->GetEntityHandle() : entt::null));
+			const entt::entity item = ITEM_MANAGER::Instance().CreateItem(99998, 1, 0, true);
+			if (ItemSystem::IsValidItem(item))
+				vec_item.emplace_back(item);
 		}
 	}
 	eventPtr = CheckEventIsActive(DUPLA_RUN_PONT_EVENT, killerEmpire);
@@ -2026,9 +2026,9 @@ void CHARACTER_MANAGER::CheckEventForDrop(entt::entity character, entt::entity k
 			)
 		{
 			// === DROP ===
-			LPITEM item = ITEM_MANAGER::Instance().CreateItem(99999, 1, 0, true);
-			if (item)
-				vec_item.emplace_back((item ? item->GetEntityHandle() : entt::null));
+			const entt::entity item = ITEM_MANAGER::Instance().CreateItem(99999, 1, 0, true);
+			if (ItemSystem::IsValidItem(item))
+				vec_item.emplace_back(item);
 		}
 	}
 	if (ecs::PlayerRuntime::IsStone(character))
@@ -2044,8 +2044,8 @@ void CHARACTER_MANAGER::CheckEventForDrop(entt::entity character, entt::entity k
 				if (ItemSystem::GetItemVnum(vItem) == 30271)
 				{
 					rewardItem = ITEM_MANAGER::Instance().CreateItem(30271, ItemSystem::GetItemCount(vItem), 0, true);
-					if (rewardItem)
-						m_cache.emplace_back((rewardItem ? rewardItem->GetEntityHandle() : entt::null));
+					if (ItemSystem::IsValidItem(rewardItem))
+						m_cache.emplace_back(rewardItem);
 				}
 			}
 
@@ -2497,15 +2497,15 @@ void CHARACTER_MANAGER::LoadItemShopBuyReal(entt::entity character, const char* 
 		TIShopData itemData{};
 		if (GetItemShopDataByVnum(itemVnum, itemData))
 		{
-			LPITEM item = ITEM_MANAGER::instance().CreateItem(itemData.itemVnum, itemCount, 0, true);
+			const entt::entity item = ITEM_MANAGER::instance().CreateItem(itemData.itemVnum, itemCount, 0, true);
 
-			if (item)
+			if (ItemSystem::IsValidItem(item))
 			{
 				int32_t alSockets[ITEM_SOCKET_MAX_NUM] = {};
 				for (size_t i = 0; i < ITEM_SOCKET_MAX_NUM; ++i)
 					alSockets[i] = itemData.alSocket[i];
 
-				const TItemTable* itemProto = ItemSystem::GetItemProto((item ? item->GetEntityHandle() : entt::null));
+				const TItemTable* itemProto = ItemSystem::GetItemProto(item);
 				if (itemProto != nullptr && alSockets[ITEM_SOCKET_REMAIN_SEC] == 0)
 				{
 					for (const auto& limit : itemProto->aLimits)
@@ -2530,16 +2530,16 @@ void CHARACTER_MANAGER::LoadItemShopBuyReal(entt::entity character, const char* 
 				}
 
 				for (size_t i = 0; i < ITEM_SOCKET_MAX_NUM; ++i)
-					ItemSystem::SetItemSocket((item ? item->GetEntityHandle() : entt::null), i, alSockets[i]);
+					ItemSystem::SetItemSocket(item, i, alSockets[i]);
 
 				for (size_t i = 0; i < ITEM_ATTRIBUTE_MAX_NUM; ++i)
 				{
 					const TPlayerItemAttribute& attribute = itemData.aAttr[i];
 					if (attribute.bType != 0)
-						ItemSystem::SetItemForceAttributeEcs((item ? item->GetEntityHandle() : entt::null), i, attribute.bType, attribute.sValue);
+						ItemSystem::SetItemForceAttributeEcs(item, i, attribute.bType, attribute.sValue);
 				}
 
-				ch->AutoGiveItem(item);
+				ItemSystem::AutoGiveItem(ch->GetEntityHandle(), item);
 			}
 			else
 			{
