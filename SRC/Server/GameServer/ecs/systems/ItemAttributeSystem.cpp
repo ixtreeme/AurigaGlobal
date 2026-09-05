@@ -5,6 +5,7 @@
 #include "PointSystem.hpp"
 #include "SocialSystem.hpp"
 #include "../Registry.hpp"
+#include "../components/inventory_components.hpp"
 #include "../detail/ItemAttributeRules.hpp"
 #include "../../constants.h"
 #include "../../config.h"
@@ -422,6 +423,93 @@ bool ResetCostumeAttributesWithItemCost(entt::entity item, entt::entity material
     return false;
 #endif
 }
+
+#ifdef ENABLE_ATTR_COSTUMES
+bool SelectCostumeAttributeToRemove(entt::entity character, std::string_view slot)
+{
+    if (!ecs::PlayerRuntime::IsPC(character))
+        return false;
+    auto& selection = g_registry.get_or_emplace<ecs::CostumeAttributeSelection>(character);
+    // Do not let atoi turn garbage into slot zero, or retain a prior valid
+    // choice after a malformed request. Only the two client options are valid.
+    selection.rareSlot = slot == "0" ? 0 : slot == "1" ? 1 : -1;
+    return selection.rareSlot >= 0;
+}
+
+CostumeAttributeResult UseCostumeAttributeItem(entt::entity character,
+    entt::entity item, entt::entity material)
+{
+    using Result = CostumeAttributeResult;
+    if (!ecs::PlayerRuntime::IsPC(character) || !CanModifyOwnedAttributes(item) ||
+        GetItemOwner(item) != character || GetItemType(item) != ITEM_COSTUME ||
+        GetItemAttributeSetIndex(item) < 0)
+        return Result::InvalidTarget;
+    const auto subtype = GetItemSubType(item);
+    if (subtype != COSTUME_BODY && subtype != COSTUME_HAIR && subtype != COSTUME_WEAPON)
+        return Result::InvalidTarget;
+    const auto* location = g_registry.try_get<ecs::ItemLocation>(item);
+    if (!location || GetItem(character, TItemPos(location->window, location->cell)) != item)
+        return Result::InvalidTarget;
+    if (!CanPayItemAttributeCost(item, material) || GetItemType(material) != ITEM_USE)
+        return Result::InvalidMaterial;
+
+    auto attrs = AttributesOf(item)->attrs;
+    const char* action = "SET_FORCE_ATTR";
+    switch (GetItemSubType(material)) {
+        case USE_CHANGE_ATTR_COSTUME:
+            if (rules::Count(attrs, 0, ITEM_ATTRIBUTE_NORM_NUM) == 0)
+                return Result::NoAttributes;
+            if (!PrepareReroll(item, attrs, nullptr))
+                return Result::Failed;
+            action = "SET_ATTR";
+            break;
+
+        case USE_ADD_ATTR_COSTUME1:
+        case USE_ADD_ATTR_COSTUME2: {
+            const int slot = rules::FindEmpty(attrs, ITEM_ATTRIBUTE_RARE_START, ITEM_ATTRIBUTE_RARE_END);
+            if (slot < 0)
+                return Result::SlotsFull;
+            const auto* sockets = g_registry.try_get<ecs::ItemSockets>(material);
+            if (!sockets)
+                return Result::InvalidMaterial;
+            const int32_t type = sockets->sockets[0];
+            const int32_t value = sockets->sockets[1];
+            // Validate before narrowing the socket payload into an attribute.
+            if (type <= 0 || type >= MAX_APPLY_NUM || type > UINT8_MAX ||
+                value == 0 || value < INT16_MIN || value > INT16_MAX)
+                return Result::InvalidMaterial;
+            if (rules::Has(attrs, ITEM_ATTRIBUTE_RARE_START, ITEM_ATTRIBUTE_RARE_END, type))
+                return Result::DuplicateAttribute;
+            attrs[slot] = {static_cast<uint8_t>(type), static_cast<int16_t>(value)};
+            break;
+        }
+
+        case USE_REMOVE_ATTR_COSTUME: {
+            if (rules::Count(attrs, ITEM_ATTRIBUTE_RARE_START, ITEM_ATTRIBUTE_RARE_END) == 0)
+                return Result::NoRareAttributes;
+            const auto* selection = g_registry.try_get<ecs::CostumeAttributeSelection>(character);
+            const int selected = selection ? selection->rareSlot : 0;
+            if (selected < 0 || selected >= ITEM_ATTRIBUTE_RARE_END - ITEM_ATTRIBUTE_RARE_START)
+                return Result::InvalidSelection;
+            const int slot = ITEM_ATTRIBUTE_RARE_START + selected;
+            if (attrs[slot].bType == 0)
+                return Result::NoRareAttributes;
+            // Compact only rare slots, and publish the completed result once.
+            for (int i = slot; i + 1 < ITEM_ATTRIBUTE_RARE_END; ++i)
+                attrs[i] = attrs[i + 1];
+            attrs[ITEM_ATTRIBUTE_RARE_END - 1] = {};
+            break;
+        }
+
+        default:
+            return Result::InvalidMaterial;
+    }
+    if (!ConsumeItemEcs(material))
+        return Result::Failed;
+    Commit(item, attrs, action);
+    return Result::Success;
+}
+#endif
 
 bool AddItemRareAttributeEcs(entt::entity item)
 {

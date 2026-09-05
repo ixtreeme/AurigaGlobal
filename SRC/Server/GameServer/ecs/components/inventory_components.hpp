@@ -78,6 +78,13 @@ struct SwitchbotRuntimeComponent {
 
 struct GoldAmount { int64_t amount; };
 
+#ifdef ENABLE_ATTR_COSTUMES
+// Per-character dialog state. An invalid command clears the previous choice.
+struct CostumeAttributeSelection {
+    int rareSlot { 0 };
+};
+#endif
+
 struct QuickSlots {
     std::array<TQuickslot, QUICKSLOT_MAX_NUM> slots;
 };

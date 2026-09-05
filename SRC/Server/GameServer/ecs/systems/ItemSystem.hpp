@@ -4,6 +4,7 @@
 
 #include <cstdint>
 #include <vector>
+#include <string_view>
 
 #include <entt/entt.hpp>
 
@@ -189,6 +190,15 @@ bool ChangeItemAttributeWithItemCost(entt::entity item, entt::entity material,
     uint32_t amount = 1, const int* probabilities = nullptr);
 bool ChangeItemAttributeWithGoldCost(entt::entity item, int64_t amount);
 bool ResetCostumeAttributesWithItemCost(entt::entity item, entt::entity material, uint32_t amount = 1);
+#ifdef ENABLE_ATTR_COSTUMES
+enum class CostumeAttributeResult {
+    Success, InvalidTarget, InvalidMaterial, NoAttributes, SlotsFull,
+    DuplicateAttribute, NoRareAttributes, InvalidSelection, Failed
+};
+bool SelectCostumeAttributeToRemove(entt::entity character, std::string_view slot);
+CostumeAttributeResult UseCostumeAttributeItem(entt::entity character,
+    entt::entity item, entt::entity material);
+#endif
 bool ChangeItemRareAttributeEcs(entt::entity item);
 bool ClearItemAttributesEcs(entt::entity item);
 bool CopyItemAttributesEcs(entt::entity source, entt::entity target);

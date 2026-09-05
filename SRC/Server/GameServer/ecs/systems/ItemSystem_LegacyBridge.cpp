@@ -8266,192 +8266,51 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 		break;
 #ifdef ENABLE_ATTR_COSTUMES
 		case USE_CHANGE_ATTR_COSTUME:
-		{
-			LPITEM item2;
-			if ((!IsValidItemPosition(DestCell)) || (!(item2 = GetItem(DestCell))))
-				return false;
-
-			if (ItemSystem::IsItemEquipped(item2->GetEntityHandle()))
-				BuffOnAttr_RemoveBuffsFromItem(item2);
-
-			if (item2->GetType() != ITEM_COSTUME)
-			{
-#ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 396, "");
-#endif
-				return false;
-			}
-
-			if ((item2->GetSubType() != COSTUME_BODY) && (item2->GetSubType() != COSTUME_HAIR) && (item2->GetSubType() != COSTUME_WEAPON)) {
-#ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 396, "");
-#endif
-				return false;
-			}
-
-			if ((item2->IsExchanging()) || (ItemSystem::IsItemEquipped(item2->GetEntityHandle())))
-				return false;
-
-			if (ItemSystem::GetItemAttributeSetIndex(item2->GetEntityHandle()) == -1)
-			{
-#ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 396, "");
-#endif
-				return false;
-			}
-			else if (item2->GetAttributeCount() == 0)
-			{
-#ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 354, "");
-#endif
-				return false;
-			}
-
-			if (!ItemSystem::ChangeItemAttributeEcs(item2->GetEntityHandle()))
-				return false;
-
-			{
-				char buf[21];
-				snprintf(buf, sizeof(buf), "%u", item2->GetID());
-				LogManager::instance().ItemLog(this, item, "CHANGE_COSTUME_ATTR", buf);
-			}
-
-#ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 392, "");
-#endif
-			ItemSystem::ConsumeItemEcs(itemEntity);
-			break;
-		}
 		case USE_ADD_ATTR_COSTUME1:
 		case USE_ADD_ATTR_COSTUME2:
-		{
-			LPITEM item2;
-			if ((!IsValidItemPosition(DestCell)) || (!(item2 = GetItem(DestCell))))
-				return false;
-
-			if (ItemSystem::IsItemEquipped(item2->GetEntityHandle()))
-				BuffOnAttr_RemoveBuffsFromItem(item2);
-
-			if (item2->GetType() != ITEM_COSTUME)
-			{
-#ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 396, "");
-#endif
-				return false;
-			}
-
-			if ((item2->GetSubType() != COSTUME_BODY) && (item2->GetSubType() != COSTUME_HAIR) && (item2->GetSubType() != COSTUME_WEAPON)) {
-#ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 396, "");
-#endif
-				return false;
-			}
-
-			if ((item2->IsExchanging()) || (ItemSystem::IsItemEquipped(item2->GetEntityHandle())))
-				return false;
-
-			if (ItemSystem::GetItemAttributeSetIndex(item2->GetEntityHandle()) == -1)
-			{
-#ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 396, "");
-#endif
-				return false;
-			}
-
-			if ((item2->GetAttributeType(ITEM_ATTRIBUTE_MAX_NUM - 2) != 0) && (item2->GetAttributeType(ITEM_ATTRIBUTE_MAX_NUM - 1) != 0))
-			{
-#ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 87, "");
-#endif
-				return false;
-			}
-
-			uint8_t bAttrSocket = item2->GetAttributeType(ITEM_ATTRIBUTE_MAX_NUM - 2) == 0 ? ITEM_ATTRIBUTE_MAX_NUM - 2 : ITEM_ATTRIBUTE_MAX_NUM - 1;
-			uint8_t bAttrSocketCheck = bAttrSocket == ITEM_ATTRIBUTE_MAX_NUM - 2 ? ITEM_ATTRIBUTE_MAX_NUM - 1 : ITEM_ATTRIBUTE_MAX_NUM - 2;
-			if (item2->GetAttributeType(bAttrSocketCheck) == item->GetSocket(0))
-			{
-#ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 88, "");
-#endif
-				return false;
-			}
-
-			ItemSystem::SetItemForceAttributeEcs(item2->GetEntityHandle(), bAttrSocket, item->GetSocket(0), item->GetSocket(1));
-
-			{
-				char buf[21];
-				snprintf(buf, sizeof(buf), "%u", item2->GetID());
-				LogManager::instance().ItemLog(this, item, "ADD_COSTUME_ATTR", buf);
-			}
-
-#ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 677, "");
-#endif
-			ItemSystem::ConsumeItemEcs(itemEntity);
-			break;
-		}
 		case USE_REMOVE_ATTR_COSTUME:
 		{
-			LPITEM item2;
-			if ((!IsValidItemPosition(DestCell)) || (!(item2 = GetItem(DestCell))))
+			if (!IsValidItemPosition(DestCell))
 				return false;
-
-			if (ItemSystem::IsItemEquipped(item2->GetEntityHandle()))
-				BuffOnAttr_RemoveBuffsFromItem(item2);
-
-			if (item2->GetType() != ITEM_COSTUME)
+			const entt::entity character = GetEntityHandle();
+			const entt::entity target = ItemSystem::GetItem(character, DestCell);
+			const auto subtype = ItemSystem::GetItemSubType(itemEntity);
+			// The last material may be destroyed during the transaction.
+			const uint32_t materialID = ItemSystem::GetItemID(itemEntity);
+			const uint32_t materialVnum = ItemSystem::GetItemOriginalVnum(itemEntity);
+			using Result = ItemSystem::CostumeAttributeResult;
+			const auto result = ItemSystem::UseCostumeAttributeItem(character, target, itemEntity);
+			if (result != Result::Success)
 			{
 #ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 396, "");
+				uint32_t message = 0;
+				switch (result)
+				{
+				case Result::InvalidTarget: message = 396; break;
+				case Result::NoAttributes: message = 354; break;
+				case Result::SlotsFull: message = 87; break;
+				case Result::DuplicateAttribute: message = 88; break;
+				case Result::NoRareAttributes: message = 89; break;
+				default: break;
+				}
+				if (message)
+					ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, message, "");
 #endif
 				return false;
 			}
-
-			if ((item2->GetSubType() != COSTUME_BODY) && (item2->GetSubType() != COSTUME_HAIR) && (item2->GetSubType() != COSTUME_WEAPON)) {
+			const char* action = subtype == USE_CHANGE_ATTR_COSTUME ? "CHANGE_COSTUME_ATTR"
+				: subtype == USE_REMOVE_ATTR_COSTUME ? "REMOVE_COSTUME_ATTR" : "ADD_COSTUME_ATTR";
+			char buf[21];
+			snprintf(buf, sizeof(buf), "%u", ItemSystem::GetItemID(target));
+			auto* desc = ecs::PlayerRuntime::GetDesc(character);
+			LogManager::instance().ItemLog(ecs::PlayerRuntime::GetPlayerID(character),
+				ecs::PlayerRuntime::GetX(character), ecs::PlayerRuntime::GetY(character),
+				materialID, action, buf, desc ? desc->GetHostName() : "", materialVnum);
 #ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 396, "");
+			const uint32_t message = subtype == USE_CHANGE_ATTR_COSTUME ? 392
+				: subtype == USE_REMOVE_ATTR_COSTUME ? 90 : 677;
+			ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, message, "");
 #endif
-				return false;
-			}
-
-			if ((item2->IsExchanging()) || (ItemSystem::IsItemEquipped(item2->GetEntityHandle())))
-				return false;
-
-			if (ItemSystem::GetItemAttributeSetIndex(item2->GetEntityHandle()) == -1)
-			{
-#ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 396, "");
-#endif
-				return false;
-			}
-
-			if ((item2->GetAttributeType(ITEM_ATTRIBUTE_MAX_NUM - 2) == 0) && (item2->GetAttributeType(ITEM_ATTRIBUTE_MAX_NUM - 1) == 0))
-			{
-#ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 89, "");
-#endif
-				return false;
-			}
-
-			int iAttrSocket = GetAttrDialogRemove();
-			if ((iAttrSocket == 0) && (item2->GetAttributeType(ITEM_ATTRIBUTE_MAX_NUM - 1) != 0))
-			{
-				ItemSystem::SetItemForceAttributeEcs(item2->GetEntityHandle(), ITEM_ATTRIBUTE_MAX_NUM - 2, item2->GetAttributeType(ITEM_ATTRIBUTE_MAX_NUM - 1), item2->GetAttributeValue(ITEM_ATTRIBUTE_MAX_NUM - 1));
-				ItemSystem::SetItemForceAttributeEcs(item2->GetEntityHandle(), ITEM_ATTRIBUTE_MAX_NUM - 1, 0, 0);
-			}
-			else
-				ItemSystem::SetItemForceAttributeEcs(item2->GetEntityHandle(), ITEM_ATTRIBUTE_MAX_NUM - 2 + iAttrSocket, 0, 0);
-
-			{
-				char buf[21];
-				snprintf(buf, sizeof(buf), "%u", item2->GetID());
-				LogManager::instance().ItemLog(this, item, "REMOVE_COSTUME_ATTR", buf);
-			}
-
-#ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 90, "");
-#endif
-			ItemSystem::ConsumeItemEcs(itemEntity);
 			break;
 		}
 #endif

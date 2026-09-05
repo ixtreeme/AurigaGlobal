@@ -6041,9 +6041,6 @@ void CHARACTER::Initialize()
         m_lRankPoints[i] = 0;
 #endif
 
-#ifdef ENABLE_ATTR_COSTUMES
-    attrdialog_remove = 0;
-#endif
 #ifdef ENABLE_BATTLE_PASS
     m_listBattlePass.clear();
     m_bIsLoadedBattlePass = false;

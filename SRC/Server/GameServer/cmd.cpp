@@ -3,6 +3,7 @@
 #include "ecs/systems/PlayerRuntimeSystem.hpp"
 #include "ecs/systems/CombatSystem.hpp"
 #include "ecs/systems/PointSystem.hpp"
+#include "ecs/systems/ItemSystem.hpp"
 #include "ecs/AIHelpers.hpp"
 #include "ecs/systems/QuestSystem.hpp"
 #include "utils.h"
@@ -307,23 +308,14 @@ ACMD(do_hide_costume);
 
 #ifdef ENABLE_ATTR_COSTUMES
 ACMD(do_attrdialog_remove) {
-	LPCHARACTER ch = ecs::LegacyCharOf(character);
-	if (ecs::PlayerRuntime::IsObserverMode(character) || CombatSystem::IsDead(character)) {
+	if (!ecs::PlayerRuntime::IsPC(character) ||
+		ecs::PlayerRuntime::IsObserverMode(character) || CombatSystem::IsDead(character)) {
 		return;
 	}
 
 	char arg1[256];
 	one_argument(argument, arg1, sizeof(arg1));
-	if (!*arg1) {
-		return;
-	}
-
-	int iArg = atoi(arg1);
-	if (iArg > 1) {
-		return;
-	}
-
-	ch->SetAttrDialogRemove(iArg);
+	ItemSystem::SelectCostumeAttributeToRemove(character, arg1);
 }
 #endif
 

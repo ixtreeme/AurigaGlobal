@@ -1790,14 +1790,6 @@ public:
 	void		SetRankPoints(int iArg, long long lPoint);
 	void		RankingSubcategory(int iArg);
 #endif
-#ifdef ENABLE_ATTR_COSTUMES
-public:
-	void	SetAttrDialogRemove(int iArg) { attrdialog_remove = iArg; }
-	int		GetAttrDialogRemove() const { return attrdialog_remove; }
-
-protected:
-	int	attrdialog_remove;
-#endif
 #ifdef ENABLE_NEW_PET_EDITS
 public:
 	void	SetPetEnchant(int iArg) { petenchant = iArg; }

@@ -19,6 +19,7 @@ ctest --test-dir build -C Release -R '^item_attributes$' --output-on-failure
 For an existing `build-asan` configured with `ENABLE_ASAN=ON`:
 
 ```powershell
+cmake -S . -B build-asan
 cmake --build build-asan --config RelWithDebInfo --target ItemAttributeTests
 ctest --test-dir build-asan -C RelWithDebInfo -R '^item_attributes$' --output-on-failure
 ```
@@ -34,6 +35,17 @@ stacks/Yang, foreign or detached materials, locked/exchanging/equipped items,
 last-unit material destruction, stale handles, wrong switchbot owners/slots,
 limited and Zodiac changers, stack selection, and atomic costume reset. The
 payment doubles assert that original attributes remain unpublished until debit.
+
+The costume change/add/remove entry point runs with entity-only characters and
+items. Checks include strict dialog selection parsing, invalidation of a prior
+selection after malformed input, negative/overflowed indices, empty rare slots,
+rare-slot compaction, duplicate bonuses, signed socket values and narrowing
+bounds, invalid owners/materials, and exactly one publish after payment.
+These tests call the production selection handler and operation, not the chat
+packet dispatcher or UI. In-game, verify both remover choices, addition of the
+sixth/seventh bonuses, and that rejecting an equipped costume leaves its buffs
+unchanged. The legacy CHARACTER selection field/accessors have been removed;
+the state now belongs to the character's CostumeAttributeSelection component.
 
 The doubles verify save/update calls, not the DB packet encoding or a live
 client session. Test in-game inventory, relog, bonus changers, rune items and

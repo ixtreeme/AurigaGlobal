@@ -7,6 +7,7 @@
 #include "../../SRC/Server/GameServer/new_switchbot.h"
 #include "../../SRC/Server/GameServer/ecs/Registry.hpp"
 #include "../../SRC/Server/GameServer/ecs/components/item_proto_components.hpp"
+#include "../../SRC/Server/GameServer/ecs/components/inventory_components.hpp"
 #include "../../SRC/Server/GameServer/ecs/detail/ItemAttributeRules.hpp"
 #include "../../SRC/Server/GameServer/constants.h"
 #include "../../SRC/Server/GameServer/log.h"
@@ -574,6 +575,229 @@ void CostumeResetTransactions()
 #endif
 }
 
+#ifdef ENABLE_ATTR_COSTUMES
+struct CostumeFixture : PaidFixture {
+    TItemTable materialProto{};
+    explicit CostumeFixture(uint8_t operation)
+    {
+        proto.bType = ITEM_COSTUME;
+        proto.bSubType = COSTUME_BODY;
+        Place(item, INVENTORY, 5);
+        materialProto.bType = ITEM_USE;
+        materialProto.bSubType = operation;
+        g_registry.emplace<ecs::ItemProtoRef>(material).proto = &materialProto;
+        g_registry.emplace<ecs::ItemSockets>(material).sockets = {40, 100};
+        Check(!g_registry.any_of<ecs::LegacyCharPtr>(owner), "costume owner must be entity-only");
+        Watch();
+    }
+    auto Use() { return ItemSystem::UseCostumeAttributeItem(owner, item, material); }
+    void Unchanged()
+    {
+        Check(EqualAttributes(Attrs(), beforePayment) && saves == 0 && updates == 0,
+            "rejected costume operation published attributes");
+        Check(ItemSystem::GetItemCount(material) == 2, "rejected costume operation consumed material");
+    }
+};
+#endif
+
+void CostumeSelectionValidation()
+{
+#ifdef ENABLE_ATTR_COSTUMES
+    using Result = ItemSystem::CostumeAttributeResult;
+    CostumeFixture f(USE_REMOVE_ATTR_COSTUME);
+    f.Attrs()[5] = {40, 400};
+    f.Attrs()[6] = {41, 500};
+    f.Watch();
+    Check(!ItemSystem::SelectCostumeAttributeToRemove(entt::null, "0"), "null dialog owner accepted");
+    Check(!ItemSystem::SelectCostumeAttributeToRemove(f.item, "0"), "non-player dialog owner accepted");
+    for (const auto input : {"", "-1", "-5", "-6", "2", "garbage", "1suffix", "01", "+1", " 1", "999999999999999999999"}) {
+        Check(ItemSystem::SelectCostumeAttributeToRemove(f.owner, "1"), "valid dialog selection failed");
+        Check(!ItemSystem::SelectCostumeAttributeToRemove(f.owner, input), "malformed selection accepted");
+        Check(f.Use() == Result::InvalidSelection, "invalid command reused previous selection");
+        f.Unchanged();
+    }
+    // Defend the operation as well as the command boundary against bad state.
+    for (const int index : {INT_MIN, -6, -5, -1, 2, INT_MAX}) {
+        g_registry.get<ecs::CostumeAttributeSelection>(f.owner).rareSlot = index;
+        Check(f.Use() == Result::InvalidSelection, "out-of-range rare index accepted");
+        f.Unchanged();
+    }
+    Check(payments == 0, "invalid selection attempted payment");
+    g_registry.destroy(f.owner);
+    Check(!ItemSystem::SelectCostumeAttributeToRemove(f.owner, "0"), "stale dialog owner accepted");
+    Check(f.Use() == Result::InvalidTarget, "stale owner used costume item");
+#endif
+}
+
+void CostumeAdditionTransactions()
+{
+#ifdef ENABLE_ATTR_COSTUMES
+    using Result = ItemSystem::CostumeAttributeResult;
+    for (const uint8_t subtype : {COSTUME_BODY, COSTUME_HAIR, COSTUME_WEAPON})
+    for (const uint8_t operation : {USE_ADD_ATTR_COSTUME1, USE_ADD_ATTR_COSTUME2}) {
+        CostumeFixture f(operation);
+        f.proto.bSubType = subtype;
+        g_registry.get<ecs::ItemSockets>(f.material).sockets[1] = -123;
+        g_registry.get<ecs::ItemCount>(f.material).count = 1;
+        Check(f.Use() == Result::Success, "costume addition failed");
+        Check(f.Attrs()[5].bType == 40 && f.Attrs()[5].sValue == -123 && f.Attrs()[6].bType == 0,
+            "costume addition changed signed payload or rare slot order");
+        Check(f.Attrs()[0].sValue == 200 && f.Attrs()[1].sValue == 300 && !g_registry.valid(f.material),
+            "costume addition damaged normal bonuses or missed last-unit debit");
+        Check(saves == 1 && updates == 1 && payments == 1 && randomCalls == 0,
+            "explicit costume addition was not a single deterministic transaction");
+        f.Watch();
+        Check(f.Use() == Result::InvalidMaterial && payments == 0, "stale costume material reused");
+    }
+    CostumeFixture f(USE_ADD_ATTR_COSTUME1);
+    f.Attrs()[6] = {40, 500};
+    f.Watch();
+    Check(f.Use() == Result::DuplicateAttribute, "duplicate rare bonus accepted across a gap");
+    f.Unchanged();
+    auto& sockets = g_registry.get<ecs::ItemSockets>(f.material).sockets;
+    for (const int32_t type : {0, -1, 256, static_cast<int>(MAX_APPLY_NUM), INT32_MAX}) {
+        sockets[0] = type;
+        Check(f.Use() == Result::InvalidMaterial, "invalid costume apply narrowed to a byte");
+        f.Unchanged();
+    }
+    sockets[0] = 20; // A normal-slot duplicate is allowed by the existing costume rules.
+    for (const int32_t value : {0, INT16_MIN - 1, INT16_MAX + 1, INT32_MIN, INT32_MAX}) {
+        sockets[1] = value;
+        Check(f.Use() == Result::InvalidMaterial, "invalid costume value narrowed to a short");
+        f.Unchanged();
+    }
+    sockets[1] = INT16_MIN;
+    rejectPayment = true;
+    Check(f.Use() == Result::Failed, "unpaid costume addition accepted");
+    f.Unchanged();
+    rejectPayment = false;
+    f.Watch();
+    Check(f.Use() == Result::Success, "costume rare-gap addition failed");
+    Check(f.Attrs()[5].bType == 20 && f.Attrs()[5].sValue == INT16_MIN && f.Attrs()[6].sValue == 500,
+        "rare-gap addition lost other bonuses");
+    f.Watch();
+    Check(f.Use() == Result::SlotsFull && payments == 0 && saves == 0, "full rare slots accepted addition");
+    f.Attrs()[5] = {};
+    f.Watch();
+    g_registry.remove<ecs::ItemSockets>(f.material);
+    Check(f.Use() == Result::InvalidMaterial && payments == 0, "missing material sockets accepted");
+#endif
+}
+
+void CostumeRemovalTransactions()
+{
+#ifdef ENABLE_ATTR_COSTUMES
+    using Result = ItemSystem::CostumeAttributeResult;
+    for (const int selected : {0, 1}) {
+        CostumeFixture f(USE_REMOVE_ATTR_COSTUME);
+        f.Attrs()[5] = {40, 400};
+        f.Attrs()[6] = {41, 500};
+        f.Watch();
+        // No component retains the legacy default of slot zero.
+        if (selected == 1)
+            Check(ItemSystem::SelectCostumeAttributeToRemove(f.owner, "1"), "select second rare slot failed");
+        rejectPayment = true;
+        Check(f.Use() == Result::Failed, "unpaid costume removal accepted");
+        f.Unchanged();
+        rejectPayment = false;
+        f.Watch();
+        g_registry.get<ecs::ItemCount>(f.material).count = 1;
+        Check(f.Use() == Result::Success, "costume removal failed");
+        Check(f.Attrs()[5].bType == (selected == 0 ? 41 : 40) &&
+            f.Attrs()[5].sValue == (selected == 0 ? 500 : 400) && f.Attrs()[6].bType == 0,
+            "costume removal compacted wrong slots");
+        Check(f.Attrs()[0].sValue == 200 && f.Attrs()[1].sValue == 300,
+            "costume removal changed normal bonuses");
+        Check(!g_registry.valid(f.material) && saves == 1 && updates == 1 && payments == 1,
+            "costume removal published intermediate state or missed last-unit debit");
+    }
+    CostumeFixture f(USE_REMOVE_ATTR_COSTUME);
+    Check(f.Use() == Result::NoRareAttributes, "empty costume rare slots consumed remover");
+    f.Attrs()[6] = {41, 500};
+    f.Watch();
+    Check(f.Use() == Result::NoRareAttributes, "empty selected slot consumed remover");
+    f.Unchanged();
+    Check(ItemSystem::SelectCostumeAttributeToRemove(f.owner, "1"), "select rare slot after gap failed");
+    Check(f.Use() == Result::Success && f.Attrs()[6].bType == 0, "rare-slot gap blocked valid removal");
+#endif
+}
+
+void CostumeOperationValidation()
+{
+#ifdef ENABLE_ATTR_COSTUMES
+    using Result = ItemSystem::CostumeAttributeResult;
+    CostumeFixture f(USE_CHANGE_ATTR_COSTUME);
+    const auto stranger = g_registry.create();
+    g_registry.emplace<TestPlayer>(stranger);
+    Check(ItemSystem::UseCostumeAttributeItem(stranger, f.item, f.material) == Result::InvalidTarget,
+        "costume operation accepted foreign owner");
+    Check(ItemSystem::UseCostumeAttributeItem(f.owner, entt::null, f.material) == Result::InvalidTarget,
+        "costume operation accepted null target");
+    inventory.erase({f.owner, INVENTORY, 5});
+    Check(f.Use() == Result::InvalidTarget, "costume operation accepted detached target");
+    f.Place(f.item, INVENTORY, 5);
+    auto& flags = g_registry.emplace<ecs::ItemFlags>(f.item);
+    flags.isLocked = true;
+    Check(f.Use() == Result::InvalidTarget, "costume operation accepted locked target");
+    flags.isLocked = false;
+    flags.exchanging = true;
+    Check(f.Use() == Result::InvalidTarget, "costume operation accepted exchanging target");
+    flags.exchanging = false;
+    g_registry.emplace<ecs::ItemEquipped>(f.item).equipped = true;
+    Check(f.Use() == Result::InvalidTarget, "costume operation accepted equipped target");
+    g_registry.get<ecs::ItemEquipped>(f.item).equipped = false;
+    f.proto.bType = ITEM_WEAPON;
+    Check(f.Use() == Result::InvalidTarget, "costume operation accepted weapon");
+    f.proto.bType = ITEM_COSTUME;
+    f.proto.bSubType = COSTUME_ACCE;
+    Check(f.Use() == Result::InvalidTarget, "costume operation accepted sash");
+    f.proto.bSubType = COSTUME_BODY;
+    f.materialProto.bType = ITEM_WEAPON;
+    Check(f.Use() == Result::InvalidMaterial, "non-consumable costume material accepted");
+    f.materialProto.bType = ITEM_USE;
+    f.materialProto.bSubType = USE_POTION;
+    Check(f.Use() == Result::InvalidMaterial, "unrelated consumable accepted");
+    f.materialProto.bSubType = USE_CHANGE_ATTR_COSTUME;
+    g_registry.get<ecs::ItemOwner>(f.material).owner = stranger;
+    Check(f.Use() == Result::InvalidMaterial, "foreign costume material accepted");
+    g_registry.get<ecs::ItemOwner>(f.material).owner = f.owner;
+    inventory.erase({f.owner, INVENTORY, 0});
+    Check(f.Use() == Result::InvalidMaterial, "detached costume material accepted");
+    f.Place(f.material, INVENTORY, 0);
+    g_registry.emplace<ecs::ItemFlags>(f.material).isLocked = true;
+    Check(f.Use() == Result::InvalidMaterial, "locked costume material accepted");
+    g_registry.get<ecs::ItemFlags>(f.material).isLocked = false;
+    Check(payments == 0, "invalid costume request attempted payment");
+    f.Unchanged();
+    f.Attrs()[0] = f.Attrs()[1] = {};
+    f.Watch();
+    Check(f.Use() == Result::NoAttributes && payments == 0, "empty costume rerolled");
+    f.Attrs()[0] = {20, 200};
+    f.Attrs()[1] = {21, 300};
+    f.Attrs()[5] = {40, 400};
+    f.Attrs()[6] = {41, 500};
+    f.Watch();
+    g_map_itemAttr.clear();
+    Check(f.Use() == Result::Failed && payments == 0, "empty table charged costume changer");
+    f.Unchanged();
+    f.Rows(5);
+    rejectPayment = true;
+    Check(f.Use() == Result::Failed, "unpaid costume reroll accepted");
+    f.Unchanged();
+    rejectPayment = false;
+    f.Watch();
+    Check(f.Use() == Result::Success && saves == 1 && updates == 1 && payments == 1, "costume reroll transaction failed");
+    Check(f.Attrs()[5].sValue == 400 && f.Attrs()[6].sValue == 500 && ItemSystem::GetItemAttributeCount(f.item) == 2,
+        "costume changer altered rare bonuses or normal count");
+    f.Watch();
+    Check(f.Use() == Result::Success && !g_registry.valid(f.material) && saves == 1 && updates == 1,
+        "costume changer failed last-unit debit");
+    f.Watch();
+    g_registry.destroy(f.item);
+    Check(f.Use() == Result::InvalidTarget && payments == 0, "stale costume target accepted");
+#endif
+}
+
 void SwitchbotTransactions()
 {
 #if defined(ENABLE_SWITCHBOT)
@@ -655,6 +879,10 @@ int main()
         PaymentValidation();
         GoldTransactions();
         CostumeResetTransactions();
+        CostumeSelectionValidation();
+        CostumeAdditionTransactions();
+        CostumeRemovalTransactions();
+        CostumeOperationValidation();
         SwitchbotTransactions();
         SwitchbotMaterialSelection();
         std::cout << "Item attribute regression checks passed: " << checks << '\n';
