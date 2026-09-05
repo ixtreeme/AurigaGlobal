@@ -363,6 +363,7 @@ MigrationBackup/
 FodyWeavers.xsd
 
 build
+build-asan
 bgfx-build2
 sln
 forras
