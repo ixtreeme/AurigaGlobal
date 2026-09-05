@@ -3357,7 +3357,7 @@ static void __GiveRewardItemToCharacterOrDrop(LegacyCharHandle ch, LegacyCharHan
 		return;
 
 	if (ch && CBattleArena::instance().IsBattleArenaMap(ecs::PlayerRuntime::GetMapIndex(chEntity)) == false)
-		ItemSystem::SetGroundOwnershipLegacyBoundary(
+		ItemSystem::SetGroundOwnership(
 			itemEntity, chEntity, 60);
 
 	LOG_INFO("DROP_ITEM: {} {} {} from {}", ItemSystem::GetItemName(itemEntity),
@@ -3930,7 +3930,7 @@ void CHARACTER::Reward(bool bItemDrop)
 										}
 
 										if (CBattleArena::instance().IsBattleArenaMap(ecs::PlayerRuntime::GetMapIndex(rchEntity)) == false)
-											ItemSystem::SetGroundOwnershipLegacyBoundary(
+											ItemSystem::SetGroundOwnership(
 												newItem, rchEntity);
 									}
 #else
@@ -3943,7 +3943,7 @@ void CHARACTER::Reward(bool bItemDrop)
 									}
 
 									if (CBattleArena::instance().IsBattleArenaMap(ecs::PlayerRuntime::GetMapIndex(rchEntity)) == false)
-										ItemSystem::SetGroundOwnershipLegacyBoundary(
+										ItemSystem::SetGroundOwnership(
 											newItem, rchEntity);
 #endif
 								}
@@ -4013,10 +4013,10 @@ void CHARACTER::Reward(bool bItemDrop)
 							f.Process(this);
 						}
 						else
-							ItemSystem::SetGroundOwnershipLegacyBoundary(
+							ItemSystem::SetGroundOwnership(
 								itemEntity, attacker);
 #else
-						ItemSystem::SetGroundOwnershipLegacyBoundary(
+						ItemSystem::SetGroundOwnership(
 							itemEntity, attacker);
 #endif
 					}
@@ -4078,7 +4078,7 @@ void CHARACTER::Reward(bool bItemDrop)
 							continue;
 
 						if (pkAttacker && CBattleArena::instance().IsBattleArenaMap(ecs::PlayerRuntime::GetMapIndex(attacker)) == false)
-							ItemSystem::SetGroundOwnershipLegacyBoundary(
+							ItemSystem::SetGroundOwnership(
 								itemEntity, attacker);
 
 						LOG_INFO("DROP_ITEM: {} {} {} by {}",
@@ -4139,10 +4139,10 @@ void CHARACTER::Reward(bool bItemDrop)
 									f.Process(this);
 								}
 								else
-									ItemSystem::SetGroundOwnershipLegacyBoundary(
+									ItemSystem::SetGroundOwnership(
 										itemEntity, (ch ? ch->GetEntityHandle() : entt::null));
 #else
-								ItemSystem::SetGroundOwnershipLegacyBoundary(
+								ItemSystem::SetGroundOwnership(
 									itemEntity, (ch ? ch->GetEntityHandle() : entt::null));
 #endif
 							}
@@ -4189,10 +4189,10 @@ void CHARACTER::Reward(bool bItemDrop)
 						f.Process(this);
 					}
 					else
-						ItemSystem::SetGroundOwnershipLegacyBoundary(
+						ItemSystem::SetGroundOwnership(
 							itemEntity, attacker);
 #else
-					ItemSystem::SetGroundOwnershipLegacyBoundary(
+					ItemSystem::SetGroundOwnership(
 						itemEntity, attacker);
 #endif
 				}
@@ -4253,7 +4253,7 @@ void CHARACTER::Reward(bool bItemDrop)
 							continue;
 
 						if (pkAttacker && CBattleArena::instance().IsBattleArenaMap(ecs::PlayerRuntime::GetMapIndex(attacker)) == false)
-							ItemSystem::SetGroundOwnershipLegacyBoundary(
+							ItemSystem::SetGroundOwnership(
 								itemEntity, attacker);
 
 						pos.x = number(-7, 7) * 20;
@@ -4302,10 +4302,10 @@ void CHARACTER::Reward(bool bItemDrop)
 								f.Process(this);
 							}
 							else
-								ItemSystem::SetGroundOwnershipLegacyBoundary(
+								ItemSystem::SetGroundOwnership(
 									itemEntity, (ch ? ch->GetEntityHandle() : entt::null));
 #else
-							ItemSystem::SetGroundOwnershipLegacyBoundary(
+							ItemSystem::SetGroundOwnership(
 								itemEntity, (ch ? ch->GetEntityHandle() : entt::null));
 #endif
 						}

@@ -160,7 +160,7 @@ namespace mining
 			ItemSystem::DestroyItemEntityEcs(item, "MINING_ORE_GROUND_FAIL");
 			return;
 		}
-		ItemSystem::SetGroundOwnershipLegacyBoundary(item, character, 15);
+		ItemSystem::SetGroundOwnership(item, character, 15);
 
 		DBManager::instance().SendMoneyLog(
 			MONEY_LOG_DROP, ItemSystem::GetItemVnum(item), ItemSystem::GetItemCount(item));

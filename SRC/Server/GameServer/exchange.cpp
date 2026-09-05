@@ -1066,7 +1066,7 @@ bool CExchange::Done()
 #endif
 		else
 			InventorySystem::AddToCharacter(item->GetEntityHandle(), victim->GetEntityHandle(), TItemPos(INVENTORY, empty_pos));
-		ITEM_MANAGER::instance().FlushDelayedSave(item);
+		ITEM_MANAGER::instance().FlushDelayedSave(item->GetEntityHandle());
 
 		ItemSystem::SetItemExchanging(itemEntity, false);
 		{

@@ -3256,7 +3256,7 @@ bool CHARACTER::DropItem(TItemPos Cell,
 		}
 
 		ItemSystem::ConsumeItemEcs((item ? item->GetEntityHandle() : entt::null), bCount);
-		ITEM_MANAGER::instance().FlushDelayedSave(item);
+		ITEM_MANAGER::instance().FlushDelayedSave(item->GetEntityHandle());
 
 		pkItemToDrop = ITEM_MANAGER::instance().CreateItem(item->GetVnum(), bCount);
 
@@ -14182,7 +14182,7 @@ void CHARACTER::ClearItem()
 		if ((item = GetInventoryItem(i)))
 		{
 			item->SetSkipSave(true);
-			ITEM_MANAGER::instance().FlushDelayedSave(item);
+			ITEM_MANAGER::instance().FlushDelayedSave(item->GetEntityHandle());
 
 			InventorySystem::RemoveFromCharacter(item->GetEntityHandle());
 			ItemSystem::DestroyItemEntityEcs(
@@ -14197,7 +14197,7 @@ void CHARACTER::ClearItem()
 		if ((item = GetItem(TItemPos(DRAGON_SOUL_INVENTORY, i))))
 		{
 			item->SetSkipSave(true);
-			ITEM_MANAGER::instance().FlushDelayedSave(item);
+			ITEM_MANAGER::instance().FlushDelayedSave(item->GetEntityHandle());
 
 			InventorySystem::RemoveFromCharacter(item->GetEntityHandle());
 			ItemSystem::DestroyItemEntityEcs(
@@ -14215,7 +14215,7 @@ void CHARACTER::ClearItem()
 		if ((item = GetExtraInventoryItem(i)))
 		{
 			item->SetSkipSave(true);
-			ITEM_MANAGER::instance().FlushDelayedSave(item);
+			ITEM_MANAGER::instance().FlushDelayedSave(item->GetEntityHandle());
 
 			InventorySystem::RemoveFromCharacter(item->GetEntityHandle());
 			ItemSystem::DestroyItemEntityEcs(
@@ -14233,7 +14233,7 @@ void CHARACTER::ClearItem()
 		if ((item = GetItem(TItemPos(SWITCHBOT, i))))
 		{
 			item->SetSkipSave(true);
-			ITEM_MANAGER::instance().FlushDelayedSave(item);
+			ITEM_MANAGER::instance().FlushDelayedSave(item->GetEntityHandle());
 
 			InventorySystem::RemoveFromCharacter(item->GetEntityHandle());
 			ItemSystem::DestroyItemEntityEcs(

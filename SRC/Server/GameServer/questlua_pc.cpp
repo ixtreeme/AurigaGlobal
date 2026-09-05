@@ -3294,9 +3294,9 @@ teleport_area:
 					break;
 				case PCMI0_DROPWP:
 					if (lua_isnumber(L, 5) && (m_sec = lua_tonumber(L, 5)))
-						ItemSystem::SetGroundOwnershipLegacyBoundary(newItem, chEntity, m_sec <= 0 ? 1 : m_sec);
+						ItemSystem::SetGroundOwnership(newItem, chEntity, m_sec <= 0 ? 1 : m_sec);
 					else
-						ItemSystem::SetGroundOwnershipLegacyBoundary(newItem, chEntity);
+						ItemSystem::SetGroundOwnership(newItem, chEntity);
 				case PCMI0_DROP:
 					pos.x = ecs::PlayerRuntime::GetX(chEntity) + number(-200, 200);
 					pos.y = ecs::PlayerRuntime::GetY(chEntity) + number(-200, 200);

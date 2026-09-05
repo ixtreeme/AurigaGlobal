@@ -240,10 +240,8 @@ bool SyncItemOwnerFromLegacy(entt::entity item);
 bool SyncItemStateFromLegacy(entt::entity item);
 bool DestroyLoadedDuplicateItem(entt::entity item);
 bool TransferItemOwnership(entt::entity item, entt::entity from, entt::entity to);
-// Explicit transition boundary. The ownership timeout event still stores a
-// legacy CHARACTER pointer until the ground-item event layer is migrated.
-bool SetGroundOwnershipLegacyBoundary(entt::entity item, entt::entity owner,
-                                      int seconds = 10);
+bool SetGroundOwnership(entt::entity item, entt::entity owner,
+                        int seconds = 10);
 bool ReceiveItemEcs(entt::entity receiver, entt::entity from, entt::entity item);
 struct SpecialItemGroupResult {
     std::vector<entt::entity> itemEntities;

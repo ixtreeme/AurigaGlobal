@@ -582,18 +582,14 @@ void ITEM_MANAGER::DelayedSave(LPITEM item)
 	if (ItemSystem::IsValidItem(itemEntity))
 		m_set_pkItemForDelayedSave.insert(itemEntity);
 }
-void ITEM_MANAGER::FlushDelayedSave(LPITEM item)
+void ITEM_MANAGER::FlushDelayedSave(entt::entity itemEntity)
 {
-	if (!item)
-		return;
-
-	const entt::entity itemEntity = CItemRegistry::Instance().Find(item->GetID());
 	const auto it = m_set_pkItemForDelayedSave.find(itemEntity);
 	if (it == m_set_pkItemForDelayedSave.end())
 		return;
 
 	m_set_pkItemForDelayedSave.erase(it);
-	SaveSingleItem(item);
+	SaveSingleItem(ResolveManagedItem(itemEntity));
 }
 
 void ITEM_MANAGER::FlushDelayedSaveByOwner(entt::entity owner)

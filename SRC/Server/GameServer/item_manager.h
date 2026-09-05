@@ -406,7 +406,7 @@ class ITEM_MANAGER : public singleton<ITEM_MANAGER>
 		// 쿼리가 너무 많아지므로 "저장을 한다" 라고 표시만 해두고 잠깐
 		// (예: 1 frame) 후에 저장시킨다.
 		void			DelayedSave(LPITEM item);
-		void			FlushDelayedSave(LPITEM item); // Delayed 리스트에 있다면 지우고 저장한다. 끊김 처리시 사용 됨.
+		void			FlushDelayedSave(entt::entity item); // Delayed 리스트에 있다면 지우고 저장한다. 끊김 처리시 사용 됨.
 		void FlushDelayedSaveByOwner(entt::entity owner);
 		void			SaveSingleItem(LPITEM item);
 

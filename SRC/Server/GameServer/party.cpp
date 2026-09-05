@@ -40,7 +40,7 @@ void FPartyDropDiceRoll::Process(const LPCHARACTER mobVictim)
 		if (!m_itemOwner)
 			return;
 
-		ItemSystem::SetGroundOwnershipLegacyBoundary(m_itemDrop, itemOwner);
+		ItemSystem::SetGroundOwnership(m_itemDrop, itemOwner);
 #ifdef TEXTS_IMPROVEMENT
 		party->ChatPacketToAllMemberNew(CHAT_TYPE_DICE_INFO, 903, "%s#%s",
 			ecs::PlayerRuntime::GetName(itemOwner).data(), ItemSystem::GetItemName(m_itemDrop));
@@ -48,7 +48,7 @@ void FPartyDropDiceRoll::Process(const LPCHARACTER mobVictim)
 		return;
 	}
 
-	ItemSystem::SetGroundOwnershipLegacyBoundary(m_itemDrop, itemOwner);
+	ItemSystem::SetGroundOwnership(m_itemDrop, itemOwner);
 }
 #endif
 CPartyManager::CPartyManager()

@@ -318,21 +318,6 @@ static bool DestroyItemEntityAndLegacy(entt::entity itemEntity, const char* reas
     return true;
 }
 
-static uint32_t ItemVnumOrLegacy(LPITEM item)
-{
-    if (!item)
-        return 0;
-
-	entt::entity e = item ? item->GetEntityHandle() : entt::null;
-    if (e != entt::null)
-    {
-        if (const auto* identity = g_registry.try_get<ecs::ItemIdentity>(e))
-            return identity->vnum;
-    }
-
-    return item->GetVnum();
-}
-
 static void SyncItemCountComponent(LPITEM item, int count)
 {
 	entt::entity e = item ? item->GetEntityHandle() : entt::null;
@@ -496,27 +481,6 @@ bool IsExtraPotionUseSubtype(uint8_t subtype)
 	return false;
 }
 
-static void FN_copy_item_socket(LPITEM dest, LPITEM src)
-{
-	for (int i = 0; i < ITEM_SOCKET_MAX_NUM; ++i)
-	{
-		dest->SetSocket(i, src->GetSocket(i));
-	}
-}
-
-#ifdef ENABLE_PVP_ADVANCED
-static bool IS_POTION_PVP_BLOCKED(int vnum)
-{
-	switch (vnum)
-	{
-	case 72725:
-	case 72726:
-		return true;
-	}
-	return false;
-}
-#endif
-
 static bool IS_SUMMON_ITEM(int vnum)
 {
 	switch (vnum)
@@ -533,49 +497,7 @@ static bool IS_SUMMON_ITEM(int vnum)
 }
 
 
-static bool FN_check_item_socket(LPITEM item)
-{
-#ifdef ENABLE_NEW_USE_POTION
-	if (item->GetType() == ITEM_USE && item->GetSubType() == USE_NEW_POTIION)
-	{
-		// inactive new potionok stackelhetnek
-		// active példány (socket1 != 0) ne stackeljen vissza
-		return item->GetSocket(1) == 0;
-	}
-#endif
-
-	for (int i = 0; i < ITEM_SOCKET_MAX_NUM; ++i)
-	{
-		if (item->GetSocket(i) != item->GetProto()->alSockets[i])
-			return false;
-	}
-
-	return true;
-}
-
 // item socket º¹»ç -- by mhh
-
-static bool FN_check_item_sex(LegacyCharHandle ch, LPITEM item)
-{
-#ifdef ENABLE_WOLFMAN_CHARACTER
-    if (ITEM_RING == item->GetType())
-        return true;
-#endif
-
-    if (IS_SET(item->GetAntiFlag(), ITEM_ANTIFLAG_MALE))
-    {
-        if (SEX_MALE == GET_SEX(ch))
-            return false;
-    }
-
-    if (IS_SET(item->GetAntiFlag(), ITEM_ANTIFLAG_FEMALE))
-    {
-        if (SEX_FEMALE == GET_SEX(ch))
-            return false;
-    }
-
-    return true;
-}
 
 } // namespace
 
@@ -978,7 +900,7 @@ static bool UseNonEquipItemLegacyBoundary(entt::entity owner,
 {
     LPCHARACTER legacyOwner = LegacyCharOf(owner);
     LPITEM legacyItem = LegacyItemBoundary(item);
-    if (!legacyOwner || !legacyItem)
+    if (!legacyOwner || !IsValidItem(item))
         return false;
 
     const bool result = legacyOwner->UseItemEx(legacyItem, destCell);
@@ -1269,7 +1191,7 @@ static entt::entity PlaceItemInInventory(entt::entity owner, entt::entity item,
     if (!PlaceItemOnGroundLegacyBoundary(
             item, ecs::PlayerRuntime::GetMapIndex(owner), position, destroySeconds))
         return entt::null;
-    SetGroundOwnershipLegacyBoundary(item, owner, longOwnerShip ? 300 : 60);
+    SetGroundOwnership(item, owner, longOwnerShip ? 300 : 60);
     LogManager::instance().ItemLogEntity(
         owner, item, "SYSTEM_DROP", GetItemName(item));
     return item;
@@ -1847,11 +1769,10 @@ bool DestroyItemEntityEcs(entt::entity item, const char* reason)
 
 bool FlushDelayedSaveEcs(entt::entity item)
 {
-    LPITEM legacyItem = LegacyItemBoundary(item);
-    if (!legacyItem)
+    if (!IsValidItem(item))
         return false;
 
-    ITEM_MANAGER::instance().FlushDelayedSave(legacyItem);
+    ITEM_MANAGER::instance().FlushDelayedSave(item);
     return true;
 }
 
@@ -2201,7 +2122,7 @@ bool SaveItemEcs(entt::entity item, bool flush)
 
     legacyItem->Save();
     if (flush)
-        ITEM_MANAGER::instance().FlushDelayedSave(legacyItem);
+        ITEM_MANAGER::instance().FlushDelayedSave(item);
     SyncItemStateFromLegacy(item);
     return true;
 }
@@ -2232,7 +2153,7 @@ entt::entity RollPartyDropOwnership(entt::entity item, entt::entity initialOwner
     LPPARTY party = ecs::SocialSystem::GetParty(initialOwner);
     if (!party || party->GetNearMemberCount() <= 1)
     {
-        SetGroundOwnershipLegacyBoundary(item, initialOwner);
+        SetGroundOwnership(item, initialOwner);
         return initialOwner;
     }
 
@@ -2268,7 +2189,7 @@ entt::entity RollPartyDropOwnership(entt::entity item, entt::entity initialOwner
     };
     party->ForEachNearMember(roll);
 
-    SetGroundOwnershipLegacyBoundary(item, selected);
+    SetGroundOwnership(item, selected);
 #ifdef TEXTS_IMPROVEMENT
     party->ChatPacketToAllMemberNew(CHAT_TYPE_DICE_INFO, 903, "%s#%s",
         ecs::PlayerRuntime::GetName(selected).data(), GetItemName(item));
@@ -3247,10 +3168,8 @@ static bool AddItemToCharacterLegacyBoundary(entt::entity owner,
                                              uint8_t window,
                                              uint16_t cell)
 {
-    LPCHARACTER legacyOwner = LegacyCharOf(owner);
-    LPITEM legacyItem = LegacyItemBoundary(item);
-    return legacyOwner && legacyItem &&
-        InventorySystem::AddToCharacter(legacyItem->GetEntityHandle(), legacyOwner->GetEntityHandle(), TItemPos(window, cell));
+    return IsValidItem(item) && ecs::PlayerRuntime::IsValid(owner) &&
+        InventorySystem::AddToCharacter(item, owner, TItemPos(window, cell));
 }
 
 bool PlaceItemEcs(entt::entity owner, entt::entity item, uint8_t window, uint16_t cell)
@@ -3303,18 +3222,23 @@ bool PlaceItemEcs(entt::entity owner, entt::entity item, uint8_t window, uint16_
 
 bool RemoveItemEcs(entt::entity item)
 {
-    LPITEM legacyItem = LegacyItemBoundary(item);
-    if (!legacyItem)
+    if (!IsValidItem(item))
         return false;
+
+    // Both are read before the components are cleared: the owner decides
+    // whether the character still has to be told, and the PID is the one
+    // thing about the old owner that survives the removal.
+    const entt::entity previousOwner = GetItemOwnerEntity(item);
+    const uint32_t lastOwnerPID = GetItemLastOwnerPID(item);
 
     g_registry.emplace_or_replace<ecs::ItemLocation>(
         item, ecs::ItemLocation{RESERVED_WINDOW, 0});
     g_registry.emplace_or_replace<ecs::ItemOwner>(
-        item, ecs::ItemOwner{entt::null, 0, legacyItem->GetLastOwnerPID(), 0});
+        item, ecs::ItemOwner{entt::null, 0, lastOwnerPID, 0});
     g_registry.remove<ecs::ItemEquipped>(item);
 
-    if (legacyItem->GetOwnerEntity() != entt::null) {
-        InventorySystem::RemoveFromCharacter(legacyItem->GetEntityHandle());
+    if (previousOwner != entt::null) {
+        InventorySystem::RemoveFromCharacter(item);
         SyncItemStateFromLegacy(item);
     }
 
@@ -3323,11 +3247,10 @@ bool RemoveItemEcs(entt::entity item)
 
 bool RemoveItemFromCharacterLegacyBoundary(entt::entity item)
 {
-    LPITEM legacyItem = LegacyItemBoundary(item);
-    if (!legacyItem || legacyItem->GetOwnerEntity() == entt::null)
+    if (!IsValidItem(item) || GetItemOwnerEntity(item) == entt::null)
         return false;
 
-    InventorySystem::RemoveFromCharacter(legacyItem->GetEntityHandle());
+    InventorySystem::RemoveFromCharacter(item);
     return SyncItemStateFromLegacy(item);
 }
 
@@ -3745,7 +3668,7 @@ static bool EquipItemLegacyBoundary(entt::entity owner, entt::entity item,
 {
     LPCHARACTER legacyOwner = LegacyCharOf(owner);
     LPITEM legacyItem = LegacyItemBoundary(item);
-    return legacyOwner && legacyItem &&
+    return legacyOwner && IsValidItem(item) &&
         legacyOwner->EquipItem(legacyItem, candidateCell);
 }
 
@@ -3753,7 +3676,7 @@ static bool UnequipItemLegacyBoundary(entt::entity owner, entt::entity item)
 {
     LPCHARACTER legacyOwner = LegacyCharOf(owner);
     LPITEM legacyItem = LegacyItemBoundary(item);
-    return legacyOwner && legacyItem && legacyOwner->UnequipItem(legacyItem);
+    return legacyOwner && IsValidItem(item) && legacyOwner->UnequipItem(legacyItem);
 }
 
 bool EquipItemEcs(entt::entity owner, entt::entity item, int candidateCell)
@@ -3938,12 +3861,12 @@ bool DestroyLoadedDuplicateItem(entt::entity item)
         return false;
     }
 
-    const uint32_t itemID = legacyItem->GetID();
-    const uint32_t itemVID = legacyItem->GetVID();
-    const uint32_t itemVnum = legacyItem->GetVnum();
-    const uint32_t lastOwnerPID = legacyItem->GetLastOwnerPID();
-    const uint8_t itemWindow = legacyItem->GetWindow();
-    const uint16_t itemCell = legacyItem->GetCell();
+    const uint32_t itemID = GetItemID(item);
+    const uint32_t itemVID = GetItemVID(item);
+    const uint32_t itemVnum = GetItemVnum(item);
+    const uint32_t lastOwnerPID = GetItemLastOwnerPID(item);
+    const uint8_t itemWindow = GetItemWindow(item);
+    const uint16_t itemCell = GetItemCell(item);
     LOG_ERROR("DUP_ITEM_DESTROY_BEGIN entity={} item={} id={} vid={} vnum={} last_owner_pid={} window={} cell={}",
         static_cast<uint32_t>(item), static_cast<const void*>(legacyItem), itemID, itemVID, itemVnum,
         lastOwnerPID, static_cast<int>(itemWindow), itemCell);
@@ -3952,7 +3875,7 @@ bool DestroyLoadedDuplicateItem(entt::entity item)
 
     const auto* ownerState = g_registry.try_get<ecs::ItemOwner>(item);
     const uint32_t ownerPID = ownerState ? ownerState->ownerPID : 0;
-    const entt::entity legacyOwner = legacyItem->GetOwnerEntity();
+    const entt::entity legacyOwner = GetItemOwnerEntity(item);
     const entt::entity liveOwner =
         ownerPID != 0 ? ecs::PlayerRuntime::FindByPlayerID(ownerPID) : entt::null;
     LOG_ERROR("DUP_ITEM_DESTROY_OWNER entity={} id={} owner_pid={} legacy_owner={} live_owner={}",
@@ -3962,9 +3885,9 @@ bool DestroyLoadedDuplicateItem(entt::entity item)
     if (legacyOwner != entt::null) {
         LOG_ERROR("DUP_ITEM_DESTROY_REMOVE_FROM_CHARACTER_BEGIN entity={} id={} stale_owner={}",
             static_cast<uint32_t>(item), itemID, liveOwner != legacyOwner);
-        InventorySystem::RemoveFromCharacter(legacyItem->GetEntityHandle());
+        InventorySystem::RemoveFromCharacter(item);
         LOG_ERROR("DUP_ITEM_DESTROY_REMOVE_FROM_CHARACTER_END entity={} id={} owner_after={}",
-            static_cast<uint32_t>(item), itemID, static_cast<uint32_t>(legacyItem->GetOwnerEntity()));
+            static_cast<uint32_t>(item), itemID, static_cast<uint32_t>(GetItemOwnerEntity(item)));
     }
 
     LOG_ERROR("DUP_ITEM_DESTROY_LEGACY_BEGIN item={} id={}", static_cast<const void*>(legacyItem), itemID);
@@ -3998,12 +3921,10 @@ bool TransferItemOwnership(entt::entity item, entt::entity from, entt::entity to
     return true;
 }
 
-bool SetGroundOwnershipLegacyBoundary(entt::entity item, entt::entity owner,
+bool SetGroundOwnership(entt::entity item, entt::entity owner,
                                       int seconds)
 {
-    LPITEM legacyItem = LegacyItemBoundary(item);
-    LPCHARACTER legacyOwner = LegacyCharOf(owner);
-    if (!legacyItem || !legacyOwner)
+    if (!IsValidItem(item) || !ecs::PlayerRuntime::IsValid(owner))
         return false;
 
     InventorySystem::SetOwnership(item, owner, seconds);
@@ -4015,9 +3936,8 @@ static bool ReceiveItemLegacyBoundary(entt::entity receiver,
                                       entt::entity item)
 {
     LPCHARACTER legacyReceiver = LegacyCharOf(receiver);
-    LPCHARACTER legacyFrom = LegacyCharOf(from);
     LPITEM legacyItem = LegacyItemBoundary(item);
-    if (!legacyReceiver || !legacyFrom || !legacyItem ||
+    if (!legacyReceiver || !ecs::PlayerRuntime::IsValid(from) || !IsValidItem(item) ||
         !legacyReceiver->CanReceiveItem(from, legacyItem))
         return false;
 
@@ -4081,7 +4001,7 @@ static bool DoRefineLegacyBoundary(entt::entity owner, entt::entity item,
 {
     LPCHARACTER legacyOwner = LegacyCharOf(owner);
     LPITEM legacyItem = LegacyItemBoundary(item);
-    return legacyOwner && legacyItem &&
+    return legacyOwner && IsValidItem(item) &&
         legacyOwner->DoRefine(legacyItem, moneyOnly);
 }
 
@@ -4090,7 +4010,7 @@ static bool DoRefineWithScrollLegacyBoundary(entt::entity owner,
 {
     LPCHARACTER legacyOwner = LegacyCharOf(owner);
     LPITEM legacyItem = LegacyItemBoundary(item);
-    return legacyOwner && legacyItem &&
+    return legacyOwner && IsValidItem(item) &&
         legacyOwner->DoRefineWithScroll(legacyItem);
 }
 
@@ -4099,7 +4019,7 @@ static bool DoRefineItemSoulLegacyBoundary(entt::entity owner,
 {
     LPCHARACTER legacyOwner = LegacyCharOf(owner);
     LPITEM legacyItem = LegacyItemBoundary(item);
-    return legacyOwner && legacyItem &&
+    return legacyOwner && IsValidItem(item) &&
         legacyOwner->DoRefineItemSoul(legacyItem);
 }
 

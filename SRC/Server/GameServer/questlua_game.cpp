@@ -198,15 +198,15 @@ namespace quest
 			int sec = (int) lua_tonumber(L, 3);
 			if (sec <= 0)
 			{
-				ItemSystem::SetGroundOwnershipLegacyBoundary(item, chEntity);
+				ItemSystem::SetGroundOwnership(item, chEntity);
 			}
 			else
 			{
-				ItemSystem::SetGroundOwnershipLegacyBoundary(item, chEntity, sec);
+				ItemSystem::SetGroundOwnership(item, chEntity, sec);
 			}
 		}
 		else
-			ItemSystem::SetGroundOwnershipLegacyBoundary(item, chEntity);
+			ItemSystem::SetGroundOwnership(item, chEntity);
 
 		PIXEL_POSITION pos;
 		pos.x = ecs::PlayerRuntime::GetX(chEntity) + number(-200, 200);
@@ -254,15 +254,15 @@ namespace quest
 			int sec = (int) lua_tonumber(L, 3);
 			if (sec <= 0)
 			{
-				ItemSystem::SetGroundOwnershipLegacyBoundary(item, owner);
+				ItemSystem::SetGroundOwnership(item, owner);
 			}
 			else
 			{
-				ItemSystem::SetGroundOwnershipLegacyBoundary(item, owner, sec);
+				ItemSystem::SetGroundOwnership(item, owner, sec);
 			}
 		}
 		else
-			ItemSystem::SetGroundOwnershipLegacyBoundary(item, owner);
+			ItemSystem::SetGroundOwnership(item, owner);
 
 		PIXEL_POSITION pos;
 		pos.x = ecs::PlayerRuntime::GetX(chEntity) + number(-200, 200);
