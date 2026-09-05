@@ -65,7 +65,7 @@
 #include "../../DragonSoul.h"
 #include "../../buff_on_attributes.h"
 #include "../../ItemUse.h"
-#include "../../item_addon.h"
+
 #ifdef __NEWPET_SYSTEM__
 #include "../../New_PetSystem.h"
 #define __NEWPET_SYSTEM_CHECK
@@ -345,63 +345,6 @@ static void SyncItemFlagsComponent(LPITEM item)
 const int MAX_NORM_ATTR_NUM = ITEM_MANAGER::MAX_NORM_ATTR_NUM;
 const int MAX_RARE_ATTR_NUM = ITEM_MANAGER::MAX_RARE_ATTR_NUM;
 #endif
-
-namespace
-{
-	bool IsZodiacAttributeItemVnum(uint32_t dwVnum)
-	{
-#ifdef DISABLE_ZODIAC_ATT
-		return (dwVnum == 12314141);
-#else
-		return
-			((dwVnum >= 19290) && (dwVnum <= 19312)) ||
-			((dwVnum >= 19490) && (dwVnum <= 19512)) ||
-			((dwVnum >= 19690) && (dwVnum <= 19712)) ||
-			((dwVnum >= 19890) && (dwVnum <= 19912)) ||
-			((dwVnum >= 300) && (dwVnum <= 319)) ||
-			(dwVnum == 329) ||
-			(dwVnum == 339) ||
-			(dwVnum == 349) ||
-			(dwVnum == 359) ||
-			(dwVnum == 369) ||
-			(dwVnum == 379) ||
-			(dwVnum == 389) ||
-			(dwVnum == 399) ||
-			((dwVnum >= 1180) && (dwVnum <= 1189)) ||
-			(dwVnum == 1199) ||
-			(dwVnum == 1209) ||
-			(dwVnum == 1219) ||
-			(dwVnum == 1229) ||
-			((dwVnum >= 2200) && (dwVnum <= 2209)) ||
-			(dwVnum == 2219) ||
-			(dwVnum == 2229) ||
-			(dwVnum == 2239) ||
-			(dwVnum == 2249) ||
-			((dwVnum >= 3220) && (dwVnum <= 3229)) ||
-			(dwVnum == 3239) ||
-			(dwVnum == 3249) ||
-			(dwVnum == 3259) ||
-			(dwVnum == 3269) ||
-			((dwVnum >= 5160) && (dwVnum <= 5169)) ||
-			(dwVnum == 5179) ||
-			(dwVnum == 5189) ||
-			(dwVnum == 5199) ||
-			(dwVnum == 5209) ||
-			((dwVnum >= 7300) && (dwVnum <= 7309)) ||
-			(dwVnum == 7319) ||
-			(dwVnum == 7329) ||
-			(dwVnum == 7339) ||
-			(dwVnum == 7349) ||
-			((dwVnum >= 1700) && (dwVnum <= 1713)) ||
-			((dwVnum >= 1720) && (dwVnum <= 1733)) ||
-			((dwVnum >= 1740) && (dwVnum <= 1753)) ||
-			((dwVnum >= 1760) && (dwVnum <= 1773)) ||
-			((dwVnum >= 1780) && (dwVnum <= 1793)) ||
-			((dwVnum >= 1800) && (dwVnum <= 1813)) ||
-			((dwVnum >= 8500) && (dwVnum <= 8839));
-#endif
-	}
-}
 
 bool IsExtraEnchantUseSubtype(uint8_t subtype)
 {
@@ -889,231 +832,11 @@ int CItem::GetSocketCount()
 
 // Phase 11: migrated from item_attribute.cpp batch A
 
-int CItem::GetAttributeSetIndex()
-
-{
-
-	if (GetType() == ITEM_WEAPON)
-
-	{
-
-		if (GetSubType() == WEAPON_ARROW)
-
-			return -1;
-
-
-
-		return ATTRIBUTE_SET_WEAPON;
-
-	}
-
-
-
-	if (GetType() == ITEM_ARMOR)
-
-	{
-
-		switch (GetSubType())
-
-		{
-
-			case ARMOR_BODY:
-
-				return ATTRIBUTE_SET_BODY;
-
-
-
-			case ARMOR_WRIST:
-
-				return ATTRIBUTE_SET_WRIST;
-
-
-
-			case ARMOR_FOOTS:
-
-				return ATTRIBUTE_SET_FOOTS;
-
-
-
-			case ARMOR_NECK:
-
-				return ATTRIBUTE_SET_NECK;
-
-
-
-			case ARMOR_HEAD:
-
-				return ATTRIBUTE_SET_HEAD;
-
-
-
-			case ARMOR_SHIELD:
-
-				return ATTRIBUTE_SET_SHIELD;
-
-
-
-			case ARMOR_EAR:
-
-				return ATTRIBUTE_SET_EAR;
-
-		
-
-#if defined(ENABLE_PENDANT) && defined(ENABLE_NEW_BONUS_TALISMAN)
-
-			case ARMOR_PENDANT:
-
-				return ATTRIBUTE_SET_PENDANT;
-
-#endif
-
-		}
-
-	}
-
-#ifdef ENABLE_ATTR_COSTUMES
-
-	else if (GetType() == ITEM_COSTUME)
-
-	{
-
-		switch (GetSubType())
-
-		{
-
-			case COSTUME_BODY:
-
-				return ATTRIBUTE_SET_COSTUME_BODY;
-
-			case COSTUME_HAIR:
-
-				return ATTRIBUTE_SET_COSTUME_HAIR;
-
-			case COSTUME_WEAPON:
-
-				return ATTRIBUTE_SET_COSTUME_WEAPON;
-
-#ifdef ENABLE_STOLE_COSTUME
-
-			case COSTUME_STOLE:
-
-				return ATTRIBUTE_SET_COSTUME_STOLE;
-
-#endif
-
-#ifdef ENABLE_MOUNT_COSTUME_SYSTEM
-
-			case COSTUME_MOUNT:
-
-				break;
-
-#endif
-
-		}
-
-	}
-
-#endif
-
-
-
-	return -1;
-
-}
-
-bool CItem::HasAttr(uint8_t bApply)
-
-{
-
-	bool ignoreBaseApplies = false;
-
-
-
-#ifdef ENABLE_PENDANT
-
-	// Talizm�n / pendant: lehessen ugyanaz a b�nusz az alap b�nusz mellett is
-
-	if ((GetType() == ITEM_ARMOR && GetSubType() == ARMOR_NUM_TYPES) || (GetWearFlag() & WEARABLE_PENDANT))
-
-		ignoreBaseApplies = true;
-
-#endif
-
-
-
-	if (!ignoreBaseApplies)
-
-	{
-
-		for (int i = 0; i < ITEM_APPLY_MAX_NUM; ++i)
-
-			if (m_pProto->aApplies[i].bType == bApply)
-
-				return true;
-
-
-
-#ifdef ENABLE_ITEM_EXTRA_PROTO
-
-		if (ItemSystem::GetItemExtraProto(GetEntityHandle()))
-
-		{
-
-#ifdef ENABLE_NEW_EXTRA_BONUS
-
-			for (int i = 0; i < NEW_EXTRA_BONUS_COUNT; ++i)
-
-				if (ItemSystem::GetItemExtraProto(GetEntityHandle())->ExtraBonus[i].bType == bApply)
-
-					return true;
-
-#endif
-
-		}
-
-#endif
-
-	}
-
-
-
- 
-
-	for (int i = 0; i < MAX_NORM_ATTR_NUM; ++i)
-
-		if (GetAttributeType(i) == bApply)
-
-			return true;
-
-
-
-	return false;
-
-}
-
-bool CItem::HasRareAttr(uint8_t bApply)
-
-{
-
-	for (int i = 0; i < MAX_RARE_ATTR_NUM; ++i)
-
-		if (GetAttributeType(i + 5) == bApply)
-
-			return true;
-
-
-
-	return false;
-
-}
-
 int CItem::GetAttributeCount()
 
 {
 
 	int i;
-
-
 
 	for (i = 0; i < MAX_NORM_ATTR_NUM; ++i)
 
@@ -1125,39 +848,7 @@ int CItem::GetAttributeCount()
 
 	}
 
-
-
 	return i;
-
-}
-
-int CItem::FindAttribute(uint8_t bType)
-
-{
-
-	for (int i = 0; i < MAX_NORM_ATTR_NUM; ++i)
-
-	{
-
-		if (GetAttributeType(i) == bType)
-
-			return i;
-
-	}
-
-
-
-	return -1;
-
-}
-
-bool CItem::RemoveAttributeType(uint8_t bType)
-
-{
-
-	int index = FindAttribute(bType);
-
-	return index != -1 && RemoveAttributeType(index);
 
 }
 
@@ -1204,82 +895,13 @@ void CItem::SetAttribute(int i, uint8_t bType, short sValue)
 
 }
 
-void CItem::SetForceAttribute(int i, uint8_t bType, short sValue)
-
-{
-
-	assert(i < ITEM_ATTRIBUTE_MAX_NUM);
-
-
-
-	if (auto* attributes = MutableAttributesOf(GetEntityHandle()))
-	{
-		attributes->attrs[i].bType = bType;
-		attributes->attrs[i].sValue = sValue;
-	}
-
-	UpdatePacket();
-
-	Save();
-
-
-
-	if (bType)
-
-	{
-
-		const char * pszIP = nullptr;
-
-
-
-		if (GetOwnerEntity() != entt::null && ecs::PlayerRuntime::GetDesc(GetOwnerEntity()))
-
-			pszIP = ecs::PlayerRuntime::GetDesc(GetOwnerEntity())->GetHostName();
-
-
-
-		LOG_LEVEL_CHECK(LOG_LEVEL_MAX, LogManager::instance().ItemLog(i, bType, sValue, GetID(), "SET_FORCE_ATTR", "", pszIP ? pszIP : "", GetOriginalVnum()));
-
-	}
-
-}
-
-
 // Phase 11: migrated from item_attribute.cpp batch B
-
-void CItem::AddAttribute(uint8_t bApply, short sValue)
-{
-	int iSameAttrCount = 0;
-	for (int i = 0; i < MAX_NORM_ATTR_NUM; ++i)
-	{
-		if (GetAttributeType(i) == bApply)
-			++iSameAttrCount;
-	}
-
-	if (IsZodiacAttributeItemVnum(GetVnum()))
-	{
-		if (iSameAttrCount >= 1)
-			return;
-	}
-	else if (HasAttr(bApply))
-		return;
-
-	int i = GetAttributeCount();
-
-	if (i >= MAX_NORM_ATTR_NUM)
-		LOG_ERROR("item attribute overflow!");
-	else
-	{
-		if (sValue)
-			SetAttribute(i, bApply, sValue);
-	}
-}
 
 bool CItem::ChangeKKAK(int iAddonType)
 {
-	(void)iAddonType; // 
+	(void)iAddonType;
 
-	// random  
+	// random
 	int iSkillBonus = MINMAX(-30, int(gauss_random(0, 5) + 0.5f), 30);
 	int iNormalHitBonus = 0;
 	if (abs(iSkillBonus) <= 20)
@@ -1287,7 +909,7 @@ bool CItem::ChangeKKAK(int iAddonType)
 	else
 		iNormalHitBonus = -2 * iSkillBonus + number(1, 5);
 
-	// 71/72  
+	// 71/72
 	//RemoveAttributeType(APPLY_SKILL_DAMAGE_BONUS);
 	//RemoveAttributeType(APPLY_NORMAL_HIT_DAMAGE_BONUS);
 	AddAttr4(APPLY_NORMAL_HIT_DAMAGE_BONUS, iNormalHitBonus);
@@ -1298,7 +920,7 @@ bool CItem::ChangeKKAK(int iAddonType)
 
 void CItem::AddAttr4(uint8_t bApply, uint8_t bLevel)
 {
-	if (HasAttr(bApply))
+	if (ItemSystem::HasItemAttribute(GetEntityHandle(), bApply))
 		return;
 
 	if (bLevel <= 0)
@@ -1322,208 +944,6 @@ void CItem::AddAttr4(uint8_t bApply, uint8_t bLevel)
 	}
 }
 
-void CItem::AddAttr(uint8_t bApply, uint8_t bLevel)
-{
-	int iSameAttrCount = 0;
-	for (int i = 0; i < MAX_NORM_ATTR_NUM; ++i)
-	{
-		if (GetAttributeType(i) == bApply)
-			++iSameAttrCount;
-	}
-
-	if (IsZodiacAttributeItemVnum(GetVnum()))
-	{
-		if (iSameAttrCount >= 1)
-			return;
-	}
-	else if (HasAttr(bApply))
-		return;
-
-	if (bLevel <= 0)
-		return;
-
-	int i = GetAttributeCount();
-
-	if (i == MAX_NORM_ATTR_NUM)
-		LOG_ERROR("item attribute overflow!");
-	else
-	{
-		const TItemAttrTable & r = g_map_itemAttr[bApply];
-		int32_t lVal = r.lValues[MIN(4, bLevel - 1)];
-#ifdef ENABLE_ATTR_COSTUMES
-		if (GetType() == ITEM_COSTUME)
-			lVal = r.lValues[MIN(9, bLevel + 5 - 1)];
-#endif
-		
-		if (lVal)
-			SetAttribute(i, bApply, lVal);
-	}
-}
-
-void CItem::PutAttributeWithLevel(uint8_t bLevel)
-{
-	int iAttributeSet = GetAttributeSetIndex();
-	if (iAttributeSet < 0)
-		return;
-
-	if (bLevel > ITEM_ATTRIBUTE_MAX_LEVEL)
-		return;
-
-	std::vector<int> avail;
-
-	int total = 0;
-
-	// ???? ?� ?ִ� ?�?? ???�?� ��??
-	for (int i = 0; i < MAX_APPLY_NUM; ++i)
-	{
-		const TItemAttrTable & r = g_map_itemAttr[i];
-
-		if (!r.bMaxLevelBySet[iAttributeSet])
-			continue;
-
-		if (IsZodiacAttributeItemVnum(GetVnum()))
-		{
-			int iSameAttrCount = 0;
-			for (int j = 0; j < MAX_NORM_ATTR_NUM; ++j)
-			{
-				if (GetAttributeType(j) == i)
-					++iSameAttrCount;
-			}
-
-			if (iSameAttrCount >= 1)
-				continue;
-		}
-		else if (HasAttr(i))
-		{
-			continue;
-		}
-
-		avail.push_back(i);
-		total += r.dwProb;
-	}
-
-	if (avail.empty())
-	{
-		return;
-	}
-
-	// ��??�? ???��� ?��� �?�??� ?��? ???? ?�?? ?���
-	unsigned int prob = number(1, total);
-	int attr_idx = APPLY_NONE;
-
-	for (uint32_t i = 0; i < avail.size(); ++i)
-	{
-		const TItemAttrTable & r = g_map_itemAttr[avail[i]];
-
-		if (prob <= r.dwProb)
-		{
-			attr_idx = avail[i];
-			break;
-		}
-
-		prob -= r.dwProb;
-	}
-
-	if (!attr_idx)
-	{
-		LOG_ERROR("Cannot put item attribute {} {}", iAttributeSet, bLevel);
-		return;
-	}
-
-	const TItemAttrTable & r = g_map_itemAttr[attr_idx];
-
-	// �?�??� ?�?? �??� ?ִ�? ���?
-	if (bLevel > r.bMaxLevelBySet[iAttributeSet])
-		bLevel = r.bMaxLevelBySet[iAttributeSet];
-
-	AddAttr(attr_idx, bLevel);
-}
-
-void CItem::PutAttribute(const int * aiAttrPercentTable)
-{
-	int iAttrLevelPercent = number(1, 100);
-	int i;
-
-	for (i = 0; i < ITEM_ATTRIBUTE_MAX_LEVEL; ++i)
-	{
-		if (iAttrLevelPercent <= aiAttrPercentTable[i])
-			break;
-
-		iAttrLevelPercent -= aiAttrPercentTable[i];
-	}
-
-	PutAttributeWithLevel(i + 1);
-}
-
-void CItem::ChangeAttribute(const int* aiChangeProb)
-{
-	int iAttributeCount = GetAttributeCount();
-
-	ClearAttribute();
-
-	if (iAttributeCount == 0)
-		return;
-
-	TItemTable const * pProto = GetProto();
-
-	if (pProto && pProto->sAddonType)
-	{
-		ApplyAddon(pProto->sAddonType);
-	}
-
-	static const int tmpChangeProb[ITEM_ATTRIBUTE_MAX_LEVEL] =
-	{
-		0, 10, 40, 35, 15,
-	};
-
-	for (int i = GetAttributeCount(); i < iAttributeCount; ++i)
-	{
-#ifdef ATTR_LOCK		
-		if (GetLockedAttr() == i)
-		{
-			continue;
-		}
-#endif
-		if (aiChangeProb == nullptr)
-		{
-			PutAttribute(tmpChangeProb);
-		}
-		else
-		{
-			PutAttribute(aiChangeProb);
-		}
-	}
-}
-
-void CItem::AddAttribute()
-{
-	static const int aiItemAddAttributePercent[ITEM_ATTRIBUTE_MAX_LEVEL] =
-	{
-		40, 50, 10, 0, 0
-	};
-
-	if (GetAttributeCount() < MAX_NORM_ATTR_NUM)
-		PutAttribute(aiItemAddAttributePercent);
-}
-
-void CItem::ClearAttribute()
-{
-	for (int i = 0; i < MAX_NORM_ATTR_NUM; ++i)
-	{
-#ifdef ATTR_LOCK		
-		if (GetLockedAttr() == i)
-		{
-			continue;
-		}
-#endif
-		if (auto* attributes = MutableAttributesOf(GetEntityHandle()))
-		{
-			attributes->attrs[i].bType = 0;
-			attributes->attrs[i].sValue = 0;
-		}
-	}
-}
-
 // Phase 11: migrated from item_attribute.cpp batch C
 
 int CItem::GetRareAttrCount()
@@ -1537,90 +957,6 @@ int CItem::GetRareAttrCount()
 	}
 
 	return ret;
-}
-
-bool CItem::ChangeRareAttribute()
-{
-	if (GetRareAttrCount() == 0)
-		return false;
-
-	int cnt = GetRareAttrCount();
-
-	for (int i = 0; i < cnt; ++i)
-	{
-		if (auto* attributes = MutableAttributesOf(GetEntityHandle()))
-		{
-			attributes->attrs[i + ITEM_ATTRIBUTE_RARE_START].bType = 0;
-			attributes->attrs[i + ITEM_ATTRIBUTE_RARE_START].sValue = 0;
-		}
-	}
-
-
-	if (GetOwnerEntity() != entt::null && ecs::PlayerRuntime::GetDesc(GetOwnerEntity()))
-		LOG_LEVEL_CHECK(LOG_LEVEL_MAX, LogManager::instance().ItemLogEntity(GetOwnerEntity(), GetEntityHandle(), "SET_RARE_CHANGE", ""))
-	else
-		LOG_LEVEL_CHECK(LOG_LEVEL_MAX, LogManager::instance().ItemLog(0, 0, 0, GetID(), "SET_RARE_CHANGE", "", "", GetOriginalVnum()))
-
-	for (int i = 0; i < cnt; ++i)
-	{
-		AddRareAttribute();
-	}
-
-	return true;
-}
-
-bool CItem::AddRareAttribute()
-{
-	int count = GetRareAttrCount();
-
-	if (count >= ITEM_ATTRIBUTE_RARE_NUM)
-		return false;
-
-	int pos = count + ITEM_ATTRIBUTE_RARE_START;
-	auto* attributes = MutableAttributesOf(GetEntityHandle());
-	if (!attributes)
-		return false;
-	TPlayerItemAttribute& attr = attributes->attrs[pos];
-
-	int nAttrSet = GetAttributeSetIndex();
-	std::vector<int> avail;
-
-	for (int i = 0; i < MAX_APPLY_NUM; ++i)
-	{
-		const TItemAttrTable & r = g_map_itemRare[i];
-
-		if (r.dwApplyIndex != 0 && r.bMaxLevelBySet[nAttrSet] > 0 && HasRareAttr(i) != true)
-		{
-			avail.push_back(i);
-		}
-	}
-
-	if (avail.empty())
-	{
-		LOG_ERROR("Couldn't add a rare bonus - item_attr_rare has incorrect values!");
-		return false;
-	}
-
-	const TItemAttrTable& r = g_map_itemRare[avail[number(0, avail.size() - 1)]];
-	int nAttrLevel = 5;
-
-	if (nAttrLevel > r.bMaxLevelBySet[nAttrSet])
-		nAttrLevel = r.bMaxLevelBySet[nAttrSet];
-
-	attr.bType = r.dwApplyIndex;
-	attr.sValue = r.lValues[nAttrLevel - 1];
-
-	UpdatePacket();
-
-	Save();
-
-	const char * pszIP = nullptr;
-
-	if (GetOwnerEntity() != entt::null && ecs::PlayerRuntime::GetDesc(GetOwnerEntity()))
-		pszIP = ecs::PlayerRuntime::GetDesc(GetOwnerEntity())->GetHostName();
-
-	LOG_LEVEL_CHECK(LOG_LEVEL_MAX, LogManager::instance().ItemLog(pos, attr.bType, attr.sValue, GetID(), "SET_RARE", "", pszIP ? pszIP : "", GetOriginalVnum()));
-	return true;
 }
 
 // char_item.cpp slice A moved into ItemSystem.cpp
@@ -3092,9 +2428,6 @@ bool CHARACTER::CanUnequipNow(const LPITEM item, const TItemPos & srcCell, const
 
 	return true;
 }
-
-
-
 
 // char_item.cpp slice C1 moved into ItemSystem.cpp
 
@@ -8119,12 +7452,12 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 			case 30617: // ÁøÀç°¡
 			{
 				// À¯·´, ½Ì°¡Æú, º£Æ®³² ÁøÀç°¡ »ç¿ë±ÝÁö
-				LPITEM item2;
+				const entt::entity item2 = ItemSystem::GetItem(GetEntityHandle(), DestCell);
 
-				if (!IsValidItemPosition(DestCell) || !(item2 = GetInventoryItem(wDestCell)))
+				if (!IsValidItemPosition(DestCell) || !ItemSystem::IsValidItem(item2))
 					return false;
 
-				if (ITEM_COSTUME == item2->GetType())
+				if (ITEM_COSTUME == ItemSystem::GetItemType(item2))
 				{
 #ifdef TEXTS_IMPROVEMENT
 					ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 396, "");
@@ -8132,10 +7465,10 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 					return false;
 				}
 
-				if (item2->IsExchanging() || ItemSystem::IsItemEquipped(item2->GetEntityHandle())) // @fixme114
+				if (ItemSystem::IsItemExchanging(item2) || ItemSystem::IsItemEquipped(item2)) // @fixme114
 					return false;
 
-				if (item2->GetAttributeSetIndex() == -1)
+				if (ItemSystem::GetItemAttributeSetIndex(item2) == -1)
 				{
 #ifdef TEXTS_IMPROVEMENT
 					ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 396, "");
@@ -8143,24 +7476,24 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 					return false;
 				}
 
-				if (item2->AddRareAttribute() == true)
+				if (ItemSystem::AddItemRareAttributeEcs(item2) == true)
 				{
 #ifdef TEXTS_IMPROVEMENT
 					ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 389, "");
 #endif
-					int iAddedIdx = item2->GetRareAttrCount() + 4;
+					int iAddedIdx = ItemSystem::GetItemRareAttributeCount(item2) + 4;
 					char buf[21];
-					snprintf(buf, sizeof(buf), "%u", item2->GetID());
+					snprintf(buf, sizeof(buf), "%u", ItemSystem::GetItemID(item2));
 
 					LogManager::instance().ItemLog(
 						GetPlayerID(),
-						item2->GetAttributeType(iAddedIdx),
-						item2->GetAttributeValue(iAddedIdx),
-						item->GetID(),
+						ItemSystem::GetItemAttributeType(item2, iAddedIdx),
+						ItemSystem::GetItemAttributeValue(item2, iAddedIdx),
+						ItemSystem::GetItemID(itemEntity),
 						"ADD_RARE_ATTR",
 						buf,
 						GetDesc()->GetHostName(),
-						item->GetOriginalVnum());
+						ItemSystem::GetItemOriginalVnum(itemEntity));
 
 					ItemSystem::ConsumeItemEcs(itemEntity);
 				}
@@ -8175,12 +7508,12 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 			case 30618: // ÁøÀç°æ
 			{
 				// À¯·´, ½Ì°¡Æú, º£Æ®³² ÁøÀç°¡ »ç¿ë±ÝÁö
-				LPITEM item2;
+				const entt::entity item2 = ItemSystem::GetItem(GetEntityHandle(), DestCell);
 
-				if (!IsValidItemPosition(DestCell) || !(item2 = GetItem(DestCell)))
+				if (!IsValidItemPosition(DestCell) || !ItemSystem::IsValidItem(item2))
 					return false;
 
-				if (ITEM_COSTUME == item2->GetType()) // @fixme124
+				if (ITEM_COSTUME == ItemSystem::GetItemType(item2)) // @fixme124
 				{
 #ifdef TEXTS_IMPROVEMENT
 					ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 396, "");
@@ -8188,10 +7521,10 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 					return false;
 				}
 
-				if (item2->IsExchanging() || ItemSystem::IsItemEquipped(item2->GetEntityHandle())) // @fixme114
+				if (ItemSystem::IsItemExchanging(item2) || ItemSystem::IsItemEquipped(item2)) // @fixme114
 					return false;
 
-				if (item2->GetAttributeSetIndex() == -1)
+				if (ItemSystem::GetItemAttributeSetIndex(item2) == -1)
 				{
 #ifdef TEXTS_IMPROVEMENT
 					ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 396, "");
@@ -8199,11 +7532,11 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 					return false;
 				}
 
-				if (item2->ChangeRareAttribute() == true)
+				if (ItemSystem::ChangeItemRareAttributeEcs(item2) == true)
 				{
 					char buf[21];
-					snprintf(buf, sizeof(buf), "%u", item2->GetID());
-					LogManager::instance().ItemLog(this, item, "CHANGE_RARE_ATTR", buf);
+					snprintf(buf, sizeof(buf), "%u", ItemSystem::GetItemID(item2));
+					LogManager::instance().ItemLogEntity(GetEntityHandle(), itemEntity, "CHANGE_RARE_ATTR", buf);
 
 					ItemSystem::ConsumeItemEcs(itemEntity);
 				}
@@ -8234,7 +7567,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 				if (item2->IsExchanging() || ItemSystem::IsItemEquipped(item2->GetEntityHandle())) // @fixme114
 					return false;
 
-				if (item2->GetAttributeSetIndex() == -1)
+				if (ItemSystem::GetItemAttributeSetIndex(item2->GetEntityHandle()) == -1)
 				{
 #ifdef TEXTS_IMPROVEMENT
 					ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 396, "");
@@ -8959,7 +8292,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 			if ((item2->IsExchanging()) || (ItemSystem::IsItemEquipped(item2->GetEntityHandle())))
 				return false;
 
-			if (item2->GetAttributeSetIndex() == -1)
+			if (ItemSystem::GetItemAttributeSetIndex(item2->GetEntityHandle()) == -1)
 			{
 #ifdef TEXTS_IMPROVEMENT
 				ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 396, "");
@@ -8974,7 +8307,8 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 				return false;
 			}
 
-			item2->ChangeAttribute();
+			if (!ItemSystem::ChangeItemAttributeEcs(item2->GetEntityHandle()))
+				return false;
 
 			{
 				char buf[21];
@@ -9016,7 +8350,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 			if ((item2->IsExchanging()) || (ItemSystem::IsItemEquipped(item2->GetEntityHandle())))
 				return false;
 
-			if (item2->GetAttributeSetIndex() == -1)
+			if (ItemSystem::GetItemAttributeSetIndex(item2->GetEntityHandle()) == -1)
 			{
 #ifdef TEXTS_IMPROVEMENT
 				ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 396, "");
@@ -9042,7 +8376,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 				return false;
 			}
 
-			item2->SetForceAttribute(bAttrSocket, item->GetSocket(0), item->GetSocket(1));
+			ItemSystem::SetItemForceAttributeEcs(item2->GetEntityHandle(), bAttrSocket, item->GetSocket(0), item->GetSocket(1));
 
 			{
 				char buf[21];
@@ -9083,7 +8417,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 			if ((item2->IsExchanging()) || (ItemSystem::IsItemEquipped(item2->GetEntityHandle())))
 				return false;
 
-			if (item2->GetAttributeSetIndex() == -1)
+			if (ItemSystem::GetItemAttributeSetIndex(item2->GetEntityHandle()) == -1)
 			{
 #ifdef TEXTS_IMPROVEMENT
 				ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 396, "");
@@ -9102,11 +8436,11 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 			int iAttrSocket = GetAttrDialogRemove();
 			if ((iAttrSocket == 0) && (item2->GetAttributeType(ITEM_ATTRIBUTE_MAX_NUM - 1) != 0))
 			{
-				item2->SetForceAttribute(ITEM_ATTRIBUTE_MAX_NUM - 2, item2->GetAttributeType(ITEM_ATTRIBUTE_MAX_NUM - 1), item2->GetAttributeValue(ITEM_ATTRIBUTE_MAX_NUM - 1));
-				item2->SetForceAttribute(ITEM_ATTRIBUTE_MAX_NUM - 1, 0, 0);
+				ItemSystem::SetItemForceAttributeEcs(item2->GetEntityHandle(), ITEM_ATTRIBUTE_MAX_NUM - 2, item2->GetAttributeType(ITEM_ATTRIBUTE_MAX_NUM - 1), item2->GetAttributeValue(ITEM_ATTRIBUTE_MAX_NUM - 1));
+				ItemSystem::SetItemForceAttributeEcs(item2->GetEntityHandle(), ITEM_ATTRIBUTE_MAX_NUM - 1, 0, 0);
 			}
 			else
-				item2->SetForceAttribute(ITEM_ATTRIBUTE_MAX_NUM - 2 + iAttrSocket, 0, 0);
+				ItemSystem::SetItemForceAttributeEcs(item2->GetEntityHandle(), ITEM_ATTRIBUTE_MAX_NUM - 2 + iAttrSocket, 0, 0);
 
 			{
 				char buf[21];
@@ -9144,7 +8478,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 			bGrade = bGrade > 4 ? 4 : bGrade;
 			uint8_t bRandom = (bGrade * 4);
 			for (int i = 0; i < MAX_ATTR; i++) {
-				item2->SetForceAttribute(i, stoleInfoTable[i][0], stoleInfoTable[i][number(bRandom - 3, bRandom)]);
+				ItemSystem::SetItemForceAttributeEcs(item2->GetEntityHandle(), i, stoleInfoTable[i][0], stoleInfoTable[i][number(bRandom - 3, bRandom)]);
 			}
 
 #ifdef TEXTS_IMPROVEMENT
@@ -9192,7 +8526,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 			}
 
 			for (int i = 0; i < ITEM_ATTRIBUTE_RARE_END; i++)
-				item2->SetForceAttribute(i, 0, 0);
+				ItemSystem::SetItemForceAttributeEcs(item2->GetEntityHandle(), i, 0, 0);
 
 			bool bRet = DSManager::instance().PutAttributes((item2 ? item2->GetEntityHandle() : entt::null));
 			if (!bRet)
@@ -9380,7 +8714,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 				else
 					iMax = iValue + 5 > 100 ? 100 : iValue + 5;
 
-				item2->SetForceAttribute(idx, 1, iMax);
+				ItemSystem::SetItemForceAttributeEcs(item2->GetEntityHandle(), idx, 1, iMax);
 				std::unique_ptr<SQLMsg> msg(DBManager::instance().DirectQuery("UPDATE player.new_petsystem SET bonus%d = %d WHERE id = %lu ", idx, iMax, item2->GetID()));
 
 #ifdef TEXTS_IMPROVEMENT
@@ -9599,7 +8933,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 			if (item2->IsExchanging() || ItemSystem::IsItemEquipped(item2->GetEntityHandle())) // @fixme114
 				return false;
 
-			if (item2->GetAttributeSetIndex() == -1)
+			if (ItemSystem::GetItemAttributeSetIndex(item2->GetEntityHandle()) == -1)
 			{
 #ifdef TEXTS_IMPROVEMENT
 				ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 396, "");
@@ -9618,7 +8952,8 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 			switch (item->GetSubType())
 			{
 			case USE_CHANGE_COSTUME_ATTR:
-				item2->ChangeAttribute();
+				if (!ItemSystem::ChangeItemAttributeEcs(item2->GetEntityHandle()))
+					return false;
 				{
 					char buf[21];
 					snprintf(buf, sizeof(buf), "%u", item2->GetID());
@@ -9626,8 +8961,8 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 				}
 				break;
 			case USE_RESET_COSTUME_ATTR:
-				item2->ClearAttribute();
-				item2->AlterToMagicItem();
+				ItemSystem::ClearNormalItemAttributes(item2->GetEntityHandle());
+				ItemSystem::AlterItemToMagicItem(item2->GetEntityHandle());
 				{
 					char buf[21];
 					snprintf(buf, sizeof(buf), "%u", item2->GetID());
@@ -9654,14 +8989,10 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 		case USE_ADD_ATTRIBUTE:
 		case USE_ADD_ATTRIBUTE2:
 		{
-			LPITEM item2;
-			if (!IsValidItemPosition(DestCell) || !(item2 = GetItem(DestCell)))
+			const entt::entity item2 = ItemSystem::GetItem(GetEntityHandle(), DestCell);
+			if (!IsValidItemPosition(DestCell) || !ItemSystem::IsValidItem(item2))
 				return false;
 
-			if (ItemSystem::IsItemEquipped(item2->GetEntityHandle()))
-			{
-				BuffOnAttr_RemoveBuffsFromItem(item2);
-			}
 
 			// [NOTE] ÄÚ½ºÆ¬ ¾ÆÀÌ�
 // Û¿¡´Â ¾ÆÀÌ�
@@ -9670,7 +9001,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 // Û Flag¸¦ Ãß°¡ÇÏ¿© ±âÈ¹ ·¹º§¿¡¼­ À¯¿¬ÇÏ°Ô ÄÁÆ®·Ñ ÇÒ ¼ö ÀÖµµ·Ï ÇÒ ¿¹Á¤ÀÌ¾úÀ¸³ª
 			// ±×µý°�
  // ÇÊ¿ä¾øÀ¸´Ï ´ÚÄ¡°í »¡¸® ÇØ´Þ·¡¼­ ±×³É ¿©±â¼­ ¸·À½... -_-
-			if (ITEM_COSTUME == item2->GetType())
+			if (ITEM_COSTUME == ItemSystem::GetItemType(item2))
 			{
 #ifdef TEXTS_IMPROVEMENT
 				ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 396, "");
@@ -9678,17 +9009,17 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 				return false;
 			}
 
-			if (item2->IsExchanging() || ItemSystem::IsItemEquipped(item2->GetEntityHandle())) // @fixme114
+			if (ItemSystem::IsItemExchanging(item2) || ItemSystem::IsItemEquipped(item2)) // @fixme114
 				return false;
 
-			switch (item->GetSubType())
+			switch (ItemSystem::GetItemSubType(itemEntity))
 			{
 			case USE_CLEAN_SOCKET:
 			{
 				int i;
 				for (i = 0; i < ITEM_SOCKET_MAX_NUM; ++i)
 				{
-					if (item2->GetSocket(i) == ITEM_BROKEN_METIN_VNUM)
+					if (ItemSystem::GetItemSocket(item2, i) == ITEM_BROKEN_METIN_VNUM)
 						break;
 				}
 
@@ -9704,20 +9035,20 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 
 				for (i = 0; i < ITEM_SOCKET_MAX_NUM; ++i)
 				{
-					if (item2->GetSocket(i) != ITEM_BROKEN_METIN_VNUM && item2->GetSocket(i) != 0)
-						ItemSystem::SetItemSocketEcs((item2 ? item2->GetEntityHandle() : entt::null), j++, item2->GetSocket(i));
+					if (ItemSystem::GetItemSocket(item2, i) != ITEM_BROKEN_METIN_VNUM && ItemSystem::GetItemSocket(item2, i) != 0)
+						ItemSystem::SetItemSocketEcs(item2, j++, ItemSystem::GetItemSocket(item2, i));
 				}
 
 				for (; j < ITEM_SOCKET_MAX_NUM; ++j)
 				{
-					if (item2->GetSocket(j) > 0)
-						ItemSystem::SetItemSocketEcs((item2 ? item2->GetEntityHandle() : entt::null), j, 1);
+					if (ItemSystem::GetItemSocket(item2, j) > 0)
+						ItemSystem::SetItemSocketEcs(item2, j, 1);
 				}
 
 				{
 					char buf[21];
-					snprintf(buf, sizeof(buf), "%u", item2->GetID());
-					LogManager::instance().ItemLog(this, item, "CLEAN_SOCKET", buf);
+					snprintf(buf, sizeof(buf), "%u", ItemSystem::GetItemID(item2));
+					LogManager::instance().ItemLogEntity(GetEntityHandle(), itemEntity, "CLEAN_SOCKET", buf);
 				}
 
 				ItemSystem::ConsumeItemEcs(itemEntity);
@@ -9727,7 +9058,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 
 			case USE_CHANGE_ATTRIBUTE:
 			case USE_CHANGE_ATTRIBUTE2: // @fixme123
-				if (item2->GetAttributeSetIndex() == -1)
+				if (ItemSystem::GetItemAttributeSetIndex(item2) == -1)
 				{
 #ifdef TEXTS_IMPROVEMENT
 					ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 396, "");
@@ -9735,7 +9066,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 					return false;
 				}
 
-				if (item2->GetAttributeCount() == 0)
+				if (ItemSystem::GetItemAttributeCount(item2) == 0)
 				{
 #ifdef TEXTS_IMPROVEMENT
 					ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 354, "");
@@ -9780,7 +9111,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 
 #ifdef ENABLE_CHANGE_ATTRIBUTE_RULES
 				{
-					uint32_t dwTargetVnum = item2->GetVnum();
+					uint32_t dwTargetVnum = ItemSystem::GetItemVnum(item2);
 					bool bZodiacItem = (
 
 #ifdef DISABLE_ZODIAC_ATT
@@ -9835,17 +9166,17 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 
 
 
-					if (item->GetVnum() != 86060) {
+					if (ItemSystem::GetItemVnum(itemEntity) != 86060) {
 						if (bZodiacItem) {
 #ifdef TEXTS_IMPROVEMENT
-							ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 10, "%s", item2->GetName());
+							ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 10, "%s", ItemSystem::GetItemName(item2));
 #endif
 							return false;
 						}
 					}
 					else if (!bZodiacItem) {
 #ifdef TEXTS_IMPROVEMENT
-						ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 9, "%s", item2->GetName());
+						ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 9, "%s", ItemSystem::GetItemName(item2));
 #endif
 						return false;
 					}
@@ -9855,11 +9186,12 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 #endif
 
 #ifdef ENABLE_TALISMAN_ATTR
-				if (item->GetVnum() == 86051 || item->GetVnum() == 88965)
+				if (ItemSystem::GetItemVnum(itemEntity) == 86051 || ItemSystem::GetItemVnum(itemEntity) == 88965)
 				{
-					if (item2->GetType() == ITEM_ARMOR && item2->GetSubType() == ARMOR_PENDANT)
+					if (ItemSystem::GetItemType(item2) == ITEM_ARMOR && ItemSystem::GetItemSubType(item2) == ARMOR_PENDANT)
 					{
-						item2->ChangeAttribute();
+						if (!ItemSystem::ChangeItemAttributeEcs(item2))
+						    return false;
 						ItemSystem::ConsumeItemEcs(itemEntity);
 #ifdef ENABLE_RANKING
 						SetRankPoints(13, GetRankPoints(13) + 1);
@@ -9874,7 +9206,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 						return false;
 					}
 				}
-				else if (item2->GetType() == ITEM_ARMOR && item2->GetSubType() == ARMOR_PENDANT)
+				else if (ItemSystem::GetItemType(item2) == ITEM_ARMOR && ItemSystem::GetItemSubType(item2) == ARMOR_PENDANT)
 				{
 #ifdef TEXTS_IMPROVEMENT
 					ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 850, "");
@@ -9883,23 +9215,25 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 				}
 #endif
 
-				if (item->GetSubType() == USE_CHANGE_ATTRIBUTE2)
+				if (ItemSystem::GetItemSubType(itemEntity) == USE_CHANGE_ATTRIBUTE2)
 				{
 					int aiChangeProb[ITEM_ATTRIBUTE_MAX_LEVEL] =
 					{
 						0, 0, 30, 40, 3
 					};
 
-					item2->ChangeAttribute(aiChangeProb);
+					if (!ItemSystem::ChangeItemAttributeEcs(item2, aiChangeProb))
+					    return false;
 				}
-				else if (item->GetVnum() == 76014)
+				else if (ItemSystem::GetItemVnum(itemEntity) == 76014)
 				{
 					int aiChangeProb[ITEM_ATTRIBUTE_MAX_LEVEL] =
 					{
 						0, 10, 50, 39, 1
 					};
 
-					item2->ChangeAttribute(aiChangeProb);
+					if (!ItemSystem::ChangeItemAttributeEcs(item2, aiChangeProb))
+					    return false;
 				}
 				else
 				{
@@ -9907,17 +9241,17 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 					// Àý´ë·Î ¿¬Àç°¡ Ãß°¡ ¾ÈµÉ°�
 // ¶ó ÇÏ¿© ÇÏµå ÄÚµùÇÔ.
 
-					if (item->GetVnum() == 71151 || item->GetVnum() == 76023)
+					if (ItemSystem::GetItemVnum(itemEntity) == 71151 || ItemSystem::GetItemVnum(itemEntity) == 76023)
 					{
-						if ((item2->GetType() == ITEM_WEAPON)
-							|| (item2->GetType() == ITEM_ARMOR && item2->GetSubType() == ARMOR_BODY)
+						if ((ItemSystem::GetItemType(item2) == ITEM_WEAPON)
+							|| (ItemSystem::GetItemType(item2) == ITEM_ARMOR && ItemSystem::GetItemSubType(item2) == ARMOR_BODY)
 #ifdef __USE_ADD_WITH_ALL_ITEMS__
-							|| (item2->GetType() == ITEM_ARMOR && item2->GetSubType() == ARMOR_HEAD)
-							|| (item2->GetType() == ITEM_ARMOR && item2->GetSubType() == ARMOR_SHIELD)
-							|| (item2->GetType() == ITEM_ARMOR && item2->GetSubType() == ARMOR_WRIST)
-							|| (item2->GetType() == ITEM_ARMOR && item2->GetSubType() == ARMOR_FOOTS)
-							|| (item2->GetType() == ITEM_ARMOR && item2->GetSubType() == ARMOR_NECK)
-							|| (item2->GetType() == ITEM_ARMOR && item2->GetSubType() == ARMOR_EAR)
+							|| (ItemSystem::GetItemType(item2) == ITEM_ARMOR && ItemSystem::GetItemSubType(item2) == ARMOR_HEAD)
+							|| (ItemSystem::GetItemType(item2) == ITEM_ARMOR && ItemSystem::GetItemSubType(item2) == ARMOR_SHIELD)
+							|| (ItemSystem::GetItemType(item2) == ITEM_ARMOR && ItemSystem::GetItemSubType(item2) == ARMOR_WRIST)
+							|| (ItemSystem::GetItemType(item2) == ITEM_ARMOR && ItemSystem::GetItemSubType(item2) == ARMOR_FOOTS)
+							|| (ItemSystem::GetItemType(item2) == ITEM_ARMOR && ItemSystem::GetItemSubType(item2) == ARMOR_NECK)
+							|| (ItemSystem::GetItemType(item2) == ITEM_ARMOR && ItemSystem::GetItemSubType(item2) == ARMOR_EAR)
 #endif
 							)
 						{
@@ -9925,9 +9259,9 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 							for (int i = 0; i < ITEM_LIMIT_MAX_NUM; ++i)
 							{
 #ifdef __ENABLE_GREEN_ITEM_LVL_30__
-								if (ItemSystem::GetItemLimitType(item2->GetEntityHandle(), i) == LIMIT_LEVEL && ItemSystem::GetItemLimitValue(item2->GetEntityHandle(), i) > 30)
+								if (ItemSystem::GetItemLimitType(item2, i) == LIMIT_LEVEL && ItemSystem::GetItemLimitValue(item2, i) > 30)
 #else
-								if (ItemSystem::GetItemLimitType(item2->GetEntityHandle(), i) == LIMIT_LEVEL && ItemSystem::GetItemLimitValue(item2->GetEntityHandle(), i) > 40)
+								if (ItemSystem::GetItemLimitType(item2, i) == LIMIT_LEVEL && ItemSystem::GetItemLimitValue(item2, i) > 40)
 #endif
 								{
 									bCanUse = false;
@@ -9964,24 +9298,25 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 						uint32_t dwItemVnum, dwUseCount;
 						if (CBattlePass::instance().BattlePassMissionGetInfo(bBattlePassId, USE_ITEM, &dwItemVnum, &dwUseCount))
 						{
-							if (dwItemVnum == item->GetVnum() && GetMissionProgress(USE_ITEM, bBattlePassId) < dwUseCount)
+							if (dwItemVnum == ItemSystem::GetItemVnum(itemEntity) && GetMissionProgress(USE_ITEM, bBattlePassId) < dwUseCount)
 								UpdateMissionProgress(USE_ITEM, bBattlePassId, 1, dwUseCount);
 						}
 
 						if (CBattlePass::instance().BattlePassMissionGetInfo(bBattlePassId, USE_ITEM1, &dwItemVnum, &dwUseCount))
 						{
-							if (dwItemVnum == item->GetVnum() && GetMissionProgress(USE_ITEM1, bBattlePassId) < dwUseCount)
+							if (dwItemVnum == ItemSystem::GetItemVnum(itemEntity) && GetMissionProgress(USE_ITEM1, bBattlePassId) < dwUseCount)
 								UpdateMissionProgress(USE_ITEM1, bBattlePassId, 1, dwUseCount);
 						}
 
 						if (CBattlePass::instance().BattlePassMissionGetInfo(bBattlePassId, USE_ITEM2, &dwItemVnum, &dwUseCount))
 						{
-							if (dwItemVnum == item->GetVnum() && GetMissionProgress(USE_ITEM2, bBattlePassId) < dwUseCount)
+							if (dwItemVnum == ItemSystem::GetItemVnum(itemEntity) && GetMissionProgress(USE_ITEM2, bBattlePassId) < dwUseCount)
 								UpdateMissionProgress(USE_ITEM2, bBattlePassId, 1, dwUseCount);
 						}
 					}
 #endif
-					item2->ChangeAttribute();
+					if (!ItemSystem::ChangeItemAttributeEcs(item2))
+					    return false;
 				}
 
 #ifdef TEXTS_IMPROVEMENT
@@ -9990,13 +9325,13 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 
 				{
 					char buf[21];
-					snprintf(buf, sizeof(buf), "%u", item2->GetID());
-					LogManager::instance().ItemLog(this, item, "CHANGE_ATTRIBUTE", buf);
+					snprintf(buf, sizeof(buf), "%u", ItemSystem::GetItemID(item2));
+					LogManager::instance().ItemLogEntity(GetEntityHandle(), itemEntity, "CHANGE_ATTRIBUTE", buf);
 				}
 
 				ItemSystem::ConsumeItemEcs(itemEntity);
 #ifdef ENABLE_RANKING
-				if (item->GetVnum() == 86051 || item->GetVnum() == 88965)
+				if (ItemSystem::GetItemVnum(itemEntity) == 86051 || ItemSystem::GetItemVnum(itemEntity) == 88965)
 					SetRankPoints(13, GetRankPoints(13) + 1);
 				else
 					SetRankPoints(12, GetRankPoints(12) + 1);
@@ -10004,7 +9339,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 				break;
 
 			case USE_ADD_ATTRIBUTE:
-				if (item2->GetAttributeSetIndex() == -1)
+				if (ItemSystem::GetItemAttributeSetIndex(item2) == -1)
 				{
 #ifdef TEXTS_IMPROVEMENT
 					ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 396, "");
@@ -10012,14 +9347,14 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 					return false;
 				}
 
-				if (item2->GetAttributeCount() < 5)
+				if (ItemSystem::GetItemAttributeCount(item2) < 5)
 				{
 #ifdef ENABLE_TALISMAN_ATTR
-					if (item->GetVnum() == 86050 || item->GetVnum() == 88966) {
-						if (item2->GetType() == ITEM_ARMOR && item2->GetSubType() == ARMOR_PENDANT)
+					if (ItemSystem::GetItemVnum(itemEntity) == 86050 || ItemSystem::GetItemVnum(itemEntity) == 88966) {
+						if (ItemSystem::GetItemType(item2) == ITEM_ARMOR && ItemSystem::GetItemSubType(item2) == ARMOR_PENDANT)
 						{
 #if defined(ENABLE_BUG_FIXES)
-							if (item2->GetAttributeCount() == 4)
+							if (ItemSystem::GetItemAttributeCount(item2) == 4)
 							{
 #if defined(TEXTS_IMPROVEMENT)
 								ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 1359, "");
@@ -10028,7 +9363,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 							}
 #endif
 
-							ItemSystem::AddItemAttributeEcs((item2 ? item2->GetEntityHandle() : entt::null));
+							ItemSystem::AddItemAttributeEcs(item2);
 							ItemSystem::ConsumeItemEcs(itemEntity);
 							return true;
 						}
@@ -10040,7 +9375,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 							return false;
 						}
 					}
-					else if (item2->GetType() == ITEM_ARMOR && item2->GetSubType() == ARMOR_PENDANT)
+					else if (ItemSystem::GetItemType(item2) == ITEM_ARMOR && ItemSystem::GetItemSubType(item2) == ARMOR_PENDANT)
 					{
 #ifdef TEXTS_IMPROVEMENT
 						ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 684, "");
@@ -10052,17 +9387,17 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 					// ¿¬Àç°¡ Æ¯¼öÃ³¸®
 					// Àý´ë·Î ¿¬Àç°¡ Ãß°¡ ¾ÈµÉ°�
 // ¶ó ÇÏ¿© ÇÏµå ÄÚµùÇÔ.
-					if (item->GetVnum() == 71152 || item->GetVnum() == 76024)
+					if (ItemSystem::GetItemVnum(itemEntity) == 71152 || ItemSystem::GetItemVnum(itemEntity) == 76024)
 					{
-						if ((item2->GetType() == ITEM_WEAPON)
-							|| (item2->GetType() == ITEM_ARMOR && item2->GetSubType() == ARMOR_BODY)
+						if ((ItemSystem::GetItemType(item2) == ITEM_WEAPON)
+							|| (ItemSystem::GetItemType(item2) == ITEM_ARMOR && ItemSystem::GetItemSubType(item2) == ARMOR_BODY)
 #ifdef __USE_ADD_WITH_ALL_ITEMS__
-							|| (item2->GetType() == ITEM_ARMOR && item2->GetSubType() == ARMOR_HEAD)
-							|| (item2->GetType() == ITEM_ARMOR && item2->GetSubType() == ARMOR_SHIELD)
-							|| (item2->GetType() == ITEM_ARMOR && item2->GetSubType() == ARMOR_WRIST)
-							|| (item2->GetType() == ITEM_ARMOR && item2->GetSubType() == ARMOR_FOOTS)
-							|| (item2->GetType() == ITEM_ARMOR && item2->GetSubType() == ARMOR_NECK)
-							|| (item2->GetType() == ITEM_ARMOR && item2->GetSubType() == ARMOR_EAR)
+							|| (ItemSystem::GetItemType(item2) == ITEM_ARMOR && ItemSystem::GetItemSubType(item2) == ARMOR_HEAD)
+							|| (ItemSystem::GetItemType(item2) == ITEM_ARMOR && ItemSystem::GetItemSubType(item2) == ARMOR_SHIELD)
+							|| (ItemSystem::GetItemType(item2) == ITEM_ARMOR && ItemSystem::GetItemSubType(item2) == ARMOR_WRIST)
+							|| (ItemSystem::GetItemType(item2) == ITEM_ARMOR && ItemSystem::GetItemSubType(item2) == ARMOR_FOOTS)
+							|| (ItemSystem::GetItemType(item2) == ITEM_ARMOR && ItemSystem::GetItemSubType(item2) == ARMOR_NECK)
+							|| (ItemSystem::GetItemType(item2) == ITEM_ARMOR && ItemSystem::GetItemSubType(item2) == ARMOR_EAR)
 #endif
 							)
 						{
@@ -10070,9 +9405,9 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 							for (int i = 0; i < ITEM_LIMIT_MAX_NUM; ++i)
 							{
 #ifdef __ENABLE_GREEN_ITEM_LVL_30__
-								if (ItemSystem::GetItemLimitType(item2->GetEntityHandle(), i) == LIMIT_LEVEL && ItemSystem::GetItemLimitValue(item2->GetEntityHandle(), i) > 30)
+								if (ItemSystem::GetItemLimitType(item2, i) == LIMIT_LEVEL && ItemSystem::GetItemLimitValue(item2, i) > 30)
 #else
-								if (ItemSystem::GetItemLimitType(item2->GetEntityHandle(), i) == LIMIT_LEVEL && ItemSystem::GetItemLimitValue(item2->GetEntityHandle(), i) > 40)
+								if (ItemSystem::GetItemLimitType(item2, i) == LIMIT_LEVEL && ItemSystem::GetItemLimitValue(item2, i) > 40)
 #endif
 								{
 									bCanUse = false;
@@ -10101,32 +9436,32 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 						}
 					}
 					char buf[21];
-					snprintf(buf, sizeof(buf), "%u", item2->GetID());
+					snprintf(buf, sizeof(buf), "%u", ItemSystem::GetItemID(item2));
 #ifndef ENABLE_ENCHANT_CHANGES
-					if (number(1, 100) <= aiItemAttributeAddPercent[item2->GetAttributeCount()])
+					if (number(1, 100) <= aiItemAttributeAddPercent[ItemSystem::GetItemAttributeCount(item2)])
 #endif
 					{
 #ifdef ENABLE_MAX_ADD_ATTRIBUTE
-						short AttributeCount = abs(1 - item->GetAttributeCount());//1 bonuszt ad hozz?a z?d er?
+						short AttributeCount = abs(1 - ItemSystem::GetItemAttributeCount(itemEntity));//1 bonuszt ad hozz?a z?d er?
 						for (int i = 0; i < AttributeCount; i++)
-							ItemSystem::AddItemAttributeEcs((item2 ? item2->GetEntityHandle() : entt::null));
+							ItemSystem::AddItemAttributeEcs(item2);
 						ItemSystem::ConsumeItemEcs(itemEntity);// elvesz 1 db ot
 #else
-						ItemSystem::AddItemAttributeEcs((item2 ? item2->GetEntityHandle() : entt::null));
+						ItemSystem::AddItemAttributeEcs(item2);
 #endif
 #ifdef TEXTS_IMPROVEMENT
 						ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 389, "");
 #endif
-						int iAddedIdx = item2->GetAttributeCount() - 1;
+						int iAddedIdx = ItemSystem::GetItemAttributeCount(item2) - 1;
 						LogManager::instance().ItemLog(
 							GetPlayerID(),
-							item2->GetAttributeType(iAddedIdx),
-							item2->GetAttributeValue(iAddedIdx),
-							item->GetID(),
+							ItemSystem::GetItemAttributeType(item2, iAddedIdx),
+							ItemSystem::GetItemAttributeValue(item2, iAddedIdx),
+							ItemSystem::GetItemID(itemEntity),
 							"ADD_ATTRIBUTE_SUCCESS",
 							buf,
 							GetDesc()->GetHostName(),
-							item->GetOriginalVnum());
+							ItemSystem::GetItemOriginalVnum(itemEntity));
 					}
 #ifndef ENABLE_ENCHANT_CHANGES
 					else
@@ -10134,7 +9469,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 #ifdef TEXTS_IMPROVEMENT
 						ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 390, "");
 #endif
-						LogManager::instance().ItemLog(this, item, "ADD_ATTRIBUTE_FAIL", buf);
+						LogManager::instance().ItemLogEntity(GetEntityHandle(), itemEntity, "ADD_ATTRIBUTE_FAIL", buf);
 					}
 
 					ItemSystem::ConsumeItemEcs(itemEntity);
@@ -10153,7 +9488,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 // ëÇØ ¼Ó¼ºÀ» 4°³ Ãß°¡ ½Ã�
 // ² ¾ÆÀÌ�
 // Û¿¡ ´ëÇØ¼­ ÇÏ³ªÀÇ ¼Ó¼ºÀ» ´õ ºÙ¿©ÁØ´Ù.
-				if (item2->GetAttributeSetIndex() == -1)
+				if (ItemSystem::GetItemAttributeSetIndex(item2) == -1)
 				{
 #ifdef TEXTS_IMPROVEMENT
 					ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 396, "");
@@ -10162,16 +9497,16 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 				}
 
 				// ¼Ó¼ºÀÌ ÀÌ¹Ì 4°³ Ãß°¡ µÇ¾úÀ» ¶§¸¸ ¼Ó¼ºÀ» Ãß°¡ °¡´ÉÇÏ´Ù.
-				if (item2->GetAttributeCount() == 4)
+				if (ItemSystem::GetItemAttributeCount(item2) == 4)
 				{
 #ifdef ENABLE_TALISMAN_ATTR
-					if (item->GetVnum() == 86052 || item->GetVnum() == 88964)
+					if (ItemSystem::GetItemVnum(itemEntity) == 86052 || ItemSystem::GetItemVnum(itemEntity) == 88964)
 					{
-						if (item2->GetType() == ITEM_ARMOR && item2->GetSubType() == ARMOR_PENDANT)
+						if (ItemSystem::GetItemType(item2) == ITEM_ARMOR && ItemSystem::GetItemSubType(item2) == ARMOR_PENDANT)
 						{
 							if (number(1, 100) <= 75) // % Successo di inserimeno Sfera Benedetta 75%
 							{
-								ItemSystem::AddItemAttributeEcs((item2 ? item2->GetEntityHandle() : entt::null));
+								ItemSystem::AddItemAttributeEcs(item2);
 								ItemSystem::ConsumeItemEcs(itemEntity);
 								return true;
 							}
@@ -10192,7 +9527,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 							return false;
 						}
 					}
-					else if (item2->GetType() == ITEM_ARMOR && item2->GetSubType() == ARMOR_PENDANT)
+					else if (ItemSystem::GetItemType(item2) == ITEM_ARMOR && ItemSystem::GetItemSubType(item2) == ARMOR_PENDANT)
 					{
 #ifdef TEXTS_IMPROVEMENT
 						ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 684, "");
@@ -10203,73 +9538,73 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 
 
 					char buf[21];
-					snprintf(buf, sizeof(buf), "%u", item2->GetID());
+					snprintf(buf, sizeof(buf), "%u", ItemSystem::GetItemID(item2));
 
-					if (number(1, 100) <= aiItemAttributeAddPercent[item2->GetAttributeCount()])
+					if (number(1, 100) <= aiItemAttributeAddPercent[ItemSystem::GetItemAttributeCount(item2)])
 					{
 #ifdef ENABLE_MAX_ADD_ATTRIBUTE
-						short AttributeCount = abs(1 - item->GetAttributeCount());
+						short AttributeCount = abs(1 - ItemSystem::GetItemAttributeCount(itemEntity));
 						for (int i = 0; i < AttributeCount; i++)
-							ItemSystem::AddItemAttributeEcs((item2 ? item2->GetEntityHandle() : entt::null));
+							ItemSystem::AddItemAttributeEcs(item2);
 #else
-						ItemSystem::AddItemAttributeEcs((item2 ? item2->GetEntityHandle() : entt::null));
+						ItemSystem::AddItemAttributeEcs(item2);
 #endif
 #ifdef TEXTS_IMPROVEMENT
 						ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 389, "");
 #endif
-						int iAddedIdx = item2->GetAttributeCount() - 1;
+						int iAddedIdx = ItemSystem::GetItemAttributeCount(item2) - 1;
 						LogManager::instance().ItemLog(
 							GetPlayerID(),
-							item2->GetAttributeType(iAddedIdx),
-							item2->GetAttributeValue(iAddedIdx),
-							item->GetID(),
+							ItemSystem::GetItemAttributeType(item2, iAddedIdx),
+							ItemSystem::GetItemAttributeValue(item2, iAddedIdx),
+							ItemSystem::GetItemID(itemEntity),
 							"ADD_ATTRIBUTE2_SUCCESS",
 							buf,
 							GetDesc()->GetHostName(),
-							item->GetOriginalVnum());
+							ItemSystem::GetItemOriginalVnum(itemEntity));
 					}
 					else
 					{
 #ifdef TEXTS_IMPROVEMENT
 						ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 390, "");
 #endif
-						LogManager::instance().ItemLog(this, item, "ADD_ATTRIBUTE2_FAIL", buf);
+						LogManager::instance().ItemLogEntity(GetEntityHandle(), itemEntity, "ADD_ATTRIBUTE2_FAIL", buf);
 					}
 
 					ItemSystem::ConsumeItemEcs(itemEntity);
 				}
-				else if (item2->GetAttributeCount() == 5)
+				else if (ItemSystem::GetItemAttributeCount(item2) == 5)
 				{
 #ifdef TEXTS_IMPROVEMENT
 					ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 308, "");
 #endif
 				}
-				else if (item2->GetAttributeCount() < 4)
+				else if (ItemSystem::GetItemAttributeCount(item2) < 4)
 				{
 #ifdef TEXTS_IMPROVEMENT
-					ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 339, "%d#%d#%d", 4, item2->GetAttributeCount(), 4);
+					ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 339, "%d#%d#%d", 4, ItemSystem::GetItemAttributeCount(item2), 4);
 #endif
 				}
 				else
 				{
 					// wtf ?!
-					LOG_ERROR("ADD_ATTRIBUTE2 : Item has wrong AttributeCount({})", item2->GetAttributeCount());
+					LOG_ERROR("ADD_ATTRIBUTE2 : Item has wrong AttributeCount({})", ItemSystem::GetItemAttributeCount(item2));
 				}
 				break;
 
 			case USE_ADD_ACCESSORY_SOCKET:
 			{
 				char buf[21];
-				snprintf(buf, sizeof(buf), "%u", item2->GetID());
-				if (item2->GetType() == ITEM_BELT)
+				snprintf(buf, sizeof(buf), "%u", ItemSystem::GetItemID(item2));
+				if (ItemSystem::GetItemType(item2) == ITEM_BELT)
 				{
 					ecs::ChatSystem::Send(GetEntityHandle(), CHAT_TYPE_INFO, "You can't add new slot's to belt items");
 					return false;
 					
 				}
-				if (ItemSystem::IsAccessoryForSocket(item2->GetEntityHandle()))
+				if (ItemSystem::IsAccessoryForSocket(item2))
 				{
-					if (ItemSystem::GetItemAccessorySocketMaxGrade(item2->GetEntityHandle()) < ITEM_ACCESSORY_SOCKET_MAX_NUM)
+					if (ItemSystem::GetItemAccessorySocketMaxGrade(item2) < ITEM_ACCESSORY_SOCKET_MAX_NUM)
 					{
 #ifdef ENABLE_ADDSTONE_FAILURE
 						if (number(1, 100) <= 50)
@@ -10277,18 +9612,18 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 						if (1)
 #endif
 						{
-							ItemSystem::SetItemAccessorySocketMaxGrade(item2->GetEntityHandle(), ItemSystem::GetItemAccessorySocketMaxGrade(item2->GetEntityHandle()) + 1);
+							ItemSystem::SetItemAccessorySocketMaxGrade(item2, ItemSystem::GetItemAccessorySocketMaxGrade(item2) + 1);
 #ifdef TEXTS_IMPROVEMENT
 							ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 387, "");
 #endif
-							LogManager::instance().ItemLog(this, item, "ADD_SOCKET_SUCCESS", buf);
+							LogManager::instance().ItemLogEntity(GetEntityHandle(), itemEntity, "ADD_SOCKET_SUCCESS", buf);
 						}
 						else
 						{
 #ifdef TEXTS_IMPROVEMENT
 							ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 386, "");
 #endif
-							LogManager::instance().ItemLog(this, item, "ADD_SOCKET_FAIL", buf);
+							LogManager::instance().ItemLogEntity(GetEntityHandle(), itemEntity, "ADD_SOCKET_FAIL", buf);
 						}
 
 						ItemSystem::ConsumeItemEcs(itemEntity);
@@ -10310,11 +9645,11 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 
 			case USE_PUT_INTO_BELT_SOCKET:
 			case USE_PUT_INTO_ACCESSORY_SOCKET:
-				if (ItemSystem::IsAccessoryForSocket(item2->GetEntityHandle()))
+				if (ItemSystem::IsAccessoryForSocket(item2))
 				{
-					if (ItemSystem::CanPutInto(item->GetEntityHandle(), item2->GetEntityHandle())) {
+					if (ItemSystem::CanPutInto(itemEntity, item2)) {
 #ifdef ENABLE_INFINITE_RAFINES
-						if (item2->GetSocket(0) > 86400 || item2->GetSocket(1) > 86400 || item2->GetSocket(2) > 86400) {
+						if (ItemSystem::GetItemSocket(item2, 0) > 86400 || ItemSystem::GetItemSocket(item2, 1) > 86400 || ItemSystem::GetItemSocket(item2, 2) > 86400) {
 #ifdef TEXTS_IMPROVEMENT
 							ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 859, "");
 #endif
@@ -10322,24 +9657,24 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 						}
 #endif
 						char buf[21];
-						snprintf(buf, sizeof(buf), "%u", item2->GetID());
+						snprintf(buf, sizeof(buf), "%u", ItemSystem::GetItemID(item2));
 
-						if (ItemSystem::GetItemAccessorySocketGrade(item2->GetEntityHandle()) < ItemSystem::GetItemAccessorySocketMaxGrade(item2->GetEntityHandle()))
+						if (ItemSystem::GetItemAccessorySocketGrade(item2) < ItemSystem::GetItemAccessorySocketMaxGrade(item2))
 						{
-							//if (number(1, 100) <= aiAccessorySocketPutPct[item2->GetAccessorySocketGrade()])
+							//if (number(1, 100) <= aiAccessorySocketPutPct[ItemSystem::GetItemAccessorySocketGrade(item2)])
 							//{
-							item2->SetAccessorySocketGrade(ItemSystem::GetItemAccessorySocketGrade(item2->GetEntityHandle()) + 1);
+							ItemSystem::SetItemAccessorySocketGrade(item2, ItemSystem::GetItemAccessorySocketGrade(item2) + 1);
 #ifdef TEXTS_IMPROVEMENT
 							ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 452, "");
 #endif
-							LogManager::instance().ItemLog(this, item, "PUT_SOCKET_SUCCESS", buf);
+							LogManager::instance().ItemLogEntity(GetEntityHandle(), itemEntity, "PUT_SOCKET_SUCCESS", buf);
 							//}
 							//else
 							//{
 //#ifdef TEXTS_IMPROVEMENT
 													//ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 453, "");
 //#endif
-													//LogManager::instance().ItemLog(this, item, "PUT_SOCKET_FAIL", buf);
+													//LogManager::instance().ItemLogEntity(GetEntityHandle(), itemEntity, "PUT_SOCKET_FAIL", buf);
 												//}
 
 							ItemSystem::ConsumeItemEcs(itemEntity);
@@ -10347,7 +9682,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 						else
 						{
 #ifdef TEXTS_IMPROVEMENT
-							if (ItemSystem::GetItemAccessorySocketMaxGrade(item2->GetEntityHandle()) == 0 || item2->GetAccessorySocketMaxGrade() < ITEM_ACCESSORY_SOCKET_MAX_NUM) {
+							if (ItemSystem::GetItemAccessorySocketMaxGrade(item2) == 0 || ItemSystem::GetItemAccessorySocketMaxGrade(item2) < ITEM_ACCESSORY_SOCKET_MAX_NUM) {
 								ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 297, "");
 								ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 298, "");
 							}
@@ -10358,8 +9693,8 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 						}
 					}
 #ifdef ENABLE_INFINITE_RAFINES
-					else if (ItemSystem::CanPutInto2(item->GetEntityHandle(), item2->GetEntityHandle())) {
-						if ((item2->GetSocket(0) > 5 && item2->GetSocket(0) <= 86400) || (item2->GetSocket(1) > 5 && item2->GetSocket(1) <= 86400) || (item2->GetSocket(2) > 5 && item2->GetSocket(2) <= 86400)) {
+					else if (ItemSystem::CanPutInto2(itemEntity, item2)) {
+						if ((ItemSystem::GetItemSocket(item2, 0) > 5 && ItemSystem::GetItemSocket(item2, 0) <= 86400) || (ItemSystem::GetItemSocket(item2, 1) > 5 && ItemSystem::GetItemSocket(item2, 1) <= 86400) || (ItemSystem::GetItemSocket(item2, 2) > 5 && ItemSystem::GetItemSocket(item2, 2) <= 86400)) {
 #ifdef TEXTS_IMPROVEMENT
 							ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 860, "");
 #endif
@@ -10367,25 +9702,25 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 						}
 
 						char buf[21];
-						snprintf(buf, sizeof(buf), "%u", item2->GetID());
+						snprintf(buf, sizeof(buf), "%u", ItemSystem::GetItemID(item2));
 
-						if (ItemSystem::GetItemAccessorySocketGrade(item2->GetEntityHandle()) < ItemSystem::GetItemAccessorySocketMaxGrade(item2->GetEntityHandle()))
+						if (ItemSystem::GetItemAccessorySocketGrade(item2) < ItemSystem::GetItemAccessorySocketMaxGrade(item2))
 						{
 							bool infinite = item->GetValue(0) == 1 ? true : false;
 							if (infinite == true)
 							{
-								item2->SetAccessorySocketGrade(ItemSystem::GetItemAccessorySocketGrade(item2->GetEntityHandle()) + 1, infinite);
+								ItemSystem::SetItemAccessorySocketGrade(item2, ItemSystem::GetItemAccessorySocketGrade(item2) + 1, infinite);
 #ifdef TEXTS_IMPROVEMENT
 								ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 452, "");
 #endif
-								LogManager::instance().ItemLog(this, item, "PUT_SOCKET_SUCCESS", buf);
+								LogManager::instance().ItemLogEntity(GetEntityHandle(), itemEntity, "PUT_SOCKET_SUCCESS", buf);
 							}
 							else
 							{
 #ifdef TEXTS_IMPROVEMENT
 								ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 453, "");
 #endif
-								LogManager::instance().ItemLog(this, item, "PUT_SOCKET_FAIL", buf);
+								LogManager::instance().ItemLogEntity(GetEntityHandle(), itemEntity, "PUT_SOCKET_FAIL", buf);
 							}
 
 							ItemSystem::ConsumeItemEcs(itemEntity);
@@ -10393,7 +9728,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 						else
 						{
 #ifdef TEXTS_IMPROVEMENT
-							if (ItemSystem::GetItemAccessorySocketMaxGrade(item2->GetEntityHandle()) == 0 || item2->GetAccessorySocketMaxGrade() < ITEM_ACCESSORY_SOCKET_MAX_NUM) {
+							if (ItemSystem::GetItemAccessorySocketMaxGrade(item2) == 0 || ItemSystem::GetItemAccessorySocketMaxGrade(item2) < ITEM_ACCESSORY_SOCKET_MAX_NUM) {
 								ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 297, "");
 								ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 298, "");
 							}
@@ -10415,10 +9750,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 				}
 				break;
 			}
-			if (ItemSystem::IsItemEquipped(item2->GetEntityHandle()))
-			{
-				BuffOnAttr_AddBuffsFromItem(item2);
-			}
+
 		}
 		break;
 		//  END_OF_ACCESSORY_REFINE & END_OF_ADD_ATTRIBUTES & END_OF_CHANGE_ATTRIBUTES
@@ -11054,7 +10386,7 @@ bool CHARACTER::DoRefine(LPITEM item, bool bMoneyOnly)
 // ÛÀÌ »ç¶óÁü.
 		DBManager::instance().SendMoneyLog(MONEY_LOG_REFINE, item->GetVnum(), -cost);
 		NotifyRefineFail(this, item, IsRefineThroughGuild() ? "GUILD" : "POWER");
-		item->AttrLog();
+		ItemSystem::AttrLog(item->GetEntityHandle());
 		ITEM_MANAGER::instance().RemoveItem(item->GetEntityHandle(), "REMOVE (REFINE FAIL)");
 
 		//PointChange(POINT_GOLD, -cost);
@@ -15835,7 +15167,7 @@ void CItem::InitializeRune() {
 		lAttr = GetRuneAttrType(i);
 		lValue = GetRuneAttrValue(i, lTime);
 		if ((lAttr > 0) && (lValue > 0)) {
-			SetForceAttribute(i, lAttr, lValue);
+			ItemSystem::SetItemForceAttributeEcs(GetEntityHandle(), i, lAttr, lValue);
 		}
 	}
 }
@@ -15852,7 +15184,7 @@ void CItem::ChangeRuneAttr(int32_t lTime) {
 
 	for (int i = 0; i < RUNE_ATTR_EACH; ++i) {
 		lValue = GetRuneAttrValue(i, lTime);
-		SetForceAttribute(i, GetAttributeType(i), lValue);
+		ItemSystem::SetItemForceAttributeEcs(GetEntityHandle(), i, GetAttributeType(i), lValue);
 	}
 
 	if (isActive)
@@ -16073,94 +15405,6 @@ void CItem::AlterToSocketItem(int iSocketCount)
 		SetSocket(i, 1);
 }
 
-void CItem::AlterToMagicItem()
-{
-	if (GetAttributeSetIndex() < 0)
-	{
-		return;
-	}
-
-	int iSecondPct;
-	int iThirdPct;
-
-	switch (GetType())
-	{
-	case ITEM_WEAPON:
-	{
-		iSecondPct = 20;
-		iThirdPct = 5;
-	}
-	break;
-
-	case ITEM_ARMOR:
-	{
-		if (GetSubType() == ARMOR_BODY)
-		{
-			iSecondPct = 10;
-			iThirdPct = 2;
-		}
-		else
-		{
-			iSecondPct = 10;
-			iThirdPct = 1;
-		}
-	}
-	break;
-#ifdef ENABLE_ATTR_COSTUMES
-	case ITEM_COSTUME:
-	{
-		uint8_t subtype = GetSubType();
-		iSecondPct = subtype == COSTUME_BODY || subtype == COSTUME_HAIR
-#ifdef ENABLE_WEAPON_COSTUME_SYSTEM
-			|| subtype == COSTUME_WEAPON
-#endif
-			? 100 : 0;
-		iThirdPct = subtype == COSTUME_BODY || subtype == COSTUME_HAIR
-#ifdef ENABLE_WEAPON_COSTUME_SYSTEM
-			|| subtype == COSTUME_WEAPON
-#endif
-			? 100 : 0;
-	}
-	break;
-#endif
-	default:
-	{
-		iSecondPct = 0;
-		iThirdPct = 0;
-	}
-	break;
-	}
-
-	if (iSecondPct == 0 && iThirdPct == 0)
-	{
-		return;
-	}
-
-	PutAttribute(aiItemMagicAttributePercentHigh);
-	if (number(1, 100) <= iSecondPct)
-	{
-		PutAttribute(aiItemMagicAttributePercentLow);
-	}
-
-	if (number(1, 100) <= iThirdPct)
-	{
-		PutAttribute(aiItemMagicAttributePercentLow);
-	}
-}
-
-void CItem::ApplyAddon(int iAddonType)
-{
-	CItemAddonManager::instance().ApplyAddonTo(iAddonType, this);
-}
-
-namespace ItemSystem {
-void AttrLog(entt::entity item)
-{
-	if (LPITEM legacy = LegacyItemBoundary(item))
-		legacy->AttrLog();
-}
-} // namespace ItemSystem
-
 namespace ItemSystem {
 const char* GetItemName(entt::entity item, uint8_t language)
 {
@@ -16169,38 +15413,7 @@ const char* GetItemName(entt::entity item, uint8_t language)
 }
 } // namespace ItemSystem
 
-void CItem::AttrLog()
-{
-	const char* pszIP = nullptr;
 
-	if (GetOwnerEntity() != entt::null && ecs::PlayerRuntime::GetDesc(GetOwnerEntity()))
-		pszIP = ecs::PlayerRuntime::GetDesc(GetOwnerEntity())->GetHostName();
-
-	for (int i = 0; i < ITEM_SOCKET_MAX_NUM; ++i)
-	{
-		if (GetSocket(i))
-		{
-#ifdef ENABLE_NEWSTUFF
-			if (g_iDbLogLevel >= LOG_LEVEL_MAX)
-#endif
-				LogManager::instance().ItemLog(i, GetSocket(i), 0, GetID(), "INFO_SOCKET", "", pszIP ? pszIP : "", GetOriginalVnum());
-		}
-	}
-
-	for (int i = 0; i < ITEM_ATTRIBUTE_MAX_NUM; ++i)
-	{
-		int	type = GetAttributeType(i);
-		int value = GetAttributeValue(i);
-
-		if (type)
-		{
-#ifdef ENABLE_NEWSTUFF
-			if (g_iDbLogLevel >= LOG_LEVEL_MAX)
-#endif
-				LogManager::instance().ItemLog(i, type, value, GetID(), "INFO_ATTR", "", pszIP ? pszIP : "", GetOriginalVnum());
-		}
-	}
-}
 
 
 namespace ItemSystem {

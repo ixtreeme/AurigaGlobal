@@ -157,8 +157,7 @@ bool HasItemSocket(entt::entity item, int index);
 TPlayerItemAttribute GetItemAttribute(entt::entity item, int index);
 int GetItemAttributeType(entt::entity item, int index);
 int GetItemAttributeValue(entt::entity item, int index);
-// The socket and attribute arrays still live on CItem, mirrored into
-// components; these write the whole array through it in one step.
+// Bulk component writes used when restoring persisted item data.
 void SetItemSockets(entt::entity item, const int32_t* sockets);
 void SetItemAttributes(entt::entity item, const TPlayerItemAttribute* attributes);
 #ifdef __ENABLE_CHANGELOOK_SYSTEM__
@@ -174,9 +173,15 @@ bool ClearItemAttribute(entt::entity item, int index);
 bool SetItemForceAttributeEcs(entt::entity item, int index, uint8_t type, int16_t value);
 int GetItemAttributeCount(entt::entity item);
 int GetItemRareAttributeCount(entt::entity item);
+int GetItemAttributeSetIndex(entt::entity item);
+bool HasItemAttribute(entt::entity item, uint8_t type);
+bool AddItemAttribute(entt::entity item, uint8_t type, int16_t value);
+bool RemoveItemAttributeType(entt::entity item, uint8_t type);
+bool ClearNormalItemAttributes(entt::entity item);
+bool ApplyItemAddon(entt::entity item, int addonType);
 bool AddItemAttributeEcs(entt::entity item);
 bool AddItemRareAttributeEcs(entt::entity item);
-bool ChangeItemAttributeEcs(entt::entity item);
+bool ChangeItemAttributeEcs(entt::entity item, const int* probabilities = nullptr);
 bool ChangeItemRareAttributeEcs(entt::entity item);
 bool ClearItemAttributesEcs(entt::entity item);
 bool CopyItemAttributesEcs(entt::entity source, entt::entity target);

@@ -447,7 +447,7 @@ entt::entity ITEM_MANAGER::CreateItem(uint32_t vnum, uint32_t count, uint32_t id
 
 		if (table->sAddonType)
 		{
-			item->ApplyAddon(table->sAddonType);
+			ItemSystem::ApplyItemAddon(itemEntity, table->sAddonType);
 		}
 
 		if (bTryMagic)
@@ -456,7 +456,7 @@ entt::entity ITEM_MANAGER::CreateItem(uint32_t vnum, uint32_t count, uint32_t id
 				iRarePct = table->bAlterToMagicItemPct;
 
 			if (number(1, 100) <= iRarePct)
-				item->AlterToMagicItem();
+				ItemSystem::AlterItemToMagicItem(itemEntity);
 		}
 
 		if (table->bGainSocketPct)
@@ -488,7 +488,7 @@ entt::entity ITEM_MANAGER::CreateItem(uint32_t vnum, uint32_t count, uint32_t id
 		// 100% 확률로 속성이 붙어야 하는데 안 붙어있다면 새로 붙힌다. ...............
 		if (100 == table->bAlterToMagicItemPct && 0 == item->GetAttributeCount())
 		{
-			item->AlterToMagicItem();
+			ItemSystem::AlterItemToMagicItem(itemEntity);
 		}
 	}
 
@@ -547,7 +547,7 @@ entt::entity ITEM_MANAGER::CreateItem(uint32_t vnum, uint32_t count, uint32_t id
 
 			uint8_t bRandom = (bGrade * 4);
 			for (int i = 0; i < MAX_ATTR; i++) {
-				item->SetForceAttribute(i, stoleInfoTable[i][0], stoleInfoTable[i][number(bRandom - 3, bRandom)]);
+				ItemSystem::SetItemForceAttributeEcs(itemEntity, i, stoleInfoTable[i][0], stoleInfoTable[i][number(bRandom - 3, bRandom)]);
 			}
 		}
 	}

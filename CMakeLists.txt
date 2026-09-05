@@ -59,6 +59,8 @@ endif()
 # ============================================================
 project(Auriga_Global VERSION 0.1 LANGUAGES C CXX)
 
+enable_testing()
+
 # ============================================================
 # vcpkg bootstrap + triplet + Directory.Build.props generalas
 # ============================================================

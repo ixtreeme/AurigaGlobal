@@ -62,7 +62,6 @@
 #include "../../DragonSoul.h"
 #include "../../buff_on_attributes.h"
 #include "../../ItemUse.h"
-#include "../../item_addon.h"
 #ifdef __NEWPET_SYSTEM__
 #include "../../New_PetSystem.h"
 #define __NEWPET_SYSTEM_CHECK
@@ -364,63 +363,6 @@ static void SyncItemSocketsComponent(LPITEM item)
         sockets.sockets[i] = values[i];
 
     g_registry.emplace_or_replace<ecs::ItemSockets>(e, sockets);
-}
-
-namespace
-{
-	bool IsZodiacAttributeItemVnum(uint32_t dwVnum)
-	{
-#ifdef DISABLE_ZODIAC_ATT
-		return (dwVnum == 12314141);
-#else
-		return
-			((dwVnum >= 19290) && (dwVnum <= 19312)) ||
-			((dwVnum >= 19490) && (dwVnum <= 19512)) ||
-			((dwVnum >= 19690) && (dwVnum <= 19712)) ||
-			((dwVnum >= 19890) && (dwVnum <= 19912)) ||
-			((dwVnum >= 300) && (dwVnum <= 319)) ||
-			(dwVnum == 329) ||
-			(dwVnum == 339) ||
-			(dwVnum == 349) ||
-			(dwVnum == 359) ||
-			(dwVnum == 369) ||
-			(dwVnum == 379) ||
-			(dwVnum == 389) ||
-			(dwVnum == 399) ||
-			((dwVnum >= 1180) && (dwVnum <= 1189)) ||
-			(dwVnum == 1199) ||
-			(dwVnum == 1209) ||
-			(dwVnum == 1219) ||
-			(dwVnum == 1229) ||
-			((dwVnum >= 2200) && (dwVnum <= 2209)) ||
-			(dwVnum == 2219) ||
-			(dwVnum == 2229) ||
-			(dwVnum == 2239) ||
-			(dwVnum == 2249) ||
-			((dwVnum >= 3220) && (dwVnum <= 3229)) ||
-			(dwVnum == 3239) ||
-			(dwVnum == 3249) ||
-			(dwVnum == 3259) ||
-			(dwVnum == 3269) ||
-			((dwVnum >= 5160) && (dwVnum <= 5169)) ||
-			(dwVnum == 5179) ||
-			(dwVnum == 5189) ||
-			(dwVnum == 5199) ||
-			(dwVnum == 5209) ||
-			((dwVnum >= 7300) && (dwVnum <= 7309)) ||
-			(dwVnum == 7319) ||
-			(dwVnum == 7329) ||
-			(dwVnum == 7339) ||
-			(dwVnum == 7349) ||
-			((dwVnum >= 1700) && (dwVnum <= 1713)) ||
-			((dwVnum >= 1720) && (dwVnum <= 1733)) ||
-			((dwVnum >= 1740) && (dwVnum <= 1753)) ||
-			((dwVnum >= 1760) && (dwVnum <= 1773)) ||
-			((dwVnum >= 1780) && (dwVnum <= 1793)) ||
-			((dwVnum >= 1800) && (dwVnum <= 1813)) ||
-			((dwVnum >= 8500) && (dwVnum <= 8839));
-#endif
-	}
 }
 
 bool IsExtraEnchantUseSubtype(uint8_t subtype)
@@ -2386,31 +2328,6 @@ bool ClearItemAttribute(entt::entity item, int index)
     return SetItemAttribute(item, index, APPLY_NONE, 0);
 }
 
-bool SetItemForceAttributeEcs(entt::entity item, int index, uint8_t type, int16_t value)
-{
-    return SetItemAttribute(item, index, type, value);
-}
-
-bool AddItemAttributeEcs(entt::entity item)
-{
-    LPITEM legacyItem = LegacyItemBoundary(item);
-    if (!legacyItem)
-        return false;
-
-    legacyItem->AddAttribute();
-    return true;
-}
-
-bool ChangeItemAttributeEcs(entt::entity item)
-{
-    LPITEM legacyItem = LegacyItemBoundary(item);
-    if (!legacyItem)
-        return false;
-
-    legacyItem->ChangeAttribute();
-    return true;
-}
-
 bool ClearItemAttributesEcs(entt::entity item)
 {
     if (item == entt::null || !g_registry.valid(item))
@@ -2908,34 +2825,6 @@ int GetItemRareAttributeCount(entt::entity item)
     return count;
 }
 
-bool AddItemRareAttributeEcs(entt::entity item)
-{
-    LPITEM legacyItem = LegacyItemBoundary(item);
-    if (!legacyItem || !legacyItem->AddRareAttribute())
-        return false;
-
-    return true;
-}
-
-bool ChangeItemRareAttributeEcs(entt::entity item)
-{
-    LPITEM legacyItem = LegacyItemBoundary(item);
-    if (!legacyItem || !legacyItem->ChangeRareAttribute())
-        return false;
-
-    return true;
-}
-
-bool AttrLogEcs(entt::entity item)
-{
-    LPITEM legacyItem = LegacyItemBoundary(item);
-    if (!legacyItem)
-        return false;
-
-    legacyItem->AttrLog();
-    return true;
-}
-
 bool IsItemExchanging(entt::entity item)
 {
     if (item == entt::null || !g_registry.valid(item))
@@ -3080,16 +2969,6 @@ bool SetItemCell(entt::entity item, entt::entity owner, uint16_t cell)
     // owner from LegacyCharOf(owner), so an owner entity carrying no
     // LegacyCharPtr would have had the assignment above undone one line later.
     return true;
-}
-
-bool AlterItemToMagicItem(entt::entity item)
-{
-    LPITEM legacyItem = LegacyItemBoundary(item);
-    if (!legacyItem)
-        return false;
-
-    legacyItem->AlterToMagicItem();
-    return SyncItemStateFromLegacy(item);
 }
 
 uint8_t GetItemWindow(entt::entity item)

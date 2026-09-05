@@ -123,12 +123,6 @@ class CItem : public CEntity
 
 		void		SetAttributes(const TPlayerItemAttribute* c_pAttribute);
 
-		int		FindAttribute(uint8_t bType);
-		bool		RemoveAttributeType(uint8_t bType);
-
-		bool		HasAttr(uint8_t bApply);
-		bool		HasRareAttr(uint8_t bApply);
-
 
 		uint32_t		GetRefinedVnum()	{ return m_pProto ? m_pProto->dwRefinedVnum : 0; }
 		uint32_t		GetRefineFromVnum();
@@ -140,9 +134,6 @@ class CItem : public CEntity
 
 #ifdef ENABLE_BATTLE_PASS
 #endif
-
-		int		GetAttributeSetIndex(); // 속성 붙는것을 지정한 배열의 어느 인덱스를 사용하는지 돌려준다.
-		void		AlterToMagicItem();
 		void		AlterToSocketItem(int iSocketCount);
 
 		uint16_t		GetRefineSet()		{ return m_pProto ? m_pProto->wRefineSet : 0;	}
@@ -155,15 +146,9 @@ class CItem : public CEntity
 		int			GetDuration();
 
 		int		GetAttributeCount();
-		void		ClearAttribute();
-		void		ChangeAttribute(const int* aiChangeProb= nullptr);
 #ifdef ENABLE_CHANGE_NORMAL_HIT_RAZOR93
 		bool ChangeKKAK(int iAddonType = 0);
 #endif
-		void		AddAttribute();
-		void		AddAttribute(uint8_t bType, short sValue);
-
-		void		ApplyAddon(int iAddonType);
 
 		int		GetSpecialGroup() const;
 
@@ -188,10 +173,6 @@ class CItem : public CEntity
 
 
 		int			GetRareAttrCount();
-		bool		AddRareAttribute();
-		bool		ChangeRareAttribute();
-
-		void		AttrLog();
 
 		void		Lock(bool f);
 		bool		isLocked() const;
@@ -201,16 +182,12 @@ class CItem : public CEntity
 #ifdef ENABLE_CHANGE_NORMAL_HIT_RAZOR93
 #endif
 	public:
-		void		SetForceAttribute(int i, uint8_t bType, short sValue);
 
 	protected:
 		bool		EquipEx(bool is_equip);
 #ifdef ENABLE_CHANGE_NORMAL_HIT_RAZOR93
 		void		AddAttr4(uint8_t bApply, uint8_t bLevel);
 #endif
-		void		AddAttr(uint8_t bApply, uint8_t bLevel);
-		void		PutAttribute(const int * aiAttrPercentTable);
-		void		PutAttributeWithLevel(uint8_t bLevel);
 
 	public:
 		bool		OnAfterCreatedItem();			// 서버상에 아이템이 모든 정보와 함께 완전히 생성(로드)된 후 불리우는 함수.

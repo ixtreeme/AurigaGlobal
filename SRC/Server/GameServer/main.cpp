@@ -42,7 +42,6 @@
 #include "marriage.h"
 #include "wedding.h"
 #include "fishing.h"
-#include "item_addon.h"
 #include "locale_service.h"
 #include "arena.h"
 #include "OXEvent.h"
@@ -433,7 +432,6 @@ int main(int argc, char **argv)
 	CTargetManager	target_manager;
 	marriage::CManager	marriage_manager;
 	marriage::WeddingManager wedding_manager;
-	CItemAddonManager	item_addon_manager;
 	CArenaManager arena_manager;
 	COXEventManager OXEvent_manager;
 	CHorseNameManager horsename_manager;
@@ -1067,7 +1065,6 @@ int io_loop(LPFDWATCH fdw)
 
 	return 1;
 }
-
 
 
 
