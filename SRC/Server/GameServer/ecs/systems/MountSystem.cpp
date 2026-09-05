@@ -39,6 +39,7 @@
 #include <Core/Logging.hpp>
 #include "../CharacterAccessors.hpp"
 #include "../components/visibility_components.hpp"
+#include "MovementSystem.hpp"
 
 namespace
 {
@@ -459,7 +460,7 @@ void HorseSummon(entt::entity rider, bool bSummon, bool bFromFar, uint32_t dwVnu
 			chHorse->SetNowWalking(false);
 			const entt::entity horseEntity = chHorse->GetEntityHandle();
 			float fx, fy;
-			chHorse->SetRotation(GetDegreeFromPositionXY(
+			ecs::MovementSystem::SetRotation(chHorse->GetEntityHandle(), GetDegreeFromPositionXY(
 				ecs::PlayerRuntime::GetX(horseEntity),
 				ecs::PlayerRuntime::GetY(horseEntity), ecs::PlayerRuntime::GetX(rider), ecs::PlayerRuntime::GetY(rider)) + 180);
 			GetDeltaByDegree(chHorse->GetRotation(), 3500, &fx, &fy);
@@ -750,7 +751,7 @@ bool CHARACTER::StartRiding()
 		return false;
 	}
 
-	if (IsPolymorphed())
+	if (AffectSystem::IsPolymorphed(GetEntityHandle()))
 	{
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(rider, CHAT_TYPE_INFO, 355, "");

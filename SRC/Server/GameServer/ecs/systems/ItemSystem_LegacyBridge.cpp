@@ -361,7 +361,7 @@ static void SyncItemFlagsComponent(LPITEM item)
     ecs::ItemFlags flags{};
     flags.flags = item->GetFlag();
     flags.exchanging = item->IsExchanging();
-    flags.skipSave = item->GetSkipSave();
+    flags.skipSave = ItemSystem::GetItemSkipSave(item->GetEntityHandle());
     flags.isLocked = item->isLocked();
     g_registry.emplace_or_replace<ecs::ItemFlags>(e, flags);
 }
@@ -2626,7 +2626,7 @@ bool CHARACTER::EquipItem(LPITEM item, int iCandidateCell)
 		return false;
 	}
 
-	if (iWearCell != WEAR_ARROW && IsPolymorphed()) {
+	if (iWearCell != WEAR_ARROW && AffectSystem::IsPolymorphed(GetEntityHandle())) {
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 315, "");
 #endif
@@ -2723,14 +2723,14 @@ bool CHARACTER::EquipItem(LPITEM item, int iCandidateCell)
 			if (item->GetWearFlag() == WEARABLE_ABILITY)
 				return false;
 
-			if (false == SwapItem(item->GetCell(), INVENTORY_MAX_NUM + iWearCell))
+			if (false == SwapItem(ItemSystem::GetItemCell(itemEntity), INVENTORY_MAX_NUM + iWearCell))
 			{
 				return false;
 			}
 		}
 		else
 		{
-			uint8_t bOldCell = item->GetCell();
+			uint8_t bOldCell = ItemSystem::GetItemCell(itemEntity);
 
 			if (InventorySystem::EquipTo(item->GetEntityHandle(), this->GetEntityHandle(), iWearCell))
 			{
@@ -2739,7 +2739,7 @@ bool CHARACTER::EquipItem(LPITEM item, int iCandidateCell)
 		}
 	}
 
-	if (true == item->IsEquipped())
+	if (true == ItemSystem::IsItemEquipped(itemEntity))
 	{
 		// 3AAIAU A�AE ��?� AIE�o�Aʹ� ��?��I�� 3E3A�� 1A�LAI �����Ǵ� 1a1� A3��.
 		if (-1 != item->GetProto()->cLimitRealTimeFirstUseIndex)
@@ -2768,22 +2768,22 @@ bool CHARACTER::EquipItem(LPITEM item, int iCandidateCell)
 		// �󸶴� AIoYA� AE1´?A� 1���(71135) �o?�1A AIAaA� 1ߵ?
 		if (true == CItemVnumHelper::IsRamadanMoonRing(dwVnum))
 		{
-			this->EffectPacket(SE_EQUIP_RAMADAN_RING);
+			NetworkSyncSystem::BroadcastEffect(g_registry, this->GetEntityHandle(), SE_EQUIP_RAMADAN_RING);
 		}
 		// �O��A� ��A�(71136) �o?�1A AIAaA� 1ߵ?
 		else if (true == CItemVnumHelper::IsHalloweenCandy(dwVnum))
 		{
-			this->EffectPacket(SE_EQUIP_HALLOWEEN_CANDY);
+			NetworkSyncSystem::BroadcastEffect(g_registry, this->GetEntityHandle(), SE_EQUIP_HALLOWEEN_CANDY);
 		}
 		// �ao1A� 1���(71143) �o?�1A AIAaA� 1ߵ?
 		else if (true == CItemVnumHelper::IsHappinessRing(dwVnum))
 		{
-			this->EffectPacket(SE_EQUIP_HAPPINESS_RING);
+			NetworkSyncSystem::BroadcastEffect(g_registry, this->GetEntityHandle(), SE_EQUIP_HAPPINESS_RING);
 		}
 		// ��uA� AO�oA�(71145) �o?�1A AIAaA� 1ߵ?
 		else if (true == CItemVnumHelper::IsLovePendant(dwVnum))
 		{
-			this->EffectPacket(SE_EQUIP_LOVE_PENDANT);
+			NetworkSyncSystem::BroadcastEffect(g_registry, this->GetEntityHandle(), SE_EQUIP_LOVE_PENDANT);
 		}
 		// ITEM_UNIQUEA� �a?i, SpecialItemGroup?! ��Aǵ�3� Aְ�, (item->GetSIGVnum() != NULL)
 		//
@@ -2802,25 +2802,25 @@ bool CHARACTER::EquipItem(LPITEM item, int iCandidateCell)
 		}
 #ifdef ENABLE_ACCE_SYSTEM
 		else if ((item->GetType() == ITEM_COSTUME) && (item->GetSubType() == COSTUME_ACCE))
-			this->EffectPacket(SE_EFFECT_ACCE_EQUIP);
+			NetworkSyncSystem::BroadcastEffect(g_registry, this->GetEntityHandle(), SE_EFFECT_ACCE_EQUIP);
 #endif
 #ifdef ENABLE_STOLE_COSTUME
 		else if ((item->GetType() == ITEM_COSTUME) && (item->GetSubType() == COSTUME_STOLE))
-			this->EffectPacket(SE_EFFECT_ACCE_EQUIP);
+			NetworkSyncSystem::BroadcastEffect(g_registry, this->GetEntityHandle(), SE_EFFECT_ACCE_EQUIP);
 #endif
 #ifdef ENABLE_TALISMAN_EFFECT
 		else if (/*(item->GetType() == ITEM_ARMOR) && (item->GetWearFlag() ==WEARABLE_PENDANT) && */(item->GetVnum() >= 9600 && item->GetVnum() <= 9800))
-			this->EffectPacket(SE_EFFECT_TALISMAN_EQUIP_FIRE);
+			NetworkSyncSystem::BroadcastEffect(g_registry, this->GetEntityHandle(), SE_EFFECT_TALISMAN_EQUIP_FIRE);
 		else if (/*(item->GetType() == ITEM_ARMOR) && (item->GetWearFlag() ==WEARABLE_PENDANT) && */(item->GetVnum() >= 9830 && item->GetVnum() <= 10030))
-			this->EffectPacket(SE_EFFECT_TALISMAN_EQUIP_ICE);
+			NetworkSyncSystem::BroadcastEffect(g_registry, this->GetEntityHandle(), SE_EFFECT_TALISMAN_EQUIP_ICE);
 		else if (/*(item->GetType() == ITEM_ARMOR) && (item->GetWearFlag() ==WEARABLE_PENDANT) && */(item->GetVnum() >= 10520 && item->GetVnum() <= 10720))
-			this->EffectPacket(SE_EFFECT_TALISMAN_EQUIP_WIND);
+			NetworkSyncSystem::BroadcastEffect(g_registry, this->GetEntityHandle(), SE_EFFECT_TALISMAN_EQUIP_WIND);
 		else if (/*(item->GetType() == ITEM_ARMOR) && (item->GetWearFlag() ==WEARABLE_PENDANT) && */(item->GetVnum() >= 10060 && item->GetVnum() <= 10260))
-			this->EffectPacket(SE_EFFECT_TALISMAN_EQUIP_EARTH);
+			NetworkSyncSystem::BroadcastEffect(g_registry, this->GetEntityHandle(), SE_EFFECT_TALISMAN_EQUIP_EARTH);
 		else if (/*(item->GetType() == ITEM_ARMOR) && (item->GetWearFlag() ==WEARABLE_PENDANT) && */(item->GetVnum() >= 10290 && item->GetVnum() <= 10490))
-			this->EffectPacket(SE_EFFECT_TALISMAN_EQUIP_DARK);
+			NetworkSyncSystem::BroadcastEffect(g_registry, this->GetEntityHandle(), SE_EFFECT_TALISMAN_EQUIP_DARK);
 		else if (/*(item->GetType() == ITEM_ARMOR) && (item->GetWearFlag() ==WEARABLE_PENDANT) && */(item->GetVnum() >= 10750 && item->GetVnum() <= 10950))
-			this->EffectPacket(SE_EFFECT_TALISMAN_EQUIP_ELEC);
+			NetworkSyncSystem::BroadcastEffect(g_registry, this->GetEntityHandle(), SE_EFFECT_TALISMAN_EQUIP_ELEC);
 #endif
 
 		if (
@@ -3289,7 +3289,7 @@ bool CHARACTER::DropItem(TItemPos Cell,
 	if (!IsValidItemPosition(Cell) || !(item = GetItem(Cell)))
 		return false;
 
-	if (item->isLocked() || item->IsExchanging() || item->IsEquipped())
+	if (item->isLocked() || item->IsExchanging() || ItemSystem::IsItemEquipped(item->GetEntityHandle()))
 		return false;
 
 	if (quest::CQuestManager::instance().GetPCForce(GetPlayerID())->IsRunning() == true)
@@ -3608,7 +3608,7 @@ bool CHARACTER::MoveItem(TItemPos Cell, TItemPos DestCell,
 		return false;
 	}
 
-	if ((DestCell.IsSwitchbotPosition() && item->IsEquipped()) || (Cell.IsSwitchbotPosition() && DestCell.IsEquipPosition()))
+	if ((DestCell.IsSwitchbotPosition() && ItemSystem::IsItemEquipped(item->GetEntityHandle())) || (Cell.IsSwitchbotPosition() && DestCell.IsEquipPosition()))
 	{
 		return false;
 	}
@@ -3677,7 +3677,7 @@ bool CHARACTER::MoveItem(TItemPos Cell, TItemPos DestCell,
 	{
 		if (item->IsDragonSoul())
 		{
-			if (item->IsEquipped())
+			if (ItemSystem::IsItemEquipped(item->GetEntityHandle()))
 			{
 				entt::entity itemEntity = (item ? item->GetEntityHandle() : entt::null);
 				return DSManager::instance().PullOut(this, DestCell, itemEntity);
@@ -5219,7 +5219,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 	}
 
 	// @fixme141 BEGIN
-/* 	if (TItemPos(item->GetWindow(), item->GetCell()).IsBeltInventoryPosition())// @Razor93 GetWear(WEAR_BELT); ne legyen szukseges a wear_mount_costume hez
+/* 	if (TItemPos(item->GetWindow(), ItemSystem::GetItemCell(itemEntity)).IsBeltInventoryPosition())// @Razor93 GetWear(WEAR_BELT); ne legyen szukseges a wear_mount_costume hez
 	{
 		const entt::entity beltItem = ItemSystem::GetWearItem(GetEntityHandle(), WEAR_BELT);
 
@@ -5231,7 +5231,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 			return false;
 		}
 
-		if (false == CBeltInventoryHelper::IsAvailableCell(item->GetCell() - BELT_INVENTORY_SLOT_START, ItemSystem::GetItemValue(beltItem, 0)))
+		if (false == CBeltInventoryHelper::IsAvailableCell(ItemSystem::GetItemCell(itemEntity) - BELT_INVENTORY_SLOT_START, ItemSystem::GetItemValue(beltItem, 0)))
 		{
 #ifdef TEXTS_IMPROVEMENT
 			ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 786, "");
@@ -5260,7 +5260,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 			item->StartRealTimeExpireEvent();
 		}
 
-		if (false == item->IsEquipped())
+		if (false == ItemSystem::IsItemEquipped(itemEntity))
 			item->SetSocket(1, item->GetSocket(1) + 1);
 	}
 
@@ -5273,7 +5273,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 		if (!IsValidItemPosition(DestCell) || !(item2 = GetItem(DestCell)))
 			return false;
 
-		if (item2->IsExchanging() || item2->IsEquipped()) // ENABLE_BUG_FIXES
+		if (item2->IsExchanging() || ItemSystem::IsItemEquipped(item2->GetEntityHandle())) // ENABLE_BUG_FIXES
 			return false;
 
 		if (item2->GetVnum() > 55711 || item2->GetVnum() < 55701)
@@ -5753,7 +5753,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 			}
 			else
 			{
-				if (!item->IsEquipped())
+				if (!ItemSystem::IsItemEquipped(item->GetEntityHandle()))
 					EquipItem(item);
 				else
 					UnequipItem(item);
@@ -5778,7 +5778,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 		// MINING
 	case ITEM_PICK:
 		// END_OF_MINING
-		if (!item->IsEquipped())
+		if (!ItemSystem::IsItemEquipped(item->GetEntityHandle()))
 			EquipItem(item);
 		else
 			UnequipItem(item);
@@ -5792,13 +5792,13 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 		// Âø¿ëÇÑ ¿ëÈ¥¼®Àº ÃßÃâÇÑ´Ù.
 	case ITEM_DS:
 	{
-		if (!item->IsEquipped())
+		if (!ItemSystem::IsItemEquipped(item->GetEntityHandle()))
 			return false;
 		return DSManager::instance().PullOut(this, NPOS, itemEntity);
 		break;
 	}
 	case ITEM_SPECIAL_DS:
-		if (!item->IsEquipped())
+		if (!ItemSystem::IsItemEquipped(item->GetEntityHandle()))
 			EquipItem(item);
 		else
 			UnequipItem(item);
@@ -5841,7 +5841,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 		if (!GetItem(DestCell) || !(item2 = GetItem(DestCell)))
 			return false;
 
-		if (item2->IsExchanging() || item2->IsEquipped()) // @fixme114
+		if (item2->IsExchanging() || ItemSystem::IsItemEquipped(item2->GetEntityHandle())) // @fixme114
 			return false;
 
 		if (item2->GetType() != ITEM_TREASURE_BOX)
@@ -6059,7 +6059,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 			return false;
 		}
 
-		if (IsPolymorphed())
+		if (AffectSystem::IsPolymorphed(GetEntityHandle()))
 		{
 #ifdef TEXTS_IMPROVEMENT
 			ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 313, "");
@@ -6270,7 +6270,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 					if (GetHP() < GetMaxHP())
 					{
 						PointChange(POINT_HP, item->GetValue(0) * (100 + GetPoint(POINT_POTION_BONUS)) / 100);
-						EffectPacket(SE_HPUP_RED);
+						NetworkSyncSystem::BroadcastEffect(g_registry, GetEntityHandle(), SE_HPUP_RED);
 						used = true;
 					}
 				}
@@ -6280,7 +6280,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 					if (GetSP() < GetMaxSP())
 					{
 						PointChange(POINT_SP, item->GetValue(1) * (100 + GetPoint(POINT_POTION_BONUS)) / 100);
-						EffectPacket(SE_SPUP_BLUE);
+						NetworkSyncSystem::BroadcastEffect(g_registry, GetEntityHandle(), SE_SPUP_BLUE);
 						used = true;
 					}
 				}
@@ -6290,7 +6290,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 					if (GetHP() < GetMaxHP())
 					{
 						PointChange(POINT_HP, item->GetValue(3) * GetMaxHP() / 100);
-						EffectPacket(SE_HPUP_RED);
+						NetworkSyncSystem::BroadcastEffect(g_registry, GetEntityHandle(), SE_HPUP_RED);
 						used = true;
 					}
 				}
@@ -6300,7 +6300,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 					if (GetSP() < GetMaxSP())
 					{
 						PointChange(POINT_SP, item->GetValue(4) * GetMaxSP() / 100);
-						EffectPacket(SE_SPUP_BLUE);
+						NetworkSyncSystem::BroadcastEffect(g_registry, GetEntityHandle(), SE_SPUP_BLUE);
 						used = true;
 					}
 				}
@@ -6821,7 +6821,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 #ifdef __EFFETTO_MANTELLO__
 				if (GetMapIndex() != 1)
 				{
-					this->EffectPacket(SE_MANTELLO);
+					NetworkSyncSystem::BroadcastEffect(g_registry, this->GetEntityHandle(), SE_MANTELLO);
 					AggregateMonster();
 
 				}
@@ -6838,7 +6838,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 #ifdef __EFFETTO_MANTELLO__
 				if (GetMapIndex() != 1)
 				{
-					this->EffectPacket(SE_MANTELLO);
+					NetworkSyncSystem::BroadcastEffect(g_registry, this->GetEntityHandle(), SE_MANTELLO);
 					AggregateMonsterPlus();
 
 				}
@@ -7130,7 +7130,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 			case 50305:
 			case 50306:
 			{
-				if (IsPolymorphed())
+				if (AffectSystem::IsPolymorphed(GetEntityHandle()))
 				{
 #ifdef TEXTS_IMPROVEMENT
 					ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 313, "");
@@ -7183,7 +7183,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 			case 50334:
 			case 50335:
 			case 50336: {
-				if (IsPolymorphed()) {
+				if (AffectSystem::IsPolymorphed(GetEntityHandle())) {
 #ifdef TEXTS_IMPROVEMENT
 					ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 313, "");
 #endif
@@ -7211,7 +7211,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 			case 50312:
 			case 50313:
 			{
-				if (IsPolymorphed())
+				if (AffectSystem::IsPolymorphed(GetEntityHandle()))
 				{
 #ifdef TEXTS_IMPROVEMENT
 					ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 313, "");
@@ -7246,7 +7246,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 			case 50061: // ÀÏº» ¸» ¼ÒÈ¯ ½º�
 // ³ ¼ö·Ã¼­
 			{
-				if (IsPolymorphed())
+				if (AffectSystem::IsPolymorphed(GetEntityHandle()))
 				{
 #ifdef TEXTS_IMPROVEMENT
 					ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 313, "");
@@ -7285,7 +7285,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 			case 50325: case 50326: // Ã¶�
 // ë ¼ö·Ã¼­
 			{
-				if (IsPolymorphed() == true)
+				if (AffectSystem::IsPolymorphed(GetEntityHandle()) == true)
 				{
 #ifdef TEXTS_IMPROVEMENT
 					ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 313, "");
@@ -7370,7 +7370,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 			case 50903:
 			case 50904:
 			{
-				if (IsPolymorphed())
+				if (AffectSystem::IsPolymorphed(GetEntityHandle()))
 				{
 #ifdef TEXTS_IMPROVEMENT
 					ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 313, "");
@@ -7405,7 +7405,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 			// MINING
 			case ITEM_MINING_SKILL_TRAIN_BOOK:
 			{
-				if (IsPolymorphed())
+				if (AffectSystem::IsPolymorphed(GetEntityHandle()))
 				{
 #ifdef TEXTS_IMPROVEMENT
 					ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 313, "");
@@ -7441,7 +7441,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 
 			case ITEM_HORSE_SKILL_TRAIN_BOOK:
 			{
-				if (IsPolymorphed())
+				if (AffectSystem::IsPolymorphed(GetEntityHandle()))
 				{
 #ifdef TEXTS_IMPROVEMENT
 					ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 313, "");
@@ -7780,14 +7780,14 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 				if (!IsValidItemPosition(DestCell) || !(item2 = GetItem(DestCell)))
 					return false;
 
-				if (item2->IsExchanging() || item2->IsEquipped()) // @fixme114
+				if (item2->IsExchanging() || ItemSystem::IsItemEquipped(item2->GetEntityHandle())) // @fixme114
 					return false;
 
 				if (item2->GetSocketCount() == 0)
 					return false;
 
 #ifdef ENABLE_BUG_FIXES
-				if (item2->IsEquipped())
+				if (ItemSystem::IsItemEquipped(item2->GetEntityHandle()))
 					return false;
 #endif
 
@@ -7860,7 +7860,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 			case 70205:   // ¿°»ö¾à(°¥»ö)
 			case 70206:   // ¿°»ö¾à(°ËÀº»ö)
 			{
-				if (GetPart(PART_HAIR) < 1001)
+				if (ecs::PlayerRuntime::GetPart(GetEntityHandle(), PART_HAIR) < 1001)
 				{
 					quest::CQuestManager& q = quest::CQuestManager::instance();
 					quest::PC* pPC = q.GetPC(GetPlayerID());
@@ -7873,7 +7873,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 							last_dye_level + 3 <= GetLevel() ||
 							item->GetVnum() == 70201)
 						{
-							SetPart(PART_HAIR, item->GetVnum() - 70201);
+							ecs::PlayerRuntime::SetPart(GetEntityHandle(), PART_HAIR, item->GetVnum() - 70201);
 
 							if (item->GetVnum() == 70201)
 								pPC->SetFlag("dyeing_hair.last_dye_level", 0);
@@ -8087,7 +8087,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 				}
 #endif
 
-				EffectPacket(SE_CHINA_FIREWORK);
+				NetworkSyncSystem::BroadcastEffect(g_registry, GetEntityHandle(), SE_CHINA_FIREWORK);
 #ifdef ENABLE_FIREWORK_STUN
 				// ½º�
 // Ï °ø°ÝÀ» ¿Ã·ÁÁØ´Ù
@@ -8116,7 +8116,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 				}
 #endif
 
-				EffectPacket(SE_SPIN_TOP);
+				NetworkSyncSystem::BroadcastEffect(g_registry, GetEntityHandle(), SE_SPIN_TOP);
 #ifdef ENABLE_FIREWORK_STUN
 				// ½º�
 // Ï °ø°ÝÀ» ¿Ã·ÁÁØ´Ù
@@ -8173,7 +8173,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 				}
 				else
 				{
-					if (IsPolymorphed())
+					if (AffectSystem::IsPolymorphed(GetEntityHandle()))
 					{
 						SetPolymorph(0);
 						RemoveAffect(AFFECT_POLYMORPH);
@@ -8198,7 +8198,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 					return false;
 				}
 
-				if (item2->IsExchanging() || item2->IsEquipped()) // @fixme114
+				if (item2->IsExchanging() || ItemSystem::IsItemEquipped(item2->GetEntityHandle())) // @fixme114
 					return false;
 
 				if (item2->GetAttributeSetIndex() == -1)
@@ -8254,7 +8254,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 					return false;
 				}
 
-				if (item2->IsExchanging() || item2->IsEquipped()) // @fixme114
+				if (item2->IsExchanging() || ItemSystem::IsItemEquipped(item2->GetEntityHandle())) // @fixme114
 					return false;
 
 				if (item2->GetAttributeSetIndex() == -1)
@@ -8297,7 +8297,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 					return false;
 				}
 
-				if (item2->IsExchanging() || item2->IsEquipped()) // @fixme114
+				if (item2->IsExchanging() || ItemSystem::IsItemEquipped(item2->GetEntityHandle())) // @fixme114
 					return false;
 
 				if (item2->GetAttributeSetIndex() == -1)
@@ -8710,7 +8710,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 				if (GetHP() < GetMaxHP())
 				{
 					PointChange(POINT_HP, item->GetValue(0) * (100 + GetPoint(POINT_POTION_BONUS)) / 100);
-					EffectPacket(SE_HPUP_RED);
+					NetworkSyncSystem::BroadcastEffect(g_registry, GetEntityHandle(), SE_HPUP_RED);
 					used = true;
 				}
 			}
@@ -8720,7 +8720,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 				if (GetSP() < GetMaxSP())
 				{
 					PointChange(POINT_SP, item->GetValue(1) * (100 + GetPoint(POINT_POTION_BONUS)) / 100);
-					EffectPacket(SE_SPUP_BLUE);
+					NetworkSyncSystem::BroadcastEffect(g_registry, GetEntityHandle(), SE_SPUP_BLUE);
 					used = true;
 				}
 			}
@@ -8730,7 +8730,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 				if (GetHP() < GetMaxHP())
 				{
 					PointChange(POINT_HP, item->GetValue(3) * GetMaxHP() / 100);
-					EffectPacket(SE_HPUP_RED);
+					NetworkSyncSystem::BroadcastEffect(g_registry, GetEntityHandle(), SE_HPUP_RED);
 					used = true;
 				}
 			}
@@ -8740,7 +8740,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 				if (GetSP() < GetMaxSP())
 				{
 					PointChange(POINT_SP, item->GetValue(4) * GetMaxSP() / 100);
-					EffectPacket(SE_SPUP_BLUE);
+					NetworkSyncSystem::BroadcastEffect(g_registry, GetEntityHandle(), SE_SPUP_BLUE);
 					used = true;
 				}
 			}
@@ -8793,7 +8793,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 
 				PointChange(POINT_SP_RECOVERY, item->GetValue(1) * std::min((int64_t)200, (100 + GetPoint(POINT_POTION_BONUS))) / 100);
 				StartAffectEvent();
-				EffectPacket(SE_SPUP_BLUE);
+				NetworkSyncSystem::BroadcastEffect(g_registry, GetEntityHandle(), SE_SPUP_BLUE);
 			}
 
 			if (item->GetValue(0) != 0)
@@ -8805,7 +8805,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 
 				PointChange(POINT_HP_RECOVERY, item->GetValue(0) * std::min((int64_t)200, (100 + GetPoint(POINT_POTION_BONUS))) / 100);
 				StartAffectEvent();
-				EffectPacket(SE_HPUP_RED);
+				NetworkSyncSystem::BroadcastEffect(g_registry, GetEntityHandle(), SE_HPUP_RED);
 			}
 
 			if (GetWarMap())
@@ -9004,7 +9004,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 			if ((!IsValidItemPosition(DestCell)) || (!(item2 = GetItem(DestCell))))
 				return false;
 
-			if (item2->IsEquipped())
+			if (ItemSystem::IsItemEquipped(item2->GetEntityHandle()))
 				BuffOnAttr_RemoveBuffsFromItem(item2);
 
 			if (item2->GetType() != ITEM_COSTUME)
@@ -9022,7 +9022,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 				return false;
 			}
 
-			if ((item2->IsExchanging()) || (item2->IsEquipped()))
+			if ((item2->IsExchanging()) || (ItemSystem::IsItemEquipped(item2->GetEntityHandle())))
 				return false;
 
 			if (item2->GetAttributeSetIndex() == -1)
@@ -9061,7 +9061,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 			if ((!IsValidItemPosition(DestCell)) || (!(item2 = GetItem(DestCell))))
 				return false;
 
-			if (item2->IsEquipped())
+			if (ItemSystem::IsItemEquipped(item2->GetEntityHandle()))
 				BuffOnAttr_RemoveBuffsFromItem(item2);
 
 			if (item2->GetType() != ITEM_COSTUME)
@@ -9079,7 +9079,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 				return false;
 			}
 
-			if ((item2->IsExchanging()) || (item2->IsEquipped()))
+			if ((item2->IsExchanging()) || (ItemSystem::IsItemEquipped(item2->GetEntityHandle())))
 				return false;
 
 			if (item2->GetAttributeSetIndex() == -1)
@@ -9128,7 +9128,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 			if ((!IsValidItemPosition(DestCell)) || (!(item2 = GetItem(DestCell))))
 				return false;
 
-			if (item2->IsEquipped())
+			if (ItemSystem::IsItemEquipped(item2->GetEntityHandle()))
 				BuffOnAttr_RemoveBuffsFromItem(item2);
 
 			if (item2->GetType() != ITEM_COSTUME)
@@ -9146,7 +9146,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 				return false;
 			}
 
-			if ((item2->IsExchanging()) || (item2->IsEquipped()))
+			if ((item2->IsExchanging()) || (ItemSystem::IsItemEquipped(item2->GetEntityHandle())))
 				return false;
 
 			if (item2->GetAttributeSetIndex() == -1)
@@ -9200,7 +9200,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 				return false;
 			}
 
-			if ((item2->IsExchanging()) || (item2->IsEquipped()) || (item2->isLocked()))
+			if ((item2->IsExchanging()) || (ItemSystem::IsItemEquipped(item2->GetEntityHandle())) || (item2->isLocked()))
 				return false;
 
 			uint8_t bGrade = item2->GetValue(0);
@@ -9233,14 +9233,14 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 				return false;
 			}
 
-			if ((DragonSoulSystem::IsDeckActivated(GetEntityHandle())) && (item2->IsEquipped())) {
+			if ((DragonSoulSystem::IsDeckActivated(GetEntityHandle())) && (ItemSystem::IsItemEquipped(item2->GetEntityHandle()))) {
 #ifdef TEXTS_IMPROVEMENT
 				ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 76, "");
 #endif
 				return false;
 			}
 
-			if (item2->IsExchanging() /*|| item2->IsEquipped()*/) // ENABLE_BUG_FIXES
+			if (item2->IsExchanging() /*|| ItemSystem::IsItemEquipped(item2->GetEntityHandle())*/) // ENABLE_BUG_FIXES
 				return false;
 
 			int iGrade = (item2->GetVnum() / 1000) % 10, iStep = (item2->GetVnum() / 100) % 10;
@@ -9283,7 +9283,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 			if ((!IsValidItemPosition(DestCell)) || (!(item2 = GetItem(DestCell))))
 				return false;
 
-			if ((item2->IsExchanging()) || (item2->IsEquipped()))
+			if ((item2->IsExchanging()) || (ItemSystem::IsItemEquipped(item2->GetEntityHandle())))
 				return false;
 
 			if ((item2->GetType() == ITEM_COSTUME) && (item2->GetSubType() == COSTUME_ACCE)) {
@@ -9344,7 +9344,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 				return false;
 			}
 
-			if (item2->IsExchanging() || item2->IsEquipped()) // ENABLE_BUG_FIXES
+			if (item2->IsExchanging() || ItemSystem::IsItemEquipped(item2->GetEntityHandle())) // ENABLE_BUG_FIXES
 				return false;
 
 			if (item2->GetSocket(1) > int(1440 * 365)) {
@@ -9404,7 +9404,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 				return false;
 			}
 
-			if (item2->IsExchanging() || item2->IsEquipped()) // ENABLE_BUG_FIXES
+			if (item2->IsExchanging() || ItemSystem::IsItemEquipped(item2->GetEntityHandle())) // ENABLE_BUG_FIXES
 				return false;
 
 			int idx = GetPetEnchant();
@@ -9471,7 +9471,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 			if (!IsValidItemPosition(DestCell) || !(item2 = GetItem(DestCell)))
 				return false;
 
-			if (item2->IsExchanging() || item2->IsEquipped()) // @fixme114
+			if (item2->IsExchanging() || ItemSystem::IsItemEquipped(item2->GetEntityHandle())) // @fixme114
 				return false;
 
 			if (item2->GetVnum() >= 28330 && item2->GetVnum() <= 28343) // ¿µ¼®+3
@@ -9483,7 +9483,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 			}
 
 #ifdef ENABLE_BUG_FIXES
-			if (item2->IsEquipped())
+			if (ItemSystem::IsItemEquipped(item2->GetEntityHandle()))
 				return false;
 #endif
 
@@ -9545,12 +9545,12 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 				return false;
 			}
 
-			if (item2->IsEquipped())
+			if (ItemSystem::IsItemEquipped(item2->GetEntityHandle()))
 			{
 				BuffOnAttr_RemoveBuffsFromItem(item2);
 			}
 
-			if (item2->IsExchanging() || item2->IsEquipped()) // @fixme114
+			if (item2->IsExchanging() || ItemSystem::IsItemEquipped(item2->GetEntityHandle())) // @fixme114
 				return false;
 
 			item2->AddLockedAttr();
@@ -9580,13 +9580,13 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 				return false;
 			}
 
-			if (item2->IsEquipped())
+			if (ItemSystem::IsItemEquipped(item2->GetEntityHandle()))
 			{
 				BuffOnAttr_RemoveBuffsFromItem(item2);
 			}
 
 
-			if (item2->IsExchanging() || item2->IsEquipped()) // @fixme114
+			if (item2->IsExchanging() || ItemSystem::IsItemEquipped(item2->GetEntityHandle())) // @fixme114
 				return false;
 
 
@@ -9608,7 +9608,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 				return false;
 			}
 
-			if (item2->IsEquipped())
+			if (ItemSystem::IsItemEquipped(item2->GetEntityHandle()))
 			{
 				BuffOnAttr_RemoveBuffsFromItem(item2);
 			}
@@ -9621,7 +9621,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 				return false;
 			}
 
-			if (item2->IsExchanging() || item2->IsEquipped()) // @fixme114
+			if (item2->IsExchanging() || ItemSystem::IsItemEquipped(item2->GetEntityHandle())) // @fixme114
 				return false;
 
 			item2->RemoveLockedAttr();
@@ -9636,7 +9636,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 			if (!IsValidItemPosition(DestCell) || !(item2 = GetItem(DestCell)))
 				return false;
 
-			if (item2->IsEquipped())
+			if (ItemSystem::IsItemEquipped(item2->GetEntityHandle()))
 			{
 				BuffOnAttr_RemoveBuffsFromItem(item2);
 			}
@@ -9662,7 +9662,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 #endif
 			}
 
-			if (item2->IsExchanging() || item2->IsEquipped()) // @fixme114
+			if (item2->IsExchanging() || ItemSystem::IsItemEquipped(item2->GetEntityHandle())) // @fixme114
 				return false;
 
 			if (item2->GetAttributeSetIndex() == -1)
@@ -9724,7 +9724,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 			if (!IsValidItemPosition(DestCell) || !(item2 = GetItem(DestCell)))
 				return false;
 
-			if (item2->IsEquipped())
+			if (ItemSystem::IsItemEquipped(item2->GetEntityHandle()))
 			{
 				BuffOnAttr_RemoveBuffsFromItem(item2);
 			}
@@ -9744,7 +9744,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 				return false;
 			}
 
-			if (item2->IsExchanging() || item2->IsEquipped()) // @fixme114
+			if (item2->IsExchanging() || ItemSystem::IsItemEquipped(item2->GetEntityHandle())) // @fixme114
 				return false;
 
 			switch (item->GetSubType())
@@ -10335,7 +10335,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 				}
 				if (ItemSystem::IsAccessoryForSocket(item2->GetEntityHandle()))
 				{
-					if (item2->GetAccessorySocketMaxGrade() < ITEM_ACCESSORY_SOCKET_MAX_NUM)
+					if (ItemSystem::GetItemAccessorySocketMaxGrade(item2->GetEntityHandle()) < ITEM_ACCESSORY_SOCKET_MAX_NUM)
 					{
 #ifdef ENABLE_ADDSTONE_FAILURE
 						if (number(1, 100) <= 50)
@@ -10343,7 +10343,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 						if (1)
 #endif
 						{
-							ItemSystem::SetItemAccessorySocketMaxGrade(item2->GetEntityHandle(), item2->GetAccessorySocketMaxGrade() + 1);
+							ItemSystem::SetItemAccessorySocketMaxGrade(item2->GetEntityHandle(), ItemSystem::GetItemAccessorySocketMaxGrade(item2->GetEntityHandle()) + 1);
 #ifdef TEXTS_IMPROVEMENT
 							ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 387, "");
 #endif
@@ -10390,11 +10390,11 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 						char buf[21];
 						snprintf(buf, sizeof(buf), "%u", item2->GetID());
 
-						if (item2->GetAccessorySocketGrade() < item2->GetAccessorySocketMaxGrade())
+						if (ItemSystem::GetItemAccessorySocketGrade(item2->GetEntityHandle()) < ItemSystem::GetItemAccessorySocketMaxGrade(item2->GetEntityHandle()))
 						{
 							//if (number(1, 100) <= aiAccessorySocketPutPct[item2->GetAccessorySocketGrade()])
 							//{
-							item2->SetAccessorySocketGrade(item2->GetAccessorySocketGrade() + 1);
+							item2->SetAccessorySocketGrade(ItemSystem::GetItemAccessorySocketGrade(item2->GetEntityHandle()) + 1);
 #ifdef TEXTS_IMPROVEMENT
 							ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 452, "");
 #endif
@@ -10413,7 +10413,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 						else
 						{
 #ifdef TEXTS_IMPROVEMENT
-							if (item2->GetAccessorySocketMaxGrade() == 0 || item2->GetAccessorySocketMaxGrade() < ITEM_ACCESSORY_SOCKET_MAX_NUM) {
+							if (ItemSystem::GetItemAccessorySocketMaxGrade(item2->GetEntityHandle()) == 0 || item2->GetAccessorySocketMaxGrade() < ITEM_ACCESSORY_SOCKET_MAX_NUM) {
 								ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 297, "");
 								ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 298, "");
 							}
@@ -10435,12 +10435,12 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 						char buf[21];
 						snprintf(buf, sizeof(buf), "%u", item2->GetID());
 
-						if (item2->GetAccessorySocketGrade() < item2->GetAccessorySocketMaxGrade())
+						if (ItemSystem::GetItemAccessorySocketGrade(item2->GetEntityHandle()) < ItemSystem::GetItemAccessorySocketMaxGrade(item2->GetEntityHandle()))
 						{
 							bool infinite = item->GetValue(0) == 1 ? true : false;
 							if (infinite == true)
 							{
-								item2->SetAccessorySocketGrade(item2->GetAccessorySocketGrade() + 1, infinite);
+								item2->SetAccessorySocketGrade(ItemSystem::GetItemAccessorySocketGrade(item2->GetEntityHandle()) + 1, infinite);
 #ifdef TEXTS_IMPROVEMENT
 								ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 452, "");
 #endif
@@ -10459,7 +10459,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 						else
 						{
 #ifdef TEXTS_IMPROVEMENT
-							if (item2->GetAccessorySocketMaxGrade() == 0 || item2->GetAccessorySocketMaxGrade() < ITEM_ACCESSORY_SOCKET_MAX_NUM) {
+							if (ItemSystem::GetItemAccessorySocketMaxGrade(item2->GetEntityHandle()) == 0 || item2->GetAccessorySocketMaxGrade() < ITEM_ACCESSORY_SOCKET_MAX_NUM) {
 								ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 297, "");
 								ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 298, "");
 							}
@@ -10481,7 +10481,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 				}
 				break;
 			}
-			if (item2->IsEquipped())
+			if (ItemSystem::IsItemEquipped(item2->GetEntityHandle()))
 			{
 				BuffOnAttr_AddBuffsFromItem(item2);
 			}
@@ -10665,7 +10665,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 		if (!IsValidItemPosition(DestCell) || !(item2 = GetItem(DestCell)))
 			return false;
 
-		if (item2->IsExchanging() || item2->IsEquipped()) // @fixme114
+		if (item2->IsExchanging() || ItemSystem::IsItemEquipped(item2->GetEntityHandle())) // @fixme114
 			return false;
 
 		if (item2->GetType() == ITEM_PICK) return false;
@@ -10793,7 +10793,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 
 	case ITEM_TOTEM:
 	{
-		if (!item->IsEquipped())
+		if (!ItemSystem::IsItemEquipped(item->GetEntityHandle()))
 			EquipItem(item);
 	}
 	break;
@@ -11069,7 +11069,7 @@ bool CHARACTER::DoRefine(LPITEM item, bool bMoneyOnly)
 			ItemSystem::CopyAllAttrToEcs(item->GetEntityHandle(), pkNewItem);
 			LogManager::instance().ItemLogEntity(GetEntityHandle(), pkNewItem, "REFINE SUCCESS", ItemSystem::GetItemName(pkNewItem));
 
-			uint8_t bCell = item->GetCell();
+			uint8_t bCell = ItemSystem::GetItemCell(item->GetEntityHandle());
 
 
 #ifdef ENABLE_BATTLE_PASS
@@ -11447,7 +11447,7 @@ bool CHARACTER::DoRefineWithScroll(LPITEM item)
 			ItemSystem::CopyAllAttrToEcs(item->GetEntityHandle(), pkNewItem);
 			LogManager::instance().ItemLogEntity(GetEntityHandle(), pkNewItem, "REFINE SUCCESS", ItemSystem::GetItemName(pkNewItem));
 
-			uint8_t bCell = item->GetCell();
+			uint8_t bCell = ItemSystem::GetItemCell(item->GetEntityHandle());
 
 
 #ifdef ENABLE_BATTLE_PASS
@@ -11578,7 +11578,7 @@ bool CHARACTER::DoRefineWithScroll(LPITEM item)
 			ItemSystem::CopyAllAttrToEcs(item->GetEntityHandle(), pkNewItem);
 			LogManager::instance().ItemLogEntity(GetEntityHandle(), pkNewItem, "REFINE FAIL", ItemSystem::GetItemName(pkNewItem));
 
-			uint8_t bCell = item->GetCell();
+			uint8_t bCell = ItemSystem::GetItemCell(item->GetEntityHandle());
 
 
 #ifdef ENABLE_BATTLE_PASS
@@ -11844,7 +11844,7 @@ bool CHARACTER::DoRefineWithScroll(LPITEM item)
 			ItemSystem::CopyAllAttrToEcs(item->GetEntityHandle(), pkNewItem->GetEntityHandle());
 			LogManager::instance().ItemLogEntity(GetEntityHandle(), pkNewItem, "REFINE SUCCESS", ItemSystem::GetItemName(pkNewItem));
 
-			uint8_t bCell = item->GetCell();
+			uint8_t bCell = ItemSystem::GetItemCell(item->GetEntityHandle());
 
 
 #ifdef ENABLE_BATTLE_PASS
@@ -11975,7 +11975,7 @@ bool CHARACTER::DoRefineWithScroll(LPITEM item)
 			ItemSystem::CopyAllAttrToEcs(item->GetEntityHandle(), pkNewItem->GetEntityHandle());
 			LogManager::instance().ItemLogEntity(GetEntityHandle(), pkNewItem, "REFINE FAIL", ItemSystem::GetItemName(pkNewItem));
 
-			uint8_t bCell = item->GetCell();
+			uint8_t bCell = ItemSystem::GetItemCell(item->GetEntityHandle());
 
 
 #ifdef ENABLE_BATTLE_PASS
@@ -12089,7 +12089,7 @@ bool CHARACTER::DoRefineItemSoul(LPITEM item)
 		const entt::entity pkNewItem = ITEM_MANAGER::instance().CreateItem(resultVnum, 1, 0, false);
 		if (ItemSystem::IsValidItem(pkNewItem))
 		{
-			uint8_t bCell = item->GetCell();
+			uint8_t bCell = ItemSystem::GetItemCell(item->GetEntityHandle());
 			ecs::ChatSystem::Send(GetEntityHandle(), CHAT_TYPE_COMMAND, "RefineSoulSuceeded");
 			ITEM_MANAGER::instance().RemoveItem(item->GetEntityHandle(), "REMOVE (REFINE SUCCESS)");
 
@@ -12308,25 +12308,25 @@ bool CHARACTER::RefineItem(LPITEM pkItem, LPITEM pkTarget)
 		// XXX ¼º´É°³·®¼­´Â Ãàº¹ÀÇ ¼­°¡ µÇ¾ú´Ù!
 		// MUSIN_SCROLL
 		if (pkItem->GetValue(0) == MUSIN_SCROLL)
-			RefineInformation(pkTarget->GetCell(), REFINE_TYPE_MUSIN, pkItem->GetCell());
+			RefineInformation(ItemSystem::GetItemCell(pkTarget->GetEntityHandle()), REFINE_TYPE_MUSIN, pkItem->GetCell());
 		// END_OF_MUSIN_SCROLL
 
 #ifdef ENABLE_SOUL_SYSTEM
 		else if (pkItem->GetValue(0) == SOUL_SCROLL)
-			RefineInformation(pkTarget->GetCell(), REFINE_TYPE_SOUL, pkItem->GetCell());
+			RefineInformation(ItemSystem::GetItemCell(pkTarget->GetEntityHandle()), REFINE_TYPE_SOUL, pkItem->GetCell());
 #endif
 
 		else if (pkItem->GetValue(0) == HYUNIRON_CHN)
-			RefineInformation(pkTarget->GetCell(), REFINE_TYPE_HYUNIRON, pkItem->GetCell());
+			RefineInformation(ItemSystem::GetItemCell(pkTarget->GetEntityHandle()), REFINE_TYPE_HYUNIRON, pkItem->GetCell());
 		else if (pkItem->GetValue(0) == BDRAGON_SCROLL)
 		{
 			if (pkTarget->GetRefineSet() != 702) return false;
-			RefineInformation(pkTarget->GetCell(), REFINE_TYPE_BDRAGON, pkItem->GetCell());
+			RefineInformation(ItemSystem::GetItemCell(pkTarget->GetEntityHandle()), REFINE_TYPE_BDRAGON, pkItem->GetCell());
 		}
 		else
 		{
 			if (pkTarget->GetRefineSet() == 501) return false;
-			RefineInformation(pkTarget->GetCell(), REFINE_TYPE_SCROLL, pkItem->GetCell());
+			RefineInformation(ItemSystem::GetItemCell(pkTarget->GetEntityHandle()), REFINE_TYPE_SCROLL, pkItem->GetCell());
 		}
 	}
 	else if (pkItem->GetSubType() == USE_DETACHMENT && IS_SET(pkTarget->GetFlag(), ITEM_FLAG_REFINEABLE))
@@ -12616,7 +12616,7 @@ void CHARACTER::AutoGiveItem(LPITEM item, bool longOwnerShip
 		LOG_ERROR("NULL point.");
 		return;
 	}
-	if (item->GetOwnerEntity() != entt::null)
+	if (ItemSystem::GetItemOwner(itemEntity) != entt::null)
 	{
 		LOG_ERROR("item {} 's owner exists!", item->GetID());
 		return;
@@ -12765,9 +12765,9 @@ void CHARACTER::AutoGiveItem(LPITEM item, bool longOwnerShip
 	{
 		item->AddToGround(GetMapIndex(), GetXYZ());
 #ifdef ENABLE_NEWSTUFF
-		item->StartDestroyEvent(g_aiItemDestroyTime[ITEM_DESTROY_TIME_AUTOGIVE]);
+		ItemSystem::StartDestroyEvent(itemEntity, g_aiItemDestroyTime[ITEM_DESTROY_TIME_AUTOGIVE]);
 #else
-		item->StartDestroyEvent();
+		ItemSystem::StartDestroyEvent(itemEntity);
 #endif
 
 		if (longOwnerShip)
@@ -12785,7 +12785,7 @@ bool CHARACTER::AutoGiveDS(LPITEM item, bool longOwnerShip) {
 		return false;
 	}
 
-	if (item->GetOwnerEntity() != entt::null) {
+	if (ItemSystem::GetItemOwner(item->GetEntityHandle()) != entt::null) {
 		LOG_ERROR("item {} 's owner exists!", item->GetID());
 		return false;
 	}
@@ -12810,9 +12810,9 @@ bool CHARACTER::AutoGiveDS(LPITEM item, bool longOwnerShip) {
 	{
 		item->AddToGround(GetMapIndex(), GetXYZ());
 #ifdef ENABLE_NEWSTUFF
-		item->StartDestroyEvent(g_aiItemDestroyTime[ITEM_DESTROY_TIME_AUTOGIVE]);
+		ItemSystem::StartDestroyEvent(item->GetEntityHandle(), g_aiItemDestroyTime[ITEM_DESTROY_TIME_AUTOGIVE]);
 #else
-		item->StartDestroyEvent();
+		ItemSystem::StartDestroyEvent(itemEntity);
 #endif
 
 		if (longOwnerShip) {
@@ -13412,7 +13412,7 @@ void CHARACTER::ReceiveItem(entt::entity fromEntity, LPITEM item)
 			)
 		{
 			from->SetRefineNPC(GetEntityHandle());
-			from->RefineInformation(item->GetCell(), REFINE_TYPE_MONEY_ONLY);
+			from->RefineInformation(ItemSystem::GetItemCell(itemEntity), REFINE_TYPE_MONEY_ONLY);
 		}
 #ifdef TEXTS_IMPROVEMENT
 		else {
@@ -13431,7 +13431,7 @@ void CHARACTER::ReceiveItem(entt::entity fromEntity, LPITEM item)
 		if (item->GetRefinedVnum())
 		{
 			from->SetRefineNPC(GetEntityHandle());
-			from->RefineInformation(item->GetCell(), REFINE_TYPE_NORMAL);
+			from->RefineInformation(ItemSystem::GetItemCell(itemEntity), REFINE_TYPE_NORMAL);
 		}
 #ifdef TEXTS_IMPROVEMENT
 		else {
@@ -13467,7 +13467,7 @@ void CHARACTER::ReceiveItem(entt::entity fromEntity, LPITEM item)
 			ecs::ChatSystem::SendNew(fromEntity, CHAT_TYPE_INFO, 112, "%s", item->GetName());
 #endif
 			ItemSystem::ConsumeItemEcs(itemEntity);
-			EffectPacket(SE_HPUP_RED);
+			NetworkSyncSystem::BroadcastEffect(g_registry, GetEntityHandle(), SE_HPUP_RED);
 		}
 		break;
 
@@ -13528,7 +13528,7 @@ bool CHARACTER::GiveItemFromSpecialItemGroup(uint32_t dwGroupNum, std::vector<ui
 
 			auto* ch = CHARACTER_MANAGER::instance().SpawnMob(dwCount, GetMapIndex(), x, y, 0, true, -1);
 			if (ch)
-				ch->SetAggressive();
+				CombatSystem::SetAggressive(ch->GetEntityHandle());
 			bSuccess = true;
 		}
 		break;
@@ -13624,7 +13624,7 @@ bool CHARACTER::DestroyItem(TItemPos Cell)
 	if (!IsValidItemPosition(Cell) || !(item = GetItem(Cell)))
 		return false;
 
-	if (item->IsEquipped())
+	if (ItemSystem::IsItemEquipped(item->GetEntityHandle()))
 		return false;
 
 	if (item->IsExchanging())
@@ -14260,7 +14260,7 @@ void CHARACTER::ClearItem()
 	{
 		if ((item = GetInventoryItem(i)))
 		{
-			item->SetSkipSave(true);
+			ItemSystem::SetItemSkipSave(item->GetEntityHandle(), true);
 			ITEM_MANAGER::instance().FlushDelayedSave(item->GetEntityHandle());
 
 			InventorySystem::RemoveFromCharacter(item->GetEntityHandle());
@@ -14275,7 +14275,7 @@ void CHARACTER::ClearItem()
 	{
 		if ((item = GetItem(TItemPos(DRAGON_SOUL_INVENTORY, i))))
 		{
-			item->SetSkipSave(true);
+			ItemSystem::SetItemSkipSave(item->GetEntityHandle(), true);
 			ITEM_MANAGER::instance().FlushDelayedSave(item->GetEntityHandle());
 
 			InventorySystem::RemoveFromCharacter(item->GetEntityHandle());
@@ -14293,7 +14293,7 @@ void CHARACTER::ClearItem()
 #endif
 		if ((item = GetExtraInventoryItem(i)))
 		{
-			item->SetSkipSave(true);
+			ItemSystem::SetItemSkipSave(item->GetEntityHandle(), true);
 			ITEM_MANAGER::instance().FlushDelayedSave(item->GetEntityHandle());
 
 			InventorySystem::RemoveFromCharacter(item->GetEntityHandle());
@@ -14311,7 +14311,7 @@ void CHARACTER::ClearItem()
 	{
 		if ((item = GetItem(TItemPos(SWITCHBOT, i))))
 		{
-			item->SetSkipSave(true);
+			ItemSystem::SetItemSkipSave(item->GetEntityHandle(), true);
 			ITEM_MANAGER::instance().FlushDelayedSave(item->GetEntityHandle());
 
 			InventorySystem::RemoveFromCharacter(item->GetEntityHandle());
@@ -15170,15 +15170,15 @@ bool CHARACTER::SwapItem(uint8_t bCell, uint8_t bDestCell)
 	}
 
 	// item2°¡ bCellÀ§Ä¡¿¡ µé¾î°¥ ¼ö ÀÖ´ÂÁö È®ÀÎÇÑ´Ù.
-	if (!IsEmptyItemGrid(TItemPos(INVENTORY, item1->GetCell()), item2->GetSize(), item1->GetCell()))
+	if (!IsEmptyItemGrid(TItemPos(INVENTORY, ItemSystem::GetItemCell(item1->GetEntityHandle())), item2->GetSize(), item1->GetCell()))
 		return false;
 
 	// ¹Ù²Ü ¾ÆÀÌ�
 // ÛÀÌ ÀåºñÃ¢¿¡ ÀÖÀ¸¸é
-	if (TItemPos(EQUIPMENT, item2->GetCell()).IsEquipPosition())
+	if (TItemPos(EQUIPMENT, ItemSystem::GetItemCell(item2->GetEntityHandle())).IsEquipPosition())
 	{
-		uint8_t bEquipCell = item2->GetCell() - INVENTORY_MAX_NUM;
-		uint8_t bInvenCell = item1->GetCell();
+		uint8_t bEquipCell = ItemSystem::GetItemCell(item2->GetEntityHandle()) - INVENTORY_MAX_NUM;
+		uint8_t bInvenCell = ItemSystem::GetItemCell(item1->GetEntityHandle());
 
 		// Âø¿ëÁßÀÎ ¾ÆÀÌ�
 // ÛÀ» ¹þÀ» ¼ö ÀÖ°í, Âø¿ë ¿¹Á¤ ¾ÆÀÌ�
@@ -15210,8 +15210,8 @@ bool CHARACTER::SwapItem(uint8_t bCell, uint8_t bDestCell)
 	}
 	else
 	{
-		uint8_t bCell1 = item1->GetCell();
-		uint8_t bCell2 = item2->GetCell();
+		uint8_t bCell1 = ItemSystem::GetItemCell(item1->GetEntityHandle());
+		uint8_t bCell2 = ItemSystem::GetItemCell(item2->GetEntityHandle());
 
 		InventorySystem::RemoveFromCharacter(item1->GetEntityHandle());
 		InventorySystem::RemoveFromCharacter(item2->GetEntityHandle());
@@ -15419,7 +15419,7 @@ bool CHARACTER::ItemProcess_Hair(LPITEM item, int iDestCell)
 		break;
 	}
 
-	if (hair == GetPart(PART_HAIR))
+	if (hair == ecs::PlayerRuntime::GetPart(GetEntityHandle(), PART_HAIR))
 	{
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 311, "");
@@ -15429,7 +15429,7 @@ bool CHARACTER::ItemProcess_Hair(LPITEM item, int iDestCell)
 
 	ItemSystem::ConsumeItemEcs((item ? item->GetEntityHandle() : entt::null));
 
-	SetPart(PART_HAIR, hair);
+	ecs::PlayerRuntime::SetPart(GetEntityHandle(), PART_HAIR, hair);
 	NetworkSyncSystem::UpdatePacket(GetEntityHandle());
 
 	return true;
@@ -15450,7 +15450,7 @@ bool CHARACTER::ItemProcess_Polymorph(LPITEM item)
 	}
 #endif
 
-	if (IsPolymorphed()) {
+	if (AffectSystem::IsPolymorphed(GetEntityHandle())) {
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 437, "");
 #endif
@@ -15736,7 +15736,7 @@ void CHARACTER::AutoRecoveryItemProcess(const EAffectTypes type)
 #endif
 					{
 						PointChange(POINT_HP_RECOVERY, amount);
-						EffectPacket(SE_AUTO_HPUP);
+						NetworkSyncSystem::BroadcastEffect(g_registry, GetEntityHandle(), SE_AUTO_HPUP);
 					}
 #ifdef ENABLE_NEW_USE_POTION
 					else if ((type == AFFECT_AUTO_SP_RECOVERY) || (type == AFFECT_AUTO_SP_RECOVERY2))
@@ -15745,7 +15745,7 @@ void CHARACTER::AutoRecoveryItemProcess(const EAffectTypes type)
 #endif
 					{
 						PointChange(POINT_SP_RECOVERY, amount);
-						EffectPacket(SE_AUTO_SPUP);
+						NetworkSyncSystem::BroadcastEffect(g_registry, GetEntityHandle(), SE_AUTO_SPUP);
 					}
 				}
 			}
@@ -15919,11 +15919,6 @@ TItemExtraProto* CItem::GetExtraProto()
 	return ItemSystem::GetItemExtraProto(GetEntityHandle());
 }
 #endif
-
-void CItem::StartDestroyEvent(int iSec)
-{
-	ItemSystem::StartDestroyEvent(GetEntityHandle(), iSec);
-}
 
 void CItem::StartRealTimeExpireEvent()
 {
@@ -16110,7 +16105,7 @@ void CItem::ActivateRuneBonus() {
 	}
 
 	ItemSystem::SetItemSocketEcs((pkItem1 ? pkItem1->GetEntityHandle() : entt::null), 1, 1);
-	pkItem1->ModifyPoints(true);
+	ItemSystem::ModifyPoints(pkItem1->GetEntityHandle(), true);
 	pkItem1->UpdatePacket();
 #ifdef TEXTS_IMPROVEMENT
 	ecs::ChatSystem::SendNew(pOwner, CHAT_TYPE_INFO, 31, "%s", pkItem1->GetName());
@@ -16133,7 +16128,7 @@ void CItem::DeactivateRuneBonus() {
 		AffectSystem::RemoveAffect(pOwner, AFFECT_RUNE2);
 
 	ItemSystem::SetItemSocketEcs((pkItem1 ? pkItem1->GetEntityHandle() : entt::null), 1, 0);
-	pkItem1->ModifyPoints(false);
+	ItemSystem::ModifyPoints(pkItem1->GetEntityHandle(), false);
 	pkItem1->UpdatePacket();
 #ifdef TEXTS_IMPROVEMENT
 	ecs::ChatSystem::SendNew(pOwner, CHAT_TYPE_INFO, 901, "%s", pkItem1->GetName());
@@ -16655,8 +16650,8 @@ EVENTFUNC(item_destroy_event)
 	if (!pkItem)
 		return 0;
 
-	if (pkItem->GetOwnerEntity() != entt::null)
-		LOG_ERROR("item_destroy_event: Owner exist. (item {} owner {})", pkItem->GetName(), ecs::PlayerRuntime::GetName(pkItem->GetOwnerEntity()));
+	if (ItemSystem::GetItemOwner(itemEntity) != entt::null)
+		LOG_ERROR("item_destroy_event: Owner exist. (item {} owner {})", pkItem->GetName(), ecs::PlayerRuntime::GetName(ItemSystem::GetItemOwner(itemEntity)));
 
 	ItemSystem::GetItemEvents(itemEntity).destroy = nullptr;
 	ItemSystem::DestroyItemEntityEcs(
@@ -16817,7 +16812,7 @@ EVENTFUNC(real_time_expire_event)
 		int32_t remainSec = item->GetSocket(0);
 		if (remainSec <= 0) {
 			if (item->GetSocket(1) == 1) {
-				const entt::entity pkOwner = item->GetOwnerEntity();
+				const entt::entity pkOwner = ItemSystem::GetItemOwner(info->item);
 				if (pkOwner != entt::null) {
 					if (AffectSystem::FindAffect(pkOwner, item->GetValue(0))) {
 						AffectSystem::RemoveAffect(pkOwner, item->GetValue(0));
@@ -16840,7 +16835,7 @@ EVENTFUNC(real_time_expire_event)
 			int32_t nextSec = (remainSec - 60) > 0 ? (remainSec - 60) : 0;
 			item->SetSocket(0, nextSec);
 			if (nextSec <= 0) {
-				const entt::entity pkOwner = item->GetOwnerEntity();
+				const entt::entity pkOwner = ItemSystem::GetItemOwner(info->item);
 				if (pkOwner != entt::null) {
 					if (AffectSystem::FindAffect(pkOwner, item->GetValue(0))) {
 						AffectSystem::RemoveAffect(pkOwner, item->GetValue(0));
@@ -16864,7 +16859,7 @@ EVENTFUNC(real_time_expire_event)
 	const time_t current = get_global_time();
 	if (current > item->GetSocket(0))
 	{
-		const entt::entity pkOwner = item->GetOwnerEntity();
+		const entt::entity pkOwner = ItemSystem::GetItemOwner(info->item);
 
 		if (pkOwner != entt::null && ecs::PlayerRuntime::GetDesc(pkOwner) && item->GetWindow() == MOUNT_INVENTORY)
 		{

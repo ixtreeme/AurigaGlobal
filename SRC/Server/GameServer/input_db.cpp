@@ -605,7 +605,7 @@ void CInputDB::PlayerLoad(LPDESC d, const char * data)
 #ifdef ENABLE_PCBANG_FEATURE // @warme006
 		{
 			LogManager::instance().LoginLog(true,
-					ecs::PlayerRuntime::GetDesc(chEntity)->GetAccountTable().id, (ecs::PlayerRuntime::GetPlayerID(chEntity)), (ecs::PointSystem::GetLevel(chEntity)), ch->GetJob(), ecs::PointSystem::GetReal(chEntity, POINT_PLAYTIME));
+					ecs::PlayerRuntime::GetDesc(chEntity)->GetAccountTable().id, (ecs::PlayerRuntime::GetPlayerID(chEntity)), (ecs::PointSystem::GetLevel(chEntity)), ecs::PlayerRuntime::GetJob(chEntity), ecs::PointSystem::GetReal(chEntity, POINT_PLAYTIME));
 
 			if (0)
 				ch->SetPCBang(CPCBangManager::instance().IsPCBangIP(ecs::PlayerRuntime::GetDesc(chEntity)->GetHostName()));
@@ -638,7 +638,7 @@ void CInputDB::PlayerLoad(LPDESC d, const char * data)
 	NetworkSyncSystem::PointsPacket(chEntity);
 	ch->SkillLevelPacket();
 
-	LOG_INFO("InputDB: player_load {} {}x{}x{} LEVEL {} MOV_SPEED {} JOB {} ATG {} DFG {} GMLv {}", pTab->name, ecs::PlayerRuntime::GetX(chEntity), ecs::PlayerRuntime::GetY(chEntity), ch->GetZ(), (ecs::PointSystem::GetLevel(chEntity)), ecs::PointSystem::Get(chEntity, POINT_MOV_SPEED), ch->GetJob(), ecs::PointSystem::Get(chEntity, POINT_ATT_GRADE), ecs::PointSystem::Get(chEntity, POINT_DEF_GRADE), ecs::PlayerRuntime::GetGMLevel(chEntity));
+	LOG_INFO("InputDB: player_load {} {}x{}x{} LEVEL {} MOV_SPEED {} JOB {} ATG {} DFG {} GMLv {}", pTab->name, ecs::PlayerRuntime::GetX(chEntity), ecs::PlayerRuntime::GetY(chEntity), ch->GetZ(), (ecs::PointSystem::GetLevel(chEntity)), ecs::PointSystem::Get(chEntity, POINT_MOV_SPEED), ecs::PlayerRuntime::GetJob(chEntity), ecs::PointSystem::Get(chEntity, POINT_ATT_GRADE), ecs::PointSystem::Get(chEntity, POINT_DEF_GRADE), ecs::PlayerRuntime::GetGMLevel(chEntity));
 
 	ch->QuerySafeboxSize();
 	ch->QueryMountInventory();

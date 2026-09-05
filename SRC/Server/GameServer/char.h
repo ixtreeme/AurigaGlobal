@@ -647,24 +647,17 @@ public:
 public:
 	int32_t			GetInstantFlag() const;
 
-	void				SetAggressive();
-	bool				IsAggressive() const;
 
 	void				SetCoward();
-	bool				IsCoward() const;
 	void				CowardEscape();
 
 	void				SetNoAttackShinsu();
-	bool				IsNoAttackShinsu() const;
 
 	void				SetNoAttackChunjo();
-	bool				IsNoAttackChunjo() const;
 
 	void				SetNoAttackJinno();
-	bool				IsNoAttackJinno() const;
 
 	void				SetAttackMob();
-	bool				IsAttackMob() const;
 
 	virtual void			BeginStateEmpty();
 	virtual void			EndStateEmpty() {}
@@ -806,8 +799,6 @@ public:
 	bool			IsPosition(int pos) const;
 	int				GetPosition() const;
 
-	void			SetPart(uint8_t bPartPos, uint16_t wVal);
-	uint16_t			GetPart(uint8_t bPartPos) const;
 
 	void			SetHP(int64_t hp);
 	int64_t				GetHP() const;
@@ -867,7 +858,6 @@ public:
 	void			SetRevive(bool mode);
 	// NEWAI END
 
-	bool			IsRaceFlag(uint32_t dwBit) const;
 	bool			IsSummonMonster() const;
 	uint32_t			GetSummonVnum() const;
 
@@ -883,7 +873,6 @@ public:
 #endif
 	);
 
-	void			ApplyPoint(uint8_t bApplyType, int iVal);
 #ifdef __NEWPET_SYSTEM__
 	void			SendPetLevelUpEffect(int vid, int type, int value, int amount);
 #endif		
@@ -913,7 +902,6 @@ public:
 	uint8_t			GetBlockMode() const;
 	bool			IsBlockMode(uint8_t bFlag) const;
 
-	bool			IsPolymorphed() const;
 	void			SetPolymorph(uint32_t dwRaceNum, bool bMaintainStat = false);
 
 	// FISING
@@ -1390,7 +1378,6 @@ public:
 
 	//	void			PotionPacket(int iPotionType);
 
-	void			EffectPacket(uint8_t enumEffectType);
 	// ADD_MONSTER_REFINE
 	bool			DoRefine(LPITEM item, bool bMoneyOnly = false);
 	// END_OF_ADD_MONSTER_REFINE

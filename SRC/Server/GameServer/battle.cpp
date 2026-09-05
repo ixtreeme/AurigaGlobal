@@ -235,7 +235,7 @@ int battle_melee_attack(entt::entity character, entt::entity victim)
 	}
 #endif
 
-	ch->SetPosition(POS_FIGHTING);
+	ecs::PlayerRuntime::SetPosition(character, POS_FIGHTING);
 	ch->SetVictim(victim);
 
 	const PIXEL_POSITION& vpos = pkVictim->GetXYZ();
@@ -252,7 +252,7 @@ void battle_end_ex(entt::entity character)
 {
 	LPCHARACTER ch = ecs::LegacyCharOf(character);
 	if (ch->IsPosition(POS_FIGHTING))
-		ch->SetPosition(POS_STANDING);
+		ecs::PlayerRuntime::SetPosition(character, POS_STANDING);
 }
 
 void battle_end(entt::entity character)
@@ -342,50 +342,50 @@ int CalcAttBonus(entt::entity attacker, entt::entity victim, int iAtk)
 	if (ecs::PlayerRuntime::IsNPC(victim))
 	{
 #ifdef ENABLE_DS_RUNE
-		if (pkVictim->IsRaceFlag(RACE_FLAG_RUNE))
+		if (ecs::PlayerRuntime::IsRaceFlag(victim, RACE_FLAG_RUNE))
 			iAtk += (iAtk * ecs::PointSystem::Get(attacker, POINT_RUNE_MONSTERS)) / 100;
 #endif
-		if (pkVictim->IsRaceFlag(RACE_FLAG_ANIMAL))
+		if (ecs::PlayerRuntime::IsRaceFlag(victim, RACE_FLAG_ANIMAL))
 			iAtk += (iAtk * ecs::PointSystem::Get(attacker, POINT_ATTBONUS_ANIMAL)) / 100;
-		if (pkVictim->IsRaceFlag(RACE_FLAG_UNDEAD))
+		if (ecs::PlayerRuntime::IsRaceFlag(victim, RACE_FLAG_UNDEAD))
 			iAtk += (iAtk * ecs::PointSystem::Get(attacker, POINT_ATTBONUS_UNDEAD)) / 100;
-		if (pkVictim->IsRaceFlag(RACE_FLAG_DEVIL))
+		if (ecs::PlayerRuntime::IsRaceFlag(victim, RACE_FLAG_DEVIL))
 			iAtk += (iAtk * ecs::PointSystem::Get(attacker, POINT_ATTBONUS_DEVIL)) / 100;
-		if (pkVictim->IsRaceFlag(RACE_FLAG_HUMAN))
+		if (ecs::PlayerRuntime::IsRaceFlag(victim, RACE_FLAG_HUMAN))
 			iAtk += (iAtk * ecs::PointSystem::Get(attacker, POINT_ATTBONUS_HUMAN)) / 100;
-		if (pkVictim->IsRaceFlag(RACE_FLAG_ORC))
+		if (ecs::PlayerRuntime::IsRaceFlag(victim, RACE_FLAG_ORC))
 			iAtk += (iAtk * ecs::PointSystem::Get(attacker, POINT_ATTBONUS_ORC)) / 100;
-		if (pkVictim->IsRaceFlag(RACE_FLAG_MILGYO))
+		if (ecs::PlayerRuntime::IsRaceFlag(victim, RACE_FLAG_MILGYO))
 			iAtk += (iAtk * ecs::PointSystem::Get(attacker, POINT_ATTBONUS_MILGYO)) / 100;
-		if (pkVictim->IsRaceFlag(RACE_FLAG_INSECT))
+		if (ecs::PlayerRuntime::IsRaceFlag(victim, RACE_FLAG_INSECT))
 			iAtk += (iAtk * ecs::PointSystem::Get(attacker, POINT_ATTBONUS_INSECT)) / 100;
-		if (pkVictim->IsRaceFlag(RACE_FLAG_FIRE))
+		if (ecs::PlayerRuntime::IsRaceFlag(victim, RACE_FLAG_FIRE))
 			iAtk += (iAtk * ecs::PointSystem::Get(attacker, POINT_ATTBONUS_FIRE)) / 100;
-		if (pkVictim->IsRaceFlag(RACE_FLAG_ICE))
+		if (ecs::PlayerRuntime::IsRaceFlag(victim, RACE_FLAG_ICE))
 			iAtk += (iAtk * ecs::PointSystem::Get(attacker, POINT_ATTBONUS_ICE)) / 100;
-		if (pkVictim->IsRaceFlag(RACE_FLAG_DESERT))
+		if (ecs::PlayerRuntime::IsRaceFlag(victim, RACE_FLAG_DESERT))
 			iAtk += (iAtk * ecs::PointSystem::Get(attacker, POINT_ATTBONUS_DESERT)) / 100;
-		if (pkVictim->IsRaceFlag(RACE_FLAG_TREE))
+		if (ecs::PlayerRuntime::IsRaceFlag(victim, RACE_FLAG_TREE))
 			iAtk += (iAtk * ecs::PointSystem::Get(attacker, POINT_ATTBONUS_TREE)) / 100;
 #ifdef ELEMENT_NEW_BONUSES
-		if (pkVictim->IsRaceFlag(RACE_FLAG_ATT_ELEC))
+		if (ecs::PlayerRuntime::IsRaceFlag(victim, RACE_FLAG_ATT_ELEC))
 			iAtk += (iAtk * ecs::PointSystem::Get(attacker, POINT_ATTBONUS_ELEC)) / 100;
-		if (pkVictim->IsRaceFlag(RACE_FLAG_ATT_FIRE))
+		if (ecs::PlayerRuntime::IsRaceFlag(victim, RACE_FLAG_ATT_FIRE))
 			iAtk += (iAtk * ecs::PointSystem::Get(attacker, POINT_ATTBONUS_FIRE)) / 100;
-		if (pkVictim->IsRaceFlag(RACE_FLAG_ATT_ICE))
+		if (ecs::PlayerRuntime::IsRaceFlag(victim, RACE_FLAG_ATT_ICE))
 			iAtk += (iAtk * ecs::PointSystem::Get(attacker, POINT_ATTBONUS_ICE)) / 100;
-		if (pkVictim->IsRaceFlag(RACE_FLAG_ATT_WIND))
+		if (ecs::PlayerRuntime::IsRaceFlag(victim, RACE_FLAG_ATT_WIND))
 			iAtk += (iAtk * ecs::PointSystem::Get(attacker, POINT_ATTBONUS_WIND)) / 100;
-		if (pkVictim->IsRaceFlag(RACE_FLAG_ATT_EARTH))
+		if (ecs::PlayerRuntime::IsRaceFlag(victim, RACE_FLAG_ATT_EARTH))
 			iAtk += (iAtk * ecs::PointSystem::Get(attacker, POINT_ATTBONUS_EARTH)) / 100;
-		if (pkVictim->IsRaceFlag(RACE_FLAG_ATT_DARK))
+		if (ecs::PlayerRuntime::IsRaceFlag(victim, RACE_FLAG_ATT_DARK))
 			iAtk += (iAtk * ecs::PointSystem::Get(attacker, POINT_ATTBONUS_DARK)) / 100;
 #endif
 		if (pkVictim->GetCharType() == CHAR_TYPE_STONE) {
 			iAtk += (iAtk * ecs::PointSystem::Get(attacker, POINT_ATTBONUS_METIN)) / 100;
 		}
 		else {
-			if (pkVictim->GetMobRank() >= MOB_RANK_BOSS)
+			if (ecs::PlayerRuntime::GetMobRank(victim) >= MOB_RANK_BOSS)
 				iAtk += (iAtk * ecs::PointSystem::Get(attacker, POINT_ATTBONUS_BOSS)) / 100;
 		}
 
@@ -429,7 +429,7 @@ int CalcAttBonus(entt::entity attacker, entt::entity victim, int iAtk)
 	iAtk += (iAtk * ecs::PointSystem::Get(attacker, POINT_ATTBONUS_HUMAN)) / 100;
 #endif
 
-		switch (pkVictim->GetJob())
+		switch (ecs::PlayerRuntime::GetJob(victim))
 		{
 			case JOB_WARRIOR:
 				iAtk += (iAtk * ecs::PointSystem::Get(attacker, POINT_ATTBONUS_WARRIOR)) / 100;
@@ -459,7 +459,7 @@ int CalcAttBonus(entt::entity attacker, entt::entity victim, int iAtk)
 #ifdef ENABLE_NEW_BONUS_TALISMAN
 		iAtk -= (iAtk * ecs::PointSystem::Get(victim, POINT_DEF_TALISMAN)) / 100;
 #endif
-		switch (pkAttacker->GetJob())
+		switch (ecs::PlayerRuntime::GetJob(attacker))
 		{
 			case JOB_WARRIOR:
 				iAtk -= (iAtk * ecs::PointSystem::Get(victim, POINT_RESIST_WARRIOR)) / 100;
@@ -493,17 +493,17 @@ int CalcAttBonus(entt::entity attacker, entt::entity victim, int iAtk)
 #ifdef ENABLE_NEW_BONUS_TALISMAN
 		iAtk -= (iAtk * 30 * ecs::PointSystem::Get(victim, POINT_DEF_TALISMAN))		/ 10000;
 #endif
-		if (pkAttacker->IsRaceFlag(RACE_FLAG_ATT_ELEC))
+		if (ecs::PlayerRuntime::IsRaceFlag(attacker, RACE_FLAG_ATT_ELEC))
 			iAtk -= (iAtk * 30 * ecs::PointSystem::Get(victim, POINT_RESIST_ELEC))		/ 10000;
-		if (pkAttacker->IsRaceFlag(RACE_FLAG_ATT_FIRE))
+		if (ecs::PlayerRuntime::IsRaceFlag(attacker, RACE_FLAG_ATT_FIRE))
 			iAtk -= (iAtk * 30 * ecs::PointSystem::Get(victim, POINT_RESIST_FIRE))		/ 10000;
-		if (pkAttacker->IsRaceFlag(RACE_FLAG_ATT_ICE))
+		if (ecs::PlayerRuntime::IsRaceFlag(attacker, RACE_FLAG_ATT_ICE))
 			iAtk -= (iAtk * 30 * ecs::PointSystem::Get(victim, POINT_RESIST_ICE))		/ 10000;
-		if (pkAttacker->IsRaceFlag(RACE_FLAG_ATT_WIND))
+		if (ecs::PlayerRuntime::IsRaceFlag(attacker, RACE_FLAG_ATT_WIND))
 			iAtk -= (iAtk * 30 * ecs::PointSystem::Get(victim, POINT_RESIST_WIND))		/ 10000;
-		if (pkAttacker->IsRaceFlag(RACE_FLAG_ATT_EARTH))
+		if (ecs::PlayerRuntime::IsRaceFlag(attacker, RACE_FLAG_ATT_EARTH))
 			iAtk -= (iAtk * 30 * ecs::PointSystem::Get(victim, POINT_RESIST_EARTH))	/ 10000;
-		if (pkAttacker->IsRaceFlag(RACE_FLAG_ATT_DARK))
+		if (ecs::PlayerRuntime::IsRaceFlag(attacker, RACE_FLAG_ATT_DARK))
 			iAtk -= (iAtk * 30 * ecs::PointSystem::Get(victim, POINT_RESIST_DARK))		/ 10000;//difesa
 #endif
 #ifdef ENABLE_RESIST_MONSTER
@@ -541,7 +541,7 @@ int CalcMeleeDamage(entt::entity attacker, entt::entity victim, bool bIgnoreDefe
 	LPCHARACTER pkAttacker = ecs::LegacyCharOf(attacker);
 	LPCHARACTER pkVictim = ecs::LegacyCharOf(victim);
 	const entt::entity weapon = ItemSystem::GetWearItem(attacker, WEAR_WEAPON);
-	bool bPolymorphed = pkAttacker->IsPolymorphed();
+	bool bPolymorphed = AffectSystem::IsPolymorphed(attacker);
 
 	if (ItemSystem::IsValidItem(weapon) && !(bPolymorphed && !AffectSystem::IsPolyMaintainStat(attacker)))
 	{

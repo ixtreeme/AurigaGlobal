@@ -2205,11 +2205,6 @@ const TMobTable* GetMobTable(entt::entity e)
 
 } // namespace ecs::PlayerRuntime
 
-bool CHARACTER::IsRaceFlag(uint32_t dwBit) const
-{
-    return ecs::PlayerRuntime::IsRaceFlag(GetEntityHandle(), dwBit);
-}
-
 namespace ecs::PlayerRuntime {
 
 bool IsRaceFlag(entt::entity e, uint32_t dwBit)
@@ -2813,7 +2808,7 @@ int CHARACTER::GetSoulItemDamage(entt::entity victim, int iDamage, uint8_t bSoul
     if (!pkVictim)
         return 0;
 
-    if (!IsPC() || IsPolymorphed() || pkVictim->IsPC())
+    if (!IsPC() || AffectSystem::IsPolymorphed(GetEntityHandle()) || pkVictim->IsPC())
         return 0;
 
     if (bSoulType >= SOUL_MAX_NUM)
@@ -3730,7 +3725,7 @@ void CHARACTER::RefineAcceMaterials()
                 ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 389, "");
             }
 #endif
-            EffectPacket(SE_EFFECT_ACCE_SUCCEDED);
+            NetworkSyncSystem::BroadcastEffect(g_registry, GetEntityHandle(), SE_EFFECT_ACCE_SUCCEDED);
 			LogManager::instance().AcceLog(GetPlayerID(), GetX(), GetY(), dwItemVnum, ItemSystem::GetItemID(resultItem), 1, dwAbs, 1);
 
             ClearAcceMaterials();
@@ -4086,11 +4081,6 @@ void SetPart(entt::entity e, uint8_t partPos, uint16_t value)
 
 } // namespace ecs::PlayerRuntime
 
-void CHARACTER::SetPart(uint8_t bPartPos, uint16_t wVal)
-{
-    ecs::PlayerRuntime::SetPart(GetEntityHandle(), bPartPos, wVal);
-}
-
 namespace ecs::PlayerRuntime {
 
 uint16_t GetPart(entt::entity e, uint8_t bPartPos)
@@ -4153,11 +4143,6 @@ uint16_t GetPart(entt::entity e, uint8_t bPartPos)
 }
 
 } // namespace ecs::PlayerRuntime
-
-uint16_t CHARACTER::GetPart(uint8_t bPartPos) const
-{
-	return ecs::PlayerRuntime::GetPart(GetEntityHandle(), bPartPos);
-}
 
 namespace ecs::PlayerRuntime {
 
@@ -4696,9 +4681,9 @@ void CHARACTER::SetPlayerProto(const TPlayerTable* t)
 
     if (auto* appearance = EnsureAppearancePartsComponent(GetEntityHandle()))
         appearance->basePart = t->part_base;
-    SetPart(PART_HAIR, t->parts[PART_HAIR]);
+    ecs::PlayerRuntime::SetPart(GetEntityHandle(), PART_HAIR, t->parts[PART_HAIR]);
 #ifdef ENABLE_ACCE_SYSTEM
-    SetPart(PART_ACCE, t->parts[PART_ACCE]);
+    ecs::PlayerRuntime::SetPart(GetEntityHandle(), PART_ACCE, t->parts[PART_ACCE]);
 #endif
 
     SetRandomHP(t->sRandomHP);
@@ -5670,7 +5655,7 @@ void CHARACTER::OpenMyShop(const char* c_pszSign, TShopItemTable* pTable, uint8_
         g_registry.emplace_or_replace<ecs::DirtyTag>(e);
     }
 
-    if (IsPolymorphed() == true)
+    if (AffectSystem::IsPolymorphed(GetEntityHandle()) == true)
     {
         RemoveAffect(AFFECT_POLYMORPH);
     }

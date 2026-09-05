@@ -1916,12 +1916,12 @@ EVENTFUNC(dead_event)
 		{
 			if (ch->IsRevive() == false && ch->HasReviverInParty() == true)
 			{
-				ch->SetPosition(POS_STANDING);
+				ecs::PlayerRuntime::SetPosition(chEntity, POS_STANDING);
 				ch->SetHP(ecs::PointSystem::GetMaxHP(chEntity));
 
 				ecs::ViewSystem::ViewReencode(chEntity);
 
-				ch->SetAggressive();
+				CombatSystem::SetAggressive(chEntity);
 				ch->SetRevive(true);
 
 				return 0;
@@ -2784,7 +2784,7 @@ void CHARACTER::DistributeSP(entt::entity killer, int iMethod)
 	}
 	else
 	{
-		if (pkKiller->GetJob() == JOB_SHAMAN || (pkKiller->GetJob() == JOB_SURA && pkKiller->GetSkillGroup() == 2))
+		if (ecs::PlayerRuntime::GetJob(killer) == JOB_SHAMAN || (pkKiller->GetJob() == JOB_SURA && pkKiller->GetSkillGroup() == 2))
 		{
 			int iAmount;
 
@@ -6164,7 +6164,7 @@ public:
 
 			if (ecs::PlayerRuntime::IsPC(me))
 			{
-				if (m_me->GetJob() != JOB_ASSASSIN)
+				if (ecs::PlayerRuntime::GetJob(me) != JOB_ASSASSIN)
 					return;
 
 				if (0 == m_me->GetArrowAndBow(&pkBow, &pkArrow))
@@ -6432,12 +6432,12 @@ public:
 #ifdef ENABLE_NINJA_SANGONG_X30_RAZOR93
 		case SKILL_SANGONG:
 		{
-			if (ecs::PlayerRuntime::IsStone(victim) || pkVictim->GetMobRank() >= 4 || ecs::PlayerRuntime::GetRaceNum(victim))
+			if (ecs::PlayerRuntime::IsStone(victim) || ecs::PlayerRuntime::GetMobRank(pkVictim->GetEntityHandle()) >= 4 || ecs::PlayerRuntime::GetRaceNum(victim))
 			{
 				int iDam = CalcMeleeDamage(me, victim);
 
-				if (m_me->GetJob() == JOB_ASSASSIN &&
-					(ecs::PlayerRuntime::IsStone(victim) || pkVictim->GetMobRank() >= 4 || ecs::PlayerRuntime::GetRaceNum(victim) == 136))
+				if (ecs::PlayerRuntime::GetJob(m_me->GetEntityHandle()) == JOB_ASSASSIN &&
+					(ecs::PlayerRuntime::IsStone(victim) || ecs::PlayerRuntime::GetMobRank(pkVictim->GetEntityHandle()) >= 4 || ecs::PlayerRuntime::GetRaceNum(victim) == 136))
 				{
 					int multiplier = 36; // alap multiplier
 
@@ -7072,16 +7072,6 @@ static int64_t CalcReferenceNormalHitDamage(LPCHARACTER pAttacker, LPCHARACTER p
 	return std::max<int64_t>(0, dam);
 }
 
-bool CHARACTER::IsAggressive() const
-{
-	return IS_SET(ecs::PlayerRuntime::GetAIFlag(GetEntityHandle()), AIFLAG_AGGRESSIVE) || AIHelpers::IsAggressive(GetEntityHandle());
-}
-
-void CHARACTER::SetAggressive()
-{
-	CombatSystem::SetAggressive(GetEntityHandle());
-}
-
 namespace CombatSystem {
 
 void SetAggressive(entt::entity e)
@@ -7093,11 +7083,6 @@ void SetAggressive(entt::entity e)
 }
 
 } // namespace CombatSystem
-
-bool CHARACTER::IsCoward() const
-{
-	return IS_SET(ecs::PlayerRuntime::GetAIFlag(GetEntityHandle()), AIFLAG_COWARD) || AIHelpers::IsCoward(GetEntityHandle());
-}
 
 void CHARACTER::SetCoward()
 {
@@ -7157,21 +7142,11 @@ void CHARACTER::SetNoAttackShinsu()
 	AIHelpers::SetNoAttackShinsu(GetEntityHandle(), true);
 }
 
-bool CHARACTER::IsNoAttackShinsu() const
-{
-	return IS_SET(ecs::PlayerRuntime::GetAIFlag(GetEntityHandle()), AIFLAG_NOATTACKSHINSU) || AIHelpers::IsNoAttackShinsu(GetEntityHandle());
-}
-
 void CHARACTER::SetNoAttackChunjo()
 {
 		if (auto* flags = RuntimeFlags(GetEntityHandle()))
 		SET_BIT(flags->aiFlag, AIFLAG_NOATTACKCHUNJO);
 	AIHelpers::SetNoAttackChunjo(GetEntityHandle(), true);
-}
-
-bool CHARACTER::IsNoAttackChunjo() const
-{
-	return IS_SET(ecs::PlayerRuntime::GetAIFlag(GetEntityHandle()), AIFLAG_NOATTACKCHUNJO) || AIHelpers::IsNoAttackChunjo(GetEntityHandle());
 }
 
 void CHARACTER::SetNoAttackJinno()
@@ -7181,21 +7156,11 @@ void CHARACTER::SetNoAttackJinno()
 	AIHelpers::SetNoAttackJinno(GetEntityHandle(), true);
 }
 
-bool CHARACTER::IsNoAttackJinno() const
-{
-	return IS_SET(ecs::PlayerRuntime::GetAIFlag(GetEntityHandle()), AIFLAG_NOATTACKJINNO) || AIHelpers::IsNoAttackJinno(GetEntityHandle());
-}
-
 void CHARACTER::SetAttackMob()
 {
 		if (auto* flags = RuntimeFlags(GetEntityHandle()))
 		SET_BIT(flags->aiFlag, AIFLAG_ATTACKMOB);
 	AIHelpers::SetAttackMob(GetEntityHandle(), true);
-}
-
-bool CHARACTER::IsAttackMob() const
-{
-	return IS_SET(ecs::PlayerRuntime::GetAIFlag(GetEntityHandle()), AIFLAG_ATTACKMOB) || AIHelpers::IsAttackMob(GetEntityHandle());
 }
 
 int CHARACTER::GetHPPct() const

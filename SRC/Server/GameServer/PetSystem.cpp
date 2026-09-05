@@ -25,6 +25,7 @@
 #include "ecs/EntityFactory.hpp"
 #include "ecs/systems/ItemSystem.hpp"
 #include "ecs/components/pet_mount_components.hpp"
+#include "ecs/systems/PointSystem.hpp"
 
 namespace
 {
@@ -529,7 +530,7 @@ void CPetActor::GiveBuff()
 		return;
 	LPITEM item = LegacyItemFromEntity(FindSummonItemByVID(m_dwSummonItemVID));
 	if (nullptr != item)
-		item->ModifyPoints(true);
+		ItemSystem::ModifyPoints(item->GetEntityHandle(), true);
 	return ;
 }
 
@@ -546,7 +547,7 @@ void CPetActor::ClearBuff()
 	{
 		if (item_proto->aApplies[i].bType == APPLY_NONE)
 			continue;
-		m_pkOwner->ApplyPoint(item_proto->aApplies[i].bType, -item_proto->aApplies[i].lValue);
+		ecs::PointSystem::ApplyPoint(m_pkOwner->GetEntityHandle(), item_proto->aApplies[i].bType, -item_proto->aApplies[i].lValue);
 	}
 
 	return ;

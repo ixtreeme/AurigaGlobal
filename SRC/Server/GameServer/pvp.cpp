@@ -251,13 +251,13 @@ EVENTFUNC(pvp_duel_counter)
 
 			if ((chA->GetDuel("BlockPoly")) && (chB->GetDuel("BlockPoly")))
 			{
-				if (chA->IsPolymorphed()) {
-					chA->SetPolymorph(0);
+				if (AffectSystem::IsPolymorphed(characterA)) {
+					AffectSystem::SetPolymorph(characterA, 0);
 					AffectSystem::RemoveAffect(characterA, AFFECT_POLYMORPH);
 				}
 
-				if (chB->IsPolymorphed()) {
-					chB->SetPolymorph(0);
+				if (AffectSystem::IsPolymorphed(characterB)) {
+					AffectSystem::SetPolymorph(characterB, 0);
 					AffectSystem::RemoveAffect(characterB, AFFECT_POLYMORPH);
 				}
 			}
@@ -295,10 +295,10 @@ EVENTFUNC(pvp_duel_counter)
 			{
 				if ((chA->GetDuel("BlockBuff")) && (chB->GetDuel("BlockBuff")))
 				{
-					if (chA->GetJob() != JOB_SHAMAN)
+					if (ecs::PlayerRuntime::GetJob(characterA) != JOB_SHAMAN)
 						AffectSystem::RemoveAffect(characterA, m_nTableSkill[i]);
 
-					if (chB->GetJob() != JOB_SHAMAN)
+					if (ecs::PlayerRuntime::GetJob(characterB) != JOB_SHAMAN)
 						AffectSystem::RemoveAffect(characterB, m_nTableSkill[i]);
 				}
 			}

@@ -272,7 +272,7 @@ entt::entity ITEM_MANAGER::CreateItem(uint32_t vnum, uint32_t count, uint32_t id
 		item = ResolveManagedItem(duplicate->second);
 		if (item)
 		{
-			if (const entt::entity owner = item->GetOwnerEntity(); owner != entt::null)
+			if (const entt::entity owner = ItemSystem::GetItemOwner(item->GetEntityHandle()); owner != entt::null)
 			{
 				const TItemTable* proto = item->GetProto();
 				const char* itemName = (proto && proto->szName[0]) ? proto->szName : "UNKNOWN";
@@ -302,12 +302,12 @@ entt::entity ITEM_MANAGER::CreateItem(uint32_t vnum, uint32_t count, uint32_t id
 	item->SetMaskVnum(dwMaskVnum);
 
 	if (item->GetType() == ITEM_ELK) {
-		item->SetSkipSave(true);
+		ItemSystem::SetItemSkipSave(item->GetEntityHandle(), true);
 	}
 	else if (!bIsNewItem)
 	{
 		item->SetID(id);
-		item->SetSkipSave(true);
+		ItemSystem::SetItemSkipSave(item->GetEntityHandle(), true);
 	}
 	else
 	{
@@ -379,7 +379,7 @@ entt::entity ITEM_MANAGER::CreateItem(uint32_t vnum, uint32_t count, uint32_t id
 	if (!item->SetCount(count))
 		return entt::null;
 
-	item->SetSkipSave(false);
+	ItemSystem::SetItemSkipSave(item->GetEntityHandle(), false);
 
 	if (item->GetType() == ITEM_UNIQUE && item->GetValue(2) != 0)
 		ItemSystem::StartUniqueExpireEvent(item->GetEntityHandle());
@@ -406,7 +406,7 @@ entt::entity ITEM_MANAGER::CreateItem(uint32_t vnum, uint32_t count, uint32_t id
 		{
 			// 이미 착용중인 아이템이면 타이머를 시작하고, 새로 만드는 아이템은 사용 가능 시간을 세팅해준다. (
 			// 아이템몰로 지급하는 경우에는 이 로직에 들어오기 전에 Socket0 값이 세팅이 되어 있어야 한다.
-			if (true == item->IsEquipped())
+			if (true == ItemSystem::IsItemEquipped(item->GetEntityHandle()))
 			{
 				ItemSystem::StartTimerBasedOnWearExpireEvent(item->GetEntityHandle());
 			}
@@ -602,7 +602,7 @@ void ITEM_MANAGER::FlushDelayedSaveByOwner(entt::entity owner)
 			continue;
 		}
 
-		if (item->GetOwnerEntity() == owner)
+		if (ItemSystem::GetItemOwner(item->GetEntityHandle()) == owner)
 		{
 			it = m_set_pkItemForDelayedSave.erase(it);
 			SaveSingleItem(item);
@@ -617,10 +617,10 @@ void ITEM_MANAGER::SaveSingleItem(LPITEM item)
 	if (!item)
 		return;
 
-	if (item->GetOwnerEntity() == entt::null)
+	if (ItemSystem::GetItemOwner(item->GetEntityHandle()) == entt::null)
 	{
 		uint32_t dwID = item->GetID();
-		uint32_t dwOwnerID = item->GetLastOwnerPID();
+		uint32_t dwOwnerID = ItemSystem::GetItemLastOwnerPID(item->GetEntityHandle());
 
 		db_clientdesc->DBPacketHeader(HEADER_GD_ITEM_DESTROY, 0, sizeof(uint32_t) + sizeof(uint32_t));
 		db_clientdesc->Packet(&dwID, sizeof(uint32_t));
@@ -642,24 +642,24 @@ void ITEM_MANAGER::SaveSingleItem(LPITEM item)
 	switch (t.window)
 	{
 	case EQUIPMENT:
-		t.pos = item->GetCell() - INVENTORY_MAX_NUM;
+		t.pos = ItemSystem::GetItemCell(item->GetEntityHandle()) - INVENTORY_MAX_NUM;
 		break;
 #ifdef ENABLE_BELT_INVENTORY_EX
 	case INVENTORY:
-		if (BELT_INVENTORY_SLOT_START <= item->GetCell() && BELT_INVENTORY_SLOT_END > item->GetCell())
+		if (BELT_INVENTORY_SLOT_START <= ItemSystem::GetItemCell(item->GetEntityHandle()) && BELT_INVENTORY_SLOT_END > item->GetCell())
 		{
 			t.window = BELT_INVENTORY;
-			t.pos = item->GetCell() - BELT_INVENTORY_SLOT_START;
+			t.pos = ItemSystem::GetItemCell(item->GetEntityHandle()) - BELT_INVENTORY_SLOT_START;
 			break;
 		}
 #endif
 	default:
-		t.pos = item->GetCell();
+		t.pos = ItemSystem::GetItemCell(item->GetEntityHandle());
 		break;
 	}
 	t.count = (uint32_t)item->GetCount();
 	t.vnum = item->GetOriginalVnum();
-	t.owner = (t.window == SAFEBOX || t.window == MALL) ? ecs::PlayerRuntime::GetDesc(item->GetOwnerEntity())->GetAccountTable().id : ecs::PlayerRuntime::GetPlayerID(item->GetOwnerEntity());
+	t.owner = (t.window == SAFEBOX || t.window == MALL) ? ecs::PlayerRuntime::GetDesc(ItemSystem::GetItemOwner(item->GetEntityHandle()))->GetAccountTable().id : ecs::PlayerRuntime::GetPlayerID(item->GetOwnerEntity());
 	memcpy(t.alSockets, item->GetSockets(), sizeof(t.alSockets));
 	memcpy(t.aAttr, item->GetAttributes(), sizeof(t.aAttr));
 
@@ -679,7 +679,7 @@ void ITEM_MANAGER::Update()
 			continue;
 		}
 
-		if (item->GetOwnerEntity() != entt::null && IS_SET(item->GetFlag(), ITEM_FLAG_SLOW_QUERY))
+		if (ItemSystem::GetItemOwner(item->GetEntityHandle()) != entt::null && IS_SET(item->GetFlag(), ITEM_FLAG_SLOW_QUERY))
 		{
 			++it;
 			continue;
@@ -704,7 +704,7 @@ void ITEM_MANAGER::RemoveItem(entt::entity itemEntity, const char* c_pszReason)
 
 	const bool bWasMountInventory = item->GetWindow() == MOUNT_INVENTORY;
 
-	if (const entt::entity ownerEntity = item->GetOwnerEntity(); ownerEntity != entt::null)
+	if (const entt::entity ownerEntity = ItemSystem::GetItemOwner(item->GetEntityHandle()); ownerEntity != entt::null)
 	{
 		LPCHARACTER o = ecs::LegacyCharOf(ownerEntity);
 		char szHint[64];
@@ -716,7 +716,7 @@ void ITEM_MANAGER::RemoveItem(entt::entity itemEntity, const char* c_pszReason)
 		{
 			CSafebox* pSafebox = item->GetWindow() == MALL ? o->GetMall() : o->GetSafebox();
 			if (pSafebox)
-				pSafebox->Remove(item->GetCell());
+				pSafebox->Remove(ItemSystem::GetItemCell(item->GetEntityHandle()));
 		}
 		else
 		{
@@ -724,11 +724,11 @@ void ITEM_MANAGER::RemoveItem(entt::entity itemEntity, const char* c_pszReason)
 			{
 #ifdef ENABLE_EXTRA_INVENTORY
 				if (item->IsExtraItem())
-					o->SyncQuickslot(QUICKSLOT_TYPE_ITEM_EXTRA, item->GetCell(), 255);
+					o->SyncQuickslot(QUICKSLOT_TYPE_ITEM_EXTRA, ItemSystem::GetItemCell(item->GetEntityHandle()), 255);
 				else
-					o->SyncQuickslot(QUICKSLOT_TYPE_ITEM, item->GetCell(), 255);
+					o->SyncQuickslot(QUICKSLOT_TYPE_ITEM, ItemSystem::GetItemCell(item->GetEntityHandle()), 255);
 #else
-				o->SyncQuickslot(QUICKSLOT_TYPE_ITEM, item->GetCell(), 255);
+				o->SyncQuickslot(QUICKSLOT_TYPE_ITEM, ItemSystem::GetItemCell(item->GetEntityHandle()), 255);
 #endif
 			}
 
@@ -768,10 +768,10 @@ void ITEM_MANAGER::DestroyItem(entt::entity itemEntity, const char* file, size_t
 	if (item->GetSectree())
 		InventorySystem::RemoveFromGround(item->GetEntityHandle());
 
-	if (const entt::entity owner = item->GetOwnerEntity(); owner != entt::null)
+	if (const entt::entity owner = ItemSystem::GetItemOwner(item->GetEntityHandle()); owner != entt::null)
 	{
-		const entt::entity liveOwner = item->GetLastOwnerPID() != 0
-			? ecs::PlayerRuntime::FindByPlayerID(item->GetLastOwnerPID())
+		const entt::entity liveOwner = ItemSystem::GetItemLastOwnerPID(item->GetEntityHandle()) != 0
+			? ecs::PlayerRuntime::FindByPlayerID(ItemSystem::GetItemLastOwnerPID(item->GetEntityHandle()))
 			: entt::null;
 
 		if (liveOwner == owner)
@@ -781,7 +781,7 @@ void ITEM_MANAGER::DestroyItem(entt::entity itemEntity, const char* file, size_t
 		}
 		else
 		{
-			LOG_ERROR("WTH! Invalid item owner. owner entity : {} last_owner_pid {}", static_cast<uint32_t>(owner), item->GetLastOwnerPID());
+			LOG_ERROR("WTH! Invalid item owner. owner entity : {} last_owner_pid {}", static_cast<uint32_t>(owner), ItemSystem::GetItemLastOwnerPID(item->GetEntityHandle()));
 			ItemSystem::SetItemOwnerEntity(item->GetEntityHandle(), entt::null);
 		}
 	}
@@ -792,9 +792,9 @@ void ITEM_MANAGER::DestroyItem(entt::entity itemEntity, const char* file, size_t
 	uint32_t dwID = item->GetID();
 	LOG_INFO("ITEM_DESTROY {}:{}", item->GetName(), dwID);
 
-	if (!item->GetSkipSave() && dwID)
+	if (!ItemSystem::GetItemSkipSave(item->GetEntityHandle()) && dwID)
 	{
-		uint32_t dwOwnerID = item->GetLastOwnerPID();
+		uint32_t dwOwnerID = ItemSystem::GetItemLastOwnerPID(item->GetEntityHandle());
 
 		db_clientdesc->DBPacketHeader(HEADER_GD_ITEM_DESTROY, 0, sizeof(uint32_t) + sizeof(uint32_t));
 		db_clientdesc->Packet(&dwID, sizeof(uint32_t));
@@ -802,7 +802,7 @@ void ITEM_MANAGER::DestroyItem(entt::entity itemEntity, const char* file, size_t
 	}
 	else
 	{
-		LOG_INFO("ITEM_DESTROY_SKIP {}:{} (skip={})", item->GetName(), dwID, item->GetSkipSave());
+		LOG_INFO("ITEM_DESTROY_SKIP {}:{} (skip={})", item->GetName(), dwID, ItemSystem::GetItemSkipSave(item->GetEntityHandle()));
 	}
 
 	if (dwID)
@@ -1127,11 +1127,11 @@ bool ITEM_MANAGER::CreateDropItemVector(LPCHARACTER pkChr, LPCHARACTER pkKiller,
 		return false;
 	}
 #endif
-	if (!pkChr || !pkKiller || pkChr->IsPolymorphed() || ecs::PlayerRuntime::IsPC(chr))
+	if (!pkChr || !pkKiller || AffectSystem::IsPolymorphed(chr) || ecs::PlayerRuntime::IsPC(chr))
 		return false;
 
 	const int level = ecs::PointSystem::GetLevel(killer);
-	const uint8_t rank = pkChr->GetMobRank();
+	const uint8_t rank = ecs::PlayerRuntime::GetMobRank(chr);
 	const uint32_t race = ecs::PlayerRuntime::GetRaceNum(chr);
 	const bool isStone = ecs::PlayerRuntime::IsStone(chr);
 
@@ -1231,7 +1231,7 @@ bool ITEM_MANAGER::CreateDropItem(LPCHARACTER pkChr, LPCHARACTER pkKiller, std::
 	if (!GetDropPct(pkChr, pkKiller, iDeltaPercent, iRandRange))
 		return false;
 
-	uint8_t bRank = pkChr->GetMobRank();
+	uint8_t bRank = ecs::PlayerRuntime::GetMobRank(chr);
 	entt::entity item = entt::null;
 
 	// Common Drop Items

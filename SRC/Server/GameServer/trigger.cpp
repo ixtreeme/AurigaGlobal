@@ -329,19 +329,19 @@ public:
 				return false;
 		}
 
-		if (m_pkChr->IsNoAttackShinsu())
+		if (ecs::PlayerRuntime::GetAIFlag(ownerChr))
 		{
 			if (ecs::PlayerRuntime::GetEmpire(chr) == 1)
 				return false;
 		}
 
-		if (m_pkChr->IsNoAttackChunjo())
+		if (ecs::PlayerRuntime::GetAIFlag(ownerChr))
 		{
 			if (ecs::PlayerRuntime::GetEmpire(chr) == 2)
 				return false;
 		}
 
-		if (m_pkChr->IsNoAttackJinno())
+		if (ecs::PlayerRuntime::GetAIFlag(ownerChr))
 		{
 			if (ecs::PlayerRuntime::GetEmpire(chr) == 3)
 				return false;

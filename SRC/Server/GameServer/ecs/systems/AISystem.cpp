@@ -65,12 +65,12 @@ bool SyncAIFlags(entt::registry& reg, entt::entity entity, LPCHARACTER ch)
 {
     auto& flags = reg.get_or_emplace<ecs::AIFlags>(entity);
     const ecs::AIFlags desired {
-        ch->IsAggressive(),
-        ch->IsCoward(),
-        ch->IsAttackMob(),
-        ch->IsNoAttackShinsu(),
-        ch->IsNoAttackChunjo(),
-        ch->IsNoAttackJinno(),
+        ecs::PlayerRuntime::GetAIFlag(ch->GetEntityHandle()),
+        ecs::PlayerRuntime::GetAIFlag(ch->GetEntityHandle()),
+        ecs::PlayerRuntime::GetAIFlag(ch->GetEntityHandle()),
+        ecs::PlayerRuntime::GetAIFlag(ch->GetEntityHandle()),
+        ecs::PlayerRuntime::GetAIFlag(ch->GetEntityHandle()),
+        ecs::PlayerRuntime::GetAIFlag(ch->GetEntityHandle()),
         ch->IsBerserk(),
         ecs::PlayerRuntime::IsGuardNPC(ch->GetEntityHandle()),
         false,
@@ -258,7 +258,7 @@ void CHARACTER::__StateIdle_Monster()
         return;
     }
 
-    if (IsCoward()) {
+    if (AIHelpers::IsCoward(GetEntityHandle())) {
         if (!IsDead()) {
             CowardEscape();
         }
@@ -283,7 +283,7 @@ void CHARACTER::__StateIdle_Monster()
     if (!victim || victim->IsBuilding()) {
         if (m_pkChrStone) {
             victim = m_pkChrStone->GetNearestVictim((m_pkChrStone ? m_pkChrStone->GetEntityHandle() : entt::null));
-        } else if (!no_wander && IsAggressive()) {
+        } else if (!no_wander && AIHelpers::IsAggressive(GetEntityHandle())) {
             victim = FindVictim(this, m_pkMobData->m_table.wAggressiveSight);
         }
     }
@@ -295,7 +295,7 @@ void CHARACTER::__StateIdle_Monster()
         return;
     }
 
-    m_dwStateDuration = IsAggressive() && !victim
+    m_dwStateDuration = AIHelpers::IsAggressive(GetEntityHandle()) && !victim
         ? PASSES_PER_SEC(number(1, 3))
         : PASSES_PER_SEC(number(3, 5));
 
@@ -345,7 +345,7 @@ void CHARACTER::StateBattle()
 
     LPCHARACTER victim = GetVictim();
 
-    if (IsCoward()) {
+    if (AIHelpers::IsCoward(GetEntityHandle())) {
         if (IsDead()) {
             return;
         }
@@ -362,7 +362,7 @@ void CHARACTER::StateBattle()
 
     if (!victim || (victim->IsStun() && ecs::PlayerRuntime::IsGuardNPC(GetEntityHandle())) || victim->IsDead()) {
         LPCHARACTER newVictim = nullptr;
-        if (victim && victim->IsDead() && !no_wander && IsAggressive() && (!GetParty() || GetParty()->GetLeader() == this)) {
+        if (victim && victim->IsDead() && !no_wander && AIHelpers::IsAggressive(GetEntityHandle()) && (!GetParty() || GetParty()->GetLeader() == this)) {
             newVictim = FindVictim(this, m_pkMobData->m_table.wAggressiveSight);
         }
 

@@ -431,21 +431,6 @@ bool CItem::IsEquipable()
 // The owner lives in ecs::ItemOwner. GetOwner keeps returning a pointer
 // because that is what its callers are typed on; GetOwnerEntity is the form
 // this migration moves them to.
-void CItem::SetSkipSave(bool b)
-{
-	ItemSystem::SetItemSkipSave(GetEntityHandle(), b);
-}
-
-bool CItem::GetSkipSave() const
-{
-	return ItemSystem::GetItemSkipSave(GetEntityHandle());
-}
-
-uint32_t CItem::GetLastOwnerPID() const
-{
-	return ItemSystem::GetItemLastOwnerPID(GetEntityHandle());
-}
-
 entt::entity CItem::GetOwnerEntity() const
 {
 	return ItemSystem::GetItemOwner(GetEntityHandle());
@@ -1596,11 +1581,6 @@ void ModifyPoints(entt::entity itemEntity, bool bAdd)
 }
 
 } // namespace ItemSystem
-
-bool CItem::IsEquipped() const
-{
-	return ItemSystem::IsItemEquipped(GetEntityHandle());
-}
 
 void CItem::ModifyPoints(bool bAdd)
 {

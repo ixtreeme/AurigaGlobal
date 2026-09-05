@@ -1367,7 +1367,7 @@ bool CHARACTER::SkillLevelDown(uint32_t dwVnum)
 	if (g_bSkillDisable)
 		return false;
 
-	if (IsPolymorphed())
+	if (AffectSystem::IsPolymorphed(GetEntityHandle()))
 		return false;
 
 	CSkillProto * pkSk = CSkillManager::instance().Get(dwVnum);
@@ -1512,7 +1512,7 @@ void CHARACTER::SkillLevelUp(uint32_t dwVnum, uint8_t bMethod)
 	if (g_bSkillDisable)
 		return;
 
-	if (IsPolymorphed())
+	if (AffectSystem::IsPolymorphed(GetEntityHandle()))
 	{
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 313, "");
@@ -2750,7 +2750,7 @@ int CHARACTER::ComputeSkillAtPosition(uint32_t dwVnum, const PIXEL_POSITION& pos
 	if (GetMountVnum())
 		return BATTLE_NONE;
 
-	if (IsPolymorphed())
+	if (AffectSystem::IsPolymorphed(GetEntityHandle()))
 		return BATTLE_NONE;
 
 	if (g_bSkillDisable)
@@ -3072,7 +3072,7 @@ int CHARACTER::ComputeSkillParty(uint32_t dwVnum, entt::entity victim, uint8_t b
 int CHARACTER::ComputeGyeongGongSkill(uint32_t dwVnum, entt::entity victim, uint8_t bSkillLevel)
 {
 	LPCHARACTER pkVictim = ecs::LegacyCharOf(victim);
-	if (IsPolymorphed())
+	if (AffectSystem::IsPolymorphed(GetEntityHandle()))
 		return BATTLE_NONE;
 
 	if (g_bSkillDisable)
@@ -3172,7 +3172,7 @@ int CHARACTER::ComputeSkill(uint32_t dwVnum, entt::entity victim, uint8_t bSkill
 		return BATTLE_NONE;
 #endif
 
-	if (IsPolymorphed())
+	if (AffectSystem::IsPolymorphed(GetEntityHandle()))
 		return BATTLE_NONE;
 
 	if (g_bSkillDisable)
@@ -3675,7 +3675,7 @@ bool CHARACTER::UseSkill(uint32_t dwVnum, entt::entity victim, bool bUseGrandMas
 	if (!CanMove())
 		return false;
 
-	if (IsPolymorphed())
+	if (AffectSystem::IsPolymorphed(GetEntityHandle()))
 		return false;
 
 	const bool bCanUseHorseSkill = CanUseHorseSkill();

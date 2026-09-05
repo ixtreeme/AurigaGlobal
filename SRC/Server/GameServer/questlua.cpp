@@ -25,6 +25,7 @@
 #include "guild.h"
 #include "guild_manager.h"
 #include "sectree_manager.h"
+#include "ecs/systems/CombatSystem.hpp"
 
 #undef sys_err
 #ifndef _WIN32
@@ -319,7 +320,7 @@ namespace quest
 			if (mob)
 			{
 				if (bAggressive)
-					mob->SetAggressive();
+					CombatSystem::SetAggressive(mob->GetEntityHandle());
 
 				mob->SetQuestBy(dwQuestIdx);
 

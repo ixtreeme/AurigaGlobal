@@ -549,31 +549,31 @@ void ApplyMobAttribute(entt::entity target, const TMobTable* table)
 
     for (int i = 0; i < MOB_ENCHANTS_MAX_NUM; ++i) {
         if (table->cEnchants[i] != 0) {
-            ch->ApplyPoint(aiMobEnchantApplyIdx[i], table->cEnchants[i]);
+            ecs::PointSystem::ApplyPoint(ch->GetEntityHandle(), aiMobEnchantApplyIdx[i], table->cEnchants[i]);
         }
     }
 
 #if defined(ENABLE_WOLFMAN_CHARACTER) && defined(USE_MOB_BLEEDING_AS_POISON)
     if (table->cEnchants[MOB_ENCHANT_POISON] != 0) {
-        ch->ApplyPoint(APPLY_BLEEDING_PCT, table->cEnchants[MOB_ENCHANT_POISON] / 50);
+        ecs::PointSystem::ApplyPoint(ch->GetEntityHandle(), APPLY_BLEEDING_PCT, table->cEnchants[MOB_ENCHANT_POISON] / 50);
     }
 #endif
 
     for (int i = 0; i < MOB_RESISTS_MAX_NUM; ++i) {
         if (table->cResists[i] != 0) {
-            ch->ApplyPoint(aiMobResistsApplyIdx[i], table->cResists[i]);
+            ecs::PointSystem::ApplyPoint(ch->GetEntityHandle(), aiMobResistsApplyIdx[i], table->cResists[i]);
         }
     }
 
 #if defined(ENABLE_WOLFMAN_CHARACTER) && defined(USE_MOB_CLAW_AS_DAGGER)
     if (table->cResists[MOB_RESIST_DAGGER] != 0) {
-        ch->ApplyPoint(APPLY_RESIST_CLAW, table->cResists[MOB_RESIST_DAGGER]);
+        ecs::PointSystem::ApplyPoint(ch->GetEntityHandle(), APPLY_RESIST_CLAW, table->cResists[MOB_RESIST_DAGGER]);
     }
 #endif
 
 #if defined(ENABLE_WOLFMAN_CHARACTER) && defined(USE_MOB_BLEEDING_AS_POISON)
     if (table->cResists[MOB_RESIST_POISON] != 0) {
-        ch->ApplyPoint(APPLY_BLEEDING_REDUCE, table->cResists[MOB_RESIST_POISON]);
+        ecs::PointSystem::ApplyPoint(ch->GetEntityHandle(), APPLY_BLEEDING_REDUCE, table->cResists[MOB_RESIST_POISON]);
     }
 #endif
 
@@ -1274,7 +1274,7 @@ int CHARACTER::ProcessAffect()
 		if ( ecs::QuestSystem::GetFlag(GetEntityHandle(), "hair.limit_time") < get_global_time())
 		{
 			// SET HAIR NORMAL
-			this->SetPart(PART_HAIR, 0);
+			ecs::PlayerRuntime::SetPart(this->GetEntityHandle(), PART_HAIR, 0);
 			// REMOVE HAIR AFFECT
 			RemoveAffect(AFFECT_HAIR);
 		}
@@ -2090,11 +2090,6 @@ void CHARACTER::RemoveBadAffect()
 void CHARACTER::SetPolymorph(uint32_t dwRaceNum, bool bMaintainStat)
 {
 	AffectSystem::SetPolymorph(GetEntityHandle(), dwRaceNum, bMaintainStat);
-}
-
-bool CHARACTER::IsPolymorphed() const
-{
-	return AffectSystem::IsPolymorphed(GetEntityHandle());
 }
 
 int32_t CHARACTER::SetInvincible(bool arg)

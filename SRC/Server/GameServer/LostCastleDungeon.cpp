@@ -781,24 +781,24 @@ void ClearClonesOnMap(int32_t mapIndex)
             CombatSystem::SetPKMode(cloneEntity, PK_MODE_FREE);
             clone->SetSkillGroup(source->GetSkillGroup());
 
-            clone->SetRotation(source->GetRotation());
+            ecs::MovementSystem::SetRotation(cloneEntity, source->GetRotation());
             clone->SetXYZ(gx, gy, 0);
             clone->SetMapIndex(mapIndex);
 
             // kinézet (partok)
-            clone->SetPart(PART_MAIN, source->GetPart(PART_MAIN));
-            clone->SetPart(PART_WEAPON, source->GetPart(PART_WEAPON));
-            clone->SetPart(PART_HEAD, source->GetPart(PART_HEAD));
-            clone->SetPart(PART_HAIR, source->GetPart(PART_HAIR));
+            ecs::PlayerRuntime::SetPart(cloneEntity, PART_MAIN, ecs::PlayerRuntime::GetPart(sourceEntity, PART_MAIN));
+            ecs::PlayerRuntime::SetPart(cloneEntity, PART_WEAPON, ecs::PlayerRuntime::GetPart(sourceEntity, PART_WEAPON));
+            ecs::PlayerRuntime::SetPart(cloneEntity, PART_HEAD, ecs::PlayerRuntime::GetPart(sourceEntity, PART_HEAD));
+            ecs::PlayerRuntime::SetPart(cloneEntity, PART_HAIR, ecs::PlayerRuntime::GetPart(sourceEntity, PART_HAIR));
 #ifdef ENABLE_ACCE_SYSTEM
-            clone->SetPart(PART_ACCE, source->GetPart(PART_ACCE));
+            ecs::PlayerRuntime::SetPart(cloneEntity, PART_ACCE, ecs::PlayerRuntime::GetPart(sourceEntity, PART_ACCE));
 #endif
 #ifdef ENABLE_RUNE_SYSTEM
-            clone->SetPart(PART_RUNE, source->GetPart(PART_RUNE));
+            ecs::PlayerRuntime::SetPart(cloneEntity, PART_RUNE, ecs::PlayerRuntime::GetPart(sourceEntity, PART_RUNE));
 #endif
 #ifdef ENABLE_COSTUME_EFFECT
-            clone->SetPart(PART_EFFECT_BODY, source->GetPart(PART_EFFECT_BODY));
-            clone->SetPart(PART_EFFECT_WEAPON, source->GetPart(PART_EFFECT_WEAPON));
+            ecs::PlayerRuntime::SetPart(cloneEntity, PART_EFFECT_BODY, ecs::PlayerRuntime::GetPart(sourceEntity, PART_EFFECT_BODY));
+            ecs::PlayerRuntime::SetPart(cloneEntity, PART_EFFECT_WEAPON, ecs::PlayerRuntime::GetPart(sourceEntity, PART_EFFECT_WEAPON));
 #endif
 
             CloneEquipWeaponFromSource(clone, source);
@@ -1337,24 +1337,24 @@ bool CLostCastleDungeon::SpawnTestClones(entt::entity source, entt::entity targe
         CombatSystem::SetPKMode(cloneEntity, PK_MODE_FREE);
         clone->SetSkillGroup(pkSource->GetSkillGroup());
 
-        clone->SetRotation(pkSource->GetRotation());
+        ecs::MovementSystem::SetRotation(cloneEntity, pkSource->GetRotation());
         clone->SetXYZ(gx, gy, 0);
         clone->SetMapIndex(mapIndex);
 
         // look/parts
-        clone->SetPart(PART_MAIN, pkSource->GetPart(PART_MAIN));
-        clone->SetPart(PART_WEAPON, pkSource->GetPart(PART_WEAPON));
-        clone->SetPart(PART_HEAD, pkSource->GetPart(PART_HEAD));
-        clone->SetPart(PART_HAIR, pkSource->GetPart(PART_HAIR));
+        ecs::PlayerRuntime::SetPart(cloneEntity, PART_MAIN, ecs::PlayerRuntime::GetPart(source, PART_MAIN));
+        ecs::PlayerRuntime::SetPart(cloneEntity, PART_WEAPON, ecs::PlayerRuntime::GetPart(source, PART_WEAPON));
+        ecs::PlayerRuntime::SetPart(cloneEntity, PART_HEAD, ecs::PlayerRuntime::GetPart(source, PART_HEAD));
+        ecs::PlayerRuntime::SetPart(cloneEntity, PART_HAIR, ecs::PlayerRuntime::GetPart(source, PART_HAIR));
 #ifdef ENABLE_ACCE_SYSTEM
-        clone->SetPart(PART_ACCE, pkSource->GetPart(PART_ACCE));
+        ecs::PlayerRuntime::SetPart(cloneEntity, PART_ACCE, ecs::PlayerRuntime::GetPart(source, PART_ACCE));
 #endif
 #ifdef ENABLE_RUNE_SYSTEM
-        clone->SetPart(PART_RUNE, pkSource->GetPart(PART_RUNE));
+        ecs::PlayerRuntime::SetPart(cloneEntity, PART_RUNE, ecs::PlayerRuntime::GetPart(source, PART_RUNE));
 #endif
 #ifdef ENABLE_COSTUME_EFFECT
-        clone->SetPart(PART_EFFECT_BODY, pkSource->GetPart(PART_EFFECT_BODY));
-        clone->SetPart(PART_EFFECT_WEAPON, pkSource->GetPart(PART_EFFECT_WEAPON));
+        ecs::PlayerRuntime::SetPart(cloneEntity, PART_EFFECT_BODY, ecs::PlayerRuntime::GetPart(source, PART_EFFECT_BODY));
+        ecs::PlayerRuntime::SetPart(cloneEntity, PART_EFFECT_WEAPON, ecs::PlayerRuntime::GetPart(source, PART_EFFECT_WEAPON));
 #endif
 
         CloneEquipWeaponFromSource(clone, pkSource);

@@ -31,7 +31,7 @@
 #include "ecs/CharacterAccessors.hpp"
 
 	SGuildMember::SGuildMember(LPCHARACTER ch, uint8_t grade, uint32_t offer_exp)
-: pid(ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null))), grade(grade), is_general(0), job(ch->GetJob()), level(ecs::PointSystem::GetLevel(((ch) ? (ch)->GetEntityHandle() : entt::null))), offer_exp(offer_exp), name(ecs::PlayerRuntime::GetName(((ch) ? (ch)->GetEntityHandle() : entt::null)).data())
+: pid(ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null))), grade(grade), is_general(0), job(ecs::PlayerRuntime::GetJob(ch->GetEntityHandle())), level(ecs::PointSystem::GetLevel(((ch) ? (ch)->GetEntityHandle() : entt::null))), offer_exp(offer_exp), name(ecs::PlayerRuntime::GetName(((ch) ? (ch)->GetEntityHandle() : entt::null)).data())
 {}
 	SGuildMember::SGuildMember(uint32_t pid, uint8_t grade, uint8_t is_general, uint8_t job, uint8_t level, uint32_t offer_exp, char* name)
 : pid(pid), grade(grade), is_general(is_general), job(job), level(level), offer_exp(offer_exp), name(name)

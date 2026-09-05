@@ -2398,7 +2398,7 @@ void CInputMain::Move(entt::entity character, const char * data)
 		if (ch->GetLimitPoint(POINT_MOV_SPEED) == 0)
 			return;
 
-		ch->SetRotation(pinfo->bRot * 5.0f);
+		ecs::MovementSystem::SetRotation(character, pinfo->bRot * 5.0f);
 		ch->ResetStopTime();
 
 		ecs::MovementSystem::Goto(character, pinfo->lX, pinfo->lY);
@@ -2422,7 +2422,7 @@ void CInputMain::Move(entt::entity character, const char * data)
 			ecs::MovementSystem::OnMove(character);
 		}
 
-		ch->SetRotation(pinfo->bRot * 5.0f);
+		ecs::MovementSystem::SetRotation(character, pinfo->bRot * 5.0f);
 		ch->ResetStopTime();
 
 		ecs::MovementSystem::Move(character, pinfo->lX, pinfo->lY);
@@ -4455,7 +4455,7 @@ void CInputMain::Fishing(entt::entity character, const char* c_pData)
 	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::Fishin");//INGAME_DEBUG_RAZOR93
 #endif
 	TPacketCGFishing* p = (TPacketCGFishing*)c_pData;
-	ch->SetRotation(p->dir * 5);
+	ecs::MovementSystem::SetRotation(character, p->dir * 5);
 	ch->fishing();
 	return;
 }
@@ -5352,13 +5352,13 @@ void CInputMain::FishingNew(entt::entity character, const char* c_pData)
 	switch (p->subheader) {
 		case FISHING_SUBHEADER_NEW_START:
 			{
-				ch->SetRotation(p->dir * 5);
+				ecs::MovementSystem::SetRotation(character, p->dir * 5);
 				ActivitySystem::StartFishing(character, get_dword_time());
 			}
 			break;
 		case FISHING_SUBHEADER_NEW_STOP:
 			{
-				ch->SetRotation(p->dir * 5);
+				ecs::MovementSystem::SetRotation(character, p->dir * 5);
 				ActivitySystem::StopFishing(character);
 			}
 			break;

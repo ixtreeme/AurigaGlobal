@@ -38,6 +38,7 @@
 #include "../gm.h"
 #include "../mob_manager.h"
 #include "../utils.h"
+#include "systems/ItemSystem.hpp"
 
 namespace {
 
@@ -440,7 +441,7 @@ ecs::ItemLocation MakeItemLocation(LPITEM item)
 {
     return ecs::ItemLocation {
         item->GetWindow(),
-        item->GetCell(),
+        ItemSystem::GetItemCell(item->GetEntityHandle()),
     };
 }
 
@@ -468,13 +469,13 @@ ecs::ItemOwner MakeItemOwner(LPITEM item)
     entt::entity ownerEntity = entt::null;
     uint32_t ownerPID = 0;
 
-    ownerEntity = item->GetOwnerEntity();
+    ownerEntity = ItemSystem::GetItemOwner(item->GetEntityHandle());
     ownerPID = ecs::PlayerRuntime::GetPlayerID(ownerEntity);
 
     return ecs::ItemOwner {
         ownerEntity,
         ownerPID,
-        item->GetLastOwnerPID(),
+        ItemSystem::GetItemLastOwnerPID(item->GetEntityHandle()),
         ownerPID,
     };
 }
@@ -482,11 +483,11 @@ ecs::ItemOwner MakeItemOwner(LPITEM item)
 ecs::ItemEquipped MakeItemEquipped(LPITEM item)
 {
     uint8_t slot = 0;
-    if (item->IsEquipped() && item->GetCell() >= INVENTORY_MAX_NUM) {
-        slot = static_cast<uint8_t>(item->GetCell() - INVENTORY_MAX_NUM);
+    if (ItemSystem::IsItemEquipped(item->GetEntityHandle()) && ItemSystem::GetItemCell(item->GetEntityHandle()) >= INVENTORY_MAX_NUM) {
+        slot = static_cast<uint8_t>(ItemSystem::GetItemCell(item->GetEntityHandle()) - INVENTORY_MAX_NUM);
     }
 
-    return ecs::ItemEquipped { item->IsEquipped(), slot };
+    return ecs::ItemEquipped { ItemSystem::IsItemEquipped(item->GetEntityHandle()), slot };
 }
 
 ecs::ItemFlags MakeItemFlags(LPITEM item)
@@ -494,7 +495,7 @@ ecs::ItemFlags MakeItemFlags(LPITEM item)
     return ecs::ItemFlags {
         item->GetFlag(),
         item->IsExchanging(),
-        item->GetSkipSave(),
+        ItemSystem::GetItemSkipSave(item->GetEntityHandle()),
         item->isLocked(),
     };
 }

@@ -2001,8 +2001,8 @@ ACMD(do_set)
 					tch->ClearSkill();
 					tch->SetSkillGroup(0);
 					// quick mesh change workaround begin
-					tch->SetPolymorph(101);
-					tch->SetPolymorph(0);
+					AffectSystem::SetPolymorph(tch->GetEntityHandle(), 101);
+					AffectSystem::SetPolymorph(tch->GetEntityHandle(), 0);
 					// quick mesh change workaround end
 				}
 			}
@@ -2019,8 +2019,8 @@ ACMD(do_set)
 				{
 					tch->ChangeSex();
 					// quick mesh change workaround begin
-					tch->SetPolymorph(101);
-					tch->SetPolymorph(0);
+					AffectSystem::SetPolymorph(tch->GetEntityHandle(), 101);
+					AffectSystem::SetPolymorph(tch->GetEntityHandle(), 0);
 					// quick mesh change workaround end
 				}
 			}
@@ -2971,7 +2971,7 @@ ACMD(do_polymorph)
 			bMaintainStat = (value>0);
 		}
 
-		ch->SetPolymorph(dwVnum, bMaintainStat);
+		AffectSystem::SetPolymorph(character, dwVnum, bMaintainStat);
 	}
 }
 
@@ -3985,7 +3985,7 @@ ACMD(do_stat_plus_amount)
 	if (*szPoint == '\0')
 		return;
 
-	if (ch->IsPolymorphed())
+	if (AffectSystem::IsPolymorphed(character))
 	{
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 314, "");
@@ -4261,7 +4261,7 @@ ACMD(do_set_stat)
 	}
 	else
 	{
-		if (tch->IsPolymorphed())
+		if (AffectSystem::IsPolymorphed(tchEntity))
 		{
 #ifdef TEXTS_IMPROVEMENT
 			ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 314, "");
@@ -4286,28 +4286,28 @@ ACMD(do_set_stat)
 		switch (subcmd)
 		{
 		case POINT_HT:
-			if (nPoint < JobInitialPoints[tch->GetJob()].ht)
+			if (nPoint < JobInitialPoints[ecs::PlayerRuntime::GetJob(tchEntity)].ht)
 			{
 				return;
 			}
 			n = 0;
 			break;
 		case POINT_IQ:
-			if (nPoint < JobInitialPoints[tch->GetJob()].iq)
+			if (nPoint < JobInitialPoints[ecs::PlayerRuntime::GetJob(tchEntity)].iq)
 			{
 				return;
 			}
 			n = 1;
 			break;
 		case POINT_ST:
-			if (nPoint < JobInitialPoints[tch->GetJob()].st)
+			if (nPoint < JobInitialPoints[ecs::PlayerRuntime::GetJob(tchEntity)].st)
 			{
 				return;
 			}
 			n = 2;
 			break;
 		case POINT_DX:
-			if (nPoint < JobInitialPoints[tch->GetJob()].dx)
+			if (nPoint < JobInitialPoints[ecs::PlayerRuntime::GetJob(tchEntity)].dx)
 			{
 				return;
 			}
@@ -4422,7 +4422,7 @@ ACMD (do_all_skill_master)
 ACMD (do_item_full_set)
 {
 	LPCHARACTER ch = ecs::LegacyCharOf(character);
-	uint8_t job = ch->GetJob();
+	uint8_t job = ecs::PlayerRuntime::GetJob(character);
 	const entt::entity owner = character;
 	for (int i = 0; i < 6; i++)
 	{
@@ -4789,7 +4789,7 @@ void ApplyFullAttributes(entt::entity owner, uint8_t wearSlot,
 ACMD (do_attr_full_set)
 {
 	LPCHARACTER ch = ecs::LegacyCharOf(character);
-	uint8_t job = ch->GetJob();
+	uint8_t job = ecs::PlayerRuntime::GetJob(character);
 	const entt::entity owner = character;
 	switch (job)
 	{

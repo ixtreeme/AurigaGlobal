@@ -1117,11 +1117,6 @@ const char* CHARACTER::GetName() const
 }
 #endif
 
-void CHARACTER::EffectPacket(uint8_t enumEffectType)
-{
-    NetworkSyncSystem::BroadcastEffect(g_registry, GetEntityHandle(), enumEffectType);
-}
-
 void CItem::UpdatePacket()
 {
     const entt::entity item = ecs::ItemNetworkSystem::ResolveItemEntity(this);

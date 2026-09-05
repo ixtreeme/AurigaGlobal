@@ -125,10 +125,10 @@ namespace
         LPCHARACTER ch = CHARACTER_MANAGER::instance().Find(vid.value);
         if (!ch || ecs::PlayerRuntime::IsPC(ch->GetEntityHandle()))
             return;
-        if (ch->GetVictim() && !ch->IsCoward())
-            ch->SetPosition(POS_FIGHTING);
+        if (ch->GetVictim() && !ecs::PlayerRuntime::GetAIFlag(ch->GetEntityHandle()))
+            ecs::PlayerRuntime::SetPosition(ch->GetEntityHandle(), POS_FIGHTING);
         else
-            ch->SetPosition(POS_STANDING);
+            ecs::PlayerRuntime::SetPosition(ch->GetEntityHandle(), POS_STANDING);
     }
 
     inline void MirrorLegacyMovement(entt::registry& reg, entt::entity entity, const ecs::Position& position)
@@ -829,7 +829,7 @@ uint32_t CHARACTER::GetMotionMode() const
 {
 	uint32_t dwMode = MOTION_MODE_GENERAL;
 
-	if (IsPolymorphed())
+	if (AffectSystem::IsPolymorphed(GetEntityHandle()))
 		return dwMode;
 
 	const entt::entity weapon = ItemSystem::GetWearItem(GetEntityHandle(), WEAR_WEAPON);

@@ -97,7 +97,6 @@ class CItem : public CEntity
 
 		bool		AddToGround(int32_t lMapIndex, const PIXEL_POSITION & pos, bool skipOwnerCheck = false);
 
-		bool		IsEquipped() const;
 		bool		IsEquipable() ;
 
 
@@ -132,17 +131,13 @@ class CItem : public CEntity
 		bool		HasAttr(uint8_t bApply);
 		bool		HasRareAttr(uint8_t bApply);
 
-		void		StartDestroyEvent(int iSec=300);
 
 		uint32_t		GetRefinedVnum()	{ return m_pProto ? m_pProto->dwRefinedVnum : 0; }
 		uint32_t		GetRefineFromVnum();
 		int		GetRefineLevel();
 
-		void		SetSkipSave(bool b);
-		bool		GetSkipSave() const;
 
 
-		uint32_t	GetLastOwnerPID() const;
 		
 
 #ifdef ENABLE_BATTLE_PASS

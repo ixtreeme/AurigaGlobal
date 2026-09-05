@@ -147,7 +147,7 @@ ACMD(do_stat2)
 	if (!*arg1)
 		return;
 
-	if (ch->IsPolymorphed()) {
+	if (AffectSystem::IsPolymorphed(character)) {
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 314, "");
 #endif
@@ -815,7 +815,7 @@ ACMD(do_doctrine_choose) {
 			}
 		}
 
-		int job = ch->GetJob();
+		int job = ecs::PlayerRuntime::GetJob(character);
 		if (job == JOB_ASSASSIN || job == JOB_SHAMAN) {
 			if (!(pkAff = AffectSystem::FindAffect(character, AFFECT_PVM_RACE, aApplyInfo[APPLY_ATTBONUS_MONSTER].bPointType))) {
 				AffectSystem::AddAffect(character, AFFECT_PVM_RACE, aApplyInfo[APPLY_ATTBONUS_MONSTER].bPointType, 10, 0, 126144000, 0, false);

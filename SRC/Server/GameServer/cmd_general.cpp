@@ -733,7 +733,7 @@ ACMD(do_fishing)
 	if (!*arg1)
 		return;
 
-	ch->SetRotation(atof(arg1));
+	ecs::MovementSystem::SetRotation(character, atof(arg1));
 	ch->fishing();
 }
 
@@ -765,7 +765,7 @@ ACMD(do_restart)
 	ecs::ChatSystem::Send(character, CHAT_TYPE_COMMAND, "CloseRestartWindow");
 
 	ecs::PlayerRuntime::GetDesc(character)->SetPhase(PHASE_GAME);
-	ch->SetPosition(POS_STANDING);
+	ecs::PlayerRuntime::SetPosition(character, POS_STANDING);
 	ecs::PlayerRuntime::StartRecoveryEvent(character);
 
 
@@ -1449,7 +1449,7 @@ ACMD(do_stat_minus)
 	if (!*arg1)
 		return;
 
-	if (ch->IsPolymorphed())
+	if (AffectSystem::IsPolymorphed(character))
 	{
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 312, "");
@@ -1462,7 +1462,7 @@ ACMD(do_stat_minus)
 
 	if (!strcmp(arg1, "st"))
 	{
-		if (ecs::PointSystem::GetReal(character, POINT_ST) <= JobInitialPoints[ch->GetJob()].st)
+		if (ecs::PointSystem::GetReal(character, POINT_ST) <= JobInitialPoints[ecs::PlayerRuntime::GetJob(character)].st)
 			return;
 
 		ch->SetRealPoint(POINT_ST, ecs::PointSystem::GetReal(character, POINT_ST) - 1);
@@ -1472,7 +1472,7 @@ ACMD(do_stat_minus)
 	}
 	else if (!strcmp(arg1, "dx"))
 	{
-		if (ecs::PointSystem::GetReal(character, POINT_DX) <= JobInitialPoints[ch->GetJob()].dx)
+		if (ecs::PointSystem::GetReal(character, POINT_DX) <= JobInitialPoints[ecs::PlayerRuntime::GetJob(character)].dx)
 			return;
 
 		ch->SetRealPoint(POINT_DX, ecs::PointSystem::GetReal(character, POINT_DX) - 1);
@@ -1482,7 +1482,7 @@ ACMD(do_stat_minus)
 	}
 	else if (!strcmp(arg1, "ht"))
 	{
-		if (ecs::PointSystem::GetReal(character, POINT_HT) <= JobInitialPoints[ch->GetJob()].ht)
+		if (ecs::PointSystem::GetReal(character, POINT_HT) <= JobInitialPoints[ecs::PlayerRuntime::GetJob(character)].ht)
 			return;
 
 		ch->SetRealPoint(POINT_HT, ecs::PointSystem::GetReal(character, POINT_HT) - 1);
@@ -1493,7 +1493,7 @@ ACMD(do_stat_minus)
 	}
 	else if (!strcmp(arg1, "iq"))
 	{
-		if (ecs::PointSystem::GetReal(character, POINT_IQ) <= JobInitialPoints[ch->GetJob()].iq)
+		if (ecs::PointSystem::GetReal(character, POINT_IQ) <= JobInitialPoints[ecs::PlayerRuntime::GetJob(character)].iq)
 			return;
 
 		ch->SetRealPoint(POINT_IQ, ecs::PointSystem::GetReal(character, POINT_IQ) - 1);
@@ -1519,7 +1519,7 @@ ACMD(do_stat)
 	if (!*arg1)
 		return;
 
-	if (ch->IsPolymorphed())
+	if (AffectSystem::IsPolymorphed(character))
 	{
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 312, "");
@@ -3623,7 +3623,7 @@ ACMD(do_ride)
 
 	const entt::entity owner = character;
 #ifdef ENABLE_MOUNT_COSTUME_SYSTEM
-	if (ch->IsPolymorphed() == true){
+	if (AffectSystem::IsPolymorphed(character) == true){
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 732, "");
 #endif

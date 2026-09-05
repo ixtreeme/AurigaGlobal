@@ -696,7 +696,7 @@ LPCHARACTER CHARACTER_MANAGER::SpawnMobRandomPosition(uint32_t dwVnum, int32_t l
 		if (ecs::PlayerRuntime::GetEmpire(character) == 0)
 			ch->SetEmpire(SECTREE_MANAGER::instance().GetEmpireFromMapIndex(lMapIndex));
 
-	ch->SetRotation(number(0, 360));
+	ecs::MovementSystem::SetRotation(ch->GetEntityHandle(), number(0, 360));
 
 	if (!ecs::MovementSystem::Show(character, lMapIndex, x, y, 0, false))
 	{
@@ -1644,7 +1644,7 @@ void CHARACTER_MANAGER::CheckBonusEvent(entt::entity character)
 	//#endif
 	const TEventManagerData* eventPtr = CheckEventIsActive(BONUS_EVENT, ecs::PlayerRuntime::GetEmpire(character));
 	if (eventPtr)
-		ch->ApplyPoint(eventPtr->value[0], eventPtr->value[1]);
+		ecs::PointSystem::ApplyPoint(character, eventPtr->value[0], eventPtr->value[1]);
 }
 const TEventManagerData* CHARACTER_MANAGER::CheckEventIsActive(uint8_t eventIndex, uint8_t empireIndex)
 {
@@ -1903,7 +1903,7 @@ void CHARACTER_MANAGER::CheckEventForDrop(entt::entity character, entt::entity k
 
 			if (boss)
 			{
-				boss->SetAggressive();
+				CombatSystem::SetAggressive(boss->GetEntityHandle());
 				boss->SetVictim(killer);
 			}
 		}
@@ -1944,7 +1944,7 @@ void CHARACTER_MANAGER::CheckEventForDrop(entt::entity character, entt::entity k
 
 				if (boss)
 				{
-					boss->SetAggressive();
+					CombatSystem::SetAggressive(boss->GetEntityHandle());
 					boss->SetVictim(killer);
 				}
 			}
@@ -2208,7 +2208,7 @@ void CHARACTER_MANAGER::SetEventStatus(const uint16_t eventID, const bool eventS
 			if (!eventStatus)
 			{
 				const int32_t value = eventData->value[1];
-				ch->ApplyPoint(eventData->value[0], -value);
+				ecs::PointSystem::ApplyPoint(ch->GetEntityHandle(), eventData->value[0], -value);
 			}
 			ch->ComputePoints();
 		}

@@ -171,22 +171,22 @@ void CHARACTER::ComputePoints()
 	SetPoint(POINT_DX, GetRealPoint(POINT_DX));
 	SetPoint(POINT_IQ, GetRealPoint(POINT_IQ));
 #ifdef ENABLE_FIX_LEVELUP_EFFECT
-	SetPart(PART_MAIN, GetPart(PART_MAIN));
+	ecs::PlayerRuntime::SetPart(GetEntityHandle(), PART_MAIN, ecs::PlayerRuntime::GetPart(GetEntityHandle(), PART_MAIN));
 #else
 	SetPart(PART_MAIN, GetOriginalPart(PART_MAIN));
 #endif
-	SetPart(PART_WEAPON, ecs::PlayerRuntime::GetOriginalPart(GetEntityHandle(), PART_WEAPON));
-	SetPart(PART_HEAD, ecs::PlayerRuntime::GetOriginalPart(GetEntityHandle(), PART_HEAD));
-	SetPart(PART_HAIR, ecs::PlayerRuntime::GetOriginalPart(GetEntityHandle(), PART_HAIR));
+	ecs::PlayerRuntime::SetPart(GetEntityHandle(), PART_WEAPON, ecs::PlayerRuntime::GetOriginalPart(GetEntityHandle(), PART_WEAPON));
+	ecs::PlayerRuntime::SetPart(GetEntityHandle(), PART_HEAD, ecs::PlayerRuntime::GetOriginalPart(GetEntityHandle(), PART_HEAD));
+	ecs::PlayerRuntime::SetPart(GetEntityHandle(), PART_HAIR, ecs::PlayerRuntime::GetOriginalPart(GetEntityHandle(), PART_HAIR));
 #ifdef ENABLE_RUNE_SYSTEM
-	SetPart(PART_RUNE, ecs::PlayerRuntime::GetOriginalPart(GetEntityHandle(), PART_RUNE));
+	ecs::PlayerRuntime::SetPart(GetEntityHandle(), PART_RUNE, ecs::PlayerRuntime::GetOriginalPart(GetEntityHandle(), PART_RUNE));
 #endif
 #ifdef ENABLE_ACCE_SYSTEM
-	SetPart(PART_ACCE, ecs::PlayerRuntime::GetOriginalPart(GetEntityHandle(), PART_ACCE));
+	ecs::PlayerRuntime::SetPart(GetEntityHandle(), PART_ACCE, ecs::PlayerRuntime::GetOriginalPart(GetEntityHandle(), PART_ACCE));
 #endif
 #ifdef ENABLE_COSTUME_EFFECT
-	SetPart(PART_EFFECT_BODY, ecs::PlayerRuntime::GetOriginalPart(GetEntityHandle(), PART_EFFECT_BODY));
-	SetPart(PART_EFFECT_WEAPON, ecs::PlayerRuntime::GetOriginalPart(GetEntityHandle(), PART_EFFECT_WEAPON));
+	ecs::PlayerRuntime::SetPart(GetEntityHandle(), PART_EFFECT_BODY, ecs::PlayerRuntime::GetOriginalPart(GetEntityHandle(), PART_EFFECT_BODY));
+	ecs::PlayerRuntime::SetPart(GetEntityHandle(), PART_EFFECT_WEAPON, ecs::PlayerRuntime::GetOriginalPart(GetEntityHandle(), PART_EFFECT_WEAPON));
 #endif
 	SetPoint(POINT_PARTY_ATTACKER_BONUS, lAttackerBonus);
 	SetPoint(POINT_PARTY_TANKER_BONUS, lTankerBonus);
@@ -517,7 +517,7 @@ void CHARACTER::ComputePoints()
 			}
 #endif
 
-			pItem->ModifyPoints(true);
+			ItemSystem::ModifyPoints(pItem->GetEntityHandle(), true);
 			SET_BIT(immuneFlag, GetWear(i)->GetImmuneFlag());
 		}
 	}
@@ -539,7 +539,7 @@ void CHARACTER::ComputePoints()
 			if (pItem)
 			{
 				if (DSManager::instance().IsTimeLeftDragonSoul((pItem ? pItem->GetEntityHandle() : entt::null)))
-					pItem->ModifyPoints(true);
+					ItemSystem::ModifyPoints(pItem->GetEntityHandle(), true);
 			}
 		}
 	}

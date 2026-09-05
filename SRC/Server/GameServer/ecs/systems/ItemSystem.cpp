@@ -337,7 +337,7 @@ static void SyncItemFlagsComponent(LPITEM item)
     ecs::ItemFlags flags{};
     flags.flags = item->GetFlag();
     flags.exchanging = item->IsExchanging();
-    flags.skipSave = item->GetSkipSave();
+    flags.skipSave = ItemSystem::GetItemSkipSave(e);
     flags.isLocked = item->isLocked();
     g_registry.emplace_or_replace<ecs::ItemFlags>(e, flags);
 }
@@ -3319,7 +3319,7 @@ bool PlaceItemOnGroundLegacyBoundary(entt::entity item, int32_t mapIndex,
     if (!legacyItem->AddToGround(mapIndex, position))
         return false;
 
-    legacyItem->StartDestroyEvent(destroySeconds);
+    ItemSystem::StartDestroyEvent(item, destroySeconds);
     return SyncItemStateFromLegacy(item);
 }
 
@@ -3376,7 +3376,7 @@ bool ModifyItemPointsEcs(entt::entity item, bool add)
     if (!legacyItem)
         return false;
 
-    legacyItem->ModifyPoints(add);
+    ItemSystem::ModifyPoints(item, add);
     return true;
 }
 
@@ -3802,7 +3802,7 @@ bool DestroyLoadedDuplicateItem(entt::entity item)
         static_cast<uint32_t>(item), static_cast<const void*>(legacyItem), itemID, itemVID, itemVnum,
         lastOwnerPID, static_cast<int>(itemWindow), itemCell);
 
-    legacyItem->SetSkipSave(true);
+    ItemSystem::SetItemSkipSave(item, true);
 
     const auto* ownerState = g_registry.try_get<ecs::ItemOwner>(item);
     const uint32_t ownerPID = ownerState ? ownerState->ownerPID : 0;

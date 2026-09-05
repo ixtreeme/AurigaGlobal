@@ -1503,7 +1503,7 @@ void Change(entt::entity e, uint8_t type, int64_t amount, bool bAmount, bool bBr
 	case POINT_POLYMORPH:
 		Set(e, type, Get(e, type) + amount);
 		val = Get(e, type);
-		if (ch) ch->SetPolymorph(val);
+		if (ch) AffectSystem::SetPolymorph(ch->GetEntityHandle(), val);
 		break;
 
 	case POINT_MOUNT:
@@ -2036,18 +2036,3 @@ void ApplyPoint(entt::entity e, uint8_t bApplyType, int iVal)
 }
 
 } // namespace ecs::PointSystem
-
-void CHARACTER::ApplyPoint(uint8_t bApplyType, int iVal)
-{
-	ecs::PointSystem::ApplyPoint(GetEntityHandle(), bApplyType, iVal);
-}
-
-
-
-
-
-
-
-
-
-
