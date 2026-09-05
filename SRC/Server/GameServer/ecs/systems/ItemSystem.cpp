@@ -3716,35 +3716,34 @@ bool UnequipItemEcs(entt::entity owner, entt::entity item)
     return true;
 }
 
-bool SyncItemLocationFromLegacy(entt::entity item)
+// ItemEquipped::slot is derived from the cell, and several writers set the
+// two independently. This recomputes the slot from the location component.
+bool RefreshItemEquippedSlot(entt::entity item)
 {
-    LPITEM legacyItem = LegacyItemBoundary(item);
-    if (!legacyItem || item == entt::null || !g_registry.valid(item))
+    if (!IsValidItem(item))
         return false;
 
-    g_registry.emplace_or_replace<ecs::ItemLocation>(
-        item, ecs::ItemLocation{legacyItem->GetWindow(), legacyItem->GetCell()});
+    const uint16_t cell = GetItemCell(item);
+    const bool equipped = IsItemEquipped(item);
     uint8_t slot = 0;
-    if (legacyItem->IsEquipped() && legacyItem->GetCell() >= INVENTORY_MAX_NUM)
-        slot = static_cast<uint8_t>(legacyItem->GetCell() - INVENTORY_MAX_NUM);
+    if (equipped && cell >= INVENTORY_MAX_NUM)
+        slot = static_cast<uint8_t>(cell - INVENTORY_MAX_NUM);
+
     g_registry.emplace_or_replace<ecs::ItemEquipped>(
-        item, ecs::ItemEquipped{legacyItem->IsEquipped(), slot});
+        item, ecs::ItemEquipped{equipped, slot});
     return true;
 }
 
-bool SyncItemOwnerFromLegacy(entt::entity item)
+// ownerPID is the persisted form of the owner entity, so it goes stale when
+// the owner gains a PID after pickup. This recomputes it from the entity.
+bool RefreshItemOwnerPID(entt::entity item)
 {
-    LPITEM legacyItem = LegacyItemBoundary(item);
-    if (!legacyItem || item == entt::null || !g_registry.valid(item))
+    if (!IsValidItem(item))
         return false;
 
-    entt::entity ownerEntity = entt::null;
-    uint32_t ownerPID = 0;
-    ownerEntity = legacyItem->GetOwnerEntity();
-    ownerPID = ecs::PlayerRuntime::GetPlayerID(ownerEntity);
-
-    g_registry.emplace_or_replace<ecs::ItemOwner>(
-        item, ecs::ItemOwner{ownerEntity, ownerPID, legacyItem->GetLastOwnerPID(), ownerPID});
+    auto& owner = g_registry.get_or_emplace<ecs::ItemOwner>(item);
+    owner.ownerPID = ecs::PlayerRuntime::GetPlayerID(owner.owner);
+    owner.ownershipPID = owner.ownerPID;
     return true;
 }
 
@@ -3775,16 +3774,13 @@ bool SyncItemStateFromLegacy(entt::entity item)
         item, ecs::ItemCount{legacyItem->GetCount()});
     g_registry.emplace_or_replace<ecs::ItemPrototypeMeta>(
         item, ecs::ItemPrototypeMeta{legacyItem->GetType(), legacyItem->GetSubType()});
-    g_registry.emplace_or_replace<ecs::ItemFlags>(
-        item, ecs::ItemFlags{
-                  legacyItem->GetFlag(),
-                  legacyItem->IsExchanging(),
-                  legacyItem->GetSkipSave(),
-                  legacyItem->isLocked(),
-              });
+    // Only flags still comes from the legacy object; exchanging, skipSave and
+    // isLocked live in this component and are written directly.
+    auto& flags = g_registry.get_or_emplace<ecs::ItemFlags>(item);
+    flags.flags = legacyItem->GetFlag();
 
-    SyncItemLocationFromLegacy(item);
-    SyncItemOwnerFromLegacy(item);
+    RefreshItemEquippedSlot(item);
+    RefreshItemOwnerPID(item);
     return true;
 }
 
@@ -3863,7 +3859,7 @@ bool SetGroundOwnership(entt::entity item, entt::entity owner,
         return false;
 
     InventorySystem::SetOwnership(item, owner, seconds);
-    return SyncItemOwnerFromLegacy(item);
+    return RefreshItemOwnerPID(item);
 }
 
 static bool ReceiveItemLegacyBoundary(entt::entity receiver,

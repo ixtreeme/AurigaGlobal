@@ -832,6 +832,42 @@ ecs::ItemAttributes* MutableAttributesOf(entt::entity e)
 }
 } // namespace
 
+namespace {
+const ecs::ItemFlags& FlagsOf(entt::entity e)
+{
+	static const ecs::ItemFlags kEmpty {};
+	if (e == entt::null || !g_registry.valid(e))
+		return kEmpty;
+	const auto* c = g_registry.try_get<ecs::ItemFlags>(e);
+	return c ? *c : kEmpty;
+}
+} // namespace
+
+bool CItem::IsExchanging() const
+{
+	return FlagsOf(GetEntityHandle()).exchanging;
+}
+
+bool CItem::isLocked() const
+{
+	return FlagsOf(GetEntityHandle()).isLocked;
+}
+
+void CItem::Lock(bool f)
+{
+	if (GetEntityHandle() == entt::null || !g_registry.valid(GetEntityHandle()))
+		return;
+	g_registry.get_or_emplace<ecs::ItemFlags>(GetEntityHandle()).isLocked = f;
+}
+
+short CItem::GetLockedAttr() const
+{
+	if (GetEntityHandle() == entt::null || !g_registry.valid(GetEntityHandle()))
+		return -1;
+	const auto* c = g_registry.try_get<ecs::ItemLockedAttribute>(GetEntityHandle());
+	return c ? c->index : -1;
+}
+
 const int32_t* CItem::GetSockets() const
 {
 	return SocketsOf(GetEntityHandle()).sockets.data();
@@ -15835,13 +15871,13 @@ void CItem::Initialize()
 	m_dwID = 0;
 	m_dwVID = m_dwCount = m_lFlag = 0;
 	m_pProto = nullptr;
-	m_bExchanging = false;
+	// exchanging lives in ecs::ItemFlags and starts false there
 #ifdef ENABLE_SOUL_SYSTEM
 	ItemSystem::GetItemEvents(GetEntityHandle()).soulItem = nullptr;
 #endif
 	ItemSystem::GetItemEvents(GetEntityHandle()).uniqueExpire = nullptr;
 #ifdef ATTR_LOCK
-	m_sLockedAttr = -1;
+	// the locked attribute lives in ecs::ItemLockedAttribute and starts at -1
 #endif
 
 	ItemSystem::GetItemEvents(GetEntityHandle()).destroy = nullptr;
@@ -16641,7 +16677,8 @@ void CItem::RemoveLockedAttr()
 
 void CItem::SetLockedAttr(short sIndex)
 {
-	m_sLockedAttr = sIndex;
+	if (GetEntityHandle() != entt::null && g_registry.valid(GetEntityHandle()))
+		g_registry.get_or_emplace<ecs::ItemLockedAttribute>(GetEntityHandle()).index = sIndex;
 	if (const entt::entity itemEntity = GetEntityHandle();
 		itemEntity != entt::null && g_registry.valid(itemEntity))
 		g_registry.emplace_or_replace<ecs::ItemLockedAttribute>(itemEntity, ecs::ItemLockedAttribute{sIndex});
@@ -16651,7 +16688,8 @@ void CItem::SetLockedAttr(short sIndex)
 
 void CItem::SetExchanging(bool bOn)
 {
-	m_bExchanging = bOn;
+	if (GetEntityHandle() != entt::null && g_registry.valid(GetEntityHandle()))
+		g_registry.get_or_emplace<ecs::ItemFlags>(GetEntityHandle()).exchanging = bOn;
 }
 
 
@@ -16720,10 +16758,7 @@ int32_t CItem::GetRuneAttrValue(int c, int32_t lTime) {
 CItem::CItem(uint32_t dwVnum)
 	: m_pProto(nullptr), m_dwVnum(dwVnum), m_dwID(0), m_dwVID(0),
 	m_dwCount(0),
-	m_sLockedAttr(0),
 	m_lFlag(0),
-	m_bExchanging(false),
-	m_isLocked(false),
 	m_dwMaskVnum(0), m_dwSIGVnum(0)
 {
 }

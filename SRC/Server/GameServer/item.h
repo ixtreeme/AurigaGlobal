@@ -42,7 +42,7 @@ class CItem : public CEntity
 #endif
 
 #ifdef ATTR_LOCK
-		short	GetLockedAttr() const	{return m_sLockedAttr;}
+		short	GetLockedAttr() const;
 		void	SetLockedAttr(short sIndex);
 		void	AddLockedAttr();
 		void	ChangeLockedAttr();
@@ -107,7 +107,7 @@ class CItem : public CEntity
 		void		UpdatePacket();
 
 		void		SetExchanging(bool isOn = true);
-		bool		IsExchanging()		{ return m_bExchanging;	}
+		bool		IsExchanging() const;
 
 		bool		IsTwohanded();
 
@@ -223,8 +223,8 @@ class CItem : public CEntity
 
 		void		AttrLog();
 
-		void		Lock(bool f) { m_isLocked = f; }
-		bool		isLocked() const { return m_isLocked; }
+		void		Lock(bool f);
+		bool		isLocked() const;
 
 	private :
 		void		SetAttribute(int i, uint8_t bType, short sValue);
@@ -288,20 +288,17 @@ class CItem : public CEntity
 		uint32_t		m_dwVID;		// VID
 		int		m_dwCount;		// 개수
 #ifdef ATTR_LOCK
-		short		m_sLockedAttr;
 #endif
 #ifdef ENABLE_ITEM_EXTRA_PROTO
 #endif
 		int32_t		m_lFlag;		// 추가 flag
 
-		bool		m_bExchanging;	///< 현재 교환중 상태
 
 
 #ifdef ENABLE_SOUL_SYSTEM
 #endif
 
 
-		bool		m_isLocked;
 
 		uint32_t		m_dwMaskVnum;
 		uint32_t		m_dwSIGVnum;
