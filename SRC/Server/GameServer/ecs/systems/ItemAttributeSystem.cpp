@@ -14,6 +14,7 @@
 #include "../../shop.h"
 #include "../../log.h"
 #include "../../utils.h"
+#include "../../../common/stole_length.h"
 
 namespace ItemSystem {
 namespace {
@@ -203,6 +204,15 @@ bool CanModifyOwnedAttributes(entt::entity item)
         return false;
     const entt::entity owner = GetItemOwner(item);
     return owner != entt::null && g_registry.valid(owner) && ecs::PlayerRuntime::IsPC(owner);
+}
+
+bool IsOwnedAttributeTarget(entt::entity character, entt::entity item)
+{
+    if (!ecs::PlayerRuntime::IsPC(character) || !CanModifyOwnedAttributes(item) ||
+        GetItemOwner(item) != character)
+        return false;
+    const auto* location = g_registry.try_get<ecs::ItemLocation>(item);
+    return location && GetItem(character, TItemPos(location->window, location->cell)) == item;
 }
 } // namespace
 
@@ -424,6 +434,114 @@ bool ResetCostumeAttributesWithItemCost(entt::entity item, entt::entity material
 #endif
 }
 
+#ifdef ENABLE_STOLE_COSTUME
+bool EnchantStoleWithItemCost(entt::entity character, entt::entity item, entt::entity material)
+{
+    if (!IsOwnedAttributeTarget(character, item) || GetItemType(item) != ITEM_COSTUME ||
+        GetItemSubType(item) != COSTUME_STOLE || !CanPayItemAttributeCost(item, material) ||
+        GetItemType(material) != ITEM_USE || GetItemSubType(material) != USE_ENCHANT_STOLE)
+        return false;
+    // Validate before narrowing: a negative proto grade must not wrap to a
+    // high uint8_t grade. Positive grades above four retain the legacy cap.
+    const int32_t grade = GetItemValue(item, 0);
+    if (grade < 1)
+        return false;
+    constexpr int maxGrade = 4;
+    static_assert(std::size(stoleInfoTable) == MAX_ATTR && MAX_ATTR <= ITEM_ATTRIBUTE_MAX_NUM);
+    static_assert(std::size(stoleInfoTable[0]) == 1 + maxGrade * MAX_VAR_ATTR);
+    const int lastVariant = std::min(grade, maxGrade) * MAX_VAR_ATTR;
+    auto attrs = AttributesOf(item)->attrs;
+    for (int i = 0; i < MAX_ATTR; ++i) {
+        const int type = stoleInfoTable[i][0];
+        const int value = stoleInfoTable[i][number(lastVariant - MAX_VAR_ATTR + 1, lastVariant)];
+        if (type <= 0 || type >= MAX_APPLY_NUM || type > UINT8_MAX ||
+            value < INT16_MIN || value > INT16_MAX)
+            return false;
+        attrs[i] = {static_cast<uint8_t>(type), static_cast<int16_t>(value)};
+    }
+    if (!ConsumeItemEcs(material))
+        return false;
+    // All six bonuses change together; the seventh slot is not part of this
+    // operation. No material/component pointer survives the debit.
+    Commit(item, attrs, "SET_FORCE_ATTR");
+    return true;
+}
+#endif
+
+short GetItemLockedAttr(entt::entity item)
+{
+    const auto* locked = IsValidItem(item) ? g_registry.try_get<ecs::ItemLockedAttribute>(item) : nullptr;
+    return locked ? locked->index : -1;
+}
+
+#ifdef ATTR_LOCK
+void SetItemLockedAttr(entt::entity item, short index)
+{
+    if (!IsValidItem(item))
+        return;
+    g_registry.emplace_or_replace<ecs::ItemLockedAttribute>(item, ecs::ItemLockedAttribute{index});
+    ecs::ItemNetworkSystem::SendItemUpdate(g_registry, item);
+    SaveItem(item);
+}
+
+AttributeLockResult UseItemAttributeLock(entt::entity character, entt::entity item, entt::entity material)
+{
+    using Result = AttributeLockResult;
+    if (!IsOwnedAttributeTarget(character, item) || GetItemType(item) == ITEM_COSTUME ||
+        GetItemType(item) == ITEM_DS)
+        return Result::InvalidTarget;
+    if (!CanPayItemAttributeCost(item, material) || GetItemType(material) != ITEM_USE)
+        return Result::InvalidMaterial;
+    const auto operation = GetItemSubType(material);
+    const int current = GetItemLockedAttr(item);
+    const auto attrs = AttributesOf(item)->attrs;
+    std::array<int, ITEM_ATTRIBUTE_NORM_NUM> candidates{};
+    int count = 0;
+    short next = -1;
+    switch (operation) {
+        case USE_ADD_ATTRIBUTE_LOCK:
+            if (GetItemWearFlags(item) & WEARABLE_PENDANT)
+                return Result::InvalidTarget;
+            if (rules::Count(attrs, 0, ITEM_ATTRIBUTE_NORM_NUM) != ITEM_ATTRIBUTE_NORM_NUM)
+                return Result::NotEnoughAttributes;
+            if (current != -1)
+                return Result::AlreadyLocked;
+            for (int i = 0; i < ITEM_ATTRIBUTE_NORM_NUM; ++i)
+                candidates[count++] = i;
+            break;
+
+        case USE_CHANGE_ATTRIBUTE_LOCK:
+            if (current == -1)
+                return Result::NotLocked;
+            if (current < 0 || current >= ITEM_ATTRIBUTE_NORM_NUM || attrs[current].bType == 0)
+                return Result::InvalidLock;
+            for (int i = 0; i < ITEM_ATTRIBUTE_NORM_NUM; ++i)
+                if (i != current && attrs[i].bType != 0)
+                    candidates[count++] = i;
+            if (count == 0)
+                return Result::NoAlternative;
+            break;
+
+        case USE_DELETE_ATTRIBUTE_LOCK:
+            if (current == -1)
+                return Result::NotLocked;
+            // Removing a malformed/out-of-range lock also repairs old data.
+            break;
+
+        default:
+            return Result::InvalidMaterial;
+    }
+    // One bounded draw, including when only one alternative remains. Unlike
+    // retrying rand() until it changes, this never loops on the current slot.
+    if (count > 0)
+        next = static_cast<short>(candidates[number(0, count - 1)]);
+    if (!ConsumeItemEcs(material))
+        return Result::Failed;
+    SetItemLockedAttr(item, next);
+    return Result::Success;
+}
+#endif
+
 #ifdef ENABLE_ATTR_COSTUMES
 bool SelectCostumeAttributeToRemove(entt::entity character, std::string_view slot)
 {
@@ -440,15 +558,11 @@ CostumeAttributeResult UseCostumeAttributeItem(entt::entity character,
     entt::entity item, entt::entity material)
 {
     using Result = CostumeAttributeResult;
-    if (!ecs::PlayerRuntime::IsPC(character) || !CanModifyOwnedAttributes(item) ||
-        GetItemOwner(item) != character || GetItemType(item) != ITEM_COSTUME ||
+    if (!IsOwnedAttributeTarget(character, item) || GetItemType(item) != ITEM_COSTUME ||
         GetItemAttributeSetIndex(item) < 0)
         return Result::InvalidTarget;
     const auto subtype = GetItemSubType(item);
     if (subtype != COSTUME_BODY && subtype != COSTUME_HAIR && subtype != COSTUME_WEAPON)
-        return Result::InvalidTarget;
-    const auto* location = g_registry.try_get<ecs::ItemLocation>(item);
-    if (!location || GetItem(character, TItemPos(location->window, location->cell)) != item)
         return Result::InvalidTarget;
     if (!CanPayItemAttributeCost(item, material) || GetItemType(material) != ITEM_USE)
         return Result::InvalidMaterial;

@@ -1755,12 +1755,6 @@ static bool HasLimitType(entt::entity item, uint8_t limitType)
     return false;
 }
 
-short GetItemLockedAttr(entt::entity item)
-{
-    const auto* locked = g_registry.try_get<ecs::ItemLockedAttribute>(item);
-    return locked ? locked->index : -1;
-}
-
 int GetItemAccessorySocketMaxGrade(entt::entity item)
 {
     return MINMAX(0, GetItemSocket(item, 1), ITEM_ACCESSORY_SOCKET_MAX_NUM);
@@ -2239,19 +2233,6 @@ void SetItemTransmutation(entt::entity item, uint32_t vnum)
         return;
 
     g_registry.get_or_emplace<ecs::ItemIdentity>(item).transmutationVnum = vnum;
-    ecs::ItemNetworkSystem::SendItemUpdate(g_registry, item);
-    SaveItem(item);
-}
-#endif
-
-#ifdef ATTR_LOCK
-void SetItemLockedAttr(entt::entity item, short index)
-{
-    if (!IsValidItem(item))
-        return;
-
-    g_registry.emplace_or_replace<ecs::ItemLockedAttribute>(
-        item, ecs::ItemLockedAttribute{index});
     ecs::ItemNetworkSystem::SendItemUpdate(g_registry, item);
     SaveItem(item);
 }

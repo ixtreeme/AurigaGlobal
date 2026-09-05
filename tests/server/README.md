@@ -47,6 +47,22 @@ sixth/seventh bonuses, and that rejecting an equipped costume leaves its buffs
 unchanged. The legacy CHARACTER selection field/accessors have been removed;
 the state now belongs to the character's CostumeAttributeSelection component.
 
+Stole enchant tests cover all four variants at grades 1-4, the existing cap
+for higher positive grades, rejected zero/negative grades, six bonuses in one
+commit, and preservation of the seventh slot. Attribute-lock tests enumerate
+every add/change candidate, skip the current/empty slots without an RNG retry
+loop, reject changes with no alternative, and allow the remover to repair a
+malformed stored lock. All four operations cover owner/material validation,
+equipped/exchanging/locked items, rejected payment and last-unit consumption.
+The payment doubles also assert that the lock index has not changed before
+debit. The native lock getter/setter are compiled from ItemAttributeSystem.cpp;
+only their network and persistence services are doubled.
+
+In-game, check stole enchant at each grade and all three lock consumables,
+including rejection on equipped items, lock preservation during subsequent
+bonus rerolls, and persistence after relog. The item-use dispatcher and its
+chat/buff side effects are not executed by these headless tests.
+
 The doubles verify save/update calls, not the DB packet encoding or a live
 client session. Test in-game inventory, relog, bonus changers, rune items and
 mount attributes separately before deploying.

@@ -42,9 +42,6 @@ class CItem : public CEntity
 #ifdef ATTR_LOCK
 		short	GetLockedAttr() const;
 		void	SetLockedAttr(short sIndex);
-		void	AddLockedAttr();
-		void	ChangeLockedAttr();
-		void	RemoveLockedAttr();
 #endif
 
 		int64_t		GetGold();

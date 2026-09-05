@@ -82,9 +82,6 @@
 #include "../../Halloween2022Dungeon.h"
 #include "../../VikingDungeon.h"
 #endif
-#ifdef ENABLE_STOLE_COSTUME
-#include "../../../common/stole_length.h"
-#endif
 #include "../../../common/CommonDefines.h"
 #ifdef ENABLE_RUNE_SYSTEM
 #include "../../../common/rune_length.h"
@@ -8316,34 +8313,23 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 #endif
 #ifdef ENABLE_STOLE_COSTUME
 		case USE_ENCHANT_STOLE: {
-			LPITEM item2;
-			if ((!IsValidItemPosition(DestCell)) || (!(item2 = GetItem(DestCell))))
+			if (!IsValidItemPosition(DestCell))
 				return false;
-
-			if ((item2->GetType() != ITEM_COSTUME) || (item2->GetSubType() != COSTUME_STOLE)) {
+			const entt::entity character = GetEntityHandle();
+			const entt::entity target = ItemSystem::GetItem(character, DestCell);
+			if (!ItemSystem::IsValidItem(target))
+				return false;
+			if (ItemSystem::GetItemType(target) != ITEM_COSTUME || ItemSystem::GetItemSubType(target) != COSTUME_STOLE) {
 #ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 22, "%s", item->GetName());
+				ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 22, "%s", ItemSystem::GetItemName(itemEntity));
 #endif
 				return false;
 			}
-
-			if ((item2->IsExchanging()) || (ItemSystem::IsItemEquipped(item2->GetEntityHandle())) || (item2->isLocked()))
+			if (!ItemSystem::EnchantStoleWithItemCost(character, target, itemEntity))
 				return false;
-
-			uint8_t bGrade = item2->GetValue(0);
-			if (bGrade < 1)
-				return false;
-
-			bGrade = bGrade > 4 ? 4 : bGrade;
-			uint8_t bRandom = (bGrade * 4);
-			for (int i = 0; i < MAX_ATTR; i++) {
-				ItemSystem::SetItemForceAttributeEcs(item2->GetEntityHandle(), i, stoleInfoTable[i][0], stoleInfoTable[i][number(bRandom - 3, bRandom)]);
-			}
-
 #ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 21, "%s", item2->GetName());
+			ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 21, "%s", ItemSystem::GetItemName(target));
 #endif
-			ItemSystem::ConsumeItemEcs(itemEntity);
 			break;
 		}
 #endif
@@ -8643,118 +8629,37 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 		break;
 #ifdef ATTR_LOCK						
 		case USE_ADD_ATTRIBUTE_LOCK:
-		{
-			LPITEM item2;
-			if (!IsValidItemPosition(DestCell) || !(item2 = GetItem(DestCell)))
-				return false;
-
-			if (ITEM_COSTUME == item2->GetType() || item2->GetWearFlag() == WEARABLE_PENDANT || item2->IsDragonSoul())
-			{
-#ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 791, "");
-#endif
-				return false;
-			}
-
-			if (item2->GetAttributeCount() < 5)
-			{
-#ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 792, "");
-#endif
-				return false;
-			}
-
-			if (item2->GetLockedAttr() != -1)
-			{
-#ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 793, "");
-#endif
-				return false;
-			}
-
-			if (ItemSystem::IsItemEquipped(item2->GetEntityHandle()))
-			{
-				BuffOnAttr_RemoveBuffsFromItem(item2);
-			}
-
-			if (item2->IsExchanging() || ItemSystem::IsItemEquipped(item2->GetEntityHandle())) // @fixme114
-				return false;
-
-			item2->AddLockedAttr();
-			ItemSystem::ConsumeItemEcs(itemEntity);
-		}
-		break;
 		case USE_CHANGE_ATTRIBUTE_LOCK:
-		{
-			LPITEM item2;
-			if (!IsValidItemPosition(DestCell) || !(item2 = GetItem(DestCell)))
-				return false;
-
-
-			if (item2->GetLockedAttr() == -1)
-			{
-#ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 795, "");
-#endif
-				return false;
-			}
-
-			if (ITEM_COSTUME == item2->GetType() /*|| item2->GetWearFlag() == WEARABLE_PENDANT*/ || item2->IsDragonSoul())
-			{
-#ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 791, "");
-#endif
-				return false;
-			}
-
-			if (ItemSystem::IsItemEquipped(item2->GetEntityHandle()))
-			{
-				BuffOnAttr_RemoveBuffsFromItem(item2);
-			}
-
-
-			if (item2->IsExchanging() || ItemSystem::IsItemEquipped(item2->GetEntityHandle())) // @fixme114
-				return false;
-
-
-			item2->ChangeLockedAttr();
-			ItemSystem::ConsumeItemEcs(itemEntity);
-		}
-		break;
 		case USE_DELETE_ATTRIBUTE_LOCK:
 		{
-			LPITEM item2;
-			if (!IsValidItemPosition(DestCell) || !(item2 = GetItem(DestCell)))
+			if (!IsValidItemPosition(DestCell))
 				return false;
-
-			if (item2->GetLockedAttr() == -1)
+			const entt::entity character = GetEntityHandle();
+			const entt::entity target = ItemSystem::GetItem(character, DestCell);
+			const auto operation = ItemSystem::GetItemSubType(itemEntity);
+			using Result = ItemSystem::AttributeLockResult;
+			const auto result = ItemSystem::UseItemAttributeLock(character, target, itemEntity);
+			if (result != Result::Success)
 			{
 #ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 795, "");
+				uint32_t message = 0;
+				switch (result)
+				{
+				case Result::InvalidTarget:
+					message = operation == USE_DELETE_ATTRIBUTE_LOCK ? 680 : 791;
+					break;
+				case Result::NotEnoughAttributes: message = 792; break;
+				case Result::AlreadyLocked: message = 793; break;
+				case Result::NotLocked: message = 795; break;
+				default: break;
+				}
+				if (message)
+					ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, message, "");
 #endif
 				return false;
 			}
-
-			if (ItemSystem::IsItemEquipped(item2->GetEntityHandle()))
-			{
-				BuffOnAttr_RemoveBuffsFromItem(item2);
-			}
-
-			if (ITEM_COSTUME == item2->GetType() || item2->IsDragonSoul())
-			{
-#ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 680, "");
-#endif
-				return false;
-			}
-
-			if (item2->IsExchanging() || ItemSystem::IsItemEquipped(item2->GetEntityHandle())) // @fixme114
-				return false;
-
-			item2->RemoveLockedAttr();
-			ItemSystem::ConsumeItemEcs(itemEntity);
+			break;
 		}
-		break;
 #endif
 		case USE_CHANGE_COSTUME_ATTR:
 		case USE_RESET_COSTUME_ATTR:
@@ -15375,47 +15280,6 @@ int CItem::GetRefineLevel()
 	}
 
 	return rtn;
-}
-
-void CItem::AddLockedAttr()
-{
-	const int iCount = GetAttributeCount();
-	if (iCount <= 0)
-	{
-		SetLockedAttr(-1);
-		return;
-	}
-
-	SetLockedAttr((short)(rand() % iCount));
-}
-
-void CItem::ChangeLockedAttr()
-{
-	const int iCount = GetAttributeCount();
-	if (iCount <= 0)
-	{
-		SetLockedAttr(-1);
-		return;
-	}
-
-	if (iCount == 1)
-	{
-		SetLockedAttr(0);
-		return;
-	}
-
-	int iRand = 0;
-	do
-	{
-		iRand = rand() % iCount;
-	} while (iRand == (int)GetLockedAttr());
-
-	SetLockedAttr((short)iRand);
-}
-
-void CItem::RemoveLockedAttr()
-{
-	SetLockedAttr(-1);
 }
 
 void CItem::SetLockedAttr(short sIndex)

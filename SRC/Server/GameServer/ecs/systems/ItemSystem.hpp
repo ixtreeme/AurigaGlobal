@@ -190,6 +190,16 @@ bool ChangeItemAttributeWithItemCost(entt::entity item, entt::entity material,
     uint32_t amount = 1, const int* probabilities = nullptr);
 bool ChangeItemAttributeWithGoldCost(entt::entity item, int64_t amount);
 bool ResetCostumeAttributesWithItemCost(entt::entity item, entt::entity material, uint32_t amount = 1);
+#ifdef ENABLE_STOLE_COSTUME
+bool EnchantStoleWithItemCost(entt::entity character, entt::entity item, entt::entity material);
+#endif
+#ifdef ATTR_LOCK
+enum class AttributeLockResult {
+    Success, InvalidTarget, InvalidMaterial, NotEnoughAttributes, AlreadyLocked,
+    NotLocked, InvalidLock, NoAlternative, Failed
+};
+AttributeLockResult UseItemAttributeLock(entt::entity character, entt::entity item, entt::entity material);
+#endif
 #ifdef ENABLE_ATTR_COSTUMES
 enum class CostumeAttributeResult {
     Success, InvalidTarget, InvalidMaterial, NoAttributes, SlotsFull,

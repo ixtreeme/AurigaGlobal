@@ -17,6 +17,7 @@
 #include "../../SRC/Server/GameServer/buffer_manager.h"
 #include "../../SRC/Server/GameServer/p2p.h"
 #include "../../SRC/Server/GameServer/battle_pass.h"
+#include "../../SRC/Server/common/stole_length.h"
 #include <Core/Logging.hpp>
 #include <stdexcept>
 #include <iostream>
@@ -33,12 +34,14 @@ namespace {
 int saves = 0;
 int updates = 0;
 int randomCalls = 0;
+int randomOffset = 0;
 int checks = 0;
 int payments = 0;
 bool rejectPayment = false;
 bool rejectGoldPayment = false;
 entt::entity watchedItem = entt::null;
 std::array<TPlayerItemAttribute, ITEM_ATTRIBUTE_MAX_NUM> beforePayment{};
+short lockBeforePayment = -1;
 std::map<std::tuple<entt::entity, uint8_t, uint16_t>, entt::entity> inventory;
 struct TestPlayer { int64_t gold = 100; };
 void Check(bool condition, const char* message)
@@ -61,6 +64,8 @@ void CheckPaymentOrder()
     Check(watchedItem != entt::null && g_registry.valid(watchedItem), "payment has no live target");
     Check(EqualAttributes(g_registry.get<ecs::ItemAttributes>(watchedItem).attrs, beforePayment),
         "attributes changed before payment succeeded");
+    Check(ItemSystem::GetItemLockedAttr(watchedItem) == lockBeforePayment,
+        "attribute lock changed before payment succeeded");
     Check(saves == 0 && updates == 0, "partial attributes published before payment");
 }
 
@@ -117,7 +122,8 @@ int number_ex(int low, int high, const char*, int)
 {
     Check(low <= high, "invalid random interval");
     ++randomCalls;
-    return low;
+    Check(randomOffset >= 0 && randomOffset <= high - low, "scripted random offset out of range");
+    return low + randomOffset;
 }
 float gauss_random(float, float) { return 4.0f; }
 void LogManager::ItemLog(uint32_t, uint32_t, uint32_t, uint32_t, const char*, const char*, const char*, uint32_t) {}
@@ -154,6 +160,11 @@ const TItemTable* GetItemProto(entt::entity item)
 uint8_t GetItemType(entt::entity item) { const auto* p = GetItemProto(item); return p ? p->bType : 0; }
 uint8_t GetItemSubType(entt::entity item) { const auto* p = GetItemProto(item); return p ? p->bSubType : 0; }
 uint32_t GetItemWearFlags(entt::entity item) { const auto* p = GetItemProto(item); return p ? p->dwWearFlags : 0; }
+int32_t GetItemValue(entt::entity item, uint32_t index)
+{
+    const auto* proto = GetItemProto(item);
+    return proto && index < ITEM_VALUES_MAX_NUM ? proto->alValues[index] : 0;
+}
 uint32_t GetItemVnum(entt::entity item) { return g_registry.get<ecs::ItemIdentity>(item).vnum; }
 uint32_t GetItemOriginalVnum(entt::entity item) { return GetItemVnum(item); }
 uint32_t GetItemID(entt::entity item) { return g_registry.get<ecs::ItemIdentity>(item).id; }
@@ -210,11 +221,7 @@ TItemExtraProto* GetItemExtraProto(entt::entity item)
     const auto* ref = g_registry.try_get<ecs::ItemExtraProtoRef>(item);
     return ref ? ref->proto : nullptr;
 }
-short GetItemLockedAttr(entt::entity item)
-{
-    const auto* locked = g_registry.try_get<ecs::ItemLockedAttribute>(item);
-    return locked ? locked->index : -1;
-}
+void SaveItem(entt::entity) { ++saves; }
 TPlayerItemAttribute GetItemAttribute(entt::entity item, int index)
 {
     return g_registry.get<ecs::ItemAttributes>(item).attrs[index];
@@ -237,6 +244,7 @@ struct Fixture {
         g_map_itemAttr.clear();
         g_map_itemRare.clear();
         saves = updates = randomCalls = 0;
+        randomOffset = 0;
         payments = 0;
         rejectPayment = rejectGoldPayment = false;
         watchedItem = entt::null;
@@ -298,9 +306,80 @@ struct PaidFixture : Fixture {
     {
         watchedItem = item;
         beforePayment = Attrs();
+        lockBeforePayment = ItemSystem::GetItemLockedAttr(item);
         saves = updates = payments = 0;
     }
 };
+
+struct AttributeItemFixture : PaidFixture {
+    TItemTable materialProto{};
+    explicit AttributeItemFixture(uint8_t operation)
+    {
+        Place(item, INVENTORY, 5);
+        materialProto.bType = ITEM_USE;
+        materialProto.bSubType = operation;
+        g_registry.emplace<ecs::ItemProtoRef>(material).proto = &materialProto;
+        for (int i = 0; i < ITEM_ATTRIBUTE_MAX_NUM; ++i)
+            Attrs()[i] = {static_cast<uint8_t>(20 + i), static_cast<int16_t>(200 + i)};
+        Check(!g_registry.any_of<ecs::LegacyCharPtr>(owner), "attribute item owner must be entity-only");
+        Watch();
+    }
+    void Unchanged()
+    {
+        Check(EqualAttributes(Attrs(), beforePayment) && saves == 0 && updates == 0 &&
+            ItemSystem::GetItemLockedAttr(item) == lockBeforePayment,
+            "failed attribute item operation published changes");
+        Check(ItemSystem::GetItemCount(material) == 2, "failed attribute item operation consumed material");
+    }
+};
+
+// Each operation must enforce these guards itself, not rely on a legacy caller.
+template <class Use>
+void AttributeItemGuards(AttributeItemFixture& f, Use use)
+{
+    Check(!use(entt::null, f.item, f.material), "null owner accepted");
+    Check(!use(f.owner, entt::null, f.material), "null target accepted");
+    Check(!use(f.owner, f.item, entt::null), "null material accepted");
+    Check(!use(f.owner, f.item, f.item), "target accepted as material");
+    const auto stranger = g_registry.create();
+    g_registry.emplace<TestPlayer>(stranger);
+    Check(!use(stranger, f.item, f.material), "foreign owner accepted");
+    inventory.erase({f.owner, INVENTORY, 5});
+    Check(!use(f.owner, f.item, f.material), "detached target accepted");
+    f.Place(f.item, INVENTORY, 5);
+    for (const auto entity : {f.item, f.material}) {
+        g_registry.emplace<ecs::ItemFlags>(entity).isLocked = true;
+        Check(!use(f.owner, f.item, f.material), "locked target/material accepted");
+        auto& flags = g_registry.get<ecs::ItemFlags>(entity);
+        flags.isLocked = false;
+        flags.exchanging = true;
+        Check(!use(f.owner, f.item, f.material), "exchanging target/material accepted");
+        flags.exchanging = false;
+        g_registry.emplace<ecs::ItemEquipped>(entity).equipped = true;
+        Check(!use(f.owner, f.item, f.material), "equipped target/material accepted");
+        g_registry.get<ecs::ItemEquipped>(entity).equipped = false;
+    }
+    g_registry.get<ecs::ItemOwner>(f.material).owner = stranger;
+    Check(!use(f.owner, f.item, f.material), "foreign material accepted");
+    f.Place(f.material, INVENTORY, 0);
+    inventory.erase({f.owner, INVENTORY, 0});
+    Check(!use(f.owner, f.item, f.material), "detached material accepted");
+    f.Place(f.material, INVENTORY, 0);
+    for (const int count : {0, -1}) {
+        g_registry.get<ecs::ItemCount>(f.material).count = count;
+        Check(!use(f.owner, f.item, f.material), "empty/negative material stack accepted");
+    }
+    g_registry.get<ecs::ItemCount>(f.material).count = 2;
+    f.materialProto.bType = ITEM_WEAPON;
+    Check(!use(f.owner, f.item, f.material), "non-consumable material accepted");
+    f.materialProto.bType = ITEM_USE;
+    const auto operation = f.materialProto.bSubType;
+    f.materialProto.bSubType = USE_POTION;
+    Check(!use(f.owner, f.item, f.material), "unrelated consumable accepted");
+    f.materialProto.bSubType = operation;
+    Check(payments == 0 && randomCalls == 0, "invalid request attempted payment or RNG");
+    f.Unchanged();
+}
 
 void EntityAndTableValidation()
 {
@@ -798,6 +877,172 @@ void CostumeOperationValidation()
 #endif
 }
 
+void StoleEnchantTransactions()
+{
+#ifdef ENABLE_STOLE_COSTUME
+    // Check every variant at every supported grade, plus the legacy high-grade
+    // cap without uint8_t wrapping. The seventh bonus must remain untouched.
+    for (const int grade : {1, 2, 3, 4, 5, 256, INT32_MAX})
+    for (int variant = 0; variant < MAX_VAR_ATTR; ++variant) {
+        AttributeItemFixture f(USE_ENCHANT_STOLE);
+        f.proto.bType = ITEM_COSTUME;
+        f.proto.bSubType = COSTUME_STOLE;
+        f.proto.alValues[0] = grade;
+        randomOffset = variant;
+        g_registry.get<ecs::ItemCount>(f.material).count = 1;
+        Check(ItemSystem::EnchantStoleWithItemCost(f.owner, f.item, f.material), "stole enchant failed");
+        const int column = (std::min(grade, 4) - 1) * MAX_VAR_ATTR + 1 + variant;
+        for (int i = 0; i < MAX_ATTR; ++i)
+            Check(f.Attrs()[i].bType == stoleInfoTable[i][0] && f.Attrs()[i].sValue == stoleInfoTable[i][column],
+                "stole grade/variant table value changed");
+        Check(f.Attrs()[6].bType == beforePayment[6].bType && f.Attrs()[6].sValue == beforePayment[6].sValue,
+            "stole enchant overwrote seventh bonus");
+        Check(randomCalls == MAX_ATTR && payments == 1 && saves == 1 && updates == 1 && !g_registry.valid(f.material),
+            "stole enchant was not one six-bonus commit with last-unit debit");
+        f.Watch();
+        Check(!ItemSystem::EnchantStoleWithItemCost(f.owner, f.item, f.material) && payments == 0,
+            "stale stole material reused");
+    }
+    AttributeItemFixture f(USE_ENCHANT_STOLE);
+    f.proto.bType = ITEM_COSTUME;
+    f.proto.bSubType = COSTUME_STOLE;
+    f.proto.alValues[0] = 2;
+    AttributeItemGuards(f, ItemSystem::EnchantStoleWithItemCost);
+    for (const int grade : {0, -1, -256, INT32_MIN}) {
+        f.proto.alValues[0] = grade;
+        Check(!ItemSystem::EnchantStoleWithItemCost(f.owner, f.item, f.material), "invalid stole grade accepted");
+        f.Unchanged();
+    }
+    Check(randomCalls == 0 && payments == 0, "invalid grade rolled bonuses or charged material");
+    f.proto.alValues[0] = 2;
+    f.proto.bSubType = COSTUME_BODY;
+    Check(!ItemSystem::EnchantStoleWithItemCost(f.owner, f.item, f.material), "body costume accepted stole enchant");
+    f.proto.bSubType = COSTUME_STOLE;
+    rejectPayment = true;
+    Check(!ItemSystem::EnchantStoleWithItemCost(f.owner, f.item, f.material), "unpaid stole enchant accepted");
+    f.Unchanged();
+    rejectPayment = false;
+    f.Watch();
+#ifdef ENABLE_EXTRA_INVENTORY
+    f.Place(f.material, EXTRA_INVENTORY, 7);
+#endif
+    Check(ItemSystem::EnchantStoleWithItemCost(f.owner, f.item, f.material) &&
+        ItemSystem::GetItemCount(f.material) == 1 && payments == 1 && saves == 1 && updates == 1,
+        "stole enchant did not debit one unit of a stack");
+    f.Watch();
+    g_registry.destroy(f.item);
+    Check(!ItemSystem::EnchantStoleWithItemCost(f.owner, f.item, f.material) && payments == 0,
+        "stale stole target accepted");
+#endif
+}
+
+void AttributeLockTransactions()
+{
+#ifdef ATTR_LOCK
+    using Result = ItemSystem::AttributeLockResult;
+    for (const uint8_t operation : {USE_ADD_ATTRIBUTE_LOCK, USE_CHANGE_ATTRIBUTE_LOCK, USE_DELETE_ATTRIBUTE_LOCK}) {
+        AttributeItemFixture f(operation);
+        if (operation != USE_ADD_ATTRIBUTE_LOCK)
+            g_registry.emplace<ecs::ItemLockedAttribute>(f.item, ecs::ItemLockedAttribute{0});
+        f.Watch();
+        AttributeItemGuards(f, [](auto owner, auto item, auto material) {
+            return ItemSystem::UseItemAttributeLock(owner, item, material) == Result::Success;
+        });
+        rejectPayment = true;
+        Check(ItemSystem::UseItemAttributeLock(f.owner, f.item, f.material) == Result::Failed,
+            "unpaid lock operation accepted");
+        f.Unchanged();
+        rejectPayment = false;
+        f.Watch();
+        g_registry.get<ecs::ItemCount>(f.material).count = 1;
+        Check(ItemSystem::UseItemAttributeLock(f.owner, f.item, f.material) == Result::Success,
+            "lock operation failed");
+        const int expected = operation == USE_ADD_ATTRIBUTE_LOCK ? 0 : operation == USE_CHANGE_ATTRIBUTE_LOCK ? 1 : -1;
+        Check(ItemSystem::GetItemLockedAttr(f.item) == expected && EqualAttributes(f.Attrs(), beforePayment),
+            "lock operation changed bonuses or selected wrong slot");
+        Check(payments == 1 && saves == 1 && updates == 1 && !g_registry.valid(f.material),
+            "lock operation was not a single commit with last-unit debit");
+        f.Watch();
+        Check(ItemSystem::UseItemAttributeLock(f.owner, f.item, f.material) == Result::InvalidMaterial && payments == 0,
+            "stale lock material reused");
+    }
+    // Enumerate every possible random choice. Moving a lock must never pick
+    // its current slot, including when the lock is at either boundary.
+    for (int current = -1; current < ITEM_ATTRIBUTE_NORM_NUM; ++current)
+    for (int choice = 0; choice < ITEM_ATTRIBUTE_NORM_NUM - (current >= 0); ++choice) {
+        AttributeItemFixture f(current < 0 ? USE_ADD_ATTRIBUTE_LOCK : USE_CHANGE_ATTRIBUTE_LOCK);
+        g_registry.emplace<ecs::ItemLockedAttribute>(f.item, ecs::ItemLockedAttribute{static_cast<short>(current)});
+        f.Watch();
+        randomOffset = choice;
+        Check(ItemSystem::UseItemAttributeLock(f.owner, f.item, f.material) == Result::Success,
+            "bounded lock choice failed");
+        const int expected = current < 0 || choice < current ? choice : choice + 1;
+        Check(ItemSystem::GetItemLockedAttr(f.item) == expected && randomCalls == 1,
+            "lock RNG retried or mapped the choice incorrectly");
+    }
+#endif
+}
+
+void AttributeLockEdgeCases()
+{
+#ifdef ATTR_LOCK
+    using Result = ItemSystem::AttributeLockResult;
+    AttributeItemFixture f(USE_ADD_ATTRIBUTE_LOCK);
+    auto use = [&] { return ItemSystem::UseItemAttributeLock(f.owner, f.item, f.material); };
+    f.Attrs()[2] = {};
+    f.Watch();
+    Check(use() == Result::NotEnoughAttributes, "lock added to fewer than five normal bonuses");
+    f.Attrs()[2] = {22, 202};
+    f.Watch();
+    f.proto.dwWearFlags = WEARABLE_PENDANT | WEARABLE_BODY;
+    Check(use() == Result::InvalidTarget, "combined pendant wear flags bypassed lock restriction");
+    f.proto.dwWearFlags = 0;
+    for (const uint8_t type : {ITEM_COSTUME, ITEM_DS}) {
+        f.proto.bType = type;
+        Check(use() == Result::InvalidTarget, "costume/dragon soul accepted attribute lock");
+    }
+    f.proto.bType = ITEM_WEAPON;
+    g_registry.emplace<ecs::ItemLockedAttribute>(f.item, ecs::ItemLockedAttribute{2});
+    f.Watch();
+    Check(use() == Result::AlreadyLocked, "already-locked item accepted add-lock material");
+    f.materialProto.bSubType = USE_CHANGE_ATTRIBUTE_LOCK;
+    for (const short index : {short(-1), short(-2), short(5), short(6), short(INT16_MAX)}) {
+        g_registry.get<ecs::ItemLockedAttribute>(f.item).index = index;
+        f.Watch();
+        Check(use() == (index == -1 ? Result::NotLocked : Result::InvalidLock), "invalid lock index changed");
+        f.Unchanged();
+    }
+    g_registry.get<ecs::ItemLockedAttribute>(f.item).index = 2;
+    f.Attrs()[2] = {};
+    f.Watch();
+    Check(use() == Result::InvalidLock, "lock on an empty bonus moved");
+    f.Attrs()[2] = {22, 202};
+    f.Attrs()[0] = f.Attrs()[1] = f.Attrs()[3] = f.Attrs()[4] = {};
+    f.Watch();
+    Check(use() == Result::NoAlternative, "one-bonus lock consumed a changer without changing slot");
+    Check(payments == 0 && randomCalls == 0, "invalid lock state attempted payment or RNG");
+    f.Unchanged();
+    f.Attrs()[4] = {24, 204};
+    f.Watch();
+    Check(use() == Result::Success && ItemSystem::GetItemLockedAttr(f.item) == 4 && randomCalls == 1,
+        "lock change did not skip empty slots");
+    Check(EqualAttributes(f.Attrs(), beforePayment), "lock change modified normal/rare bonuses");
+
+    // Deleting a malformed lock repairs it without indexing the attribute array.
+    for (const short index : {short(-2), short(2), short(5), short(INT16_MAX)}) {
+        AttributeItemFixture broken(USE_DELETE_ATTRIBUTE_LOCK);
+        g_registry.emplace<ecs::ItemLockedAttribute>(broken.item, ecs::ItemLockedAttribute{index});
+        broken.Watch();
+        Check(ItemSystem::UseItemAttributeLock(broken.owner, broken.item, broken.material) == Result::Success &&
+            ItemSystem::GetItemLockedAttr(broken.item) == -1 && randomCalls == 0,
+            "remover failed to clear malformed lock");
+        broken.Watch();
+        Check(ItemSystem::UseItemAttributeLock(broken.owner, broken.item, broken.material) == Result::NotLocked && payments == 0,
+            "remover charged an unlocked item");
+    }
+#endif
+}
+
 void SwitchbotTransactions()
 {
 #if defined(ENABLE_SWITCHBOT)
@@ -883,6 +1128,9 @@ int main()
         CostumeAdditionTransactions();
         CostumeRemovalTransactions();
         CostumeOperationValidation();
+        StoleEnchantTransactions();
+        AttributeLockTransactions();
+        AttributeLockEdgeCases();
         SwitchbotTransactions();
         SwitchbotMaterialSelection();
         std::cout << "Item attribute regression checks passed: " << checks << '\n';
