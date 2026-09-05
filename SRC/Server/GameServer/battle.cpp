@@ -30,6 +30,12 @@
 #include "locale_service.h"
 #include <common/CommonDefines.h>
 #include "ecs/CharacterAccessors.hpp"
+#include "ecs/EntityInvariants.hpp"
+#include "ecs/components/character_runtime_components.hpp"
+#include "ecs/components/combat_components.hpp"
+#include "ecs/systems/MovementSystem.hpp"
+#include "ecs/systems/MountSystem.hpp"
+#include <algorithm>
 #include "ecs/EntityFactory.hpp"
 #include "ecs/Registry.hpp"
 #include "ecs/systems/ItemSystem.hpp"
@@ -37,6 +43,26 @@
 #include "db.h"
 //#include <Database/DBManager.h>
 int battle_hit(entt::entity attacker, entt::entity victim, int & iRetDam);
+namespace {
+bool IsBattleCharacter(entt::entity e)
+{
+    return ecs::Invariants::HasAnyTypeTag(g_registry, e);
+}
+
+bool IsBattlePair(entt::entity attacker, entt::entity victim)
+{
+    return IsBattleCharacter(attacker) && IsBattleCharacter(victim);
+}
+
+bool HasCharacterType(entt::entity e, uint8_t type)
+{
+    if (!IsBattleCharacter(e))
+        return false;
+    const auto* state = g_registry.try_get<ecs::CharacterType>(e);
+    return state && state->value == type;
+}
+}
+
 
 bool battle_distance_valid_by_xy(int32_t x, int32_t y, int32_t tx, int32_t ty)
 {
@@ -50,37 +76,28 @@ bool battle_distance_valid_by_xy(int32_t x, int32_t y, int32_t tx, int32_t ty)
 
 bool battle_distance_valid(entt::entity character, entt::entity victim)
 {
+    if (!IsBattlePair(character, victim))
+        return false;
 	return battle_distance_valid_by_xy(ecs::PlayerRuntime::GetX(character), ecs::PlayerRuntime::GetY(character), ecs::PlayerRuntime::GetX(victim), ecs::PlayerRuntime::GetY(victim));
 }
 
 bool timed_event_cancel(entt::entity character)
 {
-	LPCHARACTER ch = ecs::LegacyCharOf(character);
-	if (ch->GetTimedEvent())
-	{
+    using namespace ecs::PlayerRuntime;
+    if (!IsBattleCharacter(character) || !GetCharEvent(character, CharEvent::Timed))
+        return false;
+    // Detach before publishing: a callback must not cancel a replacement timer.
+    CancelCharEvent(character, CharEvent::Timed);
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 482, "");
+    ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 482, "");
 #endif
-		event_cancel(&ch->GetTimedEventRef());
-		return true;
-	}
-
-	/* RECALL_DELAY
-	   ???? ?????? ???? ????? ??????? ??? ???? ?? ??? ??? ????
-	   if (ch->m_pk_RecallEvent)
-	   {
-	   event_cancel(&ch->m_pkRecallEvent);
-	   return true;
-	   }
-	   END_OF_RECALL_DELAY */
-
-	return false;
+    return true;
 }
 
 bool battle_is_attackable(entt::entity character, entt::entity victim)
 {
-	LPCHARACTER ch = ecs::LegacyCharOf(character);
-	LPCHARACTER pkVictim = ecs::LegacyCharOf(victim);
+    if (!IsBattlePair(character, victim) || character == victim)
+        return false;
 	// ���1aAI ��3�A��� �ߴ��N�U.
 	if (CombatSystem::IsDead(victim))
 	{
@@ -89,7 +106,7 @@ bool battle_is_attackable(entt::entity character, entt::entity victim)
 
 
 #ifdef ENABLE_BUG_FIXES
-	if (pkVictim->GetMyShop())
+	if (ecs::SocialSystem::GetMyShop(victim))
 	{
 		return false;
 	}
@@ -134,7 +151,7 @@ bool battle_is_attackable(entt::entity character, entt::entity victim)
 		return true;
 
 #ifdef __DEFENSE_WAVE__
-	if (ecs::PlayerRuntime::GetRaceNum(victim) == 20434 && ch->IsMonster())
+	if (ecs::PlayerRuntime::GetRaceNum(victim) == 20434 && ecs::PlayerRuntime::IsMonster(character))
 	{
 		return true;
 	}
@@ -156,29 +173,17 @@ bool battle_is_attackable(entt::entity character, entt::entity victim)
 
 int battle_melee_attack(entt::entity character, entt::entity victim)
 {
-	LPCHARACTER ch = ecs::LegacyCharOf(character);
-	LPCHARACTER pkVictim = ecs::LegacyCharOf(victim);
+    if (!IsBattlePair(character, victim) || character == victim)
+        return BATTLE_NONE;
 #if defined(ENABLE_CHECK_BATTLE)
-	if (ecs::PlayerRuntime::IsPC(character) && pkVictim) {
-		const bool bAttacking = (get_dword_time() - ch->GetLastAttackTime()) < (ch->IsRiding() ? 800 : 750);
+	if (ecs::PlayerRuntime::IsPC(character)) {
+		const bool bAttacking = (get_dword_time() - CombatSystem::GetLastAttackTime(character)) < (MountSystem::IsRiding(character) ? 800 : 750);
 		if (!bAttacking) {
 			return BATTLE_NONE;
 		}
 
-		//ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "Melee Attack: %d", get_dword_time() - ch->GetLastAttackTime());
-		//		if (!battle_distance_valid(ch, victim)) {
-		//			return BATTLE_NONE;
-		//		}
 	}
 #endif
-
-	if (test_server && ecs::PlayerRuntime::IsPC(character))
-		LOG_TRACE("battle_melee_attack : [{}] attack to [{}]", ecs::PlayerRuntime::GetName(character).data(), ecs::PlayerRuntime::GetName(victim).data());
-
-	if (!pkVictim || ch == pkVictim)
-	{
-		return BATTLE_NONE;
-	}
 
 	if (test_server && ecs::PlayerRuntime::IsPC(character))
 		LOG_TRACE("battle_melee_attack : [{}] attack to [{}]", ecs::PlayerRuntime::GetName(character).data(), ecs::PlayerRuntime::GetName(victim).data());
@@ -188,26 +193,23 @@ int battle_melee_attack(entt::entity character, entt::entity victim)
 		return BATTLE_NONE;
 	}
 
-	if (test_server && ecs::PlayerRuntime::IsPC(character))
-		LOG_TRACE("battle_melee_attack : [{}] attack to [{}]", ecs::PlayerRuntime::GetName(character).data(), ecs::PlayerRuntime::GetName(victim).data());
-
 	// �A�� A1A�
 	int distance = DISTANCE_APPROX(ecs::PlayerRuntime::GetX(character) - ecs::PlayerRuntime::GetX(victim), ecs::PlayerRuntime::GetY(character) - ecs::PlayerRuntime::GetY(victim));
 
-	if (!pkVictim->IsBuilding())
+	if (!HasCharacterType(victim, CHAR_TYPE_BUILDING))
 	{
 		int max = 300;
 
 		if (false == ecs::PlayerRuntime::IsPC(character))
 		{
 			// ��1oA�A� �a?i ��1oA� �o�� �A���� ��?�
-			max = (int)(ch->GetMobAttackRange() * 1.15f);
+			max = (int)(CombatSystem::GetMobAttackRange(character) * 1.15f);
 		}
 		else
 		{
 			// PCAI �a?i ���! melee ��AI �a?i ��A� �o�� �A���! Aִ� �o�� �A��
-			if (false == ecs::PlayerRuntime::IsPC(victim) && BATTLE_TYPE_MELEE == pkVictim->GetMobBattleType())
-				max = MAX(300, (int)(pkVictim->GetMobAttackRange() * 1.15f));
+			if (false == ecs::PlayerRuntime::IsPC(victim) && BATTLE_TYPE_MELEE == CombatSystem::GetMobBattleType(victim))
+				max = MAX(300, (int)(CombatSystem::GetMobAttackRange(victim) * 1.15f));
 		}
 
 #ifdef __DEFENSE_WAVE__
@@ -235,13 +237,16 @@ int battle_melee_attack(entt::entity character, entt::entity victim)
 	}
 #endif
 
+    if (!IsBattlePair(character, victim))
+        return BATTLE_NONE;
 	ecs::PlayerRuntime::SetPosition(character, POS_FIGHTING);
-	ch->SetVictim(victim);
+	CombatSystem::SetVictim(character, victim);
 
-	const PIXEL_POSITION& vpos = pkVictim->GetXYZ();
-	ch->SetRotationToXY(vpos.x, vpos.y);
+	ecs::MovementSystem::SetRotation(character, GetDegreeFromPositionXY(
+        ecs::PlayerRuntime::GetX(character), ecs::PlayerRuntime::GetY(character),
+        ecs::PlayerRuntime::GetX(victim), ecs::PlayerRuntime::GetY(victim)));
 
-	int dam;
+	int dam = 0;
 	int ret = battle_hit(character, victim, dam);
 	return (ret);
 }
@@ -250,8 +255,10 @@ int battle_melee_attack(entt::entity character, entt::entity victim)
 // ???? GET_BATTLE_VICTIM?? NULL?? ????? ???T?? j?? ??U??.
 void battle_end_ex(entt::entity character)
 {
-	LPCHARACTER ch = ecs::LegacyCharOf(character);
-	if (ch->IsPosition(POS_FIGHTING))
+	if (!IsBattleCharacter(character))
+        return;
+    const auto* state = g_registry.try_get<ecs::CharacterRuntimeFlagsComponent>(character);
+    if (state && state->position == POS_FIGHTING)
 		ecs::PlayerRuntime::SetPosition(character, POS_STANDING);
 }
 
@@ -273,14 +280,19 @@ int CalcBattleDamage(int iDam, int iAttackerLev, int iVictimLev)
 
 int CalcMagicDamageWithValue(int iDam, entt::entity attacker, entt::entity victim)
 {
+    if (!IsBattlePair(attacker, victim))
+        return 0;
 	return CalcBattleDamage(iDam, ecs::PointSystem::GetLevel(attacker), ecs::PointSystem::GetLevel(victim));
 }
 
 int CalcMagicDamage(entt::entity attacker, entt::entity victim)
 {
+    if (!IsBattlePair(attacker, victim))
+        return 0;
 	int iDam = 0;
 
-	if (ecs::PlayerRuntime::IsNPC(attacker))
+    // Legacy IsNPC meant every non-PC, including TagMonster and TagStone.
+	if (!ecs::PlayerRuntime::IsPC(attacker))
 	{
 		iDam = CalcMeleeDamage(attacker, victim, false, false);
 	}
@@ -292,8 +304,8 @@ int CalcMagicDamage(entt::entity attacker, entt::entity victim)
 
 float CalcAttackRating(entt::entity attacker, entt::entity victim, bool bIgnoreTargetRating)
 {
-	LPCHARACTER pkAttacker = ecs::LegacyCharOf(attacker);
-	LPCHARACTER pkVictim = ecs::LegacyCharOf(victim);
+    if (!IsBattlePair(attacker, victim))
+        return 0;
 	int iARSrc;
 	int iERSrc;
 
@@ -321,20 +333,20 @@ float CalcAttackRating(entt::entity attacker, entt::entity victim, bool bIgnoreT
 
 int CalcAttBonus(entt::entity attacker, entt::entity victim, int iAtk)
 {
-	LPCHARACTER pkAttacker = ecs::LegacyCharOf(attacker);
-	LPCHARACTER pkVictim = ecs::LegacyCharOf(victim);
+    if (!IsBattlePair(attacker, victim))
+        return 0;
 	// PvP???? ????????????
 	if (!ecs::PlayerRuntime::IsPC(victim))
-		iAtk += pkAttacker->GetMarriageBonus(UNIQUE_ITEM_MARRIAGE_ATTACK_BONUS);
+		iAtk += ecs::SocialSystem::GetMarriageBonus(attacker, UNIQUE_ITEM_MARRIAGE_ATTACK_BONUS);
 
 	// PvP???? ????????????
 	if (!ecs::PlayerRuntime::IsPC(attacker))
 	{
-		int iReduceDamagePct = pkVictim->GetMarriageBonus(UNIQUE_ITEM_MARRIAGE_TRANSFER_DAMAGE);
+		int iReduceDamagePct = ecs::SocialSystem::GetMarriageBonus(victim, UNIQUE_ITEM_MARRIAGE_TRANSFER_DAMAGE);
 		iAtk = iAtk * (100 + iReduceDamagePct) / 100;
 	}
 
-	if (ecs::PlayerRuntime::IsNPC(attacker) && ecs::PlayerRuntime::IsPC(victim))
+	if (!ecs::PlayerRuntime::IsPC(attacker) && ecs::PlayerRuntime::IsPC(victim))
 	{
 		iAtk = (iAtk * CHARACTER_MANAGER::instance().GetMobDamageRate(attacker)) / 100;
 	}
@@ -381,7 +393,7 @@ int CalcAttBonus(entt::entity attacker, entt::entity victim, int iAtk)
 		if (ecs::PlayerRuntime::IsRaceFlag(victim, RACE_FLAG_ATT_DARK))
 			iAtk += (iAtk * ecs::PointSystem::Get(attacker, POINT_ATTBONUS_DARK)) / 100;
 #endif
-		if (pkVictim->GetCharType() == CHAR_TYPE_STONE) {
+		if (HasCharacterType(victim, CHAR_TYPE_STONE)) {
 			iAtk += (iAtk * ecs::PointSystem::Get(attacker, POINT_ATTBONUS_METIN)) / 100;
 		}
 		else {
@@ -390,12 +402,12 @@ int CalcAttBonus(entt::entity attacker, entt::entity victim, int iAtk)
 		}
 
 #ifdef ENABLE_NO_ATTBONUS_MONSTER_FOR_STONES
-		if (pkVictim->GetCharType() != CHAR_TYPE_STONE) {
+		if (!HasCharacterType(victim, CHAR_TYPE_STONE)) {
 			iAtk += (iAtk * ecs::PointSystem::Get(attacker, POINT_ATTBONUS_MONSTER)) / 100;
 		}
 #else
 #ifdef ENABLE_MAP1_SKILL_MOB__disable
-		if (!(pkVictim && pkVictim->IsMonster() && ecs::PlayerRuntime::GetRaceNum(victim) == 136 && pkAttacker->IsSkillHit()))
+		if (!(ecs::PlayerRuntime::IsMonster(victim) && ecs::PlayerRuntime::GetRaceNum(victim) == 136 && CombatSystem::IsSkillHit(attacker)))
 		{
 			iAtk += (iAtk * ecs::PointSystem::Get(attacker, POINT_ATTBONUS_MONSTER)) / 100;
 		}
@@ -488,7 +500,7 @@ int CalcAttBonus(entt::entity attacker, entt::entity victim, int iAtk)
 	//[ mob -> PC ] ???? ??? ??? ????
 	//2013/01/17
 	//???? ??????? ???????? 30%?? ?????? ??g???? ?????? ?????.
-	if (ecs::PlayerRuntime::IsNPC(attacker) && ecs::PlayerRuntime::IsPC(victim))
+	if (!ecs::PlayerRuntime::IsPC(attacker) && ecs::PlayerRuntime::IsPC(victim))
 	{
 #ifdef ENABLE_NEW_BONUS_TALISMAN
 		iAtk -= (iAtk * 30 * ecs::PointSystem::Get(victim, POINT_DEF_TALISMAN))		/ 10000;
@@ -519,7 +531,7 @@ void Item_GetDamage(entt::entity item, int* pdamMin, int* pdamMax)
 	*pdamMin = 0;
 	*pdamMax = 1;
 
-	if (item == entt::null)
+	if (!ItemSystem::IsValidItem(item))
 		return;
 
 	switch (ItemSystem::GetItemType(item))
@@ -538,8 +550,8 @@ void Item_GetDamage(entt::entity item, int* pdamMin, int* pdamMax)
 
 int CalcMeleeDamage(entt::entity attacker, entt::entity victim, bool bIgnoreDefense, bool bIgnoreTargetRating)
 {
-	LPCHARACTER pkAttacker = ecs::LegacyCharOf(attacker);
-	LPCHARACTER pkVictim = ecs::LegacyCharOf(victim);
+    if (!IsBattlePair(attacker, victim))
+        return 0;
 	const entt::entity weapon = ItemSystem::GetWearItem(attacker, WEAR_WEAPON);
 	bool bPolymorphed = AffectSystem::IsPolymorphed(attacker);
 
@@ -601,10 +613,10 @@ int CalcMeleeDamage(entt::entity attacker, entt::entity victim, bool bIgnoreDefe
 		Item_GetDamage(weapon, &iDamMin, &iDamMax);
 		// END_OF_MONKEY_ROD_ATTACK_BUG_FIX
 	}
-	else if (ecs::PlayerRuntime::IsNPC(attacker))
+	else if (!ecs::PlayerRuntime::IsPC(attacker))
 	{
-		iDamMin = pkAttacker->GetMobDamageMin();
-		iDamMax = pkAttacker->GetMobDamageMax();
+		iDamMin = CombatSystem::GetMobDamageMin(attacker);
+		iDamMax = CombatSystem::GetMobDamageMax(attacker);
 	}
 
 	iDam = number(iDamMin, iDamMax) * 2;
@@ -641,11 +653,11 @@ int CalcMeleeDamage(entt::entity attacker, entt::entity victim, bool bIgnoreDefe
 		iDef = (ecs::PointSystem::Get(victim, POINT_DEF_GRADE) * (100 + ecs::PointSystem::Get(victim, POINT_DEF_BONUS)) / 100);
 
 		if (!ecs::PlayerRuntime::IsPC(attacker))
-			iDef += pkVictim->GetMarriageBonus(UNIQUE_ITEM_MARRIAGE_DEFENSE_BONUS);
+			iDef += ecs::SocialSystem::GetMarriageBonus(victim, UNIQUE_ITEM_MARRIAGE_DEFENSE_BONUS);
 	}
 
-	if (ecs::PlayerRuntime::IsNPC(attacker))
-		iAtk = (int) (iAtk * pkAttacker->GetMobDamageMultiply());
+	if (!ecs::PlayerRuntime::IsPC(attacker))
+		iAtk = (int) (iAtk * CombatSystem::GetMobDamageMultiplier(attacker));
 
 	iDam = MAX(0, iAtk - iDef);
 
@@ -664,10 +676,10 @@ int CalcMeleeDamage(entt::entity attacker, entt::entity victim, bool bIgnoreDefe
 		DEBUG_iPureAtk = DEBUG_iLV + DEBUG_iST + DEBUG_iWP+DEBUG_iDamBonus;
 		DEBUG_iPureDam = iAtk - iDef;
 
-		if (ecs::PlayerRuntime::IsNPC(attacker))
+		if (!ecs::PlayerRuntime::IsPC(attacker))
 		{
-			snprintf(szGradeAtkBonus, sizeof(szGradeAtkBonus), "=%d*%.1f", DEBUG_iPureAtk, pkAttacker->GetMobDamageMultiply());
-			DEBUG_iPureAtk = int(DEBUG_iPureAtk * pkAttacker->GetMobDamageMultiply());
+			snprintf(szGradeAtkBonus, sizeof(szGradeAtkBonus), "=%d*%.1f", DEBUG_iPureAtk, CombatSystem::GetMobDamageMultiplier(attacker));
+			DEBUG_iPureAtk = int(DEBUG_iPureAtk * CombatSystem::GetMobDamageMultiplier(attacker));
 		}
 
 		if (DEBUG_iDamBonus != 0)
@@ -716,7 +728,8 @@ int CalcMeleeDamage(entt::entity attacker, entt::entity victim, bool bIgnoreDefe
 
 int CalcArrowDamage(entt::entity attacker, entt::entity victim, entt::entity bow, entt::entity arrow, bool bIgnoreDefense)
 {
-	LPCHARACTER pkAttacker = ecs::LegacyCharOf(attacker);
+    if (!IsBattlePair(attacker, victim) || !ItemSystem::IsValidItem(bow) || !ItemSystem::IsValidItem(arrow))
+        return 0;
 	if (bow == entt::null || ItemSystem::GetItemType(bow) != ITEM_WEAPON || ItemSystem::GetItemSubType(bow) != WEAPON_BOW)
 		return 0;
 
@@ -758,8 +771,8 @@ int CalcArrowDamage(entt::entity attacker, entt::entity victim, entt::entity bow
 	if (!bIgnoreDefense)
 		iDef = (ecs::PointSystem::Get(victim, POINT_DEF_GRADE) * (100 + ecs::PointSystem::Get(attacker, POINT_DEF_BONUS)) / 100);
 
-	if (ecs::PlayerRuntime::IsNPC(attacker))
-		iAtk = (int) (iAtk * pkAttacker->GetMobDamageMultiply());
+	if (!ecs::PlayerRuntime::IsPC(attacker))
+		iAtk = (int) (iAtk * CombatSystem::GetMobDamageMultiplier(attacker));
 
 	iDam = MAX(0, iAtk - iDef);
 
@@ -783,43 +796,47 @@ int CalcArrowDamage(entt::entity attacker, entt::entity victim, entt::entity bow
 
 void NormalAttackAffect(entt::entity attacker, entt::entity victim)
 {
-	LPCHARACTER pkVictim = ecs::LegacyCharOf(victim);
+    if (!IsBattlePair(attacker, victim))
+        return;
 	// ?? ?????? U?????? U?? �??
 	if (ecs::PointSystem::Get(attacker, POINT_POISON_PCT) && !AffectSystem::IsAffectFlag(victim, AFF_POISON))
 	{
 		if (number(1, 100) <= ecs::PointSystem::Get(attacker, POINT_POISON_PCT))
-			pkVictim->AttackedByPoison(attacker);
+			AffectSystem::ApplyPoison(victim, attacker);
 	}
 #ifdef ENABLE_WOLFMAN_CHARACTER
+    if (!IsBattlePair(attacker, victim))
+        return;
 	if (ecs::PointSystem::Get(attacker, POINT_BLEEDING_PCT) && !AffectSystem::IsAffectFlag(victim, AFF_BLEEDING))
 	{
 		if (number(1, 100) <= ecs::PointSystem::Get(attacker, POINT_BLEEDING_PCT))
-			pkVictim->AttackedByBleeding(attacker);
+			AffectSystem::ApplyBleeding(victim, attacker);
 	}
 #endif
+    if (!IsBattlePair(attacker, victim))
+        return;
 	int iStunDuration = 2;
 	if (ecs::PlayerRuntime::IsPC(attacker) && !ecs::PlayerRuntime::IsPC(victim))
 		iStunDuration = 4;
 
 	AttackAffect(attacker, victim, POINT_STUN_PCT, IMMUNE_STUN,  AFFECT_STUN, POINT_NONE,        0, AFF_STUN, iStunDuration, "STUN");
+    if (!IsBattlePair(attacker, victim))
+        return;
 	AttackAffect(attacker, victim, POINT_SLOW_PCT, IMMUNE_SLOW,  AFFECT_SLOW, POINT_MOV_SPEED, -30, AFF_SLOW, 20,		"SLOW");
 }
 
 int battle_hit(entt::entity attacker, entt::entity victim, int & iRetDam)
 {
-	LPCHARACTER pkAttacker = ecs::LegacyCharOf(attacker);
-	LPCHARACTER pkVictim = ecs::LegacyCharOf(victim);
+    iRetDam = 0;
+    if (!IsBattlePair(attacker, victim) || attacker == victim)
+        return BATTLE_NONE;
 #if defined(ENABLE_CHECK_BATTLE)
-	if (ecs::PlayerRuntime::IsPC(attacker) && pkVictim) {
-		const bool bAttacking = (get_dword_time() - pkAttacker->GetLastAttackTime()) < (pkAttacker->IsRiding() ? 800 : 750);
+	if (ecs::PlayerRuntime::IsPC(attacker)) {
+		const bool bAttacking = (get_dword_time() - CombatSystem::GetLastAttackTime(attacker)) < (MountSystem::IsRiding(attacker) ? 800 : 750);
 		if (!bAttacking) {
 			return BATTLE_NONE;
 		}
 
-//ecs::ChatSystem::Send(attacker, CHAT_TYPE_INFO, "Melee Attack: %d", get_dword_time() - pkAttacker->GetLastAttackTime());
-//		if (!battle_distance_valid(pkAttacker, pkVictim)) {
-//			return BATTLE_NONE;
-//		}
 	}
 #endif
 
@@ -833,6 +850,8 @@ int battle_hit(entt::entity attacker, entt::entity victim, int & iRetDam)
 		return (BATTLE_DAMAGE);
 
 	NormalAttackAffect(attacker, victim);
+    if (!IsBattlePair(attacker, victim))
+        return BATTLE_NONE;
 
 	// ?????? ???
 	//iDam = iDam * (100 - ecs::PointSystem::Get(victim, POINT_RESIST)) / 100;
@@ -955,132 +974,103 @@ int battle_hit(entt::entity attacker, entt::entity victim, int & iRetDam)
 
 
 	//???????? ?????? ????. (2011?? 2?? ???? ???�????? ????.)
-	float attMul = pkAttacker->GetAttMul();
+	float attMul = CombatSystem::GetAttackMultiplier(attacker);
 	float tempIDam = iDam;
 	iDam = attMul * tempIDam + 0.5f;
 
 #ifdef ENABLE_SOUL_SYSTEM
-	iDam += pkAttacker->GetSoulItemDamage(victim, iDam, RED_SOUL);
+    // Soul consumption is still a legacy operation. Resolve only at this
+    // boundary, never retain the pointer across affect callbacks.
+    if (ecs::PlayerRuntime::IsPC(attacker))
+    {
+        auto* legacyAttacker = ecs::LegacyCharOf(attacker);
+        if (!legacyAttacker)
+            return BATTLE_NONE;
+        iDam += legacyAttacker->GetSoulItemDamage(victim, iDam, RED_SOUL);
+    }
 #endif
 
 	iRetDam = iDam;
 
 	//PROF_UNIT puDam("Dam");
-	if (pkVictim->Damage(attacker, iDam, DAMAGE_TYPE_NORMAL))
+    if (!IsBattlePair(attacker, victim))
+        return BATTLE_NONE;
+    // The complete Damage pipeline has not yet been migrated.
+    auto* legacyVictim = ecs::LegacyCharOf(victim);
+    if (!legacyVictim)
+        return BATTLE_NONE;
+	if (legacyVictim->Damage(attacker, iDam, DAMAGE_TYPE_NORMAL))
 		return (BATTLE_DEAD);
-//#ifdef ENABLE_MAP1_SKILL_MOB
-//	if (ecs::PlayerRuntime::IsPC(attacker) /*&& pkAttacker->IsSkillHit()*/
-//		&& ecs::PlayerRuntime::GetRaceNum(victim) == 136)
-//	{
-//		std::unique_ptr<SQLMsg> pMsg(DBManager::instance().DirectQuery(
-//			"UPDATE player.player "
-//			"SET map1_skillmob = GREATEST(map1_skillmob, %d) "
-//			"WHERE id=%u",
-//			iRetDam, ecs::PlayerRuntime::GetPlayerID(attacker)));
-//
-//		///*pkAttacker->*/viChatPacket(CHAT_TYPE_TALKING, "You hit a Skill Mob for %d damage!", iRetDam);
-//		ecs::ChatSystem::Send(attacker, CHAT_TYPE_INFO, "You hit a Skill Mob for %d damage!", iRetDam);
-//
-//
-//
-//
-//		LOG_TRACE("DEBUG MAP1_SKILL_MOB: attacker={} (id={}) victimVnum={} dmg={} skillhit={}",
-//			ecs::PlayerRuntime::GetName(attacker).data(),
-//			ecs::PlayerRuntime::GetPlayerID(attacker),
-//			ecs::PlayerRuntime::GetRaceNum(victim),
-//			iRetDam,
-//			pkAttacker->IsSkillHit());
-//
-//	}
-//#endif
+
 
 	return (BATTLE_DAMAGE);
 }
 
 #ifdef ENABLE_ANTICHEAT
-int32_t GET_ATTACK_SPEED(entt::entity character) {
-	LPCHARACTER ch = ecs::LegacyCharOf(character);
-	if (!ch) {
-		return 1000;
-	}
-
-	int32_t default_bonus = 100;
-	int32_t riding_bonus = ch->IsRiding() ? 50 : 0;
-	int32_t ani_speed = ani_attack_speed(character);
-	int32_t real_speed = (ani_speed * 100) / (default_bonus + ecs::PointSystem::Get(character, POINT_ATT_SPEED) + riding_bonus);
-
-	const entt::entity item = ItemSystem::GetWearItem(character, WEAR_WEAPON);
-	return ItemSystem::IsValidItem(item) && ItemSystem::GetItemSubType(item) == WEAPON_DAGGER
-		? real_speed / 2
-		: real_speed;
+int32_t GET_ATTACK_SPEED(entt::entity character)
+{
+    if (!IsBattleCharacter(character))
+        return 1000;
+    const int64_t denominator = 100 + ecs::PointSystem::Get(character, POINT_ATT_SPEED) +
+        (MountSystem::IsRiding(character) ? 50 : 0);
+    if (denominator <= 0)
+        return 1000;
+    int64_t speed = static_cast<int64_t>(ani_attack_speed(character)) * 100 / denominator;
+    const auto weapon = ItemSystem::GetWearItem(character, WEAR_WEAPON);
+    if (ItemSystem::IsValidItem(weapon) && ItemSystem::GetItemSubType(weapon) == WEAPON_DAGGER)
+        speed /= 2;
+    return static_cast<int32_t>(std::clamp<int64_t>(speed, 0, INT32_MAX));
 }
 
-void SET_ATTACK_TIME(entt::entity character, entt::entity victim, int32_t current_time) {
-	LPCHARACTER ch = ecs::LegacyCharOf(character);
-	if (ecs::PlayerRuntime::IsValid(victim) && ch && ecs::PlayerRuntime::IsPC(character)) {
-		ch->GetAttackLogRef().dwVID = ecs::PlayerRuntime::GetPacketVID(victim);
-		ch->GetAttackLogRef().dwTime = current_time;
-	}
+void SET_ATTACK_TIME(entt::entity character, entt::entity victim, int32_t current_time)
+{
+    if (!IsBattlePair(character, victim) || !ecs::PlayerRuntime::IsPC(character))
+        return;
+    auto& audit = g_registry.get_or_emplace<ecs::AttackAudit>(character);
+    audit.target = victim;
+    audit.attackTime = static_cast<uint32_t>(current_time);
 }
 
-void SET_ATTACKED_TIME(entt::entity character, entt::entity victim, int32_t current_time) {
-	LPCHARACTER ch = ecs::LegacyCharOf(character);
-	if (ecs::PlayerRuntime::IsValid(victim) && ch && ecs::PlayerRuntime::IsPC(character)) {
-		pkVictim->GetAttackedLogRef().dwPID = (ecs::PlayerRuntime::GetPlayerID(character));
-		pkVictim->GetAttackedLogRef().dwAttackedTime = current_time;
-	}
+void SET_ATTACKED_TIME(entt::entity character, entt::entity victim, int32_t current_time)
+{
+    if (!IsBattlePair(character, victim) || !ecs::PlayerRuntime::IsPC(character))
+        return;
+    auto& audit = g_registry.get_or_emplace<ecs::AttackAudit>(victim);
+    audit.attacker = character;
+    audit.attackedTime = static_cast<uint32_t>(current_time);
 }
 
-bool IS_SPEED_HACK(entt::entity character, entt::entity victim, int32_t current_time) {
-	LPCHARACTER ch = ecs::LegacyCharOf(character);
-	LPCHARACTER pkVictim = ecs::LegacyCharOf(victim);
-	if (pkVictim && ch && ecs::PlayerRuntime::IsPC(character)) {
-		if (ch->GetAttackLogRef().dwVID == ecs::PlayerRuntime::GetPacketVID(victim))
-		{
-			if (current_time - ch->GetAttackLogRef().dwTime < GET_ATTACK_SPEED(character))
-			{
-				INCREASE_SPEED_HACK_COUNT(ch);
-
-				if (test_server)
-				{
-					LOG_TRACE("{} attack hack! time (delta, limit)=({}, {}) hack_count {}", ecs::PlayerRuntime::GetName(character).data(), current_time - ch->GetAttackLogRef().dwTime, GET_ATTACK_SPEED(character), ch->GetSpeedHackCount());
-
-					ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "%s attack hack! time (delta, limit)=(%u, %u) hack_count %d",
-							ecs::PlayerRuntime::GetName(character).data(),
-							current_time - ch->GetAttackLogRef().dwTime,
-							GET_ATTACK_SPEED(character),
-							ch->GetSpeedHackCount());
-				}
-
-				SET_ATTACK_TIME(character, victim, current_time);
-				SET_ATTACKED_TIME(character, victim, current_time);
-				return true;
-			}
-		}
-
-		SET_ATTACK_TIME(character, victim, current_time);
-
-		if (pkVictim->GetAttackedLogRef().dwPID == (ecs::PlayerRuntime::GetPlayerID(character))) {
-			if (current_time - pkVictim->GetAttackedLogRef().dwAttackedTime < GET_ATTACK_SPEED(character)) {
-				INCREASE_SPEED_HACK_COUNT(ch);
-				if (ch->GetSpeedHackCount() > 30) {
-					ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "You %s have been disconnected for hacking.", ecs::PlayerRuntime::GetName(character).data());
-					//std::unique_ptr<SQLMsg> msg(DBManager::instance().DirectQuery("UPDATE account.account SET status= 'BLOCK' WHERE id = %d", ecs::PlayerRuntime::GetDesc(character)->GetAccountTable().id));
-					ecs::PlayerRuntime::GetDesc(character)->DelayedDisconnect(3);
-				}
-
-				SET_ATTACKED_TIME(character, victim, current_time);
-				return true;
-			}
-		}
-
-		SET_ATTACKED_TIME(character, victim, current_time);
-		return false;
-	}
-
-	return false;
+bool IS_SPEED_HACK(entt::entity character, entt::entity victim, int32_t current_time)
+{
+    if (!IsBattlePair(character, victim) || character == victim || !ecs::PlayerRuntime::IsPC(character))
+        return false;
+    const auto now = static_cast<uint32_t>(current_time);
+    const auto limit = static_cast<uint32_t>(GET_ATTACK_SPEED(character));
+    const auto* attack = g_registry.try_get<ecs::AttackAudit>(character);
+    const bool attackHack = attack && attack->target == victim && now - attack->attackTime < limit;
+    const auto* attacked = g_registry.try_get<ecs::AttackAudit>(victim);
+    const bool attackedHack = !attackHack && attacked && attacked->attacker == character &&
+        now - attacked->attackedTime < limit;
+    // Commit both logs before any notification can invalidate a component.
+    SET_ATTACK_TIME(character, victim, current_time);
+    SET_ATTACKED_TIME(character, victim, current_time);
+    if (!attackHack && !attackedHack)
+        return false;
+    auto& count = g_registry.get<ecs::AttackAudit>(character).speedHackCount;
+    if (count < INT_MAX)
+        ++count;
+    const int countSnapshot = count;
+    if (attackHack && test_server)
+        ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "%s attack hack! hack_count %d",
+            ecs::PlayerRuntime::GetName(character).data(), countSnapshot);
+    if (attackedHack && countSnapshot > 30)
+    {
+        ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "You %s have been disconnected for hacking.",
+            ecs::PlayerRuntime::GetName(character).data());
+        if (IsBattleCharacter(character))
+            if (auto* descriptor = ecs::PlayerRuntime::GetDesc(character))
+                descriptor->DelayedDisconnect(3);
+    }
+    return true;
 }
 #endif
-
-
-

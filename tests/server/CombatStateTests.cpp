@@ -14,6 +14,9 @@
 #include <functional>
 #include <iostream>
 #include <limits>
+#include "../../SRC/Server/GameServer/ecs/components/character_runtime_components.hpp"
+#include "../../SRC/Server/GameServer/ecs/systems/MovementSystem.hpp"
+#include "../../SRC/Server/GameServer/sectree.h"
 #include <stdexcept>
 #include "../../SRC/Server/GameServer/ecs/systems/ViewSystem.hpp"
 #include "../../SRC/Server/GameServer/ecs/systems/AffectSystem.hpp"
@@ -93,6 +96,19 @@ bool g_bSkillDisable = false, g_NoDropMetinStone = false;
 int passes_per_sec = 25;
 namespace C = CombatSystem;
 namespace {
+struct BattleFixture {
+    std::array<int64_t, 256> points {};
+    int level {90}, x {0}, y {0};
+    uint32_t race {0};
+    entt::entity weapon {entt::null};
+    bool riding {false};
+};
+struct WeaponFixture {
+    uint8_t type {ITEM_WEAPON}, subtype {WEAPON_SWORD};
+    std::array<int, 6> values {0, 0, 0, 10, 10, 2};
+};
+int poisonCalls = 0, bleedingCalls = 0, affectCalls = 0;
+std::function<void(entt::entity)> onPoison, onAffect;
 int checks = 0, computes = 0, packets = 0, alignmentPackets = 0;
 uint32_t tick = 1000;
 bool guild = false;
@@ -102,11 +118,14 @@ entt::entity Actor() {
     auto e = g_registry.create();
     g_registry.emplace<ecs::TagPC>(e);
     g_registry.emplace<ecs::CombatStats>(e);
+    g_registry.emplace<BattleFixture>(e);
+    g_registry.emplace<ecs::CharacterRuntimeFlagsComponent>(e).position = POS_STANDING;
     return e;
 }
 void Reset() {
     g_registry.clear(); computes = packets = alignmentPackets = 0; tick = 1000; guild = false;
     onCompute = onPacket = onAlignment = {}; passes_per_sec = 25;
+    onPoison = onAffect = {}; poisonCalls = bleedingCalls = affectCalls = 0;
 }
 void AssertActor(entt::entity e) {
     Check(g_registry.valid(e) && g_registry.any_of<ecs::TagPC, ecs::TagNPC, ecs::TagMonster, ecs::TagStone>(e), "stale/non-character service call");
@@ -267,11 +286,11 @@ void MultiplierAndValidityChecks() {
 // Unrelated leaves from the complete combat translation unit are fail-fast
 // doubles. No combat, loot, DB, quest, CHARACTER or item allocation is allowed.
 [[noreturn]] void UnexpectedService(const char* service) { throw std::runtime_error(service); }
-int MAX(int,int) { UnexpectedService(__func__); }
-int MIN(int,int) { UnexpectedService(__func__); }
-int MINMAX(int,int,int) { UnexpectedService(__func__); }
-int number_ex(int,int,char const *,int) { UnexpectedService(__func__); }
-unsigned int get_dword_time(void) { UnexpectedService(__func__); }
+int MAX(int a,int b) { return std::max(a,b); }
+int MIN(int a,int b) { return std::min(a,b); }
+int MINMAX(int a,int b,int c) { return std::clamp(b,a,c); }
+int number_ex(int a,int b,char const *,int) { Check(a <= b, "reversed random range"); return a; }
+unsigned int get_dword_time(void) { return tick; }
 void intrusive_ptr_add_ref(event *) { UnexpectedService(__func__); }
 void intrusive_ptr_release(event *) { UnexpectedService(__func__); }
 boost::intrusive_ptr<event> event_create_ex(int (*)(boost::intrusive_ptr<event>,int),event_info_data *,int) { UnexpectedService(__func__); }
@@ -282,45 +301,45 @@ void ecs::ViewSystem::PacketView(entt::entity,void const *,int,entt::entity) { U
 DESC * ecs::PlayerRuntime::GetDesc(entt::entity) { UnexpectedService(__func__); }
 unsigned char ecs::PlayerRuntime::GetEmpire(entt::entity) { UnexpectedService(__func__); }
 unsigned int ecs::PlayerRuntime::GetPacketVID(entt::entity) { UnexpectedService(__func__); }
-unsigned int ecs::PlayerRuntime::GetRaceNum(entt::entity) { UnexpectedService(__func__); }
-bool ecs::PlayerRuntime::IsRaceFlag(entt::entity,unsigned int) { UnexpectedService(__func__); }
+unsigned int ecs::PlayerRuntime::GetRaceNum(entt::entity e) { AssertActor(e); return g_registry.get<BattleFixture>(e).race; }
+bool ecs::PlayerRuntime::IsRaceFlag(entt::entity e,unsigned int) { AssertActor(e); return false; }
 int64_t ecs::PlayerRuntime::GetHP(entt::entity) { UnexpectedService(__func__); }
 int ecs::PlayerRuntime::GetHPPct(entt::entity) { UnexpectedService(__func__); }
 unsigned int ecs::PlayerRuntime::GetAIFlag(entt::entity) { UnexpectedService(__func__); }
-unsigned char ecs::PlayerRuntime::GetJob(entt::entity) { UnexpectedService(__func__); }
-int ecs::PlayerRuntime::GetMapIndex(entt::entity) { UnexpectedService(__func__); }
-int ecs::PlayerRuntime::GetX(entt::entity) { UnexpectedService(__func__); }
-int ecs::PlayerRuntime::GetY(entt::entity) { UnexpectedService(__func__); }
-bool ecs::PlayerRuntime::IsValid(entt::entity) { UnexpectedService(__func__); }
-bool ecs::PlayerRuntime::IsPC(entt::entity) { UnexpectedService(__func__); }
-bool ecs::PlayerRuntime::IsNPC(entt::entity) { UnexpectedService(__func__); }
+unsigned char ecs::PlayerRuntime::GetJob(entt::entity e) { AssertActor(e); return JOB_WARRIOR; }
+int ecs::PlayerRuntime::GetMapIndex(entt::entity e) { AssertActor(e); return 2; }
+int ecs::PlayerRuntime::GetX(entt::entity e) { AssertActor(e); return g_registry.get<BattleFixture>(e).x; }
+int ecs::PlayerRuntime::GetY(entt::entity e) { AssertActor(e); return g_registry.get<BattleFixture>(e).y; }
+bool ecs::PlayerRuntime::IsValid(entt::entity e) { return ecs::Invariants::HasAnyTypeTag(g_registry,e); }
+bool ecs::PlayerRuntime::IsPC(entt::entity e) { return IsValid(e) && g_registry.all_of<ecs::TagPC>(e); }
+bool ecs::PlayerRuntime::IsNPC(entt::entity e) { return IsValid(e) && g_registry.all_of<ecs::TagNPC>(e); }
 bool ecs::PlayerRuntime::IsGuardNPC(entt::entity) { UnexpectedService(__func__); }
 boost::intrusive_ptr<event> ecs::PlayerRuntime::GetCharEvent(entt::entity,ecs::PlayerRuntime::CharEvent) { UnexpectedService(__func__); }
 void ecs::PlayerRuntime::SetCharEvent(entt::entity,ecs::PlayerRuntime::CharEvent,boost::intrusive_ptr<event>) { UnexpectedService(__func__); }
 void ecs::PlayerRuntime::CancelCharEvent(entt::entity,ecs::PlayerRuntime::CharEvent) { UnexpectedService(__func__); }
-void ecs::PlayerRuntime::SetPosition(entt::entity,int) { UnexpectedService(__func__); }
+void ecs::PlayerRuntime::SetPosition(entt::entity e,int p) { AssertActor(e); g_registry.get<ecs::CharacterRuntimeFlagsComponent>(e).position = p; }
 void ecs::PlayerRuntime::StartRecoveryEvent(entt::entity) { UnexpectedService(__func__); }
 bool ecs::PlayerRuntime::IsStone(entt::entity) { UnexpectedService(__func__); }
-bool ecs::PlayerRuntime::IsMonster(entt::entity) { UnexpectedService(__func__); }
+bool ecs::PlayerRuntime::IsMonster(entt::entity e) { return IsValid(e) && g_registry.all_of<ecs::TagMonster>(e); }
 unsigned char ecs::PlayerRuntime::GetMobRank(entt::entity) { UnexpectedService(__func__); }
 bool ecs::PlayerRuntime::SetQuestNPCID(entt::entity,unsigned int) { UnexpectedService(__func__); }
 bool ecs::PlayerRuntime::UpdateMissionProgress(entt::entity,unsigned int,unsigned int,unsigned int,unsigned int,bool) { UnexpectedService(__func__); }
 int64_t ecs::PlayerRuntime::GetRankPoints(entt::entity,int) { UnexpectedService(__func__); }
 bool ecs::PlayerRuntime::SetRankPoints(entt::entity,int,int64_t) { UnexpectedService(__func__); }
 void SendAffectAddPacket(DESC *,CAffect *) { UnexpectedService(__func__); }
-bool AffectSystem::IsImmune(entt::entity,unsigned int) { UnexpectedService(__func__); }
+bool AffectSystem::IsImmune(entt::entity e,unsigned int) { AssertActor(e); return false; }
 CAffect * AffectSystem::FindAffect(entt::entity,unsigned int,unsigned char) { UnexpectedService(__func__); }
 std::vector<AffectSystem::AffectLease> AffectSystem::Snapshot(entt::entity) {
     UnexpectedService(__func__);
 }
-bool AffectSystem::IsAffectFlag(entt::entity,unsigned int) { UnexpectedService(__func__); }
-bool AffectSystem::AddAffect(entt::entity,unsigned int,unsigned char,int,unsigned int,int,int,bool,bool) { UnexpectedService(__func__); }
+bool AffectSystem::IsAffectFlag(entt::entity e,unsigned int) { AssertActor(e); return false; }
+bool AffectSystem::AddAffect(entt::entity e,unsigned int,unsigned char,int,unsigned int,int,int,bool,bool) { AssertActor(e); ++affectCalls; const auto callback=onAffect; if(callback) callback(e); return true; }
 bool AffectSystem::RemoveAffect(entt::entity,unsigned int) { UnexpectedService(__func__); }
-bool AffectSystem::IsPolymorphed(entt::entity) { UnexpectedService(__func__); }
-int64_t ecs::PointSystem::Get(entt::entity,unsigned char) { UnexpectedService(__func__); }
+bool AffectSystem::IsPolymorphed(entt::entity e) { AssertActor(e); return false; }
+int64_t ecs::PointSystem::Get(entt::entity e,unsigned char p) { AssertActor(e); return g_registry.get<BattleFixture>(e).points[p]; }
 int ecs::PointSystem::GetMaxHP(entt::entity) { UnexpectedService(__func__); }
 int ecs::PointSystem::GetMaxSP(entt::entity) { UnexpectedService(__func__); }
-int ecs::PointSystem::GetLevel(entt::entity) { UnexpectedService(__func__); }
+int ecs::PointSystem::GetLevel(entt::entity e) { AssertActor(e); return g_registry.get<BattleFixture>(e).level; }
 void ecs::PointSystem::Change(entt::entity,unsigned char,int64_t,bool,bool,bool) { UnexpectedService(__func__); }
 CParty * ecs::SocialSystem::GetParty(entt::entity) { UnexpectedService(__func__); }
 int ecs::QuestSystem::GetFlag(entt::entity,std::string_view) { UnexpectedService(__func__); }
@@ -455,15 +474,15 @@ char const * get_table_postfix(void) { UnexpectedService(__func__); }
 entt::entity ItemSystem::GetInventoryItem(entt::entity,unsigned short) { UnexpectedService(__func__); }
 entt::entity ItemSystem::GetExtraInventoryItem(entt::entity,unsigned short) { UnexpectedService(__func__); }
 entt::entity ItemSystem::FindSpecifyItem(entt::entity,unsigned int,bool) { UnexpectedService(__func__); }
-entt::entity ItemSystem::GetWearItem(entt::entity,unsigned char) { UnexpectedService(__func__); }
+entt::entity ItemSystem::GetWearItem(entt::entity e,unsigned char) { AssertActor(e); return g_registry.get<BattleFixture>(e).weapon; }
 bool ItemSystem::EquipItemEcs(entt::entity,entt::entity,int) { UnexpectedService(__func__); }
-bool ItemSystem::IsValidItem(entt::entity) { UnexpectedService(__func__); }
+bool ItemSystem::IsValidItem(entt::entity e) { return e != entt::null && g_registry.valid(e) && g_registry.all_of<WeaponFixture>(e); }
 bool ItemSystem::IsDragonSoulItem(entt::entity) { UnexpectedService(__func__); }
 bool ItemSystem::IsExtraItem(entt::entity) { UnexpectedService(__func__); }
 unsigned int ItemSystem::GetItemVnum(entt::entity) { UnexpectedService(__func__); }
 unsigned int ItemSystem::GetItemOriginalVnum(entt::entity) { UnexpectedService(__func__); }
-unsigned char ItemSystem::GetItemType(entt::entity) { UnexpectedService(__func__); }
-unsigned char ItemSystem::GetItemSubType(entt::entity) { UnexpectedService(__func__); }
+unsigned char ItemSystem::GetItemType(entt::entity e) { Check(IsValidItem(e), "invalid item type read"); return g_registry.get<WeaponFixture>(e).type; }
+unsigned char ItemSystem::GetItemSubType(entt::entity e) { Check(IsValidItem(e), "invalid item subtype read"); return g_registry.get<WeaponFixture>(e).subtype; }
 unsigned int ItemSystem::GetItemCount(entt::entity) { UnexpectedService(__func__); }
 char const * ItemSystem::GetItemName(entt::entity) { UnexpectedService(__func__); }
 unsigned int ItemSystem::GetItemAntiFlag(entt::entity) { UnexpectedService(__func__); }
@@ -500,13 +519,6 @@ int CHARACTER_MANAGER::GetUserDamageRate(entt::entity) { UnexpectedService(__fun
 event_struct_ const * CHARACTER_MANAGER::CheckEventIsActive(unsigned char,unsigned char) { UnexpectedService(__func__); }
 entt::entity ITEM_MANAGER::CreateItem(unsigned int,unsigned int,unsigned int,bool,int,bool) { UnexpectedService(__func__); }
 bool ITEM_MANAGER::CreateDropItem(CHARACTER *,CHARACTER *,std::vector<entt::entity,std::allocator<entt::entity> > &) { UnexpectedService(__func__); }
-int CalcMeleeDamage(entt::entity,entt::entity,bool,bool) { UnexpectedService(__func__); }
-int CalcMagicDamage(entt::entity,entt::entity) { UnexpectedService(__func__); }
-int CalcArrowDamage(entt::entity,entt::entity,entt::entity,entt::entity,bool) { UnexpectedService(__func__); }
-bool battle_is_attackable(entt::entity,entt::entity) { UnexpectedService(__func__); }
-int battle_melee_attack(entt::entity,entt::entity) { UnexpectedService(__func__); }
-void battle_end(entt::entity) { UnexpectedService(__func__); }
-void NormalAttackAffect(entt::entity,entt::entity) { UnexpectedService(__func__); }
 bool CPVPManager::Dead(entt::entity,unsigned int) { UnexpectedService(__func__); }
 void LogManager::ItemLogEntity(entt::entity,entt::entity,char const *,char const *) { UnexpectedService(__func__); }
 void LogManager::CharLog(entt::entity,unsigned int,char const *,char const *) { UnexpectedService(__func__); }
@@ -556,9 +568,178 @@ CEasterDungeon & CEasterDungeon::instance(void) { UnexpectedService(__func__); }
 void CEasterDungeon::OnMobKilled(entt::entity,entt::entity) { UnexpectedService(__func__); }
 void Map1MassSpawnEvent_OnMobDead(unsigned int) { UnexpectedService(__func__); }
 
+
+int ecs::PointSystem::GetPolymorphPoint(entt::entity e, uint8_t p) { return static_cast<int>(Get(e,p)); }
+int ItemSystem::GetItemValue(entt::entity e, uint32_t p) { Check(IsValidItem(e), "invalid item value read"); return g_registry.get<WeaponFixture>(e).values.at(p); }
+bool AffectSystem::IsPolyMaintainStat(entt::entity e) { AssertActor(e); return false; }
+uint32_t AffectSystem::GetPolymorphVnum(entt::entity) { UnexpectedService(__func__); }
+int AffectSystem::GetPolymorphPower(entt::entity) { UnexpectedService(__func__); }
+void AffectSystem::ApplyPoison(entt::entity e,entt::entity a) {
+    AssertActor(e); AssertActor(a); ++poisonCalls; const auto callback=onPoison; if(callback) callback(e);
+}
+void AffectSystem::ApplyBleeding(entt::entity e,entt::entity a) { AssertActor(e); AssertActor(a); ++bleedingCalls; }
+bool MountSystem::IsRiding(entt::entity e) { AssertActor(e); return g_registry.get<BattleFixture>(e).riding; }
+int ecs::SocialSystem::GetMarriageBonus(entt::entity e,uint32_t,bool) { AssertActor(e); return 0; }
+LPSHOP ecs::SocialSystem::GetMyShop(entt::entity e) { AssertActor(e); return nullptr; }
+SECTREE* ecs::PlayerRuntime::GetSectree(entt::entity e) { AssertActor(e); return nullptr; }
+void ecs::MovementSystem::SetRotation(entt::entity e,float
+#ifdef ENABLE_ANCIENT_PYRAMID
+    , bool
+#endif
+) { AssertActor(e); }
+CMobInstance::CMobInstance() : m_IsBerserk(false), m_IsGodSpeed(false), m_IsRevive(false) {}
+CMob::CMob() : m_table{}, m_mobSkillInfo{} {}
+CMob::~CMob() = default;
+CHARACTER_MANAGER::CHARACTER_MANAGER() = default;
+CHARACTER_MANAGER::~CHARACTER_MANAGER() = default;
+time_t get_global_time() { UnexpectedService(__func__); }
+void CHARACTER::ProcessCheatCheck(int) { UnexpectedService(__func__); }
+const CMob* CMobManager::Get(uint32_t) { UnexpectedService(__func__); }
+int CHARACTER_MANAGER::GetMobDamageRate(entt::entity e) { AssertActor(e); return 100; }
+bool CPVPManager::CanAttack(entt::entity,entt::entity,bool) { UnexpectedService(__func__); }
+bool CArenaManager::CanAttack(entt::entity,entt::entity) { UnexpectedService(__func__); }
+uint32_t ani_attack_speed(entt::entity e) { AssertActor(e); return 1000; }
+
+namespace {
+entt::entity Weapon() {
+    const auto e=g_registry.create(); g_registry.emplace<WeaponFixture>(e); return e;
+}
+void BattleTargetChecks() {
+    Reset(); const auto e=Actor(), victim=Actor();
+    Check(C::GetVictim(e)==entt::null, "default target");
+    Check(C::GetVictimSetTime(e)==tick-3000, "default target deadline");
+    C::SetVictim(e,victim);
+    Check(C::GetVictim(e)==victim && C::GetVictimSetTime(e)==tick, "entity-only target write");
+    g_registry.get<ecs::CharacterRuntimeFlagsComponent>(e).position=POS_FIGHTING;
+    C::SetVictim(e,entt::null);
+    Check(C::GetVictim(e)==entt::null && g_registry.get<ecs::CharacterRuntimeFlagsComponent>(e).position==POS_STANDING, "clear target ends combat");
+    C::SetVictim(e,victim); g_registry.destroy(victim); const auto replacement=Actor();
+    Check(C::GetVictim(e)==entt::null, "recycled victim inherited target");
+    C::SetLastAttackTime(e,UINT32_MAX-20);
+    Check(C::GetLastAttackTime(e)==UINT32_MAX-20, "attack milliseconds lost");
+    C::SetVictim(e,replacement);
+    g_registry.emplace<ecs::CombatActiveTag>(e);
+    g_registry.emplace<ecs::LegacyCharPtr>(e,nullptr); // updater's legacy-era view gate only
+    g_registry.emplace<ecs::Health>(e).current=100;
+    g_registry.emplace<ecs::Health>(replacement).current=100;
+    CombatSystem_Update(g_registry,100);
+    Check(C::GetLastAttackTime(e)==UINT32_MAX-20 &&
+          g_registry.get<ecs::AttackCooldown>(e).lastCombatPulse==100 &&
+          g_registry.get<ecs::Health>(replacement).current==99, "combat pulse overwrote attack milliseconds");
+    C::SetSkillHit(e,true); Check(C::IsSkillHit(e), "skill-hit state not native");
+    C::SetSkillHit(e,false); Check(!C::IsSkillHit(e), "skill-hit reset");
+    const auto item=Weapon();
+    for(const auto invalid : {entt::entity{entt::null},victim,item}) {
+        C::SetVictim(invalid,replacement); C::SetLastAttackTime(invalid,42); C::SetSkillHit(invalid,true);
+        Check(C::GetVictim(invalid)==entt::null && !C::IsSkillHit(invalid), "invalid actor state");
+        Check(CalcMeleeDamage(e,invalid)==0 && CalcMagicDamage(invalid,e)==0 &&
+              CalcAttBonus(e,invalid,100)==0 && CalcAttackRating(invalid,e)==0, "invalid combat math");
+        Check(!battle_is_attackable(e,invalid) && !battle_distance_valid(e,invalid) &&
+              battle_melee_attack(invalid,e)==BATTLE_NONE, "invalid battle entry");
+        NormalAttackAffect(e,invalid);
+    }
+    Check(!g_registry.any_of<ecs::CombatTarget,ecs::AttackCooldown,ecs::SkillHitState>(item), "item gained character state");
+    g_registry.emplace<ecs::DeadTag>(replacement);
+    Check(!battle_is_attackable(e,replacement), "dead victim attackable");
+    g_registry.remove<ecs::DeadTag>(replacement);
+    g_registry.emplace<ecs::StunTag>(e);
+    Check(!battle_is_attackable(e,replacement), "stunned attacker attackable");
+}
+void BattleMathChecks() {
+    Reset(); const auto a=Actor(), v=Actor(), weapon=Weapon();
+    g_registry.get<BattleFixture>(a).points[POINT_DX]=90;
+    g_registry.get<BattleFixture>(v).points[POINT_DX]=90;
+    g_registry.get<BattleFixture>(a).points[POINT_ATT_GRADE]=100;
+    g_registry.get<BattleFixture>(v).points[POINT_DEF_GRADE]=20;
+    g_registry.get<BattleFixture>(a).weapon=weapon;
+    Check(std::abs(CalcAttackRating(a,v)-0.7f)<0.0001f && CalcAttackRating(a,v,true)==1, "attack rating changed");
+    Check(CalcMeleeDamage(a,v,true,true)==124, "weapon/refine damage changed");
+    Check(CalcMeleeDamage(a,v,false,true)==104, "defense damage changed");
+    Check(CalcMeleeDamage(a,v)==122, "rated melee damage changed");
+    g_registry.get<WeaponFixture>(weapon).subtype=WEAPON_BOW;
+    Check(CalcMeleeDamage(a,v)==0, "bow entered melee damage");
+    const auto arrow=Weapon();
+    g_registry.get<WeaponFixture>(arrow).subtype=WEAPON_ARROW;
+    Check(CalcArrowDamage(a,v,weapon,arrow)>0, "entity-only arrow damage");
+    g_registry.destroy(arrow); Check(CalcArrowDamage(a,v,weapon,arrow)==0, "stale arrow");
+    g_registry.get<BattleFixture>(a).weapon=entt::null;
+    g_registry.remove<ecs::TagPC>(a); g_registry.emplace<ecs::TagMonster>(a);
+    CMob proto {}; CMobInstance instance;
+    proto.m_table.dwDamageRange[0]=10; proto.m_table.dwDamageRange[1]=20;
+    proto.m_table.fDamMultiply=1.5f; proto.m_table.wAttackRange=200;
+    g_registry.emplace<ecs::MobDataRef>(a,&proto,&instance);
+    Check(C::GetMobDamageMin(a)==10 && C::GetMobDamageMax(a)==20 && C::GetMobAttackRange(a)==200, "mob prototype not read");
+    proto.m_table.bBattleType=BATTLE_TYPE_RANGE;
+    g_registry.get<BattleFixture>(a).points[POINT_BOW_DISTANCE]=100;
+#ifdef __DEFENSE_WAVE__
+    Check(C::GetMobAttackRange(a)==200, "ordinary defense-wave ranged mob changed");
+    g_registry.get<BattleFixture>(a).race=3960;
+    Check(C::GetMobAttackRange(a)==4300, "defense-wave ranged mob bonus");
+    g_registry.get<BattleFixture>(a).points[POINT_BOW_DISTANCE]=100000;
+    Check(C::GetMobAttackRange(a)==UINT16_MAX, "mob range wrapped");
+    proto.m_table.bBattleType=BATTLE_TYPE_MELEE;
+    g_registry.get<BattleFixture>(a).race=3950;
+    Check(C::GetMobAttackRange(a)==500, "defense-wave melee bonus");
+    g_registry.get<BattleFixture>(a).race=3953;
+    Check(C::GetMobAttackRange(a)==200, "defense-wave excluded race");
+#else
+    Check(C::GetMobAttackRange(a)==300, "ranged mob distance bonus");
+#endif
+    g_registry.get<BattleFixture>(a).race=0;
+    g_registry.get<BattleFixture>(a).points[POINT_BOW_DISTANCE]=0;
+    Check(CalcMeleeDamage(a,v,true,true)==180, "NPC damage multiplier");
+    instance.m_IsBerserk=true;
+    Check(CalcMeleeDamage(a,v,true,true)==360, "live berserk state ignored");
+    proto.m_table.fDamMultiply=std::numeric_limits<float>::quiet_NaN();
+    Check(C::GetMobDamageMultiplier(a)==1, "invalid mob multiplier");
+    g_registry.remove<ecs::MobDataRef>(a);
+    Check(C::GetMobDamageMin(a)==0 && C::GetMobDamageMax(a)==0 && C::GetMobAttackRange(a)==0, "missing mob prototype");
+}
+void BattleAffectChecks() {
+    Reset(); const auto a=Actor(),v=Actor();
+    g_registry.get<BattleFixture>(a).points[POINT_POISON_PCT]=100;
+    g_registry.get<BattleFixture>(a).points[POINT_STUN_PCT]=100;
+    g_registry.get<BattleFixture>(a).points[POINT_SLOW_PCT]=100;
+    NormalAttackAffect(a,v); Check(poisonCalls==1 && affectCalls==2, "native normal-hit affects");
+    onPoison=[](auto e){g_registry.destroy(e); Actor();};
+    NormalAttackAffect(a,v); Check(poisonCalls==2 && affectCalls==2, "continued after poison removed victim");
+    Reset(); const auto b=Actor(),target=Actor();
+    g_registry.get<BattleFixture>(b).points[POINT_STUN_PCT]=100;
+    g_registry.get<BattleFixture>(b).points[POINT_SLOW_PCT]=100;
+    onAffect=[](auto e){g_registry.destroy(e); Actor();};
+    NormalAttackAffect(b,target); Check(affectCalls==1, "continued after stun removed victim");
+}
+void AttackAuditChecks() {
+    Reset(); const auto a=Actor(),v=Actor();
+    Check(GET_ATTACK_SPEED(a)==1000, "attack speed");
+    g_registry.get<BattleFixture>(a).riding=true;
+    Check(GET_ATTACK_SPEED(a)==666, "riding attack speed");
+    const auto dagger=Weapon();
+    g_registry.get<WeaponFixture>(dagger).subtype=WEAPON_DAGGER;
+    g_registry.get<BattleFixture>(a).weapon=dagger;
+    Check(GET_ATTACK_SPEED(a)==333, "dagger attack speed");
+    g_registry.get<BattleFixture>(a).weapon=entt::null;
+    g_registry.get<BattleFixture>(a).points[POINT_ATT_SPEED]=-150;
+    Check(GET_ATTACK_SPEED(a)==1000, "zero speed denominator");
+    g_registry.get<BattleFixture>(a).points[POINT_ATT_SPEED]=0;
+    Check(!IS_SPEED_HACK(a,v,10000) && IS_SPEED_HACK(a,v,10001), "attack history");
+    Check(g_registry.get<ecs::AttackAudit>(a).speedHackCount==1, "hack count");
+    g_registry.destroy(v); const auto next=Actor();
+    Check(!IS_SPEED_HACK(a,next,10002), "recycled target inherited anti-cheat history");
+    SET_ATTACK_TIME(a,next,static_cast<int32_t>(UINT32_MAX-10));
+    SET_ATTACKED_TIME(a,next,static_cast<int32_t>(UINT32_MAX-10));
+    Check(IS_SPEED_HACK(a,next,10), "clock rollover bypass");
+    Check(!IS_SPEED_HACK(a,entt::null,20), "invalid anti-cheat victim");
+    const auto third=Actor();
+    SET_ATTACKED_TIME(a,third,20000);
+    Check(IS_SPEED_HACK(a,third,20001), "victim-side attack audit");
+}
+}
 int main() {
     try {
+        CHARACTER_MANAGER characters;
         AlignmentChecks(); CallbackChecks(); ModeChecks(); MultiplierAndValidityChecks();
+        BattleTargetChecks(); BattleMathChecks(); BattleAffectChecks(); AttackAuditChecks();
         std::cout << "Combat state checks passed: " << checks << '\n'; return 0;
     } catch (const std::exception& error) { std::cerr << error.what() << '\n'; return 1; }
 }

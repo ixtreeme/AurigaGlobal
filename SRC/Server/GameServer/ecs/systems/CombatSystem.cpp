@@ -234,19 +234,129 @@ bool Shoot(entt::entity attacker, uint8_t attackType)
 
 void SetVictim(entt::entity attacker, entt::entity victim)
 {
-    if (auto* ch = LegacyCharOf(attacker)) {
-        ch->SetVictim(victim);
-    }
+    if (!ecs::Invariants::HasAnyTypeTag(g_registry, attacker))
+        return;
+    const auto target = victim != attacker && ecs::Invariants::HasAnyTypeTag(g_registry, victim)
+        ? victim : entt::null;
+    auto& state = g_registry.get_or_emplace<ecs::CombatTarget>(attacker, entt::null, get_dword_time() - 3000);
+    state.target = target;
+    if (target != entt::null)
+        state.setTime = get_dword_time();
+    else
+        battle_end(attacker);
 }
 
 entt::entity GetVictim(entt::entity attacker)
 {
-    if (auto* ch = LegacyCharOf(attacker)) {
-        auto* victim = ch->GetVictim();
-        return victim ? victim->GetEntityHandle() : entt::null;
-    }
+    if (!ecs::Invariants::HasAnyTypeTag(g_registry, attacker))
+        return entt::null;
+    const auto* state = g_registry.try_get<ecs::CombatTarget>(attacker);
+    return state && ecs::Invariants::HasAnyTypeTag(g_registry, state->target)
+        ? state->target : entt::null;
+}
 
-    return entt::null;
+uint32_t GetVictimSetTime(entt::entity attacker)
+{
+    if (!ecs::Invariants::HasAnyTypeTag(g_registry, attacker))
+        return 0;
+    const auto* state = g_registry.try_get<ecs::CombatTarget>(attacker);
+    return state ? state->setTime : get_dword_time() - 3000;
+}
+
+uint32_t GetLastAttackTime(entt::entity e)
+{
+    if (!ecs::Invariants::HasAnyTypeTag(g_registry, e))
+        return 0;
+    const auto* state = g_registry.try_get<ecs::AttackCooldown>(e);
+    return state ? state->lastAttackTime : get_dword_time() - 20000;
+}
+
+void SetLastAttackTime(entt::entity e, uint32_t time)
+{
+    if (ecs::Invariants::HasAnyTypeTag(g_registry, e))
+        g_registry.get_or_emplace<ecs::AttackCooldown>(e).lastAttackTime = time;
+}
+
+bool IsSkillHit(entt::entity e)
+{
+    if (!ecs::Invariants::HasAnyTypeTag(g_registry, e))
+        return false;
+    const auto* state = g_registry.try_get<ecs::SkillHitState>(e);
+    return state && state->value;
+}
+
+void SetSkillHit(entt::entity e, bool value)
+{
+    if (ecs::Invariants::HasAnyTypeTag(g_registry, e))
+        g_registry.get_or_emplace<ecs::SkillHitState>(e).value = value;
+}
+
+namespace {
+const ecs::MobDataRef* MobData(entt::entity e)
+{
+    if (!ecs::Invariants::HasAnyTypeTag(g_registry, e))
+        return nullptr;
+    const auto* mob = g_registry.try_get<ecs::MobDataRef>(e);
+    return mob && mob->data ? mob : nullptr;
+}
+}
+
+uint32_t GetMobDamageMin(entt::entity e)
+{
+    const auto* mob = MobData(e);
+    return mob ? mob->data->m_table.dwDamageRange[0] : 0;
+}
+
+uint32_t GetMobDamageMax(entt::entity e)
+{
+    const auto* mob = MobData(e);
+    return mob ? mob->data->m_table.dwDamageRange[1] : 0;
+}
+
+float GetMobDamageMultiplier(entt::entity e)
+{
+    const auto* mob = MobData(e);
+    if (!mob)
+        return 1.0f;
+    // AIFlags may lag AI changes; SetBerserk updates the live instance.
+    const float multiplier = mob->data->m_table.fDamMultiply *
+        (mob->instance && mob->instance->m_IsBerserk ? 2.0f : 1.0f);
+    return std::isfinite(multiplier) && multiplier >= 0 ? multiplier : 1.0f;
+}
+
+uint8_t GetMobBattleType(entt::entity e)
+{
+    const auto* mob = MobData(e);
+    return mob ? mob->data->m_table.bBattleType : BATTLE_TYPE_MELEE;
+}
+
+uint16_t GetMobAttackRange(entt::entity e)
+{
+    const auto* mob = MobData(e);
+    if (!mob)
+        return 0;
+    const auto& table = mob->data->m_table;
+    int64_t range = table.wAttackRange;
+    if (table.bBattleType == BATTLE_TYPE_RANGE || table.bBattleType == BATTLE_TYPE_MAGIC)
+    {
+#ifdef __DEFENSE_WAVE__
+        const auto race = ecs::PlayerRuntime::GetRaceNum(e);
+        if (race == 3960 || race == 3961 || race == 3962)
+            range += ecs::PointSystem::Get(e, POINT_BOW_DISTANCE) + 4000;
+#else
+        range += ecs::PointSystem::Get(e, POINT_BOW_DISTANCE);
+#endif
+    }
+#ifdef __DEFENSE_WAVE__
+    else
+    {
+        const auto race = ecs::PlayerRuntime::GetRaceNum(e);
+        if ((race >= 3950 && race <= 3955 && race != 3953) ||
+            (race >= 3601 && race <= 3605 && race != 3602))
+            range += 300;
+    }
+#endif
+    return static_cast<uint16_t>(std::clamp<int64_t>(range, 0, UINT16_MAX));
 }
 
 entt::entity GetNearestVictim(entt::entity attacker, entt::entity from)
@@ -647,7 +757,7 @@ struct FuncForgetMyAttacker
 			const entt::entity candidate = ch->GetEntityHandle();
 			if (ecs::PlayerRuntime::IsPC(candidate))
 				return;
-			if (ch->m_eVictim == m_character)
+			if (CombatSystem::GetVictim(candidate) == m_character)
 				CombatSystem::SetVictim(candidate, entt::null);
 		}
 	}
@@ -722,7 +832,7 @@ struct FuncAttractRanger
 				return;
 			if (!ch->IsMonster())
 				return;
-			if (ch->m_eVictim != entt::null && ch->m_eVictim != m_character)
+			if (CombatSystem::GetVictim(candidate) != entt::null && CombatSystem::GetVictim(candidate) != m_character)
 				return;
 			if (ch->GetMobAttackRange() > 150)
 			{
@@ -1095,7 +1205,7 @@ void CHARACTER::UpdateAggrPoint(entt::entity attacker, EDamageType type, int dam
 void CHARACTER::ChangeVictimByAggro(int iNewAggro, entt::entity newVictim)
 {
 	LPCHARACTER pkNewVictim = ecs::LegacyCharOf(newVictim);
-	if (get_dword_time() - m_dwLastVictimSetTime < 3000) // 3ʴ ٷѴ
+	if (get_dword_time() - CombatSystem::GetVictimSetTime(GetEntityHandle()) < 3000) // 3ʴ ٷѴ
 		return;
 
 	if (pkNewVictim == GetVictim())
@@ -2412,14 +2522,14 @@ void CombatSystem_Update(entt::registry& reg, uint32_t tick)
         }
 
         const uint32_t attackPeriod = PASSES_PER_SEC(1);
-        if (tick < attackCooldown.lastAttackTime || (tick - attackCooldown.lastAttackTime) < attackPeriod) {
+        if (tick < attackCooldown.lastCombatPulse || (tick - attackCooldown.lastCombatPulse) < attackPeriod) {
             return;
         }
 
         auto& victimHealth = reg.get<ecs::Health>(combatTarget.target);
         const int32_t damage = 1;
         victimHealth.current = std::max<int32_t>(0, victimHealth.current - damage);
-        attackCooldown.lastAttackTime = tick;
+        attackCooldown.lastCombatPulse = tick;
 
         reg.emplace_or_replace<ecs::DirtyTag>(combatTarget.target);
         g_dispatcher.trigger(ecs::EvEntityDamaged { entity, combatTarget.target, damage, DAMAGE_TYPE_NORMAL });
@@ -6497,35 +6607,30 @@ LPCHARACTER CHARACTER::GetNearestVictim(entt::entity chr)
 
 void CHARACTER::SetVictim(entt::entity victim)
 {
-	if (!ecs::PlayerRuntime::IsValid(victim))
-	{
-		if (m_eVictim != entt::null)
-			MonsterLog("  ");
-
-		m_eVictim = entt::null;
-		battle_end(GetEntityHandle());
-	}
-	else
-	{
-		const entt::entity eVictim = victim;
-		if (m_eVictim != eVictim)
-			MonsterLog("  : %s", ecs::PlayerRuntime::GetName(victim).data());
-
-		m_eVictim = eVictim;
-		m_dwLastVictimSetTime = get_dword_time();
-	}
+    CombatSystem::SetVictim(GetEntityHandle(), victim);
 }
 
 LPCHARACTER CHARACTER::GetVictim() const
 {
-	if (m_eVictim == entt::null)
-		return nullptr;
-
-	if (auto* legacy = g_registry.try_get<ecs::LegacyCharPtr>(m_eVictim))
-		return legacy->ptr;
-
-	return nullptr;
+    return LegacyCharOf(CombatSystem::GetVictim(GetEntityHandle()));
 }
+
+uint32_t CHARACTER::GetLastAttackTime() const
+{
+    return CombatSystem::GetLastAttackTime(GetEntityHandle());
+}
+
+#ifdef LEADERBOARD_RAZOR93
+bool CHARACTER::IsSkillHit() const
+{
+    return CombatSystem::IsSkillHit(GetEntityHandle());
+}
+
+void CHARACTER::SetSkillHit(bool value)
+{
+    CombatSystem::SetSkillHit(GetEntityHandle(), value);
+}
+#endif
 
 LPCHARACTER CHARACTER::GetProtege() const // ȣؾ
 {

@@ -23,7 +23,7 @@ struct SelectedBy {
 
 struct CombatTarget {
     entt::entity target { entt::null };
-    uint32_t setTime;
+    uint32_t setTime { 0 };
 };
 
 struct CombatStats {
@@ -46,6 +46,21 @@ struct AttackCooldown {
     int validComboInterval;
     uint8_t comboIndex;
     int comboHackCount;
+    // The prototype combat updater runs in pulses, not get_dword_time() ms.
+    uint32_t lastCombatPulse { 0 };
+};
+
+// Generation-bearing handles prevent a recycled VID/PID from inheriting a hit.
+struct AttackAudit {
+    entt::entity target { entt::null };
+    entt::entity attacker { entt::null };
+    uint32_t attackTime { 0 };
+    uint32_t attackedTime { 0 };
+    int speedHackCount { 0 };
+};
+
+struct SkillHitState {
+    bool value { false };
 };
 
 struct DamageMap {

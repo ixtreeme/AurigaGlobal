@@ -510,12 +510,12 @@ ACMD(do_change_channel)
 		return;
 	}
 
-	if (ch->GetTimedEvent())
+	if (ecs::PlayerRuntime::GetCharEvent(character, ecs::PlayerRuntime::CharEvent::Timed))
 	{
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 482, "");
 #endif
-		event_cancel(&ch->GetTimedEventRef());
+		ecs::PlayerRuntime::CancelCharEvent(character, ecs::PlayerRuntime::CharEvent::Timed);
 		return;
 	}
 
@@ -605,11 +605,15 @@ EVENTFUNC(timed_event)
 	if (ch == nullptr) { // <Factor>
 		return 0;
 	}
+	if (ecs::PlayerRuntime::GetCharEvent(chEntity, ecs::PlayerRuntime::CharEvent::Timed) != event)
+        return 0;
 	LPDESC d = ecs::PlayerRuntime::GetDesc(chEntity);
+    if (!d)
+        return 0;
 
 	if (info->left_second <= 0)
 	{
-		ch->GetTimedEventRef() = nullptr;
+		ecs::PlayerRuntime::SetCharEvent(chEntity, ecs::PlayerRuntime::CharEvent::Timed, nullptr);
 
 		switch (info->subcmd)
 		{
@@ -666,12 +670,12 @@ EVENTFUNC(timed_event)
 ACMD(do_cmd)
 {
 	LPCHARACTER ch = ecs::LegacyCharOf(character);
-	if (ch->GetTimedEvent())
+	if (ecs::PlayerRuntime::GetCharEvent(character, ecs::PlayerRuntime::CharEvent::Timed))
 	{
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 482, "");
 #endif
-		event_cancel(&ch->GetTimedEventRef());
+		ecs::PlayerRuntime::CancelCharEvent(character, ecs::PlayerRuntime::CharEvent::Timed);
 		return;
 	}
 
@@ -717,7 +721,8 @@ ACMD(do_cmd)
 				info->subcmd		= subcmd;
 				strlcpy(info->szReason, argument, sizeof(info->szReason));
 
-				ch->GetTimedEventRef()	= event_create(timed_event, info, 1);
+				ecs::PlayerRuntime::SetCharEvent(character, ecs::PlayerRuntime::CharEvent::Timed,
+                    event_create(timed_event, info, 1));
 			}
 			break;
 	}

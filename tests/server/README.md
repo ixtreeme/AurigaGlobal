@@ -124,7 +124,9 @@ ctest --test-dir build-asan -C RelWithDebInfo -R '^event_lifecycle$' --output-on
 
 ## Combat state
 
-`CombatStateTests` compiles the complete existing `CombatSystem.cpp`. Alignment,
+`CombatStateTests` compiles the complete existing `CombatSystem.cpp` and
+`battle.cpp`, including `ENABLE_ANTICHEAT` and `ENABLE_CHECK_BATTLE` in this test
+target only. Alignment,
 its tier calculation, killer/PK mode and attack/damage multipliers operate on ECS
 components with no CHARACTER allocation or entity-to-pointer lookup. The legacy
 alignment, timer and multiplier fields are removed; compatibility methods only
@@ -139,6 +141,21 @@ normalization, absent components, non-character/stale/null handles and finite,
 zero, negative and non-finite multiplier inputs. The alignment revision suppresses
 an obsolete outer publication; state commits before external callbacks. It is not
 a transaction or rollback mechanism for point calculation or networking.
+
+Battle checks exercise entity-only target ownership and clearing, attack/skill
+state, melee and arrow calculations, weapon/refine/defense formulas, live mob
+prototype and berserk data, stale items and recycled character handles. Monster
+damage uses the legacy non-PC meaning rather than the narrower `TagNPC` meaning.
+Normal-hit poison/stun callbacks destroy their victim to check that processing
+does not continue on a dead generation. Anti-cheat checks cover riding, a zero
+speed denominator, both attack logs, recycled target identities and clock wrap.
+Combat pulses and wall-clock attack milliseconds have separate fields.
+
+The two remaining `battle.cpp` character resolutions are explicit boundaries to
+soul consumption and the complete legacy `Damage` pipeline, not converted
+operations. Those pipelines, marriage services, networking, and affect execution
+are not integration-tested by this headless target; the dependent services are
+doubles and unexpected legacy character operations fail immediately.
 
 ```powershell
 cmake --build build --config Release --target GameServer CombatStateTests

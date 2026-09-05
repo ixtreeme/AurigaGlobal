@@ -412,8 +412,8 @@ void CHARACTER::StateBattle()
 
     const uint32_t curTime = get_dword_time();
     const uint32_t duration = CalculateDuration(GetLimitPoint(POINT_ATT_SPEED), 2000);
-    if ((curTime - m_dwLastAttackTime) < duration) {
-        m_dwStateDuration = MAX(1, (passes_per_sec * (duration - (curTime - m_dwLastAttackTime)) / 1000));
+    if ((curTime - GetLastAttackTime()) < duration) {
+        m_dwStateDuration = MAX(1, (passes_per_sec * (duration - (curTime - GetLastAttackTime())) / 1000));
         return;
     }
 
@@ -493,21 +493,7 @@ void AISystem_Update(entt::registry& reg, uint32_t tick)
 
         bool changed = SyncAIFlags(reg, entity, ch);
 
-        entt::entity victimEntity = entt::null;
-        if (LPCHARACTER victim = ch->GetVictim()) {
-            victimEntity = victim->GetEntityHandle();
-        }
-
-        if (victimEntity != entt::null) {
-            auto* currentTarget = reg.try_get<ecs::CombatTarget>(entity);
-            if (!currentTarget || currentTarget->target != victimEntity) {
-                reg.emplace_or_replace<ecs::CombatTarget>(entity, victimEntity, tick);
-                changed = true;
-            }
-        } else if (reg.all_of<ecs::CombatTarget>(entity)) {
-            reg.remove<ecs::CombatTarget>(entity);
-            changed = true;
-        }
+        // CombatTarget is authoritative; do not mirror it through CHARACTER.
 
         auto& aiState = reg.get_or_emplace<ecs::AIState>(entity);
         const uint8_t observedState = ObserveAIState(reg, entity, ch);

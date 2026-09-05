@@ -25,6 +25,16 @@ bool Damage(entt::entity target, entt::entity attacker, int damage, uint8_t dama
 bool Shoot(entt::entity attacker, uint8_t attackType);
 void SetVictim(entt::entity attacker, entt::entity victim);
 entt::entity GetVictim(entt::entity attacker);
+uint32_t GetVictimSetTime(entt::entity attacker);
+uint32_t GetLastAttackTime(entt::entity e);
+void SetLastAttackTime(entt::entity e, uint32_t time);
+bool IsSkillHit(entt::entity e);
+void SetSkillHit(entt::entity e, bool value);
+uint32_t GetMobDamageMin(entt::entity e);
+uint32_t GetMobDamageMax(entt::entity e);
+float GetMobDamageMultiplier(entt::entity e);
+uint16_t GetMobAttackRange(entt::entity e);
+uint8_t GetMobBattleType(entt::entity e);
 entt::entity GetNearestVictim(entt::entity attacker, entt::entity from);
 bool IsStun(entt::entity e);
 void Stun(entt::entity e);

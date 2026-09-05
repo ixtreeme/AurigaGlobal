@@ -67,7 +67,7 @@ namespace marriage
 		int GetMarriagePoint();
 		int GetMarriageGrade();
 
-		int GetBonus(uint32_t dwItemVnum, bool bShare = true, LPCHARACTER me = nullptr);
+		int GetBonus(uint32_t dwItemVnum, bool bShare = true, entt::entity me = entt::null);
 
 		void WarpToWeddingMap(uint32_t dwPID);
 		void Save();

@@ -66,7 +66,9 @@ add_test(NAME point_calculation COMMAND PointCalculationTests)
 add_executable(CombatStateTests EXCLUDE_FROM_ALL
     ${CMAKE_SOURCE_DIR}/tests/server/CombatStateTests.cpp
     ecs/systems/CombatSystem.cpp
+    battle.cpp
 )
+target_compile_definitions(CombatStateTests PRIVATE ENABLE_ANTICHEAT ENABLE_CHECK_BATTLE)
 target_link_libraries(CombatStateTests PRIVATE SERVER EnTT::EnTT LUA)
 if(WIN32)
     target_link_libraries(CombatStateTests PRIVATE ws2_32 bcrypt secur32 crypt32 shlwapi)

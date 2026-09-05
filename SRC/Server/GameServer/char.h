@@ -991,7 +991,7 @@ public:
 	int32_t			GetCurrentDestY() const;
 	uint32_t GetWalkStartTime() const;
 	uint32_t			GetLastMoveTime() const { return m_dwLastMoveTime; }
-	uint32_t			GetLastAttackTime() const { return m_dwLastAttackTime; }
+	uint32_t			GetLastAttackTime() const;
 // Phase C.4: GetAddChrStateForAudit removed. Its consumer in
 // CheckMovementDrift state_flags subsection deleted with the
 // m_bAddChrState write migration. CheckMovementDrift body is now empty;
@@ -1045,7 +1045,7 @@ protected:
 	uint32_t			m_dwMoveDuration;
 
 	uint32_t			m_dwLastMoveTime;
-	uint32_t			m_dwLastAttackTime;
+
 	uint32_t			m_dwStopTime;
 
 	bool			m_bWalking;
@@ -1681,7 +1681,7 @@ protected:
 
 
 	// Aggro
-	uint32_t				m_dwLastVictimSetTime;
+
 	int					m_iMaxAggro;
 	// End of Battle
 
@@ -1726,13 +1726,10 @@ protected:
 #ifdef ENABLE_RANKING
 protected:
 	long long	m_lRankPoints[RANKING_MAX_CATEGORIES];
-#ifdef LEADERBOARD_RAZOR93
-	bool m_bSkillHit;
-#endif
 public:
 #ifdef LEADERBOARD_RAZOR93
-	void SetSkillHit(bool b) { m_bSkillHit = b; }
-	bool IsSkillHit() const { return m_bSkillHit; }
+	void SetSkillHit(bool b);
+	bool IsSkillHit() const;
 #endif
 	long long	GetRankPoints(int iArg);
 	void		SetRankPoints(int iArg, long long lPoint);
@@ -1903,7 +1900,7 @@ public:
 
 	entt::entity	 m_entity { entt::null };
 	uint32_t		 m_dwLegacyVID { 0 };
-	entt::entity	 m_eVictim { entt::null };
+
 
 protected:
 	uint32_t			m_dwLastChangeAttackPositionTime;
@@ -2150,9 +2147,7 @@ public:
 	void				StartDestroyWhenIdleEvent();
 
 	LPEVENT				m_pkSaveEvent;
-	LPEVENT				m_pkTimedEvent;
-	LPEVENT				GetTimedEvent() const { return m_pkTimedEvent; }
-	LPEVENT&			GetTimedEventRef() { return m_pkTimedEvent; }
+
 	LPEVENT				m_pkWarpNPCEvent;
 	//DELAYED_WARP
 	//END_DELAYED_WARP
@@ -2293,25 +2288,7 @@ private:
 	);
 
 public:
-	struct AttackedLog
-	{
-		uint32_t 	dwPID;
-		uint32_t	dwAttackedTime;
 
-		AttackedLog() : dwPID(0), dwAttackedTime(0)
-		{
-		}
-	};
-
-	AttackLog	m_kAttackLog;
-	AttackedLog m_AttackedLog;
-	int			m_speed_hack_count;
-	const AttackLog& GetAttackLog() const { return m_kAttackLog; }
-	AttackLog& GetAttackLogRef() { return m_kAttackLog; }
-	const AttackedLog& GetAttackedLog() const { return m_AttackedLog; }
-	AttackedLog& GetAttackedLogRef() { return m_AttackedLog; }
-	int GetSpeedHackCount() const { return m_speed_hack_count; }
-	int& GetSpeedHackCountRef() { return m_speed_hack_count; }
 
 private:
 	std::string m_strNewName;

@@ -631,6 +631,7 @@ LPEVENT* CharEventSlot(entt::entity e, ecs::PlayerRuntime::CharEvent slot)
     case ecs::PlayerRuntime::CharEvent::Stun:     return &events.stun;
     case ecs::PlayerRuntime::CharEvent::Recovery: return &events.recovery;
     case ecs::PlayerRuntime::CharEvent::Fishing:  return &events.fishing;
+    case ecs::PlayerRuntime::CharEvent::Timed:    return &events.timed;
     }
     return nullptr;
 }
@@ -646,7 +647,11 @@ LPEVENT GetCharEvent(entt::entity e, CharEvent slot)
 void SetCharEvent(entt::entity e, CharEvent slot, LPEVENT ev)
 {
     if (LPEVENT* p = CharEventSlot(e, slot))
+    {
+        if (slot == CharEvent::Timed && *p != ev)
+            event_cancel(p);
         *p = ev;
+    }
 }
 
 void CancelCharEvent(entt::entity e, CharEvent slot)
@@ -2256,22 +2261,17 @@ int GetHPPct(entt::entity e)
 
 uint32_t CHARACTER::GetMobDamageMin() const
 {
-    return m_pkMobData->m_table.dwDamageRange[0];
+    return CombatSystem::GetMobDamageMin(GetEntityHandle());
 }
 
 uint32_t CHARACTER::GetMobDamageMax() const
 {
-    return m_pkMobData->m_table.dwDamageRange[1];
+    return CombatSystem::GetMobDamageMax(GetEntityHandle());
 }
 
 float CHARACTER::GetMobDamageMultiply() const
 {
-    float fDamMultiply = GetMobTable().fDamMultiply;
-
-    if (IsBerserk())
-        fDamMultiply = fDamMultiply * 2.0f;
-
-    return fDamMultiply;
+    return CombatSystem::GetMobDamageMultiplier(GetEntityHandle());
 }
 
 uint32_t CHARACTER::GetMobDropItemVnum() const
@@ -2320,44 +2320,12 @@ uint8_t CHARACTER::GetMobSize() const
 
 uint16_t CHARACTER::GetMobAttackRange() const
 {
-    if (!m_pkMobData)
-    {
-        LOG_ERROR("GetMobAttackRange: m_pkMobData NULL! (VID: {}, Name: {}, Race:{})", GetPacketVID(), GetName(), GetRaceNum());
-        return 0;
-    }
-
-    switch (GetMobBattleType())
-    {
-    case BATTLE_TYPE_RANGE:
-    case BATTLE_TYPE_MAGIC:
-#ifdef __DEFENSE_WAVE__
-        if (GetRaceNum() == 3960 || GetRaceNum() == 3961 || GetRaceNum() == 3962)
-            return m_pkMobData->m_table.wAttackRange + GetPoint(POINT_BOW_DISTANCE) + 4000;
-        else
-            return m_pkMobData->m_table.wAttackRange;
-#else
-        return m_pkMobData->m_table.wAttackRange + GetPoint(POINT_BOW_DISTANCE);
-#endif
-
-    default:
-#ifdef __DEFENSE_WAVE__
-        if ((GetRaceNum() <= 3955 && GetRaceNum() >= 3950 && GetRaceNum() != 3953) ||
-            (GetRaceNum() <= 3605 && GetRaceNum() >= 3601 && GetRaceNum() != 3602))
-            return m_pkMobData->m_table.wAttackRange + 300;
-        else
-            return m_pkMobData->m_table.wAttackRange;
-#else
-        return m_pkMobData->m_table.wAttackRange;
-#endif
-    }
+    return CombatSystem::GetMobAttackRange(GetEntityHandle());
 }
 
 uint8_t CHARACTER::GetMobBattleType() const
 {
-    if (!m_pkMobData)
-        return BATTLE_TYPE_MELEE;
-
-    return m_pkMobData->m_table.bBattleType;
+    return CombatSystem::GetMobBattleType(GetEntityHandle());
 }
 
 void CHARACTER::ResetPlayTime(uint32_t dwTimeRemain)
@@ -4403,6 +4371,10 @@ void CHARACTER::Destroy()
 
     if (m_pkMobInst)
     {
+        // The native combat readers must not retain an instance freed here.
+        if (g_registry.valid(GetEntityHandle()))
+            if (auto* mob = g_registry.try_get<ecs::MobDataRef>(GetEntityHandle()))
+                mob->instance = nullptr;
         M2_DELETE(m_pkMobInst);
         m_pkMobInst = nullptr;
     }
@@ -4424,7 +4396,7 @@ void CHARACTER::Destroy()
     ecs::PlayerRuntime::CancelCharEvent(GetEntityHandle(), ecs::PlayerRuntime::CharEvent::Recovery);
     ecs::PlayerRuntime::CancelCharEvent(GetEntityHandle(), ecs::PlayerRuntime::CharEvent::Dead);
     event_cancel(&m_pkSaveEvent);
-    event_cancel(&m_pkTimedEvent);
+    ecs::PlayerRuntime::CancelCharEvent(GetEntityHandle(), ecs::PlayerRuntime::CharEvent::Timed);
     ecs::PlayerRuntime::CancelCharEvent(GetEntityHandle(), ecs::PlayerRuntime::CharEvent::Stun);
     ecs::PlayerRuntime::CancelCharEvent(GetEntityHandle(), ecs::PlayerRuntime::CharEvent::Fishing);
     AffectSystem::CancelDamageEvents(GetEntityHandle());
@@ -4987,7 +4959,7 @@ void CHARACTER::OnMove(bool bIsAttack)
 
     if (bIsAttack)
     {
-        m_dwLastAttackTime = m_dwLastMoveTime;
+        CombatSystem::SetLastAttackTime(GetEntityHandle(), m_dwLastMoveTime);
 
         if (IsAffectFlag(AFF_REVIVE_INVISIBLE))
             RemoveAffect(AFFECT_REVIVE_INVISIBLE);
@@ -5322,7 +5294,8 @@ EVENTFUNC(switch_channel)
     }
 	const entt::entity character = ch->GetEntityHandle();
 
-    // Phase 10: WRITES_STATE - deferred until ECS component covers m_pkTimedEvent
+    if (ecs::PlayerRuntime::GetCharEvent(character, ecs::PlayerRuntime::CharEvent::Timed) != event)
+        return 0;
 
     if (!ecs::PlayerRuntime::GetDesc(character))
         return 0;
@@ -5336,8 +5309,8 @@ EVENTFUNC(switch_channel)
         return PASSES_PER_SEC(1);
     }
 
+    ecs::PlayerRuntime::SetCharEvent(character, ecs::PlayerRuntime::CharEvent::Timed, nullptr);
     ch->SwitchChannel(info->newAddr, info->newPort);
-    ch->m_pkTimedEvent = nullptr;
     return 0;
 }
 
@@ -5352,7 +5325,8 @@ bool CHARACTER::StartChannelSwitch(int32_t newAddr, uint16_t newPort)
     info->newAddr = newAddr;
     info->newPort = newPort;
 
-    m_pkTimedEvent = event_create(switch_channel, info, 1);
+    ecs::PlayerRuntime::SetCharEvent(GetEntityHandle(), ecs::PlayerRuntime::CharEvent::Timed,
+        event_create(switch_channel, info, 1));
     return true;
 }
 #endif
@@ -5743,15 +5717,12 @@ void CHARACTER::Initialize()
     CEntity::Initialize(ENTITY_CHARACTER);
     m_entity = entt::null;
     m_dwLegacyVID = 0;
-    m_eVictim = entt::null;
+
 
     m_bNoOpenedShop = true;
 #ifdef ENABLE_EVENT_MANAGER
 #endif
 
-#ifdef ENABLE_MAP1_SKILL_MOB
-    m_bSkillHit = false;
-#endif
     m_bOpeningSafebox = false;
 
     g_registry.get_or_emplace<ecs::SyncOwner>(GetEntityHandle()).syncTime = get_float_time() - 3;
@@ -5791,7 +5762,7 @@ void CHARACTER::Initialize()
 #endif
     m_pkWarpNPCEvent = nullptr;
     m_pkSaveEvent = nullptr;
-    m_pkTimedEvent = nullptr;
+
     ecs::PlayerRuntime::SetCharEvent(GetEntityHandle(), ecs::PlayerRuntime::CharEvent::Fishing, nullptr);
     m_pkWarpEvent = nullptr;
 #ifdef ENABLE_BATTLE_PASS_STAY_ONLINE
@@ -5818,7 +5789,7 @@ void CHARACTER::Initialize()
     AISystem::GotoState(GetEntityHandle(), ecs::AIFSMState::Idle);
     m_dwStateDuration = 1;
 
-    m_dwLastAttackTime = get_dword_time() - 20000;
+
 
     // Phase C.4: legacy m_bAddChrState zero-init removed (entity null at
     // this Initialize point - ECS StatusFlags created with default-zero
@@ -5863,8 +5834,8 @@ void CHARACTER::Initialize()
     m_pkDungeon = nullptr;
     m_iEventAttr = 0;
 
-    m_kAttackLog.dwVID = 0;
-    m_kAttackLog.dwTime = 0;
+
+
 
     // Phase C.2: legacy m_bNowWalking zero-init removed (ECS MovementState
     // default-init handles isNowWalking=false). m_bWalking still legacy.
@@ -5919,7 +5890,7 @@ void CHARACTER::Initialize()
 #ifdef ENABLE_GAYA_SYSTEM
     GayaSystem::Load(GetEntityHandle());
 #endif
-    m_dwLastVictimSetTime = get_dword_time() - 3000;
+
     m_iMaxAggro = -100;
 
     MountSystem::GetMountStateRef(GetEntityHandle()).sendHorseLevel = 0;

@@ -12,6 +12,8 @@ class CShop;
 
 namespace ecs::SocialSystem {
 
+int GetMarriageBonus(entt::entity e, uint32_t itemVnum, bool share = true);
+
 LPPARTY GetParty(entt::entity e);
 entt::entity GetPartyLeader(entt::entity e);
 void ForEachNearPartyMember(entt::entity e, const std::function<void(entt::entity)>& visitor);

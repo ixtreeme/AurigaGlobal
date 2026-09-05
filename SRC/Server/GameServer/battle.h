@@ -6,6 +6,7 @@
 #define __INC_METIN_II_GAME_BATTLE_H__
 
 #include "char_interface.hpp"
+#include "ecs/EntityInvariants.hpp"
 #include <entt/entt.hpp>
 
 enum EBattleTypes       // 상대방 기준
@@ -29,7 +30,6 @@ extern void	battle_end(entt::entity character);
 
 extern bool	battle_distance_valid_by_xy(int32_t x, int32_t y, int32_t tx, int32_t ty);
 extern bool	battle_distance_valid(entt::entity character, entt::entity victim);
-extern int	battle_count_attackers(LPCHARACTER ch);
 
 extern void	NormalAttackAffect(entt::entity attacker, entt::entity victim);
 
@@ -45,12 +45,16 @@ inline void AttackAffect(entt::entity attacker,
 		int time,
 		const char* name)
 {
+    if (!ecs::Invariants::HasAnyTypeTag(g_registry, attacker) || !ecs::Invariants::HasAnyTypeTag(g_registry, victim))
+        return;
 	if (ecs::PointSystem::Get(attacker, att_point) && !AffectSystem::IsAffectFlag(victim, affect_flag))
 	{
 		if (number(1, 100) <= ecs::PointSystem::Get(attacker, att_point) && !AffectSystem::IsImmune(victim, immune_flag))
 		{
 			AffectSystem::AddAffect(victim, affect_idx, affect_point, affect_amount, affect_flag, time, 0, true);
 
+            if (!ecs::Invariants::HasAnyTypeTag(g_registry, attacker) || !ecs::Invariants::HasAnyTypeTag(g_registry, victim))
+                return;
 			if (test_server)
 			{
 				ecs::ChatSystem::Send(victim, CHAT_TYPE_PARTY, "%s %s(%ld%%) SUCCESS", ecs::PlayerRuntime::GetName(attacker).data(), name, ecs::PointSystem::Get(attacker, att_point));
@@ -95,12 +99,9 @@ inline void SkillAttackAffect(entt::entity victim,
 }
 
 #ifdef ENABLE_ANTICHEAT
-#define GET_SPEED_HACK_COUNT(ch)		((ch)->GetSpeedHackCount())
-#define INCREASE_SPEED_HACK_COUNT(ch)	(++GET_SPEED_HACK_COUNT(ch))
 int32_t GET_ATTACK_SPEED(entt::entity character);
 void SET_ATTACK_TIME(entt::entity character, entt::entity victim, int32_t current_time);
 void SET_ATTACKED_TIME(entt::entity character, entt::entity victim, int32_t current_time);
 bool IS_SPEED_HACK(entt::entity character, entt::entity victim, int32_t current_time);
 #endif
 #endif
-

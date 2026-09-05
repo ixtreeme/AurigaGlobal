@@ -6,7 +6,9 @@
 #include "ecs/AIHelpers.hpp"
 #include "ecs/systems/SocialSystem.hpp"
 #include "char_interface.hpp"
+#include "ecs/systems/ItemSystem.hpp"
 #include "char_manager.h"
+#include "ecs/PIDRegistry.hpp"
 #include "ecs/CharacterAccessors.hpp"
 #include "sectree_manager.h"
 #include "desc_client.h"
@@ -99,10 +101,12 @@ namespace marriage
 
 		int point_per_day = MARRIAGE_POINT_PER_DAY;
 		int max_limit = 30;
-		if (IsOnline())
-		{
-			if (ch1->GetPremiumRemainSeconds(PREMIUM_MARRIAGE_FAST) > 0 ||
-					ch2->GetPremiumRemainSeconds(PREMIUM_MARRIAGE_FAST) > 0)
+        const auto first = CPIDRegistry::Instance().Find(m_pid1);
+        const auto second = CPIDRegistry::Instance().Find(m_pid2);
+        if (ecs::PlayerRuntime::IsPC(first) && ecs::PlayerRuntime::IsPC(second))
+        {
+            if (ecs::PlayerRuntime::GetPremiumRemainSeconds(first, PREMIUM_MARRIAGE_FAST) > 0 ||
+                ecs::PlayerRuntime::GetPremiumRemainSeconds(second, PREMIUM_MARRIAGE_FAST) > 0)
 			{
 				point_per_day = MARRIAGE_POINT_PER_DAY_FAST;
 				max_limit = 40;
@@ -155,10 +159,10 @@ namespace marriage
 	}
 
 	// �ݽ� ��ġ
-	int TMarriage::GetBonus(uint32_t dwItemVnum, bool bShare, LPCHARACTER me)
+	int TMarriage::GetBonus(uint32_t dwItemVnum, bool bShare, entt::entity me)
 	{
-		const entt::entity ch1Entity = ch1 ? ch1->GetEntityHandle() : entt::null;
-		const entt::entity ch2Entity = ch2 ? ch2->GetEntityHandle() : entt::null;
+		const entt::entity ch1Entity = CPIDRegistry::Instance().Find(m_pid1);
+		const entt::entity ch2Entity = CPIDRegistry::Instance().Find(m_pid2);
 		if (!is_married)
 			return 0;
 
@@ -208,19 +212,19 @@ namespace marriage
 		{
 			// �θ��� ���ʽ��� ���Ѵ�.
 			int count = 0;
-			if (nullptr != ch1 &&
+			if (ecs::PlayerRuntime::IsPC(ch1Entity) &&
 #ifdef ENABLE_NEW_USE_POTION
 			affetIdx != 0 && AffectSystem::FindAffect(ch1Entity, affetIdx) != nullptr
 #else
-			ch1->IsEquipUniqueItem(dwItemVnum)
+			ItemSystem::IsEquipUniqueItem(ch1Entity, dwItemVnum)
 #endif
 			)
 				count ++;
-			if (nullptr != ch2 &&
+			if (ecs::PlayerRuntime::IsPC(ch2Entity) &&
 #ifdef ENABLE_NEW_USE_POTION
 			affetIdx != 0 && AffectSystem::FindAffect(ch2Entity, affetIdx) != nullptr
 #else
-			ch2->IsEquipUniqueItem(dwItemVnum)
+			ItemSystem::IsEquipUniqueItem(ch2Entity, dwItemVnum)
 #endif
 			)
 				count ++;
@@ -235,19 +239,19 @@ namespace marriage
 		{
 			// ���� �͸� ���
 			int count = 0;
-			if (me != ch1 && nullptr != ch1 &&
+			if (me != ch1Entity && ecs::PlayerRuntime::IsPC(ch1Entity) &&
 #ifdef ENABLE_NEW_USE_POTION
 			affetIdx != 0 && AffectSystem::FindAffect(ch1Entity, affetIdx) != nullptr
 #else
-			ch1->IsEquipUniqueItem(dwItemVnum)
+			ItemSystem::IsEquipUniqueItem(ch1Entity, dwItemVnum)
 #endif
 			)
 				count ++;
-			if (me != ch2 && nullptr != ch2 &&
+			if (me != ch2Entity && ecs::PlayerRuntime::IsPC(ch2Entity) &&
 #ifdef ENABLE_NEW_USE_POTION
 			affetIdx != 0 && AffectSystem::FindAffect(ch2Entity, affetIdx) != nullptr
 #else
-			ch2->IsEquipUniqueItem(dwItemVnum)
+			ItemSystem::IsEquipUniqueItem(ch2Entity, dwItemVnum)
 #endif
 			)
 				count ++;
@@ -860,8 +864,6 @@ namespace marriage
 		db_clientdesc->DBPacket(HEADER_GD_WEDDING_END, 0, &p, sizeof(p));
 	}
 }
-
-
 
 
 
