@@ -893,7 +893,7 @@ void CInputLogin::Entergame(LPDESC d, const char* data)
 #endif
 
 #ifdef ENABLE_SWITCHBOT
-	CSwitchbotManager::Instance().EnterGame(ch);
+	CSwitchbotManager::Instance().EnterGame(d->GetEntity());
 #endif
 
 

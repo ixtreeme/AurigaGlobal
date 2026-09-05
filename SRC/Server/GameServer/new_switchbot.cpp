@@ -1144,14 +1144,13 @@ void CSwitchbotManager::SendSwitchbotUpdate(uint32_t player_id)
 	desc->Packet(&table, sizeof(table));
 }
 
-void CSwitchbotManager::EnterGame(LPCHARACTER ch)
+void CSwitchbotManager::EnterGame(entt::entity ch)
 {
-	const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
-	SendItemAttributeInformations(chEntity);
-	SetIsWarping(ecs::PlayerRuntime::GetPlayerID(chEntity), false);
-	SendSwitchbotUpdate(ecs::PlayerRuntime::GetPlayerID(chEntity));
+	SendItemAttributeInformations(ch);
+	SetIsWarping(ecs::PlayerRuntime::GetPlayerID(ch), false);
+	SendSwitchbotUpdate(ecs::PlayerRuntime::GetPlayerID(ch));
 
-	CSwitchbot* pkSwitchbot = FindSwitchbot(ecs::PlayerRuntime::GetPlayerID(chEntity));
+	CSwitchbot* pkSwitchbot = FindSwitchbot(ecs::PlayerRuntime::GetPlayerID(ch));
 	if (pkSwitchbot && pkSwitchbot->HasActiveSlots() && !pkSwitchbot->IsSwitching())
 	{
 		pkSwitchbot->Start();

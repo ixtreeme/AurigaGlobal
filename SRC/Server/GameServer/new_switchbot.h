@@ -72,7 +72,7 @@ public:
 	void SendItemAttributeInformations(entt::entity ch);
 	void SendSwitchbotUpdate(uint32_t player_id);
 
-	void EnterGame(LPCHARACTER ch);
+	void EnterGame(entt::entity ch);
 
 protected:
 	std::map<uint32_t, CSwitchbot*> m_map_Switchbots;
