@@ -256,44 +256,18 @@ static LPITEM LegacyItemBoundary(entt::entity itemEntity)
 
 static bool DestroyItemEntityAndLegacy(entt::entity itemEntity, const char* reason)
 {
-    if (itemEntity == entt::null || !g_registry.valid(itemEntity))
+    if (!ItemSystem::IsValidItem(itemEntity))
         return false;
 
-    LPITEM legacyItem = LegacyItemBoundary(itemEntity);
-    if (legacyItem) {
-        // Phase 15E-final.LPENTITY.4-architect.D.6.fixup-5:
-        // Order matters. The legacy ITEM_MANAGER::RemoveItem path ultimately
-        // reaches InventorySystem::RemoveFromGround for ground items, which is
-        // what broadcasts SendRemove to every viewer in range via
-        // SpatialService::RemoveEntity. It needs a valid entity to do that;
-        // once the ECS entity is gone there is nothing left to broadcast from,
-        // and the item stays rendered on every peer's client until they relog
-        // or move out of range. (The old CItem method fell through to a bare
-        // GetSectree()->RemoveEntity(this) in that case, which had the same
-        // effect silently; it logs now.)
-        //
-        // Pre-fixup-5 the ECS destroy ran first, so RemoveFromGround
-        // always hit the silent legacy fallback. The user-visible symptom
-        // was Metin-stone-drop fragments and despawned ground items
-        // staying rendered on the map indefinitely.
-        //
-        // Fix: run the legacy RemoveItem first (which broadcasts the
-        // SendRemove burst while the ECS entity is still valid), then
-        // destroy the ECS entity. EntityFactory::DestroyItemEntity is
-        // idempotent enough - the legacy path also destroys and unregisters
-        // the ECS entity internally. Never pass legacyItem anywhere after
-        // RemoveItem returns: at that point CItem may already be freed.
-        if (reason && *reason)
-            ITEM_MANAGER::instance().RemoveItem(itemEntity, reason);
-        else
-            ITEM_MANAGER::instance().RemoveItem(itemEntity);
-        if (g_registry.valid(itemEntity))
-            EntityFactory::DestroyItemEntity(g_registry, itemEntity);
-        return true;
-    }
+    const auto* legacy = g_registry.try_get<ecs::LegacyItemPtr>(itemEntity);
+    if (legacy && legacy->ptr)
+        ITEM_MANAGER::instance().RemoveItem(itemEntity, reason);
+    else
+        M2_DESTROY_ITEM(itemEntity);
 
-    EntityFactory::DestroyItemEntity(g_registry, itemEntity);
-    return true;
+    // A reentrant/busy or otherwise rejected manager cleanup is not success.
+    // Never bypass it with a second raw factory destruction.
+    return !g_registry.valid(itemEntity);
 }
 
 static void SyncItemCountComponent(LPITEM item, int count)

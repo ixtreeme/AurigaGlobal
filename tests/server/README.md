@@ -1,5 +1,49 @@
 # Server ECS regression tests
 
+## Item-manager destruction
+
+`ItemManagerLifecycleTests` compiles the complete production `item_manager.cpp`.
+The low-level `DestroyItem` path now reads identity, location and ownership from
+ECS; an optional legacy allocation is resolved only at the final release boundary.
+The existing implementation is edited in place, not duplicated into another system.
+
+```powershell
+cmake --build build --config Release --target GameServer ItemManagerLifecycleTests
+ctest --test-dir build -C Release -R '^item_manager_lifecycle$' --output-on-failure
+cmake -S . -B build-asan
+cmake --build build-asan --config RelWithDebInfo --target ItemManagerLifecycleTests
+ctest --test-dir build-asan -C RelWithDebInfo -R '^item_manager_lifecycle$' --output-on-failure
+```
+
+Fixtures cover entity-only and legacy-backed items with entity-only owners,
+including zero/mismatched last-owner PIDs, absolute equipment cells, missing or
+foreign slots and invalid owners. They verify recursive manager removal during
+ground/detach/factory callbacks, repeated destruction, recycled entity indices
+and ID/VID reuse, ownership transfer during ground/detach callbacks (also to
+stale owners), guard release after exceptions, rejected factory cleanup and
+retry, mismatched legacy bindings, and persistent-item deferral without a DB
+descriptor. Factory callbacks see unpublished indices; unsuccessful factory
+cleanup restores still-live identities without overwriting newer mappings.
+
+Item access, inventory, factory, logging and DB services are doubles. Legacy
+CItem/CEntity construction and destruction are doubles too: the tests verify
+allocation release order, not engine timers, component destruction callbacks,
+spatial removal, packet delivery or durable persistence. Unrelated manager
+creation/drop/legacy-removal dependencies fail immediately if called. The
+high-level `RemoveItem` is exercised only for its recursive-entry guard; its
+normal legacy body and bulk shutdown `Destroy` still need migration. The
+ItemSystem change preventing raw factory fallback after rejected manager
+cleanup, and the native mount-inventory owner lookup, are compiled with the
+GameServer but not executed by this target.
+
+The missing-descriptor guard is not a reconnect queue or a DB acknowledgement.
+It does not undo side effects already performed by a higher-level caller, nor
+does factory failure roll back a previously buffered DB delete. Direct factory
+callers and engine callbacks that independently delete legacy allocations are
+outside this manager reentry guard. Before deployment test expiry, ground-item
+removal, inventory/equipment/mount removal, last-unit consumption, disconnect,
+shutdown, DB interruption/reconnect and relog with the actual client and DB.
+
 ## Safebox and mall lifecycle
 
 `SafeboxLifecycleTests` compiles the existing production `safebox.cpp` and

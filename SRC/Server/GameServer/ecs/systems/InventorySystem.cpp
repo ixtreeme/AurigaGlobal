@@ -960,7 +960,7 @@ entt::entity RemoveFromCharacter(entt::entity itemEntity)
 
 	if (window == MOUNT_INVENTORY)
 	{
-		if (CMountInventory* mi = ecs::LegacyCharOf(ownerEntity)->GetMountInventory())
+		if (CMountInventory* mi = MountSystem::GetMountInventory(ownerEntity))
 			mi->RemoveByItem(itemEntity);
 
 		detach();

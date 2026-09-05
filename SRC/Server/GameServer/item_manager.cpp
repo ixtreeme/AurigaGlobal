@@ -54,6 +54,13 @@ LPITEM ResolveManagedItem(entt::entity item)
 	const auto* legacy = g_registry.try_get<ecs::LegacyItemPtr>(item);
 	return legacy ? legacy->ptr : nullptr;
 }
+
+struct ItemDestructionGuard
+{
+	std::unordered_set<entt::entity>& active;
+	entt::entity item;
+	~ItemDestructionGuard() { active.erase(item); }
+};
 }
 ITEM_MANAGER::ITEM_MANAGER()
 	: m_iTopOfTable(0), m_dwVIDCount(0), m_dwCurrentID(0)
@@ -706,6 +713,8 @@ void ITEM_MANAGER::Update()
 
 void ITEM_MANAGER::RemoveItem(entt::entity itemEntity, const char* c_pszReason)
 {
+	if (m_itemsBeingDestroyed.contains(itemEntity))
+		return;
 	if (!ItemSystem::IsValidItem(itemEntity))
 	{
 		LOG_ERROR("ITEM_MANAGER::RemoveItem called with an invalid item entity");
@@ -769,71 +778,139 @@ void ITEM_MANAGER::DestroyItem(entt::entity itemEntity)
 void ITEM_MANAGER::DestroyItem(entt::entity itemEntity, const char* file, size_t line)
 #endif
 {
+	if (!ItemSystem::IsValidItem(itemEntity) || m_itemsBeingDestroyed.contains(itemEntity))
+		return;
+
+	const uint32_t id = ItemSystem::GetItemID(itemEntity);
+	const uint32_t vid = ItemSystem::GetItemVID(itemEntity);
+	if (id && !ItemSystem::GetItemSkipSave(itemEntity) && !db_clientdesc)
+	{
+		LOG_ERROR("ITEM_DESTROY deferred: no DB descriptor for item {}", id);
+		return;
+	}
+
+	m_itemsBeingDestroyed.insert(itemEntity);
+	ItemDestructionGuard guard {m_itemsBeingDestroyed, itemEntity};
+	const auto forget = [&] {
+		m_set_pkItemForDelayedSave.erase(itemEntity);
+		if (auto it = m_map_pkItemByID.find(id); it != m_map_pkItemByID.end() && it->second == itemEntity)
+			m_map_pkItemByID.erase(it);
+		if (auto it = m_VIDMap.find(vid); it != m_VIDMap.end() && it->second == itemEntity)
+			m_VIDMap.erase(it);
+	};
+
+	// These services take entity identities. Never retain a CItem or owner
+	// pointer across ground removal, unequipping, event or packet callbacks.
+	const auto* initialOwnership = g_registry.try_get<ecs::ItemOwner>(itemEntity);
+	const entt::entity initialOwner = initialOwnership ? initialOwnership->owner : entt::null;
+	const auto initialWindow = ItemSystem::GetItemWindow(itemEntity);
+	const auto initialCell = ItemSystem::GetItemCell(itemEntity);
+	InventorySystem::RemoveFromGround(itemEntity);
 	if (!ItemSystem::IsValidItem(itemEntity))
 	{
-		LOG_ERROR("ITEM_MANAGER::DestroyItem called with an invalid item entity");
+		forget();
+		return;
+	}
+	if (const auto* ownership = g_registry.try_get<ecs::ItemOwner>(itemEntity);
+		ownership && ownership->owner != entt::null &&
+		(ownership->owner != initialOwner || ItemSystem::GetItemWindow(itemEntity) != initialWindow ||
+			ItemSystem::GetItemCell(itemEntity) != initialCell))
+	{
+		LOG_ERROR("ITEM_DESTROY deferred: item {} moved during ground removal", id);
 		return;
 	}
 
-	LPITEM item = ResolveManagedItem(itemEntity);
-	if (!item)
-		return;
-
-	if (item->GetSectree())
-		InventorySystem::RemoveFromGround(item->GetEntityHandle());
-
-	if (const entt::entity owner = ItemSystem::GetItemOwner(item->GetEntityHandle()); owner != entt::null)
+	if (const auto owner = ItemSystem::GetItemOwner(itemEntity); owner != entt::null)
 	{
-		const entt::entity liveOwner = ItemSystem::GetItemLastOwnerPID(item->GetEntityHandle()) != 0
-			? ecs::PlayerRuntime::FindByPlayerID(ItemSystem::GetItemLastOwnerPID(item->GetEntityHandle()))
-			: entt::null;
-
-		if (liveOwner == owner)
-		{
-			LOG_ERROR("DestroyItem: GetOwner {} {}!!", item->GetName(), ecs::PlayerRuntime::GetName(owner).data());
-			InventorySystem::RemoveFromCharacter(item->GetEntityHandle());
-		}
+		const auto window = ItemSystem::GetItemWindow(itemEntity);
+		const auto cell = ItemSystem::GetItemCell(itemEntity);
+		// Equipment locations store absolute inventory cells; GetItem's
+		// EQUIPMENT input takes a relative wear slot, so query INVENTORY here.
+		const TItemPos position(window == EQUIPMENT ? INVENTORY : window, cell);
+		if (window == SAFEBOX || window == MALL || window == MOUNT_INVENTORY ||
+			ItemSystem::GetItem(owner, position) == itemEntity)
+			InventorySystem::RemoveFromCharacter(itemEntity);
 		else
 		{
-			LOG_ERROR("WTH! Invalid item owner. owner entity : {} last_owner_pid {}", static_cast<uint32_t>(owner), ItemSystem::GetItemLastOwnerPID(item->GetEntityHandle()));
-			ItemSystem::SetItemOwnerEntity(item->GetEntityHandle(), entt::null);
+			LOG_ERROR("ITEM_DESTROY: item {} is not in its recorded owner slot; preserving that slot", id);
+			ItemSystem::SetItemOwnerEntity(itemEntity, entt::null);
 		}
 	}
-
-	if (auto it = m_set_pkItemForDelayedSave.find(itemEntity); it != m_set_pkItemForDelayedSave.end())
-		m_set_pkItemForDelayedSave.erase(it);
-
-	uint32_t dwID = item->GetID();
-	LOG_INFO("ITEM_DESTROY {}:{}", item->GetName(), dwID);
-
-	if (!ItemSystem::GetItemSkipSave(item->GetEntityHandle()) && dwID)
-	{
-		uint32_t dwOwnerID = ItemSystem::GetItemLastOwnerPID(item->GetEntityHandle());
-
-		db_clientdesc->DBPacketHeader(HEADER_GD_ITEM_DESTROY, 0, sizeof(uint32_t) + sizeof(uint32_t));
-		db_clientdesc->Packet(&dwID, sizeof(uint32_t));
-		db_clientdesc->Packet(&dwOwnerID, sizeof(uint32_t));
-	}
 	else
+		ItemSystem::SetItemOwnerEntity(itemEntity, entt::null);
+
+	if (!ItemSystem::IsValidItem(itemEntity))
 	{
-		LOG_INFO("ITEM_DESTROY_SKIP {}:{} (skip={})", item->GetName(), dwID, ItemSystem::GetItemSkipSave(item->GetEntityHandle()));
+		forget();
+		return;
+	}
+	// A callback can move a still-live item. Do not delete its new ownership.
+	const auto* remainingOwner = g_registry.try_get<ecs::ItemOwner>(itemEntity);
+	if (remainingOwner && remainingOwner->owner != entt::null)
+	{
+		LOG_ERROR("ITEM_DESTROY deferred: item {} still has an owner after detachment", id);
+		return;
 	}
 
-	if (dwID)
-		m_map_pkItemByID.erase(dwID);
+	// Validate the allocation boundary before requesting persistent deletion.
+	// DBPacket writes/flushes bytes; it does not dispatch gameplay callbacks.
+	LPITEM allocation = ResolveManagedItem(itemEntity);
+	if (allocation && allocation->GetEntityHandle() != itemEntity)
+	{
+		LOG_ERROR("ITEM_DESTROY: mismatched legacy allocation for item {}", id);
+		return;
+	}
+	LOG_INFO("ITEM_DESTROY {}:{}", ItemSystem::GetItemName(itemEntity), id);
+	if (!ItemSystem::GetItemSkipSave(itemEntity) && id)
+	{
+		if (!db_clientdesc)
+			return;
+		const std::array<uint32_t, 2> payload {id, ItemSystem::GetItemLastOwnerPID(itemEntity)};
+		db_clientdesc->DBPacket(HEADER_GD_ITEM_DESTROY, 0, payload.data(), sizeof(payload));
+	}
 
-	m_VIDMap.erase(item->GetVID());
-	EntityFactory::DestroyItemEntity(g_registry, itemEntity);
+	// The only legacy boundary left here is releasing an existing allocation.
+	// Entity-only items run the same manager/index/factory cleanup without it.
+	const bool wasDelayed = m_set_pkItemForDelayedSave.contains(itemEntity);
+	const bool wasByID = id && m_map_pkItemByID.contains(id) && m_map_pkItemByID.at(id) == itemEntity;
+	const bool wasByVID = m_VIDMap.contains(vid) && m_VIDMap.at(vid) == itemEntity;
+	const auto restore = [&] {
+		if (!ItemSystem::IsValidItem(itemEntity))
+			return;
+		// Never overwrite an identity published by a nested callback.
+		if (wasByID) m_map_pkItemByID.try_emplace(id, itemEntity);
+		if (wasByVID) m_VIDMap.try_emplace(vid, itemEntity);
+		if (wasDelayed) m_set_pkItemForDelayedSave.insert(itemEntity);
+	};
+	forget();
+	try
+	{
+		EntityFactory::DestroyItemEntity(g_registry, itemEntity);
+	}
+	catch (...)
+	{
+		restore();
+		throw;
+	}
+	if (g_registry.valid(itemEntity))
+	{
+		restore();
+		LOG_ERROR("ITEM_DESTROY: factory did not retire item {}", id);
+		return;
+	}
 
+	if (allocation)
+	{
 #ifdef M2_USE_POOL
-	pool_.Destroy(item);
+		pool_.Destroy(allocation);
 #else
 #ifndef DEBUG_ALLOC
-	M2_DELETE(item);
+		M2_DELETE(allocation);
 #else
-	M2_DELETE_EX(item, file, line);
+		M2_DELETE_EX(allocation, file, line);
 #endif
 #endif
+	}
 }
 
 LPITEM ITEM_MANAGER::Find(uint32_t id)
