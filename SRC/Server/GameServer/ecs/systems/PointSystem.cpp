@@ -1581,18 +1581,6 @@ void CHARACTER::PointChange(uint8_t type, int64_t amount, bool bAmount, bool bBr
 	);
 }
 
-#ifdef __NEWPET_SYSTEM__
-void CHARACTER::SendPetLevelUpEffect(int vid, int type, int value, int amount) {
-	struct packet_point_change pack;
-
-	pack.header = HEADER_GC_CHARACTER_POINT_CHANGE;
-	pack.dwVID = vid;
-	pack.type = type;
-	pack.value = value;
-	pack.amount = amount;
-	ecs::ViewSystem::PacketView(GetEntityHandle(), &pack, sizeof(pack));
-}
-#endif
 
 namespace ecs::PointSystem {
 

@@ -9,6 +9,18 @@
 
 namespace ecs {
 
+// Creature-side state: independent of the regular pet's owner-side snapshot.
+struct GrowthPetComponent {
+    entt::entity owner { entt::null };
+    entt::entity item { entt::null };
+    uint32_t level { 1 };
+};
+
+struct NewPetSkillState {
+    std::array<uint32_t, 4> cooldowns {};
+    entt::entity immortalSource { entt::null };
+};
+
 struct PetComponent {
     entt::entity owner { entt::null };
     entt::entity item { entt::null };

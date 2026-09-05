@@ -2,8 +2,13 @@
 #define	__HEADER_NEWPET_SYSTEM__
 
 #include <entt/entt.hpp>
+#include <array>
+#include <memory>
+#include <string>
+#include <unordered_map>
+#include "event.h"
 
-class CHARACTER;
+
 
 // TODO: 펫으로서의 능력치? 라던가 친밀도, 배고픔 기타등등... 수치
 struct SNewPetAbility
@@ -24,14 +29,17 @@ public:
 	};
 
 
-protected:
+public:
 	friend class CNewPetSystem;
 
-	CNewPetActor(LPCHARACTER owner, uint32_t vnum, uint32_t options = EPetOption_Followable | EPetOption_Summonable);
-//	CPetActor(LPCHARACTER owner, uint32_t vnum, const SPetAbility& petAbility, uint32_t options = EPetOption_Followable | EPetOption_Summonable);
+	CNewPetActor(entt::entity owner, uint32_t vnum, uint32_t options = EPetOption_Followable | EPetOption_Summonable);
+
 
 	virtual ~CNewPetActor();
+	CNewPetActor(const CNewPetActor&) = delete;
+	CNewPetActor& operator=(const CNewPetActor&) = delete;
 
+protected:
 	virtual bool	Update(uint32_t deltaTime);
 
 protected:
@@ -45,9 +53,10 @@ private:
 	bool Follow(float fMinDistance = 50.f);
 
 public:
-	LPCHARACTER		GetCharacter()	const					{ return m_pkChar; }
-	entt::entity		GetCharacterEntity() const				{ return m_characterEntity; }
-	LPCHARACTER		GetOwner()	const						{ return m_pkOwner; }
+	entt::entity GetCharacter() const { return m_character; }
+	entt::entity GetOwner() const { return m_owner; }
+	entt::entity GetSummonItem() const { return m_summonItem; }
+	uint32_t GetNextExp() const;
 	uint32_t			GetVID() const							{ return m_dwVID; }
 	uint32_t			GetVnum() const							{ return m_dwVnum; }
 
@@ -62,8 +71,8 @@ public:
 	uint32_t			Summon(const char* petName, entt::entity pSummonItem, bool bSpawnFar = false);
 	void			Unsummon();
 
-	bool			IsSummoned() const			{ return nullptr != m_pkChar; }
-	void			SetSummonItem (entt::entity pItem);
+	bool IsSummoned() const;
+	bool HasValidSummon() const;
 	uint32_t			GetSummonItemVID () { return m_dwSummonItemVID; }
 	uint32_t			GetSummonItemID () { return m_dwSummonItemID; }
 	uint32_t			GetEvolution() { return m_dwevolution; }
@@ -106,6 +115,7 @@ public:
 #endif
 	void	ChangeName(const char * name);
 private:
+    void SetSummonItem(entt::entity item);
 	int			m_dwlevelstep; //Step livello del pet da da 0 a 4
 	int			m_dwExpFromMob; //Exp richiesta per il level 90% del tot
 	int			m_dwExpFromItem; //Exp richiesta per il level 10% del tot
@@ -116,7 +126,8 @@ private:
 
 	uint32_t		m_dwImmTime;
 
-	int				m_dwpetslotitem[9];
+	struct FeedSelection { entt::entity item { entt::null }; int cell { -1 }; };
+	std::array<FeedSelection, 9> m_feedItems {};
 	int				m_dwskill[4];
 	int				m_dwskillslot[4];
 	int				m_dwbonuspet[3][2];
@@ -141,9 +152,10 @@ private:
 
 	std::string		m_name;
 
-	LPCHARACTER		m_pkChar;					// Instance of pet(CHARACTER)
-	entt::entity		m_characterEntity { entt::null };
-	LPCHARACTER		m_pkOwner;
+	entt::entity m_character { entt::null };
+	entt::entity m_owner { entt::null };
+	entt::entity m_summonItem { entt::null };
+	uint32_t m_ridingVnum { 0 };
 
 //	SPetAbility		m_petAbility;				// 능력치
 };
@@ -153,11 +165,15 @@ private:
 class CNewPetSystem
 {
 public:
-	typedef	std::unordered_map<uint32_t,	CNewPetActor*>		TNewPetActorMap;		/// <VNUM, NewPetActor> map. (한 캐릭터가 같은 vnum의 펫을 여러개 가질 일이 있을까..??)
+	typedef	std::unordered_map<uint32_t, std::unique_ptr<CNewPetActor>>		TNewPetActorMap;		/// <VNUM, NewPetActor> map. (한 캐릭터가 같은 vnum의 펫을 여러개 가질 일이 있을까..??)
 
 public:
-	CNewPetSystem(LPCHARACTER owner);
+	CNewPetSystem(entt::entity owner);
 	virtual ~CNewPetSystem();
+	CNewPetSystem(const CNewPetSystem&) = delete;
+	CNewPetSystem& operator=(const CNewPetSystem&) = delete;
+	bool IsUpdateEvent(const LPEVENT& event) const { return event && event == m_pkNewPetSystemUpdateEvent; }
+	bool IsExpireEvent(const LPEVENT& event) const { return event && event == m_pkNewPetSystemExpireEvent; }
 
 	CNewPetActor*	GetByVID(uint32_t vid) const;
 	CNewPetActor*	GetByVnum(uint32_t vnum) const;
@@ -177,7 +193,7 @@ public:
 
 	void		Unsummon(uint32_t mobVnum, bool bDeleteFromList = false);
 	void		Unsummon(CNewPetActor* petActor, bool bDeleteFromList = false);
-	void		UnsummonAll(LPCHARACTER ch);
+	void		UnsummonAll();
 
 	// TODO: 진짜 펫 시스템이 들어갈 때 구현. (캐릭터가 보유한 펫의 정보를 추가할 때 라던가...)
 	CNewPetActor*	AddPet(uint32_t mobVnum, const char* petName, const SNewPetAbility& ability, uint32_t options = CNewPetActor::EPetOption_Followable | CNewPetActor::EPetOption_Summonable | CNewPetActor::EPetOption_Combatable);
@@ -214,7 +230,8 @@ public:
 
 private:
 	TNewPetActorMap	m_petActorMap;
-	LPCHARACTER		m_pkOwner;					///< 펫 시스템의 Owner
+	entt::entity m_owner { entt::null };
+	bool m_destroying { false };
 	uint32_t			m_dwUpdatePeriod;			///< 업데이트 주기 (ms단위)
 	uint32_t			m_dwLastUpdateTime;
 	LPEVENT			m_pkNewPetSystemUpdateEvent;

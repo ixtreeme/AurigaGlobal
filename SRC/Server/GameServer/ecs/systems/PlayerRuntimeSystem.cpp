@@ -70,6 +70,7 @@
 #include "../../MountInventory.h"
 #include "../../new_offlineshop.h"
 #include "../../New_PetSystem.h"
+#include "../components/pet_mount_components.hpp"
 #include "../../PetSystem.h"
 #include "../../party.h"
 #include "../../questmanager.h"
@@ -2091,9 +2092,20 @@ void CHARACTER::SetMount()
         status->isMount = true;
 }
 
+bool CHARACTER::IsNewPet() const
+{
+    const auto* status = g_registry.try_get<ecs::StatusFlags>(GetEntityHandle());
+    return status && status->isNewPet;
+}
+
+bool CHARACTER::IsImmortal() const
+{
+    const auto* state = g_registry.try_get<ecs::NewPetSkillState>(GetEntityHandle());
+    return state && state->immortalSource != entt::null && g_registry.valid(state->immortalSource);
+}
+
 void CHARACTER::SetNewPet()
 {
-    m_bIsNewPet = true;
     if (auto* status = g_registry.try_get<ecs::StatusFlags>(GetEntityHandle()))
         status->isNewPet = true;
 }
@@ -2388,18 +2400,6 @@ uint32_t CHARACTER::GetNextExp() const
         return exp_table[GetLevel()];
 }
 
-#ifdef __NEWPET_SYSTEM__
-uint32_t CHARACTER::PetGetNextExp() const
-{
-    if (IsNewPet()) {
-        if (120 < GetLevel())
-            return 2500000000;
-        else
-            return exppet_table[GetLevel()];
-    }
-    return 0;
-}
-#endif
 
 int CHARACTER::GetSkillPowerByLevel(int level, bool bMob) const
 {
@@ -4338,7 +4338,6 @@ void CHARACTER::Destroy()
 #ifdef __NEWPET_SYSTEM__
     if (m_newpetSystem)
     {
-        m_newpetSystem->Destroy();
         delete m_newpetSystem;
 
         m_newpetSystem = nullptr;
@@ -4835,13 +4834,10 @@ void CHARACTER::SetPlayerProto(const TPlayerTable* t)
 #ifdef __NEWPET_SYSTEM__
     if (m_newpetSystem)
     {
-        m_newpetSystem->Destroy();
         delete m_newpetSystem;
     }
 
-    m_newpetSystem = M2_NEW CNewPetSystem(this);
-	if (GetEntityHandle() != entt::null && g_registry.valid(GetEntityHandle()))
-		g_registry.get_or_emplace<ecs::PetRuntimeRefs>(GetEntityHandle()).newPetSystem = m_newpetSystem;
+    m_newpetSystem = M2_NEW CNewPetSystem(GetEntityHandle());
 #endif
 }
 
@@ -5781,13 +5777,6 @@ void CHARACTER::Initialize()
 
     g_registry.get_or_emplace<ecs::SyncOwner>(GetEntityHandle()).syncTime = get_float_time() - 3;
     m_dwPlayerID = 0;
-#ifdef __NEWPET_SYSTEM__
-    m_stImmortalSt = 0;
-    m_newpetskillcd[0] = 0;
-    m_newpetskillcd[1] = 0;
-    m_newpetskillcd[2] = 0;
-    m_newpetskillcd[3] = 0;
-#endif
     m_dwKillerPID = 0;
 #ifdef __SEND_TARGET_INFO__
     dwLastTargetInfoPulse = 0;
@@ -6020,7 +6009,6 @@ void CHARACTER::Initialize()
 
 #ifdef __NEWPET_SYSTEM__
     m_newpetSystem = nullptr;
-    m_bIsNewPet = false;
     m_eggvid = 0;
 #endif
     m_fAttMul = 1.0f;

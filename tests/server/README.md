@@ -93,7 +93,8 @@ inventory destruction path, or the legacy `ChangeKKAK` special-case path.
 ## Mount and pet lifecycle regression tests
 
 `MountLifecycleTests` compiles the complete, existing `MountSystem.cpp` and
-`PetSystem.cpp`; there is no parallel production implementation.
+`PetSystem.cpp`, plus `New_PetSystem.cpp`; there is no parallel production
+implementation.
 It exercises owner, follower and summon-item handles with entity-only fixtures,
 without creating a `CHARACTER` or `CItem`. Checks cover summon/unsummon, repeated
 destruction, stale owners/items/followers with recycled entity indices, ownership
@@ -132,5 +133,24 @@ item expiry and logout/relog, and pet summon/skin/bonus behaviour in-game.
 `SpawnMobEntity` now owns the shared spawn implementation; the old pointer-return
 entry point remains only for unmigrated callers. Allocation, movement and horse
 services still contain legacy internals: this is not a fully legacy-free server.
-The separate growth/skill pet system in `New_PetSystem.cpp` still uses legacy
-character pointers; this migration covers the regular `CPetSystem`.
+Growth-pet checks use a fake SQL client and database (no connection or worker
+threads), and exercise the actual SELECT parsing, save queries and actor code.
+They cover missing/invalid rows and fields, null columns, range checks, stale
+owner/item/follower generations, independent update/expiry timers, one-minute
+expiry without unsigned underflow, no duration loss from summon/skin refresh,
+initial creature-level publication, non-levelling DB hydration, evolution,
+item-ID-based escaped renaming, rejected slot indices, selected-item replacement,
+failed consumption, duplicate/foreign/locked skill books, multi-pet teardown
+and retained callbacks against a replacement system.
+
+The SQL and skill/EXP tables are fixtures, not the live schema, deployed balance
+data, or actual MySQL escaping implementation. The active ENABLE_NEW_PET_EDITS
+configuration is covered; alternative legacy skill rules are not runtime-tested.
+The test packet/affect doubles do not simulate the complete client UI, nested
+engine affect recalculations or real network insert/reencode serialization.
+Before deployment, verify pet seal DB rows (level 1-120, evolution 0-3, valid
+skill slots/levels, positive remaining duration), egg-to-first-summon, logout/relog,
+age/expiry, evolution/EXP gates, skins, rename and feeding/skill windows in-game.
+Runtime factories, movement, point/affect calculation and persistence still
+have legacy internals; removing pointer round trips here is not a full engine
+or DB-layer migration.

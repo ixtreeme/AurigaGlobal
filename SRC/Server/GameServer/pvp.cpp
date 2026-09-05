@@ -241,10 +241,10 @@ EVENTFUNC(pvp_duel_counter)
 					CNewPetSystem* chPet = chA->GetNewPetSystem();
 					CNewPetSystem* victimPet = chB->GetNewPetSystem();
 					if (chPet)
-						chPet->UnsummonAll(chA);
+						chPet->UnsummonAll();
 
 					if (victimPet)
-						victimPet->UnsummonAll(chB);
+						victimPet->UnsummonAll();
 				}
 #endif
 			}

@@ -284,8 +284,8 @@ namespace quest
 		CNewPetActor* petActor = petSystem->GetByVnum(mobVnum);
 		if (nullptr == petActor)
 			return 0;
-		const entt::entity pet = petActor->GetCharacterEntity();
-		if (pet == entt::null)
+		const entt::entity pet = petActor->GetCharacter();
+		if (!ecs::PlayerRuntime::IsValid(pet))
 			return 0;
 
 		if (lua_isstring(L, 2))

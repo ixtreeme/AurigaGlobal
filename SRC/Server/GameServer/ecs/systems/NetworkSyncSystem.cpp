@@ -371,7 +371,7 @@ bool NetworkSyncSystem::BuildCharAdditionalInfo(entt::registry& reg, entt::entit
 #endif
     }
 #ifdef __NEWPET_SYSTEM__
-    else if (const auto* pet = reg.try_get<ecs::PetComponent>(source)) {
+    else if (const auto* pet = reg.try_get<ecs::GrowthPetComponent>(source)) {
         packet.dwLevel = pet->level;
     }
 #endif
@@ -1112,6 +1112,9 @@ const char* CHARACTER::GetName(uint8_t lang) const
 #ifdef __PET_SYSTEM__
         || IsPet()
 #endif
+#ifdef __NEWPET_SYSTEM__
+        || IsNewPet()
+#endif
     )
     {
         const auto name = ecs::PlayerRuntime::GetName(GetEntityHandle());
@@ -1125,6 +1128,9 @@ const char* CHARACTER::GetName() const
     if (IsMount()
 #ifdef __PET_SYSTEM__
         || IsPet()
+#endif
+#ifdef __NEWPET_SYSTEM__
+        || IsNewPet()
 #endif
     )
     {

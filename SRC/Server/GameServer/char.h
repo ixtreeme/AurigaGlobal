@@ -786,9 +786,6 @@ public:
 	bool			Block_Exp;
 #endif
 	uint32_t			GetNextExp() const;
-#ifdef __NEWPET_SYSTEM__
-	uint32_t			PetGetNextExp() const;
-#endif
 	LPCHARACTER		DistributeExp();
 
 	// ���� ���� ���� ����� �����Ѵ�.
@@ -873,9 +870,6 @@ public:
 #endif
 	);
 
-#ifdef __NEWPET_SYSTEM__
-	void			SendPetLevelUpEffect(int vid, int type, int value, int amount);
-#endif		
 	void			CheckMaximumPoints();	// HP, SP ���� ���� ���� �ִ밪 ���� ������ �˻��ϰ� ���ٸ� �����.
 
 	bool			Show(int32_t lMapIndex, int32_t x, int32_t y, int32_t z = LONG_MAX, bool bShowSpawnMotion = false);
@@ -931,16 +925,10 @@ protected:
 	uint32_t			m_dwLoginPlayTime;
 	uint32_t			m_dwPlayerID;
 	std::string		m_stName;
-#ifdef __NEWPET_SYSTEM__
-	uint8_t			m_stImmortalSt;
-#endif
 	uint8_t			m_bCharType;
 #ifdef ENABLE_EVENT_MANAGER
 #endif
 
-#ifdef __NEWPET_SYSTEM__
-	uint32_t			m_newpetskillcd[4];
-#endif
 	CHARACTER_POINT		m_points;
 	CHARACTER_POINT_INSTANT	m_pointsInstant;
 
@@ -1624,10 +1612,7 @@ public:
 	void				Dead(entt::entity killer = entt::null, bool bImmediateDead = false);
 #ifdef __NEWPET_SYSTEM__
 	//int GetBeltCount() const;//#ifdef ENABLE_MOUNT_COUNT_ABOVE_CHAR_RAZOR93
-	void				SetImmortal(int st) { m_stImmortalSt = st; };
-	bool				IsImmortal() { return 1 == m_stImmortalSt; };
-	void				SetNewPetSkillCD(int s, uint32_t time) { m_newpetskillcd[s] = time; };
-	uint32_t				GetNewPetSkillCD(int s) { return m_newpetskillcd[s]; };
+	bool IsImmortal() const;
 #endif
 	void				Reward(bool bItemDrop);
 	void				RewardGold(entt::entity attacker);
@@ -2448,11 +2433,10 @@ public:
 
 #ifdef __NEWPET_SYSTEM__
 private:
-	bool m_bIsNewPet;
 	int m_eggvid;
 public:
 	void SetNewPet();
-	bool IsNewPet() const { return m_bIsNewPet ? true : false; }
+	bool IsNewPet() const;
 	void SetEggVid(int vid);
 	int GetEggVid() const;
 
