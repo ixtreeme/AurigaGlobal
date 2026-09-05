@@ -104,10 +104,10 @@ static void _send_bonus_info(LPCHARACTER ch)
 	int gold10_drop_bonus = 0;
 	int exp_bonus = 0;
 
-	item_drop_bonus = CPrivManager::instance().GetPriv(ch, PRIV_ITEM_DROP);
-	gold_drop_bonus = CPrivManager::instance().GetPriv(ch, PRIV_GOLD_DROP);
-	gold10_drop_bonus = CPrivManager::instance().GetPriv(ch, PRIV_GOLD10_DROP);
-	exp_bonus = CPrivManager::instance().GetPriv(ch, PRIV_EXP_PCT);
+	item_drop_bonus = CPrivManager::instance().GetPriv(chEntity, PRIV_ITEM_DROP);
+	gold_drop_bonus = CPrivManager::instance().GetPriv(chEntity, PRIV_GOLD_DROP);
+	gold10_drop_bonus = CPrivManager::instance().GetPriv(chEntity, PRIV_GOLD10_DROP);
+	exp_bonus = CPrivManager::instance().GetPriv(chEntity, PRIV_EXP_PCT);
 #ifdef TEXTS_IMPROVEMENT
 	if (item_drop_bonus) {
 		ecs::ChatSystem::SendNew(chEntity, CHAT_TYPE_INFO, 243, "%d", item_drop_bonus);

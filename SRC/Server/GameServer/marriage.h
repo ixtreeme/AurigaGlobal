@@ -117,7 +117,7 @@ namespace marriage
 			void	Login(LPCHARACTER ch);
 
 			void	Logout(uint32_t pid);
-			void	Logout(LPCHARACTER ch);
+			void	Logout(entt::entity ch);
 
 			void	WeddingReady(uint32_t dwPID1, uint32_t dwPID2, uint32_t dwMapIndex);
 			void	WeddingStart(uint32_t dwPID1, uint32_t dwPID2);

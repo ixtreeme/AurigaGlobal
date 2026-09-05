@@ -53,9 +53,7 @@ class CShop
 		virtual bool	IsPCShop()	{ return m_pkPC ? true : false; }
 
 		// 게스트 추가/삭제
-		bool	AddGuest(LPCHARACTER ch, uint32_t owner_vid, bool bOtherEmpire);
 		virtual bool	AddGuest(entt::entity guest, uint32_t owner_vid, bool bOtherEmpire);
-		void	RemoveGuest(LPCHARACTER ch);
 		void	RemoveGuest(entt::entity guest);
 
 

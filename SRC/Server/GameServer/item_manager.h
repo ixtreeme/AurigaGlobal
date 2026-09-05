@@ -407,7 +407,7 @@ class ITEM_MANAGER : public singleton<ITEM_MANAGER>
 		// (예: 1 frame) 후에 저장시킨다.
 		void			DelayedSave(LPITEM item);
 		void			FlushDelayedSave(LPITEM item); // Delayed 리스트에 있다면 지우고 저장한다. 끊김 처리시 사용 됨.
-		void FlushDelayedSaveByOwner(LPCHARACTER owner);
+		void FlushDelayedSaveByOwner(entt::entity owner);
 		void			SaveSingleItem(LPITEM item);
 
 		LPITEM                  CreateItem(uint32_t vnum, uint32_t count = 1, uint32_t dwID = 0, bool bTryMagic = false, int iRarePct = -1, bool bSkipSave = false);

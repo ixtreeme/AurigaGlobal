@@ -33,7 +33,7 @@ namespace marriage
 
 			bool IsPlayingMusic();
 
-			void SendLocalEvent(LPCHARACTER ch);
+			void SendLocalEvent(entt::entity ch);
 
 			void ShoutInMap(uint8_t type, const char* szMsg);
 		private:

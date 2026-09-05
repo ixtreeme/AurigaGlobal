@@ -184,7 +184,7 @@ namespace marriage
 		//0, "WeddingMap: IncMember %s", ecs::PlayerRuntime::GetName(((ch) ? (ch)->GetEntityHandle() : entt::null)).data());
 		m_set_pkChr.insert(ch);
 
-		SendLocalEvent(ch);
+		SendLocalEvent(ch ? ch->GetEntityHandle() : entt::null);
 
 		if (ecs::PointSystem::GetLevel(((ch) ? (ch)->GetEntityHandle() : entt::null)) < 10)
 		{
@@ -273,17 +273,16 @@ namespace marriage
 		return m_isMusic;
 	}
 
-	void WeddingMap::SendLocalEvent(LPCHARACTER ch)
+	void WeddingMap::SendLocalEvent(entt::entity ch)
 	{
-		const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
 		char szCommand[256];
 
 		if (m_isDark)
-			ecs::ChatSystem::Send(chEntity, CHAT_TYPE_COMMAND, "DayMode dark");
+			ecs::ChatSystem::Send(ch, CHAT_TYPE_COMMAND, "DayMode dark");
 		if (m_isSnow)
-			ecs::ChatSystem::Send(chEntity, CHAT_TYPE_COMMAND, "xmas_snow 1");
+			ecs::ChatSystem::Send(ch, CHAT_TYPE_COMMAND, "xmas_snow 1");
 		if (m_isMusic)
-			ecs::ChatSystem::Send(chEntity, CHAT_TYPE_COMMAND, __BuildCommandPlayMusic(szCommand, sizeof(szCommand), 1, m_stMusicFileName.c_str()));
+			ecs::ChatSystem::Send(ch, CHAT_TYPE_COMMAND, __BuildCommandPlayMusic(szCommand, sizeof(szCommand), 1, m_stMusicFileName.c_str()));
 	}
 
 	const char* WeddingMap::__BuildCommandPlayMusic(char* szCommand, size_t nCmdLen, uint8_t bSet, const char* c_szMusicFileName)

@@ -799,11 +799,6 @@ uint8_t CShop::MultipleBuy(LPCHARACTER ch, uint8_t p, uint8_t c) {
 }
 #endif
 
-bool CShop::AddGuest(LPCHARACTER ch, uint32_t owner_vid, bool bOtherEmpire)
-{
-	return AddGuest(ch ? ch->GetEntityHandle() : entt::null, owner_vid, bOtherEmpire);
-}
-
 bool CShop::AddGuest(entt::entity guest, uint32_t owner_vid, bool bOtherEmpire)
 {
 	if (guest == entt::null || !g_registry.valid(guest))
@@ -889,11 +884,6 @@ bool CShop::AddGuest(entt::entity guest, uint32_t owner_vid, bool bOtherEmpire)
 	desc->BufferedPacket(&pack, sizeof(TPacketGCShop));
 	desc->Packet(&pack2, sizeof(TPacketGCShopStart));
 	return true;
-}
-
-void CShop::RemoveGuest(LPCHARACTER ch)
-{
-	RemoveGuest(ch ? ch->GetEntityHandle() : entt::null);
 }
 
 void CShop::RemoveGuest(entt::entity guest)

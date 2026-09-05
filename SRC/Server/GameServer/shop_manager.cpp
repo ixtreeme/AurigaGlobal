@@ -162,7 +162,7 @@ bool CShopManager::StartShopping(LPCHARACTER pkChr, LPCHARACTER pkChrShopKeeper,
 	if (ecs::PlayerRuntime::GetEmpire(chr) != ecs::PlayerRuntime::GetEmpire(chrShopKeeper))
 		bOtherEmpire = true;
 
-	pkShop->AddGuest(pkChr, ecs::PlayerRuntime::GetPacketVID(chrShopKeeper), bOtherEmpire);
+	pkShop->AddGuest(chr, ecs::PlayerRuntime::GetPacketVID(chrShopKeeper), bOtherEmpire);
 	pkChr->SetShopOwner((pkChrShopKeeper ? pkChrShopKeeper->GetEntityHandle() : entt::null));
 	LOG_INFO("SHOP: START: {}", ecs::PlayerRuntime::GetName(chr).data());
 	return true;
@@ -220,7 +220,7 @@ void CShopManager::StopShopping(LPCHARACTER ch)
 	ch->SetMyShopTime();
 	//END_PREVENT_ITEM_COPY
 
-	shop->RemoveGuest(ch);
+	shop->RemoveGuest(ch ? ch->GetEntityHandle() : entt::null);
 	LOG_INFO("SHOP: END: {}", ecs::PlayerRuntime::GetName(((ch) ? (ch)->GetEntityHandle() : entt::null)).data());
 }
 

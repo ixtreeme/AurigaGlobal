@@ -1306,7 +1306,7 @@ static void GiveExp(LegacyCharHandle from, LegacyCharHandle to, int iExp)
 	int iBaseExp = iExp;
 	rate_t rateFactor = 100;
 
-	rateFactor += CPrivManager::instance().GetPriv(to, PRIV_EXP_PCT);
+	rateFactor += CPrivManager::instance().GetPriv(toEntity, PRIV_EXP_PCT);
 	if (to->IsEquipUniqueItem(UNIQUE_ITEM_LARBOR_MEDAL))
 		rateFactor += 20;
 	if (ecs::PlayerRuntime::GetMapIndex(toEntity) >= 660000 && ecs::PlayerRuntime::GetMapIndex(toEntity) < 670000)
@@ -4407,16 +4407,16 @@ void CHARACTER::RewardGold(entt::entity attacker) {
 			int iGoldPercent = MobRankStats[GetMobRank()].iGoldPercent;
 
 			if (ecs::PlayerRuntime::IsPC(attacker))
-				iGoldPercent = iGoldPercent * (100 + CPrivManager::instance().GetPriv(pkAttacker, PRIV_GOLD_DROP)) / 100;
+				iGoldPercent = iGoldPercent * (100 + CPrivManager::instance().GetPriv(attacker, PRIV_GOLD_DROP)) / 100;
 
 #ifdef ENABLE_EVENT_MANAGER
 			if (ecs::PlayerRuntime::IsPC(attacker))
 			{
 				const auto event = CHARACTER_MANAGER::Instance().CheckEventIsActive(YANG_DROP_EVENT, ecs::PlayerRuntime::GetEmpire(attacker));
 				if (event != nullptr)
-					iGoldPercent = iGoldPercent * (100 + (event->value[0] + CPrivManager::instance().GetPriv(pkAttacker, PRIV_GOLD_DROP))) / 100;
+					iGoldPercent = iGoldPercent * (100 + (event->value[0] + CPrivManager::instance().GetPriv(attacker, PRIV_GOLD_DROP))) / 100;
 				else
-					iGoldPercent = iGoldPercent * (100 + CPrivManager::instance().GetPriv(pkAttacker, PRIV_GOLD_DROP)) / 100;
+					iGoldPercent = iGoldPercent * (100 + CPrivManager::instance().GetPriv(attacker, PRIV_GOLD_DROP)) / 100;
 			}
 #else
 			if (ecs::PlayerRuntime::IsPC(attacker))
@@ -4470,9 +4470,9 @@ void CHARACTER::RewardGold(entt::entity attacker) {
 #ifdef ENABLE_EVENT_MANAGER
 			const auto event = CHARACTER_MANAGER::Instance().CheckEventIsActive(YANG_DROP_EVENT, ecs::PlayerRuntime::GetEmpire(attacker));
 			if (event != nullptr)
-				iGold10DropPct = (iGold10DropPct * 100) / (100 + event->value[0] + CPrivManager::instance().GetPriv(pkAttacker, PRIV_GOLD10_DROP));
+				iGold10DropPct = (iGold10DropPct * 100) / (100 + event->value[0] + CPrivManager::instance().GetPriv(attacker, PRIV_GOLD10_DROP));
 			else
-				iGold10DropPct = (iGold10DropPct * 100) / (100 + CPrivManager::instance().GetPriv(pkAttacker, PRIV_GOLD10_DROP));
+				iGold10DropPct = (iGold10DropPct * 100) / (100 + CPrivManager::instance().GetPriv(attacker, PRIV_GOLD10_DROP));
 #else
 			iGold10DropPct = (iGold10DropPct * 100) / (100 + CPrivManager::instance().GetPriv(pkAttacker, PRIV_GOLD10_DROP));
 #endif

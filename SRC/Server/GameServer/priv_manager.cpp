@@ -208,11 +208,6 @@ void CPrivManager::RemoveCharacterPriv(uint32_t pid, uint8_t type)
 		m_aPrivChar[type].erase(it);
 }
 
-int CPrivManager::GetPriv(LPCHARACTER ch, uint8_t type)
-{
-	return GetPriv(ch ? ch->GetEntityHandle() : entt::null, type);
-}
-
 int CPrivManager::GetPriv(entt::entity character, uint8_t type)
 {
 	if (character == entt::null || !g_registry.valid(character))

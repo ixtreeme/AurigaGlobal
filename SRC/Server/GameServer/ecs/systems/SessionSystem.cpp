@@ -1263,7 +1263,7 @@ void CHARACTER::Disconnect(const char* c_pszReason)
 #endif
     if (GetShop())
     {
-        GetShop()->RemoveGuest(this);
+        GetShop()->RemoveGuest(GetEntityHandle());
         SetShop(nullptr);
     }
 
@@ -1277,7 +1277,7 @@ void CHARACTER::Disconnect(const char* c_pszReason)
         GetParty()->UpdateOfflineState(GetPlayerID());
     }
 
-    marriage::CManager::instance().Logout(this);
+    marriage::CManager::instance().Logout(GetEntityHandle());
 
     TPacketGGLogout p;
     p.bHeader = HEADER_GG_LOGOUT;
@@ -1336,7 +1336,7 @@ void CHARACTER::Disconnect(const char* c_pszReason)
         PointChange(POINT_HP, 50 - GetHP());
     }
 
-    ITEM_MANAGER::instance().FlushDelayedSaveByOwner(this);
+    ITEM_MANAGER::instance().FlushDelayedSaveByOwner(GetEntityHandle());
 
     if (!CHARACTER_MANAGER::instance().FlushDelayedSave(GetEntityHandle()))
         SaveReal();

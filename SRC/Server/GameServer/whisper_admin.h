@@ -16,7 +16,7 @@ class CWhisperAdmin : public singleton<CWhisperAdmin>
 		std::string GetLang();
 		int GetColor();
 
-		void SaveLog(LPCHARACTER ch, const char* c_pszText, const char* c_pszLang, int color);
+		void SaveLog(entt::entity ch, const char* c_pszText, const char* c_pszLang, int color);
 		
 		void SendWhisper(const char* c_pszText);		
 		int Whisper(LPDESC d, const char * c_pData, size_t uiBytes);

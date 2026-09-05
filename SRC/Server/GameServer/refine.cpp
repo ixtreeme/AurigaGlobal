@@ -31,10 +31,10 @@ CRefineManager::~CRefineManager()
 		REFINE_VNUM_POTION_EXTRA,
 	};
 
-	int CRefineManager::Result(LPCHARACTER ch)
+	int CRefineManager::Result(entt::entity ch)
 	{
 		int uninitialized = 0;
-		int flag = ecs::QuestSystem::GetFlag(((ch) ? (ch)->GetEntityHandle() : entt::null), REFINE_INCREASE);
+		int flag = ecs::QuestSystem::GetFlag(ch, REFINE_INCREASE);
 
 		if (flag > 0)
 			return flag;

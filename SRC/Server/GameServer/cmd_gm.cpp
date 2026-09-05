@@ -1444,7 +1444,7 @@ ACMD(do_state)
 		ecs::PointSystem::Get(((tch) ? (tch)->GetEntityHandle() : entt::null), POINT_IMMUNE_FALL));
 
 	for (int i = 0; i < MAX_PRIV_NUM; ++i) {
-		if (CPrivManager::instance().GetPriv(tch, i))
+		if (CPrivManager::instance().GetPriv(((tch) ? (tch)->GetEntityHandle() : entt::null), i))
 		{
 			int iByEmpire = CPrivManager::instance().GetPrivByEmpire((ecs::PlayerRuntime::GetEmpire(((tch) ? (tch)->GetEntityHandle() : entt::null))), i);
 			int iByGuild = 0;

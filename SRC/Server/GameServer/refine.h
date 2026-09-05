@@ -56,7 +56,7 @@ class CRefineManager : public singleton<CRefineManager>
 	void	Increase(LPCHARACTER ch, uint8_t lLow, uint8_t lMedium, uint8_t lExtra);
 	void	Reset(LPCHARACTER ch);
 	void	Reset_percent(LPCHARACTER ch);
-	int		Result(LPCHARACTER ch);
+	int		Result(entt::entity ch);
 #endif
 
 

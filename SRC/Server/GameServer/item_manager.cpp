@@ -594,9 +594,9 @@ void ITEM_MANAGER::FlushDelayedSave(LPITEM item)
 	SaveSingleItem(item);
 }
 
-void ITEM_MANAGER::FlushDelayedSaveByOwner(LPCHARACTER owner)
+void ITEM_MANAGER::FlushDelayedSaveByOwner(entt::entity owner)
 {
-	if (!owner)
+	if (!ecs::PlayerRuntime::IsValid(owner))
 		return;
 
 	auto it = m_set_pkItemForDelayedSave.begin();
@@ -609,7 +609,7 @@ void ITEM_MANAGER::FlushDelayedSaveByOwner(LPCHARACTER owner)
 			continue;
 		}
 
-		if (item->GetOwnerEntity() == owner->GetEntityHandle())
+		if (item->GetOwnerEntity() == owner)
 		{
 			it = m_set_pkItemForDelayedSave.erase(it);
 			SaveSingleItem(item);

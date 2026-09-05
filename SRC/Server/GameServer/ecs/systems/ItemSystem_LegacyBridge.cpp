@@ -10923,7 +10923,7 @@ bool CHARACTER::DoRefine(LPITEM item, bool bMoneyOnly)
 	}
 
 	int success_prob = prt->prob;
-	success_prob += CRefineManager::instance().Result(this);
+	success_prob += CRefineManager::instance().Result(GetEntityHandle());
 #else
 	if (IsRefineThroughGuild() || bMoneyOnly)
 		prob -= 10;
@@ -11307,7 +11307,7 @@ bool CHARACTER::DoRefineWithScroll(LPITEM item)
 	}
 
 #ifdef ENABLE_FEATURES_REFINE_SYSTEM	
-	success_prob += CRefineManager::instance().Result(this);
+	success_prob += CRefineManager::instance().Result(GetEntityHandle());
 
 #endif
 	ItemSystem::ConsumeItemEcs((pkItemScroll ? pkItemScroll->GetEntityHandle() : entt::null));
@@ -12139,7 +12139,7 @@ bool CHARACTER::RefineInformation(uint8_t bCell, uint8_t bType, int iAdditionalC
 	}
 
 #ifdef ENABLE_FEATURES_REFINE_SYSTEM
-	success_prob += CRefineManager::instance().Result(this);
+	success_prob += CRefineManager::instance().Result(GetEntityHandle());
 #endif
 
 	success_prob = MINMAX(0, success_prob, 100);

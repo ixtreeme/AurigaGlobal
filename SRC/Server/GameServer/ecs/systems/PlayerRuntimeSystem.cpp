@@ -4441,7 +4441,7 @@ void CHARACTER::Destroy()
 
     if (GetShop())
     {
-        GetShop()->RemoveGuest(this);
+        GetShop()->RemoveGuest(GetEntityHandle());
         SetShop(nullptr);
     }
 
@@ -5223,11 +5223,11 @@ void CHARACTER::OnClick(entt::entity causer)
 
                 if (pkCauser->GetShop())
                 {
-                    pkCauser->GetShop()->RemoveGuest(pkCauser);
+                    pkCauser->GetShop()->RemoveGuest(causer);
                     pkCauser->SetShop(nullptr);
                 }
 
-                GetMyShop()->AddGuest(pkCauser, GetPacketVID(), false);
+                GetMyShop()->AddGuest(causer, GetPacketVID(), false);
                 pkCauser->SetShopOwner(GetEntityHandle());
                 return;
             }

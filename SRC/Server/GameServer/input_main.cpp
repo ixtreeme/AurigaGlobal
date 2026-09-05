@@ -5628,7 +5628,7 @@ int CInputMain::Analyze(LPDESC d, uint8_t bHeader, const char * c_pData)
 					)) {
 						LPSHOP shop = CShopManager::instance().Get(p->shopid);
 						if (shop) {
-							shop->AddGuest(ch, 0, false);
+							shop->AddGuest(d->GetEntity(), 0, false);
 							ch->SetShopOwner(entt::null);
 						}
 					}

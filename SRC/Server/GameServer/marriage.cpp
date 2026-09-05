@@ -54,14 +54,14 @@ namespace marriage
 	const int MARRIAGE_POINT_PER_DAY_FAST = 2;
 	using namespace std;
 
-	void SendLoverInfo(LPCHARACTER ch, const string& lover_name, int love_point)
+	void SendLoverInfo(entt::entity ch, const string& lover_name, int love_point)
 	{
 		TPacketGCLoverInfo p;
 
 		p.header = HEADER_GC_LOVER_INFO;
 		strlcpy(p.name, lover_name.c_str(), sizeof(p.name));
 		p.love_point = love_point;
-		ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null))->Packet(&p, sizeof(p));
+		ecs::PlayerRuntime::GetDesc(ch)->Packet(&p, sizeof(p));
 	}
 
 	TMarriage::~TMarriage()
@@ -267,13 +267,13 @@ namespace marriage
 		{
 			ch1 = ch;
 			if (is_married)
-				SendLoverInfo(ch1, name2, GetMarriagePoint());
+				SendLoverInfo(((ch1) ? (ch1)->GetEntityHandle() : entt::null), name2, GetMarriagePoint());
 		}
 		else if ((ecs::PlayerRuntime::GetPlayerID(chEntity)) == m_pid2)
 		{
 			ch2 = ch;
 			if (is_married)
-				SendLoverInfo(ch2, name1, GetMarriagePoint());
+				SendLoverInfo(((ch2) ? (ch2)->GetEntityHandle() : entt::null), name1, GetMarriagePoint());
 		}
 
 		// �� �� �� ���μ����� �α��� ���̸� �����͸� �����ϰ� �̺�Ʈ �߻�
@@ -485,8 +485,8 @@ namespace marriage
 
 		if (IsOnline())
 		{
-			SendLoverInfo(ch1, name2, GetMarriagePoint());
-			SendLoverInfo(ch2, name1, GetMarriagePoint());
+			SendLoverInfo(((ch1) ? (ch1)->GetEntityHandle() : entt::null), name2, GetMarriagePoint());
+			SendLoverInfo(((ch2) ? (ch2)->GetEntityHandle() : entt::null), name1, GetMarriagePoint());
 
 			ecs::ChatSystem::Send(((ch1) ? (ch1)->GetEntityHandle() : entt::null), CHAT_TYPE_COMMAND, "lover_login");
 			ecs::ChatSystem::Send(((ch2) ? (ch2)->GetEntityHandle() : entt::null), CHAT_TYPE_COMMAND, "lover_login");
@@ -774,9 +774,9 @@ namespace marriage
 		pMarriage->Logout(pid);
 	}
 
-	void CManager::Logout(LPCHARACTER ch)
+	void CManager::Logout(entt::entity ch)
 	{
-		Logout((ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null))));
+		Logout((ecs::PlayerRuntime::GetPlayerID(ch)));
 	}
 
 	void CManager::WeddingReady(uint32_t dwPID1, uint32_t dwPID2, uint32_t dwMapIndex)
