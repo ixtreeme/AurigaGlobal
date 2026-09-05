@@ -1178,9 +1178,13 @@ uint32_t CHARACTER::GetMountSkinVnum() {
 
 void CHARACTER::ComputeMountInventoryBonuses()
 {
-	std::map<uint8_t, int32_t> mount_bonus_map;
+	MountSystem::ComputeMountInventoryBonuses(GetEntityHandle());
+}
 
-	CMountInventory* mi = GetMountInventory();
+void MountSystem::ComputeMountInventoryBonuses(entt::entity owner)
+{
+	std::map<uint8_t, int64_t> mount_bonus_map;
+	CMountInventory* mi = GetMountInventory(owner);
 	if (!mi)
 		return;
 
@@ -1190,7 +1194,7 @@ void CHARACTER::ComputeMountInventoryBonuses()
 	for (int pos = 0; pos < total; ++pos)
 	{
 		const entt::entity item = mi->Get(pos);
-		if (!ItemSystem::IsValidItem(item))
+		if (!ItemSystem::IsValidItem(item) || ItemSystem::GetItemOwner(item) != owner)
 			continue;
 
 		const uint32_t vnum = ItemSystem::GetItemVnum(item);
@@ -1233,5 +1237,8 @@ void CHARACTER::ComputeMountInventoryBonuses()
 	}
 
 	for (const auto& it : mount_bonus_map)
-		PointChange(it.first, it.second);
+	{
+		if (!g_registry.valid(owner)) return;
+		ecs::PointSystem::Change(owner, it.first, it.second);
+	}
 }

@@ -39,7 +39,6 @@ void DistributeSP(entt::entity victim, entt::entity killer, int iMethod);
 uint32_t GetAlignment(entt::entity e);
 uint32_t GetRealAlignment(entt::entity e);
 uint8_t GetAlignmentGrade(entt::entity e);
-void ApplyAlignmentBonus(entt::entity e);
 void UpdateAlignment(entt::entity e, uint32_t amount);
 void SetKillerMode(entt::entity e, bool isOn);
 bool IsKillerMode(entt::entity e);

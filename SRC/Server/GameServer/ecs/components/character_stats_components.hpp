@@ -8,6 +8,7 @@ namespace ecs {
 
 struct CharacterStatsComponent {
     int64_t points[POINT_MAX_NUM] {};
+    bool recomputing { false };
 };
 
 } // namespace ecs

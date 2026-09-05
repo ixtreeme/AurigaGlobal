@@ -22,6 +22,10 @@ bool SetLevelFromQuest(entt::entity e, int newLevel);
 bool ResetStat(entt::entity e, int statIndex);
 bool ResetAllPoints(entt::entity e, int level);
 void Compute(entt::entity e);
+#ifdef __ENABLE_EXTEND_INVEN_SYSTEM__
+int GetInventoryExpansion(entt::entity e);
+void SetInventoryExpansion(entt::entity e, int value);
+#endif
 
 #ifdef __ENABLE_BLOCK_EXP__
 bool IsExperienceBlocked(entt::entity e);
@@ -40,4 +44,3 @@ void Change(entt::entity e, uint8_t type, int64_t amount,
 );
 
 } // namespace ecs::PointSystem
-

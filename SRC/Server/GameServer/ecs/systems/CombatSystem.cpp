@@ -388,13 +388,6 @@ uint8_t GetAlignmentGrade(entt::entity e)
     return 0;
 }
 
-void ApplyAlignmentBonus(entt::entity e)
-{
-    if (auto* ch = LegacyCharOf(e)) {
-        ch->ApplyAlignmentBonus();
-    }
-}
-
 void UpdateAlignment(entt::entity e, uint32_t amount)
 {
     if (auto* ch = LegacyCharOf(e)) {
@@ -634,35 +627,6 @@ uint8_t CHARACTER::GetAlignmentGrade() const
 }
 
 
-void CHARACTER::ApplyAlignmentBonus()
-{
-	if (!IsPC()) return;
-	const uint8_t g = GetAlignmentGrade();
-
-	static const int hp[21] = { 500,1000,1500,2000,2500,4000,6000,8000,10000,12000,14000,16000,18000,20000,25000,30000,35000,40000,45000,50000,60000 };
-	static const int mon[21] = { 1,3,5,7,9,12,15,18,21,25,25,30,35,40,50,55,60,65,70,75,85 };
-	static const int hum[21] = { 1,3,5,7,9,12,15,18,21,25,25,30,35,40,50,55,60,65,70,75,85 };
-	static const int met[21] = { 0,0,0,0,0,0,0,0,5,10,15,20,25,30,35,40,45,50,55,60,70 };
-	static const int boss[21] = { 0,0,0,0,0,0,0,0,0,5,10,15,20,25,30,35,40,45,50,55,65 };
-	static const int pvm[21] = { 0,0,0,0,0,5,5,5,5,5,10,10,15,20,25,30,35,40,45,50,60 };
-	static const int normal[21] = { 0,0,0,0,0,0,0,0,0,0,0,0,0,5,10,15,20,25,30,35,45 };
-	static const int skill[21] = { 0,0,0,0,0,0,0,0,0,0,0,0,0,5,10,15,20,25,30,35,45 };
-	// grade nem vltozott -> a cache j, nem kell jraszmolni
-	if (g == m_lastAlignmentGrade)
-		return;
-
-	// cache frissts (ezek tllnek ComputePoints kztt)
-	m_alignBonusHP = hp[g];
-	m_alignBonusMonster = mon[g];
-	m_alignBonusHuman = hum[g];
-	m_alignBonusMetin = met[g];
-	m_alignBonusBoss = boss[g];
-	m_alignBonusPvm = pvm[g];
-	m_alignBonusNormal = normal[g];
-	m_alignBonusSkill = skill[g];
-
-	m_lastAlignmentGrade = g;
-}
 
 void CHARACTER::UpdateAlignment(uint32_t iAmount)
 {
@@ -676,15 +640,14 @@ void CHARACTER::UpdateAlignment(uint32_t iAmount)
 	m_iAlignment = m_iRealAlignment;
 
 	const uint8_t newGrade = GetAlignmentGrade();
-	if (oldGrade != newGrade)
-	{
-		ComputePoints(); // ekkor vltozik a cache + jraplnek pontok
-	}
 	if (auto* combat = g_registry.try_get<ecs::CombatStats>(GetEntityHandle())) {
 		combat->alignment = m_iAlignment;
 		combat->realAlignment = m_iRealAlignment;
 		g_registry.emplace_or_replace<ecs::DirtyTag>(GetEntityHandle());
 	}
+
+	if (oldGrade != newGrade)
+		ecs::PointSystem::Compute(GetEntityHandle());
 
 	if (oldVisibleAlignment != m_iAlignment / 10)
 		NetworkSyncSystem::BroadcastCharAdditionalInfo(g_registry, GetEntityHandle());

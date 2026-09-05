@@ -47,6 +47,19 @@
 #include "ecs/components/identity_components.hpp"
 namespace
 {
+	void InitializeSpawnArchetype(const TMobTable& proto, int x, int y, int map, uint32_t vid)
+	{
+		// Point calculation needs the complete archetype before SetProto.
+		if (proto.bType == CHAR_TYPE_STONE)
+			EntityFactory::CreateStone(g_registry, proto, x, y, map, vid);
+		else if (proto.bType == CHAR_TYPE_MONSTER)
+			EntityFactory::CreateMonster(g_registry, proto, x, y, map, vid);
+		else
+			// Horses, doors and other non-monster actors share the NPC archetype;
+			// CharacterType still retains the exact prototype type.
+			EntityFactory::CreateNPC(g_registry, proto, x, y, map, vid);
+	}
+
 	inline double uniform_random(double min, double max)
 	{
 		static thread_local std::mt19937 rng(std::random_device{}());
@@ -688,6 +701,7 @@ LPCHARACTER CHARACTER_MANAGER::SpawnMobRandomPosition(uint32_t dwVnum, int32_t l
 	}
 
 	const entt::entity character = ch->GetEntityHandle();
+	InitializeSpawnArchetype(pkMob->m_table, x, y, lMapIndex, ch->GetLegacyVID());
 
 	ch->SetProto(pkMob);
 
@@ -705,24 +719,6 @@ LPCHARACTER CHARACTER_MANAGER::SpawnMobRandomPosition(uint32_t dwVnum, int32_t l
 		return nullptr;
 	}
 
-	// Phase 8 diagnosis: keep startup ECS registration conservative.
-	// NPCs/stones are required for quest resolution; bulk monster registration
-	// on startup is deferred until the login path is stable again.
-	if (ch)
-	{
-		if (pkMob->m_table.bType == CHAR_TYPE_STONE)
-		{
-			EntityFactory::CreateStone(g_registry, ch->GetMobTable(), ecs::PlayerRuntime::GetX(character), ecs::PlayerRuntime::GetY(character), ecs::PlayerRuntime::GetMapIndex(character), ch->GetLegacyVID());
-		}
-		else if (pkMob->m_table.bType == CHAR_TYPE_MONSTER)
-		{
-			EntityFactory::CreateMonster(g_registry, ch->GetMobTable(), ecs::PlayerRuntime::GetX(character), ecs::PlayerRuntime::GetY(character), ecs::PlayerRuntime::GetMapIndex(character), ch->GetLegacyVID());
-		}
-		else if (pkMob->m_table.bType == CHAR_TYPE_NPC || pkMob->m_table.bType == CHAR_TYPE_WARP || pkMob->m_table.bType == CHAR_TYPE_GOTO)
-		{
-			EntityFactory::CreateNPC(g_registry, ch->GetMobTable(), ecs::PlayerRuntime::GetX(character), ecs::PlayerRuntime::GetY(character), ecs::PlayerRuntime::GetMapIndex(character), ch->GetLegacyVID());
-		}
-	}
 
 	return ch;
 }
@@ -821,6 +817,7 @@ entt::entity CHARACTER_MANAGER::SpawnMobEntity(uint32_t dwVnum, int32_t lMapInde
 	}
 
 	const entt::entity character = ch->GetEntityHandle();
+	InitializeSpawnArchetype(pkMob->m_table, x, y, lMapIndex, ch->GetLegacyVID());
 
 	if (iRot == -1)
 		iRot = number(0, 360);
@@ -886,24 +883,6 @@ entt::entity CHARACTER_MANAGER::SpawnMobEntity(uint32_t dwVnum, int32_t lMapInde
 	}
 #endif
 
-	// Phase 8 diagnosis: keep startup ECS registration conservative.
-	// NPCs/stones are required for quest resolution; bulk monster registration
-	// on startup is deferred until the login path is stable again.
-	if (ch)
-	{
-		if (pkMob->m_table.bType == CHAR_TYPE_STONE)
-		{
-			EntityFactory::CreateStone(g_registry, *ecs::PlayerRuntime::GetMobTable(character), ecs::PlayerRuntime::GetX(character), ecs::PlayerRuntime::GetY(character), ecs::PlayerRuntime::GetMapIndex(character), ecs::PlayerRuntime::GetPacketVID(character));
-		}
-		else if (pkMob->m_table.bType == CHAR_TYPE_MONSTER)
-		{
-			EntityFactory::CreateMonster(g_registry, *ecs::PlayerRuntime::GetMobTable(character), ecs::PlayerRuntime::GetX(character), ecs::PlayerRuntime::GetY(character), ecs::PlayerRuntime::GetMapIndex(character), ecs::PlayerRuntime::GetPacketVID(character));
-		}
-		else if (pkMob->m_table.bType == CHAR_TYPE_NPC || pkMob->m_table.bType == CHAR_TYPE_WARP || pkMob->m_table.bType == CHAR_TYPE_GOTO)
-		{
-			EntityFactory::CreateNPC(g_registry, *ecs::PlayerRuntime::GetMobTable(character), ecs::PlayerRuntime::GetX(character), ecs::PlayerRuntime::GetY(character), ecs::PlayerRuntime::GetMapIndex(character), ecs::PlayerRuntime::GetPacketVID(character));
-		}
-	}
 
 	// Phase 8 diagnosis - REMOVE AFTER SPAWN PATH IS VERIFIED
 	if (bShow && ch)

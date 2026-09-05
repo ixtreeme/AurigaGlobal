@@ -4840,6 +4840,7 @@ void CHARACTER::SetProto(const CMob* pkMob)
 
     m_pkMobData = pkMob;
     m_pkMobInst = M2_NEW CMobInstance;
+    g_registry.emplace_or_replace<ecs::MobDataRef>(GetEntityHandle(), pkMob, m_pkMobInst);
 
     g_registry.get_or_emplace<ecs::CombatStats>(GetEntityHandle()).pkMode = PK_MODE_FREE;
 
@@ -5749,23 +5750,6 @@ void CHARACTER::Initialize()
     m_bSkillHit = false;
 #endif
     m_bOpeningSafebox = false;
-    m_lastAlignmentGrade = 255;
-    m_alignBonusHP = 0;
-    m_alignBonusMonster = 0;
-    m_alignBonusHuman = 0;
-    m_alignBonusMetin = 0;
-    m_alignBonusBoss = 0;
-    m_alignBonusPvm = 0;
-    m_alignBonusNormal = 0;
-    m_alignBonusSkill = 0;
-    m_alignAppliedHP = 0;
-    m_alignAppliedMonster = 0;
-    m_alignAppliedHuman = 0;
-    m_alignAppliedMetin = 0;
-    m_alignAppliedBoss = 0;
-    m_alignAppliedPvm = 0;
-    m_alignAppliedNormal = 0;
-    m_alignAppliedSkill = 0;
 
     g_registry.get_or_emplace<ecs::SyncOwner>(GetEntityHandle()).syncTime = get_float_time() - 3;
     m_dwPlayerID = 0;

@@ -1,623 +1,267 @@
 #include "../../stdafx.h"
-
 #include "StatSystem.hpp"
-
-#include <common/VnumHelper.h>
-
-#include "../EntityFactory.hpp"
-#include "../Registry.hpp"
-#include "ItemSystem.hpp"
-#include "NetworkSyncSystem.hpp"
 #include "PointSystem.hpp"
-
-#include "../../char.h"
-
-
-#include "../../config.h"
-#include "../../utils.h"
-#include "../../crc32.h"
-#include "../../char_manager.h"
-#include "../../desc_client.h"
-#include "../../desc_manager.h"
-#include "../../buffer_manager.h"
-#include "../../item_manager.h"
-#include "../../motion.h"
-#include "../../vector.h"
-#include "../../packet.h"
-#include "../../cmd.h"
-#include "../../fishing.h"
-#include "../../exchange.h"
-#include "../../battle.h"
-#include "../../affect.h"
-#include "../../shop.h"
-#include "../../shop_manager.h"
-#include "../../safebox.h"
-#include "../../MountInventory.h"
-#include "../../regen.h"
-#include "../../pvp.h"
-#include "../../party.h"
-#include "../../start_position.h"
-#include "../../questmanager.h"
-#include "../../log.h"
-#include "../../p2p.h"
-#include "../../guild.h"
-#include "../../guild_manager.h"
-#include "../../dungeon.h"
-#include "../../messenger_manager.h"
-#include "../../unique_item.h"
-#include "../../priv_manager.h"
-#include "../../war_map.h"
-#include "../../banword.h"
-#include "../../target.h"
-#include "../../wedding.h"
-#include "../../mob_manager.h"
-#include "../../mining.h"
-#include "../../arena.h"
-#include "../../dev_log.h"
-#include "../../horsename_manager.h"
-#include "../../pcbang.h"
-#include "../../gm.h"
-#include "../../map_location.h"
-#include "../../skill_power.h"
-#include "../../buff_on_attributes.h"
-#include "../../constants.h"
-#ifdef __ENABLE_NEW_OFFLINESHOP__
-#include "../../new_offlineshop.h"
-#include "../../new_offlineshop_manager.h"
-#endif
-
-#ifdef ENABLE_MOUNT_COSTUME_SYSTEM
-#include "../../MountSystem.h"
-#endif
-
-#ifdef ENABLE_BATTLE_PASS
-#include "../../battle_pass.h"
-#endif
-
-#ifdef __PET_SYSTEM__
-#include "../../PetSystem.h"
-#include <Core/Logging.hpp>
-#include "DragonSoulSystem.hpp"
+#include "PlayerRuntimeSystem.hpp"
+#include "ItemSystem.hpp"
+#include "MountSystem.hpp"
 #include "SkillSystem.hpp"
-#endif
-#ifdef __NEWPET_SYSTEM__
-#include "../../New_PetSystem.h"
-#endif
-#include <boost/algorithm/string/find.hpp>
-
+#include "DragonSoulSystem.hpp"
+#include "AffectSystem.hpp"
+#include "NetworkSyncSystem.hpp"
+#include "../Registry.hpp"
+#include "../components/character_stats_components.hpp"
+#include "../components/vital_components.hpp"
+#include "../components/skill_components.hpp"
+#include "../components/combat_components.hpp"
+#include "../../char.h"
+#include "../../constants.h"
+#include "../../char_manager.h"
+#include "../../skill.h"
 #include "../../DragonSoul.h"
-#include <common/CommonDefines.h>
-
-#include "../../../Poly/Constants.h"
-#ifdef __SEND_TARGET_INFO__
+#include "../../PetSystem.h"
+#include "../../horse_rider.h"
+#include <Core/Logging.hpp>
 #include <algorithm>
-#include <iterator>
+#include <array>
+#include <unordered_set>
+
+namespace ecs::PointSystem {
+namespace {
+bool HasPointState(entt::entity e)
+{
+    return g_registry.valid(e) && g_registry.all_of<CharacterStatsComponent, CharacterPoints, Health, Mana, Stamina>(e);
+}
+
+struct RecomputeGuard {
+    entt::entity entity;
+    ~RecomputeGuard() {
+        if (g_registry.valid(entity))
+            if (auto* state = g_registry.try_get<CharacterStatsComponent>(entity))
+                state->recomputing = false;
+    }
+};
+
+void ApplyAlignmentPoints(entt::entity e)
+{
+    if (!ecs::PlayerRuntime::IsPC(e)) return;
+    const auto* combat = g_registry.try_get<CombatStats>(e);
+    const uint32_t alignment = combat ? combat->realAlignment / 10 : 0;
+    static constexpr std::array<uint32_t, 20> ceilings {
+        4999,14999,19999,29999,49999,74999,99999,124999,174999,249999,
+        499999,749999,999999,1499999,2499999,2999999,3499999,3999999,4499999,4999999
+    };
+    const auto grade = std::lower_bound(ceilings.begin(), ceilings.end(), alignment) - ceilings.begin();
+    static constexpr uint8_t types[] {POINT_MAX_HP, POINT_ATTBONUS_MONSTER, POINT_ATTBONUS_HUMAN,
+        POINT_ATTBONUS_METIN, POINT_ATTBONUS_BOSS, POINT_ATTBONUS_MEDI_PVM,
+        POINT_NORMAL_HIT_DAMAGE_BONUS, POINT_SKILL_DAMAGE_BONUS};
+    static constexpr int bonuses[][21] {
+        {500,1000,1500,2000,2500,4000,6000,8000,10000,12000,14000,16000,18000,20000,25000,30000,35000,40000,45000,50000,60000},
+        {1,3,5,7,9,12,15,18,21,25,25,30,35,40,50,55,60,65,70,75,85},
+        {1,3,5,7,9,12,15,18,21,25,25,30,35,40,50,55,60,65,70,75,85},
+        {0,0,0,0,0,0,0,0,5,10,15,20,25,30,35,40,45,50,55,60,70},
+        {0,0,0,0,0,0,0,0,0,5,10,15,20,25,30,35,40,45,50,55,65},
+        {0,0,0,0,0,5,5,5,5,5,10,10,15,20,25,30,35,40,45,50,60},
+        {0,0,0,0,0,0,0,0,0,0,0,0,0,5,10,15,20,25,30,35,45},
+        {0,0,0,0,0,0,0,0,0,0,0,0,0,5,10,15,20,25,30,35,45}
+    };
+    for (size_t i = 0; i < std::size(types) && HasPointState(e); ++i)
+        if (bonuses[i][grade]) Change(e, types[i], bonuses[i][grade]);
+}
+
+void ApplyBeltPoints(entt::entity e)
+{
+    std::array<int64_t, POINT_MAX_NUM> bonuses {};
+    std::unordered_set<entt::entity> seen;
+    for (int cell = BELT_INVENTORY_SLOT_START; cell < BELT_INVENTORY_SLOT_END; ++cell) {
+        const auto item = ItemSystem::GetInventoryItem(e, cell);
+        if (!ItemSystem::IsValidItem(item) || ItemSystem::GetItemOwner(item) != e ||
+            !seen.insert(item).second) continue;
+        const auto vnum = ItemSystem::GetItemVnum(item);
+        // Same enabled whitelist as before; the commented-out mount IDs
+        // never contributed here. Item attributes belong to mount storage.
+        if (vnum < 18000 || vnum > 18159) continue;
+        const auto* proto = ItemSystem::GetItemProto(item);
+        if (!proto) continue;
+        for (const auto apply : proto->aApplies) {
+            if (apply.bType == APPLY_NONE || apply.bType >= MAX_APPLY_NUM || !apply.lValue) continue;
+            const auto type = aApplyInfo[apply.bType].bPointType;
+            if (type != POINT_NONE && type < POINT_MAX_NUM) bonuses[type] += apply.lValue;
+        }
+    }
+    for (size_t type = 1; type < bonuses.size() && HasPointState(e); ++type)
+        if (bonuses[type]) Change(e, static_cast<uint8_t>(type), bonuses[type]);
+}
+} // namespace
+
+void Compute(entt::entity e)
+{
+    if (!HasPointState(e)) return;
+    const bool player = ecs::PlayerRuntime::IsPC(e);
+    const auto job = ecs::PlayerRuntime::GetJob(e);
+    const auto* mob = ecs::PlayerRuntime::GetMobTable(e);
+    if ((player && job >= JOB_MAX_NUM) || (!player && !mob)) return;
+    if (g_registry.get<CharacterStatsComponent>(e).recomputing) return;
+    g_registry.get<CharacterStatsComponent>(e).recomputing = true;
+    RecomputeGuard guard {e};
+
+    // Copy mob inputs before any callback. No component/prototype pointer is
+    // retained across item, affect, pet, event or network services.
+    const int64_t mobHP = mob ? mob->dwMaxHP : 0;
+    const int mobAttackSpeed = mob ? mob->sAttackSpeed : 0;
+    const int mobMoveSpeed = mob ? mob->sMovingSpeed : 0;
+    const uint32_t mobImmune = mob ? mob->dwImmuneFlag : 0;
+    const int64_t hpBefore = Get(e, POINT_HP), spBefore = Get(e, POINT_SP);
+    static constexpr uint8_t preservedTypes[] {
+        POINT_STAT, POINT_STAT_RESET_COUNT, POINT_SKILL, POINT_SUB_SKILL,
+        POINT_HORSE_SKILL, POINT_LEVEL_STEP, POINT_PARTY_ATTACKER_BONUS,
+        POINT_PARTY_TANKER_BONUS, POINT_PARTY_BUFFER_BONUS,
+        POINT_PARTY_SKILL_MASTER_BONUS, POINT_PARTY_HASTE_BONUS,
+        POINT_PARTY_DEFENDER_BONUS, POINT_HP_RECOVERY, POINT_SP_RECOVERY
+    };
+    std::array<int64_t, std::size(preservedTypes)> preserved {};
+    for (size_t i = 0; i < preserved.size(); ++i) preserved[i] = Get(e, preservedTypes[i]);
+    // Clear the authority, not the unused CHARACTER copy. This also resets
+    // flat HP/SP modifiers and the actual skill-damage component.
+    std::fill(std::begin(g_registry.get<CharacterStatsComponent>(e).points),
+        std::end(g_registry.get<CharacterStatsComponent>(e).points), 0);
+    std::fill(std::begin(g_registry.get<CharacterPoints>(e).instant.points),
+        std::end(g_registry.get<CharacterPoints>(e).instant.points), 0);
+    g_registry.get_or_emplace<SkillDamageBonus>(e).bySkill.clear();
+    ecs::PlayerRuntime::BuffOnAttr_ClearAll(e);
+    if (!HasPointState(e)) return;
+    ecs::PlayerRuntime::SetImmuneFlag(e, player ? 0 : mobImmune);
+
+    for (size_t i = 0; i < preserved.size(); ++i) Set(e, preservedTypes[i], preserved[i]);
+    for (const auto type : {POINT_ST, POINT_HT, POINT_DX, POINT_IQ}) Set(e, type, GetReal(e, type));
+#ifdef ENABLE_FIX_LEVELUP_EFFECT
+    ecs::PlayerRuntime::SetPart(e, PART_MAIN, ecs::PlayerRuntime::GetPart(e, PART_MAIN));
+#else
+    ecs::PlayerRuntime::SetPart(e, PART_MAIN, ecs::PlayerRuntime::GetOriginalPart(e, PART_MAIN));
 #endif
-#ifdef ENABLE_SWITCHBOT
-#include "../../new_switchbot.h"
-#endif
+    for (const auto part : {PART_WEAPON, PART_HEAD, PART_HAIR
 #ifdef ENABLE_RUNE_SYSTEM
-#include <common/rune_length.h>
+        , PART_RUNE
 #endif
-#ifdef ENABLE_STOLE_COSTUME
-#include <common/stole_length.h>
+#ifdef ENABLE_ACCE_SYSTEM
+        , PART_ACCE
 #endif
-#include "../../mount_inventory_helper.h"
-#ifdef ENABLE_CPP_DUNGEON_RAZOR93
-#include "../../OrcsDungeon.h"
-#include "../../TritonTempleDungeon.h"
-#include "../../ValentineDungeon.h"
-#include "../../RuneDungeon.h"
-#include "../../PyramidDungeonRazor93.h"
-#include "../../NightmareDungeonRazor93.h"
-#include "../../Halloween2022Dungeon.h"
-#include "../../VikingDungeon.h"
-#include "../../EasterDungeon.h"
+#ifdef ENABLE_COSTUME_EFFECT
+        , PART_EFFECT_BODY, PART_EFFECT_WEAPON
 #endif
+    }) ecs::PlayerRuntime::SetPart(e, part, ecs::PlayerRuntime::GetOriginalPart(e, part));
+
+    MountSystem::ComputeMountInventoryBonuses(e);
+    if (!HasPointState(e)) return;
+    int64_t maxHP = mobHP, maxSP = 0, maxStamina = 0;
+    if (player) {
+        const auto initial = JobInitialPoints[job];
+        maxHP = initial.max_hp + GetRandomHP(e) + Get(e, POINT_HT) * initial.hp_per_ht;
+        maxSP = initial.max_sp + GetRandomSP(e) + Get(e, POINT_IQ) * initial.sp_per_iq;
+        maxStamina = initial.max_stamina + Get(e, POINT_HT) * initial.stamina_per_con;
+        if (auto* skill = CSkillManager::instance().Get(SKILL_ADD_HP)) {
+            skill->SetPointVar("k", 1.0f * SkillSystem::GetSkillPower(e, SKILL_ADD_HP) / 100.0f);
+            maxHP += static_cast<int>(skill->kPointPoly.Eval());
+        }
+#ifdef ENABLE_NEW_SECONDARY_SKILLS
+        static constexpr int values[4][11] {
+            {0,1,2,3,4,5,6,7,8,9,10}, {0,2,4,6,8,10,12,14,16,18,20},
+            {0,1,2,3,4,5,6,7,8,9,10}, {0,200,400,800,1200,1600,2000,2200,2500,2700,3000}
+        };
+        const auto support = [&](uint32_t skill) { return std::clamp(SkillSystem::GetSkillLevel(e, skill), 0, 10); };
+        Change(e, POINT_MALL_ATTBONUS, values[0][support(NEW_SUPPORT_SKILL_ATTACK)]);
+        Change(e, POINT_MALL_GOLDBONUS, values[1][support(NEW_SUPPORT_SKILL_YANG)]);
+        Change(e, POINT_ATTBONUS_MONSTER, values[2][support(NEW_SUPPORT_SKILL_MONSTERS)]);
+        maxHP += values[3][support(NEW_SUPPORT_SKILL_HP)];
+#endif
+        Set(e, POINT_MOV_SPEED, 200);
+        if (!HasPointState(e)) return;
+        Set(e, POINT_ATT_SPEED, 100);
+        Change(e, POINT_ATT_SPEED, Get(e, POINT_PARTY_HASTE_BONUS));
+        Set(e, POINT_CASTING_SPEED, 100);
+    } else {
+        Set(e, POINT_ATT_SPEED, mobAttackSpeed);
+        Set(e, POINT_MOV_SPEED, mobMoveSpeed);
+        if (!HasPointState(e)) return;
+        Set(e, POINT_CASTING_SPEED, mobAttackSpeed);
+    }
+    if (!HasPointState(e)) return;
+    const auto mount = MountSystem::GetMountVnum(e);
+    if (player && mount) {
+        const auto horseLevel = std::clamp(MountSystem::GetHorseLevel(e), 0, HORSE_MAX_LEVEL);
+        const auto horse = c_aHorseStat[horseLevel];
+        const bool ridingHorse = mount >= 20101 && mount <= 20107;
+        for (const auto [type, value] : {
+            std::pair<uint8_t, int>{POINT_ST, ridingHorse ? horse.iST : 36},
+            {POINT_DX, ridingHorse ? horse.iDX : 18}, {POINT_HT, ridingHorse ? horse.iHT : 53},
+            {POINT_IQ, ridingHorse ? horse.iIQ : 71}}) {
+            if (!HasPointState(e)) return;
+            if (value > Get(e, type)) Change(e, type, value - Get(e, type));
+        }
+    }
+    ApplyBeltPoints(e);
+    if (!HasPointState(e)) return;
+    ComputeBattlePoints(e);
+    if (!HasPointState(e)) return;
+    SetReal(e, POINT_MAX_HP, maxHP);
+    SetReal(e, POINT_MAX_SP, maxSP);
+    Change(e, POINT_MAX_HP, 0);
+    Change(e, POINT_MAX_SP, 0);
+    ecs::PlayerRuntime::SetMaxStamina(e, maxStamina);
+    if (!HasPointState(e)) return;
+
+    std::unordered_set<entt::entity> applied;
+    for (int slot = 0; slot < WEAR_MAX_NUM; ++slot) {
+        const auto item = ItemSystem::GetWearItem(e, slot);
+        if (!ItemSystem::IsValidItem(item) || ItemSystem::GetItemOwner(item) != e || !applied.insert(item).second) continue;
+#ifdef ENABLE_RUNE_SYSTEM
+        if (ItemSystem::IsRuneItem(item) && ItemSystem::GetItemSocket(item, 1) != 1) continue;
+#endif
+        const auto immune = ItemSystem::GetItemImmuneFlags(item);
+        ItemSystem::ModifyPoints(item, true);
+        if (!HasPointState(e)) return;
+        if (ItemSystem::IsValidItem(item) && ItemSystem::GetItemOwner(item) == e && ItemSystem::GetWearItem(e, slot) == item)
+            ecs::PlayerRuntime::SetImmuneFlag(e, ecs::PlayerRuntime::GetImmuneFlag(e) | immune);
+    }
+#ifdef ENABLE_EVENT_MANAGER
+    CHARACTER_MANAGER::instance().CheckBonusEvent(e);
+    if (!HasPointState(e)) return;
+#endif
+    const int deck = DragonSoulSystem::GetActiveDeck(e);
+    if (DragonSoulSystem::IsDeckActivated(e) && deck >= 0 && deck < DRAGON_SOUL_DECK_MAX_NUM) {
+        for (int slot = WEAR_MAX_NUM + DS_SLOT_MAX * deck; slot < WEAR_MAX_NUM + DS_SLOT_MAX * (deck + 1); ++slot) {
+            const auto item = ItemSystem::GetWearItem(e, slot);
+            if (ItemSystem::IsValidItem(item) && ItemSystem::GetItemOwner(item) == e &&
+                applied.insert(item).second && DSManager::instance().IsTimeLeftDragonSoul(item))
+                ItemSystem::ModifyPoints(item, true);
+            if (!HasPointState(e)) return;
+        }
+    }
+    SkillSystem::ComputeSkillPoints(e);
+    if (!HasPointState(e)) return;
+    // Existing leaf services; their full lifecycle migration is separate.
+    AffectSystem::RefreshAffect(e);
+    if (!HasPointState(e)) return;
+#ifdef __PET_SYSTEM__
+    if (auto* pets = ecs::PlayerRuntime::GetPetSystem(e)) pets->RefreshBuff();
+    if (!HasPointState(e)) return;
+#endif
+    ApplyAlignmentPoints(e);
+    if (!HasPointState(e)) return;
+    if (player || Get(e, POINT_HP) > GetMaxHP(e))
+        Change(e, POINT_HP, std::min<int64_t>(hpBefore, GetMaxHP(e)) - Get(e, POINT_HP));
+    if (!HasPointState(e)) return;
+    if (player || Get(e, POINT_SP) > GetMaxSP(e))
+        Change(e, POINT_SP, std::min<int64_t>(spBefore, GetMaxSP(e)) - Get(e, POINT_SP));
+    if (!HasPointState(e)) return;
+    NetworkSyncSystem::UpdatePacket(e);
+    if (HasPointState(e)) ComputeBattlePoints(e);
+}
+} // namespace ecs::PointSystem
 
 void CHARACTER::ComputePoints()
 {
-	int32_t lStat = GetPoint(POINT_STAT);
-	int32_t lStatResetCount = GetPoint(POINT_STAT_RESET_COUNT);
-	int32_t lSkillActive = GetPoint(POINT_SKILL);
-	int32_t lSkillSub = GetPoint(POINT_SUB_SKILL);
-	int32_t lSkillHorse = GetPoint(POINT_HORSE_SKILL);
-	int32_t lLevelStep = GetPoint(POINT_LEVEL_STEP);
-
-	int32_t lAttackerBonus = GetPoint(POINT_PARTY_ATTACKER_BONUS);
-	int32_t lTankerBonus = GetPoint(POINT_PARTY_TANKER_BONUS);
-	int32_t lBufferBonus = GetPoint(POINT_PARTY_BUFFER_BONUS);
-	int32_t lSkillMasterBonus = GetPoint(POINT_PARTY_SKILL_MASTER_BONUS);
-	int32_t lHasteBonus = GetPoint(POINT_PARTY_HASTE_BONUS);
-	int32_t lDefenderBonus = GetPoint(POINT_PARTY_DEFENDER_BONUS);
-
-	int32_t lHPRecovery = GetPoint(POINT_HP_RECOVERY);
-	int32_t lSPRecovery = GetPoint(POINT_SP_RECOVERY);
-#ifdef __ENABLE_EXTEND_INVEN_SYSTEM__
-	int32_t envanterim = Inven_Point();
-#endif
-
-	memset(m_pointsInstant.points, 0, sizeof(m_pointsInstant.points));
-	m_alignAppliedHP = 0;
-	m_alignAppliedMonster = 0;
-	m_alignAppliedHuman = 0;
-	m_alignAppliedMetin = 0;
-	m_alignAppliedBoss = 0;
-	m_alignAppliedPvm = 0;
-	m_alignAppliedNormal = 0;
-	m_alignAppliedSkill = 0;
-
-	ecs::PlayerRuntime::BuffOnAttr_ClearAll(GetEntityHandle());
-	// Mount bonuszok eltavolitasa
-	for (int i = 0; i < POINT_MAX_NUM; ++i) {
-		if (i == POINT_ATTBONUS_MONSTER || i == POINT_RESIST_MAGIC || i == POINT_CRITICAL_PCT ||
-			i == POINT_PENETRATE_PCT || i == POINT_ATT_GRADE_BONUS || i == POINT_DEF_GRADE_BONUS) {
-			SetPoint(i, 0); // Vagy PointChange(i, -GetPoint(i)) ha inkabb valtoztatassal m?kodik
-		}
-	}
-	//ComputeMountInventoryBonuses();
-
-	m_SkillDamageBonus.clear();
-
-	SetPoint(POINT_STAT, lStat);
-	SetPoint(POINT_SKILL, lSkillActive);
-	SetPoint(POINT_SUB_SKILL, lSkillSub);
-	SetPoint(POINT_HORSE_SKILL, lSkillHorse);
-	SetPoint(POINT_LEVEL_STEP, lLevelStep);
-	SetPoint(POINT_STAT_RESET_COUNT, lStatResetCount);
-
-	SetPoint(POINT_ST, GetRealPoint(POINT_ST));
-	SetPoint(POINT_HT, GetRealPoint(POINT_HT));
-	SetPoint(POINT_DX, GetRealPoint(POINT_DX));
-	SetPoint(POINT_IQ, GetRealPoint(POINT_IQ));
-#ifdef ENABLE_FIX_LEVELUP_EFFECT
-	ecs::PlayerRuntime::SetPart(GetEntityHandle(), PART_MAIN, ecs::PlayerRuntime::GetPart(GetEntityHandle(), PART_MAIN));
-#else
-	SetPart(PART_MAIN, GetOriginalPart(PART_MAIN));
-#endif
-	ecs::PlayerRuntime::SetPart(GetEntityHandle(), PART_WEAPON, ecs::PlayerRuntime::GetOriginalPart(GetEntityHandle(), PART_WEAPON));
-	ecs::PlayerRuntime::SetPart(GetEntityHandle(), PART_HEAD, ecs::PlayerRuntime::GetOriginalPart(GetEntityHandle(), PART_HEAD));
-	ecs::PlayerRuntime::SetPart(GetEntityHandle(), PART_HAIR, ecs::PlayerRuntime::GetOriginalPart(GetEntityHandle(), PART_HAIR));
-#ifdef ENABLE_RUNE_SYSTEM
-	ecs::PlayerRuntime::SetPart(GetEntityHandle(), PART_RUNE, ecs::PlayerRuntime::GetOriginalPart(GetEntityHandle(), PART_RUNE));
-#endif
-#ifdef ENABLE_ACCE_SYSTEM
-	ecs::PlayerRuntime::SetPart(GetEntityHandle(), PART_ACCE, ecs::PlayerRuntime::GetOriginalPart(GetEntityHandle(), PART_ACCE));
-#endif
-#ifdef ENABLE_COSTUME_EFFECT
-	ecs::PlayerRuntime::SetPart(GetEntityHandle(), PART_EFFECT_BODY, ecs::PlayerRuntime::GetOriginalPart(GetEntityHandle(), PART_EFFECT_BODY));
-	ecs::PlayerRuntime::SetPart(GetEntityHandle(), PART_EFFECT_WEAPON, ecs::PlayerRuntime::GetOriginalPart(GetEntityHandle(), PART_EFFECT_WEAPON));
-#endif
-	SetPoint(POINT_PARTY_ATTACKER_BONUS, lAttackerBonus);
-	SetPoint(POINT_PARTY_TANKER_BONUS, lTankerBonus);
-	SetPoint(POINT_PARTY_BUFFER_BONUS, lBufferBonus);
-	SetPoint(POINT_PARTY_SKILL_MASTER_BONUS, lSkillMasterBonus);
-	SetPoint(POINT_PARTY_HASTE_BONUS, lHasteBonus);
-	SetPoint(POINT_PARTY_DEFENDER_BONUS, lDefenderBonus);
-
-	SetPoint(POINT_HP_RECOVERY, lHPRecovery);
-	SetPoint(POINT_SP_RECOVERY, lSPRecovery);
-
-	// PC_BANG_ITEM_ADD
-	SetPoint(POINT_PC_BANG_EXP_BONUS, 0);
-	SetPoint(POINT_PC_BANG_DROP_BONUS, 0);
-	// END_PC_BANG_ITEM_ADD
-
-#ifdef __ENABLE_EXTEND_INVEN_SYSTEM__
-	SetPoint(POINT_INVEN, envanterim);
-#endif
-	ComputeMountInventoryBonuses();
-	int64_t iMaxHP;
-	int	iMaxSP;
-	int iMaxStamina;
-
-	if (IsPC())
-	{
-		// AÖ´ë »ý¸í·Â/Á¤1A·Â
-		iMaxHP = JobInitialPoints[GetJob()].max_hp + ecs::PointSystem::GetRandomHP(GetEntityHandle()) + GetPoint(POINT_HT) * JobInitialPoints[GetJob()].hp_per_ht;
-		iMaxSP = JobInitialPoints[GetJob()].max_sp + ecs::PointSystem::GetRandomSP(GetEntityHandle()) + GetPoint(POINT_IQ) * JobInitialPoints[GetJob()].sp_per_iq;
-		iMaxStamina = JobInitialPoints[GetJob()].max_stamina + GetPoint(POINT_HT) * JobInitialPoints[GetJob()].stamina_per_con;
-
-		{
-			CSkillProto* pkSk = CSkillManager::instance().Get(SKILL_ADD_HP);
-
-			if (nullptr != pkSk)
-			{
-				pkSk->SetPointVar("k", 1.0f * GetSkillPower(SKILL_ADD_HP) / 100.0f);
-
-				iMaxHP += static_cast<int>(pkSk->kPointPoly.Eval());
-			}
-		}
-
-#ifdef ENABLE_NEW_SECONDARY_SKILLS
-		{
-			int32_t lValue[4][11] = {
-								{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10},
-								{0, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20},
-								{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10},
-								{0, 200, 400, 800, 1200, 1600, 2000, 2200, 2500, 2700, 3000},
-			};
-
-			PointChange(POINT_MALL_ATTBONUS, lValue[0][GetSkillLevel(NEW_SUPPORT_SKILL_ATTACK)]);
-			PointChange(POINT_MALL_GOLDBONUS, lValue[1][GetSkillLevel(NEW_SUPPORT_SKILL_YANG)]);
-			PointChange(POINT_ATTBONUS_MONSTER, lValue[2][GetSkillLevel(NEW_SUPPORT_SKILL_MONSTERS)]);
-			iMaxHP += lValue[3][GetSkillLevel(NEW_SUPPORT_SKILL_HP)];
-		}
-#endif
-
-
-		SetPoint(POINT_MOV_SPEED, 200);
-		SetPoint(POINT_ATT_SPEED, 100);
-		PointChange(POINT_ATT_SPEED, GetPoint(POINT_PARTY_HASTE_BONUS));
-		SetPoint(POINT_CASTING_SPEED, 100);
-	}
-	else
-	{
-		iMaxHP = m_pkMobData->m_table.dwMaxHP;
-		iMaxSP = 0;
-		iMaxStamina = 0;
-
-		SetPoint(POINT_ATT_SPEED, m_pkMobData->m_table.sAttackSpeed);
-		SetPoint(POINT_MOV_SPEED, m_pkMobData->m_table.sMovingSpeed);
-		SetPoint(POINT_CASTING_SPEED, m_pkMobData->m_table.sAttackSpeed);
-	}
-
-	if (IsPC())
-	{
-		uint32_t mountVnum = GetMountVnum();
-		if (mountVnum)
-		{
-			bool horse = mountVnum >= 20101 && mountVnum <= 20107 ? true : false;
-			int st = horse == true ? GetHorseST() : 36;
-			int dx = horse == true ? GetHorseDX() : 18;
-			int ht = horse == true ? GetHorseHT() : 53;
-			int iq = horse == true ? GetHorseIQ() : 71;
-			if (st > GetPoint(POINT_ST))
-				PointChange(POINT_ST, st - GetPoint(POINT_ST));
-
-			if (dx > GetPoint(POINT_DX))
-				PointChange(POINT_DX, dx - GetPoint(POINT_DX));
-
-			if (ht > GetPoint(POINT_HT))
-				PointChange(POINT_HT, ht - GetPoint(POINT_HT));
-
-			if (iq > GetPoint(POINT_IQ))
-				PointChange(POINT_IQ, iq - GetPoint(POINT_IQ));
-		}
-
-	}
-
-	// 1. mount_bonus_map letrehozasa
-	// Ervenyes mount bonuszt ado itemek
-	static const std::set<uint32_t> valid_mount_items = {
-		//14590, 14591, 14592, 14593,
-		//52040, 60001, 48421, 49009,
-		//49049, 60003, 71223, 71253,
-		//71224, 71228, 71251, 71125,
-		//71126, 71127, 71139, 71166,
-		//71171, 71176, 71177, 71221,
-		//71222, 71252, 71256, 71225,
-		//71226, 71227, 71255, 71254,
-		//71233, 71250, 71128, 23014, 23015, 23016, 71137, 71140, 71185,
-		// Övek: 18000 - 18119
-				18000, 18001, 18002, 18003, 18004, 18005, 18006, 18007, 18008, 18009,
-				18010, 18011, 18012, 18013, 18014, 18015, 18016, 18017, 18018, 18019,
-				18020, 18021, 18022, 18023, 18024, 18025, 18026, 18027, 18028, 18029,
-				18030, 18031, 18032, 18033, 18034, 18035, 18036, 18037, 18038, 18039,
-				18040, 18041, 18042, 18043, 18044, 18045, 18046, 18047, 18048, 18049,
-				18050, 18051, 18052, 18053, 18054, 18055, 18056, 18057, 18058, 18059,
-				18060, 18061, 18062, 18063, 18064, 18065, 18066, 18067, 18068, 18069,
-				18070, 18071, 18072, 18073, 18074, 18075, 18076, 18077, 18078, 18079,
-				18080, 18081, 18082, 18083, 18084, 18085, 18086, 18087, 18088, 18089,
-				18090, 18091, 18092, 18093, 18094, 18095, 18096, 18097, 18098, 18099,
-				18100, 18101, 18102, 18103, 18104, 18105, 18106, 18107, 18108, 18109,
-				18110, 18111, 18112, 18113, 18114, 18115, 18116, 18117, 18118, 18119,
-				18120, 18121, 18122, 18123, 18124, 18125, 18126, 18127, 18128, 18129,
-				18130, 18131, 18132, 18133, 18134, 18135, 18136, 18137, 18138, 18139,
-				//kártyák: 18140 - 18149
-				18140, 18141, 18142, 18143, 18144, 18145, 18146, 18147, 18148, 18149,
-				18150, 18151, 18152, 18153, 18154, 18155, 18156, 18157, 18158, 18159
-
-				// uj mountok 
-	/*			,611500, 611501, 611502, 611503, 611504, 611505, 611506, 611507, 611508,
-				611510, 611511, 611512, 611513, 611514, 611515, 611516, 611517, 611518,
-				611520, 611521, 611522, 611523, 611524, 611525, 611526, 611527, 611528,
-				611530, 611531, 611532, 611533, 611534, 611535, 611536, 611537, 611538,
-				611540, 611541, 611542, 611543, 611544,
-				611545,
-				611546,
-				611547,
-				611548,
-				611549,
-				611550,
-				611551,
-				611552,
-				611553,
-				611554,
-				611555,
-				611556,
-				611557,
-				611558,
-				611559,
-				611560,
-				611561,
-				611562,
-				611563,
-				611564,
-				611565,
-				611566,
-				611567,
-				611568,
-				611569,
-				611570,
-				611571,
-				611572,
-				611573,
-				611574,
-				611575,
-				611576,
-				611577,
-				611578,
-				611579,
-				611580,
-				611581,
-				611582,
-				611583,
-				611584,
-				611585,
-				611586,
-				611587,
-				611588,
-				611589,
-				611590,
-				611591,
-				611592,
-				611593,
-				611594,
-				611595,
-				611596,
-				611597,
-				611598,
-				611599,
-				611600,
-				611601,
-				611602,
-				611603,
-				611604,
-				611605,
-				611606,
-				611607,
-				611608,
-				611609,
-				611610,
-				611611,
-				611612,
-				611613,
-				611614,
-				611615,
-				611616,
-				611617,
-				611618,
-				611619,
-				611620,
-				611621,
-				611622,
-				611623,
-				611624,
-				611625,
-				611626,
-				611627,
-				611628,
-				611629,
-				611630,
-				611631,
-				611632,
-				611633,
-				611634,
-				611635,
-				611636,
-				611637,
-				611638,
-				611639,
-				611640,
-				611641,
-				611642,
-				611643,
-				611644,
-				611645,
-				611646,
-				611647,
-				611648,
-				611649,
-				611650,
-				611651,
-				611652,
-				611653,
-				611654,
-				611655,
-				611656,
-				611657,
-				611658,
-				611659,
-				611660,
-				611661,
-				611662,
-				611663,
-				611664,
-				611665,
-				611666*/
-	};
-
-	std::map<uint8_t, int32_t> mount_bonus_map;
-
-	for (int i = BELT_INVENTORY_SLOT_START; i < BELT_INVENTORY_SLOT_END; ++i)
-	{
-		LPITEM item = GetInventoryItem(i);
-		if (!item)
-			continue;
-
-		uint32_t vnum = ItemSystem::GetItemVnum((item ? item->GetEntityHandle() : entt::null));
-		if (valid_mount_items.contains(vnum))
-		{
-			const TItemTable* proto = ItemSystem::GetItemProto((item ? item->GetEntityHandle() : entt::null));
-			if (!proto)
-				continue;
-
-			for (const auto apply : proto->aApplies)
-			{
-				if (apply.bType != APPLY_NONE && apply.lValue != 0)
-				{
-					uint8_t pointType = aApplyInfo[apply.bType].bPointType;
-					if (pointType != POINT_NONE)
-						mount_bonus_map[pointType] += apply.lValue;
-				}
-			}
-		}
-	}
-
-
-	for (const auto& [pointType, value] : mount_bonus_map)
-	{
-		PointChange(pointType, value);
-		//UpdatePacket();
-		//0, "DEBUG: VEGLEGES MOUNT BONUS APPLY -> POINT %d = +%d", pointType, value);
-	}
-
-
-	ecs::PointSystem::ComputeBattlePoints(GetEntityHandle());
-
-	// ±âo» HP/SP 13Á¤
-	if (iMaxHP != GetMaxHP())
-	{
-		SetRealPoint(POINT_MAX_HP, iMaxHP); // ±âo»HP¸¦ RealPoint?! AúAaÇO 3o´Â´U.
-	}
-
-	PointChange(POINT_MAX_HP, 0);
-
-	if (iMaxSP != GetMaxSP())
-	{
-		SetRealPoint(POINT_MAX_SP, iMaxSP); // ±âo»SP¸¦ RealPoint?! AúAaÇO 3o´Â´U.
-	}
-
-	PointChange(POINT_MAX_SP, 0);
-
-	SetMaxStamina(iMaxStamina);
-	// @fixme118 part1
-	int64_t iCurHP = this->GetHP();
-	int64_t iCurSP = this->GetSP();
-
-	uint32_t immuneFlag = 0;
-
-	for (int i = 0; i < WEAR_MAX_NUM; i++) {
-		LPITEM pItem = GetWear(i);
-		if (pItem) {
-#ifdef ENABLE_RUNE_SYSTEM
-			if (pItem->IsRune() && ItemSystem::GetItemSocket((pItem ? pItem->GetEntityHandle() : entt::null), 1) != 1) {
-				continue;
-			}
-#endif
-
-			ItemSystem::ModifyPoints(pItem->GetEntityHandle(), true);
-			SET_BIT(immuneFlag, GetWear(i)->GetImmuneFlag());
-		}
-	}
-
-	// ?ëEY1® 1A1oAU
-	// ComputePoints?!1­´Â ÄÉ¸—AÍAÇ ¸?µç 1Ó1o°aA» AE±âE­ÇI°í,
-	// 3AAIAU, 1öÇÁ µî?! °ü·AµE ¸?µç 1Ó1o°aA» Aç°e»eÇI±â ¶§1®?!,
-	// ?ëEY1® 1A1oAUµµ ActiveDeck?! AÖ´Â ¸?µç ?ëEY1®AÇ 1Ó1o°aA» ´U1A Au?ë1AÄN3ß ÇN´U.
-#ifdef ENABLE_EVENT_MANAGER
-	CHARACTER_MANAGER::Instance().CheckBonusEvent(GetEntityHandle());
-#endif
-
-	if (DragonSoulSystem::IsDeckActivated(GetEntityHandle()))
-	{
-		for (int i = WEAR_MAX_NUM + DS_SLOT_MAX * DragonSoulSystem::GetActiveDeck(GetEntityHandle());
-			i < WEAR_MAX_NUM + DS_SLOT_MAX * (DragonSoulSystem::GetActiveDeck(GetEntityHandle()) + 1); i++)
-		{
-			LPITEM pItem = GetWear(i);
-			if (pItem)
-			{
-				if (DSManager::instance().IsTimeLeftDragonSoul((pItem ? pItem->GetEntityHandle() : entt::null)))
-					ItemSystem::ModifyPoints(pItem->GetEntityHandle(), true);
-			}
-		}
-	}
-
-	if (GetHP() > GetMaxHP())
-		PointChange(POINT_HP, GetMaxHP() - GetHP());
-
-	if (GetSP() > GetMaxSP())
-		PointChange(POINT_SP, GetMaxSP() - GetSP());
-
-	SkillSystem::ComputeSkillPoints(GetEntityHandle());
-
-	RefreshAffect();
-
-	CPetSystem* pPetSystem = ecs::PlayerRuntime::GetPetSystem(GetEntityHandle());
-	if (nullptr != pPetSystem) {
-		pPetSystem->RefreshBuff();
-	}
-
-	//#ifdef __NEWPET_SYSTEM__
-	//	if (m_newpetSystem) {
-	//		m_newpetSystem->RefreshBuff();
-	//	}
-	//#endif
-
-
-		// @fixme118 part2 (after petsystem stuff)
-	if (IsPC())
-	{
-		if (this->GetHP() != iCurHP)
-			ecs::PointSystem::Change(GetEntityHandle(), POINT_HP, iCurHP - this->GetHP());
-		if (this->GetSP() != iCurSP)
-			ecs::PointSystem::Change(GetEntityHandle(), POINT_SP, iCurSP - this->GetSP());
-	}
-	//#ifdef ENABLE_FAKE_SHOP_HEADER
-	//	UpdateMountCountOverhead();
-	//#endif
-	ApplyAlignmentBonus();
-
-	// csak a kulonbseget addjuk hozza -> nem tud stackelni
-	const int32_t dHP = m_alignBonusHP - m_alignAppliedHP;
-	const int32_t dMon = m_alignBonusMonster - m_alignAppliedMonster;
-	const int32_t dHum = m_alignBonusHuman - m_alignAppliedHuman;
-	const int32_t dMet = m_alignBonusMetin - m_alignAppliedMetin;
-	const int32_t dBoss = m_alignBonusBoss - m_alignAppliedBoss;
-	const int32_t dPvm = m_alignBonusPvm - m_alignAppliedPvm;
-	const int32_t dNormal = m_alignBonusNormal - m_alignAppliedNormal;
-	const int32_t dSkill = m_alignBonusSkill - m_alignAppliedSkill;
-
-	if (dHP)     PointChange(POINT_MAX_HP, dHP);
-	if (dMon)    PointChange(POINT_ATTBONUS_MONSTER, dMon);
-	if (dHum)    PointChange(POINT_ATTBONUS_HUMAN, dHum);
-	if (dMet)    PointChange(POINT_ATTBONUS_METIN, dMet);
-	if (dBoss)   PointChange(POINT_ATTBONUS_BOSS, dBoss);
-	if (dPvm)    PointChange(POINT_ATTBONUS_MEDI_PVM, dPvm);
-	if (dNormal) PointChange(POINT_NORMAL_HIT_DAMAGE_BONUS, dNormal);
-	if (dSkill)  PointChange(POINT_SKILL_DAMAGE_BONUS, dSkill);
-
-	// felrakott ertekek eltetele
-	m_alignAppliedHP = m_alignBonusHP;
-	m_alignAppliedMonster = m_alignBonusMonster;
-	m_alignAppliedHuman = m_alignBonusHuman;
-	m_alignAppliedMetin = m_alignBonusMetin;
-	m_alignAppliedBoss = m_alignBonusBoss;
-	m_alignAppliedPvm = m_alignBonusPvm;
-	m_alignAppliedNormal = m_alignBonusNormal;
-	m_alignAppliedSkill = m_alignBonusSkill;
-
-
-	NetworkSyncSystem::UpdatePacket(GetEntityHandle());
-	ecs::PointSystem::ComputeBattlePoints(GetEntityHandle());
-
-
+    ecs::PointSystem::Compute(GetEntityHandle());
 }
-
-// m_dwPlayStartTimeAÇ ´ÜA§´Â milisecond´U. µYAIAÍoLAI1o?!´Â o?´ÜA§·Î ±â·IÇI±â
-// ¶§1®?! ÇA·1AI1A°LA» °e»eÇO ¶§ / 60000 A¸·Î 3a´21­ ÇI´ÂµY, ±× 3a¸ÓÁö °aAI 323O
-// A» ¶§ ?©±â?! dwTimeRemainA¸·Î 3Ö3î1­ Á¦´ë·Î °e»eµÇµµ·I ÇOÁÖ3î3ß ÇN´U.
 
 
 

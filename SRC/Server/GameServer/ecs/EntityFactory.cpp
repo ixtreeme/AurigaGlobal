@@ -256,23 +256,6 @@ void ApplySpatialState(entt::registry& reg,
     (void)reg.get_or_emplace<ecs::ViewAgeMap>(entity);
 }
 
-void SeedCharacterStatsComponentFromLegacy(entt::registry& reg, entt::entity entity)
-{
-    const auto* legacy = reg.try_get<ecs::LegacyCharPtr>(entity);
-    if (!legacy || !legacy->ptr) {
-        return;
-    }
-
-    auto& stats = reg.get_or_emplace<ecs::CharacterStatsComponent>(entity);
-
-    for (uint32_t i = 0; i < POINT_MAX_NUM; ++i) {
-        if (!ecs::IsStatArrayPoint(static_cast<uint8_t>(i))) {
-            continue;
-        }
-
-        stats.points[i] = legacy->ptr->GetPoint(static_cast<uint8_t>(i));
-    }
-}
 
 ecs::AIFlags MakeAIFlags(const TMobTable& data)
 {
@@ -336,7 +319,6 @@ entt::entity CreateMobEntity(entt::registry& reg, const TMobTable& data, int x, 
     reg.emplace_or_replace<ecs::Experience>(entity, static_cast<int64_t>(data.dwExp), 0);
     reg.emplace_or_replace<ecs::CharacterPoints>(entity, ecs::CharacterPoints {});
     (void)reg.get_or_emplace<ecs::CharacterStatsComponent>(entity);
-    SeedCharacterStatsComponentFromLegacy(reg, entity);
     reg.emplace_or_replace<ecs::AppearancePartsComponent>(entity, ecs::AppearancePartsComponent {});
     auto runtimeFlags = MakeDefaultRuntimeFlags();
     runtimeFlags.aiFlag = data.dwAIFlag;
@@ -645,7 +627,6 @@ entt::entity EntityFactory::CreatePC(entt::registry& reg, const TPlayerTable& da
     reg.emplace_or_replace<ecs::Experience>(entity, static_cast<int64_t>(data.exp), 0);
     reg.emplace_or_replace<ecs::CharacterPoints>(entity, MakeCharacterPoints(data));
     (void)reg.get_or_emplace<ecs::CharacterStatsComponent>(entity);
-    SeedCharacterStatsComponentFromLegacy(reg, entity);
 
     reg.emplace_or_replace<ecs::CombatStats>(entity, MakeDefaultCombatStats(data.lAlignment));
     reg.emplace_or_replace<ecs::LegacyCharEvents>(entity);

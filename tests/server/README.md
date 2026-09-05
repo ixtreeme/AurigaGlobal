@@ -1,5 +1,43 @@
 # Server ECS regression tests
 
+## Point calculation
+
+`PointCalculationTests` compiles the complete existing `PointSystem.cpp` and
+`StatSystem.cpp` with entity-only fixtures, without creating a `CHARACTER` or
+`CItem`. The recomputation pipeline, point arrays, flat/base/final HP and SP
+separation, alignment bonuses and battle formulas run as production code.
+The old CHARACTER entry points forward to ECS; the alignment cache and legacy
+skill-damage map are removed. Login and both spawn paths initialize the full
+archetype before prototype loading invokes point calculation, without a late
+legacy-to-ECS point copy.
+
+Checks cover repeated calculations and zero-delta updates, SP percentage caps,
+current-HP/SP preservation, removed equipment and skill bonuses, immunity,
+entity-only PC versus NPC formulas, inactive/duplicate/foreign rune equipment,
+active and invalid Dragon Soul decks, belt whitelist/duplicate/malformed applies,
+mount bonus input, support-skill bounds, alignment upgrades/downgrades, incomplete
+archetypes, stale handles, recursive callbacks, exception/guard recovery and owner
+destruction with entity-index reuse.
+
+```powershell
+cmake --build build --config Release --target GameServer PointCalculationTests
+ctest --test-dir build -C Release -R '^point_calculation$' --output-on-failure
+cmake --build build-asan --config RelWithDebInfo --target PointCalculationTests
+ctest --test-dir build-asan -C RelWithDebInfo -R '^point_calculation$' --output-on-failure
+```
+
+Item point application, mount-inventory aggregation, skill/prototype lookup,
+affects, pets, events and network services are doubles in this target. Balance
+tables are test fixtures, not deployed data. The guard suppresses nested computes;
+it does not provide transactional rollback or queue equipment changes made by a
+callback. A retry rebuilds the point arrays, not arbitrary external side effects.
+Legacy leaves still exist for moving-character motion duration, affects/pets and
+some level-up, save, mount and Gaya operations. This is not a fully legacy-free
+server. Factory/bootstrap changes are compiled, not executed by these headless
+tests. Before deployment test login, every NPC/monster/stone/horse spawn type,
+equipment swaps, buffs, mounting, alignment transitions, death and logout/relog
+with the real client, prototypes and database.
+
 ## Quickslots
 
 `QuickslotTests` compiles the complete production `ecs/systems/InventorySystem.cpp`
@@ -341,6 +379,6 @@ engine affect recalculations or real network insert/reencode serialization.
 Before deployment, verify pet seal DB rows (level 1-120, evolution 0-3, valid
 skill slots/levels, positive remaining duration), egg-to-first-summon, logout/relog,
 age/expiry, evolution/EXP gates, skins, rename and feeding/skill windows in-game.
-Runtime factories, movement, point/affect calculation and persistence still
+Runtime factories, movement, affect calculation and persistence still
 have legacy internals; removing pointer round trips here is not a full engine
 or DB-layer migration.

@@ -540,47 +540,18 @@ void CInputDB::PlayerLoad(LPDESC d, const char * data)
 	}
 
 	auto* ch = CHARACTER_MANAGER::instance().CreateCharacter(pTab->name, pTab->id);
-	const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
-
-
+	if (!ch || !g_registry.valid(ch->GetEntityHandle())) {
+		LOG_ERROR("PlayerLoad: failed to create character for pid={}", pTab->id);
+		return;
+	}
 	ch->BindDesc(d);
+	// SetPlayerProto computes points: seed the ECS archetype before it runs.
+	const entt::entity chEntity = EntityFactory::CreatePC(g_registry, *pTab, d, ch->GetLegacyVID());
 	ch->SetPlayerProto(pTab);
 	ch->SetEmpire(d->GetEmpire());
-
 	d->BindCharacter(ch);
-
-    // Phase 7: create parallel ECS entity for this player
-    {
-        entt::entity ecs_e = EntityFactory::CreatePC(
-            g_registry,
-            *pTab,
-            d,
-            ch->GetLegacyVID());
-        d->SetEntity(ecs_e);
-        LOG_INFO("ECS: PC entity created VID={} pid={}", ch->GetLegacyVID(), ecs::PlayerRuntime::GetPlayerID(chEntity));
-
-
-        // Phase 7: sync ECS vital components from DB result
-        if (g_registry.valid(ecs_e)) {
-            auto& h = g_registry.get_or_emplace<ecs::Health>(ecs_e);
-            h.current = ch->GetHP();
-            h.max     = ecs::PointSystem::GetMaxHP(chEntity);
-
-            auto& m = g_registry.get_or_emplace<ecs::Mana>(ecs_e);
-            m.current = ch->GetSP();
-            m.max     = ecs::PointSystem::GetMaxSP(chEntity);
-
-            auto& lv = g_registry.get_or_emplace<ecs::LevelComponent>(ecs_e);
-            lv.value = ecs::PointSystem::GetLevel(chEntity);
-
-            auto& exp = g_registry.get_or_emplace<ecs::Experience>(ecs_e);
-            exp.current = ch->GetExp();
-            exp.next    = ch->GetNextExp();
-
-            auto& gold = g_registry.get_or_emplace<ecs::GoldAmount>(ecs_e);
-            gold.amount = ecs::PointSystem::GetGold(chEntity);
-        }
-    }
+	g_registry.get<ecs::Experience>(chEntity).next = ecs::PlayerRuntime::GetNextExp(chEntity);
+	LOG_INFO("ECS: PC entity created VID={} pid={}", ecs::PlayerRuntime::GetPacketVID(chEntity), ecs::PlayerRuntime::GetPlayerID(chEntity));
 
 	{
 		// P2P Login

@@ -24,6 +24,8 @@
 #include "../components/inventory_components.hpp"
 #include "../components/status_components.hpp"
 #include "../components/vital_components.hpp"
+#include "../components/movement_components.hpp"
+#include "MovementSystem.hpp"
 #include "../EventDispatcher.hpp"
 #include "../events.hpp"
 #include "../../char.h"
@@ -111,16 +113,6 @@ bool IsReadableEntity(entt::entity e)
 	return e != entt::null && g_registry.valid(e);
 }
 
-void WarnLegacyOnlyPointOnce(uint8_t type, entt::entity e)
-{
-	static std::array<bool, POINT_MAX_NUM> warned {};
-	if (type >= POINT_MAX_NUM || warned[type])
-		return;
-
-	warned[type] = true;
-	LOG_WARN("[POINT_LEGACY_ONLY] type={} entity={} no ECS source yet (one-time warning)",
-		static_cast<int>(type), static_cast<uint32_t>(e));
-}
 
 int64_t GetNextExpFromEcs(entt::entity e)
 {
@@ -164,34 +156,6 @@ int64_t ReadRealArray(entt::entity e, uint8_t type)
 	return points->base.points[type];
 }
 
-void SyncInstantPointMirror(entt::entity ch, uint8_t type, int64_t val)
-{
-	if (!ecs::PlayerRuntime::IsValid(ch) || type >= POINT_MAX_NUM || !ecs::IsStatArrayPoint(type))
-		return;
-
-	const entt::entity e = ch;
-	if (!IsReadableEntity(e))
-		return;
-
-	auto& stats = g_registry.get_or_emplace<ecs::CharacterStatsComponent>(e);
-	stats.points[type] = val;
-
-	auto& points = g_registry.get_or_emplace<ecs::CharacterPoints>(e);
-	points.instant.points[type] = val;
-}
-
-void SyncRealPointMirror(entt::entity ch, uint8_t type, int64_t val)
-{
-	if (!ecs::PlayerRuntime::IsValid(ch) || type >= POINT_MAX_NUM)
-		return;
-
-	const entt::entity e = ch;
-	if (!IsReadableEntity(e))
-		return;
-
-	auto& points = g_registry.get_or_emplace<ecs::CharacterPoints>(e);
-	points.base.points[type] = val;
-}
 
 } // namespace
 
@@ -248,10 +212,10 @@ int64_t Get(entt::entity e, uint8_t type)
 	case ecs::PointRouter::PointSource::SRC_REAL_ARRAY:
 		return ReadRealArray(e, mapping.index);
 	case ecs::PointRouter::PointSource::SRC_LEGACY_ONLY:
-		WarnLegacyOnlyPointOnce(type, e);
-		if (auto* ch = ecs::LegacyCharOf(e))
-			return ch->GetPoint(type);
-		return 0;
+#ifdef __ENABLE_EXTEND_INVEN_SYSTEM__
+		if (type == POINT_INVEN) return GetInventoryExpansion(e);
+#endif
+		return ReadInstantArray(e, type);
 	default:
 		return 0;
 	}
@@ -269,9 +233,7 @@ int64_t GetReal(entt::entity e, uint8_t type)
 		return 0;
 	case ecs::PointRouter::PointSource::SRC_GOLD:
 	case ecs::PointRouter::PointSource::SRC_HP_CURRENT:
-	case ecs::PointRouter::PointSource::SRC_HP_MAX:
 	case ecs::PointRouter::PointSource::SRC_SP_CURRENT:
-	case ecs::PointRouter::PointSource::SRC_SP_MAX:
 	case ecs::PointRouter::PointSource::SRC_STAMINA_CURRENT:
 	case ecs::PointRouter::PointSource::SRC_STAMINA_MAX:
 	case ecs::PointRouter::PointSource::SRC_EXP:
@@ -281,15 +243,15 @@ int64_t GetReal(entt::entity e, uint8_t type)
 		if (mapping.readable_in_real)
 			return Get(e, type);
 		return ReadRealArray(e, type);
+	case ecs::PointRouter::PointSource::SRC_HP_MAX:
+	case ecs::PointRouter::PointSource::SRC_SP_MAX:
+		return ReadRealArray(e, type);
 	case ecs::PointRouter::PointSource::SRC_INSTANT_ARRAY:
 		return ReadRealArray(e, mapping.index);
 	case ecs::PointRouter::PointSource::SRC_REAL_ARRAY:
 		return ReadRealArray(e, mapping.index);
 	case ecs::PointRouter::PointSource::SRC_LEGACY_ONLY:
-		WarnLegacyOnlyPointOnce(type, e);
-		if (auto* ch = ecs::LegacyCharOf(e))
-			return ch->GetRealPoint(type);
-		return 0;
+		return ReadRealArray(e, type);
 	default:
 		return 0;
 	}
@@ -337,41 +299,44 @@ int32_t GetLevel(entt::entity e)
 
 bool Set(entt::entity e, uint8_t type, int64_t value)
 {
-	if (type >= POINT_MAX_NUM || !IsReadableEntity(e))
-		return false;
-
-	// The legacy method mirrors the write back into CharacterStatsComponent.
-	if (auto* character = ecs::LegacyCharOf(e))
-	{
-		character->SetPoint(type, value);
-		return true;
-	}
-
-	auto& stats = g_registry.get_or_emplace<ecs::CharacterStatsComponent>(e);
-	stats.points[type] = value;
-	auto& points = g_registry.get_or_emplace<ecs::CharacterPoints>(e);
-	points.instant.points[type] = value;
-	g_registry.emplace_or_replace<ecs::DirtyTag>(e);
-	return true;
+    if (type >= POINT_MAX_NUM || !IsReadableEntity(e)) return false;
+    g_registry.get_or_emplace<ecs::CharacterStatsComponent>(e).points[type] = value;
+    g_registry.get_or_emplace<ecs::CharacterPoints>(e).instant.points[type] = value;
+    g_registry.emplace_or_replace<ecs::DirtyTag>(e);
+    // Movement timing is already ECS-owned; motion selection is still a
+    // legacy leaf. Resolve only for this side effect, never for point storage.
+    if (type == POINT_MOV_SPEED) {
+        const auto* movement = g_registry.try_get<ecs::MovementState>(e);
+        if (movement && get_dword_time() - movement->moveStartTime < movement->moveDuration)
+            if (auto* character = ecs::LegacyCharOf(e)) character->CalculateMoveDuration();
+    }
+    return g_registry.valid(e);
 }
 
 bool SetReal(entt::entity e, uint8_t type, int64_t value)
 {
-	if (type >= POINT_MAX_NUM || !IsReadableEntity(e))
-		return false;
-
-	// Compatibility boundary until CHARACTER's point storage is removed.
-	if (auto* character = ecs::LegacyCharOf(e))
-	{
-		character->SetRealPoint(type, value);
-		return true;
-	}
-
-	auto& points = g_registry.get_or_emplace<ecs::CharacterPoints>(e);
-	points.base.points[type] = value;
-	g_registry.emplace_or_replace<ecs::DirtyTag>(e);
-	return true;
+    if (type >= POINT_MAX_NUM || !IsReadableEntity(e)) return false;
+    g_registry.get_or_emplace<ecs::CharacterPoints>(e).base.points[type] = value;
+    g_registry.emplace_or_replace<ecs::DirtyTag>(e);
+#ifdef ENABLE_RANKING
+    if (type == POINT_PLAYTIME) ecs::PlayerRuntime::SetRankPoints(e, 15, value);
+#endif
+    return true;
 }
+
+#ifdef __ENABLE_EXTEND_INVEN_SYSTEM__
+int GetInventoryExpansion(entt::entity e)
+{
+    const auto* points = IsReadableEntity(e) ? g_registry.try_get<ecs::CharacterPoints>(e) : nullptr;
+    return points ? points->base.envanter : 0;
+}
+void SetInventoryExpansion(entt::entity e, int value)
+{
+    if (!IsReadableEntity(e) || value < 0 || value > 18) return;
+    g_registry.get_or_emplace<ecs::CharacterPoints>(e).base.envanter = value;
+    g_registry.emplace_or_replace<ecs::DirtyTag>(e);
+}
+#endif
 
 void SetRandomHP(entt::entity e, int value)
 {
@@ -501,13 +466,6 @@ bool ResetAllPoints(entt::entity e, int level)
 	return true;
 }
 
-void Compute(entt::entity e)
-{
-	// Compatibility boundary until point calculation is component-native.
-	if (auto* character = ecs::LegacyCharOf(e))
-		character->ComputePoints();
-}
-
 #ifdef __ENABLE_BLOCK_EXP__
 bool IsExperienceBlocked(entt::entity e)
 {
@@ -565,7 +523,7 @@ bool SetExperienceBlocked(entt::entity e, bool blocked)
 
 int64_t CHARACTER::GetRealPoint(uint8_t type) const
 {
-	return m_points.points[type];
+	return type < POINT_MAX_NUM ? ecs::PointSystem::ReadRealArray(GetEntityHandle(), type) : 0;
 }
 
 void CHARACTER::SetRandomHP(int value)
@@ -582,12 +540,7 @@ void CHARACTER::SetRandomSP(int value)
 
 void CHARACTER::SetRealPoint(uint8_t type, int64_t val)
 {
-	m_points.points[type] = val;
-	ecs::PointSystem::SyncRealPointMirror(GetEntityHandle(), type, val);
-#ifdef ENABLE_RANKING
-	if (type == POINT_PLAYTIME)
-		SetRankPoints(15, val);
-#endif
+    ecs::PointSystem::SetReal(GetEntityHandle(), type, val);
 }
 
 int64_t CHARACTER::GetPoint(uint8_t type) const
@@ -598,7 +551,7 @@ int64_t CHARACTER::GetPoint(uint8_t type) const
 		return 0;
 	}
 
-	int64_t val = m_pointsInstant.points[type];
+	int64_t val = ecs::PointSystem::ReadInstantArray(GetEntityHandle(), type);
 	int64_t max_val = INT_MAX;
 
 	switch (type)
@@ -626,7 +579,7 @@ int CHARACTER::GetLimitPoint(uint8_t type) const
 		return 0;
 	}
 
-	int val = m_pointsInstant.points[type];
+	int64_t val = ecs::PointSystem::ReadInstantArray(GetEntityHandle(), type);
 	int max_val = INT_MAX;
 	int limit = INT_MAX;
 	int min_limit = -INT_MAX;
@@ -674,23 +627,19 @@ int CHARACTER::GetLimitPoint(uint8_t type) const
 
 void CHARACTER::SetPoint(uint8_t type, int64_t val)
 {
-	if (type >= POINT_MAX_NUM)
-	{
-		LOG_ERROR("Point type overflow (type {})", type);
-		return;
-	}
-
-
-	m_pointsInstant.points[type] = val;
-	ecs::PointSystem::SyncInstantPointMirror(GetEntityHandle(), type, val);
-
-
-	// B.1.2: read timing via getters (ECS MovementState).
-	if (type == POINT_MOV_SPEED && get_dword_time() < GetCurrentMoveStartTime() + GetCurrentMoveDuration())
-	{
-		CalculateMoveDuration();
-	}
+    ecs::PointSystem::Set(GetEntityHandle(), type, val);
 }
+
+#ifdef __ENABLE_EXTEND_INVEN_SYSTEM__
+int CHARACTER::Inven_Point() const
+{
+    return ecs::PointSystem::GetInventoryExpansion(GetEntityHandle());
+}
+void CHARACTER::Set_Inventory_Point(int value)
+{
+    ecs::PointSystem::SetInventoryExpansion(GetEntityHandle(), value);
+}
+#endif
 
 int64_t CHARACTER::GetAllowedGold() const
 {
@@ -720,10 +669,7 @@ void Change(entt::entity e, uint8_t type, int64_t amount, bool bAmount, bool bBr
 #endif
 )
 {
-	// Resolved once for the leaves below that still own legacy state -
-	// ComputePoints, Save, the packet senders, gaya and the inventory point.
-	// Every point read and write in this body goes through components.
-	LPCHARACTER ch = ecs::LegacyCharOf(e);
+	if (!IsReadableEntity(e) || type >= POINT_MAX_NUM) return;
 	int64_t val = 0;
 
 
@@ -799,13 +745,16 @@ void Change(entt::entity e, uint8_t type, int64_t amount, bool bAmount, bool bBr
 #endif
 		if (amount)
 		{
+			uint32_t playStart = 0;
+			if (auto* character = ecs::LegacyCharOf(e)) playStart = character->GetPlayStartTime();
 			quest::CQuestManager::instance().LevelUp(ecs::PlayerRuntime::GetPlayerID(e));
+			if (!IsReadableEntity(e)) return;
 
-			LogManager::instance().LevelLog(e, val, GetReal(e, POINT_PLAYTIME) + (get_dword_time() - (ch ? ch->GetPlayStartTime() : 0u)) / 60000);
+			LogManager::instance().LevelLog(e, val, GetReal(e, POINT_PLAYTIME) + (get_dword_time() - playStart) / 60000);
 
-			if ((ch ? ch->GetGuild() : nullptr))
+			if (auto* guild = ecs::SocialSystem::GetGuild(e))
 			{
-				(ch ? ch->GetGuild() : nullptr)->LevelChange(ecs::PlayerRuntime::GetPlayerID(e), GetLevel(e));
+				guild->LevelChange(ecs::PlayerRuntime::GetPlayerID(e), GetLevel(e));
 			}
 
 			if (::ecs::SocialSystem::GetParty(e))
@@ -979,7 +928,7 @@ void Change(entt::entity e, uint8_t type, int64_t amount, bool bAmount, bool bBr
 			Set(e, POINT_LEVEL_STEP, val);
 			SetReal(e, POINT_LEVEL_STEP, val);
 
-			if (ch) ch->Save();
+			if (auto* character = ecs::LegacyCharOf(e)) character->Save();
 		}
 		else
 			val = Get(e, POINT_LEVEL_STEP);
@@ -997,7 +946,8 @@ void Change(entt::entity e, uint8_t type, int64_t amount, bool bAmount, bool bBr
 		ecs::PlayerRuntime::SetHP(e, Get(e, POINT_HP) + amount);
 		val = Get(e, POINT_HP);
 
-		if (ch) CombatSystem::BroadcastTargetPacket(ch->GetEntityHandle());
+		CombatSystem::BroadcastTargetPacket(e);
+		if (!IsReadableEntity(e)) return;
 
 		if (::ecs::SocialSystem::GetParty(e) && (ecs::PlayerRuntime::GetDesc(e) != nullptr) && val != prev_hp)
 			::ecs::SocialSystem::GetParty(e)->SendPartyInfoOneToAll(e);
@@ -1028,12 +978,13 @@ void Change(entt::entity e, uint8_t type, int64_t amount, bool bAmount, bool bBr
 		if (val == 0)
 		{
 			// Stamina�! 3oA��I �EA�!
-			if (ch) ch->SetNowWalking(true);
+			ecs::MovementSystem::SetNowWalking(e, true);
 		}
 		else if (prev_val == 0)
 		{
 			// 3o�o 1oA�1I3a�! ���aA��I AIA� �?�a o1��
-			if (ch) ch->ResetWalking();
+			if (const auto* movement = g_registry.try_get<ecs::MovementState>(e))
+				ecs::MovementSystem::SetNowWalking(e, movement->isWalking);
 		}
 
 		if (amount < 0 && val != 0) // ��1O�� o�3���3E�´U.
@@ -1043,10 +994,10 @@ void Change(entt::entity e, uint8_t type, int64_t amount, bool bAmount, bool bBr
 
 	case POINT_MAX_HP:
 	{
-		Set(e, type, Get(e, type) + amount);
+		Set(e, type, ReadInstantArray(e, type) + amount);
 
 		const int64_t base = GetReal(e, POINT_MAX_HP);              // 20-30k
-		const int64_t flat = Get(e, POINT_MAX_HP);                  // �kszerek stb. fix +HP (ett�l lesz 350k)
+		const int64_t flat = ReadInstantArray(e, POINT_MAX_HP);                  // �kszerek stb. fix +HP (ett�l lesz 350k)
 		const int64_t party = Get(e, POINT_PARTY_TANKER_BONUS);
 		const int64_t pct = Get(e, POINT_MAX_HP_PCT);              // +20
 
@@ -1063,13 +1014,13 @@ void Change(entt::entity e, uint8_t type, int64_t amount, bool bAmount, bool bBr
 
 	case POINT_MAX_SP:
 	{
-		Set(e, type, Get(e, type) + amount);
+		Set(e, type, ReadInstantArray(e, type) + amount);
 
 		//ecs::PlayerRuntime::SetMaxSP(e, GetMaxSP(e) + amount);
 		// Aִ� ��1A�� = (��o� Aִ� ��1A�� + A߰!) * Aִ���1A��%
 		int64_t sp = GetReal(e, POINT_MAX_SP);
 		int64_t add_sp = std::min((int64_t)800, sp * Get(e, POINT_MAX_SP_PCT) / 100);
-		add_sp += Get(e, POINT_MAX_SP);
+		add_sp += ReadInstantArray(e, POINT_MAX_SP);
 		add_sp += Get(e, POINT_PARTY_SKILL_MASTER_BONUS);
 
 		ecs::PlayerRuntime::SetMaxSP(e, sp + add_sp);
@@ -1098,14 +1049,14 @@ void Change(entt::entity e, uint8_t type, int64_t amount, bool bAmount, bool bBr
 #ifdef __ENABLE_EXTEND_INVEN_SYSTEM__
 	case POINT_INVEN:
 	{
-		const int64_t Envantertoplami = static_cast<int64_t>((ch ? ch->Inven_Point() : 0)) + amount;
-		if (Envantertoplami > 18)
+		const int64_t Envantertoplami = static_cast<int64_t>(GetInventoryExpansion(e)) + amount;
+		if (Envantertoplami < 0 || Envantertoplami > 18)
 		{
 			LOG_ERROR("[ENVANTER ERROR!]");
 			return;
 		}
-		if (ch) ch->Set_Inventory_Point((ch ? ch->Inven_Point() : 0) + amount);
-		val = (ch ? ch->Inven_Point() : 0);
+		SetInventoryExpansion(e, static_cast<int>(Envantertoplami));
+		val = GetInventoryExpansion(e);
 	}
 	break;
 #endif
@@ -1148,6 +1099,8 @@ void Change(entt::entity e, uint8_t type, int64_t amount, bool bAmount, bool bBr
 #ifdef ENABLE_GAYA_SYSTEM
 	case POINT_GAYA:
 	{
+		auto* ch = ecs::LegacyCharOf(e);
+		if (!ch) return;
 		const int64_t nTotalGaya = static_cast<int64_t>((ch ? ch->GetGaya() : 0)) + static_cast<int64_t>(amount);
 
 		if (GAYA_MAX <= nTotalGaya)
@@ -1381,7 +1334,7 @@ void Change(entt::entity e, uint8_t type, int64_t amount, bool bAmount, bool bBr
 		val = Get(e, type);
 
 		if (type == POINT_MALL_DEFBONUS)
-			if (ch) ecs::PointSystem::ComputeBattlePoints(ch->GetEntityHandle());
+			ecs::PointSystem::ComputeBattlePoints(e);
 
 		break;
 
@@ -1503,13 +1456,13 @@ void Change(entt::entity e, uint8_t type, int64_t amount, bool bAmount, bool bBr
 	case POINT_POLYMORPH:
 		Set(e, type, Get(e, type) + amount);
 		val = Get(e, type);
-		if (ch) AffectSystem::SetPolymorph(ch->GetEntityHandle(), val);
+		AffectSystem::SetPolymorph(e, val);
 		break;
 
 	case POINT_MOUNT:
 		Set(e, type, Get(e, type) + amount);
 		val = Get(e, type);
-		if (ch) ch->MountVnum(val);
+		if (auto* character = ecs::LegacyCharOf(e)) character->MountVnum(val);
 		break;
 
 	case POINT_ENERGY:
@@ -1518,7 +1471,7 @@ void Change(entt::entity e, uint8_t type, int64_t amount, bool bAmount, bool bBr
 		int old_val = Get(e, type);
 		Set(e, type, old_val + amount);
 		val = Get(e, type);
-		if (ch) ecs::PlayerRuntime::BuffOnAttr_ValueChange(ch->GetEntityHandle(), type, old_val, val);
+		ecs::PlayerRuntime::BuffOnAttr_ValueChange(e, type, old_val, val);
 	}
 	break;
 
@@ -1534,7 +1487,7 @@ void Change(entt::entity e, uint8_t type, int64_t amount, bool bAmount, bool bBr
 	case POINT_DX:
 	case POINT_IQ:
 	case POINT_HT:
-		if (ch) ecs::PointSystem::ComputeBattlePoints(ch->GetEntityHandle());
+		ecs::PointSystem::ComputeBattlePoints(e);
 		break;
 	case POINT_MAX_HP:
 	case POINT_MAX_SP:
@@ -1562,7 +1515,7 @@ void Change(entt::entity e, uint8_t type, int64_t amount, bool bAmount, bool bBr
 		if (!bBroadcast)
 			ecs::PlayerRuntime::GetDesc(e)->Packet(&pack, sizeof(struct packet_point_change));
 		else
-			if (ch) ecs::ViewSystem::PacketView(ch->GetEntityHandle(), &pack, sizeof(pack));
+			ecs::ViewSystem::PacketView(e, &pack, sizeof(pack));
 	}
 }
 
@@ -1618,6 +1571,7 @@ int GetPolymorphPoint(entt::entity e, uint8_t type)
 
 void ComputeBattlePoints(entt::entity e)
 {
+	if (!IsReadableEntity(e)) return;
 	if (AffectSystem::IsPolymorphed(e))
 	{
 		uint32_t dwMobVnum = AffectSystem::GetPolymorphVnum(e);
@@ -1637,7 +1591,7 @@ void ComputeBattlePoints(entt::entity e)
 		Set(e, POINT_MAGIC_ATT_GRADE, Get(e, POINT_ATT_GRADE));
 		Set(e, POINT_MAGIC_DEF_GRADE, Get(e, POINT_DEF_GRADE));
 	}
-	else if (ecs::PlayerRuntime::GetDesc(e) != nullptr)
+	else if (ecs::PlayerRuntime::IsPC(e))
 	{
 		Set(e, POINT_ATT_GRADE, 0);
 		Set(e, POINT_DEF_GRADE, 0);
@@ -1777,9 +1731,9 @@ void ComputeBattlePoints(entt::entity e)
 
 void ApplyPoint(entt::entity e, uint8_t bApplyType, int iVal)
 {
+	if (!IsReadableEntity(e)) return;
 	// The skill damage bonus map is a component; the legacy m_SkillDamageBonus
 	// was the same table on CHARACTER.
-	auto& bonus = g_registry.get_or_emplace<ecs::SkillDamageBonus>(e);
 	switch (bApplyType)
 	{
 	case APPLY_NONE:			// 0
@@ -1799,6 +1753,7 @@ void ApplyPoint(entt::entity e, uint8_t bApplyType, int iVal)
 	case APPLY_SKILL:
 		// SKILL_DAMAGE_BONUS
 	{
+		auto& bonus = g_registry.get_or_emplace<ecs::SkillDamageBonus>(e);
 		// Aֻ�A� onA� ���OA��� 8onA� vnum, 9onA� add, 15onA� change
 		// 00000000 00000000 00000000 00000000
 		// ^^^^^^^^  ^^^^^^^^^^^^^^^^^^^^^^^^^

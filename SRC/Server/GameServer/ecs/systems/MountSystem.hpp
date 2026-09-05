@@ -31,6 +31,7 @@ void MountSummon(entt::entity rider, entt::entity mountItem);
 CMountInventory* GetMountInventory(entt::entity rider);
 entt::entity GetMountInventoryItem(entt::entity rider, uint32_t cell);
 void SendMountInventory(entt::entity owner);
+void ComputeMountInventoryBonuses(entt::entity owner);
 void UpdateMountCountOverheadToViewers(entt::entity owner);
 void SetMountInventory(entt::entity rider, CMountInventory* inventory);
 ecs::MountState& GetMountStateRef(entt::entity rider);

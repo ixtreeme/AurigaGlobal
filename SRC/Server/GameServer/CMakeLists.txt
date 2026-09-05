@@ -55,8 +55,16 @@ add_executable(QuickslotTests EXCLUDE_FROM_ALL
 target_link_libraries(QuickslotTests PRIVATE SERVER EnTT::EnTT)
 add_test(NAME quickslots COMMAND QuickslotTests)
 
+add_executable(PointCalculationTests EXCLUDE_FROM_ALL
+    ${CMAKE_SOURCE_DIR}/tests/server/PointCalculationTests.cpp
+    ecs/systems/PointSystem.cpp
+    ecs/systems/StatSystem.cpp
+)
+target_link_libraries(PointCalculationTests PRIVATE SERVER EnTT::EnTT LUA)
+add_test(NAME point_calculation COMMAND PointCalculationTests)
+
 if(ENABLE_ASAN AND EXISTS "${AURIGA_ASAN_RUNTIME_DLL}")
-    foreach(_asan_target GameServer ItemAttributeTests MountLifecycleTests SafeboxLifecycleTests ItemManagerLifecycleTests QuickslotTests)
+    foreach(_asan_target GameServer ItemAttributeTests MountLifecycleTests SafeboxLifecycleTests ItemManagerLifecycleTests QuickslotTests PointCalculationTests)
         add_custom_command(TARGET ${_asan_target} POST_BUILD
             COMMAND ${CMAKE_COMMAND} -E copy_if_different
                 "${AURIGA_ASAN_RUNTIME_DLL}"

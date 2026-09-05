@@ -685,23 +685,6 @@ protected:
 #ifdef __SEND_TARGET_INFO__
 private:
 	uint32_t			dwLastTargetInfoPulse;
-uint8_t m_lastAlignmentGrade;
-int32_t m_alignBonusHP;
-int32_t m_alignBonusMonster;
-int32_t m_alignBonusHuman;
-int32_t m_alignBonusMetin;
-int32_t m_alignBonusBoss;
-int32_t m_alignBonusPvm;
-int32_t m_alignBonusNormal;
-int32_t m_alignBonusSkill;
-int32_t m_alignAppliedHP;
-int32_t m_alignAppliedMonster;
-int32_t m_alignAppliedHuman;
-int32_t m_alignAppliedMetin;
-int32_t m_alignAppliedBoss;
-int32_t m_alignAppliedPvm;
-int32_t m_alignAppliedNormal;
-int32_t m_alignAppliedSkill;
 
 #ifdef ENABLE_MOUNT_COUNT_ABOVE_CHAR_RAZOR93
 private:
@@ -1465,9 +1448,9 @@ public:
 	int64_t				GetGold() const;
 	void			SetGold(int64_t gold);
 #ifdef __ENABLE_EXTEND_INVEN_SYSTEM__
-	int				Inven_Point() const { return m_points.envanter; }
+	int				Inven_Point() const;
 	int				Inventory_Size() const { return 90 + (5 * Inven_Point()); }
-	void			Set_Inventory_Point(int black) { m_points.envanter = black; }
+	void			Set_Inventory_Point(int value);
 	bool			Update_Inven();
 #endif
 	bool			DropGold(int64_t gold);
@@ -1646,7 +1629,6 @@ public:
 
 	void ClearAlignmentBonus();
 
-	void ApplyAlignmentBonus();
 
 	void				UpdateAlignment(uint32_t iAmount);
 	uint32_t					GetAlignment() const;
@@ -1899,7 +1881,6 @@ private:
 	//
 protected:
 	TPlayerSkill* m_pSkillLevels;
-	std::unordered_map<uint8_t, int>		m_SkillDamageBonus;
 	std::map<int, TSkillUseInfo>	m_SkillUseInfo;
 
 	////////////////////////////////////////////////////////////////////////////////////////
