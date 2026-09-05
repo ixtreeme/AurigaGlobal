@@ -1658,16 +1658,6 @@ uint8_t CHARACTER::GetCharType() const
     return m_bCharType;
 }
 
-void CHARACTER::SetLastSyncTime(const timeval& tv)
-{
-    ecs::PlayerRuntime::SetLastSyncTime(GetEntityHandle(), tv);
-}
-
-const timeval& CHARACTER::GetLastSyncTime() const
-{
-    return ecs::PlayerRuntime::GetLastSyncTime(GetEntityHandle());
-}
-
 bool CHARACTER::IsDungeonTicketExtraMetin() const
 {
     return ecs::PlayerRuntime::IsDungeonTicketExtraMetin(GetEntityHandle());
@@ -1942,11 +1932,6 @@ uint8_t CHARACTER::GetGMLevel() const
         return flags->gmLevel;
 
     return GM_PLAYER;
-}
-
-void CHARACTER::SetGMLevel()
-{
-	ecs::PlayerRuntime::RefreshGMLevel(GetEntityHandle());
 }
 
 BOOL CHARACTER::IsGM() const
@@ -2806,10 +2791,6 @@ uint16_t GetRuneEffect(entt::entity e)
 
 } // namespace ecs::PlayerRuntime
 
-uint16_t CHARACTER::GetRuneEffect()
-{
-	return ecs::PlayerRuntime::GetRuneEffect(GetEntityHandle());
-}
 #endif
 
 bool CHARACTER::CanTakeInventoryItem(entt::entity item, TItemPos* cell)
@@ -4715,7 +4696,7 @@ void CHARACTER::SetPlayerProto(const TPlayerTable* t)
     if (!GetDesc() || !*GetDesc()->GetHostName())
         LOG_ERROR("cannot get desc or hostname");
     else
-        SetGMLevel();
+        ecs::PlayerRuntime::RefreshGMLevel(GetEntityHandle());
 
     m_bCharType = CHAR_TYPE_PC;
 

@@ -7240,11 +7240,6 @@ void CHARACTER::SetGodSpeed(bool mode)
 		SetPoint(POINT_ATT_SPEED, m_pkMobData->m_table.sAttackSpeed);
 }
 
-bool CHARACTER::IsDeathBlow() const
-{
-	return CombatSystem::IsDeathBlow(GetEntityHandle());
-}
-
 bool CHARACTER::IsRevive() const
 {
 	return m_pkMobInst != nullptr ? m_pkMobInst->m_IsRevive : false;
@@ -7740,16 +7735,6 @@ void CheckTarget(entt::entity e)
 void CHARACTER::SetTarget(entt::entity target)
 {
 	CombatSystem::SetTarget(GetEntityHandle(), target);
-}
-
-void CHARACTER::BroadcastTargetPacket()
-{
-	CombatSystem::BroadcastTargetPacket(GetEntityHandle());
-}
-
-void CHARACTER::CheckTarget()
-{
-	CombatSystem::CheckTarget(GetEntityHandle());
 }
 
 bool CHARACTER::IsChangeAttackPosition(entt::entity targetEntity) const

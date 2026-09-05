@@ -56,6 +56,7 @@
 #endif
 #ifdef ENABLE_MOUNT_COSTUME_SYSTEM
 #include "MountSystem.h"
+#include "ecs/systems/GayaSystem.hpp"
 #endif
 
 #ifdef ENABLE_DAILY_REWARD_HWID_LIMIT_RAZOR93
@@ -3742,7 +3743,7 @@ ACMD(do_gaya_system)
 			return;
 
 		int slot = atoi(arg2);
-		ch->CraftGayaItems(slot);
+		GayaSystem::CraftItems(character, slot);
 	}
 	else if (strArg1 == "market")
 	{
@@ -3750,11 +3751,11 @@ ACMD(do_gaya_system)
 			return;
 
 		int slot = atoi(arg2);
-		ch->MarketGayaItems(slot);
+		GayaSystem::MarketItems(character, slot);
 	}
 	else if (strArg1 == "refresh")
 	{
-		ch->RefreshGayaItems();
+		GayaSystem::RefreshItems(character);
 	}
 }
 #endif

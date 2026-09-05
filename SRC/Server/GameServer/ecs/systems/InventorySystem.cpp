@@ -400,14 +400,6 @@ bool CItem::AddToGround(int32_t lMapIndex, const PIXEL_POSITION& pos, bool skipO
 
 
 
-void CItem::SetOwnershipEvent(LPEVENT pkEvent)
-{
-	ItemSystem::GetItemEvents(GetEntityHandle()).ownership = pkEvent;
-}
-
-
-
-
 bool CItem::IsEquipable()
 {
 	switch (GetType())
@@ -452,11 +444,6 @@ bool CItem::GetSkipSave() const
 uint32_t CItem::GetLastOwnerPID() const
 {
 	return ItemSystem::GetItemLastOwnerPID(GetEntityHandle());
-}
-
-bool CItem::HaveOwnership() const
-{
-	return ItemSystem::GetItemEvents(GetEntityHandle()).ownership != nullptr;
 }
 
 entt::entity CItem::GetOwnerEntity() const

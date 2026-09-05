@@ -589,18 +589,3 @@ void StartCheckTimeMarket(entt::entity pc)
 }
 
 } // namespace GayaSystem
-
-void CHARACTER::CraftGayaItems(int slot)
-{
-	GayaSystem::CraftItems(GetEntityHandle(), slot);
-}
-
-void CHARACTER::MarketGayaItems(int slot)
-{
-	GayaSystem::MarketItems(GetEntityHandle(), slot);
-}
-
-void CHARACTER::RefreshGayaItems()
-{
-	GayaSystem::RefreshItems(GetEntityHandle());
-}

@@ -250,11 +250,6 @@ void CHARACTER::DragonSoul_Initialize()
     DragonSoulSystem::Initialize(e);
 }
 
-int CHARACTER::DragonSoul_GetActiveDeck() const
-{
-    return DragonSoulSystem::GetActiveDeck(GetEntityHandle());
-}
-
 bool CHARACTER::DragonSoul_ActivateDeck(int deck_idx)
 {
     const entt::entity e = GetEntityHandle();

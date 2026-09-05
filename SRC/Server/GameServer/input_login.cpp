@@ -913,7 +913,7 @@ void CInputLogin::Entergame(LPDESC d, const char* data)
 	ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null))->Packet(&packet, sizeof(TPacketChangeLanguage));
 #endif
 #ifdef ENABLE_RUNE_SYSTEM
-	ch->SetPart(PART_RUNE, ch->GetRuneEffect());
+	ch->SetPart(PART_RUNE, ecs::PlayerRuntime::GetRuneEffect(ch->GetEntityHandle()));
 	NetworkSyncSystem::UpdatePacket(((ch) ? (ch)->GetEntityHandle() : entt::null));
 	ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_COMMAND, "rune_affect %d", ecs::QuestSystem::GetFlag(((ch) ? (ch)->GetEntityHandle() : entt::null), "rune.hide_effect"));
 #endif

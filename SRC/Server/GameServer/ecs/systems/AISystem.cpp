@@ -18,6 +18,7 @@
 #include "../components/dirty_components.hpp"
 #include "../components/identity_components.hpp"
 #include <Core/Logging.hpp>
+#include "CombatSystem.hpp"
 
 namespace {
 
@@ -75,7 +76,7 @@ bool SyncAIFlags(entt::registry& reg, entt::entity entity, LPCHARACTER ch)
         false,
         ch->IsStoneSkinner(),
         ch->IsGodSpeed(),
-        ch->IsDeathBlow(),
+        CombatSystem::IsDeathBlow(ch->GetEntityHandle()),
         ch->IsRevive(),
         flags.isNoMove,
     };

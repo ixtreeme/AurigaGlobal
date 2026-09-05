@@ -537,8 +537,8 @@ void CHARACTER::ComputePoints()
 
 	if (DragonSoulSystem::IsDeckActivated(GetEntityHandle()))
 	{
-		for (int i = WEAR_MAX_NUM + DS_SLOT_MAX * DragonSoul_GetActiveDeck();
-			i < WEAR_MAX_NUM + DS_SLOT_MAX * (DragonSoul_GetActiveDeck() + 1); i++)
+		for (int i = WEAR_MAX_NUM + DS_SLOT_MAX * DragonSoulSystem::GetActiveDeck(GetEntityHandle());
+			i < WEAR_MAX_NUM + DS_SLOT_MAX * (DragonSoulSystem::GetActiveDeck(GetEntityHandle()) + 1); i++)
 		{
 			LPITEM pItem = GetWear(i);
 			if (pItem)

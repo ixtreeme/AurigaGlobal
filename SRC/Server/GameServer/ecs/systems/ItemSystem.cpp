@@ -3397,7 +3397,7 @@ bool StopTimerBasedOnWearExpireEventEcs(entt::entity item)
     if (!legacyItem)
         return false;
 
-    legacyItem->StopTimerBasedOnWearExpireEvent();
+    ItemSystem::StopTimerBasedOnWearExpireEvent(item);
     SyncItemStateFromLegacy(item);
     return true;
 }

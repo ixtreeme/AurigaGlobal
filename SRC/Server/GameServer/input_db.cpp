@@ -2432,7 +2432,7 @@ void CInputDB::ReloadAdmin(const char * c_pData )
 		auto* pChar = CHARACTER_MANAGER::instance().FindPC(rAdminInfo.m_szName );
 		if (pChar )
 		{
-			pChar->SetGMLevel();
+			ecs::PlayerRuntime::RefreshGMLevel(pChar->GetEntityHandle());
 		}
 	}
 

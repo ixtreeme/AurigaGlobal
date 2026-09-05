@@ -688,26 +688,6 @@ int RefineFishingRod(entt::entity owner, entt::entity rod)
 
 } // namespace ActivitySystem
 
-void CHARACTER::fishing_new_start()
-{
-    ActivitySystem::StartFishing(GetEntityHandle(), get_dword_time());
-}
-
-void CHARACTER::fishing_new_stop()
-{
-    ActivitySystem::StopFishing(GetEntityHandle());
-}
-
-void CHARACTER::fishing_new_catch()
-{
-    ActivitySystem::CatchFishing(GetEntityHandle(), get_dword_time());
-}
-
-void CHARACTER::fishing_new_catch_failed()
-{
-    ActivitySystem::CatchFishingFailed(GetEntityHandle());
-}
-
 void CHARACTER::mining(entt::entity load)
 {
     ActivitySystem::StartMining(

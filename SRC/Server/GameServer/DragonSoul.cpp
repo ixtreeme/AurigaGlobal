@@ -1204,7 +1204,7 @@ bool DSManager::ActivateDragonSoul(entt::entity item)
 	if (!ch)
 		return false;
 
-	const int deck = ch->DragonSoul_GetActiveDeck();
+	const int deck = DragonSoulSystem::GetActiveDeck(owner);
 	if (deck < 0)
 		return false;
 

@@ -78,6 +78,8 @@
 #endif
 #ifdef ENABLE_BATTLE_PASS
 #include "battle_pass.h"
+#include "ecs/systems/MountSystem.hpp"
+#include "ecs/systems/ActivitySystem.hpp"
 #endif
 
 #ifdef ENABLE_FEATURES_REFINE_SYSTEM
@@ -1296,7 +1298,7 @@ int CInputMain::Chat(entt::entity character, const char * data, uint32_t uiBytes
 #ifdef ENABLE_FAKE_SHOP_HEADER
 		const char* mountColor = "";
 		char mountTitleWithCount[64];
-		int count = ch->GetMountCount();
+		int count = MountSystem::GetMountCount(ch->GetEntityHandle());
 
 		// 80 fölött arany
 		if (count >= 80)
@@ -2727,7 +2729,7 @@ int CInputMain::SyncPosition(entt::entity character, const char * c_pcData, uint
 
 
 		static constexpr int32_t g_lValidSyncInterval = 50 * 1000;
-		const timeval& tvLastSyncTime = victim->GetLastSyncTime();
+		const timeval& tvLastSyncTime = ecs::PlayerRuntime::GetLastSyncTime(victimEntity);
 		timeval* tvDiff = timediff(&tvCurTime, &tvLastSyncTime);
 
 		if (tvDiff->tv_sec == 0 && tvDiff->tv_usec < g_lValidSyncInterval)
@@ -2758,7 +2760,7 @@ int CInputMain::SyncPosition(entt::entity character, const char * c_pcData, uint
 
 			return -1;
 		} else{
-			victim->SetLastSyncTime(tvCurTime);
+			ecs::PlayerRuntime::SetLastSyncTime(victimEntity, tvCurTime);
 			victim->Sync(e->lX, e->lY);
 			buffer_write(lpBuf, e, sizeof(TPacketCGSyncPositionElement));
 		}
@@ -5325,7 +5327,7 @@ void CInputMain::ItemDivision(entt::entity character, const char * data)
 #endif
 	struct command_item_division * pinfo = (struct command_item_division *) data;
 	if (ch)
-		ch->ItemDivision(pinfo->pos);
+		ItemSystem::ItemDivision(character, pinfo->pos);
 }
 
 
@@ -5350,23 +5352,23 @@ void CInputMain::FishingNew(entt::entity character, const char* c_pData)
 		case FISHING_SUBHEADER_NEW_START:
 			{
 				ch->SetRotation(p->dir * 5);
-				ch->fishing_new_start();
+				ActivitySystem::StartFishing(character, get_dword_time());
 			}
 			break;
 		case FISHING_SUBHEADER_NEW_STOP:
 			{
 				ch->SetRotation(p->dir * 5);
-				ch->fishing_new_stop();
+				ActivitySystem::StopFishing(character);
 			}
 			break;
 		case FISHING_SUBHEADER_NEW_CATCH:
 			{
-				ch->fishing_new_catch();
+				ActivitySystem::CatchFishing(character, get_dword_time());
 			}
 			break;
 		case FISHING_SUBHEADER_NEW_CATCH_FAILED:
 			{
-				ch->fishing_new_catch_failed();
+				ActivitySystem::CatchFishingFailed(character);
 			}
 			break;
 		default:

@@ -133,7 +133,6 @@ class CItem : public CEntity
 		bool		HasAttr(uint8_t bApply);
 		bool		HasRareAttr(uint8_t bApply);
 
-		void		SetDestroyEvent(LPEVENT pkEvent);
 		void		StartDestroyEvent(int iSec=300);
 
 		uint32_t		GetRefinedVnum()	{ return m_pProto ? m_pProto->dwRefinedVnum : 0; }
@@ -143,13 +142,11 @@ class CItem : public CEntity
 		void		SetSkipSave(bool b);
 		bool		GetSkipSave() const;
 
-		void		SetOwnershipEvent(LPEVENT pkEvent);
 
 		uint32_t	GetLastOwnerPID() const;
 		
 
 #ifdef ENABLE_BATTLE_PASS
-		bool		HaveOwnership() const;
 #endif
 
 		int		GetAttributeSetIndex(); // 속성 붙는것을 지정한 배열의 어느 인덱스를 사용하는지 돌려준다.
@@ -158,16 +155,13 @@ class CItem : public CEntity
 
 		uint16_t		GetRefineSet()		{ return m_pProto ? m_pProto->wRefineSet : 0;	}
 
-		void		StartUniqueExpireEvent();
 		void		SetUniqueExpireEvent(LPEVENT pkEvent);
 
 		void		StartTimerBasedOnWearExpireEvent();
-		void		SetTimerBasedOnWearExpireEvent(LPEVENT pkEvent);
 
 		void		StartRealTimeExpireEvent();
 		bool		IsUnlimitedTimeUnique();
 
-		void		StopTimerBasedOnWearExpireEvent();
 
 		//			일단 REAL_TIME과 TIMER_BASED_ON_WEAR 아이템에 대해서만 제대로 동작함.
 		int			GetDuration();
@@ -198,14 +192,10 @@ class CItem : public CEntity
 		, bool infinite = false
 #endif
 		);
-		void		SetAccessorySocketMaxGrade(int iMaxGrade);
-		void		SetAccessorySocketDownGradeTime(uint32_t time);
 
-		void		AccessorySocketDegrade();
 
 		// 악세사리 를 아이템에 밖았을때 타이머 돌아가는것( 구리, 등 )
 		void		StartAccessorySocketExpireEvent();
-		void		SetAccessorySocketExpireEvent(LPEVENT pkEvent);
 
 #ifdef ENABLE_INFINITE_RAFINES
 #endif
@@ -243,7 +233,6 @@ class CItem : public CEntity
 	public:
 		bool		IsRideItem();
 
-		void		ClearMountAttributeAndAffect();
 		bool		IsNewMountItem();
 
 #ifdef ENABLE_MOUNT_COSTUME_SYSTEM
@@ -268,7 +257,6 @@ class CItem : public CEntity
 #ifdef ENABLE_SOUL_SYSTEM
 	public:
 		void		StartSoulItemEvent();
-		void		SetSoulItemEvent(LPEVENT pkEvent);
 #endif
 
 	private:

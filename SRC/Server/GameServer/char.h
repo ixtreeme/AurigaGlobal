@@ -788,7 +788,6 @@ public:
 
 	uint8_t			GetGMLevel() const;
 	BOOL 			IsGM() const;
-	void			SetGMLevel();
 
 	uint32_t			GetExp() const;
 	void			SetExp(uint32_t exp);
@@ -864,7 +863,6 @@ public:
 	bool			IsGodSpeed() const;
 	void			SetGodSpeed(bool mode);
 
-	bool			IsDeathBlow() const;
 
 	bool			IsReviver() const;
 	bool			HasReviverInParty() const;
@@ -922,8 +920,6 @@ public:
 	bool			IsPolymorphed() const;
 	bool			IsPolyMaintainStat() const;
 	void			SetPolymorph(uint32_t dwRaceNum, bool bMaintainStat = false);
-	uint32_t			GetPolymorphVnum() const;
-	int				GetPolymorphPower() const;
 
 	// FISING
 	void			fishing();
@@ -1395,7 +1391,6 @@ public:
 #endif
 		bCount = 0);
 	bool			DestroyItem(TItemPos Cell);
-	void			ItemDivision(TItemPos Cell);
 	bool			GiveRecallItem(LPITEM item);
 	void			ProcessRecallItem(LPITEM item);
 
@@ -1701,7 +1696,6 @@ public:
 	uint32_t					GetAlignment() const;
 	//int GetBeltCount() const;
 #ifdef ENABLE_FAKE_SHOP_HEADER
-	int GetMountCount() const;
 	void UpdateMountCountOverheadToViewers();
 	//void UpdateMountCountOverhead(LPCHARACTER ch);
 #ifdef DISABLE_CORE_PULSE_RAZOR93
@@ -2006,8 +2000,6 @@ protected:
 
 public:
 	void				SetTarget(entt::entity target);
-	void				BroadcastTargetPacket();
-	void				CheckTarget();
 
 	////////////////////////////////////////////////////////////////////////////////////////
 	// Safebox
@@ -2465,7 +2457,6 @@ public:
 private:
 public:
 	// Driven by the point-change flow, which lives in ecs::PointSystem now.
-	void BuffOnAttr_ValueChange(uint8_t bType, uint8_t bOldValue, uint8_t bNewValue);
 	uint32_t GetPlayStartTime() const { return m_dwPlayStartTime; }
 private:
 
@@ -2523,7 +2514,6 @@ public:
 	// affect�� ���� �������� �ε�Ǿ� LoadAffect���� ȣ����.
 	void	DragonSoul_Initialize();
 
-	int		DragonSoul_GetActiveDeck() const;
 	bool	DragonSoul_ActivateDeck(int deck_idx);
 
 	void	DragonSoul_DeactivateAll();
@@ -2577,8 +2567,6 @@ private:
 	// SyncPosition�� �Ͼ ���� ���.
 	int			m_iSyncHackCount;
 public:
-	void			SetLastSyncTime(const timeval& tv);
-	const timeval& GetLastSyncTime() const;
 	void			SetSyncHackCount(int iCount) { m_iSyncHackCount = iCount; }
 	int				GetSyncHackCount() { return m_iSyncHackCount; }
 
@@ -2655,9 +2643,6 @@ private:
 
 #ifdef ENABLE_GAYA_SYSTEM
 public:
-	void CraftGayaItems(int slot);
-	void MarketGayaItems(int slot);
-	void RefreshGayaItems();
 #endif
 
 
@@ -2700,17 +2685,12 @@ public:
 #endif
 #ifdef ENABLE_RUNE_SYSTEM
 public:
-	uint16_t	GetRuneEffect();
 #endif
 #ifdef TEXTS_IMPROVEMENT
 public:
 #endif
 #ifdef ENABLE_NEW_FISHING_SYSTEM
 public:
-	void fishing_new_start();
-	void fishing_new_stop();
-	void fishing_new_catch();
-	void fishing_new_catch_failed();
 #endif
 public:
 	int		GetGoToXYTime() const { return m_iGoToXYTime; }

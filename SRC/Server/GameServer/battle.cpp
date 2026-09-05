@@ -585,12 +585,12 @@ int CalcMeleeDamage(entt::entity attacker, entt::entity victim, bool bIgnoreDefe
 		Item_GetDamage(weapon, &iDamMin, &iDamMax);
 		// END_OF_MONKEY_ROD_ATTACK_BUG_FIX
 
-		uint32_t dwMobVnum = pkAttacker->GetPolymorphVnum();
+		uint32_t dwMobVnum = AffectSystem::GetPolymorphVnum(attacker);
 		const CMob * pMob = CMobManager::instance().Get(dwMobVnum);
 
 		if (pMob)
 		{
-			int iPower = pkAttacker->GetPolymorphPower();
+			int iPower = AffectSystem::GetPolymorphPower(attacker);
 			iDamMin += pMob->m_table.dwDamageRange[0] * iPower / 100;
 			iDamMax += pMob->m_table.dwDamageRange[1] * iPower / 100;
 		}

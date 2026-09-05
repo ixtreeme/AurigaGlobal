@@ -382,7 +382,7 @@ entt::entity ITEM_MANAGER::CreateItem(uint32_t vnum, uint32_t count, uint32_t id
 	item->SetSkipSave(false);
 
 	if (item->GetType() == ITEM_UNIQUE && item->GetValue(2) != 0)
-		item->StartUniqueExpireEvent();
+		ItemSystem::StartUniqueExpireEvent(item->GetEntityHandle());
 
 	for (int i = 0; i < ITEM_LIMIT_MAX_NUM; i++)
 	{

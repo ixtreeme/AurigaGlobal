@@ -4106,7 +4106,7 @@ bool CHARACTER::PickupItem(uint32_t dwVID)
 		return false;
 
 #ifdef ENABLE_BATTLE_PASS
-	bool bIsBattlePass = item->HaveOwnership();
+	bool bIsBattlePass = (ItemSystem::GetItemEvents(item->GetEntityHandle()).ownership != nullptr);
 #endif
 
 	if (ItemSystem::DistanceValid(item->GetEntityHandle(), GetEntityHandle()))
@@ -10343,7 +10343,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 						if (1)
 #endif
 						{
-							item2->SetAccessorySocketMaxGrade(item2->GetAccessorySocketMaxGrade() + 1);
+							ItemSystem::SetItemAccessorySocketMaxGrade(item2->GetEntityHandle(), item2->GetAccessorySocketMaxGrade() + 1);
 #ifdef TEXTS_IMPROVEMENT
 							ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 387, "");
 #endif
@@ -10939,11 +10939,6 @@ int g_nPortalLimitTime = 10;
 void TransformRefineItem(LPITEM pkOldItem, LPITEM pkNewItem);
 void NotifyRefineSuccess(LPCHARACTER ch, LPITEM item, const char* way);
 void NotifyRefineFail(LPCHARACTER ch, LPITEM item, const char* way, int success = 0);
-
-void CHARACTER::ItemDivision(TItemPos Cell)
-{
-	ItemSystem::ItemDivision(GetEntityHandle(), Cell);
-}
 
 void CHARACTER::SetRefineNPC(entt::entity chEntity)
 {
@@ -15248,11 +15243,6 @@ void CHARACTER::BuffOnAttr_RemoveBuffsFromItem(LPITEM pItem)
 		GetEntityHandle(), pItem ? pItem->GetEntityHandle() : entt::null);
 }
 
-void CHARACTER::BuffOnAttr_ValueChange(uint8_t bType, uint8_t bOldValue, uint8_t bNewValue)
-{
-	ecs::PlayerRuntime::BuffOnAttr_ValueChange(GetEntityHandle(), bType, bOldValue, bNewValue);
-}
-
 namespace ecs::PlayerRuntime {
 
 // The buff pools live in ecs::BuffOnAttrs. Reads tolerate a missing component -
@@ -15935,11 +15925,6 @@ TItemExtraProto* CItem::GetExtraProto()
 }
 #endif
 
-void CItem::SetDestroyEvent(LPEVENT pkEvent)
-{
-	ItemSystem::GetItemEvents(GetEntityHandle()).destroy = pkEvent;
-}
-
 void CItem::StartDestroyEvent(int iSec)
 {
 	ItemSystem::StartDestroyEvent(GetEntityHandle(), iSec);
@@ -15950,24 +15935,9 @@ void CItem::SetUniqueExpireEvent(LPEVENT pkEvent)
 	ItemSystem::GetItemEvents(GetEntityHandle()).uniqueExpire = pkEvent;
 }
 
-void CItem::StartUniqueExpireEvent()
-{
-	ItemSystem::StartUniqueExpireEvent(GetEntityHandle());
-}
-
-void CItem::SetTimerBasedOnWearExpireEvent(LPEVENT pkEvent)
-{
-	ItemSystem::GetItemEvents(GetEntityHandle()).timerBasedOnWearExpire = pkEvent;
-}
-
 void CItem::StartTimerBasedOnWearExpireEvent()
 {
 	ItemSystem::StartTimerBasedOnWearExpireEvent(GetEntityHandle());
-}
-
-void CItem::StopTimerBasedOnWearExpireEvent()
-{
-	ItemSystem::StopTimerBasedOnWearExpireEvent(GetEntityHandle());
 }
 
 void CItem::StartRealTimeExpireEvent()
@@ -16036,17 +16006,7 @@ void CItem::StartAccessorySocketExpireEvent()
 	ItemSystem::StartAccessorySocketExpireEvent(GetEntityHandle());
 }
 
-void CItem::SetAccessorySocketExpireEvent(LPEVENT pkEvent)
-{
-	ItemSystem::GetItemEvents(GetEntityHandle()).accessorySocketExpire = pkEvent;
-}
-
 #ifdef ENABLE_SOUL_SYSTEM
-void CItem::SetSoulItemEvent(LPEVENT pkEvent)
-{
-	ItemSystem::GetItemEvents(GetEntityHandle()).soulItem = pkEvent;
-}
-
 void CItem::StartSoulItemEvent()
 {
 	if (GetType() != ITEM_SOUL)
@@ -16061,7 +16021,7 @@ void CItem::StartSoulItemEvent()
 
 	item_vid_event_info* pInfo = AllocEventInfo<item_vid_event_info>();
 	pInfo->item = GetEntityHandle();
-	SetSoulItemEvent(event_create(soul_item_event, pInfo, PASSES_PER_SEC(test_server ? 5 : 60)));
+	ItemSystem::GetItemEvents(GetEntityHandle()).soulItem = event_create(soul_item_event, pInfo, PASSES_PER_SEC(test_server ? 5 : 60));
 
 	const entt::entity e = GetEntityHandle();
 	if (e != entt::null)
@@ -16305,21 +16265,6 @@ void CItem::SetAccessorySocketGrade(int iGrade
 		, infinite
 #endif
 	);
-}
-
-void CItem::SetAccessorySocketMaxGrade(int iMaxGrade)
-{
-	ItemSystem::SetItemAccessorySocketMaxGrade(GetEntityHandle(), iMaxGrade);
-}
-
-void CItem::SetAccessorySocketDownGradeTime(uint32_t time)
-{
-	ItemSystem::SetItemAccessorySocketDownGradeTime(GetEntityHandle(), time);
-}
-
-void CItem::AccessorySocketDegrade()
-{
-	ItemSystem::AccessorySocketDegrade(GetEntityHandle());
 }
 
 int CItem::GetAccessorySocketGrade()
@@ -16590,11 +16535,6 @@ int CItem::GetRefineLevel()
 	return rtn;
 }
 
-void CItem::ClearMountAttributeAndAffect()
-{
-	ItemSystem::ClearMountAttributeAndAffect(GetEntityHandle());
-}
-
 void CItem::AddLockedAttr()
 {
 	const int iCount = GetAttributeCount();
@@ -16748,7 +16688,7 @@ EVENTFUNC(item_destroy_event)
 	if (pkItem->GetOwnerEntity() != entt::null)
 		LOG_ERROR("item_destroy_event: Owner exist. (item {} owner {})", pkItem->GetName(), ecs::PlayerRuntime::GetName(pkItem->GetOwnerEntity()));
 
-	pkItem->SetDestroyEvent(nullptr);
+	ItemSystem::GetItemEvents(itemEntity).destroy = nullptr;
 	ItemSystem::DestroyItemEntityEcs(
 		itemEntity,
 		"ITEM_DESTROY_EVENT");
@@ -16770,7 +16710,7 @@ EVENTFUNC(ownership_event)
 	if (!pkItem)
 		return 0;
 
-	pkItem->SetOwnershipEvent(nullptr);
+	ItemSystem::GetItemEvents(itemEntity).ownership = nullptr;
 
 	TPacketGCItemOwnership p;
 
@@ -16870,7 +16810,7 @@ EVENTFUNC(timer_based_on_wear_expire_event)
 	if (remain_time <= 0)
 	{
 		LOG_INFO("ITEM EXPIRED : expired {} {}", pkItem->GetName(), pkItem->GetID());
-		pkItem->SetTimerBasedOnWearExpireEvent(nullptr);
+		ItemSystem::GetItemEvents(itemEntity).timerBasedOnWearExpire = nullptr;
 		pkItem->SetSocket(ITEM_SOCKET_REMAIN_SEC, 0);
 
 		if (pkItem->IsDragonSoul())
@@ -16974,7 +16914,7 @@ EVENTFUNC(real_time_expire_event)
 
 		if (item->IsNewMountItem()) {
 			if (item->GetSocket(2) != 0)
-				item->ClearMountAttributeAndAffect();
+				ItemSystem::ClearMountAttributeAndAffect(info->item);
 		}
 
 		ITEM_MANAGER::instance().RemoveItem(info->item, "REAL_TIME_EXPIRE");
@@ -17000,8 +16940,8 @@ EVENTFUNC(accessory_socket_expire_event)
 	if (item->GetAccessorySocketDownGradeTime() <= 1)
 	{
 	degrade:
-		item->SetAccessorySocketExpireEvent(nullptr);
-		item->AccessorySocketDegrade();
+		ItemSystem::GetItemEvents(info->item).accessorySocketExpire = nullptr;
+		ItemSystem::AccessorySocketDegrade(info->item);
 		return 0;
 	}
 	else
@@ -17011,7 +16951,7 @@ EVENTFUNC(accessory_socket_expire_event)
 		if (iTime <= 1)
 			goto degrade;
 
-		item->SetAccessorySocketDownGradeTime(iTime);
+		ItemSystem::SetItemAccessorySocketDownGradeTime(info->item, iTime);
 
 		if (iTime > 60)
 			return PASSES_PER_SEC(60);
@@ -17040,7 +16980,7 @@ EVENTFUNC(soul_item_event)
 		if (pItem->GetValue(0) != 1)
 		{
 			pItem->SetSocket(2, (pItem->GetLimitValue(1) * 10000 + iCurrentStrike)); // just in case
-			pItem->SetSoulItemEvent(nullptr);
+			ItemSystem::GetItemEvents(pInfo->item).soulItem = nullptr;
 			return 0;
 		}
 	}

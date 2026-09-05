@@ -1002,7 +1002,7 @@ void Change(entt::entity e, uint8_t type, int64_t amount, bool bAmount, bool bBr
 		ecs::PlayerRuntime::SetHP(e, Get(e, POINT_HP) + amount);
 		val = Get(e, POINT_HP);
 
-		if (ch) ch->BroadcastTargetPacket();
+		if (ch) CombatSystem::BroadcastTargetPacket(ch->GetEntityHandle());
 
 		if (::ecs::SocialSystem::GetParty(e) && (ecs::PlayerRuntime::GetDesc(e) != nullptr) && val != prev_hp)
 			::ecs::SocialSystem::GetParty(e)->SendPartyInfoOneToAll(e);
@@ -1523,7 +1523,7 @@ void Change(entt::entity e, uint8_t type, int64_t amount, bool bAmount, bool bBr
 		int old_val = Get(e, type);
 		Set(e, type, old_val + amount);
 		val = Get(e, type);
-		if (ch) ch->BuffOnAttr_ValueChange(type, old_val, val);
+		if (ch) ecs::PlayerRuntime::BuffOnAttr_ValueChange(ch->GetEntityHandle(), type, old_val, val);
 	}
 	break;
 

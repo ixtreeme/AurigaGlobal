@@ -2087,10 +2087,6 @@ void CHARACTER::RemoveBadAffect()
 	//RemoveAffect(SKILL_BUDONG);
 }
 
-int CHARACTER::GetPolymorphPower() const
-{
-	return AffectSystem::GetPolymorphPower(GetEntityHandle());
-}
 void CHARACTER::SetPolymorph(uint32_t dwRaceNum, bool bMaintainStat)
 {
 	AffectSystem::SetPolymorph(GetEntityHandle(), dwRaceNum, bMaintainStat);
@@ -2106,10 +2102,6 @@ bool CHARACTER::IsPolyMaintainStat() const
 	return AffectSystem::IsPolyMaintainStat(GetEntityHandle());
 }
 
-uint32_t CHARACTER::GetPolymorphVnum() const
-{
-	return AffectSystem::GetPolymorphVnum(GetEntityHandle());
-}
 int32_t CHARACTER::SetInvincible(bool arg)
 {
 	isInvincible = arg;
