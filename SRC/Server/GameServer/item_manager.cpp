@@ -312,19 +312,28 @@ entt::entity ITEM_MANAGER::CreateItem(uint32_t vnum, uint32_t count, uint32_t id
 	else
 	{
 		item->SetID(GetNewID());
+	}
 
-		if (item->GetType() == ITEM_UNIQUE) // 유니크 아이템은 생성시에 소켓에 남은시간을 기록한다.
-		{
-			if (item->GetValue(2) == 0)
-				item->SetSocket(ITEM_SOCKET_UNIQUE_REMAIN_TIME, item->GetValue(0)); // 게임 시간 유니크
-			else
-			{
-				//int globalTime = get_global_time();
-				//int lastTime = item->GetValue(0);
-				//int endTime = get_global_time() + item->GetValue(0);
-				item->SetSocket(ITEM_SOCKET_UNIQUE_REMAIN_TIME, get_global_time() + item->GetValue(0)); // 실시간 유니크
-			}
-		}
+	// The entity has to exist before any item state is written: sockets and
+	// attributes are read back through it.
+	item->SetVID(++m_dwVIDCount);
+	const entt::entity itemEntity = EntityFactory::CreateItemEntity(g_registry, item);
+	if (!ItemSystem::IsValidItem(itemEntity))
+	{
+#ifdef M2_USE_POOL
+		pool_.Destroy(item);
+#else
+		M2_DELETE(item);
+#endif
+		return entt::null;
+	}
+
+	if (bIsNewItem && item->GetType() == ITEM_UNIQUE)
+	{
+		if (item->GetValue(2) == 0)
+			item->SetSocket(ITEM_SOCKET_UNIQUE_REMAIN_TIME, item->GetValue(0)); // 게임 시간 유니크
+		else
+			item->SetSocket(ITEM_SOCKET_UNIQUE_REMAIN_TIME, get_global_time() + item->GetValue(0)); // 실시간 유니크
 	}
 
 
@@ -360,18 +369,6 @@ entt::entity ITEM_MANAGER::CreateItem(uint32_t vnum, uint32_t count, uint32_t id
 	}
 	else
 		count = 1;
-
-	item->SetVID(++m_dwVIDCount);
-	const entt::entity itemEntity = EntityFactory::CreateItemEntity(g_registry, item);
-	if (!ItemSystem::IsValidItem(itemEntity))
-	{
-#ifdef M2_USE_POOL
-		pool_.Destroy(item);
-#else
-		M2_DELETE(item);
-#endif
-		return entt::null;
-	}
 
 	if (!bSkipSave)
 	{

@@ -57,6 +57,7 @@
 #endif
 #ifdef ENABLE_BATTLE_PASS
 #include "../../battle_pass.h"
+#include "NetworkSyncSystem.hpp"
 #endif
 #include "../../DragonSoul.h"
 #include "../../buff_on_attributes.h"
@@ -2274,34 +2275,6 @@ bool SetItemSocketEcs(entt::entity item, int index, uint32_t value)
     return SetItemSocket(item, index, value);
 }
 
-bool SyncItemSocketsFromLegacy(entt::entity item)
-{
-    LPITEM legacyItem = LegacyItemBoundary(item);
-    if (!legacyItem || item == entt::null || !g_registry.valid(item))
-        return false;
-
-    ecs::ItemSockets sockets{};
-    const int32_t* values = legacyItem->GetSockets();
-    for (int i = 0; i < ITEM_SOCKET_MAX_NUM; ++i)
-        sockets.sockets[i] = values[i];
-
-    g_registry.emplace_or_replace<ecs::ItemSockets>(item, sockets);
-    return true;
-}
-
-bool SyncLegacySocketsFromEcs(entt::entity item)
-{
-    auto* sockets = g_registry.try_get<ecs::ItemSockets>(item);
-    LPITEM legacyItem = LegacyItemBoundary(item);
-    if (!sockets || !legacyItem)
-        return false;
-
-    for (int i = 0; i < ITEM_SOCKET_MAX_NUM; ++i)
-        legacyItem->SetSocket(i, sockets->sockets[i]);
-
-    return true;
-}
-
 bool SetItemAttribute(entt::entity item, int index, int type, int value)
 {
     if (item == entt::null || !g_registry.valid(item) ||
@@ -2335,7 +2308,7 @@ bool AddItemAttributeEcs(entt::entity item)
         return false;
 
     legacyItem->AddAttribute();
-    return SyncItemAttributesFromLegacy(item);
+    return true;
 }
 
 bool ChangeItemAttributeEcs(entt::entity item)
@@ -2345,7 +2318,7 @@ bool ChangeItemAttributeEcs(entt::entity item)
         return false;
 
     legacyItem->ChangeAttribute();
-    return SyncItemAttributesFromLegacy(item);
+    return true;
 }
 
 bool ClearItemAttributesEcs(entt::entity item)
@@ -2362,32 +2335,6 @@ bool ClearItemAttributesEcs(entt::entity item)
     if (LPITEM legacyItem = LegacyItemBoundary(item))
         legacyItem->SetAttributes(attrs.attrs.data());
 
-    return true;
-}
-
-bool SyncItemAttributesFromLegacy(entt::entity item)
-{
-    LPITEM legacyItem = LegacyItemBoundary(item);
-    if (!legacyItem || item == entt::null || !g_registry.valid(item))
-        return false;
-
-    ecs::ItemAttributes attrs{};
-    const TPlayerItemAttribute* values = legacyItem->GetAttributes();
-    for (int i = 0; i < ITEM_ATTRIBUTE_MAX_NUM; ++i)
-        attrs.attrs[i] = values[i];
-
-    g_registry.emplace_or_replace<ecs::ItemAttributes>(item, attrs);
-    return true;
-}
-
-bool SyncLegacyAttributesFromEcs(entt::entity item)
-{
-    auto* attrs = g_registry.try_get<ecs::ItemAttributes>(item);
-    LPITEM legacyItem = LegacyItemBoundary(item);
-    if (!attrs || !legacyItem)
-        return false;
-
-    legacyItem->SetAttributes(attrs->attrs.data());
     return true;
 }
 
@@ -2415,8 +2362,6 @@ bool CopyItemAttributesEcs(entt::entity source, entt::entity target)
         return false;
 
     g_registry.emplace_or_replace<ecs::ItemAttributes>(target, *sourceAttributes);
-    if (!SyncLegacyAttributesFromEcs(target))
-        return false;
 
     // CItem::SetAttributes, which CopyAttributeTo called, ended with Save().
     SaveItem(target);
@@ -2433,7 +2378,11 @@ bool CopyItemSocketsEcs(entt::entity source, entt::entity target)
         return false;
 
     g_registry.emplace_or_replace<ecs::ItemSockets>(target, *sourceSockets);
-    return SyncLegacySocketsFromEcs(target);
+    // SetSocket, which the per-index copy used to call, ended with an item
+    // update packet and a save. The component write does neither.
+    ecs::ItemNetworkSystem::SendItemUpdate(g_registry, target);
+    SaveItem(target);
+    return true;
 }
 
 static bool CanPutIntoRing(entt::entity ring, entt::entity item)
@@ -2879,7 +2828,7 @@ bool AddItemRareAttributeEcs(entt::entity item)
     if (!legacyItem || !legacyItem->AddRareAttribute())
         return false;
 
-    return SyncItemAttributesFromLegacy(item);
+    return true;
 }
 
 bool ChangeItemRareAttributeEcs(entt::entity item)
@@ -2888,7 +2837,7 @@ bool ChangeItemRareAttributeEcs(entt::entity item)
     if (!legacyItem || !legacyItem->ChangeRareAttribute())
         return false;
 
-    return SyncItemAttributesFromLegacy(item);
+    return true;
 }
 
 bool AttrLogEcs(entt::entity item)
@@ -3836,8 +3785,6 @@ bool SyncItemStateFromLegacy(entt::entity item)
 
     SyncItemLocationFromLegacy(item);
     SyncItemOwnerFromLegacy(item);
-    SyncItemSocketsFromLegacy(item);
-    SyncItemAttributesFromLegacy(item);
     return true;
 }
 

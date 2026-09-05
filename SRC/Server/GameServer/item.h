@@ -112,19 +112,19 @@ class CItem : public CEntity
 		bool		IsTwohanded();
 
 		void		ModifyPoints(bool bAdd);	// 아이템의 효과를 캐릭터에 부여 한다. bAdd가 false이면 제거함
-		const int32_t*	GetSockets()		{ return &m_alSockets[0];	}
-		int32_t		GetSocket(int i)	{ return m_alSockets[i];	}
+		const int32_t*	GetSockets() const;
+		int32_t		GetSocket(int i) const;
 
 		void		SetSockets(const int32_t* al);
 		void		SetSocket(int i, int32_t v, bool bLog = true);
 
 		int		GetSocketCount();
 
-		const TPlayerItemAttribute* GetAttributes()		{ return m_aAttr;	}
-		const TPlayerItemAttribute& GetAttribute(int i)	{ return m_aAttr[i];	}
+		const TPlayerItemAttribute* GetAttributes() const;
+		const TPlayerItemAttribute& GetAttribute(int i) const;
 
-		uint8_t		GetAttributeType(int i)	{ return m_aAttr[i].bType;	}
-		short		GetAttributeValue(int i){ return m_aAttr[i].sValue;	}
+		uint8_t		GetAttributeType(int i) const;
+		short		GetAttributeValue(int i) const;
 
 		void		SetAttributes(const TPlayerItemAttribute* c_pAttribute);
 
@@ -296,8 +296,6 @@ class CItem : public CEntity
 
 		bool		m_bExchanging;	///< 현재 교환중 상태
 
-		int32_t		m_alSockets[ITEM_SOCKET_MAX_NUM];	// 아이템 소캣
-		TPlayerItemAttribute	m_aAttr[ITEM_ATTRIBUTE_MAX_NUM];
 
 #ifdef ENABLE_SOUL_SYSTEM
 #endif

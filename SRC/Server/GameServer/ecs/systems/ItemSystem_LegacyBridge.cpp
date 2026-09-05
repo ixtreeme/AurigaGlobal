@@ -370,34 +370,6 @@ const int MAX_NORM_ATTR_NUM = ITEM_MANAGER::MAX_NORM_ATTR_NUM;
 const int MAX_RARE_ATTR_NUM = ITEM_MANAGER::MAX_RARE_ATTR_NUM;
 #endif
 
-static void SyncItemAttributesComponent(LPITEM item)
-{
-    entt::entity e = (item ? item->GetEntityHandle() : entt::null);
-    if (e == entt::null)
-        return;
-
-    ecs::ItemAttributes attrs{};
-    const TPlayerItemAttribute* values = item->GetAttributes();
-    for (int i = 0; i < ITEM_ATTRIBUTE_MAX_NUM; ++i)
-        attrs.attrs[i] = values[i];
-
-    g_registry.emplace_or_replace<ecs::ItemAttributes>(e, attrs);
-}
-
-static void SyncItemSocketsComponent(LPITEM item)
-{
-    entt::entity e = (item ? item->GetEntityHandle() : entt::null);
-    if (e == entt::null)
-        return;
-
-    ecs::ItemSockets sockets{};
-    const int32_t* values = item->GetSockets();
-    for (int i = 0; i < ITEM_SOCKET_MAX_NUM; ++i)
-        sockets.sockets[i] = values[i];
-
-    g_registry.emplace_or_replace<ecs::ItemSockets>(e, sockets);
-}
-
 namespace
 {
 	bool IsZodiacAttributeItemVnum(uint32_t dwVnum)
@@ -822,18 +794,89 @@ void SetItemLockedAttr(entt::entity item, short index)
 #endif
 } // namespace ItemSystem
 
+// The socket and attribute arrays live in ecs::ItemSockets and
+// ecs::ItemAttributes. These accessors are what is left of the members that
+// used to hold them: every read goes to the component for this item entity,
+// and an item with no entity yet reads as empty.
+namespace {
+const ecs::ItemSockets& SocketsOf(entt::entity e)
+{
+	static const ecs::ItemSockets kEmpty {};
+	if (e == entt::null || !g_registry.valid(e))
+		return kEmpty;
+	const auto* c = g_registry.try_get<ecs::ItemSockets>(e);
+	return c ? *c : kEmpty;
+}
+
+const ecs::ItemAttributes& AttributesOf(entt::entity e)
+{
+	static const ecs::ItemAttributes kEmpty {};
+	if (e == entt::null || !g_registry.valid(e))
+		return kEmpty;
+	const auto* c = g_registry.try_get<ecs::ItemAttributes>(e);
+	return c ? *c : kEmpty;
+}
+
+ecs::ItemSockets* MutableSocketsOf(entt::entity e)
+{
+	if (e == entt::null || !g_registry.valid(e))
+		return nullptr;
+	return &g_registry.get_or_emplace<ecs::ItemSockets>(e);
+}
+
+ecs::ItemAttributes* MutableAttributesOf(entt::entity e)
+{
+	if (e == entt::null || !g_registry.valid(e))
+		return nullptr;
+	return &g_registry.get_or_emplace<ecs::ItemAttributes>(e);
+}
+} // namespace
+
+const int32_t* CItem::GetSockets() const
+{
+	return SocketsOf(GetEntityHandle()).sockets.data();
+}
+
+int32_t CItem::GetSocket(int i) const
+{
+	return (i >= 0 && i < ITEM_SOCKET_MAX_NUM) ? SocketsOf(GetEntityHandle()).sockets[i] : 0;
+}
+
+const TPlayerItemAttribute* CItem::GetAttributes() const
+{
+	return AttributesOf(GetEntityHandle()).attrs.data();
+}
+
+const TPlayerItemAttribute& CItem::GetAttribute(int i) const
+{
+	static const TPlayerItemAttribute kEmpty {};
+	if (i < 0 || i >= ITEM_ATTRIBUTE_MAX_NUM)
+		return kEmpty;
+	return AttributesOf(GetEntityHandle()).attrs[i];
+}
+
+uint8_t CItem::GetAttributeType(int i) const
+{
+	return GetAttribute(i).bType;
+}
+
+short CItem::GetAttributeValue(int i) const
+{
+	return GetAttribute(i).sValue;
+}
+
 void CItem::SetSockets(const int32_t* c_al)
 {
-	memcpy(m_alSockets, c_al, sizeof(m_alSockets));
-	SyncItemSocketsComponent(this);
+	if (auto* sockets = MutableSocketsOf(GetEntityHandle()))
+		std::copy_n(c_al, ITEM_SOCKET_MAX_NUM, sockets->sockets.begin());
 	Save();
 }
 
 void CItem::SetSocket(int i, int32_t v, bool bLog)
 {
 	assert(i < ITEM_SOCKET_MAX_NUM);
-	m_alSockets[i] = v;
-	SyncItemSocketsComponent(this);
+	if (auto* sockets = MutableSocketsOf(GetEntityHandle()))
+		sockets->sockets[i] = v;
 	UpdatePacket();
 	Save();
 	if (bLog)
@@ -1151,8 +1194,8 @@ void CItem::SetAttributes(const TPlayerItemAttribute* c_pAttribute)
 
 {
 
-	memcpy(m_aAttr, c_pAttribute, sizeof(m_aAttr));
-	SyncItemAttributesComponent(this);
+	if (auto* attributes = MutableAttributesOf(GetEntityHandle()))
+		std::copy_n(c_pAttribute, ITEM_ATTRIBUTE_MAX_NUM, attributes->attrs.begin());
 
 	Save();
 
@@ -1164,11 +1207,12 @@ void CItem::SetAttribute(int i, uint8_t bType, short sValue)
 
 	assert(i < MAX_NORM_ATTR_NUM);
 
-	m_aAttr[i].bType = bType;
+	if (auto* attributes = MutableAttributesOf(GetEntityHandle()))
+	{
+		attributes->attrs[i].bType = bType;
+		attributes->attrs[i].sValue = sValue;
+	}
 
-	m_aAttr[i].sValue = sValue;
-
-	SyncItemAttributesComponent(this);
 	UpdatePacket();
 
 	Save();
@@ -1197,9 +1241,11 @@ void CItem::SetForceAttribute(int i, uint8_t bType, short sValue)
 
 
 
-	m_aAttr[i].bType = bType;
-
-	m_aAttr[i].sValue = sValue;
+	if (auto* attributes = MutableAttributesOf(GetEntityHandle()))
+	{
+		attributes->attrs[i].bType = bType;
+		attributes->attrs[i].sValue = sValue;
+	}
 
 	UpdatePacket();
 
@@ -1499,10 +1545,12 @@ void CItem::ClearAttribute()
 			continue;
 		}
 #endif
-		m_aAttr[i].bType = 0;
-		m_aAttr[i].sValue = 0;
+		if (auto* attributes = MutableAttributesOf(GetEntityHandle()))
+		{
+			attributes->attrs[i].bType = 0;
+			attributes->attrs[i].sValue = 0;
+		}
 	}
-	SyncItemAttributesComponent(this);
 }
 
 // Phase 11: migrated from item_attribute.cpp batch C
@@ -1513,7 +1561,7 @@ int CItem::GetRareAttrCount()
 
 	for (uint32_t dwIdx = ITEM_ATTRIBUTE_RARE_START; dwIdx < ITEM_ATTRIBUTE_RARE_END; dwIdx++)
 	{
-		if (m_aAttr[dwIdx].bType != 0)
+		if (GetAttributeType(dwIdx) != 0)
 			ret++;
 	}
 
@@ -1529,11 +1577,13 @@ bool CItem::ChangeRareAttribute()
 
 	for (int i = 0; i < cnt; ++i)
 	{
-		m_aAttr[i + ITEM_ATTRIBUTE_RARE_START].bType = 0;
-		m_aAttr[i + ITEM_ATTRIBUTE_RARE_START].sValue = 0;
+		if (auto* attributes = MutableAttributesOf(GetEntityHandle()))
+		{
+			attributes->attrs[i + ITEM_ATTRIBUTE_RARE_START].bType = 0;
+			attributes->attrs[i + ITEM_ATTRIBUTE_RARE_START].sValue = 0;
+		}
 	}
 
-	SyncItemAttributesComponent(this);
 
 	if (GetOwnerEntity() != entt::null && ecs::PlayerRuntime::GetDesc(GetOwnerEntity()))
 		LOG_LEVEL_CHECK(LOG_LEVEL_MAX, LogManager::instance().ItemLogEntity(GetOwnerEntity(), GetEntityHandle(), "SET_RARE_CHANGE", ""))
@@ -1556,7 +1606,10 @@ bool CItem::AddRareAttribute()
 		return false;
 
 	int pos = count + ITEM_ATTRIBUTE_RARE_START;
-	TPlayerItemAttribute & attr = m_aAttr[pos];
+	auto* attributes = MutableAttributesOf(GetEntityHandle());
+	if (!attributes)
+		return false;
+	TPlayerItemAttribute& attr = attributes->attrs[pos];
 
 	int nAttrSet = GetAttributeSetIndex();
 	std::vector<int> avail;
@@ -1586,7 +1639,6 @@ bool CItem::AddRareAttribute()
 	attr.bType = r.dwApplyIndex;
 	attr.sValue = r.lValues[nAttrLevel - 1];
 
-	SyncItemAttributesComponent(this);
 	UpdatePacket();
 
 	Save();
@@ -15788,8 +15840,6 @@ void CItem::Initialize()
 	ItemSystem::GetItemEvents(GetEntityHandle()).soulItem = nullptr;
 #endif
 	ItemSystem::GetItemEvents(GetEntityHandle()).uniqueExpire = nullptr;
-	memset(&m_alSockets, 0, sizeof(m_alSockets));
-	memset(&m_aAttr, 0, sizeof(m_aAttr));
 #ifdef ATTR_LOCK
 	m_sLockedAttr = -1;
 #endif
@@ -16387,19 +16437,19 @@ void CItem::AttrLog()
 
 	for (int i = 0; i < ITEM_SOCKET_MAX_NUM; ++i)
 	{
-		if (m_alSockets[i])
+		if (GetSocket(i))
 		{
 #ifdef ENABLE_NEWSTUFF
 			if (g_iDbLogLevel >= LOG_LEVEL_MAX)
 #endif
-				LogManager::instance().ItemLog(i, m_alSockets[i], 0, GetID(), "INFO_SOCKET", "", pszIP ? pszIP : "", GetOriginalVnum());
+				LogManager::instance().ItemLog(i, GetSocket(i), 0, GetID(), "INFO_SOCKET", "", pszIP ? pszIP : "", GetOriginalVnum());
 		}
 	}
 
 	for (int i = 0; i < ITEM_ATTRIBUTE_MAX_NUM; ++i)
 	{
-		int	type = m_aAttr[i].bType;
-		int value = m_aAttr[i].sValue;
+		int	type = GetAttributeType(i);
+		int value = GetAttributeValue(i);
 
 		if (type)
 		{
@@ -16676,8 +16726,6 @@ CItem::CItem(uint32_t dwVnum)
 	m_isLocked(false),
 	m_dwMaskVnum(0), m_dwSIGVnum(0)
 {
-	memset(&m_alSockets, 0, sizeof(m_alSockets));
-	memset(&m_aAttr, 0, sizeof(m_aAttr));
 }
 
 CItem::~CItem()

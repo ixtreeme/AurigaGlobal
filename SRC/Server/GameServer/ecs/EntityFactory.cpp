@@ -499,20 +499,6 @@ ecs::ItemFlags MakeItemFlags(LPITEM item)
     };
 }
 
-ecs::ItemSockets MakeItemSockets(LPITEM item)
-{
-    ecs::ItemSockets sockets {};
-    std::copy_n(item->GetSockets(), ITEM_SOCKET_MAX_NUM, sockets.sockets.begin());
-    return sockets;
-}
-
-ecs::ItemAttributes MakeItemAttributes(LPITEM item)
-{
-    ecs::ItemAttributes attributes {};
-    std::copy_n(item->GetAttributes(), ITEM_ATTRIBUTE_MAX_NUM, attributes.attrs.begin());
-    return attributes;
-}
-
 ecs::ItemLockedAttribute MakeItemLockedAttribute(LPITEM item)
 {
 #ifdef ATTR_LOCK
@@ -571,8 +557,10 @@ void SyncItemEntity(entt::registry& reg, entt::entity entity, LPITEM item)
     reg.emplace_or_replace<ecs::ItemOwner>(entity, MakeItemOwner(item));
     reg.emplace_or_replace<ecs::ItemEquipped>(entity, MakeItemEquipped(item));
     reg.emplace_or_replace<ecs::ItemFlags>(entity, MakeItemFlags(item));
-    reg.emplace_or_replace<ecs::ItemSockets>(entity, MakeItemSockets(item));
-    reg.emplace_or_replace<ecs::ItemAttributes>(entity, MakeItemAttributes(item));
+    // The arrays live in these components; the item has no copy to seed them
+    // from, so a new entity just gets empty ones.
+    (void)reg.get_or_emplace<ecs::ItemSockets>(entity);
+    (void)reg.get_or_emplace<ecs::ItemAttributes>(entity);
     reg.emplace_or_replace<ecs::ItemLockedAttribute>(entity, MakeItemLockedAttribute(item));
     reg.emplace_or_replace<ecs::ItemProtoRef>(entity, MakeItemProtoRef(item));
     (void)reg.get_or_emplace<ecs::ViewMap>(entity);

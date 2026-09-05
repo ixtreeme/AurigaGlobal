@@ -165,8 +165,6 @@ void SetItemLockedAttr(entt::entity item, short index);
 #endif
 bool SetItemSocket(entt::entity item, int index, uint32_t value);
 bool SetItemSocketEcs(entt::entity item, int index, uint32_t value);
-bool SyncItemSocketsFromLegacy(entt::entity item);
-bool SyncLegacySocketsFromEcs(entt::entity item);
 bool SetItemAttribute(entt::entity item, int index, int type, int value);
 bool ClearItemAttribute(entt::entity item, int index);
 bool SetItemForceAttributeEcs(entt::entity item, int index, uint8_t type, int16_t value);
@@ -187,8 +185,6 @@ bool CanPutInto(entt::entity item, entt::entity container);
 bool CanPutInto2(entt::entity item, entt::entity container);
 bool CopyAllAttrToEcs(entt::entity source, entt::entity target);
 bool AttrLogEcs(entt::entity item);
-bool SyncItemAttributesFromLegacy(entt::entity item);
-bool SyncLegacyAttributesFromEcs(entt::entity item);
 bool SetItemExchanging(entt::entity item, bool flag);
 bool IsItemExchanging(entt::entity item);
 bool IsItemLocked(entt::entity item);
