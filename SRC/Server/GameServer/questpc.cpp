@@ -300,7 +300,7 @@ namespace quest
 			LOG_TRACE("QUEST Icon File {}", m_RunningQuestState->_icon_file.c_str());
 		}
 
-		ecs::PlayerRuntime::GetDesc(((CQuestManager::instance().GetCurrentCharacterPtr()) ? (CQuestManager::instance().GetCurrentCharacterPtr())->GetEntityHandle() : entt::null))->Packet(buf.read_peek(), buf.size());
+		ecs::PlayerRuntime::GetDesc(CQuestManager::instance().GetCurrentCharacter())->Packet(buf.read_peek(), buf.size());
 
 		m_iSendToClient = 0;
 //		if (m_iSendToClient & QUEST_SEND_TITLE) {
@@ -348,7 +348,7 @@ namespace quest
 //		}
 //		qi.szIconFileName[24] = '\0';
 //
-//		ecs::PlayerRuntime::GetDesc(((CQuestManager::instance().GetCurrentCharacterPtr()) ? (CQuestManager::instance().GetCurrentCharacterPtr())->GetEntityHandle() : entt::null))->Packet(&qi, sizeof(qi));
+//		ecs::PlayerRuntime::GetDesc(CQuestManager::instance().GetCurrentCharacter())->Packet(&qi, sizeof(qi));
 //		m_iSendToClient = 0;
 	}
 
@@ -357,14 +357,14 @@ namespace quest
 		// unlocked locked npc
 		{
 			LPCHARACTER npc = CQuestManager::instance().GetCurrentNPCCharacterPtr();
-			LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
+			const entt::entity ch = CQuestManager::instance().GetCurrentCharacter();
 
 			if (npc && !(ecs::PlayerRuntime::IsPC(((npc) ? (npc)->GetEntityHandle() : entt::null))))
 			{
-				if ((ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null))) == npc->GetQuestNPCID())
+				if ((ecs::PlayerRuntime::GetPlayerID(ch)) == npc->GetQuestNPCID())
 				{
 					npc->SetQuestNPCID(0);
-					LOG_TRACE("QUEST NPC lock isn't unlocked : pid {}", (ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null))));
+					LOG_TRACE("QUEST NPC lock isn't unlocked : pid {}", (ecs::PlayerRuntime::GetPlayerID(ch)));
 					CQuestManager::instance().WriteRunningStateToSyserr();
 				}
 			}
@@ -400,17 +400,17 @@ namespace quest
 
 		if (m_iLastState != iNowState)
 		{
-			LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
+			const entt::entity ch = CQuestManager::instance().GetCurrentCharacter();
 			uint32_t dwQuestIndex = CQuestManager::instance().GetQuestIndexByName(m_stCurQuest);
-			if (ch)
+			if (ecs::PlayerRuntime::IsValid(ch))
 			{
 				SetFlag(m_stCurQuest + ".__status", m_iLastState);
-				CQuestManager::instance().LeaveState((ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null))), dwQuestIndex, m_iLastState);
+				CQuestManager::instance().LeaveState((ecs::PlayerRuntime::GetPlayerID(ch)), dwQuestIndex, m_iLastState);
 				pOldState->st = iNowState;
 				SetFlag(m_stCurQuest + ".__status", iNowState);
-				CQuestManager::instance().EnterState((ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null))), dwQuestIndex, iNowState);
+				CQuestManager::instance().EnterState((ecs::PlayerRuntime::GetPlayerID(ch)), dwQuestIndex, iNowState);
 				if (GetFlag(m_stCurQuest + ".__status") == iNowState)
-					CQuestManager::instance().Letter((ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null))), dwQuestIndex, iNowState);
+					CQuestManager::instance().Letter((ecs::PlayerRuntime::GetPlayerID(ch)), dwQuestIndex, iNowState);
 			}
 		}
 
@@ -420,8 +420,7 @@ namespace quest
 
 	void PC::DoQuestStateChange()
 	{
-		LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
-		const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
+		const entt::entity ch = CQuestManager::instance().GetCurrentCharacter();
 
 
 		std::vector<TQuestStateChangeInfo> vecQuestStateChange;
@@ -451,14 +450,14 @@ namespace quest
 
 			assert(it->second.st == rInfo.prev_state);
 
-			CQuestManager::instance().LeaveState((ecs::PlayerRuntime::GetPlayerID(chEntity)), dwQuestIdx, rInfo.prev_state);
+			CQuestManager::instance().LeaveState((ecs::PlayerRuntime::GetPlayerID(ch)), dwQuestIdx, rInfo.prev_state);
 			it->second.st = rInfo.next_state;
 			SetFlag(stQuestName + ".__status", rInfo.next_state);
 
-			CQuestManager::instance().EnterState((ecs::PlayerRuntime::GetPlayerID(chEntity)), dwQuestIdx, rInfo.next_state);
+			CQuestManager::instance().EnterState((ecs::PlayerRuntime::GetPlayerID(ch)), dwQuestIdx, rInfo.next_state);
 
 			if (GetFlag(stQuestName + ".__status")==rInfo.next_state)
-				CQuestManager::instance().Letter((ecs::PlayerRuntime::GetPlayerID(chEntity)), dwQuestIdx, rInfo.next_state);
+				CQuestManager::instance().Letter((ecs::PlayerRuntime::GetPlayerID(ch)), dwQuestIdx, rInfo.next_state);
 		}
 	}
 

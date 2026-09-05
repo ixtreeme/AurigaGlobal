@@ -216,7 +216,7 @@ namespace quest
 	{
 		CQuestManager & q = CQuestManager::instance();
 		const char * pszBoardName = lua_tostring(L, 1);
-		uint32_t mypid = ecs::PlayerRuntime::GetPlayerID(((q.GetCurrentCharacterPtr()) ? (q.GetCurrentCharacterPtr())->GetEntityHandle() : entt::null));
+		uint32_t mypid = ecs::PlayerRuntime::GetPlayerID(q.GetCurrentCharacter());
 		bool bOrder = (int) lua_tonumber(L, 2) != 0 ? true : false;
 
 		DBManager::instance().ReturnQuery(QID_HIGHSCORE_SHOW, mypid, nullptr,
@@ -232,7 +232,7 @@ namespace quest
 		THighscoreRegisterQueryInfo * qi = M2_NEW THighscoreRegisterQueryInfo;
 
 		strlcpy(qi->szBoard, lua_tostring(L, 1), sizeof(qi->szBoard));
-		qi->dwPID = ecs::PlayerRuntime::GetPlayerID(((q.GetCurrentCharacterPtr()) ? (q.GetCurrentCharacterPtr())->GetEntityHandle() : entt::null));
+		qi->dwPID = ecs::PlayerRuntime::GetPlayerID(q.GetCurrentCharacter());
 		qi->iValue = (int) lua_tonumber(L, 2);
 		qi->bOrder = (int) lua_tonumber(L, 3);
 
@@ -289,10 +289,9 @@ namespace quest
 			count = 10;
 		}
 
-		LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
-		const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
+		const entt::entity ch = CQuestManager::instance().GetCurrentCharacter();
 
-		LPSECTREE_MAP pMap = SECTREE_MANAGER::instance().GetMap(ecs::PlayerRuntime::GetMapIndex(chEntity));
+		LPSECTREE_MAP pMap = SECTREE_MANAGER::instance().GetMap(ecs::PlayerRuntime::GetMapIndex(ch));
 		if (pMap == nullptr) {
 			return 0;
 		}
@@ -311,7 +310,7 @@ namespace quest
 				int32_t x = local_x + pMap->m_setting.iBaseX + (int32_t)(r * cos(angle));
 				int32_t y = local_y + pMap->m_setting.iBaseY + (int32_t)(r * sin(angle));
 
-				mob = CHARACTER_MANAGER::instance().SpawnMob(mob_vnum, ecs::PlayerRuntime::GetMapIndex(chEntity), x, y, 0);
+				mob = CHARACTER_MANAGER::instance().SpawnMob(mob_vnum, ecs::PlayerRuntime::GetMapIndex(ch), x, y, 0);
 
 				if (mob)
 					break;
@@ -362,10 +361,9 @@ namespace quest
 			count = 10;
 		}
 
-		LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
-		const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
+		const entt::entity ch = CQuestManager::instance().GetCurrentCharacter();
 
-		LPSECTREE_MAP pMap = SECTREE_MANAGER::instance().GetMap(ecs::PlayerRuntime::GetMapIndex(chEntity));
+		LPSECTREE_MAP pMap = SECTREE_MANAGER::instance().GetMap(ecs::PlayerRuntime::GetMapIndex(ch));
 		if (pMap == nullptr) {
 			lua_pushnumber(L, 0);
 			return 1;
@@ -385,7 +383,7 @@ namespace quest
 				int32_t x = local_x + pMap->m_setting.iBaseX + static_cast<int32_t>(r * cos(angle));
 				int32_t y = local_y + pMap->m_setting.iBaseY + static_cast<int32_t>(r * sin(angle));
 
-				mob = CHARACTER_MANAGER::instance().SpawnGroup(group_vnum, ecs::PlayerRuntime::GetMapIndex(chEntity), x, y, x, y, nullptr, bAggressive);
+				mob = CHARACTER_MANAGER::instance().SpawnGroup(group_vnum, ecs::PlayerRuntime::GetMapIndex(ch), x, y, x, y, nullptr, bAggressive);
 
 				if (mob)
 					break;
@@ -940,7 +938,7 @@ namespace quest
 
 		if (ch != entt::null && (ecs::PlayerRuntime::IsPC(chEntity)))
 		{
-			NetworkSyncSystem::SendConfirmWithMsg(g_registry, chEntity, szMsg, iTimeout, ecs::PlayerRuntime::GetPlayerID(((GetCurrentCharacterPtr()) ? (GetCurrentCharacterPtr())->GetEntityHandle() : entt::null)));
+			NetworkSyncSystem::SendConfirmWithMsg(g_registry, chEntity, szMsg, iTimeout, ecs::PlayerRuntime::GetPlayerID(GetCurrentCharacter()));
 		}
 
 		GetCurrentPC()->SetConfirmWait((ch != entt::null && (ecs::PlayerRuntime::IsPC(chEntity)))?(ecs::PlayerRuntime::GetPlayerID(chEntity)):0);
@@ -951,7 +949,7 @@ namespace quest
 
 		confirm_timeout_event_info* info = AllocEventInfo<confirm_timeout_event_info>();
 
-		info->dwWaitPID = ecs::PlayerRuntime::GetPlayerID(((GetCurrentCharacterPtr()) ? (GetCurrentCharacterPtr())->GetEntityHandle() : entt::null));
+		info->dwWaitPID = ecs::PlayerRuntime::GetPlayerID(GetCurrentCharacter());
 		info->dwReplyPID = (ch != entt::null && (ecs::PlayerRuntime::IsPC(chEntity))) ? (ecs::PlayerRuntime::GetPlayerID(chEntity)) : 0;
 
 		event_create(confirm_timeout_event, info, PASSES_PER_SEC(iTimeout));

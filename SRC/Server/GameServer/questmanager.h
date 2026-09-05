@@ -178,7 +178,9 @@ namespace quest
 		bool		CanStartQuest(unsigned int quest_index);
 		bool		CanEndQuestAtState(const std::string& quest_name, const string& state_name);
 
-		LPCHARACTER		GetCurrentCharacterPtr() const { return m_pCurrentCharacter; }
+		entt::entity	GetCurrentCharacter() const { return m_currentCharacter; }
+		// Derived, for the callers that still speak to CHARACTER directly.
+		LPCHARACTER		GetCurrentCharacterPtr() const;
 		LPCHARACTER		GetCurrentPartyMember() const { return m_pCurrentPartyMember; }
 		PC* GetCurrentPC() const { return m_pCurrentPC; }
 		entt::entity	GetCurrentPCEntity() const;
@@ -264,7 +266,7 @@ namespace quest
 
 		PCMap			m_mapPC;
 
-		LPCHARACTER		m_pCurrentCharacter;
+		entt::entity		m_currentCharacter;
 		LPCHARACTER		m_pCurrentNPCCharacter;
 		LPCHARACTER		m_pCurrentPartyMember;
 		PC* m_pCurrentPC;

@@ -90,7 +90,7 @@ namespace quest
 		ostringstream s;
 		combine_lua_string(L, s);
 
-		ecs::ChatSystem::Send(((CQuestManager::Instance().GetCurrentCharacterPtr()) ? (CQuestManager::Instance().GetCurrentCharacterPtr())->GetEntityHandle() : entt::null), CHAT_TYPE_TALKING, "%s", s.str().c_str());
+		ecs::ChatSystem::Send(CQuestManager::Instance().GetCurrentCharacter(), CHAT_TYPE_TALKING, "%s", s.str().c_str());
 		return 0;
 	}
 
@@ -100,7 +100,7 @@ namespace quest
 		// DUAL-PATH: legacy only during migration window
 		ostringstream s;
 		combine_lua_string(L, s);
-		ecs::ChatSystem::Send(((CQuestManager::Instance().GetCurrentCharacterPtr()) ? (CQuestManager::Instance().GetCurrentCharacterPtr())->GetEntityHandle() : entt::null), CHAT_TYPE_COMMAND, "%s", s.str().c_str());
+		ecs::ChatSystem::Send(CQuestManager::Instance().GetCurrentCharacter(), CHAT_TYPE_COMMAND, "%s", s.str().c_str());
 		return 0;
 	}
 
@@ -110,7 +110,7 @@ namespace quest
 		// DUAL-PATH: legacy only during migration window
 		ostringstream s;
 		combine_lua_string(L, s);
-		ecs::ChatSystem::Send(((CQuestManager::Instance().GetCurrentCharacterPtr()) ? (CQuestManager::Instance().GetCurrentCharacterPtr())->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "%s", s.str().c_str());
+		ecs::ChatSystem::Send(CQuestManager::Instance().GetCurrentCharacter(), CHAT_TYPE_INFO, "%s", s.str().c_str());
 		return 0;
 	}
 
@@ -120,7 +120,7 @@ namespace quest
 		// DUAL-PATH: legacy only during migration window
 		ostringstream s;
 		combine_lua_string(L, s);
-		ecs::ChatSystem::Send(((CQuestManager::Instance().GetCurrentCharacterPtr()) ? (CQuestManager::Instance().GetCurrentCharacterPtr())->GetEntityHandle() : entt::null), CHAT_TYPE_NOTICE, "%s", s.str().c_str());
+		ecs::ChatSystem::Send(CQuestManager::Instance().GetCurrentCharacter(), CHAT_TYPE_NOTICE, "%s", s.str().c_str());
 		return 0;
 	}
 
@@ -244,7 +244,7 @@ namespace quest
 
 			CQuestManager & q = CQuestManager::instance();
 			int timernpc = q.LoadTimerScript(name);
-			q.GetCurrentPC()->AddTimer(name, quest_create_timer_event(name, ecs::PlayerRuntime::GetPlayerID(((q.GetCurrentCharacterPtr()) ? (q.GetCurrentCharacterPtr())->GetEntityHandle() : entt::null)), t, timernpc, true));
+			q.GetCurrentPC()->AddTimer(name, quest_create_timer_event(name, ecs::PlayerRuntime::GetPlayerID(q.GetCurrentCharacter()), t, timernpc, true));
 		}
 
 		return 0;
@@ -269,7 +269,7 @@ namespace quest
 			double t = lua_tonumber(L, -1);
 
 			CQuestManager& q = CQuestManager::instance();
-			quest_create_timer_event("", ecs::PlayerRuntime::GetPlayerID(((q.GetCurrentCharacterPtr()) ? (q.GetCurrentCharacterPtr())->GetEntityHandle() : entt::null)), t);
+			quest_create_timer_event("", ecs::PlayerRuntime::GetPlayerID(q.GetCurrentCharacter()), t);
 		}
 
 		return 0;
@@ -292,7 +292,7 @@ namespace quest
 
 			CQuestManager & q = CQuestManager::instance();
 			int timernpc = q.LoadTimerScript(name);
-			q.GetCurrentPC()->AddTimer(name, quest_create_timer_event(name, ecs::PlayerRuntime::GetPlayerID(((q.GetCurrentCharacterPtr()) ? (q.GetCurrentCharacterPtr())->GetEntityHandle() : entt::null)), t, timernpc));
+			q.GetCurrentPC()->AddTimer(name, quest_create_timer_event(name, ecs::PlayerRuntime::GetPlayerID(q.GetCurrentCharacter()), t, timernpc));
 		}
 
 		return 0;
@@ -532,7 +532,7 @@ namespace quest
 	{
 		// migrated from CHARACTER::give_char_privilege
 		// DUAL-PATH: legacy only during migration window
-		int pid = ecs::PlayerRuntime::GetPlayerID(((CQuestManager::instance().GetCurrentCharacterPtr()) ? (CQuestManager::instance().GetCurrentCharacterPtr())->GetEntityHandle() : entt::null));
+		int pid = ecs::PlayerRuntime::GetPlayerID(CQuestManager::instance().GetCurrentCharacter());
 		int type = (int)lua_tonumber(L, 1);
 		int value = (int)lua_tonumber(L, 2);
 
@@ -881,7 +881,7 @@ namespace quest
 			for (const entt::entity tch : i)
 			{
 
-				if (ecs::PlayerRuntime::GetMapIndex(tch) == ecs::PlayerRuntime::GetMapIndex(((CQuestManager::instance().GetCurrentCharacterPtr()) ? (CQuestManager::instance().GetCurrentCharacterPtr())->GetEntityHandle() : entt::null)))
+				if (ecs::PlayerRuntime::GetMapIndex(tch) == ecs::PlayerRuntime::GetMapIndex(CQuestManager::instance().GetCurrentCharacter()))
 				{
 					lua_pushnumber(L, ecs::PlayerRuntime::GetPacketVID(tch));
 					return 1;
@@ -984,7 +984,7 @@ namespace quest
 		// DUAL-PATH: legacy only during migration window
 		ostringstream s;
 		combine_lua_string(L, s);
-		ecs::ChatSystem::Send(((CQuestManager::Instance().GetCurrentCharacterPtr()) ? (CQuestManager::Instance().GetCurrentCharacterPtr())->GetEntityHandle() : entt::null), CHAT_TYPE_BIG_NOTICE, "%s", s.str().c_str());
+		ecs::ChatSystem::Send(CQuestManager::Instance().GetCurrentCharacter(), CHAT_TYPE_BIG_NOTICE, "%s", s.str().c_str());
 		return 0;
 	}
 
@@ -992,9 +992,9 @@ namespace quest
 	{
 		// migrated from CHARACTER::big_notice_in_map
 		// DUAL-PATH: legacy only during migration window
-		const LPCHARACTER pChar = CQuestManager::instance().GetCurrentCharacterPtr();
-		if (pChar != nullptr) {
-			SendNoticeMap(lua_tostring(L,1), ecs::PlayerRuntime::GetMapIndex(((pChar) ? (pChar)->GetEntityHandle() : entt::null)), true);
+		const entt::entity pChar = CQuestManager::instance().GetCurrentCharacter();
+		if (ecs::PlayerRuntime::IsValid(pChar)) {
+			SendNoticeMap(lua_tostring(L,1), ecs::PlayerRuntime::GetMapIndex(pChar), true);
 		}
 
 		return 0;
@@ -1376,18 +1376,17 @@ namespace quest
 
 		if(nullptr != pMonster )
 		{
-			const LPCHARACTER pChar = CQuestManager::instance().GetCurrentCharacterPtr();
-			const entt::entity charEntity = pChar ? pChar->GetEntityHandle() : entt::null;
+			const entt::entity pChar = CQuestManager::instance().GetCurrentCharacter();
 
 
 			for( uint32_t i=0 ; i < count ; ++i )
 			{
 				const LPCHARACTER pSpawnMonster = CHARACTER_MANAGER::instance().SpawnMobRange( dwVnum,
-						ecs::PlayerRuntime::GetMapIndex(charEntity),
-						ecs::PlayerRuntime::GetX(charEntity) - number(200, 750),
-						ecs::PlayerRuntime::GetY(charEntity) - number(200, 750),
-						ecs::PlayerRuntime::GetX(charEntity) + number(200, 750),
-						ecs::PlayerRuntime::GetY(charEntity) + number(200, 750),
+						ecs::PlayerRuntime::GetMapIndex(pChar),
+						ecs::PlayerRuntime::GetX(pChar) - number(200, 750),
+						ecs::PlayerRuntime::GetY(pChar) - number(200, 750),
+						ecs::PlayerRuntime::GetX(pChar) + number(200, 750),
+						ecs::PlayerRuntime::GetY(pChar) + number(200, 750),
 						true,
 						pMonster->m_table.bType == CHAR_TYPE_STONE,
 						isAggresive );
@@ -1494,11 +1493,10 @@ namespace quest
 	{
 		// migrated from CHARACTER::notice_in_map
 		// DUAL-PATH: legacy only during migration window
-		const LPCHARACTER pChar = CQuestManager::instance().GetCurrentCharacterPtr();
-		const entt::entity charEntity = pChar ? pChar->GetEntityHandle() : entt::null;
+		const entt::entity pChar = CQuestManager::instance().GetCurrentCharacter();
 
 
-		if (nullptr != pChar)
+		if (ecs::PlayerRuntime::IsValid(pChar))
 		{
 #ifdef TEXTS_IMPROVEMENT
 			if (!lua_isnumber(L, 1)) {
@@ -1509,9 +1507,9 @@ namespace quest
 				return 0;
 			}
 
-			SendNoticeNew(CHAT_TYPE_NOTICE, 0, ecs::PlayerRuntime::GetMapIndex(charEntity), (uint32_t)lua_tonumber(L, 1), lua_tostring(L, 2));
+			SendNoticeNew(CHAT_TYPE_NOTICE, 0, ecs::PlayerRuntime::GetMapIndex(pChar), (uint32_t)lua_tonumber(L, 1), lua_tostring(L, 2));
 #else
-			SendNoticeMap( lua_tostring(L,1), ecs::PlayerRuntime::GetMapIndex(charEntity), lua_toboolean(L,2) );
+			SendNoticeMap( lua_tostring(L,1), ecs::PlayerRuntime::GetMapIndex(pChar), lua_toboolean(L,2) );
 #endif
 		}
 

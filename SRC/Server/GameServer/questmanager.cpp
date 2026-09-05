@@ -46,7 +46,7 @@ namespace quest
 {
 	CQuestManager::CQuestManager()
 		: m_dwServerTimerArg(0), m_iRunningEventIndex(0), L(nullptr), m_bNoSend (false),
-		m_CurrentRunningState(nullptr), m_pCurrentCharacter(nullptr), m_pCurrentNPCCharacter(nullptr), m_pCurrentPartyMember(nullptr),
+		m_CurrentRunningState(nullptr), m_currentCharacter(entt::null), m_pCurrentNPCCharacter(nullptr), m_pCurrentPartyMember(nullptr),
 		m_pCurrentPC(nullptr),  m_iCurrentSkin(0), m_bError(false), m_pOtherPCBlockRootPC(nullptr)
 	{
 	}
@@ -515,9 +515,9 @@ namespace quest
 		// 지우기 전에 로그아웃 한다.
 		Logout(ecs::PlayerRuntime::GetPlayerID(ch));
 
-		if (m_pCurrentCharacter && m_pCurrentCharacter->GetEntityHandle() == ch)
+		if (m_currentCharacter == ch)
 		{
-			m_pCurrentCharacter = nullptr;
+			m_currentCharacter = entt::null;
 			m_pCurrentPC = nullptr;
 		}
 	}
@@ -644,7 +644,7 @@ namespace quest
 		SetServerTimerArg(arg);
 		LOG_INFO("XXX ServerTimer Call NPC {} vnum {} arg {}", static_cast<const void*>(GetPCForce(0)), npc, arg);
 		m_pCurrentPC = GetPCForce(0);
-		m_pCurrentCharacter = nullptr;
+		m_currentCharacter = entt::null;
 		return m_mapNPC[npc].OnServerTimer(*m_pCurrentPC);
 	}
 
@@ -1105,8 +1105,13 @@ namespace quest
 			return nullptr;
 
 		m_pCurrentPC = GetPCForce(pc);
-		m_pCurrentCharacter = pkChr;
+		m_currentCharacter = pkChr ? pkChr->GetEntityHandle() : entt::null;
 		return (m_pCurrentPC);
+	}
+
+	LPCHARACTER CQuestManager::GetCurrentCharacterPtr() const
+	{
+		return ecs::LegacyCharOf(m_currentCharacter);
 	}
 
 	entt::entity CQuestManager::GetCurrentPCEntity() const
@@ -1291,12 +1296,12 @@ namespace quest
 
 	LPITEM CQuestManager::GetCurrentItem()
 	{
-		return GetCurrentCharacterPtr() ? GetCurrentCharacterPtr()->GetQuestItemPtr() : nullptr;
+		return ecs::PlayerRuntime::IsValid(GetCurrentCharacter()) ? GetCurrentCharacterPtr()->GetQuestItemPtr() : nullptr;
 	}
 
 	entt::entity CQuestManager::GetCurrentItemEntity()
 	{
-		return GetCurrentCharacterPtr() ? GetCurrentCharacterPtr()->GetQuestItemEntity() : entt::null;
+		return ecs::PlayerRuntime::IsValid(GetCurrentCharacter()) ? GetCurrentCharacterPtr()->GetQuestItemEntity() : entt::null;
 	}
 
 	void CQuestManager::ClearCurrentItem()
@@ -1322,7 +1327,7 @@ namespace quest
 
 	LPCHARACTER CQuestManager::GetCurrentNPCCharacterPtr() const
 	{
-		return GetCurrentCharacterPtr() ? GetCurrentCharacterPtr()->GetQuestNPC() : nullptr;
+		return ecs::PlayerRuntime::IsValid(GetCurrentCharacter()) ? GetCurrentCharacterPtr()->GetQuestNPC() : nullptr;
 	}
 
 	const std::string & CQuestManager::GetCurrentQuestName()
@@ -1785,7 +1790,7 @@ namespace quest
 
 		LOG_ERROR("LUA_ERROR: quest {}.{} {}", GetCurrentQuestName().c_str(), state_name, event_index_name.c_str());
 		if (GetCurrentCharacterPtr() && test_server)
-			ecs::ChatSystem::Send(((GetCurrentCharacterPtr()) ? (GetCurrentCharacterPtr())->GetEntityHandle() : entt::null), CHAT_TYPE_PARTY, "LUA_ERROR: quest %s.%s %s", GetCurrentQuestName().c_str(), state_name, event_index_name.c_str() );
+			ecs::ChatSystem::Send(GetCurrentCharacter(), CHAT_TYPE_PARTY, "LUA_ERROR: quest %s.%s %s", GetCurrentQuestName().c_str(), state_name, event_index_name.c_str() );
 	}
 
 	void CQuestManager::QuestErrorImpl(const char* func, int line, const std::string& msg)
@@ -1793,13 +1798,12 @@ namespace quest
 		LOG_ERROR("[QUEST {}:{}] {}", func ? func : "", line, msg);
 		if (test_server)
 		{
-			LPCHARACTER ch = GetCurrentCharacterPtr();
-			const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
+			const entt::entity ch = GetCurrentCharacter();
 
-			if (ch)
+			if (ecs::PlayerRuntime::IsValid(ch))
 			{
-				ecs::ChatSystem::Send(chEntity, CHAT_TYPE_PARTY, "error occurred on [%s:%d]", func,line);
-				ecs::ChatSystem::Send(chEntity, CHAT_TYPE_PARTY, "%s", msg.c_str());
+				ecs::ChatSystem::Send(ch, CHAT_TYPE_PARTY, "error occurred on [%s:%d]", func,line);
+				ecs::ChatSystem::Send(ch, CHAT_TYPE_PARTY, "%s", msg.c_str());
 			}
 		}
 	}
@@ -1908,8 +1912,8 @@ namespace quest
 
 	void CQuestManager::BeginOtherPCBlock(uint32_t pid)
 	{
-		LPCHARACTER ch = GetCurrentCharacterPtr();
-		if (nullptr == ch)
+		const entt::entity ch = GetCurrentCharacter();
+		if (!ecs::PlayerRuntime::IsValid(ch))
 		{
 			LOG_ERROR("NULL?");
 			return;
@@ -1928,7 +1932,7 @@ namespace quest
 		{
 			m_pOtherPCBlockRootPC = GetCurrentPC();
 		}
-		m_vecPCStack.push_back(ecs::PlayerRuntime::GetPlayerID(((GetCurrentCharacterPtr()) ? (GetCurrentCharacterPtr())->GetEntityHandle() : entt::null)));
+		m_vecPCStack.push_back(ecs::PlayerRuntime::GetPlayerID(GetCurrentCharacter()));
 		GetPC(pid);
 	}
 
