@@ -565,6 +565,8 @@ int CItem::GetCount()
 
 bool CItem::SetCount(int count)
 {
+    if (ItemSystem::IsItemConsumptionPending(GetEntityHandle()))
+        return false;
 #ifdef ENABLE_MINUS_COUNT_FIX_RAZOR93
 	if (count < 0) {
 		LOG_ERROR("SetCount attempted negative value (count={}) vnum={}", count, GetVnum());

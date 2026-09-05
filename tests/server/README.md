@@ -100,17 +100,32 @@ The tests cover strict command parsing (including the client's `del` alias),
 negative/overflow/trailing-junk indices, invalid/stale owners and NPCs, distance
 and map changes, conflicting windows, duplicate/replaced/moved/foreign items,
 locked/exchanging/equipped items, invalid costume types and stacks, malformed
-bonus types, rare-slot clearing, failed payments, reentrant operations and
-exactly one attribute publication after both payments succeed.
+bonus types, rare-slot clearing, rejected batches, reentrant operations and
+exactly one target-attribute publication after the complete batch commits.
 
-The payment, position, quest-NPC lookup, chat, log and inventory services are
-doubles. Item attribute preparation/commit and the full transfer command/window
-implementation are real production code. The existing engine item-consumption
-API still performs two sequential debits, not an atomic batch: an injected
-second-debit failure leaves the scroll consumed, the donor intact and the target
-unchanged; it is logged, and no success is emitted. There is no automatic refund
-or cross-process recovery here. A transactional inventory/persistence layer is
-still required to guarantee all-or-nothing payment under such failures.
+The batch payment, retirement queue, attribute preparation/commit and full
+transfer command/window implementation are real production code. Tests assert
+that every count and the new attributes are already visible at the first
+save/packet/destruction callback, without invoking sequential ConsumeItemEcs.
+They cover 1-64 costs, rejected empty/oversized/duplicate/invalid batches,
+last-unit retirement, failed cleanup and retry without a second debit,
+recursive processing, queue growth from callbacks, stale/recycled handles,
+post-commit target destruction and nested changes not overwritten by an older
+publication snapshot. Pending zero stacks cannot be spent again.
+
+Only synchronous, main-game-thread state changes are atomic. After that commit,
+deletion failure means pending cleanup, not a failed payment or a refund. The
+item-manager update/shutdown retries cleanup; failed entries remain retired and
+are logged once. No DB transaction, journal or cross-process crash recovery is
+implemented: separate save/delete messages can still persist partly if the
+process or connection fails. This is not a durable all-or-nothing guarantee.
+
+Position, quest lookup, chat, logging, inventory lookup, network/save and actual
+item destruction are doubles. The native count setters' removal of the legacy
+mirror, count clamping, retirement write guards, and the real item-manager
+tick/shutdown/persistence integration are built with GameServer but are not
+executed by these headless tests. Verify stack caps, splitting/merging, zero and
+last-unit consumption, quickslots and DB reconnect/logout on a test server.
 
 Before deployment verify NPC interaction, each supported costume subtype,
 selection/preview/clear/close, competing trade windows, disconnect/death,

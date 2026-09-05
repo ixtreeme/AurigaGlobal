@@ -15,11 +15,20 @@
 #include "../../log.h"
 #include "../../utils.h"
 #include "../../../common/stole_length.h"
+#include <Core/Logging.hpp>
 
 namespace ItemSystem {
 namespace {
 namespace rules = ecs::item_attributes;
 using Attributes = decltype(ecs::ItemAttributes::attrs);
+
+// Registry-scoped retirement queue. Versioned handles, never item pointers.
+// Reserve before committing, so the commit itself cannot allocate or signal.
+struct PendingConsumptions {
+    struct Entry { entt::entity item; bool failureLogged { false }; };
+    std::vector<Entry> items;
+    bool processing { false };
+};
 
 int Random(int low, int high) { return number(low, high); }
 
@@ -359,7 +368,7 @@ bool SetItemAttributesEcs(entt::entity item, const ecs::ItemAttributes& attribut
 bool CanConsumeOwnedItem(entt::entity owner, entt::entity material, uint32_t amount)
 {
     if (!ecs::PlayerRuntime::IsPC(owner) || !IsValidItem(material) ||
-        amount == 0 || IsItemEquipped(material) ||
+        amount == 0 || IsItemConsumptionPending(material) || IsItemEquipped(material) ||
         IsItemExchanging(material) || IsItemLocked(material))
         return false;
     const auto* stack = g_registry.try_get<ecs::ItemCount>(material);
@@ -378,6 +387,119 @@ bool CanConsumeOwnedItem(entt::entity owner, entt::entity material, uint32_t amo
         return false;
     if (auto* shop = ecs::SocialSystem::GetMyShop(owner); shop && shop->IsSellingItem(GetItemID(material)))
         return false;
+    return true;
+}
+
+bool IsItemConsumptionPending(entt::entity item)
+{
+    const auto* pending = g_registry.ctx().find<PendingConsumptions>();
+    return IsValidItem(item) && pending &&
+        std::any_of(pending->items.begin(), pending->items.end(),
+            [item](const auto& entry) { return entry.item == item; });
+}
+
+void PublishItemCount(entt::entity item)
+{
+    if (!IsValidItem(item) || IsItemConsumptionPending(item))
+        return;
+    SaveItem(item);
+    if (IsValidItem(item) && !IsItemConsumptionPending(item))
+        ecs::ItemNetworkSystem::SendItemUpdate(g_registry, item);
+}
+
+void ProcessPendingItemConsumptions()
+{
+    auto* pending = g_registry.ctx().find<PendingConsumptions>();
+    if (!pending || pending->processing || pending->items.empty())
+        return;
+    // Keep membership visible during callbacks, including recursive processing.
+    pending->processing = true;
+    struct ProcessingGuard {
+        PendingConsumptions& pending;
+        ~ProcessingGuard() { pending.processing = false; }
+    } guard {*pending};
+    // Process only the entries present on entry. Callbacks may append another
+    // committed batch; use indices, not iterators invalidated by that append.
+    size_t index = 0;
+    for (size_t remaining = pending->items.size(); remaining > 0; --remaining)
+    {
+        const auto item = pending->items[index].item;
+        if (IsValidItem(item) && GetItemCount(item) == 0)
+            DestroyItemEntityEcs(item, "COMMITTED_ITEM_COST");
+        // A failed cleanup keeps the zero stack retired and can be retried by
+        // the item-manager tick. Never restore/recreate a consumed item.
+        if (!IsValidItem(item))
+            pending->items.erase(pending->items.begin() + index);
+        else
+        {
+            if (!pending->items[index].failureLogged)
+            {
+                pending->items[index].failureLogged = true;
+                LOG_ERROR("Committed item consumption cleanup pending: item {} entity {} count {}",
+                    GetItemID(item), entt::to_integral(item), GetItemCount(item));
+            }
+            ++index;
+        }
+    }
+}
+
+bool SetItemAttributesWithItemCosts(entt::entity owner, entt::entity target,
+    const ecs::ItemAttributes& attributes, std::span<const ItemCost> costs)
+{
+    constexpr size_t maxCosts = 64;
+    if (costs.empty() || costs.size() > maxCosts ||
+        !IsOwnedAttributeTarget(owner, target) || !CanConsumeOwnedItem(owner, target))
+        return false;
+    const auto desired = attributes.attrs;
+    if (std::any_of(desired.begin(), desired.end(), [](const auto& attr) { return attr.bType >= MAX_APPLY_NUM; }))
+        return false;
+    struct PreparedCost { entt::entity item; int remaining; };
+    std::array<PreparedCost, maxCosts> prepared {};
+    size_t depleted = 0;
+    for (size_t i = 0; i < costs.size(); ++i)
+    {
+        const auto cost = costs[i];
+        if (cost.item == target || !CanConsumeOwnedItem(owner, cost.item, cost.amount))
+            return false;
+        for (size_t j = 0; j < i; ++j)
+            if (prepared[j].item == cost.item)
+                return false;
+        const int remaining = g_registry.get<ecs::ItemCount>(cost.item).count - static_cast<int>(cost.amount);
+        prepared[i] = {cost.item, remaining};
+        depleted += remaining == 0;
+    }
+    auto* pending = g_registry.ctx().find<PendingConsumptions>();
+    if (!pending)
+        pending = &g_registry.ctx().emplace<PendingConsumptions>();
+    if (depleted > pending->items.max_size() - pending->items.size())
+        return false;
+    pending->items.reserve(pending->items.size() + depleted);
+    const auto old = g_registry.get<ecs::ItemAttributes>(target).attrs;
+
+    // Commit point: only writes to existing trivial components and reserved
+    // storage. No registry signals, allocator, callback, save or network call.
+    for (size_t i = 0; i < costs.size(); ++i)
+    {
+        g_registry.get<ecs::ItemCount>(prepared[i].item).count = prepared[i].remaining;
+        if (prepared[i].remaining == 0)
+            pending->items.push_back({prepared[i].item});
+    }
+    g_registry.get<ecs::ItemAttributes>(target).attrs = desired;
+
+    // Everything observable from here on sees the complete committed state.
+    // Reentrant callbacks may consume/move/delete entities; do not rewrite a
+    // saved snapshot over their newer state or report a committed debit failed.
+    SaveItem(target);
+    if (IsValidItem(target) && !IsItemConsumptionPending(target))
+        ecs::ItemNetworkSystem::SendItemUpdate(g_registry, target);
+    for (int i = 0; i < ITEM_ATTRIBUTE_MAX_NUM && IsValidItem(target); ++i)
+        if (desired[i].bType != 0 &&
+            (desired[i].bType != old[i].bType || desired[i].sValue != old[i].sValue))
+            LogAttribute(target, i, desired[i], "SET_FORCE_ATTR");
+    for (size_t i = 0; i < costs.size(); ++i)
+        if (prepared[i].remaining > 0)
+            PublishItemCount(prepared[i].item);
+    ProcessPendingItemConsumptions();
     return true;
 }
 

@@ -90,6 +90,7 @@ void ITEM_MANAGER::Destroy()
 
 void ITEM_MANAGER::GracefulShutdown()
 {
+    ItemSystem::ProcessPendingItemConsumptions();
 	for (const entt::entity itemEntity : m_set_pkItemForDelayedSave)
 		SaveSingleItem(itemEntity);
 	m_set_pkItemForDelayedSave.clear();
@@ -614,7 +615,8 @@ void ITEM_MANAGER::SaveSingleItem(entt::entity item)
 	if (!ItemSystem::IsValidItem(item))
 		return;
 
-	if (ItemSystem::GetItemOwner(item) == entt::null)
+	if (ItemSystem::GetItemOwner(item) == entt::null ||
+        (ItemSystem::IsItemConsumptionPending(item) && ItemSystem::GetItemCount(item) == 0))
 	{
 		uint32_t dwID = ItemSystem::GetItemID(item);
 		uint32_t dwOwnerID = ItemSystem::GetItemLastOwnerPID(item);
@@ -679,6 +681,7 @@ void ITEM_MANAGER::SaveSingleItem(entt::entity item)
 
 void ITEM_MANAGER::Update()
 {
+    ItemSystem::ProcessPendingItemConsumptions();
 	auto it = m_set_pkItemForDelayedSave.begin();
 	while (it != m_set_pkItemForDelayedSave.end())
 	{

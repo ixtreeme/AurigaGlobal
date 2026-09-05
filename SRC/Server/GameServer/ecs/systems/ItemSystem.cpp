@@ -1454,7 +1454,7 @@ uint8_t GetItemSubType(entt::entity item)
 uint32_t GetItemCount(entt::entity item)
 {
     if (const auto* count = g_registry.try_get<ecs::ItemCount>(item))
-        return static_cast<uint32_t>(count->count);
+        return count->count > 0 ? static_cast<uint32_t>(count->count) : 0;
 
     return 0;
 }
@@ -1644,17 +1644,10 @@ static void SetItemCountComponentOnly(entt::entity item, uint32_t count)
         g_registry.emplace_or_replace<ecs::ItemCount>(item, ecs::ItemCount{static_cast<int>(count)});
 }
 
-static void MirrorItemCountToLegacyNonDestroy(entt::entity item, uint32_t count)
-{
-    if (count == 0)
-        return;
-    if (LPITEM legacyItem = LegacyItemBoundary(item))
-        legacyItem->SetCount(count);
-}
 
 void SetItemCount(entt::entity item, uint32_t count)
 {
-    if (item == entt::null || !g_registry.valid(item))
+    if (item == entt::null || !g_registry.valid(item) || IsItemConsumptionPending(item))
         return;
 
     if (count == 0) {
@@ -1662,13 +1655,15 @@ void SetItemCount(entt::entity item, uint32_t count)
         return;
     }
 
+    const auto limit = GetItemType(item) == ITEM_ELK ? INT_MAX : std::max(0, g_bItemCountLimit);
+    count = std::min(count, static_cast<uint32_t>(limit));
     SetItemCountComponentOnly(item, count);
-    MirrorItemCountToLegacyNonDestroy(item, count);
+    PublishItemCount(item);
 }
 
 bool SetItemCountEcs(entt::entity item, uint32_t count)
 {
-    if (item == entt::null || !g_registry.valid(item))
+    if (item == entt::null || !g_registry.valid(item) || IsItemConsumptionPending(item))
         return false;
 
     if (count == 0)
@@ -1680,11 +1675,11 @@ bool SetItemCountEcs(entt::entity item, uint32_t count)
 
 bool AddItemCountEcs(entt::entity item, int delta)
 {
-    if (item == entt::null || !g_registry.valid(item))
+    if (item == entt::null || !g_registry.valid(item) || IsItemConsumptionPending(item))
         return false;
 
     const int current = static_cast<int>(GetItemCount(item));
-    const int next = current + delta;
+    const int64_t next = int64_t(current) + delta;
     if (next <= 0)
         return DestroyItemEntityAndLegacy(item, "ADD_ITEM_COUNT_ECS_ZERO");
 
@@ -1693,10 +1688,12 @@ bool AddItemCountEcs(entt::entity item, int delta)
 
 bool ConsumeItem(entt::entity item, uint32_t amount)
 {
-    if (item == entt::null || !g_registry.valid(item) || amount == 0)
+    if (item == entt::null || !g_registry.valid(item) || amount == 0 || IsItemConsumptionPending(item))
         return false;
 
     const uint32_t count = GetItemCount(item);
+    if (amount > count)
+        return false;
     if (count > amount) {
         SetItemCount(item, count - amount);
         return true;
@@ -2806,6 +2803,8 @@ bool IsItemLocked(entt::entity item)
 {
     if (item == entt::null || !g_registry.valid(item))
         return false;
+    if (IsItemConsumptionPending(item))
+        return true;
 
     const auto* flags = g_registry.try_get<ecs::ItemFlags>(item);
     return flags && flags->isLocked;

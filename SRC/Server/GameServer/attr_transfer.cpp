@@ -210,7 +210,6 @@ bool AttrTransfer_make(entt::entity character)
     if (!window)
         return false;
     const auto items = window->items;
-    const auto cells = window->cells;
     for (int i = 0; i < MAX_ATTR_TRANSFER_SLOT; ++i)
         if (!ValidSelection(character, items[i], window->cells[i], i))
         {
@@ -238,27 +237,15 @@ bool AttrTransfer_make(entt::entity character)
         Info(character, 86);
         return false;
     }
-    const auto scrollID = ItemSystem::GetItemID(items[0]);
-    const auto donorID = ItemSystem::GetItemID(items[2]);
     const auto targetVnum = ItemSystem::GetItemVnum(items[1]);
     window->busy = true;
     OperationGuard guard {character};
-    // Both distinct costs are validated before these synchronous game-thread
-    // debits. Do not publish attributes before both succeed.
-    if (!ItemSystem::ConsumeItemEcs(items[0], 1))
+    const std::array costs { ItemSystem::ItemCost{items[0], 1}, ItemSystem::ItemCost{items[2], 1} };
+    if (!ItemSystem::SetItemAttributesWithItemCosts(character, items[1], prepared, costs))
         return false;
     if (auto* current = WindowOf(character)) ClearSelection(*current);
-    if (!ValidSelection(character, items[2], cells[2], 2) ||
-        !ValidSelection(character, items[1], cells[1], 1) || !ItemSystem::ConsumeItemEcs(items[2], 1))
-    {
-        LOG_ERROR("AttrTransfer: donor debit failed after scroll debit (scroll {}, donor {})", scrollID, donorID);
-        return false;
-    }
-    if (!ValidSelection(character, items[1], cells[1], 1) || !ItemSystem::SetItemAttributesEcs(items[1], prepared))
-    {
-        LOG_ERROR("AttrTransfer: target disappeared after payment (scroll {}, donor {})", scrollID, donorID);
-        return false;
-    }
+    if (!ecs::PlayerRuntime::IsValid(character))
+        return true;
     ecs::ChatSystem::Send(character, CHAT_TYPE_COMMAND, "AttrTransfer success");
     LogManager::instance().AttrTransferLog(ecs::PlayerRuntime::GetPlayerID(character),
         ecs::PlayerRuntime::GetX(character), ecs::PlayerRuntime::GetY(character), targetVnum);

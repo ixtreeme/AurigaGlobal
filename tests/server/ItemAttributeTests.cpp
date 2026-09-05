@@ -50,6 +50,10 @@ bool transferTest = false;
 int rejectPaymentAt = 0, transferLogs = 0;
 std::vector<std::string> transferCommands;
 std::function<void()> onPayment;
+std::function<void(entt::entity)> onSave, onUpdate, onDestroy;
+std::vector<entt::entity> publishedCounts;
+std::vector<entt::entity> destroyAttempts;
+std::set<entt::entity> rejectDestruction;
 struct TransferActor { int32_t x = 0, y = 0, map = 1; entt::entity npc {entt::null}; };
 entt::entity watchedItem = entt::null;
 std::array<TPlayerItemAttribute, ITEM_ATTRIBUTE_MAX_NUM> beforePayment{};
@@ -163,7 +167,19 @@ bool ItemSystem::AutoGiveDS(entt::entity, entt::entity, bool) { UnexpectedSwitch
 entt::entity ItemSystem::AutoGiveItemEcs(entt::entity, uint32_t, uint32_t, int, bool) { UnexpectedSwitchbotService(); }
 int ItemSystem::GetItemLimitTimerBasedOnWearIndex(entt::entity) { UnexpectedSwitchbotService(); }
 int ItemSystem::GetItemDuration(entt::entity) { return 0; }
-bool ItemSystem::DestroyItemEntityEcs(entt::entity, const char*) { UnexpectedSwitchbotService(); }
+bool ItemSystem::DestroyItemEntityEcs(entt::entity item, const char*)
+{
+    Check(transferTest && ItemSystem::IsItemConsumptionPending(item) && ItemSystem::GetItemCount(item) == 0,
+        "cleanup entered before committed item retirement");
+    destroyAttempts.push_back(item);
+    if (onDestroy) onDestroy(item);
+    if (rejectDestruction.contains(item)) return false;
+    if (ItemSystem::IsValidItem(item)) {
+        inventory.erase({ItemSystem::GetItemOwner(item), ItemSystem::GetItemWindow(item), ItemSystem::GetItemCell(item)});
+        g_registry.destroy(item);
+    }
+    return true;
+}
 bool ItemSystem::SetItemSocketEcs(entt::entity, int, uint32_t) { UnexpectedSwitchbotService(); }
 bool ItemSystem::CopyItemAttributesEcs(entt::entity, entt::entity) { UnexpectedSwitchbotService(); }
 bool ItemSystem::PlaceItemEcs(entt::entity, entt::entity, uint8_t, uint16_t) { UnexpectedSwitchbotService(); }
@@ -256,7 +272,12 @@ void ecs::PointSystem::Change(entt::entity e, uint8_t type, int64_t amount, bool
     if (!rejectGoldPayment)
         g_registry.get<TestPlayer>(e).gold += amount;
 }
-void ecs::ItemNetworkSystem::SendItemUpdate(entt::registry&, entt::entity) { ++updates; }
+void ecs::ItemNetworkSystem::SendItemUpdate(entt::registry&, entt::entity item)
+{
+    if (!transferTest || item == watchedItem) ++updates;
+    else publishedCounts.push_back(item);
+    if (onUpdate) onUpdate(item);
+}
 
 namespace ItemSystem {
 bool IsValidItem(entt::entity item)
@@ -311,10 +332,11 @@ bool IsItemExchanging(entt::entity item)
 bool IsItemLocked(entt::entity item)
 {
     const auto* flags = g_registry.try_get<ecs::ItemFlags>(item);
-    return flags && flags->isLocked;
+    return IsItemConsumptionPending(item) || (flags && flags->isLocked);
 }
 bool ConsumeItemEcs(entt::entity item, uint32_t amount)
 {
+    Check(!transferTest, "batch transfer fell back to sequential consumption");
     CheckPaymentOrder();
     ++payments;
     if (rejectPayment || rejectPaymentAt == payments)
@@ -339,7 +361,11 @@ TItemExtraProto* GetItemExtraProto(entt::entity item)
     const auto* ref = g_registry.try_get<ecs::ItemExtraProtoRef>(item);
     return ref ? ref->proto : nullptr;
 }
-void SaveItem(entt::entity) { ++saves; }
+void SaveItem(entt::entity item)
+{
+    if (!transferTest || item == watchedItem) ++saves;
+    if (onSave) onSave(item);
+}
 TPlayerItemAttribute GetItemAttribute(entt::entity item, int index)
 {
     return g_registry.get<ecs::ItemAttributes>(item).attrs[index];
@@ -371,6 +397,11 @@ struct Fixture {
         rejectPaymentAt = transferLogs = 0;
         transferCommands.clear();
         onPayment = {};
+        onSave = onUpdate = onDestroy = {};
+        publishedCounts.clear();
+        destroyAttempts.clear();
+        rejectDestruction.clear();
+        ItemSystem::ProcessPendingItemConsumptions(); // discard retired handles from the previous fixture
         watchedItem = entt::null;
         inventory.clear();
         proto.bType = ITEM_WEAPON;
@@ -1550,36 +1581,167 @@ void TransferPaymentAndCommit()
         TransferFixture f;
         g_registry.get<ecs::ItemCount>(f.material).count = count;
         f.Select();
-        rejectPayment = true;
-        Check(!AttrTransfer_make(f.owner) && !f.Window().busy && ItemSystem::GetItemCount(f.material) == count,
-            "rejected transfer payment changed scroll");
-        f.Unchanged();
-        rejectPayment = false;
-        f.Watch();
-        onPayment = [&] {
-            Check(f.Window().busy && !AttrTransfer_make(f.owner), "reentrant transfer accepted");
-            AttrTransfer_close(f.owner);
-            AttrTransfer_add_item(f.owner, 1, 6);
-        };
         auto expected = g_registry.get<ecs::ItemAttributes>(f.donor).attrs;
 #ifdef ENABLE_ATTR_COSTUMES
         expected[5] = {}; expected[6] = {};
 #endif
+        onSave = [&](entt::entity published) {
+            if (published != f.item) return;
+            Check(EqualAttributes(f.Attrs(), expected) && ItemSystem::GetItemCount(f.material) == count - 1 &&
+                ItemSystem::GetItemCount(f.donor) == 0, "first callback observed a partial batch");
+            Check(f.Window().busy && !AttrTransfer_make(f.owner), "reentrant transfer accepted");
+            AttrTransfer_close(f.owner);
+            AttrTransfer_add_item(f.owner, 1, 6);
+        };
+        onDestroy = [&](entt::entity retired) {
+            Check(ItemSystem::IsItemConsumptionPending(retired) && ItemSystem::IsItemLocked(retired) &&
+                !ItemSystem::CanConsumeOwnedItem(f.owner, retired), "retired payment remained spendable");
+            ItemSystem::ProcessPendingItemConsumptions(); // Must not recursively destroy this item.
+        };
         Check(AttrTransfer_make(f.owner), "valid transfer failed");
         Check(EqualAttributes(f.Attrs(), expected) && !g_registry.valid(f.donor) &&
-            payments == 2 && saves == 1 && updates == 1 && transferLogs == 1 && !f.Window().busy,
-            "transfer did not debit twice and publish exactly once");
+            payments == 0 && saves == 1 && updates == 1 && transferLogs == 1 && !f.Window().busy,
+            "batch transfer did not publish exactly once");
         Check(count == 1 ? !g_registry.valid(f.material) : ItemSystem::GetItemCount(f.material) == count - 1,
             "wrong transfer scroll count");
-        Check(!AttrTransfer_make(f.owner) && payments == 2, "repeated transfer charged twice");
+        Check(destroyAttempts.size() == (count == 1 ? 2u : 1u), "cleanup repeated a debit or destruction");
+        Check(publishedCounts.size() == (count == 1 ? 0u : 1u), "surviving stack count was not published");
+        Check(!AttrTransfer_make(f.owner) && payments == 0, "repeated transfer charged twice");
     }
     TransferFixture f;
     f.Select();
-    rejectPaymentAt = 2;
-    Check(!AttrTransfer_make(f.owner) && !f.Window().busy && payments == 2, "second debit failure reported success");
-    f.Unchanged();
-    Check(ItemSystem::GetItemCount(f.material) == 1 && ItemSystem::GetItemCount(f.donor) == 1,
-        "unexpected partial-debit failure state");
+    rejectDestruction.insert(f.donor);
+    Check(AttrTransfer_make(f.owner) && !f.Window().busy, "committed batch reported a failed payment");
+    Check(ItemSystem::GetItemCount(f.material) == 1 && ItemSystem::GetItemCount(f.donor) == 0 &&
+        ItemSystem::IsItemConsumptionPending(f.donor) && !ItemSystem::CanConsumeOwnedItem(f.owner, f.donor),
+        "failed cleanup left a partial debit or spendable donor");
+    const auto committed = f.Attrs();
+    rejectDestruction.clear();
+    ItemSystem::ProcessPendingItemConsumptions();
+    Check(!g_registry.valid(f.donor) && EqualAttributes(f.Attrs(), committed) && ItemSystem::GetItemCount(f.material) == 1 &&
+        saves == 1 && updates == 1 && transferLogs == 1, "cleanup retry recharged or republished transaction");
+}
+
+void BatchCostValidation()
+{
+    using Cost = ItemSystem::ItemCost;
+    for (int scenario = 0; scenario < 12; ++scenario)
+    {
+        TransferFixture f;
+        auto desired = g_registry.get<ecs::ItemAttributes>(f.donor);
+        std::vector<Cost> costs {{f.material, 1}, {f.donor, 1}};
+        auto owner = f.owner;
+        switch (scenario) {
+            case 0: costs.clear(); break;
+            case 1: costs[0].amount = 0; break;
+            case 2: costs[1].amount = 2; break;
+            case 3: costs[1].amount = UINT32_MAX; break;
+            case 4: costs[1].item = f.material; break;
+            case 5: costs[1].item = f.item; break;
+            case 6: owner = entt::null; break;
+            case 7: costs.resize(65, Cost{f.material, 1}); break;
+            case 8: desired.attrs[0].bType = MAX_APPLY_NUM; break;
+            case 9: g_registry.get<ecs::ItemOwner>(f.donor).owner = f.npc; break;
+            case 10: g_registry.emplace<ecs::ItemFlags>(f.material).isLocked = true; break;
+            case 11: g_registry.remove<ecs::ItemCount>(f.donor); break;
+        }
+        Check(!ItemSystem::SetItemAttributesWithItemCosts(owner, f.item, desired, costs), "invalid batch accepted");
+        f.Unchanged();
+        Check(ItemSystem::GetItemCount(f.material) == 2 && destroyAttempts.empty() && publishedCounts.empty() &&
+            !ItemSystem::IsItemConsumptionPending(f.material) && !ItemSystem::IsItemConsumptionPending(f.donor),
+            "rejected batch changed costs or retirement state");
+    }
+    TransferFixture f;
+    std::vector<Cost> costs;
+    for (int i = 0; i < 64; ++i)
+        costs.push_back({f.Material(50000 + i, 3, static_cast<uint16_t>(20 + i)), 2});
+    const auto desired = g_registry.get<ecs::ItemAttributes>(f.donor);
+    onSave = [&](entt::entity published) {
+        if (published != f.item) return;
+        for (const auto cost : costs)
+            Check(ItemSystem::GetItemCount(cost.item) == 1, "64-cost batch partly visible");
+        Check(EqualAttributes(f.Attrs(), desired.attrs), "target not committed with all costs");
+    };
+    Check(ItemSystem::SetItemAttributesWithItemCosts(f.owner, f.item, desired, costs), "64 valid costs rejected");
+    Check(publishedCounts.size() == 64 && saves == 1 && updates == 1 && destroyAttempts.empty(), "64-cost publication incorrect");
+}
+
+void BatchReentrancyAndRetirement()
+{
+    using Cost = ItemSystem::ItemCost;
+    {
+        TransferFixture f;
+        g_registry.get<ecs::ItemCount>(f.material).count = 5;
+        const std::array outerCosts {Cost{f.material, 1}, Cost{f.donor, 1}};
+        auto desired = g_registry.get<ecs::ItemAttributes>(f.donor);
+        auto nestedAttributes = desired;
+        nestedAttributes.attrs[0].sValue = 321;
+        bool nested = false;
+        onSave = [&](entt::entity published) {
+            if (published != f.item || nested) return;
+            nested = true;
+            Check(ItemSystem::GetItemCount(f.material) == 4 && ItemSystem::GetItemCount(f.donor) == 0,
+                "nested transaction saw partial outer payment");
+            const std::array nestedCosts {Cost{f.material, 2}};
+            Check(ItemSystem::SetItemAttributesWithItemCosts(f.owner, f.item, nestedAttributes, nestedCosts), "nested batch rejected");
+        };
+        Check(ItemSystem::SetItemAttributesWithItemCosts(f.owner, f.item, desired, outerCosts), "outer batch failed");
+        Check(EqualAttributes(f.Attrs(), nestedAttributes.attrs) && ItemSystem::GetItemCount(f.material) == 2 &&
+            !g_registry.valid(f.donor), "outer publication restored an obsolete snapshot");
+    }
+    {
+        TransferFixture f;
+        const std::array costs {Cost{f.material, 2}, Cost{f.donor, 1}};
+        const auto desired = g_registry.get<ecs::ItemAttributes>(f.donor);
+        rejectDestruction.insert(f.donor);
+        Check(ItemSystem::SetItemAttributesWithItemCosts(f.owner, f.item, desired, costs), "retirement fixture commit failed");
+        const auto old = f.donor;
+        g_registry.destroy(old);
+        const auto replacement = f.Material(49999, 7, 6);
+        Check(entt::to_entity(old) == entt::to_entity(replacement) && old != replacement, "retired generation not recycled");
+        const auto attempts = destroyAttempts.size();
+        ItemSystem::ProcessPendingItemConsumptions();
+        Check(g_registry.valid(replacement) && ItemSystem::GetItemCount(replacement) == 7 &&
+            !ItemSystem::IsItemConsumptionPending(replacement) && destroyAttempts.size() == attempts,
+            "retirement queue destroyed the replacement generation");
+    }
+    {
+        TransferFixture f;
+        const auto desired = g_registry.get<ecs::ItemAttributes>(f.donor);
+        const std::array costs {Cost{f.material, 1}, Cost{f.donor, 1}};
+        const auto third = f.Material(49000, 1, 8);
+        const std::array nestedCosts {Cost{third, 1}};
+        bool appended = false;
+        onDestroy = [&](entt::entity) {
+            if (appended) return;
+            appended = true;
+            Check(ItemSystem::SetItemAttributesWithItemCosts(f.owner, f.item, desired, nestedCosts), "batch during cleanup rejected");
+        };
+        Check(ItemSystem::SetItemAttributesWithItemCosts(f.owner, f.item, desired, costs), "cleanup append fixture failed");
+        Check(ItemSystem::IsItemConsumptionPending(third), "new retirement was not queued during cleanup");
+        ItemSystem::ProcessPendingItemConsumptions();
+        Check(!g_registry.valid(third) && destroyAttempts.size() == 2, "appended retirement skipped or processed twice");
+    }
+    {
+        TransferFixture f;
+        const auto desired = g_registry.get<ecs::ItemAttributes>(f.donor);
+        const std::array costs {Cost{f.material, 1}, Cost{f.donor, 1}};
+        entt::entity replacement {entt::null};
+        onSave = [&](entt::entity published) {
+            if (published != f.item) return;
+            Check(ItemSystem::GetItemCount(f.material) == 1 && ItemSystem::GetItemCount(f.donor) == 0,
+                "post-commit callback observed partial costs");
+            g_registry.destroy(f.item);
+            replacement = f.Material(48000, 1, 5);
+            g_registry.emplace<ecs::ItemAttributes>(replacement).attrs[0] = {1, 999};
+        };
+        Check(ItemSystem::SetItemAttributesWithItemCosts(f.owner, f.item, desired, costs),
+            "post-commit target disappearance was reported as an uncommitted payment");
+        Check(replacement != f.item && entt::to_entity(replacement) == entt::to_entity(f.item) &&
+            g_registry.get<ecs::ItemAttributes>(replacement).attrs[0].sValue == 999 && updates == 0 &&
+            ItemSystem::GetItemCount(f.material) == 1 && !g_registry.valid(f.donor),
+            "post-commit replacement overwritten, refunded or published as old target");
+    }
 }
 
 void SwitchbotTransactions()
@@ -1680,6 +1842,8 @@ int main()
         TransferContextGuards();
         TransferItemGuards();
         TransferPaymentAndCommit();
+        BatchCostValidation();
+        BatchReentrancyAndRetirement();
         std::cout << "Item attribute regression checks passed: " << checks << '\n';
         return 0;
     } catch (const std::exception& error) {
