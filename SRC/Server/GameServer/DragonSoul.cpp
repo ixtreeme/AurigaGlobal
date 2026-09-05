@@ -99,41 +99,49 @@ int Gamble(std::vector<float>& vec_probs)
 }
 
 // 가중치 테이블(prob_lst)을 받아 random_set.size()개의 index를 선택하여 random_set을 return
-bool MakeDistinctRandomNumberSet(std::list <float> prob_lst, OUT std::vector<int>& random_set)
+bool MakeDistinctRandomNumberSet(std::list<float> probabilities, OUT std::vector<int>& random_set)
 {
-	int size = prob_lst.size();
-	int n = random_set.size();
-	if (size < n)
+	std::vector<float> weights(probabilities.begin(), probabilities.end());
+	size_t positive = 0;
+	for (const float weight : weights) {
+		if (!std::isfinite(weight) || weight < 0.f)
+			return false;
+		positive += weight > 0.f;
+	}
+	if (positive < random_set.size())
 		return false;
-
-	std::vector <int> select_bit(size, 0);
-	for (int i = 0; i < n; i++)
-	{
-		float range = 0.f;
-		for (std::list <float>::iterator it = prob_lst.begin(); it != prob_lst.end(); it++)
-		{
-			range += *it;
+	std::vector<int> result;
+	result.reserve(random_set.size());
+	while (result.size() < random_set.size()) {
+		float total = 0.f;
+		int lastPositive = -1;
+		for (size_t i = 0; i < weights.size(); ++i) {
+			total += weights[i];
+			if (weights[i] > 0.f)
+				lastPositive = static_cast<int>(i);
 		}
-		float r = fnumber (0.f, range);
+		if (!std::isfinite(total) || total <= 0.f || lastPositive < 0)
+			return false;
+		const float draw = fnumber(0.f, total);
+		if (!std::isfinite(draw) || draw < 0.f || draw > total)
+			return false;
 		float sum = 0.f;
-		int idx = 0;
-		for (std::list <float>::iterator it = prob_lst.begin(); it != prob_lst.end(); it++)
-		{
-			while (select_bit[idx++]);
-
-			sum += *it;
-			if (sum >= r)
-			{
-				select_bit[idx - 1] = 1;
-				random_set[i] = idx - 1;
-				prob_lst.erase(it);
+		int selected = lastPositive; // Inclusive upper endpoint / float rounding.
+		for (size_t i = 0; i < weights.size(); ++i) {
+			if (weights[i] <= 0.f)
+				continue;
+			sum += weights[i];
+			if (draw <= sum) {
+				selected = static_cast<int>(i);
 				break;
 			}
 		}
+		result.push_back(selected);
+		weights[selected] = 0.f;
 	}
+	random_set = std::move(result);
 	return true;
 }
-
 /* 용혼석 Vnum에 대한 comment
  * ITEM VNUM을 10만 자리부터, FEDCBA라고 한다면
  * FE : 용혼석 종류.	D : 등급
@@ -161,12 +169,14 @@ uint8_t GetStrengthIdx(uint32_t dwVnum)
 	return (dwVnum / 10) % 10;
 }
 
-bool DSManager::ReadDragonSoulTableFile(const char * c_pszFileName)
+bool DSManager::ReadDragonSoulTableFile(const char* filename)
 {
-	m_pTable = new DragonSoulTable();
-	return m_pTable->ReadDragonSoulTableFile(c_pszFileName);
+	auto table = std::make_unique<DragonSoulTable>();
+	if (!table->ReadDragonSoulTableFile(filename))
+		return false;
+	m_pTable = std::move(table);
+	return true;
 }
-
 void DSManager::GetDragonSoulInfo(uint32_t dwVnum, uint8_t& bType, uint8_t& bGrade, uint8_t& bStep, uint8_t& bStrength) const
 {
 	bType = GetType(dwVnum);
@@ -215,142 +225,128 @@ uint16_t DSManager::GetBasePosition(entt::entity item) const
 }
 
 
+bool DSManager::PrepareAttributes(entt::entity item, ecs::ItemAttributes& result, bool refresh)
+{
+	if (!m_pTable || !ItemSystem::IsDragonSoulItem(item))
+		return false;
+	const auto* current = g_registry.try_get<ecs::ItemAttributes>(item);
+	if (!current)
+		return false;
+	const uint32_t vnum = ItemSystem::GetItemVnum(item);
+	uint8_t type, grade, step, strength;
+	GetDragonSoulInfo(vnum, type, grade, step, strength);
+	if (vnum / 10000 > UINT8_MAX || grade >= DRAGON_SOUL_GRADE_MAX ||
+		step >= DRAGON_SOUL_STEP_MAX || strength >= DRAGON_SOUL_STRENGTH_MAX)
+		return false;
+	DragonSoulTable::TVecApplys basic, additional;
+	int basicCount = 0, addMin = 0, addMax = 0;
+	float weight = 0.f;
+	if (!m_pTable->GetBasicApplys(type, basic) || !m_pTable->GetAdditionalApplys(type, additional) ||
+		!m_pTable->GetApplyNumSettings(type, grade, basicCount, addMin, addMax) ||
+		!m_pTable->GetWeight(type, grade, step, strength, weight))
+		return false;
+	constexpr int additionalStart = DRAGON_SOUL_ADDITIONAL_ATTR_START_IDX;
+	constexpr int additionalSlots = ITEM_ATTRIBUTE_MAX_NUM - additionalStart;
+	if (basicCount < 0 || basicCount > additionalStart || static_cast<size_t>(basicCount) > basic.size() ||
+		addMin < 0 || addMax < addMin || addMax > additionalSlots || !std::isfinite(weight) || weight < 0.f)
+		return false;
+	weight /= 100.f;
+	auto convert = [weight](const SApply& apply, TPlayerItemAttribute& attribute) {
+		if (apply.apply_type <= APPLY_NONE || apply.apply_type >= MAX_APPLY_NUM || apply.apply_type > UINT8_MAX)
+			return false;
+		// Preserve the original rounding rule, but never narrow NaN/overflow.
+		const float value = std::ceil(static_cast<float>(apply.apply_value) * weight - 0.01f);
+		if (!std::isfinite(value) || value < INT16_MIN || value > INT16_MAX)
+			return false;
+		attribute = {static_cast<uint8_t>(apply.apply_type), static_cast<int16_t>(value)};
+		return true;
+	};
+	ecs::ItemAttributes prepared = refresh ? *current : ecs::ItemAttributes{};
+	for (int i = 0; i < basicCount; ++i)
+		if (!convert(basic[i], prepared.attrs[i]))
+			return false;
+	if (refresh) {
+		for (int i = additionalStart; i < ITEM_ATTRIBUTE_MAX_NUM; ++i) {
+			const auto applyType = prepared.attrs[i].bType;
+			if (applyType == APPLY_NONE)
+				continue;
+			const auto found = std::find_if(additional.begin(), additional.end(),
+				[applyType](const SApply& apply) { return apply.apply_type == applyType; });
+			if (found == additional.end() || !convert(*found, prepared.attrs[i]))
+				return false;
+		}
+	} else {
+		std::list<float> probabilities;
+		std::vector<TPlayerItemAttribute> values(additional.size());
+		for (size_t i = 0; i < additional.size(); ++i) {
+			if (!std::isfinite(additional[i].prob) || additional[i].prob < 0.f || !convert(additional[i], values[i]))
+				return false;
+			probabilities.push_back(additional[i].prob);
+		}
+		std::vector<int> selected(number(addMin, addMax));
+		if (!MakeDistinctRandomNumberSet(probabilities, selected))
+			return false;
+		for (size_t i = 0; i < selected.size(); ++i)
+			prepared.attrs[additionalStart + i] = values[selected[i]];
+	}
+	result = prepared;
+	return true;
+}
+
 bool DSManager::RefreshItemAttributes(entt::entity item)
 {
-	if (!ItemSystem::IsDragonSoulItem(item))
-	{
-		LOG_ERROR("This item(ID : {}) is not DragonSoul.", ItemSystem::GetItemID(item));
-		return false;
-	}
-
-	uint8_t ds_type, grade_idx, step_idx, strength_idx;
-	GetDragonSoulInfo(ItemSystem::GetItemVnum(item), ds_type, grade_idx, step_idx, strength_idx);
-
-	DragonSoulTable::TVecApplys vec_basic_applys;
-	DragonSoulTable::TVecApplys vec_addtional_applys;
-
-	if (!m_pTable->GetBasicApplys(ds_type, vec_basic_applys))
-	{
-		LOG_ERROR("There is no BasicApply about {} type dragon soul.", static_cast<int>(ds_type));
-		return false;
-	}
-
-	if (!m_pTable->GetAdditionalApplys(ds_type, vec_addtional_applys))
-	{
-		LOG_ERROR("There is no AdditionalApply about {} type dragon soul.", static_cast<int>(ds_type));
-		return false;
-	}
-
-	int basic_apply_num, add_min, add_max;
-	if (!m_pTable->GetApplyNumSettings(ds_type, grade_idx, basic_apply_num, add_min, add_max))
-	{
-		LOG_ERROR("In ApplyNumSettings, INVALID VALUES Group type({}), GRADE idx({})", static_cast<int>(ds_type), static_cast<int>(grade_idx));
-		return false;
-	}
-
-	float fWeight = 0.f;
-	if (!m_pTable->GetWeight(ds_type, grade_idx, step_idx, strength_idx, fWeight))
-		return false;
-	fWeight /= 100.f;
-
-	const int n = MIN(basic_apply_num, vec_basic_applys.size());
-	for (int i = 0; i < n; ++i)
-	{
-		const SApply& basic_apply = vec_basic_applys[i];
-		const short value = static_cast<short>(ceil(static_cast<float>(basic_apply.apply_value) * fWeight - 0.01f));
-		ItemSystem::SetItemForceAttributeEcs(item, i, basic_apply.apply_type, value);
-	}
-
-	for (int i = DRAGON_SOUL_ADDITIONAL_ATTR_START_IDX; i < ITEM_ATTRIBUTE_MAX_NUM; ++i)
-	{
-		const uint8_t type = static_cast<uint8_t>(ItemSystem::GetItemAttributeType(item, i));
-		if (type == APPLY_NONE)
-			continue;
-
-		short value = 0;
-		for (const SApply& additional : vec_addtional_applys)
-		{
-			if (additional.apply_type == type)
-			{
-				value = additional.apply_value;
-				break;
-			}
-		}
-		ItemSystem::SetItemForceAttributeEcs(item, i, type,
-			static_cast<short>(ceil(static_cast<float>(value) * fWeight - 0.01f)));
-	}
-	return true;
+	ecs::ItemAttributes attributes;
+	return PrepareAttributes(item, attributes, true) && ItemSystem::SetItemAttributesEcs(item, attributes);
 }
+
 bool DSManager::PutAttributes(entt::entity item)
 {
-	if (!ItemSystem::IsDragonSoulItem(item))
-	{
-		LOG_ERROR("This item(ID : {}) is not DragonSoul.", ItemSystem::GetItemID(item));
-		return false;
-	}
-
-	uint8_t ds_type, grade_idx, step_idx, strength_idx;
-	GetDragonSoulInfo(ItemSystem::GetItemVnum(item), ds_type, grade_idx, step_idx, strength_idx);
-
-	DragonSoulTable::TVecApplys vec_basic_applys;
-	DragonSoulTable::TVecApplys vec_addtional_applys;
-	if (!m_pTable->GetBasicApplys(ds_type, vec_basic_applys))
-	{
-		LOG_ERROR("There is no BasicApply about {} type dragon soul.", static_cast<int>(ds_type));
-		return false;
-	}
-	if (!m_pTable->GetAdditionalApplys(ds_type, vec_addtional_applys))
-	{
-		LOG_ERROR("There is no AdditionalApply about {} type dragon soul.", static_cast<int>(ds_type));
-		return false;
-	}
-
-	int basic_apply_num, add_min, add_max;
-	if (!m_pTable->GetApplyNumSettings(ds_type, grade_idx, basic_apply_num, add_min, add_max))
-	{
-		LOG_ERROR("In ApplyNumSettings, INVALID VALUES Group type({}), GRADE idx({})", static_cast<int>(ds_type), static_cast<int>(grade_idx));
-		return false;
-	}
-
-	float fWeight = 0.f;
-	if (!m_pTable->GetWeight(ds_type, grade_idx, step_idx, strength_idx, fWeight))
-		return false;
-	fWeight /= 100.f;
-
-	const int n = MIN(basic_apply_num, vec_basic_applys.size());
-	for (int i = 0; i < n; ++i)
-	{
-		const SApply& basic_apply = vec_basic_applys[i];
-		const short value = static_cast<short>(ceil(static_cast<float>(basic_apply.apply_value) * fWeight - 0.01f));
-		ItemSystem::SetItemForceAttributeEcs(item, i, basic_apply.apply_type, value);
-	}
-
-	const uint8_t additional_attr_num = MIN(number(add_min, add_max), 4);
-	if (additional_attr_num > 0)
-	{
-		std::vector<int> random_set(additional_attr_num);
-		std::list<float> probabilities;
-		for (const SApply& additional : vec_addtional_applys)
-			probabilities.push_back(additional.prob);
-
-		if (!MakeDistinctRandomNumberSet(probabilities, random_set))
-		{
-			LOG_ERROR("MakeDistinctRandomNumberSet error.");
-			return false;
-		}
-
-		for (int i = 0; i < additional_attr_num; ++i)
-		{
-			const SApply& additional = vec_addtional_applys[random_set[i]];
-			const short value = static_cast<short>(ceil(static_cast<float>(additional.apply_value) * fWeight - 0.01f));
-			ItemSystem::SetItemForceAttributeEcs(item,
-				DRAGON_SOUL_ADDITIONAL_ATTR_START_IDX + i,
-				additional.apply_type, value);
-		}
-	}
-
-	return true;
+	ecs::ItemAttributes attributes;
+	return PrepareAttributes(item, attributes, false) && ItemSystem::SetItemAttributesEcs(item, attributes);
 }
+
+#ifdef ENABLE_DS_ENCHANT
+DSManager::EnchantResult DSManager::EnchantWithItemCost(entt::entity owner, entt::entity item, entt::entity material)
+{
+	if (!ecs::PlayerRuntime::IsPC(owner) || !ItemSystem::IsDragonSoulItem(item) ||
+		ItemSystem::GetItemOwner(item) != owner || ItemSystem::IsItemExchanging(item) || ItemSystem::IsItemLocked(item))
+		return EnchantResult::InvalidTarget;
+	const bool equipped = ItemSystem::IsItemEquipped(item);
+	if ((equipped && DragonSoulSystem::IsDeckActivated(owner)) || IsActiveDragonSoul(item))
+		return EnchantResult::Active;
+	const auto* location = g_registry.try_get<ecs::ItemLocation>(item);
+	if (!location)
+		return EnchantResult::InvalidTarget;
+	// Equipment locations store the absolute main-inventory cell, whereas
+	// GetItem(EQUIPMENT, cell) accepts a relative equipment index.
+	if (equipped) {
+		if (location->cell < DRAGON_SOUL_EQUIP_SLOT_START || location->cell >= DRAGON_SOUL_EQUIP_SLOT_END ||
+			(location->window != EQUIPMENT && location->window != INVENTORY) ||
+			ItemSystem::GetInventoryItem(owner, location->cell) != item)
+			return EnchantResult::InvalidTarget;
+	} else if (ItemSystem::GetItem(owner, TItemPos(location->window, location->cell)) != item) {
+		return EnchantResult::InvalidTarget;
+	}
+	const uint32_t vnum = ItemSystem::GetItemVnum(item);
+	if (GetGradeIdx(vnum) !=
+#ifdef ENABLE_DS_GRADE_MYTH
+		DRAGON_SOUL_GRADE_MYTH
+#else
+		DRAGON_SOUL_GRADE_LEGENDARY
+#endif
+		|| GetStepIdx(vnum) != DRAGON_SOUL_STEP_HIGHEST)
+		return EnchantResult::InvalidGrade;
+	if (item == material || !ItemSystem::CanConsumeOwnedItem(owner, material) ||
+		ItemSystem::GetItemType(material) != ITEM_USE || ItemSystem::GetItemSubType(material) != USE_DS_ENCHANT)
+		return EnchantResult::InvalidMaterial;
+	ecs::ItemAttributes attributes;
+	if (!PrepareAttributes(item, attributes, false))
+		return EnchantResult::Failed;
+	if (!ItemSystem::ConsumeItemEcs(material))
+		return EnchantResult::Failed;
+	return ItemSystem::SetItemAttributesEcs(item, attributes) ? EnchantResult::Success : EnchantResult::Failed;
+}
+#endif
 bool DSManager::DragonSoulItemInitialize(entt::entity item)
 {
 	if (!ItemSystem::IsDragonSoulItem(item))
@@ -1277,14 +1273,5 @@ void DSManager::RefreshDragonSoulState(LPCHARACTER ch)
 	}
 	DragonSoulSystem::DeactivateAll(owner);
 }
-DSManager::DSManager()
-{
-	m_pTable = nullptr;
-}
-
-DSManager::~DSManager()
-{
-	if (m_pTable)
-		delete m_pTable;
-}
-
+DSManager::DSManager() = default;
+DSManager::~DSManager() = default;

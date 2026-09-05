@@ -522,11 +522,12 @@ entt::entity ITEM_MANAGER::CreateItem(uint32_t vnum, uint32_t count, uint32_t id
 #endif
 
 	// 货肺 积己登绰 侩去籍 贸府.
-	if (item->IsDragonSoul() && 0 == id)
+	if (ItemSystem::IsDragonSoulItem(itemEntity) && id == 0 &&
+		!DSManager::instance().DragonSoulItemInitialize(itemEntity))
 	{
-		DSManager::instance().DragonSoulItemInitialize((item ? item->GetEntityHandle() : entt::null));
+		ItemSystem::DestroyItemEntityEcs(itemEntity, "DRAGON_SOUL_INIT_FAILED");
+		return entt::null;
 	}
-
 #ifdef ENABLE_RUNE_SYSTEM
 	if (bIsNewItem)
 		item->InitializeRune();

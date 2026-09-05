@@ -8335,58 +8335,34 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 #endif
 #ifdef ENABLE_DS_ENCHANT
 		case USE_DS_ENCHANT: {
-			LPITEM item2;
-			if ((!IsValidItemPosition(DestCell)) || (!(item2 = GetItem(DestCell))))
+			if (!IsValidItemPosition(DestCell))
 				return false;
-
-			if (!item2->IsDragonSoul()) {
+			const entt::entity character = GetEntityHandle();
+			const entt::entity target = ItemSystem::GetItem(character, DestCell);
+			const uint32_t materialID = ItemSystem::GetItemID(itemEntity);
+			const uint32_t materialVnum = ItemSystem::GetItemOriginalVnum(itemEntity);
+			using Result = DSManager::EnchantResult;
+			const auto result = DSManager::instance().EnchantWithItemCost(character, target, itemEntity);
+			if (result != Result::Success) {
 #ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 73, "");
+				uint32_t message = 0;
+				if (result == Result::InvalidTarget) message = 73;
+				else if (result == Result::Active) message = 76;
+				else if (result == Result::InvalidGrade) message = 75;
+				if (message)
+					ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, message, "");
 #endif
 				return false;
 			}
-
-			if ((DragonSoulSystem::IsDeckActivated(GetEntityHandle())) && (ItemSystem::IsItemEquipped(item2->GetEntityHandle()))) {
+			char buf[21];
+			snprintf(buf, sizeof(buf), "%u", ItemSystem::GetItemID(target));
+			auto* desc = ecs::PlayerRuntime::GetDesc(character);
+			LogManager::instance().ItemLog(ecs::PlayerRuntime::GetPlayerID(character),
+				ecs::PlayerRuntime::GetX(character), ecs::PlayerRuntime::GetY(character), materialID,
+				"USE_DS_ENCHANT", buf, desc ? desc->GetHostName() : "", materialVnum);
 #ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 76, "");
+			ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 74, "");
 #endif
-				return false;
-			}
-
-			if (item2->IsExchanging() /*|| ItemSystem::IsItemEquipped(item2->GetEntityHandle())*/) // ENABLE_BUG_FIXES
-				return false;
-
-			int iGrade = (item2->GetVnum() / 1000) % 10, iStep = (item2->GetVnum() / 100) % 10;
-			if ((iGrade !=
-#ifdef ENABLE_DS_GRADE_MYTH
-				DRAGON_SOUL_GRADE_MYTH
-#else
-				DRAGON_SOUL_GRADE_LEGENDARY
-#endif
-				) || (iStep != DRAGON_SOUL_STEP_HIGHEST)) {
-#ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 75, "");
-#endif
-				return false;
-			}
-
-			for (int i = 0; i < ITEM_ATTRIBUTE_RARE_END; i++)
-				ItemSystem::SetItemForceAttributeEcs(item2->GetEntityHandle(), i, 0, 0);
-
-			bool bRet = DSManager::instance().PutAttributes((item2 ? item2->GetEntityHandle() : entt::null));
-			if (!bRet)
-				return false;
-
-			{
-				char buf[21];
-				snprintf(buf, sizeof(buf), "%u", item2->GetID());
-				LogManager::instance().ItemLog(this, item, "USE_DS_ENCHANT", buf);
-			}
-
-#ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 74, "");
-#endif
-			ItemSystem::ConsumeItemEcs(itemEntity);
 			break;
 		}
 #endif

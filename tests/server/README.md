@@ -1,7 +1,7 @@
 # Item attribute regression tests
 
 The `ItemAttributeTests` target compiles the production `ItemAttributeSystem.cpp`
-and `new_switchbot.cpp` with an EnTT registry and headless inventory,
+and the complete `new_switchbot.cpp` and `DragonSoul.cpp` with an EnTT registry and headless inventory,
 payment, persistence, network, and RNG doubles. Items
 in the fixtures have no `CItem`/`LegacyItemPtr`, and no database is started.
 Switchbot implementation and declarations stay in `new_switchbot.cpp/.h`;
@@ -62,6 +62,23 @@ In-game, check stole enchant at each grade and all three lock consumables,
 including rejection on equipped items, lock preservation during subsequent
 bonus rerolls, and persistence after relog. The item-use dispatcher and its
 chat/buff side effects are not executed by these headless tests.
+
+Dragon-soul checks cover entity-only initialization, bonus refresh and paid
+enchant, missing/failed table loads, reload ownership, invalid counts/weights,
+NaN/infinity/narrowing bounds, weighted sampling without replacement (including
+zero weights and both RNG endpoints), stale handles and rejected payments.
+The original bonuses remain unchanged until preparation and payment succeed;
+one complete update clears obsolete additional slots. Active stones are
+rejected, while inactive equipped stones retain the legacy allowance. Tests
+cover the absolute main-inventory cell used for equipped dragon souls.
+
+The DS table loader/accessors are doubles, not the real text parser or deployed
+balance tables. Refinement/extraction/activation services fail immediately if
+entered; the tests call the real attribute refresh, not the complete strength
+refinement flow. Before deployment, verify the live DS table, new stone creation,
+enchant in the DS bag and inactive equipment, active-deck rejection, strength
+refinement, and relog. Failed new-stone initialization now returns no item after
+cleanup; the actual item-manager creation/destruction path needs in-game testing.
 
 The doubles verify save/update calls, not the DB packet encoding or a live
 client session. Test in-game inventory, relog, bonus changers, rune items and

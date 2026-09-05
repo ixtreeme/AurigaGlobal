@@ -186,6 +186,9 @@ bool ChangeItemAttributeEcs(entt::entity item, const int* probabilities = nullpt
 // Synchronous game-thread transactions: prepare without side effects, pay from
 // one validated stack (or the owner's wallet), then publish the new attributes.
 bool CanPayItemAttributeCost(entt::entity item, entt::entity material, uint32_t amount = 1);
+// Material validation shared by transactions whose target equip rules differ.
+bool CanConsumeOwnedItem(entt::entity owner, entt::entity material, uint32_t amount = 1);
+bool SetItemAttributesEcs(entt::entity item, const ecs::ItemAttributes& attributes);
 bool ChangeItemAttributeWithItemCost(entt::entity item, entt::entity material,
     uint32_t amount = 1, const int* probabilities = nullptr);
 bool ChangeItemAttributeWithGoldCost(entt::entity item, int64_t amount);

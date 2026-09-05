@@ -344,14 +344,27 @@ bool ChangeItemAttributeEcs(entt::entity item, const int* probabilities)
 
 bool CanPayItemAttributeCost(entt::entity item, entt::entity material, uint32_t amount)
 {
-    if (!CanModifyOwnedAttributes(item) || item == material || !IsValidItem(material) ||
+    return CanModifyOwnedAttributes(item) && item != material &&
+        CanConsumeOwnedItem(GetItemOwner(item), material, amount);
+}
+
+bool SetItemAttributesEcs(entt::entity item, const ecs::ItemAttributes& attributes)
+{
+    if (!AttributesOf(item))
+        return false;
+    Commit(item, attributes.attrs, "SET_FORCE_ATTR");
+    return true;
+}
+
+bool CanConsumeOwnedItem(entt::entity owner, entt::entity material, uint32_t amount)
+{
+    if (!ecs::PlayerRuntime::IsPC(owner) || !IsValidItem(material) ||
         amount == 0 || IsItemEquipped(material) ||
         IsItemExchanging(material) || IsItemLocked(material))
         return false;
     const auto* stack = g_registry.try_get<ecs::ItemCount>(material);
     if (!stack || stack->count <= 0 || static_cast<uint32_t>(stack->count) < amount)
         return false;
-    const entt::entity owner = GetItemOwner(item);
     if (GetItemOwner(material) != owner)
         return false;
     const uint8_t window = GetItemWindow(material);

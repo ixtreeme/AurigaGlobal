@@ -18,6 +18,10 @@
 #include "../../SRC/Server/GameServer/p2p.h"
 #include "../../SRC/Server/GameServer/battle_pass.h"
 #include "../../SRC/Server/common/stole_length.h"
+#include "../../SRC/Server/GameServer/DragonSoul.h"
+#include "../../SRC/Server/GameServer/dragon_soul_table.h"
+#include "../../SRC/Server/GameServer/ecs/systems/DragonSoulSystem.hpp"
+#include "../../SRC/Server/GameServer/item_manager.h"
 #include <Core/Logging.hpp>
 #include <stdexcept>
 #include <iostream>
@@ -43,7 +47,12 @@ entt::entity watchedItem = entt::null;
 std::array<TPlayerItemAttribute, ITEM_ATTRIBUTE_MAX_NUM> beforePayment{};
 short lockBeforePayment = -1;
 std::map<std::tuple<entt::entity, uint8_t, uint16_t>, entt::entity> inventory;
-struct TestPlayer { int64_t gold = 100; };
+struct TestPlayer { int64_t gold = 100; int activeDeck = -1; };
+DragonSoulTable::TVecApplys dsBasic, dsAdditional;
+int dsBasicCount = 3, dsAddMin = 2, dsAddMax = 2;
+float dsWeight = 100.f, floatDrawFraction = 0.f;
+int floatRandomCalls = 0, dsLiveTables = 0;
+bool dsReadOk = true, dsBasicOk = true, dsAdditionalOk = true, dsSettingsOk = true, dsWeightOk = true;
 void Check(bool condition, const char* message)
 {
     ++checks;
@@ -116,6 +125,62 @@ entt::entity ItemSystem::GetItemOwnerEntity(entt::entity) { UnexpectedSwitchbotS
 int ItemSystem::GetItemAttributeType(entt::entity, int) { UnexpectedSwitchbotService(); }
 int ItemSystem::GetItemAttributeValue(entt::entity, int) { UnexpectedSwitchbotService(); }
 
+// Compile the complete production DragonSoul.cpp. Unused refinement, timer,
+// legacy-character and inventory-movement services must never be entered here.
+int MIN(int a, int b) { return std::min(a, b); }
+time_t get_global_time() { UnexpectedSwitchbotService(); }
+void DragonSoulSystem::DeactivateAll(entt::entity) { UnexpectedSwitchbotService(); }
+bool DragonSoulSystem::CanRefine(entt::entity) { UnexpectedSwitchbotService(); }
+int32_t DragonSoulSystem::GetLastRefineTime(entt::entity) { UnexpectedSwitchbotService(); }
+void DragonSoulSystem::SetLastRefineTime(entt::entity) { UnexpectedSwitchbotService(); }
+entt::entity ITEM_MANAGER::CreateItem(uint32_t, uint32_t, uint32_t, bool, int, bool) { UnexpectedSwitchbotService(); }
+bool DragonSoulTable::GetRefineGradeValues(uint8_t, uint8_t, int&, int&, std::vector<float>&) { UnexpectedSwitchbotService(); }
+bool DragonSoulTable::GetRefineStepValues(uint8_t, uint8_t, int&, int&, std::vector<float>&) { UnexpectedSwitchbotService(); }
+bool DragonSoulTable::GetRefineStrengthValues(uint8_t, uint8_t, uint8_t, int&, float&) { UnexpectedSwitchbotService(); }
+bool DragonSoulTable::GetDragonHeartExtValues(uint8_t, uint8_t, std::vector<float>&, std::vector<float>&) { UnexpectedSwitchbotService(); }
+bool DragonSoulTable::GetDragonSoulExtValues(uint8_t, uint8_t, float&, uint32_t&) { UnexpectedSwitchbotService(); }
+void LogManager::ItemLogEntity(LPCHARACTER, entt::entity, const char*, const char*) { UnexpectedSwitchbotService(); }
+entt::entity ItemSystem::GetWearItem(entt::entity, uint8_t) { UnexpectedSwitchbotService(); }
+void ItemSystem::AutoGiveItem(entt::entity, entt::entity, bool
+#ifdef __HIGHLIGHT_SYSTEM__
+    , bool
+#endif
+) { UnexpectedSwitchbotService(); }
+bool ItemSystem::AutoGiveDS(entt::entity, entt::entity, bool) { UnexpectedSwitchbotService(); }
+entt::entity ItemSystem::AutoGiveItemEcs(entt::entity, uint32_t, uint32_t, int, bool) { UnexpectedSwitchbotService(); }
+int ItemSystem::GetItemLimitTimerBasedOnWearIndex(entt::entity) { UnexpectedSwitchbotService(); }
+int ItemSystem::GetItemDuration(entt::entity) { return 0; }
+bool ItemSystem::DestroyItemEntityEcs(entt::entity, const char*) { UnexpectedSwitchbotService(); }
+bool ItemSystem::SetItemSocketEcs(entt::entity, int, uint32_t) { UnexpectedSwitchbotService(); }
+bool ItemSystem::CopyItemAttributesEcs(entt::entity, entt::entity) { UnexpectedSwitchbotService(); }
+bool ItemSystem::PlaceItemEcs(entt::entity, entt::entity, uint8_t, uint16_t) { UnexpectedSwitchbotService(); }
+bool ItemSystem::RemoveItemEcs(entt::entity) { UnexpectedSwitchbotService(); }
+int ItemSystem::GetEmptyDragonSoulInventory(entt::entity, entt::entity) { UnexpectedSwitchbotService(); }
+bool ItemSystem::ModifyItemPointsEcs(entt::entity, bool) { UnexpectedSwitchbotService(); }
+bool ItemSystem::StartTimerBasedOnWearExpireEventEcs(entt::entity) { UnexpectedSwitchbotService(); }
+bool ItemSystem::StopTimerBasedOnWearExpireEventEcs(entt::entity) { UnexpectedSwitchbotService(); }
+bool ItemSystem::SyncItemStateFromLegacy(entt::entity) { UnexpectedSwitchbotService(); }
+
+DragonSoulTable::DragonSoulTable() { ++dsLiveTables; }
+DragonSoulTable::~DragonSoulTable() { --dsLiveTables; }
+bool DragonSoulTable::ReadDragonSoulTableFile(const char*) { return dsReadOk; }
+bool DragonSoulTable::GetBasicApplys(uint8_t, TVecApplys& out) { out = dsBasic; return dsBasicOk; }
+bool DragonSoulTable::GetAdditionalApplys(uint8_t, TVecApplys& out) { out = dsAdditional; return dsAdditionalOk; }
+bool DragonSoulTable::GetApplyNumSettings(uint8_t, uint8_t, int& basic, int& minimum, int& maximum)
+{
+    basic = dsBasicCount; minimum = dsAddMin; maximum = dsAddMax; return dsSettingsOk;
+}
+bool DragonSoulTable::GetWeight(uint8_t, uint8_t, uint8_t, uint8_t, float& weight) { weight = dsWeight; return dsWeightOk; }
+float fnumber(float low, float high)
+{
+    Check(std::isfinite(low) && std::isfinite(high) && low <= high, "invalid floating RNG interval");
+    ++floatRandomCalls;
+    return low + (high - low) * floatDrawFraction;
+}
+int DragonSoulSystem::GetActiveDeck(entt::entity owner) { return g_registry.get<TestPlayer>(owner).activeDeck; }
+bool DragonSoulSystem::IsDeckActivated(entt::entity owner) { return GetActiveDeck(owner) >= 0; }
+bool MakeDistinctRandomNumberSet(std::list<float>, std::vector<int>&);
+
 // Deterministic I/O doubles. The system under test never constructs CItem or
 // CHARACTER, and fixtures deliberately contain no LegacyItemPtr component.
 int number_ex(int low, int high, const char*, int)
@@ -159,6 +224,7 @@ const TItemTable* GetItemProto(entt::entity item)
 }
 uint8_t GetItemType(entt::entity item) { const auto* p = GetItemProto(item); return p ? p->bType : 0; }
 uint8_t GetItemSubType(entt::entity item) { const auto* p = GetItemProto(item); return p ? p->bSubType : 0; }
+bool IsDragonSoulItem(entt::entity item) { return IsValidItem(item) && GetItemType(item) == ITEM_DS; }
 uint32_t GetItemWearFlags(entt::entity item) { const auto* p = GetItemProto(item); return p ? p->dwWearFlags : 0; }
 int32_t GetItemValue(entt::entity item, uint32_t index)
 {
@@ -178,6 +244,7 @@ entt::entity GetItem(entt::entity owner, TItemPos pos)
     const auto found = inventory.find({owner, pos.window_type, pos.cell});
     return found != inventory.end() ? found->second : entt::entity{entt::null};
 }
+entt::entity GetInventoryItem(entt::entity owner, uint16_t cell) { return GetItem(owner, TItemPos(INVENTORY, cell)); }
 uint8_t GetItemWindow(entt::entity item) { return g_registry.get<ecs::ItemLocation>(item).window; }
 uint16_t GetItemCell(entt::entity item) { return g_registry.get<ecs::ItemLocation>(item).cell; }
 uint32_t GetItemCount(entt::entity item) { return g_registry.get<ecs::ItemCount>(item).count; }
@@ -215,7 +282,11 @@ bool ConsumeItemEcs(entt::entity item, uint32_t amount)
     }
     return true;
 }
-uint32_t GetItemSocket(entt::entity, int) { return 0; }
+uint32_t GetItemSocket(entt::entity item, int index)
+{
+    const auto* sockets = g_registry.try_get<ecs::ItemSockets>(item);
+    return sockets && index >= 0 && index < ITEM_SOCKET_MAX_NUM ? static_cast<uint32_t>(sockets->sockets[index]) : 0;
+}
 TItemExtraProto* GetItemExtraProto(entt::entity item)
 {
     const auto* ref = g_registry.try_get<ecs::ItemExtraProtoRef>(item);
@@ -245,6 +316,8 @@ struct Fixture {
         g_map_itemRare.clear();
         saves = updates = randomCalls = 0;
         randomOffset = 0;
+        floatDrawFraction = 0.f;
+        floatRandomCalls = 0;
         payments = 0;
         rejectPayment = rejectGoldPayment = false;
         watchedItem = entt::null;
@@ -1043,6 +1116,200 @@ void AttributeLockEdgeCases()
 #endif
 }
 
+#ifdef ENABLE_DS_ENCHANT
+struct DragonSoulFixture : AttributeItemFixture {
+    DSManager manager;
+    explicit DragonSoulFixture(bool load = true) : AttributeItemFixture(USE_DS_ENCHANT)
+    {
+        proto.bType = ITEM_DS;
+        proto.bSubType = 0;
+        g_registry.get<ecs::ItemIdentity>(item).vnum = 110000 + Grade() * 1000 + DRAGON_SOUL_STEP_HIGHEST * 100;
+        dsReadOk = dsBasicOk = dsAdditionalOk = dsSettingsOk = dsWeightOk = true;
+        dsBasicCount = 3; dsAddMin = dsAddMax = 2; dsWeight = 100.f;
+        dsBasic = {{APPLY_MAX_HP, 100}, {APPLY_ATT_GRADE_BONUS, 20}, {APPLY_DEF_GRADE_BONUS, 30}};
+        dsAdditional = {{APPLY_CRITICAL_PCT, 5, 0.f}, {APPLY_PENETRATE_PCT, 7, 1.f},
+            {APPLY_ATTBONUS_MONSTER, 9, 3.f}, {APPLY_ATTBONUS_HUMAN, 11, 1.f}};
+        if (load)
+            Check(manager.ReadDragonSoulTableFile("headless-table"), "DS fixture table load failed");
+        Watch();
+    }
+    static int Grade()
+    {
+#ifdef ENABLE_DS_GRADE_MYTH
+        return DRAGON_SOUL_GRADE_MYTH;
+#else
+        return DRAGON_SOUL_GRADE_LEGENDARY;
+#endif
+    }
+    auto Use() { return manager.EnchantWithItemCost(owner, item, material); }
+};
+#endif
+
+void DragonSoulSampling()
+{
+    Fixture f;
+    for (const float fraction : {0.f, 0.25f, 1.f}) {
+        floatDrawFraction = fraction;
+        std::vector<int> selected(2, -1);
+        Check(MakeDistinctRandomNumberSet({0.f, 1.f, 0.f, 3.f}, selected), "DS weighted selection failed");
+        Check(selected[0] != selected[1] &&
+            ((selected[0] == 1 && selected[1] == 3) || (selected[0] == 3 && selected[1] == 1)),
+            "DS selector picked a zero-weight/duplicate row");
+    }
+    for (const auto weights : {std::list<float>{}, {0.f, 0.f}, {-1.f, 3.f},
+        {std::numeric_limits<float>::quiet_NaN(), 1.f}, {std::numeric_limits<float>::infinity(), 1.f},
+        {std::numeric_limits<float>::max(), std::numeric_limits<float>::max()}, {1.f, 0.f}}) {
+        std::vector<int> selected(2, -7);
+        Check(!MakeDistinctRandomNumberSet(weights, selected), "invalid DS probability table accepted");
+        Check(selected == std::vector<int>(2, -7), "failed DS sampling published partial indices");
+    }
+    floatDrawFraction = std::numeric_limits<float>::quiet_NaN();
+    std::vector<int> selected(1, -7);
+    Check(!MakeDistinctRandomNumberSet({1.f}, selected) && selected[0] == -7, "NaN RNG output accepted");
+}
+
+void DragonSoulPreparation()
+{
+#ifdef ENABLE_DS_ENCHANT
+    using Result = DSManager::EnchantResult;
+    DragonSoulFixture f(false);
+    Check(f.Use() == Result::Failed && !f.manager.PutAttributes(f.item), "DS operation accepted missing table");
+    f.Unchanged();
+    Check(dsLiveTables == 0, "unexpected DS table lifetime");
+    Check(f.manager.ReadDragonSoulTableFile("headless-table") && dsLiveTables == 1, "DS table load failed");
+    dsReadOk = false;
+    Check(!f.manager.ReadDragonSoulTableFile("bad-table") && dsLiveTables == 1, "failed reload leaked/replaced table");
+    Check(f.manager.PutAttributes(f.item) && saves == 1 && updates == 1, "failed reload lost usable table");
+    dsReadOk = true;
+    Check(f.manager.ReadDragonSoulTableFile("new-table") && dsLiveTables == 1, "successful reload leaked old table");
+    f.Watch();
+    auto reject = [&] {
+        Check(f.Use() == Result::Failed, "invalid DS preparation succeeded");
+        f.Unchanged();
+        Check(payments == 0, "DS preparation failure attempted payment");
+    };
+    for (bool* available : {&dsBasicOk, &dsAdditionalOk, &dsSettingsOk, &dsWeightOk}) {
+        *available = false; reject(); *available = true;
+    }
+    for (const int count : {-1, 4, INT_MAX}) { dsBasicCount = count; reject(); }
+    dsBasicCount = 3;
+    const auto savedBasic = dsBasic;
+    dsBasic.pop_back(); reject(); dsBasic = savedBasic;
+    for (const auto bounds : {std::pair{-1, 2}, std::pair{3, 2}, std::pair{0, 5}}) {
+        dsAddMin = bounds.first; dsAddMax = bounds.second; reject();
+    }
+    dsAddMin = dsAddMax = 2;
+    for (const float weight : {-1.f, std::numeric_limits<float>::quiet_NaN(), std::numeric_limits<float>::infinity(),
+        std::numeric_limits<float>::max()}) { dsWeight = weight; reject(); }
+    dsWeight = 100.f;
+    dsBasic[0].apply_value = INT_MAX; reject(); dsBasic = savedBasic;
+    dsBasic[0].apply_type = static_cast<EApplyTypes>(MAX_APPLY_NUM); reject(); dsBasic = savedBasic;
+    const auto savedAdditional = dsAdditional;
+    dsAdditional.clear(); reject(); dsAdditional = savedAdditional;
+    for (auto& apply : dsAdditional) apply.prob = 0.f;
+    reject(); dsAdditional = savedAdditional;
+    dsAdditional[1].prob = -1.f; reject(); dsAdditional = savedAdditional;
+    dsAdditional[1].apply_value = INT_MIN; reject(); dsAdditional = savedAdditional;
+    auto& vnum = g_registry.get<ecs::ItemIdentity>(f.item).vnum;
+    const auto oldVnum = vnum;
+    vnum += DRAGON_SOUL_STRENGTH_MAX * 10; reject(); vnum = oldVnum;
+    const auto attributes = g_registry.get<ecs::ItemAttributes>(f.item);
+    g_registry.remove<ecs::ItemAttributes>(f.item);
+    Check(f.Use() == Result::Failed && payments == 0, "DS item without attributes accepted");
+    g_registry.emplace<ecs::ItemAttributes>(f.item, attributes);
+    dsWeight = 12.5f;
+    Check(f.manager.DragonSoulItemInitialize(f.item), "entity-only DS initialization failed");
+    Check(f.Attrs()[0].sValue == 13 && f.Attrs()[1].sValue == 3 && f.Attrs()[3].sValue == 1,
+        "DS scaled-value rounding changed");
+    Check(saves == 1 && updates == 1 && payments == 0 && f.Attrs()[5].bType == 0 && f.Attrs()[6].bType == 0,
+        "DS initialization published partial/stale bonus slots");
+    f.Watch();
+    const auto chosenType = f.Attrs()[3].bType;
+    dsWeight = 200.f;
+    Check(f.manager.RefreshItemAttributes(f.item), "DS attribute refresh failed");
+    Check(f.Attrs()[0].sValue == 200 && f.Attrs()[3].bType == chosenType && f.Attrs()[3].sValue == 14,
+        "DS refresh rerolled types or scaled incorrectly");
+    Check(saves == 1 && updates == 1 && payments == 0, "DS refresh published intermediate attributes");
+    f.Watch();
+    dsAdditional.clear();
+    Check(!f.manager.RefreshItemAttributes(f.item), "DS refresh accepted unknown stored bonus");
+    f.Unchanged();
+    dsAdditional = savedAdditional;
+    f.Watch();
+    g_registry.remove<ecs::ItemOwner>(f.item);
+    Check(f.manager.DragonSoulItemInitialize(f.item) && saves == 1 && updates == 1 && payments == 0,
+        "new ownerless DS initialization failed");
+#endif
+}
+
+void DragonSoulTransactions()
+{
+#ifdef ENABLE_DS_ENCHANT
+    using Result = DSManager::EnchantResult;
+    Check(dsLiveTables == 0, "DS manager destruction leaked table");
+    DragonSoulFixture f;
+    AttributeItemGuards(f, [&](auto owner, auto item, auto material) {
+        return f.manager.EnchantWithItemCost(owner, item, material) == Result::Success;
+    });
+    rejectPayment = true;
+    Check(f.Use() == Result::Failed, "unpaid DS reroll accepted");
+    f.Unchanged();
+    rejectPayment = false;
+    f.Watch();
+    f.Place(f.item, DRAGON_SOUL_INVENTORY, 300);
+#ifdef ENABLE_EXTRA_INVENTORY
+    f.Place(f.material, EXTRA_INVENTORY, 7);
+#endif
+    Check(f.Use() == Result::Success && ItemSystem::GetItemCount(f.material) == 1,
+        "DS inventory/extra-inventory transaction failed");
+    Check(saves == 1 && updates == 1 && payments == 1 && f.Attrs()[3].bType == APPLY_PENETRATE_PCT &&
+        f.Attrs()[4].bType == APPLY_ATTBONUS_MONSTER && f.Attrs()[5].bType == 0 && f.Attrs()[6].bType == 0,
+        "DS reroll published partial state or retained old additional bonuses");
+    f.Watch();
+    floatDrawFraction = 1.f;
+    Check(f.Use() == Result::Success && !g_registry.valid(f.material) && saves == 1 && updates == 1,
+        "DS last-unit consumption failed");
+    Check(f.Attrs()[3].bType == APPLY_ATTBONUS_HUMAN && f.Attrs()[4].bType == APPLY_ATTBONUS_MONSTER,
+        "DS upper RNG endpoint selected duplicate or wrong rows");
+    f.Watch();
+    Check(f.Use() == Result::InvalidMaterial && payments == 0, "stale DS material reused");
+    g_registry.destroy(f.item);
+    Check(f.Use() == Result::InvalidTarget && payments == 0, "stale DS target accepted");
+#endif
+}
+
+void DragonSoulEquipmentRules()
+{
+#ifdef ENABLE_DS_ENCHANT
+    using Result = DSManager::EnchantResult;
+    DragonSoulFixture f;
+    auto& vnum = g_registry.get<ecs::ItemIdentity>(f.item).vnum;
+    const auto originalVnum = vnum;
+    vnum -= 1000;
+    Check(f.Use() == Result::InvalidGrade, "lower-grade DS accepted enchant");
+    vnum = originalVnum - 100;
+    Check(f.Use() == Result::InvalidGrade, "lower-step DS accepted enchant");
+    vnum = originalVnum;
+    g_registry.emplace<ecs::ItemSockets>(f.item).sockets[ITEM_SOCKET_DRAGON_SOUL_ACTIVE_IDX] = 1;
+    Check(f.Use() == Result::Active, "active DS socket accepted reroll");
+    g_registry.get<ecs::ItemSockets>(f.item).sockets[ITEM_SOCKET_DRAGON_SOUL_ACTIVE_IDX] = 0;
+    g_registry.emplace<ecs::ItemEquipped>(f.item).equipped = true;
+    f.Place(f.item, EQUIPMENT, DRAGON_SOUL_EQUIP_SLOT_START);
+    Check(f.Use() == Result::InvalidTarget, "detached equipped DS accepted");
+    inventory[{f.owner, INVENTORY, DRAGON_SOUL_EQUIP_SLOT_START}] = f.item;
+    g_registry.get<TestPlayer>(f.owner).activeDeck = 0;
+    Check(f.Use() == Result::Active, "equipped DS with active deck accepted enchant");
+    g_registry.get<TestPlayer>(f.owner).activeDeck = -1;
+    f.Unchanged();
+    Check(payments == 0, "rejected equipment request charged material");
+    Check(f.Use() == Result::Success && saves == 1 && updates == 1 && payments == 1,
+        "inactive equipped DS lost the existing enchant allowance");
+    f.Watch();
+    g_registry.get<ecs::ItemLocation>(f.item).cell = DRAGON_SOUL_EQUIP_SLOT_START - INVENTORY_MAX_NUM;
+    Check(f.Use() == Result::InvalidTarget && payments == 0, "relative equipment cell accepted as stored absolute cell");
+#endif
+}
+
 void SwitchbotTransactions()
 {
 #if defined(ENABLE_SWITCHBOT)
@@ -1131,6 +1398,10 @@ int main()
         StoleEnchantTransactions();
         AttributeLockTransactions();
         AttributeLockEdgeCases();
+        DragonSoulSampling();
+        DragonSoulPreparation();
+        DragonSoulTransactions();
+        DragonSoulEquipmentRules();
         SwitchbotTransactions();
         SwitchbotMaterialSelection();
         std::cout << "Item attribute regression checks passed: " << checks << '\n';

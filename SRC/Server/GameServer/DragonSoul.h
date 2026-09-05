@@ -3,6 +3,8 @@
 
 #include <common/length.h>
 #include <entt/entt.hpp>
+#include <memory>
+#include "ecs/components/item_components.hpp"
 
 class CHARACTER;
 class CItem;
@@ -57,8 +59,11 @@ public:
 	bool	DeactivateDragonSoulEcs(entt::entity item, bool bSkipRefreshOwnerActiveState = false);
 	bool	IsActiveDragonSoul(entt::entity item) const;
 #ifdef ENABLE_DS_ENCHANT
+	enum class EnchantResult { Success, InvalidTarget, Active, InvalidGrade, InvalidMaterial, Failed };
+	EnchantResult EnchantWithItemCost(entt::entity owner, entt::entity item, entt::entity material);
 	bool	PutAttributes(entt::entity item);
 #endif
+	bool	RefreshItemAttributes(entt::entity item);
 private:
 	void	SendRefineResultPacket(entt::entity ch, uint8_t bSubHeader, const TItemPos& pos);
 
@@ -66,11 +71,12 @@ private:
 	void	RefreshDragonSoulState(LPCHARACTER ch);
 
 	uint32_t	MakeDragonSoulVnum(uint8_t bType, uint8_t grade, uint8_t step, uint8_t refine);
-	bool	RefreshItemAttributes(entt::entity item);
+
 #ifndef ENABLE_DS_ENCHANT
 	bool	PutAttributes(entt::entity item);
 #endif
-	DragonSoulTable*	m_pTable;
+	bool PrepareAttributes(entt::entity item, ecs::ItemAttributes& result, bool refresh);
+	std::unique_ptr<DragonSoulTable> m_pTable;
 };
 
 #endif

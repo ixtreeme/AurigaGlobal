@@ -10,12 +10,13 @@ find_package(EnTT CONFIG REQUIRED)
 auriga_add_server_executable(GameServer LIBS LUA)
 target_link_libraries(GameServer PRIVATE EnTT::EnTT)
 
-# Headless regression checks compile the production attribute and switchbot
+# Headless regression checks compile the production attribute, switchbot and DS
 # sources with service test doubles; no server/DB startup is needed.
 add_executable(ItemAttributeTests EXCLUDE_FROM_ALL
     ${CMAKE_SOURCE_DIR}/tests/server/ItemAttributeTests.cpp
     ecs/systems/ItemAttributeSystem.cpp
     new_switchbot.cpp
+    DragonSoul.cpp
 )
 target_link_libraries(ItemAttributeTests PRIVATE SERVER EnTT::EnTT)
 add_test(NAME item_attributes COMMAND ItemAttributeTests)
