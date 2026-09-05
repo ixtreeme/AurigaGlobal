@@ -1,5 +1,51 @@
 # Server ECS regression tests
 
+## Quickslots
+
+`QuickslotTests` compiles the complete production `ecs/systems/InventorySystem.cpp`
+with entity-only fixtures. Quickslot implementation stays in that existing file;
+`CHARACTER::m_quickslot`, its pointer-returning getter, add/delete/swap methods
+and unused chain helper are removed. The remaining CHARACTER sync entry point
+only forwards unmigrated callers; it stores no mirror. Its byte-sized arguments
+are still a legacy boundary: the new native sync API accepts wider cells and
+rejects values that cannot be represented instead of wrapping them.
+
+The native setters validate before removing duplicates, commit the complete
+state before packet publication and suppress an obsolete publication after a
+nested modification or owner destruction. Relocation and database hydration
+retain the last valid duplicate, matching the old ordered assignment behaviour.
+Factory hydration filters malformed entries before publishing the component.
+Login sends that completed state (including empty-slot clears); save reads ECS
+values, and auto-give no longer sends a second add packet itself.
+
+```powershell
+cmake --build build --config Release --target GameServer QuickslotTests
+ctest --test-dir build -C Release -R '^quickslots$' --output-on-failure
+cmake -S . -B build-asan
+cmake --build build-asan --config RelWithDebInfo --target QuickslotTests
+ctest --test-dir build-asan -C RelWithDebInfo -R '^quickslots$' --output-on-failure
+```
+
+Checks enumerate all byte-sized type/position combinations and invalid target
+indices; exercise add/delete/swap, duplicate removal, item relocation/removal,
+wide-cell rejection, invalid/stale/recycled owners, nested publication, malformed
+and duplicate persisted slots, full login publication and value-copy roundtrips.
+Client-facing validation covers missing/foreign/stale items, allowed item types,
+extra-inventory alias 12, and potion rejection for both alias and canonical
+extra-inventory types without modifying the caller's request value.
+
+Item lookup and network services are doubles. The target verifies requested
+packet kind, recipient, ordering and values, not actual socket serialization or
+client rendering. It executes the production client-validation service, not the
+input dispatcher/framing code. The thin packet handlers, network packet builders,
+factory and character-save call sites are compiled with GameServer; the complete
+login/DB-save flow is not executed headlessly. Existing packet framing still owns
+the minimum-length checks. Other inventory/equipment/spatial services fail if
+the tests accidentally call them. Test shortcut drag/drop/delete/swap, potion
+auto-assignment, item movement/consumption, empty-slot clearing on login and relog
+persistence with a real client/DB before deployment. This prerequisite does not
+complete the high-level item-manager `RemoveItem` or bulk shutdown migration.
+
 ## Item-manager destruction
 
 `ItemManagerLifecycleTests` compiles the complete production `item_manager.cpp`.

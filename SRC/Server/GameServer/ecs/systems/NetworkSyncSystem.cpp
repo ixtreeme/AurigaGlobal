@@ -50,6 +50,41 @@
 
 extern bool battle_is_attackable(entt::entity character, entt::entity victim);
 
+void NetworkSyncSystem::SendQuickslotAdd(entt::entity e, uint8_t pos, TQuickslot slot)
+{
+    if (auto* desc = ecs::PlayerRuntime::GetDesc(e))
+    {
+        packet_quickslot_add packet {};
+        packet.header = HEADER_GC_QUICKSLOT_ADD;
+        packet.pos = pos;
+        packet.slot = slot;
+        desc->Packet(&packet, sizeof(packet));
+    }
+}
+
+void NetworkSyncSystem::SendQuickslotDelete(entt::entity e, uint8_t pos)
+{
+    if (auto* desc = ecs::PlayerRuntime::GetDesc(e))
+    {
+        packet_quickslot_del packet {};
+        packet.header = HEADER_GC_QUICKSLOT_DEL;
+        packet.pos = pos;
+        desc->Packet(&packet, sizeof(packet));
+    }
+}
+
+void NetworkSyncSystem::SendQuickslotSwap(entt::entity e, uint8_t from, uint8_t to)
+{
+    if (auto* desc = ecs::PlayerRuntime::GetDesc(e))
+    {
+        packet_quickslot_swap packet {};
+        packet.header = HEADER_GC_QUICKSLOT_SWAP;
+        packet.pos = from;
+        packet.pos_to = to;
+        desc->Packet(&packet, sizeof(packet));
+    }
+}
+
 namespace
 {
 struct BGMInfo

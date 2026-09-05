@@ -11709,14 +11709,14 @@ void CHARACTER::AutoGiveItem(LPITEM item, bool longOwnerShip
 
 		if (item->GetType() == ITEM_USE && item->GetSubType() == USE_POTION)
 		{
-			TQuickslot* pSlot;
+			TQuickslot currentSlot {};
 
-			if (GetQuickslot(0, &pSlot) && pSlot->type == QUICKSLOT_TYPE_NONE)
+			if (InventorySystem::GetQuickslot(GetEntityHandle(), 0, currentSlot) && currentSlot.type == QUICKSLOT_TYPE_NONE)
 			{
 				TQuickslot slot;
 				slot.type = QUICKSLOT_TYPE_ITEM;
 				slot.pos = cell;
-				SetQuickslot(0, slot);
+				InventorySystem::SetQuickslot(GetEntityHandle(), 0, slot);
 			}
 		}
 	}
@@ -12002,14 +12002,14 @@ entt::entity CHARACTER::AutoGiveItem(uint32_t dwItemVnum,
 
 		if (ItemSystem::GetItemType(item) == ITEM_USE && ItemSystem::GetItemSubType(item) == USE_POTION)
 		{
-			TQuickslot* pSlot;
+			TQuickslot currentSlot {};
 
-			if (GetQuickslot(0, &pSlot) && pSlot->type == QUICKSLOT_TYPE_NONE)
+			if (InventorySystem::GetQuickslot(GetEntityHandle(), 0, currentSlot) && currentSlot.type == QUICKSLOT_TYPE_NONE)
 			{
 				TQuickslot slot;
 				slot.type = QUICKSLOT_TYPE_ITEM;
 				slot.pos = iEmptyCell;
-				SetQuickslot(0, slot);
+				InventorySystem::SetQuickslot(GetEntityHandle(), 0, slot);
 			}
 		}
 	}

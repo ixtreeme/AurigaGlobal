@@ -632,8 +632,7 @@ void CInputDB::PlayerLoad(LPDESC d, const char * data)
 
 	quest::CQuestManager::instance().BroadcastEventFlagOnLogin(chEntity);
 
-	for (int i = 0; i < QUICKSLOT_MAX_NUM; ++i)
-		ch->SetQuickslot(i, pTab->quickslot[i]);
+	InventorySystem::SendQuickslots(chEntity);
 
 	NetworkSyncSystem::PointsPacket(chEntity);
 	ch->SkillLevelPacket();

@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "ecs/systems/InventorySystem.hpp"
 #include "ecs/systems/ViewSystem.hpp"
 #include "ecs/systems/AffectSystem.hpp"
 #include <Core/Logging.hpp>
@@ -1664,82 +1665,28 @@ void CInputMain::ItemPickup(entt::entity character, const char * data)
 	ch->PickupItem(pinfo->vid);
 }
 
-void CInputMain::QuickslotAdd(entt::entity character, const char * data)
+void CInputMain::QuickslotAdd(entt::entity character, const char* data)
 {
-	LPCHARACTER ch = ecs::LegacyCharOf(character);
-#ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(
-		character,
-		CHAT_TYPE_INFO,
-		"input_main.cpp:: void CInputMain::QuickslotAdd");
-#endif
-	auto pinfo = reinterpret_cast<command_quickslot_add*>(
-		const_cast<char*>(data));
-#ifdef ENABLE_BUG_FIXES
-	if (pinfo->slot.type == QUICKSLOT_TYPE_ITEM
-#ifdef ENABLE_EXTRA_INVENTORY
-		|| pinfo->slot.type == 12
-#endif
-	)
-	{
-#ifdef ENABLE_EXTRA_INVENTORY
-		uint8_t window = INVENTORY;
-		if (pinfo->slot.type == 12)
-		{
-			pinfo->slot.type = QUICKSLOT_TYPE_ITEM_EXTRA;
-			window = EXTRA_INVENTORY;
-		}
-#else
-		const uint8_t window = INVENTORY;
-#endif
-
-		const TItemPos srcCell(window, pinfo->slot.pos);
-		const entt::entity itemEntity =
-			ItemSystem::GetItem(character, srcCell);
-		if (!ItemSystem::IsValidItem(itemEntity))
-			return;
-
-		const uint8_t itemType = ItemSystem::GetItemType(itemEntity);
-		if (itemType != ITEM_USE && itemType != ITEM_QUEST)
-			return;
-
-#ifdef ENABLE_EXTRA_INVENTORY
-		if (pinfo->slot.type == QUICKSLOT_TYPE_ITEM_EXTRA &&
-			itemType == ITEM_USE &&
-			ItemSystem::GetItemSubType(itemEntity) == USE_POTION)
-		{
-			return;
-		}
-#endif
-	}
-#endif
-
-	ch->SetQuickslot(pinfo->pos, pinfo->slot);
-}
-void CInputMain::QuickslotDelete(entt::entity character, const char * data)
-{
-	LPCHARACTER ch = ecs::LegacyCharOf(character);
-// migrated from CHARACTER handler
-// TODO Phase 8: migrate QuickslotDelete handler ECS
-// DUAL-PATH: legacy only during migration window
-#ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "input_main.cpp:: void CInputMain::QuickslotDelete");//INGAME_DEBUG_RAZOR93
-#endif
-	struct command_quickslot_del * pinfo = (struct command_quickslot_del *) data;
-	ch->DelQuickslot(pinfo->pos);
+    if (!data) return;
+    command_quickslot_add packet {};
+    memcpy(&packet, data, sizeof(packet));
+    InventorySystem::SetQuickslotFromClient(character, packet.pos, packet.slot);
 }
 
-void CInputMain::QuickslotSwap(entt::entity character, const char * data)
+void CInputMain::QuickslotDelete(entt::entity character, const char* data)
 {
-	LPCHARACTER ch = ecs::LegacyCharOf(character);
-// migrated from CHARACTER handler
-// TODO Phase 8: migrate QuickslotSwap handler ECS
-// DUAL-PATH: legacy only during migration window
-#ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "input_main.cpp:: void CInputMain::QuickslotSwap");//INGAME_DEBUG_RAZOR93
-#endif
-	struct command_quickslot_swap * pinfo = (struct command_quickslot_swap *) data;
-	ch->SwapQuickslot(pinfo->pos, pinfo->change_pos);
+    if (!data) return;
+    command_quickslot_del packet {};
+    memcpy(&packet, data, sizeof(packet));
+    InventorySystem::DelQuickslot(character, packet.pos);
+}
+
+void CInputMain::QuickslotSwap(entt::entity character, const char* data)
+{
+    if (!data) return;
+    command_quickslot_swap packet {};
+    memcpy(&packet, data, sizeof(packet));
+    InventorySystem::SwapQuickslot(character, packet.pos, packet.change_pos);
 }
 
 int CInputMain::Messenger(entt::entity character, const char* c_pData, uint64_t uiBytes)

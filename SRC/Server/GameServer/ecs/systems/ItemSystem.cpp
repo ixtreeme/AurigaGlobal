@@ -1060,13 +1060,6 @@ static entt::entity PlaceItemInInventory(entt::entity owner, entt::entity item,
                 slot.type = QUICKSLOT_TYPE_ITEM;
                 slot.pos = static_cast<uint8_t>(cell);
                 InventorySystem::SetQuickslot(owner, 0, slot);
-                if (LPDESC desc = ecs::PlayerRuntime::GetDesc(owner)) {
-                    packet_quickslot_add packet {};
-                    packet.header = HEADER_GC_QUICKSLOT_ADD;
-                    packet.pos = 0;
-                    packet.slot = slot;
-                    desc->Packet(&packet, sizeof(packet));
-                }
             }
         }
 

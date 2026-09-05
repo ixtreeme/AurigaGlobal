@@ -1073,11 +1073,6 @@ protected:
 	// Quickslot ����
 public:
 	void			SyncQuickslot(uint8_t bType, uint8_t bOldPos, uint8_t bNewPos);
-	bool			GetQuickslot(uint8_t pos, TQuickslot** ppSlot);
-	bool			SetQuickslot(uint8_t pos, TQuickslot& rSlot);
-	bool			DelQuickslot(uint8_t pos);
-	bool			SwapQuickslot(uint8_t a, uint8_t b);
-	void			ChainQuickslotItem(entt::entity item, uint8_t bType, uint8_t bOldPos);
 #ifdef __ENABLE_NEW_OFFLINESHOP__
 public:
 	offlineshop::CShop* GetOfflineShop() { return m_pkOfflineShop; }
@@ -1115,9 +1110,6 @@ private:
 	// patch with warp check
 	int		m_iOfflineShopUseTime = 0;
 #endif
-
-protected:
-	TQuickslot		m_quickslot[QUICKSLOT_MAX_NUM];
 
 	////////////////////////////////////////////////////////////////////////////////////////
 	// Affect

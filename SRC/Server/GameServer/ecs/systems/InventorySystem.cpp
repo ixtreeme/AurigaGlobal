@@ -92,247 +92,210 @@ EVENTFUNC(ownership_event);
 
 namespace InventorySystem {
 
-void SyncQuickslot(entt::entity e, uint8_t bType, uint8_t bOldPos, uint8_t bNewPos)
+static bool IsQuickslotValueValid(const TQuickslot& slot)
 {
-	if (bOldPos == bNewPos)
-		return;
+    switch (slot.type)
+    {
+#ifdef ENABLE_EXTRA_INVENTORY
+        case QUICKSLOT_TYPE_ITEM_EXTRA: return slot.pos < EXTRA_INVENTORY_MAX_NUM;
+#endif
+        case QUICKSLOT_TYPE_ITEM:
+        {
+            const TItemPos position(INVENTORY, slot.pos);
+            return position.IsDefaultInventoryPosition() || position.IsBeltInventoryPosition();
+        }
+        case QUICKSLOT_TYPE_SKILL: return slot.pos < SKILL_MAX_NUM;
+        case QUICKSLOT_TYPE_COMMAND: return true;
+        default: return false;
+    }
+}
 
-	auto* qs = GetQuickSlots(e);
-	if (!qs)
-		return;
+static bool HasQuickslotRevision(entt::entity e, uint64_t revision)
+{
+    if (!g_registry.valid(e))
+        return false;
+    const auto* slots = g_registry.try_get<ecs::QuickSlots>(e);
+    return slots && slots->revision == revision;
+}
 
-	for (uint8_t i = 0; i < QUICKSLOT_MAX_NUM; ++i)
-	{
-		if (qs->slots[i].type == bType && qs->slots[i].pos == bOldPos)
-		{
-			if (bNewPos == 255)
-				memset(&qs->slots[i], 0, sizeof(TQuickslot));
-			else
-			{
-				qs->slots[i].type = bType;
-				qs->slots[i].pos = bNewPos;
-			}
-		}
-	}
+ecs::QuickSlots MakeQuickSlots(std::span<const TQuickslot, QUICKSLOT_MAX_NUM> saved)
+{
+    ecs::QuickSlots result {};
+    for (size_t pos = 0; pos < saved.size(); ++pos)
+    {
+        const auto slot = saved[pos];
+        if (!IsQuickslotValueValid(slot))
+            continue;
+        // Preserve the last valid occurrence, as the old ordered load did.
+        for (size_t previous = 0; previous < pos; ++previous)
+            if (result.slots[previous].type == slot.type && result.slots[previous].pos == slot.pos)
+                result.slots[previous] = {};
+        result.slots[pos] = slot;
+    }
+    return result;
+}
 
-	g_registry.emplace_or_replace<ecs::DirtyTag>(e);
+void SendQuickslots(entt::entity e)
+{
+    if (!g_registry.valid(e)) return;
+    const auto* slots = g_registry.try_get<ecs::QuickSlots>(e);
+    if (!slots) return;
+    const auto snapshot = *slots;
+    for (uint8_t pos = 0; pos < QUICKSLOT_MAX_NUM && HasQuickslotRevision(e, snapshot.revision); ++pos)
+    {
+        if (snapshot.slots[pos].type == QUICKSLOT_TYPE_NONE)
+            NetworkSyncSystem::SendQuickslotDelete(e, pos);
+        else
+            NetworkSyncSystem::SendQuickslotAdd(e, pos, snapshot.slots[pos]);
+    }
+}
+
+void SyncQuickslot(entt::entity e, uint16_t type, uint16_t oldPos, uint16_t newPos)
+{
+    // Item cells can exceed the byte-sized quickslot position. Never wrap them
+    // onto an unrelated quickslot (in particular during item destruction).
+    if (oldPos > UINT8_MAX || newPos > UINT8_MAX || oldPos == newPos ||
+        type == QUICKSLOT_TYPE_NONE || type >= QUICKSLOT_TYPE_MAX_NUM)
+        return;
+    const TQuickslot replacement {static_cast<uint8_t>(type), static_cast<uint8_t>(newPos)};
+    if (newPos != UINT8_MAX && !IsQuickslotValueValid(replacement))
+        return;
+    auto* slots = GetQuickSlots(e);
+    if (!slots)
+        return;
+    std::array<bool, QUICKSLOT_MAX_NUM> changed {};
+    int target = -1;
+    for (size_t i = 0; i < slots->slots.size(); ++i)
+        if (slots->slots[i].type == type && slots->slots[i].pos == oldPos)
+            target = static_cast<int>(i);
+    if (target == -1) return;
+    for (size_t i = 0; i < slots->slots.size(); ++i)
+    {
+        if (slots->slots[i].type != type || (slots->slots[i].pos != oldPos &&
+            (newPos == UINT8_MAX || slots->slots[i].pos != newPos)))
+            continue;
+        changed[i] = true;
+        slots->slots[i] = {};
+    }
+    if (newPos != UINT8_MAX) slots->slots[target] = replacement;
+    const auto revision = ++slots->revision;
+    g_registry.emplace_or_replace<ecs::DirtyTag>(e);
+    // Publish the entire mutation before the first network callback.
+    for (uint8_t i = 0; i < QUICKSLOT_MAX_NUM && HasQuickslotRevision(e, revision); ++i)
+        if (changed[i])
+        {
+            if (newPos != UINT8_MAX && i == target) NetworkSyncSystem::SendQuickslotAdd(e, i, replacement);
+            else NetworkSyncSystem::SendQuickslotDelete(e, i);
+        }
 }
 
 bool GetQuickslot(entt::entity e, uint8_t pos, TQuickslot& out)
 {
-	auto* qs = GetQuickSlots(e);
-	if (!qs || pos >= QUICKSLOT_MAX_NUM)
-		return false;
-
-	out = qs->slots[pos];
-	return true;
+    out = {};
+    if (!g_registry.valid(e) || pos >= QUICKSLOT_MAX_NUM)
+        return false;
+    if (const auto* slots = g_registry.try_get<ecs::QuickSlots>(e))
+        out = slots->slots[pos];
+    return true;
 }
 
-void SetQuickslot(entt::entity e, uint8_t pos, const TQuickslot& slot)
+bool SetQuickslot(entt::entity e, uint8_t pos, const TQuickslot& value)
 {
-	auto* qs = GetQuickSlots(e);
-	if (!qs || pos >= QUICKSLOT_MAX_NUM)
-		return;
-
-	qs->slots[pos] = slot;
-	g_registry.emplace_or_replace<ecs::DirtyTag>(e);
+    const TQuickslot slot = value;
+    if (pos >= QUICKSLOT_MAX_NUM || !IsQuickslotValueValid(slot))
+        return false;
+    auto* slots = GetQuickSlots(e);
+    if (!slots)
+        return false;
+    std::array<bool, QUICKSLOT_MAX_NUM> removed {};
+    for (size_t i = 0; i < slots->slots.size(); ++i)
+        if (i != pos && slots->slots[i].type == slot.type && slots->slots[i].pos == slot.pos)
+        {
+            removed[i] = true;
+            slots->slots[i] = {};
+        }
+    slots->slots[pos] = slot;
+    const auto revision = ++slots->revision;
+    g_registry.emplace_or_replace<ecs::DirtyTag>(e);
+    for (uint8_t i = 0; i < QUICKSLOT_MAX_NUM && HasQuickslotRevision(e, revision); ++i)
+        if (removed[i])
+            NetworkSyncSystem::SendQuickslotDelete(e, i);
+    if (HasQuickslotRevision(e, revision))
+        NetworkSyncSystem::SendQuickslotAdd(e, pos, slot);
+    return true;
 }
 
-void DelQuickslot(entt::entity e, uint8_t pos)
+bool SetQuickslotFromClient(entt::entity e, uint8_t pos, TQuickslot slot)
 {
-	auto* qs = GetQuickSlots(e);
-	if (!qs || pos >= QUICKSLOT_MAX_NUM)
-		return;
-
-	memset(&qs->slots[pos], 0, sizeof(TQuickslot));
-	g_registry.emplace_or_replace<ecs::DirtyTag>(e);
+    if (!g_registry.valid(e) || pos >= QUICKSLOT_MAX_NUM)
+        return false;
+#ifdef ENABLE_EXTRA_INVENTORY
+    // Older clients use 12 for the extra-inventory shortcut. Normalize a copy,
+    // never modify the incoming packet buffer.
+    if (slot.type == 12) slot.type = QUICKSLOT_TYPE_ITEM_EXTRA;
+#endif
+    if (!IsQuickslotValueValid(slot))
+        return false;
+#ifdef ENABLE_BUG_FIXES
+    if (slot.type == QUICKSLOT_TYPE_ITEM
+#ifdef ENABLE_EXTRA_INVENTORY
+        || slot.type == QUICKSLOT_TYPE_ITEM_EXTRA
+#endif
+    )
+    {
+        uint8_t window = INVENTORY;
+#ifdef ENABLE_EXTRA_INVENTORY
+        if (slot.type == QUICKSLOT_TYPE_ITEM_EXTRA) window = EXTRA_INVENTORY;
+#endif
+        const auto item = ItemSystem::GetItem(e, TItemPos(window, slot.pos));
+        if (!ItemSystem::IsValidItem(item) || ItemSystem::GetItemOwner(item) != e)
+            return false;
+        const auto itemType = ItemSystem::GetItemType(item);
+        if (itemType != ITEM_USE && itemType != ITEM_QUEST)
+            return false;
+#ifdef ENABLE_EXTRA_INVENTORY
+        if (slot.type == QUICKSLOT_TYPE_ITEM_EXTRA && itemType == ITEM_USE &&
+            ItemSystem::GetItemSubType(item) == USE_POTION)
+            return false;
+#endif
+    }
+#endif
+    return SetQuickslot(e, pos, slot);
 }
 
-void SwapQuickslot(entt::entity e, uint8_t posA, uint8_t posB)
+bool DelQuickslot(entt::entity e, uint8_t pos)
 {
-	auto* qs = GetQuickSlots(e);
-	if (!qs || posA >= QUICKSLOT_MAX_NUM || posB >= QUICKSLOT_MAX_NUM)
-		return;
+    if (pos >= QUICKSLOT_MAX_NUM)
+        return false;
+    auto* slots = GetQuickSlots(e);
+    if (!slots)
+        return false;
+    slots->slots[pos] = {};
+    ++slots->revision;
+    g_registry.emplace_or_replace<ecs::DirtyTag>(e);
+    NetworkSyncSystem::SendQuickslotDelete(e, pos);
+    return true;
+}
 
-	const TQuickslot slot = qs->slots[posA];
-	qs->slots[posA] = qs->slots[posB];
-	qs->slots[posB] = slot;
-	g_registry.emplace_or_replace<ecs::DirtyTag>(e);
+bool SwapQuickslot(entt::entity e, uint8_t a, uint8_t b)
+{
+    if (a >= QUICKSLOT_MAX_NUM || b >= QUICKSLOT_MAX_NUM)
+        return false;
+    auto* slots = GetQuickSlots(e);
+    if (!slots)
+        return false;
+    std::swap(slots->slots[a], slots->slots[b]);
+    ++slots->revision;
+    g_registry.emplace_or_replace<ecs::DirtyTag>(e);
+    NetworkSyncSystem::SendQuickslotSwap(e, a, b);
+    return true;
 }
 
 } // namespace InventorySystem
 
-void CHARACTER::SyncQuickslot(uint8_t bType, uint8_t bOldPos, uint8_t bNewPos)
+void CHARACTER::SyncQuickslot(uint8_t type, uint8_t oldPos, uint8_t newPos)
 {
-	if (bOldPos == bNewPos)
-		return;
-
-	for (uint8_t i = 0; i < QUICKSLOT_MAX_NUM; ++i)
-	{
-		if (m_quickslot[i].type == bType && m_quickslot[i].pos == bOldPos)
-		{
-			if (bNewPos == 255)
-				DelQuickslot(i);
-			else
-			{
-				TQuickslot slot;
-				slot.type = bType;
-				slot.pos = bNewPos;
-
-				SetQuickslot(i, slot);
-			}
-		}
-	}
-
-	InventorySystem::SyncQuickslot(GetEntityHandle(), bType, bOldPos, bNewPos);
-}
-
-bool CHARACTER::GetQuickslot(uint8_t pos, TQuickslot** ppSlot)
-{
-	if (pos >= QUICKSLOT_MAX_NUM)
-		return false;
-
-	*ppSlot = &m_quickslot[pos];
-
-	TQuickslot ecsSlot {};
-	if (InventorySystem::GetQuickslot(GetEntityHandle(), pos, ecsSlot))
-		m_quickslot[pos] = ecsSlot;
-	else
-		InventorySystem::SetQuickslot(GetEntityHandle(), pos, m_quickslot[pos]);
-
-	return true;
-}
-
-bool CHARACTER::SetQuickslot(uint8_t pos, TQuickslot& rSlot)
-{
-	packet_quickslot_add pack_quickslot_add;
-
-	if (pos >= QUICKSLOT_MAX_NUM)
-		return false;
-
-	if (rSlot.type >= QUICKSLOT_TYPE_MAX_NUM)
-		return false;
-
-	for (uint8_t i = 0; i < QUICKSLOT_MAX_NUM; ++i)
-	{
-		if (rSlot.type == 0)
-			continue;
-		else if (m_quickslot[i].type == rSlot.type && m_quickslot[i].pos == rSlot.pos)
-			DelQuickslot(i);
-	}
-
-#ifdef ENABLE_EXTRA_INVENTORY
-	uint8_t type = rSlot.type == QUICKSLOT_TYPE_ITEM_EXTRA ? EXTRA_INVENTORY : INVENTORY;
-	TItemPos srcCell(type, rSlot.pos);
-#else
-	TItemPos srcCell(INVENTORY, rSlot.pos);
-#endif
-
-	switch (rSlot.type)
-	{
-#ifdef ENABLE_EXTRA_INVENTORY
-		case QUICKSLOT_TYPE_ITEM_EXTRA:
-			{
-				if (rSlot.pos >= EXTRA_INVENTORY_MAX_NUM)
-					return false;
-
-				break;
-			}
-#endif
-
-		case QUICKSLOT_TYPE_ITEM:
-			{
-				if (false == srcCell.IsDefaultInventoryPosition() && false == srcCell.IsBeltInventoryPosition())
-					return false;
-			}
-			break;
-
-		case QUICKSLOT_TYPE_SKILL:
-			if (rSlot.pos >= SKILL_MAX_NUM)
-				return false;
-			break;
-
-		case QUICKSLOT_TYPE_COMMAND:
-			break;
-
-		default:
-			return false;
-	}
-
-	m_quickslot[pos] = rSlot;
-	InventorySystem::SetQuickslot(GetEntityHandle(), pos, rSlot);
-
-	if (GetDesc())
-	{
-		pack_quickslot_add.header = HEADER_GC_QUICKSLOT_ADD;
-		pack_quickslot_add.pos = pos;
-		pack_quickslot_add.slot = m_quickslot[pos];
-
-		GetDesc()->Packet(&pack_quickslot_add, sizeof(pack_quickslot_add));
-	}
-
-	return true;
-}
-
-bool CHARACTER::DelQuickslot(uint8_t pos)
-{
-	packet_quickslot_del pack_quickslot_del;
-
-	if (pos >= QUICKSLOT_MAX_NUM)
-		return false;
-
-	memset(&m_quickslot[pos], 0, sizeof(TQuickslot));
-	InventorySystem::DelQuickslot(GetEntityHandle(), pos);
-
-	pack_quickslot_del.header = HEADER_GC_QUICKSLOT_DEL;
-	pack_quickslot_del.pos = pos;
-
-	if (GetDesc())
-		GetDesc()->Packet(&pack_quickslot_del, sizeof(pack_quickslot_del));
-
-	return true;
-}
-
-bool CHARACTER::SwapQuickslot(uint8_t a, uint8_t b)
-{
-	packet_quickslot_swap pack_quickslot_swap;
-
-	if (a >= QUICKSLOT_MAX_NUM || b >= QUICKSLOT_MAX_NUM)
-		return false;
-
-	const TQuickslot quickslot = m_quickslot[a];
-
-	m_quickslot[a] = m_quickslot[b];
-	m_quickslot[b] = quickslot;
-	InventorySystem::SwapQuickslot(GetEntityHandle(), a, b);
-
-	pack_quickslot_swap.header = HEADER_GC_QUICKSLOT_SWAP;
-	pack_quickslot_swap.pos = a;
-	pack_quickslot_swap.pos_to = b;
-
-	if (GetDesc())
-		GetDesc()->Packet(&pack_quickslot_swap, sizeof(pack_quickslot_swap));
-
-	return true;
-}
-
-void CHARACTER::ChainQuickslotItem(entt::entity item, uint8_t bType, uint8_t bOldPos)
-{
-	if (ItemSystem::IsDragonSoulItem(item))
-		return;
-
-	for (uint8_t i = 0; i < QUICKSLOT_MAX_NUM; ++i)
-	{
-		if (m_quickslot[i].type == bType && m_quickslot[i].pos == bOldPos)
-		{
-			TQuickslot slot;
-			slot.type = bType;
-			slot.pos = ItemSystem::GetItemCell(item);
-
-			SetQuickslot(i, slot);
-			break;
-		}
-	}
+    InventorySystem::SyncQuickslot(GetEntityHandle(), type, oldPos, newPos);
 }
 
 

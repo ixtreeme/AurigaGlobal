@@ -5829,7 +5829,6 @@ void CHARACTER::Initialize()
 
     memset(&m_points, 0, sizeof(m_points));
     memset(&m_pointsInstant, 0, sizeof(m_pointsInstant));
-    memset(&m_quickslot, 0, sizeof(m_quickslot));
 
     m_bCharType = CHAR_TYPE_MONSTER;
 

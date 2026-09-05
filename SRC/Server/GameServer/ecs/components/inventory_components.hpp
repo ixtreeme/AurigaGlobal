@@ -88,7 +88,8 @@ struct CostumeAttributeSelection {
 #endif
 
 struct QuickSlots {
-    std::array<TQuickslot, QUICKSLOT_MAX_NUM> slots;
+    std::array<TQuickslot, QUICKSLOT_MAX_NUM> slots {};
+    uint64_t revision { 0 };
 };
 
 struct SafeboxRef {

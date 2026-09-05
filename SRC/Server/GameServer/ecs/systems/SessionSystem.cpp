@@ -1,4 +1,5 @@
 #include "../../stdafx.h"
+#include "InventorySystem.hpp"
 #include <utility>
 #include "ViewSystem.hpp"
 #include "PointSystem.hpp"
@@ -322,7 +323,7 @@ void CHARACTER::CreatePlayerProto(TPlayerTable& tab)
     tab.sRandomSP = ecs::PointSystem::GetRandomSP(GetEntityHandle());
 
     for (int i = 0; i < QUICKSLOT_MAX_NUM; ++i)
-        tab.quickslot[i] = m_quickslot[i];
+        InventorySystem::GetQuickslot(GetEntityHandle(), i, tab.quickslot[i]);
 
     if (!m_stMobile.empty() && !*m_szMobileAuth)
         strlcpy(tab.szMobile, m_stMobile.c_str(), sizeof(tab.szMobile));
