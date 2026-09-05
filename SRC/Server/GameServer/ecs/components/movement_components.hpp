@@ -19,6 +19,8 @@ struct MovementState {
     bool isWalking;
     bool isNowWalking;
     bool staminaConsume;
+    // Player preference, independent of current/forced walking and movement ticks.
+    bool walkPreference { false };
 };
 
 struct MovementSpeed {

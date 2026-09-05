@@ -32,7 +32,7 @@ struct ExtraInventoryRuntimeComponent {
 
 struct CubeWindowComponent {
     std::array<entt::entity, CUBE_MAX_NUM> items;
-    LPCHARACTER pNpc { nullptr };
+    entt::entity npc { entt::null };
 
     CubeWindowComponent() { items.fill(entt::null); }
 };
@@ -46,7 +46,7 @@ struct DragonSoulInventoryComponent {
 
 struct DragonSoulRuntimeStateComponent {
     int32_t activeDeck { -1 };
-    LPENTITY pRefineWindowOpener { nullptr };
+    entt::entity refineWindowOpener { entt::null };
 };
 
 #ifdef __ATTR_TRANSFER_SYSTEM__

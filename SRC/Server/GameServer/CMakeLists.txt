@@ -107,8 +107,15 @@ if(WIN32)
 endif()
 add_test(NAME character_manager COMMAND CharacterManagerTests)
 
+add_executable(RefineWindowTests EXCLUDE_FROM_ALL
+    ${CMAKE_SOURCE_DIR}/tests/server/RefineWindowTests.cpp
+    ecs/systems/DragonSoulSystem.cpp
+)
+target_link_libraries(RefineWindowTests PRIVATE SERVER EnTT::EnTT)
+add_test(NAME refine_window COMMAND RefineWindowTests)
+
 if(ENABLE_ASAN AND EXISTS "${AURIGA_ASAN_RUNTIME_DLL}")
-    foreach(_asan_target GameServer ItemAttributeTests MountLifecycleTests SafeboxLifecycleTests ItemManagerLifecycleTests QuickslotTests PointCalculationTests CombatStateTests AffectLifecycleTests EventLifecycleTests CharacterManagerTests)
+    foreach(_asan_target GameServer ItemAttributeTests MountLifecycleTests SafeboxLifecycleTests ItemManagerLifecycleTests QuickslotTests PointCalculationTests CombatStateTests AffectLifecycleTests EventLifecycleTests CharacterManagerTests RefineWindowTests)
         add_custom_command(TARGET ${_asan_target} POST_BUILD
             COMMAND ${CMAKE_COMMAND} -E copy_if_different
                 "${AURIGA_ASAN_RUNTIME_DLL}"

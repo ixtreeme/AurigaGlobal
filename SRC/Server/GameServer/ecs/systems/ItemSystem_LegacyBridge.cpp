@@ -5,6 +5,7 @@
 #include "ActivitySystem.hpp"
 
 #include "ItemSystem.hpp"
+#include "SessionSystem.hpp"
 #include "InventorySystem.hpp"
 #include "CombatSystem.hpp"
 #include "MountSystem.hpp"
@@ -1251,9 +1252,7 @@ LPITEM CHARACTER::GetInventoryItem(uint16_t wCell) const
 #ifdef ENABLE_EXTRA_INVENTORY
 void CHARACTER::SetCubeNpc(entt::entity npcEntity)
 {
-    LPCHARACTER npc = ecs::LegacyCharOf(npcEntity);
-    if (auto* comp = EnsureCubeWindowComponent(GetEntityHandle()))
-        comp->pNpc = npc;
+    ecs::SessionSystem::SetCubeNPC(GetEntityHandle(), npcEntity);
 
 }
 
@@ -1267,10 +1266,7 @@ std::span<entt::entity> CHARACTER::GetCubeItem()
 
 bool CHARACTER::IsCubeOpen() const
 {
-    if (const auto* comp = TryGetCubeWindowComponent(GetEntityHandle()))
-        return comp->pNpc != nullptr;
-
-    return false;
+    return ecs::SessionSystem::IsCubeOpen(GetEntityHandle());
 }
 
 
@@ -2476,7 +2472,7 @@ bool CHARACTER::DropItem(TItemPos Cell,
 	if (!CanHandleItem())
 	{
 #ifdef TEXTS_IMPROVEMENT
-		if (nullptr != DragonSoulSystem::GetRefineWindowOpener(GetEntityHandle())) {
+		if (DragonSoulSystem::CanRefine(GetEntityHandle())) {
 			ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 232, "");
 		}
 #endif
@@ -2800,7 +2796,7 @@ bool CHARACTER::MoveItem(TItemPos Cell, TItemPos DestCell,
 	if (!CanHandleItem())
 	{
 #ifdef TEXTS_IMPROVEMENT
-		if (nullptr != DragonSoulSystem::GetRefineWindowOpener(GetEntityHandle())) {
+		if (DragonSoulSystem::CanRefine(GetEntityHandle())) {
 			ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 232, "");
 		}
 #endif
@@ -12569,7 +12565,7 @@ bool CHARACTER::DestroyItem(TItemPos Cell)
 	LPITEM item = nullptr;
 	if (!CanHandleItem()) {
 #ifdef TEXTS_IMPROVEMENT
-		if (nullptr != DragonSoulSystem::GetRefineWindowOpener(GetEntityHandle())) {
+		if (DragonSoulSystem::CanRefine(GetEntityHandle())) {
 			ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 232, "");
 		}
 #endif
@@ -12795,7 +12791,7 @@ bool CHARACTER::CanHandleItem(bool bSkipCheckRefine, bool bSkipObserver)
 		if (m_bUnderRefine)
 			return false;
 
-	if (IsCubeOpen() || nullptr != DragonSoulSystem::GetRefineWindowOpener(GetEntityHandle()))
+	if (IsCubeOpen() || DragonSoulSystem::CanRefine(GetEntityHandle()))
 		return false;
 
 #ifdef __ATTR_TRANSFER_SYSTEM__

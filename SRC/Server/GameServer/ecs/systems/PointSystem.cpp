@@ -984,7 +984,7 @@ void Change(entt::entity e, uint8_t type, int64_t amount, bool bAmount, bool bBr
 		{
 			// 3o�o 1oA�1I3a�! ���aA��I AIA� �?�a o1��
 			if (const auto* movement = g_registry.try_get<ecs::MovementState>(e))
-				ecs::MovementSystem::SetNowWalking(e, movement->isWalking);
+				ecs::MovementSystem::SetNowWalking(e, movement->walkPreference);
 		}
 
 		if (amount < 0 && val != 0) // ��1O�� o�3���3E�´U.

@@ -18,17 +18,8 @@ namespace quest
 {
 	ALUA(ds_open_refine_window)
 	{
-		// migrated from CHARACTER DragonSoul refine window
-		// TODO Phase 8: DragonSoulComponent
-		// DUAL-PATH: legacy only during migration window
-		const LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
-		if (nullptr == ch)
-		{
-			sys_err("NULL POINT ERROR");
-			return 0;
-		}
-
-		DragonSoulSystem::OpenRefineWindow(ch->GetEntityHandle(), CQuestManager::instance().GetCurrentNPCCharacterPtr());
+		const entt::entity character = CQuestManager::instance().GetCurrentPCEntity();
+		DragonSoulSystem::OpenRefineWindow(character, CQuestManager::instance().GetCurrentNPCEntity());
 		return 0;
 	}
 

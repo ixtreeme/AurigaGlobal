@@ -5,6 +5,11 @@
 
 namespace ecs::SessionSystem {
 
+bool IsSafeboxOpen(entt::entity character);
+void SetSafeboxOpen(entt::entity character, bool open);
+bool IsCubeOpen(entt::entity character);
+void SetCubeNPC(entt::entity character, entt::entity npc);
+
 int GetSafeboxSize(entt::entity character);
 bool SetSafeboxSize(entt::entity character, int size);
 bool SetSafeboxOpenPosition(entt::entity character);

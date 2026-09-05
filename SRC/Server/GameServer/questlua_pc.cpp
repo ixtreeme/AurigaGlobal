@@ -3769,7 +3769,7 @@ teleport_area:
 			const auto* cube = ECS_TryGet<ecs::CubeWindowComponent>(e);
 			if (ecs::SocialSystem::GetExchange(e) ||
 				(shop && (shop->currentShop || shop->myShop || shop->shopOwner != entt::null || shop->underRefine)) ||
-				(safebox && safebox->isOpening) || (cube && cube->pNpc))
+				(safebox && safebox->isOpening) || (cube && g_registry.valid(cube->npc)))
 			{
 				lua_pushboolean(L, 1);
 				return 1;
@@ -3883,7 +3883,7 @@ teleport_area:
 		const auto* cube = g_registry.try_get<ecs::CubeWindowComponent>(chEntity);
 		//PREVENT_TRADE_WINDOW
 		if ((safebox && safebox->isOpening) || ecs::SocialSystem::GetExchange(chEntity) ||
-			ecs::SocialSystem::GetMyShop(chEntity) || (cube && cube->pNpc))
+			ecs::SocialSystem::GetMyShop(chEntity) || (cube && g_registry.valid(cube->npc)))
 		{
 #ifdef TEXTS_IMPROVEMENT
 			ecs::ChatSystem::SendNew(chEntity, CHAT_TYPE_INFO, 294, "");

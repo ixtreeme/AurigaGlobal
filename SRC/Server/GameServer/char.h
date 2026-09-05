@@ -951,9 +951,9 @@ public:
 	// Bodies in MovementSystem.cpp.
 	bool			IsWalking() const;
 	bool			IsNowWalking() const;
-	void			SetWalking(bool bWalkFlag) { m_bWalking = bWalkFlag; }
+	void			SetWalking(bool bWalkFlag);
 	void			SetNowWalking(bool bWalkFlag);
-	void			ResetWalking() { SetNowWalking(m_bWalking); }
+	void			ResetWalking();
 
 	bool			Goto(int32_t x, int32_t y);	// �ٷ� �̵� ��Ű�� �ʰ� ��ǥ ��ġ�� BLENDING ��Ų��.
 	void			Stop();
@@ -1045,7 +1045,6 @@ protected:
 
 	uint32_t			m_dwStopTime;
 
-	bool			m_bWalking;
 	bool			m_bNowWalking;
 	bool			m_bStaminaConsume;
 	// End
@@ -2220,14 +2219,13 @@ public:
 
 		//PREVENT_TRADE_WINDOW
 public:
-	bool	IsOpenSafebox() const { return m_isOpenSafebox ? true : false; }
+	bool	IsOpenSafebox() const;
 	void 	SetOpenSafebox(bool b);
 
 	int		GetSafeboxLoadTime() const { return m_iSafeboxLoadTime; }
 	void	SetSafeboxLoadTime();
 	//END_PREVENT_TRADE_WINDOW
 private:
-	bool	m_isOpenSafebox;
 
 public:
 	int		GetSkillPowerByLevel(int level, bool bMob = false) const;

@@ -56,7 +56,7 @@ bool IsTradeWindowOpen(entt::entity owner)
     const auto* cube = g_registry.try_get<ecs::CubeWindowComponent>(owner);
     return ecs::SocialSystem::GetExchange(owner) || ecs::SocialSystem::GetMyShop(owner)
         || ecs::SocialSystem::GetShopOwner(owner) != entt::null
-        || (safebox && safebox->isOpening) || (cube && cube->pNpc);
+        || (safebox && safebox->isOpening) || (cube && g_registry.valid(cube->npc));
 }
 
 uint32_t PetSkin(entt::entity owner)

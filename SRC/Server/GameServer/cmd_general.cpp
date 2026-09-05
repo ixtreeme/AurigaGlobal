@@ -8,6 +8,7 @@
 #include "ecs/systems/MountSystem.hpp"
 #include "ecs/systems/SkillSystem.hpp"
 #include "ecs/systems/MovementSystem.hpp"
+#include "ecs/systems/SessionSystem.hpp"
 #include "ecs/systems/NetworkSyncSystem.hpp"
 #include "ecs/AIHelpers.hpp"
 #ifdef __FreeBSD__
@@ -51,6 +52,19 @@
 #include "shop.h"
 #include "shop_manager.h"
 #include <string_view>
+#include <charconv>
+
+namespace {
+template <typename T>
+bool ParseCommandNumber(std::string_view input, T& value)
+{
+    if (input.empty())
+        return false;
+    const auto result = std::from_chars(input.data(), input.data() + input.size(), value);
+    return result.ec == std::errc{} && result.ptr == input.data() + input.size();
+}
+}
+
 #ifdef __NEWPET_SYSTEM__
 #include "New_PetSystem.h"
 #endif
@@ -366,7 +380,7 @@ EVENTINFO(TimedEventInfo)
 	char		szReason[MAX_REASON_LEN];
 
 	TimedEventInfo()
-	: ch()
+	: ch(entt::null)
 	, subcmd( 0 )
 	, left_second( 0 )
 	{
@@ -599,21 +613,25 @@ EVENTFUNC(timed_event)
 		return 0;
 	}
 
-	LPCHARACTER	ch = ecs::LegacyCharOf(info->ch);
-	const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
-
-	if (ch == nullptr) { // <Factor>
+	const entt::entity chEntity = info->ch;
+	if (!ecs::PlayerRuntime::IsPC(chEntity))
 		return 0;
-	}
 	if (ecs::PlayerRuntime::GetCharEvent(chEntity, ecs::PlayerRuntime::CharEvent::Timed) != event)
         return 0;
 	LPDESC d = ecs::PlayerRuntime::GetDesc(chEntity);
     if (!d)
+    {
+        ecs::PlayerRuntime::SetCharEvent(chEntity, ecs::PlayerRuntime::CharEvent::Timed, nullptr);
         return 0;
+    }
 
 	if (info->left_second <= 0)
 	{
 		ecs::PlayerRuntime::SetCharEvent(chEntity, ecs::PlayerRuntime::CharEvent::Timed, nullptr);
+		// Login logging and Disconnect still require the legacy session shell.
+		LPCHARACTER ch = ecs::LegacyCharOf(chEntity);
+		if (!ch)
+			return 0;
 
 		switch (info->subcmd)
 		{
@@ -669,7 +687,8 @@ EVENTFUNC(timed_event)
 
 ACMD(do_cmd)
 {
-	LPCHARACTER ch = ecs::LegacyCharOf(character);
+	if (!ecs::PlayerRuntime::IsPC(character) || !ecs::PlayerRuntime::GetDesc(character))
+		return;
 	if (ecs::PlayerRuntime::GetCharEvent(character, ecs::PlayerRuntime::CharEvent::Timed))
 	{
 #ifdef TEXTS_IMPROVEMENT
@@ -698,7 +717,7 @@ ACMD(do_cmd)
 
 	int nExitLimitTime = 10;
 
-	if (ch->IsHack(false, true, nExitLimitTime) && (!ch->GetWarMap() || ch->GetWarMap()->GetType() == GUILD_WAR_TYPE_FLAG)) {
+	if (ecs::PlayerRuntime::IsHack(character, false, true, nExitLimitTime) && (!ecs::SocialSystem::GetWarMap(character) || ecs::SocialSystem::GetWarMap(character)->GetType() == GUILD_WAR_TYPE_FLAG)) {
 		return;
 	}
 
@@ -711,13 +730,13 @@ ACMD(do_cmd)
 				TimedEventInfo* info = AllocEventInfo<TimedEventInfo>();
 
 				{
-					if (ch->IsPosition(POS_FIGHTING))
+					if (ecs::PlayerRuntime::GetPosition(character) == POS_FIGHTING)
 						info->left_second = 10;
 					else
 						info->left_second = 3;
 				}
 
-				info->ch		= ch->GetEntityHandle();
+				info->ch		= character;
 				info->subcmd		= subcmd;
 				strlcpy(info->szReason, argument, sizeof(info->szReason));
 
@@ -1446,7 +1465,10 @@ ACMD(do_stat_reset)
 
 ACMD(do_stat_minus)
 {
-	LPCHARACTER ch = ecs::LegacyCharOf(character);
+	if (!ecs::PlayerRuntime::IsPC(character))
+		return;
+	if (ecs::PlayerRuntime::GetJob(character) >= JOB_MAX_NUM)
+		return;
 	char arg1[256];
 	one_argument(argument, arg1, sizeof(arg1));
 
@@ -1469,9 +1491,9 @@ ACMD(do_stat_minus)
 		if (ecs::PointSystem::GetReal(character, POINT_ST) <= JobInitialPoints[ecs::PlayerRuntime::GetJob(character)].st)
 			return;
 
-		ch->SetRealPoint(POINT_ST, ecs::PointSystem::GetReal(character, POINT_ST) - 1);
-		ch->SetPoint(POINT_ST, ecs::PointSystem::Get(character, POINT_ST) - 1);
-		ch->ComputePoints();
+		ecs::PointSystem::SetReal(character, POINT_ST, ecs::PointSystem::GetReal(character, POINT_ST) - 1);
+		ecs::PointSystem::Set(character, POINT_ST, ecs::PointSystem::Get(character, POINT_ST) - 1);
+		ecs::PointSystem::Compute(character);
 		ecs::PointSystem::Change(character, POINT_ST, 0);
 	}
 	else if (!strcmp(arg1, "dx"))
@@ -1479,9 +1501,9 @@ ACMD(do_stat_minus)
 		if (ecs::PointSystem::GetReal(character, POINT_DX) <= JobInitialPoints[ecs::PlayerRuntime::GetJob(character)].dx)
 			return;
 
-		ch->SetRealPoint(POINT_DX, ecs::PointSystem::GetReal(character, POINT_DX) - 1);
-		ch->SetPoint(POINT_DX, ecs::PointSystem::Get(character, POINT_DX) - 1);
-		ch->ComputePoints();
+		ecs::PointSystem::SetReal(character, POINT_DX, ecs::PointSystem::GetReal(character, POINT_DX) - 1);
+		ecs::PointSystem::Set(character, POINT_DX, ecs::PointSystem::Get(character, POINT_DX) - 1);
+		ecs::PointSystem::Compute(character);
 		ecs::PointSystem::Change(character, POINT_DX, 0);
 	}
 	else if (!strcmp(arg1, "ht"))
@@ -1489,9 +1511,9 @@ ACMD(do_stat_minus)
 		if (ecs::PointSystem::GetReal(character, POINT_HT) <= JobInitialPoints[ecs::PlayerRuntime::GetJob(character)].ht)
 			return;
 
-		ch->SetRealPoint(POINT_HT, ecs::PointSystem::GetReal(character, POINT_HT) - 1);
-		ch->SetPoint(POINT_HT, ecs::PointSystem::Get(character, POINT_HT) - 1);
-		ch->ComputePoints();
+		ecs::PointSystem::SetReal(character, POINT_HT, ecs::PointSystem::GetReal(character, POINT_HT) - 1);
+		ecs::PointSystem::Set(character, POINT_HT, ecs::PointSystem::Get(character, POINT_HT) - 1);
+		ecs::PointSystem::Compute(character);
 		ecs::PointSystem::Change(character, POINT_HT, 0);
 		ecs::PointSystem::Change(character, POINT_MAX_HP, 0);
 	}
@@ -1500,9 +1522,9 @@ ACMD(do_stat_minus)
 		if (ecs::PointSystem::GetReal(character, POINT_IQ) <= JobInitialPoints[ecs::PlayerRuntime::GetJob(character)].iq)
 			return;
 
-		ch->SetRealPoint(POINT_IQ, ecs::PointSystem::GetReal(character, POINT_IQ) - 1);
-		ch->SetPoint(POINT_IQ, ecs::PointSystem::Get(character, POINT_IQ) - 1);
-		ch->ComputePoints();
+		ecs::PointSystem::SetReal(character, POINT_IQ, ecs::PointSystem::GetReal(character, POINT_IQ) - 1);
+		ecs::PointSystem::Set(character, POINT_IQ, ecs::PointSystem::Get(character, POINT_IQ) - 1);
+		ecs::PointSystem::Compute(character);
 		ecs::PointSystem::Change(character, POINT_IQ, 0);
 		ecs::PointSystem::Change(character, POINT_MAX_SP, 0);
 	}
@@ -1511,12 +1533,13 @@ ACMD(do_stat_minus)
 
 	ecs::PointSystem::Change(character, POINT_STAT, +1);
 	ecs::PointSystem::Change(character, POINT_STAT_RESET_COUNT, -1);
-	ch->ComputePoints();
+	ecs::PointSystem::Compute(character);
 }
 
 ACMD(do_stat)
 {
-	LPCHARACTER ch = ecs::LegacyCharOf(character);
+	if (!ecs::PlayerRuntime::IsPC(character))
+		return;
 	char arg1[256];
 	one_argument(argument, arg1, sizeof(arg1));
 
@@ -1550,9 +1573,9 @@ ACMD(do_stat)
 	if (ecs::PointSystem::GetReal(character, idx) >= MAX_STAT)
 		return;
 
-	ch->SetRealPoint(idx, ecs::PointSystem::GetReal(character, idx) + 1);
-	ch->SetPoint(idx, ecs::PointSystem::Get(character, idx) + 1);
-	ch->ComputePoints();
+	ecs::PointSystem::SetReal(character, idx, ecs::PointSystem::GetReal(character, idx) + 1);
+	ecs::PointSystem::Set(character, idx, ecs::PointSystem::Get(character, idx) + 1);
+	ecs::PointSystem::Compute(character);
 	ecs::PointSystem::Change(character, idx, 0);
 
 	if (idx == POINT_IQ)
@@ -1565,7 +1588,7 @@ ACMD(do_stat)
 	}
 
 	ecs::PointSystem::Change(character, POINT_STAT, -1);
-	ch->ComputePoints();
+	ecs::PointSystem::Compute(character);
 }
 
 #ifdef ENABLE_PVP_ADVANCED
@@ -1576,12 +1599,10 @@ const char* szTableStaticPvP[] = {BLOCK_CHANGEITEM, BLOCK_BUFF, BLOCK_POTION, BL
 
 ACMD(do_pvp)
 {
-	LPCHARACTER ch = ecs::LegacyCharOf(character);
-
-	if (!ch)
+	if (!ecs::PlayerRuntime::IsPC(character))
 		return;
 
-	if (ch->GetArena() != nullptr || CArenaManager::instance().IsArenaMap(ecs::PlayerRuntime::GetMapIndex(character)) == true)
+	if (ecs::PlayerRuntime::GetArena(character) != nullptr || CArenaManager::instance().IsArenaMap(ecs::PlayerRuntime::GetMapIndex(character)) == true)
 	{
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 303, "");
@@ -1595,22 +1616,15 @@ ACMD(do_pvp)
 
 	uint32_t vid = 0;
 	str_to_number(vid, arg1);
-	LPCHARACTER pkVictim = CHARACTER_MANAGER::instance().Find(vid);
-	const entt::entity victim = pkVictim ? pkVictim->GetEntityHandle() : entt::null;
+	const entt::entity victim = CHARACTER_MANAGER::instance().FindEntity(vid);
 
-	//// Fake PC / non-real target => ignore
-	//if (pkVictim->IsFakePlayer() || !ecs::PlayerRuntime::GetDesc(((pkVictim) ? (pkVictim)->GetEntityHandle() : entt::null)))
-	//{
-	//	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "Nem lehet PVP-t kezelni klónnal.");
-	//	return;
-	//}
-	if (!pkVictim)
+	if (!ecs::PlayerRuntime::IsPC(victim))
 		return;
 
 	if (ecs::PlayerRuntime::IsNPC(victim))
 		return;
 
-	if (pkVictim->GetArena() != nullptr) {
+	if (ecs::PlayerRuntime::GetArena(victim) != nullptr) {
 		return;
 	}
 
@@ -1651,8 +1665,8 @@ ACMD(do_pvp)
 			return;
 		}
 
-		ch->SetDuel("IsFight", 1);
-		pkVictim->SetDuel("IsFight", 1);
+		ecs::PlayerRuntime::SetDuelOption(character, "IsFight", 1);
+		ecs::PlayerRuntime::SetDuelOption(victim, "IsFight", 1);
 
 		if (chA_nBetMoney > 0 && chA_nBetMoney > 0)
 		{
@@ -1734,17 +1748,17 @@ ACMD(do_pvp)
 
 	if (*arg1 && *arg2 && *arg3 && *arg4 && *arg5 && *arg6 && *arg7 && *arg8 && *arg9 && *arg10)
 	{
-		ch->SetDuel("BlockChangeItem", m_BlockChangeItem);			ch->SetDuel("BlockBuff", m_BlockBuff);
-		ch->SetDuel("BlockPotion", m_BlockPotion);					ch->SetDuel("BlockRide", m_BlockRide);
-		ch->SetDuel("BlockPet", m_BlockPet);						ch->SetDuel("BlockPoly", m_BlockPoly);
-		ch->SetDuel("BlockParty", m_BlockParty);					ch->SetDuel("BlockExchange", m_BlockExchange);
-		ch->SetDuel("BetMoney", m_BetMoney);
+		ecs::PlayerRuntime::SetDuelOption(character, "BlockChangeItem", m_BlockChangeItem);			ecs::PlayerRuntime::SetDuelOption(character, "BlockBuff", m_BlockBuff);
+		ecs::PlayerRuntime::SetDuelOption(character, "BlockPotion", m_BlockPotion);					ecs::PlayerRuntime::SetDuelOption(character, "BlockRide", m_BlockRide);
+		ecs::PlayerRuntime::SetDuelOption(character, "BlockPet", m_BlockPet);						ecs::PlayerRuntime::SetDuelOption(character, "BlockPoly", m_BlockPoly);
+		ecs::PlayerRuntime::SetDuelOption(character, "BlockParty", m_BlockParty);					ecs::PlayerRuntime::SetDuelOption(character, "BlockExchange", m_BlockExchange);
+		ecs::PlayerRuntime::SetDuelOption(character, "BetMoney", m_BetMoney);
 
-		pkVictim->SetDuel("BlockChangeItem", m_BlockChangeItem);	pkVictim->SetDuel("BlockBuff", m_BlockBuff);
-		pkVictim->SetDuel("BlockPotion", m_BlockPotion);			pkVictim->SetDuel("BlockRide", m_BlockRide);
-		pkVictim->SetDuel("BlockPet", m_BlockPet);					pkVictim->SetDuel("BlockPoly", m_BlockPoly);
-		pkVictim->SetDuel("BlockParty", m_BlockParty);				pkVictim->SetDuel("BlockExchange", m_BlockExchange);
-		pkVictim->SetDuel("BetMoney", m_BetMoney);
+		ecs::PlayerRuntime::SetDuelOption(victim, "BlockChangeItem", m_BlockChangeItem);	ecs::PlayerRuntime::SetDuelOption(victim, "BlockBuff", m_BlockBuff);
+		ecs::PlayerRuntime::SetDuelOption(victim, "BlockPotion", m_BlockPotion);			ecs::PlayerRuntime::SetDuelOption(victim, "BlockRide", m_BlockRide);
+		ecs::PlayerRuntime::SetDuelOption(victim, "BlockPet", m_BlockPet);					ecs::PlayerRuntime::SetDuelOption(victim, "BlockPoly", m_BlockPoly);
+		ecs::PlayerRuntime::SetDuelOption(victim, "BlockParty", m_BlockParty);				ecs::PlayerRuntime::SetDuelOption(victim, "BlockExchange", m_BlockExchange);
+		ecs::PlayerRuntime::SetDuelOption(victim, "BetMoney", m_BetMoney);
 
 		CPVPManager::instance().Insert(character, victim);
 	}
@@ -1768,22 +1782,15 @@ ACMD(do_pvp_advanced)
 
 	uint32_t vid = 0;
 	str_to_number(vid, arg1);
-	LPCHARACTER pkVictim = CHARACTER_MANAGER::instance().Find(vid);
-	const entt::entity victim = pkVictim ? pkVictim->GetEntityHandle() : entt::null;
+	const entt::entity victim = CHARACTER_MANAGER::instance().FindEntity(vid);
 
-	// Fake PC / non-real target => ignore
-	//if (pkVictim->IsFakePlayer() || !ecs::PlayerRuntime::GetDesc(((pkVictim) ? (pkVictim)->GetEntityHandle() : entt::null)))
-	//{
-	//	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "Nem lehet PVP-t kezelni klónnal.");
-	//	return;
-	//}
-	if (!pkVictim)
+	if (!ecs::PlayerRuntime::IsPC(victim))
 		return;
 
 	if (ecs::PlayerRuntime::IsNPC(victim))
 		return;
 
-	if (pkVictim->GetArena() != nullptr) {
+	if (ecs::PlayerRuntime::GetArena(victim) != nullptr) {
 		return;
 	}
 
@@ -2113,7 +2120,8 @@ ACMD(do_mall_close)
 
 ACMD(do_ungroup)
 {
-	LPCHARACTER ch = ecs::LegacyCharOf(character);
+	if (!ecs::PlayerRuntime::IsPC(character))
+		return;
 	if (!ecs::SocialSystem::GetParty(character))
 		return;
 
@@ -2125,7 +2133,7 @@ ACMD(do_ungroup)
 		return;
 	}
 
-	if (ch->GetDungeon())
+	if (ecs::SocialSystem::GetDungeon(character))
 	{
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 202, "");
@@ -2145,9 +2153,7 @@ ACMD(do_ungroup)
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 215, "");
 #endif
-		//pParty->SendPartyRemoveOneToAll(ch);
 		pParty->Quit((ecs::PlayerRuntime::GetPlayerID(character)));
-		//pParty->SendPartyRemoveAllToOne(ch);
 	}
 }
 
@@ -2163,16 +2169,18 @@ ACMD(do_close_shop)
 
 ACMD(do_set_walk_mode)
 {
-	LPCHARACTER ch = ecs::LegacyCharOf(character);
-	ch->SetNowWalking(true);
-	ch->SetWalking(true);
+	if (!ecs::PlayerRuntime::IsPC(character))
+		return;
+	ecs::MovementSystem::SetWalkingPreference(character, true);
+	ecs::MovementSystem::SetNowWalking(character, true);
 }
 
 ACMD(do_set_run_mode)
 {
-	LPCHARACTER ch = ecs::LegacyCharOf(character);
-	ch->SetNowWalking(false);
-	ch->SetWalking(false);
+	if (!ecs::PlayerRuntime::IsPC(character))
+		return;
+	ecs::MovementSystem::SetWalkingPreference(character, false);
+	ecs::MovementSystem::SetNowWalking(character, false);
 }
 
 ACMD(do_war)
@@ -2778,7 +2786,11 @@ ACMD(do_gift)
 
 #ifdef __NEWPET_SYSTEM__
 ACMD(do_CubePetAdd) {
-	LPCHARACTER ch = ecs::LegacyCharOf(character);
+	if (!ecs::PlayerRuntime::IsPC(character))
+		return;
+	auto* pet = ecs::PlayerRuntime::GetNewPetSystem(character);
+	if (!pet)
+		return;
 
 	int pos = 0;
 	int invpos = 0;
@@ -2800,8 +2812,8 @@ ACMD(do_CubePetAdd) {
 			0 == arg3[0] || !isdigit(*arg3))
 			return;
 
-		str_to_number(pos, arg2);
-		str_to_number(invpos, arg3);
+		if (!ParseCommandNumber(arg2, pos) || !ParseCommandNumber(arg3, invpos))
+			return;
 
 	}
 	break;
@@ -2810,27 +2822,30 @@ ACMD(do_CubePetAdd) {
 		return;
 	}
 
-	if (ch->GetNewPetSystem()->IsActivePet())
-		ch->GetNewPetSystem()->SetItemCube(pos, invpos);
+	if (pet->IsActivePet())
+		pet->SetItemCube(pos, invpos);
 	else
 		return;
 
 }
 
 ACMD(do_PetSkill) {
-	LPCHARACTER ch = ecs::LegacyCharOf(character);
+	if (!ecs::PlayerRuntime::IsPC(character))
+		return;
+	auto* pet = ecs::PlayerRuntime::GetNewPetSystem(character);
+	if (!pet)
+		return;
 	char arg1[256];
 	one_argument(argument, arg1, sizeof(arg1));
 	if (!*arg1)
 		return;
 
 	uint32_t skillslot = 0;
-	str_to_number(skillslot, arg1);
-	if (skillslot > 3 || skillslot < 0)
+	if (!ParseCommandNumber(arg1, skillslot) || skillslot > 3)
 		return;
 
-	if (ch->GetNewPetSystem()->IsActivePet()) {
-		ch->GetNewPetSystem()->DoPetSkill(skillslot);
+	if (pet->IsActivePet()) {
+		pet->DoPetSkill(skillslot);
 	}
 #ifdef TEXTS_IMPROVEMENT
 	else {
@@ -2841,33 +2856,42 @@ ACMD(do_PetSkill) {
 
 #ifdef ENABLE_NEW_PET_EDITS
 ACMD(do_PetIncreaseSkill) {
-	LPCHARACTER ch = ecs::LegacyCharOf(character);
+	if (!ecs::PlayerRuntime::IsPC(character))
+		return;
+	auto* pet = ecs::PlayerRuntime::GetNewPetSystem(character);
+	if (!pet)
+		return;
 	char arg1[256], arg2[256];
 	two_arguments(argument, arg1, sizeof(arg1), arg2, sizeof(arg2));
 
 	if ((!*arg1) || (!*arg2))
 		return;
 
-	int iSlot = atoi(arg1), iType = atoi(arg2);
-	if (!ch->GetNewPetSystem())
+	int iSlot = 0, iType = 0;
+	if (!ParseCommandNumber(arg1, iSlot) || !ParseCommandNumber(arg2, iType))
 		return;
 
-	if (ch->GetNewPetSystem()->IsActivePet())
-		ch->GetNewPetSystem()->IncreasePetSkill(iSlot, iType);
+	if (pet->IsActivePet())
+		pet->IncreasePetSkill(iSlot, iType);
 }
 #endif
 
 ACMD(do_FeedCubePet) {
-	LPCHARACTER ch = ecs::LegacyCharOf(character);
+	if (!ecs::PlayerRuntime::IsPC(character))
+		return;
+	auto* pet = ecs::PlayerRuntime::GetNewPetSystem(character);
+	if (!pet)
+		return;
 	char arg1[256];
 	one_argument(argument, arg1, sizeof(arg1));
 	if (!*arg1)
 		return;
 
 	uint32_t feedtype = 0;
-	str_to_number(feedtype, arg1);
-	if (ch->GetNewPetSystem()->IsActivePet()) {
-		ch->GetNewPetSystem()->ItemCubeFeed(feedtype);
+	if (!ParseCommandNumber(arg1, feedtype))
+		return;
+	if (pet->IsActivePet()) {
+		pet->ItemCubeFeed(feedtype);
 	}
 #ifdef TEXTS_IMPROVEMENT
 	else {
@@ -2877,19 +2901,25 @@ ACMD(do_FeedCubePet) {
 }
 
 ACMD(do_PetEvo) {
-	LPCHARACTER ch = ecs::LegacyCharOf(character);
+	if (!ecs::PlayerRuntime::IsPC(character))
+		return;
+	auto* pet = ecs::PlayerRuntime::GetNewPetSystem(character);
+	if (!pet)
+		return;
 
-	if (ecs::SocialSystem::GetExchange(character) || ch->GetMyShop() || ch->GetShopOwner() || ch->IsOpenSafebox() || ch->IsCubeOpen()) {
+	if (ecs::SocialSystem::GetExchange(character) || ecs::SocialSystem::GetMyShop(character) || ecs::SocialSystem::GetShopOwner(character) != entt::null || ecs::SessionSystem::IsSafeboxOpen(character) || ecs::SessionSystem::IsCubeOpen(character)) {
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 730, "");
 #endif
 		return;
 	}
-	if (ch->GetNewPetSystem()->IsActivePet()) {
-		int tmpevo = ch->GetNewPetSystem()->GetEvolution();
-		if (((tmpevo == 0) && (ch->GetNewPetSystem()->GetLevel() >= 40)) || ((tmpevo == 1) && (ch->GetNewPetSystem()->GetLevel() >= 60)) || ((tmpevo == 2) && (ch->GetNewPetSystem()->GetLevel() >= 80))) {
+	if (!ecs::PlayerRuntime::GetDesc(character))
+		return;
+	if (pet->IsActivePet()) {
+		int tmpevo = pet->GetEvolution();
+		if (((tmpevo == 0) && (pet->GetLevel() >= 40)) || ((tmpevo == 1) && (pet->GetLevel() >= 60)) || ((tmpevo == 2) && (pet->GetLevel() >= 80))) {
 #ifdef ENABLE_NEW_PET_EDITS
-			if (ch->GetNewPetSystem()->GetExp() < ch->GetNewPetSystem()->GetNextExpFromMob()) {
+			if (pet->GetExp() < pet->GetNextExpFromMob()) {
 #ifdef TEXTS_IMPROVEMENT
 				ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 59, "");
 #endif
@@ -2897,9 +2927,13 @@ ACMD(do_PetEvo) {
 			}
 #endif
 
+			if (!ITEM_MANAGER::instance().GetTable(55003 + tmpevo)
+				|| !ITEM_MANAGER::instance().GetTable(27992 + tmpevo)
+				|| !ITEM_MANAGER::instance().GetTable(86056 + tmpevo))
+				return;
 			bool bRet = false;
 			uint32_t dwItemVnum1 = 55003 + tmpevo;
-			if (ch->CountSpecifyItem(dwItemVnum1) < 10) {
+			if (ItemSystem::CountItem(character, dwItemVnum1) < 10) {
 #ifdef TEXTS_IMPROVEMENT
 				ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 60, "%d#%s", 10,
 #ifdef ENABLE_MULTI_NAMES
@@ -2913,7 +2947,7 @@ ACMD(do_PetEvo) {
 			}
 
 			uint32_t dwItemVnum2 = 27992 + tmpevo;
-			if (!bRet && ch->CountSpecifyItem(dwItemVnum2) < 10) {
+			if (!bRet && ItemSystem::CountItem(character, dwItemVnum2) < 10) {
 #ifdef TEXTS_IMPROVEMENT
 				ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 60, "%d#%s", 10,
 #ifdef ENABLE_MULTI_NAMES
@@ -2927,7 +2961,7 @@ ACMD(do_PetEvo) {
 			}
 
 			uint32_t dwItemVnum3 = 86056 + tmpevo;
-			if (!bRet && ch->CountSpecifyItem(dwItemVnum3) < 3) {
+			if (!bRet && ItemSystem::CountItem(character, dwItemVnum3) < 3) {
 #ifdef TEXTS_IMPROVEMENT
 				ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 60, "%d#%s", 3,
 #ifdef ENABLE_MULTI_NAMES
@@ -2943,10 +2977,13 @@ ACMD(do_PetEvo) {
 			if (bRet)
 				return;
 
-			ch->RemoveSpecifyItem(dwItemVnum1, 10);
-			ch->RemoveSpecifyItem(dwItemVnum2, 10);
-			ch->RemoveSpecifyItem(dwItemVnum3, 3);
-			ch->GetNewPetSystem()->IncreasePetEvolution();
+			if (!ItemSystem::RemoveSpecifyItemEcs(character, dwItemVnum1, 10)
+				|| !ItemSystem::RemoveSpecifyItemEcs(character, dwItemVnum2, 10)
+				|| !ItemSystem::RemoveSpecifyItemEcs(character, dwItemVnum3, 3))
+				return;
+			// Consumption can run callbacks; do not reuse a deleted/replaced subsystem.
+			if (ecs::PlayerRuntime::GetNewPetSystem(character) == pet)
+				pet->IncreasePetEvolution();
 		}
 		else {
 #ifdef TEXTS_IMPROVEMENT
@@ -3035,7 +3072,7 @@ namespace
 
 	static bool CanUseStoneCraft(entt::entity chEntity, entt::entity npcEntity)
 	{
-		if (chEntity == entt::null || npcEntity == entt::null)
+		if (!ecs::PlayerRuntime::IsPC(chEntity) || !ecs::PlayerRuntime::IsValid(npcEntity))
 			return false;
 
 		if (ecs::PlayerRuntime::GetRaceNum(npcEntity) != STONE_CRAFT_NPC_VNUM)
@@ -3044,13 +3081,11 @@ namespace
 	if (CombatSystem::IsDead(chEntity) || CombatSystem::IsStun(chEntity) || ecs::PlayerRuntime::IsObserverMode(chEntity))
 			return false;
 
-		// IsOpenSafebox and IsCubeOpen have no entity form; one resolve for the
-		// pair rather than two, and only on the branch that needs them.
-		LPCHARACTER ch = ecs::LegacyCharOf(chEntity);
 		if (ecs::SocialSystem::GetExchange(chEntity)
 			|| ecs::SocialSystem::GetMyShop(chEntity)
 			|| ecs::SocialSystem::GetShopOwner(chEntity) != entt::null
-			|| (ch && (ch->IsOpenSafebox() || ch->IsCubeOpen())))
+			|| ecs::SessionSystem::IsSafeboxOpen(chEntity)
+			|| ecs::SessionSystem::IsCubeOpen(chEntity))
 			return false;
 
 		const int32_t distance = DISTANCE_APPROX(ecs::PlayerRuntime::GetX(chEntity) - ecs::PlayerRuntime::GetX(npcEntity), ecs::PlayerRuntime::GetY(chEntity) - ecs::PlayerRuntime::GetY(npcEntity));
@@ -3063,7 +3098,8 @@ namespace
 
 ACMD(do_stonecraft)
 {
-	LPCHARACTER ch = ecs::LegacyCharOf(character);
+	if (!ecs::PlayerRuntime::IsPC(character))
+		return;
 	char arg1[256];
 	char arg2[256];
 
@@ -3105,7 +3141,7 @@ ACMD(do_stonecraft)
 			return;
 		}
 
-		const int materialCount = ch->CountSpecifyItemRenewal(materialVnum);
+		const int materialCount = ItemSystem::CountItemRenewal(character, materialVnum);
 		if (materialCount < STONE_CRAFT_NEED_COUNT)
 		{
 			ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "Not enough stone.");
@@ -3119,7 +3155,7 @@ ACMD(do_stonecraft)
 			return;
 		}
 
-		ch->RemoveSpecifyItem(materialVnum, STONE_CRAFT_NEED_COUNT, true);
+		ItemSystem::RemoveSpecifyItemEcs(character, materialVnum, STONE_CRAFT_NEED_COUNT, true);
 		ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "Craft successful.");
 		return;
 	}
@@ -3150,7 +3186,7 @@ ACMD(do_stonecraft)
 		for (size_t i = 0; i < sizeof(stoneVnums) / sizeof(stoneVnums[0]); ++i)
 		{
 			const uint32_t materialVnum = stoneVnums[i];
-			const int materialCount = ch->CountSpecifyItemRenewal(materialVnum);
+			const int materialCount = ItemSystem::CountItemRenewal(character, materialVnum);
 			const int craftCount = materialCount / STONE_CRAFT_NEED_COUNT;
 
 			if (craftCount > 0)
@@ -3175,11 +3211,11 @@ ACMD(do_stonecraft)
 		for (size_t i = 0; i < sizeof(stoneVnums) / sizeof(stoneVnums[0]); ++i)
 		{
 			const uint32_t materialVnum = stoneVnums[i];
-			const int materialCount = ch->CountSpecifyItemRenewal(materialVnum);
+			const int materialCount = ItemSystem::CountItemRenewal(character, materialVnum);
 			const int craftCount = materialCount / STONE_CRAFT_NEED_COUNT;
 
 			if (craftCount > 0)
-				ch->RemoveSpecifyItem(materialVnum, craftCount * STONE_CRAFT_NEED_COUNT, true);
+				ItemSystem::RemoveSpecifyItemEcs(character, materialVnum, craftCount * STONE_CRAFT_NEED_COUNT, true);
 		}
 
 		ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "Craft successful: You got %d items.", totalCrafted);
@@ -3500,8 +3536,9 @@ ACMD(do_dice)
 #ifdef ENABLE_NEWSTUFF
 ACMD(do_click_safebox)
 {
-	LPCHARACTER ch = ecs::LegacyCharOf(character);
-	if (ch->GetDungeon() || ch->GetWarMap())
+	if (!ecs::PlayerRuntime::IsPC(character))
+		return;
+	if (ecs::SocialSystem::GetDungeon(character) || ecs::SocialSystem::GetWarMap(character))
 	{
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 731, "");
@@ -3509,7 +3546,7 @@ ACMD(do_click_safebox)
 		return;
 	}
 
-	ch->SetSafeboxOpenPosition();
+	ecs::SessionSystem::SetSafeboxOpenPosition(character);
 	ecs::ChatSystem::Send(character, CHAT_TYPE_COMMAND, "ShowMeSafeboxPassword");
 }
 ACMD(do_force_logout)
@@ -3687,7 +3724,8 @@ ACMD(do_gaya_system)
 #ifdef __ENABLE_RANGE_ALCHEMY__
 ACMD(do_extend_range_npc)
 {
-	LPCHARACTER ch = ecs::LegacyCharOf(character);
+	if (!ecs::PlayerRuntime::IsPC(character))
+		return;
 	char arg1[256];
 	one_argument(argument, arg1, sizeof(arg1));
 
@@ -3701,7 +3739,7 @@ ACMD(do_extend_range_npc)
 	if (CombatSystem::IsDead(character))
 		return;
 
-	if (CombatSystem::IsDead(character) || ecs::SocialSystem::GetExchange(character) || ch->GetMyShop() || ch->IsOpenSafebox() || ch->IsCubeOpen())
+	if (CombatSystem::IsDead(character) || ecs::SocialSystem::GetExchange(character) || ecs::SocialSystem::GetMyShop(character) || ecs::SessionSystem::IsSafeboxOpen(character) || ecs::SessionSystem::IsCubeOpen(character))
 	{
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 735, "");
@@ -3714,7 +3752,7 @@ ACMD(do_extend_range_npc)
 	if(!shop)
 		return;
 
-	ch->SetShopOwner(character);
+	ecs::SocialSystem::SetShopOwner(character, character);
 	shop->AddGuest(character, 0, false);
 
 }
@@ -3724,8 +3762,9 @@ ACMD(do_extend_range_npc)
 
 #ifdef __ENABLE_REFINE_ALCHEMY__
 ACMD(do_refine_window_alchemy) {
-	LPCHARACTER ch = ecs::LegacyCharOf(character);
-	DragonSoulSystem::OpenRefineWindow(character, ch);
+	if (!ecs::PlayerRuntime::IsPC(character))
+		return;
+	DragonSoulSystem::OpenRefineWindow(character, character);
 }
 #endif
 
@@ -3734,7 +3773,8 @@ ACMD(do_refine_window_alchemy) {
 #ifdef __HIDE_COSTUME_SYSTEM__
 ACMD(do_hide_costume)
 {
-	LPCHARACTER ch = ecs::LegacyCharOf(character);
+	if (!ecs::PlayerRuntime::IsPC(character))
+		return;
 	char arg1[256], arg2[256];
 	two_arguments(argument, arg1, sizeof(arg1), arg2, sizeof(arg2));
 
@@ -3755,15 +3795,7 @@ ACMD(do_hide_costume)
 			hidden = false;
 	}
 
-	if (bPartPos == 1)
-		ch->SetBodyCostumeHidden(hidden);
-	else if (bPartPos == 2)
-		ch->SetHairCostumeHidden(hidden);
-	else if (bPartPos == 3)
-		ch->SetAcceCostumeHidden(hidden);
-	else if (bPartPos == 4)
-		ch->SetWeaponCostumeHidden(hidden);
-	else
+	if (!ecs::PlayerRuntime::SetCostumeHidden(character, bPartPos, hidden))
 		return;
 
 	NetworkSyncSystem::UpdatePacket(character);
@@ -3938,11 +3970,9 @@ ACMD(do_rune_charge)
 
 ACMD(do_rune_shop)
 {
-	LPCHARACTER ch = ecs::LegacyCharOf(character);
-	if (!ch)
+	if (!ecs::PlayerRuntime::IsPC(character))
 		return;
-
-	if (ch->IsOpenSafebox() || ecs::SocialSystem::GetExchange(character) || ch->GetMyShop() || ch->IsCubeOpen())
+	if (ecs::SessionSystem::IsSafeboxOpen(character) || ecs::SocialSystem::GetExchange(character) || ecs::SocialSystem::GetMyShop(character) || ecs::SessionSystem::IsCubeOpen(character))
 	{
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 294, "");
@@ -3953,7 +3983,7 @@ ACMD(do_rune_shop)
 	LPSHOP pkShop = CShopManager::instance().Get(RUNE_SHOP);
 	if (pkShop) {
 		pkShop->AddGuest(character, 0, false);
-		ch->SetShopOwner(entt::null);
+		ecs::SocialSystem::SetShopOwner(character, entt::null);
 	}
 }
 
@@ -3986,7 +4016,8 @@ ACMD(do_rune_effect)
 #ifdef ENABLE_EVENT_MANAGER
 ACMD(do_event_manager)
 {
-	LPCHARACTER ch = ecs::LegacyCharOf(character);
+	if (!ecs::PlayerRuntime::IsPC(character))
+		return;
 	std::vector<std::string> vecArgs;
 	split_argument(argument, vecArgs);
 	if (vecArgs.size() < 2) { return; }
@@ -3996,7 +4027,7 @@ ACMD(do_event_manager)
 	}
 	else if (vecArgs[1] == "remove")
 	{
-		if (!ch->IsGM())
+		if (ecs::PlayerRuntime::GetGMLevel(character) == GM_PLAYER && !test_server)
 			return;
 
 		if (vecArgs.size() < 3) {
@@ -4005,8 +4036,9 @@ ACMD(do_event_manager)
 			return;
 		}
 
-		uint8_t removeIndex;
-		str_to_number(removeIndex, vecArgs[2].c_str());
+		uint8_t removeIndex = 0;
+		if (!ParseCommandNumber(vecArgs[2], removeIndex))
+			return;
 
 		if(CHARACTER_MANAGER::Instance().CloseEventManuel(removeIndex))
 			ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "successfuly remove!");
@@ -4015,7 +4047,7 @@ ACMD(do_event_manager)
 	}
 	else if (vecArgs[1] == "update")
 	{
-		if (!ch->IsGM())
+		if (ecs::PlayerRuntime::GetGMLevel(character) == GM_PLAYER && !test_server)
 			return;
 		const uint8_t subHeader = EVENT_MANAGER_UPDATE;
 		//db_clientdesc->DBPacketHeader(HEADER_GD_EVENT_MANAGER, 0, sizeof(uint8_t));
@@ -4029,35 +4061,39 @@ ACMD(do_event_manager)
 #ifdef ENABLE_ITEMSHOP
 ACMD(do_ishop)
 {
-	LPCHARACTER ch = ecs::LegacyCharOf(character);
+	if (!ecs::PlayerRuntime::IsPC(character))
+		return;
+	if (!ecs::PlayerRuntime::GetDesc(character))
+		return;
 	std::vector<std::string> vecArgs;
 	split_argument(argument, vecArgs);
 	if (vecArgs.size() < 2) { return; }
 	else if (vecArgs[1] == "data")
 	{
-		if (ch->GetProtectTime("itemshop.load") == 1)
+		if (ecs::PlayerRuntime::GetProtectTime(character, "itemshop.load") == 1)
 			return;
-		ch->SetProtectTime("itemshop.load", 1);
 		if (vecArgs.size() < 3) { return; }
-		int updateTime;
-		str_to_number(updateTime, vecArgs[2].c_str());
+		int updateTime = 0;
+		if (!ParseCommandNumber(vecArgs[2], updateTime))
+			return;
+		ecs::PlayerRuntime::SetProtectTime(character, "itemshop.load", 1);
 		CHARACTER_MANAGER::Instance().LoadItemShopData(character, CHARACTER_MANAGER::Instance().GetItemShopUpdateTime() != updateTime);
 	}
 	else if (vecArgs[1] == "log")
 	{
-		if (ch->GetProtectTime("itemshop.log") == 1)
+		if (ecs::PlayerRuntime::GetProtectTime(character, "itemshop.log") == 1)
 			return;
-		ch->SetProtectTime("itemshop.log", 1);
+		ecs::PlayerRuntime::SetProtectTime(character, "itemshop.log", 1);
 
 		CHARACTER_MANAGER::Instance().LoadItemShopLog(character);
 	}
 	else if (vecArgs[1] == "buy")
 	{
 		if (vecArgs.size() < 4) { return; }
-		int itemID;
-		str_to_number(itemID, vecArgs[2].c_str());
-		int itemCount;
-		str_to_number(itemCount, vecArgs[3].c_str());
+		int itemID = 0, itemCount = 0;
+		if (!ParseCommandNumber(vecArgs[2], itemID) || !ParseCommandNumber(vecArgs[3], itemCount)
+			|| itemID <= 0 || itemCount < 1 || itemCount > 20)
+			return;
 		CHARACTER_MANAGER::Instance().LoadItemShopBuy(character, itemID, itemCount);
 	}
 }

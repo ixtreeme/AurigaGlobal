@@ -1,5 +1,49 @@
 # Server ECS regression tests
 
+## General commands and entity-owned window state
+
+The current cmd_general migration removes 21 of its 54 LegacyCharOf calls.
+Stat commands, duel settings/target lookup, party leave, walking preference,
+growth-pet commands, stone crafting, shop-window guards, safebox-open position,
+costume visibility, event-manager checks and itemshop protection use entity APIs.
+The timed logout countdown resolves a CHARACTER only at its logging/disconnect
+boundary. Horse/riding, inventory sorting, fishing/restart, skill learning,
+storage persistence, party requests, logging/block mode, observer cleanup,
+legacy cube and disabled guild-renewal branches still need further migration.
+No parallel production command implementation was added.
+
+Cube NPC and dragon-soul refine opener state now store versioned entities;
+every existing reader was updated. Safebox-open and preferred walk/run mode
+are component-owned, with CHARACTER compatibility accessors delegating inward.
+Quest current-PC/NPC entity getters no longer resolve CHARACTER pointers.
+Duel option access goes directly through entity quest flags, preserving the
+boolean GetDuel contract (including BetMoney).
+
+RefineWindowTests compiles the complete production DragonSoulSystem.cpp. It
+covers entity-only open/self-open/reopen/close, missing descriptors, null/stale
+owners/openers, recycled indices, failed-open permissions, packet-time owner or
+NPC destruction, nested close and component-pool growth. Packet/descriptor,
+item and affect services are doubles; deck operations fail fast if invoked.
+PointCalculationTests executes the real stamina point-change branch, verifying
+that exhaustion preserves the player's preference and recovery restores it
+instead of the current movement tick's isWalking flag. Walking packet delivery
+is a double in that test.
+
+These targets do not execute cmd_general dispatch, native session helpers,
+quest context getters, duel persistence or live client/DB traffic. The complete
+GameServer build checks their integration. Before deployment smoke-test both
+duel participants, stat add/reset, walk/run after exhaustion, pet evolution,
+stone crafting, competing windows, itemshop malformed/repeated requests and
+disconnect/relog. Craft reward/payment ordering and multi-material pet costs
+are not converted into an atomic inventory/DB transaction by this change.
+
+```powershell
+cmake --build build --config Release --target GameServer RefineWindowTests PointCalculationTests
+ctest --test-dir build -C Release --output-on-failure
+cmake --build build-asan --config RelWithDebInfo --target RefineWindowTests PointCalculationTests
+ctest --test-dir build-asan -C RelWithDebInfo --output-on-failure
+```
+
 ## Character manager indices, queues and event drops
 
 `CharacterManagerTests` compiles the complete production `char_manager.cpp` and

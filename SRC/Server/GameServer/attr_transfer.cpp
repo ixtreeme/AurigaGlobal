@@ -43,7 +43,7 @@ bool CanUse(entt::entity character)
         return false;
     if (const auto* box = g_registry.try_get<ecs::SafeboxRef>(character); box && box->isOpening)
         return false;
-    if (const auto* cube = g_registry.try_get<ecs::CubeWindowComponent>(character); cube && cube->pNpc)
+    if (const auto* cube = g_registry.try_get<ecs::CubeWindowComponent>(character); cube && g_registry.valid(cube->npc))
         return false;
 #ifdef ENABLE_ACCE_SYSTEM
     if (const auto* acce = g_registry.try_get<ecs::AcceWindowComponent>(character);

@@ -1115,32 +1115,12 @@ namespace quest
 
 	entt::entity CQuestManager::GetCurrentPCEntity() const
 	{
-		LPCHARACTER ch = GetCurrentCharacterPtr();
-		if (!ch)
-			return entt::null;
-
-		entt::entity e = ch->GetEntityHandle();
-
-		// Temporary verification - REMOVE IN PHASE 9
-		if (e == entt::null) {
-		}
-
-		return e;
+		return ecs::PlayerRuntime::IsValid(m_currentCharacter) ? m_currentCharacter : entt::null;
 	}
 
 	entt::entity CQuestManager::GetCurrentNPCEntity() const
 	{
-		LPCHARACTER ch = GetCurrentNPCCharacterPtr();
-		if (!ch)
-			return entt::null;
-
-		entt::entity e = ch->GetEntityHandle();
-
-		// Temporary verification - REMOVE IN PHASE 9
-		if (e == entt::null) {
-		}
-
-		return e;
+		return ecs::PlayerRuntime::GetQuestNPC(GetCurrentPCEntity());
 	}
 
 	entt::entity CQuestManager::GetPCEntity(lua_State* L)
@@ -1326,7 +1306,7 @@ namespace quest
 
 	LPCHARACTER CQuestManager::GetCurrentNPCCharacterPtr() const
 	{
-		return ecs::PlayerRuntime::IsValid(GetCurrentCharacter()) ? GetCurrentCharacterPtr()->GetQuestNPC() : nullptr;
+		return ecs::LegacyCharOf(GetCurrentNPCEntity());
 	}
 
 	const std::string & CQuestManager::GetCurrentQuestName()

@@ -139,6 +139,8 @@ bool CanWarp(entt::entity e);
 bool IsHack(entt::entity e, bool sendMessage, bool checkShopOwner, int limitTime);
 bool IsHack(entt::entity e, bool sendMessage = true, bool checkShopOwner = true);
 int GetDuelOption(entt::entity e, const char* option);
+void SetDuelOption(entt::entity e, const char* option, int value);
+int GetPosition(entt::entity e);
 entt::entity GetQuestNPC(entt::entity e);
 uint32_t GetQuestNPCID(entt::entity e);
 bool SetQuestNPCID(entt::entity e, uint32_t id);

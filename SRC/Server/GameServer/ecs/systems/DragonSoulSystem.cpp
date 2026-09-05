@@ -194,52 +194,49 @@ void CleanUp(entt::entity owner)
     MarkDirty(owner);
 }
 
-bool OpenRefineWindow(entt::entity owner, LPENTITY opener)
+bool OpenRefineWindow(entt::entity owner, entt::entity opener)
 {
-    auto* state = GetDragonSoulState(owner);
-    if (!state)
+    if (!g_registry.valid(owner) || !g_registry.valid(opener))
         return false;
-
-    if (!state->pRefineWindowOpener)
-        state->pRefineWindowOpener = opener;
-
-    TPacketGCDragonSoulRefine pack;
-    pack.header = HEADER_GC_DRAGON_SOUL_REFINE;
-    pack.bSubType = DS_SUB_HEADER_OPEN;
-
     LPDESC d = ecs::PlayerRuntime::GetDesc(owner);
     if (!d)
-    {
-        LOG_ERROR("User({})'s DESC is NULL POINT.", ecs::PlayerRuntime::GetName(owner).data());
         return false;
-    }
 
+    // A failed request must not leave an invisible but usable refine window.
+    auto& state = g_registry.get_or_emplace<ecs::DragonSoulRuntimeStateComponent>(owner);
+    if (!g_registry.valid(state.refineWindowOpener))
+        state.refineWindowOpener = opener;
+
+    TPacketGCDragonSoulRefine pack {};
+    pack.header = HEADER_GC_DRAGON_SOUL_REFINE;
+    pack.bSubType = DS_SUB_HEADER_OPEN;
     d->Packet(&pack, sizeof(pack));
     MarkDirty(owner);
-    return true;
+    return CanRefine(owner);
 }
 
 bool CloseRefineWindow(entt::entity owner)
 {
-    auto* state = GetDragonSoulState(owner);
-    if (!state)
+    if (!g_registry.valid(owner))
         return false;
-
-    state->pRefineWindowOpener = nullptr;
+    if (auto* state = g_registry.try_get<ecs::DragonSoulRuntimeStateComponent>(owner))
+        state->refineWindowOpener = entt::null;
     MarkDirty(owner);
     return true;
 }
 
 bool CanRefine(entt::entity owner)
 {
-    auto* state = GetDragonSoulState(owner);
-    return state && state->pRefineWindowOpener != nullptr;
+    return GetRefineWindowOpener(owner) != entt::null;
 }
 
-LPENTITY GetRefineWindowOpener(entt::entity owner)
+entt::entity GetRefineWindowOpener(entt::entity owner)
 {
-    auto* state = GetDragonSoulState(owner);
-    return state ? state->pRefineWindowOpener : nullptr;
+    if (!g_registry.valid(owner))
+        return entt::null;
+    const auto* state = g_registry.try_get<ecs::DragonSoulRuntimeStateComponent>(owner);
+    return state && g_registry.valid(state->refineWindowOpener)
+        ? state->refineWindowOpener : entt::null;
 }
 
 } // namespace DragonSoulSystem

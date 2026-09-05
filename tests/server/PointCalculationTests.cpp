@@ -21,6 +21,7 @@
 #include "../../SRC/Server/GameServer/ecs/components/vital_components.hpp"
 #include "../../SRC/Server/GameServer/ecs/components/skill_components.hpp"
 #include "../../SRC/Server/GameServer/ecs/components/combat_components.hpp"
+#include "../../SRC/Server/GameServer/ecs/components/movement_components.hpp"
 #include "../../SRC/Server/GameServer/ecs/systems/PointSystem.hpp"
 #include "../../SRC/Server/GameServer/ecs/systems/PlayerRuntimeSystem.hpp"
 #include "../../SRC/Server/GameServer/ecs/systems/ItemSystem.hpp"
@@ -250,7 +251,9 @@ void NetworkSyncSystem::PointsPacket(entt::entity) { Unexpected(); }
 void CGuild::LevelChange(uint32_t, uint8_t) { Unexpected(); }
 void CParty::SendPartyInfoOneToAll(entt::entity) { Unexpected(); }
 void CParty::RequestSetMemberLevel(uint32_t, uint8_t) { Unexpected(); }
-void ecs::MovementSystem::SetNowWalking(entt::entity, bool) { Unexpected(); }
+void ecs::MovementSystem::SetNowWalking(entt::entity e, bool walking) {
+    g_registry.get<ecs::MovementState>(e).isNowWalking = walking;
+}
 void DESC::Packet(const void*, int) { Unexpected(); }
 void quest::CQuestManager::LevelUp(uint32_t) { Unexpected(); }
 void LogManager::CharLog(entt::entity, uint32_t, const char*, const char*) { Unexpected(); }
@@ -343,6 +346,18 @@ void SourceChecks() {
     g_registry.destroy(e); P::Compute(e); P::Compute(entt::null);
     Check(packets == 0, "stale/null entity published");
 }
+void WalkingPreferenceChecks() {
+    for (bool preference : {false, true}) {
+        Reset(); const auto e = ActorEntity();
+        auto& movement = g_registry.emplace<ecs::MovementState>(e);
+        movement.walkPreference = preference;
+        movement.isWalking = !preference; // Movement tick is not the user's choice.
+        P::Change(e, POINT_STAMINA, -100);
+        Check(movement.isNowWalking && movement.walkPreference == preference, "exhaustion changed walk preference");
+        P::Change(e, POINT_STAMINA, 1);
+        Check(movement.isNowWalking == preference, "stamina recovery used current movement instead of preference");
+    }
+}
 void CallbackChecks() {
     for (int stage = 0; stage < 3; ++stage) {
         Reset(); const auto e = ActorEntity(); Wear(e);
@@ -369,7 +384,7 @@ void CallbackChecks() {
 int main() {
     try {
         CSkillManager skills; CHARACTER_MANAGER characters; DSManager dragonSouls;
-        FormulaChecks(); RepeatedCalculation(); SourceChecks(); CallbackChecks();
+        FormulaChecks(); RepeatedCalculation(); SourceChecks(); WalkingPreferenceChecks(); CallbackChecks();
         std::cout << "Point calculation checks passed: " << checks << '\n'; return 0;
     } catch (const std::exception& error) { std::cerr << error.what() << '\n'; return 1; }
 }

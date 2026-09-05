@@ -246,6 +246,20 @@ void MarkDirty(entt::entity e)
 
 } // namespace
 
+void SetWalkingPreference(entt::entity e, bool walking)
+{
+    if (IsValid(e))
+        g_registry.get_or_emplace<ecs::MovementState>(e).walkPreference = walking;
+}
+
+bool GetWalkingPreference(entt::entity e)
+{
+    if (!IsValid(e))
+        return false;
+    const auto* movement = g_registry.try_get<ecs::MovementState>(e);
+    return movement && movement->walkPreference;
+}
+
 bool Show(entt::entity e, int32_t mapIndex, int32_t x, int32_t y, int32_t z, bool showSpawnMotion)
 {
     if (!IsValid(e))
@@ -1348,6 +1362,17 @@ void SetPosition(entt::entity e, int pos)
 
 } // namespace ecs::PlayerRuntime
 
+void CHARACTER::SetWalking(bool walking)
+{
+    ecs::MovementSystem::SetWalkingPreference(GetEntityHandle(), walking);
+}
+
+void CHARACTER::ResetWalking()
+{
+    ecs::MovementSystem::SetNowWalking(GetEntityHandle(),
+        ecs::MovementSystem::GetWalkingPreference(GetEntityHandle()));
+}
+
 void CHARACTER::SetPosition(int pos)
 {
 	ecs::PlayerRuntime::SetPosition(GetEntityHandle(), pos);
@@ -1360,10 +1385,7 @@ bool CHARACTER::IsPosition(int pos) const
 
 int CHARACTER::GetPosition() const
 {
-	if (const auto* runtime = ecs::TryGetRuntimeFlags(GetEntityHandle()))
-		return runtime->position;
-
-	return POS_STANDING;
+	return ecs::PlayerRuntime::GetPosition(GetEntityHandle());
 }
 
 float CHARACTER::GetRotation() const

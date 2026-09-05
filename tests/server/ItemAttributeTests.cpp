@@ -1501,12 +1501,29 @@ void TransferContextGuards()
             case 12: g_registry.emplace<ecs::AcceWindowComponent>(f.owner).absorptionOpen = true; break;
             case 13: location.x = INT_MIN; g_registry.get<TransferActor>(f.npc).x = INT_MAX; break;
             case 14: g_registry.emplace<ecs::ShopState>(f.owner).myShop = reinterpret_cast<CShop*>(1); break;
-            case 15: g_registry.emplace<ecs::CubeWindowComponent>(f.owner).pNpc = reinterpret_cast<CHARACTER*>(1); break;
+            case 15: g_registry.emplace<ecs::CubeWindowComponent>(f.owner).npc = f.npc; break;
         }
         Check(!AttrTransfer_make(f.owner) && payments == 0, "blocked transfer context accepted");
         f.Unchanged();
         AttrTransfer_close(f.owner);
         Check(!AttrTransfer_is_open(f.owner), "blocked context prevented close");
+    }
+    {
+        TransferFixture f;
+        const auto cubeNpc = g_registry.create();
+        g_registry.emplace<ecs::CubeWindowComponent>(f.owner).npc = cubeNpc;
+        AttrTransfer_open(f.owner);
+        Check(!AttrTransfer_is_open(f.owner), "live cube NPC did not block transfer");
+        g_registry.destroy(cubeNpc);
+        const auto replacement = g_registry.create();
+        Check(entt::to_entity(cubeNpc) == entt::to_entity(replacement) && cubeNpc != replacement,
+            "cube NPC index not recycled");
+        AttrTransfer_open(f.owner);
+        Check(AttrTransfer_is_open(f.owner), "stale cube NPC inherited replacement window");
+        AttrTransfer_close(f.owner);
+        g_registry.get<ecs::CubeWindowComponent>(f.owner).npc = replacement;
+        AttrTransfer_open(f.owner);
+        Check(!AttrTransfer_is_open(f.owner), "replacement cube NPC not recognized when explicitly assigned");
     }
     TransferFixture f;
     g_registry.get<TransferActor>(f.npc).x = ATTR_TRANSFER_MAX_DISTANCE;

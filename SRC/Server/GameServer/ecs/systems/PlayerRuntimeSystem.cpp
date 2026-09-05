@@ -8,6 +8,7 @@
 #include "SocialSystem.hpp"
 
 #include "PlayerRuntimeSystem.hpp"
+#include "SessionSystem.hpp"
 #include "MountSystem.hpp"
 #include "QuestSystem.hpp"
 #include "NetworkSyncSystem.hpp"
@@ -750,7 +751,7 @@ bool CanWarp(entt::entity e)
 	if (const auto* safebox = g_registry.try_get<ecs::SafeboxRef>(e); safebox && safebox->isOpening)
 		return false;
 
-	if (const auto* cube = g_registry.try_get<ecs::CubeWindowComponent>(e); cube && cube->pNpc)
+	if (ecs::SessionSystem::IsCubeOpen(e))
 		return false;
 
 #ifdef __ATTR_TRANSFER_SYSTEM__
@@ -861,8 +862,12 @@ bool SetCostumeHidden(entt::entity e, uint8_t part, bool hidden, bool skipPersis
 		return false;
 	}
 	ecs::ChatSystem::Send(e, CHAT_TYPE_COMMAND, command, hidden ? 1 : 0);
+	if (!g_registry.valid(e))
+		return false;
 	if (!skipPersistence)
 		ecs::QuestSystem::SetFlag(e, questFlag, hidden ? 1 : 0);
+	if (!g_registry.valid(e))
+		return false;
 	g_registry.emplace_or_replace<ecs::DirtyTag>(e);
 	return true;
 }
@@ -912,10 +917,10 @@ bool IsHack(entt::entity e, bool sendMessage, bool checkShopOwner, int limitTime
 	const auto* exchange = g_registry.try_get<ecs::ExchangeRef>(e);
 	const auto* shop = g_registry.try_get<ecs::ShopState>(e);
 	const auto* safebox = g_registry.try_get<ecs::SafeboxRef>(e);
-	const auto* cube = g_registry.try_get<ecs::CubeWindowComponent>(e);
+
 	const bool activeWindow = (exchange && exchange->exchange) ||
 		(shop && (shop->myShop || (checkShopOwner && shop->shopOwner != entt::null))) ||
-		(safebox && safebox->isOpening) || (cube && cube->pNpc)
+		(safebox && safebox->isOpening) || ecs::SessionSystem::IsCubeOpen(e)
 #if defined(ENABLE_CHRISTMAS_WHEEL_OF_DESTINY)
 		|| (shop && shop->wheelDestiny)
 #endif
@@ -965,12 +970,46 @@ bool ChangeSex(entt::entity e)
 	return SetRace(e, targetRace);
 }
 
+namespace {
+const char* DuelFlag(const char* option)
+{
+#ifdef ENABLE_PVP_ADVANCED
+    static constexpr const char* names[] = {
+        "BlockChangeItem", "BlockBuff", "BlockPotion", "BlockRide", "BlockPet",
+        "BlockPoly", "BlockParty", "BlockExchange", "BetMoney", "IsFight" };
+    static constexpr const char* flags[] = {
+        BLOCK_CHANGEITEM, BLOCK_BUFF, BLOCK_POTION, BLOCK_RIDE, BLOCK_PET,
+        BLOCK_POLY, BLOCK_PARTY, BLOCK_EXCHANGE_, BET_WINNER, CHECK_IS_FIGHT };
+    if (option)
+        for (size_t i = 0; i < std::size(names); ++i)
+            if (strcmp(option, names[i]) == 0)
+                return flags[i];
+#endif
+    return nullptr;
+}
+}
+
 int GetDuelOption(entt::entity e, const char* option)
 {
-    if (e == entt::null || !g_registry.valid(e) || !option)
+    if (!g_registry.valid(e))
         return 0;
-    const auto* legacy = g_registry.try_get<ecs::LegacyCharPtr>(e);
-    return legacy && legacy->ptr ? legacy->ptr->GetDuel(option) : 0;
+    const char* flag = DuelFlag(option);
+    // Preserve the legacy boolean contract, including BetMoney.
+    return flag && ecs::QuestSystem::GetFlag(e, flag) > 0;
+}
+
+void SetDuelOption(entt::entity e, const char* option, int value)
+{
+    if (!g_registry.valid(e))
+        return;
+    if (const char* flag = DuelFlag(option))
+        ecs::QuestSystem::SetFlag(e, flag, value);
+}
+
+int GetPosition(entt::entity e)
+{
+    const auto* runtime = ecs::TryGetRuntimeFlags(e);
+    return runtime ? runtime->position : POS_STANDING;
 }
 
 entt::entity GetQuestNPC(entt::entity e)
@@ -1339,82 +1378,7 @@ inline void EnterIdleState(entt::entity e)
     g_registry.remove<ecs::MovementDestination>(e);
 }
 
-#ifdef ENABLE_PVP_ADVANCED
-int GetDuelImpl(entt::entity e, const char* type)
-{
-    const char* szTableStaticPvP[] = { BLOCK_CHANGEITEM, BLOCK_BUFF, BLOCK_POTION, BLOCK_RIDE, BLOCK_PET, BLOCK_POLY, BLOCK_PARTY, BLOCK_EXCHANGE_, BET_WINNER, CHECK_IS_FIGHT };
 
-    int m_nDuelTable[] = { (ecs::QuestSystem::GetFlag(e, szTableStaticPvP[0])), (ecs::QuestSystem::GetFlag(e, szTableStaticPvP[1])), (ecs::QuestSystem::GetFlag(e, szTableStaticPvP[2])), (ecs::QuestSystem::GetFlag(e, szTableStaticPvP[3])), (ecs::QuestSystem::GetFlag(e, szTableStaticPvP[4])), (ecs::QuestSystem::GetFlag(e, szTableStaticPvP[5])), (ecs::QuestSystem::GetFlag(e, szTableStaticPvP[6])), (ecs::QuestSystem::GetFlag(e, szTableStaticPvP[7])), (ecs::QuestSystem::GetFlag(e, szTableStaticPvP[8])), (ecs::QuestSystem::GetFlag(e, szTableStaticPvP[9])) };
-
-    if (!strcmp(type, "BlockChangeItem") && m_nDuelTable[0] > 0) {
-        return true;
-    }
-    if (!strcmp(type, "BlockBuff") && m_nDuelTable[1] > 0) {
-        return true;
-    }
-    if (!strcmp(type, "BlockPotion") && m_nDuelTable[2] > 0) {
-        return true;
-    }
-    if (!strcmp(type, "BlockRide") && m_nDuelTable[3] > 0) {
-        return true;
-    }
-    if (!strcmp(type, "BlockPet") && m_nDuelTable[4] > 0) {
-        return true;
-    }
-    if (!strcmp(type, "BlockPoly") && m_nDuelTable[5] > 0) {
-        return true;
-    }
-    if (!strcmp(type, "BlockParty") && m_nDuelTable[6] > 0) {
-        return true;
-    }
-    if (!strcmp(type, "BlockExchange") && m_nDuelTable[7] > 0) {
-        return true;
-    }
-    if (!strcmp(type, "BetMoney") && m_nDuelTable[8] > 0) {
-        return true;
-    }
-    if (!strcmp(type, "IsFight") && m_nDuelTable[9] > 0) {
-        return true;
-    }
-    return false;
-}
-
-void SetDuelImpl(entt::entity e, const char* type, int value)
-{
-    const char* szTableStaticPvP[] = { BLOCK_CHANGEITEM, BLOCK_BUFF, BLOCK_POTION, BLOCK_RIDE, BLOCK_PET, BLOCK_POLY, BLOCK_PARTY, BLOCK_EXCHANGE_, BET_WINNER, CHECK_IS_FIGHT };
-
-    if (!strcmp(type, "BlockChangeItem")) {
-        ecs::QuestSystem::SetFlag(e, szTableStaticPvP[0], value);
-    }
-    if (!strcmp(type, "BlockBuff")) {
-        ecs::QuestSystem::SetFlag(e, szTableStaticPvP[1], value);
-    }
-    if (!strcmp(type, "BlockPotion")) {
-        ecs::QuestSystem::SetFlag(e, szTableStaticPvP[2], value);
-    }
-    if (!strcmp(type, "BlockRide")) {
-        ecs::QuestSystem::SetFlag(e, szTableStaticPvP[3], value);
-    }
-    if (!strcmp(type, "BlockPet")) {
-        ecs::QuestSystem::SetFlag(e, szTableStaticPvP[4], value);
-    }
-    if (!strcmp(type, "BlockPoly")) {
-        ecs::QuestSystem::SetFlag(e, szTableStaticPvP[5], value);
-    }
-    if (!strcmp(type, "BlockParty")) {
-        ecs::QuestSystem::SetFlag(e, szTableStaticPvP[6], value);
-    }
-    if (!strcmp(type, "BlockExchange")) {
-        ecs::QuestSystem::SetFlag(e, szTableStaticPvP[7], value);
-    }
-    if (!strcmp(type, "BetMoney")) {
-        ecs::QuestSystem::SetFlag(e, szTableStaticPvP[8], value);
-    }
-    if (!strcmp(type, "IsFight")) {
-        ecs::QuestSystem::SetFlag(e, szTableStaticPvP[9], value);
-    }
-}
-#endif
 }
 
 
@@ -4068,12 +4032,12 @@ void CHARACTER::RankingSubcategory(int iArg)
 #ifdef ENABLE_PVP_ADVANCED
 int CHARACTER::GetDuel(const char* type) const
 {
-    return GetDuelImpl(GetEntityHandle(), type);
+    return ecs::PlayerRuntime::GetDuelOption(GetEntityHandle(), type);
 }
 
 void CHARACTER::SetDuel(const char* type, int value)
 {
-    SetDuelImpl(GetEntityHandle(), type, value);
+    ecs::PlayerRuntime::SetDuelOption(GetEntityHandle(), type, value);
 }
 #endif
 
@@ -5866,8 +5830,7 @@ void CHARACTER::Initialize()
 
 
     // Phase C.2: legacy m_bNowWalking zero-init removed (ECS MovementState
-    // default-init handles isNowWalking=false). m_bWalking still legacy.
-    m_bWalking = false;
+    // default-init handles isNowWalking=false and walkPreference=false).
     ResetChangeAttackPositionTime();
 
     m_bDetailLog = false;
@@ -5940,7 +5903,6 @@ void CHARACTER::Initialize()
     m_pArena = nullptr;
     ecs::PlayerRuntime::SetPotionLimit(GetEntityHandle(), quest::CQuestManager::instance().GetEventFlag("arena_potion_limit_count"));
 
-    m_isOpenSafebox = 0;
 
     m_iRefineTime = 0;
 

@@ -447,6 +447,38 @@ ecs::WarpBlockState* EnsureWarpBlockState(entt::entity character)
 
 namespace ecs::SessionSystem {
 
+bool IsSafeboxOpen(entt::entity character)
+{
+    if (!g_registry.valid(character))
+        return false;
+    const auto* safebox = g_registry.try_get<ecs::SafeboxRef>(character);
+    return safebox && safebox->isOpening;
+}
+
+void SetSafeboxOpen(entt::entity character, bool open)
+{
+    if (!g_registry.valid(character))
+        return;
+    g_registry.get_or_emplace<ecs::SafeboxRef>(character).isOpening = open;
+    g_registry.emplace_or_replace<ecs::DirtyTag>(character);
+}
+
+bool IsCubeOpen(entt::entity character)
+{
+    if (!g_registry.valid(character))
+        return false;
+    const auto* cube = g_registry.try_get<ecs::CubeWindowComponent>(character);
+    return cube && g_registry.valid(cube->npc);
+}
+
+void SetCubeNPC(entt::entity character, entt::entity npc)
+{
+    if (!g_registry.valid(character))
+        return;
+    g_registry.get_or_emplace<ecs::CubeWindowComponent>(character).npc =
+        g_registry.valid(npc) ? npc : entt::null;
+}
+
 void SetWarpLocation(entt::entity character, int32_t mapIndex, int32_t x, int32_t y)
 {
 	if (character == entt::null || !g_registry.valid(character))
@@ -521,17 +553,14 @@ float GetDistanceFromSafeboxOpen(entt::entity character)
 
 } // namespace ecs::SessionSystem
 
+bool CHARACTER::IsOpenSafebox() const
+{
+    return ecs::SessionSystem::IsSafeboxOpen(GetEntityHandle());
+}
+
 void CHARACTER::SetOpenSafebox(bool b)
 {
-    m_isOpenSafebox = b;
-
-	const auto e = GetEntityHandle();
-    if (e != entt::null && g_registry.valid(e))
-    {
-        auto& safebox = g_registry.get_or_emplace<ecs::SafeboxRef>(e);
-        safebox.isOpening = b;
-        g_registry.emplace_or_replace<ecs::DirtyTag>(e);
-    }
+    ecs::SessionSystem::SetSafeboxOpen(GetEntityHandle(), b);
 }
 
 void CHARACTER::SetSafeboxLoadTime()
