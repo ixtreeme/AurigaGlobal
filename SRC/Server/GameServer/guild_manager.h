@@ -45,8 +45,8 @@ class CGuildManager : public singleton<CGuildManager>
 		void		ResetStatsToAll();
 #endif
 
-		void		ShowGuildWarList(LPCHARACTER ch);
-		void		SendGuildWar(LPCHARACTER ch);
+		void		ShowGuildWarList(entt::entity ch);
+		void		SendGuildWar(entt::entity ch);
 
 		void		RequestEndWar(uint32_t guild_id1, uint32_t guild_id2);
 		void		RequestCancelWar(uint32_t guild_id1, uint32_t guild_id2);

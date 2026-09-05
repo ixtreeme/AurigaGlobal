@@ -32,8 +32,8 @@ class COXEventManager : public singleton<COXEventManager>
 	protected :
 		bool CheckAnswer();
 
-		bool EnterAudience(LPCHARACTER pChar);
-		bool EnterAttender(LPCHARACTER pChar);
+		bool EnterAudience(entt::entity pChar);
+		bool EnterAttender(entt::entity pChar);
 
 	public :
 		bool Initialize();
@@ -44,7 +44,7 @@ class COXEventManager : public singleton<COXEventManager>
 
 		bool LoadQuizScript(const char* szFileName);
 
-		bool Enter(LPCHARACTER pChar);
+		bool Enter(entt::entity pChar);
 
 		bool CloseEvent();
 

@@ -836,7 +836,7 @@ void CGuildManager::ReserveWar(uint32_t dwGuild1, uint32_t dwGuild2, uint8_t bTy
 	g2->ReserveWar(dwGuild1, bType);
 }
 
-void CGuildManager::ShowGuildWarList(LPCHARACTER ch)
+void CGuildManager::ShowGuildWarList(entt::entity ch)
 {
 	for (auto it = m_GuildWar.begin(); it != m_GuildWar.end(); ++it)
 	{
@@ -845,7 +845,7 @@ void CGuildManager::ShowGuildWarList(LPCHARACTER ch)
 
 		if (A && B)
 		{
-			ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_NOTICE, "%s[%d] vs %s[%d] time %u sec.",
+			ecs::ChatSystem::Send(ch, CHAT_TYPE_NOTICE, "%s[%d] vs %s[%d] time %u sec.",
 					A->GetName(), A->GetID(),
 					B->GetName(), B->GetID(),
 					get_global_time() - A->GetWarStartTime(B->GetID()));
@@ -853,10 +853,9 @@ void CGuildManager::ShowGuildWarList(LPCHARACTER ch)
 	}
 }
 
-void CGuildManager::SendGuildWar(LPCHARACTER ch)
+void CGuildManager::SendGuildWar(entt::entity ch)
 {
-	const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
-	if (!ecs::PlayerRuntime::GetDesc(chEntity))
+	if (!ecs::PlayerRuntime::GetDesc(ch))
 		return;
 
 	TEMP_BUFFER buf;
@@ -872,7 +871,7 @@ void CGuildManager::SendGuildWar(LPCHARACTER ch)
 		buf.write(&it->second, sizeof(uint32_t));
 	}
 
-	ecs::PlayerRuntime::GetDesc(chEntity)->Packet(buf.read_peek(), buf.size());
+	ecs::PlayerRuntime::GetDesc(ch)->Packet(buf.read_peek(), buf.size());
 }
 
 void SendGuildWarScore(uint32_t dwGuild, uint32_t dwGuildOpp, int iDelta, int iBetScoreDelta)

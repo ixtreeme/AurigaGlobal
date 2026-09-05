@@ -690,7 +690,7 @@ void CInputLogin::Entergame(LPDESC d, const char* data)
 	MessengerManager::instance().Login(ecs::PlayerRuntime::GetName(((ch) ? (ch)->GetEntityHandle() : entt::null)).data());
 
 	CPartyManager::instance().SetParty(ch);
-	CGuildManager::instance().SendGuildWar(ch);
+	CGuildManager::instance().SendGuildWar(d->GetEntity());
 
 	building::CManager::instance().SendLandList(d, ecs::PlayerRuntime::GetMapIndex(((ch) ? (ch)->GetEntityHandle() : entt::null)));
 
@@ -841,7 +841,7 @@ void CInputLogin::Entergame(LPDESC d, const char* data)
 		}
 #endif
 		// ox ?T
-		if (COXEventManager::instance().Enter(ch) == false)
+		if (COXEventManager::instance().Enter(d->GetEntity()) == false)
 		{
 			// ox   ?  . ÷?
 			if (ecs::PlayerRuntime::GetGMLevel(((ch) ? (ch)->GetEntityHandle() : entt::null)) == GM_PLAYER)

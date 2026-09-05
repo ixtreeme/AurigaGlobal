@@ -167,8 +167,8 @@ namespace quest
 		void		Confirm(unsigned int pc, EQuestConfirmType confirm, unsigned int pc2 = 0);
 		void		SelectItem(unsigned int pc, unsigned int selection);
 
-		void		LogoutPC(LPCHARACTER ch);
-		void		DisconnectPC(LPCHARACTER ch);
+		void		LogoutPC(entt::entity ch);
+		void		DisconnectPC(entt::entity ch);
 
 		QuestState* GetCurrentState() { return m_CurrentRunningState; }
 
@@ -211,7 +211,7 @@ namespace quest
 
 		void		SetEventFlag(const std::string& name, int value);
 		int			GetEventFlag(const std::string& name);
-		void		BroadcastEventFlagOnLogin(LPCHARACTER ch);
+		void		BroadcastEventFlagOnLogin(entt::entity ch);
 
 		void		SendEventFlagList(LPCHARACTER ch);
 

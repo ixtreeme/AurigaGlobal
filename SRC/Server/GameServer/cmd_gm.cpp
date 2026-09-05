@@ -2650,11 +2650,10 @@ ACMD(do_level)
 
 ACMD(do_gwlist)
 {
-	LPCHARACTER ch = ecs::LegacyCharOf(character);
 #ifdef TEXTS_IMPROVEMENT
 	ecs::ChatSystem::SendNew(character, CHAT_TYPE_NOTICE, 490, "");
 #endif
-	CGuildManager::instance().ShowGuildWarList(ch);
+	CGuildManager::instance().ShowGuildWarList(character);
 }
 
 ACMD(do_stop_guild_war)

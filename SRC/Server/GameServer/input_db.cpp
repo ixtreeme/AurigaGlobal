@@ -630,7 +630,7 @@ void CInputDB::PlayerLoad(LPDESC d, const char * data)
 		return;
 	}
 
-	quest::CQuestManager::instance().BroadcastEventFlagOnLogin(ch);
+	quest::CQuestManager::instance().BroadcastEventFlagOnLogin(chEntity);
 
 	for (int i = 0; i < QUICKSLOT_MAX_NUM; ++i)
 		ch->SetQuickslot(i, pTab->quickslot[i]);

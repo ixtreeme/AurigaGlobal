@@ -95,15 +95,18 @@ void COXEventManager::SetStatus(OXEventStatus status)
 	quest::CQuestManager::instance().RequestSetEventFlag("oxevent_status", val);
 }
 
-bool COXEventManager::Enter(LPCHARACTER pkChar)
+bool COXEventManager::Enter(entt::entity pkChar)
 {
 	if (GetStatus() == OXEVENT_FINISH)
 	{
-		LOG_INFO("OXEVENT : map finished. but char enter. {}", ecs::PlayerRuntime::GetName(((pkChar) ? (pkChar)->GetEntityHandle() : entt::null)).data());
+		LOG_INFO("OXEVENT : map finished. but char enter. {}", ecs::PlayerRuntime::GetName(pkChar).data());
 		return false;
 	}
 
-	PIXEL_POSITION pos = pkChar->GetXYZ();
+	PIXEL_POSITION pos;
+	pos.x = ecs::PlayerRuntime::GetX(pkChar);
+	pos.y = ecs::PlayerRuntime::GetY(pkChar);
+	pos.z = ecs::PlayerRuntime::GetZ(pkChar);
 
 	if (pos.x == 896500 && pos.y == 24600)
 	{
@@ -122,9 +125,9 @@ bool COXEventManager::Enter(LPCHARACTER pkChar)
 	return false;
 }
 
-bool COXEventManager::EnterAttender(LPCHARACTER pkChar)
+bool COXEventManager::EnterAttender(entt::entity pkChar)
 {
-	uint32_t pid = (ecs::PlayerRuntime::GetPlayerID(((pkChar) ? (pkChar)->GetEntityHandle() : entt::null)));
+	uint32_t pid = (ecs::PlayerRuntime::GetPlayerID(pkChar));
 
 	m_map_char.insert(std::make_pair(pid, pid));
 	m_map_attender.insert(std::make_pair(pid, pid));
@@ -132,9 +135,9 @@ bool COXEventManager::EnterAttender(LPCHARACTER pkChar)
 	return true;
 }
 
-bool COXEventManager::EnterAudience(LPCHARACTER pkChar)
+bool COXEventManager::EnterAudience(entt::entity pkChar)
 {
-	uint32_t pid = (ecs::PlayerRuntime::GetPlayerID(((pkChar) ? (pkChar)->GetEntityHandle() : entt::null)));
+	uint32_t pid = (ecs::PlayerRuntime::GetPlayerID(pkChar));
 
 	m_map_char.insert(std::make_pair(pid, pid));
 

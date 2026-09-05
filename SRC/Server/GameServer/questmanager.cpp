@@ -502,10 +502,9 @@ namespace quest
 			LOG_ERROR("QUEST no such pc id : {}", pc);
 	}
 
-	void CQuestManager::LogoutPC(LPCHARACTER ch)
+	void CQuestManager::LogoutPC(entt::entity ch)
 	{
-		const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
-		PC * pPC = GetPC(ecs::PlayerRuntime::GetPlayerID(chEntity));
+		PC * pPC = GetPC(ecs::PlayerRuntime::GetPlayerID(ch));
 
 		if (pPC && pPC->IsRunning())
 		{
@@ -514,9 +513,9 @@ namespace quest
 		}
 
 		// 지우기 전에 로그아웃 한다.
-		Logout(ecs::PlayerRuntime::GetPlayerID(chEntity));
+		Logout(ecs::PlayerRuntime::GetPlayerID(ch));
 
-		if (ch == m_pCurrentCharacter)
+		if (m_pCurrentCharacter && m_pCurrentCharacter->GetEntityHandle() == ch)
 		{
 			m_pCurrentCharacter = nullptr;
 			m_pCurrentPC = nullptr;
@@ -1077,9 +1076,9 @@ namespace quest
 		return false;
 	}
 
-	void CQuestManager::DisconnectPC(LPCHARACTER ch)
+	void CQuestManager::DisconnectPC(entt::entity ch)
 	{
-		m_mapPC.erase(ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null)));
+		m_mapPC.erase(ecs::PlayerRuntime::GetPlayerID(ch));
 	}
 
 	PC * CQuestManager::GetPCForce(unsigned int pc)
@@ -1617,34 +1616,33 @@ namespace quest
 		return it->second;
 	}
 
-	void CQuestManager::BroadcastEventFlagOnLogin(LPCHARACTER ch)
+	void CQuestManager::BroadcastEventFlagOnLogin(entt::entity ch)
 	{
-		const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
 		int iEventFlagValue;
 
 		if ((iEventFlagValue = quest::CQuestManager::instance().GetEventFlag("xmas_snow")))
 		{
-			ecs::ChatSystem::Send(chEntity, CHAT_TYPE_COMMAND, "xmas_snow %d", iEventFlagValue);
+			ecs::ChatSystem::Send(ch, CHAT_TYPE_COMMAND, "xmas_snow %d", iEventFlagValue);
 		}
 
 		if ((iEventFlagValue = quest::CQuestManager::instance().GetEventFlag("xmas_boom")))
 		{
-			ecs::ChatSystem::Send(chEntity, CHAT_TYPE_COMMAND, "xmas_boom %d", iEventFlagValue);
+			ecs::ChatSystem::Send(ch, CHAT_TYPE_COMMAND, "xmas_boom %d", iEventFlagValue);
 		}
 
 		if ((iEventFlagValue = quest::CQuestManager::instance().GetEventFlag("xmas_tree")))
 		{
-			ecs::ChatSystem::Send(chEntity, CHAT_TYPE_COMMAND, "xmas_tree %d", iEventFlagValue);
+			ecs::ChatSystem::Send(ch, CHAT_TYPE_COMMAND, "xmas_tree %d", iEventFlagValue);
 		}
 
 		if ((iEventFlagValue = quest::CQuestManager::instance().GetEventFlag("day")))
 		{
-			ecs::ChatSystem::Send(chEntity, CHAT_TYPE_COMMAND, "DayMode dark");
+			ecs::ChatSystem::Send(ch, CHAT_TYPE_COMMAND, "DayMode dark");
 		}
 
 		if ((iEventFlagValue = quest::CQuestManager::instance().GetEventFlag("newyear_boom")))
 		{
-			ecs::ChatSystem::Send(chEntity, CHAT_TYPE_COMMAND, "newyear_boom %d", iEventFlagValue);
+			ecs::ChatSystem::Send(ch, CHAT_TYPE_COMMAND, "newyear_boom %d", iEventFlagValue);
 		}
 
 		if ( (iEventFlagValue = quest::CQuestManager::instance().GetEventFlag("eclipse")) )
@@ -1654,7 +1652,7 @@ namespace quest
 			if ( iEventFlagValue == 1 ) mode = "dark";
 			else mode = "light";
 
-			ecs::ChatSystem::Send(chEntity, CHAT_TYPE_COMMAND, "DayMode %s", mode.c_str());
+			ecs::ChatSystem::Send(ch, CHAT_TYPE_COMMAND, "DayMode %s", mode.c_str());
 		}
 	}
 

@@ -1321,7 +1321,7 @@ void CHARACTER::Disconnect(const char* c_pszReason)
     if (GetGuild())
         GetGuild()->LogoutMember(GetEntityHandle());
 
-    quest::CQuestManager::instance().LogoutPC(this);
+    quest::CQuestManager::instance().LogoutPC(GetEntityHandle());
 
 #ifdef ENABLE_PVP_ADVANCED
     DestroyPvP();
@@ -1363,7 +1363,7 @@ void CHARACTER::Disconnect(const char* c_pszReason)
 
     m_bSkipSave = true;
 
-    quest::CQuestManager::instance().DisconnectPC(this);
+    quest::CQuestManager::instance().DisconnectPC(GetEntityHandle());
 
     CloseSafebox();
     CloseMall();
