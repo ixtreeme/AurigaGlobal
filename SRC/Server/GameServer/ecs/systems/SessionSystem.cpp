@@ -697,7 +697,7 @@ bool CHARACTER::WarpSet(int32_t x, int32_t y, int32_t lPrivateMapIndex)
 
     char buf[256];
     snprintf(buf, sizeof(buf), "%s MapIdx %ld DestMapIdx%ld DestX%ld DestY%ld Empire%d", GetName(), GetMapIndex(), lPrivateMapIndex, x, y, GetEmpire());
-    LogManager::instance().CharLog(this, 0, "WARP", buf);
+    LogManager::instance().CharLog(GetEntityHandle(), 0, "WARP", buf);
 
     return true;
 }
@@ -1283,7 +1283,7 @@ void CHARACTER::Disconnect(const char* c_pszReason)
     p.bHeader = HEADER_GG_LOGOUT;
     strlcpy(p.szName, GetName(), sizeof(p.szName));
     P2P_MANAGER::instance().Send(&p, sizeof(TPacketGGLogout));
-    LogManager::instance().CharLog(this, 0, "LOGOUT", "");
+    LogManager::instance().CharLog(GetEntityHandle(), 0, "LOGOUT", "");
 
 #ifdef ENABLE_PCBANG_FEATURE
     {

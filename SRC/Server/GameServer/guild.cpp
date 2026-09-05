@@ -2113,7 +2113,7 @@ void CGuild::RequestDepositMoney(entt::entity character, int iGold)
 
 	char buf[64+1];
 	snprintf(buf, sizeof(buf), "%u %s", GetID(), GetName());
-	LogManager::instance().CharLog(ch, iGold, "GUILD_DEPOSIT", buf);
+	LogManager::instance().CharLog(character, iGold, "GUILD_DEPOSIT", buf);
 
 	ch->UpdateDepositPulse();
 	LOG_INFO("GUILD: DEPOSIT {}:{} player {}[{}] gold {}", GetName(), GetID(), ecs::PlayerRuntime::GetName(character).data(), ecs::PlayerRuntime::GetPlayerID(character), iGold);

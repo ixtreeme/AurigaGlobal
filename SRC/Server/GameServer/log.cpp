@@ -131,11 +131,10 @@ void LogManager::ItemLogEntity(entt::entity character, entt::entity item,
 		ItemSystem::GetItemOriginalVnum(item));
 }
 
-void LogManager::ItemLog(LPCHARACTER ch, int itemID, int itemVnum, const char * c_pszText, const char * c_pszHint)
+void LogManager::ItemLog(entt::entity ch, int itemID, int itemVnum, const char * c_pszText, const char * c_pszHint)
 {
-	const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
 	LOG_LEVEL_CHECK_N_RET(LOG_LEVEL_MIN);
-	ItemLog((ecs::PlayerRuntime::GetPlayerID(chEntity)), ecs::PlayerRuntime::GetX(chEntity), ecs::PlayerRuntime::GetY(chEntity), itemID, c_pszText, c_pszHint, ecs::PlayerRuntime::GetDesc(chEntity) ? ecs::PlayerRuntime::GetDesc(chEntity)->GetHostName() : "", itemVnum);
+	ItemLog((ecs::PlayerRuntime::GetPlayerID(ch)), ecs::PlayerRuntime::GetX(ch), ecs::PlayerRuntime::GetY(ch), itemID, c_pszText, c_pszHint, ecs::PlayerRuntime::GetDesc(ch) ? ecs::PlayerRuntime::GetDesc(ch)->GetHostName() : "", itemVnum);
 }
 
 void LogManager::CharLog(uint32_t dwPID, uint32_t x, uint32_t y, uint32_t dwValue, const char * c_pszText, const char * c_pszHint, const char * c_pszIP)
@@ -145,16 +144,6 @@ void LogManager::CharLog(uint32_t dwPID, uint32_t x, uint32_t y, uint32_t dwValu
 
 	Query("INSERT IGNORE INTO log%s (type, time, who, x, y, what, how, hint, ip) VALUES('CHARACTER', NOW(), %u, %u, %u, %u, '%s', '%s', '%s')",
 			get_table_postfix(), dwPID, x, y, dwValue, c_pszText, __escape_hint, c_pszIP);
-}
-
-void LogManager::CharLog(LPCHARACTER ch, uint32_t dw, const char * c_pszText, const char * c_pszHint)
-{
-	const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
-	LOG_LEVEL_CHECK_N_RET(LOG_LEVEL_MIN);
-	if (ch)
-		CharLog((ecs::PlayerRuntime::GetPlayerID(chEntity)), ecs::PlayerRuntime::GetX(chEntity), ecs::PlayerRuntime::GetY(chEntity), dw, c_pszText, c_pszHint, ecs::PlayerRuntime::GetDesc(chEntity) ? ecs::PlayerRuntime::GetDesc(chEntity)->GetHostName() : "");
-	else
-		CharLog(0, 0, 0, dw, c_pszText, c_pszHint, "");
 }
 
 void LogManager::CharLog(entt::entity character, uint32_t value,
@@ -197,12 +186,11 @@ void LogManager::HackLog(const char * c_pszHackName, const char * c_pszLogin, co
 	Query("INSERT INTO hack_log (time, login, name, ip, server, why) VALUES(NOW(), '%s', '%s', '%s', '%s', '%s')", c_pszLogin, c_pszName, c_pszIP, g_stHostname.c_str(), __escape_hint);
 }
 
-void LogManager::HackLog(const char * c_pszHackName, LPCHARACTER ch)
+void LogManager::HackLog(const char * c_pszHackName, entt::entity ch)
 {
-	const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
-	if (ecs::PlayerRuntime::GetDesc(chEntity))
+	if (ecs::PlayerRuntime::GetDesc(ch))
 	{
-		HackLog(c_pszHackName, ecs::PlayerRuntime::GetDesc(chEntity)->GetAccountTable().login, ecs::PlayerRuntime::GetName(chEntity).data(), ecs::PlayerRuntime::GetDesc(chEntity)->GetHostName());
+		HackLog(c_pszHackName, ecs::PlayerRuntime::GetDesc(ch)->GetAccountTable().login, ecs::PlayerRuntime::GetName(ch).data(), ecs::PlayerRuntime::GetDesc(ch)->GetHostName());
 	}
 }
 
@@ -315,19 +303,18 @@ void LogManager::ShoutLog(uint8_t bChannel, uint8_t bEmpire, const char * pszTex
 	Query("INSERT INTO shout_log%s VALUES(NOW(), %d, %d,'%s')", get_table_postfix(), bChannel, bEmpire, __escape_hint);
 }
 
-void LogManager::LevelLog(LPCHARACTER pChar, unsigned int level, unsigned int playhour)
+void LogManager::LevelLog(entt::entity pChar, unsigned int level, unsigned int playhour)
 {
-	const entt::entity charEntity = pChar ? pChar->GetEntityHandle() : entt::null;
 	LOG_LEVEL_CHECK_N_RET(LOG_LEVEL_MIN);
 	uint32_t aid = 0;
 
-	if (nullptr != ecs::PlayerRuntime::GetDesc(charEntity))
+	if (nullptr != ecs::PlayerRuntime::GetDesc(pChar))
 	{
-		aid = ecs::PlayerRuntime::GetDesc(charEntity)->GetAccountTable().id;
+		aid = ecs::PlayerRuntime::GetDesc(pChar)->GetAccountTable().id;
 	}
 
 	Query("REPLACE INTO levellog%s (name, level, time, account_id, pid, playtime) VALUES('%s', %u, NOW(), %u, %u, %d)",
-			get_table_postfix(), ecs::PlayerRuntime::GetName(charEntity).data(), level, aid, (ecs::PlayerRuntime::GetPlayerID(charEntity)), playhour);
+			get_table_postfix(), ecs::PlayerRuntime::GetName(pChar).data(), level, aid, (ecs::PlayerRuntime::GetPlayerID(pChar)), playhour);
 }
 
 void LogManager::BootLog(const char * c_pszHostName, uint8_t bChannel)

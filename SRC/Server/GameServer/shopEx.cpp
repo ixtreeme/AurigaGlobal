@@ -149,7 +149,7 @@ int64_t CShopEx::Buy(LPCHARACTER ch, uint8_t pos)
 
 	if (r_item.price <= 0)
 	{
-		LogManager::instance().HackLog("SHOP_BUY_GOLD_OVERFLOW", ch);
+		LogManager::instance().HackLog("SHOP_BUY_GOLD_OVERFLOW", chEntity);
 		return SHOP_SUBHEADER_GC_NOT_ENOUGH_MONEY;
 	}
 

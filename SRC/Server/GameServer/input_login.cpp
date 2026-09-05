@@ -744,7 +744,7 @@ void CInputLogin::Entergame(LPDESC d, const char* data)
 		else {
 			if (0 != g_stClientVersion.compare(d->GetClientVersion())) {
 				d->DelayedDisconnect(0);
-				LogManager::instance().HackLog("VERSION_CONFLICT", ch);
+				LogManager::instance().HackLog("VERSION_CONFLICT", d->GetEntity());
 			}
 		}
 	}

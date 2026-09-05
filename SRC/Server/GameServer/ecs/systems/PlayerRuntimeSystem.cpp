@@ -4897,7 +4897,7 @@ void CHARACTER::SetPlayerProto(const TPlayerTable* t)
 
     if (GetGMLevel() != GM_PLAYER)
     {
-        LogManager::instance().CharLog(this, GetGMLevel(), "GM_LOGIN", "");
+        LogManager::instance().CharLog(GetEntityHandle(), GetGMLevel(), "GM_LOGIN", "");
         LOG_INFO("GM_LOGIN(gmlevel={}, name={}({}), pos=({}, {})", static_cast<int>(GetGMLevel()), GetName(), GetPlayerID(), GetX(), GetY());
     }
 
@@ -5396,7 +5396,7 @@ bool CHARACTER::SwitchChannel(int32_t newAddr, uint16_t newPort)
 
     char buf[256];
     snprintf(buf, sizeof(buf), "%s Port%d Map%ld x%ld y%ld", GetName(), wPort, GetMapIndex(), x, y);
-    LogManager::instance().CharLog(this, 0, "CHANGE_CH", buf);
+    LogManager::instance().CharLog(GetEntityHandle(), 0, "CHANGE_CH", buf);
 
     return true;
 }

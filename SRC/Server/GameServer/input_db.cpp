@@ -600,7 +600,7 @@ void CInputDB::PlayerLoad(LPDESC d, const char * data)
 		snprintf(buf, sizeof(buf), "%s %lld %d %d %u",
 
 				inet_ntoa(ecs::PlayerRuntime::GetDesc(chEntity)->GetAddr().sin_addr), ecs::PointSystem::GetGold(chEntity), g_bChannel, ecs::PlayerRuntime::GetMapIndex(chEntity), ch->GetAlignment());
-		LogManager::instance().CharLog(ch, 0, "LOGIN", buf);
+		LogManager::instance().CharLog(chEntity, 0, "LOGIN", buf);
 
 #ifdef ENABLE_PCBANG_FEATURE // @warme006
 		{

@@ -51,10 +51,9 @@ class LogManager : public singleton<LogManager>
 		void		ItemLog(LPCHARACTER ch, LPITEM item, const char * c_pszText, const char * c_pszHint);
 		void		ItemLogEntity(LPCHARACTER ch, entt::entity item, const char * c_pszText, const char * c_pszHint);
 		void		ItemLogEntity(entt::entity character, entt::entity item, const char * c_pszText, const char * c_pszHint);
-		void		ItemLog(LPCHARACTER ch, int itemID, int itemVnum, const char * c_pszText, const char * c_pszHint);
+		void		ItemLog(entt::entity ch, int itemID, int itemVnum, const char * c_pszText, const char * c_pszHint);
 
 		void		CharLog(uint32_t dwPID, uint32_t x, uint32_t y, uint32_t dw, const char * c_pszText, const char * c_pszHint, const char * c_pszIP);
-		void		CharLog(LPCHARACTER ch, uint32_t dw, const char * c_pszText, const char * c_pszHint);
 		void		CharLog(entt::entity character, uint32_t dw, const char * c_pszText, const char * c_pszHint);
 
 		void		LoginLog(bool isLogin, uint32_t dwAccountID, uint32_t dwPID, uint8_t bLevel, uint8_t bJob, uint32_t dwPlayTime);
@@ -62,7 +61,7 @@ class LogManager : public singleton<LogManager>
 		void		MoneyLog(uint8_t type, uint32_t vnum, int64_t gold);
 
 		void		HackLog(const char * c_pszHackName, const char * c_pszLogin, const char * c_pszName, const char * c_pszIP);
-		void		HackLog(const char * c_pszHackName, LPCHARACTER ch);
+		void		HackLog(const char * c_pszHackName, entt::entity ch);
 		void		HackCRCLog(const char * c_pszHackName, const char * c_pszLogin, const char * c_pszName, const char * c_pszIP, uint32_t dwCRC);
 		void		GoldBarLog(uint32_t dwPID, uint32_t dwItemID, GOLDBAR_HOW eHow, const char * c_pszHint);
 		void		PCBangLoginLog(uint32_t dwPCBangID, const char * c_szPCBangIP, uint32_t dwPlayerID, uint32_t dwPlayTime);
@@ -75,7 +74,7 @@ class LogManager : public singleton<LogManager>
 		void		ChangeNameLog(uint32_t pid, const char * old_name, const char * new_name, const char * ip);
 		void		RefineLog(uint32_t pid, const char * item_name, uint32_t item_id, int item_refine_level, int is_success, const char * how);
 		void		ShoutLog(uint8_t bChannel, uint8_t bEmpire, const char * pszText);
-		void		LevelLog(LPCHARACTER pChar, unsigned int level, unsigned int playhour);
+		void		LevelLog(entt::entity pChar, unsigned int level, unsigned int playhour);
 		void		BootLog(const char * c_pszHostName, uint8_t bChannel);
 		void		VCardLog(uint32_t vcard_id, uint32_t x, uint32_t y, const char * hostname, const char * giver_name, const char * giver_ip, const char * taker_name, const char * taker_ip);
 		void		FishLog(uint32_t dwPID, int prob_idx, int fish_id, int fish_level, uint32_t dwMiliseconds, uint32_t dwVnum = false, uint32_t dwValue = 0);

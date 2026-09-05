@@ -3093,7 +3093,7 @@ namespace NPartyPickupDistribute
 
 					if (iMoney > 1000) // Ãµ¿ø ÀÌ»ó¸¸ ±â·ÏÇÑ´Ù.
 					{
-						LOG_LEVEL_CHECK(LOG_LEVEL_MAX, LogManager::instance().CharLog(ch, iMoney, "GET_GOLD", ""));
+						LOG_LEVEL_CHECK(LOG_LEVEL_MAX, LogManager::instance().CharLog(ch->GetEntityHandle(), iMoney, "GET_GOLD", ""));
 					}
 				}
 		}
@@ -3147,7 +3147,7 @@ bool CHARACTER::DropItem(TItemPos Cell,
 		LPDESC desc = GetDesc();
 		if (desc)
 		{
-			LogManager::instance().HackLog("DROP_HACK", this);
+			LogManager::instance().HackLog("DROP_HACK", GetEntityHandle());
 			desc->SetPhase(PHASE_CLOSE);
 		}
 
@@ -3291,7 +3291,7 @@ bool CHARACTER::DropGold(int64_t gold)
 			PointChange(POINT_GOLD, -gold, true);
 
 			if (gold > 1000) // Ãµ¿ø ÀÌ»ó¸¸ ±â·ÏÇÑ´Ù.
-				LogManager::instance().CharLog(this, gold, "DROP_GOLD", "");
+				LogManager::instance().CharLog(GetEntityHandle(), gold, "DROP_GOLD", "");
 
 #ifdef ENABLE_NEWSTUFF
 			item->StartDestroyEvent(g_aiItemDestroyTime[ITEM_DESTROY_TIME_DROPGOLD]);
@@ -3940,7 +3940,7 @@ void CHARACTER::GiveGold(int64_t iAmount)
 
 		if (dwMyAmount > 1000)
 		{
-			LOG_LEVEL_CHECK(LOG_LEVEL_MAX, LogManager::instance().CharLog(this, dwMyAmount, "GET_GOLD", ""));
+			LOG_LEVEL_CHECK(LOG_LEVEL_MAX, LogManager::instance().CharLog(GetEntityHandle(), dwMyAmount, "GET_GOLD", ""));
 		}
 	}
 	else
@@ -3949,7 +3949,7 @@ void CHARACTER::GiveGold(int64_t iAmount)
 
 		if (iAmount > 1000)
 		{
-			LOG_LEVEL_CHECK(LOG_LEVEL_MAX, LogManager::instance().CharLog(this, iAmount, "GET_GOLD", ""));
+			LOG_LEVEL_CHECK(LOG_LEVEL_MAX, LogManager::instance().CharLog(GetEntityHandle(), iAmount, "GET_GOLD", ""));
 		}
 	}
 	*/
@@ -3959,7 +3959,7 @@ void CHARACTER::GiveGold(int64_t iAmount)
 
 	//if (iAmount > 1000)
 	//{
-	//	LOG_LEVEL_CHECK(LOG_LEVEL_MAX, LogManager::instance().CharLog(this, iAmount, "GET_GOLD", ""));
+	//	LOG_LEVEL_CHECK(LOG_LEVEL_MAX, LogManager::instance().CharLog(GetEntityHandle(), iAmount, "GET_GOLD", ""));
 	//}
 }
 
@@ -4932,12 +4932,12 @@ bool CHARACTER::UseItem(TItemPos Cell, TItemPos DestCell)
 		if (nullptr == ITEM_MANAGER::instance().FindByVID(vid)) // UseItemEx¿¡¼­ ¾ÆÀÌ�
 // ÛÀÌ »èÁ¦ µÇ¾ú´Ù. »èÁ¦ ·Î±×¸¦ ³²±è
 		{
-			LogManager::instance().ItemLog(this, vid, vnum, "REMOVE", hint);
+			LogManager::instance().ItemLog(GetEntityHandle(), vid, vnum, "REMOVE", hint);
 		}
 		else if (oldCount != item->GetCount())
 		{
 			snprintf(hint + len, sizeof(hint) - len, " %u", oldCount - 1);
-			LogManager::instance().ItemLog(this, vid, vnum, "USE_ITEM", hint);
+			LogManager::instance().ItemLog(GetEntityHandle(), vid, vnum, "USE_ITEM", hint);
 		}
 		return (ret);
 	}
@@ -7639,7 +7639,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 //
 //				char buf[256 + 1];
 //				snprintf(buf, sizeof(buf), "%u %u", old_alignment, GetAlignment() / 10);
-//				LogManager::instance().CharLog(this, val, "MYTHICAL_PEACH", buf);
+//				LogManager::instance().CharLog(GetEntityHandle(), val, "MYTHICAL_PEACH", buf);
 //			}
 //			break;
 
@@ -13384,14 +13384,14 @@ bool CHARACTER::GiveItemFromSpecialItemGroup(uint32_t dwGroupNum, std::vector<ui
 		{
 		case CSpecialItemGroup::GOLD:
 			PointChange(POINT_GOLD, dwCount);
-			LogManager::instance().CharLog(this, dwCount, "TREASURE_GOLD", "");
+			LogManager::instance().CharLog(GetEntityHandle(), dwCount, "TREASURE_GOLD", "");
 
 			bSuccess = true;
 			break;
 		case CSpecialItemGroup::EXP:
 		{
 			PointChange(POINT_EXP, dwCount);
-			LogManager::instance().CharLog(this, dwCount, "TREASURE_EXP", "");
+			LogManager::instance().CharLog(GetEntityHandle(), dwCount, "TREASURE_EXP", "");
 
 			bSuccess = true;
 		}

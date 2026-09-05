@@ -816,7 +816,7 @@ void Change(entt::entity e, uint8_t type, int64_t amount, bool bAmount, bool bBr
 		{
 			quest::CQuestManager::instance().LevelUp(ecs::PlayerRuntime::GetPlayerID(e));
 
-			LogManager::instance().LevelLog(ch, val, GetReal(e, POINT_PLAYTIME) + (get_dword_time() - (ch ? ch->GetPlayStartTime() : 0u)) / 60000);
+			LogManager::instance().LevelLog(e, val, GetReal(e, POINT_PLAYTIME) + (get_dword_time() - (ch ? ch->GetPlayStartTime() : 0u)) / 60000);
 
 			if ((ch ? ch->GetGuild() : nullptr))
 			{
@@ -1133,7 +1133,7 @@ void Change(entt::entity e, uint8_t type, int64_t amount, bool bAmount, bool bBr
 		{
 			LOG_ERROR("[OVERFLOW_GOLD] OriGold {} AddedGold {} id {} Name {} ", GetGold(e), amount, ecs::PlayerRuntime::GetPlayerID(e), ecs::PlayerRuntime::GetName(e).data());
 
-			LogManager::instance().CharLog(ch, GetGold(e) + amount, "OVERFLOW_GOLD", "");
+			LogManager::instance().CharLog(e, GetGold(e) + amount, "OVERFLOW_GOLD", "");
 			return;
 		}
 

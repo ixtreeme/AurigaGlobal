@@ -427,9 +427,9 @@ bool COXEventManager::LogWinner()
 
 	for (; iter != m_map_attender.end(); ++iter)
 	{
-		LPCHARACTER pkChar = CHARACTER_MANAGER::instance().FindByPID(iter->second);
+		const entt::entity pkChar = CHARACTER_MANAGER::instance().FindEntityByPID(iter->second);
 
-		if (pkChar)
+		if (ecs::PlayerRuntime::IsValid(pkChar))
 			LogManager::instance().CharLog(pkChar, 0, "OXEVENT", "LastManStanding");
 	}
 

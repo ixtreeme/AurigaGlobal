@@ -261,7 +261,7 @@ bool SpamBlockCheck(LPCHARACTER ch, const char* const buf, const size_t buflen)
 			it->second.second = event_create(block_chat_by_ip_event, info, PASSES_PER_SEC(g_uiSpamBlockDuration));
 			LOG_INFO("SPAM_IP: {} for {} seconds", info->host, g_uiSpamBlockDuration);
 
-			LogManager::instance().CharLog(ch, 0, "SPAM", word);
+			LogManager::instance().CharLog(chEntity, 0, "SPAM", word);
 
 			SendBlockChatInfo(ch, event_time(it->second.second) / passes_per_sec);
 
@@ -2713,7 +2713,7 @@ int CInputMain::SyncPosition(entt::entity character, const char * c_pcData, uint
 				ch->SetSyncHackCount(ch->GetSyncHackCount() + 1);
 				continue;
 			} else{
-				LogManager::instance().HackLog( "SYNC_POSITION_HACK", ch );
+				LogManager::instance().HackLog( "SYNC_POSITION_HACK", character );
 
 				LOG_ERROR("Too far SyncPosition DistanceWithSyncOwner({})({}) from Name({}) CH({},{}) VICTIM({},{}) SYNC({},{})", fDistWithSyncOwner, ecs::PlayerRuntime::GetName(victimEntity).data(), ecs::PlayerRuntime::GetName(character).data(), ecs::PlayerRuntime::GetX(character), ecs::PlayerRuntime::GetY(character), ecs::PlayerRuntime::GetX(victimEntity), ecs::PlayerRuntime::GetY(victimEntity), e->lX, e->lY);
 
@@ -2739,7 +2739,7 @@ int CInputMain::SyncPosition(entt::entity character, const char * c_pcData, uint
 			}
 			else
 			{
-				LogManager::instance().HackLog("SYNC_POSITION_HACK", ch);
+				LogManager::instance().HackLog("SYNC_POSITION_HACK", character);
 
 				LOG_ERROR("Too often SyncPosition Interval({}ms)({}) from Name({}) VICTIM({},{}) SYNC({},{})", tvDiff->tv_sec * 1000 + tvDiff->tv_usec / 1000, ecs::PlayerRuntime::GetName(victimEntity).data(), ecs::PlayerRuntime::GetName(character).data(), ecs::PlayerRuntime::GetX(victimEntity), ecs::PlayerRuntime::GetY(victimEntity), e->lX, e->lY);
 
@@ -2750,7 +2750,7 @@ int CInputMain::SyncPosition(entt::entity character, const char * c_pcData, uint
 		}
 		else if( fDist > 40.0f ){
 
-			LogManager::instance().HackLog( "SYNC_POSITION_HACK", ch );
+			LogManager::instance().HackLog( "SYNC_POSITION_HACK", character );
 
 			LOG_ERROR("Too far SyncPosition Distance({})({}) from Name({}) CH({},{}) VICTIM({},{}) SYNC({},{})", fDist, ecs::PlayerRuntime::GetName(victimEntity).data(), ecs::PlayerRuntime::GetName(character).data(), ecs::PlayerRuntime::GetX(character), ecs::PlayerRuntime::GetY(character), ecs::PlayerRuntime::GetX(victimEntity), ecs::PlayerRuntime::GetY(victimEntity), e->lX, e->lY);
 
@@ -3844,7 +3844,7 @@ void CInputMain::AnswerMakeGuild(entt::entity character, const char* c_pData)
 
 		char Log[128];
 		snprintf(Log, sizeof(Log), "GUILD_NAME %s MASTER %s", cp.name, ecs::PlayerRuntime::GetName(character).data());
-		LogManager::instance().CharLog(ch, 0, "MAKE_GUILD", Log);
+		LogManager::instance().CharLog(character, 0, "MAKE_GUILD", Log);
 
 		ch->RemoveSpecifyItem(GUILD_CREATE_ITEM_VNUM, 1);
 		//ch->SendGuildName(dwGuildID);

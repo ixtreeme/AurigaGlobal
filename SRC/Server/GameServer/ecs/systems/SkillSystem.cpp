@@ -763,14 +763,14 @@ bool CHARACTER::LearnGrandMasterSkill(uint32_t dwSkillVnum)
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 397, "");
 #endif
-		LogManager::instance().CharLog(this, dwSkillVnum, "GM_READ_FAIL", "");
+		LogManager::instance().CharLog(GetEntityHandle(), dwSkillVnum, "GM_READ_FAIL", "");
 		return false;
 	}
 
 #ifdef TEXTS_IMPROVEMENT
 	ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 304, "");
 #endif
-	LogManager::instance().CharLog(this, dwSkillVnum, "GM_READ_SUCCESS", "");
+	LogManager::instance().CharLog(GetEntityHandle(), dwSkillVnum, "GM_READ_SUCCESS", "");
 	return true;
 }
 
@@ -945,7 +945,7 @@ bool CHARACTER::LearnSkillByBook(uint32_t dwSkillVnum, uint8_t bProb)
 #ifdef TEXTS_IMPROVEMENT
 				ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 304, "");
 #endif
-				LogManager::instance().CharLog(this, dwSkillVnum, "READ_SUCCESS", "");
+				LogManager::instance().CharLog(GetEntityHandle(), dwSkillVnum, "READ_SUCCESS", "");
 				return true;
 			}
 			else {
@@ -1006,7 +1006,7 @@ bool CHARACTER::LearnSkillByBook(uint32_t dwSkillVnum, uint8_t bProb)
 #ifdef TEXTS_IMPROVEMENT
 				ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 304, "");
 #endif
-				LogManager::instance().CharLog(this, dwSkillVnum, "READ_SUCCESS", "");
+				LogManager::instance().CharLog(GetEntityHandle(), dwSkillVnum, "READ_SUCCESS", "");
 				return true;
 			}
 			else {
@@ -1081,7 +1081,7 @@ bool CHARACTER::LearnSkillByBook(uint32_t dwSkillVnum, uint8_t bProb)
 #ifdef TEXTS_IMPROVEMENT
 						ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 304, "");
 #endif
-						LogManager::instance().CharLog(this, dwSkillVnum, "READ_SUCCESS", "");
+						LogManager::instance().CharLog(GetEntityHandle(), dwSkillVnum, "READ_SUCCESS", "");
 						return true;
 					}
 					else
@@ -1116,14 +1116,14 @@ bool CHARACTER::LearnSkillByBook(uint32_t dwSkillVnum, uint8_t bProb)
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 304, "");
 #endif
-		LogManager::instance().CharLog(this, dwSkillVnum, "READ_SUCCESS", "");
+		LogManager::instance().CharLog(GetEntityHandle(), dwSkillVnum, "READ_SUCCESS", "");
 	}
 	else
 	{
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 397, "");
 #endif
-		LogManager::instance().CharLog(this, dwSkillVnum, "READ_FAIL", "");
+		LogManager::instance().CharLog(GetEntityHandle(), dwSkillVnum, "READ_FAIL", "");
 	}
 
 	return true;
@@ -1689,7 +1689,7 @@ void CHARACTER::SkillLevelUp(uint32_t dwVnum, uint8_t bMethod)
 
 	LOG_INFO("{}", szSkillUp);
 
-	LogManager::instance().CharLog(this, pkSk->dwVnum, "SKILLUP", szSkillUp);
+	LogManager::instance().CharLog(GetEntityHandle(), pkSk->dwVnum, "SKILLUP", szSkillUp);
 	Save();
 
 	ComputePoints();

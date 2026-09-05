@@ -2173,7 +2173,7 @@ void CHARACTER::Dead(entt::entity killer, bool bImmediateDead)
 			LOG_TRACE("DEAD: {} {} WITH PENALTY", GetName(), static_cast<const void*>(this));
 						if (auto* flags = RuntimeFlags(GetEntityHandle()))
 				SET_BIT(flags->instantFlag, INSTANT_FLAG_DEATH_PENALTY);
-			LogManager::instance().CharLog(this, ecs::PlayerRuntime::GetRaceNum(killer), "DEAD_BY_NPC", ecs::PlayerRuntime::GetName(killer).data());
+			LogManager::instance().CharLog(GetEntityHandle(), ecs::PlayerRuntime::GetRaceNum(killer), "DEAD_BY_NPC", ecs::PlayerRuntime::GetName(killer).data());
 		}
 		else
 		{
@@ -2198,7 +2198,7 @@ void CHARACTER::Dead(entt::entity killer, bool bImmediateDead)
 					GetEmpire(), GetAlignment(), GetPKMode(), GetName(),
 					ecs::PlayerRuntime::GetEmpire(killer), pkKiller->GetAlignment(), pkKiller->GetPKMode(), ecs::PlayerRuntime::GetName(killer).data());
 
-				LogManager::instance().CharLog(this, ecs::PlayerRuntime::GetPlayerID(killer), "DEAD_BY_PC", buf);
+				LogManager::instance().CharLog(GetEntityHandle(), ecs::PlayerRuntime::GetPlayerID(killer), "DEAD_BY_PC", buf);
 			}
 			else
 			{
@@ -2243,7 +2243,7 @@ void CHARACTER::Dead(entt::entity killer, bool bImmediateDead)
 					GetEmpire(), GetAlignment(), GetPKMode(), GetName(),
 					ecs::PlayerRuntime::GetEmpire(killer), pkKiller->GetAlignment(), pkKiller->GetPKMode(), ecs::PlayerRuntime::GetName(killer).data());
 
-				LogManager::instance().CharLog(this, ecs::PlayerRuntime::GetPlayerID(killer), "DEAD_BY_PC", buf);
+				LogManager::instance().CharLog(GetEntityHandle(), ecs::PlayerRuntime::GetPlayerID(killer), "DEAD_BY_PC", buf);
 			}
 
 #ifdef ENABLE_BATTLE_PASS
@@ -2388,9 +2388,9 @@ void CHARACTER::Dead(entt::entity killer, bool bImmediateDead)
 		char buf[51];
 		snprintf(buf, sizeof(buf), "%d %ld", g_bChannel, ecs::PlayerRuntime::GetMapIndex(killer));
 		if (IsStone())
-			LogManager::instance().CharLog(pkKiller, GetRaceNum(), "STONE_KILL", buf);
+			LogManager::instance().CharLog(killer, GetRaceNum(), "STONE_KILL", buf);
 		else
-			LogManager::instance().CharLog(pkKiller, GetRaceNum(), "BOSS_KILL", buf);
+			LogManager::instance().CharLog(killer, GetRaceNum(), "BOSS_KILL", buf);
 	}
 	// END_OF_BOSS_KILL_LOG
 
@@ -2618,7 +2618,7 @@ bool CHARACTER::Attack(entt::entity victim, uint8_t bType)
 	if (sectree && vsectree) {
 		if (sectree->IsAttr(GetX(), GetY(), ATTR_BANPK) || vsectree->IsAttr(ecs::PlayerRuntime::GetX(victim), ecs::PlayerRuntime::GetY(victim), ATTR_BANPK)) {
 			if (GetDesc()) {
-				LogManager::instance().HackLog("ANTISAFEZONE", this);
+				LogManager::instance().HackLog("ANTISAFEZONE", GetEntityHandle());
 				GetDesc()->DelayedDisconnect(3);
 			}
 		}
@@ -7306,7 +7306,7 @@ void CHARACTER::IncreaseComboHackCount(int k)
 			if (GetDesc()->DelayedDisconnect(number(2, 7)))
 			{
 				LOG_INFO("COMBO_HACK_DISCONNECT: {} count: {}", GetName(), m_iComboHackCount);
-				LogManager::instance().HackLog("Combo", this);
+				LogManager::instance().HackLog("Combo", GetEntityHandle());
 			}
 	}
 }

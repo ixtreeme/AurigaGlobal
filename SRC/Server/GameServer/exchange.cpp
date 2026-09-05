@@ -1097,10 +1097,10 @@ bool CExchange::Done()
 		{
 			char exchange_buf[51];
 			snprintf(exchange_buf, sizeof(exchange_buf), "%u %s", ecs::PlayerRuntime::GetPlayerID(((GetOwner()) ? (GetOwner())->GetEntityHandle() : entt::null)), ecs::PlayerRuntime::GetName(((GetOwner()) ? (GetOwner())->GetEntityHandle() : entt::null)).data());
-			LogManager::instance().CharLog(victim, m_lGold, "EXCHANGE_GOLD_TAKE", exchange_buf);
+			LogManager::instance().CharLog(victimEntity, m_lGold, "EXCHANGE_GOLD_TAKE", exchange_buf);
 
 			snprintf(exchange_buf, sizeof(exchange_buf), "%u %s", ecs::PlayerRuntime::GetPlayerID(victimEntity), ecs::PlayerRuntime::GetName(victimEntity).data());
-			LogManager::instance().CharLog(GetOwner(), m_lGold, "EXCHANGE_GOLD_GIVE", exchange_buf);
+			LogManager::instance().CharLog(GetOwner() ? GetOwner()->GetEntityHandle() : entt::null, m_lGold, "EXCHANGE_GOLD_GIVE", exchange_buf);
 		}
 	}
 

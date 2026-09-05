@@ -1961,7 +1961,7 @@ ACMD(do_set)
 				}
 				if (0 == after_gold && 0 != before_gold)
 				{
-					LogManager::instance().CharLog(tch, gold, "ZERO_GOLD", "GM");
+					LogManager::instance().CharLog(((tch) ? (tch)->GetEntityHandle() : entt::null), gold, "ZERO_GOLD", "GM");
 				}
 			}
 			break;
@@ -2092,7 +2092,7 @@ ACMD(do_set)
 			int after_gaya = tch->GetGaya();
 			if (0 == after_gaya && 0 != before_gaya)
 			{
-				LogManager::instance().CharLog(tch, gaya, "ZERO_GAYA", "GM");
+				LogManager::instance().CharLog(((tch) ? (tch)->GetEntityHandle() : entt::null), gaya, "ZERO_GAYA", "GM");
 			}
 		}
 		break;
