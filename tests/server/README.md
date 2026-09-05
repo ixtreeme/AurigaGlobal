@@ -10,8 +10,8 @@ initializes the entire record before publication, and removal detaches it before
 point callbacks. Short-lived shared leases keep removed records alive only while
 an operation/snapshot still uses them; the registry owns normal live membership.
 
-Point application/refresh, lookup, flags, individual/type removal and good/bad
-affect removal are native entity operations. Checks cover foreign/repeated
+Addition/overwrite, point application/refresh, lookup, flags, individual/type
+removal and good/bad affect removal are native entity operations. Checks cover foreign/repeated
 removal, destruction and recycled entity handles, shared allocation lifetime,
 both flag words and item IDs in the flag field, loaded-state transitions,
 INT32_MIN bonus reversal, invalid apply values, the missing-guild gate,
@@ -21,6 +21,26 @@ clamping, revive/mount exceptions, finite type-removal batches and 1,000 repeate
 allocation/refresh/removal cycles. The obsolete ECS expiry pass is a no-op: the
 legacy affect event still decrements duration exactly once.
 
+Addition also tests cube apply-slot matching, non-overwrite stacking, zero
+duration, invalid apply rejection, scheduling failure before any grant, polymorph
+conflicts, movement abort on stun, same-type reentrant changes during overwrite,
+owner destruction at scheduler/point/update/DB boundaries, and packet ordering.
+Real client/DB packet structures are captured by inert descriptor transport
+doubles; tests check fields, player ID, no-save types, DB remove/add order,
+independent wire keys and latest-value publication after nested replacements.
+The (type, apply) wire key cannot represent multiple same-key records: runtime
+stacking is retained, but only the newest matching record is published.
+
+`AffectTickState` owns the scheduled event. Its move-only component cancels the
+timer on destruction; CHARACTER no longer has an affect-event member. Start/stop,
+shutdown cancellation before event-queue teardown, pending/reentrant starts,
+component relocation/replacement, stale callbacks and recycled owners are
+checked with an in-memory scheduler double. The callback
+validates both entity generation and current event identity before the legacy
+expiry/recovery leaf; an entity without that leaf stops safely, it does not yet
+execute native-only expiry/recovery. Muyeong/Gyeonggong are separate skill timers
+and have not been migrated in this step.
+
 ```powershell
 cmake --build build --config Release --target GameServer AffectLifecycleTests
 ctest --test-dir build -C Release -R '^affect_lifecycle$' --output-on-failure
@@ -28,12 +48,13 @@ cmake --build build-asan --config RelWithDebInfo --target AffectLifecycleTests
 ctest --test-dir build-asan -C RelWithDebInfo -R '^affect_lifecycle$' --output-on-failure
 ```
 
-Point changes/recomputation, guild lookup, descriptors and update packets are
-service doubles; unrelated legacy services fail if called. This does not execute
-the complete point/affect feedback cycle, live guild-war rules, DB packets,
-login hydration, clear-on-death policy, expiry/recovery or skill timer callbacks.
-Add/load/clear/expiry and Muyeong/Gyeonggong timer internals still include legacy
-CHARACTER work, although they now use the same owning ECS storage. Raw CAffect*
+Point changes/recomputation, guild lookup, movement/posture, scheduler and packet
+transport are service doubles; unrelated legacy services fail if called. This
+does not execute the complete point/affect feedback cycle, live guild-war rules,
+socket/SQL I/O, the real event queue, login hydration, clear-on-death policy,
+expiry/recovery or skill timer callbacks. Load/clear/expiry and
+Muyeong/Gyeonggong timer internals still include legacy CHARACTER work, although
+they now use the same owning ECS storage. Raw CAffect*
 lookup remains a borrowed compatibility API: do not retain it across callbacks,
 and do not release it directly. A lease prevents deallocation, not logical
 membership changes or arbitrary mutations of a retained record.
@@ -46,6 +67,32 @@ death/revive saved buffs, poison/fire/bleeding expiry, recovery item locks, guil
 war buffs, repeated equipment/point recomputation and both skill timers against
 the real client and DB. This is a bounded ECS migration, not a claim that every
 affect lifecycle path or the original core crashes have been resolved.
+
+## Real event-queue lifecycle
+
+`EventLifecycleTests` compiles the existing `event.cpp` and `event_queue.cpp`,
+using the production allocator, scheduler and queue with only a fixed clock and
+fatal-error/logging hooks. Checks cover self-cancellation inside a running
+callback, ECS affect-timer destruction during a callback, EnTT component
+relocation, cancellation before execution, repeat timing, reset with a cancelled
+older queue entry, shutdown and externally retained event handles.
+
+Deleting a queue entry now clears its event's backlink only when that entry is
+still current. This prevents cancellation from dereferencing freed queue memory
+without erasing a newer entry installed by a timer reset. These checks complement
+the affect scheduler double above; they do not run full affect expiry or network
+and database integration.
+Before the fix, the self-cancellation case reproduced an AddressSanitizer
+heap-use-after-free in `event_cancel`, with the entry freed by `CEventQueue::Delete`
+inside `event_process` before the callback. This proves the queue defect, not the
+cause of a particular historical live-server crash.
+
+```powershell
+cmake --build build --config Release --target EventLifecycleTests
+ctest --test-dir build -C Release -R '^event_lifecycle$' --output-on-failure
+cmake --build build-asan --config RelWithDebInfo --target EventLifecycleTests
+ctest --test-dir build-asan -C RelWithDebInfo -R '^event_lifecycle$' --output-on-failure
+```
 
 ## Combat state
 

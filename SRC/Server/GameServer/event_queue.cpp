@@ -57,6 +57,11 @@ TQueueElement * CEventQueue::Dequeue()
 
 void CEventQueue::Delete(TQueueElement * pElem)
 {
+	// The event can outlive this queue entry (running callbacks, timer owners,
+	// or shutdown). A reset may already have installed a newer entry: detach
+	// only our own backlink before releasing the entry and its event lease.
+	if (pElem->pvData && pElem->pvData->q_el == pElem)
+		pElem->pvData->q_el = nullptr;
 #ifdef M2_USE_POOL
 	pool_.Destroy(pElem);
 #else

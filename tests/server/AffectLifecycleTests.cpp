@@ -11,6 +11,9 @@
 #include <functional>
 #include <iostream>
 #include <stdexcept>
+#include "../../SRC/Server/GameServer/ecs/components/movement_components.hpp"
+#include "../../SRC/Server/GameServer/ecs/components/character_runtime_components.hpp"
+#include "../../SRC/Server/GameServer/ecs/components/transform_components.hpp"
 #include "../../SRC/Server/GameServer/stdafx.h"
 #include "../../SRC/Server/GameServer/ecs/systems/PointSystem.hpp"
 #include "../../SRC/Server/GameServer/ecs/systems/PlayerRuntimeSystem.hpp"
@@ -61,6 +64,18 @@ namespace {
 int checks = 0, computes = 0, packets = 0;
 std::function<void(entt::entity, uint8_t, int64_t)> onChange;
 std::function<void(entt::entity)> onCompute;
+std::function<void(entt::entity)> onUpdate, onSync;
+std::function<void()> onSchedule;
+std::function<void(uint8_t)> onClientPacket, onDBPacket;
+std::vector<LPEVENT> scheduled;
+int schedules = 0, cancels = 0, syncs = 0, chats = 0;
+bool failSchedule = false;
+entt::entity connected = entt::null;
+DESC* client = nullptr;
+std::vector<TPacketGCAffectAdd> clientAdds;
+std::vector<TPacketGCAffectRemove> clientRemoves;
+std::vector<uint8_t> dbHeaders;
+std::map<std::pair<uint32_t, uint8_t>, TPacketGDAddAffect> storedAffects;
 struct TestPoints { std::array<int64_t, POINT_MAX_NUM> values{}; };
 void Check(bool value, const char* why) { ++checks; if (!value) throw std::runtime_error(why); }
 [[noreturn]] void UnexpectedService(const char* name) { throw std::runtime_error(name); }
@@ -275,6 +290,185 @@ void RemovalChecks() {
     A::RemoveGoodAffects(e);
     Check(!A::FindAffect(e, AFFECT_STR) && A::FindAffect(e, AFFECT_AUTO_HP_RECOVERY), "good removal preserves unrelated types");
 }
+bool Add(entt::entity e, int value = 10, uint32_t type = AFFECT_STR,
+    uint8_t apply = POINT_ST, uint32_t flag = 0, bool overwrite = true, bool cube = false, int duration = 60) {
+    return A::AddAffect(e, type, apply, value, flag, duration, 0, overwrite, cube);
+}
+void ResetPublication() {
+    clientAdds.clear(); clientRemoves.clear(); dbHeaders.clear(); storedAffects.clear();
+    onClientPacket = {}; onDBPacket = {}; onUpdate = {}; onChange = {}; onCompute = {}; onSync = {}; onSchedule = {};
+}
+void AddChecks() {
+    auto e = Actor();
+    const int before = schedules;
+    Check(Add(e), "entity-only add without descriptor");
+    Check(ecs::PointSystem::Get(e, POINT_ST) == 10, "native add points");
+    Check(Add(e, 25), "overwrite existing affect");
+    Check(A::Snapshot(e).size() == 1 && ecs::PointSystem::Get(e, POINT_ST) == 25, "overwrite reverses old bonus once");
+    Check(schedules == before + 1, "adds reuse a single timer");
+    Check(Add(e, 5, AFFECT_STR, POINT_DX, 0, true, true), "cube second apply slot");
+    Check(A::Snapshot(e).size() == 2 && ecs::PointSystem::Get(e, POINT_DX) == 5, "cube preserves different apply slot");
+    Check(Add(e, 9, AFFECT_STR, POINT_DX, 0, true, true), "cube overwrite matching apply");
+    Check(ecs::PointSystem::Get(e, POINT_DX) == 9, "cube inverse and new points");
+    Check(Add(e, 2, AFFECT_STR, POINT_ST, 0, false), "non-overwrite stack");
+    Check(A::Snapshot(e).size() == 3 && ecs::PointSystem::Get(e, POINT_ST) == 27, "non-overwrite preserves existing records");
+    Check(Add(e, 1, AFFECT_DEX, POINT_DX, 0, true, false, 0), "zero duration normalized");
+    Check(A::FindAffect(e, AFFECT_DEX)->lDuration == 1, "one-second minimum for zero duration");
+    if (POINT_MAX_NUM <= UINT8_MAX)
+        Check(!Add(e, 1, AFFECT_STR, static_cast<uint8_t>(POINT_MAX_NUM)), "invalid apply rejected before overwrite");
+    g_registry.destroy(e);
+    Check(!Add(e) && !Add(entt::null), "stale/null add rejected");
+    e = Actor(); failSchedule = true;
+    Check(!Add(e) && A::Snapshot(e).empty() && ecs::PointSystem::Get(e, POINT_ST) == 0,
+        "failed scheduling grants no affect or points");
+    failSchedule = false; Check(Add(e), "scheduling failure can be retried");
+
+    e = Actor(); Add(e, 5);
+    onChange = [&](entt::entity actor, uint8_t, int64_t amount) {
+        if (amount < 0) { onChange = {}; Check(Add(actor, 77), "nested overwrite during old bonus removal"); }
+    };
+    Check(!Add(e, 20), "obsolete outer overwrite stopped before attachment");
+    Check(A::Snapshot(e).size() == 1 && A::FindAffect(e, AFFECT_STR)->lApplyValue == 77 &&
+        ecs::PointSystem::Get(e, POINT_ST) == 77, "nested replacement wins");
+    e = Actor(); Add(e, 5);
+    onChange = [&](entt::entity actor, uint8_t, int64_t amount) {
+        if (amount < 0) { onChange = {}; A::RemoveAffect(actor, static_cast<uint32_t>(AFFECT_STR)); }
+    };
+    Check(!Add(e, 20) && A::Snapshot(e).empty(), "remove request in replacement gap cancels outer add");
+    e = Actor();
+    onUpdate = [&](entt::entity actor) { onUpdate = {}; A::RemoveAffect(actor, static_cast<uint32_t>(AFFECT_STR)); };
+    Check(!Add(e) && A::Snapshot(e).empty(), "callback removal cancels add publication");
+
+    for (int stage = 0; stage < 3; ++stage) {
+        e = Actor(); entt::entity replacement = entt::null;
+        const auto destroy = [&] { g_registry.destroy(e); replacement = Actor(); };
+        if (stage == 0) onSchedule = [&] { onSchedule = {}; destroy(); };
+        if (stage == 1) onChange = [&](entt::entity, uint8_t, int64_t) { onChange = {}; destroy(); };
+        if (stage == 2) onUpdate = [&](entt::entity) { onUpdate = {}; destroy(); };
+        Check(!Add(e), "destroyed owner aborts add");
+        Check(replacement != e && A::Snapshot(replacement).empty(), "recycled owner is untouched");
+    }
+    e = Actor();
+    g_registry.emplace<ecs::Position>(e, 100, 200, 0);
+    g_registry.emplace<ecs::MovementDestination>(e, 300, 400);
+    auto& movement = g_registry.emplace<ecs::MovementState>(e);
+    movement.moveDuration = 500; movement.moveStartTime = 99;
+    g_registry.emplace<ecs::CharacterRuntimeFlagsComponent>(e).position = POS_FIGHTING;
+    const int beforeSync = syncs;
+    Check(Add(e, 0, AFFECT_STUN, POINT_NONE, AFF_STUN), "native stun add");
+    Check(!g_registry.all_of<ecs::MovementDestination>(e) && movement.moveDuration == 0 && movement.moveStartTime == 0,
+        "stun aborts destination and timing");
+    Check(g_registry.get<ecs::CharacterRuntimeFlagsComponent>(e).position == POS_STANDING && syncs == beforeSync + 1,
+        "stun leaves fighting posture and publishes sync");
+    Check(Add(e, 0, AFFECT_STUN, POINT_NONE, AFF_STUN) && syncs == beforeSync + 1, "stationary stun sends no movement sync");
+    e = Actor();
+    Add(e, 5, SKILL_GEOMKYUNG, POINT_ST, AFF_GEOMGYEONG);
+    Add(e, 7, SKILL_GWIGEOM, POINT_ST, AFF_GWIGUM);
+    Check(Add(e, 0, AFFECT_POLYMORPH, POINT_NONE), "polymorph add");
+    Check(!A::FindAffect(e, SKILL_GEOMKYUNG) && !A::FindAffect(e, SKILL_GWIGEOM), "polymorph removes conflicting buffs");
+}
+void TimerChecks() {
+    auto e = Actor();
+    Check(A::StartAffectEvent(e), "native timer start");
+    auto timer = g_registry.get<ecs::AffectTickState>(e).timer;
+    const auto count = schedules;
+    Check(A::StartAffectEvent(e) && schedules == count, "idempotent timer start");
+    Check(static_cast<char_event_info*>(timer->info)->ch == e, "timer carries versioned entity only");
+    A::StopAffectEvent(e);
+    Check(timer->is_force_to_end && !g_registry.get<ecs::AffectTickState>(e).timer, "timer stopped and slot cleared");
+    A::StartAffectEvent(e);
+    auto replacement = g_registry.get<ecs::AffectTickState>(e).timer;
+    Check(timer->func(timer, 0) == 0 && g_registry.get<ecs::AffectTickState>(e).timer == replacement,
+        "old callback cannot stop replacement timer");
+    g_registry.destroy(e);
+    Check(replacement->is_force_to_end && replacement->func(replacement, 0) == 0, "entity destruction cancels timer and rejects stale callback");
+    e = Actor();
+    onSchedule = [&] { Check(!A::StartAffectEvent(e), "recursive start cannot report an uninstalled timer"); };
+    const auto before = schedules;
+    Check(A::StartAffectEvent(e) && schedules == before + 1, "recursive start does not allocate duplicate timer");
+    onSchedule = {};
+    timer = g_registry.get<ecs::AffectTickState>(e).timer;
+    g_registry.remove<ecs::AffectTickState>(e);
+    Check(timer->is_force_to_end, "component removal cancels timer");
+    onSchedule = [&] {
+        onSchedule = {};
+        Check(!Add(e), "nested add cannot use a pending timer");
+        A::StopAffectEvent(e);
+    };
+    Check(!A::StartAffectEvent(e) && A::Snapshot(e).empty(), "cancelled pending creation grants no nested affect");
+    onSchedule = [&] { onSchedule = {}; A::StopAffectEvent(e); A::StartAffectEvent(e); };
+    Check(!A::StartAffectEvent(e), "superseded pending start rejected");
+    Check(g_registry.get<ecs::AffectTickState>(e).timer && !g_registry.get<ecs::AffectTickState>(e).timer->is_force_to_end,
+        "new timer survives outer start completion");
+    timer = g_registry.get<ecs::AffectTickState>(e).timer;
+    Check(timer->func(timer, 0) == 0 && timer->is_force_to_end, "unmigrated tick leaf absent: stop safely");
+    A::StartAffectEvent(e);
+    timer = g_registry.get<ecs::AffectTickState>(e).timer;
+    g_registry.remove<ecs::AffectList>(e);
+    Check(timer->func(timer, 0) == 0 && !g_registry.get<ecs::AffectTickState>(e).timer,
+        "missing affect storage clears the stopped timer slot");
+    g_registry.emplace<ecs::AffectList>(e);
+    Check(A::StartAffectEvent(e) && g_registry.get<ecs::AffectTickState>(e).timer != timer,
+        "recreated affect storage can start a fresh timer");
+    // EnTT moves the last component into an erased slot. Moving is not cancellation.
+    const auto a = Actor(), b = Actor(); A::StartAffectEvent(a); A::StartAffectEvent(b);
+    timer = g_registry.get<ecs::AffectTickState>(b).timer;
+    g_registry.remove<ecs::AffectTickState>(a);
+    Check(!timer->is_force_to_end && g_registry.get<ecs::AffectTickState>(b).timer == timer, "component relocation transfers timer ownership");
+    g_registry.clear<ecs::AffectTickState>();
+    Check(timer->is_force_to_end, "shutdown cancels ECS timers before queue teardown");
+}
+void PublicationChecks() {
+    DESC descriptor;
+    CLIENT_DESC database;
+    client = &descriptor; db_clientdesc = &database;
+    auto reset = [&] { ResetPublication(); connected = Actor(); return connected; };
+    auto e = reset();
+    Check(Add(e, 41), "connected add");
+    Check(clientAdds.size() == 1 && dbHeaders.size() == 1 && clientRemoves.empty(), "single client/DB add");
+    const auto& packet = clientAdds.back().elem;
+    Check(packet.dwType == AFFECT_STR && packet.bApplyOn == POINT_ST && packet.lApplyValue == 41 &&
+        packet.lDuration == 60 && packet.lSPCost == 0 && packet.dwFlag == 0, "client fields preserved");
+    Check(storedAffects.at({AFFECT_STR, POINT_ST}).dwPID == 1, "entity player ID persisted");
+    Check(Add(e, 51) && storedAffects.at({AFFECT_STR, POINT_ST}).elem.lApplyValue == 51,
+        "overwrite persists replacement");
+    Check(clientRemoves.size() == 1 && clientAdds.size() == 2, "overwrite publishes remove/add");
+    for (const uint32_t type : {AFFECT_WAR_FLAG, AFFECT_REVIVE_INVISIBLE, AFFECT_PREMIUM_START, AFFECT_PREMIUM_END}) {
+        e = reset(); Check(Add(e, 0, type, POINT_NONE), "no-save affect accepted");
+        Check(clientAdds.size() == 1 && dbHeaders.empty(), "no-save affect not persisted");
+    }
+    for (int stage = 0; stage < 3; ++stage) {
+        e = reset();
+        const auto replace = [&] { Check(Add(e, 99), "nested packet replacement"); };
+        if (stage == 0) onUpdate = [&](entt::entity) { onUpdate = {}; replace(); };
+        if (stage == 1) onDBPacket = [&](uint8_t header) {
+            if (header == HEADER_GD_ADD_AFFECT) { onDBPacket = {}; replace(); }
+        };
+        if (stage == 2) onClientPacket = [&](uint8_t header) {
+            if (header == HEADER_GC_AFFECT_ADD) { onClientPacket = {}; replace(); }
+        };
+        Check(!Add(e, 10), "superseded outer add not reported current");
+        Check(A::FindAffect(e, AFFECT_STR)->lApplyValue == 99 && clientAdds.back().elem.lApplyValue == 99 &&
+            storedAffects.at({AFFECT_STR, POINT_ST}).elem.lApplyValue == 99, "latest value wins ECS, client and DB");
+    }
+    e = reset(); Add(e, 5);
+    onDBPacket = [&](uint8_t header) {
+        if (header == HEADER_GD_REMOVE_AFFECT) { onDBPacket = {}; Check(Add(e, 77), "replacement during remove packet"); }
+    };
+    Check(!Add(e, 20), "outer overwrite aborted after nested remove publication");
+    Check(clientAdds.back().elem.lApplyValue == 77 && storedAffects.at({AFFECT_STR, POINT_ST}).elem.lApplyValue == 77,
+        "obsolete remove cannot erase replacement");
+    e = reset();
+    onDBPacket = [&](uint8_t header) {
+        if (header == HEADER_GD_ADD_AFFECT) { onDBPacket = {}; Check(Add(e, 33, AFFECT_STR, POINT_DX, 0, true, true), "other cube slot during publication"); }
+    };
+    Check(Add(e, 11), "different apply slot does not cancel publication");
+    Check(storedAffects.size() == 2 && clientAdds.size() == 2, "both wire keys published");
+    e = reset();
+    onDBPacket = [&](uint8_t) { onDBPacket = {}; g_registry.destroy(e); connected = Actor(); };
+    Check(!Add(e) && clientAdds.empty(), "owner destroyed by DB callback: no stale client packet");
+    ResetPublication(); connected = entt::null; client = nullptr; db_clientdesc = nullptr;
+}
 void LifetimeStressChecks() {
     for (int i = 0; i < 1000; ++i) {
         const auto e = Actor();
@@ -308,10 +502,13 @@ void ecs::PointSystem::Compute(entt::entity e) {
     ++computes;
     if (onCompute) { const auto callback = onCompute; callback(e); }
 }
-void NetworkSyncSystem::UpdatePacket(entt::entity) { ++packets; }
+void NetworkSyncSystem::UpdatePacket(entt::entity e) {
+    ++packets;
+    if (onUpdate) { const auto callback = onUpdate; callback(e); }
+}
 CGuild* ecs::SocialSystem::GetGuild(entt::entity) { return nullptr; }
 bool ecs::PlayerRuntime::IsPC(entt::entity e) { return g_registry.valid(e) && g_registry.all_of<ecs::TagPC>(e); }
-LPDESC ecs::PlayerRuntime::GetDesc(entt::entity) { return nullptr; }
+LPDESC ecs::PlayerRuntime::GetDesc(entt::entity e) { return e == connected ? client : nullptr; }
 uint32_t ecs::PlayerRuntime::GetPlayerID(entt::entity) { return 1; }
 std::string_view ecs::PlayerRuntime::GetName(entt::entity) { return "affect-test"; }
 
@@ -331,19 +528,44 @@ int MIN(int,int) { UnexpectedService(__func__); }
 int MINMAX(int,int,int) { UnexpectedService(__func__); }
 int number_ex(int,int,char const *,int) { UnexpectedService(__func__); }
 unsigned int get_dword_time(void) { UnexpectedService(__func__); }
-void intrusive_ptr_add_ref(event *) { UnexpectedService(__func__); }
-void intrusive_ptr_release(event *) { UnexpectedService(__func__); }
-boost::intrusive_ptr<event> event_create_ex(int (*)(boost::intrusive_ptr<event>,int),event_info_data *,int) { UnexpectedService(__func__); }
-void event_cancel(boost::intrusive_ptr<event> *) { UnexpectedService(__func__); }
+void intrusive_ptr_add_ref(event* value) { ++value->ref_count; }
+void intrusive_ptr_release(event* value) { if (--value->ref_count == 0) delete value; }
+LPEVENT event_create_ex(TEVENTFUNC func, event_info_data* info, int delay) {
+    Check(delay == passes_per_sec, "one-second affect timer");
+    ++schedules;
+    if (failSchedule) { delete info; return {}; }
+    LPEVENT value(new event);
+    value->func = func; value->info = info;
+    scheduled.push_back(value);
+    if (onSchedule) { const auto callback = onSchedule; callback(); }
+    return value;
+}
+void event_cancel(LPEVENT* timer) {
+    if (!timer || !*timer) return;
+    if (!(*timer)->is_force_to_end) ++cancels;
+    (*timer)->is_force_to_end = true;
+    *timer = nullptr;
+}
 void ecs::ChatSystem::Send(entt::entity,unsigned char,char const *,...) { UnexpectedService(__func__); }
-void ecs::ChatSystem::SendNew(entt::entity,unsigned char,unsigned int,char const *,...) { UnexpectedService(__func__); }
+void ecs::ChatSystem::SendNew(entt::entity,unsigned char,unsigned int,char const *,...) { ++chats; }
 int ecs::PointSystem::GetLevel(entt::entity) { UnexpectedService(__func__); }
 void ecs::PointSystem::ApplyPoint(entt::entity,unsigned char,int) { UnexpectedService(__func__); }
 void ecs::PlayerRuntime::SetPart(entt::entity,unsigned char,unsigned short) { UnexpectedService(__func__); }
 unsigned char ecs::PlayerRuntime::GetMobRank(entt::entity) { UnexpectedService(__func__); }
 int ecs::QuestSystem::GetFlag(entt::entity,std::string_view) { UnexpectedService(__func__); }
-void NetworkSyncSystem::BroadcastSyncPacket(entt::registry &,entt::entity) { UnexpectedService(__func__); }
-void ecs::MovementSystem::SyncDestinationClear(entt::entity) { UnexpectedService(__func__); }
+void NetworkSyncSystem::BroadcastSyncPacket(entt::registry&, entt::entity e) {
+    ++syncs;
+    if (onSync) { const auto callback = onSync; callback(e); }
+}
+void ecs::MovementSystem::SyncDestinationClear(entt::entity e) {
+    g_registry.remove<ecs::MovementDestination>(e);
+    if (auto* movement = g_registry.try_get<ecs::MovementState>(e)) {
+        movement->moveStartTime = 0; movement->moveDuration = 0;
+    }
+}
+void ecs::PlayerRuntime::SetPosition(entt::entity e, int position) {
+    g_registry.get<ecs::CharacterRuntimeFlagsComponent>(e).position = position;
+}
 bool CombatSystem::Damage(entt::entity,entt::entity,int,unsigned char) { UnexpectedService(__func__); }
 void CombatSystem::SetComboSequence(entt::entity,unsigned char) { UnexpectedService(__func__); }
 void CombatSystem::SetValidComboInterval(entt::entity,int) { UnexpectedService(__func__); }
@@ -383,8 +605,63 @@ void ecs::VisibilitySystem::Reencode(entt::registry &,entt::entity) { Unexpected
 int SkillSystem::GetSkillLevel(entt::entity,unsigned int) { UnexpectedService(__func__); }
 CHARACTER * CHARACTER_MANAGER::FindByPID(unsigned int) { UnexpectedService(__func__); }
 bool CArenaManager::IsArenaMap(unsigned int) { UnexpectedService(__func__); }
-void DESC::Packet(void const *,int) { UnexpectedService(__func__); }
-void CLIENT_DESC::DBPacket(unsigned char,unsigned int,void const *,unsigned int) { UnexpectedService(__func__); }
+void DESC::Packet(const void* data, int size) {
+    const auto header = *static_cast<const uint8_t*>(data);
+    if (header == HEADER_GC_AFFECT_ADD) {
+        Check(size == sizeof(TPacketGCAffectAdd), "client add packet size");
+        clientAdds.push_back(*static_cast<const TPacketGCAffectAdd*>(data));
+    } else if (header == HEADER_GC_AFFECT_REMOVE) {
+        Check(size == sizeof(TPacketGCAffectRemove), "client remove packet size");
+        clientRemoves.push_back(*static_cast<const TPacketGCAffectRemove*>(data));
+    } else UnexpectedService("unexpected client packet");
+    if (onClientPacket) { const auto callback = onClientPacket; callback(header); }
+}
+void CLIENT_DESC::DBPacket(uint8_t header, uint32_t, const void* data, uint32_t size) {
+    dbHeaders.push_back(header);
+    if (header == HEADER_GD_ADD_AFFECT) {
+        Check(size == sizeof(TPacketGDAddAffect), "DB add packet size");
+        const auto value = *static_cast<const TPacketGDAddAffect*>(data);
+        storedAffects[{value.elem.dwType, value.elem.bApplyOn}] = value;
+    } else if (header == HEADER_GD_REMOVE_AFFECT) {
+        Check(size == sizeof(TPacketGDRemoveAffect), "DB remove packet size");
+        const auto value = *static_cast<const TPacketGDRemoveAffect*>(data);
+        storedAffects.erase({value.dwType, value.bApplyOn});
+    } else UnexpectedService("unexpected DB packet");
+    if (onDBPacket) { const auto callback = onDBPacket; callback(header); }
+}
+// Real descriptor objects with inert transport/processor construction, not
+// fabricated pointers. Only the packet sinks above are exercised.
+DESC::DESC() {}
+DESC::~DESC() {}
+void DESC::Destroy() { UnexpectedService(__func__); }
+void DESC::SetPhase(int) { UnexpectedService(__func__); }
+CLIENT_DESC::CLIENT_DESC() {}
+CLIENT_DESC::~CLIENT_DESC() {}
+void CLIENT_DESC::Destroy() { UnexpectedService(__func__); }
+void CLIENT_DESC::SetPhase(int) { UnexpectedService(__func__); }
+CInputProcessor::CInputProcessor() {}
+bool CInputProcessor::Process(DESC*, const void*, int, int&) { UnexpectedService(__func__); }
+void CInputProcessor::Handshake(DESC*, const char*) { UnexpectedService(__func__); }
+CInputHandshake::CInputHandshake() {}
+CInputHandshake::~CInputHandshake() {}
+int CInputHandshake::Analyze(DESC*, uint8_t, const char*) { UnexpectedService(__func__); }
+int CInputLogin::Analyze(DESC*, uint8_t, const char*) { UnexpectedService(__func__); }
+int CInputMain::Analyze(DESC*, uint8_t, const char*) { UnexpectedService(__func__); }
+int CInputDead::Analyze(DESC*, uint8_t, const char*) { UnexpectedService(__func__); }
+int CInputDB::Analyze(DESC*, uint8_t, const char*) { UnexpectedService(__func__); }
+bool CInputDB::Process(DESC*, const void*, int, int&) { UnexpectedService(__func__); }
+CInputP2P::CInputP2P() {}
+CInputAuth::CInputAuth() {}
+int CInputP2P::Analyze(DESC*, uint8_t, const char*) { UnexpectedService(__func__); }
+int CInputAuth::Analyze(DESC*, uint8_t, const char*) { UnexpectedService(__func__); }
+CPacketInfo::CPacketInfo() : m_pCurrentPacket(nullptr), m_dwStartTime(0) {}
+CPacketInfo::~CPacketInfo() {}
+CPacketInfoCG::CPacketInfoCG() {}
+CPacketInfoGG::CPacketInfoGG() {}
+CPacketInfoCG::~CPacketInfoCG() {}
+CPacketInfoGG::~CPacketInfoGG() {}
+Cipher::Cipher() : activated_(false), encoder_(nullptr), decoder_(nullptr), key_agreement_(nullptr) {}
+Cipher::~Cipher() {}
 void battle_end(entt::entity) { UnexpectedService(__func__); }
 void CHorseNameManager::Validate(CHARACTER *) { UnexpectedService(__func__); }
 int quest::CQuestManager::GetEventFlag(std::string const &) { UnexpectedService(__func__); }
@@ -395,7 +672,8 @@ bool ItemSystem::LockItem(entt::entity,bool) { UnexpectedService(__func__); }
 
 int main() {
     try {
-        StorageChecks(); FlagAndPointChecks(); RefreshChecks(); RemovalChecks(); LifetimeStressChecks();
+        StorageChecks(); FlagAndPointChecks(); RefreshChecks(); RemovalChecks();
+        AddChecks(); TimerChecks(); PublicationChecks(); LifetimeStressChecks();
         std::cout << "Affect checks passed: " << checks << '\n'; return 0;
     }
     catch (const std::exception& error) { std::cerr << error.what() << '\n'; return 1; }

@@ -63,6 +63,7 @@
 #include "ecs/systems/VitalRegenSystem.hpp"
 #include "ecs/systems/AISystem.hpp"
 #include "ecs/systems/AffectSystem.hpp"
+#include "ecs/components/status_components.hpp"
 #include "ecs/systems/ActivitySystem.hpp"
 #include "ecs/systems/NetworkSyncSystem.hpp"
 #include <boost/bind.hpp>
@@ -823,6 +824,9 @@ void destroy()
 	fdwatch_delete(main_fdw);
 
 	LOG_INFO("<shutdown> event_destroy()...");
+	// Cancel ECS-owned affect timers while their queue entries still exist,
+	// including any entities not owned by the legacy character manager.
+	g_registry.clear<ecs::AffectTickState>();
 	event_destroy();
 
 	LOG_INFO("<shutdown> CTextFileLoader::DestroySystem()...");
@@ -1065,7 +1069,6 @@ int io_loop(LPFDWATCH fdw)
 
 	return 1;
 }
-
 
 
 

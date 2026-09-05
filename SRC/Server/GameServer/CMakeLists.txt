@@ -84,8 +84,16 @@ if(WIN32)
 endif()
 add_test(NAME affect_lifecycle COMMAND AffectLifecycleTests)
 
+add_executable(EventLifecycleTests EXCLUDE_FROM_ALL
+    ${CMAKE_SOURCE_DIR}/tests/server/EventLifecycleTests.cpp
+    event.cpp
+    event_queue.cpp
+)
+target_link_libraries(EventLifecycleTests PRIVATE SERVER EnTT::EnTT)
+add_test(NAME event_lifecycle COMMAND EventLifecycleTests)
+
 if(ENABLE_ASAN AND EXISTS "${AURIGA_ASAN_RUNTIME_DLL}")
-    foreach(_asan_target GameServer ItemAttributeTests MountLifecycleTests SafeboxLifecycleTests ItemManagerLifecycleTests QuickslotTests PointCalculationTests CombatStateTests AffectLifecycleTests)
+    foreach(_asan_target GameServer ItemAttributeTests MountLifecycleTests SafeboxLifecycleTests ItemManagerLifecycleTests QuickslotTests PointCalculationTests CombatStateTests AffectLifecycleTests EventLifecycleTests)
         add_custom_command(TARGET ${_asan_target} POST_BUILD
             COMMAND ${CMAKE_COMMAND} -E copy_if_different
                 "${AURIGA_ASAN_RUNTIME_DLL}"

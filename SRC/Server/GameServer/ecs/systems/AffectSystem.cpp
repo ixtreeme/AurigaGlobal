@@ -42,9 +42,14 @@
 #include "../components/dirty_components.hpp"
 #include "../components/identity_components.hpp"
 #include "../components/status_components.hpp"
+#include "../components/movement_components.hpp"
+#include "../components/character_runtime_components.hpp"
+#include "../components/transform_components.hpp"
 #include "../events.hpp"
 #include "../EventDispatcher.hpp"
 #include <Core/Logging.hpp>
+
+EVENTFUNC(affect_event);
 
 void SendAffectRemovePacket(LPDESC d, uint32_t pid, uint32_t type, uint8_t point);
 
@@ -316,11 +321,75 @@ ecs::AffectList* AffectState(entt::entity e)
     return g_registry.try_get<ecs::AffectList>(e);
 }
 
+uint64_t NextAffectToken()
+{
+    static uint64_t next = 0;
+    return ++next;
+}
+
+uint64_t TouchAffectType(entt::entity e, uint32_t type)
+{
+    if (auto* state = AffectState(e))
+        return state->mutationTokens[type] = NextAffectToken();
+    return 0;
+}
+
+bool IsCurrentAffectType(entt::entity e, uint32_t type, uint64_t token)
+{
+    const auto* state = AffectState(e);
+    if (!state || !token)
+        return false;
+    const auto it = state->mutationTokens.find(type);
+    return it != state->mutationTokens.end() && it->second == token;
+}
+
+AffectSystem::AffectLease LastWireAffect(entt::entity e, uint32_t type, uint8_t apply)
+{
+    const auto* state = AffectState(e);
+    if (state)
+        for (auto it = state->affects.rbegin(); it != state->affects.rend(); ++it)
+            if (*it && (*it)->dwType == type && (*it)->bApplyOn == apply)
+                return *it;
+    return {};
+}
+
 bool SameAffect(const CAffect& a, const CAffect& b)
 {
     return a.dwType == b.dwType && a.bApplyOn == b.bApplyOn &&
         a.lApplyValue == b.lApplyValue && a.dwFlag == b.dwFlag &&
         a.lDuration == b.lDuration && a.lSPCost == b.lSPCost;
+}
+
+void PublishAffectRemoval(entt::entity e, const CAffect& value)
+{
+    // The wire/DB key is (type, apply), not the allocation address. Never erase
+    // a replacement that a point/packet callback has already installed.
+    const auto current = [&] {
+        return AffectState(e) && !LastWireAffect(e, value.dwType, value.bApplyOn);
+    };
+    if (!current() || !ecs::PlayerRuntime::IsPC(e))
+        return;
+    if (db_clientdesc) {
+        TPacketGDRemoveAffect packet{};
+        packet.dwPID = ecs::PlayerRuntime::GetPlayerID(e);
+        packet.dwType = value.dwType;
+        packet.bApplyOn = value.bApplyOn;
+        db_clientdesc->DBPacket(HEADER_GD_REMOVE_AFFECT, 0, &packet, sizeof(packet));
+    }
+    if (current())
+        if (auto* desc = ecs::PlayerRuntime::GetDesc(e)) {
+            TPacketGCAffectRemove packet{};
+            packet.bHeader = HEADER_GC_AFFECT_REMOVE;
+            packet.dwType = value.dwType;
+            packet.bApplyOn = value.bApplyOn;
+            desc->Packet(&packet, sizeof(packet));
+        }
+}
+
+bool IsNoSaveAffect(uint32_t type)
+{
+    return type == AFFECT_WAR_FLAG || type == AFFECT_REVIVE_INVISIBLE ||
+        (type >= AFFECT_PREMIUM_START && type <= AFFECT_PREMIUM_END);
 }
 
 } // namespace
@@ -598,6 +667,7 @@ AffectLease Attach(entt::entity e, const CAffect& value)
     AffectLease affect(CAffect::Acquire(), &CAffect::Release);
     *affect = value;
     state->affects.push_back(affect);
+    TouchAffectType(e, value.dwType);
     return affect;
 }
 
@@ -615,8 +685,10 @@ AffectLease Lease(entt::entity e, const CAffect* affect)
 AffectLease Detach(entt::entity e, const CAffect* affect)
 {
     auto lease = Lease(e, affect);
-    if (lease)
+    if (lease) {
         AffectState(e)->affects.remove(lease);
+        TouchAffectType(e, lease->dwType);
+    }
     return lease;
 }
 
@@ -738,24 +810,146 @@ bool IsAffectFlag(entt::entity e, uint32_t flag)
     return flag > 0 && flag < AFF_BITS_MAX && GetFlags(e).IsSet(static_cast<int>(flag));
 }
 
+bool StartAffectEvent(entt::entity e)
+{
+    if (!AffectState(e))
+        return false;
+    auto& state = g_registry.get_or_emplace<ecs::AffectTickState>(e);
+    if (state.timer)
+        return true;
+    // A pending reservation is not an installed timer. In particular, a nested
+    // add must not grant an affect if the outer creation is later cancelled.
+    if (state.startingToken)
+        return false;
+    const auto token = state.startingToken = NextAffectToken();
+    struct StartGuard {
+        entt::entity entity;
+        uint64_t token;
+        ~StartGuard() {
+            if (!g_registry.valid(entity)) return;
+            if (auto* current = g_registry.try_get<ecs::AffectTickState>(entity);
+                current && current->startingToken == token)
+                current->startingToken = 0;
+        }
+    } guard{e, token};
+    auto* info = AllocEventInfo<char_event_info>();
+    info->ch = e;
+    auto timer = event_create(affect_event, info, passes_per_sec);
+    // No registry references survive event creation, including nested start,
+    // stop, owner destruction or replacement of the timer component.
+    auto* current = AffectState(e) ? g_registry.try_get<ecs::AffectTickState>(e) : nullptr;
+    if (!current || current->startingToken != token) {
+        event_cancel(&timer);
+        return false;
+    }
+    current->timer = std::move(timer);
+    return static_cast<bool>(current->timer);
+}
+
+void StopAffectEvent(entt::entity e)
+{
+    if (e == entt::null || !g_registry.valid(e))
+        return;
+    if (auto* state = g_registry.try_get<ecs::AffectTickState>(e)) {
+        state->startingToken = 0;
+        auto timer = std::exchange(state->timer, {});
+        event_cancel(&timer);
+    }
+}
+
 bool AddAffect(entt::entity e, uint32_t type, uint8_t applyOn, int32_t applyValue,
                uint32_t flag, int32_t duration, int32_t spCost, bool overwrite,
                bool isCube)
 {
-    auto* ch = LegacyCharOf(e);
-    if (!ch) {
+    if (!AffectState(e) || applyOn >= POINT_MAX_NUM)
         return false;
+    if (duration == 0)
+        duration = 1;
+    uint64_t token = TouchAffectType(e, type);
+    const auto current = [&] { return IsCurrentAffectType(e, type, token); };
+
+#ifdef ENABLE_BUG_FIXES
+    if (type == AFFECT_POLYMORPH) {
+        if (IsAffectFlag(e, AFF_GEOMGYEONG))
+            RemoveAffect(e, SKILL_GEOMKYUNG);
+        if (!current()) return false;
+        if (IsAffectFlag(e, AFF_GWIGUM))
+            RemoveAffect(e, SKILL_GWIGEOM);
+        if (!current()) return false;
+    }
+#endif
+#ifdef TEXTS_IMPROVEMENT
+    if (type == AFFECT_BLOCK_CHAT && duration > 1) {
+        ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 414, "%d", duration / 60);
+        if (!current()) return false;
+    }
+#endif
+    if (flag == AFF_STUN) {
+        const auto* pos = g_registry.try_get<ecs::Position>(e);
+        const auto* destination = g_registry.try_get<ecs::MovementDestination>(e);
+        if (pos && destination && (pos->x != destination->x || pos->y != destination->y)) {
+            if (const auto* runtime = g_registry.try_get<ecs::CharacterRuntimeFlagsComponent>(e);
+                runtime && runtime->position == POS_FIGHTING)
+                ecs::PlayerRuntime::SetPosition(e, POS_STANDING);
+            if (!current()) return false;
+            // Zero timing and remove the destination. A subsequent movement
+            // initializes its own start; no m_posStart mirror write is needed.
+            ecs::MovementSystem::SyncDestinationClear(e);
+            if (!current()) return false;
+            NetworkSyncSystem::BroadcastSyncPacket(g_registry, e);
+            if (!current()) return false;
+        }
     }
 
-    const bool result = ch->AddAffect(type, applyOn, applyValue, flag, duration, spCost, overwrite, isCube);
+    // Reserve the timer before changing points/ownership. A scheduling failure
+    // must not leave a granted affect without an expiry/recovery event.
+    if (!StartAffectEvent(e) || !current()) return false;
+    if (overwrite) {
+        const auto old = Detach(e, FindAffect(e, type, isCube ? applyOn : APPLY_NONE));
+        if (old) {
+            token = TouchAffectType(e, type);
+            const CAffect value = *old;
+            ComputeAffect(e, value, false);
+            PublishAffectRemoval(e, value);
+            if (!current()) return false;
+        }
+    }
+    const CAffect value{type, applyOn, applyValue, flag, duration, spCost};
+    const auto lease = Attach(e, value);
+    if (!lease)
+        return false;
+    const auto owned = [&] { return Lease(e, lease.get()) && SameAffect(*lease, value); };
+    const auto publishable = [&] { return owned() && LastWireAffect(e, type, applyOn) == lease; };
 
-    return result;
+    ComputeAffect(e, value, true);
+    if (!owned()) return false;
+    NetworkSyncSystem::UpdatePacket(e);
+    if (!owned()) return false;
+    if (!ecs::PlayerRuntime::IsPC(e))
+        return true;
+
+    // Publish DB first so reentrant replacements remain the last write on both
+    // channels. Different apply slots can coexist; only a newer identical wire
+    // key supersedes this record's publication.
+    if (publishable() && !IsNoSaveAffect(type) && db_clientdesc) {
+        TPacketGDAddAffect packet{};
+        packet.dwPID = ecs::PlayerRuntime::GetPlayerID(e);
+        packet.elem = {type, applyOn, applyValue, flag, duration, spCost};
+        db_clientdesc->DBPacket(HEADER_GD_ADD_AFFECT, 0, &packet, sizeof(packet));
+    }
+    if (publishable())
+        if (auto* desc = ecs::PlayerRuntime::GetDesc(e)) {
+            CAffect packetValue = value;
+            SendAffectAddPacket(desc, &packetValue);
+        }
+    return owned();
 }
 
 bool RemoveAffect(entt::entity e, uint32_t type)
 {
     if (!AffectState(e))
         return false;
+    TouchAffectType(e, type);
 #ifdef TEXTS_IMPROVEMENT
     if (type == AFFECT_BLOCK_CHAT)
         ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 474, "");
@@ -808,10 +1002,7 @@ bool RemoveAffect(entt::entity e, CAffect* affect)
     if (test_server)
         LOG_TRACE("AFFECT_REMOVE: {} (flag {} apply: {})",
             ecs::PlayerRuntime::GetName(e), value.dwFlag, static_cast<int>(value.bApplyOn));
-    if (ecs::PlayerRuntime::IsPC(e))
-        if (auto* desc = ecs::PlayerRuntime::GetDesc(e))
-            SendAffectRemovePacket(desc, ecs::PlayerRuntime::GetPlayerID(e),
-                value.dwType, value.bApplyOn);
+    PublishAffectRemoval(e, value);
     return true;
 }
 
@@ -1073,24 +1264,35 @@ bool CHARACTER::IsLoadedAffect() const
 
 EVENTFUNC(affect_event)
 {
-	char_event_info* info = dynamic_cast<char_event_info*>( event->info );
-
-	if ( info == nullptr)
-	{
-		LOG_ERROR("affect_event> <Factor> Null pointer");
-		return 0;
-	}
-
-	auto* ch = ecs::LegacyCharOf(info->ch);
-
-	if (ch == nullptr) { // <Factor>
-		return 0;
-	}
-
-	if (!ch->UpdateAffect())
-		return 0;
-	else
-		return passes_per_sec; // 1��
+    const auto* info = dynamic_cast<char_event_info*>(event->info);
+    if (!info)
+        return 0;
+    const auto entity = info->ch;
+    const auto matches = [&] {
+        if (!g_registry.valid(entity)) return false;
+        const auto* state = g_registry.try_get<ecs::AffectTickState>(entity);
+        return state && state->timer == event;
+    };
+    if (!matches())
+        return 0;
+    if (!AffectState(entity)) {
+        AffectSystem::StopAffectEvent(entity);
+        return 0;
+    }
+    // Expiry/recovery rules are still the legacy leaf, not timer ownership.
+    auto* ch = LegacyCharOf(entity);
+    if (!ch) {
+        AffectSystem::StopAffectEvent(entity);
+        return 0;
+    }
+    const bool repeat = ch->UpdateAffect();
+    if (!matches())
+        return 0;
+    if (!repeat || !AffectState(entity)) {
+        AffectSystem::StopAffectEvent(entity);
+        return 0;
+    }
+    return passes_per_sec;
 }
 
 bool CHARACTER::UpdateAffect()
@@ -1170,7 +1372,7 @@ bool CHARACTER::UpdateAffect()
 	if (ProcessAffect())
 		if (GetPoint(POINT_HP_RECOVERY) == 0 && GetPoint(POINT_SP_RECOVERY) == 0 && GetStamina() == GetMaxStamina())
 		{
-			m_pkAffectEvent = nullptr;
+			AffectSystem::StopAffectEvent(GetEntityHandle());
 			return false;
 		}
 
@@ -1179,13 +1381,7 @@ bool CHARACTER::UpdateAffect()
 
 void CHARACTER::StartAffectEvent()
 {
-	if (m_pkAffectEvent)
-		return;
-
-	char_event_info* info = AllocEventInfo<char_event_info>();
-	info->ch = GetEntityHandle();
-	m_pkAffectEvent = event_create(affect_event, info, passes_per_sec);
-	LOG_TRACE("StartAffectEvent {} {} {}", GetName(), static_cast<const void*>(this), static_cast<const void*>(get_pointer(m_pkAffectEvent)));
+    AffectSystem::StartAffectEvent(GetEntityHandle());
 }
 
 #ifdef ENABLE_SKILLS_BUFF_ALTERNATIVE
@@ -1226,9 +1422,12 @@ void CHARACTER::LoadAffectSkills()
 
 void CHARACTER::ClearAffect(bool bSave)
 {
-	const auto entity = GetEntityHandle();
-	if (!AffectState(entity))
-		return;
+    const auto entity = GetEntityHandle();
+    auto* state = AffectState(entity);
+    if (!state)
+        return;
+    for (auto& [type, token] : state->mutationTokens)
+        token = NextAffectToken();
 
 	for (const auto& lease : AffectSystem::Snapshot(entity))
 	{
@@ -1315,7 +1514,7 @@ void CHARACTER::ClearAffect(bool bSave)
 		return;
 
 	if (AffectSystem::Snapshot(entity).empty())
-		event_cancel(&m_pkAffectEvent);
+		AffectSystem::StopAffectEvent(entity);
 }
 
 int CHARACTER::ProcessAffect()
@@ -1846,117 +2045,11 @@ void CHARACTER::LoadAffect(uint32_t dwCount, TPacketAffectElement * pElements)
 	LOG_ERROR("LOAD_AFFECT_END pid={} name={} count={} final_affects={}", GetPlayerID(), GetName(), dwCount, GetAffectContainer().size());
 }
 
-bool CHARACTER::AddAffect(uint32_t dwType, uint8_t bApplyOn, int32_t lApplyValue, uint32_t dwFlag, int32_t lDuration, int32_t lSPCost, bool bOverride, bool IsCube )
+bool CHARACTER::AddAffect(uint32_t type, uint8_t applyOn, int32_t value, uint32_t flag,
+    int32_t duration, int32_t spCost, bool overwrite, bool isCube)
 {
-	const auto entity = GetEntityHandle();
-	if (!AffectState(entity))
-		return false;
-	if (bApplyOn >= POINT_MAX_NUM)
-	{
-		LOG_ERROR("Character::AddAffect invalid ApplyOn {} for affect {} on {}", static_cast<int>(bApplyOn), dwType, GetName());
-		return false;
-	}
-
-#ifdef ENABLE_BUG_FIXES
-	if (dwType == AFFECT_POLYMORPH) {
-		if (IsAffectFlag(AFF_GEOMGYEONG)) {
-			RemoveAffect(SKILL_GEOMKYUNG);
-		}
-
-		if (IsAffectFlag(AFF_GWIGUM)) {
-			RemoveAffect(SKILL_GWIGEOM);
-		}
-	}
-#endif
-
-	// CHAT_BLOCK
-	if (dwType == AFFECT_BLOCK_CHAT && lDuration > 1)
-	{
-#ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 414, "%d", (lDuration / 60));
-#endif
-	}
-	// END_OF_CHAT_BLOCK
-
-	if (lDuration == 0)
-	{
-		LOG_ERROR("Character::AddAffect lDuration == 0 duration {} type {}", lDuration, dwType);
-		lDuration = 1;
-	}
-
-	CAffect * pkAff = nullptr;
-
-	if (IsCube)
-		pkAff = FindAffect(dwType,bApplyOn);
-	else
-		pkAff = FindAffect(dwType);
-
-	if (dwFlag == AFF_STUN)
-	{
-		// B.1.4: read via getter (ECS MovementDestination, fallback to GetX/Y).
-		if (GetCurrentDestX() != GetX() || GetCurrentDestY() != GetY())
-		{
-			// Phase C.3: legacy destination field write removed. m_posStart still
-			// legacy (folds into a function-local in C.5/refactor).
-			m_posStart.x = GetX();
-			m_posStart.y = GetY();
-			battle_end(GetEntityHandle());
-
-			// Stun forces movement abort. SyncDestinationClear removes ECS
-			// MovementDestination - GetCurrentDestX/Y falls back to GetX/Y
-			// (per B.1.4) so subsequent INSERT packets show current position.
-			ecs::MovementSystem::SyncDestinationClear(GetEntityHandle());
-
-			NetworkSyncSystem::BroadcastSyncPacket(g_registry, GetEntityHandle());
-		}
-	}
-
-    if (pkAff && bOverride) {
-        const auto old = AffectSystem::Detach(entity, pkAff);
-        if (old) {
-            AffectSystem::ComputeAffect(entity, *old, false);
-            if (!AffectState(entity))
-                return false;
-            if (auto* desc = ecs::PlayerRuntime::GetDesc(entity))
-                SendAffectRemovePacket(desc, ecs::PlayerRuntime::GetPlayerID(entity),
-                    old->dwType, old->bApplyOn);
-        }
-    }
-    const auto lease = AffectSystem::Attach(entity,
-        {dwType, bApplyOn, lApplyValue, dwFlag, lDuration, lSPCost});
-    if (!lease)
-        return false;
-    pkAff = lease.get();
-
-	AffectSystem::ComputeAffect(entity, *lease, true);
-	if (!AffectSystem::Lease(entity, pkAff))
-		return false;
-
-	NetworkSyncSystem::UpdatePacket(entity);
-	if (!AffectSystem::Lease(entity, pkAff))
-		return false;
-
-	StartAffectEvent();
-
-	if (IsPC())
-	{
-		SendAffectAddPacket(GetDesc(), pkAff);
-
-		if (IS_NO_SAVE_AFFECT(pkAff->dwType))
-			return true;
-
-		TPacketGDAddAffect p;
-		p.dwPID			= GetPlayerID();
-		p.elem.dwType		= pkAff->dwType;
-		p.elem.bApplyOn		= pkAff->bApplyOn;
-		p.elem.lApplyValue	= pkAff->lApplyValue;
-		p.elem.dwFlag		= pkAff->dwFlag;
-		p.elem.lDuration	= pkAff->lDuration;
-		p.elem.lSPCost		= pkAff->lSPCost;
-		db_clientdesc->DBPacket(HEADER_GD_ADD_AFFECT, 0, &p, sizeof(p));
-	}
-
-	return true;
+    return AffectSystem::AddAffect(GetEntityHandle(), type, applyOn, value,
+        flag, duration, spCost, overwrite, isCube);
 }
 
 void CHARACTER::RefreshAffect()

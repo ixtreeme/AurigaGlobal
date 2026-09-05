@@ -5795,7 +5795,6 @@ void CHARACTER::Initialize()
 
     m_pkMiningEvent = nullptr;
 
-    m_pkAffectEvent = nullptr;
 
     m_pkDestroyWhenIdleEvent = nullptr;
 

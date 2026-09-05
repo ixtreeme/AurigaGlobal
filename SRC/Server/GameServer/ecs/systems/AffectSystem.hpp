@@ -24,6 +24,8 @@ void SetFlag(entt::entity e, uint32_t flag, bool enabled = true);
 bool IsLoaded(entt::entity e);
 void SetLoaded(entt::entity e, bool loaded);
 void ComputeAffect(entt::entity e, CAffect affect, bool add);
+bool StartAffectEvent(entt::entity e);
+void StopAffectEvent(entt::entity e);
 
 void ApplyFire(entt::entity target, entt::entity attacker, int amount, int count);
 void RemoveFire(entt::entity e);

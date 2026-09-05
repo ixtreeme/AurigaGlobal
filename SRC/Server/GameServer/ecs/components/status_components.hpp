@@ -2,6 +2,7 @@
 
 #include <cstdint>
 #include <list>
+#include <utility>
 #include <unordered_map>
 #include <vector>
 
@@ -21,6 +22,29 @@ struct AffectList {
     TAffectFlag flags;
     bool isLoaded { false };
     uint64_t refreshToken { 0 };
+    // Reentrant operations of the same type invalidate an unfinished add.
+    std::unordered_map<uint32_t, uint64_t> mutationTokens;
+};
+
+// Own only the affect/recovery scheduler here. Its callback still delegates the
+// unmigrated recovery/expiry rules, but never owns a CHARACTER pointer.
+struct AffectTickState {
+    LPEVENT timer;
+    uint64_t startingToken { 0 };
+    AffectTickState() = default;
+    AffectTickState(const AffectTickState&) = delete;
+    AffectTickState& operator=(const AffectTickState&) = delete;
+    AffectTickState(AffectTickState&& other) noexcept
+        : timer(std::move(other.timer)), startingToken(std::exchange(other.startingToken, 0)) {}
+    AffectTickState& operator=(AffectTickState&& other) noexcept {
+        if (this != &other) {
+            event_cancel(&timer);
+            timer = std::move(other.timer);
+            startingToken = std::exchange(other.startingToken, 0);
+        }
+        return *this;
+    }
+    ~AffectTickState() { event_cancel(&timer); }
 };
 
 struct StatusFlags {
