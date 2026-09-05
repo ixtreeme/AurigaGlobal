@@ -79,13 +79,13 @@ CWarMap* GetWarMap(entt::entity e)
     return membership ? membership->warMap : nullptr;
 }
 
-CExchange* GetExchange(entt::entity e)
+bool HasExchange(entt::entity e)
 {
-    if (e == entt::null || !g_registry.valid(e))
-        return nullptr;
-
-    const auto* exchange = g_registry.try_get<ecs::ExchangeRef>(e);
-    return exchange ? exchange->exchange : nullptr;
+    if (!g_registry.valid(e)) return false;
+    const auto* ref = g_registry.try_get<ecs::ExchangeRef>(e);
+    const auto* session = ref && g_registry.valid(ref->session)
+        ? g_registry.try_get<ecs::ExchangeSession>(ref->session) : nullptr;
+    return session && (session->offers[0].owner == e || session->offers[1].owner == e);
 }
 
 CShop* GetShop(entt::entity e)

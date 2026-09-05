@@ -240,10 +240,12 @@ entt::entity ecs::SocialSystem::GetShopOwner(entt::entity e)
     const auto* shop = g_registry.try_get<ecs::ShopState>(e);
     return shop ? shop->shopOwner : entt::entity{entt::null};
 }
-CExchange* ecs::SocialSystem::GetExchange(entt::entity e)
+bool ecs::SocialSystem::HasExchange(entt::entity e)
 {
-    const auto* exchange = g_registry.try_get<ecs::ExchangeRef>(e);
-    return exchange ? exchange->exchange : nullptr;
+    const auto* ref = g_registry.try_get<ecs::ExchangeRef>(e);
+    const auto* session = ref && g_registry.valid(ref->session)
+        ? g_registry.try_get<ecs::ExchangeSession>(ref->session) : nullptr;
+    return session && (session->offers[0].owner == e || session->offers[1].owner == e);
 }
 int32_t ecs::PlayerRuntime::GetX(entt::entity e) { return g_registry.get<TransferActor>(e).x; }
 int32_t ecs::PlayerRuntime::GetY(entt::entity e) { return g_registry.get<TransferActor>(e).y; }
@@ -1497,7 +1499,12 @@ void TransferContextGuards()
             case 8: g_registry.emplace<ecs::ShopState>(f.owner).underRefine = true; break;
             case 9: g_registry.emplace<ecs::ShopState>(f.owner).shopOwner = f.npc; break;
             case 10: g_registry.emplace<ecs::ShopState>(f.owner).currentShop = reinterpret_cast<CShop*>(1); break;
-            case 11: g_registry.emplace<ecs::ExchangeRef>(f.owner).exchange = reinterpret_cast<CExchange*>(1); break;
+            case 11: {
+                const auto session = g_registry.create();
+                g_registry.emplace<ecs::ExchangeSession>(session).offers[0].owner = f.owner;
+                g_registry.emplace<ecs::ExchangeRef>(f.owner).session = session;
+                break;
+            }
             case 12: g_registry.emplace<ecs::AcceWindowComponent>(f.owner).absorptionOpen = true; break;
             case 13: location.x = INT_MIN; g_registry.get<TransferActor>(f.npc).x = INT_MAX; break;
             case 14: g_registry.emplace<ecs::ShopState>(f.owner).myShop = reinterpret_cast<CShop*>(1); break;

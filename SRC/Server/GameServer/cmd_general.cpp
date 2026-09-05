@@ -1641,7 +1641,7 @@ ACMD(do_pvp)
 		ecs::QuestSystem::SetFlag(victim, "pvp.timed", get_global_time() + 30);
 	}
 
-	if (ecs::SocialSystem::GetExchange(character) || ecs::SocialSystem::GetExchange(victim))
+	if (ecs::SocialSystem::HasExchange(character) || ecs::SocialSystem::HasExchange(victim))
 	{
 		CPVPManager::instance().Decline(character, victim);
 		CPVPManager::instance().Decline(victim, character);
@@ -2907,7 +2907,7 @@ ACMD(do_PetEvo) {
 	if (!pet)
 		return;
 
-	if (ecs::SocialSystem::GetExchange(character) || ecs::SocialSystem::GetMyShop(character) || ecs::SocialSystem::GetShopOwner(character) != entt::null || ecs::SessionSystem::IsSafeboxOpen(character) || ecs::SessionSystem::IsCubeOpen(character)) {
+	if (ecs::SocialSystem::HasExchange(character) || ecs::SocialSystem::GetMyShop(character) || ecs::SocialSystem::GetShopOwner(character) != entt::null || ecs::SessionSystem::IsSafeboxOpen(character) || ecs::SessionSystem::IsCubeOpen(character)) {
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 730, "");
 #endif
@@ -3081,7 +3081,7 @@ namespace
 	if (CombatSystem::IsDead(chEntity) || CombatSystem::IsStun(chEntity) || ecs::PlayerRuntime::IsObserverMode(chEntity))
 			return false;
 
-		if (ecs::SocialSystem::GetExchange(chEntity)
+		if (ecs::SocialSystem::HasExchange(chEntity)
 			|| ecs::SocialSystem::GetMyShop(chEntity)
 			|| ecs::SocialSystem::GetShopOwner(chEntity) != entt::null
 			|| ecs::SessionSystem::IsSafeboxOpen(chEntity)
@@ -3739,7 +3739,7 @@ ACMD(do_extend_range_npc)
 	if (CombatSystem::IsDead(character))
 		return;
 
-	if (CombatSystem::IsDead(character) || ecs::SocialSystem::GetExchange(character) || ecs::SocialSystem::GetMyShop(character) || ecs::SessionSystem::IsSafeboxOpen(character) || ecs::SessionSystem::IsCubeOpen(character))
+	if (CombatSystem::IsDead(character) || ecs::SocialSystem::HasExchange(character) || ecs::SocialSystem::GetMyShop(character) || ecs::SessionSystem::IsSafeboxOpen(character) || ecs::SessionSystem::IsCubeOpen(character))
 	{
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 735, "");
@@ -3972,7 +3972,7 @@ ACMD(do_rune_shop)
 {
 	if (!ecs::PlayerRuntime::IsPC(character))
 		return;
-	if (ecs::SessionSystem::IsSafeboxOpen(character) || ecs::SocialSystem::GetExchange(character) || ecs::SocialSystem::GetMyShop(character) || ecs::SessionSystem::IsCubeOpen(character))
+	if (ecs::SessionSystem::IsSafeboxOpen(character) || ecs::SocialSystem::HasExchange(character) || ecs::SocialSystem::GetMyShop(character) || ecs::SessionSystem::IsCubeOpen(character))
 	{
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 294, "");

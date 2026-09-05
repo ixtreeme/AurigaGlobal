@@ -691,7 +691,7 @@ CGuild * ecs::SocialSystem::GetGuild(entt::entity e) {
     static int token;
     return hasGuild ? reinterpret_cast<CGuild*>(&token) : nullptr;
 }
-CExchange * ecs::SocialSystem::GetExchange(entt::entity) { Unexpected(); }
+bool ecs::SocialSystem::HasExchange(entt::entity) { Unexpected(); }
 CShop * ecs::SocialSystem::GetShop(entt::entity) { Unexpected(); }
 int ecs::QuestSystem::GetFlag(entt::entity,std::string_view) { Unexpected(); }
 int64_t ecs::PointSystem::Get(entt::entity e, unsigned char type) { return g_registry.get<ecs::CharacterPoints>(e).base.points[type]; }

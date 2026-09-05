@@ -36,7 +36,7 @@ bool CanUse(entt::entity character)
     if (const auto* status = g_registry.try_get<ecs::StatusFlags>(character);
         status && (status->isObserverMode || status->isDead || status->isStunned))
         return false;
-    if (ecs::SocialSystem::GetExchange(character) || ecs::SocialSystem::GetShop(character) ||
+    if (ecs::SocialSystem::HasExchange(character) || ecs::SocialSystem::GetShop(character) ||
         ecs::SocialSystem::GetMyShop(character) || ecs::SocialSystem::GetShopOwner(character) != entt::null)
         return false;
     if (const auto* shop = g_registry.try_get<ecs::ShopState>(character); shop && shop->underRefine)

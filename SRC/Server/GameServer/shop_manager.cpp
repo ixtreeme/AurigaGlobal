@@ -127,7 +127,7 @@ bool CShopManager::StartShopping(LPCHARACTER pkChr, LPCHARACTER pkChrShopKeeper,
 		return false;
 
 	//PREVENT_TRADE_WINDOW
-	if (pkChr->IsOpenSafebox() || ecs::SocialSystem::GetExchange(chr) || pkChr->GetMyShop() || pkChr->IsCubeOpen())
+	if (pkChr->IsOpenSafebox() || ecs::SocialSystem::HasExchange(chr) || pkChr->GetMyShop() || pkChr->IsCubeOpen())
 	{
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(chr, CHAT_TYPE_INFO, 294, "");

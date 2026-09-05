@@ -2463,10 +2463,7 @@ void CHARACTER::Dead(entt::entity killer, bool bImmediateDead)
 		}
 	}
 
-	if (m_pkExchange != nullptr)
-	{
-		m_pkExchange->Cancel();
-	}
+	ExchangeSystem::Cancel(GetEntityHandle());
 
 #ifdef __ATTR_TRANSFER_SYSTEM__
 	if (AttrTransfer_is_open(GetEntityHandle()) == true)

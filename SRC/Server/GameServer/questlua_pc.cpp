@@ -3754,7 +3754,7 @@ teleport_area:
 			}
 		}
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
-		lua_pushboolean(L, ecs::SocialSystem::GetExchange(chEntity) ? 1 : 0);
+		lua_pushboolean(L, ecs::SocialSystem::HasExchange(chEntity) ? 1 : 0);
 		return 1;
 	}
 
@@ -3767,7 +3767,7 @@ teleport_area:
 			const auto* shop = ECS_TryGet<ecs::ShopState>(e);
 			const auto* safebox = ECS_TryGet<ecs::SafeboxRef>(e);
 			const auto* cube = ECS_TryGet<ecs::CubeWindowComponent>(e);
-			if (ecs::SocialSystem::GetExchange(e) ||
+			if (ecs::SocialSystem::HasExchange(e) ||
 				(shop && (shop->currentShop || shop->myShop || shop->shopOwner != entt::null || shop->underRefine)) ||
 				(safebox && safebox->isOpening) || (cube && g_registry.valid(cube->npc)))
 			{
@@ -3775,7 +3775,7 @@ teleport_area:
 				return 1;
 			}
 		}
-		lua_pushboolean(L, ecs::SocialSystem::GetExchange(e) ? 1 : 0);
+		lua_pushboolean(L, ecs::SocialSystem::HasExchange(e) ? 1 : 0);
 		return 1;
 	}
 
@@ -3882,7 +3882,7 @@ teleport_area:
 		const auto* safebox = g_registry.try_get<ecs::SafeboxRef>(chEntity);
 		const auto* cube = g_registry.try_get<ecs::CubeWindowComponent>(chEntity);
 		//PREVENT_TRADE_WINDOW
-		if ((safebox && safebox->isOpening) || ecs::SocialSystem::GetExchange(chEntity) ||
+		if ((safebox && safebox->isOpening) || ecs::SocialSystem::HasExchange(chEntity) ||
 			ecs::SocialSystem::GetMyShop(chEntity) || (cube && g_registry.valid(cube->npc)))
 		{
 #ifdef TEXTS_IMPROVEMENT

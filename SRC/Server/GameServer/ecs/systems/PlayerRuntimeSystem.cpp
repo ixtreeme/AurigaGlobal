@@ -743,7 +743,7 @@ bool CanWarp(entt::entity e)
 			return false;
 	}
 
-	if (const auto* exchange = g_registry.try_get<ecs::ExchangeRef>(e); exchange && exchange->exchange)
+	if (ecs::SocialSystem::HasExchange(e))
 		return false;
 
 	const auto* shop = g_registry.try_get<ecs::ShopState>(e);
@@ -916,11 +916,10 @@ bool IsHack(entt::entity e, bool sendMessage, bool checkShopOwner, int limitTime
 			return true;
 	}
 
-	const auto* exchange = g_registry.try_get<ecs::ExchangeRef>(e);
 	const auto* shop = g_registry.try_get<ecs::ShopState>(e);
 	const auto* safebox = g_registry.try_get<ecs::SafeboxRef>(e);
 
-	const bool activeWindow = (exchange && exchange->exchange) ||
+	const bool activeWindow = ecs::SocialSystem::HasExchange(e) ||
 		(shop && (shop->myShop || (checkShopOwner && shop->shopOwner != entt::null))) ||
 		(safebox && safebox->isOpening) || ecs::SessionSystem::IsCubeOpen(e)
 #if defined(ENABLE_CHRISTMAS_WHEEL_OF_DESTINY)
@@ -2905,19 +2904,6 @@ void CHARACTER::SetWheelDestiny(std::shared_ptr<CWheelDestiny> pt)
 }
 #endif
 
-void CHARACTER::SetExchange(CExchange* pkExchange)
-{
-    const auto e = GetEntityHandle();
-    if (e != entt::null && g_registry.valid(e))
-    {
-        auto& exchange = g_registry.get_or_emplace<ecs::ExchangeRef>(e);
-        exchange.exchange = pkExchange;
-        g_registry.emplace_or_replace<ecs::DirtyTag>(e);
-    }
-
-    m_pkExchange = pkExchange;
-}
-
 void CHARACTER::SetRegen(LPREGEN pkRegen)
 {
     m_pkRegen = pkRegen;
@@ -3485,7 +3471,7 @@ uint8_t CHARACTER::CanRefineAcceMaterials()
     if (GetOfflineShopGuest() || GetAuctionGuest())
         return 0;
 
-    if (GetExchange() || GetMyShop() || GetShopOwner() || IsOpenSafebox() || IsCubeOpen()
+    if (ecs::SocialSystem::HasExchange(GetEntityHandle()) || GetMyShop() || GetShopOwner() || IsOpenSafebox() || IsCubeOpen()
 #ifdef __ATTR_TRANSFER_SYSTEM__
         || AttrTransfer_is_open(GetEntityHandle())
 #endif
@@ -4315,8 +4301,7 @@ void CHARACTER::Destroy()
         GetDesc()->BindCharacter(nullptr);
     }
 
-    if (m_pkExchange)
-        m_pkExchange->Cancel();
+    ExchangeSystem::Cancel(GetEntityHandle());
 
     SetVictim(entt::null);
 
@@ -4992,7 +4977,7 @@ void CHARACTER::OnClick(entt::entity causer)
     }
 
     {
-        if (pkCauser->GetExchange())
+        if (ecs::SocialSystem::HasExchange(causer))
         {
             LOG_ERROR("OnClick Fail ({}->{}) - pc is exchanging", pkCauser->GetName(), GetName());
             return;
@@ -5010,7 +4995,7 @@ void CHARACTER::OnClick(entt::entity causer)
 
                 if (pkCauser == this)
                 {
-                    if ((GetExchange() || IsOpenSafebox() || GetShopOwner()) || IsCubeOpen())
+                    if ((ecs::SocialSystem::HasExchange(GetEntityHandle()) || IsOpenSafebox() || GetShopOwner()) || IsCubeOpen())
                     {
 #ifdef TEXTS_IMPROVEMENT
                         ecs::ChatSystem::SendNew(causer, CHAT_TYPE_INFO, 291, "");
@@ -5030,7 +5015,7 @@ void CHARACTER::OnClick(entt::entity causer)
                 }
                 else
                 {
-                    if ((pkCauser->GetExchange() || pkCauser->IsOpenSafebox() || pkCauser->GetMyShop() || pkCauser->GetShopOwner()) || pkCauser->IsCubeOpen())
+                    if ((ecs::SocialSystem::HasExchange(causer) || pkCauser->IsOpenSafebox() || pkCauser->GetMyShop() || pkCauser->GetShopOwner()) || pkCauser->IsCubeOpen())
                     {
 #ifdef TEXTS_IMPROVEMENT
                         ecs::ChatSystem::SendNew(causer, CHAT_TYPE_INFO, 291, "");
@@ -5048,7 +5033,7 @@ void CHARACTER::OnClick(entt::entity causer)
                     }
 #endif
 
-                    if ((GetExchange() || IsOpenSafebox() || IsCubeOpen()))
+                    if ((ecs::SocialSystem::HasExchange(GetEntityHandle()) || IsOpenSafebox() || IsCubeOpen()))
                     {
 #ifdef TEXTS_IMPROVEMENT
                         ecs::ChatSystem::SendNew(causer, CHAT_TYPE_INFO, 369, "%s", GetName());
@@ -5583,8 +5568,7 @@ void CHARACTER::OpenMyShop(const char* c_pszSign, TShopItemTable* pTable, uint8_
     else
         return;
 
-    if (m_pkExchange)
-        m_pkExchange->Cancel();
+    ExchangeSystem::Cancel(GetEntityHandle());
 
     TPacketGCShopSign p;
 
@@ -5733,7 +5717,6 @@ void CHARACTER::Initialize()
     m_pkShop = nullptr;
     m_pkChrShopOwner = nullptr;
     m_pkMyShop = nullptr;
-    m_pkExchange = nullptr;
     m_pkParty = nullptr;
     m_pkPartyRequestEvent = nullptr;
 
@@ -5896,7 +5879,6 @@ void CHARACTER::Initialize()
     m_iRefineTime = 0;
 
     m_iSeedTime = 0;
-    m_iExchangeTime = 0;
     m_iMyShopTime = 0;
 
     m_deposit_pulse = 0;

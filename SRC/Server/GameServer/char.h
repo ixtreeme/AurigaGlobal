@@ -577,7 +577,6 @@ struct TSkillUseInfo
 };
 
 typedef struct packet_party_update TPacketGCPartyUpdate;
-class CExchange;
 class CSkillProto;
 class CParty;
 class CDungeon;
@@ -1496,9 +1495,6 @@ protected:
 	////////////////////////////////////////////////////////////////////////////////////////
 	// Exchange related
 public:
-	bool			ExchangeStart(entt::entity victim);
-	void			SetExchange(CExchange* pkExchange);
-	CExchange* GetExchange() const { return m_pkExchange; }
 #if defined(ENABLE_CHRISTMAS_WHEEL_OF_DESTINY)
 	public:
 		void SetWheelDestiny(std::shared_ptr<CWheelDestiny> pt);
@@ -1510,7 +1506,6 @@ public:
 		std::shared_ptr<CWheelDestiny> pWheelDestiny = nullptr;
 #endif
 protected:
-	CExchange* m_pkExchange;
 	// End of Exchange
 
 #ifdef __DUNGEON_INFO_SYSTEM__
@@ -2229,9 +2224,6 @@ public:
 	//END_RESTRICT_USE_SEED_OR_MOONBOTTLE
 
 	//PREVENT_PORTAL_AFTER_EXCHANGE
-	int		GetExchangeTime() const { return m_iExchangeTime; }
-	void	SetExchangeTime();
-	int		m_iExchangeTime;
 	//END_PREVENT_PORTAL_AFTER_EXCHANGE
 
 	int 	m_iMyShopTime;

@@ -1,5 +1,65 @@
 # Server ECS regression tests
 
+## Entity-owned exchange sessions
+
+The existing exchange.cpp/exchange.h now contain the complete exchange state
+and implementation. CExchange, its owner/company pointers, CHARACTER's exchange
+pointer and duplicated exchange timestamp are removed. ExchangeRef stores a
+generation-checked session entity; both offers belong to one ExchangeSession.
+input_main decodes the request and passes native entities to ExchangeSystem.
+Only START resolves a network VID. Social/window guards query live ECS state.
+
+Completion validates item identities, original slots/owners, counts, attributes,
+sockets, locks, duplicate inventory references, gold, player/window state and
+available space. Main, extra and dragon-soul grids are planned as value snapshots.
+Both outgoing offers are removed from those snapshots first, so full-inventory
+swaps work. Live inventories, ownership/location, balances and old quickslot
+bindings are updated before the first publication callback. Transfer does not
+rerun the item-creation rune-autoequip or accessory-randomization rules.
+Old CGrid heap allocations and sequential unchecked detach/add calls are gone.
+
+Cancellation and participant/session destruction release matching reservations
+and item flags. END publication retains both reservations until completion;
+revision checks stop old publications after reentrant changes. Item-slot packets
+read current state, and quickslot packets stop on revision changes.
+VCardUse moved from db.cpp into the existing exchange implementation. It copies
+identities before callbacks and requires successful item retirement before
+submitting credit. It does not create an acknowledgement-based DB transaction.
+
+ExchangeTests links production exchange.cpp with entity-only inventory fixtures.
+It covers lifecycle cancellation/destruction, stale handles, source/offer guards,
+display bounds and overlap, changed item metadata, duplicate slot aliases,
+full-inventory swaps, page and capacity boundaries, all six extra categories,
+locked extra slots, dragon-soul boxes, invalid/insufficient/overflowing gold,
+64-bit gold transfers, missing DB/quest/inventory state, cooldown changes,
+callback disconnects/cancellation/slot replacement and VCard retirement failure.
+Inventory/owner mutations and packet construction are production code. Actor,
+item-accessor, quest, persistence, card-destruction and packet-transport services
+are test doubles; no CHARACTER or CItem is attached to a fixture.
+
+The tests also exposed a pre-existing MSVC enum truncation: GOLD_MAX became
+-1727379968 instead of 999000000000. The shared limit is now an explicit int64_t
+constant, outside EMisc, with a compile-time width check.
+
+Verified on 2026-09-06: GameServer and Database Release builds succeeded;
+all 13 tests passed in Release and MSVC AddressSanitizer RelWithDebInfo.
+ExchangeTests reported 11,984 checks in each configuration.
+
+```powershell
+cmake --build build --config Release --target GameServer ExchangeTests
+ctest --test-dir build -C Release --output-on-failure
+cmake --build build-asan --config RelWithDebInfo --target ExchangeTests
+ctest --test-dir build-asan -C RelWithDebInfo --output-on-failure
+```
+
+Before deployment verify actual client exchange UI, all inventory types, quickslot
+updates, VCards, disconnect/relog and item/gold persistence. The headless tests do
+not execute input_main, the production item manager, real sockets or DB workers.
+In-process all-or-nothing ownership changes are not a durable multi-record DB
+transaction: process/DB failure between saves still requires persistence-layer
+work. Existing gold-log numeric fields are also still 32-bit. Other subsystems
+and services retain legacy internals; this is not the end of the ECS migration.
+
 ## Skill runtime, colors and input recipients
 
 SkillDamageBonus::useInfo is now the only skill-use runtime store. The

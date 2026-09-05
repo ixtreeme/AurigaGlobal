@@ -377,7 +377,7 @@ void Cube_open (LPCHARACTER ch)
 	}
 
 
-	if (ecs::SocialSystem::GetExchange(chEntity) || ch->GetMyShop() || ch->GetShopOwner() || ch->IsOpenSafebox() || ch->IsCubeOpen()
+	if (ecs::SocialSystem::HasExchange(chEntity) || ch->GetMyShop() || ch->GetShopOwner() || ch->IsOpenSafebox() || ch->IsCubeOpen()
 #ifdef ENABLE_ACCE_SYSTEM
 		 || ch->IsAcceOpen()
 #endif

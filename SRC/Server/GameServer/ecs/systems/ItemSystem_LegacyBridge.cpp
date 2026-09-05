@@ -1,4 +1,5 @@
 #include "../../stdafx.h"
+#include "../../exchange.h"
 #include "ViewSystem.hpp"
 #include "PlayerRuntimeSystem.hpp"
 #include "AffectSystem.hpp"
@@ -4125,7 +4126,7 @@ bool CHARACTER::UseItem(TItemPos Cell, TItemPos DestCell)
 		//°�
 // ·¡°ü·Ã Ã¢ Ã¼�
 // ©
-		if (GetExchange() || GetMyShop() || GetShopOwner() || IsOpenSafebox() || IsCubeOpen())
+		if (ExchangeSystem::IsActive(GetEntityHandle()) || GetMyShop() || GetShopOwner() || IsOpenSafebox() || IsCubeOpen())
 		{
 #ifdef TEXTS_IMPROVEMENT
 			ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 235, "");
@@ -4219,7 +4220,7 @@ bool CHARACTER::UseItem(TItemPos Cell, TItemPos DestCell)
 		//PREVENT_PORTAL_AFTER_EXCHANGE
 		//±³È¯ ÈÄ ½Ã°£Ã¼�
 // ©
-		if (iPulse - GetExchangeTime() < PASSES_PER_SEC(g_nPortalLimitTime))
+		if (iPulse - ExchangeSystem::GetLastExchangePulse(GetEntityHandle()) < PASSES_PER_SEC(g_nPortalLimitTime))
 		{
 #ifdef TEXTS_IMPROVEMENT
 			ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 234, "%d", g_nPortalLimitTime);
@@ -4239,7 +4240,7 @@ bool CHARACTER::UseItem(TItemPos Cell, TItemPos DestCell)
 #endif
 		)
 	{
-		if (GetExchange() || GetMyShop() || GetShopOwner() || IsOpenSafebox() || IsCubeOpen())
+		if (ExchangeSystem::IsActive(GetEntityHandle()) || GetMyShop() || GetShopOwner() || IsOpenSafebox() || IsCubeOpen())
 		{
 #ifdef TEXTS_IMPROVEMENT
 			ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 237, "");

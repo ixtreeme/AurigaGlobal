@@ -57,7 +57,7 @@ bool CShopEx::AddGuest(entt::entity guest, uint32_t owner_vid, bool bOtherEmpire
 	if (guest == entt::null || !g_registry.valid(guest))
 		return false;
 
-	if (ecs::SocialSystem::GetExchange(guest) || ecs::SocialSystem::GetShop(guest))
+	if (ecs::SocialSystem::HasExchange(guest) || ecs::SocialSystem::GetShop(guest))
 		return false;
 
 	LPDESC desc = ecs::PlayerRuntime::GetDesc(guest);

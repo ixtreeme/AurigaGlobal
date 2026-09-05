@@ -1,4 +1,5 @@
 #include "../stdafx.h"
+#include "../exchange.h"
 #include "systems/PlayerRuntimeSystem.hpp"
 
 #include "EntityFactory.hpp"
@@ -788,6 +789,8 @@ void EntityFactory::Destroy(entt::registry& reg, entt::entity e)
         return;
     }
 
+    ExchangeSystem::Cancel(e);
+    if (!reg.valid(e)) return;
     CleanupCombatReferences(reg, e);
 
     if (const auto* vid = reg.try_get<ecs::VIDComponent>(e);

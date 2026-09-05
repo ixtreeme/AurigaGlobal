@@ -6,7 +6,6 @@
 #include "../../typedef.h"
 
 class CGuild;
-class CExchange;
 class CWarMap;
 class CShop;
 
@@ -28,7 +27,7 @@ CGuild* GetGuild(entt::entity e);
 void SendGuildName(entt::entity viewer, CGuild* pGuild);
 LPDUNGEON GetDungeon(entt::entity e);
 CWarMap* GetWarMap(entt::entity e);
-CExchange* GetExchange(entt::entity e);
+bool HasExchange(entt::entity e);
 CShop* GetShop(entt::entity e);
 CShop* GetMyShop(entt::entity e);
 entt::entity GetShopOwner(entt::entity e);

@@ -1946,180 +1946,38 @@ void CInputMain::OnClick(entt::entity character, const char * data)
 	}
 }
 
-void CInputMain::Exchange(entt::entity character, const char * data)
+void CInputMain::Exchange(entt::entity character, const char* data)
 {
-	LPCHARACTER ch = ecs::LegacyCharOf(character);
-// migrated from CHARACTER handler
-// TODO Phase 8: migrate Exchange handler ECS
-// DUAL-PATH: legacy only during migration window
-#ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::Exchange(LPCHARACTER ch, const char * data)");//INGAME_DEBUG_RAZOR93
-#endif
-	struct command_exchange * pinfo = (struct command_exchange *) data;
-	LPCHARACTER	to_ch = nullptr;
-
-	if (!ch->CanHandleItem())
-		return;
-
-	int iPulse = thecore_pulse();
-
-	if ((to_ch = CHARACTER_MANAGER::instance().Find(pinfo->arg1)))
-	{
-		if (iPulse - to_ch->GetSafeboxLoadTime() < PASSES_PER_SEC(g_nPortalLimitTime))
-		{
-#ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(((to_ch) ? (to_ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 234, "%d", g_nPortalLimitTime);
-#endif
-			return;
-		}
-
-		if( true == CombatSystem::IsDead(((to_ch) ? (to_ch)->GetEntityHandle() : entt::null)) )
-		{
-			return;
-		}
-	}
-
-	LOG_INFO("CInputMain()::Exchange()  SubHeader {} ", pinfo->sub_header);
-
-	if (iPulse - ch->GetSafeboxLoadTime() < PASSES_PER_SEC(g_nPortalLimitTime))
-	{
-#ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 234, "%d", g_nPortalLimitTime);
-#endif
-		return;
-	}
-
-
-	switch (pinfo->sub_header)
-	{
-		case EXCHANGE_SUBHEADER_CG_START:	// arg1 == vid of target character
-			if (!ecs::SocialSystem::GetExchange(character))
-			{
-				if ((to_ch = CHARACTER_MANAGER::instance().Find(pinfo->arg1)))
-				{
-					if (iPulse - ch->GetSafeboxLoadTime() < PASSES_PER_SEC(g_nPortalLimitTime))
-					{
-#ifdef TEXTS_IMPROVEMENT
-						ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 234, "%d", g_nPortalLimitTime);
-#endif
-						return;
-					}
-
-					if (iPulse - to_ch->GetSafeboxLoadTime() < PASSES_PER_SEC(g_nPortalLimitTime))
-					{
-#ifdef TEXTS_IMPROVEMENT
-						ecs::ChatSystem::SendNew(((to_ch) ? (to_ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 234, "%d", g_nPortalLimitTime);
-#endif
-						return;
-					}
-
-					if (ecs::PointSystem::GetGold(character) >= GOLD_MAX) {
-#ifdef TEXTS_IMPROVEMENT
-						ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 406,
-
-						"%lld"
-
-						, GOLD_MAX);
-#endif
-						return;
-					}
-
-					if (ecs::PlayerRuntime::IsPC(((to_ch) ? (to_ch)->GetEntityHandle() : entt::null)))
-					{
-						if (quest::CQuestManager::instance().GiveItemToPC(ecs::PlayerRuntime::GetPlayerID(character), ((to_ch) ? (to_ch)->GetEntityHandle() : entt::null)))
-						{
-							LOG_INFO("Exchange canceled by quest {} {}", ecs::PlayerRuntime::GetName(character).data(), ecs::PlayerRuntime::GetName(((to_ch) ? (to_ch)->GetEntityHandle() : entt::null)).data());
-							return;
-						}
-					}
-
-
-					if (ch->GetMyShop() || ch->IsOpenSafebox() || ch->GetShopOwner() || ch->IsCubeOpen()
-
-#if defined(ENABLE_CHRISTMAS_WHEEL_OF_DESTINY)
-						|| ch->GetWheelDestiny()
-#endif
-						)
-					{
-#ifdef TEXTS_IMPROVEMENT
-						ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 292, "");
-#endif
-						return;
-					}
-
-#ifdef __ATTR_TRANSFER_SYSTEM__
-					if (AttrTransfer_is_open(character))
-					{
-#ifdef TEXTS_IMPROVEMENT
-						ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 292, "");
-#endif
-						return;
-					}
-#endif
-#ifdef ENABLE_RESTRICT_GM_PERMISSIONS
-					if ((ecs::PlayerRuntime::GetGMLevel(character) > GM_PLAYER && ecs::PlayerRuntime::GetGMLevel(character) < GM_IMPLEMENTOR) || (ecs::PlayerRuntime::GetGMLevel(((to_ch) ? (to_ch)->GetEntityHandle() : entt::null)) > GM_PLAYER && ecs::PlayerRuntime::GetGMLevel(((to_ch) ? (to_ch)->GetEntityHandle() : entt::null)) < GM_IMPLEMENTOR)) {
-						return;
-					}
-#endif
-					ch->ExchangeStart((to_ch ? to_ch->GetEntityHandle() : entt::null));
-				}
-			}
-			break;
-
-		case EXCHANGE_SUBHEADER_CG_ITEM_ADD:	// arg1 == position of item, arg2 == position in exchange window
-			if (ecs::SocialSystem::GetExchange(character))
-			{
-				if (ecs::SocialSystem::GetExchange(character)->GetCompany()->GetAcceptStatus() != true)
-					ecs::SocialSystem::GetExchange(character)->AddItem(pinfo->Pos, pinfo->arg2);
-			}
-			break;
-
-		case EXCHANGE_SUBHEADER_CG_ITEM_DEL:	// arg1 == position of item
-			if (ecs::SocialSystem::GetExchange(character))
-			{
-				if (ecs::SocialSystem::GetExchange(character)->GetCompany()->GetAcceptStatus() != true)
-					ecs::SocialSystem::GetExchange(character)->RemoveItem(pinfo->arg1);
-			}
-			break;
-
-		case EXCHANGE_SUBHEADER_CG_ELK_ADD:	// arg1 == amount of gold
-			if (ecs::SocialSystem::GetExchange(character))
-			{
-
-				auto* companyOwner = ecs::SocialSystem::GetExchange(ch->GetEntityHandle())->GetCompany()->GetOwner();
-				const entt::entity companyOwnerEntity = companyOwner ? companyOwner->GetEntityHandle() : entt::null;
-				const int64_t nTotalGold = ecs::PointSystem::GetGold(companyOwnerEntity) + pinfo->arg1;
-
-				if (GOLD_MAX <= nTotalGold)
-				{
-#ifdef TEXTS_IMPROVEMENT
-					ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 226,
-
-					"%lld"
-
-					, nTotalGold);
-#endif
-					return;
-				}
-
-				if (ecs::SocialSystem::GetExchange(character)->GetCompany()->GetAcceptStatus() != true)
-					ecs::SocialSystem::GetExchange(character)->AddGold(pinfo->arg1);
-			}
-			break;
-		case EXCHANGE_SUBHEADER_CG_ACCEPT:	// arg1 == not used
-			if (ecs::SocialSystem::GetExchange(character))
-			{
-				LOG_INFO("CInputMain()::Exchange() ==> ACCEPT ");
-				ecs::SocialSystem::GetExchange(character)->Accept(true);
-			}
-
-			break;
-
-		case EXCHANGE_SUBHEADER_CG_CANCEL:	// arg1 == not used
-			if (ecs::SocialSystem::GetExchange(character))
-				ecs::SocialSystem::GetExchange(character)->Cancel();
-			break;
-	}
+    if (!ecs::PlayerRuntime::IsPC(character) || !data)
+        return;
+    // The packet decoder already checked the fixed packet size. Copying avoids
+    // alignment assumptions and keeps the request stable across callbacks.
+    command_exchange request {};
+    std::memcpy(&request, data, sizeof(request));
+    switch (request.sub_header)
+    {
+        case EXCHANGE_SUBHEADER_CG_START:
+            if (request.arg1 > 0 && request.arg1 <= UINT32_MAX)
+                ExchangeSystem::Start(character, CHARACTER_MANAGER::instance().FindEntity(static_cast<uint32_t>(request.arg1)));
+            break;
+        case EXCHANGE_SUBHEADER_CG_ITEM_ADD:
+            ExchangeSystem::AddItem(character, request.Pos, request.arg2);
+            break;
+        case EXCHANGE_SUBHEADER_CG_ITEM_DEL:
+            if (request.arg1 >= 0 && request.arg1 < EXCHANGE_ITEM_MAX_NUM)
+                ExchangeSystem::RemoveItem(character, static_cast<uint32_t>(request.arg1));
+            break;
+        case EXCHANGE_SUBHEADER_CG_ELK_ADD:
+            ExchangeSystem::AddGold(character, request.arg1);
+            break;
+        case EXCHANGE_SUBHEADER_CG_ACCEPT:
+            ExchangeSystem::Accept(character);
+            break;
+        case EXCHANGE_SUBHEADER_CG_CANCEL:
+            // Closing is always allowed, including after death/window changes.
+            ExchangeSystem::Cancel(character);
+            break;
+    }
 }
 
 void CInputMain::Position(entt::entity character, const char * data)
@@ -3355,7 +3213,7 @@ void CInputMain::MapTeleporter(entt::entity character, TPacketCGMapTeleporter* p
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
 	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::MapTeleporter");//INGAME_DEBUG_RAZOR93
 #endif
-	if (ch->IsHack() || ecs::SocialSystem::GetExchange(character) || ch->IsOpenSafebox() || ch->IsCubeOpen() || ch->GetShop() || ch->GetMyShop()
+	if (ch->IsHack() || ecs::SocialSystem::HasExchange(character) || ch->IsOpenSafebox() || ch->IsCubeOpen() || ch->GetShop() || ch->GetMyShop()
 #ifdef ENABLE_ACCE_SYSTEM
 		|| ch->IsAcceOpen()
 #endif
@@ -4441,7 +4299,7 @@ int CInputMain::MyShop(entt::entity character, const char * c_pData, size_t uiBy
 	if (CombatSystem::IsStun(character) || CombatSystem::IsDead(character))
 		return (iExtraLen);
 
-	if (ecs::SocialSystem::GetExchange(character) || ch->IsOpenSafebox() || ch->GetShopOwner() || ch->IsCubeOpen())
+	if (ecs::SocialSystem::HasExchange(character) || ch->IsOpenSafebox() || ch->GetShopOwner() || ch->IsCubeOpen())
 	{
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 292, "");
@@ -4485,7 +4343,7 @@ void CInputMain::Refine(entt::entity character, const char* c_pData)
 	}
 #endif
 
-	if (ecs::SocialSystem::GetExchange(character) || ch->IsOpenSafebox() || ch->GetShopOwner() || ch->GetMyShop() || ch->IsCubeOpen())
+	if (ecs::SocialSystem::HasExchange(character) || ch->IsOpenSafebox() || ch->GetShopOwner() || ch->GetMyShop() || ch->IsCubeOpen())
 	{
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 502, "");
@@ -5285,7 +5143,7 @@ void CInputMain::WheelDestiny(entt::entity character, const char* data)
 		return;
 	}
 
-	if (ecs::PlayerRuntime::IsObserverMode(character) || ecs::SocialSystem::GetExchange(character))
+	if (ecs::PlayerRuntime::IsObserverMode(character) || ecs::SocialSystem::HasExchange(character))
 	{
 		return;
 	}
@@ -5507,7 +5365,7 @@ int CInputMain::Analyze(LPDESC d, uint8_t bHeader, const char * c_pData)
 		case HEADER_CG_OPENSHOP: {
 				TPacketOpenShop* p = reinterpret_cast<TPacketOpenShop*>((void*)c_pData);
 				if (p->shopid > 0) {
-					if (!(ecs::PlayerRuntime::IsObserverMode(character) || ecs::SessionSystem::IsSafeboxOpen(character) || ecs::SocialSystem::GetExchange(character) || ecs::SessionSystem::IsCubeOpen(character) || CombatSystem::IsStun(character) || CombatSystem::IsDead(character)
+					if (!(ecs::PlayerRuntime::IsObserverMode(character) || ecs::SessionSystem::IsSafeboxOpen(character) || ecs::SocialSystem::HasExchange(character) || ecs::SessionSystem::IsCubeOpen(character) || CombatSystem::IsStun(character) || CombatSystem::IsDead(character)
 #ifdef __ATTR_TRANSFER_SYSTEM__
 						 || AttrTransfer_is_open(character)
 #endif

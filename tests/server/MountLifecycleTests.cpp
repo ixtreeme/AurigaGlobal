@@ -383,7 +383,7 @@ LPDUNGEON ecs::SocialSystem::GetDungeon(entt::entity e) {
     static int marker;
     return State(e).dungeon ? reinterpret_cast<LPDUNGEON>(&marker) : nullptr;
 }
-CExchange* ecs::SocialSystem::GetExchange(entt::entity e) { State(e); return nullptr; }
+bool ecs::SocialSystem::HasExchange(entt::entity e) { State(e); return false; }
 CShop* ecs::SocialSystem::GetMyShop(entt::entity e) { State(e); return nullptr; }
 entt::entity ecs::SocialSystem::GetShopOwner(entt::entity e) { State(e); return entt::null; }
 int32_t ecs::QuestSystem::GetFlag(entt::entity e, std::string_view) { State(e); return questDelay; }

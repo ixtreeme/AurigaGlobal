@@ -239,7 +239,7 @@ int OnClickStoneCraft(TRIGGERPARAM)
 	// IsOpenSafebox and IsCubeOpen have no entity form; one resolve for the
 	// pair, as in cmd_general's copy of this same guard.
 	LPCHARACTER pkCauser = ecs::LegacyCharOf(causer);
-	if (ecs::SocialSystem::GetExchange(causer)
+	if (ecs::SocialSystem::HasExchange(causer)
 		|| ecs::SocialSystem::GetMyShop(causer)
 		|| ecs::SocialSystem::GetShopOwner(causer) != entt::null
 		|| (pkCauser && (pkCauser->IsOpenSafebox() || pkCauser->IsCubeOpen())))

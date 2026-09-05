@@ -1,4 +1,5 @@
 #pragma once
+#include "../../exchange.h"
 
 #include <cstdint>
 #include <memory>
@@ -15,7 +16,6 @@ namespace marriage {
 class WeddingMap;
 }
 
-class CExchange;
 class CWheelDestiny;
 class CArena;
 
@@ -31,10 +31,6 @@ namespace ecs {
 struct SocialRefs {
     LPPARTY party { nullptr };
     CGuild* guild { nullptr };
-};
-
-struct ExchangeRef {
-    CExchange* exchange { nullptr };
 };
 
 struct PartyMembership {

@@ -1,4 +1,5 @@
 #include "../../stdafx.h"
+#include "../../exchange.h"
 #include "InventorySystem.hpp"
 #include <utility>
 #include "ViewSystem.hpp"
@@ -584,16 +585,6 @@ void CHARACTER::SetRefineTime()
     }
 }
 
-void CHARACTER::SetExchangeTime()
-{
-    m_iExchangeTime = thecore_pulse();
-    if (auto* warp = EnsureWarpBlockState(GetEntityHandle()))
-    {
-        warp->exchangeTime = m_iExchangeTime;
-        g_registry.emplace_or_replace<ecs::DirtyTag>(GetEntityHandle());
-    }
-}
-
 void CHARACTER::SetMyShopTime()
 {
     m_iMyShopTime = thecore_pulse();
@@ -612,7 +603,7 @@ bool CHARACTER::CanWarp() const
     if ((iPulse - GetSafeboxLoadTime()) < limit_time)
         return false;
 
-    if ((iPulse - GetExchangeTime()) < limit_time)
+    if ((iPulse - ExchangeSystem::GetLastExchangePulse(GetEntityHandle())) < limit_time)
         return false;
 
     if ((iPulse - GetMyShopTime()) < limit_time)
@@ -621,7 +612,7 @@ bool CHARACTER::CanWarp() const
     if ((iPulse - GetRefineTime()) < limit_time)
         return false;
 
-    if (GetExchange() || GetMyShop() || GetShopOwner() || IsOpenSafebox() || IsCubeOpen()
+    if (ExchangeSystem::IsActive(GetEntityHandle()) || GetMyShop() || GetShopOwner() || IsOpenSafebox() || IsCubeOpen()
 #ifdef ENABLE_ACCE_SYSTEM
         || IsAcceOpen()
 #endif

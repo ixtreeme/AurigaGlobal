@@ -344,7 +344,7 @@ bool CheckCharacterActions(LPCHARACTER ch)
 	}
 
 
-	if(ecs::SocialSystem::GetExchange(((ch) ? (ch)->GetEntityHandle() : entt::null)))
+	if(ecs::SocialSystem::HasExchange(((ch) ? (ch)->GetEntityHandle() : entt::null)))
 	{
 		return false;
 	}

@@ -1,61 +1,65 @@
-#ifndef __INC_METIN_II_GAME_EXCHANGE_H__
-#define __INC_METIN_II_GAME_EXCHANGE_H__
+#pragma once
 
 #include <array>
-#include <entt/entity/entity.hpp>
-
-class CGrid;
+#include <cstdint>
+#include <entt/entt.hpp>
+#include <common/tables.h>
 
 enum EExchangeValues
 {
 #ifdef __NEW_EXCHANGE_WINDOW__
-	EXCHANGE_ITEM_MAX_NUM = 24,
+    EXCHANGE_ITEM_MAX_NUM = 24,
 #else
-	EXCHANGE_ITEM_MAX_NUM = 12,
+    EXCHANGE_ITEM_MAX_NUM = 12,
 #endif
-	EXCHANGE_MAX_DISTANCE	= 1000
+    EXCHANGE_MAX_DISTANCE = 1000
 };
 
-class CExchange
+namespace ecs
 {
-	public:
-		CExchange(LPCHARACTER pOwner);
-		~CExchange();
-
-		bool		Accept(bool bIsAccept = true);
-		void		Cancel();
-
-		bool		AddGold(int64_t lGold);
-		bool		AddItem(TItemPos item_pos, uint8_t display_pos);
-		bool		RemoveItem(uint8_t pos);
-
-		LPCHARACTER	GetOwner()	{ return m_pOwner;	}
-		CExchange *	GetCompany()	{ return m_pCompany;	}
-
-		bool		GetAcceptStatus() { return m_bAccept; }
-
-		void		SetCompany(CExchange * pExchange)	{ m_pCompany = pExchange; }
-
-	private:
-		bool		Done();
-		bool		Check(int * piItemCount);
-		bool		CheckSpace();
-
-	private:
-		CExchange *	m_pCompany;	// 상대방의 CExchange 포인터
-
-		LPCHARACTER	m_pOwner;
-
-		TItemPos		m_aItemPos[EXCHANGE_ITEM_MAX_NUM];
-		std::array<entt::entity, EXCHANGE_ITEM_MAX_NUM> m_items;
-		uint8_t		m_abItemDisplayPos[EXCHANGE_ITEM_MAX_NUM];
-
-		bool 		m_bAccept;
-
-		int64_t		m_lGold;
-
-		CGrid *		m_pGrid;
-
+struct ExchangeRef
+{
+    entt::entity session { entt::null };
 };
 
-#endif
+struct ExchangeItem
+{
+    entt::entity item { entt::null };
+    TItemPos source { NPOS };
+    uint32_t id { 0 }, vnum { 0 }, count { 0 };
+    uint8_t display { 0 }, size { 0 };
+    std::array<int32_t, ITEM_SOCKET_MAX_NUM> sockets {};
+    std::array<TPlayerItemAttribute, ITEM_ATTRIBUTE_MAX_NUM> attributes {};
+    short lockedAttribute { -1 };
+};
+
+struct ExchangeOffer
+{
+    entt::entity owner { entt::null };
+    std::array<ExchangeItem, EXCHANGE_ITEM_MAX_NUM> items {};
+    int64_t gold { 0 };
+    bool accepted { false };
+};
+
+enum class ExchangePhase { Open, Committed, Closing };
+
+struct ExchangeSession
+{
+    std::array<ExchangeOffer, 2> offers {};
+    uint64_t revision { 0 };
+    ExchangePhase phase { ExchangePhase::Open };
+};
+}
+
+namespace ExchangeSystem
+{
+entt::entity GetSession(entt::entity participant);
+bool IsActive(entt::entity participant);
+int GetLastExchangePulse(entt::entity participant);
+bool Start(entt::entity initiator, entt::entity target);
+bool AddItem(entt::entity participant, TItemPos position, uint32_t display);
+bool RemoveItem(entt::entity participant, uint32_t slot);
+bool AddGold(entt::entity participant, int64_t amount);
+bool Accept(entt::entity participant, bool accepted = true);
+void Cancel(entt::entity participant);
+}

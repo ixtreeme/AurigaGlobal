@@ -54,7 +54,7 @@ bool IsTradeWindowOpen(entt::entity owner)
         return true;
     const auto* safebox = g_registry.try_get<ecs::SafeboxRef>(owner);
     const auto* cube = g_registry.try_get<ecs::CubeWindowComponent>(owner);
-    return ecs::SocialSystem::GetExchange(owner) || ecs::SocialSystem::GetMyShop(owner)
+    return ecs::SocialSystem::HasExchange(owner) || ecs::SocialSystem::GetMyShop(owner)
         || ecs::SocialSystem::GetShopOwner(owner) != entt::null
         || (safebox && safebox->isOpening) || (cube && g_registry.valid(cube->npc));
 }
