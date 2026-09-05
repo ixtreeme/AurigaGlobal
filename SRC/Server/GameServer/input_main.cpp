@@ -809,8 +809,7 @@ struct FYmirChatPacket
 #ifdef __NEWPET_SYSTEM__
 void CInputMain::BraveRequestPetName(entt::entity character, const char* c_pData)
 {
-	LPCHARACTER ch = ecs::LegacyCharOf(character);
-	if (!ch)
+	if (!ecs::PlayerRuntime::IsValid(character))
 		return;
 
 	const entt::entity ownerEntity = character;
@@ -820,7 +819,7 @@ void CInputMain::BraveRequestPetName(entt::entity character, const char* c_pData
 		return;
 	}
 
-	const int eggVnum = ch->GetEggVid();
+	const int eggVnum = ecs::PlayerRuntime::GetEggVID(character);
 	if (eggVnum <= 0)
 		return;
 
@@ -2908,10 +2907,8 @@ void CInputMain::QuestConfirm(entt::entity character, const void* c_pData)
 
 void CInputMain::Target(entt::entity character, const char * pcData)
 {
-	LPCHARACTER ch = ecs::LegacyCharOf(character);
-// migrated from CHARACTER handler
-// TODO Phase 8: migrate Target handler ECS
-// DUAL-PATH: legacy only during migration window
+	if (!ecs::PlayerRuntime::IsValid(character))
+		return;
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
 	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::Target");//INGAME_DEBUG_RAZOR93
 #endif
@@ -5319,16 +5316,13 @@ void CInputMain::ItemDestroy(entt::entity character, const char * data)
 
 void CInputMain::ItemDivision(entt::entity character, const char * data)
 {
-	LPCHARACTER ch = ecs::LegacyCharOf(character);
-// migrated from CHARACTER handler
-// TODO Phase 8: migrate ItemDivision handler ECS
-// DUAL-PATH: legacy only during migration window
+	if (!ecs::PlayerRuntime::IsValid(character))
+		return;
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
 	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "input_main.cpp:: void CInputMain::ItemDivision ");//INGAME_DEBUG_RAZOR93
 #endif
 	struct command_item_division * pinfo = (struct command_item_division *) data;
-	if (ch)
-		ItemSystem::ItemDivision(character, pinfo->pos);
+	ItemSystem::ItemDivision(character, pinfo->pos);
 }
 
 
@@ -5337,16 +5331,11 @@ void CInputMain::ItemDivision(entt::entity character, const char * data)
 #ifdef ENABLE_NEW_FISHING_SYSTEM
 void CInputMain::FishingNew(entt::entity character, const char* c_pData)
 {
-	LPCHARACTER ch = ecs::LegacyCharOf(character);
-// migrated from CHARACTER handler
-// TODO Phase 8: migrate FishingNew handler ECS
-// DUAL-PATH: legacy only during migration window
+	if (!ecs::PlayerRuntime::IsValid(character))
+		return;
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
 	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "input_main.cpp:: void CInputMain::FishingNew ");//INGAME_DEBUG_RAZOR93
 #endif
-	if (!ch) {
-		return;
-	}
 
 	TPacketFishingNew* p = (TPacketFishingNew*)c_pData;
 	switch (p->subheader) {
@@ -6010,15 +5999,11 @@ int CInputMain::Switchbot(entt::entity character, const char* data, size_t uiByt
 #ifdef ENABLE_MULTI_LANGUAGE
 void CInputMain::ChangeLanguage(entt::entity character, uint8_t bLanguage)
 {
-	LPCHARACTER ch = ecs::LegacyCharOf(character);
-// migrated from CHARACTER handler
-// TODO Phase 8: migrate ChangeLanguage handler ECS
-// DUAL-PATH: legacy only during migration window
+	if (!ecs::PlayerRuntime::IsValid(character))
+		return;
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
 	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "input_main.cpp:: void CInputMain::ChangeLanguage ");//INGAME_DEBUG_RAZOR93
 #endif
-	if (!ch)
-		return;
 
 	if (!ecs::PlayerRuntime::GetDesc(character))
 		return;
@@ -6030,7 +6015,7 @@ void CInputMain::ChangeLanguage(entt::entity character, uint8_t bLanguage)
 
 	if(bLanguage > LANGUAGE_DEFAULT && bLanguage < LANGUAGE_MAX_NUM)
 	{
-		std::unique_ptr<SQLMsg> msg(DBManager::instance().DirectQuery("UPDATE account.account SET language = %d WHERE id = %d;", bLanguage, ch->GetAID()));
+		std::unique_ptr<SQLMsg> msg(DBManager::instance().DirectQuery("UPDATE account.account SET language = %d WHERE id = %d;", bLanguage, ecs::PlayerRuntime::GetAccountID(character)));
 		ecs::PlayerRuntime::GetDesc(character)->SetLanguage(bLanguage);
 	}
 }

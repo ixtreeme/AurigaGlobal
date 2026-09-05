@@ -727,13 +727,20 @@ LPCHARACTER CHARACTER_MANAGER::SpawnMobRandomPosition(uint32_t dwVnum, int32_t l
 	return ch;
 }
 
-LPCHARACTER CHARACTER_MANAGER::SpawnMob(uint32_t dwVnum, int32_t lMapIndex, int32_t x, int32_t y, int32_t z, bool bSpawnMotion, int iRot, bool bShow)
+LPCHARACTER CHARACTER_MANAGER::SpawnMob(uint32_t vnum, int32_t map, int32_t x, int32_t y, int32_t z, bool motion, int rotation, bool show)
+{
+    // Only old pointer callers cross this compatibility boundary. Native callers
+    // receive the entity produced by the shared spawn implementation directly.
+    return ecs::LegacyCharOf(SpawnMobEntity(vnum, map, x, y, z, motion, rotation, show));
+}
+
+entt::entity CHARACTER_MANAGER::SpawnMobEntity(uint32_t dwVnum, int32_t lMapIndex, int32_t x, int32_t y, int32_t z, bool bSpawnMotion, int iRot, bool bShow)
 {
 	const CMob* pkMob = CMobManager::instance().Get(dwVnum);
 	if (!pkMob)
 	{
 		LOG_ERROR("SpawnMob: no mob data for vnum {}", dwVnum);
-		return nullptr;
+		return entt::null;
 	}
 
 	if (!(pkMob->m_table.bType == CHAR_TYPE_NPC || pkMob->m_table.bType == CHAR_TYPE_WARP || pkMob->m_table.bType == CHAR_TYPE_GOTO) || mining::IsVeinOfOre(dwVnum))
@@ -744,7 +751,7 @@ LPCHARACTER CHARACTER_MANAGER::SpawnMob(uint32_t dwVnum, int32_t lMapIndex, int3
 		{
 			LOG_INFO("no sectree for spawn at {} {} mobvnum {} mapindex {}", x, y, dwVnum, lMapIndex);
 			//"no sectree for spawn at %d %d mobvnum %d mapindex %d", x, y, dwVnum, lMapIndex);
-			return nullptr;
+			return entt::null;
 		}
 
 		uint32_t dwAttr = tree->GetAttribute(x, y);
@@ -780,14 +787,14 @@ LPCHARACTER CHARACTER_MANAGER::SpawnMob(uint32_t dwVnum, int32_t lMapIndex, int3
 				//"SpawnMob: BLOCKED position for spawn %s %u at %d %d (attr %u)", pkMob->m_table.szName, dwVnum, x, y, dwAttr);
 				LOG_INFO("SpawnMob: BLOCKED position for spawn {} {} at {} {} (attr {})", pkMob->m_table.szName, dwVnum, x, y, dwAttr);
 			// END_OF_SPAWN_BLOCK_LOG
-			return nullptr;
+			return entt::null;
 		}
 
 		if (IS_SET(dwAttr, ATTR_BANPK))
 		{
 			//"SpawnMob: BAN_PK position for mob spawn %s %u at %d %d", pkMob->m_table.szName, dwVnum, x, y);
 			LOG_INFO("SpawnMob: BAN_PK position for mob spawn {} {} at {} {}", pkMob->m_table.szName, dwVnum, x, y);
-			return nullptr;
+			return entt::null;
 		}
 	}
 
@@ -797,7 +804,7 @@ LPCHARACTER CHARACTER_MANAGER::SpawnMob(uint32_t dwVnum, int32_t lMapIndex, int3
 	{
 		//"SpawnMob: cannot create monster at non-exist sectree %d x %d (map %d)", x, y, lMapIndex);
 		LOG_INFO("SpawnMob: cannot create monster at non-exist sectree {} x {} (map {})", x, y, lMapIndex);
-		return nullptr;
+		return entt::null;
 	}
 
 #ifdef ENABLE_MULTI_NAMES
@@ -810,7 +817,7 @@ LPCHARACTER CHARACTER_MANAGER::SpawnMob(uint32_t dwVnum, int32_t lMapIndex, int3
 	{
 		//"SpawnMob: cannot create new character");
 		LOG_INFO("SpawnMob: cannot create new character");
-		return nullptr;
+		return entt::null;
 	}
 
 	const entt::entity character = ch->GetEntityHandle();
@@ -837,10 +844,10 @@ LPCHARACTER CHARACTER_MANAGER::SpawnMob(uint32_t dwVnum, int32_t lMapIndex, int3
 
 	if (bShow && !ecs::MovementSystem::Show(character, lMapIndex, x, y, z, bSpawnMotion))
 	{
-		M2_DESTROY_CHARACTER(ch);
+		ecs::PlayerRuntime::DestroyCharacter(character);
 		//"SpawnMob: cannot show monster");
 		LOG_INFO("SpawnMob: cannot show monster");
-		return nullptr;
+		return entt::null;
 	}
 #ifdef ENABLE_EVENT_MANAGER
 	// DUNGEON_TICKET_LOOT_EVENT: minden metin kapjon +value1 extra metint (dungeon mapok kivve)
@@ -869,7 +876,7 @@ LPCHARACTER CHARACTER_MANAGER::SpawnMob(uint32_t dwVnum, int32_t lMapIndex, int3
 				{
 					int sx, sy;
 					CalcDungeonTicketExtraPos(x, y, i, sx, sy);
-					SpawnMob(dwVnum, lMapIndex, sx, sy, z, bSpawnMotion, iRot, bShow);
+					SpawnMobEntity(dwVnum, lMapIndex, sx, sy, z, bSpawnMotion, iRot, bShow);
 				}
 
 
@@ -907,7 +914,7 @@ LPCHARACTER CHARACTER_MANAGER::SpawnMob(uint32_t dwVnum, int32_t lMapIndex, int3
 		}
 	}
 
-	return ch;
+	return character;
 }
 
 LPCHARACTER CHARACTER_MANAGER::SpawnMobRange(uint32_t dwVnum, int32_t lMapIndex, int sx, int sy, int ex, int ey, bool bIsException, bool bSpawnMotion, bool bAggressive)

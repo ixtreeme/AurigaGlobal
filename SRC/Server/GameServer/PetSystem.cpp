@@ -40,15 +40,6 @@ bool IsSummonItemOwnedBy(uint32_t vid, LPCHARACTER owner)
 	return item != entt::null && ItemSystem::GetItemOwner(item) == ((owner) ? (owner)->GetEntityHandle() : entt::null);
 }
 
-LPITEM LegacyItemFromEntity(entt::entity item)
-{
-	if (item == entt::null)
-		return nullptr;
-
-	const uint32_t id = ItemSystem::GetItemID(item);
-	return id != 0 ? ITEM_MANAGER::instance().Find(id) : nullptr;
-}
-
 bool SnapFollowerToOwner(LPCHARACTER follower, LPCHARACTER owner, int32_t x, int32_t y, int32_t z = 0)
 {
 	const entt::entity followerEntity = follower ? follower->GetEntityHandle() : entt::null;
@@ -167,10 +158,10 @@ void CPetActor::Unmount()
 
 #ifdef ENABLE_COSTUME_PET
 void CPetActor::UpdatePetSkin() {
-	LPITEM pSummonItem = LegacyItemFromEntity(FindSummonItemByVID(this->GetSummonItemVID()));
-	if (pSummonItem != nullptr){
+	const entt::entity pSummonItem = FindSummonItemByVID(this->GetSummonItemVID());
+	if (ItemSystem::IsValidItem(pSummonItem)){
 		Unsummon();
-		Summon("Noname", (pSummonItem ? pSummonItem->GetEntityHandle() : entt::null), false);
+		Summon("Noname", pSummonItem, false);
 
 	}
 }
@@ -191,10 +182,10 @@ void CPetActor::Unsummon()
 {
 	if (true == this->IsSummoned())
 	{
-		LPITEM pSummonItem = LegacyItemFromEntity(FindSummonItemByVID(this->GetSummonItemVID()));
-		if (pSummonItem) {
-			ItemSystem::SetItemSocket((pSummonItem ? pSummonItem->GetEntityHandle() : entt::null), 2, false);
-			ItemSystem::UnlockItem((pSummonItem ? pSummonItem->GetEntityHandle() : entt::null));
+		const entt::entity pSummonItem = FindSummonItemByVID(this->GetSummonItemVID());
+		if (ItemSystem::IsValidItem(pSummonItem)) {
+			ItemSystem::SetItemSocket(pSummonItem, 2, false);
+			ItemSystem::UnlockItem(pSummonItem);
 		}
 
 		// 버프 삭제
@@ -215,8 +206,8 @@ void CPetActor::Unsummon()
 uint32_t CPetActor::Summon(const char* petName, entt::entity pSummonItemEntity, bool bSpawnFar)
 {
 	const entt::entity owner = m_pkOwner ? m_pkOwner->GetEntityHandle() : entt::null;
-	LPITEM pSummonItem = LegacyItemFromEntity(pSummonItemEntity);
-	if (!pSummonItem)
+	const entt::entity pSummonItem = pSummonItemEntity;
+	if (!ecs::PlayerRuntime::IsValid(owner) || !ItemSystem::IsValidItem(pSummonItem) || ItemSystem::GetItemOwner(pSummonItem) != owner)
 		return 0;
 	int32_t x = ecs::PlayerRuntime::GetX(owner);
 	int32_t y = ecs::PlayerRuntime::GetY(owner);
@@ -289,15 +280,15 @@ uint32_t CPetActor::Summon(const char* petName, entt::entity pSummonItemEntity, 
 	this->SetSummonItem(pSummonItemEntity);
 	m_pkOwner->ComputePoints();
 	ecs::MovementSystem::Show(((m_pkChar) ? (m_pkChar)->GetEntityHandle() : entt::null), ecs::PlayerRuntime::GetMapIndex(owner), x, y, z);
-	ItemSystem::SetItemSocket((pSummonItem ? pSummonItem->GetEntityHandle() : entt::null), 2, true);
-	ItemSystem::LockItem((pSummonItem ? pSummonItem->GetEntityHandle() : entt::null));
+	ItemSystem::SetItemSocket(pSummonItem, 2, true);
+	ItemSystem::LockItem(pSummonItem);
 #ifdef ENABLE_RECALL
 	const CAffect* pAffect = AffectSystem::FindAffect(owner, AFFECT_RECALL1);
 	if (pAffect) {
 		AffectSystem::RemoveAffect(owner, const_cast<CAffect*>(pAffect));
 	}
 
-	AffectSystem::AddAffect(owner, AFFECT_RECALL1, APPLY_NONE, 0, ItemSystem::GetItemID((pSummonItem ? pSummonItem->GetEntityHandle() : entt::null)), INFINITE_AFFECT_DURATION, 0, true, false);
+	AffectSystem::AddAffect(owner, AFFECT_RECALL1, APPLY_NONE, 0, ItemSystem::GetItemID(pSummonItem), INFINITE_AFFECT_DURATION, 0, true, false);
 #endif
 #ifdef ENABLE_COSTUME_PET
 	uint32_t dwPetSkinvnum = m_pkOwner->GetPetSkinVnum();
@@ -483,28 +474,28 @@ bool CPetActor::Follow(float fMinDistance)
 
 void CPetActor::SetSummonItem (entt::entity pItemEntity)
 {
-	LPITEM pItem = LegacyItemFromEntity(pItemEntity);
-	if (nullptr == pItem)
+	const entt::entity pItem = pItemEntity;
+	if (!ItemSystem::IsValidItem(pItem))
 	{
 		m_dwSummonItemVID = 0;
 		m_dwSummonItemVnum = 0;
 		return;
 	}
 
-	m_dwSummonItemVID = pItem->GetVID();
-	m_dwSummonItemVnum = ItemSystem::GetItemVnum((pItem ? pItem->GetEntityHandle() : entt::null));
+	m_dwSummonItemVID = ItemSystem::GetItemVID(pItem);
+	m_dwSummonItemVnum = ItemSystem::GetItemVnum(pItem);
 
 	const entt::entity owner = ((m_pkOwner) ? (m_pkOwner)->GetEntityHandle() : entt::null);
 	if (owner != entt::null && g_registry.valid(owner)) {
 		auto& pet = g_registry.emplace_or_replace<ecs::PetComponent>(owner);
 		pet.owner = owner;
-		pet.itemID = ItemSystem::GetItemID((pItem ? pItem->GetEntityHandle() : entt::null));
-		pet.itemVID = pItem->GetVID();
-		pet.itemVnum = ItemSystem::GetItemVnum((pItem ? pItem->GetEntityHandle() : entt::null));
+		pet.itemID = ItemSystem::GetItemID(pItem);
+		pet.itemVID = ItemSystem::GetItemVID(pItem);
+		pet.itemVnum = ItemSystem::GetItemVnum(pItem);
 		pet.level = 0;
 		pet.state = IsSummoned() ? 1u : 0u;
 		for (int i = 0; i < ITEM_SOCKET_MAX_NUM; ++i)
-			pet.sockets[i] = static_cast<int32_t>(ItemSystem::GetItemSocket((pItem ? pItem->GetEntityHandle() : entt::null), i));
+			pet.sockets[i] = static_cast<int32_t>(ItemSystem::GetItemSocket(pItem, i));
 	}
 }
 
@@ -528,9 +519,9 @@ void CPetActor::GiveBuff()
 	// 파황 펫 버프는 던전에서만 발생함.
 	if (!__PetCheckBuff(this))
 		return;
-	LPITEM item = LegacyItemFromEntity(FindSummonItemByVID(m_dwSummonItemVID));
-	if (nullptr != item)
-		ItemSystem::ModifyPoints(item->GetEntityHandle(), true);
+	const entt::entity item = FindSummonItemByVID(m_dwSummonItemVID);
+	if (ItemSystem::IsValidItem(item))
+		ItemSystem::ModifyPoints(item, true);
 	return ;
 }
 

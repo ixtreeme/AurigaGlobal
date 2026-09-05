@@ -21,6 +21,7 @@ struct PetComponent {
 
 struct MountComponent {
     entt::entity owner { entt::null };
+    entt::entity item { entt::null };
     uint32_t itemID { 0 };
     uint32_t itemVID { 0 };
     uint32_t itemVnum { 0 };

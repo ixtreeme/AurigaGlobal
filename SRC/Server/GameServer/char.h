@@ -2442,10 +2442,10 @@ public:
 
 #ifdef ENABLE_MOUNT_COSTUME_SYSTEM
 private:
-	bool m_bIsMount;
+
 public:
 	void SetMount();
-	bool IsMount() { return m_bIsMount; }
+	bool IsMount() const;
 #endif
 
 #ifdef __NEWPET_SYSTEM__

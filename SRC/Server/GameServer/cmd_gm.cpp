@@ -2345,7 +2345,8 @@ ACMD(do_get_event_flag)
 
 ACMD(do_private)
 {
-	LPCHARACTER ch = ecs::LegacyCharOf(character);
+	if (!ecs::PlayerRuntime::IsValid(character))
+		return;
 	char arg1[256];
 	one_argument(argument, arg1, sizeof(arg1));
 
@@ -2360,7 +2361,7 @@ ACMD(do_private)
 	str_to_number(map_index, arg1);
 	if ((lMapIndex = SECTREE_MANAGER::instance().CreatePrivateMap(map_index)))
 	{
-		ch->SaveExitLocation();
+		ecs::MovementSystem::SaveExitLocation(character);
 
 		LPSECTREE_MAP pkSectreeMap = SECTREE_MANAGER::instance().GetMap(lMapIndex);
 		ecs::MovementSystem::WarpSet(character, pkSectreeMap->m_setting.posSpawn.x, pkSectreeMap->m_setting.posSpawn.y, lMapIndex);
@@ -2412,7 +2413,8 @@ ACMD(do_qf)
 
 ACMD(do_book)
 {
-	LPCHARACTER ch = ecs::LegacyCharOf(character);
+	if (!ecs::PlayerRuntime::IsValid(character))
+		return;
 	char arg1[256];
 
 	one_argument(argument, arg1, sizeof(arg1));
@@ -2434,7 +2436,7 @@ ACMD(do_book)
 		return;
 	}
 
-	const entt::entity item = ch->AutoGiveItem(50300);
+	const entt::entity item = ItemSystem::AutoGiveItemEcs(character, 50300);
 	ItemSystem::SetItemSocket(item, 0, pkProto->dwVnum);
 }
 
@@ -2523,7 +2525,8 @@ ACMD(do_setskill)
 
 ACMD(do_set_skill_point)
 {
-	LPCHARACTER ch = ecs::LegacyCharOf(character);
+	if (!ecs::PlayerRuntime::IsValid(character))
+		return;
 	char arg1[256];
 	one_argument(argument, arg1, sizeof(arg1));
 
@@ -2531,8 +2534,8 @@ ACMD(do_set_skill_point)
 	if (*arg1)
 		str_to_number(skill_point, arg1);
 
-	ch->SetRealPoint(POINT_SKILL, skill_point);
-	ch->SetPoint(POINT_SKILL, ecs::PointSystem::GetReal(character, POINT_SKILL));
+	ecs::PointSystem::SetReal(character, POINT_SKILL, skill_point);
+	ecs::PointSystem::Set(character, POINT_SKILL, ecs::PointSystem::GetReal(character, POINT_SKILL));
 	ecs::PointSystem::Change(character, POINT_SKILL, 0);
 }
 
@@ -2955,7 +2958,8 @@ ACMD(do_pull_monster)
 
 ACMD(do_polymorph)
 {
-	LPCHARACTER ch = ecs::LegacyCharOf(character);
+	if (!ecs::PlayerRuntime::IsValid(character))
+		return;
 	char arg1[256], arg2[256];
 
 	two_arguments(argument, arg1, sizeof(arg1), arg2, sizeof(arg2));
@@ -3143,7 +3147,8 @@ ACMD(do_observer)
 
 ACMD(do_socket_item)
 {
-	LPCHARACTER ch = ecs::LegacyCharOf(character);
+	if (!ecs::PlayerRuntime::IsValid(character))
+		return;
 	char arg1[256], arg2[256];
 	two_arguments(argument, arg1, sizeof(arg1), arg2, sizeof(arg2));
 
@@ -3167,7 +3172,7 @@ ACMD(do_socket_item)
 			}
 		}
 
-		const entt::entity item = ch->AutoGiveItem(dwVnum);
+		const entt::entity item = ItemSystem::AutoGiveItemEcs(character, dwVnum);
 
 		if (ItemSystem::IsValidItem(item))
 		{
@@ -3706,8 +3711,9 @@ ACMD(do_horse_summon)
 
 ACMD(do_horse_unsummon)
 {
-	LPCHARACTER ch = ecs::LegacyCharOf(character);
-	ch->HorseSummon(false, true);
+	if (!ecs::PlayerRuntime::IsValid(character))
+		return;
+	MountSystem::SummonHorse(character, false, true);
 }
 
 ACMD(do_horse_set_stat)

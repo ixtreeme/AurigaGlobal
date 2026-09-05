@@ -213,8 +213,7 @@ ACMD(do_daily_reward_reload){
 }
 
 ACMD(do_daily_reward_get_reward){
-	LPCHARACTER ch = ecs::LegacyCharOf(character);
-	if (!ch)
+	if (!ecs::PlayerRuntime::IsValid(character))
 		return;
 
 	std::string items = "";
@@ -1748,11 +1747,10 @@ ACMD(do_pvp)
 
 ACMD(do_pvp_advanced)
 {
-	LPCHARACTER ch = ecs::LegacyCharOf(character);
-	if (!ch)
+	if (!ecs::PlayerRuntime::IsValid(character))
 		return;
 
-	if (ch->GetArena() != nullptr || CArenaManager::instance().IsArenaMap(ecs::PlayerRuntime::GetMapIndex(character)) == true)
+	if (ecs::PlayerRuntime::GetArena(character) != nullptr || CArenaManager::instance().IsArenaMap(ecs::PlayerRuntime::GetMapIndex(character)) == true)
 	{
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 303, "");
@@ -1858,14 +1856,13 @@ ACMD(do_decline_pvp)
 }
 ACMD(do_block_equipment)
 {
-	LPCHARACTER ch = ecs::LegacyCharOf(character);
-	if (!ch)
+	if (!ecs::PlayerRuntime::IsValid(character))
 		return;
 
 	char arg1[256];
 	one_argument (argument, arg1, sizeof(arg1));
 
-	if (!(ecs::PlayerRuntime::IsPC(character)) || nullptr == ch)
+	if (!ecs::PlayerRuntime::IsPC(character))
 		return;
 
 	int statusEq = ecs::QuestSystem::GetFlag(character, BLOCK_EQUIPMENT_);
@@ -2434,7 +2431,8 @@ ACMD(do_monsterlog)
 
 ACMD(do_pkmode)
 {
-	LPCHARACTER ch = ecs::LegacyCharOf(character);
+	if (!ecs::PlayerRuntime::IsValid(character))
+		return;
 	char arg1[256];
 	one_argument(argument, arg1, sizeof(arg1));
 
@@ -2455,8 +2453,9 @@ ACMD(do_pkmode)
 
 ACMD(do_messenger_auth)
 {
-	LPCHARACTER ch = ecs::LegacyCharOf(character);
-	if (ch->GetArena())
+	if (!ecs::PlayerRuntime::IsValid(character))
+		return;
+	if (ecs::PlayerRuntime::GetArena(character))
 	{
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 303, "");
@@ -3717,7 +3716,8 @@ ACMD(do_ride)
 #ifdef ENABLE_GAYA_SYSTEM
 ACMD(do_gaya_system)
 {
-	LPCHARACTER ch = ecs::LegacyCharOf(character);
+	if (!ecs::PlayerRuntime::IsValid(character))
+		return;
 	if (quest::CQuestManager::instance().GetEventFlag("gaya_disable") == 1)
 	{
 #ifdef TEXTS_IMPROVEMENT
@@ -4036,7 +4036,8 @@ ACMD(do_rune_shop)
 
 ACMD(do_rune_effect)
 {
-	LPCHARACTER ch = ecs::LegacyCharOf(character);
+	if (!ecs::PlayerRuntime::IsValid(character))
+		return;
 	char arg1[256];
 	one_argument(argument, arg1, sizeof(arg1));
 
@@ -4054,7 +4055,7 @@ ACMD(do_rune_effect)
 		return;
 
 	ecs::QuestSystem::SetFlag(character, "rune.hide_effect", iArg1);
-	ch->ComputePoints();
+	ecs::PointSystem::Compute(character);
 	NetworkSyncSystem::UpdatePacket(character);
 	ecs::ChatSystem::Send(character, CHAT_TYPE_COMMAND, "rune_affect %d", iArg1);
 }

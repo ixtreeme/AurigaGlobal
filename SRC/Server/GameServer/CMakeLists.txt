@@ -21,8 +21,15 @@ add_executable(ItemAttributeTests EXCLUDE_FROM_ALL
 target_link_libraries(ItemAttributeTests PRIVATE SERVER EnTT::EnTT)
 add_test(NAME item_attributes COMMAND ItemAttributeTests)
 
+add_executable(MountLifecycleTests EXCLUDE_FROM_ALL
+    ${CMAKE_SOURCE_DIR}/tests/server/MountLifecycleTests.cpp
+    MountSystem.cpp
+)
+target_link_libraries(MountLifecycleTests PRIVATE SERVER EnTT::EnTT)
+add_test(NAME mount_lifecycle COMMAND MountLifecycleTests)
+
 if(ENABLE_ASAN AND EXISTS "${AURIGA_ASAN_RUNTIME_DLL}")
-    foreach(_asan_target GameServer ItemAttributeTests)
+    foreach(_asan_target GameServer ItemAttributeTests MountLifecycleTests)
         add_custom_command(TARGET ${_asan_target} POST_BUILD
             COMMAND ${CMAKE_COMMAND} -E copy_if_different
                 "${AURIGA_ASAN_RUNTIME_DLL}"

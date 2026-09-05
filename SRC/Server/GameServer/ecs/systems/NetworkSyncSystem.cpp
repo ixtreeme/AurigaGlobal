@@ -1108,11 +1108,21 @@ void NetworkSyncSystem_Update(entt::registry& reg, uint32_t tick)
 #ifdef ENABLE_MULTI_LANGUAGE
 const char* CHARACTER::GetName(uint8_t lang) const
 {
+    if (IsMount())
+    {
+        const auto name = ecs::PlayerRuntime::GetName(GetEntityHandle());
+        return name.empty() ? "" : name.data();
+    }
     return m_stName.empty() ? (m_pkMobData ? m_pkMobData->m_table.szLocaleName[lang] : "") : m_stName.c_str();
 }
 #else
 const char* CHARACTER::GetName() const
 {
+    if (IsMount())
+    {
+        const auto name = ecs::PlayerRuntime::GetName(GetEntityHandle());
+        return name.empty() ? "" : name.data();
+    }
     return m_stName.empty() ? (m_pkMobData ? m_pkMobData->m_table.szLocaleName : "") : m_stName.c_str();
 }
 #endif

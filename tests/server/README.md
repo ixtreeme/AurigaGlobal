@@ -89,3 +89,33 @@ transactions or recovery from process termination. An item payment uses one
 validated stack (the current switchbot cost is one item). The tests do not run
 the switchbot timer/UI, shop listings, rank/Battle Pass side effects, the actual
 inventory destruction path, or the legacy `ChangeKKAK` special-case path.
+
+## Mount lifecycle regression tests
+
+`MountLifecycleTests` compiles the complete, existing `MountSystem.cpp`.
+It exercises owner, follower and summon-item handles with entity-only fixtures,
+without creating a `CHARACTER` or `CItem`. Checks cover summon/unsummon, repeated
+destruction, stale owners/items/followers with recycled entity indices, ownership
+changes, reused item VIDs, failed spawn/show, follow and map transitions, expired
+items, malformed/missing prototypes, war restrictions, skin changes, mounting,
+unmounting, cancelled timers and replacement subsystems/actors.
+
+```powershell
+cmake --build build --config Release --target GameServer ItemAttributeTests MountLifecycleTests
+ctest --test-dir build -C Release -R '^(item_attributes|mount_lifecycle)$' --output-on-failure
+cmake -S . -B build-asan
+cmake --build build-asan --config RelWithDebInfo --target ItemAttributeTests MountLifecycleTests
+ctest --test-dir build-asan -C RelWithDebInfo -R '^(item_attributes|mount_lifecycle)$' --output-on-failure
+```
+
+Factory, spatial movement, horse, affect, timer and packet services are doubles.
+The tests do not execute the real `SpawnMobEntity` allocation, pending character
+destruction, engine movement/network code, login/logout or persistence. They do
+not cover the pet-system or command/packet-dispatch edits at runtime.
+
+Before deployment verify NPC/monster/metin spawning (including event-spawned
+metins), mount follow across sectors/maps, name/skin display, riding/unmounting,
+item expiry and logout/relog, and pet summon/skin/bonus behaviour in-game.
+`SpawnMobEntity` now owns the shared spawn implementation; the old pointer-return
+entry point remains only for unmigrated callers. Allocation, movement and horse
+services still contain legacy internals: this is not a fully legacy-free server.

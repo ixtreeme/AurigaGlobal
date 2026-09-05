@@ -2075,9 +2075,17 @@ void CHARACTER::SetPet()
         status->isPet = true;
 }
 
+bool CHARACTER::IsMount() const
+{
+    const auto entity = GetEntityHandle();
+    if (!ecs::PlayerRuntime::IsValid(entity))
+        return false;
+    const auto* flags = g_registry.try_get<ecs::StatusFlags>(entity);
+    return flags && flags->isMount;
+}
+
 void CHARACTER::SetMount()
 {
-    m_bIsMount = true;
     if (auto* status = g_registry.try_get<ecs::StatusFlags>(GetEntityHandle()))
         status->isMount = true;
 }
@@ -4301,7 +4309,6 @@ void CHARACTER::Destroy()
 #ifdef ENABLE_MOUNT_COSTUME_SYSTEM
     if (m_mountSystem)
     {
-        m_mountSystem->Destroy();
         delete m_mountSystem;
 
         m_mountSystem = nullptr;
@@ -4822,13 +4829,10 @@ void CHARACTER::SetPlayerProto(const TPlayerTable* t)
 #ifdef ENABLE_MOUNT_COSTUME_SYSTEM
     if (m_mountSystem)
     {
-        m_mountSystem->Destroy();
         delete m_mountSystem;
     }
 
-    m_mountSystem = M2_NEW CMountSystem(this);
-    if (GetEntityHandle() != entt::null && g_registry.valid(GetEntityHandle()))
-        g_registry.get_or_emplace<ecs::MountRuntimeRefs>(GetEntityHandle()).mountSystem = m_mountSystem;
+    m_mountSystem = M2_NEW CMountSystem(GetEntityHandle());
 #endif
 
 #ifdef __NEWPET_SYSTEM__
@@ -6028,7 +6032,6 @@ void CHARACTER::Initialize()
 
 #ifdef ENABLE_MOUNT_COSTUME_SYSTEM
     m_mountSystem = nullptr;
-    m_bIsMount = false;
 #endif
 
 #ifdef ENABLE_ANTI_CMD_FLOOD
