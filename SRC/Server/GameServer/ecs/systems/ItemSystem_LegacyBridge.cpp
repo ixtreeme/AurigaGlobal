@@ -227,26 +227,6 @@ static const ecs::CubeWindowComponent* TryGetCubeWindowComponent(entt::entity ch
     return g_registry.try_get<ecs::CubeWindowComponent>(character);
 }
 
-#ifdef __ATTR_TRANSFER_SYSTEM__
-static ecs::AttrTransferWindowComponent* EnsureAttrTransferWindowComponent(entt::entity character)
-{
-    if (character == entt::null || !g_registry.valid(character))
-        return nullptr;
-
-    if (auto* comp = g_registry.try_get<ecs::AttrTransferWindowComponent>(character))
-        return comp;
-
-    return &g_registry.emplace<ecs::AttrTransferWindowComponent>(character);
-}
-
-static const ecs::AttrTransferWindowComponent* TryGetAttrTransferWindowComponent(entt::entity character)
-{
-    if (character == entt::null || !g_registry.valid(character))
-        return nullptr;
-
-    return g_registry.try_get<ecs::AttrTransferWindowComponent>(character);
-}
-#endif
 
 #ifdef ENABLE_ACCE_SYSTEM
 static ecs::AcceWindowComponent* EnsureAcceWindowComponent(entt::entity character)
@@ -1291,31 +1271,6 @@ bool CHARACTER::IsCubeOpen() const
     return false;
 }
 
-#ifdef __ATTR_TRANSFER_SYSTEM__
-void CHARACTER::SetAttrTransferNpc(entt::entity npcEntity)
-{
-    LPCHARACTER npc = ecs::LegacyCharOf(npcEntity);
-    if (auto* comp = EnsureAttrTransferWindowComponent(GetEntityHandle()))
-        comp->pNpc = npc;
-
-}
-
-std::span<entt::entity> CHARACTER::GetAttrTransferItem()
-{
-    if (auto* comp = EnsureAttrTransferWindowComponent(GetEntityHandle()))
-        return comp->items;
-
-    return {};
-}
-
-bool CHARACTER::IsAttrTransferOpen() const
-{
-    if (const auto* comp = TryGetAttrTransferWindowComponent(GetEntityHandle()))
-        return comp->pNpc != nullptr;
-
-    return false;
-}
-#endif
 
 #ifdef ENABLE_ACCE_SYSTEM
 std::span<entt::entity> CHARACTER::GetAcceMaterials()
@@ -4181,7 +4136,7 @@ bool CHARACTER::UseItem(TItemPos Cell, TItemPos DestCell)
 		}
 
 #ifdef __ATTR_TRANSFER_SYSTEM__
-		if (IsAttrTransferOpen())
+		if (AttrTransfer_is_open(GetEntityHandle()))
 		{
 #ifdef TEXTS_IMPROVEMENT
 			ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 235, "");
@@ -4295,7 +4250,7 @@ bool CHARACTER::UseItem(TItemPos Cell, TItemPos DestCell)
 		}
 
 #ifdef __ATTR_TRANSFER_SYSTEM__
-		if (IsAttrTransferOpen())
+		if (AttrTransfer_is_open(GetEntityHandle()))
 		{
 #ifdef TEXTS_IMPROVEMENT
 			ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 237, "");
@@ -12842,7 +12797,7 @@ bool CHARACTER::CanHandleItem(bool bSkipCheckRefine, bool bSkipObserver)
 		return false;
 
 #ifdef __ATTR_TRANSFER_SYSTEM__
-	if (IsAttrTransferOpen())
+	if (AttrTransfer_is_open(GetEntityHandle()))
 		return false;
 #endif
 
@@ -14819,33 +14774,6 @@ bool CHARACTER::IsValidItemPosition(TItemPos Pos) const
 // Â¸¦ ¹Ù�
 // ÁÀ¸·Î Âø¿ë ÁßÀÎ itemÀ» ¹þÀ» ¼ö ÀÖ´Â Áö È®ÀÎÇÏ°í, ºÒ°¡´É ÇÏ´Ù¸é Ä³¸¯�
 // Í¿¡°Ô ÀÌÀ¯¸¦ ¾Ë·ÁÁÖ´Â ÇÔ¼ö
-#ifdef __ATTR_TRANSFER_SYSTEM__
-bool CHARACTER::CanDoAttrTransfer() const
-{
-	if (m_bIsObserver)
-		return false;
-
-	if (GetShop())
-		return false;
-
-	if (GetMyShop())
-		return false;
-
-	if (m_bUnderRefine)
-		return false;
-
-	if (IsWarping())
-		return false;
-
-#ifdef ENABLE_ACCE_SYSTEM
-	if ((m_bAcceCombination) || (m_bAcceAbsorption))
-		return false;
-#endif
-
-	return true;
-}
-#endif
-
 void CItem::Initialize()
 {
 	CEntity::Initialize(ENTITY_ITEM);

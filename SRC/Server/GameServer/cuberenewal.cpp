@@ -385,7 +385,7 @@ void Cube_open (LPCHARACTER ch)
 		 || ch->GetOfflineShopGuest() || ch->GetAuctionGuest()
 #endif
 #ifdef __ATTR_TRANSFER_SYSTEM__
-		 || ch->IsAttrTransferOpen()
+		 || AttrTransfer_is_open(chEntity)
 #endif
 	)
 	{

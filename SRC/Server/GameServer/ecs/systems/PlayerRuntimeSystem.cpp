@@ -748,7 +748,7 @@ bool CanWarp(entt::entity e)
 		return false;
 
 #ifdef __ATTR_TRANSFER_SYSTEM__
-	if (const auto* attr = g_registry.try_get<ecs::AttrTransferWindowComponent>(e); attr && attr->pNpc)
+	if (AttrTransfer_is_open(e))
 		return false;
 #endif
 
@@ -3528,7 +3528,7 @@ uint8_t CHARACTER::CanRefineAcceMaterials()
 
     if (GetExchange() || GetMyShop() || GetShopOwner() || IsOpenSafebox() || IsCubeOpen()
 #ifdef __ATTR_TRANSFER_SYSTEM__
-        || IsAttrTransferOpen()
+        || AttrTransfer_is_open(GetEntityHandle())
 #endif
         )
         return 0;
@@ -5066,7 +5066,7 @@ void CHARACTER::OnClick(entt::entity causer)
                     }
 
 #ifdef __ATTR_TRANSFER_SYSTEM__
-                    if (IsAttrTransferOpen())
+                    if (AttrTransfer_is_open(GetEntityHandle()))
                     {
 #ifdef TEXTS_IMPROVEMENT
                         ecs::ChatSystem::SendNew(causer, CHAT_TYPE_INFO, 291, "");
@@ -5086,7 +5086,7 @@ void CHARACTER::OnClick(entt::entity causer)
                     }
 
 #ifdef __ATTR_TRANSFER_SYSTEM__
-                    if (pkCauser->IsAttrTransferOpen())
+                    if (AttrTransfer_is_open(causer))
                     {
 #ifdef TEXTS_IMPROVEMENT
                         ecs::ChatSystem::SendNew(causer, CHAT_TYPE_INFO, 291, "");
@@ -5104,7 +5104,7 @@ void CHARACTER::OnClick(entt::entity causer)
                     }
 
 #ifdef __ATTR_TRANSFER_SYSTEM__
-                    if (IsAttrTransferOpen())
+                    if (AttrTransfer_is_open(GetEntityHandle()))
                     {
 #ifdef TEXTS_IMPROVEMENT
                         ecs::ChatSystem::SendNew(causer, CHAT_TYPE_INFO, 369, "%s", GetName());

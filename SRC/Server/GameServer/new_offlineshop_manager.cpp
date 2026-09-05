@@ -376,7 +376,7 @@ bool CheckCharacterActions(LPCHARACTER ch)
 #endif
 
 #ifdef __ATTR_TRANSFER_SYSTEM__
-	if (ch->IsAttrTransferOpen())
+	if (AttrTransfer_is_open(ch->GetEntityHandle()))
 	{
 		return false;
 	}

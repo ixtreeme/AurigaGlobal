@@ -2162,7 +2162,7 @@ void CInputMain::Exchange(entt::entity character, const char * data)
 					}
 
 #ifdef __ATTR_TRANSFER_SYSTEM__
-					if (ch->IsAttrTransferOpen())
+					if (AttrTransfer_is_open(character))
 					{
 #ifdef TEXTS_IMPROVEMENT
 						ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 292, "");
@@ -3459,7 +3459,7 @@ void CInputMain::MapTeleporter(entt::entity character, TPacketCGMapTeleporter* p
 	}
 
 #ifdef __ATTR_TRANSFER_SYSTEM__
-	if (ch->IsAttrTransferOpen())
+	if (AttrTransfer_is_open(character))
 	{
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 647, "");
@@ -4544,7 +4544,7 @@ int CInputMain::MyShop(entt::entity character, const char * c_pData, size_t uiBy
 	}
 
 #ifdef __ATTR_TRANSFER_SYSTEM__
-	if (ch->IsAttrTransferOpen())
+	if (AttrTransfer_is_open(character))
 	{
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 292, "");
@@ -4589,7 +4589,7 @@ void CInputMain::Refine(entt::entity character, const char* c_pData)
 	}
 
 #ifdef __ATTR_TRANSFER_SYSTEM__
-	if (ch->IsAttrTransferOpen())
+	if (AttrTransfer_is_open(character))
 	{
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 292, "");
@@ -5609,7 +5609,7 @@ int CInputMain::Analyze(LPDESC d, uint8_t bHeader, const char * c_pData)
 				if (p->shopid > 0) {
 					if (!(ecs::PlayerRuntime::IsObserverMode(character) || ch->IsOpenSafebox() || ecs::SocialSystem::GetExchange(character) || ch->IsCubeOpen() || CombatSystem::IsStun(character) || CombatSystem::IsDead(character)
 #ifdef __ATTR_TRANSFER_SYSTEM__
-						 || ch->IsAttrTransferOpen()
+						 || AttrTransfer_is_open(character)
 #endif
 #ifdef __ENABLE_NEW_OFFLINESHOP__
 						 || ch->GetOfflineShopGuest() || ch->GetAuctionGuest()

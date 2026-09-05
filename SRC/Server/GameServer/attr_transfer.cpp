@@ -1,359 +1,302 @@
-#define _attr_transfer_cpp_
 #include "stdafx.h"
-#include "ecs/AIHelpers.hpp"
+#include "attr_transfer.h"
+#include "ecs/Registry.hpp"
+#include "ecs/components/inventory_components.hpp"
+#include "ecs/components/social_components.hpp"
+#include "ecs/components/status_components.hpp"
+#include "ecs/systems/ItemSystem.hpp"
 #include "ecs/systems/PlayerRuntimeSystem.hpp"
 #include "ecs/systems/SocialSystem.hpp"
-#include <Core/Logging.hpp>
-#include "config.h"
+#include "ecs/AIHelpers.hpp"
 #include "constants.h"
-#include "utils.h"
 #include "log.h"
-#include "char_interface.hpp"
-#include "ecs/CharacterAccessors.hpp"
-#include "ecs/EntityFactory.hpp"
-#include "ecs/Registry.hpp"
-#include "ecs/systems/ItemSystem.hpp"
-#include "locale_service.h"
-#include "item.h"
-#include "item_manager.h"
-#include <stdlib.h>
-#include <sstream>
-#define RETURN_IF_ATTR_TRANSFER_IS_NOT_OPENED(ch) if (!(ch)->IsAttrTransferOpen()) return
+#include <Core/Logging.hpp>
+#include <algorithm>
+#include <charconv>
 
-void AttrTransfer_open(LPCHARACTER ch)
+namespace {
+using Window = ecs::AttrTransferWindowComponent;
+
+Window* WindowOf(entt::entity character)
 {
-	const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
-	if (ch == nullptr)
-		return;
-
-	const LPCHARACTER npc = ch->GetQuestNPC();
-	const entt::entity npcEntity = npc ? npc->GetEntityHandle() : entt::null;
-
-	if (npc == nullptr)
-	{
-		LOG_INFO("{} has try to open the Attr Transfer window without talk to the NPC.", ecs::PlayerRuntime::GetName(chEntity).data());
-		return;
-	}
-
-	if (ch->IsAttrTransferOpen())
-	{
-#ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(chEntity, CHAT_TYPE_INFO, 80, "");
-#endif
-		return;
-	}
-
-	if (ecs::SocialSystem::GetExchange(chEntity) || ch->GetMyShop() || ch->GetShopOwner() || ch->IsOpenSafebox() || ch->IsCubeOpen() || ch->IsAcceOpen() || ch->IsAttrTransferOpen())
-	{
-#ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(chEntity, CHAT_TYPE_INFO, 81, "");
-#endif
-		return;
-	}
-
-	int32_t distance = DISTANCE_APPROX(ecs::PlayerRuntime::GetX(chEntity) - ecs::PlayerRuntime::GetX(npcEntity), ecs::PlayerRuntime::GetY(chEntity) - ecs::PlayerRuntime::GetY(npcEntity));
-	if (distance >= ATTR_TRANSFER_MAX_DISTANCE)
-	{
-		LOG_INFO("{} is too far for can open the Attr Transfer Window. (character distance: {}, distance allowed: {})", ecs::PlayerRuntime::GetName(chEntity).data(), distance, ATTR_TRANSFER_MAX_DISTANCE);
-		return;
-	}
-
-	AttrTransfer_clean_item(ch);
-	ch->SetAttrTransferNpc((npc ? npc->GetEntityHandle() : entt::null));
-	ecs::ChatSystem::Send(chEntity, CHAT_TYPE_COMMAND, "AttrTransfer open");
-	if (test_server == true)
-	{
-		LOG_INFO("{} has open the Attr Transfer window.", ecs::PlayerRuntime::GetName(chEntity).data());
-	}
+    return ecs::PlayerRuntime::IsValid(character) ? g_registry.try_get<Window>(character) : nullptr;
 }
 
-void AttrTransfer_close(LPCHARACTER ch)
+void Info(entt::entity character, uint32_t message)
 {
-	const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
-	RETURN_IF_ATTR_TRANSFER_IS_NOT_OPENED(ch);
-	AttrTransfer_clean_item(ch);
-	ch->SetAttrTransferNpc(entt::null);
-	ecs::ChatSystem::Send(chEntity, CHAT_TYPE_COMMAND, "AttrTransfer close");
-	if (test_server == true)
-	{
-		LOG_INFO("{} has close the Attr Transfer window.", ecs::PlayerRuntime::GetName(chEntity).data());
-	}
+#ifdef TEXTS_IMPROVEMENT
+    ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, message, "");
+#endif
 }
 
-void AttrTransfer_clean_item(LPCHARACTER ch)
+bool CanUse(entt::entity character)
 {
-	auto attr_transfer_item = ch->GetAttrTransferItem();
-	for (int i = 0; i < MAX_ATTR_TRANSFER_SLOT; ++i)
-	{
-		if (attr_transfer_item[i] == entt::null)
-			continue;
-
-		attr_transfer_item[i] = entt::null;
-	}
-
+    if (!ecs::PlayerRuntime::IsPC(character))
+        return false;
+    if (const auto* status = g_registry.try_get<ecs::StatusFlags>(character);
+        status && (status->isObserverMode || status->isDead || status->isStunned))
+        return false;
+    if (ecs::SocialSystem::GetExchange(character) || ecs::SocialSystem::GetShop(character) ||
+        ecs::SocialSystem::GetMyShop(character) || ecs::SocialSystem::GetShopOwner(character) != entt::null)
+        return false;
+    if (const auto* shop = g_registry.try_get<ecs::ShopState>(character); shop && shop->underRefine)
+        return false;
+    if (const auto* box = g_registry.try_get<ecs::SafeboxRef>(character); box && box->isOpening)
+        return false;
+    if (const auto* cube = g_registry.try_get<ecs::CubeWindowComponent>(character); cube && cube->pNpc)
+        return false;
+#ifdef ENABLE_ACCE_SYSTEM
+    if (const auto* acce = g_registry.try_get<ecs::AcceWindowComponent>(character);
+        acce && (acce->combinationOpen || acce->absorptionOpen))
+        return false;
+#endif
+    return true;
 }
 
-bool AttrTransfer_make(LPCHARACTER ch)
+bool NearNpc(entt::entity character, entt::entity npc)
 {
-	const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
-	int	has_attr = 0;
-
-	if (ch == nullptr)
-		return false;
-
-	if (!(ch)->IsAttrTransferOpen())
-	{
-#ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(chEntity, CHAT_TYPE_INFO, 82, "");
-#endif
-		return false;
-	}
-
-	LPCHARACTER npc = ch->GetQuestNPC();
-	if (npc == nullptr)
-	{
-		LOG_INFO("{} has try to open the transfer the bonuses between costumes without talk to the NPC.", ecs::PlayerRuntime::GetName(chEntity).data());
-		return false;
-	}
-
-	auto items = ch->GetAttrTransferItem();
-	if (items[0] == entt::null || items[1] == entt::null || items[2] == entt::null)
-	{
-#ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(chEntity, CHAT_TYPE_INFO, 83, "");
-#endif
-		return false;
-	}
-
-	if (ItemSystem::GetItemType(items[0]) != ITEM_TRANSFER_SCROLL || ItemSystem::GetItemType(items[1]) != ITEM_COSTUME || ItemSystem::GetItemType(items[2]) != ITEM_COSTUME)
-	{
-#ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(chEntity, CHAT_TYPE_INFO, 83, "");
-#endif
-		return false;
-	}
-
-	for (int i = 0; i < ITEM_ATTRIBUTE_MAX_NUM; ++i)
-	{
-		if (has_attr != 1 && ItemSystem::GetItemAttributeType(items[2], i) > 0 && ItemSystem::GetItemAttributeValue(items[2], i) > 0)
-		{
-			has_attr = 1;
-		}
-	}
-
-	if (has_attr != 1)
-	{
-#ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(chEntity, CHAT_TYPE_INFO, 86, "");
-#endif
-		return false;
-	}
-
-	for (int i = 0; i < ITEM_ATTRIBUTE_MAX_NUM; ++i) {
-#ifdef ENABLE_ATTR_COSTUMES
-		if ((i == 5) || (i == 6)) {
-			ItemSystem::SetItemForceAttributeEcs(items[1], i, 0, 0);
-		}
-		else
-			ItemSystem::SetItemForceAttributeEcs(items[1], i, ItemSystem::GetItemAttributeType(items[2], i), ItemSystem::GetItemAttributeValue(items[2], i));
-#else
-		ItemSystem::SetItemForceAttributeEcs(items[1], i, ItemSystem::GetItemAttributeType(items[2], i), ItemSystem::GetItemAttributeValue(items[2], i));
-#endif
-	}
-
-	ItemSystem::ConsumeItemEcs(items[0], 1);
-	items[0] = entt::null;
-	ItemSystem::ConsumeItemEcs(items[2], 1);
-	items[2] = entt::null;
-
-
-	ecs::ChatSystem::Send(chEntity, CHAT_TYPE_COMMAND, "AttrTransfer success");
-	LogManager::instance().AttrTransferLog((ecs::PlayerRuntime::GetPlayerID(chEntity)), ecs::PlayerRuntime::GetX(chEntity), ecs::PlayerRuntime::GetY(chEntity), ItemSystem::GetItemVnum(items[1]));
-#ifdef TEXTS_IMPROVEMENT
-	ecs::ChatSystem::SendNew(chEntity, CHAT_TYPE_INFO, 84, "");
-#endif
-	return true;
+    if (!ecs::PlayerRuntime::IsValid(npc) ||
+        ecs::PlayerRuntime::GetMapIndex(character) != ecs::PlayerRuntime::GetMapIndex(npc))
+        return false;
+    const auto dx = std::abs(int64_t(ecs::PlayerRuntime::GetX(character)) - ecs::PlayerRuntime::GetX(npc));
+    const auto dy = std::abs(int64_t(ecs::PlayerRuntime::GetY(character)) - ecs::PlayerRuntime::GetY(npc));
+    return std::max(dx, dy) + std::min(dx, dy) / 2 < ATTR_TRANSFER_MAX_DISTANCE;
 }
 
-void AttrTransfer_add_item(LPCHARACTER ch, int w_index, int i_index)
+Window* ActiveWindow(entt::entity character)
 {
-	const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
-	RETURN_IF_ATTR_TRANSFER_IS_NOT_OPENED(ch);
+    auto* window = WindowOf(character);
+    if (!window || window->busy || !CanUse(character))
+        return nullptr;
+    if (!NearNpc(character, window->npc) || ecs::PlayerRuntime::GetQuestNPC(character) != window->npc)
+    {
+        AttrTransfer_close(character);
+        return nullptr;
+    }
+    return window;
+}
 
-	if (i_index < 0 || INVENTORY_MAX_NUM <= i_index || w_index < 0 || MAX_ATTR_TRANSFER_SLOT <= w_index)
-		return;
-
-	const entt::entity item = ItemSystem::GetInventoryItem(chEntity, i_index);
-	if (item == entt::null)
-		return;
-
-	if (w_index == 0 && ItemSystem::GetItemType(item) != ITEM_TRANSFER_SCROLL)
-		return;
-
-	if (((w_index == 1) || (w_index == 2)) && (ItemSystem::GetItemType(item) != ITEM_COSTUME))
-		return;
-
-	int32_t vnum = ItemSystem::GetItemVnum(item);
-	if (vnum == 73001 ||
-		vnum == 73002 ||
-		vnum == 73003 ||
-		vnum == 73004 ||
-		vnum == 73005 ||
-		vnum == 73006 ||
-		vnum == 73007 ||
-		vnum == 73008 ||
-		vnum == 73009 ||
-		vnum == 73010 ||
-		vnum == 73011 ||
-		vnum == 73012 ||
-		vnum == 75001 ||
-		vnum == 75002 ||
-		vnum == 75003 ||
-		vnum == 75004 ||
-		vnum == 75005 ||
-		vnum == 75006 ||
-		vnum == 75007 ||
-		vnum == 75008 ||
-		vnum == 75009 ||
-		vnum == 75010 ||
-		vnum == 75011 ||
-		vnum == 75012 ||
-		vnum == 75201 ||
-		vnum == 75202 ||
-		vnum == 75203 ||
-		vnum == 75204 ||
-		vnum == 75205 ||
-		vnum == 75206 ||
-		vnum == 75207 ||
-		vnum == 75208 ||
-		vnum == 75209 ||
-		vnum == 75210 ||
-		vnum == 75211 ||
-		vnum == 75212 ||
-		vnum == 73251 ||
-		vnum == 73252 ||
-		vnum == 73253 ||
-		vnum == 73254 ||
-		vnum == 73255 ||
-		vnum == 73256 ||
-		vnum == 73257 ||
-		vnum == 73258 ||
-		vnum == 73259 ||
-		vnum == 73260 ||
-		vnum == 73261 ||
-		vnum == 73262 ||
-		vnum == 73501 ||
-		vnum == 73502 ||
-		vnum == 73503 ||
-		vnum == 73504 ||
-		vnum == 73505 ||
-		vnum == 73506 ||
-		vnum == 73507 ||
-		vnum == 73508 ||
-		vnum == 73509 ||
-		vnum == 73510 ||
-		vnum == 73511 ||
-		vnum == 73512 ||
-		vnum == 75401 ||
-		vnum == 75402 ||
-		vnum == 75403 ||
-		vnum == 75404 ||
-		vnum == 75405 ||
-		vnum == 75406 ||
-		vnum == 75407 ||
-		vnum == 75408 ||
-		vnum == 75409 ||
-		vnum == 75410 ||
-		vnum == 75411 ||
-		vnum == 75412 ||
-		vnum == 73751 ||
-		vnum == 73752 ||
-		vnum == 73753 ||
-		vnum == 73754 ||
-		vnum == 73755 ||
-		vnum == 73756 ||
-		vnum == 73757 ||
-		vnum == 73758 ||
-		vnum == 73759 ||
-		vnum == 73760 ||
-		vnum == 73761 ||
-		vnum == 73762 ||
-		vnum == 75601 ||
-		vnum == 75602 ||
-		vnum == 75603 ||
-		vnum == 75604 ||
-		vnum == 75605 ||
-		vnum == 75606 ||
-		vnum == 75607 ||
-		vnum == 75608 ||
-		vnum == 75609 ||
-		vnum == 75610 ||
-		vnum == 75611 ||
-		vnum == 75612)
-	{
-		return;
-	}
-
-	if ((ItemSystem::GetItemSubType(item) != COSTUME_BODY) && (ItemSystem::GetItemSubType(item) != COSTUME_HAIR) && (ItemSystem::GetItemSubType(item) != COSTUME_WEAPON)
+bool AllowedCostume(entt::entity item)
+{
+    if (ItemSystem::GetItemType(item) != ITEM_COSTUME)
+        return false;
+    constexpr uint32_t excluded[][2] = {
+        {73001,73012}, {75001,75012}, {75201,75212}, {73251,73262},
+        {73501,73512}, {75401,75412}, {73751,73762}, {75601,75612}
+    };
+    const auto vnum = ItemSystem::GetItemVnum(item);
+    for (const auto& range : excluded)
+        if (vnum >= range[0] && vnum <= range[1])
+            return false;
+    const auto subtype = ItemSystem::GetItemSubType(item);
+    return subtype == COSTUME_BODY || subtype == COSTUME_HAIR || subtype == COSTUME_WEAPON
 #ifdef ENABLE_STOLE_COSTUME
-	 && (ItemSystem::GetItemSubType(item) != COSTUME_STOLE)
+        || subtype == COSTUME_STOLE
 #endif
-	)
-		return;
-
-	auto attr_transfer_item = ch->GetAttrTransferItem();
-	for (int i = 0; i < MAX_ATTR_TRANSFER_SLOT; ++i)
-	{
-		if (item == attr_transfer_item[i])
-		{
-			attr_transfer_item[i] = entt::null;
-			break;
-		}
-	}
-
-	if (w_index != 0 && attr_transfer_item[0] == entt::null)
-	{
-#ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(chEntity, CHAT_TYPE_INFO, 85, "");
-#endif
-		return;
-	}
-	else if (w_index == 1)
-	{
-		if (attr_transfer_item[2] == entt::null) {
-#ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(chEntity, CHAT_TYPE_INFO, 79, "");
-#endif
-			return;
-		}
-		else if (ItemSystem::GetItemSubType(item) != ItemSystem::GetItemSubType(attr_transfer_item[2]))
-			return;
-	}
-
-	if (w_index == 1)
-	{
-		ecs::ChatSystem::Send(chEntity, CHAT_TYPE_COMMAND, "AttrTransferMessage");
-	}
-
-	attr_transfer_item[w_index] = item;
-	return;
+        ;
 }
 
-void AttrTransfer_delete_item(LPCHARACTER ch, int w_index)
+bool ValidSelection(entt::entity character, entt::entity item, int cell, int slot)
 {
-	//LPITEM	item;
-	RETURN_IF_ATTR_TRANSFER_IS_NOT_OPENED(ch);
-
-	if (w_index < 0 || MAX_ATTR_TRANSFER_SLOT <= w_index)
-		return;
-
-	auto attr_transfer_item = ch->GetAttrTransferItem();
-	if (attr_transfer_item[w_index] == entt::null)
-		return;
-
-	//attr_transfer_item[w_index];
-	attr_transfer_item[w_index] = entt::null;
-	return;
+    if (cell < 0 || cell >= INVENTORY_MAX_NUM ||
+        ItemSystem::GetInventoryItem(character, static_cast<uint16_t>(cell)) != item ||
+        !ItemSystem::CanConsumeOwnedItem(character, item) ||
+        ItemSystem::GetItemWindow(item) != INVENTORY || ItemSystem::GetItemCell(item) != cell)
+        return false;
+    return slot == 0 ? ItemSystem::GetItemType(item) == ITEM_TRANSFER_SCROLL :
+        ItemSystem::GetItemCount(item) == 1 && AllowedCostume(item);
 }
 
+void ClearSelection(Window& window)
+{
+    window.items.fill(entt::null);
+    window.cells.fill(-1);
+}
 
+// Resolve the component again after callbacks; never retain a component reference.
+struct OperationGuard {
+    entt::entity character;
+    ~OperationGuard() { if (auto* window = WindowOf(character)) window->busy = false; }
+};
+}
+
+bool AttrTransfer_is_open(entt::entity character)
+{
+    const auto* window = WindowOf(character);
+    return window && (window->busy || ecs::PlayerRuntime::IsValid(window->npc));
+}
+
+void AttrTransfer_open(entt::entity character)
+{
+    if (!CanUse(character))
+        return;
+    if (const auto* window = WindowOf(character); window && window->busy)
+        return;
+    if (AttrTransfer_is_open(character))
+    {
+        Info(character, 80);
+        return;
+    }
+    const auto npc = ecs::PlayerRuntime::GetQuestNPC(character);
+    if (!NearNpc(character, npc))
+        return;
+    auto& window = g_registry.get_or_emplace<Window>(character);
+    ClearSelection(window);
+    window.npc = npc;
+    ecs::ChatSystem::Send(character, CHAT_TYPE_COMMAND, "AttrTransfer open");
+}
+
+void AttrTransfer_clean_item(entt::entity character)
+{
+    if (auto* window = WindowOf(character); window && !window->busy)
+        ClearSelection(*window);
+}
+
+void AttrTransfer_close(entt::entity character)
+{
+    auto* window = WindowOf(character);
+    if (!window || window->busy)
+        return;
+    const bool wasOpen = window->npc != entt::null;
+    ClearSelection(*window);
+    window->npc = entt::null;
+    if (wasOpen)
+        ecs::ChatSystem::Send(character, CHAT_TYPE_COMMAND, "AttrTransfer close");
+}
+
+void AttrTransfer_add_item(entt::entity character, int slot, int cell)
+{
+    auto* window = ActiveWindow(character);
+    if (!window || slot < 0 || slot >= MAX_ATTR_TRANSFER_SLOT || cell < 0 || cell >= INVENTORY_MAX_NUM)
+        return;
+    const auto item = ItemSystem::GetInventoryItem(character, static_cast<uint16_t>(cell));
+    if (!ValidSelection(character, item, cell, slot))
+        return;
+    for (int i = 0; i < MAX_ATTR_TRANSFER_SLOT; ++i)
+        if (i != slot && window->items[i] == item)
+            return;
+    if (slot != 0 && !ValidSelection(character, window->items[0], window->cells[0], 0))
+    {
+        Info(character, 85);
+        return;
+    }
+    if (slot == 1 && !ValidSelection(character, window->items[2], window->cells[2], 2))
+    {
+        Info(character, 79);
+        return;
+    }
+    const int other = slot == 1 ? 2 : 1;
+    if (slot != 0 && ItemSystem::IsValidItem(window->items[other]) &&
+        ItemSystem::GetItemSubType(item) != ItemSystem::GetItemSubType(window->items[other]))
+        return;
+    window->items[slot] = item;
+    window->cells[slot] = cell;
+    if (slot == 1)
+        ecs::ChatSystem::Send(character, CHAT_TYPE_COMMAND, "AttrTransferMessage");
+}
+
+void AttrTransfer_delete_item(entt::entity character, int slot)
+{
+    auto* window = WindowOf(character);
+    if (!window || window->busy || slot < 0 || slot >= MAX_ATTR_TRANSFER_SLOT)
+        return;
+    window->items[slot] = entt::null;
+    window->cells[slot] = -1;
+}
+
+bool AttrTransfer_make(entt::entity character)
+{
+    auto* window = ActiveWindow(character);
+    if (!window)
+        return false;
+    const auto items = window->items;
+    const auto cells = window->cells;
+    for (int i = 0; i < MAX_ATTR_TRANSFER_SLOT; ++i)
+        if (!ValidSelection(character, items[i], window->cells[i], i))
+        {
+            ClearSelection(*window);
+            Info(character, 83);
+            return false;
+        }
+    if (items[0] == items[1] || items[0] == items[2] || items[1] == items[2] ||
+        ItemSystem::GetItemSubType(items[1]) != ItemSystem::GetItemSubType(items[2]) ||
+        !g_registry.all_of<ecs::ItemAttributes>(items[1]) || !g_registry.all_of<ecs::ItemAttributes>(items[2]))
+        return false;
+    auto prepared = g_registry.get<ecs::ItemAttributes>(items[2]);
+#ifdef ENABLE_ATTR_COSTUMES
+    prepared.attrs[5] = {};
+    prepared.attrs[6] = {};
+#endif
+    if (std::any_of(prepared.attrs.begin(), prepared.attrs.end(), [](const auto& attr) {
+        return attr.bType >= MAX_APPLY_NUM;
+    }))
+        return false;
+    if (std::none_of(prepared.attrs.begin(), prepared.attrs.end(), [](const auto& attr) {
+        return attr.bType > 0 && attr.sValue > 0;
+    }))
+    {
+        Info(character, 86);
+        return false;
+    }
+    const auto scrollID = ItemSystem::GetItemID(items[0]);
+    const auto donorID = ItemSystem::GetItemID(items[2]);
+    const auto targetVnum = ItemSystem::GetItemVnum(items[1]);
+    window->busy = true;
+    OperationGuard guard {character};
+    // Both distinct costs are validated before these synchronous game-thread
+    // debits. Do not publish attributes before both succeed.
+    if (!ItemSystem::ConsumeItemEcs(items[0], 1))
+        return false;
+    if (auto* current = WindowOf(character)) ClearSelection(*current);
+    if (!ValidSelection(character, items[2], cells[2], 2) ||
+        !ValidSelection(character, items[1], cells[1], 1) || !ItemSystem::ConsumeItemEcs(items[2], 1))
+    {
+        LOG_ERROR("AttrTransfer: donor debit failed after scroll debit (scroll {}, donor {})", scrollID, donorID);
+        return false;
+    }
+    if (!ValidSelection(character, items[1], cells[1], 1) || !ItemSystem::SetItemAttributesEcs(items[1], prepared))
+    {
+        LOG_ERROR("AttrTransfer: target disappeared after payment (scroll {}, donor {})", scrollID, donorID);
+        return false;
+    }
+    ecs::ChatSystem::Send(character, CHAT_TYPE_COMMAND, "AttrTransfer success");
+    LogManager::instance().AttrTransferLog(ecs::PlayerRuntime::GetPlayerID(character),
+        ecs::PlayerRuntime::GetX(character), ecs::PlayerRuntime::GetY(character), targetVnum);
+    Info(character, 84);
+    return true;
+}
+
+void AttrTransfer_command(entt::entity character, std::string_view argument)
+{
+    if (!ecs::PlayerRuntime::IsValid(character))
+        return;
+    std::array<std::string_view, 3> tokens {};
+    size_t count = 0;
+    while (!argument.empty())
+    {
+        const auto start = argument.find_first_not_of(" \t\r\n");
+        if (start == std::string_view::npos) break;
+        argument.remove_prefix(start);
+        const auto end = argument.find_first_of(" \t\r\n");
+        if (count == tokens.size()) return;
+        tokens[count++] = argument.substr(0, end);
+        if (end == std::string_view::npos) break;
+        argument.remove_prefix(end);
+    }
+    if (count == 1 && (tokens[0] == "close" || tokens[0] == "c")) AttrTransfer_close(character);
+    else if (count == 1 && (tokens[0] == "open" || tokens[0] == "o")) AttrTransfer_open(character);
+    else if (count == 1 && (tokens[0] == "make" || tokens[0] == "m")) AttrTransfer_make(character);
+    else
+    {
+        auto parse = [](std::string_view token, int& value) {
+            if (token.empty()) return false;
+            const auto result = std::from_chars(token.data(), token.data() + token.size(), value);
+            return result.ec == std::errc{} && result.ptr == token.data() + token.size() && value >= 0;
+        };
+        int slot = 0, cell = 0;
+        if (count == 3 && (tokens[0] == "add" || tokens[0] == "a") && parse(tokens[1], slot) && parse(tokens[2], cell))
+            AttrTransfer_add_item(character, slot, cell);
+        else if (count == 2 && (tokens[0] == "delete" || tokens[0] == "del" || tokens[0] == "d") && parse(tokens[1], slot))
+            AttrTransfer_delete_item(character, slot);
+    }
+}

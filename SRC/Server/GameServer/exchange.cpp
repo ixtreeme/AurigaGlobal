@@ -135,7 +135,7 @@ bool CHARACTER::ExchangeStart(entt::entity victimEntity)
 	}
 
 #ifdef __ATTR_TRANSFER_SYSTEM__
-	if (IsAttrTransferOpen())
+	if (AttrTransfer_is_open(thisEntity))
 	{
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(thisEntity, CHAT_TYPE_INFO, 292, "");
@@ -143,7 +143,7 @@ bool CHARACTER::ExchangeStart(entt::entity victimEntity)
 		return false;
 	}
 
-	if (victim->IsAttrTransferOpen())
+	if (AttrTransfer_is_open(victimEntity))
 	{
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(thisEntity, CHAT_TYPE_INFO, 293, "%s", ecs::PlayerRuntime::GetName(victimEntity).data());

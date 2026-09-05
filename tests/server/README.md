@@ -90,6 +90,32 @@ validated stack (the current switchbot cost is one item). The tests do not run
 the switchbot timer/UI, shop listings, rank/Battle Pass side effects, the actual
 inventory destruction path, or the legacy `ChangeKKAK` special-case path.
 
+## Costume attribute transfer
+
+The same `ItemAttributeTests` target also compiles the complete existing
+`attr_transfer.cpp`. The window, NPC binding and all three selections are ECS
+state; the command handler and operation run without `CHARACTER` or `CItem`.
+Selections retain the original inventory cell as well as the versioned entity.
+The tests cover strict command parsing (including the client's `del` alias),
+negative/overflow/trailing-junk indices, invalid/stale owners and NPCs, distance
+and map changes, conflicting windows, duplicate/replaced/moved/foreign items,
+locked/exchanging/equipped items, invalid costume types and stacks, malformed
+bonus types, rare-slot clearing, failed payments, reentrant operations and
+exactly one attribute publication after both payments succeed.
+
+The payment, position, quest-NPC lookup, chat, log and inventory services are
+doubles. Item attribute preparation/commit and the full transfer command/window
+implementation are real production code. The existing engine item-consumption
+API still performs two sequential debits, not an atomic batch: an injected
+second-debit failure leaves the scroll consumed, the donor intact and the target
+unchanged; it is logged, and no success is emitted. There is no automatic refund
+or cross-process recovery here. A transactional inventory/persistence layer is
+still required to guarantee all-or-nothing payment under such failures.
+
+Before deployment verify NPC interaction, each supported costume subtype,
+selection/preview/clear/close, competing trade windows, disconnect/death,
+successful consumption and relog persistence with the actual client and DB.
+
 ## Mount and pet lifecycle regression tests
 
 `MountLifecycleTests` compiles the complete, existing `MountSystem.cpp` and

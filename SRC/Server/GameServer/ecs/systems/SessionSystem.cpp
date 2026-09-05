@@ -593,7 +593,7 @@ bool CHARACTER::CanWarp() const
         || IsAcceOpen()
 #endif
 #ifdef __ATTR_TRANSFER_SYSTEM__
-        || IsAttrTransferOpen()
+        || AttrTransfer_is_open(GetEntityHandle())
 #endif
 #if defined(ENABLE_CHRISTMAS_WHEEL_OF_DESTINY)
         || GetWheelDestiny()

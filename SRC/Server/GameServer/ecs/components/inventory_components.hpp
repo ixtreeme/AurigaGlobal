@@ -52,9 +52,11 @@ struct DragonSoulRuntimeStateComponent {
 #ifdef __ATTR_TRANSFER_SYSTEM__
 struct AttrTransferWindowComponent {
     std::array<entt::entity, MAX_ATTR_TRANSFER_SLOT> items;
-    LPCHARACTER pNpc { nullptr };
+    std::array<int, MAX_ATTR_TRANSFER_SLOT> cells;
+    entt::entity npc { entt::null };
+    bool busy { false };
 
-    AttrTransferWindowComponent() { items.fill(entt::null); }
+    AttrTransferWindowComponent() { items.fill(entt::null); cells.fill(-1); }
 };
 #endif
 

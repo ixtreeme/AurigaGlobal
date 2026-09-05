@@ -8,6 +8,9 @@
 #include "../../SRC/Server/GameServer/ecs/Registry.hpp"
 #include "../../SRC/Server/GameServer/ecs/components/item_proto_components.hpp"
 #include "../../SRC/Server/GameServer/ecs/components/inventory_components.hpp"
+#include "../../SRC/Server/GameServer/ecs/components/social_components.hpp"
+#include "../../SRC/Server/GameServer/ecs/components/status_components.hpp"
+#include "../../SRC/Server/GameServer/attr_transfer.h"
 #include "../../SRC/Server/GameServer/ecs/detail/ItemAttributeRules.hpp"
 #include "../../SRC/Server/GameServer/constants.h"
 #include "../../SRC/Server/GameServer/log.h"
@@ -43,6 +46,11 @@ int checks = 0;
 int payments = 0;
 bool rejectPayment = false;
 bool rejectGoldPayment = false;
+bool transferTest = false;
+int rejectPaymentAt = 0, transferLogs = 0;
+std::vector<std::string> transferCommands;
+std::function<void()> onPayment;
+struct TransferActor { int32_t x = 0, y = 0, map = 1; entt::entity npc {entt::null}; };
 entt::entity watchedItem = entt::null;
 std::array<TPlayerItemAttribute, ITEM_ATTRIBUTE_MAX_NUM> beforePayment{};
 short lockBeforePayment = -1;
@@ -89,15 +97,20 @@ void CheckPaymentOrder()
 // slice. These dependencies belong to the timer/UI/manager paths outside the
 // transaction tests; fail immediately if the tests accidentally enter them.
 int passes_per_sec = 25;
-std::shared_ptr<spdlog::logger> logging::GetErrorLogger() { UnexpectedSwitchbotService(); }
+std::shared_ptr<spdlog::logger> logging::GetErrorLogger()
+{
+    if (!transferTest) UnexpectedSwitchbotService();
+    static auto logger = std::make_shared<spdlog::logger>("transfer-test", spdlog::sinks_init_list{});
+    return logger;
+}
 void intrusive_ptr_add_ref(EVENT*) { UnexpectedSwitchbotService(); }
 void intrusive_ptr_release(EVENT*) { UnexpectedSwitchbotService(); }
 LPEVENT event_create_ex(TEVENTFUNC, event_info_data*, int32_t) { UnexpectedSwitchbotService(); }
 void event_cancel(LPEVENT*) { UnexpectedSwitchbotService(); }
 #ifdef TEXTS_IMPROVEMENT
-void ecs::ChatSystem::SendNew(entt::entity, uint8_t, uint32_t, const char*, ...) { UnexpectedSwitchbotService(); }
+void ecs::ChatSystem::SendNew(entt::entity, uint8_t, uint32_t, const char*, ...) { if (!transferTest) UnexpectedSwitchbotService(); }
 #endif
-uint32_t ecs::PlayerRuntime::GetPlayerID(entt::entity) { UnexpectedSwitchbotService(); }
+uint32_t ecs::PlayerRuntime::GetPlayerID(entt::entity) { if (!transferTest) UnexpectedSwitchbotService(); return 42; }
 std::string_view ecs::PlayerRuntime::GetName(entt::entity) { UnexpectedSwitchbotService(); }
 #ifdef ENABLE_BATTLE_PASS
 uint8_t ecs::PlayerRuntime::GetBattlePassId(entt::entity) { UnexpectedSwitchbotService(); }
@@ -196,7 +209,40 @@ void LogManager::ItemLogEntity(entt::entity, entt::entity, const char*, const ch
 LPDESC ecs::PlayerRuntime::GetDesc(entt::entity) { return nullptr; }
 bool ecs::PlayerRuntime::IsValid(entt::entity e) { return e != entt::null && g_registry.valid(e); }
 bool ecs::PlayerRuntime::IsPC(entt::entity e) { return IsValid(e) && g_registry.all_of<TestPlayer>(e); }
-CShop* ecs::SocialSystem::GetMyShop(entt::entity) { return nullptr; }
+CShop* ecs::SocialSystem::GetMyShop(entt::entity e)
+{
+    const auto* shop = g_registry.try_get<ecs::ShopState>(e);
+    return shop ? shop->myShop : nullptr;
+}
+CShop* ecs::SocialSystem::GetShop(entt::entity e)
+{
+    const auto* shop = g_registry.try_get<ecs::ShopState>(e);
+    return shop ? shop->currentShop : nullptr;
+}
+entt::entity ecs::SocialSystem::GetShopOwner(entt::entity e)
+{
+    const auto* shop = g_registry.try_get<ecs::ShopState>(e);
+    return shop ? shop->shopOwner : entt::entity{entt::null};
+}
+CExchange* ecs::SocialSystem::GetExchange(entt::entity e)
+{
+    const auto* exchange = g_registry.try_get<ecs::ExchangeRef>(e);
+    return exchange ? exchange->exchange : nullptr;
+}
+int32_t ecs::PlayerRuntime::GetX(entt::entity e) { return g_registry.get<TransferActor>(e).x; }
+int32_t ecs::PlayerRuntime::GetY(entt::entity e) { return g_registry.get<TransferActor>(e).y; }
+int32_t ecs::PlayerRuntime::GetMapIndex(entt::entity e) { return g_registry.get<TransferActor>(e).map; }
+entt::entity ecs::PlayerRuntime::GetQuestNPC(entt::entity e) { return g_registry.get<TransferActor>(e).npc; }
+void ecs::ChatSystem::Send(entt::entity, uint8_t type, const char* message, ...)
+{
+    Check(transferTest && type == CHAT_TYPE_COMMAND, "unexpected chat service");
+    transferCommands.emplace_back(message);
+}
+void LogManager::AttrTransferLog(uint32_t pid, uint32_t, uint32_t, uint32_t)
+{
+    Check(transferTest && pid == 42 && saves == 1 && updates == 1, "transfer logged before complete publish");
+    ++transferLogs;
+}
 int64_t ecs::PointSystem::GetGold(entt::entity e) { return g_registry.get<TestPlayer>(e).gold; }
 void ecs::PointSystem::Change(entt::entity e, uint8_t type, int64_t amount, bool, bool
 #ifdef __ENABLE_BLOCK_EXP__
@@ -271,8 +317,9 @@ bool ConsumeItemEcs(entt::entity item, uint32_t amount)
 {
     CheckPaymentOrder();
     ++payments;
-    if (rejectPayment)
+    if (rejectPayment || rejectPaymentAt == payments)
         return false;
+    if (onPayment) onPayment();
     Check(IsValidItem(item) && amount > 0 && GetItemCount(item) >= amount, "invalid material debit");
     if (GetItemCount(item) == amount) {
         inventory.erase({GetItemOwner(item), GetItemWindow(item), GetItemCell(item)});
@@ -320,6 +367,10 @@ struct Fixture {
         floatRandomCalls = 0;
         payments = 0;
         rejectPayment = rejectGoldPayment = false;
+        transferTest = false;
+        rejectPaymentAt = transferLogs = 0;
+        transferCommands.clear();
+        onPayment = {};
         watchedItem = entt::null;
         inventory.clear();
         proto.bType = ITEM_WEAPON;
@@ -1310,6 +1361,227 @@ void DragonSoulEquipmentRules()
 #endif
 }
 
+struct TransferFixture : PaidFixture {
+    TItemTable scrollProto{}, donorProto{};
+    entt::entity donor, npc;
+    TransferFixture()
+    {
+        transferTest = true;
+        proto.bType = ITEM_COSTUME;
+        proto.bSubType = COSTUME_BODY;
+        scrollProto.bType = ITEM_TRANSFER_SCROLL;
+        scrollProto.bSubType = 255; // Not a costume subtype: scroll validation is independent.
+        donorProto = proto;
+        Place(item, INVENTORY, 5);
+        g_registry.emplace<ecs::ItemCount>(item, 1);
+        g_registry.emplace<ecs::ItemProtoRef>(material).proto = &scrollProto;
+        donor = Material(40001, 1, 6);
+        g_registry.emplace<ecs::ItemProtoRef>(donor).proto = &donorProto;
+        auto& attributes = g_registry.emplace<ecs::ItemAttributes>(donor).attrs;
+        for (int i = 0; i < ITEM_ATTRIBUTE_MAX_NUM; ++i)
+            attributes[i] = {static_cast<uint8_t>(i + 1), static_cast<int16_t>(10 + i)};
+        npc = g_registry.create();
+        g_registry.emplace<TransferActor>(npc);
+        g_registry.emplace<TransferActor>(owner).npc = npc;
+        Check(!g_registry.any_of<ecs::LegacyCharPtr>(owner) && !g_registry.any_of<ecs::LegacyCharPtr>(npc),
+            "transfer fixture must have no legacy characters");
+        Watch();
+    }
+    void Select()
+    {
+        AttrTransfer_command(owner, "open");
+        AttrTransfer_command(owner, "add 0 0");
+        AttrTransfer_command(owner, "add 2 6");
+        AttrTransfer_command(owner, "add 1 5");
+        Check(Window().items == std::array{material, item, donor}, "transfer selection failed");
+    }
+    auto& Window() { return g_registry.get<ecs::AttrTransferWindowComponent>(owner); }
+    void Unchanged()
+    {
+        Check(EqualAttributes(Attrs(), beforePayment) && saves == 0 && updates == 0 && transferLogs == 0,
+            "rejected transfer changed target or published success");
+    }
+};
+
+void TransferWindowAndCommands()
+{
+    TransferFixture f;
+    AttrTransfer_command(entt::null, "open");
+    AttrTransfer_close(entt::null);
+    AttrTransfer_clean_item(entt::null);
+    AttrTransfer_add_item(entt::null, 0, 0);
+    AttrTransfer_delete_item(entt::null, 0);
+    Check(!AttrTransfer_make(entt::null) && !AttrTransfer_is_open(entt::null), "null transfer owner accepted");
+    for (const auto input : {"", "opensesame", "open extra", "OPEN", "makejunk", "a 0", "close extra"})
+        AttrTransfer_command(f.owner, input);
+    Check(!AttrTransfer_is_open(f.owner) && transferCommands.empty(), "malformed command opened transfer");
+    AttrTransfer_open(f.owner);
+    const auto commandCount = transferCommands.size();
+    AttrTransfer_open(f.owner);
+    Check(AttrTransfer_is_open(f.owner) && transferCommands.size() == commandCount, "duplicate open reset window");
+    for (const auto input : {"add -1 0", "add +0 0", "add 0 0junk", "add 0 2147483648", "add 3 0",
+        "add 0 -1", "add 0 999999999999999999999", "add 0 0 extra", "add 0x0 0", "delete 0junk"})
+        AttrTransfer_command(f.owner, input);
+    Check(f.Window().items[0] == entt::null && payments == 0, "malformed index accepted");
+    AttrTransfer_add_item(f.owner, INT_MIN, INT_MAX);
+    AttrTransfer_add_item(f.owner, 0, INVENTORY_MAX_NUM);
+    AttrTransfer_delete_item(f.owner, INT_MAX);
+    AttrTransfer_add_item(f.owner, 1, 5);
+    Check(f.Window().items[1] == entt::null, "target accepted before scroll/donor");
+    f.Select();
+    AttrTransfer_add_item(f.owner, 1, 6);
+    Check(f.Window().items[1] == f.item && f.Window().items[2] == f.donor, "same item selected twice");
+    for (const auto input : {"del 1", "d 2", "delete 0"}) AttrTransfer_command(f.owner, input);
+    Check(f.Window().items == std::array<entt::entity,3>{entt::null,entt::null,entt::null}, "client del aliases broken");
+    AttrTransfer_command(f.owner, "a 0 0");
+    Check(f.Window().items[0] == f.material, "short add alias broken");
+    g_registry.emplace<ecs::StatusFlags>(f.owner).isDead = true;
+    AttrTransfer_command(f.owner, "close");
+    Check(!AttrTransfer_is_open(f.owner) && f.Window().items[0] == entt::null, "dead owner cannot close window");
+    const auto stale = f.owner;
+    g_registry.destroy(stale);
+    const auto replacement = g_registry.create();
+    Check(entt::to_entity(stale) == entt::to_entity(replacement) && stale != replacement, "owner generation not recycled");
+    AttrTransfer_command(stale, "open");
+    Check(!AttrTransfer_is_open(stale), "retired owner accepted");
+}
+
+void TransferContextGuards()
+{
+    for (int scenario = 0; scenario < 16; ++scenario)
+    {
+        TransferFixture f;
+        f.Select();
+        auto& location = g_registry.get<TransferActor>(f.owner);
+        switch (scenario)
+        {
+            case 0: location.x = ATTR_TRANSFER_MAX_DISTANCE; break;
+            case 1: location.map = 2; break;
+            case 2: location.npc = entt::null; break;
+            case 3: g_registry.destroy(f.npc); (void)g_registry.create(); break;
+            case 4: g_registry.emplace<ecs::StatusFlags>(f.owner).isDead = true; break;
+            case 5: g_registry.emplace<ecs::StatusFlags>(f.owner).isObserverMode = true; break;
+            case 6: g_registry.emplace<ecs::StatusFlags>(f.owner).isStunned = true; break;
+            case 7: g_registry.emplace<ecs::SafeboxRef>(f.owner).isOpening = true; break;
+            case 8: g_registry.emplace<ecs::ShopState>(f.owner).underRefine = true; break;
+            case 9: g_registry.emplace<ecs::ShopState>(f.owner).shopOwner = f.npc; break;
+            case 10: g_registry.emplace<ecs::ShopState>(f.owner).currentShop = reinterpret_cast<CShop*>(1); break;
+            case 11: g_registry.emplace<ecs::ExchangeRef>(f.owner).exchange = reinterpret_cast<CExchange*>(1); break;
+            case 12: g_registry.emplace<ecs::AcceWindowComponent>(f.owner).absorptionOpen = true; break;
+            case 13: location.x = INT_MIN; g_registry.get<TransferActor>(f.npc).x = INT_MAX; break;
+            case 14: g_registry.emplace<ecs::ShopState>(f.owner).myShop = reinterpret_cast<CShop*>(1); break;
+            case 15: g_registry.emplace<ecs::CubeWindowComponent>(f.owner).pNpc = reinterpret_cast<CHARACTER*>(1); break;
+        }
+        Check(!AttrTransfer_make(f.owner) && payments == 0, "blocked transfer context accepted");
+        f.Unchanged();
+        AttrTransfer_close(f.owner);
+        Check(!AttrTransfer_is_open(f.owner), "blocked context prevented close");
+    }
+    TransferFixture f;
+    g_registry.get<TransferActor>(f.npc).x = ATTR_TRANSFER_MAX_DISTANCE;
+    AttrTransfer_open(f.owner);
+    Check(!AttrTransfer_is_open(f.owner), "far-away NPC opened window");
+    g_registry.get<TransferActor>(f.npc).x = ATTR_TRANSFER_MAX_DISTANCE - 1;
+    AttrTransfer_open(f.owner);
+    Check(AttrTransfer_is_open(f.owner), "valid distance boundary rejected");
+}
+
+void TransferItemGuards()
+{
+    for (int slot = 0; slot < 3; ++slot)
+        for (int scenario = 0; scenario < 8; ++scenario)
+        {
+            TransferFixture f;
+            f.Select();
+            const auto selected = f.Window().items[slot];
+            switch (scenario)
+            {
+                case 0: g_registry.emplace<ecs::ItemFlags>(selected).isLocked = true; break;
+                case 1: g_registry.emplace<ecs::ItemFlags>(selected).exchanging = true; break;
+                case 2: g_registry.emplace<ecs::ItemEquipped>(selected).equipped = true; break;
+                case 3: g_registry.get<ecs::ItemOwner>(selected).owner = f.npc; break;
+                case 4: inventory.erase({f.owner, INVENTORY, ItemSystem::GetItemCell(selected)}); break;
+                case 5: f.Place(selected, INVENTORY, 9); break;
+                case 6: g_registry.get<ecs::ItemCount>(selected).count = 0; break;
+                case 7: g_registry.get<ecs::ItemLocation>(selected).window = SAFEBOX; break;
+            }
+            Check(!AttrTransfer_make(f.owner) && payments == 0, "invalid selected item accepted");
+            f.Unchanged();
+        }
+    for (int slot = 0; slot < 3; ++slot)
+    {
+        TransferFixture f;
+        f.Select();
+        const auto old = f.Window().items[slot];
+        const auto cell = ItemSystem::GetItemCell(old);
+        g_registry.destroy(old);
+        const auto replacement = f.Material(40001, 1, cell);
+        Check(entt::to_entity(old) == entt::to_entity(replacement) && old != replacement, "item generation not recycled");
+        Check(!AttrTransfer_make(f.owner) && payments == 0 && ItemSystem::GetItemCount(replacement) == 1,
+            "replacement item consumed through stale selection");
+    }
+    for (int scenario = 0; scenario < 8; ++scenario)
+    {
+        TransferFixture f;
+        f.Select();
+        switch (scenario)
+        {
+            case 0: f.donorProto.bSubType = COSTUME_HAIR; break;
+            case 1: g_registry.get<ecs::ItemIdentity>(f.donor).vnum = 73001; break;
+            case 2: g_registry.get<ecs::ItemAttributes>(f.donor).attrs.fill({}); break;
+            case 3: g_registry.remove<ecs::ItemAttributes>(f.donor); break;
+            case 4: g_registry.get<ecs::ItemCount>(f.donor).count = 2; break;
+            case 5: g_registry.get<ecs::ItemCount>(f.item).count = 2; break;
+            case 6: g_registry.get<ecs::ItemAttributes>(f.donor).attrs[0].bType = MAX_APPLY_NUM; break;
+            case 7:
+                g_registry.get<ecs::ItemAttributes>(f.donor).attrs.fill({});
+                g_registry.get<ecs::ItemAttributes>(f.donor).attrs[6] = {1, 10};
+                break;
+        }
+        Check(!AttrTransfer_make(f.owner) && payments == 0, "malformed costume accepted");
+        f.Unchanged();
+    }
+}
+
+void TransferPaymentAndCommit()
+{
+    for (const int count : {1, 3})
+    {
+        TransferFixture f;
+        g_registry.get<ecs::ItemCount>(f.material).count = count;
+        f.Select();
+        rejectPayment = true;
+        Check(!AttrTransfer_make(f.owner) && !f.Window().busy && ItemSystem::GetItemCount(f.material) == count,
+            "rejected transfer payment changed scroll");
+        f.Unchanged();
+        rejectPayment = false;
+        f.Watch();
+        onPayment = [&] {
+            Check(f.Window().busy && !AttrTransfer_make(f.owner), "reentrant transfer accepted");
+            AttrTransfer_close(f.owner);
+            AttrTransfer_add_item(f.owner, 1, 6);
+        };
+        auto expected = g_registry.get<ecs::ItemAttributes>(f.donor).attrs;
+#ifdef ENABLE_ATTR_COSTUMES
+        expected[5] = {}; expected[6] = {};
+#endif
+        Check(AttrTransfer_make(f.owner), "valid transfer failed");
+        Check(EqualAttributes(f.Attrs(), expected) && !g_registry.valid(f.donor) &&
+            payments == 2 && saves == 1 && updates == 1 && transferLogs == 1 && !f.Window().busy,
+            "transfer did not debit twice and publish exactly once");
+        Check(count == 1 ? !g_registry.valid(f.material) : ItemSystem::GetItemCount(f.material) == count - 1,
+            "wrong transfer scroll count");
+        Check(!AttrTransfer_make(f.owner) && payments == 2, "repeated transfer charged twice");
+    }
+    TransferFixture f;
+    f.Select();
+    rejectPaymentAt = 2;
+    Check(!AttrTransfer_make(f.owner) && !f.Window().busy && payments == 2, "second debit failure reported success");
+    f.Unchanged();
+    Check(ItemSystem::GetItemCount(f.material) == 1 && ItemSystem::GetItemCount(f.donor) == 1,
+        "unexpected partial-debit failure state");
+}
+
 void SwitchbotTransactions()
 {
 #if defined(ENABLE_SWITCHBOT)
@@ -1404,6 +1676,10 @@ int main()
         DragonSoulEquipmentRules();
         SwitchbotTransactions();
         SwitchbotMaterialSelection();
+        TransferWindowAndCommands();
+        TransferContextGuards();
+        TransferItemGuards();
+        TransferPaymentAndCommit();
         std::cout << "Item attribute regression checks passed: " << checks << '\n';
         return 0;
     } catch (const std::exception& error) {

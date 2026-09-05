@@ -216,19 +216,6 @@ static ecs::CubeWindowComponent* EnsureCubeWindowComponent(entt::entity e)
     return &g_registry.emplace<ecs::CubeWindowComponent>(e);
 }
 
-#ifdef __ATTR_TRANSFER_SYSTEM__
-static ecs::AttrTransferWindowComponent* EnsureAttrTransferWindowComponent(entt::entity e)
-{
-    if (e == entt::null || !g_registry.valid(e))
-        return nullptr;
-
-    if (auto* comp = g_registry.try_get<ecs::AttrTransferWindowComponent>(e))
-        return comp;
-
-    return &g_registry.emplace<ecs::AttrTransferWindowComponent>(e);
-}
-
-#endif
 
 #ifdef ENABLE_ACCE_SYSTEM
 static ecs::AcceWindowComponent* EnsureAcceWindowComponent(entt::entity e)

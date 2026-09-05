@@ -2471,9 +2471,9 @@ void CHARACTER::Dead(entt::entity killer, bool bImmediateDead)
 	}
 
 #ifdef __ATTR_TRANSFER_SYSTEM__
-	if (IsAttrTransferOpen() == true)
+	if (AttrTransfer_is_open(GetEntityHandle()) == true)
 	{
-		AttrTransfer_close(this);
+		AttrTransfer_close(GetEntityHandle());
 	}
 #endif
 
@@ -2877,7 +2877,7 @@ void CHARACTER::DeathPenalty(uint8_t bTown)
 
 	Cube_close(this);
 #ifdef __ATTR_TRANSFER_SYSTEM__
-	AttrTransfer_close(this);
+	AttrTransfer_close(GetEntityHandle());
 #endif
 #ifdef ENABLE_ACCE_SYSTEM
 	CloseAcce();

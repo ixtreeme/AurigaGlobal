@@ -1324,7 +1324,7 @@ void CInputDB::SafeboxLoad(LPDESC d, const char * c_pData)
 	}
 
 #ifdef __ATTR_TRANSFER_SYSTEM__
-	if (ch->IsAttrTransferOpen())
+	if (AttrTransfer_is_open(chEntity))
 	{
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(chEntity, CHAT_TYPE_INFO, 296, "");

@@ -17,6 +17,7 @@ add_executable(ItemAttributeTests EXCLUDE_FROM_ALL
     ecs/systems/ItemAttributeSystem.cpp
     new_switchbot.cpp
     DragonSoul.cpp
+    attr_transfer.cpp
 )
 target_link_libraries(ItemAttributeTests PRIVATE SERVER EnTT::EnTT)
 add_test(NAME item_attributes COMMAND ItemAttributeTests)

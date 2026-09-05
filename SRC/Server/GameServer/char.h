@@ -2039,13 +2039,7 @@ public:
 	void				SetRider(entt::entity character);
 
 	bool				IsRiding() const;
-#ifdef __ATTR_TRANSFER_SYSTEM__
-public:
-	std::span<entt::entity> GetAttrTransferItem();
-	bool IsAttrTransferOpen() const;
-	void SetAttrTransferNpc(entt::entity npc);
-	bool CanDoAttrTransfer() const;
-#endif
+
 #ifdef __PET_SYSTEM__
 public:
 	CPetSystem* GetPetSystem() { return m_petSystem; }
