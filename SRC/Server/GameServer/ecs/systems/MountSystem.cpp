@@ -166,17 +166,24 @@ void CHARACTER::LoadMountInventory(const std::vector<TMountInventoryItemTable>& 
 
 void CHARACTER::SendMountInventory()
 {
-    if (!GetDesc() || !MountSystem::GetMountInventory(GetEntityHandle()))
+    MountSystem::SendMountInventory(GetEntityHandle());
+}
+
+void MountSystem::SendMountInventory(entt::entity owner)
+{
+    if (!ecs::PlayerRuntime::GetDesc(owner))
         return;
+    auto* inventory = GetMountInventory(owner);
+    if (!inventory) return;
 
     std::vector<TMountInventoryItemTable> items;
-    MountSystem::GetMountInventory(GetEntityHandle())->CollectItems(items);
+    inventory->CollectItems(items);
 
     TPacketGCMountInventory header{};
     header.bHeader = HEADER_GC_MOUNT_INVENTORY;
     header.size = sizeof(TPacketGCMountInventory) + static_cast<uint16_t>(items.size() * sizeof(TMountInventoryItemData));
-    header.bWidth = MountSystem::GetMountInventory(GetEntityHandle())->GetWidth();
-    header.bHeight = MountSystem::GetMountInventory(GetEntityHandle())->GetSize();
+    header.bWidth = inventory->GetWidth();
+    header.bHeight = inventory->GetSize();
     header.wCount = static_cast<uint16_t>(items.size());
 
     TEMP_BUFFER buf;
@@ -193,7 +200,8 @@ void CHARACTER::SendMountInventory()
         buf.write(&data, sizeof(data));
     }
 
-    GetDesc()->Packet(buf.read_peek(), buf.size());
+    if (auto* desc = ecs::PlayerRuntime::GetDesc(owner))
+        desc->Packet(buf.read_peek(), buf.size());
 }
 
 int CHARACTER::GetBeltCount() const
@@ -203,23 +211,32 @@ int CHARACTER::GetBeltCount() const
 
 void CHARACTER::UpdateMountCountOverheadToViewers()
 {
+    MountSystem::UpdateMountCountOverheadToViewers(GetEntityHandle());
+}
+
+void MountSystem::UpdateMountCountOverheadToViewers(entt::entity owner)
+{
 #ifdef ENABLE_FAKE_SHOP_HEADER
-    MountSystem::UpdateMountInventoryCountOverhead(GetEntityHandle(), GetEntityHandle());
+    if (!g_registry.valid(owner)) return;
+    MountSystem::UpdateMountInventoryCountOverhead(owner, owner);
+    if (!g_registry.valid(owner)) return;
 
     // The ECS ViewMap, not m_map_view: this is a CHARACTER, and for characters
     // the legacy map stopped being maintained when D.6 disabled the polling in
     // UpdateSectree. It is frozen at whatever it held then, so this loop was
     // walking stale contents.
-    const entt::entity selfEntity = GetEntityHandle();
+    const entt::entity selfEntity = owner;
     if (const auto* viewMap = g_registry.try_get<ecs::ViewMap>(selfEntity))
     {
-        for (const entt::entity viewerEntity : viewMap->visible)
+        const auto viewers = viewMap->visible;
+        for (const entt::entity viewerEntity : viewers)
         {
+            if (!g_registry.valid(owner)) return;
             if (viewerEntity == selfEntity)
                 continue;
 
             if (ecs::PlayerRuntime::IsPC(viewerEntity) && ecs::PlayerRuntime::GetDesc(viewerEntity))
-                MountSystem::UpdateMountInventoryCountOverhead(GetEntityHandle(), viewerEntity);
+                MountSystem::UpdateMountInventoryCountOverhead(owner, viewerEntity);
         }
     }
 #endif
@@ -479,6 +496,12 @@ void HorseSummon(entt::entity rider, bool bSummon, bool bFromFar, uint32_t dwVnu
 // The packet-dedup counters and the pulse gate. They were four CHARACTER
 // members mirrored into MountState by every SyncMountState call; the component
 // is the only copy now, so the mirror argument list goes away with them.
+entt::entity GetMountInventoryItem(entt::entity rider, uint32_t cell)
+{
+    const auto* inventory = GetMountInventory(rider);
+    return inventory ? inventory->Get(cell) : entt::null;
+}
+
 CMountInventory* GetMountInventory(entt::entity rider)
 {
     if (rider == entt::null || !g_registry.valid(rider))

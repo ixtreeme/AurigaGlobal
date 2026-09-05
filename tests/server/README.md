@@ -43,14 +43,15 @@ login/DB-save flow is not executed headlessly. Existing packet framing still own
 the minimum-length checks. Other inventory/equipment/spatial services fail if
 the tests accidentally call them. Test shortcut drag/drop/delete/swap, potion
 auto-assignment, item movement/consumption, empty-slot clearing on login and relog
-persistence with a real client/DB before deployment. This prerequisite does not
-complete the high-level item-manager `RemoveItem` or bulk shutdown migration.
+persistence with a real client/DB before deployment. Bulk item-manager shutdown
+still needs migration.
 
 ## Item-manager destruction
 
-`ItemManagerLifecycleTests` compiles the complete production `item_manager.cpp`.
-The low-level `DestroyItem` path now reads identity, location and ownership from
-ECS; an optional legacy allocation is resolved only at the final release boundary.
+`ItemManagerLifecycleTests` compiles the complete production `item_manager.cpp`,
+`safebox.cpp` and `Base/grid.cpp`. Both high-level `RemoveItem` and low-level
+`DestroyItem` read identity, location and ownership from ECS; an optional legacy
+allocation is resolved only at the final release boundary.
 The existing implementation is edited in place, not duplicated into another system.
 
 ```powershell
@@ -70,17 +71,24 @@ stale owners), guard release after exceptions, rejected factory cleanup and
 retry, mismatched legacy bindings, and persistent-item deferral without a DB
 descriptor. Factory callbacks see unpublished indices; unsuccessful factory
 cleanup restores still-live identities without overwriting newer mappings.
+High-level tests cover normal/extra inventory, equipment, dragon-soul, switchbot
+and mount windows, wide quickslot cells, logging/quickslot/mount callbacks,
+reentrant removal, ownership transfer, recycled IDs and rejected detachment.
+The real safebox/mall integration is exercised for removal, close during logging
+or detachment, shared-lease lifetime, failed removal and transfer to another owner.
 
 Item access, inventory, factory, logging and DB services are doubles. Legacy
 CItem/CEntity construction and destruction are doubles too: the tests verify
 allocation release order, not engine timers, component destruction callbacks,
 spatial removal, packet delivery or durable persistence. Unrelated manager
-creation/drop/legacy-removal dependencies fail immediately if called. The
-high-level `RemoveItem` is exercised only for its recursive-entry guard; its
-normal legacy body and bulk shutdown `Destroy` still need migration. The
-ItemSystem change preventing raw factory fallback after rejected manager
-cleanup, and the native mount-inventory owner lookup, are compiled with the
-GameServer but not executed by this target.
+creation/drop dependencies fail immediately if called. Bulk shutdown `Destroy`
+still needs migration. The ItemSystem dispatch now uses the same high-level
+manager path for entity-only and legacy-backed items; this adapter is compiled
+with GameServer, not executed by this target. Native mount lookup/packet code
+and session adapters are also compile-checked only. Point computation still
+uses the existing legacy-backed PointSystem service; its internals are not
+migrated by this change. General client-facing inventory lookup is unchanged:
+storage-window lookups are limited to the manager's internal removal path.
 
 The missing-descriptor guard is not a reconnect queue or a DB acknowledgement.
 It does not undo side effects already performed by a higher-level caller, nor
@@ -116,11 +124,15 @@ owner destruction. Reentrant flush/detach/destroy callbacks see an already
 unpublished container and cannot add, remove, move, save or destroy it again.
 Post-callback item identity/ownership is revalidated before further work.
 
-Grid ownership is RAII; copy/move construction is disabled. The real session
-and character teardown call sites now clear their safebox/mall pointer before
-deleting the container; those call sites are compiled by GameServer, but not
-executed in the headless tests. Existing CHARACTER storage pointers themselves
-are not yet migrated to ECS ownership.
+Grid ownership is RAII; copy/move construction is disabled. SafeboxRef owns
+both containers through shared leases; CHARACTER no longer has duplicate raw
+owning pointers. SafeboxSystem lives in the existing safebox.cpp/.h. Close
+unpublishes the container before callbacks, blocks reopening that window during
+teardown, and retires contents immediately even if another caller holds a lease.
+Component tests cover independent windows, stale owners, callback reentry,
+lease release and post-close reopen. Session/character teardown adapters are
+compiled by GameServer, not executed in the headless tests; legacy GetSafebox/
+GetMall borrowed-pointer accessors remain for unmigrated callers.
 
 Persistence, descriptor lookup, item detachment/destruction and stack-count
 services are doubles. No socket, DB, CHARACTER, CItem, or item-manager instance

@@ -479,6 +479,11 @@ class ITEM_MANAGER : public singleton<ITEM_MANAGER>
 		std::unordered_set<entt::entity> m_set_pkItemForDelayedSave;
 		// Versioned identities, retained across cleanup callbacks and entity destruction.
 		std::unordered_set<entt::entity> m_itemsBeingDestroyed;
+
+	private:
+		void ForgetItem(entt::entity item, uint32_t id, uint32_t vid);
+		void DestroyItemNow(entt::entity item, const char* file, size_t line);
+	protected:
 		std::map<uint32_t, entt::entity>		m_map_pkItemByID;
 		std::map<uint32_t, uint32_t>		m_map_dwEtcItemDropProb;
 		std::map<uint32_t, CDropItemGroup*> m_map_pkDropItemGroup;

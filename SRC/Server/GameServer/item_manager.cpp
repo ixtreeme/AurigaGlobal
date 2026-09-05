@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include "ecs/CharacterAccessors.hpp"
 #include "ecs/systems/InventorySystem.hpp"
+#include "ecs/systems/MountSystem.hpp"
 #include "ecs/systems/PointSystem.hpp"
 #include "ecs/systems/PlayerRuntimeSystem.hpp"
 #include "ecs/systems/NetworkSyncSystem.hpp"
@@ -711,67 +712,121 @@ void ITEM_MANAGER::Update()
 	}
 }
 
-void ITEM_MANAGER::RemoveItem(entt::entity itemEntity, const char* c_pszReason)
+void ITEM_MANAGER::RemoveItem(entt::entity itemEntity, const char* reason)
 {
-	if (m_itemsBeingDestroyed.contains(itemEntity))
+	if (!ItemSystem::IsValidItem(itemEntity) || m_itemsBeingDestroyed.contains(itemEntity))
 		return;
-	if (!ItemSystem::IsValidItem(itemEntity))
+
+	const uint32_t id = ItemSystem::GetItemID(itemEntity);
+	const uint32_t vid = ItemSystem::GetItemVID(itemEntity);
+	if (id && !ItemSystem::GetItemSkipSave(itemEntity) && !db_clientdesc)
 	{
-		LOG_ERROR("ITEM_MANAGER::RemoveItem called with an invalid item entity");
+		LOG_ERROR("ITEM_REMOVE deferred: no DB descriptor for item {}", id);
 		return;
 	}
 
-	LPITEM item = ResolveManagedItem(itemEntity);
-	if (!item)
-		return;
-
-	const bool bWasMountInventory = item->GetWindow() == MOUNT_INVENTORY;
-
-	if (const entt::entity ownerEntity = ItemSystem::GetItemOwner(item->GetEntityHandle()); ownerEntity != entt::null)
+	m_itemsBeingDestroyed.insert(itemEntity);
+	ItemDestructionGuard guard {m_itemsBeingDestroyed, itemEntity};
+	const auto live = [&] {
+		if (ItemSystem::IsValidItem(itemEntity)) return true;
+		ForgetItem(itemEntity, id, vid);
+		return false;
+	};
+	const auto detached = [&] {
+		if (!live()) return false;
+		const auto* ownership = g_registry.try_get<ecs::ItemOwner>(itemEntity);
+		return ownership && ownership->owner == entt::null &&
+			ItemSystem::GetItemWindow(itemEntity) == RESERVED_WINDOW;
+	};
+	const auto owner = ItemSystem::GetItemOwner(itemEntity);
+	if (owner != entt::null)
 	{
-		LPCHARACTER o = ecs::LegacyCharOf(ownerEntity);
-		char szHint[64];
-		snprintf(szHint, sizeof(szHint), "%s %u ", item->GetName(), item->GetCount());
-		LogManager::instance().ItemLogEntity(ownerEntity, item->GetEntityHandle(),
-			c_pszReason ? c_pszReason : "REMOVE", szHint);
-
-		if (item->GetWindow() == MALL || item->GetWindow() == SAFEBOX)
+		const auto window = ItemSystem::GetItemWindow(itemEntity);
+		const auto cell = ItemSystem::GetItemCell(itemEntity);
+		const auto stillOwned = [&] {
+			return live() && g_registry.valid(owner) && ItemSystem::GetItemOwner(itemEntity) == owner &&
+				ItemSystem::GetItemWindow(itemEntity) == window && ItemSystem::GetItemCell(itemEntity) == cell;
+		};
+		const TItemPos position(window == EQUIPMENT ? INVENTORY : window, cell);
+		const auto recordedSlot = [&]() -> entt::entity {
+			if (window == SAFEBOX || window == MALL)
+			{
+				const auto storage = SafeboxSystem::Get(owner, window);
+				return storage ? storage->Get(cell) : entt::null;
+			}
+			if (window == MOUNT_INVENTORY) return MountSystem::GetMountInventoryItem(owner, cell);
+			return ItemSystem::GetItem(owner, position);
+		};
+		// Never clear a foreign occupant (or its quickslot) from a stale location.
+		if (recordedSlot() != itemEntity)
 		{
-			CSafebox* pSafebox = item->GetWindow() == MALL ? o->GetMall() : o->GetSafebox();
-			if (pSafebox)
-				pSafebox->Remove(ItemSystem::GetItemCell(item->GetEntityHandle()));
+			LOG_ERROR("ITEM_REMOVE deferred: item {} is not in its recorded owner slot", id);
+			return;
+		}
+
+		char hint[64];
+		snprintf(hint, sizeof(hint), "%s %u ", ItemSystem::GetItemName(itemEntity), ItemSystem::GetItemCount(itemEntity));
+		LogManager::instance().ItemLogEntity(owner, itemEntity, reason ? reason : "REMOVE", hint);
+		if (!stillOwned())
+		{
+			// Closing a storage during logging can already detach this item.
+			if (detached()) DestroyItemNow(itemEntity, __FILE__, __LINE__);
+			return;
+		}
+
+		if (window == SAFEBOX || window == MALL)
+		{
+			// Keep the container alive if a removal callback closes its session.
+			const auto storage = SafeboxSystem::Get(owner, window);
+			if (!storage || storage->Get(cell) != itemEntity) return;
+			storage->Remove(cell);
+			// Close/replacement callbacks can suppress the result/packet even
+			// after a successful detach. Verify the entity's final state below.
 		}
 		else
 		{
-			if (!bWasMountInventory)
-			{
+			if (recordedSlot() != itemEntity) return;
+			if (window == INVENTORY)
+				InventorySystem::SyncQuickslot(owner, QUICKSLOT_TYPE_ITEM, cell, 255);
 #ifdef ENABLE_EXTRA_INVENTORY
-				if (item->IsExtraItem())
-					o->SyncQuickslot(QUICKSLOT_TYPE_ITEM_EXTRA, ItemSystem::GetItemCell(item->GetEntityHandle()), 255);
-				else
-					o->SyncQuickslot(QUICKSLOT_TYPE_ITEM, ItemSystem::GetItemCell(item->GetEntityHandle()), 255);
-#else
-				o->SyncQuickslot(QUICKSLOT_TYPE_ITEM, ItemSystem::GetItemCell(item->GetEntityHandle()), 255);
+			else if (window == EXTRA_INVENTORY)
+				InventorySystem::SyncQuickslot(owner, QUICKSLOT_TYPE_ITEM_EXTRA, cell, 255);
 #endif
-			}
-
-			InventorySystem::RemoveFromCharacter(item->GetEntityHandle());
-
-			if (bWasMountInventory)
+			if (!stillOwned())
 			{
-				o->SendMountInventory();
-				o->ComputePoints();
-				NetworkSyncSystem::PointsPacket(((o) ? (o)->GetEntityHandle() : entt::null));
-#ifdef ENABLE_FAKE_SHOP_HEADER
-				o->UpdateMountCountOverheadToViewers();
-#endif
+				if (detached()) DestroyItemNow(itemEntity, __FILE__, __LINE__);
+				return;
 			}
+			if (recordedSlot() != itemEntity) return;
+			InventorySystem::RemoveFromCharacter(itemEntity);
+			if (!live()) return;
+		}
+
+		if (!detached()) return;
+
+		if (window == MOUNT_INVENTORY)
+		{
+			if (g_registry.valid(owner)) MountSystem::SendMountInventory(owner);
+			if (g_registry.valid(owner)) ecs::PointSystem::Compute(owner);
+			if (g_registry.valid(owner)) NetworkSyncSystem::PointsPacket(owner);
+#ifdef ENABLE_FAKE_SHOP_HEADER
+			if (g_registry.valid(owner)) MountSystem::UpdateMountCountOverheadToViewers(owner);
+#endif
+			if (!detached()) return;
 		}
 	}
 
-	M2_DESTROY_ITEM(itemEntity);
+	DestroyItemNow(itemEntity, __FILE__, __LINE__);
 }
 
+void ITEM_MANAGER::ForgetItem(entt::entity item, uint32_t id, uint32_t vid)
+{
+	m_set_pkItemForDelayedSave.erase(item);
+	if (auto it = m_map_pkItemByID.find(id); it != m_map_pkItemByID.end() && it->second == item)
+		m_map_pkItemByID.erase(it);
+	if (auto it = m_VIDMap.find(vid); it != m_VIDMap.end() && it->second == item)
+		m_VIDMap.erase(it);
+}
 #ifndef DEBUG_ALLOC
 void ITEM_MANAGER::DestroyItem(entt::entity itemEntity)
 #else
@@ -781,6 +836,17 @@ void ITEM_MANAGER::DestroyItem(entt::entity itemEntity, const char* file, size_t
 	if (!ItemSystem::IsValidItem(itemEntity) || m_itemsBeingDestroyed.contains(itemEntity))
 		return;
 
+	m_itemsBeingDestroyed.insert(itemEntity);
+	ItemDestructionGuard guard {m_itemsBeingDestroyed, itemEntity};
+#ifdef DEBUG_ALLOC
+	DestroyItemNow(itemEntity, file, line);
+#else
+	DestroyItemNow(itemEntity, __FILE__, __LINE__);
+#endif
+}
+
+void ITEM_MANAGER::DestroyItemNow(entt::entity itemEntity, const char* file, size_t line)
+{
 	const uint32_t id = ItemSystem::GetItemID(itemEntity);
 	const uint32_t vid = ItemSystem::GetItemVID(itemEntity);
 	if (id && !ItemSystem::GetItemSkipSave(itemEntity) && !db_clientdesc)
@@ -789,14 +855,8 @@ void ITEM_MANAGER::DestroyItem(entt::entity itemEntity, const char* file, size_t
 		return;
 	}
 
-	m_itemsBeingDestroyed.insert(itemEntity);
-	ItemDestructionGuard guard {m_itemsBeingDestroyed, itemEntity};
 	const auto forget = [&] {
-		m_set_pkItemForDelayedSave.erase(itemEntity);
-		if (auto it = m_map_pkItemByID.find(id); it != m_map_pkItemByID.end() && it->second == itemEntity)
-			m_map_pkItemByID.erase(it);
-		if (auto it = m_VIDMap.find(vid); it != m_VIDMap.end() && it->second == itemEntity)
-			m_VIDMap.erase(it);
+		ForgetItem(itemEntity, id, vid);
 	};
 
 	// These services take entity identities. Never retain a CItem or owner

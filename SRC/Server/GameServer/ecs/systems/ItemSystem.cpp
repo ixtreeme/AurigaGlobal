@@ -259,11 +259,7 @@ static bool DestroyItemEntityAndLegacy(entt::entity itemEntity, const char* reas
     if (!ItemSystem::IsValidItem(itemEntity))
         return false;
 
-    const auto* legacy = g_registry.try_get<ecs::LegacyItemPtr>(itemEntity);
-    if (legacy && legacy->ptr)
-        ITEM_MANAGER::instance().RemoveItem(itemEntity, reason);
-    else
-        M2_DESTROY_ITEM(itemEntity);
+    ITEM_MANAGER::instance().RemoveItem(itemEntity, reason);
 
     // A reentrant/busy or otherwise rejected manager cleanup is not success.
     // Never bypass it with a second raw factory destruction.

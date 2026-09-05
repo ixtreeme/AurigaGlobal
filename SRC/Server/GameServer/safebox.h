@@ -14,6 +14,7 @@ class CSafebox
 	public:
 		CSafebox(entt::entity owner, int iSize, uint32_t dwGold);
 		~CSafebox();
+		void Close() { __Destroy(); }
 		CSafebox(const CSafebox&) = delete;
 		CSafebox& operator=(const CSafebox&) = delete;
 
@@ -47,5 +48,11 @@ class CSafebox
 
 		uint8_t		m_bWindowMode;
 };
+
+namespace SafeboxSystem {
+std::shared_ptr<CSafebox> Get(entt::entity owner, uint8_t window);
+std::shared_ptr<CSafebox> Open(entt::entity owner, uint8_t window, int height, uint32_t gold = 0);
+void Close(entt::entity owner, uint8_t window, bool save = true);
+}
 
 #endif

@@ -1398,7 +1398,7 @@ void CHARACTER::SetSafeboxOpenPosition()
 
 CSafebox* CHARACTER::GetSafebox() const
 {
-    return m_pkSafebox;
+    return SafeboxSystem::Get(GetEntityHandle(), SAFEBOX).get();
 }
 
 void CHARACTER::ReqSafeboxLoad(const char* pszPassword)
@@ -1410,7 +1410,7 @@ void CHARACTER::ReqSafeboxLoad(const char* pszPassword)
 #endif
         return;
     }
-    else if (m_pkSafebox)
+    else if (GetSafebox())
     {
 #ifdef TEXTS_IMPROVEMENT
         ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 189, "");
@@ -1455,17 +1455,12 @@ void CHARACTER::ReqSafeboxLoad(const char* pszPassword)
 
 void CHARACTER::LoadSafebox(int iSize, uint32_t dwGold, int iItemCount, TPlayerItem* pItems)
 {
-    bool bLoaded = false;
-
+    const auto owner = GetEntityHandle();
+    const bool bLoaded = static_cast<bool>(SafeboxSystem::Get(owner, SAFEBOX));
+    auto storage = SafeboxSystem::Open(owner, SAFEBOX, iSize, dwGold);
+    if (!storage) return;
     SetOpenSafebox(true);
-
-    if (m_pkSafebox)
-        bLoaded = true;
-
-    if (!m_pkSafebox)
-        m_pkSafebox = M2_NEW CSafebox(GetEntityHandle(), iSize, dwGold);
-    else
-        m_pkSafebox->ChangeSize(iSize);
+    if (bLoaded) storage->ChangeSize(iSize);
 
     m_iSafeboxSize = iSize;
 
@@ -1479,7 +1474,8 @@ void CHARACTER::LoadSafebox(int iSize, uint32_t dwGold, int iItemCount, TPlayerI
     {
         for (int i = 0; i < iItemCount; ++i, ++pItems)
         {
-            if (!m_pkSafebox->IsValidPosition(pItems->pos))
+            if (!g_registry.valid(owner) || SafeboxSystem::Get(owner, SAFEBOX) != storage) return;
+            if (!storage->IsValidPosition(pItems->pos))
                 continue;
 
             const entt::entity item = ITEM_MANAGER::instance().CreateItem(pItems->vnum, pItems->count, pItems->id);
@@ -1494,7 +1490,7 @@ void CHARACTER::LoadSafebox(int iSize, uint32_t dwGold, int iItemCount, TPlayerI
             ItemSystem::SetItemSockets(item, pItems->alSockets);
             ItemSystem::SetItemAttributes(item, pItems->aAttr);
 
-			if (!m_pkSafebox->Add(pItems->pos, item))
+			if (!storage->Add(pItems->pos, item))
                 ItemSystem::DestroyItemEntityEcs(
                     item,
                     "SAFEBOX_LOAD_ADD_FAILED");
@@ -1512,8 +1508,8 @@ void CHARACTER::ChangeSafeboxSize(uint8_t bSize)
 
     GetDesc()->Packet(&p, sizeof(TPacketCGSafeboxSize));
 
-    if (m_pkSafebox)
-        m_pkSafebox->ChangeSize(bSize);
+    if (auto storage = SafeboxSystem::Get(GetEntityHandle(), SAFEBOX))
+        storage->ChangeSize(bSize);
 
     m_iSafeboxSize = bSize;
     if (GetEntityHandle() != entt::null && g_registry.valid(GetEntityHandle()))
@@ -1525,22 +1521,22 @@ void CHARACTER::ChangeSafeboxSize(uint8_t bSize)
 
 void CHARACTER::CloseSafebox()
 {
-    if (!m_pkSafebox)
-        return;
+    const auto owner = GetEntityHandle();
+    if (!SafeboxSystem::Get(owner, SAFEBOX)) return;
 
     if (!IsPC() || !GetDesc())
     {
         LOG_ERROR("CloseSafebox skipped: invalid owner (name={} vid={} race={} ispc={} desc={})", GetName(), GetPacketVID(), GetRaceNum(), IsPC(), static_cast<const void*>(GetDesc()));
 
-        M2_DELETE(std::exchange(m_pkSafebox, nullptr));
+        SafeboxSystem::Close(owner, SAFEBOX, false);
+        if (!g_registry.valid(owner)) return;
         m_bOpeningSafebox = false;
         return;
     }
 
     SetOpenSafebox(false);
-    m_pkSafebox->Save();
-
-    M2_DELETE(std::exchange(m_pkSafebox, nullptr));
+    SafeboxSystem::Close(owner, SAFEBOX);
+    if (!g_registry.valid(owner)) return;
 
     ecs::ChatSystem::Send(GetEntityHandle(), CHAT_TYPE_COMMAND, "CloseSafebox");
 
@@ -1552,22 +1548,16 @@ void CHARACTER::CloseSafebox()
 
 CSafebox* CHARACTER::GetMall() const
 {
-    return m_pkMall;
+    return SafeboxSystem::Get(GetEntityHandle(), MALL).get();
 }
 
 void CHARACTER::LoadMall(int iItemCount, TPlayerItem* pItems)
 {
-    bool bLoaded = false;
-
-    if (m_pkMall)
-        bLoaded = true;
-
-    if (!m_pkMall)
-        m_pkMall = M2_NEW CSafebox(GetEntityHandle(), 3 * SAFEBOX_PAGE_SIZE, 0);
-    else
-        m_pkMall->ChangeSize(3 * SAFEBOX_PAGE_SIZE);
-
-    m_pkMall->SetWindowMode(MALL);
+    const auto owner = GetEntityHandle();
+    const bool bLoaded = static_cast<bool>(SafeboxSystem::Get(owner, MALL));
+    auto storage = SafeboxSystem::Open(owner, MALL, 3 * SAFEBOX_PAGE_SIZE);
+    if (!storage) return;
+    if (bLoaded) storage->ChangeSize(3 * SAFEBOX_PAGE_SIZE);
 
     TPacketCGSafeboxSize p;
     p.bHeader = HEADER_GC_MALL_OPEN;
@@ -1579,7 +1569,8 @@ void CHARACTER::LoadMall(int iItemCount, TPlayerItem* pItems)
     {
         for (int i = 0; i < iItemCount; ++i, ++pItems)
         {
-            if (!m_pkMall->IsValidPosition(pItems->pos))
+            if (!g_registry.valid(owner) || SafeboxSystem::Get(owner, MALL) != storage) return;
+            if (!storage->IsValidPosition(pItems->pos))
                 continue;
 
             const entt::entity item = ITEM_MANAGER::instance().CreateItem(pItems->vnum, pItems->count, pItems->id);
@@ -1594,7 +1585,7 @@ void CHARACTER::LoadMall(int iItemCount, TPlayerItem* pItems)
             ItemSystem::SetItemSockets(item, pItems->alSockets);
             ItemSystem::SetItemAttributes(item, pItems->aAttr);
 
-			if (!m_pkMall->Add(pItems->pos, item))
+			if (!storage->Add(pItems->pos, item))
                 ItemSystem::DestroyItemEntityEcs(
                     item,
                     "MALL_LOAD_ADD_FAILED");
@@ -1606,12 +1597,10 @@ void CHARACTER::LoadMall(int iItemCount, TPlayerItem* pItems)
 
 void CHARACTER::CloseMall()
 {
-    if (!m_pkMall)
-        return;
-
-    m_pkMall->Save();
-
-    M2_DELETE(std::exchange(m_pkMall, nullptr));
+    const auto owner = GetEntityHandle();
+    if (!SafeboxSystem::Get(owner, MALL)) return;
+    SafeboxSystem::Close(owner, MALL);
+    if (!g_registry.valid(owner)) return;
 
     ecs::ChatSystem::Send(GetEntityHandle(), CHAT_TYPE_COMMAND, "CloseMall");
 }

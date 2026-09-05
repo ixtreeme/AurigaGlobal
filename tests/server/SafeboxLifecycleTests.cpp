@@ -159,6 +159,43 @@ bool AddItemCountEcs(entt::entity item, int amount) {
 }
 
 namespace {
+void ComponentOwnership() {
+    for (const uint8_t window : {SAFEBOX, MALL}) {
+        Reset(); const auto owner = PlayerEntity();
+        auto storage = SafeboxSystem::Open(owner, window, 3);
+        std::weak_ptr<CSafebox> retired = storage;
+        const auto otherWindow = window == SAFEBOX ? MALL : SAFEBOX;
+        const auto other = SafeboxSystem::Open(owner, otherWindow, 3);
+        Check(storage && other && storage != other && SafeboxSystem::Open(owner, window, 1) == storage, "storage publication not unique");
+        const auto item = Item();
+        Check(storage->Add(0, item), "component-owned storage add failed");
+        onFlush = [&](entt::entity) {
+            Check(!SafeboxSystem::Get(owner, window), "closing storage remained published");
+            Check(!SafeboxSystem::Open(owner, window, 3), "callback reopened closing storage");
+            Check(SafeboxSystem::Get(owner, otherWindow) == other, "other window was closed");
+            SafeboxSystem::Close(owner, window);
+        };
+        SafeboxSystem::Close(owner, window);
+        Check(!g_registry.valid(item) && destroyed == 1 && storage->Get(0) == entt::null && !storage->IsValidPosition(0),
+            "leased storage did not retire contents immediately");
+        Check(!retired.expired(), "lease prematurely freed");
+        storage.reset(); Check(retired.expired(), "unpublished storage leaked");
+        const auto replacement = SafeboxSystem::Open(owner, window, 3);
+        Check(replacement && SafeboxSystem::Get(owner, window) == replacement, "post-close reopen failed");
+        onFlush = {};
+        SafeboxSystem::Close(owner, window, false); SafeboxSystem::Close(owner, otherWindow, false);
+    }
+    Reset(); const auto owner = PlayerEntity();
+    auto storage = SafeboxSystem::Open(owner, SAFEBOX, 3);
+    std::weak_ptr<CSafebox> retired = storage;
+    storage.reset();
+    g_registry.destroy(owner);
+    Check(retired.expired(), "owner component did not release storage");
+    const auto replacement = PlayerEntity();
+    Check(replacement != owner && !SafeboxSystem::Get(owner, SAFEBOX) && !SafeboxSystem::Open(owner, SAFEBOX, 3), "stale owner accessed new generation");
+    Check(!SafeboxSystem::Open(replacement, INVENTORY, 3), "unsupported storage window accepted");
+    Check(!SafeboxSystem::Get(entt::null, SAFEBOX), "null owner exposed storage");
+}
 void BasicStorage() {
     for (const uint8_t window : {SAFEBOX, MALL}) {
         Reset();
@@ -384,6 +421,7 @@ int main() {
     try {
         BasicStorage(); BoundsAndResize(); StaleOwnersAndItems(); ReentrantTeardown();
         PublicationAndDetachFailures(); StackGuards();
+        ComponentOwnership();
         std::cout << "Safebox/mall lifecycle checks passed: " << checks << '\n';
         return 0;
     } catch (const std::exception& error) {

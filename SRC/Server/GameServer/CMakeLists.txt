@@ -42,6 +42,8 @@ add_test(NAME safebox_lifecycle COMMAND SafeboxLifecycleTests)
 add_executable(ItemManagerLifecycleTests EXCLUDE_FROM_ALL
     ${CMAKE_SOURCE_DIR}/tests/server/ItemManagerLifecycleTests.cpp
     item_manager.cpp
+    safebox.cpp
+    ../Base/grid.cpp
 )
 target_link_libraries(ItemManagerLifecycleTests PRIVATE SERVER EnTT::EnTT LUA)
 add_test(NAME item_manager_lifecycle COMMAND ItemManagerLifecycleTests)

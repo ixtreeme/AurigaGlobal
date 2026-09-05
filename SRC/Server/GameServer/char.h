@@ -1987,14 +1987,12 @@ public:
 	void				SetSafeboxOpenPosition();
 
 protected:
-	CSafebox* m_pkSafebox;
 	int					m_iSafeboxSize;
 	int					m_iSafeboxLoadTime;
 	bool				m_bOpeningSafebox;	///< â���� ���� ��û ���̰ų� �����ִ°� ����, true �� ��� �����û�̰ų� ��������.
 
 	bool				 m_bMountInventoryLoaded;
 
-	CSafebox* m_pkMall;
 	int					m_iMallLoadTime;
 
 	PIXEL_POSITION		m_posSafeboxOpen;

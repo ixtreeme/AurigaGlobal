@@ -4404,15 +4404,8 @@ void CHARACTER::Destroy()
 
     m_pkMobData = nullptr;
 
-    if (m_pkSafebox)
-    {
-        M2_DELETE(std::exchange(m_pkSafebox, nullptr));
-    }
-
-    if (m_pkMall)
-    {
-        M2_DELETE(std::exchange(m_pkMall, nullptr));
-    }
+    SafeboxSystem::Close(GetEntityHandle(), SAFEBOX, false);
+    SafeboxSystem::Close(GetEntityHandle(), MALL, false);
 
     ecs::PlayerRuntime::BuffOnAttr_Destroy(GetEntityHandle());
 
@@ -5850,14 +5843,12 @@ void CHARACTER::Initialize()
 #endif
     m_pkChrStone = nullptr;
 
-    m_pkSafebox = nullptr;
     m_iSafeboxSize = -1;
     m_iSafeboxLoadTime = 0;
 
     MountSystem::SetMountInventory(GetEntityHandle(), nullptr);
     m_bMountInventoryLoaded = false;
 
-    m_pkMall = nullptr;
     m_iMallLoadTime = 0;
 
     m_posWarp.x = m_posWarp.y = m_posWarp.z = 0;

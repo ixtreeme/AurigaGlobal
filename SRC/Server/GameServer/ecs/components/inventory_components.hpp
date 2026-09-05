@@ -93,14 +93,16 @@ struct QuickSlots {
 };
 
 struct SafeboxRef {
-    CSafebox* safebox { nullptr };
-    CSafebox* mall { nullptr };
+    std::shared_ptr<CSafebox> safebox;
+    std::shared_ptr<CSafebox> mall;
     int safeboxSize { -1 };
     int safeboxLoadTime { 0 };
     int mallLoadTime { 0 };
     bool isOpening { false };
     int32_t openX { -1000 };
     int32_t openY { -1000 };
+    bool closingSafebox { false };
+    bool closingMall { false };
 };
 
 } // namespace ecs

@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include <utility>
 #include <Core/Logging.hpp>
 #include "ecs/systems/PlayerRuntimeSystem.hpp"
 #include <Base/grid.h>
@@ -6,6 +7,7 @@
 #include "safebox.h"
 #include "packet.h"
 #include "ecs/Registry.hpp"
+#include "ecs/components/inventory_components.hpp"
 #include "ecs/systems/ItemSystem.hpp"
 #include "desc_client.h"
 #include "config.h"
@@ -13,6 +15,56 @@
 namespace {
 constexpr int GridWidth = 16;
 constexpr int MaxHeight = SAFEBOX_MAX_NUM / GridWidth;
+
+struct ClosingStorageGuard {
+    entt::entity owner;
+    uint8_t window;
+    ~ClosingStorageGuard() {
+        if (!g_registry.valid(owner)) return;
+        if (auto* refs = g_registry.try_get<ecs::SafeboxRef>(owner))
+            (window == SAFEBOX ? refs->closingSafebox : refs->closingMall) = false;
+    }
+};
+}
+
+namespace SafeboxSystem {
+std::shared_ptr<CSafebox> Get(entt::entity owner, uint8_t window)
+{
+    if (!g_registry.valid(owner) || (window != SAFEBOX && window != MALL)) return {};
+    const auto* refs = g_registry.try_get<ecs::SafeboxRef>(owner);
+    return refs ? (window == SAFEBOX ? refs->safebox : refs->mall) : nullptr;
+}
+
+std::shared_ptr<CSafebox> Open(entt::entity owner, uint8_t window, int height, uint32_t gold)
+{
+    if (!ecs::PlayerRuntime::IsPC(owner) || (window != SAFEBOX && window != MALL)) return {};
+    auto& refs = g_registry.get_or_emplace<ecs::SafeboxRef>(owner);
+    if (window == SAFEBOX ? refs.closingSafebox : refs.closingMall) return {};
+    auto& slot = window == SAFEBOX ? refs.safebox : refs.mall;
+    if (!slot) {
+        auto storage = std::make_shared<CSafebox>(owner, height, gold);
+        storage->SetWindowMode(window);
+        slot = std::move(storage);
+    }
+    return slot;
+}
+
+void Close(entt::entity owner, uint8_t window, bool save)
+{
+    if (!g_registry.valid(owner) || (window != SAFEBOX && window != MALL)) return;
+    auto* refs = g_registry.try_get<ecs::SafeboxRef>(owner);
+    if (!refs) return;
+    bool& closing = window == SAFEBOX ? refs->closingSafebox : refs->closingMall;
+    if (closing) return;
+    closing = true;
+    ClosingStorageGuard guard {owner, window};
+    // A caller may hold a lease through a callback. Unpublish before saving,
+    // then retire contents immediately, without waiting for the last lease.
+    auto storage = std::exchange(window == SAFEBOX ? refs->safebox : refs->mall, {});
+    if (!storage) return;
+    if (save) storage->Save();
+    storage->Close();
+}
 }
 
 CSafebox::CSafebox(entt::entity owner, int iSize, uint32_t dwGold)

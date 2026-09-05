@@ -14744,14 +14744,14 @@ bool CHARACTER::IsValidItemPosition(TItemPos Pos) const
 		return cell < SWITCHBOT_SLOT_COUNT;
 #endif
 	case SAFEBOX:
-		if (nullptr != m_pkSafebox)
-			return m_pkSafebox->IsValidPosition(cell);
+		if (const auto storage = SafeboxSystem::Get(GetEntityHandle(), SAFEBOX))
+			return storage->IsValidPosition(cell);
 		else
 			return false;
 
 	case MALL:
-		if (nullptr != m_pkMall)
-			return m_pkMall->IsValidPosition(cell);
+		if (const auto storage = SafeboxSystem::Get(GetEntityHandle(), MALL))
+			return storage->IsValidPosition(cell);
 		else
 			return false;
 
