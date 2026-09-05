@@ -8900,16 +8900,11 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 		case USE_CHANGE_COSTUME_ATTR:
 		case USE_RESET_COSTUME_ATTR:
 		{
-			LPITEM item2;
-			if (!IsValidItemPosition(DestCell) || !(item2 = GetItem(DestCell)))
+			const entt::entity item2 = ItemSystem::GetItem(GetEntityHandle(), DestCell);
+			if (!IsValidItemPosition(DestCell) || !ItemSystem::IsValidItem(item2))
 				return false;
 
-			if (ItemSystem::IsItemEquipped(item2->GetEntityHandle()))
-			{
-				BuffOnAttr_RemoveBuffsFromItem(item2);
-			}
-
-			if (ITEM_COSTUME != item2->GetType())
+			if (ITEM_COSTUME != ItemSystem::GetItemType(item2))
 			{
 #ifdef TEXTS_IMPROVEMENT
 				ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 396, "");
@@ -8918,7 +8913,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 			}
 
 			{
-				uint8_t bSubType = item2->GetSubType();
+				uint8_t bSubType = ItemSystem::GetItemSubType(item2);
 #ifdef ENABLE_ACCE_SYSTEM
 				if (bSubType == COSTUME_ACCE)
 					return false;
@@ -8930,10 +8925,10 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 #endif
 			}
 
-			if (item2->IsExchanging() || ItemSystem::IsItemEquipped(item2->GetEntityHandle())) // @fixme114
+			if (ItemSystem::IsItemExchanging(item2) || ItemSystem::IsItemEquipped(item2)) // @fixme114
 				return false;
 
-			if (ItemSystem::GetItemAttributeSetIndex(item2->GetEntityHandle()) == -1)
+			if (ItemSystem::GetItemAttributeSetIndex(item2) == -1)
 			{
 #ifdef TEXTS_IMPROVEMENT
 				ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 396, "");
@@ -8941,7 +8936,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 				return false;
 			}
 
-			if (item2->GetAttributeCount() == 0)
+			if (ItemSystem::GetItemAttributeCount(item2) == 0)
 			{
 #ifdef TEXTS_IMPROVEMENT
 				ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 354, "");
@@ -8949,24 +8944,26 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 				return false;
 			}
 
-			switch (item->GetSubType())
+			const uint32_t materialID = ItemSystem::GetItemID(itemEntity);
+			const uint32_t materialVnum = ItemSystem::GetItemOriginalVnum(itemEntity);
+			switch (ItemSystem::GetItemSubType(itemEntity))
 			{
 			case USE_CHANGE_COSTUME_ATTR:
-				if (!ItemSystem::ChangeItemAttributeEcs(item2->GetEntityHandle()))
+				if (!ItemSystem::ChangeItemAttributeWithItemCost(item2, itemEntity))
 					return false;
 				{
 					char buf[21];
-					snprintf(buf, sizeof(buf), "%u", item2->GetID());
-					LogManager::instance().ItemLog(this, item, "CHANGE_COSTUME_ATTR", buf);
+					snprintf(buf, sizeof(buf), "%u", ItemSystem::GetItemID(item2));
+					LogManager::instance().ItemLog(GetPlayerID(), GetX(), GetY(), materialID, "CHANGE_COSTUME_ATTR", buf, GetDesc()->GetHostName(), materialVnum);
 				}
 				break;
 			case USE_RESET_COSTUME_ATTR:
-				ItemSystem::ClearNormalItemAttributes(item2->GetEntityHandle());
-				ItemSystem::AlterItemToMagicItem(item2->GetEntityHandle());
+				if (!ItemSystem::ResetCostumeAttributesWithItemCost(item2, itemEntity))
+					return false;
 				{
 					char buf[21];
-					snprintf(buf, sizeof(buf), "%u", item2->GetID());
-					LogManager::instance().ItemLog(this, item, "RESET_COSTUME_ATTR", buf);
+					snprintf(buf, sizeof(buf), "%u", ItemSystem::GetItemID(item2));
+					LogManager::instance().ItemLog(GetPlayerID(), GetX(), GetY(), materialID, "RESET_COSTUME_ATTR", buf, GetDesc()->GetHostName(), materialVnum);
 				}
 				break;
 			}
@@ -8974,7 +8971,6 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 #ifdef TEXTS_IMPROVEMENT
 			ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 392, "");
 #endif
-			ItemSystem::ConsumeItemEcs(itemEntity);
 			break;
 		}
 

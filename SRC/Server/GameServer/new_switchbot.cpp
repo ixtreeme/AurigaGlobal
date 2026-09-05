@@ -2,25 +2,145 @@
 #include "ecs/systems/PointSystem.hpp"
 #include <Core/Logging.hpp>
 #include "ecs/systems/PlayerRuntimeSystem.hpp"
-#include "ecs/AIHelpers.hpp"
 
 #ifdef ENABLE_SWITCHBOT
 #include "new_switchbot.h"
 #include "desc.h"
-#include "item.h"
 #include "item_manager.h"
 #include "char_manager.h"
 #include "buffer_manager.h"
-#include "char_interface.hpp"
 #include "config.h"
 #include "p2p.h"
 #include "ecs/systems/ItemSystem.hpp"
 #include "ecs/Registry.hpp"
-#include "ecs/EntityFactory.hpp"
-#include "ecs/CharacterAccessors.hpp"
 #ifdef ENABLE_BATTLE_PASS
 #include "battle_pass.h"
 #endif
+
+namespace {
+bool RequiresZodiacChanger(uint32_t vnum)
+{
+#ifdef DISABLE_ZODIAC_ATT
+    return vnum == 12314141;
+#else
+    // Keep the switchbot's existing material rules, which are deliberately
+    // separate from the broader base-apply exceptions used in bonus generation.
+    constexpr uint32_t ranges[][2] = {
+        {19290, 19312}, {19490, 19512}, {19690, 19712}, {19890, 19912},
+        {300, 319}, {1180, 1189}, {2200, 2209}, {3220, 3229},
+        {5160, 5169}, {7300, 7309}, {8500, 8569}, {8640, 8739}
+    };
+    for (const auto& range : ranges)
+        if (vnum >= range[0] && vnum <= range[1])
+            return true;
+    constexpr uint32_t singles[] = {
+        329, 339, 349, 359, 369, 379, 389, 399, 1199, 1209, 1219, 1229,
+        2219, 2229, 2239, 2249, 3239, 3249, 3259, 3269,
+        5179, 5189, 5199, 5209, 7319, 7329, 7339, 7349
+    };
+    return std::find(std::begin(singles), std::end(singles), vnum) != std::end(singles);
+#endif
+}
+
+bool AllowsLimitedChanger(entt::entity item)
+{
+    const auto* proto = ItemSystem::GetItemProto(item);
+    if (!proto)
+        return false;
+    if (proto->bType != ITEM_WEAPON) {
+        if (proto->bType != ITEM_ARMOR)
+            return false;
+        switch (proto->bSubType) {
+            case ARMOR_BODY: case ARMOR_HEAD: case ARMOR_SHIELD: case ARMOR_WRIST:
+            case ARMOR_FOOTS: case ARMOR_NECK: case ARMOR_EAR: break;
+            default: return false;
+        }
+    }
+    for (const auto& limit : proto->aLimits)
+        if (limit.bType == LIMIT_LEVEL && limit.lValue > 30)
+            return false;
+    return true;
+}
+
+entt::entity FindMaterial(entt::entity owner, entt::entity target, uint32_t vnum)
+{
+    const auto findInWindow = [&](uint8_t window, uint16_t size) {
+        for (uint16_t cell = 0; cell < size; ++cell) {
+            const entt::entity material = ItemSystem::GetItem(owner, TItemPos(window, cell));
+            if (ItemSystem::IsValidItem(material) && ItemSystem::GetItemVnum(material) == vnum &&
+                ItemSystem::CanPayItemAttributeCost(target, material, SWITCHBOT_PRICE_AMOUNT))
+                return material;
+        }
+        return entt::entity{entt::null};
+    };
+#ifdef ENABLE_EXTRA_INVENTORY
+    if (const auto material = findInWindow(EXTRA_INVENTORY, EXTRA_INVENTORY_MAX_NUM); material != entt::null)
+        return material;
+#endif
+    return findInWindow(INVENTORY, INVENTORY_MAX_NUM);
+}
+void RecordSwitchProgress(entt::entity owner, uint32_t materialVnum)
+{
+    if (materialVnum == 0)
+        return; // Yang payment is not an item-use mission.
+#ifdef ENABLE_RANKING
+    const int category = materialVnum == 86051 || materialVnum == 88965 ? 13 : 12;
+    ecs::PlayerRuntime::SetRankPoints(owner, category,
+        ecs::PlayerRuntime::GetRankPoints(owner, category) + 1);
+#endif
+#ifdef ENABLE_BATTLE_PASS
+    const uint8_t battlePass = ecs::PlayerRuntime::GetBattlePassId(owner);
+    if (battlePass != 0) {
+        for (const auto mission : {USE_ITEM, USE_ITEM1, USE_ITEM2}) {
+            uint32_t requiredVnum = 0;
+            uint32_t requiredCount = 0;
+            if (CBattlePass::instance().BattlePassMissionGetInfo(battlePass, mission, &requiredVnum, &requiredCount) &&
+                requiredVnum == materialVnum && ecs::PlayerRuntime::GetMissionProgress(owner, mission, battlePass) < requiredCount)
+                ecs::PlayerRuntime::UpdateMissionProgress(owner, mission, battlePass, 1, requiredCount);
+        }
+    }
+#endif
+}
+} // namespace
+
+SwitchbotHelper::Outcome SwitchbotHelper::TrySwitch(entt::entity owner, entt::entity item, uint8_t slot)
+{
+    if (!ecs::PlayerRuntime::IsValid(owner) || !ecs::PlayerRuntime::IsPC(owner) ||
+        slot >= SWITCHBOT_SLOT_COUNT || !ItemSystem::IsValidItem(item) ||
+        ItemSystem::GetItemOwner(item) != owner || ItemSystem::GetItemWindow(item) != SWITCHBOT ||
+        ItemSystem::GetItemCell(item) != slot || ItemSystem::GetItem(owner, TItemPos(SWITCHBOT, slot)) != item ||
+        ItemSystem::IsItemEquipped(item) || ItemSystem::IsItemExchanging(item) || ItemSystem::IsItemLocked(item) ||
+        ItemSystem::GetItemAttributeSetIndex(item) < 0 || ItemSystem::GetItemAttributeCount(item) == 0)
+        return {};
+
+    if (SWITCHBOT_PRICE_TYPE == 2) {
+        if (ecs::PointSystem::GetGold(owner) < SWITCHBOT_PRICE_AMOUNT)
+            return {Result::NoPayment};
+        return {ItemSystem::ChangeItemAttributeWithGoldCost(item, SWITCHBOT_PRICE_AMOUNT)
+            ? Result::Success : Result::RollFailed};
+    }
+    if (SWITCHBOT_PRICE_TYPE != 1)
+        return {};
+
+    const bool zodiac = RequiresZodiacChanger(ItemSystem::GetItemVnum(item));
+    const auto tryMaterial = [&](uint32_t vnum) -> Outcome {
+        const auto material = FindMaterial(owner, item, vnum);
+        if (material == entt::null)
+            return {Result::NoPayment};
+        return {ItemSystem::ChangeItemAttributeWithItemCost(item, material, SWITCHBOT_PRICE_AMOUNT)
+            ? Result::Success : Result::RollFailed, vnum};
+    };
+    if (zodiac)
+        return tryMaterial(86060);
+    for (const auto vnum : c_arSwitchingItems) {
+        if ((vnum == 71151 || vnum == 76023) && !AllowsLimitedChanger(item))
+            continue;
+        const auto outcome = tryMaterial(vnum);
+        if (outcome.result != Result::NoPayment)
+            return outcome;
+    }
+    return {Result::NoPayment};
+}
 
 bool ValidPosition(uint32_t wCell)
 {
@@ -271,9 +391,8 @@ static const char* GetHighAvgDmgFmtByLang(int lang)
 }
 
 // ---
-std::string MakeFullItemLink(entt::entity item, LPCHARACTER pkKiller)
+std::string MakeFullItemLink(entt::entity item, entt::entity killer)
 {
-	const entt::entity killer = pkKiller ? pkKiller->GetEntityHandle() : entt::null;
 	char itemlink[512];
 	int len = 0;
 
@@ -296,14 +415,14 @@ std::string MakeFullItemLink(entt::entity item, LPCHARACTER pkKiller)
 
 	// killer nyelve (fallback: EN)
 	int lang = LANGUAGE_EN;
-	if (pkKiller && ecs::PlayerRuntime::GetDesc(killer))
+	if (ecs::PlayerRuntime::GetDesc(killer))
 		lang = ecs::PlayerRuntime::GetDesc(killer)->GetLanguage();
 
 	const char* fmt = GetHighAvgDmgFmtByLang(lang);
 
 	char szChat[1024];
 	snprintf(szChat, sizeof(szChat), fmt,
-		pkKiller ? ecs::PlayerRuntime::GetName(killer).data() : "Player",
+		ecs::PlayerRuntime::IsValid(killer) ? ecs::PlayerRuntime::GetName(killer).data() : "Player",
 		itemlink,
 		item != entt::null ? ItemSystem::GetItemName(item) : "item");
 
@@ -314,6 +433,15 @@ std::string MakeFullItemLink(entt::entity item, LPCHARACTER pkKiller)
 
 void CSwitchbot::SwitchItems()
 {
+    if (m_isWarping)
+        return;
+    const auto stopSlot = [this](uint8_t slot) {
+        SetActive(slot, false);
+        if (!HasActiveSlots())
+            Stop();
+        else
+            CSwitchbotManager::Instance().SendSwitchbotUpdate(m_table.player_id);
+    };
 	for (uint8_t bSlot = 0; bSlot < SWITCHBOT_SLOT_COUNT; ++bSlot)
 	{
 		if (!m_table.active[bSlot])
@@ -325,22 +453,16 @@ void CSwitchbot::SwitchItems()
 
 		const uint32_t item_id = m_table.items[bSlot];
 
-		const entt::entity itemEntity = ItemSystem::FindItemByID(item_id);
-		if (!ItemSystem::IsValidItem(itemEntity))
-		{
-			continue;
-		}
-
-
-		const TItemTable* itemProto = ItemSystem::GetItemProto(itemEntity);
-		const entt::entity ownerEntity = ItemSystem::GetItemOwnerEntity(itemEntity);
-		LPCHARACTER pkOwner = ecs::LegacyCharOf(ownerEntity);
-		const entt::entity owner = pkOwner ? pkOwner->GetEntityHandle() : entt::null;
-
-		if (!pkOwner)
-		{
-			return;
-		}
+        const entt::entity itemEntity = ItemSystem::FindItemByID(item_id);
+        const entt::entity owner = ItemSystem::GetItemOwner(itemEntity);
+        if (!ItemSystem::IsValidItem(itemEntity) || !ecs::PlayerRuntime::IsValid(owner) ||
+            ecs::PlayerRuntime::GetPlayerID(owner) != m_table.player_id ||
+            ItemSystem::GetItemWindow(itemEntity) != SWITCHBOT || ItemSystem::GetItemCell(itemEntity) != bSlot ||
+            ItemSystem::GetItem(owner, TItemPos(SWITCHBOT, bSlot)) != itemEntity)
+        {
+            stopSlot(bSlot);
+            continue;
+        }
 
 		if (CheckItem(itemEntity, bSlot))
 		{
@@ -428,266 +550,26 @@ void CSwitchbot::SwitchItems()
 		}
 		else
 		{
-			bool stop = true;
-			if (SWITCHBOT_PRICE_TYPE == 1)
-			{
-				uint32_t dwTargetVnum = ItemSystem::GetItemVnum(itemEntity);
-				bool bZodiacItem = (
-#ifdef DISABLE_ZODIAC_ATT
+            const auto outcome = SwitchbotHelper::TrySwitch(owner, itemEntity, bSlot);
+            if (outcome.result == SwitchbotHelper::Result::Success)
+            {
+                RecordSwitchProgress(owner, outcome.materialVnum);
+                SendItemUpdate(owner, bSlot, itemEntity);
+                continue;
+            }
 
-				(dwTargetVnum == 12314141)
-					) ? true : false;
-#else
-									((dwTargetVnum >= 19290) && (dwTargetVnum <= 19312)) ||
-									((dwTargetVnum >= 19490) && (dwTargetVnum <= 19512)) ||
-									((dwTargetVnum >= 19690) && (dwTargetVnum <= 19712)) ||
-									((dwTargetVnum >= 19890) && (dwTargetVnum <= 19912)) ||
-									((dwTargetVnum >= 300) && (dwTargetVnum <= 319)) ||
-									(dwTargetVnum == 329) ||
-									(dwTargetVnum == 339) ||
-									(dwTargetVnum == 349) ||
-									(dwTargetVnum == 359) ||
-									(dwTargetVnum == 369) ||
-									(dwTargetVnum == 379) ||
-									(dwTargetVnum == 389) ||
-									(dwTargetVnum == 399) ||
-									((dwTargetVnum >= 1180) && (dwTargetVnum <= 1189)) ||
-									(dwTargetVnum == 1199) ||
-									(dwTargetVnum == 1209) ||
-									(dwTargetVnum == 1219) ||
-									(dwTargetVnum == 1229) ||
-									((dwTargetVnum >= 2200) && (dwTargetVnum <= 2209)) ||
-									(dwTargetVnum == 2219) ||
-									(dwTargetVnum == 2229) ||
-									(dwTargetVnum == 2239) ||
-									(dwTargetVnum == 2249) ||
-									((dwTargetVnum >= 3220) && (dwTargetVnum <= 3229)) ||
-									(dwTargetVnum == 3239) ||
-									(dwTargetVnum == 3249) ||
-									(dwTargetVnum == 3259) ||
-									(dwTargetVnum == 3269) ||
-									((dwTargetVnum >= 5160) && (dwTargetVnum <= 5169)) ||
-									(dwTargetVnum == 5179) ||
-									(dwTargetVnum == 5189) ||
-									(dwTargetVnum == 5199) ||
-									(dwTargetVnum == 5209) ||
-									((dwTargetVnum >= 7300) && (dwTargetVnum <= 7309)) ||
-									(dwTargetVnum == 7319) ||
-									(dwTargetVnum == 7329) ||
-									(dwTargetVnum == 7339) ||
-									(dwTargetVnum == 7349) ||
-									((dwTargetVnum >= 8500) && (dwTargetVnum <= 8569)) ||
-									((dwTargetVnum >= 8640) && (dwTargetVnum <= 8739))
-									)? true : false;
-#endif
-
-				if (bZodiacItem) {
-					if (ItemSystem::HasItem(ownerEntity, 86060, SWITCHBOT_PRICE_AMOUNT)) {
-						stop = false;
-					}
-
-					const entt::entity priceItemEntity = ItemSystem::FindSpecifyItem(ownerEntity, 86060, true);
-					if (ItemSystem::IsValidItem(priceItemEntity) && !stop)
-					{
-						const uint32_t priceItemVnum = ItemSystem::GetItemVnum(priceItemEntity);
-						if (!ItemSystem::RemoveSpecifyItemEcs(ownerEntity, priceItemVnum, SWITCHBOT_PRICE_AMOUNT))
-							continue;
-#ifdef ENABLE_RANKING
-						pkOwner->SetRankPoints(12, pkOwner->GetRankPoints(12) + 1);
-#endif
-#ifdef ENABLE_BATTLE_PASS
-							uint8_t bBattlePassId = pkOwner->GetBattlePassId();
-						if(bBattlePassId)
-						{
-							uint32_t dwItemVnum, dwUseCount;
-							if(CBattlePass::instance().BattlePassMissionGetInfo(bBattlePassId, USE_ITEM, &dwItemVnum, &dwUseCount))
-							{
-								if(dwItemVnum == priceItemVnum && pkOwner->GetMissionProgress(USE_ITEM, bBattlePassId) < dwUseCount)
-									pkOwner->UpdateMissionProgress(USE_ITEM, bBattlePassId, 1, dwUseCount);
-							}
-
-							if (CBattlePass::instance().BattlePassMissionGetInfo(bBattlePassId, USE_ITEM1, &dwItemVnum, &dwUseCount))
-							{
-								if (dwItemVnum == priceItemVnum && pkOwner->GetMissionProgress(USE_ITEM1, bBattlePassId) < dwUseCount)
-									pkOwner->UpdateMissionProgress(USE_ITEM1, bBattlePassId, 1, dwUseCount);
-							}
-
-							if (CBattlePass::instance().BattlePassMissionGetInfo(bBattlePassId, USE_ITEM2, &dwItemVnum, &dwUseCount))
-							{
-								if (dwItemVnum == priceItemVnum && pkOwner->GetMissionProgress(USE_ITEM2, bBattlePassId) < dwUseCount)
-									pkOwner->UpdateMissionProgress(USE_ITEM2, bBattlePassId, 1, dwUseCount);
-							}
-						}
-#endif
-						ItemSystem::ChangeItemAttributeEcs(itemEntity);
-						SendItemUpdate(owner, bSlot, itemEntity);
-
-
-
-						continue;
-					}
-				} else {
-					for (const auto& itemVnum : c_arSwitchingItems)
-					{
-						//CHECK_LIMITED_ITEM START
-						if (itemVnum == 71151 || itemVnum == 76023)
-						{
-							if ((ItemSystem::GetItemType(itemEntity) == ITEM_WEAPON) || ((ItemSystem::GetItemType(itemEntity) == ITEM_ARMOR && ItemSystem::GetItemSubType(itemEntity) == ARMOR_BODY)
-#define __USE_ADD_WITH_ALL_ITEMS__
-#ifdef __USE_ADD_WITH_ALL_ITEMS__
-								|| (ItemSystem::GetItemType(itemEntity) == ITEM_ARMOR && ItemSystem::GetItemSubType(itemEntity) == ARMOR_HEAD)
-								|| (ItemSystem::GetItemType(itemEntity) == ITEM_ARMOR && ItemSystem::GetItemSubType(itemEntity) == ARMOR_SHIELD)
-								|| (ItemSystem::GetItemType(itemEntity) == ITEM_ARMOR && ItemSystem::GetItemSubType(itemEntity) == ARMOR_WRIST)
-								|| (ItemSystem::GetItemType(itemEntity) == ITEM_ARMOR && ItemSystem::GetItemSubType(itemEntity) == ARMOR_FOOTS)
-								|| (ItemSystem::GetItemType(itemEntity) == ITEM_ARMOR && ItemSystem::GetItemSubType(itemEntity) == ARMOR_NECK)
-								|| (ItemSystem::GetItemType(itemEntity) == ITEM_ARMOR && ItemSystem::GetItemSubType(itemEntity) == ARMOR_EAR)
-#endif
-								))
-							{
-								bool bCanUse = true;
-								for (int i = 0; i < ITEM_LIMIT_MAX_NUM; ++i)
-								{
-									if (itemProto && itemProto->aLimits[i].bType == LIMIT_LEVEL && itemProto->aLimits[i].lValue > 30)
-									{
-										bCanUse = false;
-										break;
-									}
-								}
-								if (false == bCanUse)
-								{
-									continue;
-								}
-								else
-								{
-									if (ItemSystem::HasItem(ownerEntity, itemVnum, SWITCHBOT_PRICE_AMOUNT))
-									{
-										stop = false;
-									}
-
-									const entt::entity priceItemEntity = ItemSystem::FindSpecifyItem(ownerEntity, itemVnum, true);
-									if (ItemSystem::IsValidItem(priceItemEntity) && !stop)
-									{
-										const uint32_t priceItemVnum = ItemSystem::GetItemVnum(priceItemEntity);
-						if (!ItemSystem::RemoveSpecifyItemEcs(ownerEntity, priceItemVnum, SWITCHBOT_PRICE_AMOUNT))
-							continue;
-#ifdef ENABLE_RANKING
-										if (priceItemVnum == 86051 || priceItemVnum == 88965)
-											pkOwner->SetRankPoints(13, pkOwner->GetRankPoints(13) + 1);
-										else
-											pkOwner->SetRankPoints(12, pkOwner->GetRankPoints(12) + 1);
-#endif
-
-#ifdef ENABLE_BATTLE_PASS
-										uint8_t bBattlePassId = pkOwner->GetBattlePassId();
-										if(bBattlePassId)
-										{
-											uint32_t dwItemVnum, dwUseCount;
-											if(CBattlePass::instance().BattlePassMissionGetInfo(bBattlePassId, USE_ITEM, &dwItemVnum, &dwUseCount))
-											{
-												if(dwItemVnum == priceItemVnum && pkOwner->GetMissionProgress(USE_ITEM, bBattlePassId) < dwUseCount)
-													pkOwner->UpdateMissionProgress(USE_ITEM, bBattlePassId, 1, dwUseCount);
-											}
-
-											if (CBattlePass::instance().BattlePassMissionGetInfo(bBattlePassId, USE_ITEM1, &dwItemVnum, &dwUseCount))
-											{
-												if (dwItemVnum == priceItemVnum && pkOwner->GetMissionProgress(USE_ITEM1, bBattlePassId) < dwUseCount)
-													pkOwner->UpdateMissionProgress(USE_ITEM1, bBattlePassId, 1, dwUseCount);
-											}
-
-											if (CBattlePass::instance().BattlePassMissionGetInfo(bBattlePassId, USE_ITEM2, &dwItemVnum, &dwUseCount))
-											{
-												if (dwItemVnum == priceItemVnum && pkOwner->GetMissionProgress(USE_ITEM2, bBattlePassId) < dwUseCount)
-													pkOwner->UpdateMissionProgress(USE_ITEM2, bBattlePassId, 1, dwUseCount);
-											}
-										}
-#endif
-										ItemSystem::ChangeItemAttributeEcs(itemEntity);
-										SendItemUpdate(owner, bSlot, itemEntity);
-										break;
-									}
-								}
-							}
-							else
-							{
-								continue;
-							}
-						}
-						//CHECK_LIMITED_ITEM END
-
-						if (ItemSystem::HasItem(ownerEntity, itemVnum, SWITCHBOT_PRICE_AMOUNT))
-						{
-							stop = false;
-						}
-						const entt::entity priceItemEntity = ItemSystem::FindSpecifyItem(ownerEntity, itemVnum, true);
-						if (ItemSystem::IsValidItem(priceItemEntity) && !stop)
-						{
-							const uint32_t priceItemVnum = ItemSystem::GetItemVnum(priceItemEntity);
-						if (!ItemSystem::RemoveSpecifyItemEcs(ownerEntity, priceItemVnum, SWITCHBOT_PRICE_AMOUNT))
-							continue;
-#ifdef ENABLE_RANKING
-							if (priceItemVnum == 86051 || priceItemVnum == 88965)
-								pkOwner->SetRankPoints(13, pkOwner->GetRankPoints(13) + 1);
-							else
-								pkOwner->SetRankPoints(12, pkOwner->GetRankPoints(12) + 1);
-#endif
-
-#ifdef ENABLE_BATTLE_PASS
-							uint8_t bBattlePassId = pkOwner->GetBattlePassId();
-							if(bBattlePassId)
-							{
-								uint32_t dwItemVnum, dwUseCount;
-								if(CBattlePass::instance().BattlePassMissionGetInfo(bBattlePassId, USE_ITEM, &dwItemVnum, &dwUseCount))
-								{
-									if(dwItemVnum == priceItemVnum && pkOwner->GetMissionProgress(USE_ITEM, bBattlePassId) < dwUseCount)
-										pkOwner->UpdateMissionProgress(USE_ITEM, bBattlePassId, 1, dwUseCount);
-								}
-
-								if (CBattlePass::instance().BattlePassMissionGetInfo(bBattlePassId, USE_ITEM1, &dwItemVnum, &dwUseCount))
-								{
-									if (dwItemVnum == priceItemVnum && pkOwner->GetMissionProgress(USE_ITEM1, bBattlePassId) < dwUseCount)
-										pkOwner->UpdateMissionProgress(USE_ITEM1, bBattlePassId, 1, dwUseCount);
-								}
-
-								if (CBattlePass::instance().BattlePassMissionGetInfo(bBattlePassId, USE_ITEM2, &dwItemVnum, &dwUseCount))
-								{
-									if (dwItemVnum == priceItemVnum && pkOwner->GetMissionProgress(USE_ITEM2, bBattlePassId) < dwUseCount)
-										pkOwner->UpdateMissionProgress(USE_ITEM2, bBattlePassId, 1, dwUseCount);
-								}
-							}
-#endif
-							ItemSystem::ChangeItemAttributeEcs(itemEntity);
-							SendItemUpdate(owner, bSlot, itemEntity);
-							break;
-						}
-					}
-				}
-			}
-			else if (SWITCHBOT_PRICE_TYPE == 2)
-			{
-				if (ecs::PointSystem::GetGold(owner) >= SWITCHBOT_PRICE_AMOUNT)
-				{
-					stop = false;
-				}
-			}
-
-			if (stop)
-			{
-				SetActive(bSlot, false);
-				if (!HasActiveSlots()) {
-					Stop();
-				} else {
-					CSwitchbotManager::Instance().SendSwitchbotUpdate(ecs::PlayerRuntime::GetPlayerID(owner));
-				}
-
+            stopSlot(bSlot);
+            if (outcome.result == SwitchbotHelper::Result::NoPayment)
+            {
 #ifdef TEXTS_IMPROVEMENT
-				if (SWITCHBOT_PRICE_TYPE == 1) {
-					ecs::ChatSystem::SendNew(owner, CHAT_TYPE_INFO, 754, "");
-				} else {
-					ecs::ChatSystem::SendNew(owner, CHAT_TYPE_INFO, 755, "");
-				}
+                ecs::ChatSystem::SendNew(owner, CHAT_TYPE_INFO, SWITCHBOT_PRICE_TYPE == 1 ? 754 : 755, "");
 #endif
-				return;
-			}
+            }
+            else if (outcome.result == SwitchbotHelper::Result::RollFailed)
+            {
+                LOG_ERROR("Switchbot reroll failed: player {} item {} slot {}; attributes and payment unchanged",
+                    m_table.player_id, item_id, bSlot);
+            }
 		}
 	}
 }
@@ -736,10 +618,9 @@ bool CSwitchbot::CheckItem(entt::entity item, uint8_t slot)
 						lastNoticedTime[itemID] = now;
 
 						const entt::entity ownerEntity = ItemSystem::GetItemOwnerEntity(item);
-						LPCHARACTER pkOwner = ecs::LegacyCharOf(ownerEntity);
-						if (pkOwner)
+						if (ecs::PlayerRuntime::IsValid(ownerEntity))
 						{
-							std::string chatMsg = MakeFullItemLink(item, pkOwner);
+							std::string chatMsg = MakeFullItemLink(item, ownerEntity);
 							BroadcastNotice(chatMsg.c_str());
 						}
 					}
@@ -872,7 +753,6 @@ void CSwitchbotManager::Initialize()
 {
 	CSwitchbot* pkSwitchbot = m_map_Switchbot.second;
 	if (pkSwitchbot != nullptr) {
-		pkSwitchbot->~CSwitchbot();
 		delete pkSwitchbot;
 		pkSwitchbot = nullptr;
 	}

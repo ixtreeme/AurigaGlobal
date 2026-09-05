@@ -2,13 +2,24 @@
 #include "../../SRC/Server/GameServer/ecs/systems/ItemSystem.hpp"
 #include "../../SRC/Server/GameServer/ecs/systems/NetworkSyncSystem.hpp"
 #include "../../SRC/Server/GameServer/ecs/systems/PlayerRuntimeSystem.hpp"
+#include "../../SRC/Server/GameServer/ecs/systems/PointSystem.hpp"
+#include "../../SRC/Server/GameServer/ecs/systems/SocialSystem.hpp"
+#include "../../SRC/Server/GameServer/new_switchbot.h"
 #include "../../SRC/Server/GameServer/ecs/Registry.hpp"
 #include "../../SRC/Server/GameServer/ecs/components/item_proto_components.hpp"
 #include "../../SRC/Server/GameServer/ecs/detail/ItemAttributeRules.hpp"
 #include "../../SRC/Server/GameServer/constants.h"
 #include "../../SRC/Server/GameServer/log.h"
+#include "../../SRC/Server/GameServer/char.h"
+#include "../../SRC/Server/GameServer/char_manager.h"
+#include "../../SRC/Server/GameServer/desc.h"
+#include "../../SRC/Server/GameServer/buffer_manager.h"
+#include "../../SRC/Server/GameServer/p2p.h"
+#include "../../SRC/Server/GameServer/battle_pass.h"
+#include <Core/Logging.hpp>
 #include <stdexcept>
 #include <iostream>
+#include <cstdlib>
 
 entt::registry g_registry;
 TItemAttrMap g_map_itemAttr;
@@ -22,13 +33,82 @@ int saves = 0;
 int updates = 0;
 int randomCalls = 0;
 int checks = 0;
+int payments = 0;
+bool rejectPayment = false;
+bool rejectGoldPayment = false;
+entt::entity watchedItem = entt::null;
+std::array<TPlayerItemAttribute, ITEM_ATTRIBUTE_MAX_NUM> beforePayment{};
+std::map<std::tuple<entt::entity, uint8_t, uint16_t>, entt::entity> inventory;
+struct TestPlayer { int64_t gold = 100; };
 void Check(bool condition, const char* message)
 {
     ++checks;
     if (!condition)
         throw std::runtime_error(message);
 }
+
+bool EqualAttributes(const auto& left, const auto& right)
+{
+    for (int i = 0; i < ITEM_ATTRIBUTE_MAX_NUM; ++i)
+        if (left[i].bType != right[i].bType || left[i].sValue != right[i].sValue)
+            return false;
+    return true;
 }
+
+void CheckPaymentOrder()
+{
+    Check(watchedItem != entt::null && g_registry.valid(watchedItem), "payment has no live target");
+    Check(EqualAttributes(g_registry.get<ecs::ItemAttributes>(watchedItem).attrs, beforePayment),
+        "attributes changed before payment succeeded");
+    Check(saves == 0 && updates == 0, "partial attributes published before payment");
+}
+
+[[noreturn]] void UnexpectedSwitchbotService()
+{
+    std::cerr << "Unexpected timer/UI/manager service call in a transaction test\n";
+    std::abort();
+}
+}
+
+// The entire production new_switchbot.cpp is compiled, not a copied test-only
+// slice. These dependencies belong to the timer/UI/manager paths outside the
+// transaction tests; fail immediately if the tests accidentally enter them.
+int passes_per_sec = 25;
+std::shared_ptr<spdlog::logger> logging::GetErrorLogger() { UnexpectedSwitchbotService(); }
+void intrusive_ptr_add_ref(EVENT*) { UnexpectedSwitchbotService(); }
+void intrusive_ptr_release(EVENT*) { UnexpectedSwitchbotService(); }
+LPEVENT event_create_ex(TEVENTFUNC, event_info_data*, int32_t) { UnexpectedSwitchbotService(); }
+void event_cancel(LPEVENT*) { UnexpectedSwitchbotService(); }
+#ifdef TEXTS_IMPROVEMENT
+void ecs::ChatSystem::SendNew(entt::entity, uint8_t, uint32_t, const char*, ...) { UnexpectedSwitchbotService(); }
+#endif
+uint32_t ecs::PlayerRuntime::GetPlayerID(entt::entity) { UnexpectedSwitchbotService(); }
+std::string_view ecs::PlayerRuntime::GetName(entt::entity) { UnexpectedSwitchbotService(); }
+#ifdef ENABLE_BATTLE_PASS
+uint8_t ecs::PlayerRuntime::GetBattlePassId(entt::entity) { UnexpectedSwitchbotService(); }
+uint32_t ecs::PlayerRuntime::GetMissionProgress(entt::entity, uint32_t, uint32_t) { UnexpectedSwitchbotService(); }
+bool ecs::PlayerRuntime::UpdateMissionProgress(entt::entity, uint32_t, uint32_t, uint32_t, uint32_t, bool) { UnexpectedSwitchbotService(); }
+bool CBattlePass::BattlePassMissionGetInfo(uint8_t, uint8_t, uint32_t*, uint32_t*) { UnexpectedSwitchbotService(); }
+#endif
+#ifdef ENABLE_RANKING
+int64_t ecs::PlayerRuntime::GetRankPoints(entt::entity, int) { UnexpectedSwitchbotService(); }
+bool ecs::PlayerRuntime::SetRankPoints(entt::entity, int, int64_t) { UnexpectedSwitchbotService(); }
+#endif
+void DESC::BufferedPacket(const void*, int) { UnexpectedSwitchbotService(); }
+void DESC::Packet(const void*, int) { UnexpectedSwitchbotService(); }
+void BroadcastNotice(const char*, bool) { UnexpectedSwitchbotService(); }
+TEMP_BUFFER::TEMP_BUFFER(int, bool) { UnexpectedSwitchbotService(); }
+TEMP_BUFFER::~TEMP_BUFFER() = default; // The fail-fast constructor never creates a buffer.
+const void* TEMP_BUFFER::read_peek() { UnexpectedSwitchbotService(); }
+void TEMP_BUFFER::write(const void*, int) { UnexpectedSwitchbotService(); }
+int TEMP_BUFFER::size() { UnexpectedSwitchbotService(); }
+entt::entity CHARACTER_MANAGER::FindEntityByPID(uint32_t) { UnexpectedSwitchbotService(); }
+void P2P_MANAGER::Send(const void*, int, LPDESC) { UnexpectedSwitchbotService(); }
+entt::entity ItemSystem::FindItemByID(uint32_t) { UnexpectedSwitchbotService(); }
+const char* ItemSystem::GetItemName(entt::entity) { UnexpectedSwitchbotService(); }
+entt::entity ItemSystem::GetItemOwnerEntity(entt::entity) { UnexpectedSwitchbotService(); }
+int ItemSystem::GetItemAttributeType(entt::entity, int) { UnexpectedSwitchbotService(); }
+int ItemSystem::GetItemAttributeValue(entt::entity, int) { UnexpectedSwitchbotService(); }
 
 // Deterministic I/O doubles. The system under test never constructs CItem or
 // CHARACTER, and fixtures deliberately contain no LegacyItemPtr component.
@@ -42,6 +122,22 @@ float gauss_random(float, float) { return 4.0f; }
 void LogManager::ItemLog(uint32_t, uint32_t, uint32_t, uint32_t, const char*, const char*, const char*, uint32_t) {}
 void LogManager::ItemLogEntity(entt::entity, entt::entity, const char*, const char*) {}
 LPDESC ecs::PlayerRuntime::GetDesc(entt::entity) { return nullptr; }
+bool ecs::PlayerRuntime::IsValid(entt::entity e) { return e != entt::null && g_registry.valid(e); }
+bool ecs::PlayerRuntime::IsPC(entt::entity e) { return IsValid(e) && g_registry.all_of<TestPlayer>(e); }
+CShop* ecs::SocialSystem::GetMyShop(entt::entity) { return nullptr; }
+int64_t ecs::PointSystem::GetGold(entt::entity e) { return g_registry.get<TestPlayer>(e).gold; }
+void ecs::PointSystem::Change(entt::entity e, uint8_t type, int64_t amount, bool, bool
+#ifdef __ENABLE_BLOCK_EXP__
+    , bool
+#endif
+)
+{
+    CheckPaymentOrder();
+    Check(type == POINT_GOLD && amount < 0, "unexpected currency operation");
+    ++payments;
+    if (!rejectGoldPayment)
+        g_registry.get<TestPlayer>(e).gold += amount;
+}
 void ecs::ItemNetworkSystem::SendItemUpdate(entt::registry&, entt::entity) { ++updates; }
 
 namespace ItemSystem {
@@ -60,7 +156,53 @@ uint32_t GetItemWearFlags(entt::entity item) { const auto* p = GetItemProto(item
 uint32_t GetItemVnum(entt::entity item) { return g_registry.get<ecs::ItemIdentity>(item).vnum; }
 uint32_t GetItemOriginalVnum(entt::entity item) { return GetItemVnum(item); }
 uint32_t GetItemID(entt::entity item) { return g_registry.get<ecs::ItemIdentity>(item).id; }
-entt::entity GetItemOwner(entt::entity) { return entt::null; }
+entt::entity GetItemOwner(entt::entity item)
+{
+    const auto* owner = g_registry.try_get<ecs::ItemOwner>(item);
+    return owner ? owner->owner : entt::entity{entt::null};
+}
+entt::entity GetItem(entt::entity owner, TItemPos pos)
+{
+    const auto found = inventory.find({owner, pos.window_type, pos.cell});
+    return found != inventory.end() ? found->second : entt::entity{entt::null};
+}
+uint8_t GetItemWindow(entt::entity item) { return g_registry.get<ecs::ItemLocation>(item).window; }
+uint16_t GetItemCell(entt::entity item) { return g_registry.get<ecs::ItemLocation>(item).cell; }
+uint32_t GetItemCount(entt::entity item) { return g_registry.get<ecs::ItemCount>(item).count; }
+int GetItemAttributeCount(entt::entity item)
+{
+    return ecs::item_attributes::Count(g_registry.get<ecs::ItemAttributes>(item).attrs, 0, ITEM_ATTRIBUTE_NORM_NUM);
+}
+bool IsItemEquipped(entt::entity item)
+{
+    const auto* equipped = g_registry.try_get<ecs::ItemEquipped>(item);
+    return equipped && equipped->equipped;
+}
+bool IsItemExchanging(entt::entity item)
+{
+    const auto* flags = g_registry.try_get<ecs::ItemFlags>(item);
+    return flags && flags->exchanging;
+}
+bool IsItemLocked(entt::entity item)
+{
+    const auto* flags = g_registry.try_get<ecs::ItemFlags>(item);
+    return flags && flags->isLocked;
+}
+bool ConsumeItemEcs(entt::entity item, uint32_t amount)
+{
+    CheckPaymentOrder();
+    ++payments;
+    if (rejectPayment)
+        return false;
+    Check(IsValidItem(item) && amount > 0 && GetItemCount(item) >= amount, "invalid material debit");
+    if (GetItemCount(item) == amount) {
+        inventory.erase({GetItemOwner(item), GetItemWindow(item), GetItemCell(item)});
+        g_registry.destroy(item);
+    } else {
+        g_registry.get<ecs::ItemCount>(item).count -= static_cast<int>(amount);
+    }
+    return true;
+}
 uint32_t GetItemSocket(entt::entity, int) { return 0; }
 TItemExtraProto* GetItemExtraProto(entt::entity item)
 {
@@ -94,6 +236,10 @@ struct Fixture {
         g_map_itemAttr.clear();
         g_map_itemRare.clear();
         saves = updates = randomCalls = 0;
+        payments = 0;
+        rejectPayment = rejectGoldPayment = false;
+        watchedItem = entt::null;
+        inventory.clear();
         proto.bType = ITEM_WEAPON;
         proto.bSubType = WEAPON_SWORD;
         item = g_registry.create();
@@ -115,6 +261,43 @@ struct Fixture {
                 row.lValues[level] = static_cast<int32_t>(10 + level);
             (rare ? g_map_itemRare : g_map_itemAttr).emplace(i, row);
         }
+    }
+};
+
+struct PaidFixture : Fixture {
+    entt::entity owner;
+    entt::entity material;
+    PaidFixture()
+    {
+        owner = g_registry.create();
+        g_registry.emplace<TestPlayer>(owner);
+        Place(item, SWITCHBOT, 0);
+        material = Material(c_arSwitchingItems[0], 2, 0);
+        Rows(5);
+        Attrs()[0] = {20, 200};
+        Attrs()[1] = {21, 300};
+        Watch();
+    }
+    void Place(entt::entity e, uint8_t window, uint16_t cell)
+    {
+        std::erase_if(inventory, [e](const auto& entry) { return entry.second == e; });
+        g_registry.emplace_or_replace<ecs::ItemOwner>(e, ecs::ItemOwner{owner});
+        g_registry.emplace_or_replace<ecs::ItemLocation>(e, ecs::ItemLocation{window, cell});
+        inventory[{owner, window, cell}] = e;
+    }
+    entt::entity Material(uint32_t vnum, int count, uint16_t cell)
+    {
+        const auto e = g_registry.create();
+        g_registry.emplace<ecs::ItemIdentity>(e, ecs::ItemIdentity{uint32_t(100 + cell), vnum, vnum});
+        g_registry.emplace<ecs::ItemCount>(e, ecs::ItemCount{count});
+        Place(e, INVENTORY, cell);
+        return e;
+    }
+    void Watch()
+    {
+        watchedItem = item;
+        beforePayment = Attrs();
+        saves = updates = payments = 0;
     }
 };
 
@@ -268,6 +451,194 @@ void ProtoAndCostumeRules()
     Check(ItemSystem::SetItemForceAttributeEcs(f.item, 6, 2, -30), "signed force attribute failed");
     Check(f.Attrs()[6].sValue == -30 && saves == 1 && updates == 1, "force write did not update client and save");
 }
+
+void PaidRerollTransactions()
+{
+    PaidFixture f;
+    g_map_itemAttr.erase(2);
+    g_map_itemAttr.erase(3);
+    g_map_itemAttr.erase(4);
+    g_map_itemAttr.erase(5);
+    Check(!ItemSystem::ChangeItemAttributeWithItemCost(f.item, f.material), "incomplete paid roll accepted");
+    Check(payments == 0 && ItemSystem::GetItemCount(f.material) == 2 && EqualAttributes(f.Attrs(), beforePayment),
+        "failed preparation consumed material or changed bonuses");
+    f.Rows(5);
+    rejectPayment = true;
+    Check(!ItemSystem::ChangeItemAttributeWithItemCost(f.item, f.material), "failed payment accepted");
+    Check(payments == 1 && saves == 0 && updates == 0 && EqualAttributes(f.Attrs(), beforePayment),
+        "failed payment published a reroll");
+    rejectPayment = false;
+    f.Watch();
+    Check(ItemSystem::ChangeItemAttributeWithItemCost(f.item, f.material), "paid reroll failed");
+    Check(payments == 1 && ItemSystem::GetItemCount(f.material) == 1 && saves == 1 && updates == 1,
+        "paid reroll did not charge and publish exactly once");
+    f.Watch();
+    Check(ItemSystem::ChangeItemAttributeWithItemCost(f.item, f.material), "last material failed");
+    Check(!g_registry.valid(f.material) && g_registry.valid(f.item) && saves == 1 && updates == 1,
+        "last-unit consumption invalidated target or missed commit");
+    f.Watch();
+    Check(!ItemSystem::ChangeItemAttributeWithItemCost(f.item, f.material) && payments == 0,
+        "stale material was reused");
+}
+
+void PaymentValidation()
+{
+    PaidFixture f;
+    Check(!ItemSystem::CanPayItemAttributeCost(f.item, f.item), "target accepted as material");
+    Check(!ItemSystem::CanPayItemAttributeCost(f.item, f.material, 0), "zero cost accepted");
+    Check(!ItemSystem::CanPayItemAttributeCost(f.item, f.material, 3), "material stack underflow accepted");
+    g_registry.get<ecs::ItemCount>(f.material).count = -1;
+    Check(!ItemSystem::CanPayItemAttributeCost(f.item, f.material), "negative stack wrapped into an affordable count");
+    g_registry.get<ecs::ItemCount>(f.material).count = 2;
+    auto& flags = g_registry.emplace<ecs::ItemFlags>(f.material);
+    flags.exchanging = true;
+    Check(!ItemSystem::ChangeItemAttributeWithItemCost(f.item, f.material), "exchanging material consumed");
+    flags.exchanging = false;
+    flags.isLocked = true;
+    Check(!ItemSystem::CanPayItemAttributeCost(f.item, f.material), "locked material accepted");
+    flags.isLocked = false;
+    auto& equipped = g_registry.emplace<ecs::ItemEquipped>(f.item);
+    equipped.equipped = true;
+    Check(!ItemSystem::ChangeItemAttributeWithItemCost(f.item, f.material), "equipped target changed");
+    equipped.equipped = false;
+    const auto stranger = g_registry.create();
+    g_registry.get<ecs::ItemOwner>(f.material).owner = stranger;
+    Check(!ItemSystem::CanPayItemAttributeCost(f.item, f.material), "foreign material accepted");
+    g_registry.get<ecs::ItemOwner>(f.material).owner = f.owner;
+    inventory.erase({f.owner, INVENTORY, 0});
+    Check(!ItemSystem::CanPayItemAttributeCost(f.item, f.material), "detached material accepted");
+    Check(payments == 0 && saves == 0 && updates == 0, "invalid payment caused side effects");
+    f.Place(f.material, INVENTORY, 0);
+    g_registry.destroy(f.owner);
+    Check(!ItemSystem::ChangeItemAttributeWithItemCost(f.item, f.material), "stale owner accepted");
+}
+
+void GoldTransactions()
+{
+    PaidFixture f;
+    Check(!ItemSystem::ChangeItemAttributeWithGoldCost(f.item, 101), "insufficient yang accepted");
+    Check(!ItemSystem::ChangeItemAttributeWithGoldCost(f.item, 0), "free yang reroll accepted");
+    Check(!ItemSystem::ChangeItemAttributeWithGoldCost(f.item, -1), "negative price accepted");
+    g_map_itemAttr.clear();
+    Check(!ItemSystem::ChangeItemAttributeWithGoldCost(f.item, 10), "invalid roll charged yang");
+    Check(payments == 0 && ecs::PointSystem::GetGold(f.owner) == 100, "failed preparation changed wallet");
+    f.Rows(5);
+    rejectGoldPayment = true;
+    Check(!ItemSystem::ChangeItemAttributeWithGoldCost(f.item, 10), "rejected wallet debit accepted");
+    Check(saves == 0 && updates == 0 && EqualAttributes(f.Attrs(), beforePayment), "rejected debit changed attributes");
+    rejectGoldPayment = false;
+    f.Watch();
+    Check(ItemSystem::ChangeItemAttributeWithGoldCost(f.item, 100), "exact yang payment failed");
+    Check(ecs::PointSystem::GetGold(f.owner) == 0 && payments == 1 && saves == 1 && updates == 1,
+        "yang debit and commit were not applied exactly once");
+}
+
+void CostumeResetTransactions()
+{
+#ifdef ENABLE_ATTR_COSTUMES
+    PaidFixture f;
+    f.proto.bType = ITEM_COSTUME;
+    f.proto.bSubType = COSTUME_BODY;
+    f.Attrs()[5] = {40, 400};
+    f.Attrs()[6] = {41, 500};
+    f.Watch();
+    g_map_itemAttr.clear();
+    f.Rows(2);
+    Check(!ItemSystem::ResetCostumeAttributesWithItemCost(f.item, f.material), "partial costume reset accepted");
+    Check(EqualAttributes(f.Attrs(), beforePayment) && saves == 0 && updates == 0 && payments == 0,
+        "failed reset cleared original bonuses or consumed reset item");
+    f.Rows(5);
+    rejectPayment = true;
+    Check(!ItemSystem::ResetCostumeAttributesWithItemCost(f.item, f.material), "unpaid costume reset accepted");
+    Check(EqualAttributes(f.Attrs(), beforePayment) && saves == 0 && updates == 0,
+        "rejected reset payment changed attributes");
+    rejectPayment = false;
+    f.Watch();
+    g_registry.get<ecs::ItemCount>(f.material).count = 1;
+    Check(ItemSystem::ResetCostumeAttributesWithItemCost(f.item, f.material), "costume reset failed");
+    Check(ItemSystem::GetItemAttributeCount(f.item) == 3 && f.Attrs()[0].sValue == 19 && f.Attrs()[1].sValue == 15,
+        "costume reset changed three-bonus level rules");
+    Check(f.Attrs()[5].sValue == 400 && f.Attrs()[6].sValue == 500 && !g_registry.valid(f.material),
+        "costume reset damaged rare bonuses or failed to consume last material");
+    Check(saves == 1 && updates == 1 && payments == 1, "costume reset published intermediate empty attributes");
+    f.material = f.Material(39028, 2, 0);
+    f.Attrs()[2] = {30, 777};
+    g_registry.emplace<ecs::ItemLockedAttribute>(f.item, ecs::ItemLockedAttribute{2});
+    f.Watch();
+    Check(ItemSystem::ResetCostumeAttributesWithItemCost(f.item, f.material), "locked costume reset failed");
+    Check(f.Attrs()[2].bType == 30 && f.Attrs()[2].sValue == 777, "reset lost locked slot");
+    f.proto.bType = ITEM_WEAPON;
+    f.Watch();
+    Check(!ItemSystem::ResetCostumeAttributesWithItemCost(f.item, f.material) && payments == 0,
+        "costume reset accepted weapon");
+#endif
+}
+
+void SwitchbotTransactions()
+{
+#if defined(ENABLE_SWITCHBOT)
+    using Result = SwitchbotHelper::Result;
+    PaidFixture f;
+    const auto stranger = g_registry.create();
+    g_registry.emplace<TestPlayer>(stranger);
+    Check(SwitchbotHelper::TrySwitch(stranger, f.item, 0).result == Result::InvalidTarget, "switchbot accepted foreign target");
+    Check(SwitchbotHelper::TrySwitch(f.owner, f.item, 1).result == Result::InvalidTarget, "switchbot accepted wrong slot");
+    Check(SwitchbotHelper::TrySwitch(f.owner, f.item, SWITCHBOT_SLOT_COUNT).result == Result::InvalidTarget, "switchbot slot overflow");
+    inventory.erase({f.owner, SWITCHBOT, 0});
+    Check(SwitchbotHelper::TrySwitch(f.owner, f.item, 0).result == Result::InvalidTarget, "switchbot accepted detached target");
+    f.Place(f.item, SWITCHBOT, 0);
+    g_map_itemAttr.clear();
+    Check(SwitchbotHelper::TrySwitch(f.owner, f.item, 0).result == Result::RollFailed, "switchbot ignored failed reroll");
+    Check(payments == 0 && ItemSystem::GetItemCount(f.material) == 2, "switchbot consumed item for failed roll");
+    f.Rows(5);
+    const auto outcome = SwitchbotHelper::TrySwitch(f.owner, f.item, 0);
+    Check(outcome.result == Result::Success && outcome.materialVnum == c_arSwitchingItems[0], "switchbot transaction failed");
+    Check(payments == 1 && saves == 1 && updates == 1, "switchbot charged or committed more than once");
+    f.Watch();
+    g_registry.get<ecs::ItemCount>(f.material).count = 0;
+    Check(SwitchbotHelper::TrySwitch(f.owner, f.item, 0).result == Result::NoPayment && payments == 0, "empty material stack accepted");
+
+    const auto limited = f.Material(71151, 2, 1);
+    f.proto.aLimits[0] = {LIMIT_LEVEL, 31};
+    Check(SwitchbotHelper::TrySwitch(f.owner, f.item, 0).result == Result::NoPayment, "level-limited changer used above level 30");
+    f.proto.aLimits[0].lValue = 30;
+    Check(SwitchbotHelper::TrySwitch(f.owner, f.item, 0).result == Result::Success && ItemSystem::GetItemCount(limited) == 1,
+        "level-30 limited changer rejected");
+    f.Watch();
+#ifdef DISABLE_ZODIAC_ATT
+    g_registry.get<ecs::ItemIdentity>(f.item).vnum = 12314141;
+#else
+    g_registry.get<ecs::ItemIdentity>(f.item).vnum = 300;
+#endif
+    Check(SwitchbotHelper::TrySwitch(f.owner, f.item, 0).result == Result::NoPayment, "zodiac accepted normal changer");
+    const auto zodiac = f.Material(86060, 1, 2);
+    const auto zodiacOutcome = SwitchbotHelper::TrySwitch(f.owner, f.item, 0);
+    Check(zodiacOutcome.result == Result::Success && zodiacOutcome.materialVnum == 86060 && !g_registry.valid(zodiac),
+        "zodiac payment or destroyed-material ID lost");
+    f.Watch();
+    g_registry.destroy(f.item);
+    Check(SwitchbotHelper::TrySwitch(f.owner, f.item, 0).result == Result::InvalidTarget && payments == 0, "stale switchbot entity accepted");
+#endif
+}
+
+void SwitchbotMaterialSelection()
+{
+#ifdef ENABLE_SWITCHBOT
+    using Result = SwitchbotHelper::Result;
+    PaidFixture f;
+    g_registry.emplace<ecs::ItemFlags>(f.material).isLocked = true;
+    const auto fallback = f.Material(c_arSwitchingItems[0], 1, 1);
+    Check(SwitchbotHelper::TrySwitch(f.owner, f.item, 0).result == Result::Success, "locked first stack blocked valid fallback");
+    Check(ItemSystem::GetItemCount(f.material) == 2 && !g_registry.valid(fallback), "wrong material stack consumed");
+#ifdef ENABLE_EXTRA_INVENTORY
+    g_registry.get<ecs::ItemFlags>(f.material).isLocked = false;
+    f.Place(f.material, EXTRA_INVENTORY, 5);
+    f.Watch();
+    Check(SwitchbotHelper::TrySwitch(f.owner, f.item, 0).result == Result::Success && ItemSystem::GetItemCount(f.material) == 1,
+        "extra-inventory material was not consumed");
+#endif
+#endif
+}
 }
 
 int main()
@@ -280,6 +651,12 @@ int main()
         AddonRemovalAndDuplicates();
         WeightedBoundaries();
         ProtoAndCostumeRules();
+        PaidRerollTransactions();
+        PaymentValidation();
+        GoldTransactions();
+        CostumeResetTransactions();
+        SwitchbotTransactions();
+        SwitchbotMaterialSelection();
         std::cout << "Item attribute regression checks passed: " << checks << '\n';
         return 0;
     } catch (const std::exception& error) {

@@ -7,6 +7,13 @@
 class SwitchbotHelper
 {
 public:
+	enum class Result { Success, InvalidTarget, NoPayment, RollFailed };
+	struct Outcome {
+		Result result { Result::InvalidTarget };
+		uint32_t materialVnum { 0 }; // Captured before the last material may be destroyed.
+	};
+
+	static Outcome TrySwitch(entt::entity owner, entt::entity item, uint8_t slot);
 	static bool IsValidItem(entt::entity item);
 };
 

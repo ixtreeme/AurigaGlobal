@@ -182,6 +182,13 @@ bool ApplyItemAddon(entt::entity item, int addonType);
 bool AddItemAttributeEcs(entt::entity item);
 bool AddItemRareAttributeEcs(entt::entity item);
 bool ChangeItemAttributeEcs(entt::entity item, const int* probabilities = nullptr);
+// Synchronous game-thread transactions: prepare without side effects, pay from
+// one validated stack (or the owner's wallet), then publish the new attributes.
+bool CanPayItemAttributeCost(entt::entity item, entt::entity material, uint32_t amount = 1);
+bool ChangeItemAttributeWithItemCost(entt::entity item, entt::entity material,
+    uint32_t amount = 1, const int* probabilities = nullptr);
+bool ChangeItemAttributeWithGoldCost(entt::entity item, int64_t amount);
+bool ResetCostumeAttributesWithItemCost(entt::entity item, entt::entity material, uint32_t amount = 1);
 bool ChangeItemRareAttributeEcs(entt::entity item);
 bool ClearItemAttributesEcs(entt::entity item);
 bool CopyItemAttributesEcs(entt::entity source, entt::entity target);

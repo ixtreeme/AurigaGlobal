@@ -2,11 +2,15 @@
 #include "ItemSystem.hpp"
 #include "NetworkSyncSystem.hpp"
 #include "PlayerRuntimeSystem.hpp"
+#include "PointSystem.hpp"
+#include "SocialSystem.hpp"
 #include "../Registry.hpp"
 #include "../detail/ItemAttributeRules.hpp"
 #include "../../constants.h"
 #include "../../config.h"
 #include "../../desc.h"
+#include "../../char.h"
+#include "../../shop.h"
 #include "../../log.h"
 #include "../../utils.h"
 
@@ -174,6 +178,31 @@ const ecs::ItemAttributes* AttributesOf(entt::entity item)
 {
     return IsValidItem(item) ? g_registry.try_get<ecs::ItemAttributes>(item) : nullptr;
 }
+
+bool PrepareReroll(entt::entity item, Attributes& attrs, const int* probabilities)
+{
+    if (GetItemAttributeSetIndex(item) < 0)
+        return false;
+    const int count = rules::Count(attrs, 0, ITEM_ATTRIBUTE_NORM_NUM);
+    if (count == 0)
+        return false;
+    rules::Clear(attrs, 0, ITEM_ATTRIBUTE_NORM_NUM, LockedSlot(item));
+    if (const auto* proto = GetItemProto(item); proto && proto->sAddonType)
+        ApplyAddon(item, attrs);
+    constexpr int defaults[ITEM_ATTRIBUTE_MAX_LEVEL] = {0, 10, 40, 35, 15};
+    for (int i = rules::Count(attrs, 0, ITEM_ATTRIBUTE_NORM_NUM); i < count; ++i)
+        if (!RollNormal(item, attrs, probabilities ? probabilities : defaults))
+            return false;
+    return true;
+}
+
+bool CanModifyOwnedAttributes(entt::entity item)
+{
+    if (!AttributesOf(item) || IsItemEquipped(item) || IsItemExchanging(item) || IsItemLocked(item))
+        return false;
+    const entt::entity owner = GetItemOwner(item);
+    return owner != entt::null && g_registry.valid(owner) && ecs::PlayerRuntime::IsPC(owner);
+}
 } // namespace
 
 int GetItemAttributeSetIndex(entt::entity item)
@@ -293,21 +322,105 @@ bool AddItemAttributeEcs(entt::entity item)
 bool ChangeItemAttributeEcs(entt::entity item, const int* probabilities)
 {
     const auto* component = AttributesOf(item);
-    if (!component || GetItemAttributeSetIndex(item) < 0)
+    if (!component)
         return false;
     auto attrs = component->attrs;
-    const int count = rules::Count(attrs, 0, ITEM_ATTRIBUTE_NORM_NUM);
-    if (count == 0)
+    if (!PrepareReroll(item, attrs, probabilities))
         return false;
-    rules::Clear(attrs, 0, ITEM_ATTRIBUTE_NORM_NUM, LockedSlot(item));
-    if (const auto* proto = GetItemProto(item); proto && proto->sAddonType)
-        ApplyAddon(item, attrs);
-    constexpr int defaults[ITEM_ATTRIBUTE_MAX_LEVEL] = {0, 10, 40, 35, 15};
-    for (int i = rules::Count(attrs, 0, ITEM_ATTRIBUTE_NORM_NUM); i < count; ++i)
-        if (!RollNormal(item, attrs, probabilities ? probabilities : defaults))
-            return false; // The live component is untouched if rolling cannot finish.
     Commit(item, attrs, "SET_ATTR");
     return true;
+}
+
+bool CanPayItemAttributeCost(entt::entity item, entt::entity material, uint32_t amount)
+{
+    if (!CanModifyOwnedAttributes(item) || item == material || !IsValidItem(material) ||
+        amount == 0 || IsItemEquipped(material) ||
+        IsItemExchanging(material) || IsItemLocked(material))
+        return false;
+    const auto* stack = g_registry.try_get<ecs::ItemCount>(material);
+    if (!stack || stack->count <= 0 || static_cast<uint32_t>(stack->count) < amount)
+        return false;
+    const entt::entity owner = GetItemOwner(item);
+    if (GetItemOwner(material) != owner)
+        return false;
+    const uint8_t window = GetItemWindow(material);
+    if (window != INVENTORY
+#ifdef ENABLE_EXTRA_INVENTORY
+        && window != EXTRA_INVENTORY
+#endif
+    )
+        return false;
+    if (GetItem(owner, TItemPos(window, GetItemCell(material))) != material)
+        return false;
+    if (auto* shop = ecs::SocialSystem::GetMyShop(owner); shop && shop->IsSellingItem(GetItemID(material)))
+        return false;
+    return true;
+}
+
+bool ChangeItemAttributeWithItemCost(entt::entity item, entt::entity material,
+    uint32_t amount, const int* probabilities)
+{
+    if (!CanPayItemAttributeCost(item, material, amount))
+        return false;
+    auto attrs = AttributesOf(item)->attrs;
+    if (!PrepareReroll(item, attrs, probabilities))
+        return false;
+    // No yield or user callback between payment validation and commit. The
+    // material is distinct from the target; consuming its last unit is safe.
+    if (!ConsumeItemEcs(material, amount))
+        return false;
+    Commit(item, attrs, "SET_ATTR");
+    return true;
+}
+
+bool ChangeItemAttributeWithGoldCost(entt::entity item, int64_t amount)
+{
+    if (!CanModifyOwnedAttributes(item) || amount <= 0)
+        return false;
+    const entt::entity owner = GetItemOwner(item);
+    const int64_t gold = ecs::PointSystem::GetGold(owner);
+    if (gold < amount)
+        return false;
+    auto attrs = AttributesOf(item)->attrs;
+    if (!PrepareReroll(item, attrs, nullptr))
+        return false;
+    ecs::PointSystem::Change(owner, POINT_GOLD, -amount);
+    if (ecs::PointSystem::GetGold(owner) != gold - amount)
+        return false;
+    Commit(item, attrs, "SET_ATTR");
+    return true;
+}
+
+bool ResetCostumeAttributesWithItemCost(entt::entity item, entt::entity material, uint32_t amount)
+{
+#ifdef ENABLE_ATTR_COSTUMES
+    if (!CanPayItemAttributeCost(item, material, amount) || GetItemType(item) != ITEM_COSTUME ||
+        GetItemAttributeSetIndex(item) < 0)
+        return false;
+    const uint8_t subtype = GetItemSubType(item);
+    if (subtype != COSTUME_BODY && subtype != COSTUME_HAIR
+#ifdef ENABLE_WEAPON_COSTUME_SYSTEM
+        && subtype != COSTUME_WEAPON
+#endif
+    )
+        return false;
+    auto attrs = AttributesOf(item)->attrs;
+    if (rules::Count(attrs, 0, ITEM_ATTRIBUTE_NORM_NUM) == 0)
+        return false;
+    rules::Clear(attrs, 0, ITEM_ATTRIBUTE_NORM_NUM, LockedSlot(item));
+    // These costumes receive three magic bonuses. All three must be prepared
+    // before either the original bonuses or the reset item can be changed.
+    if (!RollNormal(item, attrs, aiItemMagicAttributePercentHigh) ||
+        !RollNormal(item, attrs, aiItemMagicAttributePercentLow) ||
+        !RollNormal(item, attrs, aiItemMagicAttributePercentLow))
+        return false;
+    if (!ConsumeItemEcs(material, amount))
+        return false;
+    Commit(item, attrs, "SET_ATTR");
+    return true;
+#else
+    return false;
+#endif
 }
 
 bool AddItemRareAttributeEcs(entt::entity item)
