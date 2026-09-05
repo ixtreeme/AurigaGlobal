@@ -6,6 +6,7 @@
 #include "../../SRC/Server/GameServer/ecs/components/identity_components.hpp"
 #include "../../SRC/Server/GameServer/ecs/components/status_components.hpp"
 #include "../../SRC/Server/GameServer/ecs/systems/CombatSystem.hpp"
+#include "../../SRC/Server/GameServer/ecs/systems/SkillSystem.hpp"
 #include "../../SRC/Server/GameServer/ecs/systems/PointSystem.hpp"
 #include "../../SRC/Server/GameServer/ecs/systems/PlayerRuntimeSystem.hpp"
 #include "../../SRC/Server/GameServer/ecs/systems/NetworkSyncSystem.hpp"
@@ -350,6 +351,7 @@ void NetworkSyncSystem::BroadcastSyncPacket(entt::registry &,entt::entity) { Une
 void NetworkSyncSystem::BroadcastEffect(entt::registry &,entt::entity,unsigned char) { UnexpectedService(__func__); }
 double CPoly::Eval(void) { UnexpectedService(__func__); }
 void CSkillProto::SetPointVar(std::string_view,double) { UnexpectedService(__func__); }
+void SkillSystem::SetSkillMainTarget(entt::entity,uint32_t,entt::entity) { UnexpectedService(__func__); }
 CSkillProto * CSkillManager::Get(unsigned int) { UnexpectedService(__func__); }
 bool CGuild::UnderWar(unsigned int) { UnexpectedService(__func__); }
 unsigned int CGuild::UnderAnyWar(unsigned char) { UnexpectedService(__func__); }

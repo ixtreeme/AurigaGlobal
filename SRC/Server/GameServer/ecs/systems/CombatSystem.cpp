@@ -8,6 +8,7 @@
 #include "NetworkSyncSystem.hpp"
 
 #include "CombatSystem.hpp"
+#include "SkillSystem.hpp"
 #include "MountSystem.hpp"
 
 #include <algorithm>
@@ -6129,9 +6130,7 @@ public:
 			if (g_bSkillDisable)
 				return;
 
-			m_me->m_SkillUseInfo[m_bType].SetMainTargetVID(static_cast<entt::entity>(dwTargetVID));
-			/*if (m_bType == SKILL_BIPABU || m_bType == SKILL_KWANKYEOK)
-			  m_me->m_SkillUseInfo[m_bType].ResetHitCount();*/
+
 		}
 
 		auto* pkVictim = CHARACTER_MANAGER::instance().Find(dwTargetVID);
@@ -6140,6 +6139,9 @@ public:
 
 		if (!pkVictim)
 			return;
+
+		if (m_bType > 1)
+			SkillSystem::SetSkillMainTarget(me, m_bType, victim);
 
 		//  Ұ
 		if (!battle_is_attackable(me, victim))
@@ -6206,16 +6208,16 @@ public:
 			//iDam = (int)((int64_t)iDam * (100 - lValue) * 20 / 10000);
 
 #ifdef ENABLE_SOUL_SYSTEM // Arrow ninja
-			iDam += m_me->GetSoulItemDamage((pkVictim ? pkVictim->GetEntityHandle() : entt::null), iDam, RED_SOUL);
+			iDam += m_me->GetSoulItemDamage(victim, iDam, RED_SOUL);
 #endif
 
-			//LOG_INFO(0, "%s arrow %s dam %d", ecs::PlayerRuntime::GetName((m_me ? m_me->GetEntityHandle() : entt::null)).data(), ecs::PlayerRuntime::GetName((pkVictim ? pkVictim->GetEntityHandle() : entt::null)).data(), iDam);
+			//LOG_INFO(0, "%s arrow %s dam %d", ecs::PlayerRuntime::GetName(me).data(), ecs::PlayerRuntime::GetName(victim).data(), iDam);
 
 			m_me->OnMove(true);
 			pkVictim->OnMove();
 
 			if (pkVictim->CanBeginFight())
-				pkVictim->BeginFight((m_me ? m_me->GetEntityHandle() : entt::null));
+				pkVictim->BeginFight(me);
 
 			pkVictim->Damage(me, iDam, DAMAGE_TYPE_NORMAL_RANGE);
 			// Ÿġ
@@ -6237,21 +6239,21 @@ public:
 
 			//
 //#ifdef ENABLE_MAGIC_REDUCTION_SYSTEM
-//						const int resist_magic = MINMAX(0, ecs::PointSystem::Get((pkVictim ? pkVictim->GetEntityHandle() : entt::null), POINT_RESIST_MAGIC), 100);
-//						const int resist_magic_reduction = MINMAX(0, (m_me->GetJob()==JOB_SURA) ? ecs::PointSystem::Get((m_me ? m_me->GetEntityHandle() : entt::null), POINT_RESIST_MAGIC_REDUCTION)/2 : ecs::PointSystem::Get((m_me ? m_me->GetEntityHandle() : entt::null), POINT_RESIST_MAGIC_REDUCTION), 50);
+//						const int resist_magic = MINMAX(0, ecs::PointSystem::Get(victim, POINT_RESIST_MAGIC), 100);
+//						const int resist_magic_reduction = MINMAX(0, (m_me->GetJob()==JOB_SURA) ? ecs::PointSystem::Get(me, POINT_RESIST_MAGIC_REDUCTION)/2 : ecs::PointSystem::Get(me, POINT_RESIST_MAGIC_REDUCTION), 50);
 //						const int total_res_magic = MINMAX(0, resist_magic - resist_magic_reduction, 100);
 //						iDam = iDam * (100 - total_res_magic) / 100;
 //#else
 			iDam = iDam * (100 - (int)(ecs::PointSystem::Get(victim, POINT_RESIST_MAGIC) / 2)) / 100;
 			//#endif
 
-									//LOG_INFO(0, "%s arrow %s dam %d", ecs::PlayerRuntime::GetName((m_me ? m_me->GetEntityHandle() : entt::null)).data(), ecs::PlayerRuntime::GetName((pkVictim ? pkVictim->GetEntityHandle() : entt::null)).data(), iDam);
+									//LOG_INFO(0, "%s arrow %s dam %d", ecs::PlayerRuntime::GetName(me).data(), ecs::PlayerRuntime::GetName(victim).data(), iDam);
 
 			m_me->OnMove(true);
 			pkVictim->OnMove();
 
 			if (pkVictim->CanBeginFight())
-				pkVictim->BeginFight((m_me ? m_me->GetEntityHandle() : entt::null));
+				pkVictim->BeginFight(me);
 
 			pkVictim->Damage(me, iDam, DAMAGE_TYPE_MAGIC);
 			// Ÿġ
@@ -6271,9 +6273,9 @@ public:
 					pkVictim->OnMove();
 
 					if (pkVictim->CanBeginFight())
-						pkVictim->BeginFight((m_me ? m_me->GetEntityHandle() : entt::null));
+						pkVictim->BeginFight(me);
 
-					m_me->ComputeSkill(m_bType, (pkVictim ? pkVictim->GetEntityHandle() : entt::null));
+					m_me->ComputeSkill(m_bType, victim);
 					m_me->UseArrow(pkArrow, iUseArrow);
 
 					if (pkVictim->IsDead())
@@ -6297,10 +6299,10 @@ public:
 				pkVictim->OnMove();
 
 				if (pkVictim->CanBeginFight())
-					pkVictim->BeginFight((m_me ? m_me->GetEntityHandle() : entt::null));
+					pkVictim->BeginFight(me);
 
 				LOG_INFO("{} kwankeyok {}", ecs::PlayerRuntime::GetName(me).data(), ecs::PlayerRuntime::GetName(victim).data());
-				m_me->ComputeSkill(m_bType, (pkVictim ? pkVictim->GetEntityHandle() : entt::null));
+				m_me->ComputeSkill(m_bType, victim);
 				m_me->UseArrow(pkArrow, iUseArrow);
 			}
 		}
@@ -6315,10 +6317,10 @@ public:
 				pkVictim->OnMove();
 
 				if (pkVictim->CanBeginFight())
-					pkVictim->BeginFight((m_me ? m_me->GetEntityHandle() : entt::null));
+					pkVictim->BeginFight(me);
 
 				LOG_INFO("{} gigung {}", ecs::PlayerRuntime::GetName(me).data(), ecs::PlayerRuntime::GetName(victim).data());
-				m_me->ComputeSkill(m_bType, (pkVictim ? pkVictim->GetEntityHandle() : entt::null));
+				m_me->ComputeSkill(m_bType, victim);
 				m_me->UseArrow(pkArrow, iUseArrow);
 			}
 		}
@@ -6333,10 +6335,10 @@ public:
 				pkVictim->OnMove();
 
 				if (pkVictim->CanBeginFight())
-					pkVictim->BeginFight((m_me ? m_me->GetEntityHandle() : entt::null));
+					pkVictim->BeginFight(me);
 
 				LOG_INFO("{} hwajo {}", ecs::PlayerRuntime::GetName(me).data(), ecs::PlayerRuntime::GetName(victim).data());
-				m_me->ComputeSkill(m_bType, (pkVictim ? pkVictim->GetEntityHandle() : entt::null));
+				m_me->ComputeSkill(m_bType, victim);
 				m_me->UseArrow(pkArrow, iUseArrow);
 			}
 		}
@@ -6352,10 +6354,10 @@ public:
 				pkVictim->OnMove();
 
 				if (pkVictim->CanBeginFight())
-					pkVictim->BeginFight((m_me ? m_me->GetEntityHandle() : entt::null));
+					pkVictim->BeginFight(me);
 
 				LOG_TRACE("{} horse_wildattack {}", ecs::PlayerRuntime::GetName(me).data(), ecs::PlayerRuntime::GetName(victim).data());
-				m_me->ComputeSkill(m_bType, (pkVictim ? pkVictim->GetEntityHandle() : entt::null));
+				m_me->ComputeSkill(m_bType, victim);
 				m_me->UseArrow(pkArrow, iUseArrow);
 			}
 		}
@@ -6381,10 +6383,10 @@ public:
 			pkVictim->OnMove();
 
 			if (pkVictim->CanBeginFight())
-				pkVictim->BeginFight((m_me ? m_me->GetEntityHandle() : entt::null));
+				pkVictim->BeginFight(me);
 
 			LOG_INFO("{} - Skill {} -> {}", ecs::PlayerRuntime::GetName(me).data(), m_bType, ecs::PlayerRuntime::GetName(victim).data());
-			m_me->ComputeSkill(m_bType, (pkVictim ? pkVictim->GetEntityHandle() : entt::null));
+			m_me->ComputeSkill(m_bType, victim);
 		}
 		break;
 
@@ -6394,10 +6396,10 @@ public:
 			pkVictim->OnMove();
 
 			if (pkVictim->CanBeginFight())
-				pkVictim->BeginFight((m_me ? m_me->GetEntityHandle() : entt::null));
+				pkVictim->BeginFight(me);
 
 			LOG_INFO("{} - Skill {} -> {}", ecs::PlayerRuntime::GetName(me).data(), m_bType, ecs::PlayerRuntime::GetName(victim).data());
-			m_me->ComputeSkill(m_bType, (pkVictim ? pkVictim->GetEntityHandle() : entt::null));
+			m_me->ComputeSkill(m_bType, victim);
 
 			// TODO     ϱ
 		}
@@ -6416,8 +6418,8 @@ public:
 
 		  uint32_t * pdw;
 		  uint32_t dwEI = AllocEventInfo(sizeof(uint32_t) * 2, &pdw);
-		  pdw[0] = ecs::PlayerRuntime::GetPacketVID((m_me ? m_me->GetEntityHandle() : entt::null));
-		  pdw[1] = ecs::PlayerRuntime::GetPacketVID((pkVictim ? pkVictim->GetEntityHandle() : entt::null));
+		  pdw[0] = ecs::PlayerRuntime::GetPacketVID(me);
+		  pdw[1] = ecs::PlayerRuntime::GetPacketVID(victim);
 
 		  event_create(budong_event_func, dwEI, PASSES_PER_SEC(1));
 		  }
@@ -6433,7 +6435,7 @@ public:
 			{
 				int iDam = CalcMeleeDamage(me, victim);
 
-				if (ecs::PlayerRuntime::GetJob(m_me->GetEntityHandle()) == JOB_ASSASSIN &&
+				if (ecs::PlayerRuntime::GetJob(me) == JOB_ASSASSIN &&
 					(ecs::PlayerRuntime::IsStone(victim) || ecs::PlayerRuntime::GetMobRank(pkVictim->GetEntityHandle()) >= 4 || ecs::PlayerRuntime::GetRaceNum(victim) == 136))
 				{
 					int multiplier = 36; // alap multiplier
@@ -6490,10 +6492,10 @@ public:
 					pkVictim->OnMove();
 
 					if (pkVictim->CanBeginFight())
-						pkVictim->BeginFight((m_me ? m_me->GetEntityHandle() : entt::null));
+						pkVictim->BeginFight(me);
 
 					LOG_INFO("{} - Skill {} -> {}", ecs::PlayerRuntime::GetName(me).data(), m_bType, ecs::PlayerRuntime::GetName(victim).data());
-					m_me->ComputeSkill(m_bType, (pkVictim ? pkVictim->GetEntityHandle() : entt::null));
+					m_me->ComputeSkill(m_bType, victim);
 				}
 
 

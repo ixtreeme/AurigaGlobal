@@ -1491,14 +1491,7 @@ protected:
 	LPCHARACTER		m_pkChrShopOwner;
 	// End of shop
 
-#ifdef __SKILL_COLOR_SYSTEM__
-public:
-	void			SetSkillColor(uint32_t* dwSkillColor);
-	uint32_t* GetSkillColor() { return m_dwSkillColor[0]; }
 
-protected:
-	uint32_t			m_dwSkillColor[ESkillColorLength::MAX_SKILL_COUNT + ESkillColorLength::MAX_BUFF_COUNT][ESkillColorLength::MAX_EFFECT_COUNT];
-#endif
 
 	////////////////////////////////////////////////////////////////////////////////////////
 	// Exchange related
@@ -1758,12 +1751,10 @@ public:
 	bool				UseSkill(uint32_t dwVnum, entt::entity victim, bool bUseGrandMaster = true);
 	void				ResetSkill();
 	void				SetSkillLevel(uint32_t dwVnum, uint8_t bLev);
-	int					GetUsedSkillMasterType(uint32_t dwVnum);
 
 	bool				IsLearnableSkill(uint32_t dwSkillVnum) const;
 	// END_OF_ADD_GRANDMASTER_SKILL
 
-	bool				CheckSkillHitCount(const uint8_t SkillID, entt::entity target);
 	bool				CanUseSkill(uint32_t dwSkillVnum) const;
 	bool				IsUsableSkillMotion(uint32_t dwMotionIndex) const;
 	int					GetSkillLevel(uint32_t dwVnum) const;
@@ -1860,7 +1851,6 @@ private:
 	//
 protected:
 	TPlayerSkill* m_pSkillLevels;
-	std::map<int, TSkillUseInfo>	m_SkillUseInfo;
 
 	////////////////////////////////////////////////////////////////////////////////////////
 	// AI related

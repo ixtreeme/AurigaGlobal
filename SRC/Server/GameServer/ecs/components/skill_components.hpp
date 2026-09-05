@@ -27,6 +27,8 @@ struct SkillDamageBonus {
     std::map<int, TSkillUseInfo> useInfo;
 };
 
+struct SkillColorChangeInProgress {};
+
 struct SkillColor {
     uint32_t data[ESkillColorLength::MAX_SKILL_COUNT +
                   ESkillColorLength::MAX_BUFF_COUNT]

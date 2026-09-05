@@ -67,6 +67,7 @@
 #include "ecs/Registry.hpp"
 #include "ecs/VIDRegistry.hpp"
 #include "ecs/components/combat_components.hpp"
+#include "ecs/components/identity_components.hpp"
 #include "ecs/components/dirty_components.hpp"
 #include "ecs/components/movement_components.hpp"
 #include "ecs/systems/ItemSystem.hpp"
@@ -598,7 +599,7 @@ int CInputMain::Whisper(entt::entity character, const char * data, uint64_t uiBy
 			CBanwordManager::instance().ConvertString(buf, buflen);
 
 			if (g_bEmpireWhisper)
-				if (!ch->IsEquipUniqueGroup(UNIQUE_GROUP_RING_OF_LANGUAGE))
+				if (!ItemSystem::IsEquipUniqueGroup(character, UNIQUE_GROUP_RING_OF_LANGUAGE))
 					if (!(pkChr && pkChr->IsEquipUniqueGroup(UNIQUE_GROUP_RING_OF_LANGUAGE)))
 						if (bOpponentEmpire != ecs::PlayerRuntime::GetEmpire(character) && ecs::PlayerRuntime::GetEmpire(character) && bOpponentEmpire // ¼­·Î Á¦±¹ÀÌ ´Ù¸£¸é¼­
 								&& ecs::PlayerRuntime::GetGMLevel(character) == GM_PLAYER && gm_get_level(pinfo->szNameTo) == GM_PLAYER) // µÑ´Ù ÀÏ¹Ý ÇÃ·¹ÀÌ¾îÀÌ¸é
@@ -681,24 +682,22 @@ int CInputMain::Whisper(entt::entity character, const char * data, uint64_t uiBy
 	return (iExtraLen);
 }
 
-struct RawPacketToCharacterFunc
+struct RawPacketToEntityFunc
 {
 
 	const void * m_buf;
 	int	m_buf_len;
 
-	RawPacketToCharacterFunc(const void * buf, int buf_len) : m_buf(buf), m_buf_len(buf_len)
+	RawPacketToEntityFunc(const void * buf, int buf_len) : m_buf(buf), m_buf_len(buf_len)
 	{
 	}
 
-	void operator () (LPCHARACTER c)
-	{
-		const entt::entity cEntity = c ? c->GetEntityHandle() : entt::null;
-		if (!ecs::PlayerRuntime::GetDesc(cEntity))
-			return;
-
-		ecs::PlayerRuntime::GetDesc(cEntity)->Packet(m_buf, m_buf_len);
-	}
+	void operator () (entt::entity recipient)
+    {
+        auto* desc = ecs::PlayerRuntime::GetDesc(recipient);
+        if (ecs::PlayerRuntime::IsPC(recipient) && desc && desc->GetEntity() == recipient)
+            desc->Packet(m_buf, m_buf_len);
+    }
 };
 
 struct FEmpireChatPacket
@@ -718,99 +717,35 @@ struct FEmpireChatPacket
 		memset( converted_msg, 0, sizeof(converted_msg) );
 	}
 
-	void operator () (LPDESC d)
-	{
-		if (!d->GetCharacter())
-			return;
+    void operator () (LPDESC desc)
+    {
+        if (!desc)
+            return;
+        const auto recipient = desc->GetEntity();
+        if (!ecs::PlayerRuntime::IsPC(recipient) ||
+            ecs::PlayerRuntime::GetDesc(recipient) != desc ||
+            ecs::PlayerRuntime::GetMapIndex(recipient) != iMapIndex ||
+            orig_len < 0 || orig_len > sizeof(converted_msg))
+            return;
 
-		if (ecs::PlayerRuntime::GetMapIndex(((d->GetCharacter()) ? (d->GetCharacter())->GetEntityHandle() : entt::null)) != iMapIndex)
-			return;
+        const char* message = orig_msg;
+        if (desc->GetEmpire() != bEmpire && bEmpire != 0 &&
+            ecs::PlayerRuntime::GetGMLevel(recipient) == GM_PLAYER &&
+            !ItemSystem::IsEquipUniqueGroup(recipient, UNIQUE_GROUP_RING_OF_LANGUAGE))
+        {
+            const size_t len = std::min(size_t(strlcpy(converted_msg, orig_msg, sizeof(converted_msg))),
+                sizeof(converted_msg) - 1);
+            const size_t offset = std::min(size_t(std::max(namelen, 0)), len);
+            ConvertEmpireText(bEmpire, converted_msg + offset, len - offset,
+                10 + 2 * SkillSystem::GetSkillPower(recipient, SKILL_LANGUAGE1 + bEmpire - 1));
+            message = converted_msg;
+        }
 
-		d->BufferedPacket(&p, sizeof(packet_chat));
-
-		if (d->GetEmpire() == bEmpire ||
-			bEmpire == 0 ||
-			ecs::PlayerRuntime::GetGMLevel(((d->GetCharacter()) ? (d->GetCharacter())->GetEntityHandle() : entt::null)) > GM_PLAYER ||
-			d->GetCharacter()->IsEquipUniqueGroup(UNIQUE_GROUP_RING_OF_LANGUAGE))
-		{
-			d->Packet(orig_msg, orig_len);
-		}
-		else
-		{
-			// »ç¶÷¸¶´Ù ½ºÅ³·¹º§ÀÌ ´Ù¸£´Ï ¸Å¹ø ÇØ¾ßÇÕ´Ï´Ù
-			uint64_t len = strlcpy(converted_msg, orig_msg, sizeof(converted_msg));
-
-			if (len >= sizeof(converted_msg))
-				len = sizeof(converted_msg) - 1;
-
-			ConvertEmpireText(bEmpire, converted_msg + namelen, len - namelen, 10 + 2 * d->GetCharacter()->GetSkillPower(SKILL_LANGUAGE1 + bEmpire - 1));
-			d->Packet(converted_msg, orig_len);
-		}
-	}
-};
-
-struct FYmirChatPacket
-{
-	packet_chat& packet;
-	const char* m_szChat;
-	uint64_t m_lenChat;
-	const char* m_szName;
-
-	int m_iMapIndex;
-	uint8_t m_bEmpire;
-	bool m_ring;
-
-	char m_orig_msg[CHAT_MAX_LEN+1];
-	int m_len_orig_msg;
-	char m_conv_msg[CHAT_MAX_LEN+1];
-	int m_len_conv_msg;
-
-	FYmirChatPacket(packet_chat& p, const char* chat, uint64_t len_chat, const char* name, uint64_t len_name, int iMapIndex, uint8_t empire, bool ring)
-		: packet(p),
-		m_szChat(chat), m_lenChat(len_chat),
-		m_szName(name),
-		m_iMapIndex(iMapIndex), m_bEmpire(empire),
-		m_ring(ring)
-	{
-		m_len_orig_msg = snprintf(m_orig_msg, sizeof(m_orig_msg), "%s : %s", m_szName, m_szChat) + 1; // ³Î ¹®ÀÚ Æ÷ÇÔ
-
-		if (m_len_orig_msg < 0 || m_len_orig_msg >= (int) sizeof(m_orig_msg))
-			m_len_orig_msg = sizeof(m_orig_msg) - 1;
-
-		m_len_conv_msg = snprintf(m_conv_msg, sizeof(m_conv_msg), "??? : %s", m_szChat) + 1; // ³Î ¹®ÀÚ ¹ÌÆ÷ÇÔ
-
-		if (m_len_conv_msg < 0 || m_len_conv_msg >= (int) sizeof(m_conv_msg))
-			m_len_conv_msg = sizeof(m_conv_msg) - 1;
-
-		ConvertEmpireText(m_bEmpire, m_conv_msg + 6, m_len_conv_msg - 6, 10); // 6Àº "??? : "ÀÇ ±æÀÌ
-	}
-
-	void operator() (LPDESC d)
-	{
-		if (!d->GetCharacter())
-			return;
-
-		if (ecs::PlayerRuntime::GetMapIndex(((d->GetCharacter()) ? (d->GetCharacter())->GetEntityHandle() : entt::null)) != m_iMapIndex)
-			return;
-
-		if (m_ring ||
-			d->GetEmpire() == m_bEmpire ||
-			ecs::PlayerRuntime::GetGMLevel(((d->GetCharacter()) ? (d->GetCharacter())->GetEntityHandle() : entt::null)) > GM_PLAYER ||
-			d->GetCharacter()->IsEquipUniqueGroup(UNIQUE_GROUP_RING_OF_LANGUAGE))
-		{
-			packet.size = m_len_orig_msg + sizeof(TPacketGCChat);
-
-			d->BufferedPacket(&packet, sizeof(packet_chat));
-			d->Packet(m_orig_msg, m_len_orig_msg);
-		}
-		else
-		{
-			packet.size = m_len_conv_msg + sizeof(TPacketGCChat);
-
-			d->BufferedPacket(&packet, sizeof(packet_chat));
-			d->Packet(m_conv_msg, m_len_conv_msg);
-		}
-	}
+        TEMP_BUFFER packet;
+        packet.write(&p, sizeof(p));
+        packet.write(message, orig_len);
+        desc->Packet(packet.read_peek(), packet.size());
+    }
 };
 
 #ifdef __NEWPET_SYSTEM__
@@ -1285,8 +1220,11 @@ int CInputMain::Chat(entt::entity character, const char * data, uint32_t uiBytes
 			for (DESC_MANAGER::DESC_SET::const_iterator it = cset.begin(); it != cset.end(); ++it)
 			{
 				LPDESC d = *it;
-				if (!d || !d->GetCharacter()) continue;
-				ecs::ChatSystem::Send(((d->GetCharacter()) ? (d->GetCharacter())->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "%s", msg);
+				if (!d) continue;
+                const auto recipient = d->GetEntity();
+                if (!ecs::PlayerRuntime::IsPC(recipient) || ecs::PlayerRuntime::GetDesc(recipient) != d)
+                    continue;
+                ecs::ChatSystem::Send(recipient, CHAT_TYPE_INFO, "%s", msg);
 			}
 #endif
 
@@ -1305,7 +1243,7 @@ int CInputMain::Chat(entt::entity character, const char * data, uint32_t uiBytes
 #ifdef ENABLE_FAKE_SHOP_HEADER
 		const char* mountColor = "";
 		char mountTitleWithCount[64];
-		int count = MountSystem::GetMountCount(ch->GetEntityHandle());
+		int count = MountSystem::GetMountCount(character);
 
 		// 80 fölött arany
 		if (count >= 80)
@@ -1452,26 +1390,14 @@ int CInputMain::Chat(entt::entity character, const char * data, uint32_t uiBytes
 			{
 				const DESC_MANAGER::DESC_SET & c_ref_set = DESC_MANAGER::instance().GetClientSet();
 
-				if (false)
-				{
-					std::for_each(c_ref_set.begin(), c_ref_set.end(),
-							FYmirChatPacket(pack_chat,
-								buf,
-								strlen(buf),
-								ecs::PlayerRuntime::GetName(character).data(),
-								strlen(ecs::PlayerRuntime::GetName(character).data()),
-								ecs::PlayerRuntime::GetMapIndex(character),
-								ecs::PlayerRuntime::GetEmpire(character),
-								ch->IsEquipUniqueGroup(UNIQUE_GROUP_RING_OF_LANGUAGE)));
-				}
-				else
+
 				{
 					std::for_each(c_ref_set.begin(), c_ref_set.end(),
 							FEmpireChatPacket(pack_chat,
 								chatbuf,
 								len,
 								(ecs::PlayerRuntime::GetGMLevel(character) > GM_PLAYER ||
-								 ch->IsEquipUniqueGroup(UNIQUE_GROUP_RING_OF_LANGUAGE)) ? 0 : ecs::PlayerRuntime::GetEmpire(character),
+								 ItemSystem::IsEquipUniqueGroup(character, UNIQUE_GROUP_RING_OF_LANGUAGE)) ? 0 : ecs::PlayerRuntime::GetEmpire(character),
 								ecs::PlayerRuntime::GetMapIndex(character), strlen(ecs::PlayerRuntime::GetName(character).data())));
 #ifdef ENABLE_CHAT_LOGGING
 					if (ch->IsGM())
@@ -1497,8 +1423,8 @@ int CInputMain::Chat(entt::entity character, const char * data, uint32_t uiBytes
 					tbuf.write(&pack_chat, sizeof(pack_chat));
 					tbuf.write(chatbuf, len);
 
-					RawPacketToCharacterFunc f(tbuf.read_peek(), tbuf.size());
-					ecs::SocialSystem::GetParty(character)->ForEachOnlineMember(f);
+					RawPacketToEntityFunc f(tbuf.read_peek(), tbuf.size());
+					ecs::SocialSystem::ForEachOnlinePartyMember(character, f);
 #ifdef ENABLE_CHAT_LOGGING
 					if (ch->IsGM())
 					{
@@ -2401,7 +2327,7 @@ void CInputMain::Move(entt::entity character, const char * data)
 	pack.dwTime       = pinfo->dwTime;
 	pack.dwDuration   = (pinfo->bFunc == FUNC_MOVE) ? ch->GetCurrentMoveDuration() : 0;
 
-	ecs::ViewSystem::PacketView(ch->GetEntityHandle(), &pack, sizeof(TPacketGCMove), ch->GetEntityHandle());
+	ecs::ViewSystem::PacketView(character, &pack, sizeof(TPacketGCMove), character);
 /*
 	if (pinfo->dwTime == 10653691) // µð¹ö°Å ¹ß°ß
 	{
@@ -2431,51 +2357,12 @@ void CInputMain::Move(entt::entity character, const char * data)
 #ifdef __SKILL_COLOR_SYSTEM__
 void CInputMain::SetSkillColor(entt::entity character, const char* pcData)
 {
-	LPCHARACTER ch = ecs::LegacyCharOf(character);
-// migrated from CHARACTER handler
-// TODO Phase 8: migrate SetSkillColor handler ECS
-// DUAL-PATH: legacy only during migration window
-#ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::SetSkillColor(LPCHARACTER ch, const char* pcData)");//INGAME_DEBUG_RAZOR93
-#endif
-	if (!ch)
-		return;
-
-	TPacketCGSkillColor * p = (TPacketCGSkillColor*)pcData;
-	if (p->skill >= ESkillColorLength::MAX_SKILL_COUNT)
-		return;
-
-	if ((p->col1 != 0) || (p->col2 != 0) || (p->col3 != 0) || (p->col4 != 0) || (p->col5 != 0)) {
-		if (ch->CountSpecifyItem(164406) < 1) {
-#ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 16, "");
-#endif
-			return;
-		} else {
-			ch->RemoveSpecifyItem(164406, 1);
-		}
-	}
-
-	uint32_t data[ESkillColorLength::MAX_SKILL_COUNT + ESkillColorLength::MAX_BUFF_COUNT][ESkillColorLength::MAX_EFFECT_COUNT];
-	memcpy(data, ch->GetSkillColor(), sizeof(data));
-
-	data[p->skill][0] = p->col1;
-	data[p->skill][1] = p->col2;
-	data[p->skill][2] = p->col3;
-	data[p->skill][3] = p->col4;
-	data[p->skill][4] = p->col5;
-
-#ifdef TEXTS_IMPROVEMENT
-	ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 15, "");
-#endif
-
-	ch->SetSkillColor(data[0]);
-
-	TSkillColor db_pack;
-	memcpy(db_pack.dwSkillColor, data, sizeof(data));
-	db_pack.player_id = ecs::PlayerRuntime::GetPlayerID(character);
-	db_clientdesc->DBPacketHeader(HEADER_GD_SKILL_COLOR_SAVE, 0, sizeof(TSkillColor));
-	db_clientdesc->Packet(&db_pack, sizeof(TSkillColor));
+    if (!pcData)
+        return;
+    TPacketCGSkillColor packet {};
+    std::memcpy(&packet, pcData, sizeof(packet));
+    SkillSystem::ChangeSkillColor(character, packet.skill,
+        {packet.col1, packet.col2, packet.col3, packet.col4, packet.col5});
 }
 #endif
 
@@ -2541,14 +2428,17 @@ void CInputMain::Attack(entt::entity character, const uint8_t header, const char
 
 				ecs::PlayerRuntime::GetDesc(character)->AssembleCRCMagicCube(packMelee->bCRCMagicCubeProcPiece, packMelee->bCRCMagicCubeFilePiece);
 
-				LPCHARACTER	victim = CHARACTER_MANAGER::instance().Find(packMelee->dwVID);
+				const auto victim = CHARACTER_MANAGER::instance().FindEntity(packMelee->dwVID);
 
-				if (nullptr == victim || ch == victim)
+				if (!ecs::PlayerRuntime::IsValid(victim) || character == victim)
 				{
 					return;
 				}
 
-				switch (victim->GetCharType())
+				const auto* victimType = g_registry.try_get<ecs::CharacterType>(victim);
+				if (!victimType)
+					return;
+				switch (victimType->value)
 				{
 					case CHAR_TYPE_NPC:
 					case CHAR_TYPE_WARP:
@@ -2558,24 +2448,18 @@ void CInputMain::Attack(entt::entity character, const uint8_t header, const char
 
 				if (packMelee->bType > 0)
 				{
-					if (false == ch->CheckSkillHitCount(packMelee->bType, victim->GetEntityHandle()))
+					if (false == SkillSystem::CheckSkillHit(character, packMelee->bType, victim))
 					{
 						return;
 					}
 				}
 
-				// migrated from CHARACTER::Attack
-				entt::entity attacker = (ch && ecs::PlayerRuntime::GetDesc(character)) ? ecs::PlayerRuntime::GetDesc(character)->GetEntity() : entt::null;
-				entt::entity target = CVIDRegistry::Instance().Find(packMelee->dwVID);
-				if (attacker != entt::null && target != entt::null && g_registry.valid(attacker) && g_registry.valid(target))
-				{
-					g_registry.emplace_or_replace<ecs::CombatTarget>(attacker, target, get_dword_time());
-					g_registry.emplace_or_replace<ecs::CombatActiveTag>(attacker);
-					g_registry.emplace_or_replace<ecs::DirtyTag>(attacker);
-				}
-				// DUAL-PATH: ECS + legacy call
+				g_registry.emplace_or_replace<ecs::CombatTarget>(character, victim, get_dword_time());
+				g_registry.emplace_or_replace<ecs::CombatActiveTag>(character);
+				g_registry.emplace_or_replace<ecs::DirtyTag>(character);
 				ecs::MovementSystem::OnMove(character, true);
-				ch->Attack(victim ? victim->GetEntityHandle() : entt::null, packMelee->bType);
+				// Damage execution is still the legacy engine boundary.
+				ch->Attack(victim, packMelee->bType);
 			}
 			break;
 
@@ -2731,7 +2615,7 @@ int CInputMain::SyncPosition(entt::entity character, const char * c_pcData, uint
 		pHeader->bHeader = HEADER_GC_SYNC_POSITION;
 		pHeader->wSize = buffer_size(lpBuf);
 
-		ecs::ViewSystem::PacketView(ch->GetEntityHandle(), buffer_read_peek(lpBuf), buffer_size(lpBuf), ch->GetEntityHandle());
+		ecs::ViewSystem::PacketView(character, buffer_read_peek(lpBuf), buffer_size(lpBuf), character);
 	}
 
 	return iExtraLen;

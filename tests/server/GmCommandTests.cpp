@@ -2,6 +2,7 @@
 #include "../../SRC/Server/GameServer/char.h"
 #include "../../SRC/Server/GameServer/cmd.h"
 #include "../../SRC/Server/GameServer/skill.h"
+#include "../../SRC/Server/GameServer/skill_power.h"
 #include "../../SRC/Server/GameServer/desc.h"
 #include "../../SRC/Server/GameServer/desc_client.h"
 #include "../../SRC/Server/GameServer/config.h"
@@ -90,7 +91,8 @@ bool hasPet = false, activePet = false, rejectDestroy = false;
 struct Player {
     std::string name;
     int level = 90, map = 1;
-    uint8_t empire = 1, gm = GM_PLAYER;
+    uint8_t empire = 1, gm = GM_PLAYER, job = JOB_WARRIOR;
+    bool languageRing = false;
     bool online = true;
 };
 struct Item { entt::entity owner; TItemPos pos; uint32_t id; };
@@ -101,7 +103,10 @@ std::vector<std::pair<uint16_t, uint16_t>> quickslots;
 std::vector<char> p2p;
 std::function<void(entt::entity)> onDestroy, onChat;
 std::function<void()> onPacket;
-std::function<void(entt::entity)> onCompute, onPointChange;
+std::function<void(entt::entity)> onCompute, onPointChange, onColorUpdate, onColorPayment;
+int colorTokens = 0, colorPayments = 0, guildSkillLevel = 0;
+bool refuseColorPayment = false, hasGuild = false;
+std::vector<TSkillColor> savedColors;
 std::map<std::pair<entt::entity, uint32_t>, entt::entity> slots;
 void Check(bool value, const char* message) { ++checks; if (!value) throw std::runtime_error(message); }
 uint32_t Key(TItemPos pos) { return (uint32_t(pos.window_type) << 16) | pos.cell; }
@@ -113,6 +118,9 @@ void Reset() {
     g_registry.clear(); slots.clear(); messages.clear(); destroyed.clear(); quickslots.clear(); p2p.clear();
     onDestroy = onChat = onCompute = onPointChange = {}; onPacket = {};
     hasPet = activePet = rejectDestroy = false; socketWrites = packets = computes = dbPackets = 0;
+    onColorUpdate = onColorPayment = {};
+    colorTokens = colorPayments = guildSkillLevel = 0;
+    refuseColorPayment = hasGuild = false; savedColors.clear();
 }
 entt::entity Actor(const char* name = "GM") {
     auto e = g_registry.create();
@@ -283,6 +291,201 @@ void SkillChecks() {
     SkillSystem::SetSkillGroup(player, 1);
     Check(packets == 3, "stale skill owner packet");
 }
+void SkillRuntimeChecks() {
+    Reset(); auto caster = Actor(), target = Actor("Target");
+    Check(!SkillSystem::CheckSkillHit(caster, SKILL_PALBANG, target), "unregistered skill hit");
+    Check(!SkillSystem::ConsumeSkillHit(caster, SKILL_PALBANG), "missing skill use consumed");
+    Check(SkillSystem::GetSkillMainTarget(caster, SKILL_PALBANG) == entt::null &&
+        SkillSystem::GetNextSkillUseTime(caster, SKILL_PALBANG) == 0, "missing skill state read");
+    Check(!g_registry.all_of<ecs::SkillDamageBonus>(caster), "read-only query allocated skill state");
+    for (uint32_t skill = 1; skill < std::min<uint32_t>(SKILL_MAX_NUM, 256); ++skill) {
+        Check(SkillSystem::RegisterSkillUse(caster, skill, false, target, 0), "native skill registration");
+        int limit = 1;
+        switch (skill) {
+        case SKILL_YONGKWON: case SKILL_HWAYEOMPOK: case SKILL_DAEJINGAK: case SKILL_PAERYONG: limit = 0; break;
+        case SKILL_SAMYEON: case SKILL_CHARYUN:
+#ifdef ENABLE_WOLFMAN_CHARACTER
+        case SKILL_CHAYEOL:
+#endif
+            limit = 3; break;
+        case SKILL_HORSE_WILDATTACK_RANGE: limit = 5; break;
+        case SKILL_YEONSA: limit = 7; break;
+        case SKILL_HORSE_ESCAPE: limit = 10; break;
+        }
+        for (int hit = 0; hit < limit; ++hit)
+            Check(SkillSystem::CheckSkillHit(caster, uint8_t(skill), target), "allowed target hit rejected");
+        Check(!SkillSystem::CheckSkillHit(caster, uint8_t(skill), target), "target hit limit exceeded");
+        auto other = Actor("Other");
+        Check(SkillSystem::CheckSkillHit(caster, uint8_t(skill), other) == (limit > 0), "targets shared a hit budget");
+        Check(SkillSystem::RegisterSkillUse(caster, skill, false, target, 0), "repeat skill registration");
+        Check(SkillSystem::CheckSkillHit(caster, uint8_t(skill), target) == (limit > 0), "accepted cast retained old target count");
+        g_registry.destroy(other);
+    }
+
+    constexpr auto skill = SKILL_SAMYEON;
+    std::array<TPlayerSkill, SKILL_MAX_NUM> levels {};
+    levels[skill].bMasterType = SKILL_PERFECT_MASTER;
+    g_registry.emplace<ecs::SkillLevels>(caster, levels.data(), uint8_t{1});
+    Check(SkillSystem::RegisterSkillUse(caster, skill, false, target, 60000, 1, 3), "cooldown registration");
+    Check(SkillSystem::GetNextSkillUseTime(caster, skill) != 0 &&
+        SkillSystem::GetSkillMainTarget(caster, skill) == target, "native cast state");
+    for (int i = 0; i < 3; ++i) Check(SkillSystem::CheckSkillHit(caster, skill, target), "multi-hit cast");
+    Check(!SkillSystem::RegisterSkillUse(caster, skill, true, target, 60000), "cooldown accepted duplicate cast");
+    Check(!SkillSystem::CheckSkillHit(caster, skill, target), "rejected cast reset target hits");
+    Check(SkillSystem::GetUsedSkillMasterType(caster, skill) == SKILL_MASTER, "rejected cast changed mastery");
+    auto& use = g_registry.get<ecs::SkillDamageBonus>(caster).useInfo[skill];
+    use.dwNextSkillUsableTime = 0;
+    Check(SkillSystem::RegisterSkillUse(caster, skill, true, target, 0, 1, 2), "new cast");
+    Check(SkillSystem::GetUsedSkillMasterType(caster, skill) == SKILL_PERFECT_MASTER, "grandmaster cast mastery");
+    Check(SkillSystem::ConsumeSkillHit(caster, skill) && SkillSystem::ConsumeSkillHit(caster, skill) &&
+        !SkillSystem::ConsumeSkillHit(caster, skill), "shared splash hit budget");
+    Check(SkillSystem::RegisterSkillUse(caster, skill, false, target, 0, 1, -1), "unlimited-hit cast");
+    for (int i = 0; i < 20; ++i) Check(SkillSystem::ConsumeSkillHit(caster, skill), "unlimited hits");
+
+    const auto deadTarget = target;
+    g_registry.destroy(target); target = Actor("Replacement");
+    Check(SkillSystem::GetSkillMainTarget(caster, skill) == entt::null, "main target inherited recycled entity");
+    Check(!SkillSystem::CheckSkillHit(caster, skill, deadTarget) &&
+        !SkillSystem::CheckSkillHit(caster, skill, entt::null) &&
+        !SkillSystem::CheckSkillHit(caster, skill, caster), "invalid attack target accepted");
+    SkillSystem::SetSkillMainTarget(caster, skill, target);
+    SkillSystem::SetSkillMainTarget(caster, skill, deadTarget);
+    Check(SkillSystem::GetSkillMainTarget(caster, skill) == target, "stale main-target update");
+    Check(!SkillSystem::RegisterSkillUse(caster, skill, false, deadTarget, 0) &&
+        !SkillSystem::RegisterSkillUse(caster, SKILL_MAX_NUM, false, target, 0), "invalid cast registered");
+    SkillSystem::ResetSkillHitTargets(caster, skill);
+    Check(g_registry.get<ecs::SkillDamageBonus>(caster).useInfo[skill].TargetVIDMap.empty(), "charge target reset");
+
+    const auto oldCaster = caster;
+    g_registry.destroy(caster); caster = Actor();
+    Check(!SkillSystem::RegisterSkillUse(oldCaster, skill, false, target, 0) &&
+        !SkillSystem::CheckSkillHit(oldCaster, skill, target) &&
+        !SkillSystem::ConsumeSkillHit(oldCaster, skill), "stale caster");
+    Check(!g_registry.all_of<ecs::SkillDamageBonus>(caster), "replacement inherited cast state");
+    Check(SkillSystem::GetUsedSkillMasterType(entt::null, skill) == SKILL_NORMAL, "null mastery read");
+}
+void SkillPowerChecks() {
+    Reset(); const auto caster = Actor();
+    std::array<TPlayerSkill, SKILL_MAX_NUM> levels {};
+    g_registry.emplace<ecs::SkillLevels>(caster, levels.data(), uint8_t{1});
+    for (uint8_t job = 0; job < JOB_MAX_NUM; ++job) {
+        g_registry.get<Player>(caster).job = job;
+        for (uint8_t group : {1, 2}) {
+            g_registry.get<ecs::SkillLevels>(caster).group = group;
+            for (uint8_t level = 0; level <= SKILL_MAX_LEVEL; ++level) {
+                levels[SKILL_PALBANG].bLevel = level;
+                Check(SkillSystem::GetSkillPower(caster, SKILL_PALBANG) ==
+                    (job * 2 + group - 1) * 100 + level, "native skill power table");
+            }
+        }
+    }
+    Check(SkillSystem::GetSkillPower(caster, SKILL_PALBANG, 255) == SKILL_MAX_LEVEL, "mob power level clamp");
+    Check(SkillSystem::GetSkillPower(caster, SKILL_MAX_NUM + 100, 10) == 10,
+        "explicit mob power incorrectly bounded by player skill array");
+    g_registry.get<ecs::SkillLevels>(caster).group = 3;
+    Check(SkillSystem::GetSkillPower(caster, SKILL_PALBANG) == 0, "invalid group indexed skill table");
+    g_registry.get<ecs::SkillLevels>(caster).group = 0;
+    Check(SkillSystem::GetSkillPower(caster, SKILL_PALBANG) == 0, "unselected group");
+    for (uint32_t skill = SKILL_LANGUAGE1; skill <= SKILL_LANGUAGE3; ++skill) {
+        g_registry.get<Player>(caster).languageRing = true;
+        Check(SkillSystem::GetSkillPower(caster, skill) == 100, "language ring");
+        g_registry.get<Player>(caster).languageRing = false;
+        Check(SkillSystem::GetSkillPower(caster, skill) == 0, "unequipped language ring");
+    }
+    Check(SkillSystem::GetSkillPower(caster, GUILD_SKILL_START) == 0, "missing guild");
+    hasGuild = true; guildSkillLevel = 7;
+    Check(SkillSystem::GetSkillPower(caster, GUILD_SKILL_START) == 100 * 7 / 7 / 7, "guild skill power");
+    Check(SkillSystem::GetSkillPower(entt::null, SKILL_PALBANG) == 0 &&
+        SkillSystem::GetSkillPower(caster, SKILL_MAX_NUM) == 0, "invalid power input");
+    g_registry.destroy(caster); Actor();
+    Check(SkillSystem::GetSkillPower(caster, SKILL_PALBANG) == 0, "stale power owner");
+}
+void SkillColorChecks() {
+    Reset(); auto caster = Actor(), target = Actor("Target");
+    ecs::SkillColor initial {};
+    for (size_t row = 0; row < std::size(initial.data); ++row)
+        for (size_t effect = 0; effect < std::size(initial.data[row]); ++effect)
+            initial.data[row][effect] = uint32_t(row * 100 + effect);
+    Check(SkillSystem::SetSkillColors(caster, initial), "native color load");
+    Check(dbPackets == 0 && packets == 1 && g_registry.all_of<ecs::DirtyTag>(caster), "load persisted unexpectedly");
+    const std::array<uint32_t, 5> selected {1, 2, 3, 4, 5}, reset {};
+    Check(!SkillSystem::ChangeSkillColor(caster, 0, selected) && colorPayments == 0 &&
+        savedColors.empty(), "unpaid color change");
+    colorTokens = 1; refuseColorPayment = true;
+    Check(!SkillSystem::ChangeSkillColor(caster, 0, selected), "failed payment changed color");
+    Check(std::memcmp(g_registry.get<ecs::SkillColor>(caster).data, initial.data, sizeof(initial.data)) == 0,
+        "payment failure mutated colors");
+    refuseColorPayment = false;
+    for (int slot = ESkillColorLength::MAX_SKILL_COUNT; slot < 256; ++slot)
+        Check(!SkillSystem::ChangeSkillColor(caster, uint8_t(slot), selected), "client wrote buff/out-of-bounds slot");
+    Check(colorTokens == 1 && colorPayments == 0, "invalid slot consumed item");
+    Check(SkillSystem::ChangeSkillColor(caster, 0, selected) && colorTokens == 0 && colorPayments == 1, "paid colors");
+    Check(savedColors.size() == 1 && savedColors.back().player_id == 7 &&
+        std::equal(selected.begin(), selected.end(), savedColors.back().dwSkillColor[0]), "persisted color row");
+    Check(std::equal(std::begin(initial.data[1]), std::end(initial.data[1]),
+        g_registry.get<ecs::SkillColor>(caster).data[1]), "unrelated row overwritten");
+    Check(SkillSystem::ChangeSkillColor(caster, 0, reset) && colorPayments == 1, "free color reset charged");
+    Check(std::equal(reset.begin(), reset.end(), savedColors.back().dwSkillColor[0]), "reset not persisted");
+
+    SkillSystem::SetSkillColors(caster, initial);
+    const std::array<uint32_t, 5> ids {94, 95, 96, 110, 111};
+    const std::array<size_t, 5> source {3, 4, 5, 4, 5};
+    for (size_t i = 0; i < ids.size(); ++i) {
+        Check(SkillSystem::CopyBuffSkillColor(caster, target, ids[i]), "buff color copy");
+        Check(std::equal(std::begin(initial.data[source[i]]), std::end(initial.data[source[i]]),
+            g_registry.get<ecs::SkillColor>(target).data[ESkillColorLength::BUFF_BEGIN + i]), "buff row mapping");
+    }
+    Check(!SkillSystem::CopyBuffSkillColor(caster, target, SKILL_PALBANG), "non-buff copy accepted");
+    Check(SkillSystem::CopyBuffSkillColor(caster, caster, 94), "self buff color copy");
+    auto blank = Actor("Blank");
+    Check(SkillSystem::CopyBuffSkillColor(blank, target, 94) &&
+        std::equal(reset.begin(), reset.end(), savedColors.back().dwSkillColor[ESkillColorLength::BUFF_BEGIN]),
+        "missing caster colors retained previous buff color");
+    g_registry.destroy(blank); Actor();
+    const auto saves = savedColors.size();
+    Check(!SkillSystem::SetSkillColors(blank, initial, true) &&
+        !SkillSystem::CopyBuffSkillColor(blank, target, 94) &&
+        !SkillSystem::ChangeSkillColor(entt::null, 0, selected) &&
+        savedColors.size() == saves, "stale color entities");
+
+    for (int mode = 0; mode < 3; ++mode) {
+        Reset(); caster = Actor(); target = Actor("Other");
+        colorTokens = 2;
+        bool nestedAccepted = false;
+        onColorPayment = [&](entt::entity e) {
+            if (mode == 0) nestedAccepted = SkillSystem::ChangeSkillColor(e, 1, selected);
+            if (mode == 1) { g_registry.destroy(e); target = Actor("Recycled"); }
+            if (mode == 2) { SkillSystem::SetSkillColors(target, initial); SkillSystem::CopyBuffSkillColor(target, e, 94); }
+        };
+        const bool accepted = SkillSystem::ChangeSkillColor(caster, 0, selected);
+        Check(colorPayments == 1 && !nestedAccepted, "recursive purchase");
+        Check(accepted == (mode != 1), "payment callback lifecycle");
+        Check(!g_registry.all_of<ecs::SkillColorChangeInProgress>(mode == 1 ? target : caster), "purchase guard retained");
+        if (mode == 1) Check(savedColors.empty() && !g_registry.all_of<ecs::SkillColor>(target), "replacement got stale purchase");
+        if (mode == 2) Check(std::equal(std::begin(initial.data[3]), std::end(initial.data[3]),
+            g_registry.get<ecs::SkillColor>(caster).data[ESkillColorLength::BUFF_BEGIN]), "payment callback buff color lost");
+    }
+    Reset(); caster = Actor(); colorTokens = 1;
+    bool once = false;
+    onColorUpdate = [&](entt::entity e) {
+        Check(!savedColors.empty(), "network update before persistence");
+        if (!std::exchange(once, true)) SkillSystem::SetSkillColors(e, initial, true);
+    };
+    Check(SkillSystem::ChangeSkillColor(caster, 0, selected) && savedColors.size() == 2 &&
+        savedColors.back().dwSkillColor[0][0] == initial.data[0][0], "nested update persisted stale colors last");
+    Reset(); caster = Actor(); colorTokens = 1;
+    onColorUpdate = [&](entt::entity e) { g_registry.destroy(e); target = Actor("Replacement"); };
+    Check(SkillSystem::ChangeSkillColor(caster, 0, selected) && savedColors.size() == 1 && messages.empty() &&
+        !g_registry.all_of<ecs::SkillColorChangeInProgress>(target), "update callback stale owner access");
+
+    Reset(); caster = Actor();
+    auto* db = db_clientdesc; db_clientdesc = nullptr; colorTokens = 1;
+    Check(!SkillSystem::ChangeSkillColor(caster, 0, selected) && colorTokens == 1 &&
+        !SkillSystem::SetSkillColors(caster, initial, true), "missing DB consumed payment");
+    Check(SkillSystem::SetSkillColors(caster, initial), "non-persistent color load needs DB");
+    db_clientdesc = db;
+}
+
 void SkillCommandChecks() {
     Reset(); auto player = Actor();
     std::array<TPlayerSkill, SKILL_MAX_NUM> levels {};
@@ -349,6 +552,17 @@ int32_t GetLevel(entt::entity e) { return g_registry.get<Player>(e).level; }
 }
 namespace ItemSystem {
 bool IsValidItem(entt::entity e) { return g_registry.valid(e) && g_registry.all_of<Item>(e); }
+bool IsEquipUniqueGroup(entt::entity e, uint32_t group) {
+    Check(group == UNIQUE_GROUP_RING_OF_LANGUAGE, "language ring group");
+    return g_registry.get<Player>(e).languageRing;
+}
+bool RemoveSpecifyItemEcs(entt::entity e, uint32_t vnum, uint32_t count, bool renewal) {
+    Check(ecs::PlayerRuntime::IsPC(e) && vnum == 164406 && count == 1 && !renewal, "native color item consumption");
+    if (refuseColorPayment || colorTokens == 0) return false;
+    --colorTokens; ++colorPayments;
+    if (onColorPayment) onColorPayment(e);
+    return true;
+}
 entt::entity GetItemOwner(entt::entity e) { return g_registry.get<Item>(e).owner; }
 entt::entity GetItem(entt::entity e, TItemPos pos) {
     Check(ecs::PlayerRuntime::IsPC(e), "invalid inventory owner");
@@ -419,8 +633,11 @@ bool g_bSkillDisable = false;
 uint32_t g_start_position[4][2] {};
 entt::dispatcher g_dispatcher;
 namespace logging {
-std::shared_ptr<spdlog::logger> GetLogger() { return {}; }
-std::shared_ptr<spdlog::logger> GetErrorLogger() { return {}; }
+std::shared_ptr<spdlog::logger> GetLogger() {
+    static auto logger = std::make_shared<spdlog::logger>("gm-tests");
+    return logger;
+}
+std::shared_ptr<spdlog::logger> GetErrorLogger() { return GetLogger(); }
 }
 namespace {
 [[noreturn]] void Unexpected() { throw std::runtime_error("unexpected legacy/live service"); }
@@ -439,7 +656,7 @@ unsigned int ecs::PlayerRuntime::GetPlayerID(entt::entity e) { Check(IsPC(e), "i
 unsigned int ecs::PlayerRuntime::GetRaceNum(entt::entity) { Unexpected(); }
 unsigned char ecs::PlayerRuntime::GetSex(entt::entity) { Unexpected(); }
 int64_t ecs::PlayerRuntime::GetHP(entt::entity) { Unexpected(); }
-unsigned char ecs::PlayerRuntime::GetJob(entt::entity) { Unexpected(); }
+unsigned char ecs::PlayerRuntime::GetJob(entt::entity e) { return g_registry.get<Player>(e).job; }
 bool ecs::PlayerRuntime::ChangeSex(entt::entity) { Unexpected(); }
 bool ecs::PlayerRuntime::SetRace(entt::entity,unsigned char) { Unexpected(); }
 int ecs::PlayerRuntime::GetX(entt::entity) { Unexpected(); }
@@ -469,7 +686,11 @@ void AffectSystem::ClearAffect(entt::entity,bool) { Unexpected(); }
 void AffectSystem::SetPolymorph(entt::entity,unsigned int,bool) { Unexpected(); }
 bool AffectSystem::IsPolymorphed(entt::entity) { Unexpected(); }
 CParty * ecs::SocialSystem::GetParty(entt::entity) { Unexpected(); }
-CGuild * ecs::SocialSystem::GetGuild(entt::entity) { Unexpected(); }
+CGuild * ecs::SocialSystem::GetGuild(entt::entity e) {
+    Check(ecs::PlayerRuntime::IsPC(e), "guild lookup entity");
+    static int token;
+    return hasGuild ? reinterpret_cast<CGuild*>(&token) : nullptr;
+}
 CExchange * ecs::SocialSystem::GetExchange(entt::entity) { Unexpected(); }
 CShop * ecs::SocialSystem::GetShop(entt::entity) { Unexpected(); }
 int ecs::QuestSystem::GetFlag(entt::entity,std::string_view) { Unexpected(); }
@@ -537,13 +758,24 @@ int SECTREE_MANAGER::CreatePrivateMap(int) { Unexpected(); }
 bool SECTREE_MANAGER::SaveAttributeToImage(int,char const *,SECTREE_MAP *) { Unexpected(); }
 void MountSystem::SummonHorse(entt::entity,bool,bool,unsigned int,char const *) { Unexpected(); }
 void MountSystem::SetMountVnum(entt::entity,unsigned int) { Unexpected(); }
+void NetworkSyncSystem::UpdatePacket(entt::entity e) {
+    Check(ecs::PlayerRuntime::IsPC(e) && g_registry.all_of<ecs::SkillColor>(e), "invalid color update owner");
+    ++packets;
+    if (onColorUpdate) onColorUpdate(e);
+}
 void NetworkSyncSystem::BroadcastEffect(entt::basic_registry<entt::entity,std::allocator<entt::entity> > &,entt::entity,unsigned char) { Unexpected(); }
 char const * get_table_postfix(void) { Unexpected(); }
 void LoadStateUserCount(void) { Unexpected(); }
 void CLIENT_DESC::DBPacketHeader(unsigned char header, unsigned int, unsigned int size) {
     Check(this == db_clientdesc && header == HEADER_GD_SKILL_COLOR_SAVE && size == sizeof(TSkillColor), "DB color header");
 }
-void CLIENT_DESC::DBPacket(unsigned char,unsigned int,void const *,unsigned int) { Unexpected(); }
+void CLIENT_DESC::DBPacket(unsigned char header, unsigned int handle, void const* data, unsigned int size) {
+    Check(this == db_clientdesc && header == HEADER_GD_SKILL_COLOR_SAVE && handle == 0 &&
+        data && size == sizeof(TSkillColor), "native color persistence packet");
+    TSkillColor packet {};
+    std::memcpy(&packet, data, sizeof(packet));
+    savedColors.push_back(packet); ++dbPackets;
+}
 void CLIENT_DESC::Packet(void const* data, int size) {
     Check(this == db_clientdesc && data && size == sizeof(TSkillColor), "DB color packet"); ++dbPackets;
 }
@@ -656,7 +888,7 @@ unsigned char CombatSystem::ToggleComboIndex(entt::entity,unsigned char) { Unexp
 void CSkillProto::SetPointVar(std::string_view,double) { Unexpected(); }
 void CSkillProto::SetDurationVar(std::string_view,double) { Unexpected(); }
 void CSkillProto::SetSPCostVar(std::string_view,double) { Unexpected(); }
-int CGuild::GetSkillLevel(unsigned int) { Unexpected(); }
+int CGuild::GetSkillLevel(unsigned int) { return guildSkillLevel; }
 int CEntity::GetX(void)const { Unexpected(); }
 int CEntity::GetY(void)const { Unexpected(); }
 pixel_position_s CEntity::GetXYZ(void)const { Unexpected(); }
@@ -687,7 +919,6 @@ void CHARACTER::RemoveGoodAffect(void) { Unexpected(); }
 void CHARACTER::RemoveBadAffect(void) { Unexpected(); }
 CAffect * CHARACTER::FindAffect(unsigned int,unsigned char)const { Unexpected(); }
 bool CHARACTER::IsEquipUniqueGroup(unsigned int)const { Unexpected(); }
-void CHARACTER::SetSkillColor(unsigned int *) { Unexpected(); }
 bool CHARACTER::Damage(entt::entity,int64_t,EDamageType) { Unexpected(); }
 bool CHARACTER::CanBeginFight(void)const { Unexpected(); }
 void CHARACTER::BeginFight(entt::entity) { Unexpected(); }
@@ -729,8 +960,14 @@ int main() {
     try {
         P2P_MANAGER peers;
         CSkillManager skills;
+        CTableBySkill power;
+        for (int index = 0; index < JOB_MAX_NUM * 2; ++index) {
+            std::array<int, SKILL_MAX_LEVEL + 1> table {};
+            for (size_t level = 0; level < table.size(); ++level) table[level] = index * 100 + int(level);
+            power.SetSkillPowerByLevelFromType(index, table.data());
+        }
         static int dbToken; db_clientdesc = reinterpret_cast<CLIENT_DESC*>(&dbToken);
-        PurgeChecks(); NoticeChecks(); SkillChecks(); SkillCommandChecks(); SocketChecks();
+        PurgeChecks(); NoticeChecks(); SkillChecks(); SkillRuntimeChecks(); SkillPowerChecks(); SkillColorChecks(); SkillCommandChecks(); SocketChecks();
         std::cout << "GM command checks passed: " << checks << '\n';
         return 0;
     } catch (const std::exception& error) { std::cerr << error.what() << '\n'; return 1; }

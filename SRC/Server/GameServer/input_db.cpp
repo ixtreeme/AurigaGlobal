@@ -1,5 +1,7 @@
 #include "stdafx.h"
 #include "ecs/systems/InventorySystem.hpp"
+#include "ecs/systems/SkillSystem.hpp"
+#include "ecs/components/skill_components.hpp"
 #include "ecs/systems/PointSystem.hpp"
 #include "ecs/systems/PlayerRuntimeSystem.hpp"
 #include "ecs/systems/SocialSystem.hpp"
@@ -1634,14 +1636,16 @@ void CInputDB::GuildLadder(const char* c_pData)
 }
 
 #ifdef __SKILL_COLOR_SYSTEM__
-void CInputDB::SkillColorLoad(LPDESC d, const char * c_pData)
+void CInputDB::SkillColorLoad(LPDESC desc, const char* data)
 {
-	auto* ch = static_cast<LPCHARACTER>(nullptr);
-
-	if (!d || !(ch = d->GetCharacter()))
-		return;
-
-	ch->SetSkillColor((uint32_t*)c_pData);
+    if (!desc || !data)
+        return;
+    const auto player = desc->GetEntity();
+    if (!ecs::PlayerRuntime::IsPC(player) || ecs::PlayerRuntime::GetDesc(player) != desc)
+        return;
+    ecs::SkillColor colors {};
+    std::memcpy(colors.data, data, sizeof(colors.data));
+    SkillSystem::SetSkillColors(player, colors);
 }
 #endif
 

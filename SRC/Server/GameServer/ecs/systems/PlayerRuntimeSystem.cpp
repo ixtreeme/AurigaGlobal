@@ -2832,16 +2832,7 @@ int CHARACTER::GetSoulItemDamage(entt::entity victim, int iDamage, uint8_t bSoul
 }
 #endif
 
-#ifdef __SKILL_COLOR_SYSTEM__
-void CHARACTER::SetSkillColor(uint32_t* dwSkillColor) {
-    memcpy(m_dwSkillColor, dwSkillColor, sizeof(m_dwSkillColor));
-    if (auto* skillColor = g_registry.try_get<ecs::SkillColor>(GetEntityHandle())) {
-        memcpy(skillColor->data, m_dwSkillColor, sizeof(skillColor->data));
-        g_registry.emplace_or_replace<ecs::DirtyTag>(GetEntityHandle());
-    }
-    NetworkSyncSystem::UpdatePacket(GetEntityHandle());
-}
-#endif
+
 
 void CHARACTER::SetShop(LPSHOP pkShop)
 {
@@ -5965,9 +5956,6 @@ void CHARACTER::Initialize()
 #endif
     m_stName = "";
 
-#ifdef __SKILL_COLOR_SYSTEM__
-    memset(&m_dwSkillColor, 0, sizeof(m_dwSkillColor));
-#endif
 #ifdef ENABLE_ACCE_SYSTEM
     m_bAcceCombination = false;
     m_bAcceAbsorption = false;

@@ -1,8 +1,59 @@
 # Server ECS regression tests
 
+## Skill runtime, colors and input recipients
+
+SkillDamageBonus::useInfo is now the only skill-use runtime store. The
+CHARACTER map, CheckSkillHitCount and GetUsedSkillMasterType methods were
+removed, along with the splash functor's retained TSkillUseInfo pointer.
+Cast registration, hit consumption, per-target limits, main-target identity
+and used mastery operate on generation-checked entities. Rejected cooldown
+requests no longer clear target hit counts or change the accepted cast's mastery.
+The shoot path resolves the target before setting it; a network VID is not an
+EnTT entity and must not be converted by static_cast.
+
+SkillColor is the sole color store: client changes, DB loading and buff-color
+copying use the existing SkillSystem. CHARACTER's array/getter/setter and its
+initialization were removed. Paid color changes check consumption success,
+reject recursive purchases, reacquire state after item callbacks, and persist
+the committed snapshot before publishing the character update. Zero-color
+resets remain free. Payment and DB persistence are separate operations, not a
+durable transaction; process/connection failure can still leave a partial save.
+
+The previous zero-result native GetSkillPower stub now uses the real skill
+power tables, language-ring and guild rules. Existing legacy callers delegate
+to this same implementation; the migrated skill calculations and chat
+recipients invoke it directly with their existing entities. Chat recipient/
+party delivery and melee victim checks no longer resolve a character just to
+recover its entity. The unreachable FYmirChatPacket implementation was removed
+from input_main rather than kept alongside the active implementation.
+
+This pass reduces input_main's textual LPCHARACTER count from 48 to 44,
+LegacyCharOf from 32 to 31 and GetEntityHandle from 31 to 18. Across the changed
+server files, GetEntityHandle occurrences decrease by 103. Counts include
+comments/debug text and do not establish that the whole combat engine is native.
+
+GmCommandTests additionally compiles the real skill_power.cpp. Entity-only
+fixtures execute all byte-sized skill hit-limit branches, forbidden attack
+skills, independent targets, cooldown rejection, shared splash hit budgets,
+accepted-cast resets, stale/recycled owners/targets, mastery and power-table
+selection/clamping. Color tests cover load/save, slot bounds, missing/failed
+payment, free resets, all five buff mappings, self buffs, callbacks that
+destroy/recycle entities or change colors, recursive purchases, and missing DB.
+Inventory consumption, guild lookup, character/network publication and DB
+transport are service doubles. CombatStateTests only adds a fail-fast link
+double for the unexecuted shoot-to-skill call.
+
+These headless tests do not execute input_main/input_db, live damage or splash
+traversal, real item payment, sockets or DB persistence. GameServer compilation
+checks those integrations. Before deployment exercise melee/multi-hit skills,
+charge/ranged skills, GM cooldown mode, self/party buffs, paid coloring and free
+reset with logout/relog, cross-empire chat/language rings and party delivery.
+Legacy damage execution, sector traversal and SkillLevels array ownership still
+need further migration; this is not a complete ECS conversion of combat.
+
 ## Main input: storage, messenger and inventory guards
 
-The current input_main pass reduces LPCHARACTER occurrences from 68 to 48 and
+The preceding input_main pass reduced LPCHARACTER occurrences from 68 to 48 and
 LegacyCharOf from 42 to 32 (textual counts, including old comments/debug strings).
 Main/dead dispatch uses DESC::GetEntity and verifies the current player/session
 binding. Safebox/mall and account mount-inventory handlers, messenger requests,
@@ -59,8 +110,8 @@ growth pets block purge as before. Selectors now require exact documented names
 or aliases instead of arbitrary matching prefixes. Item grant failures are not
 logged as successful grants and surviving unowned items are cleaned up.
 
-GmCommandTests compiles the complete production cmd_gm.cpp and SkillSystem.cpp,
-the real PID registry, argument parsing and temporary-buffer implementation.
+GmCommandTests compiles the complete production cmd_gm.cpp, SkillSystem.cpp and
+skill_power.cpp, the real PID registry, argument parsing and temporary buffers.
 Entity-only fixtures execute inventory purge, user listing, socket commands,
 setskill and set_skill_group, notice/P2P serialization and native skill setters
 and resets. Coverage includes all supported purge windows/aliases, duplicate

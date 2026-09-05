@@ -117,6 +117,7 @@ add_test(NAME refine_window COMMAND RefineWindowTests)
 add_executable(GmCommandTests EXCLUDE_FROM_ALL
     ${CMAKE_SOURCE_DIR}/tests/server/GmCommandTests.cpp
     cmd_gm.cpp
+    skill_power.cpp
     ecs/systems/SkillSystem.cpp
     ecs/PIDRegistry.cpp
     buffer_manager.cpp
