@@ -1,4 +1,51 @@
-# Item attribute regression tests
+# Server ECS regression tests
+
+## Safebox and mall lifecycle
+
+`SafeboxLifecycleTests` compiles the existing production `safebox.cpp` and
+`Base/grid.cpp`. The owner and every item are versioned EnTT entities with no
+`CHARACTER`, `CItem`, or legacy-pointer component. The implementation remains
+in `safebox.cpp/.h`; there is no parallel ECS copy of the storage system.
+
+```powershell
+cmake -S . -B build
+cmake --build build --config Release --target GameServer SafeboxLifecycleTests
+ctest --test-dir build -C Release -R '^safebox_lifecycle$' --output-on-failure
+```
+
+For ASan, configure `build-asan` with `ENABLE_ASAN=ON`, build the same test target
+in `RelWithDebInfo`, and run the test with `ctest --test-dir build-asan -C
+RelWithDebInfo -R '^safebox_lifecycle$' --output-on-failure`.
+
+Coverage includes both storage windows, detached-item attachment, duplicate and
+overlapping placements, multi-cell footprints, invalid heights/positions,
+growth up to the fixed item-array limit, and preservation of occupied cells.
+It also covers invalid/NPC/recycled owners, recycled items, items moved to
+another owner/window/cell, failed publication/detachment, and teardown after
+owner destruction. Reentrant flush/detach/destroy callbacks see an already
+unpublished container and cannot add, remove, move, save or destroy it again.
+Post-callback item identity/ownership is revalidated before further work.
+
+Grid ownership is RAII; copy/move construction is disabled. The real session
+and character teardown call sites now clear their safebox/mall pointer before
+deleting the container; those call sites are compiled by GameServer, but not
+executed in the headless tests. Existing CHARACTER storage pointers themselves
+are not yet migrated to ECS ownership.
+
+Persistence, descriptor lookup, item detachment/destruction and stack-count
+services are doubles. No socket, DB, CHARACTER, CItem, or item-manager instance
+is created. Tests cover safe no-DB saving, not successful account-save packet
+delivery or actual engine item cleanup. Stack tests cover locks/exchange flags,
+caps, oversized counts, normal partial/full merges and rejected consumption.
+The existing debit-then-credit merge is still sequential: a credit failure
+after a successful debit is logged but cannot be rolled back reliably. No DB
+transaction, durable recovery, or general atomic stack-transfer API is added.
+
+Before deployment verify safebox/mall load, deposit/withdraw/merge, resize,
+close/reopen, relog/disconnect and DB interruption on a test server. Confirm
+that closing unloads runtime items without deleting their stored DB rows.
+
+## Item attributes
 
 The `ItemAttributeTests` target compiles the production `ItemAttributeSystem.cpp`
 and the complete `new_switchbot.cpp` and `DragonSoul.cpp` with an EnTT registry and headless inventory,

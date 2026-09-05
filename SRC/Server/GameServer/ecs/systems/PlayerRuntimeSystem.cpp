@@ -1,4 +1,5 @@
 #include "../../stdafx.h"
+#include <utility>
 #include "ViewSystem.hpp"
 #include "AffectSystem.hpp"
 #include "ActivitySystem.hpp"
@@ -4405,14 +4406,12 @@ void CHARACTER::Destroy()
 
     if (m_pkSafebox)
     {
-        M2_DELETE(m_pkSafebox);
-        m_pkSafebox = nullptr;
+        M2_DELETE(std::exchange(m_pkSafebox, nullptr));
     }
 
     if (m_pkMall)
     {
-        M2_DELETE(m_pkMall);
-        m_pkMall = nullptr;
+        M2_DELETE(std::exchange(m_pkMall, nullptr));
     }
 
     ecs::PlayerRuntime::BuffOnAttr_Destroy(GetEntityHandle());

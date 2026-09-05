@@ -5,28 +5,21 @@
 #include "constants.h"
 #include "safebox.h"
 #include "packet.h"
-#include "char_interface.hpp"
-#include "ecs/CharacterAccessors.hpp"
-#include "ecs/AIHelpers.hpp"
-#include "ecs/EntityFactory.hpp"
 #include "ecs/Registry.hpp"
 #include "ecs/systems/ItemSystem.hpp"
 #include "desc_client.h"
-#include "item.h"
-#include "item_manager.h"
 #include "config.h"
 
-CSafebox::CSafebox(LPCHARACTER pkChrOwner, int iSize, uint32_t dwGold) : m_pkChrOwner(pkChrOwner), m_iSize(iSize), m_lGold(dwGold)
+namespace {
+constexpr int GridWidth = 16;
+constexpr int MaxHeight = SAFEBOX_MAX_NUM / GridWidth;
+}
+
+CSafebox::CSafebox(entt::entity owner, int iSize, uint32_t dwGold)
+	: m_owner(owner), m_iSize(0), m_lGold(dwGold), m_bWindowMode(SAFEBOX)
 {
-	assert(m_pkChrOwner != nullptr);
 	m_items.fill(entt::null);
-
-	if (m_iSize)
-		m_pkGrid = M2_NEW CGrid(16, m_iSize);
-	else
-		m_pkGrid = nullptr;
-
-	m_bWindowMode = SAFEBOX;
+	ChangeSize(iSize);
 }
 
 CSafebox::~CSafebox()
@@ -36,50 +29,106 @@ CSafebox::~CSafebox()
 
 void CSafebox::SetWindowMode(uint8_t bMode)
 {
+	if (m_destroying || (bMode != SAFEBOX && bMode != MALL) ||
+		std::any_of(m_items.begin(), m_items.end(), [](entt::entity item) { return item != entt::null; }))
+		return;
 	m_bWindowMode = bMode;
+}
+
+bool CSafebox::OwnsItem(entt::entity item, uint32_t cell) const
+{
+	if (!ItemSystem::IsValidItem(item))
+		return false;
+	const auto* owner = g_registry.try_get<ecs::ItemOwner>(item);
+	const auto* location = g_registry.try_get<ecs::ItemLocation>(item);
+	// Compare the stored versioned owner even during teardown after logout.
+	// GetItemOwner intentionally hides invalid owners and cannot do this check.
+	return owner && owner->owner == m_owner && location &&
+		location->window == m_bWindowMode && location->cell == cell;
+}
+
+bool CSafebox::FitsGrid(uint32_t cell, uint8_t size) const
+{
+	return m_pkGrid && cell < m_items.size() && cell < m_pkGrid->GetSize() &&
+		size > 0 && size <= m_iSize - static_cast<int>(cell / GridWidth);
 }
 
 void CSafebox::__Destroy()
 {
-	for (entt::entity& item : m_items)
+	if (m_destroying)
+		return;
+	m_destroying = true;
+	const auto items = m_items;
+	m_items.fill(entt::null);
+	m_pkGrid.reset();
+	// Unpublish the entire container before flush/detach/destruction callbacks.
+	for (size_t cell = 0; cell < items.size(); ++cell)
 	{
-		if (!ItemSystem::IsValidItem(item))
+		const auto item = items[cell];
+		if (!OwnsItem(item, static_cast<uint32_t>(cell)))
+			continue;
+
+		const bool previousSkipSave = ItemSystem::GetItemSkipSave(item);
+		ItemSystem::SetItemSkipSave(item, true);
+		ItemSystem::FlushDelayedSaveEcs(item);
+		if (!OwnsItem(item, static_cast<uint32_t>(cell)))
 		{
-			item = entt::null;
+			if (ItemSystem::IsValidItem(item))
+				ItemSystem::SetItemSkipSave(item, previousSkipSave);
 			continue;
 		}
-
-		const entt::entity itemToDestroy = item;
-		item = entt::null;
-		ItemSystem::SetItemSkipSave(itemToDestroy, true);
-		ItemSystem::FlushDelayedSaveEcs(itemToDestroy);
-		ItemSystem::RemoveItemEcs(itemToDestroy);
-		ItemSystem::DestroyItemEntityEcs(itemToDestroy, "SAFEBOX_DESTRUCT");
-	}
-
-	if (m_pkGrid)
-	{
-		M2_DELETE(m_pkGrid);
-		m_pkGrid = nullptr;
+		const bool removed = ItemSystem::RemoveItemEcs(item);
+		if (!ItemSystem::IsValidItem(item))
+			continue;
+		const auto* owner = g_registry.try_get<ecs::ItemOwner>(item);
+		if (!removed || !owner || owner->owner != entt::null || ItemSystem::GetItemWindow(item) != RESERVED_WINDOW)
+		{
+			ItemSystem::SetItemSkipSave(item, previousSkipSave);
+			LOG_ERROR("SAFEBOX: item {} changed ownership during teardown; not destroying", ItemSystem::GetItemID(item));
+			continue;
+		}
+		ItemSystem::DestroyItemEntityEcs(item, "SAFEBOX_DESTRUCT");
 	}
 }
 
 bool CSafebox::Add(uint32_t dwPos, entt::entity item)
 {
-	const entt::entity chrOwner = m_pkChrOwner ? m_pkChrOwner->GetEntityHandle() : entt::null;
-	if (!IsValidPosition(dwPos) || !ItemSystem::IsValidItem(item))
+	const entt::entity chrOwner = m_owner;
+	if (m_destroying || !ecs::PlayerRuntime::IsPC(chrOwner) || !IsValidPosition(dwPos) || !ItemSystem::IsValidItem(item))
 	{
 		LOG_ERROR("SAFEBOX: item on wrong position at {}", dwPos);
 		return false;
 	}
-
-	ItemSystem::SetItemWindow(item, m_bWindowMode);
-	ItemSystem::SetItemCell(item, chrOwner, dwPos);
-	if (!ItemSystem::SaveItemEcs(item))
+	const auto* owner = g_registry.try_get<ecs::ItemOwner>(item);
+	const uint8_t size = ItemSystem::GetItemSize(item);
+	if ((owner && owner->owner != entt::null) ||
+		std::find(m_items.begin(), m_items.end(), item) != m_items.end() || !IsEmpty(dwPos, size))
 		return false;
 
-	m_pkGrid->Put(dwPos, 1, ItemSystem::GetItemSize(item));
+	if (!m_pkGrid->Put(dwPos, 1, size))
+		return false;
+	const auto oldOwner = owner ? *owner : ecs::ItemOwner {};
+	const auto* location = g_registry.try_get<ecs::ItemLocation>(item);
+	const auto oldLocation = location ? *location : ecs::ItemLocation {RESERVED_WINDOW, 0};
+	ItemSystem::SetItemWindow(item, m_bWindowMode);
+	ItemSystem::SetItemCell(item, chrOwner, dwPos);
 	m_items[dwPos] = item;
+	const bool saved = ItemSystem::SaveItemEcs(item);
+	if (!saved || m_destroying || !OwnsItem(item, dwPos) || !ecs::PlayerRuntime::IsPC(chrOwner))
+	{
+		// Never restore over a moved/destroyed entity or a replacement slot.
+		if (m_items[dwPos] == item)
+		{
+			m_items[dwPos] = entt::null;
+			if (m_pkGrid) m_pkGrid->Get(dwPos, 1, size);
+		}
+		if (OwnsItem(item, dwPos))
+		{
+			g_registry.get<ecs::ItemOwner>(item) = oldOwner;
+			g_registry.get<ecs::ItemLocation>(item) = oldLocation;
+		}
+		return false;
+	}
 
 	TPacketGCItemSet pack{};
 	pack.header = m_bWindowMode == SAFEBOX ? HEADER_GC_SAFEBOX_SET : HEADER_GC_MALL_SET;
@@ -104,45 +153,60 @@ bool CSafebox::Add(uint32_t dwPos, entt::entity item)
 
 entt::entity CSafebox::Get(uint32_t dwPos) const
 {
-	if (!m_pkGrid || dwPos >= m_pkGrid->GetSize())
+	if (m_destroying || !m_pkGrid || dwPos >= m_items.size() || dwPos >= m_pkGrid->GetSize())
 		return entt::null;
 
 	const entt::entity item = m_items[dwPos];
-	return ItemSystem::IsValidItem(item) ? item : entt::null;
+	return OwnsItem(item, dwPos) ? item : entt::null;
 }
 
 entt::entity CSafebox::Remove(uint32_t dwPos)
 {
-	const entt::entity chrOwner = m_pkChrOwner ? m_pkChrOwner->GetEntityHandle() : entt::null;
+	const entt::entity chrOwner = m_owner;
+	if (m_destroying || !ecs::PlayerRuntime::IsPC(chrOwner))
+		return entt::null;
 	const entt::entity item = Get(dwPos);
 	if (!ItemSystem::IsValidItem(item))
 		return entt::null;
 
-	if (!m_pkGrid)
-		LOG_ERROR("Safebox::Remove : nil grid");
-	else
-		m_pkGrid->Get(dwPos, 1, ItemSystem::GetItemSize(item));
+	const uint8_t size = ItemSystem::GetItemSize(item);
+	if (!FitsGrid(dwPos, size))
+		return entt::null;
+	m_pkGrid->Get(dwPos, 1, size);
 
 	m_items[dwPos] = entt::null;
-	ItemSystem::RemoveItemEcs(item);
+	if (!ItemSystem::RemoveItemEcs(item))
+	{
+		if (!m_destroying && OwnsItem(item, dwPos) && m_items[dwPos] == entt::null && m_pkGrid->Put(dwPos, 1, size))
+			m_items[dwPos] = item;
+		return entt::null;
+	}
+	if (m_destroying || !ecs::PlayerRuntime::IsPC(chrOwner) || m_items[dwPos] != entt::null)
+		return entt::null;
 
 	TPacketGCItemDel pack{};
 	pack.header = m_bWindowMode == SAFEBOX ? HEADER_GC_SAFEBOX_DEL : HEADER_GC_MALL_DEL;
 	pack.pos = dwPos;
 	if (LPDESC desc = ecs::PlayerRuntime::GetDesc(chrOwner))
 		desc->Packet(&pack, sizeof(pack));
+	if (!ItemSystem::IsValidItem(item))
+		return entt::null;
+	const auto* detachedOwner = g_registry.try_get<ecs::ItemOwner>(item);
+	if (!detachedOwner || detachedOwner->owner != entt::null || ItemSystem::GetItemWindow(item) != RESERVED_WINDOW)
+		return entt::null;
 	LOG_INFO("SAFEBOX: REMOVE {} {} count {}", ecs::PlayerRuntime::GetName(chrOwner).data(), ItemSystem::GetItemName(item), ItemSystem::GetItemCount(item));
 	return item;
 }
 
 void CSafebox::Save()
 {
-	const entt::entity chrOwner = m_pkChrOwner ? m_pkChrOwner->GetEntityHandle() : entt::null;
-	TSafeboxTable t;
-
-	memset(&t, 0, sizeof(TSafeboxTable));
-
-	t.dwID = ecs::PlayerRuntime::GetDesc(chrOwner)->GetAccountTable().id;
+	const entt::entity chrOwner = m_owner;
+	if (m_destroying || !ecs::PlayerRuntime::IsPC(chrOwner) || !db_clientdesc)
+		return;
+	TSafeboxTable t {};
+	t.dwID = ecs::PlayerRuntime::GetAccountID(chrOwner);
+	if (!t.dwID)
+		return;
 	t.dwGold = m_lGold;
 
 	db_clientdesc->DBPacket(HEADER_GD_SAFEBOX_SAVE, 0, &t, sizeof(TSafeboxTable));
@@ -151,7 +215,7 @@ void CSafebox::Save()
 
 bool CSafebox::IsEmpty(uint32_t dwPos, uint8_t bSize)
 {
-	if (!m_pkGrid)
+	if (m_destroying || !FitsGrid(dwPos, bSize))
 		return false;
 
 	return m_pkGrid->IsEmpty(dwPos, 1, bSize);
@@ -159,27 +223,18 @@ bool CSafebox::IsEmpty(uint32_t dwPos, uint8_t bSize)
 
 void CSafebox::ChangeSize(int iSize)
 {
-	// 현재 사이즈가 인자보다 크면 사이즈를 가만 둔다.
-	if (m_iSize >= iSize)
+	if (m_destroying || iSize <= m_iSize || iSize > MaxHeight)
 		return;
-
+	// Allocate/copy first; the old grid remains owned if allocation fails.
+	auto grid = m_pkGrid ? std::make_unique<CGrid>(m_pkGrid.get(), GridWidth, iSize)
+		: std::make_unique<CGrid>(GridWidth, iSize);
+	m_pkGrid = std::move(grid);
 	m_iSize = iSize;
-
-	CGrid * pkOldGrid = m_pkGrid;
-
-	if (pkOldGrid) {
-		m_pkGrid = M2_NEW CGrid(pkOldGrid, 16, m_iSize);
-#ifdef ENABLE_BUG_FIXES
-		delete pkOldGrid;
-#endif
-	} else {
-		m_pkGrid = M2_NEW CGrid(16, m_iSize);
-	}
 }
 
 entt::entity CSafebox::GetItem(uint32_t bCell) const
 {
-	if (bCell >= static_cast<uint32_t>(16 * m_iSize))
+	if (bCell >= m_items.size() || bCell >= static_cast<uint32_t>(GridWidth * m_iSize))
 	{
 		LOG_ERROR("CHARACTER::GetItem: invalid item cell {}", bCell);
 		return entt::null;
@@ -190,13 +245,13 @@ entt::entity CSafebox::GetItem(uint32_t bCell) const
 
 bool CSafebox::MoveItem(uint32_t bCell, uint32_t bDestCell, uint32_t count)
 {
-	const entt::entity chrOwner = m_pkChrOwner ? m_pkChrOwner->GetEntityHandle() : entt::null;
-	const uint32_t maxPosition = static_cast<uint32_t>(16 * m_iSize);
-	if (bCell >= maxPosition || bDestCell >= maxPosition)
+	const entt::entity chrOwner = m_owner;
+	if (m_destroying || !ecs::PlayerRuntime::IsPC(chrOwner) ||
+		!IsValidPosition(bCell) || !IsValidPosition(bDestCell))
 		return false;
 
 	const entt::entity item = GetItem(bCell);
-	if (!ItemSystem::IsValidItem(item) || ItemSystem::IsItemExchanging(item))
+	if (!ItemSystem::IsValidItem(item) || ItemSystem::IsItemExchanging(item) || ItemSystem::IsItemLocked(item))
 		return false;
 
 	const uint32_t sourceCount = ItemSystem::GetItemCount(item);
@@ -204,9 +259,12 @@ bool CSafebox::MoveItem(uint32_t bCell, uint32_t bDestCell, uint32_t count)
 		return false;
 
 	const entt::entity destination = GetItem(bDestCell);
+	if (ItemSystem::IsValidItem(destination) &&
+		(ItemSystem::IsItemExchanging(destination) || ItemSystem::IsItemLocked(destination)))
+		return false;
 	if (ItemSystem::IsValidItem(destination) && destination != item &&
-		IS_SET(ItemSystem::GetItemFlags(destination), ITEM_FLAG_STACKABLE) &&
-		!IS_SET(ItemSystem::GetItemAntiFlags(destination), ITEM_ANTIFLAG_STACK) &&
+		(ItemSystem::GetItemFlags(destination) & ITEM_FLAG_STACKABLE) &&
+		!(ItemSystem::GetItemAntiFlags(destination) & ITEM_ANTIFLAG_STACK) &&
 		ItemSystem::GetItemVnum(destination) == ItemSystem::GetItemVnum(item))
 	{
 		for (int i = 0; i < ITEM_SOCKET_MAX_NUM; ++i)
@@ -216,15 +274,27 @@ bool CSafebox::MoveItem(uint32_t bCell, uint32_t bDestCell, uint32_t count)
 		if (count == 0)
 			count = sourceCount;
 
-		count = MIN(g_bItemCountLimit - ItemSystem::GetItemCount(destination), count);
+		const uint32_t destinationCount = ItemSystem::GetItemCount(destination);
+		if (g_bItemCountLimit <= 0 || destinationCount >= static_cast<uint32_t>(g_bItemCountLimit))
+			return false;
+		count = std::min(static_cast<uint32_t>(g_bItemCountLimit) - destinationCount, count);
 		if (count == 0)
 			return false;
 
-		if (count >= sourceCount)
-			Remove(bCell);
+		if (count >= sourceCount && Remove(bCell) == entt::null)
+			return false;
 
-		ItemSystem::ConsumeItemEcs(item, count);
-		ItemSystem::AddItemCountEcs(destination, count);
+		if (!ItemSystem::ConsumeItemEcs(item, count))
+		{
+			if (count >= sourceCount && ItemSystem::IsValidItem(item) && !Add(bCell, item))
+				LOG_ERROR("SAFEBOX: failed to restore source {} after rejected consumption", ItemSystem::GetItemID(item));
+			return false;
+		}
+		if (!ItemSystem::AddItemCountEcs(destination, count))
+		{
+			LOG_ERROR("SAFEBOX: destination credit failed after source debit at {} -> {}", bCell, bDestCell);
+			return false;
+		}
 		LOG_INFO("SAFEBOX: STACK {} {} -> {} {} count {}", ecs::PlayerRuntime::GetName(chrOwner).data(), static_cast<int>(bCell), static_cast<int>(bDestCell), ItemSystem::GetItemName(destination), ItemSystem::GetItemCount(destination));
 		return true;
 	}
@@ -240,7 +310,7 @@ bool CSafebox::MoveItem(uint32_t bCell, uint32_t bDestCell, uint32_t count)
 
 bool CSafebox::IsValidPosition(uint32_t dwPos)
 {
-	if (!m_pkGrid)
+	if (m_destroying || !m_pkGrid || dwPos >= m_items.size())
 		return false;
 
 	if (dwPos >= m_pkGrid->GetSize())
@@ -248,5 +318,3 @@ bool CSafebox::IsValidPosition(uint32_t dwPos)
 
 	return true;
 }
-
-

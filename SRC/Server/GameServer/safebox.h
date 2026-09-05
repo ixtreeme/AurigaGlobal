@@ -2,30 +2,26 @@
 #define __INC_METIN_II_GAME_SAFEBOX_H__
 
 #include <array>
+#include <cstdint>
+#include <memory>
+#include <common/tables.h>
 #include <entt/entity/entity.hpp>
 
-class CHARACTER;
-class CItem;
 class CGrid;
 
 class CSafebox
 {
 	public:
-		CSafebox(LPCHARACTER pkChrOwner, int iSize, uint32_t dwGold);
+		CSafebox(entt::entity owner, int iSize, uint32_t dwGold);
 		~CSafebox();
+		CSafebox(const CSafebox&) = delete;
+		CSafebox& operator=(const CSafebox&) = delete;
 
 		bool		Add(uint32_t dwPos, entt::entity item);
 		entt::entity Get(uint32_t dwPos) const;
 		entt::entity Remove(uint32_t dwPos);
 		void		ChangeSize(int iSize);
 
-//		bool		MoveItem(uint8_t bCell, uint8_t bDestCell,
-//#ifdef ENABLE_NEW_STACK_LIMIT
-//		int 
-//#else
-//		uint8_t 
-//#endif
-		//count);
 		entt::entity GetItem(uint32_t bCell) const;
 
 		bool MoveItem(uint32_t bCell, uint32_t bDestCell, uint32_t count);
@@ -40,9 +36,12 @@ class CSafebox
 	protected:
 		void		__Destroy();
 
-		LPCHARACTER	m_pkChrOwner;
+		bool OwnsItem(entt::entity item, uint32_t cell) const;
+		bool FitsGrid(uint32_t cell, uint8_t size) const;
+		entt::entity m_owner { entt::null };
 		std::array<entt::entity, SAFEBOX_MAX_NUM> m_items;
-		CGrid *		m_pkGrid;
+		std::unique_ptr<CGrid> m_pkGrid;
+		bool m_destroying { false };
 		int		m_iSize;
 		int32_t		m_lGold;
 

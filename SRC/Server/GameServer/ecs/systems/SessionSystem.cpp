@@ -1,4 +1,5 @@
 #include "../../stdafx.h"
+#include <utility>
 #include "ViewSystem.hpp"
 #include "PointSystem.hpp"
 #include "PlayerRuntimeSystem.hpp"
@@ -1461,7 +1462,7 @@ void CHARACTER::LoadSafebox(int iSize, uint32_t dwGold, int iItemCount, TPlayerI
         bLoaded = true;
 
     if (!m_pkSafebox)
-        m_pkSafebox = M2_NEW CSafebox(this, iSize, dwGold);
+        m_pkSafebox = M2_NEW CSafebox(GetEntityHandle(), iSize, dwGold);
     else
         m_pkSafebox->ChangeSize(iSize);
 
@@ -1530,8 +1531,7 @@ void CHARACTER::CloseSafebox()
     {
         LOG_ERROR("CloseSafebox skipped: invalid owner (name={} vid={} race={} ispc={} desc={})", GetName(), GetPacketVID(), GetRaceNum(), IsPC(), static_cast<const void*>(GetDesc()));
 
-        M2_DELETE(m_pkSafebox);
-        m_pkSafebox = nullptr;
+        M2_DELETE(std::exchange(m_pkSafebox, nullptr));
         m_bOpeningSafebox = false;
         return;
     }
@@ -1539,8 +1539,7 @@ void CHARACTER::CloseSafebox()
     SetOpenSafebox(false);
     m_pkSafebox->Save();
 
-    M2_DELETE(m_pkSafebox);
-    m_pkSafebox = nullptr;
+    M2_DELETE(std::exchange(m_pkSafebox, nullptr));
 
     ecs::ChatSystem::Send(GetEntityHandle(), CHAT_TYPE_COMMAND, "CloseSafebox");
 
@@ -1563,7 +1562,7 @@ void CHARACTER::LoadMall(int iItemCount, TPlayerItem* pItems)
         bLoaded = true;
 
     if (!m_pkMall)
-        m_pkMall = M2_NEW CSafebox(this, 3 * SAFEBOX_PAGE_SIZE, 0);
+        m_pkMall = M2_NEW CSafebox(GetEntityHandle(), 3 * SAFEBOX_PAGE_SIZE, 0);
     else
         m_pkMall->ChangeSize(3 * SAFEBOX_PAGE_SIZE);
 
@@ -1611,8 +1610,7 @@ void CHARACTER::CloseMall()
 
     m_pkMall->Save();
 
-    M2_DELETE(m_pkMall);
-    m_pkMall = nullptr;
+    M2_DELETE(std::exchange(m_pkMall, nullptr));
 
     ecs::ChatSystem::Send(GetEntityHandle(), CHAT_TYPE_COMMAND, "CloseMall");
 }
