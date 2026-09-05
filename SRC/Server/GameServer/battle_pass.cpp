@@ -49,12 +49,12 @@ namespace
 		return std::string(buf);
 	}
 
-	static bool IsBattlePassFinalRewardTaken(LPCHARACTER ch, uint8_t bBattlePassId)
+	static bool IsBattlePassFinalRewardTaken(entt::entity ch, uint8_t bBattlePassId)
 	{
-		if (!ch)
+		if (!ecs::PlayerRuntime::IsValid(ch))
 			return false;
 
-		quest::PC* pc = quest::CQuestManager::instance().GetPCForce((ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null))));
+		quest::PC* pc = quest::CQuestManager::instance().GetPCForce((ecs::PlayerRuntime::GetPlayerID(ch)));
 		if (!pc)
 			return false;
 
@@ -62,12 +62,12 @@ namespace
 		return pc->GetFlag(flag) != 0;
 	}
 
-	static void SetBattlePassFinalRewardTaken(LPCHARACTER ch, uint8_t bBattlePassId)
+	static void SetBattlePassFinalRewardTaken(entt::entity ch, uint8_t bBattlePassId)
 	{
-		if (!ch)
+		if (!ecs::PlayerRuntime::IsValid(ch))
 			return;
 
-		quest::PC* pc = quest::CQuestManager::instance().GetPCForce((ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null))));
+		quest::PC* pc = quest::CQuestManager::instance().GetPCForce((ecs::PlayerRuntime::GetPlayerID(ch)));
 		if (!pc)
 			return;
 
@@ -744,7 +744,7 @@ void CBattlePass::BattlePassRequestReward(LPCHARACTER pkChar)
 		return;
 
 	// mar atvette a vegso jutalmat ebben a ciklusban (honap)
-	if (IsBattlePassFinalRewardTaken(pkChar, bBattlePassId))
+	if (IsBattlePassFinalRewardTaken(charEntity, bBattlePassId))
 	{
 		ecs::ChatSystem::Send(charEntity, CHAT_TYPE_INFO, "A Battle Pass vegso jutalmat ebben a honapban mar atvetted.");
 		return;
@@ -800,7 +800,7 @@ void CBattlePass::BattlePassReward(LPCHARACTER pkChar)
 	}
 
 	// plusz vedelem: ujra login / karaktervaltas utan se tudja ujra felvenni
-	if (IsBattlePassFinalRewardTaken(pkChar, bBattlePassId))
+	if (IsBattlePassFinalRewardTaken(charEntity, bBattlePassId))
 	{
 		ecs::ChatSystem::Send(charEntity, CHAT_TYPE_INFO, "A Battle Pass vegso jutalmat ebben a honapban mar atvetted.");
 		return;
@@ -839,7 +839,7 @@ void CBattlePass::BattlePassReward(LPCHARACTER pkChar)
 	ranking.bBattlePassId = bBattlePassId;
 	strlcpy(ranking.playerName, ecs::PlayerRuntime::GetName(charEntity).data(), sizeof(ranking.playerName));
 	db_clientdesc->DBPacket(HEADER_GD_REGISTER_BP_RANKING, 0, &ranking, sizeof(TBattlePassRegisterRanking));
-	SetBattlePassFinalRewardTaken(pkChar, bBattlePassId);
+	SetBattlePassFinalRewardTaken(charEntity, bBattlePassId);
 }
 
 bool CBattlePass::BattlePassMissionGetInfo(uint8_t bBattlePassId, uint8_t bMissionType, uint32_t* dwFirstInfo, uint32_t* dwSecondInfo)

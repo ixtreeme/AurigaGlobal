@@ -164,12 +164,12 @@ int64_t ReadRealArray(entt::entity e, uint8_t type)
 	return points->base.points[type];
 }
 
-void SyncInstantPointMirror(LPCHARACTER ch, uint8_t type, int64_t val)
+void SyncInstantPointMirror(entt::entity ch, uint8_t type, int64_t val)
 {
-	if (!ch || type >= POINT_MAX_NUM || !ecs::IsStatArrayPoint(type))
+	if (!ecs::PlayerRuntime::IsValid(ch) || type >= POINT_MAX_NUM || !ecs::IsStatArrayPoint(type))
 		return;
 
-	const entt::entity e = ch->GetEntityHandle();
+	const entt::entity e = ch;
 	if (!IsReadableEntity(e))
 		return;
 
@@ -180,12 +180,12 @@ void SyncInstantPointMirror(LPCHARACTER ch, uint8_t type, int64_t val)
 	points.instant.points[type] = val;
 }
 
-void SyncRealPointMirror(LPCHARACTER ch, uint8_t type, int64_t val)
+void SyncRealPointMirror(entt::entity ch, uint8_t type, int64_t val)
 {
-	if (!ch || type >= POINT_MAX_NUM)
+	if (!ecs::PlayerRuntime::IsValid(ch) || type >= POINT_MAX_NUM)
 		return;
 
-	const entt::entity e = ch->GetEntityHandle();
+	const entt::entity e = ch;
 	if (!IsReadableEntity(e))
 		return;
 
@@ -593,7 +593,7 @@ int CHARACTER::GetRandomSP() const
 void CHARACTER::SetRealPoint(uint8_t type, int64_t val)
 {
 	m_points.points[type] = val;
-	ecs::PointSystem::SyncRealPointMirror(this, type, val);
+	ecs::PointSystem::SyncRealPointMirror(GetEntityHandle(), type, val);
 #ifdef ENABLE_RANKING
 	if (type == POINT_PLAYTIME)
 		SetRankPoints(15, val);
@@ -697,7 +697,7 @@ void CHARACTER::SetPoint(uint8_t type, int64_t val)
 
 
 	m_pointsInstant.points[type] = val;
-	ecs::PointSystem::SyncInstantPointMirror(this, type, val);
+	ecs::PointSystem::SyncInstantPointMirror(GetEntityHandle(), type, val);
 
 
 	// B.1.2: read timing via getters (ECS MovementState).

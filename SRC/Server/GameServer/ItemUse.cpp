@@ -41,15 +41,14 @@ namespace
 		ecs::ChatSystem::Send(chEntity, CHAT_TYPE_INFO, "You received %u Dragon Coins.", (uint32_t)canAdd);
 	}
 
-	inline bool CheckCanUseNow(LPCHARACTER ch)
+	inline bool CheckCanUseNow(entt::entity ch)
 	{
-		const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
-		if (!ch)
+		if (!ecs::PlayerRuntime::IsValid(ch))
 			return false;
 
-		if (!ecs::PlayerRuntime::CanWarp(chEntity))
+		if (!ecs::PlayerRuntime::CanWarp(ch))
 		{
-			ecs::ChatSystem::Send(chEntity, CHAT_TYPE_INFO, "You cannot use this item right now.");
+			ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "You cannot use this item right now.");
 			return false;
 		}
 
@@ -80,7 +79,7 @@ namespace item_change
 			// 39065: +1 Dragon Coin (consumes 1)
 			//case 39065:
 			//{
-			//	if (!CheckCanUseNow(ch))
+			//	if (!CheckCanUseNow(chEntity))
 			//		return true;
 
 			//	if (ItemSystem::GetItemCount((item ? item->GetEntityHandle() : entt::null)) < 1)
@@ -94,7 +93,7 @@ namespace item_change
 			// 30279: consumes 100 (across all stacks), gives 30280 x1
 			case 30279:
 			{
-				if (!CheckCanUseNow(ch))
+				if (!CheckCanUseNow(chEntity))
 					return true;
 
 				
@@ -112,7 +111,7 @@ namespace item_change
 			// kristaly
 			case 30277:
 			{
-				if (!CheckCanUseNow(ch))
+				if (!CheckCanUseNow(chEntity))
 					return true;
 
 				
@@ -132,7 +131,7 @@ namespace item_change
 			// 39067: +100 Dragon Coin (consumes 1)
 			case 39067:
 			{
-				if (!CheckCanUseNow(ch))
+				if (!CheckCanUseNow(chEntity))
 					return true;
 
 				if (ItemSystem::GetItemCount((item ? item->GetEntityHandle() : entt::null)) < 1)
@@ -146,7 +145,7 @@ namespace item_change
 			// 39068: +10,000,000 gold (consumes 1)
 			case 39068:
 			{
-				if (!CheckCanUseNow(ch))
+				if (!CheckCanUseNow(chEntity))
 					return true;
 
 				const int32_t count = ItemSystem::GetItemCount((item ? item->GetEntityHandle() : entt::null));

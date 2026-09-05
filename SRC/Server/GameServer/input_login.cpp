@@ -124,9 +124,9 @@ static void _send_bonus_info(LPCHARACTER ch)
 #endif
 }
 
-static bool FN_is_battle_zone(LPCHARACTER ch)
+static bool FN_is_battle_zone(entt::entity ch)
 {
-	switch (ecs::PlayerRuntime::GetMapIndex(((ch) ? (ch)->GetEntityHandle() : entt::null)))
+	switch (ecs::PlayerRuntime::GetMapIndex(ch))
 	{
 	case 1:         // ¿ 1
 	case 2:         // ¿ 2
@@ -872,7 +872,7 @@ void CInputLogin::Entergame(LPDESC d, const char* data)
 
 #ifdef TEXTS_IMPROVEMENT
 	if (g_noticeBattleZone) {
-		if (FN_is_battle_zone(ch)) {
+		if (FN_is_battle_zone(d->GetEntity())) {
 			ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 637, "");
 			ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 638, "");
 		}

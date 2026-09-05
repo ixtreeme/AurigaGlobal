@@ -59,13 +59,12 @@
 #endif
 
 #ifdef ENABLE_DAILY_REWARD_HWID_LIMIT_RAZOR93
-static std::string MakeDailyRewardHWKey(LPCHARACTER ch)
+static std::string MakeDailyRewardHWKey(entt::entity ch)
 {
-	const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
-	if (!ch || !(ecs::PlayerRuntime::IsPC(chEntity)) || !ecs::PlayerRuntime::GetDesc(chEntity))
+	if (!ecs::PlayerRuntime::IsValid(ch) || !(ecs::PlayerRuntime::IsPC(ch)) || !ecs::PlayerRuntime::GetDesc(ch))
 		return std::string();
 
-	DESC* d = ecs::PlayerRuntime::GetDesc(chEntity);
+	DESC* d = ecs::PlayerRuntime::GetDesc(ch);
 	const char* hwid = d->GetHwid();
 	const char* host = d->GetHostName();
 
@@ -87,10 +86,9 @@ static std::string MakeDailyRewardHWKey(LPCHARACTER ch)
 	return key;
 }
 
-static bool DailyReward_CheckHWIDLimit(LPCHARACTER ch)
+static bool DailyReward_CheckHWIDLimit(entt::entity ch)
 {
-	const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
-	if (!ch || !(ecs::PlayerRuntime::IsPC(chEntity)) || !ecs::PlayerRuntime::GetDesc(chEntity))
+	if (!ecs::PlayerRuntime::IsValid(ch) || !(ecs::PlayerRuntime::IsPC(ch)) || !ecs::PlayerRuntime::GetDesc(ch))
 		return false;
 
 	std::string key = MakeDailyRewardHWKey(ch);
@@ -109,8 +107,8 @@ static bool DailyReward_CheckHWIDLimit(LPCHARACTER ch)
 		"INSERT INTO player.daily_reward_claim_hwid (hwkey, claim_day, pid, account_id) "
 		"VALUES('%s', CURDATE(), %u, %u)",
 		key.c_str(),
-		(ecs::PlayerRuntime::GetPlayerID(chEntity)),
-		ecs::PlayerRuntime::GetDesc(chEntity)->GetAccountTable().id
+		(ecs::PlayerRuntime::GetPlayerID(ch)),
+		ecs::PlayerRuntime::GetDesc(ch)->GetAccountTable().id
 	));
 
 	return true;
@@ -235,7 +233,7 @@ ACMD(do_daily_reward_get_reward){
 	if (reward) {
 #ifdef ENABLE_DAILY_REWARD_HWID_LIMIT_RAZOR93
 		// HWID limit: 1 gep / nap
-		if (!DailyReward_CheckHWIDLimit(ch))
+		if (!DailyReward_CheckHWIDLimit(character))
 		{
 			ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "Napi 1 jutalom jar. // You have already collected the reward.");
 			return;
