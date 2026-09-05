@@ -13401,17 +13401,6 @@ void CHARACTER::UnlockExtraInventory(uint8_t category) {
 #endif
 
 #ifdef ENABLE_EXTRA_INVENTORY
-#ifdef ENABLE_EXTRA_INVENTORY
-namespace ItemSystem {
-int GetEmptyExtraInventory(entt::entity owner, entt::entity item)
-{
-	LPCHARACTER legacyOwner = ecs::LegacyCharOf(owner);
-	LPITEM legacyItem = LegacyItemBoundary(item);
-	return (legacyOwner && legacyItem) ? legacyOwner->GetEmptyExtraInventory(legacyItem) : -1;
-}
-} // namespace ItemSystem
-#endif
-
 int CHARACTER::GetEmptyExtraInventory(LPITEM pItem) const
 {
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93

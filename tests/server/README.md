@@ -1,5 +1,66 @@
 # Server ECS regression tests
 
+## Native inventory placement and detachment
+
+The existing InventorySystem.cpp now owns ordinary placement/removal and the
+main/extra/dragon-soul empty-slot queries. The previous ItemSystem.cpp bodies
+were removed, not retained as a second implementation. PlaceItemEcs no longer
+prewrites ownership, calls a legacy boundary, restores possibly destroyed
+components, or resynchronizes from CItem. The extra-inventory entity query no
+longer resolves either CHARACTER or CItem. Ordinary AddToCharacter uses the same
+native insertion core; its acquisition-only rune/accessory rules remain separate
+from pure transfer placement.
+
+Placement validates entity generations, raw ownership, ground state, window,
+footprint, page/unlock limits, DS boxes, extra categories and cross-window aliases.
+Both item anchors and occupancy grids must be empty. Slot/grid and ownership/
+location change together before saving or sending packets. Pending destroy-event
+leases are moved out of components before cancellation and the destination is
+rechecked afterward. Publication reads current slot state, so a nested move or
+replacement is not overwritten by a rollback. Extra unlock multiplication uses
+64-bit arithmetic before clamping.
+
+RemoveItemEcs now enters the actual removal engine BEFORE clearing metadata.
+Previously the owner was cleared first and the engine returned without removing
+inventory references. Removal clears matching anchors/footprints together with
+ownership; it rechecks location after component-construction callbacks. Unequip
+no longer calls SetItemCell with the old owner after detaching (that setter also
+reattached ownership). It commits the wear slot and detached metadata together,
+preserves the EQUIPMENT/absolute-cell wire format, rejects recursive unequipping,
+and stops after callback destruction or reownership.
+
+QuickslotTests was extended in place: it links the real InventorySystem.cpp,
+including placement, detachment, unequip and query bodies. Fixtures have only
+entities/components, with no attached CHARACTER/CItem. Tests cover main, extra,
+DS, belt and switchbot storage; invalid cells, grids and aliases; stale/same-PID
+owners; timer cancellation, save/packet callbacks, nested relocation and entity
+recycling; equipment detachment and acquisition-vs-transfer accessory behavior.
+External item accessors, combat/quest/timer services, persistence, switchbot
+registration and packet transport are controlled doubles. Container removal is
+covered separately by the existing safebox/item-manager suites, not by a live
+cross-subsystem server session.
+
+The construction-destruction test initially exposed an ASAN heap-buffer-overflow
+in the new helper's use of EnTT get_or_emplace: its signal mixin calls get after
+on_construct. The helper now uses single-entity insert, which publishes the same
+construction signal without returning a reference to a possibly deleted object.
+
+Verified on 2026-09-06: GameServer Release and all 13 Release/ASAN tests pass.
+Run the expanded inventory test through the existing QuickslotTests target:
+
+```powershell
+cmake --build build --config Release --target GameServer QuickslotTests
+ctest --test-dir build -C Release --output-on-failure
+cmake --build build-asan --config RelWithDebInfo --target QuickslotTests
+ctest --test-dir build-asan -C RelWithDebInfo --output-on-failure
+```
+
+This is not the complete equipment/shop migration. EquipTo, higher-level
+equip/unequip wrappers and other legacy callers still need migration and broader
+effect-level callback tests. Actual client inventory/equipment UI, relog, mount
+account storage, safebox transfers and DB persistence require integration tests
+before deployment. Saves are not a durable multi-record transaction.
+
 ## Entity-owned exchange sessions
 
 The existing exchange.cpp/exchange.h now contain the complete exchange state

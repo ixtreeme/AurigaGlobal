@@ -265,7 +265,6 @@ bool IsItemInExtraInventory(entt::entity item);
 bool IsItemInDragonSoulInventory(entt::entity item);
 bool PlaceItemEcs(entt::entity owner, entt::entity item, uint8_t window, uint16_t cell);
 bool RemoveItemEcs(entt::entity item);
-bool RemoveItemFromCharacterLegacyBoundary(entt::entity item);
 int GetEmptyInventoryPositionEcs(entt::entity owner, entt::entity item);
 bool HasMainInventorySpaceEcs(entt::entity owner, uint8_t itemSize = 1);
 bool HasInventorySpaceForItemVnum(entt::entity owner, uint32_t itemVnum);

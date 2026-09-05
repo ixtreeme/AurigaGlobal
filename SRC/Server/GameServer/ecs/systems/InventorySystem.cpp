@@ -3,6 +3,10 @@
 #include "PointSystem.hpp"
 #include "MountSystem.hpp"
 #include "QuestSystem.hpp"
+#ifndef ENABLE_BUG_FIXES
+#include "AffectSystem.hpp"
+#include "../../skill.h"
+#endif
 #ifndef __ENABLE_EXTEND_INVEN_SYSTEM__
 #include "../../belt_inventory_helper.h"
 #endif
@@ -23,6 +27,9 @@
 #include "../../item.h"
 #include "../../item_manager.h"
 #include "../../MountInventory.h"
+#ifdef ENABLE_SWITCHBOT
+#include "../../new_switchbot.h"
+#endif
 #include "../../DragonSoul.h"
 #include "../../packet.h"
 #include "../../sectree_manager.h"
@@ -39,6 +46,7 @@
 #include "../components/transform_components.hpp"
 #include "../components/visibility_components.hpp"
 #include <Core/Logging.hpp>
+#include <unordered_set>
 
 namespace
 {
@@ -728,146 +736,281 @@ entt::entity RemoveFromGround(entt::entity itemEntity)
 	return itemEntity;
 }
 
-#ifdef __HIGHLIGHT_SYSTEM__
-bool AddToCharacter(entt::entity itemEntity, entt::entity character, TItemPos Cell, bool isHighLight)
-#else
-bool AddToCharacter(entt::entity itemEntity, entt::entity character, TItemPos Cell)
-#endif
+namespace
 {
-	assert(ecs::PlayerRuntime::GetSectree(itemEntity) == NULL);
-	assert(ItemSystem::GetItemOwner(itemEntity) == entt::null);
-	if (itemEntity == entt::null)
-	{
-		LOG_ERROR("AddToCharacter: item {} has no ECS entity", ItemSystem::GetItemID(itemEntity));
-		return false;
-	}
-	uint16_t pos = Cell.cell;
-	uint8_t window_type = Cell.window_type;
+std::unordered_set<entt::entity> unequipping;
+struct UnequipGuard
+{
+    entt::entity item;
+    ~UnequipGuard() { unequipping.erase(item); }
+};
 
-	if (INVENTORY == window_type)
-	{
-#ifdef ENABLE_RUNE_SYSTEM
-		if (ItemSystem::IsRuneItem(itemEntity) && character != entt::null) {
-			int iFindCell = ItemSystem::FindEquipCell(character, itemEntity);
-			const entt::entity equipped = ItemSystem::GetWearItem(character, iFindCell);
-			if (ItemSystem::IsValidItem(equipped)) {
-#ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 35, "%s", ItemSystem::GetItemName(itemEntity));
-#endif
-				ItemSystem::DestroyItemEntityEcs(
-					itemEntity,
-					"INVENTORY_RUNE_ADD_FAILED");
-				return false;
-			}
-			else {
-				InventorySystem::EquipTo(itemEntity, character, iFindCell);
-				if (ecs::PlayerRuntime::GetDesc(character))
-					ItemSystem::SetItemLastOwnerPID(itemEntity, ecs::PlayerRuntime::GetPlayerID(character));
+template <typename T>
+bool EnsureComponent(entt::entity entity)
+{
+    if (!g_registry.valid(entity)) return false;
+    // EnTT emplace/get_or_emplace obtains a reference AFTER on_construct.
+    // A listener may already have destroyed the entity/component by then.
+    // Single-element insert publishes the same signal but returns no reference.
+    if (!g_registry.all_of<T>(entity)) g_registry.insert<T>(&entity, &entity + 1);
+    return g_registry.valid(entity) && g_registry.all_of<T>(entity);
+}
 
-				event_cancel(&ItemSystem::GetItemEvents(itemEntity).destroy);
-
-				ecs::PlayerRuntime::SetItem(character, TItemPos(EQUIPMENT, iFindCell), itemEntity);
-				ItemSystem::SetItemOwnerEntity(itemEntity, character);
-				ItemSystem::SaveItem(itemEntity);
-
-				SyncItemOwner(itemEntity, character, ecs::PlayerRuntime::GetPlayerID(character));
-				EnsureItemLocation(itemEntity);
-				SyncItemEquipped(itemEntity, true);
-				return true;
-			}
-		}
-#endif
-#ifdef ENABLE_MOUNT_INVENTORY_FIX_RAZOR93_egyenlore_kikapcsolva
-
-		if (pos >= INVENTORY_MAX_NUM && BELT_INVENTORY_SLOT_START > pos)
-#else
-		if (ItemSystem::GetItemCell(itemEntity) >= INVENTORY_MAX_NUM && BELT_INVENTORY_SLOT_START > ItemSystem::GetItemCell(itemEntity))
-#endif
-		{
-			LOG_ERROR("AddToCharacter: cell overflow: {} to {} cell {}", ItemSystem::GetItemProto(itemEntity)->szName, ecs::PlayerRuntime::GetName(character).data(), ItemSystem::GetItemCell(itemEntity));
-			return false;
-		}
-	}
-	else if (DRAGON_SOUL_INVENTORY == window_type)
-	{
-		if (ItemSystem::GetItemCell(itemEntity) >= DRAGON_SOUL_INVENTORY_MAX_NUM)
-		{
-			LOG_ERROR("AddToCharacter: cell overflow: {} to {} cell {}", ItemSystem::GetItemProto(itemEntity)->szName, ecs::PlayerRuntime::GetName(character).data(), ItemSystem::GetItemCell(itemEntity));
-			return false;
-		}
-	}
+template <typename Function>
+bool VisitStorage(entt::entity owner, TItemPos position, Function&& function)
+{
+    if (!g_registry.valid(owner)) return false;
+    switch (position.window_type)
+    {
+    case INVENTORY:
+    case EQUIPMENT: // Internal packet publication uses an absolute wear cell.
+        if (auto* inventory = g_registry.try_get<ecs::MainInventoryRuntimeComponent>(owner))
+            return function(*inventory, position.IsBeltInventoryPosition() ? 1 : INVENTORY_PAGE_COLUMN);
+        break;
+    case DRAGON_SOUL_INVENTORY:
+        if (auto* inventory = g_registry.try_get<ecs::DragonSoulInventoryComponent>(owner))
+            return function(*inventory, DRAGON_SOUL_BOX_COLUMN_NUM);
+        break;
 #ifdef ENABLE_EXTRA_INVENTORY
-	else if (window_type == EXTRA_INVENTORY)
-	{
-		if (ItemSystem::GetItemCell(itemEntity) >= EXTRA_INVENTORY_MAX_NUM)
-		{
-			LOG_ERROR("AddToCharacter: EXTRA cell overflow: {} to {} cell {}", ItemSystem::GetItemProto(itemEntity)->szName, ecs::PlayerRuntime::GetName(character).data(), ItemSystem::GetItemCell(itemEntity));
-			return false;
-		}
-	}
+    case EXTRA_INVENTORY:
+        if (auto* inventory = g_registry.try_get<ecs::ExtraInventoryRuntimeComponent>(owner))
+            return function(*inventory, EXTRA_INVENTORY_PAGE_COLUMN);
+        break;
 #endif
 #ifdef ENABLE_SWITCHBOT
-	else if (SWITCHBOT == window_type)
-	{
-		if (ItemSystem::GetItemCell(itemEntity) >= SWITCHBOT_SLOT_COUNT)
-		{
-			LOG_ERROR("AddToCharacter:switchbot cell overflow: {} to {} cell {}", ItemSystem::GetItemProto(itemEntity)->szName, ecs::PlayerRuntime::GetName(character).data(), ItemSystem::GetItemCell(itemEntity));
-			return false;
-		}
-	}
+    case SWITCHBOT:
+        if (auto* inventory = g_registry.try_get<ecs::SwitchbotRuntimeComponent>(owner))
+            return function(*inventory, 1);
+        break;
 #endif
-	if (ecs::PlayerRuntime::GetDesc(character))
-		ItemSystem::SetItemLastOwnerPID(itemEntity, ecs::PlayerRuntime::GetPlayerID(character));
+    }
+    return false;
+}
 
-
-#ifdef ENABLE_ACCE_SYSTEM
-	if ((ItemSystem::GetItemType(itemEntity) == ITEM_COSTUME) && (ItemSystem::GetItemSubType(itemEntity) == COSTUME_ACCE) && (ItemSystem::GetItemSocket(itemEntity, ACCE_ABSORPTION_SOCKET) == 0))
-	{
-		int32_t lVal = ItemSystem::GetItemValue(itemEntity, ACCE_GRADE_VALUE_FIELD);
-		switch (lVal)
-		{
-		case 2:
-		{
-			lVal = ACCE_GRADE_2_ABS;
-		}
-		break;
-		case 3:
-		{
-			lVal = ACCE_GRADE_3_ABS;
-		}
-		break;
-		case 4:
-		{
-			lVal = number(ACCE_GRADE_4_ABS_MIN, ACCE_GRADE_4_ABS_MAX_COMB);
-		}
-		break;
-		default:
-		{
-			lVal = ACCE_GRADE_1_ABS;
-		}
-		break;
-		}
-
-		ItemSystem::SetItemSocket(itemEntity, ACCE_ABSORPTION_SOCKET, lVal);
-	}
+bool EnsureStorage(entt::entity owner, uint8_t window)
+{
+    switch (window)
+    {
+    case INVENTORY: return EnsureComponent<ecs::MainInventoryRuntimeComponent>(owner);
+    case DRAGON_SOUL_INVENTORY: return EnsureComponent<ecs::DragonSoulInventoryComponent>(owner);
+#ifdef ENABLE_EXTRA_INVENTORY
+    case EXTRA_INVENTORY: return EnsureComponent<ecs::ExtraInventoryRuntimeComponent>(owner);
 #endif
+#ifdef ENABLE_SWITCHBOT
+    case SWITCHBOT: return EnsureComponent<ecs::SwitchbotRuntimeComponent>(owner);
+#endif
+    default: return false;
+    }
+}
 
+bool Unowned(entt::entity item)
+{
+    if (!ItemSystem::IsValidItem(item) ||
+        g_registry.any_of<ecs::SpatialEntity, ecs::SectorPlacement>(item))
+        return false;
+    const auto* owner = g_registry.try_get<ecs::ItemOwner>(item);
+    return (!owner || owner->owner == entt::null) && !ItemSystem::IsItemEquipped(item);
+}
 
-	event_cancel(&ItemSystem::GetItemEvents(itemEntity).destroy);
+bool At(entt::entity owner, entt::entity item, TItemPos position)
+{
+    if (!g_registry.valid(owner) || !ItemSystem::IsValidItem(item)) return false;
+    const auto* currentOwner = g_registry.try_get<ecs::ItemOwner>(item);
+    const auto* currentPosition = g_registry.try_get<ecs::ItemLocation>(item);
+    return currentOwner && currentOwner->owner == owner && currentPosition &&
+        currentPosition->window == position.window_type && currentPosition->cell == position.cell;
+}
+
+void SendStorageSlot(entt::entity owner, TItemPos position, bool highlight)
+{
+    if (!g_registry.valid(owner)) return;
+    auto* desc = ecs::PlayerRuntime::GetDesc(owner);
+    if (!desc || desc->GetEntity() != owner) return;
+    entt::entity item = entt::null;
+    if (!VisitStorage(owner, position, [&](auto& storage, int) {
+        if (position.cell >= storage.items.size()) return false;
+        item = storage.items[position.cell]; return true;
+    })) return;
+    if (At(owner, item, position))
+    {
+        TPacketGCItemSet packet {};
+        packet.header = HEADER_GC_ITEM_SET; packet.Cell = position;
+        packet.vnum = ItemSystem::GetItemVnum(item); packet.count = ItemSystem::GetItemCount(item);
+        packet.flags = ItemSystem::GetItemFlags(item); packet.anti_flags = ItemSystem::GetItemAntiFlag(item);
+        packet.highlight = highlight;
+#ifdef ATTR_LOCK
+        packet.lockedattr = ItemSystem::GetItemLockedAttributeIndex(item);
+#endif
+        for (int i = 0; i < ITEM_SOCKET_MAX_NUM; ++i) packet.alSockets[i] = ItemSystem::GetItemSocket(item, i);
+        for (int i = 0; i < ITEM_ATTRIBUTE_MAX_NUM; ++i) packet.aAttr[i] = ItemSystem::GetItemAttribute(item, i);
+        desc->Packet(&packet, sizeof(packet));
+    }
+    else if (item == entt::null)
+    {
+        TPacketGCItemDelDeprecated packet {};
+        packet.header = HEADER_GC_ITEM_DEL; packet.Cell = position;
+#ifdef ATTR_LOCK
+        packet.lockedattr = -1;
+#endif
+        desc->Packet(&packet, sizeof(packet));
+    }
+}
+
+bool HasInventoryReference(entt::entity owner, entt::entity item)
+{
+    const auto contains = [item](const auto* storage) {
+        return storage && std::find(storage->items.begin(), storage->items.end(), item) != storage->items.end();
+    };
+    return contains(g_registry.try_get<ecs::MainInventoryRuntimeComponent>(owner)) ||
+        contains(g_registry.try_get<ecs::DragonSoulInventoryComponent>(owner))
+#ifdef ENABLE_EXTRA_INVENTORY
+        || contains(g_registry.try_get<ecs::ExtraInventoryRuntimeComponent>(owner))
+#endif
+#ifdef ENABLE_SWITCHBOT
+        || contains(g_registry.try_get<ecs::SwitchbotRuntimeComponent>(owner))
+#endif
+        ;
+}
+
+bool DestinationFits(entt::entity owner, entt::entity item, TItemPos position)
+{
+    if (!Unowned(item) || !ecs::PlayerRuntime::IsValid(owner) ||
+        !g_registry.all_of<ecs::PlayerID>(owner) || HasInventoryReference(owner, item)) return false;
+    const uint8_t size = ItemSystem::GetItemSize(item);
+    if (!IsEmptyItemGrid(owner, position, size)) return false;
+    if (position.window_type == DRAGON_SOUL_INVENTORY)
+    {
+        if (!ItemSystem::IsDragonSoulItem(item)) return false;
+        const uint16_t base = DSManager::instance().GetBasePosition(item);
+        if (base == WORD_MAX || position.cell < base ||
+            uint32_t(position.cell) + uint32_t(size - 1) * DRAGON_SOUL_BOX_COLUMN_NUM >= uint32_t(base) + DRAGON_SOUL_BOX_SIZE)
+            return false;
+    }
+#ifdef ENABLE_EXTRA_INVENTORY
+    if (position.window_type == EXTRA_INVENTORY &&
+        (!ItemSystem::IsExtraItem(item) || position.cell / EXTRA_INVENTORY_CATEGORY_MAX_NUM != ItemSystem::GetItemExtraCategory(item)))
+        return false;
+#endif
+    return VisitStorage(owner, position, [&](auto& storage, int columns) {
+        int rows = size;
+        if constexpr (!requires { storage.itemGrid; }) rows = 1;
+        for (int row = 0; row < rows; ++row)
+        {
+            const size_t cell = size_t(position.cell) + row * columns;
+            if (cell >= storage.items.size() || storage.items[cell] != entt::null) return false;
+            if constexpr (requires { storage.itemGrid; })
+                if (storage.itemGrid[cell] != 0) return false;
+        }
+        return true;
+    });
+}
+
+bool InsertInventoryItem(entt::entity item, entt::entity owner, TItemPos position, bool highlight)
+{
+    if (!Unowned(item) || !ecs::PlayerRuntime::IsValid(owner) ||
+        !g_registry.all_of<ecs::PlayerID>(owner) ||
+        !EnsureStorage(owner, position.window_type) ||
+        !EnsureComponent<ecs::ItemOwner>(item) || !EnsureComponent<ecs::ItemLocation>(item) ||
+        !EnsureComponent<ecs::ItemEquipped>(item) || !DestinationFits(owner, item, position))
+        return false;
+
+    // Move the timer lease out before cancelling it: a callback cannot leave
+    // event_cancel holding the address of a destroyed item component.
+    if (auto* events = g_registry.try_get<ecs::ItemEvents>(item); events && events->destroy)
+    {
+        auto timer = std::move(events->destroy);
+        event_cancel(&timer);
+    }
+    if (!DestinationFits(owner, item, position) ||
+        !g_registry.all_of<ecs::ItemOwner, ecs::ItemLocation, ecs::ItemEquipped>(item)) return false;
+    const uint32_t pid = ecs::PlayerRuntime::GetPlayerID(owner);
+    const auto size = ItemSystem::GetItemSize(item);
+    const auto itemID = ItemSystem::GetItemID(item);
+
+    // No callbacks between slot/grid and ownership stores. Unlike the old
+    // PlaceItemEcs, there is no metadata prewrite and no legacy rollback/resync.
+    VisitStorage(owner, position, [&](auto& storage, int columns) {
+        storage.items[position.cell] = item;
+        if constexpr (requires { storage.itemGrid; })
+            for (int row = 0; row < size; ++row)
+                storage.itemGrid[position.cell + row * columns] = position.cell + 1;
+        return true;
+    });
+    auto& ownership = g_registry.get<ecs::ItemOwner>(item);
+    ownership.owner = owner; ownership.ownerPID = pid;
+    if (pid) ownership.lastOwnerPID = pid;
+    g_registry.get<ecs::ItemLocation>(item) = {position.window_type, position.cell};
+    g_registry.get<ecs::ItemEquipped>(item) = {};
+#ifdef ENABLE_SWITCHBOT
+    if (position.window_type == SWITCHBOT)
+        CSwitchbotManager::instance().RegisterItem(pid, itemID, position.cell);
+#endif
+    if (At(owner, item, position)) ItemSystem::SaveItem(item);
+    SendStorageSlot(owner, position, highlight);
+    // A publication callback may move/destroy the committed item. That is not
+    // an insertion failure and must not trigger an old-state rollback.
+    return true;
+}
+
+bool Detached(entt::entity item)
+{
+    if (!ItemSystem::IsValidItem(item)) return false;
+    const auto* owner = g_registry.try_get<ecs::ItemOwner>(item);
+    const auto* location = g_registry.try_get<ecs::ItemLocation>(item);
+    return owner && owner->owner == entt::null && location && location->window == RESERVED_WINDOW;
+}
+}
 
 #ifdef __HIGHLIGHT_SYSTEM__
-	ecs::PlayerRuntime::SetItem(character, TItemPos(window_type, pos), itemEntity, isHighLight);
+bool AddToCharacter(entt::entity item, entt::entity owner, TItemPos position, bool highlight)
 #else
-	ecs::PlayerRuntime::SetItem(character, TItemPos(window_type, pos), itemEntity);
+bool AddToCharacter(entt::entity item, entt::entity owner, TItemPos position)
 #endif
-	ItemSystem::SetItemOwnerEntity(itemEntity, character);
+{
+#ifndef __HIGHLIGHT_SYSTEM__
+    const bool highlight = position.window_type == DRAGON_SOUL_INVENTORY;
+#endif
+    if (!Unowned(item) || !ecs::PlayerRuntime::IsValid(owner) || !g_registry.all_of<ecs::PlayerID>(owner)) return false;
 
-	ItemSystem::SaveItem(itemEntity);
-
-	SyncItemOwner(itemEntity, character, ecs::PlayerRuntime::GetPlayerID(character));
-	EnsureItemLocation(itemEntity);
-	SyncItemEquipped(itemEntity, false);
-	return true;
+#ifdef ENABLE_RUNE_SYSTEM
+    // Keep the acquisition rule here, separate from pure PlaceItemEcs used by
+    // transfers/rollback. The old path SetWear twice and ignored EquipTo failure.
+    if (position.window_type == INVENTORY && ItemSystem::IsRuneItem(item))
+    {
+        const int cell = ItemSystem::FindEquipCell(owner, item);
+        if (cell < 0 || cell >= WEAR_MAX_NUM || ItemSystem::GetWearItem(owner, cell) != entt::null)
+            return false;
+        if (!EquipTo(item, owner, cell)) return false;
+        if (ItemSystem::IsValidItem(item))
+            if (auto* events = g_registry.try_get<ecs::ItemEvents>(item); events && events->destroy)
+            {
+                auto timer = std::move(events->destroy);
+                event_cancel(&timer);
+            }
+        if (g_registry.valid(owner) && ItemSystem::IsValidItem(item) && ItemSystem::GetItemOwner(item) == owner)
+        {
+            ItemSystem::SetItemLastOwnerPID(item, ecs::PlayerRuntime::GetPlayerID(owner));
+            ItemSystem::SaveItem(item);
+        }
+        return true;
+    }
+#endif
+    if (!EnsureStorage(owner, position.window_type) || !DestinationFits(owner, item, position)) return false;
+#ifdef ENABLE_ACCE_SYSTEM
+    if (ItemSystem::GetItemType(item) == ITEM_COSTUME && ItemSystem::GetItemSubType(item) == COSTUME_ACCE &&
+        ItemSystem::GetItemSocket(item, ACCE_ABSORPTION_SOCKET) == 0)
+    {
+        int absorption = ACCE_GRADE_1_ABS;
+        switch (ItemSystem::GetItemValue(item, ACCE_GRADE_VALUE_FIELD))
+        {
+        case 2: absorption = ACCE_GRADE_2_ABS; break;
+        case 3: absorption = ACCE_GRADE_3_ABS; break;
+        case 4: absorption = number(ACCE_GRADE_4_ABS_MIN, ACCE_GRADE_4_ABS_MAX_COMB); break;
+        }
+        if (!ItemSystem::SetItemSocket(item, ACCE_ABSORPTION_SOCKET, absorption)) return false;
+    }
+#endif
+    return InsertInventoryItem(item, owner, position, highlight);
 }
 
 } // namespace InventorySystem
@@ -876,6 +1019,10 @@ namespace InventorySystem {
 
 bool Unequip(entt::entity itemEntity)
 {
+    if (!ItemSystem::IsValidItem(itemEntity) ||
+        !g_registry.all_of<ecs::ItemOwner, ecs::ItemLocation, ecs::ItemEquipped>(itemEntity) ||
+        !unequipping.insert(itemEntity).second) return false;
+    const UnequipGuard guard {itemEntity};
 	if (ItemSystem::GetItemOwner(itemEntity) == entt::null || ItemSystem::GetItemCell(itemEntity) < INVENTORY_MAX_NUM)
 	{
 		LOG_ERROR("{} {} owner {}, GetCell {}", ItemSystem::GetItemName(itemEntity), ItemSystem::GetItemID(itemEntity), static_cast<uint32_t>(ItemSystem::GetItemOwner(itemEntity)), ItemSystem::GetItemCell(itemEntity));
@@ -883,6 +1030,19 @@ bool Unequip(entt::entity itemEntity)
 	}
 
 	const entt::entity charEntity = ItemSystem::GetItemOwner(itemEntity);
+    const auto originalCell = ItemSystem::GetItemCell(itemEntity);
+    const auto originalWindow = ItemSystem::GetItemWindow(itemEntity);
+    if (originalCell >= INVENTORY_MAX_NUM + WEAR_MAX_NUM + DRAGON_SOUL_DECK_MAX_NUM * DS_SLOT_MAX)
+        return false;
+    const auto unchanged = [&] {
+        return g_registry.valid(charEntity) && ItemSystem::IsValidItem(itemEntity) &&
+            g_registry.all_of<ecs::ItemOwner, ecs::ItemLocation, ecs::ItemEquipped>(itemEntity) &&
+            ItemSystem::GetItemOwner(itemEntity) == charEntity &&
+            ItemSystem::GetItemCell(itemEntity) == originalCell &&
+            ItemSystem::GetItemWindow(itemEntity) == originalWindow && ItemSystem::IsItemEquipped(itemEntity);
+    };
+    if (!unchanged() || !ItemSystem::GetItemProto(itemEntity)) return false;
+    const bool hasWearTimer = ItemSystem::GetItemProto(itemEntity)->cLimitTimerBasedOnWearIndex != -1;
 	if (ItemSystem::GetWearItem(
 			charEntity, static_cast<uint8_t>(ItemSystem::GetItemCell(itemEntity) - INVENTORY_MAX_NUM)) != itemEntity)
 	{
@@ -890,16 +1050,17 @@ bool Unequip(entt::entity itemEntity)
 		return false;
 	}
 
-	const uint8_t wearCell = static_cast<uint8_t>(ItemSystem::GetItemCell(itemEntity) - INVENTORY_MAX_NUM);
 
 #ifdef ENABLE_MOUNT_COSTUME_SYSTEM
 	if (ItemSystem::IsMountItem(itemEntity))
 		MountSystem::MountUnsummon(charEntity, itemEntity);
 #endif
 
+	if (!unchanged()) return false;
 	if (ItemSystem::IsRideItem(itemEntity))
 		ItemSystem::ClearMountAttributeAndAffect(itemEntity);
 
+	if (!unchanged()) return false;
 	if (ItemSystem::IsDragonSoulItem(itemEntity))
 	{
 		DSManager::instance().DeactivateDragonSoul(itemEntity);
@@ -915,16 +1076,44 @@ bool Unequip(entt::entity itemEntity)
 		ItemSystem::ModifyPoints(itemEntity, false);
 	}
 
+	if (!unchanged()) return false;
 	ItemSystem::StopUniqueExpireEvent(itemEntity);
+	if (!unchanged()) return false;
 
-	if (-1 != ItemSystem::GetItemProto(itemEntity)->cLimitTimerBasedOnWearIndex)
+	if (hasWearTimer)
 		ItemSystem::StopTimerBasedOnWearExpireEvent(itemEntity);
 
+	if (!unchanged()) return false;
 	ItemSystem::StopAccessorySocketExpireEvent(itemEntity);
+	if (!unchanged()) return false;
 
 	ecs::PlayerRuntime::BuffOnAttr_RemoveBuffsFromItem(charEntity, itemEntity);
 
-	ecs::PlayerRuntime::SetWear(charEntity, wearCell, entt::null);
+	if (!unchanged()) return false;
+    // Commit the wear slot and item metadata together before publishing any
+    // packet/event. SetItemCell(oldOwner, 0) would reattach the owner here.
+    auto* inventory = g_registry.try_get<ecs::MainInventoryRuntimeComponent>(charEntity);
+    if (!inventory || originalCell >= inventory->items.size() || inventory->items[originalCell] != itemEntity)
+        return false;
+    inventory->items[originalCell] = entt::null;
+    for (auto& grid : inventory->itemGrid) if (grid == originalCell + 1) grid = 0;
+    auto& ownership = g_registry.get<ecs::ItemOwner>(itemEntity);
+    ownership.owner = entt::null; ownership.ownerPID = 0;
+    g_registry.get<ecs::ItemLocation>(itemEntity) = {RESERVED_WINDOW, 0};
+    g_registry.get<ecs::ItemEquipped>(itemEntity) = {};
+    const auto stillDetached = [&] { return g_registry.valid(charEntity) && Detached(itemEntity); };
+
+#ifndef ENABLE_BUG_FIXES
+    if (originalCell == INVENTORY_MAX_NUM + WEAR_WEAPON)
+    {
+        if (AffectSystem::IsAffectFlag(charEntity, AFF_GWIGUM))
+            AffectSystem::RemoveAffect(charEntity, SKILL_GWIGEOM);
+        if (!stillDetached()) return true;
+        if (AffectSystem::IsAffectFlag(charEntity, AFF_GEOMGYEONG))
+            AffectSystem::RemoveAffect(charEntity, SKILL_GEOMKYUNG);
+        if (!stillDetached()) return true;
+    }
+#endif
 
 #ifndef ENABLE_IMMUNE_FIX
 	uint32_t dwImmuneFlag = 0;
@@ -941,29 +1130,28 @@ bool Unequip(entt::entity itemEntity)
 	ecs::PlayerRuntime::SetImmuneFlag(charEntity, dwImmuneFlag);
 #endif
 
+	if (!stillDetached()) return true;
 	ecs::PointSystem::ComputeBattlePoints(charEntity);
+	if (!stillDetached()) return true;
 
 	NetworkSyncSystem::UpdatePacket(charEntity);
+	if (!stillDetached()) return true;
 #ifdef ENABLE_COSTUME_PET
 	if ((ItemSystem::GetItemType(itemEntity) == ITEM_COSTUME) && (ItemSystem::GetItemSubType(itemEntity) == COSTUME_PET_SKIN)) {
 		MountSystem::UpdatePetSkin(charEntity);
 	}
 #endif
 #ifdef ENABLE_COSTUME_MOUNT
+	if (!stillDetached()) return true;
 	if ((ItemSystem::GetItemType(itemEntity) == ITEM_COSTUME) && (ItemSystem::GetItemSubType(itemEntity) == COSTUME_MOUNT_SKIN)) {
 		MountSystem::UpdateMountSkin(charEntity);
 	}
 #endif
-	ItemSystem::SetItemOwnerEntity(itemEntity, entt::null);
-	// SetWear(.., entt::null) leaves the cell alone - SetItem only writes it on
-	// the has-item branch - so ecs::ItemLocation kept the equipment cell while
-	// m_wCell went to 0. Writing through the component fixes both at once.
-	ItemSystem::SetItemCell(itemEntity, charEntity, 0);
-
-	SyncItemEquipped(itemEntity, false);
-	EnsureItemLocation(itemEntity);
-	g_dispatcher.trigger(ecs::EvItemUnequipped { charEntity, itemEntity });
-	return true;
+    if (!stillDetached()) return true;
+    SendStorageSlot(charEntity, TItemPos(EQUIPMENT, originalCell), false);
+    if (!stillDetached()) return true;
+    g_dispatcher.trigger(ecs::EvItemUnequipped { charEntity, itemEntity });
+    return true;
 }
 
 bool EquipTo(entt::entity itemEntity, entt::entity charEntity, uint8_t bWearCell)
@@ -1080,105 +1268,280 @@ bool EquipTo(entt::entity itemEntity, entt::entity charEntity, uint8_t bWearCell
 	return (true);
 }
 
-entt::entity RemoveFromCharacter(entt::entity itemEntity)
+entt::entity RemoveFromCharacter(entt::entity item)
 {
-	if (ItemSystem::GetItemOwner(itemEntity) == entt::null)
-	{
-		LOG_ERROR("RemoveFromCharacter: owner null");
-		return itemEntity;
-	}
+    if (!ItemSystem::IsValidItem(item)) return entt::null;
+    const auto* ownership = g_registry.try_get<ecs::ItemOwner>(item);
+    const auto* location = g_registry.try_get<ecs::ItemLocation>(item);
+    if (!ownership || !location) return entt::null;
+    const auto owner = ownership->owner;
+    const TItemPos oldPosition(location->window, location->cell);
+    const uint32_t ownerPID = ownership->ownerPID;
+    if (owner == entt::null) return Detached(item) ? item : entt::null;
 
-	const entt::entity ownerEntity = ItemSystem::GetItemOwner(itemEntity);
+    if (oldPosition.window_type == SAFEBOX || oldPosition.window_type == MALL)
+    {
+        auto container = SafeboxSystem::Get(owner, oldPosition.window_type);
+        if (container && container->Get(oldPosition.cell) == item)
+            return container->Remove(oldPosition.cell);
+        // Container Remove/Close unpublishes its slot before calling us back.
+    }
 
-	// Detaching means three component writes, and each one used to be a bare
-	// field assignment plus a call to the old SyncItemLocation, which copied
-	// nothing - so ecs::ItemLocation kept the cell and window the item had
-	// while it was still carried. SetItemCell and SetItemWindow write the
-	// component and mirror into m_wCell / m_bWindow, so both agree.
-	const auto detach = [&]() {
-		ItemSystem::SetItemCell(itemEntity, ownerEntity, 0);
-		ItemSystem::SetItemWindow(itemEntity, RESERVED_WINDOW);
-		ItemSystem::SetItemOwnerEntity(itemEntity, entt::null);
-		ItemSystem::SaveItem(itemEntity);
+    const bool wasEquipped = ItemSystem::IsItemEquipped(item);
+    if (wasEquipped)
+    {
+        // Equipment effects still use the existing entity-based unequip engine.
+        // Crucially it receives the real owner/cell, not pre-cleared metadata.
+        if (!Unequip(item)) return entt::null;
+        if (!ItemSystem::IsValidItem(item)) return entt::null;
+        const auto* current = g_registry.try_get<ecs::ItemOwner>(item);
+        if (!current || current->owner != entt::null) return entt::null;
+    }
 
-		EnsureItemLocation(itemEntity);
-		SyncItemOwner(itemEntity, entt::null, 0);
-		g_registry.remove<ecs::ItemEquipped>(itemEntity);
-	};
+    // Components can be absent after a preceding ground/container operation.
+    if (!EnsureComponent<ecs::ItemEquipped>(item) || !ItemSystem::IsValidItem(item) ||
+        !g_registry.all_of<ecs::ItemOwner, ecs::ItemLocation>(item))
+        return entt::null;
+    auto& currentOwner = g_registry.get<ecs::ItemOwner>(item);
+    const auto& currentLocation = g_registry.get<ecs::ItemLocation>(item);
+    if (wasEquipped ? !Detached(item) :
+        (currentOwner.owner != owner || currentLocation.window != oldPosition.window_type ||
+            currentLocation.cell != oldPosition.cell)) return entt::null;
 
-	if (ItemSystem::IsItemEquipped(itemEntity))
-	{
-		Unequip(itemEntity);
-		ItemSystem::SetItemWindow(itemEntity, RESERVED_WINDOW);
-		ItemSystem::SaveItem(itemEntity);
-
-		EnsureItemLocation(itemEntity);
-		SyncItemOwner(itemEntity, entt::null, 0);
-		g_registry.remove<ecs::ItemEquipped>(itemEntity);
-		return itemEntity;
-	}
-
-	const uint8_t window = ItemSystem::GetItemWindow(itemEntity);
-	const uint16_t cell = ItemSystem::GetItemCell(itemEntity);
-
-	if (window == MOUNT_INVENTORY)
-	{
-		if (CMountInventory* mi = MountSystem::GetMountInventory(ownerEntity))
-			mi->RemoveByItem(itemEntity);
-
-		detach();
-		return itemEntity;
-	}
-
-	if (window != SAFEBOX && window != MALL)
-	{
-		if (ItemSystem::IsDragonSoulItem(itemEntity))
-		{
-			if (cell >= DRAGON_SOUL_INVENTORY_MAX_NUM)
-				LOG_ERROR("RemoveFromCharacter: pos >= DRAGON_SOUL_INVENTORY_MAX_NUM");
-			else
-				ecs::PlayerRuntime::SetItem(ownerEntity, TItemPos(window, cell), entt::null);
-		}
+    std::vector<TItemPos> removedSlots;
+    std::vector<uint16_t> switchSlots;
+    const auto collectStorage = [&](auto* storage, uint8_t window) {
+        if (!storage) return;
+        for (size_t cell = 0; cell < storage->items.size(); ++cell)
+        {
+            if (storage->items[cell] != item) continue;
+#ifdef ENABLE_SWITCHBOT
+            if (window == SWITCHBOT) switchSlots.push_back(static_cast<uint16_t>(cell));
+#endif
+            removedSlots.emplace_back(window, static_cast<uint16_t>(cell));
+        }
+    };
+    if (g_registry.valid(owner))
+    {
+        collectStorage(g_registry.try_get<ecs::MainInventoryRuntimeComponent>(owner), INVENTORY);
+        collectStorage(g_registry.try_get<ecs::DragonSoulInventoryComponent>(owner), DRAGON_SOUL_INVENTORY);
 #ifdef ENABLE_EXTRA_INVENTORY
-		else if (ItemSystem::IsExtraItem(itemEntity))
-		{
-			if (cell >= EXTRA_INVENTORY_MAX_NUM)
-				LOG_ERROR("RemoveFromCharacter: pos >= EXTRA_INVENTORY_MAX_NUM");
-			else
-				ecs::PlayerRuntime::SetItem(ownerEntity, TItemPos(window, cell), entt::null);
-		}
+        collectStorage(g_registry.try_get<ecs::ExtraInventoryRuntimeComponent>(owner), EXTRA_INVENTORY);
 #endif
 #ifdef ENABLE_SWITCHBOT
-		else if (window == SWITCHBOT)
-		{
-			if (cell >= SWITCHBOT_SLOT_COUNT)
-			{
-				LOG_ERROR("RemoveFromCharacter: pos >= SWITCHBOT_SLOT_COUNT");
-			}
-			else
-			{
-				ecs::PlayerRuntime::SetItem(ownerEntity, TItemPos(SWITCHBOT, cell), entt::null);
-			}
-		}
+        collectStorage(g_registry.try_get<ecs::SwitchbotRuntimeComponent>(owner), SWITCHBOT);
 #endif
-		else
-		{
-			TItemPos pos(INVENTORY, cell);
+    }
+    // All temporary allocation precedes the first slot/owner mutation.
+    for (const auto position : removedSlots)
+        VisitStorage(owner, position, [&](auto& storage, int) {
+            storage.items[position.cell] = entt::null;
+            if constexpr (requires { storage.itemGrid; })
+                for (auto& grid : storage.itemGrid) if (grid == position.cell + 1) grid = 0;
+            return true;
+        });
+    currentOwner.owner = entt::null; currentOwner.ownerPID = 0;
+    g_registry.get<ecs::ItemLocation>(item) = {RESERVED_WINDOW, 0};
+    g_registry.get<ecs::ItemEquipped>(item) = {};
 
-			if (false == pos.IsDefaultInventoryPosition() && false == pos.IsBeltInventoryPosition())
-				LOG_ERROR("RemoveFromCharacter: Invalid Item Position");
-			else
-				ecs::PlayerRuntime::SetItem(ownerEntity, pos, entt::null);
-		}
-	}
-
-	detach();
-	return itemEntity;
+    // External containers have already unpublished their slot in normal Remove/
+    // Close flows. Mount's item-based removal is idempotent when invoked here.
+    if (oldPosition.window_type == MOUNT_INVENTORY && g_registry.valid(owner))
+        if (auto* mounts = MountSystem::GetMountInventory(owner)) mounts->RemoveByItem(item);
+#ifdef ENABLE_SWITCHBOT
+    for (const auto cell : switchSlots)
+        if (g_registry.valid(owner))
+        {
+            const auto* slots = g_registry.try_get<ecs::SwitchbotRuntimeComponent>(owner);
+            if (slots && slots->items[cell] == entt::null)
+                CSwitchbotManager::instance().UnregisterItem(ownerPID, cell);
+        }
+#endif
+    if (Detached(item)) ItemSystem::SaveItem(item);
+    for (const auto position : removedSlots) SendStorageSlot(owner, position, false);
+    return item;
 }
 
 } // namespace InventorySystem
 
 namespace ItemSystem {
+
+static int FindEmptyMainInventoryPosition(entt::entity owner, uint8_t itemSize)
+{
+    if (owner == entt::null || !g_registry.valid(owner) || itemSize == 0)
+        return -1;
+
+    const auto* inventory = g_registry.try_get<ecs::MainInventoryRuntimeComponent>(owner);
+    if (!inventory)
+        return -1;
+
+    const int inventoryLimit = InventorySystem::GetInventorySize(owner);
+
+    constexpr int pageSize = INVENTORY_PAGE_SIZE;
+    for (int cell = 0; cell < inventoryLimit; ++cell)
+    {
+        if (inventory->itemGrid[cell] != 0 || inventory->items[cell] != entt::null)
+            continue;
+
+        const int page = cell / pageSize;
+        bool fits = true;
+        for (int row = 1; row < itemSize; ++row)
+        {
+            const int occupiedCell = cell + (INVENTORY_PAGE_COLUMN * row);
+            if (occupiedCell >= inventoryLimit || occupiedCell / pageSize != page ||
+                inventory->itemGrid[occupiedCell] != 0 || inventory->items[occupiedCell] != entt::null)
+            {
+                fits = false;
+                break;
+            }
+        }
+        if (fits)
+            return cell;
+    }
+    return -1;
+}
+
+#ifdef ENABLE_EXTRA_INVENTORY
+static int FindEmptyExtraInventoryPosition(entt::entity owner, uint8_t itemSize,
+                                           uint8_t category)
+{
+    if (owner == entt::null || !g_registry.valid(owner) || itemSize == 0 || category >= 6)
+        return -1;
+
+    const auto* inventory = g_registry.try_get<ecs::ExtraInventoryRuntimeComponent>(owner);
+    if (!inventory)
+        return -1;
+
+    const int begin = EXTRA_INVENTORY_CATEGORY_MAX_NUM * category;
+    int end = EXTRA_INVENTORY_CATEGORY_MAX_NUM * (category + 1);
+#ifdef ENABLE_LOCKED_EXTRA_INVENTORY
+    static constexpr std::array<std::string_view, 6> unlockFlags {
+        "lock_extra.cat1", "lock_extra.cat2", "lock_extra.cat3",
+        "lock_extra.cat4", "lock_extra.cat5", "lock_extra.cat6"
+    };
+    constexpr int freeSlots = (EXTRA_INVENTORY_PAGE_SIZE * 2) + 20;
+    constexpr int maxUnlockSlots = 25 + EXTRA_INVENTORY_PAGE_SIZE;
+    const int unlockedSlots = static_cast<int>(std::clamp(
+        int64_t(ecs::QuestSystem::GetFlag(owner, unlockFlags[category])) * 5,
+        int64_t(0), int64_t(maxUnlockSlots)));
+    end = std::min(begin + freeSlots + unlockedSlots,
+                   static_cast<int>(EXTRA_INVENTORY_MAX_NUM));
+#endif
+
+    for (int cell = begin; cell < end; ++cell)
+    {
+        if (inventory->itemGrid[cell] != 0 || inventory->items[cell] != entt::null)
+            continue;
+
+        const int page = cell / EXTRA_INVENTORY_PAGE_SIZE;
+        bool fits = true;
+        for (int row = 1; row < itemSize; ++row)
+        {
+            const int occupiedCell = cell + (EXTRA_INVENTORY_PAGE_COLUMN * row);
+            if (occupiedCell >= end ||
+                occupiedCell / EXTRA_INVENTORY_PAGE_SIZE != page ||
+                inventory->itemGrid[occupiedCell] != 0 || inventory->items[occupiedCell] != entt::null)
+            {
+                fits = false;
+                break;
+            }
+        }
+
+        if (fits)
+            return cell;
+    }
+
+    return -1;
+}
+#endif
+
+#ifdef ENABLE_EXTRA_INVENTORY
+int GetEmptyExtraInventory(entt::entity owner, entt::entity item)
+{
+    if (!IsValidItem(item) || !IsExtraItem(item)) return -1;
+    return FindEmptyExtraInventoryPosition(owner, GetItemSize(item), GetItemExtraCategory(item));
+}
+#endif
+
+int GetEmptyInventoryPositionEcs(entt::entity owner, entt::entity item)
+{
+    if (owner == entt::null || !g_registry.valid(owner) || !IsValidItem(item))
+        return -1;
+
+    if (IsDragonSoulItem(item))
+        return GetEmptyDragonSoulInventory(owner, item);
+#ifdef ENABLE_EXTRA_INVENTORY
+    if (IsExtraItem(item))
+        return FindEmptyExtraInventoryPosition(
+            owner, GetItemSize(item), GetItemExtraCategory(item));
+#endif
+    return FindEmptyMainInventoryPosition(owner, GetItemSize(item));
+}
+
+bool HasMainInventorySpaceEcs(entt::entity owner, uint8_t itemSize)
+{
+    return FindEmptyMainInventoryPosition(owner, itemSize) != -1;
+}
+
+bool HasInventorySpaceForItemVnum(entt::entity owner, uint32_t itemVnum)
+{
+    const TItemTable* proto = ITEM_MANAGER::instance().GetTable(itemVnum);
+    if (!proto)
+        return false;
+
+    return FindEmptyMainInventoryPosition(owner, proto->bSize) != -1;
+}
+
+int GetEmptyDragonSoulInventory(entt::entity owner, entt::entity item)
+{
+    if (owner == entt::null || !g_registry.valid(owner) || !IsValidItem(item) || !IsDragonSoulItem(item))
+        return -1;
+
+    const auto* inventory = g_registry.try_get<ecs::DragonSoulInventoryComponent>(owner);
+    if (!inventory)
+        return -1;
+
+    const uint8_t itemSize = GetItemSize(item);
+    const uint16_t baseCell = DSManager::instance().GetBasePosition(item);
+    if (itemSize == 0 || baseCell == WORD_MAX ||
+        baseCell >= DRAGON_SOUL_INVENTORY_MAX_NUM)
+        return -1;
+
+    const int boxEnd = std::min<int>(baseCell + DRAGON_SOUL_BOX_SIZE,
+                                     DRAGON_SOUL_INVENTORY_MAX_NUM);
+    for (int cell = baseCell; cell < boxEnd; ++cell)
+    {
+        if (inventory->itemGrid[cell] != 0 || inventory->items[cell] != entt::null)
+            continue;
+
+        bool fits = true;
+        for (int row = 1; row < itemSize; ++row)
+        {
+            const int occupiedCell = cell + (DRAGON_SOUL_BOX_COLUMN_NUM * row);
+            if (occupiedCell >= boxEnd || inventory->itemGrid[occupiedCell] != 0 || inventory->items[occupiedCell] != entt::null)
+            {
+                fits = false;
+                break;
+            }
+        }
+
+        if (fits)
+            return cell;
+    }
+
+    return -1;
+}
+
+bool PlaceItemEcs(entt::entity owner, entt::entity item, uint8_t window, uint16_t cell)
+{
+    return InventorySystem::InsertInventoryItem(item, owner, TItemPos(window, cell), true);
+}
+
+bool RemoveItemEcs(entt::entity item)
+{
+    return InventorySystem::RemoveFromCharacter(item) != entt::null;
+}
+
 
 void ModifyPoints(entt::entity itemEntity, bool bAdd)
 {

@@ -3957,7 +3957,7 @@ ACMD(do_rune_charge)
 #endif
 	ItemSystem::SetItemSocket(bottle, 0, lBottlePercent - dif);
 	if (ItemSystem::GetItemSocket(bottle, 0) < 1)
-		ItemSystem::RemoveItemFromCharacterLegacyBoundary(bottle);
+		ItemSystem::RemoveItemEcs(bottle);
 
 	ItemSystem::ChangeRuneAttributesLegacyBoundary(rune, lValue);
 	if (!AffectSystem::FindAffect(owner, AFFECT_RUNE2) &&

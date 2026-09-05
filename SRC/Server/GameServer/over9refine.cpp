@@ -3,8 +3,6 @@
 #include "ecs/systems/ItemSystem.hpp"
 #include "constants.h"
 #include "log.h"
-#include "char_interface.hpp"
-#include "ecs/CharacterAccessors.hpp"
 #include "over9refine.h"
 #include "item_manager.h"
 
@@ -15,10 +13,6 @@ bool ReplaceItemWith(entt::entity character, entt::entity source, uint32_t resul
 	if (character == entt::null || !g_registry.valid(character) ||
 		!ItemSystem::IsValidItem(source) ||
 		ItemSystem::GetItemOwner(source) != character || resultVnum == 0)
-		return false;
-
-	LPCHARACTER legacyCharacter = ecs::LegacyCharOf(character);
-	if (!legacyCharacter)
 		return false;
 
 	const entt::entity result = ITEM_MANAGER::instance().CreateItem(resultVnum, 1);
@@ -44,7 +38,7 @@ bool ReplaceItemWith(entt::entity character, entt::entity source, uint32_t resul
 	snprintf(hint, sizeof(hint), "SUCCESS %u %s %u",
 		ItemSystem::GetItemID(result), ItemSystem::GetItemName(result),
 		ItemSystem::GetItemOriginalVnum(result));
-	LogManager::instance().ItemLogEntity(legacyCharacter, source, "REFINE OVER9", hint);
+	LogManager::instance().ItemLogEntity(character, source, "REFINE OVER9", hint);
 
 	if (!ItemSystem::DestroyItemEntityEcs(source, "REFINE OVER9"))
 	{
