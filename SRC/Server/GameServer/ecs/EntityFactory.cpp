@@ -564,6 +564,7 @@ void SyncItemEntity(entt::registry& reg, entt::entity entity, LPITEM item)
     (void)reg.get_or_emplace<ecs::ItemAttributes>(entity);
     reg.emplace_or_replace<ecs::ItemLockedAttribute>(entity, MakeItemLockedAttribute(item));
     reg.emplace_or_replace<ecs::ItemProtoRef>(entity, MakeItemProtoRef(item));
+    (void)reg.get_or_emplace<ecs::ItemEvents>(entity);
     (void)reg.get_or_emplace<ecs::ViewMap>(entity);
     (void)reg.get_or_emplace<ecs::ViewerMap>(entity);
     (void)reg.get_or_emplace<ecs::ViewAgeMap>(entity);
@@ -777,20 +778,23 @@ entt::entity EntityFactory::CreateItemEntity(entt::registry& reg, LPITEM item)
     return entity;
 }
 
-void EntityFactory::DestroyItemEntity(entt::registry& reg, LPITEM item)
+void EntityFactory::DestroyItemEntity(entt::registry& reg, entt::entity entity)
 {
-    if (!item) {
+    if (entity == entt::null || !reg.valid(entity)) {
         return;
     }
 
-	entt::entity entity = item->GetEntityHandle();
-	if (entity == entt::null || !reg.valid(entity))
-		entity = CItemRegistry::Instance().FindByLegacy(item);
+	ItemSystem::PrepareItemDestruction(entity);
+
+	LPITEM legacyItem = nullptr;
+	if (const auto* legacy = reg.try_get<ecs::LegacyItemPtr>(entity))
+		legacyItem = legacy->ptr;
 
     CItemRegistry::Instance().Unregister(entity);
-	item->SetEntityHandle(entt::null);
+	if (legacyItem && legacyItem->GetEntityHandle() == entity)
+		legacyItem->SetEntityHandle(entt::null);
 
-    if (entity != entt::null && reg.valid(entity)) {
+    if (reg.valid(entity)) {
         reg.destroy(entity);
     }
 }

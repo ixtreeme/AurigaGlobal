@@ -14,7 +14,7 @@ public:
     static entt::entity CreateNPC(entt::registry& reg, const TMobTable& data, int x, int y, int mapIndex, uint32_t legacyVID);
     static entt::entity CreateStone(entt::registry& reg, const TMobTable& data, int x, int y, int mapIndex, uint32_t legacyVID);
     static entt::entity CreateItemEntity(entt::registry& reg, LPITEM item);
-    static void DestroyItemEntity(entt::registry& reg, LPITEM item);
+    static void DestroyItemEntity(entt::registry& reg, entt::entity item);
 
     static void Destroy(entt::registry& reg, entt::entity e);
 };

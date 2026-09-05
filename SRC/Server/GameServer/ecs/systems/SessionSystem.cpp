@@ -376,23 +376,23 @@ void CHARACTER::SaveReal()
 
 void CHARACTER::FlushDelayedSaveItem()
 {
-    LPITEM item;
+    const entt::entity owner = GetEntityHandle();
 
     for (int i = 0; i < INVENTORY_AND_EQUIP_SLOT_MAX; ++i)
-        if ((item = GetInventoryItem(i)))
+        if (const entt::entity item = ItemSystem::GetInventoryItem(owner, i); item != entt::null)
             ITEM_MANAGER::instance().SaveSingleItem(item);
 
     for (int i = 0; i < DRAGON_SOUL_INVENTORY_MAX_NUM; ++i)
-        if ((item = GetItem(TItemPos(DRAGON_SOUL_INVENTORY, i))))
+        if (const entt::entity item = ItemSystem::GetItem(owner, TItemPos(DRAGON_SOUL_INVENTORY, i)); item != entt::null)
             ITEM_MANAGER::instance().SaveSingleItem(item);
 #ifdef ENABLE_EXTRA_INVENTORY
     for (int i = 0; i < EXTRA_INVENTORY_MAX_NUM; ++i)
-        if ((item = GetItem(TItemPos(EXTRA_INVENTORY, i))))
+        if (const entt::entity item = ItemSystem::GetItem(owner, TItemPos(EXTRA_INVENTORY, i)); item != entt::null)
             ITEM_MANAGER::instance().SaveSingleItem(item);
 #endif
 #ifdef ENABLE_SWITCHBOT
     for (int i = 0; i < SWITCHBOT_SLOT_COUNT; ++i)
-        if ((item = GetItem(TItemPos(SWITCHBOT, i))))
+        if (const entt::entity item = ItemSystem::GetItem(owner, TItemPos(SWITCHBOT, i)); item != entt::null)
             ITEM_MANAGER::instance().SaveSingleItem(item);
 #endif
 }

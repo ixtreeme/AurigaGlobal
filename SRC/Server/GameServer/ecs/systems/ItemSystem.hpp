@@ -63,18 +63,19 @@ bool OnAfterCreatedItem(entt::entity item);
 void AttrLog(entt::entity item);
 bool IsRideItem(entt::entity item);
 bool IsMountItem(entt::entity item);
+bool IsNewMountItem(entt::entity item);
 #ifdef ENABLE_RUNE_SYSTEM
 bool IsRuneItem(entt::entity item);
 bool ActivateRuneLegacyBoundary(entt::entity item);
 bool DeactivateRuneLegacyBoundary(entt::entity item);
 bool ChangeRuneAttributesLegacyBoundary(entt::entity item, int32_t time);
 bool ActivateRuneBonusLegacyBoundary(entt::entity item);
+bool DeactivateRuneBonusLegacyBoundary(entt::entity item);
 #endif
 uint32_t GetItemID(entt::entity item);
 uint32_t GetItemVID(entt::entity item);
 uint32_t GetItemVnum(entt::entity item);
 uint32_t GetItemOriginalVnum(entt::entity item);
-void ModifyPoints(entt::entity item, bool bAdd);
 TItemExtraProto* GetItemExtraProto(entt::entity item);
 void SetItemExtraProto(entt::entity item, TItemExtraProto* proto);
 uint32_t GetItemSIGVnum(entt::entity item);
@@ -94,6 +95,8 @@ uint32_t GetItemRefineVnum(entt::entity item);
 int GetItemRefineLevel(entt::entity item);
 int GetItemLevelLimit(entt::entity item);
 int GetItemLimitTimerBasedOnWearIndex(entt::entity item);
+uint8_t GetItemLimitType(entt::entity item, uint32_t index);
+int32_t GetItemLimitValue(entt::entity item, uint32_t index);
 int GetItemDuration(entt::entity item);
 int32_t GetItemFlags(entt::entity item);
 uint32_t GetItemWearFlags(entt::entity item);
@@ -143,6 +146,7 @@ void StopTimerBasedOnWearExpireEvent(entt::entity item);
 void StartAccessorySocketExpireEvent(entt::entity item);
 void StopAccessorySocketExpireEvent(entt::entity item);
 ecs::ItemEvents& GetItemEvents(entt::entity item);
+void PrepareItemDestruction(entt::entity item);
 bool SaveItemEcs(entt::entity item, bool flush = true);
 bool FlushDelayedSaveEcs(entt::entity item);
 entt::entity GetItemOwner(entt::entity item);
@@ -163,7 +167,7 @@ void SetItemTransmutation(entt::entity item, uint32_t vnum);
 #ifdef ATTR_LOCK
 void SetItemLockedAttr(entt::entity item, short index);
 #endif
-bool SetItemSocket(entt::entity item, int index, uint32_t value);
+bool SetItemSocket(entt::entity item, int index, uint32_t value, bool log = true);
 bool SetItemSocketEcs(entt::entity item, int index, uint32_t value);
 bool SetItemAttribute(entt::entity item, int index, int type, int value);
 bool ClearItemAttribute(entt::entity item, int index);
@@ -230,6 +234,9 @@ bool ModifyItemPointsEcs(entt::entity item, bool add);
 bool StartTimerBasedOnWearExpireEventEcs(entt::entity item);
 bool StopTimerBasedOnWearExpireEventEcs(entt::entity item);
 bool StartRealTimeExpireEventEcs(entt::entity item);
+#ifdef ENABLE_SOUL_SYSTEM
+bool StartSoulItemEventEcs(entt::entity item);
+#endif
 bool RefreshItemEquippedSlot(entt::entity item);
 bool RefreshItemOwnerPID(entt::entity item);
 bool SyncItemStateFromLegacy(entt::entity item);
@@ -263,4 +270,3 @@ bool DoRefineWithScroll(entt::entity e, entt::entity item);
 bool DoRefineItemSoul(entt::entity e, entt::entity item);
 
 } // namespace ItemSystem
-

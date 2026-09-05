@@ -408,7 +408,7 @@ class ITEM_MANAGER : public singleton<ITEM_MANAGER>
 		void			DelayedSave(entt::entity item);
 		void			FlushDelayedSave(entt::entity item); // Delayed 리스트에 있다면 지우고 저장한다. 끊김 처리시 사용 됨.
 		void FlushDelayedSaveByOwner(entt::entity owner);
-		void			SaveSingleItem(LPITEM item);
+		void			SaveSingleItem(entt::entity item);
 
 		entt::entity            CreateItem(uint32_t vnum, uint32_t count = 1, uint32_t dwID = 0, bool bTryMagic = false, int iRarePct = -1, bool bSkipSave = false);
 #ifndef DEBUG_ALLOC

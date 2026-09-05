@@ -82,8 +82,6 @@ class CItem : public CEntity
 		uint32_t		GetOriginalVnum() const		{ return m_dwVnum;	}
 		uint8_t		GetType()	{ return m_pProto ? m_pProto->bType : 0;	}
 		uint8_t		GetSubType() const	{ return m_pProto ? m_pProto->bSubType : 0;	}
-		uint8_t		GetLimitType(uint32_t idx) const { return m_pProto ? m_pProto->aLimits[idx].bType : 0;	}
-		int32_t		GetLimitValue(uint32_t idx) const { return m_pProto ? m_pProto->aLimits[idx].lValue : 0;	}
 #ifdef ENABLE_NEW_USE_POTION
 		uint8_t	GetApplyType(uint32_t idx) const { return m_pProto ? m_pProto->aApplies[idx].bType : 0;}
 		int32_t	GetApplyValue(uint32_t idx) const { return m_pProto ? m_pProto->aApplies[idx].lValue : 0;}
@@ -151,7 +149,6 @@ class CItem : public CEntity
 
 
 
-		void		StartRealTimeExpireEvent();
 
 
 		//			일단 REAL_TIME과 TIMER_BASED_ON_WEAR 아이템에 대해서만 제대로 동작함.
@@ -184,7 +181,6 @@ class CItem : public CEntity
 
 
 		// 악세사리 를 아이템에 밖았을때 타이머 돌아가는것( 구리, 등 )
-		void		StartAccessorySocketExpireEvent();
 
 #ifdef ENABLE_INFINITE_RAFINES
 #endif
@@ -222,7 +218,6 @@ class CItem : public CEntity
 	public:
 		bool		IsRideItem();
 
-		bool		IsNewMountItem();
 
 #ifdef ENABLE_MOUNT_COSTUME_SYSTEM
 		bool		IsMountItem();
@@ -245,7 +240,6 @@ class CItem : public CEntity
 		bool		IsDragonSoul();
 #ifdef ENABLE_SOUL_SYSTEM
 	public:
-		void		StartSoulItemEvent();
 #endif
 
 	private:

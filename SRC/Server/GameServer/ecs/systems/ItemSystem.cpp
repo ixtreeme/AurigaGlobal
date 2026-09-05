@@ -6,6 +6,7 @@
 
 #include "ItemSystem.hpp"
 #include "MountSystem.hpp"
+#include "NetworkSyncSystem.hpp"
 #include "PointSystem.hpp"
 #include "AffectSystem.hpp"
 #include "../EntityFactory.hpp"
@@ -57,7 +58,6 @@
 #endif
 #ifdef ENABLE_BATTLE_PASS
 #include "../../battle_pass.h"
-#include "NetworkSyncSystem.hpp"
 #endif
 #include "../../DragonSoul.h"
 #include "../../buff_on_attributes.h"
@@ -273,10 +273,6 @@ static bool DestroyItemEntityAndLegacy(entt::entity itemEntity, const char* reas
     if (itemEntity == entt::null || !g_registry.valid(itemEntity))
         return false;
 
-    uint32_t itemID = 0;
-    if (const auto* identity = g_registry.try_get<ecs::ItemIdentity>(itemEntity))
-        itemID = identity->id;
-
     LPITEM legacyItem = LegacyItemBoundary(itemEntity);
     if (legacyItem) {
         // Phase 15E-final.LPENTITY.4-architect.D.6.fixup-5:
@@ -305,17 +301,12 @@ static bool DestroyItemEntityAndLegacy(entt::entity itemEntity, const char* reas
             ITEM_MANAGER::instance().RemoveItem(itemEntity, reason);
         else
             ITEM_MANAGER::instance().RemoveItem(itemEntity);
-        if (g_registry.valid(itemEntity)) {
-            CItemRegistry::Instance().Unregister(itemID, itemEntity);
-            g_registry.destroy(itemEntity);
-        }
+        if (g_registry.valid(itemEntity))
+            EntityFactory::DestroyItemEntity(g_registry, itemEntity);
         return true;
     }
 
-    if (itemID != 0)
-        CItemRegistry::Instance().Unregister(itemID, itemEntity);
-    if (g_registry.valid(itemEntity))
-        g_registry.destroy(itemEntity);
+    EntityFactory::DestroyItemEntity(g_registry, itemEntity);
     return true;
 }
 
@@ -1383,6 +1374,12 @@ bool IsMountItem(entt::entity item)
 #endif
 }
 
+bool IsNewMountItem(entt::entity item)
+{
+    const uint32_t vnum = GetItemVnum(item);
+    return vnum >= 76000 && vnum <= 76014;
+}
+
 #ifdef ENABLE_RUNE_SYSTEM
 bool IsRuneItem(entt::entity item)
 {
@@ -1423,6 +1420,15 @@ bool ActivateRuneBonusLegacyBoundary(entt::entity item)
     if (!legacyItem)
         return false;
     legacyItem->ActivateRuneBonus();
+    return SyncItemStateFromLegacy(item);
+}
+
+bool DeactivateRuneBonusLegacyBoundary(entt::entity item)
+{
+    LPITEM legacyItem = LegacyItemBoundary(item);
+    if (!legacyItem)
+        return false;
+    legacyItem->DeactivateRuneBonus();
     return SyncItemStateFromLegacy(item);
 }
 #endif
@@ -1635,6 +1641,18 @@ int GetItemDuration(entt::entity item)
         return proto->aLimits[proto->cLimitTimerBasedOnWearIndex].lValue;
 
     return -1;
+}
+
+uint8_t GetItemLimitType(entt::entity item, uint32_t index)
+{
+    const TItemTable* proto = GetItemProto(item);
+    return proto && index < ITEM_LIMIT_MAX_NUM ? proto->aLimits[index].bType : 0;
+}
+
+int32_t GetItemLimitValue(entt::entity item, uint32_t index)
+{
+    const TItemTable* proto = GetItemProto(item);
+    return proto && index < ITEM_LIMIT_MAX_NUM ? proto->aLimits[index].lValue : 0;
 }
 
 int32_t GetItemFlags(entt::entity item)
@@ -1984,7 +2002,7 @@ void StopUniqueExpireEvent(entt::entity item)
 	SetItemSocket(item, ITEM_SOCKET_UNIQUE_SAVE_TIME, event_time(events.uniqueExpire) / passes_per_sec);
 	event_cancel(&events.uniqueExpire);
 
-	ITEM_MANAGER::instance().SaveSingleItem(LegacyItemBoundary(item));
+	ITEM_MANAGER::instance().FlushDelayedSave(item);
 }
 
 void StartTimerBasedOnWearExpireEvent(entt::entity item)
@@ -2029,7 +2047,7 @@ void StopTimerBasedOnWearExpireEvent(entt::entity item)
 	SetItemSocket(item, ITEM_SOCKET_REMAIN_SEC, remain_time);
 	event_cancel(&events.timerBasedOnWearExpire);
 
-	ITEM_MANAGER::instance().SaveSingleItem(LegacyItemBoundary(item));
+	ITEM_MANAGER::instance().FlushDelayedSave(item);
 }
 
 void StartAccessorySocketExpireEvent(entt::entity item)
@@ -2104,16 +2122,35 @@ ecs::ItemEvents& GetItemEvents(entt::entity item)
     return g_registry.get_or_emplace<ecs::ItemEvents>(item);
 }
 
+void PrepareItemDestruction(entt::entity item)
+{
+    if (item == entt::null || !g_registry.valid(item))
+        return;
+
+    if (auto* events = g_registry.try_get<ecs::ItemEvents>(item)) {
+        event_cancel(&events->destroy);
+        event_cancel(&events->expire);
+        event_cancel(&events->ownership);
+        event_cancel(&events->uniqueExpire);
+#ifdef ENABLE_SOUL_SYSTEM
+        event_cancel(&events->soulItem);
+#endif
+        event_cancel(&events->timerBasedOnWearExpire);
+        event_cancel(&events->realTimeExpire);
+        event_cancel(&events->accessorySocketExpire);
+    }
+
+    g_dispatcher.trigger(ecs::EvItemDestroyed { item, GetItemID(item) });
+}
+
 bool SaveItemEcs(entt::entity item, bool flush)
 {
-    LPITEM legacyItem = LegacyItemBoundary(item);
-    if (!legacyItem)
+    if (!IsValidItem(item))
         return false;
 
-    legacyItem->Save();
+    SaveItem(item);
     if (flush)
         ITEM_MANAGER::instance().FlushDelayedSave(item);
-    SyncItemStateFromLegacy(item);
     return true;
 }
 
@@ -2233,6 +2270,51 @@ TPlayerItemAttribute GetItemAttribute(entt::entity item, int index)
     return {};
 }
 
+void SetItemSockets(entt::entity item, const int32_t* sockets)
+{
+    if (!IsValidItem(item) || !sockets)
+        return;
+
+    auto& component = g_registry.get_or_emplace<ecs::ItemSockets>(item);
+    std::copy_n(sockets, ITEM_SOCKET_MAX_NUM, component.sockets.begin());
+    SaveItem(item);
+}
+
+void SetItemAttributes(entt::entity item, const TPlayerItemAttribute* attributes)
+{
+    if (!IsValidItem(item) || !attributes)
+        return;
+
+    auto& component = g_registry.get_or_emplace<ecs::ItemAttributes>(item);
+    std::copy_n(attributes, ITEM_ATTRIBUTE_MAX_NUM, component.attrs.begin());
+    SaveItem(item);
+}
+
+#ifdef __ENABLE_CHANGELOOK_SYSTEM__
+void SetItemTransmutation(entt::entity item, uint32_t vnum)
+{
+    if (!IsValidItem(item))
+        return;
+
+    g_registry.get_or_emplace<ecs::ItemIdentity>(item).transmutationVnum = vnum;
+    ecs::ItemNetworkSystem::SendItemUpdate(g_registry, item);
+    SaveItem(item);
+}
+#endif
+
+#ifdef ATTR_LOCK
+void SetItemLockedAttr(entt::entity item, short index)
+{
+    if (!IsValidItem(item))
+        return;
+
+    g_registry.emplace_or_replace<ecs::ItemLockedAttribute>(
+        item, ecs::ItemLockedAttribute{index});
+    ecs::ItemNetworkSystem::SendItemUpdate(g_registry, item);
+    SaveItem(item);
+}
+#endif
+
 int GetItemAttributeType(entt::entity item, int index)
 {
     if (index < 0 || index >= ITEM_ATTRIBUTE_MAX_NUM)
@@ -2255,7 +2337,7 @@ int GetItemAttributeValue(entt::entity item, int index)
     return 0;
 }
 
-bool SetItemSocket(entt::entity item, int index, uint32_t value)
+bool SetItemSocket(entt::entity item, int index, uint32_t value, bool log)
 {
     if (item == entt::null || !g_registry.valid(item) ||
         index < 0 || index >= ITEM_SOCKET_MAX_NUM)
@@ -2264,8 +2346,17 @@ bool SetItemSocket(entt::entity item, int index, uint32_t value)
     auto& sockets = g_registry.get_or_emplace<ecs::ItemSockets>(item);
     sockets.sockets[index] = static_cast<int32_t>(value);
 
-    if (LPITEM legacyItem = LegacyItemBoundary(item))
-        legacyItem->SetSocket(index, static_cast<int32_t>(value));
+    ecs::ItemNetworkSystem::SendItemUpdate(g_registry, item);
+    SaveItem(item);
+
+    if (log) {
+#ifdef ENABLE_NEWSTUFF
+        if (g_iDbLogLevel >= LOG_LEVEL_MAX)
+#endif
+            LogManager::instance().ItemLog(
+                index, static_cast<int32_t>(value), 0, GetItemID(item),
+                "SET_SOCKET", "", "", GetItemOriginalVnum(item));
+    }
 
     return true;
 }
@@ -2285,8 +2376,7 @@ bool SetItemAttribute(entt::entity item, int index, int type, int value)
     attrs.attrs[index].bType = static_cast<uint8_t>(type);
     attrs.attrs[index].sValue = static_cast<short>(value);
 
-    if (LPITEM legacyItem = LegacyItemBoundary(item))
-        legacyItem->SetAttributes(attrs.attrs.data());
+    SaveItem(item);
 
     return true;
 }
@@ -2332,8 +2422,7 @@ bool ClearItemAttributesEcs(entt::entity item)
         attr.sValue = 0;
     }
 
-    if (LPITEM legacyItem = LegacyItemBoundary(item))
-        legacyItem->SetAttributes(attrs.attrs.data());
+    SaveItem(item);
 
     return true;
 }
@@ -2345,9 +2434,6 @@ bool SetItemExchanging(entt::entity item, bool flag)
 
     auto& flags = g_registry.get_or_emplace<ecs::ItemFlags>(item);
     flags.exchanging = flag;
-
-    if (LPITEM legacyItem = LegacyItemBoundary(item))
-        legacyItem->SetExchanging(flag);
 
     return true;
 }
@@ -2896,9 +2982,6 @@ bool LockItem(entt::entity item, bool locked)
     auto& flags = g_registry.get_or_emplace<ecs::ItemFlags>(item);
     flags.isLocked = locked;
 
-    if (LPITEM legacyItem = LegacyItemBoundary(item))
-        legacyItem->Lock(locked);
-
     return true;
 }
 
@@ -2907,8 +2990,6 @@ bool UnlockItem(entt::entity item)
     return LockItem(item, false);
 }
 
-// ITEM_MANAGER's queue is keyed on LPITEM and the persistence layer has not
-// moved, so this is where the pointer comes back. Callers above never see one.
 void ClearMountAttributeAndAffect(entt::entity item)
 {
 	const entt::entity chEntity = GetItemOwner(item);
@@ -2978,9 +3059,6 @@ bool SetItemWindow(entt::entity item, uint8_t window)
 
     auto& location = g_registry.get_or_emplace<ecs::ItemLocation>(item);
     location.window = window;
-
-    if (LPITEM legacyItem = LegacyItemBoundary(item))
-        legacyItem->SetWindow(window);
 
     return true;
 }
@@ -3372,8 +3450,7 @@ bool IsItemVnumStackable(uint32_t vnum)
 
 bool ModifyItemPointsEcs(entt::entity item, bool add)
 {
-    LPITEM legacyItem = LegacyItemBoundary(item);
-    if (!legacyItem)
+    if (!IsValidItem(item))
         return false;
 
     ItemSystem::ModifyPoints(item, add);
@@ -3382,35 +3459,115 @@ bool ModifyItemPointsEcs(entt::entity item, bool add)
 
 bool StartTimerBasedOnWearExpireEventEcs(entt::entity item)
 {
-    LPITEM legacyItem = LegacyItemBoundary(item);
-    if (!legacyItem)
+    if (!IsValidItem(item))
         return false;
 
     ItemSystem::StartTimerBasedOnWearExpireEvent(item);
-    SyncItemStateFromLegacy(item);
     return true;
 }
 
 bool StopTimerBasedOnWearExpireEventEcs(entt::entity item)
 {
-    LPITEM legacyItem = LegacyItemBoundary(item);
-    if (!legacyItem)
+    if (!IsValidItem(item))
         return false;
 
     ItemSystem::StopTimerBasedOnWearExpireEvent(item);
-    SyncItemStateFromLegacy(item);
     return true;
 }
 
 bool StartRealTimeExpireEventEcs(entt::entity item)
 {
-    LPITEM legacyItem = LegacyItemBoundary(item);
-    if (!legacyItem)
+    if (!IsValidItem(item))
         return false;
 
-    legacyItem->StartRealTimeExpireEvent();
+    auto& events = GetItemEvents(item);
+    if (events.realTimeExpire)
+        return true;
+
+    const TItemTable* proto = GetItemProto(item);
+    if (!proto)
+        return false;
+
+    for (const auto& limit : proto->aLimits)
+    {
+        if (limit.bType != LIMIT_REAL_TIME && limit.bType != LIMIT_REAL_TIME_START_FIRST_USE)
+            continue;
+
+#ifdef ENABLE_NEW_USE_POTION
+        const bool isNewPotion = GetItemType(item) == ITEM_USE && GetItemSubType(item) == USE_NEW_POTIION;
+        const int32_t remainSec = isNewPotion ? static_cast<int32_t>(GetItemSocket(item, 0)) : 0;
+        if (isNewPotion && remainSec <= 0)
+        {
+            if (GetItemSocket(item, 1) == 1)
+            {
+                const entt::entity owner = GetItemOwnerEntity(item);
+                if (owner != entt::null)
+                {
+                    if (AffectSystem::FindAffect(owner, GetItemValue(item, 0)))
+                        AffectSystem::RemoveAffect(owner, GetItemValue(item, 0));
+#ifdef TEXTS_IMPROVEMENT
+                    ecs::ChatSystem::SendNew(owner, CHAT_TYPE_INFO, 27, "%s", GetItemName(item));
+#endif
+                }
+            }
+
+            ITEM_MANAGER::instance().RemoveItem(item, "REAL_TIME_EXPIRE");
+            return true;
+        }
+#endif
+
+        item_vid_event_info* info = AllocEventInfo<item_vid_event_info>();
+        info->item = item;
+#ifdef ENABLE_NEW_USE_POTION
+        if (isNewPotion)
+        {
+            info->newpotion = true;
+            events.realTimeExpire = event_create(
+                real_time_expire_event, info, PASSES_PER_SEC(remainSec > 60 ? 60 : remainSec));
+        }
+        else
+        {
+            info->newpotion = false;
+            events.realTimeExpire = event_create(real_time_expire_event, info, PASSES_PER_SEC(1));
+        }
+#else
+        events.realTimeExpire = event_create(real_time_expire_event, info, PASSES_PER_SEC(1));
+#endif
+
+        g_dispatcher.trigger(ecs::EvItemExpired { item, GetItemID(item) });
+        LOG_INFO("REAL_TIME_EXPIRE: StartRealTimeExpireEvent");
+        return true;
+    }
+
+    return false;
+}
+
+#ifdef ENABLE_SOUL_SYSTEM
+bool StartSoulItemEventEcs(entt::entity item)
+{
+    if (!IsValidItem(item) || GetItemType(item) != ITEM_SOUL)
+        return false;
+
+    auto& events = GetItemEvents(item);
+    if (events.soulItem)
+        return true;
+
+    const TItemTable* proto = GetItemProto(item);
+    if (!proto)
+        return false;
+
+    const int minutes = static_cast<int>(GetItemSocket(item, 2) / 10000);
+    if (minutes >= proto->aLimits[1].lValue)
+        return false;
+
+    item_vid_event_info* info = AllocEventInfo<item_vid_event_info>();
+    info->item = item;
+    events.soulItem = event_create(
+        soul_item_event, info, PASSES_PER_SEC(test_server ? 5 : 60));
+    g_dispatcher.trigger(ecs::EvItemExpired { item, GetItemID(item) });
     return true;
 }
+#endif
 
 int FindEquipCell(entt::entity ownerEntity, entt::entity item, int iCandidateCell)
 {

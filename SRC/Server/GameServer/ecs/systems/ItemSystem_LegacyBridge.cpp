@@ -302,31 +302,6 @@ static LPITEM LegacyItemBoundary(entt::entity itemEntity)
     return legacy ? legacy->ptr : nullptr;
 }
 
-static bool DestroyItemEntityAndLegacy(entt::entity itemEntity, const char* reason)
-{
-    if (itemEntity == entt::null || !g_registry.valid(itemEntity))
-        return false;
-
-    uint32_t itemID = 0;
-    if (const auto* identity = g_registry.try_get<ecs::ItemIdentity>(itemEntity))
-        itemID = identity->id;
-
-    LPITEM legacyItem = LegacyItemBoundary(itemEntity);
-    if (legacyItem) {
-        EntityFactory::DestroyItemEntity(g_registry, legacyItem);
-        if (reason && *reason)
-            ITEM_MANAGER::instance().RemoveItem(itemEntity, reason);
-        else
-            ITEM_MANAGER::instance().RemoveItem(itemEntity);
-        return true;
-    }
-
-    if (itemID != 0)
-        CItemRegistry::Instance().Unregister(itemID, itemEntity);
-    if (g_registry.valid(itemEntity))
-        g_registry.destroy(itemEntity);
-    return true;
-}
 
 static uint32_t ItemVnumOrLegacy(LPITEM item)
 {
@@ -571,18 +546,6 @@ EVENTFUNC(soul_item_event);
 // Legacy CHARACTER/CItem method bodies split from ItemSystem.cpp.
 // Keep gameplay semantics unchanged; this file is a physical bridge island.
 
-bool CItem::IsNewMountItem()
-{
-	switch (GetVnum())
-	{
-	case 76000: case 76001: case 76002: case 76003:
-	case 76004: case 76005: case 76006: case 76007:
-	case 76008: case 76009: case 76010: case 76011:
-	case 76012: case 76013: case 76014:
-		return true;
-	}
-	return false;
-}
 
 #ifdef ENABLE_MOUNT_COSTUME_SYSTEM
 bool CItem::IsMountItem()
@@ -765,35 +728,6 @@ int32_t CItem::GetValue(uint32_t idx)
 	return GetProto()->alValues[idx];
 }
 
-namespace ItemSystem {
-void SetItemSockets(entt::entity item, const int32_t* sockets)
-{
-	if (LPITEM legacy = LegacyItemBoundary(item))
-		legacy->SetSockets(sockets);
-}
-
-void SetItemAttributes(entt::entity item, const TPlayerItemAttribute* attributes)
-{
-	if (LPITEM legacy = LegacyItemBoundary(item))
-		legacy->SetAttributes(attributes);
-}
-
-#ifdef __ENABLE_CHANGELOOK_SYSTEM__
-void SetItemTransmutation(entt::entity item, uint32_t vnum)
-{
-	if (LPITEM legacy = LegacyItemBoundary(item))
-		legacy->SetTransmutation(vnum);
-}
-#endif
-
-#ifdef ATTR_LOCK
-void SetItemLockedAttr(entt::entity item, short index)
-{
-	if (LPITEM legacy = LegacyItemBoundary(item))
-		legacy->SetLockedAttr(index);
-}
-#endif
-} // namespace ItemSystem
 
 // The socket and attribute arrays live in ecs::ItemSockets and
 // ecs::ItemAttributes. These accessors are what is left of the members that
@@ -1766,14 +1700,14 @@ bool CItem::OnAfterCreatedItem()
 	{
 		if (0 != GetSocket(1))
 		{
-			StartRealTimeExpireEvent();
+			ItemSystem::StartRealTimeExpireEventEcs(GetEntityHandle());
 		}
 	}
 
 #ifdef ENABLE_SOUL_SYSTEM
 	if (GetType() == ITEM_SOUL)
 	{
-		StartSoulItemEvent();
+		ItemSystem::StartSoulItemEventEcs(GetEntityHandle());
 	}
 #endif
 
@@ -2754,7 +2688,7 @@ bool CHARACTER::EquipItem(LPITEM item, int iCandidateCell)
 					duration = 60 * 60 * 24 * 7;
 
 				item->SetSocket(0, time(nullptr) + duration);
-				item->StartRealTimeExpireEvent();
+				ItemSystem::StartRealTimeExpireEventEcs(itemEntity);
 			}
 
 			item->SetSocket(1, item->GetSocket(1) + 1);
@@ -5257,7 +5191,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 				duration = 60 * 60 * 24 * 7;
 
 			item->SetSocket(0, time(nullptr) + duration);
-			item->StartRealTimeExpireEvent();
+			ItemSystem::StartRealTimeExpireEventEcs(itemEntity);
 		}
 
 		if (false == ItemSystem::IsItemEquipped(itemEntity))
@@ -9991,9 +9925,9 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 							for (int i = 0; i < ITEM_LIMIT_MAX_NUM; ++i)
 							{
 #ifdef __ENABLE_GREEN_ITEM_LVL_30__
-								if (item2->GetLimitType(i) == LIMIT_LEVEL && item2->GetLimitValue(i) > 30)
+								if (ItemSystem::GetItemLimitType(item2->GetEntityHandle(), i) == LIMIT_LEVEL && ItemSystem::GetItemLimitValue(item2->GetEntityHandle(), i) > 30)
 #else
-								if (item2->GetLimitType(i) == LIMIT_LEVEL && item2->GetLimitValue(i) > 40)
+								if (ItemSystem::GetItemLimitType(item2->GetEntityHandle(), i) == LIMIT_LEVEL && ItemSystem::GetItemLimitValue(item2->GetEntityHandle(), i) > 40)
 #endif
 								{
 									bCanUse = false;
@@ -10136,9 +10070,9 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 							for (int i = 0; i < ITEM_LIMIT_MAX_NUM; ++i)
 							{
 #ifdef __ENABLE_GREEN_ITEM_LVL_30__
-								if (item2->GetLimitType(i) == LIMIT_LEVEL && item2->GetLimitValue(i) > 30)
+								if (ItemSystem::GetItemLimitType(item2->GetEntityHandle(), i) == LIMIT_LEVEL && ItemSystem::GetItemLimitValue(item2->GetEntityHandle(), i) > 30)
 #else
-								if (item2->GetLimitType(i) == LIMIT_LEVEL && item2->GetLimitValue(i) > 40)
+								if (ItemSystem::GetItemLimitType(item2->GetEntityHandle(), i) == LIMIT_LEVEL && ItemSystem::GetItemLimitValue(item2->GetEntityHandle(), i) > 40)
 #endif
 								{
 									bCanUse = false;
@@ -13126,7 +13060,7 @@ bool CHARACTER::CanReceiveItem(entt::entity fromEntity, LPITEM item) const
 		bool bCanProced = true;
 
 		for (uint8_t i = 0; i < ITEM_LIMIT_MAX_NUM; ++i) {
-			if (item->GetLimitType(i) == LIMIT_LEVEL && item->GetLimitValue(i) >= 90) {
+			if (ItemSystem::GetItemLimitType(item->GetEntityHandle(), i) == LIMIT_LEVEL && ItemSystem::GetItemLimitValue(item->GetEntityHandle(), i) >= 90) {
 				bCanProced = false;
 				break;
 			}
@@ -15852,53 +15786,15 @@ void CItem::Initialize()
 	m_dwID = 0;
 	m_dwVID = m_dwCount = m_lFlag = 0;
 	m_pProto = nullptr;
-	// exchanging lives in ecs::ItemFlags and starts false there
-#ifdef ENABLE_SOUL_SYSTEM
-	ItemSystem::GetItemEvents(GetEntityHandle()).soulItem = nullptr;
-#endif
-	ItemSystem::GetItemEvents(GetEntityHandle()).uniqueExpire = nullptr;
-#ifdef ATTR_LOCK
-	// the locked attribute lives in ecs::ItemLockedAttribute and starts at -1
-#endif
-
-	ItemSystem::GetItemEvents(GetEntityHandle()).destroy = nullptr;
-	ItemSystem::GetItemEvents(GetEntityHandle()).ownership = nullptr;
-
-	ItemSystem::GetItemEvents(GetEntityHandle()).timerBasedOnWearExpire = nullptr;
-	ItemSystem::GetItemEvents(GetEntityHandle()).realTimeExpire = nullptr;
-
-	ItemSystem::GetItemEvents(GetEntityHandle()).accessorySocketExpire = nullptr;
 
 }
 
 void CItem::Destroy()
 {
-	event_cancel(&ItemSystem::GetItemEvents(GetEntityHandle()).destroy);
-	event_cancel(&ItemSystem::GetItemEvents(GetEntityHandle()).ownership);
-	event_cancel(&ItemSystem::GetItemEvents(GetEntityHandle()).uniqueExpire);
-
-#ifdef ENABLE_SOUL_SYSTEM
-	event_cancel(&ItemSystem::GetItemEvents(GetEntityHandle()).soulItem);
-#endif
-
-	event_cancel(&ItemSystem::GetItemEvents(GetEntityHandle()).timerBasedOnWearExpire);
-	event_cancel(&ItemSystem::GetItemEvents(GetEntityHandle()).realTimeExpire);
-	event_cancel(&ItemSystem::GetItemEvents(GetEntityHandle()).accessorySocketExpire);
-
 	CEntity::Destroy();
 
-	const entt::entity e = GetEntityHandle();
 	if (GetSectree())
 		GetSectree()->RemoveEntity(this);
-	if (e != entt::null && g_registry.valid(e))
-	{
-		g_registry.remove<ecs::SectorPlacement>(e);
-		g_registry.remove<ecs::ViewActiveTag>(e);
-	}
-
-	const entt::entity e2 = e;
-	if (e2 != entt::null)
-		g_dispatcher.trigger(ecs::EvItemDestroyed { e2, GetID() });
 }
 
 void CItem::Save()
@@ -15920,94 +15816,7 @@ TItemExtraProto* CItem::GetExtraProto()
 }
 #endif
 
-void CItem::StartRealTimeExpireEvent()
-{
-	if (ItemSystem::GetItemEvents(GetEntityHandle()).realTimeExpire)
-		return;
 
-	for (auto aLimit : GetProto()->aLimits)
-	{
-		if (LIMIT_REAL_TIME == aLimit.bType || LIMIT_REAL_TIME_START_FIRST_USE == aLimit.bType)
-		{
-			item_vid_event_info* info = AllocEventInfo<item_vid_event_info>();
-			info->item = GetEntityHandle();
-#ifdef ENABLE_NEW_USE_POTION
-			if ((GetType() == ITEM_USE) && (GetSubType() == USE_NEW_POTIION)) {
-				int32_t remainSec = GetSocket(0);
-				if (remainSec <= 0) {
-					if (GetSocket(1) == 1) {
-						const entt::entity owner = GetOwnerEntity();
-
-						if (owner != entt::null) {
-							if (AffectSystem::FindAffect(owner, GetValue(0))) {
-								AffectSystem::RemoveAffect(owner, GetValue(0));
-							}
-
-#ifdef TEXTS_IMPROVEMENT
-							ecs::ChatSystem::SendNew(owner, CHAT_TYPE_INFO, 27, "%s", GetName());
-#endif
-						}
-					}
-
-					ITEM_MANAGER::instance().RemoveItem(GetEntityHandle(), "REAL_TIME_EXPIRE");
-					return;
-				}
-
-				info->newpotion = true;
-				ItemSystem::GetItemEvents(GetEntityHandle()).realTimeExpire = event_create(real_time_expire_event, info, PASSES_PER_SEC(remainSec > 60 ? 60 : remainSec));
-
-				const entt::entity e = GetEntityHandle();
-				if (e != entt::null)
-					g_dispatcher.trigger(ecs::EvItemExpired { e, GetID() });
-			}
-			else {
-				info->newpotion = false;
-				ItemSystem::GetItemEvents(GetEntityHandle()).realTimeExpire = event_create(real_time_expire_event, info, PASSES_PER_SEC(1));
-				const entt::entity e = GetEntityHandle();
-				if (e != entt::null)
-					g_dispatcher.trigger(ecs::EvItemExpired { e, GetID() });
-			}
-#else
-			ItemSystem::GetItemEvents(GetEntityHandle()).realTimeExpire = event_create(real_time_expire_event, info, PASSES_PER_SEC(1));
-
-			const entt::entity e = GetEntityHandle();
-			if (e != entt::null)
-				g_dispatcher.trigger(ecs::EvItemExpired { e, GetID() });
-#endif
-
-			LOG_INFO("REAL_TIME_EXPIRE: StartRealTimeExpireEvent");
-			return;
-		}
-	}
-}
-
-void CItem::StartAccessorySocketExpireEvent()
-{
-	ItemSystem::StartAccessorySocketExpireEvent(GetEntityHandle());
-}
-
-#ifdef ENABLE_SOUL_SYSTEM
-void CItem::StartSoulItemEvent()
-{
-	if (GetType() != ITEM_SOUL)
-		return;
-
-	if (ItemSystem::GetItemEvents(GetEntityHandle()).soulItem)
-		return;
-
-	int iMinutes = (GetSocket(2) / 10000);
-	if (iMinutes >= GetLimitValue(1))
-		return;
-
-	item_vid_event_info* pInfo = AllocEventInfo<item_vid_event_info>();
-	pInfo->item = GetEntityHandle();
-	ItemSystem::GetItemEvents(GetEntityHandle()).soulItem = event_create(soul_item_event, pInfo, PASSES_PER_SEC(test_server ? 5 : 60));
-
-	const entt::entity e = GetEntityHandle();
-	if (e != entt::null)
-		g_dispatcher.trigger(ecs::EvItemExpired { e, GetID() });
-}
-#endif
 
 #ifdef ENABLE_RUNE_SYSTEM
 void CItem::InitializeRune() {
@@ -16646,12 +16455,13 @@ EVENTFUNC(item_destroy_event)
 	}
 
 	const entt::entity itemEntity = info->item;
-	LPITEM pkItem = LegacyItemBoundary(itemEntity);
-	if (!pkItem)
+	if (!ItemSystem::IsValidItem(itemEntity))
 		return 0;
 
-	if (ItemSystem::GetItemOwner(itemEntity) != entt::null)
-		LOG_ERROR("item_destroy_event: Owner exist. (item {} owner {})", pkItem->GetName(), ecs::PlayerRuntime::GetName(ItemSystem::GetItemOwner(itemEntity)));
+	const entt::entity owner = ItemSystem::GetItemOwnerEntity(itemEntity);
+	if (owner != entt::null)
+		LOG_ERROR("item_destroy_event: Owner exist. (item {} owner {})",
+			ItemSystem::GetItemName(itemEntity), ecs::PlayerRuntime::GetName(owner));
 
 	ItemSystem::GetItemEvents(itemEntity).destroy = nullptr;
 	ItemSystem::DestroyItemEntityEcs(
@@ -16671,8 +16481,7 @@ EVENTFUNC(ownership_event)
 	}
 
 	const entt::entity itemEntity = info->item;
-	LPITEM pkItem = LegacyItemBoundary(itemEntity);
-	if (!pkItem)
+	if (!ItemSystem::IsValidItem(itemEntity))
 		return 0;
 
 	ItemSystem::GetItemEvents(itemEntity).ownership = nullptr;
@@ -16680,10 +16489,10 @@ EVENTFUNC(ownership_event)
 	TPacketGCItemOwnership p;
 
 	p.bHeader = HEADER_GC_ITEM_OWNERSHIP;
-	p.dwVID = pkItem->GetVID();
+	p.dwVID = ItemSystem::GetItemVID(itemEntity);
 	p.szName[0] = '\0';
 
-	ecs::ViewSystem::PacketView(pkItem->GetEntityHandle(), &p, sizeof(p));
+	ecs::ViewSystem::PacketView(itemEntity, &p, sizeof(p));
 	return 0;
 }
 
@@ -16698,22 +16507,23 @@ EVENTFUNC(unique_expire_event)
 	}
 
 	const entt::entity itemEntity = info->item;
-	LPITEM pkItem = LegacyItemBoundary(itemEntity);
-	if (!pkItem)
+	if (!ItemSystem::IsValidItem(itemEntity))
 		return 0;
 
-	if (pkItem->GetValue(2) == 0)
+	if (ItemSystem::GetItemValue(itemEntity, 2) == 0)
 	{
-		if (pkItem->GetSocket(ITEM_SOCKET_UNIQUE_REMAIN_TIME) <= 1)
+		if (ItemSystem::GetItemSocket(itemEntity, ITEM_SOCKET_UNIQUE_REMAIN_TIME) <= 1)
 		{
-			LOG_INFO("UNIQUE_ITEM: expire {} {}", pkItem->GetName(), pkItem->GetID());
+			LOG_INFO("UNIQUE_ITEM: expire {} {}", ItemSystem::GetItemName(itemEntity),
+				ItemSystem::GetItemID(itemEntity));
 			ItemSystem::GetItemEvents(itemEntity).uniqueExpire = nullptr;
 			ITEM_MANAGER::instance().RemoveItem(itemEntity, "UNIQUE_EXPIRE");
 			return 0;
 		}
 		else
 		{
-			pkItem->SetSocket(ITEM_SOCKET_UNIQUE_REMAIN_TIME, pkItem->GetSocket(ITEM_SOCKET_UNIQUE_REMAIN_TIME) - 1);
+			ItemSystem::SetItemSocket(itemEntity, ITEM_SOCKET_UNIQUE_REMAIN_TIME,
+				ItemSystem::GetItemSocket(itemEntity, ITEM_SOCKET_UNIQUE_REMAIN_TIME) - 1);
 			return PASSES_PER_SEC(60);
 		}
 	}
@@ -16721,7 +16531,7 @@ EVENTFUNC(unique_expire_event)
 	{
 		time_t cur = get_global_time();
 
-		if (pkItem->GetSocket(ITEM_SOCKET_UNIQUE_REMAIN_TIME) <= cur)
+		if (ItemSystem::GetItemSocket(itemEntity, ITEM_SOCKET_UNIQUE_REMAIN_TIME) <= cur)
 		{
 			ItemSystem::GetItemEvents(itemEntity).uniqueExpire = nullptr;
 			ITEM_MANAGER::instance().RemoveItem(itemEntity, "UNIQUE_EXPIRE");
@@ -16729,8 +16539,10 @@ EVENTFUNC(unique_expire_event)
 		}
 		else
 		{
-			if (pkItem->GetSocket(ITEM_SOCKET_UNIQUE_REMAIN_TIME) - cur < 600)
-				return PASSES_PER_SEC(pkItem->GetSocket(ITEM_SOCKET_UNIQUE_REMAIN_TIME) - cur);
+			const time_t remaining =
+				static_cast<time_t>(ItemSystem::GetItemSocket(itemEntity, ITEM_SOCKET_UNIQUE_REMAIN_TIME)) - cur;
+			if (remaining < 600)
+				return PASSES_PER_SEC(remaining);
 			else
 				return PASSES_PER_SEC(600);
 		}
@@ -16748,37 +16560,40 @@ EVENTFUNC(timer_based_on_wear_expire_event)
 	}
 
 	const entt::entity itemEntity = info->item;
-	LPITEM pkItem = LegacyItemBoundary(itemEntity);
-	if (!pkItem)
+	if (!ItemSystem::IsValidItem(itemEntity))
 		return 0;
-	int remain_time = pkItem->GetSocket(ITEM_SOCKET_REMAIN_SEC) - processing_time / passes_per_sec;
+
+	int remain_time = static_cast<int>(ItemSystem::GetItemSocket(itemEntity, ITEM_SOCKET_REMAIN_SEC))
+		- processing_time / passes_per_sec;
 #ifdef ENABLE_RUNE_SYSTEM
-	if (pkItem->IsRune()) {
+	if (ItemSystem::IsRuneItem(itemEntity)) {
 		if (remain_time <= 0) {
-			pkItem->SetSocket(ITEM_SOCKET_REMAIN_SEC, 0);
-			pkItem->DeactivateRune();
+			ItemSystem::SetItemSocket(itemEntity, ITEM_SOCKET_REMAIN_SEC, 0);
+			ItemSystem::DeactivateRuneLegacyBoundary(itemEntity);
 			return 0;
 		}
 
-		if (int32_t(remain_time / (pkItem->GetValue(0) / 100)) < 50) {
-			pkItem->DeactivateRuneBonus();
-		}
+		const int runeStep = ItemSystem::GetItemValue(itemEntity, 0) / 100;
+		if (runeStep > 0 && remain_time / runeStep < 50)
+			ItemSystem::DeactivateRuneBonusLegacyBoundary(itemEntity);
 
-		if ((pkItem->GetSubType() == RUNE_SLOT7) || (pkItem->GetSocket(1) != 1))
+		if (ItemSystem::GetItemSubType(itemEntity) == RUNE_SLOT7 ||
+			ItemSystem::GetItemSocket(itemEntity, 1) != 1)
 			return PASSES_PER_SEC(MIN(60, remain_time));
 
-		if (pkItem->GetSocket(1) == 1)
-			pkItem->ChangeRuneAttr(remain_time);
+		if (ItemSystem::GetItemSocket(itemEntity, 1) == 1)
+			ItemSystem::ChangeRuneAttributesLegacyBoundary(itemEntity, remain_time);
 	}
 #endif
 
 	if (remain_time <= 0)
 	{
-		LOG_INFO("ITEM EXPIRED : expired {} {}", pkItem->GetName(), pkItem->GetID());
+		LOG_INFO("ITEM EXPIRED : expired {} {}", ItemSystem::GetItemName(itemEntity),
+			ItemSystem::GetItemID(itemEntity));
 		ItemSystem::GetItemEvents(itemEntity).timerBasedOnWearExpire = nullptr;
-		pkItem->SetSocket(ITEM_SOCKET_REMAIN_SEC, 0);
+		ItemSystem::SetItemSocket(itemEntity, ITEM_SOCKET_REMAIN_SEC, 0);
 
-		if (pkItem->IsDragonSoul())
+		if (ItemSystem::IsDragonSoulItem(itemEntity))
 		{
 			DSManager::instance().DeactivateDragonSoul(itemEntity);
 		}
@@ -16789,7 +16604,7 @@ EVENTFUNC(timer_based_on_wear_expire_event)
 		return 0;
 	}
 
-	pkItem->SetSocket(ITEM_SOCKET_REMAIN_SEC, remain_time);
+	ItemSystem::SetItemSocket(itemEntity, ITEM_SOCKET_REMAIN_SEC, remain_time);
 	return PASSES_PER_SEC(MIN(60, remain_time));
 }
 
@@ -16800,53 +16615,50 @@ EVENTFUNC(real_time_expire_event)
 	if (nullptr == info)
 		return 0;
 
-	const LPITEM item = LegacyItemBoundary(info->item);
-	if (!item)
-		return 0;
-
-	if (nullptr == item)
+	const entt::entity item = info->item;
+	if (!ItemSystem::IsValidItem(item))
 		return 0;
 
 #ifdef ENABLE_NEW_USE_POTION
 	if (info->newpotion) {
-		int32_t remainSec = item->GetSocket(0);
+		int32_t remainSec = static_cast<int32_t>(ItemSystem::GetItemSocket(item, 0));
 		if (remainSec <= 0) {
-			if (item->GetSocket(1) == 1) {
-				const entt::entity pkOwner = ItemSystem::GetItemOwner(info->item);
+			if (ItemSystem::GetItemSocket(item, 1) == 1) {
+				const entt::entity pkOwner = ItemSystem::GetItemOwnerEntity(item);
 				if (pkOwner != entt::null) {
-					if (AffectSystem::FindAffect(pkOwner, item->GetValue(0))) {
-						AffectSystem::RemoveAffect(pkOwner, item->GetValue(0));
+					if (AffectSystem::FindAffect(pkOwner, ItemSystem::GetItemValue(item, 0))) {
+						AffectSystem::RemoveAffect(pkOwner, ItemSystem::GetItemValue(item, 0));
 					}
 
 #ifdef TEXTS_IMPROVEMENT
-					ecs::ChatSystem::SendNew(pkOwner, CHAT_TYPE_INFO, 27, "%s", item->GetName());
+					ecs::ChatSystem::SendNew(pkOwner, CHAT_TYPE_INFO, 27, "%s", ItemSystem::GetItemName(item));
 #endif
 				}
 			}
 
-			ITEM_MANAGER::instance().RemoveItem(info->item, "REAL_TIME_EXPIRE");
+			ITEM_MANAGER::instance().RemoveItem(item, "REAL_TIME_EXPIRE");
 			return 0;
 		}
 
-		if (item->GetSocket(1) != 1) {
+		if (ItemSystem::GetItemSocket(item, 1) != 1) {
 			return PASSES_PER_SEC(60);
 		}
 		else {
 			int32_t nextSec = (remainSec - 60) > 0 ? (remainSec - 60) : 0;
-			item->SetSocket(0, nextSec);
+			ItemSystem::SetItemSocket(item, 0, nextSec);
 			if (nextSec <= 0) {
-				const entt::entity pkOwner = ItemSystem::GetItemOwner(info->item);
+				const entt::entity pkOwner = ItemSystem::GetItemOwnerEntity(item);
 				if (pkOwner != entt::null) {
-					if (AffectSystem::FindAffect(pkOwner, item->GetValue(0))) {
-						AffectSystem::RemoveAffect(pkOwner, item->GetValue(0));
+					if (AffectSystem::FindAffect(pkOwner, ItemSystem::GetItemValue(item, 0))) {
+						AffectSystem::RemoveAffect(pkOwner, ItemSystem::GetItemValue(item, 0));
 					}
 
 #ifdef TEXTS_IMPROVEMENT
-					ecs::ChatSystem::SendNew(pkOwner, CHAT_TYPE_INFO, 27, "%s", item->GetName());
+					ecs::ChatSystem::SendNew(pkOwner, CHAT_TYPE_INFO, 27, "%s", ItemSystem::GetItemName(item));
 #endif
 				}
 
-				ITEM_MANAGER::instance().RemoveItem(info->item, "REAL_TIME_EXPIRE");
+				ITEM_MANAGER::instance().RemoveItem(item, "REAL_TIME_EXPIRE");
 				return 0;
 			}
 			else {
@@ -16857,16 +16669,16 @@ EVENTFUNC(real_time_expire_event)
 #endif
 
 	const time_t current = get_global_time();
-	if (current > item->GetSocket(0))
+	if (current > ItemSystem::GetItemSocket(item, 0))
 	{
-		const entt::entity pkOwner = ItemSystem::GetItemOwner(info->item);
+		const entt::entity pkOwner = ItemSystem::GetItemOwnerEntity(item);
 
-		if (pkOwner != entt::null && ecs::PlayerRuntime::GetDesc(pkOwner) && item->GetWindow() == MOUNT_INVENTORY)
+		if (pkOwner != entt::null && ecs::PlayerRuntime::GetDesc(pkOwner) && ItemSystem::GetItemWindow(item) == MOUNT_INVENTORY)
 		{
 			TPacketGCWhisper pack;
 			char msg[CHAT_MAX_LEN + 1];
 
-			const int len = snprintf(msg, sizeof(msg), "Mount expired in mountinventory: %s", item->GetName());
+			const int len = snprintf(msg, sizeof(msg), "Mount expired in mountinventory: %s", ItemSystem::GetItemName(item));
 
 			pack.bHeader = HEADER_GC_WHISPER;
 			pack.bType = WHISPER_TYPE_SYSTEM;
@@ -16877,12 +16689,12 @@ EVENTFUNC(real_time_expire_event)
 			ecs::PlayerRuntime::GetDesc(pkOwner)->Packet(msg, len + 1);
 		}
 
-		if (item->IsNewMountItem()) {
-			if (item->GetSocket(2) != 0)
-				ItemSystem::ClearMountAttributeAndAffect(info->item);
+		if (ItemSystem::IsNewMountItem(item)) {
+			if (ItemSystem::GetItemSocket(item, 2) != 0)
+				ItemSystem::ClearMountAttributeAndAffect(item);
 		}
 
-		ITEM_MANAGER::instance().RemoveItem(info->item, "REAL_TIME_EXPIRE");
+		ITEM_MANAGER::instance().RemoveItem(item, "REAL_TIME_EXPIRE");
 		return 0;
 	}
 
@@ -16899,8 +16711,7 @@ EVENTFUNC(accessory_socket_expire_event)
 		return 0;
 	}
 
-	LPITEM item = LegacyItemBoundary(info->item);
-	if (!item)
+	if (!ItemSystem::IsValidItem(info->item))
 		return 0;
 	if (ItemSystem::GetItemAccessorySocketDownGradeTime(info->item) <= 1)
 	{
@@ -16932,25 +16743,25 @@ EVENTFUNC(soul_item_event)
 	if (!pInfo)
 		return 0;
 
-	const LPITEM pItem = LegacyItemBoundary(pInfo->item);
-	if (!pItem)
+	const entt::entity item = pInfo->item;
+	if (!ItemSystem::IsValidItem(item))
 		return 0;
 
-	int iCurrentMinutes = (pItem->GetSocket(2) / 10000);
-	int iCurrentStrike = (pItem->GetSocket(2) % 10000);
+	const int iCurrentMinutes = static_cast<int>(ItemSystem::GetItemSocket(item, 2) / 10000);
+	const int iCurrentStrike = static_cast<int>(ItemSystem::GetItemSocket(item, 2) % 10000);
 	int iNextMinutes = iCurrentMinutes + 1;
 
-	if (iNextMinutes >= pItem->GetLimitValue(1))
+	if (iNextMinutes >= ItemSystem::GetItemLimitValue(item, 1))
 	{
-		if (pItem->GetValue(0) != 1)
+		if (ItemSystem::GetItemValue(item, 0) != 1)
 		{
-			pItem->SetSocket(2, (pItem->GetLimitValue(1) * 10000 + iCurrentStrike)); // just in case
-			ItemSystem::GetItemEvents(pInfo->item).soulItem = nullptr;
+			ItemSystem::SetItemSocket(item, 2, ItemSystem::GetItemLimitValue(item, 1) * 10000 + iCurrentStrike);
+			ItemSystem::GetItemEvents(item).soulItem = nullptr;
 			return 0;
 		}
 	}
 
-	pItem->SetSocket(2, (iNextMinutes * 10000 + iCurrentStrike));
+	ItemSystem::SetItemSocket(item, 2, iNextMinutes * 10000 + iCurrentStrike);
 
 	if (test_server)
 		return PASSES_PER_SEC(5);

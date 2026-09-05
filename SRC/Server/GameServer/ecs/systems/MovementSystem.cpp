@@ -7,6 +7,7 @@
 #include "AISystem.hpp"
 #include "CombatSystem.hpp"
 #include "../components/ai_components.hpp"
+#include "../AIHelpers.hpp"
 
 #include "PlayerRuntimeSystem.hpp"
 #include <cmath>
@@ -125,7 +126,7 @@ namespace
         LPCHARACTER ch = CHARACTER_MANAGER::instance().Find(vid.value);
         if (!ch || ecs::PlayerRuntime::IsPC(ch->GetEntityHandle()))
             return;
-        if (ch->GetVictim() && !ecs::PlayerRuntime::GetAIFlag(ch->GetEntityHandle()))
+        if (ch->GetVictim() && !AIHelpers::IsCoward(ch->GetEntityHandle()))
             ecs::PlayerRuntime::SetPosition(ch->GetEntityHandle(), POS_FIGHTING);
         else
             ecs::PlayerRuntime::SetPosition(ch->GetEntityHandle(), POS_STANDING);

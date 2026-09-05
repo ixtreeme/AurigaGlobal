@@ -2843,10 +2843,7 @@ int CHARACTER::GetSoulItemDamage(entt::entity victim, int iDamage, uint8_t bSoul
                 }
 
                 ItemSystem::SetItemSocket(soulItem, 2, 0);
-                // The soul timer itself is still owned by CItem. Keep this one
-                // transition visible until item events become ECS components.
-                if (LPITEM legacySoulItem = ResolveLegacyItem(soulItem))
-                    legacySoulItem->StartSoulItemEvent();
+                ItemSystem::StartSoulItemEventEcs(soulItem);
             }
 
             ItemSystem::SetItemSocket(

@@ -64,13 +64,14 @@ uint8_t ObserveAIState(entt::registry& reg, entt::entity entity, LPCHARACTER ch)
 bool SyncAIFlags(entt::registry& reg, entt::entity entity, LPCHARACTER ch)
 {
     auto& flags = reg.get_or_emplace<ecs::AIFlags>(entity);
+    const uint32_t aiFlags = ecs::PlayerRuntime::GetAIFlag(entity);
     const ecs::AIFlags desired {
-        ecs::PlayerRuntime::GetAIFlag(ch->GetEntityHandle()),
-        ecs::PlayerRuntime::GetAIFlag(ch->GetEntityHandle()),
-        ecs::PlayerRuntime::GetAIFlag(ch->GetEntityHandle()),
-        ecs::PlayerRuntime::GetAIFlag(ch->GetEntityHandle()),
-        ecs::PlayerRuntime::GetAIFlag(ch->GetEntityHandle()),
-        ecs::PlayerRuntime::GetAIFlag(ch->GetEntityHandle()),
+        IS_SET(aiFlags, AIFLAG_AGGRESSIVE) != 0,
+        IS_SET(aiFlags, AIFLAG_COWARD) != 0,
+        IS_SET(aiFlags, AIFLAG_ATTACKMOB) != 0,
+        IS_SET(aiFlags, AIFLAG_NOATTACKSHINSU) != 0,
+        IS_SET(aiFlags, AIFLAG_NOATTACKCHUNJO) != 0,
+        IS_SET(aiFlags, AIFLAG_NOATTACKJINNO) != 0,
         ch->IsBerserk(),
         ecs::PlayerRuntime::IsGuardNPC(ch->GetEntityHandle()),
         false,

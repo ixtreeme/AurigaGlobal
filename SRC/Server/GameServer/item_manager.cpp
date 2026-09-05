@@ -75,7 +75,7 @@ void ITEM_MANAGER::Destroy()
 		if (!item)
 			continue;
 
-		EntityFactory::DestroyItemEntity(g_registry, item);
+		EntityFactory::DestroyItemEntity(g_registry, itemEntity);
 #ifdef M2_USE_POOL
 		pool_.Destroy(item);
 #else
@@ -91,10 +91,7 @@ void ITEM_MANAGER::Destroy()
 void ITEM_MANAGER::GracefulShutdown()
 {
 	for (const entt::entity itemEntity : m_set_pkItemForDelayedSave)
-	{
-		if (LPITEM item = ResolveManagedItem(itemEntity))
-			SaveSingleItem(item);
-	}
+		SaveSingleItem(itemEntity);
 	m_set_pkItemForDelayedSave.clear();
 }
 
@@ -296,20 +293,13 @@ entt::entity ITEM_MANAGER::CreateItem(uint32_t vnum, uint32_t count, uint32_t id
 	//초기화 하고. 테이블 셋하고
 	item->Initialize();
 	item->SetProto(table);
-#ifdef ENABLE_ITEM_EXTRA_PROTO
-	ItemSystem::SetItemExtraProto(item->GetEntityHandle(), instance().GetExtraProto(vnum));
-#endif
 	item->SetMaskVnum(dwMaskVnum);
 
-	if (item->GetType() == ITEM_ELK) {
-		ItemSystem::SetItemSkipSave(item->GetEntityHandle(), true);
-	}
-	else if (!bIsNewItem)
+	if (item->GetType() != ITEM_ELK && !bIsNewItem)
 	{
 		item->SetID(id);
-		ItemSystem::SetItemSkipSave(item->GetEntityHandle(), true);
 	}
-	else
+	else if (item->GetType() != ITEM_ELK)
 	{
 		item->SetID(GetNewID());
 	}
@@ -327,6 +317,11 @@ entt::entity ITEM_MANAGER::CreateItem(uint32_t vnum, uint32_t count, uint32_t id
 #endif
 		return entt::null;
 	}
+
+#ifdef ENABLE_ITEM_EXTRA_PROTO
+	ItemSystem::SetItemExtraProto(itemEntity, instance().GetExtraProto(vnum));
+#endif
+	ItemSystem::SetItemSkipSave(itemEntity, item->GetType() == ITEM_ELK || !bIsNewItem);
 
 	if (bIsNewItem && item->GetType() == ITEM_UNIQUE)
 	{
@@ -387,22 +382,22 @@ entt::entity ITEM_MANAGER::CreateItem(uint32_t vnum, uint32_t count, uint32_t id
 	for (int i = 0; i < ITEM_LIMIT_MAX_NUM; i++)
 	{
 		// 아이템 생성 시점부터 사용하지 않아도 시간이 차감되는 방식
-		if (LIMIT_REAL_TIME == item->GetLimitType(i))
+		if (LIMIT_REAL_TIME == ItemSystem::GetItemLimitType(itemEntity, i))
 		{
-			if (item->GetLimitValue(i))
+			if (ItemSystem::GetItemLimitValue(itemEntity, i))
 			{
-				item->SetSocket(0, time(nullptr) + item->GetLimitValue(i));
+				item->SetSocket(0, time(nullptr) + ItemSystem::GetItemLimitValue(itemEntity, i));
 			}
 			else
 			{
 				item->SetSocket(0, time(nullptr) + 60 * 60 * 24 * 7);
 			}
 
-			item->StartRealTimeExpireEvent();
+			ItemSystem::StartRealTimeExpireEventEcs(itemEntity);
 		}
 
 		// 기존 유니크 아이템처럼 착용시에만 사용가능 시간이 차감되는 방식
-		else if (LIMIT_TIMER_BASED_ON_WEAR == item->GetLimitType(i))
+		else if (LIMIT_TIMER_BASED_ON_WEAR == ItemSystem::GetItemLimitType(itemEntity, i))
 		{
 			// 이미 착용중인 아이템이면 타이머를 시작하고, 새로 만드는 아이템은 사용 가능 시간을 세팅해준다. (
 			// 아이템몰로 지급하는 경우에는 이 로직에 들어오기 전에 Socket0 값이 세팅이 되어 있어야 한다.
@@ -414,7 +409,7 @@ entt::entity ITEM_MANAGER::CreateItem(uint32_t vnum, uint32_t count, uint32_t id
 			{
 				int32_t duration = item->GetSocket(0);
 				if (0 == duration)
-					duration = item->GetLimitValue(i);
+					duration = ItemSystem::GetItemLimitValue(itemEntity, i);
 
 				if (0 == duration)
 					duration = 60 * 60 * 10;	// 정보가 아무것도 없으면 디폴트로 10시간 세팅
@@ -433,7 +428,7 @@ entt::entity ITEM_MANAGER::CreateItem(uint32_t vnum, uint32_t count, uint32_t id
 	if (item->GetType() == ITEM_SOUL)
 	{
 		item->SetSocket(2, item->GetValue(2));
-		item->StartSoulItemEvent();
+		ItemSystem::StartSoulItemEventEcs(itemEntity);
 	}
 #endif
 
@@ -539,7 +534,7 @@ entt::entity ITEM_MANAGER::CreateItem(uint32_t vnum, uint32_t count, uint32_t id
 
 #ifdef ENABLE_NEW_USE_POTION
 	if ((bIsNewItem) && (item->GetType() == ITEM_USE) && (item->GetSubType() == USE_NEW_POTIION)) {
-		item->SetSocket(0, item->GetLimitValue(0));
+		item->SetSocket(0, ItemSystem::GetItemLimitValue(itemEntity, 0));
 		item->SetSocket(1, 0);
 	}
 #endif
@@ -584,7 +579,7 @@ void ITEM_MANAGER::FlushDelayedSave(entt::entity itemEntity)
 		return;
 
 	m_set_pkItemForDelayedSave.erase(it);
-	SaveSingleItem(ResolveManagedItem(itemEntity));
+	SaveSingleItem(itemEntity);
 }
 
 void ITEM_MANAGER::FlushDelayedSaveByOwner(entt::entity owner)
@@ -595,14 +590,15 @@ void ITEM_MANAGER::FlushDelayedSaveByOwner(entt::entity owner)
 	auto it = m_set_pkItemForDelayedSave.begin();
 	while (it != m_set_pkItemForDelayedSave.end())
 	{
-		LPITEM item = ResolveManagedItem(*it);
-		if (!item)
+		const entt::entity item = *it;
+
+		if (!ItemSystem::IsValidItem(item))
 		{
 			it = m_set_pkItemForDelayedSave.erase(it);
 			continue;
 		}
 
-		if (ItemSystem::GetItemOwner(item->GetEntityHandle()) == owner)
+		if (ItemSystem::GetItemOwner(item) == owner)
 		{
 			it = m_set_pkItemForDelayedSave.erase(it);
 			SaveSingleItem(item);
@@ -612,56 +608,69 @@ void ITEM_MANAGER::FlushDelayedSaveByOwner(entt::entity owner)
 	}
 }
 
-void ITEM_MANAGER::SaveSingleItem(LPITEM item)
+void ITEM_MANAGER::SaveSingleItem(entt::entity item)
 {
-	if (!item)
+	if (!ItemSystem::IsValidItem(item))
 		return;
 
-	if (ItemSystem::GetItemOwner(item->GetEntityHandle()) == entt::null)
+	if (ItemSystem::GetItemOwner(item) == entt::null)
 	{
-		uint32_t dwID = item->GetID();
-		uint32_t dwOwnerID = ItemSystem::GetItemLastOwnerPID(item->GetEntityHandle());
+		uint32_t dwID = ItemSystem::GetItemID(item);
+		uint32_t dwOwnerID = ItemSystem::GetItemLastOwnerPID(item);
 
 		db_clientdesc->DBPacketHeader(HEADER_GD_ITEM_DESTROY, 0, sizeof(uint32_t) + sizeof(uint32_t));
 		db_clientdesc->Packet(&dwID, sizeof(uint32_t));
 		db_clientdesc->Packet(&dwOwnerID, sizeof(uint32_t));
 
-		LOG_INFO("ITEM_DELETE {}:{}", item->GetName(), dwID);
+		LOG_INFO("ITEM_DELETE {}:{}", ItemSystem::GetItemName(item), dwID);
 		return;
 	}
 
-	LOG_INFO("ITEM_SAVE {} in window {}", item->GetID(), item->GetWindow());
+	LOG_INFO("ITEM_SAVE {} in window {}", ItemSystem::GetItemID(item), ItemSystem::GetItemWindow(item));
 
-	TPlayerItem t;
+	TPlayerItem t{};
 
-	t.id = item->GetID();
-	t.window = item->GetWindow();
+	t.id = ItemSystem::GetItemID(item);
+	t.window = ItemSystem::GetItemWindow(item);
 #ifdef ATTR_LOCK
-	t.lockedattr = item->GetLockedAttr();
+	t.lockedattr = ItemSystem::GetItemLockedAttr(item);
 #endif
 	switch (t.window)
 	{
 	case EQUIPMENT:
-		t.pos = ItemSystem::GetItemCell(item->GetEntityHandle()) - INVENTORY_MAX_NUM;
+		t.pos = ItemSystem::GetItemCell(item) - INVENTORY_MAX_NUM;
 		break;
 #ifdef ENABLE_BELT_INVENTORY_EX
 	case INVENTORY:
-		if (BELT_INVENTORY_SLOT_START <= ItemSystem::GetItemCell(item->GetEntityHandle()) && BELT_INVENTORY_SLOT_END > item->GetCell())
+		if (BELT_INVENTORY_SLOT_START <= ItemSystem::GetItemCell(item) && BELT_INVENTORY_SLOT_END > ItemSystem::GetItemCell(item))
 		{
 			t.window = BELT_INVENTORY;
-			t.pos = ItemSystem::GetItemCell(item->GetEntityHandle()) - BELT_INVENTORY_SLOT_START;
+			t.pos = ItemSystem::GetItemCell(item) - BELT_INVENTORY_SLOT_START;
 			break;
 		}
 #endif
 	default:
-		t.pos = ItemSystem::GetItemCell(item->GetEntityHandle());
+		t.pos = ItemSystem::GetItemCell(item);
 		break;
 	}
-	t.count = (uint32_t)item->GetCount();
-	t.vnum = item->GetOriginalVnum();
-	t.owner = (t.window == SAFEBOX || t.window == MALL) ? ecs::PlayerRuntime::GetDesc(ItemSystem::GetItemOwner(item->GetEntityHandle()))->GetAccountTable().id : ecs::PlayerRuntime::GetPlayerID(item->GetOwnerEntity());
-	memcpy(t.alSockets, item->GetSockets(), sizeof(t.alSockets));
-	memcpy(t.aAttr, item->GetAttributes(), sizeof(t.aAttr));
+	t.count = ItemSystem::GetItemCount(item);
+	t.vnum = ItemSystem::GetItemOriginalVnum(item);
+	const entt::entity owner = ItemSystem::GetItemOwner(item);
+	if (t.window == SAFEBOX || t.window == MALL)
+	{
+		LPDESC desc = ecs::PlayerRuntime::GetDesc(owner);
+		if (!desc) {
+			LOG_ERROR("ITEM_SAVE failed: owner has no descriptor (item_id={})", t.id);
+			return;
+		}
+		t.owner = desc->GetAccountTable().id;
+	}
+	else
+		t.owner = ecs::PlayerRuntime::GetPlayerID(owner);
+	for (int i = 0; i < ITEM_SOCKET_MAX_NUM; ++i)
+		t.alSockets[i] = ItemSystem::GetItemSocket(item, i);
+	for (int i = 0; i < ITEM_ATTRIBUTE_MAX_NUM; ++i)
+		t.aAttr[i] = ItemSystem::GetItemAttribute(item, i);
 
 	db_clientdesc->DBPacketHeader(HEADER_GD_ITEM_SAVE, 0, sizeof(TPlayerItem));
 	db_clientdesc->Packet(&t, sizeof(TPlayerItem));
@@ -672,14 +681,15 @@ void ITEM_MANAGER::Update()
 	auto it = m_set_pkItemForDelayedSave.begin();
 	while (it != m_set_pkItemForDelayedSave.end())
 	{
-		LPITEM item = ResolveManagedItem(*it);
-		if (!item)
+		const entt::entity item = *it;
+
+		if (!ItemSystem::IsValidItem(item))
 		{
 			it = m_set_pkItemForDelayedSave.erase(it);
 			continue;
 		}
 
-		if (ItemSystem::GetItemOwner(item->GetEntityHandle()) != entt::null && IS_SET(item->GetFlag(), ITEM_FLAG_SLOW_QUERY))
+		if (ItemSystem::GetItemOwner(item) != entt::null && IS_SET(ItemSystem::GetItemFlags(item), ITEM_FLAG_SLOW_QUERY))
 		{
 			++it;
 			continue;
@@ -809,7 +819,7 @@ void ITEM_MANAGER::DestroyItem(entt::entity itemEntity, const char* file, size_t
 		m_map_pkItemByID.erase(dwID);
 
 	m_VIDMap.erase(item->GetVID());
-	EntityFactory::DestroyItemEntity(g_registry, item);
+	EntityFactory::DestroyItemEntity(g_registry, itemEntity);
 
 #ifdef M2_USE_POOL
 	pool_.Destroy(item);
