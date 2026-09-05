@@ -969,7 +969,7 @@ namespace offlineshop
 				*/
 
 				SendShopSafeboxAddItemDBPacket((ecs::PlayerRuntime::GetPlayerID(chEntity)), *pItem);
-				SendChatPacket(ch, CHAT_PACKET_RECV_ITEM_SAFEBOX);
+				SendChatPacket(chEntity, CHAT_PACKET_RECV_ITEM_SAFEBOX);
 			}
 
 			else
@@ -1548,8 +1548,8 @@ namespace offlineshop
 		if(!PutsNewOffer(&offer))
 			return false;
 
-		LPCHARACTER ch = CHARACTER_MANAGER::instance().FindByPID(offer.dwOffererID);
-		if(ch)
+		const entt::entity ch = CHARACTER_MANAGER::instance().FindEntityByPID(offer.dwOffererID);
+		if (ecs::PlayerRuntime::IsValid(ch))
 			SendChatPacket(ch, CHAT_PACKET_OFFER_CREATE);
 
 		return true;
@@ -2131,7 +2131,7 @@ namespace offlineshop
 
 		if (!ch->CanHandleItem()|| !CheckCharacterActions(ch))
 		{
-			SendChatPacket(ch,CHAT_PACKET_CANNOT_DO_NOW);
+			SendChatPacket(character,CHAT_PACKET_CANNOT_DO_NOW);
 			return true;
 		}
 
@@ -2188,13 +2188,13 @@ namespace offlineshop
 
 			if (item->isLocked() || ItemSystem::IsItemEquipped((item ? item->GetEntityHandle() : entt::null)) || item->IsExchanging())
 			{
-				SendChatPacket(ch,CHAT_PACKET_CANNOT_DO_NOW);
+				SendChatPacket(character,CHAT_PACKET_CANNOT_DO_NOW);
 				return true;
 			}
 
 #ifdef ENABLE_SOULBIND_SYSTEM
 			if (item->IsSealed()){
-				SendChatPacket(ch, CHAT_PACKET_CANNOT_DO_NOW);
+				SendChatPacket(character, CHAT_PACKET_CANNOT_DO_NOW);
 				return true;
 			}
 #endif
@@ -2389,7 +2389,7 @@ namespace offlineshop
 
 		if (!ch->CanHandleItem() || !CheckCharacterActions(ch))
 		{
-			SendChatPacket(ch,CHAT_PACKET_CANNOT_DO_NOW);
+			SendChatPacket(character,CHAT_PACKET_CANNOT_DO_NOW);
 			return true;
 		}
 
@@ -2688,7 +2688,7 @@ namespace offlineshop
 
 		if (!ch->CanHandleItem()|| !CheckCharacterActions(ch))
 		{
-			SendChatPacket(ch,CHAT_PACKET_CANNOT_DO_NOW);
+			SendChatPacket(character,CHAT_PACKET_CANNOT_DO_NOW);
 			return true;
 		}
 
@@ -2699,13 +2699,13 @@ namespace offlineshop
 
 		if (pkItem->isLocked() || ItemSystem::IsItemEquipped((pkItem ? pkItem->GetEntityHandle() : entt::null)) || pkItem->IsExchanging())
 		{
-			SendChatPacket(ch,CHAT_PACKET_CANNOT_DO_NOW);
+			SendChatPacket(character,CHAT_PACKET_CANNOT_DO_NOW);
 			return true;
 		}
 
 #ifdef ENABLE_SOULBIND_SYSTEM
 		if (pkItem->IsSealed()) {
-			SendChatPacket(ch, CHAT_PACKET_CANNOT_DO_NOW);
+			SendChatPacket(character, CHAT_PACKET_CANNOT_DO_NOW);
 			return true;
 		}
 #endif
@@ -2771,7 +2771,7 @@ namespace offlineshop
 
 		if (pkShop->GetItems()->size() == 1)
 		{
-			SendChatPacket(ch, CHAT_PACKET_CANNOT_REMOVE_LAST_ITEM);
+			SendChatPacket(character, CHAT_PACKET_CANNOT_REMOVE_LAST_ITEM);
 			return false;
 		}
 
@@ -2817,7 +2817,7 @@ namespace offlineshop
 		if (!CheckSearchTime((ecs::PlayerRuntime::GetPlayerID(character))))
 		{
 			SendShopFilterResultClientPacket(character, vec);
-			SendChatPacket(ch,CHAT_PACKET_CANNOT_SEARCH_YET);
+			SendChatPacket(character,CHAT_PACKET_CANNOT_SEARCH_YET);
 			return true;
 		}
 
@@ -3471,7 +3471,7 @@ namespace offlineshop
 
 		if (!ch->CanHandleItem() || !CheckCharacterActions(ch))
 		{
-			SendChatPacket(ch,CHAT_PACKET_CANNOT_DO_NOW);
+			SendChatPacket(character,CHAT_PACKET_CANNOT_DO_NOW);
 			return true;
 		}
 
@@ -3566,13 +3566,13 @@ namespace offlineshop
 
 #ifdef ENABLE_SOULBIND_SYSTEM
 		if (item->IsSealed()) {
-			SendChatPacket(ch, CHAT_PACKET_CANNOT_DO_NOW);
+			SendChatPacket(character, CHAT_PACKET_CANNOT_DO_NOW);
 			return true;
 		}
 #endif
 
 		if (!CheckLastOfferTime((ecs::PlayerRuntime::GetPlayerID(character)))) {
-			SendChatPacket(ch, CHAT_PACKET_CANNOT_DO_NOW);
+			SendChatPacket(character, CHAT_PACKET_CANNOT_DO_NOW);
 			return false;
 		}
 
