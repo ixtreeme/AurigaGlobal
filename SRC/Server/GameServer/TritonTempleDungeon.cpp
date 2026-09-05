@@ -191,7 +191,7 @@ namespace
 
                 int32_t damage = 0;
 #ifdef __DUNGEON_INFO_SYSTEM__
-                damage = pkCh->GetQuestDamage((int)bossVnum);
+                damage = ecs::PlayerRuntime::GetQuestDamage(ch, (int)bossVnum);
                 if (damage < 0)
                     damage = 0;
 #endif

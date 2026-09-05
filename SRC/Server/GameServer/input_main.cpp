@@ -93,6 +93,7 @@
 #include "mob_manager.h"
 #endif
 #include <common/CommonDefines.h>
+#include "ecs/systems/DragonSoulSystem.hpp"
 
 #ifdef ENABLE_ITEM_ON_TITLE_RAZOR93
 static inline std::string MakeNameWithPrefix(LPCHARACTER ch)
@@ -2703,7 +2704,7 @@ int CInputMain::SyncPosition(entt::entity character, const char * c_pcData, uint
 				continue;
 		}
 
-		if (!victim->SetSyncOwner(character))
+		if (!NetworkSyncSystem::SetSyncOwner(victimEntity, character))
 			continue;
 
 		const float fDistWithSyncOwner = DISTANCE_SQRT( (ecs::PlayerRuntime::GetX(victimEntity) - ecs::PlayerRuntime::GetX(character)) / 100, (ecs::PlayerRuntime::GetY(victimEntity) - ecs::PlayerRuntime::GetY(character)) / 100 );
@@ -2926,7 +2927,7 @@ void CInputMain::Target(entt::entity character, const char * pcData)
 		ecs::PlayerRuntime::GetDesc(character)->Packet(&pckTarget, sizeof(TPacketGCTarget));
 	}
 	else
-		ch->SetTarget(CHARACTER_MANAGER::instance().FindEntity(p->dwVID));
+		CombatSystem::SetTarget(character, CHARACTER_MANAGER::instance().FindEntity(p->dwVID));
 }
 
 void CInputMain::Warp(entt::entity character, const char * pcData)
@@ -5849,7 +5850,7 @@ int CInputMain::Analyze(LPDESC d, uint8_t bHeader, const char * c_pData)
 				switch(p->bSubType)
 				{
 				case DS_SUB_HEADER_CLOSE:
-					ch->DragonSoul_RefineWindow_Close();
+					DragonSoulSystem::CloseRefineWindow(ch->GetEntityHandle());
 					break;
 				case DS_SUB_HEADER_DO_REFINE_GRADE:
 					{

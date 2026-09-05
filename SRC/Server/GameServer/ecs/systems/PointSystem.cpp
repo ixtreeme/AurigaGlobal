@@ -590,11 +590,6 @@ void CHARACTER::SetRealPoint(uint8_t type, int64_t val)
 #endif
 }
 
-int CHARACTER::GetPolymorphPoint(uint8_t type) const
-{
-	return ecs::PointSystem::GetPolymorphPoint(GetEntityHandle(), type);
-}
-
 int64_t CHARACTER::GetPoint(uint8_t type) const
 {
 	if (type >= POINT_MAX_NUM)
@@ -1386,7 +1381,7 @@ void Change(entt::entity e, uint8_t type, int64_t amount, bool bAmount, bool bBr
 		val = Get(e, type);
 
 		if (type == POINT_MALL_DEFBONUS)
-			if (ch) ch->ComputeBattlePoints();
+			if (ch) ecs::PointSystem::ComputeBattlePoints(ch->GetEntityHandle());
 
 		break;
 
@@ -1539,7 +1534,7 @@ void Change(entt::entity e, uint8_t type, int64_t amount, bool bAmount, bool bBr
 	case POINT_DX:
 	case POINT_IQ:
 	case POINT_HT:
-		if (ch) ch->ComputeBattlePoints();
+		if (ch) ecs::PointSystem::ComputeBattlePoints(ch->GetEntityHandle());
 		break;
 	case POINT_MAX_HP:
 	case POINT_MAX_SP:

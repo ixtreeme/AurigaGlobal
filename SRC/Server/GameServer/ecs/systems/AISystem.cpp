@@ -72,7 +72,7 @@ bool SyncAIFlags(entt::registry& reg, entt::entity entity, LPCHARACTER ch)
         ch->IsNoAttackChunjo(),
         ch->IsNoAttackJinno(),
         ch->IsBerserk(),
-        ch->IsGuardNPC(),
+        ecs::PlayerRuntime::IsGuardNPC(ch->GetEntityHandle()),
         false,
         ch->IsStoneSkinner(),
         ch->IsGodSpeed(),
@@ -91,7 +91,7 @@ bool SyncAIFlags(entt::registry& reg, entt::entity entity, LPCHARACTER ch)
 
 bool LegacyGotoNearTarget(LPCHARACTER self, LPCHARACTER victim)
 {
-    if (IS_SET(self->GetAIFlag(), AIFLAG_NOMOVE)) {
+    if (IS_SET(ecs::PlayerRuntime::GetAIFlag(self->GetEntityHandle()), AIFLAG_NOMOVE)) {
         return false;
     }
 
@@ -219,7 +219,7 @@ void CHARACTER::__StateIdle_NPC()
     }
 #endif
 
-    if (IS_SET(GetAIFlag(), AIFLAG_NOMOVE)) {
+    if (IS_SET(ecs::PlayerRuntime::GetAIFlag(GetEntityHandle()), AIFLAG_NOMOVE)) {
         return;
     }
 
@@ -307,7 +307,7 @@ void CHARACTER::__StateIdle_Monster()
         }
     }
 
-    if (no_wander || IS_SET(GetAIFlag(), AIFLAG_NOMOVE) || number(0, 6)) {
+    if (no_wander || IS_SET(ecs::PlayerRuntime::GetAIFlag(GetEntityHandle()), AIFLAG_NOMOVE) || number(0, 6)) {
         return;
     }
 
@@ -360,7 +360,7 @@ void CHARACTER::StateBattle()
         return;
     }
 
-    if (!victim || (victim->IsStun() && IsGuardNPC()) || victim->IsDead()) {
+    if (!victim || (victim->IsStun() && ecs::PlayerRuntime::IsGuardNPC(GetEntityHandle())) || victim->IsDead()) {
         LPCHARACTER newVictim = nullptr;
         if (victim && victim->IsDead() && !no_wander && IsAggressive() && (!GetParty() || GetParty()->GetLeader() == this)) {
             newVictim = FindVictim(this, m_pkMobData->m_table.wAggressiveSight);
@@ -373,7 +373,7 @@ void CHARACTER::StateBattle()
         }
 
         SetVictim(entt::null);
-        if (IsGuardNPC()) {
+        if (ecs::PlayerRuntime::IsGuardNPC(GetEntityHandle())) {
             Return();
         } else {
             SetPosition(POS_STANDING);

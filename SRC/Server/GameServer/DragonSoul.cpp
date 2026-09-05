@@ -1275,7 +1275,7 @@ void DSManager::RefreshDragonSoulState(LPCHARACTER ch)
 		if (item != entt::null && IsActiveDragonSoul(item))
 			return;
 	}
-	ch->DragonSoul_DeactivateAll();
+	DragonSoulSystem::DeactivateAll(owner);
 }
 DSManager::DSManager()
 {

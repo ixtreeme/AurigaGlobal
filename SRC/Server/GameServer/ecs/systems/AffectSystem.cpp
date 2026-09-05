@@ -2097,11 +2097,6 @@ bool CHARACTER::IsPolymorphed() const
 	return AffectSystem::IsPolymorphed(GetEntityHandle());
 }
 
-bool CHARACTER::IsPolyMaintainStat() const
-{
-	return AffectSystem::IsPolyMaintainStat(GetEntityHandle());
-}
-
 int32_t CHARACTER::SetInvincible(bool arg)
 {
 	isInvincible = arg;

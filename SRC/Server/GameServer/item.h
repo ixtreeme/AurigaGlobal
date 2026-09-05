@@ -36,7 +36,6 @@ class CItem : public CEntity
 		TItemTable const *	GetProto()	{ return m_pProto; }
 
 #ifdef ENABLE_ITEM_EXTRA_PROTO
-		void		SetExtraProto(TItemExtraProto* Proto);
 		TItemExtraProto* GetExtraProto();
 #endif
 
@@ -155,12 +154,9 @@ class CItem : public CEntity
 
 		uint16_t		GetRefineSet()		{ return m_pProto ? m_pProto->wRefineSet : 0;	}
 
-		void		SetUniqueExpireEvent(LPEVENT pkEvent);
 
-		void		StartTimerBasedOnWearExpireEvent();
 
 		void		StartRealTimeExpireEvent();
-		bool		IsUnlimitedTimeUnique();
 
 
 		//			일단 REAL_TIME과 TIMER_BASED_ON_WEAR 아이템에 대해서만 제대로 동작함.
@@ -181,11 +177,9 @@ class CItem : public CEntity
 
 		// ACCESSORY_REFINE
 		// 액세서리에 광산을 통해 소켓을 추가
-		bool		IsAccessoryForSocket();
 
 		int		GetAccessorySocketGrade();
 		int		GetAccessorySocketMaxGrade();
-		int		GetAccessorySocketDownGradeTime();
 
 		void		SetAccessorySocketGrade(int iGrade
 #ifdef ENABLE_INFINITE_RAFINES

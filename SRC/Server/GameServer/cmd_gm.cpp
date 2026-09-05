@@ -61,6 +61,7 @@
 #ifdef __NEWPET_SYSTEM__
 #include "New_PetSystem.h"
 #include "ecs/CharacterAccessors.hpp"
+#include "ecs/systems/DragonSoulSystem.hpp"
 #endif
 
 extern bool DropEvent_RefineBox_SetValue(const std::string& name, int value);
@@ -2139,7 +2140,7 @@ ACMD(do_advance)
 	int level = 0;
 	str_to_number(level, arg2);
 
-	tch->ResetPoint(MINMAX(0, level, gPlayerMaxLevel));
+	ecs::PointSystem::ResetAllPoints(tch->GetEntityHandle(), MINMAX(0, level, gPlayerMaxLevel));
 }
 
 ACMD(do_respawn)
@@ -2642,10 +2643,10 @@ ACMD(do_level)
 	int	level = 0;
 	str_to_number(level, arg2);
 
-	ch->ResetPoint(MINMAX(1, level, gPlayerMaxLevel));
+	ecs::PointSystem::ResetAllPoints(character, MINMAX(1, level, gPlayerMaxLevel));
 
 	ch->ClearSkill();
-	ch->ClearSubSkill();
+	SkillSystem::ClearSubSkill(character);
 }
 
 ACMD(do_gwlist)
@@ -4138,7 +4139,7 @@ ACMD(do_reset_subskill)
 	if (tch == nullptr)
 		return;
 
-	tch->ClearSubSkill();
+	SkillSystem::ClearSubSkill(tch->GetEntityHandle());
 	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "Subskill of [%s] was reset", ecs::PlayerRuntime::GetName(((tch) ? (tch)->GetEntityHandle() : entt::null)).data());
 }
 
@@ -4883,7 +4884,7 @@ ACMD (do_dragon_soul)
 		break;
 	case 'd':
 		{
-			ch->DragonSoul_DeactivateAll();
+			DragonSoulSystem::DeactivateAll(character);
 		}
 		break;
 	}

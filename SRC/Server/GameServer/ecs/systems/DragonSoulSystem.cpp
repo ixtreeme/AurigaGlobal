@@ -256,16 +256,6 @@ bool CHARACTER::DragonSoul_ActivateDeck(int deck_idx)
     return DragonSoulSystem::ActivateDeck(e, deck_idx);
 }
 
-void CHARACTER::DragonSoul_DeactivateAll()
-{
-    DragonSoulSystem::DeactivateAll(GetEntityHandle());
-}
-
-bool CHARACTER::DragonSoul_RefineWindow_Open(LPENTITY pEntity)
-{
-    return DragonSoulSystem::OpenRefineWindow(GetEntityHandle(), pEntity);
-}
-
 bool CHARACTER::DragonSoul_RefineWindow_Close()
 {
     return DragonSoulSystem::CloseRefineWindow(GetEntityHandle());

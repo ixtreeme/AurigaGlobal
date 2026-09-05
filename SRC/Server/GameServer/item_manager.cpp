@@ -227,11 +227,11 @@ bool ITEM_MANAGER::InitializeExtraProto(TItemExtraProto* table, uint32_t count)
 
 		auto extra_it = map.find(item->GetOriginalVnum());
 		if (extra_it != map.end()) {
-			item->SetExtraProto(&extra_it->second);
+			ItemSystem::SetItemExtraProto(item->GetEntityHandle(), &extra_it->second);
 			continue;
 		}
 
-		item->SetExtraProto(nullptr);
+		ItemSystem::SetItemExtraProto(item->GetEntityHandle(), nullptr);
 	}
 
 	return true;
@@ -297,7 +297,7 @@ entt::entity ITEM_MANAGER::CreateItem(uint32_t vnum, uint32_t count, uint32_t id
 	item->Initialize();
 	item->SetProto(table);
 #ifdef ENABLE_ITEM_EXTRA_PROTO
-	item->SetExtraProto(instance().GetExtraProto(vnum));
+	ItemSystem::SetItemExtraProto(item->GetEntityHandle(), instance().GetExtraProto(vnum));
 #endif
 	item->SetMaskVnum(dwMaskVnum);
 
@@ -408,7 +408,7 @@ entt::entity ITEM_MANAGER::CreateItem(uint32_t vnum, uint32_t count, uint32_t id
 			// 아이템몰로 지급하는 경우에는 이 로직에 들어오기 전에 Socket0 값이 세팅이 되어 있어야 한다.
 			if (true == item->IsEquipped())
 			{
-				item->StartTimerBasedOnWearExpireEvent();
+				ItemSystem::StartTimerBasedOnWearExpireEvent(item->GetEntityHandle());
 			}
 			else if (0 == id)
 			{

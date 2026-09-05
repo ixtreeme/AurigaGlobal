@@ -534,11 +534,6 @@ void StartRecoveryEvent(entt::entity e)
 
 } // namespace ecs::PlayerRuntime
 
-void CHARACTER::StartRecoveryEvent()
-{
-	ecs::PlayerRuntime::StartRecoveryEvent(GetEntityHandle());
-}
-
 void CHARACTER::Standup()
 {
 	struct packet_position pack_position;

@@ -298,10 +298,10 @@ float CalcAttackRating(entt::entity attacker, entt::entity victim, bool bIgnoreT
 	int iERSrc;
 
 	{
-		int attacker_dx = pkAttacker->GetPolymorphPoint(POINT_DX);
+		int attacker_dx = ecs::PointSystem::GetPolymorphPoint(attacker, POINT_DX);
 		int attacker_lv = ecs::PointSystem::GetLevel(attacker);
 
-		int victim_dx = pkVictim->GetPolymorphPoint(POINT_DX);
+		int victim_dx = ecs::PointSystem::GetPolymorphPoint(victim, POINT_DX);
 		int victim_lv = ecs::PointSystem::GetLevel(attacker);
 
 		iARSrc = MIN(90, (attacker_dx * 4	+ attacker_lv * 2) / 6);
@@ -543,7 +543,7 @@ int CalcMeleeDamage(entt::entity attacker, entt::entity victim, bool bIgnoreDefe
 	const entt::entity weapon = ItemSystem::GetWearItem(attacker, WEAR_WEAPON);
 	bool bPolymorphed = pkAttacker->IsPolymorphed();
 
-	if (ItemSystem::IsValidItem(weapon) && !(bPolymorphed && !pkAttacker->IsPolyMaintainStat()))
+	if (ItemSystem::IsValidItem(weapon) && !(bPolymorphed && !AffectSystem::IsPolyMaintainStat(attacker)))
 	{
 		if (ItemSystem::GetItemType(weapon) != ITEM_WEAPON)
 			return 0;
@@ -579,7 +579,7 @@ int CalcMeleeDamage(entt::entity attacker, entt::entity victim, bool bIgnoreDefe
 	int DEBUG_iDamBonus = 0;
 	// END_OF_TESTSERVER_SHOW_ATTACKINFO
 
-	if (bPolymorphed && !pkAttacker->IsPolyMaintainStat())
+	if (bPolymorphed && !AffectSystem::IsPolyMaintainStat(attacker))
 	{
 		// MONKEY_ROD_ATTACK_BUG_FIX
 		Item_GetDamage(weapon, &iDamMin, &iDamMax);

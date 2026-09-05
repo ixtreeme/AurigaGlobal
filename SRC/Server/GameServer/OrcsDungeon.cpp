@@ -436,7 +436,7 @@ static void OrcDungeon_CompleteRankingForMap(int32_t dungeonMapIdx)
 
             int32_t damage = 0;
 #ifdef __DUNGEON_INFO_SYSTEM__
-            damage = pkCh->GetQuestDamage((int)kBossVnum);
+            damage = ecs::PlayerRuntime::GetQuestDamage(ch, (int)kBossVnum);
             if (damage < 0)
                 damage = 0;
 #endif

@@ -1450,10 +1450,6 @@ void CHARACTER::SetQuestDamage(int race, int dmg)
     }
 }
 
-uint64_t CHARACTER::GetQuestDamage(int race)
-{
-    return ecs::PlayerRuntime::GetQuestDamage(GetEntityHandle(), race);
-}
 #endif
 
 #ifdef ENABLE_ANTICHEAT
@@ -1598,11 +1594,11 @@ void CHARACTER::SetLevel(uint8_t level)
     if (IsPC())
     {
         if (level < PK_PROTECT_LEVEL)
-            SetPKMode(PK_MODE_PROTECT);
+            CombatSystem::SetPKMode(GetEntityHandle(), PK_MODE_PROTECT);
         else if (GetGMLevel() != GM_PLAYER)
-            SetPKMode(PK_MODE_PROTECT);
+            CombatSystem::SetPKMode(GetEntityHandle(), PK_MODE_PROTECT);
         else if (GetPKMode() == PK_MODE_PROTECT)
-            SetPKMode(PK_MODE_PEACE);
+            CombatSystem::SetPKMode(GetEntityHandle(), PK_MODE_PEACE);
     }
 }
 
@@ -1656,16 +1652,6 @@ uint8_t CHARACTER::GetEmpire() const
 uint8_t CHARACTER::GetCharType() const
 {
     return m_bCharType;
-}
-
-bool CHARACTER::IsDungeonTicketExtraMetin() const
-{
-    return ecs::PlayerRuntime::IsDungeonTicketExtraMetin(GetEntityHandle());
-}
-
-uint32_t CHARACTER::GetAIFlag() const
-{
-    return ecs::PlayerRuntime::GetAIFlag(GetEntityHandle());
 }
 
 namespace ecs::PlayerRuntime {
@@ -2101,11 +2087,6 @@ void CHARACTER::SetNewPet()
     m_bIsNewPet = true;
     if (auto* status = g_registry.try_get<ecs::StatusFlags>(GetEntityHandle()))
         status->isNewPet = true;
-}
-
-bool CHARACTER::IsGuardNPC() const
-{
-    return ecs::PlayerRuntime::IsGuardNPC(GetEntityHandle());
 }
 
 int CHARACTER::GetQuestFlag(const std::string& flag) const

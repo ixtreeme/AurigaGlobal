@@ -142,7 +142,7 @@ bool CMountActor::Mount(entt::entity mountItemEntity)
 {
 	const entt::entity owner = m_pkOwner ? m_pkOwner->GetEntityHandle() : entt::null;
 #ifdef DISABLE_CORE_PULSE_RAZOR93
-	if (!ch->IsNextMountPulse()) {
+	if (!MountSystem::GetMountStateRef(ch->GetEntityHandle())) {
 		ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "You can't do this that fast, please calm down a bit...");
 		return false;
 	}
@@ -192,7 +192,7 @@ bool CMountActor::Mount(entt::entity mountItemEntity)
 		m_pkOwner->HorseSummon(false);
 	}
 
-	uint32_t dwTime = mountItem->IsUnlimitedTimeUnique() ? 86400 : ItemSystem::GetItemSocket((mountItem ? mountItem->GetEntityHandle() : entt::null), 0) - time(nullptr);
+	uint32_t dwTime = ItemSystem::IsUnlimitedTimeUnique(mountItem->GetEntityHandle()) ? 86400 : ItemSystem::GetItemSocket((mountItem ? mountItem->GetEntityHandle() : entt::null), 0) - time(nullptr);
 	const TItemTable* mountProto = ItemSystem::GetItemProto((mountItem ? mountItem->GetEntityHandle() : entt::null));
 	if (!mountProto)
 		return false;
@@ -242,7 +242,7 @@ bool CMountActor::Mount(entt::entity mountItemEntity)
 	const entt::entity owner = m_pkOwner ? m_pkOwner->GetEntityHandle() : entt::null;
 #ifdef DISABLE_CORE_PULSE_RAZOR93
 
-	if (!ch->IsNextMountPulse()) {
+	if (!MountSystem::GetMountStateRef(ch->GetEntityHandle())) {
 		ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "You can't do this that fast, please calm down a bit...");
 		return;
 	}
@@ -288,7 +288,7 @@ bool CMountActor::Mount(entt::entity mountItemEntity)
 		m_pkOwner->HorseSummon(false);
 	}
 
-	uint32_t dwTime = mountItem->IsUnlimitedTimeUnique() == true ? 86400 : ItemSystem::GetItemSocket((mountItem ? mountItem->GetEntityHandle() : entt::null), 0) - time(nullptr);
+	uint32_t dwTime = ItemSystem::IsUnlimitedTimeUnique(mountItem->GetEntityHandle()) == true ? 86400 : ItemSystem::GetItemSocket((mountItem ? mountItem->GetEntityHandle() : entt::null), 0) - time(nullptr);
 	const TItemTable* mountProto = ItemSystem::GetItemProto((mountItem ? mountItem->GetEntityHandle() : entt::null));
 	if (!mountProto)
 		return false;

@@ -5,6 +5,7 @@
 #include "questmanager.h"
 #include "char_interface.hpp"
 #include "ecs/CharacterAccessors.hpp"
+#include "ecs/systems/DragonSoulSystem.hpp"
 
 #undef sys_err
 #ifndef _WIN32
@@ -27,7 +28,7 @@ namespace quest
 			return 0;
 		}
 
-		ch->DragonSoul_RefineWindow_Open(CQuestManager::instance().GetCurrentNPCCharacterPtr());
+		DragonSoulSystem::OpenRefineWindow(ch->GetEntityHandle(), CQuestManager::instance().GetCurrentNPCCharacterPtr());
 		return 0;
 	}
 

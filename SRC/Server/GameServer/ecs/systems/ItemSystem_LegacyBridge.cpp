@@ -10333,7 +10333,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 					return false;
 					
 				}
-				if (item2->IsAccessoryForSocket())
+				if (ItemSystem::IsAccessoryForSocket(item2->GetEntityHandle()))
 				{
 					if (item2->GetAccessorySocketMaxGrade() < ITEM_ACCESSORY_SOCKET_MAX_NUM)
 					{
@@ -10376,7 +10376,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 
 			case USE_PUT_INTO_BELT_SOCKET:
 			case USE_PUT_INTO_ACCESSORY_SOCKET:
-				if (item2->IsAccessoryForSocket())
+				if (ItemSystem::IsAccessoryForSocket(item2->GetEntityHandle()))
 				{
 					if (ItemSystem::CanPutInto(item->GetEntityHandle(), item2->GetEntityHandle())) {
 #ifdef ENABLE_INFINITE_RAFINES
@@ -12491,7 +12491,7 @@ void TransformRefineItem(LPITEM pkOldItem, LPITEM pkNewItem)
 {
 
 	// ACCESSORY_REFINE
-	if (pkOldItem->IsAccessoryForSocket())
+	if (ItemSystem::IsAccessoryForSocket(pkOldItem->GetEntityHandle()))
 	{
 		for (int i = 0; i < ITEM_SOCKET_MAX_NUM; ++i)
 		{
@@ -15914,11 +15914,6 @@ void CItem::SetProto(const TItemTable* table)
 }
 
 #ifdef ENABLE_ITEM_EXTRA_PROTO
-void CItem::SetExtraProto(TItemExtraProto* Proto)
-{
-	ItemSystem::SetItemExtraProto(GetEntityHandle(), Proto);
-}
-
 TItemExtraProto* CItem::GetExtraProto()
 {
 	return ItemSystem::GetItemExtraProto(GetEntityHandle());
@@ -15928,16 +15923,6 @@ TItemExtraProto* CItem::GetExtraProto()
 void CItem::StartDestroyEvent(int iSec)
 {
 	ItemSystem::StartDestroyEvent(GetEntityHandle(), iSec);
-}
-
-void CItem::SetUniqueExpireEvent(LPEVENT pkEvent)
-{
-	ItemSystem::GetItemEvents(GetEntityHandle()).uniqueExpire = pkEvent;
-}
-
-void CItem::StartTimerBasedOnWearExpireEvent()
-{
-	ItemSystem::StartTimerBasedOnWearExpireEvent(GetEntityHandle());
 }
 
 void CItem::StartRealTimeExpireEvent()
@@ -16249,11 +16234,6 @@ void CItem::DeactivateRune() {
 }
 #endif
 
-bool CItem::IsAccessoryForSocket()
-{
-	return ItemSystem::IsAccessoryForSocket(GetEntityHandle());
-}
-
 void CItem::SetAccessorySocketGrade(int iGrade
 #ifdef ENABLE_INFINITE_RAFINES
 	, bool infinite
@@ -16275,11 +16255,6 @@ int CItem::GetAccessorySocketGrade()
 int CItem::GetAccessorySocketMaxGrade()
 {
 	return ItemSystem::GetItemAccessorySocketMaxGrade(GetEntityHandle());
-}
-
-int CItem::GetAccessorySocketDownGradeTime()
-{
-	return ItemSystem::GetItemAccessorySocketDownGradeTime(GetEntityHandle());
 }
 
 void CItem::AlterToSocketItem(int iSocketCount)
@@ -16423,11 +16398,6 @@ void CItem::AttrLog()
 	}
 }
 
-
-bool CItem::IsUnlimitedTimeUnique()
-{
-	return ItemSystem::IsUnlimitedTimeUnique(GetEntityHandle());
-}
 
 namespace ItemSystem {
 
@@ -16742,7 +16712,7 @@ EVENTFUNC(unique_expire_event)
 		if (pkItem->GetSocket(ITEM_SOCKET_UNIQUE_REMAIN_TIME) <= 1)
 		{
 			LOG_INFO("UNIQUE_ITEM: expire {} {}", pkItem->GetName(), pkItem->GetID());
-			pkItem->SetUniqueExpireEvent(nullptr);
+			ItemSystem::GetItemEvents(itemEntity).uniqueExpire = nullptr;
 			ITEM_MANAGER::instance().RemoveItem(itemEntity, "UNIQUE_EXPIRE");
 			return 0;
 		}
@@ -16758,7 +16728,7 @@ EVENTFUNC(unique_expire_event)
 
 		if (pkItem->GetSocket(ITEM_SOCKET_UNIQUE_REMAIN_TIME) <= cur)
 		{
-			pkItem->SetUniqueExpireEvent(nullptr);
+			ItemSystem::GetItemEvents(itemEntity).uniqueExpire = nullptr;
 			ITEM_MANAGER::instance().RemoveItem(itemEntity, "UNIQUE_EXPIRE");
 			return 0;
 		}
@@ -16937,7 +16907,7 @@ EVENTFUNC(accessory_socket_expire_event)
 	LPITEM item = LegacyItemBoundary(info->item);
 	if (!item)
 		return 0;
-	if (item->GetAccessorySocketDownGradeTime() <= 1)
+	if (ItemSystem::GetItemAccessorySocketDownGradeTime(info->item) <= 1)
 	{
 	degrade:
 		ItemSystem::GetItemEvents(info->item).accessorySocketExpire = nullptr;
@@ -16946,7 +16916,7 @@ EVENTFUNC(accessory_socket_expire_event)
 	}
 	else
 	{
-		int iTime = item->GetAccessorySocketDownGradeTime() - 60;
+		int iTime = ItemSystem::GetItemAccessorySocketDownGradeTime(info->item) - 60;
 
 		if (iTime <= 1)
 			goto degrade;

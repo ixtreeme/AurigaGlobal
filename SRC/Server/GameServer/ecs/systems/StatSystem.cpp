@@ -115,11 +115,6 @@
 #include "../../EasterDungeon.h"
 #endif
 
-void CHARACTER::ComputeBattlePoints()
-{
-	ecs::PointSystem::ComputeBattlePoints(GetEntityHandle());
-}
-
 void CHARACTER::ComputePoints()
 {
 	int32_t lStat = GetPoint(POINT_STAT);
@@ -489,7 +484,7 @@ void CHARACTER::ComputePoints()
 	}
 
 
-	ComputeBattlePoints();
+	ecs::PointSystem::ComputeBattlePoints(GetEntityHandle());
 
 	// ±âo» HP/SP 13Á¤
 	if (iMaxHP != GetMaxHP())
@@ -615,7 +610,7 @@ void CHARACTER::ComputePoints()
 
 
 	NetworkSyncSystem::UpdatePacket(GetEntityHandle());
-	ComputeBattlePoints();
+	ecs::PointSystem::ComputeBattlePoints(GetEntityHandle());
 
 
 }

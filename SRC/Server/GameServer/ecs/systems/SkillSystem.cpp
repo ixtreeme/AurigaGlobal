@@ -2509,7 +2509,7 @@ struct FuncSplashDamage
 			}
 
 			if (IS_SET(m_pkSk->dwFlag, SKILL_FLAG_CRUSH | SKILL_FLAG_CRUSH_LONG) &&
-				!IS_SET(pkChrVictim->GetAIFlag(), AIFLAG_NOMOVE))
+				!IS_SET(ecs::PlayerRuntime::GetAIFlag(pkChrVictim->GetEntityHandle()), AIFLAG_NOMOVE))
 			{
 				float fCrushSlidingLength = 200;
 
@@ -4865,11 +4865,6 @@ bool CHARACTER::IsUsableSkillMotion(uint32_t dwMotionIndex) const
 void CHARACTER::ClearSkill()
 {
 	SkillSystem::ClearSkill(GetEntityHandle());
-}
-
-void CHARACTER::ClearSubSkill()
-{
-	SkillSystem::ClearSubSkill(GetEntityHandle());
 }
 
 eMountType GetMountLevelByVnum(uint32_t dwMountVnum, bool IsNew) // updated to 2014/12/10

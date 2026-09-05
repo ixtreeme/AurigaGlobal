@@ -682,7 +682,7 @@ void CInputLogin::Entergame(LPDESC d, const char* data)
 
 	// ?  ?T ?
 	ch->StartSaveEvent();
-	ch->StartRecoveryEvent();
+	ecs::PlayerRuntime::StartRecoveryEvent(ch->GetEntityHandle());
 
 	CPVPManager::instance().Connect(((ch) ? (ch)->GetEntityHandle() : entt::null));
 	CPVPManager::instance().SendList(d);

@@ -897,7 +897,7 @@ bool CPVPManager::CanAttack(entt::entity character, entt::entity victim, bool bI
 	if (pkChr == pkVictim)  // ���� �� ĥ��� �ϳ� -_-
 		return false;
 
-	if (ecs::PlayerRuntime::IsNPC(victim) && ecs::PlayerRuntime::IsNPC(character) && !pkChr->IsGuardNPC())
+	if (ecs::PlayerRuntime::IsNPC(victim) && ecs::PlayerRuntime::IsNPC(character) && !ecs::PlayerRuntime::IsGuardNPC(character))
 		return false;
 	// Non-PC combat stays allowed during the migration window.
 	// The mount restriction below only gates PC-vs-PC combat.

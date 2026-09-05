@@ -220,7 +220,7 @@ struct FuncClearSync
     void operator()(LPCHARACTER ch)
     {
         assert(ch != NULL);
-        ch->SetSyncOwner(entt::null, false);
+        NetworkSyncSystem::SetSyncOwner(ch->GetEntityHandle(), entt::null, false);
     }
 };
 
@@ -1060,11 +1060,6 @@ void ClearSync(entt::entity e)
 }
 
 } // namespace NetworkSyncSystem
-
-bool CHARACTER::SetSyncOwner(entt::entity chEntity, bool bRemoveFromList)
-{
-    return NetworkSyncSystem::SetSyncOwner(GetEntityHandle(), chEntity, bRemoveFromList);
-}
 
 void NetworkSyncSystem_Update(entt::registry& reg, uint32_t tick)
 {

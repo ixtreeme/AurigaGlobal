@@ -986,11 +986,6 @@ void CHARACTER::SetHorseLevel(int iLevel)
 
 #ifdef ENABLE_FAKE_SHOP_HEADER
 #ifdef DISABLE_CORE_PULSE_RAZOR93
-bool CHARACTER::IsNextMountPulse() const
-{
-	return (MountSystem::GetMountStateRef(GetEntityHandle()).mountPulse == 0 || (MountSystem::GetMountStateRef(GetEntityHandle()).mountPulse < thecore_pulse()));
-}
-
 #endif
 #endif
 

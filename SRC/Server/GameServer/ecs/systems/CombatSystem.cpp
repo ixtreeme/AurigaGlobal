@@ -741,11 +741,6 @@ void CHARACTER::UpdateKillerMode()
 
 }
 
-void CHARACTER::SetPKMode(uint8_t bPKMode)
-{
-	CombatSystem::SetPKMode(GetEntityHandle(), bPKMode);
-}
-
 uint8_t CHARACTER::GetPKMode() const
 {
 	return CombatSystem::GetPKMode(GetEntityHandle());
@@ -2040,7 +2035,7 @@ void CHARACTER::Dead(entt::entity killer, bool bImmediateDead)
 	{
 		if (const auto* killerTarget = g_registry.try_get<ecs::SelectedTarget>(killer);
 			killerTarget && killerTarget->target == GetEntityHandle())
-			pkKiller->SetTarget(entt::null);
+			CombatSystem::SetTarget(killer, entt::null);
 
 		isAgreedPVP = CPVPManager::instance().Dead(GetEntityHandle(), ecs::PlayerRuntime::GetPlayerID(killer));
 		isDuel = CArenaManager::instance().OnDead(killer, GetEntityHandle());
@@ -2153,7 +2148,7 @@ void CHARACTER::Dead(entt::entity killer, bool bImmediateDead)
 	if (IsPC()) {
 #ifdef ENABLE_01092021
 		if (pkKiller && !ecs::PlayerRuntime::IsPC(killer)) {
-			pkKiller->SetTarget(entt::null);
+			CombatSystem::SetTarget(killer, entt::null);
 		}
 #endif
 		ClearAffectSkills();
@@ -2645,7 +2640,7 @@ bool CHARACTER::Attack(entt::entity victim, uint8_t bType)
 			return false;
 	}
 
-	pkVictim->SetSyncOwner(GetEntityHandle());
+	NetworkSyncSystem::SetSyncOwner(victim, GetEntityHandle());
 
 	if (pkVictim->CanBeginFight())
 		pkVictim->BeginFight(GetEntityHandle());
@@ -5933,7 +5928,7 @@ bool CHARACTER::Damage(entt::entity attacker, int64_t dam, EDamageType type) // 
 #ifdef __DEFENSE_WAVE__
 		if (GetRaceNum() != 20434)
 		{
-			StartRecoveryEvent();
+			ecs::PlayerRuntime::StartRecoveryEvent(GetEntityHandle());
 		}
 #else
 		StartRecoveryEvent();
@@ -7079,7 +7074,7 @@ static int64_t CalcReferenceNormalHitDamage(LPCHARACTER pAttacker, LPCHARACTER p
 
 bool CHARACTER::IsAggressive() const
 {
-	return IS_SET(GetAIFlag(), AIFLAG_AGGRESSIVE) || AIHelpers::IsAggressive(GetEntityHandle());
+	return IS_SET(ecs::PlayerRuntime::GetAIFlag(GetEntityHandle()), AIFLAG_AGGRESSIVE) || AIHelpers::IsAggressive(GetEntityHandle());
 }
 
 void CHARACTER::SetAggressive()
@@ -7101,7 +7096,7 @@ void SetAggressive(entt::entity e)
 
 bool CHARACTER::IsCoward() const
 {
-	return IS_SET(GetAIFlag(), AIFLAG_COWARD) || AIHelpers::IsCoward(GetEntityHandle());
+	return IS_SET(ecs::PlayerRuntime::GetAIFlag(GetEntityHandle()), AIFLAG_COWARD) || AIHelpers::IsCoward(GetEntityHandle());
 }
 
 void CHARACTER::SetCoward()
@@ -7113,7 +7108,7 @@ void CHARACTER::SetCoward()
 
 bool CHARACTER::IsBerserker() const
 {
-	if (IS_SET(GetAIFlag(), AIFLAG_BERSERK))
+	if (IS_SET(ecs::PlayerRuntime::GetAIFlag(GetEntityHandle()), AIFLAG_BERSERK))
 		return true;
 
 	if (auto* flags = AIHelpers::TryGetFlags(GetEntityHandle()))
@@ -7124,7 +7119,7 @@ bool CHARACTER::IsBerserker() const
 
 bool CHARACTER::IsStoneSkinner() const
 {
-	if (IS_SET(GetAIFlag(), AIFLAG_STONESKIN))
+	if (IS_SET(ecs::PlayerRuntime::GetAIFlag(GetEntityHandle()), AIFLAG_STONESKIN))
 		return true;
 
 	if (auto* flags = AIHelpers::TryGetFlags(GetEntityHandle()))
@@ -7135,7 +7130,7 @@ bool CHARACTER::IsStoneSkinner() const
 
 bool CHARACTER::IsGodSpeeder() const
 {
-	if (IS_SET(GetAIFlag(), AIFLAG_GODSPEED))
+	if (IS_SET(ecs::PlayerRuntime::GetAIFlag(GetEntityHandle()), AIFLAG_GODSPEED))
 		return true;
 
 	if (auto* flags = AIHelpers::TryGetFlags(GetEntityHandle()))
@@ -7146,7 +7141,7 @@ bool CHARACTER::IsGodSpeeder() const
 
 bool CHARACTER::IsReviver() const
 {
-	if (IS_SET(GetAIFlag(), AIFLAG_REVIVE))
+	if (IS_SET(ecs::PlayerRuntime::GetAIFlag(GetEntityHandle()), AIFLAG_REVIVE))
 		return true;
 
 	if (auto* flags = AIHelpers::TryGetFlags(GetEntityHandle()))
@@ -7164,7 +7159,7 @@ void CHARACTER::SetNoAttackShinsu()
 
 bool CHARACTER::IsNoAttackShinsu() const
 {
-	return IS_SET(GetAIFlag(), AIFLAG_NOATTACKSHINSU) || AIHelpers::IsNoAttackShinsu(GetEntityHandle());
+	return IS_SET(ecs::PlayerRuntime::GetAIFlag(GetEntityHandle()), AIFLAG_NOATTACKSHINSU) || AIHelpers::IsNoAttackShinsu(GetEntityHandle());
 }
 
 void CHARACTER::SetNoAttackChunjo()
@@ -7176,7 +7171,7 @@ void CHARACTER::SetNoAttackChunjo()
 
 bool CHARACTER::IsNoAttackChunjo() const
 {
-	return IS_SET(GetAIFlag(), AIFLAG_NOATTACKCHUNJO) || AIHelpers::IsNoAttackChunjo(GetEntityHandle());
+	return IS_SET(ecs::PlayerRuntime::GetAIFlag(GetEntityHandle()), AIFLAG_NOATTACKCHUNJO) || AIHelpers::IsNoAttackChunjo(GetEntityHandle());
 }
 
 void CHARACTER::SetNoAttackJinno()
@@ -7188,7 +7183,7 @@ void CHARACTER::SetNoAttackJinno()
 
 bool CHARACTER::IsNoAttackJinno() const
 {
-	return IS_SET(GetAIFlag(), AIFLAG_NOATTACKJINNO) || AIHelpers::IsNoAttackJinno(GetEntityHandle());
+	return IS_SET(ecs::PlayerRuntime::GetAIFlag(GetEntityHandle()), AIFLAG_NOATTACKJINNO) || AIHelpers::IsNoAttackJinno(GetEntityHandle());
 }
 
 void CHARACTER::SetAttackMob()
@@ -7200,7 +7195,7 @@ void CHARACTER::SetAttackMob()
 
 bool CHARACTER::IsAttackMob() const
 {
-	return IS_SET(GetAIFlag(), AIFLAG_ATTACKMOB) || AIHelpers::IsAttackMob(GetEntityHandle());
+	return IS_SET(ecs::PlayerRuntime::GetAIFlag(GetEntityHandle()), AIFLAG_ATTACKMOB) || AIHelpers::IsAttackMob(GetEntityHandle());
 }
 
 int CHARACTER::GetHPPct() const
@@ -7732,11 +7727,6 @@ void CheckTarget(entt::entity e)
 
 } // namespace CombatSystem
 
-void CHARACTER::SetTarget(entt::entity target)
-{
-	CombatSystem::SetTarget(GetEntityHandle(), target);
-}
-
 bool CHARACTER::IsChangeAttackPosition(entt::entity targetEntity) const
 {
 	if (!IsNPC())
@@ -7906,7 +7896,7 @@ bool CHARACTER::Follow(entt::entity chr, float fMinDistance)
 		return false;
 	}
 
-	if (IS_SET(GetAIFlag(), AIFLAG_NOMOVE))
+	if (IS_SET(ecs::PlayerRuntime::GetAIFlag(GetEntityHandle()), AIFLAG_NOMOVE))
 	{
 		if (ecs::PlayerRuntime::IsPC(chr))
 		{

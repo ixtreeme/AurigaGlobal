@@ -1160,7 +1160,7 @@ void CHARACTER_MANAGER::Update(int iPulse)
 		for (LPCHARACTER ch : all)
 		{
 			if (!ch) continue;
-			if (ecs::PlayerRuntime::IsStone(ch->GetEntityHandle()) && ch->IsDungeonTicketExtraMetin())
+			if (ecs::PlayerRuntime::IsStone(ch->GetEntityHandle()) && ecs::PlayerRuntime::IsDungeonTicketExtraMetin(ch->GetEntityHandle()))
 				DestroyCharacter(ch);
 		}
 
@@ -1179,7 +1179,7 @@ void CHARACTER_MANAGER::Update(int iPulse)
 				const entt::entity character = ch->GetEntityHandle();
 
 				if (!ecs::PlayerRuntime::IsStone(character)) continue;
-				if (ch->IsDungeonTicketExtraMetin()) continue;
+				if (ecs::PlayerRuntime::IsDungeonTicketExtraMetin(ch->GetEntityHandle())) continue;
 
 				const int32_t mapIndex = ecs::PlayerRuntime::GetMapIndex(character);
 

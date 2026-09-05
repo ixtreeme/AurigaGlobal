@@ -3386,7 +3386,7 @@ bool StartTimerBasedOnWearExpireEventEcs(entt::entity item)
     if (!legacyItem)
         return false;
 
-    legacyItem->StartTimerBasedOnWearExpireEvent();
+    ItemSystem::StartTimerBasedOnWearExpireEvent(item);
     SyncItemStateFromLegacy(item);
     return true;
 }

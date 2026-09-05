@@ -645,7 +645,6 @@ public:
 #endif
 
 public:
-	uint32_t			GetAIFlag() const;
 	int32_t			GetInstantFlag() const;
 
 	void				SetAggressive();
@@ -778,7 +777,6 @@ public:
 	//		bool			IsPet() const		{ return m_bCharType == CHAR_TYPE_PET; }
 #ifdef ENABLE_EVENT_MANAGER
 	// DUNGEON_TICKET_LOOT_EVENT extra metin marker
-	bool IsDungeonTicketExtraMetin() const;
 #endif
 
 	uint32_t			GetLastShoutPulse() const;
@@ -840,7 +838,6 @@ public:
 	int64_t			GetPoint(uint8_t idx) const;
 
 	int				GetLimitPoint(uint8_t idx) const;
-	int				GetPolymorphPoint(uint8_t idx) const;
 
 	const TMobTable& GetMobTable() const;
 	uint8_t				GetMobRank() const;
@@ -879,7 +876,6 @@ public:
 
 	void			ComputeAligin();
 	void			ComputePoints();
-	void			ComputeBattlePoints();
 
 	void			PointChange(uint8_t type, int64_t amount, bool bAmount = false, bool bBroadcast = false
 #ifdef __ENABLE_BLOCK_EXP__
@@ -918,7 +914,6 @@ public:
 	bool			IsBlockMode(uint8_t bFlag) const;
 
 	bool			IsPolymorphed() const;
-	bool			IsPolyMaintainStat() const;
 	void			SetPolymorph(uint32_t dwRaceNum, bool bMaintainStat = false);
 
 	// FISING
@@ -1052,7 +1047,6 @@ public:
 
 	void			SetLastAttacked(uint32_t time);	// ���������� ���ݹ��� �ð� �� ��ġ�� ������
 
-	bool			SetSyncOwner(entt::entity character, bool bRemoveFromList = true);
 
 	bool			WarpSet(int32_t x, int32_t y, int32_t lRealMapIndex = 0);
 
@@ -1594,7 +1588,6 @@ protected:
 #ifdef __DUNGEON_INFO_SYSTEM__
 public:
 	void				SetQuestDamage(int race, int dmg);
-	uint64_t					GetQuestDamage(int race);
 
 private:
 	std::map<int, int>	dungeonDamage;
@@ -1700,7 +1693,6 @@ public:
 	//void UpdateMountCountOverhead(LPCHARACTER ch);
 #ifdef DISABLE_CORE_PULSE_RAZOR93
 
-	bool IsNextMountPulse() const;
 
 #endif
 #endif
@@ -1713,7 +1705,6 @@ public:
 	void				UpdateKillerMode();
 
 	uint8_t				GetPKMode() const;
-	void				SetPKMode(uint8_t bPKMode);
 
 	void				ItemDropPenalty(entt::entity killer);
 
@@ -1974,7 +1965,6 @@ protected:
 public:
 	bool			Follow(entt::entity chr, float fMinimumDistance = 150.0f);
 	bool			Return();
-	bool			IsGuardNPC() const;
 	bool			IsChangeAttackPosition(entt::entity target) const;
 	void			ResetChangeAttackPositionTime() { m_dwLastChangeAttackPositionTime = get_dword_time() - AI_CHANGE_ATTACK_POISITION_TIME_NEAR; }
 	void			SetChangeAttackPositionTime() { m_dwLastChangeAttackPositionTime = get_dword_time(); }
@@ -1999,7 +1989,6 @@ protected:
 protected:
 
 public:
-	void				SetTarget(entt::entity target);
 
 	////////////////////////////////////////////////////////////////////////////////////////
 	// Safebox
@@ -2240,7 +2229,6 @@ public:
 
 public:
 	void				StartSaveEvent();
-	void				StartRecoveryEvent();
 	void				StartDestroyWhenIdleEvent();
 
 	LPEVENT				m_pkSaveEvent;
@@ -2303,7 +2291,6 @@ public:
 
 public:
 	void ClearSkill();
-	void ClearSubSkill();
 
 	// RESET_ONE_SKILL
 	// END_RESET_ONE_SKILL
@@ -2516,7 +2503,6 @@ public:
 
 	bool	DragonSoul_ActivateDeck(int deck_idx);
 
-	void	DragonSoul_DeactivateAll();
 	// �ݵ�� ClearItem ���� �ҷ��� �Ѵ�.
 	// �ֳ��ϸ�....
 	// ��ȥ�� �ϳ� �ϳ��� deactivate�� ������ ���� active�� ��ȥ���� �ִ��� Ȯ���ϰ�,
@@ -2528,7 +2514,6 @@ public:
 	// ��ȥ���� deactivate��Ű�� ĳ������ ��ȥ�� �� Ȱ�� ���´� �ǵ帮�� �ʴ´�.
 	// ��ȥ�� ��ȭâ
 public:
-	bool		DragonSoul_RefineWindow_Open(LPENTITY pEntity);
 	bool		DragonSoul_RefineWindow_Close();
 #if defined(BL_OFFLINE_MESSAGE)
 protected:

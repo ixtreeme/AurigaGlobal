@@ -1279,7 +1279,7 @@ void CParty::ComputeRolePoint(entt::entity character, uint8_t bRole, bool bAdd)
 		ecs::PointSystem::Change(character, POINT_PARTY_SKILL_MASTER_BONUS, -ecs::PointSystem::Get(character, POINT_PARTY_SKILL_MASTER_BONUS));
 		ecs::PointSystem::Change(character, POINT_PARTY_DEFENDER_BONUS, -ecs::PointSystem::Get(character, POINT_PARTY_DEFENDER_BONUS));
 		ecs::PointSystem::Change(character, POINT_PARTY_HASTE_BONUS, -ecs::PointSystem::Get(character, POINT_PARTY_HASTE_BONUS));
-		ch->ComputeBattlePoints();
+		ecs::PointSystem::ComputeBattlePoints(character);
 		return;
 	}
 

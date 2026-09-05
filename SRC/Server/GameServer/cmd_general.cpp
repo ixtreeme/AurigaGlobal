@@ -57,6 +57,7 @@
 #ifdef ENABLE_MOUNT_COSTUME_SYSTEM
 #include "MountSystem.h"
 #include "ecs/systems/GayaSystem.hpp"
+#include "ecs/systems/DragonSoulSystem.hpp"
 #endif
 
 #ifdef ENABLE_DAILY_REWARD_HWID_LIMIT_RAZOR93
@@ -765,7 +766,7 @@ ACMD(do_restart)
 
 	ecs::PlayerRuntime::GetDesc(character)->SetPhase(PHASE_GAME);
 	ch->SetPosition(POS_STANDING);
-	ch->StartRecoveryEvent();
+	ecs::PlayerRuntime::StartRecoveryEvent(character);
 
 
 	int32_t mapidx = ecs::PlayerRuntime::GetMapIndex(character);
@@ -2449,7 +2450,7 @@ ACMD(do_pkmode)
 	if ((ecs::PointSystem::GetLevel(character)) < PK_PROTECT_LEVEL && mode != 0)
 		return;
 
-	ch->SetPKMode(mode);
+	CombatSystem::SetPKMode(character, mode);
 }
 
 ACMD(do_messenger_auth)
@@ -3608,7 +3609,7 @@ ACMD(do_ride)
 	LPCHARACTER ch = ecs::LegacyCharOf(character);
 #ifdef DISABLE_CORE_PULSE_RAZOR93
 
-	if (!ch->IsNextMountPulse()) {
+	if (!MountSystem::GetMountStateRef(character)) {
 		ecs::ChatSystem::Send(character,  CHAT_TYPE_INFO, "You can't do this that fast, please calm down a bit...");
 		return;
 	}
@@ -3801,7 +3802,7 @@ ACMD(do_extend_range_npc)
 #ifdef __ENABLE_REFINE_ALCHEMY__
 ACMD(do_refine_window_alchemy) {
 	LPCHARACTER ch = ecs::LegacyCharOf(character);
-	ch->DragonSoul_RefineWindow_Open(ch);
+	DragonSoulSystem::OpenRefineWindow(character, ch);
 }
 #endif
 
