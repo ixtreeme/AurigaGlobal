@@ -6107,7 +6107,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 					return false;
 				}
 
-				int remain = (int)(m_dwBattlePassEndTime - get_global_time());
+				int remain = AffectSystem::GetBattlePassRemainingSeconds(GetEntityHandle());
 				if (remain <= 0)
 					remain = GetSecondsTillNextMonth();
 
@@ -6154,7 +6154,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 					return false;
 				}
 				else {
-					m_dwBattlePassEndTime = get_global_time() + iSeconds;
+					AffectSystem::SetBattlePassDeadline(GetEntityHandle(), get_global_time() + iSeconds);
 
 					AddAffect(AFFECT_BATTLE_PASS, POINT_BATTLE_PASS_ID, 1, 0, iSeconds, 0, true);
 					ItemSystem::ConsumeItemEcs(itemEntity);

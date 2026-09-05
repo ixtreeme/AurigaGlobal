@@ -3,7 +3,8 @@
 ## Affect ownership and point application
 
 `AffectLifecycleTests` compiles the complete existing `AffectSystem.cpp` and
-`affect.cpp`, using entity-only fixtures with no CHARACTER or CItem allocation.
+`affect.cpp` and `horsename_manager.cpp`, using entity-only fixtures with no
+CHARACTER or CItem allocation.
 `AffectList` owns the live records, saved skill buffs, flags and loaded state.
 There is no CHARACTER list/flag mirror or periodic copying. Storage insertion
 initializes the entire record before publication, and removal detaches it before
@@ -18,8 +19,9 @@ INT32_MIN bonus reversal, invalid apply values, the missing-guild gate,
 deduplicated snapshots, nested refresh, removal/replacement/addition during a
 refresh, replacement of the component on the same entity, exceptions, HP/SP
 clamping, revive/mount exceptions, finite type-removal batches and 1,000 repeated
-allocation/refresh/removal cycles. The obsolete ECS expiry pass is a no-op: the
-legacy affect event still decrements duration exactly once.
+allocation/refresh/removal cycles. The obsolete global ECS expiry pass is a
+no-op: the affect event drives the single native `ProcessAffect(entity)` pass
+through its still-legacy outer recovery tick.
 
 Addition also tests cube apply-slot matching, non-overwrite stacking, zero
 duration, invalid apply rejection, scheduling failure before any grant, polymorph
@@ -31,15 +33,35 @@ independent wire keys and latest-value publication after nested replacements.
 The (type, apply) wire key cannot represent multiple same-key records: runtime
 stacking is retained, but only the newest matching record is published.
 
+Expiry checks cover one-second duration/SP-cost application, ordinary expiry
+without full point recomputation, insufficient SP, zero/negative and extreme
+durations, soul item IDs in the SP-cost field, the missing-guild gate, HP/SP
+clamping, duplicate leases, recursive ticks, exceptions, callback replacement
+of current/future records, owner destruction/recycling, replacement of affect
+storage, and reentrant client/DB publication. Records added/replaced during the
+ordinary duration batch wait for the next pass; absolute-deadline preprocessing
+still runs before that batch, preserving the existing order.
+
+Battle-pass deadlines are ECS-owned with no CHARACTER mirror; account premium,
+battle-pass and quest-driven hair/horse deadlines are covered at expiry and
+integer boundaries. `PREMIUM_MAX_NUM` is treated as an array count, not an extra
+premium slot. Horse-name validation uses versioned entities and owned affect
+leases; tests cover expiry, recursive validation, callback replacements,
+destruction during quest/summon/removal callbacks and the actual name DB packet.
+The horse summon transport is a double: engine spawn/movement still has legacy
+internals. The redundant entity -> CHARACTER -> entity summon wrapper is gone,
+but this does not make the full horse actor lifecycle legacy-free.
+
 `AffectTickState` owns the scheduled event. Its move-only component cancels the
 timer on destruction; CHARACTER no longer has an affect-event member. Start/stop,
 shutdown cancellation before event-queue teardown, pending/reentrant starts,
 component relocation/replacement, stale callbacks and recycled owners are
 checked with an in-memory scheduler double. The callback
 validates both entity generation and current event identity before the legacy
-expiry/recovery leaf; an entity without that leaf stops safely, it does not yet
-execute native-only expiry/recovery. Muyeong/Gyeonggong are separate skill timers
-and have not been migrated in this step.
+outer recovery leaf; an entity without that leaf stops safely. Native expiry
+can now run independently through `ProcessAffect(entity)`, but the scheduled
+recovery/item/recall tick is not native yet. Muyeong/Gyeonggong are separate
+skill timers and have not been migrated in this step.
 
 ```powershell
 cmake --build build --config Release --target GameServer AffectLifecycleTests
@@ -48,16 +70,22 @@ cmake --build build-asan --config RelWithDebInfo --target AffectLifecycleTests
 ctest --test-dir build-asan -C RelWithDebInfo -R '^affect_lifecycle$' --output-on-failure
 ```
 
-Point changes/recomputation, guild lookup, movement/posture, scheduler and packet
-transport are service doubles; unrelated legacy services fail if called. This
+Point changes/recomputation, guild/premium/quest lookup, clock, movement/posture,
+horse spawning, scheduler and packet transport are service doubles; unrelated
+legacy services fail if called. This
 does not execute the complete point/affect feedback cycle, live guild-war rules,
 socket/SQL I/O, the real event queue, login hydration, clear-on-death policy,
-expiry/recovery or skill timer callbacks. Load/clear/expiry and
+outer recovery or skill timer callbacks. Load/clear/recovery and
 Muyeong/Gyeonggong timer internals still include legacy CHARACTER work, although
-they now use the same owning ECS storage. Raw CAffect*
+they now use the same owning ECS storage. The disabled vote-for-bonus branch
+is retained but not runtime-tested. The player factory seeds the deadline
+component; legacy DB hydration/serialization call sites use the new deadline
+API, but complete login/save is not executed by these headless tests. Raw CAffect*
 lookup remains a borrowed compatibility API: do not retain it across callbacks,
 and do not release it directly. A lease prevents deallocation, not logical
-membership changes or arbitrary mutations of a retained record.
+membership changes or arbitrary mutations of a retained record. Expiry guards
+prevent duplicate work within a recursive pass; an exception does not roll back
+already-applied point changes.
 
 Refresh suppresses recursive refresh and skips removed/changed snapshot entries;
 it does not transactionally roll back point changes or queue/rebuild all effects

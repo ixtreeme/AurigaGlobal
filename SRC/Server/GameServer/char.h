@@ -2566,9 +2566,8 @@ private:
 
 public:
 	int 			GetSecondsTillNextMonth();
-	int 			GetBattlePassEndTime() { return (m_dwBattlePassEndTime - get_global_time()); };
+	int 			GetBattlePassEndTime();
 protected:
-	uint32_t			m_dwBattlePassEndTime;
 
 #ifdef ENABLE_BATTLE_PASS_STAY_ONLINE		
 public:

@@ -2419,18 +2419,23 @@ std::string CHARACTER::GetLang() {
 #endif
 
 #ifdef ENABLE_BATTLE_PASS
+int CHARACTER::GetBattlePassEndTime()
+{
+    return AffectSystem::GetBattlePassRemainingSeconds(GetEntityHandle());
+}
+
 void CHARACTER::EnsureFreeBattlePassActive()
 {
     const uint8_t kDefaultBattlePassId = 1;
 
     int remain = 0;
-    if (m_dwBattlePassEndTime > 0)
-        remain = (int)(m_dwBattlePassEndTime - get_global_time());
+    if (AffectSystem::GetBattlePassDeadline(GetEntityHandle()) > 0)
+        remain = AffectSystem::GetBattlePassRemainingSeconds(GetEntityHandle());
 
     if (remain <= 0)
     {
         remain = GetSecondsTillNextMonth();
-        m_dwBattlePassEndTime = get_global_time() + remain;
+        AffectSystem::SetBattlePassDeadline(GetEntityHandle(), get_global_time() + remain);
     }
 
     if (!GetBattlePassId())
@@ -2451,13 +2456,13 @@ void CHARACTER::LoadBattlePass(uint32_t dwCount, TPlayerBattlePassMission* data)
     const uint8_t kDefaultBattlePassId = 1;
 
     int remain = 0;
-    if (m_dwBattlePassEndTime > 0)
-        remain = (int)(m_dwBattlePassEndTime - get_global_time());
+    if (AffectSystem::GetBattlePassDeadline(GetEntityHandle()) > 0)
+        remain = AffectSystem::GetBattlePassRemainingSeconds(GetEntityHandle());
 
     if (remain <= 0)
     {
         remain = GetSecondsTillNextMonth();
-        m_dwBattlePassEndTime = get_global_time() + remain;
+        AffectSystem::SetBattlePassDeadline(GetEntityHandle(), get_global_time() + remain);
     }
 
     if (!GetBattlePassId())
@@ -4689,7 +4694,7 @@ void CHARACTER::SetPlayerProto(const TPlayerTable* t)
     m_pSkillLevels = M2_NEW TPlayerSkill[SKILL_MAX_NUM];
     memcpy(m_pSkillLevels, t->skills, sizeof(TPlayerSkill) * SKILL_MAX_NUM);
 #ifdef ENABLE_BATTLE_PASS
-    m_dwBattlePassEndTime = t->dwBattlePassEndTime;
+    AffectSystem::SetBattlePassDeadline(GetEntityHandle(), t->dwBattlePassEndTime);
 #endif
 
     if (t->lMapIndex >= 10000)
@@ -5994,8 +5999,6 @@ void CHARACTER::Initialize()
 #ifdef ENABLE_BATTLE_PASS
     m_listBattlePass.clear();
     m_bIsLoadedBattlePass = false;
-
-    m_dwBattlePassEndTime = 0;
 
 #ifdef ENABLE_BATTLE_PASS_STAY_ONLINE
     m_pkStayOnlineEvent = nullptr;

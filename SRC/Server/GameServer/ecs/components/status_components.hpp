@@ -22,8 +22,15 @@ struct AffectList {
     TAffectFlag flags;
     bool isLoaded { false };
     uint64_t refreshToken { 0 };
+    uint64_t expiryToken { 0 };
+    uint64_t horseNameToken { 0 };
     // Reentrant operations of the same type invalidate an unfinished add.
     std::unordered_map<uint32_t, uint64_t> mutationTokens;
+};
+
+// Persistent deadline, independent of clearing or replacing the live affects.
+struct BattlePassTiming {
+    uint32_t deadline { 0 };
 };
 
 // Own only the affect/recovery scheduler here. Its callback still delegates the

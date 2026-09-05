@@ -1,4 +1,6 @@
+#pragma once
 
+#include <entt/entity/entity.hpp>
 class CHorseNameManager : public singleton<CHorseNameManager>
 {
 	private :
@@ -13,6 +15,6 @@ class CHorseNameManager : public singleton<CHorseNameManager>
 
 		void UpdateHorseName(uint32_t dwPlayerID, const char* szHorseName, bool broadcast=false);
 
-		void Validate(LPCHARACTER pChar);
+		void Validate(entt::entity character);
 };
 

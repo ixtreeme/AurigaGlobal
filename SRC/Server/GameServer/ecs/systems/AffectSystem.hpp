@@ -26,6 +26,11 @@ void SetLoaded(entt::entity e, bool loaded);
 void ComputeAffect(entt::entity e, CAffect affect, bool add);
 bool StartAffectEvent(entt::entity e);
 void StopAffectEvent(entt::entity e);
+// Runs one expiry/SP-cost pass; true means no live affects remain.
+bool ProcessAffect(entt::entity e);
+uint32_t GetBattlePassDeadline(entt::entity e);
+bool SetBattlePassDeadline(entt::entity e, uint32_t deadline);
+int32_t GetBattlePassRemainingSeconds(entt::entity e);
 
 void ApplyFire(entt::entity target, entt::entity attacker, int amount, int count);
 void RemoveFire(entt::entity e);

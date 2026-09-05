@@ -576,6 +576,9 @@ entt::entity EntityFactory::CreatePC(entt::registry& reg, const TPlayerTable& da
 
     entt::entity entity = CVIDRegistry::Instance().Find(legacyVID);
     if (entity != entt::null && reg.valid(entity) && reg.all_of<ecs::TagPC>(entity)) {
+#ifdef ENABLE_BATTLE_PASS
+        reg.emplace_or_replace<ecs::BattlePassTiming>(entity, ecs::BattlePassTiming { data.dwBattlePassEndTime });
+#endif
         reg.emplace_or_replace<ecs::CharacterType>(entity, static_cast<uint8_t>(CHAR_TYPE_PC));
         ApplySpatialState(reg, entity, ecs::SpatialKind::Character, data.lMapIndex, data.x, data.y, data.z);
         ecs::Invariants::ValidateSpatialCoverage(reg, entity, "factory.pc.existing");
@@ -600,6 +603,9 @@ entt::entity EntityFactory::CreatePC(entt::registry& reg, const TPlayerTable& da
     reg.emplace_or_replace<ecs::PlayerName>(entity, std::string(data.name));
     reg.emplace_or_replace<ecs::GMLevel>(entity, gmLevel);
     reg.emplace_or_replace<ecs::TagPC>(entity);
+#ifdef ENABLE_BATTLE_PASS
+    reg.emplace_or_replace<ecs::BattlePassTiming>(entity, ecs::BattlePassTiming { data.dwBattlePassEndTime });
+#endif
     reg.emplace_or_replace<ecs::SocialRefs>(entity, ecs::SocialRefs {});
 
     ApplySpatialState(reg, entity, ecs::SpatialKind::Character, data.lMapIndex, data.x, data.y, data.z);

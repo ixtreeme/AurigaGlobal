@@ -70,6 +70,13 @@ std::function<void(uint8_t)> onClientPacket, onDBPacket;
 std::vector<LPEVENT> scheduled;
 int schedules = 0, cancels = 0, syncs = 0, chats = 0;
 bool failSchedule = false;
+int64_t nowSeconds = 1000;
+std::array<int, PREMIUM_MAX_NUM> premiumRemaining{};
+int hairDeadline = 0, horseDeadline = 0, hairResets = 0;
+std::function<void(entt::entity)> onPart, onQuest;
+std::function<void(entt::entity, bool)> onHorse;
+std::vector<bool> horseCalls;
+std::vector<TPacketUpdateHorseName> horsePackets;
 entt::entity connected = entt::null;
 DESC* client = nullptr;
 std::vector<TPacketGCAffectAdd> clientAdds;
@@ -297,6 +304,7 @@ bool Add(entt::entity e, int value = 10, uint32_t type = AFFECT_STR,
 void ResetPublication() {
     clientAdds.clear(); clientRemoves.clear(); dbHeaders.clear(); storedAffects.clear();
     onClientPacket = {}; onDBPacket = {}; onUpdate = {}; onChange = {}; onCompute = {}; onSync = {}; onSchedule = {};
+    onPart = {}; onQuest = {}; onHorse = {}; horseCalls.clear(); horsePackets.clear();
 }
 void AddChecks() {
     auto e = Actor();
@@ -469,6 +477,240 @@ void PublicationChecks() {
     Check(!Add(e) && clientAdds.empty(), "owner destroyed by DB callback: no stale client packet");
     ResetPublication(); connected = entt::null; client = nullptr; db_clientdesc = nullptr;
 }
+A::AffectLease InstallTimed(entt::entity e, uint32_t type, int32_t duration,
+    uint8_t point = POINT_NONE, int32_t value = 0, int32_t cost = 0, uint32_t flag = 0) {
+    auto affect = A::Attach(e, {type, point, value, flag, duration, cost});
+    Check(static_cast<bool>(affect), "timed affect fixture attached");
+    A::ComputeAffect(e, *affect, true);
+    return affect;
+}
+void ExpiryChecks() {
+    ResetPublication();
+    auto e = Actor();
+    auto affect = InstallTimed(e, AFFECT_STR, 2, POINT_ST, 10, 4, AFF_SLOW);
+    g_registry.get<TestPoints>(e).values[POINT_SP] = 10;
+    const int beforeCompute = computes;
+    Check(!A::ProcessAffect(e) && affect->lDuration == 1 && ecs::PointSystem::Get(e, POINT_SP) == 6,
+        "live effect pays SP and loses one second");
+    Check(A::ProcessAffect(e) && ecs::PointSystem::Get(e, POINT_SP) == 2 &&
+        ecs::PointSystem::Get(e, POINT_ST) == 0 && !A::IsAffectFlag(e, AFF_SLOW),
+        "final tick removes points and flag once");
+    Check(computes == beforeCompute && A::ProcessAffect(e), "ordinary expiry does not reapply all points");
+    for (int duration : {0, -1, INT32_MIN}) {
+        e = Actor(); InstallTimed(e, AFFECT_STR, duration, POINT_ST, 7);
+        Check(A::ProcessAffect(e) && ecs::PointSystem::Get(e, POINT_ST) == 0,
+            "invalid loaded duration expires without signed underflow");
+    }
+    e = Actor(); InstallTimed(e, AFFECT_STR, 60, POINT_ST, 5, 7);
+    g_registry.get<TestPoints>(e).values[POINT_SP] = 6;
+    Check(A::ProcessAffect(e) && ecs::PointSystem::Get(e, POINT_SP) == 6,
+        "insufficient SP expires effect without an overdraft");
+    e = Actor(); affect = InstallTimed(e, AFFECT_STR, INT32_MAX, POINT_NONE, 0, INT32_MAX);
+    g_registry.get<TestPoints>(e).values[POINT_SP] = static_cast<int64_t>(INT32_MAX) + 3;
+    Check(!A::ProcessAffect(e) && affect->lDuration == INT32_MAX - 1 && ecs::PointSystem::Get(e, POINT_SP) == 3,
+        "large duration and SP cost remain representable");
+#ifdef ENABLE_SOUL_SYSTEM
+    e = Actor();
+    InstallTimed(e, AFFECT_SOUL_RED, 2, POINT_NONE, 0, 123456);
+    InstallTimed(e, AFFECT_SOUL_BLUE, 2, POINT_NONE, 0, 234567);
+    Check(!A::ProcessAffect(e) && A::Snapshot(e).size() == 2 && ecs::PointSystem::Get(e, POINT_SP) == 0,
+        "soul seal IDs are not interpreted as SP costs");
+#endif
+    e = Actor(); InstallTimed(e, GUILD_SKILL_START, 20);
+    Check(A::ProcessAffect(e), "guild skill expires without a guild war");
+    e = Actor(); affect = InstallTimed(e, AFFECT_STR, 3, POINT_NONE, 0, 2);
+    g_registry.get<ecs::AffectList>(e).affects.push_back(affect);
+    g_registry.get<TestPoints>(e).values[POINT_SP] = 10;
+    Check(!A::ProcessAffect(e) && affect->lDuration == 2 && ecs::PointSystem::Get(e, POINT_SP) == 8,
+        "duplicate lease is processed once");
+    g_registry.destroy(e);
+    Check(A::ProcessAffect(e) && A::ProcessAffect(entt::null), "stale/null expiry is harmless");
+
+    e = Actor(); affect = InstallTimed(e, AFFECT_STR, 3, POINT_NONE, 0, 2);
+    g_registry.get<TestPoints>(e).values[POINT_SP] = 10;
+    onChange = [&](entt::entity owner, uint8_t type, int64_t) {
+        if (type == POINT_SP) { onChange = {}; Check(!A::ProcessAffect(owner), "nested expiry sees live records but does no work"); }
+    };
+    Check(!A::ProcessAffect(e) && affect->lDuration == 2 && ecs::PointSystem::Get(e, POINT_SP) == 8,
+        "recursive pass cannot double-charge SP or duration");
+    e = Actor(); InstallTimed(e, AFFECT_STR, 1, POINT_NONE, 0, 2);
+    g_registry.get<TestPoints>(e).values[POINT_SP] = 10;
+    onChange = [&](entt::entity owner, uint8_t type, int64_t) {
+        if (type == POINT_SP) { onChange = {}; Check(Add(owner, 42, AFFECT_STR, POINT_ST, 0, true, false, 30), "replacement during SP debit"); }
+    };
+    Check(!A::ProcessAffect(e) && A::FindAffect(e, AFFECT_STR)->lDuration == 30 &&
+        ecs::PointSystem::Get(e, POINT_ST) == 42, "SP callback replacement is not expired by old pass");
+
+    e = Actor(); InstallTimed(e, AFFECT_STR, 1, POINT_ST, 5);
+    auto second = InstallTimed(e, AFFECT_DEX, 2, POINT_DX, 8);
+    onChange = [&](entt::entity owner, uint8_t type, int64_t amount) {
+        if (type == POINT_ST && amount < 0) {
+            onChange = {};
+            A::RemoveAffect(owner, second.get());
+            InstallTimed(owner, AFFECT_DEX, 50, POINT_DX, 19);
+        }
+    };
+    Check(!A::ProcessAffect(e) && A::FindAffect(e, AFFECT_DEX)->lDuration == 50,
+        "replaced future batch entry waits until the next pass");
+    for (int stage = 0; stage < 3; ++stage) {
+        e = Actor(); InstallTimed(e, AFFECT_STR, stage == 1 ? 1 : 2, POINT_MOV_SPEED, 5, stage == 1 ? 0 : 2);
+        g_registry.get<TestPoints>(e).values[POINT_SP] = 10;
+        entt::entity replacement = entt::null;
+        const auto destroy = [&] { g_registry.destroy(e); replacement = Actor(); };
+        if (stage == 1) onUpdate = [&](entt::entity) { onUpdate = {}; destroy(); };
+        else onChange = [&](entt::entity owner, uint8_t type, int64_t) {
+            if (type != POINT_SP) return;
+            onChange = {};
+            if (stage == 0) destroy();
+            else { g_registry.remove<ecs::AffectList>(owner); g_registry.emplace<ecs::AffectList>(owner); InstallTimed(owner, AFFECT_DEX, 88); }
+        };
+        Check(A::ProcessAffect(e) == (stage != 2), "invalidated pass stops but reports whether the current storage is empty");
+        if (stage == 2) Check(A::FindAffect(e, AFFECT_DEX)->lDuration == 88, "replacement storage not ticked");
+        else Check(replacement != e && A::Snapshot(replacement).empty(), "recycled entity untouched by expiry");
+    }
+    e = Actor(); affect = InstallTimed(e, AFFECT_STR, 3, POINT_NONE, 0, 1);
+    g_registry.get<TestPoints>(e).values[POINT_SP] = 10;
+    onChange = [&](entt::entity, uint8_t, int64_t) { throw std::runtime_error("expiry callback"); };
+    bool threw = false;
+    try { A::ProcessAffect(e); } catch (const std::runtime_error&) { threw = true; }
+    onChange = {};
+    Check(threw && g_registry.get<ecs::AffectList>(e).expiryToken == 0 && !A::ProcessAffect(e),
+        "exception releases pass guard so a later tick can run");
+
+    e = Actor(); InstallTimed(e, AFFECT_STR, 1);
+    auto& points = g_registry.get<TestPoints>(e).values;
+    points[POINT_HP] = 150; points[POINT_SP] = 110;
+    Check(A::ProcessAffect(e) && points[POINT_HP] == 100 && points[POINT_SP] == 80, "expiry clamps HP/SP to maxima");
+    e = Actor(); InstallTimed(e, AFFECT_STR, 1);
+    g_registry.get<TestPoints>(e).values[POINT_HP] = 150;
+    g_registry.get<TestPoints>(e).values[POINT_SP] = 110;
+    onChange = [&](entt::entity owner, uint8_t point, int64_t) {
+        if (point == POINT_HP) { onChange = {}; g_registry.destroy(owner); }
+    };
+    Check(A::ProcessAffect(e) && !g_registry.valid(e), "HP clamp destruction prevents a stale SP clamp");
+    ResetPublication();
+}
+void DeadlineChecks() {
+    ResetPublication(); nowSeconds = 1000;
+    auto e = Actor();
+    Check(A::GetBattlePassDeadline(e) == 0 && A::SetBattlePassDeadline(e, 1020) &&
+        A::GetBattlePassRemainingSeconds(e) == 20, "battle pass deadline is entity-owned");
+    auto affect = InstallTimed(e, AFFECT_BATTLE_PASS, 100, POINT_BATTLE_PASS_ID, 1);
+    Check(!A::ProcessAffect(e) && affect->lDuration == 20, "battle pass uses absolute remaining time");
+    nowSeconds = 1020;
+    Check(A::ProcessAffect(e), "battle pass expires at the boundary tick");
+    A::SetBattlePassDeadline(e, UINT32_MAX); nowSeconds = 0;
+    Check(A::GetBattlePassRemainingSeconds(e) == INT32_MAX, "far-future timestamp clamps instead of wrapping negative");
+    InstallTimed(e, AFFECT_BATTLE_PASS, 3);
+    Check(!A::ProcessAffect(e) && A::FindAffect(e, AFFECT_BATTLE_PASS)->lDuration == INT32_MAX - 1,
+        "remaining plus one cannot overflow duration");
+    g_registry.remove<ecs::AffectList>(e); g_registry.emplace<ecs::AffectList>(e);
+    Check(A::GetBattlePassDeadline(e) == UINT32_MAX, "clearing affects does not erase persisted deadline");
+    g_registry.destroy(e);
+    Check(!A::SetBattlePassDeadline(e, 12) && A::GetBattlePassDeadline(e) == 0 && !A::SetBattlePassDeadline(entt::null, 12),
+        "stale deadline writes rejected");
+    const auto nonCharacter = g_registry.create();
+    Check(!A::SetBattlePassDeadline(nonCharacter, 12), "deadline cannot be attached to a non-character entity");
+    nowSeconds = 1000; e = Actor(); A::SetBattlePassDeadline(e, 999);
+    InstallTimed(e, AFFECT_BATTLE_PASS, 100);
+    onCompute = [&](entt::entity owner) {
+        onCompute = {};
+        A::SetBattlePassDeadline(owner, 2000);
+        InstallTimed(owner, AFFECT_BATTLE_PASS, 1000);
+    };
+    Check(!A::ProcessAffect(e) && A::GetBattlePassDeadline(e) == 2000,
+        "expiry cannot clear a new deadline installed by removal callback");
+
+    for (uint8_t premium : {uint8_t(0), uint8_t(PREMIUM_MAX_NUM - 1)}) {
+        e = Actor(); premiumRemaining[premium] = 42;
+        affect = InstallTimed(e, AFFECT_PREMIUM_START + premium, 2);
+        Check(!A::ProcessAffect(e) && affect->lDuration == 42, "premium duration follows account remaining time");
+        premiumRemaining[premium] = -1;
+        Check(A::ProcessAffect(e), "expired account premium removed");
+    }
+    e = Actor(); premiumRemaining[0] = INT32_MAX;
+    affect = InstallTimed(e, AFFECT_PREMIUM_START, 2);
+    Check(!A::ProcessAffect(e) && affect->lDuration == INT32_MAX - 1, "premium duration refresh saturates");
+    e = Actor(); InstallTimed(e, AFFECT_PREMIUM_START + PREMIUM_MAX_NUM, 1);
+    Check(A::ProcessAffect(e), "reserved premium sentinel does not access account array or become immortal");
+    ResetPublication();
+}
+void HairAndHorseChecks() {
+    ResetPublication(); nowSeconds = 1000; hairDeadline = horseDeadline = 2000;
+    auto e = Actor();
+    auto hair = InstallTimed(e, AFFECT_HAIR, 5);
+    auto horse = InstallTimed(e, AFFECT_HORSE_NAME, 5);
+    Check(!A::ProcessAffect(e) && hair->lDuration == 5 && horse->lDuration == 5,
+        "valid hair/horse quest deadlines offset ordinary duration ticking");
+    hairDeadline = horseDeadline = 999;
+    Check(A::ProcessAffect(e) && horseCalls == std::vector<bool>({false, true}) && hairResets > 0,
+        "expired hair resets and horse name refreshes via entities");
+    e = Actor(); InstallTimed(e, AFFECT_HAIR, 50); InstallTimed(e, AFFECT_HAIR, 60);
+    Check(A::ProcessAffect(e), "expired hair removes every existing record of its type");
+    for (uint32_t type : {AFFECT_HAIR, AFFECT_HORSE_NAME}) {
+        e = Actor(); hairDeadline = horseDeadline = 2000;
+        InstallTimed(e, type, INT32_MAX);
+        Check(!A::ProcessAffect(e) && A::FindAffect(e, type)->lDuration == INT32_MAX - 1,
+            "quest-based duration extension cannot overflow");
+    }
+    e = Actor(); hairDeadline = 999; InstallTimed(e, AFFECT_HAIR, 1);
+    onPart = [&](entt::entity owner) {
+        onPart = {}; Check(Add(owner, 0, AFFECT_HAIR, POINT_NONE, 0, true, false, 50), "replacement during hair appearance reset");
+    };
+    Check(!A::ProcessAffect(e) && A::FindAffect(e, AFFECT_HAIR)->lDuration == 49,
+        "old hair expiry does not remove callback replacement");
+
+    e = Actor(); horseDeadline = 999; InstallTimed(e, AFFECT_HORSE_NAME, 1);
+    CHorseNameManager::instance().UpdateHorseName(1, "Original"); horseCalls.clear();
+    onHorse = [&](entt::entity owner, bool summon) {
+        if (summon) return;
+        onHorse = {};
+        A::RemoveAffect(owner, AFFECT_HORSE_NAME);
+        InstallTimed(owner, AFFECT_HORSE_NAME, 50);
+        CHorseNameManager::instance().UpdateHorseName(1, "Replacement");
+    };
+    CHorseNameManager::instance().Validate(e);
+    Check(horseCalls == std::vector<bool>({false}) && std::string(CHorseNameManager::instance().GetHorseName(1)) == "Replacement",
+        "old horse validation preserves callback replacement name");
+    e = Actor(); InstallTimed(e, AFFECT_HORSE_NAME, 1); horseCalls.clear();
+    onHorse = [&](entt::entity owner, bool) { CHorseNameManager::instance().Validate(owner); };
+    CHorseNameManager::instance().Validate(e); onHorse = {};
+    Check(horseCalls == std::vector<bool>({false, true}), "recursive horse validation runs once");
+    for (int stage = 0; stage < 3; ++stage) {
+        e = Actor(); InstallTimed(e, AFFECT_HORSE_NAME, 1); horseCalls.clear();
+        if (stage == 0) onQuest = [&](entt::entity owner) { onQuest = {}; g_registry.destroy(owner); };
+        if (stage == 1) onHorse = [&](entt::entity owner, bool) { onHorse = {}; g_registry.destroy(owner); };
+        if (stage == 2) onCompute = [&](entt::entity owner) { onCompute = {}; g_registry.destroy(owner); };
+        CHorseNameManager::instance().Validate(e);
+        Check(!g_registry.valid(e) && horseCalls.size() <= 1, "horse validation stops after owner destruction");
+    }
+    ResetPublication();
+}
+void ExpiryPublicationChecks() {
+    DESC descriptor; CLIENT_DESC database;
+    client = &descriptor; db_clientdesc = &database;
+    ResetPublication(); connected = Actor();
+    Add(connected, 8, AFFECT_STR, POINT_ST, 0, true, false, 1);
+    Check(A::ProcessAffect(connected) && storedAffects.empty() && clientRemoves.size() == 1,
+        "natural expiry removes the client and DB record");
+    for (int stage = 0; stage < 2; ++stage) {
+        ResetPublication(); connected = Actor();
+        Add(connected, 8, AFFECT_STR, POINT_ST, 0, true, false, 1);
+        const auto replace = [&] { Check(Add(connected, 99, AFFECT_STR, POINT_ST, 0, true, false, 50), "replacement during expiry publication"); };
+        if (stage == 0) onDBPacket = [&](uint8_t header) { if (header == HEADER_GD_REMOVE_AFFECT) { onDBPacket = {}; replace(); } };
+        else onClientPacket = [&](uint8_t header) { if (header == HEADER_GC_AFFECT_REMOVE) { onClientPacket = {}; replace(); } };
+        Check(!A::ProcessAffect(connected) && A::FindAffect(connected, AFFECT_STR)->lDuration == 50 &&
+            storedAffects.at({AFFECT_STR, POINT_ST}).elem.lApplyValue == 99 && clientAdds.back().elem.lApplyValue == 99,
+            "nested expiry replacement wins ECS, DB and client publication");
+    }
+    ResetPublication(); connected = Actor(); horseDeadline = 999;
+    Add(connected, 0, AFFECT_HORSE_NAME, POINT_NONE);
+    CHorseNameManager::instance().Validate(connected);
+    Check(horsePackets.size() == 1 && horsePackets[0].dwPlayerID == 1 &&
+        std::all_of(std::begin(horsePackets[0].szHorseName), std::end(horsePackets[0].szHorseName), [](char c) { return c == '\0'; }),
+        "horse-name expiry persists empty name for the entity's player ID");
+    ResetPublication(); connected = entt::null; client = nullptr; db_clientdesc = nullptr;
+}
 void LifetimeStressChecks() {
     for (int i = 0; i < 1000; ++i) {
         const auto e = Actor();
@@ -550,9 +792,23 @@ void ecs::ChatSystem::Send(entt::entity,unsigned char,char const *,...) { Unexpe
 void ecs::ChatSystem::SendNew(entt::entity,unsigned char,unsigned int,char const *,...) { ++chats; }
 int ecs::PointSystem::GetLevel(entt::entity) { UnexpectedService(__func__); }
 void ecs::PointSystem::ApplyPoint(entt::entity,unsigned char,int) { UnexpectedService(__func__); }
-void ecs::PlayerRuntime::SetPart(entt::entity,unsigned char,unsigned short) { UnexpectedService(__func__); }
+void ecs::PlayerRuntime::SetPart(entt::entity e, unsigned char part, unsigned short value) {
+    Check(part == PART_HAIR && value == 0, "expiry only resets hair appearance");
+    ++hairResets;
+    if (onPart) { const auto callback = onPart; callback(e); }
+}
 unsigned char ecs::PlayerRuntime::GetMobRank(entt::entity) { UnexpectedService(__func__); }
-int ecs::QuestSystem::GetFlag(entt::entity,std::string_view) { UnexpectedService(__func__); }
+int ecs::QuestSystem::GetFlag(entt::entity e, std::string_view flag) {
+    if (onQuest) { const auto callback = onQuest; callback(e); }
+    if (flag == "hair.limit_time") return hairDeadline;
+    if (flag == "horse_name.valid_till") return horseDeadline;
+    UnexpectedService("unexpected quest flag");
+}
+int ecs::PlayerRuntime::GetPremiumRemainSeconds(entt::entity, uint8_t type) {
+    Check(type < PREMIUM_MAX_NUM, "premium index must be within the account array");
+    return premiumRemaining[type];
+}
+int64_t ecs::PlayerRuntime::GetMaxStamina(entt::entity) { UnexpectedService(__func__); }
 void NetworkSyncSystem::BroadcastSyncPacket(entt::registry&, entt::entity e) {
     ++syncs;
     if (onSync) { const auto callback = onSync; callback(e); }
@@ -573,7 +829,7 @@ unsigned int CGuild::UnderAnyWar(unsigned char) { UnexpectedService(__func__); }
 void CGuild::GiveGuildBuff(entt::entity) { UnexpectedService(__func__); }
 int CEntity::GetX(void)const { UnexpectedService(__func__); }
 int CEntity::GetY(void)const { UnexpectedService(__func__); }
-int64_t get_global_time(void) { UnexpectedService(__func__); }
+int64_t get_global_time(void) { return nowSeconds; }
 char const * CHARACTER::GetName(unsigned char)const { UnexpectedService(__func__); }
 void CHARACTER::SetHP(int64_t) { UnexpectedService(__func__); }
 int64_t CHARACTER::GetHP(void)const { UnexpectedService(__func__); }
@@ -626,6 +882,9 @@ void CLIENT_DESC::DBPacket(uint8_t header, uint32_t, const void* data, uint32_t 
         Check(size == sizeof(TPacketGDRemoveAffect), "DB remove packet size");
         const auto value = *static_cast<const TPacketGDRemoveAffect*>(data);
         storedAffects.erase({value.dwType, value.bApplyOn});
+    } else if (header == HEADER_GD_UPDATE_HORSE_NAME) {
+        Check(size == sizeof(TPacketUpdateHorseName), "horse-name DB packet size");
+        horsePackets.push_back(*static_cast<const TPacketUpdateHorseName*>(data));
     } else UnexpectedService("unexpected DB packet");
     if (onDBPacket) { const auto callback = onDBPacket; callback(header); }
 }
@@ -663,7 +922,11 @@ CPacketInfoGG::~CPacketInfoGG() {}
 Cipher::Cipher() : activated_(false), encoder_(nullptr), decoder_(nullptr), key_agreement_(nullptr) {}
 Cipher::~Cipher() {}
 void battle_end(entt::entity) { UnexpectedService(__func__); }
-void CHorseNameManager::Validate(CHARACTER *) { UnexpectedService(__func__); }
+void MountSystem::SummonHorse(entt::entity e, bool summon, bool fromFar, uint32_t vnum, const char* name) {
+    Check(g_registry.valid(e) && fromFar && vnum == 0 && name == nullptr, "horse-name refresh uses the live owner entity");
+    horseCalls.push_back(summon);
+    if (onHorse) { const auto callback = onHorse; callback(e, summon); }
+}
 int quest::CQuestManager::GetEventFlag(std::string const &) { UnexpectedService(__func__); }
 entt::entity ItemSystem::FindItemByID(entt::entity,unsigned int) { UnexpectedService(__func__); }
 entt::entity ItemSystem::GetWearItem(entt::entity,unsigned char) { UnexpectedService(__func__); }
@@ -672,8 +935,10 @@ bool ItemSystem::LockItem(entt::entity,bool) { UnexpectedService(__func__); }
 
 int main() {
     try {
+        CHorseNameManager horseNames;
         StorageChecks(); FlagAndPointChecks(); RefreshChecks(); RemovalChecks();
         AddChecks(); TimerChecks(); PublicationChecks(); LifetimeStressChecks();
+        ExpiryChecks(); DeadlineChecks(); HairAndHorseChecks(); ExpiryPublicationChecks();
         std::cout << "Affect checks passed: " << checks << '\n'; return 0;
     }
     catch (const std::exception& error) { std::cerr << error.what() << '\n'; return 1; }

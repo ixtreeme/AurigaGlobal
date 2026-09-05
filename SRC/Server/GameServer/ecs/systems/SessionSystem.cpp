@@ -6,6 +6,7 @@
 #include "PlayerRuntimeSystem.hpp"
 
 #include "SessionSystem.hpp"
+#include "AffectSystem.hpp"
 #include "ItemSystem.hpp"
 #include "MovementSystem.hpp"
 
@@ -336,7 +337,7 @@ void CHARACTER::CreatePlayerProto(TPlayerTable& tab)
     memcpy(tab.skills, m_pSkillLevels, sizeof(TPlayerSkill) * SKILL_MAX_NUM);
 
 #ifdef ENABLE_BATTLE_PASS
-    tab.dwBattlePassEndTime = m_dwBattlePassEndTime;
+    tab.dwBattlePassEndTime = AffectSystem::GetBattlePassDeadline(GetEntityHandle());
 #endif
 #ifdef ENABLE_RANKING
     const entt::entity rankEntity = GetEntityHandle();

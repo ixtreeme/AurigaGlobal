@@ -1037,6 +1037,175 @@ void RemoveGoodAffects(entt::entity e)
         RemoveAffect(e, type);
 }
 
+uint32_t GetBattlePassDeadline(entt::entity e)
+{
+    if (e == entt::null || !g_registry.valid(e)) return 0;
+    const auto* state = g_registry.try_get<ecs::BattlePassTiming>(e);
+    return state ? state->deadline : 0;
+}
+
+bool SetBattlePassDeadline(entt::entity e, uint32_t deadline)
+{
+    if (e == entt::null || !g_registry.valid(e) ||
+        !ecs::Invariants::HasAnyTypeTag(g_registry, e)) return false;
+    g_registry.get_or_emplace<ecs::BattlePassTiming>(e).deadline = deadline;
+    return true;
+}
+
+int32_t GetBattlePassRemainingSeconds(entt::entity e)
+{
+    const int64_t remaining = static_cast<int64_t>(GetBattlePassDeadline(e)) - get_global_time();
+    return static_cast<int32_t>(std::clamp<int64_t>(remaining, INT32_MIN, INT32_MAX));
+}
+
+bool ProcessAffect(entt::entity e)
+{
+    auto* state = AffectState(e);
+    if (!state) return true;
+    if (state->expiryToken) return state->affects.empty();
+    const auto token = state->expiryToken = NextAffectToken();
+    struct ExpiryGuard {
+        entt::entity entity;
+        uint64_t token;
+        ~ExpiryGuard() {
+            if (auto* state = AffectState(entity); state && state->expiryToken == token)
+                state->expiryToken = 0;
+        }
+    } guard{e, token};
+    const auto current = [&] {
+        const auto* state = AffectState(e);
+        return state && state->expiryToken == token;
+    };
+    const auto empty = [&] {
+        const auto* state = AffectState(e);
+        return !state || state->affects.empty();
+    };
+    const auto stillOwned = [&](const AffectLease& affect, const CAffect& value) {
+        return current() && Lease(e, affect.get()) == affect && SameAffect(*affect, value);
+    };
+    bool changed = false;
+
+    // Absolute deadlines are refreshed before the ordinary duration pass.
+    // PREMIUM_MAX_NUM is a count, not a valid premium index.
+    for (uint8_t i = 0; i < PREMIUM_MAX_NUM; ++i) {
+        const uint32_t type = AFFECT_PREMIUM_START + i;
+        const auto affect = Lease(e, FindAffect(e, type));
+        if (!affect) continue;
+        const CAffect value = *affect;
+        const int64_t remaining = ecs::PlayerRuntime::GetPremiumRemainSeconds(e, i);
+        if (!current()) return empty();
+        if (!stillOwned(affect, value)) continue;
+        if (remaining < 0) {
+            RemoveAffect(e, type);
+            changed = true;
+            if (!current()) return empty();
+        } else
+            affect->lDuration = static_cast<int32_t>(std::min<int64_t>(remaining + 1, INT32_MAX));
+    }
+#ifdef ENABLE_VOTE_FOR_BONUS
+    if (const auto affect = Lease(e, FindAffect(e, AFFECT_VOTEFORBONUS));
+        affect && static_cast<int64_t>(affect->lDuration) <= get_global_time()) {
+        RemoveAffect(e, AFFECT_VOTEFORBONUS);
+        changed = true;
+        if (!current()) return empty();
+    }
+#endif
+#ifdef ENABLE_BATTLE_PASS
+    if (const auto affect = Lease(e, FindAffect(e, AFFECT_BATTLE_PASS))) {
+        const int64_t remaining = GetBattlePassRemainingSeconds(e);
+        if (remaining < 0) {
+            // Clear the old deadline before callbacks can install a new pass.
+            SetBattlePassDeadline(e, 0);
+            RemoveAffect(e, AFFECT_BATTLE_PASS);
+            changed = true;
+            if (!current()) return empty();
+        } else
+            affect->lDuration = static_cast<int32_t>(std::min<int64_t>(remaining + 1, INT32_MAX));
+    }
+#endif
+    if (const auto affect = Lease(e, FindAffect(e, AFFECT_HAIR))) {
+        const CAffect value = *affect;
+        const bool expired = ecs::QuestSystem::GetFlag(e, "hair.limit_time") < get_global_time();
+        if (!current()) return empty();
+        if (stillOwned(affect, value)) {
+            if (expired) {
+                ecs::PlayerRuntime::SetPart(e, PART_HAIR, 0);
+                if (!current()) return empty();
+                if (stillOwned(affect, value)) RemoveAffect(e, static_cast<uint32_t>(AFFECT_HAIR));
+                if (!current()) return empty();
+            } else if (affect->lDuration < INT32_MAX)
+                ++affect->lDuration;
+        }
+    }
+    CHorseNameManager::instance().Validate(e);
+    if (!current()) return empty();
+
+    const auto oldFlags = GetFlags(e);
+    const auto oldMoveSpeed = ecs::PointSystem::Get(e, POINT_MOV_SPEED);
+    const auto oldAttackSpeed = ecs::PointSystem::Get(e, POINT_ATT_SPEED);
+    struct Entry { AffectLease affect; CAffect value; };
+    std::vector<Entry> batch;
+    std::unordered_set<const CAffect*> seen;
+    for (const auto& affect : Snapshot(e))
+        if (affect && seen.insert(affect.get()).second)
+            batch.push_back({affect, *affect});
+
+    // New/replaced records during a point or packet callback wait for the next
+    // pass. No registry/list references or borrowed records cross callbacks.
+    for (const auto& [affect, value] : batch) {
+        if (!current()) return empty();
+        if (!stillOwned(affect, value)) continue;
+        bool expired = false;
+        if (value.dwType >= GUILD_SKILL_START && value.dwType <= GUILD_SKILL_END) {
+            auto* guild = ecs::SocialSystem::GetGuild(e);
+            expired = !guild || !guild->UnderAnyWar();
+            if (!current()) return empty();
+            if (!stillOwned(affect, value)) continue;
+        }
+        if (value.lSPCost > 0
+#ifdef ENABLE_SOUL_SYSTEM
+            && value.dwType != AFFECT_SOUL_RED && value.dwType != AFFECT_SOUL_BLUE
+#endif
+        ) {
+            if (ecs::PointSystem::Get(e, POINT_SP) < value.lSPCost)
+                expired = true;
+            else {
+                ecs::PointSystem::Change(e, POINT_SP, -static_cast<int64_t>(value.lSPCost));
+                if (!current()) return empty();
+                if (!stillOwned(affect, value)) continue;
+            }
+        }
+        // Avoid decrementing INT32_MIN. Zero/negative loaded durations expire.
+        if (affect->lDuration > 0) --affect->lDuration;
+        if (affect->lDuration <= 0) expired = true;
+        if (!expired) continue;
+
+        const CAffect expiredValue = *affect;
+        if (!Detach(e, affect.get())) continue;
+        ComputeAffect(e, expiredValue, false);
+        if (!current()) return empty();
+        changed = true;
+        PublishAffectRemoval(e, expiredValue);
+        if (!current()) return empty();
+    }
+    if (changed) {
+        if (oldFlags != GetFlags(e) || oldMoveSpeed != ecs::PointSystem::Get(e, POINT_MOV_SPEED) ||
+            oldAttackSpeed != ecs::PointSystem::Get(e, POINT_ATT_SPEED)) {
+            NetworkSyncSystem::UpdatePacket(e);
+            if (!current()) return empty();
+        }
+        const auto hp = ecs::PointSystem::Get(e, POINT_HP);
+        const auto maxHP = ecs::PointSystem::GetMaxHP(e);
+        if (hp > maxHP) ecs::PointSystem::Change(e, POINT_HP, static_cast<int64_t>(maxHP) - hp);
+        if (!current()) return empty();
+        const auto sp = ecs::PointSystem::Get(e, POINT_SP);
+        const auto maxSP = ecs::PointSystem::GetMaxSP(e);
+        if (sp > maxSP) ecs::PointSystem::Change(e, POINT_SP, static_cast<int64_t>(maxSP) - sp);
+        if (!current()) return empty();
+    }
+    return AffectState(e)->affects.empty();
+}
+
 void ClearAffect(entt::entity e, bool save)
 {
     auto* ch = LegacyCharOf(e);
@@ -1279,7 +1448,8 @@ EVENTFUNC(affect_event)
         AffectSystem::StopAffectEvent(entity);
         return 0;
     }
-    // Expiry/recovery rules are still the legacy leaf, not timer ownership.
+    // The outer recovery/item/recall tick is still legacy; it delegates expiry
+    // to native ProcessAffect. Timer ownership no longer depends on CHARACTER.
     auto* ch = LegacyCharOf(entity);
     if (!ch) {
         AffectSystem::StopAffectEvent(entity);
@@ -1369,14 +1539,18 @@ bool CHARACTER::UpdateAffect()
 
 
 	// ProcessAffect�� affect�� ������ true�� �����Ѵ�.
-	if (ProcessAffect())
-		if (GetPoint(POINT_HP_RECOVERY) == 0 && GetPoint(POINT_SP_RECOVERY) == 0 && GetStamina() == GetMaxStamina())
-		{
-			AffectSystem::StopAffectEvent(GetEntityHandle());
-			return false;
-		}
-
-	return true;
+    // Expiry callbacks can destroy this CHARACTER. Capture the entity before
+    // entering the native pass and never read this again afterwards.
+    const auto entity = GetEntityHandle();
+    const bool empty = AffectSystem::ProcessAffect(entity);
+    if (!AffectState(entity)) return false;
+    if (empty && ecs::PointSystem::Get(entity, POINT_HP_RECOVERY) == 0 &&
+        ecs::PointSystem::Get(entity, POINT_SP_RECOVERY) == 0 &&
+        ecs::PointSystem::Get(entity, POINT_STAMINA) == ecs::PlayerRuntime::GetMaxStamina(entity)) {
+        AffectSystem::StopAffectEvent(entity);
+        return false;
+    }
+    return true;
 }
 
 void CHARACTER::StartAffectEvent()
@@ -1519,167 +1693,7 @@ void CHARACTER::ClearAffect(bool bSave)
 
 int CHARACTER::ProcessAffect()
 {
-	const auto entity = GetEntityHandle();
-	if (!AffectState(entity))
-		return true;
-	bool	bDiff	= false;
-	CAffect	*pkAff;
-
-	//
-	// �����̾� ó��
-	//
-	for (int i = 0; i <= PREMIUM_MAX_NUM; ++i)
-	{
-		int aff_idx = i + AFFECT_PREMIUM_START;
-
-		pkAff = FindAffect(aff_idx);
-
-		if (!pkAff)
-			continue;
-
-		int remain = GetPremiumRemainSeconds(i);
-
-		if (remain < 0)
-		{
-			RemoveAffect(aff_idx);
-			bDiff = true;
-		}
-		else
-			pkAff->lDuration = remain + 1;
-	}
-
-#ifdef ENABLE_VOTE_FOR_BONUS
-	pkAff = FindAffect(AFFECT_VOTEFORBONUS);
-	if (pkAff)
-	{
-		int32_t remain = pkAff->lDuration - get_global_time();
-		if (remain <= 0)
-		{
-			RemoveAffect(AFFECT_VOTEFORBONUS);
-			bDiff = true;
-		}
-	}
-#endif
-
-#ifdef ENABLE_BATTLE_PASS
-	pkAff = FindAffect(AFFECT_BATTLE_PASS);
-	if (pkAff)
-	{
-		int remain = GetBattlePassEndTime();
-
-		if (remain < 0)
-		{
-			RemoveAffect(AFFECT_BATTLE_PASS);
-			m_dwBattlePassEndTime = 0;
-			bDiff = true;
-		}
-		else
-			pkAff->lDuration = remain + 1;
-	}
-#endif
-
-	////////// HAIR_AFFECT
-	pkAff = FindAffect(AFFECT_HAIR);
-	if (pkAff)
-	{
-		// IF HAIR_LIMIT_TIME() < CURRENT_TIME()
-		if ( ecs::QuestSystem::GetFlag(GetEntityHandle(), "hair.limit_time") < get_global_time())
-		{
-			// SET HAIR NORMAL
-			ecs::PlayerRuntime::SetPart(this->GetEntityHandle(), PART_HAIR, 0);
-			// REMOVE HAIR AFFECT
-			RemoveAffect(AFFECT_HAIR);
-		}
-		else
-		{
-			// INCREASE AFFECT DURATION
-			++(pkAff->lDuration);
-		}
-	}
-	////////// HAIR_AFFECT
-	//
-
-	CHorseNameManager::instance().Validate(this);
-
-	TAffectFlag afOld = GetAffectFlags();
-	int64_t lMovSpd = GetPoint(POINT_MOV_SPEED);
-	int64_t lAttSpd = GetPoint(POINT_ATT_SPEED);
-	for (const auto& lease : AffectSystem::Snapshot(entity))
-	{
-		if (!AffectSystem::Lease(entity, lease.get()))
-			continue;
-		pkAff = lease.get();
-
-		bool bEnd = false;
-
-		if (pkAff->dwType >= GUILD_SKILL_START && pkAff->dwType <= GUILD_SKILL_END)
-		{
-			if (!GetGuild() || !GetGuild()->UnderAnyWar())
-				bEnd = true;
-		}
-
-#ifdef ENABLE_SOUL_SYSTEM
-		if (pkAff->lSPCost > 0 && pkAff->dwType != AFFECT_SOUL_RED && pkAff->dwType != AFFECT_SOUL_BLUE)
-#else
-		if (pkAff->lSPCost > 0)
-#endif
-		{
-			if (GetSP() < pkAff->lSPCost)
-				bEnd = true;
-			else
-				PointChange(POINT_SP, -pkAff->lSPCost);
-		}
-
-		if (!AffectState(entity))
-			return true;
-		if (!AffectSystem::Lease(entity, pkAff))
-			continue;
-
-		// AFFECT_DURATION_BUG_FIX
-		// ���� ȿ�� �����۵� �ð��� ���δ�.
-		// �ð��� �ſ� ũ�� ��� ������ ��� ���� ���̶� ������.
-		if (pkAff->lDuration <= 0 || --pkAff->lDuration <= 0)
-		{
-			bEnd = true;
-		}
-		// END_AFFECT_DURATION_BUG_FIX
-
-		if (bEnd)
-		{
-			AffectSystem::Detach(entity, pkAff);
-			AffectSystem::ComputeAffect(entity, *lease, false);
-			if (!AffectState(entity))
-				return true;
-			bDiff = true;
-			if (IsPC())
-			{
-				SendAffectRemovePacket(GetDesc(), GetPlayerID(), pkAff->dwType, pkAff->bApplyOn);
-			}
-
-
-			continue;
-		}
-
-	}
-
-	if (bDiff)
-	{
-		if (afOld != GetAffectFlags() ||
-				lMovSpd != GetPoint(POINT_MOV_SPEED) ||
-				lAttSpd != GetPoint(POINT_ATT_SPEED))
-		{
-			NetworkSyncSystem::UpdatePacket(entity);
-			if (!AffectState(entity))
-				return true;
-		}
-
-		CheckMaximumPoints();
-	}
-
-	if (AffectSystem::Snapshot(entity).empty())
-		return true;
-
-	return false;
+    return AffectSystem::ProcessAffect(GetEntityHandle());
 }
 
 void CHARACTER::SaveAffect()

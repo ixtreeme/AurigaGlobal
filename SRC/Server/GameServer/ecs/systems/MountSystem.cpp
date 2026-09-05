@@ -284,13 +284,6 @@ bool StopRiding(entt::entity rider)
     return character && character->StopRiding();
 }
 
-void SummonHorse(entt::entity rider, bool summon, bool fromFar,
-    uint32_t vnum, const char* name)
-{
-    if (auto* character = ResolveLegacyMountOwnerBoundary(rider))
-        character->HorseSummon(summon, fromFar, vnum, name);
-}
-
 uint32_t GetMountVnum(entt::entity rider)
 {
     if (rider == entt::null || !g_registry.valid(rider))
@@ -318,8 +311,6 @@ EVENTFUNC(horse_dead_event);
 
 namespace MountSystem {
 
-void HorseSummon(entt::entity rider, bool bSummon, bool bFromFar = false,
-    uint32_t dwVnum = 0, const char* pPetName = nullptr);
 static ::CMountSystem* GetMountSystem(entt::entity e);
 
 void MountSummon(entt::entity rider, entt::entity mountItem)
@@ -351,13 +342,15 @@ void MountSummon(entt::entity rider, entt::entity mountItem)
 		StopRiding(rider);
 
 	if (GetSummonedHorse(rider) != entt::null)
-		HorseSummon(rider, false);
+		SummonHorse(rider, false);
 
 	mountSystem->Summon(mobVnum, mountItem, false);
 }
 
-void HorseSummon(entt::entity rider, bool bSummon, bool bFromFar, uint32_t dwVnum, const char* pPetName)
+void SummonHorse(entt::entity rider, bool bSummon, bool bFromFar, uint32_t dwVnum, const char* pPetName)
 {
+	if (rider == entt::null || !g_registry.valid(rider))
+		return;
 	if ( bSummon )
 	{
 		if( ecs::LegacyCharOf(GetSummonedHorse(rider)) != nullptr)
@@ -897,7 +890,7 @@ LPCHARACTER CHARACTER::GetRider() const
 
 void CHARACTER::HorseSummon(bool bSummon, bool bFromFar, uint32_t dwVnum, const char* pPetName)
 {
-	MountSystem::HorseSummon(GetEntityHandle(), bSummon, bFromFar, dwVnum, pPetName);
+	MountSystem::SummonHorse(GetEntityHandle(), bSummon, bFromFar, dwVnum, pPetName);
 }
 
 uint32_t CHARACTER::GetMyHorseVnum() const
