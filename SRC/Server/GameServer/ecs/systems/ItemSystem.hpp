@@ -119,7 +119,6 @@ int GetItemAccessorySocketGrade(entt::entity item);
 int GiveMoreTime_Per(entt::entity item, float fPercent);
 int GiveMoreTime_Fix(entt::entity item, uint32_t dwTime);
 uint16_t GetItemRefineSet(entt::entity item);
-void SetItemLock(entt::entity item, bool locked);
 bool IsItemStackable(entt::entity item);
 uint32_t GetItemRefinedVnum(entt::entity item);
 bool IsRealTimeItem(entt::entity item);

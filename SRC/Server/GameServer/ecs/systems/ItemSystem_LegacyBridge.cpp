@@ -6534,7 +6534,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 				else {
 					const entt::entity pkItem = ItemSystem::FindItemByID(GetEntityHandle(), dwItemID);
 					if (pkItem != entt::null) {
-						ItemSystem::SetItemLock(pkItem, false);
+						ItemSystem::LockItem(pkItem, false);
 						ItemSystem::SetItemSocketEcs(pkItem, 1, 0);
 					}
 
@@ -6553,7 +6553,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 					if (pAffect) {
 						const entt::entity pkItem = ItemSystem::FindItemByID(GetEntityHandle(), pAffect->dwFlag);
 						if (pkItem != entt::null) {
-							ItemSystem::SetItemLock(pkItem, false);
+							ItemSystem::LockItem(pkItem, false);
 							ItemSystem::SetItemSocketEcs(pkItem, 1, 0);
 						}
 
@@ -6565,7 +6565,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 					if (pAffect) {
 						const entt::entity pkItem = ItemSystem::FindItemByID(GetEntityHandle(), pAffect->dwFlag);
 						if (pkItem != entt::null) {
-							ItemSystem::SetItemLock(pkItem, false);
+							ItemSystem::LockItem(pkItem, false);
 							ItemSystem::SetItemSocketEcs(pkItem, 1, 0);
 						}
 
@@ -6577,7 +6577,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 					if (pAffect) {
 						const entt::entity pkItem = ItemSystem::FindItemByID(GetEntityHandle(), pAffect->dwFlag);
 						if (pkItem != entt::null) {
-							ItemSystem::SetItemLock(pkItem, false);
+							ItemSystem::LockItem(pkItem, false);
 							ItemSystem::SetItemSocketEcs(pkItem, 1, 0);
 						}
 
@@ -6589,7 +6589,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 					if (pAffect) {
 						const entt::entity pkItem = ItemSystem::FindItemByID(GetEntityHandle(), pAffect->dwFlag);
 						if (pkItem != entt::null) {
-							ItemSystem::SetItemLock(pkItem, false);
+							ItemSystem::LockItem(pkItem, false);
 							ItemSystem::SetItemSocketEcs(pkItem, 1, 0);
 						}
 
@@ -8407,7 +8407,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 							const entt::entity old = ItemSystem::FindItemByID(GetEntityHandle(), pAffect2->dwFlag);
 							if (old != entt::null)
 							{
-								ItemSystem::SetItemLock(old, false);
+								ItemSystem::LockItem(old, false);
 								ItemSystem::SetItemSocketEcs(old, 0, false);
 							}
 
@@ -8428,7 +8428,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 								const entt::entity old = ItemSystem::FindItemByID(GetEntityHandle(), pAffect2->dwFlag);
 								if (old != entt::null)
 								{
-									ItemSystem::SetItemLock(old, false);
+									ItemSystem::LockItem(old, false);
 									ItemSystem::SetItemSocketEcs(old, 0, false);
 								}
 							}
@@ -8456,7 +8456,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 
 						if (old != entt::null)
 						{
-							ItemSystem::SetItemLock(old, false);
+							ItemSystem::LockItem(old, false);
 							ItemSystem::SetItemSocketEcs(old, 0, false);
 						}
 
@@ -8504,7 +8504,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 								const entt::entity old = ItemSystem::FindItemByID(GetEntityHandle(), pAffect2->dwFlag);
 								if (old != entt::null)
 								{
-									ItemSystem::SetItemLock(old, false);
+									ItemSystem::LockItem(old, false);
 									ItemSystem::SetItemSocketEcs(old, 0, false);
 								}
 
@@ -10820,7 +10820,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 			const entt::entity currentItem = ItemSystem::FindItemByID(GetEntityHandle(), pAffect->lSPCost);
 			if (currentItem != entt::null)
 			{
-				ItemSystem::SetItemLock(currentItem, false);
+				ItemSystem::LockItem(currentItem, false);
 				ItemSystem::SetItemSocketEcs(currentItem, 1, false);
 			}
 
@@ -15682,7 +15682,7 @@ void CHARACTER::AutoRecoveryItemProcess(const EAffectTypes type)
 			}
 			else
 			{
-				ItemSystem::SetItemLock(pItem, false);
+				ItemSystem::LockItem(pItem, false);
 				ItemSystem::SetItemSocketEcs(pItem, 0, false);
 				RemoveAffect(const_cast<CAffect*>(pAffect));
 			}

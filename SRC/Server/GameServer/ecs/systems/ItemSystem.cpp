@@ -1816,17 +1816,6 @@ uint16_t GetItemRefineSet(entt::entity item)
     return proto ? proto->wRefineSet : 0;
 }
 
-void SetItemLock(entt::entity item, bool locked)
-{
-    if (item == entt::null || !g_registry.valid(item))
-        return;
-
-    g_registry.get_or_emplace<ecs::ItemFlags>(item).isLocked = locked;
-
-    if (LPITEM legacyItem = LegacyItemBoundary(item))
-        legacyItem->Lock(locked);
-}
-
 bool IsItemStackable(entt::entity item)
 {
     return (GetItemFlags(item) & ITEM_FLAG_STACKABLE) != 0;
