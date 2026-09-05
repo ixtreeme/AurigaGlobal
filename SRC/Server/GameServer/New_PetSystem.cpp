@@ -1347,6 +1347,7 @@ void CNewPetActor::SetSummonItem (entt::entity pItemEntity)
 	if (owner != entt::null && g_registry.valid(owner)) {
 		auto& pet = g_registry.emplace_or_replace<ecs::PetComponent>(owner);
 		pet.owner = owner;
+		pet.item = pItemEntity;
 		pet.itemID = ItemSystem::GetItemID(pItemEntity);
 		pet.itemVID = ItemSystem::GetItemVID(pItemEntity);
 		pet.itemVnum = ItemSystem::GetItemVnum(pItemEntity);

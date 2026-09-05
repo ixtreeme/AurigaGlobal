@@ -418,6 +418,23 @@ void SyncTimingWrite(entt::entity e, uint32_t startTime, uint32_t duration)
     }
 }
 
+void SetNowWalking(entt::entity e, bool walking)
+{
+    if (!IsValid(e))
+        return;
+    auto* state = g_registry.try_get<ecs::MovementState>(e);
+    if (!state || state->isNowWalking == walking)
+        return;
+    if (walking)
+        state->walkStartTime = get_dword_time();
+    SyncWalkingWrite(e, walking);
+    TPacketGCWalkMode packet {};
+    packet.vid = ecs::PlayerRuntime::GetPacketVID(e);
+    packet.header = HEADER_GC_WALK_MODE;
+    packet.mode = walking ? WALKMODE_WALK : WALKMODE_RUN;
+    ecs::ViewSystem::PacketView(e, &packet, sizeof(packet));
+}
+
 void SyncWalkingWrite(entt::entity e, bool isNowWalking)
 {
     if (!IsValid(e))
@@ -1195,27 +1212,17 @@ EVENTFUNC(save_event)
 }
 
 
+uint32_t CHARACTER::GetWalkStartTime() const
+{
+    const auto* state = g_registry.try_get<ecs::MovementState>(GetEntityHandle());
+    return state ? state->walkStartTime : 0;
+}
+
 void CHARACTER::SetNowWalking(bool bWalkFlag)
 {
-    // Phase C.2: legacy m_bNowWalking write removed. ECS
-    // MovementState.isNowWalking is the sole source via SyncWalkingWrite.
-    // Entry guard reads the ECS source via IsNowWalking().
     if (IsNowWalking() != bWalkFlag)
     {
-        if (bWalkFlag)
-            m_dwWalkStartTime = get_dword_time();
-
-		ecs::MovementSystem::SyncWalkingWrite(GetEntityHandle(), bWalkFlag);
-
-        {
-            TPacketGCWalkMode p;
-            p.vid = GetPacketVID();
-            p.header = HEADER_GC_WALK_MODE;
-            p.mode = bWalkFlag ? WALKMODE_WALK : WALKMODE_RUN;
-
-            ecs::ViewSystem::PacketView(GetEntityHandle(), &p, sizeof(p));
-        }
-
+        ecs::MovementSystem::SetNowWalking(GetEntityHandle(), bWalkFlag);
         if (IsNPC())
         {
             if (bWalkFlag)

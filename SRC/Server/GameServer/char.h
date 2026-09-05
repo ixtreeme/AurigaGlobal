@@ -1018,7 +1018,7 @@ public:
 	// MovementSystem.cpp.
 	int32_t			GetCurrentDestX() const;
 	int32_t			GetCurrentDestY() const;
-	uint32_t			GetWalkStartTime() const { return m_dwWalkStartTime; }
+	uint32_t GetWalkStartTime() const;
 	uint32_t			GetLastMoveTime() const { return m_dwLastMoveTime; }
 	uint32_t			GetLastAttackTime() const { return m_dwLastAttackTime; }
 // Phase C.4: GetAddChrStateForAudit removed. Its consumer in
@@ -1075,7 +1075,6 @@ protected:
 
 	uint32_t			m_dwLastMoveTime;
 	uint32_t			m_dwLastAttackTime;
-	uint32_t			m_dwWalkStartTime;
 	uint32_t			m_dwStopTime;
 
 	bool			m_bWalking;
@@ -2434,10 +2433,9 @@ private:
 	bool cannot_dead;
 #ifdef __PET_SYSTEM__
 private:
-	bool m_bIsPet;
 public:
 	void SetPet();
-	bool IsPet() { return m_bIsPet; }
+	bool IsPet() const;
 #endif
 
 #ifdef ENABLE_MOUNT_COSTUME_SYSTEM

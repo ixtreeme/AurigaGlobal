@@ -24,6 +24,7 @@ add_test(NAME item_attributes COMMAND ItemAttributeTests)
 add_executable(MountLifecycleTests EXCLUDE_FROM_ALL
     ${CMAKE_SOURCE_DIR}/tests/server/MountLifecycleTests.cpp
     MountSystem.cpp
+    PetSystem.cpp
 )
 target_link_libraries(MountLifecycleTests PRIVATE SERVER EnTT::EnTT)
 add_test(NAME mount_lifecycle COMMAND MountLifecycleTests)

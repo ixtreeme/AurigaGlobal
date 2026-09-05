@@ -1,807 +1,468 @@
 #include "stdafx.h"
-#include "ecs/systems/PlayerRuntimeSystem.hpp"
-#include "ecs/systems/CombatSystem.hpp"
-#include <Core/Logging.hpp>
-#include "ecs/systems/AffectSystem.hpp"
-#include "ecs/systems/MountSystem.hpp"
-#include "ecs/systems/MovementSystem.hpp"
+#include "PetSystem.h"
+#include "char_manager.h"
 #include "config.h"
 #include "utils.h"
 #include "vector.h"
-#include "char_interface.hpp"
-#include "sectree_manager.h"
-#include "char_manager.h"
-#include "ecs/CharacterAccessors.hpp"
-#include "mob_manager.h"
-#include "PetSystem.h"
-#include <common/VnumHelper.h>
 #include "packet.h"
-#include "item_manager.h"
-#include "item.h"
-#include "desc.h"
-#include "ecs/AIHelpers.hpp"
 #include "ecs/Registry.hpp"
-#include "ecs/components/movement_components.hpp"
-#include "ecs/EntityFactory.hpp"
-#include "ecs/systems/ItemSystem.hpp"
+#include "ecs/components/identity_components.hpp"
 #include "ecs/components/pet_mount_components.hpp"
+#include "ecs/components/status_components.hpp"
+#include "ecs/systems/PlayerRuntimeSystem.hpp"
+#include "ecs/systems/CombatSystem.hpp"
+#include "ecs/systems/AffectSystem.hpp"
+#include "ecs/systems/MountSystem.hpp"
+#include "ecs/systems/MovementSystem.hpp"
+#include "ecs/systems/ItemSystem.hpp"
 #include "ecs/systems/PointSystem.hpp"
+#include "ecs/systems/SocialSystem.hpp"
+#include <utility>
+#include <limits>
 
 namespace
 {
-entt::entity FindSummonItemByVID(uint32_t vid)
+bool IsOwnedSummonItem(entt::entity owner, entt::entity item)
 {
-	return ItemSystem::FindItemByVID(vid);
+    return ecs::PlayerRuntime::IsValid(owner) && ItemSystem::IsValidItem(item)
+        && ItemSystem::GetItemOwner(item) == owner;
 }
 
-bool IsSummonItemOwnedBy(uint32_t vid, LPCHARACTER owner)
+uint32_t PetSkin(entt::entity owner)
 {
-	const entt::entity item = FindSummonItemByVID(vid);
-	return item != entt::null && ItemSystem::GetItemOwner(item) == ((owner) ? (owner)->GetEntityHandle() : entt::null);
+#ifdef ENABLE_COSTUME_PET
+    const auto skin = ItemSystem::GetWearItem(owner, WEAR_COSTUME_PET_SKIN);
+    if (ItemSystem::IsValidItem(skin))
+        return ItemSystem::GetItemValue(skin, 0);
+#endif
+    return 0;
 }
 
-bool SnapFollowerToOwner(LPCHARACTER follower, LPCHARACTER owner, int32_t x, int32_t y, int32_t z = 0)
+bool SnapFollowerToOwner(entt::entity follower, entt::entity owner, int32_t x, int32_t y, int32_t z)
 {
-	const entt::entity followerEntity = follower ? follower->GetEntityHandle() : entt::null;
-	if (!follower || !owner)
-		return false;
-
-	if (follower->Sync(x, y))
-	{
-		ecs::MovementSystem::Stop(followerEntity);
-		follower->SendMovePacket(FUNC_WAIT, 0, 0, 0, 0, 0);
-		return true;
-	}
-
-	return ecs::MovementSystem::Show(followerEntity, ecs::PlayerRuntime::GetMapIndex(((owner) ? (owner)->GetEntityHandle() : entt::null)), x, y, z);
+    if (!ecs::PlayerRuntime::IsValid(follower) || !ecs::PlayerRuntime::IsValid(owner))
+        return false;
+    if (!ecs::MovementSystem::Show(follower, ecs::PlayerRuntime::GetMapIndex(owner), x, y, z))
+        return false;
+    ecs::MovementSystem::Stop(follower);
+    ecs::MovementSystem::SendMovePacket(follower, FUNC_WAIT, 0, 0, 0, 0);
+    return true;
 }
 }
-
 
 EVENTINFO(petsystem_event_info)
 {
-	CPetSystem* pPetSystem;
+    entt::entity owner { entt::null };
 };
 
-// PetSystem을 update 해주는 event.
-// PetSystem은 CHRACTER_MANAGER에서 기존 FSM으로 update 해주는 기존 chracters와 달리,
-// Owner의 STATE를 update 할 때 _UpdateFollowAI 함수로 update 해준다.
-// 그런데 owner의 state를 update를 CHRACTER_MANAGER에서 해주기 때문에,
-// petsystem을 update하다가 pet을 unsummon하는 부분에서 문제가 생겼다.
-// (CHRACTER_MANAGER에서 update 하면 chracter destroy가 pending되어, CPetSystem에서는 dangling 포인터를 가지고 있게 된다.)
-// 따라서 PetSystem만 업데이트 해주는 event를 발생시킴.
 EVENTFUNC(petsystem_update_event)
 {
-	petsystem_event_info* info = dynamic_cast<petsystem_event_info*>( event->info );
-	if ( info == nullptr)
-	{
-		LOG_ERROR("check_speedhack_event> <Factor> Null pointer");
-		return 0;
-	}
-
-	CPetSystem*	pPetSystem = info->pPetSystem;
-
-	if (nullptr == pPetSystem)
-		return 0;
-
-
-	pPetSystem->Update(0);
-	// 0.25초마다 갱신.
-	return PASSES_PER_SEC(1) / 4;
+    const auto* info = dynamic_cast<petsystem_event_info*>(event->info);
+    if (!info || !ecs::PlayerRuntime::IsValid(info->owner))
+        return 0;
+    auto* system = ecs::PlayerRuntime::GetPetSystem(info->owner);
+    // A cancelled callback cannot enter a replacement system on the same owner.
+    if (!system || !system->IsUpdateEvent(event))
+        return 0;
+    system->Update(0);
+    return PASSES_PER_SEC(1) / 4;
 }
 
-/// NOTE: 1캐릭터가 몇개의 펫을 가질 수 있는지 제한... 캐릭터마다 개수를 다르게 할거라면 변수로 넣등가... 음..
-/// 가질 수 있는 개수와 동시에 소환할 수 있는 개수가 틀릴 수 있는데 이런건 기획 없으니 일단 무시
-const float PET_COUNT_LIMIT = 3;
-
-///////////////////////////////////////////////////////////////////////////////////////
-//  CPetActor
-///////////////////////////////////////////////////////////////////////////////////////
-
-CPetActor::CPetActor(LPCHARACTER owner, uint32_t vnum, uint32_t options)
+CPetActor::CPetActor(entt::entity owner, uint32_t vnum, uint32_t options)
+    : m_owner(owner), m_vnum(vnum), m_options(options)
 {
-#ifdef ENABLE_COSTUME_PET
-	m_dwBaseVnum = vnum;
-#endif
-	m_dwVnum = vnum;
-	m_dwVID = 0;
-	m_dwOptions = options;
-	m_dwLastActionTime = 0;
-
-	m_pkChar = nullptr;
-	m_pkOwner = owner;
-
-	m_originalMoveSpeed = 0;
-
-	m_dwSummonItemVID = 0;
-	m_dwSummonItemVnum = 0;
 }
 
 CPetActor::~CPetActor()
 {
-	this->Unsummon();
-
-	m_pkOwner = nullptr;
+    Unsummon();
 }
 
-void CPetActor::SetName(const char* name)
+bool CPetActor::IsSummoned() const
 {
-	std::string petName = ecs::PlayerRuntime::GetName(((m_pkOwner) ? (m_pkOwner)->GetEntityHandle() : entt::null)).data();
-	petName += "'s Pet";
+    return ecs::PlayerRuntime::IsValid(m_character);
+}
 
-	if (true == IsSummoned())
-		m_pkChar->SetName(petName);
-
-	m_name = petName;
+void CPetActor::SetName(const char*)
+{
+    // Preserve the existing owner-based naming rule.
+    if (IsSummoned() && ecs::PlayerRuntime::IsValid(m_owner))
+        g_registry.emplace_or_replace<ecs::PlayerName>(m_character,
+            std::string(ecs::PlayerRuntime::GetName(m_owner)) + "'s Pet");
 }
 
 bool CPetActor::Mount()
 {
-	const entt::entity owner = m_pkOwner ? m_pkOwner->GetEntityHandle() : entt::null;
-	if (nullptr == m_pkOwner)
-		return false;
-
-	if (true == HasOption(EPetOption_Mountable))
-		MountSystem::SetMountVnum(owner, m_dwVnum);
-
-	return MountSystem::GetMountVnum(owner) == m_dwVnum;;
+    if (!ecs::PlayerRuntime::IsValid(m_owner) || !HasOption(EPetOption_Mountable))
+        return false;
+    const auto skin = PetSkin(m_owner);
+    m_ridingVnum = skin ? skin : m_vnum;
+    MountSystem::SetMountVnum(m_owner, m_ridingVnum);
+    return MountSystem::GetMountVnum(m_owner) == m_ridingVnum;
 }
 
 void CPetActor::Unmount()
 {
-	if (nullptr == m_pkOwner)
-		return;
-
-	if (m_pkOwner->IsHorseRiding())
-		m_pkOwner->StopRiding();
+    const auto ridingVnum = std::exchange(m_ridingVnum, 0u);
+    if (!ecs::PlayerRuntime::IsValid(m_owner))
+        return;
+    if (ridingVnum && MountSystem::GetMountVnum(m_owner) == ridingVnum)
+        MountSystem::SetMountVnum(m_owner, 0);
+    if (MountSystem::IsHorseRiding(m_owner))
+        MountSystem::StopRiding(m_owner);
 }
-
-#ifdef ENABLE_COSTUME_PET
-void CPetActor::UpdatePetSkin() {
-	const entt::entity pSummonItem = FindSummonItemByVID(this->GetSummonItemVID());
-	if (ItemSystem::IsValidItem(pSummonItem)){
-		Unsummon();
-		Summon("Noname", pSummonItem, false);
-
-	}
-}
-
-void CPetSystem::UpdatePetSkin() {
-	for (TPetActorMap::const_iterator iter = m_petActorMap.begin(); iter != m_petActorMap.end(); ++iter) {
-		CPetActor* petActor = iter->second;
-		if (petActor != nullptr)
-		{
-			if (petActor->IsSummoned())
-				petActor->UpdatePetSkin();
-		}
-	}
-}
-#endif
 
 void CPetActor::Unsummon()
 {
-	if (true == this->IsSummoned())
-	{
-		const entt::entity pSummonItem = FindSummonItemByVID(this->GetSummonItemVID());
-		if (ItemSystem::IsValidItem(pSummonItem)) {
-			ItemSystem::SetItemSocket(pSummonItem, 2, false);
-			ItemSystem::UnlockItem(pSummonItem);
-		}
-
-		// 버프 삭제
-		this->ClearBuff();
-		this->SetSummonItem(entt::null);
-		if (nullptr != m_pkOwner)
-			m_pkOwner->ComputePoints();
-
-		if (nullptr != m_pkChar)
-			M2_DESTROY_CHARACTER(m_pkChar);
-
-		m_pkChar = nullptr;
-		m_characterEntity = entt::null;
-		m_dwVID = 0;
-	}
+    if (m_ridingVnum)
+        Unmount();
+    // Publish the detached state before any point/character callbacks.
+    const auto character = std::exchange(m_character, entt::null);
+    const auto item = m_summonItem;
+    const bool hadSummon = character != entt::null || item != entt::null;
+    m_vid = 0;
+    SetSummonItem(entt::null);
+    if (ItemSystem::IsValidItem(item) && ItemSystem::GetItemOwner(item) == m_owner)
+    {
+        ItemSystem::SetItemSocket(item, 2, 0);
+        ItemSystem::UnlockItem(item);
+    }
+    ClearBuff();
+    if (hadSummon && ecs::PlayerRuntime::IsValid(m_owner))
+        ecs::PointSystem::Compute(m_owner);
+    if (ecs::PlayerRuntime::IsValid(character))
+        ecs::PlayerRuntime::DestroyCharacter(character);
 }
 
-uint32_t CPetActor::Summon(const char* petName, entt::entity pSummonItemEntity, bool bSpawnFar)
+uint32_t CPetActor::Summon(const char* petName, entt::entity item, bool spawnFar)
 {
-	const entt::entity owner = m_pkOwner ? m_pkOwner->GetEntityHandle() : entt::null;
-	const entt::entity pSummonItem = pSummonItemEntity;
-	if (!ecs::PlayerRuntime::IsValid(owner) || !ItemSystem::IsValidItem(pSummonItem) || ItemSystem::GetItemOwner(pSummonItem) != owner)
-		return 0;
-	int32_t x = ecs::PlayerRuntime::GetX(owner);
-	int32_t y = ecs::PlayerRuntime::GetY(owner);
-	int32_t z = m_pkOwner->GetZ();
-
-	if (true == bSpawnFar)
-	{
-		x += (number(0, 1) * 2 - 1) * number(2000, 2500);
-		y += (number(0, 1) * 2 - 1) * number(2000, 2500);
-	}
-	else
-	{
-		x += number(-100, 100);
-		y += number(-100, 100);
-	}
-
-	if (nullptr != m_pkChar)
-	{
-		SnapFollowerToOwner(m_pkChar, m_pkOwner, x, y, z);
-		m_dwVID = m_pkChar->GetLegacyVID();
-
-		return m_dwVID;
-	}
-#ifdef ENABLE_COSTUME_PET
-	uint32_t vnumToSpawn = m_dwBaseVnum ? m_dwBaseVnum : m_dwVnum;
-	if (m_pkOwner) {
-		uint32_t skin = m_pkOwner->GetPetSkinVnum();
-		if (skin != 0)
-			vnumToSpawn = skin;
-	}
-#else
-	uint32_t vnumToSpawn = m_dwBaseVnum ? m_dwBaseVnum : m_dwVnum;
-#endif
-#ifdef ENABLE_COSTUME_PET
-	m_pkChar = CHARACTER_MANAGER::instance().SpawnMob(
-		vnumToSpawn,
-		ecs::PlayerRuntime::GetMapIndex(owner),
-		x, y, z,
-		false, (int)(m_pkOwner->GetRotation() + 180), false);
-#else
-	m_pkChar = CHARACTER_MANAGER::instance().SpawnMob(
-				m_dwVnum,
-				ecs::PlayerRuntime::GetMapIndex(owner),
-				x, y, z,
-				false, (int)(m_pkOwner->GetRotation()+180), false);
-#endif
-	if (nullptr == m_pkChar)
-	{
-		LOG_ERROR("[CPetSystem::Summon] Failed to summon the pet. (vnum: {})", m_dwVnum);
-		return 0;
-	}
-	m_characterEntity = m_pkChar->GetEntityHandle();
-//	#ifdef ENABLE_COSTUME_PET
-//	uint32_t dwPetSkinvnum = m_pkOwner->GetPetSkinVnum();
-//	m_dwVnum = dwPetSkinvnum != 0 ? dwPetSkinvnum : m_dwVnum;
-//#endif
-	m_pkChar->SetPet();
-
-//	m_pkOwner->DetailLog();
-//	m_pkChar->DetailLog();
-
-	//펫의 국가를 주인의 국가로 설정함.
-	m_pkChar->SetEmpire(ecs::PlayerRuntime::GetEmpire(owner));
-
-	m_dwVID = m_pkChar->GetLegacyVID();
-
-	this->SetName("");
-
-	// SetSummonItem(pSummonItem)를 부른 후에 ComputePoints를 부르면 버프 적용됨.
-	this->SetSummonItem(pSummonItemEntity);
-	m_pkOwner->ComputePoints();
-	ecs::MovementSystem::Show(((m_pkChar) ? (m_pkChar)->GetEntityHandle() : entt::null), ecs::PlayerRuntime::GetMapIndex(owner), x, y, z);
-	ItemSystem::SetItemSocket(pSummonItem, 2, true);
-	ItemSystem::LockItem(pSummonItem);
+    if (!IsOwnedSummonItem(m_owner, item) || !ItemSystem::GetItemProto(item))
+        return 0;
+    int32_t x = ecs::PlayerRuntime::GetX(m_owner);
+    int32_t y = ecs::PlayerRuntime::GetY(m_owner);
+    const auto z = ecs::PlayerRuntime::GetZ(m_owner);
+    x += spawnFar ? (number(0, 1) * 2 - 1) * number(2000, 2500) : number(-100, 100);
+    y += spawnFar ? (number(0, 1) * 2 - 1) * number(2000, 2500) : number(-100, 100);
+    if (IsSummoned())
+    {
+        // Do not silently adopt a different item and leave the old one locked.
+        if (item != m_summonItem || !SnapFollowerToOwner(m_character, m_owner, x, y, z))
+            return 0;
+        return m_vid;
+    }
+    Unsummon();
+    const auto skin = PetSkin(m_owner);
+    m_character = CHARACTER_MANAGER::instance().SpawnMobEntity(skin ? skin : m_vnum,
+        ecs::PlayerRuntime::GetMapIndex(m_owner), x, y, z, false,
+        static_cast<int>(ecs::PlayerRuntime::GetRotation(m_owner) + 180), false);
+    if (!IsSummoned())
+        return 0;
+    g_registry.get_or_emplace<ecs::StatusFlags>(m_character).isPet = true;
+    ecs::PlayerRuntime::SetEmpire(m_character, ecs::PlayerRuntime::GetEmpire(m_owner));
+    m_vid = ecs::PlayerRuntime::GetPacketVID(m_character);
+    SetName(petName);
+    if (!ecs::MovementSystem::Show(m_character, ecs::PlayerRuntime::GetMapIndex(m_owner), x, y, z))
+    {
+        Unsummon();
+        return 0;
+    }
+    ItemSystem::SetItemSocket(item, 2, 1);
+    ItemSystem::LockItem(item);
+    SetSummonItem(item);
+    ecs::PointSystem::Compute(m_owner);
 #ifdef ENABLE_RECALL
-	const CAffect* pAffect = AffectSystem::FindAffect(owner, AFFECT_RECALL1);
-	if (pAffect) {
-		AffectSystem::RemoveAffect(owner, const_cast<CAffect*>(pAffect));
-	}
-
-	AffectSystem::AddAffect(owner, AFFECT_RECALL1, APPLY_NONE, 0, ItemSystem::GetItemID(pSummonItem), INFINITE_AFFECT_DURATION, 0, true, false);
+    AffectSystem::RemoveAffect(m_owner, AFFECT_RECALL1);
+    AffectSystem::AddAffect(m_owner, AFFECT_RECALL1, APPLY_NONE, 0,
+        ItemSystem::GetItemID(item), INFINITE_AFFECT_DURATION, 0, true, false);
 #endif
-#ifdef ENABLE_COSTUME_PET
-	uint32_t dwPetSkinvnum = m_pkOwner->GetPetSkinVnum();
-	m_dwVnum = dwPetSkinvnum != 0 ? dwPetSkinvnum : m_dwVnum;
-#endif
-	return m_dwVID;
+    return m_vid;
 }
 
-bool CPetActor::_UpdatAloneActionAI(float fMinDist, float fMaxDist)
+bool CPetActor::UpdateFollowAI()
 {
-	const entt::entity charEntity = m_pkChar ? m_pkChar->GetEntityHandle() : entt::null;
-	float fDist = number(fMinDist, fMaxDist);
-	float r = (float)number (0, 359);
-	float dest_x = ecs::PlayerRuntime::GetX(((GetOwner()) ? (GetOwner())->GetEntityHandle() : entt::null)) + fDist * cos(r);
-	float dest_y = ecs::PlayerRuntime::GetY(((GetOwner()) ? (GetOwner())->GetEntityHandle() : entt::null)) + fDist * sin(r);
-
-	//m_pkChar->SetRotation(number(0, 359));        // 방향은 랜덤으로 설정
-
-	//GetDeltaByDegree(m_pkChar->GetRotation(), fDist, &fx, &fy);
-
-	// 느슨한 못감 속성 체크; 최종 위치와 중간 위치가 갈수없다면 가지 않는다.
-	//if (!(SECTREE_MANAGER::instance().IsMovablePosition(ecs::PlayerRuntime::GetMapIndex(((m_pkChar) ? (m_pkChar)->GetEntityHandle() : entt::null)), ecs::PlayerRuntime::GetX(((m_pkChar) ? (m_pkChar)->GetEntityHandle() : entt::null)) + (int) fx, ecs::PlayerRuntime::GetY(((m_pkChar) ? (m_pkChar)->GetEntityHandle() : entt::null)) + (int) fy)
-	//			&& SECTREE_MANAGER::instance().IsMovablePosition(ecs::PlayerRuntime::GetMapIndex(((m_pkChar) ? (m_pkChar)->GetEntityHandle() : entt::null)), ecs::PlayerRuntime::GetX(((m_pkChar) ? (m_pkChar)->GetEntityHandle() : entt::null)) + (int) fx/2, ecs::PlayerRuntime::GetY(((m_pkChar) ? (m_pkChar)->GetEntityHandle() : entt::null)) + (int) fy/2)))
-	//	return true;
-
-	m_pkChar->SetNowWalking(true);
-
-	//if (ecs::MovementSystem::Goto(((m_pkChar) ? (m_pkChar)->GetEntityHandle() : entt::null), ecs::PlayerRuntime::GetX(((m_pkChar) ? (m_pkChar)->GetEntityHandle() : entt::null)) + (int) fx, ecs::PlayerRuntime::GetY(((m_pkChar) ? (m_pkChar)->GetEntityHandle() : entt::null)) + (int) fy))
-	//	m_pkChar->SendMovePacket(FUNC_WAIT, 0, 0, 0, 0);
-	const entt::entity petEntity = charEntity;
-	const bool isMoving = petEntity != entt::null
-		&& g_registry.valid(petEntity)
-		&& g_registry.all_of<ecs::MovementDestination>(petEntity);
-	if (!isMoving && ecs::MovementSystem::Goto(charEntity, dest_x, dest_y))
-	{
-		if (petEntity != entt::null && g_registry.valid(petEntity))
-			g_registry.emplace_or_replace<ecs::MovementDestination>(petEntity, static_cast<int32_t>(dest_x), static_cast<int32_t>(dest_y));
-		m_pkChar->SendMovePacket(FUNC_WAIT, 0, 0, 0, 0);
-	}
-
-	m_dwLastActionTime = get_dword_time();
-
-	return true;
+    if (!IsSummoned() || !ecs::PlayerRuntime::IsValid(m_owner)
+        || !ecs::PlayerRuntime::GetMobTable(m_character))
+        return false;
+    const auto ownerX = ecs::PlayerRuntime::GetX(m_owner);
+    const auto ownerY = ecs::PlayerRuntime::GetY(m_owner);
+    const auto charX = ecs::PlayerRuntime::GetX(m_character);
+    const auto charY = ecs::PlayerRuntime::GetY(m_character);
+    const float distance = DISTANCE_APPROX(charX - ownerX, charY - ownerY);
+    constexpr int approach = 200;
+    if (distance >= 4500.f || ecs::PlayerRuntime::GetMapIndex(m_character) != ecs::PlayerRuntime::GetMapIndex(m_owner))
+    {
+        const float rotation = ecs::PlayerRuntime::GetRotation(m_owner) * 3.141592f / 180.f;
+        return SnapFollowerToOwner(m_character, m_owner, ownerX - approach * cos(rotation),
+            ownerY - approach * sin(rotation), ecs::PlayerRuntime::GetZ(m_owner));
+    }
+    if (distance >= 300.f)
+    {
+        ecs::MovementSystem::SetNowWalking(m_character, distance < 900.f);
+        Follow(approach);
+        CombatSystem::SetLastAttacked(m_character, get_dword_time());
+    }
+    else
+        ecs::MovementSystem::SendMovePacket(m_character, FUNC_WAIT, 0, 0, 0, 0);
+    return true;
 }
 
-// StateHorse함수 그냥 C&P -_-;
-bool CPetActor::_UpdateFollowAI()
+bool CPetActor::Update(uint32_t)
 {
-	const entt::entity owner = m_pkOwner ? m_pkOwner->GetEntityHandle() : entt::null;
-	const entt::entity charEntity = m_pkChar ? m_pkChar->GetEntityHandle() : entt::null;
-	if (nullptr == m_pkChar->GetMobData())
-	{
-		// LOG_ERROR("[CPetActor::_UpdateFollowAI] m_pkChar->m_pkMobData is NULL");
-		return false;
-	}
-
-	// NOTE: 캐릭터(펫)의 원래 이동 속도를 알아야 하는데, 해당 값(m_pkChar->m_pkMobData->m_table.sMovingSpeed)을 직접적으로 접근해서 알아낼 수도 있지만
-	// m_pkChar->m_pkMobData 값이 invalid한 경우가 자주 발생함. 현재 시간관계상 원인은 다음에 파악하고 일단은 m_pkChar->m_pkMobData 값을 아예 사용하지 않도록 함.
-	// 여기서 매번 검사하는 이유는 최초 초기화 할 때 정상 값을 제대로 못얻어오는 경우도 있음.. -_-;; ㅠㅠㅠㅠㅠㅠㅠㅠㅠ
-	if (0 == m_originalMoveSpeed)
-	{
-		const CMob* mobData = CMobManager::Instance().Get(m_dwVnum);
-
-		if (nullptr != mobData)
-			m_originalMoveSpeed = mobData->m_table.sMovingSpeed;
-	}
-	float	START_FOLLOW_DISTANCE = 300.0f;		// 이 거리 이상 떨어지면 쫓아가기 시작함
-	float	START_RUN_DISTANCE = 900.0f;		// 이 거리 이상 떨어지면 뛰어서 쫓아감.
-
-	float	RESPAWN_DISTANCE = 4500.f;			// 이 거리 이상 멀어지면 주인 옆으로 소환함.
-	int		APPROACH = 200;						// 접근 거리
-
-	//bool bDoMoveAlone = true;					// 캐릭터와 가까이 있을 때 혼자 여기저기 움직일건지 여부 -_-;
-	bool bRun = false;							// 뛰어야 하나?
-
-	uint32_t currentTime = get_dword_time();
-
-	int32_t ownerX = ecs::PlayerRuntime::GetX(owner);		int32_t ownerY = ecs::PlayerRuntime::GetY(owner);
-	int32_t charX = ecs::PlayerRuntime::GetX(charEntity);			int32_t charY = ecs::PlayerRuntime::GetY(charEntity);
-
-	float fDist = DISTANCE_APPROX(charX - ownerX, charY - ownerY);
-
-	if (fDist >= RESPAWN_DISTANCE)
-	{
-		float fOwnerRot = m_pkOwner->GetRotation() * 3.141592f / 180.f;
-		float fx = -APPROACH * cos(fOwnerRot);
-		float fy = -APPROACH * sin(fOwnerRot);
-		if (SnapFollowerToOwner(m_pkChar, m_pkOwner, ownerX + fx, ownerY + fy, m_pkOwner->GetZ()))
-		{
-			return true;
-		}
-	}
-
-
-	if (fDist >= START_FOLLOW_DISTANCE)
-	{
-		if( fDist >= START_RUN_DISTANCE)
-		{
-			bRun = true;
-		}
-
-		m_pkChar->SetNowWalking(!bRun);		// NOTE: 함수 이름보고 멈추는건줄 알았는데 SetNowWalking(false) 하면 뛰는거임.. -_-;
-
-		Follow(APPROACH);
-
-		m_pkChar->SetLastAttacked(currentTime);
-		m_dwLastActionTime = currentTime;
-	}
-	//else
-	//{
-	//	if (fabs(m_pkChar->GetRotation() - GetDegreeFromPositionXY(charX, charY, ownerX, ownerX)) > 10.f || fabs(m_pkChar->GetRotation() - GetDegreeFromPositionXY(charX, charY, ownerX, ownerX)) < 350.f)
-	//	{
-	//		m_pkChar->Follow(m_pkOwner, APPROACH);
-	//		m_pkChar->SetLastAttacked(currentTime);
-	//		m_dwLastActionTime = currentTime;
-	//	}
-	//}
-	// Follow 중이지만 주인과 일정 거리 이내로 가까워졌다면 멈춤
-	else
-		m_pkChar->SendMovePacket(FUNC_WAIT, 0, 0, 0, 0);
-	//else if (currentTime - m_dwLastActionTime > number(5000, 12000))
-	//{
-	//	this->_UpdatAloneActionAI(START_FOLLOW_DISTANCE / 2, START_FOLLOW_DISTANCE);
-	//}
-
-	return true;
+    // Preserve pets across owner death; only follower death ends the summon.
+    if (!IsOwnedSummonItem(m_owner, m_summonItem) || !IsSummoned() || CombatSystem::IsDead(m_character))
+    {
+        Unsummon();
+        return true;
+    }
+    return !HasOption(EPetOption_Followable) || UpdateFollowAI();
 }
 
-bool CPetActor::Update(uint32_t deltaTime)
+bool CPetActor::Follow(float minDistance)
 {
-	bool bResult = true;
-
-	// 펫 주인이 죽었거나, 소환된 펫의 상태가 이상하다면 펫을 없앰. (NOTE: 가끔가다 이런 저런 이유로 소환된 펫이 DEAD 상태에 빠지는 경우가 있음-_-;)
-	// 펫을 소환한 아이템이 없거나, 내가 가진 상태가 아니라면 펫을 없앰.
-	//if (CombatSystem::IsDead(((m_pkOwner) ? (m_pkOwner)->GetEntityHandle() : entt::null)) || (IsSummoned() && CombatSystem::IsDead(((m_pkChar) ? (m_pkChar)->GetEntityHandle() : entt::null)))
-	if ((IsSummoned() && CombatSystem::IsDead(((m_pkChar) ? (m_pkChar)->GetEntityHandle() : entt::null)))
-		|| !IsSummonItemOwnedBy(this->GetSummonItemVID(), this->GetOwner())
-		)
-	{
-		this->Unsummon();
-		return true;
-	}
-
-	if (this->IsSummoned() && HasOption(EPetOption_Followable))
-		bResult = bResult && this->_UpdateFollowAI();
-
-	return bResult;
+    if (!ecs::PlayerRuntime::IsValid(m_owner) || !IsSummoned())
+        return false;
+    const auto ownerX = ecs::PlayerRuntime::GetX(m_owner);
+    const auto ownerY = ecs::PlayerRuntime::GetY(m_owner);
+    const auto charX = ecs::PlayerRuntime::GetX(m_character);
+    const auto charY = ecs::PlayerRuntime::GetY(m_character);
+    const float distance = DISTANCE_SQRT(ownerX - charX, ownerY - charY);
+    if (distance <= minDistance)
+        return false;
+    ecs::MovementSystem::SetRotation(m_character, GetDegreeFromPositionXY(charX, charY, ownerX, ownerY));
+    float dx, dy;
+    GetDeltaByDegree(ecs::PlayerRuntime::GetRotation(m_character), distance - minDistance, &dx, &dy);
+    if (!ecs::MovementSystem::Goto(m_character, static_cast<int>(charX + dx + 0.5f), static_cast<int>(charY + dy + 0.5f)))
+        return false;
+    ecs::MovementSystem::SendMovePacket(m_character, FUNC_WAIT, 0, 0, 0, 0);
+    return true;
 }
 
-//NOTE : 주의!!! MinDistance를 크게 잡으면 그 변위만큼의 변화동안은 follow하지 않는다,
-bool CPetActor::Follow(float fMinDistance)
+void CPetActor::SetSummonItem(entt::entity item)
 {
-	const entt::entity owner = m_pkOwner ? m_pkOwner->GetEntityHandle() : entt::null;
-	const entt::entity charEntity = m_pkChar ? m_pkChar->GetEntityHandle() : entt::null;
-	// 가려는 위치를 바라봐야 한다.
-	if( !m_pkOwner || !m_pkChar)
-		return false;
-
-	float fOwnerX = ecs::PlayerRuntime::GetX(owner);
-	float fOwnerY = ecs::PlayerRuntime::GetY(owner);
-
-	float fPetX = ecs::PlayerRuntime::GetX(charEntity);
-	float fPetY = ecs::PlayerRuntime::GetY(charEntity);
-
-	float fDist = DISTANCE_SQRT(fOwnerX - fPetX, fOwnerY - fPetY);
-	if (fDist <= fMinDistance)
-		return false;
-
-	m_pkChar->SetRotationToXY(fOwnerX, fOwnerY);
-
-	float fx, fy;
-
-	float fDistToGo = fDist - fMinDistance;
-	GetDeltaByDegree(m_pkChar->GetRotation(), fDistToGo, &fx, &fy);
-
-	if (!ecs::MovementSystem::Goto(charEntity, (int)(fPetX+fx+0.5f), (int)(fPetY+fy+0.5f)) )
-		return false;
-
-	m_pkChar->SendMovePacket(FUNC_WAIT, 0, 0, 0, 0, 0);
-
-	return true;
+    if (!IsOwnedSummonItem(m_owner, item))
+    {
+        if (ecs::PlayerRuntime::IsValid(m_owner))
+            if (auto* state = g_registry.try_get<ecs::PetComponent>(m_owner);
+                state && m_summonItem != entt::null && state->item == m_summonItem)
+                *state = {};
+        m_summonItem = entt::null;
+        return;
+    }
+    m_summonItem = item;
+    auto& state = g_registry.get_or_emplace<ecs::PetComponent>(m_owner);
+    state.owner = m_owner;
+    state.item = item;
+    state.itemID = ItemSystem::GetItemID(item);
+    state.itemVID = ItemSystem::GetItemVID(item);
+    state.itemVnum = ItemSystem::GetItemVnum(item);
+    state.level = 0;
+    state.state = IsSummoned() ? 1u : 0u;
+    for (int i = 0; i < ITEM_SOCKET_MAX_NUM; ++i)
+        state.sockets[i] = static_cast<int32_t>(ItemSystem::GetItemSocket(item, i));
 }
 
-void CPetActor::SetSummonItem (entt::entity pItemEntity)
+bool CPetActor::CanGiveBuff() const
 {
-	const entt::entity pItem = pItemEntity;
-	if (!ItemSystem::IsValidItem(pItem))
-	{
-		m_dwSummonItemVID = 0;
-		m_dwSummonItemVnum = 0;
-		return;
-	}
-
-	m_dwSummonItemVID = ItemSystem::GetItemVID(pItem);
-	m_dwSummonItemVnum = ItemSystem::GetItemVnum(pItem);
-
-	const entt::entity owner = ((m_pkOwner) ? (m_pkOwner)->GetEntityHandle() : entt::null);
-	if (owner != entt::null && g_registry.valid(owner)) {
-		auto& pet = g_registry.emplace_or_replace<ecs::PetComponent>(owner);
-		pet.owner = owner;
-		pet.itemID = ItemSystem::GetItemID(pItem);
-		pet.itemVID = ItemSystem::GetItemVID(pItem);
-		pet.itemVnum = ItemSystem::GetItemVnum(pItem);
-		pet.level = 0;
-		pet.state = IsSummoned() ? 1u : 0u;
-		for (int i = 0; i < ITEM_SOCKET_MAX_NUM; ++i)
-			pet.sockets[i] = static_cast<int32_t>(ItemSystem::GetItemSocket(pItem, i));
-	}
-}
-
-bool __PetCheckBuff(const CPetActor* pPetActor)
-{
-	bool bMustHaveBuff = true;
-	switch (pPetActor->GetVnum())
-	{
-		case 34004:
-		case 34009:
-			if (nullptr == pPetActor->GetOwner()->GetDungeon())
-				bMustHaveBuff = false;
-		default:
-			break;
-	}
-	return bMustHaveBuff;
+    return IsSummoned() && IsOwnedSummonItem(m_owner, m_summonItem)
+        && ((m_vnum != 34004 && m_vnum != 34009) || ecs::SocialSystem::GetDungeon(m_owner));
 }
 
 void CPetActor::GiveBuff()
 {
-	// 파황 펫 버프는 던전에서만 발생함.
-	if (!__PetCheckBuff(this))
-		return;
-	const entt::entity item = FindSummonItemByVID(m_dwSummonItemVID);
-	if (ItemSystem::IsValidItem(item))
-		ItemSystem::ModifyPoints(item, true);
-	return ;
+    // Called by ComputePoints AFTER the owner's point array has been reset.
+    m_buffApplies = {};
+    if (!CanGiveBuff())
+        return;
+    const auto* proto = ItemSystem::GetItemProto(m_summonItem);
+    if (!proto)
+        return;
+    for (const auto& apply : proto->aApplies)
+        if (apply.bType >= MAX_APPLY_NUM || apply.lValue == std::numeric_limits<int>::min())
+            return;
+    std::copy(std::begin(proto->aApplies), std::end(proto->aApplies), m_buffApplies.begin());
+    ItemSystem::ModifyPoints(m_summonItem, true);
 }
 
 void CPetActor::ClearBuff()
 {
-	if (nullptr == m_pkOwner)
-		return ;
-	TItemTable* item_proto = ITEM_MANAGER::instance().GetTable(m_dwSummonItemVnum);
-	if (nullptr == item_proto)
-		return;
-	if (!__PetCheckBuff(this)) // @fixme129
-		return;
-	for (int i = 0; i < ITEM_APPLY_MAX_NUM; i++)
-	{
-		if (item_proto->aApplies[i].bType == APPLY_NONE)
-			continue;
-		ecs::PointSystem::ApplyPoint(m_pkOwner->GetEntityHandle(), item_proto->aApplies[i].bType, -item_proto->aApplies[i].lValue);
-	}
-
-	return ;
+    const auto applies = std::exchange(m_buffApplies, {});
+    if (!ecs::PlayerRuntime::IsValid(m_owner))
+        return;
+    // Remove prototype contributions before ComputePoints for speed-point
+    // notifications. The recomputation rebuilds item attributes as well.
+    for (const auto& apply : applies)
+        if (apply.bType != APPLY_NONE)
+            ecs::PointSystem::ApplyPoint(m_owner, apply.bType,
+                apply.bType == APPLY_SKILL ? apply.lValue ^ 0x00800000 : -apply.lValue);
 }
 
-///////////////////////////////////////////////////////////////////////////////////////
-//  CPetSystem
-///////////////////////////////////////////////////////////////////////////////////////
-
-CPetSystem::CPetSystem(LPCHARACTER owner)
+CPetSystem::CPetSystem(entt::entity owner) : m_owner(owner)
 {
-//	assert(0 != owner && "[CPetSystem::CPetSystem] Invalid owner");
-
-	m_pkOwner = owner;
-	m_dwUpdatePeriod = 400;
-
-	m_dwLastUpdateTime = 0;
+    if (ecs::PlayerRuntime::IsValid(owner))
+        g_registry.get_or_emplace<ecs::PetRuntimeRefs>(owner).petSystem = this;
 }
 
 CPetSystem::~CPetSystem()
 {
-	Destroy();
+    Destroy();
 }
 
 void CPetSystem::Destroy()
 {
-	for (auto iter = m_petActorMap.begin(); iter != m_petActorMap.end(); ++iter)
-	{
-		CPetActor* petActor = iter->second;
-
-		if (nullptr != petActor)
-		{
-			delete petActor;
-		}
-	}
-	event_cancel(&m_pkPetSystemUpdateEvent);
-	m_petActorMap.clear();
+    if (m_destroying)
+        return;
+    m_destroying = true;
+    event_cancel(&m_updateEvent);
+    // Extract BEFORE destruction: ComputePoints -> RefreshBuff must see only
+    // living actors, never the one whose destructor is currently running.
+    while (!m_petActorMap.empty())
+    {
+        auto detached = m_petActorMap.extract(m_petActorMap.begin());
+    }
+    if (ecs::PlayerRuntime::IsValid(m_owner))
+        if (auto* refs = g_registry.try_get<ecs::PetRuntimeRefs>(m_owner); refs && refs->petSystem == this)
+            refs->petSystem = nullptr;
+    m_destroying = false;
 }
 
-/// 펫 시스템 업데이트. 등록된 펫들의 AI 처리 등을 함.
 bool CPetSystem::Update(uint32_t deltaTime)
 {
-	bool bResult = true;
-
-	uint32_t currentTime = get_dword_time();
-
-	// CHARACTER_MANAGER에서 캐릭터류 Update할 때 매개변수로 주는 (Pulse라고 되어있는)값이 이전 프레임과의 시간차이인줄 알았는데
-	// 전혀 다른 값이라서-_-; 여기에 입력으로 들어오는 deltaTime은 의미가 없음ㅠㅠ
-
-	if (m_dwUpdatePeriod > currentTime - m_dwLastUpdateTime)
-		return true;
-
-	std::vector <CPetActor*> v_garbageActor;
-
-	for (auto iter = m_petActorMap.begin(); iter != m_petActorMap.end(); ++iter)
-	{
-		CPetActor* petActor = iter->second;
-
-		if (nullptr != petActor && petActor->IsSummoned())
-		{
-			LPCHARACTER pPet = petActor->GetCharacter();
-
-			if (nullptr == CHARACTER_MANAGER::instance().Find(pPet->GetLegacyVID()))
-			{
-				v_garbageActor.push_back(petActor);
-			}
-			else
-			{
-				bResult = bResult && petActor->Update(deltaTime);
-			}
-		}
-	}
-	for (auto it = v_garbageActor.begin(); it != v_garbageActor.end(); ++it)
-		DeletePet(*it);
-
-	m_dwLastUpdateTime = currentTime;
-
-	return bResult;
+    const uint32_t now = get_dword_time();
+    if (m_updatePeriod > now - m_lastUpdateTime)
+        return true;
+    bool result = true;
+    for (auto& [vnum, actor] : m_petActorMap)
+        if (actor->GetCharacter() != entt::null || actor->GetSummonItem() != entt::null)
+            result = actor->Update(deltaTime) && result;
+    m_lastUpdateTime = now;
+    if (CountSummoned() == 0)
+        event_cancel(&m_updateEvent);
+    return result;
 }
 
-/// 관리 목록에서 펫을 지움
-void CPetSystem::DeletePet(uint32_t mobVnum)
+void CPetSystem::DeletePet(uint32_t vnum)
 {
-	const auto iter = m_petActorMap.find(mobVnum);
-
-	if (m_petActorMap.end() == iter)
-	{
-		LOG_ERROR("[CPetSystem::DeletePet] Can't find pet on my list (VNUM: {})", mobVnum);
-		return;
-	}
-
-	CPetActor* petActor = iter->second;
-
-	if (nullptr == petActor)
-		LOG_ERROR("[CPetSystem::DeletePet] Null Pointer (petActor)");
-	else
-		delete petActor;
-
-	m_petActorMap.erase(iter);
+    auto detached = m_petActorMap.extract(vnum);
+    if (!detached.empty())
+        detached.mapped().reset();
+    if (CountSummoned() == 0)
+        event_cancel(&m_updateEvent);
 }
 
-/// 관리 목록에서 펫을 지움
-void CPetSystem::DeletePet(CPetActor* petActor)
+void CPetSystem::DeletePet(CPetActor* actor)
 {
-	for (auto iter = m_petActorMap.begin(); iter != m_petActorMap.end(); ++iter)
-	{
-		if (iter->second == petActor)
-		{
-			delete petActor;
-			m_petActorMap.erase(iter);
-
-			return;
-		}
-	}
-
-	LOG_ERROR("[CPetSystem::DeletePet] Can't find petActor({}) on my list(size: {}) ", static_cast<const void*>(petActor), m_petActorMap.size());
+    for (const auto& [vnum, owned] : m_petActorMap)
+        if (owned.get() == actor)
+        {
+            DeletePet(vnum);
+            return;
+        }
 }
 
-void CPetSystem::Unsummon(uint32_t vnum, bool bDeleteFromList)
+void CPetSystem::Unsummon(uint32_t vnum, bool deleteFromList)
 {
-	CPetActor* actor = this->GetByVnum(vnum);
+    if (deleteFromList)
+        DeletePet(vnum);
+    else if (auto* actor = GetByVnum(vnum))
+        actor->Unsummon();
+    if (CountSummoned() == 0)
+        event_cancel(&m_updateEvent);
+}
 
-	if (nullptr == actor)
-	{
-		LOG_ERROR("[CPetSystem::GetByVnum({})] Null Pointer (petActor)", vnum);
-		return;
-	}
-	actor->Unsummon();
-
-	if (true == bDeleteFromList)
-		this->DeletePet(actor);
-
-	bool bActive = false;
-	for (auto it = m_petActorMap.begin(); it != m_petActorMap.end(); ++it)
-	{
-		bActive |= it->second->IsSummoned();
-	}
-	if (false == bActive)
-	{
-		event_cancel(&m_pkPetSystemUpdateEvent);
-		m_pkPetSystemUpdateEvent = nullptr;
-	}
+void CPetSystem::Unsummon(CPetActor* actor, bool deleteFromList)
+{
+    for (const auto& [vnum, owned] : m_petActorMap)
+        if (owned.get() == actor)
+        {
+            Unsummon(vnum, deleteFromList);
+            return;
+        }
 }
 
 void CPetSystem::UnsummonAll()
 {
-	for (auto iter = m_petActorMap.begin(); iter != m_petActorMap.end(); ++iter)
-	{
-		CPetActor* petActor = iter->second;
-		if (petActor != nullptr)
-		{
-			if (petActor->IsSummoned()) {
-				petActor->Unsummon();
-				break;
-			}
-		}
-	}
-
-	if (m_pkPetSystemUpdateEvent) {
-		event_cancel(&m_pkPetSystemUpdateEvent);
-		m_pkPetSystemUpdateEvent = nullptr;
-	}
+    event_cancel(&m_updateEvent);
+    for (auto& [vnum, actor] : m_petActorMap)
+        actor->Unsummon();
 }
 
-CPetActor* CPetSystem::Summon(uint32_t mobVnum, entt::entity pSummonItem, const char* petName, bool bSpawnFar, uint32_t options)
+CPetActor* CPetSystem::Summon(uint32_t vnum, entt::entity item, const char* petName, bool spawnFar, uint32_t options)
 {
-	CPetActor* petActor = this->GetByVnum(mobVnum);
-
-	// 등록된 펫이 아니라면 새로 생성 후 관리 목록에 등록함.
-	if (nullptr == petActor)
-	{
-		petActor = M2_NEW CPetActor(m_pkOwner, mobVnum, options);
-		m_petActorMap.insert(std::make_pair(mobVnum, petActor));
-	}
-
-#ifdef ENABLE_NEWSTUFF
-	uint32_t petVID = petActor->Summon(petName, pSummonItem, bSpawnFar);
-	if (!petVID)
-		LOG_ERROR("[CPetSystem::Summon({})] Null Pointer (petVID)", entt::to_integral(pSummonItem));
-#endif
-
-	if (nullptr == m_pkPetSystemUpdateEvent)
-	{
-		petsystem_event_info* info = AllocEventInfo<petsystem_event_info>();
-
-		info->pPetSystem = this;
-
-		m_pkPetSystemUpdateEvent = event_create(petsystem_update_event, info, PASSES_PER_SEC(1) / 4);	// 0.25초
-	}
-
-	return petActor;
+    if (m_destroying || !IsOwnedSummonItem(m_owner, item))
+        return nullptr;
+    for (const auto& [key, owned] : m_petActorMap)
+        if (key != vnum && owned->GetSummonItem() == item)
+            return nullptr;
+    g_registry.get_or_emplace<ecs::PetRuntimeRefs>(m_owner).petSystem = this;
+    auto* actor = GetByVnum(vnum);
+    if (!actor)
+    {
+        auto fresh = std::make_unique<CPetActor>(m_owner, vnum, options);
+        actor = fresh.get();
+        m_petActorMap.emplace(vnum, std::move(fresh));
+    }
+    if (!actor->Summon(petName, item, spawnFar))
+        return nullptr;
+    if (!m_updateEvent)
+    {
+        auto* info = AllocEventInfo<petsystem_event_info>();
+        info->owner = m_owner;
+        m_updateEvent = event_create(petsystem_update_event, info, PASSES_PER_SEC(1) / 4);
+    }
+    return actor;
 }
-
 
 CPetActor* CPetSystem::GetByVID(uint32_t vid) const
 {
-	CPetActor* petActor = nullptr;
-
-	bool bFound = false;
-
-	for (auto iter = m_petActorMap.begin(); iter != m_petActorMap.end(); ++iter)
-	{
-		petActor = iter->second;
-
-		if (nullptr == petActor)
-		{
-			LOG_ERROR("[CPetSystem::GetByVID({})] Null Pointer (petActor)", vid);
-			continue;
-		}
-
-		bFound = petActor->GetVID() == vid;
-
-		if (true == bFound)
-			break;
-	}
-
-	return bFound ? petActor : nullptr;
+    if (vid != 0)
+        for (const auto& [vnum, actor] : m_petActorMap)
+            if (actor->IsSummoned() && actor->GetVID() == vid)
+                return actor.get();
+    return nullptr;
 }
 
-/// 등록 된 펫 중에서 주어진 몹 VNUM을 가진 액터를 반환하는 함수.
 CPetActor* CPetSystem::GetByVnum(uint32_t vnum) const
 {
-	CPetActor* petActor = nullptr;
-
-	auto iter = m_petActorMap.find(vnum);
-
-	if (m_petActorMap.end() != iter)
-		petActor = iter->second;
-
-	return petActor;
+    const auto it = m_petActorMap.find(vnum);
+    return it != m_petActorMap.end() ? it->second.get() : nullptr;
 }
 
 size_t CPetSystem::CountSummoned() const
 {
-	size_t count = 0;
+    return std::count_if(m_petActorMap.begin(), m_petActorMap.end(),
+        [](const auto& entry) { return entry.second->IsSummoned(); });
+}
 
-	for (TPetActorMap::const_iterator iter = m_petActorMap.begin(); iter != m_petActorMap.end(); ++iter)
-	{
-		CPetActor* petActor = iter->second;
-
-		if (nullptr != petActor)
-		{
-			if (petActor->IsSummoned())
-				++count;
-		}
-	}
-
-	return count;
+void CPetSystem::SetUpdatePeriod(uint32_t ms)
+{
+    m_updatePeriod = ms;
 }
 
 void CPetSystem::RefreshBuff()
 {
-	for (TPetActorMap::const_iterator iter = m_petActorMap.begin(); iter != m_petActorMap.end(); ++iter)
-	{
-		CPetActor* petActor = iter->second;
-
-		if (nullptr != petActor)
-		{
-			if (petActor->IsSummoned())
-			{
-				petActor->GiveBuff();
-			}
-		}
-	}
+    for (auto& [vnum, actor] : m_petActorMap)
+        if (actor->IsSummoned())
+            actor->GiveBuff();
 }
+
+#ifdef ENABLE_COSTUME_PET
+void CPetActor::UpdatePetSkin()
+{
+    const auto item = m_summonItem;
+    if (IsOwnedSummonItem(m_owner, item))
+    {
+        Unsummon();
+        Summon("", item, false);
+    }
+}
+
+void CPetSystem::UpdatePetSkin()
+{
+    for (auto& [vnum, actor] : m_petActorMap)
+        if (actor->IsSummoned())
+            actor->UpdatePetSkin();
+    if (CountSummoned() == 0)
+        event_cancel(&m_updateEvent);
+}
+#endif
 

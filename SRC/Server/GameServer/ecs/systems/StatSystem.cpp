@@ -554,7 +554,7 @@ void CHARACTER::ComputePoints()
 
 	RefreshAffect();
 
-	CPetSystem* pPetSystem = GetPetSystem();
+	CPetSystem* pPetSystem = ecs::PlayerRuntime::GetPetSystem(GetEntityHandle());
 	if (nullptr != pPetSystem) {
 		pPetSystem->RefreshBuff();
 	}

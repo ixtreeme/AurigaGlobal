@@ -26,6 +26,8 @@ bool Move(entt::entity e, int32_t x, int32_t y);
 void OnMove(entt::entity e, bool isAttack = false);
 bool Goto(entt::entity e, int32_t x, int32_t y);
 void Stop(entt::entity e);
+// Changes walking state/timestamp and broadcasts the walk/run mode.
+void SetNowWalking(entt::entity e, bool walking);
 
 // ECS movement-state write helpers. After Phase 15E-final.LPENTITY.4-architect
 // C.2/C.3 these are the *sole* writers for movement destination and timing

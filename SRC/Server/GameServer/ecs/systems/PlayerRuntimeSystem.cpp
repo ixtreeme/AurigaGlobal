@@ -2063,16 +2063,17 @@ uint32_t CHARACTER::GetImmuneFlag() const
     return 0;
 }
 
-// The pet / mount creature markers. These write both stores at one point so
-// they cannot drift: the legacy bit that EncodeInsertPacket reads, and the
-// StatusFlags bit the native character-insert builder reads. Before this they
-// had no ECS writer at all, so the native builder's pet and mount detection
-// was dead while legacy's worked.
+// Pet/mount markers live only in StatusFlags; legacy readers use the same store.
 void CHARACTER::SetPet()
 {
-    m_bIsPet = true;
     if (auto* status = g_registry.try_get<ecs::StatusFlags>(GetEntityHandle()))
         status->isPet = true;
+}
+
+bool CHARACTER::IsPet() const
+{
+    const auto* status = g_registry.try_get<ecs::StatusFlags>(GetEntityHandle());
+    return status && status->isPet;
 }
 
 bool CHARACTER::IsMount() const
@@ -4326,7 +4327,6 @@ void CHARACTER::Destroy()
 #ifdef __PET_SYSTEM__
     if (m_petSystem)
     {
-        m_petSystem->Destroy();
         delete m_petSystem;
 
         m_petSystem = nullptr;
@@ -4817,13 +4817,10 @@ void CHARACTER::SetPlayerProto(const TPlayerTable* t)
 #ifdef __PET_SYSTEM__
     if (m_petSystem)
     {
-        m_petSystem->Destroy();
         delete m_petSystem;
     }
 
-    m_petSystem = M2_NEW CPetSystem(this);
-	if (GetEntityHandle() != entt::null && g_registry.valid(GetEntityHandle()))
-		g_registry.get_or_emplace<ecs::PetRuntimeRefs>(GetEntityHandle()).petSystem = m_petSystem;
+    m_petSystem = M2_NEW CPetSystem(GetEntityHandle());
 #endif
 
 #ifdef ENABLE_MOUNT_COSTUME_SYSTEM
@@ -6019,7 +6016,6 @@ void CHARACTER::Initialize()
 
 #ifdef __PET_SYSTEM__
     m_petSystem = nullptr;
-    m_bIsPet = false;
 #endif
 
 #ifdef __NEWPET_SYSTEM__

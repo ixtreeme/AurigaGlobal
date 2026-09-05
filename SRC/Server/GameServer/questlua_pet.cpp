@@ -30,8 +30,6 @@ namespace quest
 	// syntax in LUA: pet.summon(mob_vnum, pet's name, (bool)run to me from far away)
 	ALUA(pet_summon)
 	{
-		// migrated from CHARACTER CPetSystem
-		// DUAL-PATH: legacy only during migration window
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
 		CPetSystem* petSystem = ecs::PlayerRuntime::GetPetSystem(chEntity);
 		const entt::entity item = CQuestManager::instance().GetCurrentItemEntity();
@@ -75,8 +73,6 @@ namespace quest
 	// syntax: pet.unsummon(mob_vnum)
 	ALUA(pet_unsummon)
 	{
-		// migrated from CHARACTER CPetSystem
-		// DUAL-PATH: legacy only during migration window
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
 		CPetSystem* petSystem = ecs::PlayerRuntime::GetPetSystem(chEntity);
 
@@ -99,8 +95,6 @@ namespace quest
 	// syntax: pet.unsummon(mob_vnum)
 	ALUA(pet_count_summoned)
 	{
-		// migrated from CHARACTER CPetSystem
-		// DUAL-PATH: legacy only during migration window
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
 		CPetSystem* petSystem = ecs::PlayerRuntime::GetPetSystem(chEntity);
 
@@ -117,8 +111,6 @@ namespace quest
 	// syntax: pet.is_summon(mob_vnum)
 	ALUA(pet_is_summon)
 	{
-		// migrated from CHARACTER CPetSystem
-		// DUAL-PATH: legacy only during migration window
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
 		CPetSystem* petSystem = ecs::PlayerRuntime::GetPetSystem(chEntity);
 
@@ -140,8 +132,6 @@ namespace quest
 
 	ALUA(pet_spawn_effect)
 	{
-		// migrated from CHARACTER CPetSystem
-		// DUAL-PATH: legacy only during migration window
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
 		CPetSystem* petSystem = ecs::PlayerRuntime::GetPetSystem(chEntity);
 
@@ -153,8 +143,8 @@ namespace quest
 		CPetActor* petActor = petSystem->GetByVnum(mobVnum);
 		if (nullptr == petActor)
 			return 0;
-		const entt::entity pet = petActor->GetCharacterEntity();
-		if (pet == entt::null)
+		const entt::entity pet = petActor->GetCharacter();
+		if (!ecs::PlayerRuntime::IsValid(pet))
 			return 0;
 
 		if (lua_isstring(L, 2))

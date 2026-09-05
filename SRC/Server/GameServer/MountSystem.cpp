@@ -256,7 +256,7 @@ bool CMountActor::UpdateFollowAI()
     }
     if (distance >= 300.f)
     {
-        ecs::MovementSystem::SyncWalkingWrite(m_character, false);
+        ecs::MovementSystem::SetNowWalking(m_character, false);
         Follow(approach);
         m_dwLastActionTime = get_dword_time();
         CombatSystem::SetLastAttacked(m_character, m_dwLastActionTime);
