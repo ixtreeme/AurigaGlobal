@@ -196,6 +196,13 @@ bool IsPolymorphed(entt::entity) { return false; }
 void RefreshAffect(entt::entity e) { if (onAffect) onAffect(e); }
 }
 namespace CombatSystem {
+uint8_t GetAlignmentGrade(entt::entity e) {
+    const auto alignment = g_registry.get<ecs::CombatStats>(e).realAlignment;
+    if (alignment == 0) return 0;
+    if (alignment == 50000) return 1;
+    if (alignment == 50000000) return 20;
+    Unexpected(); // Tier boundaries are tested against the real CombatSystem separately.
+}
 bool IsDead(entt::entity) { return false; }
 bool IsStun(entt::entity) { return false; }
 void BroadcastTargetPacket(entt::entity e) { Check(g_registry.valid(e), "stale target packet"); }

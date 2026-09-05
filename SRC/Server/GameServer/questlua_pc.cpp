@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include <cmath>
 #include <Core/Logging.hpp>
 #include "ecs/systems/PlayerRuntimeSystem.hpp"
 #include "ecs/systems/CombatSystem.hpp"
@@ -1224,7 +1225,11 @@ namespace quest
 
     ALUA(pc_change_alignment)
     {
-        const int32_t alignment = static_cast<int32_t>(lua_tonumber(L, 1) * 10);
+        if (!lua_isnumber(L, 1)) return 0;
+        const double delta = lua_tonumber(L, 1) * 10.0;
+        if (!std::isfinite(delta)) return 0;
+        const int64_t alignment = static_cast<int64_t>(std::clamp(delta,
+            -static_cast<double>(CombatSystem::MAX_ALIGNMENT), static_cast<double>(CombatSystem::MAX_ALIGNMENT)));
         CombatSystem::UpdateAlignment(CQuestManager::instance().GetPCEntity(L), alignment);
         return 0;
     }

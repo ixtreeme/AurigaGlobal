@@ -11,6 +11,7 @@
 #include "MountSystem.hpp"
 
 #include <algorithm>
+#include <cmath>
 #include <boost/algorithm/string/find.hpp>
 #include <random>
 #include <thread>
@@ -363,86 +364,103 @@ void DistributeSP(entt::entity victim, entt::entity killer, int iMethod)
 
 uint32_t GetAlignment(entt::entity e)
 {
-    if (auto* ch = LegacyCharOf(e)) {
-        return ch->GetAlignment();
-    }
-
-    return 0;
+    if (!ecs::Invariants::HasAnyTypeTag(g_registry, e)) return 0;
+    const auto* state = g_registry.try_get<ecs::CombatStats>(e);
+    return state ? state->alignment : 0;
 }
 
 uint32_t GetRealAlignment(entt::entity e)
 {
-    if (auto* ch = LegacyCharOf(e)) {
-        return ch->GetRealAlignment();
-    }
-
-    return 0;
+    if (!ecs::Invariants::HasAnyTypeTag(g_registry, e)) return 0;
+    const auto* state = g_registry.try_get<ecs::CombatStats>(e);
+    return state ? state->realAlignment : 0;
 }
 
 uint8_t GetAlignmentGrade(entt::entity e)
 {
-    if (auto* ch = LegacyCharOf(e)) {
-        return ch->GetAlignmentGrade();
-    }
-
-    return 0;
+    const uint32_t alignment = GetRealAlignment(e) / 10;
+    static constexpr uint32_t ceilings[] {
+        4999,14999,19999,29999,49999,74999,99999,124999,174999,249999,
+        499999,749999,999999,1499999,2499999,2999999,3499999,3999999,4499999,4999999
+    };
+    return static_cast<uint8_t>(std::lower_bound(std::begin(ceilings), std::end(ceilings), alignment) - std::begin(ceilings));
 }
 
-void UpdateAlignment(entt::entity e, uint32_t amount)
+void UpdateAlignment(entt::entity e, int64_t amount)
 {
-    if (auto* ch = LegacyCharOf(e)) {
-        ch->UpdateAlignment(amount);
+    if (!ecs::Invariants::HasAnyTypeTag(g_registry, e)) return;
+    const auto oldGrade = GetAlignmentGrade(e);
+    const auto oldVisibleAlignment = GetAlignment(e) / 10;
+    uint64_t revision;
+    {
+        auto& state = g_registry.get_or_emplace<ecs::CombatStats>(e);
+        // Clamp the delta before adding: signed reductions and INT64_MIN/MAX
+        // must neither wrap to the maximum rank nor overflow the accumulator.
+        const int64_t current = std::min(state.realAlignment, MAX_ALIGNMENT);
+        const auto next = static_cast<uint32_t>(std::clamp<int64_t>(
+            current + std::clamp<int64_t>(amount, -static_cast<int64_t>(MAX_ALIGNMENT), MAX_ALIGNMENT),
+            0, MAX_ALIGNMENT));
+        if (state.alignment == next && state.realAlignment == next) return;
+        state.alignment = state.realAlignment = next;
+        revision = ++state.alignmentRevision;
     }
+    g_registry.emplace_or_replace<ecs::DirtyTag>(e);
+    if (oldGrade != GetAlignmentGrade(e)) ecs::PointSystem::Compute(e);
+    // Compute can destroy the owner or perform a newer alignment update.
+    // Never publish an obsolete outer operation (including an ABA update).
+    if (!ecs::Invariants::HasAnyTypeTag(g_registry, e)) return;
+    const auto* state = g_registry.try_get<ecs::CombatStats>(e);
+    if (!state || state->alignmentRevision != revision) return;
+    if (oldVisibleAlignment != state->alignment / 10)
+        NetworkSyncSystem::BroadcastCharAdditionalInfo(g_registry, e);
 }
 
 void SetKillerMode(entt::entity e, bool isOn)
 {
-    if (auto* ch = LegacyCharOf(e)) {
-        ch->SetKillerMode(isOn);
-    }
+    if (!ecs::Invariants::HasAnyTypeTag(g_registry, e) || IsKillerMode(e) == isOn) return;
+    g_registry.get_or_emplace<ecs::StatusFlags>(e).isKillerMode = isOn;
+    g_registry.get_or_emplace<ecs::CombatStats>(e).killerModePulse = static_cast<uint32_t>(thecore_pulse());
+    g_registry.emplace_or_replace<ecs::DirtyTag>(e);
+    LOG_INFO("SetKillerMode Update {}[{}]", ecs::PlayerRuntime::GetName(e).data(), ecs::PlayerRuntime::GetPlayerID(e));
+    NetworkSyncSystem::UpdatePacket(e);
 }
 
 bool IsKillerMode(entt::entity e)
 {
-    if (auto* ch = LegacyCharOf(e)) {
-        return ch->IsKillerMode();
-    }
-
-    return false;
+    if (!ecs::Invariants::HasAnyTypeTag(g_registry, e)) return false;
+    const auto* status = g_registry.try_get<ecs::StatusFlags>(e);
+    return status && status->isKillerMode;
 }
 
 void UpdateKillerMode(entt::entity e)
 {
-    if (auto* ch = LegacyCharOf(e)) {
-        ch->UpdateKillerMode();
-    }
+    if (!IsKillerMode(e)) return;
+    const auto* state = g_registry.try_get<ecs::CombatStats>(e);
+    if (!state) return;
+    const uint32_t elapsed = static_cast<uint32_t>(thecore_pulse()) - state->killerModePulse;
+    const uint64_t timeout = static_cast<uint64_t>(std::max(passes_per_sec, 1)) * 30;
+    if (elapsed >= timeout) SetKillerMode(e, false);
 }
 
-void SetPKMode(entt::entity e, uint8_t bPKMode)
+void SetPKMode(entt::entity e, uint8_t mode)
 {
-    if (bPKMode >= PK_MODE_MAX_NUM || e == entt::null || !g_registry.valid(e))
-        return;
-
-    auto& combat = g_registry.get_or_emplace<ecs::CombatStats>(e);
-    if (combat.pkMode == bPKMode)
-        return;
-
-    if (bPKMode == PK_MODE_GUILD && !ecs::SocialSystem::GetGuild(e))
-        bPKMode = PK_MODE_FREE;
-
-    combat.pkMode = bPKMode;
+    if (mode >= PK_MODE_MAX_NUM || !ecs::Invariants::HasAnyTypeTag(g_registry, e)) return;
+    if (mode == PK_MODE_GUILD && !ecs::SocialSystem::GetGuild(e)) mode = PK_MODE_FREE;
+    {
+        auto& state = g_registry.get_or_emplace<ecs::CombatStats>(e);
+        if (state.pkMode == mode) return;
+        state.pkMode = mode;
+    }
     g_registry.emplace_or_replace<ecs::DirtyTag>(e);
+    LOG_INFO("PK_MODE: {} {}", ecs::PlayerRuntime::GetName(e).data(), mode);
     NetworkSyncSystem::UpdatePacket(e);
-    LOG_INFO("PK_MODE: {} {}", ecs::PlayerRuntime::GetName(e).data(), bPKMode);
 }
 
 uint8_t GetPKMode(entt::entity e)
 {
-    if (const auto* combat = g_registry.try_get<ecs::CombatStats>(e)) {
-        return combat->pkMode;
-    }
-
-    return PK_MODE_PROTECT;
+    if (!ecs::Invariants::HasAnyTypeTag(g_registry, e)) return PK_MODE_PROTECT;
+    const auto* state = g_registry.try_get<ecs::CombatStats>(e);
+    return state ? state->pkMode : PK_MODE_PROTECT;
 }
 
 
@@ -483,28 +501,30 @@ void PullMonster(entt::entity e)
 
 float GetAttackMultiplier(entt::entity e)
 {
-    if (auto* character = LegacyCharOf(e))
-        return character->GetAttMul();
-    return 1.0f;
+    if (!ecs::Invariants::HasAnyTypeTag(g_registry, e)) return 1.0f;
+    const auto* state = g_registry.try_get<ecs::CombatStats>(e);
+    return state ? state->attackMultiplier : 1.0f;
 }
 
 void SetAttackMultiplier(entt::entity e, float multiplier)
 {
-    if (auto* character = LegacyCharOf(e))
-        character->SetAttMul(multiplier);
+    if (!ecs::Invariants::HasAnyTypeTag(g_registry, e) || !std::isfinite(multiplier) || multiplier < 0) return;
+    g_registry.get_or_emplace<ecs::CombatStats>(e).attackMultiplier = multiplier;
+    g_registry.emplace_or_replace<ecs::DirtyTag>(e);
 }
 
 float GetDamageMultiplier(entt::entity e)
 {
-    if (auto* character = LegacyCharOf(e))
-        return character->GetDamMul();
-    return 1.0f;
+    if (!ecs::Invariants::HasAnyTypeTag(g_registry, e)) return 1.0f;
+    const auto* state = g_registry.try_get<ecs::CombatStats>(e);
+    return state ? state->damageMultiplier : 1.0f;
 }
 
 void SetDamageMultiplier(entt::entity e, float multiplier)
 {
-    if (auto* character = LegacyCharOf(e))
-        character->SetDamMul(multiplier);
+    if (!ecs::Invariants::HasAnyTypeTag(g_registry, e) || !std::isfinite(multiplier) || multiplier < 0) return;
+    g_registry.get_or_emplace<ecs::CombatStats>(e).damageMultiplier = multiplier;
+    g_registry.emplace_or_replace<ecs::DirtyTag>(e);
 }
 
 
@@ -571,138 +591,43 @@ bool IsDeathBlower(entt::entity e)
 
 uint32_t CHARACTER::GetAlignment() const
 {
-	return m_iAlignment;
+    return CombatSystem::GetAlignment(GetEntityHandle());
 }
 
 uint32_t CHARACTER::GetRealAlignment() const
 {
-	return m_iRealAlignment;
+    return CombatSystem::GetRealAlignment(GetEntityHandle());
 }
-
-//void CHARACTER::ShowAlignment(bool bShow)
-//{
-//	if (bShow)
-//	{
-//		if (m_iAlignment != m_iRealAlignment)
-//		{
-//			m_iAlignment = m_iRealAlignment;
-//			UpdatePacket();
-//		}
-//	}
-//	else
-//	{
-//		if (m_iAlignment != 0)
-//		{
-//			m_iAlignment = 0;
-//			UpdatePacket();
-//		}
-//	}
-//}
 
 uint8_t CHARACTER::GetAlignmentGrade() const
 {
-	uint32_t a = GetRealAlignment() / 10;
-
-	if (a <= 4999) return 0;
-	if (a <= 14999) return 1;
-	if (a <= 19999) return 2;
-	if (a <= 29999) return 3;
-	if (a <= 49999) return 4;
-	if (a <= 74999) return 5;
-	if (a <= 99999) return 6;
-	if (a <= 124999) return 7;
-	if (a <= 174999) return 8;
-	if (a <= 249999) return 9;
-	if (a <= 499999) return 10;
-	if (a <= 749999) return 11;
-	if (a <= 999999) return 12;
-	if (a <= 1499999) return 13;
-	if (a <= 2499999) return 14;
-	if (a <= 2999999) return 15;
-	if (a <= 3499999) return 16;
-	if (a <= 3999999) return 17;
-	if (a <= 4499999) return 18;
-	if (a <= 4999999) return 19;
-	return 20;
+    return CombatSystem::GetAlignmentGrade(GetEntityHandle());
 }
 
-
-
-void CHARACTER::UpdateAlignment(uint32_t iAmount)
+void CHARACTER::UpdateAlignment(int64_t amount)
 {
-	//if (!IsPC()) return;
-	const uint8_t oldGrade = GetAlignmentGrade();
-
-	m_iAlignment = m_iRealAlignment;
-	const uint32_t oldVisibleAlignment = m_iAlignment / 10;
-
-	m_iRealAlignment = UMINMAX(0, m_iRealAlignment + iAmount, 50000000);
-	m_iAlignment = m_iRealAlignment;
-
-	const uint8_t newGrade = GetAlignmentGrade();
-	if (auto* combat = g_registry.try_get<ecs::CombatStats>(GetEntityHandle())) {
-		combat->alignment = m_iAlignment;
-		combat->realAlignment = m_iRealAlignment;
-		g_registry.emplace_or_replace<ecs::DirtyTag>(GetEntityHandle());
-	}
-
-	if (oldGrade != newGrade)
-		ecs::PointSystem::Compute(GetEntityHandle());
-
-	if (oldVisibleAlignment != m_iAlignment / 10)
-		NetworkSyncSystem::BroadcastCharAdditionalInfo(g_registry, GetEntityHandle());
-
+    CombatSystem::UpdateAlignment(GetEntityHandle(), amount);
 }
-//void CHARACTER::UpdateAlignment(uint32_t iAmount)
-//{
-//	const uint8_t oldGrade = GetAlignmentGrade();
-//
-//	m_iRealAlignment = UMINMAX(0, m_iRealAlignment + iAmount, 2500000);
-//
-//	if (m_iAlignment != m_iRealAlignment)
-//		m_iAlignment = m_iRealAlignment;
-//
-//
-//	const uint8_t newGrade = GetAlignmentGrade();
-//
-//	if (oldGrade != newGrade)
-//		ComputePoints(); // ekkor vltozik a cache + jraplnek pontok
-//	else
-//		UpdatePacket();
-//}
-
 
 void CHARACTER::SetKillerMode(bool isOn)
 {
-	// B.1.5 + C.4: read and write via ECS StatusFlags.isKillerMode.
-	if ((isOn ? ADD_CHARACTER_STATE_KILLER : 0) == IS_SET(GetAddChrStateFlag(), ADD_CHARACTER_STATE_KILLER))
-		return;
-
-	if (auto* status = g_registry.try_get<ecs::StatusFlags>(GetEntityHandle())) {
-		status->isKillerMode = isOn;
-		g_registry.emplace_or_replace<ecs::DirtyTag>(GetEntityHandle());
-	}
-
-	m_iKillerModePulse = thecore_pulse();
-	NetworkSyncSystem::UpdatePacket(GetEntityHandle());
-	LOG_INFO("SetKillerMode Update {}[{}]", GetName(), GetPlayerID());
+    CombatSystem::SetKillerMode(GetEntityHandle(), isOn);
 }
 
 bool CHARACTER::IsKillerMode() const
 {
-	// B.1.5: read via getter -> ECS StatusFlags.isKillerMode bit.
-	return IS_SET(GetAddChrStateFlag(), ADD_CHARACTER_STATE_KILLER);
+    return CombatSystem::IsKillerMode(GetEntityHandle());
 }
 
 void CHARACTER::UpdateKillerMode()
 {
-	if (!IsKillerMode())
-		return;
-
-	if (thecore_pulse() - m_iKillerModePulse >= PASSES_PER_SEC(30))
-		SetKillerMode(false);
-
+    CombatSystem::UpdateKillerMode(GetEntityHandle());
 }
+
+float CHARACTER::GetAttMul() { return CombatSystem::GetAttackMultiplier(GetEntityHandle()); }
+void CHARACTER::SetAttMul(float value) { CombatSystem::SetAttackMultiplier(GetEntityHandle(), value); }
+float CHARACTER::GetDamMul() { return CombatSystem::GetDamageMultiplier(GetEntityHandle()); }
+void CHARACTER::SetDamMul(float value) { CombatSystem::SetDamageMultiplier(GetEntityHandle(), value); }
 
 uint8_t CHARACTER::GetPKMode() const
 {

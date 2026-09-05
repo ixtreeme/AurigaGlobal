@@ -27,12 +27,15 @@ struct CombatTarget {
 };
 
 struct CombatStats {
-    uint32_t alignment;
-    uint32_t realAlignment;
-    int killerModePulse;
-    uint8_t pkMode;
-    int maxAggro;
-    uint32_t killerPID;
+    uint32_t alignment { 0 };
+    uint32_t realAlignment { 0 };
+    uint32_t killerModePulse { 0 };
+    uint8_t pkMode { 0 };
+    int maxAggro { 0 };
+    uint32_t killerPID { 0 };
+    float attackMultiplier { 1.0f };
+    float damageMultiplier { 1.0f };
+    uint64_t alignmentRevision { 0 };
 };
 
 struct AttackCooldown {

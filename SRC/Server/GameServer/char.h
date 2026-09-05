@@ -1630,7 +1630,7 @@ public:
 	void ClearAlignmentBonus();
 
 
-	void				UpdateAlignment(uint32_t iAmount);
+	void				UpdateAlignment(int64_t amount);
 	uint32_t					GetAlignment() const;
 	//int GetBeltCount() const;
 #ifdef ENABLE_FAKE_SHOP_HEADER
@@ -1686,9 +1686,6 @@ protected:
 	//		AttackLog			m_kAttackLog;
 	uint32_t				m_dwKillerPID;
 
-	uint32_t					m_iAlignment;
-	uint32_t					m_iRealAlignment;
-	int					m_iKillerModePulse;
 
 	// Aggro
 	uint32_t				m_dwLastVictimSetTime;
@@ -2409,13 +2406,11 @@ public:
 
 	//���� ������ ����.
 private:
-	float m_fAttMul;
-	float m_fDamMul;
 public:
-	float GetAttMul() { return this->m_fAttMul; }
-	void SetAttMul(float newAttMul) { this->m_fAttMul = newAttMul; }
-	float GetDamMul() { return this->m_fDamMul; }
-	void SetDamMul(float newDamMul) { this->m_fDamMul = newDamMul; }
+	float GetAttMul();
+	void SetAttMul(float multiplier);
+	float GetDamMul();
+	void SetDamMul(float multiplier);
 
 private:
 	bool IsValidItemPosition(TItemPos Pos) const;

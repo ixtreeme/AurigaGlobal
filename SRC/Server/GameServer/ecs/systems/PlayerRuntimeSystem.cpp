@@ -4663,11 +4663,9 @@ void CHARACTER::SetPlayerProto(const TPlayerTable* t)
 
     m_dwPlayerID = t->id;
 
-    m_iAlignment = t->lAlignment;
-    m_iRealAlignment = t->lAlignment;
     if (auto* combat = g_registry.try_get<ecs::CombatStats>(GetEntityHandle())) {
-        combat->alignment = m_iAlignment;
-        combat->realAlignment = m_iRealAlignment;
+        combat->alignment = std::min<uint32_t>(t->lAlignment, CombatSystem::MAX_ALIGNMENT);
+        combat->realAlignment = combat->alignment;
     }
 
     m_points.voice = t->voice;
@@ -5875,10 +5873,7 @@ void CHARACTER::Initialize()
 
     m_bDisableCooltime = false;
 
-    m_iAlignment = 0;
-    m_iRealAlignment = 0;
 
-    m_iKillerModePulse = 0;
     g_registry.get_or_emplace<ecs::CombatStats>(GetEntityHandle()).pkMode = PK_MODE_PEACE;
 
     m_dwQuestNPCVID = 0;
@@ -5984,8 +5979,6 @@ void CHARACTER::Initialize()
     m_newpetSystem = nullptr;
     m_eggvid = 0;
 #endif
-    m_fAttMul = 1.0f;
-    m_fDamMul = 1.0f;
 
 #ifdef ENABLE_MOUNT_COSTUME_SYSTEM
     m_mountSystem = nullptr;

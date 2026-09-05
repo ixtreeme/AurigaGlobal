@@ -1,6 +1,7 @@
 #include "../../stdafx.h"
 #include "StatSystem.hpp"
 #include "PointSystem.hpp"
+#include "CombatSystem.hpp"
 #include "PlayerRuntimeSystem.hpp"
 #include "ItemSystem.hpp"
 #include "MountSystem.hpp"
@@ -44,13 +45,7 @@ struct RecomputeGuard {
 void ApplyAlignmentPoints(entt::entity e)
 {
     if (!ecs::PlayerRuntime::IsPC(e)) return;
-    const auto* combat = g_registry.try_get<CombatStats>(e);
-    const uint32_t alignment = combat ? combat->realAlignment / 10 : 0;
-    static constexpr std::array<uint32_t, 20> ceilings {
-        4999,14999,19999,29999,49999,74999,99999,124999,174999,249999,
-        499999,749999,999999,1499999,2499999,2999999,3499999,3999999,4499999,4999999
-    };
-    const auto grade = std::lower_bound(ceilings.begin(), ceilings.end(), alignment) - ceilings.begin();
+    const auto grade = CombatSystem::GetAlignmentGrade(e);
     static constexpr uint8_t types[] {POINT_MAX_HP, POINT_ATTBONUS_MONSTER, POINT_ATTBONUS_HUMAN,
         POINT_ATTBONUS_METIN, POINT_ATTBONUS_BOSS, POINT_ATTBONUS_MEDI_PVM,
         POINT_NORMAL_HIT_DAMAGE_BONUS, POINT_SKILL_DAMAGE_BONUS};

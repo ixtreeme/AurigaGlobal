@@ -2,6 +2,7 @@
 #include "systems/PlayerRuntimeSystem.hpp"
 
 #include "EntityFactory.hpp"
+#include "systems/CombatSystem.hpp"
 #include "systems/InventorySystem.hpp"
 #include "EntityInvariants.hpp"
 #include "ItemInvariants.hpp"
@@ -83,6 +84,7 @@ ecs::SyncState MakeDefaultSyncState()
 
 ecs::CombatStats MakeDefaultCombatStats(uint32_t alignment)
 {
+    alignment = std::min(alignment, CombatSystem::MAX_ALIGNMENT);
     return ecs::CombatStats {
         alignment,
         alignment,

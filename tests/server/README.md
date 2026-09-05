@@ -1,5 +1,41 @@
 # Server ECS regression tests
 
+## Combat state
+
+`CombatStateTests` compiles the complete existing `CombatSystem.cpp`. Alignment,
+its tier calculation, killer/PK mode and attack/damage multipliers operate on ECS
+components with no CHARACTER allocation or entity-to-pointer lookup. The legacy
+alignment, timer and multiplier fields are removed; compatibility methods only
+forward to the native services, and saving reads the component. Both point
+recomputation and alignment updates use the same tier function.
+
+Checks cover every tier boundary, signed reductions and saturation (including
+INT64_MIN/MAX), unchanged values, sub-display changes, a newer nested alignment
+update including ABA, destruction/recycled entity indices during compute/packet
+callbacks, killer-mode expiry across signed/unsigned tick wrap, guild-mode
+normalization, absent components, non-character/stale/null handles and finite,
+zero, negative and non-finite multiplier inputs. The alignment revision suppresses
+an obsolete outer publication; state commits before external callbacks. It is not
+a transaction or rollback mechanism for point calculation or networking.
+
+```powershell
+cmake --build build --config Release --target GameServer CombatStateTests
+ctest --test-dir build -C Release -R '^combat_state$' --output-on-failure
+cmake --build build-asan --config RelWithDebInfo --target CombatStateTests
+ctest --test-dir build-asan -C RelWithDebInfo -R '^combat_state$' --output-on-failure
+```
+
+Point recomputation, time, guild lookup and packet publication are test doubles;
+other combat/loot/DB/quest/legacy services fail if called. This does not exercise
+damage resolution, actual network serialization, client rendering, the complete
+point/affect reentrancy cycle or a live database. The GM target-alignment fix,
+bounded Lua input conversion, factory hydration and persistence call sites are
+compiled with GameServer, not executed by these headless tests. Before deployment
+verify relogged alignment, GM/quest changes, rank bonuses, killer-mode expiry,
+guild changes and dungeon/quest multipliers with the real client and DB. Only
+non-finite and negative multipliers are rejected here; downstream damage overflow
+for extremely large finite multipliers is outside this state migration.
+
 ## Point calculation
 
 `PointCalculationTests` compiles the complete existing `PointSystem.cpp` and

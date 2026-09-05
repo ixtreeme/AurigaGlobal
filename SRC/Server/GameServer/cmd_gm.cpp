@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "ecs/systems/CombatSystem.hpp"
 #include "ecs/systems/InventorySystem.hpp"
 #include <Core/Logging.hpp>
 #include "ecs/systems/PlayerRuntimeSystem.hpp"
@@ -2079,7 +2080,8 @@ ACMD(do_set)
 			{
 				uint32_t	amount = 0;
 				str_to_number(amount, arg3);
-				tch->UpdateAlignment(amount - ch->GetRealAlignment());
+				const auto target = tch->GetEntityHandle();
+				CombatSystem::UpdateAlignment(target, static_cast<int64_t>(amount) - CombatSystem::GetRealAlignment(target));
 			}
 			break;
 

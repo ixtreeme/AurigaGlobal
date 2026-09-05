@@ -63,8 +63,18 @@ add_executable(PointCalculationTests EXCLUDE_FROM_ALL
 target_link_libraries(PointCalculationTests PRIVATE SERVER EnTT::EnTT LUA)
 add_test(NAME point_calculation COMMAND PointCalculationTests)
 
+add_executable(CombatStateTests EXCLUDE_FROM_ALL
+    ${CMAKE_SOURCE_DIR}/tests/server/CombatStateTests.cpp
+    ecs/systems/CombatSystem.cpp
+)
+target_link_libraries(CombatStateTests PRIVATE SERVER EnTT::EnTT LUA)
+if(WIN32)
+    target_link_libraries(CombatStateTests PRIVATE ws2_32 bcrypt secur32 crypt32 shlwapi)
+endif()
+add_test(NAME combat_state COMMAND CombatStateTests)
+
 if(ENABLE_ASAN AND EXISTS "${AURIGA_ASAN_RUNTIME_DLL}")
-    foreach(_asan_target GameServer ItemAttributeTests MountLifecycleTests SafeboxLifecycleTests ItemManagerLifecycleTests QuickslotTests PointCalculationTests)
+    foreach(_asan_target GameServer ItemAttributeTests MountLifecycleTests SafeboxLifecycleTests ItemManagerLifecycleTests QuickslotTests PointCalculationTests CombatStateTests)
         add_custom_command(TARGET ${_asan_target} POST_BUILD
             COMMAND ${CMAKE_COMMAND} -E copy_if_different
                 "${AURIGA_ASAN_RUNTIME_DLL}"
