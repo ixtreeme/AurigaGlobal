@@ -41,7 +41,7 @@ protected:
 #endif
 
 	public:
-		typedef std::unordered_map<std::string, LPCHARACTER> NAME_MAP;
+		typedef std::unordered_map<std::string, entt::entity> NAME_MAP;
 
 		CHARACTER_MANAGER();
 		virtual ~CHARACTER_MANAGER();
@@ -55,8 +55,10 @@ protected:
 		LPCHARACTER             CreateCharacter(const char * name, uint32_t dwPID = 0);
 #ifndef DEBUG_ALLOC
 		void DestroyCharacter(LPCHARACTER ch);
+		void DestroyCharacter(entt::entity character);
 #else
 		void DestroyCharacter(LPCHARACTER ch, const char* file, size_t line);
+		void DestroyCharacter(entt::entity character, const char* file, size_t line);
 #endif
 
 		void			Update(int iPulse);
@@ -77,9 +79,7 @@ protected:
 		LPCHARACTER		FindPC(const char * name);
 		LPCHARACTER		FindByPID(uint32_t dwPID);
 
-		// Entity-returning counterparts. Prefer these where the caller only
-		// needs the ECS handle; they keep the OOP->ECS conversion inside the
-		// manager instead of at every call site.
+		// Native index lookups; these do not need a legacy CHARACTER shell.
 		entt::entity		FindEntity(uint32_t dwVID);
 		entt::entity		FindPCEntity(const char * name);
 		entt::entity		FindEntityByPID(uint32_t dwPID);
@@ -193,7 +193,8 @@ protected:
 		std::map<uint32_t, std::unordered_set<entt::entity>> m_map_pkChrByRaceNum;
 
 		bool				m_bUsePendingDestroy;
-		CHARACTER_SET		m_set_pkChrPendingDestroy;
+		std::unordered_set<entt::entity> m_set_pkChrPendingDestroy;
+		std::unordered_set<entt::entity> m_destroyingCharacters;
 
 #ifdef M2_USE_POOL
 		ObjectPool<CHARACTER> pool_;

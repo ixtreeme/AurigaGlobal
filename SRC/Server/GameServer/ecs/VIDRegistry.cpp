@@ -22,6 +22,11 @@ void CVIDRegistry::Unregister(uint32_t vid)
     m_map.erase(vid);
 }
 
+void CVIDRegistry::UnregisterEntity(entt::entity entity)
+{
+    std::erase_if(m_map, [entity](const auto& entry) { return entry.second == entity; });
+}
+
 std::vector<entt::entity> CVIDRegistry::Snapshot() const
 {
     std::vector<entt::entity> out;

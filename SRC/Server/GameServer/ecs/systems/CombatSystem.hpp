@@ -8,6 +8,11 @@ namespace CombatSystem {
 
 void SetAggressive(entt::entity e);
 void ResetChatCounter(entt::entity e);
+uint8_t GetChatCounter(entt::entity e);
+uint8_t IncreaseChatCounter(entt::entity e);
+void ResetMountCounter(entt::entity e);
+uint8_t GetMountCounter(entt::entity e);
+uint8_t IncreaseMountCounter(entt::entity e);
 void SetStone(entt::entity e, entt::entity stone);
 entt::entity GetSelectedTarget(entt::entity e);
 void SendDamagePacket(entt::entity e, entt::entity attacker, int Damage, uint8_t DamageFlag);

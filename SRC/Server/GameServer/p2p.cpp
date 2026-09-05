@@ -41,10 +41,9 @@ void P2P_MANAGER::Boot(LPDESC d)
 
 	while (it != map.end())
 	{
-		LPCHARACTER ch = it->second;
-		const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
-
-		it++;
+		const entt::entity chEntity = (it++)->second;
+		if (!ecs::PlayerRuntime::IsPC(chEntity))
+			continue;
 
 		p.bHeader = HEADER_GG_LOGIN;
 		strlcpy(p.szName, ecs::PlayerRuntime::GetName(chEntity).data(), sizeof(p.szName));
@@ -277,4 +276,3 @@ void P2P_MANAGER::GetP2PHostNames(std::string& hostNames)
 	}
 	hostNames += oss.str();
 }
-

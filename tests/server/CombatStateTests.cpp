@@ -709,6 +709,25 @@ void BattleAffectChecks() {
     onAffect=[](auto e){g_registry.destroy(e); Actor();};
     NormalAttackAffect(b,target); Check(affectCalls==1, "continued after stun removed victim");
 }
+void InteractionCounterChecks() {
+    Reset(); const auto actor = Actor();
+    Check(C::GetChatCounter(actor) == 0 && C::GetMountCounter(actor) == 0, "default native counters");
+    Check(!g_registry.all_of<ecs::InteractionCounters>(actor), "counter read allocated state");
+    Check(C::IncreaseChatCounter(actor) == 1 && C::IncreaseMountCounter(actor) == 1, "native counter increment");
+    C::ResetMountCounter(actor);
+    Check(C::GetMountCounter(actor) == 0 && C::GetChatCounter(actor) == 1, "mount reset changed chat");
+    C::IncreaseMountCounter(actor); C::ResetChatCounter(actor);
+    Check(C::GetChatCounter(actor) == 0 && C::GetMountCounter(actor) == 0, "periodic reset must clear both counters");
+    for (int i = 1; i <= 256; ++i)
+        Check(C::IncreaseChatCounter(actor) == static_cast<uint8_t>(i), "byte-counter behavior changed");
+    g_registry.destroy(actor); const auto replacement = Actor();
+    C::ResetChatCounter(actor); C::ResetMountCounter(actor);
+    Check(C::IncreaseChatCounter(actor) == 0 && C::IncreaseMountCounter(actor) == 0, "stale counter update");
+    Check(C::GetChatCounter(replacement) == 0 && C::GetMountCounter(replacement) == 0, "replacement inherited counters");
+    Check(!g_registry.all_of<ecs::InteractionCounters>(replacement), "stale handle wrote to new generation");
+    C::ResetChatCounter(entt::null); C::ResetMountCounter(entt::null);
+    Check(C::IncreaseChatCounter(entt::null) == 0 && C::GetMountCounter(entt::null) == 0, "null counter update");
+}
 void AttackAuditChecks() {
     Reset(); const auto a=Actor(),v=Actor();
     Check(GET_ATTACK_SPEED(a)==1000, "attack speed");
@@ -739,7 +758,7 @@ int main() {
     try {
         CHARACTER_MANAGER characters;
         AlignmentChecks(); CallbackChecks(); ModeChecks(); MultiplierAndValidityChecks();
-        BattleTargetChecks(); BattleMathChecks(); BattleAffectChecks(); AttackAuditChecks();
+        BattleTargetChecks(); BattleMathChecks(); BattleAffectChecks(); AttackAuditChecks(); InteractionCounterChecks();
         std::cout << "Combat state checks passed: " << checks << '\n'; return 0;
     } catch (const std::exception& error) { std::cerr << error.what() << '\n'; return 1; }
 }

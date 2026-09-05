@@ -14,6 +14,9 @@ public:
     void Register(uint32_t vid, entt::entity e);
     void Unregister(uint32_t vid);
 
+    // For stale handles whose identity components no longer exist.
+    void UnregisterEntity(entt::entity entity);
+
     // A snapshot, not a view into the map: callers destroy characters while
     // iterating, which unregisters and would invalidate an iterator.
     std::vector<entt::entity> Snapshot() const;

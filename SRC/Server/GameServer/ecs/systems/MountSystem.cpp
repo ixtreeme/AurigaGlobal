@@ -1,6 +1,7 @@
 #include "../../stdafx.h"
 #include "ViewSystem.hpp"
 #include "PlayerRuntimeSystem.hpp"
+#include "CombatSystem.hpp"
 
 #include "MountSystem.hpp"
 #include "ItemSystem.hpp"
@@ -1008,17 +1009,17 @@ void CHARACTER::SetHorseLevel(int iLevel)
 
 uint8_t CHARACTER::GetMountCounter() const
 {
-	return m_bMountCounter;
+	return CombatSystem::GetMountCounter(GetEntityHandle());
 }
 
 void CHARACTER::ResetMountCounter()
 {
-	m_bMountCounter = 0;
+	CombatSystem::ResetMountCounter(GetEntityHandle());
 }
 
 uint8_t CHARACTER::IncreaseMountCounter()
 {
-	return ++m_bMountCounter;
+	return CombatSystem::IncreaseMountCounter(GetEntityHandle());
 }
 
 bool CHARACTER::IsRiding() const

@@ -1029,11 +1029,7 @@ bool SetQuestBy(entt::entity e, uint32_t questVnum)
 
 void DestroyCharacter(entt::entity e)
 {
-    // Compatibility boundary: CHARACTER_MANAGER still owns legacy object lifetime.
-    if (e == entt::null || !g_registry.valid(e))
-        return;
-    if (const auto* legacy = g_registry.try_get<ecs::LegacyCharPtr>(e); legacy && legacy->ptr)
-        M2_DESTROY_CHARACTER(legacy->ptr);
+    M2_DESTROY_CHARACTER(e);
 }
 
 #ifdef __PET_SYSTEM__
@@ -2177,37 +2173,69 @@ void CHARACTER::SetVoteCoin(long long amount)
 #endif
 
 #ifdef ENABLE_ITEMSHOP
-uint32_t CHARACTER::GetDragonCoin()
+namespace ecs::PlayerRuntime {
+
+uint32_t GetDragonCoin(entt::entity e)
 {
-    std::unique_ptr<SQLMsg> pMsg(DBManager::instance().DirectQuery("SELECT coins FROM account.account WHERE id = '%u';", GetDesc()->GetAccountTable().id));
-    if (pMsg->Get()->uiNumRows == 0)
+    auto* desc = GetDesc(e);
+    if (!desc || desc->GetAccountTable().id == 0)
+        return 0;
+    std::unique_ptr<SQLMsg> pMsg(DBManager::instance().DirectQuery("SELECT coins FROM account.account WHERE id = '%u';", desc->GetAccountTable().id));
+    if (!pMsg || !pMsg->Get() || pMsg->Get()->uiNumRows == 0 || !pMsg->Get()->pSQLResult)
         return 0;
     MYSQL_ROW row = mysql_fetch_row(pMsg->Get()->pSQLResult);
+    if (!row || !row[0])
+        return 0;
     uint32_t dc = 0;
     str_to_number(dc, row[0]);
     return dc;
 }
 
+void SetDragonCoin(entt::entity e, uint32_t amount)
+{
+    auto* desc = GetDesc(e);
+    if (!desc || desc->GetAccountTable().id == 0)
+        return;
+    std::unique_ptr<SQLMsg> pMsg(DBManager::instance().DirectQuery("UPDATE account.account SET coins = '%u' WHERE id = '%u';", amount, desc->GetAccountTable().id));
+}
+
+void SetProtectTime(entt::entity e, std::string_view flag, int value)
+{
+    if (g_registry.valid(e))
+        g_registry.get_or_emplace<ecs::ProtectionTimes>(e).values.insert_or_assign(std::string(flag), value);
+}
+
+int GetProtectTime(entt::entity e, std::string_view flag)
+{
+    if (!g_registry.valid(e))
+        return 0;
+    const auto* times = g_registry.try_get<ecs::ProtectionTimes>(e);
+    if (!times)
+        return 0;
+    const auto it = times->values.find(flag);
+    return it != times->values.end() ? it->second : 0;
+}
+
+} // namespace ecs::PlayerRuntime
+
+uint32_t CHARACTER::GetDragonCoin()
+{
+    return ecs::PlayerRuntime::GetDragonCoin(GetEntityHandle());
+}
+
 void CHARACTER::SetDragonCoin(uint32_t amount)
 {
-    std::unique_ptr<SQLMsg> pMsg(DBManager::instance().DirectQuery("UPDATE account.account SET coins = '%lld' WHERE id = '%u';", amount, GetDesc()->GetAccountTable().id));
+    ecs::PlayerRuntime::SetDragonCoin(GetEntityHandle(), amount);
 }
 
 void CHARACTER::SetProtectTime(const std::string& flagname, int value)
 {
-    auto it = m_protection_Time.find(flagname);
-    if (it != m_protection_Time.end())
-        it->second = value;
-    else
-        m_protection_Time.insert(make_pair(flagname, value));
+    ecs::PlayerRuntime::SetProtectTime(GetEntityHandle(), flagname, value);
 }
 
 int CHARACTER::GetProtectTime(const std::string& flagname) const
 {
-    auto it = m_protection_Time.find(flagname);
-    if (it != m_protection_Time.end())
-        return it->second;
-    return 0;
+    return ecs::PlayerRuntime::GetProtectTime(GetEntityHandle(), flagname);
 }
 #endif
 
@@ -5873,7 +5901,6 @@ void CHARACTER::Initialize()
 
     m_pWarMap = nullptr;
     m_pWeddingMap = nullptr;
-    m_bChatCounter = 0;
 #ifdef ENABLE_FAKE_SHOP_HEADER
     m_lastBeltMountCount = -999;
 #endif

@@ -19,6 +19,12 @@ entt::entity FindSpecifyPC(uint32_t jobFlag, int32_t mapIndex, entt::entity exce
 LPDESC GetDesc(entt::entity e);
 uint32_t GetPlayerID(entt::entity e);
 uint32_t GetAccountID(entt::entity e);
+#ifdef ENABLE_ITEMSHOP
+uint32_t GetDragonCoin(entt::entity e);
+void SetDragonCoin(entt::entity e, uint32_t amount);
+void SetProtectTime(entt::entity e, std::string_view flag, int value);
+int GetProtectTime(entt::entity e, std::string_view flag);
+#endif
 uint8_t GetEmpire(entt::entity e);
 void SetEmpire(entt::entity e, uint8_t empire);
 int ChangeEmpire(entt::entity e, uint8_t empire);

@@ -921,9 +921,6 @@ protected:
 	bool			m_bSkipSave;
 	std::string		m_stMobile;
 	char			m_szMobileAuth[5];
-	uint8_t			m_bChatCounter;
-
-	uint8_t			m_bMountCounter;
 
 	// End of Basic Points
 
@@ -1721,7 +1718,6 @@ protected:
 	uint8_t				m_bDropMetinStofaPct;
 	uint32_t				m_dwDropMetinSacca;
 	uint8_t				m_bDropMetinSaccaPct;
-	std::map<std::string, int>  m_protection_Time;
 
 #ifdef ENABLE_RANKING
 protected:

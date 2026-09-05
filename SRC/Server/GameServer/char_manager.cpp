@@ -31,6 +31,8 @@
 
 #include <algorithm>
 #include <random>
+#include <limits>
+#include <utility>
 #include <string_view>
 
 #include <unordered_set>
@@ -158,14 +160,12 @@ namespace
 
 		for (const uint32_t vid : st.aliveVIDs)
 		{
-			auto* ch = mgr.Find(vid);
-			if (!ch)
+			const entt::entity character = mgr.FindEntity(vid);
+			if (character == entt::null)
 			{
 				toErase.push_back(vid);
 				continue;
 			}
-
-			const entt::entity character = ch->GetEntityHandle();
 
 			if (CombatSystem::IsDead(character) || ecs::PlayerRuntime::GetMapIndex(character) != st.mapIndex || ecs::PlayerRuntime::GetRaceNum(character) != st.mobVnum)
 			{
@@ -180,13 +180,14 @@ namespace
 
 	static void Map1Wave_Cleanup(CHARACTER_MANAGER& mgr, TMap1WaveEventState& st)
 	{
-		for (const uint32_t vid : st.aliveVIDs)
+		const auto aliveVIDs = std::exchange(st.aliveVIDs, {});
+		for (const uint32_t vid : aliveVIDs)
 		{
-			if (auto* ch = mgr.Find(vid))
-				mgr.DestroyCharacter(ch);
+			const entt::entity character = mgr.FindEntity(vid);
+			if (character != entt::null && ecs::PlayerRuntime::GetRaceNum(character) == st.mobVnum
+				&& ecs::PlayerRuntime::GetMapIndex(character) == st.mapIndex)
+				M2_DESTROY_CHARACTER(character);
 		}
-
-		st.aliveVIDs.clear();
 		st.hadWave = false;
 		st.nextRetryTime = 0;
 	}
@@ -229,9 +230,10 @@ namespace
 				const int32_t x = base.x + (tx * 100);
 				const int32_t y = base.y + (ty * 100);
 
-				if (auto* mob = mgr.SpawnMob(st.mobVnum, st.mapIndex, x, y, 0, true, -1, true))
+				if (const entt::entity mob = mgr.SpawnMobEntity(st.mobVnum, st.mapIndex, x, y, 0, true, -1, true);
+					ecs::PlayerRuntime::IsValid(mob))
 				{
-					st.aliveVIDs.insert(mob->GetLegacyVID());
+					st.aliveVIDs.insert(ecs::PlayerRuntime::GetPacketVID(mob));
 					++spawned;
 				}
 			}
@@ -357,33 +359,26 @@ void CHARACTER_MANAGER::Destroy()
 	m_IShopManager.clear();
 #endif
 
-	// Re-snapshotting each round rather than walking one list: destroying a
-	// character can destroy others (a rider takes its mount), so a list taken
-	// once would hold entities that are already gone.
+	// Shutdown must drain deferred requests before walking the live index.
+	FlushPendingDestroy();
 	for (auto snapshot = CVIDRegistry::Instance().Snapshot(); !snapshot.empty();
 		snapshot = CVIDRegistry::Instance().Snapshot())
 	{
-		const entt::entity entity = snapshot.front();
-		LPCHARACTER ch = ecs::LegacyCharOf(entity);
-		if (!ch)
-		{
-			// No legacy shell to destroy, so nothing would unregister it and
-			// the next snapshot would be identical. Drop it here.
-			CVIDRegistry::Instance().Unregister(
-				ecs::PlayerRuntime::GetPacketVID(entity));
-			continue;
-		}
-
-		M2_DESTROY_CHARACTER(ch);
+		const entt::entity character = snapshot.front();
+		if (character == entt::null)
+			CVIDRegistry::Instance().UnregisterEntity(character);
+		else
+			M2_DESTROY_CHARACTER(character);
 	}
 }
 
 void CHARACTER_MANAGER::GracefulShutdown()
 {
-	auto it = m_map_pkPCChr.begin();
-
-	while (it != m_map_pkPCChr.end())
-		it++->second->Disconnect("GracefulShutdown");
+	// Disconnect still owns the legacy session teardown. Keep only handles
+	// across callbacks: disconnecting one player can remove another.
+	for (const entt::entity character : CPIDRegistry::Instance().Snapshot())
+		if (auto* ch = ecs::LegacyCharOf(character))
+			ch->Disconnect("GracefulShutdown");
 }
 
 uint32_t CHARACTER_MANAGER::AllocVID()
@@ -426,7 +421,7 @@ LPCHARACTER CHARACTER_MANAGER::CreateCharacter(const char* name, uint32_t dwPID)
 		char szName[CHARACTER_NAME_MAX_LEN + 1];
 		str_lower(name, szName, sizeof(szName));
 
-		m_map_pkPCChr.insert(NAME_MAP::value_type(szName, ch));
+		m_map_pkPCChr.insert(NAME_MAP::value_type(szName, ch->GetEntityHandle()));
 
 		// CPIDRegistry was only written by EntityFactory::CreatePC, which is
 		// the login path - a character given a PID here and not through that
@@ -446,98 +441,100 @@ void CHARACTER_MANAGER::DestroyCharacter(LPCHARACTER ch)
 void CHARACTER_MANAGER::DestroyCharacter(LPCHARACTER ch, const char* file, size_t line)
 #endif
 {
-	if (!ch)
-		return;
-
-	// <Factor> Check whether it has been already deleted or not.
-	// Was a lookup in the legacy VID map; the registry answers the same
-	// question, and EntityFactory::Destroy is what unregisters.
-	if (CVIDRegistry::Instance().Find(ch->GetLegacyVID()) == entt::null) {
-		LOG_ERROR("[CHARACTER_MANAGER::DestroyCharacter] <Factor> {} not found", ch->GetLegacyVID());
-		return; // prevent duplicated destrunction
-	}
-
-	const entt::entity character = ch->GetEntityHandle();
-
-#ifdef __NEWPET_SYSTEM__
-	if (ecs::PlayerRuntime::IsNPC(character) && !ecs::PlayerRuntime::IsPet(character) && !ecs::PlayerRuntime::IsNewPet(character) && ecs::LegacyCharOf(character)->GetRider() == nullptr)
+	// Compatibility for callers that still own a CHARACTER. All manager
+	// membership and deferred work use the generation-bearing handle.
+	if (ch)
+#ifndef DEBUG_ALLOC
+		DestroyCharacter(ch->GetEntityHandle());
 #else
-	if (ecs::PlayerRuntime::IsNPC(character) && !ecs::PlayerRuntime::IsPet(character) && ecs::LegacyCharOf(character)->GetRider() == NULL)
+		DestroyCharacter(ch->GetEntityHandle(), file, line);
 #endif
-	{
-		if (ecs::SocialSystem::GetDungeon(character))
-		{
-			ecs::SocialSystem::GetDungeon(character)->DeadCharacter(ch);
-		}
-	}
+}
 
+#ifndef DEBUG_ALLOC
+void CHARACTER_MANAGER::DestroyCharacter(entt::entity character)
+#else
+void CHARACTER_MANAGER::DestroyCharacter(entt::entity character, const char* file, size_t line)
+#endif
+{
+	if (character == entt::null)
+		return;
+	if (!g_registry.valid(character))
+	{
+		// A stale index has no VID/PID component left to read. Remove only
+		// entries with this exact generation, never a replacement character.
+		CVIDRegistry::Instance().UnregisterEntity(character);
+		CPIDRegistry::Instance().UnregisterEntity(character);
+		std::erase_if(m_map_pkPCChr, [character](const auto& entry) { return entry.second == character; });
+		m_set_pkChrPendingDestroy.erase(character);
+		m_set_pkChrForDelayedSave.erase(character);
+		RemoveFromStateList(character);
+		UnregisterForMonsterLog(character);
+		for (auto& [race, members] : m_map_pkChrByRaceNum)
+			members.erase(character);
+		return;
+	}
+	if (m_destroyingCharacters.contains(character))
+		return;
 	if (m_bUsePendingDestroy)
 	{
-		m_set_pkChrPendingDestroy.insert(ch);
+		m_set_pkChrPendingDestroy.insert(character);
 		return;
 	}
 
-	if (m_set_pkChrForDelayedSave.erase(character) != 0)
-		ch->SaveReal();
+	m_destroyingCharacters.insert(character);
+	struct DestroyGuard {
+		std::unordered_set<entt::entity>& active;
+		entt::entity character;
+		~DestroyGuard() { active.erase(character); }
+	} guard { m_destroyingCharacters, character };
+	m_set_pkChrPendingDestroy.erase(character);
 
-	//if (ecs::PlayerRuntime::IsPC(character))											   // Ixtreeme fix -- ITEM_SAVE invalid owner pointer
-	//	ITEM_MANAGER::instance().FlushDelayedSaveByOwner(ch);  // Ixtreeme fix -- ITEM_SAVE invalid owner pointer
-
-	if (true == ecs::PlayerRuntime::IsPC(character))
+	// The shell destructor, rider and dungeon notification still belong to
+	// CHARACTER. Resolve once at this actual teardown boundary; never queue
+	// or snapshot this pointer. The components must outlive shell cleanup.
+	LPCHARACTER ch = ecs::LegacyCharOf(character);
+	if (ch && !ecs::PlayerRuntime::IsPC(character) && !ecs::PlayerRuntime::IsPet(character)
+#ifdef __NEWPET_SYSTEM__
+		&& !ecs::PlayerRuntime::IsNewPet(character)
+#endif
+		&& ch->GetRider() == nullptr)
 	{
-		char szName[CHARACTER_NAME_MAX_LEN + 1];
+		if (auto* dungeon = ecs::SocialSystem::GetDungeon(character))
+			dungeon->DeadCharacter(ch);
+	}
 
-		str_lower(ecs::PlayerRuntime::GetName(character).data(), szName, sizeof(szName));
+	FlushDelayedSave(character);
+	if (!g_registry.valid(character))
+		return;
 
-		auto it = m_map_pkPCChr.find(szName);
-
-		if (m_map_pkPCChr.end() != it)
+	const auto characterName = ecs::PlayerRuntime::GetName(character);
+	if (!characterName.empty())
+	{
+		char name[CHARACTER_NAME_MAX_LEN + 1];
+		str_lower(characterName.data(), name, sizeof(name));
+		if (const auto it = m_map_pkPCChr.find(name);
+			it != m_map_pkPCChr.end() && it->second == character)
 			m_map_pkPCChr.erase(it);
 	}
-
-	if (ecs::PlayerRuntime::IsPC(character)) {
-		if (m_set_pkChrForDelayedSave.erase(character) != 0)
-			ch->SaveReal();
-	}
+	else
+		std::erase_if(m_map_pkPCChr, [character](const auto& entry) { return entry.second == character; });
 
 	UnregisterRaceNumMap(character);
-
 	RemoveFromStateList(character);
+	UnregisterForMonsterLog(character);
+	ecs::ViewSystem::ViewCleanup(character);
 
-	if (const entt::entity entity = character;
-		entity != entt::null && g_registry.valid(entity))
+	if (!g_registry.valid(character))
+		return;
+	if (!ch)
 	{
-		// Phase 15E-final.LPENTITY.4-architect.D.6.fixup-6:
-		// Run ViewCleanup explicitly while the ECS entity is still valid.
-		//
-		// CEntity::Destroy() (called from ~CHARACTER via M2_DELETE below)
-		// also calls ViewCleanup, but by that point EntityFactory::Destroy
-		// has already null-ed ch->GetEntityHandle() and reg.destroy()-ed
-		// the entity. The D.6 ViewCleanup char-branch resolves
-		// `EntityOf(this)` through `ch->GetEntityHandle()`, sees null, and
-		// silently skips the ViewerMap walk - so no SendRemove burst goes
-		// out to the dying character's peers.
-		//
-		// User-visible symptom: when a Metin stone (CHAR_TYPE_STONE mob) is
-		// killed, the death animation packet (HEADER_GC_DEAD) reaches the
-		// clients and starts the shatter animation, but the follow-up
-		// HEADER_GC_CHARACTER_DELETE packet is never sent because no
-		// SendRemove fired. The shattered fragments stay rendered on the
-		// map indefinitely.
-		//
-		// Fix: invoke ViewCleanup here, then EntityFactory::Destroy. The
-		// destructor's CEntity::Destroy will hit ViewCleanup again, but by
-		// then m_map_view is empty (legacy clear) and the ECS handle is
-		// null - both branches of the D.6 ViewCleanup are no-ops on the
-		// second pass.
-		ecs::ViewSystem::ViewCleanup(character);
-		// The CHARACTER destructor still needs the ECS-backed inventory,
-		// session and social components while it tears the legacy shell down.
-		// EntityFactory::Destroy is deliberately deferred to the end of
-		// CHARACTER::Destroy; destroying the entity here made ClearItem() see
-		// an empty inventory and left live CItem objects with a dangling owner.
+		EntityFactory::Destroy(g_registry, character);
+		return;
 	}
 
+	// CHARACTER::Destroy releases inventory, mount and session state before
+	// calling EntityFactory::Destroy. Do not destroy the registry entry first.
 #ifdef M2_USE_POOL
 	pool_.Destroy(ch);
 #else
@@ -578,56 +575,40 @@ LPCHARACTER CHARACTER_MANAGER::FindByPID(uint32_t dwPID)
 
 entt::entity CHARACTER_MANAGER::FindEntity(uint32_t dwVID)
 {
-	// CVIDRegistry is the ECS-side authority for VID -> entity; Find() only
-	// falls back to the legacy map (and logs VID_DRIFT) when they disagree.
-	if (const entt::entity entity = CVIDRegistry::Instance().Find(dwVID);
-		entity != entt::null && g_registry.valid(entity))
-		return entity;
-
-	LPCHARACTER found = Find(dwVID);
-	return found ? found->GetEntityHandle() : entt::null;
+	const entt::entity character = CVIDRegistry::Instance().Find(dwVID);
+	return g_registry.valid(character) ? character : entt::null;
 }
 
 entt::entity CHARACTER_MANAGER::FindPCEntity(const char* name)
 {
-	LPCHARACTER found = FindPC(name);
-	return found ? found->GetEntityHandle() : entt::null;
+	if (!name)
+		return entt::null;
+	char lowerName[CHARACTER_NAME_MAX_LEN + 1];
+	str_lower(name, lowerName, sizeof(lowerName));
+	const auto it = m_map_pkPCChr.find(lowerName);
+	if (it == m_map_pkPCChr.end() || !g_registry.valid(it->second))
+		return entt::null;
+	const entt::entity character = it->second;
+	if (ecs::PlayerRuntime::GetName(character).empty())
+		return entt::null;
+	if (strncasecmp(lowerName, ecs::PlayerRuntime::GetName(character).data(), CHARACTER_NAME_MAX_LEN) != 0)
+	{
+		LOG_ERROR("[CHARACTER_MANAGER::FindPCEntity] {} != {}", name, ecs::PlayerRuntime::GetName(character).data());
+		return entt::null;
+	}
+	return character;
 }
 
 entt::entity CHARACTER_MANAGER::FindEntityByPID(uint32_t dwPID)
 {
-	// CPIDRegistry is the ECS-side authority for PID -> entity, written where
-	// the PlayerID component is. The legacy map is only a fallback, and a hit
-	// there means the two indexes have drifted apart.
-	if (const entt::entity entity = CPIDRegistry::Instance().Find(dwPID);
-		entity != entt::null && g_registry.valid(entity))
-		return entity;
-
-	LPCHARACTER found = FindByPID(dwPID);
-	if (!found)
-		return entt::null;
-
-	LOG_ERROR("PID_DRIFT: {} resolves through the legacy map but not CPIDRegistry", dwPID);
-	return found->GetEntityHandle();
+	const entt::entity character = CPIDRegistry::Instance().Find(dwPID);
+	return g_registry.valid(character) ? character : entt::null;
 }
 
 LPCHARACTER CHARACTER_MANAGER::FindPC(const char* name)
 {
-	char szName[CHARACTER_NAME_MAX_LEN + 1];
-	str_lower(name, szName, sizeof(szName));
-	const auto it = m_map_pkPCChr.find(szName);
-
-	if (it == m_map_pkPCChr.end())
-		return nullptr;
-
-	// <Factor> Added sanity check
-	LPCHARACTER found = it->second;
-	const entt::entity character = found ? found->GetEntityHandle() : entt::null;
-	if (found != nullptr && strncasecmp(szName, ecs::PlayerRuntime::GetName(character).data(), CHARACTER_NAME_MAX_LEN) != 0) {
-		LOG_ERROR("[CHARACTER_MANAGER::FindPC] <Factor> {} != {}", name, ecs::PlayerRuntime::GetName(character).data());
-		return nullptr;
-	}
-	return found;
+	// Pointer-returning compatibility API; the name index itself is native.
+	return ecs::LegacyCharOf(FindPCEntity(name));
 }
 
 LPCHARACTER CHARACTER_MANAGER::SpawnMobRandomPosition(uint32_t dwVnum, int32_t lMapIndex)
@@ -1102,15 +1083,6 @@ LPCHARACTER CHARACTER_MANAGER::SpawnGroup(uint32_t dwVnum, int32_t lMapIndex, in
 	return chLeader;
 }
 
-struct FuncUpdateAndResetChatCounter
-{
-	void operator () (LPCHARACTER ch)
-	{
-		CombatSystem::ResetChatCounter(ch->GetEntityHandle());
-		AISystem::UpdateStateMachine(ch->GetEntityHandle());
-	}
-};
-
 void CHARACTER_MANAGER::Update(int iPulse)
 {
 	using namespace std;
@@ -1118,7 +1090,7 @@ void CHARACTER_MANAGER::Update(int iPulse)
 	//	using namespace __gnu_cxx;
 	//#endif
 
-	BeginPendingDestroy();
+	const bool ownsPendingDestroy = BeginPendingDestroy();
 #ifdef ENABLE_EVENT_MANAGER
 
 	const TEventManagerData* ev = CheckEventIsActive(DUNGEON_TICKET_LOOT_EVENT, 0);
@@ -1138,34 +1110,18 @@ void CHARACTER_MANAGER::Update(int iPulse)
 	if (needResync)
 	{
 
-		CHARACTER_VECTOR all;
-		for (const entt::entity entity : CVIDRegistry::Instance().Snapshot())
-			if (LPCHARACTER ch = ecs::LegacyCharOf(entity))
-				all.push_back(ch);
-
-		for (LPCHARACTER ch : all)
+		for (const entt::entity character : CVIDRegistry::Instance().Snapshot())
 		{
-			if (!ch) continue;
-			if (ecs::PlayerRuntime::IsStone(ch->GetEntityHandle()) && ecs::PlayerRuntime::IsDungeonTicketExtraMetin(ch->GetEntityHandle()))
-				DestroyCharacter(ch);
+			if (ecs::PlayerRuntime::IsStone(character) && ecs::PlayerRuntime::IsDungeonTicketExtraMetin(character))
+				M2_DESTROY_CHARACTER(character);
 		}
-
 
 		if (nowActive && nowExtraCount > 0)
 		{
-
-			all.clear();
-			for (const entt::entity entity : CVIDRegistry::Instance().Snapshot())
-				if (LPCHARACTER ch = ecs::LegacyCharOf(entity))
-					all.push_back(ch);
-
-			for (LPCHARACTER ch : all)
+			for (const entt::entity character : CVIDRegistry::Instance().Snapshot())
 			{
-				if (!ch) continue;
-				const entt::entity character = ch->GetEntityHandle();
-
 				if (!ecs::PlayerRuntime::IsStone(character)) continue;
-				if (ecs::PlayerRuntime::IsDungeonTicketExtraMetin(ch->GetEntityHandle())) continue;
+				if (ecs::PlayerRuntime::IsDungeonTicketExtraMetin(character)) continue;
 
 				const int32_t mapIndex = ecs::PlayerRuntime::GetMapIndex(character);
 
@@ -1179,7 +1135,7 @@ void CHARACTER_MANAGER::Update(int iPulse)
 				const uint32_t vnum = ecs::PlayerRuntime::GetRaceNum(character);
 				const int32_t x = ecs::PlayerRuntime::GetX(character);
 				const int32_t y = ecs::PlayerRuntime::GetY(character);
-				const int32_t z = ch->GetZ();
+				const int32_t z = ecs::PlayerRuntime::GetZ(character);
 
 				g_bDungeonTicketExtraMetinSpawn = true;
 
@@ -1187,7 +1143,7 @@ void CHARACTER_MANAGER::Update(int iPulse)
 				{
 					int sx, sy;
 					CalcDungeonTicketExtraPos(x, y, i, sx, sy);
-					SpawnMob(vnum, mapIndex, sx, sy, z, true, -1, true);
+					SpawnMobEntity(vnum, mapIndex, sx, sy, z, true, -1, true);
 				}
 
 
@@ -1202,46 +1158,15 @@ void CHARACTER_MANAGER::Update(int iPulse)
 	Map1MassSpawnEvents_Update(*this, iPulse);
 #endif
 
-	// PC ĳ Ʈ
+	const bool resetChat = (iPulse % PASSES_PER_SEC(5)) == 0;
+	for (const entt::entity character : CPIDRegistry::Instance().Snapshot())
 	{
-		if (!m_map_pkPCChr.empty())
-		{
-			// ̳
-			CHARACTER_VECTOR v;
-			v.reserve(m_map_pkPCChr.size());
-			//#ifdef __GNUC__
-			//			transform(m_map_pkPCChr.begin(), m_map_pkPCChr.end(), back_inserter(v), select2nd<NAME_MAP::value_type>());
-			//#else
-			transform(m_map_pkPCChr.begin(), m_map_pkPCChr.end(), back_inserter(v), std::bind(&NAME_MAP::value_type::second, std::placeholders::_1));
-			//#endif
-
-			if (0 == iPulse % PASSES_PER_SEC(5))
-			{
-				FuncUpdateAndResetChatCounter f;
-				for_each(v.begin(), v.end(), f);
-			}
-			else
-			{
-				//for_each(v.begin(), v.end(), mem_fun(&CFSM::Update));
-				// m_map_pkPCChr is still keyed on the pointer, so the entity comes from it here.
-				for_each(v.begin(), v.end(), [](LPCHARACTER ch) {
-					if (ch)
-						AISystem::UpdateStateMachine(ch->GetEntityHandle());
-				});
-			}
-		}
-		//#ifdef ENABLE_FAKE_SHOP_HEADER
-		//
-		//		if (0 == (iPulse % PASSES_PER_SEC(5)))
-		//		{
-		//			for (const auto& it : m_map_pkPCChr)
-		//			{
-		//				if (LPCHARACTER ch = it.second)
-		//					ch->UpdateMountCountOverhead(ch);
-		//			}
-		//		}
-		//#endif
-				//		for_each_pc(bind2nd(mem_fun(&CHARACTER::UpdateCharacter), iPulse));
+		if (!ecs::PlayerRuntime::IsPC(character) || m_set_pkChrPendingDestroy.contains(character))
+			continue;
+		if (resetChat)
+			CombatSystem::ResetChatCounter(character);
+		if (g_registry.valid(character) && !m_set_pkChrPendingDestroy.contains(character))
+			AISystem::UpdateStateMachine(character);
 	}
 
 	//  Ʈ
@@ -1254,7 +1179,8 @@ void CHARACTER_MANAGER::Update(int iPulse)
 			// with no line in our code, which cost a day in phase 18e.
 			const std::vector<entt::entity> v(m_set_pkChrState.begin(), m_set_pkChrState.end());
 			for (const entt::entity e : v)
-				AISystem::UpdateStateMachine(e);
+				if (g_registry.valid(e) && m_set_pkChrState.contains(e) && !m_set_pkChrPendingDestroy.contains(e))
+					AISystem::UpdateStateMachine(e);
 		}
 	}
 
@@ -1273,7 +1199,8 @@ void CHARACTER_MANAGER::Update(int iPulse)
 			CPIDRegistry::Instance().Snapshot().size());
 
 	//  DestroyCharacter ϱ
-	FlushPendingDestroy();
+	if (ownsPendingDestroy)
+		FlushPendingDestroy();
 
 	// ShutdownManager Update
 	CShutdownManager::Instance().Update();
@@ -1281,15 +1208,11 @@ void CHARACTER_MANAGER::Update(int iPulse)
 
 void CHARACTER_MANAGER::ProcessDelayedSave()
 {
-	// SaveReal is still a CHARACTER method; this is the one place per entry
-	// where the entity is resolved, not a wrapper hiding a conversion.
-	for (const entt::entity e : m_set_pkChrForDelayedSave)
-	{
-		if (LPCHARACTER pkChr = ecs::LegacyCharOf(e))
-			pkChr->SaveReal();
-	}
-
-	m_set_pkChrForDelayedSave.clear();
+    // Keep membership live so nested destruction can flush its own save.
+    // Erase each request before SaveReal; callbacks may requeue for next tick.
+    const std::vector<entt::entity> pending(m_set_pkChrForDelayedSave.begin(), m_set_pkChrForDelayedSave.end());
+    for (const entt::entity character : pending)
+        FlushDelayedSave(character);
 }
 
 bool CHARACTER_MANAGER::AddToStateList(entt::entity character)
@@ -1310,12 +1233,10 @@ void CHARACTER_MANAGER::RemoveFromStateList(entt::entity character)
 	m_set_pkChrState.erase(character);
 }
 
-void CHARACTER_MANAGER::DelayedSave(entt::entity character) {
-	//#ifdef ENABLE_INGAME_DEBUG_RAZOR93d
-	//	ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, "char_manager.cpp::void CHARACTER_MANAGER::DelayedSave");//INGAME_DEBUG_RAZOR93
-	//#endif
-		//////////FIX m_set_pkChrForDelayedSave.insert(ch);
-	m_set_pkChrForDelayedSave.insert(character);
+void CHARACTER_MANAGER::DelayedSave(entt::entity character)
+{
+	if (g_registry.valid(character))
+		m_set_pkChrForDelayedSave.insert(character);
 }
 
 bool CHARACTER_MANAGER::FlushDelayedSave(entt::entity character)
@@ -1392,7 +1313,7 @@ void CHARACTER_MANAGER::RegisterRaceNum(uint32_t dwVnum)
 void CHARACTER_MANAGER::RegisterRaceNumMap(entt::entity character)
 {
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(ch ? ch->GetEntityHandle() : entt::null, CHAT_TYPE_INFO, "char_manager.cpp::CHARACTER_MANAGER::RegisterRaceNumMap");//INGAME_DEBUG_RAZOR93
+	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "char_manager.cpp::CHARACTER_MANAGER::RegisterRaceNumMap");//INGAME_DEBUG_RAZOR93
 #endif
 	const uint32_t dwVnum = ecs::PlayerRuntime::GetRaceNum(character);
 
@@ -1406,7 +1327,7 @@ void CHARACTER_MANAGER::RegisterRaceNumMap(entt::entity character)
 void CHARACTER_MANAGER::UnregisterRaceNumMap(entt::entity character)
 {
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(ch ? ch->GetEntityHandle() : entt::null, CHAT_TYPE_INFO, "char_manager.cpp::CHARACTER_MANAGER::UnregisterRaceNumMap");//INGAME_DEBUG_RAZOR93
+	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "char_manager.cpp::CHARACTER_MANAGER::UnregisterRaceNumMap");//INGAME_DEBUG_RAZOR93
 #endif
 	const uint32_t dwVnum = ecs::PlayerRuntime::GetRaceNum(character);
 
@@ -1461,13 +1382,10 @@ entt::entity CHARACTER_MANAGER::FindSpecifyPC(unsigned int uiJobFlag, int32_t lM
 	// random winner, so a different candidate set would not show up in a build.
 	// The registry is the same population: CreateCharacter writes it and the
 	// legacy map together, and EntityFactory::Destroy unregisters.
-	for (const entt::entity entity : CPIDRegistry::Instance().Snapshot())
+	for (const entt::entity character : CPIDRegistry::Instance().Snapshot())
 	{
-		auto* ch = ecs::LegacyCharOf(entity);
-		if (!ch)
+		if (!ecs::PlayerRuntime::IsPC(character))
 			continue;
-
-		const entt::entity character = ch->GetEntityHandle();
 		if (character == except)
 			continue;
 
@@ -1484,14 +1402,18 @@ entt::entity CHARACTER_MANAGER::FindSpecifyPC(unsigned int uiJobFlag, int32_t lM
 
 		if (uiJobFlag)
 		{
-			unsigned int uiChrJob = 1 << ((ecs::PlayerRuntime::GetJob(character) + 1) * 3
-				+ SkillSystem::GetSkillGroup(character));
+			const unsigned int shift = (ecs::PlayerRuntime::GetJob(character) + 1u) * 3u
+				+ SkillSystem::GetSkillGroup(character);
+			if (shift >= std::numeric_limits<unsigned int>::digits)
+				continue;
+			const unsigned int uiChrJob = 1u << shift;
 
 			if (!IS_SET(uiJobFlag, uiChrJob))
 				continue;
 		}
 
-		if (chFind == entt::null || number(1, ++n) == 1)
+		++n;
+		if (chFind == entt::null || number(1, n) == 1)
 			chFind = character;
 	}
 
@@ -1594,21 +1516,12 @@ bool CHARACTER_MANAGER::BeginPendingDestroy()
 
 void CHARACTER_MANAGER::FlushPendingDestroy()
 {
-	using namespace std;
-
-	m_bUsePendingDestroy = false; // ÷׸  ؾ  Destroy ó
-
-	if (!m_set_pkChrPendingDestroy.empty())
-	{
-		LOG_INFO("FlushPendingDestroy size {}", m_set_pkChrPendingDestroy.size());
-
-		auto it = m_set_pkChrPendingDestroy.begin();
-		for (const auto end = m_set_pkChrPendingDestroy.end(); it != end; ++it) {
-			M2_DESTROY_CHARACTER(*it);
-		}
-
-		m_set_pkChrPendingDestroy.clear();
-	}
+	m_bUsePendingDestroy = false;
+	// Nested teardown can erase pending entries or destroy the next handle.
+	// Detach the batch before callbacks; new requests belong to the live set.
+	const auto pending = std::exchange(m_set_pkChrPendingDestroy, {});
+	for (const entt::entity character : pending)
+		M2_DESTROY_CHARACTER(character);
 }
 
 
@@ -1624,7 +1537,8 @@ void CHARACTER_MANAGER::ClearEventData()
 }
 void CHARACTER_MANAGER::CheckBonusEvent(entt::entity character)
 {
-	LPCHARACTER ch = ecs::LegacyCharOf(character);
+	if (!ecs::PlayerRuntime::IsPC(character))
+		return;
 	//#ifdef ENABLE_INGAME_DEBUG_RAZOR93
 	//	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "char_manager.cpp::CHARACTER_MANAGER::CheckBonusEvent");//INGAME_DEBUG_RAZOR93
 	//#endif
@@ -1661,11 +1575,29 @@ const TEventManagerData* CHARACTER_MANAGER::CheckEventIsActive(uint8_t eventInde
 }
 void CHARACTER_MANAGER::CheckEventForDrop(entt::entity character, entt::entity killer, std::vector<entt::entity>& vec_item)
 {
-	LPCHARACTER pkChr = ecs::LegacyCharOf(character);
-	LPCHARACTER pkKiller = ecs::LegacyCharOf(killer);
+	if (!ecs::PlayerRuntime::IsValid(character) || !ecs::PlayerRuntime::IsPC(killer))
+		return;
+
+	// Never append to the vector being traversed. Each event clones its
+	// current inputs once; following events may intentionally stack bonuses.
+	const auto duplicateDrops = [&vec_item](auto matches) {
+		const auto inputs = vec_item;
+		std::vector<entt::entity> extra;
+		for (const entt::entity item : inputs)
+		{
+			if (!ItemSystem::IsValidItem(item))
+				continue;
+			const uint32_t vnum = ItemSystem::GetItemVnum(item);
+			if (!matches(vnum))
+				continue;
+			const entt::entity copy = ITEM_MANAGER::Instance().CreateItem(vnum, ItemSystem::GetItemCount(item), 0, true);
+			if (ItemSystem::IsValidItem(copy))
+				extra.push_back(copy);
+		}
+		vec_item.insert(vec_item.end(), extra.begin(), extra.end());
+	};
 	const uint8_t killerEmpire = ecs::PlayerRuntime::GetEmpire(killer);
 	const TEventManagerData* eventPtr = nullptr;
-	entt::entity rewardItem = entt::null;
 
 	if (ecs::PlayerRuntime::IsStone(character))
 	{
@@ -1674,14 +1606,7 @@ void CHARACTER_MANAGER::CheckEventForDrop(entt::entity character, entt::entity k
 		{
 
 
-			std::vector<entt::entity> m_cache;
-			for (const auto& vItem : vec_item)
-			{
-				rewardItem = ITEM_MANAGER::Instance().CreateItem(ItemSystem::GetItemVnum(vItem), ItemSystem::GetItemCount(vItem), 0, true);
-				if (ItemSystem::IsValidItem(rewardItem)) m_cache.emplace_back(rewardItem);
-			}
-			for (const auto& rItem : m_cache)
-				vec_item.emplace_back(rItem);
+			duplicateDrops([](uint32_t) { return true; });
 
 		}
 	}
@@ -1712,16 +1637,7 @@ void CHARACTER_MANAGER::CheckEventForDrop(entt::entity character, entt::entity k
 		eventPtr = CheckEventIsActive(BUPLA_RUN_BOSS_LOOT_EVENT, killerEmpire);
 		if (eventPtr && RollEventChance(eventPtr->value[3]))
 		{
-			std::vector<entt::entity> m_cache;
-			for (const auto& vItem : vec_item)
-			{
-				rewardItem = ITEM_MANAGER::Instance().CreateItem(ItemSystem::GetItemVnum(vItem), ItemSystem::GetItemCount(vItem), 0, true);
-				if (ItemSystem::IsValidItem(rewardItem))
-					m_cache.emplace_back(rewardItem);
-			}
-
-			for (const auto& rItem : m_cache)
-				vec_item.emplace_back(rItem);
+			duplicateDrops([](uint32_t) { return true; });
 
 		}
 		if (ecs::PlayerRuntime::GetRaceNum(character) == 4011)
@@ -1759,16 +1675,7 @@ void CHARACTER_MANAGER::CheckEventForDrop(entt::entity character, entt::entity k
 		if (eventPtr && RollEventChance(eventPtr->value[3]))
 		{
 
-			std::vector<entt::entity> m_cache;
-			for (const auto& vItem : vec_item)
-			{
-				rewardItem = ITEM_MANAGER::Instance().CreateItem(ItemSystem::GetItemVnum(vItem), ItemSystem::GetItemCount(vItem), 0, true);
-				if (ItemSystem::IsValidItem(rewardItem))
-					m_cache.emplace_back(rewardItem);
-			}
-
-			for (const auto& rItem : m_cache)
-				vec_item.emplace_back(rItem);
+			duplicateDrops([](uint32_t) { return true; });
 
 		}
 	}
@@ -1777,50 +1684,13 @@ void CHARACTER_MANAGER::CheckEventForDrop(entt::entity character, entt::entity k
 	if (eventPtr && RollEventChance(eventPtr->value[3]))
 	{
 
-		// If you have different book index put here!
-		constexpr uint32_t m_lbookItems[] = { 50300, 50301, 50302 };
-		std::vector<entt::entity> m_cache;
-		for (const auto& vItem : vec_item)
-		{
-			const uint32_t itemVnum = ItemSystem::GetItemVnum(vItem);
-			for (const auto& missionBook : m_lbookItems)
-			{
-				if (missionBook == itemVnum)
-				{
-					rewardItem = ITEM_MANAGER::Instance().CreateItem(itemVnum, ItemSystem::GetItemCount(vItem), 0, true);
-					if (ItemSystem::IsValidItem(rewardItem)) m_cache.emplace_back(rewardItem);
-
-					break;
-				}
-			}
-			for (const auto& rItem : m_cache)
-				vec_item.emplace_back(rItem);
-		}
+		duplicateDrops([](uint32_t vnum) { return vnum == 50300 || vnum == 50301 || vnum == 50302; });
 	}
 
 	eventPtr = CheckEventIsActive(DUNGEON_TICKET_LOOT_EVENT, killerEmpire);
 	if (eventPtr && RollEventChance(eventPtr->value[3]))
-	{
-		// If you have different book index put here!
-		constexpr uint32_t m_lticketItems[] = { 71201 };
-		std::vector<entt::entity> m_cache;
-		for (const auto& vItem : vec_item)
-		{
-			const uint32_t itemVnum = ItemSystem::GetItemVnum(vItem);
-			for (const auto& ticketItem : m_lticketItems)
-			{
-				if (ticketItem == itemVnum)
-				{
-					rewardItem = ITEM_MANAGER::Instance().CreateItem(itemVnum, ItemSystem::GetItemCount(vItem), 0, true);
-					if (ItemSystem::IsValidItem(rewardItem)) m_cache.emplace_back(rewardItem);
+		duplicateDrops([](uint32_t vnum) { return vnum == 71201; });
 
-					break;
-				}
-			}
-			for (const auto& rItem : m_cache)
-				vec_item.emplace_back(rItem);
-		}
-	}
 	eventPtr = CheckEventIsActive(MOONLIGHT_EVENT, killerEmpire);
 	if (eventPtr && RollEventChance(eventPtr->value[3]))
 	{
@@ -1865,17 +1735,17 @@ void CHARACTER_MANAGER::CheckEventForDrop(entt::entity character, entt::entity k
 
 		const uint32_t dwBossVnum = eventPtr->value[0];
 
-		if (dwBossVnum && pkChr && ecs::PlayerRuntime::IsStone(character) && pkKiller && ecs::PlayerRuntime::IsPC(killer))
+		if (dwBossVnum && ecs::PlayerRuntime::IsStone(character) && ecs::PlayerRuntime::IsPC(killer))
 		{
 			const int32_t mapIndex = ecs::PlayerRuntime::GetMapIndex(character);
 			const int32_t baseX = ecs::PlayerRuntime::GetX(character);
 			const int32_t baseY = ecs::PlayerRuntime::GetY(character);
-			const int32_t baseZ = pkChr->GetZ();
+			const int32_t baseZ = ecs::PlayerRuntime::GetZ(character);
 
-			LPCHARACTER boss = nullptr;
+			entt::entity boss = entt::null;
 
 
-			for (int i = 0; i < 16 && !boss; ++i)
+			for (int i = 0; i < 16 && boss == entt::null; ++i)
 			{
 				PIXEL_POSITION p;
 				p.x = baseX + number(-400, 400);
@@ -1884,13 +1754,13 @@ void CHARACTER_MANAGER::CheckEventForDrop(entt::entity character, entt::entity k
 				if (!SECTREE_MANAGER::instance().GetMovablePosition(mapIndex, p.x, p.y, p))
 					continue;
 
-				boss = CHARACTER_MANAGER::instance().SpawnMob(dwBossVnum, mapIndex, p.x, p.y, baseZ, true, -1, true);
+				boss = SpawnMobEntity(dwBossVnum, mapIndex, p.x, p.y, baseZ, true, -1, true);
 			}
 
-			if (boss)
+			if (ecs::PlayerRuntime::IsValid(boss))
 			{
-				CombatSystem::SetAggressive(boss->GetEntityHandle());
-				boss->SetVictim(killer);
+				CombatSystem::SetAggressive(boss);
+				CombatSystem::SetVictim(boss, killer);
 			}
 		}
 
@@ -1903,20 +1773,21 @@ void CHARACTER_MANAGER::CheckEventForDrop(entt::entity character, entt::entity k
 	eventPtr = CheckEventIsActive(EASTER_EVENT, killerEmpire);
 	if (eventPtr)
 	{
-		if (RollEventChance(eventPtr->value[3]))
+		const TEventManagerData easterEvent = *eventPtr;
+		if (RollEventChance(easterEvent.value[3]))
 		{
-			const uint32_t dwBossVnum = eventPtr->value[0];
+			const uint32_t dwBossVnum = easterEvent.value[0];
 
-			if (dwBossVnum && pkChr && ecs::PlayerRuntime::IsStone(character) && pkKiller && ecs::PlayerRuntime::IsPC(killer))
+			if (dwBossVnum && ecs::PlayerRuntime::IsStone(character) && ecs::PlayerRuntime::IsPC(killer))
 			{
 				const int32_t mapIndex = ecs::PlayerRuntime::GetMapIndex(character);
 				const int32_t baseX = ecs::PlayerRuntime::GetX(character);
 				const int32_t baseY = ecs::PlayerRuntime::GetY(character);
-				const int32_t baseZ = pkChr->GetZ();
+				const int32_t baseZ = ecs::PlayerRuntime::GetZ(character);
 
-				LPCHARACTER boss = nullptr;
+				entt::entity boss = entt::null;
 
-				for (int i = 0; i < 16 && !boss; ++i)
+				for (int i = 0; i < 16 && boss == entt::null; ++i)
 				{
 					PIXEL_POSITION p;
 					p.x = baseX + number(-400, 400);
@@ -1925,18 +1796,18 @@ void CHARACTER_MANAGER::CheckEventForDrop(entt::entity character, entt::entity k
 					if (!SECTREE_MANAGER::instance().GetMovablePosition(mapIndex, p.x, p.y, p))
 						continue;
 
-					boss = CHARACTER_MANAGER::instance().SpawnMob(dwBossVnum, mapIndex, p.x, p.y, baseZ, true, -1, true);
+					boss = SpawnMobEntity(dwBossVnum, mapIndex, p.x, p.y, baseZ, true, -1, true);
 				}
 
-				if (boss)
+				if (ecs::PlayerRuntime::IsValid(boss))
 				{
-					CombatSystem::SetAggressive(boss->GetEntityHandle());
-					boss->SetVictim(killer);
+					CombatSystem::SetAggressive(boss);
+					CombatSystem::SetVictim(boss, killer);
 				}
 			}
 		}
 
-		if (RollEventChance(eventPtr->value[2]))
+		if (RollEventChance(easterEvent.value[2]))
 		{
 			const entt::entity item = ITEM_MANAGER::instance().CreateItem(50181, 1, 0, true);//egy néger kosár fasz
 			if (ItemSystem::IsValidItem(item))
@@ -2026,22 +1897,7 @@ void CHARACTER_MANAGER::CheckEventForDrop(entt::entity character, entt::entity k
 		eventPtr = CheckEventIsActive(DUPLA_SZILI_EVENT, killerEmpire);
 		if (eventPtr && RollEventChance(eventPtr->value[3]))
 		{
-			std::vector<entt::entity> m_cache;
-
-			for (const auto& vItem : vec_item)
-			{
-
-				if (ItemSystem::GetItemVnum(vItem) == 30271)
-				{
-					rewardItem = ITEM_MANAGER::Instance().CreateItem(30271, ItemSystem::GetItemCount(vItem), 0, true);
-					if (ItemSystem::IsValidItem(rewardItem))
-						m_cache.emplace_back(rewardItem);
-				}
-			}
-
-
-			for (const auto& rItem : m_cache)
-				vec_item.emplace_back(rItem);
+			duplicateDrops([](uint32_t vnum) { return vnum == 30271; });
 		}
 	}
 
@@ -2076,12 +1932,10 @@ void CHARACTER_MANAGER::UpdateAllPlayerEventData()
 {
 	TEMP_BUFFER buf;
 	CompareEventSendData(&buf);
-	const DESC_MANAGER::DESC_SET& c_ref_set = DESC_MANAGER::instance().GetClientSet();
-	for (const auto& desc : c_ref_set)
+	for (const entt::entity character : CPIDRegistry::Instance().Snapshot())
 	{
-		if (!desc->GetCharacter())
-			continue;
-		desc->Packet(buf.read_peek(), buf.size());
+		if (auto* desc = ecs::PlayerRuntime::GetDesc(character))
+			desc->Packet(buf.read_peek(), buf.size());
 	}
 }
 void CHARACTER_MANAGER::SendDataPlayer(entt::entity character)
@@ -2133,6 +1987,8 @@ void CHARACTER_MANAGER::SetEventStatus(const uint16_t eventID, const bool eventS
 	eventData->eventStatus = eventStatus;
 	eventData->endTime = endTime;
 	strlcpy(eventData->endTimeText, endTimeText, sizeof(eventData->endTimeText));
+	const TEventManagerData eventSnapshot = *eventData;
+	const auto players = CPIDRegistry::Instance().Snapshot();
 
 	// Auto open&close notice
 	const std::map<uint8_t, std::pair<int, int>> m_eventText = {
@@ -2159,18 +2015,16 @@ void CHARACTER_MANAGER::SetEventStatus(const uint16_t eventID, const bool eventS
 
 
 	};
-	const DESC_MANAGER::DESC_SET& c_ref_set = DESC_MANAGER::instance().GetClientSet();
-	const auto it = m_eventText.find(eventData->eventIndex);
+	const auto it = m_eventText.find(eventSnapshot.eventIndex);
 	if (it != m_eventText.end())
 	{
 
-		for (const auto& desc : c_ref_set)
+		for (const entt::entity character : players)
 		{
-			auto* ch = desc->GetCharacter();
-			if (!ch) continue;
+			if (!ecs::PlayerRuntime::IsPC(character) || !ecs::PlayerRuntime::GetDesc(character)) continue;
 
 #ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(ch->GetEntityHandle(), CHAT_TYPE_BIG_NOTICE, eventStatus ? it->second.first : it->second.second, "");
+			ecs::ChatSystem::SendNew(character, CHAT_TYPE_BIG_NOTICE, eventStatus ? it->second.first : it->second.second, "");
 #endif
 		}
 	}
@@ -2178,25 +2032,24 @@ void CHARACTER_MANAGER::SetEventStatus(const uint16_t eventID, const bool eventS
 
 
 	// Bonus event update status
-	if (eventData->eventIndex == BONUS_EVENT)
+	if (eventSnapshot.eventIndex == BONUS_EVENT)
 	{
-		for (const auto& desc : c_ref_set)
+		for (const entt::entity character : players)
 		{
-			auto* ch = desc->GetCharacter();
-			if (!ch)
+			if (!ecs::PlayerRuntime::IsPC(character) || !ecs::PlayerRuntime::GetDesc(character))
 				continue;
-			if (eventData->empireFlag != 0)
-				if (eventData->empireFlag != ecs::PlayerRuntime::GetEmpire(ch->GetEntityHandle()))
+			if (eventSnapshot.empireFlag != 0)
+				if (eventSnapshot.empireFlag != ecs::PlayerRuntime::GetEmpire(character))
 					continue;
-			if (eventData->channelFlag != 0)
-				if (eventData->channelFlag != g_bChannel)
+			if (eventSnapshot.channelFlag != 0)
+				if (eventSnapshot.channelFlag != g_bChannel)
 					return;
 			if (!eventStatus)
 			{
-				const int32_t value = eventData->value[1];
-				ecs::PointSystem::ApplyPoint(ch->GetEntityHandle(), eventData->value[0], -value);
+				const int32_t value = eventSnapshot.value[1];
+				ecs::PointSystem::ApplyPoint(character, eventSnapshot.value[0], -value);
 			}
-			ch->ComputePoints();
+			ecs::PointSystem::Compute(character);
 		}
 	}
 
@@ -2205,22 +2058,21 @@ void CHARACTER_MANAGER::SetEventStatus(const uint16_t eventID, const bool eventS
 
 	TPacketGCEventManager p;
 	p.header = HEADER_GC_EVENT_MANAGER;
-	p.size = sizeof(TPacketGCEventManager) + sizeof(uint8_t) + sizeof(uint16_t) + sizeof(bool) + sizeof(int) + sizeof(int) + sizeof(eventData->endTimeText);
+	p.size = sizeof(TPacketGCEventManager) + sizeof(uint8_t) + sizeof(uint16_t) + sizeof(bool) + sizeof(int) + sizeof(int) + sizeof(eventSnapshot.endTimeText);
 
 	TEMP_BUFFER buf;
 	buf.write(&p, sizeof(TPacketGCEventManager));
 	buf.write(&subIndex, sizeof(uint8_t));
-	buf.write(&eventData->eventID, sizeof(uint16_t));
-	buf.write(&eventData->eventStatus, sizeof(bool));
-	buf.write(&eventData->endTime, sizeof(int));
-	buf.write(&eventData->endTimeText, sizeof(eventData->endTimeText));
+	buf.write(&eventSnapshot.eventID, sizeof(uint16_t));
+	buf.write(&eventSnapshot.eventStatus, sizeof(bool));
+	buf.write(&eventSnapshot.endTime, sizeof(int));
+	buf.write(&eventSnapshot.endTimeText, sizeof(eventSnapshot.endTimeText));
 	buf.write(&now, sizeof(int));
 
-	for (const auto& desc : c_ref_set)
+	for (const entt::entity character : players)
 	{
-		if (!desc->GetCharacter())
-			continue;
-		desc->Packet(buf.read_peek(), buf.size());
+		if (auto* desc = ecs::PlayerRuntime::GetDesc(character))
+			desc->Packet(buf.read_peek(), buf.size());
 	}
 
 }
@@ -2288,7 +2140,8 @@ void CHARACTER_MANAGER::LoadItemShopLog(entt::entity character)
 }
 void CHARACTER_MANAGER::LoadItemShopData(entt::entity character, bool isAll)
 {
-	LPCHARACTER ch = ecs::LegacyCharOf(character);
+	if (!ecs::PlayerRuntime::IsPC(character) || !ecs::PlayerRuntime::GetDesc(character))
+		return;
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
 	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "char_manager.cpp::CHARACTER_MANAGER::LoadItemShopData");//INGAME_DEBUG_RAZOR93
 #endif
@@ -2296,7 +2149,7 @@ void CHARACTER_MANAGER::LoadItemShopData(entt::entity character, bool isAll)
 	TPacketGCItemShop p;
 	p.header = HEADER_GC_ITEMSHOP;
 
-	uint32_t dragonCoin = ch->GetDragonCoin();
+	uint32_t dragonCoin = ecs::PlayerRuntime::GetDragonCoin(character);
 
 	if (isAll)
 	{
@@ -2407,11 +2260,12 @@ bool CHARACTER_MANAGER::GetItemShopDataByVnum(uint32_t vnum, TIShopData& outData
 
 void CHARACTER_MANAGER::LoadItemShopBuyReal(entt::entity character, const char* c_pData)
 {
-	LPCHARACTER ch = ecs::LegacyCharOf(character);
+	if (!ecs::PlayerRuntime::IsPC(character) || !ecs::PlayerRuntime::GetDesc(character))
+		return;
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
 	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "char_manager.cpp::CHARACTER_MANAGER::LoadItemShopBuyReal");//INGAME_DEBUG_RAZOR93
 #endif
-	if (!ch)
+	if (!c_pData)
 		return;
 	const uint8_t returnType = *(uint8_t*)c_pData;
 	c_pData += sizeof(uint8_t);
@@ -2448,15 +2302,6 @@ void CHARACTER_MANAGER::LoadItemShopBuyReal(entt::entity character, const char* 
 	const uint32_t itemPrice = *(uint32_t*)c_pData;
 	c_pData += sizeof(uint32_t);
 
-	/*const bool hasMallItem = *(bool*)c_pData;
-	c_pData += sizeof(bool);
-
-	TPlayerItem mallItem{};
-	if (hasMallItem)
-	{
-		mallItem = *(TPlayerItem*)c_pData;
-		c_pData += sizeof(TPlayerItem);
-	}*/
 
 	TEMP_BUFFER buf;
 	TPacketGCItemShop p;
@@ -2467,7 +2312,7 @@ void CHARACTER_MANAGER::LoadItemShopBuyReal(entt::entity character, const char* 
 		p.size += sizeof(TIShopLogData);
 
 	uint8_t subIndex = ITEMSHOP_DRAGONCOIN;
-	uint32_t dragonCoin = ch->GetDragonCoin();
+	uint32_t dragonCoin = ecs::PlayerRuntime::GetDragonCoin(character);
 
 	buf.write(&p, sizeof(TPacketGCItemShop));
 	buf.write(&subIndex, sizeof(uint8_t));
@@ -2529,7 +2374,7 @@ void CHARACTER_MANAGER::LoadItemShopBuyReal(entt::entity character, const char* 
 						ItemSystem::SetItemForceAttributeEcs(item, i, attribute.bType, attribute.sValue);
 				}
 
-				ItemSystem::AutoGiveItem(ch->GetEntityHandle(), item);
+				ItemSystem::AutoGiveItem(character, item);
 			}
 			else
 			{
@@ -2543,23 +2388,6 @@ void CHARACTER_MANAGER::LoadItemShopBuyReal(entt::entity character, const char* 
 	}
 
 
-	/*if (hasMallItem && ch->GetMall())
-	{
-		LPITEM item = ITEM_MANAGER::instance().CreateItem(mallItem.vnum, mallItem.count, mallItem.id);
-		if (item)
-		{
-			ItemSystem::SetItemSkipSave((item ? item->GetEntityHandle() : entt::null), true);
-			item->SetSockets(mallItem.alSockets);
-			item->SetAttributes(mallItem.aAttr);
-#ifdef ATTR_LOCK
-			item->SetLockedAttr(mallItem.lockedattr);
-#endif
-			if (ch->GetMall()->Add(mallItem.pos, item))
-				ItemSystem::SetItemSkipSave((item ? item->GetEntityHandle() : entt::null), false);
-			else
-				M2_DESTROY_ITEM(item);
-		}
-	}*/
 
 	if (itemCount > 1)
 		ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "You bought from game itemshop : count: %d Coins: %u", itemCount, itemPrice);
@@ -2568,11 +2396,12 @@ void CHARACTER_MANAGER::LoadItemShopBuyReal(entt::entity character, const char* 
 }
 void CHARACTER_MANAGER::LoadItemShopBuy(entt::entity character, int itemID, int itemCount)
 {
-	LPCHARACTER ch = ecs::LegacyCharOf(character);
+	if (!ecs::PlayerRuntime::IsPC(character) || !ecs::PlayerRuntime::GetDesc(character))
+		return;
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
 	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "char_manager.cpp::CHARACTER_MANAGER::LoadItemShopBuy");//INGAME_DEBUG_RAZOR93
 #endif
-	if (itemCount > 20)
+	if (itemCount < 1 || itemCount > 20)
 		return;
 
 	if (!m_IShopManager.empty())
@@ -2587,10 +2416,10 @@ void CHARACTER_MANAGER::LoadItemShopBuy(entt::entity character, int itemID, int 
 					{
 						for (auto itReal = itEx->second.begin(); itReal != itEx->second.end(); ++itReal)
 						{
-							const TIShopData& itemData = *itReal;
+							const TIShopData itemData = *itReal;
 							if (std::cmp_equal(itemData.id, itemID))
 							{
-								uint32_t dragonCoin = ch->GetDragonCoin();
+								uint32_t dragonCoin = ecs::PlayerRuntime::GetDragonCoin(character);
 								uint32_t itemPrice = itemData.itemPrice * itemCount;
 								if (itemData.discount > 0)
 									//itemPrice = long long(float(itemData.itemPrice) / 100.0 * float(100 - itemData.discount));//razor93
@@ -2618,7 +2447,7 @@ void CHARACTER_MANAGER::LoadItemShopBuy(entt::entity character, int itemID, int 
 								buf.write(&ipAdress, sizeof(ipAdress));
 								buf.write(&itemID, sizeof(int));
 								buf.write(&itemCount, sizeof(int));
-								bool isLogOpen = ch->GetProtectTime("itemshop.log") == 1 ? true : false;
+								bool isLogOpen = ecs::PlayerRuntime::GetProtectTime(character, "itemshop.log") == 1 ? true : false;
 								buf.write(&isLogOpen, sizeof(bool));
 
 								db_clientdesc->DBPacketHeader(HEADER_GD_ITEMSHOP, ecs::PlayerRuntime::GetDesc(character)->GetHandle(), buf.size());
@@ -2635,14 +2464,11 @@ void CHARACTER_MANAGER::LoadItemShopBuy(entt::entity character, int itemID, int 
 
 
 }
-void RefreshItemShop(LPDESC d)
+void RefreshItemShop(entt::entity character)
 {
-	LPCHARACTER ch = d->GetCharacter();
-	if (!ch)
+	if (!ecs::PlayerRuntime::IsPC(character) || !ecs::PlayerRuntime::GetDesc(character))
 		return;
-	const entt::entity character = ch->GetEntityHandle();
-
-	if (ch->GetProtectTime("itemshop.load") == 1)
+	if (ecs::PlayerRuntime::GetProtectTime(character, "itemshop.load") == 1)
 	{
 		ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "ItemShop was update!");
 		CHARACTER_MANAGER::Instance().LoadItemShopData(character, true);
@@ -2701,8 +2527,8 @@ void CHARACTER_MANAGER::LoadItemShopData(const char* c_pData)
 
 	if (isManuelUpdate)
 	{
-		const DESC_MANAGER::DESC_SET& c_ref_set = DESC_MANAGER::instance().GetClientSet();
-		std::for_each(c_ref_set.begin(), c_ref_set.end(), RefreshItemShop);
+		for (const entt::entity character : CPIDRegistry::Instance().Snapshot())
+			RefreshItemShop(character);
 	}
 }
 #endif

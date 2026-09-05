@@ -95,8 +95,20 @@ add_executable(EventLifecycleTests EXCLUDE_FROM_ALL
 target_link_libraries(EventLifecycleTests PRIVATE SERVER EnTT::EnTT)
 add_test(NAME event_lifecycle COMMAND EventLifecycleTests)
 
+add_executable(CharacterManagerTests EXCLUDE_FROM_ALL
+    ${CMAKE_SOURCE_DIR}/tests/server/CharacterManagerTests.cpp
+    char_manager.cpp
+    ecs/VIDRegistry.cpp
+    ecs/PIDRegistry.cpp
+)
+target_link_libraries(CharacterManagerTests PRIVATE SERVER EnTT::EnTT LUA)
+if(WIN32)
+    target_link_libraries(CharacterManagerTests PRIVATE ws2_32 bcrypt secur32 crypt32 shlwapi)
+endif()
+add_test(NAME character_manager COMMAND CharacterManagerTests)
+
 if(ENABLE_ASAN AND EXISTS "${AURIGA_ASAN_RUNTIME_DLL}")
-    foreach(_asan_target GameServer ItemAttributeTests MountLifecycleTests SafeboxLifecycleTests ItemManagerLifecycleTests QuickslotTests PointCalculationTests CombatStateTests AffectLifecycleTests EventLifecycleTests)
+    foreach(_asan_target GameServer ItemAttributeTests MountLifecycleTests SafeboxLifecycleTests ItemManagerLifecycleTests QuickslotTests PointCalculationTests CombatStateTests AffectLifecycleTests EventLifecycleTests CharacterManagerTests)
         add_custom_command(TARGET ${_asan_target} POST_BUILD
             COMMAND ${CMAKE_COMMAND} -E copy_if_different
                 "${AURIGA_ASAN_RUNTIME_DLL}"

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <map>
+#include <string>
 #include <unordered_set>
 
 #include <cstdint>
@@ -16,6 +17,15 @@ class CBuffOnAttributes;
 class CMountInventory;
 
 namespace ecs {
+
+struct InteractionCounters {
+    uint8_t chat { 0 };
+    uint8_t mount { 0 };
+};
+
+struct ProtectionTimes {
+    std::map<std::string, int, std::less<>> values;
+};
 
 // The dead, stun and recovery events CHARACTER used to hold as members.
 // They stay legacy LPEVENTs - this is where they live, not what they are -

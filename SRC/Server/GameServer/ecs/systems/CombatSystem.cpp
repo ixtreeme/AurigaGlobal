@@ -7235,30 +7235,55 @@ uint32_t CHARACTER::GetSkipComboAttackByTime() const
 
 namespace CombatSystem {
 
-// m_bChatCounter and m_bMountCounter are still CHARACTER members with no
-// component, so this resolves. The spawn path that calls it does not.
 void ResetChatCounter(entt::entity e)
 {
-	if (LPCHARACTER ch = ecs::LegacyCharOf(e))
-		ch->ResetChatCounter();
+	if (g_registry.valid(e))
+		g_registry.get_or_emplace<ecs::InteractionCounters>(e) = {};
+}
+
+uint8_t GetChatCounter(entt::entity e)
+{
+	const auto* counters = g_registry.valid(e) ? g_registry.try_get<ecs::InteractionCounters>(e) : nullptr;
+	return counters ? counters->chat : 0;
+}
+
+uint8_t IncreaseChatCounter(entt::entity e)
+{
+	return g_registry.valid(e) ? ++g_registry.get_or_emplace<ecs::InteractionCounters>(e).chat : 0;
+}
+
+void ResetMountCounter(entt::entity e)
+{
+	if (g_registry.valid(e))
+		g_registry.get_or_emplace<ecs::InteractionCounters>(e).mount = 0;
+}
+
+uint8_t GetMountCounter(entt::entity e)
+{
+	const auto* counters = g_registry.valid(e) ? g_registry.try_get<ecs::InteractionCounters>(e) : nullptr;
+	return counters ? counters->mount : 0;
+}
+
+uint8_t IncreaseMountCounter(entt::entity e)
+{
+	return g_registry.valid(e) ? ++g_registry.get_or_emplace<ecs::InteractionCounters>(e).mount : 0;
 }
 
 } // namespace CombatSystem
 
 void CHARACTER::ResetChatCounter()
 {
-	m_bChatCounter = 0;
-	m_bMountCounter = 0;
+	CombatSystem::ResetChatCounter(GetEntityHandle());
 }
 
 uint8_t CHARACTER::IncreaseChatCounter()
 {
-	return ++m_bChatCounter;
+	return CombatSystem::IncreaseChatCounter(GetEntityHandle());
 }
 
 uint8_t CHARACTER::GetChatCounter() const
 {
-	return m_bChatCounter;
+	return CombatSystem::GetChatCounter(GetEntityHandle());
 }
 
 namespace CombatSystem {

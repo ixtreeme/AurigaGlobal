@@ -790,11 +790,13 @@ void EntityFactory::Destroy(entt::registry& reg, entt::entity e)
 
     CleanupCombatReferences(reg, e);
 
-    if (const auto* vid = reg.try_get<ecs::VIDComponent>(e)) {
+    if (const auto* vid = reg.try_get<ecs::VIDComponent>(e);
+        vid && CVIDRegistry::Instance().Find(vid->value) == e) {
         CVIDRegistry::Instance().Unregister(vid->value);
     }
 
-    if (const auto* pid = reg.try_get<ecs::PlayerID>(e); pid && pid->pid) {
+    if (const auto* pid = reg.try_get<ecs::PlayerID>(e);
+        pid && pid->pid && CPIDRegistry::Instance().Find(pid->pid) == e) {
         CPIDRegistry::Instance().Unregister(pid->pid);
     }
 

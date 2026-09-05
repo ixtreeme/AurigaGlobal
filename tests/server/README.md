@@ -1,5 +1,46 @@
 # Server ECS regression tests
 
+## Character manager indices, queues and event drops
+
+`CharacterManagerTests` compiles the complete production `char_manager.cpp` and
+the VID/PID registries. Name lookup, selection, PC/FSM snapshots and pending
+destruction use versioned entities, including fixtures without a CHARACTER shell.
+Checks cover case-insensitive names, stale/recycled handles, replacement index
+entries, incomplete names, reservoir sampling and job-mask shift bounds, deferred
+and recursive destruction, stale-index shutdown, removed snapshot members and
+preservation of an outer pending-destruction scope.
+
+Save tests attach inert CHARACTER shells to exercise the actual manager's
+SaveReal boundary: callback requeue, destruction of another queued save, exactly
+one final save and ECS state remaining alive until shell teardown. The shell
+destructor and EntityFactory are doubles; this is not an end-to-end inventory,
+dungeon, session or mount teardown test.
+
+Drop tests force successful event rolls and vector growth, verifying unique
+clone handles, counts, invalid/failed items, stacking, boss variants, mission
+books, dungeon tickets and the soul-only filter. Item allocation is a double.
+Disconnected itemshop entry points must return without contacting live services.
+Actual SQL/packet exchange and the full legacy spawn/destructor paths are not
+executed by this target. The itemshop coin query now reads the entity's session;
+protection times are ECS-owned. Neither change replaces DB-side purchase
+validation or makes the length-less itemshop DB packet parser bounds-checked.
+
+`CombatStateTests` additionally exercises the production ECS chat/mount counters:
+default reads, increments, independent mount reset, combined periodic reset,
+byte rollover and null/stale/recycled owners.
+
+```powershell
+cmake --build build --config Release --target GameServer CharacterManagerTests CombatStateTests
+ctest --test-dir build -C Release -R '^(character_manager|combat_state)$' --output-on-failure
+cmake --build build-asan --config RelWithDebInfo --target CharacterManagerTests CombatStateTests
+ctest --test-dir build-asan -C RelWithDebInfo -R '^(character_manager|combat_state)$' --output-on-failure
+```
+
+Remaining `LegacyCharOf` calls in `char_manager.cpp` are explicit boundaries for
+Disconnect, CHARACTER/dungeon teardown, pointer-returning FindPC/SpawnMob and
+SaveReal. Group/range spawning and `for_each_pc` still have legacy callers; this
+change does not claim the entire character manager or AISystem is legacy-free.
+
 ## Affect ownership and point application
 
 `AffectLifecycleTests` compiles the complete existing `AffectSystem.cpp` and
