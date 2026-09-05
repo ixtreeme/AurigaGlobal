@@ -754,11 +754,15 @@ namespace quest
 		}
 	}
 
-	void PC::SendFlagList(LPCHARACTER ch)
+	void PC::SendFlagList(entt::entity chEntity)
 	{
-		for (auto it = m_FlagMap.begin(); it!= m_FlagMap.end(); ++it)
+		if (!ecs::PlayerRuntime::IsValid(chEntity))
+			return;
+		const auto flags = m_FlagMap;
+		for (auto it = flags.begin(); it!= flags.end(); ++it)
 		{
-			const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
+			if (!ecs::PlayerRuntime::IsValid(chEntity))
+				return;
 			if (it->first.size()>9 && it->first.compare(it->first.size()-9,9, ".__status") == 0)
 			{
 				const string quest_name = it->first.substr(0, it->first.size()-9);

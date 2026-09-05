@@ -50,6 +50,9 @@
 #include "ecs/CharacterAccessors.hpp"
 #include "ecs/EntityFactory.hpp"
 #include "ecs/VIDRegistry.hpp"
+#include "ecs/PIDRegistry.hpp"
+#include <charconv>
+#include <unordered_set>
 #include "ecs/systems/ItemSystem.hpp"
 #include "ecs/systems/ActivitySystem.hpp"
 #include <common/CommonDefines.h>
@@ -65,6 +68,26 @@
 #include "ecs/systems/DragonSoulSystem.hpp"
 #endif
 
+namespace {
+template <typename Func>
+void ForEachOnlinePlayer(Func&& callback)
+{
+    // Callbacks can disconnect players: never retain a registry/map iterator.
+    for (const auto player : CPIDRegistry::Instance().Snapshot())
+        if (ecs::PlayerRuntime::IsPC(player) && ecs::PlayerRuntime::GetDesc(player))
+            callback(player);
+}
+
+template <typename T>
+bool ParseGMNumber(std::string_view text, T& value)
+{
+    if (text.empty())
+        return false;
+    const auto result = std::from_chars(text.data(), text.data() + text.size(), value);
+    return result.ec == std::errc{} && result.ptr == text.data() + text.size();
+}
+}
+
 extern bool DropEvent_RefineBox_SetValue(const std::string& name, int value);
 
 // ADD_COMMAND_SLOW_STUN
@@ -74,9 +97,10 @@ enum
 	COMMANDAFFECT_SLOW,
 };
 
-void Command_ApplyAffect(LPCHARACTER ch, const char* argument, const char* affectName, int cmdAffect)
+void Command_ApplyAffect(entt::entity chEntity, const char* argument, const char* affectName, int cmdAffect)
 {
-	const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
+	if (!ecs::PlayerRuntime::IsPC(chEntity))
+		return;
 	char arg1[256];
 	one_argument(argument, arg1, sizeof(arg1));
 
@@ -265,19 +289,18 @@ ACMD(do_pcbang_check)
 
 ACMD(do_stun)
 {
-	LPCHARACTER ch = ecs::LegacyCharOf(character);
-	Command_ApplyAffect(ch, argument, "stun", COMMANDAFFECT_STUN);
+	Command_ApplyAffect(character, argument, "stun", COMMANDAFFECT_STUN);
 }
 
 ACMD(do_slow)
 {
-	LPCHARACTER ch = ecs::LegacyCharOf(character);
-	Command_ApplyAffect(ch, argument, "slow", COMMANDAFFECT_SLOW);
+	Command_ApplyAffect(character, argument, "slow", COMMANDAFFECT_SLOW);
 }
 
 ACMD(do_transfer)
 {
-	LPCHARACTER ch = ecs::LegacyCharOf(character);
+	if (!ecs::PlayerRuntime::IsPC(character))
+		return;
 	char arg1[256];
 	one_argument(argument, arg1, sizeof(arg1));
 
@@ -287,8 +310,8 @@ ACMD(do_transfer)
 		return;
 	}
 
-	LPCHARACTER tch = CHARACTER_MANAGER::instance().FindPC(arg1);
-	if (!tch)
+	entt::entity tch = CHARACTER_MANAGER::instance().FindPCEntity(arg1);
+	if (!ecs::PlayerRuntime::IsValid(tch))
 	{
 		CCI * pkCCI = P2P_MANAGER::instance().Find(arg1);
 
@@ -322,12 +345,11 @@ ACMD(do_transfer)
 		return;
 	}
 
-	if (ch == tch) {
+	if (character == tch) {
 		return;
 	}
 
-	//tch->Show(ecs::PlayerRuntime::GetMapIndex(character), ecs::PlayerRuntime::GetX(character), ecs::PlayerRuntime::GetY(character), ch->GetZ());
-	ecs::MovementSystem::WarpSet(((tch) ? (tch)->GetEntityHandle() : entt::null), ecs::PlayerRuntime::GetX(character), ecs::PlayerRuntime::GetY(character), ecs::PlayerRuntime::GetMapIndex(character));
+	ecs::MovementSystem::WarpSet(tch, ecs::PlayerRuntime::GetX(character), ecs::PlayerRuntime::GetY(character), ecs::PlayerRuntime::GetMapIndex(character));
 }
 
 // LUA_ADD_GOTO_INFO
@@ -414,7 +436,7 @@ bool FindInString(const char * c_pszFind, const char * c_pszIn)
 	return false;
 }
 
-bool CHARACTER_GoToName(LPCHARACTER ch, uint8_t empire, int mapIndex, const char* gotoName)
+static bool GoToName(entt::entity chEntity, uint8_t empire, int mapIndex, const char* gotoName)
 {
 	//std::vector<GotoInfo>::iterator i;
 	for (auto i = gs_vec_gotoInfo.begin(); i != gs_vec_gotoInfo.end(); ++i)
@@ -431,7 +453,6 @@ bool CHARACTER_GoToName(LPCHARACTER ch, uint8_t empire, int mapIndex, const char
 
 		if (c_eachGotoInfo.empire == 0 || c_eachGotoInfo.empire == empire)
 		{
-			const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
 			int x = c_eachGotoInfo.x * 100;
 			int y = c_eachGotoInfo.y * 100;
 #ifdef TEXTS_IMPROVEMENT
@@ -447,7 +468,8 @@ bool CHARACTER_GoToName(LPCHARACTER ch, uint8_t empire, int mapIndex, const char
 
 ACMD(do_goto)
 {
-	LPCHARACTER ch = ecs::LegacyCharOf(character);
+	if (!ecs::PlayerRuntime::IsPC(character))
+		return;
 	char arg1[256], arg2[256];
 	int x = 0, y = 0, z = 0;
 
@@ -492,7 +514,7 @@ ACMD(do_goto)
 		else
 			empire = (ecs::PlayerRuntime::GetEmpire(character));
 
-		if (CHARACTER_GoToName(ch, empire, mapIndex, arg1))
+		if (!GoToName(character, empire, mapIndex, arg1))
 		{
 			ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "Cannot find map command syntax: /goto <mapname> [empire]");
 			return;
@@ -510,7 +532,8 @@ ACMD(do_goto)
 
 ACMD(do_warp)
 {
-	LPCHARACTER ch = ecs::LegacyCharOf(character);
+	if (!ecs::PlayerRuntime::IsPC(character))
+		return;
 	char arg1[256], arg2[256];
 
 	two_arguments(argument, arg1, sizeof(arg1), arg2, sizeof(arg2));
@@ -533,11 +556,10 @@ ACMD(do_warp)
 	}
 	else
 	{
-		LPCHARACTER tch = CHARACTER_MANAGER::instance().FindPC(arg1);
-		const entt::entity tchEntity = tch ? tch->GetEntityHandle() : entt::null;
+		const entt::entity tchEntity = CHARACTER_MANAGER::instance().FindPCEntity(arg1);
 
 
-		if (nullptr == tch)
+		if (!ecs::PlayerRuntime::IsValid(tchEntity))
 		{
 			const CCI* pkCCI = P2P_MANAGER::instance().Find(arg1);
 
@@ -551,7 +573,9 @@ ACMD(do_warp)
 					return;
 				}
 
-				ch->WarpToPID( pkCCI->dwPID );
+				// Remote PID warp still belongs to the legacy cross-core session path.
+				if (auto* ch = ecs::LegacyCharOf(character))
+					ch->WarpToPID(pkCCI->dwPID);
 			}
 #ifdef TEXTS_IMPROVEMENT
 			else {
@@ -602,7 +626,8 @@ ACMD(do_rewarp)
 
 ACMD(do_item)
 {
-	LPCHARACTER ch = ecs::LegacyCharOf(character);
+	if (!ecs::PlayerRuntime::IsPC(character))
+		return;
 	char arg1[256], arg2[256];
 	two_arguments(argument, arg1, sizeof(arg1), arg2, sizeof(arg2));
 
@@ -620,7 +645,7 @@ ACMD(do_item)
 		iCount = MINMAX(1, iCount, g_bItemCountLimit);
 	}
 
-	uint32_t dwVnum;
+	uint32_t dwVnum = 0;
 
 	if (isnhdigit(*arg1))
 		str_to_number(dwVnum, arg1);
@@ -643,8 +668,15 @@ ACMD(do_item)
 
 			if (iEmptyPos != -1)
 			{
-				InventorySystem::AddToCharacter(item, ch->GetEntityHandle(), TItemPos(DRAGON_SOUL_INVENTORY, iEmptyPos));
-				LogManager::instance().ItemLogEntity(character, item, "GM", ItemSystem::GetItemName(item));
+				if (!InventorySystem::AddToCharacter(item, character, TItemPos(DRAGON_SOUL_INVENTORY, iEmptyPos)))
+                {
+                    if (ItemSystem::IsValidItem(item) && ItemSystem::GetItemOwner(item) == entt::null)
+                        ItemSystem::DestroyItemEntityEcs(item, "GM_CMD_ADD_FAILED");
+                    return;
+                }
+                if (ecs::PlayerRuntime::IsPC(character) && ItemSystem::IsValidItem(item)
+                    && ItemSystem::GetItemOwner(item) == character)
+                    LogManager::instance().ItemLogEntity(character, item, "GM", ItemSystem::GetItemName(item));
 			}
 			else
 			{
@@ -663,8 +695,15 @@ ACMD(do_item)
 
 			if (iEmptyPos != -1)
 			{
-				InventorySystem::AddToCharacter(item, ch->GetEntityHandle(), TItemPos(EXTRA_INVENTORY, iEmptyPos));
-				LogManager::instance().ItemLogEntity(character, item, "GM", ItemSystem::GetItemName(item));
+				if (!InventorySystem::AddToCharacter(item, character, TItemPos(EXTRA_INVENTORY, iEmptyPos)))
+                {
+                    if (ItemSystem::IsValidItem(item) && ItemSystem::GetItemOwner(item) == entt::null)
+                        ItemSystem::DestroyItemEntityEcs(item, "GM_CMD_ADD_FAILED");
+                    return;
+                }
+                if (ecs::PlayerRuntime::IsPC(character) && ItemSystem::IsValidItem(item)
+                    && ItemSystem::GetItemOwner(item) == character)
+                    LogManager::instance().ItemLogEntity(character, item, "GM", ItemSystem::GetItemName(item));
 			}
 			else
 			{
@@ -679,12 +718,19 @@ ACMD(do_item)
 #endif
 		else
 		{
-			int iEmptyPos = ch->GetEmptyInventory(ItemSystem::GetItemSize(item));
+			int iEmptyPos = ItemSystem::GetEmptyInventoryPositionEcs(character, item);
 
 			if (iEmptyPos != -1)
 			{
-				InventorySystem::AddToCharacter(item, ch->GetEntityHandle(), TItemPos(INVENTORY, iEmptyPos));
-				LogManager::instance().ItemLogEntity(character, item, "GM", ItemSystem::GetItemName(item));
+				if (!InventorySystem::AddToCharacter(item, character, TItemPos(INVENTORY, iEmptyPos)))
+                {
+                    if (ItemSystem::IsValidItem(item) && ItemSystem::GetItemOwner(item) == entt::null)
+                        ItemSystem::DestroyItemEntityEcs(item, "GM_CMD_ADD_FAILED");
+                    return;
+                }
+                if (ecs::PlayerRuntime::IsPC(character) && ItemSystem::IsValidItem(item)
+                    && ItemSystem::GetItemOwner(item) == character)
+                    LogManager::instance().ItemLogEntity(character, item, "GM", ItemSystem::GetItemName(item));
 			}
 			else
 			{
@@ -951,7 +997,8 @@ ACMD(do_mob)
 
 ACMD(do_mob_ld)
 {
-	LPCHARACTER ch = ecs::LegacyCharOf(character);
+	if (!ecs::PlayerRuntime::IsPC(character))
+		return;
 	char	arg1[256], arg2[256], arg3[256], arg4[256];
 	uint32_t	vnum = 0;
 
@@ -997,11 +1044,11 @@ ACMD(do_mob_ld)
 		str_to_number(dir, arg4);
 
 
-	CHARACTER_MANAGER::instance().SpawnMob(vnum,
+	CHARACTER_MANAGER::instance().SpawnMobEntity(vnum,
 		ecs::PlayerRuntime::GetMapIndex(character),
 		x*100,
 		y*100,
-		ch->GetZ(),
+		ecs::PlayerRuntime::GetZ(character),
 		pkMob->m_table.bType == CHAR_TYPE_STONE,
 		dir);
 }
@@ -1065,254 +1112,163 @@ ACMD(do_purge)
 #define ENABLE_CMD_IPURGE_EX
 ACMD(do_item_purge)
 {
-	LPCHARACTER ch = ecs::LegacyCharOf(character);
-#ifdef ENABLE_CMD_IPURGE_EX
-	char arg1[256];
-	one_argument(argument, arg1, sizeof(arg1));
-	if (!*arg1)
-	{
-		ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "Usage: ipurge <window>");
-		ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "List of the available windows:");
-		ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, " all");
-		ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, " inventory or inv");
-		ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, " equipment or equip");
-		ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, " dragonsoul or ds");
-		ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, " belt");
+	if (!ecs::PlayerRuntime::IsPC(character))
 		return;
-	}
-
-	int i;
-	const entt::entity owner = character;
-
-#ifdef __NEWPET_SYSTEM__
-	CNewPetSystem* petSystem = ch->GetNewPetSystem();
-
-	if(petSystem->CountSummoned() > 0)
-	{
-#ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 807, "");
-#endif
-		return;
-	}
-#endif
-	std::string strArg(arg1);
-	if (!strArg.compare(0, 3, "all"))
-	{
-		for (i = 0; i < INVENTORY_AND_EQUIP_SLOT_MAX; ++i)
-		{
-			const entt::entity item = ItemSystem::GetInventoryItem(owner, i);
-			if (ItemSystem::IsValidItem(item))
-			{
-				ItemSystem::DestroyItemEntityEcs(item, "PURGE");
-				ch->SyncQuickslot(QUICKSLOT_TYPE_ITEM, i, 255);
-			}
-		}
-		for (i = 0; i < DRAGON_SOUL_INVENTORY_MAX_NUM; ++i)
-		{
-			const entt::entity item = ItemSystem::GetItem(
-				owner, TItemPos(DRAGON_SOUL_INVENTORY, i));
-			if (ItemSystem::IsValidItem(item))
-				ItemSystem::DestroyItemEntityEcs(item, "PURGE");
-		}
+    char arg[256];
+    one_argument(argument, arg, sizeof(arg));
+    const std::string_view window(arg);
+    const bool all = window == "all";
+    const bool inventory = window == "inventory" || window == "inv";
+    const bool equipment = window == "equipment" || window == "equip";
+    const bool dragonSoul = window == "dragonsoul" || window == "ds";
+    const bool belt = window == "belt";
 #ifdef ENABLE_EXTRA_INVENTORY
-		for (i = 0; i < EXTRA_INVENTORY_MAX_NUM; ++i)
-		{
-			const entt::entity item = ItemSystem::GetExtraInventoryItem(owner, i);
-			if (ItemSystem::IsValidItem(item)) {
-				ItemSystem::DestroyItemEntityEcs(item, "PURGE");
-				ch->SyncQuickslot(QUICKSLOT_TYPE_ITEM_EXTRA, i, 255);
-			}
-		}
-#endif
-	}
-	else if (!strArg.compare(0, 3, "inv"))
-	{
-		for (i = 0; i < INVENTORY_MAX_NUM; ++i)
-		{
-			const entt::entity item = ItemSystem::GetInventoryItem(owner, i);
-			if (ItemSystem::IsValidItem(item))
-			{
-				ItemSystem::DestroyItemEntityEcs(item, "PURGE");
-				ch->SyncQuickslot(QUICKSLOT_TYPE_ITEM, i, 255);
-			}
-		}
-	}
-	else if (!strArg.compare(0, 5, "equip"))
-	{
-		for (i = 0; i < WEAR_MAX_NUM; ++i)
-		{
-			const entt::entity item = ItemSystem::GetWearItem(owner, i);
-			if (ItemSystem::IsValidItem(item))
-			{
-				ItemSystem::DestroyItemEntityEcs(item, "PURGE");
-				ch->SyncQuickslot(QUICKSLOT_TYPE_ITEM, INVENTORY_MAX_NUM + i, 255);
-			}
-		}
-	}
-	else if (!strArg.compare(0, 6, "dragon") || !strArg.compare(0, 2, "ds"))
-	{
-		for (i = 0; i < DRAGON_SOUL_INVENTORY_MAX_NUM; ++i)
-		{
-			const entt::entity item = ItemSystem::GetItem(
-				owner, TItemPos(DRAGON_SOUL_INVENTORY, i));
-			if (ItemSystem::IsValidItem(item))
-				ItemSystem::DestroyItemEntityEcs(item, "PURGE");
-		}
-	}
-	else if (!strArg.compare(0, 4, "belt"))
-	{
-		for (i = 0; i < BELT_INVENTORY_SLOT_COUNT; ++i)
-		{
-			const entt::entity item = ItemSystem::GetInventoryItem(
-				owner, BELT_INVENTORY_SLOT_START + i);
-			if (ItemSystem::IsValidItem(item))
-			{
-				ItemSystem::DestroyItemEntityEcs(item, "PURGE");
-				ch->SyncQuickslot(QUICKSLOT_TYPE_ITEM, BELT_INVENTORY_SLOT_START + i, 255);
-			}
-		}
-	}
-#ifdef ENABLE_EXTRA_INVENTORY
-	else if (!strArg.compare(0, 5, "extra"))
-	{
-		for (i = 0; i < EXTRA_INVENTORY_MAX_NUM; ++i)
-		{
-			const entt::entity item = ItemSystem::GetExtraInventoryItem(owner, i);
-			if (ItemSystem::IsValidItem(item)) {
-				ItemSystem::DestroyItemEntityEcs(item, "PURGE");
-				ch->SyncQuickslot(QUICKSLOT_TYPE_ITEM_EXTRA, i, 255);
-			}
-		}
-	}
-#endif
+    const bool extra = window == "extra";
 #else
-	int i;
-	const entt::entity owner = character;
+    const bool extra = false;
+#endif
+    if (!(all || inventory || equipment || dragonSoul || belt || extra))
+    {
+        ecs::ChatSystem::Send(character, CHAT_TYPE_INFO,
+            "Usage: ipurge <all|inventory|equipment|dragonsoul|belt|extra>");
+        return;
+    }
+#ifdef __NEWPET_SYSTEM__
+    if (auto* pet = ecs::PlayerRuntime::GetNewPetSystem(character); pet && pet->CountSummoned() > 0)
+    {
+#ifdef TEXTS_IMPROVEMENT
+        ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 807, "");
+#endif
+        return;
+    }
+#endif
 
-	for (i = 0; i < INVENTORY_AND_EQUIP_SLOT_MAX; ++i)
-	{
-		const entt::entity item = ItemSystem::GetInventoryItem(owner, i);
-		if (ItemSystem::IsValidItem(item))
-		{
-			ItemSystem::DestroyItemEntityEcs(item, "PURGE");
-			ch->SyncQuickslot(QUICKSLOT_TYPE_ITEM, i, 255);
-		}
-	}
-	for (i = 0; i < DRAGON_SOUL_INVENTORY_MAX_NUM; ++i)
-	{
-		const entt::entity item = ItemSystem::GetItem(
-			owner, TItemPos(DRAGON_SOUL_INVENTORY, i));
-		if (ItemSystem::IsValidItem(item))
-			ItemSystem::DestroyItemEntityEcs(item, "PURGE");
-	}
+    struct Entry { entt::entity item; TItemPos position; uint16_t quickslotType; };
+    std::vector<Entry> pending;
+    std::unordered_set<entt::entity> seen;
+    const auto collect = [&](uint8_t type, int first, int end, uint16_t quickslotType)
+    {
+        for (int cell = first; cell < end; ++cell)
+        {
+            const TItemPos position(type, cell);
+            const auto item = ItemSystem::GetItem(character, position);
+            if (ItemSystem::IsValidItem(item) && ItemSystem::GetItemOwner(item) == character
+                && seen.insert(item).second)
+                pending.push_back({item, position, quickslotType});
+        }
+    };
+    if (all) collect(INVENTORY, 0, INVENTORY_AND_EQUIP_SLOT_MAX, QUICKSLOT_TYPE_ITEM);
+    else if (inventory) collect(INVENTORY, 0, INVENTORY_MAX_NUM, QUICKSLOT_TYPE_ITEM);
+    else if (equipment) collect(INVENTORY, INVENTORY_MAX_NUM, INVENTORY_MAX_NUM + WEAR_MAX_NUM, QUICKSLOT_TYPE_ITEM);
+    else if (belt) collect(INVENTORY, BELT_INVENTORY_SLOT_START,
+        BELT_INVENTORY_SLOT_START + BELT_INVENTORY_SLOT_COUNT, QUICKSLOT_TYPE_ITEM);
+    if (all || dragonSoul) collect(DRAGON_SOUL_INVENTORY, 0, DRAGON_SOUL_INVENTORY_MAX_NUM, QUICKSLOT_TYPE_NONE);
 #ifdef ENABLE_EXTRA_INVENTORY
-	for (i = 0; i < EXTRA_INVENTORY_MAX_NUM; ++i)
-	{
-		const entt::entity item = ItemSystem::GetExtraInventoryItem(owner, i);
-		if (ItemSystem::IsValidItem(item)) {
-			ItemSystem::DestroyItemEntityEcs(item, "PURGE");
-			ch->SyncQuickslot(QUICKSLOT_TYPE_ITEM_EXTRA, i, 255);
-		}
-	}
+    if (all || extra) collect(EXTRA_INVENTORY, 0, EXTRA_INVENTORY_MAX_NUM, QUICKSLOT_TYPE_ITEM_EXTRA);
 #endif
-#endif
+
+    // No inventory iterators/pointers survive deletion callbacks. An item moved
+    // into a selected slot after the snapshot does not belong to this command.
+    for (const auto& entry : pending)
+    {
+        if (!ecs::PlayerRuntime::IsPC(character))
+            return;
+        if (!ItemSystem::IsValidItem(entry.item) || ItemSystem::GetItemOwner(entry.item) != character
+            || ItemSystem::GetItem(character, entry.position) != entry.item)
+            continue;
+        if (!ItemSystem::DestroyItemEntityEcs(entry.item, "PURGE"))
+            continue;
+        if (!ecs::PlayerRuntime::IsPC(character))
+            return;
+        if (entry.quickslotType != QUICKSLOT_TYPE_NONE
+            && ItemSystem::GetItem(character, entry.position) == entt::null)
+            InventorySystem::SyncQuickslot(character, entry.quickslotType, entry.position.cell, 255);
+    }
 }
 
 ACMD(do_state)
 {
-	LPCHARACTER ch = ecs::LegacyCharOf(character);
+	if (!ecs::PlayerRuntime::IsPC(character))
+		return;
 	char arg1[256];
-	LPCHARACTER tch;
-
+	entt::entity tch = character;
 	one_argument(argument, arg1, sizeof(arg1));
-
 	if (*arg1)
 	{
 		if (arg1[0] == '#')
-		{
-			tch = CHARACTER_MANAGER::instance().Find(strtoul(arg1+1, nullptr, 10));
-		}
+			tch = CHARACTER_MANAGER::instance().FindEntity(strtoul(arg1 + 1, nullptr, 10));
 		else
-		{
-			LPDESC d = DESC_MANAGER::instance().FindByCharacterName(arg1);
-
-			if (!d)
-				tch = nullptr;
-			else
-				tch = d->GetCharacter();
-		}
+			tch = CHARACTER_MANAGER::instance().FindPCEntity(arg1);
 	}
-	else
-		tch = ch;
-
-	if (!tch)
+	if (!ecs::PlayerRuntime::IsValid(tch))
 		return;
 
 	char buf[256];
 
-	snprintf(buf, sizeof(buf), "%s's State: ", ecs::PlayerRuntime::GetName(((tch) ? (tch)->GetEntityHandle() : entt::null)).data());
+	snprintf(buf, sizeof(buf), "%s's State: ", ecs::PlayerRuntime::GetName(tch).data());
 
-	if (tch->IsPosition(POS_FIGHTING))
+	if (ecs::PlayerRuntime::GetPosition(tch) == POS_FIGHTING)
 		strlcat(buf, "Battle", sizeof(buf));
-	else if (tch->IsPosition(POS_DEAD))
+	else if (ecs::PlayerRuntime::GetPosition(tch) == POS_DEAD)
 		strlcat(buf, "Dead", sizeof(buf));
 	else
 		strlcat(buf, "Standing", sizeof(buf));
 
-	if (ch->GetShop())
+	if (ecs::SocialSystem::GetShop(tch))
 		strlcat(buf, ", Shop", sizeof(buf));
 
-	if (ecs::SocialSystem::GetExchange(character))
+	if (ecs::SocialSystem::GetExchange(tch))
 		strlcat(buf, ", Exchange", sizeof(buf));
 
 	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "%s", buf);
 
 	int len;
 	len = snprintf(buf, sizeof(buf), "Coordinate %ldx%ld (%ldx%ld)",
-			ecs::PlayerRuntime::GetX(((tch) ? (tch)->GetEntityHandle() : entt::null)), ecs::PlayerRuntime::GetY(((tch) ? (tch)->GetEntityHandle() : entt::null)), ecs::PlayerRuntime::GetX(((tch) ? (tch)->GetEntityHandle() : entt::null)) / 100, ecs::PlayerRuntime::GetY(((tch) ? (tch)->GetEntityHandle() : entt::null)) / 100);
+			ecs::PlayerRuntime::GetX(tch), ecs::PlayerRuntime::GetY(tch), ecs::PlayerRuntime::GetX(tch) / 100, ecs::PlayerRuntime::GetY(tch) / 100);
 
 	if (len < 0 || len >= (int) sizeof(buf))
 		len = sizeof(buf) - 1;
 
-	LPSECTREE pSec = SECTREE_MANAGER::instance().Get(ecs::PlayerRuntime::GetMapIndex(((tch) ? (tch)->GetEntityHandle() : entt::null)), ecs::PlayerRuntime::GetX(((tch) ? (tch)->GetEntityHandle() : entt::null)), ecs::PlayerRuntime::GetY(((tch) ? (tch)->GetEntityHandle() : entt::null)));
+	LPSECTREE pSec = SECTREE_MANAGER::instance().Get(ecs::PlayerRuntime::GetMapIndex(tch), ecs::PlayerRuntime::GetX(tch), ecs::PlayerRuntime::GetY(tch));
 
-	if (pSec)
+	auto* map = SECTREE_MANAGER::instance().GetMap(ecs::PlayerRuntime::GetMapIndex(tch));
+	if (pSec && map)
 	{
-		TMapSetting& map_setting = SECTREE_MANAGER::instance().GetMap(ecs::PlayerRuntime::GetMapIndex(((tch) ? (tch)->GetEntityHandle() : entt::null)))->m_setting;
+		const TMapSetting& map_setting = map->m_setting;
 		snprintf(buf + len, sizeof(buf) - len, " MapIndex %ld Attribute %08X Local Position (%ld x %ld)",
-			ecs::PlayerRuntime::GetMapIndex(((tch) ? (tch)->GetEntityHandle() : entt::null)), pSec->GetAttribute(ecs::PlayerRuntime::GetX(((tch) ? (tch)->GetEntityHandle() : entt::null)), ecs::PlayerRuntime::GetY(((tch) ? (tch)->GetEntityHandle() : entt::null))), (ecs::PlayerRuntime::GetX(((tch) ? (tch)->GetEntityHandle() : entt::null)) - map_setting.iBaseX)/100, (ecs::PlayerRuntime::GetY(((tch) ? (tch)->GetEntityHandle() : entt::null)) - map_setting.iBaseY)/100);
+			ecs::PlayerRuntime::GetMapIndex(tch), pSec->GetAttribute(ecs::PlayerRuntime::GetX(tch), ecs::PlayerRuntime::GetY(tch)), (ecs::PlayerRuntime::GetX(tch) - map_setting.iBaseX)/100, (ecs::PlayerRuntime::GetY(tch) - map_setting.iBaseY)/100);
 	}
 
 	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "%s", buf);
 
-	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "LEV %d", (ecs::PointSystem::GetLevel(((tch) ? (tch)->GetEntityHandle() : entt::null))));
-	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "HP %d/%d", tch->GetHP(), ecs::PointSystem::GetMaxHP(((tch) ? (tch)->GetEntityHandle() : entt::null)));
-	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "SP %d/%d", tch->GetSP(), ecs::PointSystem::GetMaxSP(((tch) ? (tch)->GetEntityHandle() : entt::null)));
+	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "LEV %d", (ecs::PointSystem::GetLevel(tch)));
+	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "HP %d/%d", ecs::PlayerRuntime::GetHP(tch), ecs::PointSystem::GetMaxHP(tch));
+	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "SP %d/%d", ecs::PointSystem::Get(tch, POINT_SP), ecs::PointSystem::GetMaxSP(tch));
 	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "ATT %d MAGIC_ATT %d SPD %d CRIT %d%% PENE %d%% ATT_BONUS %d%%",
-			ecs::PointSystem::Get(((tch) ? (tch)->GetEntityHandle() : entt::null), POINT_ATT_GRADE),
-			ecs::PointSystem::Get(((tch) ? (tch)->GetEntityHandle() : entt::null), POINT_MAGIC_ATT_GRADE),
-			ecs::PointSystem::Get(((tch) ? (tch)->GetEntityHandle() : entt::null), POINT_ATT_SPEED),
-			ecs::PointSystem::Get(((tch) ? (tch)->GetEntityHandle() : entt::null), POINT_CRITICAL_PCT),
-			ecs::PointSystem::Get(((tch) ? (tch)->GetEntityHandle() : entt::null), POINT_PENETRATE_PCT),
-			ecs::PointSystem::Get(((tch) ? (tch)->GetEntityHandle() : entt::null), POINT_ATT_BONUS));
+			ecs::PointSystem::Get(tch, POINT_ATT_GRADE),
+			ecs::PointSystem::Get(tch, POINT_MAGIC_ATT_GRADE),
+			ecs::PointSystem::Get(tch, POINT_ATT_SPEED),
+			ecs::PointSystem::Get(tch, POINT_CRITICAL_PCT),
+			ecs::PointSystem::Get(tch, POINT_PENETRATE_PCT),
+			ecs::PointSystem::Get(tch, POINT_ATT_BONUS));
 	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "DEF %d MAGIC_DEF %d BLOCK %d%% DODGE %d%% DEF_BONUS %d%%",
-			ecs::PointSystem::Get(((tch) ? (tch)->GetEntityHandle() : entt::null), POINT_DEF_GRADE),
-			ecs::PointSystem::Get(((tch) ? (tch)->GetEntityHandle() : entt::null), POINT_MAGIC_DEF_GRADE),
-			ecs::PointSystem::Get(((tch) ? (tch)->GetEntityHandle() : entt::null), POINT_BLOCK),
-			ecs::PointSystem::Get(((tch) ? (tch)->GetEntityHandle() : entt::null), POINT_DODGE),
-			ecs::PointSystem::Get(((tch) ? (tch)->GetEntityHandle() : entt::null), POINT_DEF_BONUS));
+			ecs::PointSystem::Get(tch, POINT_DEF_GRADE),
+			ecs::PointSystem::Get(tch, POINT_MAGIC_DEF_GRADE),
+			ecs::PointSystem::Get(tch, POINT_BLOCK),
+			ecs::PointSystem::Get(tch, POINT_DODGE),
+			ecs::PointSystem::Get(tch, POINT_DEF_BONUS));
 	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "RESISTANCES:");
 	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "   WARR:%3d%% ASAS:%3d%% SURA:%3d%% SHAM:%3d%%"
 #ifdef ENABLE_WOLFMAN_CHARACTER
 			" WOLF:%3d%%"
 #endif
 			,
-			ecs::PointSystem::Get(((tch) ? (tch)->GetEntityHandle() : entt::null), POINT_RESIST_WARRIOR),
-			ecs::PointSystem::Get(((tch) ? (tch)->GetEntityHandle() : entt::null), POINT_RESIST_ASSASSIN),
-			ecs::PointSystem::Get(((tch) ? (tch)->GetEntityHandle() : entt::null), POINT_RESIST_SURA),
-			ecs::PointSystem::Get(((tch) ? (tch)->GetEntityHandle() : entt::null), POINT_RESIST_SHAMAN)
+			ecs::PointSystem::Get(tch, POINT_RESIST_WARRIOR),
+			ecs::PointSystem::Get(tch, POINT_RESIST_ASSASSIN),
+			ecs::PointSystem::Get(tch, POINT_RESIST_SURA),
+			ecs::PointSystem::Get(tch, POINT_RESIST_SHAMAN)
 #ifdef ENABLE_WOLFMAN_CHARACTER
-			,ecs::PointSystem::Get(((tch) ? (tch)->GetEntityHandle() : entt::null), POINT_RESIST_WOLFMAN)
+			,ecs::PointSystem::Get(tch, POINT_RESIST_WOLFMAN)
 #endif
 	);
 	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "   SWORD:%3d%% THSWORD:%3d%% DAGGER:%3d%% BELL:%3d%% FAN:%3d%% BOW:%3d%%"
@@ -1320,76 +1276,76 @@ ACMD(do_state)
 			" CLAW:%3d%%"
 #endif
 			,
-			ecs::PointSystem::Get(((tch) ? (tch)->GetEntityHandle() : entt::null), POINT_RESIST_SWORD),
-			ecs::PointSystem::Get(((tch) ? (tch)->GetEntityHandle() : entt::null), POINT_RESIST_TWOHAND),
-			ecs::PointSystem::Get(((tch) ? (tch)->GetEntityHandle() : entt::null), POINT_RESIST_DAGGER),
-			ecs::PointSystem::Get(((tch) ? (tch)->GetEntityHandle() : entt::null), POINT_RESIST_BELL),
-			ecs::PointSystem::Get(((tch) ? (tch)->GetEntityHandle() : entt::null), POINT_RESIST_FAN),
-			ecs::PointSystem::Get(((tch) ? (tch)->GetEntityHandle() : entt::null), POINT_RESIST_BOW)
+			ecs::PointSystem::Get(tch, POINT_RESIST_SWORD),
+			ecs::PointSystem::Get(tch, POINT_RESIST_TWOHAND),
+			ecs::PointSystem::Get(tch, POINT_RESIST_DAGGER),
+			ecs::PointSystem::Get(tch, POINT_RESIST_BELL),
+			ecs::PointSystem::Get(tch, POINT_RESIST_FAN),
+			ecs::PointSystem::Get(tch, POINT_RESIST_BOW)
 #ifdef ENABLE_WOLFMAN_CHARACTER
-			,ecs::PointSystem::Get(((tch) ? (tch)->GetEntityHandle() : entt::null), POINT_RESIST_CLAW)
+			,ecs::PointSystem::Get(tch, POINT_RESIST_CLAW)
 #endif
 	);
 	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "   FIRE:%3d%% ELEC:%3d%% MAGIC:%3d%% WIND:%3d%% CRIT:%3d%% PENE:%3d%%",
-			ecs::PointSystem::Get(((tch) ? (tch)->GetEntityHandle() : entt::null), POINT_RESIST_FIRE),
-			ecs::PointSystem::Get(((tch) ? (tch)->GetEntityHandle() : entt::null), POINT_RESIST_ELEC),
-			ecs::PointSystem::Get(((tch) ? (tch)->GetEntityHandle() : entt::null), POINT_RESIST_MAGIC),
-			ecs::PointSystem::Get(((tch) ? (tch)->GetEntityHandle() : entt::null), POINT_RESIST_WIND),
-			ecs::PointSystem::Get(((tch) ? (tch)->GetEntityHandle() : entt::null), POINT_RESIST_CRITICAL),
-			ecs::PointSystem::Get(((tch) ? (tch)->GetEntityHandle() : entt::null), POINT_RESIST_PENETRATE));
+			ecs::PointSystem::Get(tch, POINT_RESIST_FIRE),
+			ecs::PointSystem::Get(tch, POINT_RESIST_ELEC),
+			ecs::PointSystem::Get(tch, POINT_RESIST_MAGIC),
+			ecs::PointSystem::Get(tch, POINT_RESIST_WIND),
+			ecs::PointSystem::Get(tch, POINT_RESIST_CRITICAL),
+			ecs::PointSystem::Get(tch, POINT_RESIST_PENETRATE));
 	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "   ICE:%3d%% EARTH:%3d%% DARK:%3d%%",
-			ecs::PointSystem::Get(((tch) ? (tch)->GetEntityHandle() : entt::null), POINT_RESIST_ICE),
-			ecs::PointSystem::Get(((tch) ? (tch)->GetEntityHandle() : entt::null), POINT_RESIST_EARTH),
-			ecs::PointSystem::Get(((tch) ? (tch)->GetEntityHandle() : entt::null), POINT_RESIST_DARK));
+			ecs::PointSystem::Get(tch, POINT_RESIST_ICE),
+			ecs::PointSystem::Get(tch, POINT_RESIST_EARTH),
+			ecs::PointSystem::Get(tch, POINT_RESIST_DARK));
 
 
 #ifdef ENABLE_NEW_BONUS_TALISMAN
 	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "IRR_SPA:%3d%% IRR_SPAD:%3d%% IRR_PUG:%3d%% IRR_FRE:%3d%% IRR_VEN:%3d%% IRR_CAMP:%3d%%"
 									"RES_MEZ:%3d%% DEF_TAL:%3d%% FORT_DES:%3d%% FORT_INS:%3d%% FORT_ZOD:%3d%% ",
-			ecs::PointSystem::Get(((tch) ? (tch)->GetEntityHandle() : entt::null), POINT_ATTBONUS_IRR_SPADA),
-			ecs::PointSystem::Get(((tch) ? (tch)->GetEntityHandle() : entt::null), POINT_ATTBONUS_IRR_SPADONE),
-			ecs::PointSystem::Get(((tch) ? (tch)->GetEntityHandle() : entt::null), POINT_ATTBONUS_IRR_PUGNALE),
-			ecs::PointSystem::Get(((tch) ? (tch)->GetEntityHandle() : entt::null), POINT_ATTBONUS_IRR_FRECCIA),
-			ecs::PointSystem::Get(((tch) ? (tch)->GetEntityHandle() : entt::null), POINT_ATTBONUS_IRR_VENTAGLIO),
-			ecs::PointSystem::Get(((tch) ? (tch)->GetEntityHandle() : entt::null), POINT_ATTBONUS_IRR_CAMPANA),
-			ecs::PointSystem::Get(((tch) ? (tch)->GetEntityHandle() : entt::null), POINT_RESIST_MEZZIUOMINI),
-			ecs::PointSystem::Get(((tch) ? (tch)->GetEntityHandle() : entt::null), POINT_DEF_TALISMAN),
-			ecs::PointSystem::Get(((tch) ? (tch)->GetEntityHandle() : entt::null), POINT_ATTBONUS_FORT_ZODIAC));
+			ecs::PointSystem::Get(tch, POINT_ATTBONUS_IRR_SPADA),
+			ecs::PointSystem::Get(tch, POINT_ATTBONUS_IRR_SPADONE),
+			ecs::PointSystem::Get(tch, POINT_ATTBONUS_IRR_PUGNALE),
+			ecs::PointSystem::Get(tch, POINT_ATTBONUS_IRR_FRECCIA),
+			ecs::PointSystem::Get(tch, POINT_ATTBONUS_IRR_VENTAGLIO),
+			ecs::PointSystem::Get(tch, POINT_ATTBONUS_IRR_CAMPANA),
+			ecs::PointSystem::Get(tch, POINT_RESIST_MEZZIUOMINI),
+			ecs::PointSystem::Get(tch, POINT_DEF_TALISMAN),
+			ecs::PointSystem::Get(tch, POINT_ATTBONUS_FORT_ZODIAC));
 #endif
 
 
 #ifdef ENABLE_MAGIC_REDUCTION_SYSTEM
-	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "   MAGICREDUCT:%3d%%", ecs::PointSystem::Get(((tch) ? (tch)->GetEntityHandle() : entt::null), POINT_RESIST_MAGIC_REDUCTION));
+	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "   MAGICREDUCT:%3d%%", ecs::PointSystem::Get(tch, POINT_RESIST_MAGIC_REDUCTION));
 #endif
 
 	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "MALL:");
 	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "   ATT:%3d%% DEF:%3d%% EXP:%3d%% ITEMx%d GOLDx%d",
-			ecs::PointSystem::Get(((tch) ? (tch)->GetEntityHandle() : entt::null), POINT_MALL_ATTBONUS),
-			ecs::PointSystem::Get(((tch) ? (tch)->GetEntityHandle() : entt::null), POINT_MALL_DEFBONUS),
-			ecs::PointSystem::Get(((tch) ? (tch)->GetEntityHandle() : entt::null), POINT_MALL_EXPBONUS),
-			ecs::PointSystem::Get(((tch) ? (tch)->GetEntityHandle() : entt::null), POINT_MALL_ITEMBONUS) / 10,
-			ecs::PointSystem::Get(((tch) ? (tch)->GetEntityHandle() : entt::null), POINT_MALL_GOLDBONUS) / 10);
+			ecs::PointSystem::Get(tch, POINT_MALL_ATTBONUS),
+			ecs::PointSystem::Get(tch, POINT_MALL_DEFBONUS),
+			ecs::PointSystem::Get(tch, POINT_MALL_EXPBONUS),
+			ecs::PointSystem::Get(tch, POINT_MALL_ITEMBONUS) / 10,
+			ecs::PointSystem::Get(tch, POINT_MALL_GOLDBONUS) / 10);
 
 	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "BONUS:");
 	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "   SKILL:%3d%% NORMAL:%3d%% SKILL_DEF:%3d%% NORMAL_DEF:%3d%%",
-			ecs::PointSystem::Get(((tch) ? (tch)->GetEntityHandle() : entt::null), POINT_SKILL_DAMAGE_BONUS),
-			ecs::PointSystem::Get(((tch) ? (tch)->GetEntityHandle() : entt::null), POINT_NORMAL_HIT_DAMAGE_BONUS),
-			ecs::PointSystem::Get(((tch) ? (tch)->GetEntityHandle() : entt::null), POINT_SKILL_DEFEND_BONUS),
-			ecs::PointSystem::Get(((tch) ? (tch)->GetEntityHandle() : entt::null), POINT_NORMAL_HIT_DEFEND_BONUS));
+			ecs::PointSystem::Get(tch, POINT_SKILL_DAMAGE_BONUS),
+			ecs::PointSystem::Get(tch, POINT_NORMAL_HIT_DAMAGE_BONUS),
+			ecs::PointSystem::Get(tch, POINT_SKILL_DEFEND_BONUS),
+			ecs::PointSystem::Get(tch, POINT_NORMAL_HIT_DEFEND_BONUS));
 
 	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "   HUMAN:%3d%% ANIMAL:%3d%% ORC:%3d%% MILGYO:%3d%% UNDEAD:%3d%%",
-			ecs::PointSystem::Get(((tch) ? (tch)->GetEntityHandle() : entt::null), POINT_ATTBONUS_HUMAN),
-			ecs::PointSystem::Get(((tch) ? (tch)->GetEntityHandle() : entt::null), POINT_ATTBONUS_ANIMAL),
-			ecs::PointSystem::Get(((tch) ? (tch)->GetEntityHandle() : entt::null), POINT_ATTBONUS_ORC),
-			ecs::PointSystem::Get(((tch) ? (tch)->GetEntityHandle() : entt::null), POINT_ATTBONUS_MILGYO),
-			ecs::PointSystem::Get(((tch) ? (tch)->GetEntityHandle() : entt::null), POINT_ATTBONUS_UNDEAD));
+			ecs::PointSystem::Get(tch, POINT_ATTBONUS_HUMAN),
+			ecs::PointSystem::Get(tch, POINT_ATTBONUS_ANIMAL),
+			ecs::PointSystem::Get(tch, POINT_ATTBONUS_ORC),
+			ecs::PointSystem::Get(tch, POINT_ATTBONUS_MILGYO),
+			ecs::PointSystem::Get(tch, POINT_ATTBONUS_UNDEAD));
 
 	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "   DEVIL:%3d%% INSECT:%3d%% FIRE:%3d%% ICE:%3d%% DESERT:%3d%%",
-			ecs::PointSystem::Get(((tch) ? (tch)->GetEntityHandle() : entt::null), POINT_ATTBONUS_DEVIL),
-			ecs::PointSystem::Get(((tch) ? (tch)->GetEntityHandle() : entt::null), POINT_ATTBONUS_INSECT),
-			ecs::PointSystem::Get(((tch) ? (tch)->GetEntityHandle() : entt::null), POINT_ATTBONUS_FIRE),
-			ecs::PointSystem::Get(((tch) ? (tch)->GetEntityHandle() : entt::null), POINT_ATTBONUS_ICE),
-			ecs::PointSystem::Get(((tch) ? (tch)->GetEntityHandle() : entt::null), POINT_ATTBONUS_DESERT));
+			ecs::PointSystem::Get(tch, POINT_ATTBONUS_DEVIL),
+			ecs::PointSystem::Get(tch, POINT_ATTBONUS_INSECT),
+			ecs::PointSystem::Get(tch, POINT_ATTBONUS_FIRE),
+			ecs::PointSystem::Get(tch, POINT_ATTBONUS_ICE),
+			ecs::PointSystem::Get(tch, POINT_ATTBONUS_DESERT));
 
 	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "   TREE:%3d%% MONSTER:%3d%%"
 #ifdef ENABLE_STRONG_METIN
@@ -1409,20 +1365,20 @@ ACMD(do_state)
 			"MONSTER_RES:%3d%%"
 #endif
 			,
-			ecs::PointSystem::Get(((tch) ? (tch)->GetEntityHandle() : entt::null), POINT_ATTBONUS_TREE),
-			ecs::PointSystem::Get(((tch) ? (tch)->GetEntityHandle() : entt::null), POINT_ATTBONUS_MONSTER)
+			ecs::PointSystem::Get(tch, POINT_ATTBONUS_TREE),
+			ecs::PointSystem::Get(tch, POINT_ATTBONUS_MONSTER)
 #ifdef ENABLE_STRONG_METIN
-			,ecs::PointSystem::Get(((tch) ? (tch)->GetEntityHandle() : entt::null), POINT_ATTBONUS_METIN)
+			,ecs::PointSystem::Get(tch, POINT_ATTBONUS_METIN)
 #endif
 
 #ifdef ENABLE_STRONG_BOSS
-			,ecs::PointSystem::Get(((tch) ? (tch)->GetEntityHandle() : entt::null), POINT_ATTBONUS_BOSS)
+			,ecs::PointSystem::Get(tch, POINT_ATTBONUS_BOSS)
 #endif
 #ifdef ENABLE_MEDI_PVM
-			,ecs::PointSystem::Get(((tch) ? (tch)->GetEntityHandle() : entt::null), POINT_ATTBONUS_MEDI_PVM)
+			,ecs::PointSystem::Get(tch, POINT_ATTBONUS_MEDI_PVM)
 #endif
 #ifdef ENABLE_RESIST_MONSTER
-			,ecs::PointSystem::Get(((tch) ? (tch)->GetEntityHandle() : entt::null), POINT_RESIST_MONSTER)
+			,ecs::PointSystem::Get(tch, POINT_RESIST_MONSTER)
 #endif
 			);
 
@@ -1431,132 +1387,81 @@ ACMD(do_state)
 			" WOLF:%3d%%"
 #endif
 			,
-			ecs::PointSystem::Get(((tch) ? (tch)->GetEntityHandle() : entt::null), POINT_ATTBONUS_WARRIOR),
-			ecs::PointSystem::Get(((tch) ? (tch)->GetEntityHandle() : entt::null), POINT_ATTBONUS_ASSASSIN),
-			ecs::PointSystem::Get(((tch) ? (tch)->GetEntityHandle() : entt::null), POINT_ATTBONUS_SURA),
-			ecs::PointSystem::Get(((tch) ? (tch)->GetEntityHandle() : entt::null), POINT_ATTBONUS_SHAMAN)
+			ecs::PointSystem::Get(tch, POINT_ATTBONUS_WARRIOR),
+			ecs::PointSystem::Get(tch, POINT_ATTBONUS_ASSASSIN),
+			ecs::PointSystem::Get(tch, POINT_ATTBONUS_SURA),
+			ecs::PointSystem::Get(tch, POINT_ATTBONUS_SHAMAN)
 #ifdef ENABLE_WOLFMAN_CHARACTER
-			,ecs::PointSystem::Get(((tch) ? (tch)->GetEntityHandle() : entt::null), POINT_ATTBONUS_WOLFMAN)
+			,ecs::PointSystem::Get(tch, POINT_ATTBONUS_WOLFMAN)
 #endif
 	);
 	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "IMMUNE:");
 	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "   STUN:%d SLOW:%d FALL:%d",
-		ecs::PointSystem::Get(((tch) ? (tch)->GetEntityHandle() : entt::null), POINT_IMMUNE_STUN),
-		ecs::PointSystem::Get(((tch) ? (tch)->GetEntityHandle() : entt::null), POINT_IMMUNE_SLOW),
-		ecs::PointSystem::Get(((tch) ? (tch)->GetEntityHandle() : entt::null), POINT_IMMUNE_FALL));
+		ecs::PointSystem::Get(tch, POINT_IMMUNE_STUN),
+		ecs::PointSystem::Get(tch, POINT_IMMUNE_SLOW),
+		ecs::PointSystem::Get(tch, POINT_IMMUNE_FALL));
 
 	for (int i = 0; i < MAX_PRIV_NUM; ++i) {
-		if (CPrivManager::instance().GetPriv(((tch) ? (tch)->GetEntityHandle() : entt::null), i))
+		if (CPrivManager::instance().GetPriv(tch, i))
 		{
-			int iByEmpire = CPrivManager::instance().GetPrivByEmpire((ecs::PlayerRuntime::GetEmpire(((tch) ? (tch)->GetEntityHandle() : entt::null))), i);
+			int iByEmpire = CPrivManager::instance().GetPrivByEmpire((ecs::PlayerRuntime::GetEmpire(tch)), i);
 			int iByGuild = 0;
 
-			if (ecs::SocialSystem::GetGuild(((tch) ? (tch)->GetEntityHandle() : entt::null)))
-				iByGuild = CPrivManager::instance().GetPrivByGuild(ecs::SocialSystem::GetGuild(((tch) ? (tch)->GetEntityHandle() : entt::null))->GetID(), i);
+			if (ecs::SocialSystem::GetGuild(tch))
+				iByGuild = CPrivManager::instance().GetPrivByGuild(ecs::SocialSystem::GetGuild(tch)->GetID(), i);
 
-			int iByPlayer = CPrivManager::instance().GetPrivByCharacter((ecs::PlayerRuntime::GetPlayerID(((tch) ? (tch)->GetEntityHandle() : entt::null))), i);
+			int iByPlayer = CPrivManager::instance().GetPrivByCharacter((ecs::PlayerRuntime::GetPlayerID(tch)), i);
 
 #ifdef TEXTS_IMPROVEMENT
 			if (iByEmpire) {
-				ecs::ChatSystem::SendNew(((tch) ? (tch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 698, "%s#%d", c_apszPrivNames[i], iByEmpire);
+				ecs::ChatSystem::SendNew(tch, CHAT_TYPE_INFO, 698, "%s#%d", c_apszPrivNames[i], iByEmpire);
 			}
 			if (iByGuild) {
-				ecs::ChatSystem::SendNew(((tch) ? (tch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 699, "%s#%d", c_apszPrivNames[i], iByGuild);
+				ecs::ChatSystem::SendNew(tch, CHAT_TYPE_INFO, 699, "%s#%d", c_apszPrivNames[i], iByGuild);
 			}
 			if (iByPlayer) {
-				ecs::ChatSystem::SendNew(((tch) ? (tch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 700, "%s#%d", c_apszPrivNames[i], iByPlayer);
+				ecs::ChatSystem::SendNew(tch, CHAT_TYPE_INFO, 700, "%s#%d", c_apszPrivNames[i], iByPlayer);
 			}
 #endif
 		}
 	}
 }
 
-struct notice_packet_func
-{
-	const char * m_str;
 #ifdef ENABLE_FULL_NOTICE
-	bool m_bBigFont;
-	notice_packet_func(const char * str, bool bBigFont=false) : m_str(str), m_bBigFont(bBigFont)
+void SendNotice(const char* message, bool bigFont)
 #else
-	notice_packet_func(const char * str) : m_str(str)
-#endif
-	{
-	}
-
-	void operator () (LPDESC d)
-	{
-		if (!d->GetCharacter())
-			return;
-#ifdef ENABLE_FULL_NOTICE
-		ecs::ChatSystem::Send(((d->GetCharacter()) ? (d->GetCharacter())->GetEntityHandle() : entt::null), (m_bBigFont)?CHAT_TYPE_BIG_NOTICE:CHAT_TYPE_NOTICE, "%s", m_str);
-#else
-		ecs::ChatSystem::Send(((d->GetCharacter()) ? (d->GetCharacter())->GetEntityHandle() : entt::null), CHAT_TYPE_NOTICE, "%s", m_str);
-#endif
-	}
-};
-
-#ifdef ENABLE_FULL_NOTICE
-void SendNotice(const char * c_pszBuf, bool bBigFont)
-#else
-void SendNotice(const char * c_pszBuf)
+void SendNotice(const char* message)
 #endif
 {
-	const DESC_MANAGER::DESC_SET & c_ref_set = DESC_MANAGER::instance().GetClientSet();
+    if (!message)
+        return;
+    ForEachOnlinePlayer([&](entt::entity player) {
 #ifdef ENABLE_FULL_NOTICE
-	std::for_each(c_ref_set.begin(), c_ref_set.end(), notice_packet_func(c_pszBuf, bBigFont));
+        ecs::ChatSystem::Send(player, bigFont ? CHAT_TYPE_BIG_NOTICE : CHAT_TYPE_NOTICE, "%s", message);
 #else
-	std::for_each(c_ref_set.begin(), c_ref_set.end(), notice_packet_func(c_pszBuf));
+        ecs::ChatSystem::Send(player, CHAT_TYPE_NOTICE, "%s", message);
 #endif
+    });
 }
 
-struct notice_map_packet_func
+void SendNoticeMap(const char* message, int32_t mapIndex, bool bigFont)
 {
-	const char* m_str;
-	int32_t m_mapIndex;
-	bool m_bBigFont;
-
-	notice_map_packet_func(const char* str, int idx, bool bBigFont) : m_str(str), m_mapIndex(idx), m_bBigFont(bBigFont)
-	{
-	}
-
-	void operator() (LPDESC d)
-	{
-		if (d->GetCharacter() == nullptr) return;
-		if (ecs::PlayerRuntime::GetMapIndex(((d->GetCharacter()) ? (d->GetCharacter())->GetEntityHandle() : entt::null)) != m_mapIndex) return;
-
-		ecs::ChatSystem::Send(((d->GetCharacter()) ? (d->GetCharacter())->GetEntityHandle() : entt::null), m_bBigFont == true ? CHAT_TYPE_BIG_NOTICE : CHAT_TYPE_NOTICE, "%s", m_str);
-	}
-};
-
-void SendNoticeMap(const char* c_pszBuf, int32_t nMapIndex, bool bBigFont)
-{
-	const DESC_MANAGER::DESC_SET & c_ref_set = DESC_MANAGER::instance().GetClientSet();
-	std::for_each(c_ref_set.begin(), c_ref_set.end(), notice_map_packet_func(c_pszBuf, nMapIndex, bBigFont));
+    if (!message)
+        return;
+    ForEachOnlinePlayer([&](entt::entity player) {
+        if (ecs::PlayerRuntime::GetMapIndex(player) == mapIndex)
+            ecs::ChatSystem::Send(player, bigFont ? CHAT_TYPE_BIG_NOTICE : CHAT_TYPE_NOTICE, "%s", message);
+    });
 }
 
-struct log_packet_func
+void SendLog(const char* message)
 {
-	const char * m_str;
-
-	log_packet_func(const char * str) : m_str(str)
-	{
-	}
-
-	void operator () (LPDESC d)
-	{
-		if (!d->GetCharacter())
-			return;
-
-		if (ecs::PlayerRuntime::GetGMLevel(((d->GetCharacter()) ? (d->GetCharacter())->GetEntityHandle() : entt::null)) > GM_PLAYER)
-			ecs::ChatSystem::Send(((d->GetCharacter()) ? (d->GetCharacter())->GetEntityHandle() : entt::null), CHAT_TYPE_NOTICE, "%s", m_str);
-	}
-};
-
-
-void SendLog(const char * c_pszBuf)
-{
-	const DESC_MANAGER::DESC_SET & c_ref_set = DESC_MANAGER::instance().GetClientSet();
-	std::for_each(c_ref_set.begin(), c_ref_set.end(), log_packet_func(c_pszBuf));
+    if (!message)
+        return;
+    ForEachOnlinePlayer([&](entt::entity player) {
+        if (ecs::PlayerRuntime::GetGMLevel(player) > GM_PLAYER)
+            ecs::ChatSystem::Send(player, CHAT_TYPE_NOTICE, "%s", message);
+    });
 }
 
 #ifdef ENABLE_FULL_NOTICE
@@ -1587,52 +1492,32 @@ void BroadcastNotice(const char * c_pszBuf)
 }
 
 #ifdef TEXTS_IMPROVEMENT
-struct noticenew_packet_func {
-	uint8_t m_type;
-	uint8_t m_empire;
-	int32_t m_mapidx;
-	uint32_t m_idx;
-	const char * m_str;
-	noticenew_packet_func(uint8_t type, uint8_t empire, int32_t mapidx, uint32_t idx, const char * format) : m_type(type), m_empire(empire), m_mapidx(mapidx), m_idx(idx), m_str(format) {}
-
-	void operator () (LPDESC d) {
-		if (!d->GetCharacter())
-			return;
-
-		if (m_empire == 0) {
-			if (m_mapidx == 0) {
-				ecs::ChatSystem::SendNew(((d->GetCharacter()) ? (d->GetCharacter())->GetEntityHandle() : entt::null), m_type, m_idx, m_str);
-			} else if (ecs::PlayerRuntime::GetMapIndex(((d->GetCharacter()) ? (d->GetCharacter())->GetEntityHandle() : entt::null)) == m_mapidx) {
-				ecs::ChatSystem::SendNew(((d->GetCharacter()) ? (d->GetCharacter())->GetEntityHandle() : entt::null), m_type, m_idx, m_str);
-			}
-		}
-		else if (ecs::PlayerRuntime::GetEmpire(((d->GetCharacter()) ? (d->GetCharacter())->GetEntityHandle() : entt::null)) == m_empire) {
-			if (m_mapidx == 0) {
-				ecs::ChatSystem::SendNew(((d->GetCharacter()) ? (d->GetCharacter())->GetEntityHandle() : entt::null), m_type, m_idx, m_str);
-			} else if (ecs::PlayerRuntime::GetMapIndex(((d->GetCharacter()) ? (d->GetCharacter())->GetEntityHandle() : entt::null)) == m_mapidx) {
-				ecs::ChatSystem::SendNew(((d->GetCharacter()) ? (d->GetCharacter())->GetEntityHandle() : entt::null), m_type, m_idx, m_str);
-			}
-		}
-	}
-};
-
-void SendNoticeNew(uint8_t type, uint8_t empire, int32_t mapidx, uint32_t idx, const char * format, ...) {
-	char chatbuf[256];
-	va_list args;
-	va_start(args, format);
-	vsnprintf(chatbuf, sizeof(chatbuf), format, args);
-	va_end(args);
-
-	const DESC_MANAGER::DESC_SET & c_ref_set = DESC_MANAGER::instance().GetClientSet();
-	std::for_each(c_ref_set.begin(), c_ref_set.end(), noticenew_packet_func(type, empire, mapidx, idx, chatbuf));
+void SendNoticeNew(uint8_t type, uint8_t empire, int32_t mapIndex, uint32_t index, const char* format, ...)
+{
+    if (!format)
+        return;
+    char message[256] {};
+    va_list args;
+    va_start(args, format);
+    vsnprintf(message, sizeof(message), format, args);
+    va_end(args);
+    ForEachOnlinePlayer([&](entt::entity player) {
+        if ((!empire || ecs::PlayerRuntime::GetEmpire(player) == empire)
+            && (!mapIndex || ecs::PlayerRuntime::GetMapIndex(player) == mapIndex))
+            ecs::ChatSystem::SendNew(player, type, index, "%s", message);
+    });
 }
 
 void BroadcastNoticeNew(uint8_t type, uint8_t empire, int32_t mapidx, uint32_t idx, const char * format, ...) {
-	char chatbuf[256];
+	if (!format)
+		return;
+	char chatbuf[256] {};
 	va_list args;
 	va_start(args, format);
-	int len = vsnprintf(chatbuf, sizeof(chatbuf), format, args);
+	const int written = vsnprintf(chatbuf, sizeof(chatbuf), format, args);
 	va_end(args);
+	if (written < 0)
+		chatbuf[0] = '\0';
 
 	TPacketGGChatNew p;
 	p.header = HEADER_GG_CHAT_NEW;
@@ -1640,6 +1525,8 @@ void BroadcastNoticeNew(uint8_t type, uint8_t empire, int32_t mapidx, uint32_t i
 	p.empire = empire;
 	p.mapidx = mapidx;
 	p.idx = idx;
+	// vsnprintf reports the untruncated length, not the buffer's readable size.
+	const int len = written < 0 ? 0 : std::min(written, static_cast<int>(sizeof(chatbuf) - 1));
 	p.size = len;
 
 	TEMP_BUFFER buf;
@@ -1649,7 +1536,7 @@ void BroadcastNoticeNew(uint8_t type, uint8_t empire, int32_t mapidx, uint32_t i
 	}
 
 	P2P_MANAGER::instance().Send(buf.read_peek(), buf.size());
-	SendNoticeNew(type, empire, mapidx, idx, chatbuf);
+	SendNoticeNew(type, empire, mapidx, idx, "%s", chatbuf);
 }
 #endif
 
@@ -1700,71 +1587,35 @@ ACMD(do_who)
 #endif
 }
 
-class user_func
-{
-	public:
-		LPCHARACTER	m_ch;
-		static int count;
-		static char str[128];
-		static int str_len;
-
-		user_func()
-			: m_ch(nullptr)
-		{}
-
-		void initialize(LPCHARACTER ch)
-		{
-			m_ch = ch;
-			str_len = 0;
-			count = 0;
-			str[0] = '\0';
-		}
-
-		void operator () (LPDESC d)
-		{
-			if (!d->GetCharacter())
-				return;
-
-			int len = snprintf(str + str_len, sizeof(str) - str_len, "%-16s ", ecs::PlayerRuntime::GetName(((d->GetCharacter()) ? (d->GetCharacter())->GetEntityHandle() : entt::null)).data());
-
-			if (len < 0 || len >= (int) sizeof(str) - str_len)
-				len = (sizeof(str) - str_len) - 1;
-
-			str_len += len;
-			++count;
-
-			if (!(count % 4))
-			{
-				ecs::ChatSystem::Send(((m_ch) ? (m_ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, str);
-
-				str[0] = '\0';
-				str_len = 0;
-			}
-		}
-};
-
-int	user_func::count = 0;
-char user_func::str[128] = { 0, };
-int	user_func::str_len = 0;
-
 ACMD(do_user)
 {
-	LPCHARACTER ch = ecs::LegacyCharOf(character);
-	const DESC_MANAGER::DESC_SET & c_ref_set = DESC_MANAGER::instance().GetClientSet();
-	user_func func;
-
-	func.initialize(ch);
-	std::for_each(c_ref_set.begin(), c_ref_set.end(), func);
-
-	if (func.count % 4)
-		ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, func.str);
-
-	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "Total %d", func.count);
+    if (!ecs::PlayerRuntime::IsPC(character))
+        return;
+    int count = 0;
+    std::string row;
+    ForEachOnlinePlayer([&](entt::entity player) {
+        if (!ecs::PlayerRuntime::IsPC(character))
+            return;
+        const std::string name(ecs::PlayerRuntime::GetName(player));
+        row += name;
+        row.append(name.size() < 16 ? 16 - name.size() : 0, ' ');
+        row += ' ';
+        if (++count % 4 == 0)
+        {
+            // Keep the output string alive independently of nested command calls.
+            const std::string output = std::exchange(row, {});
+            ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "%s", output.c_str());
+        }
+    });
+    if (!row.empty())
+        ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "%s", row.c_str());
+    ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "Total %d", count);
 }
 
 ACMD(do_disconnect)
 {
-	LPCHARACTER ch = ecs::LegacyCharOf(character);
+	if (!ecs::PlayerRuntime::IsPC(character))
+		return;
 	char arg1[256];
 	one_argument(argument, arg1, sizeof(arg1));
 
@@ -1774,16 +1625,16 @@ ACMD(do_disconnect)
 		return;
 	}
 
-	LPDESC d = DESC_MANAGER::instance().FindByCharacterName(arg1);
-	LPCHARACTER	tch = d ? d->GetCharacter() : nullptr;
+	const auto tch = CHARACTER_MANAGER::instance().FindPCEntity(arg1);
+	LPDESC d = ecs::PlayerRuntime::GetDesc(tch);
 
-	if (!tch)
+	if (!d)
 	{
 		ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "%s: no such a player.", arg1);
 		return;
 	}
 
-	if (tch == ch)
+	if (tch == character)
 	{
 		ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "cannot disconnect myself");
 		return;
@@ -1818,6 +1669,8 @@ ACMD(do_kill)
 #ifdef ENABLE_NEWSTUFF
 ACMD(do_poison)
 {
+	if (!ecs::PlayerRuntime::IsPC(character))
+		return;
 	char arg1[256];
 	one_argument(argument, arg1, sizeof(arg1));
 
@@ -1827,21 +1680,22 @@ ACMD(do_poison)
 		return;
 	}
 
-	LPDESC	d = DESC_MANAGER::instance().FindByCharacterName(arg1);
-	LPCHARACTER tch = d ? d->GetCharacter() : nullptr;
+	const auto tch = CHARACTER_MANAGER::instance().FindPCEntity(arg1);
 
-	if (!tch)
+	if (!ecs::PlayerRuntime::IsValid(tch))
 	{
 		ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "%s: no such a player", arg1);
 		return;
 	}
 
-	tch->AttackedByPoison(entt::null);
+	AffectSystem::ApplyPoison(tch, entt::null);
 }
 #endif
 #ifdef ENABLE_WOLFMAN_CHARACTER
 ACMD(do_bleeding)
 {
+	if (!ecs::PlayerRuntime::IsPC(character))
+		return;
 	char arg1[256];
 	one_argument(argument, arg1, sizeof(arg1));
 
@@ -1851,16 +1705,15 @@ ACMD(do_bleeding)
 		return;
 	}
 
-	LPDESC	d = DESC_MANAGER::instance().FindByCharacterName(arg1);
-	LPCHARACTER tch = d ? d->GetCharacter() : NULL;
+	const auto tch = CHARACTER_MANAGER::instance().FindPCEntity(arg1);
 
-	if (!tch)
+	if (!ecs::PlayerRuntime::IsValid(tch))
 	{
 		ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "%s: no such a player", arg1);
 		return;
 	}
 
-	tch->AttackedByBleeding(entt::null);
+	AffectSystem::ApplyBleeding(tch, entt::null);
 }
 #endif
 
@@ -1904,10 +1757,11 @@ const struct set_struct
 
 ACMD(do_set)
 {
-	LPCHARACTER ch = ecs::LegacyCharOf(character);
+	if (!ecs::PlayerRuntime::IsPC(character))
+		return;
 	char arg1[256], arg2[256], arg3[256];
 
-	LPCHARACTER tch = nullptr;
+	entt::entity tch = entt::null;
 
 	int i;
 	const char* line;
@@ -1930,9 +1784,9 @@ ACMD(do_set)
 		return;
 	}
 
-	tch = CHARACTER_MANAGER::instance().FindPC(arg1);
+	tch = CHARACTER_MANAGER::instance().FindPCEntity(arg1);
 
-	if (!tch)
+	if (!ecs::PlayerRuntime::IsValid(tch))
 	{
 		ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "%s not exist", arg1);
 		return;
@@ -1951,19 +1805,19 @@ ACMD(do_set)
 				int64_t gold = 0;
 				str_to_number(gold, arg3);
 				DBManager::instance().SendMoneyLog(MONEY_LOG_MISC, 3, gold);
-				int64_t before_gold = ecs::PointSystem::GetGold(((tch) ? (tch)->GetEntityHandle() : entt::null));
-				ecs::PointSystem::Change(((tch) ? (tch)->GetEntityHandle() : entt::null), POINT_GOLD, gold, true);
-				int64_t after_gold = ecs::PointSystem::GetGold(((tch) ? (tch)->GetEntityHandle() : entt::null));
+				int64_t before_gold = ecs::PointSystem::GetGold(tch);
+				ecs::PointSystem::Change(tch, POINT_GOLD, gold, true);
+				int64_t after_gold = ecs::PointSystem::GetGold(tch);
 				if (after_gold < 0)
 				{
 #ifdef TEXTS_IMPROVEMENT
 					ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 809, "");
 #endif
-					tch->SetGold(0);
+					ecs::PlayerRuntime::SetGold(tch, 0);
 				}
 				if (0 == after_gold && 0 != before_gold)
 				{
-					LogManager::instance().CharLog(((tch) ? (tch)->GetEntityHandle() : entt::null), gold, "ZERO_GOLD", "GM");
+					LogManager::instance().CharLog(tch, gold, "ZERO_GOLD", "GM");
 				}
 			}
 			break;
@@ -1974,7 +1828,7 @@ ACMD(do_set)
 				int amount = 0;
 				str_to_number(amount, arg3);
 				amount = MINMAX(0, amount, JOB_MAX_NUM);
-				ESex mySex = GET_SEX(tch);
+				const auto mySex = ecs::PlayerRuntime::GetSex(tch);
 				uint32_t dwRace = MAIN_RACE_WARRIOR_M;
 				switch (amount)
 				{
@@ -1996,14 +1850,14 @@ ACMD(do_set)
 						break;
 #endif
 				}
-				if (dwRace!=ecs::PlayerRuntime::GetRaceNum(((tch) ? (tch)->GetEntityHandle() : entt::null)))
+				if (dwRace!=ecs::PlayerRuntime::GetRaceNum(tch))
 				{
-					tch->SetRace(dwRace);
-					tch->ClearSkill();
-					tch->SetSkillGroup(0);
+					ecs::PlayerRuntime::SetRace(tch, dwRace);
+					SkillSystem::ClearSkill(tch);
+					SkillSystem::SetSkillGroup(tch, 0);
 					// quick mesh change workaround begin
-					AffectSystem::SetPolymorph(tch->GetEntityHandle(), 101);
-					AffectSystem::SetPolymorph(tch->GetEntityHandle(), 0);
+					AffectSystem::SetPolymorph(tch, 101);
+					AffectSystem::SetPolymorph(tch, 0);
 					// quick mesh change workaround end
 				}
 			}
@@ -2016,12 +1870,12 @@ ACMD(do_set)
 				int amount = 0;
 				str_to_number(amount, arg3);
 				amount = MINMAX(SEX_MALE, amount, SEX_FEMALE);
-				if (amount != GET_SEX(tch))
+				if (amount != ecs::PlayerRuntime::GetSex(tch))
 				{
-					tch->ChangeSex();
+					ecs::PlayerRuntime::ChangeSex(tch);
 					// quick mesh change workaround begin
-					AffectSystem::SetPolymorph(tch->GetEntityHandle(), 101);
-					AffectSystem::SetPolymorph(tch->GetEntityHandle(), 0);
+					AffectSystem::SetPolymorph(tch, 101);
+					AffectSystem::SetPolymorph(tch, 0);
 					// quick mesh change workaround end
 				}
 			}
@@ -2034,10 +1888,10 @@ ACMD(do_set)
 				int amount = 0;
 				str_to_number(amount, arg3);
 				amount = MINMAX(0, amount, 2);
-				if (amount != tch->GetSkillGroup())
+				if (amount != SkillSystem::GetSkillGroup(tch))
 				{
-					tch->ClearSkill();
-					tch->SetSkillGroup(amount);
+					SkillSystem::ClearSkill(tch);
+					SkillSystem::SetSkillGroup(tch, amount);
 				}
 			}
 #endif
@@ -2047,7 +1901,7 @@ ACMD(do_set)
 			{
 				int amount = 0;
 				str_to_number(amount, arg3);
-				ecs::PointSystem::Change(((tch) ? (tch)->GetEntityHandle() : entt::null), POINT_EXP, amount, true);
+				ecs::PointSystem::Change(tch, POINT_EXP, amount, true);
 			}
 			break;
 
@@ -2055,7 +1909,7 @@ ACMD(do_set)
 			{
 				int amount = 0;
 				str_to_number(amount, arg3);
-				ecs::PointSystem::Change(((tch) ? (tch)->GetEntityHandle() : entt::null), POINT_MAX_HP, amount, true);
+				ecs::PointSystem::Change(tch, POINT_MAX_HP, amount, true);
 			}
 			break;
 
@@ -2063,7 +1917,7 @@ ACMD(do_set)
 			{
 				int amount = 0;
 				str_to_number(amount, arg3);
-				ecs::PointSystem::Change(((tch) ? (tch)->GetEntityHandle() : entt::null), POINT_MAX_SP, amount, true);
+				ecs::PointSystem::Change(tch, POINT_MAX_SP, amount, true);
 			}
 			break;
 
@@ -2071,7 +1925,7 @@ ACMD(do_set)
 			{
 				int amount = 0;
 				str_to_number(amount, arg3);
-				ecs::PointSystem::Change(((tch) ? (tch)->GetEntityHandle() : entt::null), POINT_SKILL, amount, true);
+				ecs::PointSystem::Change(tch, POINT_SKILL, amount, true);
 			}
 			break;
 
@@ -2080,7 +1934,7 @@ ACMD(do_set)
 			{
 				uint32_t	amount = 0;
 				str_to_number(amount, arg3);
-				const auto target = tch->GetEntityHandle();
+				const auto target = tch;
 				CombatSystem::UpdateAlignment(target, static_cast<int64_t>(amount) - CombatSystem::GetRealAlignment(target));
 			}
 			break;
@@ -2088,14 +1942,20 @@ ACMD(do_set)
 #ifdef ENABLE_GAYA_SYSTEM
 		case DoSetTypes::GAYA: //gaya
 		{
+			// Gaya storage and mutation are still owned by the legacy currency system.
+			const auto* target = ecs::LegacyCharOf(tch);
+			if (!target)
+				return;
 			int gaya = 0;
 			str_to_number(gaya, arg3);
-			int before_gaya = tch->GetGaya();
-			ecs::PointSystem::Change(((tch) ? (tch)->GetEntityHandle() : entt::null), POINT_GAYA, gaya, true);
-			int after_gaya = tch->GetGaya();
+			int before_gaya = target->GetGaya();
+			ecs::PointSystem::Change(tch, POINT_GAYA, gaya, true);
+			if (!ecs::PlayerRuntime::IsValid(tch))
+				return;
+			int after_gaya = target->GetGaya();
 			if (0 == after_gaya && 0 != before_gaya)
 			{
-				LogManager::instance().CharLog(((tch) ? (tch)->GetEntityHandle() : entt::null), gaya, "ZERO_GAYA", "GM");
+				LogManager::instance().CharLog(tch, gaya, "ZERO_GAYA", "GM");
 			}
 		}
 		break;
@@ -2107,7 +1967,7 @@ ACMD(do_set)
 	{
 		int64_t	amount = 0;
 		str_to_number(amount, arg3);
-		ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "%s's %s set to [%lld]", ecs::PlayerRuntime::GetName(((tch) ? (tch)->GetEntityHandle() : entt::null)).data(), set_fields[i].cmd, amount);
+		ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "%s's %s set to [%lld]", ecs::PlayerRuntime::GetName(tch).data(), set_fields[i].cmd, amount);
 
 	}
 }
@@ -2131,9 +1991,9 @@ ACMD(do_advance)
 		return;
 	}
 
-	LPCHARACTER tch = CHARACTER_MANAGER::instance().FindPC(arg1);
+	entt::entity tch = CHARACTER_MANAGER::instance().FindPCEntity(arg1);
 
-	if (!tch)
+	if (!ecs::PlayerRuntime::IsValid(tch))
 	{
 		ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "%s not exist", arg1);
 		return;
@@ -2142,7 +2002,7 @@ ACMD(do_advance)
 	int level = 0;
 	str_to_number(level, arg2);
 
-	ecs::PointSystem::ResetAllPoints(tch->GetEntityHandle(), MINMAX(0, level, gPlayerMaxLevel));
+	ecs::PointSystem::ResetAllPoints(tch, MINMAX(0, level, gPlayerMaxLevel));
 }
 
 ACMD(do_respawn)
@@ -2341,8 +2201,9 @@ ACMD(do_event_flag)
 
 ACMD(do_get_event_flag)
 {
-	LPCHARACTER ch = ecs::LegacyCharOf(character);
-	quest::CQuestManager::instance().SendEventFlagList(ch);
+	if (!ecs::PlayerRuntime::IsPC(character))
+		return;
+	quest::CQuestManager::instance().SendEventFlagList(character);
 }
 
 ACMD(do_private)
@@ -2454,11 +2315,11 @@ ACMD(do_setskillother)
 		return;
 	}
 
-	LPCHARACTER tch;
+	entt::entity tch;
 
-	tch = CHARACTER_MANAGER::instance().FindPC(arg1);
+	tch = CHARACTER_MANAGER::instance().FindPCEntity(arg1);
 
-	if (!tch)
+	if (!ecs::PlayerRuntime::IsValid(tch))
 	{
 		ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "There is no such character.");
 		return;
@@ -2482,15 +2343,17 @@ ACMD(do_setskillother)
 	}
 
 	uint8_t level = 0;
-	str_to_number(level, arg3);
-	tch->SetSkillLevel(pk->dwVnum, level);
-	tch->ComputePoints();
-	tch->SkillLevelPacket();
+	if (!ParseGMNumber(arg3, level))
+		return;
+	SkillSystem::SetSkillLevel(tch, pk->dwVnum, level);
+	ecs::PointSystem::Compute(tch);
+	SkillSystem::SendSkillLevelPacket(tch);
 }
 
 ACMD(do_setskill)
 {
-	LPCHARACTER ch = ecs::LegacyCharOf(character);
+	if (!ecs::PlayerRuntime::IsPC(character))
+		return;
 	char arg1[256], arg2[256];
 	two_arguments(argument, arg1, sizeof(arg1), arg2, sizeof(arg2));
 
@@ -2519,10 +2382,11 @@ ACMD(do_setskill)
 	}
 
 	uint8_t level = 0;
-	str_to_number(level, arg2);
-	ch->SetSkillLevel(pk->dwVnum, level);
-	ch->ComputePoints();
-	ch->SkillLevelPacket();
+	if (!ParseGMNumber(arg2, level))
+		return;
+	SkillSystem::SetSkillLevel(character, pk->dwVnum, level);
+	ecs::PointSystem::Compute(character);
+	SkillSystem::SendSkillLevelPacket(character);
 }
 
 ACMD(do_set_skill_point)
@@ -2543,17 +2407,18 @@ ACMD(do_set_skill_point)
 
 ACMD(do_set_skill_group)
 {
-	LPCHARACTER ch = ecs::LegacyCharOf(character);
+	if (!ecs::PlayerRuntime::IsPC(character))
+		return;
 	char arg1[256];
 	one_argument(argument, arg1, sizeof(arg1));
 
 	int skill_group = 0;
-	if (*arg1)
-		str_to_number(skill_group, arg1);
+	if (!ParseGMNumber(arg1, skill_group) || skill_group < 0 || skill_group > 2)
+		return;
 
-	ch->SetSkillGroup(skill_group);
+	SkillSystem::SetSkillGroup(character, skill_group);
 
-	ch->ClearSkill();
+	SkillSystem::ClearSkill(character);
 	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "skill group to %d.", skill_group);
 }
 
@@ -2629,13 +2494,15 @@ ACMD(do_reload)
 
 ACMD(do_cooltime)
 {
-	LPCHARACTER ch = ecs::LegacyCharOf(character);
-	ch->DisableCooltime();
+	if (!ecs::PlayerRuntime::IsPC(character))
+		return;
+	SkillSystem::DisableCooltime(character);
 }
 
 ACMD(do_level)
 {
-	LPCHARACTER ch = ecs::LegacyCharOf(character);
+	if (!ecs::PlayerRuntime::IsPC(character))
+		return;
 	char arg2[256];
 	one_argument(argument, arg2, sizeof(arg2));
 
@@ -2650,7 +2517,7 @@ ACMD(do_level)
 
 	ecs::PointSystem::ResetAllPoints(character, MINMAX(1, level, gPlayerMaxLevel));
 
-	ch->ClearSkill();
+	SkillSystem::ClearSkill(character);
 	SkillSystem::ClearSubSkill(character);
 }
 
@@ -2766,36 +2633,38 @@ ACMD(do_weaken)
 
 ACMD(do_getqf)
 {
-	LPCHARACTER ch = ecs::LegacyCharOf(character);
+	if (!ecs::PlayerRuntime::IsPC(character))
+		return;
 	char arg1[256];
 
 	one_argument(argument, arg1, sizeof(arg1));
 
-	LPCHARACTER tch;
+	entt::entity tch;
 
 	if (!*arg1)
-		tch = ch;
+		tch = character;
 	else
 	{
-		tch = CHARACTER_MANAGER::instance().FindPC(arg1);
+		tch = CHARACTER_MANAGER::instance().FindPCEntity(arg1);
 
-		if (!tch)
+		if (!ecs::PlayerRuntime::IsValid(tch))
 		{
 			ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "There is no such character.");
 			return;
 		}
 	}
 
-	quest::PC* pPC = quest::CQuestManager::instance().GetPC(ecs::PlayerRuntime::GetPlayerID(((tch) ? (tch)->GetEntityHandle() : entt::null)));
+	quest::PC* pPC = quest::CQuestManager::instance().GetPC(ecs::PlayerRuntime::GetPlayerID(tch));
 
 	if (pPC)
-		pPC->SendFlagList(ch);
+		pPC->SendFlagList(character);
 }
 
 #define ENABLE_SET_STATE_WITH_TARGET
 ACMD(do_set_state)
 {
-	LPCHARACTER ch = ecs::LegacyCharOf(character);
+	if (!ecs::PlayerRuntime::IsPC(character))
+		return;
 	char arg1[256];
 	char arg2[256];
 
@@ -2813,22 +2682,24 @@ ACMD(do_set_state)
 	}
 
 #ifdef ENABLE_SET_STATE_WITH_TARGET
-	LPCHARACTER tch = ch;
+	entt::entity tch = character;
 	char arg3[256];
 	argument = one_argument(argument, arg3, sizeof(arg3));
 	if (*arg3)
 	{
-		tch = CHARACTER_MANAGER::instance().FindPC(arg3);
-		if (!tch)
+		tch = CHARACTER_MANAGER::instance().FindPCEntity(arg3);
+		if (!ecs::PlayerRuntime::IsValid(tch))
 		{
 			ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "There is no such character.");
 			return;
 		}
 	}
-	quest::PC* pPC = quest::CQuestManager::instance().GetPCForce(ecs::PlayerRuntime::GetPlayerID(((tch) ? (tch)->GetEntityHandle() : entt::null)));
+	quest::PC* pPC = quest::CQuestManager::instance().GetPCForce(ecs::PlayerRuntime::GetPlayerID(tch));
 #else
 	quest::PC* pPC = quest::CQuestManager::instance().GetPCForce((ecs::PlayerRuntime::GetPlayerID(character)));
 #endif
+	if (!pPC)
+		return;
 	std::string questname = arg1;
 	std::string statename = arg2;
 
@@ -2863,7 +2734,8 @@ ACMD(do_set_state)
 
 ACMD(do_setqf)
 {
-	LPCHARACTER ch = ecs::LegacyCharOf(character);
+	if (!ecs::PlayerRuntime::IsPC(character))
+		return;
 	char arg1[256];
 	char arg2[256];
 	char arg3[256];
@@ -2876,18 +2748,18 @@ ACMD(do_setqf)
 		return;
 	}
 
-	LPCHARACTER tch = ch;
+	entt::entity tch = character;
 
 	if (*arg3)
-		tch = CHARACTER_MANAGER::instance().FindPC(arg3);
+		tch = CHARACTER_MANAGER::instance().FindPCEntity(arg3);
 
-	if (!tch)
+	if (!ecs::PlayerRuntime::IsValid(tch))
 	{
 		ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "There is no such character.");
 		return;
 	}
 
-	quest::PC* pPC = quest::CQuestManager::instance().GetPC(ecs::PlayerRuntime::GetPlayerID(((tch) ? (tch)->GetEntityHandle() : entt::null)));
+	quest::PC* pPC = quest::CQuestManager::instance().GetPC(ecs::PlayerRuntime::GetPlayerID(tch));
 
 	if (pPC)
 	{
@@ -2900,7 +2772,8 @@ ACMD(do_setqf)
 
 ACMD(do_delqf)
 {
-	LPCHARACTER ch = ecs::LegacyCharOf(character);
+	if (!ecs::PlayerRuntime::IsPC(character))
+		return;
 	char arg1[256];
 	char arg2[256];
 
@@ -2912,18 +2785,18 @@ ACMD(do_delqf)
 		return;
 	}
 
-	LPCHARACTER tch = ch;
+	entt::entity tch = character;
 
 	if (*arg2)
-		tch = CHARACTER_MANAGER::instance().FindPC(arg2);
+		tch = CHARACTER_MANAGER::instance().FindPCEntity(arg2);
 
-	if (!tch)
+	if (!ecs::PlayerRuntime::IsValid(tch))
 	{
 		ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "There is no such character.");
 		return;
 	}
 
-	quest::PC* pPC = quest::CQuestManager::instance().GetPC(ecs::PlayerRuntime::GetPlayerID(((tch) ? (tch)->GetEntityHandle() : entt::null)));
+	quest::PC* pPC = quest::CQuestManager::instance().GetPC(ecs::PlayerRuntime::GetPlayerID(tch));
 
 	if (pPC)
 	{
@@ -2983,7 +2856,8 @@ ACMD(do_polymorph)
 
 ACMD(do_polymorph_item)
 {
-	LPCHARACTER ch = ecs::LegacyCharOf(character);
+	if (!ecs::PlayerRuntime::IsPC(character))
+		return;
 	char arg1[256];
 
 	one_argument(argument, arg1, sizeof(arg1));
@@ -2997,11 +2871,11 @@ ACMD(do_polymorph_item)
 		if (ItemSystem::IsValidItem(item))
 		{
 			ItemSystem::SetItemSocket(item, 0, dwVnum);
-			int iEmptyPos = ch->GetEmptyInventory(ItemSystem::GetItemSize(item));
+			int iEmptyPos = ItemSystem::GetEmptyInventoryPositionEcs(character, item);
 
 			if (iEmptyPos != -1)
 			{
-				InventorySystem::AddToCharacter(item, ch->GetEntityHandle(), TItemPos(INVENTORY, iEmptyPos));
+				InventorySystem::AddToCharacter(item, character, TItemPos(INVENTORY, iEmptyPos));
 				LogManager::instance().ItemLogEntity(character, item, "GM", ItemSystem::GetItemName(item));
 			}
 			else
@@ -3207,62 +3081,18 @@ ACMD(do_block_chat_list)
 
 ACMD(do_vote_block_chat)
 {
-	LPCHARACTER ch = ecs::LegacyCharOf(character);
-	return;
-
-	char arg1[256];
-	argument = one_argument(argument, arg1, sizeof(arg1));
-
-	if (!*arg1)
-	{
-		ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "Usage: vote_block_chat <name>");
-		return;
-	}
-
-	const char* name = arg1;
-	int32_t lBlockDuration = 10;
-	LOG_INFO("vote_block_chat {} {}", name, lBlockDuration);
-
-	LPCHARACTER tch = CHARACTER_MANAGER::instance().FindPC(name);
-
-	if (!tch)
-	{
-		CCI * pkCCI = P2P_MANAGER::instance().Find(name);
-
-		if (pkCCI)
-		{
-			TPacketGGBlockChat p;
-
-			p.bHeader = HEADER_GG_BLOCK_CHAT;
-			strlcpy(p.szName, name, sizeof(p.szName));
-			p.lBlockDuration = lBlockDuration;
-			P2P_MANAGER::instance().Send(&p, sizeof(TPacketGGBlockChat));
-		}
-		else
-		{
-			TPacketBlockChat p;
-
-			strlcpy(p.szName, name, sizeof(p.szName));
-			p.lDuration = lBlockDuration;
-			db_clientdesc->DBPacket(HEADER_GD_BLOCK_CHAT, ch ? ecs::PlayerRuntime::GetDesc(character)->GetHandle() : 0, &p, sizeof(p));
-
-		}
-
-		if (ch)
-			ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "Chat block requested.");
-
-		return;
-	}
-
-	if (tch && ch != tch)
-		AffectSystem::AddAffect(((tch) ? (tch)->GetEntityHandle() : entt::null), AFFECT_BLOCK_CHAT, POINT_NONE, 0, AFF_NONE, lBlockDuration, 0, true);
+    // This command is intentionally disabled.
 }
 
 ACMD(do_block_chat)
 {
-	LPCHARACTER ch = ecs::LegacyCharOf(character);
+	// entt::null is the explicit server-origin path; stale non-null actors
+	// must never acquire that path's permission bypass.
+	if (character != entt::null && !ecs::PlayerRuntime::IsPC(character))
+		return;
+	const bool hasExecutor = character != entt::null;
 	// GM ƴϰų block_chat_privilege   ɾ  Ұ
-	if (ch && (ecs::PlayerRuntime::GetGMLevel(character) < GM_HIGH_WIZARD && ecs::QuestSystem::GetFlag(character, "chat_privilege.block") <= 0))
+	if (hasExecutor && (ecs::PlayerRuntime::GetGMLevel(character) < GM_HIGH_WIZARD && ecs::QuestSystem::GetFlag(character, "chat_privilege.block") <= 0))
 	{
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 266, "");
@@ -3275,7 +3105,7 @@ ACMD(do_block_chat)
 
 	if (!*arg1)
 	{
-		if (ch)
+		if (hasExecutor)
 			ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "Usage: block_chat <name> <time> (0 to off)");
 
 		return;
@@ -3290,9 +3120,9 @@ ACMD(do_block_chat)
 
 	LOG_INFO("BLOCK CHAT {} {}", name, lBlockDuration);
 
-	LPCHARACTER tch = CHARACTER_MANAGER::instance().FindPC(name);
+	entt::entity tch = CHARACTER_MANAGER::instance().FindPCEntity(name);
 
-	if (!tch)
+	if (!ecs::PlayerRuntime::IsValid(tch))
 	{
 		CCI * pkCCI = P2P_MANAGER::instance().Find(name);
 
@@ -3311,19 +3141,20 @@ ACMD(do_block_chat)
 
 			strlcpy(p.szName, name, sizeof(p.szName));
 			p.lDuration = lBlockDuration;
-			db_clientdesc->DBPacket(HEADER_GD_BLOCK_CHAT, ch ? ecs::PlayerRuntime::GetDesc(character)->GetHandle() : 0, &p, sizeof(p));
+			const auto* desc = ecs::PlayerRuntime::GetDesc(character);
+			db_clientdesc->DBPacket(HEADER_GD_BLOCK_CHAT, desc ? desc->GetHandle() : 0, &p, sizeof(p));
 		}
 
 #ifdef TEXTS_IMPROVEMENT
-		if (ch) {
+		if (hasExecutor) {
 			ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 810, "");
 		}
 #endif
 		return;
 	}
 
-	if (tch && ch != tch)
-		AffectSystem::AddAffect(((tch) ? (tch)->GetEntityHandle() : entt::null), AFFECT_BLOCK_CHAT, POINT_NONE, 0, AFF_NONE, lBlockDuration, 0, true);
+	if (ecs::PlayerRuntime::IsValid(tch) && character != tch)
+		AffectSystem::AddAffect(tch, AFFECT_BLOCK_CHAT, POINT_NONE, 0, AFF_NONE, lBlockDuration, 0, true);
 }
 
 void block_chat(entt::entity executor, std::string_view arguments)
@@ -3764,7 +3595,8 @@ ACMD(do_save_attribute_to_image) // command "/saveati" for alias
 
 ACMD(do_affect_remove)
 {
-	LPCHARACTER ch = ecs::LegacyCharOf(character);
+	if (!ecs::PlayerRuntime::IsPC(character))
+		return;
 	char arg1[256];
 	char arg2[256];
 
@@ -3775,16 +3607,16 @@ ACMD(do_affect_remove)
 		ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "Syntax: /affect_remove <player name>");
 		ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "Syntax: /affect_remove <type> <point>");
 
-		LPCHARACTER tch = ch;
+		entt::entity tch = character;
 
 		if (*arg1)
-			if (!(tch = CHARACTER_MANAGER::instance().FindPC(arg1)))
-				tch = ch;
+			if ((tch = CHARACTER_MANAGER::instance().FindPCEntity(arg1)) == entt::null)
+				tch = character;
 
-		ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "-- Affect List of %s -------------------------------", ecs::PlayerRuntime::GetName(((tch) ? (tch)->GetEntityHandle() : entt::null)).data());
+		ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "-- Affect List of %s -------------------------------", ecs::PlayerRuntime::GetName(tch).data());
 		ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "Type Point Modif Duration Flag");
 
-		const auto affects = AffectSystem::Snapshot(tch->GetEntityHandle());
+		const auto affects = AffectSystem::Snapshot(tch);
 		for (const auto& pkAff : affects)
 		{
 			if (!pkAff)
@@ -3806,7 +3638,8 @@ ACMD(do_affect_remove)
 	str_to_number(point, arg2);
 	while ((af = AffectSystem::FindAffect(character, type, point)))
 	{
-		AffectSystem::RemoveAffect(character, af);
+		if (!AffectSystem::RemoveAffect(character, af))
+			break;
 		removed = true;
 	}
 
@@ -3915,20 +3748,18 @@ ACMD(do_duel)
 	if (minute < 5)
 		minute = 5;
 
-	LPCHARACTER pChar1 = CHARACTER_MANAGER::instance().FindPC(szName1);
-	const entt::entity char1 = pChar1 ? pChar1->GetEntityHandle() : entt::null;
+	const auto char1 = CHARACTER_MANAGER::instance().FindPCEntity(szName1);
 
-	LPCHARACTER pChar2 = CHARACTER_MANAGER::instance().FindPC(szName2);
-	const entt::entity char2 = pChar2 ? pChar2->GetEntityHandle() : entt::null;
+	const auto char2 = CHARACTER_MANAGER::instance().FindPCEntity(szName2);
 
 
-	if (pChar1 != nullptr && pChar2 != nullptr)
+	if (ecs::PlayerRuntime::IsPC(char1) && ecs::PlayerRuntime::IsPC(char2) && char1 != char2)
 	{
-		pChar1->RemoveGoodAffect();
-		pChar2->RemoveGoodAffect();
+		AffectSystem::RemoveGoodAffects(char1);
+		AffectSystem::RemoveGoodAffects(char2);
 
-		pChar1->RemoveBadAffect();
-		pChar2->RemoveBadAffect();
+		AffectSystem::RemoveBadAffects(char1);
+		AffectSystem::RemoveBadAffects(char2);
 
 		LPPARTY pParty = ecs::SocialSystem::GetParty(char1);
 		if (pParty != nullptr)
@@ -3962,7 +3793,7 @@ ACMD(do_duel)
 			}
 		}
 
-		if (CArenaManager::instance().StartDuel(pChar1->GetEntityHandle(), pChar2->GetEntityHandle(), set, minute) == true) {
+		if (CArenaManager::instance().StartDuel(char1, char2, set, minute) == true) {
 #ifdef TEXTS_IMPROVEMENT
 			ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 301, "");
 #endif
@@ -3983,7 +3814,8 @@ ACMD(do_duel)
 #define ENABLE_STATPLUS_NOLIMIT
 ACMD(do_stat_plus_amount)
 {
-	LPCHARACTER ch = ecs::LegacyCharOf(character);
+	if (!ecs::PlayerRuntime::IsPC(character))
+		return;
 	char szPoint[256];
 
 	one_argument(argument, szPoint, sizeof(szPoint));
@@ -4070,13 +3902,13 @@ ACMD(do_stat_plus_amount)
 
 	if (nPoint != 0)
 	{
-		ch->SetRealPoint(subcmd, ecs::PointSystem::GetReal(character, subcmd) + nPoint);
-		ch->SetPoint(subcmd, ecs::PointSystem::Get(character, subcmd) + nPoint);
-		ch->ComputePoints();
+		ecs::PointSystem::SetReal(character, subcmd, ecs::PointSystem::GetReal(character, subcmd) + nPoint);
+		ecs::PointSystem::Set(character, subcmd, ecs::PointSystem::Get(character, subcmd) + nPoint);
+		ecs::PointSystem::Compute(character);
 		ecs::PointSystem::Change(character, subcmd, 0);
 
 		ecs::PointSystem::Change(character, POINT_STAT, -nPoint);
-		ch->ComputePoints();
+		ecs::PointSystem::Compute(character);
 	}
 }
 
@@ -4140,13 +3972,13 @@ ACMD(do_reset_subskill)
 		return;
 	}
 
-	LPCHARACTER tch = CHARACTER_MANAGER::instance().FindPC(arg1);
+	entt::entity tch = CHARACTER_MANAGER::instance().FindPCEntity(arg1);
 
-	if (tch == nullptr)
+	if (!ecs::PlayerRuntime::IsValid(tch))
 		return;
 
-	SkillSystem::ClearSubSkill(tch->GetEntityHandle());
-	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "Subskill of [%s] was reset", ecs::PlayerRuntime::GetName(((tch) ? (tch)->GetEntityHandle() : entt::null)).data());
+	SkillSystem::ClearSubSkill(tch);
+	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "Subskill of [%s] was reset", ecs::PlayerRuntime::GetName(tch).data());
 }
 
 ACMD(do_flush)
@@ -4246,11 +4078,10 @@ ACMD(do_set_stat)
 		return;
 	}
 
-	LPCHARACTER tch = CHARACTER_MANAGER::instance().FindPC(szName);
-	const entt::entity tchEntity = tch ? tch->GetEntityHandle() : entt::null;
+	const auto tchEntity = CHARACTER_MANAGER::instance().FindPCEntity(szName);
 
 
-	if (!tch)
+	if (!ecs::PlayerRuntime::IsPC(tchEntity))
 	{
 		CCI * pkCCI = P2P_MANAGER::instance().Find(szName);
 
@@ -4282,6 +4113,8 @@ ACMD(do_set_stat)
 #endif
 			return;
 		}
+		if (ecs::PlayerRuntime::GetJob(tchEntity) >= JOB_MAX_NUM)
+			return;
 		int nRemainPoint = ecs::PointSystem::Get(tchEntity, POINT_STAT);
 		int nCurPoint = ecs::PointSystem::GetReal(tchEntity, subcmd);
 		int nChangeAmount = 0;
@@ -4335,13 +4168,13 @@ ACMD(do_set_stat)
 			return;
 		}
 
-		tch->SetRealPoint(subcmd, nPoint);
-		tch->SetPoint(subcmd, ecs::PointSystem::Get(tchEntity, subcmd) + nChangeAmount);
-		tch->ComputePoints();
+		ecs::PointSystem::SetReal(tchEntity, subcmd, nPoint);
+		ecs::PointSystem::Set(tchEntity, subcmd, ecs::PointSystem::Get(tchEntity, subcmd) + nChangeAmount);
+		ecs::PointSystem::Compute(tchEntity);
 		ecs::PointSystem::Change(tchEntity, subcmd, 0);
 
 		ecs::PointSystem::Change(tchEntity, POINT_STAT, -nChangeAmount);
-		tch->ComputePoints();
+		ecs::PointSystem::Compute(tchEntity);
 
 		const char* stat_name[4] = {"con", "int", "str", "dex"};
 		if (-1 == n)
@@ -4369,13 +4202,16 @@ ACMD(do_set_socket)
 
 	one_argument (two_arguments (argument, arg1, sizeof (arg1), arg2, sizeof(arg2)), arg3, sizeof (arg3));
 
-	int item_id, socket_num, value;
-	if (!str_to_number (item_id, arg1) || !str_to_number (socket_num, arg2) || !str_to_number (value, arg3))
+	uint32_t item_id = 0;
+	int socket_num = 0, value = 0;
+	if (!ParseGMNumber(arg1, item_id) || !ParseGMNumber(arg2, socket_num) || !ParseGMNumber(arg3, value))
 		return;
 
-	LPITEM item = ITEM_MANAGER::instance().Find (item_id);
-	if (item)
-		ItemSystem::SetItemSocket((item ? item->GetEntityHandle() : entt::null), socket_num, value);
+	if (socket_num < 0 || socket_num >= ITEM_SOCKET_MAX_NUM)
+		return;
+	const auto item = ItemSystem::FindItemByID(item_id);
+	if (ItemSystem::IsValidItem(item))
+		ItemSystem::SetItemSocket(item, socket_num, value);
 }
 
 ACMD (do_can_dead)
@@ -4427,7 +4263,8 @@ ACMD (do_all_skill_master)
 
 ACMD (do_item_full_set)
 {
-	LPCHARACTER ch = ecs::LegacyCharOf(character);
+	if (!ecs::PlayerRuntime::IsPC(character))
+		return;
 	uint8_t job = ecs::PlayerRuntime::GetJob(character);
 	const entt::entity owner = character;
 	for (int i = 0; i < 6; i++)
@@ -4447,66 +4284,66 @@ ACMD (do_item_full_set)
 		{
 
 			item = ITEM_MANAGER::instance().CreateItem(19712);
-			if (!ItemSystem::IsValidItem(item) || !InventorySystem::EquipTo(item, ch->GetEntityHandle(), ItemSystem::FindEquipCell(ch->GetEntityHandle(), item)))
+			if (!ItemSystem::IsValidItem(item) || !InventorySystem::EquipTo(item, character, ItemSystem::FindEquipCell(character, item)))
 				ItemSystem::DestroyItemEntityEcs(
 			item,
 			"GM_CMD_DESTROY");
 			item = ITEM_MANAGER::instance().CreateItem(1733);//pajzs
-			if (!ItemSystem::IsValidItem(item) || !InventorySystem::EquipTo(item, ch->GetEntityHandle(), ItemSystem::FindEquipCell(ch->GetEntityHandle(), item)))
+			if (!ItemSystem::IsValidItem(item) || !InventorySystem::EquipTo(item, character, ItemSystem::FindEquipCell(character, item)))
 				ItemSystem::DestroyItemEntityEcs(
 			item,
 			"GM_CMD_DESTROY");
 			item = ITEM_MANAGER::instance().CreateItem(1773 );//cipi
-			if (!ItemSystem::IsValidItem(item) || !InventorySystem::EquipTo(item, ch->GetEntityHandle(), ItemSystem::FindEquipCell(ch->GetEntityHandle(), item)))
+			if (!ItemSystem::IsValidItem(item) || !InventorySystem::EquipTo(item, character, ItemSystem::FindEquipCell(character, item)))
 				ItemSystem::DestroyItemEntityEcs(
 			item,
 			"GM_CMD_DESTROY");
 			item = ITEM_MANAGER::instance().CreateItem(399 );//kard
-			if (!ItemSystem::IsValidItem(item) || !InventorySystem::EquipTo(item, ch->GetEntityHandle(), ItemSystem::FindEquipCell(ch->GetEntityHandle(), item)))
+			if (!ItemSystem::IsValidItem(item) || !InventorySystem::EquipTo(item, character, ItemSystem::FindEquipCell(character, item)))
 				ItemSystem::DestroyItemEntityEcs(
 			item,
 			"GM_CMD_DESTROY");
 			item = ITEM_MANAGER::instance().CreateItem(1713 );//sisak
-			if (!ItemSystem::IsValidItem(item) || !InventorySystem::EquipTo(item, ch->GetEntityHandle(), ItemSystem::FindEquipCell(ch->GetEntityHandle(), item)))
+			if (!ItemSystem::IsValidItem(item) || !InventorySystem::EquipTo(item, character, ItemSystem::FindEquipCell(character, item)))
 				ItemSystem::DestroyItemEntityEcs(
 			item,
 			"GM_CMD_DESTROY");
 			item = ITEM_MANAGER::instance().CreateItem(1753 );//karos
-			if (!ItemSystem::IsValidItem(item) || !InventorySystem::EquipTo(item, ch->GetEntityHandle(), ItemSystem::FindEquipCell(ch->GetEntityHandle(), item)))
+			if (!ItemSystem::IsValidItem(item) || !InventorySystem::EquipTo(item, character, ItemSystem::FindEquipCell(character, item)))
 				ItemSystem::DestroyItemEntityEcs(
 			item,
 			"GM_CMD_DESTROY");
 			item = ITEM_MANAGER::instance().CreateItem(1813 );//fli
-			if (!ItemSystem::IsValidItem(item) || !InventorySystem::EquipTo(item, ch->GetEntityHandle(), ItemSystem::FindEquipCell(ch->GetEntityHandle(), item)))
+			if (!ItemSystem::IsValidItem(item) || !InventorySystem::EquipTo(item, character, ItemSystem::FindEquipCell(character, item)))
 				ItemSystem::DestroyItemEntityEcs(
 			item,
 			"GM_CMD_DESTROY");
 			item = ITEM_MANAGER::instance().CreateItem(1793 );//nyaki
-			if (!ItemSystem::IsValidItem(item) || !InventorySystem::EquipTo(item, ch->GetEntityHandle(), ItemSystem::FindEquipCell(ch->GetEntityHandle(), item)))
+			if (!ItemSystem::IsValidItem(item) || !InventorySystem::EquipTo(item, character, ItemSystem::FindEquipCell(character, item)))
 				ItemSystem::DestroyItemEntityEcs(
 			item,
 			"GM_CMD_DESTROY");
 
 
 			item = ITEM_MANAGER::instance().CreateItem(85153);//SZARNY
-			if (!ItemSystem::IsValidItem(item) || !InventorySystem::EquipTo(item, ch->GetEntityHandle(), ItemSystem::FindEquipCell(ch->GetEntityHandle(), item)))
+			if (!ItemSystem::IsValidItem(item) || !InventorySystem::EquipTo(item, character, ItemSystem::FindEquipCell(character, item)))
 				ItemSystem::DestroyItemEntityEcs(
 			item,
 			"GM_CMD_DESTROY");
 
 			item = ITEM_MANAGER::instance().CreateItem(88211);//EFFECT FEGYO
-			if (!ItemSystem::IsValidItem(item) || !InventorySystem::EquipTo(item, ch->GetEntityHandle(), ItemSystem::FindEquipCell(ch->GetEntityHandle(), item)))
+			if (!ItemSystem::IsValidItem(item) || !InventorySystem::EquipTo(item, character, ItemSystem::FindEquipCell(character, item)))
 				ItemSystem::DestroyItemEntityEcs(
 			item,
 			"GM_CMD_DESTROY");
 			item = ITEM_MANAGER::instance().CreateItem(88213);//EFFETC VERT
-			if (!ItemSystem::IsValidItem(item) || !InventorySystem::EquipTo(item, ch->GetEntityHandle(), ItemSystem::FindEquipCell(ch->GetEntityHandle(), item)))
+			if (!ItemSystem::IsValidItem(item) || !InventorySystem::EquipTo(item, character, ItemSystem::FindEquipCell(character, item)))
 				ItemSystem::DestroyItemEntityEcs(
 			item,
 			"GM_CMD_DESTROY");
 
 			item = ITEM_MANAGER::instance().CreateItem(10810);//tali
-			if (!ItemSystem::IsValidItem(item) || !InventorySystem::EquipTo(item, ch->GetEntityHandle(), ItemSystem::FindEquipCell(ch->GetEntityHandle(), item)))
+			if (!ItemSystem::IsValidItem(item) || !InventorySystem::EquipTo(item, character, ItemSystem::FindEquipCell(character, item)))
 				ItemSystem::DestroyItemEntityEcs(
 			item,
 			"GM_CMD_DESTROY");
@@ -4516,65 +4353,65 @@ ACMD (do_item_full_set)
 		{
 
 			item = ITEM_MANAGER::instance().CreateItem(19312);
-			if (!ItemSystem::IsValidItem(item) || !InventorySystem::EquipTo(item, ch->GetEntityHandle(), ItemSystem::FindEquipCell(ch->GetEntityHandle(), item)))
+			if (!ItemSystem::IsValidItem(item) || !InventorySystem::EquipTo(item, character, ItemSystem::FindEquipCell(character, item)))
 				ItemSystem::DestroyItemEntityEcs(
 			item,
 			"GM_CMD_DESTROY");
 			item = ITEM_MANAGER::instance().CreateItem(1733);
-			if (!ItemSystem::IsValidItem(item) || !InventorySystem::EquipTo(item, ch->GetEntityHandle(), ItemSystem::FindEquipCell(ch->GetEntityHandle(), item)))
+			if (!ItemSystem::IsValidItem(item) || !InventorySystem::EquipTo(item, character, ItemSystem::FindEquipCell(character, item)))
 				ItemSystem::DestroyItemEntityEcs(
 			item,
 			"GM_CMD_DESTROY");
 			item = ITEM_MANAGER::instance().CreateItem(1773 );
-			if (!ItemSystem::IsValidItem(item) || !InventorySystem::EquipTo(item, ch->GetEntityHandle(), ItemSystem::FindEquipCell(ch->GetEntityHandle(), item)))
+			if (!ItemSystem::IsValidItem(item) || !InventorySystem::EquipTo(item, character, ItemSystem::FindEquipCell(character, item)))
 				ItemSystem::DestroyItemEntityEcs(
 			item,
 			"GM_CMD_DESTROY");
 			item = ITEM_MANAGER::instance().CreateItem(3269);//2kezes
-			if (!ItemSystem::IsValidItem(item) || !InventorySystem::EquipTo(item, ch->GetEntityHandle(), ItemSystem::FindEquipCell(ch->GetEntityHandle(), item)))
+			if (!ItemSystem::IsValidItem(item) || !InventorySystem::EquipTo(item, character, ItemSystem::FindEquipCell(character, item)))
 				ItemSystem::DestroyItemEntityEcs(
 			item,
 			"GM_CMD_DESTROY");
 			item = ITEM_MANAGER::instance().CreateItem(1713);//sisak
-			if (!ItemSystem::IsValidItem(item) || !InventorySystem::EquipTo(item, ch->GetEntityHandle(), ItemSystem::FindEquipCell(ch->GetEntityHandle(), item)))
+			if (!ItemSystem::IsValidItem(item) || !InventorySystem::EquipTo(item, character, ItemSystem::FindEquipCell(character, item)))
 				ItemSystem::DestroyItemEntityEcs(
 			item,
 			"GM_CMD_DESTROY");
 			item = ITEM_MANAGER::instance().CreateItem(1753 );
-			if (!ItemSystem::IsValidItem(item) || !InventorySystem::EquipTo(item, ch->GetEntityHandle(), ItemSystem::FindEquipCell(ch->GetEntityHandle(), item)))
+			if (!ItemSystem::IsValidItem(item) || !InventorySystem::EquipTo(item, character, ItemSystem::FindEquipCell(character, item)))
 				ItemSystem::DestroyItemEntityEcs(
 			item,
 			"GM_CMD_DESTROY");
 			item = ITEM_MANAGER::instance().CreateItem(1813 );
-			if (!ItemSystem::IsValidItem(item) || !InventorySystem::EquipTo(item, ch->GetEntityHandle(), ItemSystem::FindEquipCell(ch->GetEntityHandle(), item)))
+			if (!ItemSystem::IsValidItem(item) || !InventorySystem::EquipTo(item, character, ItemSystem::FindEquipCell(character, item)))
 				ItemSystem::DestroyItemEntityEcs(
 			item,
 			"GM_CMD_DESTROY");
 			item = ITEM_MANAGER::instance().CreateItem(1793 );
-			if (!ItemSystem::IsValidItem(item) || !InventorySystem::EquipTo(item, ch->GetEntityHandle(), ItemSystem::FindEquipCell(ch->GetEntityHandle(), item)))
+			if (!ItemSystem::IsValidItem(item) || !InventorySystem::EquipTo(item, character, ItemSystem::FindEquipCell(character, item)))
 				ItemSystem::DestroyItemEntityEcs(
 			item,
 			"GM_CMD_DESTROY");
 			item = ITEM_MANAGER::instance().CreateItem(399);//kard
 			item = ITEM_MANAGER::instance().CreateItem(85153);//SZARNY
-			if (!ItemSystem::IsValidItem(item) || !InventorySystem::EquipTo(item, ch->GetEntityHandle(), ItemSystem::FindEquipCell(ch->GetEntityHandle(), item)))
+			if (!ItemSystem::IsValidItem(item) || !InventorySystem::EquipTo(item, character, ItemSystem::FindEquipCell(character, item)))
 				ItemSystem::DestroyItemEntityEcs(
 			item,
 			"GM_CMD_DESTROY");
 
 			item = ITEM_MANAGER::instance().CreateItem(88211);//EFFECT FEGYO
-			if (!ItemSystem::IsValidItem(item) || !InventorySystem::EquipTo(item, ch->GetEntityHandle(), ItemSystem::FindEquipCell(ch->GetEntityHandle(), item)))
+			if (!ItemSystem::IsValidItem(item) || !InventorySystem::EquipTo(item, character, ItemSystem::FindEquipCell(character, item)))
 				ItemSystem::DestroyItemEntityEcs(
 			item,
 			"GM_CMD_DESTROY");
 			item = ITEM_MANAGER::instance().CreateItem(88213);//EFFETC VERT
-			if (!ItemSystem::IsValidItem(item) || !InventorySystem::EquipTo(item, ch->GetEntityHandle(), ItemSystem::FindEquipCell(ch->GetEntityHandle(), item)))
+			if (!ItemSystem::IsValidItem(item) || !InventorySystem::EquipTo(item, character, ItemSystem::FindEquipCell(character, item)))
 				ItemSystem::DestroyItemEntityEcs(
 			item,
 			"GM_CMD_DESTROY");
 
 			item = ITEM_MANAGER::instance().CreateItem(10810);//tali
-			if (!ItemSystem::IsValidItem(item) || !InventorySystem::EquipTo(item, ch->GetEntityHandle(), ItemSystem::FindEquipCell(ch->GetEntityHandle(), item)))
+			if (!ItemSystem::IsValidItem(item) || !InventorySystem::EquipTo(item, character, ItemSystem::FindEquipCell(character, item)))
 				ItemSystem::DestroyItemEntityEcs(
 			item,
 			"GM_CMD_DESTROY");
@@ -4584,66 +4421,66 @@ ACMD (do_item_full_set)
 		{
 
 			item = ITEM_MANAGER::instance().CreateItem(19912);
-			if (!ItemSystem::IsValidItem(item) || !InventorySystem::EquipTo(item, ch->GetEntityHandle(), ItemSystem::FindEquipCell(ch->GetEntityHandle(), item)))
+			if (!ItemSystem::IsValidItem(item) || !InventorySystem::EquipTo(item, character, ItemSystem::FindEquipCell(character, item)))
 				ItemSystem::DestroyItemEntityEcs(
 			item,
 			"GM_CMD_DESTROY");
 			item = ITEM_MANAGER::instance().CreateItem(1733);
-			if (!ItemSystem::IsValidItem(item) || !InventorySystem::EquipTo(item, ch->GetEntityHandle(), ItemSystem::FindEquipCell(ch->GetEntityHandle(), item)))
+			if (!ItemSystem::IsValidItem(item) || !InventorySystem::EquipTo(item, character, ItemSystem::FindEquipCell(character, item)))
 				ItemSystem::DestroyItemEntityEcs(
 			item,
 			"GM_CMD_DESTROY");
 			item = ITEM_MANAGER::instance().CreateItem(1773 );
-			if (!ItemSystem::IsValidItem(item) || !InventorySystem::EquipTo(item, ch->GetEntityHandle(), ItemSystem::FindEquipCell(ch->GetEntityHandle(), item)))
+			if (!ItemSystem::IsValidItem(item) || !InventorySystem::EquipTo(item, character, ItemSystem::FindEquipCell(character, item)))
 				ItemSystem::DestroyItemEntityEcs(
 			item,
 			"GM_CMD_DESTROY");
 			item = ITEM_MANAGER::instance().CreateItem(7349);
-			if (!ItemSystem::IsValidItem(item) || !InventorySystem::EquipTo(item, ch->GetEntityHandle(), ItemSystem::FindEquipCell(ch->GetEntityHandle(), item)))
+			if (!ItemSystem::IsValidItem(item) || !InventorySystem::EquipTo(item, character, ItemSystem::FindEquipCell(character, item)))
 				ItemSystem::DestroyItemEntityEcs(
 			item,
 			"GM_CMD_DESTROY");
 			item = ITEM_MANAGER::instance().CreateItem(1713);//sisak
-			if (!ItemSystem::IsValidItem(item) || !InventorySystem::EquipTo(item, ch->GetEntityHandle(), ItemSystem::FindEquipCell(ch->GetEntityHandle(), item)))
+			if (!ItemSystem::IsValidItem(item) || !InventorySystem::EquipTo(item, character, ItemSystem::FindEquipCell(character, item)))
 				ItemSystem::DestroyItemEntityEcs(
 			item,
 			"GM_CMD_DESTROY");
 			item = ITEM_MANAGER::instance().CreateItem(1753 );
-			if (!ItemSystem::IsValidItem(item) || !InventorySystem::EquipTo(item, ch->GetEntityHandle(), ItemSystem::FindEquipCell(ch->GetEntityHandle(), item)))
+			if (!ItemSystem::IsValidItem(item) || !InventorySystem::EquipTo(item, character, ItemSystem::FindEquipCell(character, item)))
 				ItemSystem::DestroyItemEntityEcs(
 			item,
 			"GM_CMD_DESTROY");
 			item = ITEM_MANAGER::instance().CreateItem(1813 );
-			if (!ItemSystem::IsValidItem(item) || !InventorySystem::EquipTo(item, ch->GetEntityHandle(), ItemSystem::FindEquipCell(ch->GetEntityHandle(), item)))
+			if (!ItemSystem::IsValidItem(item) || !InventorySystem::EquipTo(item, character, ItemSystem::FindEquipCell(character, item)))
 				ItemSystem::DestroyItemEntityEcs(
 			item,
 			"GM_CMD_DESTROY");
 			item = ITEM_MANAGER::instance().CreateItem(1793 );
-			if (!ItemSystem::IsValidItem(item) || !InventorySystem::EquipTo(item, ch->GetEntityHandle(), ItemSystem::FindEquipCell(ch->GetEntityHandle(), item)))
+			if (!ItemSystem::IsValidItem(item) || !InventorySystem::EquipTo(item, character, ItemSystem::FindEquipCell(character, item)))
 				ItemSystem::DestroyItemEntityEcs(
 			item,
 			"GM_CMD_DESTROY");
 			item = ITEM_MANAGER::instance().CreateItem(5209);
 
 			item = ITEM_MANAGER::instance().CreateItem(85153);//SZARNY
-			if (!ItemSystem::IsValidItem(item) || !InventorySystem::EquipTo(item, ch->GetEntityHandle(), ItemSystem::FindEquipCell(ch->GetEntityHandle(), item)))
+			if (!ItemSystem::IsValidItem(item) || !InventorySystem::EquipTo(item, character, ItemSystem::FindEquipCell(character, item)))
 				ItemSystem::DestroyItemEntityEcs(
 			item,
 			"GM_CMD_DESTROY");
 
 			item = ITEM_MANAGER::instance().CreateItem(88211);//EFFECT FEGYO
-			if (!ItemSystem::IsValidItem(item) || !InventorySystem::EquipTo(item, ch->GetEntityHandle(), ItemSystem::FindEquipCell(ch->GetEntityHandle(), item)))
+			if (!ItemSystem::IsValidItem(item) || !InventorySystem::EquipTo(item, character, ItemSystem::FindEquipCell(character, item)))
 				ItemSystem::DestroyItemEntityEcs(
 			item,
 			"GM_CMD_DESTROY");
 			item = ITEM_MANAGER::instance().CreateItem(88213);//EFFETC VERT
-			if (!ItemSystem::IsValidItem(item) || !InventorySystem::EquipTo(item, ch->GetEntityHandle(), ItemSystem::FindEquipCell(ch->GetEntityHandle(), item)))
+			if (!ItemSystem::IsValidItem(item) || !InventorySystem::EquipTo(item, character, ItemSystem::FindEquipCell(character, item)))
 				ItemSystem::DestroyItemEntityEcs(
 			item,
 			"GM_CMD_DESTROY");
 
 			item = ITEM_MANAGER::instance().CreateItem(10810);//tali
-			if (!ItemSystem::IsValidItem(item) || !InventorySystem::EquipTo(item, ch->GetEntityHandle(), ItemSystem::FindEquipCell(ch->GetEntityHandle(), item)))
+			if (!ItemSystem::IsValidItem(item) || !InventorySystem::EquipTo(item, character, ItemSystem::FindEquipCell(character, item)))
 				ItemSystem::DestroyItemEntityEcs(
 			item,
 			"GM_CMD_DESTROY");
@@ -4653,42 +4490,42 @@ ACMD (do_item_full_set)
 		{
 
 			item = ITEM_MANAGER::instance().CreateItem(19512);
-			if (!ItemSystem::IsValidItem(item) || !InventorySystem::EquipTo(item, ch->GetEntityHandle(), ItemSystem::FindEquipCell(ch->GetEntityHandle(), item)))
+			if (!ItemSystem::IsValidItem(item) || !InventorySystem::EquipTo(item, character, ItemSystem::FindEquipCell(character, item)))
 				ItemSystem::DestroyItemEntityEcs(
 			item,
 			"GM_CMD_DESTROY");
 			item = ITEM_MANAGER::instance().CreateItem(1733);
-			if (!ItemSystem::IsValidItem(item) || !InventorySystem::EquipTo(item, ch->GetEntityHandle(), ItemSystem::FindEquipCell(ch->GetEntityHandle(), item)))
+			if (!ItemSystem::IsValidItem(item) || !InventorySystem::EquipTo(item, character, ItemSystem::FindEquipCell(character, item)))
 				ItemSystem::DestroyItemEntityEcs(
 			item,
 			"GM_CMD_DESTROY");
 			item = ITEM_MANAGER::instance().CreateItem(1773 );
-			if (!ItemSystem::IsValidItem(item) || !InventorySystem::EquipTo(item, ch->GetEntityHandle(), ItemSystem::FindEquipCell(ch->GetEntityHandle(), item)))
+			if (!ItemSystem::IsValidItem(item) || !InventorySystem::EquipTo(item, character, ItemSystem::FindEquipCell(character, item)))
 				ItemSystem::DestroyItemEntityEcs(
 			item,
 			"GM_CMD_DESTROY");
 			item = ITEM_MANAGER::instance().CreateItem(1229);//tr
-			if (!ItemSystem::IsValidItem(item) || !InventorySystem::EquipTo(item, ch->GetEntityHandle(), ItemSystem::FindEquipCell(ch->GetEntityHandle(), item)))
+			if (!ItemSystem::IsValidItem(item) || !InventorySystem::EquipTo(item, character, ItemSystem::FindEquipCell(character, item)))
 				ItemSystem::DestroyItemEntityEcs(
 			item,
 			"GM_CMD_DESTROY");
 			item = ITEM_MANAGER::instance().CreateItem(1713);//sisak
-			if (!ItemSystem::IsValidItem(item) || !InventorySystem::EquipTo(item, ch->GetEntityHandle(), ItemSystem::FindEquipCell(ch->GetEntityHandle(), item)))
+			if (!ItemSystem::IsValidItem(item) || !InventorySystem::EquipTo(item, character, ItemSystem::FindEquipCell(character, item)))
 				ItemSystem::DestroyItemEntityEcs(
 			item,
 			"GM_CMD_DESTROY");
 			item = ITEM_MANAGER::instance().CreateItem(1753);
-			if (!ItemSystem::IsValidItem(item) || !InventorySystem::EquipTo(item, ch->GetEntityHandle(), ItemSystem::FindEquipCell(ch->GetEntityHandle(), item)))
+			if (!ItemSystem::IsValidItem(item) || !InventorySystem::EquipTo(item, character, ItemSystem::FindEquipCell(character, item)))
 				ItemSystem::DestroyItemEntityEcs(
 			item,
 			"GM_CMD_DESTROY");
 			item = ITEM_MANAGER::instance().CreateItem(1813);//fli
-			if (!ItemSystem::IsValidItem(item) || !InventorySystem::EquipTo(item, ch->GetEntityHandle(), ItemSystem::FindEquipCell(ch->GetEntityHandle(), item)))
+			if (!ItemSystem::IsValidItem(item) || !InventorySystem::EquipTo(item, character, ItemSystem::FindEquipCell(character, item)))
 				ItemSystem::DestroyItemEntityEcs(
 			item,
 			"GM_CMD_DESTROY");
 			item = ITEM_MANAGER::instance().CreateItem(1793);//nyaki
-			if (!ItemSystem::IsValidItem(item) || !InventorySystem::EquipTo(item, ch->GetEntityHandle(), ItemSystem::FindEquipCell(ch->GetEntityHandle(), item)))
+			if (!ItemSystem::IsValidItem(item) || !InventorySystem::EquipTo(item, character, ItemSystem::FindEquipCell(character, item)))
 				ItemSystem::DestroyItemEntityEcs(
 			item,
 			"GM_CMD_DESTROY");
@@ -4696,24 +4533,24 @@ ACMD (do_item_full_set)
 			item = ITEM_MANAGER::instance().CreateItem(2249);//j
 
 			item = ITEM_MANAGER::instance().CreateItem(85153);//SZARNY
-			if (!ItemSystem::IsValidItem(item) || !InventorySystem::EquipTo(item, ch->GetEntityHandle(), ItemSystem::FindEquipCell(ch->GetEntityHandle(), item)))
+			if (!ItemSystem::IsValidItem(item) || !InventorySystem::EquipTo(item, character, ItemSystem::FindEquipCell(character, item)))
 				ItemSystem::DestroyItemEntityEcs(
 			item,
 			"GM_CMD_DESTROY");
 
 			item = ITEM_MANAGER::instance().CreateItem(88211);//EFFECT FEGYO
-			if (!ItemSystem::IsValidItem(item) || !InventorySystem::EquipTo(item, ch->GetEntityHandle(), ItemSystem::FindEquipCell(ch->GetEntityHandle(), item)))
+			if (!ItemSystem::IsValidItem(item) || !InventorySystem::EquipTo(item, character, ItemSystem::FindEquipCell(character, item)))
 				ItemSystem::DestroyItemEntityEcs(
 			item,
 			"GM_CMD_DESTROY");
 			item = ITEM_MANAGER::instance().CreateItem(88213);//EFFETC VERT
-			if (!ItemSystem::IsValidItem(item) || !InventorySystem::EquipTo(item, ch->GetEntityHandle(), ItemSystem::FindEquipCell(ch->GetEntityHandle(), item)))
+			if (!ItemSystem::IsValidItem(item) || !InventorySystem::EquipTo(item, character, ItemSystem::FindEquipCell(character, item)))
 				ItemSystem::DestroyItemEntityEcs(
 			item,
 			"GM_CMD_DESTROY");
 
 			item = ITEM_MANAGER::instance().CreateItem(10810);//tali
-			if (!ItemSystem::IsValidItem(item) || !InventorySystem::EquipTo(item, ch->GetEntityHandle(), ItemSystem::FindEquipCell(ch->GetEntityHandle(), item)))
+			if (!ItemSystem::IsValidItem(item) || !InventorySystem::EquipTo(item, character, ItemSystem::FindEquipCell(character, item)))
 				ItemSystem::DestroyItemEntityEcs(
 			item,
 			"GM_CMD_DESTROY");
@@ -4724,42 +4561,42 @@ ACMD (do_item_full_set)
 		{
 
 			item = ITEM_MANAGER::instance().CreateItem(21049);
-			if (!ItemSystem::IsValidItem(item) || !InventorySystem::EquipTo(item, ch->GetEntityHandle(), ItemSystem::FindEquipCell(ch->GetEntityHandle(), item)))
+			if (!ItemSystem::IsValidItem(item) || !InventorySystem::EquipTo(item, character, ItemSystem::FindEquipCell(character, item)))
 				ItemSystem::DestroyItemEntityEcs(
 			item,
 			"GM_CMD_DESTROY");
 			item = ITEM_MANAGER::instance().CreateItem(13049);
-			if (!ItemSystem::IsValidItem(item) || !InventorySystem::EquipTo(item, ch->GetEntityHandle(), ItemSystem::FindEquipCell(ch->GetEntityHandle(), item)))
+			if (!ItemSystem::IsValidItem(item) || !InventorySystem::EquipTo(item, character, ItemSystem::FindEquipCell(character, item)))
 				ItemSystem::DestroyItemEntityEcs(
 			item,
 			"GM_CMD_DESTROY");
 			item = ITEM_MANAGER::instance().CreateItem(1773);
-			if (!ItemSystem::IsValidItem(item) || !InventorySystem::EquipTo(item, ch->GetEntityHandle(), ItemSystem::FindEquipCell(ch->GetEntityHandle(), item)))
+			if (!ItemSystem::IsValidItem(item) || !InventorySystem::EquipTo(item, character, ItemSystem::FindEquipCell(character, item)))
 				ItemSystem::DestroyItemEntityEcs(
 			item,
 			"GM_CMD_DESTROY");
 			item = ITEM_MANAGER::instance().CreateItem(6049);
-			if (!ItemSystem::IsValidItem(item) || !InventorySystem::EquipTo(item, ch->GetEntityHandle(), ItemSystem::FindEquipCell(ch->GetEntityHandle(), item)))
+			if (!ItemSystem::IsValidItem(item) || !InventorySystem::EquipTo(item, character, ItemSystem::FindEquipCell(character, item)))
 				ItemSystem::DestroyItemEntityEcs(
 			item,
 			"GM_CMD_DESTROY");
 			item = ITEM_MANAGER::instance().CreateItem(21559);
-			if (!ItemSystem::IsValidItem(item) || !InventorySystem::EquipTo(item, ch->GetEntityHandle(), ItemSystem::FindEquipCell(ch->GetEntityHandle(), item)))
+			if (!ItemSystem::IsValidItem(item) || !InventorySystem::EquipTo(item, character, ItemSystem::FindEquipCell(character, item)))
 				ItemSystem::DestroyItemEntityEcs(
 			item,
 			"GM_CMD_DESTROY");
 			item = ITEM_MANAGER::instance().CreateItem(1753);
-			if (!ItemSystem::IsValidItem(item) || !InventorySystem::EquipTo(item, ch->GetEntityHandle(), ItemSystem::FindEquipCell(ch->GetEntityHandle(), item)))
+			if (!ItemSystem::IsValidItem(item) || !InventorySystem::EquipTo(item, character, ItemSystem::FindEquipCell(character, item)))
 				ItemSystem::DestroyItemEntityEcs(
 			item,
 			"GM_CMD_DESTROY");
 			item = ITEM_MANAGER::instance().CreateItem(1813);
-			if (!ItemSystem::IsValidItem(item) || !InventorySystem::EquipTo(item, ch->GetEntityHandle(), ItemSystem::FindEquipCell(ch->GetEntityHandle(), item)))
+			if (!ItemSystem::IsValidItem(item) || !InventorySystem::EquipTo(item, character, ItemSystem::FindEquipCell(character, item)))
 				ItemSystem::DestroyItemEntityEcs(
 			item,
 			"GM_CMD_DESTROY");
 			item = ITEM_MANAGER::instance().CreateItem(1793);
-			if (!ItemSystem::IsValidItem(item) || !InventorySystem::EquipTo(item, ch->GetEntityHandle(), ItemSystem::FindEquipCell(ch->GetEntityHandle(), item)))
+			if (!ItemSystem::IsValidItem(item) || !InventorySystem::EquipTo(item, character, ItemSystem::FindEquipCell(character, item)))
 				ItemSystem::DestroyItemEntityEcs(
 			item,
 			"GM_CMD_DESTROY");
@@ -4794,7 +4631,8 @@ void ApplyFullAttributes(entt::entity owner, uint8_t wearSlot,
 
 ACMD (do_attr_full_set)
 {
-	LPCHARACTER ch = ecs::LegacyCharOf(character);
+	if (!ecs::PlayerRuntime::IsPC(character))
+		return;
 	uint8_t job = ecs::PlayerRuntime::GetJob(character);
 	const entt::entity owner = character;
 	switch (job)
@@ -4866,13 +4704,15 @@ ACMD (do_use_item)
 
 ACMD (do_clear_affect)
 {
-	LPCHARACTER ch = ecs::LegacyCharOf(character);
-	ch->ClearAffect(true);
+	if (!ecs::PlayerRuntime::IsPC(character))
+		return;
+	AffectSystem::ClearAffect(character, true);
 }
 
 ACMD (do_dragon_soul)
 {
-	LPCHARACTER ch = ecs::LegacyCharOf(character);
+	if (!ecs::PlayerRuntime::IsPC(character))
+		return;
 	char arg1[512];
 	const char* rest = one_argument (argument, arg1, sizeof(arg1));
 	switch (arg1[0])
@@ -4880,12 +4720,12 @@ ACMD (do_dragon_soul)
 	case 'a':
 		{
 			one_argument (rest, arg1, sizeof(arg1));
-			int deck_idx;
+			int deck_idx = 0;
 			if (str_to_number(deck_idx, arg1) == false)
 			{
 				return;
 			}
-			ch->DragonSoul_ActivateDeck(deck_idx);
+			DragonSoulSystem::ActivateDeck(character, deck_idx);
 		}
 		break;
 	case 'd':

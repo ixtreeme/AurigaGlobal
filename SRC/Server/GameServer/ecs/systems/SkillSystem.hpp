@@ -18,6 +18,10 @@ void SendSkillLevelPacket(entt::entity e);
 uint8_t GetSkillGroup(entt::entity e);
 void SetSkillGroup(entt::entity e, uint8_t skillGroup);
 
+#ifdef ENABLE_NEW_PASSIVE_SKILLS
+bool CanIncreaseSkill(entt::entity e, uint32_t skillId, bool book = false);
+#endif
+
 bool IsLearnableSkill(entt::entity e, uint32_t skillId);
 bool LearnGrandMasterSkill(entt::entity e, uint32_t skillId);
 bool LearnSkillByBook(entt::entity e, uint32_t skillId, uint8_t prob = 0);

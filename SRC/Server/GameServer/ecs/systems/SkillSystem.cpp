@@ -202,13 +202,95 @@ uint8_t GetSkillGroup(entt::entity e)
 
 void SetSkillGroup(entt::entity e, uint8_t skillGroup)
 {
-    auto* levels = TryGetSkillLevels(e);
-    if (!levels)
+    if (!g_registry.valid(e) || skillGroup > 2)
         return;
-
-    levels->group = skillGroup;
+    g_registry.get_or_emplace<ecs::SkillLevels>(e).group = skillGroup;
+    if (auto* points = g_registry.try_get<ecs::CharacterPoints>(e))
+        points->base.skill_group = skillGroup;
     MarkDirty(e);
+    TPacketGCChangeSkillGroup packet {};
+    packet.header = HEADER_GC_SKILL_GROUP;
+    packet.skill_group = skillGroup;
+    if (auto* desc = ecs::PlayerRuntime::GetDesc(e))
+        desc->Packet(&packet, sizeof(packet));
 }
+#ifdef ENABLE_NEW_PASSIVE_SKILLS
+bool CanIncreaseSkill(entt::entity e, uint32_t dwVnum, bool book)
+{
+    if (!g_registry.valid(e) || dwVnum >= SKILL_MAX_NUM)
+        return false;
+	bool passive = false;
+	bool bCan;
+	switch (dwVnum) {
+		case SKILL_HELP_PALBANG:
+			bCan = GetSkillLevel(e, SKILL_PALBANG) < 40 ? false : true;
+			break;
+		case SKILL_HELP_AMSEOP:
+			bCan = GetSkillLevel(e, SKILL_AMSEOP) < 40 ? false : true;
+			break;
+		case SKILL_HELP_SWAERYUNG:
+			bCan = GetSkillLevel(e, SKILL_SWAERYUNG) < 40 ? false : true;
+			break;
+		case SKILL_HELP_YONGBI:
+			bCan = GetSkillLevel(e, SKILL_YONGBI) < 40 ? false : true;
+			break;
+		case SKILL_HELP_GIGONGCHAM:
+			bCan = GetSkillLevel(e, SKILL_GIGONGCHAM) < 40 ? false : true;
+			break;
+		case SKILL_HELP_HWAJO:
+			bCan = GetSkillLevel(e, SKILL_HWAJO) < 40 ? false : true;
+			break;
+		case SKILL_HELP_MARYUNG:
+			bCan = GetSkillLevel(e, SKILL_MARYUNG) < 40 ? false : true;
+			break;
+		case SKILL_HELP_BYEURAK:
+			bCan = GetSkillLevel(e, SKILL_BYEURAK) < 40 ? false : true;
+			break;
+		case SKILL_ANTI_PALBANG:
+		case SKILL_ANTI_AMSEOP:
+		case SKILL_ANTI_SWAERYUNG:
+		case SKILL_ANTI_YONGBI:
+		case SKILL_ANTI_GIGONGCHAM:
+		case SKILL_ANTI_HWAJO:
+		case SKILL_ANTI_MARYUNG:
+		case SKILL_ANTI_BYEURAK:
+			{
+				if (ecs::PointSystem::GetLevel(e) < 90) {
+#ifdef TEXTS_IMPROVEMENT
+					ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 92, "");
+#endif
+					return false;
+				}
+				else {
+					passive = true;
+					if (book) {
+						bCan = GetSkillLevel(e, dwVnum) < 30 ? true : false;
+					} else {
+						bCan = true;
+					}
+					break;
+				}
+			}
+		default:
+			bCan = true;
+			break;
+	}
+
+	if (!bCan && !passive) {
+#ifdef TEXTS_IMPROVEMENT
+		ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 93, "");
+		ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 94, "");
+#endif
+	} else if (!bCan && passive) {
+#ifdef TEXTS_IMPROVEMENT
+		ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 423, "");
+#endif
+	}
+
+	return bCan;
+}
+
+#endif
 
 void SetSkillLevel(entt::entity e, uint32_t skillId, uint8_t level)
 {
@@ -218,6 +300,17 @@ void SetSkillLevel(entt::entity e, uint32_t skillId, uint8_t level)
     auto* levels = TryGetSkillLevels(e);
     if (!levels || !levels->levels)
         return;
+
+#ifdef ENABLE_NEW_PASSIVE_SKILLS
+    if (level != 0 && !CanIncreaseSkill(e, skillId, false))
+        return;
+    if (skillId >= SKILL_ANTI_PALBANG && skillId <= SKILL_ANTI_BYEURAK && level == 11)
+        level = 20;
+    // The eligibility check may emit chat; reacquire storage after callbacks.
+    levels = TryGetSkillLevels(e);
+    if (!levels || !levels->levels)
+        return;
+#endif
 
     levels->levels[skillId].bLevel = MIN(40, level);
 
@@ -411,6 +504,8 @@ void ResetSkill(entt::entity e)
 	MarkDirty(e);
 
 #ifdef __SKILL_COLOR_SYSTEM__
+	if (!g_registry.valid(e))
+		return;
 	auto& colors = g_registry.get_or_emplace<ecs::SkillColor>(e);
 	std::memset(colors.data, 0, sizeof(colors.data));
 	TSkillColor packet {};
@@ -439,6 +534,9 @@ void ClearSubSkill(entt::entity e)
 	ecs::PointSystem::Change(e, POINT_SUB_SKILL,
 		ecs::PointSystem::GetLevel(e) < 10 ? 0 :
 		(ecs::PointSystem::GetLevel(e) - 9) - ecs::PointSystem::Get(e, POINT_SUB_SKILL));
+	levels = TryGetSkillLevels(e);
+	if (!levels || !levels->levels)
+		return;
 
 	const TPlayerSkill clean {};
 	for (const uint32_t skillId : s_adwSubSkillVnums)
@@ -471,19 +569,8 @@ bool ResetOneSkill(entt::entity e, uint32_t skillId)
 
 void CHARACTER::SetSkillGroup(uint8_t bSkillGroup)
 {
-    if (bSkillGroup > 2)
-        return;
-
-    m_points.skill_group = bSkillGroup;
     SkillSystem::SetSkillGroup(GetEntityHandle(), bSkillGroup);
-
-    TPacketGCChangeSkillGroup p;
-    p.header = HEADER_GC_SKILL_GROUP;
-    p.skill_group = m_points.skill_group;
-
-    GetDesc()->Packet(&p, sizeof(TPacketGCChangeSkillGroup));
 }
-
 time_t CHARACTER::GetSkillNextReadTime(uint32_t dwVnum) const
 {
     if (dwVnum >= SKILL_MAX_NUM)
@@ -524,46 +611,8 @@ uint8_t CHARACTER::GetSkillGroup() const
 
 void CHARACTER::SetSkillLevel(uint32_t dwVnum, uint8_t bLev)
 {
-    if (nullptr == m_pSkillLevels)
-        return;
-
-    if (dwVnum >= SKILL_MAX_NUM)
-    {
-        LOG_ERROR("vnum overflow (vnum {})", dwVnum);
-        return;
-    }
-
-#ifdef ENABLE_NEW_PASSIVE_SKILLS
-    if ((!SkillCanUp(dwVnum)) && (bLev != 0))
-        return;
-
-    if ((dwVnum >= SKILL_ANTI_PALBANG) && (dwVnum <= SKILL_ANTI_BYEURAK) && (bLev == 11))
-        bLev = 20;
-#endif
-
-    m_pSkillLevels[dwVnum].bLevel = MIN(40, bLev);
-
-#ifdef ENABLE_NEW_SECONDARY_SKILLS
-    if ((bLev > 10) &&
-        ((dwVnum == NEW_SUPPORT_SKILL_ATTACK) || (dwVnum == NEW_SUPPORT_SKILL_YANG) ||
-         (dwVnum == NEW_SUPPORT_SKILL_MONSTERS) || (dwVnum == NEW_SUPPORT_SKILL_HP))) {
-        bLev = 10;
-        m_pSkillLevels[dwVnum].bLevel = bLev;
-    }
-#endif
-
-    if (bLev >= 40)
-        m_pSkillLevels[dwVnum].bMasterType = SKILL_PERFECT_MASTER;
-    else if (bLev >= 30)
-        m_pSkillLevels[dwVnum].bMasterType = SKILL_GRAND_MASTER;
-    else if (bLev >= 20)
-        m_pSkillLevels[dwVnum].bMasterType = SKILL_MASTER;
-    else
-        m_pSkillLevels[dwVnum].bMasterType = SKILL_NORMAL;
-
     SkillSystem::SetSkillLevel(GetEntityHandle(), dwVnum, bLev);
 }
-
 int CHARACTER::GetSkillLevel(uint32_t dwVnum) const
 {
     if (dwVnum >= SKILL_MAX_NUM)
@@ -1432,75 +1481,7 @@ bool CHARACTER::SkillLevelDown(uint32_t dwVnum)
 #ifdef ENABLE_NEW_PASSIVE_SKILLS
 bool CHARACTER::SkillCanUp(uint32_t dwVnum, bool book)
 {
-	bool passive = false;
-	bool bCan;
-	switch (dwVnum) {
-		case SKILL_HELP_PALBANG:
-			bCan = GetSkillLevel(SKILL_PALBANG) < 40 ? false : true;
-			break;
-		case SKILL_HELP_AMSEOP:
-			bCan = GetSkillLevel(SKILL_AMSEOP) < 40 ? false : true;
-			break;
-		case SKILL_HELP_SWAERYUNG:
-			bCan = GetSkillLevel(SKILL_SWAERYUNG) < 40 ? false : true;
-			break;
-		case SKILL_HELP_YONGBI:
-			bCan = GetSkillLevel(SKILL_YONGBI) < 40 ? false : true;
-			break;
-		case SKILL_HELP_GIGONGCHAM:
-			bCan = GetSkillLevel(SKILL_GIGONGCHAM) < 40 ? false : true;
-			break;
-		case SKILL_HELP_HWAJO:
-			bCan = GetSkillLevel(SKILL_HWAJO) < 40 ? false : true;
-			break;
-		case SKILL_HELP_MARYUNG:
-			bCan = GetSkillLevel(SKILL_MARYUNG) < 40 ? false : true;
-			break;
-		case SKILL_HELP_BYEURAK:
-			bCan = GetSkillLevel(SKILL_BYEURAK) < 40 ? false : true;
-			break;
-		case SKILL_ANTI_PALBANG:
-		case SKILL_ANTI_AMSEOP:
-		case SKILL_ANTI_SWAERYUNG:
-		case SKILL_ANTI_YONGBI:
-		case SKILL_ANTI_GIGONGCHAM:
-		case SKILL_ANTI_HWAJO:
-		case SKILL_ANTI_MARYUNG:
-		case SKILL_ANTI_BYEURAK:
-			{
-				if (GetLevel() < 90) {
-#ifdef TEXTS_IMPROVEMENT
-					ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 92, "");
-#endif
-					return false;
-				}
-				else {
-					passive = true;
-					if (book) {
-						bCan = GetSkillLevel(dwVnum) < 30 ? true : false;
-					} else {
-						bCan = true;
-					}
-					break;
-				}
-			}
-		default:
-			bCan = true;
-			break;
-	}
-
-	if (!bCan && !passive) {
-#ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 93, "");
-		ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 94, "");
-#endif
-	} else if (!bCan && passive) {
-#ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 423, "");
-#endif
-	}
-
-	return bCan;
+    return SkillSystem::CanIncreaseSkill(GetEntityHandle(), dwVnum, book);
 }
 #endif
 

@@ -215,7 +215,7 @@ namespace quest
 		int			GetEventFlag(const std::string& name);
 		void		BroadcastEventFlagOnLogin(entt::entity ch);
 
-		void		SendEventFlagList(LPCHARACTER ch);
+		void		SendEventFlagList(entt::entity chEntity);
 
 		void		Reload();
 

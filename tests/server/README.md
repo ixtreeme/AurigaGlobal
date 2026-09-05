@@ -1,5 +1,59 @@
 # Server ECS regression tests
 
+## GM commands and skill state
+
+The cmd_gm migration removes 28 of its 46 LegacyCharOf calls, plus pointer
+target lookups and repeated GetEntityHandle conversions. Stat, skill, affect,
+quest-flag, user-list, notice, item-purge and item/socket command paths pass
+entities directly. Skill prerequisite checks and group-change packets now live
+in the existing SkillSystem implementation; player saves read the ECS skill
+group. SkillLevels still references the existing skill array: this is not a
+complete conversion of skill storage ownership.
+
+Inventory purge snapshots selected slots, checks item generation/ownership and
+slot identity before deletion, and only clears quickslots after successful
+deletion if the slot is still empty. Missing pet systems are accepted; summoned
+growth pets block purge as before. Selectors now require exact documented names
+or aliases instead of arbitrary matching prefixes. Item grant failures are not
+logged as successful grants and surviving unowned items are cleaned up.
+
+GmCommandTests compiles the complete production cmd_gm.cpp and SkillSystem.cpp,
+the real PID registry, argument parsing and temporary-buffer implementation.
+Entity-only fixtures execute inventory purge, user listing, socket commands,
+setskill and set_skill_group, notice/P2P serialization and native skill setters
+and resets. Coverage includes all supported purge windows/aliases, duplicate
+entries, invalid/stale/non-PC owners, active/missing pet systems, failed deletion,
+callback-time owner/item destruction, recycled indices, ownership/slot changes,
+new/replacement items, nested user commands, disconnected/new notice recipients,
+map/empire/GM filtering, literal percent signs, 10,000-character notices, numeric
+range/junk rejection, skill caps/master thresholds, helper prerequisites,
+anti-skill level/book rules, zero resets, group reset and packet/point callbacks
+destroying the owner.
+
+Inventory storage/destruction, quickslot delivery, pet state, character lookup,
+point calculation, descriptors/chat/network transport, skill-prototype lookup
+and DB services are doubles. Other linked GM/legacy services fail fast if called.
+These tests do not execute the real inventory allocator, quest flag-list
+implementation, character save/relog, remote warp, command authorization/dispatch
+or client UI. The main GameServer build checks those integration signatures.
+Before deployment verify /set, /setskill, /setskillother, /set_skill_group and
+skill-group persistence across relog; quest flag/state commands, item grants,
+purge/quickslots and local/cross-core notices in-game.
+
+18 LegacyCharOf boundaries remain in cmd_gm: remote PID warp, sector purge/
+weaken, reset/save, safebox sizing, monster-control commands, observer/build,
+horse commands, cannot-dead/all-skills horse state, and the legacy Gaya balance.
+Sector traversal and some spawn paths also still use legacy entity pointers.
+Movement, item and other services may retain legacy internals; no additional
+wrapper was introduced to hide those boundaries or duplicate a production file.
+
+```powershell
+cmake --build build --config Release --target GameServer GmCommandTests
+ctest --test-dir build -C Release -R gm_commands --output-on-failure
+cmake --build build-asan --config RelWithDebInfo --target GmCommandTests
+ctest --test-dir build-asan -C RelWithDebInfo -R gm_commands --output-on-failure
+```
+
 ## General commands and entity-owned window state
 
 The current cmd_general migration removes 21 of its 54 LegacyCharOf calls.

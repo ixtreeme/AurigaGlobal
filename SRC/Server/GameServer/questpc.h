@@ -134,7 +134,7 @@ namespace quest
 			void 		SetSendDoneFlag() { m_bShouldSendDone = true; }
 			bool		GetAndResetDoneFlag() { bool temp = m_bShouldSendDone; m_bShouldSendDone = false; return temp; }
 
-			void		SendFlagList(LPCHARACTER ch);
+			void		SendFlagList(entt::entity chEntity);
 
 			void		SetQuestState(const char* szQuestName, const char* szStateName);
 

@@ -6,6 +6,7 @@
 #include "PlayerRuntimeSystem.hpp"
 
 #include "SessionSystem.hpp"
+#include "SkillSystem.hpp"
 #include "AffectSystem.hpp"
 #include "ItemSystem.hpp"
 #include "MovementSystem.hpp"
@@ -253,7 +254,7 @@ void CHARACTER::CreatePlayerProto(TPlayerTable& tab)
         if (const auto* appearance = g_registry.try_get<ecs::AppearancePartsComponent>(e))
             tab.part_base = appearance->basePart;
     }
-    tab.skill_group = m_points.skill_group;
+    tab.skill_group = SkillSystem::GetSkillGroup(GetEntityHandle());
 #ifdef __ENABLE_EXTEND_INVEN_SYSTEM__
     tab.envanter = Inven_Point();
 #endif

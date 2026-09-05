@@ -114,8 +114,27 @@ add_executable(RefineWindowTests EXCLUDE_FROM_ALL
 target_link_libraries(RefineWindowTests PRIVATE SERVER EnTT::EnTT)
 add_test(NAME refine_window COMMAND RefineWindowTests)
 
+add_executable(GmCommandTests EXCLUDE_FROM_ALL
+    ${CMAKE_SOURCE_DIR}/tests/server/GmCommandTests.cpp
+    cmd_gm.cpp
+    ecs/systems/SkillSystem.cpp
+    ecs/PIDRegistry.cpp
+    buffer_manager.cpp
+    utils.cpp
+)
+target_link_libraries(GmCommandTests PRIVATE SERVER EnTT::EnTT LUA S_Core S_Poly)
+if(MSVC)
+    # Keep actual command bodies while dropping unrelated server entry points.
+    target_compile_options(GmCommandTests PRIVATE /Gy)
+    target_link_options(GmCommandTests PRIVATE /OPT:REF /OPT:NOICF)
+endif()
+if(WIN32)
+    target_link_libraries(GmCommandTests PRIVATE ws2_32 bcrypt secur32 crypt32 shlwapi)
+endif()
+add_test(NAME gm_commands COMMAND GmCommandTests)
+
 if(ENABLE_ASAN AND EXISTS "${AURIGA_ASAN_RUNTIME_DLL}")
-    foreach(_asan_target GameServer ItemAttributeTests MountLifecycleTests SafeboxLifecycleTests ItemManagerLifecycleTests QuickslotTests PointCalculationTests CombatStateTests AffectLifecycleTests EventLifecycleTests CharacterManagerTests RefineWindowTests)
+    foreach(_asan_target GameServer ItemAttributeTests MountLifecycleTests SafeboxLifecycleTests ItemManagerLifecycleTests QuickslotTests PointCalculationTests CombatStateTests AffectLifecycleTests EventLifecycleTests CharacterManagerTests RefineWindowTests GmCommandTests)
         add_custom_command(TARGET ${_asan_target} POST_BUILD
             COMMAND ${CMAKE_COMMAND} -E copy_if_different
                 "${AURIGA_ASAN_RUNTIME_DLL}"

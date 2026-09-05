@@ -1355,17 +1355,20 @@ namespace quest
 		return it->second;
 	}
 
-	void CQuestManager::SendEventFlagList(LPCHARACTER ch)
+	void CQuestManager::SendEventFlagList(entt::entity chEntity)
 	{
-		if (!ch)
+		if (!ecs::PlayerRuntime::IsValid(chEntity))
 			return;
 
-		for (auto it = m_mapEventFlag.begin(); it != m_mapEventFlag.end(); ++it)
+		const auto flags = m_mapEventFlag;
+		for (auto it = flags.begin(); it != flags.end(); ++it)
 		{
+			if (!ecs::PlayerRuntime::IsValid(chEntity))
+				return;
 			const std::string& flagname = it->first;
 			int value = it->second;
 #ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 757, "%s#%d", flagname.c_str(), value);
+			ecs::ChatSystem::SendNew(chEntity, CHAT_TYPE_INFO, 757, "%s#%d", flagname.c_str(), value);
 #endif
 		}
 	}
