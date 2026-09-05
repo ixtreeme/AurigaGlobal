@@ -2992,8 +2992,7 @@ void SaveItem(entt::entity item)
     if (GetItemSkipSave(item))
         return;
 
-    if (LPITEM legacyItem = LegacyItemBoundary(item))
-        ITEM_MANAGER::instance().DelayedSave(legacyItem);
+    ITEM_MANAGER::instance().DelayedSave(item);
 }
 
 bool GetItemSkipSave(entt::entity item)
@@ -3891,7 +3890,7 @@ bool DestroyLoadedDuplicateItem(entt::entity item)
     }
 
     LOG_ERROR("DUP_ITEM_DESTROY_LEGACY_BEGIN item={} id={}", static_cast<const void*>(legacyItem), itemID);
-    M2_DESTROY_ITEM(legacyItem);
+    M2_DESTROY_ITEM(item);
     LOG_ERROR("DUP_ITEM_DESTROY_LEGACY_END item={} id={}", static_cast<const void*>(legacyItem), itemID);
     return true;
 }

@@ -30,12 +30,6 @@
 
 namespace
 {
-LPITEM ResolveShopItem(entt::entity item)
-{
-	if (!ItemSystem::IsValidItem(item))
-		return nullptr;
-	return ITEM_MANAGER::instance().Find(ItemSystem::GetItemID(item));
-}
 }
 //#define ENABLE_SHOP_BLACKLIST
 /* ------------------------------------------------------------------------------------ */

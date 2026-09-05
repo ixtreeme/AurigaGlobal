@@ -753,13 +753,13 @@ bool CItem::SetCount(int count)
 				if (entt::null != stack)
 				{
 					ItemSystem::SetItemCount(stack, ItemSystem::GetItemCount(stack) + count);
-					M2_DESTROY_ITEM(this);
+					M2_DESTROY_ITEM(GetEntityHandle());
 					return false;
 				}
 			}
 
 			InventorySystem::RemoveFromCharacter(GetEntityHandle());
-			M2_DESTROY_ITEM(this);
+			M2_DESTROY_ITEM(GetEntityHandle());
 
 			const uint8_t bType = ecs::QuestSystem::GetFlag(owner, "main_quest_flame_lv7.reward")*1 + ecs::QuestSystem::GetFlag(owner, "main_quest_flame_lv7.reward")*2;
 			if (IsDragonSoul())
@@ -776,7 +776,7 @@ bool CItem::SetCount(int count)
 		}
 
 		InventorySystem::RemoveFromCharacter(GetEntityHandle());
-		M2_DESTROY_ITEM(this);
+		M2_DESTROY_ITEM(GetEntityHandle());
 		return false;
 	}
 

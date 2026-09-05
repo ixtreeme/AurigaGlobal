@@ -573,14 +573,12 @@ entt::entity ITEM_MANAGER::CreateItem(uint32_t vnum, uint32_t count, uint32_t id
 
 
 
-void ITEM_MANAGER::DelayedSave(LPITEM item)
+void ITEM_MANAGER::DelayedSave(entt::entity itemEntity)
 {
-	if (!item || item->GetID() == 0)
+	if (!ItemSystem::IsValidItem(itemEntity) || ItemSystem::GetItemID(itemEntity) == 0)
 		return;
 
-	const entt::entity itemEntity = (item ? item->GetEntityHandle() : entt::null);
-	if (ItemSystem::IsValidItem(itemEntity))
-		m_set_pkItemForDelayedSave.insert(itemEntity);
+	m_set_pkItemForDelayedSave.insert(itemEntity);
 }
 void ITEM_MANAGER::FlushDelayedSave(entt::entity itemEntity)
 {
@@ -751,29 +749,22 @@ void ITEM_MANAGER::RemoveItem(entt::entity itemEntity, const char* c_pszReason)
 		}
 	}
 
-	M2_DESTROY_ITEM(item);
+	M2_DESTROY_ITEM(itemEntity);
 }
 
 #ifndef DEBUG_ALLOC
-void ITEM_MANAGER::DestroyItem(LPITEM item)
+void ITEM_MANAGER::DestroyItem(entt::entity itemEntity)
 #else
-void ITEM_MANAGER::DestroyItem(LPITEM item, const char* file, size_t line)
+void ITEM_MANAGER::DestroyItem(entt::entity itemEntity, const char* file, size_t line)
 #endif
 {
-	if (!item)
+	if (!ItemSystem::IsValidItem(itemEntity))
 	{
-		LOG_ERROR("ITEM_MANAGER::DestroyItem called with null item");
+		LOG_ERROR("ITEM_MANAGER::DestroyItem called with an invalid item entity");
 		return;
 	}
 
-	const entt::entity itemEntity = CItemRegistry::Instance().FindByLegacy(item);
-	if (itemEntity == entt::null)
-	{
-		LOG_ERROR("ITEM_MANAGER::DestroyItem rejected stale item pointer {}", static_cast<const void*>(item));
-		return;
-	}
-
-	item = ResolveManagedItem(itemEntity);
+	LPITEM item = ResolveManagedItem(itemEntity);
 	if (!item)
 		return;
 

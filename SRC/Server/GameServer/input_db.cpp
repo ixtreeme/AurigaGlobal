@@ -1814,9 +1814,6 @@ void CInputDB::ItemLoad(LPDESC d, const char * c_pData)
 		if (!ItemSystem::IsValidItem(itemEntity))
 			continue;
 
-		LPITEM item = ITEM_MANAGER::instance().Find(ItemSystem::GetItemID(itemEntity));
-		if (!item)
-			continue;
 
 		const int pos = ch->GetEmptyInventory(ItemSystem::GetItemSize(itemEntity));
 		if (pos < 0)
@@ -1825,15 +1822,14 @@ void CInputDB::ItemLoad(LPDESC d, const char * c_pData)
 			coord.x = ecs::PlayerRuntime::GetX(((ch) ? (ch)->GetEntityHandle() : entt::null));
 			coord.y = ecs::PlayerRuntime::GetY(((ch) ? (ch)->GetEntityHandle() : entt::null));
 
-			item->AddToGround(ecs::PlayerRuntime::GetMapIndex(((ch) ? (ch)->GetEntityHandle() : entt::null)), coord);
-			InventorySystem::SetOwnership(item->GetEntityHandle(), ch->GetEntityHandle(), 180);
-			item->StartDestroyEvent();
+			ItemSystem::PlaceItemOnGroundLegacyBoundary(itemEntity, ecs::PlayerRuntime::GetMapIndex(((ch) ? (ch)->GetEntityHandle() : entt::null)), coord);
+			InventorySystem::SetOwnership(itemEntity, ch->GetEntityHandle(), 180);
 		}
 		else
 #ifdef __HIGHLIGHT_SYSTEM__
-			InventorySystem::AddToCharacter(item->GetEntityHandle(), ch->GetEntityHandle(), TItemPos(INVENTORY, pos), false);
+			InventorySystem::AddToCharacter(itemEntity, ch->GetEntityHandle(), TItemPos(INVENTORY, pos), false);
 #else
-			InventorySystem::AddToCharacter(item->GetEntityHandle(), ch->GetEntityHandle(), TItemPos(INVENTORY, pos));
+			InventorySystem::AddToCharacter(itemEntity, ch->GetEntityHandle(), TItemPos(INVENTORY, pos));
 #endif
 	}
 	ch->CheckMaximumPoints();

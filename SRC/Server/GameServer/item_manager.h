@@ -405,16 +405,16 @@ class ITEM_MANAGER : public singleton<ITEM_MANAGER>
 		// DelayedSave: 어떠한 루틴 내에서 저장을 해야 할 짓을 많이 하면 저장
 		// 쿼리가 너무 많아지므로 "저장을 한다" 라고 표시만 해두고 잠깐
 		// (예: 1 frame) 후에 저장시킨다.
-		void			DelayedSave(LPITEM item);
+		void			DelayedSave(entt::entity item);
 		void			FlushDelayedSave(entt::entity item); // Delayed 리스트에 있다면 지우고 저장한다. 끊김 처리시 사용 됨.
 		void FlushDelayedSaveByOwner(entt::entity owner);
 		void			SaveSingleItem(LPITEM item);
 
 		entt::entity            CreateItem(uint32_t vnum, uint32_t count = 1, uint32_t dwID = 0, bool bTryMagic = false, int iRarePct = -1, bool bSkipSave = false);
 #ifndef DEBUG_ALLOC
-		void DestroyItem(LPITEM item);
+		void DestroyItem(entt::entity item);
 #else
-		void DestroyItem(LPITEM item, const char* file, size_t line);
+		void DestroyItem(entt::entity item, const char* file, size_t line);
 #endif
 		void			RemoveItem(entt::entity item, const char * c_pszReason = nullptr); // 사용자로 부터 아이템을 제거
 
