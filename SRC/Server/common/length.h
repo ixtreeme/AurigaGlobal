@@ -8,6 +8,11 @@
 //#include "tables.h"
 
 #define WORD_MAX 0xffff
+// MSVC's default enum compatibility mode truncates this value to a signed
+// 32-bit integer inside EMisc. Currency limits must remain 64-bit on all builds.
+inline constexpr int64_t GOLD_MAX = 999000000000LL;
+static_assert(GOLD_MAX > INT32_MAX);
+
 enum EMisc
 {
 	ITEM_MAX_COUNT			= 50000,
@@ -116,7 +121,6 @@ enum EMisc
 
 
 
-	GOLD_MAX = 999000000000LL,
 
 #ifdef ENABLE_GAYA_SYSTEM
 	GAYA_MAX = 999999,
