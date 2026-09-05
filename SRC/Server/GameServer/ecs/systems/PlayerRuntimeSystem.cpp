@@ -8,6 +8,7 @@
 #include "SocialSystem.hpp"
 
 #include "PlayerRuntimeSystem.hpp"
+#include "InventorySystem.hpp"
 #include "SessionSystem.hpp"
 #include "MountSystem.hpp"
 #include "QuestSystem.hpp"
@@ -633,6 +634,7 @@ LPEVENT* CharEventSlot(entt::entity e, ecs::PlayerRuntime::CharEvent slot)
     case ecs::PlayerRuntime::CharEvent::Recovery: return &events.recovery;
     case ecs::PlayerRuntime::CharEvent::Fishing:  return &events.fishing;
     case ecs::PlayerRuntime::CharEvent::Timed:    return &events.timed;
+    case ecs::PlayerRuntime::CharEvent::Warp:     return &events.warp;
     }
     return nullptr;
 }
@@ -4393,7 +4395,7 @@ void CHARACTER::Destroy()
     ecs::PlayerRuntime::CancelCharEvent(GetEntityHandle(), ecs::PlayerRuntime::CharEvent::Fishing);
     AffectSystem::CancelDamageEvents(GetEntityHandle());
     event_cancel(&m_pkPartyRequestEvent);
-    event_cancel(&m_pkWarpEvent);
+    ecs::PlayerRuntime::CancelCharEvent(GetEntityHandle(), ecs::PlayerRuntime::CharEvent::Warp);
 #ifdef ENABLE_NEW_FISHING_SYSTEM
     ActivitySystem::StopFishing(GetEntityHandle());
 #endif
@@ -4580,8 +4582,8 @@ int64_t CHARACTER::ComputeRefineFee(int64_t iCost, int64_t iMultiply) const
         if (pGuild == GetGuild())
             return iCost * iMultiply * 9 / 10;
 
-        LPCHARACTER chRefineNPC = CHARACTER_MANAGER::instance().Find(m_dwRefineNPCVID);
-        if (chRefineNPC && chRefineNPC->GetEmpire() != GetEmpire())
+        const auto npc = InventorySystem::GetRefineNPC(GetEntityHandle());
+        if (ecs::PlayerRuntime::IsValid(npc) && ecs::PlayerRuntime::GetEmpire(npc) != GetEmpire())
             return iCost * iMultiply * 3;
 
         return iCost * iMultiply;
@@ -5756,7 +5758,7 @@ void CHARACTER::Initialize()
     m_pkSaveEvent = nullptr;
 
     ecs::PlayerRuntime::SetCharEvent(GetEntityHandle(), ecs::PlayerRuntime::CharEvent::Fishing, nullptr);
-    m_pkWarpEvent = nullptr;
+    ecs::PlayerRuntime::SetCharEvent(GetEntityHandle(), ecs::PlayerRuntime::CharEvent::Warp, nullptr);
 #ifdef ENABLE_BATTLE_PASS_STAY_ONLINE
     m_pkBattlePassStayOnlineEvent = nullptr;
 #endif
@@ -5847,10 +5849,6 @@ void CHARACTER::Initialize()
     m_szMobileAuth[0] = '\0';
 
     m_dwUnderGuildWarInfoMessageTime = get_dword_time() - 60000;
-
-    m_bUnderRefine = false;
-
-    m_dwRefineNPCVID = 0;
 
     m_dwPolymorphRace = 0;
 

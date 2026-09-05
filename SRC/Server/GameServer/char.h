@@ -1426,9 +1426,6 @@ protected:
 	bool			m_bNoOpenedShop;	///< �̹� ���� �� ���λ����� �� ���� �ִ����� ����(������ ���� ���ٸ� true)
 
 	bool			m_bItemLoaded;
-	int				m_iRefineAdditionalCell;
-	bool			m_bUnderRefine;
-	uint32_t			m_dwRefineNPCVID;
 
 public:
 	////////////////////////////////////////////////////////////////////////////////////////
@@ -2150,14 +2147,13 @@ public:
 	// MINING
 	LPEVENT				m_pkMiningEvent;
 	// END_OF_MINING
-	LPEVENT				m_pkWarpEvent;
 	LPEVENT				m_pkDestroyWhenIdleEvent;
 	LPEVENT				m_pkPetSystemUpdateEvent;
 #ifdef __NEWPET_SYSTEM__
 	LPEVENT				m_pkNewPetSystemUpdateEvent;
 	LPEVENT				m_pkNewPetSystemExpireEvent;
 #endif
-	bool IsWarping() const { return m_pkWarpEvent ? true : false; }
+	bool IsWarping() const;
 
 
 	const CMob* m_pkMobData;

@@ -18,6 +18,10 @@
 #include "../../SRC/Server/GameServer/sectree_manager.h"
 #include "../../SRC/Server/GameServer/utils.h"
 #include <Core/Logging.hpp>
+#include "../../SRC/Server/GameServer/ecs/systems/QuestSystem.hpp"
+#include "../../SRC/Server/GameServer/ecs/components/status_components.hpp"
+#include "../../SRC/Server/GameServer/ecs/components/vital_components.hpp"
+#include "../../SRC/Server/GameServer/ecs/components/character_runtime_components.hpp"
 #include <functional>
 #include <iostream>
 #include <stdexcept>
@@ -219,6 +223,161 @@ void HydrationAndRelocation() {
     for (uint8_t i = 0; i < QUICKSLOT_MAX_NUM; ++i) Check(Same(roundtrip.slots[i], Read(owner, i)), "saved ECS state changed on reload");
 }
 }
+
+namespace {
+int extraUnlock = 0;
+void InventoryGuards()
+{
+    auto owner = Reset();
+    Check(!InventorySystem::CanHandleItems(entt::null), "null item handler accepted");
+    Check(InventorySystem::CanHandleItems(owner), "entity-only handler rejected");
+    auto& status = g_registry.emplace<ecs::StatusFlags>(owner);
+    status.isObserverMode = true;
+    Check(!InventorySystem::CanHandleItems(owner), "observer accepted");
+    Check(InventorySystem::CanHandleItems(owner, false, true), "observer override ignored");
+    status.isObserverMode = false;
+    InventorySystem::SetRefineMode(owner, 37);
+    Check(InventorySystem::IsRefining(owner) && !InventorySystem::CanHandleItems(owner), "refine gate ignored");
+    Check(InventorySystem::CanHandleItems(owner, true), "refine override ignored");
+    auto npc = g_registry.create();
+    InventorySystem::SetRefineNPC(owner, npc);
+    Check(InventorySystem::GetRefineNPC(owner) == npc, "refine NPC not entity-native");
+    g_registry.destroy(npc);
+    const auto replacement = g_registry.create();
+    Check(replacement != npc && InventorySystem::GetRefineNPC(owner) == entt::null, "stale refine NPC accepted");
+    InventorySystem::ClearRefineMode(owner);
+    Check(!InventorySystem::IsRefining(owner) && InventorySystem::GetRefineScrollCell(owner) == 37,
+          "closing mode lost the scroll consumed by DoRefineWithScroll");
+    Check(InventorySystem::CanHandleItems(owner), "closed refine still blocks inventory");
+    auto& cube = g_registry.emplace<ecs::CubeWindowComponent>(owner);
+    cube.npc = replacement;
+    Check(!InventorySystem::CanHandleItems(owner, true, true), "cube bypassed");
+    cube.npc = entt::null;
+    auto& dragonSoul = g_registry.emplace<ecs::DragonSoulRuntimeStateComponent>(owner);
+    dragonSoul.refineWindowOpener = replacement;
+    Check(!InventorySystem::CanHandleItems(owner), "dragon soul window ignored");
+    g_registry.destroy(replacement);
+    Check(InventorySystem::CanHandleItems(owner), "stale window still blocks inventory");
+#ifdef __ATTR_TRANSFER_SYSTEM__
+    auto& transfer = g_registry.emplace<ecs::AttrTransferWindowComponent>(owner);
+    transfer.busy = true;
+    Check(!InventorySystem::CanHandleItems(owner), "busy attribute transfer ignored");
+    transfer.busy = false;
+#endif
+#ifdef ENABLE_ACCE_SYSTEM
+    auto& acce = g_registry.emplace<ecs::AcceWindowComponent>(owner);
+    acce.combinationOpen = true;
+    Check(!InventorySystem::CanHandleItems(owner), "accessory combination ignored");
+    acce.combinationOpen = false;
+    acce.absorptionOpen = true;
+    Check(!InventorySystem::CanHandleItems(owner), "accessory absorption ignored");
+    acce.absorptionOpen = false;
+#endif
+    auto& events = g_registry.emplace<ecs::LegacyCharEvents>(owner);
+    events.warp = LPEVENT(new EVENT);
+    Check(!InventorySystem::CanHandleItems(owner, true, true), "warp bypassed");
+    events.warp.reset();
+    Check(InventorySystem::CanHandleItems(owner), "closed windows still block inventory");
+    g_registry.destroy(owner);
+    InventorySystem::SetRefineMode(owner, 1);
+    InventorySystem::SetRefineNPC(owner, g_registry.create());
+    InventorySystem::ClearRefineMode(owner);
+    Check(!InventorySystem::IsRefining(owner) && InventorySystem::GetRefineScrollCell(owner) == -1,
+          "stale owner acquired state");
+    Check(!InventorySystem::CanHandleItems(owner), "stale item handler accepted");
+}
+void InventoryGrids()
+{
+    const auto owner = Reset();
+    extraUnlock = 0;
+    g_registry.emplace<ecs::MainInventoryRuntimeComponent>(owner);
+    auto& points = g_registry.emplace<ecs::CharacterPoints>(owner);
+#ifdef __ENABLE_EXTEND_INVEN_SYSTEM__
+    points.base.envanter = 0;
+    Check(InventorySystem::GetInventorySize(owner) == 90, "base inventory size wrong");
+    points.base.envanter = INT32_MAX;
+    Check(InventorySystem::GetInventorySize(owner) == INVENTORY_MAX_NUM, "extension overflow");
+    points.base.envanter = -100;
+    Check(InventorySystem::GetInventorySize(owner) == 0, "negative extension accepted");
+    points.base.envanter = INT32_MAX;
+#endif
+    auto& main = g_registry.get<ecs::MainInventoryRuntimeComponent>(owner);
+    for (unsigned cell = 0; cell <= UINT16_MAX; ++cell)
+    {
+        const TItemPos pos(INVENTORY, static_cast<uint16_t>(cell));
+        const bool expected = cell < INVENTORY_MAX_NUM || pos.IsBeltInventoryPosition();
+        Check(InventorySystem::IsEmptyItemGrid(owner, pos, 1) == expected, "main slot bounds");
+        Check(!InventorySystem::IsEmptyItemGrid(owner, pos, 0), "zero-height item accepted");
+    }
+    for (int cell = 0; cell < INVENTORY_MAX_NUM; ++cell)
+        for (uint8_t size = 1; size <= 10; ++size)
+        {
+            const int last = cell + (size - 1) * INVENTORY_PAGE_COLUMN;
+            const bool expected = last < INVENTORY_MAX_NUM && last / INVENTORY_PAGE_SIZE == cell / INVENTORY_PAGE_SIZE;
+            Check(InventorySystem::IsEmptyItemGrid(owner, TItemPos(INVENTORY, cell), size) == expected,
+                  "main item crosses page");
+        }
+    main.itemGrid[5] = 1;
+    Check(!InventorySystem::IsEmptyItemGrid(owner, TItemPos(INVENTORY, 0), 2), "secondary main cell ignored");
+    Check(InventorySystem::IsEmptyItemGrid(owner, TItemPos(INVENTORY, 0), 2, 0), "move exception ignored");
+    Check(!InventorySystem::IsEmptyItemGrid(owner, TItemPos(INVENTORY, 0), 2, INT32_MAX), "invalid exception accepted");
+    main.itemGrid[5] = 0;
+    auto& ds = g_registry.emplace<ecs::DragonSoulInventoryComponent>(owner);
+    ds.itemGrid[DRAGON_SOUL_BOX_COLUMN_NUM] = 7;
+    Check(!InventorySystem::IsEmptyItemGrid(owner, TItemPos(DRAGON_SOUL_INVENTORY, 0), 2),
+          "dragon soul checked empty main grid instead of its own");
+    Check(InventorySystem::IsEmptyItemGrid(owner, TItemPos(DRAGON_SOUL_INVENTORY, 0), 2, 6),
+          "dragon soul exception ignored");
+    Check(!InventorySystem::IsEmptyItemGrid(owner, TItemPos(DRAGON_SOUL_INVENTORY, DRAGON_SOUL_INVENTORY_MAX_NUM), 1),
+          "dragon soul out of bounds");
+#ifdef ENABLE_EXTRA_INVENTORY
+    auto& extra = g_registry.emplace<ecs::ExtraInventoryRuntimeComponent>(owner);
+    const int cell = EXTRA_INVENTORY_CATEGORY_MAX_NUM * 2;
+    extra.itemGrid[cell + EXTRA_INVENTORY_PAGE_COLUMN] = cell + 1;
+    Check(!InventorySystem::IsEmptyItemGrid(owner, TItemPos(EXTRA_INVENTORY, cell), 2), "large extra cell truncated");
+    Check(InventorySystem::IsEmptyItemGrid(owner, TItemPos(EXTRA_INVENTORY, cell), 2, cell), "large exception truncated");
+    extra.itemGrid.fill(0);
+    for (int unlock : {-1, 0, 1, 14, INT32_MAX})
+    {
+        extraUnlock = unlock;
+        for (int pos = 0; pos < EXTRA_INVENTORY_MAX_NUM; ++pos)
+        {
+            const int relative = pos % EXTRA_INVENTORY_CATEGORY_MAX_NUM;
+#ifdef ENABLE_LOCKED_EXTRA_INVENTORY
+            const int unlocked = static_cast<int>(std::clamp<int64_t>(int64_t(unlock) * 5, 0, 70));
+            const bool expected = relative < 110 + unlocked;
+#else
+            const bool expected = true;
+#endif
+            Check(InventorySystem::IsEmptyItemGrid(owner, TItemPos(EXTRA_INVENTORY, pos), 1) == expected,
+                  "extra category unlock bounds");
+        }
+    }
+    Check(!InventorySystem::IsEmptyItemGrid(owner, TItemPos(EXTRA_INVENTORY, EXTRA_INVENTORY_MAX_NUM), 1),
+          "extra inventory end accepted");
+#endif
+    Check(!InventorySystem::IsEmptyItemGrid(owner, TItemPos(EQUIPMENT, 0), 1), "equipment accepted as storage destination");
+    Check(!InventorySystem::IsEmptyItemGrid(owner, TItemPos(SAFEBOX, 0), 1), "foreign window accepted");
+    Check(!InventorySystem::HasBeltItems(owner), "empty belt reported occupied");
+    const auto item = g_registry.create();
+    g_registry.emplace<Item>(item, Item {owner, ITEM_USE, USE_POTION});
+    main.items[BELT_INVENTORY_SLOT_END - 1] = item;
+    Check(InventorySystem::HasBeltItems(owner), "large belt slot truncated");
+    g_registry.destroy(item);
+    Check(!InventorySystem::HasBeltItems(owner), "stale belt item accepted");
+    Check(!InventorySystem::IsEmptyItemGrid(owner, TItemPos(INVENTORY, BELT_INVENTORY_SLOT_START), 2),
+          "multi-cell item accepted in belt");
+    g_registry.destroy(owner);
+    Check(InventorySystem::GetInventorySize(owner) == 0 &&
+          !InventorySystem::IsEmptyItemGrid(owner, TItemPos(INVENTORY, 0), 1), "stale inventory accepted");
+}
+}
+int32_t ecs::QuestSystem::GetFlag(entt::entity owner, std::string_view flag)
+{
+    Check(g_registry.valid(owner) && flag.starts_with("lock_extra.cat"), "unexpected quest query");
+    return extraUnlock;
+}
+
 // Link the entire production inventory source. Services outside quickslots
 // fail immediately so tests cannot accidentally use a partial engine mock.
 int MAX(int, int) { Unexpected(); }
@@ -302,7 +461,8 @@ bool DSManager::DeactivateDragonSoul(entt::entity, bool) { Unexpected(); }
 bool ecs::SpatialService::InsertEntity(entt::registry &, entt::entity, uint32_t, int, int, int) { Unexpected(); }
 void ecs::SpatialService::RemoveEntity(entt::registry &, entt::entity) { Unexpected(); }
 void ecs::SpatialService::UpdateSectree(entt::registry &, entt::entity) { Unexpected(); }
-void intrusive_ptr_release(event*) { Unexpected(); }
+void intrusive_ptr_add_ref(event* e) { ++e->ref_count; }
+void intrusive_ptr_release(event* e) { if (--e->ref_count == 0) delete e; }
 LPEVENT event_create_ex(TEVENTFUNC, event_info_data*, int32_t) { Unexpected(); }
 void event_cancel(LPEVENT*) { Unexpected(); }
 EVENTFUNC(ownership_event) { Unexpected(); }
@@ -310,7 +470,7 @@ const int aiAccessorySocketEffectivePct[ITEM_ACCESSORY_SOCKET_MAX_NUM + 1] = {};
 int passes_per_sec = 25;
 
 int main() {
-    try { Basic(); DuplicatesAndValidation(); SyncAndLifetime(); ValueRanges(); ClientValidation(); HydrationAndRelocation();
+    try { InventoryGuards(); InventoryGrids(); Basic(); DuplicatesAndValidation(); SyncAndLifetime(); ValueRanges(); ClientValidation(); HydrationAndRelocation();
         std::cout << "Quickslot checks passed: " << checks << '\n'; return 0; }
     catch (const std::exception& error) { std::cerr << error.what() << '\n'; return 1; }
 }

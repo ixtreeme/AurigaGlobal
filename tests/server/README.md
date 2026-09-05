@@ -1,5 +1,47 @@
 # Server ECS regression tests
 
+## Main input: storage, messenger and inventory guards
+
+The current input_main pass reduces LPCHARACTER occurrences from 68 to 48 and
+LegacyCharOf from 42 to 32 (textual counts, including old comments/debug strings).
+Main/dead dispatch uses DESC::GetEntity and verifies the current player/session
+binding. Safebox/mall and account mount-inventory handlers, messenger requests,
+quest confirmations, party removal, guild creation and chat helpers pass entities.
+The admin-whisper Manager entry point also accepts an entity directly.
+No parallel production input implementation was created.
+
+CanHandleItems, inventory capacity/grid checks, belt occupancy and refine mode,
+scroll cell and NPC identity live in the existing InventorySystem/components.
+The obsolete CHARACTER refine fields and warp-event member were removed; old
+callers delegate into the same state. ClearRefineMode deliberately retains the
+scroll cell consumed by DoRefineWithScroll after closing the mode. NPC handles
+are generation-checked, not re-resolved through a potentially reused VID.
+
+Storage handlers retain safebox lifetime, revalidate ownership/location after
+callbacks, restrict source windows and only clear quickslots after successful
+check-in. Rollback never overwrites occupied inventory or claims a moved item.
+Messenger/guild/admin-whisper text fields are bounded; quest confirmation no
+longer writes into the input packet. The unsafe unbounded test-server chat log
+was removed from dispatch.
+
+QuickslotTests compiles the real InventorySystem.cpp and now also exercises
+entity-only item-handling guards, refine state and stale NPCs, pending warp,
+inventory-size clamping, the entire 16-bit main-slot range, page crossing,
+extra-inventory locks/large indices, exception cells, Dragon Soul secondary
+occupancy, belt contents, and invalid/stale owners. Quest flags, item validity,
+event reference counting and unrelated engine services are test doubles.
+The existing safebox and item-manager suites exercise their real production
+container/lifecycle code. These tests do NOT execute input_main, the account
+mount container, messenger/admin-whisper dispatch, real network or DB effects.
+GameServer builds check those integration signatures, not runtime correctness.
+
+Before deployment verify all three storage windows, failed/full-slot moves,
+quickslots, mount bonuses and logout/relog persistence with the actual client/DB;
+also check messenger, guild creation, quest confirmation and admin messages.
+Transfers are not durable DB transactions. Item use/drop/move, combat/movement,
+cube, battle pass and other remaining character-based services need more ECS
+work; native packet boundaries do not imply a completely legacy-free engine.
+
 ## GM commands and skill state
 
 The cmd_gm migration removes 28 of its 46 LegacyCharOf calls, plus pointer

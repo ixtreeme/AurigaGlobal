@@ -1,4 +1,5 @@
 #pragma once
+#include <entt/entity/entity.hpp>
 
 extern char M2_WHISPER_LANG[512 + 1];
 extern int M2_WHISPER_COLOR;
@@ -20,5 +21,5 @@ class CWhisperAdmin : public singleton<CWhisperAdmin>
 		
 		void SendWhisper(const char* c_pszText);		
 		int Whisper(LPDESC d, const char * c_pData, size_t uiBytes);
-		void Manager(LPCHARACTER ch, const char* c_pData);	
+		void Manager(entt::entity chEntity, const char* c_pData);
 };

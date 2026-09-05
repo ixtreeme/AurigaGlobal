@@ -6,6 +6,17 @@
 
 namespace InventorySystem {
 
+bool CanHandleItems(entt::entity owner, bool skipRefine = false, bool skipObserver = false);
+int GetInventorySize(entt::entity owner);
+bool IsEmptyItemGrid(entt::entity owner, TItemPos cell, uint8_t size, int exceptionCell = -1);
+bool HasBeltItems(entt::entity owner);
+bool IsRefining(entt::entity owner);
+int GetRefineScrollCell(entt::entity owner);
+entt::entity GetRefineNPC(entt::entity owner);
+void SetRefineNPC(entt::entity owner, entt::entity npc);
+void SetRefineMode(entt::entity owner, int additionalCell);
+void ClearRefineMode(entt::entity owner);
+
 #ifdef __HIGHLIGHT_SYSTEM__
 bool AddToCharacter(entt::entity item, entt::entity ch, TItemPos Cell, bool isHighLight = true);
 #else

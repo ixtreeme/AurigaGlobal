@@ -2,6 +2,14 @@
 #include "PlayerRuntimeSystem.hpp"
 #include "PointSystem.hpp"
 #include "MountSystem.hpp"
+#include "QuestSystem.hpp"
+#ifndef __ENABLE_EXTEND_INVEN_SYSTEM__
+#include "../../belt_inventory_helper.h"
+#endif
+#include "../components/status_components.hpp"
+#include "../components/social_components.hpp"
+#include "../components/vital_components.hpp"
+#include "../components/character_runtime_components.hpp"
 
 #include "InventorySystem.hpp"
 #include "ItemSystem.hpp"
@@ -91,6 +99,198 @@ void SyncItemEquipped(entt::entity e, bool equipped)
 EVENTFUNC(ownership_event);
 
 namespace InventorySystem {
+
+bool CanHandleItems(entt::entity owner, bool skipRefine, bool skipObserver)
+{
+    if (!g_registry.valid(owner))
+        return false;
+    const auto* status = g_registry.try_get<ecs::StatusFlags>(owner);
+    if (!skipObserver && status && status->isObserverMode)
+        return false;
+    const auto* shop = g_registry.try_get<ecs::ShopState>(owner);
+    if (shop && (shop->myShop || (!skipRefine && shop->underRefine)))
+        return false;
+    const auto* cube = g_registry.try_get<ecs::CubeWindowComponent>(owner);
+    if (cube && g_registry.valid(cube->npc))
+        return false;
+    const auto* dragonSoul = g_registry.try_get<ecs::DragonSoulRuntimeStateComponent>(owner);
+    if (dragonSoul && g_registry.valid(dragonSoul->refineWindowOpener))
+        return false;
+#ifdef __ATTR_TRANSFER_SYSTEM__
+    const auto* transfer = g_registry.try_get<ecs::AttrTransferWindowComponent>(owner);
+    if (transfer && (transfer->busy || g_registry.valid(transfer->npc)))
+        return false;
+#endif
+    const auto* events = g_registry.try_get<ecs::LegacyCharEvents>(owner);
+    if (events && events->warp)
+        return false;
+#ifdef ENABLE_ACCE_SYSTEM
+    const auto* acce = g_registry.try_get<ecs::AcceWindowComponent>(owner);
+    if (acce && (acce->combinationOpen || acce->absorptionOpen))
+        return false;
+#endif
+    return true;
+}
+
+int GetInventorySize(entt::entity owner)
+{
+    if (!g_registry.valid(owner))
+        return 0;
+#ifdef __ENABLE_EXTEND_INVEN_SYSTEM__
+    const auto* points = g_registry.try_get<ecs::CharacterPoints>(owner);
+    const int64_t extension = points ? points->base.envanter : 0;
+    return static_cast<int>(std::clamp<int64_t>(90 + 5 * extension, 0, INVENTORY_MAX_NUM));
+#else
+    return INVENTORY_MAX_NUM;
+#endif
+}
+
+bool IsEmptyItemGrid(entt::entity owner, TItemPos position, uint8_t size, int exceptionCell)
+{
+    if (!g_registry.valid(owner) || size == 0)
+        return false;
+
+    // Use full-width indices: extra-inventory and belt slots exceed 255.
+    const int cell = position.cell;
+    const auto fits = [=](const auto* inventory, int limit, int columns, int pageSize)
+    {
+        if (cell >= limit)
+            return false;
+        const int exception = exceptionCell >= 0 && exceptionCell < limit ? exceptionCell + 1 : 0;
+        for (int row = 0; row < size; ++row)
+        {
+            const int occupiedCell = cell + columns * row;
+            if (occupiedCell >= limit || occupiedCell / pageSize != cell / pageSize)
+                return false;
+            const int occupied = inventory ? inventory->itemGrid[occupiedCell] : 0;
+            if (occupied != 0 && occupied != exception)
+                return false;
+        }
+        return true;
+    };
+
+    switch (position.window_type)
+    {
+        case INVENTORY:
+        {
+            const auto* inventory = g_registry.try_get<ecs::MainInventoryRuntimeComponent>(owner);
+            if (position.IsBeltInventoryPosition())
+            {
+                if (size != 1)
+                    return false;
+#ifndef __ENABLE_EXTEND_INVEN_SYSTEM__
+                const auto belt = ItemSystem::GetWearItem(owner, WEAR_BELT);
+                if (!ItemSystem::IsValidItem(belt) ||
+                    !CBeltInventoryHelper::IsAvailableCell(cell - BELT_INVENTORY_SLOT_START,
+                                                          ItemSystem::GetItemValue(belt, 0)))
+                    return false;
+#endif
+                return fits(inventory, BELT_INVENTORY_SLOT_END, 1, BELT_INVENTORY_SLOT_END);
+            }
+            return fits(inventory, GetInventorySize(owner), INVENTORY_PAGE_COLUMN, INVENTORY_PAGE_SIZE);
+        }
+        case DRAGON_SOUL_INVENTORY:
+            return fits(g_registry.try_get<ecs::DragonSoulInventoryComponent>(owner),
+                        DRAGON_SOUL_INVENTORY_MAX_NUM, DRAGON_SOUL_BOX_COLUMN_NUM,
+                        DRAGON_SOUL_INVENTORY_MAX_NUM);
+#ifdef ENABLE_EXTRA_INVENTORY
+        case EXTRA_INVENTORY:
+        {
+            if (cell >= EXTRA_INVENTORY_MAX_NUM)
+                return false;
+            const int category = cell / EXTRA_INVENTORY_CATEGORY_MAX_NUM;
+            const int begin = category * EXTRA_INVENTORY_CATEGORY_MAX_NUM;
+            int end = begin + EXTRA_INVENTORY_CATEGORY_MAX_NUM;
+#ifdef ENABLE_LOCKED_EXTRA_INVENTORY
+            static constexpr std::array<std::string_view, 6> unlockFlags {
+                "lock_extra.cat1", "lock_extra.cat2", "lock_extra.cat3",
+                "lock_extra.cat4", "lock_extra.cat5", "lock_extra.cat6"
+            };
+            if (category >= static_cast<int>(unlockFlags.size()))
+                return false;
+            constexpr int freeSlots = EXTRA_INVENTORY_PAGE_SIZE * 2 + 20;
+            constexpr int maxUnlockSlots = 25 + EXTRA_INVENTORY_PAGE_SIZE;
+            const int64_t unlocked = std::clamp<int64_t>(
+                int64_t(ecs::QuestSystem::GetFlag(owner, unlockFlags[category])) * 5, 0, maxUnlockSlots);
+            end = std::min(end, begin + freeSlots + static_cast<int>(unlocked));
+#endif
+            return fits(g_registry.try_get<ecs::ExtraInventoryRuntimeComponent>(owner),
+                        end, EXTRA_INVENTORY_PAGE_COLUMN, EXTRA_INVENTORY_PAGE_SIZE);
+        }
+#endif
+#ifdef ENABLE_SWITCHBOT
+        case SWITCHBOT:
+        {
+            if (cell >= SWITCHBOT_SLOT_COUNT)
+                return false;
+            const auto* slots = g_registry.try_get<ecs::SwitchbotRuntimeComponent>(owner);
+            return !slots || slots->items[cell] == entt::null;
+        }
+#endif
+        default:
+            return false;
+    }
+}
+
+bool HasBeltItems(entt::entity owner)
+{
+    if (!g_registry.valid(owner))
+        return false;
+    const auto* inventory = g_registry.try_get<ecs::MainInventoryRuntimeComponent>(owner);
+    if (!inventory)
+        return false;
+    for (int cell = BELT_INVENTORY_SLOT_START; cell < BELT_INVENTORY_SLOT_END; ++cell)
+        if (ItemSystem::IsValidItem(inventory->items[cell]))
+            return true;
+    return false;
+}
+
+bool IsRefining(entt::entity owner)
+{
+    const auto* state = g_registry.valid(owner) ? g_registry.try_get<ecs::ShopState>(owner) : nullptr;
+    return state && state->underRefine;
+}
+
+int GetRefineScrollCell(entt::entity owner)
+{
+    const auto* state = g_registry.valid(owner) ? g_registry.try_get<ecs::ShopState>(owner) : nullptr;
+    return state ? state->refineCell : -1;
+}
+
+entt::entity GetRefineNPC(entt::entity owner)
+{
+    const auto* state = g_registry.valid(owner) ? g_registry.try_get<ecs::ShopState>(owner) : nullptr;
+    return state && g_registry.valid(state->refineNPC) ? state->refineNPC : entt::null;
+}
+
+void SetRefineNPC(entt::entity owner, entt::entity npc)
+{
+    if (g_registry.valid(owner))
+        g_registry.get_or_emplace<ecs::ShopState>(owner).refineNPC =
+            g_registry.valid(npc) ? npc : entt::null;
+}
+
+void SetRefineMode(entt::entity owner, int additionalCell)
+{
+    if (!g_registry.valid(owner))
+        return;
+    auto& state = g_registry.get_or_emplace<ecs::ShopState>(owner);
+    state.refineCell = additionalCell;
+    state.underRefine = true;
+}
+
+void ClearRefineMode(entt::entity owner)
+{
+    if (!g_registry.valid(owner))
+        return;
+    if (auto* state = g_registry.try_get<ecs::ShopState>(owner))
+    {
+        state->underRefine = false;
+        state->refineNPC = entt::null;
+        // DoRefineWithScroll consumes the selected scroll AFTER closing the mode.
+    }
+}
+
 
 static bool IsQuickslotValueValid(const TQuickslot& slot)
 {

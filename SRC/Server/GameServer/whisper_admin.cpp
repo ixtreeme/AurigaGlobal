@@ -185,13 +185,12 @@ void CWhisperAdmin::SaveLog(entt::entity ch, const char* c_pszText, const char* 
 	std::unique_ptr<SQLMsg> msg(DBManager::Instance().DirectQuery(szQuery));
 }
 
-void CWhisperAdmin::Manager(LPCHARACTER ch, const char* c_pData)
+void CWhisperAdmin::Manager(entt::entity chEntity, const char* c_pData)
 {
-	const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
-	TPacketCGWhisperAdmin * f = (TPacketCGWhisperAdmin *)c_pData;
-
-	if (!ch)
+	if (!c_pData || !ecs::PlayerRuntime::IsPC(chEntity))
 		return;
+	const auto request = *reinterpret_cast<const TPacketCGWhisperAdmin*>(c_pData);
+	const auto* f = &request;
 
 	if (ecs::PlayerRuntime::GetGMLevel(chEntity) != GM_IMPLEMENTOR)
 	{
@@ -201,7 +200,9 @@ void CWhisperAdmin::Manager(LPCHARACTER ch, const char* c_pData)
 		return;
 	}
 
-	if (strlen(f->szText) <= 0 || strlen(f->szLang) <= 0 || f->color < 0)
+	if (!memchr(f->szText, '\0', sizeof(f->szText)) ||
+		!memchr(f->szLang, '\0', sizeof(f->szLang)) ||
+		f->szText[0] == '\0' || f->szLang[0] == '\0' || f->color < 0)
 	{
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(chEntity, CHAT_TYPE_INFO, 775, "");

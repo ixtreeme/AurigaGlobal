@@ -8140,7 +8140,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 			}
 #endif
 
-			if (m_pkWarpEvent)
+			if (IsWarping())
 			{
 #ifdef TEXTS_IMPROVEMENT
 				ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 434, "");
@@ -9895,20 +9895,9 @@ void TransformRefineItem(LPITEM pkOldItem, LPITEM pkNewItem);
 void NotifyRefineSuccess(LPCHARACTER ch, LPITEM item, const char* way);
 void NotifyRefineFail(LPCHARACTER ch, LPITEM item, const char* way, int success = 0);
 
-void CHARACTER::SetRefineNPC(entt::entity chEntity)
+void CHARACTER::SetRefineNPC(entt::entity npc)
 {
-	LPCHARACTER ch = ecs::LegacyCharOf(chEntity);
-#ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(chEntity, CHAT_TYPE_INFO, "char_item.cpp:: void CHARACTER::SetRefineNPC ");//INGAME_DEBUG_RAZOR93
-#endif
-	if (ch != nullptr)
-	{
-		m_dwRefineNPCVID = ecs::PlayerRuntime::GetPacketVID(chEntity);
-	}
-	else
-	{
-		m_dwRefineNPCVID = 0;
-	}
+    InventorySystem::SetRefineNPC(GetEntityHandle(), npc);
 }
 
 bool CHARACTER::DoRefine(LPITEM item, bool bMoneyOnly)
@@ -10222,10 +10211,10 @@ bool CHARACTER::DoRefineWithScroll(LPITEM item)
 
 	// °³·®¼­ Ã¼�
 // ©
-	if (m_iRefineAdditionalCell < 0)
+	if (InventorySystem::GetRefineScrollCell(GetEntityHandle()) < 0)
 		return false;
 
-	pkItemScroll = GetInventoryItem(m_iRefineAdditionalCell);
+	pkItemScroll = GetInventoryItem(InventorySystem::GetRefineScrollCell(GetEntityHandle()));
 
 	if (!pkItemScroll)
 		return false;
@@ -10619,10 +10608,10 @@ bool CHARACTER::DoRefineWithScroll(LPITEM item)
 
 	// °³·®¼­ Ã¼�
 // ©
-	if (m_iRefineAdditionalCell < 0)
+	if (InventorySystem::GetRefineScrollCell(GetEntityHandle()) < 0)
 		return false;
 
-	pkItemScroll = GetInventoryItem(m_iRefineAdditionalCell);
+	pkItemScroll = GetInventoryItem(InventorySystem::GetRefineScrollCell(GetEntityHandle()));
 
 	if (!pkItemScroll)
 		return false;
@@ -10999,10 +10988,10 @@ bool CHARACTER::DoRefineItemSoul(LPITEM item)
 
 	LPITEM pkItemScroll;
 
-	if (m_iRefineAdditionalCell < 0)
+	if (InventorySystem::GetRefineScrollCell(GetEntityHandle()) < 0)
 		return false;
 
-	pkItemScroll = GetInventoryItem(m_iRefineAdditionalCell);
+	pkItemScroll = GetInventoryItem(InventorySystem::GetRefineScrollCell(GetEntityHandle()));
 
 	if (!pkItemScroll)
 		return false;
@@ -11429,18 +11418,15 @@ void CHARACTER::UseSilkBotary(void)
 }
 // END_OF_MYSHOP_PRICE_LIST
 
-void CHARACTER::SetRefineMode(int iAdditionalCell)
+void CHARACTER::SetRefineMode(int additionalCell)
 {
-	m_iRefineAdditionalCell = iAdditionalCell;
-	m_bUnderRefine = true;
+    InventorySystem::SetRefineMode(GetEntityHandle(), additionalCell);
 }
 
 void CHARACTER::ClearRefineMode()
 {
-	m_bUnderRefine = false;
-	SetRefineNPC(entt::null);
+    InventorySystem::ClearRefineMode(GetEntityHandle());
 }
-
 
 void TransformRefineItem(LPITEM pkOldItem, LPITEM pkNewItem)
 {
@@ -12774,40 +12760,14 @@ static bool FN_check_item_sex(LegacyCharHandle ch, LPITEM item)
 // ITEM HANDLING
 /////////////////////////////////////////////////////////////////////////////
 
-bool CHARACTER::CanHandleItem(bool bSkipCheckRefine, bool bSkipObserver)
+bool CHARACTER::CanHandleItem(bool skipRefine, bool skipObserver)
 {
-#ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(GetEntityHandle(), CHAT_TYPE_INFO, "char_item.cpp::bool CHARACTER::CanHandleItem");//INGAME_DEBUG_RAZOR93
-	LOG_INFO("Razor93 LOG:: bool CHARACTER::CanHandleItem");
-#endif
-	if (!bSkipObserver)
-		if (m_bIsObserver)
-			return false;
+    return InventorySystem::CanHandleItems(GetEntityHandle(), skipRefine, skipObserver);
+}
 
-	if (GetMyShop())
-		return false;
-
-	if (!bSkipCheckRefine)
-		if (m_bUnderRefine)
-			return false;
-
-	if (IsCubeOpen() || DragonSoulSystem::CanRefine(GetEntityHandle()))
-		return false;
-
-#ifdef __ATTR_TRANSFER_SYSTEM__
-	if (AttrTransfer_is_open(GetEntityHandle()))
-		return false;
-#endif
-
-	if (IsWarping())
-		return false;
-
-#ifdef ENABLE_ACCE_SYSTEM
-	if (IsAcceOpen())
-		return false;
-#endif
-
-	return true;
+bool CHARACTER::IsWarping() const
+{
+    return ecs::PlayerRuntime::GetCharEvent(GetEntityHandle(), ecs::PlayerRuntime::CharEvent::Warp) != nullptr;
 }
 
 #ifdef ENABLE_EXTRA_INVENTORY
@@ -13279,439 +13239,10 @@ void CHARACTER::ClearItem()
 }
 
 
-bool CHARACTER::IsEmptyItemGrid(TItemPos Cell, uint8_t bSize, int iExceptionCell) const
+bool CHARACTER::IsEmptyItemGrid(TItemPos cell, uint8_t size, int exceptionCell) const
 {
-
-
-#ifdef __ENABLE_EXTEND_INVEN_SYSTEM__
-	switch (Cell.window_type)
-	{
-	case INVENTORY:
-	{
-		int bCell = Cell.cell;
-
-		// bItemCell? 0? false?? ???? ?? + 1 ?? ????.
-		// ??? iExceptionCell? 1? ?? ????.
-		++iExceptionCell;
-
-		/* 			if (Cell.IsBeltInventoryPosition())
-					{
-						const entt::entity beltItem = ItemSystem::GetWearItem(GetEntityHandle(), WEAR_BELT);
-
-						if (NULL == beltItem)
-							return false;
-
-						if (false == CBeltInventoryHelper::IsAvailableCell(bCell - BELT_INVENTORY_SLOT_START, ItemSystem::GetItemValue(beltItem, 0)))
-							return false;
-
-						if (GetMainInventoryGrid(GetEntityHandle(), bCell))
-						{
-							if (GetMainInventoryGrid(GetEntityHandle(), bCell) == iExceptionCell)
-								return true;
-
-							return false;
-						}
-
-						if (bSize == 1)
-							return true;
-
-					} */
-		if (Cell.IsBeltInventoryPosition())
-		{
-			// NE nezd meg, hogy van-e felszerelve ov
-			// NE ellen?rizd az ov tipusat
-			// --> mindig engedelyezett
-
-			if (GetMainInventoryGrid(GetEntityHandle(), bCell))
-			{
-				if (GetMainInventoryGrid(GetEntityHandle(), bCell) == iExceptionCell)
-					return true;
-
-				return false;
-			}
-
-			if (bSize == 1)
-				return true;
-		}
-
-		//black
-		else if (bCell >= Inventory_Size())
-			return false;
-
-		if (GetMainInventoryGrid(GetEntityHandle(), bCell))
-		{
-			if (GetMainInventoryGrid(GetEntityHandle(), bCell) == iExceptionCell)
-			{
-				if (bSize == 1)
-					return true;
-
-				int j = 1;
-				uint8_t bPage = bCell / (INVENTORY_MAX_NUM / 4);
-				do
-				{
-					uint8_t p = bCell + (5 * j);
-
-					if (p >= Inventory_Size())
-						return false;
-
-					if (p / (INVENTORY_MAX_NUM / 4) != bPage)
-						return false;
-
-					if (GetMainInventoryGrid(GetEntityHandle(), p))
-						if (GetMainInventoryGrid(GetEntityHandle(), p) != iExceptionCell)
-							return false;
-				} while (++j < bSize);
-
-				return true;
-			}
-			else
-				return false;
-		}
-
-		// ??? 1?? ??? ???? ???? ?? ??
-		if (1 == bSize)
-			return true;
-		else
-		{
-			int j = 1;
-			uint8_t bPage = bCell / (INVENTORY_MAX_NUM / 4);
-
-			do
-			{
-				uint8_t p = bCell + (5 * j);
-
-				if (p >= Inventory_Size())
-					return false;
-				if (p / (INVENTORY_MAX_NUM / 4) != bPage)
-					return false;
-
-				if (GetMainInventoryGrid(GetEntityHandle(), p))
-					if (GetMainInventoryGrid(GetEntityHandle(), p) != iExceptionCell)
-						return false;
-			} while (++j < bSize);
-
-			return true;
-		}
-	}
-#ifdef ENABLE_EXTRA_INVENTORY
-	break;
-	case EXTRA_INVENTORY:
-	{
-#ifdef ENABLE_INGAME_DEBUG_RAZOR93
-		LOG_INFO("Razor93 LOG:: Called: Char_item.cpp line :894 /case switch/ : case EXTRA_INVENTORY:");
-#endif
-		uint16_t bCell = Cell.cell;
-
-		if (bCell > ExtraInventoryMaxSlots(bCell, true))
-			return false;
-
-		++iExceptionCell;
-
-		if (GetExtraInventoryGrid(bCell))
-		{
-			if (GetExtraInventoryGrid(bCell) == iExceptionCell)
-			{
-				if (bSize == 1)
-					return true;
-
-				int j = 1;
-				uint8_t bPage = bCell / (EXTRA_INVENTORY_MAX_NUM / EXTRA_INVENTORY_PAGE_COUNT);
-
-				do
-				{
-					int p = bCell + (5 * j);
-
-					if (p > ExtraInventoryMaxSlots(bCell, true))
-						return false;
-
-					if (p / (EXTRA_INVENTORY_MAX_NUM / EXTRA_INVENTORY_PAGE_COUNT) != bPage)
-						return false;
-
-					if (GetExtraInventoryGrid(p))
-						if (GetExtraInventoryGrid(p) != iExceptionCell)
-							return false;
-				} while (++j < bSize);
-
-				return true;
-			}
-			else
-				return false;
-		}
-
-		if (1 == bSize)
-			return true;
-		else
-		{
-			int j = 1;
-			uint8_t bPage = bCell / (EXTRA_INVENTORY_MAX_NUM / EXTRA_INVENTORY_PAGE_COUNT);
-
-			do
-			{
-				int p = bCell + (5 * j);
-
-				if (p > ExtraInventoryMaxSlots(bCell, true))
-					return false;
-
-				if (p / (EXTRA_INVENTORY_MAX_NUM / EXTRA_INVENTORY_PAGE_COUNT) != bPage)
-					return false;
-
-				if (GetExtraInventoryGrid(p))
-					if (GetExtraInventoryGrid(p) != iExceptionCell)
-						return false;
-			} while (++j < bSize);
-
-			return true;
-		}
-	}
-#endif
-	break;
-#else
-	switch (Cell.window_type)
-	{
-	case INVENTORY:
-	{
-		uint8_t bCell = Cell.cell;
-
-		// bItemCell? 0? false?? ???? ?? + 1 ?? ????.
-		// ??? iExceptionCell? 1? ?? ????.
-		++iExceptionCell;
-
-		if (Cell.IsBeltInventoryPosition())
-		{
-			const entt::entity beltItem = ItemSystem::GetWearItem(GetEntityHandle(), WEAR_BELT);
-
-			if (NULL == beltItem)
-				return false;
-
-			if (false == CBeltInventoryHelper::IsAvailableCell(bCell - BELT_INVENTORY_SLOT_START, ItemSystem::GetItemValue(beltItem, 0)))
-				return false;
-
-			if (GetMainInventoryGrid(GetEntityHandle(), bCell))
-			{
-				if (GetMainInventoryGrid(GetEntityHandle(), bCell) == iExceptionCell)
-					return true;
-
-				return false;
-			}
-
-			if (bSize == 1)
-				return true;
-
-		}
-		//black
-		else if (bCell >= INVENTORY_MAX_NUM)
-			return false;
-
-		if (GetMainInventoryGrid(GetEntityHandle(), bCell))
-		{
-			if (GetMainInventoryGrid(GetEntityHandle(), bCell) == iExceptionCell)
-			{
-				if (bSize == 1)
-					return true;
-
-				int j = 1;
-				uint8_t bPage = bCell / (INVENTORY_MAX_NUM / 4);
-
-				do
-				{
-					uint8_t p = bCell + (5 * j);
-
-					if (p >= INVENTORY_MAX_NUM)
-						return false;
-
-					if (p / (INVENTORY_MAX_NUM / 4) != bPage)
-						return false;
-
-					if (GetMainInventoryGrid(GetEntityHandle(), p))
-						if (GetMainInventoryGrid(GetEntityHandle(), p) != iExceptionCell)
-							return false;
-				} while (++j < bSize);
-
-				return true;
-			}
-			else
-				return false;
-		}
-
-		// ??? 1?? ??? ???? ???? ?? ??
-		if (1 == bSize)
-			return true;
-		else
-		{
-			int j = 1;
-			uint8_t bPage = bCell / (INVENTORY_MAX_NUM / 4);
-
-			do
-			{
-				uint8_t p = bCell + (5 * j);
-
-				if (p >= INVENTORY_MAX_NUM)
-					return false;
-				if (p / (INVENTORY_MAX_NUM / 4) != bPage)
-					return false;
-
-				if (GetMainInventoryGrid(GetEntityHandle(), p))
-					if (GetMainInventoryGrid(GetEntityHandle(), p) != iExceptionCell)
-						return false;
-			} while (++j < bSize);
-
-			return true;
-		}
-	}
-#ifdef ENABLE_EXTRA_INVENTORY
-	break;
-	case EXTRA_INVENTORY:
-	{
-		uint16_t bCell = Cell.cell;
-
-		if (bCell >= EXTRA_INVENTORY_MAX_NUM)
-			return false;
-
-		++iExceptionCell;
-
-		if (GetExtraInventoryGrid(bCell))
-		{
-			if (GetExtraInventoryGrid(bCell) == iExceptionCell)
-			{
-				if (bSize == 1)
-					return true;
-
-				int j = 1;
-				uint8_t bPage = bCell / (EXTRA_INVENTORY_MAX_NUM / EXTRA_INVENTORY_PAGE_COUNT);
-
-				do
-				{
-					uint8_t p = bCell + (5 * j);
-
-					if (p >= EXTRA_INVENTORY_MAX_NUM)
-						return false;
-
-					if (p / (EXTRA_INVENTORY_MAX_NUM / EXTRA_INVENTORY_PAGE_COUNT) != bPage)
-						return false;
-
-					if (GetExtraInventoryGrid(p))
-						if (GetExtraInventoryGrid(p) != iExceptionCell)
-							return false;
-				} while (++j < bSize);
-
-				return true;
-			}
-			else
-				return false;
-		}
-
-		if (1 == bSize)
-			return true;
-		else
-		{
-			int j = 1;
-			uint8_t bPage = bCell / (EXTRA_INVENTORY_MAX_NUM / EXTRA_INVENTORY_PAGE_COUNT);
-
-			do
-			{
-				uint8_t p = bCell + (5 * j);
-
-				if (p >= EXTRA_INVENTORY_MAX_NUM)
-					return false;
-
-				if (p / (EXTRA_INVENTORY_MAX_NUM / EXTRA_INVENTORY_PAGE_COUNT) != bPage)
-					return false;
-
-				if (GetExtraInventoryGrid(p))
-					if (GetExtraInventoryGrid(p) != iExceptionCell)
-						return false;
-			} while (++j < bSize);
-
-			return true;
-		}
-	}
-#endif
-	break;
-#endif
-
-
-#ifdef ENABLE_SWITCHBOT
-	case SWITCHBOT:
-	{
-		uint16_t wCell = Cell.cell;
-		if (wCell >= SWITCHBOT_SLOT_COUNT)
-		{
-			return false;
-		}
-
-		if (GetSwitchbotItem(wCell))
-		{
-			return false;
-		}
-
-		return true;
-	}
-#endif
-	case DRAGON_SOUL_INVENTORY:
-	{
-		uint16_t wCell = Cell.cell;
-		if (wCell >= DRAGON_SOUL_INVENTORY_MAX_NUM)
-			return false;
-
-		// bItemCellÀº 0ÀÌ falseÀÓÀ» ³ª�
-// ¸³»±â À§ÇØ + 1 ÇØ¼­ Ã³¸®ÇÑ´Ù.
-		// µû¶ó¼­ iExceptionCell¿¡ 1À» ´õÇØ ºñ±³ÇÑ´Ù.
-		iExceptionCell++;
-
-		if (GetDragonSoulGrid(wCell))
-		{
-			if (GetDragonSoulGrid(wCell) == iExceptionCell)
-			{
-				if (bSize == 1)
-					return true;
-
-				int j = 1;
-
-				do
-				{
-					int p = wCell + (DRAGON_SOUL_BOX_COLUMN_NUM * j);
-
-					if (p >= DRAGON_SOUL_INVENTORY_MAX_NUM)
-						return false;
-
-					if (GetDragonSoulGrid(p))
-						if (GetDragonSoulGrid(p) != iExceptionCell)
-							return false;
-				} while (++j < bSize);
-
-				return true;
-			}
-			else
-				return false;
-		}
-
-		// �
-// ©±â°¡ 1ÀÌ¸é ÇÑÄ­À» Â÷ÁöÇÏ´Â °ÍÀÌ¹Ç·Î ±×³É ¸®�
-// Ï
-		if (1 == bSize)
-			return true;
-		else
-		{
-			int j = 1;
-
-			do
-			{
-				int p = wCell + (DRAGON_SOUL_BOX_COLUMN_NUM * j);
-
-				if (p >= DRAGON_SOUL_INVENTORY_MAX_NUM)
-					return false;
-
-				if (GetMainInventoryGrid(GetEntityHandle(), p))
-					if (GetDragonSoulGrid(p) != iExceptionCell)
-						return false;
-			} while (++j < bSize);
-
-			return true;
-		}
-	}
-	}
-	return false;
-	}
+    return InventorySystem::IsEmptyItemGrid(GetEntityHandle(), cell, size, exceptionCell);
+}
 
 int CHARACTER::GetEmptyInventory(uint8_t size) const
 {
@@ -14512,7 +14043,7 @@ bool CHARACTER::CanDoCube() const
 	if (m_bIsObserver)	return false;
 	if (GetShop())		return false;
 	if (GetMyShop())	return false;
-	if (m_bUnderRefine)	return false;
+	if (InventorySystem::IsRefining(GetEntityHandle()))	return false;
 	if (IsWarping())	return false;
 
 	return true;

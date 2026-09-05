@@ -164,14 +164,13 @@ void MessengerManager::Logout(MessengerManager::keyA account)
 #endif
 }
 
-void MessengerManager::RequestToAdd(LPCHARACTER ch, LPCHARACTER target)
+void MessengerManager::RequestToAdd(entt::entity chEntity, entt::entity targetEntity)
 {
-	const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
-	const entt::entity targetEntity = target ? target->GetEntityHandle() : entt::null;
-	if (!(ecs::PlayerRuntime::IsPC(chEntity)) || !ecs::PlayerRuntime::IsPC(targetEntity))
+	if (!ecs::PlayerRuntime::IsPC(chEntity) || !ecs::PlayerRuntime::IsPC(targetEntity) || chEntity == targetEntity)
 		return;
 
-	if (quest::CQuestManager::instance().GetPCForce((ecs::PlayerRuntime::GetPlayerID(chEntity)))->IsRunning() == true)
+	auto* requester = quest::CQuestManager::instance().GetPCForce(ecs::PlayerRuntime::GetPlayerID(chEntity));
+	if (!requester || requester->IsRunning())
 	{
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(chEntity, CHAT_TYPE_INFO, 607, "");
@@ -179,7 +178,8 @@ void MessengerManager::RequestToAdd(LPCHARACTER ch, LPCHARACTER target)
 		return;
 	}
 
-	if (quest::CQuestManager::instance().GetPCForce(ecs::PlayerRuntime::GetPlayerID(targetEntity))->IsRunning() == true)
+	auto* recipient = quest::CQuestManager::instance().GetPCForce(ecs::PlayerRuntime::GetPlayerID(targetEntity));
+	if (!recipient || recipient->IsRunning())
 		return;
 
 	uint32_t dw1 = GetCRC32(ecs::PlayerRuntime::GetName(chEntity).data(), strlen(ecs::PlayerRuntime::GetName(chEntity).data()));
@@ -802,6 +802,5 @@ void MessengerManager::SendLogout(MessengerManager::keyA account, MessengerManag
 	d->BufferedPacket(&bLen, sizeof(uint8_t));
 	d->Packet(companion.c_str(), companion.size());
 }
-
 
 

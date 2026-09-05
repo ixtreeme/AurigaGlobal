@@ -3,6 +3,7 @@
 #include "PlayerRuntimeSystem.hpp"
 
 #include "SocialSystem.hpp"
+#include "InventorySystem.hpp"
 
 #include "../../affect.h"
 #include "../../char.h"
@@ -841,9 +842,7 @@ int CHARACTER::GetMarriageBonus(uint32_t dwItemVnum, bool bSum)
 
 CGuild* CHARACTER::GetRefineGuild() const
 {
-    LPCHARACTER chRefineNPC = CHARACTER_MANAGER::instance().Find(m_dwRefineNPCVID);
-
-    return (chRefineNPC ? chRefineNPC->GetGuild() : nullptr);
+    return ecs::SocialSystem::GetGuild(InventorySystem::GetRefineNPC(GetEntityHandle()));
 }
 
 bool CHARACTER::IsRefineThroughGuild() const

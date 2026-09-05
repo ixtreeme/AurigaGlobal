@@ -1,5 +1,7 @@
 #include "stdafx.h"
 #include "ecs/systems/InventorySystem.hpp"
+#include "ecs/systems/SessionSystem.hpp"
+#include "ecs/systems/MountSystem.hpp"
 #include "ecs/systems/ViewSystem.hpp"
 #include "ecs/systems/AffectSystem.hpp"
 #include <Core/Logging.hpp>
@@ -97,13 +99,13 @@
 #include "ecs/systems/DragonSoulSystem.hpp"
 
 #ifdef ENABLE_ITEM_ON_TITLE_RAZOR93
-static inline std::string MakeNameWithPrefix(LPCHARACTER ch)
+static inline std::string MakeNameWithPrefix(entt::entity chEntity)
 {
-	const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
-	const char* name = ch ? ecs::PlayerRuntime::GetName(chEntity).data() : "";
+	const bool valid = ecs::PlayerRuntime::IsValid(chEntity);
+	const char* name = valid ? ecs::PlayerRuntime::GetName(chEntity).data() : "";
 
 	std::string out;
-	if (ch)
+	if (valid)
 		out = NetworkSyncSystem::GetItemOnTitlePrefix(g_registry, chEntity); // std::string
 
 
@@ -157,9 +159,8 @@ void CInputMain::TargetInfoLoad(entt::entity character, const char* c_pData)
 	}
 }
 #endif
-void SendBlockChatInfo(LPCHARACTER ch, int sec)
+static void SendBlockChatInfo(entt::entity chEntity, int sec)
 {
-	const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
 	ecs::ChatSystem::Send(chEntity, CHAT_TYPE_INFO, "input_main.cpp::  SendBlockChatInfo(");//INGAME_DEBUG_RAZOR93
 #endif
@@ -227,11 +228,12 @@ EVENTFUNC(block_chat_by_ip_event)
 	return 0;
 }
 
-bool SpamBlockCheck(LPCHARACTER ch, const char* const buf, const size_t buflen)
+static bool SpamBlockCheck(entt::entity chEntity, const char* const buf, const size_t buflen)
 {
-	const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
+	if (!ecs::PlayerRuntime::IsPC(chEntity) || !ecs::PlayerRuntime::GetDesc(chEntity))
+		return true;
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(chEntity, CHAT_TYPE_INFO, "input_main.cpp::  bool SpamBlockCheck(LPCHARACTER ch, const char* const buf, const size_t buflen)(");//INGAME_DEBUG_RAZOR93
+	ecs::ChatSystem::Send(chEntity, CHAT_TYPE_INFO, "input_main.cpp::  bool SpamBlockCheck(entt::entity chEntity, const char* const buf, const size_t buflen)(");//INGAME_DEBUG_RAZOR93
 #endif
 	if (ecs::PointSystem::GetLevel(chEntity) < g_iSpamBlockMaxLevel)
 	{
@@ -245,7 +247,7 @@ bool SpamBlockCheck(LPCHARACTER ch, const char* const buf, const size_t buflen)
 
 		if (it->second.second)
 		{
-			SendBlockChatInfo(ch, event_time(it->second.second) / passes_per_sec);
+			SendBlockChatInfo(chEntity, event_time(it->second.second) / passes_per_sec);
 			return true;
 		}
 
@@ -267,7 +269,7 @@ bool SpamBlockCheck(LPCHARACTER ch, const char* const buf, const size_t buflen)
 
 			LogManager::instance().CharLog(chEntity, 0, "SPAM", word);
 
-			SendBlockChatInfo(ch, event_time(it->second.second) / passes_per_sec);
+			SendBlockChatInfo(chEntity, event_time(it->second.second) / passes_per_sec);
 
 			return true;
 		}
@@ -341,8 +343,10 @@ void GetTextTagInfo(const char * src, int src_len, int & hyperlinks, bool & colo
 	}
 }
 
-int ProcessTextTag(LPCHARACTER ch, const char * c_pszText, uint64_t len)
+static int ProcessTextTag(entt::entity character, const char * c_pszText, uint64_t len)
 {
+	if (!ecs::PlayerRuntime::IsPC(character))
+		return 4;
 	//°³ÀÎ»óÁ¡Áß¿¡ ±Ý°­°æÀ» »ç¿ëÇÒ °æ¿ì
 	//0 : Á¤»óÀûÀ¸·Î »ç¿ë
 	//1 : ±Ý°­°æ ºÎÁ·
@@ -361,25 +365,27 @@ int ProcessTextTag(LPCHARACTER ch, const char * c_pszText, uint64_t len)
 	if (g_bDisablePrismNeed)
 		return 0;
 #endif
-	int nPrismCount = ch->CountSpecifyItem(ITEM_PRISM);
+	int nPrismCount = ItemSystem::CountItem(character, ITEM_PRISM);
 
 	if (nPrismCount < hyperlinks)
 		return 1;
 
 
-	if (!ch->GetMyShop())
+	if (!ecs::SocialSystem::GetMyShop(character))
 	{
-		ch->RemoveSpecifyItem(ITEM_PRISM, hyperlinks);
+		if (hyperlinks > 0 && !ItemSystem::RemoveSpecifyItemEcs(character, ITEM_PRISM, hyperlinks))
+			return 1;
 		return 0;
 	} else
 	{
-		int sellingNumber = ch->GetMyShop()->GetNumberByVnum(ITEM_PRISM);
+		int sellingNumber = ecs::SocialSystem::GetMyShop(character)->GetNumberByVnum(ITEM_PRISM);
 		if(nPrismCount - sellingNumber < hyperlinks)
 		{
 			return 2;
 		} else
 		{
-			ch->RemoveSpecifyItem(ITEM_PRISM, hyperlinks);
+			if (hyperlinks > 0 && !ItemSystem::RemoveSpecifyItemEcs(character, ITEM_PRISM, hyperlinks))
+				return 1;
 			return 0;
 		}
 	}
@@ -482,7 +488,7 @@ int CInputMain::Whisper(entt::entity character, const char * data, uint64_t uiBy
 				strlcpy(buf, data + sizeof(TPacketCGWhisper), MIN(iExtraLen + 1, sizeof(buf)));
 				const uint64_t buflen = strlen(buf);
 				CBanwordManager::instance().ConvertString(buf, buflen);
-				int processReturn = ProcessTextTag(ch, buf, buflen);
+				int processReturn = ProcessTextTag(character, buf, buflen);
 
 				if (0 != processReturn)
 				{
@@ -575,7 +581,7 @@ int CInputMain::Whisper(entt::entity character, const char * data, uint64_t uiBy
 			strlcpy(buf, data + sizeof(TPacketCGWhisper), MIN(iExtraLen + 1, sizeof(buf)));
 			const uint64_t buflen = strlen(buf);
 
-			if (true == SpamBlockCheck(ch, buf, buflen))
+			if (true == SpamBlockCheck(character, buf, buflen))
 			{
 				if (!pkChr)
 				{
@@ -609,7 +615,7 @@ int CInputMain::Whisper(entt::entity character, const char * data, uint64_t uiBy
 							}
 						}
 
-			int processReturn = ProcessTextTag(ch, buf, buflen);
+			int processReturn = ProcessTextTag(character, buf, buflen);
 			if (0!=processReturn)
 			{
 				if (ecs::PlayerRuntime::GetDesc(character))
@@ -1072,7 +1078,7 @@ int CInputMain::Chat(entt::entity character, const char * data, uint32_t uiBytes
 #ifdef ENABLE_MULTI_LANGUAGE
 				std::string langName = ch->GetLang();
 #ifdef ENABLE_ITEM_ON_TITLE_RAZOR93
-				const std::string nameWithPrefix = MakeNameWithPrefix(ch);
+				const std::string nameWithPrefix = MakeNameWithPrefix(character);
 
 				snprintf(shoutbuf, sizeof(shoutbuf),
 					"|L%s|l|E%d|e %s : %s",
@@ -1131,11 +1137,11 @@ int CInputMain::Chat(entt::entity character, const char * data, uint32_t uiBytes
 
 	if (pAffect != nullptr)
 	{
-		SendBlockChatInfo(ch, pAffect->lDuration);
+		SendBlockChatInfo(character, pAffect->lDuration);
 		return iExtraLen;
 	}
 
-	if (true == SpamBlockCheck(ch, buf, buflen))
+	if (true == SpamBlockCheck(character, buf, buflen))
 	{
 		return iExtraLen;
 	}
@@ -1143,7 +1149,7 @@ int CInputMain::Chat(entt::entity character, const char * data, uint32_t uiBytes
 	// @fixme133 begin
 	CBanwordManager::instance().ConvertString(buf, buflen);
 
-	int processReturn = ProcessTextTag(ch, buf, buflen);
+	int processReturn = ProcessTextTag(character, buf, buflen);
 	if (0!=processReturn)
 	{
 #ifdef TEXTS_IMPROVEMENT
@@ -1364,7 +1370,7 @@ int CInputMain::Chat(entt::entity character, const char * data, uint32_t uiBytes
 
 	} else {
 //#ifdef ENABLE_ITEM_ON_TITLE_RAZOR93
-		const std::string nameWithPrefix = MakeNameWithPrefix(ch);
+		const std::string nameWithPrefix = MakeNameWithPrefix(character);
 
 		len = snprintf(chatbuf, sizeof(chatbuf), "|L%s|l|E%d|e %s : %s",
 			langName.c_str(), ecs::PlayerRuntime::GetEmpire(character), nameWithPrefix.c_str(), buf);
@@ -1689,12 +1695,19 @@ void CInputMain::QuickslotSwap(entt::entity character, const char* data)
     InventorySystem::SwapQuickslot(character, packet.pos, packet.change_pos);
 }
 
+namespace {
+bool IsInputBlockMode(entt::entity character, uint8_t flag)
+{
+	const auto* state = g_registry.valid(character) ?
+		g_registry.try_get<ecs::CharacterRuntimeFlagsComponent>(character) : nullptr;
+	return state && (state->blockMode & flag) != 0;
+}
+}
+
 int CInputMain::Messenger(entt::entity character, const char* c_pData, uint64_t uiBytes)
 {
-	LPCHARACTER ch = ecs::LegacyCharOf(character);
-// migrated from CHARACTER handler
-// TODO Phase 8: migrate Messenger handler ECS
-// DUAL-PATH: legacy only during migration window
+	if (!c_pData || !ecs::PlayerRuntime::IsPC(character))
+		return -1;
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
 	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "input_main.cpp:: void CInputMain::Messenger");//INGAME_DEBUG_RAZOR93
 #endif
@@ -1714,17 +1727,16 @@ int CInputMain::Messenger(entt::entity character, const char* c_pData, uint64_t 
 					return -1;
 
 				TPacketCGMessengerAddByVID * p2 = (TPacketCGMessengerAddByVID *) c_pData;
-				LPCHARACTER ch_companion = CHARACTER_MANAGER::instance().Find(p2->vid);
-				const entt::entity ch_companionEntity = ch_companion ? ch_companion->GetEntityHandle() : entt::null;
+				const entt::entity ch_companionEntity = CHARACTER_MANAGER::instance().FindEntity(p2->vid);
 
 
-				if (!ch_companion)
+				if (!ecs::PlayerRuntime::IsPC(ch_companionEntity))
 					return sizeof(TPacketCGMessengerAddByVID);
 
 				if (ecs::PlayerRuntime::IsObserverMode(character))
 					return sizeof(TPacketCGMessengerAddByVID);
 
-				if (ch_companion->IsBlockMode(BLOCK_MESSENGER_INVITE))
+				if (IsInputBlockMode(ch_companionEntity, BLOCK_MESSENGER_INVITE))
 				{
 #ifdef TEXTS_IMPROVEMENT
 					ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 370, "%s", ecs::PlayerRuntime::GetName(ch_companionEntity).data());
@@ -1748,8 +1760,7 @@ int CInputMain::Messenger(entt::entity character, const char* c_pData, uint64_t 
 				if (ecs::PlayerRuntime::GetDesc(character) == d) // ÀÚ½ÅÀº Ãß°¡ÇÒ ¼ö ¾ø´Ù.
 					return sizeof(TPacketCGMessengerAddByVID);
 
-				MessengerManager::instance().RequestToAdd(ch, ch_companion);
-				//MessengerManager::instance().AddToList(ecs::PlayerRuntime::GetName(character).data(), ecs::PlayerRuntime::GetName(((ch_companion) ? (ch_companion)->GetEntityHandle() : entt::null)).data());
+				MessengerManager::instance().RequestToAdd(character, ch_companionEntity);
 			}
 			return sizeof(TPacketCGMessengerAddByVID);
 
@@ -1759,7 +1770,8 @@ int CInputMain::Messenger(entt::entity character, const char* c_pData, uint64_t 
 					return -1;
 
 				char name[CHARACTER_NAME_MAX_LEN + 1];
-				strlcpy(name, c_pData, sizeof(name));
+				memcpy(name, c_pData, CHARACTER_NAME_MAX_LEN);
+				name[CHARACTER_NAME_MAX_LEN] = '\0';
 
 				if (ecs::PlayerRuntime::GetGMLevel(character) == GM_PLAYER && gm_get_level(name) != GM_PLAYER)
 				{
@@ -1769,23 +1781,22 @@ int CInputMain::Messenger(entt::entity character, const char* c_pData, uint64_t 
 					return CHARACTER_NAME_MAX_LEN;
 				}
 
-				LPCHARACTER tch = CHARACTER_MANAGER::instance().FindPC(name);
-				if (tch)
+				const entt::entity tch = CHARACTER_MANAGER::instance().FindPCEntity(name);
+				if (ecs::PlayerRuntime::IsPC(tch))
 				{
-					if (tch == ch) // ÀÚ½ÅÀº Ãß°¡ÇÒ ¼ö ¾ø´Ù.
+					if (tch == character) // ÀÚ½ÅÀº Ãß°¡ÇÒ ¼ö ¾ø´Ù.
 						return CHARACTER_NAME_MAX_LEN;
 
-					if (tch->IsBlockMode(BLOCK_MESSENGER_INVITE) == true)
+					if (IsInputBlockMode(tch, BLOCK_MESSENGER_INVITE) == true)
 					{
 #ifdef TEXTS_IMPROVEMENT
-						ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 370, "%s", ecs::PlayerRuntime::GetName(((tch) ? (tch)->GetEntityHandle() : entt::null)).data());
+						ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 370, "%s", ecs::PlayerRuntime::GetName(tch).data());
 #endif
 					}
 					else
 					{
 						// ¸Þ½ÅÀú°¡ Ä³¸¯ÅÍ´ÜÀ§°¡ µÇ¸é¼­ º¯°æ
-						MessengerManager::instance().RequestToAdd(ch, tch);
-						//MessengerManager::instance().AddToList(ecs::PlayerRuntime::GetName(character).data(), ecs::PlayerRuntime::GetName(((tch) ? (tch)->GetEntityHandle() : entt::null)).data());
+						MessengerManager::instance().RequestToAdd(character, tch);
 					}
 				}
 #ifdef TEXTS_IMPROVEMENT
@@ -1802,7 +1813,8 @@ int CInputMain::Messenger(entt::entity character, const char* c_pData, uint64_t 
 					return -1;
 
 				char char_name[CHARACTER_NAME_MAX_LEN + 1];
-				strlcpy(char_name, c_pData, sizeof(char_name));
+				memcpy(char_name, c_pData, CHARACTER_NAME_MAX_LEN);
+				char_name[CHARACTER_NAME_MAX_LEN] = '\0';
 				MessengerManager::instance().RemoveFromList(ecs::PlayerRuntime::GetName(character).data(), char_name);
 #ifdef ENABLE_BUG_FIXES
 				MessengerManager::instance().RemoveFromList(char_name, ecs::PlayerRuntime::GetName(character).data());
@@ -1989,7 +2001,8 @@ int CInputMain::Shop(entt::entity character, const char * data, size_t uiBytes)
 
 void CInputMain::OnClick(entt::entity character, const char * data)
 {
-	LPCHARACTER ch = ecs::LegacyCharOf(character);
+	if (!data || !ecs::PlayerRuntime::IsPC(character))
+		return;
 // migrated from CHARACTER handler
 // TODO Phase 8: migrate OnClick handler ECS
 // DUAL-PATH: legacy only during migration window
@@ -2833,23 +2846,17 @@ void CInputMain::QuestInputString(entt::entity character, const void* c_pData)
 
 void CInputMain::QuestConfirm(entt::entity character, const void* c_pData)
 {
-// migrated from CHARACTER handler
-// TODO Phase 8: migrate QuestConfirm handler ECS
-// DUAL-PATH: legacy only during migration window
-#ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::QuestConfirm");//INGAME_DEBUG_RAZOR93
-#endif
-	TPacketCGQuestConfirm* p = (TPacketCGQuestConfirm*) c_pData;
-	LPCHARACTER ch_wait = CHARACTER_MANAGER::instance().FindByPID(p->requestPID);
-	const entt::entity ch_waitEntity = ch_wait ? ch_wait->GetEntityHandle() : entt::null;
-
-	if (p->answer)
-		p->answer = quest::CONFIRM_YES;
-	LOG_INFO("QuestConfirm from {} pid {} name {} answer {}", ecs::PlayerRuntime::GetName(character).data(), p->requestPID, (ch_wait)?ecs::PlayerRuntime::GetName(ch_waitEntity).data():"", p->answer);
-	if (ch_wait)
-	{
-		quest::CQuestManager::Instance().Confirm(ecs::PlayerRuntime::GetPlayerID(ch_waitEntity), (quest::EQuestConfirmType) p->answer, ecs::PlayerRuntime::GetPlayerID(character));
-	}
+	if (!c_pData || !ecs::PlayerRuntime::IsPC(character))
+		return;
+	const auto* p = static_cast<const TPacketCGQuestConfirm*>(c_pData);
+	const auto waiting = CHARACTER_MANAGER::instance().FindEntityByPID(p->requestPID);
+	if (!ecs::PlayerRuntime::IsPC(waiting))
+		return;
+	const auto answer = p->answer ? quest::CONFIRM_YES : static_cast<quest::EQuestConfirmType>(p->answer);
+	LOG_INFO("QuestConfirm from {} pid {} name {} answer {}", ecs::PlayerRuntime::GetName(character).data(),
+		p->requestPID, ecs::PlayerRuntime::GetName(waiting).data(), static_cast<int>(answer));
+	quest::CQuestManager::Instance().Confirm(ecs::PlayerRuntime::GetPlayerID(waiting), answer,
+		ecs::PlayerRuntime::GetPlayerID(character));
 }
 
 void CInputMain::Target(entt::entity character, const char * pcData)
@@ -2886,24 +2893,64 @@ void CInputMain::Warp(entt::entity character, const char * pcData)
 	ch->WarpEnd();
 }
 
+
+namespace
+{
+bool IsInputInventoryPosition(TItemPos position)
+{
+    return position.window_type == INVENTORY || position.window_type == DRAGON_SOUL_INVENTORY
+#ifdef ENABLE_EXTRA_INVENTORY
+        || position.window_type == EXTRA_INVENTORY
+#endif
+        ;
+}
+
+bool IsInputItemAt(entt::entity owner, entt::entity item, TItemPos position)
+{
+    if (!ecs::PlayerRuntime::IsPC(owner) || !ItemSystem::IsValidItem(item))
+        return false;
+    const auto* ownership = g_registry.try_get<ecs::ItemOwner>(item);
+    const auto* location = g_registry.try_get<ecs::ItemLocation>(item);
+    return ownership && ownership->owner == owner && location &&
+        location->window == position.window_type && location->cell == position.cell;
+}
+
+bool IsDetachedInputItem(entt::entity item)
+{
+    if (!ItemSystem::IsValidItem(item))
+        return false;
+    const auto* owner = g_registry.try_get<ecs::ItemOwner>(item);
+    const auto* location = g_registry.try_get<ecs::ItemLocation>(item);
+    return owner && owner->owner == entt::null && location && location->window == RESERVED_WINDOW;
+}
+
+bool RestoreInputItem(entt::entity owner, entt::entity item, TItemPos position)
+{
+    return ecs::PlayerRuntime::IsPC(owner) && IsDetachedInputItem(item) &&
+        InventorySystem::IsEmptyItemGrid(owner, position, ItemSystem::GetItemSize(item)) &&
+        ItemSystem::PlaceItemEcs(owner, item, position.window_type, position.cell);
+}
+}
+
 void CInputMain::SafeboxCheckin(entt::entity character, const char * c_pData)
 {
-	LPCHARACTER ch = ecs::LegacyCharOf(character);
-	if (!ch || !ch->CanHandleItem())
+	if (!c_pData || !ecs::PlayerRuntime::IsPC(character) || !InventorySystem::CanHandleItems(character))
 		return;
 
 	const entt::entity ownerEntity = character;
 	if (ownerEntity == entt::null || !g_registry.valid(ownerEntity))
 		return;
 
-	if (quest::CQuestManager::instance()
-			.GetPCForce(ecs::PlayerRuntime::GetPlayerID(ownerEntity))
-			->IsRunning())
+	auto* questPC = quest::CQuestManager::instance().GetPCForce(ecs::PlayerRuntime::GetPlayerID(ownerEntity));
+	if (!questPC || questPC->IsRunning())
 	{
 		return;
 	}
 
-	const auto p = reinterpret_cast<const TPacketCGSafeboxCheckin*>(c_pData);
+	const auto request = *reinterpret_cast<const TPacketCGSafeboxCheckin*>(c_pData);
+	const auto* p = &request;
+	if (!IsInputInventoryPosition(p->ItemPos))
+		return;
 #ifdef ENABLE_RESTRICT_GM_PERMISSIONS
 	if (ecs::PlayerRuntime::GetGMLevel(ownerEntity) > GM_PLAYER &&
 		ecs::PlayerRuntime::GetGMLevel(ownerEntity) < GM_IMPLEMENTOR)
@@ -2921,9 +2968,9 @@ void CInputMain::SafeboxCheckin(entt::entity character, const char * c_pData)
 		return;
 	}
 
-	CSafebox* safebox = ch->GetSafebox();
+	const auto safebox = SafeboxSystem::Get(character, SAFEBOX);
 	const entt::entity itemEntity = ItemSystem::GetItem(ownerEntity, p->ItemPos);
-	if (!safebox || !ItemSystem::IsValidItem(itemEntity))
+	if (!safebox || !IsInputItemAt(character, itemEntity, p->ItemPos) || ItemSystem::IsItemExchanging(itemEntity))
 		return;
 
 #ifdef ENABLE_BUG_FIXES
@@ -2942,7 +2989,7 @@ void CInputMain::SafeboxCheckin(entt::entity character, const char * c_pData)
 #endif
 
 #ifdef __ENABLE_EXTEND_INVEN_SYSTEM__
-	if (ItemSystem::GetItemCell(itemEntity) >= ch->Inventory_Size() &&
+	if (ItemSystem::GetItemCell(itemEntity) >= InventorySystem::GetInventorySize(character) &&
 		IS_SET(ItemSystem::GetItemFlags(itemEntity), ITEM_FLAG_IRREMOVABLE))
 #else
 	if (ItemSystem::GetItemCell(itemEntity) >= INVENTORY_MAX_NUM &&
@@ -2974,7 +3021,7 @@ void CInputMain::SafeboxCheckin(entt::entity character, const char * c_pData)
 	}
 
 	if (ItemSystem::GetItemType(itemEntity) == ITEM_BELT &&
-		CBeltInventoryHelper::IsExistItemInBeltInventory(ch))
+		InventorySystem::HasBeltItems(character))
 	{
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(ownerEntity, CHAT_TYPE_INFO, 385, "");
@@ -2983,22 +3030,23 @@ void CInputMain::SafeboxCheckin(entt::entity character, const char * c_pData)
 	}
 
 	const TItemPos originalPos = p->ItemPos;
+	const bool clearQuickslot = !ItemSystem::IsDragonSoulItem(itemEntity) && !ItemSystem::IsExtraItem(itemEntity);
 	if (!ItemSystem::RemoveItemEcs(itemEntity))
 		return;
 
-	if (!ItemSystem::IsDragonSoulItem(itemEntity) &&
-		!ItemSystem::IsExtraItem(itemEntity))
-	{
-		ch->SyncQuickslot(QUICKSLOT_TYPE_ITEM, originalPos.cell, 255);
-	}
 
-	if (!safebox->Add(p->bSafePos, itemEntity))
+	if (SafeboxSystem::Get(character, SAFEBOX) != safebox || !IsDetachedInputItem(itemEntity) ||
+		!safebox->Add(p->bSafePos, itemEntity))
 	{
-		ItemSystem::RemoveItemEcs(itemEntity);
-		ItemSystem::PlaceItemEcs(
-			ownerEntity, itemEntity, originalPos.window_type, originalPos.cell);
+		RestoreInputItem(character, itemEntity, originalPos);
 		return;
 	}
+	if (!IsInputItemAt(character, itemEntity, TItemPos(SAFEBOX, p->bSafePos)))
+		return;
+	if (clearQuickslot && ItemSystem::GetItem(character, originalPos) == entt::null)
+		InventorySystem::SyncQuickslot(character, QUICKSLOT_TYPE_ITEM, originalPos.cell, 255);
+	if (!IsInputItemAt(character, itemEntity, TItemPos(SAFEBOX, p->bSafePos)))
+		return;
 
 	char hint[128];
 	snprintf(
@@ -3007,19 +3055,19 @@ void CInputMain::SafeboxCheckin(entt::entity character, const char * c_pData)
 		"%s %u",
 		ItemSystem::GetItemName(itemEntity),
 		ItemSystem::GetItemCount(itemEntity));
-	LogManager::instance().ItemLogEntity(ch, itemEntity, "SAFEBOX PUT", hint);
+	LogManager::instance().ItemLogEntity(character, itemEntity, "SAFEBOX PUT", hint);
 }
 void CInputMain::SafeboxCheckout(entt::entity character, const char * c_pData, bool bMall)
 {
-	LPCHARACTER ch = ecs::LegacyCharOf(character);
-	if (!ch || !ch->CanHandleItem())
+	if (!c_pData || !ecs::PlayerRuntime::IsPC(character) || !InventorySystem::CanHandleItems(character))
 		return;
 
 	const entt::entity ownerEntity = character;
 	if (ownerEntity == entt::null || !g_registry.valid(ownerEntity))
 		return;
 
-	const auto p = reinterpret_cast<const TPacketCGSafeboxCheckout*>(c_pData);
+	const auto request = *reinterpret_cast<const TPacketCGSafeboxCheckout*>(c_pData);
+	const auto* p = &request;
 #ifdef ENABLE_RESTRICT_GM_PERMISSIONS
 	if (ecs::PlayerRuntime::GetGMLevel(ownerEntity) > GM_PLAYER &&
 		ecs::PlayerRuntime::GetGMLevel(ownerEntity) < GM_IMPLEMENTOR)
@@ -3028,22 +3076,29 @@ void CInputMain::SafeboxCheckout(entt::entity character, const char * c_pData, b
 	}
 #endif
 
-	CSafebox* safebox = bMall ? ch->GetMall() : ch->GetSafebox();
+	const uint8_t window = bMall ? MALL : SAFEBOX;
+	const auto safebox = SafeboxSystem::Get(character, window);
 	if (!safebox)
 		return;
 
 	const entt::entity itemEntity = safebox->Get(p->bSafePos);
-	if (!ItemSystem::IsValidItem(itemEntity))
+	if (!IsInputItemAt(character, itemEntity, TItemPos(window, p->bSafePos)) ||
+		ItemSystem::IsItemLocked(itemEntity) || ItemSystem::IsItemExchanging(itemEntity))
 		return;
 
 	TItemPos destination = p->ItemPos;
-	if (!ch->IsEmptyItemGrid(destination, ItemSystem::GetItemSize(itemEntity)))
+	if (!InventorySystem::IsEmptyItemGrid(character, destination, ItemSystem::GetItemSize(itemEntity)))
 		return;
 
 	if (ItemSystem::IsDragonSoulItem(itemEntity))
 	{
 		if (bMall)
+		{
 			DSManager::instance().DragonSoulItemInitialize(itemEntity);
+			if (SafeboxSystem::Get(character, window) != safebox ||
+				!IsInputItemAt(character, itemEntity, TItemPos(window, p->bSafePos)))
+				return;
+		}
 
 		if (destination.window_type != DRAGON_SOUL_INVENTORY)
 		{
@@ -3098,23 +3153,32 @@ void CInputMain::SafeboxCheckout(entt::entity character, const char * c_pData, b
 		}
 	}
 
+	if (SafeboxSystem::Get(character, window) != safebox ||
+		!InventorySystem::IsEmptyItemGrid(character, destination, ItemSystem::GetItemSize(itemEntity)))
+		return;
 	const entt::entity removedItem = safebox->Remove(p->bSafePos);
-	if (removedItem != itemEntity)
+	if (removedItem != itemEntity || !IsDetachedInputItem(itemEntity))
 		return;
 
-	if (!ItemSystem::PlaceItemEcs(
-			ownerEntity, itemEntity, destination.window_type, destination.cell))
+	if (!RestoreInputItem(ownerEntity, itemEntity, destination))
 	{
-		safebox->Add(p->bSafePos, itemEntity);
+		if (SafeboxSystem::Get(character, window) == safebox && IsDetachedInputItem(itemEntity))
+			safebox->Add(p->bSafePos, itemEntity);
 		return;
 	}
 
+	if (!IsInputItemAt(character, itemEntity, destination))
+		return;
 	ItemSystem::FlushDelayedSaveEcs(itemEntity);
+	if (!IsInputItemAt(character, itemEntity, destination))
+		return;
 
 	const uint32_t itemId = ItemSystem::GetItemID(itemEntity);
 	db_clientdesc->DBPacketHeader(HEADER_GD_ITEM_FLUSH, 0, sizeof(itemId));
 	db_clientdesc->Packet(&itemId, sizeof(itemId));
 
+	if (!IsInputItemAt(character, itemEntity, destination))
+		return;
 	char hint[128];
 	snprintf(
 		hint,
@@ -3123,21 +3187,17 @@ void CInputMain::SafeboxCheckout(entt::entity character, const char * c_pData, b
 		ItemSystem::GetItemName(itemEntity),
 		ItemSystem::GetItemCount(itemEntity));
 	LogManager::instance().ItemLogEntity(
-		ch, itemEntity, bMall ? "MALL GET" : "SAFEBOX GET", hint);
+		character, itemEntity, bMall ? "MALL GET" : "SAFEBOX GET", hint);
 }
 void CInputMain::SafeboxItemMove(entt::entity character, const char * data)
 {
-	LPCHARACTER ch = ecs::LegacyCharOf(character);
-// migrated from CHARACTER handler
-// TODO Phase 8: migrate SafeboxItemMove handler ECS
-// DUAL-PATH: legacy only during migration window
 
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
 	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::SafeboxItemMove");//INGAME_DEBUG_RAZOR93
 #endif
-	struct command_item_move * pinfo = (struct command_item_move *) data;
+	const auto* pinfo = reinterpret_cast<const command_item_move*>(data);
 
-	if (!ch->CanHandleItem())
+	if (!data || !ecs::PlayerRuntime::IsPC(character) || !InventorySystem::CanHandleItems(character))
 		return;
 
 #ifdef ENABLE_RESTRICT_GM_PERMISSIONS
@@ -3146,23 +3206,26 @@ void CInputMain::SafeboxItemMove(entt::entity character, const char * data)
 	}
 #endif
 
-	if (!ch->GetSafebox())
+	const auto safebox = SafeboxSystem::Get(character, SAFEBOX);
+	if (!safebox)
 		return;
 
-	ch->GetSafebox()->MoveItem(pinfo->Cell.cell, pinfo->CellTo.cell, pinfo->count);
+	safebox->MoveItem(pinfo->Cell.cell, pinfo->CellTo.cell, pinfo->count);
 }
 
 void CInputMain::MountInventoryCheckin(entt::entity character, const char* c_pData)
 {
-	LPCHARACTER ch = ecs::LegacyCharOf(character);
-	if (!ch || !ch->CanHandleItem())
+	if (!c_pData || !ecs::PlayerRuntime::IsPC(character) || !InventorySystem::CanHandleItems(character))
 		return;
 
 	const entt::entity ownerEntity = character;
 	if (ownerEntity == entt::null || !g_registry.valid(ownerEntity))
 		return;
 
-	const auto p = reinterpret_cast<const TPacketCGMountInventoryCheckin*>(c_pData);
+	const auto request = *reinterpret_cast<const TPacketCGMountInventoryCheckin*>(c_pData);
+	const auto* p = &request;
+	if (!IsInputInventoryPosition(p->ItemPos))
+		return;
 #ifdef ENABLE_RESTRICT_GM_PERMISSIONS
 	if (ecs::PlayerRuntime::GetGMLevel(ownerEntity) > GM_PLAYER &&
 		ecs::PlayerRuntime::GetGMLevel(ownerEntity) < GM_IMPLEMENTOR)
@@ -3171,12 +3234,12 @@ void CInputMain::MountInventoryCheckin(entt::entity character, const char* c_pDa
 	}
 #endif
 
-	CMountInventory* mountInventory = ch->GetMountInventory();
+	CMountInventory* mountInventory = MountSystem::GetMountInventory(character);
 	if (!mountInventory)
 		return;
 
 	const entt::entity itemEntity = ItemSystem::GetItem(ownerEntity, p->ItemPos);
-	if (!ItemSystem::IsValidItem(itemEntity))
+	if (!IsInputItemAt(character, itemEntity, p->ItemPos))
 		return;
 
 	if (!mountInventory->IsValidPosition(p->wMountPos) ||
@@ -3195,7 +3258,7 @@ void CInputMain::MountInventoryCheckin(entt::entity character, const char* c_pDa
 	}
 
 #ifdef __ENABLE_EXTEND_INVEN_SYSTEM__
-	if (ItemSystem::GetItemCell(itemEntity) >= ch->Inventory_Size() &&
+	if (ItemSystem::GetItemCell(itemEntity) >= InventorySystem::GetInventorySize(character) &&
 		IS_SET(ItemSystem::GetItemFlags(itemEntity), ITEM_FLAG_IRREMOVABLE))
 #else
 	if (ItemSystem::GetItemCell(itemEntity) >= INVENTORY_MAX_NUM &&
@@ -3250,30 +3313,37 @@ void CInputMain::MountInventoryCheckin(entt::entity character, const char* c_pDa
 	}
 
 	const TItemPos originalPos = p->ItemPos;
+	const bool clearQuickslot = !ItemSystem::IsDragonSoulItem(itemEntity) && !ItemSystem::IsExtraItem(itemEntity);
 	if (!ItemSystem::RemoveItemEcs(itemEntity))
 		return;
 
-	if (!ItemSystem::IsDragonSoulItem(itemEntity) &&
-		!ItemSystem::IsExtraItem(itemEntity))
-	{
-		ch->SyncQuickslot(QUICKSLOT_TYPE_ITEM, originalPos.cell, 255);
-	}
 
-	ItemSystem::FlushDelayedSaveEcs(itemEntity);
-	if (!mountInventory->Add(p->wMountPos, itemEntity))
-	{
-		ItemSystem::SetItemSkipSave(itemEntity, false);
-		ItemSystem::PlaceItemEcs(
-			ownerEntity, itemEntity, originalPos.window_type, originalPos.cell);
+	if (IsDetachedInputItem(itemEntity))
 		ItemSystem::FlushDelayedSaveEcs(itemEntity);
+	if (MountSystem::GetMountInventory(character) != mountInventory || !IsDetachedInputItem(itemEntity) ||
+		!mountInventory->Add(p->wMountPos, itemEntity))
+	{
+		if (IsDetachedInputItem(itemEntity))
+			ItemSystem::SetItemSkipSave(itemEntity, false);
+		if (RestoreInputItem(character, itemEntity, originalPos) &&
+			IsInputItemAt(character, itemEntity, originalPos))
+			ItemSystem::FlushDelayedSaveEcs(itemEntity);
 		return;
 	}
+	if (!IsInputItemAt(character, itemEntity, TItemPos(MOUNT_INVENTORY, p->wMountPos)))
+		return;
+	if (clearQuickslot && ItemSystem::GetItem(character, originalPos) == entt::null)
+		InventorySystem::SyncQuickslot(character, QUICKSLOT_TYPE_ITEM, originalPos.cell, 255);
 
-	ch->SendMountInventory();
-	ch->ComputePoints();
+	if (!ecs::PlayerRuntime::IsPC(character))
+		return;
+	MountSystem::SendMountInventory(character);
+	if (!ecs::PlayerRuntime::IsPC(character))
+		return;
+	ecs::PointSystem::Compute(character);
 	NetworkSyncSystem::PointsPacket(ownerEntity);
 #ifdef ENABLE_FAKE_SHOP_HEADER
-	ch->UpdateMountCountOverheadToViewers();
+	MountSystem::UpdateMountCountOverheadToViewers(character);
 #endif
 }
 
@@ -3281,15 +3351,15 @@ void CInputMain::MountInventoryCheckin(entt::entity character, const char* c_pDa
 
 void CInputMain::MountInventoryCheckout(entt::entity character, const char* c_pData)
 {
-	LPCHARACTER ch = ecs::LegacyCharOf(character);
-	if (!ch || !ch->CanHandleItem())
+	if (!c_pData || !ecs::PlayerRuntime::IsPC(character) || !InventorySystem::CanHandleItems(character))
 		return;
 
 	const entt::entity ownerEntity = character;
 	if (ownerEntity == entt::null || !g_registry.valid(ownerEntity))
 		return;
 
-	const auto p = reinterpret_cast<const TPacketCGMountInventoryCheckout*>(c_pData);
+	const auto request = *reinterpret_cast<const TPacketCGMountInventoryCheckout*>(c_pData);
+	const auto* p = &request;
 #ifdef ENABLE_RESTRICT_GM_PERMISSIONS
 	if (ecs::PlayerRuntime::GetGMLevel(ownerEntity) > GM_PLAYER &&
 		ecs::PlayerRuntime::GetGMLevel(ownerEntity) < GM_IMPLEMENTOR)
@@ -3298,7 +3368,7 @@ void CInputMain::MountInventoryCheckout(entt::entity character, const char* c_pD
 	}
 #endif
 
-	CMountInventory* mountInventory = ch->GetMountInventory();
+	CMountInventory* mountInventory = MountSystem::GetMountInventory(character);
 	if (!mountInventory || !mountInventory->IsValidPosition(p->wMountPos))
 		return;
 
@@ -3309,38 +3379,46 @@ void CInputMain::MountInventoryCheckout(entt::entity character, const char* c_pD
 	}
 
 	const entt::entity itemEntity = mountInventory->Get(p->wMountPos);
-	if (!ItemSystem::IsValidItem(itemEntity) ||
+	if (!IsInputItemAt(character, itemEntity, TItemPos(MOUNT_INVENTORY, p->wMountPos)) ||
 		ItemSystem::IsItemExchanging(itemEntity) ||
 		ItemSystem::IsItemLocked(itemEntity))
 	{
 		return;
 	}
 
-	if (!ch->IsEmptyItemGrid(p->ItemPos, ItemSystem::GetItemSize(itemEntity)))
+	if (!InventorySystem::IsEmptyItemGrid(character, p->ItemPos, ItemSystem::GetItemSize(itemEntity)))
 		return;
 
-	if (mountInventory->Remove(p->wMountPos) != itemEntity)
+	if (mountInventory->Remove(p->wMountPos) != itemEntity || !IsDetachedInputItem(itemEntity))
 		return;
 
 	ItemSystem::SetItemSkipSave(itemEntity, false);
-	if (!ItemSystem::PlaceItemEcs(
-			ownerEntity, itemEntity, p->ItemPos.window_type, p->ItemPos.cell))
+	if (!RestoreInputItem(ownerEntity, itemEntity, p->ItemPos))
 	{
-		mountInventory->Add(p->wMountPos, itemEntity);
+		if (MountSystem::GetMountInventory(character) == mountInventory && IsDetachedInputItem(itemEntity))
+			mountInventory->Add(p->wMountPos, itemEntity);
 		return;
 	}
 
+	if (!IsInputItemAt(character, itemEntity, p->ItemPos))
+		return;
 	ItemSystem::FlushDelayedSaveEcs(itemEntity);
+	if (!IsInputItemAt(character, itemEntity, p->ItemPos))
+		return;
 
 	const uint32_t itemId = ItemSystem::GetItemID(itemEntity);
 	db_clientdesc->DBPacketHeader(HEADER_GD_ITEM_FLUSH, 0, sizeof(itemId));
 	db_clientdesc->Packet(&itemId, sizeof(itemId));
 
-	ch->SendMountInventory();
-	ch->ComputePoints();
+	if (!ecs::PlayerRuntime::IsPC(character))
+		return;
+	MountSystem::SendMountInventory(character);
+	if (!ecs::PlayerRuntime::IsPC(character))
+		return;
+	ecs::PointSystem::Compute(character);
 	NetworkSyncSystem::PointsPacket(ownerEntity);
 #ifdef ENABLE_FAKE_SHOP_HEADER
-	ch->UpdateMountCountOverheadToViewers();
+	MountSystem::UpdateMountCountOverheadToViewers(character);
 #endif
 }
 
@@ -3348,17 +3426,13 @@ void CInputMain::MountInventoryCheckout(entt::entity character, const char* c_pD
 
 void CInputMain::MountInventoryItemMove(entt::entity character, const char* data)
 {
-	LPCHARACTER ch = ecs::LegacyCharOf(character);
-// migrated from CHARACTER handler
-// TODO Phase 8: migrate MountInventoryItemMove handler ECS
-// DUAL-PATH: legacy only during migration window
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
 	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::MountInventoryItemMove");
 #endif
 
 	const auto p = reinterpret_cast<const TPacketCGMountInventoryItemMove*>(data);
 
-	if (!ch || !ch->CanHandleItem())
+	if (!data || !ecs::PlayerRuntime::IsPC(character) || !InventorySystem::CanHandleItems(character))
 		return;
 
 #ifdef ENABLE_RESTRICT_GM_PERMISSIONS
@@ -3366,18 +3440,22 @@ void CInputMain::MountInventoryItemMove(entt::entity character, const char* data
 		return;
 #endif
 
-	CMountInventory* mi = ch->GetMountInventory();
+	CMountInventory* mi = MountSystem::GetMountInventory(character);
 	if (!mi)
 		return;
 
 	mi->MoveItem(p->wMountPos, p->wDestPos);
-	ch->SendMountInventory();
+	if (!ecs::PlayerRuntime::IsPC(character))
+		return;
+	MountSystem::SendMountInventory(character);
 
 	// (count nem változik, de egységes)
-	ch->ComputePoints();
+	if (!ecs::PlayerRuntime::IsPC(character))
+		return;
+	ecs::PointSystem::Compute(character);
 
 #ifdef ENABLE_FAKE_SHOP_HEADER
-	ch->UpdateMountCountOverheadToViewers();
+	MountSystem::UpdateMountCountOverheadToViewers(character);
 #endif
 }
 
@@ -3618,14 +3696,12 @@ void CInputMain::PartySetState(entt::entity character, const char* c_pData)
 
 void CInputMain::PartyRemove(entt::entity character, const char* c_pData)
 {
-	LPCHARACTER ch = ecs::LegacyCharOf(character);
-// migrated from CHARACTER handler
-// TODO Phase 8: migrate PartyRemove handler ECS
-// DUAL-PATH: legacy only during migration window
+	if (!c_pData || !ecs::PlayerRuntime::IsPC(character))
+		return;
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
 	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::PartyRemove");//INGAME_DEBUG_RAZOR93
 #endif
-	if (ch->GetArena())
+	if (ecs::PlayerRuntime::GetArena(character))
 	{
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 303, "");
@@ -3641,7 +3717,7 @@ void CInputMain::PartyRemove(entt::entity character, const char* c_pData)
 		return;
 	}
 
-	if (ch->GetDungeon())
+	if (ecs::SocialSystem::GetDungeon(character))
 	{
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 203, "");
@@ -3657,7 +3733,7 @@ void CInputMain::PartyRemove(entt::entity character, const char* c_pData)
 	LPPARTY pParty = ecs::SocialSystem::GetParty(character);
 	if (pParty->GetLeaderPID() == ecs::PlayerRuntime::GetPlayerID(character))
 	{
-		if (!ch->GetDungeon()) {
+		if (!ecs::SocialSystem::GetDungeon(character)) {
 			// Àû·æ¼º¿¡¼­ ÆÄÆ¼ÀåÀÌ ´øÁ¯ ¹Û¿¡¼­ ÆÄÆ¼ ÇØ»ê ¸øÇÏ°Ô ¸·ÀÚ
 			if(pParty->IsPartyInDungeon(351))
 			{
@@ -3697,7 +3773,7 @@ void CInputMain::PartyRemove(entt::entity character, const char* c_pData)
 	{
 		if (p->pid == ecs::PlayerRuntime::GetPlayerID(character))
 		{
-			if (!ch->GetDungeon()) {
+			if (!ecs::SocialSystem::GetDungeon(character)) {
 				if (pParty->GetMemberCount() == 2) {
 					CPartyManager::instance().DeleteParty(pParty);
 				} else {
@@ -3726,10 +3802,8 @@ void CInputMain::PartyRemove(entt::entity character, const char* c_pData)
 
 void CInputMain::AnswerMakeGuild(entt::entity character, const char* c_pData)
 {
-	LPCHARACTER ch = ecs::LegacyCharOf(character);
-// migrated from CHARACTER handler
-// TODO Phase 8: migrate AnswerMakeGuild handler ECS
-// DUAL-PATH: legacy only during migration window
+	if (!c_pData || !ecs::PlayerRuntime::IsPC(character))
+		return;
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
 	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::AnswerMakeGuild");//INGAME_DEBUG_RAZOR93
 #endif
@@ -3767,7 +3841,9 @@ void CInputMain::AnswerMakeGuild(entt::entity character, const char* c_pData)
 	memset(&cp, 0, sizeof(cp));
 
 	cp.master = character;
-	strlcpy(cp.name, p->guild_name, sizeof(cp.name));
+	static_assert(sizeof(cp.name) == sizeof(p->guild_name));
+	memcpy(cp.name, p->guild_name, sizeof(cp.name));
+	cp.name[sizeof(cp.name) - 1] = '\0';
 
 	if (cp.name[0] == 0 || !check_name(cp.name))
 	{
@@ -3793,8 +3869,7 @@ void CInputMain::AnswerMakeGuild(entt::entity character, const char* c_pData)
 		snprintf(Log, sizeof(Log), "GUILD_NAME %s MASTER %s", cp.name, ecs::PlayerRuntime::GetName(character).data());
 		LogManager::instance().CharLog(character, 0, "MAKE_GUILD", Log);
 
-		ch->RemoveSpecifyItem(GUILD_CREATE_ITEM_VNUM, 1);
-		//ch->SendGuildName(dwGuildID);
+		ItemSystem::RemoveSpecifyItemEcs(character, GUILD_CREATE_ITEM_VNUM, 1);
 	}
 #ifdef TEXTS_IMPROVEMENT
 	else {
@@ -5416,16 +5491,16 @@ void CInputMain::WheelDestiny(entt::entity character, const char* data)
 int CInputMain::Analyze(LPDESC d, uint8_t bHeader, const char * c_pData)
 {
 
-	LPCHARACTER ch;
-
-	if (!(ch = d->GetCharacter()))
+	if (!d || !c_pData)
+		return 0;
+	const entt::entity character = d->GetEntity();
+	if (!ecs::PlayerRuntime::IsPC(character) || ecs::PlayerRuntime::GetDesc(character) != d)
 	{
 		LOG_ERROR("no character on desc");
 		d->SetPhase(PHASE_CLOSE);
 		return (0);
 	}
 
-	const entt::entity character = ch->GetEntityHandle();
 
 	int iExtraLen = 0;
 
@@ -5443,12 +5518,6 @@ int CInputMain::Analyze(LPDESC d, uint8_t bHeader, const char * c_pData)
 			break;
 
 		case HEADER_CG_CHAT:
-			if (test_server)
-			{
-				const auto pBuf = const_cast<char*>(c_pData);
-				LOG_INFO("{}", pBuf + sizeof(TPacketCGChat));
-			}
-
 			if ((iExtraLen = Chat(character, c_pData, m_iBufferLeft)) < 0)
 				return -1;
 			break;
@@ -5554,18 +5623,19 @@ int CInputMain::Analyze(LPDESC d, uint8_t bHeader, const char * c_pData)
 		case HEADER_CG_OPENSHOP: {
 				TPacketOpenShop* p = reinterpret_cast<TPacketOpenShop*>((void*)c_pData);
 				if (p->shopid > 0) {
-					if (!(ecs::PlayerRuntime::IsObserverMode(character) || ch->IsOpenSafebox() || ecs::SocialSystem::GetExchange(character) || ch->IsCubeOpen() || CombatSystem::IsStun(character) || CombatSystem::IsDead(character)
+					if (!(ecs::PlayerRuntime::IsObserverMode(character) || ecs::SessionSystem::IsSafeboxOpen(character) || ecs::SocialSystem::GetExchange(character) || ecs::SessionSystem::IsCubeOpen(character) || CombatSystem::IsStun(character) || CombatSystem::IsDead(character)
 #ifdef __ATTR_TRANSFER_SYSTEM__
 						 || AttrTransfer_is_open(character)
 #endif
 #ifdef __ENABLE_NEW_OFFLINESHOP__
-						 || ch->GetOfflineShopGuest() || ch->GetAuctionGuest()
+						 || (g_registry.try_get<ecs::ShopState>(character) &&
+						     (g_registry.get<ecs::ShopState>(character).offlineShopGuest || g_registry.get<ecs::ShopState>(character).auctionGuest))
 #endif
 					)) {
 						LPSHOP shop = CShopManager::instance().Get(p->shopid);
 						if (shop) {
-							shop->AddGuest(d->GetEntity(), 0, false);
-							ch->SetShopOwner(entt::null);
+							shop->AddGuest(character, 0, false);
+							ecs::SocialSystem::SetShopOwner(character, entt::null);
 						}
 					}
 				}
@@ -5737,7 +5807,7 @@ int CInputMain::Analyze(LPDESC d, uint8_t bHeader, const char * c_pData)
 
 #ifdef ENABLE_WHISPER_ADMIN_SYSTEM
 		case HEADER_CG_WHISPER_ADMIN:
-			CWhisperAdmin::instance().Manager(ch, c_pData);
+			CWhisperAdmin::instance().Manager(character, c_pData);
 			break;
 #endif
 
@@ -5786,7 +5856,7 @@ int CInputMain::Analyze(LPDESC d, uint8_t bHeader, const char * c_pData)
 				switch(p->bSubType)
 				{
 				case DS_SUB_HEADER_CLOSE:
-					DragonSoulSystem::CloseRefineWindow(ch->GetEntityHandle());
+					DragonSoulSystem::CloseRefineWindow(character);
 					break;
 				case DS_SUB_HEADER_DO_REFINE_GRADE:
 					{
@@ -5843,15 +5913,15 @@ int CInputMain::Analyze(LPDESC d, uint8_t bHeader, const char * c_pData)
 
 int CInputDead::Analyze(LPDESC d, uint8_t bHeader, const char * c_pData)
 {
-	LPCHARACTER ch;
-
-	if (!(ch = d->GetCharacter()))
+	if (!d || !c_pData)
+		return 0;
+	const entt::entity character = d->GetEntity();
+	if (!ecs::PlayerRuntime::IsPC(character) || ecs::PlayerRuntime::GetDesc(character) != d)
 	{
 		LOG_ERROR("no character on desc");
 		return 0;
 	}
 
-	const entt::entity character = ch->GetEntityHandle();
 
 	int iExtraLen = 0;
 

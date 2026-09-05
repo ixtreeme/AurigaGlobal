@@ -88,9 +88,9 @@ struct ShopState {
 #endif
     std::string shopSign;
     bool noOpenedShop;
-    bool underRefine;
-    int refineCell;
-    uint32_t refineNPCVID;
+    bool underRefine { false };
+    int refineCell { -1 };
+    entt::entity refineNPC { entt::null };
 #ifdef KASMIR_PAKET_SYSTEM
     // LPENTITY.4-fixup.2.g: mirror of legacy m_bKasmirPaketBaslik so native
     // EntityNetworkDispatch shop sign packet matches legacy bytes.
