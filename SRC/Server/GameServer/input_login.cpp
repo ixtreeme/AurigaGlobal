@@ -1292,11 +1292,11 @@ int CInputLogin::Analyze(LPDESC d, uint8_t bHeader, const char* c_pData)
 		break;
 
 	case HEADER_CG_CLIENT_VERSION:
-		Version(d->GetCharacter(), c_pData);
+		Version(d->GetEntity(), c_pData);
 		break;
 
 	case HEADER_CG_CLIENT_VERSION2:
-		Version(d->GetCharacter(), c_pData);
+		Version(d->GetEntity(), c_pData);
 		break;
 		// @fixme120
 	case HEADER_CG_ITEM_USE:

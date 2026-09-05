@@ -2825,11 +2825,9 @@ protected:
 public:
 	int32_t	GetLastUnlock() const { return m_iLastUnlock; }
 	void	SetLastUnlock() { m_iLastUnlock = get_global_time() + 3; }
-	int32_t	GetLastDSREfine() const { return m_iLastDSRefine; }
-	void	SetLastDSREfine() { m_iLastDSRefine = get_global_time() + 3; }
 
 protected:
-	int32_t	m_iLastUnlock, m_iLastDSRefine;
+	int32_t	m_iLastUnlock;
 #endif
 
 public:

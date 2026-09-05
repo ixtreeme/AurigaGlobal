@@ -291,6 +291,23 @@ LPENTITY CHARACTER::DragonSoul_RefineWindow_GetOpener()
     return DragonSoulSystem::GetRefineWindowOpener(GetEntityHandle());
 }
 
+namespace DragonSoulSystem {
+int32_t GetLastRefineTime(entt::entity owner)
+{
+    if (owner == entt::null || !g_registry.valid(owner))
+        return 0;
+    const auto* state = g_registry.try_get<ecs::DragonSoulState>(owner);
+    return state ? state->lastRefineTime : 0;
+}
+
+void SetLastRefineTime(entt::entity owner)
+{
+    if (owner == entt::null || !g_registry.valid(owner))
+        return;
+    g_registry.get_or_emplace<ecs::DragonSoulState>(owner).lastRefineTime = get_global_time() + 3;
+}
+}
+
 bool CHARACTER::DragonSoul_RefineWindow_CanRefine()
 {
     return DragonSoulSystem::CanRefine(GetEntityHandle());

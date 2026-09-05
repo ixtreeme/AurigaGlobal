@@ -33,7 +33,7 @@ class CInputProcessor
 		void BindPacketInfo(CPacketInfo * pPacketInfo);
 		void Pong(LPDESC d);
 		virtual void Handshake(LPDESC d, const char * c_pData);
-		void Version(LPCHARACTER ch, const char* c_pData);
+		void Version(entt::entity ch, const char* c_pData);
 
 	protected:
 		virtual int	Analyze(LPDESC d, uint8_t bHeader, const char * c_pData) = 0;

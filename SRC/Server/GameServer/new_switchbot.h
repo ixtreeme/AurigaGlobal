@@ -40,7 +40,7 @@ public:
 	void SwitchItems();
 	bool CheckItem(entt::entity item, uint8_t slot);
 
-	void SendItemUpdate(LPCHARACTER ch, uint8_t slot, entt::entity item);
+	void SendItemUpdate(entt::entity ch, uint8_t slot, entt::entity item);
 
 protected:
 	TSwitchbotTable m_table;
@@ -69,7 +69,7 @@ public:
 	void P2PSendSwitchbot(uint32_t player_id, uint16_t wTargetPort);
 	void P2PReceiveSwitchbot(TSwitchbotTable table);
 
-	void SendItemAttributeInformations(LPCHARACTER ch);
+	void SendItemAttributeInformations(entt::entity ch);
 	void SendSwitchbotUpdate(uint32_t player_id);
 
 	void EnterGame(LPCHARACTER ch);

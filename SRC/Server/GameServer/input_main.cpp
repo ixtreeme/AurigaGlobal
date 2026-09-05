@@ -1111,7 +1111,7 @@ int CInputMain::Chat(entt::entity character, const char * data, uint32_t uiBytes
 
 #endif
 
-	interpret_command(ch, buf + 1, buflen - 1);
+	interpret_command(character, buf + 1, buflen - 1);
 	return iExtraLen;
 	}
 
@@ -2138,7 +2138,7 @@ void CInputMain::Exchange(entt::entity character, const char * data)
 
 					if (ecs::PlayerRuntime::IsPC(((to_ch) ? (to_ch)->GetEntityHandle() : entt::null)))
 					{
-						if (quest::CQuestManager::instance().GiveItemToPC(ecs::PlayerRuntime::GetPlayerID(character), to_ch))
+						if (quest::CQuestManager::instance().GiveItemToPC(ecs::PlayerRuntime::GetPlayerID(character), ((to_ch) ? (to_ch)->GetEntityHandle() : entt::null)))
 						{
 							LOG_INFO("Exchange canceled by quest {} {}", ecs::PlayerRuntime::GetName(character).data(), ecs::PlayerRuntime::GetName(((to_ch) ? (to_ch)->GetEntityHandle() : entt::null)).data());
 							return;
@@ -5803,7 +5803,7 @@ int CInputMain::Analyze(LPDESC d, uint8_t bHeader, const char * c_pData)
 #endif
 
 		case HEADER_CG_CLIENT_VERSION:
-			Version(ch, c_pData);
+			Version(character, c_pData);
 			break;
 
 

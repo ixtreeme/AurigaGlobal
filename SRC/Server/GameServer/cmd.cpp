@@ -1010,11 +1010,3 @@ void interpret_command(entt::entity character, const char * argument, uint64_t l
 		}
 	}
 }
-
-void interpret_command(LPCHARACTER ch, const char* argument, uint64_t len)
-{
-	interpret_command(((ch) ? (ch)->GetEntityHandle() : entt::null), argument, len);
-}
-
-
-

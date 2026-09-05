@@ -685,7 +685,7 @@ namespace offlineshop
 
 
 
-	void CShop::__SendOfferNotify(LPCHARACTER ch, TOfferInfo* pOffer)
+	void CShop::__SendOfferNotify(entt::entity ch, TOfferInfo* pOffer)
 	{
 		//TODO : add send packet
 	}

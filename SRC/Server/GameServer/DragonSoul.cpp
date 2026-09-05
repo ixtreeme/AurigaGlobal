@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include <Core/Logging.hpp>
 #include "ecs/systems/PlayerRuntimeSystem.hpp"
+#include "ecs/systems/DragonSoulSystem.hpp"
 #include "constants.h"
 #include "item.h"
 #include "item_manager.h"
@@ -67,12 +68,12 @@ bool ConsumeDragonSoulMaterials(const std::set<entt::entity>& items, int amount)
 	return remaining == 0;
 }
 
-void SyncDragonSoulGridItems(LPCHARACTER ch, const TItemPos (&aItemPoses)[DRAGON_SOUL_REFINE_GRID_SIZE])
+void SyncDragonSoulGridItems(entt::entity ch, const TItemPos (&aItemPoses)[DRAGON_SOUL_REFINE_GRID_SIZE])
 {
-	if (!ch)
+	if (!ecs::PlayerRuntime::IsValid(ch))
 		return;
 
-	const entt::entity owner = ((ch) ? (ch)->GetEntityHandle() : entt::null);
+	const entt::entity owner = ch;
 	for (int i = 0; i < DRAGON_SOUL_REFINE_GRID_SIZE; ++i)
 		SyncDragonSoulItemPtr(ItemSystem::GetItem(owner, aItemPoses[i]));
 }
@@ -575,25 +576,24 @@ bool DSManager::PullOutEcs(entt::entity owner, TItemPos DestCell, entt::entity& 
 }
 
 
-bool DSManager::DoRefineGrade(LPCHARACTER ch, TItemPos (&aItemPoses)[DRAGON_SOUL_REFINE_GRID_SIZE])
+bool DSManager::DoRefineGrade(entt::entity ch, TItemPos (&aItemPoses)[DRAGON_SOUL_REFINE_GRID_SIZE])
 {
-	if (!ch || !ch->DragonSoul_RefineWindow_CanRefine())
+	if (!ecs::PlayerRuntime::IsValid(ch) || !DragonSoulSystem::CanRefine(ch))
 		return false;
 
-	const entt::entity owner = ((ch) ? (ch)->GetEntityHandle() : entt::null);
 	std::set<entt::entity> items;
 	for (int i = 0; i < DRAGON_SOUL_REFINE_GRID_SIZE; ++i)
 	{
 		if (aItemPoses[i].IsEquipPosition())
 			return false;
 
-		const entt::entity item = ItemSystem::GetItem(owner, aItemPoses[i]);
+		const entt::entity item = ItemSystem::GetItem(ch, aItemPoses[i]);
 		if (item == entt::null)
 			continue;
 		if (!ItemSystem::IsDragonSoulItem(item))
 		{
 #ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(owner, CHAT_TYPE_INFO, 628, "");
+			ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 628, "");
 #endif
 			SendRefineResultPacket(ch, DS_SUB_HEADER_REFINE_FAIL_INVALID_MATERIAL, DragonSoulItemPosition(item));
 			return false;
@@ -616,7 +616,7 @@ bool DSManager::DoRefineGrade(LPCHARACTER ch, TItemPos (&aItemPoses)[DRAGON_SOUL
 	if (!m_pTable->GetRefineGradeValues(dsType, grade, neededCount, fee, probabilities))
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(owner, CHAT_TYPE_INFO, 627, "");
+		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 627, "");
 #endif
 		SendRefineResultPacket(ch, DS_SUB_HEADER_REFINE_FAIL_INVALID_MATERIAL, DragonSoulItemPosition(*items.begin()));
 		return false;
@@ -628,7 +628,7 @@ bool DSManager::DoRefineGrade(LPCHARACTER ch, TItemPos (&aItemPoses)[DRAGON_SOUL
 		if (ItemSystem::IsItemEquipped(item) || dsType != GetType(vnum) || grade != GetGradeIdx(vnum))
 		{
 #ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(owner, CHAT_TYPE_INFO, 628, "");
+			ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 628, "");
 #endif
 			SendRefineResultPacket(ch, DS_SUB_HEADER_REFINE_FAIL_INVALID_MATERIAL, DragonSoulItemPosition(item));
 			return false;
@@ -638,7 +638,7 @@ bool DSManager::DoRefineGrade(LPCHARACTER ch, TItemPos (&aItemPoses)[DRAGON_SOUL
 	const int suppliedCount = static_cast<int>(items.size());
 	if (suppliedCount != neededCount)
 	{
-		LOG_ERROR("Possiblity of invalid client. Name {}", ecs::PlayerRuntime::GetName(owner).data());
+		LOG_ERROR("Possiblity of invalid client. Name {}", ecs::PlayerRuntime::GetName(ch).data());
 		const uint8_t subHeader = suppliedCount < neededCount
 			? DS_SUB_HEADER_REFINE_FAIL_NOT_ENOUGH_MATERIAL
 			: DS_SUB_HEADER_REFINE_FAIL_TOO_MUCH_MATERIAL;
@@ -646,10 +646,10 @@ bool DSManager::DoRefineGrade(LPCHARACTER ch, TItemPos (&aItemPoses)[DRAGON_SOUL
 		return false;
 	}
 
-	if (ecs::PointSystem::GetGold(owner) < fee)
+	if (ecs::PointSystem::GetGold(ch) < fee)
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(owner, CHAT_TYPE_INFO, 232, "");
+		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 232, "");
 #endif
 		SendRefineResultPacket(ch, DS_SUB_HEADER_REFINE_FAIL_NOT_ENOUGH_MONEY, NPOS);
 		return false;
@@ -676,8 +676,8 @@ bool DSManager::DoRefineGrade(LPCHARACTER ch, TItemPos (&aItemPoses)[DRAGON_SOUL
 		return false;
 	}
 
-	ecs::PointSystem::Change(owner, POINT_GOLD, -fee);
-	ItemSystem::AutoGiveItem(owner, resultItem, true);
+	ecs::PointSystem::Change(ch, POINT_GOLD, -fee);
+	ItemSystem::AutoGiveItem(ch, resultItem, true);
 
 	char logHint[128];
 	sprintf(logHint, "GRADE : %d -> %d", grade, resultGrade);
@@ -685,7 +685,7 @@ bool DSManager::DoRefineGrade(LPCHARACTER ch, TItemPos (&aItemPoses)[DRAGON_SOUL
 	LogManager::instance().ItemLogEntity(ch, resultItem,
 		success ? "DS_GRADE_REFINE_SUCCESS" : "DS_GRADE_REFINE_FAIL", logHint);
 #ifdef TEXTS_IMPROVEMENT
-	ecs::ChatSystem::SendNew(owner, CHAT_TYPE_INFO, success ? 629 : 630, "");
+	ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, success ? 629 : 630, "");
 #endif
 	SendRefineResultPacket(ch,
 		success ? DS_SUB_HEADER_REFINE_SUCCEED : DS_SUB_HEADER_REFINE_FAIL,
@@ -694,32 +694,30 @@ bool DSManager::DoRefineGrade(LPCHARACTER ch, TItemPos (&aItemPoses)[DRAGON_SOUL
 }
 bool DSManager::DoRefineGradeEcs(entt::entity owner, TItemPos (&aItemPoses)[DRAGON_SOUL_REFINE_GRID_SIZE])
 {
-	LPCHARACTER ch = ecs::LegacyCharOf(owner);
-	if (!ch)
+	if (!ecs::PlayerRuntime::IsValid(owner))
 		return false;
 
-	const bool result = DoRefineGrade(ch, aItemPoses);
-	SyncDragonSoulGridItems(ch, aItemPoses);
+	const bool result = DoRefineGrade(owner, aItemPoses);
+	SyncDragonSoulGridItems(owner, aItemPoses);
 	return result;
 }
 
 
-bool DSManager::DoRefineStep(LPCHARACTER ch, TItemPos (&aItemPoses)[DRAGON_SOUL_REFINE_GRID_SIZE])
+bool DSManager::DoRefineStep(entt::entity ch, TItemPos (&aItemPoses)[DRAGON_SOUL_REFINE_GRID_SIZE])
 {
-	if (!ch || !ch->DragonSoul_RefineWindow_CanRefine())
+	if (!ecs::PlayerRuntime::IsValid(ch) || !DragonSoulSystem::CanRefine(ch))
 		return false;
 
-	const entt::entity owner = ((ch) ? (ch)->GetEntityHandle() : entt::null);
 	std::set<entt::entity> items;
 	for (int i = 0; i < DRAGON_SOUL_REFINE_GRID_SIZE; ++i)
 	{
-		const entt::entity item = ItemSystem::GetItem(owner, aItemPoses[i]);
+		const entt::entity item = ItemSystem::GetItem(ch, aItemPoses[i]);
 		if (item == entt::null)
 			continue;
 		if (!ItemSystem::IsDragonSoulItem(item))
 		{
 #ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(owner, CHAT_TYPE_INFO, 628, "");
+			ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 628, "");
 #endif
 			SendRefineResultPacket(ch, DS_SUB_HEADER_REFINE_FAIL_INVALID_MATERIAL, DragonSoulItemPosition(item));
 			return false;
@@ -742,7 +740,7 @@ bool DSManager::DoRefineStep(LPCHARACTER ch, TItemPos (&aItemPoses)[DRAGON_SOUL_
 	if (!m_pTable->GetRefineStepValues(dsType, step, neededCount, fee, probabilities))
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(owner, CHAT_TYPE_INFO, 627, "");
+		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 627, "");
 #endif
 		SendRefineResultPacket(ch, DS_SUB_HEADER_REFINE_FAIL_INVALID_MATERIAL, DragonSoulItemPosition(*items.begin()));
 		return false;
@@ -755,7 +753,7 @@ bool DSManager::DoRefineStep(LPCHARACTER ch, TItemPos (&aItemPoses)[DRAGON_SOUL_
 			grade != GetGradeIdx(vnum) || step != GetStepIdx(vnum))
 		{
 #ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(owner, CHAT_TYPE_INFO, 628, "");
+			ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 628, "");
 #endif
 			SendRefineResultPacket(ch, DS_SUB_HEADER_REFINE_FAIL_INVALID_MATERIAL, DragonSoulItemPosition(item));
 			return false;
@@ -765,7 +763,7 @@ bool DSManager::DoRefineStep(LPCHARACTER ch, TItemPos (&aItemPoses)[DRAGON_SOUL_
 	const int suppliedCount = static_cast<int>(items.size());
 	if (suppliedCount != neededCount)
 	{
-		LOG_ERROR("Possiblity of invalid client. Name {}", ecs::PlayerRuntime::GetName(owner).data());
+		LOG_ERROR("Possiblity of invalid client. Name {}", ecs::PlayerRuntime::GetName(ch).data());
 		const uint8_t subHeader = suppliedCount < neededCount
 			? DS_SUB_HEADER_REFINE_FAIL_NOT_ENOUGH_MATERIAL
 			: DS_SUB_HEADER_REFINE_FAIL_TOO_MUCH_MATERIAL;
@@ -773,10 +771,10 @@ bool DSManager::DoRefineStep(LPCHARACTER ch, TItemPos (&aItemPoses)[DRAGON_SOUL_
 		return false;
 	}
 
-	if (ecs::PointSystem::GetGold(owner) < fee)
+	if (ecs::PointSystem::GetGold(ch) < fee)
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(owner, CHAT_TYPE_INFO, 232, "");
+		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 232, "");
 #endif
 		SendRefineResultPacket(ch, DS_SUB_HEADER_REFINE_FAIL_NOT_ENOUGH_MONEY, NPOS);
 		return false;
@@ -803,8 +801,8 @@ bool DSManager::DoRefineStep(LPCHARACTER ch, TItemPos (&aItemPoses)[DRAGON_SOUL_
 		return false;
 	}
 
-	ecs::PointSystem::Change(owner, POINT_GOLD, -fee);
-	ItemSystem::AutoGiveItem(owner, resultItem, true);
+	ecs::PointSystem::Change(ch, POINT_GOLD, -fee);
+	ItemSystem::AutoGiveItem(ch, resultItem, true);
 
 	char logHint[128];
 	sprintf(logHint, "STEP : %d -> %d", step, resultStep);
@@ -812,7 +810,7 @@ bool DSManager::DoRefineStep(LPCHARACTER ch, TItemPos (&aItemPoses)[DRAGON_SOUL_
 	LogManager::instance().ItemLogEntity(ch, resultItem,
 		success ? "DS_STEP_REFINE_SUCCESS" : "DS_STEP_REFINE_FAIL", logHint);
 #ifdef TEXTS_IMPROVEMENT
-	ecs::ChatSystem::SendNew(owner, CHAT_TYPE_INFO, success ? 629 : 630, "");
+	ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, success ? 629 : 630, "");
 #endif
 	SendRefineResultPacket(ch,
 		success ? DS_SUB_HEADER_REFINE_SUCCEED : DS_SUB_HEADER_REFINE_FAIL,
@@ -821,12 +819,11 @@ bool DSManager::DoRefineStep(LPCHARACTER ch, TItemPos (&aItemPoses)[DRAGON_SOUL_
 }
 bool DSManager::DoRefineStepEcs(entt::entity owner, TItemPos (&aItemPoses)[DRAGON_SOUL_REFINE_GRID_SIZE])
 {
-	LPCHARACTER ch = ecs::LegacyCharOf(owner);
-	if (!ch)
+	if (!ecs::PlayerRuntime::IsValid(owner))
 		return false;
 
-	const bool result = DoRefineStep(ch, aItemPoses);
-	SyncDragonSoulGridItems(ch, aItemPoses);
+	const bool result = DoRefineStep(owner, aItemPoses);
+	SyncDragonSoulGridItems(owner, aItemPoses);
 	return result;
 }
 
@@ -840,16 +837,15 @@ bool IsDragonSoulRefineMaterial(entt::entity item)
 		ItemSystem::GetItemSubType(item) == MATERIAL_DS_REFINE_HOLLY);
 }
 
-bool DSManager::DoRefineStrength(LPCHARACTER ch, TItemPos (&aItemPoses)[DRAGON_SOUL_REFINE_GRID_SIZE])
+bool DSManager::DoRefineStrength(entt::entity ch, TItemPos (&aItemPoses)[DRAGON_SOUL_REFINE_GRID_SIZE])
 {
-	if (!ch || !ch->DragonSoul_RefineWindow_CanRefine())
+	if (!ecs::PlayerRuntime::IsValid(ch) || !DragonSoulSystem::CanRefine(ch))
 		return false;
 
-	const entt::entity owner = ((ch) ? (ch)->GetEntityHandle() : entt::null);
 	std::set<entt::entity> items;
 	for (int i = 0; i < DRAGON_SOUL_REFINE_GRID_SIZE; ++i)
 	{
-		const entt::entity item = ItemSystem::GetItem(owner, aItemPoses[i]);
+		const entt::entity item = ItemSystem::GetItem(ch, aItemPoses[i]);
 		if (item != entt::null)
 			items.insert(item);
 	}
@@ -884,7 +880,7 @@ bool DSManager::DoRefineStrength(LPCHARACTER ch, TItemPos (&aItemPoses)[DRAGON_S
 		else
 		{
 #ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(owner, CHAT_TYPE_INFO, 628, "");
+			ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 628, "");
 #endif
 			SendRefineResultPacket(ch, DS_SUB_HEADER_REFINE_FAIL_INVALID_MATERIAL, DragonSoulItemPosition(item));
 			return false;
@@ -904,7 +900,7 @@ bool DSManager::DoRefineStrength(LPCHARACTER ch, TItemPos (&aItemPoses)[DRAGON_S
 	if (!m_pTable->GetWeight(type, grade, step, strength + 1, nextWeight) || nextWeight < FLT_EPSILON)
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(owner, CHAT_TYPE_INFO, 627, "");
+		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 627, "");
 #endif
 		SendRefineResultPacket(ch, DS_SUB_HEADER_REFINE_FAIL_MAX_REFINE, DragonSoulItemPosition(dragonSoul));
 		return false;
@@ -915,16 +911,16 @@ bool DSManager::DoRefineStrength(LPCHARACTER ch, TItemPos (&aItemPoses)[DRAGON_S
 	if (!m_pTable->GetRefineStrengthValues(type, ItemSystem::GetItemSubType(refineStone), strength, fee, probability))
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(owner, CHAT_TYPE_INFO, 627, "");
+		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 627, "");
 #endif
 		SendRefineResultPacket(ch, DS_SUB_HEADER_REFINE_FAIL_INVALID_MATERIAL, DragonSoulItemPosition(dragonSoul));
 		return false;
 	}
 
-	if (ecs::PointSystem::GetGold(owner) < fee)
+	if (ecs::PointSystem::GetGold(ch) < fee)
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(owner, CHAT_TYPE_INFO, 232, "");
+		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 232, "");
 #endif
 		SendRefineResultPacket(ch, DS_SUB_HEADER_REFINE_FAIL_NOT_ENOUGH_MONEY, NPOS);
 		return false;
@@ -962,12 +958,12 @@ bool DSManager::DoRefineStrength(LPCHARACTER ch, TItemPos (&aItemPoses)[DRAGON_S
 		return false;
 	}
 
-	ecs::PointSystem::Change(owner, POINT_GOLD, -fee);
+	ecs::PointSystem::Change(ch, POINT_GOLD, -fee);
 	if (result != entt::null)
-		ItemSystem::AutoGiveItem(owner, result, true);
+		ItemSystem::AutoGiveItem(ch, result, true);
 
 #ifdef TEXTS_IMPROVEMENT
-	ecs::ChatSystem::SendNew(owner, CHAT_TYPE_INFO, success ? 629 : 630, "");
+	ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, success ? 629 : 630, "");
 #endif
 	SendRefineResultPacket(ch,
 		success ? DS_SUB_HEADER_REFINE_SUCCEED : DS_SUB_HEADER_REFINE_FAIL,
@@ -976,42 +972,40 @@ bool DSManager::DoRefineStrength(LPCHARACTER ch, TItemPos (&aItemPoses)[DRAGON_S
 }
 bool DSManager::DoRefineStrengthEcs(entt::entity owner, TItemPos (&aItemPoses)[DRAGON_SOUL_REFINE_GRID_SIZE])
 {
-	LPCHARACTER ch = ecs::LegacyCharOf(owner);
-	if (!ch)
+	if (!ecs::PlayerRuntime::IsValid(owner))
 		return false;
 
-	const bool result = DoRefineStrength(ch, aItemPoses);
-	SyncDragonSoulGridItems(ch, aItemPoses);
+	const bool result = DoRefineStrength(owner, aItemPoses);
+	SyncDragonSoulGridItems(owner, aItemPoses);
 	return result;
 }
 
 
 #ifdef ENABLE_DS_REFINE_ALL
-void DSManager::DoRefineAll(LPCHARACTER ch, uint8_t subheader, uint8_t type, uint8_t requestedGrade)
+void DSManager::DoRefineAll(entt::entity ch, uint8_t subheader, uint8_t type, uint8_t requestedGrade)
 {
-	const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
-	if (!ch || (subheader != DS_SUB_HEADER_DO_REFINE_GRADE && subheader != DS_SUB_HEADER_DO_REFINE_STEP))
+	if (!ecs::PlayerRuntime::IsValid(ch) || (subheader != DS_SUB_HEADER_DO_REFINE_GRADE && subheader != DS_SUB_HEADER_DO_REFINE_STEP))
 		return;
 	if (type > 5 || requestedGrade > 5)
 		return;
 	if (subheader == DS_SUB_HEADER_DO_REFINE_GRADE && requestedGrade == 5)
 		return;
-	if (!ch->DragonSoul_RefineWindow_CanRefine())
+	if (!DragonSoulSystem::CanRefine(ch))
 		return;
 
 #ifdef ENABLE_SPAM_CHECK
-	const int32_t remainingDelay = ch->GetLastDSREfine() - get_global_time();
+	const int32_t remainingDelay = DragonSoulSystem::GetLastRefineTime(ch) - get_global_time();
 	if (remainingDelay > 0)
 	{
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(chEntity, CHAT_TYPE_INFO, 234, "%d", remainingDelay);
+		ecs::ChatSystem::SendNew(ch, CHAT_TYPE_INFO, 234, "%d", remainingDelay);
 #endif
 		return;
 	}
-	ch->SetLastDSREfine();
+	DragonSoulSystem::SetLastRefineTime(ch);
 #endif
 
-	const entt::entity owner = chEntity;
+	const entt::entity owner = ch;
 	const int32_t firstCell = 300 + (192 * type) + (requestedGrade * DRAGON_SOUL_BOX_SIZE);
 	const bool gradeMode = subheader == DS_SUB_HEADER_DO_REFINE_GRADE;
 	const int firstIndex = gradeMode ? DRAGON_SOUL_GRADE_NORMAL : DRAGON_SOUL_STEP_LOWEST;
@@ -1133,17 +1127,16 @@ void DSManager::DoRefineAll(LPCHARACTER ch, uint8_t subheader, uint8_t type, uin
 
 void DSManager::DoRefineAllEcs(entt::entity owner, uint8_t subheader, uint8_t type, uint8_t grade)
 {
-	LPCHARACTER ch = ecs::LegacyCharOf(owner);
-	if (!ch)
+	if (!ecs::PlayerRuntime::IsValid(owner))
 		return;
 
-	DoRefineAll(ch, subheader, type, grade);
+	DoRefineAll(owner, subheader, type, grade);
 	for (int i = 0; i < DRAGON_SOUL_INVENTORY_MAX_NUM; ++i)
 		SyncDragonSoulItemPtr(ItemSystem::GetItem(owner, TItemPos(DRAGON_SOUL_INVENTORY, i)));
 }
 
 #endif
-void DSManager::SendRefineResultPacket(LPCHARACTER ch, uint8_t bSubHeader, const TItemPos& pos)
+void DSManager::SendRefineResultPacket(entt::entity ch, uint8_t bSubHeader, const TItemPos& pos)
 {
 	TPacketGCDragonSoulRefine pack;
 	pack.bSubType = bSubHeader;
@@ -1152,7 +1145,7 @@ void DSManager::SendRefineResultPacket(LPCHARACTER ch, uint8_t bSubHeader, const
 	{
 		pack.Pos = pos;
 	}
-	LPDESC d = ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null));
+	LPDESC d = ecs::PlayerRuntime::GetDesc(ch);
 	if (nullptr == d)
 	{
 		return ;

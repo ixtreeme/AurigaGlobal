@@ -6219,7 +6219,6 @@ void CHARACTER::Initialize()
 #endif
 #ifdef ENABLE_SPAM_CHECK
     m_iLastUnlock = 0;
-    m_iLastDSRefine = 0;
 #endif
 #ifdef ENABLE_ANTICHEAT
     m_firstReward = 0;

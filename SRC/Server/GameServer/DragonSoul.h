@@ -36,14 +36,14 @@ public:
 	bool	PullOutEcs(entt::entity owner, TItemPos DestCell, IN OUT entt::entity& item, entt::entity extractor = entt::null);
 
 	// 용혼석 업그레이드 함수
-	bool	DoRefineGrade(LPCHARACTER ch, TItemPos (&aItemPoses)[DRAGON_SOUL_REFINE_GRID_SIZE]);
+	bool	DoRefineGrade(entt::entity ch, TItemPos (&aItemPoses)[DRAGON_SOUL_REFINE_GRID_SIZE]);
 	bool	DoRefineGradeEcs(entt::entity owner, TItemPos (&aItemPoses)[DRAGON_SOUL_REFINE_GRID_SIZE]);
-	bool	DoRefineStep(LPCHARACTER ch, TItemPos (&aItemPoses)[DRAGON_SOUL_REFINE_GRID_SIZE]);
+	bool	DoRefineStep(entt::entity ch, TItemPos (&aItemPoses)[DRAGON_SOUL_REFINE_GRID_SIZE]);
 	bool	DoRefineStepEcs(entt::entity owner, TItemPos (&aItemPoses)[DRAGON_SOUL_REFINE_GRID_SIZE]);
-	bool	DoRefineStrength(LPCHARACTER ch, TItemPos (&aItemPoses)[DRAGON_SOUL_REFINE_GRID_SIZE]);
+	bool	DoRefineStrength(entt::entity ch, TItemPos (&aItemPoses)[DRAGON_SOUL_REFINE_GRID_SIZE]);
 	bool	DoRefineStrengthEcs(entt::entity owner, TItemPos (&aItemPoses)[DRAGON_SOUL_REFINE_GRID_SIZE]);
 #ifdef ENABLE_DS_REFINE_ALL
-	void DoRefineAll(LPCHARACTER ch, uint8_t subheader, uint8_t type, uint8_t grade);
+	void DoRefineAll(entt::entity ch, uint8_t subheader, uint8_t type, uint8_t grade);
 	void DoRefineAllEcs(entt::entity owner, uint8_t subheader, uint8_t type, uint8_t grade);
 #endif
 
@@ -60,7 +60,7 @@ public:
 	bool	PutAttributes(entt::entity item);
 #endif
 private:
-	void	SendRefineResultPacket(LPCHARACTER ch, uint8_t bSubHeader, const TItemPos& pos);
+	void	SendRefineResultPacket(entt::entity ch, uint8_t bSubHeader, const TItemPos& pos);
 
 	// 캐릭터의 용혼석 덱을 살펴보고, 활성화 된 용혼석이 없다면, 캐릭터의 용혼석 활성 상태를 off 시키는 함수.
 	void	RefreshDragonSoulState(LPCHARACTER ch);

@@ -152,15 +152,14 @@ void CInputProcessor::Handshake(LPDESC d, const char * c_pData)
 	}
 }
 
-void CInputProcessor::Version(LPCHARACTER ch, const char* c_pData)
+void CInputProcessor::Version(entt::entity ch, const char* c_pData)
 {
-	const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
-	if (!ch)
+	if (!ecs::PlayerRuntime::IsValid(ch))
 		return;
 
 	TPacketCGClientVersion * p = (TPacketCGClientVersion *) c_pData;
-	LOG_INFO("VERSION: {} {} {}", ecs::PlayerRuntime::GetName(chEntity).data(), p->timestamp, p->filename);
-	ecs::PlayerRuntime::GetDesc(chEntity)->SetClientVersion(p->timestamp);
+	LOG_INFO("VERSION: {} {} {}", ecs::PlayerRuntime::GetName(ch).data(), p->timestamp, p->filename);
+	ecs::PlayerRuntime::GetDesc(ch)->SetClientVersion(p->timestamp);
 }
 
 void LoginFailure(LPDESC d, const char * c_pszStatus)

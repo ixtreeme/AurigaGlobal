@@ -377,7 +377,7 @@ namespace offlineshop
 #endif
 	private:
 		void				__RefreshItems(LPCHARACTER ch= nullptr);
-		void				__SendOfferNotify(LPCHARACTER ch, TOfferInfo* pOffer);
+		void				__SendOfferNotify(entt::entity ch, TOfferInfo* pOffer);
 
 	private:
 		VECSHOPITEM			m_vecItems;

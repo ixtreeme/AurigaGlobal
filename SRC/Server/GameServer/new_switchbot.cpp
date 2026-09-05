@@ -520,7 +520,7 @@ void CSwitchbot::SwitchItems()
 						}
 #endif
 						ItemSystem::ChangeItemAttributeEcs(itemEntity);
-						SendItemUpdate(pkOwner, bSlot, itemEntity);
+						SendItemUpdate(owner, bSlot, itemEntity);
 
 
 
@@ -602,7 +602,7 @@ void CSwitchbot::SwitchItems()
 										}
 #endif
 										ItemSystem::ChangeItemAttributeEcs(itemEntity);
-										SendItemUpdate(pkOwner, bSlot, itemEntity);
+										SendItemUpdate(owner, bSlot, itemEntity);
 										break;
 									}
 								}
@@ -656,7 +656,7 @@ void CSwitchbot::SwitchItems()
 							}
 #endif
 							ItemSystem::ChangeItemAttributeEcs(itemEntity);
-							SendItemUpdate(pkOwner, bSlot, itemEntity);
+							SendItemUpdate(owner, bSlot, itemEntity);
 							break;
 						}
 					}
@@ -829,9 +829,9 @@ bool CSwitchbot::CheckItem(entt::entity item, uint8_t slot)
 	return false;
 }
 #endif
-void CSwitchbot::SendItemUpdate(LPCHARACTER ch, uint8_t slot, entt::entity item)
+void CSwitchbot::SendItemUpdate(entt::entity ch, uint8_t slot, entt::entity item)
 {
-	LPDESC desc = ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null));
+	LPDESC desc = ecs::PlayerRuntime::GetDesc(ch);
 	if (!desc)
 	{
 		return;
@@ -1063,14 +1063,14 @@ void CSwitchbotManager::P2PReceiveSwitchbot(TSwitchbotTable table)
 	pkSwitchbot->SetTable(table);
 }
 
-void CSwitchbotManager::SendItemAttributeInformations(LPCHARACTER ch)
+void CSwitchbotManager::SendItemAttributeInformations(entt::entity ch)
 {
-	if (!ch)
+	if (!ecs::PlayerRuntime::IsValid(ch))
 	{
 		return;
 	}
 
-	LPDESC desc = ecs::PlayerRuntime::GetDesc(((ch) ? (ch)->GetEntityHandle() : entt::null));
+	LPDESC desc = ecs::PlayerRuntime::GetDesc(ch);
 	if (!desc)
 	{
 		return;
@@ -1147,7 +1147,7 @@ void CSwitchbotManager::SendSwitchbotUpdate(uint32_t player_id)
 void CSwitchbotManager::EnterGame(LPCHARACTER ch)
 {
 	const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
-	SendItemAttributeInformations(ch);
+	SendItemAttributeInformations(chEntity);
 	SetIsWarping(ecs::PlayerRuntime::GetPlayerID(chEntity), false);
 	SendSwitchbotUpdate(ecs::PlayerRuntime::GetPlayerID(chEntity));
 

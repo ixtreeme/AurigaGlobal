@@ -18,7 +18,6 @@ struct command_info
 
 extern struct command_info cmd_info[];
 
-extern void interpret_command(LPCHARACTER ch, const char * argument, uint64_t len);
 extern void interpret_command(entt::entity character, const char* argument, uint64_t len);
 extern void block_chat(entt::entity executor, std::string_view arguments);
 extern void open_in_game_mall(entt::entity character);

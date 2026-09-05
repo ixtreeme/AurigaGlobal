@@ -899,10 +899,9 @@ namespace quest
 		}
 	}
 
-	bool CQuestManager::GiveItemToPC(unsigned int pc, LPCHARACTER pkChr)
+	bool CQuestManager::GiveItemToPC(unsigned int pc, entt::entity pkChr)
 	{
-		const entt::entity chr = pkChr ? pkChr->GetEntityHandle() : entt::null;
-		if (!ecs::PlayerRuntime::IsPC(chr))
+		if (!ecs::PlayerRuntime::IsPC(pkChr))
 			return false;
 
 		PC * pPC = GetPC(pc);
@@ -912,7 +911,7 @@ namespace quest
 			if (!CheckQuestLoaded(pPC))
 				return false;
 
-			TargetInfo * pInfo = CTargetManager::instance().GetTargetInfo(pc, TARGET_TYPE_VID, ecs::PlayerRuntime::GetPacketVID(chr));
+			TargetInfo * pInfo = CTargetManager::instance().GetTargetInfo(pc, TARGET_TYPE_VID, ecs::PlayerRuntime::GetPacketVID(pkChr));
 
 			if (pInfo)
 			{
