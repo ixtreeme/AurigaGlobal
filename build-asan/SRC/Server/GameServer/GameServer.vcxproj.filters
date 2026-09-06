@@ -4,7 +4,6 @@
     <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\BattleArena.cpp" />
     <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\DragonSoul.cpp" />
     <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\EasterDungeon.cpp" />
-    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\FSM.cpp" />
     <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\Halloween2022Dungeon.cpp" />
     <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\ItemUse.cpp" />
     <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\LostCastleDungeon.cpp" />
@@ -74,6 +73,9 @@
     <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\ecs\OfflineShopEntityRegistry.cpp">
       <Filter>ecs</Filter>
     </ClCompile>
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\ecs\PIDRegistry.cpp">
+      <Filter>ecs</Filter>
+    </ClCompile>
     <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\ecs\Registry.cpp">
       <Filter>ecs</Filter>
     </ClCompile>
@@ -111,6 +113,9 @@
       <Filter>ecs\systems</Filter>
     </ClCompile>
     <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\ecs\systems\InventorySystem.cpp">
+      <Filter>ecs\systems</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\ecs\systems\ItemAttributeSystem.cpp">
       <Filter>ecs\systems</Filter>
     </ClCompile>
     <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\ecs\systems\ItemSystem.cpp">
@@ -180,7 +185,6 @@
     <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\input_p2p.cpp" />
     <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\input_udp.cpp" />
     <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\ip_ban.cpp" />
-    <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\item_addon.cpp" />
     <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\item_manager.cpp" />
     <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\item_manager_idrange.cpp" />
     <ClCompile Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\item_manager_read_tables.cpp" />
@@ -261,7 +265,6 @@
     <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\BattleArena.h" />
     <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\DragonSoul.h" />
     <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\EasterDungeon.h" />
-    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\FSM.h" />
     <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\Halloween2022Dungeon.h" />
     <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\ItemUse.h" />
     <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\LostCastleDungeon.h" />
@@ -331,7 +334,6 @@
     <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\input.h" />
     <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\ip_ban.h" />
     <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\item.h" />
-    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\item_addon.h" />
     <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\item_manager.h" />
     <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\item_manager_private_types.h" />
     <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\limit_time.h" />
@@ -388,7 +390,6 @@
     <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\spam.h" />
     <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\stable_priority_queue.h" />
     <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\start_position.h" />
-    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\state.h" />
     <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\stdafx.h" />
     <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\tables.h" />
     <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\target.h" />
@@ -431,6 +432,9 @@
       <Filter>ecs</Filter>
     </ClInclude>
     <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\ecs\OfflineShopEntityRegistry.hpp">
+      <Filter>ecs</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\ecs\PIDRegistry.hpp">
       <Filter>ecs</Filter>
     </ClInclude>
     <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\ecs\PointSemantic.hpp">
@@ -514,6 +518,9 @@
     <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\ecs\components\vital_components.hpp">
       <Filter>ecs\components</Filter>
     </ClInclude>
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\ecs\detail\ItemAttributeRules.hpp">
+      <Filter>ecs\detail</Filter>
+    </ClInclude>
     <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\ecs\events.hpp">
       <Filter>ecs</Filter>
     </ClInclude>
@@ -592,6 +599,9 @@
     <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\ecs\systems\StatSystem.hpp">
       <Filter>ecs\systems</Filter>
     </ClInclude>
+    <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\ecs\systems\ViewSystem.hpp">
+      <Filter>ecs\systems</Filter>
+    </ClInclude>
     <ClInclude Include="D:\AurigaGlobal\LiveWork\AurigaGlobal\SRC\Server\GameServer\ecs\systems\VisibilitySystem.hpp">
       <Filter>ecs\systems</Filter>
     </ClInclude>
@@ -609,6 +619,9 @@
     </Filter>
     <Filter Include="ecs\components">
       <UniqueIdentifier>{2B1B49DB-CCEC-3274-888C-E00CFA4D6ABC}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ecs\detail">
+      <UniqueIdentifier>{F389778E-D1CC-383D-90BF-4B511EDDB82A}</UniqueIdentifier>
     </Filter>
     <Filter Include="ecs\services">
       <UniqueIdentifier>{B1DEE414-42F9-301D-815A-C78A41208026}</UniqueIdentifier>

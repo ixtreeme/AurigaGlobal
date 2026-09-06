@@ -1706,7 +1706,6 @@ set(OLD_GLOB
   "D:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/BattleArena.cpp"
   "D:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/DragonSoul.cpp"
   "D:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/EasterDungeon.cpp"
-  "D:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/FSM.cpp"
   "D:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/Halloween2022Dungeon.cpp"
   "D:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ItemUse.cpp"
   "D:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/LostCastleDungeon.cpp"
@@ -1764,6 +1763,7 @@ set(OLD_GLOB
   "D:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/ItemRegistry.cpp"
   "D:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/NetworkService.cpp"
   "D:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/OfflineShopEntityRegistry.cpp"
+  "D:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/PIDRegistry.cpp"
   "D:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/Registry.cpp"
   "D:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/VIDRegistry.cpp"
   "D:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/services/EntityNetworkDispatch.cpp"
@@ -1777,6 +1777,7 @@ set(OLD_GLOB
   "D:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/DragonSoulSystem.cpp"
   "D:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/GayaSystem.cpp"
   "D:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/InventorySystem.cpp"
+  "D:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/ItemAttributeSystem.cpp"
   "D:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/ItemSystem.cpp"
   "D:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/ItemSystem_LegacyBridge.cpp"
   "D:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/MountSystem.cpp"
@@ -1816,7 +1817,6 @@ set(OLD_GLOB
   "D:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/input_p2p.cpp"
   "D:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/input_udp.cpp"
   "D:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ip_ban.cpp"
-  "D:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/item_addon.cpp"
   "D:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/item_manager.cpp"
   "D:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/item_manager_idrange.cpp"
   "D:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/item_manager_read_tables.cpp"
@@ -1920,7 +1920,6 @@ set(OLD_GLOB
   "D:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/BattleArena.h"
   "D:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/DragonSoul.h"
   "D:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/EasterDungeon.h"
-  "D:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/FSM.h"
   "D:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/Halloween2022Dungeon.h"
   "D:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ItemUse.h"
   "D:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/LostCastleDungeon.h"
@@ -1990,7 +1989,6 @@ set(OLD_GLOB
   "D:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/input.h"
   "D:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ip_ban.h"
   "D:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/item.h"
-  "D:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/item_addon.h"
   "D:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/item_manager.h"
   "D:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/item_manager_private_types.h"
   "D:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/limit_time.h"
@@ -2047,7 +2045,6 @@ set(OLD_GLOB
   "D:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/spam.h"
   "D:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/stable_priority_queue.h"
   "D:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/start_position.h"
-  "D:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/state.h"
   "D:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/stdafx.h"
   "D:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/tables.h"
   "D:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/target.h"
@@ -2097,6 +2094,7 @@ set(OLD_GLOB
   "D:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/ItemRegistry.hpp"
   "D:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/NetworkService.hpp"
   "D:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/OfflineShopEntityRegistry.hpp"
+  "D:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/PIDRegistry.hpp"
   "D:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/PointSemantic.hpp"
   "D:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/PositionSync.hpp"
   "D:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/Registry.hpp"
@@ -2124,6 +2122,7 @@ set(OLD_GLOB
   "D:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/components/transform_components.hpp"
   "D:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/components/visibility_components.hpp"
   "D:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/components/vital_components.hpp"
+  "D:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/detail/ItemAttributeRules.hpp"
   "D:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/events.hpp"
   "D:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/quest_helpers.hpp"
   "D:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/services/EntityNetworkDispatch.hpp"
@@ -2150,6 +2149,7 @@ set(OLD_GLOB
   "D:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/SkillSystem.hpp"
   "D:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/SocialSystem.hpp"
   "D:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/StatSystem.hpp"
+  "D:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/ViewSystem.hpp"
   "D:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/VisibilitySystem.hpp"
   "D:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/ecs/systems/VitalRegenSystem.hpp"
   "D:/AurigaGlobal/LiveWork/AurigaGlobal/SRC/Server/GameServer/locale.hpp"
@@ -2615,7 +2615,7 @@ if(NOT "${NEW_GLOB}" STREQUAL "${OLD_GLOB}")
   file(TOUCH_NOCREATE "D:/AurigaGlobal/LiveWork/AurigaGlobal/build-asan/CMakeFiles/cmake.verify_globs")
 endif()
 
-# AURIGA_ROOT_PYTHON at CMakeLists.txt:70 (file)
+# AURIGA_ROOT_PYTHON at CMakeLists.txt:72 (file)
 file(GLOB_RECURSE NEW_GLOB LIST_DIRECTORIES false "D:/AurigaGlobal/LiveWork/AurigaGlobal/root/*.py")
 set(OLD_GLOB
   "D:/AurigaGlobal/LiveWork/AurigaGlobal/root/colorinfo.py"

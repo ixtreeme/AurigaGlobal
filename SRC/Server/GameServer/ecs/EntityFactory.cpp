@@ -42,6 +42,8 @@
 #include "../mob_manager.h"
 #include "../utils.h"
 #include "systems/ItemSystem.hpp"
+#include "systems/AISystem.hpp"
+#include "../questmanager.h"
 
 namespace {
 
@@ -226,12 +228,39 @@ void RegisterEntityVID(entt::registry& reg, entt::entity entity, uint32_t vid)
     CVIDRegistry::Instance().Register(vid, entity);
 }
 
+// CHARACTER::Initialize set these, but it runs from the constructor - before
+// the entity exists - so every one of those writes went to entt::null. Two of
+// them asserted; the rest were silently dropped. They are seeded here instead,
+// and only when the component is absent, because AttachLegacyCharacter also
+// runs when an existing entity is re-attached and must not reset live state.
+void SeedCharacterRuntimeDefaults(entt::registry& reg, entt::entity entity)
+{
+    if (entity == entt::null || !reg.valid(entity))
+        return;
+
+    if (!reg.all_of<ecs::SyncOwner>(entity)) {
+        auto& syncOwner = reg.emplace<ecs::SyncOwner>(entity);
+        // The three-second head start is what makes the first sync check pass.
+        syncOwner.syncTime = get_float_time() - 3;
+    }
+
+    if (!reg.all_of<ecs::AIStateMachine>(entity))
+        AISystem::GotoState(entity, ecs::AIFSMState::Idle);
+
+    if (!reg.all_of<ecs::ArenaMembership>(entity)) {
+        ecs::PlayerRuntime::SetPotionLimit(
+            entity, quest::CQuestManager::instance().GetEventFlag("arena_potion_limit_count"));
+    }
+}
+
 void AttachLegacyCharacter(entt::registry& reg, entt::entity entity, LPCHARACTER ch)
 {
     reg.emplace_or_replace<ecs::LegacyCharPtr>(entity, ch);
+    SeedCharacterRuntimeDefaults(reg, entity);
+
     if (ch) {
         ch->SetEntityHandle(entity);
-		if (LPDESC desc = ecs::PlayerRuntime::GetDesc(entity)) {
+        if (LPDESC desc = ecs::PlayerRuntime::GetDesc(entity)) {
             desc->SetEntity(entity);
         }
     }

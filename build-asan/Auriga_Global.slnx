@@ -7,10 +7,45 @@
 		<BuildType Name="RelWithDebInfo"/>
 		<Platform Name="x64"/>
 	</Configurations>
+	<Project Path="SRC/Server/GameServer/AffectLifecycleTests.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="3df3ec89-2799-3cd2-9ede-cfacdbbdf637">
+		<BuildDependency Project="SRC/3rd/LUA/LUA.vcxproj"/>
+		<BuildDependency Project="ZERO_CHECK.vcxproj"/>
+	</Project>
+	<Project Path="SRC/Server/GameServer/CharacterManagerTests.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="b806c937-f936-3991-a1d6-a29f5a3b231a">
+		<BuildDependency Project="SRC/3rd/LUA/LUA.vcxproj"/>
+		<BuildDependency Project="ZERO_CHECK.vcxproj"/>
+	</Project>
+	<Project Path="SRC/Server/GameServer/CombatStateTests.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="2c815790-a820-35f6-aa86-f49841881162">
+		<BuildDependency Project="SRC/3rd/LUA/LUA.vcxproj"/>
+		<BuildDependency Project="ZERO_CHECK.vcxproj"/>
+	</Project>
+	<Project Path="SRC/Server/GameServer/EventLifecycleTests.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="8b71fbb6-da4d-348f-b4c5-9f752c27fd68">
+		<BuildDependency Project="ZERO_CHECK.vcxproj"/>
+	</Project>
+	<Project Path="SRC/Server/GameServer/ExchangeTests.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="bc52358e-beaf-3553-b054-73ed67c6abe5">
+		<BuildDependency Project="SRC/3rd/LUA/LUA.vcxproj"/>
+		<BuildDependency Project="ZERO_CHECK.vcxproj"/>
+	</Project>
+	<Project Path="SRC/Server/GameServer/GmCommandTests.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="9a1feb3f-4e34-3536-9ec5-fddac5fd352c">
+		<BuildDependency Project="SRC/3rd/LUA/LUA.vcxproj"/>
+		<BuildDependency Project="SRC/Server/Core/S_Core.vcxproj"/>
+		<BuildDependency Project="SRC/Server/Poly/S_Poly.vcxproj"/>
+		<BuildDependency Project="ZERO_CHECK.vcxproj"/>
+	</Project>
+	<Project Path="SRC/Server/GameServer/ItemAttributeTests.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="f75e85ee-69b8-3a9b-ae4e-485f32547296">
+		<BuildDependency Project="ZERO_CHECK.vcxproj"/>
+	</Project>
+	<Project Path="SRC/Server/GameServer/ItemManagerLifecycleTests.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="b095f24c-3868-3916-9e35-1f7d66f7a108">
+		<BuildDependency Project="SRC/3rd/LUA/LUA.vcxproj"/>
+		<BuildDependency Project="ZERO_CHECK.vcxproj"/>
+	</Project>
 	<Project Path="SRC/3rd/LUA/LUA.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="d3e443e8-3a1b-3e7f-913b-cd62c10bbc3b">
 		<BuildDependency Project="ZERO_CHECK.vcxproj"/>
 	</Project>
 	<Project Path="SRC/Tools/MSAMaker/MSA.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="a2382616-964c-3bf2-891a-97185bd75010">
+		<BuildDependency Project="ZERO_CHECK.vcxproj"/>
+	</Project>
+	<Project Path="SRC/Server/GameServer/MountLifecycleTests.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="91090a4c-18d8-3c38-ab05-3509b284201b">
 		<BuildDependency Project="ZERO_CHECK.vcxproj"/>
 	</Project>
 	<Project Path="SRC/Tools/Mysql2Proto/Mysql2Proto/Mysql2Proto.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="f6eb7bc7-171d-3c4f-8136-291c9c82b093">
@@ -20,9 +55,19 @@
 		<BuildDependency Project="SRC/Launcher/Game/Game.vcxproj"/>
 		<BuildDependency Project="ZERO_CHECK.vcxproj"/>
 	</Project>
+	<Project Path="SRC/Server/GameServer/PointCalculationTests.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="e37beb28-f9dd-39a1-834d-d07ef661626d">
+		<BuildDependency Project="SRC/3rd/LUA/LUA.vcxproj"/>
+		<BuildDependency Project="ZERO_CHECK.vcxproj"/>
+	</Project>
 	<Project Path="SRC/Tools/QC/QC.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="59d7032c-63d3-3600-8298-4e852a84d33f">
 		<BuildDependency Project="SRC/Launcher/Base/Base.vcxproj"/>
 		<BuildDependency Project="SRC/3rd/LUA/LUA.vcxproj"/>
+		<BuildDependency Project="ZERO_CHECK.vcxproj"/>
+	</Project>
+	<Project Path="SRC/Server/GameServer/QuickslotTests.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="b14ee382-a35b-3f72-a64f-79595c81f1fd">
+		<BuildDependency Project="ZERO_CHECK.vcxproj"/>
+	</Project>
+	<Project Path="SRC/Server/GameServer/RefineWindowTests.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="0a486ff6-c506-3903-946c-514adf35e72a">
 		<BuildDependency Project="ZERO_CHECK.vcxproj"/>
 	</Project>
 	<Project Path="SRC/Server/Base/S_Base.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="49ab63d8-965f-3925-a85b-8b0e8adb48e4">
@@ -35,6 +80,9 @@
 		<BuildDependency Project="ZERO_CHECK.vcxproj"/>
 	</Project>
 	<Project Path="SRC/Server/SQL/S_SQL.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="e2690f91-5534-3c63-ad2b-499c284da649">
+		<BuildDependency Project="ZERO_CHECK.vcxproj"/>
+	</Project>
+	<Project Path="SRC/Server/GameServer/SafeboxLifecycleTests.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="7599383b-8546-38b4-8e8f-7dec79c3f9b7">
 		<BuildDependency Project="ZERO_CHECK.vcxproj"/>
 	</Project>
 	<Folder Name="/CMakePredefinedTargets/">
@@ -69,6 +117,13 @@
 			<BuildDependency Project="SRC/Launcher/UserInterface/UserInterface.vcxproj"/>
 			<BuildDependency Project="ZERO_CHECK.vcxproj"/>
 			<BuildDependency Project="auriga_root_python_files.vcxproj"/>
+			<Build Solution="Debug|*" Project="false"/>
+			<Build Solution="Release|*" Project="false"/>
+			<Build Solution="MinSizeRel|*" Project="false"/>
+			<Build Solution="RelWithDebInfo|*" Project="false"/>
+		</Project>
+		<Project Path="RUN_TESTS.vcxproj" Type="8bc9ceb8-8b4a-11d0-8d11-00a0c91bc942" Id="6ecbbe96-bab6-3b1c-b810-3af4f51a53d3">
+			<BuildDependency Project="ZERO_CHECK.vcxproj"/>
 			<Build Solution="Debug|*" Project="false"/>
 			<Build Solution="Release|*" Project="false"/>
 			<Build Solution="MinSizeRel|*" Project="false"/>

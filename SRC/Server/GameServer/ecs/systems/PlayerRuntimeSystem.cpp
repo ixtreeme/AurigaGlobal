@@ -5694,7 +5694,6 @@ void CHARACTER::Initialize()
 
     m_bOpeningSafebox = false;
 
-    g_registry.get_or_emplace<ecs::SyncOwner>(GetEntityHandle()).syncTime = get_float_time() - 3;
     m_dwPlayerID = 0;
     m_dwKillerPID = 0;
 #ifdef __SEND_TARGET_INFO__
@@ -5722,7 +5721,6 @@ void CHARACTER::Initialize()
 
     m_pGuild = nullptr;
 
-    g_registry.get_or_emplace<ecs::SelectedTarget>(GetEntityHandle()).target = entt::null;
 
     m_pkMuyeongEvent = nullptr;
 #ifdef ENABLE_NEW_GYEONGGONG_SKILL
@@ -5731,8 +5729,6 @@ void CHARACTER::Initialize()
     m_pkWarpNPCEvent = nullptr;
     m_pkSaveEvent = nullptr;
 
-    ecs::PlayerRuntime::SetCharEvent(GetEntityHandle(), ecs::PlayerRuntime::CharEvent::Fishing, nullptr);
-    ecs::PlayerRuntime::SetCharEvent(GetEntityHandle(), ecs::PlayerRuntime::CharEvent::Warp, nullptr);
 #ifdef ENABLE_BATTLE_PASS_STAY_ONLINE
     m_pkBattlePassStayOnlineEvent = nullptr;
 #endif
@@ -5742,7 +5738,6 @@ void CHARACTER::Initialize()
 
     m_pkDestroyWhenIdleEvent = nullptr;
 
-    g_registry.get_or_emplace<ecs::SyncOwner>(GetEntityHandle()).owner = entt::null;
 
     memset(&m_points, 0, sizeof(m_points));
     memset(&m_pointsInstant, 0, sizeof(m_pointsInstant));
@@ -5754,7 +5749,6 @@ void CHARACTER::Initialize()
     m_dwPlayStartTime = m_dwLastMoveTime = get_dword_time();
 
     EnterIdleState(GetEntityHandle());
-    AISystem::GotoState(GetEntityHandle(), ecs::AIFSMState::Idle);
     m_dwStateDuration = 1;
 
 
@@ -5770,7 +5764,6 @@ void CHARACTER::Initialize()
     m_iSafeboxSize = -1;
     m_iSafeboxLoadTime = 0;
 
-    MountSystem::SetMountInventory(GetEntityHandle(), nullptr);
     m_bMountInventoryLoaded = false;
 
     m_iMallLoadTime = 0;
@@ -5815,7 +5808,6 @@ void CHARACTER::Initialize()
     m_bDisableCooltime = false;
 
 
-    g_registry.get_or_emplace<ecs::CombatStats>(GetEntityHandle()).pkMode = PK_MODE_PEACE;
 
     m_dwQuestNPCVID = 0;
     m_dwQuestByVnum = 0;
@@ -5831,7 +5823,6 @@ void CHARACTER::Initialize()
     ResetChainLightningIndex();
 
     m_dwMountVnum = 0;
-    MountSystem::SetSummonedHorse(GetEntityHandle(), entt::null);
     m_chRider = nullptr;
 
     m_pWarMap = nullptr;
@@ -5855,9 +5846,6 @@ void CHARACTER::Initialize()
 
     m_iMaxAggro = -100;
 
-    MountSystem::GetMountStateRef(GetEntityHandle()).sendHorseLevel = 0;
-    MountSystem::GetMountStateRef(GetEntityHandle()).sendHorseHealthGrade = 0;
-    MountSystem::GetMountStateRef(GetEntityHandle()).sendHorseStaminaGrade = 0;
 
     m_dwLoginPlayTime = 0;
 
@@ -5873,7 +5861,6 @@ void CHARACTER::Initialize()
     m_isinPCBang = false;
 
     m_pArena = nullptr;
-    ecs::PlayerRuntime::SetPotionLimit(GetEntityHandle(), quest::CQuestManager::instance().GetEventFlag("arena_potion_limit_count"));
 
 
     m_iRefineTime = 0;
