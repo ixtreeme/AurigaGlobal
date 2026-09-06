@@ -1855,14 +1855,6 @@ int CHARACTER::GetStamina() const
     return 0;
 }
 
-int32_t CHARACTER::GetInstantFlag() const
-{
-    if (const auto* flags = TryGetRuntimeFlagsComponent(GetEntityHandle()))
-        return flags->instantFlag;
-
-    return 0;
-}
-
 uint32_t CHARACTER::GetLastShoutPulse() const
 {
     if (const auto* flags = TryGetRuntimeFlagsComponent(GetEntityHandle()))
@@ -1924,12 +1916,6 @@ void CHARACTER::SetQuestNPCID(uint32_t vid)
     }
 }
 
-void CHARACTER::SetNewName(const std::string name)
-{
-	m_strNewName = name;
-	ecs::PlayerRuntime::SetPendingName(GetEntityHandle(), name);
-}
-
 LPCHARACTER CHARACTER::GetQuestNPC() const
 {
     return CHARACTER_MANAGER::instance().Find(m_dwQuestNPCVID);
@@ -1977,14 +1963,6 @@ entt::entity CHARACTER::GetQuestItemEntity() const
 LPITEM CHARACTER::GetQuestItemPtr() const
 {
 	return ResolveLegacyItem(GetQuestItemEntity());
-}
-
-LPDUNGEON CHARACTER::GetDungeonForce() const
-{
-    if (m_lWarpMapIndex > 10000)
-        return CDungeonManager::instance().FindByMapIndex(m_lWarpMapIndex);
-
-    return m_pkDungeon;
 }
 
 void CHARACTER::SetBlockMode(uint8_t bFlag)
@@ -2037,11 +2015,6 @@ uint32_t CHARACTER::GetImmuneFlag() const
 }
 
 // Pet/mount markers live only in StatusFlags; legacy readers use the same store.
-void CHARACTER::SetPet()
-{
-    if (auto* status = g_registry.try_get<ecs::StatusFlags>(GetEntityHandle()))
-        status->isPet = true;
-}
 
 bool CHARACTER::IsPet() const
 {
@@ -2058,12 +2031,6 @@ bool CHARACTER::IsMount() const
     return flags && flags->isMount;
 }
 
-void CHARACTER::SetMount()
-{
-    if (auto* status = g_registry.try_get<ecs::StatusFlags>(GetEntityHandle()))
-        status->isMount = true;
-}
-
 bool CHARACTER::IsNewPet() const
 {
     const auto* status = g_registry.try_get<ecs::StatusFlags>(GetEntityHandle());
@@ -2074,12 +2041,6 @@ bool CHARACTER::IsImmortal() const
 {
     const auto* state = g_registry.try_get<ecs::NewPetSkillState>(GetEntityHandle());
     return state && state->immortalSource != entt::null && g_registry.valid(state->immortalSource);
-}
-
-void CHARACTER::SetNewPet()
-{
-    if (auto* status = g_registry.try_get<ecs::StatusFlags>(GetEntityHandle()))
-        status->isNewPet = true;
 }
 
 int CHARACTER::GetQuestFlag(const std::string& flag) const
@@ -2267,11 +2228,6 @@ uint32_t CHARACTER::GetMobDamageMax() const
     return CombatSystem::GetMobDamageMax(GetEntityHandle());
 }
 
-float CHARACTER::GetMobDamageMultiply() const
-{
-    return CombatSystem::GetMobDamageMultiplier(GetEntityHandle());
-}
-
 uint32_t CHARACTER::GetMobDropItemVnum() const
 {
     if (!m_pkMobData)
@@ -2281,11 +2237,6 @@ uint32_t CHARACTER::GetMobDropItemVnum() const
     }
 
     return m_pkMobData->m_table.dwDropItemVnum;
-}
-
-bool CHARACTER::IsSummonMonster() const
-{
-    return GetSummonVnum() != 0;
 }
 
 uint32_t CHARACTER::GetSummonVnum() const
@@ -2306,14 +2257,6 @@ uint32_t CHARACTER::GetMonsterDrainSPPoint() const
 uint8_t CHARACTER::GetMobRank() const
 {
 	return ecs::PlayerRuntime::GetMobRank(GetEntityHandle());
-}
-
-uint8_t CHARACTER::GetMobSize() const
-{
-    if (!m_pkMobData)
-        return MOBSIZE_MEDIUM;
-
-    return m_pkMobData->m_table.bSize;
 }
 
 uint16_t CHARACTER::GetMobAttackRange() const
@@ -2385,10 +2328,6 @@ std::string CHARACTER::GetLang() {
 #endif
 
 #ifdef ENABLE_BATTLE_PASS
-int CHARACTER::GetBattlePassEndTime()
-{
-    return AffectSystem::GetBattlePassRemainingSeconds(GetEntityHandle());
-}
 
 void CHARACTER::EnsureFreeBattlePassActive()
 {
@@ -3848,26 +3787,6 @@ bool CHARACTER::IsHack(bool bSendMsg, bool bCheckShopOwner, int limittime)
 	return ecs::PlayerRuntime::IsHack(GetEntityHandle(), bSendMsg, bCheckShopOwner, limittime);
 }
 
-void CHARACTER::Say(const std::string& s)
-{
-    struct ::packet_script packet_script;
-
-    packet_script.header = HEADER_GC_SCRIPT;
-    packet_script.skin = 1;
-    packet_script.src_size = s.size();
-    packet_script.size = packet_script.src_size + sizeof(struct packet_script);
-
-    TEMP_BUFFER buf;
-
-    buf.write(&packet_script, sizeof(struct packet_script));
-    buf.write(&s[0], s.size());
-
-    if (IsPC())
-    {
-        GetDesc()->Packet(buf.read_peek(), buf.size());
-    }
-}
-
 #ifdef __ENABLE_NEW_OFFLINESHOP__
 void CHARACTER::SetShopSafebox(offlineshop::CShopSafebox* pk)
 {
@@ -3897,19 +3816,7 @@ CArena* CHARACTER::GetArena() const
 }
 
 #ifdef __NEWPET_SYSTEM__
-void CHARACTER::SetEggVid(int vid)
-{
-	m_eggvid = vid;
-	ecs::PlayerRuntime::SetEggVID(GetEntityHandle(), vid);
-}
 
-int CHARACTER::GetEggVid() const
-{
-	const entt::entity entity = GetEntityHandle();
-	if (entity != entt::null && g_registry.valid(entity))
-		return ecs::PlayerRuntime::GetEggVID(entity);
-	return m_eggvid;
-}
 #endif
 
 void CHARACTER::SetArenaObserverMode(bool flag)
@@ -4455,22 +4362,6 @@ void CHARACTER::Destroy()
 void CHARACTER::ResetPoint(int iLv)
 {
 	ecs::PointSystem::ResetAllPoints(GetEntityHandle(), iLv);
-}
-
-void CHARACTER::GiveRandomSkillBook()
-{
-    const entt::entity item = ItemSystem::AutoGiveItemEcs(GetEntityHandle(), 50300);
-
-    if (ItemSystem::IsValidItem(item))
-    {
-        extern const uint32_t GetRandomSkillVnum(uint8_t bJob = JOB_MAX_NUM);
-        uint32_t dwSkillVnum = 0;
-        if (!number(0, 1))
-            dwSkillVnum = GetRandomSkillVnum(GetJob());
-        else
-            dwSkillVnum = GetRandomSkillVnum();
-        ItemSystem::SetItemSocket(item, 0, dwSkillVnum);
-    }
 }
 
 void CHARACTER::ToggleMonsterLog()

@@ -641,16 +641,6 @@ void CHARACTER::Set_Inventory_Point(int value)
 }
 #endif
 
-int64_t CHARACTER::GetAllowedGold() const
-{
-	if (GetLevel() <= 10)
-		return 100000;
-	else if (GetLevel() <= 20)
-		return 500000;
-	else
-		return 50000000;
-}
-
 void CHARACTER::CheckMaximumPoints()
 {
 	if (GetMaxHP() < GetHP())

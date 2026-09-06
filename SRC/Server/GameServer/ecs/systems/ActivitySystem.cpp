@@ -688,13 +688,6 @@ int RefineFishingRod(entt::entity owner, entt::entity rod)
 
 } // namespace ActivitySystem
 
-void CHARACTER::mining(entt::entity load)
-{
-    ActivitySystem::StartMining(
-        GetEntityHandle(),
-        load);
-}
-
 void CHARACTER::fishing()
 {
     const entt::entity character = GetEntityHandle();

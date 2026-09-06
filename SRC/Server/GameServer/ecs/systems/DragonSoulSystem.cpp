@@ -247,12 +247,6 @@ void CHARACTER::DragonSoul_Initialize()
     DragonSoulSystem::Initialize(e);
 }
 
-bool CHARACTER::DragonSoul_ActivateDeck(int deck_idx)
-{
-    const entt::entity e = GetEntityHandle();
-    return DragonSoulSystem::ActivateDeck(e, deck_idx);
-}
-
 bool CHARACTER::DragonSoul_RefineWindow_Close()
 {
     return DragonSoulSystem::CloseRefineWindow(GetEntityHandle());

@@ -2152,14 +2152,6 @@ bool CHARACTER::GetInvincible()
 {
 	return isInvincible;
 }
-int32_t CHARACTER::IncreaseMobHP(int32_t lArg)
-{
-	int32_t t = GetMaxHP() + lArg;
-	SetMaxHP(t);
-	SetHP(t);
-	PointChange(POINT_HP, t, true);
-	return 1;
-}
 int32_t CHARACTER::IncreaseMobRigHP(int32_t lArg)
 {
 	PointChange(POINT_HP_REGEN, GetPoint(POINT_HP_REGEN) + lArg, true);

@@ -1139,10 +1139,6 @@ void CHARACTER::UpdatePetSkin() {
 	m_petSystem->UpdatePetSkin();
 }
 
-uint32_t CHARACTER::GetPetSkinVnum() {
-	const entt::entity item = ItemSystem::GetWearItem(GetEntityHandle(), WEAR_COSTUME_PET_SKIN);
-	return ItemSystem::IsValidItem(item) ? ItemSystem::GetItemValue(item, 0) : 0;
-}
 #endif
 
 #ifdef ENABLE_COSTUME_MOUNT
@@ -1164,10 +1160,6 @@ void CHARACTER::UpdateMountSkin() {
 	}
 }
 
-uint32_t CHARACTER::GetMountSkinVnum() {
-	const entt::entity item = ItemSystem::GetWearItem(GetEntityHandle(), WEAR_COSTUME_MOUNT_SKIN);
-	return ItemSystem::IsValidItem(item) ? ItemSystem::GetItemValue(item, 0) : 0;
-}
 #endif
 
 void CHARACTER::ComputeMountInventoryBonuses()

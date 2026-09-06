@@ -1257,14 +1257,6 @@ void CHARACTER::SetCubeNpc(entt::entity npcEntity)
 
 }
 
-std::span<entt::entity> CHARACTER::GetCubeItem()
-{
-    if (auto* comp = EnsureCubeWindowComponent(GetEntityHandle()))
-        return comp->items;
-
-    return {};
-}
-
 bool CHARACTER::IsCubeOpen() const
 {
     return ecs::SessionSystem::IsCubeOpen(GetEntityHandle());
@@ -1330,16 +1322,6 @@ LPITEM CHARACTER::GetExtraInventoryItem(uint16_t wCell) const
 	return nullptr;
 }
 
-uint16_t CHARACTER::GetExtraInventoryGrid(uint16_t wCell) const
-{
-	if (wCell >= EXTRA_INVENTORY_MAX_NUM)
-		return 0;
-
-	if (const auto* comp = TryGetExtraInventoryRuntimeComponent(GetEntityHandle()))
-		return comp->itemGrid[wCell];
-
-	return 0;
-}
 #endif
 
 LPITEM CHARACTER::GetItem(TItemPos Cell) const
@@ -1471,65 +1453,6 @@ LPITEM CHARACTER::FindItemByID(uint32_t id) const
 #endif
 
 	return nullptr;
-}
-int CHARACTER::CountSpecifyItemRenewal(uint32_t vnum) const
-{
-
-	int	count = 0;
-	LPITEM item;
-
-
-#ifdef ENABLE_EXTRA_INVENTORY
-	if (ITEM_MANAGER::instance().IsExtraItem(vnum))
-	{
-		for (int i = 0; i < EXTRA_INVENTORY_MAX_NUM; ++i)
-		{
-			item = GetExtraInventoryItem(i);
-
-			if (item && item->GetVnum() == vnum)
-			{
-				if (item->GetLockedAttr() != -1) {
-					continue;
-				}
-
-				if (m_pkMyShop && m_pkMyShop->IsSellingItem(item->GetID()))
-					continue;
-				else
-					count += item->GetCount();
-			}
-		}
-	}
-	else {
-#endif
-#ifdef __ENABLE_EXTEND_INVEN_SYSTEM__
-		for (int i = 0; i < Inventory_Size(); ++i)
-#else
-		for (int i = 0; i < INVENTORY_MAX_NUM; ++i)
-#endif
-		{
-			item = GetInventoryItem(i);
-			if (nullptr != item && item->GetVnum() == vnum)
-			{
-				// �3A� ���!?! ��I�E 1���AI�� 3N3�L�U.
-				if (item->GetLockedAttr() != -1) {
-					continue;
-				}
-
-				if (m_pkMyShop && m_pkMyShop->IsSellingItem(item->GetID()))
-				{
-					continue;
-				}
-				else
-				{
-					count += item->GetCount();
-				}
-			}
-		}
-#ifdef ENABLE_EXTRA_INVENTORY
-	}
-#endif
-	return count;
-
 }
 
 int CHARACTER::CountSpecifyItem(uint32_t vnum) const
@@ -13449,34 +13372,6 @@ int CHARACTER::GetEmptyDragonSoulInventory(LPITEM pItem) const
 			return i + wBaseCell;
 
 	return -1;
-}
-
-void CHARACTER::CopyDragonSoulItemGrid(std::vector<uint16_t>&vDragonSoulItemGrid) const
-{
-	vDragonSoulItemGrid.resize(DRAGON_SOUL_INVENTORY_MAX_NUM);
-
-	for (uint16_t i = 0; i < DRAGON_SOUL_INVENTORY_MAX_NUM; ++i)
-		vDragonSoulItemGrid[i] = GetDragonSoulGrid(i);
-}
-
-int CHARACTER::CountEmptyInventory() const
-{
-	int	count = 0;
-
-#ifdef __ENABLE_EXTEND_INVEN_SYSTEM__
-	const int inventoryLimit = std::min(Inventory_Size(), (int)INVENTORY_MAX_NUM);
-	for (int i = 0; i < inventoryLimit; ++i)
-#else
-	for (int i = 0; i < INVENTORY_MAX_NUM; ++i)
-#endif
-		if (GetInventoryItem(i))
-			count += GetInventoryItem(i)->GetSize();
-
-#ifdef __ENABLE_EXTEND_INVEN_SYSTEM__
-	return (inventoryLimit - count);
-#else
-	return (INVENTORY_MAX_NUM - count);
-#endif
 }
 
 bool CHARACTER::GiveRecallItem(LPITEM item)

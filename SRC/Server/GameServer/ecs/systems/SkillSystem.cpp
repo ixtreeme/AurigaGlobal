@@ -1813,22 +1813,6 @@ void CHARACTER::SkillLevelUp(uint32_t dwVnum, uint8_t bMethod)
 }
 
 
-void CHARACTER::ComputePassiveSkill(uint32_t dwVnum)
-{
-	if (g_bSkillDisable)
-		return;
-
-	if (GetSkillLevel(dwVnum) == 0)
-		return;
-
-	CSkillProto * pkSk = CSkillManager::instance().Get(dwVnum);
-	pkSk->SetPointVar("k", GetSkillLevel(dwVnum));
-	int iAmount = (int) pkSk->kPointPoly.Eval();
-
-	LOG_INFO("{} passive #{} on {} amount {}", GetName(), dwVnum, pkSk->bPointOn, iAmount);
-	PointChange(pkSk->bPointOn, iAmount);
-}
-
 struct FFindNearVictim
 {
 	FFindNearVictim(entt::entity center, entt::entity attacker,

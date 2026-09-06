@@ -644,7 +644,6 @@ public:
 #endif
 
 public:
-	int32_t			GetInstantFlag() const;
 
 
 	void				SetCoward();
@@ -701,7 +700,6 @@ public:
 #endif
 #ifdef ENABLE_MOUNT_COUNT_ABOVE_CHAR_RAZOR93
 	int GetBeltCount() const;
-	std::string GetDisplayedNameWithBeltCount() const;
 	void CHARACTER::UpdateMountCountOverhead(LPCHARACTER ch, bool force)
 #endif
 
@@ -812,12 +810,10 @@ public:
 	const TMobTable& GetMobTable() const;
 	uint8_t				GetMobRank() const;
 	uint8_t				GetMobBattleType() const;
-	uint8_t				GetMobSize() const;
 	uint32_t				GetMobDamageMin() const;
 	uint32_t				GetMobDamageMax() const;
 	uint16_t				GetMobAttackRange() const;
 	uint32_t				GetMobDropItemVnum() const;
-	float				GetMobDamageMultiply() const;
 
 	// NEWAI
 	bool			IsBerserker() const;
@@ -837,13 +833,11 @@ public:
 	void			SetRevive(bool mode);
 	// NEWAI END
 
-	bool			IsSummonMonster() const;
 	uint32_t			GetSummonVnum() const;
 
 	uint32_t			GetPolymorphItemVnum() const;
 	uint32_t			GetMonsterDrainSPPoint() const;
 
-	void			ComputeAligin();
 	void			ComputePoints();
 
 	void			PointChange(uint8_t type, int64_t amount, bool bAmount = false, bool bBroadcast = false
@@ -886,7 +880,6 @@ public:
 	// END_OF_FISHING
 
 	// MINING
-	void			mining(entt::entity load);
 	// END_OF_MINING
 
 	void			ResetPlayTime(uint32_t dwTimeRemain = 0);
@@ -929,7 +922,6 @@ protected:
 public:
 	int32_t	SetInvincible(bool arg);
 	bool	GetInvincible();
-	int32_t	IncreaseMobHP(int32_t lArg);
 	int32_t	IncreaseMobRigHP(int32_t lArg);
 	 
 	void SetFakePlayer(bool b) { m_bFakePlayer = b; }
@@ -950,9 +942,7 @@ public:
 	// Bodies in MovementSystem.cpp.
 	bool			IsWalking() const;
 	bool			IsNowWalking() const;
-	void			SetWalking(bool bWalkFlag);
 	void			SetNowWalking(bool bWalkFlag);
-	void			ResetWalking();
 
 	bool			Goto(int32_t x, int32_t y);	// �ٷ� �̵� ��Ű�� �ʰ� ��ǥ ��ġ�� BLENDING ��Ų��.
 	void			Stop();
@@ -974,7 +964,6 @@ public:
 	// Bodies in MovementSystem.cpp; legacy field still written by
 	// CalculateMoveDuration (Phase C will redirect).
 	uint32_t			GetCurrentMoveDuration() const;
-	uint32_t			GetCurrentMoveStartTime() const;
 	// Phase 15E-final.LPENTITY.4-architect.B.1.4:
 	// GetCurrentDestX / GetCurrentDestY now read the ECS
 	// MovementDestination component. Per A.2 movement destination row.
@@ -985,7 +974,6 @@ public:
 	// MovementSystem.cpp.
 	int32_t			GetCurrentDestX() const;
 	int32_t			GetCurrentDestY() const;
-	uint32_t GetWalkStartTime() const;
 	uint32_t			GetLastMoveTime() const { return m_dwLastMoveTime; }
 	uint32_t			GetLastAttackTime() const;
 // Phase C.4: GetAddChrStateForAudit removed. Its consumer in
@@ -1019,9 +1007,7 @@ public:
 	void			SaveExitLocation();
 	void			ExitToSavedLocation();
 
-	void			StartStaminaConsume();
 	void			StopStaminaConsume();
-	bool			IsStaminaConsume() const;
 	bool			IsStaminaHalfConsume() const;
 
 	void			ResetStopTime();
@@ -1229,7 +1215,6 @@ protected:
 public:
 	void			SetDungeon(LPDUNGEON pkDungeon);
 	LPDUNGEON		GetDungeon() const { return m_pkDungeon; }
-	LPDUNGEON		GetDungeonForce() const;
 protected:
 	LPDUNGEON	m_pkDungeon;
 	int			m_iEventAttr;
@@ -1277,7 +1262,6 @@ public:
 #endif
 #ifdef ENABLE_EXTRA_INVENTORY
 	LPITEM			GetExtraInventoryItem(uint16_t wCell) const;
-	uint16_t			GetExtraInventoryGrid(uint16_t wCell) const;
 	void			SetNextSortExtraInventoryPulse(int pulse) { m_sortExtraInventoryPulse = pulse; }
 	int				GetSortExtraInventoryPulse() { return m_sortExtraInventoryPulse; }
 	int				m_sortExtraInventoryPulse;
@@ -1392,11 +1376,8 @@ public:
 
 	int				GetEmptyInventory(uint8_t size) const;
 	int				GetEmptyDragonSoulInventory(LPITEM pItem) const;
-	void			CopyDragonSoulItemGrid(std::vector<uint16_t>& vDragonSoulItemGrid) const;
 
-	int				CountEmptyInventory() const;
 
-	int 			CountSpecifyItemRenewal(uint32_t vnum) const;
 
 	int				CountSpecifyItem(uint32_t vnum) const;
 	void			RemoveSpecifyItem(uint32_t vnum, int count = 1, bool cuberenewal = false);
@@ -1440,7 +1421,6 @@ public:
 #endif
 	bool			DropGold(int64_t gold);
 
-	int64_t				GetAllowedGold() const;
 	void			GiveGold(int64_t iAmount);	// ��Ƽ�� ������ ��Ƽ �й�, �α� ���� ó��
 
 #ifdef ENABLE_PVP_ADVANCED
@@ -1459,7 +1439,6 @@ public:
 public:
 	void			SetShop(LPSHOP pkShop);
 	LPSHOP			GetShop() const { return m_pkShop; }
-	void			ShopPacket(uint8_t bSubHeader);
 
 	void			SetShopOwner(entt::entity character);
 	LPCHARACTER		GetShopOwner() const;
@@ -1470,7 +1449,6 @@ public:
 #endif
 	);
 #ifdef KASMIR_PAKET_SYSTEM
-	void			UseSilkBotaryKasmir(void);
 #endif
 	LPSHOP			GetMyShop() const { return m_pkMyShop; }
 	void			CloseMyShop();
@@ -1538,7 +1516,6 @@ public:
 
 
 #ifdef __ENABLE_BERAN_ADDONS__
-	bool				IsBeranMap(int lMapIndex);
 #endif
 
 
@@ -1547,7 +1524,6 @@ public:
 	void				ReviveInvisible(int iDur);
 
 	bool				Attack(entt::entity victim, uint8_t bType = 0);
-	bool				IsAlive() const;
 	bool				CanFight() const;
 
 	bool				CanBeginFight() const;
@@ -1600,7 +1576,6 @@ public:
 
 	uint8_t GetAlignmentGrade() const;
 
-	void ClearAlignmentBonus();
 
 
 	void				UpdateAlignment(int64_t amount);
@@ -1636,9 +1611,6 @@ public:
 
 
 
-	void IncreaseComboHackCount(int k = 1);
-	void ResetComboHackCount();
-	void SkipComboAttackByTime(int interval);
 	uint32_t GetSkipComboAttackByTime() const;
 
 protected:
@@ -1670,7 +1642,6 @@ public:
 	void				SetStone(entt::entity stone);
 #ifdef ENABLE_STONE_SPAWN_STEP_PROCESSING_RAZOR93
 	void ClearStone(entt::entity killer = entt::null);
-	void RegisterDamageForExp(entt::entity attacker, int iDamage = 1);
 #else
 	void				ClearStone();
 #endif
@@ -1685,10 +1656,8 @@ public:
 	void				DetermineDropMetinStone();
 	uint32_t				GetDropMetinStoneVnum() const { return m_dwDropMetinStone; }
 	uint8_t				GetDropMetinStonePct() const { return m_bDropMetinStonePct; }
-	void				DetermineDropMetinStofa();
 	uint32_t				GetDropMetinStofaVnum() const { return m_dwDropMetinStofa; }
 	uint8_t				GetDropMetinStofaPct() const { return m_bDropMetinStofaPct; }
-	void				DetermineDropMetinSacca();
 	uint32_t				GetDropMetinSaccaVnum() const { return m_dwDropMetinSacca; }
 	uint8_t				GetDropMetinSaccaPct() const { return m_bDropMetinSaccaPct; }
 
@@ -1759,7 +1728,6 @@ public:
 	void				SetSkillNextReadTime(uint32_t dwVnum, time_t time);
 	void				SkillLearnWaitMoreTimeMessage(uint32_t dwVnum);
 
-	void				ComputePassiveSkill(uint32_t dwVnum);
 #ifdef ENABLE_NEW_GYEONGGONG_SKILL
 	int					ComputeGyeongGongSkill(uint32_t dwVnum, entt::entity victim, uint8_t bSkillLevel = 0);
 #endif
@@ -1773,7 +1741,6 @@ public:
 	uint8_t				GetSkillGroup() const;
 
 
-	void				GiveRandomSkillBook();
 
 	void				DisableCooltime();
 	bool				LearnSkillByBook(uint32_t dwSkillVnum, uint8_t bProb = 0);
@@ -2008,13 +1975,11 @@ public:
 #ifdef ENABLE_COSTUME_PET
 public:
 	void	UpdatePetSkin();
-	uint32_t	GetPetSkinVnum();
 
 #endif
 #ifdef ENABLE_COSTUME_MOUNT
 public:
 	void	UpdateMountSkin();
-	uint32_t	GetMountSkinVnum();
 #endif
 protected:
 	LPCHARACTER			m_chRider;
@@ -2232,13 +2197,11 @@ public:
 	// Hack ������ ���� üũ.
 	bool	IsHack(bool bSendMsg = true, bool bCheckShopOwner = true, int limittime = g_nPortalLimitTime);
 
-	void Say(const std::string& s);
 
 public:
 	bool ItemProcess_Polymorph(LPITEM item);
 
 	// by mhh
-	std::span<entt::entity> GetCubeItem();
 	bool IsCubeOpen() const;
 	void SetCubeNpc(entt::entity npc);
 	bool CanDoCube() const;
@@ -2265,7 +2228,6 @@ private:
 	std::string m_strNewName;
 
 public:
-	void SetNewName(const std::string name);
 
 public:
 	void GoHome();
@@ -2321,7 +2283,6 @@ private:
 #ifdef __PET_SYSTEM__
 private:
 public:
-	void SetPet();
 	bool IsPet() const;
 #endif
 
@@ -2329,7 +2290,6 @@ public:
 private:
 
 public:
-	void SetMount();
 	bool IsMount() const;
 #endif
 
@@ -2337,10 +2297,7 @@ public:
 private:
 	int m_eggvid;
 public:
-	void SetNewPet();
 	bool IsNewPet() const;
-	void SetEggVid(int vid);
-	int GetEggVid() const;
 
 #endif
 
@@ -2362,7 +2319,6 @@ public:
 	// affect�� ���� �������� �ε�Ǿ� LoadAffect���� ȣ����.
 	void	DragonSoul_Initialize();
 
-	bool	DragonSoul_ActivateDeck(int deck_idx);
 
 	// �ݵ�� ClearItem ���� �ҷ��� �Ѵ�.
 	// �ֳ��ϸ�....
@@ -2514,7 +2470,6 @@ private:
 
 public:
 	int 			GetSecondsTillNextMonth();
-	int 			GetBattlePassEndTime();
 protected:
 
 #ifdef ENABLE_BATTLE_PASS_STAY_ONLINE		

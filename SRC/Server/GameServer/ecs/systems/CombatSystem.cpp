@@ -6754,27 +6754,6 @@ struct FuncSetLastAttacked
 };
 
 #ifdef ENABLE_STONE_SPAWN_STEP_PROCESSING_RAZOR93
-void CHARACTER::RegisterDamageForExp(entt::entity attacker, int iDamage)
-{
-	if (!ecs::PlayerRuntime::IsPC(attacker))
-		return;
-
-	if (iDamage <= 0)
-		iDamage = 1;
-
-	const entt::entity eAttacker = attacker;
-	if (eAttacker == entt::null)
-		return;
-
-	TDamageMap::iterator it = m_map_kDamage.find(eAttacker);
-	if (it == m_map_kDamage.end())
-		m_map_kDamage.insert(TDamageMap::value_type(eAttacker, TBattleInfo(iDamage, 0)));
-	else
-		it->second.iTotalDamage += iDamage;
-
-	// hogy Dead() vissza tudja keresni a killert, ha kell
-	m_dwKillerPID = ecs::PlayerRuntime::GetPlayerID(attacker);
-}
 
 
 #endif
@@ -7200,31 +7179,6 @@ void CHARACTER::SetRevive(bool mode)
 {
 	if (m_pkMobInst != nullptr)
 		m_pkMobInst->m_IsRevive = mode;
-}
-
-void CHARACTER::IncreaseComboHackCount(int k)
-{
-	m_iComboHackCount += k;
-
-	if (m_iComboHackCount >= 10)
-	{
-		if (GetDesc())
-			if (GetDesc()->DelayedDisconnect(number(2, 7)))
-			{
-				LOG_INFO("COMBO_HACK_DISCONNECT: {} count: {}", GetName(), m_iComboHackCount);
-				LogManager::instance().HackLog("Combo", GetEntityHandle());
-			}
-	}
-}
-
-void CHARACTER::ResetComboHackCount()
-{
-	m_iComboHackCount = 0;
-}
-
-void CHARACTER::SkipComboAttackByTime(int interval)
-{
-	m_dwSkipComboAttackByTime = get_dword_time() + interval;
 }
 
 uint32_t CHARACTER::GetSkipComboAttackByTime() const

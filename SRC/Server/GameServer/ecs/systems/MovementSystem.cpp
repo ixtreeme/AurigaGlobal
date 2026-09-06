@@ -1095,16 +1095,6 @@ uint32_t CHARACTER::GetCurrentMoveDuration() const
 	return 0;
 }
 
-uint32_t CHARACTER::GetCurrentMoveStartTime() const
-{
-	const entt::entity e = GetEntityHandle();
-	if (e == entt::null || !g_registry.valid(e))
-		return 0;
-	if (const auto* state = g_registry.try_get<ecs::MovementState>(e))
-		return state->moveStartTime;
-	return 0;
-}
-
 // Phase 15E-final.LPENTITY.4-architect.B.1.3:
 // Walk-mode read flip. IsNowWalking returns the pure ECS
 // MovementState.isNowWalking flag; IsWalking adds the stamina-exhaustion
@@ -1226,12 +1216,6 @@ EVENTFUNC(save_event)
 }
 
 
-uint32_t CHARACTER::GetWalkStartTime() const
-{
-    const auto* state = g_registry.try_get<ecs::MovementState>(GetEntityHandle());
-    return state ? state->walkStartTime : 0;
-}
-
 void CHARACTER::SetNowWalking(bool bWalkFlag)
 {
     if (IsNowWalking() != bWalkFlag)
@@ -1247,18 +1231,6 @@ void CHARACTER::SetNowWalking(bool bWalkFlag)
     }
 }
 
-void CHARACTER::StartStaminaConsume()
-{
-    if (m_bStaminaConsume)
-        return;
-    PointChange(POINT_STAMINA, 0);
-    m_bStaminaConsume = true;
-    if (IsStaminaHalfConsume())
-        ecs::ChatSystem::Send(GetEntityHandle(), CHAT_TYPE_COMMAND, "StartStaminaConsume %d %d", STAMINA_PER_STEP * passes_per_sec / 2, GetStamina());
-    else
-        ecs::ChatSystem::Send(GetEntityHandle(), CHAT_TYPE_COMMAND, "StartStaminaConsume %d %d", STAMINA_PER_STEP * passes_per_sec, GetStamina());
-}
-
 void CHARACTER::StopStaminaConsume()
 {
     if (!m_bStaminaConsume)
@@ -1266,11 +1238,6 @@ void CHARACTER::StopStaminaConsume()
     PointChange(POINT_STAMINA, 0);
     m_bStaminaConsume = false;
     ecs::ChatSystem::Send(GetEntityHandle(), CHAT_TYPE_COMMAND, "StopStaminaConsume %d", GetStamina());
-}
-
-bool CHARACTER::IsStaminaConsume() const
-{
-    return m_bStaminaConsume;
 }
 
 bool CHARACTER::IsStaminaHalfConsume() const
@@ -1362,17 +1329,6 @@ void SetPosition(entt::entity e, int pos)
 
 } // namespace ecs::PlayerRuntime
 
-void CHARACTER::SetWalking(bool walking)
-{
-    ecs::MovementSystem::SetWalkingPreference(GetEntityHandle(), walking);
-}
-
-void CHARACTER::ResetWalking()
-{
-    ecs::MovementSystem::SetNowWalking(GetEntityHandle(),
-        ecs::MovementSystem::GetWalkingPreference(GetEntityHandle()));
-}
-
 void CHARACTER::SetPosition(int pos)
 {
 	ecs::PlayerRuntime::SetPosition(GetEntityHandle(), pos);
@@ -1394,11 +1350,6 @@ float CHARACTER::GetRotation() const
 		return runtime->rotation;
 
 	return 0.0f;
-}
-
-bool CHARACTER::IsAlive() const
-{
-	return GetPosition() != POS_DEAD;
 }
 
 const int aiRecoveryPercents[10] = { 1, 5, 5, 5, 5, 5, 5, 5, 5, 5 };
