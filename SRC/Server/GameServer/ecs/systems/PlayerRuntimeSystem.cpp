@@ -2843,16 +2843,25 @@ void CHARACTER::SetShop(LPSHOP pkShop)
     const auto e = GetEntityHandle();
     ecs::SocialSystem::SetShop(e, pkShop);
     m_pkShop = pkShop;
-    if (!pkShop)
-        m_pkChrShopOwner = nullptr;
+}
+
+// ShopState is the only copy. CShop::RemoveGuest clears it through
+// SocialSystem::SetShop(e, nullptr) without passing through CHARACTER::
+// SetShop, so the old m_pkChrShopOwner mirror was never cleared on the
+// normal close path and stayed pointing at the NPC. Eleven "is this
+// player busy" guards read this getter, so one closed shop left the
+// player unable to open anything at all.
+LPCHARACTER CHARACTER::GetShopOwner() const
+{
+    return ecs::LegacyCharOf(ecs::SocialSystem::GetShopOwner(GetEntityHandle()));
 }
 
 void CHARACTER::SetShopOwner(entt::entity chEntity)
 {
     LPCHARACTER ch = ecs::LegacyCharOf(chEntity);
     const auto e = GetEntityHandle();
+    (void)ch;
     ecs::SocialSystem::SetShopOwner(e, chEntity);
-    m_pkChrShopOwner = ch;
 }
 
 #ifdef __ENABLE_NEW_OFFLINESHOP__
@@ -5733,7 +5742,6 @@ void CHARACTER::Initialize()
     m_pkMobInst = nullptr;
 
     m_pkShop = nullptr;
-    m_pkChrShopOwner = nullptr;
     m_pkMyShop = nullptr;
     m_pkParty = nullptr;
     m_pkPartyRequestEvent = nullptr;

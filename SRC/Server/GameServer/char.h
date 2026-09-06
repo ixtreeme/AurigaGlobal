@@ -1462,7 +1462,7 @@ public:
 	void			ShopPacket(uint8_t bSubHeader);
 
 	void			SetShopOwner(entt::entity character);
-	LPCHARACTER		GetShopOwner() const { return m_pkChrShopOwner; }
+	LPCHARACTER		GetShopOwner() const;
 
 	void			OpenMyShop(const char* c_pszSign, TShopItemTable* pTable, uint8_t bItemCount
 #ifdef KASMIR_PAKET_SYSTEM
@@ -1487,7 +1487,6 @@ protected:
 	bool			m_bKasmirPaketDurum;
 #endif
 	std::string		m_stShopSign;
-	LPCHARACTER		m_pkChrShopOwner;
 	// End of shop
 
 
