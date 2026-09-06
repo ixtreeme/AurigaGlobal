@@ -6,6 +6,7 @@
 #include <Core/Logging.hpp>
 #include "constants.h"
 #include "config.h"
+#include "crash_report.h"
 #include "event.h"
 #include "minilzo.h"
 #include "packet.h"
@@ -374,6 +375,10 @@ static void CleanUpForEarlyExit() {
 
 int main(int argc, char **argv)
 {
+	// Before anything else: an access violation otherwise leaves only a WER
+	// event behind, because the async syslog queue dies with the process.
+	InstallCrashReporter();
+
 //#ifdef __ENABLE_NEW_OFFLINESHOP__
 //	if(!Offlineshop_InitializeLibrary("wonder2", "vgbp1q098vgtajp9")){
 //		LOG_ERROR("Cannot initialize correctly offlineshop library!");
