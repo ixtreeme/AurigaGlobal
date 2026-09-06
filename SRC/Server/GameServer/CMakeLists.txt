@@ -152,10 +152,13 @@ if(ENABLE_ASAN AND EXISTS "${AURIGA_ASAN_RUNTIME_DLL}")
     endforeach()
 endif()
 
-# LPENTITY.4-fixup.3: enable runtime drift detector in non-release builds.
+# LPENTITY.4-fixup.3: runtime drift detector. Debug only.
 # Compares legacy CHARACTER fields to ECS components inside
 # EntityNetworkDispatch::BuildCharacterInsert. Removed in LPENTITY.6.
+# It was on for RelWithDebInfo as well, which is the configuration the live
+# server runs: DriftSweep walks every character entity every five seconds and
+# recomputes its viewer set from the sectree, and the same flag adds a parity
+# check inside BuildCharacterInsert, on the path every insert packet takes.
 target_compile_definitions(GameServer PRIVATE
     $<$<CONFIG:Debug>:AURIGA_LPENTITY_FIXUP_AUDIT>
-    $<$<CONFIG:RelWithDebInfo>:AURIGA_LPENTITY_FIXUP_AUDIT>
 )
