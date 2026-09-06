@@ -246,11 +246,6 @@ void SeedCharacterRuntimeDefaults(entt::registry& reg, entt::entity entity)
 
     if (!reg.all_of<ecs::AIStateMachine>(entity))
         AISystem::GotoState(entity, ecs::AIFSMState::Idle);
-
-    if (!reg.all_of<ecs::ArenaMembership>(entity)) {
-        ecs::PlayerRuntime::SetPotionLimit(
-            entity, quest::CQuestManager::instance().GetEventFlag("arena_potion_limit_count"));
-    }
 }
 
 void AttachLegacyCharacter(entt::registry& reg, entt::entity entity, LPCHARACTER ch)
@@ -633,6 +628,10 @@ entt::entity EntityFactory::CreatePC(entt::registry& reg, const TPlayerTable& da
     reg.emplace_or_replace<ecs::PlayerName>(entity, std::string(data.name));
     reg.emplace_or_replace<ecs::GMLevel>(entity, gmLevel);
     reg.emplace_or_replace<ecs::TagPC>(entity);
+    // The arena potion limit is a player concept: CHARACTER::Initialize set it
+    // for everything, but it only means anything here.
+    ecs::PlayerRuntime::SetPotionLimit(
+        entity, quest::CQuestManager::instance().GetEventFlag("arena_potion_limit_count"));
 #ifdef ENABLE_BATTLE_PASS
     reg.emplace_or_replace<ecs::BattlePassTiming>(entity, ecs::BattlePassTiming { data.dwBattlePassEndTime });
 #endif
