@@ -101,7 +101,6 @@ void CPythonPlayer::NEW_GetMainActorPosition(TPixelPosition* pkPPosActor)
 }
 
 
-
 bool CPythonPlayer::RegisterEffect(uint32_t dwEID, const char* c_szFileName, bool isCache)
 {
 	if (dwEID>=EFFECT_NUM)
@@ -1167,9 +1166,6 @@ void CPythonPlayer::SetSkillLevel_(uint32_t dwSkillIndex, uint32_t dwSkillGrade,
 	const uint32_t SKILL_MAX_LEVEL = 40;
 
 
-
-
-
 	if (dwSkillLevel>SKILL_MAX_LEVEL)
 	{
 		m_playerStatus.aSkill[dwSlotIndex].fcurEfficientPercentage = 0.0f;
@@ -1865,10 +1861,6 @@ CPythonPlayer::CPythonPlayer()
 	m_kMap_dwSkillIndexToAffectIndex.emplace(78, int(CInstanceBase::AFFECT_MUYEONG));
 	m_kMap_dwSkillIndexToAffectIndex.emplace(79, int(CInstanceBase::AFFECT_HEUKSIN));
 
-#ifdef ENABLE_WOLFMAN_CHARACTER
-	m_kMap_dwSkillIndexToAffectIndex.emplace(174, int(CInstanceBase::AFFECT_RED_POSSESSION));
-	m_kMap_dwSkillIndexToAffectIndex.emplace(175, int(CInstanceBase::AFFECT_BLUE_POSSESSION));
-#endif
 
 #endif
 	m_ppyGameWindow = nullptr;

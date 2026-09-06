@@ -436,10 +436,6 @@ static bool FN_check_item_socket(LPITEM item)
 
 static bool FN_check_item_sex(LegacyCharHandle ch, LPITEM item)
 {
-#ifdef ENABLE_WOLFMAN_CHARACTER
-    if (ITEM_RING == item->GetType())
-        return true;
-#endif
 
     if (IS_SET(item->GetAntiFlag(), ITEM_ANTIFLAG_MALE))
     {
@@ -2136,12 +2132,6 @@ bool CHARACTER::CanEquipNow(const LPITEM item, const TItemPos & srcCell, const T
 		if (item->GetAntiFlag() & ITEM_ANTIFLAG_SURA)
 			return false;
 		break;
-#ifdef ENABLE_WOLFMAN_CHARACTER
-	case JOB_WOLFMAN:
-		if (item->GetAntiFlag() & ITEM_ANTIFLAG_WOLFMAN)
-			return false;
-		break; // TODO: 1�A��� 3AAIAU �o?�!��?�o� A3��
-#endif
 	}
 
 	for (int i = 0; i < ITEM_LIMIT_MAX_NUM; ++i)
@@ -2646,8 +2636,6 @@ bool CHARACTER::MoveItem(TItemPos Cell, TItemPos DestCell,
 	}
 
 
-
-
 	if (!(item = GetItem(Cell)))
 		return false;
 
@@ -3106,7 +3094,6 @@ bool CHARACTER::MoveItem(TItemPos Cell, TItemPos DestCell,
 
 
 			}
-
 
 
 #ifdef ENABLE_EXTRA_INVENTORY
@@ -5033,13 +5020,6 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 						ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 376, "");
 #endif
 						break;
-#ifdef ENABLE_WOLFMAN_CHARACTER
-					case CSpecialItemGroup::BLEEDING:
-#ifdef TEXTS_IMPROVEMENT
-						ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 379, "");
-#endif
-						break;
-#endif
 					case CSpecialItemGroup::MOB_GROUP:
 #ifdef TEXTS_IMPROVEMENT
 						ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 380, "");
@@ -5134,13 +5114,6 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 					ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 376, "");
 #endif
 					break;
-#ifdef ENABLE_WOLFMAN_CHARACTER
-				case CSpecialItemGroup::BLEEDING:
-#ifdef TEXTS_IMPROVEMENT
-					ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 379, "");
-#endif
-					break;
-#endif
 				case CSpecialItemGroup::MOB_GROUP:
 #ifdef TEXTS_IMPROVEMENT
 					ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 380, "");
@@ -6653,7 +6626,6 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 			break;
 
 
-
 			case 70102: // Zenbab
 			{
 
@@ -7164,13 +7136,6 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 							ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 376, "");
 #endif
 							break;
-#ifdef ENABLE_WOLFMAN_CHARACTER
-						case CSpecialItemGroup::BLEEDING:
-#ifdef TEXTS_IMPROVEMENT
-							ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 379, "");
-#endif
-							break;
-#endif
 						case CSpecialItemGroup::MOB_GROUP:
 #ifdef TEXTS_IMPROVEMENT
 							ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 380, "");
@@ -7755,11 +7720,6 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 		{
 			switch (item->GetVnum())
 			{
-#ifdef ENABLE_WOLFMAN_CHARACTER
-			case 27124: // Bandage
-				RemoveBleeding();
-				break;
-#endif
 			case 27874: // Grilled Perch
 			default:
 				RemoveBadAffect();
@@ -8777,8 +8737,6 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 						? true : false;
 
 
-
-
 					if (ItemSystem::GetItemVnum(itemEntity) != 86060) {
 						if (bZodiacItem) {
 #ifdef TEXTS_IMPROVEMENT
@@ -9568,7 +9526,6 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 			const int32_t insV4 = item->GetValue(4);
 
 			
-
 				const int32_t exV5 = p->alValues[5];
 			const int32_t exV4 = p->alValues[4];
 
@@ -10340,7 +10297,6 @@ bool CHARACTER::DoRefineWithScroll(LPITEM item)
 			ItemSystem::FlushDelayedSaveEcs(pkNewItem);
 
 
-
 			ItemSystem::AttrLog(pkNewItem);
 			//PointChange(POINT_GOLD, -prt->cost);
 #ifdef ENABLE_FEATURES_REFINE_SYSTEM
@@ -10737,7 +10693,6 @@ bool CHARACTER::DoRefineWithScroll(LPITEM item)
 			ItemSystem::FlushDelayedSaveEcs(pkNewItem);
 
 
-
 			ItemSystem::AttrLog(pkNewItem);
 			//PointChange(POINT_GOLD, -prt->cost);
 #ifdef ENABLE_FEATURES_REFINE_SYSTEM
@@ -10985,7 +10940,6 @@ bool CHARACTER::RefineInformation(uint8_t bCell, uint8_t bType, int iAdditionalC
 		return false;
 
 	const entt::entity item = ItemSystem::GetInventoryItem(GetEntityHandle(), bCell);
-
 
 
 	if (item == entt::null)
@@ -12420,14 +12374,6 @@ bool CHARACTER::GiveItemFromSpecialItemGroup(uint32_t dwGroupNum, std::vector<ui
 			bSuccess = true;
 		}
 		break;
-#ifdef ENABLE_WOLFMAN_CHARACTER
-		case CSpecialItemGroup::BLEEDING:
-		{
-			AttackedByBleeding(NULL);
-			bSuccess = true;
-		}
-		break;
-#endif
 		case CSpecialItemGroup::MOB_GROUP:
 		{
 			int sx = GetX() - number(300, 500);
@@ -13779,12 +13725,6 @@ bool CHARACTER::ItemProcess_Hair(LPITEM item, int iDestCell)
 	case JOB_SHAMAN:
 		hair -= 69750;
 		break;
-#ifdef ENABLE_WOLFMAN_CHARACTER
-	case JOB_WOLFMAN:
-		break; // NOTE: ÀÌ Çì¾îÄÚµå´Â ¾È ¾²ÀÌ¹Ç·Î ÆÐ½º. (ÇöÀç Çì¾î½Ã½º�
-// ÛÀº ÀÌ¹Ì ÄÚ½ºÆ¬À¸·Î ´ëÃ¼ µÈ »ó�
-// ÂÀÓ)
-#endif
 	default:
 		return false;
 		break;
@@ -14227,7 +14167,6 @@ TItemExtraProto* CItem::GetExtraProto()
 #endif
 
 
-
 #ifdef ENABLE_RUNE_SYSTEM
 void CItem::InitializeRune() {
 	if ((GetType() == ITEM_USE) && (GetSubType() == USE_RUNE_PERC_CHARGE)) {
@@ -14490,8 +14429,6 @@ const char* GetItemName(entt::entity item, uint8_t language)
 	return legacy ? legacy->GetName(language) : "";
 }
 } // namespace ItemSystem
-
-
 
 
 namespace ItemSystem {
@@ -15021,7 +14958,4 @@ EVENTFUNC(soul_item_event)
 
 
 #endif
-
-
-
 

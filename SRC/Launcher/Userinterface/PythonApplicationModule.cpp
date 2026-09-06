@@ -15,7 +15,6 @@
 #pragma comment(lib, "windowscodecs.lib")
 
 
-
 extern bool PERF_CHECKER_RENDER_GAME;
 extern D3DXCOLOR g_fSpecularColor;
 extern bool bVisibleNotice = true;
@@ -387,7 +386,6 @@ PyObject* appRenderGame(PyObject* poSelf, PyObject* poArgs)
 	CPythonApplication::Instance().RenderGame();
 	return Py_BuildNone();
 }
-
 
 
 PyObject* appSetMouseHandler(PyObject* poSelf, PyObject* poArgs)
@@ -1731,11 +1729,7 @@ void initapp()
 	PyModule_AddIntConstant(poModule, "PLAYER_PER_ACCOUNT",	PLAYER_PER_ACCOUNT4);
 #endif
 
-#ifdef ENABLE_WOLFMAN_CHARACTER
-	PyModule_AddIntConstant(poModule, "ENABLE_WOLFMAN_CHARACTER",	1);
-#else
 	PyModule_AddIntConstant(poModule, "ENABLE_WOLFMAN_CHARACTER",	0);
-#endif
 
 #ifdef ENABLE_QUIVER_SYSTEM
 	PyModule_AddIntConstant(poModule, "ENABLE_QUIVER_SYSTEM",	1);

@@ -3349,11 +3349,6 @@ teleport_area:
             case JOB_SHAMAN:
                 dwRace = (mySex==SEX_MALE)?MAIN_RACE_SHAMAN_M:MAIN_RACE_SHAMAN_W;
                 break;
-#ifdef ENABLE_WOLFMAN_CHARACTER
-            case JOB_WOLFMAN:
-                dwRace = (mySex==SEX_MALE)?MAIN_RACE_WOLFMAN_M:MAIN_RACE_WOLFMAN_M;
-                break;
-#endif
         }
 		if (dwRace != ecs::PlayerRuntime::GetRaceNum(chEntity))
         {
@@ -3466,21 +3461,6 @@ teleport_area:
 		lua_pushboolean(L, AffectSystem::IsAffectFlag(chEntity, AFF_POISON) ? 1 : 0);
 		return 1;
 	}
-#ifdef ENABLE_WOLFMAN_CHARACTER
-	ALUA(pc_if_bleeding)
-	{
-		// migrated from CHARACTER::IsAffectFlag(AFF_BLEEDING)
-		entt::entity e = CQuestManager::instance().GetPCEntity(L);
-		if (const auto* sf = ECS_TryGet<ecs::StatusFlags>(e))
-		{
-			lua_pushboolean(L, sf->hasBled ? 1 : 0);
-			return 1;
-		}
-		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
-		lua_pushboolean(L, AffectSystem::IsAffectFlag(chEntity, AFF_BLEEDING) ? 1 : 0);
-		return 1;
-	}
-#endif
 	ALUA(pc_if_slow)
 	{
 		// migrated from CHARACTER::IsAffectFlag(AFF_SLOW)
@@ -3568,28 +3548,6 @@ teleport_area:
         }
         return 0;
     }
-#ifdef ENABLE_WOLFMAN_CHARACTER
-    ALUA(pc_sf_bleeding)
-    {
-        // migrated from CHARACTER::AddAffect
-        // DUAL-PATH: ECS StatusFlags + legacy call
-        const bool enabled = lua_toboolean(L, 1) != 0;
-        entt::entity e = CQuestManager::instance().GetPCEntity(L);
-        if (auto* sf = ECS_TryGet<ecs::StatusFlags>(e))
-        {
-            sf->hasBled = enabled;
-            g_registry.emplace_or_replace<ecs::DirtyTag>(e);
-        }
-        if (e != entt::null && g_registry.valid(e))
-        {
-            if(enabled)
-                AffectSystem::AddAffect(e, AFFECT_BLEEDING, 0, 0, AFF_BLEEDING, 30+1, 0, 1, 0);
-            else
-                AffectSystem::RemoveAffect(e, AFFECT_BLEEDING);
-        }
-        return 0;
-    }
-#endif
     ALUA(pc_sf_slow)
     {
         // migrated from CHARACTER::AddAffect
@@ -3968,7 +3926,6 @@ teleport_area:
 		return 0;
 	}
 #endif
-
 
 
 #ifdef ENABLE_MULTI_LANGUAGE
@@ -4355,7 +4312,6 @@ teleport_area:
 #endif
 
 
-
 	void RegisterPCFunctionTable()
 	{
 		luaL_reg pc_functions[] =
@@ -4594,18 +4550,12 @@ teleport_area:
 			{ "is_flag_fire",			pc_if_fire			},
 			{ "is_flag_invisible",		pc_if_invisible		},
 			{ "is_flag_poison",			pc_if_poison		},
-#ifdef ENABLE_WOLFMAN_CHARACTER
-			{ "is_flag_bleeding",		pc_if_bleeding		},
-#endif
 			{ "is_flag_slow",			pc_if_slow			},
 			{ "is_flag_stun",			pc_if_stun			},
 			//set_flags (bool) [return nothing]
 			{ "set_flag_fire",			pc_sf_fire			},
 			{ "set_flag_invisible",		pc_sf_invisible		},
 			{ "set_flag_poison",		pc_sf_poison		},
-#ifdef ENABLE_WOLFMAN_CHARACTER
-			{ "set_flag_bleeding",		pc_sf_bleeding		},
-#endif
 			{ "set_flag_slow",			pc_sf_slow			},
 			{ "set_flag_stun",			pc_sf_stun			},
 			//pc.set_flag_kill(char_name) [return nothing]
@@ -4693,9 +4643,4 @@ teleport_area:
 		CQuestManager::instance().AddLuaFunctionTable("pc", pc_functions);
 	}
 };
-
-
-
-
-
 

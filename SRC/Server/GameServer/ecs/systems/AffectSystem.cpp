@@ -120,73 +120,6 @@ EVENTFUNC(poison_event)
     return 0;
 }
 
-#ifdef ENABLE_WOLFMAN_CHARACTER
-const int bleeding_damage_rate[MOB_RANK_MAX_NUM] = {
-    80, 50, 40, 30, 25, 1
-};
-
-int GetBleedingDamageRate(entt::entity character)
-{
-    int iRate = ecs::PlayerRuntime::IsPC(character)
-        ? 50
-        : bleeding_damage_rate[ecs::PlayerRuntime::GetMobRank(character)];
-    iRate = MAX(0, iRate - ecs::PointSystem::Get(character, POINT_BLEEDING_REDUCE));
-#if defined(ENABLE_WOLFMAN_CHARACTER) && defined(USE_ITEM_BLEEDING_AS_POISON)
-    iRate = MAX(0, iRate - ecs::PointSystem::Get(character, POINT_POISON_REDUCE));
-#endif
-    return iRate;
-}
-
-EVENTINFO(TBleedingEventInfo)
-{
-    entt::entity character { entt::null };
-    entt::entity attacker { entt::null };
-    int count;
-
-    TBleedingEventInfo()
-        : count(0)
-    {
-    }
-};
-
-EVENTFUNC(bleeding_event)
-{
-    TBleedingEventInfo* info = dynamic_cast<TBleedingEventInfo*>(event->info);
-    if (info == nullptr) {
-        LOG_ERROR("bleeding_event> <Factor> Null pointer");
-        return 0;
-    }
-
-    const entt::entity character = info->character;
-    if (character == entt::null || !g_registry.valid(character)) {
-        return 0;
-    }
-
-    int dam = ecs::PointSystem::GetMaxHP(character) * GetBleedingDamageRate(character) / 1000;
-    if (test_server) {
-        ecs::ChatSystem::Send(character, CHAT_TYPE_NOTICE, "Bleeding Damage %d", dam);
-    }
-
-    if (character != entt::null) {
-        g_dispatcher.trigger(ecs::EvBleedingApplied { character, dam });
-    }
-
-    if (CombatSystem::Damage(character, info->attacker, dam, DAMAGE_TYPE_BLEEDING)) {
-        if (auto* state = g_registry.try_get<ecs::AffectEventState>(character))
-            state->bleedingEvent = nullptr;
-        return 0;
-    }
-
-    --info->count;
-    if (info->count) {
-        return PASSES_PER_SEC(3);
-    }
-
-    if (auto* state = g_registry.try_get<ecs::AffectEventState>(character))
-        state->bleedingEvent = nullptr;
-    return 0;
-}
-#endif
 
 EVENTINFO(TFireEventInfo)
 {
@@ -244,11 +177,6 @@ int poison_level_adjust[9] = {
     100, 90, 80, 70, 50, 30, 10, 5, 0
 };
 
-#ifdef ENABLE_WOLFMAN_CHARACTER
-int bleeding_level_adjust[9] = {
-    100, 90, 80, 70, 50, 30, 10, 5, 0
-};
-#endif
 
 LegacyCharHandle LegacyCharOf(entt::entity e)
 {
@@ -442,14 +370,6 @@ void ApplyPoison(entt::entity target, entt::entity attacker)
     if (status.hasPoisoned && !ecs::PlayerRuntime::IsPC(target))
         return;
 
-#ifdef ENABLE_WOLFMAN_CHARACTER
-    if (events.bleedingEvent)
-        return;
-
-    if (status.hasBled && !ecs::PlayerRuntime::IsPC(target)) {
-        return;
-    }
-#endif
 
     const bool hasAttacker = attacker != entt::null && g_registry.valid(attacker);
     if (hasAttacker && ecs::PointSystem::GetLevel(attacker) < ecs::PointSystem::GetLevel(target)) {
@@ -492,69 +412,6 @@ void RemovePoison(entt::entity e)
         event_cancel(&events->poisonEvent);
 }
 
-#ifdef ENABLE_WOLFMAN_CHARACTER
-void ApplyBleeding(entt::entity target, entt::entity attacker)
-{
-    if (target == entt::null || !g_registry.valid(target))
-        return;
-
-    auto& events = g_registry.get_or_emplace<ecs::AffectEventState>(target);
-    auto& status = g_registry.get_or_emplace<ecs::StatusFlags>(target);
-    if (events.bleedingEvent)
-        return;
-
-    if (status.hasBled && !ecs::PlayerRuntime::IsPC(target))
-        return;
-
-    if (events.poisonEvent) {
-        return;
-    }
-
-    if (status.hasPoisoned && !ecs::PlayerRuntime::IsPC(target)) {
-        return;
-    }
-
-    const bool hasAttacker = attacker != entt::null && g_registry.valid(attacker);
-    if (hasAttacker && ecs::PointSystem::GetLevel(attacker) < ecs::PointSystem::GetLevel(target)) {
-        int delta = ecs::PointSystem::GetLevel(target) - ecs::PointSystem::GetLevel(attacker);
-        if (delta > 8) {
-            delta = 8;
-        }
-
-        if (number(1, 100) > bleeding_level_adjust[delta]) {
-            return;
-        }
-    }
-
-    MarkBleeding(target, true);
-    AddAffect(target, AFFECT_BLEEDING, POINT_NONE, 0, AFF_BLEEDING, BLEEDING_LENGTH + 1, 0, true);
-
-    TBleedingEventInfo* info = AllocEventInfo<TBleedingEventInfo>();
-    info->character = target;
-    info->attacker = attacker;
-    info->count = 10;
-    events.bleedingEvent = event_create(bleeding_event, info, 1);
-
-    if (test_server && hasAttacker) {
-        char buf[256];
-        snprintf(buf, sizeof(buf), "BLEEDING %s -> %s", ecs::PlayerRuntime::GetName(attacker).data(), ecs::PlayerRuntime::GetName(target).data());
-        ecs::ChatSystem::Send(attacker, CHAT_TYPE_INFO, "%s", buf);
-    }
-}
-
-void RemoveBleeding(entt::entity e)
-{
-    MarkBleeding(e, false);
-
-    if (e == entt::null || !g_registry.valid(e)) {
-        return;
-    }
-
-    RemoveAffect(e, AFFECT_BLEEDING);
-    if (auto* events = g_registry.try_get<ecs::AffectEventState>(e))
-        event_cancel(&events->bleedingEvent);
-}
-#else
 void ApplyBleeding(entt::entity, entt::entity)
 {
 }
@@ -562,7 +419,6 @@ void ApplyBleeding(entt::entity, entt::entity)
 void RemoveBleeding(entt::entity)
 {
 }
-#endif
 
 void CancelDamageEvents(entt::entity e)
 {
@@ -571,9 +427,6 @@ void CancelDamageEvents(entt::entity e)
 
     if (auto* events = g_registry.try_get<ecs::AffectEventState>(e)) {
         event_cancel(&events->poisonEvent);
-#ifdef ENABLE_WOLFMAN_CHARACTER
-        event_cancel(&events->bleedingEvent);
-#endif
         event_cancel(&events->fireEvent);
     }
 }
@@ -630,11 +483,6 @@ void ApplyMobAttribute(entt::entity target, const TMobTable* table)
         }
     }
 
-#if defined(ENABLE_WOLFMAN_CHARACTER) && defined(USE_MOB_BLEEDING_AS_POISON)
-    if (table->cEnchants[MOB_ENCHANT_POISON] != 0) {
-        ecs::PointSystem::ApplyPoint(ch->GetEntityHandle(), APPLY_BLEEDING_PCT, table->cEnchants[MOB_ENCHANT_POISON] / 50);
-    }
-#endif
 
     for (int i = 0; i < MOB_RESISTS_MAX_NUM; ++i) {
         if (table->cResists[i] != 0) {
@@ -642,17 +490,6 @@ void ApplyMobAttribute(entt::entity target, const TMobTable* table)
         }
     }
 
-#if defined(ENABLE_WOLFMAN_CHARACTER) && defined(USE_MOB_CLAW_AS_DAGGER)
-    if (table->cResists[MOB_RESIST_DAGGER] != 0) {
-        ecs::PointSystem::ApplyPoint(ch->GetEntityHandle(), APPLY_RESIST_CLAW, table->cResists[MOB_RESIST_DAGGER]);
-    }
-#endif
-
-#if defined(ENABLE_WOLFMAN_CHARACTER) && defined(USE_MOB_BLEEDING_AS_POISON)
-    if (table->cResists[MOB_RESIST_POISON] != 0) {
-        ecs::PointSystem::ApplyPoint(ch->GetEntityHandle(), APPLY_BLEEDING_REDUCE, table->cResists[MOB_RESIST_POISON]);
-    }
-#endif
 
     if (target != entt::null && g_registry.valid(target)) {
         g_registry.emplace_or_replace<ecs::DirtyTag>(target);
@@ -1011,9 +848,6 @@ void RemoveBadAffects(entt::entity e)
     if (!AffectState(e))
         return;
     RemovePoison(e);
-#ifdef ENABLE_WOLFMAN_CHARACTER
-    RemoveBleeding(e);
-#endif
     RemoveFire(e);
     RemoveAffect(e, AFFECT_STUN);
     RemoveAffect(e, AFFECT_SLOW);
@@ -1029,9 +863,6 @@ void RemoveGoodAffects(entt::entity e)
         SKILL_JUMAGAP, SKILL_MANASHILED, SKILL_HOSIN, SKILL_REFLECT,
         SKILL_GICHEON, SKILL_KWAESOK, SKILL_JEUNGRYEOK, SKILL_CHUNKEON,
         SKILL_EUNHYUNG,
-#ifdef ENABLE_WOLFMAN_CHARACTER
-        SKILL_JEOKRANG, SKILL_CHEONGRANG,
-#endif
     };
     for (const auto type : types)
         RemoveAffect(e, type);
@@ -1294,11 +1125,7 @@ void SetPolymorph(entt::entity e, uint32_t raceVnum, bool maintainStats)
 {
 	if (e == entt::null || !g_registry.valid(e))
 		return;
-#ifdef ENABLE_WOLFMAN_CHARACTER
-	if (raceVnum < MAIN_RACE_MAX_NUM)
-#else
 	if (raceVnum < JOB_MAX_NUM)
-#endif
 	{
 		raceVnum = 0;
 		maintainStats = false;
@@ -1360,17 +1187,6 @@ void CHARACTER::AttackedByPoison(entt::entity attacker)
         attacker);
 }
 
-#ifdef ENABLE_WOLFMAN_CHARACTER
-void CHARACTER::AttackedByBleeding(entt::entity attacker)
-{
-    AffectSystem::ApplyBleeding(
-        GetEntityHandle(),
-        attacker);
-}
-#endif
-
-#ifdef ENABLE_WOLFMAN_CHARACTER
-#endif
 
 void AffectSystem_Update(entt::registry& reg, uint32_t tick)
 {
@@ -2123,11 +1939,6 @@ bool CHARACTER::IsGoodAffect(uint8_t bAffectType) const
 		case (SKILL_KWAESOK):
 		case (SKILL_JEUNGRYEOK):
 		case (SKILL_GICHEON):
-#ifdef ENABLE_WOLFMAN_CHARACTER
-		// ������(WOLFMEN) ���� �߰�
-		case (SKILL_JEOKRANG):
-		case (SKILL_CHEONGRANG):
-#endif
 			return true;
 	}
 	return false;

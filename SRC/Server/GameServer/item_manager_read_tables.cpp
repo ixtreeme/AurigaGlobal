@@ -338,12 +338,6 @@ bool ITEM_MANAGER::ReadSpecialDropItemFile(const char * c_pszFileName)
 						{
 							dwVnum = CSpecialItemGroup::POISON;
 						}
-#ifdef ENABLE_WOLFMAN_CHARACTER
-						else if (name == "bleeding")
-						{
-							dwVnum = CSpecialItemGroup::BLEEDING;
-						}
-#endif
 						else if (name == "group")
 						{
 							dwVnum = CSpecialItemGroup::MOB_GROUP;
@@ -508,9 +502,6 @@ bool ITEM_MANAGER::ConvSpecialDropItemFile()
 						name == "slow" ||
 						name == "drain_hp" ||
 						name == "poison" ||
-#ifdef ENABLE_WOLFMAN_CHARACTER
-						name == "bleeding" ||
-#endif
 						name == "group")
 					{
 						dwVnum = 0;

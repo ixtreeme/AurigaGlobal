@@ -962,9 +962,6 @@ bool ChangeSex(entt::entity e)
 	case MAIN_RACE_SURA_W: targetRace = MAIN_RACE_SURA_M; break;
 	case MAIN_RACE_SHAMAN_M: targetRace = MAIN_RACE_SHAMAN_W; break;
 	case MAIN_RACE_SHAMAN_W: targetRace = MAIN_RACE_SHAMAN_M; break;
-#ifdef ENABLE_WOLFMAN_CHARACTER
-	case MAIN_RACE_WOLFMAN_M: targetRace = MAIN_RACE_WOLFMAN_M; break;
-#endif
 	default: return false;
 	}
 
@@ -1512,11 +1509,6 @@ bool CHARACTER::ChangeSex()
     case MAIN_RACE_SHAMAN_W:
         m_points.job = MAIN_RACE_SHAMAN_M;
         break;
-#ifdef ENABLE_WOLFMAN_CHARACTER
-    case MAIN_RACE_WOLFMAN_M:
-        m_points.job = MAIN_RACE_WOLFMAN_M;
-        break;
-#endif
     default:
         LOG_ERROR("CHANGE_SEX: {} unknown race {}", GetName(), static_cast<int>(src_race));
         return false;
@@ -2774,7 +2766,6 @@ int CHARACTER::GetSoulItemDamage(entt::entity victim, int iDamage, uint8_t bSoul
     return iDamageAdd;
 }
 #endif
-
 
 
 void CHARACTER::SetShop(LPSHOP pkShop)
@@ -5560,11 +5551,7 @@ void CHARACTER::CloseMyShop()
         p.szSign[0] = '\0';
 
         ecs::ViewSystem::PacketView(GetEntityHandle(), &p, sizeof(p));
-#ifdef ENABLE_WOLFMAN_CHARACTER
-        SetPolymorph(m_points.job, true);
-#else
         SetPolymorph(GetJob(), true);
-#endif
     }
 }
 
@@ -5670,7 +5657,6 @@ void CHARACTER::Initialize()
     m_dwStateDuration = 1;
 
 
-
     // Phase C.4: legacy m_bAddChrState zero-init removed (entity null at
     // this Initialize point - ECS StatusFlags created with default-zero
     // bits when this CHARACTER is later attached to an ECS entity).
@@ -5714,8 +5700,6 @@ void CHARACTER::Initialize()
     m_iEventAttr = 0;
 
 
-
-
     // Phase C.2: legacy m_bNowWalking zero-init removed (ECS MovementState
     // default-init handles isNowWalking=false and walkPreference=false).
     ResetChangeAttackPositionTime();
@@ -5724,7 +5708,6 @@ void CHARACTER::Initialize()
     m_bMonsterLog = false;
 
     m_bDisableCooltime = false;
-
 
 
     m_dwQuestNPCVID = 0;
@@ -5922,8 +5905,6 @@ void CHARACTER::Create(const char* c_pszName, uint32_t vid, bool isPC)
 }
 
 
-
-
 CHARACTER::CHARACTER()
 {
     Initialize();
@@ -5963,9 +5944,6 @@ ESex GET_SEX(LPCHARACTER ch)
     case MAIN_RACE_SURA_M:
     case MAIN_RACE_ASSASSIN_M:
     case MAIN_RACE_SHAMAN_M:
-#ifdef ENABLE_WOLFMAN_CHARACTER
-    case MAIN_RACE_WOLFMAN_M:
-#endif
         return SEX_MALE;
 
     case MAIN_RACE_ASSASSIN_W:
@@ -6101,5 +6079,4 @@ EVENTFUNC(drop_event)
     return PASSES_PER_SEC(1);
 }
 #endif
-
 

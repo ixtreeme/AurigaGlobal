@@ -683,24 +683,6 @@ void Change(entt::entity e, uint8_t type, int64_t amount, bool bAmount, bool bBr
 		val = GetLevel(e);
 
 		LOG_INFO("LEVELUP: {} {} NEXT EXP {}", ecs::PlayerRuntime::GetName(e).data(), GetLevel(e), ecs::PlayerRuntime::GetNextExp(e));
-#ifdef ENABLE_WOLFMAN_CHARACTER
-		if (ecs::PlayerRuntime::GetJob(e) == JOB_WOLFMAN)
-		{
-			if ((5 <= val) && (SkillSystem::GetSkillGroup(e) != 1))
-			{
-				ClearSkill();
-				// set skill group
-				SetSkillGroup(1);
-				// set skill points
-				SetReal(e, POINT_SKILL, GetLevel(e) - 1);
-				Set(e, POINT_SKILL, GetReal(e, POINT_SKILL));
-				Change(e, POINT_SKILL, 0);
-				// update points (not required)
-				// if (ch) ch->ComputePoints();
-				// PointsPacket();
-			}
-		}
-#endif
 		Change(e, POINT_NEXT_EXP, ecs::PlayerRuntime::GetNextExp(e), false);
 #ifdef ENABLE_ANNOUNCEMENT_LEVELUP
 #ifdef TEXTS_IMPROVEMENT
@@ -1170,14 +1152,8 @@ void Change(entt::entity e, uint8_t type, int64_t amount, bool bAmount, bool bBr
 	case POINT_ATTBONUS_ASSASSIN:
 	case POINT_ATTBONUS_WARRIOR:
 	case POINT_ATTBONUS_SHAMAN:
-#ifdef ENABLE_WOLFMAN_CHARACTER
-	case POINT_ATTBONUS_WOLFMAN:
-#endif
 
 	case POINT_POISON_PCT:
-#ifdef ENABLE_WOLFMAN_CHARACTER
-	case POINT_BLEEDING_PCT:
-#endif
 	case POINT_STUN_PCT:
 	case POINT_SLOW_PCT:
 
@@ -1203,9 +1179,6 @@ void Change(entt::entity e, uint8_t type, int64_t amount, bool bAmount, bool bBr
 	case POINT_RESIST_BELL:
 	case POINT_RESIST_FAN:
 	case POINT_RESIST_BOW:
-#ifdef ENABLE_WOLFMAN_CHARACTER
-	case POINT_RESIST_CLAW:
-#endif
 	case POINT_RESIST_FIRE:
 	case POINT_RESIST_ELEC:
 	case POINT_RESIST_MAGIC:
@@ -1222,9 +1195,6 @@ void Change(entt::entity e, uint8_t type, int64_t amount, bool bAmount, bool bBr
 	case POINT_REFLECT_MELEE:	// 67 ï¿½oï¿½ï¿½ 1Ý»ï¿½
 	case POINT_REFLECT_CURSE:	// 68 Aï¿½ï¿½ï¿½ 1Ý»ï¿½
 	case POINT_POISON_REDUCE:	// 69 ï¿½ï¿½ï¿½Y1Iï¿½ï¿½ ï¿½ï¿½1O
-#ifdef ENABLE_WOLFMAN_CHARACTER
-	case POINT_BLEEDING_REDUCE:
-#endif
 	case POINT_KILL_SP_RECOVER:	// 70 Au 1Oï¿½e1A MP Eï¿½o1
 	case POINT_KILL_HP_RECOVERY:	// 75
 	case POINT_HIT_HP_RECOVERY:
@@ -1299,9 +1269,6 @@ void Change(entt::entity e, uint8_t type, int64_t amount, bool bAmount, bool bBr
 	case POINT_RESIST_ASSASSIN:
 	case POINT_RESIST_SURA:
 	case POINT_RESIST_SHAMAN:
-#ifdef ENABLE_WOLFMAN_CHARACTER
-	case POINT_RESIST_WOLFMAN:
-#endif
 		Set(e, type, Get(e, type) + amount);
 		val = Get(e, type);
 		break;
@@ -1609,12 +1576,6 @@ void ComputeBattlePoints(entt::entity e)
 		case JOB_SHAMAN:
 			iStatAtk = (4 * Get(e, POINT_ST) + 2 * Get(e, POINT_IQ)) / 3;
 			break;
-#ifdef ENABLE_WOLFMAN_CHARACTER
-		case JOB_WOLFMAN:
-			// TODO: 1öAÎÁ· °o°Ý·Â °o1Ä ±âE1AÚ?!°Ô ?äA»
-			iStatAtk = (2 * Get(e, POINT_ST));
-			break;
-#endif
 		default:
 			LOG_ERROR("invalid job {}", ecs::PlayerRuntime::GetJob(e));
 			iStatAtk = (2 * Get(e, POINT_ST));
@@ -1807,9 +1768,6 @@ void ApplyPoint(entt::entity e, uint8_t bApplyType, int iVal)
 	case APPLY_HP_REGEN:
 	case APPLY_SP_REGEN:
 	case APPLY_POISON_PCT:
-#ifdef ENABLE_WOLFMAN_CHARACTER
-	case APPLY_BLEEDING_PCT:
-#endif
 	case APPLY_STUN_PCT:
 	case APPLY_SLOW_PCT:
 	case APPLY_CRITICAL_PCT:
@@ -1824,9 +1782,6 @@ void ApplyPoint(entt::entity e, uint8_t bApplyType, int iVal)
 	case APPLY_ATTBONUS_ASSASSIN:	// 60
 	case APPLY_ATTBONUS_SURA:	// 61
 	case APPLY_ATTBONUS_SHAMAN:	// 62
-#ifdef ENABLE_WOLFMAN_CHARACTER
-	case APPLY_ATTBONUS_WOLFMAN:
-#endif
 	case APPLY_ATTBONUS_MONSTER:	// 63
 	case APPLY_STEAL_HP:
 	case APPLY_STEAL_SP:
@@ -1840,9 +1795,6 @@ void ApplyPoint(entt::entity e, uint8_t bApplyType, int iVal)
 	case APPLY_RESIST_BELL:
 	case APPLY_RESIST_FAN:
 	case APPLY_RESIST_BOW:
-#ifdef ENABLE_WOLFMAN_CHARACTER
-	case APPLY_RESIST_CLAW:
-#endif
 	case APPLY_RESIST_FIRE:
 	case APPLY_RESIST_ELEC:
 	case APPLY_RESIST_MAGIC:
@@ -1855,9 +1807,6 @@ void ApplyPoint(entt::entity e, uint8_t bApplyType, int iVal)
 	case APPLY_ANTI_CRITICAL_PCT:
 	case APPLY_ANTI_PENETRATE_PCT:
 	case APPLY_POISON_REDUCE:
-#ifdef ENABLE_WOLFMAN_CHARACTER
-	case APPLY_BLEEDING_REDUCE:
-#endif
 	case APPLY_KILL_SP_RECOVER:
 	case APPLY_EXP_DOUBLE_BONUS:
 	case APPLY_GOLD_DOUBLE_BONUS:
@@ -1894,9 +1843,6 @@ void ApplyPoint(entt::entity e, uint8_t bApplyType, int iVal)
 	case APPLY_RESIST_ASSASSIN:
 	case APPLY_RESIST_SURA:
 	case APPLY_RESIST_SHAMAN:
-#ifdef ENABLE_WOLFMAN_CHARACTER
-	case APPLY_RESIST_WOLFMAN:
-#endif
 	case APPLY_ENERGY:					// 82 ï¿½ï¿½ï¿½
 	case APPLY_DEF_GRADE:				// 83 1a3ï¿½ï¿½. DEF_GRADE_BONUSï¿½ï¿½ Aï¿½ï¿½ï¿½?!1ï¿½ ï¿½ï¿½1eï¿½ï¿½ oï¿½?ï¿½ï¿½ï¿½ï¿½ï¿½ AÇµï¿½ï¿½E 1ï¿½ï¿½ï¿½(...)ï¿½! AÖ´U.
 	case APPLY_COSTUME_ATTR_BONUS:		// 84 ï¿½ï¿½1oAï¿½ 3AAIAU?! oUAo 1ï¿½1oï¿½! oï¿½3E1o

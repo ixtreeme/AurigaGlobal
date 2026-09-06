@@ -2376,12 +2376,6 @@ bool CanUsedBy(entt::entity itemEntity, entt::entity character)
 		if (ItemSystem::GetItemAntiFlag(itemEntity) & ITEM_ANTIFLAG_SURA)
 			return false;
 		break;
-#ifdef ENABLE_WOLFMAN_CHARACTER
-	case JOB_WOLFMAN:
-		if (ItemSystem::GetItemAntiFlag(itemEntity) & ITEM_ANTIFLAG_WOLFMAN)
-			return false;
-		break;
-#endif
 	}
 
 	return true;
@@ -2436,8 +2430,6 @@ bool CanPutInto(entt::entity item, entt::entity container)
 	{
 		return (vnum >= 8730 && vnum <= 8739) || (vnum >= 8700 && vnum <= 8709) || (vnum >= 8780 && vnum <= 8789) ? true : false;//véres zodiák itemek
 	}
-
-
 
 
 	if (GetItemVnum(item) == 50643) //limites koho isteni

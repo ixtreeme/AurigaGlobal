@@ -1308,7 +1308,6 @@ static void GiveExp(LegacyCharHandle from, LegacyCharHandle to, int iExp)
 #ifdef NEW_POINT_EXP_DOUBLE_BONUS_RAZOR93
 
 
-
 	int expDoubleBonus = ecs::PointSystem::Get(toEntity, POINT_EXP_DOUBLE_BONUS);
 
 	if (expDoubleBonus > 0)
@@ -2491,10 +2490,6 @@ void CHARACTER::Dead(entt::entity killer, bool bImmediateDead)
 }
 
 
-
-
-
-
 void CombatSystem_Update(entt::registry& reg, uint32_t tick)
 {
     // During the migration window, only process entities with an explicit active combat target.
@@ -2815,7 +2810,6 @@ void CHARACTER::DistributeSP(entt::entity killer, int iMethod)
 		}
 	}
 }
-
 
 
 // char_battle.cpp slice BD2a helper surface duplicated into CombatSystem.cpp
@@ -3428,8 +3422,6 @@ static std::string MakeItemLink(entt::entity item, LegacyCharHandle pkKiller, Le
 
 	return std::string(szChat);
 }
-
-
 
 
 static std::set<uint32_t> verjema_szadba_ixtreeme =
@@ -4687,7 +4679,6 @@ bool CHARACTER::Damage(entt::entity attacker, int64_t dam, EDamageType type) // 
 #ifdef DISABLE_DAMAGE_TYPE_NORMAL_RANGE_EVENT_MAP
 
 
-
 		const entt::entity weapon = ItemSystem::GetWearItem(
 			attacker, WEAR_WEAPON);
 		const TItemTable* weaponProto = ItemSystem::GetItemProto(weapon);
@@ -4719,7 +4710,6 @@ bool CHARACTER::Damage(entt::entity attacker, int64_t dam, EDamageType type) // 
 		}
 
 
-
 		CombatSystem::SendDamagePacket(GetEntityHandle(), attacker, fixed_dam, DAMAGE_NORMAL);
 
 
@@ -4736,7 +4726,6 @@ bool CHARACTER::Damage(entt::entity attacker, int64_t dam, EDamageType type) // 
 		}
 	}
 #endif
-
 
 
 	int iCurHP = GetHP();
@@ -5346,15 +5335,6 @@ bool CHARACTER::Damage(entt::entity attacker, int64_t dam, EDamageType type) // 
 			dam = GetHP() - 1;
 		}
 	}
-#ifdef ENABLE_WOLFMAN_CHARACTER
-	else if (type == DAMAGE_TYPE_BLEEDING)
-	{
-		if (GetHP() - dam <= 0)
-		{
-			dam = GetHP();
-		}
-	}
-#endif
 	// ------------------------
 	//  ̾
 	// -----------------------
@@ -5391,13 +5371,6 @@ bool CHARACTER::Damage(entt::entity attacker, int64_t dam, EDamageType type) // 
 
 		if (type == DAMAGE_TYPE_POISON)
 			damageFlag = DAMAGE_POISON;
-#if defined(ENABLE_WOLFMAN_CHARACTER) && !defined(USE_MOB_BLEEDING_AS_POISON)
-		else if (type == DAMAGE_TYPE_BLEEDING)
-			damageFlag = DAMAGE_BLEEDING;
-#elif defined(ENABLE_WOLFMAN_CHARACTER) && defined(USE_MOB_BLEEDING_AS_POISON)
-		else if (type == DAMAGE_TYPE_BLEEDING)
-			damageFlag = DAMAGE_POISON;
-#endif
 		else
 			damageFlag = DAMAGE_NORMAL;
 
@@ -5765,7 +5738,6 @@ bool CHARACTER::Damage(entt::entity attacker, int64_t dam, EDamageType type) // 
 			}
 
 
-
 			ecs::ChatSystem::Send(attacker, CHAT_TYPE_INFO, "Skill damage recorded: %d vs %s", dam, GetName());
 		}
 #endif
@@ -5994,7 +5966,6 @@ bool CHARACTER::Damage(entt::entity attacker, int64_t dam, EDamageType type) // 
 #ifdef LEADERBOARD_RAZOR93
 
 
-
 //void CHARACTER::SendLeaderboardData()
 //{
 //	if (!GetDesc())
@@ -6220,7 +6191,6 @@ public:
 			// Ÿġ
 		}
 		break;
-
 
 
 		case 1: // Ϲ
@@ -6968,9 +6938,6 @@ static int64_t CalcReferenceNormalHitDamage(LPCHARACTER pAttacker, LPCHARACTER p
 			break;
 
 		case WEAPON_DAGGER:
-#ifdef ENABLE_WOLFMAN_CHARACTER
-		case WEAPON_CLAW:
-#endif
 			lValue = ecs::PointSystem::Get(victim, POINT_RESIST_DAGGER);
 #ifdef ENABLE_NEW_BONUS_TALISMAN
 			lValue -= ecs::PointSystem::Get(attacker, POINT_ATTBONUS_IRR_PUGNALE);
@@ -7738,9 +7705,6 @@ void CHARACTER::DetermineDropMetinStone()
 
 	static const uint32_t c_adwMetin[] =
 	{
-#if defined(ENABLE_WOLFMAN_CHARACTER) && defined(USE_WOLFMAN_STONES)
-		28012,
-#endif
 		28030,
 		28031,
 		28032,

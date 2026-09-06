@@ -33,7 +33,7 @@ enum ESkillFlags
 	SKILL_FLAG_WIND		= (1 << 24),	// 바람 속성
 	SKILL_FLAG_ELEC		= (1 << 25),	// 전기 속성
 	SKILL_FLAG_FIRE		= (1 << 26),	// 불 속성
-#if defined(ENABLE_WOLFMAN_CHARACTER) || defined(__VERSION_162__)
+#ifdef __VERSION_162__
 	SKILL_FLAG_BLEEDING	= (1 << 27),
 	SKILL_FLAG_PARTY	= (1 << 28),
 #endif
@@ -181,15 +181,6 @@ enum ESkillIndexes
 	GUILD_SKILL_END = 162,
 
 	GUILD_SKILL_COUNT = GUILD_SKILL_END - GUILD_SKILL_START + 1,
-#ifdef ENABLE_WOLFMAN_CHARACTER
-	// 수인족 스킬
-	SKILL_CHAYEOL		= 170,			// 차열 (공격) : 늑대가 바람을 가르듯 적을 찢어 발긴다 : 총 공격력 %.0f-%.0f 크리티컬 확률 증가, 출혈 확률 %.0f%% 무기 보너스 // 무사 삼연참
-	SKILL_SALPOONG		= 171,			// 살풍 (공격) : 전방으로 죽음을 부르는 바람을 일으킨다. // 무사 검풍
-	SKILL_GONGDAB		= 172,			// 공답참 (공격) : 허공을 딛고 적을 섬멸한다. // 자객 천룡추타 (라고 기획서에 써있는데 무슨스킬인지 모르겠음 -_-;)
-	SKILL_PASWAE		= 173,			// 파쇄 (공격) : 상대의 갑옷을 찢어 발긴다. // 무사 삼연참 (단, 1회만 타격)
-	SKILL_JEOKRANG		= 174,			// 적랑빙의 (버프) : 붉은 늑대의 영혼을 빙의한다. // 공격력 +%.0f, 방어력 -%.0f, 이동 속도 -%.0f, 상대 방어 무시 확률 %.0f%% // 무사 천근추
-	SKILL_CHEONGRANG	= 175,			// 청랑빙의 (버프) : 푸른 늑대의 영혼을 빙의한다. // 공격력 -%.0f, 방어력 -%.0f, 이동 속도 +%.0f, 일정 확률로 스턴 유발
-#endif
 
 #ifdef ENABLE_NEW_PASSIVE_SKILLS
 	SKILL_ANTI_PALBANG = 221,

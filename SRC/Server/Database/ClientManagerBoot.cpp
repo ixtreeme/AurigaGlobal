@@ -1100,8 +1100,6 @@ bool CClientManager::InitializeItemExtraProtoTable()
 #endif
 
 
-
-
 bool CClientManager::MirrorMobTableIntoDB()
 {
 #ifdef ENABLE_MULTILANGUAGE_SYSTEM
@@ -1398,16 +1396,7 @@ namespace MProto
 		regen_cycle, regen_percent, exp, gold_min, gold_max, def,
 		attack_speed, move_speed, aggressive_hp_pct, aggressive_sight, attack_range, polymorph_item,
 		enchant_curse, enchant_slow, enchant_poison, enchant_stun, enchant_critical, enchant_penetrate,
-#if defined(ENABLE_WOLFMAN_CHARACTER) && !defined(USE_MOB_BLEEDING_AS_POISON)
-		enchant_bleeding,
-#endif
 		resist_sword, resist_twohand, resist_dagger, resist_bell, resist_fan, resist_bow,
-#if defined(ENABLE_WOLFMAN_CHARACTER) && !defined(USE_MOB_CLAW_AS_DAGGER)
-		resist_claw,
-#endif
-#if defined(ENABLE_WOLFMAN_CHARACTER) && !defined(USE_MOB_BLEEDING_AS_POISON)
-		resist_bleeding,
-#endif
 		resist_fire, resist_elect, resist_magic, resist_wind, resist_poison, dam_multiply, summon, drain_sp,
 		skill_vnum0, skill_level0, skill_vnum1, skill_level1, skill_vnum2, skill_level2, skill_vnum3, skill_level3,
 		skill_vnum4, skill_level4, sp_berserk, sp_stoneskin, sp_godspeed, sp_deathblow, sp_revive
@@ -1435,16 +1424,7 @@ bool CClientManager::InitializeMobTableFromDB()
 		" regen_cycle, regen_percent, exp, gold_min, gold_max, def,"
 		" attack_speed, move_speed, aggressive_hp_pct, aggressive_sight, attack_range, polymorph_item,"
 		" enchant_curse, enchant_slow, enchant_poison, enchant_stun, enchant_critical, enchant_penetrate,"
-#if defined(ENABLE_WOLFMAN_CHARACTER) && !defined(USE_MOB_BLEEDING_AS_POISON)
-		" enchant_bleeding,"
-#endif
 		" resist_sword, resist_twohand, resist_dagger, resist_bell, resist_fan, resist_bow,"
-#if defined(ENABLE_WOLFMAN_CHARACTER) && !defined(USE_MOB_CLAW_AS_DAGGER)
-		" resist_claw,"
-#endif
-#if defined(ENABLE_WOLFMAN_CHARACTER) && !defined(USE_MOB_BLEEDING_AS_POISON)
-		" resist_bleeding,"
-#endif
 		" resist_fire, resist_elect, resist_magic, resist_wind, resist_poison, dam_multiply, summon, drain_sp,"
 		" skill_vnum0, skill_level0, skill_vnum1, skill_level1, skill_vnum2, skill_level2, skill_vnum3, skill_level3,"
 		" skill_vnum4, skill_level4, sp_berserk, sp_stoneskin, sp_godspeed, sp_deathblow, sp_revive"
@@ -1457,16 +1437,7 @@ bool CClientManager::InitializeMobTableFromDB()
 		" regen_cycle, regen_percent, exp, gold_min, gold_max, def,"
 		" attack_speed, move_speed, aggressive_hp_pct, aggressive_sight, attack_range, polymorph_item,"
 		" enchant_curse, enchant_slow, enchant_poison, enchant_stun, enchant_critical, enchant_penetrate,"
-#if defined(ENABLE_WOLFMAN_CHARACTER) && !defined(USE_MOB_BLEEDING_AS_POISON)
-		" enchant_bleeding,"
-#endif
 		" resist_sword, resist_twohand, resist_dagger, resist_bell, resist_fan, resist_bow,"
-#if defined(ENABLE_WOLFMAN_CHARACTER) && !defined(USE_MOB_CLAW_AS_DAGGER)
-		" resist_claw,"
-#endif
-#if defined(ENABLE_WOLFMAN_CHARACTER) && !defined(USE_MOB_BLEEDING_AS_POISON)
-		" resist_bleeding,"
-#endif
 		" resist_fire, resist_elect, resist_magic, resist_wind, resist_poison, dam_multiply, summon, drain_sp,"
 		" skill_vnum0, skill_level0, skill_vnum1, skill_level1, skill_vnum2, skill_level2, skill_vnum3, skill_level3,"
 		" skill_vnum4, skill_level4, sp_berserk, sp_stoneskin, sp_godspeed, sp_deathblow, sp_revive"
@@ -1556,9 +1527,6 @@ bool CClientManager::InitializeMobTableFromDB()
 		VERIFY_IFIELD(MProto::enchant_stun, mob_table->cEnchants[MOB_ENCHANT_STUN])
 		VERIFY_IFIELD(MProto::enchant_critical, mob_table->cEnchants[MOB_ENCHANT_CRITICAL])
 		VERIFY_IFIELD(MProto::enchant_penetrate, mob_table->cEnchants[MOB_ENCHANT_PENETRATE])
-#if defined(ENABLE_WOLFMAN_CHARACTER) && !defined(USE_MOB_BLEEDING_AS_POISON)
-		VERIFY_IFIELD(MProto::enchant_bleeding, mob_table->cEnchants[MOB_ENCHANT_BLEEDING]);
-#endif
 
 		// ## RESIST 11
 		VERIFY_IFIELD(MProto::resist_sword, mob_table->cResists[MOB_RESIST_SWORD])
@@ -1572,12 +1540,6 @@ bool CClientManager::InitializeMobTableFromDB()
 		VERIFY_IFIELD(MProto::resist_magic, mob_table->cResists[MOB_RESIST_MAGIC])
 		VERIFY_IFIELD(MProto::resist_wind, mob_table->cResists[MOB_RESIST_WIND])
 		VERIFY_IFIELD(MProto::resist_poison, mob_table->cResists[MOB_RESIST_POISON])
-#if defined(ENABLE_WOLFMAN_CHARACTER) && !defined(USE_MOB_CLAW_AS_DAGGER)
-		VERIFY_IFIELD(MProto::resist_claw, mob_table->cResists[MOB_RESIST_CLAW]);
-#endif
-#if defined(ENABLE_WOLFMAN_CHARACTER) && !defined(USE_MOB_BLEEDING_AS_POISON)
-		VERIFY_IFIELD(MProto::resist_bleeding, mob_table->cResists[MOB_RESIST_BLEEDING]);
-#endif
 
 		// ## OTHERS #2
 		VERIFY_IFIELD(MProto::dam_multiply, mob_table->fDamMultiply)

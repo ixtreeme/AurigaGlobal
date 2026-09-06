@@ -93,9 +93,6 @@ struct ImmunityFlags {
 
 struct AffectEventState {
     LPEVENT poisonEvent;
-#ifdef ENABLE_WOLFMAN_CHARACTER
-    LPEVENT bleedingEvent;
-#endif
     LPEVENT fireEvent;
 };
 

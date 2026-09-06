@@ -52,8 +52,6 @@ eMountType GetMountLevelByVnum(uint32_t dwMountVnum, bool IsNew);
 const uint32_t GetRandomSkillVnum(uint8_t bJob = JOB_MAX_NUM);
 
 	
-
-
 class CBuffOnAttributes;
 class CPetSystem;
 #ifdef __NEWPET_SYSTEM__
@@ -80,8 +78,6 @@ namespace offlineshop
 #define AI_FLAG_STAYZONE			(1 << 3)
 
 
-
-
 extern int g_nPortalLimitTime;
 
 enum
@@ -94,18 +90,12 @@ enum
 	MAIN_RACE_ASSASSIN_M,
 	MAIN_RACE_SURA_W,
 	MAIN_RACE_SHAMAN_M,
-#ifdef ENABLE_WOLFMAN_CHARACTER
-	MAIN_RACE_WOLFMAN_M,
-#endif
 	MAIN_RACE_MAX_NUM,
 };
 
 enum
 {
 	POISON_LENGTH = 30,
-#ifdef ENABLE_WOLFMAN_CHARACTER
-	BLEEDING_LENGTH = 30,
-#endif
 	STAMINA_PER_STEP = 1,
 	SAFEBOX_PAGE_SIZE = 9,
 	AI_CHANGE_ATTACK_POISITION_TIME_NEAR = 10000,
@@ -149,9 +139,6 @@ enum EDamageType
 	DAMAGE_TYPE_MAGIC,
 	DAMAGE_TYPE_POISON,
 	DAMAGE_TYPE_SPECIAL,
-#ifdef ENABLE_WOLFMAN_CHARACTER
-	DAMAGE_TYPE_BLEEDING,
-#endif
 };
 
 enum DamageFlag
@@ -162,9 +149,6 @@ enum DamageFlag
 	DAMAGE_BLOCK = (1 << 3),
 	DAMAGE_PENETRATE = (1 << 4),
 	DAMAGE_CRITICAL = (1 << 5),
-#if defined(ENABLE_WOLFMAN_CHARACTER) && !defined(USE_MOB_BLEEDING_AS_POISON)
-	DAMAGE_BLEEDING = (1 << 6),
-#endif
 };
 
 enum EPointTypes
@@ -358,14 +342,6 @@ enum EPointTypes
 	POINT_RESIST_CRITICAL = 136,		// ũ��Ƽ�� ����	: ����� ũ��Ƽ�� Ȯ���� ����
 	POINT_RESIST_PENETRATE = 137,		// ����Ÿ�� ����	: ����� ����Ÿ�� Ȯ���� ����
 
-#ifdef ENABLE_WOLFMAN_CHARACTER
-	POINT_BLEEDING_REDUCE = 138,
-	POINT_BLEEDING_PCT = 139,
-
-	POINT_ATTBONUS_WOLFMAN = 140,				// 140 ���������� ����
-	POINT_RESIST_WOLFMAN = 141,				// 141 ���������� ����
-	POINT_RESIST_CLAW = 142,					// 142 CLAW�� ����
-#endif
 
 #ifdef ENABLE_ACCE_SYSTEM
 	POINT_ACCEDRAIN_RATE = 143,
@@ -702,7 +678,6 @@ public:
 	int GetBeltCount() const;
 	void CHARACTER::UpdateMountCountOverhead(LPCHARACTER ch, bool force)
 #endif
-
 
 
 	void			SetPlayerProto(const TPlayerTable* table);
@@ -1378,7 +1353,6 @@ public:
 	int				GetEmptyDragonSoulInventory(LPITEM pItem) const;
 
 
-
 	int				CountSpecifyItem(uint32_t vnum) const;
 	void			RemoveSpecifyItem(uint32_t vnum, int count = 1, bool cuberenewal = false);
 	LPITEM			FindSpecifyItem(uint32_t vnum
@@ -1466,7 +1440,6 @@ protected:
 #endif
 	std::string		m_stShopSign;
 	// End of shop
-
 
 
 	////////////////////////////////////////////////////////////////////////////////////////
@@ -1569,13 +1542,9 @@ public:
 	static void CheckLeaderboardSkillMobChanges();
 #endif
 	void				AttackedByPoison(entt::entity attacker);
-#ifdef ENABLE_WOLFMAN_CHARACTER
-	void				AttackedByBleeding(entt::entity attacker);
-#endif
 	void				AttackedByFire(entt::entity attacker, int amount, int count);
 
 	uint8_t GetAlignmentGrade() const;
-
 
 
 	void				UpdateAlignment(int64_t amount);
@@ -1607,8 +1576,6 @@ public:
 	// HACK
 	//
 public:
-
-
 
 
 	uint32_t GetSkipComboAttackByTime() const;
@@ -1739,7 +1706,6 @@ public:
 
 	void				SetSkillGroup(uint8_t bSkillGroup);
 	uint8_t				GetSkillGroup() const;
-
 
 
 	void				DisableCooltime();
@@ -2399,7 +2365,6 @@ public:
 #endif
 
 
-
 #ifdef __HIDE_COSTUME_SYSTEM__
 public:
 	void SetBodyCostumeHidden(bool hidden, bool pass = false);
@@ -2442,11 +2407,9 @@ private:
 #endif
 
 
-
 #ifdef ENABLE_GAYA_SYSTEM
 public:
 #endif
-
 
 
 #ifdef ENABLE_SOUL_SYSTEM
@@ -2615,12 +2578,4 @@ EVENTINFO(fishingnew_event_info)
 };
 #endif
 #endif
-
-
-
-
-
-
-
-
 

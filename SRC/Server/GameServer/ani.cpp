@@ -37,9 +37,6 @@ const char* FN_race_name(int race)
 		FN_NAME(MAIN_RACE_ASSASSIN_M);
 		FN_NAME(MAIN_RACE_SURA_W);
 		FN_NAME(MAIN_RACE_SHAMAN_M);
-#ifdef ENABLE_WOLFMAN_CHARACTER
-		FN_NAME(MAIN_RACE_WOLFMAN_M);
-#endif
 		FN_NAME(MAIN_RACE_MAX_NUM);
 	}
 
@@ -60,9 +57,6 @@ const char* FN_weapon_type(int weapon)
 		FN_NAME(WEAPON_FAN);
 		FN_NAME(WEAPON_ARROW);
 		FN_NAME(WEAPON_MOUNT_SPEAR);
-#ifdef ENABLE_WOLFMAN_CHARACTER
-		FN_NAME(WEAPON_CLAW);
-#endif
 		FN_NAME(WEAPON_NUM_TYPES);
 	}
 
@@ -149,9 +143,6 @@ bool ANI::load()
 		"data/pc2/assassin",	// �ڰ�(��)
 		"data/pc2/sura",		// ����(��)
 		"data/pc2/shaman",		// ����(��)
-#ifdef ENABLE_WOLFMAN_CHARACTER
-		"data/pc3/wolfman",		// ������
-#endif
 	};
 
 	for (int race = 0; race <MAIN_RACE_MAX_NUM; ++race)
@@ -197,11 +188,6 @@ uint32_t ANI::load_one_weapon(const char *dir_name, int weapon, uint8_t combo, b
 			strlcpy(format, "%s/%sfan/combo_%02d.msa", sizeof(format));
 			break;
 
-#ifdef ENABLE_WOLFMAN_CHARACTER
-		case WEAPON_CLAW:
-			strlcpy(format, "%s/%sclaw/combo_%02d.msa", sizeof(format));
-			break;
-#endif
 
 		default:
 			return 1000;
@@ -257,9 +243,6 @@ uint32_t ANI::attack_speed(int race, int weapon, uint8_t combo, bool horse)
 		case MAIN_RACE_ASSASSIN_M:
 		case MAIN_RACE_SURA_W:
 		case MAIN_RACE_SHAMAN_M:
-#ifdef ENABLE_WOLFMAN_CHARACTER
-		case MAIN_RACE_WOLFMAN_M:
-#endif
 			break;
 		default:
 			return 1000;
@@ -275,9 +258,6 @@ uint32_t ANI::attack_speed(int race, int weapon, uint8_t combo, bool horse)
 		case WEAPON_FAN:
 		case WEAPON_ARROW:
 		case WEAPON_MOUNT_SPEAR:
-#ifdef ENABLE_WOLFMAN_CHARACTER
-		case WEAPON_CLAW:
-#endif
 			break;
 		default:
 			return 1000;
@@ -299,9 +279,6 @@ const char* FN_race_string(int race)
 		case MAIN_RACE_ASSASSIN_M:	return "ASSASSIN_M";
 		case MAIN_RACE_SURA_W:		return "SURA_W";
 		case MAIN_RACE_SHAMAN_M:	return "SHAMAN_M";
-#ifdef ENABLE_WOLFMAN_CHARACTER
-		case MAIN_RACE_WOLFMAN_M:	return "WOLFMAN_M";
-#endif
 	}
 
 	return "UNKNOWN_RACE";
@@ -319,9 +296,6 @@ const char* FN_weapon_string(int weapon)
 		case WEAPON_FAN:		return "FAN";
 		case WEAPON_ARROW:		return "ARROW";
 		case WEAPON_MOUNT_SPEAR:return "WEAPON_MOUNT_SPEAR";
-#ifdef ENABLE_WOLFMAN_CHARACTER
-		case WEAPON_CLAW:		return "CLAW";
-#endif
 	}
 
 	return "UNKNOWN";
@@ -405,5 +379,4 @@ int main(int argc, char **argv)
 	exit(0);
 }
 #endif
-
 

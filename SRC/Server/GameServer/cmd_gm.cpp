@@ -1259,22 +1259,13 @@ ACMD(do_state)
 			ecs::PointSystem::Get(tch, POINT_DEF_BONUS));
 	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "RESISTANCES:");
 	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "   WARR:%3d%% ASAS:%3d%% SURA:%3d%% SHAM:%3d%%"
-#ifdef ENABLE_WOLFMAN_CHARACTER
-			" WOLF:%3d%%"
-#endif
 			,
 			ecs::PointSystem::Get(tch, POINT_RESIST_WARRIOR),
 			ecs::PointSystem::Get(tch, POINT_RESIST_ASSASSIN),
 			ecs::PointSystem::Get(tch, POINT_RESIST_SURA),
 			ecs::PointSystem::Get(tch, POINT_RESIST_SHAMAN)
-#ifdef ENABLE_WOLFMAN_CHARACTER
-			,ecs::PointSystem::Get(tch, POINT_RESIST_WOLFMAN)
-#endif
 	);
 	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "   SWORD:%3d%% THSWORD:%3d%% DAGGER:%3d%% BELL:%3d%% FAN:%3d%% BOW:%3d%%"
-#ifdef ENABLE_WOLFMAN_CHARACTER
-			" CLAW:%3d%%"
-#endif
 			,
 			ecs::PointSystem::Get(tch, POINT_RESIST_SWORD),
 			ecs::PointSystem::Get(tch, POINT_RESIST_TWOHAND),
@@ -1282,9 +1273,6 @@ ACMD(do_state)
 			ecs::PointSystem::Get(tch, POINT_RESIST_BELL),
 			ecs::PointSystem::Get(tch, POINT_RESIST_FAN),
 			ecs::PointSystem::Get(tch, POINT_RESIST_BOW)
-#ifdef ENABLE_WOLFMAN_CHARACTER
-			,ecs::PointSystem::Get(tch, POINT_RESIST_CLAW)
-#endif
 	);
 	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "   FIRE:%3d%% ELEC:%3d%% MAGIC:%3d%% WIND:%3d%% CRIT:%3d%% PENE:%3d%%",
 			ecs::PointSystem::Get(tch, POINT_RESIST_FIRE),
@@ -1383,17 +1371,11 @@ ACMD(do_state)
 			);
 
 	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "   WARR:%3d%% ASAS:%3d%% SURA:%3d%% SHAM:%3d%%"
-#ifdef ENABLE_WOLFMAN_CHARACTER
-			" WOLF:%3d%%"
-#endif
 			,
 			ecs::PointSystem::Get(tch, POINT_ATTBONUS_WARRIOR),
 			ecs::PointSystem::Get(tch, POINT_ATTBONUS_ASSASSIN),
 			ecs::PointSystem::Get(tch, POINT_ATTBONUS_SURA),
 			ecs::PointSystem::Get(tch, POINT_ATTBONUS_SHAMAN)
-#ifdef ENABLE_WOLFMAN_CHARACTER
-			,ecs::PointSystem::Get(tch, POINT_ATTBONUS_WOLFMAN)
-#endif
 	);
 	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "IMMUNE:");
 	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "   STUN:%d SLOW:%d FALL:%d",
@@ -1691,31 +1673,6 @@ ACMD(do_poison)
 	AffectSystem::ApplyPoison(tch, entt::null);
 }
 #endif
-#ifdef ENABLE_WOLFMAN_CHARACTER
-ACMD(do_bleeding)
-{
-	if (!ecs::PlayerRuntime::IsPC(character))
-		return;
-	char arg1[256];
-	one_argument(argument, arg1, sizeof(arg1));
-
-	if (!*arg1)
-	{
-		ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "ex) /bleeding <player name>");
-		return;
-	}
-
-	const auto tch = CHARACTER_MANAGER::instance().FindPCEntity(arg1);
-
-	if (!ecs::PlayerRuntime::IsValid(tch))
-	{
-		ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "%s: no such a player", arg1);
-		return;
-	}
-
-	AffectSystem::ApplyBleeding(tch, entt::null);
-}
-#endif
 
 #define MISC    0
 #define BINARY  1
@@ -1736,11 +1693,7 @@ const struct set_struct
 	const char * help;
 } set_fields[] = {
 	{ "gold",		NUMBER, nullptr},
-#ifdef ENABLE_WOLFMAN_CHARACTER
-	{ "race",		NUMBER,	"0. Warrior, 1. Ninja, 2. Sura, 3. Shaman, 4. Lycan"		},
-#else
 	{ "race",		NUMBER,	"0. Warrior, 1. Ninja, 2. Sura, 3. Shaman"		},
-#endif
 	{ "sex",		NUMBER,	"0. Male, 1. Female"	},
 	{ "job",		NUMBER,	"0. None, 1. First, 2. Second"	},
 	{ "exp",		NUMBER, nullptr},
@@ -1844,11 +1797,6 @@ ACMD(do_set)
 					case JOB_SHAMAN:
 						dwRace = (mySex==SEX_MALE)?MAIN_RACE_SHAMAN_M:MAIN_RACE_SHAMAN_W;
 						break;
-#ifdef ENABLE_WOLFMAN_CHARACTER
-					case JOB_WOLFMAN:
-						dwRace = (mySex==SEX_MALE)?MAIN_RACE_WOLFMAN_M:MAIN_RACE_WOLFMAN_M;
-						break;
-#endif
 				}
 				if (dwRace!=ecs::PlayerRuntime::GetRaceNum(tch))
 				{
@@ -4556,53 +4504,6 @@ ACMD (do_item_full_set)
 			"GM_CMD_DESTROY");
 		}
 		break;
-#ifdef ENABLE_WOLFMAN_CHARACTER
-	case JOB_WOLFMAN:
-		{
-
-			item = ITEM_MANAGER::instance().CreateItem(21049);
-			if (!ItemSystem::IsValidItem(item) || !InventorySystem::EquipTo(item, character, ItemSystem::FindEquipCell(character, item)))
-				ItemSystem::DestroyItemEntityEcs(
-			item,
-			"GM_CMD_DESTROY");
-			item = ITEM_MANAGER::instance().CreateItem(13049);
-			if (!ItemSystem::IsValidItem(item) || !InventorySystem::EquipTo(item, character, ItemSystem::FindEquipCell(character, item)))
-				ItemSystem::DestroyItemEntityEcs(
-			item,
-			"GM_CMD_DESTROY");
-			item = ITEM_MANAGER::instance().CreateItem(1773);
-			if (!ItemSystem::IsValidItem(item) || !InventorySystem::EquipTo(item, character, ItemSystem::FindEquipCell(character, item)))
-				ItemSystem::DestroyItemEntityEcs(
-			item,
-			"GM_CMD_DESTROY");
-			item = ITEM_MANAGER::instance().CreateItem(6049);
-			if (!ItemSystem::IsValidItem(item) || !InventorySystem::EquipTo(item, character, ItemSystem::FindEquipCell(character, item)))
-				ItemSystem::DestroyItemEntityEcs(
-			item,
-			"GM_CMD_DESTROY");
-			item = ITEM_MANAGER::instance().CreateItem(21559);
-			if (!ItemSystem::IsValidItem(item) || !InventorySystem::EquipTo(item, character, ItemSystem::FindEquipCell(character, item)))
-				ItemSystem::DestroyItemEntityEcs(
-			item,
-			"GM_CMD_DESTROY");
-			item = ITEM_MANAGER::instance().CreateItem(1753);
-			if (!ItemSystem::IsValidItem(item) || !InventorySystem::EquipTo(item, character, ItemSystem::FindEquipCell(character, item)))
-				ItemSystem::DestroyItemEntityEcs(
-			item,
-			"GM_CMD_DESTROY");
-			item = ITEM_MANAGER::instance().CreateItem(1813);
-			if (!ItemSystem::IsValidItem(item) || !InventorySystem::EquipTo(item, character, ItemSystem::FindEquipCell(character, item)))
-				ItemSystem::DestroyItemEntityEcs(
-			item,
-			"GM_CMD_DESTROY");
-			item = ITEM_MANAGER::instance().CreateItem(1793);
-			if (!ItemSystem::IsValidItem(item) || !InventorySystem::EquipTo(item, character, ItemSystem::FindEquipCell(character, item)))
-				ItemSystem::DestroyItemEntityEcs(
-			item,
-			"GM_CMD_DESTROY");
-		}
-		break;
-#endif
 	}
 }
 
@@ -4641,9 +4542,6 @@ ACMD (do_attr_full_set)
 		case JOB_ASSASSIN:
 		case JOB_SURA:
 		case JOB_SHAMAN:
-	#ifdef ENABLE_WOLFMAN_CHARACTER
-		case JOB_WOLFMAN:
-	#endif
 		{
 
 			ApplyFullAttributes(owner, WEAR_HEAD, {
@@ -4780,7 +4678,6 @@ ACMD(do_offshop_change_shop_name) {
 		return;
 	}
 }
-
 
 
 ACMD(do_offshop_force_close_shop) {

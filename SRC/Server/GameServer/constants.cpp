@@ -23,9 +23,6 @@ TJobInitialPoints JobInitialPoints[JOB_MAX_NUM] =
 	{   4,  3,  6,  3,  650,   200,     40,    20,    36, 44,     18, 22,     800,      5,      1, 3  }, // JOB_ASSASSIN 16
 	{   5,  3,  3,  5,  650,   200,     40,    20,    36, 44,     18, 22,     800,      5,      1, 3  }, // JOB_SURA	 16
 	{   3,  4,  3,  6,  700,   200,     40,    20,    36, 44,     18, 22,     800,      5,      1, 3  },  // JOB_SHAMANa  16
-#ifdef ENABLE_WOLFMAN_CHARACTER
-	{   2,  6,  6,  2,  600,   200,     40,    20,    36, 44,     18, 22,     800,      5,      1, 3  }, // JOB_WOLFMAN  16  // TODO: 4ɷġ ʱⰪ ܿ ٸ  ʿ (ȹ û)
-#endif
 };
 
 const TMobRankStat MobRankStats[MOB_RANK_MAX_NUM] =
@@ -288,7 +285,6 @@ const int aiPercentByDeltaLevForBoss_euckr[MAX_EXP_DELTA_OF_LEV] =
 	170,        // 14   29
 	180         // 15   30
 };
-
 
 
 const int aiPercentByDeltaLev_euckr[MAX_EXP_DELTA_OF_LEV] =
@@ -657,9 +653,6 @@ const int aiMobEnchantApplyIdx[MOB_ENCHANTS_MAX_NUM] =
 	APPLY_STUN_PCT,
 	APPLY_CRITICAL_PCT,
 	APPLY_PENETRATE_PCT,
-#if defined(ENABLE_WOLFMAN_CHARACTER) && !defined(USE_MOB_BLEEDING_AS_POISON)
-	APPLY_BLEEDING_PCT,
-#endif
 };
 
 const int aiMobResistsApplyIdx[MOB_RESISTS_MAX_NUM] =
@@ -675,12 +668,6 @@ const int aiMobResistsApplyIdx[MOB_RESISTS_MAX_NUM] =
 	APPLY_RESIST_MAGIC,
 	APPLY_RESIST_WIND,
 	APPLY_POISON_REDUCE,
-#if defined(ENABLE_WOLFMAN_CHARACTER) && !defined(USE_MOB_CLAW_AS_DAGGER)
-	APPLY_RESIST_CLAW,
-#endif
-#if defined(ENABLE_WOLFMAN_CHARACTER) && !defined(USE_MOB_BLEEDING_AS_POISON)
-	APPLY_BLEEDING_REDUCE,
-#endif
 };
 
 const int aiSocketPercentByQty[5][4] =
@@ -702,9 +689,6 @@ const int aiWeaponSocketQty[WEAPON_NUM_TYPES] =
 	3, // WEAPON_FAN,
 	0, // WEAPON_ARROW,
 	0, // WEAPON_MOUNT_SPEAR
-#ifdef ENABLE_WOLFMAN_CHARACTER
-	3, // WEAPON_CLAW
-#endif
 };
 
 const int aiArmorSocketQty[ARMOR_NUM_TYPES] =
@@ -829,19 +813,11 @@ const TApplyInfo aApplyInfo[MAX_APPLY_NUM] =
 	{ POINT_RESIST_CRITICAL,		},   // APPLY_ANTI_CRITICAL_PCT,	90
 	{ POINT_RESIST_PENETRATE,		},   // APPLY_ANTI_PENETRATE_PCT,	91
 
-#ifdef ENABLE_WOLFMAN_CHARACTER
-	{ POINT_BLEEDING_REDUCE,		},	// APPLY_BLEEDING_REDUCE, 		92
-	{ POINT_BLEEDING_PCT,			},	// APPLY_BLEEDING_PCT, 			93
-	{ POINT_ATTBONUS_WOLFMAN,		},	// APPLY_ATTBONUS_WOLFMAN,		94  
-	{ POINT_RESIST_WOLFMAN,			},	// APPLY_RESIST_WOLFMAN,		95  
-	{ POINT_RESIST_CLAW,			},	// APPLY_RESIST_CLAW,			96 CLAW 
-#else
 	{POINT_NONE,},
 	{POINT_NONE,},
 	{POINT_NONE,},
 	{POINT_NONE,},
 	{POINT_NONE,},
-#endif
 
 #ifdef ELEMENT_NEW_BONUSES
 #ifdef ENABLE_NEW_BONUS_TALISMAN
@@ -1645,7 +1621,6 @@ std::span<const GuildAttr> GetGuildAttributesByLevel(uint8_t level)
 }
 
 
-
 #endif
 
 
@@ -1750,13 +1725,6 @@ TValueName c_aApplyTypeNames[] =
 	{ "MAGIC_ATTBONUS_PER",	APPLY_MAGIC_ATTBONUS_PER	},
     { "MELEE_MAGIC_ATTBONUS_PER",	APPLY_MELEE_MAGIC_ATTBONUS_PER	},
 
-#ifdef ENABLE_WOLFMAN_CHARACTER
-	{ "BLEEDING_REDUCE",APPLY_BLEEDING_REDUCE },
-	{ "BLEEDING_PCT",APPLY_BLEEDING_PCT },
-	{ "ATT_BONUS_TO_WOLFMAN",APPLY_ATTBONUS_WOLFMAN },
-	{ "RESIST_WOLFMAN",APPLY_RESIST_WOLFMAN },
-	{ "RESIST_CLAW",APPLY_RESIST_CLAW },
-#endif
 
 #ifdef ENABLE_ACCE_SYSTEM
 	{ "ACCEDRAIN_RATE",APPLY_ACCEDRAIN_RATE },

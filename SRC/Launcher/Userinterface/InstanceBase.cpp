@@ -4972,11 +4972,7 @@ void CInstanceBase::__GetShiningEffect(CItemData* pItem)
 				else
 				{
 					//Check for double sided weapons or fan which is attached on both sides when mounted.
-#ifdef ENABLE_WOLFMAN
-					bool twoSidedWeapon = bSubType == CItemData::WEAPON_DAGGER || (IsMountingHorse() && bSubType == CItemData::WEAPON_FAN) || bSubType == CItemData::WEAPON_CLAW;
-#else
 					bool twoSidedWeapon = bSubType == CItemData::WEAPON_DAGGER || (IsMountingHorse() && bSubType == CItemData::WEAPON_FAN);
-#endif
 					if (twoSidedWeapon)
 					{
 						__AttachWeaponShiningEffect(i, shiningTable.szShinings[i], "PART_WEAPON_LEFT");

@@ -325,8 +325,6 @@ void Map1MassSpawnEvent_OnMobDead(uint32_t vid)
 #endif
 
 
-
-
 CHARACTER_MANAGER::CHARACTER_MANAGER() : itemshopUpdateTime(0),
 m_iVIDCount(0), dummy1{},
 m_selectedStone(entt::null),
@@ -1362,12 +1360,6 @@ bool CHARACTER_MANAGER::GetCharactersByRaceNum(uint32_t dwRaceNum, std::vector<e
 #define FIND_JOB_SHAMAN_1	(1 << 13)
 #define FIND_JOB_SHAMAN_2	(1 << 14)
 #define FIND_JOB_SHAMAN		(FIND_JOB_SHAMAN_0 | FIND_JOB_SHAMAN_1 | FIND_JOB_SHAMAN_2)
-#ifdef ENABLE_WOLFMAN_CHARACTER
-#define FIND_JOB_WOLFMAN_0	(1 << 15)
-#define FIND_JOB_WOLFMAN_1	(1 << 16)
-#define FIND_JOB_WOLFMAN_2	(1 << 17)
-#define FIND_JOB_WOLFMAN		(FIND_JOB_WOLFMAN_0 | FIND_JOB_WOLFMAN_1 | FIND_JOB_WOLFMAN_2)
-#endif
 
 //
 // (job+1)*3+(skill_group)
@@ -1631,7 +1623,6 @@ void CHARACTER_MANAGER::CheckEventForDrop(entt::entity character, entt::entity k
 		|| ecs::PlayerRuntime::GetRaceNum(character) == 3910//Skeletos
 
 
-
 		)
 	{
 		eventPtr = CheckEventIsActive(BUPLA_RUN_BOSS_LOOT_EVENT, killerEmpire);
@@ -1763,9 +1754,6 @@ void CHARACTER_MANAGER::CheckEventForDrop(entt::entity character, entt::entity k
 				CombatSystem::SetVictim(boss, killer);
 			}
 		}
-
-
-
 
 
 	}
@@ -2013,7 +2001,6 @@ void CHARACTER_MANAGER::SetEventStatus(const uint16_t eventID, const bool eventS
 		{LELEKGOMB_EVENT,{2247,2248}},
 
 
-
 	};
 	const auto it = m_eventText.find(eventSnapshot.eventIndex);
 	if (it != m_eventText.end())
@@ -2028,7 +2015,6 @@ void CHARACTER_MANAGER::SetEventStatus(const uint16_t eventID, const bool eventS
 #endif
 		}
 	}
-
 
 
 	// Bonus event update status
@@ -2236,7 +2222,6 @@ void CHARACTER_MANAGER::LoadItemShopData(entt::entity character, bool isAll)
 }
 
 
-
 bool CHARACTER_MANAGER::GetItemShopDataByVnum(uint32_t vnum, TIShopData& outData) const
 {
 	for (const auto& categoryEntry : m_IShopManager)
@@ -2388,7 +2373,6 @@ void CHARACTER_MANAGER::LoadItemShopBuyReal(entt::entity character, const char* 
 	}
 
 
-
 	if (itemCount > 1)
 		ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "You bought from game itemshop : count: %d Coins: %u", itemCount, itemPrice);
 	else
@@ -2532,8 +2516,4 @@ void CHARACTER_MANAGER::LoadItemShopData(const char* c_pData)
 	}
 }
 #endif
-
-
-
-
 

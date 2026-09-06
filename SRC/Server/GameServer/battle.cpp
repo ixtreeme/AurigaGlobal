@@ -458,11 +458,6 @@ int CalcAttBonus(entt::entity attacker, entt::entity victim, int iAtk)
 			case JOB_SHAMAN:
 				iAtk += (iAtk * ecs::PointSystem::Get(attacker, POINT_ATTBONUS_SHAMAN)) / 100;
 				break;
-#ifdef ENABLE_WOLFMAN_CHARACTER
-			case JOB_WOLFMAN: // TODO: ?????? ATTBONUS �??
-				iAtk += (iAtk * ecs::PointSystem::Get(attacker, POINT_ATTBONUS_WOLFMAN)) / 100;
-				break;
-#endif
 		}
 	}
 
@@ -488,11 +483,6 @@ int CalcAttBonus(entt::entity attacker, entt::entity victim, int iAtk)
 			case JOB_SHAMAN:
 				iAtk -= (iAtk * ecs::PointSystem::Get(victim, POINT_RESIST_SHAMAN)) / 100;
 				break;
-#ifdef ENABLE_WOLFMAN_CHARACTER
-			case JOB_WOLFMAN: // TODO: ?????? ???? �??
-				iAtk -= (iAtk * ecs::PointSystem::Get(victim, POINT_RESIST_WOLFMAN)) / 100;
-				break;
-#endif
 		}
 	}
 
@@ -568,9 +558,6 @@ int CalcMeleeDamage(entt::entity attacker, entt::entity victim, bool bIgnoreDefe
 			case WEAPON_BELL:
 			case WEAPON_FAN:
 			case WEAPON_MOUNT_SPEAR:
-#ifdef ENABLE_WOLFMAN_CHARACTER
-			case WEAPON_CLAW:
-#endif
 				break;
 
 			case WEAPON_BOW:
@@ -804,15 +791,6 @@ void NormalAttackAffect(entt::entity attacker, entt::entity victim)
 		if (number(1, 100) <= ecs::PointSystem::Get(attacker, POINT_POISON_PCT))
 			AffectSystem::ApplyPoison(victim, attacker);
 	}
-#ifdef ENABLE_WOLFMAN_CHARACTER
-    if (!IsBattlePair(attacker, victim))
-        return;
-	if (ecs::PointSystem::Get(attacker, POINT_BLEEDING_PCT) && !AffectSystem::IsAffectFlag(victim, AFF_BLEEDING))
-	{
-		if (number(1, 100) <= ecs::PointSystem::Get(attacker, POINT_BLEEDING_PCT))
-			AffectSystem::ApplyBleeding(victim, attacker);
-	}
-#endif
     if (!IsBattlePair(attacker, victim))
         return;
 	int iStunDuration = 2;
@@ -953,21 +931,6 @@ int battle_hit(entt::entity attacker, entt::entity victim, int & iRetDam)
 				break;
 			}
 
-#ifdef ENABLE_WOLFMAN_CHARACTER
-			case WEAPON_CLAW:
-			{
-				int32_t lValue = ecs::PointSystem::Get(victim, POINT_RESIST_DAGGER);
-#ifdef ENABLE_NEW_BONUS_TALISMAN
-				lValue -= ecs::PointSystem::Get(attacker, POINT_ATTBONUS_IRR_PUGNALE);
-#endif
-#ifdef ENABLE_NEW_COMMON_BONUSES
-				lValue -= ecs::PointSystem::Get(attacker, POINT_IRR_WEAPON_DEFENSE);
-#endif
-				lValue = lValue < 0 ? 0 :  lValue;
-				iDam = iDam * (100 - lValue) / 100;
-				break;
-			}
-#endif
 			default:
 				break;
 		}

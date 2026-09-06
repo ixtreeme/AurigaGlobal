@@ -56,9 +56,6 @@ class CSpecialItemGroup
 			DRAIN_HP,
 			POISON,
 			MOB_GROUP,
-#ifdef ENABLE_WOLFMAN_CHARACTER
-			BLEEDING,
-#endif
 		};
 
 		// QUEST 타입은 퀘스트 스크립트에서 vnum.sig_use를 사용할 수 있는 그룹이다.
@@ -441,7 +438,6 @@ class ITEM_MANAGER : public singleton<ITEM_MANAGER>
 		// convert name -> vnum special_item_group.txt
 
 		uint32_t			GetRefineFromVnum(uint32_t dwVnum);
-
 
 
 		const CSpecialItemGroup* GetSpecialItemGroup(uint32_t dwVnum);

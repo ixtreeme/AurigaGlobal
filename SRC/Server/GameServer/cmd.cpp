@@ -22,7 +22,6 @@ ACMD(do_stonecraft);
 #endif
 
 
-
 ACMD(do_pcbang_update);
 ACMD(do_pcbang_check);
 #ifdef __NEWPET_SYSTEM__
@@ -282,9 +281,6 @@ ACMD(do_force_logout);
 
 ACMD(do_poison);
 ACMD(do_rewarp);
-#endif
-#ifdef ENABLE_WOLFMAN_CHARACTER
-ACMD(do_bleeding);
 #endif
 #ifdef ENABLE_GAYA_SYSTEM
 ACMD(do_gaya_system);
@@ -763,9 +759,6 @@ struct command_info cmd_info[] =
 #ifdef __ENABLE_NEW_OFFLINESHOP__
 	{ "offshop_change_shop_name", do_offshop_change_shop_name, 0,  POS_DEAD, GM_IMPLEMENTOR },
 	{ "offshop_force_close_shop", do_offshop_force_close_shop, 0,  POS_DEAD, GM_IMPLEMENTOR },
-#endif
-#ifdef ENABLE_WOLFMAN_CHARACTER
-	{ "bleeding",			do_bleeding,				0,			POS_DEAD,	GM_IMPLEMENTOR	},
 #endif
 #ifdef ENABLE_GAYA_SYSTEM
 	{ "w_gaya",							do_gaya_system,					0,	POS_DEAD,	GM_PLAYER },

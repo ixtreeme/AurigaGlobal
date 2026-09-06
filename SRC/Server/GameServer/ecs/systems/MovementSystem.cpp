@@ -896,11 +896,6 @@ uint32_t CHARACTER::GetMotionMode() const
 		case WEAPON_FAN:
 			dwMode = MOTION_MODE_FAN;
 			break;
-#ifdef ENABLE_WOLFMAN_CHARACTER
-		case WEAPON_CLAW:
-			dwMode = MOTION_MODE_CLAW;
-			break;
-#endif
 		}
 	}
 	return dwMode;
@@ -1376,10 +1371,6 @@ EVENTFUNC(recovery_event)
 		if (AffectSystem::IsAffectFlag(character, AFF_POISON))
 			return PASSES_PER_SEC(std::max((uint8_t)1, ch->GetMobTable().bRegenCycle));
 
-#ifdef ENABLE_WOLFMAN_CHARACTER
-		if (AffectSystem::IsAffectFlag(character, AFF_BLEEDING))
-			return PASSES_PER_SEC(MAX(1, ch->GetMobTable().bRegenCycle));
-#endif
 
 #ifdef ENABLE_DS_RUNE
 		if (ch->GetMobTable().dwVnum == 3996) {
@@ -1457,10 +1448,6 @@ EVENTFUNC(recovery_event)
 		{
 			return 3;
 		}
-#ifdef ENABLE_WOLFMAN_CHARACTER
-		if (AffectSystem::IsAffectFlag(character, AFF_BLEEDING))
-			return 3;
-#endif
 		int iSec = (get_dword_time() - ch->GetLastMoveTime()) / 3000;
 
 		ch->DistributeSP((ch ? ch->GetEntityHandle() : entt::null));

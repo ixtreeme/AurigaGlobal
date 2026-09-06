@@ -15,15 +15,6 @@ enum eCommonDefines {
 
 //////////////////////////////////////////////////////////////////////////
 // ### CommonDefines Systems ###
-// #define ENABLE_WOLFMAN_CHARACTER
-// #ifdef ENABLE_WOLFMAN_CHARACTER
-// #define USE_MOB_BLEEDING_AS_POISON
-// #define USE_MOB_CLAW_AS_DAGGER
-// #define USE_ITEM_BLEEDING_AS_POISON
-// #define USE_ITEM_CLAW_AS_DAGGER
-// #define USE_WOLFMAN_STONES
-// #define USE_WOLFMAN_BOOKS
-// #endif
 
 #define ENABLE_DICE_SYSTEM
 #define ENABLE_EXTEND_INVEN_SYSTEM
