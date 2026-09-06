@@ -8,6 +8,7 @@
 #include "SocialSystem.hpp"
 
 #include "PlayerRuntimeSystem.hpp"
+#include "../EcsDiagnostics.hpp"
 #include "InventorySystem.hpp"
 #include "SessionSystem.hpp"
 #include "MountSystem.hpp"
@@ -1989,9 +1990,7 @@ void CHARACTER::SetImmuneFlag(uint32_t dw)
 {
     if (auto* flags = EnsureRuntimeFlagsComponent(GetEntityHandle()))
         flags->immuneFlag = dw;
-    // NDEBUG is set for Release and RelWithDebInfo, so an invalid handle
-    // here is not an assert but a write through entt::null.
-    if (GetEntityHandle() != entt::null && g_registry.valid(GetEntityHandle()))
+    if (ecs::diag::Check(GetEntityHandle(), "SetImmuneFlag"))
     {
         auto& immunity = g_registry.get_or_emplace<ecs::ImmunityFlags>(GetEntityHandle());
         immunity.flags = dw;
@@ -4607,17 +4606,13 @@ void CHARACTER::SetPlayerProto(const TPlayerTable* t)
 #endif
         {
             AffectSystem::SetFlag(GetEntityHandle(), AFF_YMIR);
-            // NDEBUG is set for Release and RelWithDebInfo, so an invalid handle
-            // here is not an assert but a write through entt::null.
-            if (GetEntityHandle() != entt::null && g_registry.valid(GetEntityHandle()))
+            if (ecs::diag::Check(GetEntityHandle(), "SetPlayerProto/GM"))
                 g_registry.get_or_emplace<ecs::CombatStats>(GetEntityHandle()).pkMode = PK_MODE_PROTECT;
         }
     }
 
     if (GetLevel() < PK_PROTECT_LEVEL) {
-        // NDEBUG is set for Release and RelWithDebInfo, so an invalid handle
-        // here is not an assert but a write through entt::null.
-        if (GetEntityHandle() != entt::null && g_registry.valid(GetEntityHandle()))
+        if (ecs::diag::Check(GetEntityHandle(), "SetPlayerProto/lowLevel"))
             g_registry.get_or_emplace<ecs::CombatStats>(GetEntityHandle()).pkMode = PK_MODE_PROTECT;
     }
 
@@ -4692,8 +4687,7 @@ void CHARACTER::SetProto(const CMob* pkMob)
     // is false - so a character with no entity yet passes the filter instead of
     // being turned back. NDEBUG is set for Release and RelWithDebInfo, so there
     // the invalid handle is not an assert but a write through entt::null.
-    if (const entt::entity self = GetEntityHandle();
-        self != entt::null && g_registry.valid(self))
+    if (const entt::entity self = GetEntityHandle(); ecs::diag::Check(self, "SetProto"))
     {
         g_registry.emplace_or_replace<ecs::MobDataRef>(self, pkMob, m_pkMobInst);
         g_registry.get_or_emplace<ecs::CombatStats>(self).pkMode = PK_MODE_FREE;

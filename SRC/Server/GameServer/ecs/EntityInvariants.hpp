@@ -5,6 +5,7 @@
 #include "components/identity_components.hpp"
 #include "components/spatial_components.hpp"
 #include "components/transform_components.hpp"
+#include "EcsDiagnostics.hpp"
 #include <Core/Logging.hpp>
 
 namespace ecs::Invariants {
@@ -40,7 +41,7 @@ inline void ValidateCharacterTags(entt::registry& reg, entt::entity e, const cha
 
     if (!HasAnyTypeTag(reg, e)) {
         LOG_WARN("[ECS_INVARIANT] entity={} ctx={} has NO type tag (TagPC/TagNPC/TagMonster/TagStone)",
-            static_cast<uint32_t>(e), context ? context : "unknown");
+            ecs::diag::Describe(e), context ? context : "unknown");
     }
 }
 
@@ -52,13 +53,13 @@ inline void ValidateCommonIdentity(entt::registry& reg, entt::entity e, const ch
     const char* ctx = context ? context : "unknown";
 
     if (!reg.all_of<ecs::VIDComponent>(e))
-        LOG_WARN("[ECS_INVARIANT] entity={} ctx={} missing VIDComponent", static_cast<uint32_t>(e), ctx);
+        LOG_WARN("[ECS_INVARIANT] entity={} ctx={} missing VIDComponent", ecs::diag::Describe(e), ctx);
     if (!reg.all_of<ecs::PlayerName>(e))
-        LOG_WARN("[ECS_INVARIANT] entity={} ctx={} missing PlayerName", static_cast<uint32_t>(e), ctx);
+        LOG_WARN("[ECS_INVARIANT] entity={} ctx={} missing PlayerName", ecs::diag::Describe(e), ctx);
     if (!reg.all_of<ecs::RaceComponent>(e))
-        LOG_WARN("[ECS_INVARIANT] entity={} ctx={} missing RaceComponent", static_cast<uint32_t>(e), ctx);
+        LOG_WARN("[ECS_INVARIANT] entity={} ctx={} missing RaceComponent", ecs::diag::Describe(e), ctx);
     if (!reg.all_of<ecs::RaceState>(e))
-        LOG_WARN("[ECS_INVARIANT] entity={} ctx={} missing RaceState", static_cast<uint32_t>(e), ctx);
+        LOG_WARN("[ECS_INVARIANT] entity={} ctx={} missing RaceState", ecs::diag::Describe(e), ctx);
 }
 
 inline void ValidatePCIdentity(entt::registry& reg, entt::entity e, const char* context)
@@ -70,13 +71,13 @@ inline void ValidatePCIdentity(entt::registry& reg, entt::entity e, const char* 
     ValidateCommonIdentity(reg, e, ctx);
 
     if (!reg.all_of<ecs::PlayerID>(e))
-        LOG_WARN("[ECS_INVARIANT] entity={} ctx={} missing PlayerID", static_cast<uint32_t>(e), ctx);
+        LOG_WARN("[ECS_INVARIANT] entity={} ctx={} missing PlayerID", ecs::diag::Describe(e), ctx);
     if (!reg.all_of<ecs::AccountID>(e))
-        LOG_WARN("[ECS_INVARIANT] entity={} ctx={} missing AccountID", static_cast<uint32_t>(e), ctx);
+        LOG_WARN("[ECS_INVARIANT] entity={} ctx={} missing AccountID", ecs::diag::Describe(e), ctx);
     if (!reg.all_of<ecs::EmpireComponent>(e))
-        LOG_WARN("[ECS_INVARIANT] entity={} ctx={} missing EmpireComponent", static_cast<uint32_t>(e), ctx);
+        LOG_WARN("[ECS_INVARIANT] entity={} ctx={} missing EmpireComponent", ecs::diag::Describe(e), ctx);
     if (!reg.all_of<ecs::GMLevel>(e))
-        LOG_WARN("[ECS_INVARIANT] entity={} ctx={} missing GMLevel", static_cast<uint32_t>(e), ctx);
+        LOG_WARN("[ECS_INVARIANT] entity={} ctx={} missing GMLevel", ecs::diag::Describe(e), ctx);
 }
 
 inline bool HasMatchingSpatialKind(entt::registry& reg, entt::entity e, ecs::SpatialKind expected)
@@ -96,17 +97,17 @@ inline void ValidateSpatialCoverage(entt::registry& reg, entt::entity e, const c
     const char* ctx = context ? context : "unknown";
 
     if (!reg.all_of<ecs::SpatialEntity>(e))
-        LOG_WARN("[ECS_INVARIANT] entity={} ctx={} missing SpatialEntity", static_cast<uint32_t>(e), ctx);
+        LOG_WARN("[ECS_INVARIANT] entity={} ctx={} missing SpatialEntity", ecs::diag::Describe(e), ctx);
     if (!reg.all_of<ecs::SpatialKindTag>(e))
-        LOG_WARN("[ECS_INVARIANT] entity={} ctx={} missing SpatialKindTag", static_cast<uint32_t>(e), ctx);
+        LOG_WARN("[ECS_INVARIANT] entity={} ctx={} missing SpatialKindTag", ecs::diag::Describe(e), ctx);
     if (!reg.all_of<ecs::Position>(e))
-        LOG_WARN("[ECS_INVARIANT] entity={} ctx={} missing Position", static_cast<uint32_t>(e), ctx);
+        LOG_WARN("[ECS_INVARIANT] entity={} ctx={} missing Position", ecs::diag::Describe(e), ctx);
     if (!reg.all_of<ecs::PositionZ>(e))
-        LOG_WARN("[ECS_INVARIANT] entity={} ctx={} missing PositionZ", static_cast<uint32_t>(e), ctx);
+        LOG_WARN("[ECS_INVARIANT] entity={} ctx={} missing PositionZ", ecs::diag::Describe(e), ctx);
     if (!reg.all_of<ecs::MapIndex>(e))
-        LOG_WARN("[ECS_INVARIANT] entity={} ctx={} missing MapIndex", static_cast<uint32_t>(e), ctx);
+        LOG_WARN("[ECS_INVARIANT] entity={} ctx={} missing MapIndex", ecs::diag::Describe(e), ctx);
     if (!reg.all_of<ecs::VIDComponent>(e))
-        LOG_WARN("[ECS_INVARIANT] entity={} ctx={} missing VIDComponent", static_cast<uint32_t>(e), ctx);
+        LOG_WARN("[ECS_INVARIANT] entity={} ctx={} missing VIDComponent", ecs::diag::Describe(e), ctx);
 }
 
 } // namespace ecs::Invariants
