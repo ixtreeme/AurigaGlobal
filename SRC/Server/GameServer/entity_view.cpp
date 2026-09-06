@@ -10,12 +10,14 @@
 #include "ecs/Registry.hpp"
 #include "ecs/services/EntityNetworkDispatch.hpp"
 #include "ecs/services/SpatialService.hpp"
+#include "ecs/services/VisibilityService.hpp"
 #include "ecs/systems/VisibilitySystem.hpp"
 #include "ecs/components/visibility_components.hpp"
 #include "sectree_manager.h"
 #include "config.h"
 
 #include <unordered_map>
+#include <unordered_set>
 #include <utility>
 
 namespace
@@ -178,15 +180,30 @@ void ViewCleanup(entt::entity selfE)
 	const auto* kind = g_registry.try_get<ecs::SpatialKindTag>(selfE);
 	if (kind && kind->kind == ecs::SpatialKind::Character)
 	{
-		if (auto* viewerMap = g_registry.try_get<ecs::ViewerMap>(selfE))
+		// The mirror alone is not a safe recipient list. SpatialService::
+		// RemoveEntity already refuses to trust it for items, buildings and
+		// shops - "the native ViewerMap has gaps under load and would miss
+		// recipients" - and computes recipients from the sectree instead.
+		// Characters were still walking the mirror, so a character missing
+		// from it got no HEADER_GC_CHARACTER_DELETE and stayed drawn on the
+		// client forever. Mount actors show it plainly: each ride/dismount
+		// summons a new one and abandons the last, so they accumulate on
+		// screen. Insert already comes from the sectree, so taking removes
+		// from both sides only makes the two directions agree. Duplicate
+		// removes are harmless: the add/remove protocol is idempotent.
+		std::unordered_set<entt::entity> recipients;
+		if (const auto* viewerMap = g_registry.try_get<ecs::ViewerMap>(selfE))
+			recipients.insert(viewerMap->viewers.begin(), viewerMap->viewers.end());
+		for (const entt::entity viewerE :
+			 ecs::VisibilityService::GetEntitiesInRange(g_registry, selfE,
+				 VIEW_RANGE + VIEW_BONUS_RANGE))
+			recipients.insert(viewerE);
+
+		for (const entt::entity viewerE : recipients)
 		{
-			const auto viewers = viewerMap->viewers;
-			for (const entt::entity viewerE : viewers)
-			{
-				if (viewerE == entt::null || !g_registry.valid(viewerE))
-					continue;
-				ecs::EntityNetworkDispatch::SendRemove(g_registry, selfE, viewerE);
-			}
+			if (viewerE == entt::null || viewerE == selfE || !g_registry.valid(viewerE))
+				continue;
+			ecs::EntityNetworkDispatch::SendRemove(g_registry, selfE, viewerE);
 		}
 		MirrorViewClear(selfE);
 		return;
