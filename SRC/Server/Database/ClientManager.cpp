@@ -2349,27 +2349,6 @@ void CClientManager::UpdateLand(uint32_t * pdw)
 		ForwardPacket(HEADER_DG_UPDATE_LAND, p, sizeof(building::TLand));
 }
 
-void CClientManager::VCard(TPacketGDVCard * p)
-{
-	LOG_INFO("VCARD: {} {} {} {} {}", p->dwID, p->szSellCharacter, p->szSellAccount, p->szBuyCharacter, p->szBuyAccount);
-
-	m_queue_vcard.push(*p);
-}
-
-void CClientManager::VCardProcess()
-{
-	if (!m_pkAuthPeer)
-		return;
-
-	while (!m_queue_vcard.empty())
-	{
-		m_pkAuthPeer->EncodeHeader(HEADER_DG_VCARD, 0, sizeof(TPacketGDVCard));
-		m_pkAuthPeer->Encode(&m_queue_vcard.front(), sizeof(TPacketGDVCard));
-
-		m_queue_vcard.pop();
-	}
-}
-
 // BLOCK_CHAT
 void CClientManager::BlockChat(TPacketBlockChat* p)
 {
@@ -2824,10 +2803,6 @@ void CClientManager::ProcessPackets(CPeer * peer)
 
 			case HEADER_GD_UPDATE_LAND:
 				UpdateLand((uint32_t *) data);
-				break;
-
-			case HEADER_GD_VCARD:
-				VCard((TPacketGDVCard *) data);
 				break;
 
 			case HEADER_GD_MARRIAGE_ADD:
@@ -3547,7 +3522,6 @@ int CClientManager::Process()
 	}
 #endif
 
-	VCardProcess();
 	return 1;
 }
 

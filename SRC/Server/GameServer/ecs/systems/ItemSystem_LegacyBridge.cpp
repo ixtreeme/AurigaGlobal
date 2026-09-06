@@ -7247,11 +7247,6 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 				ItemSystem::ConsumeItemEcs(itemEntity);
 				break;
 
-			case 90008: // VCARD
-			case 90009: // VCARD
-				VCardUse(GetEntityHandle(), GetEntityHandle(), itemEntity);
-				break;
-
 			case ITEM_ELK_VNUM: // µ·²Ù·¯¹Ì
 			{
 				int iGold = item->GetSocket(0);

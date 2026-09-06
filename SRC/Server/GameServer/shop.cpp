@@ -407,12 +407,6 @@ int64_t CShop::Buy(LPCHARACTER ch, uint8_t pos
 		m_pkPC->SyncQuickslot(QUICKSLOT_TYPE_ITEM, ItemSystem::GetItemCell(itemEntity), 255);
 #endif
 
-		if (ItemSystem::GetItemVnum(itemEntity) == 90008 || ItemSystem::GetItemVnum(itemEntity) == 90009) // VCARD
-		{
-			VCardUse(m_pkPC ? m_pkPC->GetEntityHandle() : entt::null, chEntity, itemEntity);
-			itemEntity = entt::null;
-		}
-		else
 		{
 			char buf[512];
 

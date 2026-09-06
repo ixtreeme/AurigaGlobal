@@ -690,8 +690,6 @@ bool Complete(entt::entity session)
                 LogManager::instance().GoldBarLog(transfer.toPID, transfer.selection.id, EXCHANGE_TAKE, "");
                 LogManager::instance().GoldBarLog(transfer.fromPID, transfer.selection.id, EXCHANGE_GIVE, "");
             }
-            if (transfer.selection.vnum == 90008 || transfer.selection.vnum == 90009)
-                VCardUse(transfer.from, transfer.to, transfer.selection.item);
         }
     }
     for (int side = 0; side < 2; ++side)
@@ -926,39 +924,3 @@ void Cancel(entt::entity participant)
 }
 }
 
-// Cards are a special exchange item. Retire the entity before sending a credit
-// request, and retain only copied identities across deletion/network callbacks.
-void VCardUse(entt::entity seller, entt::entity buyer, entt::entity item)
-{
-    auto* sellerDesc = Descriptor(seller);
-    auto* buyerDesc = Descriptor(buyer);
-    if (!sellerDesc || !buyerDesc || !db_clientdesc || db_clientdesc->GetSocket() == INVALID_SOCKET ||
-        !ItemSystem::IsValidItem(item) || ItemSystem::IsItemExchanging(item) ||
-        (ItemSystem::GetItemVnum(item) != 90008 && ItemSystem::GetItemVnum(item) != 90009) ||
-        (ItemSystem::GetItemOwner(item) != seller && ItemSystem::GetItemOwner(item) != buyer))
-        return;
-
-    TPacketGDVCard packet {};
-    packet.dwID = ItemSystem::GetItemSocket(item, 0);
-    strlcpy(packet.szSellCharacter, ecs::PlayerRuntime::GetName(seller).data(), sizeof(packet.szSellCharacter));
-    strlcpy(packet.szSellAccount, sellerDesc->GetAccountTable().login, sizeof(packet.szSellAccount));
-    strlcpy(packet.szBuyCharacter, ecs::PlayerRuntime::GetName(buyer).data(), sizeof(packet.szBuyCharacter));
-    strlcpy(packet.szBuyAccount, buyerDesc->GetAccountTable().login, sizeof(packet.szBuyAccount));
-    const std::string sellerHost(sellerDesc->GetHostName()), buyerHost(buyerDesc->GetHostName());
-    const auto x = ecs::PlayerRuntime::GetX(buyer), y = ecs::PlayerRuntime::GetY(buyer);
-    const auto minutes = ItemSystem::GetItemSocket(item, 1) / 60;
-    const std::string serverHost(g_stHostname);
-
-    if (!ItemSystem::DestroyItemEntityEcs(item, "VCARD_USE"))
-        return;
-    // No acknowledgement-based DB transaction is introduced here. Persistence
-    // retains the existing delete/request protocol; this guard is in-process.
-    db_clientdesc->DBPacket(HEADER_GD_VCARD, 0, &packet, sizeof(packet));
-    LogManager::instance().VCardLog(packet.dwID, x, y, serverHost.c_str(),
-        packet.szSellCharacter, sellerHost.c_str(), packet.szBuyCharacter, buyerHost.c_str());
-#ifdef TEXTS_IMPROVEMENT
-    if (Descriptor(buyer))
-        ecs::ChatSystem::SendNew(buyer, CHAT_TYPE_INFO, 101, "%d", minutes);
-#endif
-    LOG_INFO("VCARD_TAKE: {} {} -> {}", packet.dwID, packet.szSellCharacter, packet.szBuyCharacter);
-}

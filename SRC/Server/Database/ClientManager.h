@@ -459,9 +459,6 @@ protected:
 	void		DeleteObject(uint32_t dwID);
 	void		UpdateLand(uint32_t* pdw);
 
-	// VCard
-	void 		VCard(TPacketGDVCard* p);
-	void		VCardProcess();
 
 	// BLOCK_CHAT
 	void		BlockChat(TPacketBlockChat* p);
@@ -523,7 +520,6 @@ private:
 	std::vector<building::TObjectProto>	m_vec_kObjectProto;
 	std::map<uint32_t, building::TObject*>	m_map_pkObjectTable;
 
-	std::queue<TPacketGDVCard>		m_queue_vcard;
 
 	bool					m_bShutdowned;
 

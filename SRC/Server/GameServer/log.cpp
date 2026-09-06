@@ -324,13 +324,6 @@ void LogManager::BootLog(const char * c_pszHostName, uint8_t bChannel)
 			c_pszHostName, bChannel);
 }
 
-void LogManager::VCardLog(uint32_t vcard_id, uint32_t x, uint32_t y, const char * hostname, const char * giver_name, const char * giver_ip, const char * taker_name, const char * taker_ip)
-{
-	LOG_LEVEL_CHECK_N_RET(LOG_LEVEL_MAX);
-	Query("INSERT INTO vcard_log (vcard_id, x, y, hostname, giver_name, giver_ip, taker_name, taker_ip) VALUES(%u, %u, %u, '%s', '%s', '%s', '%s', '%s')",
-			vcard_id, x, y, hostname, giver_name, giver_ip, taker_name, taker_ip);
-}
-
 void LogManager::FishLog(uint32_t dwPID, int prob_idx, int fish_id, int fish_level, uint32_t dwMiliseconds, uint32_t dwVnum, uint32_t dwValue)
 {
 	LOG_LEVEL_CHECK_N_RET(LOG_LEVEL_MAX);
