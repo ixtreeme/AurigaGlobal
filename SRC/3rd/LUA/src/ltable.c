@@ -193,7 +193,18 @@ static void computesizes  (int nums[], int ntotal, int *narray, int *nhash) {
   }
   lua_assert(na <= *narray && *narray <= ntotal);
   *nhash = ntotal - na;
-  *narray = (n == -1) ? 0 : twoto(n);
+  /* n == -1 means nothing belongs in the array part, and is reached by any
+     table built from string keys alone - every table luaopen_base creates.
+     Written as a ternary, the shift twoto(-1) sits on a path the compiler
+     may assume unreachable: 1 << -1 is undefined, so an optimiser is free to
+     conclude n >= 0, find "n == -1" provably false, and drop the guard. MSVC
+     at /O2 does exactly that, and *narray comes back as INT_MIN, which resize
+     then walks as an array index. Branching first keeps n >= 0 on the only
+     path that shifts. */
+  if (n < 0)
+    *narray = 0;
+  else
+    *narray = twoto(n);
   lua_assert(na <= *narray && na >= *narray/2);
 }
 
