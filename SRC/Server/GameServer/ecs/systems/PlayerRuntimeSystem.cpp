@@ -2019,8 +2019,13 @@ void CHARACTER::SetImmuneFlag(uint32_t dw)
 {
     if (auto* flags = EnsureRuntimeFlagsComponent(GetEntityHandle()))
         flags->immuneFlag = dw;
-    auto& immunity = g_registry.get_or_emplace<ecs::ImmunityFlags>(GetEntityHandle());
-    immunity.flags = dw;
+    // NDEBUG is set for Release and RelWithDebInfo, so an invalid handle
+    // here is not an assert but a write through entt::null.
+    if (GetEntityHandle() != entt::null && g_registry.valid(GetEntityHandle()))
+    {
+        auto& immunity = g_registry.get_or_emplace<ecs::ImmunityFlags>(GetEntityHandle());
+        immunity.flags = dw;
+    }
 }
 
 uint32_t CHARACTER::GetImmuneFlag() const
@@ -4711,12 +4716,18 @@ void CHARACTER::SetPlayerProto(const TPlayerTable* t)
 #endif
         {
             AffectSystem::SetFlag(GetEntityHandle(), AFF_YMIR);
-            g_registry.get_or_emplace<ecs::CombatStats>(GetEntityHandle()).pkMode = PK_MODE_PROTECT;
+            // NDEBUG is set for Release and RelWithDebInfo, so an invalid handle
+            // here is not an assert but a write through entt::null.
+            if (GetEntityHandle() != entt::null && g_registry.valid(GetEntityHandle()))
+                g_registry.get_or_emplace<ecs::CombatStats>(GetEntityHandle()).pkMode = PK_MODE_PROTECT;
         }
     }
 
     if (GetLevel() < PK_PROTECT_LEVEL) {
-        g_registry.get_or_emplace<ecs::CombatStats>(GetEntityHandle()).pkMode = PK_MODE_PROTECT;
+        // NDEBUG is set for Release and RelWithDebInfo, so an invalid handle
+        // here is not an assert but a write through entt::null.
+        if (GetEntityHandle() != entt::null && g_registry.valid(GetEntityHandle()))
+            g_registry.get_or_emplace<ecs::CombatStats>(GetEntityHandle()).pkMode = PK_MODE_PROTECT;
     }
 
     m_stMobile = t->szMobile;
@@ -4785,9 +4796,17 @@ void CHARACTER::SetProto(const CMob* pkMob)
 
     m_pkMobData = pkMob;
     m_pkMobInst = M2_NEW CMobInstance;
-    g_registry.emplace_or_replace<ecs::MobDataRef>(GetEntityHandle(), pkMob, m_pkMobInst);
 
-    g_registry.get_or_emplace<ecs::CombatStats>(GetEntityHandle()).pkMode = PK_MODE_FREE;
+    // mob_manager.cpp reaches here through an IsPC() test, and IsPC(entt::null)
+    // is false - so a character with no entity yet passes the filter instead of
+    // being turned back. NDEBUG is set for Release and RelWithDebInfo, so there
+    // the invalid handle is not an assert but a write through entt::null.
+    if (const entt::entity self = GetEntityHandle();
+        self != entt::null && g_registry.valid(self))
+    {
+        g_registry.emplace_or_replace<ecs::MobDataRef>(self, pkMob, m_pkMobInst);
+        g_registry.get_or_emplace<ecs::CombatStats>(self).pkMode = PK_MODE_FREE;
+    }
 
     const TMobTable* t = &m_pkMobData->m_table;
 
