@@ -29,11 +29,7 @@ class CLoginData
 	void		SetDeleted(bool bSet);
 	bool		IsDeleted();
 
-	void		SetBillID(uint32_t id) { m_dwBillID = id; }
-	uint32_t		GetBillID() { return m_dwBillID; }
 
-	void		SetBillType(uint8_t type) { m_bBillType = type; }
-	uint8_t		GetBillType() { return m_bBillType; }
 
 	time_t		Getlastplay() { return m_lastplay; }
 
@@ -53,8 +49,6 @@ class CLoginData
 	bool		m_bPlay;
 	bool		m_bDeleted;
 
-	uint8_t		m_bBillType;
-	uint32_t		m_dwBillID;
 	time_t		m_lastplay;
 	int		m_aiPremiumTimes[PREMIUM_MAX_NUM];
 

@@ -55,7 +55,6 @@ bool CClientManager::DeleteLogonAccount(const char * c_pszLogin, uint32_t dwHand
 	if (pkLD->IsPlay())
 	{
 		pkLD->SetPlay(false);
-		SendLoginToBilling(pkLD, false);
 	}
 
 	if (pkLD->IsDeleted())

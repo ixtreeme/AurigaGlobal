@@ -413,11 +413,7 @@ protected:
 	void SetEventFlag(const char* flag, int32_t value);
 	int GetEventFlag(const char* flag);
 
-	void		BillingExpire(TPacketBillingExpire* p);
-	void		BillingCheck(const char* data);
 
-	void		SendAllLoginToBilling();
-	void		SendLoginToBilling(CLoginData* pkLD, bool bLogin);
 
 	// ∞·»•
 	void		MarriageAdd(TPacketMarriageAdd* p);

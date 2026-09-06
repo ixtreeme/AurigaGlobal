@@ -19,8 +19,6 @@ enum
 	QID_LOTTO,
 	QID_HIGHSCORE_REGISTER,
 	QID_HIGHSCORE_SHOW,
-	QID_BILLING_GET_TIME,
-	QID_BILLING_CHECK,
 
 	// BLOCK_CHAT
 	QID_BLOCK_CHAT_LIST,
@@ -35,15 +33,6 @@ enum
 	QID_PROTECT_CHILD,
 	// END_PROTECT_CHILD_FOR_NEWCIBN
 };
-
-typedef struct SUseTime
-{
-	uint32_t	dwLoginKey;
-	char        szLogin[LOGIN_MAX_LEN+1];
-	uint8_t        bBillType;
-	uint32_t       dwUseSec;
-	char        szIP[MAX_HOST_LENGTH+1];
-} TUseTime;
 
 class CQueryInfo
 {
@@ -93,19 +82,14 @@ class DBManager : public singleton<DBManager>
 		void			SendMoneyLog(uint8_t type, uint32_t vnum, int64_t gold);
 
 
-		void			LoginPrepare(uint8_t bBillType, uint32_t dwBillID, int32_t lRemainSecs, LPDESC d, uint32_t * pdwClientKey, int * paiPremiumTimes = nullptr);
+		void			LoginPrepare(LPDESC d, uint32_t * pdwClientKey, int * paiPremiumTimes = nullptr);
 		void			SendAuthLogin(LPDESC d);
 		void			SendLoginPing(const char * c_pszLogin);
 
 		void			InsertLoginData(CLoginData * pkLD);
 		void			DeleteLoginData(CLoginData * pkLD);
 		CLoginData *		GetLoginData(uint32_t dwKey);
-		void			SetBilling(uint32_t dwKey, bool bOn, bool bSkipPush = false);
-		void			PushBilling(CLoginData * pkLD);
-		void			FlushBilling(bool bForce=false);
-		void			CheckBilling();
 
-		void			StopAllBilling(); // 20050503.ipkn.DB-AUTH 접속 종료시 빌링 테이블 모두 지우기 (재연결시 복구함)
 
 		uint32_t			CountQuery()		{ return m_sql.CountQuery(); }
 		uint32_t			CountQueryResult()	{ return m_sql.CountResult(); }
@@ -130,8 +114,6 @@ class DBManager : public singleton<DBManager>
 		std::map<std::string, std::string>	m_map_dbstring;
 		std::vector<std::string>		m_vec_GreetMessage;
 		std::map<uint32_t, CLoginData *>		m_map_pkLoginData;
-		std::map<std::string, CLoginData *>	mapLDBilling;
-		std::vector<TUseTime>			m_vec_kUseTime;
 };
 
 template <class Functor> void DBManager::FuncQuery(Functor f, const char* c_pszFormat, ...)
@@ -177,7 +159,6 @@ typedef struct SHighscoreRegisterQueryInfo
 	bool    bOrder;
 } THighscoreRegisterQueryInfo;
 
-extern void SendBillingExpire(const char * c_pszLogin, uint8_t bBillType, int iSecs, CLoginData * pkLD);
 
 
 // ACCOUNT_DB

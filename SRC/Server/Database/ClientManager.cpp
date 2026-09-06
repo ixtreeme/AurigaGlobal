@@ -2,7 +2,6 @@
 #include "stdafx.h"
 #include <common/CommonDefines.h>
 
-#include <common/billing.h>
 #include <common/building.h>
 #include <common/VnumHelper.h>
 #include <Base/grid.h>
@@ -1265,7 +1264,6 @@ void CClientManager::QUERY_SETUP(CPeer * peer, uint32_t dwHandle, const char * c
 		LOG_INFO("AUTH_PEER ptr {}", static_cast<const void*>(peer));
 
 		m_pkAuthPeer = peer;
-		SendAllLoginToBilling();
 		return;
 	}
 
@@ -1436,7 +1434,6 @@ void CClientManager::QUERY_SETUP(CPeer * peer, uint32_t dwHandle, const char * c
 	// 로그인 및 빌링정보 보내기
 	//
 	TPacketLoginOnSetup * pck = (TPacketLoginOnSetup *) c_pData;
-	std::vector<TPacketBillingRepair> vec_repair;
 
 	for (uint32_t c = 0; c < p->dwLoginCount; ++c, ++pck)
 	{
@@ -1467,27 +1464,11 @@ void CClientManager::QUERY_SETUP(CPeer * peer, uint32_t dwHandle, const char * c
 			LOG_INFO("SETUP: login {} {} login_key {} host {}", pck->dwID, pck->szLogin, pck->dwLoginKey, pck->szHost);
 			pkLD->SetPlay(true);
 
-			if (m_pkAuthPeer)
-			{
-				TPacketBillingRepair pck_repair;
-				pck_repair.dwLoginKey = pkLD->GetKey();
-				strlcpy(pck_repair.szLogin, pck->szLogin, sizeof(pck_repair.szLogin));
-				strlcpy(pck_repair.szHost, pck->szHost, sizeof(pck_repair.szHost));
-				vec_repair.push_back(pck_repair);
-			}
 		}
 		else
 			LOG_INFO("SETUP: login_fail {} {} login_key {}", pck->dwID, pck->szLogin, pck->dwLoginKey);
 	}
 
-	if (m_pkAuthPeer && !vec_repair.empty())
-	{
-		LOG_INFO("REPAIR size {}", vec_repair.size());
-
-		m_pkAuthPeer->EncodeHeader(HEADER_DG_BILLING_REPAIR, 0, sizeof(uint32_t) + sizeof(TPacketBillingRepair) * vec_repair.size());
-		m_pkAuthPeer->EncodeDWORD(vec_repair.size());
-		m_pkAuthPeer->Encode(&vec_repair[0], sizeof(TPacketBillingRepair) * vec_repair.size());
-	}
 
 	SendPartyOnSetup(peer);
 	CGuildManager::instance().OnSetup(peer);
@@ -2071,8 +2052,6 @@ void CClientManager::QUERY_AUTH_LOGIN(CPeer * pkPeer, uint32_t dwHandle, TPacket
 
 		pkLD->SetKey(p->dwLoginKey);
 		pkLD->SetClientKey(p->adwClientKey);
-		pkLD->SetBillType(p->bBillType);
-		pkLD->SetBillID(p->dwBillID);
 		pkLD->SetPremium(p->iPremiumTimes);
 
 		TAccountTable & r = pkLD->GetAccountRef();
@@ -2098,105 +2077,6 @@ void CClientManager::QUERY_AUTH_LOGIN(CPeer * pkPeer, uint32_t dwHandle, TPacket
 	}
 }
 
-void CClientManager::BillingExpire(TPacketBillingExpire * p)
-{
-	char key[LOGIN_MAX_LEN + 1];
-	trim_and_lower(p->szLogin, key, sizeof(key));
-
-	switch (p->bBillType)
-	{
-		case BILLING_IP_TIME:
-		case BILLING_IP_DAY:
-			{
-				uint32_t dwIPID = 0;
-				str_to_number(dwIPID, p->szLogin);
-
-				auto it = m_map_kLogonAccount.begin();
-
-				while (it != m_map_kLogonAccount.end())
-				{
-					CLoginData * pkLD = it++->second;
-
-					if (pkLD->GetBillID() == dwIPID)
-					{
-						CPeer * pkPeer = GetPeer(pkLD->GetConnectedPeerHandle());
-
-						if (pkPeer)
-						{
-							strlcpy(p->szLogin, pkLD->GetAccountRef().login, sizeof(p->szLogin));
-							pkPeer->EncodeHeader(HEADER_DG_BILLING_EXPIRE, 0, sizeof(TPacketBillingExpire));
-							pkPeer->Encode(p, sizeof(TPacketBillingExpire));
-						}
-					}
-				}
-			}
-			break;
-
-		case BILLING_TIME:
-		case BILLING_DAY:
-			{
-				if (const auto it = m_map_kLogonAccount.find(key); it != m_map_kLogonAccount.end())
-				{
-					CLoginData * pkLD = it->second;
-
-					CPeer * pkPeer = GetPeer(pkLD->GetConnectedPeerHandle());
-
-					if (pkPeer)
-					{
-						pkPeer->EncodeHeader(HEADER_DG_BILLING_EXPIRE, 0, sizeof(TPacketBillingExpire));
-						pkPeer->Encode(p, sizeof(TPacketBillingExpire));
-					}
-				}
-			}
-			break;
-	}
-}
-
-void CClientManager::BillingCheck(const char * data)
-{
-	if (!m_pkAuthPeer)
-		return;
-
-	time_t curTime = GetCurrentTime();
-
-	uint32_t dwCount = *(uint32_t *) data;
-	data += sizeof(uint32_t);
-
-	std::vector<uint32_t> vec;
-
-	LOG_INFO("BillingCheck: size {}", dwCount);
-
-	for (uint32_t i = 0; i < dwCount; ++i)
-	{
-		uint32_t dwKey = *(uint32_t *) data;
-		data += sizeof(uint32_t);
-
-		LOG_INFO("BillingCheck: {}", dwKey);
-
-		if (auto it = m_map_pkLoginData.find(dwKey); it == m_map_pkLoginData.end())
-		{
-			LOG_INFO("BillingCheck: key not exist: {}", dwKey);
-			vec.push_back(dwKey);
-		}
-		else
-		{
-			CLoginData * pkLD = it->second;
-
-			if (!pkLD->IsPlay() && curTime - pkLD->Getlastplay() > 180)
-			{
-				LOG_INFO("BillingCheck: not login: {}", dwKey);
-				vec.push_back(dwKey);
-			}
-		}
-	}
-
-	m_pkAuthPeer->EncodeHeader(HEADER_DG_BILLING_CHECK, 0, sizeof(uint32_t) + sizeof(uint32_t) * vec.size());
-	m_pkAuthPeer->EncodeDWORD(vec.size());
-
-	if (!vec.empty())
-		m_pkAuthPeer->Encode(vec.data(), sizeof(uint32_t) * vec.size());
-}
-
 void CClientManager::GuildDepositMoney(TPacketGDGuildMoney* p)
 {
 	CGuildManager::instance().DepositMoney(p->dwGuild, p->iGold);
@@ -2215,51 +2095,6 @@ void CClientManager::GuildWithdrawMoneyGiveReply(TPacketGDGuildMoneyWithdrawGive
 void CClientManager::GuildWarBet(TPacketGDGuildWarBet * p)
 {
 	CGuildManager::instance().Bet(p->dwWarID, p->szLogin, p->dwGold, p->dwGuild);
-}
-
-void CClientManager::SendAllLoginToBilling()
-{
-	if (!m_pkAuthPeer)
-		return;
-
-	std::vector<TPacketBillingRepair> vec;
-	TPacketBillingRepair p;
-
-	auto it = m_map_kLogonAccount.begin();
-
-	while (it != m_map_kLogonAccount.end())
-	{
-		CLoginData * pkLD = it++->second;
-
-		p.dwLoginKey = pkLD->GetKey();
-		strlcpy(p.szLogin, pkLD->GetAccountRef().login, sizeof(p.szLogin));
-		strlcpy(p.szHost, pkLD->GetIP(), sizeof(p.szHost));
-		LOG_INFO("SendAllLoginToBilling {} {}", pkLD->GetAccountRef().login, pkLD->GetIP());
-		vec.push_back(p);
-	}
-
-	if (!vec.empty())
-	{
-		m_pkAuthPeer->EncodeHeader(HEADER_DG_BILLING_REPAIR, 0, sizeof(uint32_t) + sizeof(TPacketBillingRepair) * vec.size());
-		m_pkAuthPeer->EncodeDWORD(vec.size());
-		m_pkAuthPeer->Encode(vec.data(), sizeof(TPacketBillingRepair) * vec.size());
-	}
-}
-
-void CClientManager::SendLoginToBilling(CLoginData * pkLD, bool bLogin)
-{
-	if (!m_pkAuthPeer)
-		return;
-
-	TPacketBillingLogin p;
-
-	p.dwLoginKey = pkLD->GetKey();
-	p.bLogin = bLogin ? 1 : 0;
-
-	uint32_t dwCount = 1;
-	m_pkAuthPeer->EncodeHeader(HEADER_DG_BILLING_LOGIN, 0, sizeof(uint32_t) + sizeof(TPacketBillingLogin));
-	m_pkAuthPeer->EncodeDWORD(dwCount);
-	m_pkAuthPeer->Encode(&p, sizeof(TPacketBillingLogin));
 }
 
 void CClientManager::CreateObject(TPacketGDCreateObject * p)
@@ -2785,14 +2620,6 @@ void CClientManager::ProcessPackets(CPeer * peer)
 				SetEventFlag((TPacketSetEventFlag*) data);
 				break;
 
-			case HEADER_GD_BILLING_EXPIRE:
-				BillingExpire((TPacketBillingExpire *) data);
-				break;
-
-			case HEADER_GD_BILLING_CHECK:
-				BillingCheck(data);
-				break;
-
 			case HEADER_GD_CREATE_OBJECT:
 				CreateObject((TPacketGDCreateObject *) data);
 				break;
@@ -2992,7 +2819,6 @@ void CClientManager::RemovePeer(CPeer * pPeer)
 				if (pkLD->IsPlay())
 				{
 					pkLD->SetPlay(false);
-					SendLoginToBilling(pkLD, false);
 				}
 
 				if (pkLD->IsDeleted())

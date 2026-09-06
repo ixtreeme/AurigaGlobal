@@ -2156,90 +2156,7 @@ void CInputDB::UpdateLand(const char * c_pData)
 }
 
 ////////////////////////////////////////////////////////////////////
-// Billing
 ////////////////////////////////////////////////////////////////////
-void CInputDB::BillingRepair(const char * c_pData)
-{
-	uint32_t dwCount = *(uint32_t *) c_pData;
-	c_pData += sizeof(uint32_t);
-
-	TPacketBillingRepair * p = (TPacketBillingRepair *) c_pData;
-
-	for (uint32_t i = 0; i < dwCount; ++i, ++p)
-	{
-		CLoginData * pkLD = M2_NEW CLoginData;
-
-		pkLD->SetKey(p->dwLoginKey);
-		pkLD->SetLogin(p->szLogin);
-		pkLD->SetIP(p->szHost);
-
-		LOG_INFO("BILLING: REPAIR {} host {}", p->szLogin, p->szHost);
-	}
-}
-
-void CInputDB::BillingExpire(const char * c_pData)
-{
-	TPacketBillingExpire * p = (TPacketBillingExpire *) c_pData;
-
-	LPDESC d = DESC_MANAGER::instance().FindByLoginName(p->szLogin);
-
-	if (!d)
-		return;
-
-	auto* ch = d->GetCharacter();
-
-	if (p->dwRemainSeconds <= 60)
-	{
-		int i = MAX(5, p->dwRemainSeconds);
-		LOG_INFO("BILLING_EXPIRE: {} {}", p->szLogin, p->dwRemainSeconds);
-		d->DelayedDisconnect(i);
-	}
-	else
-	{
-		if ((p->dwRemainSeconds - d->GetBillingExpireSecond()) > 60)
-		{
-			d->SetBillingExpireSecond(p->dwRemainSeconds);
-#ifdef TEXTS_IMPROVEMENT
-			if (ch) {
-				ecs::ChatSystem::SendNew(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 241, "%d", (p->dwRemainSeconds / 60));
-			}
-#endif
-		}
-	}
-}
-
-void CInputDB::BillingLogin(const char * c_pData)
-{
-	if (nullptr == c_pData)
-		return;
-
-	TPacketBillingLogin * p;
-
-	uint32_t dwCount = *(uint32_t *) c_pData;
-	c_pData += sizeof(uint32_t);
-
-	p = (TPacketBillingLogin *) c_pData;
-
-	for (uint32_t i = 0; i < dwCount; ++i, ++p)
-	{
-		DBManager::instance().SetBilling(p->dwLoginKey, p->bLogin);
-	}
-}
-
-void CInputDB::BillingCheck(const char * c_pData)
-{
-	uint32_t size = *(uint32_t *) c_pData;
-	c_pData += sizeof(uint32_t);
-
-	for (uint32_t i = 0; i < size; ++i)
-	{
-		uint32_t dwKey = *(uint32_t *) c_pData;
-		c_pData += sizeof(uint32_t);
-
-		LOG_INFO("BILLING: NOT_LOGIN {}", dwKey);
-		DBManager::instance().SetBilling(dwKey, 0, true);
-	}
-}
 
 void CInputDB::Notice(const char * c_pData)
 {
@@ -3074,22 +2991,6 @@ int CInputDB::Analyze(LPDESC d, uint8_t bHeader, const char * c_pData)
 
 	case HEADER_DG_SET_EVENT_FLAG:
 		SetEventFlag(c_pData);
-		break;
-
-	case HEADER_DG_BILLING_REPAIR:
-		BillingRepair(c_pData);
-		break;
-
-	case HEADER_DG_BILLING_EXPIRE:
-		BillingExpire(c_pData);
-		break;
-
-	case HEADER_DG_BILLING_LOGIN:
-		BillingLogin(c_pData);
-		break;
-
-	case HEADER_DG_BILLING_CHECK:
-		BillingCheck(c_pData);
 		break;
 
 	case HEADER_DG_CREATE_OBJECT:

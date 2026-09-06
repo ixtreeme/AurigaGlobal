@@ -4,7 +4,6 @@
 #include "ecs/AIHelpers.hpp"
 #include <sstream>
 #include <vector>
-#include <common/billing.h>
 #include <common/length.h>
 
 #include "db.h"
@@ -180,258 +179,9 @@ void DBManager::DeleteLoginData(CLoginData * pkLD)
 
 	LOG_INFO("DeleteLoginData {} {}", pkLD->GetLogin(), static_cast<const void*>(pkLD));
 
-	mapLDBilling.erase(pkLD->GetLogin());
 
 	M2_DELETE(it->second);
 	m_map_pkLoginData.erase(it);
-}
-
-void DBManager::SetBilling(uint32_t dwKey, bool bOn, bool bSkipPush)
-{
-	std::map<uint32_t, CLoginData *>::iterator it = m_map_pkLoginData.find(dwKey);
-
-	if (it == m_map_pkLoginData.end())
-	{
-		LOG_ERROR("cannot find login key {}", dwKey);
-		return;
-	}
-
-	CLoginData * ld = it->second;
-
-	auto it2 = mapLDBilling.find(ld->GetLogin());
-
-	if (it2 != mapLDBilling.end())
-		if (it2->second != ld)
-			DeleteLoginData(it2->second);
-
-	mapLDBilling.insert(std::make_pair(ld->GetLogin(), ld));
-
-	if (ld->IsBilling() && !bOn && !bSkipPush)
-		PushBilling(ld);
-
-	SendLoginPing(ld->GetLogin());
-	ld->SetBilling(bOn);
-}
-
-void DBManager::PushBilling(CLoginData * pkLD)
-{
-	TUseTime t;
-
-	t.dwUseSec = (get_dword_time() - pkLD->GetLogonTime()) / 1000;
-
-	if (t.dwUseSec <= 0)
-		return;
-
-	pkLD->SetLogonTime();
-	int32_t lRemainSecs = pkLD->GetRemainSecs() - t.dwUseSec;
-	pkLD->SetRemainSecs(MAX(0, lRemainSecs));
-
-	t.dwLoginKey = pkLD->GetKey();
-	t.bBillType = pkLD->GetBillType();
-
-	LOG_INFO("BILLING: PUSH {} {} type {}", pkLD->GetLogin(), t.dwUseSec, t.bBillType);
-
-	if (t.bBillType == BILLING_IP_FREE || t.bBillType == BILLING_IP_TIME || t.bBillType == BILLING_IP_DAY)
-		snprintf(t.szLogin, sizeof(t.szLogin), "%u", pkLD->GetBillID());
-	else
-		strlcpy(t.szLogin, pkLD->GetLogin(), sizeof(t.szLogin));
-
-	strlcpy(t.szIP, pkLD->GetIP(), sizeof(t.szIP));
-
-	m_vec_kUseTime.push_back(t);
-}
-
-void DBManager::FlushBilling(bool bForce)
-{
-	if (bForce)
-	{
-		std::map<uint32_t, CLoginData *>::iterator it = m_map_pkLoginData.begin();
-
-		while (it != m_map_pkLoginData.end())
-		{
-			CLoginData * pkLD = (it++)->second;
-
-			if (pkLD->IsBilling())
-				PushBilling(pkLD);
-		}
-	}
-
-	if (!m_vec_kUseTime.empty())
-	{
-		uint32_t dwCount = 0;
-
-		std::vector<TUseTime>::iterator it = m_vec_kUseTime.begin();
-
-		while (it != m_vec_kUseTime.end())
-		{
-			TUseTime * p = &(*(it++));
-
-			// DISABLE_OLD_BILLING_CODE
-			if (!g_bBilling)
-			{
-				++dwCount;
-				continue;
-			}
-
-			Query("INSERT GameTimeLog (login, type, logon_time, logout_time, use_time, ip, server) "
-					"VALUES('%s', %u, DATE_SUB(NOW(), INTERVAL %u SECOND), NOW(), %u, '%s', '%s')",
-					p->szLogin, p->bBillType, p->dwUseSec, p->dwUseSec, p->szIP, g_stHostname.c_str());
-			// DISABLE_OLD_BILLING_CODE_END
-
-			switch (p->bBillType)
-			{
-				case BILLING_FREE:
-				case BILLING_IP_FREE:
-					break;
-
-				case BILLING_DAY:
-					{
-						if (!bForce)
-						{
-							TUseTime * pInfo = M2_NEW TUseTime;
-							memcpy(pInfo, p, sizeof(TUseTime));
-							ReturnQuery(QID_BILLING_CHECK, 0, pInfo,
-									"SELECT UNIX_TIMESTAMP(LimitDt)-UNIX_TIMESTAMP(NOW()),LimitTime FROM GameTime WHERE UserID='%s'", p->szLogin);
-						}
-					}
-					break;
-
-				case BILLING_TIME:
-					{
-						Query("UPDATE GameTime SET LimitTime=LimitTime-%u WHERE UserID='%s'", p->dwUseSec, p->szLogin);
-
-						if (!bForce)
-						{
-							TUseTime * pInfo = M2_NEW TUseTime;
-							memcpy(pInfo, p, sizeof(TUseTime));
-							ReturnQuery(QID_BILLING_CHECK, 0, pInfo,
-									"SELECT UNIX_TIMESTAMP(LimitDt)-UNIX_TIMESTAMP(NOW()),LimitTime FROM GameTime WHERE UserID='%s'", p->szLogin);
-						}
-					}
-					break;
-
-				case BILLING_IP_DAY:
-					{
-						if (!bForce)
-						{
-							TUseTime * pInfo = M2_NEW TUseTime;
-							memcpy(pInfo, p, sizeof(TUseTime));
-							ReturnQuery(QID_BILLING_CHECK, 0, pInfo,
-									"SELECT UNIX_TIMESTAMP(LimitDt)-UNIX_TIMESTAMP(NOW()),LimitTime FROM GameTimeIP WHERE ipid=%s", p->szLogin);
-						}
-					}
-					break;
-
-				case BILLING_IP_TIME:
-					{
-						Query("UPDATE GameTimeIP SET LimitTime=LimitTime-%u WHERE ipid=%s", p->dwUseSec, p->szLogin);
-
-						if (!bForce)
-						{
-							TUseTime * pInfo = M2_NEW TUseTime;
-							memcpy(pInfo, p, sizeof(TUseTime));
-							ReturnQuery(QID_BILLING_CHECK, 0, pInfo,
-									"SELECT UNIX_TIMESTAMP(LimitDt)-UNIX_TIMESTAMP(NOW()),LimitTime FROM GameTimeIP WHERE ipid=%s", p->szLogin);
-						}
-					}
-					break;
-			}
-
-			if (!bForce && ++dwCount >= 1000)
-				break;
-		}
-
-		if (dwCount < m_vec_kUseTime.size())
-		{
-			int nNewSize = m_vec_kUseTime.size() - dwCount;
-			memcpy(&m_vec_kUseTime[0], &m_vec_kUseTime[dwCount], sizeof(TUseTime) * nNewSize);
-			m_vec_kUseTime.resize(nNewSize);
-		}
-		else
-			m_vec_kUseTime.clear();
-
-		LOG_INFO("FLUSH_USE_TIME: count {}", dwCount);
-	}
-
-	if (m_vec_kUseTime.size() < 10240)
-	{
-		uint32_t dwCurTime = get_dword_time();
-
-		std::map<uint32_t, CLoginData *>::iterator it = m_map_pkLoginData.begin();
-
-		while (it != m_map_pkLoginData.end())
-		{
-			CLoginData * pkLD = (it++)->second;
-
-			if (!pkLD->IsBilling())
-				continue;
-
-			switch (pkLD->GetBillType())
-			{
-				case BILLING_IP_FREE:
-				case BILLING_FREE:
-					break;
-
-				case BILLING_IP_DAY:
-				case BILLING_DAY:
-				case BILLING_IP_TIME:
-				case BILLING_TIME:
-					if (pkLD->GetRemainSecs() < 0)
-					{
-						uint32_t dwSecsConnected = (dwCurTime - pkLD->GetLogonTime()) / 1000;
-
-						if (dwSecsConnected % 10 == 0)
-							SendBillingExpire(pkLD->GetLogin(), BILLING_DAY, 0, pkLD);
-					}
-					else if (pkLD->GetRemainSecs() <= 600) // if remain seconds lower than 10 minutes
-					{
-						uint32_t dwSecsConnected = (dwCurTime - pkLD->GetLogonTime()) / 1000;
-
-						if (dwSecsConnected >= 60) // 60 second cycle
-						{
-							LOG_INFO("BILLING 1 {} remain {} connected secs {}", pkLD->GetLogin(), pkLD->GetRemainSecs(), dwSecsConnected);
-							PushBilling(pkLD);
-						}
-					}
-					else
-					{
-						uint32_t dwSecsConnected = (dwCurTime - pkLD->GetLogonTime()) / 1000;
-
-						if (dwSecsConnected > (uint32_t) (pkLD->GetRemainSecs() - 600) || dwSecsConnected >= 600)
-						{
-							LOG_INFO("BILLING 2 {} remain {} connected secs {}", pkLD->GetLogin(), pkLD->GetRemainSecs(), dwSecsConnected);
-							PushBilling(pkLD);
-						}
-					}
-					break;
-			}
-		}
-	}
-
-}
-
-void DBManager::CheckBilling()
-{
-	std::vector<uint32_t> vec;
-	vec.push_back(0); // ī��Ʈ�� ���� �̸� ����д�.
-
-	// LOG_INFO("CheckBilling: map size {}", m_map_pkLoginData.size());
-
-	auto it = m_map_pkLoginData.begin();
-
-	while (it != m_map_pkLoginData.end())
-	{
-		CLoginData * pkLD = (it++)->second;
-
-		if (pkLD->IsBilling())
-		{
-			LOG_INFO("BILLING: CHECK {}", pkLD->GetKey());
-			vec.push_back(pkLD->GetKey());
-		}
-	}
-
-	vec[0] = vec.size() - 1; // ����� ���� ����� �ִ´�, ������ �ڽ��� �����ؾ� �ϹǷ� -1
-	db_clientdesc->DBPacket(HEADER_GD_BILLING_CHECK, 0, &vec[0], sizeof(uint32_t) * vec.size());
 }
 
 void DBManager::SendLoginPing(const char * c_pszLogin)
@@ -473,8 +223,6 @@ void DBManager::SendAuthLogin(LPDESC d)
 #ifdef ENABLE_MULTI_LANGUAGE
 	ptod.bLanguage = r.bLanguage;
 #endif
-	ptod.bBillType = pkLD->GetBillType();
-	ptod.dwBillID = pkLD->GetBillID();
 
 	memcpy(ptod.iPremiumTimes, pkLD->GetPremiumPtr(), sizeof(ptod.iPremiumTimes));
 	memcpy(&ptod.adwClientKey, pkLD->GetClientKey(), sizeof(uint32_t) * 4);
@@ -485,7 +233,7 @@ void DBManager::SendAuthLogin(LPDESC d)
 	SendLoginPing(r.login);
 }
 
-void DBManager::LoginPrepare(uint8_t bBillType, uint32_t dwBillID, int32_t lRemainSecs, LPDESC d, uint32_t * pdwClientKey, int * paiPremiumTimes)
+void DBManager::LoginPrepare(LPDESC d, uint32_t * pdwClientKey, int * paiPremiumTimes)
 {
 	const TAccountTable & r = d->GetAccountTable();
 
@@ -493,9 +241,6 @@ void DBManager::LoginPrepare(uint8_t bBillType, uint32_t dwBillID, int32_t lRema
 
 	pkLD->SetKey(d->GetLoginKey());
 	pkLD->SetLogin(r.login);
-	pkLD->SetBillType(bBillType);
-	pkLD->SetBillID(dwBillID);
-	pkLD->SetRemainSecs(lRemainSecs);
 	pkLD->SetIP(d->GetHostName());
 	pkLD->SetClientKey(pdwClientKey);
 
@@ -504,108 +249,6 @@ void DBManager::LoginPrepare(uint8_t bBillType, uint32_t dwBillID, int32_t lRema
 
 	InsertLoginData(pkLD);
 	SendAuthLogin(d);
-}
-
-bool GetGameTimeIP(MYSQL_RES * pRes, uint8_t & bBillType, uint32_t & dwBillID, int & seconds, const char * c_pszIP)
-{
-	if (!pRes)
-		return true;
-
-	MYSQL_ROW row = mysql_fetch_row(pRes);
-	int col = 0;
-
-	str_to_number(dwBillID, row[col++]);
-
-	int ip_start = 0;
-	str_to_number(ip_start, row[col++]);
-
-	int ip_end = 0;
-	str_to_number(ip_end, row[col++]);
-
-	int type = 0;
-	str_to_number(type, row[col++]);
-
-	str_to_number(seconds, row[col++]);
-
-	int day_seconds = 0;
-	str_to_number(day_seconds, row[col++]);
-
-	char szIP[MAX_HOST_LENGTH + 1];
-	strlcpy(szIP, c_pszIP, sizeof(szIP));
-
-	char * p = strrchr(szIP, '.');
-	++p;
-
-	int ip_postfix = 0;
-	str_to_number(ip_postfix, p);
-	int valid_ip = false;
-
-	if (ip_start <= ip_postfix && ip_end >= ip_postfix)
-		valid_ip = true;
-
-	bBillType = BILLING_NONE;
-
-	if (valid_ip)
-	{
-		if (type == -1)
-			return false;
-
-		if (type == 0)
-			bBillType = BILLING_IP_FREE;
-		else if (day_seconds > 0)
-		{
-			bBillType = BILLING_IP_DAY;
-			seconds = day_seconds;
-		}
-		else if (seconds > 0)
-			bBillType = BILLING_IP_TIME;
-	}
-
-	return true;
-}
-
-bool GetGameTime(MYSQL_RES * pRes, uint8_t & bBillType, int & seconds)
-{
-	if (!pRes)
-		return true;
-
-	MYSQL_ROW row = mysql_fetch_row(pRes);
-	LOG_INFO("GetGameTime {} {} {}", static_cast<const void*>(row[0]), static_cast<const void*>(row[1]), static_cast<const void*>(row[2]));
-
-	int type = 0;
-	str_to_number(type, row[0]);
-	str_to_number(seconds, row[1]);
-	int day_seconds = 0;
-	str_to_number(day_seconds, row[2]);
-	bBillType = BILLING_NONE;
-
-	if (type == -1)
-		return false;
-	else if (type == 0)
-		bBillType = BILLING_FREE;
-	else if (day_seconds > 0)
-	{
-		bBillType = BILLING_DAY;
-		seconds = day_seconds;
-	}
-	else if (seconds > 0)
-		bBillType = BILLING_TIME;
-
-	if (!g_bBilling)
-		bBillType = BILLING_FREE;
-
-	return true;
-}
-
-void SendBillingExpire(const char * c_pszLogin, uint8_t bBillType, int iSecs, CLoginData * pkLD)
-{
-	TPacketBillingExpire ptod;
-
-	strlcpy(ptod.szLogin, c_pszLogin, sizeof(ptod.szLogin));
-	ptod.bBillType = bBillType;
-	ptod.dwRemainSeconds = MAX(0, iSecs);
-	db_clientdesc->DBPacket(HEADER_GD_BILLING_EXPIRE, 0, &ptod, sizeof(TPacketBillingExpire));
-	LOG_INFO("BILLING: EXPIRE {} type {} sec {} ptr {}", c_pszLogin, bBillType, iSecs, static_cast<const void*>(pkLD));
 }
 
 void DBManager::AnalyzeReturnQuery(SQLMsg * pMsg)
@@ -830,120 +473,16 @@ void DBManager::AnalyzeReturnQuery(SQLMsg * pMsg)
 #endif
 						DESC_MANAGER::instance().ConnectAccount(r.login, d);
 
-						if (!g_bBilling)
-						{
-							LoginPrepare(BILLING_FREE, 0, 0, d, pinfo->adwClientKey, aiPremiumTimes);
+							LoginPrepare(d, pinfo->adwClientKey, aiPremiumTimes);
 							//By SeMinZ
 							M2_DELETE(pinfo);
 							break;
-						}
 
-						LOG_INFO("QID_AUTH_LOGIN: SUCCESS {}", pinfo->login);
 					}
 				}
 			}
 			break;
 
-		case QID_BILLING_GET_TIME:
-			{
-				TPacketCGLogin3 * pinfo = (TPacketCGLogin3 *) qi->pvData;
-				LPDESC d = DESC_MANAGER::instance().FindByLoginKey(qi->dwIdent);
-
-				LOG_INFO("QID_BILLING_GET_TIME: START ident {} d {}", qi->dwIdent, static_cast<const void*>(get_pointer(d)));
-
-				if (d)
-				{
-					if (pMsg->Get()->uiNumRows == 0)
-					{
-						if (g_bBilling)
-							LoginFailure(d, "NOBILL");
-						else
-							LoginPrepare(BILLING_FREE, 0, 0, d, pinfo->adwClientKey);
-					}
-					else
-					{
-						int seconds = 0;
-						uint8_t bBillType = BILLING_NONE;
-
-						if (!GetGameTime(pMsg->Get()->pSQLResult, bBillType, seconds))
-						{
-							LOG_INFO("QID_BILLING_GET_TIME: BLOCK");
-							LoginFailure(d, "BLOCK");
-						}
-						else if (bBillType == BILLING_NONE)
-						{
-							LoginFailure(d, "NOBILL");
-							LOG_INFO("QID_BILLING_GET_TIME: NO TIME");
-						}
-						else
-						{
-							LoginPrepare(bBillType, 0, seconds, d, pinfo->adwClientKey);
-							LOG_INFO("QID_BILLING_GET_TIME: SUCCESS");
-						}
-					}
-				}
-				M2_DELETE(pinfo);
-			}
-			break;
-
-		case QID_BILLING_CHECK:
-			{
-				TUseTime * pinfo = (TUseTime *) qi->pvData;
-				int iRemainSecs = 0;
-
-				CLoginData * pkLD = nullptr;
-
-				if (pMsg->Get()->uiNumRows > 0)
-				{
-					MYSQL_ROW row = mysql_fetch_row(pMsg->Get()->pSQLResult);
-
-					int iLimitDt = 0;
-					str_to_number(iLimitDt, row[0]);
-
-					int iLimitTime = 0;
-					str_to_number(iLimitTime, row[1]);
-
-					pkLD = GetLoginData(pinfo->dwLoginKey);
-
-					if (pkLD)
-					{
-						switch (pkLD->GetBillType())
-						{
-							case BILLING_TIME:
-								if (iLimitTime <= 600 && iLimitDt > 0)
-								{
-									iRemainSecs = iLimitDt;
-									pkLD->SetBillType(BILLING_DAY);
-									pinfo->bBillType = BILLING_DAY;
-								}
-								else
-									iRemainSecs = iLimitTime;
-								break;
-
-							case BILLING_IP_TIME:
-								if (iLimitTime <= 600 && iLimitDt > 0)
-								{
-									iRemainSecs = iLimitDt;
-									pkLD->SetBillType(BILLING_IP_DAY);
-									pinfo->bBillType = BILLING_IP_DAY;
-								}
-								else
-									iRemainSecs = iLimitTime;
-								break;
-
-							case BILLING_DAY:
-							case BILLING_IP_DAY:
-								iRemainSecs = iLimitDt;
-								break;
-						}
-
-						pkLD->SetRemainSecs(iRemainSecs);
-					}
-				}
-
-				SendBillingExpire(pinfo->szLogin, pinfo->bBillType, MAX(0, iRemainSecs), pkLD);
-				M2_DELETE(pinfo);
-			}
 			break;
 
 
@@ -1226,14 +765,6 @@ void DBManager::SendMoneyLog(uint8_t type, uint32_t vnum, int64_t gold)
 	p.vnum = vnum;
 	p.gold = gold;
 	db_clientdesc->DBPacket(HEADER_GD_MONEY_LOG, 0, &p, sizeof(p));
-}
-
-void DBManager::StopAllBilling()
-{
-	for (auto it = m_map_pkLoginData.begin(); it != m_map_pkLoginData.end(); ++it)
-	{
-		SetBilling(it->first, false);
-	}
 }
 
 uint32_t DBManager::EscapeString(char* dst, uint64_t dstSize, const char *src, uint32_t srcSize)

@@ -88,7 +88,6 @@ extern void		LoadStateUserCount();
 extern bool	g_bEmpireWhisper;
 
 extern uint8_t	g_bAuthServer;
-extern uint8_t	g_bBilling;
 
 extern uint8_t	PK_PROTECT_LEVEL;
 

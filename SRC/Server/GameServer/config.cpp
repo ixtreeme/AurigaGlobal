@@ -91,8 +91,6 @@ uint8_t		g_bAuthServer = false;
 bool		g_bCheckClientVersion = true;
 string	g_stClientVersion = "20251204";
 
-uint8_t		g_bBilling = false;
-
 string	g_stAuthMasterIP;
 uint16_t		g_wAuthMasterPort = 0;
 
@@ -1200,11 +1198,6 @@ static bool __LoadGeneralConfigFile(const char* configName)
 		{
 			str_to_number(g_bSkillDisable, value_string);
 			continue;
-		}
-
-		TOKEN("billing")
-		{
-			g_bBilling = true;
 		}
 
 		TOKEN("quest_dir")

@@ -3,7 +3,6 @@
 #include "ecs/systems/MovementSystem.hpp"
 #include "ecs/systems/AffectSystem.hpp"
 #include "ecs/AIHelpers.hpp"
-#include <common/billing.h>
 #include "config.h"
 #include "desc_client.h"
 #include "desc_manager.h"
@@ -380,8 +379,6 @@ void CInputP2P::Transfer(const char * c_pData)
 void CInputP2P::LoginPing(LPDESC d, const char * c_pData)
 {
 	TPacketGGLoginPing * p = (TPacketGGLoginPing *) c_pData;
-
-	SendBillingExpire(p->szLogin, BILLING_DAY, 0, nullptr);
 
 	if (!g_pkAuthMasterDesc) // If I am master, I have to broadcast
 		P2P_MANAGER::instance().Send(p, sizeof(TPacketGGLoginPing), d);
