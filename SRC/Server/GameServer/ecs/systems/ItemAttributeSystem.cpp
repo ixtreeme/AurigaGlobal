@@ -16,9 +16,51 @@
 #include "../../log.h"
 #include "../../utils.h"
 #include "../../../common/stole_length.h"
+#ifdef ENABLE_RUNE_SYSTEM
+#include "../../../common/rune_length.h"
+#endif
 #include <Core/Logging.hpp>
 
 namespace ItemSystem {
+#ifdef ENABLE_RUNE_SYSTEM
+int32_t GetRuneAttributeType(entt::entity item, int index)
+{
+    if (!IsRuneItem(item) || index < 0 || index >= RUNE_ATTR_EACH) return 0;
+    return aApplyRuneInfo[(GetItemSubType(item) - RUNE_SLOT1) * RUNE_ATTR_EACH + index][0];
+}
+
+int32_t GetRuneAttributeValue(entt::entity item, int index, int32_t remainingTime)
+{
+    if (!IsRuneItem(item) || index < 0 || index >= RUNE_ATTR_EACH) return 0;
+    const int onePercent = GetItemValue(item, 0) / 100;
+    // The legacy calculation divided by zero for missing/sub-100 durations.
+    if (onePercent <= 0) return 0;
+    const int remaining = remainingTime / onePercent;
+    const int tier = remaining >= 81 ? 7 : remaining >= 61 ? 6 : remaining >= 41 ? 5 :
+        remaining >= 21 ? 4 : remaining >= 11 ? 3 : remaining >= 6 ? 2 : 1;
+    return aApplyRuneInfo[(GetItemSubType(item) - RUNE_SLOT1) * RUNE_ATTR_EACH + index][tier];
+}
+
+bool InitializeRuneItem(entt::entity item)
+{
+    if (!IsValidItem(item) || !g_registry.all_of<ecs::ItemSockets, ecs::ItemAttributes>(item)) return false;
+    if (GetItemType(item) == ITEM_USE && GetItemSubType(item) == USE_RUNE_PERC_CHARGE)
+    {
+        g_registry.get<ecs::ItemSockets>(item).sockets[0] = GetItemValue(item, 0);
+        return true;
+    }
+    if (!IsRuneItem(item)) return true;
+    if (GetItemValue(item, 0) < 100) return false;
+    const int32_t time = g_registry.get<ecs::ItemSockets>(item).sockets[0];
+    for (int index = 0; index < RUNE_ATTR_EACH; ++index)
+    {
+        const auto type = GetRuneAttributeType(item, index), value = GetRuneAttributeValue(item, index, time);
+        if (type > 0 && type <= UINT8_MAX && value > 0 && value <= INT16_MAX)
+            g_registry.get<ecs::ItemAttributes>(item).attrs[index] = {static_cast<uint8_t>(type), static_cast<int16_t>(value)};
+    }
+    return true;
+}
+#endif
 namespace {
 namespace rules = ecs::item_attributes;
 using Attributes = decltype(ecs::ItemAttributes::attrs);

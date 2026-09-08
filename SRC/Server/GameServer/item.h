@@ -130,7 +130,6 @@ class CItem : public CEntity
 
 #ifdef ENABLE_BATTLE_PASS
 #endif
-		void		AlterToSocketItem(int iSocketCount);
 
 		uint16_t		GetRefineSet()		{ return m_pProto ? m_pProto->wRefineSet : 0;	}
 
@@ -237,16 +236,8 @@ class CItem : public CEntity
 
 
 		uint32_t		m_dwMaskVnum;
-		uint32_t		m_dwSIGVnum;
 	public:
-		void SetSIGVnum(uint32_t dwSIG)
-		{
-			m_dwSIGVnum = dwSIG;
-		}
-		uint32_t	GetSIGVnum() const
-		{
-			return m_dwSIGVnum;
-		}
+		uint32_t GetSIGVnum() const;
 #ifdef ENABLE_EXTRA_INVENTORY
 		bool	IsExtraItem();
 		uint8_t	GetExtraCategory();
@@ -256,7 +247,6 @@ class CItem : public CEntity
 		bool	IsRune();
 		int32_t	GetRuneAttrType(int c);
 		int32_t	GetRuneAttrValue(int c, int32_t lTime);
-		void	InitializeRune();
 		void	ChangeRuneAttr(int32_t lTime);
 		void	ActivateRuneBonus();
 		void	DeactivateRuneBonus();

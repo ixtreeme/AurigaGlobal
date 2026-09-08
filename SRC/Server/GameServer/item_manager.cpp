@@ -56,6 +56,23 @@ LPITEM ResolveManagedItem(entt::entity item)
 	return legacy ? legacy->ptr : nullptr;
 }
 
+template<class Function>
+struct ScopeExit
+{
+    Function function;
+    ~ScopeExit() noexcept
+    {
+        try { function(); }
+        catch (...)
+        {
+            // Preserve an initializer's original exception. The destruction
+            // path retains the live item's indexes when retirement fails.
+            try { LOG_ERROR("Item creation rollback threw; retained item requires cleanup"); }
+            catch (...) {}
+        }
+    }
+};
+
 struct ItemDestructionGuard
 {
 	std::unordered_set<entt::entity>& active;
@@ -254,333 +271,308 @@ TItemExtraProto* ITEM_MANAGER::GetExtraProto(uint32_t vnum)
 
 
 
-entt::entity ITEM_MANAGER::CreateItem(uint32_t vnum, uint32_t count, uint32_t id, bool bTryMagic, int iRarePct, bool bSkipSave)
+// Skill-book selection is shared by item creation and quest rewards. Preserve
+// the old conditional distribution, but enumerate candidates instead of retrying
+// forever when a job or the entire skill table has no usable entries.
+const uint32_t GetRandomSkillVnum(uint8_t job)
 {
-	if (0 == vnum)
-		return entt::null;
-
-	uint32_t dwMaskVnum = 0;
-	if (GetMaskVnum(vnum))
-	{
-		dwMaskVnum = GetMaskVnum(vnum);
-	}
-
-	const TItemTable* table = GetTable(vnum);
-
-	if (nullptr == table)
-		return entt::null;
-	// Invalid stack configuration must fail before allocating/registering an
-	// item whose first count write cannot succeed.
-	if (table->bType != ITEM_ELK && g_bItemCountLimit <= 0)
-		return entt::null;
-	if (table->bType == ITEM_ELK && count == 0)
-		return entt::null;
-
-	LPITEM item = nullptr;
-
-	//id로 검사해서 존재한다면 -- 리턴!
-	if (auto duplicate = m_map_pkItemByID.find(id); duplicate != m_map_pkItemByID.end())
-	{
-		item = ResolveManagedItem(duplicate->second);
-		if (item)
-		{
-			if (const entt::entity owner = ItemSystem::GetItemOwner(item->GetEntityHandle()); owner != entt::null)
-			{
-				const TItemTable* proto = item->GetProto();
-				const char* itemName = (proto && proto->szName[0]) ? proto->szName : "UNKNOWN";
-				LOG_ERROR("ITEM_ID_DUP: {} vnum={} {} owner {}", id, item->GetVnum(), itemName,
-					static_cast<uint32_t>(owner));
-			}
-			return entt::null;
-		}
-
-		m_map_pkItemByID.erase(duplicate);
-	}
-	//아이템 하나 할당하고
-#ifdef M2_USE_POOL
-	item = pool_.Construct();
-#else
-	item = M2_NEW CItem(vnum);
-#endif
-
-	bool bIsNewItem = (0 == id);
-
-	//초기화 하고. 테이블 셋하고
-	item->Initialize();
-	item->SetProto(table);
-	item->SetMaskVnum(dwMaskVnum);
-
-	if (item->GetType() != ITEM_ELK && !bIsNewItem)
-	{
-		item->SetID(id);
-	}
-	else if (item->GetType() != ITEM_ELK)
-	{
-		item->SetID(GetNewID());
-	}
-
-	// The entity has to exist before any item state is written: sockets and
-	// attributes are read back through it.
-	item->SetVID(++m_dwVIDCount);
-	const entt::entity itemEntity = EntityFactory::CreateItemEntity(g_registry, item);
-	if (!ItemSystem::IsValidItem(itemEntity))
-	{
-#ifdef M2_USE_POOL
-		pool_.Destroy(item);
-#else
-		M2_DELETE(item);
-#endif
-		return entt::null;
-	}
-
-#ifdef ENABLE_ITEM_EXTRA_PROTO
-	ItemSystem::SetItemExtraProto(itemEntity, instance().GetExtraProto(vnum));
-#endif
-	ItemSystem::SetItemSkipSave(itemEntity, item->GetType() == ITEM_ELK || !bIsNewItem);
-
-	if (bIsNewItem && item->GetType() == ITEM_UNIQUE)
-	{
-		if (item->GetValue(2) == 0)
-			item->SetSocket(ITEM_SOCKET_UNIQUE_REMAIN_TIME, item->GetValue(0)); // 게임 시간 유니크
-		else
-			item->SetSocket(ITEM_SOCKET_UNIQUE_REMAIN_TIME, get_global_time() + item->GetValue(0)); // 실시간 유니크
-	}
-
-
-	switch (item->GetVnum())
-	{
-	case ITEM_AUTO_HP_RECOVERY_S:
-	case ITEM_AUTO_HP_RECOVERY_M:
-	case ITEM_AUTO_HP_RECOVERY_L:
-	case ITEM_AUTO_HP_RECOVERY_X:
-	case ITEM_AUTO_SP_RECOVERY_S:
-	case ITEM_AUTO_SP_RECOVERY_M:
-	case ITEM_AUTO_SP_RECOVERY_L:
-	case ITEM_AUTO_SP_RECOVERY_X:
-	case REWARD_BOX_ITEM_AUTO_SP_RECOVERY_XS:
-	case REWARD_BOX_ITEM_AUTO_SP_RECOVERY_S:
-	case REWARD_BOX_ITEM_AUTO_HP_RECOVERY_XS:
-	case REWARD_BOX_ITEM_AUTO_HP_RECOVERY_S:
-		if (bIsNewItem)
-			item->SetSocket(2, item->GetValue(0), true);
-		else
-			item->SetSocket(2, item->GetValue(0), false);
-		break;
-	}
-
-	if (item->GetType() == ITEM_ELK) // 돈은 아무 처리가 필요하지 않음
-		;
-	else if (item->IsStackable())  // 합칠 수 있는 아이템의 경우
-	{
-		count = MINMAX(1, count, g_bItemCountLimit);
-
-		if (bTryMagic && count <= 1 && IS_SET(item->GetFlag(), ITEM_FLAG_MAKECOUNT))
-			count = item->GetValue(1);
-	}
-	else
-		count = 1;
-
-	if (!bSkipSave)
-	{
-		m_VIDMap.insert_or_assign(item->GetVID(), itemEntity);
-		if (item->GetID() != 0)
-			m_map_pkItemByID.insert_or_assign(item->GetID(), itemEntity);
-	}
-	if (!ItemSystem::SetItemCountEcs(itemEntity, count) ||
-		!ItemSystem::IsValidItem(itemEntity) || ItemSystem::IsItemConsumptionPending(itemEntity) ||
-		ItemSystem::GetItemCount(itemEntity) == 0 || ResolveManagedItem(itemEntity) != item)
-		return entt::null;
-
-	ItemSystem::SetItemSkipSave(itemEntity, false);
-
-	if (item->GetType() == ITEM_UNIQUE && item->GetValue(2) != 0)
-		ItemSystem::StartUniqueExpireEvent(item->GetEntityHandle());
-
-	for (int i = 0; i < ITEM_LIMIT_MAX_NUM; i++)
-	{
-		// 아이템 생성 시점부터 사용하지 않아도 시간이 차감되는 방식
-		if (LIMIT_REAL_TIME == ItemSystem::GetItemLimitType(itemEntity, i))
-		{
-			if (ItemSystem::GetItemLimitValue(itemEntity, i))
-			{
-				item->SetSocket(0, time(nullptr) + ItemSystem::GetItemLimitValue(itemEntity, i));
-			}
-			else
-			{
-				item->SetSocket(0, time(nullptr) + 60 * 60 * 24 * 7);
-			}
-
-			ItemSystem::StartRealTimeExpireEventEcs(itemEntity);
-		}
-
-		// 기존 유니크 아이템처럼 착용시에만 사용가능 시간이 차감되는 방식
-		else if (LIMIT_TIMER_BASED_ON_WEAR == ItemSystem::GetItemLimitType(itemEntity, i))
-		{
-			// 이미 착용중인 아이템이면 타이머를 시작하고, 새로 만드는 아이템은 사용 가능 시간을 세팅해준다. (
-			// 아이템몰로 지급하는 경우에는 이 로직에 들어오기 전에 Socket0 값이 세팅이 되어 있어야 한다.
-			if (true == ItemSystem::IsItemEquipped(item->GetEntityHandle()))
-			{
-				ItemSystem::StartTimerBasedOnWearExpireEvent(item->GetEntityHandle());
-			}
-			else if (0 == id)
-			{
-				int32_t duration = item->GetSocket(0);
-				if (0 == duration)
-					duration = ItemSystem::GetItemLimitValue(itemEntity, i);
-
-				if (0 == duration)
-					duration = 60 * 60 * 10;	// 정보가 아무것도 없으면 디폴트로 10시간 세팅
-
-				item->SetSocket(0, duration);
-			}
-		}
-	}
-
-#ifdef ENABLE_DS_EDITS
-	if ((item->GetVnum() == 100000) || (item->GetVnum() == 100001) || (item->GetVnum() == 100002))
-		item->SetSocket(ITEM_SOCKET_CHARGING_AMOUNT_IDX, item->GetValue(0));
-#endif
-
-#ifdef ENABLE_SOUL_SYSTEM
-	if (item->GetType() == ITEM_SOUL)
-	{
-		item->SetSocket(2, item->GetValue(2));
-		ItemSystem::StartSoulItemEventEcs(itemEntity);
-	}
-#endif
-
-	if (id == 0) // 새로 만드는 아이템일 때만 처리
-	{
-		// 새로추가되는 약초들일경우 성능을 다르게처리
-		if (ITEM_BLEND == item->GetType())
-		{
-			if (Blend_Item_find(item->GetVnum()))
-			{
-				Blend_Item_set_value(item);
-				ItemSystem::SyncItemStateFromLegacy(itemEntity);
-				return itemEntity;
-			}
-		}
-
-		if (table->sAddonType)
-		{
-			ItemSystem::ApplyItemAddon(itemEntity, table->sAddonType);
-		}
-
-		if (bTryMagic)
-		{
-			if (iRarePct == -1)
-				iRarePct = table->bAlterToMagicItemPct;
-
-			if (number(1, 100) <= iRarePct)
-				ItemSystem::AlterItemToMagicItem(itemEntity);
-		}
-
-		if (table->bGainSocketPct)
-			item->AlterToSocketItem(table->bGainSocketPct);
-
-		// 50300 == 기술 수련서
-		if (vnum == 50300 || vnum == ITEM_SKILLFORGET_VNUM)
-		{
-			extern const uint32_t GetRandomSkillVnum(uint8_t bJob = JOB_MAX_NUM);
-			item->SetSocket(0, GetRandomSkillVnum());
-		}
-		else if (ITEM_SKILLFORGET2_VNUM == vnum)
-		{
-			uint32_t dwSkillVnum;
-
-			do
-			{
-				dwSkillVnum = number(112, 119);
-
-				if (nullptr != CSkillManager::instance().Get(dwSkillVnum))
-					break;
-			} while (true);
-
-			item->SetSocket(0, dwSkillVnum);
-		}
-	}
-	else
-	{
-		// 100% 확률로 속성이 붙어야 하는데 안 붙어있다면 새로 붙힌다. ...............
-		if (100 == table->bAlterToMagicItemPct && 0 == item->GetAttributeCount())
-		{
-			ItemSystem::AlterItemToMagicItem(itemEntity);
-		}
-	}
-
-	if (item->GetType() == ITEM_QUEST)
-	{
-		for (auto it = m_map_pkQuestItemGroup.begin(); it != m_map_pkQuestItemGroup.end(); ++it)
-		{
-			if (it->second->m_bType == CSpecialItemGroup::QUEST && it->second->Contains(vnum))
-			{
-				item->SetSIGVnum(it->first);
-			}
-		}
-	}
-	else if (item->GetType() == ITEM_UNIQUE || item->GetSubType() == COSTUME_MOUNT)
-	{
-		for (auto it = m_map_pkSpecialItemGroup.begin(); it != m_map_pkSpecialItemGroup.end(); ++it)
-		{
-			if (it->second->m_bType == CSpecialItemGroup::SPECIAL && it->second->Contains(vnum))
-			{
-				item->SetSIGVnum(it->first);
-			}
-		}
-	}
-#ifdef ENABLE_ATTR_COSTUMES
-	else if ((item->GetType() == ITEM_USE) && ((item->GetSubType() == USE_ADD_ATTR_COSTUME1) || (item->GetSubType() == USE_ADD_ATTR_COSTUME2))) {
-		int aiBonusList[5] = { APPLY_ATTBONUS_MONSTER, APPLY_ATTBONUS_BOSS, APPLY_ATTBONUS_METIN, APPLY_ATTBONUS_HUMAN, APPLY_RESIST_MEZZIUOMINI };
-		item->SetSocket(0, aiBonusList[number(0, 4)]);
-		int iVal = item->GetSubType() == USE_ADD_ATTR_COSTUME1 ? 5 : 10;
-		item->SetSocket(1, iVal);
-	}
-#endif
-
-	// 새로 생성되는 용혼석 처리.
-	if (ItemSystem::IsDragonSoulItem(itemEntity) && id == 0 &&
-		!DSManager::instance().DragonSoulItemInitialize(itemEntity))
-	{
-		ItemSystem::DestroyItemEntityEcs(itemEntity, "DRAGON_SOUL_INIT_FAILED");
-		return entt::null;
-	}
-#ifdef ENABLE_RUNE_SYSTEM
-	if (bIsNewItem)
-		item->InitializeRune();
-#endif
-
-#ifdef ENABLE_NEW_USE_POTION
-	if ((bIsNewItem) && (item->GetType() == ITEM_USE) && (item->GetSubType() == USE_NEW_POTIION)) {
-		item->SetSocket(0, ItemSystem::GetItemLimitValue(itemEntity, 0));
-		item->SetSocket(1, 0);
-	}
-#endif
-
-#ifdef ENABLE_STOLE_COSTUME
-	if ((bIsNewItem) && (item->GetType() == ITEM_COSTUME) && (item->GetSubType() == COSTUME_STOLE)) {
-		uint8_t bGrade = item->GetValue(0);
-		if (bGrade > 0) {
-			bGrade = bGrade > 4 ? 4 : bGrade;
-
-			uint8_t bRandom = (bGrade * 4);
-			for (int i = 0; i < MAX_ATTR; i++) {
-				ItemSystem::SetItemForceAttributeEcs(itemEntity, i, stoleInfoTable[i][0], stoleInfoTable[i][number(bRandom - 3, bRandom)]);
-			}
-		}
-	}
-#endif
-
-#ifdef ENABLE_DS_POTION_DIFFRENT
-	if (bIsNewItem && item->GetType() == ITEM_USE && item->GetSubType() == USE_TIME_CHARGE_PER) {
-		item->SetSocket(0, item->GetValue(0));
-	}
-#endif
-
-	ItemSystem::SyncItemStateFromLegacy(itemEntity);
-	return itemEntity;
+    static constexpr uint32_t skills[JOB_MAX_NUM][SKILL_GROUP_MAX_NUM][6] = {
+        {{1, 2, 3, 4, 5, 6}, {16, 17, 18, 19, 20, 21}},
+        {{31, 32, 33, 34, 35, 36}, {46, 47, 48, 49, 50, 51}},
+        {{61, 62, 63, 64, 65, 66}, {76, 77, 78, 79, 80, 81}},
+        {{91, 92, 93, 94, 95, 96}, {106, 107, 108, 109, 110, 111}},
+    };
+    std::array<uint32_t, JOB_MAX_NUM * SKILL_GROUP_MAX_NUM * 6> available {};
+    size_t size = 0;
+    const int firstJob = job == JOB_MAX_NUM ? 0 : std::min<int>(job, JOB_MAX_NUM - 1);
+    const int endJob = job == JOB_MAX_NUM ? JOB_MAX_NUM : firstJob + 1;
+    for (int current = firstJob; current < endJob; ++current)
+        for (const auto& group : skills[current])
+            for (const uint32_t skill : group)
+                if (skill && CSkillManager::instance().Get(skill)) available[size++] = skill;
+    return size ? available[number(0, static_cast<int>(size) - 1)] : 0;
 }
 
+entt::entity ITEM_MANAGER::CreateItem(uint32_t vnum, uint32_t count, uint32_t id, bool bTryMagic, int iRarePct, bool bSkipSave)
+{
+    const TItemTable* table = vnum ? GetTable(vnum) : nullptr;
+    if (!table || table->bSize == 0) return entt::null;
+    const TItemTable proto = *table; // Never retain a borrowed table across initialization callbacks.
+    const bool isNew = id == 0;
+    const bool gold = proto.bType == ITEM_ELK;
+    if ((!gold && g_bItemCountLimit <= 0) || (gold && count == 0)) return entt::null;
+    if (gold) count = std::min(count, uint32_t(INT_MAX));
+    else if (proto.dwFlags & ITEM_FLAG_STACKABLE)
+    {
+        count = std::clamp(count, uint32_t(1), uint32_t(g_bItemCountLimit));
+        if (bTryMagic && count == 1 && (proto.dwFlags & ITEM_FLAG_MAKECOUNT))
+        {
+            if (proto.alValues[1] <= 0) return entt::null;
+            count = std::min(uint32_t(proto.alValues[1]), uint32_t(g_bItemCountLimit));
+        }
+    }
+    else count = 1;
+
+    const uint32_t itemID = gold ? 0 : (isNew ? GetNewID() : id);
+    if (!gold && !itemID) return entt::null;
+    const auto occupied = [&](const auto& index, uint32_t key) {
+        const auto it = index.find(key);
+        return it != index.end() && ItemSystem::IsValidItem(it->second);
+    };
+    if (itemID && occupied(m_map_pkItemByID, itemID))
+    {
+        LOG_ERROR("ITEM_ID_DUP: id={} vnum={}", itemID, vnum);
+        return entt::null;
+    }
+    if (m_dwVIDCount == UINT32_MAX) return entt::null; // Never wrap over a live VID.
+    const uint32_t itemVID = ++m_dwVIDCount;
+    if (occupied(m_VIDMap, itemVID)) return entt::null;
+    const uint32_t mask = GetMaskVnum(vnum);
+    const uint32_t displayVnum = mask ? mask : vnum;
+
+    // Temporary allocation boundary: unmigrated consumers still require CItem.
+    // No CItem pointer is used by the initialization pipeline below this block.
+    const entt::entity item = [&] {
+#ifdef M2_USE_POOL
+        LPITEM allocation = pool_.Construct();
+#else
+        LPITEM allocation = M2_NEW CItem(vnum);
+#endif
+        allocation->Initialize();
+        allocation->SetProto(table);
+        allocation->SetMaskVnum(mask);
+        allocation->SetID(itemID);
+        allocation->SetVID(itemVID);
+        const auto entity = EntityFactory::CreateItemEntity(g_registry, allocation);
+        if (!ItemSystem::IsValidItem(entity))
+        {
+#ifdef M2_USE_POOL
+            pool_.Destroy(allocation);
+#else
+            M2_DELETE(allocation);
+#endif
+        }
+        return entity;
+    }();
+    if (!ItemSystem::IsValidItem(item)) return entt::null;
+    bool committed = false;
+    const auto* initialFlags = g_registry.try_get<ecs::ItemFlags>(item);
+    const bool originalSkipSave = initialFlags && initialFlags->skipSave;
+    const auto cleanup = [&] {
+        if (committed) return;
+        if (!ItemSystem::IsValidItem(item)) { ForgetItem(item, itemID, itemVID); return; }
+        const auto* owner = g_registry.try_get<ecs::ItemOwner>(item);
+        const auto* location = g_registry.try_get<ecs::ItemLocation>(item);
+        // An external callback may have taken ownership. Never destroy its item.
+        if (!owner || owner->owner != entt::null || !location || location->window != RESERVED_WINDOW ||
+            g_registry.any_of<ecs::SpatialEntity, ecs::SectorPlacement>(item))
+        {
+            if (auto* flags = g_registry.try_get<ecs::ItemFlags>(item)) flags->skipSave = originalSkipSave;
+            LOG_ERROR("ITEM_CREATE aborted: item {} moved during initialization", itemID);
+            return;
+        }
+        if (auto* flags = g_registry.try_get<ecs::ItemFlags>(item)) flags->skipSave = true;
+        const ScopeExit restoreTransferredSavePolicy {[&] {
+            if (!ItemSystem::IsValidItem(item)) return;
+            const auto* currentOwner = g_registry.try_get<ecs::ItemOwner>(item);
+            const auto* currentLocation = g_registry.try_get<ecs::ItemLocation>(item);
+            if ((currentOwner && currentOwner->owner != entt::null) ||
+                (currentLocation && currentLocation->window != RESERVED_WINDOW) ||
+                g_registry.any_of<ecs::SpatialEntity, ecs::SectorPlacement>(item))
+                if (auto* flags = g_registry.try_get<ecs::ItemFlags>(item)) flags->skipSave = originalSkipSave;
+        }};
+#ifdef DEBUG_ALLOC
+        DestroyItem(item, __FILE__, __LINE__);
+#else
+        DestroyItem(item);
+#endif
+    };
+    const ScopeExit creationGuard {cleanup};
+    const auto live = [&] {
+        if (!ItemSystem::IsValidItem(item) ||
+            !g_registry.all_of<ecs::ItemIdentity, ecs::ItemCount, ecs::ItemOwner, ecs::ItemLocation,
+                ecs::ItemFlags, ecs::ItemEquipped, ecs::ItemSockets, ecs::ItemAttributes>(item) ||
+            g_registry.any_of<ecs::SpatialEntity, ecs::SectorPlacement>(item)) return false;
+        const auto& identity = g_registry.get<ecs::ItemIdentity>(item);
+        return identity.id == itemID && identity.vid == itemVID && identity.originalVnum == vnum &&
+            identity.vnum == displayVnum && g_registry.get<ecs::ItemOwner>(item).owner == entt::null &&
+            g_registry.get<ecs::ItemLocation>(item).window == RESERVED_WINDOW &&
+            !g_registry.get<ecs::ItemEquipped>(item).equipped &&
+            !g_registry.get<ecs::ItemFlags>(item).exchanging && !g_registry.get<ecs::ItemFlags>(item).isLocked &&
+            !ItemSystem::IsItemConsumptionPending(item);
+    };
+    if (!live()) return entt::null;
+    g_registry.get<ecs::ItemFlags>(item).skipSave = true;
+    if (!bSkipSave)
+    {
+        // Purge stale entries only. Nested creation must never lose its indexes.
+        if (auto it = m_VIDMap.find(itemVID); it != m_VIDMap.end() && !ItemSystem::IsValidItem(it->second)) m_VIDMap.erase(it);
+        if (itemID)
+            if (auto it = m_map_pkItemByID.find(itemID); it != m_map_pkItemByID.end() && !ItemSystem::IsValidItem(it->second)) m_map_pkItemByID.erase(it);
+        if (!m_VIDMap.try_emplace(itemVID, item).second ||
+            (itemID && !m_map_pkItemByID.try_emplace(itemID, item).second)) return entt::null;
+    }
+#ifdef ENABLE_ITEM_EXTRA_PROTO
+    ItemSystem::SetItemExtraProto(item, GetExtraProto(vnum));
+    if (!live()) return entt::null;
+#endif
+    if (!ItemSystem::SetItemCountEcs(item, count) || !live() || ItemSystem::GetItemCount(item) != count) return entt::null;
+
+    // Creation writes existing socket components without interim save/packets.
+    // The completed item is saved once, after every initializer has succeeded.
+    const auto socket = [&](int index, int64_t value) {
+        g_registry.get<ecs::ItemSockets>(item).sockets[index] =
+            static_cast<int32_t>(std::clamp<int64_t>(value, INT32_MIN, INT32_MAX));
+    };
+    if (isNew && proto.bType == ITEM_UNIQUE)
+        socket(ITEM_SOCKET_UNIQUE_REMAIN_TIME, proto.alValues[2] == 0 ? int64_t(proto.alValues[0]) :
+            int64_t(get_global_time()) + proto.alValues[0]);
+
+    switch (displayVnum)
+    {
+    case ITEM_AUTO_HP_RECOVERY_S: case ITEM_AUTO_HP_RECOVERY_M:
+    case ITEM_AUTO_HP_RECOVERY_L: case ITEM_AUTO_HP_RECOVERY_X:
+    case ITEM_AUTO_SP_RECOVERY_S: case ITEM_AUTO_SP_RECOVERY_M:
+    case ITEM_AUTO_SP_RECOVERY_L: case ITEM_AUTO_SP_RECOVERY_X:
+    case REWARD_BOX_ITEM_AUTO_SP_RECOVERY_XS: case REWARD_BOX_ITEM_AUTO_SP_RECOVERY_S:
+    case REWARD_BOX_ITEM_AUTO_HP_RECOVERY_XS: case REWARD_BOX_ITEM_AUTO_HP_RECOVERY_S:
+        socket(2, proto.alValues[0]); break;
+    }
+    bool realTime = false, soulTimer = false;
+    for (const auto& limit : proto.aLimits)
+    {
+        if (limit.bType == LIMIT_REAL_TIME)
+        {
+            socket(0, int64_t(time(nullptr)) + (limit.lValue ? int64_t(limit.lValue) : 60 * 60 * 24 * 7));
+            realTime = true;
+        }
+        else if (limit.bType == LIMIT_TIMER_BASED_ON_WEAR && isNew)
+        {
+            const auto duration = g_registry.get<ecs::ItemSockets>(item).sockets[0];
+            socket(0, duration ? duration : limit.lValue ? limit.lValue : 60 * 60 * 10);
+        }
+    }
+#ifdef ENABLE_DS_EDITS
+    if (displayVnum == 100000 || displayVnum == 100001 || displayVnum == 100002)
+        socket(ITEM_SOCKET_CHARGING_AMOUNT_IDX, proto.alValues[0]);
+#endif
+#ifdef ENABLE_SOUL_SYSTEM
+    if (proto.bType == ITEM_SOUL) { socket(2, proto.alValues[2]); soulTimer = true; }
+#endif
+    const bool blend = isNew && proto.bType == ITEM_BLEND && Blend_Item_find(displayVnum);
+    if (blend)
+    {
+        if (!Blend_Item_set_value(item) || !live()) return entt::null;
+    }
+    else
+    {
+        if (isNew)
+        {
+            if (proto.sAddonType)
+            {
+                ItemSystem::ApplyItemAddon(item, proto.sAddonType);
+                if (!live()) return entt::null;
+            }
+            if (bTryMagic)
+            {
+                const int rare = iRarePct == -1 ? proto.bAlterToMagicItemPct : iRarePct;
+                if (number(1, 100) <= rare)
+                {
+                    ItemSystem::AlterItemToMagicItem(item);
+                    if (!live()) return entt::null;
+                }
+            }
+            for (int index = 0; index < std::min<int>(proto.bGainSocketPct, ITEM_SOCKET_MAX_NUM); ++index) socket(index, 1);
+            if (vnum == 50300 || vnum == ITEM_SKILLFORGET_VNUM)
+            {
+                const uint32_t skill = GetRandomSkillVnum();
+                if (!skill || !live()) return entt::null;
+                socket(0, skill);
+            }
+            else if (vnum == ITEM_SKILLFORGET2_VNUM)
+            {
+                std::array<uint32_t, 8> available {};
+                size_t size = 0;
+                for (uint32_t skill = 112; skill <= 119; ++skill)
+                    if (CSkillManager::instance().Get(skill)) available[size++] = skill;
+                if (!size || !live()) return entt::null;
+                socket(0, available[number(0, static_cast<int>(size) - 1)]);
+            }
+        }
+        else if (proto.bAlterToMagicItemPct == 100 && ItemSystem::GetItemAttributeCount(item) == 0)
+        {
+            ItemSystem::AlterItemToMagicItem(item);
+            if (!live()) return entt::null;
+        }
+
+        uint32_t sig = 0;
+        if (proto.bType == ITEM_QUEST)
+        {
+            for (const auto& [groupID, group] : m_map_pkQuestItemGroup)
+                if (group && group->m_bType == CSpecialItemGroup::QUEST && group->Contains(vnum)) sig = groupID;
+        }
+        else if (proto.bType == ITEM_UNIQUE || proto.bSubType == COSTUME_MOUNT)
+        {
+            for (const auto& [groupID, group] : m_map_pkSpecialItemGroup)
+                if (group && group->m_bType == CSpecialItemGroup::SPECIAL && group->Contains(vnum)) sig = groupID;
+        }
+#ifdef ENABLE_ATTR_COSTUMES
+        else if (proto.bType == ITEM_USE && (proto.bSubType == USE_ADD_ATTR_COSTUME1 || proto.bSubType == USE_ADD_ATTR_COSTUME2))
+        {
+            constexpr int bonuses[] = {APPLY_ATTBONUS_MONSTER, APPLY_ATTBONUS_BOSS, APPLY_ATTBONUS_METIN,
+                APPLY_ATTBONUS_HUMAN, APPLY_RESIST_MEZZIUOMINI};
+            socket(0, bonuses[number(0, 4)]);
+            socket(1, proto.bSubType == USE_ADD_ATTR_COSTUME1 ? 5 : 10);
+        }
+#endif
+        g_registry.get<ecs::ItemIdentity>(item).sigVnum = sig;
+        if (isNew && ItemSystem::IsDragonSoulItem(item))
+        {
+            if (!DSManager::instance().DragonSoulItemInitialize(item) || !live()) return entt::null;
+        }
+#ifdef ENABLE_RUNE_SYSTEM
+        if (isNew && (!ItemSystem::InitializeRuneItem(item) || !live())) return entt::null;
+#endif
+#ifdef ENABLE_NEW_USE_POTION
+        if (isNew && proto.bType == ITEM_USE && proto.bSubType == USE_NEW_POTIION)
+        { socket(0, proto.aLimits[0].lValue); socket(1, 0); }
+#endif
+#ifdef ENABLE_STOLE_COSTUME
+        if (isNew && proto.bType == ITEM_COSTUME && proto.bSubType == COSTUME_STOLE)
+        {
+            const int grade = std::clamp<int>(proto.alValues[0], 0, 4);
+            if (grade)
+                for (int index = 0; index < MAX_ATTR; ++index)
+                {
+                    if (!ItemSystem::SetItemForceAttributeEcs(item, index, stoleInfoTable[index][0],
+                        stoleInfoTable[index][number(grade * 4 - 3, grade * 4)]) || !live()) return entt::null;
+                }
+        }
+#endif
+#ifdef ENABLE_DS_POTION_DIFFRENT
+        if (isNew && proto.bType == ITEM_USE && proto.bSubType == USE_TIME_CHARGE_PER) socket(0, proto.alValues[0]);
+#endif
+    }
+
+    // Start events only after all socket/attribute state is initialized.
+    if (proto.bType == ITEM_UNIQUE && proto.alValues[2] != 0)
+    {
+        ItemSystem::StartUniqueExpireEvent(item);
+        if (!live()) return entt::null;
+    }
+    if (realTime && (!ItemSystem::StartRealTimeExpireEventEcs(item) || !live())) return entt::null;
+#ifdef ENABLE_SOUL_SYSTEM
+    // A fully charged soul intentionally has no growth timer. That is not an
+    // initialization failure (the event service also returns false for it).
+    if (soulTimer && static_cast<int>(uint32_t(g_registry.get<ecs::ItemSockets>(item).sockets[2]) / 10000) < proto.aLimits[1].lValue &&
+        (!ItemSystem::StartSoulItemEventEcs(item) || !live())) return entt::null;
+#endif
+    if (!live() || ItemSystem::GetItemCount(item) != count) return entt::null;
+    g_registry.get<ecs::ItemFlags>(item).skipSave = false;
+    committed = true;
+    ItemSystem::SaveItem(item);
+    return live() && ItemSystem::GetItemCount(item) == count ? item : entt::entity(entt::null);
+}
 
 
 void ITEM_MANAGER::DelayedSave(entt::entity itemEntity)

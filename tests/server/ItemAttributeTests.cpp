@@ -22,6 +22,7 @@
 #include "../../SRC/Server/GameServer/p2p.h"
 #include "../../SRC/Server/GameServer/battle_pass.h"
 #include "../../SRC/Server/common/stole_length.h"
+#include "../../SRC/Server/common/rune_length.h"
 #include "../../SRC/Server/GameServer/DragonSoul.h"
 #include "../../SRC/Server/GameServer/dragon_soul_table.h"
 #include "../../SRC/Server/GameServer/ecs/systems/DragonSoulSystem.hpp"
@@ -446,6 +447,10 @@ const TItemTable* GetItemProto(entt::entity item)
 uint8_t GetItemType(entt::entity item) { const auto* p = GetItemProto(item); return p ? p->bType : 0; }
 uint8_t GetItemSubType(entt::entity item) { const auto* p = GetItemProto(item); return p ? p->bSubType : 0; }
 bool IsDragonSoulItem(entt::entity item) { return IsValidItem(item) && GetItemType(item) == ITEM_DS; }
+bool IsRuneItem(entt::entity item) {
+    return IsValidItem(item) && GetItemType(item) == ITEM_COSTUME &&
+        GetItemSubType(item) >= RUNE_SLOT1 && GetItemSubType(item) <= RUNE_SLOT7;
+}
 bool IsExtraItem(entt::entity item) { ++stackCategoryLookups; return IsValidItem(item) && g_registry.all_of<TestExtraStack>(item); }
 uint32_t GetItemWearFlags(entt::entity item) { const auto* p = GetItemProto(item); return p ? p->dwWearFlags : 0; }
 int32_t GetItemValue(entt::entity item, uint32_t index)
@@ -2871,6 +2876,63 @@ void SwitchbotTransactions()
 #endif
 }
 
+void RuneInitializationAndBoundaries()
+{
+#ifdef ENABLE_RUNE_SYSTEM
+    for (int subtype = RUNE_SLOT1; subtype <= RUNE_SLOT7; ++subtype) {
+        for (int duration : {100, 199, 10000, INT_MAX}) {
+            Fixture f;
+            f.proto.bType = ITEM_COSTUME; f.proto.bSubType = static_cast<uint8_t>(subtype);
+            f.proto.alValues[0] = duration;
+            g_registry.emplace<ecs::ItemSockets>(f.item);
+            f.Attrs()[3] = {APPLY_MAX_SP, 23};
+            for (int remaining : {INT_MIN, -1, 0, 5, 6, 10, 11, 20, 21, 40, 41, 60, 61, 80, 81, 100, INT_MAX}) {
+                // Input is seconds, preserving the original integer-percent rounding.
+                const int percent = remaining / (duration / 100);
+                const int tier = percent >= 81 ? 7 : percent >= 61 ? 6 : percent >= 41 ? 5 :
+                    percent >= 21 ? 4 : percent >= 11 ? 3 : percent >= 6 ? 2 : 1;
+                g_registry.get<ecs::ItemSockets>(f.item).sockets[0] = remaining;
+                Check(ItemSystem::InitializeRuneItem(f.item), "valid rune initialization rejected");
+                for (int slot = 0; slot < RUNE_ATTR_EACH; ++slot) {
+                    const auto& row = aApplyRuneInfo[(subtype - RUNE_SLOT1) * RUNE_ATTR_EACH + slot];
+                    Check(ItemSystem::GetRuneAttributeType(f.item, slot) == row[0], "rune subtype/type mapping changed");
+                    Check(ItemSystem::GetRuneAttributeValue(f.item, slot, remaining) == row[tier], "rune duration tier changed");
+                    Check(f.Attrs()[slot].bType == row[0] && f.Attrs()[slot].sValue == row[tier], "rune initialization lost attributes");
+                }
+                Check(f.Attrs()[3].bType == APPLY_MAX_SP && f.Attrs()[3].sValue == 23, "rune overwrote unrelated attribute");
+            }
+            Check(saves == 0 && updates == 0 && randomCalls == 0, "rune setup published partial item");
+        }
+    }
+    for (int duration : {INT_MIN, -100, -1, 0, 1, 99}) {
+        Fixture f; f.proto.bType = ITEM_COSTUME; f.proto.bSubType = RUNE_SLOT1; f.proto.alValues[0] = duration;
+        g_registry.emplace<ecs::ItemSockets>(f.item);
+        f.Attrs()[0] = {APPLY_MAX_HP, 17}; const auto before = f.Attrs();
+        Check(ItemSystem::GetRuneAttributeValue(f.item, 0, INT_MAX) == 0, "invalid rune duration divided by zero");
+        Check(!ItemSystem::InitializeRuneItem(f.item) && EqualAttributes(f.Attrs(), before), "invalid rune modified attributes");
+    }
+    {
+        Fixture f; g_registry.emplace<ecs::ItemSockets>(f.item);
+        Check(ItemSystem::InitializeRuneItem(f.item), "ordinary item rejected by rune initializer");
+        Check(ItemSystem::GetRuneAttributeType(f.item, 0) == 0 && ItemSystem::GetRuneAttributeValue(f.item, 0, 100) == 0,
+            "non-rune acquired rune bonus");
+        f.proto.bType = ITEM_USE; f.proto.bSubType = USE_RUNE_PERC_CHARGE; f.proto.alValues[0] = 30;
+        Check(ItemSystem::InitializeRuneItem(f.item) && g_registry.get<ecs::ItemSockets>(f.item).sockets[0] == 30,
+            "rune charge potion lost payload");
+        f.proto.bType = ITEM_COSTUME; f.proto.bSubType = RUNE_SLOT7; f.proto.alValues[0] = 100;
+        for (int index : {INT_MIN, -1, 2, INT_MAX})
+            Check(ItemSystem::GetRuneAttributeType(f.item, index) == 0 && ItemSystem::GetRuneAttributeValue(f.item, index, 100) == 0,
+                "rune slot bounds were not checked");
+        g_registry.remove<ecs::ItemSockets>(f.item);
+        Check(!ItemSystem::InitializeRuneItem(f.item) && !g_registry.any_of<ecs::ItemSockets>(f.item), "rune setup fabricated missing sockets");
+        g_registry.emplace<ecs::ItemSockets>(f.item); g_registry.remove<ecs::ItemAttributes>(f.item);
+        Check(!ItemSystem::InitializeRuneItem(f.item) && !g_registry.any_of<ecs::ItemAttributes>(f.item), "rune setup fabricated missing attributes");
+        g_registry.destroy(f.item); const auto replacement = g_registry.create();
+        Check(!ItemSystem::InitializeRuneItem(f.item) && !ItemSystem::InitializeRuneItem(entt::null) &&
+            ItemSystem::GetRuneAttributeValue(f.item, 0, 100) == 0 && g_registry.valid(replacement), "rune setup accepted stale entity");
+    }
+#endif
+}
 void SwitchbotMaterialSelection()
 {
 #ifdef ENABLE_SWITCHBOT
@@ -2896,6 +2958,7 @@ int main()
     try {
         ITEM_MANAGER itemManager;
         LogManager logManager;
+        RuneInitializationAndBoundaries();
         EntityAndTableValidation();
         LockedSlotAndRarePreservation();
         FailureIsAtomic();

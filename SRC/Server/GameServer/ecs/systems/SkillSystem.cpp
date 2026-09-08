@@ -4852,33 +4852,3 @@ eMountType GetMountLevelByVnum(uint32_t dwMountVnum, bool IsNew) // updated to 2
 			break;
 	}
 }
-
-const int SKILL_COUNT = 6;
-static const uint32_t SkillList[JOB_MAX_NUM][SKILL_GROUP_MAX_NUM][SKILL_COUNT] =
-{
-	{ {	1,	2,	3,	4,	5,	6	}, {	16,	17,	18,	19,	20,	21	} },
-	{ {	31,	32,	33,	34,	35,	36	}, {	46,	47,	48,	49,	50,	51	} },
-	{ {	61,	62,	63,	64,	65,	66	}, {	76,	77,	78,	79,	80,	81	} },
-	{ {	91,	92,	93,	94,	95,	96	}, {	106,107,108,109,110,111	} },
-};
-
-const uint32_t GetRandomSkillVnum(uint8_t bJob)
-{
-	// the chosen skill
-	uint32_t dwSkillVnum = 0;
-	do
-	{
-		// tmp stuff
-		uint32_t tmpJob = (bJob != JOB_MAX_NUM)?MINMAX(0, bJob, JOB_MAX_NUM-1):number(0, JOB_MAX_NUM-1);
-		uint32_t tmpSkillGroup = number(0, SKILL_GROUP_MAX_NUM-1);
-		uint32_t tmpSkillCount = number(0, SKILL_COUNT-1);
-		// set skill
-		dwSkillVnum = SkillList[tmpJob][tmpSkillGroup][tmpSkillCount];
-
-
-		if (dwSkillVnum != 0 && nullptr != CSkillManager::instance().Get(dwSkillVnum))
-			break;
-	} while (true);
-	return dwSkillVnum;
-}
-

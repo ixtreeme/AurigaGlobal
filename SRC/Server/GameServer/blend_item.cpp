@@ -195,14 +195,14 @@ static int FN_ECS_random_index()
 }
 
 
-bool	Blend_Item_set_value(LPITEM item)
+bool	Blend_Item_set_value(entt::entity itemEntity)
 {
+	if (!ItemSystem::IsValidItem(itemEntity) || !g_registry.all_of<ecs::ItemSockets>(itemEntity)) return false;
 	BLEND_ITEM_INFO	*blend_info;
 	T_BLEND_ITEM_INFO::iterator	iter;
 
 	DO_ALL_BLEND_INFO(iter)
 	{
-		const entt::entity itemEntity = item ? item->GetEntityHandle() : entt::null;
 		blend_info = *iter;
 		if (blend_info->item_vnum == ItemSystem::GetItemVnum(itemEntity))
 		{
@@ -223,9 +223,11 @@ bool	Blend_Item_set_value(LPITEM item)
 				apply_duration	= blend_info->apply_duration	[FN_random_index()];
 			}
 			LOG_INFO("blend_item : type : {}, value : {}, du : {}", apply_type, apply_value, apply_duration);
-			ItemSystem::SetItemSocket(itemEntity, 0, apply_type);
-			ItemSystem::SetItemSocket(itemEntity, 1, apply_value);
-			ItemSystem::SetItemSocket(itemEntity, 2, apply_duration);
+			// Creation-only setup: publish the complete value with the finished item.
+			auto& sockets = g_registry.get<ecs::ItemSockets>(itemEntity).sockets;
+			sockets[0] = apply_type;
+			sockets[1] = apply_value;
+			sockets[2] = apply_duration;
 			return true;
 		}
 

@@ -661,13 +661,50 @@ auto-assignment, item movement/consumption, empty-slot clearing on login and rel
 persistence with a real client/DB before deployment. Bulk item-manager shutdown
 still needs migration.
 
-## Item-manager destruction
+## Item-manager creation and destruction
 
 `ItemManagerLifecycleTests` compiles the complete production `item_manager.cpp`,
 `safebox.cpp` and `Base/grid.cpp`. Both high-level `RemoveItem` and low-level
 `DestroyItem` read identity, location and ownership from ECS; an optional legacy
 allocation is resolved only at the final release boundary.
 The existing implementation is edited in place, not duplicated into another system.
+
+`CreateItem` now operates on entity identity, quantity, sockets, attributes and
+SIG group after its explicitly retained CItem allocation/bootstrap boundary.
+It snapshots prototype rules before initialization callbacks, rejects live
+duplicate entity IDs and VID exhaustion, and normalizes gold/non-stack/MAKECOUNT
+quantities before allocation. Initialization suppresses delayed persistence;
+successful completion queues one save without a legacy state resync. Timer
+startup follows payload preparation; fully charged souls correctly skip growth
+timers. Initial socket timestamps are saturated to the signed 32-bit storage
+range rather than overflowing. This does not extend the wire/storage format.
+
+Creation checks execute the real manager path against both entity-only and
+legacy-backed factory doubles. They cover new/load/skip-index behavior, special
+item payloads, magic/addon/blend dispatch, SIG selection, failed allocation,
+count/rune/dragon-soul/timer initialization, callback deletion, recycled entity
+generations, ownership transfer, recursive duplicate creation, exceptions and
+rejected rollback. Cleanup preserves externally acquired ownership and failed
+retirement indexes; it does not overwrite callback state after final publication.
+Skill-book selection is shared with quest rewards and implemented once in this
+manager file; exhaustive candidate/job/boundary tests exercise the actual bounded
+selection code. Empty skill data now fails instead of spinning indefinitely.
+
+The real rune setup/tier calculation is additionally executed by
+`ItemAttributeTests`: all seven rune types, both attributes, tier boundaries,
+integer rounding, malformed durations (including the old zero-divisor cases),
+charge potions, missing components and recycled handles. Creation requires a
+valid rune duration of at least 100; gameplay duration tables need checking.
+
+Creation factory/bootstrap, timer, blend, magic/addon, dragon-soul, save and
+packet services remain doubles in the manager target. These checks do not
+exercise real EnTT bootstrap signals, legacy allocation internals, SQL or full
+engine event callbacks. Rune calculations and attribute/DS operations have
+separate real-code tests, not a complete combined creation integration test.
+Before deployment test drop/reward creation, blend/rune/stole items, skill books,
+new and fully charged souls, time-limited items, loading persisted sockets,
+logout/relog and DB persistence. AutoGive, bootstrap and bulk shutdown remain
+separate migration work; this is not a fully pointer-free item factory.
 
 ```powershell
 cmake --build build --config Release --target GameServer ItemManagerLifecycleTests
@@ -696,7 +733,7 @@ Item access, inventory, factory, logging and DB services are doubles. Legacy
 CItem/CEntity construction and destruction are doubles too: the tests verify
 allocation release order, not engine timers, component destruction callbacks,
 spatial removal, packet delivery or durable persistence. Unrelated manager
-creation/drop dependencies fail immediately if called. Bulk shutdown `Destroy`
+drop dependencies fail immediately if called. Bulk shutdown `Destroy`
 still needs migration. The ItemSystem dispatch now uses the same high-level
 manager path for entity-only and legacy-backed items; this adapter is compiled
 with GameServer, not executed by this target. Native mount lookup/packet code

@@ -69,6 +69,10 @@ bool IsMountItem(entt::entity item);
 bool IsNewMountItem(entt::entity item);
 #ifdef ENABLE_RUNE_SYSTEM
 bool IsRuneItem(entt::entity item);
+int32_t GetRuneAttributeType(entt::entity item, int index);
+int32_t GetRuneAttributeValue(entt::entity item, int index, int32_t remainingTime);
+// Creation-only initialization: writes existing components before publication.
+bool InitializeRuneItem(entt::entity item);
 bool ActivateRuneLegacyBoundary(entt::entity item);
 bool DeactivateRuneLegacyBoundary(entt::entity item);
 bool ChangeRuneAttributesLegacyBoundary(entt::entity item, int32_t time);

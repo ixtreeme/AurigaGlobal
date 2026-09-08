@@ -15,6 +15,8 @@
 #include "../../SRC/Server/GameServer/questmanager.h"
 #include "../../SRC/Server/GameServer/blend_item.h"
 #include "../../SRC/Server/GameServer/DragonSoul.h"
+#include "../../SRC/Server/GameServer/dragon_soul_table.h"
+#include "../../SRC/Server/GameServer/unique_item.h"
 #include "../../SRC/Server/GameServer/refine.h"
 #include "../../SRC/Server/GameServer/item_manager_private_types.h"
 #include "../../SRC/Server/GameServer/ecs/EntityFactory.hpp"
@@ -40,14 +42,38 @@ int logs = 0, quickslots = 0, mountPackets = 0, computes = 0, points = 0, overhe
 uint16_t quickslotType = 0, quickslotCell = 0;
 bool rejectFactory = false;
 bool rejectDetach = false;
+bool creationTest = false, entityOnlyFactory = false, rejectAllocation = false, rejectCount = false;
+bool rejectRune = false, rejectDS = false, rejectTimer = false, blendExists = false;
+bool highDraw = false;
+uint32_t nextItemID = 1000;
+int creationSaves = 0, allocations = 0;
+std::function<void(const char*, entt::entity)> onCreation;
+std::vector<std::string> creationStages;
+std::set<uint32_t> availableSkills;
+struct CreationProto { TItemTable value; };
 std::function<void(entt::entity)> onGround, onDetach, onFactory;
 std::function<void(entt::entity)> onLog, onQuickslot, onCompute;
 std::map<std::pair<entt::entity, uint16_t>, entt::entity> inventory;
 void Check(bool value, const char* message) { ++checks; if (!value) throw std::runtime_error(message); }
 [[noreturn]] void Unexpected() { throw std::runtime_error("unexpected legacy/live service"); }
+void CreationStage(const char* stage, entt::entity item) {
+    Check(creationTest && ItemSystem::IsValidItem(item), "creation service received stale item");
+    creationStages.emplace_back(stage);
+    if (onCreation) { auto callback = onCreation; callback(stage, item); }
+}
+const TItemTable& Proto(entt::entity item) {
+    Check(g_registry.valid(item) && g_registry.all_of<CreationProto>(item), "stale creation prototype read");
+    return g_registry.get<CreationProto>(item).value;
+}
 struct Player {};
 class Manager : public ITEM_MANAGER {
 public:
+    void Prototype(TItemTable proto) { m_vec_prototype = {proto}; }
+    TItemTable& Prototype() { return m_vec_prototype.front(); }
+    void VID(uint32_t value) { m_dwVIDCount = value; }
+    void Group(CSpecialItemGroup& group, bool quest) {
+        (quest ? m_map_pkQuestItemGroup : m_map_pkSpecialItemGroup)[group.m_dwVnum] = &group;
+    }
     void Register(entt::entity item) {
         const auto& identity = g_registry.get<ecs::ItemIdentity>(item);
         m_VIDMap[identity.vid] = item;
@@ -63,6 +89,10 @@ public:
     ~Manager() { m_VIDMap.clear(); m_map_pkItemByID.clear(); m_set_pkItemForDelayedSave.clear(); }
 };
 void Reset() {
+    onCreation = {}; creationTest = entityOnlyFactory = rejectAllocation = rejectCount = false;
+    rejectRune = rejectDS = rejectTimer = blendExists = highDraw = false;
+    nextItemID = 1000; creationSaves = allocations = 0; creationStages.clear(); availableSkills.clear();
+    g_bItemCountLimit = 200;
     g_registry.clear(); inventory.clear();
     groundCalls = detachCalls = factoryCalls = frees = 0;
     logs = quickslots = mountPackets = computes = points = overheads = 0;
@@ -102,7 +132,7 @@ std::shared_ptr<spdlog::logger> logging::GetLogger() {
 CEntity::CEntity() = default;
 CEntity::~CEntity() = default;
 CItem::CItem(uint32_t vnum) : m_pProto(nullptr), m_dwVnum(vnum), m_dwID(0), m_dwVID(0),
-    m_lFlag(0), m_dwMaskVnum(0), m_dwSIGVnum(0) {}
+    m_lFlag(0), m_dwMaskVnum(0) {}
 CItem::~CItem() { Check(GetEntityHandle() == entt::null, "allocation freed before entity unbinding"); ++frees; }
 void CLIENT_DESC::DBPacket(uint8_t, uint32_t, const void*, uint32_t) { Unexpected(); }
 void DESC::Packet(const void*, int) { Unexpected(); }
@@ -110,6 +140,13 @@ CSemaphore::CSemaphore() = default;
 CSemaphore::~CSemaphore() = default;
 CAsyncSQL::CAsyncSQL() = default;
 CAsyncSQL::~CAsyncSQL() = default;
+CPoly::CPoly() = default;
+CPoly::~CPoly() = default;
+CSkillManager::CSkillManager() = default;
+CSkillManager::~CSkillManager() = default;
+DSManager::DSManager() = default;
+DSManager::~DSManager() = default;
+DragonSoulTable::~DragonSoulTable() = default;
 LogManager::LogManager() : m_bIsConnect(false) {}
 LogManager::~LogManager() = default;
 
@@ -176,7 +213,8 @@ std::string_view GetName(entt::entity owner) { Check(g_registry.valid(owner), "s
 }
 
 // The entire original manager translation unit is linked. Dependencies of
-// unrelated creation, drop and legacy removal paths must fail if exercised.
+// unrelated drop and legacy removal paths must fail if exercised. Creation
+// services below are controlled entity-only doubles, not live engine services.
 const int* aiPercentByDeltaLev = nullptr;
 const int* aiPercentByDeltaLevForBoss = nullptr;
 int test_server = 0;
@@ -184,9 +222,8 @@ int g_bItemCountLimit = 200;
 std::vector<CItemDropInfo> g_vec_pkCommonDropItem[MOB_RANK_MAX_NUM];
 int MAX(int, int) { Unexpected(); }
 int MINMAX(int, int, int) { Unexpected(); }
-int number_ex(int, int, const char*, int) { Unexpected(); }
-time_t get_global_time() { Unexpected(); }
-const uint32_t GetRandomSkillVnum(uint8_t) { Unexpected(); }
+int number_ex(int low, int high, const char*, int) { Check(creationTest && low <= high, "invalid creation RNG"); return highDraw ? high : low; }
+time_t get_global_time() { Check(creationTest, "unexpected clock"); return 10000; }
 const char* get_table_postfix() { Unexpected(); }
 bool AffectSystem::IsPolymorphed(entt::entity) { Unexpected(); }
 uint32_t CHARACTER::GetMobDropItemVnum() const { Unexpected(); }
@@ -226,11 +263,15 @@ void MountSystem::UpdateMountCountOverheadToViewers(entt::entity owner) { Check(
 namespace ItemSystem {
 bool IsEquipUniqueItem(entt::entity, uint32_t) { Unexpected(); }
 bool IsEquipUniqueGroup(entt::entity, uint32_t) { Unexpected(); }
-bool IsDragonSoulItem(entt::entity) { Unexpected(); }
+bool IsDragonSoulItem(entt::entity item) { return GetItemType(item) == ITEM_DS; }
 uint32_t GetItemVnum(entt::entity item) { return g_registry.get<ecs::ItemIdentity>(item).vnum; }
-uint32_t GetItemOriginalVnum(entt::entity) { Unexpected(); }
-void SetItemExtraProto(entt::entity, TItemExtraProto*) { Unexpected(); }
-uint8_t GetItemType(entt::entity) { Unexpected(); }
+uint32_t GetItemOriginalVnum(entt::entity item) { return g_registry.get<ecs::ItemIdentity>(item).originalVnum; }
+void SetItemExtraProto(entt::entity item, TItemExtraProto*) { CreationStage("extra", item); }
+uint8_t GetItemType(entt::entity item) { return Proto(item).bType; }
+int GetItemAttributeCount(entt::entity item) {
+    const auto& attrs = g_registry.get<ecs::ItemAttributes>(item).attrs;
+    return std::count_if(attrs.begin(), attrs.end(), [](auto a) { return a.bType != 0; });
+}
 uint32_t GetItemCount(entt::entity item) { return g_registry.get<ecs::ItemCount>(item).count; }
 uint8_t GetItemLimitType(entt::entity, uint32_t) { Unexpected(); }
 int32_t GetItemLimitValue(entt::entity, uint32_t) { Unexpected(); }
@@ -239,14 +280,16 @@ bool DestroyItemEntityEcs(entt::entity item, const char* reason) {
     ITEM_MANAGER::instance().RemoveItem(item, reason); return !g_registry.valid(item);
 }
 int16_t GetItemLockedAttr(entt::entity) { Unexpected(); }
-void StartUniqueExpireEvent(entt::entity) { Unexpected(); }
+void StartUniqueExpireEvent(entt::entity item) { CreationStage("unique", item); }
 void StartTimerBasedOnWearExpireEvent(entt::entity) { Unexpected(); }
 uint32_t GetItemSocket(entt::entity, int) { return 0; }
 TPlayerItemAttribute GetItemAttribute(entt::entity, int) { return {}; }
 bool SetItemSocket(entt::entity, int, uint32_t, bool) { Unexpected(); }
-bool SetItemForceAttributeEcs(entt::entity, int, uint8_t, int16_t) { Unexpected(); }
-bool ApplyItemAddon(entt::entity, int) { Unexpected(); }
-bool IsItemConsumptionPending(entt::entity) { Unexpected(); }
+bool SetItemForceAttributeEcs(entt::entity item, int index, uint8_t type, int16_t value) {
+    g_registry.get<ecs::ItemAttributes>(item).attrs[index] = {type, value}; CreationStage("attribute", item); return true;
+}
+bool ApplyItemAddon(entt::entity item, int) { CreationStage("addon", item); return true; }
+bool IsItemConsumptionPending(entt::entity item) { return g_registry.valid(item) && g_registry.get<ecs::ItemCount>(item).count < 0; }
 void ProcessPendingItemConsumptions() { Unexpected(); }
 bool SetItemSkipSave(entt::entity item, bool flag) { g_registry.get<ecs::ItemFlags>(item).skipSave = flag; return true; }
 uint8_t GetItemSize(entt::entity) { return 1; }
@@ -263,10 +306,12 @@ bool IsItemExchanging(entt::entity) { return false; }
 bool IsItemLocked(entt::entity) { return false; }
 bool ConsumeItemEcs(entt::entity, uint32_t) { Unexpected(); }
 bool AddItemCountEcs(entt::entity, int) { Unexpected(); }
-bool AlterItemToMagicItem(entt::entity) { Unexpected(); }
+bool AlterItemToMagicItem(entt::entity item) { CreationStage("magic", item); return true; }
 bool IsItemEquipped(entt::entity) { Unexpected(); }
-bool StartRealTimeExpireEventEcs(entt::entity) { Unexpected(); }
-bool StartSoulItemEventEcs(entt::entity) { Unexpected(); }
+bool StartRealTimeExpireEventEcs(entt::entity item) { CreationStage("real-time", item); return !rejectTimer; }
+bool StartSoulItemEventEcs(entt::entity item) { CreationStage("soul", item); return !rejectTimer; }
+bool InitializeRuneItem(entt::entity item) { CreationStage("rune", item); return !rejectRune; }
+void SaveItem(entt::entity item) { ++creationSaves; CreationStage("save", item); }
 bool SyncItemStateFromLegacy(entt::entity) { Unexpected(); }
 }
 int CHARACTER_MANAGER::GetMobItemRate(entt::entity) { Unexpected(); }
@@ -280,32 +325,298 @@ void LogManager::ItemLogEntity(entt::entity owner, entt::entity item, const char
     Check(g_registry.valid(owner) && ItemSystem::IsValidItem(item) && reason && std::string(hint) == "item 1 ", "invalid item log");
     ++logs; if (onLog) onLog(item);
 }
-CSkillProto* CSkillManager::Get(uint32_t) { Unexpected(); }
+CSkillProto* CSkillManager::Get(uint32_t id) {
+    Check(creationTest, "unexpected skill query"); static CSkillProto skill;
+    return availableSkills.contains(id) ? &skill : nullptr;
+}
 int CPrivManager::GetPriv(entt::entity, uint8_t) { Unexpected(); }
 int quest::CQuestManager::GetEventFlag(const std::string&) { Unexpected(); }
 void quest::CQuestManager::RegisterNPCVnum(uint32_t) { Unexpected(); }
-bool Blend_Item_set_value(LPITEM) { Unexpected(); }
-bool Blend_Item_find(uint32_t) { Unexpected(); }
-void CItem::Initialize() { Unexpected(); }
+bool Blend_Item_set_value(entt::entity item) {
+    g_registry.get<ecs::ItemSockets>(item).sockets = {3, 7, 900}; CreationStage("blend", item); return true;
+}
+bool Blend_Item_find(uint32_t) { Check(creationTest, "unexpected blend query"); return blendExists; }
+void CItem::Initialize() { Check(creationTest, "unexpected legacy initialization"); SetEntityHandle(entt::null); }
 uint8_t CItem::GetWindow() const { Unexpected(); }
-void CItem::SetProto(const TItemTable*) { Unexpected(); }
+void CItem::SetProto(const TItemTable* proto) { Check(creationTest, "unexpected legacy proto"); m_pProto = proto; m_lFlag = proto->dwFlags; }
 const char* CItem::GetName(uint8_t) { Unexpected(); }
 bool CItem::SetCount(int) { Unexpected(); }
-bool ItemSystem::SetItemCountEcs(entt::entity, uint32_t) { Unexpected(); }
+bool ItemSystem::SetItemCountEcs(entt::entity item, uint32_t count) {
+    if (rejectCount) return false;
+    g_registry.get<ecs::ItemCount>(item).count = static_cast<int>(count); CreationStage("count", item); return true;
+}
 int CItem::GetCount() { Unexpected(); }
 int32_t CItem::GetValue(uint32_t) { Unexpected(); }
 int32_t CItem::GetSocket(int) const { Unexpected(); }
 void CItem::SetSocket(int, int32_t, bool) { Unexpected(); }
-void CItem::AlterToSocketItem(int) { Unexpected(); }
 int CItem::GetAttributeCount() { Unexpected(); }
 bool CItem::IsExtraItem() { Unexpected(); }
-void CItem::InitializeRune() { Unexpected(); }
-uint32_t ITEM_MANAGER::GetNewID() { Unexpected(); }
-entt::entity EntityFactory::CreateItemEntity(entt::registry&, LPITEM) { Unexpected(); }
-bool DSManager::DragonSoulItemInitialize(entt::entity) { Unexpected(); }
+uint32_t ITEM_MANAGER::GetNewID() { Check(creationTest, "unexpected ID allocation"); return nextItemID++; }
+entt::entity EntityFactory::CreateItemEntity(entt::registry& registry, LPITEM allocation) {
+    Check(creationTest, "unexpected entity factory"); ++allocations;
+    if (rejectAllocation) return entt::null;
+    const auto item = registry.create();
+    registry.emplace<CreationProto>(item, *allocation->GetProto());
+    auto& identity = registry.emplace<ecs::ItemIdentity>(item);
+    identity.id = allocation->GetID(); identity.vid = allocation->GetVID();
+    identity.vnum = allocation->GetVnum(); identity.originalVnum = allocation->GetOriginalVnum();
+    registry.emplace<ecs::ItemCount>(item);
+    registry.emplace<ecs::ItemOwner>(item);
+    registry.emplace<ecs::ItemLocation>(item, ecs::ItemLocation {RESERVED_WINDOW, 0});
+    registry.emplace<ecs::ItemEquipped>(item);
+    registry.emplace<ecs::ItemFlags>(item).flags = allocation->GetFlag();
+    registry.emplace<ecs::ItemSockets>(item); registry.emplace<ecs::ItemAttributes>(item);
+    if (entityOnlyFactory) delete allocation;
+    else { allocation->SetEntityHandle(item); registry.emplace<ecs::LegacyItemPtr>(item, allocation); }
+    return item;
+}
+bool DSManager::DragonSoulItemInitialize(entt::entity item) { CreationStage("dragon-soul", item); return !rejectDS; }
 const TRefineTable* CRefineManager::GetRefineRecipe(uint32_t) { Unexpected(); }
 
 namespace {
+struct CreationFixture {
+    Manager manager;
+    explicit CreationFixture(bool native = true) {
+        Reset(); creationTest = true; entityOnlyFactory = native;
+        TItemTable proto {}; proto.dwVnum = 100; proto.bType = ITEM_WEAPON; proto.bSize = 1;
+        manager.Prototype(proto);
+    }
+    entt::entity Create(uint32_t count = 1, uint32_t id = 0, bool magic = false, bool skip = false) {
+        return manager.CreateItem(manager.Prototype().dwVnum, count, id, magic, -1, skip);
+    }
+    void Retire(entt::entity item) {
+        if (!ItemSystem::IsValidItem(item)) return;
+        g_registry.get<ecs::ItemFlags>(item).skipSave = true;
+        manager.DestroyItem(item);
+        Check(!g_registry.valid(item), "creation fixture could not retire item");
+    }
+    bool Stage(const char* stage) const {
+        return std::find(creationStages.begin(), creationStages.end(), stage) != creationStages.end();
+    }
+};
+void CreationQuantitiesAndIdentity() {
+    for (bool native : {false, true}) {
+        for (bool loaded : {false, true}) {
+            for (bool skip : {false, true}) {
+                CreationFixture f(native);
+                f.manager.Prototype().dwFlags = ITEM_FLAG_STACKABLE;
+                const auto item = f.Create(UINT32_MAX, loaded ? 400 : 0, false, skip);
+                Check(ItemSystem::IsValidItem(item) && ItemSystem::GetItemCount(item) == 200, "creation count clamp failed");
+                Check(ItemSystem::GetItemID(item) == (loaded ? 400 : 1000) && ItemSystem::GetItemVID(item) == 1,
+                    "creation lost native ID/VID");
+                Check(f.manager.Indexed(item) == !skip && !ItemSystem::GetItemSkipSave(item), "creation index/save policy changed");
+                Check(g_registry.any_of<ecs::LegacyItemPtr>(item) == !native, "incorrect allocation fixture");
+                Check(creationSaves == 1 && creationStages.back() == "save", "creation did not save exactly once at completion");
+                Check(f.Stage("rune") == !loaded, "load repeated new-item initialization");
+                f.Retire(item); Check(frees == allocations, "creation leaked/double-freed allocation");
+            }
+        }
+    }
+    for (uint32_t requested : {0u, 1u, 17u, UINT32_MAX}) {
+        for (int kind = 0; kind < 3; ++kind) {
+            CreationFixture f;
+            auto& proto = f.manager.Prototype();
+            if (kind == 1) proto.dwFlags = ITEM_FLAG_STACKABLE | ITEM_FLAG_MAKECOUNT;
+            if (kind == 2) proto.bType = ITEM_ELK;
+            proto.alValues[1] = 15;
+            const auto item = f.Create(requested, 0, true);
+            if (kind == 2 && requested == 0) { Check(item == entt::null && allocations == 0, "zero gold allocated"); continue; }
+            const uint32_t expected = kind == 0 ? 1 : kind == 2 ? std::min(requested, uint32_t(INT_MAX)) :
+                requested <= 1 ? 15 : std::min(requested, 200u);
+            Check(ItemSystem::GetItemCount(item) == expected, "MAKECOUNT/non-stack/gold normalization changed");
+            Check(kind != 2 || ItemSystem::GetItemID(item) == 0, "gold acquired persistent ID");
+            f.Retire(item);
+        }
+    }
+    for (int scenario = 0; scenario < 6; ++scenario) {
+        CreationFixture f;
+        if (scenario == 0) f.manager.Prototype().bSize = 0;
+        if (scenario == 1) g_bItemCountLimit = 0;
+        if (scenario == 2) nextItemID = 0;
+        if (scenario == 3) f.manager.VID(UINT32_MAX);
+        if (scenario == 4) f.manager.Prototype().dwFlags = ITEM_FLAG_STACKABLE | ITEM_FLAG_MAKECOUNT;
+        if (scenario == 5) f.manager.Prototype().dwVnum = 0;
+        Check(f.Create(1, 0, true) == entt::null && allocations == 0 && creationSaves == 0, "invalid creation had allocation effects");
+    }
+    for (bool stale : {false, true}) {
+        CreationFixture f;
+        const auto previous = Item(f.manager, 1000, 99);
+        if (stale) g_registry.destroy(previous);
+        const auto item = f.Create();
+        if (stale) { Check(ItemSystem::IsValidItem(item) && f.manager.Indexed(item), "stale ID blocked creation"); f.Retire(item); }
+        else { Check(item == entt::null && allocations == 0 && f.manager.Indexed(previous), "native duplicate ID overwritten"); f.Retire(previous); }
+    }
+}
+void CreationPayloads() {
+    for (int scenario = 0; scenario < 11; ++scenario) {
+        CreationFixture f;
+        auto& proto = f.manager.Prototype();
+        proto.alValues[0] = 1234;
+        if (scenario == 0) { proto.bType = ITEM_UNIQUE; proto.alValues[2] = 1; }
+        if (scenario == 1) proto.bType = ITEM_UNIQUE;
+        if (scenario == 2) proto.dwVnum = ITEM_AUTO_HP_RECOVERY_S;
+        if (scenario == 3) proto.aLimits[0] = {LIMIT_TIMER_BASED_ON_WEAR, 876};
+        if (scenario == 4) proto.aLimits[0] = {LIMIT_TIMER_BASED_ON_WEAR, 0};
+        if (scenario == 5) proto.bGainSocketPct = 255;
+        if (scenario == 6) { proto.bType = ITEM_USE; proto.bSubType = USE_TIME_CHARGE_PER; }
+        if (scenario == 7) proto.dwVnum = 100000;
+        if (scenario == 8) { proto.bType = ITEM_SOUL; proto.alValues[2] = 777; proto.aLimits[1].lValue = 10; }
+        if (scenario == 9) { proto.bType = ITEM_USE; proto.bSubType = USE_NEW_POTIION; proto.aLimits[0].lValue = 555; }
+        if (scenario == 10) { proto.bType = ITEM_SOUL; proto.alValues[2] = 100000; proto.aLimits[1].lValue = 10; }
+        onCreation = [&](const char* stage, entt::entity item) {
+            if (std::string_view(stage) == "unique")
+                Check(g_registry.get<ecs::ItemSockets>(item).sockets[ITEM_SOCKET_UNIQUE_REMAIN_TIME] == 11234,
+                    "unique timer started before its payload");
+            if (std::string_view(stage) == "soul")
+                Check(g_registry.get<ecs::ItemSockets>(item).sockets[2] == 777, "soul timer saw partial payload");
+        };
+        const auto item = f.Create();
+        Check(ItemSystem::IsValidItem(item), "special item creation rejected");
+        const auto sockets = g_registry.get<ecs::ItemSockets>(item).sockets;
+        if (scenario < 2) Check(sockets[ITEM_SOCKET_UNIQUE_REMAIN_TIME] == (scenario == 0 ? 11234 : 1234), "unique duration changed");
+        if (scenario == 2) Check(sockets[2] == 1234, "auto-potion capacity missing");
+        if (scenario == 3 || scenario == 4) Check(sockets[0] == (scenario == 3 ? 876 : 36000), "wear duration/default missing");
+        if (scenario == 5) Check(std::all_of(sockets.begin(), sockets.end(), [](auto v) { return v == 1; }), "socket holes overflow/missing");
+        if (scenario == 6) Check(sockets[0] == 1234, "DS percent potion payload missing");
+        if (scenario == 7) Check(sockets[ITEM_SOCKET_CHARGING_AMOUNT_IDX] == 1234, "DS charge missing");
+        if (scenario == 8) Check(f.Stage("soul") && sockets[2] == 777, "soul initialization missing");
+        if (scenario == 9) Check(sockets[0] == 555 && sockets[1] == 0, "new potion initialization missing");
+        if (scenario == 10) Check(!f.Stage("soul") && sockets[2] == 100000, "fully charged soul was rejected or restarted");
+        f.Retire(item);
+    }
+    for (bool loaded : {false, true}) {
+        CreationFixture f;
+        auto& proto = f.manager.Prototype(); proto.bAlterToMagicItemPct = 100; proto.sAddonType = 1;
+        const auto item = f.Create(1, loaded ? 20 : 0, true);
+        Check(f.Stage("magic") && f.Stage("addon") == !loaded, "new/load magic/addon dispatch changed"); f.Retire(item);
+    }
+    for (bool quest : {false, true}) {
+        CreationFixture f; f.manager.Prototype().bType = quest ? ITEM_QUEST : ITEM_UNIQUE;
+        CSpecialItemGroup first(50, quest ? CSpecialItemGroup::QUEST : CSpecialItemGroup::SPECIAL);
+        CSpecialItemGroup last(60, first.m_bType); first.AddItem(100, 1, 1, 0); last.AddItem(100, 1, 1, 0);
+        f.manager.Group(first, quest); f.manager.Group(last, quest);
+        const auto item = f.Create(); Check(g_registry.get<ecs::ItemIdentity>(item).sigVnum == 60, "native SIG/order lost"); f.Retire(item);
+    }
+    {
+        CreationFixture f; auto& proto = f.manager.Prototype(); proto.bType = ITEM_BLEND;
+        proto.bAlterToMagicItemPct = 100; proto.sAddonType = 1; proto.bGainSocketPct = 3; blendExists = true;
+        const auto item = f.Create(1, 0, true);
+        const auto sockets = g_registry.get<ecs::ItemSockets>(item).sockets;
+        Check(sockets[0] == 3 && sockets[1] == 7 && sockets[2] == 900, "blend payload overwritten");
+        Check(f.Stage("blend") && !f.Stage("magic") && !f.Stage("addon") && !f.Stage("rune"), "blend early path changed"); f.Retire(item);
+    }
+    for (uint32_t vnum : {50300u, uint32_t(ITEM_SKILLFORGET_VNUM), uint32_t(ITEM_SKILLFORGET2_VNUM)}) {
+        for (bool hasSkills : {false, true}) {
+            CreationFixture f; f.manager.Prototype().dwVnum = vnum;
+            if (hasSkills) availableSkills = {17, 114, 119};
+            const auto item = f.Create();
+            if (!hasSkills) {
+                Check(item == entt::null && creationSaves == 0 && factoryCalls == 1, "missing skills did not reject and retire book");
+            } else {
+                Check(g_registry.get<ecs::ItemSockets>(item).sockets[0] == (vnum == ITEM_SKILLFORGET2_VNUM ? 114 : 17), "skill selection changed");
+                f.Retire(item);
+            }
+        }
+    }
+}
+void SkillBookSelection() {
+    CreationFixture f;
+    constexpr uint32_t skills[][12] = {
+        {1, 2, 3, 4, 5, 6, 16, 17, 18, 19, 20, 21},
+        {31, 32, 33, 34, 35, 36, 46, 47, 48, 49, 50, 51},
+        {61, 62, 63, 64, 65, 66, 76, 77, 78, 79, 80, 81},
+        {91, 92, 93, 94, 95, 96, 106, 107, 108, 109, 110, 111},
+    };
+    for (int job = 0; job < JOB_MAX_NUM; ++job) {
+        for (uint32_t skill : skills[job]) {
+            availableSkills = {skill, 999};
+            Check(GetRandomSkillVnum(job) == skill && GetRandomSkillVnum(JOB_MAX_NUM) == skill,
+                "bounded skill selection lost a supported skill/job");
+            Check(GetRandomSkillVnum((job + 1) % JOB_MAX_NUM) == 0, "skill leaked between jobs");
+        }
+    }
+    availableSkills.clear();
+    for (uint8_t job : {uint8_t(0), uint8_t(JOB_MAX_NUM), uint8_t(255)})
+        Check(GetRandomSkillVnum(job) == 0, "empty skill data did not terminate");
+    for (const auto& group : skills) for (uint32_t skill : group) availableSkills.insert(skill);
+    Check(GetRandomSkillVnum(JOB_MAX_NUM) == 1 && GetRandomSkillVnum(255) == 91, "skill low boundary/job clamp changed");
+    highDraw = true;
+    Check(GetRandomSkillVnum(JOB_MAX_NUM) == 111 && GetRandomSkillVnum(0) == 21, "skill high boundary changed");
+}
+void CreationFailuresAndCallbacks() {
+    for (bool native : {false, true}) {
+        for (int stage = 0; stage < 6; ++stage) {
+            CreationFixture f(native);
+            if (stage == 0) rejectAllocation = true;
+            if (stage == 1) rejectCount = true;
+            if (stage == 2) rejectRune = true;
+            if (stage == 3) { rejectDS = true; f.manager.Prototype().bType = ITEM_DS; }
+            if (stage == 4) { rejectTimer = true; f.manager.Prototype().aLimits[0] = {LIMIT_REAL_TIME, 100}; }
+            if (stage == 5) { rejectTimer = true; f.manager.Prototype().bType = ITEM_SOUL; f.manager.Prototype().aLimits[1].lValue = 10; }
+            Check(f.Create() == entt::null && creationSaves == 0 && frees == allocations, "failed creation leaked allocation or saved partial item");
+            Check(g_registry.view<ecs::ItemIdentity>().size() == 0, "failed creation left live item");
+        }
+    }
+    for (const char* stage : {"extra", "count", "addon", "magic", "rune", "unique", "real-time", "soul", "save"}) {
+        for (int action = 0; action < 5; ++action) {
+            CreationFixture f;
+            auto& proto = f.manager.Prototype(); proto.sAddonType = 1; proto.bAlterToMagicItemPct = 100;
+            proto.bType = std::string_view(stage) == "soul" ? ITEM_SOUL : ITEM_UNIQUE;
+            proto.alValues[2] = 1; proto.alValues[0] = 100;
+            proto.aLimits[0] = {LIMIT_REAL_TIME, 100};
+            proto.aLimits[1].lValue = 10;
+            entt::entity watched = entt::null, replacement = entt::null;
+            onCreation = [&](const char* current, entt::entity item) {
+                if (std::string_view(current) != stage) return;
+                watched = item;
+                if (action == 0) { g_registry.get<ecs::ItemFlags>(item).skipSave = true; f.manager.DestroyItem(item); }
+                if (action == 1) {
+                    const auto identity = g_registry.get<ecs::ItemIdentity>(item);
+                    g_registry.destroy(item); replacement = Item(f.manager, identity.id, identity.vid);
+                    Check(entt::to_entity(replacement) == entt::to_entity(item) && replacement != item, "factory callback did not recycle generation");
+                }
+                if (action == 2) Owner(item, INVENTORY, 17);
+                if (action == 3) Check(f.manager.CreateItem(100, 1, ItemSystem::GetItemID(item)) == entt::null, "recursive duplicate ID accepted");
+                if (action == 4) throw std::runtime_error("initializer failure");
+            };
+            bool threw = false; entt::entity result = entt::null;
+            try { result = f.Create(1, 0, true); } catch (const std::runtime_error&) { threw = true; }
+            Check(watched != entt::null && threw == (action == 4), "creation callback stage/exception missing");
+            Check((result != entt::null) == (action == 3), "creation returned invalid/moved item");
+            if (action < 2) Check(!f.manager.Indexed(watched), "retired generation still indexed");
+            if (action == 1) Check(f.manager.Indexed(replacement) && g_registry.valid(replacement), "rollback destroyed replacement");
+            if (action == 2) Check(g_registry.valid(watched) && f.manager.Indexed(watched) && !ItemSystem::GetItemSkipSave(watched),
+                "rollback destroyed/unindexed/transiently stranded transferred item");
+            if (action == 4 && std::string_view(stage) != "save") Check(!g_registry.valid(watched), "exception left detached partial item");
+            onCreation = {}; f.Retire(watched); f.Retire(replacement);
+        }
+    }
+    for (bool throws : {false, true}) {
+        CreationFixture f(false); entt::entity item = entt::null;
+        onCreation = [&](const char* stage, entt::entity current) {
+            if (std::string_view(stage) != "rune") return;
+            item = current; rejectRune = rejectFactory = true;
+            if (throws) onFactory = [](entt::entity) { throw std::runtime_error("retirement failure"); };
+        };
+        Check(f.Create() == entt::null && g_registry.valid(item) && f.manager.Indexed(item) && !f.manager.Busy(item) && frees == 0,
+            "failed rollback lost recoverable item/indices");
+        onFactory = {}; rejectFactory = false; f.Retire(item);
+    }
+}
+void CreationRollbackTransfers() {
+    for (bool throws : {false, true}) {
+        CreationFixture f(false); rejectRune = true;
+        entt::entity transferred = entt::null;
+        onGround = [&](entt::entity item) {
+            transferred = item; Owner(item, INVENTORY, 17);
+            if (throws) throw std::runtime_error("transfer during failed creation cleanup");
+        };
+        Check(f.Create() == entt::null && ItemSystem::IsValidItem(transferred) && f.manager.Indexed(transferred) &&
+            !ItemSystem::GetItemSkipSave(transferred) && !f.manager.Busy(transferred) && factoryCalls == 0,
+            "rollback callback stranded/transiently marked its new owner's item");
+        onGround = {}; f.Retire(transferred);
+    }
+}
 void NativeRemoval() {
     for (const bool legacy : {false, true}) {
         for (const uint8_t window : {INVENTORY, EQUIPMENT, EXTRA_INVENTORY, DRAGON_SOUL_INVENTORY, SWITCHBOT, MOUNT_INVENTORY}) {
@@ -569,6 +880,10 @@ void SlotAndPersistenceGuards() {
 int main() {
     try {
         LogManager log;
+        CSkillManager skills;
+        DSManager dragonSouls;
+        CreationQuantitiesAndIdentity(); CreationPayloads(); SkillBookSelection(); CreationFailuresAndCallbacks();
+        CreationRollbackTransfers();
         NativeAndLegacy(); ReentryAndExceptions(); FactoryFailures(); RecycledAndTransferred(); SlotAndPersistenceGuards();
         NativeRemoval(); RemovalCallbacks(); RemovalFailures(); StorageRemovalIntegration();
         std::cout << "Item-manager lifecycle checks passed: " << checks << '\n'; return 0;

@@ -12813,27 +12813,6 @@ TItemExtraProto* CItem::GetExtraProto()
 
 
 #ifdef ENABLE_RUNE_SYSTEM
-void CItem::InitializeRune() {
-	if ((GetType() == ITEM_USE) && (GetSubType() == USE_RUNE_PERC_CHARGE)) {
-		SetSocket(0, GetValue(0));
-		UpdatePacket();
-		return;
-	}
-
-	if (!IsRune())
-		return;
-
-	int32_t lTime = 0, lAttr = 0, lValue = 0;
-	for (int i = 0; i < RUNE_ATTR_EACH; ++i) {
-		lTime = GetSocket(0);
-		lAttr = GetRuneAttrType(i);
-		lValue = GetRuneAttrValue(i, lTime);
-		if ((lAttr > 0) && (lValue > 0)) {
-			ItemSystem::SetItemForceAttributeEcs(GetEntityHandle(), i, lAttr, lValue);
-		}
-	}
-}
-
 void CItem::ChangeRuneAttr(int32_t lTime) {
 	int32_t lValue = GetRuneAttrValue(0, lTime);
 	bool bChange = lValue != GetAttributeValue(0) ? true : false;
@@ -13055,16 +13034,9 @@ int CItem::GetAccessorySocketMaxGrade()
 	return ItemSystem::GetItemAccessorySocketMaxGrade(GetEntityHandle());
 }
 
-void CItem::AlterToSocketItem(int iSocketCount)
+uint32_t CItem::GetSIGVnum() const
 {
-	if (iSocketCount >= ITEM_SOCKET_MAX_NUM)
-	{
-		LOG_INFO("Invalid Socket Count {}, set to maximum", static_cast<int>(ITEM_SOCKET_MAX_NUM));
-		iSocketCount = ITEM_SOCKET_MAX_NUM;
-	}
-
-	for (int i = 0; i < iSocketCount; ++i)
-		SetSocket(i, 1);
+    return ItemSystem::GetItemSIGVnum(GetEntityHandle());
 }
 
 namespace ItemSystem {
@@ -13200,72 +13172,19 @@ void CItem::SetExchanging(bool bOn)
 }
 
 
-int32_t CItem::GetRuneAttrType(int c) {
-	int32_t v = 0;
-	uint8_t bSubType = GetSubType();
-	if (bSubType == RUNE_SLOT1)
-		v = c == 1 ? aApplyRuneInfo[1][0] : aApplyRuneInfo[0][0];
-	else if (bSubType == RUNE_SLOT2)
-		v = c == 1 ? aApplyRuneInfo[3][0] : aApplyRuneInfo[2][0];
-	else if (bSubType == RUNE_SLOT3)
-		v = c == 1 ? aApplyRuneInfo[5][0] : aApplyRuneInfo[4][0];
-	else if (bSubType == RUNE_SLOT4)
-		v = c == 1 ? aApplyRuneInfo[7][0] : aApplyRuneInfo[6][0];
-	else if (bSubType == RUNE_SLOT5)
-		v = c == 1 ? aApplyRuneInfo[9][0] : aApplyRuneInfo[8][0];
-	else if (bSubType == RUNE_SLOT6)
-		v = c == 1 ? aApplyRuneInfo[11][0] : aApplyRuneInfo[10][0];
-	else if (bSubType == RUNE_SLOT7)
-		v = c == 1 ? aApplyRuneInfo[13][0] : aApplyRuneInfo[12][0];
-
-	return v;
+int32_t CItem::GetRuneAttrType(int index) {
+    return ItemSystem::GetRuneAttributeType(GetEntityHandle(), index);
 }
 
-int32_t CItem::GetRuneAttrValue(int c, int32_t lTime) {
-	int32_t v = 0;
-	int32_t t = 1;
-	int32_t lMaxTime = GetValue(0);
-	int32_t lOnePercent = lMaxTime / 100;
-	int32_t lRemainPercent = lTime / lOnePercent;
-	if (lRemainPercent >= 81)
-		t = 7;
-	else if (lRemainPercent >= 61)
-		t = 6;
-	else if (lRemainPercent >= 41)
-		t = 5;
-	else if (lRemainPercent >= 21)
-		t = 4;
-	else if (lRemainPercent >= 11)
-		t = 3;
-	else if (lRemainPercent >= 6)
-		t = 2;
-	else if (lRemainPercent >= 0)
-		t = 1;
-
-	uint8_t bSubType = GetSubType();
-	if (bSubType == RUNE_SLOT1)
-		v = c == 1 ? aApplyRuneInfo[1][t] : aApplyRuneInfo[0][t];
-	else if (bSubType == RUNE_SLOT2)
-		v = c == 1 ? aApplyRuneInfo[3][t] : aApplyRuneInfo[2][t];
-	else if (bSubType == RUNE_SLOT3)
-		v = c == 1 ? aApplyRuneInfo[5][t] : aApplyRuneInfo[4][t];
-	else if (bSubType == RUNE_SLOT4)
-		v = c == 1 ? aApplyRuneInfo[7][t] : aApplyRuneInfo[6][t];
-	else if (bSubType == RUNE_SLOT5)
-		v = c == 1 ? aApplyRuneInfo[9][t] : aApplyRuneInfo[8][t];
-	else if (bSubType == RUNE_SLOT6)
-		v = c == 1 ? aApplyRuneInfo[11][t] : aApplyRuneInfo[10][t];
-	else if (bSubType == RUNE_SLOT7)
-		v = c == 1 ? aApplyRuneInfo[13][t] : aApplyRuneInfo[12][t];
-
-	return v;
+int32_t CItem::GetRuneAttrValue(int index, int32_t time) {
+    return ItemSystem::GetRuneAttributeValue(GetEntityHandle(), index, time);
 }
 
 
 CItem::CItem(uint32_t dwVnum)
 	: m_pProto(nullptr), m_dwVnum(dwVnum), m_dwID(0), m_dwVID(0),
 	m_lFlag(0),
-	m_dwMaskVnum(0), m_dwSIGVnum(0)
+	m_dwMaskVnum(0)
 {
 }
 
