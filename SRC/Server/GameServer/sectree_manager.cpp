@@ -36,6 +36,7 @@ SECTREE_MAP::SECTREE_MAP()
 
 SECTREE_MAP::~SECTREE_MAP()
 {
+	DrainEntities();
 	MapType::iterator it = map_.begin();
 
 	while (it != map_.end()) {
@@ -44,6 +45,16 @@ SECTREE_MAP::~SECTREE_MAP()
 	}
 
 	map_.clear();
+}
+
+void SECTREE_MAP::DrainEntities()
+{
+	if (m_draining) return;
+	m_draining = true;
+	// Close every sector before callbacks can move entities between them.
+	for (const auto& [id, tree] : map_) tree->m_closed = true;
+	// Keep map lookup and neighbors alive until all memberships are retired.
+	for (const auto& [id, tree] : map_) tree->Destroy();
 }
 
 SECTREE_MAP::SECTREE_MAP(SECTREE_MAP & r)
@@ -111,6 +122,7 @@ void SECTREE_MAP::Build()
 	while (it != map_.end())
 	{
 		LPSECTREE tree = it->second;
+		tree->m_neighbor_list.clear();
 
 		tree->m_neighbor_list.push_back(tree); // �ڽ��� �ִ´�.
 
@@ -1020,36 +1032,6 @@ int32_t SECTREE_MANAGER::CreatePrivateMap(int32_t lMapIndex)
 	return lNewMapIndex;
 }
 
-struct FDestroyPrivateMapEntity
-{
-	void operator() (LPENTITY ent)
-	{
-		if (ent->IsType(ENTITY_CHARACTER))
-		{
-			LPCHARACTER ch = (LPCHARACTER) ent;
-			const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
-
-			//0, "PRIVAE_MAP: removing character %s", ecs::PlayerRuntime::GetName(((ch) ? (ch)->GetEntityHandle() : entt::null)).data());
-
-			if (ecs::PlayerRuntime::GetDesc(chEntity))
-				DESC_MANAGER::instance().DestroyDesc(ecs::PlayerRuntime::GetDesc(chEntity));
-			else
-				M2_DESTROY_CHARACTER(ch);
-		}
-		else if (ent->IsType(ENTITY_ITEM))
-		{
-			LPITEM item = (LPITEM) ent;
-			LOG_INFO("PRIVATE_MAP: removing item {}", item->GetName());
-
-			ItemSystem::DestroyItemEntityEcs(
-				(item ? item->GetEntityHandle() : entt::null),
-				"PRIVATE_MAP_ITEM_CLEANUP");
-		}
-		else
-			LOG_ERROR("PRIVAE_MAP: trying to remove unknown entity {}", ent->GetType());
-	}
-};
-
 void SECTREE_MANAGER::DestroyPrivateMap(int32_t lMapIndex)
 {
 	if (lMapIndex < 10000) // private map �� �ε����� 10000 �̻� �̴�.
@@ -1057,7 +1039,7 @@ void SECTREE_MANAGER::DestroyPrivateMap(int32_t lMapIndex)
 
 	LPSECTREE_MAP pkMapSectree = GetMap(lMapIndex);
 
-	if (!pkMapSectree)
+	if (!pkMapSectree || pkMapSectree->IsDraining())
 		return;
 
 	// �� �� ���� ���� �����ϴ� �͵��� ���� ���ش�.
@@ -1065,8 +1047,7 @@ void SECTREE_MANAGER::DestroyPrivateMap(int32_t lMapIndex)
 	// �� �ʿ� ������ � Sectree���� �������� ���� �� ����
 	// ���� ���⼭ delete �� �� �����Ƿ� �����Ͱ� ���� �� ������
 	// ���� ó���� �ؾ���
-	FDestroyPrivateMapEntity f;
-	pkMapSectree->for_each(f);
+	pkMapSectree->DrainEntities();
 
 	m_map_pkSectree.erase(lMapIndex);
 

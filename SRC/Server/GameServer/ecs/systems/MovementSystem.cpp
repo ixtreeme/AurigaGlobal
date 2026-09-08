@@ -1,5 +1,6 @@
 #include "../../stdafx.h"
 #include "ViewSystem.hpp"
+#include "VisibilitySystem.hpp"
 #include "AffectSystem.hpp"
 
 #include "PlayerRuntimeSystem.hpp"
@@ -140,87 +141,19 @@ namespace
 
         LPCHARACTER ch = legacy->ptr;
 
-        // Phase 15E-final.LPENTITY.4-architect.B.1.1 atomic:
-        // The previous early-return guard compared ch->GetX/GetY against the
-        // freshly-advanced ECS `position`. Pre-flip GetX read legacy m_pos
-        // which lagged the registry by one mutation; the guard avoided
-        // redundant SetXYZ + UpdateSectree when both stores already agreed.
-        // After the read flip GetX reads the SAME ECS Position component the
-        // guard checks against, so the comparison would always evaluate true
-        // and skip UpdateSectree. UpdateSectree refreshes m_map_view and
-        // dispatches viewer transitions; skipping it caused the regression
-        // user reported as "ket karakter nem latja a masik mozgasat" during
-        // the first B.1.1 attempt (commits 9d27603 + fefce11, since reverted).
-        //
-        // Body now runs unconditionally on every ECS movement tick.
-        // Phase C.1: legacy m_pos write via SetXYZ removed - ECS Position is
-        // the sole source of truth for character position. SyncPositionComponents
-        // emplaces Position / PositionZ / MapIndex / DirtyTag in one shot.
-        // UpdateSectree refreshes m_map_view and dispatches viewer transitions.
+        // Position is authoritative ECS state. Membership must be updated
+        // before the final visibility refresh, including under interpolation.
         ecs::SyncPositionComponents(reg, entity, ch->GetMapIndex(), position.x, position.y, ch->GetZ());
 
-        // Phase 15E-final.LPENTITY.4-architect.D.6.fixup-3:
-        // Sectree boundary crossing for characters. Pre-D.6 the legacy
-        // CHARACTER::Sync handled this in the movement tick; D.6 stubbed
-        // CEntity::UpdateSectree for chars to disable polling, but that
-        // also disabled the side-effect that Sync used to perform.
-        //
-        // Without this fixup, when a character crosses a sectree boundary
-        // (every few hundred logical pixels), the m_pSectree legacy field
-        // stays pointing at the OLD sectree while ecs::Position has already
-        // moved to the new sectree. The next CHARACTER::Show call (e.g.
-        // backport, /warp, dungeon entry) compares m_pSectree to a fresh
-        // SECTREE_MANAGER lookup at the current pos and sees them differ -
-        // forces bChangeTree=true even when the spatial reality says
-        // bChangeTree=false. The bChangeTree=true branch then:
-        //   1. RemoveEntity from the stale m_pSectree (no-op because the
-        //      stale tree's m_set_entity does not actually contain this
-        //      character anymore)
-        //   2. ViewCleanup -> MirrorViewClear -> wipes the ECS ViewMap and
-        //      ViewerMap entirely, sending SendRemove to every current viewer
-        //   3. InsertEntity into the real sectree
-        //   4. fixup-1 spawn event re-builds ViewerMap
-        //
-        // Steps 2 and 4 produce the user-visible "map reload" effect: peers
-        // get a remove-then-insert burst, the player's ViewerMap is briefly
-        // empty during the gap, and any visibility query (next Show, next
-        // PacketView) inside that window sees an inconsistent set.
-        //
-        // The fix is to keep m_pSectree in sync with the ECS Position on
-        // every tick by re-inserting into the correct sectree as soon as the
-        // character crosses a boundary. SECTREE::InsertEntity automatically
-        // erases the entity from its previous sectree's m_set_entity and
-        // updates SectorPlacement, so a single InsertEntity call on the
-        // correct tree is enough.
-        //
-        // Phase 15E-final.LPENTITY.4-architect H fixup-1:
-        // Drop the `new_tree != ch->GetSectree()` short-circuit. Post-H
-        // GetSectree resolves through the ECS SectorPlacement which was
-        // last written by the SyncSectorPlacement call at the end of the
-        // previous tick - it can lag the new Position by exactly one
-        // SyncPositionComponents under interpolation. Under fast-mount
-        // movement that lag intermittently makes the comparison return
-        // "same tree" even though the entity has crossed a boundary, so
-        // InsertEntity skips and the entity stays referenced in the old
-        // SECTREE::m_set_entity. ComputeViewersAt running at the new
-        // position then walks the new sector grid that does not include
-        // the stale-membership entity, the diff handler emits a spurious
-        // SendRemove burst, and the moving character vanishes on every
-        // peer's client.
-        //
-        // SECTREE::InsertEntity is idempotent (the early-return at line
-        // 141 catches the same-tree case), so dropping the cached check
-        // costs one m_set_entity.find per tick per moving character with
-        // no behavioural change when the ECS sector cache happened to be
-        // current. The defensive call resolves the lag-window race.
+        // The native insert moves the versioned handle from the old sector;
+        // same-sector insertion is a no-op. No mirrored placement write.
         if (LPSECTREE new_tree = ecs::SectorAt(ch->GetMapIndex(), position.x, position.y))
         {
-            new_tree->InsertEntity(ch);
+            new_tree->InsertEntity(entity);
         }
 
         ch->UpdateSectree();
 
-        ecs::SyncSectorPlacement(reg, entity, ch->GetMapIndex(), ch->GetX(), ch->GetY());
     }
 }
 
@@ -762,12 +695,11 @@ bool CHARACTER::Sync(int32_t x, int32_t y)
 			LOG_INFO("SECTREE DIFFER: {} {}x{} was {}x{} dist {:.1f}m", GetName(), newX, newY, oldX, oldY, fDist);
 		}
 
-		new_tree->InsertEntity(this);
-
 		const entt::entity e = GetEntityHandle();
-		ecs::SyncSectorPlacement(g_registry, e, GetMapIndex(), GetX(), GetY());
+		new_tree->InsertEntity(e);
 		if (e != entt::null && g_registry.valid(e))
 			g_registry.emplace_or_replace<ecs::ViewActiveTag>(e);
+		ecs::VisibilitySystem::Refresh(g_registry, e);
 	}
 
 	return true;

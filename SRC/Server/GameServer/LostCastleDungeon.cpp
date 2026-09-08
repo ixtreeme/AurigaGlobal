@@ -193,7 +193,7 @@ namespace
         pos.y = ecs::PlayerRuntime::GetY(victimEntity) + number(-200, 200);
         pos.z = victim->GetZ();
 
-        ItemSystem::PlaceItemOnGroundLegacyBoundary(item, ecs::PlayerRuntime::GetMapIndex(victimEntity), pos);
+        ItemSystem::PlaceItemOnGround(item, ecs::PlayerRuntime::GetMapIndex(victimEntity), pos);
 
         if (owner)
             ItemSystem::SetGroundOwnership(item, owner->GetEntityHandle(), 60 * 3);

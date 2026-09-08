@@ -1796,7 +1796,7 @@ void CInputDB::ItemLoad(LPDESC d, const char * c_pData)
 			coord.x = ecs::PlayerRuntime::GetX(((ch) ? (ch)->GetEntityHandle() : entt::null));
 			coord.y = ecs::PlayerRuntime::GetY(((ch) ? (ch)->GetEntityHandle() : entt::null));
 
-			ItemSystem::PlaceItemOnGroundLegacyBoundary(itemEntity, ecs::PlayerRuntime::GetMapIndex(((ch) ? (ch)->GetEntityHandle() : entt::null)), coord);
+			ItemSystem::PlaceItemOnGround(itemEntity, ecs::PlayerRuntime::GetMapIndex(((ch) ? (ch)->GetEntityHandle() : entt::null)), coord);
 			ItemSystem::SetGroundOwnership(itemEntity, ch->GetEntityHandle(), 180);
 		}
 		else

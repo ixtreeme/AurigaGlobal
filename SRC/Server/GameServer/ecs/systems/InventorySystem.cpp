@@ -62,16 +62,6 @@ ecs::QuickSlots* GetQuickSlots(entt::entity e)
 	return &g_registry.get_or_emplace<ecs::QuickSlots>(e);
 }
 
-// The remaining ground/ownership paths need a location component even when
-// the item has not entered character storage yet.
-void EnsureItemLocation(entt::entity e)
-{
-	if (e == entt::null || !g_registry.valid(e))
-		return;
-
-	(void)g_registry.get_or_emplace<ecs::ItemLocation>(e);
-}
-
 template <typename T>
 bool EnsureComponent(entt::entity entity)
 {
@@ -686,70 +676,6 @@ void CHARACTER::SyncQuickslot(uint8_t type, uint8_t oldPos, uint8_t newPos)
 }
 
 
-bool CItem::AddToGround(int32_t lMapIndex, const PIXEL_POSITION& pos, bool skipOwnerCheck)
-{
-	if (0 == lMapIndex)
-	{
-		LOG_ERROR("wrong map index argument: {}", lMapIndex);
-		return false;
-	}
-
-	if (GetSectree())
-	{
-		LOG_ERROR("sectree already assigned");
-		return false;
-	}
-
-	if (!skipOwnerCheck && GetOwnerEntity() != entt::null)
-	{
-		LOG_ERROR("owner pointer not null");
-		return false;
-	}
-
-	LPSECTREE tree = ecs::SectorAt(lMapIndex, pos.x, pos.y);
-
-	if (!tree)
-	{
-		LOG_ERROR("cannot find sectree by {}x{}", pos.x, pos.y);
-		return false;
-	}
-
-	//tree->Touch();
-
-	SetWindow(GROUND);
-	SetXYZ(pos.x, pos.y, pos.z);
-
-	const entt::entity itemEntity = GetEntityHandle();
-	if (itemEntity != entt::null && g_registry.valid(itemEntity)) {
-		g_registry.emplace_or_replace<ecs::SpatialEntity>(itemEntity);
-		g_registry.emplace_or_replace<ecs::SpatialKindTag>(itemEntity, ecs::SpatialKindTag{ecs::SpatialKind::Item});
-		g_registry.emplace_or_replace<ecs::Position>(itemEntity, pos.x, pos.y, pos.z);
-		g_registry.emplace_or_replace<ecs::PositionZ>(itemEntity, ecs::PositionZ{pos.z});
-		g_registry.emplace_or_replace<ecs::MapIndex>(itemEntity, lMapIndex);
-		g_registry.emplace_or_replace<ecs::VIDComponent>(itemEntity, GetVID());
-		g_registry.emplace_or_replace<ecs::ItemGroundPosition>(itemEntity, ecs::ItemGroundPosition{pos.x, pos.y, pos.z});
-		(void)g_registry.get_or_emplace<ecs::ViewMap>(itemEntity);
-		(void)g_registry.get_or_emplace<ecs::ViewerMap>(itemEntity);
-		(void)g_registry.get_or_emplace<ecs::ViewAgeMap>(itemEntity);
-		EnsureItemLocation(itemEntity);
-		// Keep a quest's pre-insertion ground claim and last-owner history.
-		g_registry.remove<ecs::ItemEquipped>(itemEntity);
-		ecs::Invariants::ValidateSpatialCoverage(g_registry, itemEntity, "item.add_to_ground");
-	}
-
-	if (!ecs::SpatialService::InsertEntity(g_registry, itemEntity, static_cast<uint32_t>(lMapIndex), pos.x, pos.y, pos.z))
-	{
-		LOG_ERROR("cannot insert ground item entity id {} vid {} by {}x{} mapindex {}",
-			GetID(), GetVID(), pos.x, pos.y, lMapIndex);
-		return false;
-	}
-	ecs::SpatialService::UpdateSectree(g_registry, itemEntity);
-	Save();
-	return true;
-}
-
-
-
 #define ENABLE_IMMUNE_FIX
 // return false on error state
 // The cell lives in ecs::ItemLocation. SetCell is the legacy-facing name for
@@ -879,6 +805,57 @@ EVENTFUNC(GroundItemExpired)
 
 namespace ItemSystem
 {
+bool PlaceItemOnGround(entt::entity item, int32_t map, const PIXEL_POSITION& pos, int seconds)
+{
+    const auto detached = [&] {
+        if (!IsValidItem(item) || GetItemCount(item) == 0 || IsItemConsumptionPending(item) ||
+            g_registry.any_of<ecs::SpatialEntity, ecs::SectorPlacement>(item)) return false;
+        const auto* owner = g_registry.try_get<ecs::ItemOwner>(item);
+        const auto* location = g_registry.try_get<ecs::ItemLocation>(item);
+        const auto* equipped = g_registry.try_get<ecs::ItemEquipped>(item);
+        return (!owner || (owner->owner == entt::null && owner->ownerPID == 0)) &&
+            (!equipped || !equipped->equipped) &&
+            (!location || (location->window == RESERVED_WINDOW && location->cell == 0));
+    };
+    if (map <= 0 || !GroundTimerDelay(seconds) || !detached()) return false;
+    auto* tree = ecs::SectorAt(map, pos.x, pos.y);
+    if (!tree || tree->IsDestroying() || !EnsureComponent<ecs::ItemLocation>(item) ||
+        !EnsureComponent<ecs::ItemGroundPosition>(item) || !EnsureComponent<ecs::ItemEvents>(item) ||
+        !EnsureComponent<ecs::SpatialRevision>(item) || !detached() ||
+        !g_registry.all_of<ecs::ItemLocation, ecs::ItemGroundPosition, ecs::SpatialRevision>(item)) return false;
+    const uint64_t revision = g_registry.get<ecs::SpatialRevision>(item).value;
+    const auto unownedAtRevision = [&](uint64_t expected) {
+        if (!IsValidItem(item)) return false;
+        const auto* version = g_registry.try_get<ecs::SpatialRevision>(item);
+        const auto* owner = g_registry.try_get<ecs::ItemOwner>(item);
+        return version && version->value == expected &&
+            (!owner || (owner->owner == entt::null && owner->ownerPID == 0));
+    };
+    g_registry.get<ecs::ItemLocation>(item) = {GROUND, 0};
+    g_registry.get<ecs::ItemGroundPosition>(item) = {pos.x, pos.y, pos.z};
+    if (!ecs::SpatialService::InsertEntity(g_registry, item, uint32_t(map), pos.x, pos.y, pos.z)) {
+        // Recover only our still-unpublished item, never a callback's placement.
+        if (unownedAtRevision(revision) && !ecs::SectorOf(g_registry, item) && GetItemWindow(item) == GROUND) {
+            g_registry.get<ecs::ItemLocation>(item) = {RESERVED_WINDOW, 0};
+            g_registry.remove<ecs::SpatialEntity>(item);
+            if (unownedAtRevision(revision)) g_registry.remove<ecs::ViewActiveTag>(item);
+            if (unownedAtRevision(revision)) g_registry.remove<ecs::VisibilityDirty>(item);
+            if (unownedAtRevision(revision)) g_registry.remove<ecs::SectorPlacement>(item);
+            if (unownedAtRevision(revision)) g_registry.remove<ecs::ItemGroundPosition>(item);
+        }
+        return false;
+    }
+    const auto receipt = [&] {
+        if (!unownedAtRevision(revision + 1) || !GroundTimerCandidate(item, true) || ecs::SectorOf(g_registry, item) != tree) return false;
+        const auto* location = g_registry.try_get<ecs::ItemGroundPosition>(item);
+        return location && location->x == pos.x && location->y == pos.y && location->z == pos.z;
+    };
+    if (receipt()) StartDestroyEvent(item, seconds);
+    if (receipt()) ecs::SpatialService::UpdateSectree(g_registry, item);
+    if (receipt()) SaveItem(item);
+    return true; // Insertion committed, even if a publication callback removed it.
+}
+
 bool SetGroundOwnership(entt::entity item, entt::entity character, int seconds)
 {
     if (character == entt::null) return ClearGroundClaim(item);
@@ -964,50 +941,42 @@ void StartDestroyEvent(entt::entity item, int seconds)
 
 namespace InventorySystem {
 
-entt::entity RemoveFromGround(entt::entity itemEntity)
+entt::entity RemoveFromGround(entt::entity item)
 {
-	if (itemEntity == entt::null || !g_registry.valid(itemEntity))
-	{
-		// The method this replaced fell through to GetSectree()->RemoveEntity(this)
-		// here. That path removed the item from the sectree but emitted no
-		// SendRemove, so the item stayed rendered on every client in range -
-		// the exact symptom the fixup-5 note in DestroyItemEntityAndLegacy
-		// describes. Nothing can broadcast without a valid entity either way,
-		// so this says so instead of doing it quietly.
-		LOG_ERROR("RemoveFromGround: no valid entity ({}), skipping",
-			static_cast<uint32_t>(itemEntity));
-		return itemEntity;
-	}
-
-	if (!ecs::PlayerRuntime::GetSectree(itemEntity))
-		return itemEntity;
-
-	ItemSystem::SetGroundOwnership(itemEntity, entt::null);
-	if (!ItemSystem::IsValidItem(itemEntity) || !ecs::PlayerRuntime::GetSectree(itemEntity))
-		return itemEntity;
-
-
-	ecs::SpatialService::RemoveEntity(g_registry, itemEntity);
-
-	g_registry.remove<ecs::SectorPlacement>(itemEntity);
-	g_registry.remove<ecs::ViewActiveTag>(itemEntity);
-	g_registry.remove<ecs::SpatialEntity>(itemEntity);
-	// LPENTITY.4-fixup-item: keep SpatialKindTag intact. Removing it
-	// here breaks any subsequent EntityNetworkDispatch::SendRemove
-	// (e.g. PC UpdateSectree age-out) since SendRemove returns
-	// silently on missing SpatialKindTag. SpatialEntity is the
-	// gating tag for spatial queries; the kind tag is identity.
-	g_registry.remove<ecs::ItemGroundPosition>(itemEntity);
-
-	ecs::ViewSystem::ViewCleanup(itemEntity);
-
-	ItemSystem::SaveItem(itemEntity);
-
-	EnsureItemLocation(itemEntity);
-	g_registry.remove<ecs::ItemOwner>(itemEntity);
-	g_registry.remove<ecs::ItemEquipped>(itemEntity);
-
-	return itemEntity;
+    if (!GroundTimerCandidate(item, true)) return item;
+    auto* tree = ecs::SectorOf(g_registry, item);
+    if (!tree) return item;
+    const auto* version = g_registry.try_get<ecs::SpatialRevision>(item);
+    const uint64_t revision = version ? version->value : 0;
+    const auto unchanged = [&] {
+        if (!GroundTimerCandidate(item, true) || ecs::SectorOf(g_registry, item) != tree) return false;
+        const auto* current = g_registry.try_get<ecs::SpatialRevision>(item);
+        return (current ? current->value : 0) == revision;
+    };
+    if (auto* events = g_registry.try_get<ecs::ItemEvents>(item); events && events->destroy) {
+        auto timer = std::move(events->destroy);
+        event_cancel(&timer);
+    }
+    if (!unchanged()) return item;
+    ItemSystem::SetGroundOwnership(item, entt::null);
+    if (!unchanged()) return item;
+    // Commit detached item state before spatial removal publishes packets.
+    g_registry.get<ecs::ItemLocation>(item) = {RESERVED_WINDOW, 0};
+    if (auto* equipped = g_registry.try_get<ecs::ItemEquipped>(item)) *equipped = {};
+    g_registry.remove<ecs::ItemGroundPosition>(item);
+    const auto detachedAt = [&](uint64_t expected) {
+        if (!ItemSystem::IsValidItem(item)) return false;
+        const auto* current = g_registry.try_get<ecs::SpatialRevision>(item);
+        const auto* owner = g_registry.try_get<ecs::ItemOwner>(item);
+        return (current ? current->value : 0) == expected &&
+            (!owner || (owner->owner == entt::null && owner->ownerPID == 0)) &&
+            ItemSystem::GetItemWindow(item) == RESERVED_WINDOW;
+    };
+    if (!detachedAt(revision)) return item;
+    ecs::SpatialService::RemoveEntity(g_registry, item);
+    if (detachedAt(revision + 2) && !ecs::SectorOf(g_registry, item))
+        ItemSystem::SaveItem(item);
+    return item;
 }
 
 namespace
@@ -3349,8 +3318,8 @@ entt::entity DeliverItem(entt::entity owner, entt::entity item, bool longOwnersh
 #else
     const int duration = 300;
 #endif
-    // Ground/spatial allocation is still an explicit, separate legacy boundary.
-    if (!PlaceItemOnGroundLegacyBoundary(item, map, position, duration)) return entt::null;
+    // Ground membership and publication use the same native entity lifecycle.
+    if (!PlaceItemOnGround(item, map, position, duration)) return entt::null;
     committed = true;
     if (!GiveOwner(owner) || !GiveGroundReceipt(item, map, position)) return entt::null;
     if (!SetGroundOwnership(item, owner, protectedDrop ? 300 : 60) ||

@@ -2448,20 +2448,6 @@ bool IsItemInDragonSoulInventory(entt::entity item)
 
 static uint32_t EntityPlayerID(entt::entity e);
 
-bool PlaceItemOnGroundLegacyBoundary(entt::entity item, int32_t mapIndex,
-                                     const PIXEL_POSITION& position, int destroySeconds)
-{
-    LPITEM legacyItem = LegacyItemBoundary(item);
-    if (!legacyItem || destroySeconds <= 0)
-        return false;
-
-    if (!legacyItem->AddToGround(mapIndex, position))
-        return false;
-
-    ItemSystem::StartDestroyEvent(item, destroySeconds);
-    return SyncItemStateFromLegacy(item);
-}
-
 bool IsItemVnumStackable(uint32_t vnum)
 {
     const TItemTable* proto = ITEM_MANAGER::instance().GetTable(vnum);

@@ -162,7 +162,7 @@ namespace quest
 		pos.x = x + number(-200, 200);
 		pos.y = y + number(-200, 200);
 
-		if (!ItemSystem::PlaceItemOnGroundLegacyBoundary(
+		if (!ItemSystem::PlaceItemOnGround(
 			item, ecs::PlayerRuntime::GetMapIndex(chEntity), pos, 300))
 			ItemSystem::DestroyItemEntityEcs(item, "QUEST_DROP_GROUND_FAILED");
 
@@ -212,7 +212,7 @@ namespace quest
 		pos.x = ecs::PlayerRuntime::GetX(chEntity) + number(-200, 200);
 		pos.y = ecs::PlayerRuntime::GetY(chEntity) + number(-200, 200);
 
-		if (!ItemSystem::PlaceItemOnGroundLegacyBoundary(
+		if (!ItemSystem::PlaceItemOnGround(
 			item, ecs::PlayerRuntime::GetMapIndex(chEntity), pos, 300))
 			ItemSystem::DestroyItemEntityEcs(item, "QUEST_OWNED_DROP_GROUND_FAILED");
 
@@ -268,7 +268,7 @@ namespace quest
 		pos.x = ecs::PlayerRuntime::GetX(chEntity) + number(-200, 200);
 		pos.y = ecs::PlayerRuntime::GetY(chEntity) + number(-200, 200);
 
-		if (!ItemSystem::PlaceItemOnGroundLegacyBoundary(
+		if (!ItemSystem::PlaceItemOnGround(
 			item, ecs::PlayerRuntime::GetMapIndex(chEntity), pos, 300))
 			ItemSystem::DestroyItemEntityEcs(item, "QUEST_DICE_DROP_GROUND_FAILED");
 

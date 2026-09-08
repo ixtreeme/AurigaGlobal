@@ -297,9 +297,9 @@ bool RemoveItemEcs(entt::entity item);
 int GetEmptyInventoryPositionEcs(entt::entity owner, entt::entity item);
 bool HasMainInventorySpaceEcs(entt::entity owner, uint8_t itemSize = 1);
 bool HasInventorySpaceForItemVnum(entt::entity owner, uint32_t itemVnum);
-// Explicit transition boundary. Ground insertion still depends on CItem /
-// LPENTITY and must not be presented as a native ECS operation.
-bool PlaceItemOnGroundLegacyBoundary(entt::entity item, int32_t mapIndex,
+// Native entity placement. True means committed, even if a publication callback
+// subsequently moves/deletes the item. No CItem allocation/resynchronization.
+bool PlaceItemOnGround(entt::entity item, int32_t mapIndex,
                                      const PIXEL_POSITION& position,
                                      int destroySeconds = 300);
 int GetEmptyDragonSoulInventory(entt::entity owner, entt::entity item);

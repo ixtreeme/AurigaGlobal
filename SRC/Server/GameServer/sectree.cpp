@@ -1,237 +1,209 @@
 #include "stdafx.h"
 #include <Core/Logging.hpp>
 #include "ecs/systems/PlayerRuntimeSystem.hpp"
-#include "ecs/AIHelpers.hpp"
 #include <Base/attribute.h>
 #include "sectree_manager.h"
-#include "char_interface.hpp"
 #include "char_manager.h"
-#include "ecs/CharacterAccessors.hpp"
-#include "ecs/EntityFactory.hpp"
-#include "ecs/Registry.hpp"
 #include "ecs/SpatialHelpers.hpp"
-#include "ecs/components/spatial_components.hpp"
 #include "ecs/services/SpatialService.hpp"
+#include "ecs/components/identity_components.hpp"
+#include "ecs/components/item_components.hpp"
+#include "ecs/components/transform_components.hpp"
+#include "ecs/components/visibility_components.hpp"
 #include "ecs/systems/ItemSystem.hpp"
-#include "item.h"
-#include "item_manager.h"
+#include "ecs/systems/VisibilitySystem.hpp"
 #include "desc_manager.h"
-#include "packet.h"
 
-SECTREE::SECTREE()
-{
-	Initialize();
+namespace {
+std::unordered_set<entt::entity> relocating;
+struct Relocation {
+    entt::entity entity;
+    bool entered;
+    explicit Relocation(entt::entity e) : entity(e), entered(relocating.insert(e).second) {}
+    ~Relocation() { if (entered) relocating.erase(entity); }
+};
+template<class T> bool Prepare(entt::entity e) {
+    if (!g_registry.valid(e)) return false;
+    if (!g_registry.all_of<T>(e)) g_registry.insert<T>(&e, &e + 1);
+    return g_registry.valid(e) && g_registry.all_of<T>(e);
+}
+void Wake(entt::entity e) {
+    if (!g_registry.valid(e) || g_registry.all_of<ecs::TagPC>(e)) return;
+    const auto* type = g_registry.try_get<ecs::CharacterType>(e);
+    if (type && type->value != CHAR_TYPE_WARP && type->value != CHAR_TYPE_GOTO)
+        CHARACTER_MANAGER::instance().AddToStateList(e);
+}
 }
 
-SECTREE::~SECTREE()
-{
-	Destroy();
+LPENTITY SectreeLegacyEntity(entt::entity e) {
+    return ecs::SpatialService::LPENTITYFromEntity(g_registry, e);
+}
+bool SectreeMember(entt::entity e, const SECTREE* tree) {
+    return g_registry.valid(e) && ecs::SectorOf(g_registry, e) == tree && tree && tree->Contains(e);
 }
 
-void SECTREE::Initialize()
-{
-	m_id.package = 0;
-	m_pkAttribute = nullptr;
-	m_iPCCount = 0;
-	isClone = false;
+SECTREE::SECTREE() {
+    static bool connected = false;
+    if (!connected) {
+        g_registry.on_destroy<ecs::SectorPlacement>().connect<&SECTREE::OnPlacementDestroyed>();
+        connected = true;
+    }
+    Initialize();
 }
-
-void SECTREE::Destroy()
-{
-	if (!m_set_entity.empty())
-	{
-		LOG_ERROR("Sectree: entity set not empty!!");
-
-		ENTITY_SET::iterator it = m_set_entity.begin();
-
-		while (it != m_set_entity.end())
-		{
-			LPENTITY ent = *(it++);
-
-			if (!ent)
-				continue;
-
-			if (ent->IsType(ENTITY_CHARACTER))
-			{
-				LPCHARACTER ch = (LPCHARACTER)ent;
-				const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
-
-
-				LOG_ERROR("Sectree: destroying character: {} is_pc {}", ecs::PlayerRuntime::GetName(chEntity).data(), (ecs::PlayerRuntime::IsPC(chEntity)) ? 1 : 0);
-
-				if (ecs::PlayerRuntime::GetDesc(chEntity))
-					DESC_MANAGER::instance().DestroyDesc(ecs::PlayerRuntime::GetDesc(chEntity));
-				else
-					M2_DESTROY_CHARACTER(ch);
-			}
-			else if (ent->IsType(ENTITY_ITEM))
-			{
-				LPITEM item = (LPITEM)ent;
-
-				LOG_ERROR("Sectree: destroying item: {}", item->GetName());
-				ItemSystem::DestroyItemEntityEcs(
-					(item ? item->GetEntityHandle() : entt::null),
-					"SECTREE_DESTROY_ITEM");
-			}
-			else
-			{
-				LOG_ERROR("Sectree: unknown type: {}", ent->GetType());
-			}
-		}
-	}
-
-	m_set_entity.clear();
-
-	if (!isClone && m_pkAttribute)
-	{
-		M2_DELETE(m_pkAttribute);
-		m_pkAttribute = nullptr;
-	}
+void SECTREE::OnPlacementDestroyed(entt::registry& reg, entt::entity e) {
+    // Registry destruction must also retire the native sector index. The
+    // component still exists during this signal; do not recursively remove it.
+    auto* tree = ecs::SectorOf(reg, e);
+    if (!tree) return;
+    auto it = tree->m_entities.find(e);
+    if (it == tree->m_entities.end()) return;
+    const bool pc = it->second;
+    tree->m_entities.erase(it);
+    if (pc) tree->DecreasePC();
 }
-
-SECTREEID SECTREE::GetID()
-{
-	return m_id;
+SECTREE::~SECTREE() { Destroy(); }
+void SECTREE::Initialize() {
+    m_id.package = 0; m_pkAttribute = nullptr; m_iPCCount = 0; isClone = false;
+    m_destroying = false;
 }
-
-void SECTREE::IncreasePC()
-{
-	LPSECTREE_LIST::iterator it_tree = m_neighbor_list.begin();
-
-	while (it_tree != m_neighbor_list.end())
-	{
-		++(*it_tree)->m_iPCCount;
-		++it_tree;
-	}
+bool SECTREE::Contains(entt::entity e) const { return m_entities.contains(e); }
+void SECTREE::Collect(FCollectEntity& out) const {
+    for (const auto& [e, pc] : m_entities)
+        if (g_registry.valid(e)) out.Add(e, this);
 }
-
-void SECTREE::DecreasePC()
-{
-	LPSECTREE_LIST::iterator it_tree = m_neighbor_list.begin();
-
-	while (it_tree != m_neighbor_list.end())
-	{
-		LPSECTREE tree = *it_tree++;
-
-		if (--tree->m_iPCCount <= 0)
-		{
-			if (tree->m_iPCCount < 0)
-			{
-				const auto coordX = tree->m_id.coord.x;
-				const auto coordY = tree->m_id.coord.y;
-				LOG_ERROR("tree pc count lower than zero (value {} coord {} {})", tree->m_iPCCount, coordX, coordY);
-				tree->m_iPCCount = 0;
-			}
-
-			ENTITY_SET::iterator it_entity = tree->m_set_entity.begin();
-
-			while (it_entity != tree->m_set_entity.end())
-			{
-				LPENTITY pkEnt = *(it_entity++);
-
-				if (pkEnt->IsType(ENTITY_CHARACTER))
-				{
-					LPCHARACTER ch = (LPCHARACTER) pkEnt;
-					ch->StopStateMachine();
-				}
-			}
-		}
-	}
+FCollectEntity SECTREE::SnapshotAround(int rings) const {
+    FCollectEntity result;
+    std::unordered_set<const SECTREE*> visited {this};
+    std::vector<const SECTREE*> current {this}, next;
+    for (int ring = 0; ring <= rings && !current.empty(); ++ring) {
+        next.clear();
+        for (const auto* tree : current) {
+            tree->Collect(result);
+            for (const auto* neighbor : tree->m_neighbor_list)
+                if (neighbor && visited.insert(neighbor).second) next.push_back(neighbor);
+        }
+        current.swap(next);
+    }
+    return result;
 }
-
-bool SECTREE::InsertEntity(LPENTITY pkEnt)
-{
-	LPSECTREE pkCurTree;
-
-	if ((pkCurTree = pkEnt->GetSectree()) == this)
-		return false;
-
-	if (m_set_entity.find(pkEnt) != m_set_entity.end()) {
-		LOG_ERROR("entity {} already exist in this sectree!", static_cast<const void*>(get_pointer(pkEnt)));
-		return false;
-	}
-
-	if (pkCurTree)
-		pkCurTree->m_set_entity.erase(pkEnt);
-
-	// Phase 15E-final.LPENTITY.4-architect.H.3:
-	// pkEnt->SetSectree(this) deleted - the legacy m_pSectree field is
-	// gone; the ECS SectorPlacement update below is the sole sectree
-	// reference for the entity.
-	//pkEnt->UpdateSectree();
-
-	// Phase 15E-final.LPENTITY.4-architect.H.2:
-	// Mirror the legacy m_pSectree write into ECS SectorPlacement so the
-	// H.1 GetSectree ECS-resolution path always sees the right sector
-	// without relying on the dual-store maintenance running through
-	// SpatialService::InsertEntity. The seam matters because several
-	// callers reach SECTREE::InsertEntity directly (e.g. CHARACTER::Sync
-	// at MovementSystem.cpp:634, CHARACTER::Show at SessionSystem.cpp:1005)
-	// without an explicit SyncSectorPlacement call right after.
-	//
-	// Use pkEnt->GetMapIndex() rather than this->GetID() because SECTREEID
-	// only carries (sectorX, sectorY) - the mapIndex is owned by the
-	// SECTREE_MANAGER side, not stored on the SECTREE itself. The entity's
-	// legacy m_lMapIndex is set by every InsertEntity caller before this
-	// point (e.g. CHARACTER::Show line 934 SetMapIndex(lMapIndex)).
-	{
-		const entt::entity e = ecs::SpatialService::EntityFromLPENTITY(pkEnt);
-		if (e != entt::null && g_registry.valid(e))
-		{
-			ecs::SyncSectorPlacement(
-				g_registry, e, pkEnt->GetMapIndex(), pkEnt->GetX(), pkEnt->GetY());
-		}
-	}
-
-	m_set_entity.insert(pkEnt);
-
-	if (pkEnt->IsType(ENTITY_CHARACTER))
-	{
-		LPCHARACTER pkChr = (LPCHARACTER) pkEnt;
-
-		if ((ecs::PlayerRuntime::IsPC(((pkChr) ? (pkChr)->GetEntityHandle() : entt::null))))
-		{
-			IncreasePC();
-
-			if (pkCurTree)
-				pkCurTree->DecreasePC();
-		}
-		else if (m_iPCCount > 0 && !pkChr->IsWarp() && !pkChr->IsGoto()) // PC�� �ƴϰ� �� ���� PC�� �ִٸ� Idle event�� ���� ��Ų��.
-		{
-			pkChr->StartStateMachine();
-		}
-	}
-
-	return true;
+void SECTREE::Destroy() {
+    if (m_destroying) return;
+    m_destroying = true;
+    const auto members = m_entities;
+    for (const auto& [e, pc] : members) {
+        if (!SectreeMember(e, this)) { m_entities.erase(e); continue; }
+        const auto* kind = g_registry.try_get<ecs::SpatialKindTag>(e);
+        const auto type = kind ? kind->kind : ecs::SpatialKind::Character;
+        // Detach before callbacks. This region cannot accept new members.
+        ecs::SpatialService::RemoveEntity(g_registry, e);
+        if (!g_registry.valid(e) || ecs::SectorOf(g_registry, e)) continue;
+        if (type == ecs::SpatialKind::Item)
+            ItemSystem::DestroyItemEntityEcs(e, "SECTREE_DESTROY_ITEM");
+        else if (type == ecs::SpatialKind::Character) {
+            if (auto* desc = ecs::PlayerRuntime::GetDesc(e))
+                DESC_MANAGER::instance().DestroyDesc(desc);
+            else M2_DESTROY_CHARACTER(e);
+        }
+    }
+    m_entities.clear();
+    if (!isClone && m_pkAttribute) { M2_DELETE(m_pkAttribute); m_pkAttribute = nullptr; }
 }
-
-void SECTREE::RemoveEntity(LPENTITY pkEnt)
-{
-	ENTITY_SET::iterator it = m_set_entity.find(pkEnt);
-
-	if (it == m_set_entity.end()) {
-		return;
-	}
-	m_set_entity.erase(it);
-
-	// Phase 15E-final.LPENTITY.4-architect.H.3:
-	// pkEnt->SetSectree(nullptr) deleted. The ECS SectorPlacement remove
-	// below is the sole "no longer in any sector" signal.
-	//
-	// reg.remove is idempotent - if the component is already gone (e.g.
-	// SpatialService::RemoveEntity removed SectorPlacement explicitly at
-	// line 269) the second remove is a no-op.
-	{
-		const entt::entity e = ecs::SpatialService::EntityFromLPENTITY(pkEnt);
-		if (e != entt::null && g_registry.valid(e))
-			g_registry.remove<ecs::SectorPlacement>(e);
-	}
-
-	if (pkEnt->IsType(ENTITY_CHARACTER))
-	{
-	if (ecs::PlayerRuntime::IsPC((((LPCHARACTER) pkEnt) ? ((LPCHARACTER) pkEnt)->GetEntityHandle() : entt::null)))
-			DecreasePC();
-	}
+SECTREEID SECTREE::GetID() { return m_id; }
+void SECTREE::IncreasePC() {
+    // Build() normally includes self; standalone sectors must work as well.
+    std::unordered_set<SECTREE*> neighbors(m_neighbor_list.begin(), m_neighbor_list.end());
+    neighbors.insert(this);
+    for (auto* tree : neighbors) {
+        const bool wake = tree->m_iPCCount++ == 0;
+        if (wake) {
+            FCollectEntity list; tree->Collect(list);
+            auto activate = [](entt::entity e) { Wake(e); };
+            list.ForEach(activate);
+        }
+    }
+}
+void SECTREE::DecreasePC() {
+    std::unordered_set<SECTREE*> neighbors(m_neighbor_list.begin(), m_neighbor_list.end());
+    neighbors.insert(this);
+    for (auto* tree : neighbors) {
+        if (tree->m_iPCCount > 0) --tree->m_iPCCount;
+        if (tree->m_iPCCount == 0) {
+            FCollectEntity list; tree->Collect(list);
+            auto stop = [](entt::entity e) {
+                if (g_registry.all_of<ecs::CharacterType>(e) && !g_registry.all_of<ecs::TagPC>(e))
+                    CHARACTER_MANAGER::instance().RemoveFromStateList(e);
+            };
+            list.ForEach(stop);
+        }
+    }
+}
+bool SECTREE::InsertEntity(LPENTITY legacy) {
+    return InsertEntity(ecs::SpatialService::EntityFromLPENTITY(legacy));
+}
+void SECTREE::RemoveEntity(LPENTITY legacy) {
+    RemoveEntity(ecs::SpatialService::EntityFromLPENTITY(legacy));
+}
+bool SECTREE::InsertEntity(entt::entity e) {
+    if (IsDestroying() || !g_registry.valid(e) || ecs::VisibilitySystem::IsRemoving(g_registry, e)) return false;
+    Relocation action(e);
+    if (!action.entered) return false;
+    auto* previous = ecs::SectorOf(g_registry, e);
+    if (previous == this && Contains(e)) return false;
+    const auto eligible = [&] {
+        if (IsDestroying() || !g_registry.valid(e)) return false;
+        if (g_registry.all_of<ecs::ItemIdentity>(e)) {
+            const auto* owner = g_registry.try_get<ecs::ItemOwner>(e);
+            const auto* location = g_registry.try_get<ecs::ItemLocation>(e);
+            if ((owner && (owner->owner != entt::null || owner->ownerPID != 0)) ||
+                !location || location->window != GROUND) return false;
+        }
+        const auto* pos = g_registry.try_get<ecs::Position>(e);
+        const auto* map = g_registry.try_get<ecs::MapIndex>(e);
+        return pos && map && ecs::SectorAt(map->value, pos->x, pos->y) == this;
+    };
+    const bool hadPlacement = g_registry.all_of<ecs::SectorPlacement>(e);
+    if (!eligible() || !Prepare<ecs::SpatialRevision>(e) || !Prepare<ecs::SpatialEntity>(e) ||
+        !Prepare<ecs::ViewActiveTag>(e) || !Prepare<ecs::VisibilityDirty>(e) || !Prepare<ecs::SectorPlacement>(e) ||
+        !eligible() || !g_registry.all_of<ecs::SectorPlacement, ecs::SpatialRevision, ecs::SpatialEntity>(e)) {
+        // A failed on_construct must not leave a phantom inventory-blocking
+        // placement. Never remove an existing or callback-committed placement.
+        if (!hadPlacement && g_registry.valid(e) && !ecs::SectorOf(g_registry, e))
+            g_registry.remove<ecs::SectorPlacement>(e);
+        return false;
+    }
+    // on_construct can remove a previous placement; it cannot recursively enter
+    // another membership operation for the same handle.
+    if (previous && !previous->Contains(e)) previous = nullptr;
+    const bool pc = g_registry.all_of<ecs::TagPC>(e);
+    const auto position = g_registry.get<ecs::Position>(e);
+    const auto map = g_registry.get<ecs::MapIndex>(e).value;
+    m_entities.emplace(e, pc); // Allocate before modifying previous membership.
+    bool previousPC = false;
+    if (previous) {
+        if (auto it = previous->m_entities.find(e); it != previous->m_entities.end()) {
+            previousPC = it->second;
+            previous->m_entities.erase(it);
+        }
+    }
+    g_registry.get<ecs::SectorPlacement>(e) = {map, uint32_t(position.x), uint32_t(position.y)};
+    ++g_registry.get<ecs::SpatialRevision>(e).value;
+    if (pc) IncreasePC();
+    if (previousPC) previous->DecreasePC();
+    if (g_registry.valid(e) && Contains(e) && !pc && m_iPCCount > 0) Wake(e);
+    return true;
+}
+void SECTREE::RemoveEntity(entt::entity e) {
+    Relocation action(e);
+    if (!action.entered) return;
+    const auto it = m_entities.find(e);
+    if (it == m_entities.end()) return;
+    const bool pc = it->second;
+    m_entities.erase(it);
+    if (g_registry.valid(e) && ecs::SectorOf(g_registry, e) == this) {
+        if (auto* revision = g_registry.try_get<ecs::SpatialRevision>(e)) ++revision->value;
+        g_registry.remove<ecs::SectorPlacement>(e);
+    }
+    if (pc) DecreasePC();
 }
 
 void SECTREE::BindAttribute(CAttribute * pkAttribute)

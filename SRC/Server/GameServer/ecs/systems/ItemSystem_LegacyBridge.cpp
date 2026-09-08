@@ -1828,7 +1828,7 @@ bool CHARACTER::DropItem(TItemPos Cell,
 #else
 	const int dropDestroySeconds = 300;
 #endif
-	if (ItemSystem::PlaceItemOnGroundLegacyBoundary(pkItemToDrop, GetMapIndex(), pxPos, dropDestroySeconds))
+	if (ItemSystem::PlaceItemOnGround(pkItemToDrop, GetMapIndex(), pxPos, dropDestroySeconds))
 	{
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 321, "%d",
@@ -1887,7 +1887,7 @@ bool CHARACTER::DropGold(int64_t gold)
 #else
 		const int goldDestroySeconds = 300;
 #endif
-		if (ItemSystem::PlaceItemOnGroundLegacyBoundary(item, GetMapIndex(), pos, goldDestroySeconds))
+		if (ItemSystem::PlaceItemOnGround(item, GetMapIndex(), pos, goldDestroySeconds))
 		{
 			//Motion(MOTION_PICKUP);
 			PointChange(POINT_GOLD, -gold, true);

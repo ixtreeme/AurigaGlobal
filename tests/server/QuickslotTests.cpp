@@ -660,17 +660,6 @@ entt::entity ItemSystem::MergeItemIntoInventoryEcs(entt::entity owner, entt::ent
 }
 bool ItemSystem::SetItemSkipSave(entt::entity item, bool skip) { Meta(item); g_registry.get<ecs::ItemFlags>(item).skipSave = skip; return true; }
 bool ItemSystem::GetItemSkipSave(entt::entity item) { Meta(item); return g_registry.get<ecs::ItemFlags>(item).skipSave; }
-bool ItemSystem::PlaceItemOnGroundLegacyBoundary(entt::entity item, int32_t map, const PIXEL_POSITION& position, int duration) {
-    Check(giving && map == 1 && position.x == 100 && position.y == 200 && duration == 300 && RawOwner(item) == entt::null,
-        "invalid reward ground placement");
-    if (rejectGround) return false;
-    g_registry.get<ecs::ItemLocation>(item).window = GROUND;
-    g_registry.emplace<ecs::SpatialEntity>(item);
-    g_registry.emplace<ecs::Position>(item, position.x, position.y, position.z);
-    g_registry.emplace<ecs::MapIndex>(item, map);
-    if (onReward) { auto callback = onReward; callback("ground", item); }
-    return true;
-}
 std::shared_ptr<CSafebox> SafeboxSystem::Get(entt::entity, uint8_t) { Unexpected(); }
 entt::entity CSafebox::Get(unsigned int) const { Unexpected(); }
 entt::entity CSafebox::Remove(unsigned int) { Unexpected(); }
@@ -701,7 +690,14 @@ uint16_t ecs::PlayerRuntime::GetRuneEffect(entt::entity) { Unexpected(); }
 void ecs::PointSystem::ComputeBattlePoints(entt::entity) { Service("battle-points"); }
 void ecs::PointSystem::ApplyPoint(entt::entity, uint8_t, int) { Unexpected(); }
 SECTREE * CEntity::GetSectree()const { Unexpected(); }
-SECTREE * SECTREE_MANAGER::Get(int, int, int) { Unexpected(); }
+SECTREE::SECTREE() {}
+SECTREE::~SECTREE() {}
+SECTREE_MANAGER::SECTREE_MANAGER() {}
+SECTREE_MANAGER::~SECTREE_MANAGER() {}
+SECTREE * SECTREE_MANAGER::Get(int map, int, int) {
+    static SECTREE ground;
+    return map == 1 && !rejectGround ? &ground : nullptr;
+}
 void MountSystem::UpdateMountSkin(entt::entity) { Unexpected(); }
 void MountSystem::MountUnsummon(entt::entity, entt::entity) { Unexpected(); }
 void MountSystem::UpdatePetSkin(entt::entity) { Unexpected(); }
@@ -803,9 +799,24 @@ CSpecialAttrGroup const * ITEM_MANAGER::GetSpecialAttrGroup(uint32_t) { Unexpect
 bool CMountInventory::RemoveByItem(entt::entity, bool) { Unexpected(); }
 bool DSManager::ActivateDragonSoul(entt::entity e) { Meta(e); Service("ds-activate"); return true; }
 bool DSManager::DeactivateDragonSoul(entt::entity e, bool) { Meta(e); Service("ds-deactivate"); return true; }
-bool ecs::SpatialService::InsertEntity(entt::registry &, entt::entity, uint32_t, int, int, int) { Unexpected(); }
-void ecs::SpatialService::RemoveEntity(entt::registry &, entt::entity) { Unexpected(); }
-void ecs::SpatialService::UpdateSectree(entt::registry &, entt::entity) { Unexpected(); }
+bool ecs::SpatialService::InsertEntity(entt::registry& reg, entt::entity item, uint32_t map, int x, int y, int z) {
+    Check(map == 1 && RawOwner(item) == entt::null && ItemSystem::GetItemWindow(item) == GROUND,
+        "invalid native ground insertion");
+    reg.emplace_or_replace<ecs::SpatialEntity>(item);
+    reg.emplace_or_replace<ecs::Position>(item, x, y, z);
+    reg.emplace_or_replace<ecs::MapIndex>(item, int32_t(map));
+    reg.emplace<ecs::SectorPlacement>(item, ecs::SectorPlacement {int32_t(map), uint32_t(x), uint32_t(y)});
+    ++reg.get<ecs::SpatialRevision>(item).value;
+    return true;
+}
+void ecs::SpatialService::RemoveEntity(entt::registry& reg, entt::entity item) {
+    reg.remove<ecs::SectorPlacement, ecs::SpatialEntity, ecs::ViewActiveTag>(item);
+    reg.get<ecs::SpatialRevision>(item).value += 2;
+    if (onReward) { auto callback = onReward; callback("remove", item); }
+}
+void ecs::SpatialService::UpdateSectree(entt::registry&, entt::entity item) {
+    if (onReward) { auto callback = onReward; callback("ground", item); }
+}
 void intrusive_ptr_add_ref(event* e) { ++e->ref_count; }
 void intrusive_ptr_release(event* e) { if (--e->ref_count == 0) delete e; }
 LPEVENT event_create_ex(TEVENTFUNC function, event_info_data* info, int32_t delay) {
@@ -2150,6 +2161,62 @@ int32_t FireGround(const LPEVENT& timer)
     return timer->func(timer, 0);
 }
 
+void GroundPlacementAndRemoval()
+{
+    Reset();
+    const auto owner = PlacementOwner(), item = PlacementItem();
+    const PIXEL_POSITION position {100, 200, 3};
+    Check(ItemSystem::SetGroundOwnership(item, owner, 60), "detached preclaim failed");
+    const auto claim = g_registry.get<ecs::ItemEvents>(item).ownership;
+    Check(ItemSystem::PlaceItemOnGround(item, 1, position, 30), "native ground placement failed");
+    const auto timer = g_registry.get<ecs::ItemEvents>(item).destroy;
+    Check(timer && g_registry.get<ecs::ItemEvents>(item).ownership == claim &&
+        g_registry.get<ecs::ItemOwner>(item).ownershipPID == 37 && saves == 1,
+        "ground commit lost timer/preclaim/save");
+    Check(!ItemSystem::PlaceItemOnGround(item, 1, position), "duplicate placement accepted");
+    Check(InventorySystem::RemoveFromGround(item) == item, "native ground removal failed");
+    Check(ItemSystem::GetItemWindow(item) == RESERVED_WINDOW &&
+        !g_registry.any_of<ecs::SpatialEntity, ecs::SectorPlacement, ecs::ItemGroundPosition>(item) &&
+        !g_registry.get<ecs::ItemEvents>(item).destroy &&
+        !g_registry.get<ecs::ItemEvents>(item).ownership && saves == 2, "removal left ground state");
+    Check(ItemSystem::PlaceItemEcs(owner, item, INVENTORY, 0), "pickup into inventory failed");
+    Check(FireGround(timer) == 0 && g_registry.valid(item), "cancelled ground timer deleted pickup");
+
+    for (int mode = 0; mode < 4; ++mode) {
+        Reset(); const auto e = PlacementItem();
+        if (mode == 0) rejectGround = true;
+        if (mode == 1) g_registry.emplace<ecs::ItemOwner>(e).ownerPID = 999;
+        if (mode == 2) g_registry.emplace<ecs::ItemLocation>(e, ecs::ItemLocation {INVENTORY, 0});
+        if (mode == 3) Meta(e).pending = true;
+        Check(!ItemSystem::PlaceItemOnGround(e, 1, position) && saves == 0 &&
+            !g_registry.any_of<ecs::SpatialEntity, ecs::SectorPlacement>(e),
+            "invalid ground item accepted/mutated");
+    }
+    for (bool onRemove : {false, true}) {
+        Reset(); const auto e = PlacementItem();
+        if (onRemove) Check(ItemSystem::PlaceItemOnGround(e, 1, position), "remove reentry setup");
+        onReward = [&](const char* stage, entt::entity current) {
+            if (std::string_view(stage) != (onRemove ? "remove" : "ground")) return;
+            onReward = {};
+            if (!onRemove) InventorySystem::RemoveFromGround(current);
+            Check(ItemSystem::PlaceItemOnGround(current, 1, position, 90), "same-location respawn failed");
+        };
+        const int before = saves;
+        if (onRemove) InventorySystem::RemoveFromGround(e);
+        else Check(ItemSystem::PlaceItemOnGround(e, 1, position, 30), "publication reported uncommitted placement");
+        Check(g_registry.all_of<ecs::SpatialEntity, ecs::SectorPlacement, ecs::ItemGroundPosition>(e) &&
+            groundDelays.at(g_registry.get<ecs::ItemEvents>(e).destroy.get()) == 90 * passes_per_sec &&
+            saves == before + (onRemove ? 1 : 2),
+            "older ground operation changed/saved respawn");
+    }
+    Reset(); const auto erased = PlacementItem();
+    onReward = [&](const char* stage, entt::entity e) {
+        if (std::string_view(stage) == "ground") { onReward = {}; g_registry.destroy(e); }
+    };
+    Check(ItemSystem::PlaceItemOnGround(erased, 1, position) && !g_registry.valid(erased) && saves == 0,
+        "deleted published item was saved/dereferenced");
+}
+
 void GroundClaims()
 {
     for (int duration : {-1, 0, 1, 10, 11, 60, 300})
@@ -2412,6 +2479,7 @@ void GroundDestroyTimers()
 int main() {
     try {
         DSManager dragonSouls;
+        SECTREE_MANAGER sectors;
         ITEM_MANAGER items;
         LogManager logs;
         DBManager database;
@@ -2420,7 +2488,7 @@ int main() {
 #ifdef ENABLE_SWITCHBOT
         CSwitchbotManager switchbots;
 #endif
-        GroundClaims(); GroundClaimValidation(); GroundClaimCallbacks(); GroundDestroyTimers();
+        GroundPlacementAndRemoval(); GroundClaims(); GroundClaimValidation(); GroundClaimCallbacks(); GroundDestroyTimers();
         MovePreparationSignals(); NativeMoves(); MoveRejections(); MoveSpecialWindows(); NativeSplits(); SplitFailuresAndCallbacks(); MoveCallbacksAndDispatch();
         RewardQuantitiesAndPlacement(); RewardMergeAndReentry(); RewardCallbacksAndFailures(); RewardGroundAndAcquisition();
         RewardQuickslotConstruction();

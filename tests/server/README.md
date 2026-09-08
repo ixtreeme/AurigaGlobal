@@ -1,5 +1,53 @@
 # Server ECS regression tests
 
+## Native ground placement, sectree membership and visibility
+
+PlaceItemOnGround and RemoveFromGround live in InventorySystem.cpp and operate
+on versioned entity handles. CItem::AddToGround and the ground legacy wrapper
+are deleted. The original sectree files now keep one entity membership index;
+native callbacks never resolve LPENTITY. Unmigrated character/building callbacks
+still have a compatibility adapter at the iteration/entry boundary.
+
+SpatialService commits membership before the caller arms expiry and publishes.
+SpatialRevision distinguishes removal/reinsertion even at identical coordinates.
+Preparation and publication revalidate handles, ownership and component state;
+an older operation cannot save or overwrite a callback's new ground placement.
+Claims and last-owner history survive initial placement. Native ground removal
+cancels timers, clears the claim and commits detached state before remove packets.
+
+VisibilitySystem is the sole directed graph implementation for characters,
+items, buildings and shops. The parallel entity_view.cpp is deleted. Late viewers
+discover existing ground items, departing viewers get correctly directed removes,
+unchanged characters do not get duplicate inserts, and observer state is committed
+before reconciliation. Shop reencode updates its viewers, while character
+reencode preserves the self-only refresh policy. Sector insertion restores tags
+after character cleanup. Native sector snapshots revalidate membership before
+each callback; map enumeration also excludes removed and replacement entities.
+
+SECTREE_MAP drains while lookup/neighbors are still alive and closes all sectors
+before whole-map callbacks. Private-map destruction uses this same native drain
+instead of its former LPITEM/LPCHARACTER cleanup pass. Direct SectorPlacement
+destruction retires membership and the recorded PC contribution.
+
+SpatialLifecycleTests compiles the actual sectree.cpp, SpatialService.cpp and
+VisibilitySystem.cpp with no CItem/CHARACTER fixtures. Checks cover late viewers,
+sector/private-map boundaries, PC-triggered NPC activation, registry destruction,
+snapshot mutation/recycling, observer directions, shop reencode, native character
+reinsertion, preparation mutation/deletion, network callback deletion/relocation/
+same-location respawn, tag-destruction reentry and reentrant sector teardown.
+Map loading/SECTREE_MAP methods, AI scheduling, retirement and packet transport
+are controlled doubles; the real map-file loader and whole-map destructor are
+not runtime-tested here. QuickslotTests executes actual ground placement/removal,
+timers and claims against controlled spatial/network/DB services, including
+inventory pickup, preclaims, reentrant respawn and publication deletion.
+
+Run both suites plus the full server regression set in Release and ASAN.
+Before deployment test login/warp, two moving players, observer transitions,
+normal/quest/dice drops, late viewers, pickup/expiry, shop rename, NPC wake/sleep,
+private dungeon teardown, disconnect/relog and persistence with the real client.
+These isolated tests are not a live-server load test or proof that all engine
+lifetimes are migrated.
+
 ## Native ground ownership and expiry
 
 InventorySystem.cpp now owns SetGroundOwnership, IsOwnership, owner-PID refresh,
@@ -10,7 +58,7 @@ file was introduced. Claim permission reads no longer create ItemEvents.
 
 Inventory owner/ownerPID and the temporary reservation's ownershipPID are
 independent. Refreshing the former no longer zeroes a ground reservation. The
-remaining CItem ground insertion preserves ItemOwner, including a quest's claim
+native ground insertion preserves ItemOwner, including a quest's claim
 set before insertion and last-owner history. Claims commit timer, PID and bounded
 display name before publication. Clearing/expiry empties the display as well as
 the PID; it never erases an actual inventory owner. A null owner releases the
@@ -41,10 +89,7 @@ EventLifecycleTests separately exercises the real queue. Full engine callback
 chains, spatial rendering, live persistence and real scheduler-to-item integration
 are not covered by this fixture.
 
-Ground placement still goes through PlaceItemOnGroundLegacyBoundary and a
-SpatialService/SECTREE implementation that requires LPENTITY. It is deliberately
-not relabelled as native ECS, and broader spatial insertion/removal lifetime work
-remains. Before deployment verify normal/quest/dice drops, late-arriving viewers,
+Before deployment verify normal/quest/dice drops, late-arriving viewers,
 exclusive pickup then public pickup after expiry, pickup during expiration,
 disconnect/relog, and ground cleanup on a test server.
 
@@ -1153,10 +1198,10 @@ counts, rarity/highlight/message flags, full/partial/missing merge receipts,
 same-item recursion, normal/extra/DS routing, wide extra slots, ground fallback
 protection, rune/accessory acquisition, creation failures, exceptions, entity
 recycling, owner destruction, reownership and failed cleanup. Creation, merge,
-ground/spatial placement, timers, persistence, packets and logs are controlled
-doubles here. Real creation and merge algorithms have separate tests, not a
-single integrated live-server test. Actual CItem allocation and ground insertion
-remain explicit legacy boundaries, not claimed pointer-free by this migration.
+spatial membership, scheduling, persistence, packets and logs are controlled
+doubles here; ground placement/claims/timer callbacks execute their real code.
+Real creation and merge algorithms have separate tests, not a single integrated
+live-server test. Actual CItem allocation remains a legacy boundary.
 Verify quest/drop/refine rewards, full inventories, acquisition effects,
 disconnect/relog and database persistence with the real client before deployment.
 

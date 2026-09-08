@@ -4,23 +4,12 @@
 
 namespace ecs::ViewSystem {
 
-// Drop `other` from `self`'s view, unhook the reverse ViewerMap edge and tell
-// `other` the source is gone. `recursive` does the same in the other direction.
-void ViewRemove(entt::entity self, entt::entity other, bool recursive);
-
-// Tear down every view edge this entity is part of, in whichever direction
-// applies to its kind, and clear its own maps.
+// Disconnect directed view edges and publish removal without resolving CEntity.
+// Implementations live with the common visibility reconciliation engine.
 void ViewCleanup(entt::entity self);
-
-// Add `other` to `self`'s view, hook the reverse ViewerMap edge and announce
-// the insert. `recursive` does the same in the other direction.
-void ViewInsert(entt::entity self, entt::entity other, bool recursive);
-
-// Re-send this entity's view state: itself, then every entity it can see.
 void ViewReencode(entt::entity self);
 
-// Broadcast to everyone who can see this entity, plus itself. `except` is
-// skipped; pass entt::null for none.
+// Broadcast to current nearby viewers. Recipients and identity are snapshotted.
 void PacketView(entt::entity self, const void* data, int bytes,
                 entt::entity except = entt::null);
 

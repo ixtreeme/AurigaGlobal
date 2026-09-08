@@ -1,5 +1,7 @@
 #include "stdafx.h"
 #include "ecs/systems/ViewSystem.hpp"
+#include "ecs/systems/VisibilitySystem.hpp"
+#include "ecs/services/VisibilityService.hpp"
 #include "ecs/systems/PlayerRuntimeSystem.hpp"
 #include "char_interface.hpp"
 #include "config.h"
@@ -51,8 +53,8 @@ void CEntity::Destroy()
 	if (m_bIsDestroyed) {
 		return;
 	}
-	ecs::ViewSystem::ViewCleanup(ecs::SpatialService::EntityFromLPENTITY(this));
 	m_bIsDestroyed = true;
+	ecs::ViewSystem::ViewCleanup(ecs::SpatialService::EntityFromLPENTITY(this));
 }
 
 namespace {
@@ -153,111 +155,17 @@ namespace ecs::ViewSystem {
 
 void PacketView(entt::entity self, const void* data, int bytes, entt::entity except)
 {
-	if (self == entt::null || !g_registry.valid(self))
-		return;
-
-	if (!ecs::SpatialService::GetSectree(g_registry, self))
-		return;
-
-	// Phase 15E-final.LPENTITY.4-architect.D.8:
-	//
-	// The hybrid f76a3f1 broadcast (m_map_view loop + sectree neighbour
-	// walk + dedup) was a band-aid for the original two-client desync
-	// root cause: idle characters never re-poll, so m_map_view goes stale
-	// during their stillness window. After Phase D.4-D.6 the ECS ViewerMap
-	// is event-driven and current at every tick - so the band-aid retires
-	// here. PacketView body is now a straight walk of ViewerMap.viewers
-	// plus self, exactly matching the architect doc Phase D.8 spec.
-	//
-	// For non-character source entities, ViewerMap may be incomplete
-	// (the legacy CFuncViewInsert path that fed it from chars' polling
-	// was disabled in D.6). PacketView is called only from char paths
-	// (FuncPacketView via PacketAround, MovementSystem broadcasts), so
-	// the practical recipient set is unaffected. If a future caller
-	// invokes PacketView on a non-char source and finds the ViewerMap
-	// empty, the fallback below catches it via a one-time sectree walk.
-	std::unordered_set<entt::entity> sent;
-
-	const auto send = [&](entt::entity target) {
-		if (target == except)
-			return;
-
-		if (LPDESC desc = ecs::PlayerRuntime::GetDesc(target))
-			desc->Packet(data, bytes);
-	};
-
-	const auto isCharacter = [](entt::entity e) {
-		const auto* kind = g_registry.try_get<ecs::SpatialKindTag>(e);
-		return kind && kind->kind == ecs::SpatialKind::Character;
-	};
-
-	if (!ecs::PlayerRuntime::IsObserverMode(self))
-	{
-		bool walkedViewerMap = false;
-
-		if (isCharacter(self))
-		{
-		// Phase 15E-final.LPENTITY.4-architect H fixup-2:
-		// Self-heal ViewerMap before the broadcast walk. The D.4 event
-		// handler is supposed to keep self.ViewerMap.viewers in sync with
-		// the sectree truth, but live WinTest after Phase H.1-H.3 + H
-		// fixup-1 still showed peers losing visibility under fast-mount
-		// movement ("ghost" symptom: char rendered on the moving client
-		// keeps moving, peer client shows it frozen). The diff handler
-		// must be missing some path - rather than chasing the exact gap,
-		// guarantee correctness here at the broadcast site.
-		//
-		// Walk the sectree neighbour grid at self's current position and
-		// add any character in range that is missing from the ViewerMap.
-		// This is "additive only" - no entity is removed - so it cannot
-		// race with a legitimate D.4 leaving transition. The cost is one
-		// sectree query per PacketView call on character sources (~9
-		// neighbour cells, range filter); cheap relative to packet
-		// construction and network send.
-			const int32_t range = VIEW_RANGE + VIEW_BONUS_RANGE;
-			ecs::SpatialService::ForEachAround(g_registry, self, range,
-				[&](entt::entity other) {
-					if (other == self || !isCharacter(other))
-						return;
-
-					g_registry.get_or_emplace<ecs::ViewerMap>(self).viewers.insert(other);
-					if (auto* otherView = g_registry.try_get<ecs::ViewMap>(other))
-						otherView->visible.insert(self);
-				});
-		}
-
-		if (auto* viewerMap = g_registry.try_get<ecs::ViewerMap>(self))
-		{
-			walkedViewerMap = true;
-			for (const entt::entity viewer : viewerMap->viewers)
-			{
-				if (viewer == entt::null || !g_registry.valid(viewer))
-					continue;
-
-				if (sent.insert(viewer).second)
-					send(viewer);
-			}
-		}
-
-		if (!walkedViewerMap)
-		{
-			const int32_t range = VIEW_RANGE + VIEW_BONUS_RANGE;
-			ecs::SpatialService::ForEachAround(g_registry, self, range,
-				[&](entt::entity other) {
-					if (other == self || other == except || !isCharacter(other))
-						return;
-
-					if (!ecs::PlayerRuntime::GetDesc(other))
-						return;
-
-					if (sent.insert(other).second)
-						send(other);
-				});
-		}
-	}
-
-	if (sent.insert(self).second)
-		send(self);
+    if (!g_registry.valid(self) || !ecs::SectorOf(g_registry, self)) return;
+    const auto* revision = g_registry.try_get<ecs::SpatialRevision>(self);
+    const uint64_t version = revision ? revision->value : 0;
+    const auto recipients = ecs::VisibilityService::GetViewersOf(g_registry, self);
+    for (auto target : recipients) {
+        if (!g_registry.valid(self)) return;
+        const auto* current = g_registry.try_get<ecs::SpatialRevision>(self);
+        if ((current ? current->value : 0) != version) return;
+        if (target == except || !g_registry.valid(target)) continue;
+        if (auto* desc = ecs::PlayerRuntime::GetDesc(target)) desc->Packet(data, bytes);
+    }
 }
 
 } // namespace ecs::ViewSystem
@@ -265,32 +173,34 @@ void PacketView(entt::entity self, const void* data, int bytes, entt::entity exc
 
 void CEntity::SetObserverMode(bool bFlag)
 {
-	if (m_bIsObserver == bFlag)
-		return;
-
-	m_bIsObserver = bFlag;
-	m_bObserverModeChange = true;
-	UpdateSectree();
-
-	if (IsType(ENTITY_CHARACTER))
-	{
-		LPCHARACTER ch = (LPCHARACTER) this;
-		const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
-
-		const auto e = chEntity;
-		if (e != entt::null && g_registry.valid(e))
-		{
-			if (bFlag)
-				g_registry.emplace_or_replace<ecs::ObserverModeTag>(e);
-			else if (g_registry.all_of<ecs::ObserverModeTag>(e))
-				g_registry.remove<ecs::ObserverModeTag>(e);
-
-			if (auto* status = g_registry.try_get<ecs::StatusFlags>(e))
-				status->isObserverMode = bFlag;
-			g_registry.emplace_or_replace<ecs::DirtyTag>(e);
-		}
-		ecs::ChatSystem::Send(chEntity, CHAT_TYPE_COMMAND, "ObserverMode %d", m_bIsObserver ? 1 : 0);
-	}
+    if (m_bIsObserver == bFlag) return;
+    const auto entity = ecs::SpatialService::EntityFromLPENTITY(this);
+    const bool character = IsType(ENTITY_CHARACTER);
+    m_bIsObserver = bFlag;
+    m_bObserverModeChange = false;
+    // Commit the ECS observer state before publishing visibility changes.
+    // Do not dereference this after any component/network callback.
+    if (!g_registry.valid(entity)) return;
+    if (character) {
+        if (auto* status = g_registry.try_get<ecs::StatusFlags>(entity))
+            status->isObserverMode = bFlag;
+        if (bFlag) {
+            if (!g_registry.all_of<ecs::ObserverModeTag>(entity))
+                g_registry.insert<ecs::ObserverModeTag>(&entity, &entity + 1);
+        }
+        else g_registry.remove<ecs::ObserverModeTag>(entity);
+        if (!g_registry.valid(entity)) return;
+        if (!g_registry.all_of<ecs::DirtyTag>(entity))
+            g_registry.insert<ecs::DirtyTag>(&entity, &entity + 1);
+    }
+    ecs::VisibilitySystem::Refresh(g_registry, entity);
+    if (character && g_registry.valid(entity))
+        ecs::ChatSystem::Send(entity, CHAT_TYPE_COMMAND, "ObserverMode %d", bFlag ? 1 : 0);
 }
 
-
+void CEntity::UpdateSectree()
+{
+    const auto entity = ecs::SpatialService::EntityFromLPENTITY(this);
+    m_bObserverModeChange = false;
+    ecs::VisibilitySystem::Refresh(g_registry, entity);
+}

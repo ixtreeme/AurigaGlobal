@@ -26,8 +26,8 @@ struct PositionZ {
     int32_t z;
 };
 
-// Mirrors the entity's current sector placement.
-// Updated additively alongside legacy SECTREE::InsertEntity / RemoveEntity.
+// Authoritative sector membership, maintained only by SECTREE insert/remove.
+// sectorX/Y contain world coordinates used to resolve the owning sector.
 struct SectorPlacement {
     int32_t mapIndex;
     uint32_t sectorX;
@@ -35,9 +35,13 @@ struct SectorPlacement {
 };
 
 // Tag: entity is currently visible (in-sector, has active view).
-// Set additively after legacy view/sectree updates succeed.
+// Set by the spatial lifecycle.
 // Cleared on RemoveEntity / despawn.
 struct ViewActiveTag {};
+
+// Survives detach/reinsert, so an older publication cannot act on a new spawn
+// of the same entity at the same coordinates.
+struct SpatialRevision { uint64_t value { 0 }; };
 
 struct BuildingState {
     uint32_t vnum { 0 };

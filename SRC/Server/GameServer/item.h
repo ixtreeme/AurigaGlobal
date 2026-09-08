@@ -90,7 +90,6 @@ class CItem : public CEntity
 		entt::entity	GetOwnerEntity() const;
 		void		SetOwnerEntity(entt::entity owner);
 
-		bool		AddToGround(int32_t lMapIndex, const PIXEL_POSITION & pos, bool skipOwnerCheck = false);
 
 
 

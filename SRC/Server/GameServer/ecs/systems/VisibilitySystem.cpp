@@ -1,392 +1,230 @@
 #include "../../stdafx.h"
-
 #include "VisibilitySystem.hpp"
-
+#include "ViewSystem.hpp"
 #include "../../config.h"
 #include "../../sectree.h"
-#include "../../utils.h"
 #include "../EventDispatcher.hpp"
 #include "../Registry.hpp"
 #include "../SpatialHelpers.hpp"
-#include "../components/spatial_components.hpp"
 #include "../components/transform_components.hpp"
 #include "../components/visibility_components.hpp"
 #include "../components/status_components.hpp"
 #include "../services/EntityNetworkDispatch.hpp"
-#include "PlayerRuntimeSystem.hpp"
+#include "../services/VisibilityService.hpp"
 #include "../events.hpp"
-#include "../services/EntityNetworkDispatch.hpp"
-
 #include <Core/Logging.hpp>
-
-#include <unordered_map>
-#include <unordered_set>
+#include <chrono>
 
 namespace ecs::VisibilitySystem {
-
-void Reencode(entt::registry& reg, entt::entity character)
-{
-	if (character == entt::null || !reg.valid(character))
-		return;
-	if (const auto* status = reg.try_get<ecs::StatusFlags>(character);
-		status && status->isObserverMode)
-		return;
-
-	ecs::EntityNetworkDispatch::SendRemove(reg, character, character);
-	ecs::EntityNetworkDispatch::SendInsert(reg, character, character);
-
-	const auto* view = reg.try_get<ecs::ViewMap>(character);
-	if (!view)
-		return;
-	const auto visible = view->visible;
-	for (const entt::entity other : visible)
-	{
-		if (other == entt::null || !reg.valid(other))
-			continue;
-		const auto* otherStatus = reg.try_get<ecs::StatusFlags>(other);
-		if (!otherStatus || !otherStatus->isObserverMode)
-			ecs::EntityNetworkDispatch::SendInsert(reg, other, character);
-	}
-}
-
-void Reencode(entt::entity self)
-{
-    if (self == entt::null || !g_registry.valid(self))
-        return;
-
-    if (ecs::PlayerRuntime::IsObserverMode(self))
-        return;
-
-    ecs::EntityNetworkDispatch::SendRemove(g_registry, self, self);
-    ecs::EntityNetworkDispatch::SendInsert(g_registry, self, self);
-
-    const auto* viewMap = g_registry.try_get<ecs::ViewMap>(self);
-    if (!viewMap)
-        return;
-
-    const auto visible = viewMap->visible;  // snapshot: the loop dispatches
-    for (const entt::entity other : visible) {
-        if (other == entt::null || !g_registry.valid(other))
-            continue;
-
-        if (ecs::PlayerRuntime::IsObserverMode(other))
-            continue;
-
-        // Only the reverse direction. The peer-direction pair was removed
-        // in fixup-5 because it forced every peer client to despawn and
-        // respawn the character, resetting its movement animation; this
-        // one refreshes the SELF client's render of the peer, which is
-        // what ViewReencode is for.
-        ecs::EntityNetworkDispatch::SendInsert(g_registry, other, self);
-    }
-}
-
 namespace {
-    bool g_initialized = false;
-
-    // Phase 15E-final.LPENTITY.4-architect.D.4:
-    // Sectree-based viewer-set computation at an arbitrary (mapIndex, x, y).
-    //
-    // Mirrors the structure of VisibilityService::GetEntitiesInRange but
-    // takes (mapIndex, x, y) directly rather than reading the source's
-    // current Position. Required because the handler must compute the
-    // OLD viewer set after Position has already been written to the new
-    // location.
-    //
-    // mapIndex == 0 is the spawn/despawn sentinel (real maps start at 1).
-    // The handler treats it as "no prior viewers" by short-circuiting to
-    // an empty set.
-    std::unordered_set<entt::entity> ComputeViewersAt(
-        entt::registry& reg,
-        entt::entity self,
-        int32_t mapIndex,
-        int32_t x,
-        int32_t y,
-        int32_t range)
-    {
-        std::unordered_set<entt::entity> result;
-        if (mapIndex == 0)
-            return result;
-
-        LPSECTREE sectree = ecs::SectorAt(mapIndex, x, y);
-        if (!sectree)
-            return result;
-
-        struct Collector {
-            entt::registry& reg;
-            entt::entity self;
-            int32_t cx;
-            int32_t cy;
-            int32_t range;
-            std::unordered_set<entt::entity>& out;
-
-            void operator()(LPENTITY entity)
-            {
-                if (!entity || !entity->IsType(ENTITY_CHARACTER))
-                    return;
-
-                const auto e = static_cast<LPCHARACTER>(entity)->GetEntityHandle();
-                if (e == entt::null || !reg.valid(e) || e == self)
-                    return;
-
-                const auto* pos = reg.try_get<ecs::Position>(e);
-                if (!pos)
-                    return;
-
-                if (DISTANCE_APPROX(pos->x - cx, pos->y - cy) > range)
-                    return;
-
-                out.insert(e);
-            }
-        } collector { reg, self, x, y, range, result };
-
-        sectree->ForEachAround(collector);
-        return result;
+bool initialized = false;
+std::set<std::pair<const entt::registry*, entt::entity>> removing;
+struct Removal {
+    const entt::registry* registry;
+    entt::entity entity;
+    bool entered;
+    Removal(const entt::registry& reg, entt::entity e)
+        : registry(&reg), entity(e), entered(removing.emplace(&reg, e).second) {}
+    void Release() { if (entered) removing.erase({registry, entity}); entered = false; }
+    ~Removal() { Release(); }
+};
+template<class T> bool Prepare(entt::registry& reg, entt::entity e) {
+    if (!reg.valid(e)) return false;
+    if (!reg.all_of<T>(e)) reg.insert<T>(&e, &e + 1);
+    return reg.valid(e) && reg.all_of<T>(e);
+}
+bool Active(entt::registry& reg, entt::entity e) {
+    if (!reg.valid(e) || !reg.all_of<SpatialEntity, SpatialKindTag, Position, MapIndex>(e)) return false;
+    auto* tree = SectorOf(reg, e);
+    return tree && tree->Contains(e) && !tree->IsDestroying();
+}
+bool CanSee(entt::registry& reg, entt::entity source, entt::entity viewer) {
+    if (source == viewer || !Active(reg, source) || !Active(reg, viewer) ||
+        reg.get<SpatialKindTag>(viewer).kind != SpatialKind::Character ||
+        reg.get<MapIndex>(source).value != reg.get<MapIndex>(viewer).value) return false;
+    const auto* status = reg.try_get<StatusFlags>(source);
+    if (status && status->isObserverMode) return false;
+    const auto a = reg.get<Position>(source), b = reg.get<Position>(viewer);
+    // Buildings have the historical whole-neighbor-sector visibility exception.
+    if (reg.get<SpatialKindTag>(source).kind == SpatialKind::Building)
+        return std::abs(int64_t(a.x / SECTREE_SIZE) - b.x / SECTREE_SIZE) <= 1 &&
+            std::abs(int64_t(a.y / SECTREE_SIZE) - b.y / SECTREE_SIZE) <= 1;
+    const auto dx = std::abs(int64_t(a.x) - b.x), dy = std::abs(int64_t(a.y) - b.y);
+    return std::max(dx, dy) + std::min(dx, dy) / 2 <= VIEW_RANGE + VIEW_BONUS_RANGE;
+}
+struct Snapshot {
+    entt::entity e;
+    Position pos;
+    int32_t map;
+    uint64_t revision;
+    bool Matches(entt::registry& reg) const {
+        if (!Active(reg, e)) return false;
+        const auto now = reg.get<Position>(e);
+        const auto* version = reg.try_get<SpatialRevision>(e);
+        return now.x == pos.x && now.y == pos.y && now.z == pos.z &&
+            reg.get<MapIndex>(e).value == map && (version ? version->value : 0) == revision;
     }
-
-    // Bidirectional ViewMap/ViewerMap maintenance.
-    //
-    // Phase 15E-final.LPENTITY.4-architect.D.6:
-    // Visibility is symmetric for non-observer characters (A sees B <=> B
-    // sees A, A views B <=> B views A). When the handler fires for `self`
-    // moving and a viewer enters/leaves, we update all four ECS fields:
-    //
-    //   self.ViewerMap.viewers   += viewer  (viewer views self)
-    //   self.ViewMap.visible     += viewer  (self sees viewer)
-    //   viewer.ViewerMap.viewers += self    (self views viewer)
-    //   viewer.ViewMap.visible   += self    (viewer sees self)
-    //
-    // Pre-D.6 the helper updated only sides 1 and 4 - the other two were
-    // populated by the legacy CFuncViewInsert polling running in parallel
-    // (the per-entity UpdateSectree adds the entity to its own ViewMap).
-    // After D.6 stubs out that polling for characters, the helper must
-    // fill all four sides itself or GetVisibleEntities(self) and
-    // GetViewersOf(viewer) return empty for the just-formed visibility
-    // pair.
-    void InsertBidirectional(entt::registry& reg, entt::entity self, entt::entity viewer)
-    {
-        reg.get_or_emplace<ecs::ViewerMap>(self).viewers.insert(viewer);
-        reg.get_or_emplace<ecs::ViewMap>(self).visible.insert(viewer);
-        reg.get_or_emplace<ecs::ViewerMap>(viewer).viewers.insert(self);
-        reg.get_or_emplace<ecs::ViewMap>(viewer).visible.insert(self);
+};
+Snapshot Capture(entt::registry& reg, entt::entity e) {
+    const auto* revision = reg.try_get<SpatialRevision>(e);
+    return {e, reg.get<Position>(e), reg.get<MapIndex>(e).value, revision ? revision->value : 0};
+}
+void Edge(entt::registry& reg, entt::entity source, entt::entity viewer, bool add) {
+    if (!reg.valid(source) || !reg.valid(viewer)) return;
+    if (add) {
+        if (!Prepare<ViewerMap>(reg, source) || !Prepare<ViewMap>(reg, viewer) ||
+            !reg.valid(source) || !reg.all_of<ViewerMap>(source) || !CanSee(reg, source, viewer)) return;
+        auto& views = reg.get<ViewMap>(viewer).visible;
+        const bool fresh = views.insert(source).second;
+        reg.get<ViewerMap>(source).viewers.insert(viewer);
+        if (fresh) EntityNetworkDispatch::SendInsert(reg, source, viewer);
+    } else {
+        bool present = false;
+        if (auto* views = reg.try_get<ViewMap>(viewer)) present = views->visible.erase(source) != 0;
+        if (auto* viewers = reg.try_get<ViewerMap>(source)) present |= viewers->viewers.erase(viewer) != 0;
+        if (auto* age = reg.try_get<ViewAgeMap>(viewer)) age->ageByEntity.erase(source);
+        if (present) EntityNetworkDispatch::SendRemove(reg, source, viewer);
     }
-
-    void RemoveBidirectional(entt::registry& reg, entt::entity self, entt::entity viewer)
-    {
-        if (auto* selfViewer = reg.try_get<ecs::ViewerMap>(self))
-            selfViewer->viewers.erase(viewer);
-        if (auto* selfView = reg.try_get<ecs::ViewMap>(self))
-            selfView->visible.erase(viewer);
-        if (auto* viewerViewer = reg.try_get<ecs::ViewerMap>(viewer))
-            viewerViewer->viewers.erase(self);
-        if (auto* viewerView = reg.try_get<ecs::ViewMap>(viewer))
-            viewerView->visible.erase(self);
+}
+void ClearEdges(entt::registry& reg, entt::entity e) {
+    if (auto* view = reg.try_get<ViewMap>(e)) {
+        for (auto other : view->visible)
+            if (reg.valid(other))
+                if (auto* reverse = reg.try_get<ViewerMap>(other)) reverse->viewers.erase(e);
+        view->visible.clear();
     }
-
-    // Phase 15E-final.LPENTITY.4-architect.D.4 handler.
-    //
-    // Runs IN PARALLEL with the legacy UpdateSectree polling: both paths
-    // maintain ViewMap/ViewerMap, both emit SendInsert/SendRemove. The
-    // server protocol is idempotent for character add/remove (the legacy
-    // path already calls these multiple times for the same VID under
-    // movement/Show/UpdateSectree overlap), so duplicate packets are not
-    // a correctness concern - just bandwidth. D.5 will quantify the
-    // overlap via a drift detector; D.6 will disable the legacy polling
-    // once D.5 reports zero divergence.
-    //
-    // Scope guard: only character entities. Items / buildings / shops
-    // continue to use the existing legacy InsertEntity/RemoveEntity
-    // recipient-broadcast machinery in SpatialService.cpp - their
-    // PositionChangedEvent (fired from D.2's SpatialService::InsertEntity
-    // trigger) is observed here but skipped.
-    void OnPositionChanged(const ecs::PositionChangedEvent& ev)
-    {
-        auto& reg = g_registry;
-
-        if (ev.entity == entt::null || !reg.valid(ev.entity))
-            return;
-
-        const auto* kind = reg.try_get<ecs::SpatialKindTag>(ev.entity);
-        if (!kind || kind->kind != ecs::SpatialKind::Character)
-            return;
-
-        const int32_t kRange = VIEW_RANGE + VIEW_BONUS_RANGE;
-
-        const auto newViewers = ComputeViewersAt(reg, ev.entity, ev.newMapIndex, ev.newX, ev.newY, kRange);
-
-        // Phase 15E-final.LPENTITY.4-architect H fixup-3:
-        // Spawn-shape sentinel (oldMapIndex==0) becomes "heal-only" mode.
-        //
-        // The fixup-1 / fixup-2 spawn triggers in CHARACTER::Show emit a
-        // PositionChangedEvent with old==(0,0,0,0) on every Show invocation
-        // (login spawn, map warp, dungeon entry, anti-cheat backport,
-        // intra-sectree /warp). Pre-fixup-3 that sentinel was processed as
-        // "fresh spawn - empty oldViewers, full newViewers, every newViewer
-        // entering" - so EVERY existing viewer received a duplicate
-        // SendInsert (CharacterAdd packet) on every Show.
-        //
-        // Symptom: the moving character's animation freezes on peer clients
-        // after the first stop-and-restart cycle. The peer client renders
-        // the CharacterAdd as a respawn at the indicated position and
-        // resets the moving state. If the next HEADER_GC_MOVE arrives
-        // before the peer's render unfreezes (which is "never" because
-        // the cycle repeats on every move command), the character looks
-        // stuck.
-        //
-        // Heal-only mode: snapshot the entity's CURRENT ViewerMap as the
-        // baseline instead of the empty oldViewers from oldMapIndex==0.
-        // - Viewers already known stay - no duplicate SendInsert.
-        // - Newly-seen viewers (in sectree truth, not in ViewerMap) get a
-        //   proper SendInsert + bidirectional state update.
-        // - Stale viewers (in ViewerMap, not in sectree truth) are NOT
-        //   removed by the spawn-shape - additive only. The next regular
-        //   move-driven PositionChangedEvent will catch them via the
-        //   normal leaving loop.
-        //
-        // Real spawns (login/warp) hit this path with an empty ViewerMap
-        // anyway, so they still emit SendInsert to every nearby peer -
-        // identical to fixup-1's original intent.
-        std::unordered_set<entt::entity> oldViewers;
-        const bool healOnly = (ev.oldMapIndex == 0);
-        if (healOnly) {
-            if (const auto* selfViewer = reg.try_get<ecs::ViewerMap>(ev.entity)) {
-                for (entt::entity v : selfViewer->viewers)
-                    oldViewers.insert(v);
-            }
-        } else {
-            oldViewers = ComputeViewersAt(reg, ev.entity, ev.oldMapIndex, ev.oldX, ev.oldY, kRange);
+    if (auto* viewers = reg.try_get<ViewerMap>(e)) {
+        for (auto other : viewers->viewers) if (reg.valid(other)) {
+            if (auto* view = reg.try_get<ViewMap>(other)) view->visible.erase(e);
+            if (auto* age = reg.try_get<ViewAgeMap>(other)) age->ageByEntity.erase(e);
         }
+        viewers->viewers.clear();
+    }
+    if (auto* age = reg.try_get<ViewAgeMap>(e)) age->ageByEntity.clear();
+}
+void OnPositionChanged(const PositionChangedEvent& ev) { Refresh(g_registry, ev.entity); }
+}
 
-        // Phase 15E-final.LPENTITY.4-architect.D.6:
-        // Each viewer transition emits packets in BOTH directions
-        // (self -> viewer and viewer -> self). Pre-D.6 the legacy
-        // CFuncViewInsert polling running on self's own UpdateSectree
-        // emitted the viewer -> self direction; after D.6 stubs that
-        // polling, the handler is the sole source. The character
-        // add/remove protocol is idempotent under the legacy fallback
-        // path inside EntityNetworkDispatch (EncodeInsert/Remove just
-        // re-emit a packet), so duplicate wires are bandwidth, not
-        // correctness.
-
-        // Leaving: in oldViewers, not in newViewers.
-        // Skipped in heal-only mode (additive: never removes from
-        // ViewerMap on a spawn-shape event).
-        if (!healOnly) {
-            for (const entt::entity viewer : oldViewers) {
-                if (newViewers.count(viewer))
-                    continue;
-                if (viewer == entt::null || !reg.valid(viewer))
-                    continue;
-                RemoveBidirectional(reg, ev.entity, viewer);
-                ecs::EntityNetworkDispatch::SendRemove(reg, ev.entity, viewer);
-                ecs::EntityNetworkDispatch::SendRemove(reg, viewer, ev.entity);
-            }
+void Refresh(entt::registry& reg, entt::entity e) {
+    if (!Active(reg, e)) return;
+    const auto snapshot = Capture(reg, e);
+    std::unordered_set<entt::entity> candidates;
+    auto collect = [&](entt::entity other) { if (other != e) candidates.insert(other); };
+    SectorOf(reg, e)->ForEachAround(collect);
+    // Actual published edges are the baseline, not an inferred old position.
+    // This also heals stationary/late-arriving viewers of newly dropped items.
+    if (auto* view = reg.try_get<ViewMap>(e)) candidates.insert(view->visible.begin(), view->visible.end());
+    if (auto* viewers = reg.try_get<ViewerMap>(e)) candidates.insert(viewers->viewers.begin(), viewers->viewers.end());
+    for (auto other : candidates) {
+        if (!snapshot.Matches(reg)) return;
+        if (!reg.valid(other)) {
+            if (auto* view = reg.try_get<ViewMap>(e)) view->visible.erase(other);
+            if (auto* viewers = reg.try_get<ViewerMap>(e)) viewers->viewers.erase(other);
+            continue;
         }
-
-        // Entering: in newViewers, not in oldViewers
-        for (const entt::entity viewer : newViewers) {
-            if (oldViewers.count(viewer))
-                continue;
-            if (viewer == entt::null || !reg.valid(viewer))
-                continue;
-            InsertBidirectional(reg, ev.entity, viewer);
-            ecs::EntityNetworkDispatch::SendInsert(reg, ev.entity, viewer);
-            ecs::EntityNetworkDispatch::SendInsert(reg, viewer, ev.entity);
-        }
+        Edge(reg, e, other, CanSee(reg, e, other));
+        if (!snapshot.Matches(reg)) return;
+        Edge(reg, other, e, CanSee(reg, other, e));
     }
 }
 
-void Init(entt::registry& /*reg*/)
-{
-    if (g_initialized)
+void Remove(entt::registry& reg, entt::entity e) {
+    if (!reg.valid(e)) return;
+    Removal action(reg, e);
+    if (!action.entered) return;
+    const auto* initialTree = SectorOf(reg, e);
+    std::unordered_set<entt::entity> recipients;
+    if (auto* viewers = reg.try_get<ViewerMap>(e)) recipients.insert(viewers->viewers.begin(), viewers->viewers.end());
+    for (auto viewer : VisibilityService::GetEntitiesInRange(reg, e, VIEW_RANGE + VIEW_BONUS_RANGE))
+        if (viewer != e) recipients.insert(viewer);
+    auto* version = reg.try_get<SpatialRevision>(e);
+    if (version) ++version->value;
+    const uint64_t revision = version ? version->value : 0;
+    const auto detached = [&] {
+        if (!reg.valid(e) || SectorOf(reg, e) != initialTree) return false;
+        const auto* current = reg.try_get<SpatialRevision>(e);
+        return (current ? current->value : 0) == revision;
+    };
+    ClearEdges(reg, e);
+    if (!detached()) return;
+    reg.remove<SpatialEntity>(e);
+    if (!detached()) return;
+    reg.remove<ViewActiveTag>(e);
+    if (!detached()) return;
+    reg.remove<VisibilityDirty>(e);
+    action.Release(); // Packet callbacks may legitimately respawn the entity.
+    // SpatialKindTag is identity: retain it until remove packets are encoded.
+    for (auto viewer : recipients) {
+        if (!detached()) return;
+        if (reg.valid(viewer)) EntityNetworkDispatch::SendRemove(reg, e, viewer);
+    }
+}
+
+bool IsRemoving(const entt::registry& reg, entt::entity e) {
+    return removing.contains({&reg, e});
+}
+
+void Reencode(entt::registry& reg, entt::entity e) {
+    if (!Active(reg, e)) return;
+    const auto snapshot = Capture(reg, e);
+    const auto* status = reg.try_get<StatusFlags>(e);
+    if (status && status->isObserverMode) return;
+    if (reg.get<SpatialKindTag>(e).kind != SpatialKind::Character) {
+        // Shops/buildings have no client of their own; reencode the source to
+        // its viewers (e.g. a shop name change), not an empty outgoing ViewMap.
+        const auto* viewers = reg.try_get<ViewerMap>(e);
+        const auto recipients = viewers ? viewers->viewers : std::unordered_set<entt::entity>{};
+        for (auto viewer : recipients) {
+            if (!snapshot.Matches(reg)) return;
+            if (!CanSee(reg, e, viewer)) continue;
+            EntityNetworkDispatch::SendRemove(reg, e, viewer);
+            if (!snapshot.Matches(reg)) return;
+            if (CanSee(reg, e, viewer)) EntityNetworkDispatch::SendInsert(reg, e, viewer);
+        }
         return;
-
-    g_dispatcher.sink<ecs::PositionChangedEvent>()
-        .connect<&OnPositionChanged>();
-
-    g_initialized = true;
-    LOG_INFO("[VISIBILITY] Init: PositionChangedEvent handler connected (D.4 diff handler)");
+    }
+    EntityNetworkDispatch::SendRemove(reg, e, e);
+    if (!snapshot.Matches(reg)) return;
+    EntityNetworkDispatch::SendInsert(reg, e, e);
+    if (!snapshot.Matches(reg)) return;
+    const auto* view = reg.try_get<ViewMap>(e);
+    const auto visible = view ? view->visible : std::unordered_set<entt::entity>{};
+    for (auto other : visible) {
+        if (!snapshot.Matches(reg)) return;
+        if (CanSee(reg, other, e)) EntityNetworkDispatch::SendInsert(reg, other, e);
+    }
 }
-
-void Shutdown(entt::registry& /*reg*/)
-{
-    if (!g_initialized)
-        return;
-
-    g_dispatcher.sink<ecs::PositionChangedEvent>()
-        .disconnect<&OnPositionChanged>();
-
-    g_initialized = false;
+void Reencode(entt::entity e) { Reencode(g_registry, e); }
+void Init(entt::registry&) {
+    if (initialized) return;
+    g_dispatcher.sink<PositionChangedEvent>().connect<&OnPositionChanged>();
+    initialized = true;
 }
-
-void DriftSweep(entt::registry& reg)
-{
+void Shutdown(entt::registry&) {
+    if (!initialized) return;
+    g_dispatcher.sink<PositionChangedEvent>().disconnect<&OnPositionChanged>();
+    initialized = false;
+}
+void DriftSweep(entt::registry& reg) {
 #ifdef AURIGA_LPENTITY_FIXUP_AUDIT
-    // Self-throttle: at most one full sweep every 5 seconds. The sweep
-    // walks every character entity with a ViewerMap and runs a sectree
-    // query per entity, so it's O(N) sectree queries per sweep - cheap
-    // enough at 0.2 Hz, prohibitive at tick rate.
-    static uint32_t s_lastSweepMs = 0;
-    const uint32_t nowMs = static_cast<uint32_t>(get_dword_time());
-    if (s_lastSweepMs != 0 && nowMs - s_lastSweepMs < 5000u)
-        return;
-    s_lastSweepMs = nowMs;
-
-    // Per-entity log throttle: at most one drift report per entity per
-    // 30 seconds. Without this, a single stuck-mirror entity would log
-    // every sweep (12 logs/min) and 50+ such entities under load would
-    // saturate the log queue. The throttle matches the ValidateViewMapMirror
-    // [VIEWMAP_DRIFT] pattern in entity_view.cpp.
-    static std::unordered_map<uint32_t, uint32_t> s_entityLastLogMs;
-
-    const int32_t kRange = VIEW_RANGE + VIEW_BONUS_RANGE;
-
-    auto charView = reg.view<ecs::ViewerMap, ecs::SpatialKindTag, ecs::Position, ecs::MapIndex>();
-    for (auto e : charView) {
-        const auto& kind = charView.get<ecs::SpatialKindTag>(e);
-        if (kind.kind != ecs::SpatialKind::Character)
-            continue;
-
-        const auto& pos = charView.get<ecs::Position>(e);
-        const auto& mapIdx = charView.get<ecs::MapIndex>(e);
-        const auto& mirror = charView.get<ecs::ViewerMap>(e);
-
-        const auto truth = ComputeViewersAt(reg, e, mapIdx.value, pos.x, pos.y, kRange);
-
-        // Diff
-        size_t onlyInMirror = 0;
-        for (entt::entity v : mirror.viewers) {
-            if (v == entt::null || !reg.valid(v))
-                continue;
-            if (truth.find(v) == truth.end())
-                ++onlyInMirror;
-        }
-        size_t onlyInTruth = 0;
-        for (entt::entity v : truth) {
-            if (mirror.viewers.find(v) == mirror.viewers.end())
-                ++onlyInTruth;
-        }
-
-        if (onlyInMirror == 0 && onlyInTruth == 0)
-            continue;
-
-        const uint32_t entityKey = static_cast<uint32_t>(e);
-        if (auto it = s_entityLastLogMs.find(entityKey); it != s_entityLastLogMs.end()) {
-            if (nowMs - it->second < 30000u)
-                continue;
-        }
-        s_entityLastLogMs[entityKey] = nowMs;
-
-        LOG_WARN("[VISIBILITY_DRIFT] entity={} mirror_size={} truth_size={} only_in_mirror={} only_in_truth={}",
-            entityKey,
-            mirror.viewers.size(),
-            truth.size(),
-            onlyInMirror,
-            onlyInTruth);
-    }
+    const auto now = std::chrono::steady_clock::now();
+    static auto lastSweep = now - std::chrono::seconds(5);
+    if (now - lastSweep < std::chrono::seconds(5)) return;
+    lastSweep = now;
+    // Read-only directed-edge audit, shared by character and item visibility.
+    for (auto e : reg.view<ViewerMap>())
+        for (auto viewer : reg.get<ViewerMap>(e).viewers)
+            if (!reg.valid(viewer) || !reg.all_of<ViewMap>(viewer) ||
+                !reg.get<ViewMap>(viewer).visible.contains(e))
+                LOG_WARN("[VISIBILITY_DRIFT] missing reverse edge {} -> {}",
+                    entt::to_integral(e), entt::to_integral(viewer));
 #else
     (void)reg;
 #endif
 }
-
 } // namespace ecs::VisibilitySystem
+
+namespace ecs::ViewSystem {
+void ViewCleanup(entt::entity entity) { VisibilitySystem::Remove(g_registry, entity); }
+void ViewReencode(entt::entity entity) { VisibilitySystem::Reencode(g_registry, entity); }
+}

@@ -407,6 +407,9 @@ int TEMP_BUFFER::size() { Unexpected(); }
 LPPARTY CPartyManager::CreateParty(entt::entity) { Unexpected(); }
 void CParty::Link(entt::entity) { Unexpected(); }
 uint32_t SECTREE::GetAttribute(int32_t, int32_t) { Unexpected(); }
+LPENTITY SectreeLegacyEntity(entt::entity) { Unexpected(); }
+bool SectreeMember(entt::entity, const SECTREE*) { Unexpected(); }
+void SECTREE::Collect(FCollectEntity&) const { Unexpected(); }
 LPSECTREE SECTREE_MAP::Find(uint32_t, uint32_t) { Unexpected(); }
 LPSECTREE_MAP SECTREE_MANAGER::GetMap(int32_t) { Unexpected(); }
 LPSECTREE SECTREE_MANAGER::Get(int32_t, int32_t, int32_t) { Unexpected(); }

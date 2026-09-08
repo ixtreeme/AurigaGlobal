@@ -29,105 +29,7 @@
 #include "../systems/PlayerRuntimeSystem.hpp"
 #include "EntityNetworkDispatch.hpp"
 #include "VisibilityService.hpp"
-
-namespace {
-
-ecs::SpatialKind KindFromLegacyType(int type)
-{
-    switch (type) {
-    case ENTITY_ITEM:
-        return ecs::SpatialKind::Item;
-    case ENTITY_OBJECT:
-        return ecs::SpatialKind::Building;
-    case ENTITY_NEWSHOPS:
-        return ecs::SpatialKind::OfflineShop;
-    case ENTITY_CHARACTER:
-    default:
-        return ecs::SpatialKind::Character;
-    }
-}
-
-void SyncSpatialComponents(entt::registry& reg,
-    entt::entity e,
-    ecs::SpatialKind kind,
-    uint32_t mapIndex,
-    int32_t x,
-    int32_t y,
-    int32_t z)
-{
-    if (e == entt::null || !reg.valid(e))
-        return;
-
-    reg.emplace_or_replace<ecs::SpatialEntity>(e);
-    reg.emplace_or_replace<ecs::SpatialKindTag>(e, ecs::SpatialKindTag { kind });
-    reg.emplace_or_replace<ecs::Position>(e, x, y, z);
-    reg.emplace_or_replace<ecs::PositionZ>(e, ecs::PositionZ { z });
-    reg.emplace_or_replace<ecs::MapIndex>(e, static_cast<int32_t>(mapIndex));
-    (void)reg.get_or_emplace<ecs::ViewMap>(e);
-    (void)reg.get_or_emplace<ecs::ViewerMap>(e);
-    (void)reg.get_or_emplace<ecs::ViewAgeMap>(e);
-}
-
-void SyncVIDFromLegacy(entt::registry& reg, entt::entity e, LPENTITY legacy)
-{
-    if (e == entt::null || !reg.valid(e) || !legacy)
-        return;
-
-    switch (legacy->GetType()) {
-    case ENTITY_CHARACTER:
-		reg.emplace_or_replace<ecs::VIDComponent>(e, ecs::PlayerRuntime::GetPacketVID(e));
-        break;
-    case ENTITY_ITEM:
-        if (auto* item = static_cast<LPITEM>(legacy))
-            reg.emplace_or_replace<ecs::VIDComponent>(e, item->GetVID());
-        break;
-    case ENTITY_OBJECT:
-        if (auto* object = static_cast<building::CObject*>(legacy))
-            reg.emplace_or_replace<ecs::VIDComponent>(e, object->GetVID());
-        break;
-#ifdef ENABLE_NEW_SHOP_IN_CITIES
-    case ENTITY_NEWSHOPS:
-        if (auto* shop = static_cast<offlineshop::ShopEntity*>(legacy))
-            reg.emplace_or_replace<ecs::VIDComponent>(e, shop->GetVID());
-        break;
-#endif
-    default:
-        break;
-    }
-}
-
-void ClearVisibilityMirror(entt::registry& reg, entt::entity e)
-{
-    if (e == entt::null || !reg.valid(e))
-        return;
-
-    if (auto* view = reg.try_get<ecs::ViewMap>(e)) {
-        for (const entt::entity visible : view->visible) {
-            if (visible != entt::null && reg.valid(visible)) {
-                if (auto* reverse = reg.try_get<ecs::ViewerMap>(visible))
-                    reverse->viewers.erase(e);
-            }
-        }
-        view->visible.clear();
-    }
-
-    if (auto* ageMap = reg.try_get<ecs::ViewAgeMap>(e))
-        ageMap->ageByEntity.clear();
-
-    if (auto* reverse = reg.try_get<ecs::ViewerMap>(e)) {
-        for (const entt::entity viewer : reverse->viewers) {
-            if (viewer != entt::null && reg.valid(viewer)) {
-                if (auto* view = reg.try_get<ecs::ViewMap>(viewer))
-                    view->visible.erase(e);
-                if (auto* ageMap = reg.try_get<ecs::ViewAgeMap>(viewer))
-                    ageMap->ageByEntity.erase(e);
-            }
-        }
-        reverse->viewers.clear();
-    }
-}
-
-}
+#include "../systems/VisibilitySystem.hpp"
 
 namespace ecs::SpatialService {
 
@@ -140,10 +42,13 @@ LPENTITY LPENTITYFromEntity(entt::registry& reg, entt::entity e)
         return legacy->ptr;
 
     if (const auto* item = reg.try_get<ecs::ItemIdentity>(e)) {
-        if (LPITEM legacyItem = ITEM_MANAGER::instance().Find(item->id))
+        if (LPITEM legacyItem = ITEM_MANAGER::instance().Find(item->id);
+            legacyItem && legacyItem->GetEntityHandle() == e)
             return legacyItem;
-        if (item->vid != 0)
-            return ITEM_MANAGER::instance().FindByVID(item->vid);
+        if (item->vid != 0) {
+            auto* legacyItem = ITEM_MANAGER::instance().FindByVID(item->vid);
+            if (legacyItem && legacyItem->GetEntityHandle() == e) return legacyItem;
+        }
     }
 
     if (auto* building = ecs::CBuildingRegistry::FindLegacyByEntity(e))
@@ -165,13 +70,8 @@ entt::entity EntityFromLPENTITY(LPENTITY entity)
     switch (entity->GetType()) {
     case ENTITY_CHARACTER:
 		return static_cast<LPCHARACTER>(entity)->GetEntityHandle();
-    case ENTITY_ITEM: {
-        auto* item = static_cast<LPITEM>(entity);
-        entt::entity itemEntity = CItemRegistry::Instance().Find(item->GetID());
-        if (itemEntity == entt::null)
-            itemEntity = CItemRegistry::Instance().FindByVID(item->GetVID());
-        return itemEntity;
-    }
+    case ENTITY_ITEM:
+        return static_cast<LPITEM>(entity)->GetEntityHandle();
     case ENTITY_OBJECT:
         return ecs::CBuildingRegistry::FindByID(static_cast<building::CObject*>(entity)->GetID());
 #ifdef ENABLE_NEW_SHOP_IN_CITIES
@@ -185,156 +85,126 @@ entt::entity EntityFromLPENTITY(LPENTITY entity)
 
 bool InsertEntity(entt::registry& reg, entt::entity e, uint32_t mapIndex, int32_t x, int32_t y, int32_t z)
 {
-    LPENTITY legacy = LPENTITYFromEntity(reg, e);
-    if (!legacy)
-        return false;
-
-    const ecs::SpatialKind kind = reg.all_of<ecs::SpatialKindTag>(e)
-        ? reg.get<ecs::SpatialKindTag>(e).kind
-        : KindFromLegacyType(legacy->GetType());
-
-    SyncSpatialComponents(reg, e, kind, mapIndex, x, y, z);
-    SyncVIDFromLegacy(reg, e, legacy);
-
-    LPSECTREE tree = ecs::SectorAt(static_cast<int32_t>(mapIndex), x, y);
-    if (!tree)
-        return false;
-
-    legacy->SetMapIndex(static_cast<int32_t>(mapIndex));
-    legacy->SetXYZ(x, y, z);
-    if (!tree->InsertEntity(legacy))
-        return false;
-
-    ecs::SyncSectorPlacement(reg, e, static_cast<int32_t>(mapIndex), legacy->GetX(), legacy->GetY());
-    reg.emplace_or_replace<ecs::ViewActiveTag>(e);
-    reg.emplace_or_replace<ecs::VisibilityDirty>(e);
-    ecs::Invariants::ValidateSpatialCoverage(reg, e, "spatial.insert");
-
-    // Phase 15E-final.LPENTITY.4-architect.D.2: emit a spawn-shaped
-    // PositionChangedEvent so the VisibilitySystem (D.4) can compute the
-    // initial viewer set for this newly-inserted entity. Spawn case is
-    // signalled with old==(0,0,0) and oldMapIndex==0 (mapIndex 0 is never
-    // a real map - the index space starts at 1). No subscribers in D.2;
-    // the event is a no-op at runtime until D.3 wires up the handler.
-    g_dispatcher.trigger(ecs::PositionChangedEvent {
-        e,
-        0, 0, 0,
-        x, y, z,
-        0, static_cast<int32_t>(mapIndex) });
-
+    if (!reg.valid(e) || mapIndex == 0 || mapIndex > INT32_MAX ||
+        ecs::VisibilitySystem::IsRemoving(reg, e)) return false;
+    auto* tree = ecs::SectorAt(int32_t(mapIndex), x, y);
+    if (!tree || tree->IsDestroying() || ecs::SectorOf(reg, e)) return false;
+    const auto* initialVersion = reg.try_get<ecs::SpatialRevision>(e);
+    const uint64_t revision = initialVersion ? initialVersion->value : 0;
+    const bool hadSpatial = reg.all_of<ecs::SpatialEntity>(e);
+    const bool hadView = reg.all_of<ecs::ViewActiveTag>(e);
+    const bool hadDirty = reg.all_of<ecs::VisibilityDirty>(e);
+    bool committed = false;
+    const auto rollback = [&] {
+        const auto ours = [&] {
+            if (committed || !reg.valid(e) || ecs::SectorOf(reg, e)) return false;
+            const auto* version = reg.try_get<ecs::SpatialRevision>(e);
+            return (version ? version->value : 0) == revision;
+        };
+        if (ours() && !hadSpatial) reg.remove<ecs::SpatialEntity>(e);
+        if (ours() && !hadView) reg.remove<ecs::ViewActiveTag>(e);
+        if (ours() && !hadDirty) reg.remove<ecs::VisibilityDirty>(e);
+    };
+    struct Rollback {
+        const decltype(rollback)& fn;
+        ~Rollback() { fn(); }
+    } undo {rollback};
+    const auto eligible = [&] {
+        if (!reg.valid(e) || ecs::SectorOf(reg, e)) return false;
+        const auto* version = reg.try_get<ecs::SpatialRevision>(e);
+        if ((version ? version->value : 0) != revision) return false;
+        if (reg.all_of<ecs::ItemIdentity>(e)) {
+            const auto* owner = reg.try_get<ecs::ItemOwner>(e);
+            const auto* location = reg.try_get<ecs::ItemLocation>(e);
+            const auto* equipped = reg.try_get<ecs::ItemEquipped>(e);
+            if ((owner && (owner->owner != entt::null || owner->ownerPID != 0)) ||
+                (equipped && equipped->equipped) || !location || location->window != GROUND) return false;
+        }
+        return true;
+    };
+    if (!eligible()) return false;
+    // Preparation may publish on_construct signals, so never retain component
+    // references or a CEntity across it. Item identity needs no legacy object.
+    const auto prepare = [&]<class T>() {
+        if (!reg.valid(e)) return false;
+        if (!reg.all_of<T>(e)) reg.insert<T>(&e, &e + 1);
+        return reg.valid(e) && reg.all_of<T>(e);
+    };
+    if (!prepare.template operator()<ecs::SpatialKindTag>() ||
+        !prepare.template operator()<ecs::Position>() ||
+        !prepare.template operator()<ecs::PositionZ>() ||
+        !prepare.template operator()<ecs::MapIndex>() ||
+        !prepare.template operator()<ecs::ViewMap>() ||
+        !prepare.template operator()<ecs::ViewerMap>() ||
+        !prepare.template operator()<ecs::ViewAgeMap>() ||
+        !prepare.template operator()<ecs::ViewActiveTag>() ||
+        !prepare.template operator()<ecs::VisibilityDirty>() ||
+        !prepare.template operator()<ecs::SpatialRevision>() ||
+        !prepare.template operator()<ecs::SpatialEntity>()) return false;
+    if (!reg.valid(e) || !reg.all_of<ecs::SpatialKindTag, ecs::Position, ecs::PositionZ,
+        ecs::MapIndex, ecs::SpatialEntity, ecs::SpatialRevision>(e) || !eligible()) return false;
+    if (reg.all_of<ecs::ItemIdentity>(e))
+        reg.get<ecs::SpatialKindTag>(e).kind = ecs::SpatialKind::Item;
+    else if (reg.all_of<ecs::BuildingState>(e))
+        reg.get<ecs::SpatialKindTag>(e).kind = ecs::SpatialKind::Building;
+    else if (reg.all_of<ecs::OfflineShopState>(e))
+        reg.get<ecs::SpatialKindTag>(e).kind = ecs::SpatialKind::OfflineShop;
+    reg.get<ecs::Position>(e) = {x, y, z};
+    reg.get<ecs::PositionZ>(e).z = z;
+    reg.get<ecs::MapIndex>(e).value = int32_t(mapIndex);
+    if (!tree->InsertEntity(e)) return false;
+    committed = true;
+    // Membership is committed. The caller publishes with UpdateSectree after
+    // installing its timers/state; insertion itself sends no network packets.
     return true;
 }
 
 void RemoveEntity(entt::registry& reg, entt::entity e)
 {
-    LPENTITY legacy = LPENTITYFromEntity(reg, e);
-    if (!legacy)
-        return;
-
-    // LPENTITY.4-fixup-item + 4-fixup-B (Option A): broadcast SendRemove to
-    // all current viewers BEFORE the sectree drop and visibility cleanup.
-    // Without this, the only path to a remove packet is the per-viewer
-    // UpdateSectree age-out which dispatches through SendRemove. SendRemove
-    // looks up SpatialKindTag on the source; if a caller strips
-    // SpatialKindTag in the same call sequence, dispatch silently bails out
-    // and the item / building / shop persists visually on every viewer
-    // client.
-    //
-    // The recipient set is computed via the legacy/sectree-authoritative
-    // GetEntitiesInRange (not the native ViewerMap mirror). The native
-    // ViewerMap has gaps under load and would miss recipients - the very
-    // bug LPENTITY.4-fixup-B targets. Range query at VIEW_RANGE +
-    // VIEW_BONUS_RANGE matches what UpdateSectree would naturally discover.
-    //
-    // Only the four RemoveEntity callers (Item pickup, Building destroy x2,
-    // OfflineShop close - characters do not use this path) hit this branch.
-    if (e != entt::null && reg.valid(e)) {
-        const auto recipients = ecs::VisibilityService::GetEntitiesInRange(
-            reg, e, VIEW_RANGE + VIEW_BONUS_RANGE);
-        for (const entt::entity viewer : recipients) {
-            if (viewer == e)
-                continue;
-            if (viewer != entt::null && reg.valid(viewer))
-                ecs::EntityNetworkDispatch::SendRemove(reg, e, viewer);
-        }
-    }
-
-    if (LPSECTREE sectree = legacy->GetSectree())
-        sectree->RemoveEntity(legacy);
-
-    if (e != entt::null && reg.valid(e)) {
-        ClearVisibilityMirror(reg, e);
-        reg.remove<ecs::SectorPlacement>(e);
-        reg.remove<ecs::ViewActiveTag>(e);
-        reg.remove<ecs::SpatialEntity>(e);
-        reg.remove<ecs::VisibilityDirty>(e);
-    }
+    if (!reg.valid(e)) return;
+    auto* tree = ecs::SectorOf(reg, e);
+    if (tree) tree->RemoveEntity(e);
+    if (!reg.valid(e) || ecs::SectorOf(reg, e)) return;
+    // Visibility state is detached before packets; a callback may reinsert.
+    ecs::VisibilitySystem::Remove(reg, e);
 }
 
 void UpdateSectree(entt::registry& reg, entt::entity e)
 {
-    LPENTITY legacy = LPENTITYFromEntity(reg, e);
-    if (!legacy)
-        return;
-
-    legacy->UpdateSectree();
-
-    if (e != entt::null && reg.valid(e)) {
-        SyncSpatialComponents(
-            reg,
-            e,
-            reg.all_of<ecs::SpatialKindTag>(e) ? reg.get<ecs::SpatialKindTag>(e).kind : KindFromLegacyType(legacy->GetType()),
-            static_cast<uint32_t>(legacy->GetMapIndex()),
-            legacy->GetX(),
-            legacy->GetY(),
-            legacy->GetZ());
-        ecs::SyncSectorPlacement(reg, e, legacy->GetMapIndex(), legacy->GetX(), legacy->GetY());
-        reg.emplace_or_replace<ecs::VisibilityDirty>(e);
-        ecs::Invariants::ValidateSpatialCoverage(reg, e, "spatial.update_sectree");
-    }
+    ecs::VisibilitySystem::Refresh(reg, e);
 }
 
 void ForEachAround(entt::registry& reg, entt::entity source, int32_t range, const std::function<void(entt::entity)>& callback)
 {
-    if (!callback)
-        return;
-
-    const auto* sourcePos = reg.try_get<ecs::Position>(source);
-    LPENTITY sourceLegacy = LPENTITYFromEntity(reg, source);
-    if (!sourcePos || !sourceLegacy || !sourceLegacy->GetSectree())
-        return;
-
-    struct Collector {
-        entt::registry& reg;
-        entt::entity source;
-        const ecs::Position& sourcePos;
-        int32_t range;
-        const std::function<void(entt::entity)>& callback;
-
-        void operator()(LPENTITY legacy)
-        {
-            const entt::entity e = ecs::SpatialService::EntityFromLPENTITY(legacy);
-            if (e == entt::null || !reg.valid(e) || !reg.all_of<ecs::SpatialEntity>(e))
-                return;
-
-            const auto* pos = reg.try_get<ecs::Position>(e);
-            if (!pos)
-                return;
-
-            if (range > 0 && e != source && DISTANCE_APPROX(pos->x - sourcePos.x, pos->y - sourcePos.y) > range)
-                return;
-
-            callback(e);
-        }
-    } collector { reg, source, *sourcePos, range, callback };
-
-    sourceLegacy->GetSectree()->ForEachAround(collector);
+    if (!callback || !reg.valid(source)) return;
+    const auto* position = reg.try_get<ecs::Position>(source);
+    const auto* map = reg.try_get<ecs::MapIndex>(source);
+    auto* tree = ecs::SectorOf(reg, source);
+    if (!position || !map || !tree) return;
+    const auto origin = *position;
+    const auto mapIndex = map->value;
+    const auto* version = reg.try_get<ecs::SpatialRevision>(source);
+    const uint64_t revision = version ? version->value : 0;
+    auto visit = [&](entt::entity e) {
+        if (!reg.valid(source) || ecs::SectorOf(reg, source) != tree ||
+            !reg.all_of<ecs::SpatialEntity>(e)) return;
+        const auto* now = reg.try_get<ecs::Position>(source);
+        const auto* current = reg.try_get<ecs::SpatialRevision>(source);
+        if (!now || now->x != origin.x || now->y != origin.y || now->z != origin.z ||
+            (current ? current->value : 0) != revision) return;
+        const auto* pos = reg.try_get<ecs::Position>(e);
+        const auto* targetMap = reg.try_get<ecs::MapIndex>(e);
+        if (!pos || !targetMap || targetMap->value != mapIndex) return;
+        const auto dx = std::abs(int64_t(pos->x) - origin.x), dy = std::abs(int64_t(pos->y) - origin.y);
+        if (range > 0 && std::max(dx, dy) + std::min(dx, dy) / 2 > range) return;
+        callback(e);
+    };
+    tree->ForEachAround(visit);
 }
 
 LPSECTREE GetSectree(entt::registry& reg, entt::entity e)
 {
-    LPENTITY legacy = LPENTITYFromEntity(reg, e);
-    return legacy ? legacy->GetSectree() : nullptr;
+    return ecs::SectorOf(reg, e);
 }
 
 void ForEachInMap(entt::registry& reg, uint32_t mapIndex, const std::function<void(entt::entity)>& callback)
@@ -342,11 +212,14 @@ void ForEachInMap(entt::registry& reg, uint32_t mapIndex, const std::function<vo
     if (!callback)
         return;
 
-    auto view = reg.view<ecs::SpatialEntity, ecs::MapIndex>();
-    for (const entt::entity e : view) {
-        const auto& map = view.get<ecs::MapIndex>(e);
-        if (map.value == static_cast<int32_t>(mapIndex))
-            callback(e);
+    std::vector<entt::entity> entities;
+    for (auto e : reg.view<ecs::SpatialEntity, ecs::MapIndex>())
+        if (reg.get<ecs::MapIndex>(e).value == static_cast<int32_t>(mapIndex) &&
+            SectreeMember(e, ecs::SectorOf(reg, e))) entities.push_back(e);
+    for (auto e : entities) {
+        if (!reg.valid(e) || !reg.all_of<ecs::SpatialEntity, ecs::MapIndex>(e)) continue;
+        if (reg.get<ecs::MapIndex>(e).value == static_cast<int32_t>(mapIndex) &&
+            SectreeMember(e, ecs::SectorOf(reg, e))) callback(e);
     }
 }
 

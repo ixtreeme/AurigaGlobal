@@ -91,8 +91,11 @@ class SECTREE_MAP
 		SECTREE_MAP();
 		SECTREE_MAP(SECTREE_MAP & r);
 		virtual ~SECTREE_MAP();
+		void DrainEntities();
+		bool IsDraining() const { return m_draining; }
 
 		bool Add(uint32_t key, LPSECTREE sectree) {
+			if (m_draining) return false;
 			return map_.insert(MapType::value_type(key, sectree)).second;
 		}
 
@@ -110,17 +113,9 @@ class SECTREE_MAP
 			for (auto it = map_.begin(); it != map_.end(); ++it)
 			{
 				LPSECTREE sectree = it->second;
-				sectree->for_each_entity(collector);
+				sectree->Collect(collector);
 			}
 			collector.ForEach(rfunc);
-			/*
-			std::map<uint32_t,LPSECTREE>::iterator i = map_.begin();
-			for (; i != map_.end(); ++i )
-			{
-				LPSECTREE pSec = i->second;
-				pSec->for_each_entity( rfunc );
-			}
-			*/
 		}
 
 		void DumpAllToSysErr() {
@@ -132,6 +127,7 @@ class SECTREE_MAP
 
 	private:
 		MapType map_;
+		bool m_draining = false;
 };
 
 enum EAttrRegionMode

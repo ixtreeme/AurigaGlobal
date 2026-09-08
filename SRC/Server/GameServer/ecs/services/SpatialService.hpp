@@ -14,6 +14,7 @@ namespace ecs::SpatialService {
 LPENTITY LPENTITYFromEntity(entt::registry& reg, entt::entity e);
 entt::entity EntityFromLPENTITY(LPENTITY entity);
 
+// Commit native membership; call UpdateSectree after installing spawn state.
 bool InsertEntity(entt::registry& reg, entt::entity e, uint32_t mapIndex, int32_t x, int32_t y, int32_t z);
 void RemoveEntity(entt::registry& reg, entt::entity e);
 void UpdateSectree(entt::registry& reg, entt::entity e);

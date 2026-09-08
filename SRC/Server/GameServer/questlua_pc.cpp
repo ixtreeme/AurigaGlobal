@@ -3306,7 +3306,7 @@ teleport_area:
 					pos.x = ecs::PlayerRuntime::GetX(chEntity) + number(-200, 200);
 					pos.y = ecs::PlayerRuntime::GetY(chEntity) + number(-200, 200);
 
-					if (!ItemSystem::PlaceItemOnGroundLegacyBoundary(
+					if (!ItemSystem::PlaceItemOnGround(
 							newItem, ecs::PlayerRuntime::GetMapIndex(chEntity), pos))
 					{
 						ItemSystem::DestroyItemEntityEcs(newItem, "QUEST_ITEM_GROUND_FAIL");

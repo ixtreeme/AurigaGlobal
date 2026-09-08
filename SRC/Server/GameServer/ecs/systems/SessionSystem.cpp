@@ -1122,10 +1122,9 @@ bool CHARACTER::Show(int32_t lMapIndex, int32_t x, int32_t y, int32_t z, bool bS
         // the packet only does anything for an entity with a descriptor - which
         // is a PC, so it came through CreatePC.
         ecs::EntityNetworkDispatch::SendInsert(g_registry, GetEntityHandle(), GetEntityHandle());
-        sectree->InsertEntity(this);
+        sectree->InsertEntity(self);
 
         const entt::entity e = GetEntityHandle();
-        ecs::SyncSectorPlacement(g_registry, e, GetMapIndex(), GetX(), GetY());
         if (e != entt::null && g_registry.valid(e))
             g_registry.emplace_or_replace<ecs::ViewActiveTag>(e);
 

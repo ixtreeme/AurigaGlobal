@@ -5,7 +5,7 @@
 
 #include <entt/entt.hpp>
 
-#include "../../char.h"
+#include "SpatialService.hpp"
 #include "../../config.h"
 #include "../../sectree.h"
 #include "../../utils.h"
@@ -32,24 +32,8 @@ inline std::vector<entt::entity> GetEntitiesInRange(entt::registry& reg, entt::e
     if (source == entt::null || !reg.valid(source))
         return result;
 
-    // Phase 15E-final.LPENTITY.4-architect.D.6.fixup-4:
-    // Sectree lookup via ECS Position + MapIndex instead of
-    // ecs::PlayerRuntime::GetSectree (which uses LegacyCharOf and only
-    // works for character entities). Building / item / shop entities
-    // are not characters - their LegacyCharPtr component is absent -
-    // so PlayerRuntime::GetSectree returns nullptr and this function
-    // returns an empty recipient set.
-    //
-    // This silently broke despawn broadcasts for Metin stone fragments,
-    // dropped items, destroyed buildings, and closed offline shops:
-    // SpatialService::RemoveEntity uses GetEntitiesInRange to compute
-    // who needs the SendRemove packet. With an empty result, no remove
-    // packet is emitted and the entity stays rendered on every viewer's
-    // client until they relog or move out of range.
-    //
-    // ECS Position + MapIndex are populated for every spatial entity
-    // type (chars, items, buildings, shops) by SpatialService::SyncSpatialComponents,
-    // so the sectree lookup via SectorAt works uniformly.
+    // Resolve from position/map so a detached source can still notify nearby
+    // clients. Membership of each recipient is checked by native enumeration.
     const auto* sourcePos = reg.try_get<ecs::Position>(source);
     const auto* sourceMap = reg.try_get<ecs::MapIndex>(source);
     if (!sourcePos || !sourceMap)
@@ -58,34 +42,18 @@ inline std::vector<entt::entity> GetEntitiesInRange(entt::registry& reg, entt::e
     if (!sectree)
         return result;
 
-    struct Collector {
-        entt::registry& reg;
-        entt::entity source;
-        const ecs::Position& sourcePos;
-        int32_t range;
-        std::vector<entt::entity>& result;
-
-        void operator()(LPENTITY entity)
-        {
-            if (!entity || !entity->IsType(ENTITY_CHARACTER))
-                return;
-
-			const auto e = static_cast<LPCHARACTER>(entity)->GetEntityHandle();
-            if (e == entt::null || !reg.valid(e))
-                return;
-
-            const auto* pos = reg.try_get<ecs::Position>(e);
-            if (!pos)
-                return;
-
-            if (e != source && DISTANCE_APPROX(pos->x - sourcePos.x, pos->y - sourcePos.y) > range)
-                return;
-
-            PushUnique(result, e);
-        }
-    } collector { reg, source, *sourcePos, range, result };
-
-    sectree->ForEachAround(collector);
+    const auto origin = *sourcePos;
+    const int32_t mapIndex = sourceMap->value;
+    auto collect = [&](entt::entity e) {
+        const auto* kind = reg.try_get<ecs::SpatialKindTag>(e);
+        const auto* pos = reg.try_get<ecs::Position>(e);
+        const auto* map = reg.try_get<ecs::MapIndex>(e);
+        if (!kind || kind->kind != ecs::SpatialKind::Character || !pos || !map || map->value != mapIndex) return;
+        const auto dx = std::abs(int64_t(pos->x) - origin.x), dy = std::abs(int64_t(pos->y) - origin.y);
+        if (e != source && std::max(dx, dy) + std::min(dx, dy) / 2 > range) return;
+        PushUnique(result, e);
+    };
+    sectree->ForEachAround(collect);
     PushUnique(result, source);
     return result;
 }

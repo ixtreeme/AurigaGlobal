@@ -3121,7 +3121,7 @@ void CHARACTER::ItemDropPenalty(entt::entity killer)
 				continue;
 			int window = vec_item[i].second;
 
-			if (!ItemSystem::PlaceItemOnGroundLegacyBoundary(
+			if (!ItemSystem::PlaceItemOnGround(
 					item, GetMapIndex(), pos, 300))
 				continue;
 
@@ -3335,7 +3335,7 @@ static void __GiveRewardItemToCharacterOrDrop(LegacyCharHandle ch, LegacyCharHan
 	if (bTrackBattlePass && dwGivenCount > 0)
 		__UpdateBattlePassCollectProgress(ch, dwItemVnum, dwGivenCount);
 
-	if (!ItemSystem::PlaceItemOnGroundLegacyBoundary(
+	if (!ItemSystem::PlaceItemOnGround(
 			itemEntity,
 			ecs::PlayerRuntime::GetMapIndex(victim),
 			pos, 300))
@@ -3904,7 +3904,7 @@ void CHARACTER::Reward(bool bItemDrop)
 									}
 									else
 									{
-										if (!ItemSystem::PlaceItemOnGroundLegacyBoundary(
+										if (!ItemSystem::PlaceItemOnGround(
 												newItem, lMapIndex, mpos, 300))
 										{
 											ItemSystem::DestroyItemEntityEcs(
@@ -3917,7 +3917,7 @@ void CHARACTER::Reward(bool bItemDrop)
 												newItem, rchEntity);
 									}
 #else
-									if (!ItemSystem::PlaceItemOnGroundLegacyBoundary(
+									if (!ItemSystem::PlaceItemOnGround(
 											newItem, lMapIndex, mpos, 300))
 									{
 										ItemSystem::DestroyItemEntityEcs(
@@ -3978,7 +3978,7 @@ void CHARACTER::Reward(bool bItemDrop)
 				}
 				else
 				{
-					if (!ItemSystem::PlaceItemOnGroundLegacyBoundary(
+					if (!ItemSystem::PlaceItemOnGround(
 							itemEntity, GetMapIndex(), pos, 300))
 					{
 						LOG_ERROR("failed to place single drop entity {}",
@@ -4056,7 +4056,7 @@ void CHARACTER::Reward(bool bItemDrop)
 							continue;
 						}
 
-						if (!ItemSystem::PlaceItemOnGroundLegacyBoundary(
+						if (!ItemSystem::PlaceItemOnGround(
 								itemEntity, GetMapIndex(), pos, 300))
 							continue;
 
@@ -4109,7 +4109,7 @@ void CHARACTER::Reward(bool bItemDrop)
 						}
 						else
 						{
-							if (!ItemSystem::PlaceItemOnGroundLegacyBoundary(
+							if (!ItemSystem::PlaceItemOnGround(
 									itemEntity, GetMapIndex(), pos, 300))
 								continue;
 
@@ -4154,7 +4154,7 @@ void CHARACTER::Reward(bool bItemDrop)
 					m_map_kDamage.clear();
 					return;
 				}
-				if (!ItemSystem::PlaceItemOnGroundLegacyBoundary(
+				if (!ItemSystem::PlaceItemOnGround(
 						itemEntity, GetMapIndex(), pos, 300))
 				{
 					LOG_ERROR("failed to place single ground drop entity {}",
@@ -4231,7 +4231,7 @@ void CHARACTER::Reward(bool bItemDrop)
 							continue;
 						}
 
-						if (!ItemSystem::PlaceItemOnGroundLegacyBoundary(
+						if (!ItemSystem::PlaceItemOnGround(
 								itemEntity, GetMapIndex(), pos, 300))
 							continue;
 
@@ -4262,7 +4262,7 @@ void CHARACTER::Reward(bool bItemDrop)
 							continue;
 						}
 
-						if (!ItemSystem::PlaceItemOnGroundLegacyBoundary(
+						if (!ItemSystem::PlaceItemOnGround(
 								itemEntity, GetMapIndex(), pos, 300))
 							continue;
 
@@ -4496,7 +4496,7 @@ void CHARACTER::RewardGold(entt::entity attacker) {
 					{
 						pos.x = GetX() + ((number(-14, 14) + number(-14, 14)) * 23);
 						pos.y = GetY() + ((number(-14, 14) + number(-14, 14)) * 23);
-						if (ItemSystem::PlaceItemOnGroundLegacyBoundary(
+						if (ItemSystem::PlaceItemOnGround(
 								gold, GetMapIndex(), pos, 300))
 							iTotalGold += iGold;
 						else
@@ -4531,7 +4531,7 @@ void CHARACTER::RewardGold(entt::entity attacker) {
 					{
 						pos.x = GetX() + (number(-7, 7) * 20);
 						pos.y = GetY() + (number(-7, 7) * 20);
-						if (ItemSystem::PlaceItemOnGroundLegacyBoundary(
+						if (ItemSystem::PlaceItemOnGround(
 								gold, GetMapIndex(), pos, 300))
 							iTotalGold += iGold;
 						else
@@ -4585,7 +4585,7 @@ void CHARACTER::RewardGold(entt::entity attacker) {
 							{
 								pos.x = GetX() + (number(-7, 7) * 20);
 								pos.y = GetY() + (number(-7, 7) * 20);
-								if (!ItemSystem::PlaceItemOnGroundLegacyBoundary(
+								if (!ItemSystem::PlaceItemOnGround(
 										gold, GetMapIndex(), pos, 300))
 									ItemSystem::DestroyItemEntityEcs(
 										gold, "GOLD_DROP_PLACE_FAIL");

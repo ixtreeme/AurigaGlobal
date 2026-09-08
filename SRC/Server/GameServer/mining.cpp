@@ -154,7 +154,7 @@ namespace mining
 		pos.x = ecs::PlayerRuntime::GetX(character) + number(-200, 200);
 		pos.y = ecs::PlayerRuntime::GetY(character) + number(-200, 200);
 
-		if (!ItemSystem::PlaceItemOnGroundLegacyBoundary(
+		if (!ItemSystem::PlaceItemOnGround(
 				item, ecs::PlayerRuntime::GetMapIndex(character), pos))
 		{
 			ItemSystem::DestroyItemEntityEcs(item, "MINING_ORE_GROUND_FAIL");

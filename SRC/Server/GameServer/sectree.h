@@ -3,6 +3,9 @@
 
 #include "entity.h"
 #include <Core/Logging.hpp>
+#include "ecs/Registry.hpp"
+#include <unordered_map>
+#include <type_traits>
 
 enum ESectree
 {
@@ -31,51 +34,24 @@ enum
 	ATTR_OBJECT = (1 << 7),
 };
 
+// Compatibility is confined to callbacks which have not migrated yet. The
+// sector and every snapshot store versioned handles, never CEntity pointers.
+LPENTITY SectreeLegacyEntity(entt::entity entity);
+bool SectreeMember(entt::entity entity, const SECTREE* tree);
+
 struct FCollectEntity {
-	void operator()(LPENTITY entity) {
-		// Consider removing sanity check after debug pass
-		/*
-		if (entity->IsType(ENTITY_CHARACTER)) {
-			LPCHARACTER character = (LPCHARACTER)entity;
-			uint32_t vid = character->GetLegacyVID();
-			LPCHARACTER found = CHARACTER_MANGAER::instance().Find(vid);
-			if (found == NULL || vid != found->GetLegacyVID()) {
-				LOG_ERROR("<Factor> Invalid character {}", static_cast<const void*>(get_pointer(character)));
-				return;
-			}
-		} else if (entity->IsType(ENTITY_ITEM)) {
-			LPITEM item = (LPITEM)entity;
-			uint32_t vid = item->GetVID();
-			LPITEM found = ITEM_MANGAER::instance().FindByVID(vid);
-			if (found == NULL || vid != found->GetLegacyVID()) {
-				LOG_ERROR("<Factor> Invalid item {}", static_cast<const void*>(get_pointer(item)));
-				return;
-			}
-		} else if (entity->IsType(ENTITY_OBJECT)) {
-			LPOBJECT object = (LPOBJECT)entity;
-			uint32_t vid = object->GetVID();
-			LPOBJECT found = CManager::instance().FindObjectByVID(vid);
-			if (found == NULL || vid != found->GetLegacyVID()) {
-				LOG_ERROR("<Factor> Invalid object {}", static_cast<const void*>(get_pointer(object)));
-				return;
-			}
-		} else {
-			LOG_ERROR("<Factor> Invalid entity type {}", static_cast<const void*>(get_pointer(entity)));
-			return;
-		}
-		*/
-		result.push_back(entity);
-	}
-	template<typename F>
-	void ForEach(F& f) {
-		std::vector<LPENTITY>::iterator it = result.begin();
-		for ( ; it != result.end(); ++it) {
-			LPENTITY entity = *it;
-			f(entity);
-		}
-	}
-	typedef std::vector<LPENTITY> ListType;
-	ListType result; // list collected
+    struct Entry { entt::entity entity; const SECTREE* tree; };
+    std::vector<Entry> result;
+    void Add(entt::entity entity, const SECTREE* tree) { result.push_back({entity, tree}); }
+    template<typename F> void ForEach(F& f) {
+        for (const auto& entry : result) {
+            if (!SectreeMember(entry.entity, entry.tree)) continue;
+            if constexpr (std::is_invocable_v<F&, entt::entity>)
+                f(entry.entity);
+            else if (auto* legacy = SectreeLegacyEntity(entry.entity))
+                f(legacy);
+        }
+    }
 };
 
 class CAttribute;
@@ -86,118 +62,17 @@ class SECTREE
 		friend class SECTREE_MANAGER;
 		friend class SECTREE_MAP;
 
-		template <class _Func> LPENTITY	find_if (_Func & func) const
-		{
-			auto it_tree = m_neighbor_list.begin();
 
-			while (it_tree != m_neighbor_list.end())
-			{
-				ENTITY_SET::iterator it_entity = (*it_tree)->m_set_entity.begin();
-
-				while (it_entity != (*it_tree)->m_set_entity.end())
-				{
-					if (func(*it_entity))
-						return (*it_entity);
-
-					++it_entity;
-				}
-
-				++it_tree;
-			}
-
-			return nullptr;
-		}
-
-		template <class _Func> void ForEachAround(_Func & func)
-		{
-			// <Factor> Using snapshot copy to avoid side-effects
-			FCollectEntity collector;
-			for (auto it = m_neighbor_list.begin(); it != m_neighbor_list.end(); ++it)
-			{
-				const LPSECTREE sectree = *it;
-				sectree->for_each_entity(collector);
-			}
-			collector.ForEach(func);
-			/*
-			LPSECTREE_LIST::iterator it_tree = m_neighbor_list.begin();
-			for ( ; it_tree != m_neighbor_list.end(); ++it_tree) {
-				(*it_tree)->for_each_entity(func);
-			}
-			*/
-		}
+        // Native snapshot enumeration. Captured members are revalidated before
+        // each callback, including when a prior callback moved/destroyed them.
+        FCollectEntity SnapshotAround(int rings = 1) const;
+        void Collect(FCollectEntity& out) const;
+        template <class F> void ForEachAround(F& func) { auto list = SnapshotAround(); list.ForEach(func); }
 #ifdef ENABLE_AGGREGATE_MONSTER_PLUS_RAZOR93
-
-
-
-		
-		template <class _Func>
-		void ForEachAroundPlus(_Func& func, int rings)
-		{
-			
-			FCollectEntity collector;
-
-			std::set<LPSECTREE> visited;
-			std::vector<LPSECTREE> cur, next;
-
-			visited.insert(this);
-			cur.push_back(this);
-
-			for (int r = 0; r <= rings; ++r)
-			{
-				next.clear();
-
-				for (size_t i = 0; i < cur.size(); ++i)
-				{
-					LPSECTREE st = cur[i];
-					st->for_each_entity(collector);
-
-					LPSECTREE_LIST::iterator it = st->m_neighbor_list.begin();
-					for (; it != st->m_neighbor_list.end(); ++it)
-					{
-						LPSECTREE nb = *it;
-						if (visited.insert(nb).second)
-							next.push_back(nb);
-					}
-				}
-
-				cur.swap(next);
-			}
-
-			collector.ForEach(func);
-		}
-
-		
-		template <class _Func>
-		void ForEachAroundPlus(_Func& func)
-		{
-			ForEachAroundPlus(func, 1);
-		}
-
+        template <class F> void ForEachAroundPlus(F& func, int rings = 1) {
+            auto list = SnapshotAround(rings); list.ForEach(func);
+        }
 #endif
-		template <class _Func> void for_each_for_find_victim(_Func & func)
-		{
-			LPSECTREE_LIST::iterator it_tree = m_neighbor_list.begin();
-
-			while (it_tree != m_neighbor_list.end())
-			{
-				//첫번째를 찾으면 바로 리턴
-				if ( (*(it_tree++))->for_each_entity_for_find_victim(func) )
-					return;
-			}
-		}
-		template <class _Func> bool for_each_entity_for_find_victim(_Func & func)
-		{
-			auto it = m_set_entity.begin();
-
-			while (it != m_set_entity.end())
-			{
-				//정상적으로 찾으면 바로 리턴
-				if ( func(*it++) )
-					return true;
-			}
-			return false;
-		}
-
 
 	public:
 		SECTREE();
@@ -208,8 +83,13 @@ class SECTREE
 
 		SECTREEID			GetID();
 
-		bool				InsertEntity(LPENTITY ent);
-		void				RemoveEntity(LPENTITY ent);
+        bool InsertEntity(entt::entity entity);
+        void RemoveEntity(entt::entity entity);
+        bool Contains(entt::entity entity) const;
+        bool IsDestroying() const { return m_destroying || m_closed; }
+        // Remaining character/building callers enter once at this boundary.
+        bool InsertEntity(LPENTITY entity);
+        void RemoveEntity(LPENTITY entity);
 
 		void				SetRegenEvent(LPEVENT event);
 		bool				Regen();
@@ -232,28 +112,11 @@ class SECTREE
 		void				RemoveAttribute(uint32_t x, uint32_t y, uint32_t dwAttr);
 
 	private:
-		template <class _Func> void for_each_entity(_Func& func)
-		{
-			auto it = m_set_entity.begin();
-
-			while (it != m_set_entity.end())
-			{
-				LPENTITY entity = *it;
-
-				if (entity->GetSectree() != this)
-				{
-					LOG_ERROR("<Factor> SECTREE-ENTITY relationship mismatch ent={} tree={} enttree={}", static_cast<const void*>(get_pointer(entity)), static_cast<const void*>(this), static_cast<const void*>(entity ? entity->GetSectree() : nullptr));
-					it = m_set_entity.erase(it);
-					continue;
-				}
-
-				++it;
-				func(entity);
-			}
-		}
-
+		static void OnPlacementDestroyed(entt::registry& registry, entt::entity entity);
 		SECTREEID			m_id;
-		ENTITY_SET			m_set_entity;
+		std::unordered_map<entt::entity, bool> m_entities; // value: counted as PC
+        bool m_destroying = false;
+        bool m_closed = false; // Whole-map teardown closes every sector first.
 		LPSECTREE_LIST			m_neighbor_list;
 		int				m_iPCCount;
 		bool				isClone;

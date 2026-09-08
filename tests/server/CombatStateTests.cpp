@@ -287,6 +287,11 @@ void MultiplierAndValidityChecks() {
 // Unrelated leaves from the complete combat translation unit are fail-fast
 // doubles. No combat, loot, DB, quest, CHARACTER or item allocation is allowed.
 [[noreturn]] void UnexpectedService(const char* service) { throw std::runtime_error(service); }
+// Spatial traversal is outside this combat fixture; SpatialLifecycleTests
+// exercises the real native index and callback dispatch.
+LPENTITY SectreeLegacyEntity(entt::entity) { UnexpectedService(__func__); }
+bool SectreeMember(entt::entity, const SECTREE*) { UnexpectedService(__func__); }
+FCollectEntity SECTREE::SnapshotAround(int) const { UnexpectedService(__func__); }
 int MAX(int a,int b) { return std::max(a,b); }
 int MIN(int a,int b) { return std::min(a,b); }
 int MINMAX(int a,int b,int c) { return std::clamp(b,a,c); }
@@ -501,7 +506,7 @@ bool ItemSystem::SetItemAttribute(entt::entity,int,int,int) { UnexpectedService(
 bool ItemSystem::PlaceItemEcs(entt::entity,entt::entity,unsigned char,unsigned short) { UnexpectedService(__func__); }
 bool ItemSystem::RemoveItemEcs(entt::entity) { UnexpectedService(__func__); }
 int ItemSystem::GetEmptyInventoryPositionEcs(entt::entity,entt::entity) { UnexpectedService(__func__); }
-bool ItemSystem::PlaceItemOnGroundLegacyBoundary(entt::entity,int,pixel_position_s const &,int) { UnexpectedService(__func__); }
+bool ItemSystem::PlaceItemOnGround(entt::entity,int,pixel_position_s const &,int) { UnexpectedService(__func__); }
 bool ItemSystem::IsItemVnumStackable(unsigned int) { UnexpectedService(__func__); }
 bool ItemSystem::SetGroundOwnership(entt::entity,entt::entity,int) { UnexpectedService(__func__); }
 CPIDRegistry & CPIDRegistry::Instance(void) { UnexpectedService(__func__); }

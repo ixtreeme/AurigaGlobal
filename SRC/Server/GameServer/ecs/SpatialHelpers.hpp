@@ -9,10 +9,11 @@
 
 namespace ecs {
 
-// Resolve the legacy LPSECTREE for an ECS entity.
+// Resolve the owning sector from authoritative ECS membership.
 // Returns nullptr if the entity has no SectorPlacement component.
 inline LPSECTREE SectorOf(entt::registry& reg, entt::entity e)
 {
+    if (!reg.valid(e)) return nullptr;
     auto* sp = reg.try_get<ecs::SectorPlacement>(e);
     if (!sp)
         return nullptr;
@@ -21,23 +22,8 @@ inline LPSECTREE SectorOf(entt::registry& reg, entt::entity e)
         sp->mapIndex, static_cast<int32_t>(sp->sectorX), static_cast<int32_t>(sp->sectorY));
 }
 
-// Update SectorPlacement after a legacy position change.
-// Call this after any legacy sectree insert/move, not before.
-inline void SyncSectorPlacement(entt::registry& reg,
-                                entt::entity e,
-                                int32_t mapIndex,
-                                int32_t x, int32_t y)
-{
-    if (e == entt::null)
-        return;
-
-    reg.emplace_or_replace<ecs::SectorPlacement>(
-        e,
-        ecs::SectorPlacement{ mapIndex, static_cast<uint32_t>(x), static_cast<uint32_t>(y) });
-}
-
 // Iterate all entities visible from the sector of entity `e`.
-// Calls func(LPENTITY) for each entity in the sector and its neighbors.
+// Native callbacks take entt::entity; unmigrated callbacks use the sector adapter.
 // Returns immediately if SectorPlacement is missing.
 template <typename Func>
 inline void ForEachAround(entt::registry& reg, entt::entity e, Func&& func)
