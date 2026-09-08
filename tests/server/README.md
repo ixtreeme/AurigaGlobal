@@ -989,7 +989,7 @@ methods are compatibility boundaries for unmigrated callers. The old SetCount
 branch accessed the deleted CItem; it is removed, including its obsolete
 CHARACTER refine-window-close shim. These boundaries and factory hydration are
 compiled with GameServer, not executed by this headless count fixture. The real
-item-manager tick/persistence integration, inventory stack merge/split algorithms
+item-manager tick/persistence integration, inventory split algorithm
 and full gameplay callback graph are not covered here. Verify stack caps,
 splitting/merging, zero and last-unit consumption, quickslots and DB
 reconnect/logout on a test server.
@@ -997,6 +997,40 @@ reconnect/logout on a test server.
 Before deployment verify NPC interaction, each supported costume subtype,
 selection/preview/clear/close, competing trade windows, disconnect/death,
 successful consumption and relog persistence with the actual client and DB.
+
+## Entity-native stack merges
+
+`ItemAttributeTests` runs the real pairwise merge and automatic detached-reward
+merge in the existing `ItemAttributeSystem.cpp`, together with count publication
+and deferred retirement. Both counts commit before any save, packet or deletion
+callback. Depleted sources cannot be reused even when deletion must be retried.
+The result records the committed quantity, not whether callbacks kept either
+entity alive. This is main-thread in-memory atomicity, not a durable DB transaction.
+
+Checks include 1,890 source/count/cap/request combinations, zero-as-all and
+oversized requests, partial and full merges, invalid/stale/foreign handles,
+slot anchors, normal/extra inventory, equipment/ground/storage exclusions,
+locks/exchange flags, sockets, attributes, prototype flags and identity metadata.
+Different payloads are not silently discarded by a count-only merge. Blend rewards
+keep their remainder when a destination reaches its cap. Automatic delivery uses
+a bounded snapshot of anchored entities in slot order, without retaining registry
+views or component references through callbacks. Tests cover recursive merges,
+recursive reward delivery, failed retirement/retry, publication exceptions,
+owner/source/destination deletion, generation reuse, moved/replaced/locked
+candidates and stale slot aliases.
+
+The old automatic and blend merge implementations were removed. The occupied
+stack branch in `CHARACTER::MoveItem` now calls the entity-native pair operation,
+without an LPITEM destination or sequential consume/add. Its negative-count
+check no longer applies abs(int) to INT_MIN. The rest of MoveItem, splitting,
+the complete AutoGive dispatcher, reward creation/placement and money logging
+remain separate migration work. The VNUM-only reward path now respects rejected
+count writes and does not create a replacement item when a fully credited
+destination disappears during callbacks; those call sites are compiled with
+GameServer, not executed by this fixture. Inventory lookup, extra-item category,
+item validity/lock/owner access, save/network and actual deletion are doubles.
+Verify client drag/drop, quickslots, blend rewards, full inventory, disconnect
+during rewards and relogged persistence with the real client and test database.
 
 ## Mount and pet lifecycle regression tests
 

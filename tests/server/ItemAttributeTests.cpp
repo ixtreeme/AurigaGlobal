@@ -51,6 +51,7 @@ bool rejectGoldPayment = false;
 bool transferTest = false;
 bool soulStateTest = false;
 bool countStateTest = false;
+int stackCategoryLookups = 0;
 int soulAdds = 0, soulRemoves = 0, soulStarts = 0, soulStops = 0, soulLogs = 0, deckStops = 0;
 bool rejectSoulPoints = false, rejectSoulTimer = false;
 std::map<entt::entity, int> soulBonus;
@@ -80,6 +81,7 @@ std::array<TPlayerItemAttribute, ITEM_ATTRIBUTE_MAX_NUM> beforePayment{};
 short lockBeforePayment = -1;
 std::map<std::tuple<entt::entity, uint8_t, uint16_t>, entt::entity> inventory;
 struct TestPlayer { int64_t gold = 100; int activeDeck = -1; };
+struct TestExtraStack {};
 DragonSoulTable::TVecApplys dsBasic, dsAdditional;
 int dsBasicCount = 3, dsAddMin = 2, dsAddMax = 2;
 float dsWeight = 100.f, floatDrawFraction = 0.f;
@@ -444,6 +446,7 @@ const TItemTable* GetItemProto(entt::entity item)
 uint8_t GetItemType(entt::entity item) { const auto* p = GetItemProto(item); return p ? p->bType : 0; }
 uint8_t GetItemSubType(entt::entity item) { const auto* p = GetItemProto(item); return p ? p->bSubType : 0; }
 bool IsDragonSoulItem(entt::entity item) { return IsValidItem(item) && GetItemType(item) == ITEM_DS; }
+bool IsExtraItem(entt::entity item) { ++stackCategoryLookups; return IsValidItem(item) && g_registry.all_of<TestExtraStack>(item); }
 uint32_t GetItemWearFlags(entt::entity item) { const auto* p = GetItemProto(item); return p ? p->dwWearFlags : 0; }
 int32_t GetItemValue(entt::entity item, uint32_t index)
 {
@@ -546,6 +549,7 @@ struct Fixture {
         rejectPayment = rejectGoldPayment = false;
         transferTest = extractionTest = soulStateTest = countStateTest = false;
         g_bItemCountLimit = 200;
+        stackCategoryLookups = 0;
         onSoulPoints = {}; onSoulStart = onSoulStop = {};
         onCreate = onSocket = onRemove = onPlace = onLog = {};
         rejectPaymentAt = transferLogs = 0;
@@ -2507,6 +2511,319 @@ void CountDestructionAndCallbacks()
     }
 }
 
+struct StackFixture : CountFixture {
+    StackFixture()
+    {
+        proto.bType = ITEM_USE;
+        proto.bSubType = USE_POTION;
+        Configure(item, 40);
+        Configure(material, 180);
+    }
+    void Configure(entt::entity e, int count)
+    {
+        auto& identity = g_registry.get<ecs::ItemIdentity>(e);
+        identity.vnum = identity.originalVnum = 1000;
+        g_registry.emplace_or_replace<ecs::ItemCount>(e, ecs::ItemCount{count});
+        g_registry.emplace_or_replace<ecs::ItemProtoRef>(e).proto = &proto;
+        g_registry.emplace_or_replace<ecs::ItemPrototypeMeta>(e, ecs::ItemPrototypeMeta{proto.bType, proto.bSubType});
+        g_registry.emplace_or_replace<ecs::ItemFlags>(e).flags = ITEM_FLAG_STACKABLE;
+        g_registry.emplace_or_replace<ecs::ItemSockets>(e);
+        g_registry.emplace_or_replace<ecs::ItemAttributes>(e);
+    }
+    entt::entity Target(int count, uint16_t cell)
+    {
+        const auto e = Material(1000, count, cell);
+        Configure(e, count);
+        return e;
+    }
+    void Detach()
+    {
+        std::erase_if(inventory, [&](const auto& entry) { return entry.second == item; });
+        g_registry.get<ecs::ItemOwner>(item) = {};
+        g_registry.get<ecs::ItemLocation>(item) = {RESERVED_WINDOW, 0};
+    }
+};
+
+void StackMergeBoundaries()
+{
+    for (int limit = 1; limit <= 5; ++limit)
+        for (int source = 1; source <= 7; ++source)
+            for (int target = 1; target <= 6; ++target)
+                for (uint32_t request = 0; request <= 8; ++request) {
+                    StackFixture f;
+                    g_bItemCountLimit = limit;
+                    g_registry.get<ecs::ItemCount>(f.item).count = source;
+                    g_registry.get<ecs::ItemCount>(f.material).count = target;
+                    const int expected = request > uint32_t(source) || target >= limit ? 0 :
+                        std::min(request ? int(request) : source, limit - target);
+                    CountSignals signals;
+                    entt::scoped_connection constructed = g_registry.on_construct<ecs::ItemCount>().connect<&CountSignals::Changed>(signals);
+                    entt::scoped_connection updated = g_registry.on_update<ecs::ItemCount>().connect<&CountSignals::Changed>(signals);
+                    const auto observe = [&](entt::entity) {
+                        Check(ItemSystem::GetItemCount(f.item) == uint32_t(source - expected) &&
+                            ItemSystem::GetItemCount(f.material) == uint32_t(target + expected),
+                            "callback observed only half of stack transfer");
+                    };
+                    onSave = onUpdate = onDestroy = observe;
+                    const auto result = ItemSystem::MergeItemStacksEcs(f.owner, f.item, f.material, request);
+                    Check(result.transferred == uint32_t(expected) && result.sourceDepleted == (expected == source),
+                        "stack transfer amount/depletion boundary incorrect");
+                    Check(ItemSystem::GetItemCount(f.item) + ItemSystem::GetItemCount(f.material) == uint32_t(source + target),
+                        "stack merge created or lost units");
+                    Check(signals.calls == 0, "stack commit emitted registry signals");
+                    if (expected == 0) Check(saves == 0 && updates == 0 && destroyAttempts.empty(), "failed merge published changes");
+                    else if (expected == source) Check(!g_registry.valid(f.item) && saves == 1 && updates == 1 &&
+                        destroyAttempts.size() == 1, "depleted stack not retired exactly once");
+                    else Check(saves == 2 && updates == 2 && destroyAttempts.empty(), "partial merge publication incorrect");
+                }
+}
+
+void StackMergeGuards()
+{
+    for (int scenario = 0; scenario < 37; ++scenario) {
+        StackFixture f;
+        auto owner = f.owner, source = f.item, target = f.material;
+        auto storage = ItemSystem::StackSource::Inventory;
+        uint32_t amount = 0;
+        switch (scenario) {
+            case 0: owner = entt::null; break;
+            case 1: g_registry.destroy(owner); break;
+            case 2: source = entt::null; break;
+            case 3: target = entt::null; break;
+            case 4: g_registry.destroy(source); break;
+            case 5: g_registry.destroy(target); break;
+            case 6: target = source; break;
+            case 7: amount = UINT32_MAX; break;
+            case 8: g_bItemCountLimit = 0; break;
+            case 9: g_bItemCountLimit = -1; break;
+            case 10: g_registry.remove<ecs::ItemCount>(source); break;
+            case 11: g_registry.remove<ecs::ItemCount>(target); break;
+            case 12: g_registry.get<ecs::ItemCount>(source).count = -1; break;
+            case 13: g_registry.get<ecs::ItemCount>(target).count = 0; break;
+            case 14: g_registry.get<ecs::ItemOwner>(target).owner = g_registry.create(); break;
+            case 15: g_registry.get<ecs::ItemOwner>(source).owner = g_registry.create(); break;
+            case 16: inventory.erase({owner, INVENTORY, 0}); break;
+            case 17: inventory.erase({owner, INVENTORY, 5}); break;
+            case 18: f.Place(source, MOUNT_INVENTORY, 0); break;
+            case 19: f.Place(target, SAFEBOX, 0); break;
+            case 20: f.Place(target, INVENTORY, INVENTORY_MAX_NUM); break;
+            case 21: g_registry.emplace<ecs::ItemEquipped>(source).equipped = true; break;
+            case 22: g_registry.emplace<ecs::ItemEquipped>(target).equipped = true; break;
+            case 23: g_registry.get<ecs::ItemFlags>(source).exchanging = true; break;
+            case 24: g_registry.get<ecs::ItemFlags>(target).exchanging = true; break;
+            case 25: g_registry.get<ecs::ItemFlags>(source).isLocked = true; break;
+            case 26: g_registry.get<ecs::ItemFlags>(target).isLocked = true; break;
+            case 27: storage = static_cast<ItemSystem::StackSource>(99); break;
+            case 28: storage = ItemSystem::StackSource::DetachedReward; break; // still owned
+            case 29: f.Detach(); break; // requires explicit reward opt-in
+            case 30: f.Detach(); storage = ItemSystem::StackSource::DetachedReward;
+                g_registry.get<ecs::ItemLocation>(source).window = GROUND; break;
+            case 31: f.Detach(); storage = ItemSystem::StackSource::DetachedReward;
+                g_registry.get<ecs::ItemOwner>(source).ownerPID = 42; break;
+            case 32: f.Detach(); storage = ItemSystem::StackSource::DetachedReward;
+                g_registry.get<ecs::ItemLocation>(source).cell = 5; break;
+            case 33: g_registry.remove<ecs::ItemIdentity>(target); break;
+            case 34: g_registry.remove<ecs::ItemOwner>(source); break;
+            case 35: g_registry.remove<ecs::ItemLocation>(target); break;
+            case 36: f.Place(source, INVENTORY, BELT_INVENTORY_SLOT_START); break;
+        }
+        const auto beforeSource = ItemSystem::GetItemCount(source), beforeTarget = ItemSystem::GetItemCount(target);
+        Check(ItemSystem::MergeItemStacksEcs(owner, source, target, amount, storage).transferred == 0,
+            "invalid stack merge accepted");
+        Check(ItemSystem::GetItemCount(source) == beforeSource && ItemSystem::GetItemCount(target) == beforeTarget &&
+            saves == 0 && updates == 0 && destroyAttempts.empty(), "rejected merge changed state");
+    }
+    for (int scenario = 0; scenario < 21; ++scenario) {
+        StackFixture f;
+        const auto e = f.material;
+        auto& id = g_registry.get<ecs::ItemIdentity>(e);
+        switch (scenario) {
+            case 0: ++id.vnum; break;
+            case 1: ++id.originalVnum; break;
+            case 2: ++id.maskVnum; break;
+            case 3: ++id.sigVnum; break;
+            case 4: ++id.specialGroup; break;
+            case 5: ++id.transmutationVnum; break;
+            case 6: g_registry.get<ecs::ItemSockets>(e).sockets.back() = 1; break;
+            case 7: g_registry.get<ecs::ItemAttributes>(e).attrs.back() = {APPLY_MAX_HP, 100}; break;
+            case 8: g_registry.get<ecs::ItemFlags>(e).flags = 0; break;
+            case 9: g_registry.get<ecs::ItemProtoRef>(e).anti_flags = ITEM_ANTIFLAG_STACK; break;
+            case 10: g_registry.emplace<ecs::ItemLockedAttribute>(e).index = 0; break;
+            case 11: g_registry.get<ecs::ItemPrototypeMeta>(e).subType = USE_ABILITY_UP; break;
+            case 12: g_registry.remove<ecs::ItemPrototypeMeta>(e); break;
+            case 13: g_registry.remove<ecs::ItemProtoRef>(e); break;
+            case 14: g_registry.remove<ecs::ItemFlags>(e); break;
+            case 15: g_registry.remove<ecs::ItemSockets>(e); break;
+            case 16: g_registry.remove<ecs::ItemAttributes>(e); break;
+            case 17: g_registry.get<ecs::ItemPrototypeMeta>(e).type = ITEM_DS; break;
+            case 18: g_registry.get<ecs::ItemPrototypeMeta>(e).type = ITEM_SPECIAL_DS; break;
+            case 19: g_registry.get<ecs::ItemPrototypeMeta>(e).type = ITEM_ELK; break;
+            case 20: g_registry.emplace<ecs::ItemExtraProtoRef>(e).proto = reinterpret_cast<TItemExtraProto*>(1); break;
+        }
+        Check(ItemSystem::MergeItemStacksEcs(f.owner, f.item, e).transferred == 0 &&
+            ItemSystem::GetItemCount(f.item) == 40 && ItemSystem::GetItemCount(e) == 180 && saves == 0,
+            "incompatible payload merged/lost metadata");
+    }
+}
+
+void StackMergeCallbacks()
+{
+    {
+        StackFixture f;
+        g_registry.get<ecs::ItemCount>(f.item).count = 10;
+        rejectDestruction.insert(f.item);
+        onDestroy = [&](entt::entity e) {
+            Check(e == f.item && ItemSystem::IsItemConsumptionPending(e) && ItemSystem::GetItemCount(e) == 0 &&
+                ItemSystem::GetItemCount(f.material) == 190, "retirement preceded complete stack commit");
+            Check(!ItemSystem::SetItemCountEcs(e, 10) &&
+                ItemSystem::MergeItemStacksEcs(f.owner, e, f.material).transferred == 0, "retired source spent twice");
+        };
+        const auto result = ItemSystem::MergeItemStacksEcs(f.owner, f.item, f.material);
+        Check(result.transferred == 10 && result.sourceDepleted && g_registry.valid(f.item), "cleanup failure hid committed merge");
+        Check(ItemSystem::MergeItemStacksEcs(f.owner, f.material, f.item).transferred == 0, "retired target resurrected");
+        rejectDestruction.clear();
+        ItemSystem::ProcessPendingItemConsumptions();
+        Check(!g_registry.valid(f.item) && ItemSystem::GetItemCount(f.material) == 190, "retry credited destination twice");
+    }
+    {
+        StackFixture f;
+        const auto third = f.Target(100, 1);
+        bool nested = false;
+        onSave = [&](entt::entity) {
+            if (nested) return;
+            nested = true;
+            Check(ItemSystem::GetItemCount(f.item) == 20 && ItemSystem::GetItemCount(f.material) == 200,
+                "nested merge entered partially committed state");
+            Check(ItemSystem::MergeItemStacksEcs(f.owner, f.item, third, 5).transferred == 5, "nested merge rejected");
+        };
+        Check(ItemSystem::MergeItemStacksEcs(f.owner, f.item, f.material).transferred == 20 &&
+            ItemSystem::GetItemCount(f.item) == 15 && ItemSystem::GetItemCount(third) == 105 &&
+            ItemSystem::GetItemCount(f.material) == 200, "outer publication restored obsolete counts");
+    }
+    for (bool removeTarget : {false, true}) {
+        StackFixture f;
+        entt::entity replacement {entt::null};
+        bool removed = false;
+        onSave = [&](entt::entity) {
+            if (removed) return;
+            removed = true;
+            const auto victim = removeTarget ? f.material : f.item;
+            g_registry.destroy(victim);
+            replacement = f.Target(77, removeTarget ? 0 : 5);
+            Check(replacement != victim && entt::to_entity(replacement) == entt::to_entity(victim), "index not recycled");
+        };
+        Check(ItemSystem::MergeItemStacksEcs(f.owner, f.item, f.material).transferred == 20 &&
+            ItemSystem::GetItemCount(replacement) == 77, "stale merge touched recycled entity");
+    }
+    {
+        StackFixture f;
+        onSave = [&](entt::entity) { throw std::runtime_error("publication failure"); };
+        bool threw = false;
+        try { ItemSystem::MergeItemStacksEcs(f.owner, f.item, f.material); }
+        catch (const std::runtime_error&) { threw = true; }
+        Check(threw && ItemSystem::GetItemCount(f.item) == 20 && ItemSystem::GetItemCount(f.material) == 200,
+            "publication exception rolled back only one count");
+    }
+}
+
+void AutomaticStackMerges()
+{
+    {
+        StackFixture f;
+        f.Detach();
+        g_registry.get<ecs::ItemFlags>(f.item).flags = 0;
+        Check(ItemSystem::MergeItemIntoInventoryEcs(f.owner, f.item) == f.item &&
+            stackCategoryLookups == 0 && saves == 0 && updates == 0,
+            "nonstackable reward entered inventory search");
+    }
+    for (bool blend : {false, true}) {
+        StackFixture f;
+        f.Detach();
+        if (blend) {
+            f.proto.bType = ITEM_BLEND;
+            for (auto e : {f.item, f.material}) {
+                g_registry.get<ecs::ItemPrototypeMeta>(e).type = ITEM_BLEND;
+                g_registry.get<ecs::ItemFlags>(e).flags = 0;
+            }
+        }
+        Check(ItemSystem::MergeItemIntoInventoryEcs(f.owner, f.item) == f.item &&
+            ItemSystem::GetItemCount(f.item) == 20 && ItemSystem::GetItemCount(f.material) == 200 &&
+            destroyAttempts.empty(), "automatic merge discarded stack-limit remainder");
+    }
+    {
+        StackFixture f;
+        f.Detach();
+        const auto second = f.Target(180, 1);
+        bool nested = false;
+        onSave = [&](entt::entity) {
+            if (nested) return;
+            nested = true;
+            g_registry.get<ecs::ItemFlags>(f.item).flags = 0;
+            Check(ItemSystem::MergeItemIntoInventoryEcs(f.owner, f.item) == entt::null,
+                "reentrant reward delivery accepted");
+            g_registry.get<ecs::ItemFlags>(f.item).flags = ITEM_FLAG_STACKABLE;
+        };
+        Check(ItemSystem::MergeItemIntoInventoryEcs(f.owner, f.item) == second && !g_registry.valid(f.item) &&
+            ItemSystem::GetItemCount(f.material) == 200 && ItemSystem::GetItemCount(second) == 200,
+            "multi-stack reward distribution or recursive guard failed");
+    }
+    for (int scenario = 0; scenario < 7; ++scenario) {
+        StackFixture f;
+        f.Detach();
+        const auto second = f.Target(100, 1);
+        entt::entity replacement {entt::null};
+        bool acted = false;
+        onSave = [&](entt::entity) {
+            if (acted) return;
+            acted = true;
+            if (scenario == 0) { g_registry.destroy(second); replacement = f.Target(77, 1); }
+            if (scenario == 1) f.Place(second, INVENTORY, 2);
+            if (scenario == 2) g_registry.get<ecs::ItemFlags>(second).isLocked = true;
+            if (scenario == 3) g_registry.destroy(f.owner);
+            if (scenario == 4) f.Place(f.item, INVENTORY, 8);
+            if (scenario == 5) { g_registry.destroy(f.item); replacement = f.Target(77, 8); }
+            if (scenario == 6) {
+                g_registry.get<ecs::ItemLocation>(second).cell = 2;
+                inventory[{f.owner, INVENTORY, 2}] = second; // leave a stale old-slot alias
+            }
+        };
+        const auto result = ItemSystem::MergeItemIntoInventoryEcs(f.owner, f.item);
+        Check(result == (scenario >= 3 && scenario <= 5 ? entt::entity{entt::null} : f.item),
+            "callback change did not stop/skip automatic merge");
+        if (scenario == 0 || scenario == 5) Check(ItemSystem::GetItemCount(replacement) == 77, "automatic merge touched replacement");
+        else Check(ItemSystem::GetItemCount(second) == 100, "changed candidate still received stack units");
+    }
+    {
+        StackFixture f;
+        f.Detach();
+        g_registry.get<ecs::ItemFlags>(f.material).isLocked = true;
+        const auto second = f.Target(100, 1);
+        Check(ItemSystem::MergeItemIntoInventoryEcs(f.owner, f.item) == second &&
+            ItemSystem::GetItemCount(f.material) == 180 && ItemSystem::GetItemCount(second) == 140,
+            "locked candidate prevented valid fallback");
+    }
+#ifdef ENABLE_EXTRA_INVENTORY
+    {
+        StackFixture f;
+        f.Detach();
+        g_registry.emplace<TestExtraStack>(f.item);
+        const auto extra = f.Target(100, 1);
+        f.Place(extra, EXTRA_INVENTORY, 1);
+        Check(ItemSystem::MergeItemIntoInventoryEcs(f.owner, f.item) == extra &&
+            ItemSystem::GetItemCount(f.material) == 180 && ItemSystem::GetItemCount(extra) == 140,
+            "extra-inventory reward merged into normal inventory");
+    }
+#endif
+    {
+        StackFixture f;
+        f.Detach();
+        g_registry.get<ecs::ItemCount>(f.item).count = 10;
+        onSave = [&](entt::entity e) { g_registry.destroy(e); };
+        Check(ItemSystem::MergeItemIntoInventoryEcs(f.owner, f.item) == entt::null && !g_registry.valid(f.item),
+            "destroyed destination returned as live reward or source resurrected");
+    }
+}
+
 void SwitchbotTransactions()
 {
 #if defined(ENABLE_SWITCHBOT)
@@ -2616,6 +2933,7 @@ int main()
         BatchCostValidation();
         BatchReentrancyAndRetirement();
         CountValidationAndLimits(); CountDestructionAndCallbacks();
+        StackMergeBoundaries(); StackMergeGuards(); StackMergeCallbacks(); AutomaticStackMerges();
         std::cout << "Item attribute regression checks passed: " << checks << '\n';
         return 0;
     } catch (const std::exception& error) {

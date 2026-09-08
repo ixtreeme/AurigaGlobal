@@ -859,8 +859,7 @@ static entt::entity FindMergeTarget(entt::entity owner, uint32_t itemVnum,
                                     const TItemTable& proto,
                                     StackInventoryKind kind)
 {
-    const auto* ownerID = g_registry.try_get<ecs::PlayerID>(owner);
-    if (!ownerID || ownerID->pid == 0)
+    if (!ecs::PlayerRuntime::IsPC(owner) || g_bItemCountLimit <= 0)
         return entt::null;
 
     const uint8_t targetWindow =
@@ -878,13 +877,14 @@ static entt::entity FindMergeTarget(entt::entity owner, uint32_t itemVnum,
         const auto& location = view.get<ecs::ItemLocation>(item);
         const auto& count = view.get<ecs::ItemCount>(item);
 
-        if (itemOwner.ownerPID != ownerID->pid)
+        if (itemOwner.owner != owner)
             continue;
         if (location.window != targetWindow)
             continue;
         if (identity.vnum != itemVnum)
             continue;
-        if (count.count >= g_bItemCountLimit)
+        if (count.count <= 0 || count.count >= g_bItemCountLimit ||
+            !CanConsumeOwnedItem(owner, item))
             continue;
         if (!ItemSocketsMatchProto(item, proto))
             continue;
@@ -897,7 +897,7 @@ static entt::entity FindMergeTarget(entt::entity owner, uint32_t itemVnum,
 
 static uint32_t MergeIntoStack(entt::entity target, uint32_t count)
 {
-    if (target == entt::null || !g_registry.valid(target) || count == 0)
+    if (!IsValidItem(target) || IsItemConsumptionPending(target) || g_bItemCountLimit <= 0 || count == 0)
         return count;
 
     const uint32_t current = GetItemCount(target);
@@ -906,8 +906,7 @@ static uint32_t MergeIntoStack(entt::entity target, uint32_t count)
 
     const uint32_t capacity = static_cast<uint32_t>(g_bItemCountLimit) - current;
     const uint32_t merged = std::min(capacity, count);
-    SetItemCount(target, current + merged);
-    return count - merged;
+    return SetItemCountEcs(target, current + merged) ? count - merged : count;
 }
 
 static entt::entity TryMergeItemVnum(entt::entity owner, uint32_t itemVnum,
@@ -928,7 +927,9 @@ static entt::entity TryMergeItemVnum(entt::entity owner, uint32_t itemVnum,
             break;
     }
 
-    return count == 0 ? lastMerged : entt::null;
+    return count == 0 && ecs::PlayerRuntime::IsPC(owner) && IsValidItem(lastMerged) &&
+        GetItemOwner(lastMerged) == owner && GetItemCount(lastMerged) > 0 &&
+        !IsItemConsumptionPending(lastMerged) ? lastMerged : entt::null;
 }
 
 static void SendAutoGiveMessage(entt::entity owner, uint32_t count,
@@ -955,63 +956,15 @@ static void SendAutoGiveMessage(entt::entity owner, uint32_t count,
 #endif
 }
 
-static entt::entity HandleBlendItemMerge(entt::entity owner, entt::entity item)
-{
-    if (owner == entt::null || !g_registry.valid(owner) ||
-        !IsValidItem(item) || GetItemType(item) != ITEM_BLEND)
-        return item;
-
-    auto* incomingSockets = g_registry.try_get<ecs::ItemSockets>(item);
-    if (!incomingSockets)
-        return item;
-
-    const uint32_t incomingVnum = GetItemVnum(item);
-    auto view = g_registry.view<ecs::ItemIdentity, ecs::ItemOwner,
-                                ecs::ItemLocation, ecs::ItemCount,
-                                ecs::ItemPrototypeMeta, ecs::ItemSockets>();
-    const auto* ownerID = g_registry.try_get<ecs::PlayerID>(owner);
-    if (!ownerID)
-        return item;
-
-    for (auto candidate : view) {
-        if (candidate == item)
-            continue;
-
-        const auto& identity = view.get<ecs::ItemIdentity>(candidate);
-        const auto& candidateOwner = view.get<ecs::ItemOwner>(candidate);
-        const auto& location = view.get<ecs::ItemLocation>(candidate);
-        const auto& count = view.get<ecs::ItemCount>(candidate);
-        const auto& meta = view.get<ecs::ItemPrototypeMeta>(candidate);
-        const auto& sockets = view.get<ecs::ItemSockets>(candidate);
-
-        if (candidateOwner.ownerPID != ownerID->pid)
-            continue;
-        if (location.window != INVENTORY)
-            continue;
-        if (meta.type != ITEM_BLEND || identity.vnum != incomingVnum)
-            continue;
-        if (sockets.sockets[0] != incomingSockets->sockets[0] ||
-            sockets.sockets[1] != incomingSockets->sockets[1] ||
-            sockets.sockets[2] != incomingSockets->sockets[2])
-            continue;
-        if (count.count >= g_bItemCountLimit)
-            continue;
-
-        SetItemCount(candidate, static_cast<uint32_t>(count.count) + GetItemCount(item));
-        DestroyItemEntityEcs(item, "AUTOGIVE_BLEND_MERGE");
-        return candidate;
-    }
-
-    return item;
-}
-
 static entt::entity PlaceItemInInventory(entt::entity owner, entt::entity item,
                                          bool longOwnerShip,
                                          bool sendMessage,
                                          uint32_t messageCount)
 {
     if (owner == entt::null || !g_registry.valid(owner) ||
-        !g_registry.any_of<ecs::PlayerID>(owner) || !IsValidItem(item))
+        !g_registry.any_of<ecs::PlayerID>(owner) || !IsValidItem(item) ||
+        IsItemConsumptionPending(item) || GetItemCount(item) == 0 ||
+        GetItemOwner(item) != entt::null || GetItemWindow(item) != RESERVED_WINDOW)
         return entt::null;
 
     const int cell = GetEmptyInventoryPositionEcs(owner, item);
@@ -1064,64 +1017,6 @@ static entt::entity PlaceItemInInventory(entt::entity owner, entt::entity item,
     return item;
 }
 
-static entt::entity MergeExistingStackIntoInventory(entt::entity owner,
-                                                    entt::entity item)
-{
-    if (!IsValidItem(item) ||
-        !IS_SET(GetItemFlags(item), ITEM_FLAG_STACKABLE) ||
-        IS_SET(GetItemAntiFlags(item), ITEM_ANTIFLAG_STACK) ||
-        IsDragonSoulItem(item))
-        return item;
-
-    const auto* ownerID = g_registry.try_get<ecs::PlayerID>(owner);
-    const auto* incomingSockets = g_registry.try_get<ecs::ItemSockets>(item);
-    if (!ownerID || ownerID->pid == 0 || !incomingSockets)
-        return item;
-
-    const uint8_t targetWindow =
-#ifdef ENABLE_EXTRA_INVENTORY
-        IsExtraItem(item) ? EXTRA_INVENTORY :
-#endif
-        INVENTORY;
-    const uint32_t itemVnum = GetItemVnum(item);
-    uint32_t remaining = GetItemCount(item);
-    entt::entity lastMerged = entt::null;
-
-    auto view = g_registry.view<ecs::ItemIdentity, ecs::ItemOwner,
-                                ecs::ItemLocation, ecs::ItemCount,
-                                ecs::ItemSockets>();
-    for (auto candidate : view) {
-        if (candidate == item || remaining == 0)
-            continue;
-
-        const auto& identity = view.get<ecs::ItemIdentity>(candidate);
-        const auto& candidateOwner = view.get<ecs::ItemOwner>(candidate);
-        const auto& location = view.get<ecs::ItemLocation>(candidate);
-        const auto& count = view.get<ecs::ItemCount>(candidate);
-        const auto& sockets = view.get<ecs::ItemSockets>(candidate);
-        if (candidateOwner.ownerPID != ownerID->pid ||
-            location.window != targetWindow || identity.vnum != itemVnum ||
-            sockets.sockets != incomingSockets->sockets ||
-            count.count >= g_bItemCountLimit)
-            continue;
-
-        const uint32_t capacity = static_cast<uint32_t>(g_bItemCountLimit - count.count);
-        const uint32_t merged = std::min(capacity, remaining);
-        SetItemCount(candidate, static_cast<uint32_t>(count.count) + merged);
-        remaining -= merged;
-        lastMerged = candidate;
-    }
-
-    if (remaining == 0) {
-        DestroyItemEntityEcs(item, "AUTOGIVE_STACK_MERGE");
-        return lastMerged;
-    }
-
-    if (remaining != GetItemCount(item))
-        SetItemCount(item, remaining);
-    return item;
-}
-
 entt::entity GiveExistingItemEcs(entt::entity owner, entt::entity item,
                                  bool longOwnerShip)
 {
@@ -1129,11 +1024,7 @@ entt::entity GiveExistingItemEcs(entt::entity owner, entt::entity item,
         !g_registry.any_of<ecs::PlayerID>(owner) || !IsValidItem(item))
         return entt::null;
 
-    if (const auto* itemOwner = g_registry.try_get<ecs::ItemOwner>(item);
-        itemOwner && itemOwner->ownerPID != 0)
-        return entt::null;
-
-    const entt::entity merged = MergeExistingStackIntoInventory(owner, item);
+    const entt::entity merged = MergeItemIntoInventoryEcs(owner, item);
     if (merged != item)
         return merged;
 
@@ -1151,24 +1042,25 @@ entt::entity AutoGiveItemEcs(entt::entity owner, uint32_t itemVnum,
         !g_registry.any_of<ecs::PlayerID>(owner))
         return entt::null;
 
-    TItemTable* proto = ITEM_MANAGER::instance().GetTable(itemVnum);
-    if (!proto)
+    const TItemTable* table = ITEM_MANAGER::instance().GetTable(itemVnum);
+    if (!table)
         return entt::null;
+    const TItemTable proto = *table; // no borrowed prototype across callbacks
 
     const uint32_t requestedCount = count;
     DBManager::instance().SendMoneyLog(MONEY_LOG_DROP, itemVnum, count);
 
     entt::entity merged = entt::null;
 #ifdef ENABLE_EXTRA_INVENTORY
-    if ((proto->dwFlags & ITEM_FLAG_STACKABLE) &&
+    if ((proto.dwFlags & ITEM_FLAG_STACKABLE) &&
         ITEM_MANAGER::instance().IsExtraItem(itemVnum)) {
-        if (IS_SET(proto->dwFlags, ITEM_FLAG_MAKECOUNT) &&
-            count < static_cast<uint32_t>(proto->alValues[1])) {
-            count = static_cast<uint32_t>(proto->alValues[1]);
+        if (IS_SET(proto.dwFlags, ITEM_FLAG_MAKECOUNT) &&
+            count < static_cast<uint32_t>(proto.alValues[1])) {
+            count = static_cast<uint32_t>(proto.alValues[1]);
         }
 
-        merged = TryMergeItemVnum(owner, itemVnum, count, *proto, StackInventoryKind::Extra);
-        if (merged != entt::null) {
+        merged = TryMergeItemVnum(owner, itemVnum, count, proto, StackInventoryKind::Extra);
+        if (count == 0) {
             if (sendMessage)
                 SendAutoGiveMessage(owner, requestedCount, merged);
             return merged;
@@ -1176,25 +1068,29 @@ entt::entity AutoGiveItemEcs(entt::entity owner, uint32_t itemVnum,
     }
     else
 #endif
-    if ((proto->dwFlags & ITEM_FLAG_STACKABLE) && proto->bType != ITEM_BLEND) {
-        if (IS_SET(proto->dwFlags, ITEM_FLAG_MAKECOUNT) &&
-            count < static_cast<uint32_t>(proto->alValues[1])) {
-            count = static_cast<uint32_t>(proto->alValues[1]);
+    if ((proto.dwFlags & ITEM_FLAG_STACKABLE) && proto.bType != ITEM_BLEND) {
+        if (IS_SET(proto.dwFlags, ITEM_FLAG_MAKECOUNT) &&
+            count < static_cast<uint32_t>(proto.alValues[1])) {
+            count = static_cast<uint32_t>(proto.alValues[1]);
         }
 
-        merged = TryMergeItemVnum(owner, itemVnum, count, *proto, StackInventoryKind::Main);
-        if (merged != entt::null) {
+        merged = TryMergeItemVnum(owner, itemVnum, count, proto, StackInventoryKind::Main);
+        if (count == 0) {
             if (sendMessage)
                 SendAutoGiveMessage(owner, requestedCount, merged);
             return merged;
         }
     }
 
+    // A consumed reward is not a failed merge even if its receipt disappeared
+    // during publication. Never fall through to CreateItem(..., 0) and mint one.
+    if (count == 0 || !ecs::PlayerRuntime::IsPC(owner)) return entt::null;
     entt::entity created = ITEM_MANAGER::instance().CreateItem(itemVnum, count, 0, true, rarePct);
     if (created == entt::null)
         return entt::null;
 
-    entt::entity mergedBlend = HandleBlendItemMerge(owner, created);
+    entt::entity mergedBlend = GetItemType(created) == ITEM_BLEND ?
+        MergeItemIntoInventoryEcs(owner, created) : created;
     if (mergedBlend != created)
         return mergedBlend;
 

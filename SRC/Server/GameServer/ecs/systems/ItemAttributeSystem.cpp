@@ -6,6 +6,7 @@
 #include "SocialSystem.hpp"
 #include "../Registry.hpp"
 #include "../components/inventory_components.hpp"
+#include "../components/item_proto_components.hpp"
 #include "../detail/ItemAttributeRules.hpp"
 #include "../../constants.h"
 #include "../../config.h"
@@ -501,6 +502,149 @@ bool AddItemCountEcs(entt::entity item, int delta)
         return false;
     const int64_t next = int64_t(GetItemCount(item)) + delta;
     return SetItemCountEcs(item, next > 0 ? static_cast<uint32_t>(next) : 0);
+}
+
+namespace {
+bool InventoryStackPosition(entt::entity item)
+{
+    const auto* location = g_registry.try_get<ecs::ItemLocation>(item);
+    if (!location) return false;
+    if (location->window == INVENTORY) return location->cell < INVENTORY_MAX_NUM;
+#ifdef ENABLE_EXTRA_INVENTORY
+    if (location->window == EXTRA_INVENTORY) return location->cell < EXTRA_INVENTORY_MAX_NUM;
+#endif
+    return false;
+}
+
+bool DetachedStackSource(entt::entity item)
+{
+    if (!IsValidItem(item) || IsItemConsumptionPending(item) || GetItemCount(item) == 0 ||
+        IsItemEquipped(item) || IsItemExchanging(item) || IsItemLocked(item)) return false;
+    const auto* owner = g_registry.try_get<ecs::ItemOwner>(item);
+    const auto* location = g_registry.try_get<ecs::ItemLocation>(item);
+    return owner && owner->owner == entt::null && owner->ownerPID == 0 && location &&
+        location->window == RESERVED_WINDOW && location->cell == 0;
+}
+
+bool StackablePayload(entt::entity item, bool reward)
+{
+    if (!g_registry.all_of<ecs::ItemIdentity, ecs::ItemPrototypeMeta, ecs::ItemProtoRef,
+        ecs::ItemFlags, ecs::ItemSockets, ecs::ItemAttributes>(item)) return false;
+    const auto& meta = g_registry.get<ecs::ItemPrototypeMeta>(item);
+    const auto& flags = g_registry.get<ecs::ItemFlags>(item);
+    const auto& proto = g_registry.get<ecs::ItemProtoRef>(item);
+    return meta.type != ITEM_NONE && meta.type != ITEM_ELK && meta.type != ITEM_DS && meta.type != ITEM_SPECIAL_DS &&
+        !(proto.anti_flags & ITEM_ANTIFLAG_STACK) &&
+        ((flags.flags & ITEM_FLAG_STACKABLE) || (reward && meta.type == ITEM_BLEND));
+}
+
+bool SameStackPayload(entt::entity source, entt::entity target, bool reward)
+{
+    if (!StackablePayload(source, reward) || !StackablePayload(target, reward)) return false;
+    const auto& a = g_registry.get<ecs::ItemIdentity>(source);
+    const auto& b = g_registry.get<ecs::ItemIdentity>(target);
+    if (a.vnum != b.vnum || a.originalVnum != b.originalVnum || a.maskVnum != b.maskVnum ||
+        a.sigVnum != b.sigVnum || a.specialGroup != b.specialGroup || a.transmutationVnum != b.transmutationVnum)
+        return false;
+    const auto& aType = g_registry.get<ecs::ItemPrototypeMeta>(source);
+    const auto& bType = g_registry.get<ecs::ItemPrototypeMeta>(target);
+    if (aType.type != bType.type || aType.subType != bType.subType ||
+        g_registry.get<ecs::ItemFlags>(source).flags != g_registry.get<ecs::ItemFlags>(target).flags ||
+        g_registry.get<ecs::ItemSockets>(source).sockets != g_registry.get<ecs::ItemSockets>(target).sockets ||
+        GetItemLockedAttr(source) != GetItemLockedAttr(target)) return false;
+    const auto& aAttrs = g_registry.get<ecs::ItemAttributes>(source).attrs;
+    const auto& bAttrs = g_registry.get<ecs::ItemAttributes>(target).attrs;
+    for (size_t i = 0; i < aAttrs.size(); ++i)
+        if (aAttrs[i].bType != bAttrs[i].bType || aAttrs[i].sValue != bAttrs[i].sValue) return false;
+    const auto* aExtra = g_registry.try_get<ecs::ItemExtraProtoRef>(source);
+    const auto* bExtra = g_registry.try_get<ecs::ItemExtraProtoRef>(target);
+    return (aExtra ? aExtra->proto : nullptr) == (bExtra ? bExtra->proto : nullptr);
+}
+
+struct StackDeliveries { std::set<entt::entity> active; };
+}
+
+StackMergeResult MergeItemStacksEcs(entt::entity owner, entt::entity source,
+    entt::entity target, uint32_t amount, StackSource storage)
+{
+    if (!ecs::PlayerRuntime::IsPC(owner) || source == target || g_bItemCountLimit <= 0 ||
+        !IsValidItem(source) || !IsValidItem(target) || !InventoryStackPosition(target) ||
+        !CanConsumeOwnedItem(owner, target)) return {};
+    if (storage == StackSource::Inventory) {
+        if (!InventoryStackPosition(source) || !CanConsumeOwnedItem(owner, source)) return {};
+    } else if (storage != StackSource::DetachedReward || !DetachedStackSource(source)) return {};
+    if (!SameStackPayload(source, target, storage == StackSource::DetachedReward)) return {};
+
+    const uint32_t sourceCount = GetItemCount(source), targetCount = GetItemCount(target);
+    const uint32_t limit = static_cast<uint32_t>(g_bItemCountLimit);
+    if (amount > sourceCount || targetCount >= limit) return {};
+    const uint32_t moved = std::min(amount ? amount : sourceCount, limit - targetCount);
+    if (!moved) return {};
+    const uint32_t remaining = sourceCount - moved;
+    PendingConsumptions* pending = nullptr;
+    if (remaining == 0) {
+        pending = g_registry.ctx().find<PendingConsumptions>();
+        if (!pending) pending = &g_registry.ctx().emplace<PendingConsumptions>();
+        if (pending->items.size() == pending->items.max_size()) return {};
+        pending->items.reserve(pending->items.size() + 1);
+    }
+
+    // Reserve before committing. No signals, allocations, saves, deletion or
+    // packets can expose only one half of the transfer.
+    g_registry.get<ecs::ItemCount>(source).count = static_cast<int>(remaining);
+    g_registry.get<ecs::ItemCount>(target).count = static_cast<int>(targetCount + moved);
+    if (pending) pending->items.push_back({source});
+
+    PublishItemCount(target);
+    if (remaining) PublishItemCount(source);
+    ProcessPendingItemConsumptions();
+    return {moved, remaining == 0};
+}
+
+entt::entity MergeItemIntoInventoryEcs(entt::entity owner, entt::entity item)
+{
+    if (!ecs::PlayerRuntime::IsPC(owner) || !DetachedStackSource(item)) return entt::null;
+    auto* deliveries = g_registry.ctx().find<StackDeliveries>();
+    if (!deliveries) deliveries = &g_registry.ctx().emplace<StackDeliveries>();
+    if (!deliveries->active.insert(item).second) return entt::null;
+    struct Guard {
+        StackDeliveries& deliveries;
+        entt::entity item;
+        ~Guard() { deliveries.active.erase(item); }
+    } guard {*deliveries, item};
+    // Nonstackable equipment/DS rewards need no inventory scan. Keep this after
+    // the delivery guard so a callback cannot bypass it by changing item flags.
+    if (!StackablePayload(item, true)) return item;
+    const uint8_t window =
+#ifdef ENABLE_EXTRA_INVENTORY
+        IsExtraItem(item) ? EXTRA_INVENTORY :
+#endif
+        INVENTORY;
+    // No view, component pointer or iterator survives a publication callback.
+    // Only initially anchored candidates are considered, in stable slot order.
+    std::vector<std::pair<uint16_t, entt::entity>> candidates;
+    for (const auto candidate : g_registry.view<ecs::ItemOwner, ecs::ItemLocation>()) {
+        const auto& binding = g_registry.get<ecs::ItemOwner>(candidate);
+        const auto& location = g_registry.get<ecs::ItemLocation>(candidate);
+        if (candidate != item && binding.owner == owner && location.window == window &&
+            InventoryStackPosition(candidate) && GetItem(owner, TItemPos(window, location.cell)) == candidate)
+            candidates.emplace_back(location.cell, candidate);
+    }
+    std::sort(candidates.begin(), candidates.end());
+    for (const auto [cell, candidate] : candidates) {
+        if (!ecs::PlayerRuntime::IsPC(owner) || !DetachedStackSource(item)) return entt::null;
+        if (!IsValidItem(candidate) || GetItemOwner(candidate) != owner ||
+            GetItemWindow(candidate) != window || GetItemCell(candidate) != cell ||
+            GetItem(owner, TItemPos(window, cell)) != candidate) continue;
+        const auto result = MergeItemStacksEcs(owner, item, candidate, 0, StackSource::DetachedReward);
+        if (result.sourceDepleted) {
+            return ecs::PlayerRuntime::IsPC(owner) && IsValidItem(candidate) &&
+                GetItemOwner(candidate) == owner && GetItemWindow(candidate) == window &&
+                GetItemCell(candidate) == cell && GetItem(owner, TItemPos(window, cell)) == candidate &&
+                GetItemCount(candidate) > 0 && !IsItemConsumptionPending(candidate) ? candidate : entt::null;
+        }
+    }
+    return ecs::PlayerRuntime::IsPC(owner) && DetachedStackSource(item) ? item : entt::null;
 }
 
 void ProcessPendingItemConsumptions()

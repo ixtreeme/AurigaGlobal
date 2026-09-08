@@ -115,6 +115,20 @@ bool ConsumeItem(entt::entity item, uint32_t amount = 1);
 // subsequently destroy the item. Zero writes return verified removal success.
 bool SetItemCountEcs(entt::entity item, uint32_t count);
 bool AddItemCountEcs(entt::entity item, int delta);
+enum class StackSource { Inventory, DetachedReward };
+struct StackMergeResult {
+    uint32_t transferred {0};
+    bool sourceDepleted {false};
+};
+// Both counts commit before callbacks. Zero amount means the whole source;
+// oversized requests are rejected. A depleted source stays retired if cleanup
+// fails. The result describes the commit, not post-callback entity liveness.
+StackMergeResult MergeItemStacksEcs(entt::entity owner, entt::entity source,
+    entt::entity target, uint32_t amount = 0, StackSource storage = StackSource::Inventory);
+// For an unowned, detached reward: return the remaining source, or the final
+// destination when fully merged. Null means unavailable after callbacks, never
+// a request to recreate/refund a committed transfer. Reentrant delivery is denied.
+entt::entity MergeItemIntoInventoryEcs(entt::entity owner, entt::entity item);
 bool ConsumeItemEcs(entt::entity item, uint32_t amount = 1);
 bool DestroyItemEntityEcs(entt::entity item, const char* reason = nullptr);
 void ModifyPoints(entt::entity item, bool bAdd);

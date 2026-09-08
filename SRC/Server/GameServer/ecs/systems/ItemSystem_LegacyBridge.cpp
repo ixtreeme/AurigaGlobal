@@ -1937,19 +1937,10 @@ bool CHARACTER::MoveItem(TItemPos Cell, TItemPos DestCell,
 
 {
 	//ecs::ChatSystem::Send(GetEntityHandle(), CHAT_TYPE_INFO, "char_item.cpp::MoveItem called.");
-	bool stupid = false;
+	// Reject INT_MIN too, without invoking overflowing abs(int).
 	if (count < 0)
-	{
-		LOG_ERROR("I am a stupid hacker 3: {} {}", GetName(), count);
-		stupid = true;
-	}
-
-	count = abs(count);
-	if (stupid)
-	{
-		LOG_ERROR("I am a stupid hacker 4: {} {}", GetName(), count);
 		return false;
-	}
+	const entt::entity character = GetEntityHandle();
 
 	if (Cell.cell == DestCell.cell && Cell.window_type == DestCell.window_type)
 	{
@@ -1996,6 +1987,7 @@ bool CHARACTER::MoveItem(TItemPos Cell, TItemPos DestCell,
 
 	if (!(item = GetItem(Cell)))
 		return false;
+	const entt::entity sourceItem = item->GetEntityHandle();
 
 	// Duplikacio ellen?rzes belt inventoryba mozgataskor
 	if (DestCell.IsBeltInventoryPosition())
@@ -2204,27 +2196,20 @@ bool CHARACTER::MoveItem(TItemPos Cell, TItemPos DestCell,
 			return false;
 #endif
 
-		LPITEM item2;
-
-		if ((item2 = GetItem(DestCell)) && item != item2 && item2->IsStackable() &&
-			!IS_SET(item2->GetAntiFlag(), ITEM_ANTIFLAG_STACK) &&
-			item2->GetVnum() == item->GetVnum()) // ÇÕÄ¥ ¼ö ÀÖ´Â ¾ÆÀÌ�
-// ÛÀÇ °æ¿ì
+		const entt::entity targetItem = ItemSystem::GetItem(character, DestCell);
+		if (targetItem != entt::null && targetItem != sourceItem)
 		{
-			for (int i = 0; i < ITEM_SOCKET_MAX_NUM; ++i)
-				if (item2->GetSocket(i) != item->GetSocket(i))
-					return false;
-
-			if (count == 0)
-				count = item->GetCount();
-
-			LOG_INFO("{}: ITEM_STACK {} (window: {}, cell : {}) -> (window:{}, cell {}) count {}", GetName(), item->GetName(), Cell.window_type, Cell.cell, DestCell.window_type, DestCell.cell, count);
-
-			count = std::min(g_bItemCountLimit - item2->GetCount(), count);
-
-			ItemSystem::ConsumeItemEcs((item ? item->GetEntityHandle() : entt::null), count);
-			ItemSystem::AddItemCountEcs((item2 ? item2->GetEntityHandle() : entt::null), count);
-			return true;
+			if (ItemSystem::GetItem(character, Cell) != sourceItem)
+				return false;
+			// The native operation validates both anchors and commits both counts.
+			// Nothing on this CHARACTER or the source CItem is read after callbacks.
+			const auto result = ItemSystem::MergeItemStacksEcs(character, sourceItem, targetItem,
+				static_cast<uint32_t>(count));
+			if (result.transferred)
+				LOG_INFO("ITEM_STACK owner entity={} source entity={} target entity={} count={}",
+					entt::to_integral(character), entt::to_integral(sourceItem),
+					entt::to_integral(targetItem), result.transferred);
+			return result.transferred != 0;
 		}
 
 		if (!IsEmptyItemGrid(DestCell, item->GetSize(), Cell.cell))
