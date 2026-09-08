@@ -3,22 +3,21 @@
 #include "ecs/systems/PlayerRuntimeSystem.hpp"
 #include "ecs/systems/DragonSoulSystem.hpp"
 #include "constants.h"
+#include "char.h" // POINT_* constants still live in this header.
+#include "utils.h"
 #include "item.h"
 #include "item_manager.h"
 #include "unique_item.h"
 #include "packet.h"
 #include "desc.h"
-#include "char_interface.hpp"
 #include "dragon_soul_table.h"
 #include "log.h"
 #include "DragonSoul.h"
-#include "ecs/EntityFactory.hpp"
 #include "ecs/Registry.hpp"
-#include "ecs/AIHelpers.hpp"
-#include "ecs/CharacterAccessors.hpp"
 #include "ecs/systems/ItemSystem.hpp"
 #include "ecs/systems/PointSystem.hpp"
 #include "ecs/systems/InventorySystem.hpp"
+#include "ecs/systems/NetworkSyncSystem.hpp"
 #include "ecs/components/spatial_components.hpp"
 //#include <boost/lexical_cast.hpp>
 
@@ -1246,126 +1245,144 @@ void DSManager::SendRefineResultPacket(entt::entity ch, uint8_t bSubHeader, cons
 	}
 }
 
-int DSManager::LeftTime(entt::entity item) const
-{
-	if (!ItemSystem::IsValidItem(item))
-		return false;
+namespace {
+std::set<entt::entity> activatingSouls, deactivatingSouls;
+struct SoulTransition {
+    std::set<entt::entity>& set;
+    entt::entity item;
+    bool entered;
+    SoulTransition(std::set<entt::entity>& states, entt::entity e)
+        : set(states), item(e), entered(set.insert(e).second) {}
+    ~SoulTransition() { if (entered) set.erase(item); }
+    SoulTransition(const SoulTransition&) = delete;
+    SoulTransition& operator=(const SoulTransition&) = delete;
+};
 
-	if (ItemSystem::GetItemLimitTimerBasedOnWearIndex(item) >= 0)
-	{
-		return ItemSystem::GetItemSocket(item, ITEM_SOCKET_REMAIN_SEC);
-	}
-	else
-	{
-		return INT_MAX;
-	}
+bool EquippedSoul(entt::entity owner, entt::entity item, TItemPos position)
+{
+    return ItemSystem::IsDragonSoulItem(item) && ItemSystem::GetItemProto(item) &&
+        ExtractionAnchor(owner, item, position) && ItemSystem::IsItemEquipped(item) &&
+        !ItemSystem::IsItemConsumptionPending(item) && ItemSystem::GetItemCount(item) == 1 &&
+        position.cell >= DRAGON_SOUL_EQUIP_SLOT_START && position.cell < DRAGON_SOUL_EQUIP_SLOT_END &&
+        g_registry.all_of<ecs::ItemSockets>(item) &&
+        ItemSystem::GetWearItem(owner, static_cast<uint8_t>(position.cell - INVENTORY_MAX_NUM)) == item;
 }
 
+void PublishSoulState(entt::entity item)
+{
+    // Publish the current component, not a pre-callback socket snapshot.
+    if (!ItemSystem::IsValidItem(item)) return;
+    ItemSystem::SaveItem(item);
+    if (ItemSystem::IsValidItem(item))
+        ecs::ItemNetworkSystem::SendItemUpdate(g_registry, item);
+}
+} // namespace
+
+int DSManager::LeftTime(entt::entity item) const
+{
+    if (!ItemSystem::IsDragonSoulItem(item) || !ItemSystem::GetItemProto(item))
+        return 0;
+    if (ItemSystem::GetItemLimitTimerBasedOnWearIndex(item) < 0)
+        return INT_MAX;
+    const auto remaining = ItemSystem::GetItemSocket(item, ITEM_SOCKET_REMAIN_SEC);
+    // Negative signed sockets must not turn into years of unsigned lifetime.
+    return remaining <= INT_MAX ? static_cast<int>(remaining) : 0;
+}
 
 bool DSManager::IsTimeLeftDragonSoul(entt::entity item) const
 {
-	if (!ItemSystem::IsValidItem(item))
-		return false;
-
-	if (ItemSystem::GetItemLimitTimerBasedOnWearIndex(item) >= 0)
-	{
-		return ItemSystem::GetItemSocket(item, ITEM_SOCKET_REMAIN_SEC) > 0;
-	}
-	else
-	{
-		return true;
-	}
+    return LeftTime(item) > 0;
 }
-
 
 bool DSManager::IsActiveDragonSoul(entt::entity item) const
 {
-	return ItemSystem::GetItemSocket(item, ITEM_SOCKET_DRAGON_SOUL_ACTIVE_IDX) != 0;
+    return ItemSystem::IsDragonSoulItem(item) &&
+        ItemSystem::GetItemSocket(item, ITEM_SOCKET_DRAGON_SOUL_ACTIVE_IDX) != 0;
 }
-
 
 bool DSManager::ActivateDragonSoul(entt::entity item)
 {
-	if (!ItemSystem::IsDragonSoulItem(item))
-		return false;
+    if (!ItemSystem::IsDragonSoulItem(item) || deactivatingSouls.contains(item))
+        return false;
+    const auto owner = ItemSystem::GetItemOwner(item);
+    const auto position = DragonSoulItemPosition(item);
+    if (!EquippedSoul(owner, item, position) || !IsTimeLeftDragonSoul(item)) return false;
+    const int deck = DragonSoulSystem::GetActiveDeck(owner);
+    if (deck < 0 || deck >= DRAGON_SOUL_DECK_MAX_NUM ||
+        position.cell < DRAGON_SOUL_EQUIP_SLOT_START + DS_SLOT_MAX * deck ||
+        position.cell >= DRAGON_SOUL_EQUIP_SLOT_START + DS_SLOT_MAX * (deck + 1))
+        return false;
+    const SoulTransition guard(activatingSouls, item);
+    if (!guard.entered) return false;
+    if (IsActiveDragonSoul(item)) return true;
+    const auto bound = [&] { return EquippedSoul(owner, item, position); };
+    const auto active = [&] {
+        return bound() && IsActiveDragonSoul(item) && IsTimeLeftDragonSoul(item) &&
+            DragonSoulSystem::GetActiveDeck(owner) == deck;
+    };
 
-	const entt::entity owner = ItemSystem::GetItemOwnerEntity(item);
-	LPCHARACTER ch = ecs::LegacyCharOf(owner);
-	if (!ch)
-		return false;
-
-	const int deck = DragonSoulSystem::GetActiveDeck(owner);
-	if (deck < 0)
-		return false;
-
-	const uint16_t cell = ItemSystem::GetItemCell(item);
-	if (cell < DRAGON_SOUL_EQUIP_SLOT_START + DS_SLOT_MAX * deck ||
-		cell >= DRAGON_SOUL_EQUIP_SLOT_START + DS_SLOT_MAX * (deck + 1))
-		return false;
-
-	if (IsTimeLeftDragonSoul(item) && !IsActiveDragonSoul(item))
-	{
-		char logHint[128];
-		sprintf(logHint, "LEFT TIME(%d)", LeftTime(item));
-		LogManager::instance().ItemLogEntity(ch, item, "DS_ACTIVATE", logHint);
-		if (!ItemSystem::ModifyItemPointsEcs(item, true))
-			return false;
-		ItemSystem::SetItemSocketEcs(item, ITEM_SOCKET_DRAGON_SOUL_ACTIVE_IDX, 1);
-		ItemSystem::StartTimerBasedOnWearExpireEventEcs(item);
-	}
-	return true;
-}
-bool DSManager::ActivateDragonSoulEcs(entt::entity item)
-{
-	const bool result = ActivateDragonSoul(item);
-	SyncDragonSoulItemEntity(item);
-	return result;
-}
-
-
-bool DSManager::DeactivateDragonSoul(entt::entity item, bool bSkipRefreshOwnerActiveState)
-{
-	if (!ItemSystem::IsDragonSoulItem(item))
-		return false;
-
-	const entt::entity owner = ItemSystem::GetItemOwnerEntity(item);
-	LPCHARACTER ch = ecs::LegacyCharOf(owner);
-	if (!ch || !IsActiveDragonSoul(item))
-		return false;
-
-	ItemSystem::StopTimerBasedOnWearExpireEventEcs(item);
-	ItemSystem::SetItemSocketEcs(item, ITEM_SOCKET_DRAGON_SOUL_ACTIVE_IDX, 0);
-	ItemSystem::ModifyItemPointsEcs(item, false);
-
-	char logHint[128];
-	sprintf(logHint, "LEFT TIME(%d)", LeftTime(item));
-	LogManager::instance().ItemLogEntity(ch, item, "DS_DEACTIVATE", logHint);
-
-	if (!bSkipRefreshOwnerActiveState)
-		RefreshDragonSoulState(ch);
-	return true;
-}
-bool DSManager::DeactivateDragonSoulEcs(entt::entity item, bool bSkipRefreshOwnerActiveState)
-{
-	const bool result = DeactivateDragonSoul(item, bSkipRefreshOwnerActiveState);
-	SyncDragonSoulItemEntity(item);
-	return result;
+    // No signal or save between the flag and the point operation. A nested
+    // deactivation during publication can undo an activated stone exactly once;
+    // the outer activation must never turn its flag/timer back on afterward.
+    g_registry.get<ecs::ItemSockets>(item).sockets[ITEM_SOCKET_DRAGON_SOUL_ACTIVE_IDX] = 1;
+    if (!ItemSystem::ModifyItemPointsEcs(item, true))
+    {
+        if (bound()) g_registry.get<ecs::ItemSockets>(item).sockets[ITEM_SOCKET_DRAGON_SOUL_ACTIVE_IDX] = 0;
+        return false;
+    }
+    const auto cancel = [&] {
+        if (bound() && IsActiveDragonSoul(item)) DeactivateDragonSoul(item, true);
+        return false;
+    };
+    if (!active()) return cancel();
+    if (!ItemSystem::StartTimerBasedOnWearExpireEventEcs(item) || !active()) return cancel();
+    PublishSoulState(item);
+    if (!active()) return cancel();
+    const auto hint = "LEFT TIME(" + std::to_string(LeftTime(item)) + ")";
+    LogManager::instance().ItemLogEntity(owner, item, "DS_ACTIVATE", hint.c_str());
+    return active() ? true : cancel();
 }
 
-
-void DSManager::RefreshDragonSoulState(LPCHARACTER ch)
+bool DSManager::DeactivateDragonSoul(entt::entity item, bool skipRefreshOwner)
 {
-	if (!ch)
-		return;
+    if (!ItemSystem::IsDragonSoulItem(item)) return false;
+    const auto owner = ItemSystem::GetItemOwner(item);
+    const auto position = DragonSoulItemPosition(item);
+    if (!EquippedSoul(owner, item, position) || !IsActiveDragonSoul(item)) return false;
+    const SoulTransition guard(deactivatingSouls, item);
+    if (!guard.entered) return false;
+    const auto bound = [&] { return EquippedSoul(owner, item, position); };
 
-	const entt::entity owner = ((ch) ? (ch)->GetEntityHandle() : entt::null);
-	for (int i = WEAR_MAX_NUM; i < WEAR_MAX_NUM + DS_SLOT_MAX * DRAGON_SOUL_DECK_MAX_NUM; ++i)
-	{
-		const entt::entity item = ItemSystem::GetWearItem(owner, i);
-		if (item != entt::null && IsActiveDragonSoul(item))
-			return;
-	}
-	DragonSoulSystem::DeactivateAll(owner);
+    g_registry.get<ecs::ItemSockets>(item).sockets[ITEM_SOCKET_DRAGON_SOUL_ACTIVE_IDX] = 0;
+    if (!ItemSystem::ModifyItemPointsEcs(item, false))
+    {
+        if (bound()) g_registry.get<ecs::ItemSockets>(item).sockets[ITEM_SOCKET_DRAGON_SOUL_ACTIVE_IDX] = 1;
+        return false;
+    }
+    // The deduction has committed. An item/owner destroyed by a later callback
+    // is not a failed deduction and must not be recreated or refunded.
+    if (bound()) ItemSystem::StopTimerBasedOnWearExpireEventEcs(item);
+    if (bound()) PublishSoulState(item);
+    if (bound())
+    {
+        const auto hint = "LEFT TIME(" + std::to_string(LeftTime(item)) + ")";
+        LogManager::instance().ItemLogEntity(owner, item, "DS_DEACTIVATE", hint.c_str());
+    }
+    if (!skipRefreshOwner && ecs::PlayerRuntime::IsPC(owner))
+        RefreshDragonSoulState(owner);
+    return true;
+}
+
+void DSManager::RefreshDragonSoulState(entt::entity owner)
+{
+    if (!ecs::PlayerRuntime::IsPC(owner)) return;
+    for (int wear = WEAR_MAX_NUM; wear < WEAR_MAX_NUM + DS_SLOT_MAX * DRAGON_SOUL_DECK_MAX_NUM; ++wear)
+    {
+        const auto item = ItemSystem::GetWearItem(owner, static_cast<uint8_t>(wear));
+        if (IsActiveDragonSoul(item) && EquippedSoul(owner, item, DragonSoulItemPosition(item)))
+            return;
+    }
+    DragonSoulSystem::DeactivateAll(owner);
 }
 DSManager::DSManager() = default;
 DSManager::~DSManager() = default;

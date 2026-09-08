@@ -48,6 +48,13 @@ int payments = 0;
 bool rejectPayment = false;
 bool rejectGoldPayment = false;
 bool transferTest = false;
+bool soulStateTest = false;
+int soulAdds = 0, soulRemoves = 0, soulStarts = 0, soulStops = 0, soulLogs = 0, deckStops = 0;
+bool rejectSoulPoints = false, rejectSoulTimer = false;
+std::map<entt::entity, int> soulBonus;
+std::set<entt::entity> soulTimers;
+std::function<void(entt::entity, bool)> onSoulPoints;
+std::function<void(entt::entity)> onSoulStart, onSoulStop;
 bool extractionTest = false, rejectCreation = false, rejectSocket = false, rejectPlace = false;
 bool allowHandling = true, allowUnequip = true, dsHeartOk = true, dsPullOk = true;
 int emptyDSCell = -1, extractionLogs = 0;
@@ -164,7 +171,10 @@ int ItemSystem::GetItemAttributeValue(entt::entity, int) { UnexpectedSwitchbotSe
 // legacy-character and inventory-movement services must never be entered here.
 int MIN(int a, int b) { return std::min(a, b); }
 time_t get_global_time() { UnexpectedSwitchbotService(); }
-void DragonSoulSystem::DeactivateAll(entt::entity) { UnexpectedSwitchbotService(); }
+void DragonSoulSystem::DeactivateAll(entt::entity owner) {
+    Check(soulStateTest && ecs::PlayerRuntime::IsPC(owner), "invalid deck refresh");
+    ++deckStops; g_registry.get<TestPlayer>(owner).activeDeck = -1;
+}
 bool DragonSoulSystem::CanRefine(entt::entity) { UnexpectedSwitchbotService(); }
 int32_t DragonSoulSystem::GetLastRefineTime(entt::entity) { UnexpectedSwitchbotService(); }
 void DragonSoulSystem::SetLastRefineTime(entt::entity) { UnexpectedSwitchbotService(); }
@@ -223,7 +233,11 @@ void ItemSystem::AutoGiveItem(entt::entity owner, entt::entity item, bool
 }
 bool ItemSystem::AutoGiveDS(entt::entity, entt::entity, bool) { UnexpectedSwitchbotService(); }
 entt::entity ItemSystem::AutoGiveItemEcs(entt::entity, uint32_t, uint32_t, int, bool) { UnexpectedSwitchbotService(); }
-int ItemSystem::GetItemLimitTimerBasedOnWearIndex(entt::entity) { UnexpectedSwitchbotService(); }
+int ItemSystem::GetItemLimitTimerBasedOnWearIndex(entt::entity item) {
+    if (!soulStateTest) UnexpectedSwitchbotService();
+    Check(ItemSystem::IsValidItem(item), "stale soul lifetime lookup");
+    return ItemSystem::GetItemProto(item)->cLimitTimerBasedOnWearIndex;
+}
 int ItemSystem::GetItemDuration(entt::entity) { return 0; }
 bool ItemSystem::DestroyItemEntityEcs(entt::entity item, const char*)
 {
@@ -294,9 +308,28 @@ bool InventorySystem::EquipTo(entt::entity item, entt::entity owner, uint8_t wea
     rejectPlace = blocked;
     return result;
 }
-bool ItemSystem::ModifyItemPointsEcs(entt::entity, bool) { UnexpectedSwitchbotService(); }
-bool ItemSystem::StartTimerBasedOnWearExpireEventEcs(entt::entity) { UnexpectedSwitchbotService(); }
-bool ItemSystem::StopTimerBasedOnWearExpireEventEcs(entt::entity) { UnexpectedSwitchbotService(); }
+bool ItemSystem::ModifyItemPointsEcs(entt::entity item, bool add) {
+    Check(soulStateTest && IsValidItem(item) && ecs::PlayerRuntime::IsPC(GetItemOwner(item)),
+        "invalid soul point operation");
+    if (rejectSoulPoints) return false;
+    (add ? soulAdds : soulRemoves)++;
+    soulBonus[GetItemOwner(item)] += add ? 1 : -1;
+    if (onSoulPoints) onSoulPoints(item, add);
+    return true;
+}
+bool ItemSystem::StartTimerBasedOnWearExpireEventEcs(entt::entity item) {
+    Check(soulStateTest && IsValidItem(item), "invalid soul timer start");
+    if (rejectSoulTimer) return false;
+    ++soulStarts; soulTimers.insert(item);
+    if (onSoulStart) onSoulStart(item);
+    return true;
+}
+bool ItemSystem::StopTimerBasedOnWearExpireEventEcs(entt::entity item) {
+    Check(soulStateTest && IsValidItem(item), "invalid soul timer stop");
+    ++soulStops; soulTimers.erase(item);
+    if (onSoulStop) onSoulStop(item);
+    return true;
+}
 bool ItemSystem::SyncItemStateFromLegacy(entt::entity) { UnexpectedSwitchbotService(); }
 
 DragonSoulTable::DragonSoulTable() { ++dsLiveTables; }
@@ -330,7 +363,13 @@ int number_ex(int low, int high, const char*, int)
 }
 float gauss_random(float, float) { return 4.0f; }
 void LogManager::ItemLog(uint32_t, uint32_t, uint32_t, uint32_t, const char*, const char*, const char*, uint32_t) {}
-void LogManager::ItemLogEntity(entt::entity, entt::entity, const char*, const char*) {}
+void LogManager::ItemLogEntity(entt::entity owner, entt::entity item, const char*, const char*) {
+    if (soulStateTest) {
+        Check(ecs::PlayerRuntime::IsPC(owner) && ItemSystem::IsValidItem(item), "stale soul log");
+        ++soulLogs;
+        if (onLog) onLog(owner);
+    }
+}
 LPDESC ecs::PlayerRuntime::GetDesc(entt::entity) { return nullptr; }
 bool ecs::PlayerRuntime::IsValid(entt::entity e) { return e != entt::null && g_registry.valid(e); }
 bool ecs::PlayerRuntime::IsPC(entt::entity e) { return IsValid(e) && g_registry.all_of<TestPlayer>(e); }
@@ -504,7 +543,8 @@ struct Fixture {
         floatRandomCalls = 0;
         payments = 0;
         rejectPayment = rejectGoldPayment = false;
-        transferTest = extractionTest = false;
+        transferTest = extractionTest = soulStateTest = false;
+        onSoulPoints = {}; onSoulStart = onSoulStop = {};
         onCreate = onSocket = onRemove = onPlace = onLog = {};
         rejectPaymentAt = transferLogs = 0;
         transferCommands.clear();
@@ -2189,6 +2229,143 @@ void ExtractionCallbacksAndCostPolicy()
     }
 }
 
+
+struct SoulStateFixture : ExtractionFixture {
+    SoulStateFixture() : ExtractionFixture(true) {
+        soulStateTest = true;
+        soulAdds = soulRemoves = soulStarts = soulStops = soulLogs = deckStops = 0;
+        rejectSoulPoints = rejectSoulTimer = false;
+        soulBonus.clear(); soulTimers.clear();
+        g_registry.get<TestPlayer>(owner).activeDeck = 0;
+        proto.cLimitTimerBasedOnWearIndex = 0;
+        g_registry.emplace<ecs::ItemSockets>(item).sockets[ITEM_SOCKET_REMAIN_SEC] = 120;
+    }
+    bool Active() { return manager.IsActiveDragonSoul(item); }
+};
+
+void SoulStateValidation()
+{
+    SoulStateFixture f;
+    Check(!f.manager.ActivateDragonSoul(entt::null) && !f.manager.DeactivateDragonSoul(entt::null), "null soul toggle");
+    Check(!f.manager.IsActiveDragonSoul(entt::null) && !f.manager.IsTimeLeftDragonSoul(entt::null), "null soul queries");
+    Check(!f.manager.DeactivateDragonSoul(f.item), "inactive soul removed points");
+    for (int deck : std::array<int, 4>{-1, 1, DRAGON_SOUL_DECK_MAX_NUM, INT_MAX}) {
+        g_registry.get<TestPlayer>(f.owner).activeDeck = deck;
+        Check(!f.manager.ActivateDragonSoul(f.item), "soul activated outside its deck");
+    }
+    g_registry.get<TestPlayer>(f.owner).activeDeck = 0;
+    for (int remaining : {0, -1, INT_MIN}) {
+        g_registry.get<ecs::ItemSockets>(f.item).sockets[ITEM_SOCKET_REMAIN_SEC] = remaining;
+        Check(!f.manager.IsTimeLeftDragonSoul(f.item) && !f.manager.ActivateDragonSoul(f.item), "expired/negative lifetime accepted");
+    }
+    g_registry.get<ecs::ItemSockets>(f.item).sockets[ITEM_SOCKET_REMAIN_SEC] = 120;
+    const auto wearCell = ItemSystem::GetItemCell(f.item);
+    inventory.erase({f.owner, EQUIPMENT, wearCell});
+    Check(!f.manager.ActivateDragonSoul(f.item), "unanchored soul activated");
+    f.Place(f.item, EQUIPMENT, wearCell);
+    const auto stranger = g_registry.create(); g_registry.emplace<TestPlayer>(stranger);
+    g_registry.get<ecs::ItemOwner>(f.item).owner = stranger;
+    Check(!f.manager.ActivateDragonSoul(f.item), "foreign soul activated");
+    g_registry.get<ecs::ItemOwner>(f.item).owner = f.owner;
+    g_registry.get<ecs::ItemEquipped>(f.item).equipped = false;
+    Check(!f.manager.ActivateDragonSoul(f.item), "unequipped soul activated");
+    g_registry.get<ecs::ItemEquipped>(f.item).equipped = true;
+    Check(soulAdds == 0 && soulRemoves == 0 && soulStarts == 0 && soulLogs == 0, "invalid toggle caused side effects");
+    f.proto.cLimitTimerBasedOnWearIndex = -1;
+    Check(f.manager.LeftTime(f.item) == INT_MAX && f.manager.IsTimeLeftDragonSoul(f.item), "permanent soul expired");
+    g_registry.destroy(f.item);
+    Check(!f.manager.IsActiveDragonSoul(f.item) && !f.manager.ActivateDragonSoul(f.item), "stale soul accepted");
+}
+
+void SoulStateTransitions()
+{
+    {
+        SoulStateFixture f;
+        Check(f.manager.ActivateDragonSoul(f.item) && f.Active(), "entity-only soul activation failed");
+        Check(f.manager.ActivateDragonSoul(f.item) && soulAdds == 1 && soulStarts == 1, "activation applied twice");
+        g_registry.get<ecs::ItemSockets>(f.item).sockets[ITEM_SOCKET_REMAIN_SEC] = 0;
+        Check(f.manager.DeactivateDragonSoul(f.item) && !f.Active(), "expired soul was not deactivated");
+        Check(!f.manager.DeactivateDragonSoul(f.item) && soulRemoves == 1 && soulBonus[f.owner] == 0 &&
+            soulTimers.empty() && deckStops == 1, "deactivation repeated or skipped cleanup");
+    }
+    {
+        SoulStateFixture f;
+        rejectSoulPoints = true;
+        Check(!f.manager.ActivateDragonSoul(f.item) && !f.Active() && soulStarts == 0, "failed points activated soul");
+        rejectSoulPoints = false; rejectSoulTimer = true;
+        Check(!f.manager.ActivateDragonSoul(f.item) && !f.Active() && soulBonus[f.owner] == 0,
+            "failed timer left soul bonus active");
+    }
+    for (int callback = 0; callback < 4; ++callback) {
+        SoulStateFixture f;
+        bool once = false;
+        const auto deactivate = [&](entt::entity) {
+            if (once) return; once = true;
+            Check(f.manager.DeactivateDragonSoul(f.item, true), "nested deactivation rejected");
+        };
+        if (callback == 0) onSoulStart = deactivate;
+        else if (callback == 1) onSave = deactivate;
+        else if (callback == 2) onUpdate = deactivate;
+        else onLog = deactivate;
+        Check(!f.manager.ActivateDragonSoul(f.item) && !f.Active() && soulBonus[f.owner] == 0 &&
+            soulAdds == 1 && soulRemoves == 1 && soulTimers.empty(), "activation overwrote callback deactivation");
+    }
+    {
+        SoulStateFixture f;
+        onSoulPoints = [&](entt::entity item, bool add) {
+            Check(!f.manager.ActivateDragonSoul(item), "recursive activation allowed");
+            if (!add) Check(!f.manager.DeactivateDragonSoul(item), "recursive deduction allowed");
+        };
+        Check(f.manager.ActivateDragonSoul(f.item), "guard blocked outer activation");
+        Check(f.manager.DeactivateDragonSoul(f.item, true) && soulBonus[f.owner] == 0 && deckStops == 0,
+            "guard blocked outer deactivation or ignored skip refresh");
+    }
+    {
+        SoulStateFixture f;
+        onSoulPoints = [&](entt::entity, bool add) { if (add) g_registry.get<TestPlayer>(f.owner).activeDeck = 1; };
+        Check(!f.manager.ActivateDragonSoul(f.item) && !f.Active() && soulBonus[f.owner] == 0,
+            "deck changed during point application but old soul stayed active");
+        Check(g_registry.get<TestPlayer>(f.owner).activeDeck == 1, "old activation overwrote new deck");
+    }
+}
+
+void SoulStateCallbacks()
+{
+    {
+        SoulStateFixture f;
+        Check(f.manager.ActivateDragonSoul(f.item), "teardown setup");
+        onSoulStop = [&](entt::entity item) { g_registry.destroy(item); };
+        Check(f.manager.DeactivateDragonSoul(f.item) && soulBonus[f.owner] == 0 && deckStops == 1,
+            "deactivation read destroyed item or missed owner refresh");
+    }
+    for (bool destroyOwner : {false, true}) {
+        SoulStateFixture f;
+        entt::entity replacement = entt::null;
+        onSoulStart = [&](entt::entity item) {
+            if (destroyOwner) g_registry.destroy(f.owner);
+            else {
+                Check(f.manager.DeactivateDragonSoul(item, true), "teardown deactivation failed");
+                g_registry.destroy(item);
+            }
+            replacement = g_registry.create();
+        };
+        Check(!f.manager.ActivateDragonSoul(f.item), "destroyed binding reported active");
+        Check(replacement != entt::null && !g_registry.any_of<ecs::ItemSockets>(replacement),
+            "recycled entity inherited active socket");
+    }
+    {
+        SoulStateFixture f;
+        Check(f.manager.ActivateDragonSoul(f.item), "refresh setup");
+        const auto second = f.Material(110000, 1, 20);
+        g_registry.emplace<ecs::ItemProtoRef>(second).proto = &f.proto;
+        g_registry.emplace<ecs::ItemSockets>(second).sockets[ITEM_SOCKET_DRAGON_SOUL_ACTIVE_IDX] = 1;
+        g_registry.emplace<ecs::ItemEquipped>(second).equipped = true;
+        f.Place(second, EQUIPMENT, DRAGON_SOUL_EQUIP_SLOT_START + 1);
+        Check(f.manager.DeactivateDragonSoul(f.item) && deckStops == 0, "refresh disabled another active soul");
+    }
+}
+
+
 void SwitchbotTransactions()
 {
 #if defined(ENABLE_SWITCHBOT)
@@ -2288,6 +2465,7 @@ int main()
         HeartExtractionTransactions();
         PullOutTransactions();
         ExtractionCallbacksAndCostPolicy();
+        SoulStateValidation(); SoulStateTransitions(); SoulStateCallbacks();
         SwitchbotTransactions();
         SwitchbotMaterialSelection();
         TransferWindowAndCommands();

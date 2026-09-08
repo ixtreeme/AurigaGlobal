@@ -856,9 +856,25 @@ inventory destruction path, or the legacy `ChangeKKAK` special-case path.
 
 ## Dragon-soul extraction and pull-out
 
+The per-stone ActivateDragonSoul/DeactivateDragonSoul operations now also use
+only entity ownership/wear-slot checks and native logging. Their redundant Ecs
+resync wrappers and the final CHARACTER-based DSManager state refresh were
+removed. Active socket writes use existing components without emitting a
+callback before the point operation. Repeated/reentrant toggles do not apply
+points twice, and activation does not restart a timer after nested deactivation.
+The tests cover deck/slot/owner validation, signed lifetime bounds, expired and
+permanent stones, failure compensation, callback cancellation, owner/item
+destruction, recycled generations and preservation of another active stone.
+
+Point modification and wear timers are service doubles in these checks; the
+internals of ModifyPoints and the real timer scheduler are not made atomic or
+fully reentrancy-safe by this change. Live bonus arithmetic, expiry, relog and
+deck switching still need integration testing. Deck orchestration is a separate
+migration step from these individual item operations.
+
 Verified on 2026-09-08 with Windows/MSVC x64: GameServer Release build, all
 13/13 headless tests in Release and AddressSanitizer RelWithDebInfo, including
-3,414 checks in ItemAttributeTests. No live server/client/DB test was performed.
+3,632 checks in ItemAttributeTests. No live server/client/DB test was performed.
 
 `ExtractDragonHeartEcs` and `PullOutEcs` now contain the implementation in the
 existing `DragonSoul.cpp`; the CHARACTER-taking methods and their legacy-state

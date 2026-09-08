@@ -6,9 +6,6 @@
 #include <memory>
 #include "ecs/components/item_components.hpp"
 
-class CHARACTER;
-class CItem;
-
 class DragonSoulTable;
 
 class DSManager : public singleton<DSManager>
@@ -52,9 +49,7 @@ public:
 	bool	IsTimeLeftDragonSoul(entt::entity item) const;
 	int		LeftTime(entt::entity item) const;
 	bool	ActivateDragonSoul(entt::entity item);
-	bool	ActivateDragonSoulEcs(entt::entity item);
 	bool	DeactivateDragonSoul(entt::entity item, bool bSkipRefreshOwnerActiveState = false);
-	bool	DeactivateDragonSoulEcs(entt::entity item, bool bSkipRefreshOwnerActiveState = false);
 	bool	IsActiveDragonSoul(entt::entity item) const;
 #ifdef ENABLE_DS_ENCHANT
 	enum class EnchantResult { Success, InvalidTarget, Active, InvalidGrade, InvalidMaterial, Failed };
@@ -66,7 +61,7 @@ private:
 	void	SendRefineResultPacket(entt::entity ch, uint8_t bSubHeader, const TItemPos& pos);
 
 	// 캐릭터의 용혼석 덱을 살펴보고, 활성화 된 용혼석이 없다면, 캐릭터의 용혼석 활성 상태를 off 시키는 함수.
-	void	RefreshDragonSoulState(LPCHARACTER ch);
+	void	RefreshDragonSoulState(entt::entity owner);
 
 	uint32_t	MakeDragonSoulVnum(uint8_t bType, uint8_t grade, uint8_t step, uint8_t refine);
 
