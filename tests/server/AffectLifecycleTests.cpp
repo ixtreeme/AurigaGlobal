@@ -38,6 +38,7 @@
 #include "../../SRC/Server/GameServer/desc_client.h"
 #include "../../SRC/Server/GameServer/battle.h"
 #include "../../SRC/Server/GameServer/DragonSoul.h"
+#include "../../SRC/Server/GameServer/ecs/systems/DragonSoulSystem.hpp"
 #include "../../SRC/Server/GameServer/guild.h"
 #include "../../SRC/Server/GameServer/horsename_manager.h"
 #include "../../SRC/Server/GameServer/item.h"
@@ -854,7 +855,7 @@ int CHARACTER::GetQuestFlag(std::string const &)const { UnexpectedService(__func
 int CHARACTER::GetPremiumRemainSeconds(unsigned char)const { UnexpectedService(__func__); }
 void CHARACTER::AutoRecoveryItemProcess(EAffectTypes) { UnexpectedService(__func__); }
 void CHARACTER::AutoRecallProcess(void) { UnexpectedService(__func__); }
-void CHARACTER::DragonSoul_Initialize(void) { UnexpectedService(__func__); }
+void DragonSoulSystem::Initialize(entt::entity) { UnexpectedService(__func__); }
 void CHARACTER::SetDropStatus(void) { UnexpectedService(__func__); }
 bool MountSystem::StopRiding(entt::entity) { UnexpectedService(__func__); }
 void ecs::VisibilitySystem::Reencode(entt::registry &,entt::entity) { UnexpectedService(__func__); }

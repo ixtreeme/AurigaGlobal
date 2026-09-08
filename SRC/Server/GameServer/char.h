@@ -2272,7 +2272,6 @@ public:
 
 	// ĳ������ affect, quest�� load �Ǳ� ���� DragonSoul_Initialize�� ȣ���ϸ� �ȵȴ�.
 	// affect�� ���� �������� �ε�Ǿ� LoadAffect���� ȣ����.
-	void	DragonSoul_Initialize();
 
 
 	// �ݵ�� ClearItem ���� �ҷ��� �Ѵ�.

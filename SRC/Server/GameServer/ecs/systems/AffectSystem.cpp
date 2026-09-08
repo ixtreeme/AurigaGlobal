@@ -25,6 +25,7 @@
 #include "../../desc_client.h"
 #include "../../battle.h"
 #include "../../DragonSoul.h"
+#include "DragonSoulSystem.hpp"
 #include "../../guild.h"
 #include "../../horsename_manager.h"
 #include "../../item.h"
@@ -1838,7 +1839,7 @@ void CHARACTER::LoadAffect(uint32_t dwCount, TPacketAffectElement * pElements)
 
 	// ��ȥ�� ���� �ε� �� �ʱ�ȭ
 	LOG_ERROR("LOAD_AFFECT_DRAGONSOUL_BEGIN pid={} name={}", GetPlayerID(), GetName());
-	DragonSoul_Initialize();
+	DragonSoulSystem::Initialize(entity);
 	LOG_ERROR("LOAD_AFFECT_DRAGONSOUL_END pid={} name={}", GetPlayerID(), GetName());
 
 	// @fixme118 (regain affect hp/mp)

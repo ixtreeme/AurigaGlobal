@@ -872,6 +872,29 @@ fully reentrancy-safe by this change. Live bonus arithmetic, expiry, relog and
 deck switching still need integration testing. Deck orchestration is a separate
 migration step from these individual item operations.
 
+DragonSoulSystem deck orchestration now uses fresh component lookups after
+callbacks, scoped owner-operation guards and component-destruction tracking.
+Read-only deck queries no longer create runtime state. Constructor callbacks
+may destroy an owner without leaving a dangling emplace return value. Nested
+disable/logout requests cancel in-progress activation; explicit disable clears
+selection/affects, while logout preserves them. Hydration resets all loaded
+active flags before publication, and repeated hydration removes existing
+runtime bonuses first. Set bonuses require the same complete, active, unexpired
+set before and after each affect callback, not stale vnums from earlier slots.
+
+The existing RefineWindowTests now also exercises both decks, same-deck
+idempotence, switch/cleanup/disable, partial and expired sets, failed affects,
+nested activation/cancellation, removed/replaced stones, destroyed/replaced
+runtime components, constructor/dirty-tag destruction and repeated login
+hydration. Its stone activation, affect, save and network services are doubles;
+these tests complement, but do not combine, the real per-stone tests above.
+LoadAffect calls Initialize with its existing entity; the CHARACTER initializer
+shim was removed. Live login/logout, set-affect arithmetic and timers still
+require a client/server integration test.
+
+Deck verification on 2026-09-08: GameServer Release build and all 13/13 tests
+passed in Release and ASAN RelWithDebInfo; RefineWindowTests ran 2,516 checks.
+
 Verified on 2026-09-08 with Windows/MSVC x64: GameServer Release build, all
 13/13 headless tests in Release and AddressSanitizer RelWithDebInfo, including
 3,632 checks in ItemAttributeTests. No live server/client/DB test was performed.
