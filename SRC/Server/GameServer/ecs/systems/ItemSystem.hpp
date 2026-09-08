@@ -39,6 +39,7 @@ bool RemoveSpecifyItemEcs(entt::entity e, uint32_t vnum, uint32_t count = 1,
 // Slice B - equip / unequip
 entt::entity GetWearItem(entt::entity e, uint8_t wearPos);
 bool UnequipItemEcs(entt::entity owner, entt::entity item);
+bool UnequipItemToEcs(entt::entity owner, entt::entity item, TItemPos destination);
 bool EquipItemEcs(entt::entity owner, entt::entity item, int candidateCell = -1);
 bool IsEquipUniqueItem(entt::entity e, uint32_t itemVnum);
 bool IsEquipUniqueGroup(entt::entity e, uint32_t groupVnum);

@@ -2,6 +2,7 @@
 #include "../../SRC/Server/GameServer/ecs/systems/InventorySystem.hpp"
 #include "../../SRC/Server/GameServer/ecs/systems/AffectSystem.hpp"
 #include "../../SRC/Server/GameServer/ecs/systems/DragonSoulSystem.hpp"
+#include "../../SRC/Server/GameServer/ecs/systems/CombatSystem.hpp"
 #include "../../SRC/Server/GameServer/questmanager.h"
 #include "../../SRC/Server/GameServer/marriage.h"
 #include "../../SRC/Server/GameServer/MountSystem.h"
@@ -26,6 +27,7 @@
 #include "../../SRC/Server/GameServer/ecs/components/identity_components.hpp"
 #include "../../SRC/Server/GameServer/ecs/events.hpp"
 #include "../../SRC/Server/GameServer/item_manager.h"
+#include "../../SRC/Server/GameServer/log.h"
 #include "../../SRC/Server/GameServer/MountInventory.h"
 #include "../../SRC/Server/GameServer/DragonSoul.h"
 #include "../../SRC/Server/GameServer/sectree_manager.h"
@@ -69,7 +71,7 @@ struct PlacementMeta {
     TItemTable proto {};
     uint8_t category = 0;
     uint16_t dragonBase = 0;
-    bool extra = false, dragon = false, rune = false, locked = false, exchanging = false;
+    bool extra = false, dragon = false, rune = false, locked = false, exchanging = false, pending = false;
     int wear = WEAR_BODY, group = 0;
 };
 std::vector<std::unique_ptr<DESC>> descriptors;
@@ -77,6 +79,11 @@ std::function<void(entt::entity)> onSave;
 std::function<void()> onCancel, onRegistration;
 std::function<void(entt::entity, uint8_t, TItemPos)> onStoragePacket;
 std::function<void(const char*)> onService;
+std::function<entt::entity(uint32_t, uint32_t)> onCreate;
+std::function<ItemSystem::StackMergeResult(entt::entity, entt::entity, entt::entity, uint32_t)> onMerge;
+std::function<bool(entt::entity, TItemPos, entt::entity&)> onPullOut;
+bool switchActive = false, switchAllowed = true;
+int retiredSplits = 0;
 int saves = 0, storagePackets = 0, registrations = 0;
 void Service(const char* name) { if (onService) { auto f = onService; f(name); } }
 PlacementMeta& Meta(entt::entity e) {
@@ -117,6 +124,8 @@ void Send(entt::entity owner, Packet packet) {
     if (callback) callback(owner);
 }
 entt::entity Reset() {
+    onCreate = {}; onMerge = {}; onPullOut = {}; retiredSplits = 0;
+    switchActive = false; switchAllowed = true;
     onSave = {}; onCancel = onRegistration = {}; onStoragePacket = {}; onService = {};
     notices.clear(); married = marriageItem = false;
     g_registry.clear(); descriptors.clear(); saves = storagePackets = registrations = 0;
@@ -142,6 +151,22 @@ namespace ItemSystem {
 bool IsValidItem(entt::entity item) { return g_registry.valid(item) && g_registry.any_of<Item, ecs::ItemIdentity>(item); }
 entt::entity GetItem(entt::entity owner, TItemPos pos) {
     Check(g_registry.valid(owner), "lookup with stale owner");
+    if (g_registry.all_of<PlacementActor>(owner)) {
+        const auto lookup = [&](const auto* storage) {
+            return storage && pos.cell < storage->items.size() ? storage->items[pos.cell] : entt::entity(entt::null);
+        };
+        switch (pos.window_type) {
+        case INVENTORY: case EQUIPMENT: return lookup(g_registry.try_get<ecs::MainInventoryRuntimeComponent>(owner));
+        case DRAGON_SOUL_INVENTORY: return lookup(g_registry.try_get<ecs::DragonSoulInventoryComponent>(owner));
+#ifdef ENABLE_EXTRA_INVENTORY
+        case EXTRA_INVENTORY: return lookup(g_registry.try_get<ecs::ExtraInventoryRuntimeComponent>(owner));
+#endif
+#ifdef ENABLE_SWITCHBOT
+        case SWITCHBOT: return lookup(g_registry.try_get<ecs::SwitchbotRuntimeComponent>(owner));
+#endif
+        default: return entt::entity(entt::null);
+        }
+    }
     auto it = inventory.find({pos.window_type, pos.cell}); return it == inventory.end() ? entt::null : it->second;
 }
 entt::entity GetItemOwner(entt::entity item) { return IsPlacement(item) ? RawOwner(item) : g_registry.get<Item>(item).owner; }
@@ -491,7 +516,15 @@ void DESC::Packet(const void* data, int size) {
     if (header == HEADER_GC_ITEM_SET) {
         Check(size == sizeof(TPacketGCItemSet), "item set wire size");
         const auto& p = *static_cast<const TPacketGCItemSet*>(data); pos = p.Cell;
-        Check(p.count == 7 && p.vnum == 100, "item set payload");
+        const auto item = ItemSystem::GetItem(GetEntity(), pos);
+        Check(ItemSystem::IsValidItem(item) && p.count == ItemSystem::GetItemCount(item) &&
+            p.vnum == ItemSystem::GetItemVnum(item), "item set payload");
+        for (int i = 0; i < ITEM_SOCKET_MAX_NUM; ++i)
+            Check(uint32_t(p.alSockets[i]) == ItemSystem::GetItemSocket(item, i), "item set socket payload");
+        for (int i = 0; i < ITEM_ATTRIBUTE_MAX_NUM; ++i) {
+            const auto attr = ItemSystem::GetItemAttribute(item, i);
+            Check(p.aAttr[i].bType == attr.bType && p.aAttr[i].sValue == attr.sValue, "item set attribute payload");
+        }
     } else {
         Check(header == HEADER_GC_ITEM_DEL && size == sizeof(TPacketGCItemDelDeprecated), "item del wire size");
         pos = static_cast<const TPacketGCItemDelDeprecated*>(data)->Cell;
@@ -503,9 +536,52 @@ DSManager::DSManager() = default;
 DSManager::~DSManager() = default;
 DragonSoulTable::~DragonSoulTable() = default;
 uint16_t DSManager::GetBasePosition(entt::entity e) const { return Meta(e).dragonBase; }
+bool DSManager::PullOutEcs(entt::entity owner, TItemPos pos, entt::entity& stone, entt::entity extractor) {
+    Check(extractor == entt::null, "drag unexpectedly supplied an extractor");
+    if (!onPullOut) Unexpected();
+    auto callback = onPullOut; return callback(owner, pos, stone);
+}
+ITEM_MANAGER::ITEM_MANAGER() = default;
+ITEM_MANAGER::~ITEM_MANAGER() = default;
+CAsyncSQL::CAsyncSQL() = default;
+CAsyncSQL::~CAsyncSQL() = default;
+CSemaphore::CSemaphore() = default;
+CSemaphore::~CSemaphore() = default;
+LogManager::LogManager() : m_bIsConnect(false) {}
+LogManager::~LogManager() = default;
+void LogManager::ItemLogEntity(entt::entity owner, entt::entity item, const char* action, const char* hint) {
+    Actor(owner); Meta(item);
+    unsigned cloneID = 0, split = 0, remaining = 0, total = 0;
+    Check(std::string_view(action) == "ITEM_SPLIT" && sscanf(hint, "%u %u %u %u", &cloneID, &split, &remaining, &total) == 4,
+        "split audit fields lost");
+    Check(split > 0 && remaining > 0 && split + remaining == total && ItemSystem::GetItemCount(item) == remaining,
+        "split audit precedes commit or lost quantity");
+    Service("split-log");
+}
+entt::entity ITEM_MANAGER::CreateItem(uint32_t vnum, uint32_t count, uint32_t id, bool magic, int rare, bool skip) {
+    Check(id == 0 && !magic && rare == -1 && !skip, "split factory changed creation flags");
+    if (!onCreate) Unexpected();
+    auto callback = onCreate; return callback(vnum, count);
+}
+bool ItemSystem::IsItemStackable(entt::entity item) { return (GetItemFlags(item) & ITEM_FLAG_STACKABLE) != 0; }
+bool ItemSystem::IsItemConsumptionPending(entt::entity item) { return Meta(item).pending; }
+ItemSystem::StackMergeResult ItemSystem::MergeItemStacksEcs(entt::entity owner, entt::entity source, entt::entity target,
+    uint32_t count, StackSource context) {
+    Actor(owner); Meta(source); Meta(target);
+    Check(context == StackSource::Inventory, "client drag selected reward merge semantics");
+    if (!onMerge) return {};
+    auto callback = onMerge; return callback(owner, source, target, count);
+}
+void ecs::PointSystem::Compute(entt::entity e) { Actor(e); Service("compute-points"); }
+void MountSystem::UpdateMountCountOverheadToViewers(entt::entity e) { Actor(e); Service("mount-overhead"); }
+void CombatSystem::SendLeaderboardDataSkillMob(entt::entity e, entt::entity viewer) {
+    Actor(e); Actor(viewer); Service("skill-leaderboard");
+}
 #ifdef ENABLE_SWITCHBOT
 CSwitchbotManager::CSwitchbotManager() = default;
 CSwitchbotManager::~CSwitchbotManager() = default;
+bool CSwitchbotManager::IsActive(uint32_t, uint8_t) { return switchActive; }
+bool SwitchbotHelper::IsValidItem(entt::entity e) { Meta(e); return switchAllowed; }
 void CSwitchbotManager::RegisterItem(uint32_t, uint32_t, uint16_t) {
     ++registrations; if (onRegistration) { auto f = onRegistration; f(); }
 }
@@ -522,11 +598,14 @@ uint8_t ItemSystem::GetItemExtraCategory(entt::entity e) { return Meta(e).catego
 uint32_t ItemSystem::GetItemCount(entt::entity e) { return g_registry.get<ecs::ItemCount>(e).count; }
 int ItemSystem::GetItemFlags(entt::entity e) { return Meta(e).proto.dwFlags; }
 uint32_t ItemSystem::GetItemAntiFlag(entt::entity e) { return Meta(e).proto.dwAntiFlags; }
-short ItemSystem::GetItemLockedAttributeIndex(entt::entity e) { Meta(e); return -1; }
+short ItemSystem::GetItemLockedAttributeIndex(entt::entity e) {
+    Meta(e); const auto* lock = g_registry.try_get<ecs::ItemLockedAttribute>(e); return lock ? lock->index : -1;
+}
 int MAX(int a, int b) { return std::max(a, b); }
 int MIN(int a, int b) { return std::min(a, b); }
 int number_ex(int, int, char const *, int) { Unexpected(); }
 void ecs::ChatSystem::SendNew(entt::entity e, uint8_t, uint32_t id, char const *, ...) { Actor(e); notices.push_back(id); Service("notice"); }
+void ecs::ChatSystem::Send(entt::entity e, uint8_t, char const *, ...) { Actor(e); Service("notice"); }
 DESC * ecs::PlayerRuntime::GetDesc(entt::entity e) { return g_registry.get<PlacementActor>(e).desc; }
 uint32_t ecs::PlayerRuntime::GetPlayerID(entt::entity e) { return g_registry.get<PlacementActor>(e).pid; }
 void ecs::PlayerRuntime::BuffOnAttr_AddBuffsFromItem(entt::entity e, entt::entity i) { Actor(e); Meta(i); Service("buff-add"); }
@@ -563,7 +642,10 @@ char const * ItemSystem::GetItemName(entt::entity e) { Meta(e); return "test-ite
 uint32_t ItemSystem::GetItemWearFlag(entt::entity e) { return Meta(e).proto.dwWearFlags; }
 int ItemSystem::FindEquipCell(entt::entity owner, entt::entity e, int) { Actor(owner); return Meta(e).wear; }
 SItemTable const * ItemSystem::GetItemProto(entt::entity e) { return &Meta(e).proto; }
-bool ItemSystem::DestroyItemEntityEcs(entt::entity, char const *) { Unexpected(); }
+bool ItemSystem::DestroyItemEntityEcs(entt::entity e, char const * reason) {
+    Check(std::string_view(reason) == "SPLIT_ABORT" && RawOwner(e) == entt::null, "unexpected item destruction");
+    ++retiredSplits; g_registry.destroy(e); return true;
+}
 short ItemSystem::GetItemLockedAttr(entt::entity) { Unexpected(); }
 int ItemSystem::GetItemAccessorySocketGrade(entt::entity) { Unexpected(); }
 bool ItemSystem::IsAccessoryForSocket(entt::entity e) { Meta(e); return false; }
@@ -975,6 +1057,10 @@ bool ItemSystem::IsItemLocked(entt::entity e) { return Meta(e).locked; }
 bool ItemSystem::IsItemExchanging(entt::entity e) { return Meta(e).exchanging; }
 bool ItemSystem::StartRealTimeExpireEventEcs(entt::entity e) { Meta(e); Service("real-time"); return true; }
 bool DragonSoulSystem::IsDeckActivated(entt::entity e) { return Actor(e).deck; }
+bool DragonSoulSystem::CanRefine(entt::entity e) {
+    const auto* state = g_registry.try_get<ecs::DragonSoulRuntimeStateComponent>(e);
+    return state && g_registry.valid(state->refineWindowOpener);
+}
 bool AffectSystem::IsPolymorphed(entt::entity e) { return Actor(e).poly; }
 bool AffectSystem::IsAffectFlag(entt::entity e, uint32_t) { Actor(e); return false; }
 bool AffectSystem::RemoveAffect(entt::entity e, uint32_t) { Actor(e); Service("affect-remove"); return true; }
@@ -1250,14 +1336,426 @@ void EquipmentDragonSoulAndTimers() {
 }
 }
 
+namespace {
+void EnableSplitting(entt::entity source)
+{
+    const auto metadata = Meta(source);
+    onCreate = [metadata](uint32_t vnum, uint32_t count) {
+        const auto clone = PlacementItem(metadata.proto.bSize);
+        g_registry.get<PlacementMeta>(clone) = metadata;
+        g_registry.get<ecs::ItemIdentity>(clone).vnum = vnum;
+        g_registry.get<ecs::ItemCount>(clone).count = static_cast<int>(count);
+        return clone;
+    };
+}
+entt::entity StackAt(entt::entity owner, TItemPos pos, int count = 7, uint8_t size = 1)
+{
+    const auto item = PlacementItem(size);
+    Meta(item).proto.dwFlags |= ITEM_FLAG_STACKABLE;
+    Meta(item).dragon = pos.window_type == DRAGON_SOUL_INVENTORY;
+    Meta(item).dragonBase = (pos.cell / DRAGON_SOUL_BOX_SIZE) * DRAGON_SOUL_BOX_SIZE;
+#ifdef ENABLE_EXTRA_INVENTORY
+    Meta(item).extra = pos.window_type == EXTRA_INVENTORY;
+    Meta(item).category = pos.cell / EXTRA_INVENTORY_CATEGORY_MAX_NUM;
+#endif
+    g_registry.get<ecs::ItemCount>(item).count = count;
+    Check(ItemSystem::PlaceItemEcs(owner, item, pos.window_type, pos.cell), "move fixture placement");
+    return item;
+}
+void NativeMoves()
+{
+    std::vector<TItemPos> positions {TItemPos(INVENTORY, 0), TItemPos(DRAGON_SOUL_INVENTORY, 576)};
+#ifdef ENABLE_EXTRA_INVENTORY
+    positions.emplace_back(EXTRA_INVENTORY, EXTRA_INVENTORY_CATEGORY_MAX_NUM * 4);
+#endif
+    for (const auto from : positions)
+    {
+        Reset(); extraUnlock = INT32_MAX;
+        const auto owner = PlacementOwner(), item = StackAt(owner, from, 7, 2);
+        const TItemPos to(from.window_type, from.cell + 1);
+        onSave = [&](entt::entity e) {
+            Check(e == item, "move saved another item"); AssertPlaced(owner, item, to);
+            Check(ItemSystem::GetItem(owner, from) == entt::null && ItemSystem::GetItemCount(item) == 7,
+                "move published partial storage");
+            Check(!InventorySystem::MoveItem(owner, to, from, 0), "recursive drag accepted");
+        };
+        Check(InventorySystem::MoveItem(owner, from, to, 0), "native multi-cell move rejected");
+        onSave = {};
+        AssertPlaced(owner, item, to);
+        // A move may overlap its own footprint. A split may not.
+        const int columns = from.window_type == DRAGON_SOUL_INVENTORY ? DRAGON_SOUL_BOX_COLUMN_NUM : INVENTORY_PAGE_COLUMN;
+        const TItemPos overlap(to.window_type, to.cell + columns);
+        Check(InventorySystem::MoveItem(owner, to, overlap, 0), "overlapping footprint move rejected");
+        AssertPlaced(owner, item, overlap);
+        Storage(owner, from.window_type, [&](const auto& storage) {
+            if constexpr (requires { storage.itemGrid; })
+                Check(storage.itemGrid[to.cell] == 0 && storage.itemGrid[overlap.cell] == overlap.cell + 1 &&
+                    storage.itemGrid[overlap.cell + columns] == overlap.cell + 1, "move left old footprint");
+        });
+    }
+    Reset();
+    auto owner = PlacementOwner(), item = StackAt(owner, TItemPos(INVENTORY, 0));
+    auto& slots = g_registry.emplace<ecs::QuickSlots>(owner);
+    slots.slots[0] = {QUICKSLOT_TYPE_ITEM, 0};
+    slots.slots[1] = {QUICKSLOT_TYPE_ITEM, 4};
+    onPacket = [&](entt::entity e) { AssertPlaced(e, item, TItemPos(INVENTORY, 4)); };
+    onSave = [&](entt::entity) { Check(Read(owner, 0).pos == 4 && Read(owner, 1).type == 0, "quickslot lagged item commit"); };
+    Check(InventorySystem::MoveItem(owner, TItemPos(INVENTORY, 0), TItemPos(INVENTORY, 4), 7), "full-stack move");
+    Check(Read(owner, 0).pos == 4 && Read(owner, 1).type == 0, "quickslot relocation not atomic");
+    Reset(); owner = PlacementOwner(); item = StackAt(owner, TItemPos(INVENTORY, 0));
+    Meta(item).proto.dwFlags = 0;
+    Check(InventorySystem::MoveItem(owner, TItemPos(INVENTORY, 0), TItemPos(INVENTORY, 1), 1), "non-stackable partial drag");
+    Check(ItemSystem::GetItemCount(item) == 7, "non-stackable drag split count");
+}
+void MoveRejections()
+{
+    Reset(); extraUnlock = INT32_MAX;
+    const auto owner = PlacementOwner(), item = StackAt(owner, TItemPos(INVENTORY, 0), 7, 2);
+    const TItemPos from(INVENTORY, 0), to(INVENTORY, 1);
+    const int saved = saves;
+    for (const int count : {INT32_MIN, -1, 8, INT32_MAX})
+        Check(!InventorySystem::MoveItem(owner, from, to, count), "invalid count accepted");
+    Check(!InventorySystem::MoveItem(owner, from, from, 0), "self move accepted");
+    Check(!InventorySystem::MoveItem(entt::null, from, to, 0), "null owner moved");
+    for (const uint8_t window : {uint8_t(RESERVED_WINDOW), uint8_t(SAFEBOX), uint8_t(MALL),
+            uint8_t(MOUNT_INVENTORY), uint8_t(BELT_INVENTORY), uint8_t(255)})
+    {
+        Check(!InventorySystem::MoveItem(owner, from, TItemPos(window, 1), 0), "unsupported target window");
+        Check(!InventorySystem::MoveItem(owner, TItemPos(window, 0), to, 0), "unsupported source window");
+    }
+    for (unsigned cell = INVENTORY_AND_EQUIP_SLOT_MAX; cell <= UINT16_MAX; ++cell)
+        Check(!InventorySystem::MoveItem(owner, from, TItemPos(INVENTORY, uint16_t(cell)), 0), "oversized target cell");
+    Check(!InventorySystem::MoveItem(owner, from, TItemPos(DRAGON_SOUL_INVENTORY, 0), 0), "ordinary item in DS");
+    Check(!InventorySystem::MoveItem(owner, from, TItemPos(INVENTORY, INVENTORY_PAGE_SIZE - 1), 0), "cross-page drag");
+    for (auto flag : {&PlacementMeta::locked, &PlacementMeta::exchanging, &PlacementMeta::pending})
+    {
+        Meta(item).*flag = true;
+        Check(!InventorySystem::MoveItem(owner, from, to, 0), "restricted source moved");
+        Meta(item).*flag = false;
+    }
+    g_registry.emplace<ecs::StatusFlags>(owner).isObserverMode = true;
+    Check(!InventorySystem::MoveItem(owner, from, to, 0), "observer moved item");
+    g_registry.get<ecs::StatusFlags>(owner).isObserverMode = false;
+    const auto other = PlacementOwner();
+    g_registry.get<ecs::ItemOwner>(item).owner = other;
+    Check(!InventorySystem::MoveItem(owner, from, to, 0), "foreign same-PID owner moved");
+    g_registry.get<ecs::ItemOwner>(item).owner = owner;
+    auto& inv = g_registry.get<ecs::MainInventoryRuntimeComponent>(owner);
+    inv.items[10] = item;
+    Check(!InventorySystem::MoveItem(owner, from, to, 0), "duplicate anchor moved");
+    inv.items[10] = entt::null;
+    inv.itemGrid[INVENTORY_PAGE_COLUMN] = 0;
+    Check(!InventorySystem::MoveItem(owner, from, to, 0), "broken source footprint moved");
+    inv.itemGrid[INVENTORY_PAGE_COLUMN] = 1;
+    const auto blocker = PlacementItem();
+    inv.items[1 + INVENTORY_PAGE_COLUMN] = blocker;
+    Check(!InventorySystem::MoveItem(owner, from, to, 0), "ungridded target anchor overwritten");
+    inv.items[1 + INVENTORY_PAGE_COLUMN] = entt::null;
+    g_registry.get<ecs::ItemCount>(item).count = 0;
+    Check(!InventorySystem::MoveItem(owner, from, to, 0), "zero stack moved");
+    g_registry.get<ecs::ItemCount>(item).count = -1;
+    Check(!InventorySystem::MoveItem(owner, from, to, 0), "negative stack moved");
+    Check(saves == saved, "rejected move saved state");
+}
+void MoveSpecialWindows()
+{
+#ifdef ENABLE_EXTRA_INVENTORY
+    Reset(); extraUnlock = INT32_MAX;
+    auto owner = PlacementOwner(), item = StackAt(owner, TItemPos(EXTRA_INVENTORY, 360));
+    Check(!InventorySystem::MoveItem(owner, TItemPos(EXTRA_INVENTORY, 360), TItemPos(EXTRA_INVENTORY, 0), 0), "extra category escaped");
+    Check(!InventorySystem::MoveItem(owner, TItemPos(EXTRA_INVENTORY, 360), TItemPos(INVENTORY, 0), 0), "extra item escaped inventory");
+    extraUnlock = INT32_MIN;
+    Check(!InventorySystem::MoveItem(owner, TItemPos(EXTRA_INVENTORY, 360), TItemPos(EXTRA_INVENTORY, 539), 0), "locked extra slot accepted");
+#endif
+#ifdef ENABLE_SWITCHBOT
+    Reset();
+    auto switchOwner = PlacementOwner(), switchItem = StackAt(switchOwner, TItemPos(INVENTORY, 0));
+    const TItemPos normal(INVENTORY, 0), slot(SWITCHBOT, 2);
+    switchAllowed = false;
+    Check(!InventorySystem::MoveItem(switchOwner, normal, slot, 0), "invalid switchbot item accepted");
+    switchAllowed = true;
+    onRegistration = [&] { AssertPlaced(switchOwner, switchItem, slot); };
+    Check(InventorySystem::MoveItem(switchOwner, normal, slot, 0), "switchbot insert failed");
+    switchActive = true;
+    Check(!InventorySystem::MoveItem(switchOwner, slot, normal, 0), "active switchbot source moved");
+    switchActive = false;
+    onRegistration = [&] { AssertPlaced(switchOwner, switchItem, normal); };
+    Check(InventorySystem::MoveItem(switchOwner, slot, normal, 0), "switchbot return failed");
+    Check(registrations == 0, "switchbot registration leaked");
+#endif
+    Reset();
+    const auto beltOwner = PlacementOwner(), belt = StackAt(beltOwner, TItemPos(INVENTORY, 0), 1);
+    const TItemPos beltPos(INVENTORY, BELT_INVENTORY_SLOT_START);
+    Check(!InventorySystem::MoveItem(beltOwner, TItemPos(INVENTORY, 0), beltPos, 0), "non-belt allowed");
+    g_registry.get<ecs::ItemIdentity>(belt).vnum = 18000;
+    Meta(belt).proto.aLimits[0] = {LIMIT_LEVEL, 101};
+    Check(!InventorySystem::MoveItem(beltOwner, TItemPos(INVENTORY, 0), beltPos, 0), "underlevel belt allowed");
+    Meta(belt).proto.aLimits[0].lValue = 100;
+    int computes = 0;
+    onService = [&](const char* name) { if (std::string_view(name) == "compute-points") { ++computes; AssertPlaced(beltOwner, belt, beltPos); } };
+    Check(InventorySystem::MoveItem(beltOwner, TItemPos(INVENTORY, 0), beltPos, 0), "belt insert failed");
+    onService = {};
+    const auto duplicate = StackAt(beltOwner, TItemPos(INVENTORY, 1), 1);
+    g_registry.get<ecs::ItemIdentity>(duplicate).vnum = 18009;
+    Check(!InventorySystem::MoveItem(beltOwner, TItemPos(INVENTORY, 1), TItemPos(INVENTORY, BELT_INVENTORY_SLOT_START + 1), 0),
+        "same belt group duplicated");
+    Check(!InventorySystem::MoveItem(beltOwner, beltPos, TItemPos(SAFEBOX, 0), 0), "belt moved to safebox protocol");
+    int affects = 0;
+    onService = [&](const char* name) {
+        AssertPlaced(beltOwner, belt, TItemPos(INVENTORY, 0));
+        if (std::string_view(name) == "affect-remove") ++affects;
+        if (std::string_view(name) == "compute-points") ++computes;
+    };
+    Check(InventorySystem::MoveItem(beltOwner, beltPos, TItemPos(INVENTORY, 0), 0), "belt removal failed");
+    Check(computes == 2 && affects == 1, "belt points/affect refresh omitted");
+    Reset();
+    const auto dsOwner = PlacementOwner(), ds = StackAt(dsOwner, TItemPos(DRAGON_SOUL_INVENTORY, 576));
+    Check(!InventorySystem::MoveItem(dsOwner, TItemPos(DRAGON_SOUL_INVENTORY, 576), TItemPos(INVENTORY, 0), 0), "DS escaped inventory");
+    Check(!InventorySystem::MoveItem(dsOwner, TItemPos(DRAGON_SOUL_INVENTORY, 576), TItemPos(DRAGON_SOUL_INVENTORY, 0), 0), "DS wrong box");
+    Check(InventorySystem::MoveItem(dsOwner, TItemPos(DRAGON_SOUL_INVENTORY, 576), TItemPos(DRAGON_SOUL_INVENTORY, 577), 0),
+        "DS cell mistaken for belt/equipment");
+}
+void NativeSplits()
+{
+    std::vector<TItemPos> positions {TItemPos(INVENTORY, 0), TItemPos(DRAGON_SOUL_INVENTORY, 576)};
+#ifdef ENABLE_EXTRA_INVENTORY
+    positions.emplace_back(EXTRA_INVENTORY, 360);
+#endif
+    for (const auto from : positions)
+    {
+        Reset(); extraUnlock = INT32_MAX;
+        const auto owner = PlacementOwner(), item = StackAt(owner, from);
+        const TItemPos dest(from.window_type, from.cell + 1);
+        g_registry.get<ecs::ItemSockets>(item).sockets[1] = -19;
+        g_registry.get<ecs::ItemAttributes>(item).attrs[0] = {APPLY_MAX_HP, 37};
+        g_registry.emplace<ecs::ItemLockedAttribute>(item).index = 2;
+        g_registry.get<ecs::ItemIdentity>(item).transmutationVnum = 800;
+        EnableSplitting(item);
+        const auto originalID = ItemSystem::GetItemID(item);
+        onSave = [&](entt::entity) {
+            const auto clone = ItemSystem::GetItem(owner, dest);
+            Check(clone != entt::null && clone != item, "split published before clone anchored");
+            AssertPlaced(owner, item, from); AssertPlaced(owner, clone, dest);
+            Check(ItemSystem::GetItemCount(item) == 4 && ItemSystem::GetItemCount(clone) == 3, "partial split count visible");
+            Check(!InventorySystem::MoveItem(owner, from, TItemPos(from.window_type, from.cell + 2), 1), "recursive split accepted");
+        };
+        Check(InventorySystem::MoveItem(owner, from, dest, 3), "native split failed");
+        const auto clone = ItemSystem::GetItem(owner, dest);
+        Check(ItemSystem::GetItemID(clone) != originalID, "split copied persistent item identity");
+        Check(g_registry.get<ecs::ItemSockets>(clone).sockets[1] == -19 &&
+            g_registry.get<ecs::ItemAttributes>(clone).attrs[0].sValue == 37 &&
+            g_registry.get<ecs::ItemLockedAttribute>(clone).index == 2 &&
+            g_registry.get<ecs::ItemIdentity>(clone).transmutationVnum == 800, "split lost payload");
+        Check(retiredSplits == 0, "committed split retired");
+    }
+    Reset();
+    const auto owner = PlacementOwner(), item = StackAt(owner, TItemPos(INVENTORY, 0), 7, 2);
+    Check(!InventorySystem::MoveItem(owner, TItemPos(INVENTORY, 0), TItemPos(INVENTORY, INVENTORY_PAGE_COLUMN), 2),
+        "split overlapped source footprint");
+    onCreate = [](uint32_t, uint32_t) { return entt::entity(entt::null); };
+    Check(!InventorySystem::MoveItem(owner, TItemPos(INVENTORY, 0), TItemPos(INVENTORY, 1), 2), "failed allocation committed");
+    Check(ItemSystem::GetItemCount(item) == 7, "allocation failure debited source");
+}
+void SplitFailuresAndCallbacks()
+{
+    for (int scenario = 0; scenario < 11; ++scenario)
+    {
+        Reset();
+        const auto owner = PlacementOwner(), item = StackAt(owner, TItemPos(INVENTORY, 0));
+        const TItemPos from(INVENTORY, 0), dest(INVENTORY, 1);
+        EnableSplitting(item);
+        const auto create = onCreate;
+        entt::entity clone = entt::null, replacement = entt::null;
+        onCreate = [&](uint32_t vnum, uint32_t count) {
+            clone = create(vnum, count);
+            switch (scenario)
+            {
+            case 0: Meta(item).locked = true; break;
+            case 1: g_registry.get<ecs::ItemCount>(item).count = 2; break;
+            case 2: g_registry.get<ecs::ItemSockets>(item).sockets[0] = 99; break;
+            case 3: g_registry.get<ecs::ItemAttributes>(item).attrs[0] = {APPLY_MAX_HP, 9}; break;
+            case 4: replacement = StackAt(owner, dest); break;
+            case 5: g_registry.destroy(item); replacement = PlacementItem(); break;
+            case 6: g_registry.destroy(owner); replacement = PlacementOwner(); break;
+            case 7: g_registry.get<ecs::ItemCount>(clone).count = 1; break; // clamped factory
+            case 8: Meta(clone).locked = true; break;
+            case 9: Meta(item).proto.dwAntiFlags |= ITEM_ANTIFLAG_STACK; break;
+            case 10: Meta(item).pending = true; break;
+            }
+            return clone;
+        };
+        Check(!InventorySystem::MoveItem(owner, from, dest, 3), "mutated preparation committed");
+        Check(!g_registry.valid(clone) && retiredSplits == 1, "failed prepared item leaked");
+        if (g_registry.valid(item))
+            Check(ItemSystem::GetItemCount(item) == (scenario == 1 ? 2 : 7), "failed preparation debited source");
+        if (scenario == 4) AssertPlaced(owner, replacement, dest);
+        if (scenario == 5 || scenario == 6) Check(replacement != (scenario == 5 ? item : owner), "generation not changed");
+    }
+    for (bool destroyOwner : {false, true})
+    {
+        Reset();
+        const auto owner = PlacementOwner(), item = StackAt(owner, TItemPos(INVENTORY, 0));
+        EnableSplitting(item);
+        entt::entity clone = entt::null, replacement = entt::null;
+        onSave = [&](entt::entity e) {
+            Check(e == item, "split source must publish first");
+            clone = ItemSystem::GetItem(owner, TItemPos(INVENTORY, 1));
+            Check(ItemSystem::GetItemCount(item) == 4 && ItemSystem::GetItemCount(clone) == 3, "split save precedes commit");
+            onSave = {};
+            g_registry.destroy(destroyOwner ? owner : item); replacement = g_registry.create();
+        };
+        Check(InventorySystem::MoveItem(owner, TItemPos(INVENTORY, 0), TItemPos(INVENTORY, 1), 3),
+            "committed split deletion reported failure");
+        Check(retiredSplits == 0 && g_registry.valid(clone) &&
+            !g_registry.any_of<ecs::ItemCount, ecs::MainInventoryRuntimeComponent>(replacement), "split replayed onto replacement");
+    }
+    Reset();
+    const auto owner = PlacementOwner(), item = StackAt(owner, TItemPos(INVENTORY, 0)), other = PlacementOwner();
+    EnableSplitting(item);
+    entt::entity movedClone = entt::null;
+    onSave = [&](entt::entity) {
+        onSave = {};
+        movedClone = ItemSystem::GetItem(owner, TItemPos(INVENTORY, 1));
+        Check(ItemSystem::RemoveItemEcs(movedClone) && ItemSystem::PlaceItemEcs(other, movedClone, INVENTORY, 9),
+            "nested split transfer failed");
+    };
+    Check(InventorySystem::MoveItem(owner, TItemPos(INVENTORY, 0), TItemPos(INVENTORY, 1), 3), "transferred split not committed");
+    AssertPlaced(other, movedClone, TItemPos(INVENTORY, 9));
+    Check(ItemSystem::GetItemCount(item) == 4 && retiredSplits == 0, "transferred clone refunded or retired");
+}
+void MovePreparationSignals()
+{
+    for (bool wasSplit : {false, true})
+    {
+        Reset();
+        const auto owner = PlacementOwner(), item = StackAt(owner, TItemPos(INVENTORY, 0));
+        g_registry.emplace<ecs::QuickSlots>(owner).slots[0] = {QUICKSLOT_TYPE_ITEM, 0};
+        ConstructionCallback callback {[&](entt::registry& registry, entt::entity) {
+            registry.get<ecs::ItemCount>(item).count = wasSplit ? 3 : 10;
+        }};
+        entt::scoped_connection connection = g_registry.on_construct<ecs::DirtyTag>().connect<&ConstructionCallback::OnConstruct>(callback);
+        Check(!InventorySystem::MoveItem(owner, TItemPos(INVENTORY, 0), TItemPos(INVENTORY, 1), wasSplit ? 3 : 7),
+            "preparation changed full-move/split semantics");
+        AssertPlaced(owner, item, TItemPos(INVENTORY, 0));
+        Check(ItemSystem::GetItemCount(item) == (wasSplit ? 3 : 10), "reclassified request debited source");
+    }
+    for (bool duringSplit : {false, true})
+        for (bool destroyOwner : {false, true})
+        {
+            Reset();
+            const auto owner = PlacementOwner(), item = StackAt(owner, TItemPos(INVENTORY, 0));
+            g_registry.emplace<ecs::QuickSlots>(owner).slots[0] = {QUICKSLOT_TYPE_ITEM, 0};
+            EnableSplitting(item);
+            entt::entity replacement = entt::null;
+            ConstructionCallback callback {[&](entt::registry& registry, entt::entity e) {
+                Check(ItemSystem::GetItemCount(item) == 7, "construction preceded count commit");
+                registry.destroy(destroyOwner ? owner : e); replacement = registry.create();
+            }};
+            entt::scoped_connection connection = duringSplit ?
+                g_registry.on_construct<ecs::ItemOwner>().connect<&ConstructionCallback::OnConstruct>(callback) :
+                g_registry.on_construct<ecs::DirtyTag>().connect<&ConstructionCallback::OnConstruct>(callback);
+            Check(!InventorySystem::MoveItem(owner, TItemPos(INVENTORY, 0), TItemPos(INVENTORY, 1), duringSplit ? 3 : 0),
+                "component destruction ignored");
+            Check(ItemSystem::GetItemCount(item) == 7 &&
+                !g_registry.any_of<ecs::ItemCount, ecs::ItemLocation, ecs::MainInventoryRuntimeComponent>(replacement),
+                "failed component preparation changed source or replacement");
+        }
+    for (bool destroyClone : {false, true})
+    {
+        Reset();
+        const auto owner = PlacementOwner(), item = StackAt(owner, TItemPos(INVENTORY, 0));
+        EnableSplitting(item);
+        const auto create = onCreate;
+        entt::entity clone = entt::null;
+        onCreate = [&](uint32_t vnum, uint32_t count) {
+            clone = create(vnum, count);
+            g_registry.emplace<ecs::ItemEvents>(clone).destroy = LPEVENT(new EVENT);
+            return clone;
+        };
+        onCancel = [&] {
+            onCancel = {};
+            Check(ItemSystem::GetItemCount(item) == 7, "cancel callback saw pre-debit");
+            if (destroyClone) g_registry.destroy(clone);
+            else Meta(item).locked = true;
+        };
+        Check(!InventorySystem::MoveItem(owner, TItemPos(INVENTORY, 0), TItemPos(INVENTORY, 1), 3),
+            "timer cancellation mutation ignored");
+        Check(ItemSystem::GetItemCount(item) == 7 && !g_registry.valid(clone), "timer failure leaked a split");
+    }
+    for (bool destroyOwner : {false, true})
+    {
+        Reset();
+        const auto owner = PlacementOwner(), item = StackAt(owner, TItemPos(INVENTORY, 0));
+        entt::entity replacement = entt::null;
+        onStoragePacket = [&](entt::entity, uint8_t, TItemPos) {
+            onStoragePacket = {};
+            g_registry.destroy(destroyOwner ? owner : item); replacement = g_registry.create();
+        };
+        Check(InventorySystem::MoveItem(owner, TItemPos(INVENTORY, 0), TItemPos(INVENTORY, 1), 0),
+            "post-commit packet deletion reported failure");
+        Check(!g_registry.any_of<ecs::ItemCount, ecs::ItemLocation, ecs::MainInventoryRuntimeComponent>(replacement),
+            "move publication wrote recycled entity");
+    }
+}
+
+void MoveCallbacksAndDispatch()
+{
+    for (bool packet : {false, true})
+    {
+        Reset();
+        const auto owner = PlacementOwner(), item = StackAt(owner, TItemPos(INVENTORY, 0)), other = PlacementOwner();
+        const TItemPos from(INVENTORY, 0), dest(INVENTORY, 1);
+        auto moveAgain = [&] {
+            Check(ItemSystem::RemoveItemEcs(item), "callback detach failed");
+            Check(ItemSystem::PlaceItemEcs(other, item, INVENTORY, 7), "callback transfer failed");
+            StackAt(owner, dest); // Must not be overwritten by the outer publication.
+        };
+        if (packet)
+            onStoragePacket = [&](entt::entity, uint8_t, TItemPos) { onStoragePacket = {}; moveAgain(); };
+        else onSave = [&](entt::entity) { onSave = {}; moveAgain(); };
+        Check(InventorySystem::MoveItem(owner, from, dest, 0), "committed relocation reported failure");
+        AssertPlaced(other, item, TItemPos(INVENTORY, 7));
+        Check(ItemSystem::GetItem(owner, dest) != item && ItemSystem::GetItem(owner, from) == entt::null,
+            "callback replacement overwritten");
+    }
+    Reset();
+    auto owner = PlacementOwner(), source = StackAt(owner, TItemPos(INVENTORY, 0)), target = StackAt(owner, TItemPos(INVENTORY, 1));
+    onMerge = [&](entt::entity e, entt::entity a, entt::entity b, uint32_t n) {
+        Check(e == owner && a == source && b == target && n == 3, "merge dispatch identity/count changed");
+        return ItemSystem::StackMergeResult {3, false};
+    };
+    Check(InventorySystem::MoveItem(owner, TItemPos(INVENTORY, 0), TItemPos(INVENTORY, 1), 3), "native merge result ignored");
+    Reset();
+    owner = PlacementOwner(); source = Gear(owner);
+    const TItemPos wear(INVENTORY, INVENTORY_MAX_NUM + WEAR_BODY);
+    Check(InventorySystem::MoveItem(owner, TItemPos(INVENTORY, 0), wear, 0), "equip drag failed");
+    AssertWorn(owner, source, WEAR_BODY);
+    Check(!InventorySystem::MoveItem(owner, wear, TItemPos(EQUIPMENT, wear.cell), 0), "equipment aliases not normalized");
+    Check(InventorySystem::MoveItem(owner, wear, TItemPos(INVENTORY, 9), 0), "unequip drag failed");
+    AssertPlaced(owner, source, TItemPos(INVENTORY, 9));
+    Meta(source).dragon = true; Meta(source).wear = WEAR_MAX_NUM;
+    Meta(source).proto.bType = ITEM_DS;
+    Check(ItemSystem::EquipItemEcs(owner, source), "DS dispatch setup");
+    onPullOut = [&](entt::entity e, TItemPos pos, entt::entity& stone) {
+        Check(e == owner && stone == source && pos == TItemPos(DRAGON_SOUL_INVENTORY, 2), "DS extraction dispatch changed");
+        return true;
+    };
+    Check(InventorySystem::MoveItem(owner, TItemPos(INVENTORY, INVENTORY_MAX_NUM + WEAR_MAX_NUM),
+        TItemPos(DRAGON_SOUL_INVENTORY, 2), 0), "DS extraction not dispatched");
+}
+} // namespace
+
 int main() {
     try {
         DSManager dragonSouls;
+        ITEM_MANAGER items;
+        LogManager logs;
         marriage::CManager marriages;
         quest::CQuestManager quests;
 #ifdef ENABLE_SWITCHBOT
         CSwitchbotManager switchbots;
 #endif
+        MovePreparationSignals(); NativeMoves(); MoveRejections(); MoveSpecialWindows(); NativeSplits(); SplitFailuresAndCallbacks(); MoveCallbacksAndDispatch();
         EquipmentPolicies(); EquipmentRoundTripAndSwap(); EquipmentCallbacks(); EquipmentDragonSoulAndTimers();
         PlacementWindows(); PlacementValidation(); PlacementQueries(); PlacementCallbacks(); NativeUnequip(); RemovalCallbacksAndAliases(); PurePlacementRules();
         InventoryGuards(); InventoryGrids(); Basic(); DuplicatesAndValidation(); SyncAndLifetime(); ValueRanges(); ClientValidation(); HydrationAndRelocation();

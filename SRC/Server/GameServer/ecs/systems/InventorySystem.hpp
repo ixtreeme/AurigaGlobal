@@ -10,6 +10,9 @@ bool CanUnequipNow(entt::entity owner, entt::entity item, bool requireSpace = tr
 bool IsEquipmentSexAllowed(entt::entity owner, entt::entity item);
 
 bool CanHandleItems(entt::entity owner, bool skipRefine = false, bool skipObserver = false);
+// Client drag/drop: both positions and the owner remain native entity state.
+// True means committed, including when a publication callback removes the item.
+bool MoveItem(entt::entity owner, TItemPos source, TItemPos destination, int count);
 int GetInventorySize(entt::entity owner);
 bool IsEmptyItemGrid(entt::entity owner, TItemPos cell, uint8_t size, int exceptionCell = -1);
 bool HasBeltItems(entt::entity owner);

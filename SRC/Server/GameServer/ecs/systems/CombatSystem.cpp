@@ -646,11 +646,42 @@ void SendLeaderboardData(entt::entity e)
     }
 }
 
-void SendLeaderboardDataSkillMob(entt::entity e, entt::entity viewer)
+void SendLeaderboardDataSkillMob(entt::entity e, entt::entity viewerEntity)
 {
-    if (auto* ch = LegacyCharOf(e)) {
-        ch->SendLeaderboardDataSkillMob(viewer);
-    }
+	if (!g_registry.valid(e) || !g_registry.valid(viewerEntity) || !ecs::PlayerRuntime::GetDesc(viewerEntity))
+		return;
+
+	std::unique_ptr<SQLMsg> pMsg(DBManager::instance().DirectQuery(
+		"SELECT name, level, map1_skillmob, skill_victim "
+		"FROM player.player ORDER BY map1_skillmob DESC LIMIT 10"));
+
+	if (!pMsg || !pMsg->Get() || !pMsg->Get()->pSQLResult) return;
+	MYSQL_ROW row;
+	MYSQL_RES* res = pMsg->Get()->pSQLResult;
+
+	std::string result;
+
+	while ((row = mysql_fetch_row(res)))
+	{
+		const char* name = row[0] ? row[0] : "Unknown";
+		int level = row[1] ? atoi(row[1]) : 0;
+		int dmg = row[2] ? atoi(row[2]) : 0;
+		const char* victim = row[3] ? row[3] : "None";
+
+		char line[256];
+
+		snprintf(line, sizeof(line), "%s;%d;%s;%d\n", name, level, victim, dmg);
+
+		result += line;
+	}
+
+	TPacketGCLeaderboardNews p {};
+	p.header = HEADER_GC_LEADERBOARD_NEWS;
+	strlcpy(p.data, result.c_str(), sizeof(p.data));
+
+	if (g_registry.valid(viewerEntity))
+		if (auto* desc = ecs::PlayerRuntime::GetDesc(viewerEntity); desc && desc->GetEntity() == viewerEntity)
+			desc->Packet(&p, sizeof(p));
 }
 
 void SendLeaderboardDataGuild(entt::entity e)
@@ -981,37 +1012,7 @@ void CHARACTER::SendLeaderboardData()
 
 void CHARACTER::SendLeaderboardDataSkillMob(entt::entity viewerEntity)
 {
-	if (!ecs::PlayerRuntime::GetDesc(viewerEntity))
-		return;
-
-	std::unique_ptr<SQLMsg> pMsg(DBManager::instance().DirectQuery(
-		"SELECT name, level, map1_skillmob, skill_victim "
-		"FROM player.player ORDER BY map1_skillmob DESC LIMIT 10"));
-
-	MYSQL_ROW row;
-	MYSQL_RES* res = pMsg->Get()->pSQLResult;
-
-	std::string result;
-
-	while ((row = mysql_fetch_row(res)))
-	{
-		const char* name = row[0] ? row[0] : "Unknown";
-		int level = row[1] ? atoi(row[1]) : 0;
-		int dmg = row[2] ? atoi(row[2]) : 0;
-		const char* victim = row[3] ? row[3] : "None";
-
-		char line[256];
-
-		snprintf(line, sizeof(line), "%s;%d;%s;%d\n", name, level, victim, dmg);
-
-		result += line;
-	}
-
-	TPacketGCLeaderboardNews p;
-	p.header = HEADER_GC_LEADERBOARD_NEWS;
-	strlcpy(p.data, result.c_str(), sizeof(p.data));
-
-	ecs::PlayerRuntime::GetDesc(viewerEntity)->Packet(&p, sizeof(p));
+    CombatSystem::SendLeaderboardDataSkillMob(GetEntityHandle(), viewerEntity);
 }
 
 #ifdef LEADERBOARD_RAZOR93

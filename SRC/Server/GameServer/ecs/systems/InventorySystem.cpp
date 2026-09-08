@@ -5,13 +5,12 @@
 #include "QuestSystem.hpp"
 #include "AffectSystem.hpp"
 #include "DragonSoulSystem.hpp"
+#include "CombatSystem.hpp"
 #include "../../skill.h"
 #include "../../marriage.h"
 #include "../../questmanager.h"
 #include "../../MountSystem.h"
-#ifndef __ENABLE_EXTEND_INVEN_SYSTEM__
 #include "../../belt_inventory_helper.h"
-#endif
 #include "../components/status_components.hpp"
 #include "../components/social_components.hpp"
 #include "../components/vital_components.hpp"
@@ -28,6 +27,7 @@
 #include "../../desc.h"
 #include "../../item.h"
 #include "../../item_manager.h"
+#include "../../log.h"
 #include "../../MountInventory.h"
 #ifdef ENABLE_SWITCHBOT
 #include "../../new_switchbot.h"
@@ -1171,6 +1171,477 @@ bool AddToCharacter(entt::entity item, entt::entity owner, TItemPos position)
     return InsertInventoryItem(item, owner, position, highlight);
 }
 
+namespace {
+// SItemPos's historical belt/DS predicates also match other windows with the
+// same numeric cell. Packet routing must validate the window before the cell.
+bool NormalizeMovePosition(TItemPos& pos)
+{
+    switch (pos.window_type)
+    {
+    case INVENTORY:
+    case EQUIPMENT:
+        if (pos.cell >= INVENTORY_MAX_NUM &&
+            pos.cell < INVENTORY_MAX_NUM + WEAR_MAX_NUM + DRAGON_SOUL_DECK_MAX_NUM * DS_SLOT_MAX)
+            pos.window_type = EQUIPMENT;
+        else if (pos.window_type != INVENTORY ||
+            !(pos.cell < INVENTORY_MAX_NUM || pos.IsBeltInventoryPosition())) return false;
+        return true;
+    case DRAGON_SOUL_INVENTORY: return pos.cell < DRAGON_SOUL_INVENTORY_MAX_NUM;
+#ifdef ENABLE_EXTRA_INVENTORY
+    case EXTRA_INVENTORY: return pos.cell < EXTRA_INVENTORY_MAX_NUM;
+#endif
+#ifdef ENABLE_SWITCHBOT
+    case SWITCHBOT: return pos.cell < SWITCHBOT_SLOT_COUNT;
+#endif
+    default: return false; // Safebox, mall and account mounts have separate protocols.
+    }
+}
+bool BeltPosition(TItemPos pos) { return pos.window_type == INVENTORY && pos.IsBeltInventoryPosition(); }
+
+entt::entity SlotAt(entt::entity owner, TItemPos pos)
+{
+    entt::entity item = entt::null;
+    VisitStorage(owner, pos, [&](const auto& storage, int) {
+        if (pos.cell >= storage.items.size()) return false;
+        item = storage.items[pos.cell]; return true;
+    });
+    return item;
+}
+bool Anchored(entt::entity owner, entt::entity item, TItemPos pos)
+{
+    return At(owner, item, pos) && SlotAt(owner, pos) == item;
+}
+bool MoveSource(entt::entity owner, entt::entity item, TItemPos source, int count)
+{
+    if (!g_registry.valid(owner) || !g_registry.all_of<ecs::PlayerID>(owner) || count < 0 ||
+        !Anchored(owner, item, source) ||
+        ItemSystem::IsItemConsumptionPending(item) || ItemSystem::IsItemLocked(item) ||
+        ItemSystem::IsItemExchanging(item) ||
+        g_registry.any_of<ecs::SpatialEntity, ecs::SectorPlacement>(item)) return false;
+    if (!CanHandleItems(owner))
+    {
+#ifdef TEXTS_IMPROVEMENT
+        if (DragonSoulSystem::CanRefine(owner)) ecs::ChatSystem::SendNew(owner, CHAT_TYPE_INFO, 232, "");
+#endif
+        return false;
+    }
+    const auto* quantity = g_registry.try_get<ecs::ItemCount>(item);
+    if (!quantity || quantity->count <= 0 || count > quantity->count ||
+        ItemSystem::GetItemSize(item) == 0 ||
+        (ItemSystem::IsItemEquipped(item) != (source.window_type == EQUIPMENT))) return false;
+    if (source.window_type == INVENTORY && source.cell >= INVENTORY_MAX_NUM &&
+        (ItemSystem::GetItemFlags(item) & ITEM_FLAG_IRREMOVABLE)) return false;
+#ifdef ENABLE_SWITCHBOT
+    if (source.window_type == SWITCHBOT &&
+        CSwitchbotManager::instance().IsActive(ecs::PlayerRuntime::GetPlayerID(owner), source.cell))
+    {
+#ifdef TEXTS_IMPROVEMENT
+        ecs::ChatSystem::SendNew(owner, CHAT_TYPE_INFO, 690, "");
+#endif
+        return false;
+    }
+#endif
+    // Reject duplicate aliases, including an alias in a different inventory.
+    size_t references = 0;
+    const auto scan = [&](const auto* storage) {
+        if (storage) references += std::count(storage->items.begin(), storage->items.end(), item);
+    };
+    scan(g_registry.try_get<ecs::MainInventoryRuntimeComponent>(owner));
+    scan(g_registry.try_get<ecs::DragonSoulInventoryComponent>(owner));
+#ifdef ENABLE_EXTRA_INVENTORY
+    scan(g_registry.try_get<ecs::ExtraInventoryRuntimeComponent>(owner));
+#endif
+#ifdef ENABLE_SWITCHBOT
+    scan(g_registry.try_get<ecs::SwitchbotRuntimeComponent>(owner));
+#endif
+    if (references != 1) return false;
+    return VisitStorage(owner, source, [&](const auto& storage, int columns) {
+        if constexpr (requires { storage.itemGrid; })
+        {
+            const int rows = source.window_type == EQUIPMENT ? 1 : ItemSystem::GetItemSize(item);
+            for (int row = 0; row < rows; ++row)
+            {
+                const size_t cell = size_t(source.cell) + row * columns;
+                if (cell >= storage.items.size() || storage.itemGrid[cell] != source.cell + 1 ||
+                    (row && storage.items[cell] != entt::null)) return false;
+            }
+        }
+        return true;
+    });
+}
+bool MoveDestination(entt::entity owner, entt::entity item, TItemPos source, TItemPos dest)
+{
+#ifdef ENABLE_SWITCHBOT
+    if ((source.window_type == SWITCHBOT && dest.window_type == EQUIPMENT) ||
+        (dest.window_type == SWITCHBOT && source.window_type == EQUIPMENT)) return false;
+    if (dest.window_type == SWITCHBOT && !SwitchbotHelper::IsValidItem(item))
+    {
+#ifdef TEXTS_IMPROVEMENT
+        ecs::ChatSystem::SendNew(owner, CHAT_TYPE_INFO, 691, "");
+#endif
+        return false;
+    }
+#endif
+    if (dest.window_type == EQUIPMENT)
+    {
+#ifdef ENABLE_EXTRA_INVENTORY
+        return !ItemSystem::IsExtraItem(item);
+#else
+        return true;
+#endif
+    }
+    if (ItemSystem::IsDragonSoulItem(item))
+    {
+        if (dest.window_type != DRAGON_SOUL_INVENTORY) return false;
+        const auto base = DSManager::instance().GetBasePosition(item);
+        if (base == WORD_MAX || dest.cell < base ||
+            uint32_t(dest.cell) + uint32_t(ItemSystem::GetItemSize(item) - 1) * DRAGON_SOUL_BOX_COLUMN_NUM >=
+            uint32_t(base) + DRAGON_SOUL_BOX_SIZE) return false;
+    }
+    else if (dest.window_type == DRAGON_SOUL_INVENTORY) return false;
+#ifdef ENABLE_EXTRA_INVENTORY
+    if (ItemSystem::IsExtraItem(item))
+    {
+        if (dest.window_type != EXTRA_INVENTORY ||
+            dest.cell / EXTRA_INVENTORY_CATEGORY_MAX_NUM != ItemSystem::GetItemExtraCategory(item)) return false;
+    }
+    else if (dest.window_type == EXTRA_INVENTORY) return false;
+#endif
+    if (BeltPosition(dest))
+    {
+        if (SlotAt(owner, dest) != entt::null)
+        {
+            ecs::ChatSystem::Send(owner, CHAT_TYPE_INFO, "This place is already taken.");
+            return false;
+        }
+        if (ItemSystem::GetItemSize(item) != 1 || !CBeltInventoryHelper::CanMoveIntoBeltInventory(item))
+        {
+            ecs::ChatSystem::Send(owner, CHAT_TYPE_INFO, "Belt Only // Csak oveket tehetsz ide.");
+            return false;
+        }
+        const auto* proto = ItemSystem::GetItemProto(item);
+        if (!proto) return false;
+        if (proto->aLimits[0].bType == LIMIT_LEVEL && ecs::PointSystem::GetLevel(owner) < proto->aLimits[0].lValue)
+        {
+            ecs::ChatSystem::Send(owner, CHAT_TYPE_INFO, "You need to be at least level %d to equip this item.", proto->aLimits[0].lValue);
+            return false;
+        }
+        const auto vnum = ItemSystem::GetItemVnum(item);
+        for (uint16_t cell = BELT_INVENTORY_SLOT_START; cell < BELT_INVENTORY_SLOT_END; ++cell)
+        {
+            const auto other = SlotAt(owner, TItemPos(INVENTORY, cell));
+            if (other == entt::null || other == item) continue;
+            if (!ItemSystem::IsValidItem(other)) return false;
+            const auto otherVnum = ItemSystem::GetItemVnum(other);
+            if (vnum == otherVnum || (vnum >= 18000 && vnum <= 18159 && vnum / 10 == otherVnum / 10))
+            {
+                ecs::ChatSystem::Send(owner, CHAT_TYPE_INFO, "You already have a belt of this type in your inventory.");
+                return false;
+            }
+        }
+    }
+    return true;
+}
+bool MoveFits(entt::entity owner, entt::entity item, TItemPos source, TItemPos dest, bool split)
+{
+    const int exception = !split && source.window_type == dest.window_type ? source.cell : -1;
+    const auto size = ItemSystem::GetItemSize(item);
+    if (!IsEmptyItemGrid(owner, dest, size, exception)) return false;
+    return VisitStorage(owner, dest, [&](const auto& storage, int columns) {
+        const int rows = [&] { if constexpr (requires { storage.itemGrid; }) return int(size); else return 1; }();
+        for (int row = 0; row < rows; ++row)
+        {
+            const size_t cell = size_t(dest.cell) + row * columns;
+            if (cell >= storage.items.size() ||
+                (storage.items[cell] != entt::null && !(exception >= 0 && storage.items[cell] == item))) return false;
+            if constexpr (requires { storage.itemGrid; })
+                if (storage.itemGrid[cell] && !(exception >= 0 && storage.itemGrid[cell] == exception + 1)) return false;
+        }
+        return true;
+    });
+}
+bool IsSplitRequest(entt::entity item, int count)
+{
+    return count > 0 && count < g_registry.get<ecs::ItemCount>(item).count &&
+        ItemSystem::IsItemStackable(item) && !(ItemSystem::GetItemAntiFlag(item) & ITEM_ANTIFLAG_STACK);
+}
+struct MoveAction
+{
+    static std::unordered_set<entt::entity> owners;
+    entt::entity owner;
+    bool entered;
+    explicit MoveAction(entt::entity e) : owner(e), entered(owners.insert(e).second) {}
+    ~MoveAction() { if (entered) owners.erase(owner); }
+};
+std::unordered_set<entt::entity> MoveAction::owners;
+
+struct MovedQuickslots
+{
+    std::array<bool, QUICKSLOT_MAX_NUM> changed {};
+    ecs::QuickSlots snapshot {};
+    void Commit(entt::entity owner, TItemPos source, TItemPos dest)
+    {
+        auto* slots = g_registry.try_get<ecs::QuickSlots>(owner);
+        if (!slots || source.cell > UINT8_MAX) return;
+        uint8_t type = 0;
+        if (source.window_type == INVENTORY) type = QUICKSLOT_TYPE_ITEM;
+#ifdef ENABLE_EXTRA_INVENTORY
+        if (source.window_type == EXTRA_INVENTORY) type = QUICKSLOT_TYPE_ITEM_EXTRA;
+#endif
+        if (!type) return;
+        int target = -1;
+        for (size_t i = 0; i < slots->slots.size(); ++i)
+            if (slots->slots[i].type == type && slots->slots[i].pos == source.cell) target = int(i);
+        if (target < 0) return;
+        const TQuickslot replacement {type, static_cast<uint8_t>(dest.cell)};
+        const bool keep = source.window_type == dest.window_type && dest.cell < UINT8_MAX &&
+            IsQuickslotValueValid(replacement);
+        for (size_t i = 0; i < slots->slots.size(); ++i)
+            if (slots->slots[i].type == type &&
+                (slots->slots[i].pos == source.cell || (keep && slots->slots[i].pos == dest.cell)))
+            {
+                changed[i] = true; slots->slots[i] = {};
+            }
+        if (keep) slots->slots[target] = replacement;
+        ++slots->revision;
+        snapshot = *slots; // DirtyTag was ensured before final transaction validation.
+    }
+    void Publish(entt::entity owner) const
+    {
+        for (uint8_t i = 0; i < QUICKSLOT_MAX_NUM && HasQuickslotRevision(owner, snapshot.revision); ++i)
+            if (changed[i])
+            {
+                if (snapshot.slots[i].type) NetworkSyncSystem::SendQuickslotAdd(owner, i, snapshot.slots[i]);
+                else NetworkSyncSystem::SendQuickslotDelete(owner, i);
+            }
+    }
+};
+void CommitRelocation(entt::entity owner, entt::entity item, TItemPos source, TItemPos dest, bool split)
+{
+    if (!split)
+        VisitStorage(owner, source, [&](auto& storage, int) {
+            storage.items[source.cell] = entt::null;
+            if constexpr (requires { storage.itemGrid; })
+                for (auto& anchor : storage.itemGrid) if (anchor == source.cell + 1) anchor = 0;
+            return true;
+        });
+    VisitStorage(owner, dest, [&](auto& storage, int columns) {
+        storage.items[dest.cell] = item;
+        if constexpr (requires { storage.itemGrid; })
+            for (int row = 0; row < ItemSystem::GetItemSize(item); ++row)
+                storage.itemGrid[dest.cell + row * columns] = dest.cell + 1;
+        return true;
+    });
+    auto& ownership = g_registry.get<ecs::ItemOwner>(item);
+    ownership.owner = owner; ownership.ownerPID = ecs::PlayerRuntime::GetPlayerID(owner);
+    ownership.lastOwnerPID = ownership.ownerPID;
+    g_registry.get<ecs::ItemLocation>(item) = {dest.window_type, dest.cell};
+    g_registry.get<ecs::ItemEquipped>(item) = {};
+}
+
+struct SplitPayload
+{
+    ecs::ItemIdentity identity;
+    ecs::ItemSockets sockets;
+    ecs::ItemAttributes attributes;
+    int flags, count;
+    uint8_t size, type, subtype;
+    short locked;
+    TItemExtraProto* extra;
+    explicit SplitPayload(entt::entity item) :
+        identity(g_registry.get<ecs::ItemIdentity>(item)), sockets(g_registry.get<ecs::ItemSockets>(item)),
+        attributes(g_registry.get<ecs::ItemAttributes>(item)), flags(ItemSystem::GetItemFlags(item)),
+        count(g_registry.get<ecs::ItemCount>(item).count), size(ItemSystem::GetItemSize(item)),
+        type(ItemSystem::GetItemType(item)), subtype(ItemSystem::GetItemSubType(item)),
+        locked(ItemSystem::GetItemLockedAttributeIndex(item)), extra(ItemSystem::GetItemExtraProto(item)) {}
+    bool Unchanged(entt::entity item) const
+    {
+        if (!g_registry.all_of<ecs::ItemIdentity, ecs::ItemSockets, ecs::ItemAttributes, ecs::ItemCount>(item)) return false;
+        const auto& id = g_registry.get<ecs::ItemIdentity>(item);
+        if (id.id != identity.id || id.vid != identity.vid || id.vnum != identity.vnum ||
+            id.originalVnum != identity.originalVnum || id.maskVnum != identity.maskVnum ||
+            id.sigVnum != identity.sigVnum || id.specialGroup != identity.specialGroup ||
+            id.transmutationVnum != identity.transmutationVnum ||
+            g_registry.get<ecs::ItemSockets>(item).sockets != sockets.sockets ||
+            ItemSystem::GetItemFlags(item) != flags || g_registry.get<ecs::ItemCount>(item).count != count ||
+            ItemSystem::GetItemSize(item) != size || ItemSystem::GetItemType(item) != type ||
+            ItemSystem::GetItemSubType(item) != subtype || ItemSystem::GetItemLockedAttributeIndex(item) != locked ||
+            ItemSystem::GetItemExtraProto(item) != extra) return false;
+        const auto& current = g_registry.get<ecs::ItemAttributes>(item).attrs;
+        for (size_t i = 0; i < current.size(); ++i)
+            if (current[i].bType != attributes.attrs[i].bType || current[i].sValue != attributes.attrs[i].sValue) return false;
+        return true;
+    }
+    void CopyTo(entt::entity item) const
+    {
+        auto& id = g_registry.get<ecs::ItemIdentity>(item);
+        const auto newID = id.id, newVID = id.vid;
+        id = identity; id.id = newID; id.vid = newVID;
+        g_registry.get<ecs::ItemSockets>(item) = sockets;
+        g_registry.get<ecs::ItemAttributes>(item) = attributes;
+        g_registry.get<ecs::ItemFlags>(item).flags = flags;
+        g_registry.get<ecs::ItemPrototypeMeta>(item) = {type, subtype};
+        g_registry.get<ecs::ItemExtraProtoRef>(item).proto = extra;
+        g_registry.get<ecs::ItemLockedAttribute>(item).index = locked;
+    }
+};
+struct PreparedSplit
+{
+    entt::entity item = entt::null;
+    bool committed = false;
+    ~PreparedSplit()
+    {
+        // Never destroy an entity a callback has transferred elsewhere.
+        if (!committed && Unowned(item) && ItemSystem::GetItemWindow(item) == RESERVED_WINDOW &&
+            !ItemSystem::DestroyItemEntityEcs(item, "SPLIT_ABORT"))
+            LOG_ERROR("Could not retire prepared split item {}", entt::to_integral(item));
+    }
+};
+bool PrepareSplit(entt::entity item)
+{
+    return EnsureComponent<ecs::ItemOwner>(item) && EnsureComponent<ecs::ItemLocation>(item) &&
+        EnsureComponent<ecs::ItemEquipped>(item) && EnsureComponent<ecs::ItemSockets>(item) &&
+        EnsureComponent<ecs::ItemAttributes>(item) && EnsureComponent<ecs::ItemFlags>(item) &&
+        EnsureComponent<ecs::ItemPrototypeMeta>(item) && EnsureComponent<ecs::ItemExtraProtoRef>(item) &&
+        EnsureComponent<ecs::ItemLockedAttribute>(item);
+}
+bool HadMountBonus(uint32_t vnum)
+{
+    // Preserve the former MoveItem whitelist, including the four gaps.
+    if (vnum >= 18000 && vnum <= 18159) return true;
+    if (vnum >= 611500 && vnum <= 611666)
+        return vnum != 611509 && vnum != 611519 && vnum != 611529 && vnum != 611539;
+    constexpr uint32_t singles[] = {
+        14590,14591,14592,14593,52040,60001,48421,49009,49049,60003,
+        71223,71253,71224,71228,71251,71125,71126,71127,71139,71166,71171,
+        71176,71177,71221,71222,71252,71256,71225,71226,71227,71255,71254,
+        71233,71250,71128,23014,23015,23016,71137,71140,71185
+    };
+    return std::find(std::begin(singles), std::end(singles), vnum) != std::end(singles);
+}
+void PublishMove(entt::entity owner, entt::entity item, TItemPos source, TItemPos dest,
+                 bool split, const MovedQuickslots& quickslots)
+{
+#ifdef ENABLE_SWITCHBOT
+    if (!split && source.window_type == SWITCHBOT && g_registry.valid(owner) && SlotAt(owner, source) == entt::null)
+        CSwitchbotManager::instance().UnregisterItem(ecs::PlayerRuntime::GetPlayerID(owner), source.cell);
+    if (dest.window_type == SWITCHBOT && Anchored(owner, item, dest))
+        CSwitchbotManager::instance().RegisterItem(ecs::PlayerRuntime::GetPlayerID(owner), ItemSystem::GetItemID(item), dest.cell);
+#endif
+    quickslots.Publish(owner);
+    if (Anchored(owner, item, dest)) ItemSystem::SaveItem(item);
+    SendStorageSlot(owner, source, false);
+    SendStorageSlot(owner, dest, false);
+}
+void PublishBeltMove(entt::entity owner, TItemPos source, TItemPos dest, bool split, uint32_t vnum)
+{
+    if (g_registry.valid(owner) && (BeltPosition(source) || BeltPosition(dest)))
+    {
+        if (!split && BeltPosition(source) && HadMountBonus(vnum)) AffectSystem::RemoveAffect(owner, AFFECT_MOUNT_BONUS);
+        if (!g_registry.valid(owner)) return;
+        ecs::PointSystem::Compute(owner);
+        if (!g_registry.valid(owner)) return;
+        MountSystem::UpdateMountCountOverheadToViewers(owner);
+#ifdef ENABLE_FAKE_SHOP_HEADER
+        if (g_registry.valid(owner)) CombatSystem::SendLeaderboardDataSkillMob(owner, owner);
+#endif
+    }
+}
+} // namespace
+
+bool MoveItem(entt::entity owner, TItemPos source, TItemPos dest, int count)
+{
+    if (!NormalizeMovePosition(source) || !NormalizeMovePosition(dest) || source == dest || count < 0 ||
+        !g_registry.valid(owner)) return false;
+    const MoveAction action(owner);
+    if (!action.entered) return false;
+    const auto item = SlotAt(owner, source);
+    if (!MoveSource(owner, item, source, count) || !MoveDestination(owner, item, source, dest)) return false;
+    if (dest.window_type == EQUIPMENT)
+    {
+        if (SlotAt(owner, dest) != entt::null)
+        {
+#ifdef TEXTS_IMPROVEMENT
+            ecs::ChatSystem::SendNew(owner, CHAT_TYPE_INFO, 538, "");
+#endif
+            return false;
+        }
+        return ItemSystem::EquipItemEcs(owner, item, dest.cell - INVENTORY_MAX_NUM);
+    }
+    if (source.window_type == EQUIPMENT)
+    {
+        if (ItemSystem::IsDragonSoulItem(item))
+        {
+            auto stone = item;
+            return DSManager::instance().PullOutEcs(owner, dest, stone);
+        }
+        const auto vnum = ItemSystem::GetItemVnum(item);
+        const bool committed = ItemSystem::UnequipItemToEcs(owner, item, dest);
+        if (committed) PublishBeltMove(owner, source, dest, false, vnum);
+        return committed;
+    }
+    const auto target = SlotAt(owner, dest);
+    if (target != entt::null)
+        return target != item && ItemSystem::MergeItemStacksEcs(owner, item, target, uint32_t(count)).transferred != 0;
+
+    const bool split = IsSplitRequest(item, count);
+    // Splitting a belt entry would bypass its one-per-type rule.
+    if (split && (BeltPosition(source) || BeltPosition(dest) || ItemSystem::GetItemType(item) == ITEM_ELK)) return false;
+    if (!EnsureStorage(owner, dest.window_type) ||
+        !EnsureComponent<ecs::ItemEquipped>(item) ||
+        (g_registry.valid(owner) && g_registry.all_of<ecs::QuickSlots>(owner) && !EnsureComponent<ecs::DirtyTag>(owner)) ||
+        !MoveSource(owner, item, source, count) || !MoveDestination(owner, item, source, dest) ||
+        split != IsSplitRequest(item, count) ||
+        !MoveFits(owner, item, source, dest, split)) return false;
+    const auto vnum = ItemSystem::GetItemVnum(item);
+    MovedQuickslots quickslots;
+    if (!split)
+    {
+        // Location, both footprints and quickslots are committed with no callbacks.
+        CommitRelocation(owner, item, source, dest, false);
+        quickslots.Commit(owner, source, dest);
+        PublishMove(owner, item, source, dest, false, quickslots);
+        PublishBeltMove(owner, source, dest, false, vnum);
+        return true;
+    }
+
+    if (!g_registry.all_of<ecs::ItemIdentity, ecs::ItemSockets, ecs::ItemAttributes>(item)) return false;
+    const SplitPayload payload(item);
+    PreparedSplit prepared {ITEM_MANAGER::instance().CreateItem(vnum, uint32_t(count))};
+    if (prepared.item == item || !ItemSystem::IsValidItem(prepared.item) || !PrepareSplit(prepared.item)) return false;
+    if (auto* events = g_registry.try_get<ecs::ItemEvents>(prepared.item); events && events->destroy)
+    {
+        auto timer = std::move(events->destroy);
+        event_cancel(&timer);
+    }
+    // Allocation, component construction and timer cancellation can all call out.
+    // Revalidate both entities and the complete source payload before any debit.
+    if (!MoveSource(owner, item, source, count) || !payload.Unchanged(item) ||
+        !ItemSystem::IsItemStackable(item) || (ItemSystem::GetItemAntiFlag(item) & ITEM_ANTIFLAG_STACK) ||
+        !MoveDestination(owner, item, source, dest) || !MoveFits(owner, item, source, dest, true) ||
+        !DestinationFits(owner, prepared.item, dest) ||
+        ItemSystem::IsItemConsumptionPending(prepared.item) || ItemSystem::IsItemLocked(prepared.item) ||
+        ItemSystem::IsItemExchanging(prepared.item) ||
+        ItemSystem::GetItemVnum(prepared.item) != vnum || ItemSystem::GetItemSize(prepared.item) != payload.size ||
+        ItemSystem::GetItemCount(prepared.item) != uint32_t(count) ||
+        !g_registry.all_of<ecs::ItemIdentity, ecs::ItemCount, ecs::ItemOwner, ecs::ItemLocation,
+            ecs::ItemEquipped, ecs::ItemSockets, ecs::ItemAttributes, ecs::ItemFlags,
+            ecs::ItemPrototypeMeta, ecs::ItemExtraProtoRef, ecs::ItemLockedAttribute>(prepared.item)) return false;
+    payload.CopyTo(prepared.item);
+    char splitHint[80];
+    snprintf(splitHint, sizeof(splitHint), "%u %u %u %u ", ItemSystem::GetItemID(prepared.item),
+        uint32_t(count), uint32_t(payload.count - count), uint32_t(payload.count));
+    g_registry.get<ecs::ItemCount>(item).count -= count;
+    CommitRelocation(owner, prepared.item, source, dest, true);
+    prepared.committed = true;
+    LogManager::instance().ItemLogEntity(owner, item, "ITEM_SPLIT", splitHint);
+    if (Anchored(owner, item, source) && !ItemSystem::IsItemConsumptionPending(item)) ItemSystem::SaveItem(item);
+    PublishMove(owner, prepared.item, source, dest, true, quickslots);
+    LOG_INFO("ITEM_SPLIT owner entity={} source entity={} target entity={} count={}",
+        entt::to_integral(owner), entt::to_integral(item), entt::to_integral(prepared.item), count);
+    return true;
+}
+
 } // namespace InventorySystem
 
 namespace InventorySystem {
@@ -1631,7 +2102,7 @@ void RestoreDetached(entt::entity owner, entt::entity item, TItemPos position) {
     LOG_ERROR("Equipment recovery failed: owner {} item {} window {} cell {}",
         entt::to_integral(owner), entt::to_integral(item), position.window_type, position.cell);
 }
-bool UnequipAction(entt::entity owner, entt::entity item) {
+bool UnequipAction(entt::entity owner, entt::entity item, TItemPos preferred = NPOS) {
     if (!WornBy(owner, item) || !InventorySystem::CanUnequipNow(owner, item)) return false;
     const uint16_t wearCell = GetItemCell(item);
     const auto unchanged = [&] { return WornBy(owner, item) && GetItemCell(item) == wearCell; };
@@ -1642,9 +2113,9 @@ bool UnequipAction(entt::entity owner, entt::entity item) {
     }
 #endif
     if (!unchanged()) return false;
-    const int cell = GetEmptyInventoryPositionEcs(owner, item);
+    const int cell = preferred == NPOS ? GetEmptyInventoryPositionEcs(owner, item) : preferred.cell;
     if (cell < 0) return false;
-    const TItemPos destination(StorageWindow(item), cell);
+    const TItemPos destination = preferred == NPOS ? TItemPos(StorageWindow(item), cell) : preferred;
     if (InventorySystem::RemoveFromCharacter(item) == entt::null || !InventorySystem::Detached(item)) return false;
     if (!CarryDetached(owner, item, destination)) {
         RestoreDetached(owner, item, TItemPos(EQUIPMENT, wearCell));
@@ -1689,6 +2160,13 @@ bool UnequipItemEcs(entt::entity owner, entt::entity item) {
     if (!g_registry.valid(owner) || !IsValidItem(item)) return false;
     const EquipmentAction action(owner);
     return action.entered && UnequipAction(owner, item);
+}
+
+bool UnequipItemToEcs(entt::entity owner, entt::entity item, TItemPos destination) {
+    if (!g_registry.valid(owner) || !IsValidItem(item) || destination.window_type != StorageWindow(item) ||
+        !InventorySystem::IsEmptyItemGrid(owner, destination, GetItemSize(item))) return false;
+    const EquipmentAction action(owner);
+    return action.entered && UnequipAction(owner, item, destination);
 }
 
 bool EquipItemEcs(entt::entity owner, entt::entity item, int candidateCell) {

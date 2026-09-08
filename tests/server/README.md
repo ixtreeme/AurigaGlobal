@@ -1019,18 +1019,70 @@ recursive reward delivery, failed retirement/retry, publication exceptions,
 owner/source/destination deletion, generation reuse, moved/replaced/locked
 candidates and stale slot aliases.
 
-The old automatic and blend merge implementations were removed. The occupied
-stack branch in `CHARACTER::MoveItem` now calls the entity-native pair operation,
-without an LPITEM destination or sequential consume/add. Its negative-count
-check no longer applies abs(int) to INT_MIN. The rest of MoveItem, splitting,
-the complete AutoGive dispatcher, reward creation/placement and money logging
-remain separate migration work. The VNUM-only reward path now respects rejected
+The old automatic and blend merge implementations were removed. Inventory drag
+now calls this operation from the entity-native MoveItem transaction described
+below, without an LPITEM destination or sequential consume/add. Its negative-count
+check does not apply abs(int) to INT_MIN. The complete AutoGive dispatcher,
+reward creation/placement and money logging remain separate migration work.
+The VNUM-only reward path now respects rejected
 count writes and does not create a replacement item when a fully credited
 destination disappears during callbacks; those call sites are compiled with
 GameServer, not executed by this fixture. Inventory lookup, extra-item category,
 item validity/lock/owner access, save/network and actual deletion are doubles.
 Verify client drag/drop, quickslots, blend rewards, full inventory, disconnect
 during rewards and relogged persistence with the real client and test database.
+
+## Entity-native inventory drag and stack splitting
+
+`InventorySystem::MoveItem` replaces the entire `CHARACTER::MoveItem` body and
+declaration, in the existing InventorySystem.cpp. Input dispatch passes the owner
+entity and copied packet positions/count directly; the two remaining item-use
+call sites also enter this transaction. There is no new pointer conversion or
+parallel implementation file. The old duplicate mount-bonus whitelist is reduced
+to exactly equivalent ranges/singles, including its four excluded mount IDs.
+
+Ordinary relocation commits source/destination anchors, footprints, location,
+ownership and affected quickslots before external publication. Split preparation
+creates a detached item before any source debit, retains sockets, attributes,
+attribute lock, flags and identity metadata while keeping the new persistent
+ID/VID, then commits both quantities and placement without callbacks in between.
+Allocation, component-construction and timer callbacks force revalidation of
+source identity, payload, quantity, ownership, restrictions and destination.
+Failed preparation retires only the original still-detached temporary item;
+committed operations never refund or replay old state over a callback's changes.
+The split DB audit is retained through the native entity logging entry point.
+
+The packet operation explicitly routes normal, extra, dragon-soul, switchbot and
+equipment windows. A DS inventory cell cannot be mistaken for a numerically
+overlapping belt/equipment cell. It rejects aliases, invalid footprints, negative
+counts, inaccessible destinations, active switchbot entries, locked/exchanging
+or pending-consumption items, and wrong DS/extra categories. Belt whitelist,
+level/group uniqueness, removal affects, point recalculation and overhead updates
+are preserved. Belt stack splitting is rejected to preserve one-per-type entries.
+Safebox, mall and account-mount windows require their dedicated protocols.
+Equipment drag dispatches the existing native equipment engine; explicit unequip
+uses the requested destination when available (with the existing callback-safe
+recovery), and DS equipment extraction goes through PullOutEcs. Dragging equipment
+onto an occupied slot is rejected before unequipping a dependent costume.
+
+The existing `QuickslotTests` target executes the real MoveItem implementation,
+storage transactions, queries, quickslots and equipment engine with entity-only
+fixtures. It covers multi-cell/overlapping moves, wide DS/extra cells, full moves
+and splits, packet payloads, merge/extraction dispatch, equipment aliases, belt
+restrictions and refreshes, switchbot registration, failed/clamped creation,
+changed source payload/count/flags, stale/recycled entities, reentrant moves,
+component destruction, timer cancellation, publication-time transfer/deletion,
+and split/full-move reclassification during preparation.
+
+Factory, metadata/accessor queries, split retirement, DB logging, merge and
+DS-extraction dispatch, switchbot, points, mount/leaderboard and packet services
+are controlled doubles here. Pairwise merges and extraction have separate real
+implementation tests; this fixture does not exercise actual item allocation,
+database durability, socket transport, leaderboard SQL or complete engine
+callbacks. Atomicity here means synchronous main-thread in-memory state, not a
+durable database transaction. Allocation and other systems still contain legacy
+internals. Run client drag/split/equip, belt bonuses, switchbot transfers,
+disconnect/relog and persistence checks on a test server before deployment.
 
 ## Mount and pet lifecycle regression tests
 

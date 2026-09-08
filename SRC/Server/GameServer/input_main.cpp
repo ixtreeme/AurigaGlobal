@@ -1548,17 +1548,11 @@ void CInputMain::ItemDrop2(entt::entity character, const char * data)
 
 void CInputMain::ItemMove(entt::entity character, const char * data)
 {
-	LPCHARACTER ch = ecs::LegacyCharOf(character);
-// migrated from CHARACTER handler
-// TODO Phase 8: migrate ItemMove handler ECS
-// DUAL-PATH: legacy only during migration window
-#ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "input_main.cpp:: void CInputMain::ItemMove");//INGAME_DEBUG_RAZOR93
-#endif
-	struct command_item_move * pinfo = (struct command_item_move *) data;
-
-	if (ch)
-		ch->MoveItem(pinfo->Cell, pinfo->CellTo, pinfo->count);
+	// Framing validates this fixed-size packet before dispatch. Copy packed data
+	// so the transaction does not retain a pointer into the receive buffer.
+	command_item_move packet {};
+	memcpy(&packet, data, sizeof(packet));
+	InventorySystem::MoveItem(character, packet.Cell, packet.CellTo, packet.count);
 }
 
 #ifdef __ENABLE_EXTEND_INVEN_SYSTEM__

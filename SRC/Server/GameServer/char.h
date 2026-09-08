@@ -1303,13 +1303,6 @@ public:
 	bool			GiveItemFromSpecialItemGroup(uint32_t dwGroupNum, std::vector <uint32_t>& dwItemVnums,
 		std::vector <uint32_t>& dwItemCounts, std::vector<entt::entity>& item_gets, int& count);
 
-	bool			MoveItem(TItemPos pos, TItemPos change_pos,
-#ifdef ENABLE_NEW_STACK_LIMIT
-		int
-#else
-		uint32_t
-#endif
-		count);
 	bool			PickupItem(uint32_t vid);
 
 	entt::entity		AutoGiveItem(uint32_t dwItemVnum,
