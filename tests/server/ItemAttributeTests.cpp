@@ -35,6 +35,7 @@ entt::registry g_registry;
 TItemAttrMap g_map_itemAttr;
 TItemAttrMap g_map_itemRare;
 int g_iDbLogLevel = 0;
+int g_bItemCountLimit = 200;
 const int aiItemMagicAttributePercentHigh[ITEM_ATTRIBUTE_MAX_LEVEL] = {0, 0, 0, 0, 100};
 const int aiItemMagicAttributePercentLow[ITEM_ATTRIBUTE_MAX_LEVEL] = {100, 0, 0, 0, 0};
 
@@ -49,6 +50,7 @@ bool rejectPayment = false;
 bool rejectGoldPayment = false;
 bool transferTest = false;
 bool soulStateTest = false;
+bool countStateTest = false;
 int soulAdds = 0, soulRemoves = 0, soulStarts = 0, soulStops = 0, soulLogs = 0, deckStops = 0;
 bool rejectSoulPoints = false, rejectSoulTimer = false;
 std::map<entt::entity, int> soulBonus;
@@ -121,7 +123,7 @@ void CheckPaymentOrder()
 int passes_per_sec = 25;
 std::shared_ptr<spdlog::logger> logging::GetErrorLogger()
 {
-    if (!transferTest && !extractionTest) UnexpectedSwitchbotService();
+    if (!transferTest && !extractionTest && !countStateTest) UnexpectedSwitchbotService();
     static auto logger = std::make_shared<spdlog::logger>("transfer-test", spdlog::sinks_init_list{});
     return logger;
 }
@@ -242,8 +244,8 @@ int ItemSystem::GetItemDuration(entt::entity) { return 0; }
 bool ItemSystem::DestroyItemEntityEcs(entt::entity item, const char*)
 {
     const bool retired = ItemSystem::IsItemConsumptionPending(item) && ItemSystem::GetItemCount(item) == 0;
-    Check((transferTest || extractionTest) && (retired ||
-        (extractionTest && ItemSystem::GetItemOwner(item) == entt::null)),
+    Check(countStateTest || ((transferTest || extractionTest) && (retired ||
+        (extractionTest && ItemSystem::GetItemOwner(item) == entt::null))),
         "cleanup entered before committed item retirement");
     destroyAttempts.push_back(item);
     if (onDestroy) onDestroy(item);
@@ -464,7 +466,6 @@ entt::entity GetItem(entt::entity owner, TItemPos pos)
 entt::entity GetInventoryItem(entt::entity owner, uint16_t cell) { return GetItem(owner, TItemPos(INVENTORY, cell)); }
 uint8_t GetItemWindow(entt::entity item) { return g_registry.get<ecs::ItemLocation>(item).window; }
 uint16_t GetItemCell(entt::entity item) { return g_registry.get<ecs::ItemLocation>(item).cell; }
-uint32_t GetItemCount(entt::entity item) { return g_registry.get<ecs::ItemCount>(item).count; }
 int GetItemAttributeCount(entt::entity item)
 {
     return ecs::item_attributes::Count(g_registry.get<ecs::ItemAttributes>(item).attrs, 0, ITEM_ATTRIBUTE_NORM_NUM);
@@ -543,7 +544,8 @@ struct Fixture {
         floatRandomCalls = 0;
         payments = 0;
         rejectPayment = rejectGoldPayment = false;
-        transferTest = extractionTest = soulStateTest = false;
+        transferTest = extractionTest = soulStateTest = countStateTest = false;
+        g_bItemCountLimit = 200;
         onSoulPoints = {}; onSoulStart = onSoulStop = {};
         onCreate = onSocket = onRemove = onPlace = onLog = {};
         rejectPaymentAt = transferLogs = 0;
@@ -2366,6 +2368,145 @@ void SoulStateCallbacks()
 }
 
 
+struct CountFixture : PaidFixture {
+    CountFixture()
+    {
+        countStateTest = true;
+        Place(item, INVENTORY, 5);
+        g_registry.emplace<ecs::ItemCount>(item, ecs::ItemCount{3});
+    }
+};
+
+struct CountSignals {
+    int calls {0};
+    void Changed(entt::registry&, entt::entity) { ++calls; }
+};
+
+void CountValidationAndLimits()
+{
+    for (int scenario = 0; scenario < 5; ++scenario) {
+        CountFixture f;
+        auto invalid = f.item;
+        switch (scenario) {
+            case 0: invalid = entt::null; break;
+            case 1: g_registry.destroy(invalid); break;
+            case 2: invalid = g_registry.create(); break;
+            case 3: g_registry.remove<ecs::ItemIdentity>(invalid); break;
+            case 4: g_registry.remove<ecs::ItemCount>(invalid); break;
+        }
+        for (auto amount : {0u, 1u, UINT32_MAX})
+            Check(!ItemSystem::SetItemCountEcs(invalid, amount), "invalid stack write accepted");
+        Check(!ItemSystem::AddItemCountEcs(invalid, -1) && !ItemSystem::AddItemCountEcs(invalid, 1),
+            "invalid stack delta accepted");
+        if (scenario == 0 || scenario == 1 || scenario == 2 || scenario == 4)
+            Check(ItemSystem::GetItemCount(invalid) == 0, "missing/stale stack read nonzero");
+        Check(saves == 0 && updates == 0 && destroyAttempts.empty(), "rejected count write published");
+        if (scenario == 4) Check(!g_registry.any_of<ecs::ItemCount>(invalid), "count setter created missing component");
+    }
+    {
+        CountFixture f;
+        CountSignals signals;
+        entt::scoped_connection countConstruct = g_registry.on_construct<ecs::ItemCount>().connect<&CountSignals::Changed>(signals);
+        entt::scoped_connection countUpdate = g_registry.on_update<ecs::ItemCount>().connect<&CountSignals::Changed>(signals);
+        Check(ItemSystem::SetItemCountEcs(f.item, 4) && ItemSystem::GetItemCount(f.item) == 4,
+            "positive stack update failed");
+        Check(saves == 1 && updates == 1, "positive stack publication not exactly once");
+        ItemSystem::SetItemCount(f.item, 8);
+        Check(ItemSystem::GetItemCount(f.item) == 8 && saves == 2 && updates == 2, "void setter bypassed core");
+        for (auto amount : {201u, UINT32_MAX})
+            Check(ItemSystem::SetItemCountEcs(f.item, amount) && ItemSystem::GetItemCount(f.item) == 200,
+                "stack limit/unsigned input narrowed before clamping");
+        for (int limit : {0, -1}) {
+            g_bItemCountLimit = limit;
+            f.Watch();
+            Check(!ItemSystem::SetItemCountEcs(f.item, 1) && ItemSystem::GetItemCount(f.item) == 200 &&
+                saves == 0 && updates == 0, "invalid cap created zero/negative stack");
+        }
+        f.proto.bType = ITEM_ELK;
+        Check(ItemSystem::SetItemCountEcs(f.item, UINT32_MAX) && ItemSystem::GetItemCount(f.item) == INT_MAX,
+            "gold stack was not clamped independently to INT_MAX");
+        Check(ItemSystem::AddItemCountEcs(f.item, INT_MAX) && ItemSystem::GetItemCount(f.item) == INT_MAX,
+            "gold delta overflowed signed arithmetic");
+        Check(ItemSystem::AddItemCountEcs(f.item, -1) && ItemSystem::GetItemCount(f.item) == INT_MAX - 1u,
+            "negative delta did not use current component count");
+        g_registry.get<ecs::ItemCount>(f.item).count = -10;
+        Check(ItemSystem::GetItemCount(f.item) == 0, "negative component wrapped to unsigned count");
+        Check(ItemSystem::SetItemCountEcs(f.item, 1) && ItemSystem::GetItemCount(f.item) == 1,
+            "explicit valid count did not replace corrupt negative state");
+        Check(signals.calls == 0, "count commit emitted registry signals");
+    }
+}
+
+void CountDestructionAndCallbacks()
+{
+    for (bool delta : {false, true}) {
+        CountFixture f;
+        rejectDestruction.insert(f.item);
+        const auto remove = [&] { return delta ? ItemSystem::AddItemCountEcs(f.item, INT_MIN) :
+            ItemSystem::SetItemCountEcs(f.item, 0); };
+        Check(!remove() && ItemSystem::GetItemCount(f.item) == 3 && saves == 0 && updates == 0,
+            "failed zero-count removal reported success or changed count");
+        rejectDestruction.clear();
+        Check(remove() && !g_registry.valid(f.item) && saves == 0 && updates == 0,
+            "zero-count removal did not retire the item");
+    }
+    {
+        CountFixture f;
+        bool nested = false;
+        onSave = [&](entt::entity e) {
+            Check(e == f.item && ItemSystem::GetItemCount(e) == (nested ? 9u : 5u),
+                "save observed uncommitted stack");
+            if (!nested) {
+                nested = true;
+                Check(ItemSystem::SetItemCountEcs(e, 9), "nested count update rejected");
+            }
+        };
+        onUpdate = [&](entt::entity e) { Check(ItemSystem::GetItemCount(e) == 9, "outer packet restored stale count"); };
+        Check(ItemSystem::SetItemCountEcs(f.item, 5) && ItemSystem::GetItemCount(f.item) == 9 &&
+            saves == 2 && updates == 2, "nested count commit was overwritten");
+    }
+    for (int scenario = 0; scenario < 4; ++scenario) {
+        CountFixture f;
+        entt::entity replacement {entt::null};
+        onSave = [&](entt::entity e) {
+            Check(ItemSystem::GetItemCount(e) == 5, "save called before positive commit");
+            if (scenario == 0) {
+                g_registry.destroy(e);
+                replacement = f.Material(50001, 37, 5);
+                Check(entt::to_entity(replacement) == entt::to_entity(e) && replacement != e,
+                    "fixture did not recycle entity index");
+            } else if (scenario == 1) g_registry.remove<ecs::ItemCount>(e);
+            else if (scenario == 2) g_registry.get<ecs::ItemCount>(e).count = 0;
+            else Check(ItemSystem::SetItemCountEcs(e, 0), "nested zero-count removal failed");
+        };
+        Check(ItemSystem::SetItemCountEcs(f.item, 5) && saves == 1 && updates == 0,
+            "post-save removal still published count or hid successful commit");
+        if (scenario == 0) Check(ItemSystem::GetItemCount(replacement) == 37, "stale publication touched replacement item");
+    }
+    {
+        CountFixture f;
+        onUpdate = [&](entt::entity e) { g_registry.destroy(e); };
+        Check(ItemSystem::SetItemCountEcs(f.item, 6) && !g_registry.valid(f.item) && saves == 1 && updates == 1,
+            "packet callback destruction invalidated the commit result");
+    }
+    {
+        CountFixture f;
+        const std::array costs {ItemSystem::ItemCost{f.material, 2}};
+        rejectDestruction.insert(f.material);
+        Check(ItemSystem::ConsumeOwnedItemCosts(f.owner, costs) && ItemSystem::IsItemConsumptionPending(f.material),
+            "fixture did not retain committed zero-count retirement");
+        for (auto amount : {0u, 1u, UINT32_MAX})
+            Check(!ItemSystem::SetItemCountEcs(f.material, amount), "count setter resurrected retired stack");
+        Check(!ItemSystem::AddItemCountEcs(f.material, 1) && !ItemSystem::AddItemCountEcs(f.material, -1),
+            "count delta bypassed retirement guard");
+        Check(ItemSystem::GetItemCount(f.material) == 0 && saves == 0 && updates == 0,
+            "retired stack was published");
+        rejectDestruction.clear();
+        ItemSystem::ProcessPendingItemConsumptions();
+        Check(!g_registry.valid(f.material), "retired stack did not finish cleanup");
+    }
+}
+
 void SwitchbotTransactions()
 {
 #if defined(ENABLE_SWITCHBOT)
@@ -2474,6 +2615,7 @@ int main()
         TransferPaymentAndCommit();
         BatchCostValidation();
         BatchReentrancyAndRetirement();
+        CountValidationAndLimits(); CountDestructionAndCallbacks();
         std::cout << "Item attribute regression checks passed: " << checks << '\n';
         return 0;
     } catch (const std::exception& error) {

@@ -454,11 +454,6 @@ ecs::ItemGroundPosition MakeItemGroundPosition(LPITEM item)
     return ecs::ItemGroundPosition { pos.x, pos.y, pos.z };
 }
 
-ecs::ItemCount MakeItemCount(LPITEM item)
-{
-    return ecs::ItemCount { item->GetCount() };
-}
-
 ecs::ItemPrototypeMeta MakeItemPrototypeMeta(LPITEM item)
 {
     return ecs::ItemPrototypeMeta {
@@ -556,7 +551,10 @@ void SyncItemEntity(entt::registry& reg, entt::entity entity, LPITEM item)
     reg.emplace_or_replace<ecs::ItemIdentity>(entity, MakeItemIdentity(item));
     reg.emplace_or_replace<ecs::ItemLocation>(entity, MakeItemLocation(item));
     reg.emplace_or_replace<ecs::ItemGroundPosition>(entity, MakeItemGroundPosition(item));
-    reg.emplace_or_replace<ecs::ItemCount>(entity, MakeItemCount(item));
+    // Count has no legacy mirror. Creation starts empty; resync preserves the
+    // current stack (including a committed zero-count retirement).
+    if (!reg.all_of<ecs::ItemCount>(entity))
+        reg.insert<ecs::ItemCount>(&entity, &entity + 1);
     reg.emplace_or_replace<ecs::ItemPrototypeMeta>(entity, MakeItemPrototypeMeta(item));
     reg.emplace_or_replace<ecs::ItemOwner>(entity, MakeItemOwner(item));
     reg.emplace_or_replace<ecs::ItemEquipped>(entity, MakeItemEquipped(item));

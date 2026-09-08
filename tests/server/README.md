@@ -974,11 +974,25 @@ implemented: separate save/delete messages can still persist partly if the
 process or connection fails. This is not a durable all-or-nothing guarantee.
 
 Position, quest lookup, chat, logging, inventory lookup, network/save and actual
-item destruction are doubles. The native count setters' removal of the legacy
-mirror, count clamping, retirement write guards, and the real item-manager
-tick/shutdown/persistence integration are built with GameServer but are not
-executed by these headless tests. Verify stack caps, splitting/merging, zero and
-last-unit consumption, quickslots and DB reconnect/logout on a test server.
+item destruction are doubles. The native count getter, setters and signed-delta
+operation now run as production code in ItemAttributeTests. Checks cover invalid
+and stale handles, missing count components, configured stack caps, UINT32_MAX
+inputs, independent INT_MAX gold caps, signed-delta overflow, rejected zero-count
+removal, pending-retirement write guards, nested updates and deletion/component
+removal during save or packet callbacks. A positive result means the count
+committed, not that the item survived subsequent callbacks; zero writes report
+verified removal instead of first publishing a zero-count stack.
+
+ItemCount is the only count storage: CItem has no count member, and legacy
+resynchronization cannot overwrite it. The remaining CItem GetCount/SetCount
+methods are compatibility boundaries for unmigrated callers. The old SetCount
+branch accessed the deleted CItem; it is removed, including its obsolete
+CHARACTER refine-window-close shim. These boundaries and factory hydration are
+compiled with GameServer, not executed by this headless count fixture. The real
+item-manager tick/persistence integration, inventory stack merge/split algorithms
+and full gameplay callback graph are not covered here. Verify stack caps,
+splitting/merging, zero and last-unit consumption, quickslots and DB
+reconnect/logout on a test server.
 
 Before deployment verify NPC interaction, each supported costume subtype,
 selection/preview/clear/close, competing trade windows, disconnect/death,

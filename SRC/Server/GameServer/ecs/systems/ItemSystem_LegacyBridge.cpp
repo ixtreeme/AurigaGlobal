@@ -297,15 +297,6 @@ static uint32_t ItemVnumOrLegacy(LPITEM item)
     return item->GetVnum();
 }
 
-static void SyncItemCountComponent(LPITEM item, int count)
-{
-    entt::entity e = (item ? item->GetEntityHandle() : entt::null);
-    if (e == entt::null)
-        return;
-
-    g_registry.emplace_or_replace<ecs::ItemCount>(e, ecs::ItemCount{count});
-}
-
 static void SyncItemFlagsComponent(LPITEM item)
 {
     entt::entity e = (item ? item->GetEntityHandle() : entt::null);
@@ -520,110 +511,26 @@ void CItem::AddFlag(int32_t bit)
 
 int CItem::GetCount()
 {
-	const TItemTable* proto = GetProto();
-	const TItemTable* expected = ITEM_MANAGER::instance().GetTable(GetOriginalVnum());
-
-	if (proto != expected)
-	{
-		proto = expected;
-	}
-
-	int count = m_dwCount;
-	entt::entity e = GetEntityHandle();
-	if (e != entt::null)
-	{
-		if (const auto* itemCount = g_registry.try_get<ecs::ItemCount>(e))
-			count = itemCount->count;
-	}
-
-	const uint8_t itemType = proto ? proto->bType : 0;
-	if (itemType == ITEM_ELK)
-	{
-		return MIN(count, INT_MAX);
-	}
-
-	return MIN(count, g_bItemCountLimit);
+    const auto item = GetEntityHandle();
+    const int limit = ItemSystem::GetItemType(item) == ITEM_ELK ? INT_MAX : std::max(0, int(g_bItemCountLimit));
+    return static_cast<int>(std::min(ItemSystem::GetItemCount(item), static_cast<uint32_t>(limit)));
 }
 
 bool CItem::SetCount(int count)
 {
-    if (ItemSystem::IsItemConsumptionPending(GetEntityHandle()))
+    // This is only the compatibility boundary. The ECS component owns the
+    // count; never access this after publication, which may delete the item.
+    const auto item = GetEntityHandle();
+    if (!ItemSystem::IsValidItem(item) || ItemSystem::IsItemConsumptionPending(item))
         return false;
-#ifdef ENABLE_MINUS_COUNT_FIX_RAZOR93
-	if (count < 0) {
-		LOG_ERROR("SetCount attempted negative value (count={}) vnum={}", count, GetVnum());
-		count = 0;
-	}
-
-	const int limit = (GetType() == ITEM_ELK) ? INT_MAX : g_bItemCountLimit;
-	if (count > limit)
-		count = limit;
-
-	m_dwCount = count;
-#else
-
-	if (GetType() == ITEM_ELK)
-	{
-		m_dwCount = MIN(count, INT_MAX);
-	}
-	else
-	{
-		m_dwCount = MIN(count, g_bItemCountLimit);
-	}
-#endif
-	SyncItemCountComponent(this, m_dwCount);
-	if (count == 0 && GetOwnerEntity() != entt::null)
-	{
-		if (GetSubType() == USE_ABILITY_UP || GetSubType() == USE_POTION || GetVnum() == 70020)
-		{
-			const entt::entity owner = GetOwnerEntity();
-
-			uint16_t wCell = GetCell();
-
-			InventorySystem::RemoveFromCharacter(GetEntityHandle());
-
-			if (!IsDragonSoul())
-			{
-				const entt::entity stack =
-					ItemSystem::FindSpecifyItem(owner, ItemSystem::GetItemVnum(GetEntityHandle())
-#ifdef ENABLE_EXTRA_INVENTORY
-						, false
-#endif
-					);
-				if (entt::null != stack)
-				{
-					ItemSystem::SetItemCount(stack, ItemSystem::GetItemCount(stack) + count);
-					M2_DESTROY_ITEM(GetEntityHandle());
-					return false;
-				}
-			}
-
-			InventorySystem::RemoveFromCharacter(GetEntityHandle());
-			M2_DESTROY_ITEM(GetEntityHandle());
-
-			const uint8_t bType = ecs::QuestSystem::GetFlag(owner, "main_quest_flame_lv7.reward")*1 + ecs::QuestSystem::GetFlag(owner, "main_quest_flame_lv7.reward")*2;
-			if (IsDragonSoul())
-			{
-				if (bType == 0)
-					ecs::LegacyCharOf(owner)->DragonSoul_RefineWindow_Close();
-				else if (bType == 1)
-					ecs::LegacyCharOf(owner)->DragonSoul_RefineWindow_Close();
-			}
-
-			LogManager::instance().ItemLogEntity(owner, GetEntityHandle(), "REMOVE", "DELETED (set count to 0)");
-
-			return false;
-		}
-
-		InventorySystem::RemoveFromCharacter(GetEntityHandle());
-		M2_DESTROY_ITEM(GetEntityHandle());
-		return false;
-	}
-
-	UpdatePacket();
-	Save();
-
-	return true;
+    if (count < 0) {
+        LOG_ERROR("SetCount attempted negative value (count={}) vnum={}", count, ItemSystem::GetItemVnum(item));
+        count = 0;
+    }
+    const bool committed = ItemSystem::SetItemCountEcs(item, static_cast<uint32_t>(count));
+    // Preserve the legacy caller contract: false for zero/deleted items.
+    return count > 0 && committed && ItemSystem::IsValidItem(item) &&
+        !ItemSystem::IsItemConsumptionPending(item);
 }
 
 int32_t CItem::GetValue(uint32_t idx)
@@ -13449,7 +13356,7 @@ void CItem::Initialize()
 	SetEntityHandle(entt::null);
 
 	m_dwID = 0;
-	m_dwVID = m_dwCount = m_lFlag = 0;
+	m_dwVID = m_lFlag = 0;
 	m_pProto = nullptr;
 
 }
@@ -13934,7 +13841,6 @@ int32_t CItem::GetRuneAttrValue(int c, int32_t lTime) {
 
 CItem::CItem(uint32_t dwVnum)
 	: m_pProto(nullptr), m_dwVnum(dwVnum), m_dwID(0), m_dwVID(0),
-	m_dwCount(0),
 	m_lFlag(0),
 	m_dwMaskVnum(0), m_dwSIGVnum(0)
 {

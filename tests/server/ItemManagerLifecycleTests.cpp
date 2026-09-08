@@ -102,7 +102,7 @@ std::shared_ptr<spdlog::logger> logging::GetLogger() {
 CEntity::CEntity() = default;
 CEntity::~CEntity() = default;
 CItem::CItem(uint32_t vnum) : m_pProto(nullptr), m_dwVnum(vnum), m_dwID(0), m_dwVID(0),
-    m_dwCount(0), m_lFlag(0), m_dwMaskVnum(0), m_dwSIGVnum(0) {}
+    m_lFlag(0), m_dwMaskVnum(0), m_dwSIGVnum(0) {}
 CItem::~CItem() { Check(GetEntityHandle() == entt::null, "allocation freed before entity unbinding"); ++frees; }
 void CLIENT_DESC::DBPacket(uint8_t, uint32_t, const void*, uint32_t) { Unexpected(); }
 void DESC::Packet(const void*, int) { Unexpected(); }
@@ -291,6 +291,7 @@ uint8_t CItem::GetWindow() const { Unexpected(); }
 void CItem::SetProto(const TItemTable*) { Unexpected(); }
 const char* CItem::GetName(uint8_t) { Unexpected(); }
 bool CItem::SetCount(int) { Unexpected(); }
+bool ItemSystem::SetItemCountEcs(entt::entity, uint32_t) { Unexpected(); }
 int CItem::GetCount() { Unexpected(); }
 int32_t CItem::GetValue(uint32_t) { Unexpected(); }
 int32_t CItem::GetSocket(int) const { Unexpected(); }

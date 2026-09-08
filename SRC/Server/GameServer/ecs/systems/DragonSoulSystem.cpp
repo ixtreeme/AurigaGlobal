@@ -315,11 +315,6 @@ entt::entity GetRefineWindowOpener(entt::entity owner)
 
 } // namespace DragonSoulSystem
 
-bool CHARACTER::DragonSoul_RefineWindow_Close()
-{
-    return DragonSoulSystem::CloseRefineWindow(GetEntityHandle());
-}
-
 namespace DragonSoulSystem {
 int32_t GetLastRefineTime(entt::entity owner)
 {

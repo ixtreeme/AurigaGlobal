@@ -266,15 +266,6 @@ static bool DestroyItemEntityAndLegacy(entt::entity itemEntity, const char* reas
     return !g_registry.valid(itemEntity);
 }
 
-static void SyncItemCountComponent(LPITEM item, int count)
-{
-	entt::entity e = item ? item->GetEntityHandle() : entt::null;
-    if (e == entt::null)
-        return;
-
-    g_registry.emplace_or_replace<ecs::ItemCount>(e, ecs::ItemCount{count});
-}
-
 static void SyncItemFlagsComponent(LPITEM item)
 {
 	entt::entity e = item ? item->GetEntityHandle() : entt::null;
@@ -1406,14 +1397,6 @@ uint8_t GetItemSubType(entt::entity item)
     return 0;
 }
 
-uint32_t GetItemCount(entt::entity item)
-{
-    if (const auto* count = g_registry.try_get<ecs::ItemCount>(item))
-        return count->count > 0 ? static_cast<uint32_t>(count->count) : 0;
-
-    return 0;
-}
-
 int32_t GetItemValue(entt::entity item, uint32_t index)
 {
     if (index >= ITEM_VALUES_MAX_NUM)
@@ -1593,54 +1576,6 @@ const TItemTable* GetItemProto(entt::entity item)
     return nullptr;
 }
 
-static void SetItemCountComponentOnly(entt::entity item, uint32_t count)
-{
-    if (item != entt::null && g_registry.valid(item))
-        g_registry.emplace_or_replace<ecs::ItemCount>(item, ecs::ItemCount{static_cast<int>(count)});
-}
-
-
-void SetItemCount(entt::entity item, uint32_t count)
-{
-    if (item == entt::null || !g_registry.valid(item) || IsItemConsumptionPending(item))
-        return;
-
-    if (count == 0) {
-        DestroyItemEntityAndLegacy(item, "SET_ITEM_COUNT_ZERO");
-        return;
-    }
-
-    const auto limit = GetItemType(item) == ITEM_ELK ? INT_MAX : std::max(0, g_bItemCountLimit);
-    count = std::min(count, static_cast<uint32_t>(limit));
-    SetItemCountComponentOnly(item, count);
-    PublishItemCount(item);
-}
-
-bool SetItemCountEcs(entt::entity item, uint32_t count)
-{
-    if (item == entt::null || !g_registry.valid(item) || IsItemConsumptionPending(item))
-        return false;
-
-    if (count == 0)
-        return DestroyItemEntityAndLegacy(item, "SET_ITEM_COUNT_ECS_ZERO");
-
-    SetItemCount(item, count);
-    return true;
-}
-
-bool AddItemCountEcs(entt::entity item, int delta)
-{
-    if (item == entt::null || !g_registry.valid(item) || IsItemConsumptionPending(item))
-        return false;
-
-    const int current = static_cast<int>(GetItemCount(item));
-    const int64_t next = int64_t(current) + delta;
-    if (next <= 0)
-        return DestroyItemEntityAndLegacy(item, "ADD_ITEM_COUNT_ECS_ZERO");
-
-    return SetItemCountEcs(item, static_cast<uint32_t>(next));
-}
-
 bool ConsumeItem(entt::entity item, uint32_t amount)
 {
     if (item == entt::null || !g_registry.valid(item) || amount == 0 || IsItemConsumptionPending(item))
@@ -1650,8 +1585,7 @@ bool ConsumeItem(entt::entity item, uint32_t amount)
     if (amount > count)
         return false;
     if (count > amount) {
-        SetItemCount(item, count - amount);
-        return true;
+        return SetItemCountEcs(item, count - amount);
     }
 
     return DestroyItemEntityAndLegacy(item, "CONSUME_ITEM");
@@ -3316,8 +3250,6 @@ bool SyncItemStateFromLegacy(entt::entity item)
                   0,
 #endif
               });
-    g_registry.emplace_or_replace<ecs::ItemCount>(
-        item, ecs::ItemCount{legacyItem->GetCount()});
     g_registry.emplace_or_replace<ecs::ItemPrototypeMeta>(
         item, ecs::ItemPrototypeMeta{legacyItem->GetType(), legacyItem->GetSubType()});
     // Only flags still comes from the legacy object; exchanging, skipSave and

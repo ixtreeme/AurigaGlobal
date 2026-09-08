@@ -2285,7 +2285,6 @@ public:
 	// ��ȥ���� deactivate��Ű�� ĳ������ ��ȥ�� �� Ȱ�� ���´� �ǵ帮�� �ʴ´�.
 	// ��ȥ�� ��ȭâ
 public:
-	bool		DragonSoul_RefineWindow_Close();
 #if defined(BL_OFFLINE_MESSAGE)
 protected:
 	uint32_t				dwLastOfflinePMTime;

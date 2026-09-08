@@ -111,6 +111,8 @@ uint32_t GetItemImmuneFlags(entt::entity item);
 const TItemTable* GetItemProto(entt::entity item);
 void SetItemCount(entt::entity item, uint32_t count);
 bool ConsumeItem(entt::entity item, uint32_t amount = 1);
+// Positive writes return whether the component change committed; callbacks may
+// subsequently destroy the item. Zero writes return verified removal success.
 bool SetItemCountEcs(entt::entity item, uint32_t count);
 bool AddItemCountEcs(entt::entity item, int delta);
 bool ConsumeItemEcs(entt::entity item, uint32_t amount = 1);

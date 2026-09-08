@@ -223,7 +223,6 @@ class CItem : public CEntity
 
 		uint32_t		m_dwID;			// 고유번호
 		uint32_t		m_dwVID;		// VID
-		int		m_dwCount;		// 개수
 #ifdef ATTR_LOCK
 #endif
 #ifdef ENABLE_ITEM_EXTRA_PROTO

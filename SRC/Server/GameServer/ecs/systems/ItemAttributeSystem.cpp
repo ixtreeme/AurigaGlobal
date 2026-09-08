@@ -452,11 +452,55 @@ bool IsItemConsumptionPending(entt::entity item)
 
 void PublishItemCount(entt::entity item)
 {
-    if (!IsValidItem(item) || IsItemConsumptionPending(item))
+    const auto publishable = [item] {
+        return IsValidItem(item) && GetItemCount(item) > 0 && !IsItemConsumptionPending(item);
+    };
+    if (!publishable())
         return;
     SaveItem(item);
-    if (IsValidItem(item) && !IsItemConsumptionPending(item))
+    if (publishable())
         ecs::ItemNetworkSystem::SendItemUpdate(g_registry, item);
+}
+
+uint32_t GetItemCount(entt::entity item)
+{
+    if (const auto* count = g_registry.try_get<ecs::ItemCount>(item))
+        return count->count > 0 ? static_cast<uint32_t>(count->count) : 0;
+    return 0;
+}
+
+// Stack updates and batch cost retirement share the same publication and
+// pending-item rules. The component must already exist: count writes must not
+// invoke on_construct/on_update while committing a stack change.
+bool SetItemCountEcs(entt::entity item, uint32_t count)
+{
+    if (!IsValidItem(item) || IsItemConsumptionPending(item) ||
+        !g_registry.all_of<ecs::ItemCount>(item))
+        return false;
+    if (count == 0)
+        return DestroyItemEntityEcs(item, "SET_ITEM_COUNT_ZERO");
+
+    const int limit = GetItemType(item) == ITEM_ELK ? INT_MAX : g_bItemCountLimit;
+    if (limit <= 0) return false;
+    g_registry.get<ecs::ItemCount>(item).count =
+        static_cast<int>(std::min(count, static_cast<uint32_t>(limit)));
+    PublishItemCount(item);
+    // True means this change committed, not that a callback kept the item alive.
+    return true;
+}
+
+void SetItemCount(entt::entity item, uint32_t count)
+{
+    SetItemCountEcs(item, count);
+}
+
+bool AddItemCountEcs(entt::entity item, int delta)
+{
+    if (!IsValidItem(item) || IsItemConsumptionPending(item) ||
+        !g_registry.all_of<ecs::ItemCount>(item))
+        return false;
+    const int64_t next = int64_t(GetItemCount(item)) + delta;
+    return SetItemCountEcs(item, next > 0 ? static_cast<uint32_t>(next) : 0);
 }
 
 void ProcessPendingItemConsumptions()

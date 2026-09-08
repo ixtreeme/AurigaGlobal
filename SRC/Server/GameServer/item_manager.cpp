@@ -269,6 +269,12 @@ entt::entity ITEM_MANAGER::CreateItem(uint32_t vnum, uint32_t count, uint32_t id
 
 	if (nullptr == table)
 		return entt::null;
+	// Invalid stack configuration must fail before allocating/registering an
+	// item whose first count write cannot succeed.
+	if (table->bType != ITEM_ELK && g_bItemCountLimit <= 0)
+		return entt::null;
+	if (table->bType == ITEM_ELK && count == 0)
+		return entt::null;
 
 	LPITEM item = nullptr;
 
@@ -380,10 +386,12 @@ entt::entity ITEM_MANAGER::CreateItem(uint32_t vnum, uint32_t count, uint32_t id
 		if (item->GetID() != 0)
 			m_map_pkItemByID.insert_or_assign(item->GetID(), itemEntity);
 	}
-	if (!item->SetCount(count))
+	if (!ItemSystem::SetItemCountEcs(itemEntity, count) ||
+		!ItemSystem::IsValidItem(itemEntity) || ItemSystem::IsItemConsumptionPending(itemEntity) ||
+		ItemSystem::GetItemCount(itemEntity) == 0 || ResolveManagedItem(itemEntity) != item)
 		return entt::null;
 
-	ItemSystem::SetItemSkipSave(item->GetEntityHandle(), false);
+	ItemSystem::SetItemSkipSave(itemEntity, false);
 
 	if (item->GetType() == ITEM_UNIQUE && item->GetValue(2) != 0)
 		ItemSystem::StartUniqueExpireEvent(item->GetEntityHandle());
