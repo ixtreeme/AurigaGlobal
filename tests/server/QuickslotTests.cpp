@@ -27,6 +27,8 @@
 #include "../../SRC/Server/GameServer/ecs/components/identity_components.hpp"
 #include "../../SRC/Server/GameServer/ecs/events.hpp"
 #include "../../SRC/Server/GameServer/item_manager.h"
+#include "../../SRC/Server/GameServer/db.h"
+#include "../../SRC/Server/GameServer/config.h"
 #include "../../SRC/Server/GameServer/log.h"
 #include "../../SRC/Server/GameServer/MountInventory.h"
 #include "../../SRC/Server/GameServer/DragonSoul.h"
@@ -43,6 +45,8 @@
 
 entt::registry g_registry;
 entt::dispatcher g_dispatcher;
+int g_bItemCountLimit = 200;
+int g_aiItemDestroyTime[ITEM_DESTROY_TIME_MAX] = {300, 150, 30};
 
 namespace {
 int checks = 0;
@@ -84,6 +88,15 @@ std::function<ItemSystem::StackMergeResult(entt::entity, entt::entity, entt::ent
 std::function<bool(entt::entity, TItemPos, entt::entity&)> onPullOut;
 bool switchActive = false, switchAllowed = true;
 int retiredSplits = 0;
+bool giving = false, rejectGround = false, rejectRewardRetirement = false;
+bool rewardHighlight = true;
+int rewardCreates = 0, rewardMerges = 0, rewardRetired = 0, rewardLogs = 0, moneyLogs = 0, ownershipSeconds = 0;
+int factoryRare = 0;
+uint32_t factoryCount = 0;
+TItemTable rewardProto {};
+std::vector<entt::entity> rewards;
+std::function<entt::entity(entt::entity, entt::entity)> onRewardMerge;
+std::function<void(const char*, entt::entity)> onReward;
 int saves = 0, storagePackets = 0, registrations = 0;
 void Service(const char* name) { if (onService) { auto f = onService; f(name); } }
 PlacementMeta& Meta(entt::entity e) {
@@ -124,6 +137,10 @@ void Send(entt::entity owner, Packet packet) {
     if (callback) callback(owner);
 }
 entt::entity Reset() {
+    giving = rejectGround = rejectRewardRetirement = false; rewardHighlight = true;
+    rewardCreates = rewardMerges = rewardRetired = rewardLogs = moneyLogs = ownershipSeconds = 0;
+    factoryRare = 0; factoryCount = 0; rewardProto = {}; rewards.clear(); onRewardMerge = {}; onReward = {};
+    g_bItemCountLimit = 200;
     onCreate = {}; onMerge = {}; onPullOut = {}; retiredSplits = 0;
     switchActive = false; switchAllowed = true;
     onSave = {}; onCancel = onRegistration = {}; onStoragePacket = {}; onService = {};
@@ -516,6 +533,7 @@ void DESC::Packet(const void* data, int size) {
     if (header == HEADER_GC_ITEM_SET) {
         Check(size == sizeof(TPacketGCItemSet), "item set wire size");
         const auto& p = *static_cast<const TPacketGCItemSet*>(data); pos = p.Cell;
+        if (giving) rewardHighlight = p.highlight;
         const auto item = ItemSystem::GetItem(GetEntity(), pos);
         Check(ItemSystem::IsValidItem(item) && p.count == ItemSystem::GetItemCount(item) &&
             p.vnum == ItemSystem::GetItemVnum(item), "item set payload");
@@ -549,8 +567,22 @@ CSemaphore::CSemaphore() = default;
 CSemaphore::~CSemaphore() = default;
 LogManager::LogManager() : m_bIsConnect(false) {}
 LogManager::~LogManager() = default;
+DBManager::DBManager() = default;
+DBManager::~DBManager() = default;
+void DBManager::SendMoneyLog(uint8_t type, uint32_t vnum, int64_t count) {
+    Check(giving && type == MONEY_LOG_DROP && vnum == rewardProto.dwVnum && count == factoryCount,
+        "reward money log lost normalized quantity");
+    ++moneyLogs;
+    if (onReward) { auto callback = onReward; callback("money-log", rewards.back()); }
+}
 void LogManager::ItemLogEntity(entt::entity owner, entt::entity item, const char* action, const char* hint) {
     Actor(owner); Meta(item);
+    if (giving) {
+        Check(std::string_view(action) == "SYSTEM" || std::string_view(action) == "SYSTEM_DROP", "wrong reward log action");
+        Check(hint != nullptr, "reward log has no name"); ++rewardLogs;
+        if (onReward) { auto callback = onReward; callback("item-log", item); }
+        return;
+    }
     unsigned cloneID = 0, split = 0, remaining = 0, total = 0;
     Check(std::string_view(action) == "ITEM_SPLIT" && sscanf(hint, "%u %u %u %u", &cloneID, &split, &remaining, &total) == 4,
         "split audit fields lost");
@@ -559,6 +591,20 @@ void LogManager::ItemLogEntity(entt::entity owner, entt::entity item, const char
     Service("split-log");
 }
 entt::entity ITEM_MANAGER::CreateItem(uint32_t vnum, uint32_t count, uint32_t id, bool magic, int rare, bool skip) {
+    if (giving) {
+        Check(!id && magic && !skip && count > 0, "reward factory flags changed");
+        ++rewardCreates; factoryCount = count; factoryRare = rare;
+        if (onCreate) { auto callback = onCreate; return callback(vnum, count); }
+        const auto item = PlacementItem(); Meta(item).proto = rewardProto;
+        g_registry.get<ecs::ItemIdentity>(item).vnum = vnum;
+        g_registry.get<ecs::ItemCount>(item).count = static_cast<int>(count);
+        g_registry.emplace<ecs::ItemOwner>(item);
+        g_registry.emplace<ecs::ItemLocation>(item, ecs::ItemLocation {RESERVED_WINDOW, 0});
+        g_registry.emplace<ecs::ItemFlags>(item);
+        rewards.push_back(item);
+        if (onReward) { auto callback = onReward; callback("create", item); }
+        return item;
+    }
     Check(id == 0 && !magic && rare == -1 && !skip, "split factory changed creation flags");
     if (!onCreate) Unexpected();
     auto callback = onCreate; return callback(vnum, count);
@@ -590,6 +636,35 @@ void CSwitchbotManager::UnregisterItem(uint32_t, uint16_t) {
 }
 #endif
 bool ecs::PlayerRuntime::IsValid(entt::entity e) { return g_registry.valid(e); }
+bool ecs::PlayerRuntime::IsPC(entt::entity e) { return g_registry.valid(e) && g_registry.all_of<PlacementActor>(e); }
+int32_t ecs::PlayerRuntime::GetMapIndex(entt::entity e) { Actor(e); return 1; }
+int32_t ecs::PlayerRuntime::GetX(entt::entity e) { Actor(e); return 100; }
+int32_t ecs::PlayerRuntime::GetY(entt::entity e) { Actor(e); return 200; }
+entt::entity ItemSystem::MergeItemIntoInventoryEcs(entt::entity owner, entt::entity item) {
+    Check(giving, "unexpected reward merge"); Actor(owner); Meta(item); ++rewardMerges;
+    if (onRewardMerge) { auto callback = onRewardMerge; return callback(owner, item); }
+    if (onReward) { auto callback = onReward; callback("merge", item); }
+    return item;
+}
+bool ItemSystem::SetItemSkipSave(entt::entity item, bool skip) { Meta(item); g_registry.get<ecs::ItemFlags>(item).skipSave = skip; return true; }
+bool ItemSystem::GetItemSkipSave(entt::entity item) { Meta(item); return g_registry.get<ecs::ItemFlags>(item).skipSave; }
+bool ItemSystem::PlaceItemOnGroundLegacyBoundary(entt::entity item, int32_t map, const PIXEL_POSITION& position, int duration) {
+    Check(giving && map == 1 && position.x == 100 && position.y == 200 && duration == 300 && RawOwner(item) == entt::null,
+        "invalid reward ground placement");
+    if (rejectGround) return false;
+    g_registry.get<ecs::ItemLocation>(item).window = GROUND;
+    g_registry.emplace<ecs::SpatialEntity>(item);
+    g_registry.emplace<ecs::Position>(item, position.x, position.y, position.z);
+    g_registry.emplace<ecs::MapIndex>(item, map);
+    if (onReward) { auto callback = onReward; callback("ground", item); }
+    return true;
+}
+bool ItemSystem::SetGroundOwnership(entt::entity item, entt::entity owner, int duration) {
+    Check(giving && ItemSystem::GetItemWindow(item) == GROUND, "ownership on nonground item"); Actor(owner);
+    ownershipSeconds = duration;
+    if (onReward) { auto callback = onReward; callback("ownership", item); }
+    return true;
+}
 std::shared_ptr<CSafebox> SafeboxSystem::Get(entt::entity, uint8_t) { Unexpected(); }
 entt::entity CSafebox::Get(unsigned int) const { Unexpected(); }
 entt::entity CSafebox::Remove(unsigned int) { Unexpected(); }
@@ -643,6 +718,14 @@ uint32_t ItemSystem::GetItemWearFlag(entt::entity e) { return Meta(e).proto.dwWe
 int ItemSystem::FindEquipCell(entt::entity owner, entt::entity e, int) { Actor(owner); return Meta(e).wear; }
 SItemTable const * ItemSystem::GetItemProto(entt::entity e) { return &Meta(e).proto; }
 bool ItemSystem::DestroyItemEntityEcs(entt::entity e, char const * reason) {
+    if (giving) {
+        Check(std::string_view(reason) == "AUTOGIVE_FAILED" && RawOwner(e) == entt::null &&
+            g_registry.get<ecs::ItemFlags>(e).skipSave, "reward rollback deleted published/persistent item");
+        ++rewardRetired;
+        if (onReward) { auto callback = onReward; callback("retire", e); }
+        if (rejectRewardRetirement || !g_registry.valid(e)) return false;
+        g_registry.destroy(e); return true;
+    }
     Check(std::string_view(reason) == "SPLIT_ABORT" && RawOwner(e) == entt::null, "unexpected item destruction");
     ++retiredSplits; g_registry.destroy(e); return true;
 }
@@ -663,7 +746,9 @@ bool ItemSystem::SetItemSocket(entt::entity e, int i, uint32_t value, bool) { g_
 void ItemSystem::ClearMountAttributeAndAffect(entt::entity) { Unexpected(); }
 void ItemSystem::SaveItem(entt::entity e) { Meta(e); ++saves; if (onSave) { auto f = onSave; f(e); } }
 void ItemSystem::SetItemOwnerEntity(entt::entity, entt::entity) { Unexpected(); }
-void ItemSystem::SetItemLastOwnerPID(entt::entity, uint32_t) { Unexpected(); }
+void ItemSystem::SetItemLastOwnerPID(entt::entity item, uint32_t pid) {
+    Check(giving, "unexpected last-owner write"); Meta(item); g_registry.get<ecs::ItemOwner>(item).lastOwnerPID = pid;
+}
 void ItemSystem::SetItemOwnershipPID(entt::entity, uint32_t) { Unexpected(); }
 bool ItemSystem::SetItemWindow(entt::entity, uint8_t) { Unexpected(); }
 bool ItemSystem::SetItemCell(entt::entity, entt::entity, uint16_t) { Unexpected(); }
@@ -676,7 +761,7 @@ void ecs::ViewSystem::ViewCleanup(entt::entity) { Unexpected(); }
 void ecs::ViewSystem::PacketView(entt::entity, void const *, int, entt::entity) { Unexpected(); }
 void CItem::Save() { Unexpected(); }
 int CItem::GetValue(uint32_t) { Unexpected(); }
-SItemTable * ITEM_MANAGER::GetTable(uint32_t) { Unexpected(); }
+SItemTable * ITEM_MANAGER::GetTable(uint32_t vnum) { Check(giving, "unexpected prototype lookup"); return vnum == rewardProto.dwVnum ? &rewardProto : nullptr; }
 CSpecialItemGroup const * ITEM_MANAGER::GetSpecialItemGroup(uint32_t) { Unexpected(); }
 CSpecialAttrGroup const * ITEM_MANAGER::GetSpecialAttrGroup(uint32_t) { Unexpected(); }
 bool CMountInventory::RemoveByItem(entt::entity, bool) { Unexpected(); }
@@ -706,6 +791,10 @@ template<class F> decltype(auto) Storage(entt::entity owner, uint8_t window, F&&
     return f(g_registry.get<ecs::MainInventoryRuntimeComponent>(owner));
 }
 void AssertPlaced(entt::entity owner, entt::entity item, TItemPos pos) {
+    if (RawOwner(item) != owner || ItemSystem::GetItemWindow(item) != pos.window_type || ItemSystem::GetItemCell(item) != pos.cell)
+        throw std::runtime_error("placement mismatch: expected window=" + std::to_string(pos.window_type) +
+            " cell=" + std::to_string(pos.cell) + " actual window=" + std::to_string(ItemSystem::GetItemWindow(item)) +
+            " cell=" + std::to_string(ItemSystem::GetItemCell(item)) + " creates=" + std::to_string(rewardCreates));
     Check(RawOwner(item) == owner && ItemSystem::GetItemWindow(item) == pos.window_type &&
           ItemSystem::GetItemCell(item) == pos.cell, "slot/ownership transaction split");
     Check(g_registry.get<ecs::ItemOwner>(item).ownerPID == ecs::PlayerRuntime::GetPlayerID(owner), "owner PID mismatch");
@@ -1362,6 +1451,259 @@ entt::entity StackAt(entt::entity owner, TItemPos pos, int count = 7, uint8_t si
     Check(ItemSystem::PlaceItemEcs(owner, item, pos.window_type, pos.cell), "move fixture placement");
     return item;
 }
+struct RewardFixture {
+    entt::entity owner;
+    RewardFixture() {
+        Reset(); giving = true; owner = PlacementOwner();
+        g_registry.emplace<ecs::MainInventoryRuntimeComponent>(owner);
+        g_registry.emplace<ecs::DragonSoulInventoryComponent>(owner);
+#ifdef ENABLE_EXTRA_INVENTORY
+        g_registry.emplace<ecs::ExtraInventoryRuntimeComponent>(owner);
+#endif
+        rewardProto.dwVnum = 100; rewardProto.bSize = 1;
+        rewardProto.bType = ITEM_USE; rewardProto.bSubType = USE_POTION;
+        rewardProto.dwFlags = ITEM_FLAG_STACKABLE;
+        rewardProto.cLimitTimerBasedOnWearIndex = rewardProto.cLimitRealTimeFirstUseIndex = -1;
+    }
+    entt::entity Give(uint32_t count = 7, bool message = true, bool highlight = true) {
+        return ItemSystem::AutoGiveItemEcs(owner, 100, count, 42, message, highlight);
+    }
+    entt::entity Existing(uint32_t count = 7) {
+        const auto item = PlacementItem(); Meta(item).proto = rewardProto;
+        g_registry.get<ecs::ItemCount>(item).count = count;
+        g_registry.emplace<ecs::ItemOwner>(item);
+        g_registry.emplace<ecs::ItemLocation>(item, ecs::ItemLocation {RESERVED_WINDOW, 0});
+        g_registry.emplace<ecs::ItemFlags>(item);
+        return item;
+    }
+    void Full() {
+        const auto blocker = PlacementItem();
+        auto& inv = g_registry.get_or_emplace<ecs::MainInventoryRuntimeComponent>(owner);
+        for (size_t cell = 0; cell < INVENTORY_MAX_NUM; ++cell) { inv.items[cell] = blocker; inv.itemGrid[cell] = cell + 1; }
+    }
+};
+void RewardQuantitiesAndPlacement() {
+    for (int kind = 0; kind < 4; ++kind) {
+        for (uint32_t requested : {1u, 7u, 200u, UINT32_MAX}) {
+            RewardFixture f;
+            if (kind == 1) { rewardProto.dwFlags |= ITEM_FLAG_MAKECOUNT; rewardProto.alValues[1] = 15; }
+            if (kind == 2) { rewardProto.dwFlags = 0; rewardProto.bType = ITEM_WEAPON; }
+            if (kind == 3) rewardProto.bType = ITEM_ELK;
+            const auto item = f.Give(requested);
+            const uint32_t expected = kind == 3 ? std::min(requested, uint32_t(INT_MAX)) : kind == 2 ? 1u :
+                std::min(kind == 1 ? std::max(requested, 15u) : requested, 200u);
+            Check(ItemSystem::IsValidItem(item) && ItemSystem::GetItemCount(item) == expected &&
+                factoryCount == expected && factoryRare == 42, "reward normalization/rare chance lost");
+            Check(rewardCreates == 1 && rewardMerges == 1 && rewardRetired == 0 && rewardLogs == 1 && moneyLogs == 1,
+                "reward creation/merge/publication repeated or skipped");
+            AssertPlaced(f.owner, item, TItemPos(INVENTORY, 0));
+            Check(!g_registry.any_of<ecs::LegacyItemPtr>(item), "reward fixture acquired legacy pointer");
+            Check(notices.size() == 1, "reward message missing");
+            Check(packets.size() == (kind < 2 ? 1 : 0), "wrong item received potion shortcut");
+        }
+    }
+    {
+        RewardFixture f; const auto item = f.Give(7, false, false);
+        Check(item != entt::null && notices.empty() && !rewardHighlight, "disabled message/highlight still sent");
+    }
+    for (int invalid = 0; invalid < 7; ++invalid) {
+        RewardFixture f;
+        if (invalid == 0) g_registry.destroy(f.owner);
+        if (invalid == 1) g_registry.remove<ecs::PlayerID>(f.owner);
+        if (invalid == 2) rewardProto.dwVnum = 101;
+        if (invalid == 3) rewardProto.bSize = 0;
+        if (invalid == 4) g_bItemCountLimit = 0;
+        if (invalid == 5) { rewardProto.dwFlags |= ITEM_FLAG_MAKECOUNT; rewardProto.alValues[1] = -1; }
+        Check(f.Give(invalid == 6 ? 0 : 7) == entt::null && rewardCreates == 0 && moneyLogs == 0,
+            "invalid reward input had creation/logging side effects");
+    }
+    for (int kind = 0; kind < 3; ++kind) {
+        if (kind == 2 && INVENTORY_MAX_NUM <= UINT8_MAX) continue;
+        RewardFixture f;
+        if (kind == 0) {
+            rewardProto.bType = ITEM_DS; rewardProto.dwFlags = 0;
+            onReward = [](const char* stage, entt::entity item) { if (std::string_view(stage) == "create") Meta(item).dragon = true; };
+        }
+        if (kind == 1) {
+            extraUnlock = INT32_MAX;
+            onReward = [](const char* stage, entt::entity item) {
+                if (std::string_view(stage) == "create") { Meta(item).extra = true; Meta(item).category = 2; }
+            };
+        }
+        if (kind == 2) {
+            const auto blocker = PlacementItem(); auto& inv = g_registry.get_or_emplace<ecs::MainInventoryRuntimeComponent>(f.owner);
+            for (int cell = 0; cell <= UINT8_MAX; ++cell) { inv.items[cell] = blocker; inv.itemGrid[cell] = cell + 1; }
+        }
+        const auto item = f.Give();
+        Check(item != entt::null && packets.empty(), "foreign/wide inventory slot wrapped into main shortcut");
+        if (kind == 0) AssertPlaced(f.owner, item, TItemPos(DRAGON_SOUL_INVENTORY, 0));
+        if (kind == 1) AssertPlaced(f.owner, item, TItemPos(EXTRA_INVENTORY, 2 * EXTRA_INVENTORY_CATEGORY_MAX_NUM));
+        if (kind == 2) AssertPlaced(f.owner, item, TItemPos(INVENTORY, UINT8_MAX + 1));
+    }
+    {
+        RewardFixture f;
+        const auto existing = f.Existing();
+        ItemSystem::AutoGiveItem(f.owner, existing, false, false);
+        AssertPlaced(f.owner, existing, TItemPos(INVENTORY, 0));
+        Check(!rewardHighlight, "existing reward ignored highlight choice");
+        Check(rewardCreates == 0 && rewardMerges == 1 && moneyLogs == 0 && notices.empty(), "existing item was recreated");
+    }
+}
+void RewardMergeAndReentry() {
+    for (int mode = 0; mode < 4; ++mode) {
+        RewardFixture f;
+        const auto target = f.Existing(190);
+        Check(ItemSystem::PlaceItemEcs(f.owner, target, INVENTORY, 0), "reward target setup");
+        storagePackets = saves = 0;
+        onReward = [](const char* stage, entt::entity item) {
+            if (std::string_view(stage) == "create") {
+                g_registry.get<ecs::ItemSockets>(item).sockets[0] = 123;
+                g_registry.get<ecs::ItemAttributes>(item).attrs[0] = {APPLY_MAX_HP, 200};
+            }
+        };
+        onRewardMerge = [&](entt::entity owner, entt::entity source) {
+            Check(rewardCreates == 1 && g_registry.get<ecs::ItemSockets>(source).sockets[0] == 123 &&
+                g_registry.get<ecs::ItemAttributes>(source).attrs[0].sValue == 200, "reward merged before payload initialization");
+            ItemSystem::AutoGiveItem(owner, source); // Same-item reentry must stop outside the merge service.
+            Check(rewardMerges == 1 && RawOwner(source) == entt::null, "nested reward escaped delivery guard");
+            if (mode == 0) return source; // Incompatible payload: actual merge rules have their own tests.
+            g_registry.get<ecs::ItemCount>(target).count += mode == 1 ? 10 : 7;
+            if (mode == 1) { g_registry.get<ecs::ItemCount>(source).count -= 10; return source; }
+            g_registry.destroy(source);
+            if (mode == 3) { g_registry.destroy(target); return entt::entity(entt::null); }
+            return target;
+        };
+        const auto receipt = f.Give(mode == 1 ? 15 : 7);
+        Check(rewardCreates == 1 && rewardMerges == 1 && rewardRetired == 0, "merge receipt loss recreated/retired reward");
+        if (mode == 0) Check(receipt != target && ItemSystem::GetItemCount(receipt) == 7, "incompatible reward not placed");
+        if (mode == 1) Check(ItemSystem::GetItemCount(receipt) == 5 && ItemSystem::GetItemCount(target) == 200, "partial merge lost remainder");
+        if (mode == 2) Check(receipt == target && storagePackets == 0, "fully merged reward was placed again");
+        if (mode == 3) Check(receipt == entt::null && storagePackets == 0 && notices.empty(), "lost receipt was reused");
+    }
+}
+void RewardCallbacksAndFailures() {
+    for (const char* stage : {"create", "money-log", "merge", "save", "item-log", "notice", "quickslot"}) {
+        for (int action = 0; action < 3; ++action) {
+            RewardFixture f; const auto other = PlacementOwner(); entt::entity watched = entt::null, replacement = entt::null;
+            const auto callback = [&](entt::entity item) {
+                watched = item; onReward = {}; onSave = {}; onService = {}; onPacket = {};
+                if (action == 0) { g_registry.destroy(item); replacement = g_registry.create(); }
+                if (action == 1) g_registry.destroy(f.owner);
+                if (action == 2) {
+                    if (RawOwner(item) != entt::null) Check(ItemSystem::RemoveItemEcs(item), "callback could not detach reward");
+                    Check(ItemSystem::PlaceItemEcs(other, item, INVENTORY, 7), "callback could not transfer reward");
+                }
+            };
+            onReward = [&](const char* current, entt::entity item) { if (std::string_view(current) == stage) callback(item); };
+            if (std::string_view(stage) == "save") onSave = callback;
+            if (std::string_view(stage) == "notice") onService = [&](const char* current) { if (std::string_view(current) == "notice") callback(rewards.back()); };
+            if (std::string_view(stage) == "quickslot") onPacket = [&](entt::entity) { callback(rewards.back()); };
+            Check(f.Give() == entt::null && watched != entt::null && rewardCreates == 1, "callback did not invalidate reward receipt");
+            if (action == 0) Check(g_registry.valid(replacement) && !g_registry.any_of<ecs::ItemOwner, ecs::ItemLocation>(replacement),
+                "old reward changed recycled generation");
+            if (action == 2) { AssertPlaced(other, watched, TItemPos(INVENTORY, 7)); Check(rewardRetired == 0, "new ownership retired by rollback"); }
+            const bool beforeCommit = std::string_view(stage) == "create" || std::string_view(stage) == "money-log" || std::string_view(stage) == "merge";
+            if (action == 1) Check(rewardRetired == (beforeCommit ? 1 : 0), "owner loss rolled back committed item or leaked detached reward");
+        }
+    }
+    for (const char* stage : {"create", "money-log", "merge", "item-log"}) {
+        RewardFixture f;
+        // Factory exceptions precede ownership transfer to AutoGive; the real
+        // factory owns its own cleanup. Inject creation failure as null instead.
+        if (std::string_view(stage) == "create") onCreate = [](uint32_t, uint32_t) { return entt::entity(entt::null); };
+        else onReward = [&](const char* current, entt::entity) {
+            if (std::string_view(current) == stage) throw std::runtime_error("reward callback failure");
+        };
+        bool threw = false; entt::entity result = entt::null;
+        try { result = f.Give(); } catch (const std::runtime_error&) { threw = true; }
+        Check(result == entt::null && threw == (std::string_view(stage) != "create"), "reward exception contract changed");
+        if (std::string_view(stage) != "create")
+            Check(rewardRetired == (std::string_view(stage) == "item-log" ? 0 : 1), "exception rollback repeated/skipped");
+    }
+}
+void RewardQuickslotConstruction() {
+    for (int action = 0; action < 3; ++action) {
+        RewardFixture f;
+        ConstructionCallback callback {[&](entt::registry& registry, entt::entity owner) {
+            Check(owner == f.owner && rewards.size() == 1, "wrong reward shortcut constructor");
+            if (action == 0) registry.destroy(owner);
+            if (action == 1) registry.destroy(rewards.back());
+            if (action == 2) Check(InventorySystem::SetQuickslot(owner, 0, {QUICKSLOT_TYPE_COMMAND, 7}), "nested shortcut setup failed");
+        }};
+        entt::scoped_connection connection = g_registry.on_construct<ecs::QuickSlots>().connect<&ConstructionCallback::OnConstruct>(callback);
+        const auto result = f.Give();
+        Check((result != entt::null) == (action == 2) && rewardRetired == 0, "shortcut constructor reused/rolled back stale reward");
+        if (action == 2) Check(Same(Read(f.owner, 0), {QUICKSLOT_TYPE_COMMAND, 7}), "reward overwrote callback's shortcut");
+    }
+}
+void RewardGroundAndAcquisition() {
+    for (int protect = 0; protect < 3; ++protect) {
+        RewardFixture f; f.Full();
+        if (protect == 1) rewardProto.dwAntiFlags = ITEM_ANTIFLAG_DROP;
+        if (protect == 2) {
+            const auto item = f.Existing(); ItemSystem::AutoGiveItem(f.owner, item, true);
+            Check(ItemSystem::GetItemWindow(item) == GROUND, "existing reward ground fallback failed");
+        } else Check(f.Give() != entt::null, "created reward ground fallback failed");
+        Check(ownershipSeconds == (protect ? 300 : 60) && rewardLogs == 1 && packets.empty(), "ground protection/logging policy changed");
+    }
+    for (const char* stage : {"ground", "ownership"}) {
+        for (bool owner : {false, true}) {
+            RewardFixture f; f.Full();
+            onReward = [&](const char* current, entt::entity item) {
+                if (std::string_view(current) == stage) g_registry.destroy(owner ? f.owner : item);
+            };
+            Check(f.Give() == entt::null && rewardLogs == 0 && rewardRetired == 0, "ground publication used stale entity or replayed reward");
+        }
+    }
+    {
+        RewardFixture f; f.Full(); rejectGround = true;
+        Check(f.Give() == entt::null && rewardRetired == 1 && rewardLogs == 0, "failed ground placement left temporary reward");
+        const auto existing = f.Existing(); ItemSystem::AutoGiveItem(f.owner, existing);
+        Check(ItemSystem::IsValidItem(existing) && RawOwner(existing) == entt::null && rewardRetired == 1, "failed existing delivery stole caller's item");
+    }
+#ifdef ENABLE_ACCE_SYSTEM
+    {
+        RewardFixture f; rewardProto.bType = ITEM_COSTUME; rewardProto.bSubType = COSTUME_ACCE; rewardProto.dwFlags = 0;
+        rewardProto.alValues[ACCE_GRADE_VALUE_FIELD] = 2;
+        const auto item = f.Give();
+        Check(item != entt::null && ItemSystem::GetItemSocket(item, ACCE_ABSORPTION_SOCKET) == ACCE_GRADE_2_ABS,
+            "reward bypassed accessory acquisition initialization");
+    }
+#endif
+#ifdef ENABLE_RUNE_SYSTEM
+    {
+        RewardFixture f; rewardProto.bType = ITEM_COSTUME; rewardProto.bSubType = RUNE_SLOT1; rewardProto.dwFlags = 0;
+        onReward = [](const char* stage, entt::entity item) {
+            if (std::string_view(stage) == "create") { Meta(item).rune = true; Meta(item).wear = WEAR_RUNE1; }
+        };
+        const auto item = f.Give();
+        Check(item != entt::null && ItemSystem::IsItemEquipped(item) && ItemSystem::GetItemCell(item) == INVENTORY_MAX_NUM + WEAR_RUNE1 &&
+            ItemSystem::GetWearItem(f.owner, WEAR_RUNE1) == item, "reward bypassed rune auto-equip");
+    }
+#endif
+#ifdef ENABLE_DS_REFINE_ALL
+    {
+        RewardFixture f; const auto item = f.Existing(); Meta(item).dragon = true; Meta(item).proto.bType = ITEM_DS;
+        onSave = [&](entt::entity current) { Check(current == item, "wrong DS reward"); g_registry.destroy(current); };
+        Check(ItemSystem::AutoGiveDS(f.owner, item, true) && !g_registry.valid(item) && rewardCreates == 0,
+            "committed DS publication was reported as failed delivery");
+    }
+#endif
+    for (int action = 0; action < 3; ++action) {
+        RewardFixture f; const auto other = PlacementOwner(); f.Full(); rejectGround = rejectRewardRetirement = true;
+        onReward = [&](const char* stage, entt::entity item) {
+            if (std::string_view(stage) != "retire") return;
+            if (action == 1) Check(ItemSystem::PlaceItemEcs(other, item, INVENTORY, 7), "rollback callback transfer failed");
+            if (action == 2) throw std::runtime_error("retirement failure");
+        };
+        Check(f.Give() == entt::null && rewardRetired == 1 && ItemSystem::IsValidItem(rewards.back()), "failed retirement lost/repeated item");
+        if (action == 1) {
+            AssertPlaced(other, rewards.back(), TItemPos(INVENTORY, 7));
+            Check(!ItemSystem::GetItemSkipSave(rewards.back()), "rollback transfer lost persistence policy");
+        }
+    }
+}
+
 void NativeMoves()
 {
     std::vector<TItemPos> positions {TItemPos(INVENTORY, 0), TItemPos(DRAGON_SOUL_INVENTORY, 576)};
@@ -1750,12 +2092,15 @@ int main() {
         DSManager dragonSouls;
         ITEM_MANAGER items;
         LogManager logs;
+        DBManager database;
         marriage::CManager marriages;
         quest::CQuestManager quests;
 #ifdef ENABLE_SWITCHBOT
         CSwitchbotManager switchbots;
 #endif
         MovePreparationSignals(); NativeMoves(); MoveRejections(); MoveSpecialWindows(); NativeSplits(); SplitFailuresAndCallbacks(); MoveCallbacksAndDispatch();
+        RewardQuantitiesAndPlacement(); RewardMergeAndReentry(); RewardCallbacksAndFailures(); RewardGroundAndAcquisition();
+        RewardQuickslotConstruction();
         EquipmentPolicies(); EquipmentRoundTripAndSwap(); EquipmentCallbacks(); EquipmentDragonSoulAndTimers();
         PlacementWindows(); PlacementValidation(); PlacementQueries(); PlacementCallbacks(); NativeUnequip(); RemovalCallbacksAndAliases(); PurePlacementRules();
         InventoryGuards(); InventoryGrids(); Basic(); DuplicatesAndValidation(); SyncAndLifetime(); ValueRanges(); ClientValidation(); HydrationAndRelocation();

@@ -28,6 +28,7 @@
 #include "../../item.h"
 #include "../../item_manager.h"
 #include "../../log.h"
+#include "../../db.h"
 #include "../../MountInventory.h"
 #ifdef ENABLE_SWITCHBOT
 #include "../../new_switchbot.h"
@@ -3095,6 +3096,242 @@ void ModifyPoints(entt::entity itemEntity, bool bAdd)
 	}
 	break;
 	}
+}
+
+namespace {
+// The delivery lock covers merges, placement and publication, not just one
+// stack operation. A callback cannot deliver the same detached entity twice.
+struct ItemDeliveries { std::unordered_set<entt::entity> active; };
+struct ItemDeliveryGuard {
+    ItemDeliveries& state;
+    entt::entity item;
+    ~ItemDeliveryGuard() { state.active.erase(item); }
+};
+
+bool GiveOwner(entt::entity owner)
+{
+    return ecs::PlayerRuntime::IsPC(owner) && g_registry.all_of<ecs::PlayerID>(owner);
+}
+bool GiveDetached(entt::entity item)
+{
+    if (!IsValidItem(item) || GetItemCount(item) == 0 || IsItemConsumptionPending(item) ||
+        IsItemEquipped(item) || IsItemLocked(item) || IsItemExchanging(item) ||
+        g_registry.any_of<ecs::SpatialEntity, ecs::SectorPlacement>(item)) return false;
+    const auto* owner = g_registry.try_get<ecs::ItemOwner>(item);
+    const auto* location = g_registry.try_get<ecs::ItemLocation>(item);
+    return owner && owner->owner == entt::null && owner->ownerPID == 0 &&
+        location && location->window == RESERVED_WINDOW && location->cell == 0;
+}
+bool GiveReceipt(entt::entity owner, entt::entity item)
+{
+    if (!GiveOwner(owner) || !IsValidItem(item) || GetItemCount(item) == 0 ||
+        IsItemConsumptionPending(item) || GetItemOwner(item) != owner) return false;
+    const auto* location = g_registry.try_get<ecs::ItemLocation>(item);
+    if (!location) return false;
+    const uint8_t window = location->window;
+    if (window != INVENTORY && window != EQUIPMENT && window != DRAGON_SOUL_INVENTORY
+#ifdef ENABLE_EXTRA_INVENTORY
+        && window != EXTRA_INVENTORY
+#endif
+    ) return false;
+    return GetItem(owner, TItemPos(window == EQUIPMENT ? INVENTORY : window, location->cell)) == item;
+}
+std::string GiveName(entt::entity owner, entt::entity item)
+{
+    const auto* proto = GetItemProto(item);
+    if (!proto) return "UNKNOWN";
+#ifdef ENABLE_MULTI_NAMES
+    const auto desc = ecs::PlayerRuntime::GetDesc(owner);
+    const uint8_t language = desc ? desc->GetLanguage() : 0;
+    const auto& name = proto->szLocaleName[language < LANGUAGE_MAX_NUM ? language : 0];
+#else
+    (void)owner;
+    const auto& name = proto->szLocaleName;
+#endif
+    return std::string(name, std::find(std::begin(name), std::end(name), '\0'));
+}
+void GiveMessage(entt::entity owner, entt::entity item, uint32_t count)
+{
+#ifdef TEXTS_IMPROVEMENT
+    if (!GiveReceipt(owner, item)) return;
+    const auto name = GiveName(owner, item);
+    ecs::ChatSystem::SendNew(owner,
+#ifdef ENABLE_NEW_CHAT
+        CHAT_TYPE_INFO_ITEM,
+#else
+        CHAT_TYPE_INFO,
+#endif
+        102, "%u#%s", count, name.c_str());
+#else
+    (void)owner; (void)item; (void)count;
+#endif
+}
+bool GiveGroundReceipt(entt::entity item, int32_t map, const PIXEL_POSITION& position)
+{
+    if (!IsValidItem(item) || GetItemCount(item) == 0 || IsItemConsumptionPending(item) ||
+        GetItemWindow(item) != GROUND || !g_registry.all_of<ecs::SpatialEntity>(item)) return false;
+    if (const auto* owner = g_registry.try_get<ecs::ItemOwner>(item); owner && owner->owner != entt::null) return false;
+    const auto* itemMap = g_registry.try_get<ecs::MapIndex>(item);
+    const auto* itemPosition = g_registry.try_get<ecs::Position>(item);
+    return itemMap && itemMap->value == map && itemPosition &&
+        itemPosition->x == position.x && itemPosition->y == position.y && itemPosition->z == position.z;
+}
+
+entt::entity DeliverItem(entt::entity owner, entt::entity item, bool longOwnership,
+    bool message, bool highlight, bool& committed)
+{
+    if (!GiveOwner(owner) || !GiveDetached(item)) return entt::null;
+    auto* deliveries = g_registry.ctx().find<ItemDeliveries>();
+    if (!deliveries) deliveries = &g_registry.ctx().emplace<ItemDeliveries>();
+    if (!deliveries->active.insert(item).second) return entt::null;
+    const ItemDeliveryGuard guard {*deliveries, item};
+    const uint32_t amount = GetItemCount(item);
+
+    // Materialize first: sockets, attributes, masks, SIG and anti-stack flags
+    // must be compared by the same native merge transaction as manual moves.
+    const auto merged = MergeItemIntoInventoryEcs(owner, item);
+    if (merged != item)
+    {
+        if (message) GiveMessage(owner, merged, amount);
+        return GiveReceipt(owner, merged) ? merged : entt::entity(entt::null);
+    }
+    if (!GiveOwner(owner) || !GiveDetached(item)) return entt::null;
+
+    const int cell = GetEmptyInventoryPositionEcs(owner, item);
+    if (!GiveOwner(owner) || !GiveDetached(item)) return entt::null;
+    if (cell >= 0 && cell <= UINT16_MAX)
+    {
+        const uint8_t window = IsDragonSoulItem(item) ? DRAGON_SOUL_INVENTORY :
+#ifdef ENABLE_EXTRA_INVENTORY
+            IsExtraItem(item) ? EXTRA_INVENTORY :
+#endif
+            INVENTORY;
+        if (!InventorySystem::AddToCharacter(item, owner, TItemPos(window, static_cast<uint16_t>(cell))
+#ifdef __HIGHLIGHT_SYSTEM__
+            , highlight
+#endif
+        )) return entt::null;
+        // True means placement committed, even if publication removed the item.
+        committed = true;
+        if (!GiveReceipt(owner, item)) return entt::null;
+        const auto name = GiveName(owner, item);
+        LogManager::instance().ItemLogEntity(owner, item, "SYSTEM", name.c_str());
+        if (!GiveReceipt(owner, item)) return entt::null;
+        if (message) GiveMessage(owner, item, amount);
+        if (!GiveReceipt(owner, item)) return entt::null;
+
+        const auto location = g_registry.get<ecs::ItemLocation>(item);
+        if (location.window == INVENTORY && location.cell <= UINT8_MAX &&
+            GetItemType(item) == ITEM_USE && GetItemSubType(item) == USE_POTION)
+        {
+            TQuickslot current {};
+            if (InventorySystem::GetQuickslot(owner, 0, current) &&
+                current.type == QUICKSLOT_TYPE_NONE &&
+                InventorySystem::EnsureComponent<ecs::QuickSlots>(owner) && GiveReceipt(owner, item) &&
+                GetItemWindow(item) == INVENTORY && GetItemCell(item) == location.cell &&
+                InventorySystem::GetQuickslot(owner, 0, current) && current.type == QUICKSLOT_TYPE_NONE)
+                InventorySystem::SetQuickslot(owner, 0, {QUICKSLOT_TYPE_ITEM, static_cast<uint8_t>(location.cell)});
+        }
+        return GiveReceipt(owner, item) ? item : entt::entity(entt::null);
+    }
+    if (cell != -1) return entt::null;
+
+    const int32_t map = ecs::PlayerRuntime::GetMapIndex(owner);
+    PIXEL_POSITION position {ecs::PlayerRuntime::GetX(owner), ecs::PlayerRuntime::GetY(owner), 0};
+    if (const auto* spatial = g_registry.try_get<ecs::Position>(owner)) position.z = spatial->z;
+    const bool protectedDrop = longOwnership || (GetItemAntiFlag(item) & ITEM_ANTIFLAG_DROP);
+#ifdef ENABLE_NEWSTUFF
+    const int duration = g_aiItemDestroyTime[ITEM_DESTROY_TIME_AUTOGIVE];
+#else
+    const int duration = 300;
+#endif
+    // Ground/spatial allocation is still an explicit, separate legacy boundary.
+    if (!PlaceItemOnGroundLegacyBoundary(item, map, position, duration)) return entt::null;
+    committed = true;
+    if (!GiveOwner(owner) || !GiveGroundReceipt(item, map, position)) return entt::null;
+    if (!SetGroundOwnership(item, owner, protectedDrop ? 300 : 60) ||
+        !GiveOwner(owner) || !GiveGroundReceipt(item, map, position)) return entt::null;
+    const auto name = GiveName(owner, item);
+    LogManager::instance().ItemLogEntity(owner, item, "SYSTEM_DROP", name.c_str());
+    return GiveOwner(owner) && GiveGroundReceipt(item, map, position) ? item : entt::entity(entt::null);
+}
+}
+
+void AutoGiveItem(entt::entity owner, entt::entity item, bool longOwnership
+#ifdef __HIGHLIGHT_SYSTEM__
+    , bool highlight
+#endif
+)
+{
+#ifndef __HIGHLIGHT_SYSTEM__
+    const bool highlight = true;
+#endif
+    bool committed = false;
+    DeliverItem(owner, item, longOwnership, false, highlight, committed);
+}
+#ifdef ENABLE_DS_REFINE_ALL
+bool AutoGiveDS(entt::entity owner, entt::entity item, bool longOwnership)
+{
+    if (!IsDragonSoulItem(item)) return false;
+    bool committed = false;
+    const auto receipt = DeliverItem(owner, item, longOwnership, false, true, committed);
+    return committed || receipt != entt::null;
+}
+#endif
+
+entt::entity AutoGiveItemEcs(entt::entity owner, uint32_t vnum, uint32_t count,
+    int rarePct, bool message, bool highlight)
+{
+    if (!GiveOwner(owner) || !vnum || !count) return entt::null;
+    const auto* table = ITEM_MANAGER::instance().GetTable(vnum);
+    if (!table || !table->bSize || (table->bType != ITEM_ELK && g_bItemCountLimit <= 0)) return entt::null;
+    const auto proto = *table;
+    // One call creates one normalized item/stack, regardless of inventory fill.
+    // MAKECOUNT is the AutoGive minimum; invalid signed prototype values fail.
+    if (proto.bType == ITEM_ELK) count = std::min(count, uint32_t(INT_MAX));
+    else if (proto.dwFlags & ITEM_FLAG_STACKABLE)
+    {
+        if (proto.dwFlags & ITEM_FLAG_MAKECOUNT)
+        {
+            if (proto.alValues[1] <= 0) return entt::null;
+            count = std::max(count, uint32_t(proto.alValues[1]));
+        }
+        count = std::min(count, uint32_t(g_bItemCountLimit));
+    }
+    else count = 1;
+
+    const auto item = ITEM_MANAGER::instance().CreateItem(vnum, count, 0, true, rarePct);
+    if (!IsValidItem(item)) return entt::null;
+    bool committed = false;
+    struct Cleanup {
+        entt::entity item;
+        bool& committed;
+        ~Cleanup() noexcept {
+            try {
+                if (committed || !GiveDetached(item)) return;
+                // A new unplaced reward must not remain in the delayed-save
+                // queue. Never retire a callback's new ownership or generation.
+                const bool skipSave = GetItemSkipSave(item);
+                SetItemSkipSave(item, true);
+                struct RestoreTransferred {
+                    entt::entity item;
+                    bool skipSave;
+                    ~RestoreTransferred() {
+                        if (IsValidItem(item) && !GiveDetached(item)) SetItemSkipSave(item, skipSave);
+                    }
+                } restore {item, skipSave};
+                if (!DestroyItemEntityEcs(item, "AUTOGIVE_FAILED") && IsValidItem(item))
+                    LOG_ERROR("AUTOGIVE cleanup deferred for entity {}", entt::to_integral(item));
+            } catch (...) {
+                try { LOG_ERROR("AUTOGIVE cleanup failed for entity {}", entt::to_integral(item)); } catch (...) {}
+            }
+        }
+    } cleanup {item, committed};
+    if (!GiveOwner(owner) || !GiveDetached(item) || GetItemOriginalVnum(item) != vnum || GetItemCount(item) != count)
+        return entt::null;
+    DBManager::instance().SendMoneyLog(MONEY_LOG_DROP, vnum, count);
+    if (!GiveOwner(owner) || !GiveDetached(item) || GetItemCount(item) != count) return entt::null;
+    return DeliverItem(owner, item, false, message, highlight, committed);
 }
 
 } // namespace ItemSystem

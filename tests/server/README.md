@@ -703,7 +703,7 @@ engine event callbacks. Rune calculations and attribute/DS operations have
 separate real-code tests, not a complete combined creation integration test.
 Before deployment test drop/reward creation, blend/rune/stole items, skill books,
 new and fully charged souls, time-limited items, loading persisted sockets,
-logout/relog and DB persistence. AutoGive, bootstrap and bulk shutdown remain
+logout/relog and DB persistence. Bootstrap and bulk shutdown remain
 separate migration work; this is not a fully pointer-free item factory.
 
 ```powershell
@@ -1059,15 +1059,58 @@ candidates and stale slot aliases.
 The old automatic and blend merge implementations were removed. Inventory drag
 now calls this operation from the entity-native MoveItem transaction described
 below, without an LPITEM destination or sequential consume/add. Its negative-count
-check does not apply abs(int) to INT_MIN. The complete AutoGive dispatcher,
-reward creation/placement and money logging remain separate migration work.
-The VNUM-only reward path now respects rejected
-count writes and does not create a replacement item when a fully credited
-destination disappears during callbacks; those call sites are compiled with
-GameServer, not executed by this fixture. Inventory lookup, extra-item category,
+check does not apply abs(int) to INT_MIN. AutoGive now dispatches this same
+full-payload merge after item creation; the former VNUM-only credit path is
+removed (delivery coverage is described below). Inventory lookup, extra-item category,
 item validity/lock/owner access, save/network and actual deletion are doubles.
 Verify client drag/drop, quickslots, blend rewards, full inventory, disconnect
 during rewards and relogged persistence with the real client and test database.
+
+## Entity-native item delivery
+
+AutoGive's existing/new-item and dragon-soul delivery share one implementation
+in the existing `InventorySystem.cpp`. The old implementation in `ItemSystem.cpp`
+and the duplicate CHARACTER item-pointer/DS overloads and socket helper are
+removed. The CHARACTER VNUM overload remains only as an entry adapter for
+unmigrated callers; it rejects nonpositive signed counts and forwards rarity,
+message and highlight settings. No new production file is introduced.
+
+Creation precedes merging, so the actual sockets, attributes, identity metadata
+and anti-stack rules reach the existing native transaction. A reward entity can
+have only one active delivery; losing a fully merged receipt never recreates it.
+Inventory insertion uses the acquisition path (including rune auto-equip and
+accessory initialization), not the pure transfer path. Every later log, chat and
+quickslot operation revalidates the owner and anchored receipt. Auto-assignment
+of potion shortcuts is restricted to representable main-inventory cells.
+
+One VNUM call produces one normalized item/stack: nonstackable counts become one,
+stack counts/MAKECOUNT minima are capped at the configured stack limit and gold
+at INT_MAX. Zero requests and invalid signed MAKECOUNT data are rejected. Unlike
+the removed pre-credit loop, oversized input no longer yields an amount dependent
+on free capacity in existing stacks. Callers needing more than one stack must
+request several rewards explicitly. Messages and money logs use normalized
+quantities. Check deployed reward tables against this contract before rollout.
+
+Failed new-item placement retires only its still-detached temporary entity;
+caller-supplied items remain the caller's responsibility on failure. Committed
+placement is not rolled back after a publication callback, and AutoGiveDS retains
+its committed-success result even if the receipt is deleted during publication.
+The entity-returning API can return null after committed callbacks, so null is
+not permission to replay a reward. Partial stack transfers are not a durable
+all-or-nothing reward transaction. Failed retirement remains logged/recoverable.
+
+`QuickslotTests` executes the real dispatcher, queries, acquisition/placement,
+equipment and shortcut code with entity-only fixtures. It checks normalized
+counts, rarity/highlight/message flags, full/partial/missing merge receipts,
+same-item recursion, normal/extra/DS routing, wide extra slots, ground fallback
+protection, rune/accessory acquisition, creation failures, exceptions, entity
+recycling, owner destruction, reownership and failed cleanup. Creation, merge,
+ground/spatial placement, timers, persistence, packets and logs are controlled
+doubles here. Real creation and merge algorithms have separate tests, not a
+single integrated live-server test. Actual CItem allocation and ground insertion
+remain explicit legacy boundaries, not claimed pointer-free by this migration.
+Verify quest/drop/refine rewards, full inventories, acquisition effects,
+disconnect/relog and database persistence with the real client before deployment.
 
 ## Entity-native inventory drag and stack splitting
 

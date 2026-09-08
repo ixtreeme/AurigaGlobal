@@ -852,7 +852,7 @@ entt::entity ItemSystem::GetInventoryItem(entt::entity,unsigned short) { Unexpec
 entt::entity ItemSystem::GetWearItem(entt::entity,unsigned char) { Unexpected(); }
 bool ItemSystem::UnequipItemEcs(entt::entity,entt::entity) { Unexpected(); }
 bool ItemSystem::UseItemEcs(entt::entity,entt::entity,SItemPos) { Unexpected(); }
-entt::entity ItemSystem::AutoGiveItemEcs(entt::entity,unsigned int,unsigned int,int,bool) { Unexpected(); }
+entt::entity ItemSystem::AutoGiveItemEcs(entt::entity,unsigned int,unsigned int,int,bool,bool) { Unexpected(); }
 bool ItemSystem::IsDragonSoulItem(entt::entity) { Unexpected(); }
 bool ItemSystem::IsExtraItem(entt::entity) { Unexpected(); }
 unsigned int ItemSystem::GetItemID(entt::entity) { Unexpected(); }

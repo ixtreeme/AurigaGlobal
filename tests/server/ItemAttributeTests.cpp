@@ -237,7 +237,7 @@ void ItemSystem::AutoGiveItem(entt::entity owner, entt::entity item, bool
     inventory[{owner, INVENTORY, 100}] = item;
 }
 bool ItemSystem::AutoGiveDS(entt::entity, entt::entity, bool) { UnexpectedSwitchbotService(); }
-entt::entity ItemSystem::AutoGiveItemEcs(entt::entity, uint32_t, uint32_t, int, bool) { UnexpectedSwitchbotService(); }
+entt::entity ItemSystem::AutoGiveItemEcs(entt::entity, uint32_t, uint32_t, int, bool, bool) { UnexpectedSwitchbotService(); }
 int ItemSystem::GetItemLimitTimerBasedOnWearIndex(entt::entity item) {
     if (!soulStateTest) UnexpectedSwitchbotService();
     Check(ItemSystem::IsValidItem(item), "stale soul lifetime lookup");

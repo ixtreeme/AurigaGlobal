@@ -55,9 +55,11 @@ void AutoGiveItem(entt::entity e, entt::entity item, bool longOwnerShip = false
 #ifdef ENABLE_DS_REFINE_ALL
 bool AutoGiveDS(entt::entity e, entt::entity item, bool longOwnerShip = false);
 #endif
+// One normalized item/stack (CreateItem count limits). A receipt may disappear
+// after committed publication; a null handle must not automatically replay rewards.
 entt::entity AutoGiveItemEcs(entt::entity owner, uint32_t itemVnum,
                              uint32_t count = 1, int rarePct = -1,
-                             bool sendMessage = true);
+                             bool sendMessage = true, bool highlight = true);
 bool IsValidItem(entt::entity item);
 bool IsDragonSoulItem(entt::entity item);
 bool IsExtraItem(entt::entity item);

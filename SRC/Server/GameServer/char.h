@@ -1316,14 +1316,6 @@ public:
 		, bool isHighLight = true
 #endif
 	);
-	void			AutoGiveItem(LPITEM item, bool longOwnerShip = false
-#ifdef __HIGHLIGHT_SYSTEM__
-		, bool isHighLight = true
-#endif
-	);
-#ifdef ENABLE_DS_REFINE_ALL
-	bool	AutoGiveDS(LPITEM item, bool longOwnerShip = false);
-#endif
 	bool			CanTakeInventoryItem(entt::entity item, TItemPos* pos);
 
 #ifdef ENABLE_EXTRA_INVENTORY
