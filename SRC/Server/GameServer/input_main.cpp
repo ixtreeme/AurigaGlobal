@@ -2078,7 +2078,7 @@ void CInputMain::Move(entt::entity character, const char * data)
 			// and MoveDuration; after Stop() above they evaluate
 			// to the servers current position with duration 0 -
 			// halt at this position.
-			ch->SendMovePacket(FUNC_WAIT, 0, 0, 0, 0, 0, -1.0f);
+			ecs::MovementSystem::SendMovePacket(character, FUNC_WAIT, 0, 0, 0, 0, 0, -1.0f);
 
 						return;
 		}

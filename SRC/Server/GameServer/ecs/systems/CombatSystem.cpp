@@ -1,4 +1,5 @@
 #include "../../stdafx.h"
+#include "MovementSystem.hpp"
 #include "ViewSystem.hpp"
 #include "PlayerRuntimeSystem.hpp"
 #include "AffectSystem.hpp"
@@ -6807,7 +6808,7 @@ static void ProcessStoneSpawnStep(LegacyCharHandle ch)
 	for (int step = ecs::PointSystem::GetMaxSP(chEntity) + 1; step <= wantStep; ++step)
 	{
 		ch->SetMaxSP(step);
-		ch->SendMovePacket(FUNC_ATTACK, 0, ecs::PlayerRuntime::GetX(chEntity), ecs::PlayerRuntime::GetY(chEntity), 0);
+		ecs::MovementSystem::SendMovePacket(chEntity, FUNC_ATTACK, 0, ecs::PlayerRuntime::GetX(chEntity), ecs::PlayerRuntime::GetY(chEntity), 0);
 
 		CHARACTER_MANAGER::instance().SelectStone(ch ? ch->GetEntityHandle() : entt::null);
 
@@ -7687,7 +7688,7 @@ void CHARACTER::CowardEscape()
 			int iDestY = GetY() + (int)fy;
 
 			if (Goto(iDestX, iDestY))
-				SendMovePacket(FUNC_WAIT, 0, 0, 0, 0);
+				ecs::MovementSystem::SendMovePacket(GetEntityHandle(), FUNC_WAIT, 0, 0, 0, 0);
 
 			LOG_INFO("WAEGU move to {} {} (far)", iDestX, iDestY);
 			return;
@@ -7776,7 +7777,7 @@ bool CHARACTER::Return()
 	if (!Goto(x, y))
 		return false;
 
-	SendMovePacket(FUNC_WAIT, 0, 0, 0, 0);
+	ecs::MovementSystem::SendMovePacket(GetEntityHandle(), FUNC_WAIT, 0, 0, 0, 0);
 
 	if (test_server)
 		LOG_INFO("{} {} A÷±âÇI°í µ13A°!AÚ! {} {}", GetName(), static_cast<const void*>(this), x, y);
@@ -7930,6 +7931,6 @@ bool CHARACTER::Follow(entt::entity chr, float fMinDistance)
 			return false;
 	}
 
-	SendMovePacket(FUNC_WAIT, 0, 0, 0, 0);
+	ecs::MovementSystem::SendMovePacket(GetEntityHandle(), FUNC_WAIT, 0, 0, 0, 0);
 	return true;
 }

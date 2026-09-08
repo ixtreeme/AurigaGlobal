@@ -409,7 +409,7 @@ bool CHARACTER::Sync(int,int) { UnexpectedService(__func__); }
 void CHARACTER::OnMove(bool) { UnexpectedService(__func__); }
 float CHARACTER::GetMoveSpeed(void)const { UnexpectedService(__func__); }
 void CHARACTER::CalculateMoveDuration(void) { UnexpectedService(__func__); }
-void CHARACTER::SendMovePacket(unsigned char,unsigned char,unsigned int,unsigned int,unsigned int,unsigned int,float) { UnexpectedService(__func__); }
+void ecs::MovementSystem::SendMovePacket(entt::entity,unsigned char,unsigned char,unsigned int,unsigned int,unsigned int,unsigned int,float) { UnexpectedService(__func__); }
 void CHARACTER::SyncQuickslot(unsigned char,unsigned char,unsigned char) { UnexpectedService(__func__); }
 void CHARACTER::ClearAffect(bool) { UnexpectedService(__func__); }
 bool CHARACTER::AddAffect(unsigned int,unsigned char,int,unsigned int,int,int,bool,bool) { UnexpectedService(__func__); }

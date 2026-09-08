@@ -931,7 +931,6 @@ public:
 	float			GetMoveMotionSpeed() const;
 	float			GetMoveSpeed() const;
 	void			CalculateMoveDuration();
-	void			SendMovePacket(uint8_t bFunc, uint8_t bArg, uint32_t x, uint32_t y, uint32_t dwDuration, uint32_t dwTime = 0, float iRot = -1.0f);
 	// Phase 15E-final.LPENTITY.4-architect.B.1.2:
 	// GetCurrentMoveDuration / GetCurrentMoveStartTime now read the ECS
 	// MovementState component as the authoritative source. Per A.2 §2

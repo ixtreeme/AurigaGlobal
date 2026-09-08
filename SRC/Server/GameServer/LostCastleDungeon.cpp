@@ -377,7 +377,7 @@ namespace
         ecs::MovementSystem::Goto(cloneEntity, tx, ty);
 
         // server-controlled chars need explicit MOVE packets
-        clone->SendMovePacket(FUNC_MOVE, 0, tx, ty, clone->GetCurrentMoveDuration(), now);
+        ecs::MovementSystem::SendMovePacket(cloneEntity, FUNC_MOVE, 0, tx, ty, clone->GetCurrentMoveDuration(), now);
     }
 
     inline void LostCastleCloneBroadcastMelee(LPCHARACTER clone, LPCHARACTER target, uint8_t motionIndex, uint32_t now)
@@ -391,7 +391,7 @@ namespace
         ecs::MovementSystem::Stop(cloneEntity);
 
         // PC swing is broadcast as FUNC_COMBO with motion index (13..21)
-        clone->SendMovePacket(FUNC_COMBO, motionIndex, ecs::PlayerRuntime::GetX(cloneEntity), ecs::PlayerRuntime::GetY(cloneEntity), 0, now);
+        ecs::MovementSystem::SendMovePacket(cloneEntity, FUNC_COMBO, motionIndex, ecs::PlayerRuntime::GetX(cloneEntity), ecs::PlayerRuntime::GetY(cloneEntity), 0, now);
         ecs::MovementSystem::OnMove(cloneEntity, true);
     }
 
@@ -407,7 +407,7 @@ namespace
 
         // Skills are broadcast as FUNC_SKILL|skillVnum (see input_main.cpp)
         const uint8_t func = (uint8_t)(FUNC_SKILL | (skillVnum & 0x7F));
-        clone->SendMovePacket(func, 0, ecs::PlayerRuntime::GetX(cloneEntity), ecs::PlayerRuntime::GetY(cloneEntity), 0, now);
+        ecs::MovementSystem::SendMovePacket(cloneEntity, func, 0, ecs::PlayerRuntime::GetX(cloneEntity), ecs::PlayerRuntime::GetY(cloneEntity), 0, now);
         ecs::MovementSystem::OnMove(cloneEntity, true);
     }
 }

@@ -1,5 +1,37 @@
 # Server ECS regression tests
 
+## Native movement tick and move packets
+
+MovementSystem.cpp now interpolates placed character entities without a VID
+lookup, LegacyCharPtr or CHARACTER call. The native sector index is committed
+before PositionChangedEvent; old/new coordinates are captured before the write.
+Arrival publishes once and the NPC combat/idle decision uses the entity target.
+Dead, stunned and detached entities are not advanced; missing destination
+sectors leave position and timing unchanged. Coordinate differences are widened
+before subtraction; the existing step, rounding and timing rules are retained.
+
+Each tick snapshots values, not component references. Versioned handles,
+SpatialRevision, destination, timing and placement are rechecked after callbacks.
+A retired/recycled entity, later retargeted snapshot entry or same-location
+respawn cannot receive the old tick's follow-up movement/arrival operation.
+
+SendMovePacket reads identity, destination/current position, timing and rotation
+from ECS. CHARACTER::SendMovePacket is deleted and its callers use the entity
+API. Motion victim encoding no longer converts an entity back to CHARACTER.
+The existing MovementSystem file remains the only implementation; Show, Warp,
+Goto, Stop and recovery/save callbacks still contain migration work.
+
+SpatialLifecycleTests also compiles production MovementSystem.cpp and its move
+packet encoder and SetPosition implementation. Pointer-free cases cover sector
+crossing, single visibility publication, arrival/idle/fighting, walking preference,
+diagonal/zero-speed interpolation, extreme destination subtraction, missing
+sectors, dead/detached movers, event/packet deletion, new movement from a callback,
+same-location respawn and packet field/fallback parity. Combat-target lookup,
+AI scheduling, event cancellation and packet transport are controlled leaf doubles;
+legacy-only link seams fail immediately if reached. These are not live-client
+movement, motion-file or server-load tests. Test real player/NPC/mount movement
+and peer visibility before deployment.
+
 ## Native ground placement, sectree membership and visibility
 
 PlaceItemOnGround and RemoveFromGround live in InventorySystem.cpp and operate

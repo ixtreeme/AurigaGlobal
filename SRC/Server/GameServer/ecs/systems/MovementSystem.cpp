@@ -10,74 +10,43 @@
 #include "../components/ai_components.hpp"
 #include "../AIHelpers.hpp"
 
-#include "PlayerRuntimeSystem.hpp"
 #include <cmath>
 #include <algorithm>
+#include <tuple>
+#include <vector>
 
 #include "../../char.h"
-#include "PlayerRuntimeSystem.hpp"
 #include "../../char_manager.h"
-#include "PlayerRuntimeSystem.hpp"
 #include "../../desc_client.h"
-#include "PlayerRuntimeSystem.hpp"
 #include "../../dungeon.h"
-#include "PlayerRuntimeSystem.hpp"
 #include "../../packet.h"
-#include "PlayerRuntimeSystem.hpp"
 #include "../../motion.h"
-#include "PlayerRuntimeSystem.hpp"
 #include "../../vector.h"
-#include "PlayerRuntimeSystem.hpp"
 #include "../../sectree_manager.h"
-#include "PlayerRuntimeSystem.hpp"
 #include "../../regen.h"
-#include "PlayerRuntimeSystem.hpp"
 #include "../../start_position.h"
-#include "PlayerRuntimeSystem.hpp"
 #include "../../config.h"
-#include "PlayerRuntimeSystem.hpp"
 #include "../../unique_item.h"
-#include "PlayerRuntimeSystem.hpp"
 #include "../../utils.h"
-#include "PlayerRuntimeSystem.hpp"
 #include "../../questmanager.h"
-#include "PlayerRuntimeSystem.hpp"
 #include "../../mount_inventory_helper.h"
-#include "PlayerRuntimeSystem.hpp"
 #include "../../party.h"
-#include "PlayerRuntimeSystem.hpp"
 #include "../CharacterAccessors.hpp"
-#include "PlayerRuntimeSystem.hpp"
 #include "../EntityFactory.hpp"
-#include "PlayerRuntimeSystem.hpp"
 #include "../Registry.hpp"
-#include "PlayerRuntimeSystem.hpp"
-#include "PlayerRuntimeSystem.hpp"
 #include "ItemSystem.hpp"
-#include "PlayerRuntimeSystem.hpp"
 #include "PointSystem.hpp"
-#include "PlayerRuntimeSystem.hpp"
 #include "../SpatialHelpers.hpp"
 #include "../PositionSync.hpp"
-#include "PlayerRuntimeSystem.hpp"
 #include "../components/dirty_components.hpp"
-#include "PlayerRuntimeSystem.hpp"
 #include "../components/identity_components.hpp"
-#include "PlayerRuntimeSystem.hpp"
 #include "../components/movement_components.hpp"
-#include "PlayerRuntimeSystem.hpp"
 #include "../components/status_components.hpp"
-#include "PlayerRuntimeSystem.hpp"
 #include "../components/transform_components.hpp"
-#include "PlayerRuntimeSystem.hpp"
 #include "../components/combat_components.hpp"
-#include "PlayerRuntimeSystem.hpp"
 #include "../components/character_runtime_components.hpp"
-#include "PlayerRuntimeSystem.hpp"
 #include "../events.hpp"
-#include "PlayerRuntimeSystem.hpp"
 #include "../EventDispatcher.hpp"
-#include "PlayerRuntimeSystem.hpp"
 #include <Core/Logging.hpp>
 
 void EncodeMovePacket(TPacketGCMove& pack, uint32_t dwVID, uint8_t bFunc, uint8_t bArg, uint32_t x, uint32_t y, uint32_t dwDuration, uint32_t dwTime, float bRot);
@@ -122,39 +91,58 @@ namespace
             return;
         g_registry.emplace_or_replace<ecs::CombatActiveTag>(e);
     }
-    inline void TransitionAfterMovementStop(const ecs::VIDComponent& vid)
+    void TransitionAfterMovementStop(entt::entity entity)
     {
-        LPCHARACTER ch = CHARACTER_MANAGER::instance().Find(vid.value);
-        if (!ch || ecs::PlayerRuntime::IsPC(ch->GetEntityHandle()))
+        if (!g_registry.valid(entity) || ecs::PlayerRuntime::IsPC(entity) ||
+            g_registry.any_of<ecs::DeadTag, ecs::StunTag>(entity))
             return;
-        if (ch->GetVictim() && !AIHelpers::IsCoward(ch->GetEntityHandle()))
-            ecs::PlayerRuntime::SetPosition(ch->GetEntityHandle(), POS_FIGHTING);
-        else
-            ecs::PlayerRuntime::SetPosition(ch->GetEntityHandle(), POS_STANDING);
+        const bool fighting = CombatSystem::GetVictim(entity) != entt::null &&
+            !AIHelpers::IsCoward(entity);
+        ecs::PlayerRuntime::SetPosition(entity, fighting ? POS_FIGHTING : POS_STANDING);
     }
 
-    inline void MirrorLegacyMovement(entt::registry& reg, entt::entity entity, const ecs::Position& position)
+    auto MovementValues(const ecs::MovementState& s)
     {
-        const auto* legacy = reg.try_get<ecs::LegacyCharPtr>(entity);
-        if (!legacy || !legacy->ptr)
-            return;
+        return std::tie(s.moveStartTime, s.moveDuration, s.lastMoveTime, s.lastAttackTime,
+            s.walkStartTime, s.stopTime, s.isWalking, s.isNowWalking, s.staminaConsume,
+            s.walkPreference);
+    }
 
-        LPCHARACTER ch = legacy->ptr;
+    // Own values, never component references: publication can retire, respawn
+    // or retarget this entity (or any later entity in the tick snapshot).
+    struct MovementFrame
+    {
+        entt::entity entity;
+        ecs::Position position;
+        ecs::MovementDestination destination;
+        ecs::MovementState state;
+        int32_t mapIndex;
+        uint64_t spatialRevision;
+        int32_t step;
+        bool moving = true;
 
-        // Position is authoritative ECS state. Membership must be updated
-        // before the final visibility refresh, including under interpolation.
-        ecs::SyncPositionComponents(reg, entity, ch->GetMapIndex(), position.x, position.y, ch->GetZ());
-
-        // The native insert moves the versioned handle from the old sector;
-        // same-sector insertion is a no-op. No mirrored placement write.
-        if (LPSECTREE new_tree = ecs::SectorAt(ch->GetMapIndex(), position.x, position.y))
+        bool Current(entt::registry& reg) const
         {
-            new_tree->InsertEntity(entity);
+            if (!reg.valid(entity) ||
+                !reg.all_of<ecs::Position, ecs::MapIndex, ecs::MovementState,
+                    ecs::SpatialRevision, ecs::SpatialEntity, ecs::CharacterType>(entity) ||
+                reg.any_of<ecs::DeadTag, ecs::StunTag>(entity))
+                return false;
+            const auto& pos = reg.get<ecs::Position>(entity);
+            const auto* dest = reg.try_get<ecs::MovementDestination>(entity);
+            const auto* speed = reg.try_get<ecs::MovementSpeed>(entity);
+            if (pos.x != position.x || pos.y != position.y || pos.z != position.z ||
+                reg.get<ecs::MapIndex>(entity).value != mapIndex ||
+                reg.get<ecs::SpatialRevision>(entity).value != spatialRevision ||
+                MovementValues(reg.get<ecs::MovementState>(entity)) != MovementValues(state) ||
+                (speed ? std::max<int32_t>(1, speed->run) : 200) != step ||
+                (moving ? !dest || dest->x != destination.x || dest->y != destination.y : dest != nullptr))
+                return false;
+            auto* tree = ecs::SectorOf(reg, entity);
+            return tree && !tree->IsDestroying() && tree->Contains(entity);
         }
+    };
 
-        ch->UpdateSectree();
-
-    }
 }
 
 namespace ecs::MovementSystem {
@@ -395,63 +383,101 @@ void SyncWalkingWrite(entt::entity e, bool isNowWalking)
 
 void MovementSystem_Update(entt::registry& reg, uint32_t tick)
 {
-    // During the migration window, only process entities with an active movement destination.
-    auto view = reg.view<ecs::MovementDestination, ecs::VIDComponent, ecs::Position, ecs::MovementState>();
+    // Sectree and gameplay services share the world registry. Do not partially
+    // update a different registry through the global services.
+    if (&reg != &g_registry)
+        return;
 
-    view.each([&](const entt::entity entity,
-                  ecs::MovementDestination& destination,
-                  const ecs::VIDComponent& vid,
-                  ecs::Position& position,
-                  ecs::MovementState& movementState) {
-        (void)vid;
-        const int32_t dx = destination.x - position.x;
-        const int32_t dy = destination.y - position.y;
+    std::vector<MovementFrame> frames;
+    auto view = reg.view<ecs::MovementDestination, ecs::Position, ecs::MapIndex,
+        ecs::MovementState, ecs::SpatialRevision, ecs::SpatialEntity, ecs::CharacterType>();
+    for (auto entity : view) {
+        const auto* speed = reg.try_get<ecs::MovementSpeed>(entity);
+        frames.push_back({entity, view.get<ecs::Position>(entity),
+            view.get<ecs::MovementDestination>(entity), view.get<ecs::MovementState>(entity),
+            view.get<ecs::MapIndex>(entity).value, view.get<ecs::SpatialRevision>(entity).value,
+            speed ? std::max<int32_t>(1, speed->run) : 200});
+    }
 
-        if (dx == 0 && dy == 0) {
-            movementState.lastMoveTime = tick;
-            movementState.stopTime = tick;
-            movementState.moveDuration = 0;
-            movementState.isWalking = false;
-            movementState.isNowWalking = false;
-            reg.remove<ecs::MovementDestination>(entity);
-            MirrorLegacyMovement(reg, entity, position);
-            reg.emplace_or_replace<ecs::DirtyTag>(entity);
-            TransitionAfterMovementStop(vid);
-            return;
-        }
-
-        int32_t step = 200;
-        if (const auto* movementSpeed = reg.try_get<ecs::MovementSpeed>(entity)) {
-            step = std::max<int32_t>(1, movementSpeed->run);
-        }
-
-        const double distance = std::sqrt(static_cast<double>(dx) * dx + static_cast<double>(dy) * dy);
-        if (distance <= step) {
-            position.x = destination.x;
-            position.y = destination.y;
-            movementState.lastMoveTime = tick;
-            movementState.stopTime = tick;
-            movementState.moveDuration = 0;
-            movementState.isWalking = false;
-            movementState.isNowWalking = false;
-            reg.remove<ecs::MovementDestination>(entity);
-            MirrorLegacyMovement(reg, entity, position);
-            TransitionAfterMovementStop(vid);
+    for (auto frame : frames) {
+        if (!frame.Current(reg))
+            continue;
+        const auto entity = frame.entity;
+        const auto oldPosition = frame.position;
+        const auto oldState = frame.state;
+        // Widen before subtracting: opposite int32 endpoints must not overflow.
+        const double dx = double(frame.destination.x) - oldPosition.x;
+        const double dy = double(frame.destination.y) - oldPosition.y;
+        const double distance = std::hypot(dx, dy);
+        const bool arrived = distance <= frame.step;
+        auto position = oldPosition;
+        if (arrived) {
+            position.x = frame.destination.x;
+            position.y = frame.destination.y;
         } else {
-            const double ratio = static_cast<double>(step) / distance;
-            position.x += static_cast<int32_t>(std::round(dx * ratio));
-            position.y += static_cast<int32_t>(std::round(dy * ratio));
-            movementState.moveStartTime = tick;
-            movementState.moveDuration = 1;
-            movementState.lastMoveTime = tick;
-            movementState.isWalking = true;
-            movementState.isNowWalking = true;
+            position.x = int32_t(double(oldPosition.x) + std::round(dx * frame.step / distance));
+            position.y = int32_t(double(oldPosition.y) + std::round(dy * frame.step / distance));
         }
 
-        MirrorLegacyMovement(reg, entity, position);
-        reg.emplace_or_replace<ecs::DirtyTag>(entity);
-        g_dispatcher.trigger(ecs::EvEntityMoved { entity, position.x, position.y });
-    });
+        auto* target = ecs::SectorAt(frame.mapIndex, position.x, position.y);
+        if (!target || target->IsDestroying())
+            continue; // Never commit coordinates without a live destination sector.
+
+        if (!reg.all_of<ecs::DirtyTag>(entity))
+            reg.insert<ecs::DirtyTag>(&entity, &entity + 1);
+        if (!frame.Current(reg))
+            continue;
+
+        frame.position = position;
+        frame.state.lastMoveTime = tick;
+        frame.state.moveDuration = arrived ? 0 : 1;
+        frame.state.isWalking = frame.state.isNowWalking = !arrived;
+        if (arrived) frame.state.stopTime = tick;
+        else frame.state.moveStartTime = tick;
+        reg.get<ecs::Position>(entity) = position;
+        reg.get<ecs::MovementState>(entity) = frame.state;
+
+        if (ecs::SectorOf(reg, entity) != target) {
+            if (!target->InsertEntity(entity)) {
+                // Only roll back our own unpublished write. A callback's
+                // replacement, despawn or new movement always takes precedence.
+                if (frame.Current(reg)) {
+                    reg.get<ecs::Position>(entity) = oldPosition;
+                    reg.get<ecs::MovementState>(entity) = oldState;
+                }
+                continue;
+            }
+            ++frame.spatialRevision;
+        }
+        if (!frame.Current(reg))
+            continue;
+        if (arrived) {
+            frame.moving = false;
+            reg.remove<ecs::MovementDestination>(entity);
+            if (!frame.Current(reg))
+                continue;
+        }
+
+        const bool changed = position.x != oldPosition.x || position.y != oldPosition.y;
+        if (changed) {
+            // Publish once, after membership and movement state are committed.
+            // Visibility subscribes here; observers see the real old/new values.
+            g_dispatcher.trigger(ecs::PositionChangedEvent {entity,
+                oldPosition.x, oldPosition.y, oldPosition.z, position.x, position.y, position.z,
+                frame.mapIndex, frame.mapIndex});
+        } else {
+            ecs::VisibilitySystem::Refresh(reg, entity);
+        }
+        if (!frame.Current(reg))
+            continue;
+        if (changed) {
+            g_dispatcher.trigger(ecs::EvEntityMoved {entity, position.x, position.y});
+            if (!frame.Current(reg))
+                continue;
+        }
+        if (arrived)
+            TransitionAfterMovementStop(entity);
+    }
 }
 
 namespace ecs::PlayerRuntime {
@@ -945,48 +971,35 @@ bool CHARACTER::Move(int32_t x, int32_t y)
 
 namespace ecs::MovementSystem {
 
-// The packet builder reads a dozen CHARACTER members that have no component
-// yet, so this resolves rather than duplicating it. The spawn path above it
-// holds an entity either way.
 void SendMovePacket(entt::entity e, uint8_t bFunc, uint8_t bArg, uint32_t x, uint32_t y,
-	uint32_t dwDuration, uint32_t dwTime, float iRot)
+    uint32_t dwDuration, uint32_t dwTime, float iRot)
 {
-	if (LPCHARACTER ch = ecs::LegacyCharOf(e))
-		ch->SendMovePacket(bFunc, bArg, x, y, dwDuration, dwTime, iRot);
+    if (!g_registry.valid(e) || !g_registry.all_of<ecs::CharacterType, ecs::VIDComponent>(e))
+        return;
+    if (bFunc == FUNC_WAIT) {
+        const auto* destination = g_registry.try_get<ecs::MovementDestination>(e);
+        const auto* position = g_registry.try_get<ecs::Position>(e);
+        const auto* movement = g_registry.try_get<ecs::MovementState>(e);
+        x = destination ? destination->x : position ? position->x : 0;
+        y = destination ? destination->y : position ? position->y : 0;
+        dwDuration = movement ? movement->moveDuration : 0;
+    }
+    TPacketGCMove pack {};
+    EncodeMovePacket(pack, g_registry.get<ecs::VIDComponent>(e).value, bFunc, bArg,
+        x, y, dwDuration, dwTime,
+        iRot == -1.0f ? ecs::PlayerRuntime::GetRotation(e) / 5.0f : iRot);
+    ecs::ViewSystem::PacketView(e, &pack, sizeof(pack), e);
 }
 
 } // namespace ecs::MovementSystem
 
-void CHARACTER::SendMovePacket(uint8_t bFunc, uint8_t bArg, uint32_t x, uint32_t y, uint32_t dwDuration, uint32_t dwTime, float iRot)
-{
-	TPacketGCMove pack;
-
-	if (bFunc == FUNC_WAIT)
-	{
-		// B.1.4 + B.1.2: read via getters so the source is ECS.
-		x = GetCurrentDestX();
-		y = GetCurrentDestY();
-		dwDuration = GetCurrentMoveDuration();
-	}
-
-	if (iRot == -1.0f)
-		EncodeMovePacket(pack, GetPacketVID(), bFunc, bArg, x, y, dwDuration, dwTime, GetRotation() / 5.0f);
-	else
-		EncodeMovePacket(pack, GetPacketVID(), bFunc, bArg, x, y, dwDuration, dwTime, iRot);
-	ecs::ViewSystem::PacketView(GetEntityHandle(), &pack, sizeof(TPacketGCMove), GetEntityHandle());
-}
-
 void CHARACTER::MotionPacketEncode(uint8_t motion, entt::entity victimEntity, struct packet_motion* packet)
 {
-	LPCHARACTER victim = ecs::LegacyCharOf(victimEntity);
 	packet->header = HEADER_GC_MOTION;
 	packet->vid = GetPacketVID();
 	packet->motion = motion;
 
-	if (victim)
-		packet->victim_vid = ecs::PlayerRuntime::GetPacketVID(victim->GetEntityHandle());
-	else
-		packet->victim_vid = 0;
+	packet->victim_vid = ecs::PlayerRuntime::GetPacketVID(victimEntity);
 }
 
 void CHARACTER::Motion(uint8_t motion, entt::entity victimEntity)

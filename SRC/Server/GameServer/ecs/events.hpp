@@ -35,11 +35,8 @@ struct EvEntityMoved {
 // Map-warp case: oldMapIndex and newMapIndex differ; the handler treats
 // this as a full leave-old / enter-new visibility transition.
 //
-// Trigger sites (planned for D.2): SpatialService::InsertEntity,
-// SyncPositionComponents, MovementSystem update loop, MirrorLegacyMovement,
-// SetObserverMode (synthetic event with old==new but observer flag flipped).
-//
-// No subscribers in D.1 - event struct lands first so D.2 can compile.
+// Movement ticks publish after the native sectree membership is committed.
+// VisibilitySystem subscribes to reconcile the directed view graph.
 struct PositionChangedEvent {
     entt::entity entity { entt::null };
     int32_t      oldX { 0 };

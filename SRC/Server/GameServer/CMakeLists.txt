@@ -60,8 +60,9 @@ add_executable(SpatialLifecycleTests EXCLUDE_FROM_ALL
     sectree.cpp
     ecs/services/SpatialService.cpp
     ecs/systems/VisibilitySystem.cpp
+    ecs/systems/MovementSystem.cpp
 )
-target_link_libraries(SpatialLifecycleTests PRIVATE SERVER EnTT::EnTT)
+target_link_libraries(SpatialLifecycleTests PRIVATE SERVER EnTT::EnTT LUA)
 if(MSVC)
     target_compile_options(SpatialLifecycleTests PRIVATE /Gy)
     target_link_options(SpatialLifecycleTests PRIVATE /OPT:REF /OPT:NOICF)

@@ -1,4 +1,5 @@
 #include "../../stdafx.h"
+#include "MovementSystem.hpp"
 #include "PlayerRuntimeSystem.hpp"
 
 #include "AISystem.hpp"
@@ -249,7 +250,7 @@ void CHARACTER::__StateIdle_NPC()
 
     SetNowWalking(true);
     if (Goto(GetX() + static_cast<int>(fx), GetY() + static_cast<int>(fy))) {
-        SendMovePacket(FUNC_WAIT, 0, 0, 0, 0);
+        ecs::MovementSystem::SendMovePacket(GetEntityHandle(), FUNC_WAIT, 0, 0, 0, 0);
     }
 }
 
@@ -329,7 +330,7 @@ void CHARACTER::__StateIdle_Monster()
     }
 
     if (Goto(GetX() + static_cast<int>(fx), GetY() + static_cast<int>(fy))) {
-        SendMovePacket(FUNC_WAIT, 0, 0, 0, 0);
+        ecs::MovementSystem::SendMovePacket(GetEntityHandle(), FUNC_WAIT, 0, 0, 0, 0);
     }
 }
 
@@ -433,7 +434,7 @@ void CHARACTER::StateBattle()
 
             SetRotationToXY(ecs::PlayerRuntime::GetX(victimEntity), ecs::PlayerRuntime::GetY(victimEntity));
             if (UseMobSkill(skillIdx)) {
-                SendMovePacket(FUNC_MOB_SKILL, skillIdx, GetX(), GetY(), 0, curTime);
+                ecs::MovementSystem::SendMovePacket(GetEntityHandle(), FUNC_MOB_SKILL, skillIdx, GetX(), GetY(), 0, curTime);
 
                 const float motionDuration = CMotionManager::instance().GetMotionDuration(
                     GetRaceNum(),
@@ -470,7 +471,7 @@ void CHARACTER::StateBattle()
     }
 
     SetRotationToXY(ecs::PlayerRuntime::GetX(victimEntity), ecs::PlayerRuntime::GetY(victimEntity));
-    SendMovePacket(FUNC_ATTACK, 0, GetX(), GetY(), 0, curTime);
+    ecs::MovementSystem::SendMovePacket(GetEntityHandle(), FUNC_ATTACK, 0, GetX(), GetY(), 0, curTime);
 
     const float motionDuration = CMotionManager::instance().GetMotionDuration(
         GetRaceNum(),

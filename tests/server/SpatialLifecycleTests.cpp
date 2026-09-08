@@ -9,6 +9,22 @@
 #include "../../SRC/Server/GameServer/ecs/services/VisibilityService.hpp"
 #include "../../SRC/Server/GameServer/ecs/services/EntityNetworkDispatch.hpp"
 #include "../../SRC/Server/GameServer/ecs/systems/VisibilitySystem.hpp"
+#include "../../SRC/Server/GameServer/ecs/systems/MovementSystem.hpp"
+#include "../../SRC/Server/GameServer/ecs/systems/ViewSystem.hpp"
+#include "../../SRC/Server/GameServer/ecs/systems/CombatSystem.hpp"
+#include "../../SRC/Server/GameServer/ecs/systems/AISystem.hpp"
+#include "../../SRC/Server/GameServer/ecs/components/movement_components.hpp"
+#include "../../SRC/Server/GameServer/ecs/components/character_runtime_components.hpp"
+#include "../../SRC/Server/GameServer/ecs/components/combat_components.hpp"
+#include "../../SRC/Server/GameServer/ecs/components/status_components.hpp"
+#include "../../SRC/Server/GameServer/ecs/components/ai_components.hpp"
+#include "../../SRC/Server/GameServer/packet.h"
+#include "../../SRC/Server/GameServer/questmanager.h"
+#include "../../SRC/Server/GameServer/dungeon.h"
+#include "../../SRC/Server/GameServer/party.h"
+#include "../../SRC/Server/GameServer/motion.h"
+#include "../../SRC/Server/GameServer/ecs/systems/AffectSystem.hpp"
+#include "../../SRC/Server/GameServer/ecs/systems/PointSystem.hpp"
 #include "../../SRC/Server/GameServer/ecs/systems/PlayerRuntimeSystem.hpp"
 #include "../../SRC/Server/GameServer/ecs/systems/ItemSystem.hpp"
 #include "../../SRC/Server/GameServer/ecs/components/item_components.hpp"
@@ -37,6 +53,8 @@ std::vector<Packet> packets;
 std::function<void(Packet)> onPacket;
 std::function<void(entt::entity)> onRetire;
 int retired = 0;
+std::vector<TPacketGCMove> movementPackets;
+std::vector<std::pair<entt::entity, ecs::AIFSMState>> transitions;
 
 struct MapFixture {
     int index;
@@ -82,7 +100,10 @@ bool Visible(entt::entity source, entt::entity viewer) {
     return g_registry.valid(viewer) && g_registry.all_of<ecs::ViewMap>(viewer) &&
         g_registry.get<ecs::ViewMap>(viewer).visible.contains(source);
 }
-void Reset() { onPacket = {}; onRetire = {}; packets.clear(); awake.clear(); retired = 0; g_registry.clear(); }
+void Reset() {
+    onPacket = {}; onRetire = {}; packets.clear(); awake.clear(); retired = 0;
+    movementPackets.clear(); transitions.clear(); g_registry.clear();
+}
 struct Callback {
     std::function<void(entt::registry&, entt::entity)> fn;
     void Run(entt::registry& reg, entt::entity e) { fn(reg, e); }
@@ -128,6 +149,95 @@ DESC_MANAGER::DESC_MANAGER() {}
 DESC_MANAGER::~DESC_MANAGER() {}
 void DESC_MANAGER::DestroyDesc(LPDESC, bool) { Unexpected(); }
 DESC* ecs::PlayerRuntime::GetDesc(entt::entity) { return nullptr; }
+// Gameplay leaf services are isolated here; movement, packet encoding,
+// SetPosition, sectree relocation and visibility run their production code.
+uint32_t get_dword_time() { return 123456; }
+bool ecs::PlayerRuntime::IsPC(entt::entity e) { return g_registry.all_of<ecs::TagPC>(e); }
+bool ecs::PlayerRuntime::IsStone(entt::entity e) { return g_registry.all_of<ecs::StoneAITag>(e); }
+void ecs::PlayerRuntime::MonsterLog(entt::entity, const char*) {}
+void ecs::PlayerRuntime::CancelCharEvent(entt::entity e, CharEvent) { Check(g_registry.valid(e), "cancel event on stale entity"); }
+float ecs::PlayerRuntime::GetRotation(entt::entity e) {
+    const auto* runtime = g_registry.try_get<ecs::CharacterRuntimeFlagsComponent>(e);
+    return runtime ? runtime->rotation : 0.0f;
+}
+void AISystem::GotoState(entt::entity e, ecs::AIFSMState state) {
+    Check(g_registry.valid(e), "AI transition on stale entity"); transitions.emplace_back(e, state);
+}
+entt::entity CombatSystem::GetVictim(entt::entity e) {
+    const auto* target = g_registry.try_get<ecs::CombatTarget>(e);
+    return target && g_registry.valid(target->target) &&
+        g_registry.all_of<ecs::CharacterType>(target->target) ? target->target : entt::null;
+}
+void ecs::ViewSystem::PacketView(entt::entity e, const void* data, int size, entt::entity except) {
+    Check(g_registry.valid(e) && e == except && size == sizeof(TPacketGCMove), "invalid movement broadcast");
+    movementPackets.push_back(*static_cast<const TPacketGCMove*>(data));
+}
+// Fail-fast link seams for the still-unmigrated functions in MovementSystem.cpp.
+// None may be reached by the native tick or packet tests.
+void intrusive_ptr_add_ref(event*) { Unexpected(); }
+void intrusive_ptr_release(event*) { Unexpected(); }
+LPEVENT event_create_ex(TEVENTFUNC, event_info_data*, int32_t) { Unexpected(); }
+void ecs::ChatSystem::Send(entt::entity, uint8_t, const char*, ...) { Unexpected(); }
+bool AffectSystem::IsAffectFlag(entt::entity, uint32_t) { Unexpected(); }
+bool AffectSystem::IsPolymorphed(entt::entity) { Unexpected(); }
+uint32_t ecs::PlayerRuntime::GetPacketVID(entt::entity) { Unexpected(); }
+uint32_t ecs::PlayerRuntime::GetRaceNum(entt::entity) { Unexpected(); }
+std::string_view ecs::PlayerRuntime::GetName(entt::entity) { Unexpected(); }
+int32_t ecs::PlayerRuntime::GetMapIndex(entt::entity) { Unexpected(); }
+int32_t ecs::PlayerRuntime::GetX(entt::entity) { Unexpected(); }
+int32_t ecs::PlayerRuntime::GetY(entt::entity) { Unexpected(); }
+LPEVENT ecs::PlayerRuntime::GetCharEvent(entt::entity, CharEvent) { Unexpected(); }
+void ecs::PlayerRuntime::SetCharEvent(entt::entity, CharEvent, LPEVENT) { Unexpected(); }
+int ecs::PlayerRuntime::GetPosition(entt::entity) { Unexpected(); }
+void CombatSystem::CheckTarget(entt::entity) { Unexpected(); }
+bool CombatSystem::IsStun(entt::entity) { Unexpected(); }
+bool CombatSystem::IsDead(entt::entity) { Unexpected(); }
+int32_t CEntity::GetX() const { Unexpected(); }
+int32_t CEntity::GetY() const { Unexpected(); }
+int32_t CEntity::GetZ() const { Unexpected(); }
+LPSECTREE CEntity::GetSectree() const { Unexpected(); }
+int CalculateDuration(int, int) { Unexpected(); }
+uint16_t CHARACTER::GetRaceNum() const { Unexpected(); }
+void CHARACTER::Save() { Unexpected(); }
+void CHARACTER::FlushDelayedSaveItem() { Unexpected(); }
+const char* CHARACTER::GetName(uint8_t) const { Unexpected(); }
+uint32_t CHARACTER::GetPacketVID() const { Unexpected(); }
+void CHARACTER::DistributeSP(entt::entity, int) { Unexpected(); }
+int64_t CHARACTER::GetHP() const { Unexpected(); }
+int CHARACTER::GetStamina() const { Unexpected(); }
+int CHARACTER::GetLimitPoint(uint8_t) const { Unexpected(); }
+const TMobTable& CHARACTER::GetMobTable() const { Unexpected(); }
+void CHARACTER::PointChange(uint8_t, int64_t, bool, bool, bool) { Unexpected(); }
+bool CHARACTER::Show(int32_t, int32_t, int32_t, int32_t, bool) { Unexpected(); }
+void CHARACTER::OnMove(bool) { Unexpected(); }
+bool CHARACTER::WarpSet(int32_t, int32_t, int32_t) { Unexpected(); }
+void CHARACTER::SaveExitLocation() { Unexpected(); }
+void CHARACTER::ExitToSavedLocation() { Unexpected(); }
+bool CHARACTER::IsAffectFlag(uint32_t) const { Unexpected(); }
+bool CHARACTER::IsEquipUniqueItem(uint32_t) const { Unexpected(); }
+void CHARACTER::Dead(entt::entity, bool) { Unexpected(); }
+void CHARACTER::UpdateKillerMode() { Unexpected(); }
+LPCHARACTER CHARACTER::GetVictim() const { Unexpected(); }
+void CHARACTER::MonsterLog(const char*, ...) { Unexpected(); }
+uint8_t CHARACTER::GetEmpire() const { Unexpected(); }
+int CDungeon::GetFlag(std::string) { Unexpected(); }
+float CMotion::GetDuration() const { Unexpected(); }
+const D3DXVECTOR3& CMotion::GetAccumVector() const { Unexpected(); }
+const CMotion* CMotionManager::GetMotion(uint32_t, uint32_t) { Unexpected(); }
+float GetDegreeFromPositionXY(int32_t, int32_t, int32_t, int32_t) { Unexpected(); }
+void quest::CQuestManager::AttrIn(uint32_t, LPCHARACTER, int) { Unexpected(); }
+void quest::CQuestManager::AttrOut(uint32_t, LPCHARACTER, int) { Unexpected(); }
+entt::entity ItemSystem::GetWearItem(entt::entity, uint8_t) { Unexpected(); }
+bool ItemSystem::IsValidItem(entt::entity) { Unexpected(); }
+const TItemTable* ItemSystem::GetItemProto(entt::entity) { Unexpected(); }
+uint32_t CParty::GetLeaderPID() { Unexpected(); }
+int64_t ecs::PointSystem::Get(entt::entity, uint8_t) { Unexpected(); }
+int ecs::PointSystem::GetMaxHP(entt::entity) { Unexpected(); }
+void ecs::PointSystem::Change(entt::entity, uint8_t, int64_t, bool, bool, bool) { Unexpected(); }
+uint32_t g_start_position[4][2] {};
+int passes_per_sec = 25;
+int save_event_second_cycle = 60;
+int test_server = 0;
 int CEntity::GetType() const { Unexpected(); }
 CItem* ITEM_MANAGER::Find(uint32_t) { Unexpected(); }
 CItem* ITEM_MANAGER::FindByVID(uint32_t) { Unexpected(); }
@@ -341,6 +451,217 @@ void PreparationMutationAndIteration() {
     });
     Check(visits == 1, "map iteration included deleted/replacement entities");
 }
+
+struct MovementProbe {
+    std::vector<ecs::PositionChangedEvent> positions;
+    std::vector<ecs::EvEntityMoved> moved;
+    std::function<void(const ecs::PositionChangedEvent&)> onPosition;
+    std::function<void(const ecs::EvEntityMoved&)> onMoved;
+    entt::scoped_connection positionConnection, movedConnection;
+    MovementProbe() :
+        positionConnection(g_dispatcher.sink<ecs::PositionChangedEvent>().connect<&MovementProbe::Position>(*this)),
+        movedConnection(g_dispatcher.sink<ecs::EvEntityMoved>().connect<&MovementProbe::Moved>(*this)) {}
+    void Position(const ecs::PositionChangedEvent& event) {
+        Check(g_registry.valid(event.entity), "position event has stale identity");
+        const auto* tree = ecs::SectorOf(g_registry, event.entity);
+        Check(tree && tree->Contains(event.entity) &&
+            tree == ecs::SectorAt(event.newMapIndex, event.newX, event.newY),
+            "position event preceded native sector commit");
+        positions.push_back(event);
+        if (onPosition) onPosition(event);
+    }
+    void Moved(const ecs::EvEntityMoved& event) {
+        Check(g_registry.valid(event.entity), "movement event has stale identity");
+        moved.push_back(event);
+        if (onMoved) onMoved(event);
+    }
+};
+entt::entity Moving(int x, int y, int targetX, int targetY, int speed = 200, bool npc = false) {
+    const auto e = Entity(ecs::SpatialKind::Character);
+    if (npc) {
+        g_registry.remove<ecs::TagPC>(e);
+        g_registry.emplace<ecs::TagNPC>(e);
+        g_registry.get<ecs::CharacterType>(e).value = CHAR_TYPE_MONSTER;
+    }
+    g_registry.emplace<ecs::MovementState>(e);
+    g_registry.emplace<ecs::MovementSpeed>(e, 100, speed);
+    g_registry.emplace<ecs::CharacterRuntimeFlagsComponent>(e);
+    Check(Spawn(e, 1, x, y), "native mover spawn");
+    g_registry.emplace<ecs::MovementDestination>(e, targetX, targetY);
+    Check(!g_registry.all_of<ecs::LegacyCharPtr>(e), "movement fixture acquired legacy character");
+    return e;
+}
+void NativeMovement() {
+    Reset(); MapFixture map; MovementProbe probe;
+    const auto e = Moving(6300, 100, 6700, 100);
+    auto* oldTree = map.At(6300, 100);
+    const auto revision = g_registry.get<ecs::SpatialRevision>(e).value;
+    g_registry.get<ecs::Position>(e).z = 77;
+    g_registry.get<ecs::PositionZ>(e).z = 77;
+    g_registry.get<ecs::MovementState>(e).walkPreference = true;
+    g_registry.remove<ecs::VIDComponent>(e); // Tick has no VID-index dependency.
+    MovementSystem_Update(g_registry, 10);
+    Check(g_registry.get<ecs::Position>(e).x == 6500 && !oldTree->Contains(e) &&
+        map.At(6500, 100)->Contains(e), "native tick did not migrate sector");
+    Check(g_registry.get<ecs::SpatialRevision>(e).value == revision + 1, "sector revision not advanced");
+    Check(probe.positions.size() == 1 && probe.moved.size() == 1 &&
+        probe.positions[0].oldX == 6300 && probe.positions[0].newX == 6500,
+        "movement old/new event values or count wrong");
+    MovementSystem_Update(g_registry, 20);
+    const auto& state = g_registry.get<ecs::MovementState>(e);
+    Check(g_registry.get<ecs::Position>(e).x == 6700 && !g_registry.all_of<ecs::MovementDestination>(e) &&
+        state.lastMoveTime == 20 && state.stopTime == 20 && !state.isWalking &&
+        !state.isNowWalking && state.moveDuration == 0 && state.walkPreference, "arrival state incorrect");
+    Check(probe.positions.size() == 2 && probe.moved.size() == 2 && transitions.empty(),
+        "arrival duplicated publication or transitioned a PC");
+    Check(g_registry.get<ecs::Position>(e).z == 77 && g_registry.get<ecs::PositionZ>(e).z == 77,
+        "movement changed altitude");
+    MovementSystem_Update(g_registry, 30);
+    Check(probe.positions.size() == 2, "stopped entity moved again");
+}
+void MovementVisibilityAndBounds() {
+    Reset(); MapFixture map; MovementProbe probe;
+    const auto oldViewer = Entity(ecs::SpatialKind::Character), newViewer = Entity(ecs::SpatialKind::Character);
+    Check(Spawn(oldViewer, 1, 500, 100) && Spawn(newViewer, 1, 10500, 100), "movement viewers");
+    const auto e = Moving(1000, 100, 10000, 100, 20000);
+    Check(Visible(e, oldViewer) && !Visible(e, newViewer), "initial movement visibility");
+    packets.clear();
+    MovementSystem_Update(g_registry, 50);
+    Check(!Visible(e, oldViewer) && Visible(e, newViewer), "movement did not reconcile visibility");
+    Check(std::count_if(packets.begin(), packets.end(), [&](const Packet& p) {
+        return p.source == e && p.viewer == newViewer && p.add;
+    }) == 1, "arrival duplicated insert packet");
+
+    const auto edge = Moving(25500, 100, 25700, 100);
+    const auto overflow = Moving(100, 500, INT32_MIN, 500, 1);
+    const auto diagonal = Moving(500, 500, 800, 900, 100);
+    const auto zeroSpeed = Moving(100, 700, 110, 700, 0);
+    const auto detached = Moving(100, 900, 110, 900);
+    ecs::SpatialService::RemoveEntity(g_registry, detached);
+    const auto dead = Moving(100, 1100, 110, 1100);
+    g_registry.emplace<ecs::DeadTag>(dead);
+    MovementSystem_Update(g_registry, 60);
+    Check(g_registry.get<ecs::Position>(edge).x == 25500 &&
+        g_registry.get<ecs::MovementState>(edge).lastMoveTime == 0 &&
+        map.At(25500, 100)->Contains(edge), "out-of-map step partially committed");
+    Check(g_registry.get<ecs::Position>(overflow).x == 99, "destination subtraction overflowed");
+    Check(g_registry.get<ecs::Position>(diagonal).x == 560 &&
+        g_registry.get<ecs::Position>(diagonal).y == 580, "diagonal interpolation changed");
+    Check(g_registry.get<ecs::Position>(zeroSpeed).x == 101, "nonpositive speed did not clamp");
+    Check(g_registry.get<ecs::Position>(detached).x == 100 && !ecs::SectorOf(g_registry, detached),
+        "tick respawned detached entity");
+    Check(g_registry.get<ecs::Position>(dead).x == 100 && g_registry.all_of<ecs::DeadTag>(dead),
+        "tick moved or revived dead character");
+}
+void MovementCallbackLifetime() {
+    Reset(); MapFixture map; MovementProbe probe;
+    const auto e = Moving(100, 100, 300, 100);
+    entt::entity replacement = entt::null;
+    probe.onPosition = [&](const ecs::PositionChangedEvent& event) {
+        if (event.entity != e) return;
+        g_registry.destroy(e);
+        replacement = Moving(500, 100, 700, 100);
+    };
+    MovementSystem_Update(g_registry, 80);
+    Check(!g_registry.valid(e) && g_registry.valid(replacement) && probe.moved.empty() &&
+        g_registry.get<ecs::Position>(replacement).x == 500,
+        "tick used retired identity or advanced callback-created replacement");
+    probe.onPosition = {};
+
+    // A visibility packet can also retire the mover, after PositionChangedEvent.
+    const auto viewer = Entity(ecs::SpatialKind::Character); Check(Spawn(viewer, 1, 10000, 100), "callback viewer");
+    const auto packetMover = Moving(1000, 100, 10000, 100, 20000);
+    onPacket = [&](Packet p) {
+        if (p.add && p.source == packetMover && p.viewer == viewer) g_registry.destroy(packetMover);
+    };
+    MovementSystem_Update(g_registry, 90);
+    Check(!g_registry.valid(packetMover) && std::none_of(probe.moved.begin(), probe.moved.end(),
+        [&](const auto& event) { return event.entity == packetMover; }), "packet callback left stale tick continuation");
+    onPacket = {};
+}
+void MovementCallbackRetarget() {
+    Reset(); MapFixture map; MovementProbe probe;
+    const auto e = Moving(100, 100, 300, 100, 200, true);
+    probe.onPosition = [&](const ecs::PositionChangedEvent& event) {
+        if (event.entity != e) return;
+        g_registry.emplace<ecs::MovementDestination>(e, 1000, 100);
+        g_registry.get<ecs::MovementState>(e).moveDuration = 777;
+    };
+    MovementSystem_Update(g_registry, 100);
+    Check(g_registry.get<ecs::MovementDestination>(e).x == 1000 &&
+        g_registry.get<ecs::MovementState>(e).moveDuration == 777 &&
+        transitions.empty() && probe.moved.empty(), "old arrival overrode callback retarget");
+
+    probe.onPosition = {};
+    probe.onMoved = [&](const ecs::EvEntityMoved& event) {
+        if (event.entity != e) return;
+        ecs::SpatialService::RemoveEntity(g_registry, e);
+        Check(Spawn(e, 1, event.newX, event.newY), "same-location callback respawn");
+    };
+    g_registry.get<ecs::MovementDestination>(e).x = 500;
+    MovementSystem_Update(g_registry, 110);
+    Check(transitions.empty() && map.At(500, 100)->Contains(e), "old arrival transitioned new spawn");
+
+    probe.onMoved = {};
+    std::vector<entt::entity> original;
+    for (int i = 0; i < 6; ++i) original.push_back(Moving(2000, 2000 + i * 100, 2200, 2000 + i * 100));
+    bool changed = false;
+    probe.onPosition = [&](const ecs::PositionChangedEvent& event) {
+        if (changed) return;
+        changed = true;
+        for (auto other : original) {
+            if (other == event.entity) continue;
+            g_registry.get<ecs::MovementDestination>(other).x = 4000;
+        }
+    };
+    const auto before = probe.moved.size();
+    MovementSystem_Update(g_registry, 120);
+    Check(changed && probe.moved.size() == before + 1, "tick advanced later retargeted snapshot entries");
+}
+void MovementArrivalAndPackets() {
+    Reset(); MapFixture map; MovementProbe probe;
+    const auto victim = Entity(ecs::SpatialKind::Character);
+    const auto fighter = Moving(100, 100, 100, 100, 200, true);
+    g_registry.emplace<ecs::CombatTarget>(fighter, victim, 0u);
+    MovementSystem_Update(g_registry, 130);
+    Check(g_registry.all_of<ecs::CombatActiveTag>(fighter) &&
+        g_registry.get<ecs::CharacterRuntimeFlagsComponent>(fighter).position == POS_FIGHTING &&
+        transitions.size() == 1 && transitions.back().second == ecs::AIFSMState::Battle &&
+        probe.positions.empty() && probe.moved.empty(), "zero-distance native combat arrival");
+    const auto coward = Moving(200, 100, 300, 100, 200, true);
+    g_registry.emplace<ecs::CombatTarget>(coward, victim, 0u);
+    g_registry.emplace<ecs::AIFlags>(coward).isCoward = true;
+    MovementSystem_Update(g_registry, 140);
+    Check(!g_registry.all_of<ecs::CombatTarget>(coward) &&
+        g_registry.get<ecs::CharacterRuntimeFlagsComponent>(coward).position == POS_STANDING &&
+        transitions.back().second == ecs::AIFSMState::Idle, "coward arrival did not enter idle");
+
+    const auto e = Moving(1000, 1500, 1200, 1600);
+    g_registry.get<ecs::MovementState>(e).moveDuration = 444;
+    g_registry.get<ecs::CharacterRuntimeFlagsComponent>(e).rotation = 225;
+    ecs::MovementSystem::SendMovePacket(e, FUNC_WAIT, 2, 9, 9, 9);
+    Check(movementPackets.size() == 1 && movementPackets.back().dwVID == g_registry.get<ecs::VIDComponent>(e).value &&
+        movementPackets.back().lX == 1200 && movementPackets.back().lY == 1600 &&
+        movementPackets.back().dwDuration == 444 && movementPackets.back().bRot == 45 &&
+        movementPackets.back().dwTime == 123456, "entity movement packet lost destination/timing/rotation");
+    g_registry.remove<ecs::MovementDestination>(e);
+    g_registry.get<ecs::MovementState>(e).moveDuration = 0;
+    ecs::MovementSystem::SendMovePacket(e, FUNC_WAIT, 0, 0, 0, 9, 42, 10);
+    Check(movementPackets.back().lX == 1000 && movementPackets.back().lY == 1500 &&
+        movementPackets.back().dwDuration == 0 && movementPackets.back().dwTime == 42 &&
+        movementPackets.back().bRot == 10, "stopped movement packet fallback");
+    ecs::MovementSystem::SendMovePacket(e, FUNC_ATTACK, 3, 2000, 2500, 99, 43, 12);
+    Check(movementPackets.back().bHeader == HEADER_GC_MOVE && movementPackets.back().bFunc == FUNC_ATTACK &&
+        movementPackets.back().bArg == 3 && movementPackets.back().lX == 2000 &&
+        movementPackets.back().lY == 2500 && movementPackets.back().dwDuration == 99,
+        "explicit movement packet fields changed");
+    g_registry.destroy(e);
+    ecs::MovementSystem::SendMovePacket(e, FUNC_WAIT, 0, 0, 0, 0);
+    ecs::MovementSystem::SendMovePacket(entt::null, FUNC_WAIT, 0, 0, 0, 0);
+    ecs::MovementSystem::SendMovePacket(Entity(), FUNC_WAIT, 0, 0, 0, 0);
+    Check(movementPackets.size() == 3, "invalid/non-character entity emitted movement packet");
+}
+
 }
 int main() {
     try {
@@ -348,6 +669,8 @@ int main() {
         ecs::VisibilitySystem::Init(g_registry);
         MembershipAndSnapshots(); VisibilityRoundTrip(); ViewCallbacks(); PreparationAndPCs();
         LifetimeAndObservers(); RemovalCallbacksAndTeardown(); PreparationMutationAndIteration();
+        NativeMovement(); MovementVisibilityAndBounds(); MovementCallbackLifetime();
+        MovementCallbackRetarget(); MovementArrivalAndPackets();
         ecs::VisibilitySystem::Shutdown(g_registry);
         std::cout << "Spatial checks passed: " << checks << '\n'; return 0;
     } catch (const std::exception& error) { std::cerr << error.what() << '\n'; return 1; }

@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "ecs/systems/MovementSystem.hpp"
 #include "ecs/systems/PointSystem.hpp"
 #include <Core/Logging.hpp>
 #include "ecs/systems/PlayerRuntimeSystem.hpp"
@@ -1779,10 +1780,10 @@ namespace quest
 
 		int32_t time = get_dword_time();
 
-		statue1->SendMovePacket(FUNC_MOB_SKILL, 0, ecs::PlayerRuntime::GetX(statue1Entity), ecs::PlayerRuntime::GetY(statue1Entity), 0, time);
-		statue2->SendMovePacket(FUNC_MOB_SKILL, 0, ecs::PlayerRuntime::GetX(statue2Entity), ecs::PlayerRuntime::GetY(statue2Entity), 0, time);
-		statue3->SendMovePacket(FUNC_MOB_SKILL, 0, ecs::PlayerRuntime::GetX(statue3Entity), ecs::PlayerRuntime::GetY(statue3Entity), 0, time);
-		statue4->SendMovePacket(FUNC_MOB_SKILL, 0, ecs::PlayerRuntime::GetX(statue4Entity), ecs::PlayerRuntime::GetY(statue4Entity), 0, time);
+		ecs::MovementSystem::SendMovePacket(statue1Entity, FUNC_MOB_SKILL, 0, ecs::PlayerRuntime::GetX(statue1Entity), ecs::PlayerRuntime::GetY(statue1Entity), 0, time);
+		ecs::MovementSystem::SendMovePacket(statue2Entity, FUNC_MOB_SKILL, 0, ecs::PlayerRuntime::GetX(statue2Entity), ecs::PlayerRuntime::GetY(statue2Entity), 0, time);
+		ecs::MovementSystem::SendMovePacket(statue3Entity, FUNC_MOB_SKILL, 0, ecs::PlayerRuntime::GetX(statue3Entity), ecs::PlayerRuntime::GetY(statue3Entity), 0, time);
+		ecs::MovementSystem::SendMovePacket(statue4Entity, FUNC_MOB_SKILL, 0, ecs::PlayerRuntime::GetX(statue4Entity), ecs::PlayerRuntime::GetY(statue4Entity), 0, time);
 
 		return 0;
 	}

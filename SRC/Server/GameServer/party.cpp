@@ -936,7 +936,7 @@ void CParty::SendMessage(entt::entity character, uint8_t bMsg, uint32_t dwArg1, 
 						{
 							auto* victim = pkChr->GetVictim();
 							LOG_TRACE("{} {} RETURN victim {}", ecs::PlayerRuntime::GetName(((pkChr) ? (pkChr)->GetEntityHandle() : entt::null)).data(), static_cast<const void*>(get_pointer(pkChr)), static_cast<const void*>(get_pointer(victim)));
-							pkChr->SendMovePacket(FUNC_WAIT, 0, 0, 0, 0);
+							ecs::MovementSystem::SendMovePacket(pkChr->GetEntityHandle(), FUNC_WAIT, 0, 0, 0, 0);
 						}
 					}
 				}

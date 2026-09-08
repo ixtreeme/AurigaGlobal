@@ -478,7 +478,7 @@ void SummonHorse(entt::entity rider, bool bSummon, bool bFromFar, uint32_t dwVnu
 			chHorse->Goto(
 				static_cast<int32_t>(ecs::PlayerRuntime::GetX(horseEntity) + fx),
 				static_cast<int32_t>(ecs::PlayerRuntime::GetY(horseEntity) + fy));
-			chHorse->SendMovePacket(FUNC_WAIT, 0, 0, 0, 0);
+			ecs::MovementSystem::SendMovePacket(horseEntity, FUNC_WAIT, 0, 0, 0, 0);
 		}
 
 		SetSummonedHorse(rider, entt::null);
