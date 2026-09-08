@@ -1797,7 +1797,7 @@ void CInputDB::ItemLoad(LPDESC d, const char * c_pData)
 			coord.y = ecs::PlayerRuntime::GetY(((ch) ? (ch)->GetEntityHandle() : entt::null));
 
 			ItemSystem::PlaceItemOnGroundLegacyBoundary(itemEntity, ecs::PlayerRuntime::GetMapIndex(((ch) ? (ch)->GetEntityHandle() : entt::null)), coord);
-			InventorySystem::SetOwnership(itemEntity, ch->GetEntityHandle(), 180);
+			ItemSystem::SetGroundOwnership(itemEntity, ch->GetEntityHandle(), 180);
 		}
 		else
 #ifdef __HIGHLIGHT_SYSTEM__

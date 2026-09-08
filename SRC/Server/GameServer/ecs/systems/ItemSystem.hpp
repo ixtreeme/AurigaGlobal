@@ -319,6 +319,9 @@ bool RefreshItemOwnerPID(entt::entity item);
 bool SyncItemStateFromLegacy(entt::entity item);
 bool DestroyLoadedDuplicateItem(entt::entity item);
 bool TransferItemOwnership(entt::entity item, entt::entity from, entt::entity to);
+// owner == null releases the claim. Existing claims are not extended/stolen;
+// true means committed (publication may subsequently move/destroy the item).
+// A detached quest reward may be claimed before ground insertion.
 bool SetGroundOwnership(entt::entity item, entt::entity owner,
                         int seconds = 10);
 bool ReceiveItemEcs(entt::entity receiver, entt::entity from, entt::entity item);

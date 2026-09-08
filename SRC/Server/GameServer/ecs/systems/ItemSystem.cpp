@@ -383,7 +383,6 @@ static bool IS_SUMMON_ITEM(int vnum)
 
 } // namespace
 
-EVENTFUNC(item_destroy_event);
 EVENTFUNC(unique_expire_event);
 EVENTFUNC(timer_based_on_wear_expire_event);
 EVENTFUNC(real_time_expire_event);
@@ -1352,18 +1351,6 @@ void SetItemAccessorySocketDownGradeTime(entt::entity item, uint32_t time)
     SetItemSocket(item, 2, time);
 }
 
-void StartDestroyEvent(entt::entity item, int iSec)
-{
-	auto& events = GetItemEvents(item);
-	if (events.destroy)
-		return;
-
-	item_event_info* info = AllocEventInfo<item_event_info>();
-	info->item = item;
-
-	events.destroy = event_create(item_destroy_event, info, PASSES_PER_SEC(iSec));
-}
-
 void StartUniqueExpireEvent(entt::entity item)
 {
 	auto& events = GetItemEvents(item);
@@ -1909,14 +1896,6 @@ bool CanUsedBy(entt::entity itemEntity, entt::entity character)
 	}
 
 	return true;
-}
-
-bool IsOwnership(entt::entity itemEntity, entt::entity character)
-{
-	if (!ItemSystem::GetItemEvents(itemEntity).ownership)
-		return true;
-
-	return ItemSystem::GetItemOwnershipPID(itemEntity) == ecs::PlayerRuntime::GetPlayerID(character);
 }
 
 bool CanPutInto(entt::entity item, entt::entity container)
@@ -2818,19 +2797,6 @@ bool RefreshItemEquippedSlot(entt::entity item)
     return true;
 }
 
-// ownerPID is the persisted form of the owner entity, so it goes stale when
-// the owner gains a PID after pickup. This recomputes it from the entity.
-bool RefreshItemOwnerPID(entt::entity item)
-{
-    if (!IsValidItem(item))
-        return false;
-
-    auto& owner = g_registry.get_or_emplace<ecs::ItemOwner>(item);
-    owner.ownerPID = ecs::PlayerRuntime::GetPlayerID(owner.owner);
-    owner.ownershipPID = owner.ownerPID;
-    return true;
-}
-
 bool SyncItemStateFromLegacy(entt::entity item)
 {
     LPITEM legacyItem = LegacyItemBoundary(item);
@@ -2932,16 +2898,6 @@ bool TransferItemOwnership(entt::entity item, entt::entity from, entt::entity to
     owner.ownerPID = toPID;
     owner.ownershipPID = toPID;
     return true;
-}
-
-bool SetGroundOwnership(entt::entity item, entt::entity owner,
-                                      int seconds)
-{
-    if (!IsValidItem(item) || !ecs::PlayerRuntime::IsValid(owner))
-        return false;
-
-    InventorySystem::SetOwnership(item, owner, seconds);
-    return RefreshItemOwnerPID(item);
 }
 
 static bool ReceiveItemLegacyBoundary(entt::entity receiver,

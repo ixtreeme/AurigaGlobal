@@ -410,7 +410,6 @@ static bool IS_SUMMON_ITEM(int vnum)
 
 } // namespace
 
-EVENTFUNC(item_destroy_event);
 EVENTFUNC(unique_expire_event);
 EVENTFUNC(timer_based_on_wear_expire_event);
 EVENTFUNC(real_time_expire_event);
@@ -12714,58 +12713,6 @@ CItem::~CItem()
 	Destroy();
 }
 
-
-EVENTFUNC(item_destroy_event)
-{
-	auto info = dynamic_cast<item_event_info*>(event->info);
-
-	if (info == nullptr)
-	{
-		LOG_ERROR("item_destroy_event> <Factor> Null pointer");
-		return 0;
-	}
-
-	const entt::entity itemEntity = info->item;
-	if (!ItemSystem::IsValidItem(itemEntity))
-		return 0;
-
-	const entt::entity owner = ItemSystem::GetItemOwnerEntity(itemEntity);
-	if (owner != entt::null)
-		LOG_ERROR("item_destroy_event: Owner exist. (item {} owner {})",
-			ItemSystem::GetItemName(itemEntity), ecs::PlayerRuntime::GetName(owner));
-
-	ItemSystem::GetItemEvents(itemEntity).destroy = nullptr;
-	ItemSystem::DestroyItemEntityEcs(
-		itemEntity,
-		"ITEM_DESTROY_EVENT");
-	return 0;
-}
-
-EVENTFUNC(ownership_event)
-{
-	auto info = dynamic_cast<item_event_info*>(event->info);
-
-	if (info == nullptr)
-	{
-		LOG_ERROR("ownership_event> <Factor> Null pointer");
-		return 0;
-	}
-
-	const entt::entity itemEntity = info->item;
-	if (!ItemSystem::IsValidItem(itemEntity))
-		return 0;
-
-	ItemSystem::GetItemEvents(itemEntity).ownership = nullptr;
-
-	TPacketGCItemOwnership p;
-
-	p.bHeader = HEADER_GC_ITEM_OWNERSHIP;
-	p.dwVID = ItemSystem::GetItemVID(itemEntity);
-	p.szName[0] = '\0';
-
-	ecs::ViewSystem::PacketView(itemEntity, &p, sizeof(p));
-	return 0;
-}
 
 EVENTFUNC(unique_expire_event)
 {

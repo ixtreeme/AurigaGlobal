@@ -72,23 +72,19 @@ void EnsureItemLocation(entt::entity e)
 	(void)g_registry.get_or_emplace<ecs::ItemLocation>(e);
 }
 
-// lastOwnerPID and ownershipPID used to be passed in from CItem members and
-// written back into the component alongside the owner. Those members are gone
-// and the component is their only home, so this writes just the two fields it
-// actually changes rather than rewriting the other two with themselves.
-void SyncItemOwner(entt::entity e, entt::entity owner, uint32_t ownerPID)
+template <typename T>
+bool EnsureComponent(entt::entity entity)
 {
-	if (e == entt::null || !g_registry.valid(e))
-		return;
-
-	auto& itemOwner = g_registry.get_or_emplace<ecs::ItemOwner>(e);
-	itemOwner.owner = owner;
-	itemOwner.ownerPID = ownerPID;
+    if (!g_registry.valid(entity)) return false;
+    // EnTT emplace/get_or_emplace obtains a reference AFTER on_construct.
+    // A listener may already have destroyed the entity/component by then.
+    // Single-element insert publishes the same signal but returns no reference.
+    if (!g_registry.all_of<T>(entity)) g_registry.insert<T>(&entity, &entity + 1);
+    return g_registry.valid(entity) && g_registry.all_of<T>(entity);
 }
 
 } // namespace
 
-EVENTFUNC(ownership_event);
 
 namespace InventorySystem {
 
@@ -736,7 +732,7 @@ bool CItem::AddToGround(int32_t lMapIndex, const PIXEL_POSITION& pos, bool skipO
 		(void)g_registry.get_or_emplace<ecs::ViewerMap>(itemEntity);
 		(void)g_registry.get_or_emplace<ecs::ViewAgeMap>(itemEntity);
 		EnsureItemLocation(itemEntity);
-		g_registry.remove<ecs::ItemOwner>(itemEntity);
+		// Keep a quest's pre-insertion ground claim and last-owner history.
 		g_registry.remove<ecs::ItemEquipped>(itemEntity);
 		ecs::Invariants::ValidateSpatialCoverage(g_registry, itemEntity, "item.add_to_ground");
 	}
@@ -796,60 +792,177 @@ uint16_t CItem::GetCell() const
 	return ItemSystem::GetItemCell(GetEntityHandle());
 }
 
-namespace InventorySystem {
-
-void SetOwnership(entt::entity itemEntity, entt::entity character, int iSec)
+namespace
 {
-	if (character == entt::null)
-	{
-		if (ItemSystem::GetItemEvents(itemEntity).ownership)
-		{
-			event_cancel(&ItemSystem::GetItemEvents(itemEntity).ownership);
-			ItemSystem::SetItemOwnershipPID(itemEntity, 0);
-
-			TPacketGCItemOwnership p;
-
-			p.bHeader = HEADER_GC_ITEM_OWNERSHIP;
-			p.dwVID = ItemSystem::GetItemVID(itemEntity);
-			p.szName[0] = '\0';
-
-			ecs::ViewSystem::PacketView(itemEntity, &p, sizeof(p));
-
-					SyncItemOwner(itemEntity, entt::null, 0);
-			if (itemEntity != entt::null && g_registry.valid(itemEntity))
-				g_registry.remove<ecs::ItemOwnershipDisplay>(itemEntity);
-		}
-		return;
-	}
-
-	if (ItemSystem::GetItemEvents(itemEntity).ownership)
-		return;
-
-	if (iSec <= 10)
-		iSec = 30;
-
-	ItemSystem::SetItemOwnershipPID(itemEntity, ecs::PlayerRuntime::GetPlayerID(character));
-
-	item_event_info* info = AllocEventInfo<item_event_info>();
-	strlcpy(info->szOwnerName, ecs::PlayerRuntime::GetName(character).data(), sizeof(info->szOwnerName));
-	info->item = itemEntity;
-
-	ItemSystem::GetItemEvents(itemEntity).ownership = event_create(ownership_event, info, PASSES_PER_SEC(iSec));
-
-	TPacketGCItemOwnership p;
-
-	p.bHeader = HEADER_GC_ITEM_OWNERSHIP;
-	p.dwVID = ItemSystem::GetItemVID(itemEntity);
-	strlcpy(p.szName, ecs::PlayerRuntime::GetName(character).data(), sizeof(p.szName));
-
-	ecs::ViewSystem::PacketView(itemEntity, &p, sizeof(p));
-
-	const entt::entity ownerEntity = ItemSystem::GetItemOwner(itemEntity);
-	SyncItemOwner(itemEntity, ownerEntity, ecs::PlayerRuntime::GetPlayerID(ownerEntity));
-	if (itemEntity != entt::null && g_registry.valid(itemEntity))
-		g_registry.emplace_or_replace<ecs::ItemOwnershipDisplay>(
-			itemEntity, ecs::ItemOwnershipDisplay{ecs::PlayerRuntime::GetName(character).data()});
+// Quest rewards may reserve ownership before insertion. Stored/equipped items
+// must never become ground-timer targets, even if their owner handle is stale.
+bool GroundTimerCandidate(entt::entity item, bool requireGround = false)
+{
+    if (!ItemSystem::IsValidItem(item)) return false;
+    const auto* owner = g_registry.try_get<ecs::ItemOwner>(item);
+    if (owner && (owner->owner != entt::null || owner->ownerPID != 0)) return false;
+    const auto* equipped = g_registry.try_get<ecs::ItemEquipped>(item);
+    if (equipped && equipped->equipped) return false;
+    const auto* location = g_registry.try_get<ecs::ItemLocation>(item);
+    if (location && location->window == GROUND)
+        return !requireGround || g_registry.all_of<ecs::SpatialEntity>(item);
+    return !requireGround && (!location ||
+        (location->window == RESERVED_WINDOW && location->cell == 0));
 }
+
+int32_t GroundTimerDelay(int seconds)
+{
+    if (seconds <= 0 || passes_per_sec <= 0) return 0;
+    const int64_t delay = int64_t(seconds) * passes_per_sec;
+    const int64_t pulse = thecore_pulse();
+    // The queue stores both delay and absolute deadline in int32.
+    if (pulse < 0 || delay > INT32_MAX - pulse) return 0;
+    return static_cast<int32_t>(delay);
+}
+
+bool ClearGroundClaim(entt::entity item, const LPEVENT& expected = {})
+{
+    if (!ItemSystem::IsValidItem(item)) return false;
+    auto* events = g_registry.try_get<ecs::ItemEvents>(item);
+    if (expected && (!events || events->ownership != expected)) return false;
+    auto* owner = g_registry.try_get<ecs::ItemOwner>(item);
+    auto* display = g_registry.try_get<ecs::ItemOwnershipDisplay>(item);
+    const bool changed = (events && events->ownership) ||
+        (owner && owner->ownershipPID) || (display && !display->ownerName.empty());
+    auto timer = events ? std::move(events->ownership) : LPEVENT {};
+    if (owner) owner->ownershipPID = 0;
+    // No removal signals between committing the timer/PID and publishing.
+    if (display) display->ownerName.clear();
+    TPacketGCItemOwnership packet {};
+    packet.bHeader = HEADER_GC_ITEM_OWNERSHIP;
+    packet.dwVID = g_registry.get<ecs::ItemIdentity>(item).vid;
+    // Never lend the address of an item component to a cancelling service.
+    if (timer && !expected) event_cancel(&timer);
+    if (!changed || !GroundTimerCandidate(item, true)) return true;
+    events = g_registry.try_get<ecs::ItemEvents>(item);
+    owner = g_registry.try_get<ecs::ItemOwner>(item);
+    display = g_registry.try_get<ecs::ItemOwnershipDisplay>(item);
+    // A cancellation callback may have created a new claim or moved/deleted it.
+    if ((!events || !events->ownership) && (!owner || !owner->ownershipPID) &&
+        (!display || display->ownerName.empty()))
+        ecs::ViewSystem::PacketView(item, &packet, sizeof(packet));
+    return true; // Committed, even if publication destroys the item.
+}
+
+EVENTFUNC(GroundOwnershipExpired)
+{
+    const auto* info = event ? dynamic_cast<item_event_info*>(event->info) : nullptr;
+    if (info) ClearGroundClaim(info->item, event);
+    return 0;
+}
+
+EVENTFUNC(GroundItemExpired)
+{
+    const auto* info = event ? dynamic_cast<item_event_info*>(event->info) : nullptr;
+    if (!info || !ItemSystem::IsValidItem(info->item)) return 0;
+    const entt::entity item = info->item;
+    auto* events = g_registry.try_get<ecs::ItemEvents>(item);
+    if (!events || events->destroy != event) return 0;
+    events->destroy.reset();
+    // A missed pickup cancellation must not destroy a stored item.
+    if (!GroundTimerCandidate(item, true)) return 0;
+    if (ItemSystem::DestroyItemEntityEcs(item, "ITEM_DESTROY_EVENT")) return 0;
+    // Retry retirement only on the ground, without replacing a newer timer.
+    if (!GroundTimerCandidate(item, true)) return 0;
+    events = g_registry.try_get<ecs::ItemEvents>(item);
+    const int32_t delay = GroundTimerDelay(1);
+    if (!events || events->destroy || !delay) return 0;
+    events->destroy = event;
+    return delay;
+}
+} // namespace
+
+namespace ItemSystem
+{
+bool SetGroundOwnership(entt::entity item, entt::entity character, int seconds)
+{
+    if (character == entt::null) return ClearGroundClaim(item);
+    if (!GroundTimerCandidate(item) || !ecs::PlayerRuntime::IsPC(character)) return false;
+    // Preserve the historical <=10-second default of 30 seconds.
+    const int32_t delay = GroundTimerDelay(seconds <= 10 ? 30 : seconds);
+    if (!delay || !EnsureComponent<ecs::ItemEvents>(item) ||
+        !EnsureComponent<ecs::ItemOwner>(item) ||
+        !EnsureComponent<ecs::ItemOwnershipDisplay>(item)) return false;
+    const auto ready = [&] {
+        return GroundTimerCandidate(item) && ecs::PlayerRuntime::IsPC(character) &&
+            g_registry.all_of<ecs::ItemEvents, ecs::ItemOwner, ecs::ItemOwnershipDisplay>(item);
+    };
+    if (!ready()) return false;
+    const uint32_t pid = ecs::PlayerRuntime::GetPlayerID(character);
+    if (!pid) return false;
+    if (g_registry.get<ecs::ItemEvents>(item).ownership)
+        return g_registry.get<ecs::ItemOwner>(item).ownershipPID == pid;
+    TPacketGCItemOwnership packet {};
+    packet.bHeader = HEADER_GC_ITEM_OWNERSHIP;
+    packet.dwVID = g_registry.get<ecs::ItemIdentity>(item).vid;
+    const std::string_view name = ecs::PlayerRuntime::GetName(character);
+    name.copy(packet.szName, sizeof(packet.szName) - 1);
+    if (!packet.szName[0]) return false;
+    std::string displayName(packet.szName);
+    auto* info = AllocEventInfo<item_event_info>();
+    info->item = item;
+    auto timer = event_create(GroundOwnershipExpired, info, delay);
+    if (!timer) return false;
+    if (!ready() || ecs::PlayerRuntime::GetPlayerID(character) != pid ||
+        g_registry.get<ecs::ItemEvents>(item).ownership)
+    {
+        event_cancel(&timer);
+        return false;
+    }
+    // Commit every claim field before observers receive its packet.
+    g_registry.get<ecs::ItemOwner>(item).ownershipPID = pid;
+    g_registry.get<ecs::ItemOwnershipDisplay>(item).ownerName.swap(displayName);
+    g_registry.get<ecs::ItemEvents>(item).ownership = std::move(timer);
+    if (GroundTimerCandidate(item, true))
+        ecs::ViewSystem::PacketView(item, &packet, sizeof(packet));
+    return true;
+}
+
+bool IsOwnership(entt::entity item, entt::entity character)
+{
+    if (!IsValidItem(item) || !ecs::PlayerRuntime::IsPC(character)) return false;
+    const auto* events = g_registry.try_get<ecs::ItemEvents>(item);
+    if (!events || !events->ownership) return true;
+    const auto* owner = g_registry.try_get<ecs::ItemOwner>(item);
+    return owner && owner->ownershipPID != 0 &&
+        owner->ownershipPID == ecs::PlayerRuntime::GetPlayerID(character);
+}
+
+bool RefreshItemOwnerPID(entt::entity item)
+{
+    if (!IsValidItem(item) || !EnsureComponent<ecs::ItemOwner>(item) || !IsValidItem(item)) return false;
+    auto& owner = g_registry.get<ecs::ItemOwner>(item);
+    owner.ownerPID = ecs::PlayerRuntime::GetPlayerID(owner.owner);
+    // Inventory ownership and a temporary ground reservation are independent.
+    return true;
+}
+
+void StartDestroyEvent(entt::entity item, int seconds)
+{
+    if (!GroundTimerCandidate(item, true)) return;
+    const int32_t delay = GroundTimerDelay(seconds);
+    if (!delay || !EnsureComponent<ecs::ItemEvents>(item) || !GroundTimerCandidate(item, true)) return;
+    if (g_registry.get<ecs::ItemEvents>(item).destroy) return;
+    auto* info = AllocEventInfo<item_event_info>();
+    info->item = item;
+    auto timer = event_create(GroundItemExpired, info, delay);
+    if (!timer) return;
+    if (!GroundTimerCandidate(item, true) || !g_registry.all_of<ecs::ItemEvents>(item) ||
+        g_registry.get<ecs::ItemEvents>(item).destroy)
+    {
+        event_cancel(&timer);
+        return;
+    }
+    g_registry.get<ecs::ItemEvents>(item).destroy = std::move(timer);
+}
+} // namespace ItemSystem
+
+namespace InventorySystem {
 
 entt::entity RemoveFromGround(entt::entity itemEntity)
 {
@@ -869,7 +982,9 @@ entt::entity RemoveFromGround(entt::entity itemEntity)
 	if (!ecs::PlayerRuntime::GetSectree(itemEntity))
 		return itemEntity;
 
-	SetOwnership(itemEntity, entt::null, 10);
+	ItemSystem::SetGroundOwnership(itemEntity, entt::null);
+	if (!ItemSystem::IsValidItem(itemEntity) || !ecs::PlayerRuntime::GetSectree(itemEntity))
+		return itemEntity;
 
 
 	ecs::SpatialService::RemoveEntity(g_registry, itemEntity);
@@ -903,17 +1018,6 @@ struct UnequipGuard
     entt::entity item;
     ~UnequipGuard() { unequipping.erase(item); }
 };
-
-template <typename T>
-bool EnsureComponent(entt::entity entity)
-{
-    if (!g_registry.valid(entity)) return false;
-    // EnTT emplace/get_or_emplace obtains a reference AFTER on_construct.
-    // A listener may already have destroyed the entity/component by then.
-    // Single-element insert publishes the same signal but returns no reference.
-    if (!g_registry.all_of<T>(entity)) g_registry.insert<T>(&entity, &entity + 1);
-    return g_registry.valid(entity) && g_registry.all_of<T>(entity);
-}
 
 template <typename Function>
 bool VisitStorage(entt::entity owner, TItemPos position, Function&& function)
@@ -3227,7 +3331,7 @@ entt::entity DeliverItem(entt::entity owner, entt::entity item, bool longOwnersh
             TQuickslot current {};
             if (InventorySystem::GetQuickslot(owner, 0, current) &&
                 current.type == QUICKSLOT_TYPE_NONE &&
-                InventorySystem::EnsureComponent<ecs::QuickSlots>(owner) && GiveReceipt(owner, item) &&
+                EnsureComponent<ecs::QuickSlots>(owner) && GiveReceipt(owner, item) &&
                 GetItemWindow(item) == INVENTORY && GetItemCell(item) == location.cell &&
                 InventorySystem::GetQuickslot(owner, 0, current) && current.type == QUICKSLOT_TYPE_NONE)
                 InventorySystem::SetQuickslot(owner, 0, {QUICKSLOT_TYPE_ITEM, static_cast<uint8_t>(location.cell)});

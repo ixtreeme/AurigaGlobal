@@ -1,5 +1,53 @@
 # Server ECS regression tests
 
+## Native ground ownership and expiry
+
+InventorySystem.cpp now owns SetGroundOwnership, IsOwnership, owner-PID refresh,
+StartDestroyEvent and both ground timer callbacks. The old InventorySystem
+SetOwnership entry point, ItemSystem wrappers and LegacyBridge callbacks were
+removed; dungeon/login callers use the same entity API. No parallel production
+file was introduced. Claim permission reads no longer create ItemEvents.
+
+Inventory owner/ownerPID and the temporary reservation's ownershipPID are
+independent. Refreshing the former no longer zeroes a ground reservation. The
+remaining CItem ground insertion preserves ItemOwner, including a quest's claim
+set before insertion and last-owner history. Claims commit timer, PID and bounded
+display name before publication. Clearing/expiry empties the display as well as
+the PID; it never erases an actual inventory owner. A null owner releases the
+claim; repeating the same claim succeeds without extending it, and a different
+owner cannot replace it without release. The historical <=10-second request
+default remains 30 seconds. Delays and absolute queue deadlines are checked for
+int32 overflow. New claims reject stored/equipped items and zero-PID/non-PC owners.
+
+Callbacks verify both the versioned entity and the exact active event lease.
+Cancelled/replaced timers cannot clear a new claim or destroy a recycled entity.
+Cancellation uses a local lease, not an address inside an item component. ECS
+construction and scheduler callbacks are revalidated before committing. Ground
+destruction refuses items that have moved to storage, even if pickup missed timer
+cancellation. A refused retirement retries after one second only if still on the
+ground with no newer timer. Publication may move/delete a committed item without
+being followed by stale-state writes.
+
+QuickslotTests executes these real implementations with entity-only fixtures.
+Coverage includes public/claimed pickup permissions, pre-insertion quest claims,
+PID refresh, duration/name bounds, duplicate/foreign claims, complete expiry and
+clear, malformed ownership targets, expired/reused entity generations, ECS
+construction deletion/mutation, scheduler failures/deletion, cancellation-time
+replacement claims, packet-time reclaims/deletion, destroy-timer replacement,
+stored-item survival and retirement retry/transfer/deletion. Its existing reward
+fallback tests now execute the real ownership API too. The scheduler, retirement,
+spatial insertion, view packets and database services are controlled doubles;
+EventLifecycleTests separately exercises the real queue. Full engine callback
+chains, spatial rendering, live persistence and real scheduler-to-item integration
+are not covered by this fixture.
+
+Ground placement still goes through PlaceItemOnGroundLegacyBoundary and a
+SpatialService/SECTREE implementation that requires LPENTITY. It is deliberately
+not relabelled as native ECS, and broader spatial insertion/removal lifetime work
+remains. Before deployment verify normal/quest/dice drops, late-arriving viewers,
+exclusive pickup then public pickup after expiry, pickup during expiration,
+disconnect/relog, and ground cleanup on a test server.
+
 ## Native equipment operations
 
 InventorySystem.cpp now owns EquipItemEcs, UnequipItemEcs, equipment policies and

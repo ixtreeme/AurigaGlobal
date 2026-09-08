@@ -64,6 +64,7 @@ struct PlacementActor {
     int level = 100, maxHP = 100, maxSP = 100;
     bool duelBlock = false, poly = false, riding = false, deck = false;
     std::array<int64_t, POINT_MAX_NUM> points {};
+    std::string name = "fixture-owner";
 };
 bool married = false, marriageItem = false;
 std::vector<uint32_t> notices;
@@ -98,6 +99,14 @@ std::vector<entt::entity> rewards;
 std::function<entt::entity(entt::entity, entt::entity)> onRewardMerge;
 std::function<void(const char*, entt::entity)> onReward;
 int saves = 0, storagePackets = 0, registrations = 0;
+std::vector<LPEVENT> groundTimers;
+std::map<EVENT*, int32_t> groundDelays;
+std::vector<TPacketGCItemOwnership> ownershipPackets;
+std::function<void(entt::entity, const TPacketGCItemOwnership&)> onOwnershipPacket;
+std::function<void()> onTimerCreate;
+std::function<void(entt::entity)> onGroundRetire;
+bool rejectTimer = false, rejectGroundRetirement = false;
+int groundRetired = 0, timerPulse = 1000;
 void Service(const char* name) { if (onService) { auto f = onService; f(name); } }
 PlacementMeta& Meta(entt::entity e) {
     Check(g_registry.valid(e) && g_registry.all_of<PlacementMeta>(e), "stale item metadata read");
@@ -137,6 +146,9 @@ void Send(entt::entity owner, Packet packet) {
     if (callback) callback(owner);
 }
 entt::entity Reset() {
+    onOwnershipPacket = {}; onTimerCreate = {}; onGroundRetire = {};
+    rejectTimer = rejectGroundRetirement = false; groundRetired = 0; timerPulse = 1000;
+    groundTimers.clear(); groundDelays.clear(); ownershipPackets.clear();
     giving = rejectGround = rejectRewardRetirement = false; rewardHighlight = true;
     rewardCreates = rewardMerges = rewardRetired = rewardLogs = moneyLogs = ownershipSeconds = 0;
     factoryRare = 0; factoryCount = 0; rewardProto = {}; rewards.clear(); onRewardMerge = {}; onReward = {};
@@ -659,12 +671,6 @@ bool ItemSystem::PlaceItemOnGroundLegacyBoundary(entt::entity item, int32_t map,
     if (onReward) { auto callback = onReward; callback("ground", item); }
     return true;
 }
-bool ItemSystem::SetGroundOwnership(entt::entity item, entt::entity owner, int duration) {
-    Check(giving && ItemSystem::GetItemWindow(item) == GROUND, "ownership on nonground item"); Actor(owner);
-    ownershipSeconds = duration;
-    if (onReward) { auto callback = onReward; callback("ownership", item); }
-    return true;
-}
 std::shared_ptr<CSafebox> SafeboxSystem::Get(entt::entity, uint8_t) { Unexpected(); }
 entt::entity CSafebox::Get(unsigned int) const { Unexpected(); }
 entt::entity CSafebox::Remove(unsigned int) { Unexpected(); }
@@ -682,12 +688,12 @@ int number_ex(int, int, char const *, int) { Unexpected(); }
 void ecs::ChatSystem::SendNew(entt::entity e, uint8_t, uint32_t id, char const *, ...) { Actor(e); notices.push_back(id); Service("notice"); }
 void ecs::ChatSystem::Send(entt::entity e, uint8_t, char const *, ...) { Actor(e); Service("notice"); }
 DESC * ecs::PlayerRuntime::GetDesc(entt::entity e) { return g_registry.get<PlacementActor>(e).desc; }
-uint32_t ecs::PlayerRuntime::GetPlayerID(entt::entity e) { return g_registry.get<PlacementActor>(e).pid; }
+uint32_t ecs::PlayerRuntime::GetPlayerID(entt::entity e) { return IsPC(e) ? Actor(e).pid : 0; }
 void ecs::PlayerRuntime::BuffOnAttr_AddBuffsFromItem(entt::entity e, entt::entity i) { Actor(e); Meta(i); Service("buff-add"); }
 void ecs::PlayerRuntime::BuffOnAttr_RemoveBuffsFromItem(entt::entity, entt::entity) { Service("buff-remove"); }
 void ecs::PlayerRuntime::SetItem(entt::entity, SItemPos, entt::entity, bool) { Unexpected(); }
 void ecs::PlayerRuntime::SetWear(entt::entity, uint8_t, entt::entity) { Unexpected(); }
-std::string_view ecs::PlayerRuntime::GetName(entt::entity) { Unexpected(); }
+std::string_view ecs::PlayerRuntime::GetName(entt::entity e) { return Actor(e).name; }
 SECTREE * ecs::PlayerRuntime::GetSectree(entt::entity) { Unexpected(); }
 void ecs::PlayerRuntime::SetPart(entt::entity e, uint8_t, uint16_t) { Actor(e); Service("set-part"); }
 uint16_t ecs::PlayerRuntime::GetOriginalPart(entt::entity e, uint8_t) { Actor(e); return 0; }
@@ -718,6 +724,15 @@ uint32_t ItemSystem::GetItemWearFlag(entt::entity e) { return Meta(e).proto.dwWe
 int ItemSystem::FindEquipCell(entt::entity owner, entt::entity e, int) { Actor(owner); return Meta(e).wear; }
 SItemTable const * ItemSystem::GetItemProto(entt::entity e) { return &Meta(e).proto; }
 bool ItemSystem::DestroyItemEntityEcs(entt::entity e, char const * reason) {
+    if (std::string_view(reason) == "ITEM_DESTROY_EVENT") {
+        Meta(e);
+        Check(RawOwner(e) == entt::null && GetItemWindow(e) == GROUND &&
+            !g_registry.get<ecs::ItemEvents>(e).destroy, "expiry retired owned item or kept its timer");
+        ++groundRetired;
+        if (onGroundRetire) { auto callback = onGroundRetire; callback(e); }
+        if (rejectGroundRetirement || !g_registry.valid(e)) return false;
+        g_registry.destroy(e); return true;
+    }
     if (giving) {
         Check(std::string_view(reason) == "AUTOGIVE_FAILED" && RawOwner(e) == entt::null &&
             g_registry.get<ecs::ItemFlags>(e).skipSave, "reward rollback deleted published/persistent item");
@@ -758,7 +773,28 @@ bool ItemSystem::IsItemEquipped(entt::entity e) { Meta(e); const auto* c = g_reg
 void NetworkSyncSystem::UpdatePacket(entt::entity) { Service("update-packet"); }
 void NetworkSyncSystem::UpdateItemOnTitleName(entt::registry &, entt::entity, bool) { Unexpected(); }
 void ecs::ViewSystem::ViewCleanup(entt::entity) { Unexpected(); }
-void ecs::ViewSystem::PacketView(entt::entity, void const *, int, entt::entity) { Unexpected(); }
+void ecs::ViewSystem::PacketView(entt::entity item, void const* data, int size, entt::entity) {
+    Meta(item);
+    Check(size == sizeof(TPacketGCItemOwnership), "unexpected ground packet");
+    const auto packet = *static_cast<const TPacketGCItemOwnership*>(data);
+    Check(packet.bHeader == HEADER_GC_ITEM_OWNERSHIP &&
+        packet.dwVID == g_registry.get<ecs::ItemIdentity>(item).vid &&
+        packet.szName[sizeof(packet.szName) - 1] == 0, "invalid ownership packet");
+    const auto* events = g_registry.try_get<ecs::ItemEvents>(item);
+    const auto* owner = g_registry.try_get<ecs::ItemOwner>(item);
+    const auto* display = g_registry.try_get<ecs::ItemOwnershipDisplay>(item);
+    if (packet.szName[0]) {
+        Check(events && events->ownership && owner && owner->ownershipPID &&
+            display && display->ownerName == packet.szName, "claim published before commit");
+        ownershipSeconds = groundDelays.at(events->ownership.get()) / passes_per_sec;
+    } else {
+        Check((!events || !events->ownership) && (!owner || !owner->ownershipPID) &&
+            (!display || display->ownerName.empty()), "clear published before commit");
+    }
+    ownershipPackets.push_back(packet);
+    if (onOwnershipPacket) { auto callback = onOwnershipPacket; callback(item, packet); }
+    if (giving && onReward) { auto callback = onReward; callback("ownership", item); }
+}
 void CItem::Save() { Unexpected(); }
 int CItem::GetValue(uint32_t) { Unexpected(); }
 SItemTable * ITEM_MANAGER::GetTable(uint32_t vnum) { Check(giving, "unexpected prototype lookup"); return vnum == rewardProto.dwVnum ? &rewardProto : nullptr; }
@@ -772,9 +808,17 @@ void ecs::SpatialService::RemoveEntity(entt::registry &, entt::entity) { Unexpec
 void ecs::SpatialService::UpdateSectree(entt::registry &, entt::entity) { Unexpected(); }
 void intrusive_ptr_add_ref(event* e) { ++e->ref_count; }
 void intrusive_ptr_release(event* e) { if (--e->ref_count == 0) delete e; }
-LPEVENT event_create_ex(TEVENTFUNC, event_info_data*, int32_t) { Unexpected(); }
+LPEVENT event_create_ex(TEVENTFUNC function, event_info_data* info, int32_t delay) {
+    Check(delay > 0 && int64_t(delay) + timerPulse <= INT32_MAX, "unsafe timer delay");
+    if (rejectTimer) { delete info; return {}; }
+    LPEVENT timer(new EVENT);
+    timer->func = function; timer->info = info;
+    groundTimers.push_back(timer); groundDelays[timer.get()] = delay;
+    if (onTimerCreate) { auto callback = onTimerCreate; callback(); }
+    return timer;
+}
 void event_cancel(LPEVENT* e) { e->reset(); if (onCancel) { auto f = onCancel; f(); } }
-EVENTFUNC(ownership_event) { Unexpected(); }
+int thecore_pulse() { return timerPulse; }
 const int aiAccessorySocketEffectivePct[ITEM_ACCESSORY_SOCKET_MAX_NUM + 1] = {};
 int passes_per_sec = 25;
 
@@ -2087,6 +2131,284 @@ void MoveCallbacksAndDispatch()
 }
 } // namespace
 
+namespace {
+
+// Real ground timer/claim code with entity-only items; scheduling and packets
+// remain controlled services, so callbacks can deliberately recycle entities.
+entt::entity GroundItem()
+{
+    const auto item = PlacementItem();
+    g_registry.get<ecs::ItemIdentity>(item).vid = 500;
+    g_registry.emplace<ecs::ItemLocation>(item, ecs::ItemLocation {GROUND, 0});
+    g_registry.emplace<ecs::SpatialEntity>(item);
+    return item;
+}
+
+int32_t FireGround(const LPEVENT& timer)
+{
+    Check(timer && timer->func, "missing ground callback");
+    return timer->func(timer, 0);
+}
+
+void GroundClaims()
+{
+    for (int duration : {-1, 0, 1, 10, 11, 60, 300})
+    {
+        Reset();
+        const auto owner = PlacementOwner(), other = PlacementOwner(), item = GroundItem();
+        Actor(other).pid = 99;
+        Check(ItemSystem::IsOwnership(item, owner) && !g_registry.all_of<ecs::ItemEvents>(item),
+            "public ownership query created state");
+        Check(ItemSystem::SetGroundOwnership(item, owner, duration), "claim rejected");
+        const auto timer = g_registry.get<ecs::ItemEvents>(item).ownership;
+        Check(groundDelays.at(timer.get()) == (duration <= 10 ? 30 : duration) * passes_per_sec,
+            "ownership duration changed");
+        auto& state = g_registry.get<ecs::ItemOwner>(item);
+        state.lastOwnerPID = 123;
+        Check(state.owner == entt::null && state.ownerPID == 0 && state.ownershipPID == 37,
+            "reservation confused with inventory owner");
+        Check(ItemSystem::RefreshItemOwnerPID(item) && state.ownershipPID == 37 && state.lastOwnerPID == 123,
+            "PID synchronization destroyed reservation/history");
+        Check(ItemSystem::IsOwnership(item, owner) && !ItemSystem::IsOwnership(item, other),
+            "claim permission ignored");
+        Check(ItemSystem::SetGroundOwnership(item, owner, 500) && groundTimers.size() == 1,
+            "same owner's claim restarted");
+        Check(!ItemSystem::SetGroundOwnership(item, other, 500) &&
+            g_registry.get<ecs::ItemEvents>(item).ownership == timer, "foreign claim stolen");
+        Check(FireGround(timer) == 0 && !g_registry.get<ecs::ItemEvents>(item).ownership &&
+            state.ownershipPID == 0 && state.lastOwnerPID == 123 &&
+            g_registry.get<ecs::ItemOwnershipDisplay>(item).ownerName.empty(), "expiry left ghost ownership");
+        Check(ItemSystem::IsOwnership(item, other) && ownershipPackets.size() == 2 &&
+            ownershipPackets.back().szName[0] == 0, "expiry not public");
+        Check(FireGround(timer) == 0 && ownershipPackets.size() == 2, "expiry replayed");
+    }
+    Reset();
+    auto owner = PlacementOwner(), item = PlacementItem();
+    Actor(owner).name = std::string(CHARACTER_NAME_MAX_LEN + 20, 'x');
+    Check(ItemSystem::SetGroundOwnership(item, owner) && ownershipPackets.empty(),
+        "pre-insertion quest claim rejected/published");
+    const auto timer = g_registry.get<ecs::ItemEvents>(item).ownership;
+    Check(g_registry.get<ecs::ItemOwnershipDisplay>(item).ownerName.size() == CHARACTER_NAME_MAX_LEN,
+        "ownership name not bounded like the wire packet");
+    g_registry.emplace<ecs::ItemLocation>(item, ecs::ItemLocation {GROUND, 0});
+    g_registry.emplace<ecs::SpatialEntity>(item);
+    Check(ItemSystem::RefreshItemOwnerPID(item) && ItemSystem::IsOwnership(item, owner),
+        "ground insertion synchronization lost preclaim");
+    Check(ItemSystem::SetGroundOwnership(item, entt::null) && ownershipPackets.size() == 1,
+        "explicit release failed");
+    Check(ItemSystem::SetGroundOwnership(item, owner), "replacement claim rejected");
+    const auto replacement = g_registry.get<ecs::ItemEvents>(item).ownership;
+    Check(FireGround(timer) == 0 && g_registry.get<ecs::ItemEvents>(item).ownership == replacement &&
+        ItemSystem::IsOwnership(item, owner), "old timer cleared replacement claim");
+
+    // Clearing a stale ground reservation must never reset a real storage owner.
+    auto& state = g_registry.get<ecs::ItemOwner>(item);
+    state.owner = owner; state.ownerPID = 37; state.lastOwnerPID = 123;
+    g_registry.get<ecs::ItemLocation>(item) = {INVENTORY, 7};
+    Check(ItemSystem::SetGroundOwnership(item, entt::null) && state.owner == owner &&
+        state.ownerPID == 37 && state.lastOwnerPID == 123, "release erased storage owner");
+}
+
+void GroundClaimValidation()
+{
+    Reset();
+    auto owner = PlacementOwner(), item = GroundItem();
+    Check(!ItemSystem::SetGroundOwnership(entt::null, owner) &&
+        !ItemSystem::IsOwnership(entt::null, owner), "invalid item accepted");
+    const auto nonPlayer = g_registry.create();
+    Check(!ItemSystem::SetGroundOwnership(item, nonPlayer) &&
+        !ItemSystem::IsOwnership(item, nonPlayer), "non-player claim accepted");
+    Actor(owner).pid = 0;
+    Check(!ItemSystem::SetGroundOwnership(item, owner), "zero-PID reservation accepted");
+    Actor(owner).pid = 37; Actor(owner).name.clear();
+    Check(!ItemSystem::SetGroundOwnership(item, owner), "empty ownership label accepted");
+    Actor(owner).name = "owner";
+    Check(!ItemSystem::SetGroundOwnership(item, owner, INT32_MAX), "timer multiplication overflow accepted");
+    timerPulse = INT32_MAX - 100;
+    Check(!ItemSystem::SetGroundOwnership(item, owner), "timer deadline overflow accepted");
+    timerPulse = 1000;
+    rejectTimer = true;
+    Check(!ItemSystem::SetGroundOwnership(item, owner) && !g_registry.get<ecs::ItemEvents>(item).ownership &&
+        !g_registry.get<ecs::ItemOwner>(item).ownershipPID &&
+        g_registry.get<ecs::ItemOwnershipDisplay>(item).ownerName.empty(), "failed scheduling left a claim");
+    rejectTimer = false;
+    for (auto window : {INVENTORY, EQUIPMENT, SAFEBOX, MALL, DRAGON_SOUL_INVENTORY})
+    {
+        g_registry.get<ecs::ItemLocation>(item).window = window;
+        Check(!ItemSystem::SetGroundOwnership(item, owner), "stored item claimed");
+    }
+    g_registry.get<ecs::ItemLocation>(item).window = GROUND;
+    g_registry.get<ecs::ItemOwner>(item).ownerPID = 555;
+    Check(!ItemSystem::SetGroundOwnership(item, owner), "orphaned persisted owner ignored");
+    g_registry.get<ecs::ItemOwner>(item).ownerPID = 0;
+    g_registry.get<ecs::ItemOwner>(item).owner = nonPlayer;
+    g_registry.destroy(nonPlayer);
+    Check(!ItemSystem::SetGroundOwnership(item, owner), "stale real owner treated as detached");
+    g_registry.get<ecs::ItemOwner>(item).owner = entt::null;
+    g_registry.emplace<ecs::ItemEquipped>(item, ecs::ItemEquipped {true, 0});
+    Check(!ItemSystem::SetGroundOwnership(item, owner), "equipped item claimed");
+    g_registry.remove<ecs::ItemEquipped>(item);
+    Check(ItemSystem::SetGroundOwnership(item, owner), "valid reservation rejected");
+    const auto timer = g_registry.get<ecs::ItemEvents>(item).ownership;
+    g_registry.destroy(item);
+    const auto replacement = GroundItem();
+    Check(replacement != item && FireGround(timer) == 0 &&
+        !g_registry.any_of<ecs::ItemEvents, ecs::ItemOwner, ecs::ItemOwnershipDisplay>(replacement),
+        "old claim wrote recycled entity");
+}
+
+void GroundClaimCallbacks()
+{
+    for (int component = 0; component < 3; ++component)
+    for (int mutation = 0; mutation < 4; ++mutation)
+    {
+        Reset();
+        const auto owner = PlacementOwner(), item = GroundItem();
+        entt::entity replacement = entt::null;
+        ConstructionCallback callback {[&](entt::registry& registry, entt::entity e) {
+            if (e != item) return;
+            if (mutation == 0) { registry.destroy(item); replacement = registry.create(); }
+            if (mutation == 1) { registry.destroy(owner); replacement = registry.create(); }
+            if (mutation == 2) registry.get<ecs::ItemLocation>(item).window = SAFEBOX;
+            if (mutation == 3) registry.remove<ecs::ItemEvents>(item);
+        }};
+        entt::scoped_connection connection = component == 0 ?
+            g_registry.on_construct<ecs::ItemEvents>().connect<&ConstructionCallback::OnConstruct>(callback) :
+            component == 1 ?
+            g_registry.on_construct<ecs::ItemOwner>().connect<&ConstructionCallback::OnConstruct>(callback) :
+            g_registry.on_construct<ecs::ItemOwnershipDisplay>().connect<&ConstructionCallback::OnConstruct>(callback);
+        Check(!ItemSystem::SetGroundOwnership(item, owner) && groundTimers.empty(),
+            "claim survived preparation mutation");
+        if (replacement != entt::null)
+            Check(!g_registry.any_of<ecs::ItemEvents, ecs::ItemOwner, ecs::ItemOwnershipDisplay>(replacement),
+                "claim preparation wrote recycled entity");
+    }
+    for (bool destroyItem : {false, true})
+    {
+        Reset();
+        const auto owner = PlacementOwner(), item = GroundItem();
+        entt::entity replacement = entt::null;
+        onTimerCreate = [&] {
+            onTimerCreate = {};
+            g_registry.destroy(destroyItem ? item : owner); replacement = g_registry.create();
+        };
+        Check(!ItemSystem::SetGroundOwnership(item, owner) && ownershipPackets.empty(),
+            "scheduled claim ignored deleted entity");
+        Check(!g_registry.any_of<ecs::ItemEvents, ecs::ItemOwner>(replacement), "scheduling wrote recycled entity");
+        Check(FireGround(groundTimers.back()) == 0, "cancelled callback rescheduled");
+    }
+    {
+        Reset();
+        const auto owner = PlacementOwner(), other = PlacementOwner(), item = GroundItem();
+        Actor(other).pid = 99;
+        Check(ItemSystem::SetGroundOwnership(item, owner), "setup claim");
+        onCancel = [&] {
+            onCancel = {};
+            Check(ItemSystem::SetGroundOwnership(item, other), "cancel callback could not reclaim");
+        };
+        Check(ItemSystem::SetGroundOwnership(item, entt::null) && ownershipPackets.size() == 2 &&
+            ownershipPackets.back().szName[0] && ItemSystem::IsOwnership(item, other),
+            "cancellation overwrote new claim");
+        onOwnershipPacket = [&](entt::entity, const TPacketGCItemOwnership& packet) {
+            if (packet.szName[0]) return;
+            onOwnershipPacket = {};
+            Check(ItemSystem::SetGroundOwnership(item, owner), "packet callback could not reclaim");
+        };
+        const auto timer = g_registry.get<ecs::ItemEvents>(item).ownership;
+        Check(FireGround(timer) == 0 && ItemSystem::IsOwnership(item, owner) &&
+            !ItemSystem::IsOwnership(item, other), "expiry overwrote publication callback");
+    }
+    for (bool cancel : {false, true})
+    {
+        Reset();
+        const auto owner = PlacementOwner(), item = GroundItem();
+        Check(ItemSystem::SetGroundOwnership(item, owner), "deletion setup");
+        auto remove = [&] { g_registry.destroy(item); (void)g_registry.create(); };
+        if (cancel) onCancel = remove;
+        else onOwnershipPacket = [&](entt::entity, const TPacketGCItemOwnership&) { remove(); };
+        Check(ItemSystem::SetGroundOwnership(item, entt::null) && !g_registry.valid(item),
+            "release did not tolerate callback deletion");
+    }
+}
+
+void GroundDestroyTimers()
+{
+    Reset();
+    auto item = GroundItem();
+    ItemSystem::StartDestroyEvent(item, 300);
+    auto timer = g_registry.get<ecs::ItemEvents>(item).destroy;
+    Check(timer && groundDelays.at(timer.get()) == 300 * passes_per_sec, "destroy timer missing");
+    ItemSystem::StartDestroyEvent(item, 10);
+    Check(groundTimers.size() == 1, "destroy timer restarted");
+    Check(FireGround(timer) == 0 && !g_registry.valid(item) && groundRetired == 1, "expiry did not retire ground item");
+    const auto replacement = GroundItem();
+    Check(FireGround(timer) == 0 && g_registry.valid(replacement) && groundRetired == 1,
+        "destroy callback hit recycled entity");
+
+    Reset(); item = GroundItem();
+    ItemSystem::StartDestroyEvent(item, 0); ItemSystem::StartDestroyEvent(item, -1);
+    ItemSystem::StartDestroyEvent(item, INT32_MAX);
+    timerPulse = INT32_MAX - 100; ItemSystem::StartDestroyEvent(item, 30);
+    Check(groundTimers.empty(), "invalid destroy duration scheduled");
+    timerPulse = 1000; rejectTimer = true;
+    ItemSystem::StartDestroyEvent(item, 30);
+    Check(!g_registry.get<ecs::ItemEvents>(item).destroy, "failed destroy schedule retained");
+    rejectTimer = false;
+    ItemSystem::StartDestroyEvent(item, 30);
+    timer = std::move(g_registry.get<ecs::ItemEvents>(item).destroy);
+    ItemSystem::StartDestroyEvent(item, 60);
+    const auto newer = g_registry.get<ecs::ItemEvents>(item).destroy;
+    Check(FireGround(timer) == 0 && g_registry.get<ecs::ItemEvents>(item).destroy == newer &&
+        groundRetired == 0, "stale destroy timer retired replacement");
+
+    // A current but uncancelled timer is harmless once the item is in storage.
+    const auto owner = PlacementOwner();
+    g_registry.emplace<ecs::ItemOwner>(item, ecs::ItemOwner {owner, 37});
+    g_registry.get<ecs::ItemLocation>(item) = {INVENTORY, 0};
+    Check(FireGround(newer) == 0 && g_registry.valid(item) && groundRetired == 0 &&
+        !g_registry.get<ecs::ItemEvents>(item).destroy, "ground expiry deleted stored item");
+    ItemSystem::StartDestroyEvent(item, 30);
+    Check(groundTimers.size() == 2, "stored item armed for destruction");
+
+    for (int mutation = 0; mutation < 4; ++mutation)
+    {
+        Reset(); item = GroundItem();
+        rejectGroundRetirement = true;
+        ItemSystem::StartDestroyEvent(item, 30);
+        timer = g_registry.get<ecs::ItemEvents>(item).destroy;
+        onGroundRetire = [&](entt::entity e) {
+            if (mutation == 1) { g_registry.destroy(e); (void)g_registry.create(); }
+            if (mutation == 2) g_registry.get<ecs::ItemLocation>(e).window = SAFEBOX;
+            if (mutation == 3) ItemSystem::StartDestroyEvent(e, 60);
+        };
+        const auto delay = FireGround(timer);
+        Check(groundRetired == 1 && delay == (mutation == 0 ? passes_per_sec : 0),
+            "retirement retry ignored callback mutation");
+        if (mutation == 0) {
+            Check(g_registry.get<ecs::ItemEvents>(item).destroy == timer, "retry lost its lease");
+            onGroundRetire = {}; rejectGroundRetirement = false;
+            Check(FireGround(timer) == 0 && !g_registry.valid(item) && groundRetired == 2, "retry never retired item");
+        }
+        if (mutation == 3)
+            Check(g_registry.get<ecs::ItemEvents>(item).destroy != timer, "retry overwrote new timer");
+    }
+    for (bool duringCreate : {false, true})
+    {
+        Reset(); item = GroundItem();
+        entt::entity recycled = entt::null;
+        auto destroy = [&] { g_registry.destroy(item); recycled = g_registry.create(); };
+        ConstructionCallback callback {[&](entt::registry&, entt::entity) { if (!duringCreate) destroy(); }};
+        entt::scoped_connection connection =
+            g_registry.on_construct<ecs::ItemEvents>().connect<&ConstructionCallback::OnConstruct>(callback);
+        if (duringCreate) onTimerCreate = destroy;
+        ItemSystem::StartDestroyEvent(item, 30);
+        Check(!g_registry.valid(item) && !g_registry.all_of<ecs::ItemEvents>(recycled),
+            "destroy preparation wrote recycled entity");
+    }
+}
+
+} // namespace
+
 int main() {
     try {
         DSManager dragonSouls;
@@ -2098,6 +2420,7 @@ int main() {
 #ifdef ENABLE_SWITCHBOT
         CSwitchbotManager switchbots;
 #endif
+        GroundClaims(); GroundClaimValidation(); GroundClaimCallbacks(); GroundDestroyTimers();
         MovePreparationSignals(); NativeMoves(); MoveRejections(); MoveSpecialWindows(); NativeSplits(); SplitFailuresAndCallbacks(); MoveCallbacksAndDispatch();
         RewardQuantitiesAndPlacement(); RewardMergeAndReentry(); RewardCallbacksAndFailures(); RewardGroundAndAcquisition();
         RewardQuickslotConstruction();

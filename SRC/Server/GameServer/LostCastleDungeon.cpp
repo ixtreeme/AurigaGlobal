@@ -196,7 +196,7 @@ namespace
         ItemSystem::PlaceItemOnGroundLegacyBoundary(item, ecs::PlayerRuntime::GetMapIndex(victimEntity), pos);
 
         if (owner)
-            InventorySystem::SetOwnership(item, owner->GetEntityHandle(), 60 * 3);
+            ItemSystem::SetGroundOwnership(item, owner->GetEntityHandle(), 60 * 3);
     }
 
     bool ConsumeOneGivenItem(entt::entity itemEntity, const char* reason)
