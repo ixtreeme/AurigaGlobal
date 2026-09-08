@@ -3,10 +3,12 @@
 #include "PointSystem.hpp"
 #include "MountSystem.hpp"
 #include "QuestSystem.hpp"
-#ifndef ENABLE_BUG_FIXES
 #include "AffectSystem.hpp"
+#include "DragonSoulSystem.hpp"
 #include "../../skill.h"
-#endif
+#include "../../marriage.h"
+#include "../../questmanager.h"
+#include "../../MountSystem.h"
 #ifndef __ENABLE_EXTEND_INVEN_SYSTEM__
 #include "../../belt_inventory_helper.h"
 #endif
@@ -59,12 +61,8 @@ ecs::QuickSlots* GetQuickSlots(entt::entity e)
 	return &g_registry.get_or_emplace<ecs::QuickSlots>(e);
 }
 
-// Despite the name this copies nothing: GetItemWindow and GetItemCell read
-// ecs::ItemLocation, so the old body wrote the component back onto itself. All
-// it ever did was create the component, zeroed, when it was missing - and
-// EquipItemEcs checks all_of<ItemLocation> for its rollback, so that presence
-// is load-bearing. Kept as the ensure it actually is. The values come from
-// ItemSystem::SetItemCell and SetItemWindow.
+// The remaining ground/ownership paths need a location component even when
+// the item has not entered character storage yet.
 void EnsureItemLocation(entt::entity e)
 {
 	if (e == entt::null || !g_registry.valid(e))
@@ -87,26 +85,210 @@ void SyncItemOwner(entt::entity e, entt::entity owner, uint32_t ownerPID)
 	itemOwner.ownerPID = ownerPID;
 }
 
-void SyncItemEquipped(entt::entity e, bool equipped)
-{
-	if (e == entt::null || !g_registry.valid(e))
-		return;
-
-	uint8_t slot = 0;
-	if (equipped) {
-		const uint16_t cell = ItemSystem::GetItemCell(e);
-		if (cell >= INVENTORY_MAX_NUM)
-			slot = static_cast<uint8_t>(cell - INVENTORY_MAX_NUM);
-	}
-
-	g_registry.emplace_or_replace<ecs::ItemEquipped>(e, equipped, slot);
-}
-
 } // namespace
 
 EVENTFUNC(ownership_event);
 
 namespace InventorySystem {
+
+bool CanEquipNow(entt::entity owner, entt::entity itemEntity)
+{
+    if (!g_registry.valid(owner) || !ItemSystem::IsValidItem(itemEntity)) return false;
+    const auto* sourceProto = ItemSystem::GetItemProto(itemEntity);
+    if (!sourceProto) return false;
+    const TItemTable table = *sourceProto;
+    const TItemTable* itemTable = &table;
+
+#ifdef ENABLE_PVP_ADVANCED
+	if ((ecs::PlayerRuntime::GetDuelOption(owner, "BlockChangeItem")))
+	{
+#ifdef TEXTS_IMPROVEMENT
+		ecs::ChatSystem::SendNew(owner, CHAT_TYPE_INFO, 516, "");
+#endif
+		return false;
+	}
+#endif
+
+	switch (ecs::PlayerRuntime::GetJob(owner))
+	{
+	case JOB_WARRIOR:
+		if (ItemSystem::GetItemAntiFlag(itemEntity) & ITEM_ANTIFLAG_WARRIOR)
+			return false;
+		break;
+
+	case JOB_ASSASSIN:
+		if (ItemSystem::GetItemAntiFlag(itemEntity) & ITEM_ANTIFLAG_ASSASSIN)
+			return false;
+		break;
+
+	case JOB_SHAMAN:
+		if (ItemSystem::GetItemAntiFlag(itemEntity) & ITEM_ANTIFLAG_SHAMAN)
+			return false;
+		break;
+
+	case JOB_SURA:
+		if (ItemSystem::GetItemAntiFlag(itemEntity) & ITEM_ANTIFLAG_SURA)
+			return false;
+		break;
+	}
+
+	for (int i = 0; i < ITEM_LIMIT_MAX_NUM; ++i)
+	{
+		int32_t limit = itemTable->aLimits[i].lValue;
+		switch (itemTable->aLimits[i].bType)
+		{
+		case LIMIT_LEVEL:
+			if (ecs::PointSystem::GetLevel(owner) < limit) {
+#ifdef TEXTS_IMPROVEMENT
+				ecs::ChatSystem::SendNew(owner, CHAT_TYPE_INFO, 325, "%d", limit);
+#endif
+				return false;
+			}
+			break;
+		case LIMIT_STR:
+			if (ecs::PointSystem::Get(owner, POINT_ST) < limit) {
+#ifdef TEXTS_IMPROVEMENT
+				ecs::ChatSystem::SendNew(owner, CHAT_TYPE_INFO, 269, "%d", limit);
+#endif
+				return false;
+			}
+			break;
+		case LIMIT_INT:
+			if (ecs::PointSystem::Get(owner, POINT_IQ) < limit) {
+#ifdef TEXTS_IMPROVEMENT
+				ecs::ChatSystem::SendNew(owner, CHAT_TYPE_INFO, 468, "%d", limit);
+#endif
+				return false;
+			}
+			break;
+		case LIMIT_DEX:
+			if (ecs::PointSystem::Get(owner, POINT_DX) < limit) {
+#ifdef TEXTS_IMPROVEMENT
+				ecs::ChatSystem::SendNew(owner, CHAT_TYPE_INFO, 352, "%d", limit);
+#endif
+				return false;
+			}
+			break;
+
+		case LIMIT_CON:
+			if (ecs::PointSystem::Get(owner, POINT_HT) < limit) {
+#ifdef TEXTS_IMPROVEMENT
+				ecs::ChatSystem::SendNew(owner, CHAT_TYPE_INFO, 481, "%d", limit);
+#endif
+				return false;
+			}
+			break;
+		}
+	}
+
+	if (ItemSystem::GetItemWearFlag(itemEntity) & WEARABLE_UNIQUE)
+	{
+		const bool bAllowDualUnique =
+			ItemSystem::GetItemSubType(itemEntity) == 4 ||
+			ItemSystem::GetItemSubType(itemEntity) == 5;
+
+		if (!bAllowDualUnique &&
+			(ItemSystem::IsSameSpecialGroup(
+					ItemSystem::GetWearItem(owner, WEAR_UNIQUE1), itemEntity) ||
+				ItemSystem::IsSameSpecialGroup(
+					ItemSystem::GetWearItem(owner, WEAR_UNIQUE2), itemEntity) ||
+				ItemSystem::IsSameSpecialGroup(
+					ItemSystem::GetWearItem(owner, WEAR_COSTUME_MOUNT), itemEntity)))
+		{
+#ifdef TEXTS_IMPROVEMENT
+			ecs::ChatSystem::SendNew(owner, CHAT_TYPE_INFO, 695, "");
+#endif
+			return false;
+		}
+
+		if (marriage::CManager::instance().IsMarriageUniqueItem(ItemSystem::GetItemVnum(itemEntity)) &&
+			!marriage::CManager::instance().IsMarried(ecs::PlayerRuntime::GetPlayerID(owner)))
+		{
+#ifdef TEXTS_IMPROVEMENT
+			ecs::ChatSystem::SendNew(owner, CHAT_TYPE_INFO, 696, "");
+#endif
+			return false;
+		}
+	}
+
+#ifdef ENABLE_BUG_FIXES
+	if (ItemSystem::GetItemType(itemEntity) == ITEM_COSTUME && ItemSystem::GetItemSubType(itemEntity) == COSTUME_BODY)
+	{
+		const auto armor = ItemSystem::GetWearItem(owner, WEAR_BODY);
+		if (armor != entt::null && !ItemSystem::IsValidItem(armor)) return false;
+		if (armor != entt::null && (ItemSystem::GetItemVnum(armor) >= 11901 && ItemSystem::GetItemVnum(armor) <= 11914))
+		{
+#ifdef TEXTS_IMPROVEMENT
+			ecs::ChatSystem::SendNew(owner, CHAT_TYPE_INFO, 1129, "");
+#endif
+			return false;
+		}
+	}
+
+	if (ItemSystem::GetItemVnum(itemEntity) >= 11901 && ItemSystem::GetItemVnum(itemEntity) <= 11914)
+	{
+		const auto costume = ItemSystem::GetWearItem(owner, WEAR_COSTUME_BODY);
+		if (costume != entt::null && !ItemSystem::IsValidItem(costume)) return false;
+		if (costume != entt::null && (ItemSystem::GetItemType(costume) == ITEM_COSTUME && ItemSystem::GetItemSubType(costume) == COSTUME_BODY))
+		{
+#ifdef TEXTS_IMPROVEMENT
+			ecs::ChatSystem::SendNew(owner, CHAT_TYPE_INFO, 1129, "");
+#endif
+			return false;
+		}
+	}
+#endif
+
+#ifdef ENABLE_DS_SET
+	if ((DragonSoulSystem::IsDeckActivated(owner)) && (ItemSystem::IsDragonSoulItem(itemEntity))) {
+#ifdef TEXTS_IMPROVEMENT
+		ecs::ChatSystem::SendNew(owner, CHAT_TYPE_INFO, 76, "");
+#endif
+		return false;
+	}
+#endif
+
+	return true;
+}
+
+
+
+bool IsEquipmentSexAllowed(entt::entity owner, entt::entity item)
+{
+    if (!g_registry.valid(owner) || !ItemSystem::IsValidItem(item)) return false;
+    const uint32_t anti = ItemSystem::GetItemAntiFlag(item);
+    const auto sex = ecs::PlayerRuntime::GetSex(owner);
+    return !((anti & ITEM_ANTIFLAG_MALE) && sex == SEX_MALE) &&
+        !((anti & ITEM_ANTIFLAG_FEMALE) && sex == SEX_FEMALE);
+}
+
+bool CanUnequipNow(entt::entity owner, entt::entity item, bool requireSpace)
+{
+    if (!g_registry.valid(owner) || !ItemSystem::IsValidItem(item) ||
+        ItemSystem::GetItemOwner(item) != owner || !ItemSystem::IsItemEquipped(item))
+        return false;
+    if ((ItemSystem::GetItemFlags(item) & ITEM_FLAG_IRREMOVABLE) ||
+        ItemSystem::IsItemExchanging(item) || ItemSystem::IsItemLocked(item)) return false;
+    if ((ItemSystem::GetItemType(item) == ITEM_BELT && HasBeltItems(owner)) ||
+        (requireSpace && ItemSystem::GetEmptyInventoryPositionEcs(owner, item) < 0))
+    {
+#ifdef TEXTS_IMPROVEMENT
+        ecs::ChatSystem::SendNew(owner, CHAT_TYPE_INFO, 366, "");
+#endif
+        return false;
+    }
+#ifdef ENABLE_DS_SET
+    if (ItemSystem::IsDragonSoulItem(item) && DragonSoulSystem::IsDeckActivated(owner))
+    {
+#ifdef TEXTS_IMPROVEMENT
+        ecs::ChatSystem::SendNew(owner, CHAT_TYPE_INFO, 76, "");
+#endif
+        return false;
+    }
+#endif
+    return true;
+}
+
 
 bool CanHandleItems(entt::entity owner, bool skipRefine, bool skipObserver)
 {
@@ -569,30 +751,6 @@ bool CItem::AddToGround(int32_t lMapIndex, const PIXEL_POSITION& pos, bool skipO
 	return true;
 }
 
-
-
-bool CItem::IsEquipable()
-{
-	switch (GetType())
-	{
-	case ITEM_COSTUME:
-	case ITEM_ARMOR:
-	case ITEM_WEAPON:
-	case ITEM_ROD:
-	case ITEM_PICK:
-	case ITEM_UNIQUE:
-	case ITEM_DS:
-	case ITEM_SPECIAL_DS:
-	case ITEM_RING:
-		return true;
-
-	case ITEM_BELT:
-		return (GetValue(5) == 1);
-
-	default:
-		return false;
-	}
-}
 
 
 #define ENABLE_IMMUNE_FIX
@@ -1137,6 +1295,7 @@ bool Unequip(entt::entity itemEntity)
 	NetworkSyncSystem::UpdatePacket(charEntity);
 	if (!stillDetached()) return true;
 #ifdef ENABLE_COSTUME_PET
+    if (!stillDetached()) return true;
 	if ((ItemSystem::GetItemType(itemEntity) == ITEM_COSTUME) && (ItemSystem::GetItemSubType(itemEntity) == COSTUME_PET_SKIN)) {
 		MountSystem::UpdatePetSkin(charEntity);
 	}
@@ -1156,7 +1315,9 @@ bool Unequip(entt::entity itemEntity)
 
 bool EquipTo(entt::entity itemEntity, entt::entity charEntity, uint8_t bWearCell)
 {
-	if (charEntity == entt::null || !g_registry.valid(charEntity))
+	if (!ecs::PlayerRuntime::IsValid(charEntity) || !g_registry.all_of<ecs::PlayerID>(charEntity) ||
+        !ItemSystem::IsValidItem(itemEntity) || !ItemSystem::GetItemProto(itemEntity) ||
+        unequipping.contains(itemEntity))
 	{
 		LOG_ERROR("EquipTo: nil character");
 		return false;
@@ -1180,22 +1341,51 @@ bool EquipTo(entt::entity itemEntity, entt::entity charEntity, uint8_t bWearCell
 	}
 
 	const entt::entity occupied = ItemSystem::GetWearItem(charEntity, bWearCell);
-	if (ItemSystem::IsValidItem(occupied))
+	if (occupied != entt::null)
 	{
-		LOG_ERROR("EquipTo: item already exist (item: #{} {} cell: {} {})",
-			ItemSystem::GetItemOriginalVnum(itemEntity), ItemSystem::GetItemName(itemEntity), bWearCell, ItemSystem::GetItemName(occupied));
+        LOG_ERROR("EquipTo: occupied wear cell {}", bWearCell);
 		return false;
 	}
 
-	if (ItemSystem::GetItemOwner(itemEntity) != entt::null)
-		RemoveFromCharacter(itemEntity);
-
-	ecs::PlayerRuntime::SetWear(charEntity, bWearCell, itemEntity);
-
-	ItemSystem::SetItemOwnerEntity(itemEntity, charEntity);
-	// SetWear above already routed the cell through ItemSystem::SetItemCell,
-	// which writes ecs::ItemLocation and mirrors it back into m_wCell.
-	SyncItemEquipped(itemEntity, true);
+    const auto target = TItemPos(EQUIPMENT, INVENTORY_MAX_NUM + bWearCell);
+    const auto rawOwner = g_registry.try_get<ecs::ItemOwner>(itemEntity);
+    if (rawOwner && rawOwner->owner != entt::null)
+    {
+        if (rawOwner->owner != charEntity || RemoveFromCharacter(itemEntity) == entt::null)
+            return false;
+    }
+    if (!Unowned(itemEntity) || !g_registry.valid(charEntity) ||
+        !EnsureStorage(charEntity, INVENTORY) ||
+        !EnsureComponent<ecs::ItemOwner>(itemEntity) || !EnsureComponent<ecs::ItemLocation>(itemEntity) ||
+        !EnsureComponent<ecs::ItemEquipped>(itemEntity)) return false;
+    if (auto* events = g_registry.try_get<ecs::ItemEvents>(itemEntity); events && events->destroy)
+    {
+        auto timer = std::move(events->destroy);
+        event_cancel(&timer);
+    }
+    if (!Unowned(itemEntity) || !g_registry.valid(charEntity) ||
+        !g_registry.all_of<ecs::PlayerID>(charEntity) ||
+        !g_registry.all_of<ecs::ItemOwner, ecs::ItemLocation, ecs::ItemEquipped>(itemEntity) ||
+        HasInventoryReference(charEntity, itemEntity)) return false;
+    auto* inventory = g_registry.try_get<ecs::MainInventoryRuntimeComponent>(charEntity);
+    if (!inventory || target.cell >= inventory->items.size() ||
+        inventory->items[target.cell] != entt::null || inventory->itemGrid[target.cell] != 0) return false;
+    const auto* proto = ItemSystem::GetItemProto(itemEntity);
+    if (!proto) return false;
+    const bool hasWearTimer = proto->cLimitTimerBasedOnWearIndex != -1;
+    const uint32_t pid = ecs::PlayerRuntime::GetPlayerID(charEntity);
+    inventory->items[target.cell] = itemEntity;
+    inventory->itemGrid[target.cell] = target.cell + 1;
+    auto& owner = g_registry.get<ecs::ItemOwner>(itemEntity);
+    owner.owner = charEntity; owner.ownerPID = pid;
+    if (pid) owner.lastOwnerPID = pid;
+    g_registry.get<ecs::ItemLocation>(itemEntity) = {EQUIPMENT, target.cell};
+    g_registry.get<ecs::ItemEquipped>(itemEntity) = {true, bWearCell};
+    const auto stillWorn = [&] {
+        if (!At(charEntity, itemEntity, target) || !ItemSystem::IsItemEquipped(itemEntity)) return false;
+        const auto* current = g_registry.try_get<ecs::MainInventoryRuntimeComponent>(charEntity);
+        return current && current->items[target.cell] == itemEntity;
+    };
 
 #ifndef ENABLE_IMMUNE_FIX
 	uint32_t dwImmuneFlag = 0;
@@ -1212,6 +1402,7 @@ bool EquipTo(entt::entity itemEntity, entt::entity charEntity, uint8_t bWearCell
 	ecs::PlayerRuntime::SetImmuneFlag(charEntity, dwImmuneFlag);
 #endif
 
+	if (!stillWorn()) return true;
 	if (ItemSystem::IsDragonSoulItem(itemEntity))
 	{
 		DSManager::instance().ActivateDragonSoul(itemEntity);
@@ -1226,46 +1417,58 @@ bool EquipTo(entt::entity itemEntity, entt::entity charEntity, uint8_t bWearCell
 #else
 		ItemSystem::ModifyPoints(itemEntity, true);
 #endif
+		if (!stillWorn()) return true;
 		ItemSystem::StartUniqueExpireEvent(itemEntity);
-		if (-1 != ItemSystem::GetItemProto(itemEntity)->cLimitTimerBasedOnWearIndex)
+        if (!stillWorn()) return true;
+		if (hasWearTimer)
 			ItemSystem::StartTimerBasedOnWearExpireEvent(itemEntity);
 
 		// ACCESSORY_REFINE
+		if (!stillWorn()) return true;
 		ItemSystem::StartAccessorySocketExpireEvent(itemEntity);
 		// END_OF_ACCESSORY_REFINE
 	}
 
+	if (!stillWorn()) return true;
 	ecs::PlayerRuntime::BuffOnAttr_AddBuffsFromItem(charEntity, itemEntity);
 
+	if (!stillWorn()) return true;
 	ecs::PointSystem::ComputeBattlePoints(charEntity);
 
 #ifdef ENABLE_MOUNT_COSTUME_SYSTEM
+	if (!stillWorn()) return true;
 	if (ItemSystem::IsMountItem(itemEntity))
 		MountSystem::MountSummon(charEntity, itemEntity);
 #endif
+	if (!stillWorn()) return true;
 	NetworkSyncSystem::UpdatePacket(charEntity);
 #ifdef ENABLE_ITEM_ON_TITLE_RAZOR93
-	if (bWearCell == WEAR_BELT)
-		NetworkSyncSystem::UpdateItemOnTitleName(g_registry, charEntity, true);
+    if (!stillWorn()) return true;
+    if (bWearCell == WEAR_BELT)
+        NetworkSyncSystem::UpdateItemOnTitleName(g_registry, charEntity, true);
 #endif
 
 #ifdef ENABLE_COSTUME_PET
+	if (!stillWorn()) return true;
 	if ((ItemSystem::GetItemType(itemEntity) == ITEM_COSTUME) && (ItemSystem::GetItemSubType(itemEntity) == COSTUME_PET_SKIN)) {
+		if (!stillWorn()) return true;
 		MountSystem::UpdatePetSkin(charEntity);
 	}
 #endif
 #ifdef ENABLE_COSTUME_MOUNT
+    if (!stillWorn()) return true;
 	if ((ItemSystem::GetItemType(itemEntity) == ITEM_COSTUME) && (ItemSystem::GetItemSubType(itemEntity) == COSTUME_MOUNT_SKIN)) {
+		if (!stillWorn()) return true;
 		MountSystem::UpdateMountSkin(charEntity);
 	}
 #endif
 
-	EnsureItemLocation(itemEntity);
-	SyncItemOwner(itemEntity, charEntity, ecs::PlayerRuntime::GetPlayerID(charEntity));
-	g_dispatcher.trigger(ecs::EvItemEquipped { charEntity, itemEntity });
-
-	ItemSystem::SaveItem(itemEntity);
-	return (true);
+    if (!stillWorn()) return true;
+    SendStorageSlot(charEntity, target, false);
+    if (!stillWorn()) return true;
+    g_dispatcher.trigger(ecs::EvItemEquipped { charEntity, itemEntity });
+    if (stillWorn()) ItemSystem::SaveItem(itemEntity);
+    return true;
 }
 
 entt::entity RemoveFromCharacter(entt::entity item)
@@ -1365,6 +1568,316 @@ entt::entity RemoveFromCharacter(entt::entity item)
 } // namespace InventorySystem
 
 namespace ItemSystem {
+
+entt::entity GetWearItem(entt::entity owner, uint8_t slot)
+{
+    // Dragon-soul decks occupy the wear range immediately after ordinary gear,
+    // just as CHARACTER::GetWear did. They must not be reported as empty.
+    if (!g_registry.valid(owner) || slot >= WEAR_MAX_NUM + DRAGON_SOUL_DECK_MAX_NUM * DS_SLOT_MAX)
+        return entt::null;
+    const auto* inventory = g_registry.try_get<ecs::MainInventoryRuntimeComponent>(owner);
+    return inventory ? inventory->items[INVENTORY_MAX_NUM + slot] : entt::null;
+}
+
+namespace {
+std::unordered_set<entt::entity> equipmentActions;
+struct EquipmentAction {
+    entt::entity owner;
+    bool entered;
+    explicit EquipmentAction(entt::entity e) : owner(e), entered(equipmentActions.insert(e).second) {}
+    ~EquipmentAction() { if (entered) equipmentActions.erase(owner); }
+};
+bool WornBy(entt::entity owner, entt::entity item) {
+    if (!g_registry.valid(owner) || !IsValidItem(item) || GetItemOwner(item) != owner ||
+        !IsItemEquipped(item) || GetItemWindow(item) != EQUIPMENT) return false;
+    const auto cell = GetItemCell(item);
+    const auto* inventory = g_registry.try_get<ecs::MainInventoryRuntimeComponent>(owner);
+    return inventory && cell >= INVENTORY_MAX_NUM && cell < INVENTORY_MAX_NUM + WEAR_MAX_NUM + DRAGON_SOUL_DECK_MAX_NUM * DS_SLOT_MAX &&
+        inventory->items[cell] == item;
+}
+bool EquipmentType(entt::entity item) {
+    switch (GetItemType(item)) {
+    case ITEM_COSTUME: case ITEM_ARMOR: case ITEM_WEAPON: case ITEM_ROD:
+    case ITEM_PICK: case ITEM_UNIQUE: case ITEM_DS: case ITEM_SPECIAL_DS: case ITEM_RING: return true;
+    case ITEM_BELT: return GetItemValue(item, 5) == 1;
+    default: return false;
+    }
+}
+uint8_t StorageWindow(entt::entity item) {
+    if (IsDragonSoulItem(item)) return DRAGON_SOUL_INVENTORY;
+#ifdef ENABLE_EXTRA_INVENTORY
+    if (IsExtraItem(item)) return EXTRA_INVENTORY;
+#endif
+    return INVENTORY;
+}
+bool CarryDetached(entt::entity owner, entt::entity item, TItemPos preferred) {
+    if (!g_registry.valid(owner) || !InventorySystem::Detached(item)) return false;
+    if (InventorySystem::InsertInventoryItem(item, owner, preferred, false)) return true;
+    if (!g_registry.valid(owner) || !InventorySystem::Detached(item)) return false;
+    const int cell = GetEmptyInventoryPositionEcs(owner, item);
+    return cell >= 0 && InventorySystem::InsertInventoryItem(item, owner, TItemPos(StorageWindow(item), cell), false);
+}
+void RestoreDetached(entt::entity owner, entt::entity item, TItemPos position) {
+    if (!g_registry.valid(owner) || !InventorySystem::Detached(item)) return;
+    if (position.window_type == EQUIPMENT) {
+        if (position.cell >= INVENTORY_MAX_NUM && position.cell < INVENTORY_MAX_NUM + WEAR_MAX_NUM + DRAGON_SOUL_DECK_MAX_NUM * DS_SLOT_MAX &&
+            InventorySystem::EquipTo(item, owner, position.cell - INVENTORY_MAX_NUM)) return;
+        // A callback can legitimately occupy the old wear slot. Preserve its
+        // occupant and recover our detached item into its carrying inventory.
+        if (!g_registry.valid(owner) || !InventorySystem::Detached(item)) return;
+        const int cell = GetEmptyInventoryPositionEcs(owner, item);
+        if (cell >= 0 && CarryDetached(owner, item, TItemPos(StorageWindow(item), cell))) return;
+    } else if (CarryDetached(owner, item, position)) return;
+    LOG_ERROR("Equipment recovery failed: owner {} item {} window {} cell {}",
+        entt::to_integral(owner), entt::to_integral(item), position.window_type, position.cell);
+}
+bool UnequipAction(entt::entity owner, entt::entity item) {
+    if (!WornBy(owner, item) || !InventorySystem::CanUnequipNow(owner, item)) return false;
+    const uint16_t wearCell = GetItemCell(item);
+    const auto unchanged = [&] { return WornBy(owner, item) && GetItemCell(item) == wearCell; };
+#ifdef ENABLE_WEAPON_COSTUME_SYSTEM
+    if (wearCell == INVENTORY_MAX_NUM + WEAR_WEAPON) {
+        const auto costume = GetWearItem(owner, WEAR_COSTUME_WEAPON);
+        if (costume != entt::null && (!UnequipAction(owner, costume) || !unchanged())) return false;
+    }
+#endif
+    if (!unchanged()) return false;
+    const int cell = GetEmptyInventoryPositionEcs(owner, item);
+    if (cell < 0) return false;
+    const TItemPos destination(StorageWindow(item), cell);
+    if (InventorySystem::RemoveFromCharacter(item) == entt::null || !InventorySystem::Detached(item)) return false;
+    if (!CarryDetached(owner, item, destination)) {
+        RestoreDetached(owner, item, TItemPos(EQUIPMENT, wearCell));
+        return false;
+    }
+    if (!g_registry.valid(owner) || !IsValidItem(item) || GetItemOwner(item) != owner || IsItemEquipped(item)) return true;
+    const int64_t hp = ecs::PointSystem::Get(owner, POINT_HP), maxHP = ecs::PointSystem::GetMaxHP(owner);
+    if (hp > maxHP) ecs::PointSystem::Change(owner, POINT_HP, maxHP - hp);
+    if (!g_registry.valid(owner)) return true;
+    const int64_t sp = ecs::PointSystem::Get(owner, POINT_SP), maxSP = ecs::PointSystem::GetMaxSP(owner);
+    if (sp > maxSP) ecs::PointSystem::Change(owner, POINT_SP, maxSP - sp);
+    if (!g_registry.valid(owner)) return true;
+#ifdef ENABLE_BUG_FIXES
+    if (wearCell == INVENTORY_MAX_NUM + WEAR_WEAPON) {
+        if (AffectSystem::IsAffectFlag(owner, AFF_GWIGUM)) AffectSystem::RemoveAffect(owner, SKILL_GWIGEOM);
+        if (!g_registry.valid(owner)) return true;
+        if (AffectSystem::IsAffectFlag(owner, AFF_GEOMGYEONG)) AffectSystem::RemoveAffect(owner, SKILL_GEOMKYUNG);
+        if (!g_registry.valid(owner)) return true;
+    }
+#endif
+#ifdef ENABLE_ITEM_ON_TITLE_RAZOR93
+    if (wearCell == INVENTORY_MAX_NUM + WEAR_BELT) NetworkSyncSystem::UpdateItemOnTitleName(g_registry, owner);
+#endif
+    return true;
+}
+bool FitsReplacement(entt::entity owner, entt::entity outgoing, entt::entity incoming, TItemPos source) {
+    if (source.window_type != StorageWindow(incoming)) return false;
+    if (!InventorySystem::IsEmptyItemGrid(owner, source, GetItemSize(incoming), source.cell)) return false;
+    return InventorySystem::VisitStorage(owner, source, [&](const auto& storage, int columns) {
+        for (int row = 0; row < GetItemSize(incoming); ++row) {
+            const size_t cell = source.cell + row * columns;
+            if (cell >= storage.items.size()) return false;
+            if (storage.items[cell] != entt::null && storage.items[cell] != outgoing) return false;
+        }
+        return true;
+    });
+}
+void FinishEquip(entt::entity owner, entt::entity item);
+} // namespace
+
+bool UnequipItemEcs(entt::entity owner, entt::entity item) {
+    if (!g_registry.valid(owner) || !IsValidItem(item)) return false;
+    const EquipmentAction action(owner);
+    return action.entered && UnequipAction(owner, item);
+}
+
+bool EquipItemEcs(entt::entity owner, entt::entity item, int candidateCell) {
+    if (!g_registry.valid(owner) || !g_registry.all_of<ecs::PlayerID>(owner) || !IsValidItem(item) ||
+        IsItemExchanging(item) || IsItemLocked(item) || IsItemEquipped(item) || !EquipmentType(item)) return false;
+    const auto rawOwner = [&] {
+        const auto* ownership = g_registry.try_get<ecs::ItemOwner>(item);
+        return ownership ? ownership->owner : entt::entity(entt::null);
+    }();
+    if (rawOwner != entt::null && rawOwner != owner) return false;
+    const EquipmentAction action(owner);
+    if (!action.entered || !InventorySystem::CanEquipNow(owner, item)) return false;
+    const int wear = FindEquipCell(owner, item, candidateCell);
+    if (wear < 0 || wear >= WEAR_MAX_NUM + DRAGON_SOUL_DECK_MAX_NUM * DS_SLOT_MAX ||
+        (candidateCell >= 0 && candidateCell != wear)) return false;
+    const uint32_t vnum = GetItemVnum(item);
+    if (wear == WEAR_BODY && MountSystem::IsRiding(owner) && vnum >= 11901 && vnum <= 11904) {
+#ifdef TEXTS_IMPROVEMENT
+        ecs::ChatSystem::SendNew(owner, CHAT_TYPE_INFO, 693, "");
+#endif
+        return false;
+    }
+    if (wear != WEAR_ARROW && AffectSystem::IsPolymorphed(owner)) {
+#ifdef TEXTS_IMPROVEMENT
+        ecs::ChatSystem::SendNew(owner, CHAT_TYPE_INFO, 315, "");
+#endif
+        return false;
+    }
+    if (!InventorySystem::IsEquipmentSexAllowed(owner, item)) {
+#ifdef TEXTS_IMPROVEMENT
+        ecs::ChatSystem::SendNew(owner, CHAT_TYPE_INFO, 496, "");
+#endif
+        return false;
+    }
+    const TItemPos original(GetItemWindow(item), GetItemCell(item));
+    const bool carried = rawOwner == owner;
+    if (carried && (!InventorySystem::At(owner, item, original) ||
+        !InventorySystem::VisitStorage(owner, original, [&](const auto& inventory, int) {
+            return original.cell < inventory.items.size() && inventory.items[original.cell] == item;
+        }) ||
+        (original.window_type != INVENTORY && original.window_type != DRAGON_SOUL_INVENTORY
+#ifdef ENABLE_EXTRA_INVENTORY
+         && original.window_type != EXTRA_INVENTORY
+#endif
+        ))) return false;
+    const auto sourceUnchanged = [&] {
+        if (!g_registry.valid(owner) || !IsValidItem(item) || IsItemEquipped(item) ||
+            IsItemExchanging(item) || IsItemLocked(item)) return false;
+        return carried ? InventorySystem::At(owner, item, original) &&
+            InventorySystem::VisitStorage(owner, original, [&](const auto& inventory, int) {
+                return original.cell < inventory.items.size() && inventory.items[original.cell] == item;
+            }) : InventorySystem::Unowned(item);
+    };
+    if (IsRideItem(item) && MountSystem::IsRiding(owner) && MountSystem::GetMountVnum(owner) &&
+        GetWearItem(owner, WEAR_COSTUME_MOUNT) == entt::null)
+        MountSystem::ForceClearRidingState(owner);
+    if (!sourceUnchanged()) return false;
+    if (IsRideItem(item) && MountSystem::IsRiding(owner)) {
+#ifdef TEXTS_IMPROVEMENT
+        ecs::ChatSystem::SendNew(owner, CHAT_TYPE_INFO, 532, "");
+#endif
+        return false;
+    }
+#ifdef ENABLE_WEAPON_COSTUME_SYSTEM
+    if (wear == WEAR_WEAPON) {
+        const auto costume = GetWearItem(owner, WEAR_COSTUME_WEAPON);
+        if (costume != entt::null && !IsValidItem(costume)) return false;
+        if (costume != entt::null && (GetItemType(item) != ITEM_WEAPON || GetItemValue(costume, 3) != GetItemSubType(item))) {
+            if (!UnequipAction(owner, costume) || !sourceUnchanged()) return false;
+        }
+    } else if (wear == WEAR_COSTUME_WEAPON) {
+        const auto weapon = GetWearItem(owner, WEAR_WEAPON);
+        if (!IsValidItem(weapon) || GetItemType(weapon) != ITEM_WEAPON || GetItemValue(item, 3) != GetItemSubType(weapon)) {
+#ifdef TEXTS_IMPROVEMENT
+            ecs::ChatSystem::SendNew(owner, CHAT_TYPE_INFO, 694, "");
+#endif
+            return false;
+        }
+    }
+#endif
+    if (!sourceUnchanged()) return false;
+    const auto displaced = GetWearItem(owner, wear);
+    if (displaced != entt::null) {
+        if (!InventorySystem::CanHandleItems(owner)) return false;
+        if (!IsValidItem(displaced) || IsDragonSoulItem(item) || !WornBy(owner, displaced) ||
+            !InventorySystem::CanUnequipNow(owner, displaced, false) || GetItemWearFlag(item) == WEARABLE_ABILITY)
+            return false;
+        if (!carried || !FitsReplacement(owner, item, displaced, original)) return false;
+        // Both identities and the full-width source cell are retained across
+        // effect/save callbacks. Rollback only touches still-detached originals.
+        if (InventorySystem::RemoveFromCharacter(item) == entt::null || !InventorySystem::Detached(item)) return false;
+        if (!WornBy(owner, displaced) || GetItemCell(displaced) != INVENTORY_MAX_NUM + wear ||
+            !InventorySystem::CanUnequipNow(owner, displaced, false) ||
+            InventorySystem::RemoveFromCharacter(displaced) == entt::null || !InventorySystem::Detached(displaced)) {
+            RestoreDetached(owner, item, original); return false;
+        }
+        if (!InventorySystem::EquipTo(item, owner, wear) || !WornBy(owner, item) || GetItemCell(item) != INVENTORY_MAX_NUM + wear) {
+            RestoreDetached(owner, displaced, TItemPos(EQUIPMENT, INVENTORY_MAX_NUM + wear));
+            RestoreDetached(owner, item, original); return false;
+        }
+        if (!CarryDetached(owner, displaced, original)) {
+            // A callback may have occupied the planned return cell. Undo only
+            // this operation's still-worn replacement, never another item that
+            // a callback moved into the equipment slot or to another owner.
+            if (WornBy(owner, item) && GetItemCell(item) == INVENTORY_MAX_NUM + wear)
+                InventorySystem::RemoveFromCharacter(item);
+            RestoreDetached(owner, displaced, TItemPos(EQUIPMENT, INVENTORY_MAX_NUM + wear));
+            RestoreDetached(owner, item, original);
+            return false;
+        }
+    } else {
+        if (!InventorySystem::EquipTo(item, owner, wear)) { RestoreDetached(owner, item, original); return false; }
+        if (!WornBy(owner, item) || GetItemCell(item) != INVENTORY_MAX_NUM + wear) return true;
+    }
+    if (carried && original.window_type == INVENTORY)
+        InventorySystem::SyncQuickslot(owner, QUICKSLOT_TYPE_ITEM, original.cell, wear);
+    if (WornBy(owner, item)) FinishEquip(owner, item);
+    return true;
+}
+
+namespace {
+void FinishEquip(entt::entity owner, entt::entity item) {
+    if (!WornBy(owner, item)) return;
+    const uint16_t wearCell = GetItemCell(item);
+    const auto unchanged = [&] { return WornBy(owner, item) && GetItemCell(item) == wearCell; };
+    const auto* proto = GetItemProto(item);
+    if (!proto) return;
+    const int firstUse = proto->cLimitRealTimeFirstUseIndex;
+    if (firstUse >= 0 && firstUse < ITEM_LIMIT_MAX_NUM) {
+        const int64_t configuredDuration = proto->aLimits[firstUse].lValue;
+        if (GetItemSocket(item, 1) == 0) {
+            int64_t duration = GetItemSocket(item, 0);
+            if (duration == 0) duration = configuredDuration;
+            if (duration <= 0) duration = 60 * 60 * 24 * 7;
+            const int64_t expires = std::clamp<int64_t>(int64_t(time(nullptr)) + duration, 0, UINT32_MAX);
+            if (!SetItemSocket(item, 0, static_cast<uint32_t>(expires)) || !unchanged()) return;
+            StartRealTimeExpireEventEcs(item);
+            if (!unchanged()) return;
+        }
+        const uint32_t used = GetItemSocket(item, 1);
+        if (!SetItemSocket(item, 1, used == UINT32_MAX ? used : used + 1) || !unchanged()) return;
+    }
+    const uint32_t vnum = GetItemVnum(item);
+    const auto type = GetItemType(item), subtype = GetItemSubType(item);
+    int effect = -1;
+    if (CItemVnumHelper::IsRamadanMoonRing(vnum)) effect = SE_EQUIP_RAMADAN_RING;
+    else if (CItemVnumHelper::IsHalloweenCandy(vnum)) effect = SE_EQUIP_HALLOWEEN_CANDY;
+    else if (CItemVnumHelper::IsHappinessRing(vnum)) effect = SE_EQUIP_HAPPINESS_RING;
+    else if (CItemVnumHelper::IsLovePendant(vnum)) effect = SE_EQUIP_LOVE_PENDANT;
+    else if (type == ITEM_UNIQUE && GetItemSIGVnum(item)) {
+        if (const auto* group = ITEM_MANAGER::instance().GetSpecialItemGroup(GetItemSIGVnum(item)))
+            if (const auto* attributes = ITEM_MANAGER::instance().GetSpecialAttrGroup(group->GetAttrVnum(vnum))) {
+                const std::string filename = attributes->m_stEffectFileName;
+                NetworkSyncSystem::BroadcastSpecificEffect(g_registry, owner, filename.c_str());
+            }
+    }
+#ifdef ENABLE_ACCE_SYSTEM
+    else if (type == ITEM_COSTUME && subtype == COSTUME_ACCE) effect = SE_EFFECT_ACCE_EQUIP;
+#endif
+#ifdef ENABLE_STOLE_COSTUME
+    else if (type == ITEM_COSTUME && subtype == COSTUME_STOLE) effect = SE_EFFECT_ACCE_EQUIP;
+#endif
+#ifdef ENABLE_TALISMAN_EFFECT
+    else if (vnum >= 9600 && vnum <= 9800) effect = SE_EFFECT_TALISMAN_EQUIP_FIRE;
+    else if (vnum >= 9830 && vnum <= 10030) effect = SE_EFFECT_TALISMAN_EQUIP_ICE;
+    else if (vnum >= 10520 && vnum <= 10720) effect = SE_EFFECT_TALISMAN_EQUIP_WIND;
+    else if (vnum >= 10060 && vnum <= 10260) effect = SE_EFFECT_TALISMAN_EQUIP_EARTH;
+    else if (vnum >= 10290 && vnum <= 10490) effect = SE_EFFECT_TALISMAN_EQUIP_DARK;
+    else if (vnum >= 10750 && vnum <= 10950) effect = SE_EFFECT_TALISMAN_EQUIP_ELEC;
+#endif
+    if (!unchanged()) return;
+    if (effect >= 0) NetworkSyncSystem::BroadcastEffect(g_registry, owner, static_cast<uint8_t>(effect));
+    if (!unchanged()) return;
+    const bool questUse = type == ITEM_UNIQUE &&
+        (subtype == UNIQUE_SPECIAL_RIDE || subtype == UNIQUE_SPECIAL_MOUNT_RIDE) &&
+        (GetItemFlags(item) & ITEM_FLAG_QUEST_USE);
+    if (questUse
+#ifdef ENABLE_MOUNT_COSTUME_SYSTEM
+        || (type == ITEM_COSTUME && subtype == COSTUME_MOUNT)
+#endif
+    ) quest::CQuestManager::instance().UseItem(ecs::PlayerRuntime::GetPlayerID(owner), item, false);
+#ifdef ENABLE_MOUNT_COSTUME_SYSTEM
+    if (!unchanged()) return;
+    if (type == ITEM_COSTUME && subtype == COSTUME_MOUNT)
+        if (const auto* refs = g_registry.try_get<ecs::MountRuntimeRefs>(owner); refs && refs->mountSystem)
+            refs->mountSystem->Mount(GetItemValue(item, 1), item);
+#endif
+}
+} // namespace
 
 static int FindEmptyMainInventoryPosition(entt::entity owner, uint8_t itemSize)
 {

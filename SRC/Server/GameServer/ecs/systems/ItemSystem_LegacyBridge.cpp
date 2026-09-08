@@ -434,23 +434,7 @@ static bool FN_check_item_socket(LPITEM item)
 
 // item socket º¹»ç -- by mhh
 
-static bool FN_check_item_sex(LegacyCharHandle ch, LPITEM item)
-{
 
-    if (IS_SET(item->GetAntiFlag(), ITEM_ANTIFLAG_MALE))
-    {
-        if (SEX_MALE == GET_SEX(ch))
-            return false;
-    }
-
-    if (IS_SET(item->GetAntiFlag(), ITEM_ANTIFLAG_FEMALE))
-    {
-        if (SEX_FEMALE == GET_SEX(ch))
-            return false;
-    }
-
-    return true;
-}
 
 } // namespace
 
@@ -1658,340 +1642,6 @@ void SetWear(entt::entity e, uint8_t bCell, entt::entity item)
 }
 
 } // namespace ecs::PlayerRuntime
-// Entity overload. The pointer one keeps its thirteen callers; this is what
-// the converted locals in this file reach.
-bool CHARACTER::UnequipItem(entt::entity item)
-{
-	return UnequipItem(LegacyItemBoundary(item));
-}
-
-bool CHARACTER::UnequipItem(LPITEM item)
-{
-#ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(GetEntityHandle(), CHAT_TYPE_INFO, "char_item.cpp:: CHARACTER::UnequipItem ");//INGAME_DEBUG_RAZOR93
-#endif
-#ifdef ENABLE_WEAPON_COSTUME_SYSTEM
-	int iWearCell = ItemSystem::FindEquipCell(GetEntityHandle(), item->GetEntityHandle());
-	if (iWearCell == WEAR_WEAPON)
-	{
-		const entt::entity costumeWeapon = ItemSystem::GetWearItem(GetEntityHandle(), WEAR_COSTUME_WEAPON);
-		if (costumeWeapon != entt::null && !UnequipItem(costumeWeapon))
-		{
-#ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 366, "");
-#endif
-			return false;
-		}
-	}
-#elif defined(ENABLE_BUG_FIXES)
-	int iWearCell = ItemSystem::FindEquipCell(GetEntityHandle(), item->GetEntityHandle());
-#endif
-
-	if (false == CanUnequipNow(item))
-		return false;
-	
-	int pos;
-	if (item->IsDragonSoul())
-		pos = GetEmptyDragonSoulInventory(item);
-	else
-		pos = GetEmptyInventory(item->GetSize());
-
-	// HARD CODING
-	/*if (item->GetVnum() == UNIQUE_ITEM_HIDE_ALIGNMENT_TITLE)
-		ShowAlignment(true);*/
-
-	InventorySystem::RemoveFromCharacter(item->GetEntityHandle());
-	if (item->IsDragonSoul())
-#ifdef __HIGHLIGHT_SYSTEM__
-		InventorySystem::AddToCharacter(item->GetEntityHandle(), GetEntityHandle(), TItemPos(DRAGON_SOUL_INVENTORY, pos), false);
-#else
-		InventorySystem::AddToCharacter(item->GetEntityHandle(), GetEntityHandle(), TItemPos(DRAGON_SOUL_INVENTORY, pos));
-#endif
-	else
-#ifdef __HIGHLIGHT_SYSTEM__
-		InventorySystem::AddToCharacter(item->GetEntityHandle(), GetEntityHandle(), TItemPos(INVENTORY, pos), false);
-#else
-		InventorySystem::AddToCharacter(item->GetEntityHandle(), GetEntityHandle(), TItemPos(INVENTORY, pos));
-#endif
-
-	CheckMaximumPoints();
-#ifdef ENABLE_BUG_FIXES
-	if (iWearCell == WEAR_WEAPON) {
-		if (IsAffectFlag(AFF_GWIGUM)) {
-			RemoveAffect(SKILL_GWIGEOM);
-		}
-
-		if (IsAffectFlag(AFF_GEOMGYEONG)) {
-			RemoveAffect(SKILL_GEOMKYUNG);
-		}
-	}
-#endif
-#ifdef ENABLE_ITEM_ON_TITLE_RAZOR93
-	if (iWearCell == WEAR_BELT) {
-
-		NetworkSyncSystem::UpdateItemOnTitleName(g_registry, GetEntityHandle());
-	}
-#endif
-	return true;
-}
-
-
-bool CHARACTER::EquipItem(LPITEM item, int iCandidateCell)
-{
-	const entt::entity itemEntity = item ? item->GetEntityHandle() : entt::null;
-#ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(GetEntityHandle(), CHAT_TYPE_INFO, "char_item.cpp:: CHARACTER::UnequipItem ");// 1993
-#endif
-	if (item->IsExchanging())
-
-		return false;
-
-	if (false == item->IsEquipable())
-		return false;
-
-	if (false == CanEquipNow(item))
-		return false;
-
-	int iWearCell = ItemSystem::FindEquipCell(GetEntityHandle(), item->GetEntityHandle(), iCandidateCell);
-
-	if (iWearCell < 0)
-		return false;
-
-	// 1�3?�!�� Ao ��A�?!1� A�1A�� AԱ� ����
-	if (iWearCell == WEAR_BODY && IsRiding() && (item->GetVnum() >= 11901 && item->GetVnum() <= 11904))
-	{
-#ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 693, "");
-#endif
-		return false;
-	}
-
-	if (iWearCell != WEAR_ARROW && AffectSystem::IsPolymorphed(GetEntityHandle())) {
-#ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 315, "");
-#endif
-		return false;
-	}
-
-	if (FN_check_item_sex(this, item) == false)
-	{
-#ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 496, "");
-#endif
-		return false;
-	}
-
-	//1A�� A��� ��?�1A ���� �� ��?�?�o� A1A�
-	if (item->IsRideItem() && IsRiding() && GetMountVnum() != 0 && !GetWear(WEAR_COSTUME_MOUNT))
-		MountSystem::ForceClearRidingState(GetEntityHandle());
-
-	if (item->IsRideItem() && IsRiding())
-	{
-#ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 532, "");
-#endif
-		return false;
-	}
-
-#ifdef ENABLE_WEAPON_COSTUME_SYSTEM
-	if (iWearCell == WEAR_WEAPON)
-	{
-		if (item->GetType() == ITEM_WEAPON)
-		{
-			const entt::entity costumeWeapon = ItemSystem::GetWearItem(GetEntityHandle(), WEAR_COSTUME_WEAPON);
-			if (costumeWeapon != entt::null && ItemSystem::GetItemValue(costumeWeapon, 3) != item->GetSubType() && !UnequipItem(costumeWeapon))
-			{
-#ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 366, "");
-#endif
-				return false;
-			}
-		}
-		else //fishrod/pickaxe
-		{
-			const entt::entity costumeWeapon = ItemSystem::GetWearItem(GetEntityHandle(), WEAR_COSTUME_WEAPON);
-			if (costumeWeapon != entt::null && !UnequipItem(costumeWeapon))
-			{
-#ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 366, "");
-#endif
-				return false;
-			}
-		}
-	}
-	else if (iWearCell == WEAR_COSTUME_WEAPON)
-	{
-		if (item->GetType() == ITEM_COSTUME && item->GetSubType() == COSTUME_WEAPON)
-		{
-			const entt::entity pkWeapon = ItemSystem::GetWearItem(GetEntityHandle(), WEAR_WEAPON);
-			if (pkWeapon == entt::null || ItemSystem::GetItemType(pkWeapon) != ITEM_WEAPON || item->GetValue(3) != ItemSystem::GetItemSubType(pkWeapon))
-			{
-#ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 694, "");
-#endif
-				return false;
-			}
-		}
-	}
-#endif
-
-	// ?�EY1� A�1� A3��
-	if (item->IsDragonSoul())
-	{
-		// ��Ao A�A�A� ?�EY1�AI AI1I ��3�! AִU�� �o?��O 1� 3o�U.
-		// ?�EY1�Ao swapA� ��?o�I�� 3E�E.
-		if (GetInventoryItem(INVENTORY_MAX_NUM + iWearCell))
-		{
-#ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 796, "");
-#endif
-			return false;
-		}
-
-		if (!InventorySystem::EquipTo(item->GetEntityHandle(), this->GetEntityHandle(), iWearCell))
-		{
-			return false;
-		}
-	}
-	// ?�EY1�AI 3A��.
-	else
-	{
-		// �o?��O ��?! 3AAIAUAI AִU��,
-		if (GetWear(iWearCell) && !IS_SET(GetWear(iWearCell)->GetFlag(), ITEM_FLAG_IRREMOVABLE))
-		{
-			// AI 3AAIAUAo �N1o 1�E��� o��a oO�!. swap ?a1A ?IA� oO�!
-			if (item->GetWearFlag() == WEARABLE_ABILITY)
-				return false;
-
-			if (false == SwapItem(ItemSystem::GetItemCell(itemEntity), INVENTORY_MAX_NUM + iWearCell))
-			{
-				return false;
-			}
-		}
-		else
-		{
-			uint8_t bOldCell = ItemSystem::GetItemCell(itemEntity);
-
-			if (InventorySystem::EquipTo(item->GetEntityHandle(), this->GetEntityHandle(), iWearCell))
-			{
-				SyncQuickslot(QUICKSLOT_TYPE_ITEM, bOldCell, iWearCell);
-			}
-		}
-	}
-
-	if (true == ItemSystem::IsItemEquipped(itemEntity))
-	{
-		// 3AAIAU A�AE ��?� AIE�o�Aʹ� ��?��I�� 3E3A�� 1A�LAI �����Ǵ� 1a1� A3��.
-		if (-1 != item->GetProto()->cLimitRealTimeFirstUseIndex)
-		{
-			// �N 1oAI�� ��?��N 3AAIAUA��� ?�oδ� Socket1A� o��� AǴ��N�U. (Socket1?! ��?�E11� ��I)
-			if (0 == item->GetSocket(1))
-			{
-				// ��?�!��1A�LAo Default �aA��� Limit Value �aA� ��?��I��, Socket0?! �aAI A�A��� �� �aA� ��?��I���I �N�U. (��A��� AE)
-				int32_t duration = (0 != item->GetSocket(0)) ? item->GetSocket(0) : item->GetProto()->aLimits[(unsigned char)(item->GetProto()->cLimitRealTimeFirstUseIndex)].lValue;
-
-				if (0 == duration)
-					duration = 60 * 60 * 24 * 7;
-
-				item->SetSocket(0, time(nullptr) + duration);
-				ItemSystem::StartRealTimeExpireEventEcs(itemEntity);
-			}
-
-			item->SetSocket(1, item->GetSocket(1) + 1);
-		}
-
-		/*if (item->GetVnum() == UNIQUE_ITEM_HIDE_ALIGNMENT_TITLE)
-			ShowAlignment(false);*/
-
-		const uint32_t& dwVnum = item->GetVnum();
-
-		// �󸶴� AIoYA� AE1´?A� 1���(71135) �o?�1A AIAaA� 1ߵ?
-		if (true == CItemVnumHelper::IsRamadanMoonRing(dwVnum))
-		{
-			NetworkSyncSystem::BroadcastEffect(g_registry, this->GetEntityHandle(), SE_EQUIP_RAMADAN_RING);
-		}
-		// �O��A� ��A�(71136) �o?�1A AIAaA� 1ߵ?
-		else if (true == CItemVnumHelper::IsHalloweenCandy(dwVnum))
-		{
-			NetworkSyncSystem::BroadcastEffect(g_registry, this->GetEntityHandle(), SE_EQUIP_HALLOWEEN_CANDY);
-		}
-		// �ao1A� 1���(71143) �o?�1A AIAaA� 1ߵ?
-		else if (true == CItemVnumHelper::IsHappinessRing(dwVnum))
-		{
-			NetworkSyncSystem::BroadcastEffect(g_registry, this->GetEntityHandle(), SE_EQUIP_HAPPINESS_RING);
-		}
-		// ��uA� AO�oA�(71145) �o?�1A AIAaA� 1ߵ?
-		else if (true == CItemVnumHelper::IsLovePendant(dwVnum))
-		{
-			NetworkSyncSystem::BroadcastEffect(g_registry, this->GetEntityHandle(), SE_EQUIP_LOVE_PENDANT);
-		}
-		// ITEM_UNIQUEA� �a?i, SpecialItemGroup?! ��Aǵ�3� Aְ�, (item->GetSIGVnum() != NULL)
-		//
-		else if (ITEM_UNIQUE == item->GetType() && 0 != item->GetSIGVnum())
-		{
-			const CSpecialItemGroup* pGroup = ITEM_MANAGER::instance().GetSpecialItemGroup(item->GetSIGVnum());
-			if (nullptr != pGroup)
-			{
-				const CSpecialAttrGroup* pAttrGroup = ITEM_MANAGER::instance().GetSpecialAttrGroup(pGroup->GetAttrVnum(item->GetVnum()));
-				if (nullptr != pAttrGroup)
-				{
-					const std::string& std = pAttrGroup->m_stEffectFileName;
-					NetworkSyncSystem::BroadcastSpecificEffect(g_registry, GetEntityHandle(), std.c_str());
-				}
-			}
-		}
-#ifdef ENABLE_ACCE_SYSTEM
-		else if ((item->GetType() == ITEM_COSTUME) && (item->GetSubType() == COSTUME_ACCE))
-			NetworkSyncSystem::BroadcastEffect(g_registry, this->GetEntityHandle(), SE_EFFECT_ACCE_EQUIP);
-#endif
-#ifdef ENABLE_STOLE_COSTUME
-		else if ((item->GetType() == ITEM_COSTUME) && (item->GetSubType() == COSTUME_STOLE))
-			NetworkSyncSystem::BroadcastEffect(g_registry, this->GetEntityHandle(), SE_EFFECT_ACCE_EQUIP);
-#endif
-#ifdef ENABLE_TALISMAN_EFFECT
-		else if (/*(item->GetType() == ITEM_ARMOR) && (item->GetWearFlag() ==WEARABLE_PENDANT) && */(item->GetVnum() >= 9600 && item->GetVnum() <= 9800))
-			NetworkSyncSystem::BroadcastEffect(g_registry, this->GetEntityHandle(), SE_EFFECT_TALISMAN_EQUIP_FIRE);
-		else if (/*(item->GetType() == ITEM_ARMOR) && (item->GetWearFlag() ==WEARABLE_PENDANT) && */(item->GetVnum() >= 9830 && item->GetVnum() <= 10030))
-			NetworkSyncSystem::BroadcastEffect(g_registry, this->GetEntityHandle(), SE_EFFECT_TALISMAN_EQUIP_ICE);
-		else if (/*(item->GetType() == ITEM_ARMOR) && (item->GetWearFlag() ==WEARABLE_PENDANT) && */(item->GetVnum() >= 10520 && item->GetVnum() <= 10720))
-			NetworkSyncSystem::BroadcastEffect(g_registry, this->GetEntityHandle(), SE_EFFECT_TALISMAN_EQUIP_WIND);
-		else if (/*(item->GetType() == ITEM_ARMOR) && (item->GetWearFlag() ==WEARABLE_PENDANT) && */(item->GetVnum() >= 10060 && item->GetVnum() <= 10260))
-			NetworkSyncSystem::BroadcastEffect(g_registry, this->GetEntityHandle(), SE_EFFECT_TALISMAN_EQUIP_EARTH);
-		else if (/*(item->GetType() == ITEM_ARMOR) && (item->GetWearFlag() ==WEARABLE_PENDANT) && */(item->GetVnum() >= 10290 && item->GetVnum() <= 10490))
-			NetworkSyncSystem::BroadcastEffect(g_registry, this->GetEntityHandle(), SE_EFFECT_TALISMAN_EQUIP_DARK);
-		else if (/*(item->GetType() == ITEM_ARMOR) && (item->GetWearFlag() ==WEARABLE_PENDANT) && */(item->GetVnum() >= 10750 && item->GetVnum() <= 10950))
-			NetworkSyncSystem::BroadcastEffect(g_registry, this->GetEntityHandle(), SE_EFFECT_TALISMAN_EQUIP_ELEC);
-#endif
-
-		if (
-			(ITEM_UNIQUE == item->GetType() && UNIQUE_SPECIAL_RIDE == item->GetSubType() && IS_SET(item->GetFlag(), ITEM_FLAG_QUEST_USE))
-			|| (ITEM_UNIQUE == item->GetType() && UNIQUE_SPECIAL_MOUNT_RIDE == item->GetSubType() && IS_SET(item->GetFlag(), ITEM_FLAG_QUEST_USE))
-#ifdef ENABLE_MOUNT_COSTUME_SYSTEM
-			|| (ITEM_COSTUME == item->GetType() && COSTUME_MOUNT == item->GetSubType())
-#endif
-			)
-		{
-			quest::CQuestManager::instance().UseItem(GetPlayerID(), itemEntity, false);
-		}
-
-	}
-#ifdef ENABLE_MOUNT_COSTUME_SYSTEM
-	// Automatikus mount aktivalas, ha felszereltek a mountot
-	if (item->GetType() == ITEM_COSTUME && item->GetSubType() == COSTUME_MOUNT)
-	{
-		CMountSystem* mountSystem = GetMountSystem();
-		if (mountSystem)
-		{
-			uint32_t mountVnum = item->GetValue(1);
-			mountSystem->Mount(mountVnum, itemEntity);
-		}
-	}
-#endif
-
-	return true;
-}
-
-
 bool CHARACTER::IsEquipUniqueItem(uint32_t dwItemVnum) const
 {
 	{
@@ -2065,7 +1715,7 @@ bool CHARACTER::UnEquipSpecialRideUniqueItem()
 	{
 		if (UNIQUE_GROUP_SPECIAL_RIDE == ItemSystem::GetItemSpecialGroup(Unique1))
 		{
-			return UnequipItem(Unique1);
+			return ItemSystem::UnequipItemEcs(GetEntityHandle(), Unique1);
 		}
 	}
 
@@ -2073,7 +1723,7 @@ bool CHARACTER::UnEquipSpecialRideUniqueItem()
 	{
 		if (UNIQUE_GROUP_SPECIAL_RIDE == ItemSystem::GetItemSpecialGroup(Unique2))
 		{
-			return UnequipItem(Unique2);
+			return ItemSystem::UnequipItemEcs(GetEntityHandle(), Unique2);
 		}
 	}
 
@@ -2081,217 +1731,18 @@ bool CHARACTER::UnEquipSpecialRideUniqueItem()
 	{
 		if (UNIQUE_GROUP_SPECIAL_RIDE == ItemSystem::GetItemSpecialGroup(Unique3))
 		{
-			return UnequipItem(Unique3);
+			return ItemSystem::UnequipItemEcs(GetEntityHandle(), Unique3);
 		}
 	}
 
 	/*#ifdef ENABLE_MOUNT_COSTUME_SYSTEM
 		if (MountCostume != entt::null)
-			return UnequipItem(MountCostume);
+			return ItemSystem::UnequipItemEcs(GetEntityHandle(), MountCostume);
 	#endif*/
 
 	return true;
 }
 
-
-bool CHARACTER::CanEquipNow(const LPITEM item, const TItemPos & srcCell, const TItemPos & destCell) /*const*/
-{
-	const entt::entity itemEntity = item ? item->GetEntityHandle() : entt::null;
-	const TItemTable* itemTable = item->GetProto();
-	//uint8_t itemType = item->GetType();
-	//uint8_t itemSubType = item->GetSubType();
-
-#ifdef ENABLE_PVP_ADVANCED
-	if ((GetDuel("BlockChangeItem")))
-	{
-#ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 516, "");
-#endif
-		return false;
-	}
-#endif
-
-	switch (GetJob())
-	{
-	case JOB_WARRIOR:
-		if (item->GetAntiFlag() & ITEM_ANTIFLAG_WARRIOR)
-			return false;
-		break;
-
-	case JOB_ASSASSIN:
-		if (item->GetAntiFlag() & ITEM_ANTIFLAG_ASSASSIN)
-			return false;
-		break;
-
-	case JOB_SHAMAN:
-		if (item->GetAntiFlag() & ITEM_ANTIFLAG_SHAMAN)
-			return false;
-		break;
-
-	case JOB_SURA:
-		if (item->GetAntiFlag() & ITEM_ANTIFLAG_SURA)
-			return false;
-		break;
-	}
-
-	for (int i = 0; i < ITEM_LIMIT_MAX_NUM; ++i)
-	{
-		int32_t limit = itemTable->aLimits[i].lValue;
-		switch (itemTable->aLimits[i].bType)
-		{
-		case LIMIT_LEVEL:
-			if (GetLevel() < limit) {
-#ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 325, "%d", limit);
-#endif
-				return false;
-			}
-			break;
-		case LIMIT_STR:
-			if (GetPoint(POINT_ST) < limit) {
-#ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 269, "%d", limit);
-#endif
-				return false;
-			}
-			break;
-		case LIMIT_INT:
-			if (GetPoint(POINT_IQ) < limit) {
-#ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 468, "%d", limit);
-#endif
-				return false;
-			}
-			break;
-		case LIMIT_DEX:
-			if (GetPoint(POINT_DX) < limit) {
-#ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 352, "%d", limit);
-#endif
-				return false;
-			}
-			break;
-
-		case LIMIT_CON:
-			if (GetPoint(POINT_HT) < limit) {
-#ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 481, "%d", limit);
-#endif
-				return false;
-			}
-			break;
-		}
-	}
-
-	if (item->GetWearFlag() & WEARABLE_UNIQUE)
-	{
-		const bool bAllowDualUnique =
-			item->GetSubType() == 4 ||
-			item->GetSubType() == 5;
-
-		if (!bAllowDualUnique &&
-			(ItemSystem::IsSameSpecialGroup(
-					ItemSystem::GetWearItem(GetEntityHandle(), WEAR_UNIQUE1), itemEntity) ||
-				ItemSystem::IsSameSpecialGroup(
-					ItemSystem::GetWearItem(GetEntityHandle(), WEAR_UNIQUE2), itemEntity) ||
-				ItemSystem::IsSameSpecialGroup(
-					ItemSystem::GetWearItem(GetEntityHandle(), WEAR_COSTUME_MOUNT), itemEntity)))
-		{
-#ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 695, "");
-#endif
-			return false;
-		}
-
-		if (marriage::CManager::instance().IsMarriageUniqueItem(item->GetVnum()) &&
-			!marriage::CManager::instance().IsMarried(GetPlayerID()))
-		{
-#ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 696, "");
-#endif
-			return false;
-		}
-	}
-
-#ifdef ENABLE_BUG_FIXES
-	if (item->GetType() == ITEM_COSTUME && item->GetSubType() == COSTUME_BODY)
-	{
-		const entt::entity atakanxd = ItemSystem::GetWearItem(GetEntityHandle(), WEAR_BODY);
-		if (atakanxd != entt::null && (ItemSystem::GetItemVnum(atakanxd) >= 11901 && ItemSystem::GetItemVnum(atakanxd) <= 11914))
-		{
-#ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 1129, "");
-#endif
-			return false;
-		}
-	}
-
-	if (item->GetVnum() >= 11901 && item->GetVnum() <= 11914)
-	{
-		const entt::entity atakan = ItemSystem::GetWearItem(GetEntityHandle(), WEAR_COSTUME_BODY);
-		if (atakan != entt::null && (ItemSystem::GetItemType(atakan) == ITEM_COSTUME && ItemSystem::GetItemSubType(atakan) == COSTUME_BODY))
-		{
-#ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 1129, "");
-#endif
-			return false;
-		}
-	}
-#endif
-
-#ifdef ENABLE_DS_SET
-	if ((DragonSoulSystem::IsDeckActivated(GetEntityHandle())) && (item->IsDragonSoul())) {
-#ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 76, "");
-#endif
-		return false;
-	}
-#endif
-
-	return true;
-}
-
-
-bool CHARACTER::CanUnequipNow(const LPITEM item, const TItemPos & srcCell, const TItemPos & destCell) {
-	if (ITEM_BELT == item->GetType() && CBeltInventoryHelper::IsExistItemInBeltInventory(this)) {
-#ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 366, "");
-#endif
-		return false;
-	}
-
-	// ?�?oE� �O���O 1� 3o�� 3AAIAU
-	if (IS_SET(item->GetFlag(), ITEM_FLAG_IRREMOVABLE))
-		return false;
-
-	// 3AAIAU unequip1A A�oYA丮�� ?A�a �� o� Aڸ��! Aִ� �� E�A�
-	{
-		int pos = -1;
-
-		if (item->IsDragonSoul())
-			pos = GetEmptyDragonSoulInventory(item);
-		else
-			pos = GetEmptyInventory(item->GetSize());
-
-		if (pos == -1) {
-#ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 366, "");
-#endif
-			return false;
-		}
-	}
-
-#ifdef ENABLE_DS_SET
-	if ((DragonSoulSystem::IsDeckActivated(GetEntityHandle())) && (item->IsDragonSoul())) {
-#ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 76, "");
-#endif
-		return false;
-	}
-#endif
-
-	return true;
-}
 
 // char_item.cpp slice C1 moved into ItemSystem.cpp
 
@@ -2757,7 +2208,7 @@ bool CHARACTER::MoveItem(TItemPos Cell, TItemPos DestCell,
 
 	if (Cell.IsEquipPosition())
 	{
-		if (!CanUnequipNow(item))
+		if (!InventorySystem::CanUnequipNow(GetEntityHandle(), item->GetEntityHandle()))
 			return false;
 
 #ifdef ENABLE_WEAPON_COSTUME_SYSTEM
@@ -2765,7 +2216,7 @@ bool CHARACTER::MoveItem(TItemPos Cell, TItemPos DestCell,
 		if (iWearCell == WEAR_WEAPON)
 		{
 			const entt::entity costumeWeapon = ItemSystem::GetWearItem(GetEntityHandle(), WEAR_COSTUME_WEAPON);
-			if (costumeWeapon != entt::null && !UnequipItem(costumeWeapon))
+			if (costumeWeapon != entt::null && !ItemSystem::UnequipItemEcs(GetEntityHandle(), costumeWeapon))
 			{
 #ifdef TEXTS_IMPROVEMENT
 				ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 366, "");
@@ -2774,7 +2225,7 @@ bool CHARACTER::MoveItem(TItemPos Cell, TItemPos DestCell,
 			}
 
 			if (!IsEmptyItemGrid(DestCell, item->GetSize(), Cell.cell))
-				return UnequipItem(item);
+				return ItemSystem::UnequipItemEcs(GetEntityHandle(), item->GetEntityHandle());
 		}
 #endif
 	}
@@ -2800,7 +2251,7 @@ bool CHARACTER::MoveItem(TItemPos Cell, TItemPos DestCell,
 			return false;
 		}
 
-		EquipItem(item, DestCell.cell - INVENTORY_MAX_NUM);
+		ItemSystem::EquipItemEcs(GetEntityHandle(), item->GetEntityHandle(), DestCell.cell - INVENTORY_MAX_NUM);
 	}
 	else
 	{
@@ -3992,7 +3443,7 @@ bool CHARACTER::UseItem(TItemPos Cell, TItemPos DestCell)
 	if (IsStun())
 		return false;
 
-	if (false == FN_check_item_sex(this, item))
+	if (false == InventorySystem::IsEquipmentSexAllowed(GetEntityHandle(), item->GetEntityHandle()))
 	{
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 496, "");
@@ -4882,9 +4333,9 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 			else
 			{
 				if (!ItemSystem::IsItemEquipped(item->GetEntityHandle()))
-					EquipItem(item);
+					ItemSystem::EquipItemEcs(GetEntityHandle(), item->GetEntityHandle());
 				else
-					UnequipItem(item);
+					ItemSystem::UnequipItemEcs(GetEntityHandle(), item->GetEntityHandle());
 			}
 		}
 		break;
@@ -4907,9 +4358,9 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 	case ITEM_PICK:
 		// END_OF_MINING
 		if (!ItemSystem::IsItemEquipped(item->GetEntityHandle()))
-			EquipItem(item);
+			ItemSystem::EquipItemEcs(GetEntityHandle(), item->GetEntityHandle());
 		else
-			UnequipItem(item);
+			ItemSystem::UnequipItemEcs(GetEntityHandle(), item->GetEntityHandle());
 		break;
 		// Âø¿ëÇÏÁö ¾ÊÀº ¿ëÈ¥¼®Àº »ç¿ëÇÒ ¼ö ¾ø´Ù.
 		// Á¤»óÀûÀÎ �
@@ -4927,9 +4378,9 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 	}
 	case ITEM_SPECIAL_DS:
 		if (!ItemSystem::IsItemEquipped(item->GetEntityHandle()))
-			EquipItem(item);
+			ItemSystem::EquipItemEcs(GetEntityHandle(), item->GetEntityHandle());
 		else
-			UnequipItem(item);
+			ItemSystem::UnequipItemEcs(GetEntityHandle(), item->GetEntityHandle());
 		break;
 
 	case ITEM_FISH:
@@ -9625,7 +9076,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 	case ITEM_TOTEM:
 	{
 		if (!ItemSystem::IsItemEquipped(item->GetEntityHandle()))
-			EquipItem(item);
+			ItemSystem::EquipItemEcs(GetEntityHandle(), item->GetEntityHandle());
 	}
 	break;
 
@@ -12596,29 +12047,7 @@ bool IS_BOTARYABLE_ZONE(int nMapIndex)
 // ä�
 // ¸ÀÔ°ú °°ÀºÁö Ã¼�
 // © -- by mhh
-static bool FN_check_item_sex(LegacyCharHandle ch, LPITEM item)
-{
 
-#ifdef ENABLE_SORT_INVEN
-	if (item->GetType() == ITEM_USE && item->GetSubType() == USE_AFFECT)
-		return true;
-#endif
-
-	// ³²ÀÚ ±ÝÁö
-	if (IS_SET(item->GetAntiFlag(), ITEM_ANTIFLAG_MALE))
-	{
-		if (SEX_MALE == GET_SEX(ch))
-			return false;
-	}
-	// ¿©ÀÚ±ÝÁö
-	if (IS_SET(item->GetAntiFlag(), ITEM_ANTIFLAG_FEMALE))
-	{
-		if (SEX_FEMALE == GET_SEX(ch))
-			return false;
-	}
-
-	return true;
-}
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -13434,115 +12863,6 @@ void CHARACTER::ProcessRecallItem(LPITEM item)
 	}
 }
 
-bool CHARACTER::SwapItem(uint8_t bCell, uint8_t bDestCell)
-{
-#ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(GetEntityHandle(), CHAT_TYPE_INFO, "char_item.cpp::bool bool CHARACTER::SwapItem ");//INGAME_DEBUG_RAZOR93
-#endif
-	if (!CanHandleItem())
-		return false;
-
-	TItemPos srcCell(INVENTORY, bCell), destCell(INVENTORY, bDestCell);
-
-	// ¿Ã¹Ù¸¥ Cell ÀÎÁö °Ë»ç
-	// ¿ëÈ¥¼®Àº SwapÇÒ ¼ö ¾øÀ¸¹Ç·Î, ¿©±â¼­ °É¸².
-	//if (bCell >= INVENTORY_MAX_NUM + WEAR_MAX_NUM || bDestCell >= INVENTORY_MAX_NUM + WEAR_MAX_NUM)
-	if (srcCell.IsDragonSoulEquipPosition() || destCell.IsDragonSoulEquipPosition())
-		return false;
-
-	// °°Àº CELL ÀÎÁö °Ë»ç
-	if (bCell == bDestCell)
-		return false;
-
-	// µÑ ´Ù ÀåºñÃ¢ À§Ä¡¸é Swap ÇÒ ¼ö ¾ø´Ù.
-	if (srcCell.IsEquipPosition() && destCell.IsEquipPosition())
-		return false;
-
-	LPITEM item1, item2;
-
-	// item2°¡ ÀåºñÃ¢¿¡ ÀÖ´Â °ÍÀÌ µÇµµ·Ï.
-	if (srcCell.IsEquipPosition())
-	{
-		item1 = GetInventoryItem(bDestCell);
-		item2 = GetInventoryItem(bCell);
-	}
-	else
-	{
-		item1 = GetInventoryItem(bCell);
-		item2 = GetInventoryItem(bDestCell);
-	}
-
-	if (!item1 || !item2)
-		return false;
-
-	if (item1 == item2)
-	{
-		LOG_INFO("[WARNING][WARNING][HACK USER!] : {} {} {}", m_stName.c_str(), bCell, bDestCell);
-		return false;
-	}
-
-	// item2°¡ bCellÀ§Ä¡¿¡ µé¾î°¥ ¼ö ÀÖ´ÂÁö È®ÀÎÇÑ´Ù.
-	if (!IsEmptyItemGrid(TItemPos(INVENTORY, ItemSystem::GetItemCell(item1->GetEntityHandle())), item2->GetSize(), item1->GetCell()))
-		return false;
-
-	// ¹Ù²Ü ¾ÆÀÌ�
-// ÛÀÌ ÀåºñÃ¢¿¡ ÀÖÀ¸¸é
-	if (TItemPos(EQUIPMENT, ItemSystem::GetItemCell(item2->GetEntityHandle())).IsEquipPosition())
-	{
-		uint8_t bEquipCell = ItemSystem::GetItemCell(item2->GetEntityHandle()) - INVENTORY_MAX_NUM;
-		uint8_t bInvenCell = ItemSystem::GetItemCell(item1->GetEntityHandle());
-
-		// Âø¿ëÁßÀÎ ¾ÆÀÌ�
-// ÛÀ» ¹þÀ» ¼ö ÀÖ°í, Âø¿ë ¿¹Á¤ ¾ÆÀÌ�
-// ÛÀÌ Âø¿ë °¡´ÉÇÑ »ó�
-// Â¿©¾ß¸¸ ÁøÇ�
-		if (item2->IsDragonSoul() || item2->GetType() == ITEM_BELT) // @fixme117
-		{
-			if (false == CanUnequipNow(item2) || false == CanEquipNow(item1))
-				return false;
-		}
-		if (bEquipCell != ItemSystem::FindEquipCell(GetEntityHandle(), item1->GetEntityHandle(), bEquipCell))
-			return false;
-
-		InventorySystem::RemoveFromCharacter(item2->GetEntityHandle());
-
-		if (InventorySystem::EquipTo(item1->GetEntityHandle(), this->GetEntityHandle(), bEquipCell))
-		{
-			InventorySystem::AddToCharacter(item2->GetEntityHandle(), GetEntityHandle(), TItemPos(INVENTORY, bInvenCell)
-#ifdef __HIGHLIGHT_SYSTEM__
-				, false
-#endif
-			);
-			////item2->ModifyPoints(false);
-			////ComputePoints();
-		}
-		else {
-			LOG_ERROR("SwapItem cannot equip {}! item1 {}", item2->GetName(), item1->GetName());
-		}
-	}
-	else
-	{
-		uint8_t bCell1 = ItemSystem::GetItemCell(item1->GetEntityHandle());
-		uint8_t bCell2 = ItemSystem::GetItemCell(item2->GetEntityHandle());
-
-		InventorySystem::RemoveFromCharacter(item1->GetEntityHandle());
-		InventorySystem::RemoveFromCharacter(item2->GetEntityHandle());
-
-#ifdef __HIGHLIGHT_SYSTEM__
-		InventorySystem::AddToCharacter(item1->GetEntityHandle(), GetEntityHandle(), TItemPos(INVENTORY, bCell2), false);
-		InventorySystem::AddToCharacter(item2->GetEntityHandle(), GetEntityHandle(), TItemPos(INVENTORY, bCell1), false);
-#else
-		InventorySystem::AddToCharacter(item1->GetEntityHandle(), GetEntityHandle(), TItemPos(INVENTORY, bCell2));
-		InventorySystem::AddToCharacter(item2->GetEntityHandle(), GetEntityHandle(), TItemPos(INVENTORY, bCell1));
-#endif
-	}
-
-	return true;
-}
-
-//
-// @version	05/07/05 Bang2ni - Skill »ç¿ëÈÄ 1.5 ÃÊ ÀÌ³»¿¡ Àåºñ Âø¿ë ±ÝÁö
-//
 void CHARACTER::BuffOnAttr_AddBuffsFromItem(LPITEM pItem)
 {
 	ecs::PlayerRuntime::BuffOnAttr_AddBuffsFromItem(

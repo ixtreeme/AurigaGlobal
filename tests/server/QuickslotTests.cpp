@@ -1,5 +1,10 @@
 #include "../../SRC/Server/GameServer/stdafx.h"
 #include "../../SRC/Server/GameServer/ecs/systems/InventorySystem.hpp"
+#include "../../SRC/Server/GameServer/ecs/systems/AffectSystem.hpp"
+#include "../../SRC/Server/GameServer/ecs/systems/DragonSoulSystem.hpp"
+#include "../../SRC/Server/GameServer/questmanager.h"
+#include "../../SRC/Server/GameServer/marriage.h"
+#include "../../SRC/Server/GameServer/MountSystem.h"
 #include "../../SRC/Server/GameServer/ecs/systems/ItemSystem.hpp"
 #include "../../SRC/Server/GameServer/ecs/systems/NetworkSyncSystem.hpp"
 #include "../../SRC/Server/GameServer/ecs/components/dirty_components.hpp"
@@ -47,12 +52,25 @@ std::vector<Packet> packets;
 std::function<void(entt::entity)> onPacket;
 struct Item { entt::entity owner; uint8_t type, subType; };
 std::map<std::pair<uint8_t, uint16_t>, entt::entity> inventory;
-struct PlacementActor { DESC* desc = nullptr; uint32_t pid = 37; };
+struct PlacementActor {
+    DESC* desc = nullptr; uint32_t pid = 37;
+    uint8_t job = JOB_WARRIOR, sex = SEX_MALE;
+    int level = 100, maxHP = 100, maxSP = 100;
+    bool duelBlock = false, poly = false, riding = false, deck = false;
+    std::array<int64_t, POINT_MAX_NUM> points {};
+};
+bool married = false, marriageItem = false;
+std::vector<uint32_t> notices;
+PlacementActor& Actor(entt::entity e) {
+    Check(g_registry.valid(e) && g_registry.all_of<PlacementActor>(e), "stale actor service");
+    return g_registry.get<PlacementActor>(e);
+}
 struct PlacementMeta {
     TItemTable proto {};
     uint8_t category = 0;
     uint16_t dragonBase = 0;
-    bool extra = false, dragon = false, rune = false;
+    bool extra = false, dragon = false, rune = false, locked = false, exchanging = false;
+    int wear = WEAR_BODY, group = 0;
 };
 std::vector<std::unique_ptr<DESC>> descriptors;
 std::function<void(entt::entity)> onSave;
@@ -84,7 +102,7 @@ entt::entity PlacementItem(uint8_t size = 1) {
     auto e = g_registry.create();
     auto& proto = g_registry.emplace<PlacementMeta>(e).proto;
     proto.dwVnum = 100; proto.bSize = size; proto.bType = ITEM_USE; proto.bSubType = USE_POTION;
-    proto.cLimitTimerBasedOnWearIndex = -1;
+    proto.cLimitTimerBasedOnWearIndex = -1; proto.cLimitRealTimeFirstUseIndex = -1;
     auto& id = g_registry.emplace<ecs::ItemIdentity>(e); id.id = entt::to_integral(e) + 10; id.vnum = 100;
     g_registry.emplace<ecs::ItemCount>(e, 7);
     g_registry.emplace<ecs::ItemSockets>(e);
@@ -100,6 +118,7 @@ void Send(entt::entity owner, Packet packet) {
 }
 entt::entity Reset() {
     onSave = {}; onCancel = onRegistration = {}; onStoragePacket = {}; onService = {};
+    notices.clear(); married = marriageItem = false;
     g_registry.clear(); descriptors.clear(); saves = storagePackets = registrations = 0;
     packets.clear(); inventory.clear(); onPacket = {}; expectDirty = true;
     return g_registry.create();
@@ -507,17 +526,17 @@ short ItemSystem::GetItemLockedAttributeIndex(entt::entity e) { Meta(e); return 
 int MAX(int a, int b) { return std::max(a, b); }
 int MIN(int a, int b) { return std::min(a, b); }
 int number_ex(int, int, char const *, int) { Unexpected(); }
-void ecs::ChatSystem::SendNew(entt::entity, uint8_t, uint32_t, char const *, ...) { Unexpected(); }
+void ecs::ChatSystem::SendNew(entt::entity e, uint8_t, uint32_t id, char const *, ...) { Actor(e); notices.push_back(id); Service("notice"); }
 DESC * ecs::PlayerRuntime::GetDesc(entt::entity e) { return g_registry.get<PlacementActor>(e).desc; }
 uint32_t ecs::PlayerRuntime::GetPlayerID(entt::entity e) { return g_registry.get<PlacementActor>(e).pid; }
-void ecs::PlayerRuntime::BuffOnAttr_AddBuffsFromItem(entt::entity, entt::entity) { Unexpected(); }
+void ecs::PlayerRuntime::BuffOnAttr_AddBuffsFromItem(entt::entity e, entt::entity i) { Actor(e); Meta(i); Service("buff-add"); }
 void ecs::PlayerRuntime::BuffOnAttr_RemoveBuffsFromItem(entt::entity, entt::entity) { Service("buff-remove"); }
 void ecs::PlayerRuntime::SetItem(entt::entity, SItemPos, entt::entity, bool) { Unexpected(); }
 void ecs::PlayerRuntime::SetWear(entt::entity, uint8_t, entt::entity) { Unexpected(); }
 std::string_view ecs::PlayerRuntime::GetName(entt::entity) { Unexpected(); }
 SECTREE * ecs::PlayerRuntime::GetSectree(entt::entity) { Unexpected(); }
-void ecs::PlayerRuntime::SetPart(entt::entity, uint8_t, uint16_t) { Unexpected(); }
-uint16_t ecs::PlayerRuntime::GetOriginalPart(entt::entity, uint8_t) { Unexpected(); }
+void ecs::PlayerRuntime::SetPart(entt::entity e, uint8_t, uint16_t) { Actor(e); Service("set-part"); }
+uint16_t ecs::PlayerRuntime::GetOriginalPart(entt::entity e, uint8_t) { Actor(e); return 0; }
 uint16_t ecs::PlayerRuntime::GetRuneEffect(entt::entity) { Unexpected(); }
 void ecs::PointSystem::ComputeBattlePoints(entt::entity) { Service("battle-points"); }
 void ecs::PointSystem::ApplyPoint(entt::entity, uint8_t, int) { Unexpected(); }
@@ -528,7 +547,6 @@ void MountSystem::MountUnsummon(entt::entity, entt::entity) { Unexpected(); }
 void MountSystem::UpdatePetSkin(entt::entity) { Unexpected(); }
 void MountSystem::MountSummon(entt::entity, entt::entity) { Unexpected(); }
 CMountInventory * MountSystem::GetMountInventory(entt::entity) { Unexpected(); }
-entt::entity ItemSystem::GetWearItem(entt::entity e, uint8_t slot) { const auto* inv = g_registry.try_get<ecs::MainInventoryRuntimeComponent>(e); return inv ? inv->items[INVENTORY_MAX_NUM + slot] : entt::null; }
 bool ItemSystem::IsDragonSoulItem(entt::entity e) { return Meta(e).dragon; }
 bool ItemSystem::IsExtraItem(entt::entity e) { return Meta(e).extra; }
 bool ItemSystem::IsRideItem(entt::entity e) { Meta(e); return false; }
@@ -537,23 +555,23 @@ bool ItemSystem::IsRuneItem(entt::entity e) { return Meta(e).rune; }
 uint32_t ItemSystem::GetItemID(entt::entity e) { return g_registry.get<ecs::ItemIdentity>(e).id; }
 uint32_t ItemSystem::GetItemVID(entt::entity) { Unexpected(); }
 uint32_t ItemSystem::GetItemVnum(entt::entity e) { return g_registry.get<ecs::ItemIdentity>(e).vnum; }
-uint32_t ItemSystem::GetItemOriginalVnum(entt::entity) { Unexpected(); }
+uint32_t ItemSystem::GetItemOriginalVnum(entt::entity e) { return GetItemVnum(e); }
 TItemExtraProto * ItemSystem::GetItemExtraProto(entt::entity e) { Meta(e); return nullptr; }
-uint32_t ItemSystem::GetItemSIGVnum(entt::entity) { Unexpected(); }
+uint32_t ItemSystem::GetItemSIGVnum(entt::entity e) { Meta(e); return 0; }
 int ItemSystem::GetItemValue(entt::entity e, uint32_t i) { return Meta(e).proto.alValues[i]; }
 char const * ItemSystem::GetItemName(entt::entity e) { Meta(e); return "test-item"; }
-uint32_t ItemSystem::GetItemWearFlag(entt::entity) { Unexpected(); }
-int ItemSystem::FindEquipCell(entt::entity, entt::entity, int) { Unexpected(); }
+uint32_t ItemSystem::GetItemWearFlag(entt::entity e) { return Meta(e).proto.dwWearFlags; }
+int ItemSystem::FindEquipCell(entt::entity owner, entt::entity e, int) { Actor(owner); return Meta(e).wear; }
 SItemTable const * ItemSystem::GetItemProto(entt::entity e) { return &Meta(e).proto; }
 bool ItemSystem::DestroyItemEntityEcs(entt::entity, char const *) { Unexpected(); }
 short ItemSystem::GetItemLockedAttr(entt::entity) { Unexpected(); }
 int ItemSystem::GetItemAccessorySocketGrade(entt::entity) { Unexpected(); }
 bool ItemSystem::IsAccessoryForSocket(entt::entity e) { Meta(e); return false; }
-void ItemSystem::StartUniqueExpireEvent(entt::entity) { Unexpected(); }
+void ItemSystem::StartUniqueExpireEvent(entt::entity e) { Meta(e); Service("start-unique"); }
 void ItemSystem::StopUniqueExpireEvent(entt::entity e) { Meta(e); Service("stop-unique"); }
-void ItemSystem::StartTimerBasedOnWearExpireEvent(entt::entity) { Unexpected(); }
+void ItemSystem::StartTimerBasedOnWearExpireEvent(entt::entity e) { Meta(e); Service("start-wear-timer"); }
 void ItemSystem::StopTimerBasedOnWearExpireEvent(entt::entity) { Unexpected(); }
-void ItemSystem::StartAccessorySocketExpireEvent(entt::entity) { Unexpected(); }
+void ItemSystem::StartAccessorySocketExpireEvent(entt::entity e) { Meta(e); Service("start-accessory"); }
 void ItemSystem::StopAccessorySocketExpireEvent(entt::entity e) { Meta(e); Service("stop-accessory"); }
 ecs::ItemEvents & ItemSystem::GetItemEvents(entt::entity) { Unexpected(); }
 uint32_t ItemSystem::GetItemSocket(entt::entity e, int i) { return g_registry.get<ecs::ItemSockets>(e).sockets[i]; }
@@ -567,8 +585,8 @@ void ItemSystem::SetItemLastOwnerPID(entt::entity, uint32_t) { Unexpected(); }
 void ItemSystem::SetItemOwnershipPID(entt::entity, uint32_t) { Unexpected(); }
 bool ItemSystem::SetItemWindow(entt::entity, uint8_t) { Unexpected(); }
 bool ItemSystem::SetItemCell(entt::entity, entt::entity, uint16_t) { Unexpected(); }
-uint8_t ItemSystem::GetItemWindow(entt::entity e) { return g_registry.get<ecs::ItemLocation>(e).window; }
-uint16_t ItemSystem::GetItemCell(entt::entity e) { return g_registry.get<ecs::ItemLocation>(e).cell; }
+uint8_t ItemSystem::GetItemWindow(entt::entity e) { Meta(e); const auto* l = g_registry.try_get<ecs::ItemLocation>(e); return l ? l->window : RESERVED_WINDOW; }
+uint16_t ItemSystem::GetItemCell(entt::entity e) { Meta(e); const auto* l = g_registry.try_get<ecs::ItemLocation>(e); return l ? l->cell : 0; }
 bool ItemSystem::IsItemEquipped(entt::entity e) { Meta(e); const auto* c = g_registry.try_get<ecs::ItemEquipped>(e); return c && c->equipped; }
 void NetworkSyncSystem::UpdatePacket(entt::entity) { Service("update-packet"); }
 void NetworkSyncSystem::UpdateItemOnTitleName(entt::registry &, entt::entity, bool) { Unexpected(); }
@@ -580,8 +598,8 @@ SItemTable * ITEM_MANAGER::GetTable(uint32_t) { Unexpected(); }
 CSpecialItemGroup const * ITEM_MANAGER::GetSpecialItemGroup(uint32_t) { Unexpected(); }
 CSpecialAttrGroup const * ITEM_MANAGER::GetSpecialAttrGroup(uint32_t) { Unexpected(); }
 bool CMountInventory::RemoveByItem(entt::entity, bool) { Unexpected(); }
-bool DSManager::ActivateDragonSoul(entt::entity) { Unexpected(); }
-bool DSManager::DeactivateDragonSoul(entt::entity, bool) { Unexpected(); }
+bool DSManager::ActivateDragonSoul(entt::entity e) { Meta(e); Service("ds-activate"); return true; }
+bool DSManager::DeactivateDragonSoul(entt::entity e, bool) { Meta(e); Service("ds-deactivate"); return true; }
 bool ecs::SpatialService::InsertEntity(entt::registry &, entt::entity, uint32_t, int, int, int) { Unexpected(); }
 void ecs::SpatialService::RemoveEntity(entt::registry &, entt::entity) { Unexpected(); }
 void ecs::SpatialService::UpdateSectree(entt::registry &, entt::entity) { Unexpected(); }
@@ -925,12 +943,322 @@ void PurePlacementRules() {
 }
 }
 
+
+marriage::CManager::CManager() = default;
+marriage::CManager::~CManager() = default;
+bool marriage::CManager::IsMarriageUniqueItem(uint32_t) { return marriageItem; }
+bool marriage::CManager::IsMarried(uint32_t) { return married; }
+quest::CQuestManager::CQuestManager() = default;
+quest::CQuestManager::~CQuestManager() = default;
+quest::NPC::NPC() = default;
+quest::NPC::~NPC() = default;
+quest::PC::PC() : m_RunningQuestState(nullptr) {}
+quest::PC::~PC() = default;
+bool quest::CQuestManager::UseItem(unsigned int, entt::entity item, bool) { Meta(item); Service("quest-use"); return true; }
+void CMountSystem::Mount(uint32_t, entt::entity) { Unexpected(); }
+int ecs::PlayerRuntime::GetDuelOption(entt::entity e, const char*) { return Actor(e).duelBlock; }
+uint8_t ecs::PlayerRuntime::GetJob(entt::entity e) { return Actor(e).job; }
+uint8_t ecs::PlayerRuntime::GetSex(entt::entity e) { return Actor(e).sex; }
+int64_t ecs::PointSystem::Get(entt::entity e, uint8_t type) { return Actor(e).points[type]; }
+int32_t ecs::PointSystem::GetLevel(entt::entity e) { return Actor(e).level; }
+int32_t ecs::PointSystem::GetMaxHP(entt::entity e) { return Actor(e).maxHP; }
+int32_t ecs::PointSystem::GetMaxSP(entt::entity e) { return Actor(e).maxSP; }
+void ecs::PointSystem::Change(entt::entity e, uint8_t type, int64_t amount, bool, bool
+#ifdef __ENABLE_BLOCK_EXP__
+, bool
+#endif
+) { Actor(e).points[type] += amount; Service("point-change"); }
+bool ItemSystem::IsSameSpecialGroup(entt::entity a, entt::entity b) {
+    return IsPlacement(a) && IsPlacement(b) && Meta(a).group && Meta(a).group == Meta(b).group;
+}
+bool ItemSystem::IsItemLocked(entt::entity e) { return Meta(e).locked; }
+bool ItemSystem::IsItemExchanging(entt::entity e) { return Meta(e).exchanging; }
+bool ItemSystem::StartRealTimeExpireEventEcs(entt::entity e) { Meta(e); Service("real-time"); return true; }
+bool DragonSoulSystem::IsDeckActivated(entt::entity e) { return Actor(e).deck; }
+bool AffectSystem::IsPolymorphed(entt::entity e) { return Actor(e).poly; }
+bool AffectSystem::IsAffectFlag(entt::entity e, uint32_t) { Actor(e); return false; }
+bool AffectSystem::RemoveAffect(entt::entity e, uint32_t) { Actor(e); Service("affect-remove"); return true; }
+bool MountSystem::IsRiding(entt::entity e) { return Actor(e).riding; }
+uint32_t MountSystem::GetMountVnum(entt::entity e) { Actor(e); return 0; }
+void MountSystem::ForceClearRidingState(entt::entity e) { Actor(e).riding = false; }
+void NetworkSyncSystem::BroadcastEffect(entt::registry&, entt::entity e, uint8_t) { Actor(e); Service("effect"); }
+void NetworkSyncSystem::BroadcastSpecificEffect(entt::registry&, entt::entity e, const char*) { Actor(e); Service("effect"); }
+
+
+namespace {
+entt::entity Gear(entt::entity owner, uint16_t cell = 0, int wear = WEAR_BODY) {
+    const auto item = PlacementItem();
+    Meta(item).proto.bType = ITEM_RING;
+    Meta(item).proto.dwWearFlags = WEARABLE_BODY;
+    Meta(item).proto.bSubType = 0; Meta(item).wear = wear;
+    Check(ItemSystem::PlaceItemEcs(owner, item, INVENTORY, cell), "gear fixture placement");
+    return item;
+}
+void AssertWorn(entt::entity owner, entt::entity item, int slot) {
+    Check(ItemSystem::IsItemEquipped(item) && RawOwner(item) == owner &&
+        ItemSystem::GetItemCell(item) == INVENTORY_MAX_NUM + slot &&
+        g_registry.get<ecs::MainInventoryRuntimeComponent>(owner).items[INVENTORY_MAX_NUM + slot] == item,
+        "equipped state mismatch");
+}
+void EquipmentPolicies() {
+    Reset();
+    const auto owner = PlacementOwner(), item = Gear(owner);
+    Check(InventorySystem::CanEquipNow(owner, item), "basic equipment policy");
+    Check(InventorySystem::IsEquipmentSexAllowed(owner, item), "basic sex policy");
+    for (const auto [job, anti] : {std::pair{JOB_WARRIOR, ITEM_ANTIFLAG_WARRIOR},
+        std::pair{JOB_ASSASSIN, ITEM_ANTIFLAG_ASSASSIN}, std::pair{JOB_SURA, ITEM_ANTIFLAG_SURA},
+        std::pair{JOB_SHAMAN, ITEM_ANTIFLAG_SHAMAN}}) {
+        Actor(owner).job = job; Meta(item).proto.dwAntiFlags = anti;
+        Check(!InventorySystem::CanEquipNow(owner, item), "job restriction ignored");
+    }
+    Actor(owner).job = JOB_WARRIOR; Meta(item).proto.dwAntiFlags = 0;
+    for (const uint8_t limit : {uint8_t(LIMIT_LEVEL), uint8_t(LIMIT_STR), uint8_t(LIMIT_INT), uint8_t(LIMIT_DEX), uint8_t(LIMIT_CON)}) {
+        Meta(item).proto.aLimits[0] = {limit, 101};
+        Check(!InventorySystem::CanEquipNow(owner, item), "stat/level restriction ignored");
+        Check(!notices.empty(), "missing restriction message");
+        Meta(item).proto.aLimits[0] = {};
+    }
+    for (const auto [sex, anti] : {std::pair{SEX_MALE, ITEM_ANTIFLAG_MALE}, std::pair{SEX_FEMALE, ITEM_ANTIFLAG_FEMALE}}) {
+        Actor(owner).sex = sex; Meta(item).proto.dwAntiFlags = anti;
+        Check(!InventorySystem::IsEquipmentSexAllowed(owner, item), "sex restriction ignored");
+    }
+    Actor(owner).sex = SEX_MALE; Meta(item).proto.dwAntiFlags = 0;
+#ifdef ENABLE_PVP_ADVANCED
+    Actor(owner).duelBlock = true;
+    Check(!InventorySystem::CanEquipNow(owner, item), "duel restriction ignored");
+    Actor(owner).duelBlock = false;
+#endif
+    Meta(item).proto.dwWearFlags = WEARABLE_UNIQUE;
+    marriageItem = true;
+    Check(!InventorySystem::CanEquipNow(owner, item), "marriage restriction ignored");
+    married = true;
+    Check(InventorySystem::CanEquipNow(owner, item), "married unique rejected");
+    marriageItem = false; Meta(item).proto.dwWearFlags = 0;
+    Meta(item).locked = true;
+    Check(!ItemSystem::EquipItemEcs(owner, item), "locked equipment accepted");
+    Meta(item).locked = false; Meta(item).exchanging = true;
+    Check(!ItemSystem::EquipItemEcs(owner, item), "exchange equipment accepted");
+    Meta(item).exchanging = false;
+    Actor(owner).poly = true;
+    Check(!ItemSystem::EquipItemEcs(owner, item), "polymorphed equipment accepted");
+    Actor(owner).poly = false;
+    const auto foreign = PlacementOwner();
+    Check(!ItemSystem::EquipItemEcs(foreign, item), "foreign equipment accepted");
+    Check(!ItemSystem::EquipItemEcs(owner, item, WEAR_WEAPON), "wrong candidate accepted");
+    AssertPlaced(owner, item, TItemPos(INVENTORY, 0));
+    Check(!ItemSystem::UnequipItemEcs(owner, item), "non-worn item unequipped");
+    // A destroyed owner with the same player ID is not an unowned item.
+    g_registry.destroy(owner);
+    Check(!ItemSystem::EquipItemEcs(foreign, item), "stale ownership silently adopted");
+}
+void EquipmentRoundTripAndSwap() {
+    Reset();
+    const auto owner = PlacementOwner(), item = Gear(owner, BELT_INVENTORY_SLOT_START);
+    static_assert(BELT_INVENTORY_SLOT_START > UINT8_MAX);
+    constexpr uint8_t truncatedCell = static_cast<uint8_t>(BELT_INVENTORY_SLOT_START);
+    g_registry.emplace<ecs::QuickSlots>(owner).slots[0] = {QUICKSLOT_TYPE_ITEM, truncatedCell};
+    onStoragePacket = [&](entt::entity e, uint8_t kind, TItemPos pos) {
+        if (kind == HEADER_GC_ITEM_SET && pos.window_type == EQUIPMENT) AssertWorn(e, item, WEAR_BODY);
+    };
+    Check(ItemSystem::EquipItemEcs(owner, item), "native high-level equip failed");
+    AssertWorn(owner, item, WEAR_BODY);
+    Check(Read(owner, 0).pos == truncatedCell, "large source wrapped into quickslot");
+    onStoragePacket = {};
+    Actor(owner).points[POINT_HP] = 170; Actor(owner).points[POINT_SP] = 150;
+    Check(ItemSystem::UnequipItemEcs(owner, item), "native high-level unequip failed");
+    Check(!ItemSystem::IsItemEquipped(item) && RawOwner(item) == owner &&
+        Actor(owner).points[POINT_HP] == 100 && Actor(owner).points[POINT_SP] == 100, "unequip/clamp failed");
+
+    Reset();
+    const auto actor = PlacementOwner(), old = Gear(actor), replacement = Gear(actor, INVENTORY_MAX_NUM - 1);
+    Check(ItemSystem::EquipItemEcs(actor, old), "swap setup equip");
+    const auto blocker = PlacementItem();
+    auto& main = g_registry.get<ecs::MainInventoryRuntimeComponent>(actor);
+    for (int i = 0; i < INVENTORY_MAX_NUM; ++i) {
+        if (main.items[i] == entt::null) { main.items[i] = blocker; main.itemGrid[i] = i + 1; }
+    }
+    Check(!InventorySystem::CanUnequipNow(actor, old), "full inventory unequip accepted");
+    g_registry.emplace<ecs::StatusFlags>(actor).isObserverMode = true;
+    Check(!ItemSystem::EquipItemEcs(actor, replacement), "observer swapped equipment");
+    g_registry.get<ecs::StatusFlags>(actor).isObserverMode = false;
+    Check(ItemSystem::EquipItemEcs(actor, replacement), "full inventory native swap failed");
+    AssertWorn(actor, replacement, WEAR_BODY);
+    AssertPlaced(actor, old, TItemPos(INVENTORY, INVENTORY_MAX_NUM - 1));
+    Meta(replacement).proto.dwFlags |= ITEM_FLAG_IRREMOVABLE;
+    Check(!ItemSystem::EquipItemEcs(actor, old), "irremovable displaced item swapped");
+    AssertWorn(actor, replacement, WEAR_BODY);
+
+    Reset();
+    const auto p = PlacementOwner(), a = Gear(p), b = Gear(p, INVENTORY_PAGE_SIZE - 1);
+    Meta(a).proto.bSize = 2;
+    Check(ItemSystem::EquipItemEcs(p, a), "tall swap setup");
+    Check(!ItemSystem::EquipItemEcs(p, b), "swap crossed inventory page");
+    AssertWorn(p, a, WEAR_BODY); AssertPlaced(p, b, TItemPos(INVENTORY, INVENTORY_PAGE_SIZE - 1));
+
+    Reset();
+    const auto questOwner = PlacementOwner(), created = PlacementItem();
+    Meta(created).proto.bType = ITEM_RING;
+    Check(ItemSystem::EquipItemEcs(questOwner, created), "fresh unowned quest item rejected");
+    AssertWorn(questOwner, created, WEAR_BODY);
+
+#ifdef ENABLE_EXTRA_INVENTORY
+    Reset(); extraUnlock = INT32_MAX;
+    const auto extraOwner = PlacementOwner(), first = PlacementItem(), second = PlacementItem();
+    constexpr int source = 2 * EXTRA_INVENTORY_CATEGORY_MAX_NUM;
+    static_assert(source > UINT8_MAX);
+    for (const auto e : {first, second}) {
+        Meta(e).proto.bType = ITEM_RING; Meta(e).extra = true; Meta(e).category = 2;
+    }
+    Check(ItemSystem::PlaceItemEcs(extraOwner, first, EXTRA_INVENTORY, source), "extra first setup");
+    Check(ItemSystem::EquipItemEcs(extraOwner, first), "extra first equip");
+    Check(ItemSystem::PlaceItemEcs(extraOwner, second, EXTRA_INVENTORY, source), "extra replacement setup");
+    Check(ItemSystem::EquipItemEcs(extraOwner, second), "extra swap lost window or cell");
+    AssertPlaced(extraOwner, first, TItemPos(EXTRA_INVENTORY, source));
+    AssertWorn(extraOwner, second, WEAR_BODY);
+    Check(ItemSystem::UnequipItemEcs(extraOwner, second), "extra unequip");
+    AssertPlaced(extraOwner, second, TItemPos(EXTRA_INVENTORY, source + 1));
+#endif
+}
+void EquipmentCallbacks() {
+    for (const std::string stage : {"start-unique", "start-accessory", "buff-add", "battle-points", "update-packet"}) {
+        Reset();
+        const auto owner = PlacementOwner(), item = Gear(owner);
+        entt::entity recycled = entt::null;
+        onService = [&](const char* name) {
+            if (stage == name) {
+                onService = {}; g_registry.destroy(item); recycled = g_registry.create();
+            }
+        };
+        Check(ItemSystem::EquipItemEcs(owner, item), "committed equip misreported callback destruction");
+        Check(recycled != entt::null && recycled != item && !g_registry.any_of<ecs::ItemOwner, ecs::ItemEquipped>(recycled),
+            "equip wrote through recycled entity");
+    }
+    Reset();
+    auto owner = PlacementOwner(), item = Gear(owner);
+    onService = [&](const char* name) {
+        if (std::string_view(name) == "buff-add") {
+            Check(!ItemSystem::UnequipItemEcs(owner, item), "recursive high-level unequip accepted");
+            Check(!ItemSystem::EquipItemEcs(owner, item), "recursive high-level equip accepted");
+        }
+    };
+    Check(ItemSystem::EquipItemEcs(owner, item), "recursive guard setup");
+    AssertWorn(owner, item, WEAR_BODY);
+    onService = {};
+    const auto blocker = PlacementItem();
+    onService = [&](const char* name) {
+        if (std::string_view(name) == "battle-points" && !ItemSystem::IsItemEquipped(item)) {
+            onService = {};
+            auto& main = g_registry.get<ecs::MainInventoryRuntimeComponent>(owner);
+            for (int cell = 0; cell < INVENTORY_MAX_NUM; ++cell) { main.items[cell] = blocker; main.itemGrid[cell] = cell + 1; }
+        }
+    };
+    Check(!ItemSystem::UnequipItemEcs(owner, item), "lost destination reported as success");
+    AssertWorn(owner, item, WEAR_BODY);
+
+    Reset(); owner = PlacementOwner();
+    const auto old = Gear(owner); item = Gear(owner, 1);
+    Check(ItemSystem::EquipItemEcs(owner, old), "lock callback setup");
+    onSave = [&](entt::entity e) {
+        if (e == item && RawOwner(item) == entt::null) { onSave = {}; Meta(old).locked = true; }
+    };
+    Check(!ItemSystem::EquipItemEcs(owner, item), "swap ignored changed removal permission");
+    AssertWorn(owner, old, WEAR_BODY);
+    AssertPlaced(owner, item, TItemPos(INVENTORY, 1));
+
+    Reset(); owner = PlacementOwner();
+    const auto tall = Gear(owner); Meta(tall).proto.bSize = 2;
+    Check(ItemSystem::EquipItemEcs(owner, tall), "recovery setup");
+    item = Gear(owner, 10);
+    const auto filler = PlacementItem();
+    auto& main = g_registry.get<ecs::MainInventoryRuntimeComponent>(owner);
+    for (int cell = 0; cell < INVENTORY_MAX_NUM; ++cell) {
+        if (cell != 10 && cell != 10 + INVENTORY_PAGE_COLUMN) {
+            main.items[cell] = filler; main.itemGrid[cell] = cell + 1;
+        }
+    }
+    onService = [&](const char* name) {
+        if (std::string_view(name) == "buff-add" && ItemSystem::IsItemEquipped(item)) {
+            onService = {};
+            auto& current = g_registry.get<ecs::MainInventoryRuntimeComponent>(owner);
+            current.items[10 + INVENTORY_PAGE_COLUMN] = filler;
+            current.itemGrid[10 + INVENTORY_PAGE_COLUMN] = 11 + INVENTORY_PAGE_COLUMN;
+        }
+    };
+    Check(!ItemSystem::EquipItemEcs(owner, item), "interrupted swap reported success");
+    AssertWorn(owner, tall, WEAR_BODY);
+    AssertPlaced(owner, item, TItemPos(INVENTORY, 10));
+    Check(g_registry.get<ecs::MainInventoryRuntimeComponent>(owner).items[10 + INVENTORY_PAGE_COLUMN] == filler,
+        "recovery overwrote callback item");
+
+    Reset(); owner = PlacementOwner();
+    const auto original = Gear(owner); item = Gear(owner, 1);
+    const auto callbackItem = PlacementItem(); Meta(callbackItem).proto.bType = ITEM_RING;
+    Check(ItemSystem::EquipItemEcs(owner, original), "occupied wear recovery setup");
+    onService = [&](const char* name) {
+        if (std::string_view(name) == "battle-points" && !ItemSystem::IsItemEquipped(original)) {
+            onService = {};
+            Check(InventorySystem::EquipTo(callbackItem, owner, WEAR_BODY), "callback wear takeover");
+        }
+    };
+    Check(!ItemSystem::EquipItemEcs(owner, item), "occupied wear swap reported success");
+    AssertWorn(owner, callbackItem, WEAR_BODY);
+    AssertPlaced(owner, original, TItemPos(INVENTORY, 0));
+    AssertPlaced(owner, item, TItemPos(INVENTORY, 1));
+
+    Reset(); owner = PlacementOwner(); item = Gear(owner);
+    onService = [&](const char* name) {
+        if (std::string_view(name) == "buff-add") { onService = {}; g_registry.destroy(owner); }
+    };
+    Check(ItemSystem::EquipItemEcs(owner, item), "committed equip rejected destroyed actor");
+    Check(!g_registry.valid(owner), "actor callback not executed");
+}
+void EquipmentDragonSoulAndTimers() {
+    Reset();
+    const auto owner = PlacementOwner(), item = PlacementItem();
+    Meta(item).dragon = true; Meta(item).proto.bType = ITEM_DS; Meta(item).wear = WEAR_MAX_NUM;
+    Check(ItemSystem::PlaceItemEcs(owner, item, DRAGON_SOUL_INVENTORY, 0), "DS equipment fixture");
+#ifdef ENABLE_DS_SET
+    Actor(owner).deck = true;
+    Check(!ItemSystem::EquipItemEcs(owner, item), "active deck accepted equip");
+    Actor(owner).deck = false;
+#endif
+    Check(ItemSystem::EquipItemEcs(owner, item), "DS equip failed");
+    AssertWorn(owner, item, WEAR_MAX_NUM);
+    Check(ItemSystem::GetWearItem(owner, WEAR_MAX_NUM) == item, "DS wear query reported an empty slot");
+    Check(ItemSystem::GetWearItem(owner, WEAR_MAX_NUM + DRAGON_SOUL_DECK_MAX_NUM * DS_SLOT_MAX) == entt::null,
+        "out-of-range wear query accepted");
+    Check(ItemSystem::GetWearItem(entt::null, WEAR_MAX_NUM) == entt::null, "null wear owner accepted");
+#ifdef ENABLE_DS_SET
+    Actor(owner).deck = true;
+    Check(!ItemSystem::UnequipItemEcs(owner, item), "active deck accepted unequip");
+    Actor(owner).deck = false;
+#endif
+    Check(ItemSystem::UnequipItemEcs(owner, item), "DS unequip failed");
+    AssertPlaced(owner, item, TItemPos(DRAGON_SOUL_INVENTORY, 0));
+    Reset();
+    const auto actor = PlacementOwner(), timer = Gear(actor);
+    Meta(timer).proto.cLimitRealTimeFirstUseIndex = 0; Meta(timer).proto.aLimits[0] = {LIMIT_REAL_TIME_START_FIRST_USE, 60};
+    Check(ItemSystem::EquipItemEcs(actor, timer), "first use equip failed");
+    Check(ItemSystem::GetItemSocket(timer, 0) > uint32_t(time(nullptr)) && ItemSystem::GetItemSocket(timer, 1) == 1,
+        "first-use timer not initialized");
+    Check(ItemSystem::UnequipItemEcs(actor, timer), "timer unequip");
+    const auto deadline = ItemSystem::GetItemSocket(timer, 0);
+    g_registry.get<ecs::ItemSockets>(timer).sockets[1] = -1;
+    Check(ItemSystem::EquipItemEcs(actor, timer), "repeat timer equip");
+    Check(ItemSystem::GetItemSocket(timer, 0) == deadline && ItemSystem::GetItemSocket(timer, 1) == UINT32_MAX,
+        "timer restart or use counter overflow");
+}
+}
+
 int main() {
     try {
         DSManager dragonSouls;
+        marriage::CManager marriages;
+        quest::CQuestManager quests;
 #ifdef ENABLE_SWITCHBOT
         CSwitchbotManager switchbots;
 #endif
+        EquipmentPolicies(); EquipmentRoundTripAndSwap(); EquipmentCallbacks(); EquipmentDragonSoulAndTimers();
         PlacementWindows(); PlacementValidation(); PlacementQueries(); PlacementCallbacks(); NativeUnequip(); RemovalCallbacksAndAliases(); PurePlacementRules();
         InventoryGuards(); InventoryGrids(); Basic(); DuplicatesAndValidation(); SyncAndLifetime(); ValueRanges(); ClientValidation(); HydrationAndRelocation();
         std::cout << "Quickslot checks passed: " << checks << '\n'; return 0; }

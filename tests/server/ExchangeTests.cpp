@@ -33,10 +33,10 @@ int passes_per_sec = 25, g_nPortalLimitTime = 10;
 std::string g_stHostname = "exchange-test";
 LPCLIENT_DESC db_clientdesc = nullptr;
 namespace {
-int checks = 0, saves = 0, characterSaves = 0, credits = 0, itemLogs = 0, goldLogs = 0;
+int checks = 0, saves = 0, characterSaves = 0, itemLogs = 0, goldLogs = 0;
 int pulse = 100000;
-bool noQuest = false, questConsumes = false, failDestroy = false;
-std::function<void()> onQuest, onFlag, onSave, onDestroy, onCredit, onQuickslot;
+bool noQuest = false, questConsumes = false;
+std::function<void()> onQuest, onFlag, onSave, onQuickslot;
 std::function<void(entt::entity, uint8_t, uint8_t)> onPacket;
 std::vector<std::unique_ptr<DESC>> descriptors;
 struct Actor {
@@ -126,12 +126,12 @@ entt::entity Item(entt::entity owner, int cell = 0, uint8_t size = 1, uint8_t wi
     return e;
 }
 void Reset() {
-    onQuest = onFlag = onSave = onDestroy = onCredit = onQuickslot = {};
+    onQuest = onFlag = onSave = onQuickslot = {};
     onPacket = {};
     g_registry.clear();
     descriptors.clear(); sent.clear(); quickDeletes.clear();
-    saves = characterSaves = credits = itemLogs = goldLogs = 0;
-    noQuest = questConsumes = failDestroy = false;
+    saves = characterSaves = itemLogs = goldLogs = 0;
+    noQuest = questConsumes = false;
 }
 void Offer(entt::entity owner, entt::entity item, int display = 0) {
     const auto pos = g_registry.get<ecs::ItemLocation>(item);
@@ -194,9 +194,8 @@ void DESC::Packet(const void* data, int size) {
     sent.push_back({GetEntity(), header, sub});
     if (onPacket) { auto callback = onPacket; callback(GetEntity(), header, sub); }
 }
-void CLIENT_DESC::DBPacket(uint8_t header, uint32_t, const void*, uint32_t size) {
-    Check(header == HEADER_GD_VCARD && size == sizeof(TPacketGDVCard), "card credit packet");
-    ++credits; Call(onCredit);
+void CLIENT_DESC::DBPacket(uint8_t, uint32_t, const void*, uint32_t) {
+    Unexpected("exchange unexpectedly sent a direct DB credit packet");
 }
 CHARACTER_MANAGER::CHARACTER_MANAGER() = default;
 CHARACTER_MANAGER::~CHARACTER_MANAGER() = default;
@@ -222,7 +221,6 @@ LogManager::~LogManager() = default;
 void LogManager::ItemLog(entt::entity e, int, int, const char*, const char*) { A(e); ++itemLogs; }
 void LogManager::CharLog(entt::entity e, uint32_t, const char*, const char*) { A(e); ++goldLogs; }
 void LogManager::GoldBarLog(uint32_t, uint32_t, GOLDBAR_HOW, const char*) { ++goldLogs; }
-void LogManager::VCardLog(uint32_t, uint32_t, uint32_t, const char*, const char*, const char*, const char*, const char*) {}
 namespace ecs::PlayerRuntime {
 bool IsValid(entt::entity e) { return g_registry.valid(e) && g_registry.all_of<Actor>(e); }
 bool IsPC(entt::entity e) { return IsValid(e) && A(e).pc; }
@@ -281,18 +279,7 @@ bool IsDragonSoulItem(entt::entity e) { return I(e).dragon; }
 bool IsExtraItem(entt::entity e) { return I(e).extra; }
 uint8_t GetItemExtraCategory(entt::entity e) { return I(e).category; }
 bool SaveItemEcs(entt::entity e, bool flush) { I(e); Check(flush, "immediate item persistence"); ++saves; Call(onSave); return true; }
-bool DestroyItemEntityEcs(entt::entity e, const char*) {
-    I(e); if (failDestroy) return false;
-    const auto owner = GetItemOwner(e); const auto pos = g_registry.get<ecs::ItemLocation>(e);
-    const auto size = I(e).size;
-    Inventory(owner, pos.window, [&](auto& inv) {
-        if (inv.items[pos.cell] == e) {
-            inv.items[pos.cell] = entt::null;
-            for (auto& cell : inv.itemGrid) if (cell == pos.cell + 1) cell = 0;
-        }
-    });
-    g_registry.destroy(e); Call(onDestroy); return true;
-}
+
 }
 namespace {
 void LifecycleTests() {
@@ -524,25 +511,21 @@ void ReentrancyTests() {
     Check(ItemSystem::GetItemOwner(x) == a, "planned item stays with owner");
 #endif
 }
-void CardTests() {
-    Reset(); auto a = ActorEntity(), b = ActorEntity(), item = Item(a);
-    g_registry.get<ecs::ItemIdentity>(item).vnum = 90008;
-    g_registry.get<ecs::ItemSockets>(item).sockets[0] = 42;
-    Check(ExchangeSystem::Start(a, b), "card start"); Offer(a, item);
-    onCredit = [&] {
-        Check(!g_registry.valid(item), "card retired before credit callback");
-        VCardUse(a, b, item);
-    };
-    Check(Finish(a, b), "card exchanged"); Check(credits == 1, "card cannot redeem twice");
-    AssertClosed(a, b);
-
-    Reset(); a = ActorEntity(); b = ActorEntity(); item = Item(a);
-    g_registry.get<ecs::ItemIdentity>(item).vnum = 90009; failDestroy = true;
-    Check(ExchangeSystem::Start(a, b), "failed redeem start"); Offer(a, item);
-    Check(Finish(a, b), "card transferred when redeem fails");
-    Check(ItemSystem::GetItemOwner(item) == b && credits == 0, "failed retirement keeps card without credit");
-    failDestroy = false; onDestroy = [&] { g_registry.destroy(a); g_registry.destroy(b); };
-    VCardUse(a, b, item); Check(credits == 1, "copied card identity survives both disconnects");
+void RetiredCardItemsAreOrdinary() {
+    // Account trading was removed upstream. Existing item vnums must transfer
+    // as ordinary items, without retirement or a credit/account DB request.
+    for (const uint32_t vnum : {90008u, 90009u}) {
+        Reset();
+        const auto a = ActorEntity(), b = ActorEntity(), item = Item(a);
+        g_registry.get<ecs::ItemIdentity>(item).vnum = vnum;
+        g_registry.get<ecs::ItemSockets>(item).sockets[0] = 42;
+        Check(ExchangeSystem::Start(a, b), "retired card item trade start"); Offer(a, item);
+        Check(Finish(a, b), "retired card item trade");
+        Check(g_registry.valid(item) && ItemSystem::GetItemOwner(item) == b,
+            "removed card behavior consumed the transferred item");
+        Check(g_registry.get<ecs::ItemSockets>(item).sockets[0] == 42, "ordinary item socket changed");
+        AssertClosed(a, b);
+    }
 }
 
 void AdditionalFailureTests() {
@@ -588,7 +571,7 @@ int main() {
         CLIENT_DESC db; db_clientdesc = &db;
         CHARACTER_MANAGER characters; DSManager dragons; quest::CQuestManager quests; LogManager logs;
         LifecycleTests(); StartGuards(); OffersAndValidation(); TransferTests(); GoldTests();
-        InventoryKinds(); ReentrancyTests(); CardTests(); AdditionalFailureTests();
+        InventoryKinds(); ReentrancyTests(); RetiredCardItemsAreOrdinary(); AdditionalFailureTests();
         Reset(); db_clientdesc = nullptr;
         std::cout << "Exchange tests passed: " << checks << " checks\n";
         return 0;

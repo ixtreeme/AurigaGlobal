@@ -724,14 +724,6 @@ bool RemoveSpecifyItemEcs(entt::entity e, uint32_t vnum, uint32_t count,
     return count == 0;
 }
 
-entt::entity GetWearItem(entt::entity e, uint8_t wearPos)
-{
-    if (wearPos >= WEAR_MAX_NUM)
-        return entt::null;
-
-    return GetMainInventoryItem(e, static_cast<uint16_t>(INVENTORY_MAX_NUM + wearPos));
-}
-
 bool IsEquipUniqueItem(entt::entity e, uint32_t itemVnum)
 {
     for (const uint8_t wearSlot : { WEAR_UNIQUE1, WEAR_UNIQUE2, WEAR_COSTUME_MOUNT })
@@ -3269,121 +3261,6 @@ int FindEquipCell(entt::entity ownerEntity, entt::entity item, int iCandidateCel
 	return -1;
 }
 
-static bool EquipItemLegacyBoundary(entt::entity owner, entt::entity item,
-                                    int candidateCell)
-{
-    LPCHARACTER legacyOwner = LegacyCharOf(owner);
-    LPITEM legacyItem = LegacyItemBoundary(item);
-    return legacyOwner && IsValidItem(item) &&
-        legacyOwner->EquipItem(legacyItem, candidateCell);
-}
-
-static bool UnequipItemLegacyBoundary(entt::entity owner, entt::entity item)
-{
-    LPCHARACTER legacyOwner = LegacyCharOf(owner);
-    LPITEM legacyItem = LegacyItemBoundary(item);
-    return legacyOwner && IsValidItem(item) && legacyOwner->UnequipItem(legacyItem);
-}
-
-bool EquipItemEcs(entt::entity owner, entt::entity item, int candidateCell)
-{
-    if (owner == entt::null || !g_registry.valid(owner) || !IsValidItem(item))
-        return false;
-
-    const int wearCell = FindEquipCell(owner, item, candidateCell);
-    if (wearCell < 0)
-        return false;
-
-    const bool hadLocation = g_registry.all_of<ecs::ItemLocation>(item);
-    const bool hadOwner = g_registry.all_of<ecs::ItemOwner>(item);
-    const bool hadEquipped = g_registry.all_of<ecs::ItemEquipped>(item);
-    const ecs::ItemLocation oldLocation =
-        hadLocation ? g_registry.get<ecs::ItemLocation>(item) : ecs::ItemLocation {};
-    const ecs::ItemOwner oldOwner =
-        hadOwner ? g_registry.get<ecs::ItemOwner>(item) : ecs::ItemOwner {};
-    const ecs::ItemEquipped oldEquipped =
-        hadEquipped ? g_registry.get<ecs::ItemEquipped>(item) : ecs::ItemEquipped {};
-
-    TransferItemOwnership(item, entt::null, owner);
-    g_registry.emplace_or_replace<ecs::ItemLocation>(
-        item, ecs::ItemLocation{EQUIPMENT, static_cast<uint16_t>(INVENTORY_MAX_NUM + wearCell)});
-    g_registry.emplace_or_replace<ecs::ItemEquipped>(
-        item, ecs::ItemEquipped{true, static_cast<uint8_t>(wearCell)});
-
-    const bool result = EquipItemLegacyBoundary(owner, item, candidateCell);
-    if (!result) {
-        if (hadLocation)
-            g_registry.emplace_or_replace<ecs::ItemLocation>(item, oldLocation);
-        else
-            g_registry.remove<ecs::ItemLocation>(item);
-
-        if (hadOwner)
-            g_registry.emplace_or_replace<ecs::ItemOwner>(item, oldOwner);
-        else
-            g_registry.remove<ecs::ItemOwner>(item);
-
-        if (hadEquipped)
-            g_registry.emplace_or_replace<ecs::ItemEquipped>(item, oldEquipped);
-        else
-            g_registry.remove<ecs::ItemEquipped>(item);
-        return false;
-    }
-
-    SyncItemStateFromLegacy(item);
-    return true;
-}
-
-bool UnequipItemEcs(entt::entity owner, entt::entity item)
-{
-    if (owner == entt::null || !g_registry.valid(owner) || !IsValidItem(item))
-        return false;
-
-    const int targetCell = GetEmptyInventoryPositionEcs(owner, item);
-    if (targetCell < 0)
-        return false;
-
-    const uint8_t targetWindow = IsDragonSoulItem(item)
-        ? DRAGON_SOUL_INVENTORY
-        : INVENTORY;
-
-    const bool hadLocation = g_registry.all_of<ecs::ItemLocation>(item);
-    const bool hadOwner = g_registry.all_of<ecs::ItemOwner>(item);
-    const bool hadEquipped = g_registry.all_of<ecs::ItemEquipped>(item);
-    const ecs::ItemLocation oldLocation =
-        hadLocation ? g_registry.get<ecs::ItemLocation>(item) : ecs::ItemLocation {};
-    const ecs::ItemOwner oldOwner =
-        hadOwner ? g_registry.get<ecs::ItemOwner>(item) : ecs::ItemOwner {};
-    const ecs::ItemEquipped oldEquipped =
-        hadEquipped ? g_registry.get<ecs::ItemEquipped>(item) : ecs::ItemEquipped {};
-
-    TransferItemOwnership(item, entt::null, owner);
-    g_registry.emplace_or_replace<ecs::ItemLocation>(
-        item, ecs::ItemLocation{targetWindow, static_cast<uint16_t>(targetCell)});
-    g_registry.emplace_or_replace<ecs::ItemEquipped>(
-        item, ecs::ItemEquipped{false, 0});
-
-    const bool result = UnequipItemLegacyBoundary(owner, item);
-    if (!result) {
-        if (hadLocation)
-            g_registry.emplace_or_replace<ecs::ItemLocation>(item, oldLocation);
-        else
-            g_registry.remove<ecs::ItemLocation>(item);
-
-        if (hadOwner)
-            g_registry.emplace_or_replace<ecs::ItemOwner>(item, oldOwner);
-        else
-            g_registry.remove<ecs::ItemOwner>(item);
-
-        if (hadEquipped)
-            g_registry.emplace_or_replace<ecs::ItemEquipped>(item, oldEquipped);
-        else
-            g_registry.remove<ecs::ItemEquipped>(item);
-        return false;
-    }
-
-    SyncItemStateFromLegacy(item);
-    return true;
-}
 
 // ItemEquipped::slot is derived from the cell, and several writers set the
 // two independently. This recomputes the slot from the location component.

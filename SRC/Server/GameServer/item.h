@@ -92,7 +92,6 @@ class CItem : public CEntity
 
 		bool		AddToGround(int32_t lMapIndex, const PIXEL_POSITION & pos, bool skipOwnerCheck = false);
 
-		bool		IsEquipable() ;
 
 
 

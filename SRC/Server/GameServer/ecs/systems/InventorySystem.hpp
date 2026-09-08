@@ -5,6 +5,9 @@
 #include "../components/inventory_components.hpp"
 
 namespace InventorySystem {
+bool CanEquipNow(entt::entity owner, entt::entity item);
+bool CanUnequipNow(entt::entity owner, entt::entity item, bool requireSpace = true);
+bool IsEquipmentSexAllowed(entt::entity owner, entt::entity item);
 
 bool CanHandleItems(entt::entity owner, bool skipRefine = false, bool skipObserver = false);
 int GetInventorySize(entt::entity owner);

@@ -1,5 +1,54 @@
 # Server ECS regression tests
 
+## Native equipment operations
+
+InventorySystem.cpp now owns EquipItemEcs, UnequipItemEcs, equipment policies and
+GetWearItem as well as the native EquipTo slot commit. The previous CHARACTER
+EquipItem/UnequipItem/CanEquipNow/CanUnequipNow/SwapItem implementations and the
+CItem IsEquipable method were deleted. ItemSystem.cpp's equipment wrappers no
+longer prewrite ownership/location/equipped state, resolve CHARACTER/CItem, or
+restore and resynchronize legacy state after a failed call. No replacement file
+or second equipment implementation was added.
+
+Equipment slot/grid and item owner/location/equipped components are committed
+together before publication. The higher-level path checks ownership, source
+anchors, item locks, job/stat/sex restrictions, unique groups, riding, costume
+dependencies and dragon-soul decks. Replacement validates the displaced item's
+permissions again after callbacks. Full-width source cells and their inventory
+window survive swaps, including extra-inventory and belt sources. Transfers use
+pure insertion without acquisition-only attribute randomization or rune equip.
+
+Public equipment actions have an owner-scoped recursion guard. Publication
+stages recheck generation, owner and wear slot; recovery only touches the original
+still-detached entities, never a recycled entity or another owner's item.
+First-use expiry indices and counter overflow are checked. GetWearItem accepts
+the dragon-soul deck range too: the previous ECS query returned null there even
+though CHARACTER::GetWear supported it. The real query is now linked into the
+headless test rather than replaced by a service double.
+
+QuickslotTests exercises the production high-level equip/unequip/policy bodies,
+GetWearItem and low-level slot operations with entity-only fixtures. Coverage
+includes full-inventory swaps, failed displacement recovery, occupied footprints,
+source windows/cells above 255, stale/foreign owners, observer/duel/lock/stat/sex/
+marriage restrictions, recursive actions, callback destruction/recycling,
+dragon-soul equip/unequip and first-use timers. The existing CMake test targets
+also link the production EcsDiagnostics.cpp after its recent introduction.
+
+Item metadata/FindEquipCell, point and mount effects, quest/timer services,
+persistence and packet transport are controlled doubles. ModifyPoints is linked
+but these fixtures do not exercise every apply/appearance branch. Effect-level
+reentrancy and all weapon-costume/mount combinations still need broader coverage.
+The swap is guarded sequential work, not an atomic database transaction: recovery
+stops when the owner is invalidated and never overwrites callback-owned state.
+If the old wear slot was taken, it tries carrying storage instead; if no recovery
+slot remains for a live owner, it logs the unresolved detached item.
+Live client equipment UI, relog, persistence and mount integration remain required
+before deployment. Remaining legacy move/use callers have not been migrated by
+this equipment change.
+
+Verified on 2026-09-08 (Windows/MSVC): GameServer Release builds successfully;
+all 13 headless suites pass in Release and AddressSanitizer RelWithDebInfo.
+
 ## Native inventory placement and detachment
 
 The existing InventorySystem.cpp now owns ordinary placement/removal and the
@@ -55,9 +104,9 @@ cmake --build build-asan --config RelWithDebInfo --target QuickslotTests
 ctest --test-dir build-asan -C RelWithDebInfo --output-on-failure
 ```
 
-This is not the complete equipment/shop migration. EquipTo, higher-level
-equip/unequip wrappers and other legacy callers still need migration and broader
-effect-level callback tests. Actual client inventory/equipment UI, relog, mount
+This is not the complete equipment/shop migration. The equipment follow-up above
+replaces EquipTo's legacy writes and the high-level wrappers; other legacy callers
+and broader effect-level callback tests remain. Actual client inventory/equipment UI, relog, mount
 account storage, safebox transfers and DB persistence require integration tests
 before deployment. Saves are not a durable multi-record transaction.
 
@@ -83,9 +132,9 @@ Cancellation and participant/session destruction release matching reservations
 and item flags. END publication retains both reservations until completion;
 revision checks stop old publications after reentrant changes. Item-slot packets
 read current state, and quickslot packets stop on revision changes.
-VCardUse moved from db.cpp into the existing exchange implementation. It copies
-identities before callbacks and requires successful item retirement before
-submitting credit. It does not create an acknowledgement-based DB transaction.
+VCard account trading was removed in upstream commit a9c100a6. Its obsolete
+test calls were removed too; former vnums 90008/90009 now have regression checks
+for ordinary item transfer without retirement or account-credit DB requests.
 
 ExchangeTests links production exchange.cpp with entity-only inventory fixtures.
 It covers lifecycle cancellation/destruction, stale handles, source/offer guards,
@@ -93,9 +142,9 @@ display bounds and overlap, changed item metadata, duplicate slot aliases,
 full-inventory swaps, page and capacity boundaries, all six extra categories,
 locked extra slots, dragon-soul boxes, invalid/insufficient/overflowing gold,
 64-bit gold transfers, missing DB/quest/inventory state, cooldown changes,
-callback disconnects/cancellation/slot replacement and VCard retirement failure.
+callback disconnects/cancellation/slot replacement and ordinary retired-card items.
 Inventory/owner mutations and packet construction are production code. Actor,
-item-accessor, quest, persistence, card-destruction and packet-transport services
+item-accessor, quest, persistence and packet-transport services
 are test doubles; no CHARACTER or CItem is attached to a fixture.
 
 The tests also exposed a pre-existing MSVC enum truncation: GOLD_MAX became
@@ -114,7 +163,7 @@ ctest --test-dir build-asan -C RelWithDebInfo --output-on-failure
 ```
 
 Before deployment verify actual client exchange UI, all inventory types, quickslot
-updates, VCards, disconnect/relog and item/gold persistence. The headless tests do
+updates, disconnect/relog and item/gold persistence. The headless tests do
 not execute input_main, the production item manager, real sockets or DB workers.
 In-process all-or-nothing ownership changes are not a durable multi-record DB
 transaction: process/DB failure between saves still requires persistence-layer

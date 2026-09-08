@@ -52,7 +52,7 @@ add_executable(QuickslotTests EXCLUDE_FROM_ALL
     ${CMAKE_SOURCE_DIR}/tests/server/QuickslotTests.cpp
     ecs/systems/InventorySystem.cpp
 )
-target_link_libraries(QuickslotTests PRIVATE SERVER EnTT::EnTT)
+target_link_libraries(QuickslotTests PRIVATE SERVER EnTT::EnTT LUA)
 add_test(NAME quickslots COMMAND QuickslotTests)
 
 add_executable(PointCalculationTests EXCLUDE_FROM_ALL
@@ -140,6 +140,12 @@ add_executable(ExchangeTests EXCLUDE_FROM_ALL
 )
 target_link_libraries(ExchangeTests PRIVATE SERVER EnTT::EnTT LUA)
 add_test(NAME exchange COMMAND ExchangeTests)
+
+# Exercise the same generation-aware diagnostic implementation as GameServer.
+# The isolated event/refine-window suites have no diagnostic dependency.
+foreach(_ecs_test ItemAttributeTests MountLifecycleTests SafeboxLifecycleTests ItemManagerLifecycleTests QuickslotTests PointCalculationTests CombatStateTests AffectLifecycleTests CharacterManagerTests GmCommandTests ExchangeTests)
+    target_sources(${_ecs_test} PRIVATE ecs/EcsDiagnostics.cpp)
+endforeach()
 
 if(ENABLE_ASAN AND EXISTS "${AURIGA_ASAN_RUNTIME_DLL}")
     foreach(_asan_target GameServer ItemAttributeTests MountLifecycleTests SafeboxLifecycleTests ItemManagerLifecycleTests QuickslotTests PointCalculationTests CombatStateTests AffectLifecycleTests EventLifecycleTests CharacterManagerTests RefineWindowTests GmCommandTests ExchangeTests)
