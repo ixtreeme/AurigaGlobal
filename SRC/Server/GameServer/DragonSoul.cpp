@@ -18,6 +18,8 @@
 #include "ecs/CharacterAccessors.hpp"
 #include "ecs/systems/ItemSystem.hpp"
 #include "ecs/systems/PointSystem.hpp"
+#include "ecs/systems/InventorySystem.hpp"
+#include "ecs/components/spatial_components.hpp"
 //#include <boost/lexical_cast.hpp>
 
 template <typename T> T MINMAX(T min, T value, T max)
@@ -369,208 +371,300 @@ int DSManager::GetDuration(entt::entity item) const
 	return ItemSystem::GetItemDuration(item);
 }
 // 용혼석을 받아서 용심을 추출하는 함수
-bool DSManager::ExtractDragonHeart(LPCHARACTER ch, entt::entity item, entt::entity extractor)
+
+namespace {
+// Extraction runs on the game thread. Keep the guard off entity storage so
+// entering it cannot invoke registry construction/destruction listeners.
+std::set<entt::entity> extractingOwners;
+struct ExtractionGuard {
+    entt::entity owner;
+    bool entered;
+    explicit ExtractionGuard(entt::entity e) : owner(e), entered(extractingOwners.insert(e).second) {}
+    ~ExtractionGuard() { if (entered) extractingOwners.erase(owner); }
+    ExtractionGuard(const ExtractionGuard&) = delete;
+    ExtractionGuard& operator=(const ExtractionGuard&) = delete;
+};
+
+bool ExtractionAnchor(entt::entity owner, entt::entity item, TItemPos position)
 {
-	if (!ch || !ItemSystem::IsDragonSoulItem(item))
-		return false;
-
-	const entt::entity owner = ((ch) ? (ch)->GetEntityHandle() : entt::null);
-	const bool hasExtractor = extractor != entt::null;
-	if (hasExtractor && !ItemSystem::IsValidItem(extractor))
-		return false;
-
-	if (ItemSystem::IsItemEquipped(item))
-	{
-#ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(owner, CHAT_TYPE_INFO, 623, "");
-#endif
-		return false;
-	}
-
-	uint8_t ds_type, grade_idx, step_idx, strength_idx;
-	GetDragonSoulInfo(ItemSystem::GetItemVnum(item), ds_type, grade_idx, step_idx, strength_idx);
-
-	const int bonus = hasExtractor ? ItemSystem::GetItemValue(extractor, 0) : 0;
-	std::vector<float> chargings;
-	std::vector<float> probabilities;
-	if (!m_pTable->GetDragonHeartExtValues(ds_type, grade_idx, chargings, probabilities))
-		return false;
-
-	const int resultIndex = Gamble(probabilities);
-	if (resultIndex < 0 || static_cast<size_t>(resultIndex) >= chargings.size())
-	{
-		LOG_ERROR("Gamble is failed. ds_type({}), grade_idx({})", static_cast<int>(ds_type), static_cast<int>(grade_idx));
-		return false;
-	}
-
-	float charge = chargings[resultIndex] * (100 + bonus) / 100.f;
-#ifdef ENABLE_DS_EDITS
-	charge = static_cast<float>(bonus);
-#else
-	charge = MINMAX<float>(0.f, charge, 100.f);
-#endif
-
-	if (charge < FLT_EPSILON)
-	{
-		LogManager::instance().ItemLogEntity(ch, item, "DS_HEART_EXTRACT_FAIL", "");
-		ItemSystem::ConsumeItemEcs(item, 1);
-		if (hasExtractor)
-			ItemSystem::ConsumeItemEcs(extractor, 1);
-#ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(owner, CHAT_TYPE_INFO, 624, "");
-#endif
-		return false;
-	}
-
-	const entt::entity dragonHeart = ITEM_MANAGER::instance().CreateItem(DRAGON_HEART_VNUM);
-	if (dragonHeart == entt::null)
-	{
-		LOG_ERROR("Cannot create DRAGON_HEART({}).", DRAGON_HEART_VNUM);
-		return false;
-	}
-
-	const int chargePercent = static_cast<int>(charge + 0.5f);
-	ItemSystem::SetItemSocketEcs(dragonHeart, ITEM_SOCKET_CHARGING_AMOUNT_IDX, chargePercent);
-
-	auto hint = std::to_string(chargePercent);
-	hint += "%s";
-	LogManager::instance().ItemLogEntity(ch, item, "DS_HEART_EXTRACT_SUCCESS", hint.c_str());
-
-	if (!ItemSystem::ConsumeItemEcs(item, 1))
-	{
-		ItemSystem::DestroyItemEntityEcs(dragonHeart, "DS_HEART_INPUT_INVALID");
-		return false;
-	}
-	if (hasExtractor && !ItemSystem::ConsumeItemEcs(extractor, 1))
-	{
-		ItemSystem::DestroyItemEntityEcs(dragonHeart, "DS_HEART_EXTRACTOR_INVALID");
-		return false;
-	}
-
-	ItemSystem::AutoGiveItem(owner, dragonHeart, true);
-#ifdef TEXTS_IMPROVEMENT
-	ecs::ChatSystem::SendNew(owner, CHAT_TYPE_INFO, 624, "");
-#endif
-	return true;
+    if (!ecs::PlayerRuntime::IsPC(owner) || !ItemSystem::IsValidItem(item) ||
+        !g_registry.all_of<ecs::ItemOwner, ecs::ItemLocation, ecs::ItemCount>(item))
+        return false;
+    return ItemSystem::GetItemOwner(item) == owner &&
+        ItemSystem::GetItemWindow(item) == position.window_type && ItemSystem::GetItemCell(item) == position.cell &&
+        ItemSystem::GetItem(owner, position) == item;
 }
+
+bool DetachedExtractionItem(entt::entity item)
+{
+    return ItemSystem::IsValidItem(item) && ItemSystem::GetItemOwner(item) == entt::null &&
+        !ItemSystem::IsItemEquipped(item) &&
+        !g_registry.any_of<ecs::SpatialEntity, ecs::SectorPlacement>(item);
+}
+
+bool ValidExtractor(entt::entity owner, entt::entity soul, entt::entity extractor, uint8_t subtype)
+{
+    return extractor == entt::null || (extractor != soul &&
+        ItemSystem::CanConsumeOwnedItem(owner, extractor) &&
+        ItemSystem::GetItemType(extractor) == ITEM_EXTRACT && ItemSystem::GetItemSubType(extractor) == subtype);
+}
+
+// Only dispose of our still-detached output. A callback may have destroyed,
+// dropped or transferred it; never delete that newer state.
+struct ExtractionOutput {
+    entt::entity item {entt::null};
+    ~ExtractionOutput()
+    {
+        if (DetachedExtractionItem(item) && !ItemSystem::DestroyItemEntityEcs(item, "DS_UNUSED_OUTPUT"))
+            LOG_ERROR("Dragon soul output cleanup failed: entity {}", entt::to_integral(item));
+    }
+    void Give(entt::entity owner)
+    {
+        if (ecs::PlayerRuntime::IsPC(owner) && DetachedExtractionItem(item))
+            ItemSystem::AutoGiveItem(owner, item, true);
+        if (DetachedExtractionItem(item))
+            LOG_ERROR("Committed dragon soul output delivery failed: owner {} item {}",
+                entt::to_integral(owner), entt::to_integral(item));
+    }
+};
+
+void RestorePulledSoul(entt::entity owner, entt::entity item, uint8_t wear, TItemPos destination)
+{
+    if (!ecs::PlayerRuntime::IsPC(owner) ||
+        (!DetachedExtractionItem(item) && !ExtractionAnchor(owner, item, destination)))
+        return;
+    if (ItemSystem::GetWearItem(owner, wear) == entt::null)
+    {
+        InventorySystem::EquipTo(item, owner, wear);
+        if (!DetachedExtractionItem(item)) return;
+    }
+    // If a callback took the original wear slot, retain the stone in carrying
+    // storage when possible. Do not displace the replacement or resurrect it.
+    if (DetachedExtractionItem(item) && ecs::PlayerRuntime::IsPC(owner))
+    {
+        const int cell = ItemSystem::GetEmptyDragonSoulInventory(owner, item);
+        if (cell >= 0) ItemSystem::PlaceItemEcs(owner, item, DRAGON_SOUL_INVENTORY, static_cast<uint16_t>(cell));
+    }
+    if (DetachedExtractionItem(item))
+        LOG_ERROR("Dragon soul pull-out recovery failed: owner {} item {}",
+            entt::to_integral(owner), entt::to_integral(item));
+}
+} // namespace
+
 bool DSManager::ExtractDragonHeartEcs(entt::entity owner, entt::entity item, entt::entity extractor)
 {
-	LPCHARACTER ch = ecs::LegacyCharOf(owner);
-	if (!ch || item == entt::null)
-		return false;
+    using Storage = ItemSystem::ItemCostStorage;
+    if (!m_pTable || !InventorySystem::CanHandleItems(owner) || !ItemSystem::IsDragonSoulItem(item) ||
+        !ItemSystem::CanConsumeOwnedItem(owner, item, 1, Storage::DragonSoulInventory) ||
+        !ValidExtractor(owner, item, extractor, EXTRACT_DRAGON_HEART))
+        return false;
+    const TItemPos origin = DragonSoulItemPosition(item);
+    if (!IsValidCellForThisItem(item, origin)) return false;
+    const ExtractionGuard guard(owner);
+    if (!guard.entered) return false;
 
-	const bool result = ExtractDragonHeart(ch, item, extractor);
-	SyncDragonSoulItemEntity(item);
-	SyncDragonSoulItemEntity(extractor);
-	return result;
+    const auto vnum = ItemSystem::GetItemVnum(item);
+    const auto itemID = ItemSystem::GetItemID(item);
+    const auto count = ItemSystem::GetItemCount(item);
+    const auto extractorOrigin = DragonSoulItemPosition(extractor);
+    const auto extractorCount = extractor == entt::null ? 0 : ItemSystem::GetItemCount(extractor);
+    const auto extractorVnum = extractor == entt::null ? 0 : ItemSystem::GetItemVnum(extractor);
+    const auto ready = [&] {
+        return InventorySystem::CanHandleItems(owner) &&
+            ExtractionAnchor(owner, item, origin) && ItemSystem::GetItemVnum(item) == vnum &&
+            ItemSystem::GetItemCount(item) == count &&
+            ItemSystem::CanConsumeOwnedItem(owner, item, 1, Storage::DragonSoulInventory) &&
+            ValidExtractor(owner, item, extractor, EXTRACT_DRAGON_HEART) &&
+            (extractor == entt::null || (ExtractionAnchor(owner, extractor, extractorOrigin) &&
+                ItemSystem::GetItemCount(extractor) == extractorCount && ItemSystem::GetItemVnum(extractor) == extractorVnum));
+    };
+
+    uint8_t type, grade, step, strength;
+    GetDragonSoulInfo(vnum, type, grade, step, strength);
+    std::vector<float> chargings, probabilities;
+    if (!m_pTable->GetDragonHeartExtValues(type, grade, chargings, probabilities) ||
+        chargings.empty() || chargings.size() != probabilities.size())
+        return false;
+    double total = 0;
+    for (size_t i = 0; i < probabilities.size(); ++i)
+    {
+        if (!std::isfinite(probabilities[i]) || probabilities[i] < 0 ||
+            !std::isfinite(chargings[i]) || chargings[i] < 0) return false;
+        total += probabilities[i];
+    }
+    if (!(total > 0) || total > FLT_MAX) return false;
+    const float dice = fnumber(0.f, static_cast<float>(total));
+    double cumulative = 0;
+    size_t selected = probabilities.size();
+    for (size_t i = 0; i < probabilities.size(); ++i)
+    {
+        cumulative += probabilities[i];
+        if (probabilities[i] > 0) selected = i;
+        if (probabilities[i] > 0 && dice <= cumulative) break;
+    }
+    const int bonus = extractor == entt::null ? 0 : ItemSystem::GetItemValue(extractor, 0);
+#ifdef ENABLE_DS_EDITS
+    const double charge = bonus; // Preserve this server's extractor-defined charge rule.
+#else
+    const double charge = std::clamp(chargings[selected] * (100.0 + bonus) / 100.0, 0.0, 100.0);
+#endif
+    if (!std::isfinite(charge) || charge < 0 || charge > 100) return false;
+    const bool success = charge >= FLT_EPSILON;
+    const int chargePercent = static_cast<int>(charge + 0.5);
+    ExtractionOutput output;
+    if (success)
+    {
+        output.item = ITEM_MANAGER::instance().CreateItem(DRAGON_HEART_VNUM);
+        if (!DetachedExtractionItem(output.item) ||
+            !ItemSystem::SetItemSocketEcs(output.item, ITEM_SOCKET_CHARGING_AMOUNT_IDX, chargePercent) ||
+            !DetachedExtractionItem(output.item))
+            return false;
+    }
+    const ItemSystem::ItemCost costs[] = {{item, 1, Storage::DragonSoulInventory}, {extractor, 1}};
+    if (!ready() || !ItemSystem::ConsumeOwnedItemCosts(owner, {costs, extractor == entt::null ? 1u : 2u}))
+        return false;
+
+    // Input entities may already be retired. Log the captured identifiers.
+    if (ecs::PlayerRuntime::IsPC(owner))
+        LogManager::instance().ItemLog(owner, itemID, vnum,
+            success ? "DS_HEART_EXTRACT_SUCCESS" : "DS_HEART_EXTRACT_FAIL",
+            success ? (std::to_string(chargePercent) + "%").c_str() : "");
+    if (success) output.Give(owner);
+#ifdef TEXTS_IMPROVEMENT
+    if (ecs::PlayerRuntime::IsPC(owner)) ecs::ChatSystem::SendNew(owner, CHAT_TYPE_INFO, 624, "");
+#endif
+    return success;
 }
 
-
-// 특정 용혼석을 장비창에서 제거할 때에 성공 여부를 결정하고, 실패시 부산물을 주는 함수.
-bool DSManager::PullOut(LPCHARACTER ch, TItemPos DestCell, entt::entity& item, entt::entity extractor)
+bool DSManager::PullOutEcs(entt::entity owner, TItemPos destination, entt::entity& item, entt::entity extractor)
 {
-	if (!ch || !ItemSystem::IsDragonSoulItem(item))
-	{
-		LOG_ERROR("Invalid dragon soul pull-out input. ch({}) item({})",
-			static_cast<const void*>(ch), static_cast<uint32_t>(item));
-		return false;
-	}
-
-	const entt::entity owner = ((ch) ? (ch)->GetEntityHandle() : entt::null);
-	const bool hasExtractor = extractor != entt::null;
-	if (hasExtractor && !ItemSystem::IsValidItem(extractor))
-		return false;
-	const uint32_t extractorVnum = hasExtractor ? ItemSystem::GetItemVnum(extractor) : 0;
-
-	if (!IsValidCellForThisItem(item, DestCell))
-	{
-		const int emptyCell = ItemSystem::GetEmptyDragonSoulInventory(owner, item);
-		if (emptyCell < 0)
-		{
+    const entt::entity soul = item; // Never reread a caller's mutable handle after callbacks.
+    if (!m_pTable || !InventorySystem::CanHandleItems(owner) || !ItemSystem::IsDragonSoulItem(soul) ||
+        !ItemSystem::IsItemEquipped(soul) || !ValidExtractor(owner, soul, extractor, EXTRACT_DRAGON_SOUL))
+        return false;
+    const TItemPos origin = DragonSoulItemPosition(soul);
+    if (!ExtractionAnchor(owner, soul, origin) ||
+        origin.cell < INVENTORY_MAX_NUM + WEAR_MAX_NUM ||
+        origin.cell >= INVENTORY_MAX_NUM + WEAR_MAX_NUM + DRAGON_SOUL_DECK_MAX_NUM * DS_SLOT_MAX ||
+        ItemSystem::GetItemCount(soul) != 1 || !InventorySystem::CanUnequipNow(owner, soul, false))
+        return false;
+    const ExtractionGuard guard(owner);
+    if (!guard.entered) return false;
+    const auto wear = static_cast<uint8_t>(origin.cell - INVENTORY_MAX_NUM);
+    const auto vnum = ItemSystem::GetItemVnum(soul);
+    const auto itemID = ItemSystem::GetItemID(soul);
+    const auto name = std::string(ItemSystem::GetItemName(soul));
+    const auto extractorOrigin = DragonSoulItemPosition(extractor);
+    const auto extractorCount = extractor == entt::null ? 0 : ItemSystem::GetItemCount(extractor);
+    const auto extractorVnum = extractor == entt::null ? 0 : ItemSystem::GetItemVnum(extractor);
+    const auto extractorReady = [&] {
+        return InventorySystem::CanHandleItems(owner) &&
+            ValidExtractor(owner, soul, extractor, EXTRACT_DRAGON_SOUL) &&
+            (extractor == entt::null || (ExtractionAnchor(owner, extractor, extractorOrigin) &&
+                ItemSystem::GetItemCount(extractor) == extractorCount && ItemSystem::GetItemVnum(extractor) == extractorVnum));
+    };
+    const auto sourceReady = [&] {
+        return ExtractionAnchor(owner, soul, origin) && ItemSystem::IsItemEquipped(soul) &&
+            ItemSystem::GetWearItem(owner, wear) == soul && ItemSystem::GetItemVnum(soul) == vnum &&
+            ItemSystem::GetItemCount(soul) == 1 && !ItemSystem::IsItemLocked(soul) &&
+            !ItemSystem::IsItemExchanging(soul) && extractorReady();
+    };
+    if (!sourceReady()) return false;
+    if (!IsValidCellForThisItem(soul, destination))
+    {
+        const int cell = ItemSystem::GetEmptyDragonSoulInventory(owner, soul);
+        if (cell < 0)
+        {
 #ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(owner, CHAT_TYPE_INFO, 626, "");
+            ecs::ChatSystem::SendNew(owner, CHAT_TYPE_INFO, 626, "");
 #endif
-			return false;
-		}
-		DestCell = TItemPos(DRAGON_SOUL_INVENTORY, emptyCell);
-	}
+            return false;
+        }
+        destination = TItemPos(DRAGON_SOUL_INVENTORY, static_cast<uint16_t>(cell));
+    }
+    const auto destinationReady = [&] {
+        return IsValidCellForThisItem(soul, destination) &&
+            InventorySystem::IsEmptyItemGrid(owner, destination, ItemSystem::GetItemSize(soul)) &&
+            ItemSystem::GetItem(owner, destination) == entt::null;
+    };
+    if (!destinationReady()) return false;
+    uint8_t type, grade, step, strength;
+    GetDragonSoulInfo(vnum, type, grade, step, strength);
+    float probability = 0.f;
+    uint32_t byProductVnum = 0;
+    const bool hasRule = m_pTable->GetDragonSoulExtValues(type, grade, probability, byProductVnum);
+    if (hasRule && (!std::isfinite(probability) || probability < 0 || probability > 100)) return false;
+    int bonus = 0;
+    float dice = 0;
+    bool success = true;
+    if (hasRule)
+    {
+        if (extractor != entt::null)
+        {
+            bonus = ItemSystem::GetItemValue(extractor, ITEM_VALUE_DRAGON_SOUL_POLL_OUT_BONUS_IDX);
+            if (bonus < 0 || bonus > 100) return false;
+        }
+        dice = fnumber(0.f, 100.f);
+        success = dice <= probability;
+        // Preserve the deployed rule: the extractor replaces, not adds to, the chance.
+        if (extractor != entt::null) success = number(1, 100) <= bonus;
+    }
+    ExtractionOutput output;
+    if (!success && byProductVnum != 0)
+    {
+        output.item = ITEM_MANAGER::instance().CreateItem(byProductVnum);
+        if (!DetachedExtractionItem(output.item)) return false;
+    }
+    if (!sourceReady() || !destinationReady()) return false;
 
-	if (!ItemSystem::IsItemEquipped(item) || !ItemSystem::RemoveItemEcs(item))
-		return false;
+    const auto recover = [&] { RestorePulledSoul(owner, soul, wear, destination); };
+    if (!ItemSystem::RemoveItemEcs(soul))
+    {
+        recover();
+        return false;
+    }
+    if (!ecs::PlayerRuntime::IsPC(owner) || !DetachedExtractionItem(soul) ||
+        !extractorReady() || !destinationReady() ||
+        !ItemSystem::PlaceItemEcs(owner, soul, destination.window_type, destination.cell) ||
+        !ExtractionAnchor(owner, soul, destination) || ItemSystem::GetItemVnum(soul) != vnum ||
+        ItemSystem::GetItemCount(soul) != 1 || !extractorReady())
+    {
+        recover();
+        return false;
+    }
 
-	uint8_t ds_type, grade_idx, step_idx, strength_idx;
-	GetDragonSoulInfo(ItemSystem::GetItemVnum(item), ds_type, grade_idx, step_idx, strength_idx);
-
-	float probability = 0.f;
-	uint32_t byProductVnum = 0;
-	if (!m_pTable->GetDragonSoulExtValues(ds_type, grade_idx, probability, byProductVnum))
-		return ItemSystem::PlaceItemEcs(owner, item, DestCell.window_type, DestCell.cell);
-
-	const float dice = fnumber(0.f, 100.f);
-	int bonus = 0;
-	bool success = dice <= probability;
-	if (hasExtractor)
-	{
-		bonus = ItemSystem::GetItemValue(extractor, ITEM_VALUE_DRAGON_SOUL_POLL_OUT_BONUS_IDX);
-		if (!ItemSystem::ConsumeItemEcs(extractor, 1))
-			return false;
-		success = number(1, 100) <= bonus;
-	}
-
-	char logHint[128];
-	if (success)
-	{
-		if (hasExtractor)
-			sprintf(logHint, "dice(%d) prob(%d + %d) EXTR(VN:%d)", static_cast<int>(dice), static_cast<int>(probability), bonus, extractorVnum);
-		else
-			sprintf(logHint, "dice(%d) prob(%d)", static_cast<int>(dice), static_cast<int>(probability));
-
-		LogManager::instance().ItemLogEntity(ch, item, "DS_PULL_OUT_SUCCESS", logHint);
+    ItemSystem::ItemCost costs[2];
+    size_t costCount = 0;
+    if (!success) costs[costCount++] = {soul, 1, ItemSystem::ItemCostStorage::DragonSoulInventory};
+    if (hasRule && extractor != entt::null) costs[costCount++] = {extractor, 1};
+    if (costCount != 0 && !ItemSystem::ConsumeOwnedItemCosts(owner, {costs, costCount}))
+    {
+        recover();
+        return false;
+    }
+    // This is a committed retirement, even when the item-manager cleanup must retry.
+    if (!success) item = entt::null;
+    if (hasRule && ecs::PlayerRuntime::IsPC(owner))
+    {
+        const auto hint = "dice(" + std::to_string(dice) + ") prob(" + std::to_string(probability) +
+            ") extractorBonus(" + std::to_string(bonus) + ") EXTR(VN:" + std::to_string(extractorVnum) +
+            ") ByProd(VN:" + std::to_string(byProductVnum) + ")";
+        LogManager::instance().ItemLog(owner, itemID, vnum,
+            success ? "DS_PULL_OUT_SUCCESS" : "DS_PULL_OUT_FAILED", hint.c_str());
+    }
+    if (!success && byProductVnum != 0) output.Give(owner);
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(owner, CHAT_TYPE_INFO, 534, "%s", ItemSystem::GetItemName(item));
+    if (hasRule && ecs::PlayerRuntime::IsPC(owner))
+    {
+        if (success) ecs::ChatSystem::SendNew(owner, CHAT_TYPE_INFO, 534, "%s", name.c_str());
+        else if (byProductVnum == 0) ecs::ChatSystem::SendNew(owner, CHAT_TYPE_INFO, 537, "");
+        else if (ItemSystem::IsValidItem(output.item))
+            ecs::ChatSystem::SendNew(owner, CHAT_TYPE_INFO, 535, "%s", ItemSystem::GetItemName(output.item));
+        else ecs::ChatSystem::SendNew(owner, CHAT_TYPE_INFO, 536, "");
+    }
 #endif
-		return ItemSystem::PlaceItemEcs(owner, item, DestCell.window_type, DestCell.cell);
-	}
-
-	if (hasExtractor)
-		sprintf(logHint, "dice(%d) prob(%d + %d) EXTR(VN:%d) ByProd(VN:%d)", static_cast<int>(dice), static_cast<int>(probability), bonus, extractorVnum, byProductVnum);
-	else
-		sprintf(logHint, "dice(%d) prob(%d) ByProd(VNUM:%d)", static_cast<int>(dice), static_cast<int>(probability), byProductVnum);
-
-	LogManager::instance().ItemLogEntity(ch, item, "DS_PULL_OUT_FAILED", logHint);
-	ItemSystem::DestroyItemEntityEcs(item, "DRAGON_SOUL_BYPRODUCT");
-	item = entt::null;
-
-	if (byProductVnum != 0)
-	{
-		const entt::entity byProduct = ItemSystem::AutoGiveItemEcs(owner, byProductVnum, 1, -1, true);
-#ifdef TEXTS_IMPROVEMENT
-		if (byProduct != entt::null)
-			ecs::ChatSystem::SendNew(owner, CHAT_TYPE_INFO, 535, "%s", ItemSystem::GetItemName(byProduct));
-		else
-			ecs::ChatSystem::SendNew(owner, CHAT_TYPE_INFO, 536, "");
-#endif
-	}
-#ifdef TEXTS_IMPROVEMENT
-	else
-	{
-		ecs::ChatSystem::SendNew(owner, CHAT_TYPE_INFO, 537, "");
-	}
-#endif
-	return false;
+    return success;
 }
-bool DSManager::PullOutEcs(entt::entity owner, TItemPos DestCell, entt::entity& item, entt::entity extractor)
-{
-	LPCHARACTER ch = ecs::LegacyCharOf(owner);
-	if (!ch || item == entt::null)
-		return false;
-
-	const bool result = PullOut(ch, DestCell, item, extractor);
-	SyncDragonSoulItemEntity(item);
-	SyncDragonSoulItemEntity(extractor);
-	return result;
-}
-
 
 bool DSManager::DoRefineGrade(entt::entity ch, TItemPos (&aItemPoses)[DRAGON_SOUL_REFINE_GRID_SIZE])
 {

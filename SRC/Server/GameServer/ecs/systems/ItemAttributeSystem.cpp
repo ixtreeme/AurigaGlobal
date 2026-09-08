@@ -30,6 +30,53 @@ struct PendingConsumptions {
     bool processing { false };
 };
 
+struct PreparedCosts {
+    struct Entry { entt::entity item; int remaining; };
+    std::array<Entry, 64> entries {};
+    size_t size {};
+    PendingConsumptions* pending {};
+
+    bool Prepare(entt::entity owner, std::span<const ItemCost> costs, entt::entity excluded = entt::null)
+    {
+        if (costs.empty() || costs.size() > entries.size()) return false;
+        size_t depleted = 0;
+        for (size_t i = 0; i < costs.size(); ++i)
+        {
+            const auto cost = costs[i];
+            if (cost.item == excluded || !CanConsumeOwnedItem(owner, cost.item, cost.amount, cost.storage))
+                return false;
+            for (size_t j = 0; j < i; ++j)
+                if (entries[j].item == cost.item) return false;
+            const int remaining = g_registry.get<ecs::ItemCount>(cost.item).count - static_cast<int>(cost.amount);
+            entries[i] = {cost.item, remaining};
+            depleted += remaining == 0;
+        }
+        pending = g_registry.ctx().find<PendingConsumptions>();
+        if (!pending) pending = &g_registry.ctx().emplace<PendingConsumptions>();
+        if (depleted > pending->items.max_size() - pending->items.size()) return false;
+        pending->items.reserve(pending->items.size() + depleted);
+        size = costs.size();
+        return true;
+    }
+
+    // No signals, allocations or callbacks between validation and this commit.
+    void Commit()
+    {
+        for (size_t i = 0; i < size; ++i)
+        {
+            g_registry.get<ecs::ItemCount>(entries[i].item).count = entries[i].remaining;
+            if (entries[i].remaining == 0) pending->items.push_back({entries[i].item});
+        }
+    }
+
+    void Publish() const
+    {
+        for (size_t i = 0; i < size; ++i)
+            if (entries[i].remaining > 0) PublishItemCount(entries[i].item);
+        ProcessPendingItemConsumptions();
+    }
+};
+
 int Random(int low, int high) { return number(low, high); }
 
 int LockedSlot(entt::entity item)
@@ -365,9 +412,10 @@ bool SetItemAttributesEcs(entt::entity item, const ecs::ItemAttributes& attribut
     return true;
 }
 
-bool CanConsumeOwnedItem(entt::entity owner, entt::entity material, uint32_t amount)
+bool CanConsumeOwnedItem(entt::entity owner, entt::entity material, uint32_t amount, ItemCostStorage storage)
 {
     if (!ecs::PlayerRuntime::IsPC(owner) || !IsValidItem(material) ||
+        !g_registry.all_of<ecs::ItemOwner, ecs::ItemLocation>(material) ||
         amount == 0 || IsItemConsumptionPending(material) || IsItemEquipped(material) ||
         IsItemExchanging(material) || IsItemLocked(material))
         return false;
@@ -377,11 +425,15 @@ bool CanConsumeOwnedItem(entt::entity owner, entt::entity material, uint32_t amo
     if (GetItemOwner(material) != owner)
         return false;
     const uint8_t window = GetItemWindow(material);
-    if (window != INVENTORY
+    if (storage == ItemCostStorage::DragonSoulInventory)
+    {
+        if (window != DRAGON_SOUL_INVENTORY || !IsDragonSoulItem(material)) return false;
+    }
+    else if (storage != ItemCostStorage::Inventory || (window != INVENTORY
 #ifdef ENABLE_EXTRA_INVENTORY
         && window != EXTRA_INVENTORY
 #endif
-    )
+    ))
         return false;
     if (GetItem(owner, TItemPos(window, GetItemCell(material))) != material)
         return false;
@@ -446,44 +498,16 @@ void ProcessPendingItemConsumptions()
 bool SetItemAttributesWithItemCosts(entt::entity owner, entt::entity target,
     const ecs::ItemAttributes& attributes, std::span<const ItemCost> costs)
 {
-    constexpr size_t maxCosts = 64;
-    if (costs.empty() || costs.size() > maxCosts ||
-        !IsOwnedAttributeTarget(owner, target) || !CanConsumeOwnedItem(owner, target))
+    if (!IsOwnedAttributeTarget(owner, target) || !CanConsumeOwnedItem(owner, target))
         return false;
     const auto desired = attributes.attrs;
     if (std::any_of(desired.begin(), desired.end(), [](const auto& attr) { return attr.bType >= MAX_APPLY_NUM; }))
         return false;
-    struct PreparedCost { entt::entity item; int remaining; };
-    std::array<PreparedCost, maxCosts> prepared {};
-    size_t depleted = 0;
-    for (size_t i = 0; i < costs.size(); ++i)
-    {
-        const auto cost = costs[i];
-        if (cost.item == target || !CanConsumeOwnedItem(owner, cost.item, cost.amount))
-            return false;
-        for (size_t j = 0; j < i; ++j)
-            if (prepared[j].item == cost.item)
-                return false;
-        const int remaining = g_registry.get<ecs::ItemCount>(cost.item).count - static_cast<int>(cost.amount);
-        prepared[i] = {cost.item, remaining};
-        depleted += remaining == 0;
-    }
-    auto* pending = g_registry.ctx().find<PendingConsumptions>();
-    if (!pending)
-        pending = &g_registry.ctx().emplace<PendingConsumptions>();
-    if (depleted > pending->items.max_size() - pending->items.size())
-        return false;
-    pending->items.reserve(pending->items.size() + depleted);
+    PreparedCosts prepared;
+    if (!prepared.Prepare(owner, costs, target)) return false;
     const auto old = g_registry.get<ecs::ItemAttributes>(target).attrs;
 
-    // Commit point: only writes to existing trivial components and reserved
-    // storage. No registry signals, allocator, callback, save or network call.
-    for (size_t i = 0; i < costs.size(); ++i)
-    {
-        g_registry.get<ecs::ItemCount>(prepared[i].item).count = prepared[i].remaining;
-        if (prepared[i].remaining == 0)
-            pending->items.push_back({prepared[i].item});
-    }
+    prepared.Commit();
     g_registry.get<ecs::ItemAttributes>(target).attrs = desired;
 
     // Everything observable from here on sees the complete committed state.
@@ -496,10 +520,16 @@ bool SetItemAttributesWithItemCosts(entt::entity owner, entt::entity target,
         if (desired[i].bType != 0 &&
             (desired[i].bType != old[i].bType || desired[i].sValue != old[i].sValue))
             LogAttribute(target, i, desired[i], "SET_FORCE_ATTR");
-    for (size_t i = 0; i < costs.size(); ++i)
-        if (prepared[i].remaining > 0)
-            PublishItemCount(prepared[i].item);
-    ProcessPendingItemConsumptions();
+    prepared.Publish();
+    return true;
+}
+
+bool ConsumeOwnedItemCosts(entt::entity owner, std::span<const ItemCost> costs)
+{
+    PreparedCosts prepared;
+    if (!prepared.Prepare(owner, costs)) return false;
+    prepared.Commit();
+    prepared.Publish();
     return true;
 }
 

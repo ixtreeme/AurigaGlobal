@@ -854,6 +854,56 @@ validated stack (the current switchbot cost is one item). The tests do not run
 the switchbot timer/UI, shop listings, rank/Battle Pass side effects, the actual
 inventory destruction path, or the legacy `ChangeKKAK` special-case path.
 
+## Dragon-soul extraction and pull-out
+
+Verified on 2026-09-08 with Windows/MSVC x64: GameServer Release build, all
+13/13 headless tests in Release and AddressSanitizer RelWithDebInfo, including
+3,414 checks in ItemAttributeTests. No live server/client/DB test was performed.
+
+`ExtractDragonHeartEcs` and `PullOutEcs` now contain the implementation in the
+existing `DragonSoul.cpp`; the CHARACTER-taking methods and their legacy-state
+resync wrappers were removed. The four still-legacy use/move callers hand off
+the owner entity at that boundary. This does not migrate the main MoveItem or
+UseItemEx dispatchers, the other DS refinement wrappers, or the whole DS system.
+
+`ItemAttributeTests` executes both complete extraction algorithms with no
+CHARACTER/CItem fixtures. Coverage includes ownership and slot anchors, stale
+owners/materials, aliasing, equipment/lock/exchange restrictions, extractor
+subtypes, blocked inventory handling, malformed probabilities/charging values,
+failed output creation/socket initialization, callbacks invalidating inputs,
+occupied/full destinations, rejected placement and equipment recovery, source
+destruction during removal, recursive extraction, last-unit costs, deferred
+destruction/retry, and post-commit owner destruction without an orphaned reward.
+
+Both costs commit together through the existing shared item-cost/retirement
+engine before its first save/packet/destruction callback. Dragon-soul inventory
+consumption is explicit opt-in; ordinary attribute costs retain their previous
+inventory policy. Equipped stones are moved to validated DS storage before
+charging or retiring them. A failed placement/payment attempts to restore only
+the original live item, never a replacement or an item transferred by a
+callback. Occupied original wear slots are not overwritten; a detached stone
+falls back to a free DS cell, with unresolved recovery logged.
+
+The deployed extractor rules are preserved: pull-out uses the extractor's
+chance instead of adding it to the base chance; a missing pull-out row allows
+free guaranteed removal; ENABLE_DS_EDITS takes heart charge from the extractor.
+Invalid nonfinite/out-of-range configuration is rejected. Byproducts are
+prepared before destructive changes, so allocation failure leaves inputs intact.
+
+Only the algorithms and batch commit/retirement engine are real in this target.
+Table loading, RNG, inventory/equipment mutation, creation, destruction,
+automatic reward delivery, logs, chat and persistence are controlled doubles.
+Inventory/equipment engines have separate QuickslotTests coverage, but live
+DS deactivation/bonus/timer callbacks and reward delivery are not integrated
+here. A committed cost is not refunded after a later callback destroys its
+owner; undeliverable detached outputs are logged and cleaned up. This is not a
+durable DB transaction or recovery from a process crash.
+
+Before deployment test equip/pull-out in both decks, all grades, full DS bags,
+both extractor types, success/failure/no-table-row behaviour, heart charging,
+byproducts, ground delivery with full ordinary inventory, disconnect and relog
+against the actual DS table, client, timers and DB.
+
 ## Costume attribute transfer
 
 The same `ItemAttributeTests` target also compiles the complete existing

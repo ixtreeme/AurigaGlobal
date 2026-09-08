@@ -188,16 +188,22 @@ bool ChangeItemAttributeEcs(entt::entity item, const int* probabilities = nullpt
 // one validated stack (or the owner's wallet), then publish the new attributes.
 bool CanPayItemAttributeCost(entt::entity item, entt::entity material, uint32_t amount = 1);
 // Material validation shared by transactions whose target equip rules differ.
-bool CanConsumeOwnedItem(entt::entity owner, entt::entity material, uint32_t amount = 1);
+enum class ItemCostStorage { Inventory, DragonSoulInventory };
+bool CanConsumeOwnedItem(entt::entity owner, entt::entity material, uint32_t amount = 1,
+    ItemCostStorage storage = ItemCostStorage::Inventory);
 struct ItemCost {
     entt::entity item { entt::null };
     uint32_t amount { 1 };
+    ItemCostStorage storage { ItemCostStorage::Inventory };
 };
 // A successful result means the whole in-memory change committed. All costs
 // and the target change before the first save/packet/destruction callback.
 // Empty, duplicate and more than 64 costs are rejected. Not a DB transaction.
 bool SetItemAttributesWithItemCosts(entt::entity owner, entt::entity target,
     const ecs::ItemAttributes& attributes, std::span<const ItemCost> costs);
+// Same batch debit/retirement contract without an attribute target. Dragon-soul
+// inventory costs require explicit opt-in; equipped and foreign items are rejected.
+bool ConsumeOwnedItemCosts(entt::entity owner, std::span<const ItemCost> costs);
 bool IsItemConsumptionPending(entt::entity item);
 void ProcessPendingItemConsumptions();
 // Publish the current component, never reapply an earlier count snapshot.

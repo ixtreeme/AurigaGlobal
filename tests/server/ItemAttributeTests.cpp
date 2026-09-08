@@ -1,5 +1,6 @@
 #include "../../SRC/Server/GameServer/stdafx.h"
 #include "../../SRC/Server/GameServer/ecs/systems/ItemSystem.hpp"
+#include "../../SRC/Server/GameServer/ecs/systems/InventorySystem.hpp"
 #include "../../SRC/Server/GameServer/ecs/systems/NetworkSyncSystem.hpp"
 #include "../../SRC/Server/GameServer/ecs/systems/PlayerRuntimeSystem.hpp"
 #include "../../SRC/Server/GameServer/ecs/systems/PointSystem.hpp"
@@ -47,6 +48,16 @@ int payments = 0;
 bool rejectPayment = false;
 bool rejectGoldPayment = false;
 bool transferTest = false;
+bool extractionTest = false, rejectCreation = false, rejectSocket = false, rejectPlace = false;
+bool allowHandling = true, allowUnequip = true, dsHeartOk = true, dsPullOk = true;
+int emptyDSCell = -1, extractionLogs = 0;
+float pullProbability = 100.f;
+uint32_t byProductVnum = 0;
+std::vector<float> heartCharges, heartProbabilities;
+std::vector<entt::entity> createdOutputs, givenOutputs;
+std::function<void(entt::entity)> onCreate, onSocket, onRemove, onPlace, onLog;
+TItemTable outputProto {};
+
 int rejectPaymentAt = 0, transferLogs = 0;
 std::vector<std::string> transferCommands;
 std::function<void()> onPayment;
@@ -103,7 +114,7 @@ void CheckPaymentOrder()
 int passes_per_sec = 25;
 std::shared_ptr<spdlog::logger> logging::GetErrorLogger()
 {
-    if (!transferTest) UnexpectedSwitchbotService();
+    if (!transferTest && !extractionTest) UnexpectedSwitchbotService();
     static auto logger = std::make_shared<spdlog::logger>("transfer-test", spdlog::sinks_init_list{});
     return logger;
 }
@@ -112,9 +123,9 @@ void intrusive_ptr_release(EVENT*) { UnexpectedSwitchbotService(); }
 LPEVENT event_create_ex(TEVENTFUNC, event_info_data*, int32_t) { UnexpectedSwitchbotService(); }
 void event_cancel(LPEVENT*) { UnexpectedSwitchbotService(); }
 #ifdef TEXTS_IMPROVEMENT
-void ecs::ChatSystem::SendNew(entt::entity, uint8_t, uint32_t, const char*, ...) { if (!transferTest) UnexpectedSwitchbotService(); }
+void ecs::ChatSystem::SendNew(entt::entity, uint8_t, uint32_t, const char*, ...) { if (!transferTest && !extractionTest) UnexpectedSwitchbotService(); }
 #endif
-uint32_t ecs::PlayerRuntime::GetPlayerID(entt::entity) { if (!transferTest) UnexpectedSwitchbotService(); return 42; }
+uint32_t ecs::PlayerRuntime::GetPlayerID(entt::entity) { if (!transferTest && !extractionTest) UnexpectedSwitchbotService(); return 42; }
 std::string_view ecs::PlayerRuntime::GetName(entt::entity) { UnexpectedSwitchbotService(); }
 #ifdef ENABLE_BATTLE_PASS
 uint8_t ecs::PlayerRuntime::GetBattlePassId(entt::entity) { UnexpectedSwitchbotService(); }
@@ -137,7 +148,14 @@ int TEMP_BUFFER::size() { UnexpectedSwitchbotService(); }
 entt::entity CHARACTER_MANAGER::FindEntityByPID(uint32_t) { UnexpectedSwitchbotService(); }
 void P2P_MANAGER::Send(const void*, int, LPDESC) { UnexpectedSwitchbotService(); }
 entt::entity ItemSystem::FindItemByID(uint32_t) { UnexpectedSwitchbotService(); }
-const char* ItemSystem::GetItemName(entt::entity) { UnexpectedSwitchbotService(); }
+const char* ItemSystem::GetItemName(entt::entity item) {
+    Check(extractionTest && ItemSystem::IsValidItem(item), "stale extraction item name");
+    return "dragon-soul-test";
+}
+uint8_t ItemSystem::GetItemSize(entt::entity item) {
+    Check(extractionTest && ItemSystem::IsValidItem(item), "stale extraction item size");
+    return ItemSystem::GetItemProto(item)->bSize;
+}
 entt::entity ItemSystem::GetItemOwnerEntity(entt::entity) { UnexpectedSwitchbotService(); }
 int ItemSystem::GetItemAttributeType(entt::entity, int) { UnexpectedSwitchbotService(); }
 int ItemSystem::GetItemAttributeValue(entt::entity, int) { UnexpectedSwitchbotService(); }
@@ -150,26 +168,68 @@ void DragonSoulSystem::DeactivateAll(entt::entity) { UnexpectedSwitchbotService(
 bool DragonSoulSystem::CanRefine(entt::entity) { UnexpectedSwitchbotService(); }
 int32_t DragonSoulSystem::GetLastRefineTime(entt::entity) { UnexpectedSwitchbotService(); }
 void DragonSoulSystem::SetLastRefineTime(entt::entity) { UnexpectedSwitchbotService(); }
-entt::entity ITEM_MANAGER::CreateItem(uint32_t, uint32_t, uint32_t, bool, int, bool) { UnexpectedSwitchbotService(); }
+ITEM_MANAGER::ITEM_MANAGER() {}
+ITEM_MANAGER::~ITEM_MANAGER() {}
+CSemaphore::CSemaphore() = default;
+CSemaphore::~CSemaphore() = default;
+CAsyncSQL::CAsyncSQL() = default;
+CAsyncSQL::~CAsyncSQL() = default;
+LogManager::LogManager() : m_bIsConnect(false) {}
+LogManager::~LogManager() = default;
+void LogManager::ItemLog(entt::entity owner, int, int, const char*, const char*) {
+    Check(extractionTest && ecs::PlayerRuntime::IsPC(owner), "extraction log read stale owner");
+    ++extractionLogs;
+    if (onLog) onLog(owner);
+}
+entt::entity ITEM_MANAGER::CreateItem(uint32_t vnum, uint32_t count, uint32_t, bool, int, bool) {
+    if (!extractionTest) UnexpectedSwitchbotService();
+    if (rejectCreation) return entt::null;
+    const auto item = g_registry.create();
+    g_registry.emplace<ecs::ItemIdentity>(item, ecs::ItemIdentity{500, vnum, vnum});
+    g_registry.emplace<ecs::ItemCount>(item, ecs::ItemCount{static_cast<int>(count)});
+    g_registry.emplace<ecs::ItemProtoRef>(item).proto = &outputProto;
+    g_registry.emplace<ecs::ItemLocation>(item, ecs::ItemLocation{RESERVED_WINDOW, 0});
+    createdOutputs.push_back(item);
+    if (onCreate) onCreate(item);
+    return item;
+}
 bool DragonSoulTable::GetRefineGradeValues(uint8_t, uint8_t, int&, int&, std::vector<float>&) { UnexpectedSwitchbotService(); }
 bool DragonSoulTable::GetRefineStepValues(uint8_t, uint8_t, int&, int&, std::vector<float>&) { UnexpectedSwitchbotService(); }
 bool DragonSoulTable::GetRefineStrengthValues(uint8_t, uint8_t, uint8_t, int&, float&) { UnexpectedSwitchbotService(); }
-bool DragonSoulTable::GetDragonHeartExtValues(uint8_t, uint8_t, std::vector<float>&, std::vector<float>&) { UnexpectedSwitchbotService(); }
-bool DragonSoulTable::GetDragonSoulExtValues(uint8_t, uint8_t, float&, uint32_t&) { UnexpectedSwitchbotService(); }
+bool DragonSoulTable::GetDragonHeartExtValues(uint8_t, uint8_t, std::vector<float>& charges, std::vector<float>& probabilities) {
+    if (!extractionTest) UnexpectedSwitchbotService();
+    charges = heartCharges; probabilities = heartProbabilities; return dsHeartOk;
+}
+bool DragonSoulTable::GetDragonSoulExtValues(uint8_t, uint8_t, float& probability, uint32_t& byproduct) {
+    if (!extractionTest) UnexpectedSwitchbotService();
+    probability = pullProbability; byproduct = byProductVnum; return dsPullOk;
+}
 void LogManager::ItemLogEntity(LPCHARACTER, entt::entity, const char*, const char*) { UnexpectedSwitchbotService(); }
-entt::entity ItemSystem::GetWearItem(entt::entity, uint8_t) { UnexpectedSwitchbotService(); }
-void ItemSystem::AutoGiveItem(entt::entity, entt::entity, bool
+entt::entity ItemSystem::GetWearItem(entt::entity owner, uint8_t wear) {
+    if (!extractionTest) UnexpectedSwitchbotService();
+    return ItemSystem::GetItem(owner, TItemPos(EQUIPMENT, INVENTORY_MAX_NUM + wear));
+}
+void ItemSystem::AutoGiveItem(entt::entity owner, entt::entity item, bool
 #ifdef __HIGHLIGHT_SYSTEM__
     , bool
 #endif
-) { UnexpectedSwitchbotService(); }
+) {
+    Check(extractionTest && ecs::PlayerRuntime::IsPC(owner) && ItemSystem::IsValidItem(item),
+        "extraction output delivered to stale entity");
+    givenOutputs.push_back(item);
+    g_registry.emplace_or_replace<ecs::ItemOwner>(item, ecs::ItemOwner{owner});
+    g_registry.get<ecs::ItemLocation>(item) = {INVENTORY, 100};
+    inventory[{owner, INVENTORY, 100}] = item;
+}
 bool ItemSystem::AutoGiveDS(entt::entity, entt::entity, bool) { UnexpectedSwitchbotService(); }
 entt::entity ItemSystem::AutoGiveItemEcs(entt::entity, uint32_t, uint32_t, int, bool) { UnexpectedSwitchbotService(); }
 int ItemSystem::GetItemLimitTimerBasedOnWearIndex(entt::entity) { UnexpectedSwitchbotService(); }
 int ItemSystem::GetItemDuration(entt::entity) { return 0; }
 bool ItemSystem::DestroyItemEntityEcs(entt::entity item, const char*)
 {
-    Check(transferTest && ItemSystem::IsItemConsumptionPending(item) && ItemSystem::GetItemCount(item) == 0,
+    const bool retired = ItemSystem::IsItemConsumptionPending(item) && ItemSystem::GetItemCount(item) == 0;
+    Check((transferTest || extractionTest) && (retired ||
+        (extractionTest && ItemSystem::GetItemOwner(item) == entt::null)),
         "cleanup entered before committed item retirement");
     destroyAttempts.push_back(item);
     if (onDestroy) onDestroy(item);
@@ -180,11 +240,60 @@ bool ItemSystem::DestroyItemEntityEcs(entt::entity item, const char*)
     }
     return true;
 }
-bool ItemSystem::SetItemSocketEcs(entt::entity, int, uint32_t) { UnexpectedSwitchbotService(); }
+bool ItemSystem::SetItemSocketEcs(entt::entity item, int index, uint32_t value) {
+    if (!extractionTest) UnexpectedSwitchbotService();
+    if (rejectSocket) return false;
+    g_registry.get_or_emplace<ecs::ItemSockets>(item).sockets[index] = value;
+    if (onSocket) onSocket(item);
+    return true;
+}
 bool ItemSystem::CopyItemAttributesEcs(entt::entity, entt::entity) { UnexpectedSwitchbotService(); }
-bool ItemSystem::PlaceItemEcs(entt::entity, entt::entity, uint8_t, uint16_t) { UnexpectedSwitchbotService(); }
-bool ItemSystem::RemoveItemEcs(entt::entity) { UnexpectedSwitchbotService(); }
-int ItemSystem::GetEmptyDragonSoulInventory(entt::entity, entt::entity) { UnexpectedSwitchbotService(); }
+bool ItemSystem::PlaceItemEcs(entt::entity owner, entt::entity item, uint8_t window, uint16_t cell) {
+    if (!extractionTest) UnexpectedSwitchbotService();
+    if (rejectPlace || !ecs::PlayerRuntime::IsPC(owner) || !IsValidItem(item) ||
+        GetItemOwner(item) != entt::null || GetItem(owner, TItemPos(window, cell)) != entt::null) return false;
+    g_registry.emplace_or_replace<ecs::ItemOwner>(item, ecs::ItemOwner{owner});
+    g_registry.get<ecs::ItemLocation>(item) = {window, cell};
+    g_registry.get_or_emplace<ecs::ItemEquipped>(item).equipped = window == EQUIPMENT;
+    inventory[{owner, window, cell}] = item;
+    if (onPlace) onPlace(item);
+    return true;
+}
+bool ItemSystem::RemoveItemEcs(entt::entity item) {
+    Check(extractionTest && IsValidItem(item), "stale extraction removal");
+    inventory.erase({GetItemOwner(item), GetItemWindow(item), GetItemCell(item)});
+    g_registry.get<ecs::ItemOwner>(item).owner = entt::null;
+    g_registry.get<ecs::ItemLocation>(item) = {RESERVED_WINDOW, 0};
+    g_registry.get_or_emplace<ecs::ItemEquipped>(item).equipped = false;
+    if (onRemove) onRemove(item);
+    return true;
+}
+int ItemSystem::GetEmptyDragonSoulInventory(entt::entity, entt::entity) {
+    if (!extractionTest) UnexpectedSwitchbotService();
+    return emptyDSCell;
+}
+bool InventorySystem::CanHandleItems(entt::entity owner, bool, bool) {
+    if (!extractionTest) UnexpectedSwitchbotService();
+    return allowHandling && ecs::PlayerRuntime::IsPC(owner);
+}
+bool InventorySystem::CanUnequipNow(entt::entity, entt::entity item, bool) {
+    if (!extractionTest) UnexpectedSwitchbotService();
+    return allowUnequip && !ItemSystem::IsItemLocked(item) && !ItemSystem::IsItemExchanging(item);
+}
+bool InventorySystem::IsEmptyItemGrid(entt::entity owner, TItemPos cell, uint8_t size, int) {
+    if (!extractionTest) UnexpectedSwitchbotService();
+    return size == 1 && cell.cell < DRAGON_SOUL_INVENTORY_MAX_NUM &&
+        ItemSystem::GetItem(owner, cell) == entt::null;
+}
+bool InventorySystem::EquipTo(entt::entity item, entt::entity owner, uint8_t wear) {
+    if (!extractionTest) UnexpectedSwitchbotService();
+    if (ItemSystem::GetWearItem(owner, wear) != entt::null) return false;
+    if (ItemSystem::GetItemOwner(item) != entt::null && !ItemSystem::RemoveItemEcs(item)) return false;
+    const bool blocked = rejectPlace; rejectPlace = false;
+    const bool result = ItemSystem::PlaceItemEcs(owner, item, EQUIPMENT, INVENTORY_MAX_NUM + wear);
+    rejectPlace = blocked;
+    return result;
+}
 bool ItemSystem::ModifyItemPointsEcs(entt::entity, bool) { UnexpectedSwitchbotService(); }
 bool ItemSystem::StartTimerBasedOnWearExpireEventEcs(entt::entity) { UnexpectedSwitchbotService(); }
 bool ItemSystem::StopTimerBasedOnWearExpireEventEcs(entt::entity) { UnexpectedSwitchbotService(); }
@@ -338,7 +447,7 @@ bool IsItemLocked(entt::entity item)
 }
 bool ConsumeItemEcs(entt::entity item, uint32_t amount)
 {
-    Check(!transferTest, "batch transfer fell back to sequential consumption");
+    Check(!transferTest && !extractionTest, "batch fell back to sequential consumption");
     CheckPaymentOrder();
     ++payments;
     if (rejectPayment || rejectPaymentAt == payments)
@@ -395,7 +504,8 @@ struct Fixture {
         floatRandomCalls = 0;
         payments = 0;
         rejectPayment = rejectGoldPayment = false;
-        transferTest = false;
+        transferTest = extractionTest = false;
+        onCreate = onSocket = onRemove = onPlace = onLog = {};
         rejectPaymentAt = transferLogs = 0;
         transferCommands.clear();
         onPayment = {};
@@ -1768,6 +1878,317 @@ void BatchReentrancyAndRetirement()
     }
 }
 
+
+struct ExtractionFixture : PaidFixture {
+    DSManager manager;
+    TItemTable extractorProto {};
+    TItemPos destination;
+    explicit ExtractionFixture(bool equipped = false, bool loadTable = true)
+    {
+        extractionTest = true;
+        rejectCreation = rejectSocket = rejectPlace = false;
+        allowHandling = allowUnequip = dsReadOk = dsHeartOk = dsPullOk = true;
+        createdOutputs.clear(); givenOutputs.clear(); extractionLogs = 0;
+        heartCharges = {50.f}; heartProbabilities = {100.f};
+        pullProbability = 100.f; byProductVnum = 0;
+        proto.bType = ITEM_DS; proto.bSubType = 0; proto.bSize = 1;
+        g_registry.get<ecs::ItemIdentity>(item).vnum = 110000;
+        g_registry.emplace<ecs::ItemCount>(item, ecs::ItemCount{1});
+        extractorProto.bType = ITEM_EXTRACT;
+        extractorProto.bSubType = equipped ? EXTRACT_DRAGON_SOUL : EXTRACT_DRAGON_HEART;
+        extractorProto.alValues[0] = 50;
+        g_registry.emplace<ecs::ItemProtoRef>(material).proto = &extractorProto;
+        outputProto = {}; outputProto.bSize = 1;
+        if (loadTable) Check(manager.ReadDragonSoulTableFile("extraction-test-table"), "extraction table failed");
+        emptyDSCell = manager.GetBasePosition(item);
+        destination = TItemPos(DRAGON_SOUL_INVENTORY, emptyDSCell);
+        Place(item, equipped ? EQUIPMENT : DRAGON_SOUL_INVENTORY,
+            equipped ? INVENTORY_MAX_NUM + WEAR_MAX_NUM : emptyDSCell);
+        g_registry.emplace<ecs::ItemEquipped>(item).equipped = equipped;
+        Check(!g_registry.any_of<ecs::LegacyCharPtr>(owner) &&
+            !g_registry.any_of<ecs::LegacyItemPtr>(material), "extraction fixtures must be entity-only");
+    }
+    bool Run(bool equipped)
+    {
+        return equipped ? manager.PullOutEcs(owner, destination, item, material) :
+            manager.ExtractDragonHeartEcs(owner, item, material);
+    }
+    void Intact(bool equipped)
+    {
+        Check(ItemSystem::IsValidItem(item) && ItemSystem::GetItemCount(item) == 1 &&
+            ItemSystem::GetItemCount(material) == 2 && ItemSystem::IsItemEquipped(item) == equipped,
+            "rejected extraction altered inputs");
+        Check(givenOutputs.empty() && extractionLogs == 0 && payments == 0,
+            "rejected extraction delivered/logged/charged");
+    }
+};
+
+void ExtractionInputGuards()
+{
+    for (bool equipped : {false, true})
+    {
+        ExtractionFixture f(equipped);
+        const auto run = [&] { return f.Run(equipped); };
+        allowHandling = false;
+        Check(!run(), "extraction while inventory blocked");
+        allowHandling = true;
+        const auto stranger = g_registry.create();
+        g_registry.emplace<TestPlayer>(stranger);
+        for (const auto entity : {f.item, f.material})
+        {
+            g_registry.get<ecs::ItemOwner>(entity).owner = stranger;
+            Check(!run(), "foreign extraction input accepted");
+            g_registry.get<ecs::ItemOwner>(entity).owner = f.owner;
+            auto& flags = g_registry.emplace<ecs::ItemFlags>(entity);
+            flags.isLocked = true; Check(!run(), "locked extraction input accepted");
+            flags.isLocked = false; flags.exchanging = true;
+            Check(!run(), "exchanging extraction input accepted"); flags.exchanging = false;
+        }
+        const auto originalMaterial = f.material;
+        f.material = f.item;
+        Check(!run(), "soul accepted as its own extractor");
+        f.material = originalMaterial;
+        f.extractorProto.bSubType = equipped ? EXTRACT_DRAGON_HEART : EXTRACT_DRAGON_SOUL;
+        Check(!run(), "wrong extractor subtype accepted");
+        f.extractorProto.bSubType = equipped ? EXTRACT_DRAGON_SOUL : EXTRACT_DRAGON_HEART;
+        inventory.erase({f.owner, INVENTORY, 0});
+        Check(!run(), "unanchored extractor accepted");
+        f.Place(f.material, INVENTORY, 0);
+        Check(randomCalls == 0 && floatRandomCalls == 0, "bad inputs reached RNG");
+        f.Intact(equipped);
+        g_registry.destroy(f.material);
+        Check(!run(), "stale extractor accepted");
+        g_registry.destroy(f.owner);
+        Check(!run(), "stale owner accepted");
+    }
+    ExtractionFixture f;
+    f.Place(f.item, INVENTORY, 5);
+    Check(!f.Run(false), "heart accepted DS outside its inventory");
+    f.Intact(false);
+}
+
+void HeartExtractionTransactions()
+{
+    {
+        ExtractionFixture f;
+        rejectCreation = true;
+        Check(!f.Run(false), "missing heart output accepted"); f.Intact(false);
+        rejectCreation = false; rejectSocket = true;
+        Check(!f.Run(false), "failed output socket accepted"); f.Intact(false);
+        Check(createdOutputs.size() == 1 && !g_registry.valid(createdOutputs.back()), "unused heart leaked");
+    }
+    for (bool duringSocket : {false, true})
+    {
+        ExtractionFixture f;
+        const auto change = [&](entt::entity) {
+            g_registry.get<ecs::ItemFlags>(f.material).isLocked = true;
+        };
+        g_registry.emplace<ecs::ItemFlags>(f.material);
+        if (duringSocket) onSocket = change; else onCreate = change;
+        Check(!f.Run(false), "changed material accepted after output callback");
+        f.Intact(false);
+        Check(!g_registry.valid(createdOutputs.back()), "aborted output leaked");
+    }
+    {
+        ExtractionFixture f;
+        const auto source = f.item;
+        onSave = [&](entt::entity) {
+            Check(ItemSystem::IsItemConsumptionPending(source) && ItemSystem::GetItemCount(source) == 0 &&
+                ItemSystem::GetItemCount(f.material) == 1, "heart published a partial debit");
+            Check(!f.Run(false), "recursive heart extraction was allowed");
+        };
+        Check(f.Run(false), "entity-only heart extraction failed");
+        Check(!g_registry.valid(source) && ItemSystem::GetItemCount(f.material) == 1 &&
+            givenOutputs.size() == 1 && extractionLogs == 1, "heart debit/reward count wrong");
+        Check(ItemSystem::GetItemSocket(givenOutputs.front(), ITEM_SOCKET_CHARGING_AMOUNT_IDX) ==
+#ifdef ENABLE_DS_EDITS
+            50,
+#else
+            75,
+#endif
+            "heart charging policy changed");
+        Check(!f.Run(false) && givenOutputs.size() == 1, "consumed heart source reused");
+    }
+    {
+        ExtractionFixture f;
+        f.extractorProto.alValues[0] = 0; heartCharges = {0};
+        Check(!f.Run(false), "zero-charge extraction reported success");
+        Check(!g_registry.valid(f.item) && ItemSystem::GetItemCount(f.material) == 1 &&
+            givenOutputs.empty() && extractionLogs == 1, "failed roll did not commit both costs");
+    }
+    {
+        ExtractionFixture f;
+        const auto source = f.item;
+        rejectDestruction.insert(source);
+        Check(f.Run(false), "committed heart extraction rolled back on cleanup failure");
+        Check(ItemSystem::IsItemConsumptionPending(source) && ItemSystem::GetItemCount(source) == 0 &&
+            givenOutputs.size() == 1, "retired DS remained spendable");
+        Check(!f.Run(false) && givenOutputs.size() == 1, "pending cleanup duplicated heart");
+        rejectDestruction.clear(); ItemSystem::ProcessPendingItemConsumptions();
+        Check(!g_registry.valid(source), "DS retirement cleanup did not retry");
+    }
+    {
+        ExtractionFixture f;
+        onLog = [&](entt::entity owner) { g_registry.destroy(owner); };
+        Check(f.Run(false), "committed debit changed result after owner destruction");
+        Check(givenOutputs.empty() && !g_registry.valid(createdOutputs.back()), "orphaned output after owner teardown");
+    }
+}
+
+void ExtractionTableValidation()
+{
+    for (bool equipped : {false, true})
+    {
+        ExtractionFixture f(equipped, false);
+        Check(!f.Run(equipped), "extraction without initialized table accepted");
+        f.Intact(equipped);
+    }
+    for (int scenario = 0; scenario < 7; ++scenario)
+    {
+        ExtractionFixture f;
+        switch (scenario) {
+        case 0: dsHeartOk = false; break;
+        case 1: heartProbabilities.clear(); break;
+        case 2: heartProbabilities = {0}; break;
+        case 3: heartProbabilities = {-1}; break;
+        case 4: heartProbabilities = {std::numeric_limits<float>::infinity()}; break;
+        case 5: heartCharges = {std::numeric_limits<float>::quiet_NaN()}; break;
+        case 6: heartCharges = {-1}; break;
+        }
+        Check(!f.Run(false), "invalid heart table accepted");
+        Check(floatRandomCalls == 0, "invalid table reached RNG"); f.Intact(false);
+    }
+    for (float probability : {-1.f, 101.f, std::numeric_limits<float>::quiet_NaN()})
+    {
+        ExtractionFixture f(true); pullProbability = probability;
+        Check(!f.Run(true), "invalid pull probability accepted"); f.Intact(true);
+    }
+    {
+        ExtractionFixture f;
+        // A zero-weight leading row must not be selected by a zero RNG draw.
+        heartCharges = {0, 50}; heartProbabilities = {0, 100};
+        Check(f.Run(false) && givenOutputs.size() == 1, "zero-weight heart row selected");
+    }
+}
+
+void PullOutTransactions()
+{
+    {
+        ExtractionFixture f(true);
+        randomOffset = 0; pullProbability = 0; // Extractor replaces the base probability.
+        Check(f.Run(true), "extractor-assisted pull failed");
+        Check(ItemSystem::GetItem(f.owner, f.destination) == f.item && !ItemSystem::IsItemEquipped(f.item) &&
+            ItemSystem::GetItemCount(f.material) == 1 && givenOutputs.empty(), "successful pull state incorrect");
+        Check(!f.Run(true), "already unequipped stone pulled twice");
+    }
+    {
+        ExtractionFixture f(true);
+        dsPullOk = false; // Missing row retains the legacy free, guaranteed pull.
+        Check(f.manager.PullOutEcs(f.owner, NPOS, f.item, f.material), "fallback destination/missing-row pull failed");
+        Check(ItemSystem::GetItemCount(f.material) == 2 && floatRandomCalls == 0 && extractionLogs == 0,
+            "missing extraction row charged/rolled");
+    }
+    {
+        ExtractionFixture f(true);
+        const auto blocker = f.Material(99, 1, 20);
+        f.Place(blocker, DRAGON_SOUL_INVENTORY, f.destination.cell);
+        Check(!f.Run(true), "occupied destination accepted"); f.Intact(true);
+        Check(ItemSystem::GetItem(f.owner, f.destination) == blocker, "destination overwritten");
+    }
+    {
+        ExtractionFixture f(true);
+        emptyDSCell = -1;
+        Check(!f.manager.PullOutEcs(f.owner, NPOS, f.item, f.material), "full DS inventory accepted");
+        f.Intact(true);
+    }
+    {
+        ExtractionFixture f(true);
+        rejectPlace = true;
+        Check(!f.Run(true), "rejected placement accepted"); f.Intact(true);
+        Check(ItemSystem::GetWearItem(f.owner, WEAR_MAX_NUM) == f.item, "failed pull lost original wear anchor");
+    }
+    {
+        ExtractionFixture f(true);
+        g_registry.emplace<ecs::ItemFlags>(f.material);
+        onPlace = [&](entt::entity) { g_registry.get<ecs::ItemFlags>(f.material).isLocked = true; };
+        Check(!f.Run(true), "invalidated extractor charged after placement"); f.Intact(true);
+    }
+    {
+        ExtractionFixture f(true);
+        onRemove = [&](entt::entity soul) { g_registry.destroy(soul); };
+        Check(!f.Run(true), "removed stale DS accepted");
+        Check(ItemSystem::GetItemCount(f.material) == 2 && givenOutputs.empty(), "lost DS callback charged material");
+    }
+    {
+        ExtractionFixture f(true);
+        // Failed roll retires both inputs before any destruction callback.
+        randomOffset = 99; byProductVnum = 999;
+        g_registry.get<ecs::ItemCount>(f.material).count = 1;
+        const auto source = f.item, extractor = f.material;
+        rejectDestruction.insert(source); rejectDestruction.insert(extractor);
+        onDestroy = [&](entt::entity) {
+            Check(ItemSystem::GetItemCount(source) == 0 && ItemSystem::GetItemCount(extractor) == 0 &&
+                ItemSystem::IsItemConsumptionPending(source) && ItemSystem::IsItemConsumptionPending(extractor),
+                "pull published a partial retirement");
+            auto retry = source;
+            Check(!f.manager.PullOutEcs(f.owner, f.destination, retry, extractor), "recursive retired pull accepted");
+        };
+        Check(!f.Run(true) && f.item == entt::null, "failed pull did not retire caller handle");
+        Check(givenOutputs.size() == 1 && extractionLogs == 1, "failed pull byproduct missing/duplicated");
+        onDestroy = {}; rejectDestruction.clear(); ItemSystem::ProcessPendingItemConsumptions();
+        Check(!g_registry.valid(source) && !g_registry.valid(extractor) && givenOutputs.size() == 1,
+            "retirement retry recreated reward");
+    }
+    {
+        ExtractionFixture f(true);
+        randomOffset = 99; byProductVnum = 999; rejectCreation = true;
+        Check(!f.Run(true), "missing byproduct output accepted"); f.Intact(true);
+    }
+}
+
+
+void ExtractionCallbacksAndCostPolicy()
+{
+    for (bool equipped : {false, true})
+    {
+        ExtractionFixture f(equipped);
+        const auto block = [](entt::entity) { allowHandling = false; };
+        if (equipped) onRemove = block; else onSocket = block;
+        Check(!f.Run(equipped), "extraction continued after a conflicting window opened");
+        f.Intact(equipped);
+    }
+    {
+        ExtractionFixture f;
+        const ItemSystem::ItemCost ordinary[] = {{f.item, 1}};
+        Check(!ItemSystem::ConsumeOwnedItemCosts(f.owner, ordinary), "ordinary cost silently accepted DS inventory");
+        using Storage = ItemSystem::ItemCostStorage;
+        const ItemSystem::ItemCost duplicate[] = {{f.item, 1, Storage::DragonSoulInventory}, {f.item, 1, Storage::DragonSoulInventory}};
+        Check(!ItemSystem::ConsumeOwnedItemCosts(f.owner, duplicate), "duplicate DS cost accepted");
+        const ItemSystem::ItemCost insufficient[] = {{f.item, 1, Storage::DragonSoulInventory}, {f.material, 3}};
+        Check(!ItemSystem::ConsumeOwnedItemCosts(f.owner, insufficient), "partly affordable DS batch accepted");
+        f.Intact(false);
+        Check(f.manager.ExtractDragonHeartEcs(f.owner, f.item) ==
+#ifdef ENABLE_DS_EDITS
+            false,
+#else
+            true,
+#endif
+            "extractor-free heart rule changed");
+        Check(!g_registry.valid(f.item) && ItemSystem::GetItemCount(f.material) == 2,
+            "extractor-free heart consumed an unrelated material");
+    }
+    for (bool success : {false, true})
+    {
+        ExtractionFixture f(true);
+        floatDrawFraction = 0.5f; pullProbability = success ? 100.f : 0.f;
+        Check(f.manager.PullOutEcs(f.owner, f.destination, f.item) == success,
+            "extractor-free pull result wrong");
+        Check(ItemSystem::GetItemCount(f.material) == 2 && givenOutputs.empty(),
+            "extractor-free pull charged unrelated material or created byproduct");
+        if (!success) Check(f.item == entt::null, "extractor-free failure did not retire source");
+    }
+}
+
 void SwitchbotTransactions()
 {
 #if defined(ENABLE_SWITCHBOT)
@@ -1838,6 +2259,8 @@ void SwitchbotMaterialSelection()
 int main()
 {
     try {
+        ITEM_MANAGER itemManager;
+        LogManager logManager;
         EntityAndTableValidation();
         LockedSlotAndRarePreservation();
         FailureIsAtomic();
@@ -1860,6 +2283,11 @@ int main()
         DragonSoulPreparation();
         DragonSoulTransactions();
         DragonSoulEquipmentRules();
+        ExtractionInputGuards();
+        ExtractionTableValidation();
+        HeartExtractionTransactions();
+        PullOutTransactions();
+        ExtractionCallbacksAndCostPolicy();
         SwitchbotTransactions();
         SwitchbotMaterialSelection();
         TransferWindowAndCommands();
