@@ -33,19 +33,9 @@ constexpr uint8_t AI_STATE_CHASE = 1;
 constexpr uint8_t AI_STATE_ATTACK = 2;
 constexpr uint8_t AI_STATE_RETURN = 3;
 
-LPCHARACTER LegacyCharBoundary(entt::registry& reg, entt::entity entity)
+uint8_t ObserveAIState(entt::registry& reg, entt::entity entity)
 {
-    if (entity == entt::null || !reg.valid(entity)) {
-        return nullptr;
-    }
-
-    const auto* legacy = reg.try_get<ecs::LegacyCharPtr>(entity);
-    return legacy ? legacy->ptr : nullptr;
-}
-
-uint8_t ObserveAIState(entt::registry& reg, entt::entity entity, LPCHARACTER ch)
-{
-    if (!ch || ecs::PlayerRuntime::IsPC(entity)) {
+    if (ecs::PlayerRuntime::IsPC(entity)) {
         return AI_STATE_IDLE;
     }
 
@@ -71,7 +61,7 @@ uint8_t ObserveAIState(entt::registry& reg, entt::entity entity, LPCHARACTER ch)
     return AI_STATE_IDLE;
 }
 
-bool SyncAIFlags(entt::registry& reg, entt::entity entity, LPCHARACTER ch)
+bool SyncAIFlags(entt::registry& reg, entt::entity entity)
 {
     auto& flags = reg.get_or_emplace<ecs::AIFlags>(entity);
     const uint32_t aiFlags = ecs::PlayerRuntime::GetAIFlag(entity);
@@ -85,7 +75,7 @@ bool SyncAIFlags(entt::registry& reg, entt::entity entity, LPCHARACTER ch)
         CombatSystem::IsBerserk(entity),
         ecs::PlayerRuntime::IsGuardNPC(entity),
         false,
-        ch->IsStoneSkinner(),
+        CombatSystem::IsStoneSkinner(entity),
         CombatSystem::IsGodSpeed(entity),
         CombatSystem::IsDeathBlow(entity),
         CombatSystem::IsRevive(entity),
@@ -390,10 +380,7 @@ void StateBattle(entt::entity e)
 
         CombatSystem::SetVictim(e, entt::null);
         if (guard) {
-            // Return walks back to the last attacked position, which is still
-            // CMobInstance state.
-            if (LPCHARACTER ch = ecs::LegacyCharOf(e))
-                ch->Return();
+            CombatSystem::Return(e);
         } else {
             ecs::PlayerRuntime::SetPosition(e, POS_STANDING);
         }
@@ -548,17 +535,19 @@ void AISystem_Update(entt::registry& reg, uint32_t tick)
     auto view = reg.view<ecs::VIDComponent>();
 
     for (auto entity : view) {
-        LPCHARACTER ch = LegacyCharBoundary(reg, entity);
-        if (!ch || ecs::PlayerRuntime::IsPC(entity)) {
+        // "Has a legacy object and is not a PC" was the old gate. The first
+        // half is a component test now, not a character the loop goes on to use.
+        const auto* legacy = reg.try_get<ecs::LegacyCharPtr>(entity);
+        if (!legacy || !legacy->ptr || ecs::PlayerRuntime::IsPC(entity)) {
             continue;
         }
 
-        bool changed = SyncAIFlags(reg, entity, ch);
+        bool changed = SyncAIFlags(reg, entity);
 
         // CombatTarget is authoritative; do not mirror it through CHARACTER.
 
         auto& aiState = reg.get_or_emplace<ecs::AIState>(entity);
-        const uint8_t observedState = ObserveAIState(reg, entity, ch);
+        const uint8_t observedState = ObserveAIState(reg, entity);
         if (aiState.currentState != observedState) {
             aiState.currentState = observedState;
             changed = true;

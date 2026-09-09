@@ -786,7 +786,6 @@ public:
 
 	// NEWAI
 
-	bool			IsStoneSkinner() const;
 
 
 
@@ -1734,7 +1733,6 @@ protected:
 
 public:
 	bool			Follow(entt::entity chr, float fMinimumDistance = 150.0f);
-	bool			Return();
 	bool			IsChangeAttackPosition(entt::entity target) const;
 	void			ResetChangeAttackPositionTime() { m_dwLastChangeAttackPositionTime = get_dword_time() - AI_CHANGE_ATTACK_POISITION_TIME_NEAR; }
 	void			SetChangeAttackPositionTime() { m_dwLastChangeAttackPositionTime = get_dword_time(); }

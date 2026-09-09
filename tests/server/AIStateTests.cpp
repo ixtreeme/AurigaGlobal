@@ -154,6 +154,8 @@ void SetBerserk(entt::entity, bool) {}
 bool IsGodSpeed(entt::entity) { return false; }
 void SetGodSpeed(entt::entity, bool) {}
 bool IsRevive(entt::entity) { return false; }
+bool IsStoneSkinner(entt::entity) { return false; }
+bool Return(entt::entity) { return false; }
 } // namespace CombatSystem
 
 namespace ecs::MovementSystem {
@@ -211,9 +213,7 @@ bool SECTREE_MANAGER::IsMovablePosition(int, int, int) { return true; }
 
 // The AI pump still resolves a character for the flag sync and the two mob
 // instance flags; none of it is reachable from the idle cases below.
-bool CHARACTER::IsStoneSkinner() const { return false; }
 bool CHARACTER::Follow(entt::entity, float) { return false; }
-bool CHARACTER::Return() { return false; }
 bool CHARACTER::UseMobSkill(unsigned int) { return false; }
 float CMotionManager::GetMotionDuration(uint32_t, uint32_t) { return 0.0f; }
 void CParty::SendMessage(entt::entity, uint8_t, uint32_t, uint32_t) {}

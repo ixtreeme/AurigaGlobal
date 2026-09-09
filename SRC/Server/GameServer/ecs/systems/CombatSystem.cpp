@@ -5537,7 +5537,7 @@ bool CHARACTER::Damage(entt::entity attacker, int64_t dam, EDamageType type) // 
 	}
 
 	// STONE SKIN :
-	if (IsMonster() && IsStoneSkinner())
+	if (IsMonster() && CombatSystem::IsStoneSkinner(GetEntityHandle()))
 	{
 		if (GetHPPct() < GetMobTable().bStoneSkinPoint)
 			dam /= 2;
@@ -7159,17 +7159,6 @@ void CHARACTER::SetCoward()
 	AIHelpers::SetCoward(GetEntityHandle(), true);
 }
 
-bool CHARACTER::IsStoneSkinner() const
-{
-	if (IS_SET(ecs::PlayerRuntime::GetAIFlag(GetEntityHandle()), AIFLAG_STONESKIN))
-		return true;
-
-	if (auto* flags = AIHelpers::TryGetFlags(GetEntityHandle()))
-		return flags->isStoneSkinner;
-
-	return false;
-}
-
 bool CHARACTER::IsReviver() const
 {
 	if (IS_SET(ecs::PlayerRuntime::GetAIFlag(GetEntityHandle()), AIFLAG_REVIVE))
@@ -7797,35 +7786,55 @@ bool CHARACTER::CanSummon(int iLeaderShip)
 	return ((iLeaderShip >= 20) || ((iLeaderShip >= 12) && ((m_dwLastDeadTime + 180) > get_dword_time())));
 }
 
-bool CHARACTER::Return()
+namespace CombatSystem {
+
+// Walk back to where this mob was last attacked. Everything it reads has an
+// entity accessor now that the last-attacked position is a component.
+bool Return(entt::entity e)
 {
-	if (!IsNPC())
-		return false;
+    if (e == entt::null || !g_registry.valid(e))
+        return false;
 
-	int x, y;
-	SetVictim(entt::null);
+    // CHARACTER::IsNPC was m_bCharType != CHAR_TYPE_PC, so "anything but a PC".
+    if (ecs::PlayerRuntime::IsPC(e))
+        return false;
 
-	const auto* mobState = CombatSystem::MobStateConst(GetEntityHandle());
-	if (!mobState)
-		return false;
-	x = mobState->lastAttackedX;
-	y = mobState->lastAttackedY;
+    SetVictim(e, entt::null);
 
-	ecs::MovementSystem::SetRotationToXY(GetEntityHandle(), x, y);
+    const auto* mobState = MobStateConst(e);
+    if (!mobState)
+        return false;
 
-	if (!ecs::MovementSystem::Goto(GetEntityHandle(), x, y))
-		return false;
+    const int32_t x = mobState->lastAttackedX;
+    const int32_t y = mobState->lastAttackedY;
 
-	ecs::MovementSystem::SendMovePacket(GetEntityHandle(), FUNC_WAIT, 0, 0, 0, 0);
+    ecs::MovementSystem::SetRotationToXY(e, x, y);
 
-	if (test_server)
-		LOG_INFO("{} {} A÷±âÇI°í µ13A°!AÚ! {} {}", GetName(), static_cast<const void*>(this), x, y);
+    if (!ecs::MovementSystem::Goto(e, x, y))
+        return false;
 
-	if (GetParty())
-		GetParty()->SendMessage(GetEntityHandle(), PM_RETURN, x, y);
+    ecs::MovementSystem::SendMovePacket(e, FUNC_WAIT, 0, 0, 0, 0);
 
-	return true;
+    if (test_server)
+        LOG_INFO("{} returning to {} {}", ecs::PlayerRuntime::GetName(e), x, y);
+
+    if (LPPARTY party = ecs::SocialSystem::GetParty(e))
+        party->SendMessage(e, PM_RETURN, x, y);
+
+    return true;
 }
+
+// The last of the mob-table AI flags that still lived on CHARACTER.
+bool IsStoneSkinner(entt::entity e)
+{
+    if (IS_SET(ecs::PlayerRuntime::GetAIFlag(e), AIFLAG_STONESKIN))
+        return true;
+
+    const auto* flags = AIHelpers::TryGetFlags(e);
+    return flags && flags->isStoneSkinner;
+}
+
+} // namespace CombatSystem
 
 bool CHARACTER::Follow(entt::entity chr, float fMinDistance)
 {
@@ -7845,7 +7854,7 @@ bool CHARACTER::Follow(entt::entity chr, float fMinDistance)
 				if (get_dword_time() - CombatSystem::GetLastAttackedTime(GetEntityHandle()) >= 15000)
 				{
 					if (m_pkMobData->m_table.wAttackRange < DISTANCE_APPROX(ecs::PlayerRuntime::GetX(chr) - GetX(), ecs::PlayerRuntime::GetY(chr) - GetY()))
-						if (Return())
+						if (CombatSystem::Return(GetEntityHandle()))
 							return true;
 				}
 			}
@@ -7863,7 +7872,7 @@ bool CHARACTER::Follow(entt::entity chr, float fMinDistance)
 			if (get_dword_time() - CombatSystem::GetLastAttackedTime(GetEntityHandle()) >= 15000)
 			{
 				if (5000 < CombatSystem::DistanceFromLastAttacked(GetEntityHandle()))
-					if (Return())
+					if (CombatSystem::Return(GetEntityHandle()))
 						return true;
 			}
 		}
@@ -7873,7 +7882,7 @@ bool CHARACTER::Follow(entt::entity chr, float fMinDistance)
 	if (IsGuardNPC())
 	{
 		if (5000 < CombatSystem::DistanceFromLastAttacked(GetEntityHandle()))
-			if (Return())
+			if (CombatSystem::Return(GetEntityHandle()))
 				return true;
 	}
 #endif

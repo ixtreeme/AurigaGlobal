@@ -35,6 +35,8 @@ void SetRevive(entt::entity e, bool value);
 uint32_t GetLastAttackedTime(entt::entity e);
 int32_t DistanceFromLastAttacked(entt::entity e);
 void SetLastAttacked(entt::entity e, uint32_t when);
+bool Return(entt::entity e);
+bool IsStoneSkinner(entt::entity e);
 bool IsBerserker(entt::entity e);
 bool IsGodSpeeder(entt::entity e);
 // The stone this mob guards, else its party leader; entt::null for neither.
