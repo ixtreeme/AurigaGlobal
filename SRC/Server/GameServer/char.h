@@ -772,7 +772,6 @@ public:
 	uint32_t			GetSummonVnum() const;
 
 	uint32_t			GetPolymorphItemVnum() const;
-	uint32_t			GetMonsterDrainSPPoint() const;
 
 	void			ComputePoints();
 
@@ -817,7 +816,6 @@ public:
 
 	void			ResetPlayTime(uint32_t dwTimeRemain = 0);
 
-	void			CreateFly(uint8_t bType, entt::entity victim);
 
 	void			ResetChatCounter();
 	uint8_t			IncreaseChatCounter();
@@ -851,9 +849,6 @@ protected:
 	// Move & Synchronize Positions
 	//////////////////////////////////////////////////////////////////////////////////
 public:
-	int32_t	SetInvincible(bool arg);
-	bool	GetInvincible();
-	int32_t	IncreaseMobRigHP(int32_t lArg);
 	 
 	void SetFakePlayer(bool b) { m_bFakePlayer = b; }
 	bool IsFakePlayer() const { return m_bFakePlayer; }
@@ -861,7 +856,6 @@ public:
 	 
 	//void			SetCharType(uint8_t bType) { m_bCharType = bType; }
 private:
-	bool	isInvincible;
 	bool	m_bFakePlayer = false;
 public:
 	// Phase 15E-final.LPENTITY.4-architect.B.1.3:
@@ -1417,7 +1411,6 @@ public:
 	void				Dead(entt::entity killer = entt::null, bool bImmediateDead = false);
 #ifdef __NEWPET_SYSTEM__
 	//int GetBeltCount() const;//#ifdef ENABLE_MOUNT_COUNT_ABOVE_CHAR_RAZOR93
-	bool IsImmortal() const;
 #endif
 	void				Reward(bool bItemDrop);
 	void				RewardGold(entt::entity attacker);

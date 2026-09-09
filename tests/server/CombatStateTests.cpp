@@ -396,14 +396,11 @@ unsigned char CHARACTER::GetMobRank(void)const { UnexpectedService(__func__); }
 unsigned char CHARACTER::GetMobBattleType(void)const { UnexpectedService(__func__); }
 unsigned short CHARACTER::GetMobAttackRange(void)const { UnexpectedService(__func__); }
 bool CHARACTER::HasReviverInParty(void)const { UnexpectedService(__func__); }
-unsigned int CHARACTER::GetMonsterDrainSPPoint(void)const { UnexpectedService(__func__); }
+uint32_t ecs::PlayerRuntime::GetMonsterDrainSPPoint(entt::entity) { UnexpectedService(__func__); }
 void CHARACTER::PointChange(unsigned char,int64_t,bool,bool,bool) { UnexpectedService(__func__); }
 void CHARACTER::SetRotation(float,bool) { UnexpectedService(__func__); }
 void ecs::MovementSystem::SetRotationToXY(entt::entity, int, int) { UnexpectedService(__func__); }
 float CHARACTER::GetRotation(void)const { UnexpectedService(__func__); }
-int CHARACTER::SetInvincible(bool) { UnexpectedService(__func__); }
-bool CHARACTER::GetInvincible(void) { UnexpectedService(__func__); }
-int CHARACTER::IncreaseMobRigHP(int) { UnexpectedService(__func__); }
 bool ecs::MovementSystem::Goto(entt::entity,int,int) { UnexpectedService(__func__); }
 bool ecs::MovementSystem::CanMove(entt::entity) { UnexpectedService(__func__); }
 bool CHARACTER::Sync(int,int) { UnexpectedService(__func__); }
@@ -432,7 +429,7 @@ bool CHARACTER::IsEquipUniqueGroup(unsigned int)const { UnexpectedService(__func
 void CHARACTER::GiveGold(int64_t) { UnexpectedService(__func__); }
 void CHARACTER::CloseMyShop(void) { UnexpectedService(__func__); }
 void CHARACTER::SetQuestDamage(int,int) { UnexpectedService(__func__); }
-bool CHARACTER::IsImmortal(void)const { UnexpectedService(__func__); }
+bool ecs::PlayerRuntime::IsImmortal(entt::entity) { return false; }
 int64_t CHARACTER::GetRankPoints(int) { UnexpectedService(__func__); }
 void CHARACTER::SetRankPoints(int,int64_t) { UnexpectedService(__func__); }
 int CHARACTER::GetSkillLevel(unsigned int)const { UnexpectedService(__func__); }

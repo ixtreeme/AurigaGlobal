@@ -88,6 +88,8 @@ bool IsGuardNPC(entt::entity e);
 // The remaining two CharacterType tests the AI states need. CHARACTER
 // carried these as inline reads of m_bCharType; the component is what the
 // factory fills and what IsGuardNPC above already trusts.
+bool IsImmortal(entt::entity e);
+uint32_t GetMonsterDrainSPPoint(entt::entity e);
 bool IsWarp(entt::entity e);
 bool IsBuilding(entt::entity e);
 // Is this character a mount creature, not a rider - StatusFlags.isMount.

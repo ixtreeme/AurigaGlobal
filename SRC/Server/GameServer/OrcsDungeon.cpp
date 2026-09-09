@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "ecs/systems/PointSystem.hpp"
+#include "ecs/systems/CombatSystem.hpp"
 #include "ecs/systems/MovementSystem.hpp"
 #include "ecs/systems/PlayerRuntimeSystem.hpp"
 #include "ecs/systems/SocialSystem.hpp"
@@ -194,7 +195,9 @@ public:
         const uint32_t bossVid = boss ? boss->GetLegacyVID() : 0;
         d->SetFlag(kFlagBossVid, (int32_t)bossVid);
 
-        bool ok = boss && boss->SetInvincible(true);
+        const bool ok = boss != nullptr;
+        if (ok)
+            CombatSystem::SetInvincible(boss->GetEntityHandle(), true);
 
         if (!ok)
         {
@@ -561,7 +564,9 @@ void COrcsDungeon::OnMobKilled(entt::entity killer, entt::entity victim)
         {
             const uint32_t bossVid = (uint32_t)d->GetFlag(kFlagBossVid);
             LPCHARACTER boss = CHARACTER_MANAGER::instance().Find(bossVid);
-            bool ok = boss && boss->SetInvincible(false);
+            const bool ok = boss != nullptr;
+        if (ok)
+            CombatSystem::SetInvincible(boss->GetEntityHandle(), false);
             if (!ok)
             {
                 d->Notice(

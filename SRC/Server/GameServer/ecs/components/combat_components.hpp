@@ -93,6 +93,12 @@ struct AggroState {
     int maxAggro { -100 };
 };
 
+// Boss invincibility windows. It was a bare bool on CHARACTER that only the
+// dungeon scripts and the damage path ever touched.
+struct InvincibleState {
+    bool value { false };
+};
+
 struct CombatActiveTag {};
 struct InvincibleTag {};
 

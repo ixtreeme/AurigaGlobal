@@ -915,7 +915,7 @@ unsigned int CHARACTER::GetMobDamageMin(void)const { Unexpected(); }
 unsigned int CHARACTER::GetMobDamageMax(void)const { Unexpected(); }
 void CHARACTER::PointChange(unsigned char,int64_t,bool,bool,bool) { Unexpected(); }
 float CHARACTER::GetRotation(void)const { Unexpected(); }
-void CHARACTER::CreateFly(unsigned char,entt::entity) { Unexpected(); }
+void CombatSystem::CreateFly(entt::entity, unsigned char, entt::entity) { Unexpected(); }
 bool ecs::MovementSystem::Goto(entt::entity,int,int) { Unexpected(); }
 bool ecs::MovementSystem::CanMove(entt::entity) { Unexpected(); }
 bool CHARACTER::Sync(int,int) { Unexpected(); }

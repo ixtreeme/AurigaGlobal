@@ -2011,7 +2011,7 @@ EVENTFUNC(ChainLightningEvent)
 
 	if (target != entt::null)
 	{
-		pkChrVictim->CreateFly(FLY_CHAIN_LIGHTNING, target);
+		CombatSystem::CreateFly(pkChrVictim->GetEntityHandle(), FLY_CHAIN_LIGHTNING, target);
 		if (character != entt::null)
 			g_dispatcher.trigger(ecs::EvSkillUsed { character, SKILL_CHAIN });
 		pkChr->ComputeSkill(SKILL_CHAIN, target);
@@ -4138,7 +4138,7 @@ EVENTFUNC(skill_muyoung_event)
 		// 2. Shoot!
 		if (f.GetVictim() != entt::null)
 		{
-			ch->CreateFly(FLY_SKILL_MUYEONG, f.GetVictim());
+			CombatSystem::CreateFly(ch->GetEntityHandle(), FLY_SKILL_MUYEONG, f.GetVictim());
 			ch->ComputeSkill(SKILL_MUYEONG, f.GetVictim());
 		}
 	}

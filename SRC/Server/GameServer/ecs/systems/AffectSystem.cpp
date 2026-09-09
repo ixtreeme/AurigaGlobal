@@ -1954,18 +1954,3 @@ void CHARACTER::SetPolymorph(uint32_t dwRaceNum, bool bMaintainStat)
 {
 	AffectSystem::SetPolymorph(GetEntityHandle(), dwRaceNum, bMaintainStat);
 }
-
-int32_t CHARACTER::SetInvincible(bool arg)
-{
-	isInvincible = arg;
-	return 1;
-}
-bool CHARACTER::GetInvincible()
-{
-	return isInvincible;
-}
-int32_t CHARACTER::IncreaseMobRigHP(int32_t lArg)
-{
-	PointChange(POINT_HP_REGEN, GetPoint(POINT_HP_REGEN) + lArg, true);
-	return 1;
-}

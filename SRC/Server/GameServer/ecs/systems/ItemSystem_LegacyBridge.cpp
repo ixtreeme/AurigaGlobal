@@ -4945,7 +4945,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 			break;
 
 			case 71013: // ÃàÁ¦¿ëÆøÁ×
-				CreateFly(number(FLY_FIREWORK1, FLY_FIREWORK6), GetEntityHandle());
+				CombatSystem::CreateFly(GetEntityHandle(), number(FLY_FIREWORK1, FLY_FIREWORK6), GetEntityHandle());
 				ItemSystem::ConsumeItemEcs(itemEntity);
 				break;
 
@@ -4956,7 +4956,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 			case 50104:
 			case 50105:
 			case 50106:
-				CreateFly(item->GetVnum() - 50100 + FLY_FIREWORK1, GetEntityHandle());
+				CombatSystem::CreateFly(GetEntityHandle(), item->GetVnum() - 50100 + FLY_FIREWORK1, GetEntityHandle());
 				ItemSystem::ConsumeItemEcs(itemEntity);
 				break;
 

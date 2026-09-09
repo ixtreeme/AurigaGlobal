@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "ecs/systems/CombatSystem.hpp"
 #include "ecs/systems/MovementSystem.hpp"
 #include "ecs/systems/PointSystem.hpp"
 #include <Core/Logging.hpp>
@@ -718,13 +719,13 @@ namespace quest
 
 		if (!lastmeley)
 		{
-			lua_pushboolean(L, ch->SetInvincible(what));
+			lua_pushboolean(L, CombatSystem::SetInvincible(ch->GetEntityHandle(), what));
 		}
 		else
 		{
 			if ((ecs::PlayerRuntime::GetRaceNum(chEntity)) == 6118 && !AffectSystem::FindAffect(chEntity, AFFECT_STATUE))
 			{
-				lua_pushboolean(L, ch->SetInvincible(what));
+				lua_pushboolean(L, CombatSystem::SetInvincible(ch->GetEntityHandle(), what));
 			}
 			else
 			{
@@ -732,7 +733,7 @@ namespace quest
 			}
 		}
 #else
-		lua_pushboolean(L, ch->SetInvincible(lua_toboolean(L, 2)));
+		lua_pushboolean(L, CombatSystem::SetInvincible(ch->GetEntityHandle(), lua_toboolean(L, 2)));
 #endif
 		return 1;
 	}
@@ -1887,13 +1888,13 @@ namespace quest
 			return 0;
 		}
 
-		boss->SetInvincible(false);
+		CombatSystem::SetInvincible(boss->GetEntityHandle(), false);
 		boss->Dead();
 
-		statue1->SetInvincible(false);
-		statue2->SetInvincible(false);
-		statue3->SetInvincible(false);
-		statue4->SetInvincible(false);
+		CombatSystem::SetInvincible(statue1->GetEntityHandle(), false);
+		CombatSystem::SetInvincible(statue2->GetEntityHandle(), false);
+		CombatSystem::SetInvincible(statue3->GetEntityHandle(), false);
+		CombatSystem::SetInvincible(statue4->GetEntityHandle(), false);
 		statue1->Dead();
 		statue2->Dead();
 		statue3->Dead();

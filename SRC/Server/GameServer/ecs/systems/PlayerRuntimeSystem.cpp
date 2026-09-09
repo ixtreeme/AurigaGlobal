@@ -579,6 +579,20 @@ bool IsMount(entt::entity e)
     return flags && flags->isMount;
 }
 
+bool IsImmortal(entt::entity e)
+{
+    if (e == entt::null || !g_registry.valid(e))
+        return false;
+    const auto* state = g_registry.try_get<ecs::NewPetSkillState>(e);
+    return state && state->immortalSource != entt::null && g_registry.valid(state->immortalSource);
+}
+
+uint32_t GetMonsterDrainSPPoint(entt::entity e)
+{
+    const TMobTable* table = GetMobTable(e);
+    return table ? table->dwDrainSP : 0;
+}
+
 bool IsWarp(entt::entity e)
 {
     return CharTypeOf(e) == CHAR_TYPE_WARP;
@@ -2049,12 +2063,6 @@ bool CHARACTER::IsNewPet() const
     return status && status->isNewPet;
 }
 
-bool CHARACTER::IsImmortal() const
-{
-    const auto* state = g_registry.try_get<ecs::NewPetSkillState>(GetEntityHandle());
-    return state && state->immortalSource != entt::null && g_registry.valid(state->immortalSource);
-}
-
 int CHARACTER::GetQuestFlag(const std::string& flag) const
 {
     int ret = 0;
@@ -2259,11 +2267,6 @@ uint32_t CHARACTER::GetSummonVnum() const
 uint32_t CHARACTER::GetPolymorphItemVnum() const
 {
     return m_pkMobData ? m_pkMobData->m_table.dwPolymorphItemVnum : 0;
-}
-
-uint32_t CHARACTER::GetMonsterDrainSPPoint() const
-{
-    return m_pkMobData ? m_pkMobData->m_table.dwDrainSP : 0;
 }
 
 uint8_t CHARACTER::GetMobRank() const
@@ -5834,7 +5837,6 @@ void CHARACTER::Initialize()
     m_bKasmirPaketBaslik = 0;
     m_bKasmirPaketDurum = false;
 #endif
-    isInvincible = false;
     m_iGoToXYTime = 0;
 #ifdef ENABLE_SAVEPOINT_SYSTEM
     m_iSavePointTime = 0;

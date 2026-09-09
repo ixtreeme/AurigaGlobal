@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "ecs/systems/CombatSystem.hpp"
 #include "ecs/systems/InventorySystem.hpp"
 #include "ecs/systems/PointSystem.hpp"
 #include "ecs/systems/MovementSystem.hpp"
@@ -192,7 +193,7 @@ namespace
         LPCHARACTER ch = CHARACTER_MANAGER::instance().Find(vid);
         if (!ch)
             return false;
-        return ch->SetInvincible(inv);
+        return CombatSystem::SetInvincible(ch->GetEntityHandle(), inv);
     }
 
     void RemoveAllItemOnMap(int32_t mapIndex, uint32_t vnum)
@@ -471,7 +472,7 @@ namespace
                     return;
                 }
 
-                stone->SetInvincible(true);
+                CombatSystem::SetInvincible(stone->GetEntityHandle(), true);
 
                 char vidFlag[32];
                 snprintf(vidFlag, sizeof(vidFlag), "unique_vid%d", i + 1);
@@ -592,7 +593,7 @@ namespace
                     ClearDungeon(mapIndex);
                     return;
                 }
-                boss->SetInvincible(true);
+                CombatSystem::SetInvincible(boss->GetEntityHandle(), true);
 
 	d->SetFlag(kFlagBossVid, (int32_t)ecs::PlayerRuntime::GetPacketVID(((boss) ? (boss)->GetEntityHandle() : entt::null)));
 
@@ -1077,7 +1078,7 @@ void CRuneDungeon::OnMobKilled(entt::entity killer, entt::entity victim)
             s_rune.ClearDungeon(idx);
             return;
         }
-        gate->SetInvincible(true);
+        CombatSystem::SetInvincible(gate->GetEntityHandle(), true);
 
 	d->SetFlag(kFlagBossVid, (int32_t)ecs::PlayerRuntime::GetPacketVID(((gate) ? (gate)->GetEntityHandle() : entt::null)));
         d->SetFlag(kFlagOpened, 0);

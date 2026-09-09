@@ -418,6 +418,42 @@ static bool IsDefanceWaweMastAttackMob(int32_t vnum)
 }
 #endif
 
+bool GetInvincible(entt::entity e)
+{
+    if (e == entt::null || !g_registry.valid(e))
+        return false;
+    const auto* state = g_registry.try_get<ecs::InvincibleState>(e);
+    return state && state->value;
+}
+
+// Returns whether the write landed. The CHARACTER version returned a
+// constant 1, and callers used it as "did I have a target"; a handle that
+// has gone now answers false instead of pretending.
+bool SetInvincible(entt::entity e, bool value)
+{
+    if (e == entt::null || !g_registry.valid(e))
+        return false;
+    g_registry.get_or_emplace<ecs::InvincibleState>(e).value = value;
+    return true;
+}
+
+void IncreaseMobRigHP(entt::entity e, int32_t amount)
+{
+    ecs::PointSystem::Change(e, POINT_HP_REGEN,
+        ecs::PointSystem::Get(e, POINT_HP_REGEN) + amount, true);
+}
+
+void CreateFly(entt::entity attacker, uint8_t flyType, entt::entity victim)
+{
+    TPacketGCCreateFly pack;
+    pack.bHeader = HEADER_GC_CREATE_FLY;
+    pack.bType = flyType;
+    pack.dwStartVID = ecs::PlayerRuntime::GetPacketVID(attacker);
+    pack.dwEndVID = ecs::PlayerRuntime::GetPacketVID(victim);
+
+    ecs::ViewSystem::PacketView(attacker, &pack, sizeof(TPacketGCCreateFly));
+}
+
 uint32_t GetSkipComboAttackByTime(entt::entity e)
 {
     if (e == entt::null || !g_registry.valid(e))
@@ -1617,7 +1653,7 @@ static void GiveExp(LegacyCharHandle from, LegacyCharHandle to, int iExp)
 		ecs::ChatSystem::Send(toEntity, CHAT_TYPE_INFO, "exp+minGNE+adjust(%d)", iExp);
 	// set
 	ecs::PointSystem::Change(toEntity, POINT_EXP, iExp, true);
-	from->CreateFly(FLY_EXP, (to ? to->GetEntityHandle() : entt::null));
+	CombatSystem::CreateFly(from->GetEntityHandle(), FLY_EXP, (to ? to->GetEntityHandle() : entt::null));
 	// marriage
 	{
 		auto* you = to->GetMarryPartner();
@@ -1767,7 +1803,7 @@ static void GiveExp(LegacyCharHandle from, LegacyCharHandle to, int iExp)
 #endif
 
 	ecs::PointSystem::Change(toEntity, POINT_EXP, iExp, true);
-	from->CreateFly(FLY_EXP, (to ? to->GetEntityHandle() : entt::null));
+	CombatSystem::CreateFly(from->GetEntityHandle(), FLY_EXP, (to ? to->GetEntityHandle() : entt::null));
 
 	{
 		auto* you = to->GetMarryPartner();
@@ -2157,7 +2193,7 @@ void CHARACTER::Dead(entt::entity killer, bool bImmediateDead)
 	if (IsDead())
 		return;
 
-	if (GetInvincible())
+	if (CombatSystem::GetInvincible(GetEntityHandle()))
 		return;
 
 	// LostCastle klonoknak nincs mob_proto (m_pkMobData == nullptr),
@@ -2770,18 +2806,6 @@ bool CHARACTER::CanFight() const
 	return GetPosition() >= POS_FIGHTING ? true : false;
 }
 
-void CHARACTER::CreateFly(uint8_t bType, entt::entity victim)
-{
-	TPacketGCCreateFly packFly;
-
-	packFly.bHeader = HEADER_GC_CREATE_FLY;
-	packFly.bType = bType;
-	packFly.dwStartVID = GetPacketVID();
-	packFly.dwEndVID = ecs::PlayerRuntime::GetPacketVID(victim);
-
-	ecs::ViewSystem::PacketView(GetEntityHandle(), &packFly, sizeof(TPacketGCCreateFly));
-}
-
 namespace CombatSystem {
 
 // One swing. Attacker and victim are handles the whole way through; the old
@@ -2975,11 +2999,11 @@ void CHARACTER::DistributeSP(entt::entity killer, int iMethod)
 				iAmount += (iAmount * ecs::PointSystem::Get(killer, POINT_SP_REGEN)) / 100;
 
 				if (iAmount >= 11)
-					CreateFly(FLY_SP_BIG, killer);
+					CombatSystem::CreateFly(GetEntityHandle(), FLY_SP_BIG, killer);
 				else if (iAmount >= 7)
-					CreateFly(FLY_SP_MEDIUM, killer);
+					CombatSystem::CreateFly(GetEntityHandle(), FLY_SP_MEDIUM, killer);
 				else
-					CreateFly(FLY_SP_SMALL, killer);
+					CombatSystem::CreateFly(GetEntityHandle(), FLY_SP_SMALL, killer);
 
 				ecs::PointSystem::Change(killer, POINT_SP, iAmount);
 			}
@@ -3869,14 +3893,14 @@ void CHARACTER::Reward(bool bItemDrop)
 			{
 				int iHP = ecs::PointSystem::GetMaxHP(attacker) * ecs::PointSystem::Get(attacker, POINT_KILL_HP_RECOVERY) / 100;
 				ecs::PointSystem::Change(attacker, POINT_HP, iHP);
-				CreateFly(FLY_HP_SMALL, pkAttacker ? pkAttacker->GetEntityHandle() : entt::null);
+				CombatSystem::CreateFly(GetEntityHandle(), FLY_HP_SMALL, pkAttacker ? pkAttacker->GetEntityHandle() : entt::null);
 			}
 
 			if (ecs::PointSystem::Get(attacker, POINT_KILL_SP_RECOVER))
 			{
 				int iSP = ecs::PointSystem::GetMaxSP(attacker) * ecs::PointSystem::Get(attacker, POINT_KILL_SP_RECOVER) / 100;
 				ecs::PointSystem::Change(attacker, POINT_SP, iSP);
-				CreateFly(FLY_SP_SMALL, pkAttacker ? pkAttacker->GetEntityHandle() : entt::null);
+				CombatSystem::CreateFly(GetEntityHandle(), FLY_SP_SMALL, pkAttacker ? pkAttacker->GetEntityHandle() : entt::null);
 			}
 		}
 	}
@@ -4829,11 +4853,11 @@ bool CHARACTER::Damage(entt::entity attacker, int64_t dam, EDamageType type) // 
 	if (pkAttacker && ecs::PlayerRuntime::IsPC(attacker) && IsPC() && GetMapIndex() == 1)
 		return false;
 #endif
-	if (GetInvincible())
+	if (CombatSystem::GetInvincible(GetEntityHandle()))
 		return false;
 
 #ifdef __NEWPET_SYSTEM__
-	if (IsImmortal())
+	if (ecs::PlayerRuntime::IsImmortal(GetEntityHandle()))
 		return false;
 #endif
 
@@ -5198,7 +5222,7 @@ bool CHARACTER::Damage(entt::entity attacker, int64_t dam, EDamageType type) // 
 
 
 					if ((ecs::PointSystem::Get(attacker, POINT_HP) > 0) && (ecs::PointSystem::Get(attacker, POINT_HP) + iHP < ecs::PointSystem::GetMaxHP(attacker)) && (GetHP() > 0) && (iHP > 0)) {
-						CreateFly(FLY_HP_MEDIUM, attacker);
+						CombatSystem::CreateFly(GetEntityHandle(), FLY_HP_MEDIUM, attacker);
 						ecs::PointSystem::Change(attacker, POINT_HP, iHP);
 #if defined(ENABLE_DS_RUNE) || defined(ENABLE_MELEY_LAIR)
 						int32_t racevnum = GetRaceNum();
@@ -5236,7 +5260,7 @@ bool CHARACTER::Damage(entt::entity attacker, int64_t dam, EDamageType type) // 
 
 						if ((ecs::PointSystem::Get(attacker, POINT_SP) > 0) && (ecs::PointSystem::Get(attacker, POINT_SP) + iSP < ecs::PointSystem::GetMaxSP(attacker)) && (GetSP() > 0) && (iSP > 0))
 						{
-							CreateFly(FLY_SP_MEDIUM, attacker);
+							CombatSystem::CreateFly(GetEntityHandle(), FLY_SP_MEDIUM, attacker);
 							ecs::PointSystem::Change(attacker, POINT_SP, iSP);
 							PointChange(POINT_SP, -iSP);
 						}
@@ -5255,7 +5279,7 @@ bool CHARACTER::Damage(entt::entity attacker, int64_t dam, EDamageType type) // 
 
 					if (iHP > 0 && GetHP() >= iHP)
 					{
-						CreateFly(FLY_HP_SMALL, attacker);
+						CombatSystem::CreateFly(GetEntityHandle(), FLY_HP_SMALL, attacker);
 						ecs::PointSystem::Change(attacker, POINT_HP, iHP);
 #if defined(ENABLE_DS_RUNE) || defined(ENABLE_MELEY_LAIR)
 						if (
@@ -5302,7 +5326,7 @@ bool CHARACTER::Damage(entt::entity attacker, int64_t dam, EDamageType type) // 
 
 					if (iSP > 0 && iCur >= iSP)
 					{
-						CreateFly(FLY_SP_SMALL, attacker);
+						CombatSystem::CreateFly(GetEntityHandle(), FLY_SP_SMALL, attacker);
 						ecs::PointSystem::Change(attacker, POINT_SP, iSP);
 
 						if (IsPC())
@@ -5329,7 +5353,7 @@ bool CHARACTER::Damage(entt::entity attacker, int64_t dam, EDamageType type) // 
 				if (number(1, 100) <= iAbsoHP_ptr) {
 					int iHPAbso = std::min(dam, GetHP()) * ecs::PointSystem::Get(attacker, POINT_HIT_HP_RECOVERY) / 100;
 					if ((ecs::PointSystem::Get(attacker, POINT_HP) > 0) && (ecs::PointSystem::Get(attacker, POINT_HP) + iHPAbso < ecs::PointSystem::GetMaxHP(attacker)) && (GetHP() > 0) && (iHPAbso > 0)) {
-						CreateFly(FLY_HP_SMALL, attacker);
+						CombatSystem::CreateFly(GetEntityHandle(), FLY_HP_SMALL, attacker);
 						ecs::PointSystem::Change(attacker, POINT_HP, iHPAbso);
 					}
 				}
@@ -5340,7 +5364,7 @@ bool CHARACTER::Damage(entt::entity attacker, int64_t dam, EDamageType type) // 
 				if (number(1, 100) <= iAbsoSP_ptr) {
 					int64_t iSPAbso = std::min(dam, GetSP()) * ecs::PointSystem::Get(attacker, POINT_HIT_SP_RECOVERY) / 100;
 					if ((ecs::PointSystem::Get(attacker, POINT_SP) > 0) && (ecs::PointSystem::Get(attacker, POINT_SP) + iSPAbso < ecs::PointSystem::GetMaxSP(attacker)) && (GetSP() > 0) && (iSPAbso > 0)) {
-						CreateFly(FLY_SP_SMALL, attacker);
+						CombatSystem::CreateFly(GetEntityHandle(), FLY_SP_SMALL, attacker);
 						ecs::PointSystem::Change(attacker, POINT_SP, iSPAbso);
 					}
 				}
@@ -5353,7 +5377,7 @@ bool CHARACTER::Damage(entt::entity attacker, int64_t dam, EDamageType type) // 
 
 				if (i)
 				{
-					CreateFly(FLY_HP_SMALL, attacker);
+					CombatSystem::CreateFly(GetEntityHandle(), FLY_HP_SMALL, attacker);
 					ecs::PointSystem::Change(attacker, POINT_HP, i);
 				}
 			}
@@ -5365,7 +5389,7 @@ bool CHARACTER::Damage(entt::entity attacker, int64_t dam, EDamageType type) // 
 
 				if (i)
 				{
-					CreateFly(FLY_SP_SMALL, attacker);
+					CombatSystem::CreateFly(GetEntityHandle(), FLY_SP_SMALL, attacker);
 					ecs::PointSystem::Change(attacker, POINT_SP, i);
 				}
 			}
@@ -5496,9 +5520,9 @@ bool CHARACTER::Damage(entt::entity attacker, int64_t dam, EDamageType type) // 
 				dam = dam * 9 / 10;
 			}
 
-			if (!IsPC() && GetMonsterDrainSPPoint())
+			if (!IsPC() && ecs::PlayerRuntime::GetMonsterDrainSPPoint(GetEntityHandle()))
 			{
-				int iDrain = GetMonsterDrainSPPoint();
+				int iDrain = ecs::PlayerRuntime::GetMonsterDrainSPPoint(GetEntityHandle());
 
 				if (iDrain <= ecs::PointSystem::Get(attacker, POINT_SP))
 					ecs::PointSystem::Change(attacker, POINT_SP, -iDrain);
@@ -5683,7 +5707,7 @@ bool CHARACTER::Damage(entt::entity attacker, int64_t dam, EDamageType type) // 
 									PointChange(POINT_HP, (per - GetHP()), false);
 								}
 
-								SetInvincible(true);
+								CombatSystem::SetInvincible(GetEntityHandle(), true);
 								return false;
 							}
 						}
@@ -5717,7 +5741,7 @@ bool CHARACTER::Damage(entt::entity attacker, int64_t dam, EDamageType type) // 
 
 								SetAttMul(2.0f);
 								SetDamMul(2.0f);
-								SetInvincible(true);
+								CombatSystem::SetInvincible(GetEntityHandle(), true);
 								return false;
 							}
 						}
@@ -5768,8 +5792,8 @@ bool CHARACTER::Damage(entt::entity attacker, int64_t dam, EDamageType type) // 
 									PointChange(POINT_HP, (per - GetHP()), false);
 								}
 
-								IncreaseMobRigHP(20);
-								SetInvincible(true);
+								CombatSystem::IncreaseMobRigHP(GetEntityHandle(), 20);
+								CombatSystem::SetInvincible(GetEntityHandle(), true);
 								return false;
 							}
 						}
@@ -5795,7 +5819,7 @@ bool CHARACTER::Damage(entt::entity attacker, int64_t dam, EDamageType type) // 
 
 								SetAttMul(2.0f);
 								SetDamMul(2.0f);
-								SetInvincible(true);
+								CombatSystem::SetInvincible(GetEntityHandle(), true);
 								return false;
 							}
 						}
@@ -5830,7 +5854,7 @@ bool CHARACTER::Damage(entt::entity attacker, int64_t dam, EDamageType type) // 
 									PointChange(POINT_HP, (per - GetHP()), false);
 								}
 
-								SetInvincible(true);
+								CombatSystem::SetInvincible(GetEntityHandle(), true);
 
 								if (!FindAffect(AFFECT_STATUE))
 								{
@@ -5862,7 +5886,7 @@ bool CHARACTER::Damage(entt::entity attacker, int64_t dam, EDamageType type) // 
 									PointChange(POINT_HP, (per - GetHP()), false);
 								}
 
-								SetInvincible(true);
+								CombatSystem::SetInvincible(GetEntityHandle(), true);
 
 								if (!FindAffect(AFFECT_STATUE))
 								{
@@ -5894,7 +5918,7 @@ bool CHARACTER::Damage(entt::entity attacker, int64_t dam, EDamageType type) // 
 									PointChange(POINT_HP, (per - GetHP()), false);
 								}
 
-								SetInvincible(true);
+								CombatSystem::SetInvincible(GetEntityHandle(), true);
 
 								if (!FindAffect(AFFECT_STATUE))
 								{
