@@ -4284,15 +4284,9 @@ void CHARACTER::Destroy()
         SetParty(nullptr);
     }
 
-    if (m_pkMobInst)
-    {
-        // The native combat readers must not retain an instance freed here.
-        if (g_registry.valid(GetEntityHandle()))
-            if (auto* mob = g_registry.try_get<ecs::MobDataRef>(GetEntityHandle()))
-                mob->instance = nullptr;
-        M2_DELETE(m_pkMobInst);
-        m_pkMobInst = nullptr;
-    }
+    // Mob runtime state goes with the entity; there is no allocation to free.
+    if (g_registry.valid(GetEntityHandle()))
+        g_registry.remove<ecs::MobInstanceState>(GetEntityHandle());
 
     m_pkMobData = nullptr;
 
@@ -4701,11 +4695,7 @@ void CHARACTER::SetPlayerProto(const TPlayerTable* t)
 
 void CHARACTER::SetProto(const CMob* pkMob)
 {
-    if (m_pkMobInst)
-        M2_DELETE(m_pkMobInst);
-
     m_pkMobData = pkMob;
-    m_pkMobInst = M2_NEW CMobInstance;
 
     // mob_manager.cpp reaches here through an IsPC() test, and IsPC(entt::null)
     // is false - so a character with no entity yet passes the filter instead of
@@ -4713,7 +4703,11 @@ void CHARACTER::SetProto(const CMob* pkMob)
     // the invalid handle is not an assert but a write through entt::null.
     if (const entt::entity self = GetEntityHandle(); ecs::diag::Check(self, "SetProto"))
     {
-        g_registry.emplace_or_replace<ecs::MobDataRef>(self, pkMob, m_pkMobInst);
+        g_registry.emplace_or_replace<ecs::MobDataRef>(self, pkMob);
+        // The mob runtime state starts here, as the CMobInstance allocation
+        // did: last-attacked at the origin, every mode switch off.
+        auto& mobState = g_registry.emplace_or_replace<ecs::MobInstanceState>(self);
+        mobState.lastAttackedTime = get_dword_time();
         g_registry.get_or_emplace<ecs::CombatStats>(self).pkMode = PK_MODE_FREE;
     }
 
@@ -5640,7 +5634,6 @@ void CHARACTER::Initialize()
     m_fRegenAngle = 0.0f;
 
     m_pkMobData = nullptr;
-    m_pkMobInst = nullptr;
 
     m_pkShop = nullptr;
     m_pkMyShop = nullptr;

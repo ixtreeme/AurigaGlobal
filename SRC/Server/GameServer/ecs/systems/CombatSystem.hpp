@@ -22,6 +22,19 @@ void CheckTarget(entt::entity e);
 void BroadcastTargetPacket(entt::entity e);
 
 
+// Mob runtime state, formerly CMobInstance. Null for anything that never
+// had an instance, which is every PC.
+ecs::MobInstanceState* MobState(entt::entity e);
+const ecs::MobInstanceState* MobStateConst(entt::entity e);
+bool IsBerserk(entt::entity e);
+void SetBerserk(entt::entity e, bool value);
+bool IsGodSpeed(entt::entity e);
+void SetGodSpeed(entt::entity e, bool value);
+bool IsRevive(entt::entity e);
+void SetRevive(entt::entity e, bool value);
+uint32_t GetLastAttackedTime(entt::entity e);
+int32_t DistanceFromLastAttacked(entt::entity e);
+void SetLastAttacked(entt::entity e, uint32_t when);
 bool IsBerserker(entt::entity e);
 bool IsGodSpeeder(entt::entity e);
 // The stone this mob guards, else its party leader; entt::null for neither.
@@ -54,7 +67,6 @@ bool IsStun(entt::entity e);
 void Stun(entt::entity e);
 bool IsDead(entt::entity e);
 void Dead(entt::entity victim, entt::entity killer = entt::null, bool immediate = false);
-void SetLastAttacked(entt::entity e, uint32_t tick);
 void DeathPenalty(entt::entity e, uint8_t bTown);
 void RewardGold(entt::entity victim, entt::entity attacker);
 void Reward(entt::entity victim, bool bItemDrop);

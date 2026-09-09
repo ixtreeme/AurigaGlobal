@@ -36,15 +36,6 @@ void CMob::AddSkillSplash(int iIndex, uint32_t dwTiming, uint32_t dwHitDistance)
 	m_mobSkillInfo[iIndex].vecSplashAttack.push_back(TMobSplashAttackInfo(dwTiming, dwHitDistance));
 }
 
-CMobInstance::CMobInstance()
-	: m_IsBerserk(false), m_IsGodSpeed(false), m_IsRevive(false)
-{
-	m_dwLastAttackedTime = get_dword_time();
-	m_dwLastWarpTime = get_dword_time();
-
-	memset( &m_posLastAttacked, 0, sizeof(m_posLastAttacked) );
-}
-
 CMobManager::CMobManager()
 {
 }

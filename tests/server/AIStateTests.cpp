@@ -149,6 +149,11 @@ bool Attack(entt::entity attacker, entt::entity victim, uint8_t)
     return true;
 }
 bool IsGodSpeeder(entt::entity) { return false; }
+bool IsBerserk(entt::entity) { return false; }
+void SetBerserk(entt::entity, bool) {}
+bool IsGodSpeed(entt::entity) { return false; }
+void SetGodSpeed(entt::entity, bool) {}
+bool IsRevive(entt::entity) { return false; }
 } // namespace CombatSystem
 
 namespace ecs::MovementSystem {
@@ -206,12 +211,7 @@ bool SECTREE_MANAGER::IsMovablePosition(int, int, int) { return true; }
 
 // The AI pump still resolves a character for the flag sync and the two mob
 // instance flags; none of it is reachable from the idle cases below.
-bool CHARACTER::IsBerserk() const { return false; }
-bool CHARACTER::IsGodSpeed() const { return false; }
-bool CHARACTER::IsRevive() const { return false; }
 bool CHARACTER::IsStoneSkinner() const { return false; }
-void CHARACTER::SetBerserk(bool) {}
-void CHARACTER::SetGodSpeed(bool) {}
 bool CHARACTER::Follow(entt::entity, float) { return false; }
 bool CHARACTER::Return() { return false; }
 bool CHARACTER::UseMobSkill(unsigned int) { return false; }

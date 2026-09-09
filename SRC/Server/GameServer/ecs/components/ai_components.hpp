@@ -73,7 +73,20 @@ struct SpawnInfo {
 
 struct MobDataRef {
     const CMob* data { nullptr };
-    CMobInstance* instance { nullptr };
+};
+
+// What CMobInstance held: where and when this mob was last attacked, and
+// the three mode switches the AI toggles. It existed only for mobs, and so
+// does this - absence is the old null instance, and reads answer the same
+// defaults the null checks used to return.
+struct MobInstanceState {
+    int32_t lastAttackedX { 0 };
+    int32_t lastAttackedY { 0 };
+    int32_t lastAttackedZ { 0 };
+    uint32_t lastAttackedTime { 0 };
+    bool isBerserk { false };
+    bool isGodSpeed { false };
+    bool isRevive { false };
 };
 
 struct FlyTargets {

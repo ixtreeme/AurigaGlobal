@@ -35,19 +35,6 @@ class CMob
 		void AddSkillSplash(int iIndex, uint32_t dwTiming, uint32_t dwHitDistance);
 };
 
-class CMobInstance
-{
-	public:
-		CMobInstance();
-
-		PIXEL_POSITION	m_posLastAttacked;	// 마지막 맞은 위치
-		uint32_t		m_dwLastAttackedTime;	// 마지막 맞은 시간
-		uint32_t		m_dwLastWarpTime;
-
-		bool m_IsBerserk;
-		bool m_IsGodSpeed;
-		bool m_IsRevive;
-};
 
 class CMobGroupGroup
 {

@@ -82,13 +82,13 @@ bool SyncAIFlags(entt::registry& reg, entt::entity entity, LPCHARACTER ch)
         IS_SET(aiFlags, AIFLAG_NOATTACKSHINSU) != 0,
         IS_SET(aiFlags, AIFLAG_NOATTACKCHUNJO) != 0,
         IS_SET(aiFlags, AIFLAG_NOATTACKJINNO) != 0,
-        ch->IsBerserk(),
+        CombatSystem::IsBerserk(entity),
         ecs::PlayerRuntime::IsGuardNPC(entity),
         false,
         ch->IsStoneSkinner(),
-        ch->IsGodSpeed(),
+        CombatSystem::IsGodSpeed(entity),
         CombatSystem::IsDeathBlow(entity),
-        ch->IsRevive(),
+        CombatSystem::IsRevive(entity),
         flags.isNoMove,
     };
 
@@ -228,18 +228,11 @@ void StateIdle_Monster(entt::entity e)
         return;
     }
 
-    // Berserk and godspeed still live on CMobInstance, which has no component
-    // yet. Resolving a character is their cost alone, so it happens here and
-    // not as a precondition for the whole body - a mob with no legacy object
-    // still wanders and still drops a dead target.
-    if (CombatSystem::IsBerserker(e) || CombatSystem::IsGodSpeeder(e)) {
-        if (LPCHARACTER ch = ecs::LegacyCharOf(e)) {
-            if (CombatSystem::IsBerserker(e) && ch->IsBerserk())
-                ch->SetBerserk(false);
-            if (CombatSystem::IsGodSpeeder(e) && ch->IsGodSpeed())
-                ch->SetGodSpeed(false);
-        }
-    }
+    if (CombatSystem::IsBerserker(e) && CombatSystem::IsBerserk(e))
+        CombatSystem::SetBerserk(e, false);
+
+    if (CombatSystem::IsGodSpeeder(e) && CombatSystem::IsGodSpeed(e))
+        CombatSystem::SetGodSpeed(e, false);
 
     entt::entity victim = CombatSystem::GetVictim(e);
     if (victim == entt::null || !g_registry.valid(victim) || CombatSystem::IsDead(victim)) {
@@ -455,14 +448,10 @@ void StateBattle(entt::entity e)
             ecs::PlayerRuntime::GetHPPct(e) < table->bBerserkPoint;
         const bool wantsGodSpeed = CombatSystem::IsGodSpeeder(e) &&
             ecs::PlayerRuntime::GetHPPct(e) < table->bGodSpeedPoint;
-        if (wantsBerserk || wantsGodSpeed) {
-            if (LPCHARACTER ch = ecs::LegacyCharOf(e)) {
-                if (wantsBerserk && !ch->IsBerserk())
-                    ch->SetBerserk(true);
-                if (wantsGodSpeed && !ch->IsGodSpeed())
-                    ch->SetGodSpeed(true);
-            }
-        }
+        if (wantsBerserk && !CombatSystem::IsBerserk(e))
+            CombatSystem::SetBerserk(e, true);
+        if (wantsGodSpeed && !CombatSystem::IsGodSpeed(e))
+            CombatSystem::SetGodSpeed(e, true);
     }
 
     if (SkillSystem::HasMobSkill(e)) {

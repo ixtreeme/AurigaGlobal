@@ -1084,9 +1084,11 @@ bool CHARACTER::Show(int32_t lMapIndex, int32_t x, int32_t y, int32_t z, bool bS
     }
     else if (m_pkMobData)
     {
-        m_pkMobInst->m_posLastAttacked.x = x;
-        m_pkMobInst->m_posLastAttacked.y = y;
-        m_pkMobInst->m_posLastAttacked.z = z;
+        if (auto* mobState = CombatSystem::MobState(GetEntityHandle())) {
+            mobState->lastAttackedX = x;
+            mobState->lastAttackedY = y;
+            mobState->lastAttackedZ = z;
+        }
     }
 
     if (bShowSpawnMotion)

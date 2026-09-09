@@ -226,6 +226,94 @@ entt::entity GetNearestVictim(entt::entity attacker, entt::entity from)
     return victim;
 }
 
+ecs::MobInstanceState* MobState(entt::entity e)
+{
+    if (e == entt::null || !g_registry.valid(e))
+        return nullptr;
+    return g_registry.try_get<ecs::MobInstanceState>(e);
+}
+
+const ecs::MobInstanceState* MobStateConst(entt::entity e)
+{
+    return MobState(e);
+}
+
+bool IsBerserk(entt::entity e)
+{
+    const auto* state = MobState(e);
+    return state && state->isBerserk;
+}
+
+void SetBerserk(entt::entity e, bool value)
+{
+    if (auto* state = MobState(e))
+        state->isBerserk = value;
+}
+
+bool IsGodSpeed(entt::entity e)
+{
+    const auto* state = MobState(e);
+    return state && state->isGodSpeed;
+}
+
+void SetGodSpeed(entt::entity e, bool value)
+{
+    auto* state = MobState(e);
+    if (!state)
+        return;
+
+    state->isGodSpeed = value;
+
+    // Godspeed pins attack speed while it lasts and hands the prototype
+    // value back when it ends.
+    // PointSystem exposes Change but no absolute set, so the attack-speed
+    // pin still goes through CHARACTER::SetPoint. That accessor is the next
+    // thing that would need moving.
+    const TMobTable* table = ecs::PlayerRuntime::GetMobTable(e);
+    if (LPCHARACTER ch = LegacyCharOf(e))
+        ch->SetPoint(POINT_ATT_SPEED, value ? 250 : (table ? table->sAttackSpeed : 0));
+}
+
+bool IsRevive(entt::entity e)
+{
+    const auto* state = MobState(e);
+    return state && state->isRevive;
+}
+
+void SetRevive(entt::entity e, bool value)
+{
+    if (auto* state = MobState(e))
+        state->isRevive = value;
+}
+
+// Two readings Follow needs, phrased so the caller never holds the state.
+uint32_t GetLastAttackedTime(entt::entity e)
+{
+    const auto* state = MobState(e);
+    return state ? state->lastAttackedTime : 0;
+}
+
+int32_t DistanceFromLastAttacked(entt::entity e)
+{
+    const auto* state = MobState(e);
+    if (!state)
+        return 0;
+    return DISTANCE_APPROX(state->lastAttackedX - ecs::PlayerRuntime::GetX(e),
+                           state->lastAttackedY - ecs::PlayerRuntime::GetY(e));
+}
+
+void SetLastAttacked(entt::entity e, uint32_t when)
+{
+    auto* state = MobState(e);
+    if (!state)
+        return;
+
+    state->lastAttackedTime = when;
+    state->lastAttackedX = ecs::PlayerRuntime::GetX(e);
+    state->lastAttackedY = ecs::PlayerRuntime::GetY(e);
+    state->lastAttackedZ = ecs::PlayerRuntime::GetZ(e);
+}
+
 bool IsBerserker(entt::entity e)
 {
     if (IS_SET(ecs::PlayerRuntime::GetAIFlag(e), AIFLAG_BERSERK))
@@ -439,9 +527,9 @@ float GetMobDamageMultiplier(entt::entity e)
     const auto* mob = MobData(e);
     if (!mob)
         return 1.0f;
-    // AIFlags may lag AI changes; SetBerserk updates the live instance.
+    // AIFlags may lag AI changes; MobInstanceState is what SetBerserk writes.
     const float multiplier = mob->data->m_table.fDamMultiply *
-        (mob->instance && mob->instance->m_IsBerserk ? 2.0f : 1.0f);
+        (IsBerserk(e) ? 2.0f : 1.0f);
     return std::isfinite(multiplier) && multiplier >= 0 ? multiplier : 1.0f;
 }
 
@@ -533,13 +621,6 @@ void Dead(entt::entity victim, entt::entity killer, bool immediate)
     // Compatibility boundary until the complete death pipeline is component-native.
     if (auto* legacyVictim = LegacyCharOf(victim))
         legacyVictim->Dead(killer, immediate);
-}
-
-void SetLastAttacked(entt::entity e, uint32_t tick)
-{
-    if (auto* ch = LegacyCharOf(e)) {
-        ch->SetLastAttacked(tick);
-    }
 }
 
 
@@ -2023,7 +2104,7 @@ EVENTFUNC(dead_event)
 	{
 		if (ch->IsMonster() == true)
 		{
-			if (ch->IsRevive() == false && ch->HasReviverInParty() == true)
+			if (CombatSystem::IsRevive(ch->GetEntityHandle()) == false && ch->HasReviverInParty() == true)
 			{
 				ecs::PlayerRuntime::SetPosition(chEntity, POS_STANDING);
 				ch->SetHP(ecs::PointSystem::GetMaxHP(chEntity));
@@ -2031,7 +2112,7 @@ EVENTFUNC(dead_event)
 				ecs::ViewSystem::ViewReencode(chEntity);
 
 				CombatSystem::SetAggressive(chEntity);
-				ch->SetRevive(true);
+				CombatSystem::SetRevive(ch->GetEntityHandle(), true);
 
 				return 0;
 			}
@@ -2464,7 +2545,7 @@ void CHARACTER::Dead(entt::entity killer, bool bImmediateDead)
 
 					Reward(false);
 				}
-				else if (IsRevive() == true)
+				else if (CombatSystem::IsRevive(GetEntityHandle()) == true)
 				{
 					Reward(false);
 				}
@@ -2550,7 +2631,7 @@ void CHARACTER::Dead(entt::entity killer, bool bImmediateDead)
 			SCharDeadEventInfo* pEventInfo = AllocEventInfo<SCharDeadEventInfo>();
 			pEventInfo->entity = GetEntityHandle();
 
-			if (IsRevive() == false && HasReviverInParty() == true)
+			if (CombatSystem::IsRevive(GetEntityHandle()) == false && HasReviverInParty() == true)
 			{
 				ecs::PlayerRuntime::SetCharEvent(GetEntityHandle(), ecs::PlayerRuntime::CharEvent::Dead,
 					event_create(dead_event, pEventInfo, bImmediateDead ? 1 : PASSES_PER_SEC(1)));
@@ -5424,9 +5505,9 @@ bool CHARACTER::Damage(entt::entity attacker, int64_t dam, EDamageType type) // 
 	if (!IsPC())
 	{
 		if (m_pkParty && m_pkParty->GetLeader())
-			m_pkParty->GetLeader()->SetLastAttacked(get_dword_time());
+			CombatSystem::SetLastAttacked(ecs::SocialSystem::GetPartyLeader(GetEntityHandle()), get_dword_time());
 		else
-			SetLastAttacked(get_dword_time());
+			CombatSystem::SetLastAttacked(GetEntityHandle(), get_dword_time());
 	}
 
 	if (IsStun())
@@ -6777,7 +6858,7 @@ struct FuncSetLastAttacked
 
 	void operator () (LegacyCharHandle ch)
 	{
-		ch->SetLastAttacked(m_dwTime);
+		CombatSystem::SetLastAttacked(ch->GetEntityHandle(), m_dwTime);
 	}
 
 	uint32_t m_dwTime;
@@ -6787,16 +6868,6 @@ struct FuncSetLastAttacked
 
 
 #endif
-void CHARACTER::SetLastAttacked(uint32_t dwTime)
-{
-	if (!m_pkMobInst)
-		return;
-	assert(m_pkMobInst != NULL);
-
-	m_pkMobInst->m_dwLastAttackedTime = dwTime;
-	m_pkMobInst->m_posLastAttacked = GetXYZ();
-}
-
 
 //
 // CHARACTER::Damage ޼ҵ this  ԰ Ѵ.
@@ -7144,46 +7215,6 @@ int CHARACTER::GetHPPct() const
 		return 0;
 
 	return static_cast<int>((static_cast<int64_t>(GetHP()) * 100) / static_cast<int64_t>(GetMaxHP()));
-}
-
-bool CHARACTER::IsBerserk() const
-{
-	return m_pkMobInst != nullptr ? m_pkMobInst->m_IsBerserk : false;
-}
-
-void CHARACTER::SetBerserk(bool mode)
-{
-	if (m_pkMobInst != nullptr)
-		m_pkMobInst->m_IsBerserk = mode;
-}
-
-bool CHARACTER::IsGodSpeed() const
-{
-	return m_pkMobInst != nullptr ? m_pkMobInst->m_IsGodSpeed : false;
-}
-
-void CHARACTER::SetGodSpeed(bool mode)
-{
-	if (m_pkMobInst == nullptr)
-		return;
-
-	m_pkMobInst->m_IsGodSpeed = mode;
-
-	if (mode == true)
-		SetPoint(POINT_ATT_SPEED, 250);
-	else
-		SetPoint(POINT_ATT_SPEED, m_pkMobData->m_table.sAttackSpeed);
-}
-
-bool CHARACTER::IsRevive() const
-{
-	return m_pkMobInst != nullptr ? m_pkMobInst->m_IsRevive : false;
-}
-
-void CHARACTER::SetRevive(bool mode)
-{
-	if (m_pkMobInst != nullptr)
-		m_pkMobInst->m_IsRevive = mode;
 }
 
 uint32_t CHARACTER::GetSkipComboAttackByTime() const
@@ -7774,8 +7805,11 @@ bool CHARACTER::Return()
 	int x, y;
 	SetVictim(entt::null);
 
-	x = m_pkMobInst->m_posLastAttacked.x;
-	y = m_pkMobInst->m_posLastAttacked.y;
+	const auto* mobState = CombatSystem::MobStateConst(GetEntityHandle());
+	if (!mobState)
+		return false;
+	x = mobState->lastAttackedX;
+	y = mobState->lastAttackedY;
 
 	ecs::MovementSystem::SetRotationToXY(GetEntityHandle(), x, y);
 
@@ -7808,7 +7842,7 @@ bool CHARACTER::Follow(entt::entity chr, float fMinDistance)
 		{
 			if (!GetParty() || !GetParty()->GetLeader() || GetParty()->GetLeader() == this)
 			{
-				if (get_dword_time() - m_pkMobInst->m_dwLastAttackedTime >= 15000)
+				if (get_dword_time() - CombatSystem::GetLastAttackedTime(GetEntityHandle()) >= 15000)
 				{
 					if (m_pkMobData->m_table.wAttackRange < DISTANCE_APPROX(ecs::PlayerRuntime::GetX(chr) - GetX(), ecs::PlayerRuntime::GetY(chr) - GetY()))
 						if (Return())
@@ -7826,9 +7860,9 @@ bool CHARACTER::Follow(entt::entity chr, float fMinDistance)
 	{
 		if (!GetParty() || !GetParty()->GetLeader() || GetParty()->GetLeader() == this)
 		{
-			if (get_dword_time() - m_pkMobInst->m_dwLastAttackedTime >= 15000)
+			if (get_dword_time() - CombatSystem::GetLastAttackedTime(GetEntityHandle()) >= 15000)
 			{
-				if (5000 < DISTANCE_APPROX(m_pkMobInst->m_posLastAttacked.x - GetX(), m_pkMobInst->m_posLastAttacked.y - GetY()))
+				if (5000 < CombatSystem::DistanceFromLastAttacked(GetEntityHandle()))
 					if (Return())
 						return true;
 			}
@@ -7838,7 +7872,7 @@ bool CHARACTER::Follow(entt::entity chr, float fMinDistance)
 #ifndef ENABLE_BUG_FIXES
 	if (IsGuardNPC())
 	{
-		if (5000 < DISTANCE_APPROX(m_pkMobInst->m_posLastAttacked.x - GetX(), m_pkMobInst->m_posLastAttacked.y - GetY()))
+		if (5000 < CombatSystem::DistanceFromLastAttacked(GetEntityHandle()))
 			if (Return())
 				return true;
 	}

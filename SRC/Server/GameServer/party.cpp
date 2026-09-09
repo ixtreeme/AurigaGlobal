@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "ecs/systems/CombatSystem.hpp"
 #include <Core/Logging.hpp>
 #include "ecs/systems/PlayerRuntimeSystem.hpp"
 #include "ecs/systems/MovementSystem.hpp"
@@ -374,7 +375,7 @@ void CParty::Destroy()
 			else
 			{
 				// NPC�� ��� ���� �ð� �� ���� ���� �ƴ� �� ������� �ϴ� �̺�Ʈ�� ���۽�Ų��.
-				rMember.pCharacter->SetLastAttacked(dwTime);
+				CombatSystem::SetLastAttacked(rMember.pCharacter->GetEntityHandle(), dwTime);
 				rMember.pCharacter->StartDestroyWhenIdleEvent();
 			}
 

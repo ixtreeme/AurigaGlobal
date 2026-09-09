@@ -785,19 +785,13 @@ public:
 	uint32_t				GetMobDropItemVnum() const;
 
 	// NEWAI
-	bool			IsBerserk() const;
-	void			SetBerserk(bool mode);
 
 	bool			IsStoneSkinner() const;
 
-	bool			IsGodSpeed() const;
-	void			SetGodSpeed(bool mode);
 
 
 	bool			IsReviver() const;
 	bool			HasReviverInParty() const;
-	bool			IsRevive() const;
-	void			SetRevive(bool mode);
 	// NEWAI END
 
 	uint32_t			GetSummonVnum() const;
@@ -937,7 +931,6 @@ public:
 	// Body in MovementSystem.cpp.
 	uint8_t				GetAddChrStateFlag() const;
 
-	void			SetLastAttacked(uint32_t time);	// ���������� ���ݹ��� �ð� �� ��ġ�� ������
 
 
 	bool			WarpSet(int32_t x, int32_t y, int32_t lRealMapIndex = 0);
@@ -2016,7 +2009,6 @@ public:
 
 
 	const CMob* m_pkMobData;
-	CMobInstance* m_pkMobInst;
 	const CMob* GetMobData() const { return m_pkMobData; }
 
 	std::map<int, LPEVENT> m_mapMobSkillEvent;

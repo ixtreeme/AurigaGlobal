@@ -362,7 +362,7 @@ entt::entity CreateMobEntity(entt::registry& reg, const TMobTable& data, int x, 
     reg.emplace_or_replace<ecs::AIFlags>(entity, aiFlags);
     reg.emplace_or_replace<ecs::AggroTable>(entity, ecs::AggroTable {});
     reg.emplace_or_replace<ecs::SpawnInfo>(entity, ecs::SpawnInfo { x, y, static_cast<uint32_t>(mapIndex), 0u, 0u });
-    reg.emplace_or_replace<ecs::MobDataRef>(entity, mobProto, nullptr);
+    reg.emplace_or_replace<ecs::MobDataRef>(entity, mobProto);
     reg.emplace_or_replace<ecs::FlyTargets>(entity, ecs::FlyTargets { 0u, {} });
 
     if (aiFlags.isGuard) {

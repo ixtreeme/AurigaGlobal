@@ -410,6 +410,8 @@ bool CHARACTER::Sync(int,int) { UnexpectedService(__func__); }
 void CHARACTER::OnMove(bool) { UnexpectedService(__func__); }
 float ecs::MovementSystem::GetMoveSpeed(entt::entity) { UnexpectedService(__func__); }
 float ecs::PlayerRuntime::GetRotation(entt::entity) { UnexpectedService(__func__); }
+const TMobTable* ecs::PlayerRuntime::GetMobTable(entt::entity) { return nullptr; }
+int ecs::PlayerRuntime::GetZ(entt::entity) { return 0; }
 void ecs::MovementSystem::CalculateMoveDuration(entt::entity) { UnexpectedService(__func__); }
 void ecs::MovementSystem::SendMovePacket(entt::entity,unsigned char,unsigned char,unsigned int,unsigned int,unsigned int,unsigned int,float) { UnexpectedService(__func__); }
 void CHARACTER::SyncQuickslot(unsigned char,unsigned char,unsigned char) { UnexpectedService(__func__); }
@@ -596,7 +598,6 @@ void ecs::MovementSystem::SetRotation(entt::entity e,float
     , bool
 #endif
 ) { AssertActor(e); }
-CMobInstance::CMobInstance() : m_IsBerserk(false), m_IsGodSpeed(false), m_IsRevive(false) {}
 CMob::CMob() : m_table{}, m_mobSkillInfo{} {}
 CMob::~CMob() = default;
 CHARACTER_MANAGER::CHARACTER_MANAGER() = default;
@@ -673,10 +674,10 @@ void BattleMathChecks() {
     g_registry.destroy(arrow); Check(CalcArrowDamage(a,v,weapon,arrow)==0, "stale arrow");
     g_registry.get<BattleFixture>(a).weapon=entt::null;
     g_registry.remove<ecs::TagPC>(a); g_registry.emplace<ecs::TagMonster>(a);
-    CMob proto {}; CMobInstance instance;
+    CMob proto {};
     proto.m_table.dwDamageRange[0]=10; proto.m_table.dwDamageRange[1]=20;
     proto.m_table.fDamMultiply=1.5f; proto.m_table.wAttackRange=200;
-    g_registry.emplace<ecs::MobDataRef>(a,&proto,&instance);
+    g_registry.emplace<ecs::MobDataRef>(a,&proto);
     Check(C::GetMobDamageMin(a)==10 && C::GetMobDamageMax(a)==20 && C::GetMobAttackRange(a)==200, "mob prototype not read");
     proto.m_table.bBattleType=BATTLE_TYPE_RANGE;
     g_registry.get<BattleFixture>(a).points[POINT_BOW_DISTANCE]=100;
@@ -697,7 +698,7 @@ void BattleMathChecks() {
     g_registry.get<BattleFixture>(a).race=0;
     g_registry.get<BattleFixture>(a).points[POINT_BOW_DISTANCE]=0;
     Check(CalcMeleeDamage(a,v,true,true)==180, "NPC damage multiplier");
-    instance.m_IsBerserk=true;
+    g_registry.emplace_or_replace<ecs::MobInstanceState>(a).isBerserk=true;
     Check(CalcMeleeDamage(a,v,true,true)==360, "live berserk state ignored");
     proto.m_table.fDamMultiply=std::numeric_limits<float>::quiet_NaN();
     Check(C::GetMobDamageMultiplier(a)==1, "invalid mob multiplier");
