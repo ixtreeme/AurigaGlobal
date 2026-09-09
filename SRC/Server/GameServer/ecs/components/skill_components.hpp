@@ -18,7 +18,9 @@ struct SkillLevels {
 
 struct SkillCooldowns {
     std::array<uint32_t, MOB_SKILL_MAX_NUM> mob {};
-    uint32_t lastSkillTime;
+    // When a skill was last used. The field was declared here and left
+    // uninitialised while CHARACTER kept the live copy.
+    uint32_t lastSkillTime { 0 };
     bool disableCooltime;
 };
 

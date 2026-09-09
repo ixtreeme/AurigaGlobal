@@ -49,6 +49,7 @@ entt::entity GetStone(entt::entity e);
 entt::entity GetProtege(entt::entity e);
 void CowardEscape(entt::entity e);
 bool CanBeginFight(entt::entity e);
+uint32_t GetSkipComboAttackByTime(entt::entity e);
 int GetMaxAggro(entt::entity e);
 void SetMaxAggro(entt::entity e, int value);
 void ChangeVictimByAggro(entt::entity self, int newAggro, entt::entity newVictim);

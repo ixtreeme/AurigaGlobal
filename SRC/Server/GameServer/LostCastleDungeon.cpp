@@ -1130,7 +1130,8 @@ void ClearClonesOnMap(int32_t mapIndex)
                     }
                     else
                     {
-                        didAction = clone->Attack(target ? target->GetEntityHandle() : entt::null, 0);
+                        didAction = CombatSystem::Attack(clone->GetEntityHandle(),
+                            target ? target->GetEntityHandle() : entt::null, 0);
                     }
 
                     if (didAction)

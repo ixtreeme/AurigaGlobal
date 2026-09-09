@@ -413,6 +413,8 @@ float ecs::PlayerRuntime::GetRotation(entt::entity) { UnexpectedService(__func__
 const TMobTable* ecs::PlayerRuntime::GetMobTable(entt::entity) { return nullptr; }
 int ecs::PlayerRuntime::GetZ(entt::entity) { return 0; }
 int ecs::PlayerRuntime::GetPosition(entt::entity) { return POS_STANDING; }
+uint32_t SkillSystem::GetLastSkillTime(entt::entity) { return 0; }
+void ecs::MovementSystem::OnMove(entt::entity, bool) {}
 bool ecs::PlayerRuntime::IsPet(entt::entity) { return false; }
 bool ecs::PlayerRuntime::IsNewPet(entt::entity) { return false; }
 void ecs::MovementSystem::CalculateMoveDuration(entt::entity) { UnexpectedService(__func__); }
@@ -814,11 +816,35 @@ void AggroSwitchChecks() {
     Check(C::GetMaxAggro(entt::null) == -100, "no aggro state means the floor");
 }
 }
+namespace {
+// A swing must refuse a handle that has gone. The old Attack resolved the
+// victim once at the top and then dereferenced it twice without checking, so a
+// target retired between the command and the swing was a null dereference.
+void AttackHandleChecks() {
+    Reset();
+    const auto attacker = Actor();
+
+    Check(!C::Attack(entt::null, attacker, 0), "a null attacker is refused");
+    Check(!C::Attack(attacker, entt::null, 0), "a null victim is refused");
+
+    const auto gone = Actor();
+    g_registry.destroy(gone);
+    Check(!C::Attack(attacker, gone, 0), "a destroyed victim is refused");
+    Check(!C::Attack(gone, attacker, 0), "a destroyed attacker is refused");
+
+    const auto reused = Actor();
+    Check(entt::to_entity(reused) == entt::to_entity(gone), "the slot was reused");
+    Check(!C::Attack(attacker, gone, 0), "a stale handle is refused after the slot is reused");
+
+    g_registry.destroy(attacker);
+    Check(!C::Attack(attacker, reused, 0), "an attacker retired mid-sequence is refused");
+}
+}
 int main() {
     try {
         CHARACTER_MANAGER characters;
         AlignmentChecks(); CallbackChecks(); ModeChecks(); MultiplierAndValidityChecks();
-        BattleTargetChecks(); AggroSwitchChecks(); BattleMathChecks(); BattleAffectChecks(); AttackAuditChecks(); InteractionCounterChecks();
+        BattleTargetChecks(); AggroSwitchChecks(); AttackHandleChecks(); BattleMathChecks(); BattleAffectChecks(); AttackAuditChecks(); InteractionCounterChecks();
         std::cout << "Combat state checks passed: " << checks << '\n'; return 0;
     } catch (const std::exception& error) { std::cerr << error.what() << '\n'; return 1; }
 }

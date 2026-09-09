@@ -1407,7 +1407,6 @@ public:
 	void				DeathPenalty(uint8_t bExpLossPercent);
 	void				ReviveInvisible(int iDur);
 
-	bool				Attack(entt::entity victim, uint8_t bType = 0);
 	bool				CanFight() const;
 
 
@@ -1487,7 +1486,6 @@ public:
 public:
 
 
-	uint32_t GetSkipComboAttackByTime() const;
 
 protected:
 	uint8_t m_bComboSequence;
@@ -1495,7 +1493,6 @@ protected:
 	int m_iValidComboInterval;
 	uint8_t m_bComboIndex;
 	int m_iComboHackCount;
-	uint32_t m_dwSkipComboAttackByTime;
 
 protected:
 	void				UpdateAggrPointEx(entt::entity character, EDamageType type, int dam, TBattleInfo& info);
@@ -1627,7 +1624,6 @@ public:
 
 private:
 	bool				m_bDisableCooltime;
-	uint32_t				m_dwLastSkillTime;	///< ���������� skill �� �� �ð�(millisecond).
 	// End of Skill
 #ifdef DISABLE_CORE_PULSE_RAZOR93
 

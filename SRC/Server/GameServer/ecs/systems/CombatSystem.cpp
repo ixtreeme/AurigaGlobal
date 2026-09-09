@@ -418,6 +418,14 @@ static bool IsDefanceWaweMastAttackMob(int32_t vnum)
 }
 #endif
 
+uint32_t GetSkipComboAttackByTime(entt::entity e)
+{
+    if (e == entt::null || !g_registry.valid(e))
+        return 0;
+    const auto* skip = g_registry.try_get<ecs::ComboSkipUntil>(e);
+    return skip ? skip->value : 0;
+}
+
 int GetMaxAggro(entt::entity e)
 {
     if (e == entt::null || !g_registry.valid(e))
@@ -508,20 +516,6 @@ bool CanFight(entt::entity e)
 {
     if (auto* ch = LegacyCharOf(e)) {
         return ch->CanFight();
-    }
-
-    return false;
-}
-
-bool Attack(entt::entity attacker, entt::entity victim, uint8_t attackType)
-{
-    ecs::Invariants::ValidateCharacterTags(g_registry, attacker, "combat.attack.attacker");
-    ecs::Invariants::ValidateCharacterTags(g_registry, victim, "combat.attack.victim");
-    ecs::Invariants::ValidateCommonIdentity(g_registry, attacker, "combat.attack.attacker");
-    ecs::Invariants::ValidateCommonIdentity(g_registry, victim, "combat.attack.victim");
-
-    if (auto* ch = LegacyCharOf(attacker)) {
-        return ch->Attack(victim, attackType);
     }
 
     return false;
@@ -2788,119 +2782,133 @@ void CHARACTER::CreateFly(uint8_t bType, entt::entity victim)
 	ecs::ViewSystem::PacketView(GetEntityHandle(), &packFly, sizeof(TPacketGCCreateFly));
 }
 
-bool CHARACTER::Attack(entt::entity victim, uint8_t bType)
+namespace CombatSystem {
+
+// One swing. Attacker and victim are handles the whole way through; the old
+// version resolved the victim at the top and then dereferenced it twice
+// without ever checking it, which is what this step exists to stop.
+bool Attack(entt::entity attacker, entt::entity victim, uint8_t attackType)
 {
-	LPCHARACTER pkVictim = ecs::LegacyCharOf(victim);
+    if (attacker == entt::null || !g_registry.valid(attacker))
+        return false;
+    if (victim == entt::null || !g_registry.valid(victim))
+        return false;
+
 #ifdef ENABLE_BUG_FIXES
-	if (pkVictim->GetMyShop())
-		return false;
+    if (ecs::SocialSystem::GetMyShop(victim))
+        return false;
 #endif
 
-	if (test_server)
-		LOG_TRACE("[TEST_SERVER] Attack : {} type {}, MobBattleType {}", GetName(), bType, (!IsPC() && GetMobBattleType()) ? GetMobAttackRange() : 0);
-	//PROF_UNIT puAttack("Attack");
-	if (!ecs::MovementSystem::CanMove(GetEntityHandle()))
-		return false;
+    if (test_server)
+        LOG_TRACE("[TEST_SERVER] Attack : {} type {}, MobBattleType {}",
+            ecs::PlayerRuntime::GetName(attacker), attackType,
+            (!ecs::PlayerRuntime::IsPC(attacker) && GetMobBattleType(attacker))
+                ? GetMobAttackRange(attacker) : 0);
+
+    if (!ecs::MovementSystem::CanMove(attacker))
+        return false;
+
 #ifdef ENABLE_ANTICHEAT
-	SECTREE* sectree = GetSectree();
-	SECTREE* vsectree = ecs::PlayerRuntime::GetSectree(victim);
-
-	if (sectree && vsectree) {
-		if (sectree->IsAttr(GetX(), GetY(), ATTR_BANPK) || vsectree->IsAttr(ecs::PlayerRuntime::GetX(victim), ecs::PlayerRuntime::GetY(victim), ATTR_BANPK)) {
-			if (GetDesc()) {
-				LogManager::instance().HackLog("ANTISAFEZONE", GetEntityHandle());
-				GetDesc()->DelayedDisconnect(3);
-			}
-		}
-	}
+    if (LPSECTREE own = ecs::PlayerRuntime::GetSectree(attacker),
+        theirs = ecs::PlayerRuntime::GetSectree(victim); own && theirs) {
+        if (own->IsAttr(ecs::PlayerRuntime::GetX(attacker), ecs::PlayerRuntime::GetY(attacker), ATTR_BANPK) ||
+            theirs->IsAttr(ecs::PlayerRuntime::GetX(victim), ecs::PlayerRuntime::GetY(victim), ATTR_BANPK)) {
+            if (LPDESC desc = ecs::PlayerRuntime::GetDesc(attacker)) {
+                LogManager::instance().HackLog("ANTISAFEZONE", attacker);
+                desc->DelayedDisconnect(3);
+            }
+        }
+    }
 #endif
-	// if (ecs::SocialSystem::GetParty((pkVictim ? pkVictim->GetEntityHandle() : entt::null)))
-	   // return false;
 
-   // @fixme131
-	if (!battle_is_attackable(GetEntityHandle(), victim))
-		return false;
+    if (!battle_is_attackable(attacker, victim))
+        return false;
 
-	uint32_t dwCurrentTime = get_dword_time();
+    const uint32_t now = get_dword_time();
 
-	if (IsPC()) {
+    if (ecs::PlayerRuntime::IsPC(attacker)) {
 #ifdef ENABLE_ANTICHEAT
-		if (IS_SPEED_HACK(GetEntityHandle(), victim, dwCurrentTime)) {
-			return false;
-		}
+        if (IS_SPEED_HACK(attacker, victim, now))
+            return false;
 #endif
+        if (attackType == 0 && now < GetSkipComboAttackByTime(attacker))
+            return false;
+    }
 
+    NetworkSyncSystem::SetSyncOwner(victim, attacker);
 
-		if (bType == 0 && dwCurrentTime < GetSkipComboAttackByTime())
-			return false;
-	}
+    if (CanBeginFight(victim))
+        BeginFight(victim, attacker);
 
-	NetworkSyncSystem::SetSyncOwner(victim, GetEntityHandle());
+    int result = BATTLE_NONE;
 
-	if (CombatSystem::CanBeginFight(pkVictim->GetEntityHandle()))
-		CombatSystem::BeginFight(pkVictim->GetEntityHandle(), GetEntityHandle());
+    if (attackType == 0) {
+        switch (GetMobBattleType(attacker)) {
+        case BATTLE_TYPE_MELEE:
+        case BATTLE_TYPE_POWER:
+        case BATTLE_TYPE_TANKER:
+        case BATTLE_TYPE_SUPER_POWER:
+        case BATTLE_TYPE_SUPER_TANKER:
+            result = battle_melee_attack(attacker, victim);
+            break;
 
-	int iRet;
+        case BATTLE_TYPE_RANGE:
+        case BATTLE_TYPE_MAGIC: {
+            // FlyTarget and Shoot are the projectile pipeline and still take a
+            // character; the shot type is the only thing that differs here.
+            const uint8_t shotType = GetMobBattleType(attacker) == BATTLE_TYPE_RANGE ? 0 : 1;
+            LPCHARACTER shooter = LegacyCharOf(attacker);
+            if (!shooter) {
+                result = BATTLE_NONE;
+                break;
+            }
+            shooter->FlyTarget(ecs::PlayerRuntime::GetPacketVID(victim),
+                ecs::PlayerRuntime::GetX(victim), ecs::PlayerRuntime::GetY(victim),
+                HEADER_CG_FLY_TARGETING);
+            result = Shoot(attacker, shotType) ? BATTLE_DAMAGE : BATTLE_NONE;
+            break;
+        }
 
-	if (bType == 0)
-	{
-		//
-		// Ϲ
-		//
-		switch (GetMobBattleType())
-		{
-		case BATTLE_TYPE_MELEE:
-		case BATTLE_TYPE_POWER:
-		case BATTLE_TYPE_TANKER:
-		case BATTLE_TYPE_SUPER_POWER:
-		case BATTLE_TYPE_SUPER_TANKER:
-			iRet = battle_melee_attack(GetEntityHandle(), victim);
-			break;
-		case BATTLE_TYPE_RANGE:
-			FlyTarget(ecs::PlayerRuntime::GetPacketVID(victim), ecs::PlayerRuntime::GetX(victim), ecs::PlayerRuntime::GetY(victim), HEADER_CG_FLY_TARGETING);
-			iRet = Shoot(0) ? BATTLE_DAMAGE : BATTLE_NONE;
-			break;
-		case BATTLE_TYPE_MAGIC:
-			FlyTarget(ecs::PlayerRuntime::GetPacketVID(victim), ecs::PlayerRuntime::GetX(victim), ecs::PlayerRuntime::GetY(victim), HEADER_CG_FLY_TARGETING);
-			iRet = Shoot(1) ? BATTLE_DAMAGE : BATTLE_NONE;
-			break;
-		default:
-			LOG_ERROR("Unhandled battle type {}", GetMobBattleType());
-			iRet = BATTLE_NONE;
-			break;
-		}
-	}
-	else
-	{
-		if (IsPC() == true)
-		{
-			if (dwCurrentTime - m_dwLastSkillTime > 1500)
-			{
-				LOG_INFO("HACK: Too long skill using term. Name({}) PID({}) delta({})", GetName(), GetPlayerID(), (dwCurrentTime - m_dwLastSkillTime));
-				return false;
-			}
-		}
+        default:
+            LOG_ERROR("Unhandled battle type {}", GetMobBattleType(attacker));
+            result = BATTLE_NONE;
+            break;
+        }
+    } else {
+        if (ecs::PlayerRuntime::IsPC(attacker)) {
+            const uint32_t sinceSkill = now - SkillSystem::GetLastSkillTime(attacker);
+            if (sinceSkill > 1500) {
+                LOG_INFO("HACK: Too long skill using term. Name({}) PID({}) delta({})",
+                    ecs::PlayerRuntime::GetName(attacker),
+                    ecs::PlayerRuntime::GetPlayerID(attacker), sinceSkill);
+                return false;
+            }
+        }
 
-		LOG_TRACE("Attack call ComputeSkill {} {}", bType, pkVictim ? ecs::PlayerRuntime::GetName(victim).data() : "");
-		iRet = ComputeSkill(bType, victim);
-	}
+        LOG_TRACE("Attack call ComputeSkill {} {}", attackType, ecs::PlayerRuntime::GetName(victim));
+        // ComputeSkill is the skill pipeline and is its own migration.
+        LPCHARACTER caster = LegacyCharOf(attacker);
+        result = caster ? caster->ComputeSkill(attackType, victim) : BATTLE_NONE;
+    }
 
-	//if (test_server && IsPC())
-	//	0, "%s Attack %s type %u ret %d", GetName(), ecs::PlayerRuntime::GetName((pkVictim ? pkVictim->GetEntityHandle() : entt::null)).data(), bType, iRet);
-	if (iRet == BATTLE_DAMAGE || iRet == BATTLE_DEAD)
-	{
-		OnMove(true);
-		pkVictim->OnMove();
+    if (result != BATTLE_DAMAGE && result != BATTLE_DEAD)
+        return false;
 
-		// only pc sets victim null. For npc, state machine will reset this.
-		if (BATTLE_DEAD == iRet && IsPC())
-			SetVictim(entt::null);
+    // The swing can have retired either side by now - a killing blow destroys
+    // the victim, and a callback on the way can take the attacker with it.
+    if (g_registry.valid(attacker))
+        ecs::MovementSystem::OnMove(attacker, true);
+    if (g_registry.valid(victim))
+        ecs::MovementSystem::OnMove(victim);
 
-		return true;
-	}
+    // Only a PC clears its own victim; for a mob the state machine does it.
+    if (result == BATTLE_DEAD && g_registry.valid(attacker) && ecs::PlayerRuntime::IsPC(attacker))
+        SetVictim(attacker, entt::null);
 
-	return false;
+    return true;
 }
+
+} // namespace CombatSystem
 
 int CHARACTER::GetArrowAndBow(entt::entity* ppkBow, entt::entity* ppkArrow, int iArrowCount/* = 1 */)
 {
@@ -7217,11 +7225,6 @@ int CHARACTER::GetHPPct() const
 		return 0;
 
 	return static_cast<int>((static_cast<int64_t>(GetHP()) * 100) / static_cast<int64_t>(GetMaxHP()));
-}
-
-uint32_t CHARACTER::GetSkipComboAttackByTime() const
-{
-	return m_dwSkipComboAttackByTime;
 }
 
 namespace CombatSystem {

@@ -32,6 +32,8 @@ bool HasMobSkill(entt::entity e);
 bool UseMobSkill(entt::entity e, unsigned int idx);
 const CMob* MobProtoOf(entt::entity e);
 const TMobSkillInfo* GetMobSkill(entt::entity e, unsigned int idx);
+uint32_t GetLastSkillTime(entt::entity e);
+void SetLastSkillTime(entt::entity e, uint32_t when);
 uint32_t GetMobSkillCooltime(entt::entity e, unsigned int idx);
 void SetMobSkillCooltime(entt::entity e, unsigned int idx, uint32_t when);
 void CancelMobSkillEvent(entt::entity e, int index);

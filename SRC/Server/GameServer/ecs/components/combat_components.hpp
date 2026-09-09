@@ -51,6 +51,14 @@ struct AttackCooldown {
 };
 
 // Generation-bearing handles prevent a recycled VID/PID from inheriting a hit.
+// Until when combo attacks are skipped. The setter was removed as dead code
+// earlier, so this is zero for everyone; the read stays because the check is
+// on the attack path and dropping it would be a behaviour change, not a
+// cleanup.
+struct ComboSkipUntil {
+    uint32_t value { 0 };
+};
+
 struct AttackAudit {
     entt::entity target { entt::null };
     entt::entity attacker { entt::null };

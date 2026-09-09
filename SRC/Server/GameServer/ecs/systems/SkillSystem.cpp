@@ -635,6 +635,21 @@ void DisableCooltime(entt::entity e)
     MarkDirty(e);
 }
 
+uint32_t GetLastSkillTime(entt::entity e)
+{
+    if (e == entt::null || !g_registry.valid(e))
+        return 0;
+    const auto* cooldowns = g_registry.try_get<ecs::SkillCooldowns>(e);
+    return cooldowns ? cooldowns->lastSkillTime : 0;
+}
+
+void SetLastSkillTime(entt::entity e, uint32_t when)
+{
+    if (e == entt::null || !g_registry.valid(e))
+        return;
+    g_registry.get_or_emplace<ecs::SkillCooldowns>(e).lastSkillTime = when;
+}
+
 uint32_t GetMobSkillCooltime(entt::entity e, unsigned int idx)
 {
     if (idx >= MOB_SKILL_MAX_NUM || e == entt::null || !g_registry.valid(e))
@@ -4068,7 +4083,7 @@ bool CHARACTER::UseSkill(uint32_t dwVnum, entt::entity victim, bool bUseGrandMas
 	else if (dwVnum == SKILL_MUYEONG || pkSk->IsChargeSkill())
 		ComputeSkill(dwVnum, victimEntity);
 
-	m_dwLastSkillTime = get_dword_time();
+	SkillSystem::SetLastSkillTime(character, get_dword_time());
 
 	return true;
 }

@@ -5746,7 +5746,6 @@ void CHARACTER::Initialize()
     m_posSafeboxOpen.x = -1000;
     m_posSafeboxOpen.y = -1000;
 
-    m_dwLastSkillTime = get_dword_time();
 
 
     m_isinPCBang = false;
@@ -5770,7 +5769,6 @@ void CHARACTER::Initialize()
     m_dwLastComboTime = 0;
     m_bComboIndex = 0;
     m_iComboHackCount = 0;
-    m_dwSkipComboAttackByTime = 0;
 
     m_dwMountTime = 0;
 

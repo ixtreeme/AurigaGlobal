@@ -2311,7 +2311,7 @@ void CInputMain::Attack(entt::entity character, const uint8_t header, const char
 				g_registry.emplace_or_replace<ecs::DirtyTag>(character);
 				ecs::MovementSystem::OnMove(character, true);
 				// Damage execution is still the legacy engine boundary.
-				ch->Attack(victim, packMelee->bType);
+				CombatSystem::Attack(character, victim, packMelee->bType);
 			}
 			break;
 
