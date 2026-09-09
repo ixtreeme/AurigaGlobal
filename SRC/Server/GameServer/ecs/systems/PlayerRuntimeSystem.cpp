@@ -5601,7 +5601,6 @@ void CHARACTER::Initialize()
     m_bOpeningSafebox = false;
 
     m_dwPlayerID = 0;
-    m_dwKillerPID = 0;
 #ifdef __SEND_TARGET_INFO__
     dwLastTargetInfoPulse = 0;
 #endif
@@ -5780,7 +5779,6 @@ void CHARACTER::Initialize()
     m_dwLastBuySellTime = 0;
 #endif
 
-    cannot_dead = false;
 
 #ifdef __PET_SYSTEM__
     m_petSystem = nullptr;

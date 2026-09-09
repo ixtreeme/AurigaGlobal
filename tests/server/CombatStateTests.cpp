@@ -411,6 +411,10 @@ const TMobTable* ecs::PlayerRuntime::GetMobTable(entt::entity) { return nullptr;
 int ecs::PlayerRuntime::GetZ(entt::entity) { return 0; }
 int ecs::PlayerRuntime::GetPosition(entt::entity) { return POS_STANDING; }
 int64_t ecs::PlayerRuntime::GetSP(entt::entity) { return 0; }
+void ecs::PlayerRuntime::SetHP(entt::entity, int64_t) {}
+CDungeon* ecs::SocialSystem::GetDungeon(entt::entity) { return nullptr; }
+int SkillSystem::GetSkillPower(entt::entity, uint32_t, uint8_t) { return 0; }
+uint32_t ecs::PlayerRuntime::GetMissionProgress(entt::entity, uint32_t, uint32_t) { return 0; }
 uint32_t SkillSystem::GetLastSkillTime(entt::entity) { return 0; }
 void ecs::MovementSystem::OnMove(entt::entity, bool) {}
 bool ecs::PlayerRuntime::IsPet(entt::entity) { return false; }

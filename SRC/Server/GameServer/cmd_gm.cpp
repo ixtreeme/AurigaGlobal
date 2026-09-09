@@ -4166,9 +4166,9 @@ ACMD (do_can_dead)
 {
 	LPCHARACTER ch = ecs::LegacyCharOf(character);
 	if (subcmd)
-		ch->SetArmada();
+		CombatSystem::SetUndying(ch->GetEntityHandle(), true);
 	else
-		ch->ResetArmada();
+		CombatSystem::SetUndying(ch->GetEntityHandle(), false);
 }
 
 ACMD (do_full_set)

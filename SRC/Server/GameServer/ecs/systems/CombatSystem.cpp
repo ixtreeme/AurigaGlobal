@@ -418,6 +418,36 @@ static bool IsDefanceWaweMastAttackMob(int32_t vnum)
 }
 #endif
 
+uint32_t GetKillerPID(entt::entity e)
+{
+    if (e == entt::null || !g_registry.valid(e))
+        return 0;
+    const auto* killer = g_registry.try_get<ecs::KillerPID>(e);
+    return killer ? killer->value : 0;
+}
+
+void SetKillerPID(entt::entity e, uint32_t pid)
+{
+    if (e == entt::null || !g_registry.valid(e))
+        return;
+    g_registry.get_or_emplace<ecs::KillerPID>(e).value = pid;
+}
+
+bool IsUndying(entt::entity e)
+{
+    if (e == entt::null || !g_registry.valid(e))
+        return false;
+    const auto* state = g_registry.try_get<ecs::UndyingState>(e);
+    return state && state->value;
+}
+
+void SetUndying(entt::entity e, bool value)
+{
+    if (e == entt::null || !g_registry.valid(e))
+        return;
+    g_registry.get_or_emplace<ecs::UndyingState>(e).value = value;
+}
+
 bool GetInvincible(entt::entity e)
 {
     if (e == entt::null || !g_registry.valid(e))
@@ -730,15 +760,6 @@ bool IsDead(entt::entity e)
 
     const auto* runtime = g_registry.try_get<ecs::CharacterRuntimeFlagsComponent>(e);
     return runtime && runtime->position == POS_DEAD;
-}
-
-bool Damage(entt::entity target, entt::entity attacker, int damage, uint8_t damageType)
-{
-    auto* legacyTarget = LegacyCharOf(target);
-    if (!legacyTarget)
-        return false;
-
-    return legacyTarget->Damage(attacker, damage, static_cast<EDamageType>(damageType));
 }
 
 void Dead(entt::entity victim, entt::entity killer, bool immediate)
@@ -2278,10 +2299,11 @@ void CHARACTER::Dead(entt::entity killer, bool bImmediateDead)
 #endif
 
 
-	if (!pkKiller && m_dwKillerPID)
-		pkKiller = CHARACTER_MANAGER::instance().FindByPID(m_dwKillerPID);
+	if (!pkKiller && CombatSystem::GetKillerPID(GetEntityHandle()))
+		pkKiller = CHARACTER_MANAGER::instance().FindByPID(
+			CombatSystem::GetKillerPID(GetEntityHandle()));
 
-	m_dwKillerPID = 0; // ݵ ʱȭ ؾ DO NOT DELETE THIS LINE UNLESS YOU ARE 1000000% SURE
+	CombatSystem::SetKillerPID(GetEntityHandle(), 0); // ݵ ʱȭ ؾ DO NOT DELETE THIS LINE UNLESS YOU ARE 1000000% SURE
 
 	bool isAgreedPVP = false;
 	bool isUnderGuildWar = false;
@@ -4849,23 +4871,38 @@ void CHARACTER::RewardGold(entt::entity attacker) {
 
 #ifdef ENABLE_STONE_SPAWN_STEP_PROCESSING_RAZOR93
 static void ProcessStoneSpawnStep(entt::entity stone);
-#endif
-static int64_t CalcReferenceBowHitDamage(entt::entity attacker, entt::entity victim);
-static int64_t CalcReferenceBasicHitDamage(entt::entity attacker, entt::entity victim);
-static int64_t CalcReferenceNormalHitDamage(entt::entity attacker, entt::entity victim);
 
-bool CHARACTER::Damage(entt::entity attacker, int64_t dam, EDamageType type) // returns true if dead
+static int64_t CalcReferenceBasicHitDamage(entt::entity attacker, entt::entity victim);
+
+namespace CombatSystem {
+
+// The damage pipeline. Victim and attacker are handles the whole way through.
+// The receiver used to be the thing being hit, so every bare accessor in here
+// was a read on the victim; that is what the entity in each call is.
+bool Damage(entt::entity victim, entt::entity attacker, int64_t dam, uint8_t damageType)
 {
+    if (victim == entt::null || !g_registry.valid(victim))
+        return false;
+
+    const EDamageType type = static_cast<EDamageType>(damageType);
+
+    // The damage map that decides drops and experience is still a CHARACTER
+    // member, so the victim is resolved once here and nowhere else below. That
+    // map is its own migration.
+    LPCHARACTER book = LegacyCharOf(victim);
+    if (!book)
+        return false;
+
 	LPCHARACTER pkAttacker = ecs::LegacyCharOf(attacker);
 #ifdef DISABLE_PC_ATTACK_PC_ON_MAPIDEX1
-	if (pkAttacker && ecs::PlayerRuntime::IsPC(attacker) && IsPC() && GetMapIndex() == 1)
+	if (pkAttacker && ecs::PlayerRuntime::IsPC(attacker) && ecs::PlayerRuntime::IsPC(victim) && ecs::PlayerRuntime::GetMapIndex(victim) == 1)
 		return false;
 #endif
-	if (CombatSystem::GetInvincible(GetEntityHandle()))
+	if (CombatSystem::GetInvincible(victim))
 		return false;
 
 #ifdef __NEWPET_SYSTEM__
-	if (ecs::PlayerRuntime::IsImmortal(GetEntityHandle()))
+	if (ecs::PlayerRuntime::IsImmortal(victim))
 		return false;
 #endif
 
@@ -4888,15 +4925,15 @@ bool CHARACTER::Damage(entt::entity attacker, int64_t dam, EDamageType type) // 
 
 	}
 
-	if ((IsPC() && IsAffectFlag(AFF_REVIVE_INVISIBLE)) || (pkAttacker && (ecs::PlayerRuntime::IsPC(attacker) && AffectSystem::IsAffectFlag(attacker, AFF_REVIVE_INVISIBLE))))
+	if ((ecs::PlayerRuntime::IsPC(victim) && AffectSystem::IsAffectFlag(victim, AFF_REVIVE_INVISIBLE)) || (pkAttacker && (ecs::PlayerRuntime::IsPC(attacker) && AffectSystem::IsAffectFlag(attacker, AFF_REVIVE_INVISIBLE))))
 		return false;
 
 #ifdef ENABLE_NEWSTUFF
-	if (pkAttacker && IsStone() && ecs::PlayerRuntime::IsPC(attacker))
+	if (pkAttacker && ecs::PlayerRuntime::IsStone(victim) && ecs::PlayerRuntime::IsPC(attacker))
 	{
-		if (GetEmpire() && GetEmpire() == ecs::PlayerRuntime::GetEmpire(attacker))
+		if (ecs::PlayerRuntime::GetEmpire(victim) && ecs::PlayerRuntime::GetEmpire(victim) == ecs::PlayerRuntime::GetEmpire(attacker))
 		{
-			CombatSystem::SendDamagePacket(GetEntityHandle(), attacker, 0, DAMAGE_BLOCK);
+			CombatSystem::SendDamagePacket(victim, attacker, 0, DAMAGE_BLOCK);
 			return false;
 		}
 	}
@@ -4910,16 +4947,16 @@ bool CHARACTER::Damage(entt::entity attacker, int64_t dam, EDamageType type) // 
 	// Ÿ ƴ   ó
 	if (type != DAMAGE_TYPE_NORMAL && type != DAMAGE_TYPE_NORMAL_RANGE)
 	{
-		if (IsAffectFlag(AFF_TERROR))
+		if (AffectSystem::IsAffectFlag(victim, AFF_TERROR))
 		{
-			int pct = GetSkillPower(SKILL_TERROR) / 400;
+			int pct = SkillSystem::GetSkillPower(victim, SKILL_TERROR) / 400;
 
 			if (number(1, 100) <= pct)
 				return false;
 		}
 	}
 #ifdef ENABLE_MAX_100K_DMG_ON_EVENT_MAP_RAZOR93
-	if (pkAttacker && ecs::PlayerRuntime::IsPC(attacker) && GetMapIndex() == 1 && (IsMonster() || IsStone()))
+	if (pkAttacker && ecs::PlayerRuntime::IsPC(attacker) && ecs::PlayerRuntime::GetMapIndex(victim) == 1 && (ecs::PlayerRuntime::IsMonster(victim) || ecs::PlayerRuntime::IsStone(victim)))
 	{
 #ifdef DISABLE_DAMAGE_TYPE_NORMAL_RANGE_EVENT_MAP
 
@@ -4930,7 +4967,7 @@ bool CHARACTER::Damage(entt::entity attacker, int64_t dam, EDamageType type) // 
 		if (weaponProto && weaponProto->bSubType == WEAPON_BOW)
 		{
 
-			CombatSystem::SendDamagePacket(GetEntityHandle(), attacker, 0, DAMAGE_BLOCK);
+			CombatSystem::SendDamagePacket(victim, attacker, 0, DAMAGE_BLOCK);
 			return false;
 		}
 #endif // !DISABLE_DAMAGE_TYPE_NORMAL_RANGE_EVENT_MAP
@@ -4941,12 +4978,13 @@ bool CHARACTER::Damage(entt::entity attacker, int64_t dam, EDamageType type) // 
 		if (eAttacker == entt::null)
 			return false;
 
-		auto it = m_map_kDamage.find(eAttacker);
-		if (it == m_map_kDamage.end())
+		auto& damageMap = book->GetDamageMapForUpdate();
+		auto it = damageMap.find(eAttacker);
+		if (it == damageMap.end())
 		{
-			m_map_kDamage.insert(std::make_pair(
+			damageMap.insert(std::make_pair(
 				eAttacker,
-				TBattleInfo(fixed_dam, 0)
+				CHARACTER::TBattleInfo(fixed_dam, 0)
 			));
 		}
 		else
@@ -4955,26 +4993,26 @@ bool CHARACTER::Damage(entt::entity attacker, int64_t dam, EDamageType type) // 
 		}
 
 
-		CombatSystem::SendDamagePacket(GetEntityHandle(), attacker, fixed_dam, DAMAGE_NORMAL);
+		CombatSystem::SendDamagePacket(victim, attacker, fixed_dam, DAMAGE_NORMAL);
 
 
-		if (GetHP() <= fixed_dam)
+		if (ecs::PlayerRuntime::GetHP(victim) <= fixed_dam)
 		{
-			SetHP(0);
-			Dead(attacker);
+			ecs::PlayerRuntime::SetHP(victim, 0);
+			CombatSystem::Dead(victim, attacker);
 			return true; // nem megy tovbb
 		}
 		else
 		{
-			PointChange(POINT_HP, -fixed_dam, false);
+			ecs::PointSystem::Change(victim, POINT_HP, -fixed_dam, false);
 			return false; // nem megy tovbb
 		}
 	}
 #endif
 
 
-	int iCurHP = GetHP();
-	int iCurSP = ecs::PlayerRuntime::GetSP(GetEntityHandle());
+	int iCurHP = ecs::PlayerRuntime::GetHP(victim);
+	int iCurSP = ecs::PlayerRuntime::GetSP(victim);
 
 	bool IsCritical = false;
 	bool IsPenetrate = false;
@@ -5003,7 +5041,7 @@ bool CHARACTER::Damage(entt::entity attacker, int64_t dam, EDamageType type) // 
 			// ũƼ
 			int iCriticalPct = ecs::PointSystem::Get(attacker, POINT_CRITICAL_PCT);
 
-			if (!IsPC()) {
+			if (!ecs::PlayerRuntime::IsPC(victim)) {
 				iCriticalPct += pkAttacker->GetMarriageBonus(UNIQUE_ITEM_MARRIAGE_CRITICAL_BONUS);
 				iCriticalPct += ecs::PointSystem::Get(attacker, POINT_PVM_CRITICAL_PCT);
 			}
@@ -5016,17 +5054,17 @@ bool CHARACTER::Damage(entt::entity attacker, int64_t dam, EDamageType type) // 
 					iCriticalPct /= 2;
 
 				//ũƼ   .
-				iCriticalPct -= GetPoint(POINT_RESIST_CRITICAL);
+				iCriticalPct -= ecs::PointSystem::Get(victim, POINT_RESIST_CRITICAL);
 
 				if (number(1, 100) <= iCriticalPct)
 				{
 					IsCritical = true;
 					dam *= 2;
-					NetworkSyncSystem::BroadcastEffect(g_registry, GetEntityHandle(), SE_CRITICAL);
+					NetworkSyncSystem::BroadcastEffect(g_registry, victim, SE_CRITICAL);
 
-					if (IsAffectFlag(AFF_MANASHIELD))
+					if (AffectSystem::IsAffectFlag(victim, AFF_MANASHIELD))
 					{
-						RemoveAffect(AFF_MANASHIELD);
+						AffectSystem::RemoveAffect(victim, AFF_MANASHIELD);
 					}
 				}
 			}
@@ -5034,7 +5072,7 @@ bool CHARACTER::Damage(entt::entity attacker, int64_t dam, EDamageType type) // 
 			//
 			int iPenetratePct = ecs::PointSystem::Get(attacker, POINT_PENETRATE_PCT);
 
-			if (!IsPC())
+			if (!ecs::PlayerRuntime::IsPC(victim))
 				iPenetratePct += pkAttacker->GetMarriageBonus(UNIQUE_ITEM_MARRIAGE_PENETRATE_BONUS);
 
 
@@ -5045,7 +5083,7 @@ bool CHARACTER::Damage(entt::entity attacker, int64_t dam, EDamageType type) // 
 
 					if (nullptr != pkSk)
 					{
-						pkSk->SetPointVar("k", 1.0f * GetSkillPower(SKILL_RESIST_PENETRATE) / 100.0f);
+						pkSk->SetPointVar("k", 1.0f * SkillSystem::GetSkillPower(victim, SKILL_RESIST_PENETRATE) / 100.0f);
 
 						iPenetratePct -= static_cast<int>(pkSk->kPointPoly.Eval());
 					}
@@ -5063,24 +5101,24 @@ bool CHARACTER::Damage(entt::entity attacker, int64_t dam, EDamageType type) // 
 				}
 
 				//Ÿ   .
-				iPenetratePct -= GetPoint(POINT_RESIST_PENETRATE);
+				iPenetratePct -= ecs::PointSystem::Get(victim, POINT_RESIST_PENETRATE);
 
 				if (number(1, 100) <= iPenetratePct)
 				{
 					IsPenetrate = true;
 #ifdef TEXTS_IMPROVEMENT
 					if (test_server) {
-						ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 257, "%d", GetPoint(POINT_DEF_GRADE) * (100 + GetPoint(POINT_DEF_BONUS)) / 100);
+						ecs::ChatSystem::SendNew(victim, CHAT_TYPE_INFO, 257, "%d", ecs::PointSystem::Get(victim, POINT_DEF_GRADE) * (100 + ecs::PointSystem::Get(victim, POINT_DEF_BONUS)) / 100);
 					}
 #endif
-					dam += GetPoint(POINT_DEF_GRADE) * (100 + GetPoint(POINT_DEF_BONUS)) / 100;
+					dam += ecs::PointSystem::Get(victim, POINT_DEF_GRADE) * (100 + ecs::PointSystem::Get(victim, POINT_DEF_BONUS)) / 100;
 
-					if (IsAffectFlag(AFF_MANASHIELD))
+					if (AffectSystem::IsAffectFlag(victim, AFF_MANASHIELD))
 					{
-						RemoveAffect(AFF_MANASHIELD);
+						AffectSystem::RemoveAffect(victim, AFF_MANASHIELD);
 					}
 #ifdef ENABLE_EFFECT_PENETRATE
-					NetworkSyncSystem::BroadcastEffect(g_registry, GetEntityHandle(), SE_PENETRATE);
+					NetworkSyncSystem::BroadcastEffect(g_registry, victim, SE_PENETRATE);
 #endif
 				}
 			}
@@ -5094,56 +5132,56 @@ bool CHARACTER::Damage(entt::entity attacker, int64_t dam, EDamageType type) // 
 		if (type == DAMAGE_TYPE_NORMAL)
 		{
 			//  Ÿ
-			if (GetPoint(POINT_BLOCK) && number(1, 100) <= GetPoint(POINT_BLOCK))
+			if (ecs::PointSystem::Get(victim, POINT_BLOCK) && number(1, 100) <= ecs::PointSystem::Get(victim, POINT_BLOCK))
 			{
 #ifdef TEXTS_IMPROVEMENT
 				if (test_server) {
-					ecs::ChatSystem::SendNew(attacker, CHAT_TYPE_INFO, 95, "%s#%d", GetName(), GetPoint(POINT_BLOCK));
-					ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 95, "%s#%d", ecs::PlayerRuntime::GetName(attacker).data(), ecs::PointSystem::Get(attacker, POINT_BLOCK));
+					ecs::ChatSystem::SendNew(attacker, CHAT_TYPE_INFO, 95, "%s#%d", ecs::PlayerRuntime::GetName(victim), ecs::PointSystem::Get(victim, POINT_BLOCK));
+					ecs::ChatSystem::SendNew(victim, CHAT_TYPE_INFO, 95, "%s#%d", ecs::PlayerRuntime::GetName(attacker).data(), ecs::PointSystem::Get(attacker, POINT_BLOCK));
 				}
 #endif
-				CombatSystem::SendDamagePacket(GetEntityHandle(), attacker, 0, DAMAGE_BLOCK);
+				CombatSystem::SendDamagePacket(victim, attacker, 0, DAMAGE_BLOCK);
 				return false;
 			}
 		}
 		else if (type == DAMAGE_TYPE_NORMAL_RANGE)
 		{
 			// Ÿ Ÿ
-			if (GetPoint(POINT_DODGE) && number(1, 100) <= GetPoint(POINT_DODGE))
+			if (ecs::PointSystem::Get(victim, POINT_DODGE) && number(1, 100) <= ecs::PointSystem::Get(victim, POINT_DODGE))
 			{
 #ifdef TEXTS_IMPROVEMENT
 				if (test_server) {
-					ecs::ChatSystem::SendNew(attacker, CHAT_TYPE_INFO, 96, "%s#%d", GetName(), GetPoint(POINT_DODGE));
-					ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 96, "%s#%d", ecs::PlayerRuntime::GetName(attacker).data(), ecs::PointSystem::Get(attacker, POINT_DODGE));
+					ecs::ChatSystem::SendNew(attacker, CHAT_TYPE_INFO, 96, "%s#%d", ecs::PlayerRuntime::GetName(victim), ecs::PointSystem::Get(victim, POINT_DODGE));
+					ecs::ChatSystem::SendNew(victim, CHAT_TYPE_INFO, 96, "%s#%d", ecs::PlayerRuntime::GetName(attacker).data(), ecs::PointSystem::Get(attacker, POINT_DODGE));
 				}
 #endif
-				CombatSystem::SendDamagePacket(GetEntityHandle(), attacker, 0, DAMAGE_DODGE);
+				CombatSystem::SendDamagePacket(victim, attacker, 0, DAMAGE_DODGE);
 				return false;
 			}
 		}
 
 #ifndef ENABLE_NO_MALUS_JEONGWIHON
-		if (IsAffectFlag(AFF_JEONGWIHON))
-			dam = (int)(dam * (100 + GetSkillPower(SKILL_JEONGWI) * 25 / 100) / 100);
+		if (AffectSystem::IsAffectFlag(victim, AFF_JEONGWIHON))
+			dam = (int)(dam * (100 + SkillSystem::GetSkillPower(victim, SKILL_JEONGWI) * 25 / 100) / 100);
 #endif
 
-		if (IsAffectFlag(AFF_TERROR))
-			dam = (int)(dam * (95 - GetSkillPower(SKILL_TERROR) / 5) / 100);
+		if (AffectSystem::IsAffectFlag(victim, AFF_TERROR))
+			dam = (int)(dam * (95 - SkillSystem::GetSkillPower(victim, SKILL_TERROR) / 5) / 100);
 
-		//if (IsAffectFlag(AFF_HOSIN))
-		//	dam = dam * (100 - GetPoint(POINT_RESIST_NORMAL_DAMAGE)) / 100;
-		if (IsAffectFlag(AFF_HOSIN))
+		//if (AffectSystem::IsAffectFlag(victim, AFF_HOSIN))
+		//	dam = dam * (100 - ecs::PointSystem::Get(victim, POINT_RESIST_NORMAL_DAMAGE)) / 100;
+		if (AffectSystem::IsAffectFlag(victim, AFF_HOSIN))
 		{
-			int32_t resist = GetPoint(POINT_RESIST_NORMAL_DAMAGE);
+			int32_t resist = ecs::PointSystem::Get(victim, POINT_RESIST_NORMAL_DAMAGE);
 
 			// clamp 0..100
 			if (resist < 0) resist = 0;
 			if (resist > 100) resist = 100;
 
 			// PvP: csak fele hasson
-			if (pkAttacker && ecs::PlayerRuntime::IsPC(attacker) && IsPC())
+			if (pkAttacker && ecs::PlayerRuntime::IsPC(attacker) && ecs::PlayerRuntime::IsPC(victim))
 				resist = (resist + 1) / 2; // kerekítve: 1->1, 2->1, 3->2...
-			if (pkAttacker && ecs::PlayerRuntime::IsMonster(attacker) && IsPC())
+			if (pkAttacker && ecs::PlayerRuntime::IsMonster(attacker) && ecs::PlayerRuntime::IsPC(victim))
 				resist = (resist + 1) / 2; // kerekítve: 1->1, 2->1, 3->2...
 			dam = dam * (100 - resist) / 100;
 		}
@@ -5155,23 +5193,23 @@ bool CHARACTER::Damage(entt::entity attacker, int64_t dam, EDamageType type) // 
 			if (type == DAMAGE_TYPE_NORMAL)
 			{
 				// ݻ
-				if (GetPoint(POINT_REFLECT_MELEE))
+				if (ecs::PointSystem::Get(victim, POINT_REFLECT_MELEE))
 				{
-					int reflectDamage = dam * GetPoint(POINT_REFLECT_MELEE) / 100;
+					int reflectDamage = dam * ecs::PointSystem::Get(victim, POINT_REFLECT_MELEE) / 100;
 
 					// NOTE: ڰ IMMUNE_REFLECT Ӽ ִٸ ݻ縦  ϴ
 					// ƴ϶ 1/3  ؼ  ȹ û.
 					if (AffectSystem::IsImmune(attacker, IMMUNE_REFLECT))
 						reflectDamage = int(reflectDamage / 3.0f + 0.5f);
 
-					CombatSystem::Damage(attacker, GetEntityHandle(), reflectDamage, DAMAGE_TYPE_SPECIAL);
+					CombatSystem::Damage(attacker, victim, reflectDamage, DAMAGE_TYPE_SPECIAL);
 				}
 			}
 
 			// ũƼ
 			int iCriticalPct = ecs::PointSystem::Get(attacker, POINT_CRITICAL_PCT);
 
-			if (!IsPC()) {
+			if (!ecs::PlayerRuntime::IsPC(victim)) {
 				iCriticalPct += pkAttacker->GetMarriageBonus(UNIQUE_ITEM_MARRIAGE_CRITICAL_BONUS);
 				iCriticalPct += ecs::PointSystem::Get(attacker, POINT_PVM_CRITICAL_PCT);
 			}
@@ -5179,20 +5217,20 @@ bool CHARACTER::Damage(entt::entity attacker, int64_t dam, EDamageType type) // 
 			if (iCriticalPct)
 			{
 				//ũƼ   .
-				iCriticalPct -= GetPoint(POINT_RESIST_CRITICAL);
+				iCriticalPct -= ecs::PointSystem::Get(victim, POINT_RESIST_CRITICAL);
 
 				if (number(1, 100) <= iCriticalPct)
 				{
 					IsCritical = true;
 					dam *= 2;
-					NetworkSyncSystem::BroadcastEffect(g_registry, GetEntityHandle(), SE_CRITICAL);
+					NetworkSyncSystem::BroadcastEffect(g_registry, victim, SE_CRITICAL);
 				}
 			}
 
 			//
 			int iPenetratePct = ecs::PointSystem::Get(attacker, POINT_PENETRATE_PCT);
 
-			if (!IsPC())
+			if (!ecs::PlayerRuntime::IsPC(victim))
 				iPenetratePct += pkAttacker->GetMarriageBonus(UNIQUE_ITEM_MARRIAGE_PENETRATE_BONUS);
 
 			{
@@ -5200,7 +5238,7 @@ bool CHARACTER::Damage(entt::entity attacker, int64_t dam, EDamageType type) // 
 
 				if (nullptr != pkSk)
 				{
-					pkSk->SetPointVar("k", 1.0f * GetSkillPower(SKILL_RESIST_PENETRATE) / 100.0f);
+					pkSk->SetPointVar("k", 1.0f * SkillSystem::GetSkillPower(victim, SKILL_RESIST_PENETRATE) / 100.0f);
 
 					iPenetratePct -= static_cast<int>(pkSk->kPointPoly.Eval());
 				}
@@ -5211,14 +5249,14 @@ bool CHARACTER::Damage(entt::entity attacker, int64_t dam, EDamageType type) // 
 			{
 
 				//Ÿ   .
-				iPenetratePct -= GetPoint(POINT_RESIST_PENETRATE);
+				iPenetratePct -= ecs::PointSystem::Get(victim, POINT_RESIST_PENETRATE);
 
 				if (number(1, 100) <= iPenetratePct)
 				{
 					IsPenetrate = true;
-					dam += GetPoint(POINT_DEF_GRADE) * (100 + GetPoint(POINT_DEF_BONUS)) / 100;
+					dam += ecs::PointSystem::Get(victim, POINT_DEF_GRADE) * (100 + ecs::PointSystem::Get(victim, POINT_DEF_BONUS)) / 100;
 #ifdef ENABLE_EFFECT_PENETRATE
-					NetworkSyncSystem::BroadcastEffect(g_registry, GetEntityHandle(), SE_PENETRATE);
+					NetworkSyncSystem::BroadcastEffect(g_registry, victim, SE_PENETRATE);
 #endif
 				}
 			}
@@ -5226,14 +5264,14 @@ bool CHARACTER::Damage(entt::entity attacker, int64_t dam, EDamageType type) // 
 #ifdef ENABLE_BUG_FIXES
 			if (int64_t iStealHP_ptr = ecs::PointSystem::Get(attacker, POINT_STEAL_HP)) {
 				if (number(1, 100) <= iStealHP_ptr) {
-					int64_t iHP = std::min((int64_t)dam, std::max((int64_t)0, GetHP())) * ecs::PointSystem::Get(attacker, POINT_STEAL_HP) / 100;
+					int64_t iHP = std::min((int64_t)dam, std::max((int64_t)0, ecs::PlayerRuntime::GetHP(victim))) * ecs::PointSystem::Get(attacker, POINT_STEAL_HP) / 100;
 
 
-					if ((ecs::PointSystem::Get(attacker, POINT_HP) > 0) && (ecs::PointSystem::Get(attacker, POINT_HP) + iHP < ecs::PointSystem::GetMaxHP(attacker)) && (GetHP() > 0) && (iHP > 0)) {
-						CombatSystem::CreateFly(GetEntityHandle(), FLY_HP_MEDIUM, attacker);
+					if ((ecs::PointSystem::Get(attacker, POINT_HP) > 0) && (ecs::PointSystem::Get(attacker, POINT_HP) + iHP < ecs::PointSystem::GetMaxHP(attacker)) && (ecs::PlayerRuntime::GetHP(victim) > 0) && (iHP > 0)) {
+						CombatSystem::CreateFly(victim, FLY_HP_MEDIUM, attacker);
 						ecs::PointSystem::Change(attacker, POINT_HP, iHP);
 #if defined(ENABLE_DS_RUNE) || defined(ENABLE_MELEY_LAIR)
-						int32_t racevnum = GetRaceNum();
+						int32_t racevnum = ecs::PlayerRuntime::GetRaceNum(victim);
 						if (
 #if defined(ENABLE_DS_RUNE)
 							racevnum == 3996 || racevnum == 3997 || racevnum == 3998 || racevnum == 4011 || racevnum == 4012 || racevnum == 4013
@@ -5251,26 +5289,26 @@ bool CHARACTER::Damage(entt::entity attacker, int64_t dam, EDamageType type) // 
 						}
 						else
 						{
-							PointChange(POINT_HP, -iHP);
+							ecs::PointSystem::Change(victim, POINT_HP, -iHP);
 						}
 #else
-						PointChange(POINT_HP, -iHP);
+						ecs::PointSystem::Change(victim, POINT_HP, -iHP);
 #endif
 					}
 				}
 			}
 
 			if (int64_t iStealSP_ptr = ecs::PointSystem::Get(attacker, POINT_STEAL_SP)) {
-				if (IsPC() && ecs::PlayerRuntime::IsPC(attacker)) {
+				if (ecs::PlayerRuntime::IsPC(victim) && ecs::PlayerRuntime::IsPC(attacker)) {
 					if (number(1, 100) <= iStealSP_ptr) {
-						int64_t iSP = std::min((int64_t)dam, std::max((int64_t)0, ecs::PlayerRuntime::GetSP(GetEntityHandle()))) * ecs::PointSystem::Get(attacker, POINT_STEAL_SP) / 100;
+						int64_t iSP = std::min((int64_t)dam, std::max((int64_t)0, ecs::PlayerRuntime::GetSP(victim))) * ecs::PointSystem::Get(attacker, POINT_STEAL_SP) / 100;
 
 
-						if ((ecs::PointSystem::Get(attacker, POINT_SP) > 0) && (ecs::PointSystem::Get(attacker, POINT_SP) + iSP < ecs::PointSystem::GetMaxSP(attacker)) && (ecs::PlayerRuntime::GetSP(GetEntityHandle()) > 0) && (iSP > 0))
+						if ((ecs::PointSystem::Get(attacker, POINT_SP) > 0) && (ecs::PointSystem::Get(attacker, POINT_SP) + iSP < ecs::PointSystem::GetMaxSP(attacker)) && (ecs::PlayerRuntime::GetSP(victim) > 0) && (iSP > 0))
 						{
-							CombatSystem::CreateFly(GetEntityHandle(), FLY_SP_MEDIUM, attacker);
+							CombatSystem::CreateFly(victim, FLY_SP_MEDIUM, attacker);
 							ecs::PointSystem::Change(attacker, POINT_SP, iSP);
-							PointChange(POINT_SP, -iSP);
+							ecs::PointSystem::Change(victim, POINT_SP, -iSP);
 						}
 					}
 				}
@@ -5285,9 +5323,9 @@ bool CHARACTER::Damage(entt::entity attacker, int64_t dam, EDamageType type) // 
 				{
 					int iHP = MIN(dam, MAX(0, iCurHP)) * ecs::PointSystem::Get(attacker, POINT_STEAL_HP) / 100;
 
-					if (iHP > 0 && GetHP() >= iHP)
+					if (iHP > 0 && ecs::PlayerRuntime::GetHP(victim) >= iHP)
 					{
-						CombatSystem::CreateFly(GetEntityHandle(), FLY_HP_SMALL, attacker);
+						CombatSystem::CreateFly(victim, FLY_HP_SMALL, attacker);
 						ecs::PointSystem::Change(attacker, POINT_HP, iHP);
 #if defined(ENABLE_DS_RUNE) || defined(ENABLE_MELEY_LAIR)
 						if (
@@ -5307,10 +5345,10 @@ bool CHARACTER::Damage(entt::entity attacker, int64_t dam, EDamageType type) // 
 						}
 						else
 						{
-							PointChange(POINT_HP, -iHP);
+							ecs::PointSystem::Change(victim, POINT_HP, -iHP);
 						}
 #else
-						PointChange(POINT_HP, -iHP);
+						ecs::PointSystem::Change(victim, POINT_HP, -iHP);
 #endif
 					}
 				}
@@ -5325,7 +5363,7 @@ bool CHARACTER::Damage(entt::entity attacker, int64_t dam, EDamageType type) // 
 				{
 					int iCur;
 
-					if (IsPC())
+					if (ecs::PlayerRuntime::IsPC(victim))
 						iCur = iCurSP;
 					else
 						iCur = iCurHP;
@@ -5334,11 +5372,11 @@ bool CHARACTER::Damage(entt::entity attacker, int64_t dam, EDamageType type) // 
 
 					if (iSP > 0 && iCur >= iSP)
 					{
-						CombatSystem::CreateFly(GetEntityHandle(), FLY_SP_SMALL, attacker);
+						CombatSystem::CreateFly(victim, FLY_SP_SMALL, attacker);
 						ecs::PointSystem::Change(attacker, POINT_SP, iSP);
 
-						if (IsPC())
-							PointChange(POINT_SP, -iSP);
+						if (ecs::PlayerRuntime::IsPC(victim))
+							ecs::PointSystem::Change(victim, POINT_SP, -iSP);
 					}
 				}
 			}
@@ -5349,7 +5387,7 @@ bool CHARACTER::Damage(entt::entity attacker, int64_t dam, EDamageType type) // 
 			{
 				if (number(1, 100) <= ecs::PointSystem::Get(attacker, POINT_STEAL_GOLD))
 				{
-					int iAmount = number(1, GetLevel());
+					int iAmount = number(1, ecs::PointSystem::GetLevel(victim));
 					ecs::PointSystem::Change(attacker, POINT_GOLD, iAmount);
 					DBManager::instance().SendMoneyLog(MONEY_LOG_MISC, 1, iAmount);
 				}
@@ -5359,9 +5397,9 @@ bool CHARACTER::Damage(entt::entity attacker, int64_t dam, EDamageType type) // 
 			int iAbsoHP_ptr = ecs::PointSystem::Get(attacker, POINT_HIT_HP_RECOVERY);
 			if (iAbsoHP_ptr > 0) {
 				if (number(1, 100) <= iAbsoHP_ptr) {
-					int iHPAbso = std::min(dam, GetHP()) * ecs::PointSystem::Get(attacker, POINT_HIT_HP_RECOVERY) / 100;
-					if ((ecs::PointSystem::Get(attacker, POINT_HP) > 0) && (ecs::PointSystem::Get(attacker, POINT_HP) + iHPAbso < ecs::PointSystem::GetMaxHP(attacker)) && (GetHP() > 0) && (iHPAbso > 0)) {
-						CombatSystem::CreateFly(GetEntityHandle(), FLY_HP_SMALL, attacker);
+					int iHPAbso = std::min(dam, ecs::PlayerRuntime::GetHP(victim)) * ecs::PointSystem::Get(attacker, POINT_HIT_HP_RECOVERY) / 100;
+					if ((ecs::PointSystem::Get(attacker, POINT_HP) > 0) && (ecs::PointSystem::Get(attacker, POINT_HP) + iHPAbso < ecs::PointSystem::GetMaxHP(attacker)) && (ecs::PlayerRuntime::GetHP(victim) > 0) && (iHPAbso > 0)) {
+						CombatSystem::CreateFly(victim, FLY_HP_SMALL, attacker);
 						ecs::PointSystem::Change(attacker, POINT_HP, iHPAbso);
 					}
 				}
@@ -5370,9 +5408,9 @@ bool CHARACTER::Damage(entt::entity attacker, int64_t dam, EDamageType type) // 
 			int64_t iAbsoSP_ptr = ecs::PointSystem::Get(attacker, POINT_HIT_SP_RECOVERY);
 			if (iAbsoSP_ptr > 0) {
 				if (number(1, 100) <= iAbsoSP_ptr) {
-					int64_t iSPAbso = std::min(dam, ecs::PlayerRuntime::GetSP(GetEntityHandle())) * ecs::PointSystem::Get(attacker, POINT_HIT_SP_RECOVERY) / 100;
-					if ((ecs::PointSystem::Get(attacker, POINT_SP) > 0) && (ecs::PointSystem::Get(attacker, POINT_SP) + iSPAbso < ecs::PointSystem::GetMaxSP(attacker)) && (ecs::PlayerRuntime::GetSP(GetEntityHandle()) > 0) && (iSPAbso > 0)) {
-						CombatSystem::CreateFly(GetEntityHandle(), FLY_SP_SMALL, attacker);
+					int64_t iSPAbso = std::min(dam, ecs::PlayerRuntime::GetSP(victim)) * ecs::PointSystem::Get(attacker, POINT_HIT_SP_RECOVERY) / 100;
+					if ((ecs::PointSystem::Get(attacker, POINT_SP) > 0) && (ecs::PointSystem::Get(attacker, POINT_SP) + iSPAbso < ecs::PointSystem::GetMaxSP(attacker)) && (ecs::PlayerRuntime::GetSP(victim) > 0) && (iSPAbso > 0)) {
+						CombatSystem::CreateFly(victim, FLY_SP_SMALL, attacker);
 						ecs::PointSystem::Change(attacker, POINT_SP, iSPAbso);
 					}
 				}
@@ -5385,7 +5423,7 @@ bool CHARACTER::Damage(entt::entity attacker, int64_t dam, EDamageType type) // 
 
 				if (i)
 				{
-					CombatSystem::CreateFly(GetEntityHandle(), FLY_HP_SMALL, attacker);
+					CombatSystem::CreateFly(victim, FLY_HP_SMALL, attacker);
 					ecs::PointSystem::Change(attacker, POINT_HP, i);
 				}
 			}
@@ -5397,7 +5435,7 @@ bool CHARACTER::Damage(entt::entity attacker, int64_t dam, EDamageType type) // 
 
 				if (i)
 				{
-					CombatSystem::CreateFly(GetEntityHandle(), FLY_SP_SMALL, attacker);
+					CombatSystem::CreateFly(victim, FLY_SP_SMALL, attacker);
 					ecs::PointSystem::Change(attacker, POINT_SP, i);
 				}
 			}
@@ -5407,7 +5445,7 @@ bool CHARACTER::Damage(entt::entity attacker, int64_t dam, EDamageType type) // 
 			if (ecs::PointSystem::Get(attacker, POINT_MANA_BURN_PCT))
 			{
 				if (number(1, 100) <= ecs::PointSystem::Get(attacker, POINT_MANA_BURN_PCT))
-					PointChange(POINT_SP, -50);
+					ecs::PointSystem::Change(victim, POINT_SP, -50);
 			}
 		}
 	}
@@ -5424,12 +5462,12 @@ bool CHARACTER::Damage(entt::entity attacker, int64_t dam, EDamageType type) // 
 			if (ecs::PointSystem::Get(attacker, POINT_NORMAL_HIT_DAMAGE_BONUS))
 				dam = dam * (100 + ecs::PointSystem::Get(attacker, POINT_NORMAL_HIT_DAMAGE_BONUS)) / 100;
 #ifdef ENABLE_MEDI_PVM
-			if (IsNPC())
+			if (!ecs::PlayerRuntime::IsPC(victim))
 				dam = dam * (100 + ecs::PointSystem::Get(attacker, POINT_ATTBONUS_MEDI_PVM)) / 100;
 #endif
 		}
 
-		dam = dam * (100 - std::min((int64_t)99, GetPoint(POINT_NORMAL_HIT_DEFEND_BONUS))) / 100;
+		dam = dam * (100 - std::min((int64_t)99, ecs::PointSystem::Get(victim, POINT_NORMAL_HIT_DEFEND_BONUS))) / 100;
 	}
 	break;
 	case DAMAGE_TYPE_MELEE:
@@ -5445,18 +5483,18 @@ bool CHARACTER::Damage(entt::entity attacker, int64_t dam, EDamageType type) // 
 				dam = dam * (100 + skillBonus) / 100;
 		}
 
-		int64_t def = GetPoint(POINT_SKILL_DEFEND_BONUS);
+		int64_t def = ecs::PointSystem::Get(victim, POINT_SKILL_DEFEND_BONUS);
 		def = std::clamp<int64_t>(def, 0, 100);
 
-		if (pkAttacker && ecs::PlayerRuntime::IsPC(attacker) && IsPC())
+		if (pkAttacker && ecs::PlayerRuntime::IsPC(attacker) && ecs::PlayerRuntime::IsPC(victim))
 			def = (def * 75 + 50) / 100;
 
 		dam = dam * (100 - def) / 100;
 
 
-		if (pkAttacker && ecs::PlayerRuntime::IsPC(attacker) && IsNPC())
+		if (pkAttacker && ecs::PlayerRuntime::IsPC(attacker) && !ecs::PlayerRuntime::IsPC(victim))
 		{
-			const int64_t normalRef = CalcReferenceBasicHitDamage(attacker, GetEntityHandle());
+			const int64_t normalRef = CalcReferenceBasicHitDamage(attacker, victim);
 			if (normalRef > 0)
 			{
 				int64_t minSkillDam = normalRef * 10;
@@ -5475,33 +5513,33 @@ bool CHARACTER::Damage(entt::entity attacker, int64_t dam, EDamageType type) // 
 	//
 	// (żȣ)
 	//
-	if (IsAffectFlag(AFF_MANASHIELD))
+	if (AffectSystem::IsAffectFlag(victim, AFF_MANASHIELD))
 	{
 		// POINT_MANASHIELD  ۾
 		int iDamageSPPart = dam / 3;
-		int iDamageToSP = iDamageSPPart * GetPoint(POINT_MANASHIELD) / 100;
-		int iSP = ecs::PlayerRuntime::GetSP(GetEntityHandle());
+		int iDamageToSP = iDamageSPPart * ecs::PointSystem::Get(victim, POINT_MANASHIELD) / 100;
+		int iSP = ecs::PlayerRuntime::GetSP(victim);
 
 		// SP
 		if (iDamageToSP <= iSP)
 		{
-			PointChange(POINT_SP, -iDamageToSP);
+			ecs::PointSystem::Change(victim, POINT_SP, -iDamageToSP);
 			dam -= iDamageSPPart;
 		}
 		else
 		{
 			// ŷ ڶ ǰ  ￩ҋ
-			PointChange(POINT_SP, -ecs::PlayerRuntime::GetSP(GetEntityHandle()));
-			dam -= iSP * 100 / std::max(GetPoint(POINT_MANASHIELD), (int64_t)1);
+			ecs::PointSystem::Change(victim, POINT_SP, -ecs::PlayerRuntime::GetSP(victim));
+			dam -= iSP * 100 / std::max(ecs::PointSystem::Get(victim, POINT_MANASHIELD), (int64_t)1);
 		}
 	}
 
 	//
 	// ü   ( )
 	//
-	//if (GetPoint(POINT_MALL_DEFBONUS) > 0)
+	//if (ecs::PointSystem::Get(victim, POINT_MALL_DEFBONUS) > 0)
 	//{
-	//	int64_t dec_dam = std::min((int64_t)200, dam * GetPoint(POINT_MALL_DEFBONUS) / 100);//razor93
+	//	int64_t dec_dam = std::min((int64_t)200, dam * ecs::PointSystem::Get(victim, POINT_MALL_DEFBONUS) / 100);//razor93
 	//	dam -= dec_dam;
 	//}
 
@@ -5528,9 +5566,9 @@ bool CHARACTER::Damage(entt::entity attacker, int64_t dam, EDamageType type) // 
 				dam = dam * 9 / 10;
 			}
 
-			if (!IsPC() && ecs::PlayerRuntime::GetMonsterDrainSPPoint(GetEntityHandle()))
+			if (!ecs::PlayerRuntime::IsPC(victim) && ecs::PlayerRuntime::GetMonsterDrainSPPoint(victim))
 			{
-				int iDrain = ecs::PlayerRuntime::GetMonsterDrainSPPoint(GetEntityHandle());
+				int iDrain = ecs::PlayerRuntime::GetMonsterDrainSPPoint(victim);
 
 				if (iDrain <= ecs::PointSystem::Get(attacker, POINT_SP))
 					ecs::PointSystem::Change(attacker, POINT_SP, -iDrain);
@@ -5544,40 +5582,40 @@ bool CHARACTER::Damage(entt::entity attacker, int64_t dam, EDamageType type) // 
 		}
 		else if (ecs::PlayerRuntime::IsGuardNPC(attacker))
 		{
-						if (auto* flags = RuntimeFlags(GetEntityHandle()))
+						if (auto* flags = RuntimeFlags(victim))
 				SET_BIT(flags->instantFlag, INSTANT_FLAG_NO_REWARD);
-			Stun();
+			CombatSystem::Stun(victim);
 			return true;
 		}
 	}
 	//puAttr.Pop();
 
-	if (!GetSectree() || GetSectree()->IsAttr(GetX(), GetY(), ATTR_BANPK))
+	if (!ecs::PlayerRuntime::GetSectree(victim) || ecs::PlayerRuntime::GetSectree(victim)->IsAttr(ecs::PlayerRuntime::GetX(victim), ecs::PlayerRuntime::GetY(victim), ATTR_BANPK))
 		return false;
 
-	if (!IsPC())
+	if (!ecs::PlayerRuntime::IsPC(victim))
 	{
-		if (m_pkParty && m_pkParty->GetLeader())
-			CombatSystem::SetLastAttacked(ecs::SocialSystem::GetPartyLeader(GetEntityHandle()), get_dword_time());
+		if (ecs::SocialSystem::GetPartyLeader(victim) != entt::null)
+			CombatSystem::SetLastAttacked(ecs::SocialSystem::GetPartyLeader(victim), get_dword_time());
 		else
-			CombatSystem::SetLastAttacked(GetEntityHandle(), get_dword_time());
+			CombatSystem::SetLastAttacked(victim, get_dword_time());
 	}
 
-	if (IsStun())
+	if (CombatSystem::IsStun(victim))
 	{
-		Dead(attacker);
+		CombatSystem::Dead(victim, attacker);
 		return true;
 	}
 
-	if (IsDead())
+	if (CombatSystem::IsDead(victim))
 		return true;
 
 	//    ʵ .
 	if (type == DAMAGE_TYPE_POISON)
 	{
-		if (GetHP() - dam <= 0)
+		if (ecs::PlayerRuntime::GetHP(victim) - dam <= 0)
 		{
-			dam = GetHP() - 1;
+			dam = ecs::PlayerRuntime::GetHP(victim) - 1;
 		}
 	}
 	// ------------------------
@@ -5590,9 +5628,9 @@ bool CHARACTER::Damage(entt::entity attacker, int64_t dam, EDamageType type) // 
 	}
 
 	// STONE SKIN :
-	if (IsMonster() && CombatSystem::IsStoneSkinner(GetEntityHandle()))
+	if (ecs::PlayerRuntime::IsMonster(victim) && CombatSystem::IsStoneSkinner(victim))
 	{
-		if (GetHPPct() < GetMobTable().bStoneSkinPoint)
+		if (ecs::PlayerRuntime::GetHPPct(victim) < (*ecs::PlayerRuntime::GetMobTable(victim)).bStoneSkinPoint)
 			dam /= 2;
 	}
 
@@ -5604,7 +5642,7 @@ bool CHARACTER::Damage(entt::entity attacker, int64_t dam, EDamageType type) // 
 		{
 			if (CombatSystem::IsDeathBlow(attacker))
 			{
-				if (number(1, 4) == GetJob())
+				if (number(1, 4) == ecs::PlayerRuntime::GetJob(victim))
 				{
 					IsDeathBlow = true;
 					dam = dam * 4;
@@ -5627,7 +5665,7 @@ bool CHARACTER::Damage(entt::entity attacker, int64_t dam, EDamageType type) // 
 
 
 		//
-		float damMul = this->GetDamMul();
+		float damMul = CombatSystem::GetDamageMultiplier(victim);
 		float tempDam = dam;
 		dam = tempDam * damMul + 0.5f;
 
@@ -5637,16 +5675,16 @@ bool CHARACTER::Damage(entt::entity attacker, int64_t dam, EDamageType type) // 
 			uint8_t bBattlePassId = pkAttacker->GetBattlePassId();
 			if (bBattlePassId)
 			{
-				if (IsPC())
+				if (ecs::PlayerRuntime::IsPC(victim))
 				{
 					uint32_t dwMinLevel, dwDamage;
-					uint32_t dwLevel = GetLevel();
+					uint32_t dwLevel = ecs::PointSystem::GetLevel(victim);
 					if (CBattlePass::instance().BattlePassMissionGetInfo(bBattlePassId, PLAYER_DAMAGE, &dwMinLevel, &dwDamage))
 					{
 						if (!pkAttacker->IsCompletedMission(PLAYER_DAMAGE))
 						{
 							uint32_t dwDam = dam;
-							if (dwLevel >= dwMinLevel && GetMissionProgress(PLAYER_DAMAGE, bBattlePassId) < dwDam)
+							if (dwLevel >= dwMinLevel && ecs::PlayerRuntime::GetMissionProgress(victim, PLAYER_DAMAGE, bBattlePassId) < dwDam)
 							{
 								ecs::PlayerRuntime::UpdateMissionProgress(attacker, PLAYER_DAMAGE, bBattlePassId, dwDam, dwDamage);
 							}
@@ -5658,11 +5696,11 @@ bool CHARACTER::Damage(entt::entity attacker, int64_t dam, EDamageType type) // 
 					uint32_t dwMonsterVnum, dwDamage;
 					if (CBattlePass::instance().BattlePassMissionGetInfo(bBattlePassId, MONSTER_DAMAGE, &dwMonsterVnum, &dwDamage))
 					{
-						uint32_t dwRaceNum = GetRaceNum();
+						uint32_t dwRaceNum = ecs::PlayerRuntime::GetRaceNum(victim);
 						if (!pkAttacker->IsCompletedMission(MONSTER_DAMAGE))
 						{
 							uint32_t dwDam = dam;
-							if (dwMonsterVnum == dwRaceNum && GetMissionProgress(MONSTER_DAMAGE, bBattlePassId) < dwDam)
+							if (dwMonsterVnum == dwRaceNum && ecs::PlayerRuntime::GetMissionProgress(victim, MONSTER_DAMAGE, bBattlePassId) < dwDam)
 							{
 								ecs::PlayerRuntime::UpdateMissionProgress(attacker, MONSTER_DAMAGE, bBattlePassId, dwDam, dwDamage);
 							}
@@ -5674,10 +5712,10 @@ bool CHARACTER::Damage(entt::entity attacker, int64_t dam, EDamageType type) // 
 #endif
 
 #if defined(ENABLE_DS_RUNE) || defined(ENABLE_MELEY_LAIR)
-		if (!IsPC() && pkAttacker && ecs::PlayerRuntime::IsPC(attacker))
+		if (!ecs::PlayerRuntime::IsPC(victim) && pkAttacker && ecs::PlayerRuntime::IsPC(attacker))
 		{
-			int32_t racevnum = GetRaceNum();
-			LPDUNGEON dungeon = GetDungeon();
+			int32_t racevnum = ecs::PlayerRuntime::GetRaceNum(victim);
+			LPDUNGEON dungeon = ecs::SocialSystem::GetDungeon(victim);
 			if (dungeon)
 			{
 #if defined(ENABLE_DS_RUNE)
@@ -5689,8 +5727,8 @@ bool CHARACTER::Damage(entt::entity attacker, int64_t dam, EDamageType type) // 
 					{
 						if (step == 0)
 						{
-							int32_t per = (GetMaxHP() / 100) * 60;
-							if (GetHP() - dam <= per)
+							int32_t per = (ecs::PointSystem::GetMaxHP(victim) / 100) * 60;
+							if (ecs::PlayerRuntime::GetHP(victim) - dam <= per)
 							{
 								dungeon->SetFlag("step", 1);
 								if (racevnum == 3997) {
@@ -5706,23 +5744,23 @@ bool CHARACTER::Damage(entt::entity attacker, int64_t dam, EDamageType type) // 
 								dungeon->Notice(905, "");
 								dungeon->Notice(906, "");
 
-								if (GetHP() > per)
+								if (ecs::PlayerRuntime::GetHP(victim) > per)
 								{
-									PointChange(POINT_HP, -(GetHP() - per), false);
+									ecs::PointSystem::Change(victim, POINT_HP, -(ecs::PlayerRuntime::GetHP(victim) - per), false);
 								}
 								else
 								{
-									PointChange(POINT_HP, (per - GetHP()), false);
+									ecs::PointSystem::Change(victim, POINT_HP, (per - ecs::PlayerRuntime::GetHP(victim)), false);
 								}
 
-								CombatSystem::SetInvincible(GetEntityHandle(), true);
+								CombatSystem::SetInvincible(victim, true);
 								return false;
 							}
 						}
 						else if (step == 2)
 						{
-							int32_t per = (GetMaxHP() / 100) * 20;
-							if (GetHP() - dam <= per)
+							int32_t per = (ecs::PointSystem::GetMaxHP(victim) / 100) * 20;
+							if (ecs::PlayerRuntime::GetHP(victim) - dam <= per)
 							{
 								dungeon->SetFlag("step", 3);
 								if (racevnum == 3997) {
@@ -5738,18 +5776,18 @@ bool CHARACTER::Damage(entt::entity attacker, int64_t dam, EDamageType type) // 
 								dungeon->Notice(907, "");
 								dungeon->Notice(906, "");
 
-								if (GetHP() > per)
+								if (ecs::PlayerRuntime::GetHP(victim) > per)
 								{
-									PointChange(POINT_HP, -(GetHP() - per), false);
+									ecs::PointSystem::Change(victim, POINT_HP, -(ecs::PlayerRuntime::GetHP(victim) - per), false);
 								}
 								else
 								{
-									PointChange(POINT_HP, (per - GetHP()), false);
+									ecs::PointSystem::Change(victim, POINT_HP, (per - ecs::PlayerRuntime::GetHP(victim)), false);
 								}
 
-								SetAttMul(2.0f);
-								SetDamMul(2.0f);
-								CombatSystem::SetInvincible(GetEntityHandle(), true);
+								CombatSystem::SetAttackMultiplier(victim, 2.0f);
+								CombatSystem::SetDamageMultiplier(victim, 2.0f);
+								CombatSystem::SetInvincible(victim, true);
 								return false;
 							}
 						}
@@ -5761,8 +5799,8 @@ bool CHARACTER::Damage(entt::entity attacker, int64_t dam, EDamageType type) // 
 						{
 							if (party->GetLeaderPID() == ecs::PlayerRuntime::GetPlayerID(attacker))
 							{
-								int32_t per = (GetMaxHP() / 100) * 70;
-								if (GetHP() - dam <= per)
+								int32_t per = (ecs::PointSystem::GetMaxHP(victim) / 100) * 70;
+								if (ecs::PlayerRuntime::GetHP(victim) - dam <= per)
 								{
 									dungeon->SetFlag("step", 1);
 									dungeon->Notice(908, "");
@@ -5782,8 +5820,8 @@ bool CHARACTER::Damage(entt::entity attacker, int64_t dam, EDamageType type) // 
 					{
 						if (step == 0)
 						{
-							int32_t per = (GetMaxHP() / 100) * 50;
-							if (GetHP() - dam <= per)
+							int32_t per = (ecs::PointSystem::GetMaxHP(victim) / 100) * 50;
+							if (ecs::PlayerRuntime::GetHP(victim) - dam <= per)
 							{
 								dungeon->SetFlag("step", 1);
 								dungeon->SpawnRegen("data/dungeon/rune/regen8.txt");
@@ -5791,24 +5829,24 @@ bool CHARACTER::Damage(entt::entity attacker, int64_t dam, EDamageType type) // 
 								dungeon->Notice(907, "");
 								dungeon->Notice(906, "");
 
-								if (GetHP() > per)
+								if (ecs::PlayerRuntime::GetHP(victim) > per)
 								{
-									PointChange(POINT_HP, -(GetHP() - per), false);
+									ecs::PointSystem::Change(victim, POINT_HP, -(ecs::PlayerRuntime::GetHP(victim) - per), false);
 								}
 								else
 								{
-									PointChange(POINT_HP, (per - GetHP()), false);
+									ecs::PointSystem::Change(victim, POINT_HP, (per - ecs::PlayerRuntime::GetHP(victim)), false);
 								}
 
-								CombatSystem::IncreaseMobRigHP(GetEntityHandle(), 20);
-								CombatSystem::SetInvincible(GetEntityHandle(), true);
+								CombatSystem::IncreaseMobRigHP(victim, 20);
+								CombatSystem::SetInvincible(victim, true);
 								return false;
 							}
 						}
 						else if (step == 2)
 						{
-							int32_t per = (GetMaxHP() / 100) * 10;
-							if (GetHP() - dam <= per)
+							int32_t per = (ecs::PointSystem::GetMaxHP(victim) / 100) * 10;
+							if (ecs::PlayerRuntime::GetHP(victim) - dam <= per)
 							{
 								dungeon->SetFlag("step", 3);
 								dungeon->SpawnRegen("data/dungeon/rune/regen9.txt");
@@ -5816,18 +5854,18 @@ bool CHARACTER::Damage(entt::entity attacker, int64_t dam, EDamageType type) // 
 								dungeon->Notice(905, "");
 								dungeon->Notice(906, "");
 
-								if (GetHP() > per)
+								if (ecs::PlayerRuntime::GetHP(victim) > per)
 								{
-									PointChange(POINT_HP, -(GetHP() - per), false);
+									ecs::PointSystem::Change(victim, POINT_HP, -(ecs::PlayerRuntime::GetHP(victim) - per), false);
 								}
 								else
 								{
-									PointChange(POINT_HP, (per - GetHP()), false);
+									ecs::PointSystem::Change(victim, POINT_HP, (per - ecs::PlayerRuntime::GetHP(victim)), false);
 								}
 
-								SetAttMul(2.0f);
-								SetDamMul(2.0f);
-								CombatSystem::SetInvincible(GetEntityHandle(), true);
+								CombatSystem::SetAttackMultiplier(victim, 2.0f);
+								CombatSystem::SetDamageMultiplier(victim, 2.0f);
+								CombatSystem::SetInvincible(victim, true);
 								return false;
 							}
 						}
@@ -5835,38 +5873,38 @@ bool CHARACTER::Damage(entt::entity attacker, int64_t dam, EDamageType type) // 
 
 					if (itakehp != 0)
 					{
-						PointChange(POINT_HP, -itakehp);
+						ecs::PointSystem::Change(victim, POINT_HP, -itakehp);
 					}
 				}
 #endif
 #if defined(ENABLE_MELEY_LAIR)
 				if (racevnum == 6118)
 				{
-					int32_t vid = GetPacketVID();
+					int32_t vid = ecs::PlayerRuntime::GetPacketVID(victim);
 					if (vid == dungeon->GetFlag("statue_vid1") || vid == dungeon->GetFlag("statue_vid2") || vid == dungeon->GetFlag("statue_vid3") || vid == dungeon->GetFlag("statue_vid4"))
 					{
 						int32_t floor = dungeon->GetFlag("floor");
 						if (floor >= 1 && floor < 5)
 						{
-							int32_t per = (GetMaxHP() / 100) * 75;
-							if (GetHP() - dam <= per)
+							int32_t per = (ecs::PointSystem::GetMaxHP(victim) / 100) * 75;
+							if (ecs::PlayerRuntime::GetHP(victim) - dam <= per)
 							{
 								dungeon->SetFlag("floor", floor + 1);
 
-								if (GetHP() > per)
+								if (ecs::PlayerRuntime::GetHP(victim) > per)
 								{
-									PointChange(POINT_HP, -(GetHP() - per), false);
+									ecs::PointSystem::Change(victim, POINT_HP, -(ecs::PlayerRuntime::GetHP(victim) - per), false);
 								}
 								else
 								{
-									PointChange(POINT_HP, (per - GetHP()), false);
+									ecs::PointSystem::Change(victim, POINT_HP, (per - ecs::PlayerRuntime::GetHP(victim)), false);
 								}
 
-								CombatSystem::SetInvincible(GetEntityHandle(), true);
+								CombatSystem::SetInvincible(victim, true);
 
-								if (!FindAffect(AFFECT_STATUE))
+								if (!AffectSystem::FindAffect(victim, AFFECT_STATUE))
 								{
-									AddAffect(AFFECT_STATUE, POINT_NONE, 0, AFF_STATUE1, 3600, 0, true);
+									AffectSystem::AddAffect(victim, AFFECT_STATUE, POINT_NONE, 0, AFF_STATUE1, 3600, 0, true);
 								}
 
 								if (floor == 4)
@@ -5880,25 +5918,25 @@ bool CHARACTER::Damage(entt::entity attacker, int64_t dam, EDamageType type) // 
 						}
 						else if (floor >= 7 && floor < 11)
 						{
-							int32_t per = (GetMaxHP() / 100) * 50;
-							if (GetHP() - dam <= per)
+							int32_t per = (ecs::PointSystem::GetMaxHP(victim) / 100) * 50;
+							if (ecs::PlayerRuntime::GetHP(victim) - dam <= per)
 							{
 								dungeon->SetFlag("floor", floor + 1);
 
-								if (GetHP() > per)
+								if (ecs::PlayerRuntime::GetHP(victim) > per)
 								{
-									PointChange(POINT_HP, -(GetHP() - per), false);
+									ecs::PointSystem::Change(victim, POINT_HP, -(ecs::PlayerRuntime::GetHP(victim) - per), false);
 								}
 								else
 								{
-									PointChange(POINT_HP, (per - GetHP()), false);
+									ecs::PointSystem::Change(victim, POINT_HP, (per - ecs::PlayerRuntime::GetHP(victim)), false);
 								}
 
-								CombatSystem::SetInvincible(GetEntityHandle(), true);
+								CombatSystem::SetInvincible(victim, true);
 
-								if (!FindAffect(AFFECT_STATUE))
+								if (!AffectSystem::FindAffect(victim, AFFECT_STATUE))
 								{
-									AddAffect(AFFECT_STATUE, POINT_NONE, 0, AFF_STATUE2, 3600, 0, true);
+									AffectSystem::AddAffect(victim, AFFECT_STATUE, POINT_NONE, 0, AFF_STATUE2, 3600, 0, true);
 								}
 
 								if (floor == 10)
@@ -5912,25 +5950,25 @@ bool CHARACTER::Damage(entt::entity attacker, int64_t dam, EDamageType type) // 
 						}
 						else if (floor >= 13 && floor < 17)
 						{
-							int32_t per = (GetMaxHP() / 100) * 5;
-							if (GetHP() - dam <= per)
+							int32_t per = (ecs::PointSystem::GetMaxHP(victim) / 100) * 5;
+							if (ecs::PlayerRuntime::GetHP(victim) - dam <= per)
 							{
 								dungeon->SetFlag("floor", floor + 1);
 
-								if (GetHP() > per)
+								if (ecs::PlayerRuntime::GetHP(victim) > per)
 								{
-									PointChange(POINT_HP, -(GetHP() - per), false);
+									ecs::PointSystem::Change(victim, POINT_HP, -(ecs::PlayerRuntime::GetHP(victim) - per), false);
 								}
 								else
 								{
-									PointChange(POINT_HP, (per - GetHP()), false);
+									ecs::PointSystem::Change(victim, POINT_HP, (per - ecs::PlayerRuntime::GetHP(victim)), false);
 								}
 
-								CombatSystem::SetInvincible(GetEntityHandle(), true);
+								CombatSystem::SetInvincible(victim, true);
 
-								if (!FindAffect(AFFECT_STATUE))
+								if (!AffectSystem::FindAffect(victim, AFFECT_STATUE))
 								{
-									AddAffect(AFFECT_STATUE, POINT_NONE, 0, AFF_STATUE3, 3600, 0, true);
+									AffectSystem::AddAffect(victim, AFFECT_STATUE, POINT_NONE, 0, AFF_STATUE3, 3600, 0, true);
 								}
 
 								if (floor == 17)
@@ -5945,7 +5983,7 @@ bool CHARACTER::Damage(entt::entity attacker, int64_t dam, EDamageType type) // 
 
 					if (itakehp != 0)
 					{
-						PointChange(POINT_HP, -itakehp);
+						ecs::PointSystem::Change(victim, POINT_HP, -itakehp);
 					}
 				}
 #endif
@@ -5954,13 +5992,14 @@ bool CHARACTER::Damage(entt::entity attacker, int64_t dam, EDamageType type) // 
 #endif
 
 		if (pkAttacker)
-			CombatSystem::SendDamagePacket(GetEntityHandle(), attacker, dam, damageFlag);
+			CombatSystem::SendDamagePacket(victim, attacker, dam, damageFlag);
 #ifdef LEADERBOARD_RAZOR93
 
-		if (pkAttacker && ecs::PlayerRuntime::IsPC(attacker) && pkAttacker->IsSkillHit() && IsPC())
+		if (pkAttacker && ecs::PlayerRuntime::IsPC(attacker) && pkAttacker->IsSkillHit() && ecs::PlayerRuntime::IsPC(victim))
 		{
 			char szVictimEsc[CHARACTER_NAME_MAX_LEN * 2 + 1];
-			DBManager::instance().EscapeString(szVictimEsc, sizeof(szVictimEsc), GetName(), strnlen(GetName(), CHARACTER_NAME_MAX_LEN));
+			DBManager::instance().EscapeString(szVictimEsc, sizeof(szVictimEsc), ecs::PlayerRuntime::GetName(victim).data(),
+				strnlen(ecs::PlayerRuntime::GetName(victim).data(), CHARACTER_NAME_MAX_LEN));
 
 			DBManager::instance().DirectQuery(
 				"UPDATE player.player "
@@ -5973,8 +6012,8 @@ bool CHARACTER::Damage(entt::entity attacker, int64_t dam, EDamageType type) // 
 				dam,
 				ecs::PlayerRuntime::GetPlayerID(attacker)
 			);
-			CheckLeaderboardSkillMobChanges();
-			if (GetMapIndex() == 41) {
+			CHARACTER::CheckLeaderboardSkillMobChanges();
+			if (ecs::PlayerRuntime::GetMapIndex(victim) == 41) {
 				CHARACTER_MANAGER::instance().for_each_pc([](LegacyCharHandle ch) {
 					ch->SendLeaderboardDataSkillMob((ch ? ch->GetEntityHandle() : entt::null));
 					});
@@ -5983,31 +6022,31 @@ bool CHARACTER::Damage(entt::entity attacker, int64_t dam, EDamageType type) // 
 			}
 
 
-			ecs::ChatSystem::Send(attacker, CHAT_TYPE_INFO, "Skill damage recorded: %d vs %s", dam, GetName());
+			ecs::ChatSystem::Send(attacker, CHAT_TYPE_INFO, "Skill damage recorded: %d vs %s", dam, ecs::PlayerRuntime::GetName(victim));
 		}
 #endif
 		if (test_server)
 		{
 			int iTmpPercent = 0; // @fixme136
-			if (GetMaxHP() >= 0)
-				iTmpPercent = (GetHP() * 100) / GetMaxHP();
+			if (ecs::PointSystem::GetMaxHP(victim) >= 0)
+				iTmpPercent = (ecs::PlayerRuntime::GetHP(victim) * 100) / ecs::PointSystem::GetMaxHP(victim);
 
 			if (pkAttacker)
 			{
 				ecs::ChatSystem::Send(attacker, CHAT_TYPE_INFO, "-> %s, DAM %d HP %d(%d%%) %s%s",
-					GetName(),
+					ecs::PlayerRuntime::GetName(victim),
 					dam,
-					GetHP(),
+					ecs::PlayerRuntime::GetHP(victim),
 					iTmpPercent,
 					IsCritical ? "crit " : "",
 					IsPenetrate ? "pene " : "",
 					IsDeathBlow ? "deathblow " : "");
 			}
 
-			ecs::ChatSystem::Send(GetEntityHandle(), CHAT_TYPE_PARTY, "<- %s, DAM %d HP %d(%d%%) %s%s",
+			ecs::ChatSystem::Send(victim, CHAT_TYPE_PARTY, "<- %s, DAM %d HP %d(%d%%) %s%s",
 				pkAttacker ? ecs::PlayerRuntime::GetName(attacker).data() : nullptr,
 				dam,
-				GetHP(),
+				ecs::PlayerRuntime::GetHP(victim),
 				iTmpPercent,
 				IsCritical ? "crit " : "",
 				IsPenetrate ? "pene " : "",
@@ -6016,7 +6055,7 @@ bool CHARACTER::Damage(entt::entity attacker, int64_t dam, EDamageType type) // 
 
 #ifdef ENABLE_RANKING
 		if (ecs::PlayerRuntime::IsPC(attacker)) {
-			if (IsPC()) {
+			if (ecs::PlayerRuntime::IsPC(victim)) {
 				switch (type) {
 				case DAMAGE_TYPE_NORMAL:
 				case DAMAGE_TYPE_NORMAL_RANGE: {
@@ -6038,8 +6077,8 @@ bool CHARACTER::Damage(entt::entity attacker, int64_t dam, EDamageType type) // 
 					break;
 				}
 			}
-			else if (IsMonster()) {
-				if (GetMobRank() >= MOB_RANK_BOSS) {
+			else if (ecs::PlayerRuntime::IsMonster(victim)) {
+				if (ecs::PlayerRuntime::GetMobRank(victim) >= MOB_RANK_BOSS) {
 					switch (type) {
 					case DAMAGE_TYPE_NORMAL:
 					case DAMAGE_TYPE_NORMAL_RANGE: {
@@ -6061,7 +6100,7 @@ bool CHARACTER::Damage(entt::entity attacker, int64_t dam, EDamageType type) // 
 						break;
 					}
 				}
-				else if (!IsStone()) {
+				else if (!ecs::PlayerRuntime::IsStone(victim)) {
 					switch (type) {
 					case DAMAGE_TYPE_NORMAL:
 					case DAMAGE_TYPE_NORMAL_RANGE: {
@@ -6091,43 +6130,44 @@ bool CHARACTER::Damage(entt::entity attacker, int64_t dam, EDamageType type) // 
 	//
 	// !!!!!!!!!  HP ̴ κ !!!!!!!!!
 	//
-	if (!cannot_dead)
+	if (!IsUndying(victim))
 	{
 #ifdef __DUNGEON_INFO_SYSTEM__
-		if (!IsPC() && pkAttacker && ecs::PlayerRuntime::IsPC(attacker))
+		if (!ecs::PlayerRuntime::IsPC(victim) && pkAttacker && ecs::PlayerRuntime::IsPC(attacker))
 		{
-			pkAttacker->SetQuestDamage(GetRaceNum(), dam);
-			ecs::PlayerRuntime::SetQuestNPCID(attacker, GetPacketVID());
-			quest::CQuestManager::instance().QuestDamage(ecs::PlayerRuntime::GetPlayerID(attacker), GetRaceNum());
+			pkAttacker->SetQuestDamage(ecs::PlayerRuntime::GetRaceNum(victim), dam);
+			ecs::PlayerRuntime::SetQuestNPCID(attacker, ecs::PlayerRuntime::GetPacketVID(victim));
+			quest::CQuestManager::instance().QuestDamage(ecs::PlayerRuntime::GetPlayerID(attacker), ecs::PlayerRuntime::GetRaceNum(victim));
 		}
 #endif
 
-		if (GetHP() - dam <= 0) // @fixme137
-			dam = GetHP();
+		if (ecs::PlayerRuntime::GetHP(victim) - dam <= 0) // @fixme137
+			dam = ecs::PlayerRuntime::GetHP(victim);
 
-		PointChange(POINT_HP, -dam, false);
+		ecs::PointSystem::Change(victim, POINT_HP, -dam, false);
 #ifdef ENABLE_STONE_SPAWN_STEP_PROCESSING_RAZOR93
-		if (IsStone())
-			ProcessStoneSpawnStep(GetEntityHandle());
+		if (ecs::PlayerRuntime::IsStone(victim))
+			ProcessStoneSpawnStep(victim);
 #endif
 	}
 
 	//puRest1.Pop();
 
 	//PROF_UNIT puRest2("Rest2");
-	if (pkAttacker && dam > 0 && IsNPC())
+	if (pkAttacker && dam > 0 && !ecs::PlayerRuntime::IsPC(victim))
 	{
 		//PROF_UNIT puRest20("Rest20");
 		const entt::entity eAttacker = attacker;
-		TDamageMap::iterator it = m_map_kDamage.end();
+		CHARACTER::TDamageMap::iterator it = book->GetDamageMapForUpdate().end();
 		if (eAttacker != entt::null)
 		{
-			it = m_map_kDamage.find(eAttacker);
+			it = book->GetDamageMapForUpdate().find(eAttacker);
 
-			if (it == m_map_kDamage.end())
+			if (it == book->GetDamageMapForUpdate().end())
 			{
-				m_map_kDamage.insert(TDamageMap::value_type(eAttacker, TBattleInfo(dam, 0)));
-				it = m_map_kDamage.find(eAttacker);
+				book->GetDamageMapForUpdate().insert(
+					CHARACTER::TDamageMap::value_type(eAttacker, CHARACTER::TBattleInfo(dam, 0)));
+				it = book->GetDamageMapForUpdate().find(eAttacker);
 			}
 			else
 			{
@@ -6138,18 +6178,18 @@ bool CHARACTER::Damage(entt::entity attacker, int64_t dam, EDamageType type) // 
 
 		//PROF_UNIT puRest21("Rest21");
 #ifdef __DEFENSE_WAVE__
-		if (GetRaceNum() != 20434)
+		if (ecs::PlayerRuntime::GetRaceNum(victim) != 20434)
 		{
-			ecs::PlayerRuntime::StartRecoveryEvent(GetEntityHandle());
+			ecs::PlayerRuntime::StartRecoveryEvent(victim);
 		}
 #else
-		StartRecoveryEvent();
+		ecs::PlayerRuntime::StartRecoveryEvent(victim);
 #endif
 		//puRest21.Pop();
 
 		//PROF_UNIT puRest22("Rest22");
-		if (it != m_map_kDamage.end())
-			CombatSystem::UpdateAggrPointEx(GetEntityHandle(), attacker, type, dam, it->second);
+		if (it != book->GetDamageMapForUpdate().end())
+			CombatSystem::UpdateAggrPointEx(victim, attacker, type, dam, it->second);
 		//puRest22.Pop();
 	}
 	//puRest2.Pop();
@@ -6157,39 +6197,39 @@ bool CHARACTER::Damage(entt::entity attacker, int64_t dam, EDamageType type) // 
 	//PROF_UNIT puRest3("Rest3");
 
 #ifdef ENABLE_STONE_SPAWN_STEP_PROCESSING_RAZOR93
-	if (GetHP() <= 0)
+	if (ecs::PlayerRuntime::GetHP(victim) <= 0)
 	{
 		if (pkAttacker && !ecs::PlayerRuntime::IsNPC(attacker))
-			m_dwKillerPID = ecs::PlayerRuntime::GetPlayerID(attacker);
+			SetKillerPID(victim, ecs::PlayerRuntime::GetPlayerID(attacker));
 		else
-			m_dwKillerPID = 0;
+			SetKillerPID(victim, 0);
 
-		if (!IsPC())
+		if (!ecs::PlayerRuntime::IsPC(victim))
 		{
-			Dead(attacker, true);
+			CombatSystem::Dead(victim, attacker, true);
 			return true;
 		}
 
 
-		Stun();
+		CombatSystem::Stun(victim);
 	}
 
 #else
 
-	if (GetHP() <= 0)
+	if (ecs::PlayerRuntime::GetHP(victim) <= 0)
 	{
-		Stun();
+		CombatSystem::Stun(victim);
 
 		if (pkAttacker && !ecs::PlayerRuntime::IsNPC(attacker))
-			m_dwKillerPID = ecs::PlayerRuntime::GetPlayerID(attacker);
+			SetKillerPID(victim, ecs::PlayerRuntime::GetPlayerID(attacker));
 		else
-			m_dwKillerPID = 0;
+			SetKillerPID(victim, 0);
 	}
 #endif
 #ifdef __DEFENSE_WAVE__
-	if (GetRaceNum() == 20434)
+	if (ecs::PlayerRuntime::GetRaceNum(victim) == 20434)
 	{
-		LPDUNGEON dungeon = GetDungeon();
+		LPDUNGEON dungeon = ecs::SocialSystem::GetDungeon(victim);
 		if (dungeon)
 		{
 			dungeon->UpdateMastHP();
@@ -6207,6 +6247,11 @@ bool CHARACTER::Damage(entt::entity attacker, int64_t dam, EDamageType type) // 
 
 	return false;
 }
+} // namespace CombatSystem
+#endif
+static int64_t CalcReferenceBowHitDamage(entt::entity attacker, entt::entity victim);
+static int64_t CalcReferenceBasicHitDamage(entt::entity attacker, entt::entity victim);
+static int64_t CalcReferenceNormalHitDamage(entt::entity attacker, entt::entity victim);
 
 #ifdef LEADERBOARD_RAZOR93
 
@@ -6432,7 +6477,7 @@ public:
 			if (CombatSystem::CanBeginFight(pkVictim->GetEntityHandle()))
 				CombatSystem::BeginFight(pkVictim->GetEntityHandle(), me);
 
-			pkVictim->Damage(me, iDam, DAMAGE_TYPE_NORMAL_RANGE);
+			CombatSystem::Damage(pkVictim->GetEntityHandle(), me, iDam, DAMAGE_TYPE_NORMAL_RANGE);
 			// Ÿġ
 		}
 		break;
@@ -6467,7 +6512,7 @@ public:
 			if (CombatSystem::CanBeginFight(pkVictim->GetEntityHandle()))
 				CombatSystem::BeginFight(pkVictim->GetEntityHandle(), me);
 
-			pkVictim->Damage(me, iDam, DAMAGE_TYPE_MAGIC);
+			CombatSystem::Damage(pkVictim->GetEntityHandle(), me, iDam, DAMAGE_TYPE_MAGIC);
 			// Ÿġ
 		}
 		break;
@@ -6695,7 +6740,7 @@ public:
 					}
 				}
 
-				pkVictim->Damage(me, iDam, DAMAGE_TYPE_NORMAL);
+				CombatSystem::Damage(pkVictim->GetEntityHandle(), me, iDam, DAMAGE_TYPE_NORMAL);
 
 
 				if (ecs::PlayerRuntime::IsPC(victim))

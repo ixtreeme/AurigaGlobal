@@ -917,6 +917,7 @@ unsigned int CHARACTER::GetMobDamageMax(void)const { Unexpected(); }
 void CHARACTER::PointChange(unsigned char,int64_t,bool,bool,bool) { Unexpected(); }
 float CHARACTER::GetRotation(void)const { Unexpected(); }
 void CombatSystem::CreateFly(entt::entity, unsigned char, entt::entity) { Unexpected(); }
+void CombatSystem::SetUndying(entt::entity, bool) {}
 bool ecs::MovementSystem::Goto(entt::entity,int,int) { Unexpected(); }
 bool ecs::MovementSystem::CanMove(entt::entity) { Unexpected(); }
 bool CHARACTER::Sync(int,int) { Unexpected(); }
@@ -931,7 +932,7 @@ void CHARACTER::RemoveGoodAffect(void) { Unexpected(); }
 void CHARACTER::RemoveBadAffect(void) { Unexpected(); }
 CAffect * CHARACTER::FindAffect(unsigned int,unsigned char)const { Unexpected(); }
 bool CHARACTER::IsEquipUniqueGroup(unsigned int)const { Unexpected(); }
-bool CHARACTER::Damage(entt::entity,int64_t,EDamageType) { Unexpected(); }
+bool CombatSystem::Damage(entt::entity,entt::entity,int64_t,unsigned char) { Unexpected(); }
 bool CombatSystem::CanBeginFight(entt::entity) { Unexpected(); }
 void CombatSystem::BeginFight(entt::entity, entt::entity) { Unexpected(); }
 bool CHARACTER::IsStun(void)const { Unexpected(); }

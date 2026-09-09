@@ -99,6 +99,17 @@ struct InvincibleState {
     bool value { false };
 };
 
+// The GM "armada" flag: HP can fall but death never fires.
+// Who landed the killing blow, carried from the damage that did it to the
+// death that follows. Cleared as the death is processed.
+struct KillerPID {
+    uint32_t value { 0 };
+};
+
+struct UndyingState {
+    bool value { false };
+};
+
 struct CombatActiveTag {};
 struct InvincibleTag {};
 

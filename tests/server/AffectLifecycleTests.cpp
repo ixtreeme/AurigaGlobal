@@ -824,7 +824,7 @@ void ecs::MovementSystem::SyncDestinationClear(entt::entity e) {
 void ecs::PlayerRuntime::SetPosition(entt::entity e, int position) {
     g_registry.get<ecs::CharacterRuntimeFlagsComponent>(e).position = position;
 }
-bool CombatSystem::Damage(entt::entity,entt::entity,int,unsigned char) { UnexpectedService(__func__); }
+bool CombatSystem::Damage(entt::entity,entt::entity,int64_t,unsigned char) { UnexpectedService(__func__); }
 void CombatSystem::SetComboSequence(entt::entity,unsigned char) { UnexpectedService(__func__); }
 void CombatSystem::SetValidComboInterval(entt::entity,int) { UnexpectedService(__func__); }
 unsigned int CGuild::UnderAnyWar(unsigned char) { UnexpectedService(__func__); }

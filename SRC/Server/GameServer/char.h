@@ -1397,7 +1397,6 @@ public:
 #endif
 
 
-	bool				Damage(entt::entity attacker, int64_t dam, EDamageType type = DAMAGE_TYPE_NORMAL);
 	void				DeathPenalty(uint8_t bExpLossPercent);
 	void				ReviveInvisible(int iDur);
 
@@ -1495,11 +1494,11 @@ public:
 	// Read-only view for entity-native callers; the map is keyed by entity
 	// already, so nothing has to resolve a character to walk it.
 	const TDamageMap&	GetDamageMap() const { return m_map_kDamage; }
+	TDamageMap&			GetDamageMapForUpdate() { return m_map_kDamage; }
 
 private:
 	TDamageMap			m_map_kDamage;	// � ĳ���Ͱ� ������ �󸶸�ŭ�� �������� �־��°�?
 	//		AttackLog			m_kAttackLog;
-	uint32_t				m_dwKillerPID;
 
 
 	// Aggro
@@ -2123,10 +2122,7 @@ private:
 
 	// ���� : ��Ȱ�� �׽�Ʈ�� ���Ͽ�.
 public:
-	void SetArmada() { cannot_dead = true; }
-	void ResetArmada() { cannot_dead = false; }
 private:
-	bool cannot_dead;
 #ifdef __PET_SYSTEM__
 private:
 public:

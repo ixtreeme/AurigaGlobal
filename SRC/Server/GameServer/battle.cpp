@@ -962,7 +962,7 @@ int battle_hit(entt::entity attacker, entt::entity victim, int & iRetDam)
     auto* legacyVictim = ecs::LegacyCharOf(victim);
     if (!legacyVictim)
         return BATTLE_NONE;
-	if (legacyVictim->Damage(attacker, iDam, DAMAGE_TYPE_NORMAL))
+	if (CombatSystem::Damage(victim, attacker, iDam, DAMAGE_TYPE_NORMAL))
 		return (BATTLE_DEAD);
 
 
