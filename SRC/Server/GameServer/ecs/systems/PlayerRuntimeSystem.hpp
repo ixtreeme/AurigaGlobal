@@ -88,6 +88,7 @@ bool IsGuardNPC(entt::entity e);
 // The remaining two CharacterType tests the AI states need. CHARACTER
 // carried these as inline reads of m_bCharType; the component is what the
 // factory fills and what IsGuardNPC above already trusts.
+int64_t GetSP(entt::entity e);
 bool IsImmortal(entt::entity e);
 uint32_t GetMonsterDrainSPPoint(entt::entity e);
 bool IsWarp(entt::entity e);

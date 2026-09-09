@@ -410,6 +410,7 @@ float ecs::PlayerRuntime::GetRotation(entt::entity) { UnexpectedService(__func__
 const TMobTable* ecs::PlayerRuntime::GetMobTable(entt::entity) { return nullptr; }
 int ecs::PlayerRuntime::GetZ(entt::entity) { return 0; }
 int ecs::PlayerRuntime::GetPosition(entt::entity) { return POS_STANDING; }
+int64_t ecs::PlayerRuntime::GetSP(entt::entity) { return 0; }
 uint32_t SkillSystem::GetLastSkillTime(entt::entity) { return 0; }
 void ecs::MovementSystem::OnMove(entt::entity, bool) {}
 bool ecs::PlayerRuntime::IsPet(entt::entity) { return false; }

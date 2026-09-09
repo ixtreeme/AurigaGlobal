@@ -599,8 +599,8 @@ void CHARACTER::CheckMaximumPoints()
 	if (GetMaxHP() < GetHP())
 		PointChange(POINT_HP, GetMaxHP() - GetHP());
 
-	if (GetMaxSP() < GetSP())
-		PointChange(POINT_SP, GetMaxSP() - GetSP());
+	if (GetMaxSP() < ecs::PlayerRuntime::GetSP(GetEntityHandle()))
+		PointChange(POINT_SP, GetMaxSP() - ecs::PlayerRuntime::GetSP(GetEntityHandle()));
 }
 
 

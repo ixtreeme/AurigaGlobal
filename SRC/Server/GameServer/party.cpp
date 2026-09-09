@@ -1139,7 +1139,7 @@ void CParty::HealParty()
 		if (DISTANCE_APPROX(ecs::PlayerRuntime::GetX(lEntity)-ecs::PlayerRuntime::GetX(chEntity), ecs::PlayerRuntime::GetY(lEntity)-ecs::PlayerRuntime::GetY(chEntity)) < PARTY_DEFAULT_RANGE)
 		{
 			ecs::PointSystem::Change(chEntity, POINT_HP, ecs::PointSystem::GetMaxHP(chEntity)-ch->GetHP());
-			ecs::PointSystem::Change(chEntity, POINT_SP, ecs::PointSystem::GetMaxSP(chEntity)-ch->GetSP());
+			ecs::PointSystem::Change(chEntity, POINT_SP, ecs::PointSystem::GetMaxSP(chEntity)-ecs::PlayerRuntime::GetSP(ch->GetEntityHandle()));
 		}
 	}
 

@@ -1315,7 +1315,7 @@ bool CHARACTER::UpdateAffect()
 
 	if (GetPoint(POINT_SP_RECOVERY) > 0)
 	{
-		if (GetMaxSP() <= GetSP())
+		if (GetMaxSP() <= ecs::PlayerRuntime::GetSP(GetEntityHandle()))
 			PointChange(POINT_SP_RECOVERY, -GetPoint(POINT_SP_RECOVERY));
 		else
 		{
@@ -1847,7 +1847,7 @@ void CHARACTER::LoadAffect(uint32_t dwCount, TPacketAffectElement * pElements)
 	{
 		LOG_ERROR("LOAD_AFFECT_REFILL_POINTS_BEGIN pid={} name={}", GetPlayerID(), GetName());
 		PointChange(POINT_HP, GetMaxHP() - GetHP());
-		PointChange(POINT_SP, GetMaxSP() - GetSP());
+		PointChange(POINT_SP, GetMaxSP() - ecs::PlayerRuntime::GetSP(GetEntityHandle()));
 		LOG_ERROR("LOAD_AFFECT_REFILL_POINTS_END pid={} name={}", GetPlayerID(), GetName());
 	}
 #ifdef ENABLE_GUILD_ATTRIBUTE

@@ -318,7 +318,7 @@ void CHARACTER::CreatePlayerProto(TPlayerTable& tab)
     tab.stat_reset_count = GetPoint(POINT_STAT_RESET_COUNT);
 
     tab.hp = GetHP();
-    tab.sp = GetSP();
+    tab.sp = ecs::PlayerRuntime::GetSP(GetEntityHandle());
 
     tab.stamina = GetStamina();
 

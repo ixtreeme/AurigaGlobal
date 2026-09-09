@@ -3028,7 +3028,7 @@ int CalculateConsumeSP(LegacyCharHandle lpChar)
 	const entt::entity lpCharEntity = lpChar ? lpChar->GetEntityHandle() : entt::null;
 	static const int NEED_WARP_SP_PERCENT = 30;
 
-	const int curSP = lpChar->GetSP();
+	const int curSP = ecs::PlayerRuntime::GetSP(lpChar->GetEntityHandle());
 	const int needSP = ecs::PointSystem::GetMaxSP(lpCharEntity) * NEED_WARP_SP_PERCENT / 100;
 
 	if (curSP < needSP)
@@ -4152,7 +4152,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 
 				if (item->GetValue(1) != 0)	// SP Àý´ë°ª È¸º¹
 				{
-					if (GetSP() < GetMaxSP())
+					if (ecs::PlayerRuntime::GetSP(GetEntityHandle()) < GetMaxSP())
 					{
 						PointChange(POINT_SP, item->GetValue(1) * (100 + GetPoint(POINT_POTION_BONUS)) / 100);
 						NetworkSyncSystem::BroadcastEffect(g_registry, GetEntityHandle(), SE_SPUP_BLUE);
@@ -4172,7 +4172,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 
 				if (item->GetValue(4) != 0) // SP % È¸º¹
 				{
-					if (GetSP() < GetMaxSP())
+					if (ecs::PlayerRuntime::GetSP(GetEntityHandle()) < GetMaxSP())
 					{
 						PointChange(POINT_SP, item->GetValue(4) * GetMaxSP() / 100);
 						NetworkSyncSystem::BroadcastEffect(g_registry, GetEntityHandle(), SE_SPUP_BLUE);
@@ -5999,7 +5999,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 				break;
 
 			case ITEM_WONSO_SUGAR_VNUM:
-				PointChange(POINT_SP, GetMaxSP() - GetSP());
+				PointChange(POINT_SP, GetMaxSP() - ecs::PlayerRuntime::GetSP(GetEntityHandle()));
 				ItemSystem::ConsumeItemEcs(itemEntity);
 				break;
 
@@ -6574,7 +6574,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 
 			if (item->GetValue(1) != 0)	// SP Àý´ë°ª È¸º¹
 			{
-				if (GetSP() < GetMaxSP())
+				if (ecs::PlayerRuntime::GetSP(GetEntityHandle()) < GetMaxSP())
 				{
 					PointChange(POINT_SP, item->GetValue(1) * (100 + GetPoint(POINT_POTION_BONUS)) / 100);
 					NetworkSyncSystem::BroadcastEffect(g_registry, GetEntityHandle(), SE_SPUP_BLUE);
@@ -6594,7 +6594,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 
 			if (item->GetValue(4) != 0) // SP % È¸º¹
 			{
-				if (GetSP() < GetMaxSP())
+				if (ecs::PlayerRuntime::GetSP(GetEntityHandle()) < GetMaxSP())
 				{
 					PointChange(POINT_SP, item->GetValue(4) * GetMaxSP() / 100);
 					NetworkSyncSystem::BroadcastEffect(g_registry, GetEntityHandle(), SE_SPUP_BLUE);
@@ -6643,7 +6643,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 
 			if (item->GetValue(1) != 0)
 			{
-				if (GetPoint(POINT_SP_RECOVERY) + GetSP() >= GetMaxSP())
+				if (GetPoint(POINT_SP_RECOVERY) + ecs::PlayerRuntime::GetSP(GetEntityHandle()) >= GetMaxSP())
 				{
 					return false;
 				}
@@ -12175,7 +12175,7 @@ void CHARACTER::AutoRecoveryItemProcess(const EAffectTypes type)
 				else if (AFFECT_AUTO_SP_RECOVERY == type)
 #endif
 				{
-					amount = GetMaxSP() - (GetSP() + GetPoint(POINT_SP_RECOVERY));
+					amount = GetMaxSP() - (ecs::PlayerRuntime::GetSP(GetEntityHandle()) + GetPoint(POINT_SP_RECOVERY));
 				}
 
 				if (amount > 0)

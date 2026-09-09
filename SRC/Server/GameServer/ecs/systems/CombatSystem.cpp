@@ -2972,7 +2972,7 @@ int CHARACTER::GetArrowAndBow(entt::entity* ppkBow, entt::entity* ppkArrow, int 
 void CHARACTER::DistributeSP(entt::entity killer, int iMethod)
 {
 	LPCHARACTER pkKiller = ecs::LegacyCharOf(killer);
-	if (pkKiller->GetSP() >= ecs::PointSystem::GetMaxSP(killer))
+	if (ecs::PlayerRuntime::GetSP(pkKiller->GetEntityHandle()) >= ecs::PointSystem::GetMaxSP(killer))
 		return;
 
 	bool bAttacking = (get_dword_time() - GetLastAttackTime()) < 3000;
@@ -4966,7 +4966,7 @@ bool CHARACTER::Damage(entt::entity attacker, int64_t dam, EDamageType type) // 
 
 
 	int iCurHP = GetHP();
-	int iCurSP = GetSP();
+	int iCurSP = ecs::PlayerRuntime::GetSP(GetEntityHandle());
 
 	bool IsCritical = false;
 	bool IsPenetrate = false;
@@ -5255,10 +5255,10 @@ bool CHARACTER::Damage(entt::entity attacker, int64_t dam, EDamageType type) // 
 			if (int64_t iStealSP_ptr = ecs::PointSystem::Get(attacker, POINT_STEAL_SP)) {
 				if (IsPC() && ecs::PlayerRuntime::IsPC(attacker)) {
 					if (number(1, 100) <= iStealSP_ptr) {
-						int64_t iSP = std::min((int64_t)dam, std::max((int64_t)0, GetSP())) * ecs::PointSystem::Get(attacker, POINT_STEAL_SP) / 100;
+						int64_t iSP = std::min((int64_t)dam, std::max((int64_t)0, ecs::PlayerRuntime::GetSP(GetEntityHandle()))) * ecs::PointSystem::Get(attacker, POINT_STEAL_SP) / 100;
 
 
-						if ((ecs::PointSystem::Get(attacker, POINT_SP) > 0) && (ecs::PointSystem::Get(attacker, POINT_SP) + iSP < ecs::PointSystem::GetMaxSP(attacker)) && (GetSP() > 0) && (iSP > 0))
+						if ((ecs::PointSystem::Get(attacker, POINT_SP) > 0) && (ecs::PointSystem::Get(attacker, POINT_SP) + iSP < ecs::PointSystem::GetMaxSP(attacker)) && (ecs::PlayerRuntime::GetSP(GetEntityHandle()) > 0) && (iSP > 0))
 						{
 							CombatSystem::CreateFly(GetEntityHandle(), FLY_SP_MEDIUM, attacker);
 							ecs::PointSystem::Change(attacker, POINT_SP, iSP);
@@ -5362,8 +5362,8 @@ bool CHARACTER::Damage(entt::entity attacker, int64_t dam, EDamageType type) // 
 			int64_t iAbsoSP_ptr = ecs::PointSystem::Get(attacker, POINT_HIT_SP_RECOVERY);
 			if (iAbsoSP_ptr > 0) {
 				if (number(1, 100) <= iAbsoSP_ptr) {
-					int64_t iSPAbso = std::min(dam, GetSP()) * ecs::PointSystem::Get(attacker, POINT_HIT_SP_RECOVERY) / 100;
-					if ((ecs::PointSystem::Get(attacker, POINT_SP) > 0) && (ecs::PointSystem::Get(attacker, POINT_SP) + iSPAbso < ecs::PointSystem::GetMaxSP(attacker)) && (GetSP() > 0) && (iSPAbso > 0)) {
+					int64_t iSPAbso = std::min(dam, ecs::PlayerRuntime::GetSP(GetEntityHandle())) * ecs::PointSystem::Get(attacker, POINT_HIT_SP_RECOVERY) / 100;
+					if ((ecs::PointSystem::Get(attacker, POINT_SP) > 0) && (ecs::PointSystem::Get(attacker, POINT_SP) + iSPAbso < ecs::PointSystem::GetMaxSP(attacker)) && (ecs::PlayerRuntime::GetSP(GetEntityHandle()) > 0) && (iSPAbso > 0)) {
 						CombatSystem::CreateFly(GetEntityHandle(), FLY_SP_SMALL, attacker);
 						ecs::PointSystem::Change(attacker, POINT_SP, iSPAbso);
 					}
@@ -5472,7 +5472,7 @@ bool CHARACTER::Damage(entt::entity attacker, int64_t dam, EDamageType type) // 
 		// POINT_MANASHIELD  ۾
 		int iDamageSPPart = dam / 3;
 		int iDamageToSP = iDamageSPPart * GetPoint(POINT_MANASHIELD) / 100;
-		int iSP = GetSP();
+		int iSP = ecs::PlayerRuntime::GetSP(GetEntityHandle());
 
 		// SP
 		if (iDamageToSP <= iSP)
@@ -5483,7 +5483,7 @@ bool CHARACTER::Damage(entt::entity attacker, int64_t dam, EDamageType type) // 
 		else
 		{
 			// ŷ ڶ ǰ  ￩ҋ
-			PointChange(POINT_SP, -GetSP());
+			PointChange(POINT_SP, -ecs::PlayerRuntime::GetSP(GetEntityHandle()));
 			dam -= iSP * 100 / std::max(GetPoint(POINT_MANASHIELD), (int64_t)1);
 		}
 	}
@@ -6377,7 +6377,7 @@ public:
 				if (m_me->GetSkillGroup() != 0)
 					if (!ecs::PlayerRuntime::IsNPC(me) && m_me->GetSkillGroup() != 2)
 					{
-						if (m_me->GetSP() < 5)
+						if (ecs::PlayerRuntime::GetSP(m_me->GetEntityHandle()) < 5)
 							return;
 
 						ecs::PointSystem::Change(me, POINT_SP, -5);

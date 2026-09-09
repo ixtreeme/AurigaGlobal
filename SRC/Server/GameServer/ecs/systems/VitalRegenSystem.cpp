@@ -90,7 +90,7 @@ void VitalRegenSystem_Update(entt::registry& reg, uint32_t tick)
 
         health.current = ch->GetHP();
         health.max = ecs::PointSystem::GetMaxHP(entity);
-        mana.current = ch->GetSP();
+        mana.current = ecs::PlayerRuntime::GetSP(ch->GetEntityHandle());
         mana.max = ecs::PointSystem::GetMaxSP(entity);
 
         if (auto* stamina = reg.try_get<ecs::Stamina>(entity)) {

@@ -908,6 +908,7 @@ const TMobTable* ecs::PlayerRuntime::GetMobTable(entt::entity) { return nullptr;
 bool ecs::PlayerRuntime::IsMonster(entt::entity) { return false; }
 float ecs::PlayerRuntime::GetRotation(entt::entity) { return 0.0f; }
 void ecs::PlayerRuntime::SetHP(entt::entity, int64_t) {}
+int64_t ecs::PlayerRuntime::GetSP(entt::entity) { return 0; }
 #ifdef ENABLE_GAYA_SYSTEM
 int ecs::PointSystem::GetGaya(entt::entity) { Unexpected(); }
 #endif

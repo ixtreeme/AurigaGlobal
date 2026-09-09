@@ -579,6 +579,13 @@ bool IsMount(entt::entity e)
     return flags && flags->isMount;
 }
 
+int64_t GetSP(entt::entity e)
+{
+    if (const auto* mana = g_registry.try_get<ecs::Mana>(e))
+        return mana->current;
+    return 0;
+}
+
 bool IsImmortal(entt::entity e)
 {
     if (e == entt::null || !g_registry.valid(e))
@@ -1859,14 +1866,6 @@ void CHARACTER::SetSP(int64_t sp)
 {
     if (auto* mana = EnsureManaComponent(GetEntityHandle()))
         mana->current = static_cast<int32_t>(std::clamp<int64_t>(sp, 0, INT32_MAX));
-}
-
-int64_t CHARACTER::GetSP() const
-{
-    if (const auto* mana = TryGetManaComponent(GetEntityHandle()))
-        return mana->current;
-
-    return 0;
 }
 
 void CHARACTER::SetStamina(int stamina)

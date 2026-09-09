@@ -3956,7 +3956,7 @@ bool CHARACTER::UseSkill(uint32_t dwVnum, entt::entity victim, bool bUseGrandMas
 		// SKILL_FOMULA_REFACTORING
 		pkSk->SetSPCostVar("maxhp", GetMaxHP());
 		pkSk->SetSPCostVar("maxv", GetMaxSP());
-		pkSk->SetSPCostVar("v", GetSP());
+		pkSk->SetSPCostVar("v", ecs::PlayerRuntime::GetSP(GetEntityHandle()));
 
 		iNeededSP = (int) pkSk->kSPCostPoly.Eval();
 
@@ -3966,7 +3966,7 @@ bool CHARACTER::UseSkill(uint32_t dwVnum, entt::entity victim, bool bUseGrandMas
 		}
 		// END_OF_SKILL_FOMULA_REFACTORING
 
-		if (GetSP() < iNeededSP)
+		if (ecs::PlayerRuntime::GetSP(GetEntityHandle()) < iNeededSP)
 			return false;
 
 #ifdef TEXTS_IMPROVEMENT
