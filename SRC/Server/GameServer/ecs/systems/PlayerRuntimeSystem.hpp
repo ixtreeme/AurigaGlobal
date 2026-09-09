@@ -85,6 +85,14 @@ bool IsNPC(entt::entity e);
 // Not IsNPC: CHARACTER::IsGuardNPC tests m_bCharType != CHAR_TYPE_PC, which
 // includes monsters and stones, while IsNPC above is the TagNPC component.
 bool IsGuardNPC(entt::entity e);
+// The remaining two CharacterType tests the AI states need. CHARACTER
+// carried these as inline reads of m_bCharType; the component is what the
+// factory fills and what IsGuardNPC above already trusts.
+bool IsWarp(entt::entity e);
+bool IsBuilding(entt::entity e);
+// Is this character a mount creature, not a rider - StatusFlags.isMount.
+bool IsMount(entt::entity e);
+bool IsGoto(entt::entity e);
 void SetPotionLimit(entt::entity e, int count);
 
 // The appearance part write. CHARACTER::SetPart was already nothing but

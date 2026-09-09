@@ -374,7 +374,7 @@ bool CHorseRider::StartRiding() { Unexpected(); }
 bool CHorseRider::StopRiding() { Unexpected(); }
 void CHARACTER::BeginStateEmpty() { Unexpected(); }
 void CHARACTER::StateBattle() { Unexpected(); }
-void CHARACTER::StateIdle() { Unexpected(); }
+void AISystem::StateIdle(entt::entity) { Unexpected(); }
 void CHARACTER::SetHorseLevel(int) { Unexpected(); }
 bool CHARACTER::StartRiding() { Unexpected(); }
 bool CHARACTER::StopRiding() { Unexpected(); }

@@ -348,6 +348,7 @@ int ecs::PointSystem::GetMaxSP(entt::entity) { UnexpectedService(__func__); }
 int ecs::PointSystem::GetLevel(entt::entity e) { AssertActor(e); return g_registry.get<BattleFixture>(e).level; }
 void ecs::PointSystem::Change(entt::entity,unsigned char,int64_t,bool,bool,bool) { UnexpectedService(__func__); }
 CParty * ecs::SocialSystem::GetParty(entt::entity) { UnexpectedService(__func__); }
+entt::entity ecs::SocialSystem::GetPartyLeader(entt::entity) { UnexpectedService(__func__); }
 int ecs::QuestSystem::GetFlag(entt::entity,std::string_view) { UnexpectedService(__func__); }
 void ecs::QuestSystem::SetFlag(entt::entity,std::string_view,int) { UnexpectedService(__func__); }
 bool NetworkSyncSystem::SetSyncOwner(entt::entity,entt::entity,bool) { UnexpectedService(__func__); }
@@ -404,10 +405,11 @@ int CHARACTER::SetInvincible(bool) { UnexpectedService(__func__); }
 bool CHARACTER::GetInvincible(void) { UnexpectedService(__func__); }
 int CHARACTER::IncreaseMobRigHP(int) { UnexpectedService(__func__); }
 bool ecs::MovementSystem::Goto(entt::entity,int,int) { UnexpectedService(__func__); }
-bool CHARACTER::CanMove(void)const { UnexpectedService(__func__); }
+bool ecs::MovementSystem::CanMove(entt::entity) { UnexpectedService(__func__); }
 bool CHARACTER::Sync(int,int) { UnexpectedService(__func__); }
 void CHARACTER::OnMove(bool) { UnexpectedService(__func__); }
 float ecs::MovementSystem::GetMoveSpeed(entt::entity) { UnexpectedService(__func__); }
+float ecs::PlayerRuntime::GetRotation(entt::entity) { UnexpectedService(__func__); }
 void ecs::MovementSystem::CalculateMoveDuration(entt::entity) { UnexpectedService(__func__); }
 void ecs::MovementSystem::SendMovePacket(entt::entity,unsigned char,unsigned char,unsigned int,unsigned int,unsigned int,unsigned int,float) { UnexpectedService(__func__); }
 void CHARACTER::SyncQuickslot(unsigned char,unsigned char,unsigned char) { UnexpectedService(__func__); }

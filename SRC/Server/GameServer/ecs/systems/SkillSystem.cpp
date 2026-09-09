@@ -3723,7 +3723,7 @@ bool CHARACTER::UseSkill(uint32_t dwVnum, entt::entity victim, bool bUseGrandMas
 	if (IsObserverMode())
 		return false;
 
-	if (!CanMove())
+	if (!ecs::MovementSystem::CanMove(GetEntityHandle()))
 		return false;
 
 	if (AffectSystem::IsPolymorphed(character))

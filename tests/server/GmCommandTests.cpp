@@ -910,7 +910,7 @@ void CHARACTER::PointChange(unsigned char,int64_t,bool,bool,bool) { Unexpected()
 float CHARACTER::GetRotation(void)const { Unexpected(); }
 void CHARACTER::CreateFly(unsigned char,entt::entity) { Unexpected(); }
 bool ecs::MovementSystem::Goto(entt::entity,int,int) { Unexpected(); }
-bool CHARACTER::CanMove(void)const { Unexpected(); }
+bool ecs::MovementSystem::CanMove(entt::entity) { Unexpected(); }
 bool CHARACTER::Sync(int,int) { Unexpected(); }
 void CHARACTER::OnMove(bool) { Unexpected(); }
 void ecs::MovementSystem::CalculateMoveDuration(entt::entity) { Unexpected(); }

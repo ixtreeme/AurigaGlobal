@@ -14,6 +14,7 @@
 #include "../../SRC/Server/GameServer/ecs/AIHelpers.hpp"
 #include "../../SRC/Server/GameServer/ecs/systems/ViewSystem.hpp"
 #include "../../SRC/Server/GameServer/ecs/systems/CombatSystem.hpp"
+#include "../../SRC/Server/GameServer/ecs/systems/SocialSystem.hpp"
 #include "../../SRC/Server/GameServer/ecs/systems/AISystem.hpp"
 #include "../../SRC/Server/GameServer/ecs/components/movement_components.hpp"
 #include "../../SRC/Server/GameServer/ecs/components/dirty_components.hpp"
@@ -212,6 +213,7 @@ void intrusive_ptr_release(event*) { Unexpected(); }
 LPEVENT event_create_ex(TEVENTFUNC, event_info_data*, int32_t) { Unexpected(); }
 void ecs::ChatSystem::Send(entt::entity, uint8_t, const char*, ...) { Unexpected(); }
 bool AffectSystem::IsAffectFlag(entt::entity, uint32_t) { Unexpected(); }
+LPSHOP ecs::SocialSystem::GetMyShop(entt::entity) { Unexpected(); }
 bool AffectSystem::IsPolymorphed(entt::entity e) { return motionSettings[e].polymorphed; }
 uint32_t ecs::PlayerRuntime::GetPacketVID(entt::entity) { Unexpected(); }
 uint32_t ecs::PlayerRuntime::GetRaceNum(entt::entity e) { return motionSettings[e].race; }

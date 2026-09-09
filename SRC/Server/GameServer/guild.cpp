@@ -1322,7 +1322,7 @@ void CGuild::UseSkill(uint32_t dwVnum, entt::entity character, uint32_t pid)
 
 	uint32_t dwRealVnum = dwVnum - GUILD_SKILL_START;
 
-	if (!ch->CanMove())
+	if (!ecs::MovementSystem::CanMove(ch->GetEntityHandle()))
 		return;
 
 	if (dwRealVnum >= GUILD_SKILL_COUNT)

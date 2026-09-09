@@ -22,6 +22,13 @@ void CheckTarget(entt::entity e);
 void BroadcastTargetPacket(entt::entity e);
 
 
+bool IsBerserker(entt::entity e);
+bool IsGodSpeeder(entt::entity e);
+// The stone this mob guards, else its party leader; entt::null for neither.
+// The stone a mob was spawned from, entt::null when it has none.
+entt::entity GetStone(entt::entity e);
+entt::entity GetProtege(entt::entity e);
+void CowardEscape(entt::entity e);
 bool CanBeginFight(entt::entity e);
 void BeginFight(entt::entity attacker, entt::entity victim);
 bool CanFight(entt::entity e);

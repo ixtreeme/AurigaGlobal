@@ -14,6 +14,7 @@
 #include "../../vector.h"
 #include "../VIDRegistry.hpp"
 #include "../CharacterAccessors.hpp"
+#include "../SpatialHelpers.hpp"
 #include "../components/ai_components.hpp"
 #include "../components/combat_components.hpp"
 #include "../components/dirty_components.hpp"
@@ -91,30 +92,6 @@ bool SyncAIFlags(entt::registry& reg, entt::entity entity, LPCHARACTER ch)
     return true;
 }
 
-bool LegacyGotoNearTarget(LPCHARACTER self, LPCHARACTER victim)
-{
-    if (IS_SET(ecs::PlayerRuntime::GetAIFlag(self->GetEntityHandle()), AIFLAG_NOMOVE)) {
-        return false;
-    }
-
-    switch (self->GetMobBattleType()) {
-    case BATTLE_TYPE_RANGE:
-    case BATTLE_TYPE_MAGIC:
-        if (self->Follow(victim ? victim->GetEntityHandle() : entt::null, self->GetMobAttackRange() * 8 / 10)) {
-            return true;
-        }
-        break;
-
-    default:
-        if (self->Follow(victim ? victim->GetEntityHandle() : entt::null, self->GetMobAttackRange() * 9 / 10)) {
-            return true;
-        }
-        break;
-    }
-
-    return self->Follow(victim ? victim->GetEntityHandle() : entt::null, self->GetMobAttackRange() * 9 / 10);
-}
-
 } // namespace
 
 extern LPCHARACTER FindVictim(LPCHARACTER pkChr, int iMaxDistance);
@@ -168,7 +145,7 @@ void UpdateStateMachine(entt::entity e)
         ch->StateBattle();
         break;
     case ecs::AIFSMState::Idle:
-        ch->StateIdle();
+        StateIdle(e);
         break;
     case ecs::AIFSMState::Initial:
         break;  // CFSM's m_stateInitial had empty hooks on CHARACTER
@@ -177,308 +154,188 @@ void UpdateStateMachine(entt::entity e)
 
 } // namespace AISystem
 
-void CHARACTER::StateIdle()
+namespace AISystem {
+
+// Idle, entity-native. Wandering, protege-following and target acquisition all
+// read components; the two calls left on a character are named where they are.
+
+namespace {
+
+void StateIdle_NPC(entt::entity e)
 {
-    if (IsStone()) {
-        AIHelpers::SetStateDuration(GetEntityHandle(), PASSES_PER_SEC(1));
-        return;
-    }
-
-    if (IsWarp() || IsGoto()) {
-        AIHelpers::SetStateDuration(GetEntityHandle(), 60 * passes_per_sec);
-        return;
-    }
-
-    if (IsPC()) {
-        return;
-    }
-
-    if (!IsMonster()) {
-        __StateIdle_NPC();
-        return;
-    }
-
-    __StateIdle_Monster();
-}
-
-void CHARACTER::__StateIdle_NPC()
-{
-    AIHelpers::SetStateDuration(GetEntityHandle(), PASSES_PER_SEC(5));
+    AIHelpers::SetStateDuration(e, PASSES_PER_SEC(5));
 
 #ifdef ENABLE_MOUNT_COSTUME_SYSTEM
-    if (IsMount()) {
+    if (ecs::PlayerRuntime::IsMount(e))
         return;
-    }
 #endif
 
 #ifdef __NEWPET_SYSTEM__
-    if (IsPet() || IsNewPet()) {
+    if (ecs::PlayerRuntime::IsPet(e) || ecs::PlayerRuntime::IsNewPet(e))
         return;
-    }
 #else
-    if (IsPet()) {
+    if (ecs::PlayerRuntime::IsPet(e))
         return;
-    }
 #endif
 
-    if (IS_SET(ecs::PlayerRuntime::GetAIFlag(GetEntityHandle()), AIFLAG_NOMOVE)) {
+    if (IS_SET(ecs::PlayerRuntime::GetAIFlag(e), AIFLAG_NOMOVE))
         return;
-    }
 
-    LPCHARACTER protege = GetProtege();
-    if (protege && DISTANCE_APPROX(GetX() - ecs::PlayerRuntime::GetX(protege->GetEntityHandle()), GetY() - ecs::PlayerRuntime::GetY(protege->GetEntityHandle())) > 500) {
-        if (Follow(protege ? protege->GetEntityHandle() : entt::null, number(100, 300))) {
-            return;
+    const int32_t x = ecs::PlayerRuntime::GetX(e);
+    const int32_t y = ecs::PlayerRuntime::GetY(e);
+
+    if (const entt::entity protege = CombatSystem::GetProtege(e); protege != entt::null) {
+        const int32_t dx = x - ecs::PlayerRuntime::GetX(protege);
+        const int32_t dy = y - ecs::PlayerRuntime::GetY(protege);
+        if (DISTANCE_APPROX(dx, dy) > 500) {
+            // Follow is 146 lines of legacy pathing and is its own migration
+            // unit; this is the one operation idle still needs a character for.
+            if (LPCHARACTER ch = ecs::LegacyCharOf(e); ch && ch->Follow(protege, number(100, 300)))
+                return;
         }
     }
 
-    if (number(0, 6)) {
+    if (number(0, 6))
         return;
-    }
 
-    SetRotation(number(0, 359));
+    ecs::MovementSystem::SetRotation(e, number(0, 359));
 
     float fx = 0.0f;
     float fy = 0.0f;
-    const float dist = number(200, 400);
-    GetDeltaByDegree(GetRotation(), dist, &fx, &fy);
+    GetDeltaByDegree(ecs::PlayerRuntime::GetRotation(e), number(200, 400), &fx, &fy);
 
-    if (!(SECTREE_MANAGER::instance().IsMovablePosition(GetMapIndex(), GetX() + static_cast<int>(fx), GetY() + static_cast<int>(fy)) &&
-        SECTREE_MANAGER::instance().IsMovablePosition(GetMapIndex(), GetX() + static_cast<int>(fx) / 2, GetY() + static_cast<int>(fy) / 2))) {
+    const int32_t mapIndex = ecs::PlayerRuntime::GetMapIndex(e);
+    const int32_t destX = x + static_cast<int>(fx);
+    const int32_t destY = y + static_cast<int>(fy);
+    if (!(ecs::IsMovablePosition(mapIndex, destX, destY) &&
+          ecs::IsMovablePosition(mapIndex, x + static_cast<int>(fx) / 2, y + static_cast<int>(fy) / 2)))
         return;
-    }
 
-    SetNowWalking(true);
-    if (ecs::MovementSystem::Goto(GetEntityHandle(), GetX() + static_cast<int>(fx), GetY() + static_cast<int>(fy))) {
-        ecs::MovementSystem::SendMovePacket(GetEntityHandle(), FUNC_WAIT, 0, 0, 0, 0);
-    }
+    ecs::MovementSystem::SetNowWalking(e, true);
+    if (ecs::MovementSystem::Goto(e, destX, destY))
+        ecs::MovementSystem::SendMovePacket(e, FUNC_WAIT, 0, 0, 0, 0);
 }
 
-void CHARACTER::__StateIdle_Monster()
+void StateIdle_Monster(entt::entity e)
 {
-    if (IsStun() || !CanMove()) {
+    if (CombatSystem::IsStun(e) || !ecs::MovementSystem::CanMove(e))
+        return;
+
+    if (AIHelpers::IsCoward(e)) {
+        if (!CombatSystem::IsDead(e))
+            CombatSystem::CowardEscape(e);
         return;
     }
 
-    if (AIHelpers::IsCoward(GetEntityHandle())) {
-        if (!IsDead()) {
-            CowardEscape();
+    // Berserk and godspeed still live on CMobInstance, which has no component
+    // yet. Resolving a character is their cost alone, so it happens here and
+    // not as a precondition for the whole body - a mob with no legacy object
+    // still wanders and still drops a dead target.
+    if (CombatSystem::IsBerserker(e) || CombatSystem::IsGodSpeeder(e)) {
+        if (LPCHARACTER ch = ecs::LegacyCharOf(e)) {
+            if (CombatSystem::IsBerserker(e) && ch->IsBerserk())
+                ch->SetBerserk(false);
+            if (CombatSystem::IsGodSpeeder(e) && ch->IsGodSpeed())
+                ch->SetGodSpeed(false);
         }
+    }
+
+    entt::entity victim = CombatSystem::GetVictim(e);
+    if (victim == entt::null || CombatSystem::IsDead(victim)) {
+        CombatSystem::SetVictim(e, entt::null);
+        victim = entt::null;
+        AIHelpers::SetStateDuration(e, PASSES_PER_SEC(1));
+    }
+
+    if (victim == entt::null || ecs::PlayerRuntime::IsBuilding(victim)) {
+        if (const entt::entity stone = CombatSystem::GetStone(e); stone != entt::null) {
+            victim = CombatSystem::GetNearestVictim(stone, stone);
+        } else if (!no_wander && AIHelpers::IsAggressive(e)) {
+            // Target search is step 2; it still takes a character.
+            const TMobTable* table = ecs::PlayerRuntime::GetMobTable(e);
+            LPCHARACTER self = table ? ecs::LegacyCharOf(e) : nullptr;
+            LPCHARACTER found = self ? FindVictim(self, table->wAggressiveSight) : nullptr;
+            victim = found ? found->GetEntityHandle() : entt::null;
+        }
+    }
+
+    if (victim != entt::null && !CombatSystem::IsDead(victim)) {
+        if (CombatSystem::CanBeginFight(e))
+            CombatSystem::BeginFight(e, victim);
         return;
     }
 
-    if (IsBerserker() && IsBerserk()) {
-        SetBerserk(false);
-    }
-
-    if (IsGodSpeeder() && IsGodSpeed()) {
-        SetGodSpeed(false);
-    }
-
-    LPCHARACTER victim = GetVictim();
-    if (!victim || victim->IsDead()) {
-        SetVictim(entt::null);
-        victim = nullptr;
-        AIHelpers::SetStateDuration(GetEntityHandle(), PASSES_PER_SEC(1));
-    }
-
-    if (!victim || victim->IsBuilding()) {
-        if (m_pkChrStone) {
-            victim = m_pkChrStone->GetNearestVictim((m_pkChrStone ? m_pkChrStone->GetEntityHandle() : entt::null));
-        } else if (!no_wander && AIHelpers::IsAggressive(GetEntityHandle())) {
-            victim = FindVictim(this, m_pkMobData->m_table.wAggressiveSight);
-        }
-    }
-
-    if (victim && !victim->IsDead()) {
-        if (CanBeginFight()) {
-            BeginFight(victim ? victim->GetEntityHandle() : entt::null);
-        }
-        return;
-    }
-
-    AIHelpers::SetStateDuration(GetEntityHandle(), AIHelpers::IsAggressive(GetEntityHandle()) && !victim
+    AIHelpers::SetStateDuration(e, AIHelpers::IsAggressive(e) && victim == entt::null
         ? PASSES_PER_SEC(number(1, 3))
         : PASSES_PER_SEC(number(3, 5)));
 
-    LPCHARACTER protege = GetProtege();
-    if (protege && DISTANCE_APPROX(GetX() - ecs::PlayerRuntime::GetX(protege->GetEntityHandle()), GetY() - ecs::PlayerRuntime::GetY(protege->GetEntityHandle())) > 1000) {
-        if (Follow(protege ? protege->GetEntityHandle() : entt::null, number(150, 400))) {
-            MonsterLog("[IDLE] returning to protege");
-            return;
-        }
-    }
+    const int32_t x = ecs::PlayerRuntime::GetX(e);
+    const int32_t y = ecs::PlayerRuntime::GetY(e);
 
-    if (no_wander || IS_SET(ecs::PlayerRuntime::GetAIFlag(GetEntityHandle()), AIFLAG_NOMOVE) || number(0, 6)) {
-        return;
-    }
-
-    SetRotation(number(0, 359));
-
-    float fx = 0.0f;
-    float fy = 0.0f;
-    const float dist = number(300, 700);
-    GetDeltaByDegree(GetRotation(), dist, &fx, &fy);
-
-    if (!(SECTREE_MANAGER::instance().IsMovablePosition(GetMapIndex(), GetX() + static_cast<int>(fx), GetY() + static_cast<int>(fy)) &&
-        SECTREE_MANAGER::instance().IsMovablePosition(GetMapIndex(), GetX() + static_cast<int>(fx) / 2, GetY() + static_cast<int>(fy) / 2))) {
-        return;
-    }
-
-    if (test_server) {
-        SetNowWalking(number(0, 100) >= 60);
-    }
-
-    if (ecs::MovementSystem::Goto(GetEntityHandle(), GetX() + static_cast<int>(fx), GetY() + static_cast<int>(fy))) {
-        ecs::MovementSystem::SendMovePacket(GetEntityHandle(), FUNC_WAIT, 0, 0, 0, 0);
-    }
-}
-
-void CHARACTER::StateBattle()
-{
-    if (IsStone()) {
-        LOG_ERROR("Stone must not use battle state (name {})", GetName());
-        return;
-    }
-
-    if (IsPC() || !CanMove() || IsStun()) {
-        return;
-    }
-
-    LPCHARACTER victim = GetVictim();
-
-    if (AIHelpers::IsCoward(GetEntityHandle())) {
-        if (IsDead()) {
-            return;
-        }
-
-        SetVictim(entt::null);
-        if (number(1, 50) != 1) {
-            SetPosition(POS_STANDING);
-            AIHelpers::SetStateDuration(GetEntityHandle(), 1);
-        } else {
-            CowardEscape();
-        }
-        return;
-    }
-
-    if (!victim || (victim->IsStun() && ecs::PlayerRuntime::IsGuardNPC(GetEntityHandle())) || victim->IsDead()) {
-        LPCHARACTER newVictim = nullptr;
-        if (victim && victim->IsDead() && !no_wander && AIHelpers::IsAggressive(GetEntityHandle()) && (!GetParty() || GetParty()->GetLeader() == this)) {
-            newVictim = FindVictim(this, m_pkMobData->m_table.wAggressiveSight);
-        }
-
-        if (newVictim) {
-            SetVictim(newVictim ? newVictim->GetEntityHandle() : entt::null);
-            AIHelpers::SetStateDuration(GetEntityHandle(), PASSES_PER_SEC(1));
-            return;
-        }
-
-        SetVictim(entt::null);
-        if (ecs::PlayerRuntime::IsGuardNPC(GetEntityHandle())) {
-            Return();
-        } else {
-            SetPosition(POS_STANDING);
-        }
-        AIHelpers::SetStateDuration(GetEntityHandle(), PASSES_PER_SEC(1));
-        return;
-    }
-
-    LPCHARACTER protege = GetProtege();
-    const entt::entity victimEntity = victim->GetEntityHandle();
-    const float dist = static_cast<float>(DISTANCE_APPROX(
-        GetX() - ecs::PlayerRuntime::GetX(victimEntity),
-        GetY() - ecs::PlayerRuntime::GetY(victimEntity)));
-
-    if (dist >= 4000.0f) {
-        SetVictim(entt::null);
-        if (protege && DISTANCE_APPROX(GetX() - ecs::PlayerRuntime::GetX(protege->GetEntityHandle()), GetY() - ecs::PlayerRuntime::GetY(protege->GetEntityHandle())) > 1000) {
-            Follow(protege ? protege->GetEntityHandle() : entt::null, number(150, 400));
-        } else {
-            SetPosition(POS_STANDING);
-        }
-        return;
-    }
-
-    if (dist >= GetMobAttackRange() * 1.15f) {
-        if (LegacyGotoNearTarget(this, victim)) {
-            AIHelpers::SetStateDuration(GetEntityHandle(), 1);
-        }
-        return;
-    }
-
-    if (m_pkParty) {
-        m_pkParty->SendMessage(GetEntityHandle(), PM_ATTACKED_BY, 0, 0);
-    }
-
-    const uint32_t curTime = get_dword_time();
-    const uint32_t duration = CalculateDuration(GetLimitPoint(POINT_ATT_SPEED), 2000);
-    if ((curTime - GetLastAttackTime()) < duration) {
-        AIHelpers::SetStateDuration(GetEntityHandle(), MAX(1, (passes_per_sec * (duration - (curTime - GetLastAttackTime())) / 1000)));
-        return;
-    }
-
-    if (IsBerserker() && GetHPPct() < m_pkMobData->m_table.bBerserkPoint && !IsBerserk()) {
-        SetBerserk(true);
-    }
-
-    if (IsGodSpeeder() && GetHPPct() < m_pkMobData->m_table.bGodSpeedPoint && !IsGodSpeed()) {
-        SetGodSpeed(true);
-    }
-
-    if (HasMobSkill()) {
-        for (unsigned int skillIdx = 0; skillIdx < MOB_SKILL_MAX_NUM; ++skillIdx) {
-            if (!CanUseMobSkill(skillIdx)) {
-                continue;
-            }
-
-            SetRotationToXY(ecs::PlayerRuntime::GetX(victimEntity), ecs::PlayerRuntime::GetY(victimEntity));
-            if (UseMobSkill(skillIdx)) {
-                ecs::MovementSystem::SendMovePacket(GetEntityHandle(), FUNC_MOB_SKILL, skillIdx, GetX(), GetY(), 0, curTime);
-
-                const float motionDuration = CMotionManager::instance().GetMotionDuration(
-                    GetRaceNum(),
-                    MAKE_MOTION_KEY(MOTION_MODE_GENERAL, MOTION_SPECIAL_1 + skillIdx));
-                AIHelpers::SetStateDuration(GetEntityHandle(), static_cast<uint32_t>(
-                    motionDuration == 0.0f ? PASSES_PER_SEC(2) : PASSES_PER_SEC(motionDuration)));
+    if (const entt::entity protege = CombatSystem::GetProtege(e); protege != entt::null) {
+        const int32_t dx = x - ecs::PlayerRuntime::GetX(protege);
+        const int32_t dy = y - ecs::PlayerRuntime::GetY(protege);
+        if (DISTANCE_APPROX(dx, dy) > 1000) {
+            LPCHARACTER self = ecs::LegacyCharOf(e);
+            if (self && self->Follow(protege, number(150, 400))) {
+                ecs::PlayerRuntime::MonsterLog(e, "[IDLE] returning to protege");
                 return;
             }
         }
     }
 
-    if (!IsPC()) {
-        const int32_t vnum = GetRaceNum();
-#ifdef ENABLE_MELEY_LAIR
-        if (vnum == 6193) {
-            return;
-        }
-#endif
-#ifdef ENABLE_ANCIENT_PYRAMID
-        if (vnum == PYRAMID_BOSSVNUM) {
-            return;
-        }
-#endif
-#ifdef __DEFENSE_WAVE__
-        if (vnum >= 3960 && vnum <= 3962) {
-            return;
-        }
-#endif
-    }
+    if (no_wander || IS_SET(ecs::PlayerRuntime::GetAIFlag(e), AIFLAG_NOMOVE) || number(0, 6))
+        return;
 
-    if (!Attack(victim ? victim->GetEntityHandle() : entt::null, 0)) {
-        AIHelpers::SetStateDuration(GetEntityHandle(), passes_per_sec / 2);
+    ecs::MovementSystem::SetRotation(e, number(0, 359));
+
+    float fx = 0.0f;
+    float fy = 0.0f;
+    GetDeltaByDegree(ecs::PlayerRuntime::GetRotation(e), number(300, 700), &fx, &fy);
+
+    const int32_t mapIndex = ecs::PlayerRuntime::GetMapIndex(e);
+    const int32_t destX = x + static_cast<int>(fx);
+    const int32_t destY = y + static_cast<int>(fy);
+    if (!(ecs::IsMovablePosition(mapIndex, destX, destY) &&
+          ecs::IsMovablePosition(mapIndex, x + static_cast<int>(fx) / 2, y + static_cast<int>(fy) / 2)))
+        return;
+
+    if (test_server)
+        ecs::MovementSystem::SetNowWalking(e, number(0, 100) >= 60);
+
+    if (ecs::MovementSystem::Goto(e, destX, destY))
+        ecs::MovementSystem::SendMovePacket(e, FUNC_WAIT, 0, 0, 0, 0);
+}
+
+} // namespace
+
+void StateIdle(entt::entity e)
+{
+    if (e == entt::null || !g_registry.valid(e))
+        return;
+
+    if (ecs::PlayerRuntime::IsStone(e)) {
+        AIHelpers::SetStateDuration(e, PASSES_PER_SEC(1));
         return;
     }
 
-    SetRotationToXY(ecs::PlayerRuntime::GetX(victimEntity), ecs::PlayerRuntime::GetY(victimEntity));
-    ecs::MovementSystem::SendMovePacket(GetEntityHandle(), FUNC_ATTACK, 0, GetX(), GetY(), 0, curTime);
+    if (ecs::PlayerRuntime::IsWarp(e) || ecs::PlayerRuntime::IsGoto(e)) {
+        AIHelpers::SetStateDuration(e, 60 * passes_per_sec);
+        return;
+    }
 
-    const float motionDuration = CMotionManager::instance().GetMotionDuration(
-        GetRaceNum(),
-        MAKE_MOTION_KEY(MOTION_MODE_GENERAL, MOTION_NORMAL_ATTACK));
-    AIHelpers::SetStateDuration(GetEntityHandle(), static_cast<uint32_t>(
-        motionDuration == 0.0f ? PASSES_PER_SEC(2) : PASSES_PER_SEC(motionDuration)));
+    if (ecs::PlayerRuntime::IsPC(e))
+        return;
+
+    if (!ecs::PlayerRuntime::IsMonster(e)) {
+        StateIdle_NPC(e);
+        return;
+    }
+
+    StateIdle_Monster(e);
 }
+
+} // namespace AISystem
 
 void AISystem_Update(entt::registry& reg, uint32_t tick)
 {

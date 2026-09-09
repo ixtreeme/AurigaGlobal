@@ -555,6 +555,39 @@ bool IsGuardNPC(entt::entity e)
     return race == 11000 || race == 11002 || race == 11004;
 }
 
+namespace {
+uint8_t CharTypeOf(entt::entity e)
+{
+    if (e == entt::null || !g_registry.valid(e))
+        return CHAR_TYPE_PC;
+    const auto* type = g_registry.try_get<ecs::CharacterType>(e);
+    return type ? type->value : CHAR_TYPE_PC;
+}
+} // namespace
+
+bool IsBuilding(entt::entity e)
+{
+    return CharTypeOf(e) == CHAR_TYPE_BUILDING;
+}
+
+bool IsMount(entt::entity e)
+{
+    if (e == entt::null || !g_registry.valid(e))
+        return false;
+    const auto* flags = g_registry.try_get<ecs::StatusFlags>(e);
+    return flags && flags->isMount;
+}
+
+bool IsWarp(entt::entity e)
+{
+    return CharTypeOf(e) == CHAR_TYPE_WARP;
+}
+
+bool IsGoto(entt::entity e)
+{
+    return CharTypeOf(e) == CHAR_TYPE_GOTO;
+}
+
 bool IsStone(entt::entity e)
 {
 	return e != entt::null && g_registry.valid(e) && g_registry.all_of<ecs::TagStone>(e);
@@ -4692,6 +4725,11 @@ void CHARACTER::SetProto(const CMob* pkMob)
     const TMobTable* t = &m_pkMobData->m_table;
 
     m_bCharType = t->bType;
+    // The factory fills CharacterType at spawn, but SetProto can change the
+    // type afterwards and used to leave the component behind.
+    if (const entt::entity self = GetEntityHandle();
+        self != entt::null && g_registry.valid(self))
+        g_registry.emplace_or_replace<ecs::CharacterType>(self, static_cast<uint8_t>(t->bType));
 
     SetLevel(t->bLevel);
     SetEmpire(t->bEmpire);
@@ -4719,7 +4757,7 @@ void CHARACTER::SetProto(const CMob* pkMob)
         DetermineDropMetinStone();
     }
 
-    if (IsWarp() || IsGoto())
+    if (ecs::PlayerRuntime::IsWarp(GetEntityHandle()) || ecs::PlayerRuntime::IsGoto(GetEntityHandle()))
     {
         StartWarpNPCEvent();
     }

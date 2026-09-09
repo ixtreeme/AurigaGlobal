@@ -89,6 +89,17 @@ if(WIN32)
 endif()
 add_test(NAME combat_state COMMAND CombatStateTests)
 
+add_executable(AIStateTests EXCLUDE_FROM_ALL
+    ${CMAKE_SOURCE_DIR}/tests/server/AIStateTests.cpp
+    ecs/systems/AISystem.cpp
+    ecs/Registry.cpp
+)
+target_link_libraries(AIStateTests PRIVATE SERVER EnTT::EnTT LUA)
+if(WIN32)
+    target_link_libraries(AIStateTests PRIVATE ws2_32 bcrypt secur32 crypt32 shlwapi)
+endif()
+add_test(NAME ai_state COMMAND AIStateTests)
+
 add_executable(AffectLifecycleTests EXCLUDE_FROM_ALL
     ${CMAKE_SOURCE_DIR}/tests/server/AffectLifecycleTests.cpp
     ecs/systems/AffectSystem.cpp

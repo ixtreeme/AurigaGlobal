@@ -11,11 +11,12 @@ enum class AIFSMState : uint8_t;
 namespace AISystem {
 
 // Replaces CFSM::GotoState and CFSM::Update on CHARACTER. The state lives
-// in the AIStateMachine component; the state bodies are still CHARACTER
-// methods, so UpdateStateMachine resolves the legacy object once per tick
-// at the pump - the same boundary every other system crosses there.
+// in the AIStateMachine component.
 void GotoState(entt::entity e, ecs::AIFSMState state);
 void UpdateStateMachine(entt::entity e);
+
+// The idle state body. Battle is still a CHARACTER method.
+void StateIdle(entt::entity e);
 
 } // namespace AISystem
 

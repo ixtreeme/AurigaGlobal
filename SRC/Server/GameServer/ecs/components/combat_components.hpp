@@ -67,6 +67,12 @@ struct DamageMap {
     std::unordered_map<uint32_t, int32_t> entries;
 };
 
+// The stone a mob was spawned from. CHARACTER kept this as m_pkChrStone with
+// no component, so nothing entity-native could ask who a mob is guarding.
+struct StoneOwner {
+    entt::entity stone { entt::null };
+};
+
 struct CombatActiveTag {};
 struct InvincibleTag {};
 

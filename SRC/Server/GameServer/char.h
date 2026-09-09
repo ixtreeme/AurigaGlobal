@@ -623,7 +623,6 @@ public:
 
 
 	void				SetCoward();
-	void				CowardEscape();
 
 	void				SetNoAttackShinsu();
 
@@ -719,8 +718,6 @@ public:
 	bool			IsStone() const { return m_bCharType == CHAR_TYPE_STONE; }
 	bool			IsDoor() const { return m_bCharType == CHAR_TYPE_DOOR; }
 	bool			IsBuilding() const { return m_bCharType == CHAR_TYPE_BUILDING; }
-	bool			IsWarp() const { return m_bCharType == CHAR_TYPE_WARP; }
-	bool			IsGoto() const { return m_bCharType == CHAR_TYPE_GOTO; }
 	//		bool			IsPet() const		{ return m_bCharType == CHAR_TYPE_PET; }
 #ifdef ENABLE_EVENT_MANAGER
 	// DUNGEON_TICKET_LOOT_EVENT extra metin marker
@@ -790,13 +787,11 @@ public:
 	uint32_t				GetMobDropItemVnum() const;
 
 	// NEWAI
-	bool			IsBerserker() const;
 	bool			IsBerserk() const;
 	void			SetBerserk(bool mode);
 
 	bool			IsStoneSkinner() const;
 
-	bool			IsGodSpeeder() const;
 	bool			IsGodSpeed() const;
 	void			SetGodSpeed(bool mode);
 
@@ -917,7 +912,6 @@ public:
 	void			SetNowWalking(bool bWalkFlag);
 
 
-	bool			CanMove() const;		// �̵��� �� �ִ°�?
 
 	bool			Sync(int32_t x, int32_t y);	// ���� �� �޼ҵ�� �̵� �Ѵ� (�� �� ���ǿ� ���� �̵� �Ұ��� ����)
 	bool			Move(int32_t x, int32_t y);	// ������ �˻��ϰ� Sync �޼ҵ带 ���� �̵� �Ѵ�.
@@ -1742,13 +1736,9 @@ public:
 	LPCHARACTER		GetVictim() const;	// ������ ��� ����
 	void			SetVictim(entt::entity victim);
 	LPCHARACTER		GetNearestVictim(entt::entity chr);
-	LPCHARACTER		GetProtege() const;	// ��ȣ�ؾ� �� ��� ����
 	virtual void			StateBattle();
-	virtual void			StateIdle();
 
 protected:
-	void				__StateIdle_Monster();
-	void				__StateIdle_NPC();
 
 public:
 	bool			Follow(entt::entity chr, float fMinimumDistance = 150.0f);

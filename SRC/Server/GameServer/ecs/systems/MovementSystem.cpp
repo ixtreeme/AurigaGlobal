@@ -38,6 +38,8 @@
 #include "PointSystem.hpp"
 #include "MountSystem.hpp"
 #include "../SpatialHelpers.hpp"
+#include "SocialSystem.hpp"
+#include "AffectSystem.hpp"
 #include "../PositionSync.hpp"
 #include "../components/dirty_components.hpp"
 #include "../components/identity_components.hpp"
@@ -709,26 +711,24 @@ void CHARACTER::SetRotationToXY(int32_t x, int32_t y)
 	SetRotation(GetDegreeFromPositionXY(GetX(), GetY(), x, y));
 }
 
+namespace ecs::MovementSystem {
+// CHARACTER::CanMove was two reads and nothing else. Both have component
+// accessors, so the body moves here whole rather than being wrapped.
+bool CanMove(entt::entity e)
+{
+    if (e == entt::null || !g_registry.valid(e))
+        return false;
+    if (AffectSystem::IsAffectFlag(e, AFF_STUN))
+        return false;
+    if (ecs::SocialSystem::GetMyShop(e))
+        return false;
+    return true;
+}
+} // namespace ecs::MovementSystem
+
 bool CHARACTER::CannotMoveByAffect() const
 {
 	return (IsAffectFlag(AFF_STUN));
-}
-
-bool CHARACTER::CanMove() const
-{
-	if (CannotMoveByAffect())
-		return false;
-
-	if (GetMyShop())	// ��? ??��A?!1???o��AI 1?3oA1
-		return false;
-
-	// 0.2AE A?I��� ?o��AI 1?3o�U.
-	/*
-	   if (const auto* sync = g_registry.try_get<ecs::SyncOwner>(GetEntityHandle());
-		   sync && get_float_time() - sync->syncTime < 0.2f)
-	   return false;
-	 */
-	return true;
 }
 
 // 1����?x, y A��!�� AI? 1AA2�U.

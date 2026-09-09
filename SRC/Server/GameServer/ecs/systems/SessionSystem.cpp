@@ -902,7 +902,7 @@ EVENTFUNC(warp_npc_event)
         return 0;
     }
 
-    FuncCheckWarp f(e, ch->IsGoto());
+    FuncCheckWarp f(e, ecs::PlayerRuntime::IsGoto(e));
     if (f.Valid())
         ecs::PlayerRuntime::GetSectree(e)->ForEachAround(f);
 
@@ -914,7 +914,7 @@ void CHARACTER::StartWarpNPCEvent()
     if (m_pkWarpNPCEvent)
         return;
 
-    if (!IsWarp() && !IsGoto())
+    if (!ecs::PlayerRuntime::IsWarp(GetEntityHandle()) && !ecs::PlayerRuntime::IsGoto(GetEntityHandle()))
         return;
 
     char_event_info* info = AllocEventInfo<char_event_info>();

@@ -186,6 +186,88 @@ uint8_t ToggleComboIndex(entt::entity e, uint8_t skillLevel)
 	return cooldown.comboIndex;
 }
 
+// The mob-table half of berserk and godspeed. CHARACTER read the AI flag word
+// and then the AIFlags component; both are reachable from the entity, so the
+// test moves here whole.
+bool IsBerserker(entt::entity e)
+{
+    if (IS_SET(ecs::PlayerRuntime::GetAIFlag(e), AIFLAG_BERSERK))
+        return true;
+    const auto* flags = AIHelpers::TryGetFlags(e);
+    return flags && flags->isBerserk;
+}
+
+bool IsGodSpeeder(entt::entity e)
+{
+    if (IS_SET(ecs::PlayerRuntime::GetAIFlag(e), AIFLAG_GODSPEED))
+        return true;
+    const auto* flags = AIHelpers::TryGetFlags(e);
+    return flags && flags->isGodSpeed;
+}
+
+// Who this mob is guarding: the stone it spawned from, else its party leader.
+// Entity in, entity out - the caller no longer needs a character to ask.
+entt::entity GetStone(entt::entity e)
+{
+    if (e == entt::null || !g_registry.valid(e))
+        return entt::null;
+    const auto* owner = g_registry.try_get<ecs::StoneOwner>(e);
+    if (!owner || owner->stone == entt::null || !g_registry.valid(owner->stone))
+        return entt::null;
+    return owner->stone;
+}
+
+entt::entity GetProtege(entt::entity e)
+{
+    if (const entt::entity stone = GetStone(e); stone != entt::null)
+        return stone;
+    // The party leader is still a CHARACTER-side lookup; SocialSystem owns it.
+    return ecs::SocialSystem::GetPartyLeader(e);
+}
+
+// Run away: pick a reachable bearing at increasing distance and walk it.
+void CowardEscape(entt::entity e)
+{
+    if (e == entt::null || !g_registry.valid(e))
+        return;
+
+    const int distances[4] = {500, 1000, 3000, 5000};
+    for (int band = 2; band >= 0; --band) {
+        for (int attempt = 0; attempt < 8; ++attempt) {
+            ecs::MovementSystem::SetRotation(e, number(0, 359));
+
+            float fx = 0.0f, fy = 0.0f;
+            const float dist = number(distances[band], distances[band + 1]);
+            GetDeltaByDegree(ecs::PlayerRuntime::GetRotation(e), dist, &fx, &fy);
+
+            const int32_t mapIndex = ecs::PlayerRuntime::GetMapIndex(e);
+            const int32_t x = ecs::PlayerRuntime::GetX(e);
+            const int32_t y = ecs::PlayerRuntime::GetY(e);
+
+            bool blocked = false;
+            for (int step = 1; step <= 100; ++step) {
+                if (!ecs::IsMovablePosition(mapIndex, x + static_cast<int>(fx) * step / 100,
+                        y + static_cast<int>(fy) * step / 100)) {
+                    blocked = true;
+                    break;
+                }
+            }
+            if (blocked)
+                continue;
+
+            AIHelpers::SetStateDuration(e, PASSES_PER_SEC(1));
+
+            const int destX = x + static_cast<int>(fx);
+            const int destY = y + static_cast<int>(fy);
+            if (ecs::MovementSystem::Goto(e, destX, destY))
+                ecs::MovementSystem::SendMovePacket(e, FUNC_WAIT, 0, 0, 0, 0);
+
+            LOG_INFO("WAEGU move to {} {} (far)", destX, destY);
+            return;
+        }
+    }
+}
+
 bool CanBeginFight(entt::entity e)
 {
     if (auto* ch = LegacyCharOf(e)) {
@@ -2555,7 +2637,7 @@ void CombatSystem_Update(entt::registry& reg, uint32_t tick)
 
 bool CHARACTER::CanBeginFight() const
 {
-	if (!CanMove())
+	if (!ecs::MovementSystem::CanMove(GetEntityHandle()))
 		return false;
 
 	return GetPosition() == POS_STANDING && !IsDead() && !IsStun();
@@ -2596,7 +2678,7 @@ bool CHARACTER::Attack(entt::entity victim, uint8_t bType)
 	if (test_server)
 		LOG_TRACE("[TEST_SERVER] Attack : {} type {}, MobBattleType {}", GetName(), bType, (!IsPC() && GetMobBattleType()) ? GetMobAttackRange() : 0);
 	//PROF_UNIT puAttack("Attack");
-	if (!CanMove())
+	if (!ecs::MovementSystem::CanMove(GetEntityHandle()))
 		return false;
 #ifdef ENABLE_ANTICHEAT
 	SECTREE* sectree = GetSectree();
@@ -6485,7 +6567,7 @@ bool CHARACTER::Shoot(uint8_t bType)
 {
 	LOG_INFO("Shoot {} type {} flyTargets.size {}", GetName(), bType, m_vec_dwFlyTargets.size());
 
-	if (!CanMove())
+	if (!ecs::MovementSystem::CanMove(GetEntityHandle()))
 	{
 		return false;
 	}
@@ -6603,16 +6685,6 @@ void CHARACTER::SetSkillHit(bool value)
 }
 #endif
 
-LPCHARACTER CHARACTER::GetProtege() const // ȣؾ
-{
-	if (m_pkChrStone)
-		return m_pkChrStone;
-
-	if (m_pkParty)
-		return m_pkParty->GetLeader();
-
-	return nullptr;
-}
 
 // char_battle.cpp slice BB1 moved into CombatSystem.cpp
 
@@ -7030,17 +7102,6 @@ void CHARACTER::SetCoward()
 	AIHelpers::SetCoward(GetEntityHandle(), true);
 }
 
-bool CHARACTER::IsBerserker() const
-{
-	if (IS_SET(ecs::PlayerRuntime::GetAIFlag(GetEntityHandle()), AIFLAG_BERSERK))
-		return true;
-
-	if (auto* flags = AIHelpers::TryGetFlags(GetEntityHandle()))
-		return flags->isBerserk;
-
-	return false;
-}
-
 bool CHARACTER::IsStoneSkinner() const
 {
 	if (IS_SET(ecs::PlayerRuntime::GetAIFlag(GetEntityHandle()), AIFLAG_STONESKIN))
@@ -7048,17 +7109,6 @@ bool CHARACTER::IsStoneSkinner() const
 
 	if (auto* flags = AIHelpers::TryGetFlags(GetEntityHandle()))
 		return flags->isStoneSkinner;
-
-	return false;
-}
-
-bool CHARACTER::IsGodSpeeder() const
-{
-	if (IS_SET(ecs::PlayerRuntime::GetAIFlag(GetEntityHandle()), AIFLAG_GODSPEED))
-		return true;
-
-	if (auto* flags = AIHelpers::TryGetFlags(GetEntityHandle()))
-		return flags->isGodSpeed;
 
 	return false;
 }
@@ -7224,6 +7274,9 @@ void CHARACTER::SetStone(entt::entity stone)
 {
 	LPCHARACTER pkStone = ecs::LegacyCharOf(stone);
 	m_pkChrStone = pkStone;
+	if (const entt::entity self = GetEntityHandle();
+		self != entt::null && g_registry.valid(self))
+		g_registry.emplace_or_replace<ecs::StoneOwner>(self, pkStone ? stone : entt::null);
 
 	if (m_pkChrStone)
 	{
@@ -7277,6 +7330,9 @@ void CHARACTER::ClearStone(entt::entity killer)
 
 	m_pkChrStone->m_set_pkChrSpawnedBy.erase(this);
 	m_pkChrStone = nullptr;
+	if (const entt::entity self = GetEntityHandle();
+		self != entt::null && g_registry.valid(self))
+		g_registry.remove<ecs::StoneOwner>(self);
 }
 #else
 void CHARACTER::ClearStone()
@@ -7293,6 +7349,9 @@ void CHARACTER::ClearStone()
 
 	m_pkChrStone->m_set_pkChrSpawnedBy.erase(this);
 	m_pkChrStone = nullptr;
+	if (const entt::entity self = GetEntityHandle();
+		self != entt::null && g_registry.valid(self))
+		g_registry.remove<ecs::StoneOwner>(self);
 }
 #endif
 
@@ -7653,46 +7712,6 @@ int CHARACTER::GetLeadershipSkillLevel() const
 void CHARACTER::ReviveInvisible(int iDur)
 {
 	AddAffect(AFFECT_REVIVE_INVISIBLE, POINT_NONE, 0, AFF_REVIVE_INVISIBLE, iDur, 0, true);
-}
-
-void CHARACTER::CowardEscape()
-{
-	int iDist[4] = {500, 1000, 3000, 5000};
-
-	for (int iDistIdx = 2; iDistIdx >= 0; --iDistIdx)
-		for (int iTryCount = 0; iTryCount < 8; ++iTryCount)
-		{
-			SetRotation(number(0, 359));
-
-			float fx, fy;
-			float fDist = number(iDist[iDistIdx], iDist[iDistIdx + 1]);
-
-			GetDeltaByDegree(GetRotation(), fDist, &fx, &fy);
-
-			bool bIsWayBlocked = false;
-			for (int j = 1; j <= 100; ++j)
-			{
-				if (!ecs::IsMovablePosition(GetMapIndex(), GetX() + (int)fx * j / 100, GetY() + (int)fy * j / 100))
-				{
-					bIsWayBlocked = true;
-					break;
-				}
-			}
-
-			if (bIsWayBlocked)
-				continue;
-
-			AIHelpers::SetStateDuration(GetEntityHandle(), PASSES_PER_SEC(1));
-
-			int iDestX = GetX() + (int)fx;
-			int iDestY = GetY() + (int)fy;
-
-			if (ecs::MovementSystem::Goto(GetEntityHandle(), iDestX, iDestY))
-				ecs::MovementSystem::SendMovePacket(GetEntityHandle(), FUNC_WAIT, 0, 0, 0, 0);
-
-			LOG_INFO("WAEGU move to {} {} (far)", iDestX, iDestY);
-			return;
-		}
 }
 
 void CHARACTER::DetermineDropMetinStone()

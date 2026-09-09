@@ -2019,7 +2019,7 @@ void CInputMain::Move(entt::entity character, const char * data)
 		return;
 
 	struct command_move * pinfo = (struct command_move *) data;
-	if (!ch->CanMove())
+	if (!ecs::MovementSystem::CanMove(ch->GetEntityHandle()))
 		return;
 
 	if (pinfo->bFunc >= FUNC_MAX_NUM && !(pinfo->bFunc & 0x80))
