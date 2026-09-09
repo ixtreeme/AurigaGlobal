@@ -21,6 +21,10 @@
 #include "../components/identity_components.hpp"
 #include <Core/Logging.hpp>
 #include "CombatSystem.hpp"
+#include "../../utils.h"
+#include "PointSystem.hpp"
+#include "SocialSystem.hpp"
+#include "SkillSystem.hpp"
 
 namespace {
 
@@ -130,22 +134,16 @@ void UpdateStateMachine(entt::entity e)
         fsm.hasPending = false;
     }
 
-    // The state bodies are still CHARACTER methods. This is the once-per-tick
-    // boundary the pump already crosses for everything else, not a wrapper
-    // hiding a conversion behind an entity-shaped call.
-    LPCHARACTER ch = ecs::LegacyCharOf(e);
-    if (!ch)
-        return;
-
-    // CFSM ran the old state's End hook then the new state's Begin hook on a
-    // transition. EndStateEmpty is genuinely empty; BeginStateEmpty is not -
-    // it logs - so it has to keep firing.
+    // CFSM ran the old End hook then the new Begin hook on a transition.
+    // EndStateEmpty was genuinely empty; BeginStateEmpty was a single
+    // MonsterLog call, which the entity can make for itself - so the pump no
+    // longer resolves a character at all.
     if (transitioned)
-        ch->BeginStateEmpty();
+        ecs::PlayerRuntime::MonsterLog(e, "!");
 
     switch (fsm.current) {
     case ecs::AIFSMState::Battle:
-        ch->StateBattle();
+        StateBattle(e);
         break;
     case ecs::AIFSMState::Idle:
         StateIdle(e);
@@ -311,6 +309,220 @@ void StateIdle_Monster(entt::entity e)
 }
 
 } // namespace
+
+namespace {
+
+// Close the distance. Ranged and magic mobs stop a little further out; the
+// repeated fallback call is the original one, kept as it was.
+bool GotoNearTarget(entt::entity self, entt::entity victim)
+{
+    if (IS_SET(ecs::PlayerRuntime::GetAIFlag(self), AIFLAG_NOMOVE))
+        return false;
+
+    const uint16_t range = CombatSystem::GetMobAttackRange(self);
+    // Follow is the last legacy pathing call left in the AI; it needs a
+    // character, and this is the only place battle asks for one to move.
+    LPCHARACTER ch = ecs::LegacyCharOf(self);
+    if (!ch)
+        return false;
+
+    switch (CombatSystem::GetMobBattleType(self)) {
+    case BATTLE_TYPE_RANGE:
+    case BATTLE_TYPE_MAGIC:
+        if (ch->Follow(victim, range * 8 / 10))
+            return true;
+        break;
+
+    default:
+        if (ch->Follow(victim, range * 9 / 10))
+            return true;
+        break;
+    }
+
+    return ch->Follow(victim, range * 9 / 10);
+}
+
+} // namespace
+
+void StateBattle(entt::entity e)
+{
+    if (e == entt::null || !g_registry.valid(e))
+        return;
+
+    if (ecs::PlayerRuntime::IsStone(e)) {
+        LOG_ERROR("Stone must not use battle state (name {})", ecs::PlayerRuntime::GetName(e));
+        return;
+    }
+
+    if (ecs::PlayerRuntime::IsPC(e) || !ecs::MovementSystem::CanMove(e) || CombatSystem::IsStun(e))
+        return;
+
+    entt::entity victim = CombatSystem::GetVictim(e);
+    if (victim != entt::null && !g_registry.valid(victim))
+        victim = entt::null;
+
+    if (AIHelpers::IsCoward(e)) {
+        if (CombatSystem::IsDead(e))
+            return;
+
+        CombatSystem::SetVictim(e, entt::null);
+        if (number(1, 50) != 1) {
+            ecs::PlayerRuntime::SetPosition(e, POS_STANDING);
+            AIHelpers::SetStateDuration(e, 1);
+        } else {
+            CombatSystem::CowardEscape(e);
+        }
+        return;
+    }
+
+    const bool guard = ecs::PlayerRuntime::IsGuardNPC(e);
+    if (victim == entt::null ||
+        (CombatSystem::IsStun(victim) && guard) ||
+        CombatSystem::IsDead(victim)) {
+        entt::entity replacement = entt::null;
+        if (victim != entt::null && CombatSystem::IsDead(victim) && !no_wander &&
+            AIHelpers::IsAggressive(e)) {
+            const entt::entity leader = ecs::SocialSystem::GetPartyLeader(e);
+            if (leader == entt::null || leader == e) {
+                if (const TMobTable* table = ecs::PlayerRuntime::GetMobTable(e))
+                    replacement = CombatSystem::FindVictim(e, table->wAggressiveSight);
+            }
+        }
+
+        if (replacement != entt::null && g_registry.valid(replacement)) {
+            CombatSystem::SetVictim(e, replacement);
+            AIHelpers::SetStateDuration(e, PASSES_PER_SEC(1));
+            return;
+        }
+
+        CombatSystem::SetVictim(e, entt::null);
+        if (guard) {
+            // Return walks back to the last attacked position, which is still
+            // CMobInstance state.
+            if (LPCHARACTER ch = ecs::LegacyCharOf(e))
+                ch->Return();
+        } else {
+            ecs::PlayerRuntime::SetPosition(e, POS_STANDING);
+        }
+        AIHelpers::SetStateDuration(e, PASSES_PER_SEC(1));
+        return;
+    }
+
+    const int32_t x = ecs::PlayerRuntime::GetX(e);
+    const int32_t y = ecs::PlayerRuntime::GetY(e);
+    const entt::entity protege = CombatSystem::GetProtege(e);
+    const float distance = static_cast<float>(DISTANCE_APPROX(
+        x - ecs::PlayerRuntime::GetX(victim),
+        y - ecs::PlayerRuntime::GetY(victim)));
+
+    if (distance >= 4000.0f) {
+        CombatSystem::SetVictim(e, entt::null);
+        const bool farFromProtege = protege != entt::null &&
+            DISTANCE_APPROX(x - ecs::PlayerRuntime::GetX(protege),
+                            y - ecs::PlayerRuntime::GetY(protege)) > 1000;
+        if (farFromProtege) {
+            if (LPCHARACTER ch = ecs::LegacyCharOf(e))
+                ch->Follow(protege, number(150, 400));
+        } else {
+            ecs::PlayerRuntime::SetPosition(e, POS_STANDING);
+        }
+        return;
+    }
+
+    if (distance >= CombatSystem::GetMobAttackRange(e) * 1.15f) {
+        if (GotoNearTarget(e, victim))
+            AIHelpers::SetStateDuration(e, 1);
+        return;
+    }
+
+    if (LPPARTY party = ecs::SocialSystem::GetParty(e))
+        party->SendMessage(e, PM_ATTACKED_BY, 0, 0);
+
+    const uint32_t curTime = get_dword_time();
+    const uint32_t duration = CalculateDuration(
+        ecs::PointSystem::GetLimitPoint(e, POINT_ATT_SPEED), 2000);
+    const uint32_t sinceLastAttack = curTime - CombatSystem::GetLastAttackTime(e);
+    if (sinceLastAttack < duration) {
+        AIHelpers::SetStateDuration(e,
+            MAX(1, (passes_per_sec * (duration - sinceLastAttack) / 1000)));
+        return;
+    }
+
+    // The berserk and godspeed switches are CMobInstance state; the thresholds
+    // they compare against come off the table, which the entity exposes.
+    if (const TMobTable* table = ecs::PlayerRuntime::GetMobTable(e)) {
+        const bool wantsBerserk = CombatSystem::IsBerserker(e) &&
+            ecs::PlayerRuntime::GetHPPct(e) < table->bBerserkPoint;
+        const bool wantsGodSpeed = CombatSystem::IsGodSpeeder(e) &&
+            ecs::PlayerRuntime::GetHPPct(e) < table->bGodSpeedPoint;
+        if (wantsBerserk || wantsGodSpeed) {
+            if (LPCHARACTER ch = ecs::LegacyCharOf(e)) {
+                if (wantsBerserk && !ch->IsBerserk())
+                    ch->SetBerserk(true);
+                if (wantsGodSpeed && !ch->IsGodSpeed())
+                    ch->SetGodSpeed(true);
+            }
+        }
+    }
+
+    if (SkillSystem::HasMobSkill(e)) {
+        for (unsigned int skillIdx = 0; skillIdx < MOB_SKILL_MAX_NUM; ++skillIdx) {
+            if (!SkillSystem::CanUseMobSkill(e, skillIdx))
+                continue;
+
+            ecs::MovementSystem::SetRotationToXY(e,
+                ecs::PlayerRuntime::GetX(victim), ecs::PlayerRuntime::GetY(victim));
+
+            // UseMobSkill is 98 lines of legacy with its own directive arms and
+            // is a migration unit of its own.
+            LPCHARACTER ch = ecs::LegacyCharOf(e);
+            if (!ch || !ch->UseMobSkill(skillIdx))
+                continue;
+
+            ecs::MovementSystem::SendMovePacket(e, FUNC_MOB_SKILL, skillIdx,
+                ecs::PlayerRuntime::GetX(e), ecs::PlayerRuntime::GetY(e), 0, curTime);
+
+            const float motionDuration = CMotionManager::instance().GetMotionDuration(
+                ecs::PlayerRuntime::GetRaceNum(e),
+                MAKE_MOTION_KEY(MOTION_MODE_GENERAL, MOTION_SPECIAL_1 + skillIdx));
+            AIHelpers::SetStateDuration(e, static_cast<uint32_t>(
+                motionDuration == 0.0f ? PASSES_PER_SEC(2) : PASSES_PER_SEC(motionDuration)));
+            return;
+        }
+    }
+
+    {
+        const int32_t vnum = ecs::PlayerRuntime::GetRaceNum(e);
+#ifdef ENABLE_MELEY_LAIR
+        if (vnum == 6193)
+            return;
+#endif
+#ifdef ENABLE_ANCIENT_PYRAMID
+        if (vnum == PYRAMID_BOSSVNUM)
+            return;
+#endif
+#ifdef __DEFENSE_WAVE__
+        if (vnum >= 3960 && vnum <= 3962)
+            return;
+#endif
+    }
+
+    if (!CombatSystem::Attack(e, victim, 0)) {
+        AIHelpers::SetStateDuration(e, passes_per_sec / 2);
+        return;
+    }
+
+    ecs::MovementSystem::SetRotationToXY(e,
+        ecs::PlayerRuntime::GetX(victim), ecs::PlayerRuntime::GetY(victim));
+    ecs::MovementSystem::SendMovePacket(e, FUNC_ATTACK, 0,
+        ecs::PlayerRuntime::GetX(e), ecs::PlayerRuntime::GetY(e), 0, curTime);
+
+    const float motionDuration = CMotionManager::instance().GetMotionDuration(
+        ecs::PlayerRuntime::GetRaceNum(e),
+        MAKE_MOTION_KEY(MOTION_MODE_GENERAL, MOTION_NORMAL_ATTACK));
+    AIHelpers::SetStateDuration(e, static_cast<uint32_t>(
+        motionDuration == 0.0f ? PASSES_PER_SEC(2) : PASSES_PER_SEC(motionDuration)));
+}
 
 void StateIdle(entt::entity e)
 {

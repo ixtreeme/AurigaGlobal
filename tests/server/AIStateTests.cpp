@@ -18,8 +18,14 @@
 #include "../../SRC/Server/GameServer/ecs/systems/CombatSystem.hpp"
 #include "../../SRC/Server/GameServer/ecs/systems/MovementSystem.hpp"
 #include "../../SRC/Server/GameServer/ecs/systems/PlayerRuntimeSystem.hpp"
+#include "../../SRC/Server/GameServer/ecs/systems/PointSystem.hpp"
+#include "../../SRC/Server/GameServer/ecs/systems/SkillSystem.hpp"
+#include "../../SRC/Server/GameServer/ecs/systems/SocialSystem.hpp"
+#include "../../SRC/Server/GameServer/motion.h"
+#include "../../SRC/Server/GameServer/party.h"
 
 #include <functional>
+#include <memory>
 #include <iostream>
 #include <stdexcept>
 #include <string>
@@ -47,6 +53,8 @@ struct Recorder {
     std::vector<entt::entity> dead;
     int searchCalls { 0 };
     std::vector<entt::entity> fightsBegun;
+    std::vector<entt::entity> attacked;
+    std::function<void(entt::entity)> onAttack;
     // Fires inside Goto, standing in for a packet callback that retires the
     // entity while the state body is still running.
     std::function<void(entt::entity)> onGoto;
@@ -90,6 +98,10 @@ const TMobTable* GetMobTable(entt::entity)
     return &table;
 }
 void MonsterLog(entt::entity, const char*) {}
+std::string_view GetName(entt::entity) { return "test-mob"; }
+int GetHPPct(entt::entity) { return 100; }
+uint32_t GetRaceNum(entt::entity) { return 101; }
+void SetPosition(entt::entity, int) {}
 bool IsGuardNPC(entt::entity) { return false; }
 } // namespace ecs::PlayerRuntime
 
@@ -127,6 +139,15 @@ void CowardEscape(entt::entity) {}
 bool IsBerserker(entt::entity) { return false; }
 bool IsDeathBlow(entt::entity) { return false; }
 uint16_t GetMobAttackRange(entt::entity) { return 100; }
+uint8_t GetMobBattleType(entt::entity) { return 0; }
+uint32_t GetLastAttackTime(entt::entity) { return 0; }
+bool Attack(entt::entity attacker, entt::entity victim, uint8_t)
+{
+    g_rec.attacked.push_back(victim);
+    if (g_rec.onAttack)
+        g_rec.onAttack(attacker);
+    return true;
+}
 bool IsGodSpeeder(entt::entity) { return false; }
 } // namespace CombatSystem
 
@@ -140,11 +161,26 @@ bool Goto(entt::entity e, int32_t, int32_t)
     return true;
 }
 void SetNowWalking(entt::entity, bool) {}
+void SetRotationToXY(entt::entity, int32_t, int32_t) {}
 void SetRotation(entt::entity, float, bool) {}
 void SendMovePacket(entt::entity, uint8_t, uint8_t, uint32_t, uint32_t,
     uint32_t, uint32_t, float) {}
 } // namespace ecs::MovementSystem
 
+
+namespace SkillSystem {
+bool HasMobSkill(entt::entity) { return false; }
+bool CanUseMobSkill(entt::entity, unsigned int) { return false; }
+} // namespace SkillSystem
+
+namespace ecs::SocialSystem {
+CParty* GetParty(entt::entity) { return nullptr; }
+entt::entity GetPartyLeader(entt::entity) { return entt::null; }
+} // namespace ecs::SocialSystem
+
+namespace ecs::PointSystem {
+int GetLimitPoint(entt::entity, uint8_t) { return 100; }
+} // namespace ecs::PointSystem
 
 // --- globals and free functions the pump touches ----------------------------
 
@@ -177,6 +213,21 @@ bool CHARACTER::IsStoneSkinner() const { return false; }
 void CHARACTER::SetBerserk(bool) {}
 void CHARACTER::SetGodSpeed(bool) {}
 bool CHARACTER::Follow(entt::entity, float) { return false; }
+bool CHARACTER::Return() { return false; }
+bool CHARACTER::UseMobSkill(unsigned int) { return false; }
+float CMotionManager::GetMotionDuration(uint32_t, uint32_t) { return 0.0f; }
+void CParty::SendMessage(entt::entity, uint8_t, uint32_t, uint32_t) {}
+int CalculateDuration(int, int) { return 0; }
+int MAX(int a, int b) { return a > b ? a : b; }
+
+namespace logging {
+std::shared_ptr<spdlog::logger> GetErrorLogger()
+{
+    static auto logger = std::make_shared<spdlog::logger>("test-null");
+    return logger;
+}
+} // namespace logging
+uint32_t get_dword_time() { return 1000; }
 
 // --- the cases --------------------------------------------------------------
 
@@ -307,6 +358,54 @@ void SearchResultThatWentBadIsNotEngaged()
     }
 }
 
+// Battle runs against a stored victim handle, which can go bad between ticks
+// exactly as the idle one can.
+void BattleDoesNotSwingAtAGoneVictim()
+{
+    struct Case { const char* name; bool destroy; bool recycle; };
+    const Case cases[] = {
+        { "battle does not attack a destroyed victim", true, false },
+        { "battle does not attack through a recycled slot", true, true },
+    };
+
+    for (const Case& c : cases) {
+        Reset();
+        const entt::entity mob = MakeMonster();
+        entt::entity victim = g_registry.create();
+        g_registry.emplace<ecs::Position>(victim, ecs::Position { 1000, 1000 });
+        if (c.destroy)
+            g_registry.destroy(victim);
+        if (c.recycle) {
+            const entt::entity reused = g_registry.create();
+            Check(entt::to_entity(reused) == entt::to_entity(victim), "the slot was reused");
+        }
+        g_rec.victim = victim;
+
+        AISystem::StateBattle(mob);
+
+        Check(g_rec.attacked.empty(), c.name);
+    }
+}
+
+// The entity can be retired by a callback while battle is still running.
+void BattleSurvivesDestructionInsideAttack()
+{
+    Reset();
+    const entt::entity mob = MakeMonster();
+    const entt::entity victim = g_registry.create();
+    g_registry.emplace<ecs::Position>(victim, ecs::Position { 1000, 1000 });
+    g_rec.victim = victim;
+    g_rec.onAttack = [](entt::entity e) {
+        if (g_registry.valid(e))
+            g_registry.destroy(e);
+    };
+
+    AISystem::StateBattle(mob);
+
+    Check(!g_rec.attacked.empty(), "the attack path was reached");
+    Check(!g_registry.valid(mob), "the callback did retire the entity");
+}
+
 } // namespace
 
 int main()
@@ -317,12 +416,14 @@ int main()
         RecycledHandleIsNotTheNewEntity();
         EntityDestroyedInsideCallback();
         SearchResultThatWentBadIsNotEngaged();
+        BattleDoesNotSwingAtAGoneVictim();
+        BattleSurvivesDestructionInsideAttack();
     } catch (const std::exception& e) {
         std::cerr << "FAIL: threw: " << e.what() << std::endl;
         ++g_failures;
     }
 
     if (g_failures == 0)
-        std::cout << "AI idle state: all cases passed" << std::endl;
+        std::cout << "AI idle and battle states: all cases passed" << std::endl;
     return g_failures == 0 ? 0 : 1;
 }

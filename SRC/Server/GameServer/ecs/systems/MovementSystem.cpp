@@ -706,12 +706,14 @@ void SetRotation(entt::entity e, float fRot)
 } // namespace ecs::MovementSystem
 
 // x, y 1a��A��?o��?1��U.
-void CHARACTER::SetRotationToXY(int32_t x, int32_t y)
-{
-	SetRotation(GetDegreeFromPositionXY(GetX(), GetY(), x, y));
-}
 
 namespace ecs::MovementSystem {
+void SetRotationToXY(entt::entity e, int32_t x, int32_t y)
+{
+    SetRotation(e, GetDegreeFromPositionXY(
+        ecs::PlayerRuntime::GetX(e), ecs::PlayerRuntime::GetY(e), x, y));
+}
+
 // CHARACTER::CanMove was two reads and nothing else. Both have component
 // accessors, so the body moves here whole rather than being wrapped.
 bool CanMove(entt::entity e)
@@ -755,7 +757,7 @@ bool CHARACTER::Sync(int32_t x, int32_t y)
 		return false;
 	}
 
-	SetRotationToXY(x, y);
+	ecs::MovementSystem::SetRotationToXY(GetEntityHandle(), x, y);
 	// Phase C.1: legacy m_pos write removed - SyncPositionComponents below
 	// emplaces ECS Position as the sole source of truth.
 	ecs::SyncPositionComponents(g_registry, GetEntityHandle(), GetMapIndex(), x, y, GetZ());

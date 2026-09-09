@@ -390,7 +390,7 @@ void CHARACTER::SetMaxSP(int64_t) { UnexpectedService(__func__); }
 int64_t CHARACTER::GetMaxSP(void)const { UnexpectedService(__func__); }
 void CHARACTER::SetPoint(unsigned char,int64_t) { UnexpectedService(__func__); }
 int64_t CHARACTER::GetPoint(unsigned char)const { UnexpectedService(__func__); }
-int CHARACTER::GetLimitPoint(unsigned char)const { UnexpectedService(__func__); }
+int ecs::PointSystem::GetLimitPoint(entt::entity, unsigned char) { UnexpectedService(__func__); }
 SMobTable const & CHARACTER::GetMobTable(void)const { UnexpectedService(__func__); }
 unsigned char CHARACTER::GetMobRank(void)const { UnexpectedService(__func__); }
 unsigned char CHARACTER::GetMobBattleType(void)const { UnexpectedService(__func__); }
@@ -399,7 +399,7 @@ bool CHARACTER::HasReviverInParty(void)const { UnexpectedService(__func__); }
 unsigned int CHARACTER::GetMonsterDrainSPPoint(void)const { UnexpectedService(__func__); }
 void CHARACTER::PointChange(unsigned char,int64_t,bool,bool,bool) { UnexpectedService(__func__); }
 void CHARACTER::SetRotation(float,bool) { UnexpectedService(__func__); }
-void CHARACTER::SetRotationToXY(int,int) { UnexpectedService(__func__); }
+void ecs::MovementSystem::SetRotationToXY(entt::entity, int, int) { UnexpectedService(__func__); }
 float CHARACTER::GetRotation(void)const { UnexpectedService(__func__); }
 int CHARACTER::SetInvincible(bool) { UnexpectedService(__func__); }
 bool CHARACTER::GetInvincible(void) { UnexpectedService(__func__); }

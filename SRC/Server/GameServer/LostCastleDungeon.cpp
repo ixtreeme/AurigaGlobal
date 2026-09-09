@@ -319,7 +319,7 @@ namespace
             return 700;
 
         // ATT_SPEED is typically 0..200
-        const int as = ch->GetLimitPoint(POINT_ATT_SPEED);
+        const int as = ecs::PointSystem::GetLimitPoint(ch->GetEntityHandle(), POINT_ATT_SPEED);
         int interval = 900 - as * 3;
         if (interval < 350) interval = 350;
         if (interval > 900) interval = 900;
@@ -373,7 +373,7 @@ namespace
 
         clone->StartStateMachine(1);
         clone->SetNowWalking(false);
-        clone->SetRotationToXY(tx, ty);
+        ecs::MovementSystem::SetRotationToXY(clone->GetEntityHandle(), tx, ty);
         ecs::MovementSystem::Goto(cloneEntity, tx, ty);
 
         // server-controlled chars need explicit MOVE packets
@@ -387,7 +387,8 @@ namespace
         if (!clone || !target)
             return;
 
-        clone->SetRotationToXY(ecs::PlayerRuntime::GetX(targetEntity), ecs::PlayerRuntime::GetY(targetEntity));
+        ecs::MovementSystem::SetRotationToXY(clone->GetEntityHandle(),
+            ecs::PlayerRuntime::GetX(targetEntity), ecs::PlayerRuntime::GetY(targetEntity));
         ecs::MovementSystem::Stop(cloneEntity);
 
         // PC swing is broadcast as FUNC_COMBO with motion index (13..21)
@@ -402,7 +403,8 @@ namespace
         if (!clone || !target)
             return;
 
-        clone->SetRotationToXY(ecs::PlayerRuntime::GetX(targetEntity), ecs::PlayerRuntime::GetY(targetEntity));
+        ecs::MovementSystem::SetRotationToXY(clone->GetEntityHandle(),
+            ecs::PlayerRuntime::GetX(targetEntity), ecs::PlayerRuntime::GetY(targetEntity));
         ecs::MovementSystem::Stop(cloneEntity);
 
         // Skills are broadcast as FUNC_SKILL|skillVnum (see input_main.cpp)

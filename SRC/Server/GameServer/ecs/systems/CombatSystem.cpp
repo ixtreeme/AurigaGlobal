@@ -5378,7 +5378,7 @@ bool CHARACTER::Damage(entt::entity attacker, int64_t dam, EDamageType type) // 
 		//
 		if (ecs::PointSystem::Get(attacker, POINT_MALL_ATTBONUS) > 0)
 		{
-			int64_t add_dam = std::min((int64_t)300, dam * pkAttacker->GetLimitPoint(POINT_MALL_ATTBONUS) / 100);
+			int64_t add_dam = std::min((int64_t)300, dam * ecs::PointSystem::GetLimitPoint(pkAttacker->GetEntityHandle(), POINT_MALL_ATTBONUS) / 100);
 			dam += add_dam;
 		}
 
@@ -7777,7 +7777,7 @@ bool CHARACTER::Return()
 	x = m_pkMobInst->m_posLastAttacked.x;
 	y = m_pkMobInst->m_posLastAttacked.y;
 
-	SetRotationToXY(x, y);
+	ecs::MovementSystem::SetRotationToXY(GetEntityHandle(), x, y);
 
 	if (!ecs::MovementSystem::Goto(GetEntityHandle(), x, y))
 		return false;
@@ -7888,7 +7888,7 @@ bool CHARACTER::Follow(entt::entity chr, float fMinDistance)
 		}
 	}
 
-	SetRotationToXY(x, y);
+	ecs::MovementSystem::SetRotationToXY(GetEntityHandle(), x, y);
 
 	float fDist = DISTANCE_SQRT(x - GetX(), y - GetY());
 

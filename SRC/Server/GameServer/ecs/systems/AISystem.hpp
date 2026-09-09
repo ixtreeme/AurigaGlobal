@@ -15,8 +15,9 @@ namespace AISystem {
 void GotoState(entt::entity e, ecs::AIFSMState state);
 void UpdateStateMachine(entt::entity e);
 
-// The idle state body. Battle is still a CHARACTER method.
+// The two state bodies. Neither is a CHARACTER method any more.
 void StateIdle(entt::entity e);
+void StateBattle(entt::entity e);
 
 } // namespace AISystem
 

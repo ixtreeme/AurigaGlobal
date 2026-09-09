@@ -28,6 +28,7 @@ bool CanIncreaseSkill(entt::entity e, uint32_t skillId, bool book = false);
 bool IsLearnableSkill(entt::entity e, uint32_t skillId);
 bool LearnGrandMasterSkill(entt::entity e, uint32_t skillId);
 bool LearnSkillByBook(entt::entity e, uint32_t skillId, uint8_t prob = 0);
+bool HasMobSkill(entt::entity e);
 bool CanUseMobSkill(entt::entity e, unsigned int idx);
 bool CanUseSkill(entt::entity e, uint32_t skillId);
 // Runtime skill state belongs to the entity, never to a CHARACTER mirror.

@@ -372,8 +372,7 @@ void CHorseRider::HorseDie() { Unexpected(); }
 void CHorseRider::SetHorseLevel(int) { Unexpected(); }
 bool CHorseRider::StartRiding() { Unexpected(); }
 bool CHorseRider::StopRiding() { Unexpected(); }
-void CHARACTER::BeginStateEmpty() { Unexpected(); }
-void CHARACTER::StateBattle() { Unexpected(); }
+void AISystem::StateBattle(entt::entity) { Unexpected(); }
 void AISystem::StateIdle(entt::entity) { Unexpected(); }
 void CHARACTER::SetHorseLevel(int) { Unexpected(); }
 bool CHARACTER::StartRiding() { Unexpected(); }

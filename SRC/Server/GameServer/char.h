@@ -632,7 +632,6 @@ public:
 
 	void				SetAttackMob();
 
-	virtual void			BeginStateEmpty();
 	virtual void			EndStateEmpty() {}
 
 	void				RestartAtSamePos();
@@ -776,7 +775,6 @@ public:
 
 	int64_t			GetPoint(uint8_t idx) const;
 
-	int				GetLimitPoint(uint8_t idx) const;
 
 	const TMobTable& GetMobTable() const;
 	uint8_t				GetMobRank() const;
@@ -827,7 +825,6 @@ public:
 #else
 	void			SetRotation(float fRot);
 #endif
-	void			SetRotationToXY(int32_t x, int32_t y);
 	float			GetRotation() const;
 
 
@@ -1677,8 +1674,6 @@ private:
 #endif
 	// MOB_SKILL
 public:
-	bool				HasMobSkill() const;
-	size_t				CountMobSkill() const;
 	const TMobSkillInfo* GetMobSkill(unsigned int idx) const;
 	bool				CanUseMobSkill(unsigned int idx) const;
 	bool				UseMobSkill(unsigned int idx);
@@ -1741,7 +1736,6 @@ public:
 	void			AssignTriggers(const TMobTable* table);
 	LPCHARACTER		GetVictim() const;	// ������ ��� ����
 	void			SetVictim(entt::entity victim);
-	virtual void			StateBattle();
 
 protected:
 

@@ -242,7 +242,7 @@ uint32_t CHARACTER::GetPacketVID() const { Unexpected(); }
 void CHARACTER::DistributeSP(entt::entity, int) { Unexpected(); }
 int64_t CHARACTER::GetHP() const { Unexpected(); }
 int CHARACTER::GetStamina() const { Unexpected(); }
-int CHARACTER::GetLimitPoint(uint8_t) const { Unexpected(); }
+int ecs::PointSystem::GetLimitPoint(entt::entity, uint8_t) { Unexpected(); }
 const TMobTable& CHARACTER::GetMobTable() const { Unexpected(); }
 void CHARACTER::PointChange(uint8_t, int64_t, bool, bool, bool) { Unexpected(); }
 bool CHARACTER::Show(int32_t, int32_t, int32_t, int32_t, bool) { Unexpected(); }

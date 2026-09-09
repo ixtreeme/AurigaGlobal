@@ -352,6 +352,19 @@ bool LearnSkillByBook(entt::entity e, uint32_t skillId, uint8_t prob)
     return ch ? ch->LearnSkillByBook(skillId, prob) : false;
 }
 
+// Mob skills are a property of the prototype, so this needs the table and
+// nothing else - the old pair walked m_pkMobData through the character.
+bool HasMobSkill(entt::entity e)
+{
+    const TMobTable* table = ecs::PlayerRuntime::GetMobTable(e);
+    if (!table)
+        return false;
+    for (size_t i = 0; i < MOB_SKILL_MAX_NUM; ++i)
+        if (table->Skills[i].dwVnum)
+            return true;
+    return false;
+}
+
 bool CanUseMobSkill(entt::entity e, unsigned int idx)
 {
     auto* ch = LegacyCharOf(e);
@@ -2062,7 +2075,7 @@ struct FuncSplashDamage
 		}
 
 		if (m_pkSk->bPointOn == POINT_MOV_SPEED)
-			m_pkSk->kPointPoly.SetVar("maxv", pkChrVictim->GetLimitPoint(POINT_MOV_SPEED));
+			m_pkSk->kPointPoly.SetVar("maxv", ecs::PointSystem::GetLimitPoint(pkChrVictim->GetEntityHandle(), POINT_MOV_SPEED));
 
 		m_pkSk->SetPointVar("maxhp", ecs::PointSystem::GetMaxHP(victimEntity));
 		m_pkSk->SetPointVar("maxsp", ecs::PointSystem::GetMaxSP(victimEntity));
@@ -2862,7 +2875,7 @@ int CHARACTER::ComputeSkillAtPosition(uint32_t dwVnum, const PIXEL_POSITION& pos
 
 	if (pkSk->bPointOn == POINT_MOV_SPEED)
 	{
-		pkSk->SetPointVar("maxv", this->GetLimitPoint(POINT_MOV_SPEED));
+		pkSk->SetPointVar("maxv", ecs::PointSystem::GetLimitPoint(this->GetEntityHandle(), POINT_MOV_SPEED));
 	}
 
 	pkSk->SetPointVar("lv", GetLevel());
@@ -3331,7 +3344,7 @@ int CHARACTER::ComputeSkill(uint32_t dwVnum, entt::entity victim, uint8_t bSkill
 
 	if (pkSk->bPointOn == POINT_MOV_SPEED)
 	{
-		pkSk->SetPointVar("maxv", pkVictim->GetLimitPoint(POINT_MOV_SPEED));
+		pkSk->SetPointVar("maxv", ecs::PointSystem::GetLimitPoint(pkVictim->GetEntityHandle(), POINT_MOV_SPEED));
 	}
 
 	pkSk->SetPointVar("lv", GetLevel());
@@ -4137,25 +4150,6 @@ void CHARACTER::SkillLearnWaitMoreTimeMessage(uint32_t ms)
 		ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 435, "");
 	}
 #endif
-}
-
-bool CHARACTER::HasMobSkill() const
-{
-	return CountMobSkill() > 0;
-}
-
-size_t CHARACTER::CountMobSkill() const
-{
-	if (!m_pkMobData)
-		return 0;
-
-	size_t c = 0;
-
-	for (size_t i = 0; i < MOB_SKILL_MAX_NUM; ++i)
-		if (m_pkMobData->m_table.Skills[i].dwVnum)
-			++c;
-
-	return c;
 }
 
 const TMobSkillInfo* CHARACTER::GetMobSkill(unsigned int idx) const

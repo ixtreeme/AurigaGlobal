@@ -601,7 +601,7 @@ namespace quest
 #ifdef ENABLE_MELEY_LAIR
 		if (vnum == 6118)
 		{
-			ch->SetRotationToXY(320200, 1518100);
+			ecs::MovementSystem::SetRotationToXY(ch->GetEntityHandle(), 320200, 1518100);
 		}
 #endif
 
@@ -1773,10 +1773,10 @@ namespace quest
 			return 0;
 		}
 
-		statue1->SetRotationToXY(320200, 1518100);
-		statue2->SetRotationToXY(320200, 1518100);
-		statue3->SetRotationToXY(320200, 1518100);
-		statue4->SetRotationToXY(320200, 1518100);
+		ecs::MovementSystem::SetRotationToXY(statue1->GetEntityHandle(), 320200, 1518100);
+		ecs::MovementSystem::SetRotationToXY(statue2->GetEntityHandle(), 320200, 1518100);
+		ecs::MovementSystem::SetRotationToXY(statue3->GetEntityHandle(), 320200, 1518100);
+		ecs::MovementSystem::SetRotationToXY(statue4->GetEntityHandle(), 320200, 1518100);
 
 		int32_t time = get_dword_time();
 

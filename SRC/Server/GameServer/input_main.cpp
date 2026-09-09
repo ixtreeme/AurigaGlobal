@@ -2132,7 +2132,7 @@ void CInputMain::Move(entt::entity character, const char * data)
 	// DUAL-PATH: ECS + legacy call
 	if (pinfo->bFunc == FUNC_MOVE)
 	{
-		if (ch->GetLimitPoint(POINT_MOV_SPEED) == 0)
+		if (ecs::PointSystem::GetLimitPoint(ch->GetEntityHandle(), POINT_MOV_SPEED) == 0)
 			return;
 
 		ecs::MovementSystem::SetRotation(character, pinfo->bRot * 5.0f);

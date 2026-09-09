@@ -87,8 +87,8 @@ void CheckCharacterInsertParity(entt::registry& reg, entt::entity source)
     if (nativePack.wRaceNum != ch->GetRaceNum())
         LOG_WARN("[INSERT_PARITY] wRaceNum entity={} native={} legacy={}", entityIdx, nativePack.wRaceNum, ch->GetRaceNum());
 
-    if (nativePack.bAttackSpeed != ch->GetLimitPoint(POINT_ATT_SPEED))
-        LOG_WARN("[INSERT_PARITY] bAttackSpeed entity={} native={} legacy={}", entityIdx, nativePack.bAttackSpeed, ch->GetLimitPoint(POINT_ATT_SPEED));
+    if (nativePack.bAttackSpeed != ecs::PointSystem::GetLimitPoint(ch->GetEntityHandle(), POINT_ATT_SPEED))
+        LOG_WARN("[INSERT_PARITY] bAttackSpeed entity={} native={} legacy={}", entityIdx, nativePack.bAttackSpeed, ecs::PointSystem::GetLimitPoint(ch->GetEntityHandle(), POINT_ATT_SPEED));
 
     if (nativePack.bStateFlag != ch->GetAddChrStateFlag())
         LOG_WARN("[INSERT_PARITY] bStateFlag entity={} native={} legacy={}", entityIdx,
@@ -143,15 +143,15 @@ void CheckCharacterInsertParity(entt::registry& reg, entt::entity source)
         {
 #ifdef ENABLE_MOUNT_COSTUME_SYSTEM
             legacySpeed = ch->IsMount()
-                ? static_cast<uint16_t>(ch->GetLimitPoint(POINT_MOV_SPEED))
-                : static_cast<uint16_t>(ch->IsPC() ? ch->GetLimitPoint(POINT_MOV_SPEED) : 150);
+                ? static_cast<uint16_t>(ecs::PointSystem::GetLimitPoint(ch->GetEntityHandle(), POINT_MOV_SPEED))
+                : static_cast<uint16_t>(ch->IsPC() ? ecs::PointSystem::GetLimitPoint(ch->GetEntityHandle(), POINT_MOV_SPEED) : 150);
 #else
             legacySpeed = 150;
 #endif
         }
         else
         {
-            legacySpeed = static_cast<uint16_t>(ch->GetLimitPoint(POINT_MOV_SPEED));
+            legacySpeed = static_cast<uint16_t>(ecs::PointSystem::GetLimitPoint(ch->GetEntityHandle(), POINT_MOV_SPEED));
         }
 
         if (nativePack.bMovingSpeed != legacySpeed)

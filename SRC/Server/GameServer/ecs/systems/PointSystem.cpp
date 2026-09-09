@@ -570,59 +570,7 @@ int64_t CHARACTER::GetPoint(uint8_t type) const
 	return (val);
 }
 
-int CHARACTER::GetLimitPoint(uint8_t type) const
-{
-	if (type >= POINT_MAX_NUM)
-	{
-		LOG_ERROR("Point type overflow (type {})", type);
-		return 0;
-	}
 
-	int64_t val = ecs::PointSystem::ReadInstantArray(GetEntityHandle(), type);
-	int max_val = INT_MAX;
-	int limit = INT_MAX;
-	int min_limit = -INT_MAX;
-
-	switch (type)
-	{
-	case POINT_ATT_SPEED:
-		min_limit = 0;
-
-		if (IsPC())
-			limit = 170;
-		else
-			limit = 250;
-		break;
-
-	case POINT_MOV_SPEED:
-		min_limit = 0;
-		limit = 350;
-		break;
-
-	case POINT_STEAL_HP:
-	case POINT_STEAL_SP:
-		limit = 50;
-		max_val = 50;
-		break;
-
-	case POINT_MALL_ATTBONUS:
-	case POINT_MALL_DEFBONUS:
-		limit = 20;
-		max_val = 50;
-		break;
-	}
-
-	if (val > max_val)
-		LOG_ERROR("POINT_ERROR: {} type {} val {} (max: {})", GetName(), type, val, max_val);
-
-	if (val > limit)
-		val = limit;
-
-	if (val < min_limit)
-		val = min_limit;
-
-	return (val);
-}
 
 void CHARACTER::SetPoint(uint8_t type, int64_t val)
 {
@@ -1912,5 +1860,62 @@ void ApplyPoint(entt::entity e, uint8_t bApplyType, int iVal)
 	}
 	}
 }
+
+// Lifted whole off CHARACTER: it already read the instant array through
+// the entity, so only the receiver had to change.
+int GetLimitPoint(entt::entity e, uint8_t type)
+{
+	if (type >= POINT_MAX_NUM)
+	{
+		LOG_ERROR("Point type overflow (type {})", type);
+		return 0;
+	}
+
+	int64_t val = ecs::PointSystem::ReadInstantArray(e, type);
+	int max_val = INT_MAX;
+	int limit = INT_MAX;
+	int min_limit = -INT_MAX;
+
+	switch (type)
+	{
+	case POINT_ATT_SPEED:
+		min_limit = 0;
+
+		if (ecs::PlayerRuntime::IsPC(e))
+			limit = 170;
+		else
+			limit = 250;
+		break;
+
+	case POINT_MOV_SPEED:
+		min_limit = 0;
+		limit = 350;
+		break;
+
+	case POINT_STEAL_HP:
+	case POINT_STEAL_SP:
+		limit = 50;
+		max_val = 50;
+		break;
+
+	case POINT_MALL_ATTBONUS:
+	case POINT_MALL_DEFBONUS:
+		limit = 20;
+		max_val = 50;
+		break;
+	}
+
+	if (val > max_val)
+		LOG_ERROR("POINT_ERROR: {} type {} val {} (max: {})", ecs::PlayerRuntime::GetName(e), type, val, max_val);
+
+	if (val > limit)
+		val = limit;
+
+	if (val < min_limit)
+		val = min_limit;
+
+	return (val);
+}
+
 
 } // namespace ecs::PointSystem

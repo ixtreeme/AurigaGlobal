@@ -930,7 +930,7 @@ void CParty::SendMessage(entt::entity character, uint8_t bMsg, uint32_t dwArg1, 
 						uint32_t y = dwArg2 + number(-500, 500);
 
 						pkChr->SetVictim(entt::null);
-						pkChr->SetRotationToXY(x, y);
+						ecs::MovementSystem::SetRotationToXY(pkChr->GetEntityHandle(), x, y);
 
 						if (ecs::MovementSystem::Goto(((pkChr) ? (pkChr)->GetEntityHandle() : entt::null), x, y))
 						{

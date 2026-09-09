@@ -4412,11 +4412,6 @@ void CHARACTER::SendGreetMessage()
     }
 }
 
-void CHARACTER::BeginStateEmpty()
-{
-    MonsterLog("!");
-}
-
 void CHARACTER::MountVnum(uint32_t vnum)
 {
     if (m_dwMountVnum == vnum)

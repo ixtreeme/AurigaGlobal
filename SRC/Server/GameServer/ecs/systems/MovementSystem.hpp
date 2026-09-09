@@ -26,6 +26,7 @@ void SaveExitLocation(entt::entity e);
 void ExitToSavedLocation(entt::entity e);
 bool Move(entt::entity e, int32_t x, int32_t y);
 void OnMove(entt::entity e, bool isAttack = false);
+void SetRotationToXY(entt::entity e, int32_t x, int32_t y);
 bool CanMove(entt::entity e);
 bool Goto(entt::entity e, int32_t x, int32_t y);
 void Stop(entt::entity e);

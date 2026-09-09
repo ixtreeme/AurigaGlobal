@@ -903,7 +903,8 @@ void CHARACTER::SetHP(int64_t) { Unexpected(); }
 int64_t CHARACTER::GetMaxHP(void)const { Unexpected(); }
 int64_t CHARACTER::GetMaxSP(void)const { Unexpected(); }
 int64_t CHARACTER::GetPoint(unsigned char)const { Unexpected(); }
-int CHARACTER::GetLimitPoint(unsigned char)const { Unexpected(); }
+int ecs::PointSystem::GetLimitPoint(entt::entity, unsigned char) { Unexpected(); }
+const TMobTable* ecs::PlayerRuntime::GetMobTable(entt::entity) { return nullptr; }
 unsigned int CHARACTER::GetMobDamageMin(void)const { Unexpected(); }
 unsigned int CHARACTER::GetMobDamageMax(void)const { Unexpected(); }
 void CHARACTER::PointChange(unsigned char,int64_t,bool,bool,bool) { Unexpected(); }
