@@ -1,5 +1,13 @@
 # Server ECS regression tests
 
+## Native movement duration reads
+
+MovementSystem::GetCurrentMoveDuration replaces the CHARACTER getter at all
+three input/LostCastle callsites. It reads stored timing without resolving a
+legacy character or creating components; packet and distance rules are unchanged.
+SpatialLifecycleTests covers missing state, zero/full-width timing, destination-
+independent reads, null/non-character sources and recycled entity generations.
+
 ## Native animation packets
 
 MovementSystem::Motion builds and broadcasts HEADER_GC_MOTION from entity VIDs.

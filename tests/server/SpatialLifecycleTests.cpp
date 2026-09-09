@@ -739,6 +739,30 @@ void NativeAnimationPackets() {
     Check(!g_registry.valid(source) && animationPackets.size() == 5, "retired animation source reused");
 }
 
+void NativeMovementDurationReads() {
+    Reset();
+    const auto e = Entity(ecs::SpatialKind::Character);
+    Check(ecs::MovementSystem::GetCurrentMoveDuration(e) == 0 &&
+        !g_registry.all_of<ecs::MovementState>(e), "duration read created bootstrap state");
+    auto& state = g_registry.emplace<ecs::MovementState>(e);
+    state.moveStartTime = 0; state.moveDuration = 456;
+    Check(ecs::MovementSystem::GetCurrentMoveDuration(e) == 456,
+        "duration read required destination or returned remaining time");
+    state.moveDuration = UINT32_MAX;
+    Check(ecs::MovementSystem::GetCurrentMoveDuration(e) == UINT32_MAX, "duration read truncated stored value");
+    state.moveDuration = 0;
+    Check(ecs::MovementSystem::GetCurrentMoveDuration(e) == 0, "stopped duration read");
+    g_registry.destroy(e);
+    const auto recycled = Entity(ecs::SpatialKind::Character);
+    g_registry.emplace<ecs::MovementState>(recycled).moveDuration = 999;
+    Check(ecs::MovementSystem::GetCurrentMoveDuration(e) == 0 &&
+        ecs::MovementSystem::GetCurrentMoveDuration(recycled) == 999, "duration read crossed entity generation");
+    const auto item = Entity();
+    g_registry.emplace<ecs::MovementState>(item).moveDuration = 999;
+    Check(ecs::MovementSystem::GetCurrentMoveDuration(item) == 0 &&
+        ecs::MovementSystem::GetCurrentMoveDuration(entt::null) == 0, "invalid duration source accepted");
+}
+
 void NativeMovementCommands() {
     Reset(); MapFixture map;
     const auto e = Moving(100, 100, 101, 100);
@@ -996,7 +1020,8 @@ int main() {
         LifetimeAndObservers(); RemovalCallbacksAndTeardown(); PreparationMutationAndIteration();
         NativeMovement(); MovementVisibilityAndBounds(); MovementCallbackLifetime();
         MovementCallbackRetarget(); MovementArrivalAndPackets();
-        NativeAnimationPackets(); NativeMovementCommands(); NativeMotionSelection(); MovementCommandReentry(); NativeAIScheduleStorage();
+        NativeAnimationPackets(); NativeMovementDurationReads(); NativeMovementCommands();
+        NativeMotionSelection(); MovementCommandReentry(); NativeAIScheduleStorage();
         ecs::VisibilitySystem::Shutdown(g_registry);
         std::cout << "Spatial checks passed: " << checks << '\n'; return 0;
     } catch (const std::exception& error) { std::cerr << error.what() << '\n'; return 1; }

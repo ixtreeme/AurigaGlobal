@@ -32,6 +32,8 @@ uint32_t GetMotionMode(entt::entity e);
 float GetMoveMotionSpeed(entt::entity e);
 float GetMoveSpeed(entt::entity e);
 void CalculateMoveDuration(entt::entity e);
+// Stored timing, not elapsed/remaining time; absent or retired characters return 0.
+uint32_t GetCurrentMoveDuration(entt::entity e);
 // Changes walking state/timestamp and broadcasts the walk/run mode.
 void SetNowWalking(entt::entity e, bool walking);
 void SetWalkingPreference(entt::entity e, bool walking);

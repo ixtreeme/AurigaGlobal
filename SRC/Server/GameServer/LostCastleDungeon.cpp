@@ -377,7 +377,7 @@ namespace
         ecs::MovementSystem::Goto(cloneEntity, tx, ty);
 
         // server-controlled chars need explicit MOVE packets
-        ecs::MovementSystem::SendMovePacket(cloneEntity, FUNC_MOVE, 0, tx, ty, clone->GetCurrentMoveDuration(), now);
+        ecs::MovementSystem::SendMovePacket(cloneEntity, FUNC_MOVE, 0, tx, ty, ecs::MovementSystem::GetCurrentMoveDuration(cloneEntity), now);
     }
 
     inline void LostCastleCloneBroadcastMelee(LPCHARACTER clone, LPCHARACTER target, uint8_t motionIndex, uint32_t now)

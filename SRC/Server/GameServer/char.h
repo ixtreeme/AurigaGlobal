@@ -922,13 +922,6 @@ public:
 	bool			Sync(int32_t x, int32_t y);	// ���� �� �޼ҵ�� �̵� �Ѵ� (�� �� ���ǿ� ���� �̵� �Ұ��� ����)
 	bool			Move(int32_t x, int32_t y);	// ������ �˻��ϰ� Sync �޼ҵ带 ���� �̵� �Ѵ�.
 	void			OnMove(bool bIsAttack = false);	// �����϶� �Ҹ���. Move() �޼ҵ� �̿ܿ����� �Ҹ� �� �ִ�.
-	// Phase 15E-final.LPENTITY.4-architect.B.1.2:
-	// GetCurrentMoveDuration / GetCurrentMoveStartTime now read the ECS
-	// MovementState component as the authoritative source. Per A.2 §2
-	// m_dwMoveStartTime / m_dwMoveDuration rows.
-	// Bodies in MovementSystem.cpp; legacy field still written by
-	// CalculateMoveDuration (Phase C will redirect).
-	uint32_t			GetCurrentMoveDuration() const;
 	// Phase 15E-final.LPENTITY.4-architect.B.1.4:
 	// GetCurrentDestX / GetCurrentDestY now read the ECS
 	// MovementDestination component. Per A.2 movement destination row.

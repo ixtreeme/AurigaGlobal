@@ -950,31 +950,16 @@ void Motion(entt::entity e, uint8_t motion, entt::entity victim)
 
 } // namespace ecs::MovementSystem
 
-// Phase 15E-final.LPENTITY.4-architect.B.1.2:
-// CHARACTER::GetCurrentMoveDuration / GetCurrentMoveStartTime now read the
-// ECS MovementState component as the authoritative source.
-//
-// Bootstrap (entity not yet ECS-registered, or MovementState absent):
-// returns 0. Matches legacy bootstrap value from CHARACTER::Initialize
-// (m_dwMoveStartTime / m_dwMoveDuration zero-init).
-//
-// Once the entity has been wired to ECS via AttachLegacyCharacter and the
-// MovementState component emplaced by EntityFactory, the getters return
-// the ECS values. Dual-write contract via the existing SyncTimingWrite
-// helper at MovementSystem::CalculateMoveDuration keeps ECS in lockstep
-// with legacy m_dwMoveStartTime / m_dwMoveDuration writes (Phase 4-fixup.2.a).
-//
-// Phase C will redirect writes; Phase G removes the legacy fields and the
-// audit-only GetMoveStartTimeForAudit accessor.
-uint32_t CHARACTER::GetCurrentMoveDuration() const
+namespace ecs::MovementSystem {
+
+uint32_t GetCurrentMoveDuration(entt::entity e)
 {
-	const entt::entity e = GetEntityHandle();
-	if (e == entt::null || !g_registry.valid(e))
-		return 0;
-	if (const auto* state = g_registry.try_get<ecs::MovementState>(e))
-		return state->moveDuration;
-	return 0;
+    if (!IsValid(e) || !g_registry.all_of<ecs::CharacterType>(e)) return 0;
+    const auto* state = g_registry.try_get<ecs::MovementState>(e);
+    return state ? state->moveDuration : 0;
 }
+
+} // namespace ecs::MovementSystem
 
 // Phase 15E-final.LPENTITY.4-architect.B.1.3:
 // Walk-mode read flip. IsNowWalking returns the pure ECS

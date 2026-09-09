@@ -2051,7 +2051,7 @@ void CInputMain::Move(entt::entity character, const char * data)
 		// pending server destination as well. Without this, legitimate follow-up move
 		// packets get treated as teleports and the server rubberbands the player.
 		if (pinfo->bFunc == FUNC_MOVE &&
-			ch->GetCurrentMoveDuration() > 0 &&
+			ecs::MovementSystem::GetCurrentMoveDuration(character) > 0 &&
 			(ch->GetCurrentDestX() != ecs::PlayerRuntime::GetX(character) || ch->GetCurrentDestY() != ecs::PlayerRuntime::GetY(character)))
 		{
 			const float fDistFromDest = DISTANCE_SQRT((ch->GetCurrentDestX() - pinfo->lX) / 100, (ch->GetCurrentDestY() - pinfo->lY) / 100);
@@ -2177,7 +2177,7 @@ void CInputMain::Move(entt::entity character, const char * data)
 	pack.lX           = pinfo->lX;
 	pack.lY           = pinfo->lY;
 	pack.dwTime       = pinfo->dwTime;
-	pack.dwDuration   = (pinfo->bFunc == FUNC_MOVE) ? ch->GetCurrentMoveDuration() : 0;
+	pack.dwDuration   = (pinfo->bFunc == FUNC_MOVE) ? ecs::MovementSystem::GetCurrentMoveDuration(character) : 0;
 
 	ecs::ViewSystem::PacketView(character, &pack, sizeof(TPacketGCMove), character);
 /*
