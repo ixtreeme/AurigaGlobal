@@ -301,7 +301,6 @@ bool Set(entt::entity e, uint8_t type, int64_t value)
 {
     if (type >= POINT_MAX_NUM || !IsReadableEntity(e)) return false;
     g_registry.get_or_emplace<ecs::CharacterStatsComponent>(e).points[type] = value;
-    g_registry.get_or_emplace<ecs::CharacterPoints>(e).instant.points[type] = value;
     g_registry.emplace_or_replace<ecs::DirtyTag>(e);
     // Motion selection and timing are native, including entity-only characters.
     if (type == POINT_MOV_SPEED) {
@@ -352,6 +351,25 @@ void SetRandomSP(entt::entity e, int value)
 	g_registry.get_or_emplace<ecs::CharacterPoints>(e).base.iRandomSP = value;
 	g_registry.emplace_or_replace<ecs::DirtyTag>(e);
 }
+
+#ifdef ENABLE_GAYA_SYSTEM
+// Gaya was the last field anything still read out of CHARACTER::m_points.
+int GetGaya(entt::entity e)
+{
+	if (!IsReadableEntity(e))
+		return 0;
+	const auto* points = g_registry.try_get<ecs::CharacterPoints>(e);
+	return points ? points->base.gaya : 0;
+}
+
+void SetGaya(entt::entity e, int value)
+{
+	if (!IsReadableEntity(e))
+		return;
+	g_registry.get_or_emplace<ecs::CharacterPoints>(e).base.gaya = value;
+	g_registry.emplace_or_replace<ecs::DirtyTag>(e);
+}
+#endif
 
 int GetRandomHP(entt::entity e)
 {
@@ -523,18 +541,6 @@ bool SetExperienceBlocked(entt::entity e, bool blocked)
 int64_t CHARACTER::GetRealPoint(uint8_t type) const
 {
 	return type < POINT_MAX_NUM ? ecs::PointSystem::ReadRealArray(GetEntityHandle(), type) : 0;
-}
-
-void CHARACTER::SetRandomHP(int value)
-{
-	m_points.iRandomHP = value;
-	ecs::PointSystem::SetRandomHP(GetEntityHandle(), value);
-}
-
-void CHARACTER::SetRandomSP(int value)
-{
-	m_points.iRandomSP = value;
-	ecs::PointSystem::SetRandomSP(GetEntityHandle(), value);
 }
 
 void CHARACTER::SetRealPoint(uint8_t type, int64_t val)
@@ -1018,13 +1024,11 @@ void Change(entt::entity e, uint8_t type, int64_t amount, bool bAmount, bool bBr
 #ifdef ENABLE_GAYA_SYSTEM
 	case POINT_GAYA:
 	{
-		auto* ch = ecs::LegacyCharOf(e);
-		if (!ch) return;
-		const int64_t nTotalGaya = static_cast<int64_t>((ch ? ch->GetGaya() : 0)) + static_cast<int64_t>(amount);
+		const int64_t nTotalGaya = static_cast<int64_t>(GetGaya(e)) + static_cast<int64_t>(amount);
 
 		if (GAYA_MAX <= nTotalGaya)
 		{
-			LOG_ERROR("[OVERFLOW_GAYA] Gaya max seviyede {} Name {} ", (ch ? ch->GetGaya() : 0), ecs::PlayerRuntime::GetName(e).data());
+			LOG_ERROR("[OVERFLOW_GAYA] Gaya max seviyede {} Name {} ", GetGaya(e), ecs::PlayerRuntime::GetName(e).data());
 			return;
 		}
 
@@ -1034,8 +1038,8 @@ void Change(entt::entity e, uint8_t type, int64_t amount, bool bAmount, bool bBr
 			return;
 		}
 
-		if (ch) ch->SetGaya((ch ? ch->GetGaya() : 0) + amount);
-		val = (ch ? ch->GetGaya() : 0);
+		SetGaya(e, GetGaya(e) + amount);
+		val = GetGaya(e);
 	}
 	break;
 #endif

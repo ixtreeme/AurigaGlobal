@@ -115,12 +115,10 @@ void Compute(entt::entity e)
     };
     std::array<int64_t, std::size(preservedTypes)> preserved {};
     for (size_t i = 0; i < preserved.size(); ++i) preserved[i] = Get(e, preservedTypes[i]);
-    // Clear the authority, not the unused CHARACTER copy. This also resets
-    // flat HP/SP modifiers and the actual skill-damage component.
+    // Clear the authority. This also resets flat HP/SP modifiers and the
+    // actual skill-damage component.
     std::fill(std::begin(g_registry.get<CharacterStatsComponent>(e).points),
         std::end(g_registry.get<CharacterStatsComponent>(e).points), 0);
-    std::fill(std::begin(g_registry.get<CharacterPoints>(e).instant.points),
-        std::end(g_registry.get<CharacterPoints>(e).instant.points), 0);
     g_registry.get_or_emplace<SkillDamageBonus>(e).bySkill.clear();
     ecs::PlayerRuntime::BuffOnAttr_ClearAll(e);
     if (!HasPointState(e)) return;

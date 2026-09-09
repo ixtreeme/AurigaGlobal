@@ -483,28 +483,6 @@ typedef struct character_point
 } CHARACTER_POINT;
 
 /* ������� �ʴ� ĳ���� ������ */
-typedef struct character_point_instant
-{
-	int64_t			points[POINT_MAX_NUM];
-
-	// ��... ��¥ ���� �� �ҷ��� �� �� ���� ����.
-	// char�� �κ��� uint8_t array�� grid�� �����ϰ�, exchange�� cube�� CGrid�� grid�� �����ϰ� ���� �̰�...
-	// grid�� ����� ������ grid�� ���� ���̾�!!!
-	// ���� ��ȥ�� �κ��� �Ȱ��� ���� ���� ���� �߸��ߴ� �Ф�
-
-	// ��ȥ�� �κ��丮.
-#ifdef ENABLE_EXTRA_INVENTORY
-#endif
-#ifdef ENABLE_SWITCHBOT
-#endif
-	// by mhh
-#ifdef __ATTR_TRANSFER_SYSTEM__
-#endif
-#ifdef ENABLE_ACCE_SYSTEM
-#endif
-
-} CHARACTER_POINT_INSTANT;
-
 #define TRIGGERPARAM		entt::entity ch, entt::entity causer
 
 
@@ -762,8 +740,6 @@ public:
 	void			SetMaxStamina(int64_t iVal);
 	int64_t				GetMaxStamina() const;
 
-	void			SetRandomHP(int v);
-	void			SetRandomSP(int v);
 
 
 	int				GetHPPct() const;
@@ -861,8 +837,6 @@ protected:
 #ifdef ENABLE_EVENT_MANAGER
 #endif
 
-	CHARACTER_POINT		m_points;
-	CHARACTER_POINT_INSTANT	m_pointsInstant;
 
 	int				m_iMoveCount;
 	uint32_t			m_dwPlayStartTime;
@@ -1341,8 +1315,6 @@ public:
 	void			SetDuel(const char* type, int value);
 #endif
 #ifdef ENABLE_GAYA_SYSTEM
-	int				GetGaya() const { return m_points.gaya; }
-	void			SetGaya(int gaya) { m_points.gaya = gaya; }
 #endif
 
 	// End of Money

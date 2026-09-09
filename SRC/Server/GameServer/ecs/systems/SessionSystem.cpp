@@ -242,9 +242,9 @@ void CHARACTER::CreatePlayerProto(TPlayerTable& tab)
     tab.exp = GetExp();
     tab.gold = GetGold();
 #ifdef ENABLE_GAYA_SYSTEM
-    tab.gaya = GetGaya();
+    tab.gaya = ecs::PointSystem::GetGaya(GetEntityHandle());
 #endif
-    tab.job = m_points.job;
+    tab.job = 0;
     if (const entt::entity e = GetEntityHandle(); e != entt::null && g_registry.valid(e))
     {
         if (const auto* points = g_registry.try_get<ecs::CharacterPoints>(e))

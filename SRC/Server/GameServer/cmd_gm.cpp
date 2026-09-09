@@ -1896,11 +1896,11 @@ ACMD(do_set)
 				return;
 			int gaya = 0;
 			str_to_number(gaya, arg3);
-			int before_gaya = target->GetGaya();
+			int before_gaya = ecs::PointSystem::GetGaya(target->GetEntityHandle());
 			ecs::PointSystem::Change(tch, POINT_GAYA, gaya, true);
 			if (!ecs::PlayerRuntime::IsValid(tch))
 				return;
-			int after_gaya = target->GetGaya();
+			int after_gaya = ecs::PointSystem::GetGaya(target->GetEntityHandle());
 			if (0 == after_gaya && 0 != before_gaya)
 			{
 				LogManager::instance().CharLog(tch, gaya, "ZERO_GAYA", "GM");

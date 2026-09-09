@@ -494,7 +494,7 @@ void Cube_Make(LPCHARACTER ch, int index, int count_item, int index_item_improve
 	const uint64_t requiredGaya =
 		static_cast<uint64_t>(materialInfo.gaya) * static_cast<uint64_t>(count_item);
 	if (requiredGaya > static_cast<uint64_t>(std::numeric_limits<int64_t>::max()) ||
-		static_cast<uint64_t>(ch->GetGaya()) < requiredGaya)
+		static_cast<uint64_t>(ecs::PointSystem::GetGaya(ch->GetEntityHandle())) < requiredGaya)
 	{
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(ownerEntity, CHAT_TYPE_INFO, 524, "");

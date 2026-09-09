@@ -1503,54 +1503,36 @@ bool CHARACTER::ChangeSex()
 			return false;
 		}
 
-		const auto* target = g_registry.try_get<ecs::RaceComponent>(entity);
-		m_points.job = target ? static_cast<uint8_t>(target->value) : m_points.job;
 		LOG_INFO("CHANGE_SEX: {} ({} -> {})", GetName(), static_cast<int>(sourceRace),
-			static_cast<int>(m_points.job));
+			static_cast<int>(ecs::PlayerRuntime::GetRaceNum(entity)));
 		return true;
 	}
 
-    int src_race = GetRaceNum();
+    const int src_race = GetRaceNum();
 
+    // This branch used to assign m_points.job and nothing else. That field was
+    // the race for as long as it had readers; with the race living in
+    // RaceState, writing it here would have changed nothing at all, so the
+    // swap goes through SetRace like every other race change.
+    uint8_t dst_race = 0;
     switch (src_race)
     {
-    case MAIN_RACE_WARRIOR_M:
-        m_points.job = MAIN_RACE_WARRIOR_W;
-        break;
-
-    case MAIN_RACE_WARRIOR_W:
-        m_points.job = MAIN_RACE_WARRIOR_M;
-        break;
-
-    case MAIN_RACE_ASSASSIN_M:
-        m_points.job = MAIN_RACE_ASSASSIN_W;
-        break;
-
-    case MAIN_RACE_ASSASSIN_W:
-        m_points.job = MAIN_RACE_ASSASSIN_M;
-        break;
-
-    case MAIN_RACE_SURA_M:
-        m_points.job = MAIN_RACE_SURA_W;
-        break;
-
-    case MAIN_RACE_SURA_W:
-        m_points.job = MAIN_RACE_SURA_M;
-        break;
-
-    case MAIN_RACE_SHAMAN_M:
-        m_points.job = MAIN_RACE_SHAMAN_W;
-        break;
-
-    case MAIN_RACE_SHAMAN_W:
-        m_points.job = MAIN_RACE_SHAMAN_M;
-        break;
+    case MAIN_RACE_WARRIOR_M:  dst_race = MAIN_RACE_WARRIOR_W;  break;
+    case MAIN_RACE_WARRIOR_W:  dst_race = MAIN_RACE_WARRIOR_M;  break;
+    case MAIN_RACE_ASSASSIN_M: dst_race = MAIN_RACE_ASSASSIN_W; break;
+    case MAIN_RACE_ASSASSIN_W: dst_race = MAIN_RACE_ASSASSIN_M; break;
+    case MAIN_RACE_SURA_M:     dst_race = MAIN_RACE_SURA_W;     break;
+    case MAIN_RACE_SURA_W:     dst_race = MAIN_RACE_SURA_M;     break;
+    case MAIN_RACE_SHAMAN_M:   dst_race = MAIN_RACE_SHAMAN_W;   break;
+    case MAIN_RACE_SHAMAN_W:   dst_race = MAIN_RACE_SHAMAN_M;   break;
     default:
         LOG_ERROR("CHANGE_SEX: {} unknown race {}", GetName(), static_cast<int>(src_race));
         return false;
     }
 
-    LOG_INFO("CHANGE_SEX: {} ({} -> {})", GetName(), static_cast<int>(src_race), static_cast<int>(m_points.job));
+    SetRace(dst_race);
+
+    LOG_INFO("CHANGE_SEX: {} ({} -> {})", GetName(), static_cast<int>(src_race), static_cast<int>(dst_race));
     return true;
 }
 
@@ -1562,7 +1544,12 @@ uint16_t CHARACTER::GetRaceNum() const
     if (m_pkMobData)
         return m_pkMobData->m_table.dwVnum;
 
-    return m_points.job;
+    // RaceState.baseRace is what SetRace writes and what the entity-native
+    // GetRaceNum answers with; m_points.job was a second copy of it.
+    if (const auto* race = g_registry.try_get<ecs::RaceState>(GetEntityHandle()))
+        return static_cast<uint16_t>(race->baseRace);
+
+    return 0;
 }
 
 void CHARACTER::SetRace(uint8_t race)
@@ -1573,7 +1560,6 @@ void CHARACTER::SetRace(uint8_t race)
         return;
     }
 
-	m_points.job = race;
 	ecs::PlayerRuntime::SetRace(GetEntityHandle(), race);
 }
 
@@ -4527,9 +4513,7 @@ void CHARACTER::SetPlayerProto(const TPlayerTable* t)
         combat->realAlignment = combat->alignment;
     }
 
-    m_points.voice = t->voice;
 
-    m_points.skill_group = t->skill_group;
 
     if (auto* appearance = EnsureAppearancePartsComponent(GetEntityHandle()))
         appearance->basePart = t->part_base;
@@ -4538,8 +4522,8 @@ void CHARACTER::SetPlayerProto(const TPlayerTable* t)
     ecs::PlayerRuntime::SetPart(GetEntityHandle(), PART_ACCE, t->parts[PART_ACCE]);
 #endif
 
-    SetRandomHP(t->sRandomHP);
-    SetRandomSP(t->sRandomSP);
+    ecs::PointSystem::SetRandomHP(GetEntityHandle(), t->sRandomHP);
+    ecs::PointSystem::SetRandomSP(GetEntityHandle(), t->sRandomSP);
 
     if (m_pSkillLevels) {
         M2_DELETE_ARRAY(m_pSkillLevels);
@@ -4586,7 +4570,7 @@ void CHARACTER::SetPlayerProto(const TPlayerTable* t)
     SetExp(t->exp);
     SetGold(t->gold);
 #ifdef ENABLE_GAYA_SYSTEM
-    SetGaya(t->gaya);
+    ecs::PointSystem::SetGaya(GetEntityHandle(), t->gaya);
 #endif
 #ifdef __ENABLE_EXTEND_INVEN_SYSTEM__
     Set_Inventory_Point(t->envanter);
@@ -5656,8 +5640,6 @@ void CHARACTER::Initialize()
     m_pkDestroyWhenIdleEvent = nullptr;
 
 
-    memset(&m_points, 0, sizeof(m_points));
-    memset(&m_pointsInstant, 0, sizeof(m_pointsInstant));
 
     m_bCharType = CHAR_TYPE_MONSTER;
 

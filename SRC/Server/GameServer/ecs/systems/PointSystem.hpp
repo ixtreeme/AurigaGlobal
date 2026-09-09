@@ -17,6 +17,10 @@ bool Set(entt::entity e, uint8_t type, int64_t value);
 bool SetReal(entt::entity e, uint8_t type, int64_t value);
 void SetRandomHP(entt::entity e, int value);
 void SetRandomSP(entt::entity e, int value);
+#ifdef ENABLE_GAYA_SYSTEM
+int GetGaya(entt::entity e);
+void SetGaya(entt::entity e, int value);
+#endif
 int GetRandomHP(entt::entity e);
 int GetRandomSP(entt::entity e);
 bool SetLevelFromQuest(entt::entity e, int newLevel);
