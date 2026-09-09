@@ -5716,7 +5716,7 @@ void CHARACTER::Initialize()
 
     // Phase C.2: legacy m_bNowWalking zero-init removed (ECS MovementState
     // default-init handles isNowWalking=false and walkPreference=false).
-    ResetChangeAttackPositionTime();
+    CombatSystem::ResetChangeAttackPositionTime(GetEntityHandle());
 
     m_bDetailLog = false;
     m_bMonsterLog = false;

@@ -412,6 +412,8 @@ float ecs::MovementSystem::GetMoveSpeed(entt::entity) { UnexpectedService(__func
 float ecs::PlayerRuntime::GetRotation(entt::entity) { UnexpectedService(__func__); }
 const TMobTable* ecs::PlayerRuntime::GetMobTable(entt::entity) { return nullptr; }
 int ecs::PlayerRuntime::GetZ(entt::entity) { return 0; }
+bool ecs::PlayerRuntime::IsPet(entt::entity) { return false; }
+bool ecs::PlayerRuntime::IsNewPet(entt::entity) { return false; }
 void ecs::MovementSystem::CalculateMoveDuration(entt::entity) { UnexpectedService(__func__); }
 void ecs::MovementSystem::SendMovePacket(entt::entity,unsigned char,unsigned char,unsigned int,unsigned int,unsigned int,unsigned int,float) { UnexpectedService(__func__); }
 void CHARACTER::SyncQuickslot(unsigned char,unsigned char,unsigned char) { UnexpectedService(__func__); }

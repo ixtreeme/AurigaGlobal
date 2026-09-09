@@ -7696,20 +7696,6 @@ void CheckTarget(entt::entity e)
 
 } // namespace CombatSystem
 
-bool CHARACTER::IsChangeAttackPosition(entt::entity targetEntity) const
-{
-	if (!IsNPC())
-		return true;
-
-	uint32_t dwChangeTime = AI_CHANGE_ATTACK_POISITION_TIME_NEAR;
-
-	if (DISTANCE_APPROX(GetX() - ecs::PlayerRuntime::GetX(targetEntity), GetY() - ecs::PlayerRuntime::GetY(targetEntity)) >
-		AI_CHANGE_ATTACK_POISITION_DISTANCE + GetMobAttackRange())
-		dwChangeTime = AI_CHANGE_ATTACK_POISITION_TIME_FAR;
-
-	return get_dword_time() - m_dwLastChangeAttackPositionTime > dwChangeTime;
-}
-
 int CHARACTER::GetLeadershipSkillLevel() const
 {
 	return GetSkillLevel(SKILL_LEADERSHIP);
@@ -7836,149 +7822,183 @@ bool IsStoneSkinner(entt::entity e)
 
 } // namespace CombatSystem
 
-bool CHARACTER::Follow(entt::entity chr, float fMinDistance)
+namespace CombatSystem {
+
+bool IsChangeAttackPosition(entt::entity e, entt::entity target)
 {
-	LPCHARACTER pkChr = ecs::LegacyCharOf(chr);
-	if (IsPC())
-	{
-		LOG_ERROR("CHARACTER::Follow : PC cannot use this method", GetName());
-		return false;
-	}
+    // CHARACTER::IsNPC was "anything but a PC"; a PC always counts as ready.
+    if (ecs::PlayerRuntime::IsPC(e))
+        return true;
 
-	if (IS_SET(ecs::PlayerRuntime::GetAIFlag(GetEntityHandle()), AIFLAG_NOMOVE))
-	{
-		if (ecs::PlayerRuntime::IsPC(chr))
-		{
-			if (!GetParty() || !GetParty()->GetLeader() || GetParty()->GetLeader() == this)
-			{
-				if (get_dword_time() - CombatSystem::GetLastAttackedTime(GetEntityHandle()) >= 15000)
-				{
-					if (m_pkMobData->m_table.wAttackRange < DISTANCE_APPROX(ecs::PlayerRuntime::GetX(chr) - GetX(), ecs::PlayerRuntime::GetY(chr) - GetY()))
-						if (CombatSystem::Return(GetEntityHandle()))
-							return true;
-				}
-			}
-		}
-		return false;
-	}
+    uint32_t changeTime = AI_CHANGE_ATTACK_POISITION_TIME_NEAR;
 
-	int32_t x = ecs::PlayerRuntime::GetX(chr);
-	int32_t y = ecs::PlayerRuntime::GetY(chr);
+    if (DISTANCE_APPROX(ecs::PlayerRuntime::GetX(e) - ecs::PlayerRuntime::GetX(target),
+                        ecs::PlayerRuntime::GetY(e) - ecs::PlayerRuntime::GetY(target)) >
+        AI_CHANGE_ATTACK_POISITION_DISTANCE + GetMobAttackRange(e))
+        changeTime = AI_CHANGE_ATTACK_POISITION_TIME_FAR;
 
-	if (ecs::PlayerRuntime::IsPC(chr))
-	{
-		if (!GetParty() || !GetParty()->GetLeader() || GetParty()->GetLeader() == this)
-		{
-			if (get_dword_time() - CombatSystem::GetLastAttackedTime(GetEntityHandle()) >= 15000)
-			{
-				if (5000 < CombatSystem::DistanceFromLastAttacked(GetEntityHandle()))
-					if (CombatSystem::Return(GetEntityHandle()))
-						return true;
-			}
-		}
-	}
+    const auto* timer = (e != entt::null && g_registry.valid(e))
+        ? g_registry.try_get<ecs::AttackPositionTimer>(e) : nullptr;
+    return get_dword_time() - (timer ? timer->lastChange : 0) > changeTime;
+}
+
+void SetChangeAttackPositionTime(entt::entity e)
+{
+    if (e == entt::null || !g_registry.valid(e))
+        return;
+    g_registry.get_or_emplace<ecs::AttackPositionTimer>(e).lastChange = get_dword_time();
+}
+
+void ResetChangeAttackPositionTime(entt::entity e)
+{
+    if (e == entt::null || !g_registry.valid(e))
+        return;
+    g_registry.get_or_emplace<ecs::AttackPositionTimer>(e).lastChange =
+        get_dword_time() - AI_CHANGE_ATTACK_POISITION_TIME_NEAR;
+}
+
+// Chase a target and stop at minDistance. The body is the one CHARACTER::Follow
+// had; every reader it used has an entity accessor, so the only thing that
+// changed is who is being asked.
+bool Follow(entt::entity self, entt::entity target, float minDistance)
+{
+    if (self == entt::null || !g_registry.valid(self))
+        return false;
+
+    if (ecs::PlayerRuntime::IsPC(self)) {
+        LOG_ERROR("Follow: PC cannot use this ({})", ecs::PlayerRuntime::GetName(self));
+        return false;
+    }
+
+    const int32_t selfX = ecs::PlayerRuntime::GetX(self);
+    const int32_t selfY = ecs::PlayerRuntime::GetY(self);
+
+    // The mob leads its own party, or has none, and has been left alone long
+    // enough to give up and walk back.
+    const auto leadsOrHasNoParty = [&] {
+        const entt::entity leader = ecs::SocialSystem::GetPartyLeader(self);
+        return leader == entt::null || leader == self;
+    };
+    const auto idleLongEnough = [&] {
+        return get_dword_time() - GetLastAttackedTime(self) >= 15000;
+    };
+
+    if (IS_SET(ecs::PlayerRuntime::GetAIFlag(self), AIFLAG_NOMOVE)) {
+        if (ecs::PlayerRuntime::IsPC(target) && leadsOrHasNoParty() && idleLongEnough()) {
+            const TMobTable* table = ecs::PlayerRuntime::GetMobTable(self);
+            const int32_t gap = DISTANCE_APPROX(ecs::PlayerRuntime::GetX(target) - selfX,
+                                                ecs::PlayerRuntime::GetY(target) - selfY);
+            if (table && table->wAttackRange < gap && Return(self))
+                return true;
+        }
+        return false;
+    }
+
+    int32_t x = ecs::PlayerRuntime::GetX(target);
+    int32_t y = ecs::PlayerRuntime::GetY(target);
+
+    if (ecs::PlayerRuntime::IsPC(target) && leadsOrHasNoParty() && idleLongEnough()) {
+        if (5000 < DistanceFromLastAttacked(self) && Return(self))
+            return true;
+    }
 
 #ifndef ENABLE_BUG_FIXES
-	if (IsGuardNPC())
-	{
-		if (5000 < CombatSystem::DistanceFromLastAttacked(GetEntityHandle()))
-			if (CombatSystem::Return(GetEntityHandle()))
-				return true;
-	}
+    if (ecs::PlayerRuntime::IsGuardNPC(self)) {
+        if (5000 < DistanceFromLastAttacked(self) && Return(self))
+            return true;
+    }
 #endif
 
+    const uint8_t battleType = GetMobBattleType(self);
+    const bool intercepts = HasMoveState(target) &&
+        battleType != BATTLE_TYPE_RANGE &&
+        battleType != BATTLE_TYPE_MAGIC &&
+        !ecs::PlayerRuntime::IsPet(self)
 #ifdef __NEWPET_SYSTEM__
-	if (HasMoveState(chr) &&
-		GetMobBattleType() != BATTLE_TYPE_RANGE &&
-		GetMobBattleType() != BATTLE_TYPE_MAGIC &&
-		false == IsPet() && false == IsNewPet()
-#else
-	if (HasMoveState(chr) &&
-		GetMobBattleType() != BATTLE_TYPE_RANGE &&
-		GetMobBattleType() != BATTLE_TYPE_MAGIC &&
-		false == IsPet()
+        && !ecs::PlayerRuntime::IsNewPet(self)
 #endif
-		)
-	{
-		float rot = pkChr->GetRotation();
-		float rot_delta = GetDegreeDelta(rot, GetDegreeFromPositionXY(GetX(), GetY(), ecs::PlayerRuntime::GetX(chr), ecs::PlayerRuntime::GetY(chr)));
+        ;
 
-		float yourSpeed = ecs::MovementSystem::GetMoveSpeed(chr);
-		float mySpeed = ecs::MovementSystem::GetMoveSpeed(GetEntityHandle());
+    if (intercepts) {
+        // Aim at where the target will be, not where it is.
+        const float targetRotation = ecs::PlayerRuntime::GetRotation(target);
+        const float rotationDelta = GetDegreeDelta(targetRotation,
+            GetDegreeFromPositionXY(selfX, selfY,
+                ecs::PlayerRuntime::GetX(target), ecs::PlayerRuntime::GetY(target)));
 
-		float fDist = DISTANCE_SQRT(x - GetX(), y - GetY());
-		float fFollowSpeed = mySpeed - yourSpeed * cos(rot_delta * M_PI / 180);
+        const float targetSpeed = ecs::MovementSystem::GetMoveSpeed(target);
+        const float ownSpeed = ecs::MovementSystem::GetMoveSpeed(self);
 
-		if (fFollowSpeed >= 0.1f)
-		{
-			float fMeetTime = fDist / fFollowSpeed;
-			float fYourMoveEstimateX, fYourMoveEstimateY;
+        const float gap = DISTANCE_SQRT(x - selfX, y - selfY);
+        const float closingSpeed = ownSpeed - targetSpeed * cos(rotationDelta * M_PI / 180);
 
-			if (fMeetTime * yourSpeed <= 100000.0f)
-			{
-				GetDeltaByDegree(pkChr->GetRotation(), fMeetTime * yourSpeed, &fYourMoveEstimateX, &fYourMoveEstimateY);
+        if (closingSpeed >= 0.1f) {
+            const float meetTime = gap / closingSpeed;
+            if (meetTime * targetSpeed <= 100000.0f) {
+                float estimateX = 0.0f;
+                float estimateY = 0.0f;
+                GetDeltaByDegree(targetRotation, meetTime * targetSpeed, &estimateX, &estimateY);
 
-				x += (int32_t)fYourMoveEstimateX;
-				y += (int32_t)fYourMoveEstimateY;
+                x += static_cast<int32_t>(estimateX);
+                y += static_cast<int32_t>(estimateY);
 
-				float fDistNew = sqrt(((double)x - GetX()) * (x - GetX()) + ((double)y - GetY()) * (y - GetY()));
-				if (fDist < fDistNew)
-				{
-					x = (int32_t)(GetX() + (x - GetX()) * fDist / fDistNew);
-					y = (int32_t)(GetY() + (y - GetY()) * fDist / fDistNew);
-				}
-			}
-		}
-	}
+                const float projected = sqrt(((double)x - selfX) * (x - selfX) +
+                                             ((double)y - selfY) * (y - selfY));
+                if (gap < projected) {
+                    x = static_cast<int32_t>(selfX + (x - selfX) * gap / projected);
+                    y = static_cast<int32_t>(selfY + (y - selfY) * gap / projected);
+                }
+            }
+        }
+    }
 
-	ecs::MovementSystem::SetRotationToXY(GetEntityHandle(), x, y);
+    ecs::MovementSystem::SetRotationToXY(self, x, y);
 
-	float fDist = DISTANCE_SQRT(x - GetX(), y - GetY());
+    const float distance = DISTANCE_SQRT(x - selfX, y - selfY);
+    if (distance <= minDistance)
+        return false;
 
-	if (fDist <= fMinDistance)
-		return false;
+    float fx = 0.0f;
+    float fy = 0.0f;
 
-	float fx, fy;
+    if (IsChangeAttackPosition(self, target) &&
+        ecs::PlayerRuntime::GetMobRank(self) < MOB_RANK_BOSS) {
+        SetChangeAttackPositionTime(self);
 
-	if (IsChangeAttackPosition(pkChr ? pkChr->GetEntityHandle() : entt::null) && GetMobRank() < MOB_RANK_BOSS)
-	{
-		SetChangeAttackPositionTime();
+        int retry = 16;
+        int dx = 0;
+        int dy = 0;
+        const int rot = static_cast<int>(GetDegreeFromPositionXY(x, y, selfX, selfY));
 
-		int retry = 16;
-		int dx, dy;
-		int rot = (int)GetDegreeFromPositionXY(x, y, GetX(), GetY());
+        while (--retry) {
+            if (distance < 500.0f)
+                GetDeltaByDegree((rot + number(-90, 90) + number(-90, 90)) % 360, minDistance, &fx, &fy);
+            else
+                GetDeltaByDegree(number(0, 359), minDistance, &fx, &fy);
 
-		while (--retry)
-		{
-			if (fDist < 500.0f)
-				GetDeltaByDegree((rot + number(-90, 90) + number(-90, 90)) % 360, fMinDistance, &fx, &fy);
-			else
-				GetDeltaByDegree(number(0, 359), fMinDistance, &fx, &fy);
+            dx = x + static_cast<int>(fx);
+            dy = y + static_cast<int>(fy);
 
-			dx = x + (int)fx;
-			dy = y + (int)fy;
+            LPSECTREE tree = ecs::SectorAt(ecs::PlayerRuntime::GetMapIndex(self), dx, dy);
+            if (nullptr == tree)
+                break;
 
-			LPSECTREE tree = ecs::SectorAt(GetMapIndex(), dx, dy);
+            if (0 == (tree->GetAttribute(dx, dy) & (ATTR_BLOCK | ATTR_OBJECT)))
+                break;
+        }
 
-			if (nullptr == tree)
-				break;
+        if (!ecs::MovementSystem::Goto(self, dx, dy))
+            return false;
+    } else {
+        GetDeltaByDegree(ecs::PlayerRuntime::GetRotation(self), distance - minDistance, &fx, &fy);
 
-			if (0 == (tree->GetAttribute(dx, dy) & (ATTR_BLOCK | ATTR_OBJECT)))
-				break;
-		}
+        if (!ecs::MovementSystem::Goto(self, selfX + static_cast<int>(fx), selfY + static_cast<int>(fy)))
+            return false;
+    }
 
-		if (!ecs::MovementSystem::Goto(GetEntityHandle(), dx, dy))
-			return false;
-	}
-	else
-	{
-		float fDistToGo = fDist - fMinDistance;
-		GetDeltaByDegree(GetRotation(), fDistToGo, &fx, &fy);
-
-		if (!ecs::MovementSystem::Goto(GetEntityHandle(), GetX() + (int)fx, GetY() + (int)fy))
-			return false;
-	}
-
-	ecs::MovementSystem::SendMovePacket(GetEntityHandle(), FUNC_WAIT, 0, 0, 0, 0);
-	return true;
+    ecs::MovementSystem::SendMovePacket(self, FUNC_WAIT, 0, 0, 0, 0);
+    return true;
 }
+
+} // namespace CombatSystem
+

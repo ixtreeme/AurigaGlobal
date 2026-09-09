@@ -181,7 +181,7 @@ void StateIdle_NPC(entt::entity e)
         if (DISTANCE_APPROX(dx, dy) > 500) {
             // Follow is 146 lines of legacy pathing and is its own migration
             // unit; this is the one operation idle still needs a character for.
-            if (LPCHARACTER ch = ecs::LegacyCharOf(e); ch && ch->Follow(protege, number(100, 300)))
+            if (CombatSystem::Follow(e, protege, number(100, 300)))
                 return;
         }
     }
@@ -260,8 +260,7 @@ void StateIdle_Monster(entt::entity e)
         const int32_t dx = x - ecs::PlayerRuntime::GetX(protege);
         const int32_t dy = y - ecs::PlayerRuntime::GetY(protege);
         if (DISTANCE_APPROX(dx, dy) > 1000) {
-            LPCHARACTER self = ecs::LegacyCharOf(e);
-            if (self && self->Follow(protege, number(150, 400))) {
+            if (CombatSystem::Follow(e, protege, number(150, 400))) {
                 ecs::PlayerRuntime::MonsterLog(e, "[IDLE] returning to protege");
                 return;
             }
@@ -303,26 +302,21 @@ bool GotoNearTarget(entt::entity self, entt::entity victim)
         return false;
 
     const uint16_t range = CombatSystem::GetMobAttackRange(self);
-    // Follow is the last legacy pathing call left in the AI; it needs a
-    // character, and this is the only place battle asks for one to move.
-    LPCHARACTER ch = ecs::LegacyCharOf(self);
-    if (!ch)
-        return false;
 
     switch (CombatSystem::GetMobBattleType(self)) {
     case BATTLE_TYPE_RANGE:
     case BATTLE_TYPE_MAGIC:
-        if (ch->Follow(victim, range * 8 / 10))
+        if (CombatSystem::Follow(self, victim, range * 8 / 10))
             return true;
         break;
 
     default:
-        if (ch->Follow(victim, range * 9 / 10))
+        if (CombatSystem::Follow(self, victim, range * 9 / 10))
             return true;
         break;
     }
 
-    return ch->Follow(victim, range * 9 / 10);
+    return CombatSystem::Follow(self, victim, range * 9 / 10);
 }
 
 } // namespace
@@ -401,8 +395,7 @@ void StateBattle(entt::entity e)
             DISTANCE_APPROX(x - ecs::PlayerRuntime::GetX(protege),
                             y - ecs::PlayerRuntime::GetY(protege)) > 1000;
         if (farFromProtege) {
-            if (LPCHARACTER ch = ecs::LegacyCharOf(e))
-                ch->Follow(protege, number(150, 400));
+            CombatSystem::Follow(e, protege, number(150, 400));
         } else {
             ecs::PlayerRuntime::SetPosition(e, POS_STANDING);
         }

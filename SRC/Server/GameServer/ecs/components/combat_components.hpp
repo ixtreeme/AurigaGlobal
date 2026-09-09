@@ -73,6 +73,12 @@ struct StoneOwner {
     entt::entity stone { entt::null };
 };
 
+// When this mob last repositioned around its target. One field, but it was
+// the only thing keeping IsChangeAttackPosition on CHARACTER.
+struct AttackPositionTimer {
+    uint32_t lastChange { 0 };
+};
+
 struct CombatActiveTag {};
 struct InvincibleTag {};
 
