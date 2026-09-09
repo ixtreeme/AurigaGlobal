@@ -909,11 +909,11 @@ unsigned int CHARACTER::GetMobDamageMax(void)const { Unexpected(); }
 void CHARACTER::PointChange(unsigned char,int64_t,bool,bool,bool) { Unexpected(); }
 float CHARACTER::GetRotation(void)const { Unexpected(); }
 void CHARACTER::CreateFly(unsigned char,entt::entity) { Unexpected(); }
-bool CHARACTER::Goto(int,int) { Unexpected(); }
+bool ecs::MovementSystem::Goto(entt::entity,int,int) { Unexpected(); }
 bool CHARACTER::CanMove(void)const { Unexpected(); }
 bool CHARACTER::Sync(int,int) { Unexpected(); }
 void CHARACTER::OnMove(bool) { Unexpected(); }
-void CHARACTER::CalculateMoveDuration(void) { Unexpected(); }
+void ecs::MovementSystem::CalculateMoveDuration(entt::entity) { Unexpected(); }
 bool CHARACTER::WarpSet(int,int,int) { Unexpected(); }
 bool CHARACTER::AddAffect(unsigned int,unsigned char,int,unsigned int,int,int,bool,bool) { Unexpected(); }
 bool CHARACTER::RemoveAffect(unsigned int) { Unexpected(); }

@@ -679,7 +679,7 @@ bool CHARACTER::WarpSet(int32_t x, int32_t y, int32_t lPrivateMapIndex)
     }
 #endif
 
-    Stop();
+    ecs::MovementSystem::Stop(GetEntityHandle());
     Save();
 
     if (GetSectree())
@@ -755,7 +755,7 @@ void CHARACTER::WarpEnd()
     LOG_INFO("WarpEnd {} {} {} {}", GetName(), m_lWarpMapIndex, m_posWarp.x, m_posWarp.y);
 
     Show(m_lWarpMapIndex, m_posWarp.x, m_posWarp.y, 0);
-    Stop();
+    ecs::MovementSystem::Stop(GetEntityHandle());
 
     m_lWarpMapIndex = 0;
     m_posWarp.x = m_posWarp.y = m_posWarp.z = 0;
@@ -1108,9 +1108,6 @@ bool CHARACTER::Show(int32_t lMapIndex, int32_t x, int32_t y, int32_t z, bool bS
     // Phase C.3: legacy destination field write removed. SyncDestinationClear
     // drops ECS MovementDestination so subsequent INSERT packets emit
     // current (warped) position via GetCurrentDestX/Y -> GetX/Y fallback.
-    m_posStart.x = x;
-    m_posStart.y = y;
-    m_posStart.z = z;
 
     ecs::MovementSystem::SyncDestinationClear(GetEntityHandle());
 

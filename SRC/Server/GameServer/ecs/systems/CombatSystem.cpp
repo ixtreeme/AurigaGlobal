@@ -918,8 +918,8 @@ struct FuncPullMonster
 			int32_t ty = (int32_t)(ecs::PlayerRuntime::GetY(candidate) + fy);
 
 			ch->Sync(tx, ty);
-			ch->Goto(tx, ty);
-			ch->CalculateMoveDuration();
+			ecs::MovementSystem::Goto(candidate, tx, ty);
+			ecs::MovementSystem::CalculateMoveDuration(candidate);
 
 			NetworkSyncSystem::BroadcastSyncPacket(g_registry, candidate);
 		}
@@ -1250,7 +1250,7 @@ void CHARACTER::ChangeVictimByAggro(int iNewAggro, entt::entity newVictim)
 #else
 			SetVictim(itFind->first);
 #endif
-			m_dwStateDuration = 1;
+			AIHelpers::SetStateDuration(GetEntityHandle(), 1);
 		}
 	}
 	else
@@ -1266,7 +1266,7 @@ void CHARACTER::ChangeVictimByAggro(int iNewAggro, entt::entity newVictim)
 #else
 			SetVictim(newVictim);
 #endif
-			m_dwStateDuration = 1;
+			AIHelpers::SetStateDuration(GetEntityHandle(), 1);
 		}
 	}
 }
@@ -7682,12 +7682,12 @@ void CHARACTER::CowardEscape()
 			if (bIsWayBlocked)
 				continue;
 
-			m_dwStateDuration = PASSES_PER_SEC(1);
+			AIHelpers::SetStateDuration(GetEntityHandle(), PASSES_PER_SEC(1));
 
 			int iDestX = GetX() + (int)fx;
 			int iDestY = GetY() + (int)fy;
 
-			if (Goto(iDestX, iDestY))
+			if (ecs::MovementSystem::Goto(GetEntityHandle(), iDestX, iDestY))
 				ecs::MovementSystem::SendMovePacket(GetEntityHandle(), FUNC_WAIT, 0, 0, 0, 0);
 
 			LOG_INFO("WAEGU move to {} {} (far)", iDestX, iDestY);
@@ -7774,7 +7774,7 @@ bool CHARACTER::Return()
 
 	SetRotationToXY(x, y);
 
-	if (!Goto(x, y))
+	if (!ecs::MovementSystem::Goto(GetEntityHandle(), x, y))
 		return false;
 
 	ecs::MovementSystem::SendMovePacket(GetEntityHandle(), FUNC_WAIT, 0, 0, 0, 0);
@@ -7855,8 +7855,8 @@ bool CHARACTER::Follow(entt::entity chr, float fMinDistance)
 		float rot = pkChr->GetRotation();
 		float rot_delta = GetDegreeDelta(rot, GetDegreeFromPositionXY(GetX(), GetY(), ecs::PlayerRuntime::GetX(chr), ecs::PlayerRuntime::GetY(chr)));
 
-		float yourSpeed = pkChr->GetMoveSpeed();
-		float mySpeed = GetMoveSpeed();
+		float yourSpeed = ecs::MovementSystem::GetMoveSpeed(chr);
+		float mySpeed = ecs::MovementSystem::GetMoveSpeed(GetEntityHandle());
 
 		float fDist = DISTANCE_SQRT(x - GetX(), y - GetY());
 		float fFollowSpeed = mySpeed - yourSpeed * cos(rot_delta * M_PI / 180);
@@ -7919,7 +7919,7 @@ bool CHARACTER::Follow(entt::entity chr, float fMinDistance)
 				break;
 		}
 
-		if (!Goto(dx, dy))
+		if (!ecs::MovementSystem::Goto(GetEntityHandle(), dx, dy))
 			return false;
 	}
 	else
@@ -7927,7 +7927,7 @@ bool CHARACTER::Follow(entt::entity chr, float fMinDistance)
 		float fDistToGo = fDist - fMinDistance;
 		GetDeltaByDegree(GetRotation(), fDistToGo, &fx, &fy);
 
-		if (!Goto(GetX() + (int)fx, GetY() + (int)fy))
+		if (!ecs::MovementSystem::Goto(GetEntityHandle(), GetX() + (int)fx, GetY() + (int)fy))
 			return false;
 	}
 

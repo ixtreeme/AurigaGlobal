@@ -1,5 +1,48 @@
 # Server ECS regression tests
 
+## Native movement commands and AI timing
+
+Goto, Stop, motion-mode/speed selection and CalculateMoveDuration now live only
+in the existing MovementSystem.cpp entity API. Their CHARACTER methods are
+deleted; combat, skill, AI, mount, dungeon and session callers use this API.
+The old Goto bridge prewrote the requested destination before calling CHARACTER,
+so that call mistook a new target for a duplicate and skipped timing. Native
+Goto commits destination, timing and the four-pulse AI duration together.
+Repeat/current-position requests remain no-ops; descriptor attachment still
+governs PC walking and NPC immobility/stop behavior, including TagPC clones.
+
+MovementState.commandRevision guards nested commands, even with identical
+parameters. It also participates in tick snapshots. Stop/sync-clear commit
+timing before destination removal, preserving callback-owned timing writes.
+Revision checks abort older commands after nested movement or spatial changes.
+New components use single-entity insertion without a returned reference; a
+construction callback can remove them without a post-callback EnTT lookup.
+Retargeting writes destination fields directly, like timing (no on_update signal).
+Callbacks must not replace a component while its own on_destroy signal is active;
+such same-component replacement is not a supported movement command boundary.
+Motion speed handles all weapon modes, polymorph, stamina walking, mounts and
+horse fallback without resolving CHARACTER/CItem. Missing or non-finite/zero
+motion data uses the existing 300-unit fallback; wide arithmetic and bounded
+duration conversion avoid overflow on extreme targets. Normal float truncation,
+movement-point limits and integer speed-factor semantics are retained.
+
+The write-only m_posStart and the two legacy AI scheduling fields are deleted.
+AIState owns stateDuration/nextStatePulse; all AI writers and the real character
+state-machine pump consume those components. The AI state bodies themselves
+remain legacy and still need migration. The pump keeps the entity handle across
+the state callback instead of dereferencing a potentially retired CHARACTER.
+
+SpatialLifecycleTests exercises actual command, timing and selection logic on
+entity-only fixtures, with controlled motion/equipment/point/descriptor services.
+Cases include duplicate targets, retiming, stops, all weapon modes, mount/horse
+fallback, PC versus descriptor-free walking, malformed motions, integer bounds,
+immobile bosses, reentrant Goto/Stop, preparation-time recycling and AI scheduling
+defaults/reentry. PointCalculationTests separately checks that an active speed
+change calls the native timing API even without a legacy character, after point
+commit, and that stationary/expired movement does not. The live animation-file
+loader, AI state callbacks, network and live-client movement are not covered by
+these isolated fixtures; verify them before deployment.
+
 ## Native movement tick and move packets
 
 MovementSystem.cpp now interpolates placed character entities without a VID
@@ -19,7 +62,7 @@ SendMovePacket reads identity, destination/current position, timing and rotation
 from ECS. CHARACTER::SendMovePacket is deleted and its callers use the entity
 API. Motion victim encoding no longer converts an entity back to CHARACTER.
 The existing MovementSystem file remains the only implementation; Show, Warp,
-Goto, Stop and recovery/save callbacks still contain migration work.
+Move/Sync/OnMove and recovery/save callbacks still contain migration work.
 
 SpatialLifecycleTests also compiles production MovementSystem.cpp and its move
 packet encoder and SetPosition implementation. Pointer-free cases cover sector

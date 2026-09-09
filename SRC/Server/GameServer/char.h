@@ -639,7 +639,6 @@ public:
 	void				RestartAtSamePos();
 
 protected:
-	uint32_t				m_dwStateDuration;
 	//////////////////////////////////////////////////////////////////////////////////
 
 public:
@@ -919,18 +918,12 @@ public:
 	bool			IsNowWalking() const;
 	void			SetNowWalking(bool bWalkFlag);
 
-	bool			Goto(int32_t x, int32_t y);	// �ٷ� �̵� ��Ű�� �ʰ� ��ǥ ��ġ�� BLENDING ��Ų��.
-	void			Stop();
 
 	bool			CanMove() const;		// �̵��� �� �ִ°�?
 
 	bool			Sync(int32_t x, int32_t y);	// ���� �� �޼ҵ�� �̵� �Ѵ� (�� �� ���ǿ� ���� �̵� �Ұ��� ����)
 	bool			Move(int32_t x, int32_t y);	// ������ �˻��ϰ� Sync �޼ҵ带 ���� �̵� �Ѵ�.
 	void			OnMove(bool bIsAttack = false);	// �����϶� �Ҹ���. Move() �޼ҵ� �̿ܿ����� �Ҹ� �� �ִ�.
-	uint32_t			GetMotionMode() const;
-	float			GetMoveMotionSpeed() const;
-	float			GetMoveSpeed() const;
-	void			CalculateMoveDuration();
 	// Phase 15E-final.LPENTITY.4-architect.B.1.2:
 	// GetCurrentMoveDuration / GetCurrentMoveStartTime now read the ECS
 	// MovementState component as the authoritative source. Per A.2 §2
@@ -990,7 +983,6 @@ public:
 protected:
 
 
-	PIXEL_POSITION	m_posStart;
 	PIXEL_POSITION	m_posWarp;
 	int32_t			m_lWarpMapIndex;
 
@@ -2003,7 +1995,6 @@ public:
 	// ĳ���� �ν��Ͻ� ������Ʈ �Լ�. ������ �̻��� ��ӱ����� CFSM::Update �Լ��� ȣ���ϰų� UpdateStateMachine �Լ��� ����ߴµ�, ������ ������Ʈ �Լ� �߰���.
 
 protected:
-	uint32_t				m_dwNextStatePulse;
 
 	// Marriage
 public:

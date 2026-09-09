@@ -303,12 +303,11 @@ bool Set(entt::entity e, uint8_t type, int64_t value)
     g_registry.get_or_emplace<ecs::CharacterStatsComponent>(e).points[type] = value;
     g_registry.get_or_emplace<ecs::CharacterPoints>(e).instant.points[type] = value;
     g_registry.emplace_or_replace<ecs::DirtyTag>(e);
-    // Movement timing is already ECS-owned; motion selection is still a
-    // legacy leaf. Resolve only for this side effect, never for point storage.
+    // Motion selection and timing are native, including entity-only characters.
     if (type == POINT_MOV_SPEED) {
         const auto* movement = g_registry.try_get<ecs::MovementState>(e);
         if (movement && get_dword_time() - movement->moveStartTime < movement->moveDuration)
-            if (auto* character = ecs::LegacyCharOf(e)) character->CalculateMoveDuration();
+            ecs::MovementSystem::CalculateMoveDuration(e);
     }
     return g_registry.valid(e);
 }

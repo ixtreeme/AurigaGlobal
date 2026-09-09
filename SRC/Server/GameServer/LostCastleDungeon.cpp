@@ -302,7 +302,7 @@ namespace
         if (!ch)
             return 220;
 
-        const uint32_t mode = ch->GetMotionMode();
+        const uint32_t mode = ecs::MovementSystem::GetMotionMode(ch->GetEntityHandle());
         const float durSec = CMotionManager::instance().GetMotionDuration(ecs::PlayerRuntime::GetRaceNum(((ch) ? (ch)->GetEntityHandle() : entt::null)), MAKE_MOTION_KEY(mode, motionIndex));
         uint32_t durMs = (durSec > 0.01f) ? (uint32_t)(durSec * 1000.0f) : 650;
 

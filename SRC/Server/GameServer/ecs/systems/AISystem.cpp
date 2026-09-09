@@ -180,12 +180,12 @@ void UpdateStateMachine(entt::entity e)
 void CHARACTER::StateIdle()
 {
     if (IsStone()) {
-        m_dwStateDuration = PASSES_PER_SEC(1);
+        AIHelpers::SetStateDuration(GetEntityHandle(), PASSES_PER_SEC(1));
         return;
     }
 
     if (IsWarp() || IsGoto()) {
-        m_dwStateDuration = 60 * passes_per_sec;
+        AIHelpers::SetStateDuration(GetEntityHandle(), 60 * passes_per_sec);
         return;
     }
 
@@ -203,7 +203,7 @@ void CHARACTER::StateIdle()
 
 void CHARACTER::__StateIdle_NPC()
 {
-    m_dwStateDuration = PASSES_PER_SEC(5);
+    AIHelpers::SetStateDuration(GetEntityHandle(), PASSES_PER_SEC(5));
 
 #ifdef ENABLE_MOUNT_COSTUME_SYSTEM
     if (IsMount()) {
@@ -249,7 +249,7 @@ void CHARACTER::__StateIdle_NPC()
     }
 
     SetNowWalking(true);
-    if (Goto(GetX() + static_cast<int>(fx), GetY() + static_cast<int>(fy))) {
+    if (ecs::MovementSystem::Goto(GetEntityHandle(), GetX() + static_cast<int>(fx), GetY() + static_cast<int>(fy))) {
         ecs::MovementSystem::SendMovePacket(GetEntityHandle(), FUNC_WAIT, 0, 0, 0, 0);
     }
 }
@@ -279,7 +279,7 @@ void CHARACTER::__StateIdle_Monster()
     if (!victim || victim->IsDead()) {
         SetVictim(entt::null);
         victim = nullptr;
-        m_dwStateDuration = PASSES_PER_SEC(1);
+        AIHelpers::SetStateDuration(GetEntityHandle(), PASSES_PER_SEC(1));
     }
 
     if (!victim || victim->IsBuilding()) {
@@ -297,9 +297,9 @@ void CHARACTER::__StateIdle_Monster()
         return;
     }
 
-    m_dwStateDuration = AIHelpers::IsAggressive(GetEntityHandle()) && !victim
+    AIHelpers::SetStateDuration(GetEntityHandle(), AIHelpers::IsAggressive(GetEntityHandle()) && !victim
         ? PASSES_PER_SEC(number(1, 3))
-        : PASSES_PER_SEC(number(3, 5));
+        : PASSES_PER_SEC(number(3, 5)));
 
     LPCHARACTER protege = GetProtege();
     if (protege && DISTANCE_APPROX(GetX() - ecs::PlayerRuntime::GetX(protege->GetEntityHandle()), GetY() - ecs::PlayerRuntime::GetY(protege->GetEntityHandle())) > 1000) {
@@ -329,7 +329,7 @@ void CHARACTER::__StateIdle_Monster()
         SetNowWalking(number(0, 100) >= 60);
     }
 
-    if (Goto(GetX() + static_cast<int>(fx), GetY() + static_cast<int>(fy))) {
+    if (ecs::MovementSystem::Goto(GetEntityHandle(), GetX() + static_cast<int>(fx), GetY() + static_cast<int>(fy))) {
         ecs::MovementSystem::SendMovePacket(GetEntityHandle(), FUNC_WAIT, 0, 0, 0, 0);
     }
 }
@@ -355,7 +355,7 @@ void CHARACTER::StateBattle()
         SetVictim(entt::null);
         if (number(1, 50) != 1) {
             SetPosition(POS_STANDING);
-            m_dwStateDuration = 1;
+            AIHelpers::SetStateDuration(GetEntityHandle(), 1);
         } else {
             CowardEscape();
         }
@@ -370,7 +370,7 @@ void CHARACTER::StateBattle()
 
         if (newVictim) {
             SetVictim(newVictim ? newVictim->GetEntityHandle() : entt::null);
-            m_dwStateDuration = PASSES_PER_SEC(1);
+            AIHelpers::SetStateDuration(GetEntityHandle(), PASSES_PER_SEC(1));
             return;
         }
 
@@ -380,7 +380,7 @@ void CHARACTER::StateBattle()
         } else {
             SetPosition(POS_STANDING);
         }
-        m_dwStateDuration = PASSES_PER_SEC(1);
+        AIHelpers::SetStateDuration(GetEntityHandle(), PASSES_PER_SEC(1));
         return;
     }
 
@@ -402,7 +402,7 @@ void CHARACTER::StateBattle()
 
     if (dist >= GetMobAttackRange() * 1.15f) {
         if (LegacyGotoNearTarget(this, victim)) {
-            m_dwStateDuration = 1;
+            AIHelpers::SetStateDuration(GetEntityHandle(), 1);
         }
         return;
     }
@@ -414,7 +414,7 @@ void CHARACTER::StateBattle()
     const uint32_t curTime = get_dword_time();
     const uint32_t duration = CalculateDuration(GetLimitPoint(POINT_ATT_SPEED), 2000);
     if ((curTime - GetLastAttackTime()) < duration) {
-        m_dwStateDuration = MAX(1, (passes_per_sec * (duration - (curTime - GetLastAttackTime())) / 1000));
+        AIHelpers::SetStateDuration(GetEntityHandle(), MAX(1, (passes_per_sec * (duration - (curTime - GetLastAttackTime())) / 1000)));
         return;
     }
 
@@ -439,8 +439,8 @@ void CHARACTER::StateBattle()
                 const float motionDuration = CMotionManager::instance().GetMotionDuration(
                     GetRaceNum(),
                     MAKE_MOTION_KEY(MOTION_MODE_GENERAL, MOTION_SPECIAL_1 + skillIdx));
-                m_dwStateDuration = static_cast<uint32_t>(
-                    motionDuration == 0.0f ? PASSES_PER_SEC(2) : PASSES_PER_SEC(motionDuration));
+                AIHelpers::SetStateDuration(GetEntityHandle(), static_cast<uint32_t>(
+                    motionDuration == 0.0f ? PASSES_PER_SEC(2) : PASSES_PER_SEC(motionDuration)));
                 return;
             }
         }
@@ -466,7 +466,7 @@ void CHARACTER::StateBattle()
     }
 
     if (!Attack(victim ? victim->GetEntityHandle() : entt::null, 0)) {
-        m_dwStateDuration = passes_per_sec / 2;
+        AIHelpers::SetStateDuration(GetEntityHandle(), passes_per_sec / 2);
         return;
     }
 
@@ -476,8 +476,8 @@ void CHARACTER::StateBattle()
     const float motionDuration = CMotionManager::instance().GetMotionDuration(
         GetRaceNum(),
         MAKE_MOTION_KEY(MOTION_MODE_GENERAL, MOTION_NORMAL_ATTACK));
-    m_dwStateDuration = static_cast<uint32_t>(
-        motionDuration == 0.0f ? PASSES_PER_SEC(2) : PASSES_PER_SEC(motionDuration));
+    AIHelpers::SetStateDuration(GetEntityHandle(), static_cast<uint32_t>(
+        motionDuration == 0.0f ? PASSES_PER_SEC(2) : PASSES_PER_SEC(motionDuration)));
 }
 
 void AISystem_Update(entt::registry& reg, uint32_t tick)

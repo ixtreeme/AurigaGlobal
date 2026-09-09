@@ -1,4 +1,5 @@
 #include "../../stdafx.h"
+#include "MovementSystem.hpp"
 #include <Core/Logging.hpp>
 #include "PlayerRuntimeSystem.hpp"
 #include "AffectSystem.hpp"
@@ -2604,8 +2605,8 @@ struct FuncSplashDamage
 #endif
 
 				pkChrVictim->Sync(tx, ty);
-				pkChrVictim->Goto(tx, ty);
-				pkChrVictim->CalculateMoveDuration();
+				ecs::MovementSystem::Goto(victimEntity, tx, ty);
+				ecs::MovementSystem::CalculateMoveDuration(victimEntity);
 
 				if (ecs::PlayerRuntime::IsPC(m_character) && SkillSystem::GetSkillMainTarget(m_character, m_pkSk->dwVnum) == victimEntity)
 				{

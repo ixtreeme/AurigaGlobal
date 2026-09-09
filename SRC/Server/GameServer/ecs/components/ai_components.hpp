@@ -43,9 +43,9 @@ struct AIFlags {
 };
 
 struct AIState {
-    uint8_t currentState;
-    uint32_t nextStatePulse;
-    uint32_t stateDuration;
+    uint8_t currentState { 0 };
+    uint32_t nextStatePulse { 0 };
+    uint32_t stateDuration { 1 };
 };
 
 struct GuardState {

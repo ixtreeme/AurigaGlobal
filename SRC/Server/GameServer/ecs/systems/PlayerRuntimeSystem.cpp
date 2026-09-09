@@ -1,4 +1,5 @@
 #include "../../stdafx.h"
+#include "../AIHelpers.hpp"
 #include <utility>
 #include "ViewSystem.hpp"
 #include "AffectSystem.hpp"
@@ -4410,8 +4411,6 @@ void CHARACTER::MountVnum(uint32_t vnum)
     // Phase C.3: legacy destination field write removed. SyncDestinationClear
     // drops ECS MovementDestination so subsequent INSERT packets emit
     // current position (GetX/Y fallback in GetCurrentDestX/Y).
-    m_posStart.x = GetX();
-    m_posStart.y = GetY();
     ecs::MovementSystem::SyncDestinationClear(GetEntityHandle());
 
     ecs::EntityNetworkDispatch::SendInsert(g_registry, GetEntityHandle(), GetEntityHandle());
@@ -4584,9 +4583,6 @@ void CHARACTER::SetPlayerProto(const TPlayerTable* t)
     // drops ECS MovementDestination - GetCurrentDestX/Y now returns
     // GetX/Y (the loaded position) so EncodeInsertPacket emits the
     // correct values without legacy dest priming.
-    m_posStart.x = t->x;
-    m_posStart.y = t->y;
-    m_posStart.z = t->z;
     ecs::MovementSystem::SyncDestinationClear(GetEntityHandle());
 
     ComputePoints();
@@ -4744,7 +4740,7 @@ bool CHARACTER::StartStateMachine(int iNextPulse)
 {
     if (CHARACTER_MANAGER::instance().AddToStateList(GetEntityHandle()))
     {
-        m_dwNextStatePulse = thecore_heart->pulse + iNextPulse;
+        AIHelpers::SetNextStatePulse(GetEntityHandle(), thecore_heart->pulse + iNextPulse);
         return true;
     }
 
@@ -4758,20 +4754,21 @@ void CHARACTER::StopStateMachine()
 
 void CHARACTER::UpdateStateMachine(uint32_t dwPulse)
 {
-    if (dwPulse < m_dwNextStatePulse)
+    const auto self = GetEntityHandle();
+    if (!g_registry.valid(self) || dwPulse < AIHelpers::GetNextStatePulse(self))
         return;
 
-    if (IsDead())
+    if (CombatSystem::IsDead(self))
         return;
 
-    AISystem::UpdateStateMachine(GetEntityHandle());
-    m_dwNextStatePulse = dwPulse + m_dwStateDuration;
+    AISystem::UpdateStateMachine(self);
+    AIHelpers::SetNextStatePulse(self, dwPulse + AIHelpers::GetStateDuration(self));
 }
 
 void CHARACTER::SetNextStatePulse(int iNextPulse)
 {
     CHARACTER_MANAGER::instance().AddToStateList(GetEntityHandle());
-    m_dwNextStatePulse = iNextPulse;
+    AIHelpers::SetNextStatePulse(GetEntityHandle(), iNextPulse);
 
     if (iNextPulse < 10)
         MonsterLog("´UA1»óAÂ·Î3î1­°!AÚ");
@@ -5097,7 +5094,7 @@ bool CHARACTER::SwitchChannel(int32_t newAddr, uint16_t newPort)
         return false;
     }
 
-    Stop();
+    ecs::MovementSystem::Stop(GetEntityHandle());
     Save();
 
     if (GetSectree())
@@ -5607,7 +5604,6 @@ void CHARACTER::Initialize()
     // Phase C.3: legacy destination zero-init removed (entity null at this
     // Initialize point - ECS write would no-op anyway; new MovementDestination
     // is absent until Goto/Move emplaces).
-    m_posStart.x = m_posStart.y = 0;
     m_fRegenAngle = 0.0f;
 
     m_pkMobData = nullptr;
@@ -5648,7 +5644,6 @@ void CHARACTER::Initialize()
     m_dwPlayStartTime = m_dwLastMoveTime = get_dword_time();
 
     EnterIdleState(GetEntityHandle());
-    m_dwStateDuration = 1;
 
 
     // Phase C.4: legacy m_bAddChrState zero-init removed (entity null at
@@ -5682,7 +5677,6 @@ void CHARACTER::Initialize()
 
     m_dwFlyTargetID = 0;
 
-    m_dwNextStatePulse = 0;
 
     m_dwLastDeadTime = get_dword_time() - 180000;
 

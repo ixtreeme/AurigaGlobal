@@ -26,6 +26,10 @@ bool Move(entt::entity e, int32_t x, int32_t y);
 void OnMove(entt::entity e, bool isAttack = false);
 bool Goto(entt::entity e, int32_t x, int32_t y);
 void Stop(entt::entity e);
+uint32_t GetMotionMode(entt::entity e);
+float GetMoveMotionSpeed(entt::entity e);
+float GetMoveSpeed(entt::entity e);
+void CalculateMoveDuration(entt::entity e);
 // Changes walking state/timestamp and broadcasts the walk/run mode.
 void SetNowWalking(entt::entity e, bool walking);
 void SetWalkingPreference(entt::entity e, bool walking);
@@ -42,7 +46,7 @@ bool GetWalkingPreference(entt::entity e);
 // Each helper bundles a small group of related component writes so the
 // callsite stays a single line:
 //
-// SyncDestinationWrite: emplace_or_replace<MovementDestination>(e, x, y)
+// SyncDestinationWrite: construct or directly retarget MovementDestination
 // SyncDestinationClear: remove<MovementDestination>(e) and zero MovementState
 //                       timing fields (moveStartTime, moveDuration)
 // SyncTimingWrite:      patch<MovementState>(e) writing moveStartTime and

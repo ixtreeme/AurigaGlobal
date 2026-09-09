@@ -65,7 +65,7 @@ namespace P = ecs::PointSystem;
 namespace {
 int checks = 0, modifies = 0, packets = 0, supportLevel = 0, activeDeck = -1;
 int64_t mountHP = 0;
-std::function<void(entt::entity)> onItem, onAffect, onPacket;
+std::function<void(entt::entity)> onItem, onAffect, onPacket, onMovement;
 struct Actor { bool player = true; uint8_t job = 0; uint32_t immune = 0; TMobTable mob {}; };
 struct Gear { int flatHP = 300, pctHP = 20; bool rune = false, active = true; uint32_t immune = IMMUNE_STUN; TItemTable proto {}; };
 std::map<std::pair<entt::entity, int>, entt::entity> equipment;
@@ -97,7 +97,7 @@ entt::entity Wear(entt::entity owner, int slot = WEAR_BODY) {
 }
 void Reset() {
     g_registry.clear(); equipment.clear(); inventory.clear(); modifies = packets = supportLevel = 0; activeDeck = -1; mountHP = 0;
-    onItem = onAffect = onPacket = {};
+    onItem = onAffect = onPacket = onMovement = {};
     for (auto& job : JobInitialPoints) {
         job = {}; job.max_hp = 1000; job.max_sp = 200; job.max_stamina = 100;
         job.hp_per_ht = 10; job.sp_per_iq = 5; job.stamina_per_con = 2;
@@ -236,7 +236,10 @@ int64_t CHARACTER::GetHP() const { Unexpected(); }
 int64_t CHARACTER::GetSP() const { Unexpected(); }
 int64_t CHARACTER::GetMaxHP() const { Unexpected(); }
 int64_t CHARACTER::GetMaxSP() const { Unexpected(); }
-void CHARACTER::CalculateMoveDuration() { Unexpected(); }
+void ecs::MovementSystem::CalculateMoveDuration(entt::entity e) {
+    if (!onMovement) Unexpected();
+    onMovement(e);
+}
 void CHARACTER::MountVnum(uint32_t) { Unexpected(); }
 int ecs::QuestSystem::GetFlag(entt::entity, std::string_view) { Unexpected(); }
 void ecs::QuestSystem::SetFlag(entt::entity, std::string_view, int) { Unexpected(); }
@@ -358,6 +361,26 @@ void WalkingPreferenceChecks() {
         Check(movement.isNowWalking == preference, "stamina recovery used current movement instead of preference");
     }
 }
+void MovementTimingRouteChecks() {
+    Reset(); const auto e = ActorEntity();
+    auto& state = g_registry.emplace<ecs::MovementState>(e);
+    state.moveStartTime = 900; state.moveDuration = 200;
+    int calls = 0;
+    onMovement = [&](entt::entity current) {
+        Check(current == e && P::Get(e, POINT_MOV_SPEED) == 300,
+            "movement recalculation before point commit or wrong entity");
+        ++calls;
+    };
+    Check(P::Set(e, POINT_MOV_SPEED, 300) && calls == 1,
+        "entity-only speed change skipped native movement recalculation");
+    state.moveDuration = 0;
+    Check(P::Set(e, POINT_MOV_SPEED, 100) && calls == 1, "stationary speed change recalculated movement");
+    state.moveStartTime = 700; state.moveDuration = 100;
+    Check(P::Set(e, POINT_MOV_SPEED, 150) && calls == 1, "expired movement recalculated");
+    state.moveDuration = 1000;
+    onMovement = [&](entt::entity current) { g_registry.destroy(current); };
+    Check(!P::Set(e, POINT_MOV_SPEED, 200) && !g_registry.valid(e), "movement callback retirement ignored");
+}
 void CallbackChecks() {
     for (int stage = 0; stage < 3; ++stage) {
         Reset(); const auto e = ActorEntity(); Wear(e);
@@ -384,7 +407,7 @@ void CallbackChecks() {
 int main() {
     try {
         CSkillManager skills; CHARACTER_MANAGER characters; DSManager dragonSouls;
-        FormulaChecks(); RepeatedCalculation(); SourceChecks(); WalkingPreferenceChecks(); CallbackChecks();
+        FormulaChecks(); RepeatedCalculation(); SourceChecks(); WalkingPreferenceChecks(); MovementTimingRouteChecks(); CallbackChecks();
         std::cout << "Point calculation checks passed: " << checks << '\n'; return 0;
     } catch (const std::exception& error) { std::cerr << error.what() << '\n'; return 1; }
 }

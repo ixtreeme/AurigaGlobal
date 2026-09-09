@@ -10,10 +10,13 @@
 #include "../../SRC/Server/GameServer/ecs/services/EntityNetworkDispatch.hpp"
 #include "../../SRC/Server/GameServer/ecs/systems/VisibilitySystem.hpp"
 #include "../../SRC/Server/GameServer/ecs/systems/MovementSystem.hpp"
+#include "../../SRC/Server/GameServer/ecs/systems/MountSystem.hpp"
+#include "../../SRC/Server/GameServer/ecs/AIHelpers.hpp"
 #include "../../SRC/Server/GameServer/ecs/systems/ViewSystem.hpp"
 #include "../../SRC/Server/GameServer/ecs/systems/CombatSystem.hpp"
 #include "../../SRC/Server/GameServer/ecs/systems/AISystem.hpp"
 #include "../../SRC/Server/GameServer/ecs/components/movement_components.hpp"
+#include "../../SRC/Server/GameServer/ecs/components/dirty_components.hpp"
 #include "../../SRC/Server/GameServer/ecs/components/character_runtime_components.hpp"
 #include "../../SRC/Server/GameServer/ecs/components/combat_components.hpp"
 #include "../../SRC/Server/GameServer/ecs/components/status_components.hpp"
@@ -37,6 +40,8 @@
 #include <functional>
 #include <iostream>
 #include <stdexcept>
+#include <limits>
+#include "../../SRC/Server/GameServer/mount_inventory_helper.h"
 
 entt::registry g_registry;
 entt::dispatcher g_dispatcher;
@@ -55,6 +60,20 @@ std::function<void(entt::entity)> onRetire;
 int retired = 0;
 std::vector<TPacketGCMove> movementPackets;
 std::vector<std::pair<entt::entity, ecs::AIFSMState>> transitions;
+struct MotionSettings {
+    bool attached = false, polymorphed = false;
+    uint32_t race = 0, mount = 0;
+    int stamina = 100;
+    int64_t movePoint = 100;
+    entt::entity weapon = entt::null;
+};
+std::unordered_map<entt::entity, MotionSettings> motionSettings;
+std::map<entt::entity, TItemTable> weaponProtos;
+std::map<std::pair<uint32_t, uint32_t>, const CMotion*> motions;
+std::vector<std::pair<uint32_t, uint32_t>> motionRequests;
+struct TestMotion : CMotion {
+    TestMotion(float duration, float distance) { m_fDuration = duration; m_vec3Accumulation = {0, -distance, 0}; }
+};
 
 struct MapFixture {
     int index;
@@ -102,7 +121,8 @@ bool Visible(entt::entity source, entt::entity viewer) {
 }
 void Reset() {
     onPacket = {}; onRetire = {}; packets.clear(); awake.clear(); retired = 0;
-    movementPackets.clear(); transitions.clear(); g_registry.clear();
+    movementPackets.clear(); transitions.clear(); motionSettings.clear(); weaponProtos.clear();
+    motions.clear(); motionRequests.clear(); g_registry.clear();
 }
 struct Callback {
     std::function<void(entt::registry&, entt::entity)> fn;
@@ -148,7 +168,10 @@ void CHARACTER_MANAGER::DestroyCharacter(entt::entity e) { g_registry.destroy(e)
 DESC_MANAGER::DESC_MANAGER() {}
 DESC_MANAGER::~DESC_MANAGER() {}
 void DESC_MANAGER::DestroyDesc(LPDESC, bool) { Unexpected(); }
-DESC* ecs::PlayerRuntime::GetDesc(entt::entity) { return nullptr; }
+DESC* ecs::PlayerRuntime::GetDesc(entt::entity e) {
+    // Boolean-only attachment seam: no transport object is dereferenced here.
+    return motionSettings[e].attached ? reinterpret_cast<DESC*>(uintptr_t(1)) : nullptr;
+}
 // Gameplay leaf services are isolated here; movement, packet encoding,
 // SetPosition, sectree relocation and visibility run their production code.
 uint32_t get_dword_time() { return 123456; }
@@ -179,9 +202,11 @@ void intrusive_ptr_release(event*) { Unexpected(); }
 LPEVENT event_create_ex(TEVENTFUNC, event_info_data*, int32_t) { Unexpected(); }
 void ecs::ChatSystem::Send(entt::entity, uint8_t, const char*, ...) { Unexpected(); }
 bool AffectSystem::IsAffectFlag(entt::entity, uint32_t) { Unexpected(); }
-bool AffectSystem::IsPolymorphed(entt::entity) { Unexpected(); }
+bool AffectSystem::IsPolymorphed(entt::entity e) { return motionSettings[e].polymorphed; }
 uint32_t ecs::PlayerRuntime::GetPacketVID(entt::entity) { Unexpected(); }
-uint32_t ecs::PlayerRuntime::GetRaceNum(entt::entity) { Unexpected(); }
+uint32_t ecs::PlayerRuntime::GetRaceNum(entt::entity e) { return motionSettings[e].race; }
+int ecs::PlayerRuntime::GetStamina(entt::entity e) { return motionSettings[e].stamina; }
+uint32_t MountSystem::GetMountVnum(entt::entity e) { return motionSettings[e].mount; }
 std::string_view ecs::PlayerRuntime::GetName(entt::entity) { Unexpected(); }
 int32_t ecs::PlayerRuntime::GetMapIndex(entt::entity) { Unexpected(); }
 int32_t ecs::PlayerRuntime::GetX(entt::entity) { Unexpected(); }
@@ -221,17 +246,30 @@ LPCHARACTER CHARACTER::GetVictim() const { Unexpected(); }
 void CHARACTER::MonsterLog(const char*, ...) { Unexpected(); }
 uint8_t CHARACTER::GetEmpire() const { Unexpected(); }
 int CDungeon::GetFlag(std::string) { Unexpected(); }
-float CMotion::GetDuration() const { Unexpected(); }
-const D3DXVECTOR3& CMotion::GetAccumVector() const { Unexpected(); }
-const CMotion* CMotionManager::GetMotion(uint32_t, uint32_t) { Unexpected(); }
+CMotion::CMotion() {}
+CMotion::~CMotion() {}
+float CMotion::GetDuration() const { return m_fDuration; }
+const D3DXVECTOR3& CMotion::GetAccumVector() const { return m_vec3Accumulation; }
+CMotionManager::CMotionManager() {}
+CMotionManager::~CMotionManager() {}
+const CMotion* CMotionManager::GetMotion(uint32_t race, uint32_t key) {
+    motionRequests.emplace_back(race, key);
+    auto it = motions.find({race, key}); return it == motions.end() ? nullptr : it->second;
+}
 float GetDegreeFromPositionXY(int32_t, int32_t, int32_t, int32_t) { Unexpected(); }
 void quest::CQuestManager::AttrIn(uint32_t, LPCHARACTER, int) { Unexpected(); }
 void quest::CQuestManager::AttrOut(uint32_t, LPCHARACTER, int) { Unexpected(); }
-entt::entity ItemSystem::GetWearItem(entt::entity, uint8_t) { Unexpected(); }
-bool ItemSystem::IsValidItem(entt::entity) { Unexpected(); }
-const TItemTable* ItemSystem::GetItemProto(entt::entity) { Unexpected(); }
+entt::entity ItemSystem::GetWearItem(entt::entity e, uint8_t slot) {
+    Check(slot == WEAR_WEAPON, "motion read wrong wear slot"); return motionSettings[e].weapon;
+}
+bool ItemSystem::IsValidItem(entt::entity e) { return g_registry.valid(e) && g_registry.all_of<ecs::ItemIdentity>(e); }
+const TItemTable* ItemSystem::GetItemProto(entt::entity e) {
+    auto it = weaponProtos.find(e); return it == weaponProtos.end() ? nullptr : &it->second;
+}
 uint32_t CParty::GetLeaderPID() { Unexpected(); }
-int64_t ecs::PointSystem::Get(entt::entity, uint8_t) { Unexpected(); }
+int64_t ecs::PointSystem::Get(entt::entity e, uint8_t point) {
+    Check(point == POINT_MOV_SPEED, "motion read wrong point"); return motionSettings[e].movePoint;
+}
 int ecs::PointSystem::GetMaxHP(entt::entity) { Unexpected(); }
 void ecs::PointSystem::Change(entt::entity, uint8_t, int64_t, bool, bool, bool) { Unexpected(); }
 uint32_t g_start_position[4][2] {};
@@ -662,15 +700,265 @@ void MovementArrivalAndPackets() {
     Check(movementPackets.size() == 3, "invalid/non-character entity emitted movement packet");
 }
 
+
+void NativeMovementCommands() {
+    Reset(); MapFixture map;
+    const auto e = Moving(100, 100, 101, 100);
+    ecs::MovementSystem::SyncDestinationClear(e);
+    g_registry.remove<ecs::MovementState>(e); // Exercise command bootstrap too.
+    motionSettings[e].attached = true;
+    Check(ecs::MovementSystem::Goto(e, 400, 500), "native Goto rejected fresh target");
+    g_registry.get<ecs::MovementState>(e).walkPreference = true;
+    const auto initial = g_registry.get<ecs::MovementState>(e);
+    Check(initial.moveStartTime == 123456 && initial.moveDuration == 1666 &&
+        g_registry.get<ecs::MovementDestination>(e).x == 400 &&
+        AIHelpers::GetStateDuration(e) == 4, "Goto target/timing/AI commit missing");
+    Check(!ecs::MovementSystem::Goto(e, 400, 500) &&
+        g_registry.get<ecs::MovementState>(e).commandRevision == initial.commandRevision,
+        "repeated target restarted movement");
+    Check(!ecs::MovementSystem::Goto(e, 100, 100) &&
+        g_registry.get<ecs::MovementDestination>(e).x == 400, "current-position no-op changed target");
+
+    motionSettings[e].movePoint = 200;
+    ecs::MovementSystem::CalculateMoveDuration(e);
+    Check(g_registry.get<ecs::MovementState>(e).moveDuration == 833, "speed-change duration calculation");
+    Check(ecs::MovementSystem::GetMoveSpeed(e) == 600.0f, "native effective movement speed");
+    g_registry.emplace<ecs::CombatActiveTag>(e);
+    g_registry.emplace<ecs::CombatTarget>(e, Entity(ecs::SpatialKind::Character), 0u);
+    ecs::MovementSystem::Stop(e);
+    Check(!g_registry.any_of<ecs::MovementDestination, ecs::CombatActiveTag, ecs::CombatTarget>(e) &&
+        g_registry.get<ecs::MovementState>(e).moveDuration == 0 &&
+        g_registry.get<ecs::MovementState>(e).moveStartTime == 0 &&
+        g_registry.get<ecs::MovementState>(e).walkPreference && transitions.empty(),
+        "native PC stop did not clear combat/timing or changed preference/AI");
+    ecs::MovementSystem::CalculateMoveDuration(e);
+    Check(g_registry.get<ecs::MovementState>(e).moveDuration == 0, "stationary duration is nonzero");
+
+    const auto clone = Moving(500, 500, 800, 500);
+    // TagPC without an attached descriptor follows legacy NPC stop semantics.
+    ecs::MovementSystem::Stop(clone);
+    Check(transitions.size() == 1 && transitions.back().first == clone &&
+        transitions.back().second == ecs::AIFSMState::Idle, "descriptor-free clone stop skipped AI");
+    for (auto invalid : {entt::entity(entt::null), Entity()}) {
+        Check(!ecs::MovementSystem::Goto(invalid, 1, 1), "invalid/item Goto accepted");
+        ecs::MovementSystem::Stop(invalid);
+    }
+    const auto stale = e; g_registry.destroy(e);
+    Check(!ecs::MovementSystem::Goto(stale, 5, 5), "stale Goto accepted");
+    ecs::MovementSystem::Stop(stale);
+}
+void NativeMotionSelection() {
+    Reset(); MapFixture map;
+    const auto e = Moving(100, 100, 101, 100);
+    const auto weapon = Entity();
+    motionSettings[e].weapon = weapon;
+    const std::pair<uint8_t, uint32_t> modes[] = {
+        {WEAPON_SWORD, MOTION_MODE_ONEHAND_SWORD}, {WEAPON_TWO_HANDED, MOTION_MODE_TWOHAND_SWORD},
+        {WEAPON_DAGGER, MOTION_MODE_DUALHAND_SWORD}, {WEAPON_BOW, MOTION_MODE_BOW},
+        {WEAPON_BELL, MOTION_MODE_BELL}, {WEAPON_FAN, MOTION_MODE_FAN}
+    };
+    for (auto [subtype, mode] : modes) {
+        weaponProtos[weapon].bSubType = subtype;
+        Check(ecs::MovementSystem::GetMotionMode(e) == mode, "weapon motion mode mismatch");
+    }
+    motionSettings[e].polymorphed = true;
+    Check(ecs::MovementSystem::GetMotionMode(e) == MOTION_MODE_GENERAL, "polymorph retained weapon mode");
+    motionSettings[e].polymorphed = false;
+    weaponProtos.erase(weapon);
+    Check(ecs::MovementSystem::GetMotionMode(e) == MOTION_MODE_GENERAL, "missing weapon proto mode");
+    g_registry.destroy(weapon);
+    Check(ecs::MovementSystem::GetMotionMode(e) == MOTION_MODE_GENERAL, "stale weapon mode");
+    motionSettings[e].weapon = entt::null;
+    motionSettings[e].race = 1;
+    motionSettings[e].attached = true;
+    TestMotion run(2, 800), walk(2, 300), mounted(1, 900), horse(1, 700);
+    motions[{1, MAKE_MOTION_KEY(MOTION_MODE_GENERAL, MOTION_RUN)}] = &run;
+    motions[{1, MAKE_MOTION_KEY(MOTION_MODE_GENERAL, MOTION_WALK)}] = &walk;
+    Check(ecs::MovementSystem::GetMoveMotionSpeed(e) == 400, "run motion speed");
+    g_registry.get<ecs::MovementState>(e).isNowWalking = true;
+    Check(ecs::MovementSystem::GetMoveMotionSpeed(e) == 150, "walk motion speed");
+    g_registry.get<ecs::MovementState>(e).isNowWalking = false;
+    motionSettings[e].stamina = 0;
+    Check(ecs::MovementSystem::GetMoveMotionSpeed(e) == 150, "exhausted PC did not walk");
+    motionSettings[e].attached = false;
+    Check(ecs::MovementSystem::GetMoveMotionSpeed(e) == 400, "descriptor-free character used PC walk motion");
+    motionSettings[e].attached = true; motionSettings[e].stamina = 100;
+    motionSettings[e].mount = 20201;
+    motions[{20201, MAKE_MOTION_KEY(MOTION_MODE_GENERAL, MOTION_RUN)}] = &mounted;
+    Check(ecs::MovementSystem::GetMoveMotionSpeed(e) == 900, "mount motion speed");
+    motions.erase({20201, MAKE_MOTION_KEY(MOTION_MODE_GENERAL, MOTION_RUN)});
+    motions[{1, MAKE_MOTION_KEY(MOTION_MODE_HORSE, MOTION_RUN)}] = &horse;
+    Check(ecs::MovementSystem::GetMoveMotionSpeed(e) == 700, "horse-mode fallback");
+    motions.clear();
+    Check(ecs::MovementSystem::GetMoveMotionSpeed(e) == 300, "missing mount motion fallback");
+    motionSettings[e].mount = 0;
+    TestMotion zeroDuration(0, 100), zeroDistance(1, 0), negative(1, -100),
+        infinite(std::numeric_limits<float>::infinity(), 100), nan(1, std::numeric_limits<float>::quiet_NaN());
+    for (const auto* bad : {&zeroDuration, &zeroDistance, &negative, &infinite, &nan}) {
+        motions[{1, MAKE_MOTION_KEY(MOTION_MODE_GENERAL, MOTION_RUN)}] = bad;
+        Check(ecs::MovementSystem::GetMoveMotionSpeed(e) == 300, "malformed motion introduced invalid speed");
+    }
+    motions.clear();
+    ecs::MovementSystem::SyncDestinationWrite(e, INT32_MIN, INT32_MAX);
+    motionSettings[e].movePoint = INT64_MIN;
+    ecs::MovementSystem::CalculateMoveDuration(e);
+    Check(g_registry.get<ecs::MovementState>(e).moveDuration == INT_MAX,
+        "extreme duration overflowed rather than saturating");
+    motionSettings[e].movePoint = INT64_MAX;
+    Check(std::abs(ecs::MovementSystem::GetMoveSpeed(e) - 30000.0f / 28) < 0.01f,
+        "movement point upper limit changed");
+#ifdef ENABLE_MELEY_LAIR
+    motionSettings[e].attached = false; motionSettings[e].race = 6193;
+    Check(!ecs::MovementSystem::Goto(e, 200, 200) && ecs::MovementSystem::GetMoveMotionSpeed(e) == 100,
+        "Meley immobility rule lost");
+#endif
+#ifdef ENABLE_ANCIENT_PYRAMID
+    motionSettings[e].attached = false; motionSettings[e].race = PYRAMID_BOSSVNUM;
+    Check(!ecs::MovementSystem::Goto(e, 200, 200), "pyramid immobility rule lost");
+#endif
+#ifdef __DEFENSE_WAVE__
+    for (uint32_t race = 3960; race <= 3962; ++race) {
+        motionSettings[e].attached = false; motionSettings[e].race = race;
+        Check(!ecs::MovementSystem::Goto(e, 200, 200), "defense-wave immobility rule lost");
+    }
+#endif
+}
+void MovementCommandReentry() {
+    Reset(); MapFixture map;
+    const auto e = Moving(100, 100, 101, 100);
+    ecs::MovementSystem::SyncDestinationClear(e);
+    Callback arrival {[&](entt::registry& reg, entt::entity changed) {
+        if (changed != e) return;
+        Check(reg.get<ecs::MovementState>(e).moveDuration == 1000 &&
+            reg.get<ecs::MovementDestination>(e).x == 400, "destination observer saw incomplete timing");
+        ecs::MovementSystem::Stop(e);
+    }};
+    entt::scoped_connection connection =
+        g_registry.on_construct<ecs::MovementDestination>().connect<&Callback::Run>(arrival);
+    Check(!ecs::MovementSystem::Goto(e, 400, 100) &&
+        !g_registry.all_of<ecs::MovementDestination>(e) &&
+        g_registry.get<ecs::MovementState>(e).moveDuration == 0, "Goto overwrote observer stop");
+    connection.release();
+
+    g_registry.remove<ecs::DirtyTag>(e);
+    Callback speedChange {[&](entt::registry&, entt::entity changed) {
+        if (changed == e) motionSettings[e].movePoint = 200;
+    }};
+    connection = g_registry.on_construct<ecs::DirtyTag>().connect<&Callback::Run>(speedChange);
+    Check(ecs::MovementSystem::Goto(e, 700, 100) &&
+        g_registry.get<ecs::MovementState>(e).moveDuration == 1000,
+        "Goto used speed from before preparation callback");
+    connection.release();
+    motionSettings[e].movePoint = 100;
+    ecs::MovementSystem::SyncDestinationClear(e);
+
+    g_registry.remove<ecs::DirtyTag>(e);
+    Callback removePrepared {[&](entt::registry& reg, entt::entity changed) {
+        if (changed == e) reg.remove<ecs::AIState>(e);
+    }};
+    connection = g_registry.on_construct<ecs::DirtyTag>().connect<&Callback::Run>(removePrepared);
+    Check(!ecs::MovementSystem::Goto(e, 400, 100) && !g_registry.all_of<ecs::MovementDestination>(e),
+        "Goto used scheduler removed by later preparation");
+    connection.release();
+
+    g_registry.remove<ecs::AIState>(e);
+    bool nested = false;
+    Callback prepare {[&](entt::registry&, entt::entity changed) {
+        if (changed == e && !nested) {
+            nested = true;
+            Check(ecs::MovementSystem::Goto(e, 700, 100), "nested Goto failed");
+        }
+    }};
+    connection = g_registry.on_construct<ecs::AIState>().connect<&Callback::Run>(prepare);
+    Check(!ecs::MovementSystem::Goto(e, 400, 100) && nested &&
+        g_registry.get<ecs::MovementDestination>(e).x == 700 &&
+        g_registry.get<ecs::MovementState>(e).moveDuration == 2000, "preparation replaced nested command");
+    connection.release();
+
+    g_registry.emplace<ecs::CombatActiveTag>(e);
+    Callback stop {[&](entt::registry&, entt::entity changed) {
+        if (changed == e) Check(ecs::MovementSystem::Goto(e, 1000, 100), "retarget during stop");
+    }};
+    connection = g_registry.on_destroy<ecs::CombatActiveTag>().connect<&Callback::Run>(stop);
+    ecs::MovementSystem::Stop(e);
+    Check(g_registry.get<ecs::MovementDestination>(e).x == 1000 &&
+        g_registry.get<ecs::MovementState>(e).moveDuration == 3000, "old Stop erased new Goto");
+    connection.release();
+
+    Callback clear {[&](entt::registry& reg, entt::entity changed) {
+        if (changed == e) reg.get<ecs::MovementState>(e).moveDuration = 777;
+    }};
+    connection = g_registry.on_destroy<ecs::MovementDestination>().connect<&Callback::Run>(clear);
+    ecs::MovementSystem::SyncDestinationClear(e);
+    Check(g_registry.get<ecs::MovementState>(e).moveDuration == 777, "sync clear overwrote observer timing");
+    connection.release();
+
+    g_registry.remove<ecs::DirtyTag>(e);
+    entt::entity replacement = entt::null;
+    Callback destroy {[&](entt::registry& reg, entt::entity changed) {
+        if (changed != e) return;
+        reg.destroy(e);
+        replacement = Entity(ecs::SpatialKind::Character);
+    }};
+    connection = g_registry.on_construct<ecs::DirtyTag>().connect<&Callback::Run>(destroy);
+    Check(!ecs::MovementSystem::Goto(e, 400, 100) && !g_registry.valid(e) &&
+        g_registry.valid(replacement) && !g_registry.all_of<ecs::MovementDestination>(replacement),
+        "preparation wrote through recycled handle");
+}
+void NativeAIScheduleStorage() {
+    Reset();
+    const auto e = Entity(ecs::SpatialKind::Character);
+    Check(AIHelpers::GetStateDuration(e) == 1 && AIHelpers::GetNextStatePulse(e) == 0,
+        "scheduler bootstrap defaults");
+    AIHelpers::SetStateDuration(e, 4);
+    AIHelpers::SetNextStatePulse(e, 900);
+    Check(g_registry.get<ecs::AIState>(e).stateDuration == 4 &&
+        g_registry.get<ecs::AIState>(e).nextStatePulse == 900, "AI scheduler did not use components");
+    g_registry.remove<ecs::AIState>(e);
+    Callback callback {[&](entt::registry& reg, entt::entity changed) {
+        if (changed == e) {
+            Check(reg.get<ecs::AIState>(e).stateDuration == 7, "scheduler published default instead of requested state");
+            AIHelpers::SetStateDuration(e, 11);
+        }
+    }};
+    entt::scoped_connection connection = g_registry.on_construct<ecs::AIState>().connect<&Callback::Run>(callback);
+    AIHelpers::SetStateDuration(e, 7);
+    Check(AIHelpers::GetStateDuration(e) == 11, "scheduler overwrote reentrant duration");
+    connection.release();
+
+    g_registry.remove<ecs::AIState>(e);
+    Callback remove {[&](entt::registry& reg, entt::entity changed) {
+        if (changed == e) reg.remove<ecs::AIState>(e);
+    }};
+    connection = g_registry.on_construct<ecs::AIState>().connect<&Callback::Run>(remove);
+    AIHelpers::SetStateDuration(e, 7);
+    Check(!g_registry.all_of<ecs::AIState>(e), "duration setter recreated removed scheduler");
+    connection.release();
+
+    Callback destroy {[&](entt::registry& reg, entt::entity changed) {
+        if (changed == e) {
+            Check(reg.get<ecs::AIState>(e).nextStatePulse == 123, "pulse observer saw incomplete state");
+            reg.destroy(e);
+        }
+    }};
+    connection = g_registry.on_construct<ecs::AIState>().connect<&Callback::Run>(destroy);
+    AIHelpers::SetNextStatePulse(e, 123);
+    Check(!g_registry.valid(e), "pulse setter recreated retired owner");
+    connection.release();
+    AIHelpers::SetStateDuration(e, 3); AIHelpers::SetNextStatePulse(e, 100);
+    Check(!g_registry.valid(e), "scheduler recreated stale entity");
+}
+
 }
 int main() {
     try {
-        SECTREE_MANAGER maps; CHARACTER_MANAGER characters; DESC_MANAGER descriptors;
+        SECTREE_MANAGER maps; CHARACTER_MANAGER characters; DESC_MANAGER descriptors; CMotionManager motionManager;
         ecs::VisibilitySystem::Init(g_registry);
         MembershipAndSnapshots(); VisibilityRoundTrip(); ViewCallbacks(); PreparationAndPCs();
         LifetimeAndObservers(); RemovalCallbacksAndTeardown(); PreparationMutationAndIteration();
         NativeMovement(); MovementVisibilityAndBounds(); MovementCallbackLifetime();
         MovementCallbackRetarget(); MovementArrivalAndPackets();
+        NativeMovementCommands(); NativeMotionSelection(); MovementCommandReentry(); NativeAIScheduleStorage();
         ecs::VisibilitySystem::Shutdown(g_registry);
         std::cout << "Spatial checks passed: " << checks << '\n'; return 0;
     } catch (const std::exception& error) { std::cerr << error.what() << '\n'; return 1; }

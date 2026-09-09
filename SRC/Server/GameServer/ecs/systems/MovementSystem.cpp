@@ -13,10 +13,10 @@
 #include <cmath>
 #include <algorithm>
 #include <tuple>
+#include <optional>
 #include <vector>
 
 #include "../../char.h"
-#include "../../char_manager.h"
 #include "../../desc_client.h"
 #include "../../dungeon.h"
 #include "../../packet.h"
@@ -36,6 +36,7 @@
 #include "../Registry.hpp"
 #include "ItemSystem.hpp"
 #include "PointSystem.hpp"
+#include "MountSystem.hpp"
 #include "../SpatialHelpers.hpp"
 #include "../PositionSync.hpp"
 #include "../components/dirty_components.hpp"
@@ -105,7 +106,91 @@ namespace
     {
         return std::tie(s.moveStartTime, s.moveDuration, s.lastMoveTime, s.lastAttackTime,
             s.walkStartTime, s.stopTime, s.isWalking, s.isNowWalking, s.staminaConsume,
-            s.walkPreference);
+            s.walkPreference, s.commandRevision);
+    }
+
+    // A command owns no component references across construction/destruction
+    // signals. Nested movement commands and spatial replacement win.
+    struct MotionCommand
+    {
+        entt::entity entity;
+        std::optional<ecs::Position> position;
+        int32_t map = 0;
+        uint64_t spatialRevision = 0, revision = 0;
+        bool started = false;
+
+        explicit MotionCommand(entt::entity e) : entity(e)
+        {
+            if (!g_registry.valid(e) || !g_registry.all_of<ecs::CharacterType>(e)) return;
+            if (auto* p = g_registry.try_get<ecs::Position>(e)) position = *p;
+            if (auto* m = g_registry.try_get<ecs::MapIndex>(e)) map = m->value;
+            if (auto* r = g_registry.try_get<ecs::SpatialRevision>(e)) spatialRevision = r->value;
+            if (auto* s = g_registry.try_get<ecs::MovementState>(e)) revision = s->commandRevision;
+            else g_registry.insert<ecs::MovementState>(&e, &e + 1);
+            if (!Current()) return;
+            g_registry.get<ecs::MovementState>(e).commandRevision = ++revision;
+            started = true;
+        }
+        bool Current() const
+        {
+            if (!g_registry.valid(entity) || !g_registry.all_of<ecs::CharacterType>(entity)) return false;
+            const auto* s = g_registry.try_get<ecs::MovementState>(entity);
+            const auto* p = g_registry.try_get<ecs::Position>(entity);
+            const auto* m = g_registry.try_get<ecs::MapIndex>(entity);
+            const auto* r = g_registry.try_get<ecs::SpatialRevision>(entity);
+            return s && s->commandRevision == revision &&
+                (m ? m->value : 0) == map && (r ? r->value : 0) == spatialRevision &&
+                (position ? p && p->x == position->x && p->y == position->y && p->z == position->z : !p);
+        }
+        template<class T> bool Prepare() const
+        {
+            if (!Current()) return false;
+            if (!g_registry.all_of<T>(entity)) g_registry.insert<T>(&entity, &entity + 1);
+            return Current() && g_registry.all_of<T>(entity);
+        }
+    };
+
+    void WriteDestination(entt::entity e, int32_t x, int32_t y)
+    {
+        // Retarget in place, like timing writes (no on_update contract).
+        // Single-entity insert publishes construction without emplace's
+        // post-callback get: an observer may stop or destroy this mover.
+        if (auto* destination = g_registry.try_get<ecs::MovementDestination>(e))
+            *destination = {x, y};
+        else
+            g_registry.insert<ecs::MovementDestination>(&e, &e + 1, ecs::MovementDestination {x, y});
+    }
+
+    bool FixedMovementRace(uint32_t race)
+    {
+#ifdef ENABLE_MELEY_LAIR
+        if (race == 6193) return true;
+#endif
+#ifdef ENABLE_ANCIENT_PYRAMID
+        if (race == PYRAMID_BOSSVNUM) return true;
+#endif
+#ifdef __DEFENSE_WAVE__
+        if (race >= 3960 && race <= 3962) return true;
+#endif
+        return false;
+    }
+
+    int MovementDurationFactor(entt::entity e)
+    {
+        // GetLimitPoint(POINT_MOV_SPEED) used the same instant-point authority.
+        const auto speed = std::clamp<int64_t>(ecs::PointSystem::Get(e, POINT_MOV_SPEED), 0, 350);
+        return speed <= 100 ? int(200 - speed) : int(10000 / speed);
+    }
+
+    uint32_t MovementDuration(entt::entity e, const ecs::Position& from, int32_t x, int32_t y)
+    {
+        const double distance = std::hypot(double(from.x) - x, double(from.y) - y);
+        const float millis = (static_cast<float>(distance) / ecs::MovementSystem::GetMoveMotionSpeed(e)) * 1000.0f;
+        // Keep normal float/truncation and integer-factor semantics, but never
+        // cast infinity/out-of-range floats or overflow the duration product.
+        const auto base = static_cast<uint64_t>(std::clamp<double>(millis, 0, INT_MAX));
+        return static_cast<uint32_t>(std::min<uint64_t>(
+            base * MovementDurationFactor(e) / 100, INT_MAX));
     }
 
     // Own values, never component references: publication can retire, respawn
@@ -282,63 +367,72 @@ void OnMove(entt::entity e, bool isAttack)
 
 bool Goto(entt::entity e, int32_t x, int32_t y)
 {
-    if (!IsValid(e))
+    if (!IsValid(e) || !g_registry.all_of<ecs::CharacterType, ecs::Position>(e))
+        return false;
+    const auto position = g_registry.get<ecs::Position>(e);
+    if (position.x == x && position.y == y) return false;
+    // Legacy IsPC is the attached-descriptor test, not TagPC (e.g. clones).
+    if (!PlayerRuntime::GetDesc(e) && FixedMovementRace(PlayerRuntime::GetRaceNum(e)))
+        return false;
+    if (const auto* destination = g_registry.try_get<ecs::MovementDestination>(e);
+        destination && destination->x == x && destination->y == y)
         return false;
 
-    auto* ch = CharacterOf(e);
-    if (!ch)
-        return false;
-
-    g_registry.emplace_or_replace<ecs::MovementDestination>(e, x, y);
-    MarkDirty(e);
-
-    return ch->Goto(x, y);
+    MotionCommand command(e);
+    if (!command.started) return false;
+    if (!command.Prepare<ecs::AIState>() || !command.Prepare<ecs::DirtyTag>()) return false;
+    // Preparation observers may change equipment or speed without starting
+    // another move. Calculate from the final component state, not a stale copy.
+    const auto duration = MovementDuration(e, position, x, y);
+    const auto now = get_dword_time();
+    if (!command.Current() || !g_registry.all_of<ecs::AIState>(e)) return false;
+    auto& state = g_registry.get<ecs::MovementState>(e);
+    state.moveStartTime = now;
+    state.moveDuration = duration;
+    g_registry.get<ecs::AIState>(e).stateDuration = 4;
+    // Observers of the destination see its matching timing. Reentry cannot
+    // overwrite the nested command after this publication.
+    WriteDestination(e, x, y);
+    return command.Current() && g_registry.all_of<ecs::MovementDestination>(e) &&
+        g_registry.get<ecs::MovementDestination>(e).x == x &&
+        g_registry.get<ecs::MovementDestination>(e).y == y;
 }
 
 void Stop(entt::entity e)
 {
-    if (!IsValid(e))
+    MotionCommand command(e);
+    if (!command.started) return;
+    const bool npc = !PlayerRuntime::GetDesc(e);
+    if (!command.Prepare<ecs::DirtyTag>() || (npc && !command.Prepare<ecs::AIStateMachine>()))
         return;
-
-    auto* ch = CharacterOf(e);
-    if (!ch)
-        return;
-
-    if (g_registry.all_of<ecs::MovementDestination>(e))
-        g_registry.remove<ecs::MovementDestination>(e);
-    MarkDirty(e);
-
-    ch->Stop();
+    const bool wasIdle = HasIdleState(e);
+    auto& state = g_registry.get<ecs::MovementState>(e);
+    state.moveStartTime = state.moveDuration = 0;
+    g_registry.remove<ecs::CombatActiveTag>(e);
+    if (!command.Current()) return;
+    g_registry.remove<ecs::CombatTarget>(e);
+    if (!command.Current()) return;
+    g_registry.remove<ecs::MovementDestination>(e);
+    if (!command.Current()) return;
+    if (npc) AISystem::GotoState(e, ecs::AIFSMState::Idle);
+    if (!wasIdle && command.Current()) PlayerRuntime::MonsterLog(e, "[IDLE] stop");
 }
 
-// LPENTITY.4-fixup helpers: mirror legacy CHARACTER movement-field writes
-// into the parallel ECS components. Each helper is safe to call with a
-// null/invalid entity. They patch existing components when available and
-// emplace_or_replace when not, except SyncDestinationClear which removes
-// MovementDestination outright (its absence is the canonical "no active
-// movement" state). See docs/ecs_migration/phase15e_final_lpentity_4_fixup_audit.txt.
+// Component-only writes for sync/spawn paths; these also supersede older commands.
 
 void SyncDestinationWrite(entt::entity e, int32_t x, int32_t y)
 {
-    if (!IsValid(e))
-        return;
-
-    g_registry.emplace_or_replace<ecs::MovementDestination>(e, x, y);
+    MotionCommand command(e);
+    if (command.started) WriteDestination(e, x, y);
 }
 
 void SyncDestinationClear(entt::entity e)
 {
-    if (!IsValid(e))
-        return;
-
-    if (g_registry.all_of<ecs::MovementDestination>(e))
-        g_registry.remove<ecs::MovementDestination>(e);
-
-    if (auto* state = g_registry.try_get<ecs::MovementState>(e))
-    {
-        state->moveStartTime = 0;
-        state->moveDuration = 0;
-    }
+    MotionCommand command(e);
+    if (!command.started) return;
+    auto& state = g_registry.get<ecs::MovementState>(e);
+    state.moveStartTime = state.moveDuration = 0;
+    g_registry.remove<ecs::MovementDestination>(e);
 }
 
 void SyncTimingWrite(entt::entity e, uint32_t startTime, uint32_t duration)
@@ -681,8 +775,6 @@ bool CHARACTER::Sync(int32_t x, int32_t y)
 	// removes ECS MovementDestination so GetCurrentDestX/Y falls back to
 	// GetX/GetY (current position via ECS Position) - same effective
 	// semantic as legacy destination = current_pos.
-	m_posStart.x = x;
-	m_posStart.y = y;
 	ecs::MovementSystem::SyncDestinationClear(GetEntityHandle());
 
 	if (GetDungeon())
@@ -731,224 +823,75 @@ bool CHARACTER::Sync(int32_t x, int32_t y)
 	return true;
 }
 
-void CHARACTER::Stop()
-{
-	if (!HasIdleState(GetEntityHandle()))
-		MonsterLog("[IDLE] stop");
-	EnterIdleState(GetEntityHandle());
-	if (!IsPC())
-		AISystem::GotoState(GetEntityHandle(), ecs::AIFSMState::Idle);
+namespace ecs::MovementSystem {
 
-	// Phase C.3: legacy destination field write removed. SyncDestinationClear
-	// drops ECS MovementDestination so GetCurrentDestX/Y returns current
-	// position via the GetX/Y fallback - matches legacy "stop parks at
-	// current pos" semantic.
-	m_posStart.x = GetX();
-	m_posStart.y = GetY();
-	ecs::MovementSystem::SyncDestinationClear(GetEntityHandle());
+uint32_t GetMotionMode(entt::entity e)
+{
+    if (!IsValid(e) || AffectSystem::IsPolymorphed(e)) return MOTION_MODE_GENERAL;
+    const auto weapon = ItemSystem::GetWearItem(e, WEAR_WEAPON);
+    const auto* proto = ItemSystem::IsValidItem(weapon) ? ItemSystem::GetItemProto(weapon) : nullptr;
+    if (!proto) return MOTION_MODE_GENERAL;
+    switch (proto->bSubType) {
+    case WEAPON_SWORD: return MOTION_MODE_ONEHAND_SWORD;
+    case WEAPON_TWO_HANDED: return MOTION_MODE_TWOHAND_SWORD;
+    case WEAPON_DAGGER: return MOTION_MODE_DUALHAND_SWORD;
+    case WEAPON_BOW: return MOTION_MODE_BOW;
+    case WEAPON_BELL: return MOTION_MODE_BELL;
+    case WEAPON_FAN: return MOTION_MODE_FAN;
+    default: return MOTION_MODE_GENERAL;
+    }
 }
 
-bool CHARACTER::Goto(int32_t x, int32_t y)
+float GetMoveMotionSpeed(entt::entity e)
 {
-	// TODO �A��A1A????	// ��Ao A��!�� AI?? ???3oA1 (Aڵ? 1o�o)
-	if (GetX() == x && GetY() == y)
-		return false;
-
-	if (!IsPC())
-	{
-		int32_t vnum = GetRaceNum();
-#ifdef ENABLE_MELEY_LAIR
-		if (vnum == 6193)
-		{
-			return false;
-		}
-#endif
-
-#ifdef ENABLE_ANCIENT_PYRAMID
-		if (vnum == PYRAMID_BOSSVNUM)
-		{
-			return false;
-		}
-#endif
-
-#ifdef __DEFENSE_WAVE__
-		if (vnum >= 3960 && vnum <= 3962)
-		{
-			return false;
-		}
-#endif
-	}
-
-	// B.1.4: read via getter (ECS MovementDestination, fallback to GetX/Y).
-	if (GetCurrentDestX() == x && GetCurrentDestY() == y)
-	{
-		if (!HasMoveState(GetEntityHandle()))
-		{
-			m_dwStateDuration = 4;
-			const entt::entity e = GetEntityHandle();
-			if (e != entt::null && g_registry.valid(e))
-				g_registry.emplace_or_replace<ecs::MovementDestination>(e, static_cast<int32_t>(x), static_cast<int32_t>(y));
-		}
-		return false;
-	}
-
-	// Phase C.3: legacy destination field write removed; ECS MovementDestination
-	// emplaced here BEFORE CalculateMoveDuration so the duration calc
-	// (which reads dest via GetCurrentDestX/Y) sees the new value.
-	if (const entt::entity destEntity = GetEntityHandle(); destEntity != entt::null && g_registry.valid(destEntity))
-		g_registry.emplace_or_replace<ecs::MovementDestination>(destEntity, x, y);
-
-	CalculateMoveDuration();
-
-	m_dwStateDuration = 4;
-
-
-	if (!HasMoveState(GetEntityHandle())) {
-		MonsterLog("[MOVE] %s", GetVictim() ? "���A?u" : "��3?I?");
-	}
-
-	const entt::entity e = GetEntityHandle();
-	if (e != entt::null && g_registry.valid(e))
-		g_registry.emplace_or_replace<ecs::MovementDestination>(e, static_cast<int32_t>(x), static_cast<int32_t>(y));
-
-	return true;
+    if (!IsValid(e)) return 300.0f;
+    const auto mode = GetMotionMode(e);
+    const auto race = PlayerRuntime::GetRaceNum(e);
+    const bool attached = PlayerRuntime::GetDesc(e) != nullptr;
+    if (!attached && mode == MOTION_MODE_GENERAL && FixedMovementRace(race)) return 100.0f;
+    const auto* movement = g_registry.try_get<ecs::MovementState>(e);
+    const bool walking = attached && ((movement && movement->isNowWalking) || PlayerRuntime::GetStamina(e) <= 0);
+    const auto motionIndex = walking ? MOTION_WALK : MOTION_RUN;
+    const auto mount = MountSystem::GetMountVnum(e);
+    const CMotion* motion = nullptr;
+    if (mount) {
+        motion = CMotionManager::instance().GetMotion(mount, MAKE_MOTION_KEY(MOTION_MODE_GENERAL, motionIndex));
+        if (!motion) motion = CMotionManager::instance().GetMotion(race, MAKE_MOTION_KEY(MOTION_MODE_HORSE, motionIndex));
+    } else {
+        motion = CMotionManager::instance().GetMotion(race, MAKE_MOTION_KEY(mode, motionIndex));
+    }
+    if (motion) {
+        const float duration = motion->GetDuration();
+        const float distance = -motion->GetAccumVector().y;
+        if (std::isfinite(duration) && duration > 0 && std::isfinite(distance) && distance > 0) {
+            const float speed = distance / duration;
+            if (std::isfinite(speed) && speed > 0) return speed;
+        }
+    }
+    return 300.0f; // Missing/malformed motion must not introduce NaN or zero division.
 }
 
-
-uint32_t CHARACTER::GetMotionMode() const
+float GetMoveSpeed(entt::entity e)
 {
-	uint32_t dwMode = MOTION_MODE_GENERAL;
-
-	if (AffectSystem::IsPolymorphed(GetEntityHandle()))
-		return dwMode;
-
-	const entt::entity weapon = ItemSystem::GetWearItem(GetEntityHandle(), WEAR_WEAPON);
-	if (ItemSystem::IsValidItem(weapon))
-	{
-		const TItemTable* itemProto = ItemSystem::GetItemProto(weapon);
-		if (!itemProto)
-			return dwMode;
-
-		switch (itemProto->bSubType)
-		{
-		case WEAPON_SWORD:
-			dwMode = MOTION_MODE_ONEHAND_SWORD;
-			break;
-
-		case WEAPON_TWO_HANDED:
-			dwMode = MOTION_MODE_TWOHAND_SWORD;
-			break;
-
-		case WEAPON_DAGGER:
-			dwMode = MOTION_MODE_DUALHAND_SWORD;
-			break;
-
-		case WEAPON_BOW:
-			dwMode = MOTION_MODE_BOW;
-			break;
-
-		case WEAPON_BELL:
-			dwMode = MOTION_MODE_BELL;
-			break;
-
-		case WEAPON_FAN:
-			dwMode = MOTION_MODE_FAN;
-			break;
-		}
-	}
-	return dwMode;
+    return GetMoveMotionSpeed(e) * 100.0f / MovementDurationFactor(e);
 }
 
-float CHARACTER::GetMoveMotionSpeed() const
+void CalculateMoveDuration(entt::entity e)
 {
-	uint32_t dwMode = GetMotionMode();
-	if (!IsPC())
-	{
-		if (dwMode == 0)
-		{
-			int32_t vnum = GetRaceNum();
-#ifdef ENABLE_MELEY_LAIR
-			if (vnum == 6193)
-			{
-				return 100.0f;
-			}
-#endif
-
-#ifdef ENABLE_ANCIENT_PYRAMID
-			if (vnum == PYRAMID_BOSSVNUM)
-			{
-				return 100.0f;
-			}
-#endif
-
-#ifdef __DEFENSE_WAVE__
-			if (vnum >= 3960 && vnum <= 3962)
-			{
-				return 100.0f;
-			}
-#endif
-		}
-	}
-
-	const CMotion* pkMotion = nullptr;
-
-	if (!GetMountVnum())
-		pkMotion = CMotionManager::instance().GetMotion(GetRaceNum(), MAKE_MOTION_KEY(dwMode, (IsWalking() && IsPC()) ? MOTION_WALK : MOTION_RUN));
-	else
-	{
-		pkMotion = CMotionManager::instance().GetMotion(GetMountVnum(), MAKE_MOTION_KEY(MOTION_MODE_GENERAL, (IsWalking() && IsPC()) ? MOTION_WALK : MOTION_RUN));
-
-		if (!pkMotion)
-			pkMotion = CMotionManager::instance().GetMotion(GetRaceNum(), MAKE_MOTION_KEY(MOTION_MODE_HORSE, (IsWalking() && IsPC()) ? MOTION_WALK : MOTION_RUN));
-	}
-
-	if (pkMotion)
-		return -pkMotion->GetAccumVector().y / pkMotion->GetDuration();
-	else
-	{
-		if (test_server) {
-			LOG_ERROR("cannot find motion (name {} race {} mode {})", GetName(), GetRaceNum(), dwMode);
-		}
-
-		return 300.0f;
-	}
+    if (!IsValid(e) || !g_registry.all_of<ecs::Position>(e)) return;
+    MotionCommand command(e);
+    if (!command.started) return;
+    const auto position = g_registry.get<ecs::Position>(e);
+    const auto* dest = g_registry.try_get<ecs::MovementDestination>(e);
+    const auto duration = MovementDuration(e, position, dest ? dest->x : position.x, dest ? dest->y : position.y);
+    const auto now = get_dword_time();
+    if (!command.Current()) return;
+    auto& state = g_registry.get<ecs::MovementState>(e);
+    state.moveStartTime = now;
+    state.moveDuration = duration;
 }
 
-float CHARACTER::GetMoveSpeed() const
-{
-	return GetMoveMotionSpeed() * 10000 / CalculateDuration(GetLimitPoint(POINT_MOV_SPEED), 10000);
-}
-
-void CHARACTER::CalculateMoveDuration()
-{
-	// Phase C.2/C.3: legacy m_dwMoveStartTime / m_dwMoveDuration / destination
-	// writes removed. ECS MovementState + MovementDestination are the sole
-	// sources. m_posStart still legacy-written; A.2 §2 m_posStart row says
-	// fold into a function-local. Done here.
-	const int32_t startX = GetX();
-	const int32_t startY = GetY();
-	const int32_t destX = GetCurrentDestX();
-	const int32_t destY = GetCurrentDestY();
-
-	// Keep m_posStart in sync for now - audit accessor surface and
-	// CalculateMoveDuration internal callers may read it; deletes in
-	// Phase G with the field.
-	m_posStart.x = startX;
-	m_posStart.y = startY;
-
-	const float fDist = DISTANCE_SQRT(startX - destX, startY - destY);
-	const float motionSpeed = GetMoveMotionSpeed();
-	const uint32_t newDuration = CalculateDuration(GetLimitPoint(POINT_MOV_SPEED),
-		static_cast<int>((fDist / motionSpeed) * 1000.0f));
-	const uint32_t newStartTime = get_dword_time();
-
-	ecs::MovementSystem::SyncTimingWrite(GetEntityHandle(), newStartTime, newDuration);
-
-	if (IsNPC())
-		LOG_TRACE("{}: GOTO: distance {:f}, spd {}, duration {}, motion speed {:f} pos {} {} -> {} {}",
-			GetName(), fDist, GetLimitPoint(POINT_MOV_SPEED), newDuration, motionSpeed,
-			startX, startY, destX, destY);
-}
+} // namespace ecs::MovementSystem
 
 // x y A��!�� AI? ?�U. (AI?? 1?Aִ?? 3o�� ?�� E�A??�� Sync ?1O�a�� 1��?AI? ?�U)
 // 1?��?charA?x, y �aA?1U�� 1U2U����,

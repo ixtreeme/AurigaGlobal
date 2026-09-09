@@ -7,6 +7,31 @@
 
 namespace AIHelpers {
 
+// Authoritative scheduler state; never mirror CHARACTER timing fields.
+inline uint32_t GetStateDuration(entt::entity e)
+{
+    const auto* state = g_registry.valid(e) ? g_registry.try_get<ecs::AIState>(e) : nullptr;
+    return state ? state->stateDuration : 1;
+}
+inline uint32_t GetNextStatePulse(entt::entity e)
+{
+    const auto* state = g_registry.valid(e) ? g_registry.try_get<ecs::AIState>(e) : nullptr;
+    return state ? state->nextStatePulse : 0;
+}
+inline void SetStateDuration(entt::entity e, uint32_t duration)
+{
+    if (!g_registry.valid(e)) return;
+    if (auto* state = g_registry.try_get<ecs::AIState>(e)) state->stateDuration = duration;
+    // No returned reference: a construction observer may retire the entity.
+    else g_registry.insert<ecs::AIState>(&e, &e + 1, ecs::AIState {0, 0, duration});
+}
+inline void SetNextStatePulse(entt::entity e, uint32_t pulse)
+{
+    if (!g_registry.valid(e)) return;
+    if (auto* state = g_registry.try_get<ecs::AIState>(e)) state->nextStatePulse = pulse;
+    else g_registry.insert<ecs::AIState>(&e, &e + 1, ecs::AIState {0, pulse, 1});
+}
+
 inline ecs::AIFlags* TryGetFlags(entt::entity e)
 {
     if (e == entt::null || !g_registry.valid(e)) {

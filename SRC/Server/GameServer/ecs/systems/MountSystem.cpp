@@ -422,9 +422,9 @@ void SummonHorse(entt::entity rider, bool bSummon, bool bFromFar, uint32_t dwVnu
 		{
 			uint8_t bLang = 0;
 			if (ecs::PlayerRuntime::GetDesc(rider)) {
-				bLang = ecs::PlayerRuntime::GetDesc(rider)->GetLanguage(); 
+				bLang = ecs::PlayerRuntime::GetDesc(rider)->GetLanguage();
 			}
-			
+
 			ecs::LegacyCharOf(GetSummonedHorse(rider))->SetName(std::string(ecs::PlayerRuntime::GetName(rider)));
 			ecs::LegacyCharOf(GetSummonedHorse(rider))->SetName(
 				std::string(ecs::LegacyCharOf(GetSummonedHorse(rider))->GetName()) + " ");
@@ -475,7 +475,7 @@ void SummonHorse(entt::entity rider, bool bSummon, bool bFromFar, uint32_t dwVnu
 				ecs::PlayerRuntime::GetX(horseEntity),
 				ecs::PlayerRuntime::GetY(horseEntity), ecs::PlayerRuntime::GetX(rider), ecs::PlayerRuntime::GetY(rider)) + 180);
 			GetDeltaByDegree(chHorse->GetRotation(), 3500, &fx, &fy);
-			chHorse->Goto(
+			ecs::MovementSystem::Goto(horseEntity,
 				static_cast<int32_t>(ecs::PlayerRuntime::GetX(horseEntity) + fx),
 				static_cast<int32_t>(ecs::PlayerRuntime::GetY(horseEntity) + fy));
 			ecs::MovementSystem::SendMovePacket(horseEntity, FUNC_WAIT, 0, 0, 0, 0);
