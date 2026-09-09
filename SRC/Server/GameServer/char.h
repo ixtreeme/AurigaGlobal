@@ -835,8 +835,6 @@ public:
 	void			SetRotationToXY(int32_t x, int32_t y);
 	float			GetRotation() const;
 
-	void			MotionPacketEncode(uint8_t motion, entt::entity victim, struct packet_motion* packet);
-	void			Motion(uint8_t motion, entt::entity victim = entt::null);
 
 	void			SendGreetMessage();
 

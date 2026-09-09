@@ -7,6 +7,8 @@
 
 namespace ecs::MovementSystem {
 
+void Motion(entt::entity e, uint8_t motion, entt::entity victim = entt::null);
+
 void SendMovePacket(entt::entity e, uint8_t bFunc, uint8_t bArg, uint32_t x, uint32_t y,
                     uint32_t dwDuration, uint32_t dwTime = 0, float iRot = -1.0f);
 

@@ -1134,7 +1134,7 @@ void ClearClonesOnMap(int32_t mapIndex)
                     if (didAction)
                     {
                         // Force victim hurt animation like real PvP
-                        target->Motion(MOTION_DAMAGE, (clone ? clone->GetEntityHandle() : entt::null));
+                        ecs::MovementSystem::Motion(targetEntity, MOTION_DAMAGE, cloneEntity);
                     }
 
                     s_lc.m_clonePending.erase(cloneVid);

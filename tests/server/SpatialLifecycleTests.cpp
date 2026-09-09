@@ -59,6 +59,8 @@ std::function<void(Packet)> onPacket;
 std::function<void(entt::entity)> onRetire;
 int retired = 0;
 std::vector<TPacketGCMove> movementPackets;
+std::vector<packet_motion> animationPackets;
+std::function<void(entt::entity)> onAnimation;
 std::vector<std::pair<entt::entity, ecs::AIFSMState>> transitions;
 struct MotionSettings {
     bool attached = false, polymorphed = false;
@@ -121,7 +123,8 @@ bool Visible(entt::entity source, entt::entity viewer) {
 }
 void Reset() {
     onPacket = {}; onRetire = {}; packets.clear(); awake.clear(); retired = 0;
-    movementPackets.clear(); transitions.clear(); motionSettings.clear(); weaponProtos.clear();
+    movementPackets.clear(); animationPackets.clear(); onAnimation = {};
+    transitions.clear(); motionSettings.clear(); weaponProtos.clear();
     motions.clear(); motionRequests.clear(); g_registry.clear();
 }
 struct Callback {
@@ -192,6 +195,13 @@ entt::entity CombatSystem::GetVictim(entt::entity e) {
         g_registry.all_of<ecs::CharacterType>(target->target) ? target->target : entt::null;
 }
 void ecs::ViewSystem::PacketView(entt::entity e, const void* data, int size, entt::entity except) {
+    if (*static_cast<const uint8_t*>(data) == HEADER_GC_MOTION) {
+        Check(g_registry.valid(e) && except == entt::null && size == sizeof(packet_motion),
+            "invalid animation broadcast or source excluded");
+        animationPackets.push_back(*static_cast<const packet_motion*>(data));
+        if (onAnimation) onAnimation(e);
+        return;
+    }
     Check(g_registry.valid(e) && e == except && size == sizeof(TPacketGCMove), "invalid movement broadcast");
     movementPackets.push_back(*static_cast<const TPacketGCMove*>(data));
 }
@@ -701,6 +711,34 @@ void MovementArrivalAndPackets() {
 }
 
 
+void NativeAnimationPackets() {
+    Reset();
+    const auto source = Entity(ecs::SpatialKind::Character);
+    const auto victim = Entity(ecs::SpatialKind::Character);
+    ecs::MovementSystem::Motion(source, MOTION_DAMAGE, victim);
+    Check(animationPackets.size() == 1 && animationPackets.back().header == HEADER_GC_MOTION &&
+        animationPackets.back().vid == g_registry.get<ecs::VIDComponent>(source).value &&
+        animationPackets.back().victim_vid == g_registry.get<ecs::VIDComponent>(victim).value &&
+        animationPackets.back().motion == MOTION_DAMAGE, "native animation encoding");
+    g_registry.destroy(victim);
+    const auto recycled = Entity(ecs::SpatialKind::Character);
+    ecs::MovementSystem::Motion(source, MOTION_DAMAGE, victim);
+    Check(animationPackets.back().victim_vid == 0, "animation resolved recycled victim generation");
+    g_registry.remove<ecs::VIDComponent>(recycled);
+    ecs::MovementSystem::Motion(source, MOTION_DAMAGE, recycled);
+    Check(animationPackets.back().victim_vid == 0, "missing victim VID fallback");
+    ecs::MovementSystem::Motion(source, MOTION_DAMAGE);
+    Check(animationPackets.back().victim_vid == 0, "null victim fallback");
+    ecs::MovementSystem::Motion(recycled, MOTION_DAMAGE);
+    ecs::MovementSystem::Motion(Entity(), MOTION_DAMAGE);
+    ecs::MovementSystem::Motion(entt::null, MOTION_DAMAGE);
+    Check(animationPackets.size() == 4, "invalid animation source broadcast");
+    onAnimation = [](entt::entity e) { g_registry.destroy(e); };
+    ecs::MovementSystem::Motion(source, MOTION_DAMAGE);
+    ecs::MovementSystem::Motion(source, MOTION_DAMAGE);
+    Check(!g_registry.valid(source) && animationPackets.size() == 5, "retired animation source reused");
+}
+
 void NativeMovementCommands() {
     Reset(); MapFixture map;
     const auto e = Moving(100, 100, 101, 100);
@@ -958,7 +996,7 @@ int main() {
         LifetimeAndObservers(); RemovalCallbacksAndTeardown(); PreparationMutationAndIteration();
         NativeMovement(); MovementVisibilityAndBounds(); MovementCallbackLifetime();
         MovementCallbackRetarget(); MovementArrivalAndPackets();
-        NativeMovementCommands(); NativeMotionSelection(); MovementCommandReentry(); NativeAIScheduleStorage();
+        NativeAnimationPackets(); NativeMovementCommands(); NativeMotionSelection(); MovementCommandReentry(); NativeAIScheduleStorage();
         ecs::VisibilitySystem::Shutdown(g_registry);
         std::cout << "Spatial checks passed: " << checks << '\n'; return 0;
     } catch (const std::exception& error) { std::cerr << error.what() << '\n'; return 1; }

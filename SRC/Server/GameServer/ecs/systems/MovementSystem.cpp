@@ -934,23 +934,21 @@ void SendMovePacket(entt::entity e, uint8_t bFunc, uint8_t bArg, uint32_t x, uin
     ecs::ViewSystem::PacketView(e, &pack, sizeof(pack), e);
 }
 
+void Motion(entt::entity e, uint8_t motion, entt::entity victim)
+{
+    if (!IsValid(e) || !g_registry.all_of<ecs::CharacterType, ecs::VIDComponent>(e)) return;
+    const auto* victimVID = IsValid(victim) ? g_registry.try_get<ecs::VIDComponent>(victim) : nullptr;
+    packet_motion packet {};
+    packet.header = HEADER_GC_MOTION;
+    packet.vid = g_registry.get<ecs::VIDComponent>(e).value;
+    packet.victim_vid = victimVID ? victimVID->value : 0;
+    packet.motion = motion;
+    // Include the source, as the original animation broadcast did. No entity
+    // or component access after publication: transport may retire the source.
+    ecs::ViewSystem::PacketView(e, &packet, sizeof(packet));
+}
+
 } // namespace ecs::MovementSystem
-
-void CHARACTER::MotionPacketEncode(uint8_t motion, entt::entity victimEntity, struct packet_motion* packet)
-{
-	packet->header = HEADER_GC_MOTION;
-	packet->vid = GetPacketVID();
-	packet->motion = motion;
-
-	packet->victim_vid = ecs::PlayerRuntime::GetPacketVID(victimEntity);
-}
-
-void CHARACTER::Motion(uint8_t motion, entt::entity victimEntity)
-{
-	struct packet_motion pack_motion;
-	MotionPacketEncode(motion, victimEntity, &pack_motion);
-	ecs::ViewSystem::PacketView(GetEntityHandle(), &pack_motion, sizeof(struct packet_motion));
-}
 
 // Phase 15E-final.LPENTITY.4-architect.B.1.2:
 // CHARACTER::GetCurrentMoveDuration / GetCurrentMoveStartTime now read the

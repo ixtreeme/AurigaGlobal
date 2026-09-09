@@ -1,5 +1,13 @@
 # Server ECS regression tests
 
+## Native animation packets
+
+MovementSystem::Motion builds and broadcasts HEADER_GC_MOTION from entity VIDs.
+The two CHARACTER animation methods are deleted; LostCastle uses its existing
+entity handles. SpatialLifecycleTests checks encoding, source inclusion, null or
+stale/missing-VID victims, rejected sources and source retirement during transport.
+Packet transport is a controlled test double; this is not a live animation test.
+
 ## Native movement commands and AI timing
 
 Goto, Stop, motion-mode/speed selection and CalculateMoveDuration now live only
