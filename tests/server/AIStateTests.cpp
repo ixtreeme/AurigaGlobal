@@ -42,6 +42,11 @@ struct Recorder {
     std::vector<entt::entity> gotoCalls;
     entt::entity victim { entt::null };
     bool victimDead { false };
+    // What the target search hands back, and whether it was consulted.
+    entt::entity searchResult { entt::null };
+    std::vector<entt::entity> dead;
+    int searchCalls { 0 };
+    std::vector<entt::entity> fightsBegun;
     // Fires inside Goto, standing in for a packet callback that retires the
     // entity while the state body is still running.
     std::function<void(entt::entity)> onGoto;
@@ -78,7 +83,12 @@ int32_t GetX(entt::entity e) { const auto* p = g_registry.try_get<ecs::Position>
 int32_t GetY(entt::entity e) { const auto* p = g_registry.try_get<ecs::Position>(e); return p ? p->y : 0; }
 int32_t GetMapIndex(entt::entity) { return 1; }
 float GetRotation(entt::entity) { return 0.0f; }
-const TMobTable* GetMobTable(entt::entity) { return nullptr; }
+const TMobTable* GetMobTable(entt::entity)
+{
+    static TMobTable table {};
+    table.wAggressiveSight = 5000;
+    return &table;
+}
 void MonsterLog(entt::entity, const char*) {}
 bool IsGuardNPC(entt::entity) { return false; }
 } // namespace ecs::PlayerRuntime
@@ -91,6 +101,9 @@ bool IsDead(entt::entity e)
     // would hide the very bug these cases are looking for.
     if (!g_registry.valid(e))
         return false;
+    for (const entt::entity d : g_rec.dead)
+        if (d == e)
+            return true;
     return e == g_rec.victim && g_rec.victimDead;
 }
 entt::entity GetVictim(entt::entity) { return g_rec.victim; }
@@ -101,13 +114,19 @@ void SetVictim(entt::entity attacker, entt::entity victim)
     g_rec.victim = victim;
 }
 bool CanBeginFight(entt::entity) { return true; }
-void BeginFight(entt::entity, entt::entity) {}
+void BeginFight(entt::entity, entt::entity victim) { g_rec.fightsBegun.push_back(victim); }
+entt::entity FindVictim(entt::entity, int)
+{
+    ++g_rec.searchCalls;
+    return g_rec.searchResult;
+}
 entt::entity GetNearestVictim(entt::entity, entt::entity) { return entt::null; }
 entt::entity GetStone(entt::entity) { return entt::null; }
 entt::entity GetProtege(entt::entity) { return entt::null; }
 void CowardEscape(entt::entity) {}
 bool IsBerserker(entt::entity) { return false; }
 bool IsDeathBlow(entt::entity) { return false; }
+uint16_t GetMobAttackRange(entt::entity) { return 100; }
 bool IsGodSpeeder(entt::entity) { return false; }
 } // namespace CombatSystem
 
@@ -148,12 +167,9 @@ void GetDeltaByDegree(float, float distance, float* x, float* y)
 
 bool SECTREE_MANAGER::IsMovablePosition(int, int, int) { return true; }
 
-LPCHARACTER FindVictim(LPCHARACTER, int) { return nullptr; }
 
 // The AI pump still resolves a character for the flag sync and the two mob
 // instance flags; none of it is reachable from the idle cases below.
-CHARACTER* CHARACTER::GetVictim() const { return nullptr; }
-uint16_t CHARACTER::GetMobAttackRange() const { return 0; }
 bool CHARACTER::IsBerserk() const { return false; }
 bool CHARACTER::IsGodSpeed() const { return false; }
 bool CHARACTER::IsRevive() const { return false; }
@@ -251,6 +267,46 @@ void EntityDestroyedInsideCallback()
     Check(!g_rec.gotoCalls.empty(), "the wander path was reached at least once");
 }
 
+// The search can hand back a handle that has gone bad between the scan and the
+// decision. None of these may reach BeginFight.
+void SearchResultThatWentBadIsNotEngaged()
+{
+    struct Case {
+        const char* name;
+        bool destroy;
+        bool recycle;
+        bool dead;
+    };
+    const Case cases[] = {
+        { "a dead search result is not engaged", false, false, true },
+        { "a destroyed search result is not engaged", true, false, false },
+        { "a recycled slot from the search is not engaged", true, true, false },
+    };
+
+    for (const Case& c : cases) {
+        Reset();
+        const entt::entity mob = MakeMonster();
+        g_registry.get<ecs::AIFlags>(mob).isAggressive = true;
+
+        entt::entity found = g_registry.create();
+        if (c.dead)
+            g_rec.dead.push_back(found);
+        if (c.destroy)
+            g_registry.destroy(found);
+        if (c.recycle) {
+            const entt::entity reused = g_registry.create();
+            Check(entt::to_entity(reused) == entt::to_entity(found), "the slot was reused");
+        }
+        g_rec.searchResult = found;
+
+        AISystem::StateIdle(mob);
+
+        Check(g_rec.searchCalls > 0, std::string("the search ran for: ") + c.name);
+        const bool engaged = !g_rec.fightsBegun.empty();
+        Check(!engaged, c.name);
+    }
+}
+
 } // namespace
 
 int main()
@@ -260,6 +316,7 @@ int main()
         DestroyedVictimDoesNotCrash();
         RecycledHandleIsNotTheNewEntity();
         EntityDestroyedInsideCallback();
+        SearchResultThatWentBadIsNotEngaged();
     } catch (const std::exception& e) {
         std::cerr << "FAIL: threw: " << e.what() << std::endl;
         ++g_failures;

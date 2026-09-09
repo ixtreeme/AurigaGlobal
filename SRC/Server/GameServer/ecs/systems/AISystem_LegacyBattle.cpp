@@ -26,7 +26,6 @@
 // with it. Keeping it apart is what lets AISystem.cpp be linked into a test
 // without dragging in attack, mob skills and the motion manager.
 
-extern LPCHARACTER FindVictim(LPCHARACTER pkChr, int iMaxDistance);
 
 namespace {
 
@@ -87,7 +86,8 @@ void CHARACTER::StateBattle()
     if (!victim || (victim->IsStun() && ecs::PlayerRuntime::IsGuardNPC(GetEntityHandle())) || victim->IsDead()) {
         LPCHARACTER newVictim = nullptr;
         if (victim && victim->IsDead() && !no_wander && AIHelpers::IsAggressive(GetEntityHandle()) && (!GetParty() || GetParty()->GetLeader() == this)) {
-            newVictim = FindVictim(this, m_pkMobData->m_table.wAggressiveSight);
+            newVictim = ecs::LegacyCharOf(
+                CombatSystem::FindVictim(GetEntityHandle(), m_pkMobData->m_table.wAggressiveSight));
         }
 
         if (newVictim) {

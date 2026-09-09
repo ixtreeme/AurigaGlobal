@@ -10,6 +10,8 @@
 #include "char_interface.hpp"
 #include "ecs/CharacterAccessors.hpp"
 #include "sectree_manager.h"
+#include "ecs/services/SpatialService.hpp"
+#include "ecs/AIHelpers.hpp"
 #include "battle.h"
 #include "affect.h"
 #include "shop_manager.h"
@@ -275,119 +277,134 @@ int OnIdleDefault(TRIGGERPARAM)
 	return PASSES_PER_SEC(1);
 }
 
-class FuncFindMobVictim
+namespace {
+
+// Target search for a mob, entity in and entity out. The sectree hands back an
+// LPENTITY, so that one conversion happens once per candidate and the handle
+// stays an entity from there - no candidate is ever turned into a character.
+class FindMobVictim
 {
 public:
-	FuncFindMobVictim(LPCHARACTER pkChr, int iMaxDistance) :
-		m_pkChr(pkChr),
-		m_iMinDistance(~(1L << 31)),
-		m_iMaxDistance(iMaxDistance),
-		m_lx(ecs::PlayerRuntime::GetX(((pkChr) ? (pkChr)->GetEntityHandle() : entt::null))),
-		m_ly(ecs::PlayerRuntime::GetY(((pkChr) ? (pkChr)->GetEntityHandle() : entt::null))),
-		m_pkChrVictim(nullptr),
-		m_pkChrBuilding(nullptr)
-	{
-	};
+    FindMobVictim(entt::entity self, int maxDistance)
+        : m_self(self),
+          m_minDistance(~(1L << 31)),
+          m_maxDistance(maxDistance),
+          m_x(ecs::PlayerRuntime::GetX(self)),
+          m_y(ecs::PlayerRuntime::GetY(self))
+    {
+    }
 
-	bool operator () (LPENTITY ent)
-	{
-		const entt::entity ownerChr = m_pkChr ? m_pkChr->GetEntityHandle() : entt::null;
-		if (!ent->IsType(ENTITY_CHARACTER))
-			return false;
+    bool operator()(LPENTITY ent)
+    {
+        if (!ent || !ent->IsType(ENTITY_CHARACTER))
+            return false;
 
-		LPCHARACTER pkChr = (LPCHARACTER)ent;
-		const entt::entity chr = pkChr ? pkChr->GetEntityHandle() : entt::null;
+        const entt::entity candidate = ecs::SpatialService::EntityFromLPENTITY(ent);
+        if (candidate == entt::null || !g_registry.valid(candidate))
+            return false;
 
+        if (ecs::PlayerRuntime::IsBuilding(candidate) &&
+            (AffectSystem::IsAffectFlag(candidate, AFF_BUILDING_CONSTRUCTION_SMALL) ||
+             AffectSystem::IsAffectFlag(candidate, AFF_BUILDING_CONSTRUCTION_LARGE) ||
+             AffectSystem::IsAffectFlag(candidate, AFF_BUILDING_UPGRADE)))
+        {
+            m_building = candidate;
+        }
 
-		if (pkChr->IsBuilding() &&
-			(AffectSystem::IsAffectFlag(chr, AFF_BUILDING_CONSTRUCTION_SMALL) ||
-				AffectSystem::IsAffectFlag(chr, AFF_BUILDING_CONSTRUCTION_LARGE) ||
-				AffectSystem::IsAffectFlag(chr, AFF_BUILDING_UPGRADE)))
-		{
-			m_pkChrBuilding = pkChr;
-		}
+        if (ecs::PlayerRuntime::IsNPC(candidate))
+        {
+            // These three flags belong to the searcher, not to what it is
+            // looking at: "will this mob attack other mobs, and is it already
+            // aggressive". The entity-conversion pass that came through here
+            // read them off the candidate instead, which asked whether the
+            // prey was an attack-mob. Restored to the searcher.
+            if (!ecs::PlayerRuntime::IsMonster(candidate) ||
+                !AIHelpers::IsAttackMob(m_self) ||
+                AIHelpers::IsAggressive(m_self))
+                return false;
+        }
 
-		if (ecs::PlayerRuntime::IsNPC(chr))
-		{
-			const entt::entity ownerEntity = chr;
-			if (!pkChr->IsMonster() || !AIHelpers::IsAttackMob(ownerEntity) || AIHelpers::IsAggressive(ownerEntity))
-				return false;
+        if (CombatSystem::IsDead(candidate))
+            return false;
 
-		}
+        if (AffectSystem::IsAffectFlag(candidate, AFF_EUNHYUNG) ||
+            AffectSystem::IsAffectFlag(candidate, AFF_INVISIBILITY) ||
+            AffectSystem::IsAffectFlag(candidate, AFF_REVIVE_INVISIBLE))
+            return false;
 
-		if (CombatSystem::IsDead(chr))
-			return false;
+        if (AffectSystem::IsAffectFlag(candidate, AFF_TERROR) &&
+            !AffectSystem::IsImmune(candidate, IMMUNE_TERROR))
+        {
+            // Terror only spares the candidate while the searcher is not below
+            // it in level. Both sides of this comparison had become the
+            // candidate, which made it true for everything and dropped every
+            // terrified target regardless of level.
+            if (ecs::PointSystem::GetLevel(m_self) >= ecs::PointSystem::GetLevel(candidate))
+                return false;
+        }
 
-		if (AffectSystem::IsAffectFlag(chr, AFF_EUNHYUNG) ||
-			AffectSystem::IsAffectFlag(chr, AFF_INVISIBILITY) ||
-			AffectSystem::IsAffectFlag(chr, AFF_REVIVE_INVISIBLE))
-			return false;
+        if (AIHelpers::IsNoAttackShinsu(m_self) && ecs::PlayerRuntime::GetEmpire(candidate) == 1)
+            return false;
+        if (AIHelpers::IsNoAttackChunjo(m_self) && ecs::PlayerRuntime::GetEmpire(candidate) == 2)
+            return false;
+        if (AIHelpers::IsNoAttackJinno(m_self) && ecs::PlayerRuntime::GetEmpire(candidate) == 3)
+            return false;
 
-		if (AffectSystem::IsAffectFlag(chr, AFF_TERROR) && AffectSystem::IsImmune(chr, IMMUNE_TERROR) == false)	// \xb0\xf8\xc6\xf7 �\xb8\xae
-		{
-			if ((ecs::PointSystem::GetLevel(chr)) >= ecs::PointSystem::GetLevel(chr))
-				return false;
-		}
+        const int distance = DISTANCE_APPROX(m_x - ecs::PlayerRuntime::GetX(candidate),
+                                             m_y - ecs::PlayerRuntime::GetY(candidate));
 
-		if (AIHelpers::IsNoAttackShinsu(ownerChr))
-		{
-			if (ecs::PlayerRuntime::GetEmpire(chr) == 1)
-				return false;
-		}
+        if (distance < m_minDistance && distance <= m_maxDistance)
+        {
+            m_victim = candidate;
+            m_minDistance = distance;
+        }
+        return true;
+    }
 
-		if (AIHelpers::IsNoAttackChunjo(ownerChr))
-		{
-			if (ecs::PlayerRuntime::GetEmpire(chr) == 2)
-				return false;
-		}
+    entt::entity Result() const
+    {
+        // A construction site is worth hitting only while this mob is still
+        // healthy; otherwise, and whenever nothing else was found, it is the
+        // answer anyway.
+        if ((m_building != entt::null &&
+             ecs::PlayerRuntime::GetHP(m_self) * 2 > ecs::PointSystem::GetMaxHP(m_self)) ||
+            m_victim == entt::null)
+            return m_building;
 
-		if (AIHelpers::IsNoAttackJinno(ownerChr))
-		{
-			if (ecs::PlayerRuntime::GetEmpire(chr) == 3)
-				return false;
-		}
-
-		int iDistance = DISTANCE_APPROX(m_lx - ecs::PlayerRuntime::GetX(chr), m_ly - ecs::PlayerRuntime::GetY(chr));
-
-		if (iDistance < m_iMinDistance && iDistance <= m_iMaxDistance)
-		{
-			m_pkChrVictim = pkChr;
-			m_iMinDistance = iDistance;
-		}
-		return true;
-	}
-
-	LPCHARACTER GetVictim()
-	{
-		// \xb1\xd9�\xbf\xa1 \xb0?\xb0\xc0\xcc \xc0?\xed \xc7j\xa1 \xb8\xb9\xc0\xcc \xc0??\xe9 \xb0?\xb0\xc0\xbb \xb0\xf8\xb0\xdd\xc7?\xd9. \xb0?\xb0\xb8\xb8 \xc0?? \xb0?\xb0\xc0\xbb \xb0\xf8\xb0\xdd
-		if ((m_pkChrBuilding && ((m_pkChr->GetHP() * 2) > ecs::PointSystem::GetMaxHP(((m_pkChr) ? (m_pkChr)->GetEntityHandle() : entt::null)))) || !m_pkChrVictim)
-		{
-			return m_pkChrBuilding;
-		}
-
-		return (m_pkChrVictim);
-	}
+        return m_victim;
+    }
 
 private:
-	LPCHARACTER	m_pkChr;
-
-	int		m_iMinDistance;
-	int		m_iMaxDistance;
-	int32_t		m_lx;
-	int32_t		m_ly;
-
-	LPCHARACTER	m_pkChrVictim;
-	LPCHARACTER	m_pkChrBuilding;
+    entt::entity m_self;
+    int m_minDistance;
+    int m_maxDistance;
+    int32_t m_x;
+    int32_t m_y;
+    entt::entity m_victim { entt::null };
+    entt::entity m_building { entt::null };
 };
 
-LPCHARACTER FindVictim(LPCHARACTER pkChr, int iMaxDistance)
+} // namespace
+
+namespace CombatSystem {
+
+// Lives here rather than in CombatSystem.cpp because the sectree scan and its
+// helpers are already set up in this translation unit.
+entt::entity FindVictim(entt::entity self, int maxDistance)
 {
-	const entt::entity chr = pkChr ? pkChr->GetEntityHandle() : entt::null;
-	FuncFindMobVictim f(pkChr, iMaxDistance);
-	if (ecs::PlayerRuntime::GetSectree(chr) != nullptr) {
-		ecs::PlayerRuntime::GetSectree(chr)->ForEachAround(f);
-	}
-	return f.GetVictim();
+    if (self == entt::null || !g_registry.valid(self))
+        return entt::null;
+
+    LPSECTREE sectree = ecs::PlayerRuntime::GetSectree(self);
+    if (!sectree)
+        return entt::null;
+
+    FindMobVictim finder(self, maxDistance);
+    sectree->ForEachAround(finder);
+    return finder.Result();
 }
+
+} // namespace CombatSystem
+
 
 

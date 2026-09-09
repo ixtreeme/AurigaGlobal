@@ -1544,6 +1544,12 @@ protected:
 
 	uint32_t				m_dwFlyTargetID;
 	std::vector<uint32_t>	m_vec_dwFlyTargets;
+public:
+	// Read-only view for entity-native callers; the map is keyed by entity
+	// already, so nothing has to resolve a character to walk it.
+	const TDamageMap&	GetDamageMap() const { return m_map_kDamage; }
+
+private:
 	TDamageMap			m_map_kDamage;	// � ĳ���Ͱ� ������ �󸶸�ŭ�� �������� �־��°�?
 	//		AttackLog			m_kAttackLog;
 	uint32_t				m_dwKillerPID;
@@ -1735,7 +1741,6 @@ public:
 	void			AssignTriggers(const TMobTable* table);
 	LPCHARACTER		GetVictim() const;	// ������ ��� ����
 	void			SetVictim(entt::entity victim);
-	LPCHARACTER		GetNearestVictim(entt::entity chr);
 	virtual void			StateBattle();
 
 protected:

@@ -189,6 +189,43 @@ uint8_t ToggleComboIndex(entt::entity e, uint8_t skillLevel)
 // The mob-table half of berserk and godspeed. CHARACTER read the AI flag word
 // and then the AIFlags component; both are reachable from the entity, so the
 // test moves here whole.
+// Nearest of the attackers that have hurt this character. The damage map is
+// already keyed by entity, so the walk never leaves entity handles: the old
+// version resolved a character for every candidate and one more for the answer.
+// Resolving `self` stays, because the map is still a CHARACTER member.
+entt::entity GetNearestVictim(entt::entity attacker, entt::entity from)
+{
+    LPCHARACTER self = LegacyCharOf(attacker);
+    if (!self)
+        return entt::null;
+
+    const entt::entity origin = (from != entt::null && g_registry.valid(from)) ? from : attacker;
+
+    float nearest = 99999.0f;
+    entt::entity victim = entt::null;
+
+    for (const auto& [candidate, damage] : self->GetDamageMap()) {
+        if (candidate == entt::null || !g_registry.valid(candidate))
+            continue;
+
+        if (AffectSystem::IsAffectFlag(candidate, AFF_EUNHYUNG) ||
+            AffectSystem::IsAffectFlag(candidate, AFF_INVISIBILITY) ||
+            AffectSystem::IsAffectFlag(candidate, AFF_REVIVE_INVISIBLE))
+            continue;
+
+        const float distance = DISTANCE_APPROX(
+            ecs::PlayerRuntime::GetX(candidate) - ecs::PlayerRuntime::GetX(origin),
+            ecs::PlayerRuntime::GetY(candidate) - ecs::PlayerRuntime::GetY(origin));
+
+        if (distance < nearest) {
+            victim = candidate;
+            nearest = distance;
+        }
+    }
+
+    return victim;
+}
+
 bool IsBerserker(entt::entity e)
 {
     if (IS_SET(ecs::PlayerRuntime::GetAIFlag(e), AIFLAG_BERSERK))
@@ -441,16 +478,6 @@ uint16_t GetMobAttackRange(entt::entity e)
     }
 #endif
     return static_cast<uint16_t>(std::clamp<int64_t>(range, 0, UINT16_MAX));
-}
-
-entt::entity GetNearestVictim(entt::entity attacker, entt::entity from)
-{
-    if (auto* ch = LegacyCharOf(attacker)) {
-        auto* victim = ch->GetNearestVictim(from);
-        return victim ? victim->GetEntityHandle() : entt::null;
-    }
-
-    return entt::null;
 }
 
 bool IsStun(entt::entity e)
@@ -6615,47 +6642,6 @@ void CHARACTER::FlyTarget(uint32_t dwTargetVID, int32_t x, int32_t y, uint8_t bH
 
 	LOG_INFO("FlyTarget {} vid {} x {} y {}", GetName(), pack.dwTargetVID, pack.x, pack.y);
 	ecs::ViewSystem::PacketView(GetEntityHandle(), &pack, sizeof(pack), GetEntityHandle());
-}
-
-LPCHARACTER CHARACTER::GetNearestVictim(entt::entity chr)
-{
-	LPCHARACTER pkChr = ecs::LegacyCharOf(chr);
-	if (nullptr == pkChr)
-		pkChr = this;
-
-	float fMinDist = 99999.0f;
-	auto* pkVictim = static_cast<LegacyCharHandle>(nullptr);
-
-	TDamageMap::iterator it = m_map_kDamage.begin();
-
-	// ϴ    ɷ .
-	while (it != m_map_kDamage.end())
-	{
-		const entt::entity eAttacker = it->first;
-		++it;
-
-		auto* pAttacker = LegacyCharOf(eAttacker);
-		const entt::entity attacker = pAttacker ? pAttacker->GetEntityHandle() : entt::null;
-
-
-		if (!pAttacker)
-			continue;
-
-		if (AffectSystem::IsAffectFlag(attacker, AFF_EUNHYUNG) ||
-			AffectSystem::IsAffectFlag(attacker, AFF_INVISIBILITY) ||
-			AffectSystem::IsAffectFlag(attacker, AFF_REVIVE_INVISIBLE))
-			continue;
-
-		float fDist = DISTANCE_APPROX(ecs::PlayerRuntime::GetX(attacker) - ecs::PlayerRuntime::GetX(chr), ecs::PlayerRuntime::GetY(attacker) - ecs::PlayerRuntime::GetY(chr));
-
-		if (fDist < fMinDist)
-		{
-			pkVictim = pAttacker;
-			fMinDist = fDist;
-		}
-	}
-
-	return pkVictim;
 }
 
 void CHARACTER::SetVictim(entt::entity victim)

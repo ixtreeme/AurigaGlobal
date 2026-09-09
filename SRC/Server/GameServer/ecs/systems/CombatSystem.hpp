@@ -47,6 +47,8 @@ uint32_t GetMobDamageMax(entt::entity e);
 float GetMobDamageMultiplier(entt::entity e);
 uint16_t GetMobAttackRange(entt::entity e);
 uint8_t GetMobBattleType(entt::entity e);
+// Nearest acceptable target within maxDistance, chosen from the sectree.
+entt::entity FindVictim(entt::entity self, int maxDistance);
 entt::entity GetNearestVictim(entt::entity attacker, entt::entity from);
 bool IsStun(entt::entity e);
 void Stun(entt::entity e);

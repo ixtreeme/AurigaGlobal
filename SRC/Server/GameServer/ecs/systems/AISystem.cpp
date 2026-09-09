@@ -45,12 +45,16 @@ uint8_t ObserveAIState(entt::registry& reg, entt::entity entity, LPCHARACTER ch)
         return AI_STATE_IDLE;
     }
 
-    if (LPCHARACTER victim = ch->GetVictim()) {
-        const entt::entity victimEntity = victim->GetEntityHandle();
-        const int32_t dx = ecs::PlayerRuntime::GetX(victimEntity) - ecs::PlayerRuntime::GetX(entity);
-        const int32_t dy = ecs::PlayerRuntime::GetY(victimEntity) - ecs::PlayerRuntime::GetY(entity);
+    // The victim comes back as a handle and stays one; asking the character for
+    // it only to convert the answer back was a round trip with a dangling
+    // pointer in the middle of it.
+    if (const entt::entity victim = CombatSystem::GetVictim(entity);
+        victim != entt::null && reg.valid(victim)) {
+        const int32_t dx = ecs::PlayerRuntime::GetX(victim) - ecs::PlayerRuntime::GetX(entity);
+        const int32_t dy = ecs::PlayerRuntime::GetY(victim) - ecs::PlayerRuntime::GetY(entity);
         const int32_t distance = DISTANCE_APPROX(dx, dy);
-        const int32_t attackRange = static_cast<int32_t>(ch->GetMobAttackRange()) * 100;
+        const int32_t attackRange =
+            static_cast<int32_t>(CombatSystem::GetMobAttackRange(entity)) * 100;
         return distance <= attackRange ? AI_STATE_ATTACK : AI_STATE_CHASE;
     }
 
@@ -75,11 +79,11 @@ bool SyncAIFlags(entt::registry& reg, entt::entity entity, LPCHARACTER ch)
         IS_SET(aiFlags, AIFLAG_NOATTACKCHUNJO) != 0,
         IS_SET(aiFlags, AIFLAG_NOATTACKJINNO) != 0,
         ch->IsBerserk(),
-        ecs::PlayerRuntime::IsGuardNPC(ch->GetEntityHandle()),
+        ecs::PlayerRuntime::IsGuardNPC(entity),
         false,
         ch->IsStoneSkinner(),
         ch->IsGodSpeed(),
-        CombatSystem::IsDeathBlow(ch->GetEntityHandle()),
+        CombatSystem::IsDeathBlow(entity),
         ch->IsRevive(),
         flags.isNoMove,
     };
@@ -94,7 +98,6 @@ bool SyncAIFlags(entt::registry& reg, entt::entity entity, LPCHARACTER ch)
 
 } // namespace
 
-extern LPCHARACTER FindVictim(LPCHARACTER pkChr, int iMaxDistance);
 
 namespace AISystem {
 
@@ -241,7 +244,7 @@ void StateIdle_Monster(entt::entity e)
     }
 
     entt::entity victim = CombatSystem::GetVictim(e);
-    if (victim == entt::null || CombatSystem::IsDead(victim)) {
+    if (victim == entt::null || !g_registry.valid(victim) || CombatSystem::IsDead(victim)) {
         CombatSystem::SetVictim(e, entt::null);
         victim = entt::null;
         AIHelpers::SetStateDuration(e, PASSES_PER_SEC(1));
@@ -251,15 +254,15 @@ void StateIdle_Monster(entt::entity e)
         if (const entt::entity stone = CombatSystem::GetStone(e); stone != entt::null) {
             victim = CombatSystem::GetNearestVictim(stone, stone);
         } else if (!no_wander && AIHelpers::IsAggressive(e)) {
-            // Target search is step 2; it still takes a character.
             const TMobTable* table = ecs::PlayerRuntime::GetMobTable(e);
-            LPCHARACTER self = table ? ecs::LegacyCharOf(e) : nullptr;
-            LPCHARACTER found = self ? FindVictim(self, table->wAggressiveSight) : nullptr;
-            victim = found ? found->GetEntityHandle() : entt::null;
+            victim = table ? CombatSystem::FindVictim(e, table->wAggressiveSight)
+                           : entt::null;
         }
     }
 
-    if (victim != entt::null && !CombatSystem::IsDead(victim)) {
+    // The search result gets the same treatment: it was chosen during a
+    // sectree scan, and a callback in between can have retired it.
+    if (victim != entt::null && g_registry.valid(victim) && !CombatSystem::IsDead(victim)) {
         if (CombatSystem::CanBeginFight(e))
             CombatSystem::BeginFight(e, victim);
         return;
