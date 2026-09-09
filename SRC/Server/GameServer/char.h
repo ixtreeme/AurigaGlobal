@@ -1488,7 +1488,6 @@ protected:
 	int m_iComboHackCount;
 
 protected:
-	void				UpdateAggrPointEx(entt::entity character, EDamageType type, int dam, TBattleInfo& info);
 
 	uint32_t				m_dwFlyTargetID;
 	std::vector<uint32_t>	m_vec_dwFlyTargets;

@@ -596,6 +596,7 @@ bool MountSystem::IsRiding(entt::entity e) { AssertActor(e); return g_registry.g
 int ecs::SocialSystem::GetMarriageBonus(entt::entity e,uint32_t,bool) { AssertActor(e); return 0; }
 LPSHOP ecs::SocialSystem::GetMyShop(entt::entity e) { AssertActor(e); return nullptr; }
 SECTREE* ecs::PlayerRuntime::GetSectree(entt::entity e) { AssertActor(e); return nullptr; }
+void ecs::PlayerRuntime::SetMaxSP(entt::entity, int64_t) {}
 void ecs::MovementSystem::SetRotation(entt::entity e,float
 #ifdef ENABLE_ANCIENT_PYRAMID
     , bool

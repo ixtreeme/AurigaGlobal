@@ -1450,9 +1450,15 @@ void CHARACTER::CheckLeaderboardSkillMobChanges()
 
 // char_battle.cpp slice BE2b moved into CombatSystem.cpp
 
-void CHARACTER::UpdateAggrPointEx(entt::entity attacker, EDamageType type, int dam, CHARACTER::TBattleInfo& info)
+namespace CombatSystem {
+
+// Aggro bookkeeping for one hit: the figure is weighted by how the damage
+// was delivered, the standing victim gets a loyalty bonus, and the running
+// total is what decides whether the target changes.
+void UpdateAggrPointEx(entt::entity self, entt::entity attacker, uint8_t rawType,
+    int dam, CHARACTER::TBattleInfo& info)
 {
-	LPCHARACTER pkAttacker = ecs::LegacyCharOf(attacker);
+    const EDamageType type = static_cast<EDamageType>(rawType);
 	// Ư ŸԿ   ö󰣴
 	switch (type)
 	{
@@ -1473,7 +1479,7 @@ void CHARACTER::UpdateAggrPointEx(entt::entity attacker, EDamageType type, int d
 	}
 
 	// ڰ    ʽ ش.
-	if (pkAttacker == GetVictim())
+	if (attacker == GetVictim(self))
 		dam = (int)(dam * 1.2f);
 
 	info.iAggro += dam;
@@ -1481,24 +1487,26 @@ void CHARACTER::UpdateAggrPointEx(entt::entity attacker, EDamageType type, int d
 	if (info.iAggro < 0)
 		info.iAggro = 0;
 
-	//LOG_INFO(0, "UpdateAggrPointEx for %s by %s dam %d total %d", GetName(), ecs::PlayerRuntime::GetName((pAttacker ? pAttacker->GetEntityHandle() : entt::null)).data(), dam, total);
-	if (GetParty() && dam > 0 && type != DAMAGE_TYPE_SPECIAL)
+	//LOG_INFO(0, "UpdateAggrPointEx for %s by %s dam %d total %d", ecs::PlayerRuntime::GetName(self), ecs::PlayerRuntime::GetName((pAttacker ? pAttacker->GetEntityHandle() : entt::null)).data(), dam, total);
+	if (ecs::SocialSystem::GetParty(self) && dam > 0 && type != DAMAGE_TYPE_SPECIAL)
 	{
-		LPPARTY pParty = GetParty();
+		LPPARTY pParty = ecs::SocialSystem::GetParty(self);
 
 		//     ϴ
 		int iPartyAggroDist = dam;
 
-		if (pParty->GetLeaderPID() == GetPacketVID())
+		if (pParty->GetLeaderPID() == ecs::PlayerRuntime::GetPacketVID(self))
 			iPartyAggroDist /= 2;
 		else
 			iPartyAggroDist /= 3;
 
-		pParty->SendMessage(GetEntityHandle(), PM_AGGRO_INCREASE, iPartyAggroDist, ecs::PlayerRuntime::GetPacketVID(attacker));
+		pParty->SendMessage(self, PM_AGGRO_INCREASE, iPartyAggroDist, ecs::PlayerRuntime::GetPacketVID(attacker));
 	}
 
-	CombatSystem::ChangeVictimByAggro(GetEntityHandle(), info.iAggro, attacker);
+	CombatSystem::ChangeVictimByAggro(self, info.iAggro, attacker);
 }
+
+} // namespace CombatSystem
 
 void CHARACTER::UpdateAggrPoint(entt::entity attacker, EDamageType type, int dam)
 {
@@ -1517,7 +1525,7 @@ void CHARACTER::UpdateAggrPoint(entt::entity attacker, EDamageType type, int dam
 		it = m_map_kDamage.find(eAttacker);
 	}
 
-	UpdateAggrPointEx(attacker, type, dam, it->second);
+	CombatSystem::UpdateAggrPointEx(GetEntityHandle(), attacker, type, dam, it->second);
 }
 
 // char_battle.cpp slice BD2b moved into CombatSystem.cpp
@@ -4840,11 +4848,11 @@ void CHARACTER::RewardGold(entt::entity attacker) {
 // char_battle.cpp slice BB2b moved into CombatSystem.cpp
 
 #ifdef ENABLE_STONE_SPAWN_STEP_PROCESSING_RAZOR93
-static void ProcessStoneSpawnStep(LegacyCharHandle ch);
+static void ProcessStoneSpawnStep(entt::entity stone);
 #endif
-static int64_t CalcReferenceBowHitDamage(LegacyCharHandle pAttacker, LegacyCharHandle pVictim);
-static int64_t CalcReferenceBasicHitDamage(LegacyCharHandle pAttacker, LegacyCharHandle pVictim);
-static int64_t CalcReferenceNormalHitDamage(LegacyCharHandle pAttacker, LegacyCharHandle pVictim);
+static int64_t CalcReferenceBowHitDamage(entt::entity attacker, entt::entity victim);
+static int64_t CalcReferenceBasicHitDamage(entt::entity attacker, entt::entity victim);
+static int64_t CalcReferenceNormalHitDamage(entt::entity attacker, entt::entity victim);
 
 bool CHARACTER::Damage(entt::entity attacker, int64_t dam, EDamageType type) // returns true if dead
 {
@@ -5448,7 +5456,7 @@ bool CHARACTER::Damage(entt::entity attacker, int64_t dam, EDamageType type) // 
 
 		if (pkAttacker && ecs::PlayerRuntime::IsPC(attacker) && IsNPC())
 		{
-			const int64_t normalRef = CalcReferenceBasicHitDamage(pkAttacker, this);
+			const int64_t normalRef = CalcReferenceBasicHitDamage(attacker, GetEntityHandle());
 			if (normalRef > 0)
 			{
 				int64_t minSkillDam = normalRef * 10;
@@ -6100,7 +6108,7 @@ bool CHARACTER::Damage(entt::entity attacker, int64_t dam, EDamageType type) // 
 		PointChange(POINT_HP, -dam, false);
 #ifdef ENABLE_STONE_SPAWN_STEP_PROCESSING_RAZOR93
 		if (IsStone())
-			ProcessStoneSpawnStep(this);
+			ProcessStoneSpawnStep(GetEntityHandle());
 #endif
 	}
 
@@ -6141,7 +6149,7 @@ bool CHARACTER::Damage(entt::entity attacker, int64_t dam, EDamageType type) // 
 
 		//PROF_UNIT puRest22("Rest22");
 		if (it != m_map_kDamage.end())
-			UpdateAggrPointEx(attacker, type, dam, it->second);
+			CombatSystem::UpdateAggrPointEx(GetEntityHandle(), attacker, type, dam, it->second);
 		//puRest22.Pop();
 	}
 	//puRest2.Pop();
@@ -6953,18 +6961,17 @@ bool IsSpiderMap(int lMapIndex)
 
 // char_battle.cpp slice BB2a helper surface moved into CombatSystem.cpp
 
-static int64_t CalcReferenceNormalHitDamage(LegacyCharHandle pAttacker, LegacyCharHandle pVictim);
+static int64_t CalcReferenceNormalHitDamage(entt::entity attacker, entt::entity victim);
 #ifdef ENABLE_STONE_SPAWN_STEP_PROCESSING_RAZOR93
-static void ProcessStoneSpawnStep(LegacyCharHandle ch)
+static void ProcessStoneSpawnStep(entt::entity stone)
 {
-	const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
-	if (!ch || !ecs::PlayerRuntime::IsStone(chEntity) || ecs::PointSystem::GetMaxHP(chEntity) <= 0)
+	if (stone == entt::null || !g_registry.valid(stone) || !ecs::PlayerRuntime::IsStone(stone) || ecs::PointSystem::GetMaxHP(stone) <= 0)
 		return;
 
-	const int iPercent = (ch->GetHP() * 100) / ecs::PointSystem::GetMaxHP(chEntity);
+	const int iPercent = (ecs::PlayerRuntime::GetHP(stone) * 100) / ecs::PointSystem::GetMaxHP(stone);
 	const uint32_t dwVnum = number(
-		MIN(ch->GetMobTable().sAttackSpeed, ch->GetMobTable().sMovingSpeed),
-		MAX(ch->GetMobTable().sAttackSpeed, ch->GetMobTable().sMovingSpeed));
+		MIN((*ecs::PlayerRuntime::GetMobTable(stone)).sAttackSpeed, (*ecs::PlayerRuntime::GetMobTable(stone)).sMovingSpeed),
+		MAX((*ecs::PlayerRuntime::GetMobTable(stone)).sAttackSpeed, (*ecs::PlayerRuntime::GetMobTable(stone)).sMovingSpeed));
 
 	int wantStep = 0;
 	if (iPercent <= 10) wantStep = 10;
@@ -6979,37 +6986,39 @@ static void ProcessStoneSpawnStep(LegacyCharHandle ch)
 	else if (iPercent <= 99) wantStep = 1;
 	else return;
 
-	for (int step = ecs::PointSystem::GetMaxSP(chEntity) + 1; step <= wantStep; ++step)
+	for (int step = ecs::PointSystem::GetMaxSP(stone) + 1; step <= wantStep; ++step)
 	{
-		ch->SetMaxSP(step);
-		ecs::MovementSystem::SendMovePacket(chEntity, FUNC_ATTACK, 0, ecs::PlayerRuntime::GetX(chEntity), ecs::PlayerRuntime::GetY(chEntity), 0);
+		ecs::PlayerRuntime::SetMaxSP(stone, step);
+		ecs::MovementSystem::SendMovePacket(stone, FUNC_ATTACK, 0, ecs::PlayerRuntime::GetX(stone), ecs::PlayerRuntime::GetY(stone), 0);
 
-		CHARACTER_MANAGER::instance().SelectStone(ch ? ch->GetEntityHandle() : entt::null);
+		CHARACTER_MANAGER::instance().SelectStone(stone);
 
 		if (step == 10 || step == 9)
-			CHARACTER_MANAGER::instance().SpawnGroup(dwVnum, ecs::PlayerRuntime::GetMapIndex(chEntity), ecs::PlayerRuntime::GetX(chEntity) - 1500, ecs::PlayerRuntime::GetY(chEntity) - 1500, ecs::PlayerRuntime::GetX(chEntity) + 1500, ecs::PlayerRuntime::GetY(chEntity) + 1500);
+			CHARACTER_MANAGER::instance().SpawnGroup(dwVnum, ecs::PlayerRuntime::GetMapIndex(stone), ecs::PlayerRuntime::GetX(stone) - 1500, ecs::PlayerRuntime::GetY(stone) - 1500, ecs::PlayerRuntime::GetX(stone) + 1500, ecs::PlayerRuntime::GetY(stone) + 1500);
 		else if (step == 8 || step == 7 || step == 6 || step == 3 || step == 1)
-			CHARACTER_MANAGER::instance().SpawnGroup(dwVnum, ecs::PlayerRuntime::GetMapIndex(chEntity), ecs::PlayerRuntime::GetX(chEntity) - 1000, ecs::PlayerRuntime::GetY(chEntity) - 1000, ecs::PlayerRuntime::GetX(chEntity) + 1000, ecs::PlayerRuntime::GetY(chEntity) + 1000);
+			CHARACTER_MANAGER::instance().SpawnGroup(dwVnum, ecs::PlayerRuntime::GetMapIndex(stone), ecs::PlayerRuntime::GetX(stone) - 1000, ecs::PlayerRuntime::GetY(stone) - 1000, ecs::PlayerRuntime::GetX(stone) + 1000, ecs::PlayerRuntime::GetY(stone) + 1000);
 		else if (step == 5 || step == 4 || step == 2)
-			CHARACTER_MANAGER::instance().SpawnGroup(dwVnum, ecs::PlayerRuntime::GetMapIndex(chEntity), ecs::PlayerRuntime::GetX(chEntity) - 500, ecs::PlayerRuntime::GetY(chEntity) - 500, ecs::PlayerRuntime::GetX(chEntity) + 500, ecs::PlayerRuntime::GetY(chEntity) + 500);
+			CHARACTER_MANAGER::instance().SpawnGroup(dwVnum, ecs::PlayerRuntime::GetMapIndex(stone), ecs::PlayerRuntime::GetX(stone) - 500, ecs::PlayerRuntime::GetY(stone) - 500, ecs::PlayerRuntime::GetX(stone) + 500, ecs::PlayerRuntime::GetY(stone) + 500);
 
 		CHARACTER_MANAGER::instance().SelectStone(entt::null);
 	}
 
-	NetworkSyncSystem::UpdatePacket(chEntity);
+	NetworkSyncSystem::UpdatePacket(stone);
 }
 #endif
-static int64_t CalcReferenceBowHitDamage(LPCHARACTER pAttacker, LPCHARACTER pVictim)
+static int64_t CalcReferenceBowHitDamage(entt::entity attacker, entt::entity victim)
 {
-	const entt::entity attacker = pAttacker ? pAttacker->GetEntityHandle() : entt::null;
-	const entt::entity victim = pVictim ? pVictim->GetEntityHandle() : entt::null;
-	if (!pAttacker || !pVictim)
+	if (attacker == entt::null || !g_registry.valid(attacker) ||
+		victim == entt::null || !g_registry.valid(victim))
 		return 0;
 
 	entt::entity pkBow = entt::null;
 	entt::entity pkArrow = entt::null;
 
-	if (0 == pAttacker->GetArrowAndBow(&pkBow, &pkArrow))
+	// GetArrowAndBow is still a CHARACTER method - the bow and quiver
+	// bookkeeping is its own migration.
+	LPCHARACTER shooter = ecs::LegacyCharOf(attacker);
+	if (!shooter || 0 == shooter->GetArrowAndBow(&pkBow, &pkArrow))
 		return 0;
 
 	int64_t dam = CalcArrowDamage(attacker, victim, pkBow, pkArrow);
@@ -7032,7 +7041,8 @@ static int64_t CalcReferenceBowHitDamage(LPCHARACTER pAttacker, LPCHARACTER pVic
 	dam = dam * (100 - lValue) / 100;
 
 #ifdef ENABLE_SOUL_SYSTEM
-	dam += pAttacker->GetSoulItemDamage((pVictim ? pVictim->GetEntityHandle() : entt::null), dam, RED_SOUL);
+	if (LPCHARACTER souled = ecs::LegacyCharOf(attacker))
+		dam += souled->GetSoulItemDamage(victim, dam, RED_SOUL);
 #endif
 
 	if (ecs::PointSystem::Get(attacker, POINT_NORMAL_HIT_DAMAGE_BONUS))
@@ -7048,10 +7058,10 @@ static int64_t CalcReferenceBowHitDamage(LPCHARACTER pAttacker, LPCHARACTER pVic
 	return std::max<int64_t>(0, dam);
 }
 
-static int64_t CalcReferenceBasicHitDamage(LPCHARACTER pAttacker, LPCHARACTER pVictim)
+static int64_t CalcReferenceBasicHitDamage(entt::entity attacker, entt::entity victim)
 {
-	const entt::entity attacker = pAttacker ? pAttacker->GetEntityHandle() : entt::null;
-	if (!pAttacker || !pVictim)
+	if (attacker == entt::null || !g_registry.valid(attacker) ||
+		victim == entt::null || !g_registry.valid(victim))
 		return 0;
 
 	int64_t dam = 0;
@@ -7061,9 +7071,9 @@ static int64_t CalcReferenceBasicHitDamage(LPCHARACTER pAttacker, LPCHARACTER pV
 	if (ItemSystem::IsValidItem(weapon) &&
 		ItemSystem::GetItemType(weapon) == ITEM_WEAPON &&
 		ItemSystem::GetItemSubType(weapon) == WEAPON_BOW)
-		dam = CalcReferenceBowHitDamage(pAttacker, pVictim);
+		dam = CalcReferenceBowHitDamage(attacker, victim);
 	else
-		dam = CalcReferenceNormalHitDamage(pAttacker, pVictim);
+		dam = CalcReferenceNormalHitDamage(attacker, victim);
 
 	if (dam <= 0)
 		return 0;
@@ -7074,11 +7084,10 @@ static int64_t CalcReferenceBasicHitDamage(LPCHARACTER pAttacker, LPCHARACTER pV
 
 	return dam;
 }
-static int64_t CalcReferenceNormalHitDamage(LPCHARACTER pAttacker, LPCHARACTER pVictim)
+static int64_t CalcReferenceNormalHitDamage(entt::entity attacker, entt::entity victim)
 {
-	const entt::entity attacker = pAttacker ? pAttacker->GetEntityHandle() : entt::null;
-	const entt::entity victim = pVictim ? pVictim->GetEntityHandle() : entt::null;
-	if (!pAttacker || !pVictim)
+	if (attacker == entt::null || !g_registry.valid(attacker) ||
+		victim == entt::null || !g_registry.valid(victim))
 		return 0;
 
 	int64_t dam = CalcMeleeDamage(attacker, victim);
@@ -7166,10 +7175,11 @@ static int64_t CalcReferenceNormalHitDamage(LPCHARACTER pAttacker, LPCHARACTER p
 		dam = dam * (100 - lValue) / 100;
 	}
 
-	dam = static_cast<int64_t>(pAttacker->GetAttMul() * static_cast<double>(dam) + 0.5);
+	dam = static_cast<int64_t>(CombatSystem::GetAttackMultiplier(attacker) * static_cast<double>(dam) + 0.5);
 
 #ifdef ENABLE_SOUL_SYSTEM
-	dam += pAttacker->GetSoulItemDamage((pVictim ? pVictim->GetEntityHandle() : entt::null), dam, RED_SOUL);
+	if (LPCHARACTER souled = ecs::LegacyCharOf(attacker))
+		dam += souled->GetSoulItemDamage(victim, dam, RED_SOUL);
 #endif
 
 	if (ecs::PointSystem::Get(attacker, POINT_NORMAL_HIT_DAMAGE_BONUS))

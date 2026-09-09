@@ -249,6 +249,7 @@ uint32_t ecs::PlayerRuntime::GetNextExp(entt::entity) { Unexpected(); }
 void ecs::PlayerRuntime::SetGold(entt::entity, int64_t) { Unexpected(); }
 void ecs::PlayerRuntime::SetLevel(entt::entity, uint8_t) { Unexpected(); }
 bool ecs::PlayerRuntime::SetRankPoints(entt::entity, int, int64_t) { return true; }
+int64_t ecs::PlayerRuntime::GetSP(entt::entity) { return 0; }
 void SkillSystem::SendSkillLevelPacket(entt::entity) { Unexpected(); }
 void NetworkSyncSystem::PointsPacket(entt::entity) { Unexpected(); }
 void CGuild::LevelChange(uint32_t, uint8_t) { Unexpected(); }

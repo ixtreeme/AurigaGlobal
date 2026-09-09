@@ -810,6 +810,7 @@ int ecs::PlayerRuntime::GetPremiumRemainSeconds(entt::entity, uint8_t type) {
     return premiumRemaining[type];
 }
 int64_t ecs::PlayerRuntime::GetMaxStamina(entt::entity) { UnexpectedService(__func__); }
+int64_t ecs::PlayerRuntime::GetSP(entt::entity) { return 0; }
 void NetworkSyncSystem::BroadcastSyncPacket(entt::registry&, entt::entity e) {
     ++syncs;
     if (onSync) { const auto callback = onSync; callback(e); }
