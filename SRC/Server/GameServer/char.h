@@ -1410,8 +1410,6 @@ public:
 	bool				Attack(entt::entity victim, uint8_t bType = 0);
 	bool				CanFight() const;
 
-	bool				CanBeginFight() const;
-	void				BeginFight(entt::entity victim); // pkVictimr�� �ο�� �����Ѵ�. (��������, ������ �� �ֳ� üũ�Ϸ��� CanBeginFight�� ���)
 
 
 	bool				IsStun() const;
@@ -1501,7 +1499,6 @@ protected:
 
 protected:
 	void				UpdateAggrPointEx(entt::entity character, EDamageType type, int dam, TBattleInfo& info);
-	void				ChangeVictimByAggro(int iNewAggro, entt::entity newVictim);
 
 	uint32_t				m_dwFlyTargetID;
 	std::vector<uint32_t>	m_vec_dwFlyTargets;
@@ -1518,7 +1515,6 @@ private:
 
 	// Aggro
 
-	int					m_iMaxAggro;
 	// End of Battle
 
 	// Stone
@@ -2422,7 +2418,6 @@ public:
 #endif
 
 #ifdef __DEFENSE_WAVE__
-	bool IsDefanceWaweMastAttackMob(int32_t vnum) const { return (vnum >= 3401 && vnum <= 3405) || (vnum >= 3601 && vnum <= 3605) || (vnum >= 3950 && vnum <= 3964); }
 #endif
 //#if defined(ENABLE_CHRISTMAS_WHEEL_OF_DESTINY)
 //	void SetWheelDestiny(std::shared_ptr<CWheelDestiny> pt) { pWheelDestiny = std::move(pt); };

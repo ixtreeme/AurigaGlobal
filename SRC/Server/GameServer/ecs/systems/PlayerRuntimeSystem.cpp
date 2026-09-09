@@ -5737,7 +5737,6 @@ void CHARACTER::Initialize()
     GayaSystem::Load(GetEntityHandle());
 #endif
 
-    m_iMaxAggro = -100;
 
 
     m_dwLoginPlayTime = 0;

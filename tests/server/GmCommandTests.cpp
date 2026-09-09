@@ -931,8 +931,8 @@ void CHARACTER::RemoveBadAffect(void) { Unexpected(); }
 CAffect * CHARACTER::FindAffect(unsigned int,unsigned char)const { Unexpected(); }
 bool CHARACTER::IsEquipUniqueGroup(unsigned int)const { Unexpected(); }
 bool CHARACTER::Damage(entt::entity,int64_t,EDamageType) { Unexpected(); }
-bool CHARACTER::CanBeginFight(void)const { Unexpected(); }
-void CHARACTER::BeginFight(entt::entity) { Unexpected(); }
+bool CombatSystem::CanBeginFight(entt::entity) { Unexpected(); }
+void CombatSystem::BeginFight(entt::entity, entt::entity) { Unexpected(); }
 bool CHARACTER::IsStun(void)const { Unexpected(); }
 int CHARACTER::GetArrowAndBow(entt::entity *,entt::entity *,int) { Unexpected(); }
 void CHARACTER::AttackedByPoison(entt::entity) { Unexpected(); }

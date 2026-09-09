@@ -395,18 +395,113 @@ void CowardEscape(entt::entity e)
 
 bool CanBeginFight(entt::entity e)
 {
-    if (auto* ch = LegacyCharOf(e)) {
-        return ch->CanBeginFight();
-    }
+    if (!ecs::MovementSystem::CanMove(e))
+        return false;
 
-    return false;
+    return ecs::PlayerRuntime::GetPosition(e) == POS_STANDING && !IsDead(e) && !IsStun(e);
 }
 
 void BeginFight(entt::entity attacker, entt::entity victim)
 {
-    if (auto* ch = LegacyCharOf(attacker)) {
-        ch->BeginFight(victim);
+    SetVictim(attacker, victim);
+    ecs::PlayerRuntime::SetPosition(attacker, POS_FIGHTING);
+    AIHelpers::SetNextStatePulse(attacker, 1);
+}
+
+#ifdef __DEFENSE_WAVE__
+// Was a const CHARACTER method that never touched this - a vnum range test.
+// Spelling kept as it was so it still greps against the original.
+static bool IsDefanceWaweMastAttackMob(int32_t vnum)
+{
+    return (vnum >= 3401 && vnum <= 3405) || (vnum >= 3601 && vnum <= 3605) ||
+           (vnum >= 3950 && vnum <= 3964);
+}
+#endif
+
+int GetMaxAggro(entt::entity e)
+{
+    if (e == entt::null || !g_registry.valid(e))
+        return -100;
+    const auto* aggro = g_registry.try_get<ecs::AggroState>(e);
+    return aggro ? aggro->maxAggro : -100;
+}
+
+void SetMaxAggro(entt::entity e, int value)
+{
+    if (e == entt::null || !g_registry.valid(e))
+        return;
+    g_registry.get_or_emplace<ecs::AggroState>(e).maxAggro = value;
+}
+
+// Who this character should be hitting, decided by aggro. The damage map is
+// keyed by entity, so the search never leaves a handle: the old version
+// resolved a character for every entry just to test distance and death.
+void ChangeVictimByAggro(entt::entity self, int newAggro, entt::entity newVictim)
+{
+    if (self == entt::null || !g_registry.valid(self))
+        return;
+
+    // A victim chosen less than three seconds ago is left alone.
+    if (get_dword_time() - GetVictimSetTime(self) < 3000)
+        return;
+
+    const entt::entity current = GetVictim(self);
+
+    const auto adopt = [&](entt::entity candidate, int aggro) {
+        // A handle that reached here through a damage report can have been
+        // retired since; adopting it would leave the mob swinging at a slot
+        // that now belongs to somebody else, or to nobody.
+        if (candidate == entt::null || !g_registry.valid(candidate))
+            return;
+        SetMaxAggro(self, aggro);
+#ifdef __DEFENSE_WAVE__
+        if (IsDefanceWaweMastAttackMob(ecs::PlayerRuntime::GetRaceNum(self)))
+            return;
+#endif
+        SetVictim(self, candidate);
+        AIHelpers::SetStateDuration(self, 1);
+    };
+
+    if (newVictim != current) {
+        // Somebody else: they only take over by out-aggroing the ceiling.
+        if (GetMaxAggro(self) < newAggro)
+            adopt(newVictim, newAggro);
+        return;
     }
+
+    // The current victim reporting in. A higher figure just raises the
+    // ceiling; a lower one means somebody in the damage map may now be
+    // angrier, so look for the angriest one still alive and within reach.
+    if (GetMaxAggro(self) < newAggro) {
+        SetMaxAggro(self, newAggro);
+        return;
+    }
+
+    LPCHARACTER owner = LegacyCharOf(self);
+    if (!owner)
+        return;
+
+    const int32_t x = ecs::PlayerRuntime::GetX(self);
+    const int32_t y = ecs::PlayerRuntime::GetY(self);
+
+    entt::entity best = entt::null;
+    int bestAggro = newAggro;
+
+    for (const auto& [candidate, battle] : owner->GetDamageMap()) {
+        if (battle.iAggro <= bestAggro)
+            continue;
+        if (candidate == entt::null || !g_registry.valid(candidate) || IsDead(candidate))
+            continue;
+        if (DISTANCE_APPROX(ecs::PlayerRuntime::GetX(candidate) - x,
+                            ecs::PlayerRuntime::GetY(candidate) - y) >= 5000)
+            continue;
+
+        best = candidate;
+        bestAggro = battle.iAggro;
+    }
+
+    if (best != entt::null)
+        adopt(best, bestAggro);
 }
 
 bool CanFight(entt::entity e)
@@ -1372,7 +1467,7 @@ void CHARACTER::UpdateAggrPointEx(entt::entity attacker, EDamageType type, int d
 		pParty->SendMessage(GetEntityHandle(), PM_AGGRO_INCREASE, iPartyAggroDist, ecs::PlayerRuntime::GetPacketVID(attacker));
 	}
 
-	ChangeVictimByAggro(info.iAggro, attacker);
+	CombatSystem::ChangeVictimByAggro(GetEntityHandle(), info.iAggro, attacker);
 }
 
 void CHARACTER::UpdateAggrPoint(entt::entity attacker, EDamageType type, int dam)
@@ -1394,73 +1489,6 @@ void CHARACTER::UpdateAggrPoint(entt::entity attacker, EDamageType type, int dam
 
 	UpdateAggrPointEx(attacker, type, dam, it->second);
 }
-
-void CHARACTER::ChangeVictimByAggro(int iNewAggro, entt::entity newVictim)
-{
-	LPCHARACTER pkNewVictim = ecs::LegacyCharOf(newVictim);
-	if (get_dword_time() - CombatSystem::GetVictimSetTime(GetEntityHandle()) < 3000) // 3ʴ ٷѴ
-		return;
-
-	if (pkNewVictim == GetVictim())
-	{
-		if (m_iMaxAggro < iNewAggro)
-		{
-			m_iMaxAggro = iNewAggro;
-			return;
-		}
-
-		// Aggro
-		TDamageMap::iterator it;
-		TDamageMap::iterator itFind = m_map_kDamage.end();
-
-		for (it = m_map_kDamage.begin(); it != m_map_kDamage.end(); ++it)
-		{
-			if (it->second.iAggro > iNewAggro)
-			{
-				auto* ch = LegacyCharOf(it->first);
-				const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
-
-
-				if (ch && !ch->IsDead() && DISTANCE_APPROX(ecs::PlayerRuntime::GetX(chEntity) - GetX(), ecs::PlayerRuntime::GetY(chEntity) - GetY()) < 5000)
-				{
-					itFind = it;
-					iNewAggro = it->second.iAggro;
-				}
-			}
-		}
-
-		if (itFind != m_map_kDamage.end())
-		{
-			m_iMaxAggro = iNewAggro;
-#ifdef __DEFENSE_WAVE__
-			if (!IsDefanceWaweMastAttackMob(GetRaceNum()))
-			{
-				SetVictim(itFind->first);
-			}
-#else
-			SetVictim(itFind->first);
-#endif
-			AIHelpers::SetStateDuration(GetEntityHandle(), 1);
-		}
-	}
-	else
-	{
-		if (m_iMaxAggro < iNewAggro)
-		{
-			m_iMaxAggro = iNewAggro;
-#ifdef __DEFENSE_WAVE__
-			if (!IsDefanceWaweMastAttackMob(GetRaceNum()))
-			{
-				SetVictim(newVictim);
-			}
-#else
-			SetVictim(newVictim);
-#endif
-			AIHelpers::SetStateDuration(GetEntityHandle(), 1);
-		}
-	}
-}
-
 
 // char_battle.cpp slice BD2b moved into CombatSystem.cpp
 
@@ -2743,21 +2771,6 @@ void CombatSystem_Update(entt::registry& reg, uint32_t tick)
 
 // char_battle.cpp slice BA moved into CombatSystem.cpp
 
-bool CHARACTER::CanBeginFight() const
-{
-	if (!ecs::MovementSystem::CanMove(GetEntityHandle()))
-		return false;
-
-	return GetPosition() == POS_STANDING && !IsDead() && !IsStun();
-}
-
-void CHARACTER::BeginFight(entt::entity victim)
-{
-	SetVictim(victim);
-	SetPosition(POS_FIGHTING);
-	SetNextStatePulse(1);
-}
-
 bool CHARACTER::CanFight() const
 {
 	return GetPosition() >= POS_FIGHTING ? true : false;
@@ -2824,8 +2837,8 @@ bool CHARACTER::Attack(entt::entity victim, uint8_t bType)
 
 	NetworkSyncSystem::SetSyncOwner(victim, GetEntityHandle());
 
-	if (pkVictim->CanBeginFight())
-		pkVictim->BeginFight(GetEntityHandle());
+	if (CombatSystem::CanBeginFight(pkVictim->GetEntityHandle()))
+		CombatSystem::BeginFight(pkVictim->GetEntityHandle(), GetEntityHandle());
 
 	int iRet;
 
@@ -6376,8 +6389,8 @@ public:
 			m_me->OnMove(true);
 			pkVictim->OnMove();
 
-			if (pkVictim->CanBeginFight())
-				pkVictim->BeginFight(me);
+			if (CombatSystem::CanBeginFight(pkVictim->GetEntityHandle()))
+				CombatSystem::BeginFight(pkVictim->GetEntityHandle(), me);
 
 			pkVictim->Damage(me, iDam, DAMAGE_TYPE_NORMAL_RANGE);
 			// Ÿġ
@@ -6411,8 +6424,8 @@ public:
 			m_me->OnMove(true);
 			pkVictim->OnMove();
 
-			if (pkVictim->CanBeginFight())
-				pkVictim->BeginFight(me);
+			if (CombatSystem::CanBeginFight(pkVictim->GetEntityHandle()))
+				CombatSystem::BeginFight(pkVictim->GetEntityHandle(), me);
 
 			pkVictim->Damage(me, iDam, DAMAGE_TYPE_MAGIC);
 			// Ÿġ
@@ -6431,8 +6444,8 @@ public:
 					m_me->OnMove(true);
 					pkVictim->OnMove();
 
-					if (pkVictim->CanBeginFight())
-						pkVictim->BeginFight(me);
+					if (CombatSystem::CanBeginFight(pkVictim->GetEntityHandle()))
+						CombatSystem::BeginFight(pkVictim->GetEntityHandle(), me);
 
 					m_me->ComputeSkill(m_bType, victim);
 					m_me->UseArrow(pkArrow, iUseArrow);
@@ -6457,8 +6470,8 @@ public:
 				m_me->OnMove(true);
 				pkVictim->OnMove();
 
-				if (pkVictim->CanBeginFight())
-					pkVictim->BeginFight(me);
+				if (CombatSystem::CanBeginFight(pkVictim->GetEntityHandle()))
+					CombatSystem::BeginFight(pkVictim->GetEntityHandle(), me);
 
 				LOG_INFO("{} kwankeyok {}", ecs::PlayerRuntime::GetName(me).data(), ecs::PlayerRuntime::GetName(victim).data());
 				m_me->ComputeSkill(m_bType, victim);
@@ -6475,8 +6488,8 @@ public:
 				m_me->OnMove(true);
 				pkVictim->OnMove();
 
-				if (pkVictim->CanBeginFight())
-					pkVictim->BeginFight(me);
+				if (CombatSystem::CanBeginFight(pkVictim->GetEntityHandle()))
+					CombatSystem::BeginFight(pkVictim->GetEntityHandle(), me);
 
 				LOG_INFO("{} gigung {}", ecs::PlayerRuntime::GetName(me).data(), ecs::PlayerRuntime::GetName(victim).data());
 				m_me->ComputeSkill(m_bType, victim);
@@ -6493,8 +6506,8 @@ public:
 				m_me->OnMove(true);
 				pkVictim->OnMove();
 
-				if (pkVictim->CanBeginFight())
-					pkVictim->BeginFight(me);
+				if (CombatSystem::CanBeginFight(pkVictim->GetEntityHandle()))
+					CombatSystem::BeginFight(pkVictim->GetEntityHandle(), me);
 
 				LOG_INFO("{} hwajo {}", ecs::PlayerRuntime::GetName(me).data(), ecs::PlayerRuntime::GetName(victim).data());
 				m_me->ComputeSkill(m_bType, victim);
@@ -6512,8 +6525,8 @@ public:
 				m_me->OnMove(true);
 				pkVictim->OnMove();
 
-				if (pkVictim->CanBeginFight())
-					pkVictim->BeginFight(me);
+				if (CombatSystem::CanBeginFight(pkVictim->GetEntityHandle()))
+					CombatSystem::BeginFight(pkVictim->GetEntityHandle(), me);
 
 				LOG_TRACE("{} horse_wildattack {}", ecs::PlayerRuntime::GetName(me).data(), ecs::PlayerRuntime::GetName(victim).data());
 				m_me->ComputeSkill(m_bType, victim);
@@ -6541,8 +6554,8 @@ public:
 			m_me->OnMove(true);
 			pkVictim->OnMove();
 
-			if (pkVictim->CanBeginFight())
-				pkVictim->BeginFight(me);
+			if (CombatSystem::CanBeginFight(pkVictim->GetEntityHandle()))
+				CombatSystem::BeginFight(pkVictim->GetEntityHandle(), me);
 
 			LOG_INFO("{} - Skill {} -> {}", ecs::PlayerRuntime::GetName(me).data(), m_bType, ecs::PlayerRuntime::GetName(victim).data());
 			m_me->ComputeSkill(m_bType, victim);
@@ -6554,8 +6567,8 @@ public:
 			m_me->OnMove(true);
 			pkVictim->OnMove();
 
-			if (pkVictim->CanBeginFight())
-				pkVictim->BeginFight(me);
+			if (CombatSystem::CanBeginFight(pkVictim->GetEntityHandle()))
+				CombatSystem::BeginFight(pkVictim->GetEntityHandle(), me);
 
 			LOG_INFO("{} - Skill {} -> {}", ecs::PlayerRuntime::GetName(me).data(), m_bType, ecs::PlayerRuntime::GetName(victim).data());
 			m_me->ComputeSkill(m_bType, victim);
@@ -6650,8 +6663,8 @@ public:
 					m_me->OnMove(true);
 					pkVictim->OnMove();
 
-					if (pkVictim->CanBeginFight())
-						pkVictim->BeginFight(me);
+					if (CombatSystem::CanBeginFight(pkVictim->GetEntityHandle()))
+						CombatSystem::BeginFight(pkVictim->GetEntityHandle(), me);
 
 					LOG_INFO("{} - Skill {} -> {}", ecs::PlayerRuntime::GetName(me).data(), m_bType, ecs::PlayerRuntime::GetName(victim).data());
 					m_me->ComputeSkill(m_bType, victim);

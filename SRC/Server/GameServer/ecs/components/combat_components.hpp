@@ -79,6 +79,12 @@ struct AttackPositionTimer {
     uint32_t lastChange { 0 };
 };
 
+// The highest aggro this character has seen. It gates every victim switch,
+// and it starts below zero so the first attacker always takes the slot.
+struct AggroState {
+    int maxAggro { -100 };
+};
+
 struct CombatActiveTag {};
 struct InvincibleTag {};
 

@@ -2423,8 +2423,8 @@ struct FuncSplashDamage
 		if (IS_SET(m_pkSk->dwFlag, SKILL_FLAG_COMPUTE_MAGIC_DAMAGE))
 			dt = DAMAGE_TYPE_MAGIC;
 
-		if (pkChrVictim->CanBeginFight())
-			pkChrVictim->BeginFight((m_pkChr ? m_pkChr->GetEntityHandle() : entt::null));
+		if (CombatSystem::CanBeginFight(pkChrVictim->GetEntityHandle()))
+			CombatSystem::BeginFight(pkChrVictim->GetEntityHandle(), (m_pkChr ? m_pkChr->GetEntityHandle() : entt::null));
 
 		if (m_pkSk->dwVnum == SKILL_CHAIN)
 			LOG_INFO("{} CHAIN INDEX {} DAM {} DT {}", ecs::PlayerRuntime::GetName(m_character).data(), m_pkChr->GetChainLightningIndex() - 1, iDam, static_cast<int>(dt));
@@ -2796,8 +2796,8 @@ struct FuncSplashAffect
 				if (test_server)
 					LOG_INFO("FuncSplashAffect step 2 : name:{} vnum:{} iDur:{}", ecs::PlayerRuntime::GetName(target).data(), m_dwVnum, m_iDuration);
 				if (m_dwVnum == SKILL_TUSOK)
-					if (pkChr->CanBeginFight())
-						pkChr->BeginFight(m_attacker);
+					if (CombatSystem::CanBeginFight(pkChr->GetEntityHandle()))
+						CombatSystem::BeginFight(pkChr->GetEntityHandle(), m_attacker);
 
 				if (ecs::PlayerRuntime::IsPC(target) && m_dwVnum == SKILL_TUSOK)
 					AffectSystem::AddAffect(target, m_dwVnum, m_bPointOn, m_iAmount, m_dwAffectFlag, m_iDuration/3, m_iSPCost, m_bOverride);

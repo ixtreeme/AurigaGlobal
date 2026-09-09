@@ -963,8 +963,8 @@ void CParty::SendMessage(entt::entity character, uint8_t bMsg, uint32_t dwArg1, 
 
 					if ((pkChr = rMember.pCharacter) && ch != pkChr)
 					{
-						if (pkChr->CanBeginFight())
-							pkChr->BeginFight((pkChrVictim ? pkChrVictim->GetEntityHandle() : entt::null));
+						if (CombatSystem::CanBeginFight(pkChr->GetEntityHandle()))
+							CombatSystem::BeginFight(pkChr->GetEntityHandle(), (pkChrVictim ? pkChrVictim->GetEntityHandle() : entt::null));
 					}
 				}
 			}

@@ -412,6 +412,7 @@ float ecs::MovementSystem::GetMoveSpeed(entt::entity) { UnexpectedService(__func
 float ecs::PlayerRuntime::GetRotation(entt::entity) { UnexpectedService(__func__); }
 const TMobTable* ecs::PlayerRuntime::GetMobTable(entt::entity) { return nullptr; }
 int ecs::PlayerRuntime::GetZ(entt::entity) { return 0; }
+int ecs::PlayerRuntime::GetPosition(entt::entity) { return POS_STANDING; }
 bool ecs::PlayerRuntime::IsPet(entt::entity) { return false; }
 bool ecs::PlayerRuntime::IsNewPet(entt::entity) { return false; }
 void ecs::MovementSystem::CalculateMoveDuration(entt::entity) { UnexpectedService(__func__); }
@@ -766,11 +767,58 @@ void AttackAuditChecks() {
     Check(IS_SPEED_HACK(a,third,20001), "victim-side attack audit");
 }
 }
+namespace {
+// Aggro-driven victim switching. The handle a damage report carries can have
+// been retired between the hit and the decision, and none of those may be
+// adopted as a target.
+void AggroSwitchChecks() {
+    Reset();
+    tick = 10000;  // past the three-second guard, so it can be tested both ways
+    const auto mob = Actor();
+
+    // Nothing is chosen while the current pick is younger than three seconds.
+    C::SetVictim(mob, entt::null);
+    g_registry.get_or_emplace<ecs::CombatTarget>(mob).setTime = tick;
+    const auto fresh = Actor();
+    C::ChangeVictimByAggro(mob, 500, fresh);
+    Check(C::GetVictim(mob) == entt::null, "a victim younger than three seconds is left alone");
+
+    // Past the guard, a higher figure takes the slot.
+    g_registry.get_or_emplace<ecs::CombatTarget>(mob).setTime = 0;
+    C::ChangeVictimByAggro(mob, 500, fresh);
+    Check(C::GetVictim(mob) == fresh, "a higher aggro takes the slot");
+    Check(C::GetMaxAggro(mob) == 500, "the ceiling follows the adopted target");
+
+    // A lower figure from somebody else does not.
+    const auto weaker = Actor();
+    g_registry.get_or_emplace<ecs::CombatTarget>(mob).setTime = 0;
+    C::ChangeVictimByAggro(mob, 100, weaker);
+    Check(C::GetVictim(mob) == fresh, "a lower aggro does not steal the slot");
+
+    // A destroyed candidate is refused however angry it claims to be.
+    const auto gone = Actor();
+    g_registry.destroy(gone);
+    g_registry.get_or_emplace<ecs::CombatTarget>(mob).setTime = 0;
+    C::ChangeVictimByAggro(mob, 9000, gone);
+    Check(C::GetVictim(mob) == fresh, "a destroyed candidate is not adopted");
+    Check(C::GetMaxAggro(mob) == 500, "a destroyed candidate does not raise the ceiling");
+
+    // And its slot, once handed to somebody else, is still not the same entity.
+    const auto reused = Actor();
+    Check(entt::to_entity(reused) == entt::to_entity(gone), "the slot was reused");
+    g_registry.get_or_emplace<ecs::CombatTarget>(mob).setTime = 0;
+    C::ChangeVictimByAggro(mob, 9000, gone);
+    Check(C::GetVictim(mob) != reused, "a stale handle never resolves to its successor");
+
+    // An entity with no aggro state answers the floor rather than inventing one.
+    Check(C::GetMaxAggro(entt::null) == -100, "no aggro state means the floor");
+}
+}
 int main() {
     try {
         CHARACTER_MANAGER characters;
         AlignmentChecks(); CallbackChecks(); ModeChecks(); MultiplierAndValidityChecks();
-        BattleTargetChecks(); BattleMathChecks(); BattleAffectChecks(); AttackAuditChecks(); InteractionCounterChecks();
+        BattleTargetChecks(); AggroSwitchChecks(); BattleMathChecks(); BattleAffectChecks(); AttackAuditChecks(); InteractionCounterChecks();
         std::cout << "Combat state checks passed: " << checks << '\n'; return 0;
     } catch (const std::exception& error) { std::cerr << error.what() << '\n'; return 1; }
 }
