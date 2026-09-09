@@ -9,6 +9,7 @@
 #include "SocialSystem.hpp"
 
 #include "PlayerRuntimeSystem.hpp"
+#include "SkillSystem.hpp"
 #include "../EcsDiagnostics.hpp"
 #include "InventorySystem.hpp"
 #include "SessionSystem.hpp"
@@ -4333,12 +4334,7 @@ void CHARACTER::Destroy()
     event_cancel(&m_pkStayOnlineEvent);
 #endif
 
-    for (auto it = m_mapMobSkillEvent.begin(); it != m_mapMobSkillEvent.end(); ++it)
-    {
-        LPEVENT pkEvent = it->second;
-        event_cancel(&pkEvent);
-    }
-    m_mapMobSkillEvent.clear();
+    SkillSystem::CancelAllMobSkillEvents(GetEntityHandle());
 #ifdef __DUNGEON_INFO_SYSTEM__
     dungeonDamage.clear();
 #endif
@@ -5771,7 +5767,6 @@ void CHARACTER::Initialize()
 
     m_dwLastSkillTime = get_dword_time();
 
-    memset(m_adwMobSkillCooltime, 0, sizeof(m_adwMobSkillCooltime));
 
     m_isinPCBang = false;
 

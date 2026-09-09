@@ -29,6 +29,14 @@ bool IsLearnableSkill(entt::entity e, uint32_t skillId);
 bool LearnGrandMasterSkill(entt::entity e, uint32_t skillId);
 bool LearnSkillByBook(entt::entity e, uint32_t skillId, uint8_t prob = 0);
 bool HasMobSkill(entt::entity e);
+bool UseMobSkill(entt::entity e, unsigned int idx);
+const CMob* MobProtoOf(entt::entity e);
+const TMobSkillInfo* GetMobSkill(entt::entity e, unsigned int idx);
+uint32_t GetMobSkillCooltime(entt::entity e, unsigned int idx);
+void SetMobSkillCooltime(entt::entity e, unsigned int idx, uint32_t when);
+void CancelMobSkillEvent(entt::entity e, int index);
+void ForgetMobSkillEvent(entt::entity e, int index);
+void CancelAllMobSkillEvents(entt::entity e);
 bool CanUseMobSkill(entt::entity e, unsigned int idx);
 bool CanUseSkill(entt::entity e, uint32_t skillId);
 // Runtime skill state belongs to the entity, never to a CHARACTER mirror.

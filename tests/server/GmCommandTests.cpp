@@ -905,6 +905,9 @@ int64_t CHARACTER::GetMaxSP(void)const { Unexpected(); }
 int64_t CHARACTER::GetPoint(unsigned char)const { Unexpected(); }
 int ecs::PointSystem::GetLimitPoint(entt::entity, unsigned char) { Unexpected(); }
 const TMobTable* ecs::PlayerRuntime::GetMobTable(entt::entity) { return nullptr; }
+bool ecs::PlayerRuntime::IsMonster(entt::entity) { return false; }
+float ecs::PlayerRuntime::GetRotation(entt::entity) { return 0.0f; }
+void ecs::PlayerRuntime::SetHP(entt::entity, int64_t) {}
 unsigned int CHARACTER::GetMobDamageMin(void)const { Unexpected(); }
 unsigned int CHARACTER::GetMobDamageMax(void)const { Unexpected(); }
 void CHARACTER::PointChange(unsigned char,int64_t,bool,bool,bool) { Unexpected(); }

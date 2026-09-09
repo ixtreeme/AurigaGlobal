@@ -1666,12 +1666,9 @@ private:
 #endif
 	// MOB_SKILL
 public:
-	const TMobSkillInfo* GetMobSkill(unsigned int idx) const;
 	bool				CanUseMobSkill(unsigned int idx) const;
-	bool				UseMobSkill(unsigned int idx);
 	void				ResetMobSkillCooltime();
 protected:
-	uint32_t				m_adwMobSkillCooltime[MOB_SKILL_MAX_NUM];
 	// END_OF_MOB_SKILL
 
 	// for SKILL_MUYEONG
@@ -2004,7 +2001,6 @@ public:
 	const CMob* m_pkMobData;
 	const CMob* GetMobData() const { return m_pkMobData; }
 
-	std::map<int, LPEVENT> m_mapMobSkillEvent;
 
 	friend struct FuncSplashDamage;
 	friend struct FuncSplashAffect;

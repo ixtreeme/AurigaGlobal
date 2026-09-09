@@ -635,6 +635,78 @@ void DisableCooltime(entt::entity e)
     MarkDirty(e);
 }
 
+uint32_t GetMobSkillCooltime(entt::entity e, unsigned int idx)
+{
+    if (idx >= MOB_SKILL_MAX_NUM || e == entt::null || !g_registry.valid(e))
+        return 0;
+    const auto* cooldowns = g_registry.try_get<ecs::SkillCooldowns>(e);
+    return cooldowns ? cooldowns->mob[idx] : 0;
+}
+
+void SetMobSkillCooltime(entt::entity e, unsigned int idx, uint32_t when)
+{
+    if (idx >= MOB_SKILL_MAX_NUM || e == entt::null || !g_registry.valid(e))
+        return;
+    g_registry.get_or_emplace<ecs::SkillCooldowns>(e).mob[idx] = when;
+}
+
+// The prototype a mob was spawned from, or null for anything that has none.
+const CMob* MobProtoOf(entt::entity e)
+{
+    if (e == entt::null || !g_registry.valid(e))
+        return nullptr;
+    const auto* ref = g_registry.try_get<ecs::MobDataRef>(e);
+    return ref ? ref->data : nullptr;
+}
+
+// The skill slot lives on the CMob, gated by the table entry being filled -
+// the same two reads CHARACTER::GetMobSkill did.
+const TMobSkillInfo* GetMobSkill(entt::entity e, unsigned int idx)
+{
+    if (idx >= MOB_SKILL_MAX_NUM)
+        return nullptr;
+    const CMob* mob = MobProtoOf(e);
+    if (!mob || mob->m_table.Skills[idx].dwVnum == 0)
+        return nullptr;
+    return &mob->m_mobSkillInfo[idx];
+}
+
+void CancelMobSkillEvent(entt::entity e, int index)
+{
+    if (e == entt::null || !g_registry.valid(e))
+        return;
+    auto* events = g_registry.try_get<ecs::MobSkillEvents>(e);
+    if (!events)
+        return;
+    if (const auto it = events->pending.find(index); it != events->pending.end()) {
+        LPEVENT existing = it->second;
+        event_cancel(&existing);
+        events->pending.erase(it);
+    }
+}
+
+void ForgetMobSkillEvent(entt::entity e, int index)
+{
+    if (e == entt::null || !g_registry.valid(e))
+        return;
+    if (auto* events = g_registry.try_get<ecs::MobSkillEvents>(e))
+        events->pending.erase(index);
+}
+
+void CancelAllMobSkillEvents(entt::entity e)
+{
+    if (e == entt::null || !g_registry.valid(e))
+        return;
+    auto* events = g_registry.try_get<ecs::MobSkillEvents>(e);
+    if (!events)
+        return;
+    for (auto& [index, pending] : events->pending) {
+        LPEVENT alive = pending;
+        event_cancel(&alive);
+    }
+    events->pending.clear();
+}
+
 void ResetMobSkillCooltime(entt::entity e)
 {
     if (e == entt::null || !g_registry.valid(e))
@@ -1392,12 +1464,12 @@ bool CHARACTER::LearnSkillByBook(uint32_t dwSkillVnum, uint8_t bProb)
 
 bool CHARACTER::CanUseMobSkill(unsigned int idx) const
 {
-	const TMobSkillInfo* pInfo = GetMobSkill(idx);
+	const TMobSkillInfo* pInfo = SkillSystem::GetMobSkill(GetEntityHandle(), idx);
 
 	if (!pInfo)
 		return false;
 
-	if (m_adwMobSkillCooltime[idx] > get_dword_time())
+	if (SkillSystem::GetMobSkillCooltime(GetEntityHandle(), idx) > get_dword_time())
 		return false;
 
 	if (number(0, 1))
@@ -1454,7 +1526,6 @@ bool CHARACTER::CanUseSkill(uint32_t dwSkillVnum) const
 
 void CHARACTER::ResetMobSkillCooltime()
 {
-    memset(m_adwMobSkillCooltime, 0, sizeof(m_adwMobSkillCooltime));
     SkillSystem::ResetMobSkillCooltime(GetEntityHandle());
 }
 
@@ -4152,21 +4223,6 @@ void CHARACTER::SkillLearnWaitMoreTimeMessage(uint32_t ms)
 #endif
 }
 
-const TMobSkillInfo* CHARACTER::GetMobSkill(unsigned int idx) const
-{
-	if (idx >= MOB_SKILL_MAX_NUM)
-		return nullptr;
-
-	if (!m_pkMobData)
-		return nullptr;
-
-	if (0 == m_pkMobData->m_table.Skills[idx].dwVnum)
-		return nullptr;
-
-	return &m_pkMobData->m_mobSkillInfo[idx];
-}
-
-
 EVENTINFO(mob_skill_event_info)
 {
 	entt::entity ch { entt::null };
@@ -4205,7 +4261,7 @@ EVENTFUNC(mob_skill_hit_event)
 	if (e != entt::null)
 		g_dispatcher.trigger(ecs::EvSkillUsed { e, info->vnum });
 	ch->ComputeSkillAtPosition(info->vnum, info->pos, info->level);
-	ch->m_mapMobSkillEvent.erase(info->index);
+	SkillSystem::ForgetMobSkillEvent(e, info->index);
 
 	return 0;
 }
@@ -4234,103 +4290,106 @@ struct FHealerParty
 };
 #endif
 
-bool CHARACTER::UseMobSkill(unsigned int idx)
+namespace SkillSystem {
+
+// The mob skill body. Cooldowns and pending hits are components now, so the one
+// thing still needing a character is ComputeSkillAtPosition - 293 lines of
+// skill maths that is its own migration, not the AI's.
+bool UseMobSkill(entt::entity e, unsigned int idx)
 {
-	if (IsPC())
-		return false;
+    if (e == entt::null || !g_registry.valid(e) || ecs::PlayerRuntime::IsPC(e))
+        return false;
 
-	const TMobSkillInfo* pInfo = GetMobSkill(idx);
+    const TMobSkillInfo* info = GetMobSkill(e, idx);
+    if (!info)
+        return false;
 
-	if (!pInfo)
-		return false;
+    const uint32_t vnum = info->dwSkillVnum;
+    CSkillProto* proto = CSkillManager::instance().Get(vnum);
+    if (!proto)
+        return false;
 
-	uint32_t dwVnum = pInfo->dwSkillVnum;
-	CSkillProto * pkSk = CSkillManager::instance().Get(dwVnum);
+    const float k = 1.0 * GetSkillPower(e, proto->dwVnum, info->bSkillLevel) * proto->bMaxLevel / 100;
 
-	if (!pkSk)
-		return false;
+    proto->kCooldownPoly.SetVar("k", k);
+    const int cooltime = static_cast<int>(proto->kCooldownPoly.Eval() * 1000);
 
-	const float k = 1.0 * GetSkillPower(pkSk->dwVnum, pInfo->bSkillLevel) * pkSk->bMaxLevel / 100;
+    SetMobSkillCooltime(e, idx, get_dword_time() + cooltime);
 
-	pkSk->kCooldownPoly.SetVar("k", k);
-	int iCooltime = (int) (pkSk->kCooldownPoly.Eval() * 1000);
-
-	m_adwMobSkillCooltime[idx] = get_dword_time() + iCooltime;
-
-	LOG_INFO("USE_MOB_SKILL: {} idx {} vnum {} cooltime {}", GetName(), idx, dwVnum, iCooltime);
+    LOG_INFO("USE_MOB_SKILL: {} idx {} vnum {} cooltime {}",
+        ecs::PlayerRuntime::GetName(e), idx, vnum, cooltime);
 
 #ifdef __VERSION_162__
-	if ((IsMonster()) && (pkSk->dwVnum == HEALING_SKILL_VNUM))
-	{
-		LPPARTY pkParty = GetParty();
-		if ((pkParty) && (IS_SET(pkSk->dwFlag, SKILL_FLAG_PARTY)))
-		{
-			FHealerParty f(this);
-			pkParty->ForEachMemberPtr(f);
-		}
-		else
-		{
-			int iRevive = (int)(GetMaxHP() / 100 * 15);
-			int iHP = (GetMaxHP() >= GetHP() + iRevive) ? (int)(GetHP() + iRevive) : (int)(GetMaxHP());
-			SetHP(iHP);
-			NetworkSyncSystem::BroadcastEffect(g_registry, GetEntityHandle(), SE_EFFECT_HEALER);
-			LOG_INFO("FHealer: {} (pointer: {}) heal their HP with {} (new HP: {}).", GetName(), static_cast<const void*>(get_pointer(this)), iRevive, GetHP());
-		}
+    if (ecs::PlayerRuntime::IsMonster(e) && proto->dwVnum == HEALING_SKILL_VNUM) {
+        LPPARTY party = ecs::SocialSystem::GetParty(e);
+        if (party && IS_SET(proto->dwFlag, SKILL_FLAG_PARTY)) {
+            FHealerParty heal(ecs::LegacyCharOf(e));
+            party->ForEachMemberPtr(heal);
+        } else {
+            // Heal fifteen percent of the maximum, capped at full.
+            const int64_t maxHP = ecs::PointSystem::GetMaxHP(e);
+            const int64_t revive = maxHP / 100 * 15;
+            const int64_t current = ecs::PlayerRuntime::GetHP(e);
+            ecs::PlayerRuntime::SetHP(e, maxHP >= current + revive ? current + revive : maxHP);
+            NetworkSyncSystem::BroadcastEffect(g_registry, e, SE_EFFECT_HEALER);
+            LOG_INFO("FHealer: {} heals for {} (new HP: {}).",
+                ecs::PlayerRuntime::GetName(e), revive, ecs::PlayerRuntime::GetHP(e));
+        }
 
-		return true;
-	}
+        return true;
+    }
 #endif
 
-	if (m_pkMobData->m_mobSkillInfo[idx].vecSplashAttack.empty())
-	{
-		LOG_ERROR("No skill hit data for mob {} index {}", GetName(), idx);
-		return false;
-	}
+    const CMob* mob = MobProtoOf(e);
+    if (!mob || mob->m_mobSkillInfo[idx].vecSplashAttack.empty()) {
+        LOG_ERROR("No skill hit data for mob {} index {}", ecs::PlayerRuntime::GetName(e), idx);
+        return false;
+    }
 
-	for (size_t i = 0; i < m_pkMobData->m_mobSkillInfo[idx].vecSplashAttack.size(); i++)
-	{
-		PIXEL_POSITION pos = GetXYZ();
-		const TMobSplashAttackInfo& rInfo = m_pkMobData->m_mobSkillInfo[idx].vecSplashAttack[i];
+    for (size_t i = 0; i < mob->m_mobSkillInfo[idx].vecSplashAttack.size(); i++) {
+        PIXEL_POSITION pos;
+        pos.x = ecs::PlayerRuntime::GetX(e);
+        pos.y = ecs::PlayerRuntime::GetY(e);
+        pos.z = ecs::PlayerRuntime::GetZ(e);
 
-		if (rInfo.dwHitDistance)
-		{
-			float fx, fy;
-			GetDeltaByDegree(GetRotation(), rInfo.dwHitDistance, &fx, &fy);
-			pos.x += (int32_t) fx;
-			pos.y += (int32_t) fy;
-		}
+        const TMobSplashAttackInfo& splash = mob->m_mobSkillInfo[idx].vecSplashAttack[i];
 
-		if (rInfo.dwTiming)
-		{
-			if (test_server)
-				LOG_INFO("               timing {}ms", rInfo.dwTiming);
+        if (splash.dwHitDistance) {
+            float fx = 0.0f;
+            float fy = 0.0f;
+            GetDeltaByDegree(ecs::PlayerRuntime::GetRotation(e), splash.dwHitDistance, &fx, &fy);
+            pos.x += static_cast<int32_t>(fx);
+            pos.y += static_cast<int32_t>(fy);
+        }
 
-			mob_skill_event_info* info = AllocEventInfo<mob_skill_event_info>();
+        if (splash.dwTiming) {
+            if (test_server)
+                LOG_INFO("               timing {}ms", splash.dwTiming);
 
-			info->ch = GetEntityHandle();
-			info->pos = pos;
-			info->level = pInfo->bSkillLevel;
-			info->vnum = dwVnum;
-			info->index = i;
+            mob_skill_event_info* event = AllocEventInfo<mob_skill_event_info>();
+            event->ch = e;
+            event->pos = pos;
+            event->level = info->bSkillLevel;
+            event->vnum = vnum;
+            event->index = i;
 
-			// <Factor> Cancel existing event first
-			auto it = m_mapMobSkillEvent.find(i);
-			if (it != m_mapMobSkillEvent.end()) {
-				LPEVENT existing = it->second;
-				event_cancel(&existing);
-				m_mapMobSkillEvent.erase(it);
-			}
+            // A repeat use of the same slot cancels the hit still in flight.
+            CancelMobSkillEvent(e, static_cast<int>(i));
 
-			m_mapMobSkillEvent.insert(std::make_pair(i, event_create(mob_skill_hit_event, info, PASSES_PER_SEC(rInfo.dwTiming) / 1000)));
-		}
-		else
-		{
-			ComputeSkillAtPosition(dwVnum, pos, pInfo->bSkillLevel);
-		}
-	}
+            g_registry.get_or_emplace<ecs::MobSkillEvents>(e).pending.insert(
+                std::make_pair(static_cast<int>(i),
+                    event_create(mob_skill_hit_event, event, PASSES_PER_SEC(splash.dwTiming) / 1000)));
+        } else {
+            // The only character left: skill computation is a separate unit.
+            if (LPCHARACTER ch = ecs::LegacyCharOf(e))
+                ch->ComputeSkillAtPosition(vnum, pos, info->bSkillLevel);
+        }
+    }
 
-	return true;
+    return true;
 }
+
+} // namespace SkillSystem
 
 bool CHARACTER::IsUsableSkillMotion(uint32_t dwMotionIndex) const
 {

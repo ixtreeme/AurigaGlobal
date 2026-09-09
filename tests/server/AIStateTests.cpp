@@ -179,6 +179,7 @@ void SendMovePacket(entt::entity, uint8_t, uint8_t, uint32_t, uint32_t,
 namespace SkillSystem {
 bool HasMobSkill(entt::entity) { return false; }
 bool CanUseMobSkill(entt::entity, unsigned int) { return false; }
+bool UseMobSkill(entt::entity, unsigned int) { return false; }
 } // namespace SkillSystem
 
 namespace ecs::SocialSystem {
@@ -214,7 +215,6 @@ bool SECTREE_MANAGER::IsMovablePosition(int, int, int) { return true; }
 
 // The AI pump still resolves a character for the flag sync and the two mob
 // instance flags; none of it is reachable from the idle cases below.
-bool CHARACTER::UseMobSkill(unsigned int) { return false; }
 float CMotionManager::GetMotionDuration(uint32_t, uint32_t) { return 0.0f; }
 void CParty::SendMessage(entt::entity, uint8_t, uint32_t, uint32_t) {}
 int CalculateDuration(int, int) { return 0; }

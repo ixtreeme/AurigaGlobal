@@ -22,6 +22,12 @@ struct SkillCooldowns {
     bool disableCooltime;
 };
 
+// Mob skill hits that have been scheduled but not landed yet, keyed by the
+// splash index so a repeat use of the same slot cancels the one in flight.
+struct MobSkillEvents {
+    std::map<int, LPEVENT> pending;
+};
+
 struct SkillDamageBonus {
     std::unordered_map<uint8_t, int> bySkill;
     std::map<int, TSkillUseInfo> useInfo;

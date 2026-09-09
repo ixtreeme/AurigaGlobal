@@ -442,10 +442,7 @@ void StateBattle(entt::entity e)
             ecs::MovementSystem::SetRotationToXY(e,
                 ecs::PlayerRuntime::GetX(victim), ecs::PlayerRuntime::GetY(victim));
 
-            // UseMobSkill is 98 lines of legacy with its own directive arms and
-            // is a migration unit of its own.
-            LPCHARACTER ch = ecs::LegacyCharOf(e);
-            if (!ch || !ch->UseMobSkill(skillIdx))
+            if (!SkillSystem::UseMobSkill(e, skillIdx))
                 continue;
 
             ecs::MovementSystem::SendMovePacket(e, FUNC_MOB_SKILL, skillIdx,
