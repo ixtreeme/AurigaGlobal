@@ -231,7 +231,6 @@ uint32_t CHARACTER::GetPolymorphItemVnum() const { Unexpected(); }
 void CHARACTER::ComputePoints() { Unexpected(); }
 void CHARACTER::SyncQuickslot(uint8_t, uint8_t, uint8_t) { Unexpected(); }
 bool CHARACTER::IsEquipUniqueGroup(uint32_t) const { Unexpected(); }
-void CHARACTER::UpdateMountCountOverheadToViewers() { Unexpected(); }
 CSafebox* CHARACTER::GetSafebox() const { Unexpected(); }
 void CHARACTER::SendMountInventory() { Unexpected(); }
 CSafebox* CHARACTER::GetMall() const { Unexpected(); }

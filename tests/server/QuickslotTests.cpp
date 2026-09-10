@@ -509,6 +509,13 @@ int32_t ecs::QuestSystem::GetFlag(entt::entity owner, std::string_view flag)
 // doubled; placement, removal, unequip, grid queries and quickslots are real.
 DESC::DESC() { m_sock = 1; m_entity = entt::null; m_accountTable = {}; }
 DESC::~DESC() {}
+// The refine fee moved into InventorySystem, which this target compiles.
+namespace ecs::SocialSystem {
+CGuild* GetGuild(entt::entity) { Unexpected(); }
+CGuild* GetRefineGuild(entt::entity) { Unexpected(); }
+}
+void CGuild::RequestDepositMoney(entt::entity, int) { Unexpected(); }
+uint8_t ecs::PlayerRuntime::GetEmpire(entt::entity) { Unexpected(); }
 void DESC::Destroy() { Unexpected(); }
 void DESC::SetPhase(int) { Unexpected(); }
 CLIENT_DESC::CLIENT_DESC() {}

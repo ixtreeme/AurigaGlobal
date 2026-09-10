@@ -732,7 +732,7 @@ void CHARACTER::Save(void) { Unexpected(); }
 int64_t CHARACTER::GetHP(void)const { Unexpected(); }
 int64_t CHARACTER::GetSP(void)const { Unexpected(); }
 void CHARACTER::ComputePoints(void) { Unexpected(); }
-bool CHARACTER::WarpToPID(unsigned int) { Unexpected(); }
+namespace ecs::SessionSystem { bool WarpToPID(entt::entity, unsigned int) { Unexpected(); } }
 int CHARACTER::CountSpecifyItem(unsigned int)const { Unexpected(); }
 void CHARACTER::RemoveSpecifyItem(unsigned int,int,bool) { Unexpected(); }
 void CombatSystem::Dead(entt::entity,entt::entity,bool) { Unexpected(); }
@@ -937,7 +937,6 @@ bool CombatSystem::CanBeginFight(entt::entity) { Unexpected(); }
 void CombatSystem::BeginFight(entt::entity, entt::entity) { Unexpected(); }
 bool CHARACTER::IsStun(void)const { Unexpected(); }
 int CHARACTER::GetArrowAndBow(entt::entity *,entt::entity *,int) { Unexpected(); }
-void CHARACTER::AttackedByPoison(entt::entity) { Unexpected(); }
 void CHARACTER::AttackedByFire(entt::entity,int,int) { Unexpected(); }
 void CHARACTER::SetSkillHit(bool) { Unexpected(); }
 bool CHARACTER::CanUseHorseSkill(void) { Unexpected(); }
