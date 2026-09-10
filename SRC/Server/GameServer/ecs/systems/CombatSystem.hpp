@@ -6,6 +6,8 @@
 
 #include <entt/entt.hpp>
 
+#include "../components/combat_components.hpp"
+
 #ifdef LEADERBOARD_RAZOR93
 // One row of a leaderboard query. It lived in char.h because the two functions
 // that build it were static CHARACTER members; neither reads a character.
@@ -106,6 +108,9 @@ void FlyTarget(entt::entity e, uint32_t targetVID, int32_t x, int32_t y, uint8_t
 void DetermineDropMetinStone(entt::entity e);
 uint32_t GetDropMetinStoneVnum(entt::entity e);
 uint8_t GetDropMetinStonePct(entt::entity e);
+// The damage ledger, created on demand for a character being hurt.
+ecs::DamageLedger& DamageLedgerOf(entt::entity e);
+void ClearDamageLedger(entt::entity e);
 void DistributeHP(entt::entity victim, entt::entity killer);
 void ReviveInvisible(entt::entity e, int duration);
 bool IsStun(entt::entity e);

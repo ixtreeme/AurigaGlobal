@@ -1,5 +1,6 @@
 #pragma once
 
+#include <map>
 #include <unordered_set>
 #include <vector>
 
@@ -27,6 +28,19 @@ struct SelectedBy {
 struct MetinStoneDrop {
     uint32_t vnum { 0 };
     uint8_t pct { 0 };
+};
+
+// Who has hurt this character and by how much. The killer, the experience
+// split and the drop ownership are all decided from it, and death clears it.
+// This was CHARACTER::m_map_kDamage with two accessors returning the map
+// itself, so every caller reached straight into the field.
+struct BattleContribution {
+    uint64_t totalDamage { 0 };
+    int aggro { 0 };
+};
+
+struct DamageLedger {
+    std::map<entt::entity, BattleContribution> entries;
 };
 
 struct CombatTarget {

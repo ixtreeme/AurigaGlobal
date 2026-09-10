@@ -208,7 +208,7 @@ entt::entity GetNearestVictim(entt::entity attacker, entt::entity from)
     float nearest = 99999.0f;
     entt::entity victim = entt::null;
 
-    for (const auto& [candidate, damage] : self->GetDamageMap()) {
+    for (const auto& [candidate, damage] : DamageLedgerOf(self->GetEntityHandle()).entries) {
         if (candidate == entt::null || !g_registry.valid(candidate))
             continue;
 
@@ -595,8 +595,8 @@ void ChangeVictimByAggro(entt::entity self, int newAggro, entt::entity newVictim
     entt::entity best = entt::null;
     int bestAggro = newAggro;
 
-    for (const auto& [candidate, battle] : owner->GetDamageMap()) {
-        if (battle.iAggro <= bestAggro)
+    for (const auto& [candidate, battle] : DamageLedgerOf(owner->GetEntityHandle()).entries) {
+        if (battle.aggro <= bestAggro)
             continue;
         if (candidate == entt::null || !g_registry.valid(candidate) || IsDead(candidate))
             continue;
@@ -605,7 +605,7 @@ void ChangeVictimByAggro(entt::entity self, int newAggro, entt::entity newVictim
             continue;
 
         best = candidate;
-        bestAggro = battle.iAggro;
+        bestAggro = battle.aggro;
     }
 
     if (best != entt::null)
@@ -1411,11 +1411,31 @@ void DistributeHP(entt::entity victim, entt::entity killer)
 		return;
 }
 
+ecs::DamageLedger& DamageLedgerOf(entt::entity e)
+{
+    static ecs::DamageLedger stale;
+    if (e == entt::null || !g_registry.valid(e))
+    {
+        // A handle that no longer names a character gets a scratch ledger, so
+        // callers that write through the reference need not check first.
+        stale.entries.clear();
+        return stale;
+    }
+    return g_registry.get_or_emplace<ecs::DamageLedger>(e);
+}
+
+void ClearDamageLedger(entt::entity e)
+{
+    if (auto* ledger = e != entt::null && g_registry.valid(e)
+            ? g_registry.try_get<ecs::DamageLedger>(e) : nullptr)
+        ledger->entries.clear();
+}
+
 // Aggro bookkeeping for one hit: the figure is weighted by how the damage
 // was delivered, the standing victim gets a loyalty bonus, and the running
 // total is what decides whether the target changes.
 void UpdateAggrPointEx(entt::entity self, entt::entity attacker, uint8_t rawType,
-    int dam, CHARACTER::TBattleInfo& info)
+    int dam, ecs::BattleContribution& info)
 {
     const EDamageType type = static_cast<EDamageType>(rawType);
 	// Ư ŸԿ   ö󰣴
@@ -1441,10 +1461,10 @@ void UpdateAggrPointEx(entt::entity self, entt::entity attacker, uint8_t rawType
 	if (attacker == GetVictim(self))
 		dam = (int)(dam * 1.2f);
 
-	info.iAggro += dam;
+	info.aggro += dam;
 
-	if (info.iAggro < 0)
-		info.iAggro = 0;
+	if (info.aggro < 0)
+		info.aggro = 0;
 
 	//LOG_INFO(0, "UpdateAggrPointEx for %s by %s dam %d total %d", ecs::PlayerRuntime::GetName(self), ecs::PlayerRuntime::GetName((pAttacker ? pAttacker->GetEntityHandle() : entt::null)).data(), dam, total);
 	if (ecs::SocialSystem::GetParty(self) && dam > 0 && type != DAMAGE_TYPE_SPECIAL)
@@ -1462,7 +1482,7 @@ void UpdateAggrPointEx(entt::entity self, entt::entity attacker, uint8_t rawType
 		pParty->SendMessage(self, PM_AGGRO_INCREASE, iPartyAggroDist, ecs::PlayerRuntime::GetPacketVID(attacker));
 	}
 
-	CombatSystem::ChangeVictimByAggro(self, info.iAggro, attacker);
+	CombatSystem::ChangeVictimByAggro(self, info.aggro, attacker);
 }
 
 } // namespace CombatSystem
@@ -1476,12 +1496,12 @@ void CHARACTER::UpdateAggrPoint(entt::entity attacker, EDamageType type, int dam
 	if (eAttacker == entt::null)
 		return;
 
-	TDamageMap::iterator it = m_map_kDamage.find(eAttacker);
+	std::map<entt::entity, ecs::BattleContribution>::iterator it = CombatSystem::DamageLedgerOf(GetEntityHandle()).entries.find(eAttacker);
 
-	if (it == m_map_kDamage.end())
+	if (it == CombatSystem::DamageLedgerOf(GetEntityHandle()).entries.end())
 	{
-		m_map_kDamage.insert(TDamageMap::value_type(eAttacker, TBattleInfo(0, dam)));
-		it = m_map_kDamage.find(eAttacker);
+		CombatSystem::DamageLedgerOf(GetEntityHandle()).entries.insert(std::map<entt::entity, ecs::BattleContribution>::value_type(eAttacker, ecs::BattleContribution(0, dam)));
+		it = CombatSystem::DamageLedgerOf(GetEntityHandle()).entries.find(eAttacker);
 	}
 
 	CombatSystem::UpdateAggrPointEx(GetEntityHandle(), attacker, type, dam, it->second);
@@ -1982,15 +2002,15 @@ LPCHARACTER CHARACTER::DistributeExp()
 	TDamageInfoTable damage_info_table;
 	std::map<LPPARTY, TDamageInfo> map_party_damage;
 
-	damage_info_table.reserve(m_map_kDamage.size());
+	damage_info_table.reserve(CombatSystem::DamageLedgerOf(GetEntityHandle()).entries.size());
 
-	TDamageMap::iterator it = m_map_kDamage.begin();
+	std::map<entt::entity, ecs::BattleContribution>::iterator it = CombatSystem::DamageLedgerOf(GetEntityHandle()).entries.begin();
 
 	// ϴ    ɷ . (50m)
-	while (it != m_map_kDamage.end())
+	while (it != CombatSystem::DamageLedgerOf(GetEntityHandle()).entries.end())
 	{
 		const entt::entity eAttacker = it->first;
-		uint64_t iDam = it->second.iTotalDamage;
+		uint64_t iDam = it->second.totalDamage;
 
 		++it;
 
@@ -2044,7 +2064,7 @@ LPCHARACTER CHARACTER::DistributeExp()
 	}
 
 	SetExp(0);
-	//m_map_kDamage.clear();
+	//CombatSystem::ClearDamageLedger(GetEntityHandle());
 
 	if (iTotalDam == 0)	//  ذ 0̸
 		return nullptr;
@@ -3860,7 +3880,7 @@ void CHARACTER::Reward(bool bItemDrop)
 	if (!IsPC() && !m_pkMobData)
 	{
 		LOG_ERROR("Reward: NULL mob data (vid={} race={} name={} map={} x={} y={} attacker={})", GetPacketVID(), GetRaceNum(), GetName(), GetMapIndex(), GetX(), GetY(), pkAttacker ? ecs::PlayerRuntime::GetName(attacker).data() : "<null>");
-		m_map_kDamage.clear();
+		CombatSystem::ClearDamageLedger(GetEntityHandle());
 		return;
 	}
 	//PROF_UNIT pu1("r1");
@@ -4081,13 +4101,13 @@ void CHARACTER::Reward(bool bItemDrop)
 								uint64_t dmgNew = 0;
 								uint64_t dmgOld = 0;
 
-								auto itNew = m_map_kDamage.find(mch->GetEntityHandle());
-								if (itNew != m_map_kDamage.end())
-									dmgNew = itNew->second.iTotalDamage;
+								auto itNew = CombatSystem::DamageLedgerOf(GetEntityHandle()).entries.find(mch->GetEntityHandle());
+								if (itNew != CombatSystem::DamageLedgerOf(GetEntityHandle()).entries.end())
+									dmgNew = itNew->second.totalDamage;
 
-								auto itOld = m_map_kDamage.find(it->second->GetEntityHandle());
-								if (itOld != m_map_kDamage.end())
-									dmgOld = itOld->second.iTotalDamage;
+								auto itOld = CombatSystem::DamageLedgerOf(GetEntityHandle()).entries.find(it->second->GetEntityHandle());
+								if (itOld != CombatSystem::DamageLedgerOf(GetEntityHandle()).entries.end())
+									dmgOld = itOld->second.totalDamage;
 
 								if (dmgNew > dmgOld)
 									it->second = mch;
@@ -4219,7 +4239,7 @@ void CHARACTER::Reward(bool bItemDrop)
 				if (!ItemSystem::IsValidItem(itemEntity))
 				{
 					LOG_ERROR("invalid item entity in single drop");
-					m_map_kDamage.clear();
+					CombatSystem::ClearDamageLedger(GetEntityHandle());
 					return;
 				}
 
@@ -4240,7 +4260,7 @@ void CHARACTER::Reward(bool bItemDrop)
 					{
 						LOG_ERROR("failed to place single drop entity {}",
 							static_cast<uint32_t>(itemEntity));
-						m_map_kDamage.clear();
+						CombatSystem::ClearDamageLedger(GetEntityHandle());
 						return;
 					}
 
@@ -4278,9 +4298,9 @@ void CHARACTER::Reward(bool bItemDrop)
 
 				uint64_t total_dam = 0;
 
-				for (TDamageMap::iterator it = m_map_kDamage.begin(); it != m_map_kDamage.end(); ++it)
+				for (std::map<entt::entity, ecs::BattleContribution>::iterator it = CombatSystem::DamageLedgerOf(GetEntityHandle()).entries.begin(); it != CombatSystem::DamageLedgerOf(GetEntityHandle()).entries.end(); ++it)
 				{
-					uint64_t iDamage = it->second.iTotalDamage;
+					uint64_t iDamage = it->second.totalDamage;
 					if (iDamage > 0)
 					{
 						auto* ch = LegacyCharOf(it->first);
@@ -4408,7 +4428,7 @@ void CHARACTER::Reward(bool bItemDrop)
 				if (!ItemSystem::IsValidItem(itemEntity))
 				{
 					LOG_ERROR("invalid item entity in single ground drop");
-					m_map_kDamage.clear();
+					CombatSystem::ClearDamageLedger(GetEntityHandle());
 					return;
 				}
 				if (!ItemSystem::PlaceItemOnGround(
@@ -4416,7 +4436,7 @@ void CHARACTER::Reward(bool bItemDrop)
 				{
 					LOG_ERROR("failed to place single ground drop entity {}",
 						static_cast<uint32_t>(itemEntity));
-					m_map_kDamage.clear();
+					CombatSystem::ClearDamageLedger(GetEntityHandle());
 					return;
 				}
 
@@ -4453,9 +4473,9 @@ void CHARACTER::Reward(bool bItemDrop)
 
 				uint64_t total_dam = 0;
 
-				for (TDamageMap::iterator it = m_map_kDamage.begin(); it != m_map_kDamage.end(); ++it)
+				for (std::map<entt::entity, ecs::BattleContribution>::iterator it = CombatSystem::DamageLedgerOf(GetEntityHandle()).entries.begin(); it != CombatSystem::DamageLedgerOf(GetEntityHandle()).entries.end(); ++it)
 				{
-					uint64_t iDamage = it->second.iTotalDamage;
+					uint64_t iDamage = it->second.totalDamage;
 					if (iDamage > 0)
 					{
 						auto* ch = LegacyCharOf(it->first);
@@ -4565,7 +4585,7 @@ void CHARACTER::Reward(bool bItemDrop)
 		}
 	}
 
-	m_map_kDamage.clear();
+	CombatSystem::ClearDamageLedger(GetEntityHandle());
 }
 
 
@@ -4969,18 +4989,18 @@ bool Damage(entt::entity victim, entt::entity attacker, int64_t dam, uint8_t dam
 		if (eAttacker == entt::null)
 			return false;
 
-		auto& damageMap = book->GetDamageMapForUpdate();
+		auto& damageMap = CombatSystem::DamageLedgerOf(victim).entries;
 		auto it = damageMap.find(eAttacker);
 		if (it == damageMap.end())
 		{
 			damageMap.insert(std::make_pair(
 				eAttacker,
-				CHARACTER::TBattleInfo(fixed_dam, 0)
+				ecs::BattleContribution(fixed_dam, 0)
 			));
 		}
 		else
 		{
-			it->second.iTotalDamage += fixed_dam;
+			it->second.totalDamage += fixed_dam;
 		}
 
 
@@ -6149,20 +6169,20 @@ bool Damage(entt::entity victim, entt::entity attacker, int64_t dam, uint8_t dam
 	{
 		//PROF_UNIT puRest20("Rest20");
 		const entt::entity eAttacker = attacker;
-		CHARACTER::TDamageMap::iterator it = book->GetDamageMapForUpdate().end();
+		std::map<entt::entity, ecs::BattleContribution>::iterator it = CombatSystem::DamageLedgerOf(victim).entries.end();
 		if (eAttacker != entt::null)
 		{
-			it = book->GetDamageMapForUpdate().find(eAttacker);
+			it = CombatSystem::DamageLedgerOf(victim).entries.find(eAttacker);
 
-			if (it == book->GetDamageMapForUpdate().end())
+			if (it == CombatSystem::DamageLedgerOf(victim).entries.end())
 			{
-				book->GetDamageMapForUpdate().insert(
-					CHARACTER::TDamageMap::value_type(eAttacker, CHARACTER::TBattleInfo(dam, 0)));
-				it = book->GetDamageMapForUpdate().find(eAttacker);
+				CombatSystem::DamageLedgerOf(victim).entries.insert(
+					std::map<entt::entity, ecs::BattleContribution>::value_type(eAttacker, ecs::BattleContribution(dam, 0)));
+				it = CombatSystem::DamageLedgerOf(victim).entries.find(eAttacker);
 			}
 			else
 			{
-				it->second.iTotalDamage += dam;
+				it->second.totalDamage += dam;
 			}
 		}
 		//puRest20.Pop();
@@ -6179,7 +6199,7 @@ bool Damage(entt::entity victim, entt::entity attacker, int64_t dam, uint8_t dam
 		//puRest21.Pop();
 
 		//PROF_UNIT puRest22("Rest22");
-		if (it != book->GetDamageMapForUpdate().end())
+		if (it != CombatSystem::DamageLedgerOf(victim).entries.end())
 			CombatSystem::UpdateAggrPointEx(victim, attacker, type, dam, it->second);
 		//puRest22.Pop();
 	}
