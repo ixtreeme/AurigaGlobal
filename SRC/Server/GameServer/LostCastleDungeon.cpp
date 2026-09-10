@@ -1634,7 +1634,7 @@ bool CLostCastleDungeon::OnClickNpc(entt::entity character)
             ecs::QuestSystem::SetFlag(m, kQfCh, (int32_t)g_bChannel);
 
             // exit/lobby
-            pkM->SetWarpLocation(lobbyMap, lobbyX, lobbyY);
+            ecs::MovementSystem::SetWarpLocation(pkM->GetEntityHandle(), lobbyMap, lobbyX, lobbyY);
         };
 
     if (!party)

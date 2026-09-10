@@ -2941,12 +2941,12 @@ EVENTFUNC(skill_gwihwan_event)
 		if (ecs::GetRecallPosition(ecs::PlayerRuntime::GetMapIndex(character), ecs::PlayerRuntime::GetEmpire(character), pos))
 		{
 			LOG_INFO("Recall: {} {} {} -> {} {}", ecs::PlayerRuntime::GetName(character).data(), ecs::PlayerRuntime::GetX(character), ecs::PlayerRuntime::GetY(character), pos.x, pos.y);
-			ch->WarpSet(pos.x, pos.y);
+			ecs::MovementSystem::WarpSet(character, pos.x, pos.y);
 		}
 		else
 		{
 			LOG_ERROR("CHARACTER::UseItem : cannot find spawn position (name {}, {} x {})", ecs::PlayerRuntime::GetName(character).data(), ecs::PlayerRuntime::GetX(character), ecs::PlayerRuntime::GetY(character));
-			ch->WarpSet(EMPIRE_START_X(ecs::PlayerRuntime::GetEmpire(character)), EMPIRE_START_Y(ecs::PlayerRuntime::GetEmpire(character)));
+			ecs::MovementSystem::WarpSet(character, EMPIRE_START_X(ecs::PlayerRuntime::GetEmpire(character)), EMPIRE_START_Y(ecs::PlayerRuntime::GetEmpire(character)));
 		}
 	}
 #ifdef TEXTS_IMPROVEMENT

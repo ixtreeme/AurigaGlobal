@@ -302,7 +302,7 @@ namespace
             return;
         int32_t mapIdx = 1, x = 0, y = 0;
         GetOutsideWarpByEmpire(ecs::PlayerRuntime::GetEmpire(((ch) ? (ch)->GetEntityHandle() : entt::null)), mapIdx, x, y);
-        ch->SetWarpLocation(mapIdx, x, y);
+        ecs::MovementSystem::SetWarpLocation(ch->GetEntityHandle(), mapIdx, x, y);
     }
 
     void WarpOut(entt::entity ch)

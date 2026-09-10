@@ -889,7 +889,6 @@ public:
 
 
 
-	bool			WarpSet(int32_t x, int32_t y, int32_t lRealMapIndex = 0);
 
 
 #ifdef ENABLE_CHANNEL_SWITCH_SYSTEM
@@ -897,12 +896,7 @@ public:
 	bool			StartChannelSwitch(int32_t newAddr, uint16_t newPort);
 #endif
 
-	void			SetWarpLocation(int32_t lMapIndex, int32_t x, int32_t y);
-	void			WarpEnd();
-	const PIXEL_POSITION& GetWarpPosition() const { return m_posWarp; }
 
-	void			SaveExitLocation();
-	void			ExitToSavedLocation();
 
 	void			StopStaminaConsume();
 	bool			IsStaminaHalfConsume() const;
@@ -913,11 +907,7 @@ public:
 protected:
 
 
-	PIXEL_POSITION	m_posWarp;
-	int32_t			m_lWarpMapIndex;
 
-	PIXEL_POSITION	m_posExit;
-	int32_t			m_lExitMapIndex;
 
 	uint32_t			m_dwMoveStartTime;
 	uint32_t			m_dwMoveDuration;
@@ -1790,14 +1780,12 @@ private:
 
 	// Warp Character
 public:
-	void				StartWarpNPCEvent();
 
 public:
 	void				StartSaveEvent();
 	void				StartDestroyWhenIdleEvent();
 
 
-	LPEVENT				m_pkWarpNPCEvent;
 	//DELAYED_WARP
 	//END_DELAYED_WARP
 
@@ -1940,7 +1928,6 @@ public:
 public:
 	bool UnEquipSpecialRideUniqueItem();
 
-	bool CanWarp() const;
 
 private:
 	uint32_t m_dwLastGoldDropTime;

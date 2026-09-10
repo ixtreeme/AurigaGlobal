@@ -5,6 +5,7 @@
 #include "ecs/systems/PointSystem.hpp"
 #include "ecs/systems/PlayerRuntimeSystem.hpp"
 #include "ecs/systems/SocialSystem.hpp"
+#include "ecs/systems/MovementSystem.hpp"
 #include "ecs/systems/SessionSystem.hpp"
 #include "ecs/systems/NetworkSyncSystem.hpp"
 #include "ecs/AIHelpers.hpp"
@@ -596,7 +597,7 @@ void CInputDB::PlayerLoad(LPDESC d, const char * data)
 	{
 		LOG_ERROR("InputDB::PlayerLoad : entering {} map is not allowed here (name: {}, empire {})", lMapIndex, pTab->name, d->GetEmpire());
 
-		ch->SetWarpLocation(EMPIRE_START_MAP(d->GetEmpire()),
+		ecs::MovementSystem::SetWarpLocation(ch->GetEntityHandle(), EMPIRE_START_MAP(d->GetEmpire()),
 				EMPIRE_START_X(d->GetEmpire()) / 100,
 				EMPIRE_START_Y(d->GetEmpire()) / 100);
 

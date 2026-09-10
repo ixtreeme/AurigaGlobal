@@ -922,7 +922,7 @@ void CRuneDungeon::OnPlayerLogin(entt::entity character)
         return;
 
     // Set return location
-    ch->SetWarpLocation(219, 5369, 14292);
+    ecs::MovementSystem::SetWarpLocation(ch->GetEntityHandle(), 219, 5369, 14292);
 
     ecs::QuestSystem::SetFlag(character, kQfIdx, idx);
     ecs::QuestSystem::SetFlag(character, kQfCh, (int32_t)g_bChannel);
@@ -1402,7 +1402,7 @@ bool CRuneDungeon::OnClickNpc(entt::entity character)
             ecs::QuestSystem::SetFlag(pc, kQfEnterTime, now);
 
             // Same return location as Lua.
-            pkPc->SetWarpLocation(219, 5369, 14292);
+            ecs::MovementSystem::SetWarpLocation(pkPc->GetEntityHandle(), 219, 5369, 14292);
         };
 
     // Consume entry items + clear leftovers BEFORE warping, and set rejoin/ranking timers

@@ -43,6 +43,11 @@
 #include <stdexcept>
 #include <limits>
 #include "../../SRC/Server/GameServer/mount_inventory_helper.h"
+#include "../../SRC/Server/GameServer/map_location.h"
+#include "../../SRC/Server/GameServer/desc.h"
+#include "../../SRC/Server/GameServer/log.h"
+#include "../../SRC/Server/GameServer/p2p.h"
+#include "../../SRC/Server/GameServer/new_switchbot.h"
 
 entt::registry g_registry;
 entt::dispatcher g_dispatcher;
@@ -74,6 +79,10 @@ std::unordered_map<entt::entity, MotionSettings> motionSettings;
 std::map<entt::entity, TItemTable> weaponProtos;
 std::map<std::pair<uint32_t, uint32_t>, const CMotion*> motions;
 std::vector<std::pair<uint32_t, uint32_t>> motionRequests;
+// Only entities a test places have a position; every other entity keeps the
+// "must not be asked" guarantee the plain Unexpected() doubles gave.
+struct Placement { int32_t x, y, mapIndex; };
+std::map<entt::entity, Placement> placements;
 struct TestMotion : CMotion {
     TestMotion(float duration, float distance) { m_fDuration = duration; m_vec3Accumulation = {0, -distance, 0}; }
 };
@@ -126,7 +135,7 @@ void Reset() {
     onPacket = {}; onRetire = {}; packets.clear(); awake.clear(); retired = 0;
     movementPackets.clear(); animationPackets.clear(); onAnimation = {};
     transitions.clear(); motionSettings.clear(); weaponProtos.clear();
-    motions.clear(); motionRequests.clear(); g_registry.clear();
+    motions.clear(); motionRequests.clear(); placements.clear(); g_registry.clear();
 }
 struct Callback {
     std::function<void(entt::registry&, entt::entity)> fn;
@@ -183,6 +192,31 @@ bool ecs::PlayerRuntime::IsPC(entt::entity e) { return g_registry.all_of<ecs::Ta
 bool ecs::PlayerRuntime::IsStone(entt::entity e) { return g_registry.all_of<ecs::StoneAITag>(e); }
 void ecs::PlayerRuntime::MonsterLog(entt::entity, const char*) {}
 void ecs::PlayerRuntime::CancelCharEvent(entt::entity e, CharEvent) { Check(g_registry.valid(e), "cancel event on stale entity"); }
+
+// The warp cluster moved into MovementSystem.cpp and brought the map table,
+// the descriptor, the switchbot and the P2P link with it. None of that is
+// reachable headless, so every one of these must stay unreached.
+int g_nPortalLimitTime = 10;
+uint8_t g_bChannel = 1;
+uint16_t mother_port = 13000;
+bool map_allow_find(int) { Unexpected(); }
+int number_ex(int, int, const char*, int) { Unexpected(); }
+bool CEntity::IsType(int) const { Unexpected(); }
+bool CHARACTER::CanHandleItem(bool, bool) { Unexpected(); }
+bool CHARACTER::IsHack(bool, bool, int) { Unexpected(); }
+bool CMapLocation::Get(int, int, int&, uint32_t&, uint16_t&) { Unexpected(); }
+SECTREE_MAP* SECTREE_MANAGER::GetMap(int) { Unexpected(); }
+int SECTREE_MANAGER::GetMapIndex(int, int) { Unexpected(); }
+void CSwitchbotManager::P2PSendSwitchbot(uint32_t, uint16_t) { Unexpected(); }
+void CSwitchbotManager::SetIsWarping(uint32_t, bool) { Unexpected(); }
+void DESC::Packet(const void*, int) { Unexpected(); }
+void LogManager::CharLog(entt::entity, uint32_t, const char*, const char*) { Unexpected(); }
+void P2P_MANAGER::Send(const void*, int, LPDESC) { Unexpected(); }
+uint8_t ecs::PlayerRuntime::GetEmpire(entt::entity) { Unexpected(); }
+uint32_t ecs::PlayerRuntime::GetPlayerID(entt::entity) { Unexpected(); }
+bool ecs::PlayerRuntime::IsGoto(entt::entity) { Unexpected(); }
+bool ecs::PlayerRuntime::IsWarp(entt::entity) { Unexpected(); }
+SECTREE* ecs::PlayerRuntime::GetSectree(entt::entity) { Unexpected(); }
 float ecs::PlayerRuntime::GetRotation(entt::entity e) {
     const auto* runtime = g_registry.try_get<ecs::CharacterRuntimeFlagsComponent>(e);
     return runtime ? runtime->rotation : 0.0f;
@@ -219,9 +253,18 @@ uint32_t ecs::PlayerRuntime::GetRaceNum(entt::entity e) { return motionSettings[
 int ecs::PlayerRuntime::GetStamina(entt::entity e) { return motionSettings[e].stamina; }
 uint32_t MountSystem::GetMountVnum(entt::entity e) { return motionSettings[e].mount; }
 std::string_view ecs::PlayerRuntime::GetName(entt::entity) { Unexpected(); }
-int32_t ecs::PlayerRuntime::GetMapIndex(entt::entity) { Unexpected(); }
-int32_t ecs::PlayerRuntime::GetX(entt::entity) { Unexpected(); }
-int32_t ecs::PlayerRuntime::GetY(entt::entity) { Unexpected(); }
+int32_t ecs::PlayerRuntime::GetMapIndex(entt::entity e) {
+    auto it = placements.find(e); if (it == placements.end()) Unexpected();
+    return it->second.mapIndex;
+}
+int32_t ecs::PlayerRuntime::GetX(entt::entity e) {
+    auto it = placements.find(e); if (it == placements.end()) Unexpected();
+    return it->second.x;
+}
+int32_t ecs::PlayerRuntime::GetY(entt::entity e) {
+    auto it = placements.find(e); if (it == placements.end()) Unexpected();
+    return it->second.y;
+}
 LPEVENT ecs::PlayerRuntime::GetCharEvent(entt::entity, CharEvent) { Unexpected(); }
 void ecs::PlayerRuntime::SetCharEvent(entt::entity, CharEvent, LPEVENT) { Unexpected(); }
 int ecs::PlayerRuntime::GetPosition(entt::entity) { Unexpected(); }
@@ -249,9 +292,6 @@ const TMobTable& CHARACTER::GetMobTable() const { Unexpected(); }
 void CHARACTER::PointChange(uint8_t, int64_t, bool, bool, bool) { Unexpected(); }
 bool CHARACTER::Show(int32_t, int32_t, int32_t, int32_t, bool) { Unexpected(); }
 void CHARACTER::OnMove(bool) { Unexpected(); }
-bool CHARACTER::WarpSet(int32_t, int32_t, int32_t) { Unexpected(); }
-void CHARACTER::SaveExitLocation() { Unexpected(); }
-void CHARACTER::ExitToSavedLocation() { Unexpected(); }
 bool AffectSystem::IsAffectFlag(entt::entity, uint32_t) { Unexpected(); }
 bool CHARACTER::IsEquipUniqueItem(uint32_t) const { Unexpected(); }
 void CombatSystem::Dead(entt::entity, entt::entity, bool) { Unexpected(); }
@@ -971,6 +1011,60 @@ void MovementCommandReentry() {
         g_registry.valid(replacement) && !g_registry.all_of<ecs::MovementDestination>(replacement),
         "preparation wrote through recycled handle");
 }
+// The pending warp and the saved exit. Each used to be a pair of CHARACTER
+// fields beside these components: the login, the channel switch, WarpSet and
+// WarpEnd wrote only the fields, so anything reading the component saw a value
+// left over from an unrelated write. WarpSet, WarpEnd and ExitToSavedLocation
+// need a map table, a descriptor and a P2P link, so they are not reachable
+// here; what is pinned is the storage every one of them now shares.
+void NativeWarpLocations() {
+    Reset();
+    const auto e = Entity(ecs::SpatialKind::Character);
+
+    Check(ecs::MovementSystem::GetWarpLocation(e).x == 0 &&
+        ecs::MovementSystem::GetWarpLocation(e).y == 0 &&
+        ecs::MovementSystem::GetWarpLocation(e).mapIndex == 0, "a fresh character has a pending warp");
+    Check(ecs::MovementSystem::GetExitLocation(e).mapIndex == 0, "a fresh character has a saved exit");
+
+    // The dungeons and the quest bindings pass map cells.
+    ecs::MovementSystem::SetWarpLocation(e, 42, 300, 400);
+    auto warp = ecs::MovementSystem::GetWarpLocation(e);
+    Check(warp.x == 30000 && warp.y == 40000 && warp.mapIndex == 42, "cell coordinates were not scaled");
+
+    // WarpSet and the login path pass world units.
+    ecs::MovementSystem::SetWarpLocationRaw(e, 7, 300, 400);
+    warp = ecs::MovementSystem::GetWarpLocation(e);
+    Check(warp.x == 300 && warp.y == 400 && warp.mapIndex == 7, "world coordinates were scaled again");
+
+    // WarpEnd clears it through the same door it was written through.
+    ecs::MovementSystem::SetWarpLocationRaw(e, 0, 0, 0);
+    warp = ecs::MovementSystem::GetWarpLocation(e);
+    Check(warp.x == 0 && warp.y == 0 && warp.mapIndex == 0, "the pending warp survived being cleared");
+
+    placements[e] = {700, 800, 13};
+    ecs::MovementSystem::SaveExitLocation(e);
+    const auto exit = ecs::MovementSystem::GetExitLocation(e);
+    Check(exit.x == 700 && exit.y == 800 && exit.mapIndex == 13, "the exit was not saved where it is read");
+    Check(ecs::MovementSystem::GetWarpLocation(e).mapIndex == 0, "saving an exit set a pending warp");
+
+    // Neither accessor may create a component, and neither may touch a handle
+    // that no longer names a character.
+    const auto bare = Entity(ecs::SpatialKind::Character);
+    Check(ecs::MovementSystem::GetWarpLocation(bare).mapIndex == 0 &&
+        !g_registry.all_of<ecs::WarpPosition>(bare), "reading a warp created one");
+    Check(ecs::MovementSystem::GetExitLocation(bare).mapIndex == 0 &&
+        !g_registry.all_of<ecs::ExitPosition>(bare), "reading an exit created one");
+
+    g_registry.destroy(e);
+    Check(ecs::MovementSystem::GetWarpLocation(e).mapIndex == 0, "stale handle reported a pending warp");
+    Check(ecs::MovementSystem::GetExitLocation(e).mapIndex == 0, "stale handle reported a saved exit");
+    ecs::MovementSystem::SetWarpLocation(e, 1, 2, 3);
+    ecs::MovementSystem::SetWarpLocationRaw(e, 1, 2, 3);
+    ecs::MovementSystem::SaveExitLocation(e);
+    Check(ecs::MovementSystem::GetWarpLocation(entt::null).mapIndex == 0, "the null handle carried a warp");
+    Check(ecs::MovementSystem::GetExitLocation(entt::null).mapIndex == 0, "the null handle carried an exit");
+}
+
 void NativeAIScheduleStorage() {
     Reset();
     const auto e = Entity(ecs::SpatialKind::Character);
@@ -1025,7 +1119,7 @@ int main() {
         NativeMovement(); MovementVisibilityAndBounds(); MovementCallbackLifetime();
         MovementCallbackRetarget(); MovementArrivalAndPackets();
         NativeAnimationPackets(); NativeMovementDurationReads(); NativeMovementCommands();
-        NativeMotionSelection(); MovementCommandReentry(); NativeAIScheduleStorage();
+        NativeMotionSelection(); MovementCommandReentry(); NativeAIScheduleStorage(); NativeWarpLocations();
         ecs::VisibilitySystem::Shutdown(g_registry);
         std::cout << "Spatial checks passed: " << checks << '\n'; return 0;
     } catch (const std::exception& error) { std::cerr << error.what() << '\n'; return 1; }

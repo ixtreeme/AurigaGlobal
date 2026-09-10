@@ -39,6 +39,7 @@ struct LegacyCharEvents {
     LPEVENT fishing { nullptr };
     LPEVENT timed { nullptr };
     LPEVENT warp { nullptr };
+    LPEVENT warpNPC { nullptr };
 };
 
 struct CharacterRuntimeFlagsComponent {

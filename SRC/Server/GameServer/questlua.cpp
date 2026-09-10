@@ -62,7 +62,7 @@ namespace quest
 	{
 		if ((ecs::PlayerRuntime::IsPC(((ch) ? (ch)->GetEntityHandle() : entt::null))))
 		{
-			ch->SetWarpLocation (map_index, x, y);
+			ecs::MovementSystem::SetWarpLocation(ch->GetEntityHandle(), map_index, x, y);
 		}
 	}
 

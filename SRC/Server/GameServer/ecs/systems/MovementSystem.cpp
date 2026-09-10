@@ -51,6 +51,13 @@
 #include "../components/character_runtime_components.hpp"
 #include "../events.hpp"
 #include "../EventDispatcher.hpp"
+#include "../../map_location.h"
+#include "../../p2p.h"
+#include "../../log.h"
+#include "../services/EntityNetworkDispatch.hpp"
+#ifdef ENABLE_SWITCHBOT
+#include "../../new_switchbot.h"
+#endif
 #include <Core/Logging.hpp>
 
 void EncodeMovePacket(TPacketGCMove& pack, uint32_t dwVID, uint8_t bFunc, uint8_t bArg, uint32_t x, uint32_t y, uint32_t dwDuration, uint32_t dwTime, float bRot);
@@ -255,6 +262,49 @@ void MarkDirty(entt::entity e)
 
 } // namespace
 
+// Where the character is headed and where it came from. Both used to be four
+// CHARACTER fields beside these components, and only the fields were read: the
+// login, the channel switch, WarpSet and WarpEnd all wrote CHARACTER alone, so
+// anything reading the component - the quest bindings, the warp-NPC pulse - saw
+// whatever the last unrelated write had left. There is one copy now.
+
+// x and y in map cells, as the dungeons and the quest bindings pass them.
+void SetWarpLocation(entt::entity e, int32_t mapIndex, int32_t x, int32_t y)
+{
+    SetWarpLocationRaw(e, mapIndex, x * 100, y * 100);
+}
+
+// x and y already in world units, as WarpSet and the login path have them.
+void SetWarpLocationRaw(entt::entity e, int32_t mapIndex, int32_t x, int32_t y)
+{
+    if (!IsValid(e))
+        return;
+
+    auto& warp = g_registry.get_or_emplace<ecs::WarpPosition>(e);
+    warp.x = x;
+    warp.y = y;
+    warp.mapIndex = mapIndex;
+    MarkDirty(e);
+}
+
+ecs::WarpPosition GetWarpLocation(entt::entity e)
+{
+    if (!IsValid(e))
+        return {};
+
+    const auto* warp = g_registry.try_get<ecs::WarpPosition>(e);
+    return warp ? *warp : ecs::WarpPosition {};
+}
+
+ecs::ExitPosition GetExitLocation(entt::entity e)
+{
+    if (!IsValid(e))
+        return {};
+
+    const auto* exit = g_registry.try_get<ecs::ExitPosition>(e);
+    return exit ? *exit : ecs::ExitPosition {};
+}
+
 void SetWalkingPreference(entt::entity e, bool walking)
 {
     if (IsValid(e))
@@ -284,22 +334,309 @@ bool Show(entt::entity e, int32_t mapIndex, int32_t x, int32_t y, int32_t z, boo
     return ch->Show(mapIndex, x, y, z, showSpawnMotion);
 }
 
-bool WarpSet(entt::entity e, int32_t x, int32_t y, int32_t privateMapIndex)
+// Sending the client to another map, and the arrival on the other side.
+bool WarpSet(entt::entity e, int32_t x, int32_t y, int32_t lPrivateMapIndex)
+{
+    if (!IsValid(e) || !ecs::PlayerRuntime::IsPC(e))
+        return false;
+
+    // RemoveEntity still needs the LPENTITY the sectree was given.
+    LPCHARACTER self = ecs::LegacyCharOf(e);
+    if (!self)
+        return false;
+
+    uint32_t lAddr;
+    int32_t lMapIndex;
+    uint16_t wPort;
+
+#ifdef ENABLE_GENERAL_CH
+    uint8_t ch = ecs::PlayerRuntime::GetDesc(e) ? ecs::PlayerRuntime::GetDesc(e)->GetAccountTable().bChannel : 0;
+    if (!CMapLocation::instance().Get(ch, x, y, lMapIndex, lAddr, wPort)) {
+        LOG_ERROR("cannot find map location index {} x {} y {} name {}", lMapIndex, x, y, ecs::PlayerRuntime::GetName(e).data());
+        return false;
+    }
+
+    if (lPrivateMapIndex >= 10000) {
+        if (lPrivateMapIndex / 10000 != lMapIndex) {
+            LOG_ERROR("Invalid map index {}, must be child of {}", lPrivateMapIndex, lMapIndex);
+            return false;
+        }
+
+        lMapIndex = lPrivateMapIndex;
+    }
+#else
+    if (!CMapLocation::instance().Get(x, y, lMapIndex, lAddr, wPort))
+    {
+        LOG_ERROR("cannot find map location index {} x {} y {} name {}", lMapIndex, x, y, ecs::PlayerRuntime::GetName(e).data());
+        return false;
+    }
+
+    if (lPrivateMapIndex >= 10000)
+    {
+        if (lPrivateMapIndex / 10000 != lMapIndex)
+        {
+            LOG_ERROR("Invalid map index {}, must be child of {}", lPrivateMapIndex, lMapIndex);
+            return false;
+        }
+
+        lMapIndex = lPrivateMapIndex;
+    }
+#endif
+
+    Stop(e);
+    ecs::SessionSystem::Save(e);
+
+    if (ecs::PlayerRuntime::GetSectree(e))
+    {
+        ecs::PlayerRuntime::GetSectree(e)->RemoveEntity(self);
+        if (g_registry.valid(e))
+        {
+            g_registry.remove<ecs::SectorPlacement>(e);
+            g_registry.remove<ecs::ViewActiveTag>(e);
+        }
+        ecs::ViewSystem::ViewCleanup(e);
+
+        ecs::EntityNetworkDispatch::SendRemove(g_registry, e, e);
+    }
+
+    SetWarpLocationRaw(e, lMapIndex, x, y);
+
+    LOG_INFO("WarpSet {} {} {} current map {} target map {}", ecs::PlayerRuntime::GetName(e).data(), x, y, ecs::PlayerRuntime::GetMapIndex(e), lMapIndex);
+
+    TPacketGCWarp p;
+
+    p.bHeader = HEADER_GC_WARP;
+    p.lX = x;
+    p.lY = y;
+    p.lAddr = lAddr;
+    p.wPort = wPort;
+
+#ifdef ENABLE_SWITCHBOT
+    CSwitchbotManager::Instance().SetIsWarping(ecs::PlayerRuntime::GetPlayerID(e), true);
+
+    if (p.wPort != mother_port)
+    {
+        CSwitchbotManager::Instance().P2PSendSwitchbot(ecs::PlayerRuntime::GetPlayerID(e), p.wPort);
+    }
+#endif
+
+    LPDESC desc = IsValid(e) ? ecs::PlayerRuntime::GetDesc(e) : nullptr;
+    if (!desc)
+        return false;
+
+    desc->Packet(&p, sizeof(TPacketGCWarp));
+
+    char buf[256];
+    snprintf(buf, sizeof(buf), "%s MapIdx %ld DestMapIdx%ld DestX%ld DestY%ld Empire%d", ecs::PlayerRuntime::GetName(e).data(), ecs::PlayerRuntime::GetMapIndex(e), lPrivateMapIndex, x, y, ecs::PlayerRuntime::GetEmpire(e));
+    LogManager::instance().CharLog(e, 0, "WARP", buf);
+
+    return true;
+}
+
+void WarpEnd(entt::entity e)
 {
     if (!IsValid(e))
-        return false;
+        return;
 
-    auto* ch = CharacterOf(e);
-    if (!ch)
-        return false;
+    if (test_server)
+        LOG_INFO("WarpEnd {}", ecs::PlayerRuntime::GetName(e).data());
 
-    auto& warp = g_registry.get_or_emplace<ecs::WarpPosition>(e);
-    warp.x = x;
-    warp.y = y;
-    warp.mapIndex = privateMapIndex ? privateMapIndex : ecs::PlayerRuntime::GetMapIndex(e);
-    MarkDirty(e);
+    const auto warp = GetWarpLocation(e);
+    if (warp.x == 0 && warp.y == 0)
+        return;
 
-    return ch->WarpSet(x, y, privateMapIndex);
+    int32_t index = warp.mapIndex;
+
+    if (index > 10000)
+        index /= 10000;
+
+    if (!map_allow_find(index))
+    {
+        LOG_ERROR("location {} {} not allowed to login this server", warp.x, warp.y);
+#ifdef ENABLE_GOHOME_IF_MAP_NOT_ALLOWED
+        // GoHome has no entity form yet; it is its own migration.
+        if (LPCHARACTER self = ecs::LegacyCharOf(e))
+            self->GoHome();
+#else
+        if (LPDESC desc = ecs::PlayerRuntime::GetDesc(e))
+            desc->SetPhase(PHASE_CLOSE);
+#endif
+        return;
+    }
+
+    LOG_INFO("WarpEnd {} {} {} {}", ecs::PlayerRuntime::GetName(e).data(), warp.mapIndex, warp.x, warp.y);
+
+    Show(e, warp.mapIndex, warp.x, warp.y, 0);
+    Stop(e);
+
+    SetWarpLocationRaw(e, 0, 0, 0);
+
+    // Show places the character in a sectree and can retire it.
+    if (IsValid(e))
+    {
+        TPacketGGLogin p;
+
+        p.bHeader = HEADER_GG_LOGIN;
+        strlcpy(p.szName, ecs::PlayerRuntime::GetName(e).data(), sizeof(p.szName));
+        p.dwPID = ecs::PlayerRuntime::GetPlayerID(e);
+        p.bEmpire = ecs::PlayerRuntime::GetEmpire(e);
+        p.lMapIndex = ecs::MapIndexAt(ecs::PlayerRuntime::GetX(e), ecs::PlayerRuntime::GetY(e));
+        p.bChannel = g_bChannel;
+
+        P2P_MANAGER::instance().Send(&p, sizeof(TPacketGGLogin));
+    }
+}
+
+namespace {
+    class FuncCheckWarp
+    {
+    public:
+        FuncCheckWarp(entt::entity warp, bool isGoto)
+        {
+            m_lTargetY = 0;
+            m_lTargetX = 0;
+
+            m_lX = ecs::PlayerRuntime::GetX(warp);
+            m_lY = ecs::PlayerRuntime::GetY(warp);
+
+            m_bInvalid = false;
+            m_bEmpire = ecs::PlayerRuntime::GetEmpire(warp);
+
+            char szTmp[64];
+
+            if (3 != sscanf(ecs::PlayerRuntime::GetName(warp).data(), " %s %ld %ld ", szTmp, &m_lTargetX, &m_lTargetY))
+            {
+                if (number(1, 100) < 5)
+                    LOG_ERROR("Warp NPC name wrong : vnum({}) name({})", ecs::PlayerRuntime::GetRaceNum(warp), ecs::PlayerRuntime::GetName(warp).data());
+
+                m_bInvalid = true;
+
+                return;
+            }
+
+            m_lTargetX *= 100;
+            m_lTargetY *= 100;
+
+            m_bUseWarp = true;
+
+            if (isGoto)
+            {
+                LPSECTREE_MAP pkSectreeMap = ecs::GetMap(ecs::PlayerRuntime::GetMapIndex(warp));
+                m_lTargetX += pkSectreeMap->m_setting.iBaseX;
+                m_lTargetY += pkSectreeMap->m_setting.iBaseY;
+                m_bUseWarp = false;
+            }
+        }
+
+        bool Valid()
+        {
+            return !m_bInvalid;
+        }
+
+        void operator()(LPENTITY ent)
+        {
+            if (!Valid())
+                return;
+
+            if (!ent->IsType(ENTITY_CHARACTER))
+                return;
+
+            LPCHARACTER pkChr = (LPCHARACTER)ent;
+			const entt::entity character = pkChr->GetEntityHandle();
+
+            if (!ecs::PlayerRuntime::IsPC(character))
+                return;
+
+            int iDist = DISTANCE_APPROX(ecs::PlayerRuntime::GetX(character) - m_lX, ecs::PlayerRuntime::GetY(character) - m_lY);
+
+            if (iDist > 300)
+                return;
+
+            if (m_bEmpire && ecs::PlayerRuntime::GetEmpire(character) && m_bEmpire != ecs::PlayerRuntime::GetEmpire(character))
+                return;
+
+            if (pkChr->IsHack())
+                return;
+
+            if (!pkChr->CanHandleItem(false, true))
+                return;
+
+            if (m_bUseWarp)
+                ecs::MovementSystem::WarpSet(character, m_lTargetX, m_lTargetY);
+            else
+            {
+                ecs::MovementSystem::Show(character, ecs::PlayerRuntime::GetMapIndex(character), m_lTargetX, m_lTargetY);
+				ecs::MovementSystem::Stop(character);
+            }
+        }
+
+        bool m_bInvalid;
+        bool m_bUseWarp;
+        int32_t m_lX;
+        int32_t m_lY;
+        int32_t m_lTargetX;
+        int32_t m_lTargetY;
+        uint8_t m_bEmpire;
+    };
+}
+
+EVENTFUNC(warp_npc_event)
+{
+    char_event_info* info = dynamic_cast<char_event_info*>(event->info);
+    if (info == nullptr)
+    {
+        LOG_ERROR("warp_npc_event> <Factor> Null pointer");
+        return 0;
+    }
+
+    LPCHARACTER ch = ecs::LegacyCharOf(info->ch);
+
+    if (ch == nullptr) {
+        return 0;
+    }
+
+    const entt::entity e = ch->GetEntityHandle();
+    if (e != entt::null)
+    {
+        const auto warpPos = ecs::MovementSystem::GetWarpLocation(e);
+        g_dispatcher.trigger(ecs::EvWarpBegin {
+            e,
+            static_cast<uint32_t>(ecs::PlayerRuntime::GetMapIndex(e)),
+            warpPos.x,
+            warpPos.y
+        });
+    }
+
+    if (!ecs::PlayerRuntime::GetSectree(e))
+    {
+        ecs::PlayerRuntime::SetCharEvent(e, ecs::PlayerRuntime::CharEvent::WarpNPC, nullptr);
+        return 0;
+    }
+
+    FuncCheckWarp f(e, ecs::PlayerRuntime::IsGoto(e));
+    if (f.Valid())
+        ecs::PlayerRuntime::GetSectree(e)->ForEachAround(f);
+
+    return passes_per_sec / 2;
+}
+
+void StartWarpNPCEvent(entt::entity e)
+{
+    if (!IsValid(e))
+        return;
+
+    if (ecs::PlayerRuntime::GetCharEvent(e, ecs::PlayerRuntime::CharEvent::WarpNPC))
+        return;
+
+    if (!ecs::PlayerRuntime::IsWarp(e) && !ecs::PlayerRuntime::IsGoto(e))
+        return;
+
+    char_event_info* info = AllocEventInfo<char_event_info>();
+
+    info->ch = e;
+
+    ecs::PlayerRuntime::SetCharEvent(e, ecs::PlayerRuntime::CharEvent::WarpNPC,
+        event_create(warp_npc_event, info, passes_per_sec / 2));
 }
 
 void SaveExitLocation(entt::entity e)
@@ -312,9 +649,6 @@ void SaveExitLocation(entt::entity e)
     exit.y = ecs::PlayerRuntime::GetY(e);
     exit.mapIndex = ecs::PlayerRuntime::GetMapIndex(e);
     MarkDirty(e);
-
-    if (auto* ch = CharacterOf(e))
-        ch->SaveExitLocation();
 }
 
 void ExitToSavedLocation(entt::entity e)
@@ -322,24 +656,21 @@ void ExitToSavedLocation(entt::entity e)
     if (!IsValid(e))
         return;
 
-    auto* ch = CharacterOf(e);
-    if (!ch)
-        return;
+    // The saved exit becomes the pending warp. Both this function and the
+    // pc_warp_exit quest binding already wrote that copy, but into the
+    // component, while CHARACTER::ExitToSavedLocation warped to its own field -
+    // so a character who entered a dungeon in this session left through
+    // whatever the last WarpSet had put there, and WarpEnd had zeroed it.
+    const auto exit = GetExitLocation(e);
+    SetWarpLocationRaw(e, exit.mapIndex, exit.x, exit.y);
 
-    if (const auto* exit = g_registry.try_get<ecs::ExitPosition>(e)) {
-        auto& warp = g_registry.get_or_emplace<ecs::WarpPosition>(e);
-        warp.x = exit->x;
-        warp.y = exit->y;
-        warp.mapIndex = exit->mapIndex;
-        MarkDirty(e);
-    }
+    LOG_INFO("ExitToSavedLocation");
+    WarpSet(e, exit.x, exit.y, exit.mapIndex);
 
-    ch->ExitToSavedLocation();
-
-    if (auto* exit = g_registry.try_get<ecs::ExitPosition>(e)) {
-        exit->x = 0;
-        exit->y = 0;
-        exit->mapIndex = 0;
+    if (auto* saved = IsValid(e) ? g_registry.try_get<ecs::ExitPosition>(e) : nullptr) {
+        saved->x = 0;
+        saved->y = 0;
+        saved->mapIndex = 0;
         MarkDirty(e);
     }
 }
@@ -1126,7 +1457,7 @@ uint32_t CHARACTER::GetStopTime() const
 
 void CHARACTER::GoHome()
 {
-    WarpSet(EMPIRE_START_X(GetEmpire()), EMPIRE_START_Y(GetEmpire()));
+    ecs::MovementSystem::WarpSet(GetEntityHandle(), EMPIRE_START_X(GetEmpire()), EMPIRE_START_Y(GetEmpire()));
 }
 
 namespace ecs::PlayerRuntime {

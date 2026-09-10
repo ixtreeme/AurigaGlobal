@@ -850,6 +850,7 @@ LPEVENT* CharEventSlot(entt::entity e, ecs::PlayerRuntime::CharEvent slot)
     case ecs::PlayerRuntime::CharEvent::Fishing:  return &events.fishing;
     case ecs::PlayerRuntime::CharEvent::Timed:    return &events.timed;
     case ecs::PlayerRuntime::CharEvent::Warp:     return &events.warp;
+    case ecs::PlayerRuntime::CharEvent::WarpNPC:  return &events.warpNPC;
     }
     return nullptr;
 }
@@ -966,6 +967,12 @@ bool CanWarp(entt::entity e)
 		return false;
 
 	if (const auto* safebox = g_registry.try_get<ecs::SafeboxRef>(e); safebox && safebox->isOpening)
+		return false;
+
+	// CHARACTER::CanWarp refused while the safebox window was open, this one
+	// only while its contents were still in flight. The window guard is the
+	// one that stops an item being duplicated across a map change.
+	if (ecs::SessionSystem::IsSafeboxOpen(e))
 		return false;
 
 	if (ecs::SessionSystem::IsCubeOpen(e))
@@ -4333,7 +4340,7 @@ void CHARACTER::Destroy()
 #ifdef ENABLE_NEW_GYEONGGONG_SKILL
     StopGyeongGongEvent();
 #endif
-    event_cancel(&m_pkWarpNPCEvent);
+    ecs::PlayerRuntime::CancelCharEvent(GetEntityHandle(), ecs::PlayerRuntime::CharEvent::WarpNPC);
     ecs::PlayerRuntime::CancelCharEvent(GetEntityHandle(), ecs::PlayerRuntime::CharEvent::Recovery);
     ecs::PlayerRuntime::CancelCharEvent(GetEntityHandle(), ecs::PlayerRuntime::CharEvent::Dead);
     ecs::PlayerRuntime::CancelCharEvent(GetEntityHandle(), ecs::PlayerRuntime::CharEvent::Save);
@@ -4535,9 +4542,7 @@ void CHARACTER::SetPlayerProto(const TPlayerTable* t)
 
     if (t->lMapIndex >= 10000)
     {
-        m_posWarp.x = t->lExitX;
-        m_posWarp.y = t->lExitY;
-        m_lWarpMapIndex = t->lExitMapIndex;
+        ecs::MovementSystem::SetWarpLocationRaw(GetEntityHandle(), t->lExitMapIndex, t->lExitX, t->lExitY);
     }
 
     SetRealPoint(POINT_PLAYTIME, t->playtime);
@@ -4726,7 +4731,7 @@ void CHARACTER::SetProto(const CMob* pkMob)
 
     if (ecs::PlayerRuntime::IsWarp(GetEntityHandle()) || ecs::PlayerRuntime::IsGoto(GetEntityHandle()))
     {
-        StartWarpNPCEvent();
+        ecs::MovementSystem::StartWarpNPCEvent(GetEntityHandle());
     }
 
     CHARACTER_MANAGER::instance().RegisterRaceNumMap(GetEntityHandle());
@@ -5077,7 +5082,7 @@ void CHARACTER::RestartAtSamePos()
 #ifdef ENABLE_CHANNEL_SWITCH_SYSTEM
 bool CHARACTER::SwitchChannel(int32_t newAddr, uint16_t newPort)
 {
-    if (!IsPC() || !GetDesc() || !CanWarp())
+    if (!IsPC() || !GetDesc() || !ecs::PlayerRuntime::CanWarp(GetEntityHandle()))
         return false;
 
     int32_t x = GetX();
@@ -5115,9 +5120,7 @@ bool CHARACTER::SwitchChannel(int32_t newAddr, uint16_t newPort)
         ecs::EntityNetworkDispatch::SendRemove(g_registry, e, e);
     }
 
-    m_lWarpMapIndex = lMapIndex;
-    m_posWarp.x = x;
-    m_posWarp.y = y;
+    ecs::MovementSystem::SetWarpLocationRaw(GetEntityHandle(), lMapIndex, x, y);
 
     LOG_INFO("ChangeChannel {}, {} {} map {} to port {}", GetName(), x, y, GetMapIndex(), wPort);
 
@@ -5197,7 +5200,7 @@ bool CHARACTER::StartChannelSwitch(int32_t newAddr, uint16_t newPort)
 
     switch_channel_info* info = AllocEventInfo<switch_channel_info>();
     info->ch = GetEntityHandle();
-    info->secs = CanWarp() && !IsPosition(POS_FIGHTING) ? 3 : 10;
+    info->secs = ecs::PlayerRuntime::CanWarp(GetEntityHandle()) && !IsPosition(POS_FIGHTING) ? 3 : 10;
     info->newAddr = newAddr;
     info->newPort = newPort;
 
@@ -5622,7 +5625,6 @@ void CHARACTER::Initialize()
 #ifdef ENABLE_NEW_GYEONGGONG_SKILL
     m_pkGyeongGongEvent = nullptr;
 #endif
-    m_pkWarpNPCEvent = nullptr;
 
 #ifdef ENABLE_BATTLE_PASS_STAY_ONLINE
     m_pkBattlePassStayOnlineEvent = nullptr;
@@ -5655,11 +5657,9 @@ void CHARACTER::Initialize()
 
     m_iMallLoadTime = 0;
 
-    m_posWarp.x = m_posWarp.y = m_posWarp.z = 0;
-    m_lWarpMapIndex = 0;
 
-    m_posExit.x = m_posExit.y = m_posExit.z = 0;
-    m_lExitMapIndex = 0;
+
+
 
 
     // Phase C.2: legacy m_dwMoveStartTime / m_dwMoveDuration zero-init

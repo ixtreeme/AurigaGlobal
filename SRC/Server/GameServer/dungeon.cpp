@@ -72,7 +72,7 @@ struct FWarpToDungeonCoords
 
 	void operator () (LPCHARACTER ch)
 	{
-		ch->SaveExitLocation();
+		ecs::MovementSystem::SaveExitLocation(ch->GetEntityHandle());
 		ecs::MovementSystem::WarpSet(((ch) ? (ch)->GetEntityHandle() : entt::null), m_x, m_y, m_lMapIndex);
 	}
 
@@ -180,7 +180,7 @@ struct FWarpToDungeon
 
 	void operator () (LPCHARACTER ch)
 	{
-		ch->SaveExitLocation();
+		ecs::MovementSystem::SaveExitLocation(ch->GetEntityHandle());
 		ecs::MovementSystem::WarpSet(((ch) ? (ch)->GetEntityHandle() : entt::null), m_x, m_y, m_lMapIndex);
 		//m_pkDungeon->IncPartyMember(ecs::SocialSystem::GetParty(((ch) ? (ch)->GetEntityHandle() : entt::null)));
 	}

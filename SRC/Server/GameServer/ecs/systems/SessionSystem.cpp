@@ -271,12 +271,13 @@ void CHARACTER::CreatePlayerProto(TPlayerTable& tab)
     tab.playtime = GetRealPoint(POINT_PLAYTIME);
     tab.lAlignment = CombatSystem::GetRealAlignment(GetEntityHandle());
 
-    if (m_posWarp.x != 0 || m_posWarp.y != 0)
+    const auto warp = ecs::MovementSystem::GetWarpLocation(GetEntityHandle());
+    if (warp.x != 0 || warp.y != 0)
     {
-        tab.x = m_posWarp.x;
-        tab.y = m_posWarp.y;
+        tab.x = warp.x;
+        tab.y = warp.y;
         tab.z = 0;
-        tab.lMapIndex = m_lWarpMapIndex;
+        tab.lMapIndex = warp.mapIndex;
     }
     else
     {
@@ -286,7 +287,8 @@ void CHARACTER::CreatePlayerProto(TPlayerTable& tab)
         tab.lMapIndex = GetMapIndex();
     }
 
-    if (m_lExitMapIndex == 0)
+    const auto exit = ecs::MovementSystem::GetExitLocation(GetEntityHandle());
+    if (exit.mapIndex == 0)
     {
         tab.lExitMapIndex = tab.lMapIndex;
         tab.lExitX = tab.x;
@@ -294,9 +296,9 @@ void CHARACTER::CreatePlayerProto(TPlayerTable& tab)
     }
     else
     {
-        tab.lExitMapIndex = m_lExitMapIndex;
-        tab.lExitX = m_posExit.x;
-        tab.lExitY = m_posExit.y;
+        tab.lExitMapIndex = exit.mapIndex;
+        tab.lExitX = exit.x;
+        tab.lExitY = exit.y;
     }
 
     LOG_TRACE("SAVE: {} {}x{}", GetName(), tab.x, tab.y);
@@ -343,29 +345,6 @@ void CHARACTER::CreatePlayerProto(TPlayerTable& tab)
         tab.lRankPoints[i] = ecs::PlayerRuntime::GetRankPoints(rankEntity, i);
 #endif
     tab.horse = GetHorseData();
-}
-
-void CHARACTER::SetWarpLocation(int32_t lMapIndex, int32_t x, int32_t y)
-{
-    m_posWarp.x = x * 100;
-    m_posWarp.y = y * 100;
-    m_lWarpMapIndex = lMapIndex;
-	ecs::SessionSystem::SetWarpLocation(GetEntityHandle(), lMapIndex, x, y);
-}
-
-void CHARACTER::SaveExitLocation()
-{
-    m_posExit = GetXYZ();
-    m_lExitMapIndex = GetMapIndex();
-}
-
-void CHARACTER::ExitToSavedLocation()
-{
-    LOG_INFO("ExitToSavedLocation");
-    WarpSet(m_posWarp.x, m_posWarp.y, m_lWarpMapIndex);
-
-    m_posExit.x = m_posExit.y = m_posExit.z = 0;
-    m_lExitMapIndex = 0;
 }
 
 namespace
@@ -832,25 +811,6 @@ void SetCubeNPC(entt::entity character, entt::entity npc)
         g_registry.valid(npc) ? npc : entt::null;
 }
 
-void SetWarpLocation(entt::entity character, int32_t mapIndex, int32_t x, int32_t y)
-{
-	if (character == entt::null || !g_registry.valid(character))
-		return;
-	auto& warp = g_registry.get_or_emplace<ecs::WarpPosition>(character);
-	warp.x = x * 100;
-	warp.y = y * 100;
-	warp.mapIndex = mapIndex;
-	g_registry.emplace_or_replace<ecs::DirtyTag>(character);
-}
-
-ecs::WarpPosition GetWarpLocation(entt::entity character)
-{
-	if (character == entt::null || !g_registry.valid(character))
-		return {};
-	const auto* warp = g_registry.try_get<ecs::WarpPosition>(character);
-	return warp ? *warp : ecs::WarpPosition {};
-}
-
 int GetSafeboxSize(entt::entity character)
 {
     if (character == entt::null || !g_registry.valid(character))
@@ -905,335 +865,6 @@ float GetDistanceFromSafeboxOpen(entt::entity character)
 }
 
 } // namespace ecs::SessionSystem
-
-bool CHARACTER::CanWarp() const
-{
-    const int iPulse = thecore_pulse();
-    const int limit_time = PASSES_PER_SEC(g_nPortalLimitTime);
-
-    if ((iPulse - ecs::SocialSystem::GetSafeboxLoadTime(GetEntityHandle())) < limit_time)
-        return false;
-
-    if ((iPulse - ExchangeSystem::GetLastExchangePulse(GetEntityHandle())) < limit_time)
-        return false;
-
-    if ((iPulse - ecs::SocialSystem::GetMyShopTime(GetEntityHandle())) < limit_time)
-        return false;
-
-    if ((iPulse - ecs::SocialSystem::GetRefineTime(GetEntityHandle())) < limit_time)
-        return false;
-
-    if (ExchangeSystem::IsActive(GetEntityHandle()) || GetMyShop() || GetShopOwner() || ecs::SessionSystem::IsSafeboxOpen(GetEntityHandle()) || IsCubeOpen()
-#ifdef ENABLE_ACCE_SYSTEM
-        || IsAcceOpen()
-#endif
-#ifdef __ATTR_TRANSFER_SYSTEM__
-        || AttrTransfer_is_open(GetEntityHandle())
-#endif
-#if defined(ENABLE_CHRISTMAS_WHEEL_OF_DESTINY)
-        || GetWheelDestiny()
-#endif
-        )
-        return false;
-
-#ifdef __ENABLE_NEW_OFFLINESHOP__
-    if (GetOfflineShopGuest() || GetAuctionGuest())
-        return false;
-
-    if (iPulse - GetOfflineShopUseTime() < limit_time)
-        return false;
-#endif
-
-    return true;
-}
-
-bool CHARACTER::WarpSet(int32_t x, int32_t y, int32_t lPrivateMapIndex)
-{
-    if (!IsPC())
-        return false;
-
-    uint32_t lAddr;
-    int32_t lMapIndex;
-    uint16_t wPort;
-
-#ifdef ENABLE_GENERAL_CH
-    uint8_t ch = GetDesc() ? GetDesc()->GetAccountTable().bChannel : 0;
-    if (!CMapLocation::instance().Get(ch, x, y, lMapIndex, lAddr, wPort)) {
-        LOG_ERROR("cannot find map location index {} x {} y {} name {}", lMapIndex, x, y, GetName());
-        return false;
-    }
-
-    if (lPrivateMapIndex >= 10000) {
-        if (lPrivateMapIndex / 10000 != lMapIndex) {
-            LOG_ERROR("Invalid map index {}, must be child of {}", lPrivateMapIndex, lMapIndex);
-            return false;
-        }
-
-        lMapIndex = lPrivateMapIndex;
-    }
-#else
-    if (!CMapLocation::instance().Get(x, y, lMapIndex, lAddr, wPort))
-    {
-        LOG_ERROR("cannot find map location index {} x {} y {} name {}", lMapIndex, x, y, GetName());
-        return false;
-    }
-
-    if (lPrivateMapIndex >= 10000)
-    {
-        if (lPrivateMapIndex / 10000 != lMapIndex)
-        {
-            LOG_ERROR("Invalid map index {}, must be child of {}", lPrivateMapIndex, lMapIndex);
-            return false;
-        }
-
-        lMapIndex = lPrivateMapIndex;
-    }
-#endif
-
-    ecs::MovementSystem::Stop(GetEntityHandle());
-    ecs::SessionSystem::Save(GetEntityHandle());
-
-    if (GetSectree())
-    {
-        GetSectree()->RemoveEntity(this);
-        const entt::entity e = GetEntityHandle();
-        if (e != entt::null && g_registry.valid(e))
-        {
-            g_registry.remove<ecs::SectorPlacement>(e);
-            g_registry.remove<ecs::ViewActiveTag>(e);
-        }
-        ecs::ViewSystem::ViewCleanup(e);
-
-        ecs::EntityNetworkDispatch::SendRemove(g_registry, e, e);
-    }
-
-    m_lWarpMapIndex = lMapIndex;
-    m_posWarp.x = x;
-    m_posWarp.y = y;
-
-    LOG_INFO("WarpSet {} {} {} current map {} target map {}", GetName(), x, y, GetMapIndex(), lMapIndex);
-
-    TPacketGCWarp p;
-
-    p.bHeader = HEADER_GC_WARP;
-    p.lX = x;
-    p.lY = y;
-    p.lAddr = lAddr;
-    p.wPort = wPort;
-
-#ifdef ENABLE_SWITCHBOT
-    CSwitchbotManager::Instance().SetIsWarping(GetPlayerID(), true);
-
-    if (p.wPort != mother_port)
-    {
-        CSwitchbotManager::Instance().P2PSendSwitchbot(GetPlayerID(), p.wPort);
-    }
-#endif
-
-    GetDesc()->Packet(&p, sizeof(TPacketGCWarp));
-
-    char buf[256];
-    snprintf(buf, sizeof(buf), "%s MapIdx %ld DestMapIdx%ld DestX%ld DestY%ld Empire%d", GetName(), GetMapIndex(), lPrivateMapIndex, x, y, GetEmpire());
-    LogManager::instance().CharLog(GetEntityHandle(), 0, "WARP", buf);
-
-    return true;
-}
-
-void CHARACTER::WarpEnd()
-{
-    if (test_server)
-        LOG_INFO("WarpEnd {}", GetName());
-
-    if (m_posWarp.x == 0 && m_posWarp.y == 0)
-        return;
-
-    int32_t index = m_lWarpMapIndex;
-
-    if (index > 10000)
-        index /= 10000;
-
-    if (!map_allow_find(index))
-    {
-        LOG_ERROR("location {} {} not allowed to login this server", m_posWarp.x, m_posWarp.y);
-#ifdef ENABLE_GOHOME_IF_MAP_NOT_ALLOWED
-        GoHome();
-#else
-        GetDesc()->SetPhase(PHASE_CLOSE);
-#endif
-        return;
-    }
-
-    LOG_INFO("WarpEnd {} {} {} {}", GetName(), m_lWarpMapIndex, m_posWarp.x, m_posWarp.y);
-
-    Show(m_lWarpMapIndex, m_posWarp.x, m_posWarp.y, 0);
-    ecs::MovementSystem::Stop(GetEntityHandle());
-
-    m_lWarpMapIndex = 0;
-    m_posWarp.x = m_posWarp.y = m_posWarp.z = 0;
-
-    {
-        TPacketGGLogin p;
-
-        p.bHeader = HEADER_GG_LOGIN;
-        strlcpy(p.szName, GetName(), sizeof(p.szName));
-        p.dwPID = GetPlayerID();
-        p.bEmpire = GetEmpire();
-        p.lMapIndex = ecs::MapIndexAt(GetX(), GetY());
-        p.bChannel = g_bChannel;
-
-        P2P_MANAGER::instance().Send(&p, sizeof(TPacketGGLogin));
-    }
-}
-
-namespace {
-    class FuncCheckWarp
-    {
-    public:
-        FuncCheckWarp(entt::entity warp, bool isGoto)
-        {
-            m_lTargetY = 0;
-            m_lTargetX = 0;
-
-            m_lX = ecs::PlayerRuntime::GetX(warp);
-            m_lY = ecs::PlayerRuntime::GetY(warp);
-
-            m_bInvalid = false;
-            m_bEmpire = ecs::PlayerRuntime::GetEmpire(warp);
-
-            char szTmp[64];
-
-            if (3 != sscanf(ecs::PlayerRuntime::GetName(warp).data(), " %s %ld %ld ", szTmp, &m_lTargetX, &m_lTargetY))
-            {
-                if (number(1, 100) < 5)
-                    LOG_ERROR("Warp NPC name wrong : vnum({}) name({})", ecs::PlayerRuntime::GetRaceNum(warp), ecs::PlayerRuntime::GetName(warp).data());
-
-                m_bInvalid = true;
-
-                return;
-            }
-
-            m_lTargetX *= 100;
-            m_lTargetY *= 100;
-
-            m_bUseWarp = true;
-
-            if (isGoto)
-            {
-                LPSECTREE_MAP pkSectreeMap = ecs::GetMap(ecs::PlayerRuntime::GetMapIndex(warp));
-                m_lTargetX += pkSectreeMap->m_setting.iBaseX;
-                m_lTargetY += pkSectreeMap->m_setting.iBaseY;
-                m_bUseWarp = false;
-            }
-        }
-
-        bool Valid()
-        {
-            return !m_bInvalid;
-        }
-
-        void operator()(LPENTITY ent)
-        {
-            if (!Valid())
-                return;
-
-            if (!ent->IsType(ENTITY_CHARACTER))
-                return;
-
-            LPCHARACTER pkChr = (LPCHARACTER)ent;
-			const entt::entity character = pkChr->GetEntityHandle();
-
-            if (!ecs::PlayerRuntime::IsPC(character))
-                return;
-
-            int iDist = DISTANCE_APPROX(ecs::PlayerRuntime::GetX(character) - m_lX, ecs::PlayerRuntime::GetY(character) - m_lY);
-
-            if (iDist > 300)
-                return;
-
-            if (m_bEmpire && ecs::PlayerRuntime::GetEmpire(character) && m_bEmpire != ecs::PlayerRuntime::GetEmpire(character))
-                return;
-
-            if (pkChr->IsHack())
-                return;
-
-            if (!pkChr->CanHandleItem(false, true))
-                return;
-
-            if (m_bUseWarp)
-                ecs::MovementSystem::WarpSet(character, m_lTargetX, m_lTargetY);
-            else
-            {
-                ecs::MovementSystem::Show(character, ecs::PlayerRuntime::GetMapIndex(character), m_lTargetX, m_lTargetY);
-				ecs::MovementSystem::Stop(character);
-            }
-        }
-
-        bool m_bInvalid;
-        bool m_bUseWarp;
-        int32_t m_lX;
-        int32_t m_lY;
-        int32_t m_lTargetX;
-        int32_t m_lTargetY;
-        uint8_t m_bEmpire;
-    };
-}
-
-EVENTFUNC(warp_npc_event)
-{
-    char_event_info* info = dynamic_cast<char_event_info*>(event->info);
-    if (info == nullptr)
-    {
-        LOG_ERROR("warp_npc_event> <Factor> Null pointer");
-        return 0;
-    }
-
-    LPCHARACTER ch = ecs::LegacyCharOf(info->ch);
-
-    if (ch == nullptr) {
-        return 0;
-    }
-
-    // Phase 10: WRITES_STATE - deferred until ECS component covers m_pkWarpNPCEvent
-
-    const entt::entity e = ch->GetEntityHandle();
-    if (e != entt::null)
-    {
-        const PIXEL_POSITION& warpPos = ch->GetWarpPosition();
-        g_dispatcher.trigger(ecs::EvWarpBegin {
-            e,
-            static_cast<uint32_t>(ecs::PlayerRuntime::GetMapIndex(e)),
-            warpPos.x,
-            warpPos.y
-        });
-    }
-
-    if (!ecs::PlayerRuntime::GetSectree(e))
-    {
-        ch->m_pkWarpNPCEvent = nullptr;
-        return 0;
-    }
-
-    FuncCheckWarp f(e, ecs::PlayerRuntime::IsGoto(e));
-    if (f.Valid())
-        ecs::PlayerRuntime::GetSectree(e)->ForEachAround(f);
-
-    return passes_per_sec / 2;
-}
-
-void CHARACTER::StartWarpNPCEvent()
-{
-    if (m_pkWarpNPCEvent)
-        return;
-
-    if (!ecs::PlayerRuntime::IsWarp(GetEntityHandle()) && !ecs::PlayerRuntime::IsGoto(GetEntityHandle()))
-        return;
-
-    char_event_info* info = AllocEventInfo<char_event_info>();
-
-    info->ch = GetEntityHandle();
-
-    m_pkWarpNPCEvent = event_create(warp_npc_event, info, passes_per_sec / 2);
-}
 
 bool CHARACTER::Show(int32_t lMapIndex, int32_t x, int32_t y, int32_t z, bool bShowSpawnMotion/* = false */)
 {

@@ -5,6 +5,8 @@
 
 #include <entt/entt.hpp>
 
+#include "../components/transform_components.hpp"
+
 namespace ecs::MovementSystem {
 
 void Motion(entt::entity e, uint8_t motion, entt::entity victim = entt::null);
@@ -22,8 +24,15 @@ void SetRotation(entt::entity e, float fRot);
 
 bool Show(entt::entity e, int32_t mapIndex, int32_t x, int32_t y, int32_t z = LONG_MAX, bool showSpawnMotion = false);
 bool WarpSet(entt::entity e, int32_t x, int32_t y, int32_t privateMapIndex = 0);
+void WarpEnd(entt::entity e);
+void StartWarpNPCEvent(entt::entity e);
 void SaveExitLocation(entt::entity e);
 void ExitToSavedLocation(entt::entity e);
+// x and y in map cells; SetWarpLocationRaw takes them already in world units.
+void SetWarpLocation(entt::entity e, int32_t mapIndex, int32_t x, int32_t y);
+void SetWarpLocationRaw(entt::entity e, int32_t mapIndex, int32_t x, int32_t y);
+ecs::WarpPosition GetWarpLocation(entt::entity e);
+ecs::ExitPosition GetExitLocation(entt::entity e);
 bool Move(entt::entity e, int32_t x, int32_t y);
 void OnMove(entt::entity e, bool isAttack = false);
 void SetRotationToXY(entt::entity e, int32_t x, int32_t y);

@@ -2626,7 +2626,7 @@ void CInputMain::Warp(entt::entity character, const char * pcData)
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
 	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::Warp");//INGAME_DEBUG_RAZOR93
 #endif
-	ch->WarpEnd();
+	ecs::MovementSystem::WarpEnd(ch->GetEntityHandle());
 }
 
 

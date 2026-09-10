@@ -536,7 +536,7 @@ namespace marriage
 				LOG_ERROR("cannot get warp position");
 				return;
 			}
-			ch->SaveExitLocation();
+			ecs::MovementSystem::SaveExitLocation(ch->GetEntityHandle());
 			ecs::MovementSystem::WarpSet(((ch) ? (ch)->GetEntityHandle() : entt::null), pos.x, pos.y, pWeddingInfo->dwMapIndex);
 		}
 	}

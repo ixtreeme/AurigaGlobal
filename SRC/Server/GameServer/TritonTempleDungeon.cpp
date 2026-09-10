@@ -658,7 +658,7 @@ bool CTritonTempleDungeon::OnClickNpc(entt::entity character)
             LPDUNGEON d = CDungeonManager::instance().FindByMapIndex(rejoinIdx);
             if (d && d->GetFlag(kFlagWasCompleted) == 0 && d->GetFlag(kFlagFloor) == 2)
             {
-                ch->SaveExitLocation();
+                ecs::MovementSystem::SaveExitLocation(ch->GetEntityHandle());
                 ecs::MovementSystem::WarpSet(character, kRejoinWarpX, kRejoinWarpY, rejoinIdx);
                 return true;
             }

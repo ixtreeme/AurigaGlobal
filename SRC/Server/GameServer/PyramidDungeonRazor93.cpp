@@ -359,7 +359,7 @@ void CPyramidDungeonRazor93::OnPlayerLogin(entt::entity character)
         return;
 
     // Set exit location as in Lua
-    ch->SetWarpLocation(kLobbyMap, kLobbyX, kLobbyY);
+    ecs::MovementSystem::SetWarpLocation(ch->GetEntityHandle(), kLobbyMap, kLobbyX, kLobbyY);
     ecs::QuestSystem::SetFlag(character, kQfIdx, mapIdx);
     ecs::QuestSystem::SetFlag(character, kQfCh, (int32_t)g_bChannel);
 
@@ -429,7 +429,7 @@ bool CPyramidDungeonRazor93::OnClickNpc(entt::entity character)
                 if (floor == 2)
                 {
                     // Lua used pc.warp(218600, 348900, rejoinIDX)
-                    ch->SaveExitLocation();
+                    ecs::MovementSystem::SaveExitLocation(ch->GetEntityHandle());
                     ecs::MovementSystem::WarpSet(character, kRejoinWarpX100, kRejoinWarpY100, rejoinIdx);
                     ResetRejoinFlags(character);
                     return true;

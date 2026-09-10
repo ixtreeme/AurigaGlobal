@@ -621,7 +621,7 @@ bool CNightmareDungeonRazor93::OnClickNpc(entt::entity character)
             // Save current position as return point for ExitAllLobby.
             // When restarting from inside a completed instance, keep the original return point.
             if (!fromCompletedInside)
-                pkM->SetWarpLocation(ecs::PlayerRuntime::GetMapIndex(m), (int32_t)(ecs::PlayerRuntime::GetX(m) / 100), (int32_t)(ecs::PlayerRuntime::GetY(m) / 100));
+                ecs::MovementSystem::SetWarpLocation(pkM->GetEntityHandle(), ecs::PlayerRuntime::GetMapIndex(m), (int32_t)(ecs::PlayerRuntime::GetX(m) / 100), (int32_t)(ecs::PlayerRuntime::GetY(m) / 100));
         };
     auto applyMemberPtr = [&](LPCHARACTER pkMember) { applyMember(pkMember ? pkMember->GetEntityHandle() : entt::null); };
 

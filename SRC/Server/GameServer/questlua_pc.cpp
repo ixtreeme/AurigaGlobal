@@ -171,7 +171,7 @@ namespace quest
         const int32_t mapIndex = static_cast<int32_t>(lua_tonumber(L, 1));
         const int32_t x = static_cast<int32_t>(lua_tonumber(L, 2));
         const int32_t y = static_cast<int32_t>(lua_tonumber(L, 3));
-		ecs::SessionSystem::SetWarpLocation(chEntity, mapIndex, x, y);
+		ecs::MovementSystem::SetWarpLocation(chEntity, mapIndex, x, y);
         return 0;
     }
 
@@ -207,7 +207,7 @@ namespace quest
             sys_err("y coordinate overflow max: {} input: {}", region->ey - region->sy, y);
             return 0;
         }
-		ecs::SessionSystem::SetWarpLocation(chEntity, lMapIndex, x, y);
+		ecs::MovementSystem::SetWarpLocation(chEntity, lMapIndex, x, y);
         return 0;
     }
 

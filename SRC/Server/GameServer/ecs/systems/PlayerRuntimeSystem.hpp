@@ -145,7 +145,7 @@ void SetImmuneFlag(entt::entity e, uint32_t value);
 
 // The three timed events that used to be CHARACTER members. Slot names the
 // one being addressed; Cancel runs event_cancel on it, Set stores or clears.
-enum class CharEvent : uint8_t { Dead, Stun, Recovery, Fishing, Timed, Warp, Save };
+enum class CharEvent : uint8_t { Dead, Stun, Recovery, Fishing, Timed, Warp, WarpNPC, Save };
 LPEVENT GetCharEvent(entt::entity e, CharEvent slot);
 void SetCharEvent(entt::entity e, CharEvent slot, LPEVENT ev);
 void CancelCharEvent(entt::entity e, CharEvent slot);

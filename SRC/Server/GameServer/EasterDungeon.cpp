@@ -806,7 +806,7 @@ bool CEasterDungeon::OnClickNpc(entt::entity character)
             LPDUNGEON d = CDungeonManager::instance().FindByMapIndex(rejoinIdx);
             if (d && d->GetFlag(kFlagCompleted) == 0)
             {
-                ch->SaveExitLocation();
+                ecs::MovementSystem::SaveExitLocation(ch->GetEntityHandle());
                 ecs::MovementSystem::WarpSet(character, kEnterX * 100, kEnterY * 100, rejoinIdx);
                 return true;
             }
