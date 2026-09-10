@@ -4688,7 +4688,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 				AddAffect(AFFECT_BATTLE_PASS_BOOST, POINT_BATTLE_PASS_ID, bBattlePassId, 0, remain, 0, true);
 
 				 
-				ApplyBattlePassBoostRecalc(bBattlePassId);
+				ecs::PlayerRuntime::ApplyBattlePassBoostRecalc(GetEntityHandle(), bBattlePassId);
 
 				 
 				CBattlePass::instance().BattlePassRequestOpen(this);

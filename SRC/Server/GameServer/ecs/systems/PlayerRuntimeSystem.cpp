@@ -1,4 +1,5 @@
 #include "../../stdafx.h"
+#include "../components/activity_components.hpp"
 #include "../AIHelpers.hpp"
 #include <utility>
 #include "ViewSystem.hpp"
@@ -628,6 +629,49 @@ void SetUseSeedOrMoonBottleTime(entt::entity e)
     if (e == entt::null || !g_registry.valid(e))
         return;
     g_registry.get_or_emplace<ecs::SeedBottleTime>(e).pulse = thecore_pulse();
+}
+
+// The mission list, created on first ask so every caller sees one list.
+std::list<TPlayerBattlePassMission*>& GetBattlePassMissions(entt::entity e)
+{
+    return g_registry.get_or_emplace<ecs::BattlePassMissions>(e).missions;
+}
+
+// A boost halves what a mission needs, rounding up.
+uint32_t GetBattlePassAdjustedTotal(entt::entity e, uint32_t dwMissionID, uint32_t dwBattlePassID, uint32_t dwBaseTotal)
+{
+    if (dwBaseTotal <= 1)
+        return dwBaseTotal;
+
+    if (!ecs::PlayerRuntime::HasBattlePassBoost(e, (uint8_t)dwBattlePassID))
+        return dwBaseTotal;
+
+    return (dwBaseTotal + 1) / 2;
+}
+
+// After a boost is gained, every unfinished mission of that pass is
+// re-checked against its new, lower target.
+void ApplyBattlePassBoostRecalc(entt::entity e, uint8_t bBattlePassId)
+{
+    auto it = GetBattlePassMissions(e).begin();
+    while (it != GetBattlePassMissions(e).end())
+    {
+        TPlayerBattlePassMission* m = *it++;
+        if (!m || m->dwBattlePassId != bBattlePassId)
+            continue;
+
+        if (m->bCompleted)
+            continue;
+
+        uint32_t dwInfo1 = 0, dwBaseNeed = 0;
+        if (!CBattlePass::instance().BattlePassMissionGetInfo(bBattlePassId, (uint8_t)m->dwMissionId, &dwInfo1, &dwBaseNeed))
+            continue;
+
+        const uint32_t dwNeed = GetBattlePassAdjustedTotal(e, m->dwMissionId, bBattlePassId, dwBaseNeed);
+
+        if (m->dwExtraInfo >= dwNeed)
+            ecs::PlayerRuntime::UpdateMissionProgress(e, m->dwMissionId, bBattlePassId, dwNeed, dwNeed, true);
+    }
 }
 
 bool HasBattlePassBoost(entt::entity e, uint8_t bBattlePassId)
@@ -2433,9 +2477,9 @@ void CHARACTER::LoadBattlePass(uint32_t dwCount, TPlayerBattlePassMission* data)
 {
     m_bIsLoadedBattlePass = false;
 
-    for (auto it = m_listBattlePass.begin(); it != m_listBattlePass.end(); ++it)
+    for (auto it = ecs::PlayerRuntime::GetBattlePassMissions(GetEntityHandle()).begin(); it != ecs::PlayerRuntime::GetBattlePassMissions(GetEntityHandle()).end(); ++it)
         delete (*it);
-    m_listBattlePass.clear();
+    ecs::PlayerRuntime::GetBattlePassMissions(GetEntityHandle()).clear();
 
     const uint8_t kDefaultBattlePassId = 1;
 
@@ -2468,7 +2512,7 @@ void CHARACTER::LoadBattlePass(uint32_t dwCount, TPlayerBattlePassMission* data)
         newMission->bCompleted = data->bCompleted;
         newMission->bIsUpdated = data->bIsUpdated;
 
-        m_listBattlePass.push_back(newMission);
+        ecs::PlayerRuntime::GetBattlePassMissions(GetEntityHandle()).push_back(newMission);
     }
 
     m_bIsLoadedBattlePass = true;
@@ -2486,45 +2530,12 @@ void CHARACTER::CancelStayOnlineEvent()
 #endif
 
 #ifdef ENABLE_FREE_PASS_RAZOR93
-uint32_t CHARACTER::GetBattlePassAdjustedTotal(uint32_t dwMissionID, uint32_t dwBattlePassID, uint32_t dwBaseTotal)
-{
-    if (dwBaseTotal <= 1)
-        return dwBaseTotal;
-
-    if (!ecs::PlayerRuntime::HasBattlePassBoost(GetEntityHandle(), (uint8_t)dwBattlePassID))
-        return dwBaseTotal;
-
-    return (dwBaseTotal + 1) / 2;
-}
-
-void CHARACTER::ApplyBattlePassBoostRecalc(uint8_t bBattlePassId)
-{
-    auto it = m_listBattlePass.begin();
-    while (it != m_listBattlePass.end())
-    {
-        TPlayerBattlePassMission* m = *it++;
-        if (!m || m->dwBattlePassId != bBattlePassId)
-            continue;
-
-        if (m->bCompleted)
-            continue;
-
-        uint32_t dwInfo1 = 0, dwBaseNeed = 0;
-        if (!CBattlePass::instance().BattlePassMissionGetInfo(bBattlePassId, (uint8_t)m->dwMissionId, &dwInfo1, &dwBaseNeed))
-            continue;
-
-        const uint32_t dwNeed = GetBattlePassAdjustedTotal(m->dwMissionId, bBattlePassId, dwBaseNeed);
-
-        if (m->dwExtraInfo >= dwNeed)
-            UpdateMissionProgress(m->dwMissionId, bBattlePassId, dwNeed, dwNeed, true);
-    }
-}
 #endif
 
 uint32_t CHARACTER::GetMissionProgress(uint32_t dwMissionID, uint32_t dwBattlePassID)
 {
-    auto it = m_listBattlePass.begin();
-    while (it != m_listBattlePass.end())
+    auto it = ecs::PlayerRuntime::GetBattlePassMissions(GetEntityHandle()).begin();
+    while (it != ecs::PlayerRuntime::GetBattlePassMissions(GetEntityHandle()).end())
     {
         TPlayerBattlePassMission* pkMission = *it++;
         if (pkMission->dwMissionId == dwMissionID && pkMission->dwBattlePassId == dwBattlePassID)
@@ -2536,8 +2547,8 @@ uint32_t CHARACTER::GetMissionProgress(uint32_t dwMissionID, uint32_t dwBattlePa
 
 bool CHARACTER::IsCompletedMission(uint8_t bMissionType)
 {
-    auto it = m_listBattlePass.begin();
-    while (it != m_listBattlePass.end())
+    auto it = ecs::PlayerRuntime::GetBattlePassMissions(GetEntityHandle()).begin();
+    while (it != ecs::PlayerRuntime::GetBattlePassMissions(GetEntityHandle()).end())
     {
         TPlayerBattlePassMission* pkMission = *it++;
         if (pkMission->dwMissionId == bMissionType)
@@ -2552,13 +2563,13 @@ void CHARACTER::UpdateMissionProgress(uint32_t dwMissionID, uint32_t dwBattlePas
     if (!m_bIsLoadedBattlePass)
         return;
 #ifdef ENABLE_FREE_PASS_RAZOR93
-    dwTotalValue = GetBattlePassAdjustedTotal(dwMissionID, dwBattlePassID, dwTotalValue);
+    dwTotalValue = ecs::PlayerRuntime::GetBattlePassAdjustedTotal(GetEntityHandle(), dwMissionID, dwBattlePassID, dwTotalValue);
 #endif
     bool foundMission = false;
     uint32_t dwSaveProgress = 0;
 
-    auto it = m_listBattlePass.begin();
-    while (it != m_listBattlePass.end())
+    auto it = ecs::PlayerRuntime::GetBattlePassMissions(GetEntityHandle()).begin();
+    while (it != ecs::PlayerRuntime::GetBattlePassMissions(GetEntityHandle()).end())
     {
         TPlayerBattlePassMission* pkMission = *it++;
 
@@ -2621,7 +2632,7 @@ void CHARACTER::UpdateMissionProgress(uint32_t dwMissionID, uint32_t dwBattlePas
 
         newMission->bIsUpdated = 1;
 
-        m_listBattlePass.push_back(newMission);
+        ecs::PlayerRuntime::GetBattlePassMissions(GetEntityHandle()).push_back(newMission);
     }
 
     if (!GetDesc())
@@ -5761,7 +5772,7 @@ void CHARACTER::Initialize()
 #endif
 
 #ifdef ENABLE_BATTLE_PASS
-    m_listBattlePass.clear();
+    ecs::PlayerRuntime::GetBattlePassMissions(GetEntityHandle()).clear();
     m_bIsLoadedBattlePass = false;
 
 #ifdef ENABLE_BATTLE_PASS_STAY_ONLINE

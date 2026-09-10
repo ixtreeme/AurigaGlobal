@@ -647,7 +647,7 @@ void CBattlePass::BattlePassRequestOpen(LPCHARACTER pkChar)
 		missionInfo[i].dwMissionInfo[2] = pkChar->GetMissionProgress(missionInfo[i].bMissionType, bBattlePassId);
 
 		// BOOST: a kliens fel� is felezett total menjen
-		missionInfo[i].dwMissionInfo[1] = pkChar->GetBattlePassAdjustedTotal(
+		missionInfo[i].dwMissionInfo[1] = ecs::PlayerRuntime::GetBattlePassAdjustedTotal(pkChar->GetEntityHandle(), 
 			missionInfo[i].bMissionType, bBattlePassId, missionInfo[i].dwMissionInfo[1]
 		);
 

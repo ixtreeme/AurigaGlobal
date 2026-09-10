@@ -2128,8 +2128,6 @@ public:
 	void SetHairCostumeHidden(bool hidden, bool pass = false);
 #ifdef ENABLE_FREE_PASS_RAZOR93
 
-	uint32_t GetBattlePassAdjustedTotal(uint32_t dwMissionID, uint32_t dwBattlePassID, uint32_t dwBaseTotal);
-	void ApplyBattlePassBoostRecalc(uint8_t bBattlePassId);
 
 	void EnsureFreeBattlePassActive();
 
@@ -2183,7 +2181,6 @@ public:
 
 private:
 	bool m_bIsLoadedBattlePass;
-	std::list<TPlayerBattlePassMission*> m_listBattlePass;
 
 public:
 protected:

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <list>
 
 #include "../../event.h"
 
@@ -17,6 +18,12 @@ struct FishingState {
 };
 
 struct FishingActiveTag {};
+
+// The battle-pass missions this character is working on. It was a raw list
+// of pointers on CHARACTER, so nothing entity-native could read a mission.
+struct BattlePassMissions {
+    std::list<TPlayerBattlePassMission*> missions;
+};
 
 struct MiningState {
     LPEVENT event { nullptr };

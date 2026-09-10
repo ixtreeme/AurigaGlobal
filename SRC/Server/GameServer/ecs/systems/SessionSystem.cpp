@@ -1353,8 +1353,8 @@ void CHARACTER::Disconnect(const char* c_pszReason)
     AffectSystem::SetLoaded(GetEntityHandle(), false);
 
 #ifdef ENABLE_BATTLE_PASS
-    auto it = m_listBattlePass.begin();
-    while (it != m_listBattlePass.end())
+    auto it = ecs::PlayerRuntime::GetBattlePassMissions(GetEntityHandle()).begin();
+    while (it != ecs::PlayerRuntime::GetBattlePassMissions(GetEntityHandle()).end())
     {
         TPlayerBattlePassMission* pkMission = *it++;
 
