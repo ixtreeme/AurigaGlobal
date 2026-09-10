@@ -4,6 +4,7 @@
 #include <string_view>
 
 #include "../../typedef.h"
+#include "../components/session_components.hpp"
 
 class CArena;
 class CPetSystem;
@@ -167,6 +168,8 @@ bool IsPCBang(entt::entity e);
 bool IsObserverMode(entt::entity e);
 bool IsArenaObserverMode(entt::entity e);
 CArena* GetArena(entt::entity e);
+const ecs::MobileAuth& GetMobileAuth(entt::entity e);
+void SetMobilePhone(entt::entity e, const char* phone);
 bool IsBattlePassLoaded(entt::entity e);
 void SetBattlePassLoaded(entt::entity e, bool loaded);
 void SetArena(entt::entity e, CArena* arena);

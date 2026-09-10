@@ -651,7 +651,6 @@ public:
 
 
 	void			SetPlayerProto(const TPlayerTable* table);
-	void			CreatePlayerProto(TPlayerTable& tab);
 
 	void			SetProto(const CMob* c_pkMob);
 	uint16_t			GetRaceNum() const;
@@ -827,10 +826,6 @@ protected:
 	int				m_iMoveCount;
 	uint32_t			m_dwPlayStartTime;
 	uint8_t			m_bAddChrState;
-	std::string		m_stMobile;
-	char			m_szMobileAuth[5];
-
-	// End of Basic Points
 
 	//////////////////////////////////////////////////////////////////////////////////
 	// Move & Synchronize Positions

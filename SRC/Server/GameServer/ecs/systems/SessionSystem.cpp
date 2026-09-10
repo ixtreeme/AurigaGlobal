@@ -101,137 +101,6 @@ bool CAN_ENTER_ZONE(entt::entity character, int map_index)
     return true;
 }
 
-void CHARACTER::CreatePlayerProto(TPlayerTable& tab)
-{
-    memset(&tab, 0, sizeof(TPlayerTable));
-
-    if (ecs::PlayerRuntime::GetPendingName(GetEntityHandle()).empty())
-    {
-        strlcpy(tab.name, GetName(), sizeof(tab.name));
-    }
-    else
-    {
-        strlcpy(tab.name, ecs::PlayerRuntime::GetPendingName(GetEntityHandle()).data(), sizeof(tab.name));
-    }
-
-    strlcpy(tab.ip, GetDesc() ? GetDesc()->GetHostName() : "", sizeof(tab.ip));
-
-    tab.id = m_dwPlayerID;
-    tab.voice = GetPoint(POINT_VOICE);
-    tab.level = GetLevel();
-    tab.level_step = GetPoint(POINT_LEVEL_STEP);
-    tab.exp = GetExp();
-    tab.gold = GetGold();
-#ifdef ENABLE_GAYA_SYSTEM
-    tab.gaya = ecs::PointSystem::GetGaya(GetEntityHandle());
-#endif
-    tab.job = 0;
-    if (const entt::entity e = GetEntityHandle(); e != entt::null && g_registry.valid(e))
-    {
-        if (const auto* points = g_registry.try_get<ecs::CharacterPoints>(e))
-            tab.job = points->base.job;
-    }
-    if (const entt::entity e = GetEntityHandle(); e != entt::null && g_registry.valid(e))
-    {
-        if (const auto* appearance = g_registry.try_get<ecs::AppearancePartsComponent>(e))
-            tab.part_base = appearance->basePart;
-    }
-    tab.skill_group = SkillSystem::GetSkillGroup(GetEntityHandle());
-#ifdef __ENABLE_EXTEND_INVEN_SYSTEM__
-    tab.envanter = Inven_Point();
-#endif
-    uint32_t dwPlayedTime = (get_dword_time() - m_dwPlayStartTime);
-
-    if (dwPlayedTime > 60000)
-    {
-        if (GetSectree() && !GetSectree()->IsAttr(GetX(), GetY(), ATTR_BANPK))
-        {
-            UpdateAlignment(5 * (dwPlayedTime / 60000));
-        }
-
-        SetRealPoint(POINT_PLAYTIME, GetRealPoint(POINT_PLAYTIME) + dwPlayedTime / 60000);
-        ResetPlayTime(dwPlayedTime % 60000);
-    }
-
-    tab.playtime = GetRealPoint(POINT_PLAYTIME);
-    tab.lAlignment = CombatSystem::GetRealAlignment(GetEntityHandle());
-
-    const auto warp = ecs::MovementSystem::GetWarpLocation(GetEntityHandle());
-    if (warp.x != 0 || warp.y != 0)
-    {
-        tab.x = warp.x;
-        tab.y = warp.y;
-        tab.z = 0;
-        tab.lMapIndex = warp.mapIndex;
-    }
-    else
-    {
-        tab.x = GetX();
-        tab.y = GetY();
-        tab.z = GetZ();
-        tab.lMapIndex = GetMapIndex();
-    }
-
-    const auto exit = ecs::MovementSystem::GetExitLocation(GetEntityHandle());
-    if (exit.mapIndex == 0)
-    {
-        tab.lExitMapIndex = tab.lMapIndex;
-        tab.lExitX = tab.x;
-        tab.lExitY = tab.y;
-    }
-    else
-    {
-        tab.lExitMapIndex = exit.mapIndex;
-        tab.lExitX = exit.x;
-        tab.lExitY = exit.y;
-    }
-
-    LOG_TRACE("SAVE: {} {}x{}", GetName(), tab.x, tab.y);
-
-    tab.st = GetRealPoint(POINT_ST);
-    tab.ht = GetRealPoint(POINT_HT);
-    tab.dx = GetRealPoint(POINT_DX);
-    tab.iq = GetRealPoint(POINT_IQ);
-
-    tab.stat_point = GetPoint(POINT_STAT);
-    tab.skill_point = GetPoint(POINT_SKILL);
-    tab.sub_skill_point = GetPoint(POINT_SUB_SKILL);
-    tab.horse_skill_point = GetPoint(POINT_HORSE_SKILL);
-
-    tab.stat_reset_count = GetPoint(POINT_STAT_RESET_COUNT);
-
-    tab.hp = GetHP();
-    tab.sp = ecs::PlayerRuntime::GetSP(GetEntityHandle());
-
-    tab.stamina = GetStamina();
-
-    tab.sRandomHP = ecs::PointSystem::GetRandomHP(GetEntityHandle());
-    tab.sRandomSP = ecs::PointSystem::GetRandomSP(GetEntityHandle());
-
-    for (int i = 0; i < QUICKSLOT_MAX_NUM; ++i)
-        InventorySystem::GetQuickslot(GetEntityHandle(), i, tab.quickslot[i]);
-
-    if (!m_stMobile.empty() && !*m_szMobileAuth)
-        strlcpy(tab.szMobile, m_stMobile.c_str(), sizeof(tab.szMobile));
-
-    if (const entt::entity e = GetEntityHandle(); e != entt::null && g_registry.valid(e))
-    {
-        if (const auto* appearance = g_registry.try_get<ecs::AppearancePartsComponent>(e))
-            memcpy(tab.parts, appearance->parts, sizeof(tab.parts));
-    }
-    SkillSystem::StoreSkillLevels(GetEntityHandle(), tab.skills);
-
-#ifdef ENABLE_BATTLE_PASS
-    tab.dwBattlePassEndTime = AffectSystem::GetBattlePassDeadline(GetEntityHandle());
-#endif
-#ifdef ENABLE_RANKING
-    const entt::entity rankEntity = GetEntityHandle();
-    for (int i = 0; i < RANKING_MAX_CATEGORIES; ++i)
-        tab.lRankPoints[i] = ecs::PlayerRuntime::GetRankPoints(rankEntity, i);
-#endif
-    tab.horse = GetHorseData();
-}
-
 namespace
 {
 ecs::WarpBlockState* EnsureWarpBlockState(entt::entity character)
@@ -381,7 +250,7 @@ void SaveReal(entt::entity e)
     }
 
     TPlayerTable table;
-    LegacyCharOf(e)->CreatePlayerProto(table);
+    CreatePlayerProto(e, table);
 
     db_clientdesc->DBPacket(HEADER_GD_PLAYER_SAVE, ecs::PlayerRuntime::GetDesc(e)->GetHandle(), &table, sizeof(TPlayerTable));
 
@@ -651,6 +520,150 @@ void SetSafeboxLoading(entt::entity e, bool loading)
 
 // The end of a session: everything the character was part of lets go of it,
 // what has to survive is written, and then it is destroyed.
+// The player row as it will be written: everything the session changed,
+// collected out of the components that now hold it.
+void CreatePlayerProto(entt::entity e, TPlayerTable& tab)
+{
+    memset(&tab, 0, sizeof(TPlayerTable));
+
+    if (e == entt::null || !g_registry.valid(e))
+        return;
+
+    // GetPoint, GetRealPoint, SetRealPoint, ResetPlayTime, Inven_Point, the
+    // horse table, the play-start stamp and the mobile-auth pair have no
+    // entity form yet; each is its own migration and they share this resolve.
+    LPCHARACTER self = ecs::LegacyCharOf(e);
+    if (!self)
+        return;
+
+    if (ecs::PlayerRuntime::GetPendingName(e).empty())
+    {
+        strlcpy(tab.name, ecs::PlayerRuntime::GetName(e).data(), sizeof(tab.name));
+    }
+    else
+    {
+        strlcpy(tab.name, ecs::PlayerRuntime::GetPendingName(e).data(), sizeof(tab.name));
+    }
+
+    strlcpy(tab.ip, ecs::PlayerRuntime::GetDesc(e) ? ecs::PlayerRuntime::GetDesc(e)->GetHostName() : "", sizeof(tab.ip));
+
+    tab.id = ecs::PlayerRuntime::GetPlayerID(e);
+    tab.voice = self->GetPoint(POINT_VOICE);
+    tab.level = ecs::PointSystem::GetLevel(e);
+    tab.level_step = self->GetPoint(POINT_LEVEL_STEP);
+    tab.exp = ecs::PlayerRuntime::GetExp(e);
+    tab.gold = ecs::PointSystem::GetGold(e);
+#ifdef ENABLE_GAYA_SYSTEM
+    tab.gaya = ecs::PointSystem::GetGaya(e);
+#endif
+    tab.job = 0;
+    if (g_registry.valid(e))
+    {
+        if (const auto* points = g_registry.try_get<ecs::CharacterPoints>(e))
+            tab.job = points->base.job;
+    }
+    if (g_registry.valid(e))
+    {
+        if (const auto* appearance = g_registry.try_get<ecs::AppearancePartsComponent>(e))
+            tab.part_base = appearance->basePart;
+    }
+    tab.skill_group = SkillSystem::GetSkillGroup(e);
+#ifdef __ENABLE_EXTEND_INVEN_SYSTEM__
+    tab.envanter = self->Inven_Point();
+#endif
+    uint32_t dwPlayedTime = (get_dword_time() - self->GetPlayStartTime());
+
+    if (dwPlayedTime > 60000)
+    {
+        if (ecs::PlayerRuntime::GetSectree(e) && !ecs::PlayerRuntime::GetSectree(e)->IsAttr(ecs::PlayerRuntime::GetX(e), ecs::PlayerRuntime::GetY(e), ATTR_BANPK))
+        {
+            CombatSystem::UpdateAlignment(e, 5 * (dwPlayedTime / 60000));
+        }
+
+        self->SetRealPoint(POINT_PLAYTIME, self->GetRealPoint(POINT_PLAYTIME) + dwPlayedTime / 60000);
+        self->ResetPlayTime(dwPlayedTime % 60000);
+    }
+
+    tab.playtime = self->GetRealPoint(POINT_PLAYTIME);
+    tab.lAlignment = CombatSystem::GetRealAlignment(e);
+
+    const auto warp = ecs::MovementSystem::GetWarpLocation(e);
+    if (warp.x != 0 || warp.y != 0)
+    {
+        tab.x = warp.x;
+        tab.y = warp.y;
+        tab.z = 0;
+        tab.lMapIndex = warp.mapIndex;
+    }
+    else
+    {
+        tab.x = ecs::PlayerRuntime::GetX(e);
+        tab.y = ecs::PlayerRuntime::GetY(e);
+        tab.z = ecs::PlayerRuntime::GetZ(e);
+        tab.lMapIndex = ecs::PlayerRuntime::GetMapIndex(e);
+    }
+
+    const auto exit = ecs::MovementSystem::GetExitLocation(e);
+    if (exit.mapIndex == 0)
+    {
+        tab.lExitMapIndex = tab.lMapIndex;
+        tab.lExitX = tab.x;
+        tab.lExitY = tab.y;
+    }
+    else
+    {
+        tab.lExitMapIndex = exit.mapIndex;
+        tab.lExitX = exit.x;
+        tab.lExitY = exit.y;
+    }
+
+    LOG_TRACE("SAVE: {} {}x{}", ecs::PlayerRuntime::GetName(e).data(), tab.x, tab.y);
+
+    tab.st = self->GetRealPoint(POINT_ST);
+    tab.ht = self->GetRealPoint(POINT_HT);
+    tab.dx = self->GetRealPoint(POINT_DX);
+    tab.iq = self->GetRealPoint(POINT_IQ);
+
+    tab.stat_point = self->GetPoint(POINT_STAT);
+    tab.skill_point = self->GetPoint(POINT_SKILL);
+    tab.sub_skill_point = self->GetPoint(POINT_SUB_SKILL);
+    tab.horse_skill_point = self->GetPoint(POINT_HORSE_SKILL);
+
+    tab.stat_reset_count = self->GetPoint(POINT_STAT_RESET_COUNT);
+
+    tab.hp = ecs::PlayerRuntime::GetHP(e);
+    tab.sp = ecs::PlayerRuntime::GetSP(e);
+
+    tab.stamina = ecs::PlayerRuntime::GetStamina(e);
+
+    tab.sRandomHP = ecs::PointSystem::GetRandomHP(e);
+    tab.sRandomSP = ecs::PointSystem::GetRandomSP(e);
+
+    for (int i = 0; i < QUICKSLOT_MAX_NUM; ++i)
+        InventorySystem::GetQuickslot(e, i, tab.quickslot[i]);
+
+    const auto& mobile = ecs::PlayerRuntime::GetMobileAuth(e);
+    if (!mobile.phone.empty() && mobile.code.empty())
+        strlcpy(tab.szMobile, mobile.phone.c_str(), sizeof(tab.szMobile));
+
+    if (g_registry.valid(e))
+    {
+        if (const auto* appearance = g_registry.try_get<ecs::AppearancePartsComponent>(e))
+            memcpy(tab.parts, appearance->parts, sizeof(tab.parts));
+    }
+    SkillSystem::StoreSkillLevels(e, tab.skills);
+
+#ifdef ENABLE_BATTLE_PASS
+    tab.dwBattlePassEndTime = AffectSystem::GetBattlePassDeadline(e);
+#endif
+#ifdef ENABLE_RANKING
+    const entt::entity rankEntity = e;
+    for (int i = 0; i < RANKING_MAX_CATEGORIES; ++i)
+        tab.lRankPoints[i] = ecs::PlayerRuntime::GetRankPoints(rankEntity, i);
+#endif
+    tab.horse = self->GetHorseData();
+}
+
 void Disconnect(entt::entity e, const char* c_pszReason)
 {
     if (e == entt::null || !g_registry.valid(e))
@@ -705,7 +718,7 @@ void Disconnect(entt::entity e, const char* c_pszReason)
 #ifdef ENABLE_PCBANG_FEATURE
     {
         int32_t playTime = self->GetRealPoint(POINT_PLAYTIME) - self->m_dwLoginPlayTime;
-        LogManager::instance().LoginLog(false, ecs::PlayerRuntime::GetDesc(e)->GetAccountTable().id, ecs::PlayerRuntime::GetPlayerID(e), ecs::PlayerRuntime::GetLevel(e), ecs::PlayerRuntime::GetJob(e), playTime);
+        LogManager::instance().LoginLog(false, ecs::PlayerRuntime::GetDesc(e)->GetAccountTable().id, ecs::PlayerRuntime::GetPlayerID(e), ecs::PointSystem::GetLevel(e), ecs::PlayerRuntime::GetJob(e), playTime);
 
         if (0)
             CPCBangManager::instance().Log(ecs::PlayerRuntime::GetDesc(e)->GetHostName(), ecs::PlayerRuntime::GetPlayerID(e), playTime);

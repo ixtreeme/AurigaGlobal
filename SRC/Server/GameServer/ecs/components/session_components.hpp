@@ -18,6 +18,15 @@ struct SkipSave {
     bool value { false };
 };
 
+// The phone number the account registered with and the code sent to it. Two
+// CHARACTER fields the save path was the only reader of; the code has not been
+// written since the constructor cleared it, so the guard it forms is always
+// true. Kept as it stands rather than folded away.
+struct MobileAuth {
+    std::string phone;
+    std::string code;
+};
+
 struct LoginInfo {
     std::string login;
     uint32_t loginPlayTime;

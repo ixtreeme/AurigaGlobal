@@ -66,9 +66,11 @@ class CHorseRider
 
 		virtual void UpdateRideTime(int interval) {}
 
+		// Public because the save path reads it from outside CHARACTER now.
+		const THorseInfo& GetHorseData() const { return m_Horse; }
+
 	protected:
 		void SetHorseData(const THorseInfo& crInfo);
-		const THorseInfo& GetHorseData() const { return m_Horse; }
 
 		void UpdateHorseDataByLogoff(uint32_t dwLogoffTime);
 

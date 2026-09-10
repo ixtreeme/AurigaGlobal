@@ -841,6 +841,22 @@ void SetBattlePassLoaded(entt::entity e, bool loaded)
     g_registry.get_or_emplace<ecs::BattlePassMissions>(e).loaded = loaded;
 }
 
+const ecs::MobileAuth& GetMobileAuth(entt::entity e)
+{
+    static const ecs::MobileAuth none {};
+    if (e == entt::null || !g_registry.valid(e))
+        return none;
+    const auto* mobile = g_registry.try_get<ecs::MobileAuth>(e);
+    return mobile ? *mobile : none;
+}
+
+void SetMobilePhone(entt::entity e, const char* phone)
+{
+    if (e == entt::null || !g_registry.valid(e))
+        return;
+    g_registry.get_or_emplace<ecs::MobileAuth>(e).phone = phone ? phone : "";
+}
+
 CArena* GetArena(entt::entity e)
 {
 	if (e == entt::null || !g_registry.valid(e))
@@ -4632,7 +4648,7 @@ void CHARACTER::SetPlayerProto(const TPlayerTable* t)
             g_registry.get_or_emplace<ecs::CombatStats>(GetEntityHandle()).pkMode = PK_MODE_PROTECT;
     }
 
-    m_stMobile = t->szMobile;
+    ecs::PlayerRuntime::SetMobilePhone(GetEntityHandle(), t->szMobile);
 
     SetHorseData(t->horse);
 
@@ -5705,8 +5721,6 @@ void CHARACTER::Initialize()
 
     m_dwQuestNPCVID = 0;
     m_dwQuestByVnum = 0;
-
-    m_szMobileAuth[0] = '\0';
 
 
     m_dwPolymorphRace = 0;
