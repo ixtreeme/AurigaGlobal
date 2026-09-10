@@ -6,6 +6,7 @@
 #include "ActivitySystem.hpp"
 
 #include "ItemSystem.hpp"
+#include "MovementSystem.hpp"
 #include "SkillSystem.hpp"
 #include "SocialSystem.hpp"
 #include "SessionSystem.hpp"
@@ -1898,79 +1899,6 @@ bool CHARACTER::DropGold(int64_t gold)
 	return false;
 }
 
-void CHARACTER::GiveGold(int64_t iAmount)
-{
-	if (iAmount <= 0)
-		return;
-
-	LOG_INFO("GIVE_GOLD: {} {}", GetName(), iAmount);
-	//#ifdef TEXTS_IMPROVEMENT
-	//	ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 3, "%lld", iAmount);
-	//#endif
-
-#ifdef ENABLE_BATTLE_PASS
-	uint8_t bBattlePassId = GetBattlePassId();
-	if (bBattlePassId)
-	{
-		uint32_t dwYangCount, dwNotUsed;
-		if (CBattlePass::instance().BattlePassMissionGetInfo(bBattlePassId, FARM_YANG, &dwNotUsed, &dwYangCount))
-		{
-			if (GetMissionProgress(FARM_YANG, bBattlePassId) < dwYangCount)
-				UpdateMissionProgress(FARM_YANG, bBattlePassId, iAmount, dwYangCount);
-		}
-	}
-#endif
-
-	/*
-	// PARTY GOLD SPLIT -  kikommentelve
-
-
-	if (GetParty())
-	{
-		LPPARTY pParty = GetParty();
-
-		int64_t dwTotal = iAmount;
-		int64_t dwMyAmount = dwTotal;
-
-		NPartyPickupDistribute::FCountNearMember funcCountNearMember(this);
-		pParty->ForEachOnlineMember(funcCountNearMember);
-
-		if (funcCountNearMember.total > 1)
-		{
-			int64_t dwShare = dwTotal / funcCountNearMember.total;
-			dwMyAmount -= dwShare * (funcCountNearMember.total - 1);
-
-			NPartyPickupDistribute::FMoneyDistributor funcMoneyDist(this, dwShare);
-			pParty->ForEachOnlineMember(funcMoneyDist);
-		}
-
-		PointChange(POINT_GOLD, dwMyAmount, true);
-
-		if (dwMyAmount > 1000)
-		{
-			LOG_LEVEL_CHECK(LOG_LEVEL_MAX, LogManager::instance().CharLog(GetEntityHandle(), dwMyAmount, "GET_GOLD", ""));
-		}
-	}
-	else
-	{
-		PointChange(POINT_GOLD, iAmount, true);
-
-		if (iAmount > 1000)
-		{
-			LOG_LEVEL_CHECK(LOG_LEVEL_MAX, LogManager::instance().CharLog(GetEntityHandle(), iAmount, "GET_GOLD", ""));
-		}
-	}
-	*/
-
-	// Mindig csak az kapja a goldot, akihez a GiveGold() meghivodik
-	PointChange(POINT_GOLD, iAmount, true);
-
-	//if (iAmount > 1000)
-	//{
-	//	LOG_LEVEL_CHECK(LOG_LEVEL_MAX, LogManager::instance().CharLog(GetEntityHandle(), iAmount, "GET_GOLD", ""));
-	//}
-}
-
 bool CHARACTER::PickupItem(uint32_t dwVID)
 {
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
@@ -2011,7 +1939,7 @@ bool CHARACTER::PickupItem(uint32_t dwVID)
 // ©¶ó¸é
 			if (item->GetType() == ITEM_ELK)
 			{
-				GiveGold((int64_t)item->GetCount());
+				ItemSystem::GiveGold(GetEntityHandle(), (int64_t)item->GetCount());
 				InventorySystem::RemoveFromGround(item->GetEntityHandle());
 #ifdef ENABLE_RANKING
 				SetRankPoints(10, GetRankPoints(10) + item->GetCount());
@@ -5586,7 +5514,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 				const uint64_t canAdd = unitPrice * (uint64_t)canUse;
 
 				 
-				GiveGold((long long)canAdd);
+				ItemSystem::GiveGold(GetEntityHandle(), (long long)canAdd);
 
 				 
 				ItemSystem::ConsumeItemEcs(itemEntity, canUse);
@@ -6379,7 +6307,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 					AddAffect(type, bonus, 4, item->GetID(), INFINITE_AFFECT_DURATION, 0, true, false);
 					item->Lock(true);
 					ItemSystem::SetItemSocketEcs(itemEntity, 0, true);
-					AutoRecoveryItemProcess(type);
+					ItemSystem::AutoRecoveryItemProcess(GetEntityHandle(), type);
 				}
 				else
 				{
@@ -6458,7 +6386,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 						item->Lock(true);
 						ItemSystem::SetItemSocketEcs(itemEntity, 0, true);
 
-						AutoRecoveryItemProcess(type);
+						ItemSystem::AutoRecoveryItemProcess(GetEntityHandle(), type);
 					}
 				}
 			}
@@ -6794,7 +6722,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 				if (item->GetSocket(0) == 0)
 				{
 					if (!GetDungeon())
-						if (!GiveRecallItem(item))
+						if (!ItemSystem::GiveRecallItem(GetEntityHandle(), item->GetEntityHandle()))
 							return false;
 
 					PIXEL_POSITION posWarp;
@@ -6819,7 +6747,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 						ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 415, "");
 					}
 #endif
-					ProcessRecallItem(item);
+					ItemSystem::ProcessRecallItem(GetEntityHandle(), item->GetEntityHandle());
 				}
 			}
 			else if (item->GetValue(0) == MEMORY_PORTAL) // ±ÍÈ¯±â¾ïºÎ
@@ -6834,7 +6762,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 						return false;
 					}
 
-					if (!GiveRecallItem(item))
+					if (!ItemSystem::GiveRecallItem(GetEntityHandle(), item->GetEntityHandle()))
 						return false;
 				}
 				else
@@ -6843,7 +6771,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 					PointChange(POINT_HP, -consumeLife, false);
 					// END_OF_CONSUME_LIFE_WHEN_USE_WARP_ITEM
 
-					ProcessRecallItem(item);
+					ItemSystem::ProcessRecallItem(GetEntityHandle(), item->GetEntityHandle());
 				}
 			}
 		}
@@ -10191,125 +10119,6 @@ int CHARACTER::GetEmptyDragonSoulInventory(LPITEM pItem) const
 	return -1;
 }
 
-bool CHARACTER::GiveRecallItem(LPITEM item)
-{
-	int idx = GetMapIndex();
-	int iEmpireByMapIndex = -1;
-
-	if (idx < 20)
-		iEmpireByMapIndex = 1;
-	else if (idx < 40)
-		iEmpireByMapIndex = 2;
-	else if (idx < 60)
-		iEmpireByMapIndex = 3;
-	else if (idx < 10000)
-		iEmpireByMapIndex = 0;
-
-	switch (idx)
-	{
-	case 66:
-	case 216:
-		iEmpireByMapIndex = -1;
-		break;
-	}
-
-	if (iEmpireByMapIndex && GetEmpire() != iEmpireByMapIndex)
-	{
-#ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 270, "");
-#endif
-		return false;
-	}
-
-	int pos;
-
-	if (item->GetCount() == 1)	// ¾ÆÀÌ�
-// ÛÀÌ ÇÏ³ª¶ó¸é ±×³É ¼ÂÆÃ.
-	{
-		item->SetSocket(0, GetX());
-		item->SetSocket(1, GetY());
-	}
-	else if ((pos = InventorySystem::GetEmptyInventory(GetEntityHandle(), item->GetSize())) != -1) // ±×·¸Áö ¾Ê´Ù¸é ´Ù¸¥ ÀÎº¥�
-// ä¸® ½½·ÔÀ» Ã£´Â´Ù.
-	{
-		const entt::entity item2 = ITEM_MANAGER::instance().CreateItem(item->GetVnum(), 1);
-
-		if (ItemSystem::IsValidItem(item2))
-		{
-			ItemSystem::SetItemSocket(item2, 0, GetX());
-			ItemSystem::SetItemSocket(item2, 1, GetY());
-			InventorySystem::AddToCharacter(item2, GetEntityHandle(), TItemPos(INVENTORY, pos));
-
-			ItemSystem::ConsumeItemEcs((item ? item->GetEntityHandle() : entt::null));
-		}
-	}
-	else
-	{
-#ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 366, "");
-#endif
-		return false;
-	}
-
-	return true;
-}
-
-void CHARACTER::ProcessRecallItem(LPITEM item)
-{
-	int idx;
-
-	if ((idx = ecs::MapIndexAt(item->GetSocket(0), item->GetSocket(1))) == 0)
-		return;
-
-	int iEmpireByMapIndex = -1;
-
-	if (idx < 20)
-		iEmpireByMapIndex = 1;
-	else if (idx < 40)
-		iEmpireByMapIndex = 2;
-	else if (idx < 60)
-		iEmpireByMapIndex = 3;
-	else if (idx < 10000)
-		iEmpireByMapIndex = 0;
-
-	switch (idx)
-	{
-	case 66:
-	case 216:
-		iEmpireByMapIndex = -1;
-		break;
-		// ¾Ç·æ±ºµµ ÀÏ¶§
-	case 301:
-	case 302:
-	case 303:
-	case 304:
-		if (GetLevel() < 90)
-		{
-#ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 325, "%d", 90);
-#endif
-			return;
-		}
-		else
-			break;
-	}
-
-	if (iEmpireByMapIndex && GetEmpire() != iEmpireByMapIndex)
-	{
-#ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 270, "");
-#endif
-		item->SetSocket(0, 0);
-		item->SetSocket(1, 0);
-	}
-	else
-	{
-		LOG_INFO("Recall: {} {} {} -> {} {}", GetName(), GetX(), GetY(), item->GetSocket(0), item->GetSocket(1));
-		WarpSet(item->GetSocket(0), item->GetSocket(1));
-		ItemSystem::ConsumeItemEcs((item ? item->GetEntityHandle() : entt::null));
-	}
-}
-
 void CHARACTER::BuffOnAttr_AddBuffsFromItem(LPITEM pItem)
 {
 	ecs::PlayerRuntime::BuffOnAttr_AddBuffsFromItem(
@@ -10526,149 +10335,6 @@ void CHARACTER::AutoRecallProcess()
 #endif
 }
 #endif
-
-void CHARACTER::AutoRecoveryItemProcess(const EAffectTypes type)
-{
-	if (true == IsDead() || true == IsStun())
-		return;
-
-	if (false == IsPC())
-		return;
-
-#ifdef ENABLE_PVP_ADVANCED	
-	if (
-#ifdef ENABLE_NEW_USE_POTION
-	((type == AFFECT_AUTO_HP_RECOVERY2) ||
-#endif
-		(type == AFFECT_AUTO_HP_RECOVERY)
-#ifdef ENABLE_NEW_USE_POTION
-	)
-#endif
-		&& (ecs::PlayerRuntime::GetDuelOption(GetEntityHandle(), "BlockPotion")))
-		return;
-#endif
-
-	if ((type != AFFECT_AUTO_HP_RECOVERY) && (type != AFFECT_AUTO_SP_RECOVERY)
-#ifdef ENABLE_NEW_USE_POTION
-		&& (type != AFFECT_AUTO_HP_RECOVERY2) && (type != AFFECT_AUTO_SP_RECOVERY2)
-#endif
-		)
-		return;
-
-	if (nullptr != FindAffect(AFFECT_STUN))
-		return;
-
-	{
-		const uint32_t stunSkills[] = { SKILL_TANHWAN, SKILL_GEOMPUNG, SKILL_BYEURAK, SKILL_GIGUNG };
-
-		for (size_t i = 0; i < sizeof(stunSkills) / sizeof(uint32_t); ++i)
-		{
-			const CAffect* p = FindAffect(stunSkills[i]);
-
-			if (nullptr != p && AFF_STUN == p->dwFlag)
-				return;
-		}
-	}
-
-	const CAffect* pAffect = FindAffect(type);
-	const size_t idx_of_amount_of_used = 1;
-	const size_t idx_of_amount_of_full = 2;
-
-	if (nullptr != pAffect)
-	{
-		const entt::entity pItem = ItemSystem::FindItemByID(GetEntityHandle(), pAffect->dwFlag);
-
-		if (pItem != entt::null && true == ItemSystem::GetItemSocket(pItem, 0))
-		{
-			if (!CArenaManager::instance().IsArenaMap(GetMapIndex())
-#ifdef ENABLE_NEWSTUFF
-				&& !(g_NoPotionsOnPVP && CPVPManager::instance().IsFighting(GetPlayerID()) && !IsAllowedPotionOnPVP(ItemSystem::GetItemVnum(pItem)))
-#endif
-				)
-			{
-				const int32_t amount_of_used = ItemSystem::GetItemSocket(pItem, idx_of_amount_of_used);
-				const int32_t amount_of_full = ItemSystem::GetItemSocket(pItem, idx_of_amount_of_full);
-
-				const int32_t avail = amount_of_full - amount_of_used;
-
-				int32_t amount = 0;
-#ifdef ENABLE_NEW_USE_POTION
-				if ((type == AFFECT_AUTO_HP_RECOVERY) || (type == AFFECT_AUTO_HP_RECOVERY2))
-#else
-				if (AFFECT_AUTO_HP_RECOVERY == type)
-#endif
-				{
-					amount = GetMaxHP() - (GetHP() + GetPoint(POINT_HP_RECOVERY));
-				}
-#ifdef ENABLE_NEW_USE_POTION
-				else if ((type == AFFECT_AUTO_SP_RECOVERY) || (type == AFFECT_AUTO_SP_RECOVERY2))
-#else
-				else if (AFFECT_AUTO_SP_RECOVERY == type)
-#endif
-				{
-					amount = GetMaxSP() - (ecs::PlayerRuntime::GetSP(GetEntityHandle()) + GetPoint(POINT_SP_RECOVERY));
-				}
-
-				if (amount > 0)
-				{
-					if (avail > amount)
-					{
-						const int pct_of_used = amount_of_used * 100 / amount_of_full;
-						const int pct_of_will_used = (amount_of_used + amount) * 100 / amount_of_full;
-
-						bool bLog = false;
-						// »ç¿ë·®ÀÇ 10% ´ÜÀ§·Î ·Î±×¸¦ ³²±è
-						// (»ç¿ë·®ÀÇ %¿¡¼­, ½ÊÀÇ ÀÚ¸®°¡ ¹Ù²ð ¶§¸¶´Ù ·Î±×¸¦ ³²±è.)
-						if ((pct_of_will_used / 10) - (pct_of_used / 10) >= 1)
-							bLog = true;
-
-#ifdef ENABLE_NEW_USE_POTION
-						if (ItemSystem::GetItemVnum(pItem) != ITEM_AUTO_HP_RECOVERY_X && ItemSystem::GetItemVnum(pItem) != ITEM_AUTO_SP_RECOVERY_X)
-							ItemSystem::SetItemSocket(pItem, idx_of_amount_of_used, amount_of_used + amount);
-#else
-						ItemSystem::SetItemSocket(pItem, idx_of_amount_of_used, amount_of_used + amount, bLog);
-#endif
-					}
-					else if (ItemSystem::GetItemVnum(pItem) != ITEM_AUTO_HP_RECOVERY_X && ItemSystem::GetItemVnum(pItem) != ITEM_AUTO_SP_RECOVERY_X)
-					{
-						amount = avail;
-
-						ItemSystem::DestroyItemEntityEcs(pItem, "AUTO_RECOVERY_USED_UP");
-					}
-
-#ifdef ENABLE_NEW_USE_POTION
-					if ((type == AFFECT_AUTO_HP_RECOVERY) || (type == AFFECT_AUTO_HP_RECOVERY2))
-#else
-					if (AFFECT_AUTO_HP_RECOVERY == type)
-#endif
-					{
-						PointChange(POINT_HP_RECOVERY, amount);
-						NetworkSyncSystem::BroadcastEffect(g_registry, GetEntityHandle(), SE_AUTO_HPUP);
-					}
-#ifdef ENABLE_NEW_USE_POTION
-					else if ((type == AFFECT_AUTO_SP_RECOVERY) || (type == AFFECT_AUTO_SP_RECOVERY2))
-#else
-					else if (AFFECT_AUTO_SP_RECOVERY == type)
-#endif
-					{
-						PointChange(POINT_SP_RECOVERY, amount);
-						NetworkSyncSystem::BroadcastEffect(g_registry, GetEntityHandle(), SE_AUTO_SPUP);
-					}
-				}
-			}
-			else
-			{
-				ItemSystem::LockItem(pItem, false);
-				ItemSystem::SetItemSocketEcs(pItem, 0, false);
-				RemoveAffect(const_cast<CAffect*>(pAffect));
-			}
-		}
-		else
-		{
-			RemoveAffect(const_cast<CAffect*>(pAffect));
-		}
-	}
-}
 
 /// ÇöÀç Ä³¸¯�
 // ÍÀÇ »ó�
@@ -13024,6 +12690,350 @@ bool ItemProcess_Polymorph(entt::entity e, entt::entity item)
 	}
 
 	return true;
+}
+
+} // namespace ItemSystem
+
+namespace ItemSystem {
+
+// Stamping a recall scroll with where its owner is standing.
+bool GiveRecallItem(entt::entity e, entt::entity item)
+{
+	int idx = ecs::PlayerRuntime::GetMapIndex(e);
+	int iEmpireByMapIndex = -1;
+
+	if (idx < 20)
+		iEmpireByMapIndex = 1;
+	else if (idx < 40)
+		iEmpireByMapIndex = 2;
+	else if (idx < 60)
+		iEmpireByMapIndex = 3;
+	else if (idx < 10000)
+		iEmpireByMapIndex = 0;
+
+	switch (idx)
+	{
+	case 66:
+	case 216:
+		iEmpireByMapIndex = -1;
+		break;
+	}
+
+	if (iEmpireByMapIndex && ecs::PlayerRuntime::GetEmpire(e) != iEmpireByMapIndex)
+	{
+#ifdef TEXTS_IMPROVEMENT
+		ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 270, "");
+#endif
+		return false;
+	}
+
+	int pos;
+
+	if (GetItemCount(item) == 1)	// ¾ÆÀÌ�
+// ÛÀÌ ÇÏ³ª¶ó¸é ±×³É ¼ÂÆÃ.
+	{
+		SetItemSocket(item, 0, ecs::PlayerRuntime::GetX(e));
+		SetItemSocket(item, 1, ecs::PlayerRuntime::GetY(e));
+	}
+	else if ((pos = InventorySystem::GetEmptyInventory(e, GetItemSize(item))) != -1) // ±×·¸Áö ¾Ê´Ù¸é ´Ù¸¥ ÀÎº¥�
+// ä¸® ½½·ÔÀ» Ã£´Â´Ù.
+	{
+		const entt::entity item2 = ITEM_MANAGER::instance().CreateItem(GetItemVnum(item), 1);
+
+		if (IsValidItem(item2))
+		{
+			SetItemSocket(item2, 0, ecs::PlayerRuntime::GetX(e));
+			SetItemSocket(item2, 1, ecs::PlayerRuntime::GetY(e));
+			InventorySystem::AddToCharacter(item2, e, TItemPos(INVENTORY, pos));
+
+			ConsumeItemEcs(item);
+		}
+	}
+	else
+	{
+#ifdef TEXTS_IMPROVEMENT
+		ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 366, "");
+#endif
+		return false;
+	}
+
+	return true;
+}
+
+// Warping to where a recall scroll was stamped.
+void ProcessRecallItem(entt::entity e, entt::entity item)
+{
+	int idx;
+
+	if ((idx = ecs::MapIndexAt(GetItemSocket(item, 0), GetItemSocket(item, 1))) == 0)
+		return;
+
+	int iEmpireByMapIndex = -1;
+
+	if (idx < 20)
+		iEmpireByMapIndex = 1;
+	else if (idx < 40)
+		iEmpireByMapIndex = 2;
+	else if (idx < 60)
+		iEmpireByMapIndex = 3;
+	else if (idx < 10000)
+		iEmpireByMapIndex = 0;
+
+	switch (idx)
+	{
+	case 66:
+	case 216:
+		iEmpireByMapIndex = -1;
+		break;
+		// ¾Ç·æ±ºµµ ÀÏ¶§
+	case 301:
+	case 302:
+	case 303:
+	case 304:
+		if (ecs::PointSystem::GetLevel(e) < 90)
+		{
+#ifdef TEXTS_IMPROVEMENT
+			ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 325, "%d", 90);
+#endif
+			return;
+		}
+		else
+			break;
+	}
+
+	if (iEmpireByMapIndex && ecs::PlayerRuntime::GetEmpire(e) != iEmpireByMapIndex)
+	{
+#ifdef TEXTS_IMPROVEMENT
+		ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 270, "");
+#endif
+		SetItemSocket(item, 0, 0);
+		SetItemSocket(item, 1, 0);
+	}
+	else
+	{
+		LOG_INFO("Recall: {} {} {} -> {} {}", ecs::PlayerRuntime::GetName(e).data(), ecs::PlayerRuntime::GetX(e), ecs::PlayerRuntime::GetY(e), GetItemSocket(item, 0), GetItemSocket(item, 1));
+		ecs::MovementSystem::WarpSet(e, GetItemSocket(item, 0), GetItemSocket(item, 1));
+		ConsumeItemEcs(item);
+	}
+}
+
+// Handing gold to a character, and crediting the farm-yang mission.
+void GiveGold(entt::entity e, int64_t iAmount)
+{
+	if (iAmount <= 0)
+		return;
+
+	LOG_INFO("GIVE_GOLD: {} {}", ecs::PlayerRuntime::GetName(e).data(), iAmount);
+	//#ifdef TEXTS_IMPROVEMENT
+	//	ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 3, "%lld", iAmount);
+	//#endif
+
+#ifdef ENABLE_BATTLE_PASS
+	uint8_t bBattlePassId = ecs::PlayerRuntime::GetBattlePassId(e);
+	if (bBattlePassId)
+	{
+		uint32_t dwYangCount, dwNotUsed;
+		if (CBattlePass::instance().BattlePassMissionGetInfo(bBattlePassId, FARM_YANG, &dwNotUsed, &dwYangCount))
+		{
+			if (ecs::PlayerRuntime::GetMissionProgress(e, FARM_YANG, bBattlePassId) < dwYangCount)
+				ecs::PlayerRuntime::UpdateMissionProgress(e, FARM_YANG, bBattlePassId, iAmount, dwYangCount);
+		}
+	}
+#endif
+
+	/*
+	// PARTY GOLD SPLIT -  kikommentelve
+
+
+	if (ecs::SocialSystem::GetParty(e))
+	{
+		LPPARTY pParty = ecs::SocialSystem::GetParty(e);
+
+		int64_t dwTotal = iAmount;
+		int64_t dwMyAmount = dwTotal;
+
+		NPartyPickupDistribute::FCountNearMember funcCountNearMember(this);
+		pParty->ForEachOnlineMember(funcCountNearMember);
+
+		if (funcCountNearMember.total > 1)
+		{
+			int64_t dwShare = dwTotal / funcCountNearMember.total;
+			dwMyAmount -= dwShare * (funcCountNearMember.total - 1);
+
+			NPartyPickupDistribute::FMoneyDistributor funcMoneyDist(this, dwShare);
+			pParty->ForEachOnlineMember(funcMoneyDist);
+		}
+
+		ecs::PointSystem::Change(e, POINT_GOLD, dwMyAmount, true);
+
+		if (dwMyAmount > 1000)
+		{
+			LOG_LEVEL_CHECK(LOG_LEVEL_MAX, LogManager::instance().CharLog(e, dwMyAmount, "GET_GOLD", ""));
+		}
+	}
+	else
+	{
+		ecs::PointSystem::Change(e, POINT_GOLD, iAmount, true);
+
+		if (iAmount > 1000)
+		{
+			LOG_LEVEL_CHECK(LOG_LEVEL_MAX, LogManager::instance().CharLog(e, iAmount, "GET_GOLD", ""));
+		}
+	}
+	*/
+
+	// Mindig csak az kapja a goldot, akihez a ItemSystem::GiveGold(GetEntityHandle(), ) meghivodik
+	ecs::PointSystem::Change(e, POINT_GOLD, iAmount, true);
+
+	//if (iAmount > 1000)
+	//{
+	//	LOG_LEVEL_CHECK(LOG_LEVEL_MAX, LogManager::instance().CharLog(e, iAmount, "GET_GOLD", ""));
+	//}
+}
+
+// The automatic potion tick: top the character up while an auto-recovery
+// affect is running, and stop when the bottle runs dry.
+void AutoRecoveryItemProcess(entt::entity e, int type)
+{
+	if (true == CombatSystem::IsDead(e) || true == CombatSystem::IsStun(e))
+		return;
+
+	if (false == ecs::PlayerRuntime::IsPC(e))
+		return;
+
+#ifdef ENABLE_PVP_ADVANCED	
+	if (
+#ifdef ENABLE_NEW_USE_POTION
+	((type == AFFECT_AUTO_HP_RECOVERY2) ||
+#endif
+		(type == AFFECT_AUTO_HP_RECOVERY)
+#ifdef ENABLE_NEW_USE_POTION
+	)
+#endif
+		&& (ecs::PlayerRuntime::GetDuelOption(e, "BlockPotion")))
+		return;
+#endif
+
+	if ((type != AFFECT_AUTO_HP_RECOVERY) && (type != AFFECT_AUTO_SP_RECOVERY)
+#ifdef ENABLE_NEW_USE_POTION
+		&& (type != AFFECT_AUTO_HP_RECOVERY2) && (type != AFFECT_AUTO_SP_RECOVERY2)
+#endif
+		)
+		return;
+
+	if (nullptr != AffectSystem::FindAffect(e, AFFECT_STUN))
+		return;
+
+	{
+		const uint32_t stunSkills[] = { SKILL_TANHWAN, SKILL_GEOMPUNG, SKILL_BYEURAK, SKILL_GIGUNG };
+
+		for (size_t i = 0; i < sizeof(stunSkills) / sizeof(uint32_t); ++i)
+		{
+			const CAffect* p = AffectSystem::FindAffect(e, stunSkills[i]);
+
+			if (nullptr != p && AFF_STUN == p->dwFlag)
+				return;
+		}
+	}
+
+	const CAffect* pAffect = AffectSystem::FindAffect(e, type);
+	const size_t idx_of_amount_of_used = 1;
+	const size_t idx_of_amount_of_full = 2;
+
+	if (nullptr != pAffect)
+	{
+		const entt::entity pItem = FindItemByID(e, pAffect->dwFlag);
+
+		if (pItem != entt::null && true == GetItemSocket(pItem, 0))
+		{
+			if (!CArenaManager::instance().IsArenaMap(ecs::PlayerRuntime::GetMapIndex(e))
+#ifdef ENABLE_NEWSTUFF
+				&& !(g_NoPotionsOnPVP && CPVPManager::instance().IsFighting(ecs::PlayerRuntime::GetPlayerID(e)) && !IsAllowedPotionOnPVP(GetItemVnum(pItem)))
+#endif
+				)
+			{
+				const int32_t amount_of_used = GetItemSocket(pItem, idx_of_amount_of_used);
+				const int32_t amount_of_full = GetItemSocket(pItem, idx_of_amount_of_full);
+
+				const int32_t avail = amount_of_full - amount_of_used;
+
+				int32_t amount = 0;
+#ifdef ENABLE_NEW_USE_POTION
+				if ((type == AFFECT_AUTO_HP_RECOVERY) || (type == AFFECT_AUTO_HP_RECOVERY2))
+#else
+				if (AFFECT_AUTO_HP_RECOVERY == type)
+#endif
+				{
+					amount = ecs::PointSystem::GetMaxHP(e) - (ecs::PlayerRuntime::GetHP(e) + ecs::PointSystem::Get(e, POINT_HP_RECOVERY));
+				}
+#ifdef ENABLE_NEW_USE_POTION
+				else if ((type == AFFECT_AUTO_SP_RECOVERY) || (type == AFFECT_AUTO_SP_RECOVERY2))
+#else
+				else if (AFFECT_AUTO_SP_RECOVERY == type)
+#endif
+				{
+					amount = ecs::PointSystem::GetMaxSP(e) - (ecs::PlayerRuntime::GetSP(e) + ecs::PointSystem::Get(e, POINT_SP_RECOVERY));
+				}
+
+				if (amount > 0)
+				{
+					if (avail > amount)
+					{
+						const int pct_of_used = amount_of_used * 100 / amount_of_full;
+						const int pct_of_will_used = (amount_of_used + amount) * 100 / amount_of_full;
+
+						bool bLog = false;
+						// »ç¿ë·®ÀÇ 10% ´ÜÀ§·Î ·Î±×¸¦ ³²±è
+						// (»ç¿ë·®ÀÇ %¿¡¼­, ½ÊÀÇ ÀÚ¸®°¡ ¹Ù²ð ¶§¸¶´Ù ·Î±×¸¦ ³²±è.)
+						if ((pct_of_will_used / 10) - (pct_of_used / 10) >= 1)
+							bLog = true;
+
+#ifdef ENABLE_NEW_USE_POTION
+						if (GetItemVnum(pItem) != ITEM_AUTO_HP_RECOVERY_X && GetItemVnum(pItem) != ITEM_AUTO_SP_RECOVERY_X)
+							SetItemSocket(pItem, idx_of_amount_of_used, amount_of_used + amount);
+#else
+						SetItemSocket(pItem, idx_of_amount_of_used, amount_of_used + amount, bLog);
+#endif
+					}
+					else if (GetItemVnum(pItem) != ITEM_AUTO_HP_RECOVERY_X && GetItemVnum(pItem) != ITEM_AUTO_SP_RECOVERY_X)
+					{
+						amount = avail;
+
+						DestroyItemEntityEcs(pItem, "AUTO_RECOVERY_USED_UP");
+					}
+
+#ifdef ENABLE_NEW_USE_POTION
+					if ((type == AFFECT_AUTO_HP_RECOVERY) || (type == AFFECT_AUTO_HP_RECOVERY2))
+#else
+					if (AFFECT_AUTO_HP_RECOVERY == type)
+#endif
+					{
+						ecs::PointSystem::Change(e, POINT_HP_RECOVERY, amount);
+						NetworkSyncSystem::BroadcastEffect(g_registry, e, SE_AUTO_HPUP);
+					}
+#ifdef ENABLE_NEW_USE_POTION
+					else if ((type == AFFECT_AUTO_SP_RECOVERY) || (type == AFFECT_AUTO_SP_RECOVERY2))
+#else
+					else if (AFFECT_AUTO_SP_RECOVERY == type)
+#endif
+					{
+						ecs::PointSystem::Change(e, POINT_SP_RECOVERY, amount);
+						NetworkSyncSystem::BroadcastEffect(g_registry, e, SE_AUTO_SPUP);
+					}
+				}
+			}
+			else
+			{
+				LockItem(pItem, false);
+				SetItemSocketEcs(pItem, 0, false);
+				AffectSystem::RemoveAffect(e, const_cast<CAffect*>(pAffect));
+			}
+		}
+		else
+		{
+			AffectSystem::RemoveAffect(e, const_cast<CAffect*>(pAffect));
+		}
+	}
 }
 
 } // namespace ItemSystem

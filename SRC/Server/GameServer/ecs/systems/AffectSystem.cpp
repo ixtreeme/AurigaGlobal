@@ -1329,11 +1329,11 @@ bool CHARACTER::UpdateAffect()
 		PointChange(POINT_SP, GetPoint(POINT_SP_RECOVER_CONTINUE));
 	}
 
-	AutoRecoveryItemProcess(AFFECT_AUTO_HP_RECOVERY);
-	AutoRecoveryItemProcess(AFFECT_AUTO_SP_RECOVERY);
+	ItemSystem::AutoRecoveryItemProcess(GetEntityHandle(), AFFECT_AUTO_HP_RECOVERY);
+	ItemSystem::AutoRecoveryItemProcess(GetEntityHandle(), AFFECT_AUTO_SP_RECOVERY);
 #ifdef ENABLE_NEW_USE_POTION
-	AutoRecoveryItemProcess(AFFECT_AUTO_HP_RECOVERY2);
-	AutoRecoveryItemProcess(AFFECT_AUTO_SP_RECOVERY2);
+	ItemSystem::AutoRecoveryItemProcess(GetEntityHandle(), AFFECT_AUTO_HP_RECOVERY2);
+	ItemSystem::AutoRecoveryItemProcess(GetEntityHandle(), AFFECT_AUTO_SP_RECOVERY2);
 #endif
 #ifdef ENABLE_RECALL
 	AutoRecallProcess();

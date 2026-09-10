@@ -4814,7 +4814,7 @@ void CHARACTER::RewardGold(entt::entity attacker) {
 					}
 
 #ifdef ENABLE_YANG_INSTANT_INVENTORY_RAZOR93
-					pkAttacker->GiveGold(iGold);
+					ItemSystem::GiveGold(pkAttacker->GetEntityHandle(), iGold);
 					iTotalGold += iGold;
 #else
 					const entt::entity gold = ITEM_MANAGER::instance().CreateItem(1, iGold);
@@ -4849,7 +4849,7 @@ void CHARACTER::RewardGold(entt::entity attacker) {
 					}
 
 #ifdef ENABLE_YANG_INSTANT_INVENTORY_RAZOR93
-					pkAttacker->GiveGold(iGold);
+					ItemSystem::GiveGold(pkAttacker->GetEntityHandle(), iGold);
 					iTotalGold += iGold;
 #else
 					const entt::entity gold = ITEM_MANAGER::instance().CreateItem(1, iGold);
@@ -4899,12 +4899,12 @@ void CHARACTER::RewardGold(entt::entity attacker) {
 						const int64_t splitGold = iGold / iSplitCount;
 						if (isAutoLoot)
 						{
-							pkAttacker->GiveGold(splitGold);
+							ItemSystem::GiveGold(pkAttacker->GetEntityHandle(), splitGold);
 						}
 						else
 						{
 #ifdef ENABLE_YANG_INSTANT_INVENTORY_RAZOR93
-							pkAttacker->GiveGold(splitGold);
+							ItemSystem::GiveGold(pkAttacker->GetEntityHandle(), splitGold);
 #else
 							const entt::entity gold = ITEM_MANAGER::instance().CreateItem(1, splitGold);
 							if (ItemSystem::IsValidItem(gold))

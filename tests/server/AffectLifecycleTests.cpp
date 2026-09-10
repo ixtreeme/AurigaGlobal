@@ -854,7 +854,7 @@ void CHARACTER::StartGyeongGongEvent(void) { UnexpectedService(__func__); }
 void CHARACTER::StopGyeongGongEvent(void) { UnexpectedService(__func__); }
 int ecs::PlayerRuntime::GetQuestFlag(entt::entity,std::string const &) { UnexpectedService(__func__); }
 int CHARACTER::GetPremiumRemainSeconds(unsigned char)const { UnexpectedService(__func__); }
-void CHARACTER::AutoRecoveryItemProcess(EAffectTypes) { UnexpectedService(__func__); }
+void ItemSystem::AutoRecoveryItemProcess(entt::entity, int) { UnexpectedService(__func__); }
 void CHARACTER::AutoRecallProcess(void) { UnexpectedService(__func__); }
 void DragonSoulSystem::Initialize(entt::entity) { UnexpectedService(__func__); }
 void CHARACTER::SetDropStatus(void) { UnexpectedService(__func__); }

@@ -162,103 +162,102 @@ enum EPointTypes
 	POINT_MAX_HP,               // 6
 	POINT_SP,                   // 7
 	POINT_MAX_SP,               // 8
-	POINT_STAMINA,              // 9  ���׹̳�
-	POINT_MAX_STAMINA,          // 10 �ִ� ���׹̳�
+	POINT_STAMINA,              // 9 
+	POINT_MAX_STAMINA,          // 10 
 
 	POINT_GOLD,                 // 11
-	POINT_ST,                   // 12 �ٷ�
-	POINT_HT,                   // 13 ü��
-	POINT_DX,                   // 14 ��ø��
-	POINT_IQ,                   // 15 ���ŷ�
+	POINT_ST,                   // 12 
+	POINT_HT,                   // 13 
+	POINT_DX,                   // 14 
+	POINT_IQ,                   // 15 
 	POINT_DEF_GRADE,		// 16 ...
-	POINT_ATT_SPEED,            // 17 ���ݼӵ�
-	POINT_ATT_GRADE,		// 18 ���ݷ� MAX
-	POINT_MOV_SPEED,            // 19 �̵��ӵ�
-	POINT_CLIENT_DEF_GRADE,	// 20 �����
-	POINT_CASTING_SPEED,        // 21 �ֹ��ӵ� (��ٿ�Ÿ��*100) / (100 + �̰�) = ���� ��ٿ� Ÿ��
-	POINT_MAGIC_ATT_GRADE,      // 22 �������ݷ�
-	POINT_MAGIC_DEF_GRADE,      // 23 ��������
-	POINT_EMPIRE_POINT,         // 24 ��������
-	POINT_LEVEL_STEP,           // 25 �� ���������� �ܰ�.. (1 2 3 �� �� ����, 4 �Ǹ� ���� ��)
-	POINT_STAT,                 // 26 �ɷ�ġ �ø� �� �ִ� ����
-	POINT_SUB_SKILL,		// 27 ���� ��ų ����Ʈ
-	POINT_SKILL,		// 28 ��Ƽ�� ��ų ����Ʈ
-	POINT_WEAPON_MIN,		// 29 ���� �ּ� ������
-	POINT_WEAPON_MAX,		// 30 ���� �ִ� ������
-	POINT_PLAYTIME,             // 31 �÷��̽ð�
-	POINT_HP_REGEN,             // 32 HP ȸ����
-	POINT_SP_REGEN,             // 33 SP ȸ����
+	POINT_ATT_SPEED,            // 17 
+	POINT_ATT_GRADE,		// 18 
+	POINT_MOV_SPEED,            // 19
+	POINT_CLIENT_DEF_GRADE,	// 20 
+	POINT_CASTING_SPEED,        // 21 
+	POINT_MAGIC_ATT_GRADE,      // 22 
+	POINT_MAGIC_DEF_GRADE,      // 23 
+	POINT_EMPIRE_POINT,         // 24 
+	POINT_LEVEL_STEP,           // 25 
+	POINT_STAT,                 // 26 
+	POINT_SUB_SKILL,		// 27
+	POINT_SKILL,		// 28
+	POINT_WEAPON_MIN,		// 29 
+	POINT_WEAPON_MAX,		// 30 
+	POINT_PLAYTIME,             // 31
+	POINT_HP_REGEN,             // 32 HP 
+	POINT_SP_REGEN,             // 33 SP
 
-	POINT_BOW_DISTANCE,         // 34 Ȱ �����Ÿ� ����ġ (meter)
+	POINT_BOW_DISTANCE,         // 34
 
-	POINT_HP_RECOVERY,          // 35 ü�� ȸ�� ������
-	POINT_SP_RECOVERY,          // 36 ���ŷ� ȸ�� ������
+	POINT_HP_RECOVERY,          // 35 
+	POINT_SP_RECOVERY,          // 36 
 
-	POINT_POISON_PCT,           // 37 �� Ȯ��
-	POINT_STUN_PCT,             // 38 ���� Ȯ��
-	POINT_SLOW_PCT,             // 39 ���ο� Ȯ��
-	POINT_CRITICAL_PCT,         // 40 ũ��Ƽ�� Ȯ��
-	POINT_PENETRATE_PCT,        // 41 ����Ÿ�� Ȯ��
-	POINT_CURSE_PCT,            // 42 ���� Ȯ��
+	POINT_POISON_PCT,           // 37 
+	POINT_STUN_PCT,             // 38 
+	POINT_SLOW_PCT,             // 39 
+	POINT_CRITICAL_PCT,         // 40 
+	POINT_PENETRATE_PCT,        // 41 
+	POINT_CURSE_PCT,            // 42 
 
-	POINT_ATTBONUS_HUMAN,       // 43 �ΰ����� ����
-	POINT_ATTBONUS_ANIMAL,      // 44 �������� ������ % ����
-	POINT_ATTBONUS_ORC,         // 45 ���Ϳ��� ������ % ����
-	POINT_ATTBONUS_MILGYO,      // 46 �б����� ������ % ����
-	POINT_ATTBONUS_UNDEAD,      // 47 ��ü���� ������ % ����
-	POINT_ATTBONUS_DEVIL,       // 48 ����(�Ǹ�)���� ������ % ����
-	POINT_ATTBONUS_INSECT,      // 49 ������
-	POINT_ATTBONUS_FIRE,        // 50 ȭ����
-	POINT_ATTBONUS_ICE,         // 51 ������
-	POINT_ATTBONUS_DESERT,      // 52 �縷��
-	POINT_ATTBONUS_MONSTER,     // 53 ��� ���Ϳ��� ����
-	POINT_ATTBONUS_WARRIOR,     // 54 ���翡�� ����
-	POINT_ATTBONUS_ASSASSIN,	// 55 �ڰ����� ����
-	POINT_ATTBONUS_SURA,		// 56 ���󿡰� ����
-	POINT_ATTBONUS_SHAMAN,		// 57 ���翡�� ����
-	POINT_ATTBONUS_TREE,     	// 58 �������� ���� 20050729.myevan UNUSED5
+	POINT_ATTBONUS_HUMAN,       // 43 
+	POINT_ATTBONUS_ANIMAL,      // 44 
+	POINT_ATTBONUS_ORC,         // 45 
+	POINT_ATTBONUS_MILGYO,      // 46 
+	POINT_ATTBONUS_UNDEAD,      // 47 
+	POINT_ATTBONUS_DEVIL,       // 48 
+	POINT_ATTBONUS_INSECT,      // 49 
+	POINT_ATTBONUS_FIRE,        // 50 
+	POINT_ATTBONUS_ICE,         // 51 
+	POINT_ATTBONUS_DESERT,      // 52 
+	POINT_ATTBONUS_MONSTER,     // 53 
+	POINT_ATTBONUS_WARRIOR,     // 54 
+	POINT_ATTBONUS_ASSASSIN,	// 55 
+	POINT_ATTBONUS_SURA,		// 56 
+	POINT_ATTBONUS_SHAMAN,		// 57 
+	POINT_ATTBONUS_TREE,     	// 58 
 
-	POINT_RESIST_WARRIOR,		// 59 ���翡�� ����
-	POINT_RESIST_ASSASSIN,		// 60 �ڰ����� ����
-	POINT_RESIST_SURA,			// 61 ���󿡰� ����
-	POINT_RESIST_SHAMAN,		// 62 ���翡�� ����
+	POINT_RESIST_WARRIOR,		// 59 
+	POINT_RESIST_ASSASSIN,		// 60 
+	POINT_RESIST_SURA,			// 61 
+	POINT_RESIST_SHAMAN,		// 62 
 
-	POINT_STEAL_HP,             // 63 ������ ����
-	POINT_STEAL_SP,             // 64 ���ŷ� ����
+	POINT_STEAL_HP,             // 63 
+	POINT_STEAL_SP,             // 64 
 
-	POINT_MANA_BURN_PCT,        // 65 ���� ��
+	POINT_MANA_BURN_PCT,        // 65 
 
-	/// ���ؽ� ���ʽ� ///
 
-	POINT_DAMAGE_SP_RECOVER,    // 66 ���ݴ��� �� ���ŷ� ȸ�� Ȯ��
 
-	POINT_BLOCK,                // 67 ������
-	POINT_DODGE,                // 68 ȸ����
+	POINT_DAMAGE_SP_RECOVER,    // 66 
+
+	POINT_BLOCK,                // 67
+	POINT_DODGE,                // 68
 
 	POINT_RESIST_SWORD,         // 69
 	POINT_RESIST_TWOHAND,       // 70
 	POINT_RESIST_DAGGER,        // 71
 	POINT_RESIST_BELL,          // 72
 	POINT_RESIST_FAN,           // 73
-	POINT_RESIST_BOW,           // 74  ȭ��   ����   : ����� ����
-	POINT_RESIST_FIRE,          // 75  ȭ��   ����   : ȭ�����ݿ� ���� ����� ����
-	POINT_RESIST_ELEC,          // 76  ����   ����   : ������ݿ� ���� ����� ����
-	POINT_RESIST_MAGIC,         // 77  ����   ����   : �������� ���� ����� ����
-	POINT_RESIST_WIND,          // 78  �ٶ�   ����   : �ٶ����ݿ� ���� ����� ����
+	POINT_RESIST_BOW,           // 74 
+	POINT_RESIST_FIRE,          // 75 
+	POINT_RESIST_ELEC,          // 76 
+	POINT_RESIST_MAGIC,         // 77 
+	POINT_RESIST_WIND,          // 78 
 
-	POINT_REFLECT_MELEE,        // 79 ���� �ݻ�
+	POINT_REFLECT_MELEE,        // 79 
 
-	/// Ư�� ���ؽ� ///
-	POINT_REFLECT_CURSE,		// 80 ���� �ݻ�
-	POINT_POISON_REDUCE,		// 81 �������� ����
 
-	/// �� �Ҹ�� ///
-	POINT_KILL_SP_RECOVER,		// 82 �� �Ҹ�� MP ȸ��
+	POINT_REFLECT_CURSE,		// 80 
+	POINT_POISON_REDUCE,		// 8
+
+	POINT_KILL_SP_RECOVER,		// 82 
 	POINT_EXP_DOUBLE_BONUS,		// 83
 	POINT_GOLD_DOUBLE_BONUS,		// 84
 	POINT_ITEM_DROP_BONUS,		// 85
 
-	/// ȸ�� ���� ///
+
 	POINT_POTION_BONUS,			// 86
 	POINT_KILL_HP_RECOVERY,		// 87
 
@@ -282,7 +281,7 @@ enum EPointTypes
 
 	POINT_HIT_HP_RECOVERY,		// 100
 	POINT_HIT_SP_RECOVERY, 		// 101
-	POINT_MANASHIELD,			// 102 ��ż�ȣ ��ų�� ���� �������� ȿ�� ����
+	POINT_MANASHIELD,
 
 	POINT_PARTY_BUFFER_BONUS,		// 103
 	POINT_PARTY_SKILL_MASTER_BONUS,	// 104
@@ -290,57 +289,54 @@ enum EPointTypes
 	POINT_HP_RECOVER_CONTINUE,		// 105
 	POINT_SP_RECOVER_CONTINUE,		// 106
 
-	POINT_STEAL_GOLD,			// 107
-	POINT_POLYMORPH,			// 108 ������ ���� ��ȣ
-	POINT_MOUNT,			// 109 Ÿ���ִ� ���� ��ȣ
+	POINT_STEAL_GOLD,
+	POINT_POLYMORPH,
+	POINT_MOUNT,
 
-	POINT_PARTY_HASTE_BONUS,		// 110
-	POINT_PARTY_DEFENDER_BONUS,		// 111
-	POINT_STAT_RESET_COUNT,		// 112 ���� �ܾ� ����� ���� ���� ���� ����Ʈ (1�� 1����Ʈ ���°���)
+	POINT_PARTY_HASTE_BONUS,
+	POINT_PARTY_DEFENDER_BONUS,
+	POINT_STAT_RESET_COUNT,
 
-	POINT_HORSE_SKILL,			// 113
+	POINT_HORSE_SKILL,
 
-	POINT_MALL_ATTBONUS,		// 114 ���ݷ� +x%
-	POINT_MALL_DEFBONUS,		// 115 ���� +x%
-	POINT_MALL_EXPBONUS,		// 116 ����ġ +x%
-	POINT_MALL_ITEMBONUS,		// 117 ������ ����� x/10��
-	POINT_MALL_GOLDBONUS,		// 118 �� ����� x/10��
+	POINT_MALL_ATTBONUS,
+	POINT_MALL_DEFBONUS,
+	POINT_MALL_EXPBONUS,
+	POINT_MALL_ITEMBONUS,
+	POINT_MALL_GOLDBONUS,
 
-	POINT_MAX_HP_PCT,			// 119 �ִ������ +x%
-	POINT_MAX_SP_PCT,			// 120 �ִ����ŷ� +x%
+	POINT_MAX_HP_PCT,
+	POINT_MAX_SP_PCT,
 
-	POINT_SKILL_DAMAGE_BONUS,		// 121 ��ų ������ *(100+x)%
-	POINT_NORMAL_HIT_DAMAGE_BONUS,	// 122 ��Ÿ ������ *(100+x)%
+	POINT_SKILL_DAMAGE_BONUS,
+	POINT_NORMAL_HIT_DAMAGE_BONUS,
 
 	// DEFEND_BONUS_ATTRIBUTES
-	POINT_SKILL_DEFEND_BONUS,		// 123 ��ų ��� ������
-	POINT_NORMAL_HIT_DEFEND_BONUS,	// 124 ��Ÿ ��� ������
+	POINT_SKILL_DEFEND_BONUS,
+	POINT_NORMAL_HIT_DEFEND_BONUS,
 	// END_OF_DEFEND_BONUS_ATTRIBUTES
 
 	// PC_BANG_ITEM_ADD
-	POINT_PC_BANG_EXP_BONUS,		// 125 PC�� ���� ����ġ ���ʽ�
-	POINT_PC_BANG_DROP_BONUS,		// 126 PC�� ���� ��ӷ� ���ʽ�
+	POINT_PC_BANG_EXP_BONUS,
+	POINT_PC_BANG_DROP_BONUS,
 	// END_PC_BANG_ITEM_ADD
-	POINT_RAMADAN_CANDY_BONUS_EXP,			// �󸶴� ���� ����ġ ������
+	POINT_RAMADAN_CANDY_BONUS_EXP,
 
-	POINT_ENERGY = 128,					// 128 ���
+	POINT_ENERGY = 128,
 
-	// ��� ui ��.
-	// �������� ���� �ʱ⸸, Ŭ���̾�Ʈ���� ����� �� �ð��� POINT�� �����ϱ� ������ �̷��� �Ѵ�.
-	// �� �β�����
-	POINT_ENERGY_END_TIME = 129,					// 129 ��� ���� �ð�
+	POINT_ENERGY_END_TIME = 129,
 
 	POINT_COSTUME_ATTR_BONUS = 130,
 	POINT_MAGIC_ATT_BONUS_PER = 131,
 	POINT_MELEE_MAGIC_ATT_BONUS_PER = 132,
 
-	// �߰� �Ӽ� ����
-	POINT_RESIST_ICE = 133,          //   �ñ� ����   : �������ݿ� ���� ����� ����
-	POINT_RESIST_EARTH = 134,        //   ���� ����   : �������ݿ� ���� ����� ����
-	POINT_RESIST_DARK = 135,         //   ��� ����   : �������ݿ� ���� ����� ����
 
-	POINT_RESIST_CRITICAL = 136,		// ũ��Ƽ�� ����	: ����� ũ��Ƽ�� Ȯ���� ����
-	POINT_RESIST_PENETRATE = 137,		// ����Ÿ�� ����	: ����� ����Ÿ�� Ȯ���� ����
+	POINT_RESIST_ICE = 133,
+	POINT_RESIST_EARTH = 134,
+	POINT_RESIST_DARK = 135,
+
+	POINT_RESIST_CRITICAL = 136,
+	POINT_RESIST_PENETRATE = 137,
 
 
 #ifdef ENABLE_ACCE_SYSTEM
@@ -459,7 +455,7 @@ enum EBlockAction
 // Referring to SCharDeadEventInfo.
 
 
-/* �����ϴ� ������ */
+
 typedef struct character_point
 {
 
@@ -482,7 +478,7 @@ typedef struct character_point
 	uint8_t			skill_group;
 } CHARACTER_POINT;
 
-/* ������� �ʴ� ĳ���� ������ */
+
 #define TRIGGERPARAM		entt::entity ch, entt::entity causer
 
 
@@ -585,7 +581,7 @@ public:
 
 protected:
 	//////////////////////////////////////////////////////////////////////////////////
-	// Entity ����
+	// Entity
 	//////////////////////////////////////////////////////////////////////////////////
 
 public:
@@ -656,13 +652,13 @@ public:
 
 
 	void			SetPlayerProto(const TPlayerTable* table);
-	void			CreatePlayerProto(TPlayerTable& tab);	// ���� �� ���
+	void			CreatePlayerProto(TPlayerTable& tab);
 
 	void			SetProto(const CMob* c_pkMob);
 	uint16_t			GetRaceNum() const;
 
 	void			Save();		// DelayedSave
-	void			SaveReal();	// ���� ����
+	void			SaveReal();	
 	void			FlushDelayedSaveItem();
 
 #ifdef ENABLE_MULTI_NAMES
@@ -868,9 +864,9 @@ public:
 
 
 
-	bool			Sync(int32_t x, int32_t y);	// ���� �� �޼ҵ�� �̵� �Ѵ� (�� �� ���ǿ� ���� �̵� �Ұ��� ����)
-	bool			Move(int32_t x, int32_t y);	// ������ �˻��ϰ� Sync �޼ҵ带 ���� �̵� �Ѵ�.
-	void			OnMove(bool bIsAttack = false);	// �����϶� �Ҹ���. Move() �޼ҵ� �̿ܿ����� �Ҹ� �� �ִ�.
+	bool			Sync(int32_t x, int32_t y);	// 
+	bool			Move(int32_t x, int32_t y);	// 
+	void			OnMove(bool bIsAttack = false);
 	// Phase 15E-final.LPENTITY.4-architect.B.1.4:
 	// GetCurrentDestX / GetCurrentDestY now read the ECS
 	// MovementDestination component. Per A.2 movement destination row.
@@ -938,7 +934,7 @@ protected:
 	bool			m_bStaminaConsume;
 	// End
 
-	// Quickslot ����
+	// Quickslot 
 public:
 	void			SyncQuickslot(uint8_t bType, uint8_t bOldPos, uint8_t bNewPos);
 #ifdef __ENABLE_NEW_OFFLINESHOP__
@@ -996,7 +992,7 @@ public:
 	void			LoadAffect(uint32_t dwCount, TPacketAffectElement* pElements);
 	void			SaveAffect();
 
-	// Affect loading�� ���� �����ΰ�?
+
 
 	bool			IsGoodAffect(uint8_t bAffectType) const;
 
@@ -1023,88 +1019,39 @@ public:
 	bool			RequestToParty(entt::entity leader);
 	void			DenyToParty(entt::entity member);
 	void			AcceptToParty(entt::entity member);
-
-	/// �ڽ��� ��Ƽ�� �ٸ� character �� �ʴ��Ѵ�.
-	/**
-	 * @param	pchInvitee �ʴ��� ��� character. ��Ƽ�� ���� ������ �����̾�� �Ѵ�.
-	 *
-	 * ���� character �� ���°� ��Ƽ�� �ʴ��ϰ� �ʴ���� �� �ִ� ���°� �ƴ϶�� �ʴ��ϴ� ĳ���Ϳ��� �ش��ϴ� ä�� �޼����� �����Ѵ�.
-	 */
 	void			PartyInvite(entt::entity invitee);
-
-	/// �ʴ��ߴ� character �� ������ ó���Ѵ�.
-	/**
-	 * @param	pchInvitee ��Ƽ�� ������ character. ��Ƽ�� ���������� �����̾�� �Ѵ�.
-	 *
-	 * pchInvitee �� ��Ƽ�� ������ �� �ִ� ��Ȳ�� �ƴ϶�� �ش��ϴ� ä�� �޼����� �����Ѵ�.
-	 */
 	void			PartyInviteAccept(entt::entity invitee);
-
-	/// �ʴ��ߴ� character �� �ʴ� �źθ� ó���Ѵ�.
-	/**
-	 * @param [in]	dwPID �ʴ� �ߴ� character �� PID
-	 */
 	void			PartyInviteDeny(uint32_t dwPID);
-
 	int				GetLeadershipSkillLevel() const;
-
-
 	void			SetPartyRequestEvent(LPEVENT pkEvent) { m_pkPartyRequestEvent = pkEvent; }
 
 protected:
 
-	/// ��Ƽ�� �����Ѵ�.
-	/**
-	 * @param	pkLeader ������ ��Ƽ�� ����
-	 */
+	
 	void			PartyJoin(entt::entity leader);
 
-	/**
-	 * ��Ƽ ������ �� �� ���� ����� �����ڵ�.
-	 * Error code �� �ð��� �������ΰ��� ���� ���氡����(mutable) type �� ����(static) type ���� ������.
-	 * Error code �� ���� PERR_SEPARATOR ���� ������ ���氡���� type �̰� ������ ���� type �̴�.
-	 */
+
 	enum PartyJoinErrCode {
-		PERR_NONE = 0,	///< ó������
-		PERR_SERVER,			///< ���������� ��Ƽ���� ó�� �Ұ�
-		PERR_DUNGEON,			///< ĳ���Ͱ� ������ ����
-		PERR_OBSERVER,			///< ���������
-		PERR_LVBOUNDARY,		///< ��� ĳ���Ϳ� �������̰� ��
-		PERR_LOWLEVEL,			///< �����Ƽ�� �ְ��������� 30���� ����
-		PERR_HILEVEL,			///< �����Ƽ�� ������������ 30���� ����
-		PERR_ALREADYJOIN,		///< ��Ƽ���� ��� ĳ���Ͱ� �̹� ��Ƽ��
-		PERR_PARTYISFULL,		///< ��Ƽ�ο� ���� �ʰ�
-		PERR_SEPARATOR,			///< Error type separator.
-		PERR_DIFFEMPIRE,		///< ��� ĳ���Ϳ� �ٸ� ������
-		PERR_MAX				///< Error code �ְ�ġ. �� �տ� Error code �� �߰��Ѵ�.
+		PERR_NONE = 0,
+		PERR_SERVER,	
+		PERR_DUNGEON,	
+		PERR_OBSERVER,	
+		PERR_LVBOUNDARY,
+		PERR_LOWLEVEL,	
+		PERR_HILEVEL,	
+		PERR_ALREADYJOIN,
+		PERR_PARTYISFULL,
+		PERR_SEPARATOR,	
+		PERR_DIFFEMPIRE,
+		PERR_MAX		
 	};
 
-	/// ��Ƽ �����̳� �Ἲ ������ ������ �˻��Ѵ�.
-	/**
-	 * @param 	pchLeader ��Ƽ�� leader �̰ų� �ʴ��� character
-	 * @param	pchGuest �ʴ�޴� character
-	 * @return	��� PartyJoinErrCode �� ��ȯ�� �� �ִ�.
-	 */
+	
 	static PartyJoinErrCode	IsPartyJoinableCondition(entt::entity leader, entt::entity guest);
-
-	/// ��Ƽ �����̳� �Ἲ ������ ������ ������ �˻��Ѵ�.
-	/**
-	 * @param 	pchLeader ��Ƽ�� leader �̰ų� �ʴ��� character
-	 * @param	pchGuest �ʴ�޴� character
-	 * @return	mutable type �� code �� ��ȯ�Ѵ�.
-	 */
 	static PartyJoinErrCode	IsPartyJoinableMutableCondition(entt::entity leader, entt::entity guest);
 
 	LPPARTY			m_pkParty;
 	LPEVENT			m_pkPartyRequestEvent;
-
-	/**
-	 * ��Ƽ��û Event map.
-	 * key: �ʴ���� ĳ������ PID
-	 * value: event�� pointer
-	 *
-	 * �ʴ��� ĳ���͵鿡 ���� event map.
-	 */
 	typedef std::map< uint32_t, LPEVENT >	EventMap;
 	EventMap		m_PartyInviteEventMap;
 
@@ -1135,7 +1082,7 @@ protected:
 	////////////////////////////////////////////////////////////////////////////////////////
 	// Item related
 public:
-	bool			CanHandleItem(bool bSkipRefineCheck = false, bool bSkipObserver = false); // ������ ���� ������ �� �� �ִ°�?
+	bool			CanHandleItem(bool bSkipRefineCheck = false, bool bSkipObserver = false); 
 
 	bool			IsItemLoaded() const { return m_bItemLoaded; }
 	void			SetItemLoaded() { m_bItemLoaded = true; }
@@ -1173,15 +1120,8 @@ public:
 
 
 	// MYSHOP_PRICE_LIST
-	void			UseSilkBotary(void); 		/// ��� ������ �������� ���
+	void			UseSilkBotary(void); 
 
-	/// DB ĳ�÷� ���� �޾ƿ� �������� ����Ʈ�� �������� �����ϰ� ������ ������ ����� ó���Ѵ�.
-	/**
-	 * @param [in] p	�������� ����Ʈ ��Ŷ
-	 *
-	 * ������ �� ó�� ��� ������ ������ ��� �� UseSilkBotary ���� DB ĳ�÷� �������� ����Ʈ�� ��û�ϰ�
-	 * ������� ������ �� �Լ����� ���� ��ܺ����� ����� ó���Ѵ�.
-	 */
 	void			UseSilkBotaryReal(const TPacketMyshopPricelistHeader* p);
 	// END_OF_MYSHOP_PRICE_LIST
 
@@ -1200,8 +1140,6 @@ public:
 #endif
 		bCount = 0);
 	bool			DestroyItem(TItemPos Cell);
-	bool			GiveRecallItem(LPITEM item);
-	void			ProcessRecallItem(LPITEM item);
 
 	//	void			PotionPacket(int iPotionType);
 
@@ -1265,7 +1203,7 @@ protected:
 
 	void			SendMyShopPriceListCmd(uint32_t dwItemVnum, int64_t dwItemPrice);
 
-	bool			m_bNoOpenedShop;	///< �̹� ���� �� ���λ����� �� ���� �ִ����� ����(������ ���� ���ٸ� true)
+	bool			m_bNoOpenedShop;
 
 	bool			m_bItemLoaded;
 
@@ -1283,7 +1221,6 @@ public:
 #endif
 	bool			DropGold(int64_t gold);
 
-	void			GiveGold(int64_t iAmount);	// ��Ƽ�� ������ ��Ƽ �й�, �α� ���� ó��
 
 #ifdef ENABLE_PVP_ADVANCED
 	void			SetDuel(const char* type, int value);
@@ -1474,7 +1411,7 @@ public:
 	TDamageMap&			GetDamageMapForUpdate() { return m_map_kDamage; }
 
 private:
-	TDamageMap			m_map_kDamage;	// � ĳ���Ͱ� ������ �󸶸�ŭ�� �������� �־��°�?
+	TDamageMap			m_map_kDamage;
 	//		AttackLog			m_kAttackLog;
 
 
@@ -2055,7 +1992,6 @@ private:
 public:
 #endif
 public:
-	void AutoRecoveryItemProcess(const EAffectTypes);
 #ifdef ENABLE_RECALL
 	void AutoRecallProcess();
 #endif

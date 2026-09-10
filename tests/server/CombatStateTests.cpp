@@ -443,7 +443,7 @@ void AffectSystem::ClearAffectSkills(entt::entity) { UnexpectedService(__func__)
 void CHARACTER::SetDungeon(CDungeon *) { UnexpectedService(__func__); }
 bool CHARACTER::IsEquipUniqueItem(unsigned int)const { UnexpectedService(__func__); }
 bool CHARACTER::IsEquipUniqueGroup(unsigned int)const { UnexpectedService(__func__); }
-void CHARACTER::GiveGold(int64_t) { UnexpectedService(__func__); }
+void ItemSystem::GiveGold(entt::entity, int64_t) { UnexpectedService(__func__); }
 void CHARACTER::CloseMyShop(void) { UnexpectedService(__func__); }
 void CHARACTER::SetQuestDamage(int,int) { UnexpectedService(__func__); }
 bool ecs::PlayerRuntime::IsImmortal(entt::entity) { return false; }
