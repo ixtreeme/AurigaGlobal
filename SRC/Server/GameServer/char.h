@@ -1587,13 +1587,7 @@ public:
 	////////////////////////////////////////////////////////////////////////////////////////
 	// Safebox
 public:
-	void				QuerySafeboxSize();
-	void				SetSafeboxSize(int size);
 
-	CSafebox* GetSafebox() const;
-	void				LoadSafebox(int iSize, uint32_t dwGold, int iItemCount, TPlayerItem* pItems);
-	void				ChangeSafeboxSize(uint8_t bSize);
-	void				CloseSafebox();
 
 	CMountInventory* GetMountInventory() const;
 	void				QueryMountInventory();
@@ -1607,34 +1601,24 @@ public:
 	 * DB �� â�����⸦ ��û�Ѵ�.
 	 * â���� �ߺ����� ���� ���ϸ�, �ֱ� â���� ���� �ð����� ���� 10�� �̳����� �� �� ���Ѵ�.
 	 */
-	void				ReqSafeboxLoad(const char* pszPassword);
 
 	/// â�� ���� ��û�� ���
 	/**
 	 * ReqSafeboxLoad �� ȣ���ϰ� CloseSafebox ���� �ʾ��� �� �� �Լ��� ȣ���ϸ� â���� �� �� �ִ�.
 	 * â�������� ��û�� DB �������� ���������� �޾��� ��� �� �Լ��� ����ؼ� ��û�� �� �� �ְ� ���ش�.
 	 */
-	void				CancelSafeboxLoad(void) { m_bOpeningSafebox = false; }
 
 	void				SetMallLoadTime(int t) { m_iMallLoadTime = t; }
 	int					GetMallLoadTime() const { return m_iMallLoadTime; }
 
-	CSafebox* GetMall() const;
-	void				LoadMall(int iItemCount, TPlayerItem* pItems);
-	void				CloseMall();
 
-	void				SetSafeboxOpenPosition();
 
 protected:
-	int					m_iSafeboxSize;
-	int					m_iSafeboxLoadTime;
-	bool				m_bOpeningSafebox;	///< â���� ���� ��û ���̰ų� �����ִ°� ����, true �� ��� �����û�̰ų� ��������.
 
 	bool				 m_bMountInventoryLoaded;
 
 	int					m_iMallLoadTime;
 
-	PIXEL_POSITION		m_posSafeboxOpen;
 
 	////////////////////////////////////////////////////////////////////////////////////////
 
@@ -1888,8 +1872,6 @@ public:
 	bool	IsOpenSafebox() const;
 	void 	SetOpenSafebox(bool b);
 
-	int		GetSafeboxLoadTime() const { return m_iSafeboxLoadTime; }
-	void	SetSafeboxLoadTime();
 	//END_PREVENT_TRADE_WINDOW
 private:
 

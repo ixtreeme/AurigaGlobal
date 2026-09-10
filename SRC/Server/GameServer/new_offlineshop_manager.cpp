@@ -4,6 +4,7 @@
 #include <Core/Logging.hpp>
 #include "ecs/systems/PlayerRuntimeSystem.hpp"
 #include "ecs/systems/SocialSystem.hpp"
+#include "ecs/systems/SessionSystem.hpp"
 #include "ecs/systems/PointSystem.hpp"
 #include "ecs/AIHelpers.hpp"
 #include <common/tables.h>
@@ -344,7 +345,7 @@ bool CheckCharacterActions(LPCHARACTER ch)
 	}
 
 
-	if(ch->GetSafebox())
+	if(ecs::SessionSystem::GetSafebox(ch->GetEntityHandle()))
 	{
 		return false;
 	}

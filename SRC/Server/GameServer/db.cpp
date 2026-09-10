@@ -17,6 +17,7 @@
 #include "ecs/EntityFactory.hpp"
 #include "ecs/Registry.hpp"
 #include "ecs/systems/ItemSystem.hpp"
+#include "ecs/systems/SessionSystem.hpp"
 #include "item.h"
 #include "item_manager.h"
 #include "p2p.h"
@@ -539,7 +540,7 @@ void DBManager::AnalyzeReturnQuery(SQLMsg * pMsg)
 						MYSQL_ROW row = mysql_fetch_row(pMsg->Get()->pSQLResult);
 						int	size = 0;
 						str_to_number(size, row[0]);
-						ch->SetSafeboxSize(SAFEBOX_PAGE_SIZE * size);
+						ecs::SessionSystem::SetSafeboxSize(ch->GetEntityHandle(), SAFEBOX_PAGE_SIZE * size);
 					}
 				}
 			}

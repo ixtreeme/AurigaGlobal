@@ -535,6 +535,256 @@ void SaveReal(entt::entity e)
         pMarriage->Save();
 }
 
+// The safebox this character has open, if any.
+CSafebox* GetSafebox(entt::entity e)
+{
+    return SafeboxSystem::Get(e, SAFEBOX).get();
+}
+
+// The item mall storage, which is a safebox with its own window.
+CSafebox* GetMall(entt::entity e)
+{
+    return SafeboxSystem::Get(e, MALL).get();
+}
+
+// Closing the mall window.
+void CloseMall(entt::entity e)
+{
+    const auto owner = e;
+    if (!SafeboxSystem::Get(owner, MALL)) return;
+    SafeboxSystem::Close(owner, MALL);
+    if (!g_registry.valid(owner)) return;
+
+    ecs::ChatSystem::Send(e, CHAT_TYPE_COMMAND, "CloseMall");
+}
+
+// Asking the database how many pages this safebox has.
+void QuerySafeboxSize(entt::entity e)
+{
+    if (e == entt::null || !g_registry.valid(e))
+        return;
+
+    // -1 is the component's own "not asked yet"; GetSafeboxSize reports 0 for
+    // a character with no component at all, and 0 is a real size.
+    const auto* known = g_registry.try_get<ecs::SafeboxRef>(e);
+    if (!known || known->safeboxSize == -1)
+    {
+        DBManager::instance().ReturnQuery(QID_SAFEBOX_SIZE,
+            ecs::PlayerRuntime::GetPlayerID(e),
+            nullptr,
+            "SELECT size FROM safebox%s WHERE account_id = %u",
+            get_table_postfix(),
+            ecs::PlayerRuntime::GetDesc(e)->GetAccountTable().id);
+    }
+}
+
+// Buying another safebox page.
+void ChangeSafeboxSize(entt::entity e, uint8_t bSize)
+{
+    TPacketCGSafeboxSize p;
+    p.bHeader = HEADER_GC_SAFEBOX_SIZE;
+    p.bSize = bSize;
+
+    ecs::PlayerRuntime::GetDesc(e)->Packet(&p, sizeof(TPacketCGSafeboxSize));
+
+    if (auto storage = SafeboxSystem::Get(e, SAFEBOX))
+        storage->ChangeSize(bSize);
+
+    if (e != entt::null && g_registry.valid(e))
+        g_registry.get_or_emplace<ecs::SafeboxRef>(e).safeboxSize = bSize;
+}
+
+// Asking the database for the safebox contents.
+void ReqSafeboxLoad(entt::entity e, const char* pszPassword)
+{
+    if (!*pszPassword || strlen(pszPassword) > SAFEBOX_PASSWORD_MAX_LEN)
+    {
+#ifdef TEXTS_IMPROVEMENT
+        ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 188, "");
+#endif
+        return;
+    }
+    else if (GetSafebox(e))
+    {
+#ifdef TEXTS_IMPROVEMENT
+        ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 189, "");
+#endif
+        return;
+    }
+
+    int iPulse = thecore_pulse();
+
+    if (iPulse - ecs::SocialSystem::GetSafeboxLoadTime(e) < PASSES_PER_SEC(10))
+    {
+#ifdef TEXTS_IMPROVEMENT
+        ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 190, "");
+#endif
+        return;
+    }
+#ifndef __OPEN_SAFEBOX_CLICK__
+    else if (GetDistanceFromSafeboxOpen(e) > 1000)
+    {
+#ifdef TEXTS_IMPROVEMENT
+        ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 185, "");
+#endif
+        return;
+    }
+#endif
+    else if (IsSafeboxLoading(e))
+    {
+        LOG_INFO("Overlapped safebox load request from {}", ecs::PlayerRuntime::GetName(e).data());
+        return;
+    }
+
+    ecs::SocialSystem::SetSafeboxLoadTime(e);
+    SetSafeboxLoading(e, true);
+
+    TSafeboxLoadPacket p;
+    p.dwID = ecs::PlayerRuntime::GetDesc(e)->GetAccountTable().id;
+    strlcpy(p.szLogin, ecs::PlayerRuntime::GetDesc(e)->GetAccountTable().login, sizeof(p.szLogin));
+    strlcpy(p.szPassword, pszPassword, sizeof(p.szPassword));
+
+    db_clientdesc->DBPacket(HEADER_GD_SAFEBOX_LOAD, ecs::PlayerRuntime::GetDesc(e)->GetHandle(), &p, sizeof(p));
+}
+
+// Building the safebox from what the database sent back.
+void LoadSafebox(entt::entity e, int iSize, uint32_t dwGold, int iItemCount, TPlayerItem* pItems)
+{
+    const auto owner = e;
+    const bool bLoaded = static_cast<bool>(SafeboxSystem::Get(owner, SAFEBOX));
+    auto storage = SafeboxSystem::Open(owner, SAFEBOX, iSize, dwGold);
+    if (!storage) return;
+    ecs::SessionSystem::SetSafeboxOpen(e, true);
+    if (bLoaded) storage->ChangeSize(iSize);
+
+    g_registry.get_or_emplace<ecs::SafeboxRef>(owner).safeboxSize = iSize;
+
+    TPacketCGSafeboxSize p;
+    p.bHeader = HEADER_GC_SAFEBOX_SIZE;
+    p.bSize = iSize;
+
+    ecs::PlayerRuntime::GetDesc(e)->Packet(&p, sizeof(TPacketCGSafeboxSize));
+
+    if (!bLoaded)
+    {
+        for (int i = 0; i < iItemCount; ++i, ++pItems)
+        {
+            if (!g_registry.valid(owner) || SafeboxSystem::Get(owner, SAFEBOX) != storage) return;
+            if (!storage->IsValidPosition(pItems->pos))
+                continue;
+
+            const entt::entity item = ITEM_MANAGER::instance().CreateItem(pItems->vnum, pItems->count, pItems->id);
+
+            if (!ItemSystem::IsValidItem(item))
+            {
+                LOG_ERROR("cannot create item vnum {} id {} (name: {})", pItems->vnum, pItems->id, ecs::PlayerRuntime::GetName(e).data());
+                continue;
+            }
+
+            ItemSystem::SetItemSkipSave(item, true);
+            ItemSystem::SetItemSockets(item, pItems->alSockets);
+            ItemSystem::SetItemAttributes(item, pItems->aAttr);
+
+			if (!storage->Add(pItems->pos, item))
+                ItemSystem::DestroyItemEntityEcs(
+                    item,
+                    "SAFEBOX_LOAD_ADD_FAILED");
+            else
+                ItemSystem::SetItemSkipSave(item, false);
+        }
+    }
+}
+
+// The same for the mall.
+void LoadMall(entt::entity e, int iItemCount, TPlayerItem* pItems)
+{
+    const auto owner = e;
+    const bool bLoaded = static_cast<bool>(SafeboxSystem::Get(owner, MALL));
+    auto storage = SafeboxSystem::Open(owner, MALL, 3 * SAFEBOX_PAGE_SIZE);
+    if (!storage) return;
+    if (bLoaded) storage->ChangeSize(3 * SAFEBOX_PAGE_SIZE);
+
+    TPacketCGSafeboxSize p;
+    p.bHeader = HEADER_GC_MALL_OPEN;
+    p.bSize = 3 * SAFEBOX_PAGE_SIZE;
+
+    ecs::PlayerRuntime::GetDesc(e)->Packet(&p, sizeof(TPacketCGSafeboxSize));
+
+    if (!bLoaded)
+    {
+        for (int i = 0; i < iItemCount; ++i, ++pItems)
+        {
+            if (!g_registry.valid(owner) || SafeboxSystem::Get(owner, MALL) != storage) return;
+            if (!storage->IsValidPosition(pItems->pos))
+                continue;
+
+            const entt::entity item = ITEM_MANAGER::instance().CreateItem(pItems->vnum, pItems->count, pItems->id);
+
+            if (!ItemSystem::IsValidItem(item))
+            {
+                LOG_ERROR("cannot create item vnum {} id {} (name: {})", pItems->vnum, pItems->id, ecs::PlayerRuntime::GetName(e).data());
+                continue;
+            }
+
+            ItemSystem::SetItemSkipSave(item, true);
+            ItemSystem::SetItemSockets(item, pItems->alSockets);
+            ItemSystem::SetItemAttributes(item, pItems->aAttr);
+
+			if (!storage->Add(pItems->pos, item))
+                ItemSystem::DestroyItemEntityEcs(
+                    item,
+                    "MALL_LOAD_ADD_FAILED");
+            else
+                ItemSystem::SetItemSkipSave(item, false);
+        }
+    }
+}
+
+// Closing the safebox window and writing what changed.
+void CloseSafebox(entt::entity e)
+{
+    const auto owner = e;
+    if (!SafeboxSystem::Get(owner, SAFEBOX)) return;
+
+    if (!ecs::PlayerRuntime::IsPC(e) || !ecs::PlayerRuntime::GetDesc(e))
+    {
+        LOG_ERROR("CloseSafebox skipped: invalid owner (name={} vid={} race={} ispc={} desc={})", ecs::PlayerRuntime::GetName(e).data(), ecs::PlayerRuntime::GetPacketVID(e), ecs::PlayerRuntime::GetRaceNum(e), ecs::PlayerRuntime::IsPC(e), static_cast<const void*>(ecs::PlayerRuntime::GetDesc(e)));
+
+        SafeboxSystem::Close(owner, SAFEBOX, false);
+        if (!g_registry.valid(owner)) return;
+        SetSafeboxLoading(owner, false);
+        return;
+    }
+
+    ecs::SessionSystem::SetSafeboxOpen(e, false);
+    SafeboxSystem::Close(owner, SAFEBOX);
+    if (!g_registry.valid(owner)) return;
+
+    ecs::ChatSystem::Send(e, CHAT_TYPE_COMMAND, "CloseSafebox");
+
+    ecs::SocialSystem::SetSafeboxLoadTime(e);
+    SetSafeboxLoading(e, false);
+
+    ecs::SessionSystem::Save(e);
+}
+
+// True between asking the database for a safebox and getting it back. This
+// was a CHARACTER flag beside SafeboxRef::isOpening, which nothing wrote.
+bool IsSafeboxLoading(entt::entity e)
+{
+    if (e == entt::null || !g_registry.valid(e))
+        return false;
+    const auto* safebox = g_registry.try_get<ecs::SafeboxRef>(e);
+    return safebox && safebox->isOpening;
+}
+
+void SetSafeboxLoading(entt::entity e, bool loading)
+{
+    if (e == entt::null || !g_registry.valid(e))
+        return;
+    g_registry.get_or_emplace<ecs::SafeboxRef>(e).isOpening = loading;
+}
+
 bool GetSkipSave(entt::entity e)
 {
     if (e == entt::null || !g_registry.valid(e))
@@ -656,22 +906,12 @@ float GetDistanceFromSafeboxOpen(entt::entity character)
 
 } // namespace ecs::SessionSystem
 
-void CHARACTER::SetSafeboxLoadTime()
-{
-    m_iSafeboxLoadTime = thecore_pulse();
-    if (auto* warp = EnsureWarpBlockState(GetEntityHandle()))
-    {
-        warp->safeboxLoadTime = m_iSafeboxLoadTime;
-        g_registry.emplace_or_replace<ecs::DirtyTag>(GetEntityHandle());
-    }
-}
-
 bool CHARACTER::CanWarp() const
 {
     const int iPulse = thecore_pulse();
     const int limit_time = PASSES_PER_SEC(g_nPortalLimitTime);
 
-    if ((iPulse - GetSafeboxLoadTime()) < limit_time)
+    if ((iPulse - ecs::SocialSystem::GetSafeboxLoadTime(GetEntityHandle())) < limit_time)
         return false;
 
     if ((iPulse - ExchangeSystem::GetLastExchangePulse(GetEntityHandle())) < limit_time)
@@ -1382,8 +1622,8 @@ void CHARACTER::Disconnect(const char* c_pszReason)
 
     quest::CQuestManager::instance().DisconnectPC(GetEntityHandle());
 
-    CloseSafebox();
-    CloseMall();
+    ecs::SessionSystem::CloseSafebox(GetEntityHandle());
+    ecs::SessionSystem::CloseMall(GetEntityHandle());
 
     CPVPManager::instance().Disconnect(GetEntityHandle());
     CTargetManager::instance().Logout(GetPlayerID());
@@ -1403,241 +1643,3 @@ void CHARACTER::Disconnect(const char* c_pszReason)
     M2_DESTROY_CHARACTER(this);
 }
 
-void CHARACTER::SetSafeboxOpenPosition()
-{
-    m_posSafeboxOpen = GetXYZ();
-    ecs::SessionSystem::SetSafeboxOpenPosition(GetEntityHandle());
-}
-
-CSafebox* CHARACTER::GetSafebox() const
-{
-    return SafeboxSystem::Get(GetEntityHandle(), SAFEBOX).get();
-}
-
-void CHARACTER::ReqSafeboxLoad(const char* pszPassword)
-{
-    if (!*pszPassword || strlen(pszPassword) > SAFEBOX_PASSWORD_MAX_LEN)
-    {
-#ifdef TEXTS_IMPROVEMENT
-        ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 188, "");
-#endif
-        return;
-    }
-    else if (GetSafebox())
-    {
-#ifdef TEXTS_IMPROVEMENT
-        ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 189, "");
-#endif
-        return;
-    }
-
-    int iPulse = thecore_pulse();
-
-    if (iPulse - GetSafeboxLoadTime() < PASSES_PER_SEC(10))
-    {
-#ifdef TEXTS_IMPROVEMENT
-        ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 190, "");
-#endif
-        return;
-    }
-#ifndef __OPEN_SAFEBOX_CLICK__
-    else if (GetDistanceFromSafeboxOpen() > 1000)
-    {
-#ifdef TEXTS_IMPROVEMENT
-        ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 185, "");
-#endif
-        return;
-    }
-#endif
-    else if (m_bOpeningSafebox)
-    {
-        LOG_INFO("Overlapped safebox load request from {}", GetName());
-        return;
-    }
-
-    SetSafeboxLoadTime();
-    m_bOpeningSafebox = true;
-
-    TSafeboxLoadPacket p;
-    p.dwID = GetDesc()->GetAccountTable().id;
-    strlcpy(p.szLogin, GetDesc()->GetAccountTable().login, sizeof(p.szLogin));
-    strlcpy(p.szPassword, pszPassword, sizeof(p.szPassword));
-
-    db_clientdesc->DBPacket(HEADER_GD_SAFEBOX_LOAD, GetDesc()->GetHandle(), &p, sizeof(p));
-}
-
-void CHARACTER::LoadSafebox(int iSize, uint32_t dwGold, int iItemCount, TPlayerItem* pItems)
-{
-    const auto owner = GetEntityHandle();
-    const bool bLoaded = static_cast<bool>(SafeboxSystem::Get(owner, SAFEBOX));
-    auto storage = SafeboxSystem::Open(owner, SAFEBOX, iSize, dwGold);
-    if (!storage) return;
-    ecs::SessionSystem::SetSafeboxOpen(GetEntityHandle(), true);
-    if (bLoaded) storage->ChangeSize(iSize);
-
-    m_iSafeboxSize = iSize;
-
-    TPacketCGSafeboxSize p;
-    p.bHeader = HEADER_GC_SAFEBOX_SIZE;
-    p.bSize = iSize;
-
-    GetDesc()->Packet(&p, sizeof(TPacketCGSafeboxSize));
-
-    if (!bLoaded)
-    {
-        for (int i = 0; i < iItemCount; ++i, ++pItems)
-        {
-            if (!g_registry.valid(owner) || SafeboxSystem::Get(owner, SAFEBOX) != storage) return;
-            if (!storage->IsValidPosition(pItems->pos))
-                continue;
-
-            const entt::entity item = ITEM_MANAGER::instance().CreateItem(pItems->vnum, pItems->count, pItems->id);
-
-            if (!ItemSystem::IsValidItem(item))
-            {
-                LOG_ERROR("cannot create item vnum {} id {} (name: {})", pItems->vnum, pItems->id, GetName());
-                continue;
-            }
-
-            ItemSystem::SetItemSkipSave(item, true);
-            ItemSystem::SetItemSockets(item, pItems->alSockets);
-            ItemSystem::SetItemAttributes(item, pItems->aAttr);
-
-			if (!storage->Add(pItems->pos, item))
-                ItemSystem::DestroyItemEntityEcs(
-                    item,
-                    "SAFEBOX_LOAD_ADD_FAILED");
-            else
-                ItemSystem::SetItemSkipSave(item, false);
-        }
-    }
-}
-
-void CHARACTER::ChangeSafeboxSize(uint8_t bSize)
-{
-    TPacketCGSafeboxSize p;
-    p.bHeader = HEADER_GC_SAFEBOX_SIZE;
-    p.bSize = bSize;
-
-    GetDesc()->Packet(&p, sizeof(TPacketCGSafeboxSize));
-
-    if (auto storage = SafeboxSystem::Get(GetEntityHandle(), SAFEBOX))
-        storage->ChangeSize(bSize);
-
-    m_iSafeboxSize = bSize;
-    if (GetEntityHandle() != entt::null && g_registry.valid(GetEntityHandle()))
-    {
-        auto& safebox = g_registry.get_or_emplace<ecs::SafeboxRef>(GetEntityHandle());
-        safebox.safeboxSize = bSize;
-    }
-}
-
-void CHARACTER::CloseSafebox()
-{
-    const auto owner = GetEntityHandle();
-    if (!SafeboxSystem::Get(owner, SAFEBOX)) return;
-
-    if (!IsPC() || !GetDesc())
-    {
-        LOG_ERROR("CloseSafebox skipped: invalid owner (name={} vid={} race={} ispc={} desc={})", GetName(), GetPacketVID(), GetRaceNum(), IsPC(), static_cast<const void*>(GetDesc()));
-
-        SafeboxSystem::Close(owner, SAFEBOX, false);
-        if (!g_registry.valid(owner)) return;
-        m_bOpeningSafebox = false;
-        return;
-    }
-
-    ecs::SessionSystem::SetSafeboxOpen(GetEntityHandle(), false);
-    SafeboxSystem::Close(owner, SAFEBOX);
-    if (!g_registry.valid(owner)) return;
-
-    ecs::ChatSystem::Send(GetEntityHandle(), CHAT_TYPE_COMMAND, "CloseSafebox");
-
-    SetSafeboxLoadTime();
-    m_bOpeningSafebox = false;
-
-    ecs::SessionSystem::Save(GetEntityHandle());
-}
-
-CSafebox* CHARACTER::GetMall() const
-{
-    return SafeboxSystem::Get(GetEntityHandle(), MALL).get();
-}
-
-void CHARACTER::LoadMall(int iItemCount, TPlayerItem* pItems)
-{
-    const auto owner = GetEntityHandle();
-    const bool bLoaded = static_cast<bool>(SafeboxSystem::Get(owner, MALL));
-    auto storage = SafeboxSystem::Open(owner, MALL, 3 * SAFEBOX_PAGE_SIZE);
-    if (!storage) return;
-    if (bLoaded) storage->ChangeSize(3 * SAFEBOX_PAGE_SIZE);
-
-    TPacketCGSafeboxSize p;
-    p.bHeader = HEADER_GC_MALL_OPEN;
-    p.bSize = 3 * SAFEBOX_PAGE_SIZE;
-
-    GetDesc()->Packet(&p, sizeof(TPacketCGSafeboxSize));
-
-    if (!bLoaded)
-    {
-        for (int i = 0; i < iItemCount; ++i, ++pItems)
-        {
-            if (!g_registry.valid(owner) || SafeboxSystem::Get(owner, MALL) != storage) return;
-            if (!storage->IsValidPosition(pItems->pos))
-                continue;
-
-            const entt::entity item = ITEM_MANAGER::instance().CreateItem(pItems->vnum, pItems->count, pItems->id);
-
-            if (!ItemSystem::IsValidItem(item))
-            {
-                LOG_ERROR("cannot create item vnum {} id {} (name: {})", pItems->vnum, pItems->id, GetName());
-                continue;
-            }
-
-            ItemSystem::SetItemSkipSave(item, true);
-            ItemSystem::SetItemSockets(item, pItems->alSockets);
-            ItemSystem::SetItemAttributes(item, pItems->aAttr);
-
-			if (!storage->Add(pItems->pos, item))
-                ItemSystem::DestroyItemEntityEcs(
-                    item,
-                    "MALL_LOAD_ADD_FAILED");
-            else
-                ItemSystem::SetItemSkipSave(item, false);
-        }
-    }
-}
-
-void CHARACTER::CloseMall()
-{
-    const auto owner = GetEntityHandle();
-    if (!SafeboxSystem::Get(owner, MALL)) return;
-    SafeboxSystem::Close(owner, MALL);
-    if (!g_registry.valid(owner)) return;
-
-    ecs::ChatSystem::Send(GetEntityHandle(), CHAT_TYPE_COMMAND, "CloseMall");
-}
-
-void CHARACTER::QuerySafeboxSize()
-{
-    if (m_iSafeboxSize == -1)
-    {
-        DBManager::instance().ReturnQuery(QID_SAFEBOX_SIZE,
-            GetPlayerID(),
-            nullptr,
-            "SELECT size FROM safebox%s WHERE account_id = %u",
-            get_table_postfix(),
-            GetDesc()->GetAccountTable().id);
-    }
-}
-
-void CHARACTER::SetSafeboxSize(int iSize)
-{
-    m_iSafeboxSize = iSize;
-    if (GetEntityHandle() != entt::null && g_registry.valid(GetEntityHandle()))
-    {
-        auto& safebox = g_registry.get_or_emplace<ecs::SafeboxRef>(GetEntityHandle());
-        safebox.safeboxSize = iSize;
-    }
-    ecs::SessionSystem::SetSafeboxSize(GetEntityHandle(), iSize);
-}

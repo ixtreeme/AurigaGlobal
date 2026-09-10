@@ -5594,8 +5594,6 @@ void CHARACTER::Initialize()
 #ifdef ENABLE_EVENT_MANAGER
 #endif
 
-    m_bOpeningSafebox = false;
-
     m_dwPlayerID = 0;
 #ifdef __SEND_TARGET_INFO__
     dwLastTargetInfoPulse = 0;
@@ -5652,9 +5650,6 @@ void CHARACTER::Initialize()
 #if defined(BL_OFFLINE_MESSAGE)
     dwLastOfflinePMTime = 0;
 #endif
-
-    m_iSafeboxSize = -1;
-    m_iSafeboxLoadTime = 0;
 
     m_bMountInventoryLoaded = false;
 
@@ -5733,9 +5728,6 @@ void CHARACTER::Initialize()
     m_dwLoginPlayTime = 0;
 
     m_pkChrMarried = nullptr;
-
-    m_posSafeboxOpen.x = -1000;
-    m_posSafeboxOpen.y = -1000;
 
 
 

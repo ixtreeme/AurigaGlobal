@@ -2,6 +2,7 @@
 #include "../../SRC/Server/GameServer/safebox.h"
 #include "../../SRC/Server/GameServer/desc_client.h"
 #include "../../SRC/Server/GameServer/ecs/Registry.hpp"
+#include "../../SRC/Server/GameServer/ecs/components/inventory_components.hpp"
 #include "../../SRC/Server/GameServer/ecs/systems/ItemSystem.hpp"
 #include "../../SRC/Server/GameServer/ecs/systems/PlayerRuntimeSystem.hpp"
 #include <Core/Logging.hpp>
@@ -195,6 +196,47 @@ void ComponentOwnership() {
     Check(replacement != owner && !SafeboxSystem::Get(owner, SAFEBOX) && !SafeboxSystem::Open(owner, SAFEBOX, 3), "stale owner accessed new generation");
     Check(!SafeboxSystem::Open(replacement, INVENTORY, 3), "unsupported storage window accepted");
     Check(!SafeboxSystem::Get(entt::null, SAFEBOX), "null owner exposed storage");
+}
+// The safebox size, the "waiting for the database" flag and the position the
+// window was opened at each used to exist twice: a CHARACTER field and a
+// SafeboxRef member. Only the CHARACTER copy was ever read, so the component's
+// defaults were never exercised. They are the only copy now, and three callers
+// depend on the exact default: QuerySafeboxSize asks the database only while
+// the size is still -1, ReqSafeboxLoad refuses a second request while the flag
+// is set, and GetDistanceFromSafeboxOpen must report "nowhere near" before a
+// window was ever opened.
+void SessionStateOwnership() {
+    Reset(); const auto owner = PlayerEntity();
+    const auto& fresh = g_registry.emplace<ecs::SafeboxRef>(owner);
+    Check(fresh.safeboxSize == -1, "a fresh safebox reports a real size");
+    Check(!fresh.isOpening, "a fresh safebox claims a load is in flight");
+    Check(fresh.openX == -1000 && fresh.openY == -1000, "a fresh safebox opens at the origin");
+
+    auto& state = g_registry.get<ecs::SafeboxRef>(owner);
+    state.safeboxSize = 27;
+    state.isOpening = true;
+    state.openX = 400; state.openY = 500;
+
+    // Opening and closing the storage must not touch any of it: the flag is
+    // cleared by CloseSafebox, which runs after this, and the size outlives
+    // the window so the next open knows how many pages were paid for.
+    auto storage = SafeboxSystem::Open(owner, SAFEBOX, 3);
+    Check(static_cast<bool>(storage), "storage did not open");
+    SafeboxSystem::Close(owner, SAFEBOX, false);
+    storage.reset();
+    const auto& kept = g_registry.get<ecs::SafeboxRef>(owner);
+    Check(kept.safeboxSize == 27, "closing the window forgot the paid-for size");
+    Check(kept.isOpening, "closing the window cleared the load flag behind its owner");
+    Check(kept.openX == 400 && kept.openY == 500, "closing the window moved the open position");
+
+    // A new character in a recycled slot starts over; the old values must not
+    // survive into it, which is what the CHARACTER constructor used to promise.
+    g_registry.destroy(owner);
+    const auto replacement = PlayerEntity();
+    Check(!g_registry.try_get<ecs::SafeboxRef>(replacement), "recycled owner inherited safebox state");
+    const auto& reborn = g_registry.emplace<ecs::SafeboxRef>(replacement);
+    Check(reborn.safeboxSize == -1 && !reborn.isOpening && reborn.openX == -1000,
+        "recycled owner inherited safebox state");
 }
 void BasicStorage() {
     for (const uint8_t window : {SAFEBOX, MALL}) {
@@ -421,7 +463,7 @@ int main() {
     try {
         BasicStorage(); BoundsAndResize(); StaleOwnersAndItems(); ReentrantTeardown();
         PublicationAndDetachFailures(); StackGuards();
-        ComponentOwnership();
+        ComponentOwnership(); SessionStateOwnership();
         std::cout << "Safebox/mall lifecycle checks passed: " << checks << '\n';
         return 0;
     } catch (const std::exception& error) {

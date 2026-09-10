@@ -1985,7 +1985,7 @@ ACMD(do_safebox_size)
 		size = 0;
 
 	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "Safebox size set to %d", size);
-	ch->ChangeSafeboxSize(size);
+	ecs::SessionSystem::ChangeSafeboxSize(ch->GetEntityHandle(), size);
 }
 
 ACMD(do_makeguild)

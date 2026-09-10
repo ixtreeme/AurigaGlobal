@@ -5,6 +5,7 @@
 #include "ecs/systems/PointSystem.hpp"
 #include "ecs/systems/PlayerRuntimeSystem.hpp"
 #include "ecs/systems/SocialSystem.hpp"
+#include "ecs/systems/SessionSystem.hpp"
 #include "ecs/systems/NetworkSyncSystem.hpp"
 #include "ecs/AIHelpers.hpp"
 #include "constants.h"
@@ -612,7 +613,7 @@ void CInputDB::PlayerLoad(LPDESC d, const char * data)
 
 	LOG_INFO("InputDB: player_load {} {}x{}x{} LEVEL {} MOV_SPEED {} JOB {} ATG {} DFG {} GMLv {}", pTab->name, ecs::PlayerRuntime::GetX(chEntity), ecs::PlayerRuntime::GetY(chEntity), ch->GetZ(), (ecs::PointSystem::GetLevel(chEntity)), ecs::PointSystem::Get(chEntity, POINT_MOV_SPEED), ecs::PlayerRuntime::GetJob(chEntity), ecs::PointSystem::Get(chEntity, POINT_ATT_GRADE), ecs::PointSystem::Get(chEntity, POINT_DEF_GRADE), ecs::PlayerRuntime::GetGMLevel(chEntity));
 
-	ch->QuerySafeboxSize();
+	ecs::SessionSystem::QuerySafeboxSize(ch->GetEntityHandle());
 	ch->QueryMountInventory();
 }
 
@@ -1291,7 +1292,7 @@ void CInputDB::SafeboxLoad(LPDESC d, const char * c_pData)
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(chEntity, CHAT_TYPE_INFO, 296, "");
 #endif
-		d->GetCharacter()->CancelSafeboxLoad();
+		ecs::SessionSystem::SetSafeboxLoading(d->GetCharacter()->GetEntityHandle(), false);
 		return;
 	}
 
@@ -1301,7 +1302,7 @@ void CInputDB::SafeboxLoad(LPDESC d, const char * c_pData)
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(chEntity, CHAT_TYPE_INFO, 296, "");
 #endif
-		d->GetCharacter()->CancelSafeboxLoad();
+		ecs::SessionSystem::SetSafeboxLoading(d->GetCharacter()->GetEntityHandle(), false);
 		return;
 	}
 #endif
@@ -1315,8 +1316,8 @@ void CInputDB::SafeboxLoad(LPDESC d, const char * c_pData)
 	//if (d->GetCharacter()->IsEquipUniqueItem(UNIQUE_ITEM_SAFEBOX_EXPAND))
 	//bSize = 3; // â��Ȯ���
 
-	//d->GetCharacter()->LoadSafebox(p->bSize * SAFEBOX_PAGE_SIZE, p->dwGold, p->wItemCount, (TPlayerItem *) (c_pData + sizeof(TSafeboxTable)));
-	d->GetCharacter()->LoadSafebox(bSize * SAFEBOX_PAGE_SIZE, p->dwGold, p->wItemCount, (TPlayerItem *) (c_pData + sizeof(TSafeboxTable)));
+	//ecs::SessionSystem::LoadSafebox(d->GetCharacter()->GetEntityHandle(), p->bSize * SAFEBOX_PAGE_SIZE, p->dwGold, p->wItemCount, (TPlayerItem *) (c_pData + sizeof(TSafeboxTable)));
+	ecs::SessionSystem::LoadSafebox(d->GetCharacter()->GetEntityHandle(), bSize * SAFEBOX_PAGE_SIZE, p->dwGold, p->wItemCount, (TPlayerItem *) (c_pData + sizeof(TSafeboxTable)));
 }
 
 void CInputDB::SafeboxChangeSize(LPDESC d, const char * c_pData)
@@ -1329,7 +1330,7 @@ void CInputDB::SafeboxChangeSize(LPDESC d, const char * c_pData)
 	if (!d->GetCharacter())
 		return;
 
-	d->GetCharacter()->ChangeSafeboxSize(bSize);
+	ecs::SessionSystem::ChangeSafeboxSize(d->GetCharacter()->GetEntityHandle(), bSize);
 }
 
 //
@@ -1347,7 +1348,7 @@ void CInputDB::SafeboxWrongPassword(LPDESC d)
 	p.bHeader = HEADER_GC_SAFEBOX_WRONG_PASSWORD;
 	d->Packet(&p, sizeof(p));
 
-	d->GetCharacter()->CancelSafeboxLoad();
+	ecs::SessionSystem::SetSafeboxLoading(d->GetCharacter()->GetEntityHandle(), false);
 }
 
 void CInputDB::SafeboxChangePasswordAnswer(LPDESC d, const char* c_pData)
@@ -1385,7 +1386,7 @@ void CInputDB::MallLoad(LPDESC d, const char * c_pData)
 	if (!d->GetCharacter())
 		return;
 
-	d->GetCharacter()->LoadMall(p->wItemCount, (TPlayerItem *) (c_pData + sizeof(TSafeboxTable)));
+	ecs::SessionSystem::LoadMall(d->GetCharacter()->GetEntityHandle(), p->wItemCount, (TPlayerItem *) (c_pData + sizeof(TSafeboxTable)));
 }
 
 void CInputDB::LoginAlready(LPDESC d, const char * c_pData)

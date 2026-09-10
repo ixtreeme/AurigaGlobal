@@ -2019,7 +2019,7 @@ ACMD(do_skillup)
 ACMD(do_safebox_close)
 {
 	LPCHARACTER ch = ecs::LegacyCharOf(character);
-	ch->CloseSafebox();
+	ecs::SessionSystem::CloseSafebox(ch->GetEntityHandle());
 }
 
 //
@@ -2030,7 +2030,7 @@ ACMD(do_safebox_password)
 	LPCHARACTER ch = ecs::LegacyCharOf(character);
 	char arg1[256];
 	one_argument(argument, arg1, sizeof(arg1));
-	ch->ReqSafeboxLoad(arg1);
+	ecs::SessionSystem::ReqSafeboxLoad(ch->GetEntityHandle(), arg1);
 }
 
 ACMD(do_safebox_change_password)
@@ -2081,7 +2081,7 @@ ACMD(do_mall_password)
 
 	int iPulse = thecore_pulse();
 
-	if (ch->GetMall())
+	if (ecs::SessionSystem::GetMall(ch->GetEntityHandle()))
 	{
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 189, "");
@@ -2110,10 +2110,10 @@ ACMD(do_mall_password)
 ACMD(do_mall_close)
 {
 	LPCHARACTER ch = ecs::LegacyCharOf(character);
-	if (ch->GetMall())
+	if (ecs::SessionSystem::GetMall(ch->GetEntityHandle()))
 	{
 		ch->SetMallLoadTime(thecore_pulse());
-		ch->CloseMall();
+		ecs::SessionSystem::CloseMall(ch->GetEntityHandle());
 		ecs::SessionSystem::Save(ch->GetEntityHandle());
 	}
 }

@@ -2823,7 +2823,7 @@ void Dead(entt::entity victim, entt::entity killer, bool immediate)
 		if (LPCHARACTER windows = ecs::LegacyCharOf(victim))
 		{
 			windows->CloseMyShop();
-			windows->CloseSafebox();
+			ecs::SessionSystem::CloseSafebox(windows->GetEntityHandle());
 		}
 	}
 }

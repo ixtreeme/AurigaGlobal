@@ -118,6 +118,14 @@ int GetSafeboxLoadTime(entt::entity e)
     return warp ? warp->safeboxLoadTime : 0;
 }
 
+void SetSafeboxLoadTime(entt::entity e)
+{
+    if (e == entt::null || !g_registry.valid(e))
+        return;
+    g_registry.get_or_emplace<ecs::WarpBlockState>(e).safeboxLoadTime = thecore_pulse();
+    g_registry.emplace_or_replace<ecs::DirtyTag>(e);
+}
+
 int GetRefineTime(entt::entity e)
 {
     if (e == entt::null || !g_registry.valid(e))
