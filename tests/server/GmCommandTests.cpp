@@ -735,7 +735,7 @@ void CHARACTER::ComputePoints(void) { Unexpected(); }
 bool CHARACTER::WarpToPID(unsigned int) { Unexpected(); }
 int CHARACTER::CountSpecifyItem(unsigned int)const { Unexpected(); }
 void CHARACTER::RemoveSpecifyItem(unsigned int,int,bool) { Unexpected(); }
-void CHARACTER::Dead(entt::entity,bool) { Unexpected(); }
+void CombatSystem::Dead(entt::entity,entt::entity,bool) { Unexpected(); }
 void CHARACTER::ForgetMyAttacker(void) { Unexpected(); }
 void CHARACTER::AggregateMonster(void) { Unexpected(); }
 void CHARACTER::AttractRanger(void) { Unexpected(); }
@@ -942,8 +942,8 @@ void CHARACTER::AttackedByFire(entt::entity,int,int) { Unexpected(); }
 void CHARACTER::SetSkillHit(bool) { Unexpected(); }
 bool CHARACTER::CanUseHorseSkill(void) { Unexpected(); }
 bool CHARACTER::IsRiding(void)const { Unexpected(); }
-int CHARACTER::GetQuestFlag(std::string const &)const { Unexpected(); }
-void CHARACTER::SetQuestFlag(std::string const &,int) { Unexpected(); }
+int ecs::PlayerRuntime::GetQuestFlag(entt::entity,std::string const &) { Unexpected(); }
+void ecs::PlayerRuntime::SetQuestFlag(entt::entity,std::string const &,int) { Unexpected(); }
 int CHARACTER::GetSkillPowerByLevel(int,bool)const { Unexpected(); }
 int CHARACTER::GetSoulItemDamage(entt::entity,int,unsigned char) { Unexpected(); }
 CHARACTER * CParty::GetNextOwnership(CHARACTER *,int,int) { Unexpected(); }

@@ -252,7 +252,7 @@ void CHARACTER::SaveExitLocation() { Unexpected(); }
 void CHARACTER::ExitToSavedLocation() { Unexpected(); }
 bool CHARACTER::IsAffectFlag(uint32_t) const { Unexpected(); }
 bool CHARACTER::IsEquipUniqueItem(uint32_t) const { Unexpected(); }
-void CHARACTER::Dead(entt::entity, bool) { Unexpected(); }
+void CombatSystem::Dead(entt::entity, entt::entity, bool) { Unexpected(); }
 void CHARACTER::UpdateKillerMode() { Unexpected(); }
 LPCHARACTER CHARACTER::GetVictim() const { Unexpected(); }
 void CHARACTER::MonsterLog(const char*, ...) { Unexpected(); }

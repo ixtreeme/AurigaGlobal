@@ -26,6 +26,7 @@
 #include "ecs/EntityFactory.hpp"
 #include "ecs/Registry.hpp"
 #include "ecs/systems/ItemSystem.hpp"
+#include "ecs/systems/CombatSystem.hpp"
 
 EVENTINFO(war_map_info)
 {
@@ -910,7 +911,7 @@ void CWarMap::RemoveFlag(uint8_t bIdx)
 
 	LOG_INFO("WarMap::RemoveFlag {} {}", static_cast<int>(bIdx), static_cast<const void*>(get_pointer(r.pkChrFlag)));
 
-	r.pkChrFlag->Dead(entt::null, true);
+	CombatSystem::Dead(r.pkChrFlag->GetEntityHandle(), entt::null, true);
 	r.pkChrFlag = nullptr;
 }
 

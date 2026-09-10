@@ -1645,7 +1645,7 @@ ACMD(do_kill)
 		return;
 	}
 
-	tch->Dead();
+	CombatSystem::Dead(tch->GetEntityHandle());
 }
 
 #ifdef ENABLE_NEWSTUFF

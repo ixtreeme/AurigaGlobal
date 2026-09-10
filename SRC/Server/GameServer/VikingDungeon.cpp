@@ -486,7 +486,7 @@ namespace
         if (spawned)
 		d->SetUnique("vk_compass", ecs::PlayerRuntime::GetPacketVID(((spawned) ? (spawned)->GetEntityHandle() : entt::null)));
 
-        npc->Dead(entt::null, true);
+        CombatSystem::Dead(npc->GetEntityHandle(), entt::null, true);
     }
 
     EVENTINFO(viking_event_info)
@@ -1426,7 +1426,7 @@ bool CVikingDungeon::OnNpcTakeItem(entt::entity from, entt::entity npc, CItem* i
         int32_t stage = d->GetFlag(kFlagFloor3NpcStage) + 1;
         d->SetFlag(kFlagFloor3NpcStage, stage);
 
-        pkNpc->Dead(entt::null, true);
+        CombatSystem::Dead(pkNpc->GetEntityHandle(), entt::null, true);
 
         uint32_t newNpc = kMemorialNpc4;
         if (stage == 1)

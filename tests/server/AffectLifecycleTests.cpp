@@ -852,7 +852,7 @@ void CHARACTER::StartMuyeongEvent(void) { UnexpectedService(__func__); }
 void CHARACTER::StopMuyeongEvent(void) { UnexpectedService(__func__); }
 void CHARACTER::StartGyeongGongEvent(void) { UnexpectedService(__func__); }
 void CHARACTER::StopGyeongGongEvent(void) { UnexpectedService(__func__); }
-int CHARACTER::GetQuestFlag(std::string const &)const { UnexpectedService(__func__); }
+int ecs::PlayerRuntime::GetQuestFlag(entt::entity,std::string const &) { UnexpectedService(__func__); }
 int CHARACTER::GetPremiumRemainSeconds(unsigned char)const { UnexpectedService(__func__); }
 void CHARACTER::AutoRecoveryItemProcess(EAffectTypes) { UnexpectedService(__func__); }
 void CHARACTER::AutoRecallProcess(void) { UnexpectedService(__func__); }

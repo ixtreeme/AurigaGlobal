@@ -9,6 +9,7 @@
 #include "NetworkSyncSystem.hpp"
 
 #include "CombatSystem.hpp"
+#include "SessionSystem.hpp"
 #include "SkillSystem.hpp"
 #include "MountSystem.hpp"
 
@@ -418,6 +419,21 @@ static bool IsDefanceWaweMastAttackMob(int32_t vnum)
 }
 #endif
 
+// Whether a party leader may summon this member: high leadership always, or
+// middling leadership shortly after the member died. The window compares a
+// millisecond clock against a 180 offset, so it is 180ms wide rather than the
+// 180s the surrounding code implies - preserved as it stands.
+bool CanSummon(entt::entity e, int iLeaderShip)
+{
+    if (iLeaderShip >= 20)
+        return true;
+    if (iLeaderShip < 12)
+        return false;
+    const auto* dead = (e != entt::null && g_registry.valid(e))
+        ? g_registry.try_get<ecs::LastDeadTime>(e) : nullptr;
+    return dead && (dead->value + 180) > get_dword_time();
+}
+
 bool GetDeadByMonster(entt::entity e)
 {
     if (e == entt::null || !g_registry.valid(e))
@@ -777,12 +793,6 @@ bool IsDead(entt::entity e)
     return runtime && runtime->position == POS_DEAD;
 }
 
-void Dead(entt::entity victim, entt::entity killer, bool immediate)
-{
-    // Compatibility boundary until the complete death pipeline is component-native.
-    if (auto* legacyVictim = LegacyCharOf(victim))
-        legacyVictim->Dead(killer, immediate);
-}
 
 
 void DeathPenalty(entt::entity e, uint8_t bTown)
@@ -2206,7 +2216,7 @@ EVENTFUNC(dead_event)
 	{
 		if (ch->IsMonster() == true)
 		{
-			if (CombatSystem::IsRevive(ch->GetEntityHandle()) == false && ch->HasReviverInParty() == true)
+			if (CombatSystem::IsRevive(ch->GetEntityHandle()) == false && ecs::SocialSystem::HasReviverInParty(chEntity) == true)
 			{
 				ecs::PlayerRuntime::SetPosition(chEntity, POS_STANDING);
 				ch->SetHP(ecs::PointSystem::GetMaxHP(chEntity));
@@ -2227,76 +2237,79 @@ EVENTFUNC(dead_event)
 }
 
 
-void CHARACTER::Dead(entt::entity killer, bool bImmediateDead)
+namespace CombatSystem {
+
+void Dead(entt::entity victim, entt::entity killer, bool immediate)
 {
-	LPCHARACTER pkKiller = ecs::LegacyCharOf(killer);
+	if (victim == entt::null || !g_registry.valid(victim))
+		return;
 	// FakePlayers are normally excluded from death handling, but LostCastle clones must die.
 	//if (IsFakePlayer() && !CLostCastleDungeon::instance().IsCloneVID(GetVID()))
 	//	return;
 
-	if (IsDead())
+	if (IsDead(victim))
 		return;
 
-	if (CombatSystem::GetInvincible(GetEntityHandle()))
+	if (CombatSystem::GetInvincible(victim))
 		return;
 
 	// LostCastle klonoknak nincs mob_proto (m_pkMobData == nullptr),
-	// ezert a normal !IsPC() reward/resurrection ag GetMobTable()-t hivna es crashelne.
+	// ezert a normal !ecs::PlayerRuntime::IsPC(victim) reward/resurrection ag GetMobTable()-t hivna es crashelne.
 	// Itt egy safe halal pipeline + return.
 	//if (IsFakePlayer() && CLostCastleDungeon::instance().IsCloneVID(GetVID()))
 	//{
-	//	if (!pkKiller && m_dwKillerPID)
-	//		pkKiller = CHARACTER_MANAGER::instance().FindByPID(m_dwKillerPID);
+	//	if (!hasKiller && m_dwKillerPID)
+	//		hasKiller = CHARACTER_MANAGER::instance().FindByPID(m_dwKillerPID);
 
 	//	m_dwKillerPID = 0;
 
-	//	if (auto* flags = RuntimeFlags(GetEntityHandle()))
+	//	if (auto* flags = RuntimeFlags(victim))
 	//		SET_BIT(flags->instantFlag, INSTANT_FLAG_NO_REWARD);
 
-	//	SetPosition(POS_DEAD);
-	//	ClearAffect(true);
+	//	ecs::PlayerRuntime::SetPosition(victim, POS_DEAD);
+	//	AffectSystem::ClearAffect(victim, true);
 	//	ClearSync();
 	//	event_cancel(&m_pkStunEvent);
 
-	//	if (pkKiller && ecs::PlayerRuntime::IsPC((pkKiller ? pkKiller->GetEntityHandle() : entt::null)))
-	//		CLostCastleDungeon::instance().OnMobKilled((pkKiller ? pkKiller->GetEntityHandle() : entt::null), GetEntityHandle());
+	//	if (hasKiller && ecs::PlayerRuntime::IsPC((hasKiller ? hasKiller->GetEntityHandle() : entt::null)))
+	//		CLostCastleDungeon::instance().OnMobKilled((hasKiller ? hasKiller->GetEntityHandle() : entt::null), victim);
 
 	//	TPacketGCDead pack;
 	//	pack.header = HEADER_GC_DEAD;
-	//	pack.vid = GetPacketVID();
-	//	ecs::ViewSystem::PacketView(GetEntityHandle(), &pack, sizeof(pack));
+	//	pack.vid = ecs::PlayerRuntime::GetPacketVID(victim);
+	//	ecs::ViewSystem::PacketView(victim, &pack, sizeof(pack));
 
-	//	if (auto* flags = RuntimeFlags(GetEntityHandle()))
+	//	if (auto* flags = RuntimeFlags(victim))
 	//		REMOVE_BIT(flags->instantFlag, INSTANT_FLAG_STUN);
 
-	//	if (GetDungeon())
-	//		GetDungeon()->DeadCharacter(this);
+	//	if (ecs::SocialSystem::GetDungeon(victim))
+	//		ecs::SocialSystem::GetDungeon(victim)->DeadCharacter(this);
 
 	//	if (m_pkDeadEvent)
 	//		event_cancel(&m_pkDeadEvent);
 
 	//	SCharDeadEventInfo* pEventInfo = AllocEventInfo<SCharDeadEventInfo>();
 	//	pEventInfo->vid = GetVID();
-	//	m_pkDeadEvent = event_create(dead_event, pEventInfo, bImmediateDead ? 1 : PASSES_PER_SEC(1));
+	//	m_pkDeadEvent = event_create(dead_event, pEventInfo, immediate ? 1 : PASSES_PER_SEC(1));
 	//	return;
 	//}
 
-	if (IsPC())
+	if (ecs::PlayerRuntime::IsPC(victim))
 	{
-		if (IsHorseRiding()) {
-			StopRiding();
+		if (MountSystem::IsHorseRiding(victim)) {
+			MountSystem::StopRiding(victim);
 		}
-		else if (GetMountVnum()) {
-			RemoveAffect(AFFECT_MOUNT_BONUS);
-			m_dwMountVnum = 0;
-			UnEquipSpecialRideUniqueItem();
-			NetworkSyncSystem::UpdatePacket(GetEntityHandle());
+		else if (MountSystem::GetMountVnum(victim)) {
+			AffectSystem::RemoveAffect(victim, AFFECT_MOUNT_BONUS);
+			MountSystem::SetMountVnum(victim, 0);
+			ItemSystem::UnEquipSpecialRideUniqueItem(victim);
+			NetworkSyncSystem::UpdatePacket(victim);
 		}
 	}
 
-	if (IsMonster() || IsStone())
+	if (ecs::PlayerRuntime::IsMonster(victim) || ecs::PlayerRuntime::IsStone(victim))
 	{
-		LPDUNGEON dungeon = GetDungeon();
+		LPDUNGEON dungeon = ecs::SocialSystem::GetDungeon(victim);
 		if (dungeon)
 		{
 			dungeon->DecMonster();
@@ -2305,39 +2318,47 @@ void CHARACTER::Dead(entt::entity killer, bool bImmediateDead)
 
 #ifdef ENABLE_EVENT_MANAGER
 	// Map1 mass-spawn wave tracking (Tanaka / Golden Frog)
-	if (IsMonster() && GetMapIndex() == 1)
+	if (ecs::PlayerRuntime::IsMonster(victim) && ecs::PlayerRuntime::GetMapIndex(victim) == 1)
 	{
-		const uint32_t vnum = GetRaceNum();
+		const uint32_t vnum = ecs::PlayerRuntime::GetRaceNum(victim);
 		if (vnum == 5000u || vnum == 124u)
-			Map1MassSpawnEvent_OnMobDead(GetPacketVID());
+			Map1MassSpawnEvent_OnMobDead(ecs::PlayerRuntime::GetPacketVID(victim));
 	}
 #endif
 
 
-	if (!pkKiller && CombatSystem::GetKillerPID(GetEntityHandle()))
-		pkKiller = CHARACTER_MANAGER::instance().FindByPID(
-			CombatSystem::GetKillerPID(GetEntityHandle()));
+	// A killer that left only a player id behind is looked up again, and the
+	// entity handle has to come back with it. Everything below asks about the
+	// killer through the handle, so a killer recovered as a pointer alone read
+	// as "no killer at all": no PvP bookkeeping, no guild war kill, no log.
+	if ((killer == entt::null || !g_registry.valid(killer)) && GetKillerPID(victim))
+	{
+		if (LPCHARACTER recovered = CHARACTER_MANAGER::instance().FindByPID(GetKillerPID(victim)))
+			killer = recovered->GetEntityHandle();
+	}
 
-	CombatSystem::SetKillerPID(GetEntityHandle(), 0); // ݵ ʱȭ ؾ DO NOT DELETE THIS LINE UNLESS YOU ARE 1000000% SURE
+	const bool hasKiller = killer != entt::null && g_registry.valid(killer);
+
+	CombatSystem::SetKillerPID(victim, 0); // ݵ ʱȭ ؾ DO NOT DELETE THIS LINE UNLESS YOU ARE 1000000% SURE
 
 	bool isAgreedPVP = false;
 	bool isUnderGuildWar = false;
 	bool isDuel = false;
 
-	if (pkKiller && ecs::PlayerRuntime::IsPC(killer))
+	if (hasKiller && ecs::PlayerRuntime::IsPC(killer))
 	{
 		if (const auto* killerTarget = g_registry.try_get<ecs::SelectedTarget>(killer);
-			killerTarget && killerTarget->target == GetEntityHandle())
+			killerTarget && killerTarget->target == victim)
 			CombatSystem::SetTarget(killer, entt::null);
 
-		isAgreedPVP = CPVPManager::instance().Dead(GetEntityHandle(), ecs::PlayerRuntime::GetPlayerID(killer));
-		isDuel = CArenaManager::instance().OnDead(killer, GetEntityHandle());
+		isAgreedPVP = CPVPManager::instance().Dead(victim, ecs::PlayerRuntime::GetPlayerID(killer));
+		isDuel = CArenaManager::instance().OnDead(killer, victim);
 #ifdef ENABLE_PVP_ADVANCED
 		if (isAgreedPVP || isDuel)
 		{
 			const char* szTableStaticPvP[] = { BLOCK_CHANGEITEM, BLOCK_BUFF, BLOCK_POTION, BLOCK_RIDE, BLOCK_PET, BLOCK_POLY, BLOCK_PARTY, BLOCK_EXCHANGE_, BET_WINNER, CHECK_IS_FIGHT };
 
-			int betMoneyDead = ecs::PlayerRuntime::GetQuestFlag(GetEntityHandle(), szTableStaticPvP[8]);
+			int betMoneyDead = ecs::PlayerRuntime::GetQuestFlag(victim, szTableStaticPvP[8]);
 			int betMoneyKiller = ecs::QuestSystem::GetFlag(killer, szTableStaticPvP[8]);
 
 			if (betMoneyDead > 0 && betMoneyKiller > 0)
@@ -2354,8 +2375,8 @@ void CHARACTER::Dead(entt::entity killer, bool bImmediateDead)
 				snprintf(pkCh_Buf, sizeof(pkCh_Buf), "BINARY_Duel_Delete");
 				snprintf(pkKiller_Buf, sizeof(pkKiller_Buf), "BINARY_Duel_Delete");
 
-				ecs::ChatSystem::Send(GetEntityHandle(), CHAT_TYPE_COMMAND, pkCh_Buf);
-				ecs::PlayerRuntime::SetQuestFlag(GetEntityHandle(), szTableStaticPvP[i], 0);
+				ecs::ChatSystem::Send(victim, CHAT_TYPE_COMMAND, pkCh_Buf);
+				ecs::PlayerRuntime::SetQuestFlag(victim, szTableStaticPvP[i], 0);
 
 				ecs::ChatSystem::Send(killer, CHAT_TYPE_COMMAND, pkKiller_Buf);
 				ecs::QuestSystem::SetFlag(killer, szTableStaticPvP[i], 0);
@@ -2363,204 +2384,210 @@ void CHARACTER::Dead(entt::entity killer, bool bImmediateDead)
 		}
 #endif
 
-		if (IsPC())
+		if (ecs::PlayerRuntime::IsPC(victim))
 		{
-			CGuild* g1 = GetGuild();
+			CGuild* g1 = ecs::SocialSystem::GetGuild(victim);
 			CGuild* g2 = ecs::SocialSystem::GetGuild(killer);
 
 			if (g1 && g2)
 				if (g1->UnderWar(g2->GetID()))
 					isUnderGuildWar = true;
 
-			pkKiller->SetQuestNPCID(GetPacketVID());
+			ecs::PlayerRuntime::SetQuestNPCID(killer, ecs::PlayerRuntime::GetPacketVID(victim));
 			quest::CQuestManager::instance().Kill(ecs::PlayerRuntime::GetPlayerID(killer), quest::QUEST_NO_NPC);
-			CGuildManager::instance().Kill(pkKiller, this);
+			// Guild kill bookkeeping is still pointer-shaped; CGuildManager is its
+			// own migration. One resolve, named.
+			if (LPCHARACTER legacyKiller = ecs::LegacyCharOf(killer))
+			{
+				if (LPCHARACTER legacyVictim = ecs::LegacyCharOf(victim))
+					CGuildManager::instance().Kill(legacyKiller, legacyVictim);
+			}
 		}
 	}
 
 #ifdef ENABLE_QUEST_DIE_EVENT
-	//if (IsPC())
+	//if (ecs::PlayerRuntime::IsPC(victim))
 	//{
-	//	if (pkKiller)
-	//		SetQuestNPCID(pkKiller->GetVID());
-	//	// quest::CQuestManager::instance().Die(GetPlayerID(), quest::QUEST_NO_NPC);
-	//	quest::CQuestManager::instance().Die(GetPlayerID(), (pkKiller)?ecs::PlayerRuntime::GetRaceNum((pkKiller ? pkKiller->GetEntityHandle() : entt::null)):quest::QUEST_NO_NPC);
+	//	if (hasKiller)
+	//		ecs::PlayerRuntime::SetQuestNPCID(victim, hasKiller->GetVID());
+	//	// quest::CQuestManager::instance().Die(ecs::PlayerRuntime::GetPlayerID(victim), quest::QUEST_NO_NPC);
+	//	quest::CQuestManager::instance().Die(ecs::PlayerRuntime::GetPlayerID(victim), (hasKiller)?ecs::PlayerRuntime::GetRaceNum((hasKiller ? hasKiller->GetEntityHandle() : entt::null)):quest::QUEST_NO_NPC);
 	//}
-	if (IsPC())
+	if (ecs::PlayerRuntime::IsPC(victim))
 	{
-		if (pkKiller) {
-			SetQuestNPCID(ecs::PlayerRuntime::GetPacketVID(killer));
+		if (hasKiller) {
+			ecs::PlayerRuntime::SetQuestNPCID(victim, ecs::PlayerRuntime::GetPacketVID(killer));
 		}
 
-		quest::CQuestManager::instance().Die(GetPlayerID(), (pkKiller) ? ecs::PlayerRuntime::GetRaceNum(killer) : quest::QUEST_NO_NPC);
+		quest::CQuestManager::instance().Die(ecs::PlayerRuntime::GetPlayerID(victim), (hasKiller) ? ecs::PlayerRuntime::GetRaceNum(killer) : quest::QUEST_NO_NPC);
 	}
 #endif
 
 #ifdef ENABLE_RANKING
-	if ((IsPC())) {
-		if (((isAgreedPVP) || (isDuel)) && (pkKiller)) {
-			SetRankPoints(1, pkKiller->GetRankPoints(1) + 1);
-			pkKiller->SetRankPoints(0, pkKiller->GetRankPoints(0) + 1);
+	if ((ecs::PlayerRuntime::IsPC(victim))) {
+		if (((isAgreedPVP) || (isDuel)) && (hasKiller)) {
+			ecs::PlayerRuntime::SetRankPoints(victim, 1, ecs::PlayerRuntime::GetRankPoints(killer, 1) + 1);
+			ecs::PlayerRuntime::SetRankPoints(killer, 0, ecs::PlayerRuntime::GetRankPoints(killer, 0) + 1);
 		}
 		else if (isUnderGuildWar) {
-			pkKiller->SetRankPoints(2, pkKiller->GetRankPoints(2) + 1);
+			ecs::PlayerRuntime::SetRankPoints(killer, 2, ecs::PlayerRuntime::GetRankPoints(killer, 2) + 1);
 		}
 	}
 
-	if (pkKiller) {
+	if (hasKiller) {
 		if (ecs::PlayerRuntime::IsPC(killer)) {
-			if (IsStone()) {
-				if (pkKiller)
-					pkKiller->SetRankPoints(5, pkKiller->GetRankPoints(5) + 1);
+			if (ecs::PlayerRuntime::IsStone(victim)) {
+				if (hasKiller)
+					ecs::PlayerRuntime::SetRankPoints(killer, 5, ecs::PlayerRuntime::GetRankPoints(killer, 5) + 1);
 			}
-			else if (IsMonster()) {
-				if (GetMobRank() >= MOB_RANK_BOSS)
-					pkKiller->SetRankPoints(7, pkKiller->GetRankPoints(7) + 1);
+			else if (ecs::PlayerRuntime::IsMonster(victim)) {
+				if (ecs::PlayerRuntime::GetMobRank(victim) >= MOB_RANK_BOSS)
+					ecs::PlayerRuntime::SetRankPoints(killer, 7, ecs::PlayerRuntime::GetRankPoints(killer, 7) + 1);
 				else
-					pkKiller->SetRankPoints(6, pkKiller->GetRankPoints(6) + 1);
+					ecs::PlayerRuntime::SetRankPoints(killer, 6, ecs::PlayerRuntime::GetRankPoints(killer, 6) + 1);
 			}
 		}
 	}
 #endif
 
 	/*
-		if (pkKiller &&
+		if (hasKiller &&
 				!isAgreedPVP &&
 				!isUnderGuildWar &&
-				IsPC() &&
+				ecs::PlayerRuntime::IsPC(victim) &&
 				!isDuel)
 		{
 			if (GetGMLevel() == GM_PLAYER || test_server)
 			{
-				ItemDropPenalty(pkKiller);
+				ItemDropPenalty(victim, killer);
 			}
 		}
 	*/
 
 #ifdef ENABLE_SKILLS_BUFF_ALTERNATIVE
-	if (IsPC()) {
+	if (ecs::PlayerRuntime::IsPC(victim)) {
 #ifdef ENABLE_01092021
-		if (pkKiller && !ecs::PlayerRuntime::IsPC(killer)) {
+		if (hasKiller && !ecs::PlayerRuntime::IsPC(killer)) {
 			CombatSystem::SetTarget(killer, entt::null);
 		}
 #endif
-		AffectSystem::ClearAffectSkills(GetEntityHandle());
+		AffectSystem::ClearAffectSkills(victim);
 	}
 #endif
-	SetPosition(POS_DEAD);
-	ClearAffect(true);
+	ecs::PlayerRuntime::SetPosition(victim, POS_DEAD);
+	AffectSystem::ClearAffect(victim, true);
 
-	if (pkKiller && IsPC())
+	if (hasKiller && ecs::PlayerRuntime::IsPC(victim))
 	{
 		if (!ecs::PlayerRuntime::IsPC(killer))
 		{
 #ifdef ENABLE_REVIVE_WITH_HALF_HP_IF_MONSTER_KILLED_YOU
-			CombatSystem::SetDeadByMonster(GetEntityHandle(), true);
+			CombatSystem::SetDeadByMonster(victim, true);
 #endif
 
-			LOG_TRACE("DEAD: {} {} WITH PENALTY", GetName(), static_cast<const void*>(this));
-						if (auto* flags = RuntimeFlags(GetEntityHandle()))
+			LOG_TRACE("DEAD: {} {} WITH PENALTY", ecs::PlayerRuntime::GetName(victim).data(), static_cast<uint32_t>(victim));
+						if (auto* flags = RuntimeFlags(victim))
 				SET_BIT(flags->instantFlag, INSTANT_FLAG_DEATH_PENALTY);
-			LogManager::instance().CharLog(GetEntityHandle(), ecs::PlayerRuntime::GetRaceNum(killer), "DEAD_BY_NPC", ecs::PlayerRuntime::GetName(killer).data());
+			LogManager::instance().CharLog(victim, ecs::PlayerRuntime::GetRaceNum(killer), "DEAD_BY_NPC", ecs::PlayerRuntime::GetName(killer).data());
 		}
 		else
 		{
 #ifdef ENABLE_REVIVE_WITH_HALF_HP_IF_MONSTER_KILLED_YOU
-			CombatSystem::SetDeadByMonster(GetEntityHandle(), false);
+			CombatSystem::SetDeadByMonster(victim, false);
 #endif
-			LOG_TRACE("DEAD_BY_PC: {} {} KILLER {} {}", GetName(), static_cast<const void*>(this), ecs::PlayerRuntime::GetName(killer).data(), static_cast<const void*>(get_pointer(pkKiller)));
-						if (auto* flags = RuntimeFlags(GetEntityHandle()))
+			LOG_TRACE("DEAD_BY_PC: {} {} KILLER {} {}", ecs::PlayerRuntime::GetName(victim).data(), static_cast<uint32_t>(victim), ecs::PlayerRuntime::GetName(killer).data(), static_cast<uint32_t>(killer));
+						if (auto* flags = RuntimeFlags(victim))
 				REMOVE_BIT(flags->instantFlag, INSTANT_FLAG_DEATH_PENALTY);
 
-			if (GetEmpire() != ecs::PlayerRuntime::GetEmpire(killer))
+			if (ecs::PlayerRuntime::GetEmpire(victim) != ecs::PlayerRuntime::GetEmpire(killer))
 			{
-				int64_t iEP = std::min(GetPoint(POINT_EMPIRE_POINT), ecs::PointSystem::Get(killer, POINT_EMPIRE_POINT));
+				int64_t iEP = std::min(ecs::PointSystem::Get(victim, POINT_EMPIRE_POINT), ecs::PointSystem::Get(killer, POINT_EMPIRE_POINT));
 
-				PointChange(POINT_EMPIRE_POINT, -(iEP / 10));
+				ecs::PointSystem::Change(victim, POINT_EMPIRE_POINT, -(iEP / 10));
 				ecs::PointSystem::Change(killer, POINT_EMPIRE_POINT, iEP / 5);
 
 
 				char buf[256];
 				snprintf(buf, sizeof(buf),
 					"%d %u %d %s %d %u %d %s",
-					GetEmpire(), GetAlignment(), GetPKMode(), GetName(),
-					ecs::PlayerRuntime::GetEmpire(killer), pkKiller->GetAlignment(), pkKiller->GetPKMode(), ecs::PlayerRuntime::GetName(killer).data());
+					ecs::PlayerRuntime::GetEmpire(victim), GetAlignment(victim), GetPKMode(victim), ecs::PlayerRuntime::GetName(victim).data(),
+					ecs::PlayerRuntime::GetEmpire(killer), GetAlignment(killer), GetPKMode(killer), ecs::PlayerRuntime::GetName(killer).data());
 
-				LogManager::instance().CharLog(GetEntityHandle(), ecs::PlayerRuntime::GetPlayerID(killer), "DEAD_BY_PC", buf);
+				LogManager::instance().CharLog(victim, ecs::PlayerRuntime::GetPlayerID(killer), "DEAD_BY_PC", buf);
 			}
 			else
 			{
-//				if (!isAgreedPVP && !isUnderGuildWar && !IsKillerMode() /*&& GetAlignment() >= 0*/ && !isDuel)
+//				if (!isAgreedPVP && !isUnderGuildWar && !IsKillerMode() /*&& GetAlignment(victim) >= 0*/ && !isDuel)
 //				{
 //					int iNoPenaltyProb = 0;
 //
-//					if (pkKiller->GetAlignment() >= 0)	// 1/3 percent down
+//					if (GetAlignment(killer) >= 0)	// 1/3 percent down
 //						iNoPenaltyProb = 33;
 //					else				// 4/5 percent down
 //						iNoPenaltyProb = 20;
 //
 //					if (number(1, 100) < iNoPenaltyProb) {
 //#ifdef TEXTS_IMPROVEMENT
-//						ecs::ChatSystem::SendNew((pkKiller ? pkKiller->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 413, "");
+//						ecs::ChatSystem::SendNew((hasKiller ? hasKiller->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 413, "");
 //#endif
 //					}
 //					else {
-//						if (ecs::SocialSystem::GetParty((pkKiller ? pkKiller->GetEntityHandle() : entt::null)))
+//						if (ecs::SocialSystem::GetParty((hasKiller ? hasKiller->GetEntityHandle() : entt::null)))
 //						{
-//							FPartyAlignmentCompute f(-20000, ecs::PlayerRuntime::GetX((pkKiller ? pkKiller->GetEntityHandle() : entt::null)), ecs::PlayerRuntime::GetY((pkKiller ? pkKiller->GetEntityHandle() : entt::null)));
-//							ecs::SocialSystem::GetParty((pkKiller ? pkKiller->GetEntityHandle() : entt::null))->ForEachOnlineMember(f);
+//							FPartyAlignmentCompute f(-20000, ecs::PlayerRuntime::GetX((hasKiller ? hasKiller->GetEntityHandle() : entt::null)), ecs::PlayerRuntime::GetY((hasKiller ? hasKiller->GetEntityHandle() : entt::null)));
+//							ecs::SocialSystem::GetParty((hasKiller ? hasKiller->GetEntityHandle() : entt::null))->ForEachOnlineMember(f);
 //
 //							if (f.m_iCount == 0)
-//								pkKiller->UpdateAlignment(-20000);
+//								hasKiller->UpdateAlignment(-20000);
 //							else
 //							{
 //								0, "ALIGNMENT PARTY count %d amount %d", f.m_iCount, f.m_iAmount);
 //
 //								f.m_iStep = 1;
-//								ecs::SocialSystem::GetParty((pkKiller ? pkKiller->GetEntityHandle() : entt::null))->ForEachOnlineMember(f);
+//								ecs::SocialSystem::GetParty((hasKiller ? hasKiller->GetEntityHandle() : entt::null))->ForEachOnlineMember(f);
 //							}
 //						}
 //						else
-//							pkKiller->UpdateAlignment(-20000);
+//							hasKiller->UpdateAlignment(-20000);
 //					}
 //				}
 
 				char buf[256];
 				snprintf(buf, sizeof(buf),
 					"%d %u %d %s %d %u %d %s",
-					GetEmpire(), GetAlignment(), GetPKMode(), GetName(),
-					ecs::PlayerRuntime::GetEmpire(killer), pkKiller->GetAlignment(), pkKiller->GetPKMode(), ecs::PlayerRuntime::GetName(killer).data());
+					ecs::PlayerRuntime::GetEmpire(victim), GetAlignment(victim), GetPKMode(victim), ecs::PlayerRuntime::GetName(victim).data(),
+					ecs::PlayerRuntime::GetEmpire(killer), GetAlignment(killer), GetPKMode(killer), ecs::PlayerRuntime::GetName(killer).data());
 
-				LogManager::instance().CharLog(GetEntityHandle(), ecs::PlayerRuntime::GetPlayerID(killer), "DEAD_BY_PC", buf);
+				LogManager::instance().CharLog(victim, ecs::PlayerRuntime::GetPlayerID(killer), "DEAD_BY_PC", buf);
 			}
 
 #ifdef ENABLE_BATTLE_PASS
-			uint8_t bBattlePassId = pkKiller->GetBattlePassId();
+			uint8_t bBattlePassId = ecs::PlayerRuntime::GetBattlePassId(killer);
 			if (bBattlePassId)
 			{
 				uint32_t dwToKillCount, dwMinLevel;
-				uint32_t dwLevel = GetLevel();
+				uint32_t dwLevel = ecs::PointSystem::GetLevel(victim);
 				if (CBattlePass::instance().BattlePassMissionGetInfo(bBattlePassId, PLAYER_KILL, &dwMinLevel, &dwToKillCount))
 				{
 #ifdef ENABLE_BATTLE_PASS_SECURITY_KILL
-					if ((GetDesc()->GetHostName() != ecs::PlayerRuntime::GetDesc(killer)->GetHostName()) && CBattlePass::instance().IsEligibleForPlayerKill(ecs::PlayerRuntime::GetPlayerID(killer), GetPlayerID()))
+					if ((ecs::PlayerRuntime::GetDesc(victim)->GetHostName() != ecs::PlayerRuntime::GetDesc(killer)->GetHostName()) && CBattlePass::instance().IsEligibleForPlayerKill(ecs::PlayerRuntime::GetPlayerID(killer), ecs::PlayerRuntime::GetPlayerID(victim)))
 					{
-						if (dwLevel >= dwMinLevel && pkKiller->GetMissionProgress(PLAYER_KILL, bBattlePassId) < dwToKillCount)
+						if (dwLevel >= dwMinLevel && ecs::PlayerRuntime::GetMissionProgress(killer, PLAYER_KILL, bBattlePassId) < dwToKillCount)
 						{
-							pkKiller->UpdateMissionProgress(PLAYER_KILL, bBattlePassId, 1, dwToKillCount);
-							CBattlePass::instance().RegisterPlayerKill(ecs::PlayerRuntime::GetPlayerID(killer), GetPlayerID());
+							ecs::PlayerRuntime::UpdateMissionProgress(killer, PLAYER_KILL, bBattlePassId, 1, dwToKillCount);
+							CBattlePass::instance().RegisterPlayerKill(ecs::PlayerRuntime::GetPlayerID(killer), ecs::PlayerRuntime::GetPlayerID(victim));
 						}
 					}
 #else
-					if (dwLevel >= dwMinLevel && pkKiller->GetMissionProgress(PLAYER_KILL, bBattlePassId) < dwToKillCount)
-						pkKiller->UpdateMissionProgress(PLAYER_KILL, bBattlePassId, 1, dwToKillCount);
+					if (dwLevel >= dwMinLevel && ecs::PlayerRuntime::GetMissionProgress(killer, PLAYER_KILL, bBattlePassId) < dwToKillCount)
+						ecs::PlayerRuntime::UpdateMissionProgress(killer, PLAYER_KILL, bBattlePassId, 1, dwToKillCount);
 #endif
 				}
 			}
-			if (pkKiller && ecs::PlayerRuntime::IsPC(killer) && IsPC())
+			if (hasKiller && ecs::PlayerRuntime::IsPC(killer) && ecs::PlayerRuntime::IsPC(victim))
 			{
 				const char* szMapName;
-				switch (GetMapIndex())
+				switch (ecs::PlayerRuntime::GetMapIndex(victim))
 				{
 				case 18: szMapName = "Owl Dungeon"; break;
 				case 27: szMapName = "Slime Dungeon"; break;
@@ -2590,16 +2617,16 @@ void CHARACTER::Dead(entt::entity killer, bool bImmediateDead)
 
 				if (isAgreedPVP)
 				{
-					int iRankPoints = pkKiller->GetRankPoints(0); // PvP rangpont
+					int iRankPoints = ecs::PlayerRuntime::GetRankPoints(killer, 0); // PvP rangpont
 					snprintf(szMsg, sizeof(szMsg),
 						"|cff00ff00%s|r has killed |cffff0000%s|r Map: %s, PVP-Mode: DUEL (Winned duels: %d)",
-						ecs::PlayerRuntime::GetName(killer).data(), GetName(), szMapName, iRankPoints);
+						ecs::PlayerRuntime::GetName(killer).data(), ecs::PlayerRuntime::GetName(victim).data(), szMapName, iRankPoints);
 				}
 				else
 				{
 					snprintf(szMsg, sizeof(szMsg),
 						"|cff00ff00%s|r has killed |cffff0000%s|r Map: %s, PVP-Mode: FREE!",
-						ecs::PlayerRuntime::GetName(killer).data(), GetName(), szMapName);
+						ecs::PlayerRuntime::GetName(killer).data(), ecs::PlayerRuntime::GetName(victim).data(), szMapName);
 				}
 
 				BroadcastNotice(szMsg);
@@ -2611,57 +2638,64 @@ void CHARACTER::Dead(entt::entity killer, bool bImmediateDead)
 	}
 	else
 	{
-		LOG_TRACE("DEAD: {} {}", GetName(), static_cast<const void*>(this));
-				if (auto* flags = RuntimeFlags(GetEntityHandle()))
+		LOG_TRACE("DEAD: {} {}", ecs::PlayerRuntime::GetName(victim).data(), static_cast<uint32_t>(victim));
+				if (auto* flags = RuntimeFlags(victim))
 			REMOVE_BIT(flags->instantFlag, INSTANT_FLAG_DEATH_PENALTY);
 	}
 
-	NetworkSyncSystem::ClearSync(GetEntityHandle());
+	NetworkSyncSystem::ClearSync(victim);
 
-	//LOG_INFO(1, "stun cancel %s[%d]", GetName(), (uint32_t)GetVID());
-	ecs::PlayerRuntime::CancelCharEvent(GetEntityHandle(), ecs::PlayerRuntime::CharEvent::Stun); //  ̺Ʈ δ.
+	//LOG_INFO(1, "stun cancel %s[%d]", ecs::PlayerRuntime::GetName(victim).data(), (uint32_t)GetVID());
+	ecs::PlayerRuntime::CancelCharEvent(victim, ecs::PlayerRuntime::CharEvent::Stun); //  ̺Ʈ δ.
 
-	if (IsPC())
+	if (ecs::PlayerRuntime::IsPC(victim))
 	{
-		m_dwLastDeadTime = get_dword_time();
-		//SetKillerMode(pkKiller && ecs::PlayerRuntime::IsPC((pkKiller ? pkKiller->GetEntityHandle() : entt::null)));
-		SetKillerMode(false);
-		GetDesc()->SetPhase(PHASE_DEAD);
+		g_registry.get_or_emplace<ecs::LastDeadTime>(victim).value = get_dword_time();
+		//SetKillerMode(victim, hasKiller && ecs::PlayerRuntime::IsPC((hasKiller ? hasKiller->GetEntityHandle() : entt::null)));
+		SetKillerMode(victim, false);
+		ecs::PlayerRuntime::GetDesc(victim)->SetPhase(PHASE_DEAD);
 	}
 	else
 	{
 		// 忡 ݹ ʹ   Ѵ.
-		if (!(RuntimeFlags(GetEntityHandle()) && IS_SET(RuntimeFlags(GetEntityHandle())->instantFlag, INSTANT_FLAG_NO_REWARD)))
+		if (!(RuntimeFlags(victim) && IS_SET(RuntimeFlags(victim)->instantFlag, INSTANT_FLAG_NO_REWARD)))
 		{
-			if (!(pkKiller && ecs::PlayerRuntime::IsPC(killer) && ecs::SocialSystem::GetGuild(killer) && ecs::SocialSystem::GetGuild(killer)->UnderAnyWar(GUILD_WAR_TYPE_FIELD)))
+			if (!(hasKiller && ecs::PlayerRuntime::IsPC(killer) && ecs::SocialSystem::GetGuild(killer) && ecs::SocialSystem::GetGuild(killer)->UnderAnyWar(GUILD_WAR_TYPE_FIELD)))
 			{
 				// Ȱϴ ʹ   ʴ´.
-				if (GetMobTable().dwResurrectionVnum)
+				const TMobTable* mobTable = ecs::PlayerRuntime::GetMobTable(victim);
+				if (mobTable && mobTable->dwResurrectionVnum)
 				{
 					// DUNGEON_MONSTER_REBIRTH_BUG_FIX
-					auto* chResurrect = CHARACTER_MANAGER::instance().SpawnMob(GetMobTable().dwResurrectionVnum, GetMapIndex(), GetX(), GetY(), GetZ(), true, (int)GetRotation());
-					if (GetDungeon() && chResurrect)
+					auto* chResurrect = CHARACTER_MANAGER::instance().SpawnMob(mobTable->dwResurrectionVnum, ecs::PlayerRuntime::GetMapIndex(victim), ecs::PlayerRuntime::GetX(victim), ecs::PlayerRuntime::GetY(victim), ecs::PlayerRuntime::GetZ(victim), true, (int)ecs::PlayerRuntime::GetRotation(victim));
+					if (ecs::SocialSystem::GetDungeon(victim) && chResurrect)
 					{
-						chResurrect->SetDungeon(GetDungeon());
+						chResurrect->SetDungeon(ecs::SocialSystem::GetDungeon(victim));
 					}
 					// END_OF_DUNGEON_MONSTER_REBIRTH_BUG_FIX
 
-					Reward(false);
+					Reward(victim, false);
 				}
-				else if (CombatSystem::IsRevive(GetEntityHandle()) == true)
+				else if (CombatSystem::IsRevive(victim) == true)
 				{
-					Reward(false);
+					Reward(victim, false);
 				}
 				else
 				{
-					Reward(true); // Drops gold, item, etc..
+					Reward(victim, true); // Drops gold, item, etc..
 				}
+
+				// Rewarding runs quest triggers and item drops, either of which can
+				// destroy this mob outright.
+				if (!g_registry.valid(victim))
+					return;
 			}
 			else
 			{
-				if (pkKiller->m_dwUnderGuildWarInfoMessageTime < get_dword_time())
+				if (auto& notice = g_registry.get_or_emplace<ecs::GuildWarNoticeTime>(killer);
+					notice.value < get_dword_time())
 				{
-					pkKiller->m_dwUnderGuildWarInfoMessageTime = get_dword_time() + 60000;
+					notice.value = get_dword_time() + 60000;
 #ifdef TEXTS_IMPROVEMENT
 					ecs::ChatSystem::SendNew(killer, CHAT_TYPE_INFO, 147, "");
 #endif
@@ -2671,33 +2705,33 @@ void CHARACTER::Dead(entt::entity killer, bool bImmediateDead)
 	}
 
 	// BOSS_KILL_LOG
-	if (GetMobRank() >= MOB_RANK_BOSS && pkKiller && ecs::PlayerRuntime::IsPC(killer))
+	if (ecs::PlayerRuntime::GetMobRank(victim) >= MOB_RANK_BOSS && hasKiller && ecs::PlayerRuntime::IsPC(killer))
 	{
 		char buf[51];
 		snprintf(buf, sizeof(buf), "%d %ld", g_bChannel, ecs::PlayerRuntime::GetMapIndex(killer));
-		if (IsStone())
-			LogManager::instance().CharLog(killer, GetRaceNum(), "STONE_KILL", buf);
+		if (ecs::PlayerRuntime::IsStone(victim))
+			LogManager::instance().CharLog(killer, ecs::PlayerRuntime::GetRaceNum(victim), "STONE_KILL", buf);
 		else
-			LogManager::instance().CharLog(killer, GetRaceNum(), "BOSS_KILL", buf);
+			LogManager::instance().CharLog(killer, ecs::PlayerRuntime::GetRaceNum(victim), "BOSS_KILL", buf);
 	}
 	// END_OF_BOSS_KILL_LOG
 
 	TPacketGCDead pack;
 	pack.header = HEADER_GC_DEAD;
-	pack.vid = GetPacketVID();
-	ecs::ViewSystem::PacketView(GetEntityHandle(), &pack, sizeof(pack));
+	pack.vid = ecs::PlayerRuntime::GetPacketVID(victim);
+	ecs::ViewSystem::PacketView(victim, &pack, sizeof(pack));
 
-		if (auto* flags = RuntimeFlags(GetEntityHandle()))
+		if (auto* flags = RuntimeFlags(victim))
 		REMOVE_BIT(flags->instantFlag, INSTANT_FLAG_STUN);
 
 	// ÷̾ ĳ̸
-	if (GetDesc() != nullptr) {
+	if (ecs::PlayerRuntime::GetDesc(victim) != nullptr) {
 		//
 		// Ŭ̾Ʈ Ʈ Ŷ ٽ .
 		//
-		for (const auto& affect : AffectSystem::Snapshot(GetEntityHandle()))
+		for (const auto& affect : AffectSystem::Snapshot(victim))
 			if (affect)
-				SendAffectAddPacket(GetDesc(), affect.get());
+				SendAffectAddPacket(ecs::PlayerRuntime::GetDesc(victim), affect.get());
 	}
 
 	//
@@ -2708,78 +2742,94 @@ void CHARACTER::Dead(entt::entity killer, bool bImmediateDead)
 	//   , ⼭    ޴´.
 	if (isDuel == false)
 	{
-		if (ecs::PlayerRuntime::GetCharEvent(GetEntityHandle(), ecs::PlayerRuntime::CharEvent::Dead))
+		if (ecs::PlayerRuntime::GetCharEvent(victim, ecs::PlayerRuntime::CharEvent::Dead))
 		{
-			LOG_TRACE("DEAD_EVENT_CANCEL: {} {} {}", GetName(), static_cast<const void*>(this), static_cast<const void*>(get_pointer(
-				ecs::PlayerRuntime::GetCharEvent(GetEntityHandle(), ecs::PlayerRuntime::CharEvent::Dead))));
-			ecs::PlayerRuntime::CancelCharEvent(GetEntityHandle(), ecs::PlayerRuntime::CharEvent::Dead);
+			LOG_TRACE("DEAD_EVENT_CANCEL: {} {} {}", ecs::PlayerRuntime::GetName(victim).data(), static_cast<uint32_t>(victim), static_cast<const void*>(get_pointer(
+				ecs::PlayerRuntime::GetCharEvent(victim, ecs::PlayerRuntime::CharEvent::Dead))));
+			ecs::PlayerRuntime::CancelCharEvent(victim, ecs::PlayerRuntime::CharEvent::Dead);
 		}
 
-		if (IsStone())
+		if (ecs::PlayerRuntime::IsStone(victim))
 		{
-			CombatSystem::ClearStone(GetEntityHandle());
+			// Every mob the stone spawned dies here, and each of those deaths
+			// comes back through this function.
+			ClearStone(victim);
+			if (!g_registry.valid(victim))
+				return;
 		}
 
-		if (GetDungeon())
+		// The dungeon may destroy the character it is told about, so nothing
+		// below may touch the victim without asking again.
+		if (LPDUNGEON dungeon = ecs::SocialSystem::GetDungeon(victim))
 		{
-			GetDungeon()->DeadCharacter(this);
+			if (LPCHARACTER legacyVictim = ecs::LegacyCharOf(victim))
+				dungeon->DeadCharacter(legacyVictim);
+
+			if (!g_registry.valid(victim))
+				return;
 		}
 
-		if (!IsPC())
+		if (!ecs::PlayerRuntime::IsPC(victim))
 		{
 			SCharDeadEventInfo* pEventInfo = AllocEventInfo<SCharDeadEventInfo>();
-			pEventInfo->entity = GetEntityHandle();
+			pEventInfo->entity = victim;
 
-			if (CombatSystem::IsRevive(GetEntityHandle()) == false && HasReviverInParty() == true)
+			if (CombatSystem::IsRevive(victim) == false && ecs::SocialSystem::HasReviverInParty(victim) == true)
 			{
-				ecs::PlayerRuntime::SetCharEvent(GetEntityHandle(), ecs::PlayerRuntime::CharEvent::Dead,
-					event_create(dead_event, pEventInfo, bImmediateDead ? 1 : PASSES_PER_SEC(1)));
+				ecs::PlayerRuntime::SetCharEvent(victim, ecs::PlayerRuntime::CharEvent::Dead,
+					event_create(dead_event, pEventInfo, immediate ? 1 : PASSES_PER_SEC(1)));
 			}
 #ifdef __DEFENSE_WAVE__
-			else if (GetRaceNum() >= 3950 && GetRaceNum() <= 3964)
+			else if (ecs::PlayerRuntime::GetRaceNum(victim) >= 3950 && ecs::PlayerRuntime::GetRaceNum(victim) <= 3964)
 			{
-				ecs::PlayerRuntime::SetCharEvent(GetEntityHandle(), ecs::PlayerRuntime::CharEvent::Dead,
-					event_create(dead_event, pEventInfo, bImmediateDead ? 1 : PASSES_PER_SEC(1)));
+				ecs::PlayerRuntime::SetCharEvent(victim, ecs::PlayerRuntime::CharEvent::Dead,
+					event_create(dead_event, pEventInfo, immediate ? 1 : PASSES_PER_SEC(1)));
 			}
 #endif
 			else
 			{
-				ecs::PlayerRuntime::SetCharEvent(GetEntityHandle(), ecs::PlayerRuntime::CharEvent::Dead,
-					event_create(dead_event, pEventInfo, bImmediateDead ? 1 : PASSES_PER_SEC(1)));
+				ecs::PlayerRuntime::SetCharEvent(victim, ecs::PlayerRuntime::CharEvent::Dead,
+					event_create(dead_event, pEventInfo, immediate ? 1 : PASSES_PER_SEC(1)));
 			}
 
-			LOG_TRACE("DEAD_EVENT_CREATE: {} {} {}", GetName(), static_cast<const void*>(this), static_cast<const void*>(get_pointer(
-				ecs::PlayerRuntime::GetCharEvent(GetEntityHandle(), ecs::PlayerRuntime::CharEvent::Dead))));
+			LOG_TRACE("DEAD_EVENT_CREATE: {} {} {}", ecs::PlayerRuntime::GetName(victim).data(), static_cast<uint32_t>(victim), static_cast<const void*>(get_pointer(
+				ecs::PlayerRuntime::GetCharEvent(victim, ecs::PlayerRuntime::CharEvent::Dead))));
 		}
 	}
 
-	ExchangeSystem::Cancel(GetEntityHandle());
+	ExchangeSystem::Cancel(victim);
 
 #ifdef __ATTR_TRANSFER_SYSTEM__
-	if (AttrTransfer_is_open(GetEntityHandle()) == true)
+	if (AttrTransfer_is_open(victim) == true)
 	{
-		AttrTransfer_close(GetEntityHandle());
+		AttrTransfer_close(victim);
 	}
 #endif
 
-	if (IsCubeOpen() == true)
-	{
-		Cube_close(this);
-	}
+	if (ecs::SessionSystem::IsCubeOpen(victim))
+		ecs::SessionSystem::SetCubeNPC(victim, entt::null);
 
 #ifdef ENABLE_ACCE_SYSTEM
-	if (IsPC())
-		CloseAcce();
+	if (ecs::PlayerRuntime::IsPC(victim))
+		if (LPCHARACTER windows = ecs::LegacyCharOf(victim))
+			windows->CloseAcce();
 #endif
 
-	if (IsPC())
+	// The personal shop and the safebox each close through CHARACTER still,
+	// and CShopManager speaks in pointers. Each is its own migration; they
+	// share one resolve here rather than three.
+	if (ecs::PlayerRuntime::IsPC(victim))
 	{
-		CShopManager::instance().StopShopping(this);
-		CloseMyShop();
-		CloseSafebox();
+		if (LPCHARACTER windows = ecs::LegacyCharOf(victim))
+		{
+			CShopManager::instance().StopShopping(windows);
+			windows->CloseMyShop();
+			windows->CloseSafebox();
+		}
 	}
 }
 
+} // namespace CombatSystem
 
 void CombatSystem_Update(entt::registry& reg, uint32_t tick)
 {
@@ -6898,7 +6948,7 @@ EVENTFUNC(StunEvent)
 		g_registry.emplace_or_replace<ecs::DirtyTag>(e);
 		g_dispatcher.trigger(ecs::EvStunBegin { e, 3000u });
 	}
-	ch->Dead();
+	CombatSystem::Dead(ch->GetEntityHandle());
 	return 0;
 }
 
@@ -7845,11 +7895,6 @@ void CHARACTER::DetermineDropMetinStone()
 			}
 		}
 	}
-}
-
-bool CHARACTER::CanSummon(int iLeaderShip)
-{
-	return ((iLeaderShip >= 20) || ((iLeaderShip >= 12) && ((m_dwLastDeadTime + 180) > get_dword_time())));
 }
 
 namespace CombatSystem {

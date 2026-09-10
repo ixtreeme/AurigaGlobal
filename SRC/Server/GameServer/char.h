@@ -766,7 +766,6 @@ public:
 
 
 	bool			IsReviver() const;
-	bool			HasReviverInParty() const;
 	// NEWAI END
 
 	uint32_t			GetSummonVnum() const;
@@ -1053,7 +1052,6 @@ public:
 
 	int				GetLeadershipSkillLevel() const;
 
-	bool			CanSummon(int iLeaderShip);
 
 	void			SetPartyRequestEvent(LPEVENT pkEvent) { m_pkPartyRequestEvent = pkEvent; }
 
@@ -1102,7 +1100,6 @@ protected:
 	static PartyJoinErrCode	IsPartyJoinableMutableCondition(entt::entity leader, entt::entity guest);
 
 	LPPARTY			m_pkParty;
-	uint32_t			m_dwLastDeadTime;
 	LPEVENT			m_pkPartyRequestEvent;
 
 	/**
@@ -1137,7 +1134,6 @@ public:
 
 protected:
 	CGuild* m_pGuild;
-	uint32_t			m_dwUnderGuildWarInfoMessageTime;
 	CWarMap* m_pWarMap;
 
 	////////////////////////////////////////////////////////////////////////////////////////
@@ -1406,7 +1402,6 @@ public:
 	bool				IsStun() const;
 	void				Stun();
 	bool				IsDead() const;
-	void				Dead(entt::entity killer = entt::null, bool bImmediateDead = false);
 #ifdef __NEWPET_SYSTEM__
 	//int GetBeltCount() const;//#ifdef ENABLE_MOUNT_COUNT_ABOVE_CHAR_RAZOR93
 #endif

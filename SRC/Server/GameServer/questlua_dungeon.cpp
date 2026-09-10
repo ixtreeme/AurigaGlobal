@@ -1889,16 +1889,16 @@ namespace quest
 		}
 
 		CombatSystem::SetInvincible(boss->GetEntityHandle(), false);
-		boss->Dead();
+		CombatSystem::Dead(boss->GetEntityHandle());
 
 		CombatSystem::SetInvincible(statue1->GetEntityHandle(), false);
 		CombatSystem::SetInvincible(statue2->GetEntityHandle(), false);
 		CombatSystem::SetInvincible(statue3->GetEntityHandle(), false);
 		CombatSystem::SetInvincible(statue4->GetEntityHandle(), false);
-		statue1->Dead();
-		statue2->Dead();
-		statue3->Dead();
-		statue4->Dead();
+		CombatSystem::Dead(statue1->GetEntityHandle());
+		CombatSystem::Dead(statue2->GetEntityHandle());
+		CombatSystem::Dead(statue3->GetEntityHandle());
+		CombatSystem::Dead(statue4->GetEntityHandle());
 
 		return 0;
 	}

@@ -5681,7 +5681,6 @@ void CHARACTER::Initialize()
     m_dwFlyTargetID = 0;
 
 
-    m_dwLastDeadTime = get_dword_time() - 180000;
 
     m_bSkipSave = false;
 
@@ -5706,7 +5705,6 @@ void CHARACTER::Initialize()
 
     m_szMobileAuth[0] = '\0';
 
-    m_dwUnderGuildWarInfoMessageTime = get_dword_time() - 60000;
 
     m_dwPolymorphRace = 0;
 

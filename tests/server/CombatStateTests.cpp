@@ -23,6 +23,7 @@
 #include "../../SRC/Server/GameServer/ecs/systems/AffectSystem.hpp"
 #include "../../SRC/Server/GameServer/ecs/systems/QuestSystem.hpp"
 #include "../../SRC/Server/GameServer/ecs/systems/MountSystem.hpp"
+#include "../../SRC/Server/GameServer/ecs/systems/SessionSystem.hpp"
 #include "../../SRC/Server/GameServer/ecs/components/dirty_components.hpp"
 #include "../../SRC/Server/GameServer/ecs/components/movement_components.hpp"
 #include "../../SRC/Server/GameServer/ecs/components/vital_components.hpp"
@@ -395,7 +396,18 @@ SMobTable const & CHARACTER::GetMobTable(void)const { UnexpectedService(__func__
 unsigned char CHARACTER::GetMobRank(void)const { UnexpectedService(__func__); }
 unsigned char CHARACTER::GetMobBattleType(void)const { UnexpectedService(__func__); }
 unsigned short CHARACTER::GetMobAttackRange(void)const { UnexpectedService(__func__); }
-bool CHARACTER::HasReviverInParty(void)const { UnexpectedService(__func__); }
+bool ecs::SocialSystem::HasReviverInParty(entt::entity) { UnexpectedService(__func__); }
+bool ItemSystem::UnEquipSpecialRideUniqueItem(entt::entity) { UnexpectedService(__func__); }
+bool MountSystem::IsHorseRiding(entt::entity) { UnexpectedService(__func__); }
+bool MountSystem::StopRiding(entt::entity) { UnexpectedService(__func__); }
+uint32_t MountSystem::GetMountVnum(entt::entity) { UnexpectedService(__func__); }
+void MountSystem::SetMountVnum(entt::entity,uint32_t) { UnexpectedService(__func__); }
+bool ecs::SessionSystem::IsCubeOpen(entt::entity) { UnexpectedService(__func__); }
+void ecs::SessionSystem::SetCubeNPC(entt::entity,entt::entity) { UnexpectedService(__func__); }
+uint8_t ecs::PlayerRuntime::GetBattlePassId(entt::entity) { UnexpectedService(__func__); }
+uint32_t ecs::PlayerRuntime::GetExp(entt::entity) { UnexpectedService(__func__); }
+void ecs::PlayerRuntime::SetExp(entt::entity,uint32_t) { UnexpectedService(__func__); }
+void AffectSystem::ClearAffect(entt::entity,bool) { UnexpectedService(__func__); }
 uint32_t ecs::PlayerRuntime::GetMonsterDrainSPPoint(entt::entity) { UnexpectedService(__func__); }
 void CHARACTER::PointChange(unsigned char,int64_t,bool,bool,bool) { UnexpectedService(__func__); }
 void CHARACTER::SetRotation(float,bool) { UnexpectedService(__func__); }
@@ -427,7 +439,7 @@ bool CHARACTER::AddAffect(unsigned int,unsigned char,int,unsigned int,int,int,bo
 bool CHARACTER::RemoveAffect(unsigned int) { UnexpectedService(__func__); }
 bool CHARACTER::IsAffectFlag(unsigned int)const { UnexpectedService(__func__); }
 CAffect * CHARACTER::FindAffect(unsigned int,unsigned char)const { UnexpectedService(__func__); }
-void CHARACTER::ClearAffectSkills(void) { UnexpectedService(__func__); }
+void AffectSystem::ClearAffectSkills(entt::entity) { UnexpectedService(__func__); }
 void CHARACTER::SetDungeon(CDungeon *) { UnexpectedService(__func__); }
 bool CHARACTER::IsEquipUniqueItem(unsigned int)const { UnexpectedService(__func__); }
 bool CHARACTER::IsEquipUniqueGroup(unsigned int)const { UnexpectedService(__func__); }
@@ -445,8 +457,8 @@ void CHARACTER::CloseSafebox(void) { UnexpectedService(__func__); }
 void CHARACTER::MonsterLog(char const *,...) { UnexpectedService(__func__); }
 unsigned char CHARACTER::GetEmpire(void)const { UnexpectedService(__func__); }
 void CHARACTER::SetQuestNPCID(unsigned int) { UnexpectedService(__func__); }
-int CHARACTER::GetQuestFlag(std::string const &)const { UnexpectedService(__func__); }
-void CHARACTER::SetQuestFlag(std::string const &,int) { UnexpectedService(__func__); }
+int ecs::PlayerRuntime::GetQuestFlag(entt::entity,std::string const &) { UnexpectedService(__func__); }
+void ecs::PlayerRuntime::SetQuestFlag(entt::entity,std::string const &,int) { UnexpectedService(__func__); }
 void CHARACTER::SetNextStatePulse(int) { UnexpectedService(__func__); }
 CHARACTER * CHARACTER::GetMarryPartner(void)const { UnexpectedService(__func__); }
 int CHARACTER::GetMarriageBonus(unsigned int,bool) { UnexpectedService(__func__); }
@@ -842,12 +854,123 @@ void AttackHandleChecks() {
     g_registry.destroy(attacker);
     Check(!C::Attack(attacker, reused, 0), "an attacker retired mid-sequence is refused");
 }
+
+// The death path. Dead() is where the whole cleanup chain starts - combat
+// links, timed events, rewards, entity destruction - so a handle that stopped
+// resolving between the killing blow and this call must be refused here rather
+// than read by everything downstream.
+void DeathHandleChecks() {
+    Reset();
+
+    C::Dead(entt::null, entt::null, true);
+    Check(true, "a null victim is refused");
+
+    const auto gone = Actor();
+    g_registry.destroy(gone);
+    C::Dead(gone, entt::null, true);
+    Check(!g_registry.valid(gone), "a destroyed victim is refused");
+
+    const auto reused = Actor();
+    Check(entt::to_entity(reused) == entt::to_entity(gone), "the slot was reused");
+    C::Dead(gone, entt::null, true);
+    Check(g_registry.valid(reused) && !g_registry.valid(gone),
+          "a stale handle is refused after the slot is reused");
+
+    // Dying twice must stop at the second call: everything past the guard
+    // rewards, drops and schedules the destruction event again.
+    const auto victim = Actor();
+    g_registry.get<ecs::CharacterRuntimeFlagsComponent>(victim).position = POS_DEAD;
+    C::Dead(victim, entt::null, true);
+    Check(g_registry.valid(victim), "a victim already dead is refused");
+
+    // The GM armada flag stops death before any of it runs.
+    const auto undying = Actor();
+    C::SetInvincible(undying, true);
+    C::Dead(undying, entt::null, true);
+    Check(g_registry.get<ecs::CharacterRuntimeFlagsComponent>(undying).position != POS_DEAD,
+          "an invincible victim never reaches the death path");
+}
+
+// Stone ownership. The spawn list was a raw pointer set that only ever grew:
+// a mob that moved between stones stayed in the first one's list, and clearing
+// a stone walked that set while the deaths it caused erased from it.
+void StoneOwnershipChecks() {
+    Reset();
+    const auto mob = Actor();
+    const auto first = Actor();
+    const auto second = Actor();
+
+    C::SetStone(mob, first);
+    Check(C::GetStone(mob) == first, "the mob reports the stone it spawned from");
+    Check(g_registry.get<ecs::StoneSpawns>(first).members.size() == 1, "the stone lists its spawn");
+
+    C::SetStone(mob, first);
+    Check(g_registry.get<ecs::StoneSpawns>(first).members.size() == 1,
+          "linking the same stone twice does not duplicate the entry");
+
+    C::SetStone(mob, second);
+    Check(C::GetStone(mob) == second, "the mob moved to the second stone");
+    Check(g_registry.get<ecs::StoneSpawns>(first).members.empty(),
+          "leaving a stone leaves its spawn list");
+    Check(g_registry.get<ecs::StoneSpawns>(second).members.size() == 1,
+          "the new stone lists it");
+
+    C::SetStone(mob, entt::null);
+    Check(C::GetStone(mob) == entt::null, "detaching clears the owner");
+    Check(g_registry.get<ecs::StoneSpawns>(second).members.empty(),
+          "detaching leaves the list behind it");
+
+    C::SetStone(mob, second);
+    g_registry.destroy(second);
+    Check(C::GetStone(mob) == entt::null, "a destroyed stone reads as no stone");
+
+    Reset();
+    const auto stone = Actor();
+    const auto spawn = Actor();
+    C::SetStone(spawn, stone);
+    g_registry.destroy(spawn);
+    C::ClearStone(stone);
+    Check(g_registry.get<ecs::StoneSpawns>(stone).members.empty(),
+          "a spawn destroyed before the stone died is skipped, not read");
+
+    C::ClearStone(entt::null);
+    C::ClearStone(stone);
+    Check(!g_registry.all_of<ecs::StoneOwner>(stone), "clearing a cleared stone is safe");
+}
+
+// The two flags the death path leaves behind, read back through handles that
+// may no longer resolve.
+void DeathStateChecks() {
+    Reset();
+    const auto member = Actor();
+
+    Check(C::CanSummon(member, 20), "high leadership always summons");
+    Check(!C::CanSummon(member, 11), "leadership below the threshold never summons");
+    Check(!C::CanSummon(member, 12), "a member that never died is not summoned");
+    g_registry.emplace<ecs::LastDeadTime>(member).value = get_dword_time();
+    Check(C::CanSummon(member, 12), "a member that just died is summoned");
+
+    Check(!C::GetDeadByMonster(member), "the monster-death flag defaults to false");
+    C::SetDeadByMonster(member, true);
+    Check(C::GetDeadByMonster(member), "the monster-death flag is set");
+    C::SetDeadByMonster(member, false);
+    Check(!C::GetDeadByMonster(member), "the monster-death flag is cleared");
+
+    const auto retired = Actor();
+    C::SetDeadByMonster(retired, true);
+    g_registry.destroy(retired);
+    Check(!C::GetDeadByMonster(retired), "a destroyed handle reads false");
+    Check(!C::CanSummon(retired, 12), "a destroyed member is never summoned");
+    C::SetDeadByMonster(retired, true);
+    Check(!g_registry.valid(retired), "writing through a stale handle stays a no-op");
+}
 }
 int main() {
     try {
         CHARACTER_MANAGER characters;
         AlignmentChecks(); CallbackChecks(); ModeChecks(); MultiplierAndValidityChecks();
-        BattleTargetChecks(); AggroSwitchChecks(); AttackHandleChecks(); BattleMathChecks(); BattleAffectChecks(); AttackAuditChecks(); InteractionCounterChecks();
+        BattleTargetChecks(); AggroSwitchChecks(); AttackHandleChecks();
+        DeathHandleChecks(); StoneOwnershipChecks(); DeathStateChecks(); BattleMathChecks(); BattleAffectChecks(); AttackAuditChecks(); InteractionCounterChecks();
         std::cout << "Combat state checks passed: " << checks << '\n'; return 0;
     } catch (const std::exception& error) { std::cerr << error.what() << '\n'; return 1; }
 }

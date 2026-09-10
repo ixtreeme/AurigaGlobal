@@ -468,7 +468,7 @@ void CDungeon::KillUnique(std::string_view key)
 
 	LPCHARACTER ch = it->second;
 	m_map_UniqueMob.erase(it);
-	ch->Dead();
+	CombatSystem::Dead(ch->GetEntityHandle());
 }
 
 int32_t CDungeon::GetUniqueVid(std::string_view key)
@@ -601,7 +601,7 @@ namespace
 #endif
 				)
 				{
-					ch->Dead();
+					CombatSystem::Dead(ch->GetEntityHandle());
 				}
 			}
 		}
@@ -618,7 +618,7 @@ namespace
 
 				if (!ecs::PlayerRuntime::IsPC(chEntity) && (ch->IsMonster() || ecs::PlayerRuntime::IsStone(chEntity)))
 				{
-					ch->Dead();
+					CombatSystem::Dead(ch->GetEntityHandle());
 				}
 			}
 		}
@@ -639,7 +639,7 @@ namespace
 					int32_t racevnum = ecs::PlayerRuntime::GetRaceNum(chEntity);
 					if (racevnum != 3963 && racevnum != 3964)
 					{
-						ch->Dead();
+						CombatSystem::Dead(ch->GetEntityHandle());
 					}
 				}
 			}

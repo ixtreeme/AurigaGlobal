@@ -50,6 +50,7 @@ entt::entity GetStone(entt::entity e);
 entt::entity GetProtege(entt::entity e);
 void CowardEscape(entt::entity e);
 bool CanBeginFight(entt::entity e);
+bool CanSummon(entt::entity e, int iLeaderShip);
 bool GetDeadByMonster(entt::entity e);
 void SetDeadByMonster(entt::entity e, bool value);
 uint32_t GetKillerPID(entt::entity e);

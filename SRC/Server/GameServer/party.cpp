@@ -1193,7 +1193,7 @@ void CParty::SummonToLeader(uint32_t pid)
 		return;
 	}
 
-	if (!ch->CanSummon(m_iLeadership))
+	if (!CombatSystem::CanSummon(ch->GetEntityHandle(), m_iLeadership))
 	{
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(lEntity, CHAT_TYPE_INFO, 198, "");

@@ -26,6 +26,7 @@
 #include "dev_log.h"
 #include <Core/Logging.hpp>
 #include "Core/Logging.hpp"
+#include "ecs/systems/CombatSystem.hpp"
 
 uint16_t SECTREE_MANAGER::current_sectree_version = MAKEWORD(0, 3);
 
@@ -1263,7 +1264,7 @@ class FRemoveIfAttr
 						ecs::MovementSystem::WarpSet(chEntity, EMPIRE_START_X(ecs::PlayerRuntime::GetEmpire(chEntity)), EMPIRE_START_Y(ecs::PlayerRuntime::GetEmpire(chEntity)));
 				}
 				else
-					ch->Dead();
+					CombatSystem::Dead(ch->GetEntityHandle());
 			}
 		}
 

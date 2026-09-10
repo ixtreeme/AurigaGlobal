@@ -879,24 +879,23 @@ struct FFindReviver
     bool HasReviver;
 };
 
-bool CHARACTER::HasReviverInParty() const
-{
-    LPPARTY party = GetParty();
-
-    if (party != nullptr)
-    {
-        if (party->GetMemberCount() == 1)
-            return false;
-
-        FFindReviver f;
-        party->ForEachMemberPtr(f);
-        return f.HasReviver;
-    }
-
-    return false;
-}
-
 namespace ecs::SocialSystem {
+
+// Whether a reviver mob stands in this one's party. The party still iterates
+// CHARACTER pointers; CParty is its own migration.
+bool HasReviverInParty(entt::entity e)
+{
+    LPPARTY party = GetParty(e);
+    if (party == nullptr)
+        return false;
+
+    if (party->GetMemberCount() == 1)
+        return false;
+
+    FFindReviver f;
+    party->ForEachMemberPtr(f);
+    return f.HasReviver;
+}
 
 void SendGuildName(entt::entity viewer, CGuild* pGuild)
 {

@@ -42,6 +42,7 @@
 #endif
 #ifdef ENABLE_NEWSTUFF
 #include "db.h"
+#include "ecs/systems/CombatSystem.hpp"
 #endif
 namespace quest
 {
@@ -1200,7 +1201,7 @@ namespace quest
 #else
 				if (!(ecs::PlayerRuntime::IsPC(chEntity)) && !ch->IsPet())
 #endif
-					ch->Dead();
+					CombatSystem::Dead(ch->GetEntityHandle());
 			}
 		}
 	};

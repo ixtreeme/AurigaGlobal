@@ -112,6 +112,18 @@ struct InvincibleState {
 // death that follows. Cleared as the death is processed.
 // Whether the last death came from a monster rather than a player. The
 // respawn heal reads it to decide how much HP to give back.
+// When this character last died, and when its guild was last told that a
+// war kill earns no reward. Both were CHARACTER members that only the
+// character itself could read; a zero default reads the same as the
+// backdated values Initialize used to write.
+struct LastDeadTime {
+    uint32_t value { 0 };
+};
+
+struct GuildWarNoticeTime {
+    uint32_t value { 0 };
+};
+
 struct DeadByMonster {
     bool value { false };
 };

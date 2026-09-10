@@ -751,7 +751,7 @@ bool CHARACTER::Sync(int32_t x, int32_t y)
 		else
 		{
 			LOG_ERROR("no tree: {} {} {} {}", GetName(), x, y, GetMapIndex());
-			Dead();
+			CombatSystem::Dead(GetEntityHandle());
 		}
 
 		return false;
