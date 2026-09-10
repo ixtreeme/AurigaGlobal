@@ -4657,7 +4657,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 
 					PointChange(POINT_SP, -consumeSP, false);
 
-					WarpToPID(pMarriage->GetOther(GetPlayerID()));
+					ecs::SessionSystem::WarpToPID(GetEntityHandle(), pMarriage->GetOther(GetPlayerID()));
 				}
 #ifdef TEXTS_IMPROVEMENT
 				else {

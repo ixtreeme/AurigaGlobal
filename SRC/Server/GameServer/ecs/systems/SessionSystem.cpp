@@ -450,6 +450,85 @@ ecs::WarpBlockState* EnsureWarpBlockState(entt::entity character)
 
 namespace ecs::SessionSystem {
 
+// Summoning yourself to another player, if their map allows it.
+bool WarpToPID(entt::entity e, uint32_t dwPID)
+{
+    LPCHARACTER victim;
+    if ((victim = (CHARACTER_MANAGER::instance().FindByPID(dwPID))))
+    {
+		const entt::entity victimEntity = victim->GetEntityHandle();
+        int mapIdx = ecs::PlayerRuntime::GetMapIndex(victimEntity);
+        if (IS_SUMMONABLE_ZONE(mapIdx))
+        {
+            if (CAN_ENTER_ZONE(e, mapIdx))
+            {
+                ecs::MovementSystem::WarpSet(e, ecs::PlayerRuntime::GetX(victimEntity), ecs::PlayerRuntime::GetY(victimEntity));
+            }
+            else
+            {
+#ifdef TEXTS_IMPROVEMENT
+                ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 372, "");
+#endif
+                return false;
+            }
+        }
+        else
+        {
+#ifdef TEXTS_IMPROVEMENT
+            ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 372, "");
+#endif
+            return false;
+        }
+    }
+    else
+    {
+        CCI* pcci = P2P_MANAGER::instance().FindByPID(dwPID);
+
+        if (!pcci)
+        {
+#ifdef TEXTS_IMPROVEMENT
+            ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 371, "");
+#endif
+            return false;
+        }
+
+        if (pcci->bChannel != g_bChannel)
+        {
+#ifdef TEXTS_IMPROVEMENT
+            ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 367, "%d#%d", g_bChannel, pcci->bChannel);
+#endif
+            return false;
+        }
+        else if (false == IS_SUMMONABLE_ZONE(pcci->lMapIndex))
+        {
+#ifdef TEXTS_IMPROVEMENT
+            ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 372, "");
+#endif
+            return false;
+        }
+        else
+        {
+            if (!CAN_ENTER_ZONE(e, pcci->lMapIndex))
+            {
+#ifdef TEXTS_IMPROVEMENT
+                ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 372, "");
+#endif
+                return false;
+            }
+
+            TPacketGGFindPosition p;
+            p.header = HEADER_GG_FIND_POSITION;
+            p.dwFromPID = ecs::PlayerRuntime::GetPlayerID(e);
+            p.dwTargetPID = dwPID;
+            pcci->pkDesc->Packet(&p, sizeof(TPacketGGFindPosition));
+
+            if (test_server)
+                ecs::ChatSystem::Send(e, CHAT_TYPE_PARTY, "sent find position packet for teleport");
+        }
+    }
+    return true;
+}
+
 bool IsSafeboxOpen(entt::entity character)
 {
     if (!g_registry.valid(character))
@@ -903,84 +982,6 @@ void CHARACTER::StartWarpNPCEvent()
     info->ch = GetEntityHandle();
 
     m_pkWarpNPCEvent = event_create(warp_npc_event, info, passes_per_sec / 2);
-}
-
-bool CHARACTER::WarpToPID(uint32_t dwPID)
-{
-    LPCHARACTER victim;
-    if ((victim = (CHARACTER_MANAGER::instance().FindByPID(dwPID))))
-    {
-		const entt::entity victimEntity = victim->GetEntityHandle();
-        int mapIdx = ecs::PlayerRuntime::GetMapIndex(victimEntity);
-        if (IS_SUMMONABLE_ZONE(mapIdx))
-        {
-            if (CAN_ENTER_ZONE(GetEntityHandle(), mapIdx))
-            {
-                WarpSet(ecs::PlayerRuntime::GetX(victimEntity), ecs::PlayerRuntime::GetY(victimEntity));
-            }
-            else
-            {
-#ifdef TEXTS_IMPROVEMENT
-                ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 372, "");
-#endif
-                return false;
-            }
-        }
-        else
-        {
-#ifdef TEXTS_IMPROVEMENT
-            ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 372, "");
-#endif
-            return false;
-        }
-    }
-    else
-    {
-        CCI* pcci = P2P_MANAGER::instance().FindByPID(dwPID);
-
-        if (!pcci)
-        {
-#ifdef TEXTS_IMPROVEMENT
-            ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 371, "");
-#endif
-            return false;
-        }
-
-        if (pcci->bChannel != g_bChannel)
-        {
-#ifdef TEXTS_IMPROVEMENT
-            ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 367, "%d#%d", g_bChannel, pcci->bChannel);
-#endif
-            return false;
-        }
-        else if (false == IS_SUMMONABLE_ZONE(pcci->lMapIndex))
-        {
-#ifdef TEXTS_IMPROVEMENT
-            ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 372, "");
-#endif
-            return false;
-        }
-        else
-        {
-            if (!CAN_ENTER_ZONE(GetEntityHandle(), pcci->lMapIndex))
-            {
-#ifdef TEXTS_IMPROVEMENT
-                ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 372, "");
-#endif
-                return false;
-            }
-
-            TPacketGGFindPosition p;
-            p.header = HEADER_GG_FIND_POSITION;
-            p.dwFromPID = GetPlayerID();
-            p.dwTargetPID = dwPID;
-            pcci->pkDesc->Packet(&p, sizeof(TPacketGGFindPosition));
-
-            if (test_server)
-                ecs::ChatSystem::Send(GetEntityHandle(), CHAT_TYPE_PARTY, "sent find position packet for teleport");
-        }
-    }
-    return true;
 }
 
 bool CHARACTER::Show(int32_t lMapIndex, int32_t x, int32_t y, int32_t z, bool bShowSpawnMotion/* = false */)

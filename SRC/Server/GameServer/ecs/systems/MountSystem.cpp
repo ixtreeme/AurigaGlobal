@@ -210,11 +210,6 @@ int CHARACTER::GetBeltCount() const
     return MountSystem::GetBeltCount(GetEntityHandle());
 }
 
-void CHARACTER::UpdateMountCountOverheadToViewers()
-{
-    MountSystem::UpdateMountCountOverheadToViewers(GetEntityHandle());
-}
-
 void MountSystem::UpdateMountCountOverheadToViewers(entt::entity owner)
 {
 #ifdef ENABLE_FAKE_SHOP_HEADER

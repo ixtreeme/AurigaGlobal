@@ -908,7 +908,6 @@ public:
 	void			SetWarpLocation(int32_t lMapIndex, int32_t x, int32_t y);
 	void			WarpEnd();
 	const PIXEL_POSITION& GetWarpPosition() const { return m_posWarp; }
-	bool			WarpToPID(uint32_t dwPID);
 
 	void			SaveExitLocation();
 	void			ExitToSavedLocation();
@@ -1430,7 +1429,6 @@ public:
 	uint32_t					GetAlignment() const;
 	//int GetBeltCount() const;
 #ifdef ENABLE_FAKE_SHOP_HEADER
-	void UpdateMountCountOverheadToViewers();
 	//void UpdateMountCountOverhead(LPCHARACTER ch);
 #ifdef DISABLE_CORE_PULSE_RAZOR93
 

@@ -5,6 +5,7 @@
 
 namespace ecs::SessionSystem {
 
+bool WarpToPID(entt::entity e, uint32_t dwPID);
 bool IsSafeboxOpen(entt::entity character);
 void SetSafeboxOpen(entt::entity character, bool open);
 bool IsCubeOpen(entt::entity character);

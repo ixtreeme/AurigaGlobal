@@ -66,6 +66,7 @@
 #include "New_PetSystem.h"
 #include "ecs/CharacterAccessors.hpp"
 #include "ecs/systems/DragonSoulSystem.hpp"
+#include "ecs/systems/SessionSystem.hpp"
 #endif
 
 namespace {
@@ -573,9 +574,7 @@ ACMD(do_warp)
 					return;
 				}
 
-				// Remote PID warp still belongs to the legacy cross-core session path.
-				if (auto* ch = ecs::LegacyCharOf(character))
-					ch->WarpToPID(pkCCI->dwPID);
+				ecs::SessionSystem::WarpToPID(character, pkCCI->dwPID);
 			}
 #ifdef TEXTS_IMPROVEMENT
 			else {
