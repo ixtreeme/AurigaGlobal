@@ -2117,7 +2117,6 @@ public:
 	void SetDamMul(float multiplier);
 
 private:
-	bool IsValidItemPosition(TItemPos Pos) const;
 
 public:
 	//��ȥ��

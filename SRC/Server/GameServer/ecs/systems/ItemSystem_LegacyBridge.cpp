@@ -1199,7 +1199,7 @@ LPITEM CHARACTER::GetExtraInventoryItem(uint16_t wCell) const
 LPITEM CHARACTER::GetItem(TItemPos Cell) const
 {
 
-	if (!IsValidItemPosition(Cell))
+	if (!InventorySystem::IsValidItemPosition(GetEntityHandle(), Cell))
 		return nullptr;
 	uint16_t wCell = Cell.cell;
 	uint8_t window_type = Cell.window_type;
@@ -1760,7 +1760,7 @@ bool CHARACTER::DropItem(TItemPos Cell,
 	if (IsDead())
 		return false;
 
-	if (!IsValidItemPosition(Cell) || !(item = GetItem(Cell)))
+	if (!InventorySystem::IsValidItemPosition(GetEntityHandle(), Cell) || !(item = GetItem(Cell)))
 		return false;
 
 	if (item->isLocked() || item->IsExchanging() || ItemSystem::IsItemEquipped(item->GetEntityHandle()))
@@ -2677,7 +2677,7 @@ bool CHARACTER::UseItem(TItemPos Cell, TItemPos DestCell)
 	if (!CanHandleItem())
 		return false;
 
-	if (!IsValidItemPosition(Cell) || !(item = GetItem(Cell)))
+	if (!InventorySystem::IsValidItemPosition(GetEntityHandle(), Cell) || !(item = GetItem(Cell)))
 		return false;
 
 #ifdef ENABLE_USEITEM_COOLDOWN
@@ -3164,7 +3164,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 
 		LPITEM item2;
 
-		if (!IsValidItemPosition(DestCell) || !(item2 = GetItem(DestCell)))
+		if (!InventorySystem::IsValidItemPosition(GetEntityHandle(), DestCell) || !(item2 = GetItem(DestCell)))
 			return false;
 
 		if (item2->IsExchanging() || ItemSystem::IsItemEquipped(item2->GetEntityHandle())) // ENABLE_BUG_FIXES
@@ -5659,7 +5659,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 			{
 				LPITEM item2;
 
-				if (!IsValidItemPosition(DestCell) || !(item2 = GetItem(DestCell)))
+				if (!InventorySystem::IsValidItemPosition(GetEntityHandle(), DestCell) || !(item2 = GetItem(DestCell)))
 					return false;
 
 				if (item2->IsExchanging() || ItemSystem::IsItemEquipped(item2->GetEntityHandle())) // @fixme114
@@ -6057,7 +6057,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 				// À¯·´, ½Ì°¡Æú, º£Æ®³² ÁøÀç°¡ »ç¿ë±ÝÁö
 				const entt::entity item2 = ItemSystem::GetItem(GetEntityHandle(), DestCell);
 
-				if (!IsValidItemPosition(DestCell) || !ItemSystem::IsValidItem(item2))
+				if (!InventorySystem::IsValidItemPosition(GetEntityHandle(), DestCell) || !ItemSystem::IsValidItem(item2))
 					return false;
 
 				if (ITEM_COSTUME == ItemSystem::GetItemType(item2))
@@ -6113,7 +6113,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 				// À¯·´, ½Ì°¡Æú, º£Æ®³² ÁøÀç°¡ »ç¿ë±ÝÁö
 				const entt::entity item2 = ItemSystem::GetItem(GetEntityHandle(), DestCell);
 
-				if (!IsValidItemPosition(DestCell) || !ItemSystem::IsValidItem(item2))
+				if (!InventorySystem::IsValidItemPosition(GetEntityHandle(), DestCell) || !ItemSystem::IsValidItem(item2))
 					return false;
 
 				if (ITEM_COSTUME == ItemSystem::GetItemType(item2)) // @fixme124
@@ -6156,7 +6156,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 				// À¯·´, ½Ì°¡Æú, º£Æ®³² ÁøÀç°¡ »ç¿ë±ÝÁö
 				LPITEM item2;
 
-				if (!IsValidItemPosition(DestCell) || !(item2 = GetItem(DestCell)))
+				if (!InventorySystem::IsValidItemPosition(GetEntityHandle(), DestCell) || !(item2 = GetItem(DestCell)))
 					return false;
 
 				if (ITEM_COSTUME == item2->GetType()) // @fixme124
@@ -6868,7 +6868,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 		case USE_ADD_ATTR_COSTUME2:
 		case USE_REMOVE_ATTR_COSTUME:
 		{
-			if (!IsValidItemPosition(DestCell))
+			if (!InventorySystem::IsValidItemPosition(GetEntityHandle(), DestCell))
 				return false;
 			const entt::entity character = GetEntityHandle();
 			const entt::entity target = ItemSystem::GetItem(character, DestCell);
@@ -6914,7 +6914,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 #endif
 #ifdef ENABLE_STOLE_COSTUME
 		case USE_ENCHANT_STOLE: {
-			if (!IsValidItemPosition(DestCell))
+			if (!InventorySystem::IsValidItemPosition(GetEntityHandle(), DestCell))
 				return false;
 			const entt::entity character = GetEntityHandle();
 			const entt::entity target = ItemSystem::GetItem(character, DestCell);
@@ -6936,7 +6936,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 #endif
 #ifdef ENABLE_DS_ENCHANT
 		case USE_DS_ENCHANT: {
-			if (!IsValidItemPosition(DestCell))
+			if (!InventorySystem::IsValidItemPosition(GetEntityHandle(), DestCell))
 				return false;
 			const entt::entity character = GetEntityHandle();
 			const entt::entity target = ItemSystem::GetItem(character, DestCell);
@@ -6970,7 +6970,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 #ifdef ENABLE_REMOTE_ATTR_SASH_REMOVE
 		case USE_ATTR_SASH_REMOVE: {
 			LPITEM item2;
-			if ((!IsValidItemPosition(DestCell)) || (!(item2 = GetItem(DestCell))))
+			if ((!InventorySystem::IsValidItemPosition(GetEntityHandle(), DestCell)) || (!(item2 = GetItem(DestCell))))
 				return false;
 
 			if ((item2->IsExchanging()) || (ItemSystem::IsItemEquipped(item2->GetEntityHandle())))
@@ -7010,7 +7010,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 #ifdef ENABLE_NEW_PET_EDITS
 		case USE_PET_REVIVE: {
 			LPITEM item2;
-			if ((!IsValidItemPosition(DestCell)) || (!(item2 = GetItem(DestCell))))
+			if ((!InventorySystem::IsValidItemPosition(GetEntityHandle(), DestCell)) || (!(item2 = GetItem(DestCell))))
 				return false;
 
 			if ((item2->GetVnum() < 55701) || (item2->GetVnum() > 55711)) {
@@ -7077,7 +7077,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 		}
 		case USE_PET_ENCHANT: {
 			LPITEM item2;
-			if ((!IsValidItemPosition(DestCell)) || (!(item2 = GetItem(DestCell))))
+			if ((!InventorySystem::IsValidItemPosition(GetEntityHandle(), DestCell)) || (!(item2 = GetItem(DestCell))))
 				return false;
 
 			if ((item2->GetVnum() < 55701) || (item2->GetVnum() > 55711)) {
@@ -7158,7 +7158,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 		{
 			LPITEM item2;
 
-			if (!IsValidItemPosition(DestCell) || !(item2 = GetItem(DestCell)))
+			if (!InventorySystem::IsValidItemPosition(GetEntityHandle(), DestCell) || !(item2 = GetItem(DestCell)))
 				return false;
 
 			if (item2->IsExchanging() || ItemSystem::IsItemEquipped(item2->GetEntityHandle())) // @fixme114
@@ -7209,7 +7209,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 		case USE_CHANGE_ATTRIBUTE_LOCK:
 		case USE_DELETE_ATTRIBUTE_LOCK:
 		{
-			if (!IsValidItemPosition(DestCell))
+			if (!InventorySystem::IsValidItemPosition(GetEntityHandle(), DestCell))
 				return false;
 			const entt::entity character = GetEntityHandle();
 			const entt::entity target = ItemSystem::GetItem(character, DestCell);
@@ -7242,7 +7242,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 		case USE_RESET_COSTUME_ATTR:
 		{
 			const entt::entity item2 = ItemSystem::GetItem(GetEntityHandle(), DestCell);
-			if (!IsValidItemPosition(DestCell) || !ItemSystem::IsValidItem(item2))
+			if (!InventorySystem::IsValidItemPosition(GetEntityHandle(), DestCell) || !ItemSystem::IsValidItem(item2))
 				return false;
 
 			if (ITEM_COSTUME != ItemSystem::GetItemType(item2))
@@ -7327,7 +7327,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 		case USE_ADD_ATTRIBUTE2:
 		{
 			const entt::entity item2 = ItemSystem::GetItem(GetEntityHandle(), DestCell);
-			if (!IsValidItemPosition(DestCell) || !ItemSystem::IsValidItem(item2))
+			if (!InventorySystem::IsValidItemPosition(GetEntityHandle(), DestCell) || !ItemSystem::IsValidItem(item2))
 				return false;
 
 
@@ -8263,7 +8263,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 	{
 		LPITEM item2;
 
-		if (!IsValidItemPosition(DestCell) || !(item2 = GetItem(DestCell)))
+		if (!InventorySystem::IsValidItemPosition(GetEntityHandle(), DestCell) || !(item2 = GetItem(DestCell)))
 			return false;
 
 		if (item2->IsExchanging() || ItemSystem::IsItemEquipped(item2->GetEntityHandle())) // @fixme114
@@ -9381,7 +9381,7 @@ bool CHARACTER::DestroyItem(TItemPos Cell)
 	if (IsDead())
 		return false;
 
-	if (!IsValidItemPosition(Cell) || !(item = GetItem(Cell)))
+	if (!InventorySystem::IsValidItemPosition(GetEntityHandle(), Cell) || !(item = GetItem(Cell)))
 		return false;
 
 	if (ItemSystem::IsItemEquipped(item->GetEntityHandle()))
@@ -10706,48 +10706,6 @@ void CHARACTER::AutoRecoveryItemProcess(const EAffectTypes type)
 		{
 			RemoveAffect(const_cast<CAffect*>(pAffect));
 		}
-	}
-}
-
-bool CHARACTER::IsValidItemPosition(TItemPos Pos) const
-{
-
-	uint8_t window_type = Pos.window_type;
-	uint16_t cell = Pos.cell;
-
-	switch (window_type)
-	{
-	case RESERVED_WINDOW:
-		return false;
-
-	case INVENTORY:
-	case EQUIPMENT:
-		return cell < (INVENTORY_AND_EQUIP_SLOT_MAX);
-
-	case DRAGON_SOUL_INVENTORY:
-		return cell < (DRAGON_SOUL_INVENTORY_MAX_NUM);
-#ifdef ENABLE_SWITCHBOT
-	case SWITCHBOT:
-		return cell < SWITCHBOT_SLOT_COUNT;
-#endif
-	case SAFEBOX:
-		if (const auto storage = SafeboxSystem::Get(GetEntityHandle(), SAFEBOX))
-			return storage->IsValidPosition(cell);
-		else
-			return false;
-
-	case MALL:
-		if (const auto storage = SafeboxSystem::Get(GetEntityHandle(), MALL))
-			return storage->IsValidPosition(cell);
-		else
-			return false;
-
-#ifdef ENABLE_EXTRA_INVENTORY
-	case EXTRA_INVENTORY:
-		return cell < (EXTRA_INVENTORY_MAX_NUM);
-#endif
-	default:
-		return false;
 	}
 }
 
@@ -12832,6 +12790,55 @@ void TransformRefineItem(entt::entity pkOldItem, entt::entity pkNewItem)
 }
 
 } // namespace ItemSystem
+
+namespace InventorySystem {
+
+// Whether a window and cell pair names a slot this character has. Only
+// the safebox and the mall arms need the character at all; the rest is a
+// range check that never touched CHARACTER state.
+bool IsValidItemPosition(entt::entity owner, TItemPos Pos)
+{
+
+	uint8_t window_type = Pos.window_type;
+	uint16_t cell = Pos.cell;
+
+	switch (window_type)
+	{
+	case RESERVED_WINDOW:
+		return false;
+
+	case INVENTORY:
+	case EQUIPMENT:
+		return cell < (INVENTORY_AND_EQUIP_SLOT_MAX);
+
+	case DRAGON_SOUL_INVENTORY:
+		return cell < (DRAGON_SOUL_INVENTORY_MAX_NUM);
+#ifdef ENABLE_SWITCHBOT
+	case SWITCHBOT:
+		return cell < SWITCHBOT_SLOT_COUNT;
+#endif
+	case SAFEBOX:
+		if (const auto storage = SafeboxSystem::Get(owner, SAFEBOX))
+			return storage->IsValidPosition(cell);
+		else
+			return false;
+
+	case MALL:
+		if (const auto storage = SafeboxSystem::Get(owner, MALL))
+			return storage->IsValidPosition(cell);
+		else
+			return false;
+
+#ifdef ENABLE_EXTRA_INVENTORY
+	case EXTRA_INVENTORY:
+		return cell < (EXTRA_INVENTORY_MAX_NUM);
+#endif
+	default:
+		return false;
+	}
+}
+
+} // namespace InventorySystem
 
 namespace ItemSystem {
 
