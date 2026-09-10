@@ -63,6 +63,7 @@
 #include "Halloween2022Dungeon.h"
 #include "VikingDungeon.h"
 #include "EasterDungeon.h"
+#include "ecs/systems/SessionSystem.hpp"
 #endif
 
 static void _send_bonus_info(LPCHARACTER ch)
@@ -635,7 +636,7 @@ void CInputLogin::Entergame(LPDESC d, const char* data)
 	ch->ResetPlayTime();
 
 	// ?  ?T ?
-	ch->StartSaveEvent();
+	ecs::SessionSystem::StartSaveEvent(ch->GetEntityHandle());
 	ecs::PlayerRuntime::StartRecoveryEvent(ch->GetEntityHandle());
 
 	CPVPManager::instance().Connect(((ch) ? (ch)->GetEntityHandle() : entt::null));

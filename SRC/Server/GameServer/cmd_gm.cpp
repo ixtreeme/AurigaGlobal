@@ -1924,7 +1924,7 @@ ACMD(do_reset)
 	LPCHARACTER ch = ecs::LegacyCharOf(character);
 	ecs::PointSystem::Change(character, POINT_HP, ecs::PointSystem::GetMaxHP(character) - ch->GetHP());
 	ecs::PointSystem::Change(character, POINT_SP, ecs::PointSystem::GetMaxSP(character) - ecs::PlayerRuntime::GetSP(character));
-	ch->Save();
+	ecs::SessionSystem::Save(ch->GetEntityHandle());
 }
 
 ACMD(do_advance)

@@ -1892,7 +1892,7 @@ bool CHARACTER::DropGold(int64_t gold)
 #endif
 		}
 
-		Save();
+		ecs::SessionSystem::Save(GetEntityHandle());
 		return true;
 	}
 
@@ -1948,7 +1948,7 @@ bool CHARACTER::PickupItem(uint32_t dwVID)
 					(item ? item->GetEntityHandle() : entt::null),
 					"PICKUP_GOLD");
 
-				Save();
+				ecs::SessionSystem::Save(GetEntityHandle());
 			}
 			// Æò¹üÇÑ ¾ÆÀÌ�
 // ÛÀÌ¶ó¸é

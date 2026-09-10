@@ -718,6 +718,7 @@ bool ecs::MovementSystem::WarpSet(entt::entity,int,int,int) { Unexpected(); }
 void ecs::MovementSystem::SaveExitLocation(entt::entity) { Unexpected(); }
 void ecs::MovementSystem::Stop(entt::entity) { Unexpected(); }
 std::vector<std::shared_ptr<CAffect>,std::allocator<std::shared_ptr<CAffect> > > AffectSystem::Snapshot(entt::entity) { Unexpected(); }
+namespace ecs::SessionSystem { void Save(entt::entity) { Unexpected(); } }
 void AffectSystem::ApplyFire(entt::entity, entt::entity, int, int) { Unexpected(); }
 void AffectSystem::ApplyPoison(entt::entity,entt::entity) { Unexpected(); }
 bool AffectSystem::IsImmune(entt::entity,unsigned int) { Unexpected(); }

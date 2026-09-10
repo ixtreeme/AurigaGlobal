@@ -223,6 +223,7 @@ int MINMAX(int a, int b, int c) { return std::clamp(b, a, c); }
 int number_ex(int, int, const char*, int) { Unexpected(); }
 uint32_t get_dword_time() { return 1000; }
 const CMob* CMobManager::Get(uint32_t) { Unexpected(); }
+namespace ecs::SessionSystem { void Save(entt::entity) {} }
 void ecs::ViewSystem::PacketView(entt::entity, const void*, int, entt::entity) { Unexpected(); }
 void BroadcastNoticeNew(uint8_t, uint8_t, int, uint32_t, const char*, ...) { Unexpected(); }
 void AffectSystem::SetPolymorph(entt::entity, uint32_t, bool) { Unexpected(); }

@@ -374,6 +374,11 @@ bool CHorseRider::StartRiding() { Unexpected(); }
 bool CHorseRider::StopRiding() { Unexpected(); }
 void AISystem::StateBattle(entt::entity) { Unexpected(); }
 void AISystem::StateIdle(entt::entity) { Unexpected(); }
+namespace ecs::SessionSystem {
+void SaveReal(entt::entity e) { ++saves; if (onSave) onSave(e); }
+void Save(entt::entity) {}
+void FlushDelayedSaveItem(entt::entity) {}
+}
 void CHARACTER::SetHorseLevel(int) { Unexpected(); }
 bool CHARACTER::StartRiding() { Unexpected(); }
 bool CHARACTER::StopRiding() { Unexpected(); }
@@ -392,7 +397,6 @@ CHARACTER::~CHARACTER() {
 void CHARACTER::Create(const char*, uint32_t, bool) { Unexpected(); }
 void CHARACTER::Disconnect(const char*) { Unexpected(); }
 void CHARACTER::SetProto(const CMob*) { Unexpected(); }
-void CHARACTER::SaveReal() { ++saves; if (onSave) onSave(GetEntityHandle()); }
 uint32_t CHARACTER::GetLegacyVID() const { Unexpected(); }
 void CHARACTER::ComputePoints() { Unexpected(); }
 LPCHARACTER CHARACTER::GetRider() const { return nullptr; }

@@ -3511,7 +3511,7 @@ uint8_t CHARACTER::CanRefineAcceMaterials()
     if (GetOfflineShopGuest() || GetAuctionGuest())
         return 0;
 
-    if (ecs::SocialSystem::HasExchange(GetEntityHandle()) || GetMyShop() || GetShopOwner() || IsOpenSafebox() || IsCubeOpen()
+    if (ecs::SocialSystem::HasExchange(GetEntityHandle()) || GetMyShop() || GetShopOwner() || ecs::SessionSystem::IsSafeboxOpen(GetEntityHandle()) || IsCubeOpen()
 #ifdef __ATTR_TRANSFER_SYSTEM__
         || AttrTransfer_is_open(GetEntityHandle())
 #endif
@@ -3927,7 +3927,7 @@ void CHARACTER::SetRankPoints(int iArg, long long lPoint)
 
 	m_lRankPoints[iArg] = lPoint;
 	ecs::PlayerRuntime::SetRankPoints(GetEntityHandle(), iArg, lPoint);
-	Save();
+	ecs::SessionSystem::Save(GetEntityHandle());
 }
 
 void CHARACTER::RankingSubcategory(int iArg)
@@ -4336,7 +4336,7 @@ void CHARACTER::Destroy()
     event_cancel(&m_pkWarpNPCEvent);
     ecs::PlayerRuntime::CancelCharEvent(GetEntityHandle(), ecs::PlayerRuntime::CharEvent::Recovery);
     ecs::PlayerRuntime::CancelCharEvent(GetEntityHandle(), ecs::PlayerRuntime::CharEvent::Dead);
-    event_cancel(&m_pkSaveEvent);
+    ecs::PlayerRuntime::CancelCharEvent(GetEntityHandle(), ecs::PlayerRuntime::CharEvent::Save);
     ecs::PlayerRuntime::CancelCharEvent(GetEntityHandle(), ecs::PlayerRuntime::CharEvent::Timed);
     ecs::PlayerRuntime::CancelCharEvent(GetEntityHandle(), ecs::PlayerRuntime::CharEvent::Stun);
     ecs::PlayerRuntime::CancelCharEvent(GetEntityHandle(), ecs::PlayerRuntime::CharEvent::Fishing);
@@ -4901,7 +4901,7 @@ void CHARACTER::OnClick(entt::entity causer)
 
                 if (pkCauser == this)
                 {
-                    if ((ecs::SocialSystem::HasExchange(GetEntityHandle()) || IsOpenSafebox() || GetShopOwner()) || IsCubeOpen())
+                    if ((ecs::SocialSystem::HasExchange(GetEntityHandle()) || ecs::SessionSystem::IsSafeboxOpen(GetEntityHandle()) || GetShopOwner()) || IsCubeOpen())
                     {
 #ifdef TEXTS_IMPROVEMENT
                         ecs::ChatSystem::SendNew(causer, CHAT_TYPE_INFO, 291, "");
@@ -4921,7 +4921,7 @@ void CHARACTER::OnClick(entt::entity causer)
                 }
                 else
                 {
-                    if ((ecs::SocialSystem::HasExchange(causer) || pkCauser->IsOpenSafebox() || pkCauser->GetMyShop() || pkCauser->GetShopOwner()) || pkCauser->IsCubeOpen())
+                    if ((ecs::SocialSystem::HasExchange(causer) || ecs::SessionSystem::IsSafeboxOpen(pkCauser->GetEntityHandle()) || pkCauser->GetMyShop() || pkCauser->GetShopOwner()) || pkCauser->IsCubeOpen())
                     {
 #ifdef TEXTS_IMPROVEMENT
                         ecs::ChatSystem::SendNew(causer, CHAT_TYPE_INFO, 291, "");
@@ -4939,7 +4939,7 @@ void CHARACTER::OnClick(entt::entity causer)
                     }
 #endif
 
-                    if ((ecs::SocialSystem::HasExchange(GetEntityHandle()) || IsOpenSafebox() || IsCubeOpen()))
+                    if ((ecs::SocialSystem::HasExchange(GetEntityHandle()) || ecs::SessionSystem::IsSafeboxOpen(GetEntityHandle()) || IsCubeOpen()))
                     {
 #ifdef TEXTS_IMPROVEMENT
                         ecs::ChatSystem::SendNew(causer, CHAT_TYPE_INFO, 369, "%s", GetName());
@@ -5100,7 +5100,7 @@ bool CHARACTER::SwitchChannel(int32_t newAddr, uint16_t newPort)
     }
 
     ecs::MovementSystem::Stop(GetEntityHandle());
-    Save();
+    ecs::SessionSystem::Save(GetEntityHandle());
 
     if (GetSectree())
     {
@@ -5625,7 +5625,6 @@ void CHARACTER::Initialize()
     m_pkGyeongGongEvent = nullptr;
 #endif
     m_pkWarpNPCEvent = nullptr;
-    m_pkSaveEvent = nullptr;
 
 #ifdef ENABLE_BATTLE_PASS_STAY_ONLINE
     m_pkBattlePassStayOnlineEvent = nullptr;
@@ -5678,7 +5677,6 @@ void CHARACTER::Initialize()
 
 
 
-    m_bSkipSave = false;
 
     m_bItemLoaded = false;
 

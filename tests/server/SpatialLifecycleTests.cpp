@@ -234,8 +234,11 @@ int32_t CEntity::GetZ() const { Unexpected(); }
 LPSECTREE CEntity::GetSectree() const { Unexpected(); }
 int CalculateDuration(int, int) { Unexpected(); }
 uint16_t CHARACTER::GetRaceNum() const { Unexpected(); }
+namespace ecs::SessionSystem {
+void FlushDelayedSaveItem(entt::entity) { Unexpected(); }
+void Save(entt::entity) { Unexpected(); }
+}
 void CHARACTER::Save() { Unexpected(); }
-void CHARACTER::FlushDelayedSaveItem() { Unexpected(); }
 const char* CHARACTER::GetName(uint8_t) const { Unexpected(); }
 uint32_t CHARACTER::GetPacketVID() const { Unexpected(); }
 void CHARACTER::DistributeSP(entt::entity, int) { Unexpected(); }

@@ -1,4 +1,5 @@
 #include "../../stdafx.h"
+#include "SessionSystem.hpp"
 #include "ViewSystem.hpp"
 #include "VisibilitySystem.hpp"
 #include "AffectSystem.hpp"
@@ -1078,8 +1079,8 @@ EVENTFUNC(save_event)
 	LOG_TRACE("SAVE_EVENT: {}", ecs::PlayerRuntime::GetName(saveEntity).data());
 	if (saveEntity != entt::null)
 		g_dispatcher.trigger(ecs::EvCharSaved { saveEntity });
-	ch->Save();
-	ch->FlushDelayedSaveItem();
+	ecs::SessionSystem::Save(ch->GetEntityHandle());
+	ecs::SessionSystem::FlushDelayedSaveItem(ch->GetEntityHandle());
 	return (save_event_second_cycle);
 }
 

@@ -60,6 +60,7 @@ extern bool RaceToJob(unsigned race, unsigned* ret_job);
 #include "../components/vital_components.hpp"
 #include "ItemSystem.hpp"
 #include "../CharacterAccessors.hpp"
+#include "SessionSystem.hpp"
 
 namespace
 {
@@ -226,7 +227,7 @@ bool SkillLevelDown(entt::entity e, uint32_t dwVnum)
 		GetSkillLevel(e, pkSk->dwVnum), pkSk->dwType);
 	// The character save is still CHARACTER work; one resolve, named.
 	if (LPCHARACTER self = ecs::LegacyCharOf(e))
-		self->Save();
+		ecs::SessionSystem::Save(self->GetEntityHandle());
 
 	ecs::PointSystem::Compute(e);
 	SendSkillLevelPacket(e);
@@ -1950,7 +1951,7 @@ void CHARACTER::SkillLevelUp(uint32_t dwVnum, uint8_t bMethod)
 	LOG_INFO("{}", szSkillUp);
 
 	LogManager::instance().CharLog(GetEntityHandle(), pkSk->dwVnum, "SKILLUP", szSkillUp);
-	Save();
+	ecs::SessionSystem::Save(GetEntityHandle());
 
 	ComputePoints();
 	SkillLevelPacket();

@@ -1,4 +1,5 @@
 #include "../../stdafx.h"
+#include "../components/session_components.hpp"
 #include "../../exchange.h"
 #include "InventorySystem.hpp"
 #include <utility>
@@ -215,12 +216,6 @@ bool CAN_ENTER_ZONE(entt::entity character, int map_index)
     return true;
 }
 
-void CHARACTER::Save()
-{
-    if (!m_bSkipSave)
-        CHARACTER_MANAGER::instance().DelayedSave(GetEntityHandle());
-}
-
 void CHARACTER::CreatePlayerProto(TPlayerTable& tab)
 {
     memset(&tab, 0, sizeof(TPlayerTable));
@@ -350,70 +345,6 @@ void CHARACTER::CreatePlayerProto(TPlayerTable& tab)
     tab.horse = GetHorseData();
 }
 
-void CHARACTER::SaveReal()
-{
-    if (m_bSkipSave)
-        return;
-
-    if (!GetDesc())
-    {
-        LOG_ERROR("Character::Save : no descriptor when saving (name: {})", GetName());
-        return;
-    }
-
-    TPlayerTable table;
-    CreatePlayerProto(table);
-
-    db_clientdesc->DBPacket(HEADER_GD_PLAYER_SAVE, GetDesc()->GetHandle(), &table, sizeof(TPlayerTable));
-
-    quest::PC* pkQuestPC = quest::CQuestManager::instance().GetPCForce(GetPlayerID());
-
-    if (!pkQuestPC)
-        LOG_ERROR("CHARACTER::Save : null quest::PC pointer! (name {})", GetName());
-    else
-    {
-        pkQuestPC->Save();
-    }
-
-    marriage::TMarriage* pMarriage = marriage::CManager::instance().Get(GetPlayerID());
-    if (pMarriage)
-        pMarriage->Save();
-}
-
-void CHARACTER::FlushDelayedSaveItem()
-{
-    const entt::entity owner = GetEntityHandle();
-
-    for (int i = 0; i < INVENTORY_AND_EQUIP_SLOT_MAX; ++i)
-        if (const entt::entity item = ItemSystem::GetInventoryItem(owner, i); item != entt::null)
-            ITEM_MANAGER::instance().SaveSingleItem(item);
-
-    for (int i = 0; i < DRAGON_SOUL_INVENTORY_MAX_NUM; ++i)
-        if (const entt::entity item = ItemSystem::GetItem(owner, TItemPos(DRAGON_SOUL_INVENTORY, i)); item != entt::null)
-            ITEM_MANAGER::instance().SaveSingleItem(item);
-#ifdef ENABLE_EXTRA_INVENTORY
-    for (int i = 0; i < EXTRA_INVENTORY_MAX_NUM; ++i)
-        if (const entt::entity item = ItemSystem::GetItem(owner, TItemPos(EXTRA_INVENTORY, i)); item != entt::null)
-            ITEM_MANAGER::instance().SaveSingleItem(item);
-#endif
-#ifdef ENABLE_SWITCHBOT
-    for (int i = 0; i < SWITCHBOT_SLOT_COUNT; ++i)
-        if (const entt::entity item = ItemSystem::GetItem(owner, TItemPos(SWITCHBOT, i)); item != entt::null)
-            ITEM_MANAGER::instance().SaveSingleItem(item);
-#endif
-}
-
-void CHARACTER::StartSaveEvent()
-{
-    if (m_pkSaveEvent)
-        return;
-
-    char_event_info* info = AllocEventInfo<char_event_info>();
-
-    info->ch = GetEntityHandle();
-    m_pkSaveEvent = event_create(save_event, info, save_event_second_cycle);
-}
-
 void CHARACTER::SetWarpLocation(int32_t lMapIndex, int32_t x, int32_t y)
 {
     m_posWarp.x = x * 100;
@@ -529,6 +460,96 @@ bool WarpToPID(entt::entity e, uint32_t dwPID)
     return true;
 }
 
+// Writing every carried item out before the character goes.
+void FlushDelayedSaveItem(entt::entity e)
+{
+    const entt::entity owner = e;
+
+    for (int i = 0; i < INVENTORY_AND_EQUIP_SLOT_MAX; ++i)
+        if (const entt::entity item = ItemSystem::GetInventoryItem(owner, i); item != entt::null)
+            ITEM_MANAGER::instance().SaveSingleItem(item);
+
+    for (int i = 0; i < DRAGON_SOUL_INVENTORY_MAX_NUM; ++i)
+        if (const entt::entity item = ItemSystem::GetItem(owner, TItemPos(DRAGON_SOUL_INVENTORY, i)); item != entt::null)
+            ITEM_MANAGER::instance().SaveSingleItem(item);
+#ifdef ENABLE_EXTRA_INVENTORY
+    for (int i = 0; i < EXTRA_INVENTORY_MAX_NUM; ++i)
+        if (const entt::entity item = ItemSystem::GetItem(owner, TItemPos(EXTRA_INVENTORY, i)); item != entt::null)
+            ITEM_MANAGER::instance().SaveSingleItem(item);
+#endif
+#ifdef ENABLE_SWITCHBOT
+    for (int i = 0; i < SWITCHBOT_SLOT_COUNT; ++i)
+        if (const entt::entity item = ItemSystem::GetItem(owner, TItemPos(SWITCHBOT, i)); item != entt::null)
+            ITEM_MANAGER::instance().SaveSingleItem(item);
+#endif
+}
+
+// Queueing a save; the manager batches them.
+void Save(entt::entity e)
+{
+    if (!GetSkipSave(e))
+        CHARACTER_MANAGER::instance().DelayedSave(e);
+}
+
+// The periodic save timer.
+void StartSaveEvent(entt::entity e)
+{
+    if (ecs::PlayerRuntime::GetCharEvent(e, ecs::PlayerRuntime::CharEvent::Save))
+        return;
+
+    char_event_info* info = AllocEventInfo<char_event_info>();
+
+    info->ch = e;
+    ecs::PlayerRuntime::SetCharEvent(e, ecs::PlayerRuntime::CharEvent::Save,
+        event_create(save_event, info, save_event_second_cycle));
+}
+
+// The save itself: the player row, the quest state and the marriage.
+void SaveReal(entt::entity e)
+{
+    if (GetSkipSave(e))
+        return;
+
+    if (!ecs::PlayerRuntime::GetDesc(e))
+    {
+        LOG_ERROR("Character::Save : no descriptor when saving (name: {})", ecs::PlayerRuntime::GetName(e).data());
+        return;
+    }
+
+    TPlayerTable table;
+    LegacyCharOf(e)->CreatePlayerProto(table);
+
+    db_clientdesc->DBPacket(HEADER_GD_PLAYER_SAVE, ecs::PlayerRuntime::GetDesc(e)->GetHandle(), &table, sizeof(TPlayerTable));
+
+    quest::PC* pkQuestPC = quest::CQuestManager::instance().GetPCForce(ecs::PlayerRuntime::GetPlayerID(e));
+
+    if (!pkQuestPC)
+        LOG_ERROR("CHARACTER::Save : null quest::PC pointer! (name {})", ecs::PlayerRuntime::GetName(e).data());
+    else
+    {
+        pkQuestPC->Save();
+    }
+
+    marriage::TMarriage* pMarriage = marriage::CManager::instance().Get(ecs::PlayerRuntime::GetPlayerID(e));
+    if (pMarriage)
+        pMarriage->Save();
+}
+
+bool GetSkipSave(entt::entity e)
+{
+    if (e == entt::null || !g_registry.valid(e))
+        return true;
+    const auto* skip = g_registry.try_get<ecs::SkipSave>(e);
+    return skip && skip->value;
+}
+
+void SetSkipSave(entt::entity e, bool value)
+{
+    if (e == entt::null || !g_registry.valid(e))
+        return;
+    g_registry.get_or_emplace<ecs::SkipSave>(e).value = value;
+}
+
 bool IsSafeboxOpen(entt::entity character)
 {
     if (!g_registry.valid(character))
@@ -635,16 +656,6 @@ float GetDistanceFromSafeboxOpen(entt::entity character)
 
 } // namespace ecs::SessionSystem
 
-bool CHARACTER::IsOpenSafebox() const
-{
-    return ecs::SessionSystem::IsSafeboxOpen(GetEntityHandle());
-}
-
-void CHARACTER::SetOpenSafebox(bool b)
-{
-    ecs::SessionSystem::SetSafeboxOpen(GetEntityHandle(), b);
-}
-
 void CHARACTER::SetSafeboxLoadTime()
 {
     m_iSafeboxLoadTime = thecore_pulse();
@@ -672,7 +683,7 @@ bool CHARACTER::CanWarp() const
     if ((iPulse - ecs::SocialSystem::GetRefineTime(GetEntityHandle())) < limit_time)
         return false;
 
-    if (ExchangeSystem::IsActive(GetEntityHandle()) || GetMyShop() || GetShopOwner() || IsOpenSafebox() || IsCubeOpen()
+    if (ExchangeSystem::IsActive(GetEntityHandle()) || GetMyShop() || GetShopOwner() || ecs::SessionSystem::IsSafeboxOpen(GetEntityHandle()) || IsCubeOpen()
 #ifdef ENABLE_ACCE_SYSTEM
         || IsAcceOpen()
 #endif
@@ -740,7 +751,7 @@ bool CHARACTER::WarpSet(int32_t x, int32_t y, int32_t lPrivateMapIndex)
 #endif
 
     ecs::MovementSystem::Stop(GetEntityHandle());
-    Save();
+    ecs::SessionSystem::Save(GetEntityHandle());
 
     if (GetSectree())
     {
@@ -1345,9 +1356,9 @@ void CHARACTER::Disconnect(const char* c_pszReason)
     ITEM_MANAGER::instance().FlushDelayedSaveByOwner(GetEntityHandle());
 
     if (!CHARACTER_MANAGER::instance().FlushDelayedSave(GetEntityHandle()))
-        SaveReal();
+        ecs::SessionSystem::SaveReal(GetEntityHandle());
 
-    FlushDelayedSaveItem();
+    ecs::SessionSystem::FlushDelayedSaveItem(GetEntityHandle());
 
     AffectSystem::SaveAffect(GetEntityHandle());
     AffectSystem::SetLoaded(GetEntityHandle(), false);
@@ -1367,7 +1378,7 @@ void CHARACTER::Disconnect(const char* c_pszReason)
     m_bIsLoadedBattlePass = false;
 #endif
 
-    m_bSkipSave = true;
+    ecs::SessionSystem::SetSkipSave(GetEntityHandle(), true);
 
     quest::CQuestManager::instance().DisconnectPC(GetEntityHandle());
 
@@ -1461,7 +1472,7 @@ void CHARACTER::LoadSafebox(int iSize, uint32_t dwGold, int iItemCount, TPlayerI
     const bool bLoaded = static_cast<bool>(SafeboxSystem::Get(owner, SAFEBOX));
     auto storage = SafeboxSystem::Open(owner, SAFEBOX, iSize, dwGold);
     if (!storage) return;
-    SetOpenSafebox(true);
+    ecs::SessionSystem::SetSafeboxOpen(GetEntityHandle(), true);
     if (bLoaded) storage->ChangeSize(iSize);
 
     m_iSafeboxSize = iSize;
@@ -1536,7 +1547,7 @@ void CHARACTER::CloseSafebox()
         return;
     }
 
-    SetOpenSafebox(false);
+    ecs::SessionSystem::SetSafeboxOpen(GetEntityHandle(), false);
     SafeboxSystem::Close(owner, SAFEBOX);
     if (!g_registry.valid(owner)) return;
 
@@ -1545,7 +1556,7 @@ void CHARACTER::CloseSafebox()
     SetSafeboxLoadTime();
     m_bOpeningSafebox = false;
 
-    Save();
+    ecs::SessionSystem::Save(GetEntityHandle());
 }
 
 CSafebox* CHARACTER::GetMall() const

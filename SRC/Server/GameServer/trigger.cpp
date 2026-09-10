@@ -27,6 +27,7 @@
 #include "Halloween2022Dungeon.h"
 #include "VikingDungeon.h"
 #include "EasterDungeon.h"
+#include "ecs/systems/SessionSystem.hpp"
 //#include "LostCastleDungeon.h"
 int OnClickOrcsDungeon(TRIGGERPARAM);
 int OnClickTritonTempleDungeon(TRIGGERPARAM);
@@ -243,7 +244,7 @@ int OnClickStoneCraft(TRIGGERPARAM)
 	if (ecs::SocialSystem::HasExchange(causer)
 		|| ecs::SocialSystem::GetMyShop(causer)
 		|| ecs::SocialSystem::GetShopOwner(causer) != entt::null
-		|| (pkCauser && (pkCauser->IsOpenSafebox() || pkCauser->IsCubeOpen())))
+		|| (pkCauser && (ecs::SessionSystem::IsSafeboxOpen(pkCauser->GetEntityHandle()) || pkCauser->IsCubeOpen())))
 		return 0;
 
 	ecs::PlayerRuntime::SetQuestNPCID(causer, ecs::PlayerRuntime::GetPacketVID(ch));

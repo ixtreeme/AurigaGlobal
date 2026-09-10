@@ -3207,7 +3207,7 @@ void CInputMain::MapTeleporter(entt::entity character, TPacketCGMapTeleporter* p
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
 	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::MapTeleporter");//INGAME_DEBUG_RAZOR93
 #endif
-	if (ch->IsHack() || ecs::SocialSystem::HasExchange(character) || ch->IsOpenSafebox() || ch->IsCubeOpen() || ch->GetShop() || ch->GetMyShop()
+	if (ch->IsHack() || ecs::SocialSystem::HasExchange(character) || ecs::SessionSystem::IsSafeboxOpen(ch->GetEntityHandle()) || ch->IsCubeOpen() || ch->GetShop() || ch->GetMyShop()
 #ifdef ENABLE_ACCE_SYSTEM
 		|| ch->IsAcceOpen()
 #endif
@@ -4292,7 +4292,7 @@ int CInputMain::MyShop(entt::entity character, const char * c_pData, size_t uiBy
 	if (CombatSystem::IsStun(character) || CombatSystem::IsDead(character))
 		return (iExtraLen);
 
-	if (ecs::SocialSystem::HasExchange(character) || ch->IsOpenSafebox() || ch->GetShopOwner() || ch->IsCubeOpen())
+	if (ecs::SocialSystem::HasExchange(character) || ecs::SessionSystem::IsSafeboxOpen(ch->GetEntityHandle()) || ch->GetShopOwner() || ch->IsCubeOpen())
 	{
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 292, "");
@@ -4336,7 +4336,7 @@ void CInputMain::Refine(entt::entity character, const char* c_pData)
 	}
 #endif
 
-	if (ecs::SocialSystem::HasExchange(character) || ch->IsOpenSafebox() || ch->GetShopOwner() || ch->GetMyShop() || ch->IsCubeOpen())
+	if (ecs::SocialSystem::HasExchange(character) || ecs::SessionSystem::IsSafeboxOpen(ch->GetEntityHandle()) || ch->GetShopOwner() || ch->GetMyShop() || ch->IsCubeOpen())
 	{
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 502, "");

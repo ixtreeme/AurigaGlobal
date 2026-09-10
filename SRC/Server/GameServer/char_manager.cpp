@@ -47,6 +47,7 @@
 #include "ecs/CharacterAccessors.hpp"
 #include "ecs/systems/ItemSystem.hpp"
 #include "ecs/components/identity_components.hpp"
+#include "ecs/systems/SessionSystem.hpp"
 namespace
 {
 	void InitializeSpawnArchetype(const TMobTable& proto, int x, int y, int map, uint32_t vid)
@@ -1246,7 +1247,7 @@ bool CHARACTER_MANAGER::FlushDelayedSave(entt::entity character)
 		return false;
 
 	if (LPCHARACTER ch = ecs::LegacyCharOf(character))
-		ch->SaveReal();
+		ecs::SessionSystem::SaveReal(ch->GetEntityHandle());
 	return true;
 }
 

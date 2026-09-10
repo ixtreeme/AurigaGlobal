@@ -658,8 +658,6 @@ public:
 	uint16_t			GetRaceNum() const;
 
 	void			Save();		// DelayedSave
-	void			SaveReal();	
-	void			FlushDelayedSaveItem();
 
 #ifdef ENABLE_MULTI_NAMES
 	const char* GetName(uint8_t lang = DEFAULT_LANGUAGE) const;
@@ -831,7 +829,6 @@ protected:
 	int				m_iMoveCount;
 	uint32_t			m_dwPlayStartTime;
 	uint8_t			m_bAddChrState;
-	bool			m_bSkipSave;
 	std::string		m_stMobile;
 	char			m_szMobileAuth[5];
 
@@ -1815,7 +1812,6 @@ public:
 	void				StartSaveEvent();
 	void				StartDestroyWhenIdleEvent();
 
-	LPEVENT				m_pkSaveEvent;
 
 	LPEVENT				m_pkWarpNPCEvent;
 	//DELAYED_WARP

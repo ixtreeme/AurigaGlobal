@@ -30,6 +30,7 @@
 #include "desc_client.h"
 #include "shopEx.h"
 #include "group_text_parse_tree.h"
+#include "ecs/systems/SessionSystem.hpp"
 
 bool CShopEx::Create(uint32_t dwVnum, uint32_t dwNPCVnum)
 {
@@ -251,14 +252,14 @@ int64_t CShopEx::Buy(entt::entity ch, uint8_t pos)
 
 #ifdef ENABLE_FLUSH_CACHE_FEATURE // @warme006
 	{
-		inventory->SaveReal();
+		ecs::SessionSystem::SaveReal(inventory->GetEntityHandle());
 		db_clientdesc->DBPacketHeader(HEADER_GD_FLUSH_CACHE, 0, sizeof(uint32_t));
 		uint32_t pid = (ecs::PlayerRuntime::GetPlayerID(ch));
 		db_clientdesc->Packet(&pid, sizeof(uint32_t));
 	}
 #else
 	{
-		inventory->Save();
+		ecs::SessionSystem::Save(ch);
 	}
 #endif
 

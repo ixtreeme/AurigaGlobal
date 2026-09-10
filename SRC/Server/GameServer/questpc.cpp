@@ -12,6 +12,7 @@
 #include "ecs/CharacterAccessors.hpp"
 #include "desc_client.h"
 #include "questevent.h"
+#include "ecs/systems/SessionSystem.hpp"
 
 namespace quest
 {
@@ -378,7 +379,7 @@ namespace quest
 			LPCHARACTER ch = CQuestManager::instance().GetCurrentCharacterPtr();
 			if (ch != nullptr) {
 				Reward(ch);
-				ch->Save();
+				ecs::SessionSystem::Save(ch->GetEntityHandle());
 			}
 		}
 		m_bIsGivenReward = false;

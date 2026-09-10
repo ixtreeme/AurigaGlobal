@@ -27,6 +27,7 @@
 #include "ecs/EntityFactory.hpp"
 #include "ecs/Registry.hpp"
 #include "ecs/systems/ItemSystem.hpp"
+#include "ecs/systems/SessionSystem.hpp"
 
 namespace
 {
@@ -695,7 +696,7 @@ int64_t CShop::Buy(entt::entity ch, uint8_t pos
 #ifdef ENABLE_LIMIT_BUY_SPEED
 		ecs::SocialSystem::SetLastBuyTime(ch);
 #endif
-		inventory->Save();
+		ecs::SessionSystem::Save(ch);
 	}
 
 	return (SHOP_SUBHEADER_GC_OK);
@@ -781,7 +782,7 @@ uint8_t CShop::MultipleBuy(entt::entity ch, uint8_t p, uint8_t c) {
 #ifdef ENABLE_LIMIT_BUY_SPEED
 	ecs::SocialSystem::SetLastBuyTime(ch);
 #endif
-	inventory->Save();
+	ecs::SessionSystem::Save(ch);
 	return c <= 0 ? SHOP_SUBHEADER_GC_OK : r;
 }
 #endif

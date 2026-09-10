@@ -33,6 +33,7 @@
 #endif
 #ifdef ENABLE_STOLE_COSTUME
 #include <common/stole_length.h>
+#include "ecs/systems/SessionSystem.hpp"
 #endif
 
 static std::vector<CUBE_RENEWAL_DATA*>	s_cube_proto;
@@ -377,7 +378,7 @@ void Cube_open (LPCHARACTER ch)
 	}
 
 
-	if (ecs::SocialSystem::HasExchange(chEntity) || ch->GetMyShop() || ch->GetShopOwner() || ch->IsOpenSafebox() || ch->IsCubeOpen()
+	if (ecs::SocialSystem::HasExchange(chEntity) || ch->GetMyShop() || ch->GetShopOwner() || ecs::SessionSystem::IsSafeboxOpen(ch->GetEntityHandle()) || ch->IsCubeOpen()
 #ifdef ENABLE_ACCE_SYSTEM
 		 || ch->IsAcceOpen()
 #endif

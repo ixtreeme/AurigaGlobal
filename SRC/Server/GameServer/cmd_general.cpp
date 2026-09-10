@@ -2114,7 +2114,7 @@ ACMD(do_mall_close)
 	{
 		ch->SetMallLoadTime(thecore_pulse());
 		ch->CloseMall();
-		ch->Save();
+		ecs::SessionSystem::Save(ch->GetEntityHandle());
 	}
 }
 

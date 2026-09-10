@@ -12,6 +12,12 @@ struct NetworkSession {
     LPDESC desc;
 };
 
+// Set when a character must not be written back - a deleted or duplicated
+// login. It was a CHARACTER field only the save path read.
+struct SkipSave {
+    bool value { false };
+};
+
 struct LoginInfo {
     std::string login;
     uint32_t loginPlayTime;
