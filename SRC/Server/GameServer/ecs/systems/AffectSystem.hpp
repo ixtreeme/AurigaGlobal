@@ -55,6 +55,7 @@ bool RemoveAffect(entt::entity e, uint32_t type);
 bool RemoveAffect(entt::entity e, CAffect* affect);
 void RemoveBadAffects(entt::entity e);
 void RemoveGoodAffects(entt::entity e);
+void ClearAffectSkills(entt::entity e);
 void ClearAffect(entt::entity e, bool save);
 void RefreshAffect(entt::entity e);
 void SetPolymorph(entt::entity e, uint32_t raceVnum, bool maintainStats = false);

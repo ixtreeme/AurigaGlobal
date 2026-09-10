@@ -1015,7 +1015,6 @@ public:
 
 #ifdef ENABLE_SKILLS_BUFF_ALTERNATIVE
 public:
-	void						ClearAffectSkills();
 	void						SaveAffectSkills(uint32_t dwType, uint8_t bApplyOn, int32_t lApplyValue, uint32_t dwFlag, int32_t lDuration, int32_t lSPCost);
 	void						LoadAffectSkills();
 
@@ -1354,8 +1353,8 @@ public:
 	public:
 		void SetWheelDestiny(std::shared_ptr<CWheelDestiny> pt);
 		std::shared_ptr<CWheelDestiny> GetWheelDestiny() const { return pWheelDestiny; }
-		void SetWheelFreeCount(const int count) { SetQuestFlag("wheel.free", GetWheelFreeCount() + count); }
-		int GetWheelFreeCount() const { return GetQuestFlag("wheel.free"); }
+		void SetWheelFreeCount(const int count);
+		int GetWheelFreeCount() const;
 
 	private:
 		std::shared_ptr<CWheelDestiny> pWheelDestiny = nullptr;
@@ -1507,11 +1506,8 @@ private:
 
 	// Stone
 public:
-	void				SetStone(entt::entity stone);
 #ifdef ENABLE_STONE_SPAWN_STEP_PROCESSING_RAZOR93
-	void ClearStone(entt::entity killer = entt::null);
 #else
-	void				ClearStone();
 #endif
 #ifdef ENABLE_ITEMSHOP
 	uint32_t			GetDragonCoin();
@@ -1530,8 +1526,6 @@ public:
 	uint8_t				GetDropMetinSaccaPct() const { return m_bDropMetinSaccaPct; }
 
 protected:
-	LPCHARACTER			m_pkChrStone;		// ���� ������ ��
-	CHARACTER_SET		m_set_pkChrSpawnedBy;	// ���� ������ ���
 	uint32_t				m_dwDropMetinStone;
 	uint8_t				m_bDropMetinStonePct;
 	uint32_t				m_dwDropMetinStofa;
@@ -1895,8 +1889,6 @@ public:
 	void				SetQuestBy(uint32_t dwQuestVnum);
 	uint32_t				GetQuestBy() const;
 
-	int					GetQuestFlag(const std::string& flag) const;
-	void				SetQuestFlag(const std::string& flag, int value);
 
 
 private:
@@ -2369,11 +2361,8 @@ protected:
 
 #ifdef ENABLE_REVIVE_WITH_HALF_HP_IF_MONSTER_KILLED_YOU
 public:
-	bool	GetDeadByMonster() const { return m_deadByMonster; }
-	void	SetDeadByMonster(bool flag) { m_deadByMonster = flag; }
 
 protected:
-	bool	m_deadByMonster;
 #endif
 
 #ifdef ENABLE_SPAM_CHECK

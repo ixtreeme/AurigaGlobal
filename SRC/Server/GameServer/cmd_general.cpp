@@ -1433,7 +1433,7 @@ ACMD(do_restart)
 
 				ch->RestartAtSamePos();
 #ifdef ENABLE_REVIVE_WITH_HALF_HP_IF_MONSTER_KILLED_YOU
-				ecs::PointSystem::Change(character, POINT_HP, ch->GetDeadByMonster() ? (ecs::PointSystem::GetMaxHP(character) - ch->GetHP()) / 2 : 50 - ch->GetHP());
+				ecs::PointSystem::Change(character, POINT_HP, CombatSystem::GetDeadByMonster(character) ? (ecs::PointSystem::GetMaxHP(character) - ch->GetHP()) / 2 : 50 - ch->GetHP());
 #else
 				ecs::PointSystem::Change(character, POINT_HP, 50 - ch->GetHP());
 #endif

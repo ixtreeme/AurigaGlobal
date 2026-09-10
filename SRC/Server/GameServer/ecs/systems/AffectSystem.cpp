@@ -1038,6 +1038,12 @@ bool ProcessAffect(entt::entity e)
     return AffectState(e)->affects.empty();
 }
 
+void ClearAffectSkills(entt::entity e)
+{
+    if (auto* state = AffectState(e))
+        state->skillAffects.clear();
+}
+
 void ClearAffect(entt::entity e, bool save)
 {
     auto* ch = LegacyCharOf(e);
@@ -1376,12 +1382,6 @@ void CHARACTER::StartAffectEvent()
 }
 
 #ifdef ENABLE_SKILLS_BUFF_ALTERNATIVE
-void CHARACTER::ClearAffectSkills()
-{
-    if (auto* state = AffectState(GetEntityHandle()))
-        state->skillAffects.clear();
-}
-
 void CHARACTER::SaveAffectSkills(uint32_t dwType, uint8_t bApplyOn, int32_t lApplyValue, uint32_t dwFlag, int32_t lDuration, int32_t lSPCost)
 {
     if (auto* state = AffectState(GetEntityHandle()))
@@ -1619,7 +1619,7 @@ EVENTFUNC(load_affect_login_event)
 
 #ifdef ENABLE_BIOLOGIST_UI
 void CHARACTER::CheckBiologistReward() {
-	int stat = GetQuestFlag("biologist.stat");
+	int stat = ecs::PlayerRuntime::GetQuestFlag(GetEntityHandle(), "biologist.stat");
 	if (stat > 0) {
 		for (int i = 0; i < stat; i++) {
 			if (FindAffect(biologistMissionInfo[i][14])) {

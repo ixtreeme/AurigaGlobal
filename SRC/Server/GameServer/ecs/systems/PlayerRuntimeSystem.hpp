@@ -89,6 +89,8 @@ bool IsGuardNPC(entt::entity e);
 // carried these as inline reads of m_bCharType; the component is what the
 // factory fills and what IsGuardNPC above already trusts.
 int64_t GetSP(entt::entity e);
+int GetQuestFlag(entt::entity e, const std::string& flag);
+void SetQuestFlag(entt::entity e, const std::string& flag, int value);
 bool IsImmortal(entt::entity e);
 uint32_t GetMonsterDrainSPPoint(entt::entity e);
 bool IsWarp(entt::entity e);

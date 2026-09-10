@@ -586,6 +586,24 @@ int64_t GetSP(entt::entity e)
     return 0;
 }
 
+int GetQuestFlag(entt::entity e, const std::string& flag)
+{
+    int ret = 0;
+    quest::CQuestManager& q = quest::CQuestManager::instance();
+    quest::PC* pPC = q.GetPC(GetPlayerID(e));
+    if (pPC)
+        ret = pPC->GetFlag(flag);
+
+    return ret;
+}
+
+void SetQuestFlag(entt::entity e, const std::string& flag, int value)
+{
+    quest::CQuestManager& q = quest::CQuestManager::instance();
+    quest::PC* pPC = q.GetPC(GetPlayerID(e));
+    pPC->SetFlag(flag, value);
+}
+
 bool IsImmortal(entt::entity e)
 {
     if (e == entt::null || !g_registry.valid(e))
@@ -1999,12 +2017,12 @@ void CHARACTER::SetBlockMode(uint8_t bFlag)
 
     ecs::ChatSystem::Send(GetEntityHandle(), CHAT_TYPE_COMMAND, "setblockmode %d", bFlag);
 
-    SetQuestFlag("game_option.block_exchange", bFlag & BLOCK_EXCHANGE ? 1 : 0);
-    SetQuestFlag("game_option.block_party_invite", bFlag & BLOCK_PARTY_INVITE ? 1 : 0);
-    SetQuestFlag("game_option.block_guild_invite", bFlag & BLOCK_GUILD_INVITE ? 1 : 0);
-    SetQuestFlag("game_option.block_whisper", bFlag & BLOCK_WHISPER ? 1 : 0);
-    SetQuestFlag("game_option.block_messenger_invite", bFlag & BLOCK_MESSENGER_INVITE ? 1 : 0);
-    SetQuestFlag("game_option.block_party_request", bFlag & BLOCK_PARTY_REQUEST ? 1 : 0);
+    ecs::PlayerRuntime::SetQuestFlag(GetEntityHandle(), "game_option.block_exchange", bFlag & BLOCK_EXCHANGE ? 1 : 0);
+    ecs::PlayerRuntime::SetQuestFlag(GetEntityHandle(), "game_option.block_party_invite", bFlag & BLOCK_PARTY_INVITE ? 1 : 0);
+    ecs::PlayerRuntime::SetQuestFlag(GetEntityHandle(), "game_option.block_guild_invite", bFlag & BLOCK_GUILD_INVITE ? 1 : 0);
+    ecs::PlayerRuntime::SetQuestFlag(GetEntityHandle(), "game_option.block_whisper", bFlag & BLOCK_WHISPER ? 1 : 0);
+    ecs::PlayerRuntime::SetQuestFlag(GetEntityHandle(), "game_option.block_messenger_invite", bFlag & BLOCK_MESSENGER_INVITE ? 1 : 0);
+    ecs::PlayerRuntime::SetQuestFlag(GetEntityHandle(), "game_option.block_party_request", bFlag & BLOCK_PARTY_REQUEST ? 1 : 0);
 }
 
 uint8_t CHARACTER::GetBlockMode() const
@@ -2060,24 +2078,6 @@ bool CHARACTER::IsNewPet() const
 {
     const auto* status = g_registry.try_get<ecs::StatusFlags>(GetEntityHandle());
     return status && status->isNewPet;
-}
-
-int CHARACTER::GetQuestFlag(const std::string& flag) const
-{
-    int ret = 0;
-    quest::CQuestManager& q = quest::CQuestManager::instance();
-    quest::PC* pPC = q.GetPC(GetPlayerID());
-    if (pPC)
-        ret = pPC->GetFlag(flag);
-
-    return ret;
-}
-
-void CHARACTER::SetQuestFlag(const std::string& flag, int value)
-{
-    quest::CQuestManager& q = quest::CQuestManager::instance();
-    quest::PC* pPC = q.GetPC(GetPlayerID());
-    pPC->SetFlag(flag, value);
 }
 
 void CHARACTER::SetItemAward_vnum(unsigned int vnum)
@@ -4245,7 +4245,7 @@ void CHARACTER::Destroy()
         SetShop(nullptr);
     }
 
-    ClearStone();
+    CombatSystem::ClearStone(GetEntityHandle());
     NetworkSyncSystem::ClearSync(GetEntityHandle());
     CombatSystem::ClearTarget(GetEntityHandle());
 
@@ -4284,7 +4284,6 @@ void CHARACTER::Destroy()
 
     ecs::PlayerRuntime::BuffOnAttr_Destroy(GetEntityHandle());
 
-    m_set_pkChrSpawnedBy.clear();
 
     StopMuyeongEvent();
 #ifdef ENABLE_NEW_GYEONGGONG_SKILL
@@ -5005,8 +5004,8 @@ void CHARACTER::DestroyPvP()
     {
         const char* szTableStaticPvP[] = { BLOCK_CHANGEITEM, BLOCK_BUFF, BLOCK_POTION, BLOCK_RIDE, BLOCK_PET, BLOCK_POLY, BLOCK_PARTY, BLOCK_EXCHANGE_, BET_WINNER, CHECK_IS_FIGHT };
 
-        int moneyBet = GetQuestFlag(szTableStaticPvP[8]);
-        int isDuel = GetQuestFlag(szTableStaticPvP[9]);
+        int moneyBet = ecs::PlayerRuntime::GetQuestFlag(GetEntityHandle(), szTableStaticPvP[8]);
+        int isDuel = ecs::PlayerRuntime::GetQuestFlag(GetEntityHandle(), szTableStaticPvP[9]);
 
         if (isDuel != 0)
         {
@@ -5021,7 +5020,7 @@ void CHARACTER::DestroyPvP()
 
             for (size_t i = 0; i < _countof(szTableStaticPvP); i++)
             {
-                SetQuestFlag(szTableStaticPvP[i], 0);
+                ecs::PlayerRuntime::SetQuestFlag(GetEntityHandle(), szTableStaticPvP[i], 0);
             }
         }
     }
@@ -5657,7 +5656,6 @@ void CHARACTER::Initialize()
 #if defined(BL_OFFLINE_MESSAGE)
     dwLastOfflinePMTime = 0;
 #endif
-    m_pkChrStone = nullptr;
 
     m_iSafeboxSize = -1;
     m_iSafeboxLoadTime = 0;
@@ -6067,3 +6065,14 @@ EVENTFUNC(drop_event)
 }
 #endif
 
+
+// The wheel counters are quest flags; they moved with them.
+int CHARACTER::GetWheelFreeCount() const
+{
+    return ecs::PlayerRuntime::GetQuestFlag(GetEntityHandle(), "wheel.free");
+}
+
+void CHARACTER::SetWheelFreeCount(const int count)
+{
+    ecs::PlayerRuntime::SetQuestFlag(GetEntityHandle(), "wheel.free", GetWheelFreeCount() + count);
+}

@@ -1067,8 +1067,8 @@ bool CHARACTER::LearnGrandMasterSkill(uint32_t dwSkillVnum)
 
 	LOG_INFO("LearnGrandMasterSkill {} table idx {} value {}", GetName(), idx, aiGrandMasterSkillBookCountForLevelUp[idx]);
 
-	int iTotalReadCount = GetQuestFlag(strTrainSkill) + 1;
-	SetQuestFlag(strTrainSkill, iTotalReadCount);
+	int iTotalReadCount = ecs::PlayerRuntime::GetQuestFlag(GetEntityHandle(), strTrainSkill) + 1;
+	ecs::PlayerRuntime::SetQuestFlag(GetEntityHandle(), strTrainSkill, iTotalReadCount);
 
 	int iMinReadCount = aiGrandMasterSkillBookMinCount[idx];
 	int iMaxReadCount = aiGrandMasterSkillBookMaxCount[idx];
@@ -1849,10 +1849,10 @@ void CHARACTER::SkillLevelUp(uint32_t dwVnum, uint8_t bMethod)
 #ifdef ENABLE_FORCE2MASTERSKILL
 					SetSkillLevel(pkSk->dwVnum, 20);
 #else
-					if (GetQuestFlag("reset_scroll.force_to_master_skill") > 0)
+					if (ecs::PlayerRuntime::GetQuestFlag(GetEntityHandle(), "reset_scroll.force_to_master_skill") > 0)
 					{
 						SetSkillLevel(pkSk->dwVnum, 20);
-						SetQuestFlag("reset_scroll.force_to_master_skill", 0);
+						ecs::PlayerRuntime::SetQuestFlag(GetEntityHandle(), "reset_scroll.force_to_master_skill", 0);
 					}
 					else
 					{

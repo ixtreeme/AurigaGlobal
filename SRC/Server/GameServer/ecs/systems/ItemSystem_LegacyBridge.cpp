@@ -3520,14 +3520,14 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 		}
 
 #ifdef ENABLE_BUG_FIXES
-		if (get_global_time() - GetQuestFlag("kamp.spawned") < 60) {
+		if (get_global_time() - ecs::PlayerRuntime::GetQuestFlag(GetEntityHandle(), "kamp.spawned") < 60) {
 #ifdef TEXTS_IMPROVEMENT
 			ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 1246, "");
 #endif
 			return false;
 		}
 		else {
-			SetQuestFlag("kamp.spawned", get_global_time());
+			ecs::PlayerRuntime::SetQuestFlag(GetEntityHandle(), "kamp.spawned", get_global_time());
 		}
 #endif
 
@@ -9712,7 +9712,7 @@ bool CHARACTER::RefineInformation(uint8_t bCell, uint8_t bType, int iAdditionalC
 #endif
 
 	// REFINE_COST
-	if (bType == REFINE_TYPE_MONEY_ONLY && !GetQuestFlag("deviltower_zone.can_refine"))
+	if (bType == REFINE_TYPE_MONEY_ONLY && !ecs::PlayerRuntime::GetQuestFlag(GetEntityHandle(), "deviltower_zone.can_refine"))
 	{
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 361, "");
@@ -11432,27 +11432,27 @@ int CHARACTER::ExtraInventoryMaxSlots(int iArg1, bool bAuto) const {
 	int iUnlock;
 	switch (iArg1) {
 	case 0: {
-		iUnlock = GetQuestFlag("lock_extra.cat1") * 5;
+		iUnlock = ecs::PlayerRuntime::GetQuestFlag(GetEntityHandle(), "lock_extra.cat1") * 5;
 		break;
 	}
 	case 1: {
-		iUnlock = GetQuestFlag("lock_extra.cat2") * 5;
+		iUnlock = ecs::PlayerRuntime::GetQuestFlag(GetEntityHandle(), "lock_extra.cat2") * 5;
 		break;
 	}
 	case 2: {
-		iUnlock = GetQuestFlag("lock_extra.cat3") * 5;
+		iUnlock = ecs::PlayerRuntime::GetQuestFlag(GetEntityHandle(), "lock_extra.cat3") * 5;
 		break;
 	}
 	case 3: {
-		iUnlock = GetQuestFlag("lock_extra.cat4") * 5;
+		iUnlock = ecs::PlayerRuntime::GetQuestFlag(GetEntityHandle(), "lock_extra.cat4") * 5;
 		break;
 	}
 	case 4: {
-		iUnlock = GetQuestFlag("lock_extra.cat5") * 5;
+		iUnlock = ecs::PlayerRuntime::GetQuestFlag(GetEntityHandle(), "lock_extra.cat5") * 5;
 		break;
 	}
 	case 5: {
-		iUnlock = GetQuestFlag("lock_extra.cat6") * 5;
+		iUnlock = ecs::PlayerRuntime::GetQuestFlag(GetEntityHandle(), "lock_extra.cat6") * 5;
 		break;
 	}
 	default: {
@@ -11522,7 +11522,7 @@ void CHARACTER::UnlockExtraInventory(uint8_t category) {
 	} break;
 	}
 
-	uint8_t stage = GetQuestFlag(stageName.c_str());
+	uint8_t stage = ecs::PlayerRuntime::GetQuestFlag(GetEntityHandle(), stageName.c_str());
 	if (stage < 0 || stage >= 14)
 		return;
 
@@ -11530,7 +11530,7 @@ void CHARACTER::UnlockExtraInventory(uint8_t category) {
 	if (CountSpecifyItem(72320) >= needKeys) {
 		RemoveSpecifyItem(72320, needKeys);
 
-		SetQuestFlag(stageName.c_str(), stage + 1);
+		ecs::PlayerRuntime::SetQuestFlag(GetEntityHandle(), stageName.c_str(), stage + 1);
 		PointChange(POINT_EXTRA_INVENTORY1 + category, stage + 1);
 		ecs::ChatSystem::Send(GetEntityHandle(), CHAT_TYPE_COMMAND, "RefreshExpandInventory");
 #ifdef ENABLE_SPAM_CHECK

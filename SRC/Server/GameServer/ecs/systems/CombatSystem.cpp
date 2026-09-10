@@ -418,6 +418,21 @@ static bool IsDefanceWaweMastAttackMob(int32_t vnum)
 }
 #endif
 
+bool GetDeadByMonster(entt::entity e)
+{
+    if (e == entt::null || !g_registry.valid(e))
+        return false;
+    const auto* state = g_registry.try_get<ecs::DeadByMonster>(e);
+    return state && state->value;
+}
+
+void SetDeadByMonster(entt::entity e, bool value)
+{
+    if (e == entt::null || !g_registry.valid(e))
+        return;
+    g_registry.get_or_emplace<ecs::DeadByMonster>(e).value = value;
+}
+
 uint32_t GetKillerPID(entt::entity e)
 {
     if (e == entt::null || !g_registry.valid(e))
@@ -2055,11 +2070,11 @@ LPCHARACTER CHARACTER::DistributeExp()
 	if (iTotalDam == 0)	//  ذ 0̸
 		return nullptr;
 
-	if (m_pkChrStone)	//    ġ   ѱ.
+	// Half of the experience goes to the stone that spawned this mob.
+	if (const entt::entity stone = CombatSystem::GetStone(GetEntityHandle()); stone != entt::null)
 	{
-		//LOG_INFO(0, "__ Give half to Stone : %d", iExpToDistribute>>1);
-		int iExp = iExpToDistribute >> 1;
-		m_pkChrStone->SetExp(m_pkChrStone->GetExp() + iExp);
+		const int iExp = iExpToDistribute >> 1;
+		ecs::PlayerRuntime::SetExp(stone, ecs::PlayerRuntime::GetExp(stone) + iExp);
 		iExpToDistribute -= iExp;
 	}
 
@@ -2322,7 +2337,7 @@ void CHARACTER::Dead(entt::entity killer, bool bImmediateDead)
 		{
 			const char* szTableStaticPvP[] = { BLOCK_CHANGEITEM, BLOCK_BUFF, BLOCK_POTION, BLOCK_RIDE, BLOCK_PET, BLOCK_POLY, BLOCK_PARTY, BLOCK_EXCHANGE_, BET_WINNER, CHECK_IS_FIGHT };
 
-			int betMoneyDead = GetQuestFlag(szTableStaticPvP[8]);
+			int betMoneyDead = ecs::PlayerRuntime::GetQuestFlag(GetEntityHandle(), szTableStaticPvP[8]);
 			int betMoneyKiller = ecs::QuestSystem::GetFlag(killer, szTableStaticPvP[8]);
 
 			if (betMoneyDead > 0 && betMoneyKiller > 0)
@@ -2340,7 +2355,7 @@ void CHARACTER::Dead(entt::entity killer, bool bImmediateDead)
 				snprintf(pkKiller_Buf, sizeof(pkKiller_Buf), "BINARY_Duel_Delete");
 
 				ecs::ChatSystem::Send(GetEntityHandle(), CHAT_TYPE_COMMAND, pkCh_Buf);
-				SetQuestFlag(szTableStaticPvP[i], 0);
+				ecs::PlayerRuntime::SetQuestFlag(GetEntityHandle(), szTableStaticPvP[i], 0);
 
 				ecs::ChatSystem::Send(killer, CHAT_TYPE_COMMAND, pkKiller_Buf);
 				ecs::QuestSystem::SetFlag(killer, szTableStaticPvP[i], 0);
@@ -2429,7 +2444,7 @@ void CHARACTER::Dead(entt::entity killer, bool bImmediateDead)
 			CombatSystem::SetTarget(killer, entt::null);
 		}
 #endif
-		ClearAffectSkills();
+		AffectSystem::ClearAffectSkills(GetEntityHandle());
 	}
 #endif
 	SetPosition(POS_DEAD);
@@ -2440,7 +2455,7 @@ void CHARACTER::Dead(entt::entity killer, bool bImmediateDead)
 		if (!ecs::PlayerRuntime::IsPC(killer))
 		{
 #ifdef ENABLE_REVIVE_WITH_HALF_HP_IF_MONSTER_KILLED_YOU
-			SetDeadByMonster(true);
+			CombatSystem::SetDeadByMonster(GetEntityHandle(), true);
 #endif
 
 			LOG_TRACE("DEAD: {} {} WITH PENALTY", GetName(), static_cast<const void*>(this));
@@ -2451,7 +2466,7 @@ void CHARACTER::Dead(entt::entity killer, bool bImmediateDead)
 		else
 		{
 #ifdef ENABLE_REVIVE_WITH_HALF_HP_IF_MONSTER_KILLED_YOU
-			SetDeadByMonster(false);
+			CombatSystem::SetDeadByMonster(GetEntityHandle(), false);
 #endif
 			LOG_TRACE("DEAD_BY_PC: {} {} KILLER {} {}", GetName(), static_cast<const void*>(this), ecs::PlayerRuntime::GetName(killer).data(), static_cast<const void*>(get_pointer(pkKiller)));
 						if (auto* flags = RuntimeFlags(GetEntityHandle()))
@@ -2702,11 +2717,7 @@ void CHARACTER::Dead(entt::entity killer, bool bImmediateDead)
 
 		if (IsStone())
 		{
-#ifdef ENABLE_STONE_SPAWN_STEP_PROCESSING_RAZOR93
-			ClearStone(pkKiller ? pkKiller->GetEntityHandle() : entt::null);
-#else
-			ClearStone();
-#endif
+			CombatSystem::ClearStone(GetEntityHandle());
 		}
 
 		if (GetDungeon())
@@ -7361,100 +7372,74 @@ uint8_t CHARACTER::GetChatCounter() const
 
 namespace CombatSystem {
 
-// m_pkChrStone and the spawned-by set on the stone are CHARACTER members with
-// no component; this resolves for them. The spawn path calling it does not.
+// Attaching a mob to a stone, or detaching it. Leaving a stone now leaves its
+// spawn list as well; the CHARACTER version only ever inserted, so a mob that
+// moved between stones stayed in the first one's list forever.
 void SetStone(entt::entity e, entt::entity stone)
 {
-	if (LPCHARACTER ch = ecs::LegacyCharOf(e))
-		ch->SetStone(stone);
+    if (e == entt::null || !g_registry.valid(e))
+        return;
+
+    if (const auto* owner = g_registry.try_get<ecs::StoneOwner>(e);
+        owner && owner->stone != entt::null && owner->stone != stone && g_registry.valid(owner->stone))
+    {
+        if (auto* previous = g_registry.try_get<ecs::StoneSpawns>(owner->stone))
+            std::erase(previous->members, e);
+    }
+
+    if (stone == entt::null || !g_registry.valid(stone))
+    {
+        g_registry.remove<ecs::StoneOwner>(e);
+        return;
+    }
+
+    g_registry.emplace_or_replace<ecs::StoneOwner>(e, stone);
+    auto& spawns = g_registry.get_or_emplace<ecs::StoneSpawns>(stone);
+    if (std::find(spawns.members.begin(), spawns.members.end(), e) == spawns.members.end())
+        spawns.members.push_back(e);
+}
+
+// Kills everything this stone spawned, then detaches this mob from its own
+// stone. The member list is taken by move first: every Dead() below comes back
+// through here and erases from the very list the old std::for_each walked,
+// which invalidated its iterator mid-iteration.
+void ClearStone(entt::entity e)
+{
+    if (e == entt::null || !g_registry.valid(e))
+        return;
+
+    if (auto* spawns = g_registry.try_get<ecs::StoneSpawns>(e))
+    {
+        std::vector<entt::entity> members;
+        members.swap(spawns->members);
+
+        for (const entt::entity member : members)
+        {
+            if (member == entt::null || !g_registry.valid(member))
+                continue;
+#ifdef ENABLE_STONE_SPAWN_STEP_PROCESSING_RAZOR93
+            if (auto* flags = RuntimeFlags(member))
+                SET_BIT(flags->instantFlag, INSTANT_FLAG_NO_REWARD);
+#endif
+            Dead(member, entt::null);
+            // Dead() can take the entity with it; nothing may touch it after.
+            if (g_registry.valid(member))
+                SetStone(member, entt::null);
+        }
+    }
+
+    if (const auto* owner = g_registry.try_get<ecs::StoneOwner>(e))
+    {
+        if (owner->stone != entt::null && g_registry.valid(owner->stone))
+        {
+            if (auto* spawns = g_registry.try_get<ecs::StoneSpawns>(owner->stone))
+                std::erase(spawns->members, e);
+        }
+        g_registry.remove<ecs::StoneOwner>(e);
+    }
 }
 
 } // namespace CombatSystem
-
-void CHARACTER::SetStone(entt::entity stone)
-{
-	LPCHARACTER pkStone = ecs::LegacyCharOf(stone);
-	m_pkChrStone = pkStone;
-	if (const entt::entity self = GetEntityHandle();
-		self != entt::null && g_registry.valid(self))
-		g_registry.emplace_or_replace<ecs::StoneOwner>(self, pkStone ? stone : entt::null);
-
-	if (m_pkChrStone)
-	{
-		if (!pkStone->m_set_pkChrSpawnedBy.contains(this))
-			pkStone->m_set_pkChrSpawnedBy.insert(this);
-	}
-}
-
-#ifdef ENABLE_STONE_SPAWN_STEP_PROCESSING_RAZOR93
-struct FuncDeadSpawnedByStone
-{
-	LPCHARACTER m_pkKiller;
-
-	FuncDeadSpawnedByStone(LPCHARACTER pkKiller)
-		: m_pkKiller(pkKiller)
-	{
-	}
-
-	void operator () (LegacyCharHandle ch)
-	{
-		if (auto* flags = RuntimeFlags(ch->GetEntityHandle()))
-			SET_BIT(flags->instantFlag, INSTANT_FLAG_NO_REWARD);
-		ch->Dead(entt::null);
-		ch->SetStone(entt::null);
-	}
-};
-#else
-struct FuncDeadSpawnedByStone
-{
-	void operator () (LegacyCharHandle ch)
-	{
-		ch->Dead(entt::null);
-		ch->SetStone(entt::null);
-	}
-};
-#endif
-
-#ifdef ENABLE_STONE_SPAWN_STEP_PROCESSING_RAZOR93
-void CHARACTER::ClearStone(entt::entity killer)
-{
-	LPCHARACTER pkKiller = ecs::LegacyCharOf(killer);
-	if (!m_set_pkChrSpawnedBy.empty())
-	{
-		FuncDeadSpawnedByStone f(pkKiller);
-		std::for_each(m_set_pkChrSpawnedBy.begin(), m_set_pkChrSpawnedBy.end(), f);
-		m_set_pkChrSpawnedBy.clear();
-	}
-
-	if (!m_pkChrStone)
-		return;
-
-	m_pkChrStone->m_set_pkChrSpawnedBy.erase(this);
-	m_pkChrStone = nullptr;
-	if (const entt::entity self = GetEntityHandle();
-		self != entt::null && g_registry.valid(self))
-		g_registry.remove<ecs::StoneOwner>(self);
-}
-#else
-void CHARACTER::ClearStone()
-{
-	if (!m_set_pkChrSpawnedBy.empty())
-	{
-		FuncDeadSpawnedByStone f;
-		std::for_each(m_set_pkChrSpawnedBy.begin(), m_set_pkChrSpawnedBy.end(), f);
-		m_set_pkChrSpawnedBy.clear();
-	}
-
-	if (!m_pkChrStone)
-		return;
-
-	m_pkChrStone->m_set_pkChrSpawnedBy.erase(this);
-	m_pkChrStone = nullptr;
-	if (const entt::entity self = GetEntityHandle();
-		self != entt::null && g_registry.valid(self))
-		g_registry.remove<ecs::StoneOwner>(self);
-}
-#endif
 
 namespace CombatSystem {
 

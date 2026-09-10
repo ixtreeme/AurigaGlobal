@@ -1,6 +1,7 @@
 #pragma once
 
 #include <unordered_set>
+#include <vector>
 
 #include <cstdint>
 #include <unordered_map>
@@ -81,6 +82,13 @@ struct StoneOwner {
     entt::entity stone { entt::null };
 };
 
+// The mobs a stone spawned. This was m_set_pkChrSpawnedBy, a raw pointer set
+// that only the stone itself could read, and that nothing kept in step when a
+// mob left one stone for another.
+struct StoneSpawns {
+    std::vector<entt::entity> members;
+};
+
 // When this mob last repositioned around its target. One field, but it was
 // the only thing keeping IsChangeAttackPosition on CHARACTER.
 struct AttackPositionTimer {
@@ -102,6 +110,12 @@ struct InvincibleState {
 // The GM "armada" flag: HP can fall but death never fires.
 // Who landed the killing blow, carried from the damage that did it to the
 // death that follows. Cleared as the death is processed.
+// Whether the last death came from a monster rather than a player. The
+// respawn heal reads it to decide how much HP to give back.
+struct DeadByMonster {
+    bool value { false };
+};
+
 struct KillerPID {
     uint32_t value { 0 };
 };
