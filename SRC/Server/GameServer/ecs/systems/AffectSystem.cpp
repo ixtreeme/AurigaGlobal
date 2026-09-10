@@ -480,14 +480,14 @@ void ApplyMobAttribute(entt::entity target, const TMobTable* table)
 
     for (int i = 0; i < MOB_ENCHANTS_MAX_NUM; ++i) {
         if (table->cEnchants[i] != 0) {
-            ecs::PointSystem::ApplyPoint(ch->GetEntityHandle(), aiMobEnchantApplyIdx[i], table->cEnchants[i]);
+            ecs::PointSystem::ApplyPoint(target, aiMobEnchantApplyIdx[i], table->cEnchants[i]);
         }
     }
 
 
     for (int i = 0; i < MOB_RESISTS_MAX_NUM; ++i) {
         if (table->cResists[i] != 0) {
-            ecs::PointSystem::ApplyPoint(ch->GetEntityHandle(), aiMobResistsApplyIdx[i], table->cResists[i]);
+            ecs::PointSystem::ApplyPoint(target, aiMobResistsApplyIdx[i], table->cResists[i]);
         }
     }
 

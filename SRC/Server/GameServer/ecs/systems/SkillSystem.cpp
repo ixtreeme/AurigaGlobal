@@ -2011,7 +2011,7 @@ EVENTFUNC(ChainLightningEvent)
 
 	if (target != entt::null)
 	{
-		CombatSystem::CreateFly(pkChrVictim->GetEntityHandle(), FLY_CHAIN_LIGHTNING, target);
+		CombatSystem::CreateFly(victimEntity, FLY_CHAIN_LIGHTNING, target);
 		if (character != entt::null)
 			g_dispatcher.trigger(ecs::EvSkillUsed { character, SKILL_CHAIN });
 		pkChr->ComputeSkill(SKILL_CHAIN, target);

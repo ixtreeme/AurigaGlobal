@@ -2019,7 +2019,7 @@ void CInputMain::Move(entt::entity character, const char * data)
 		return;
 
 	struct command_move * pinfo = (struct command_move *) data;
-	if (!ecs::MovementSystem::CanMove(ch->GetEntityHandle()))
+	if (!ecs::MovementSystem::CanMove(character))
 		return;
 
 	if (pinfo->bFunc >= FUNC_MAX_NUM && !(pinfo->bFunc & 0x80))
@@ -2132,7 +2132,7 @@ void CInputMain::Move(entt::entity character, const char * data)
 	// DUAL-PATH: ECS + legacy call
 	if (pinfo->bFunc == FUNC_MOVE)
 	{
-		if (ecs::PointSystem::GetLimitPoint(ch->GetEntityHandle(), POINT_MOV_SPEED) == 0)
+		if (ecs::PointSystem::GetLimitPoint(character, POINT_MOV_SPEED) == 0)
 			return;
 
 		ecs::MovementSystem::SetRotation(character, pinfo->bRot * 5.0f);

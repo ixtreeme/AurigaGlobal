@@ -1322,7 +1322,7 @@ void CGuild::UseSkill(uint32_t dwVnum, entt::entity character, uint32_t pid)
 
 	uint32_t dwRealVnum = dwVnum - GUILD_SKILL_START;
 
-	if (!ecs::MovementSystem::CanMove(ch->GetEntityHandle()))
+	if (!ecs::MovementSystem::CanMove(character))
 		return;
 
 	if (dwRealVnum >= GUILD_SKILL_COUNT)
@@ -1458,7 +1458,7 @@ void CGuild::UseSkill(uint32_t dwVnum, entt::entity character, uint32_t pid)
 					const entt::entity victim = *it;
 					LPCHARACTER pkVictim = ecs::LegacyCharOf(victim);
 					AffectSystem::RemoveAffect(victim, dwVnum);
-					ch->ComputeSkill(dwVnum, (pkVictim ? pkVictim->GetEntityHandle() : entt::null), m_data.abySkill[dwRealVnum]);
+					ch->ComputeSkill(dwVnum, victim, m_data.abySkill[dwRealVnum]);
 				}
 			}
 			break;

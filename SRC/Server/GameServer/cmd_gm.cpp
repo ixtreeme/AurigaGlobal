@@ -1896,11 +1896,11 @@ ACMD(do_set)
 				return;
 			int gaya = 0;
 			str_to_number(gaya, arg3);
-			int before_gaya = ecs::PointSystem::GetGaya(target->GetEntityHandle());
+			int before_gaya = ecs::PointSystem::GetGaya(tch);
 			ecs::PointSystem::Change(tch, POINT_GAYA, gaya, true);
 			if (!ecs::PlayerRuntime::IsValid(tch))
 				return;
-			int after_gaya = ecs::PointSystem::GetGaya(target->GetEntityHandle());
+			int after_gaya = ecs::PointSystem::GetGaya(tch);
 			if (0 == after_gaya && 0 != before_gaya)
 			{
 				LogManager::instance().CharLog(tch, gaya, "ZERO_GAYA", "GM");
@@ -1924,7 +1924,7 @@ ACMD(do_reset)
 {
 	LPCHARACTER ch = ecs::LegacyCharOf(character);
 	ecs::PointSystem::Change(character, POINT_HP, ecs::PointSystem::GetMaxHP(character) - ch->GetHP());
-	ecs::PointSystem::Change(character, POINT_SP, ecs::PointSystem::GetMaxSP(character) - ecs::PlayerRuntime::GetSP(ch->GetEntityHandle()));
+	ecs::PointSystem::Change(character, POINT_SP, ecs::PointSystem::GetMaxSP(character) - ecs::PlayerRuntime::GetSP(character));
 	ch->Save();
 }
 
@@ -4166,9 +4166,9 @@ ACMD (do_can_dead)
 {
 	LPCHARACTER ch = ecs::LegacyCharOf(character);
 	if (subcmd)
-		CombatSystem::SetUndying(ch->GetEntityHandle(), true);
+		CombatSystem::SetUndying(character, true);
 	else
-		CombatSystem::SetUndying(ch->GetEntityHandle(), false);
+		CombatSystem::SetUndying(character, false);
 }
 
 ACMD (do_full_set)

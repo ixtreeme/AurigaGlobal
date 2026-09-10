@@ -4994,7 +4994,7 @@ void CHARACTER::OnClick(entt::entity causer)
         }
 
         m_triggerOnClick.pFunc(GetEntityHandle(),
-			pkCauser ? pkCauser->GetEntityHandle() : entt::null);
+			pkCauser ? causer : entt::null);
     }
 }
 

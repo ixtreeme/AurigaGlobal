@@ -765,7 +765,6 @@ void CHARACTER::PartyJoin(entt::entity leader)
 {
     LPCHARACTER pkLeader = ecs::LegacyCharOf(leader);
     if (pkLeader && pkLeader->GetParty()) {
-		const entt::entity leader = pkLeader->GetEntityHandle();
 #ifdef TEXTS_IMPROVEMENT
         ecs::ChatSystem::SendNew(leader, CHAT_TYPE_INFO, 1249, "%s", GetName());
         ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 193, "%s", ecs::PlayerRuntime::GetName(leader).data());
@@ -797,7 +796,7 @@ CHARACTER::PartyJoinErrCode CHARACTER::IsPartyJoinableMutableCondition(const ent
     else if (pkGuest->IsObserverMode())
         return PERR_OBSERVER;
     else if (false == __party_can_join_by_level(
-		pkLeader->GetEntityHandle(), pkGuest->GetEntityHandle()))
+		leader, guest))
         return PERR_LVBOUNDARY;
     else if (pkGuest->GetParty())
         return PERR_ALREADYJOIN;

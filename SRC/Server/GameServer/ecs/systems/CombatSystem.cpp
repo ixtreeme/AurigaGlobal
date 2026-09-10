@@ -2028,7 +2028,7 @@ LPCHARACTER CHARACTER::DistributeExp()
 		auto* pAttacker = LegacyCharOf(eAttacker);
 
 		// NPC ⵵ ϳ? -.-;
-		if (!pAttacker || ecs::PlayerRuntime::IsNPC((pAttacker ? pAttacker->GetEntityHandle() : entt::null)) || DISTANCE_APPROX(GetX() - ecs::PlayerRuntime::GetX((pAttacker ? pAttacker->GetEntityHandle() : entt::null)), GetY() - ecs::PlayerRuntime::GetY((pAttacker ? pAttacker->GetEntityHandle() : entt::null))) > 5000)
+		if (!pAttacker || ecs::PlayerRuntime::IsNPC(eAttacker) || DISTANCE_APPROX(GetX() - ecs::PlayerRuntime::GetX(eAttacker), GetY() - ecs::PlayerRuntime::GetY(eAttacker)) > 5000)
 			continue;
 
 		iTotalDam += iDam;
@@ -2038,9 +2038,9 @@ LPCHARACTER CHARACTER::DistributeExp()
 			iMostDam = iDam;
 		}
 
-		if (ecs::SocialSystem::GetParty((pAttacker ? pAttacker->GetEntityHandle() : entt::null)))
+		if (ecs::SocialSystem::GetParty(eAttacker))
 		{
-			std::map<LPPARTY, TDamageInfo>::iterator it = map_party_damage.find(ecs::SocialSystem::GetParty((pAttacker ? pAttacker->GetEntityHandle() : entt::null)));
+			std::map<LPPARTY, TDamageInfo>::iterator it = map_party_damage.find(ecs::SocialSystem::GetParty(eAttacker));
 			if (it == map_party_damage.end())
 			{
 				TDamageInfo di;
@@ -3063,7 +3063,7 @@ int CHARACTER::GetArrowAndBow(entt::entity* ppkBow, entt::entity* ppkArrow, int 
 void CHARACTER::DistributeSP(entt::entity killer, int iMethod)
 {
 	LPCHARACTER pkKiller = ecs::LegacyCharOf(killer);
-	if (ecs::PlayerRuntime::GetSP(pkKiller->GetEntityHandle()) >= ecs::PointSystem::GetMaxSP(killer))
+	if (ecs::PlayerRuntime::GetSP(killer) >= ecs::PointSystem::GetMaxSP(killer))
 		return;
 
 	bool bAttacking = (get_dword_time() - GetLastAttackTime()) < 3000;
@@ -5611,7 +5611,7 @@ bool Damage(entt::entity victim, entt::entity attacker, int64_t dam, uint8_t dam
 		//
 		if (ecs::PointSystem::Get(attacker, POINT_MALL_ATTBONUS) > 0)
 		{
-			int64_t add_dam = std::min((int64_t)300, dam * ecs::PointSystem::GetLimitPoint(pkAttacker->GetEntityHandle(), POINT_MALL_ATTBONUS) / 100);
+			int64_t add_dam = std::min((int64_t)300, dam * ecs::PointSystem::GetLimitPoint(attacker, POINT_MALL_ATTBONUS) / 100);
 			dam += add_dam;
 		}
 

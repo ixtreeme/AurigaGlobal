@@ -1426,7 +1426,7 @@ bool CVikingDungeon::OnNpcTakeItem(entt::entity from, entt::entity npc, CItem* i
         int32_t stage = d->GetFlag(kFlagFloor3NpcStage) + 1;
         d->SetFlag(kFlagFloor3NpcStage, stage);
 
-        CombatSystem::Dead(pkNpc->GetEntityHandle(), entt::null, true);
+        CombatSystem::Dead(npc, entt::null, true);
 
         uint32_t newNpc = kMemorialNpc4;
         if (stage == 1)
