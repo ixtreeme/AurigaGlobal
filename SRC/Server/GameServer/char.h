@@ -1195,7 +1195,6 @@ public:
 	void			SetRefineNPC(entt::entity character);
 	// END_OF_ADD_REFINE_BUILDING
 
-	bool			RefineItem(LPITEM pkItem, LPITEM pkTarget);
 	bool			DropItem(TItemPos Cell,
 #ifdef ENABLE_NEW_STACK_LIMIT
 		int
@@ -1210,11 +1209,8 @@ public:
 	//	void			PotionPacket(int iPotionType);
 
 	// ADD_MONSTER_REFINE
-	bool			DoRefine(LPITEM item, bool bMoneyOnly = false);
 	// END_OF_ADD_MONSTER_REFINE
 
-	bool			DoRefineWithScroll(LPITEM item);
-	bool			RefineInformation(uint8_t bCell, uint8_t bType, int iAdditionalCell = -1);
 
 	void			SetRefineMode(int iAdditionalCell = -1);
 	void			ClearRefineMode();
@@ -2260,7 +2256,6 @@ public:
 
 #ifdef ENABLE_SOUL_SYSTEM
 public:
-	bool 		DoRefineItemSoul(LPITEM item);
 	int 		GetSoulItemDamage(entt::entity victim, int iDamage, uint8_t bSoulType);
 #endif
 

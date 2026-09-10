@@ -118,7 +118,6 @@ class CItem : public CEntity
 
 
 		uint32_t		GetRefinedVnum()	{ return m_pProto ? m_pProto->dwRefinedVnum : 0; }
-		uint32_t		GetRefineFromVnum();
 		int		GetRefineLevel();
 
 

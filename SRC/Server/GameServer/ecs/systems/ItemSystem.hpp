@@ -149,6 +149,7 @@ int GiveMoreTime_Fix(entt::entity item, uint32_t dwTime);
 uint16_t GetItemRefineSet(entt::entity item);
 bool IsItemStackable(entt::entity item);
 uint32_t GetItemRefinedVnum(entt::entity item);
+uint32_t GetItemRefineFromVnum(entt::entity item);
 bool IsRealTimeItem(entt::entity item);
 bool IsRealTimeFirstUseItem(entt::entity item);
 bool IsUnlimitedTimeUnique(entt::entity item);
@@ -348,5 +349,8 @@ struct RefineResult {
 bool DoRefine(entt::entity e, entt::entity item, bool moneyOnly = false);
 bool DoRefineWithScroll(entt::entity e, entt::entity item);
 bool DoRefineItemSoul(entt::entity e, entt::entity item);
+bool RefineItem(entt::entity e, entt::entity pkItem, entt::entity pkTarget);
+bool RefineInformation(entt::entity e, uint8_t bCell, uint8_t bType, int iAdditionalCell = -1);
+void TransformRefineItem(entt::entity pkOldItem, entt::entity pkNewItem);
 
 } // namespace ItemSystem

@@ -7189,7 +7189,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 			{
 				if (item->GetVnum() == 71056) // Ã»·æÀÇ¼û°á
 				{
-					RefineItem(item, item2);
+					ItemSystem::RefineItem(GetEntityHandle(), item->GetEntityHandle(), item2->GetEntityHandle());
 				}
 #ifdef TEXTS_IMPROVEMENT
 				else {
@@ -7199,7 +7199,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 			}
 			else
 			{
-				RefineItem(item, item2);
+				ItemSystem::RefineItem(GetEntityHandle(), item->GetEntityHandle(), item2->GetEntityHandle());
 			}
 		}
 		break;
@@ -8535,190 +8535,13 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 
 int g_nPortalLimitTime = 10;
 
-void TransformRefineItem(LPITEM pkOldItem, LPITEM pkNewItem);
+namespace ItemSystem { void TransformRefineItem(entt::entity pkOldItem, entt::entity pkNewItem); }
 void NotifyRefineSuccess(entt::entity ch, entt::entity item, const char* way);
 void NotifyRefineFail(entt::entity ch, entt::entity item, const char* way, int success = 0);
 
 void CHARACTER::SetRefineNPC(entt::entity npc)
 {
     InventorySystem::SetRefineNPC(GetEntityHandle(), npc);
-}
-
-bool CHARACTER::DoRefine(LPITEM item, bool bMoneyOnly)
-{
-#ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(GetEntityHandle(), CHAT_TYPE_INFO, "char_item.cpp:: bool CHARACTER::DoRefine ");
-#endif
-	if (!CanHandleItem(true))
-	{
-		ClearRefineMode();
-		return false;
-	}
-
-	//°³·® ½Ã°£Á¦ÇÑ : upgrade_refine_scroll.quest ¿¡¼­ °³·®ÈÄ 5ºÐÀÌ³»¿¡ ÀÏ¹Ý °³·®À»
-	//ÁøÇàÇÒ¼ö ¾øÀ½
-	if (quest::CQuestManager::instance().GetEventFlag("update_refine_time") != 0)
-	{
-		if (get_global_time() < quest::CQuestManager::instance().GetEventFlag("update_refine_time") + (60 * 5))
-		{
-			LOG_INFO("can't refine {} {}", GetPlayerID(), GetName());
-			return false;
-		}
-	}
-
-	const TRefineTable* prt = CRefineManager::instance().GetRefineRecipe(item->GetRefineSet());
-
-	if (!prt)
-		return false;
-
-	uint32_t result_vnum = item->GetRefinedVnum();
-	int64_t cost = InventorySystem::ComputeRefineFee(GetEntityHandle(), prt->cost);
-
-	if (result_vnum == 0)
-	{
-#ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 305, "");
-#endif
-		return false;
-	}
-
-	if (item->GetType() == ITEM_USE && item->GetSubType() == USE_TUNING)
-		return false;
-
-	TItemTable* pProto = ITEM_MANAGER::instance().GetTable(item->GetRefinedVnum());
-
-	if (!pProto)
-	{
-#ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 427, "");
-#endif
-		return false;
-	}
-
-	// REFINE_COST
-	if (GetGold() < cost)
-	{
-#ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 232, "");
-#ifdef ENABLE_FEATURES_REFINE_SYSTEM
-		CRefineManager::instance().Reset_percent(GetEntityHandle());
-#endif
-#endif
-		return false;
-	}
-
-	if (!bMoneyOnly)
-	{
-		for (int i = 0; i < prt->material_count; ++i)
-		{
-			if (CountSpecifyItem(prt->materials[i].vnum) < prt->materials[i].count)
-			{
-#ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 233, "");
-#endif
-				return false;
-			}
-		}
-
-		for (int i = 0; i < prt->material_count; ++i)
-			RemoveSpecifyItem(prt->materials[i].vnum, prt->materials[i].count);
-	}
-
-	int prob = number(1, 100);
-
-
-#ifdef ENABLE_FEATURES_REFINE_SYSTEM	
-	if (ecs::SocialSystem::IsRefineThroughGuild(GetEntityHandle()) || bMoneyOnly)
-	{
-		prob -= 10;
-	}
-
-	int success_prob = prt->prob;
-	success_prob += CRefineManager::instance().Result(GetEntityHandle());
-#else
-	if (ecs::SocialSystem::IsRefineThroughGuild(GetEntityHandle()) || bMoneyOnly)
-		prob -= 10;
-
-#endif
-	// END_OF_REFINE_COST
-#ifdef ENABLE_FEATURES_REFINE_SYSTEM	
-	if (prob <= success_prob)
-#else
-	if (prob <= prt->prob)
-#endif
-	{
-		// ¼º°ø! ¸ðµç ¾ÆÀÌ�
-// ÛÀÌ »ç¶óÁö°í, °°Àº ¼Ó¼ºÀÇ ´Ù¸¥ ¾ÆÀÌ�
-// Û È¹µæ
-		const entt::entity pkNewItem = ITEM_MANAGER::instance().CreateItem(result_vnum, 1, 0, false);
-
-		if (ItemSystem::IsValidItem(pkNewItem))
-		{
-			ItemSystem::CopyAllAttrToEcs(item->GetEntityHandle(), pkNewItem);
-			LogManager::instance().ItemLogEntity(GetEntityHandle(), pkNewItem, "REFINE SUCCESS", ItemSystem::GetItemName(pkNewItem));
-
-			uint8_t bCell = ItemSystem::GetItemCell(item->GetEntityHandle());
-
-
-#ifdef ENABLE_BATTLE_PASS
-			uint8_t bBattlePassId = GetBattlePassId();
-			if (bBattlePassId)
-			{
-				uint32_t dwItemVnum, dwCount;
-				if (CBattlePass::instance().BattlePassMissionGetInfo(bBattlePassId, REFINE_ITEM, &dwItemVnum, &dwCount))
-				{
-					if (dwItemVnum == item->GetVnum() && GetMissionProgress(REFINE_ITEM, bBattlePassId) < dwCount)
-						UpdateMissionProgress(REFINE_ITEM, bBattlePassId, 1, dwCount);
-				}
-			}
-#endif
-
-			// DETAIL_REFINE_LOG
-			NotifyRefineSuccess(GetEntityHandle(), item->GetEntityHandle(), ecs::SocialSystem::IsRefineThroughGuild(GetEntityHandle()) ? "GUILD" : "POWER");
-			DBManager::instance().SendMoneyLog(MONEY_LOG_REFINE, item->GetVnum(), -cost);
-			ITEM_MANAGER::instance().RemoveItem(item->GetEntityHandle(), "REMOVE (REFINE SUCCESS)");
-			// END_OF_DETAIL_REFINE_LOG
-
-			InventorySystem::AddToCharacter(pkNewItem, GetEntityHandle(), TItemPos(INVENTORY, bCell));
-			ItemSystem::FlushDelayedSaveEcs(pkNewItem);
-
-			LOG_INFO("Refine Success {}", (long long)cost);
-			ItemSystem::AttrLog(pkNewItem);
-			//PointChange(POINT_GOLD, -cost);
-			LOG_INFO("PayPee {}", (long long)cost);
-#ifdef ENABLE_FEATURES_REFINE_SYSTEM
-			CRefineManager::instance().Reset(GetEntityHandle());
-#endif
-			InventorySystem::PayRefineFee(GetEntityHandle(), cost);
-			LOG_INFO("PayPee End {}", cost);
-		}
-		else
-		{
-			// DETAIL_REFINE_LOG
-			// ¾ÆÀÌ�
-// Û »ý¼º¿¡ ½ÇÆÐ -> °³·® ½ÇÆÐ·Î °£ÁÖ
-			LOG_ERROR("cannot create item {}", result_vnum);
-			NotifyRefineFail(GetEntityHandle(), item->GetEntityHandle(), ecs::SocialSystem::IsRefineThroughGuild(GetEntityHandle()) ? "GUILD" : "POWER");
-			// END_OF_DETAIL_REFINE_LOG
-		}
-	}
-	else
-	{
-		// ½ÇÆÐ! ¸ðµç ¾ÆÀÌ�
-// ÛÀÌ »ç¶óÁü.
-		DBManager::instance().SendMoneyLog(MONEY_LOG_REFINE, item->GetVnum(), -cost);
-		NotifyRefineFail(GetEntityHandle(), item->GetEntityHandle(), ecs::SocialSystem::IsRefineThroughGuild(GetEntityHandle()) ? "GUILD" : "POWER");
-		ItemSystem::AttrLog(item->GetEntityHandle());
-		ITEM_MANAGER::instance().RemoveItem(item->GetEntityHandle(), "REMOVE (REFINE FAIL)");
-
-		//PointChange(POINT_GOLD, -cost);
-#ifdef ENABLE_FEATURES_REFINE_SYSTEM
-		CRefineManager::instance().Reset(GetEntityHandle());
-#endif
-		InventorySystem::PayRefineFee(GetEntityHandle(), cost);
-	}
-
-	return true;
 }
 
 enum enum_RefineScrolls
@@ -8817,1147 +8640,12 @@ std::set<uint32_t> allowedVnums = {
 
 #ifdef ENABLE_MUSIN_SCROLL_REFINE_100_SUCCESS_RAZOR93
 
-bool CHARACTER::DoRefineWithScroll(LPITEM item)
-{
-	
-	//if (item && IsRefineBlockedVnum(item->GetVnum()))
-	//{
-	//	ecs::ChatSystem::Send(GetEntityHandle(), CHAT_TYPE_INFO, "Ezt a targyat nem lehet fejleszteni.");
-	//	ClearRefineMode();
-	//	return false;
-	//}
-
-	if (!CanHandleItem(true))
-	{
-		ClearRefineMode();
-		return false;
-	}
-
-	ClearRefineMode();
-
-	//°³·® ½Ã°£Á¦ÇÑ : upgrade_refine_scroll.quest ¿¡¼­ °³·®ÈÄ 5ºÐÀÌ³»¿¡ ÀÏ¹Ý °³·®À»
-		//ÁøÇàÇÒ¼ö ¾øÀ½
-	if (quest::CQuestManager::instance().GetEventFlag("update_refine_time") != 0)
-	{
-		if (get_global_time() < quest::CQuestManager::instance().GetEventFlag("update_refine_time") + (60 * 5))
-		{
-			LOG_INFO("can't refine {} {}", GetPlayerID(), GetName());
-			return false;
-		}
-	}
-
-	const TRefineTable* prt = CRefineManager::instance().GetRefineRecipe(item->GetRefineSet());
-
-	if (!prt)
-		return false;
-
-	LPITEM pkItemScroll;
-
-	// °³·®¼­ Ã¼�
-// ©
-	if (InventorySystem::GetRefineScrollCell(GetEntityHandle()) < 0)
-		return false;
-
-	pkItemScroll = GetInventoryItem(InventorySystem::GetRefineScrollCell(GetEntityHandle()));
-
-	if (!pkItemScroll)
-		return false;
-
-	if (!(pkItemScroll->GetType() == ITEM_USE && pkItemScroll->GetSubType() == USE_TUNING))
-		return false;
-
-	if (pkItemScroll->GetVnum() == item->GetVnum())
-		return false;
-
-	uint32_t result_vnum = item->GetRefinedVnum();
-	uint32_t result_fail_vnum = item->GetRefineFromVnum();
-
-	if (result_vnum == 0)
-	{
-#ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 305, "");
-#endif
-		return false;
-	}
-
-	// MUSIN_SCROLL
-	if (pkItemScroll->GetValue(0) == MUSIN_SCROLL)
-	{
-		
-		//if (item->GetRefineLevel() >= 4)
-		//{
-		//	ecs::ChatSystem::Send(GetEntityHandle(), CHAT_TYPE_INFO, "MAX +9 with this scroll!");
-		//	return false;
-		//}
-	}
-	// END_OF_MUSIC_SCROLL
-
-	else if (pkItemScroll->GetValue(0) == MEMO_SCROLL)
-	{
-		if (item->GetRefineLevel() != pkItemScroll->GetValue(1))
-		{
-#ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 417, "%s#%s", item->GetName(), pkItemScroll->GetName());
-#endif
-			return false;
-		}
-	}
-	else if (pkItemScroll->GetValue(0) == BDRAGON_SCROLL)
-	{
-		if (item->GetType() != ITEM_METIN || item->GetRefineLevel() != 4)
-		{
-#ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 665, "%s#%s", item->GetName(), pkItemScroll->GetName());
-#endif
-			return false;
-		}
-	}
-
-	TItemTable* pProto = ITEM_MANAGER::instance().GetTable(item->GetRefinedVnum());
-
-	if (!pProto)
-	{
-#ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 427, "");
-#endif
-		return false;
-	}
-
-	if (GetGold() < prt->cost)
-	{
-#ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 232, "");
-#endif
-#ifdef ENABLE_FEATURES_REFINE_SYSTEM
-		CRefineManager::instance().Reset_percent(GetEntityHandle());
-#endif
-		return false;
-	}
-
-	for (int i = 0; i < prt->material_count; ++i)
-	{
-		if (CountSpecifyItem(prt->materials[i].vnum) < prt->materials[i].count)
-		{
-#ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 233, "");
-#endif
-			return false;
-		}
-	}
-
-	for (int i = 0; i < prt->material_count; ++i)
-		RemoveSpecifyItem(prt->materials[i].vnum, prt->materials[i].count);
-
-	int prob = number(1, 100);
-	int success_prob = prt->prob;
-	bool bDestroyWhenFail = false;
-
-	const char* szRefineType = "SCROLL";
-
-	if (pkItemScroll->GetValue(0) == HYUNIRON_CHN ||
-		pkItemScroll->GetValue(0) == YONGSIN_SCROLL ||
-		pkItemScroll->GetValue(0) == YAGONG_SCROLL) // ÇöÃ¶, ¿ë½�
-// ÀÇ Ãàº¹¼­, ¾ß°øÀÇ ºñÀü¼­  Ã³¸®
-	{
-		const char hyuniron_prob[9] = { 100, 75, 65, 55, 45, 40, 35, 25, 20 };
-		const char yagong_prob[9] = { 100, 100, 90, 80, 70, 60, 50, 30, 20 };
-
-		if (pkItemScroll->GetValue(0) == YONGSIN_SCROLL)
-		{
-			success_prob = hyuniron_prob[MINMAX(0, item->GetRefineLevel(), 8)];
-		}
-		else if (pkItemScroll->GetValue(0) == YAGONG_SCROLL)
-		{
-			success_prob = yagong_prob[MINMAX(0, item->GetRefineLevel(), 8)];
-		}
-		else if (pkItemScroll->GetValue(0) == HYUNIRON_CHN) {} // @fixme121
-		else
-		{
-			LOG_ERROR("REFINE : Unknown refine scroll item. Value0: {}", pkItemScroll->GetValue(0));
-		}
-
-		if (pkItemScroll->GetValue(0) == HYUNIRON_CHN) // ÇöÃ¶Àº ¾ÆÀÌ�
-// ÛÀÌ ºÎ¼­Á®¾ß ÇÑ´Ù.
-			bDestroyWhenFail = true;
-
-		// DETAIL_REFINE_LOG
-		if (pkItemScroll->GetValue(0) == HYUNIRON_CHN)
-		{
-			szRefineType = "HYUNIRON";
-		}
-		else if (pkItemScroll->GetValue(0) == YONGSIN_SCROLL)
-		{
-			szRefineType = "GOD_SCROLL";
-		}
-		else if (pkItemScroll->GetValue(0) == YAGONG_SCROLL)
-		{
-			szRefineType = "YAGONG_SCROLL";
-		}
-		// END_OF_DETAIL_REFINE_LOG
-	}
-	// DETAIL_REFINE_LOG
-	if (pkItemScroll->GetValue(0) == MUSIN_SCROLL)
-	{
-		
-		success_prob += 100; // Musin izé mindig sikeres 
-		if (success_prob > 100)
-			success_prob = 100;
-
-		szRefineType = "MUSIN_SCROLL";
-	}
-	// END_OF_DETAIL_REFINE_LOG
-	else if (pkItemScroll->GetValue(0) == MEMO_SCROLL)
-	{
-		success_prob = 100;
-		szRefineType = "MEMO_SCROLL";
-	}
-	else if (pkItemScroll->GetValue(0) == BDRAGON_SCROLL)
-	{
-		success_prob = 80;
-		szRefineType = "BDRAGON_SCROLL";
-	}
-
-#ifdef ENABLE_FEATURES_REFINE_SYSTEM	
-	success_prob += CRefineManager::instance().Result(GetEntityHandle());
-
-#endif
-	ItemSystem::ConsumeItemEcs((pkItemScroll ? pkItemScroll->GetEntityHandle() : entt::null));
-
-	if (prob <= success_prob)
-	{
-		// ¼º°ø! ¸ðµç ¾ÆÀÌ�
-// ÛÀÌ »ç¶óÁö°í, °°Àº ¼Ó¼ºÀÇ ´Ù¸¥ ¾ÆÀÌ�
-// Û È¹µæ
-		const entt::entity pkNewItem = ITEM_MANAGER::instance().CreateItem(result_vnum, 1, 0, false);
-
-		if (ItemSystem::IsValidItem(pkNewItem))
-		{
-			ItemSystem::CopyAllAttrToEcs(item->GetEntityHandle(), pkNewItem);
-			LogManager::instance().ItemLogEntity(GetEntityHandle(), pkNewItem, "REFINE SUCCESS", ItemSystem::GetItemName(pkNewItem));
-
-			uint8_t bCell = ItemSystem::GetItemCell(item->GetEntityHandle());
-
-
-#ifdef ENABLE_BATTLE_PASS
-			uint8_t bBattlePassId = GetBattlePassId();
-			if (bBattlePassId)
-			{
-				uint32_t dwItemVnum, dwCount;
-				if (CBattlePass::instance().BattlePassMissionGetInfo(bBattlePassId, REFINE_ITEM, &dwItemVnum, &dwCount))
-				{
-					if (dwItemVnum == item->GetVnum() && GetMissionProgress(REFINE_ITEM, bBattlePassId) < dwCount)
-						UpdateMissionProgress(REFINE_ITEM, bBattlePassId, 1, dwCount);
-				}
-			}
-#endif
-
-			NotifyRefineSuccess(GetEntityHandle(), item->GetEntityHandle(), szRefineType);
-
-			DBManager::instance().SendMoneyLog(MONEY_LOG_REFINE, item->GetVnum(), -prt->cost);
-			ITEM_MANAGER::instance().RemoveItem(item->GetEntityHandle(), "REMOVE (REFINE SUCCESS)");
-
-			InventorySystem::AddToCharacter(pkNewItem, GetEntityHandle(), TItemPos(INVENTORY, bCell));
-			ItemSystem::FlushDelayedSaveEcs(pkNewItem);
-
-
-			ItemSystem::AttrLog(pkNewItem);
-			//PointChange(POINT_GOLD, -prt->cost);
-#ifdef ENABLE_FEATURES_REFINE_SYSTEM
-			CRefineManager::instance().Reset(GetEntityHandle());
-#endif
-			InventorySystem::PayRefineFee(GetEntityHandle(), prt->cost);
-#ifdef ENABLE_UPGRADE_NOTICE_BY_RAZOR93
-			if (ItemSystem::GetItemRefineLevel(pkNewItem) >= 8)
-			{
-				char itemlink[512];
-				int len = 0;
-
-				len += snprintf(itemlink + len, sizeof(itemlink) - len, "item:%x:%x:%x:%x:%x:%x",
-					ItemSystem::GetItemVnum(pkNewItem),
-					ItemSystem::GetItemSocket(pkNewItem, 0),
-					ItemSystem::GetItemSocket(pkNewItem, 1),
-					ItemSystem::GetItemSocket(pkNewItem, 2),
-					0, // transmute
-					0  // transmute2 
-				);
-
-				// Bónuszok
-				for (int i = 0; i < ITEM_ATTRIBUTE_MAX_NUM; ++i)
-				{
-					uint8_t type = ItemSystem::GetItemAttributeType(pkNewItem, i);
-					short val = ItemSystem::GetItemAttributeValue(pkNewItem, i);
-
-					if (type != 0 && val != 0)
-						len += snprintf(itemlink + len, sizeof(itemlink) - len, ":%x:%d", type, val);
-				}
-
-				// debug log:
-				//LOG_INFO("ItemLink Debug: {}", itemlink);
-				//LOG_INFO(0, "Socket0=%d Socket1=%d Socket2=%d",
-					//ItemSystem::GetItemSocket(pkNewItem, 0),
-					//ItemSystem::GetItemSocket(pkNewItem, 1),
-					//ItemSystem::GetItemSocket(pkNewItem, 2));
-
-				char szChat[2048];
-				snprintf(szChat, sizeof(szChat),
-					"|cff00ff00[%s]|r Successfully upgraded:|cffffd700|H%s|h[%s]|h|r",
-					GetName(), itemlink, ItemSystem::GetItemName(pkNewItem));
-
-				SPacketGGNotice packet;
-				strlcpy(packet.szText, szChat, sizeof(packet.szText));
-				//P2P_MANAGER::instance().Send(&packet, sizeof(packet));
-
-				BroadcastNotice(szChat); // ez kell a jelenlegi ch-ra
-
-			}
-
-
-			if (allowedVnums.find(ItemSystem::GetItemVnum(pkNewItem)) != allowedVnums.end())
-			{
-				char itemlink[512];
-				int len = 0;
-
-				len += snprintf(itemlink + len, sizeof(itemlink) - len, "item:%x:%x:%x:%x:%x:%x",
-					ItemSystem::GetItemVnum(pkNewItem),
-					ItemSystem::GetItemSocket(pkNewItem, 0),
-					ItemSystem::GetItemSocket(pkNewItem, 1),
-					ItemSystem::GetItemSocket(pkNewItem, 2),
-					0, // transmute
-					0  // transmute2 
-				);
-
-				for (int i = 0; i < ITEM_ATTRIBUTE_MAX_NUM; ++i)
-				{
-					uint8_t type = ItemSystem::GetItemAttributeType(pkNewItem, i);
-					short val = ItemSystem::GetItemAttributeValue(pkNewItem, i);
-
-					if (type != 0 && val != 0)
-						len += snprintf(itemlink + len, sizeof(itemlink) - len, ":%x:%d", type, val);
-				}
-
-				char szChat[2048];
-				snprintf(szChat, sizeof(szChat),
-					"|cff00ff00[%s]|r Successfully upgraded:|cffffd700|H%s|h[%s]|h|r",
-					GetName(), itemlink, ItemSystem::GetItemName(pkNewItem));
-
-				ecs::ChatSystem::Send(GetEntityHandle(), CHAT_TYPE_INFO, szChat);
-			}
-#endif ENABLE_UPGRADE_NOTICE_BY_RAZOR93
-		}
-		else
-		{
-			// ¾ÆÀÌ�
-// Û »ý¼º¿¡ ½ÇÆÐ -> °³·® ½ÇÆÐ·Î °£ÁÖ
-			LOG_ERROR("cannot create item {}", result_vnum);
-			NotifyRefineFail(GetEntityHandle(), item->GetEntityHandle(), szRefineType);
-		}
-
-	}
-	else if (!bDestroyWhenFail && result_fail_vnum)
-	{
-		// ½ÇÆÐ! ¸ðµç ¾ÆÀÌ�
-// ÛÀÌ »ç¶óÁö°í, °°Àº ¼Ó¼ºÀÇ ³·Àº µî±ÞÀÇ ¾ÆÀÌ�
-// Û È¹µæ
-		const entt::entity pkNewItem = ITEM_MANAGER::instance().CreateItem(result_fail_vnum, 1, 0, false);
-
-		if (ItemSystem::IsValidItem(pkNewItem))
-		{
-			ItemSystem::CopyAllAttrToEcs(item->GetEntityHandle(), pkNewItem);
-			LogManager::instance().ItemLogEntity(GetEntityHandle(), pkNewItem, "REFINE FAIL", ItemSystem::GetItemName(pkNewItem));
-
-			uint8_t bCell = ItemSystem::GetItemCell(item->GetEntityHandle());
-
-
-#ifdef ENABLE_BATTLE_PASS
-			uint8_t bBattlePassId = GetBattlePassId();
-			if (bBattlePassId)
-			{
-				uint32_t dwItemVnum, dwCount;
-				if (CBattlePass::instance().BattlePassMissionGetInfo(bBattlePassId, REFINE_ITEM, &dwItemVnum, &dwCount))
-				{
-					if (dwItemVnum == item->GetVnum() && GetMissionProgress(REFINE_ITEM, bBattlePassId) < dwCount)
-						UpdateMissionProgress(REFINE_ITEM, bBattlePassId, 1, dwCount);
-				}
-			}
-#endif
-
-			DBManager::instance().SendMoneyLog(MONEY_LOG_REFINE, item->GetVnum(), -prt->cost);
-			NotifyRefineFail(GetEntityHandle(), item->GetEntityHandle(), szRefineType, -1);
-			ITEM_MANAGER::instance().RemoveItem(item->GetEntityHandle(), "REMOVE (REFINE FAIL)");
-
-			InventorySystem::AddToCharacter(pkNewItem, GetEntityHandle(), TItemPos(INVENTORY, bCell));
-			ItemSystem::FlushDelayedSaveEcs(pkNewItem);
-
-			ItemSystem::AttrLog(pkNewItem);
-
-			//PointChange(POINT_GOLD, -prt->cost);
-#ifdef ENABLE_FEATURES_REFINE_SYSTEM
-			CRefineManager::instance().Reset(GetEntityHandle());
-#endif
-			InventorySystem::PayRefineFee(GetEntityHandle(), prt->cost);
-		}
-		else
-		{
-			// ¾ÆÀÌ�
-// Û »ý¼º¿¡ ½ÇÆÐ -> °³·® ½ÇÆÐ·Î °£ÁÖ
-			LOG_ERROR("cannot create item {}", result_fail_vnum);
-			NotifyRefineFail(GetEntityHandle(), item->GetEntityHandle(), szRefineType);
-		}
-	}
-	else
-	{
-		NotifyRefineFail(GetEntityHandle(), item->GetEntityHandle(), szRefineType); // °³·®½Ã ¾ÆÀÌ�
-// Û »ç¶óÁöÁö ¾ÊÀ½
-
-#ifdef ENABLE_FEATURES_REFINE_SYSTEM
-		CRefineManager::instance().Reset(GetEntityHandle());
-#endif
-		InventorySystem::PayRefineFee(GetEntityHandle(), prt->cost);
-	}
-
-	return true;
-
-}
-
 #else
 
-bool CHARACTER::DoRefineWithScroll(LPITEM item)
-{
-	if (!CanHandleItem(true))
-	{
-		ClearRefineMode();
-		return false;
-	}
-
-	ClearRefineMode();
-
-	//°³·® ½Ã°£Á¦ÇÑ : upgrade_refine_scroll.quest ¿¡¼­ °³·®ÈÄ 5ºÐÀÌ³»¿¡ ÀÏ¹Ý °³·®À»
-	//ÁøÇàÇÒ¼ö ¾øÀ½
-	if (quest::CQuestManager::instance().GetEventFlag("update_refine_time") != 0)
-	{
-		if (get_global_time() < quest::CQuestManager::instance().GetEventFlag("update_refine_time") + (60 * 5))
-		{
-			LOG_INFO("can't refine {} {}", GetPlayerID(), GetName());
-			return false;
-		}
-	}
-
-	const TRefineTable* prt = CRefineManager::instance().GetRefineRecipe(item->GetRefineSet());
-
-	if (!prt)
-		return false;
-
-	LPITEM pkItemScroll;
-
-	// °³·®¼­ Ã¼�
-// ©
-	if (InventorySystem::GetRefineScrollCell(GetEntityHandle()) < 0)
-		return false;
-
-	pkItemScroll = GetInventoryItem(InventorySystem::GetRefineScrollCell(GetEntityHandle()));
-
-	if (!pkItemScroll)
-		return false;
-
-	if (!(pkItemScroll->GetType() == ITEM_USE && pkItemScroll->GetSubType() == USE_TUNING))
-		return false;
-
-	if (pkItemScroll->GetVnum() == item->GetVnum())
-		return false;
-
-	uint32_t result_vnum = item->GetRefinedVnum();
-	uint32_t result_fail_vnum = item->GetRefineFromVnum();
-
-	if (result_vnum == 0)
-	{
-#ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 305, "");
-#endif
-		return false;
-	}
-
-	// MUSIN_SCROLL
-	if (pkItemScroll->GetValue(0) == MUSIN_SCROLL)
-	{
-		if (item->GetRefineLevel() >= 4)
-		{
-#ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 305, "");
-#endif
-			return false;
-		}
-	}
-	// END_OF_MUSIC_SCROLL
-
-	else if (pkItemScroll->GetValue(0) == MEMO_SCROLL)
-	{
-		if (item->GetRefineLevel() != pkItemScroll->GetValue(1))
-		{
-#ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 417, "%s#%s", item->GetName(), pkItemScroll->GetName());
-#endif
-			return false;
-		}
-	}
-	else if (pkItemScroll->GetValue(0) == BDRAGON_SCROLL)
-	{
-		if (item->GetType() != ITEM_METIN || item->GetRefineLevel() != 4)
-		{
-#ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 665, "%s#%s", item->GetName(), pkItemScroll->GetName());
-#endif
-			return false;
-		}
-	}
-
-	TItemTable* pProto = ITEM_MANAGER::instance().GetTable(item->GetRefinedVnum());
-
-	if (!pProto)
-	{
-#ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 427, "");
-#endif
-		return false;
-	}
-
-	if (GetGold() < prt->cost)
-	{
-#ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 232, "");
-#endif
-#ifdef ENABLE_FEATURES_REFINE_SYSTEM
-		CRefineManager::instance().Reset_percent(GetEntityHandle());
-#endif
-		return false;
-	}
-
-	for (int i = 0; i < prt->material_count; ++i)
-	{
-		if (CountSpecifyItem(prt->materials[i].vnum) < prt->materials[i].count)
-		{
-#ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 233, "");
-#endif
-			return false;
-		}
-	}
-
-	for (int i = 0; i < prt->material_count; ++i)
-		RemoveSpecifyItem(prt->materials[i].vnum, prt->materials[i].count);
-
-	int prob = number(1, 100);
-	int success_prob = prt->prob;
-	bool bDestroyWhenFail = false;
-
-	const char* szRefineType = "SCROLL";
-
-	if (pkItemScroll->GetValue(0) == HYUNIRON_CHN ||
-		pkItemScroll->GetValue(0) == YONGSIN_SCROLL ||
-		pkItemScroll->GetValue(0) == YAGONG_SCROLL) // ÇöÃ¶, ¿ë½�
-// ÀÇ Ãàº¹¼­, ¾ß°øÀÇ ºñÀü¼­  Ã³¸®
-	{
-		const char hyuniron_prob[9] = { 100, 75, 65, 55, 45, 40, 35, 25, 20 };
-		const char yagong_prob[9] = { 100, 100, 90, 80, 70, 60, 50, 30, 20 };
-
-		if (pkItemScroll->GetValue(0) == YONGSIN_SCROLL)
-		{
-			success_prob = hyuniron_prob[MINMAX(0, item->GetRefineLevel(), 8)];
-		}
-		else if (pkItemScroll->GetValue(0) == YAGONG_SCROLL)
-		{
-			success_prob = yagong_prob[MINMAX(0, item->GetRefineLevel(), 8)];
-		}
-		else if (pkItemScroll->GetValue(0) == HYUNIRON_CHN) {} // @fixme121
-		else
-		{
-			LOG_ERROR("REFINE : Unknown refine scroll item. Value0: {}", pkItemScroll->GetValue(0));
-		}
-
-		if (pkItemScroll->GetValue(0) == HYUNIRON_CHN) // ÇöÃ¶Àº ¾ÆÀÌ�
-// ÛÀÌ ºÎ¼­Á®¾ß ÇÑ´Ù.
-			bDestroyWhenFail = true;
-
-		// DETAIL_REFINE_LOG
-		if (pkItemScroll->GetValue(0) == HYUNIRON_CHN)
-		{
-			szRefineType = "HYUNIRON";
-		}
-		else if (pkItemScroll->GetValue(0) == YONGSIN_SCROLL)
-		{
-			szRefineType = "GOD_SCROLL";
-		}
-		else if (pkItemScroll->GetValue(0) == YAGONG_SCROLL)
-		{
-			szRefineType = "YAGONG_SCROLL";
-		}
-		// END_OF_DETAIL_REFINE_LOG
-	}
-
-	// DETAIL_REFINE_LOG
-	if (pkItemScroll->GetValue(0) == MUSIN_SCROLL) // ¹«½�
-// ÀÇ Ãàº¹¼­´Â 100% ¼º°ø (+4±îÁö¸¸)
-	{
-		success_prob = 100;
-
-		szRefineType = "MUSIN_SCROLL";
-	}
-	// END_OF_DETAIL_REFINE_LOG
-	else if (pkItemScroll->GetValue(0) == MEMO_SCROLL)
-	{
-		success_prob = 100;
-		szRefineType = "MEMO_SCROLL";
-	}
-	else if (pkItemScroll->GetValue(0) == BDRAGON_SCROLL)
-	{
-		success_prob = 80;
-		szRefineType = "BDRAGON_SCROLL";
-	}
-
-#ifdef ENABLE_FEATURES_REFINE_SYSTEM	
-	success_prob += CRefineManager::instance().Result(GetEntityHandle());
-
-#endif
-	ItemSystem::ConsumeItemEcs((pkItemScroll ? pkItemScroll->GetEntityHandle() : entt::null));
-
-	if (prob <= success_prob)
-	{
-		// ¼º°ø! ¸ðµç ¾ÆÀÌ�
-// ÛÀÌ »ç¶óÁö°í, °°Àº ¼Ó¼ºÀÇ ´Ù¸¥ ¾ÆÀÌ�
-// Û È¹µæ
-		LPITEM pkNewItem = ITEM_MANAGER::instance().CreateItem(result_vnum, 1, 0, false);
-
-		if (pkNewItem)
-		{
-			ItemSystem::CopyAllAttrToEcs(item->GetEntityHandle(), pkNewItem->GetEntityHandle());
-			LogManager::instance().ItemLogEntity(GetEntityHandle(), pkNewItem, "REFINE SUCCESS", ItemSystem::GetItemName(pkNewItem));
-
-			uint8_t bCell = ItemSystem::GetItemCell(item->GetEntityHandle());
-
-
-#ifdef ENABLE_BATTLE_PASS
-			uint8_t bBattlePassId = GetBattlePassId();
-			if (bBattlePassId)
-			{
-				uint32_t dwItemVnum, dwCount;
-				if (CBattlePass::instance().BattlePassMissionGetInfo(bBattlePassId, REFINE_ITEM, &dwItemVnum, &dwCount))
-				{
-					if (dwItemVnum == item->GetVnum() && GetMissionProgress(REFINE_ITEM, bBattlePassId) < dwCount)
-						UpdateMissionProgress(REFINE_ITEM, bBattlePassId, 1, dwCount);
-				}
-			}
-#endif
-
-			NotifyRefineSuccess(GetEntityHandle(), item->GetEntityHandle(), szRefineType);
-
-			DBManager::instance().SendMoneyLog(MONEY_LOG_REFINE, item->GetVnum(), -prt->cost);
-			ITEM_MANAGER::instance().RemoveItem(item, "REMOVE (REFINE SUCCESS)");
-
-			InventorySystem::AddToCharacter(pkNewItem->GetEntityHandle(), GetEntityHandle(), TItemPos(INVENTORY, bCell));
-			ItemSystem::FlushDelayedSaveEcs(pkNewItem);
-
-
-			ItemSystem::AttrLog(pkNewItem);
-			//PointChange(POINT_GOLD, -prt->cost);
-#ifdef ENABLE_FEATURES_REFINE_SYSTEM
-			CRefineManager::instance().Reset(GetEntityHandle());
-#endif
-			InventorySystem::PayRefineFee(GetEntityHandle(), prt->cost);
-#ifdef ENABLE_UPGRADE_NOTICE_BY_RAZOR93
-			if (ItemSystem::GetItemRefineLevel(pkNewItem) >= 8)
-			{
-				char itemlink[512];
-				int len = 0;
-
-				len += snprintf(itemlink + len, sizeof(itemlink) - len, "item:%x:%x:%x:%x:%x:%x",
-					ItemSystem::GetItemVnum(pkNewItem),
-					ItemSystem::GetItemSocket(pkNewItem, 0),
-					ItemSystem::GetItemSocket(pkNewItem, 1),
-					ItemSystem::GetItemSocket(pkNewItem, 2),
-					0, // transmute
-					0  // transmute2 
-				);
-
-				// Bónuszok
-				for (int i = 0; i < ITEM_ATTRIBUTE_MAX_NUM; ++i)
-				{
-					uint8_t type = ItemSystem::GetItemAttributeType(pkNewItem, i);
-					short val = ItemSystem::GetItemAttributeValue(pkNewItem, i);
-
-					if (type != 0 && val != 0)
-						len += snprintf(itemlink + len, sizeof(itemlink) - len, ":%x:%d", type, val);
-				}
-
-				// debug log:
-				//LOG_INFO(0, "ItemLink Debug: %s", itemlink);
-				//LOG_INFO(0, "Socket0=%d Socket1=%d Socket2=%d",
-					//ItemSystem::GetItemSocket(pkNewItem, 0),
-					//ItemSystem::GetItemSocket(pkNewItem, 1),
-					//ItemSystem::GetItemSocket(pkNewItem, 2));
-
-				char szChat[2048];
-				snprintf(szChat, sizeof(szChat),
-					"|cff00ff00[%s]|r Successfully upgraded:|cffffd700|H%s|h[%s]|h|r",
-					GetName(), itemlink, ItemSystem::GetItemName(pkNewItem));
-
-				SPacketGGNotice packet;
-				strlcpy(packet.szText, szChat, sizeof(packet.szText));
-				//P2P_MANAGER::instance().Send(&packet, sizeof(packet));
-
-				BroadcastNotice(szChat); // ez kell a jelenlegi ch-ra
-
-			}
-
-
-			if (allowedVnums.find(ItemSystem::GetItemVnum(pkNewItem)) != allowedVnums.end())
-			{
-				char itemlink[512];
-				int len = 0;
-
-				len += snprintf(itemlink + len, sizeof(itemlink) - len, "item:%x:%x:%x:%x:%x:%x",
-					ItemSystem::GetItemVnum(pkNewItem),
-					ItemSystem::GetItemSocket(pkNewItem, 0),
-					ItemSystem::GetItemSocket(pkNewItem, 1),
-					ItemSystem::GetItemSocket(pkNewItem, 2),
-					0, // transmute
-					0  // transmute2 
-				);
-
-				for (int i = 0; i < ITEM_ATTRIBUTE_MAX_NUM; ++i)
-				{
-					uint8_t type = ItemSystem::GetItemAttributeType(pkNewItem, i);
-					short val = ItemSystem::GetItemAttributeValue(pkNewItem, i);
-
-					if (type != 0 && val != 0)
-						len += snprintf(itemlink + len, sizeof(itemlink) - len, ":%x:%d", type, val);
-				}
-
-				char szChat[2048];
-				snprintf(szChat, sizeof(szChat),
-					"|cff00ff00[%s]|r Successfully upgraded:|cffffd700|H%s|h[%s]|h|r",
-					GetName(), itemlink, ItemSystem::GetItemName(pkNewItem));
-
-				ecs::ChatSystem::Send(GetEntityHandle(), CHAT_TYPE_INFO, szChat);
-			}
-#endif ENABLE_UPGRADE_NOTICE_BY_RAZOR93
-		}
-		else
-		{
-			// ¾ÆÀÌ�
-// Û »ý¼º¿¡ ½ÇÆÐ -> °³·® ½ÇÆÐ·Î °£ÁÖ
-			LOG_ERROR("cannot create item {}", result_vnum);
-			NotifyRefineFail(GetEntityHandle(), item->GetEntityHandle(), szRefineType);
-		}
-
-	}
-	else if (!bDestroyWhenFail && result_fail_vnum)
-	{
-		// ½ÇÆÐ! ¸ðµç ¾ÆÀÌ�
-// ÛÀÌ »ç¶óÁö°í, °°Àº ¼Ó¼ºÀÇ ³·Àº µî±ÞÀÇ ¾ÆÀÌ�
-// Û È¹µæ
-		LPITEM pkNewItem = ITEM_MANAGER::instance().CreateItem(result_fail_vnum, 1, 0, false);
-
-		if (pkNewItem)
-		{
-			ItemSystem::CopyAllAttrToEcs(item->GetEntityHandle(), pkNewItem->GetEntityHandle());
-			LogManager::instance().ItemLogEntity(GetEntityHandle(), pkNewItem, "REFINE FAIL", ItemSystem::GetItemName(pkNewItem));
-
-			uint8_t bCell = ItemSystem::GetItemCell(item->GetEntityHandle());
-
-
-#ifdef ENABLE_BATTLE_PASS
-			uint8_t bBattlePassId = GetBattlePassId();
-			if (bBattlePassId)
-			{
-				uint32_t dwItemVnum, dwCount;
-				if (CBattlePass::instance().BattlePassMissionGetInfo(bBattlePassId, REFINE_ITEM, &dwItemVnum, &dwCount))
-				{
-					if (dwItemVnum == item->GetVnum() && GetMissionProgress(REFINE_ITEM, bBattlePassId) < dwCount)
-						UpdateMissionProgress(REFINE_ITEM, bBattlePassId, 1, dwCount);
-				}
-			}
-#endif
-
-			DBManager::instance().SendMoneyLog(MONEY_LOG_REFINE, item->GetVnum(), -prt->cost);
-			NotifyRefineFail(GetEntityHandle(), item->GetEntityHandle(), szRefineType, -1);
-			ITEM_MANAGER::instance().RemoveItem(item, "REMOVE (REFINE FAIL)");
-
-			InventorySystem::AddToCharacter(pkNewItem->GetEntityHandle(), GetEntityHandle(), TItemPos(INVENTORY, bCell));
-			ItemSystem::FlushDelayedSaveEcs(pkNewItem);
-
-			ItemSystem::AttrLog(pkNewItem);
-
-			//PointChange(POINT_GOLD, -prt->cost);
-#ifdef ENABLE_FEATURES_REFINE_SYSTEM
-			CRefineManager::instance().Reset(GetEntityHandle());
-#endif
-			InventorySystem::PayRefineFee(GetEntityHandle(), prt->cost);
-		}
-		else
-		{
-			// ¾ÆÀÌ�
-// Û »ý¼º¿¡ ½ÇÆÐ -> °³·® ½ÇÆÐ·Î °£ÁÖ
-			LOG_ERROR("cannot create item {}", result_fail_vnum);
-			NotifyRefineFail(GetEntityHandle(), item->GetEntityHandle(), szRefineType);
-		}
-	}
-	else
-	{
-		NotifyRefineFail(GetEntityHandle(), item->GetEntityHandle(), szRefineType); // °³·®½Ã ¾ÆÀÌ�
-// Û »ç¶óÁöÁö ¾ÊÀ½
-
-#ifdef ENABLE_FEATURES_REFINE_SYSTEM
-		CRefineManager::instance().Reset(GetEntityHandle());
-#endif
-		InventorySystem::PayRefineFee(GetEntityHandle(), prt->cost);
-	}
-
-	return true;
-
-}
-
 #endif
 #ifdef ENABLE_SOUL_SYSTEM
 
-bool CHARACTER::DoRefineItemSoul(LPITEM item)
-{
-	if (!CanHandleItem(true))
-	{
-		ClearRefineMode();
-		return false;
-	}
-
-	ClearRefineMode();
-
-	LPITEM pkItemScroll;
-
-	if (InventorySystem::GetRefineScrollCell(GetEntityHandle()) < 0)
-		return false;
-
-	pkItemScroll = GetInventoryItem(InventorySystem::GetRefineScrollCell(GetEntityHandle()));
-
-	if (!pkItemScroll)
-		return false;
-
-	if (!(pkItemScroll->GetType() == ITEM_USE && pkItemScroll->GetSubType() == USE_TUNING))
-		return false;
-
-	if (pkItemScroll->GetVnum() == item->GetVnum())
-		return false;
-
-	uint32_t resultVnum = item->GetRefinedVnum();
-
-	if (resultVnum == 0)
-	{
-#ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 666, "%s", item->GetName());
 #endif
-		return false;
-	}
-
-	TItemTable* pProto = ITEM_MANAGER::instance().GetTable(item->GetRefinedVnum());
-
-	if (!pProto)
-	{
-		LOG_ERROR("DoRefineWithScroll NOT GET ITEM PROTO {}", item->GetRefinedVnum());
-#ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 305, "");
-#endif
-		return false;
-	}
-
-	int prob = number(1, 100);
-	int successProb = pkItemScroll->GetValue(1);
-
-	ItemSystem::ConsumeItemEcs((pkItemScroll ? pkItemScroll->GetEntityHandle() : entt::null));
-
-	if (prob <= successProb)
-	{
-		const entt::entity pkNewItem = ITEM_MANAGER::instance().CreateItem(resultVnum, 1, 0, false);
-		if (ItemSystem::IsValidItem(pkNewItem))
-		{
-			uint8_t bCell = ItemSystem::GetItemCell(item->GetEntityHandle());
-			ecs::ChatSystem::Send(GetEntityHandle(), CHAT_TYPE_COMMAND, "RefineSoulSuceeded");
-			ITEM_MANAGER::instance().RemoveItem(item->GetEntityHandle(), "REMOVE (REFINE SUCCESS)");
-
-			InventorySystem::AddToCharacter(pkNewItem, GetEntityHandle(), TItemPos(INVENTORY, bCell));
-			ItemSystem::FlushDelayedSaveEcs(pkNewItem);
-		}
-		else
-		{
-			LOG_ERROR("Cannot create item soul {}", resultVnum);
-			ecs::ChatSystem::Send(GetEntityHandle(), CHAT_TYPE_COMMAND, "RefineSoulFailed");
-		}
-	}
-	else
-	{
-		ecs::ChatSystem::Send(GetEntityHandle(), CHAT_TYPE_COMMAND, "RefineSoulFailed");
-	}
-
-	return true;
-}
-#endif
-
-bool CHARACTER::RefineInformation(uint8_t bCell, uint8_t bType, int iAdditionalCell)
-{
-	if (bCell > INVENTORY_MAX_NUM)
-		return false;
-
-	const entt::entity item = ItemSystem::GetInventoryItem(GetEntityHandle(), bCell);
-
-
-	if (item == entt::null)
-		return false;
-
-#ifdef ATTR_LOCK
-	if (ItemSystem::GetItemLockedAttr(item) != -1)
-	{
-#ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 784, "");
-#endif
-		return false;
-	}
-#endif
-
-	// REFINE_COST
-	if (bType == REFINE_TYPE_MONEY_ONLY && !ecs::PlayerRuntime::GetQuestFlag(GetEntityHandle(), "deviltower_zone.can_refine"))
-	{
-#ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 361, "");
-#endif
-		return false;
-	}
-	// END_OF_REFINE_COST
-
-	TPacketGCRefineInformation p;
-
-	p.header = HEADER_GC_REFINE_INFORMATION;
-	p.pos = bCell;
-	p.src_vnum = ItemSystem::GetItemVnum(item);
-	p.result_vnum = ItemSystem::GetItemRefinedVnum(item);
-	p.type = bType;
-
-	if (p.result_vnum == 0)
-	{
-#ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 427, "");
-#endif
-		return false;
-	}
-
-	if (ItemSystem::GetItemType(item) == ITEM_USE && ItemSystem::GetItemSubType(item) == USE_TUNING)
-	{
-		if (bType == 0)
-		{
-#ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 424, "");
-#endif
-			return false;
-		}
-		else
-		{
-			const entt::entity itemScroll = ItemSystem::GetInventoryItem(GetEntityHandle(), iAdditionalCell);
-			if (itemScroll == entt::null || ItemSystem::GetItemVnum(item) == ItemSystem::GetItemVnum(itemScroll))
-			{
-#ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 229, "");
-#endif
-				return false;
-			}
-		}
-	}
-
-#ifdef ENABLE_SOUL_SYSTEM
-	if (bType == REFINE_TYPE_SOUL)
-	{
-		const entt::entity itemScroll = ItemSystem::GetInventoryItem(GetEntityHandle(), iAdditionalCell);
-		if (itemScroll == entt::null)
-			return false;
-
-		p.cost = 0;
-		p.prob = ItemSystem::GetItemValue(itemScroll, 1);
-		p.material_count = 0;
-		memset(p.materials, 0, sizeof(p.materials));
-
-		GetDesc()->Packet(&p, sizeof(TPacketGCRefineInformation));
-
-		SetRefineMode(iAdditionalCell);
-		return true;
-	}
-#endif
-
-	CRefineManager& rm = CRefineManager::instance();
-
-	const TRefineTable* prt = rm.GetRefineRecipe(ItemSystem::GetItemRefineSet(item));
-
-	if (!prt)
-	{
-#ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 427, "");
-#endif
-		return false;
-	}
-
-	p.cost = InventorySystem::ComputeRefineFee(GetEntityHandle(), prt->cost);
-#ifdef NEW_POINT_EXP_DOUBLE_BONUS_RAZOR93
-	int success_prob = prt->prob;
-
-	// Kijelzett esély igazítása scroll típus alapján (hogy a kliens ugyanazt lássa, mint amit a szerver használ)
-	if (bType != REFINE_TYPE_MONEY_ONLY)
-	{
-		const entt::entity pkScroll = ItemSystem::GetInventoryItem(GetEntityHandle(), iAdditionalCell);
-		if (pkScroll != entt::null && ItemSystem::GetItemType(pkScroll) == ITEM_USE && ItemSystem::GetItemSubType(pkScroll) == USE_TUNING)
-		{
-			const int scrollType = ItemSystem::GetItemValue(pkScroll, 0);
-
-			if (scrollType == YONGSIN_SCROLL || scrollType == YAGONG_SCROLL || scrollType == HYUNIRON_CHN)
-			{
-				const char hyuniron_prob[9] = { 100, 75, 65, 55, 45, 40, 35, 25, 20 };
-				const char yagong_prob[9] = { 100, 100, 90, 80, 70, 60, 50, 30, 20 };
-
-				if (scrollType == YONGSIN_SCROLL)
-					success_prob = hyuniron_prob[MINMAX(0, ItemSystem::GetItemRefineLevel(item), 8)];
-				else if (scrollType == YAGONG_SCROLL)
-					success_prob = yagong_prob[MINMAX(0, ItemSystem::GetItemRefineLevel(item), 8)];
-				// HYUNIRON_CHN: marad a prt->prob
-			}
-			else if (scrollType == MUSIN_SCROLL)
-			{
-				//if (ItemSystem::GetItemRefineLevel(item) >= 9)
-				//{
-				//	ecs::ChatSystem::Send(GetEntityHandle(), CHAT_TYPE_INFO, "MAX +9 with this scroll!");
-				//	return false;
-				//}
-				success_prob += 100;
-				if (success_prob > 100)
-					success_prob = 100;
-			}
-			else if (scrollType == MEMO_SCROLL)
-			{
-				if (ItemSystem::GetItemRefineLevel(item) != ItemSystem::GetItemValue(pkScroll, 1))
-					return false;
-				success_prob = 100;
-			}
-			else if (scrollType == BDRAGON_SCROLL)
-			{
-				if (ItemSystem::GetItemType(item) != ITEM_METIN || ItemSystem::GetItemRefineLevel(item) != 4)
-					return false;
-				success_prob = 80;
-			}
-		}
-	}
-
-#ifdef ENABLE_FEATURES_REFINE_SYSTEM
-	success_prob += CRefineManager::instance().Result(GetEntityHandle());
-#endif
-
-	success_prob = MINMAX(0, success_prob, 100);
-	p.prob = success_prob;
-#else
-	p.prob = prt->prob;
-#endif
-	if (bType == REFINE_TYPE_MONEY_ONLY)
-	{
-		p.material_count = 0;
-		memset(p.materials, 0, sizeof(p.materials));
-	}
-	else
-	{
-		p.material_count = prt->material_count;
-		memcpy(&p.materials, prt->materials, sizeof(prt->materials));
-	}
-
-	GetDesc()->Packet(&p, sizeof(TPacketGCRefineInformation));
-
-	SetRefineMode(iAdditionalCell);
-	return true;
-}
-
-bool CHARACTER::RefineItem(LPITEM pkItem, LPITEM pkTarget)
-{
-	if (!CanHandleItem())
-		return false;
-
-#ifdef ENABLE_SOUL_SYSTEM
-	uint32_t vnum = pkItem->GetVnum();
-	if ((vnum == 70602 || vnum == 70603 || vnum == 88958) && pkTarget->GetType() != ITEM_SOUL) {
-#ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 1294, "%s", pkItem->GetName());
-#endif
-		return false;
-	}
-#endif
-
-	if (pkItem->GetSubType() == USE_TUNING)
-	{
-		// XXX ¼º´É, ¼ÒÄÏ °³·®¼­´Â »ç¶óÁ³½À´Ï´Ù...
-		// XXX ¼º´É°³·®¼­´Â Ãàº¹ÀÇ ¼­°¡ µÇ¾ú´Ù!
-		// MUSIN_SCROLL
-		if (pkItem->GetValue(0) == MUSIN_SCROLL)
-			RefineInformation(ItemSystem::GetItemCell(pkTarget->GetEntityHandle()), REFINE_TYPE_MUSIN, pkItem->GetCell());
-		// END_OF_MUSIN_SCROLL
-
-#ifdef ENABLE_SOUL_SYSTEM
-		else if (pkItem->GetValue(0) == SOUL_SCROLL)
-			RefineInformation(ItemSystem::GetItemCell(pkTarget->GetEntityHandle()), REFINE_TYPE_SOUL, pkItem->GetCell());
-#endif
-
-		else if (pkItem->GetValue(0) == HYUNIRON_CHN)
-			RefineInformation(ItemSystem::GetItemCell(pkTarget->GetEntityHandle()), REFINE_TYPE_HYUNIRON, pkItem->GetCell());
-		else if (pkItem->GetValue(0) == BDRAGON_SCROLL)
-		{
-			if (pkTarget->GetRefineSet() != 702) return false;
-			RefineInformation(ItemSystem::GetItemCell(pkTarget->GetEntityHandle()), REFINE_TYPE_BDRAGON, pkItem->GetCell());
-		}
-		else
-		{
-			if (pkTarget->GetRefineSet() == 501) return false;
-			RefineInformation(ItemSystem::GetItemCell(pkTarget->GetEntityHandle()), REFINE_TYPE_SCROLL, pkItem->GetCell());
-		}
-	}
-	else if (pkItem->GetSubType() == USE_DETACHMENT && IS_SET(pkTarget->GetFlag(), ITEM_FLAG_REFINEABLE))
-	{
-		LogManager::instance().ItemLog(this, pkTarget, "USE_DETACHMENT", pkTarget->GetName());
-
-		bool bHasMetinStone = false;
-
-		for (int i = 0; i < ITEM_SOCKET_MAX_NUM; i++)
-		{
-			int32_t socket = pkTarget->GetSocket(i);
-			if (socket > 2 && socket != ITEM_BROKEN_METIN_VNUM)
-			{
-				bHasMetinStone = true;
-				break;
-			}
-		}
-
-		if (bHasMetinStone)
-		{
-			for (int i = 0; i < ITEM_SOCKET_MAX_NUM; ++i)
-			{
-				int32_t socket = pkTarget->GetSocket(i);
-				if (socket > 2 && socket != ITEM_BROKEN_METIN_VNUM)
-				{
-					ItemSystem::AutoGiveItemEcs(GetEntityHandle(), socket);
-					//TItemTable* pTable = ITEM_MANAGER::instance().GetTable(pkTarget->GetSocket(i));
-					//pkTarget->SetSocket(i, pTable->alValues[2]);
-					// ±úÁøµ¹·Î ´ëÃ¼ÇØÁØ´Ù
-					ItemSystem::SetItemSocketEcs((pkTarget ? pkTarget->GetEntityHandle() : entt::null), i, ITEM_BROKEN_METIN_VNUM);
-				}
-			}
-			ItemSystem::ConsumeItemEcs((pkItem ? pkItem->GetEntityHandle() : entt::null));
-			return true;
-		}
-		else
-		{
-#ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 360, "");
-#endif
-			return false;
-		}
-	}
-
-	return false;
-}
 
 void CHARACTER::__OpenPrivateShop(
 #ifdef KASMIR_PAKET_SYSTEM
@@ -10067,49 +8755,6 @@ void CHARACTER::SetRefineMode(int additionalCell)
 void CHARACTER::ClearRefineMode()
 {
     InventorySystem::ClearRefineMode(GetEntityHandle());
-}
-
-void TransformRefineItem(LPITEM pkOldItem, LPITEM pkNewItem)
-{
-
-	// ACCESSORY_REFINE
-	if (ItemSystem::IsAccessoryForSocket(pkOldItem->GetEntityHandle()))
-	{
-		for (int i = 0; i < ITEM_SOCKET_MAX_NUM; ++i)
-		{
-			pkNewItem->SetSocket(i, pkOldItem->GetSocket(i));
-		}
-		//pkNewItem->StartAccessorySocketExpireEvent();
-	}
-	// END_OF_ACCESSORY_REFINE
-	else
-	{
-		// ¿©±â¼­ ±úÁø¼®ÀÌ ÀÚµ¿ÀûÀ¸·Î Ã»¼Ò µÊ
-		for (int i = 0; i < ITEM_SOCKET_MAX_NUM; ++i)
-		{
-			if (!pkOldItem->GetSocket(i))
-				break;
-			else
-				pkNewItem->SetSocket(i, 1);
-		}
-
-		// ¼ÒÄÏ ¼³Á¤
-		int slot = 0;
-
-		for (int i = 0; i < ITEM_SOCKET_MAX_NUM; ++i)
-		{
-			int32_t socket = pkOldItem->GetSocket(i);
-
-			if (socket > 2 && socket != ITEM_BROKEN_METIN_VNUM)
-				pkNewItem->SetSocket(slot++, socket);
-		}
-
-	}
-
-	// ¸�
-// Á÷ ¾ÆÀÌ�
-// Û ¼³Á¤
-	ItemSystem::CopyItemAttributesEcs(pkOldItem->GetEntityHandle(), pkNewItem->GetEntityHandle());
 }
 
 void NotifyRefineSuccess(entt::entity ch, entt::entity item, const char* way)
@@ -10534,7 +9179,7 @@ void CHARACTER::ReceiveItem(entt::entity fromEntity, LPITEM item)
 			)
 		{
 			from->SetRefineNPC(GetEntityHandle());
-			from->RefineInformation(ItemSystem::GetItemCell(itemEntity), REFINE_TYPE_MONEY_ONLY);
+			ItemSystem::RefineInformation(from->GetEntityHandle(), ItemSystem::GetItemCell(itemEntity), REFINE_TYPE_MONEY_ONLY);
 		}
 #ifdef TEXTS_IMPROVEMENT
 		else {
@@ -10553,7 +9198,7 @@ void CHARACTER::ReceiveItem(entt::entity fromEntity, LPITEM item)
 		if (item->GetRefinedVnum())
 		{
 			from->SetRefineNPC(GetEntityHandle());
-			from->RefineInformation(ItemSystem::GetItemCell(itemEntity), REFINE_TYPE_NORMAL);
+			ItemSystem::RefineInformation(from->GetEntityHandle(), ItemSystem::GetItemCell(itemEntity), REFINE_TYPE_NORMAL);
 		}
 #ifdef TEXTS_IMPROVEMENT
 		else {
@@ -12632,11 +11277,6 @@ int	CItem::GetDuration()
 }
 
 
-uint32_t CItem::GetRefineFromVnum()
-{
-	return ITEM_MANAGER::instance().GetRefineFromVnum(GetVnum());
-}
-
 int CItem::GetRefineLevel()
 {
 	const char* name = GetBaseName();
@@ -12980,3 +11620,1380 @@ EVENTFUNC(soul_item_event)
 
 #endif
 
+namespace ItemSystem {
+
+// What this item refines back down to when a scroll fails.
+uint32_t GetItemRefineFromVnum(entt::entity item)
+{
+	return ITEM_MANAGER::instance().GetRefineFromVnum(GetItemVnum(item));
+}
+
+// The refine itself, with both sides as entities.
+bool DoRefine(entt::entity e, entt::entity item, bool bMoneyOnly)
+{
+#ifdef ENABLE_INGAME_DEBUG_RAZOR93
+	ecs::ChatSystem::Send(e, CHAT_TYPE_INFO, "char_item.cpp:: bool CHARACTER::DoRefine ");
+#endif
+	if (!InventorySystem::CanHandleItems(e, true))
+	{
+		InventorySystem::ClearRefineMode(e);
+		return false;
+	}
+
+	//°³·® ½Ã°£Á¦ÇÑ : upgrade_refine_scroll.quest ¿¡¼­ °³·®ÈÄ 5ºÐÀÌ³»¿¡ ÀÏ¹Ý °³·®À»
+	//ÁøÇàÇÒ¼ö ¾øÀ½
+	if (quest::CQuestManager::instance().GetEventFlag("update_refine_time") != 0)
+	{
+		if (get_global_time() < quest::CQuestManager::instance().GetEventFlag("update_refine_time") + (60 * 5))
+		{
+			LOG_INFO("can't refine {} {}", ecs::PlayerRuntime::GetPlayerID(e), ecs::PlayerRuntime::GetName(e).data());
+			return false;
+		}
+	}
+
+	const TRefineTable* prt = CRefineManager::instance().GetRefineRecipe(GetItemRefineSet(item));
+
+	if (!prt)
+		return false;
+
+	uint32_t result_vnum = GetItemRefinedVnum(item);
+	int64_t cost = InventorySystem::ComputeRefineFee(e, prt->cost);
+
+	if (result_vnum == 0)
+	{
+#ifdef TEXTS_IMPROVEMENT
+		ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 305, "");
+#endif
+		return false;
+	}
+
+	if (GetItemType(item) == ITEM_USE && GetItemSubType(item) == USE_TUNING)
+		return false;
+
+	TItemTable* pProto = ITEM_MANAGER::instance().GetTable(GetItemRefinedVnum(item));
+
+	if (!pProto)
+	{
+#ifdef TEXTS_IMPROVEMENT
+		ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 427, "");
+#endif
+		return false;
+	}
+
+	// REFINE_COST
+	if (ecs::PointSystem::GetGold(e) < cost)
+	{
+#ifdef TEXTS_IMPROVEMENT
+		ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 232, "");
+#ifdef ENABLE_FEATURES_REFINE_SYSTEM
+		CRefineManager::instance().Reset_percent(e);
+#endif
+#endif
+		return false;
+	}
+
+	if (!bMoneyOnly)
+	{
+		for (int i = 0; i < prt->material_count; ++i)
+		{
+			if (CountItem(e, prt->materials[i].vnum) < prt->materials[i].count)
+			{
+#ifdef TEXTS_IMPROVEMENT
+				ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 233, "");
+#endif
+				return false;
+			}
+		}
+
+		for (int i = 0; i < prt->material_count; ++i)
+			RemoveSpecifyItemEcs(e, prt->materials[i].vnum, prt->materials[i].count);
+	}
+
+	int prob = number(1, 100);
+
+
+#ifdef ENABLE_FEATURES_REFINE_SYSTEM	
+	if (ecs::SocialSystem::IsRefineThroughGuild(e) || bMoneyOnly)
+	{
+		prob -= 10;
+	}
+
+	int success_prob = prt->prob;
+	success_prob += CRefineManager::instance().Result(e);
+#else
+	if (ecs::SocialSystem::IsRefineThroughGuild(e) || bMoneyOnly)
+		prob -= 10;
+
+#endif
+	// END_OF_REFINE_COST
+#ifdef ENABLE_FEATURES_REFINE_SYSTEM	
+	if (prob <= success_prob)
+#else
+	if (prob <= prt->prob)
+#endif
+	{
+		// ¼º°ø! ¸ðµç ¾ÆÀÌ�
+// ÛÀÌ »ç¶óÁö°í, °°Àº ¼Ó¼ºÀÇ ´Ù¸¥ ¾ÆÀÌ�
+// Û È¹µæ
+		const entt::entity pkNewItem = ITEM_MANAGER::instance().CreateItem(result_vnum, 1, 0, false);
+
+		if (IsValidItem(pkNewItem))
+		{
+			CopyAllAttrToEcs(item, pkNewItem);
+			LogManager::instance().ItemLogEntity(e, pkNewItem, "REFINE SUCCESS", GetItemName(pkNewItem));
+
+			uint8_t bCell = GetItemCell(item);
+
+
+#ifdef ENABLE_BATTLE_PASS
+			uint8_t bBattlePassId = ecs::PlayerRuntime::GetBattlePassId(e);
+			if (bBattlePassId)
+			{
+				uint32_t dwItemVnum, dwCount;
+				if (CBattlePass::instance().BattlePassMissionGetInfo(bBattlePassId, REFINE_ITEM, &dwItemVnum, &dwCount))
+				{
+					if (dwItemVnum == GetItemVnum(item) && ecs::PlayerRuntime::GetMissionProgress(e, REFINE_ITEM, bBattlePassId) < dwCount)
+						ecs::PlayerRuntime::UpdateMissionProgress(e, REFINE_ITEM, bBattlePassId, 1, dwCount);
+				}
+			}
+#endif
+
+			// DETAIL_REFINE_LOG
+			NotifyRefineSuccess(e, item, ecs::SocialSystem::IsRefineThroughGuild(e) ? "GUILD" : "POWER");
+			DBManager::instance().SendMoneyLog(MONEY_LOG_REFINE, GetItemVnum(item), -cost);
+			ITEM_MANAGER::instance().RemoveItem(item, "REMOVE (REFINE SUCCESS)");
+			// END_OF_DETAIL_REFINE_LOG
+
+			InventorySystem::AddToCharacter(pkNewItem, e, TItemPos(INVENTORY, bCell));
+			FlushDelayedSaveEcs(pkNewItem);
+
+			LOG_INFO("Refine Success {}", (long long)cost);
+			AttrLog(pkNewItem);
+			//ecs::PointSystem::Change(e, POINT_GOLD, -cost);
+			LOG_INFO("PayPee {}", (long long)cost);
+#ifdef ENABLE_FEATURES_REFINE_SYSTEM
+			CRefineManager::instance().Reset(e);
+#endif
+			InventorySystem::PayRefineFee(e, cost);
+			LOG_INFO("PayPee End {}", cost);
+		}
+		else
+		{
+			// DETAIL_REFINE_LOG
+			// ¾ÆÀÌ�
+// Û »ý¼º¿¡ ½ÇÆÐ -> °³·® ½ÇÆÐ·Î °£ÁÖ
+			LOG_ERROR("cannot create item {}", result_vnum);
+			NotifyRefineFail(e, item, ecs::SocialSystem::IsRefineThroughGuild(e) ? "GUILD" : "POWER");
+			// END_OF_DETAIL_REFINE_LOG
+		}
+	}
+	else
+	{
+		// ½ÇÆÐ! ¸ðµç ¾ÆÀÌ�
+// ÛÀÌ »ç¶óÁü.
+		DBManager::instance().SendMoneyLog(MONEY_LOG_REFINE, GetItemVnum(item), -cost);
+		NotifyRefineFail(e, item, ecs::SocialSystem::IsRefineThroughGuild(e) ? "GUILD" : "POWER");
+		AttrLog(item);
+		ITEM_MANAGER::instance().RemoveItem(item, "REMOVE (REFINE FAIL)");
+
+		//ecs::PointSystem::Change(e, POINT_GOLD, -cost);
+#ifdef ENABLE_FEATURES_REFINE_SYSTEM
+		CRefineManager::instance().Reset(e);
+#endif
+		InventorySystem::PayRefineFee(e, cost);
+	}
+
+	// Both paths above normally consume the item, so this finds nothing
+	// to copy. The one path that keeps it is the failed creation above,
+	// and there its components are re-read - which is what the old
+	// entry point did on every successful return.
+	SyncItemStateFromLegacy(item);
+	return true;
+}
+
+#ifdef ENABLE_MUSIN_SCROLL_REFINE_100_SUCCESS_RAZOR93
+// Refining with a scroll rather than materials.
+bool DoRefineWithScroll(entt::entity e, entt::entity item)
+{
+	
+	//if (item && IsRefineBlockedVnum(GetItemVnum(item)))
+	//{
+	//	ecs::ChatSystem::Send(e, CHAT_TYPE_INFO, "Ezt a targyat nem lehet fejleszteni.");
+	//	InventorySystem::ClearRefineMode(e);
+	//	return false;
+	//}
+
+	if (!InventorySystem::CanHandleItems(e, true))
+	{
+		InventorySystem::ClearRefineMode(e);
+		return false;
+	}
+
+	InventorySystem::ClearRefineMode(e);
+
+	//°³·® ½Ã°£Á¦ÇÑ : upgrade_refine_scroll.quest ¿¡¼­ °³·®ÈÄ 5ºÐÀÌ³»¿¡ ÀÏ¹Ý °³·®À»
+		//ÁøÇàÇÒ¼ö ¾øÀ½
+	if (quest::CQuestManager::instance().GetEventFlag("update_refine_time") != 0)
+	{
+		if (get_global_time() < quest::CQuestManager::instance().GetEventFlag("update_refine_time") + (60 * 5))
+		{
+			LOG_INFO("can't refine {} {}", ecs::PlayerRuntime::GetPlayerID(e), ecs::PlayerRuntime::GetName(e).data());
+			return false;
+		}
+	}
+
+	const TRefineTable* prt = CRefineManager::instance().GetRefineRecipe(GetItemRefineSet(item));
+
+	if (!prt)
+		return false;
+
+
+	// °³·®¼­ Ã¼�
+// ©
+	if (InventorySystem::GetRefineScrollCell(e) < 0)
+		return false;
+
+	const entt::entity pkItemScroll = GetInventoryItem(e, InventorySystem::GetRefineScrollCell(e));
+
+	if (pkItemScroll == entt::null)
+		return false;
+
+	if (!(GetItemType(pkItemScroll) == ITEM_USE && GetItemSubType(pkItemScroll) == USE_TUNING))
+		return false;
+
+	if (GetItemVnum(pkItemScroll) == GetItemVnum(item))
+		return false;
+
+	uint32_t result_vnum = GetItemRefinedVnum(item);
+	uint32_t result_fail_vnum = GetItemRefineFromVnum(item);
+
+	if (result_vnum == 0)
+	{
+#ifdef TEXTS_IMPROVEMENT
+		ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 305, "");
+#endif
+		return false;
+	}
+
+	// MUSIN_SCROLL
+	if (GetItemValue(pkItemScroll, 0) == MUSIN_SCROLL)
+	{
+		
+		//if (GetItemRefineLevel(item) >= 4)
+		//{
+		//	ecs::ChatSystem::Send(e, CHAT_TYPE_INFO, "MAX +9 with this scroll!");
+		//	return false;
+		//}
+	}
+	// END_OF_MUSIC_SCROLL
+
+	else if (GetItemValue(pkItemScroll, 0) == MEMO_SCROLL)
+	{
+		if (GetItemRefineLevel(item) != GetItemValue(pkItemScroll, 1))
+		{
+#ifdef TEXTS_IMPROVEMENT
+			ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 417, "%s#%s", GetItemName(item), GetItemName(pkItemScroll));
+#endif
+			return false;
+		}
+	}
+	else if (GetItemValue(pkItemScroll, 0) == BDRAGON_SCROLL)
+	{
+		if (GetItemType(item) != ITEM_METIN || GetItemRefineLevel(item) != 4)
+		{
+#ifdef TEXTS_IMPROVEMENT
+			ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 665, "%s#%s", GetItemName(item), GetItemName(pkItemScroll));
+#endif
+			return false;
+		}
+	}
+
+	TItemTable* pProto = ITEM_MANAGER::instance().GetTable(GetItemRefinedVnum(item));
+
+	if (!pProto)
+	{
+#ifdef TEXTS_IMPROVEMENT
+		ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 427, "");
+#endif
+		return false;
+	}
+
+	if (ecs::PointSystem::GetGold(e) < prt->cost)
+	{
+#ifdef TEXTS_IMPROVEMENT
+		ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 232, "");
+#endif
+#ifdef ENABLE_FEATURES_REFINE_SYSTEM
+		CRefineManager::instance().Reset_percent(e);
+#endif
+		return false;
+	}
+
+	for (int i = 0; i < prt->material_count; ++i)
+	{
+		if (CountItem(e, prt->materials[i].vnum) < prt->materials[i].count)
+		{
+#ifdef TEXTS_IMPROVEMENT
+			ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 233, "");
+#endif
+			return false;
+		}
+	}
+
+	for (int i = 0; i < prt->material_count; ++i)
+		RemoveSpecifyItemEcs(e, prt->materials[i].vnum, prt->materials[i].count);
+
+	int prob = number(1, 100);
+	int success_prob = prt->prob;
+	bool bDestroyWhenFail = false;
+
+	const char* szRefineType = "SCROLL";
+
+	if (GetItemValue(pkItemScroll, 0) == HYUNIRON_CHN ||
+		GetItemValue(pkItemScroll, 0) == YONGSIN_SCROLL ||
+		GetItemValue(pkItemScroll, 0) == YAGONG_SCROLL) // ÇöÃ¶, ¿ë½�
+// ÀÇ Ãàº¹¼­, ¾ß°øÀÇ ºñÀü¼­  Ã³¸®
+	{
+		const char hyuniron_prob[9] = { 100, 75, 65, 55, 45, 40, 35, 25, 20 };
+		const char yagong_prob[9] = { 100, 100, 90, 80, 70, 60, 50, 30, 20 };
+
+		if (GetItemValue(pkItemScroll, 0) == YONGSIN_SCROLL)
+		{
+			success_prob = hyuniron_prob[MINMAX(0, GetItemRefineLevel(item), 8)];
+		}
+		else if (GetItemValue(pkItemScroll, 0) == YAGONG_SCROLL)
+		{
+			success_prob = yagong_prob[MINMAX(0, GetItemRefineLevel(item), 8)];
+		}
+		else if (GetItemValue(pkItemScroll, 0) == HYUNIRON_CHN) {} // @fixme121
+		else
+		{
+			LOG_ERROR("REFINE : Unknown refine scroll item. Value0: {}", GetItemValue(pkItemScroll, 0));
+		}
+
+		if (GetItemValue(pkItemScroll, 0) == HYUNIRON_CHN) // ÇöÃ¶Àº ¾ÆÀÌ�
+// ÛÀÌ ºÎ¼­Á®¾ß ÇÑ´Ù.
+			bDestroyWhenFail = true;
+
+		// DETAIL_REFINE_LOG
+		if (GetItemValue(pkItemScroll, 0) == HYUNIRON_CHN)
+		{
+			szRefineType = "HYUNIRON";
+		}
+		else if (GetItemValue(pkItemScroll, 0) == YONGSIN_SCROLL)
+		{
+			szRefineType = "GOD_SCROLL";
+		}
+		else if (GetItemValue(pkItemScroll, 0) == YAGONG_SCROLL)
+		{
+			szRefineType = "YAGONG_SCROLL";
+		}
+		// END_OF_DETAIL_REFINE_LOG
+	}
+	// DETAIL_REFINE_LOG
+	if (GetItemValue(pkItemScroll, 0) == MUSIN_SCROLL)
+	{
+		
+		success_prob += 100; // Musin izé mindig sikeres 
+		if (success_prob > 100)
+			success_prob = 100;
+
+		szRefineType = "MUSIN_SCROLL";
+	}
+	// END_OF_DETAIL_REFINE_LOG
+	else if (GetItemValue(pkItemScroll, 0) == MEMO_SCROLL)
+	{
+		success_prob = 100;
+		szRefineType = "MEMO_SCROLL";
+	}
+	else if (GetItemValue(pkItemScroll, 0) == BDRAGON_SCROLL)
+	{
+		success_prob = 80;
+		szRefineType = "BDRAGON_SCROLL";
+	}
+
+#ifdef ENABLE_FEATURES_REFINE_SYSTEM	
+	success_prob += CRefineManager::instance().Result(e);
+
+#endif
+	ConsumeItemEcs(pkItemScroll);
+
+	if (prob <= success_prob)
+	{
+		// ¼º°ø! ¸ðµç ¾ÆÀÌ�
+// ÛÀÌ »ç¶óÁö°í, °°Àº ¼Ó¼ºÀÇ ´Ù¸¥ ¾ÆÀÌ�
+// Û È¹µæ
+		const entt::entity pkNewItem = ITEM_MANAGER::instance().CreateItem(result_vnum, 1, 0, false);
+
+		if (IsValidItem(pkNewItem))
+		{
+			CopyAllAttrToEcs(item, pkNewItem);
+			LogManager::instance().ItemLogEntity(e, pkNewItem, "REFINE SUCCESS", GetItemName(pkNewItem));
+
+			uint8_t bCell = GetItemCell(item);
+
+
+#ifdef ENABLE_BATTLE_PASS
+			uint8_t bBattlePassId = ecs::PlayerRuntime::GetBattlePassId(e);
+			if (bBattlePassId)
+			{
+				uint32_t dwItemVnum, dwCount;
+				if (CBattlePass::instance().BattlePassMissionGetInfo(bBattlePassId, REFINE_ITEM, &dwItemVnum, &dwCount))
+				{
+					if (dwItemVnum == GetItemVnum(item) && ecs::PlayerRuntime::GetMissionProgress(e, REFINE_ITEM, bBattlePassId) < dwCount)
+						ecs::PlayerRuntime::UpdateMissionProgress(e, REFINE_ITEM, bBattlePassId, 1, dwCount);
+				}
+			}
+#endif
+
+			NotifyRefineSuccess(e, item, szRefineType);
+
+			DBManager::instance().SendMoneyLog(MONEY_LOG_REFINE, GetItemVnum(item), -prt->cost);
+			ITEM_MANAGER::instance().RemoveItem(item, "REMOVE (REFINE SUCCESS)");
+
+			InventorySystem::AddToCharacter(pkNewItem, e, TItemPos(INVENTORY, bCell));
+			FlushDelayedSaveEcs(pkNewItem);
+
+
+			AttrLog(pkNewItem);
+			//ecs::PointSystem::Change(e, POINT_GOLD, -prt->cost);
+#ifdef ENABLE_FEATURES_REFINE_SYSTEM
+			CRefineManager::instance().Reset(e);
+#endif
+			InventorySystem::PayRefineFee(e, prt->cost);
+#ifdef ENABLE_UPGRADE_NOTICE_BY_RAZOR93
+			if (GetItemRefineLevel(pkNewItem) >= 8)
+			{
+				char itemlink[512];
+				int len = 0;
+
+				len += snprintf(itemlink + len, sizeof(itemlink) - len, "item:%x:%x:%x:%x:%x:%x",
+					GetItemVnum(pkNewItem),
+					GetItemSocket(pkNewItem, 0),
+					GetItemSocket(pkNewItem, 1),
+					GetItemSocket(pkNewItem, 2),
+					0, // transmute
+					0  // transmute2 
+				);
+
+				// Bónuszok
+				for (int i = 0; i < ITEM_ATTRIBUTE_MAX_NUM; ++i)
+				{
+					uint8_t type = GetItemAttributeType(pkNewItem, i);
+					short val = GetItemAttributeValue(pkNewItem, i);
+
+					if (type != 0 && val != 0)
+						len += snprintf(itemlink + len, sizeof(itemlink) - len, ":%x:%d", type, val);
+				}
+
+				// debug log:
+				//LOG_INFO("ItemLink Debug: {}", itemlink);
+				//LOG_INFO(0, "Socket0=%d Socket1=%d Socket2=%d",
+					//GetItemSocket(pkNewItem, 0),
+					//GetItemSocket(pkNewItem, 1),
+					//GetItemSocket(pkNewItem, 2));
+
+				char szChat[2048];
+				snprintf(szChat, sizeof(szChat),
+					"|cff00ff00[%s]|r Successfully upgraded:|cffffd700|H%s|h[%s]|h|r",
+					ecs::PlayerRuntime::GetName(e).data(), itemlink, GetItemName(pkNewItem));
+
+				SPacketGGNotice packet;
+				strlcpy(packet.szText, szChat, sizeof(packet.szText));
+				//P2P_MANAGER::instance().Send(&packet, sizeof(packet));
+
+				BroadcastNotice(szChat); // ez kell a jelenlegi ch-ra
+
+			}
+
+
+			if (allowedVnums.find(GetItemVnum(pkNewItem)) != allowedVnums.end())
+			{
+				char itemlink[512];
+				int len = 0;
+
+				len += snprintf(itemlink + len, sizeof(itemlink) - len, "item:%x:%x:%x:%x:%x:%x",
+					GetItemVnum(pkNewItem),
+					GetItemSocket(pkNewItem, 0),
+					GetItemSocket(pkNewItem, 1),
+					GetItemSocket(pkNewItem, 2),
+					0, // transmute
+					0  // transmute2 
+				);
+
+				for (int i = 0; i < ITEM_ATTRIBUTE_MAX_NUM; ++i)
+				{
+					uint8_t type = GetItemAttributeType(pkNewItem, i);
+					short val = GetItemAttributeValue(pkNewItem, i);
+
+					if (type != 0 && val != 0)
+						len += snprintf(itemlink + len, sizeof(itemlink) - len, ":%x:%d", type, val);
+				}
+
+				char szChat[2048];
+				snprintf(szChat, sizeof(szChat),
+					"|cff00ff00[%s]|r Successfully upgraded:|cffffd700|H%s|h[%s]|h|r",
+					ecs::PlayerRuntime::GetName(e).data(), itemlink, GetItemName(pkNewItem));
+
+				ecs::ChatSystem::Send(e, CHAT_TYPE_INFO, szChat);
+			}
+#endif ENABLE_UPGRADE_NOTICE_BY_RAZOR93
+		}
+		else
+		{
+			// ¾ÆÀÌ�
+// Û »ý¼º¿¡ ½ÇÆÐ -> °³·® ½ÇÆÐ·Î °£ÁÖ
+			LOG_ERROR("cannot create item {}", result_vnum);
+			NotifyRefineFail(e, item, szRefineType);
+		}
+
+	}
+	else if (!bDestroyWhenFail && result_fail_vnum)
+	{
+		// ½ÇÆÐ! ¸ðµç ¾ÆÀÌ�
+// ÛÀÌ »ç¶óÁö°í, °°Àº ¼Ó¼ºÀÇ ³·Àº µî±ÞÀÇ ¾ÆÀÌ�
+// Û È¹µæ
+		const entt::entity pkNewItem = ITEM_MANAGER::instance().CreateItem(result_fail_vnum, 1, 0, false);
+
+		if (IsValidItem(pkNewItem))
+		{
+			CopyAllAttrToEcs(item, pkNewItem);
+			LogManager::instance().ItemLogEntity(e, pkNewItem, "REFINE FAIL", GetItemName(pkNewItem));
+
+			uint8_t bCell = GetItemCell(item);
+
+
+#ifdef ENABLE_BATTLE_PASS
+			uint8_t bBattlePassId = ecs::PlayerRuntime::GetBattlePassId(e);
+			if (bBattlePassId)
+			{
+				uint32_t dwItemVnum, dwCount;
+				if (CBattlePass::instance().BattlePassMissionGetInfo(bBattlePassId, REFINE_ITEM, &dwItemVnum, &dwCount))
+				{
+					if (dwItemVnum == GetItemVnum(item) && ecs::PlayerRuntime::GetMissionProgress(e, REFINE_ITEM, bBattlePassId) < dwCount)
+						ecs::PlayerRuntime::UpdateMissionProgress(e, REFINE_ITEM, bBattlePassId, 1, dwCount);
+				}
+			}
+#endif
+
+			DBManager::instance().SendMoneyLog(MONEY_LOG_REFINE, GetItemVnum(item), -prt->cost);
+			NotifyRefineFail(e, item, szRefineType, -1);
+			ITEM_MANAGER::instance().RemoveItem(item, "REMOVE (REFINE FAIL)");
+
+			InventorySystem::AddToCharacter(pkNewItem, e, TItemPos(INVENTORY, bCell));
+			FlushDelayedSaveEcs(pkNewItem);
+
+			AttrLog(pkNewItem);
+
+			//ecs::PointSystem::Change(e, POINT_GOLD, -prt->cost);
+#ifdef ENABLE_FEATURES_REFINE_SYSTEM
+			CRefineManager::instance().Reset(e);
+#endif
+			InventorySystem::PayRefineFee(e, prt->cost);
+		}
+		else
+		{
+			// ¾ÆÀÌ�
+// Û »ý¼º¿¡ ½ÇÆÐ -> °³·® ½ÇÆÐ·Î °£ÁÖ
+			LOG_ERROR("cannot create item {}", result_fail_vnum);
+			NotifyRefineFail(e, item, szRefineType);
+		}
+	}
+	else
+	{
+		NotifyRefineFail(e, item, szRefineType); // °³·®½Ã ¾ÆÀÌ�
+// Û »ç¶óÁöÁö ¾ÊÀ½
+
+#ifdef ENABLE_FEATURES_REFINE_SYSTEM
+		CRefineManager::instance().Reset(e);
+#endif
+		InventorySystem::PayRefineFee(e, prt->cost);
+	}
+
+	return true;
+
+}
+#else
+// Refining with a scroll rather than materials.
+bool DoRefineWithScroll(entt::entity e, entt::entity item)
+{
+	if (!InventorySystem::CanHandleItems(e, true))
+	{
+		InventorySystem::ClearRefineMode(e);
+		return false;
+	}
+
+	InventorySystem::ClearRefineMode(e);
+
+	//°³·® ½Ã°£Á¦ÇÑ : upgrade_refine_scroll.quest ¿¡¼­ °³·®ÈÄ 5ºÐÀÌ³»¿¡ ÀÏ¹Ý °³·®À»
+	//ÁøÇàÇÒ¼ö ¾øÀ½
+	if (quest::CQuestManager::instance().GetEventFlag("update_refine_time") != 0)
+	{
+		if (get_global_time() < quest::CQuestManager::instance().GetEventFlag("update_refine_time") + (60 * 5))
+		{
+			LOG_INFO("can't refine {} {}", ecs::PlayerRuntime::GetPlayerID(e), ecs::PlayerRuntime::GetName(e).data());
+			return false;
+		}
+	}
+
+	const TRefineTable* prt = CRefineManager::instance().GetRefineRecipe(GetItemRefineSet(item));
+
+	if (!prt)
+		return false;
+
+
+	// °³·®¼­ Ã¼�
+// ©
+	if (InventorySystem::GetRefineScrollCell(e) < 0)
+		return false;
+
+	const entt::entity pkItemScroll = GetInventoryItem(e, InventorySystem::GetRefineScrollCell(e));
+
+	if (pkItemScroll == entt::null)
+		return false;
+
+	if (!(GetItemType(pkItemScroll) == ITEM_USE && GetItemSubType(pkItemScroll) == USE_TUNING))
+		return false;
+
+	if (GetItemVnum(pkItemScroll) == GetItemVnum(item))
+		return false;
+
+	uint32_t result_vnum = GetItemRefinedVnum(item);
+	uint32_t result_fail_vnum = GetItemRefineFromVnum(item);
+
+	if (result_vnum == 0)
+	{
+#ifdef TEXTS_IMPROVEMENT
+		ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 305, "");
+#endif
+		return false;
+	}
+
+	// MUSIN_SCROLL
+	if (GetItemValue(pkItemScroll, 0) == MUSIN_SCROLL)
+	{
+		if (GetItemRefineLevel(item) >= 4)
+		{
+#ifdef TEXTS_IMPROVEMENT
+			ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 305, "");
+#endif
+			return false;
+		}
+	}
+	// END_OF_MUSIC_SCROLL
+
+	else if (GetItemValue(pkItemScroll, 0) == MEMO_SCROLL)
+	{
+		if (GetItemRefineLevel(item) != GetItemValue(pkItemScroll, 1))
+		{
+#ifdef TEXTS_IMPROVEMENT
+			ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 417, "%s#%s", GetItemName(item), GetItemName(pkItemScroll));
+#endif
+			return false;
+		}
+	}
+	else if (GetItemValue(pkItemScroll, 0) == BDRAGON_SCROLL)
+	{
+		if (GetItemType(item) != ITEM_METIN || GetItemRefineLevel(item) != 4)
+		{
+#ifdef TEXTS_IMPROVEMENT
+			ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 665, "%s#%s", GetItemName(item), GetItemName(pkItemScroll));
+#endif
+			return false;
+		}
+	}
+
+	TItemTable* pProto = ITEM_MANAGER::instance().GetTable(GetItemRefinedVnum(item));
+
+	if (!pProto)
+	{
+#ifdef TEXTS_IMPROVEMENT
+		ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 427, "");
+#endif
+		return false;
+	}
+
+	if (ecs::PointSystem::GetGold(e) < prt->cost)
+	{
+#ifdef TEXTS_IMPROVEMENT
+		ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 232, "");
+#endif
+#ifdef ENABLE_FEATURES_REFINE_SYSTEM
+		CRefineManager::instance().Reset_percent(e);
+#endif
+		return false;
+	}
+
+	for (int i = 0; i < prt->material_count; ++i)
+	{
+		if (CountItem(e, prt->materials[i].vnum) < prt->materials[i].count)
+		{
+#ifdef TEXTS_IMPROVEMENT
+			ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 233, "");
+#endif
+			return false;
+		}
+	}
+
+	for (int i = 0; i < prt->material_count; ++i)
+		RemoveSpecifyItemEcs(e, prt->materials[i].vnum, prt->materials[i].count);
+
+	int prob = number(1, 100);
+	int success_prob = prt->prob;
+	bool bDestroyWhenFail = false;
+
+	const char* szRefineType = "SCROLL";
+
+	if (GetItemValue(pkItemScroll, 0) == HYUNIRON_CHN ||
+		GetItemValue(pkItemScroll, 0) == YONGSIN_SCROLL ||
+		GetItemValue(pkItemScroll, 0) == YAGONG_SCROLL) // ÇöÃ¶, ¿ë½�
+// ÀÇ Ãàº¹¼­, ¾ß°øÀÇ ºñÀü¼­  Ã³¸®
+	{
+		const char hyuniron_prob[9] = { 100, 75, 65, 55, 45, 40, 35, 25, 20 };
+		const char yagong_prob[9] = { 100, 100, 90, 80, 70, 60, 50, 30, 20 };
+
+		if (GetItemValue(pkItemScroll, 0) == YONGSIN_SCROLL)
+		{
+			success_prob = hyuniron_prob[MINMAX(0, GetItemRefineLevel(item), 8)];
+		}
+		else if (GetItemValue(pkItemScroll, 0) == YAGONG_SCROLL)
+		{
+			success_prob = yagong_prob[MINMAX(0, GetItemRefineLevel(item), 8)];
+		}
+		else if (GetItemValue(pkItemScroll, 0) == HYUNIRON_CHN) {} // @fixme121
+		else
+		{
+			LOG_ERROR("REFINE : Unknown refine scroll item. Value0: {}", GetItemValue(pkItemScroll, 0));
+		}
+
+		if (GetItemValue(pkItemScroll, 0) == HYUNIRON_CHN) // ÇöÃ¶Àº ¾ÆÀÌ�
+// ÛÀÌ ºÎ¼­Á®¾ß ÇÑ´Ù.
+			bDestroyWhenFail = true;
+
+		// DETAIL_REFINE_LOG
+		if (GetItemValue(pkItemScroll, 0) == HYUNIRON_CHN)
+		{
+			szRefineType = "HYUNIRON";
+		}
+		else if (GetItemValue(pkItemScroll, 0) == YONGSIN_SCROLL)
+		{
+			szRefineType = "GOD_SCROLL";
+		}
+		else if (GetItemValue(pkItemScroll, 0) == YAGONG_SCROLL)
+		{
+			szRefineType = "YAGONG_SCROLL";
+		}
+		// END_OF_DETAIL_REFINE_LOG
+	}
+
+	// DETAIL_REFINE_LOG
+	if (GetItemValue(pkItemScroll, 0) == MUSIN_SCROLL) // ¹«½�
+// ÀÇ Ãàº¹¼­´Â 100% ¼º°ø (+4±îÁö¸¸)
+	{
+		success_prob = 100;
+
+		szRefineType = "MUSIN_SCROLL";
+	}
+	// END_OF_DETAIL_REFINE_LOG
+	else if (GetItemValue(pkItemScroll, 0) == MEMO_SCROLL)
+	{
+		success_prob = 100;
+		szRefineType = "MEMO_SCROLL";
+	}
+	else if (GetItemValue(pkItemScroll, 0) == BDRAGON_SCROLL)
+	{
+		success_prob = 80;
+		szRefineType = "BDRAGON_SCROLL";
+	}
+
+#ifdef ENABLE_FEATURES_REFINE_SYSTEM	
+	success_prob += CRefineManager::instance().Result(e);
+
+#endif
+	ConsumeItemEcs(pkItemScroll);
+
+	if (prob <= success_prob)
+	{
+		// ¼º°ø! ¸ðµç ¾ÆÀÌ�
+// ÛÀÌ »ç¶óÁö°í, °°Àº ¼Ó¼ºÀÇ ´Ù¸¥ ¾ÆÀÌ�
+// Û È¹µæ
+		const entt::entity pkNewItem = ITEM_MANAGER::instance().CreateItem(result_vnum, 1, 0, false);
+
+		if (pkNewItem != entt::null)
+		{
+			CopyAllAttrToEcs(item, pkNewItem);
+			LogManager::instance().ItemLogEntity(e, pkNewItem, "REFINE SUCCESS", GetItemName(pkNewItem));
+
+			uint8_t bCell = GetItemCell(item);
+
+
+#ifdef ENABLE_BATTLE_PASS
+			uint8_t bBattlePassId = ecs::PlayerRuntime::GetBattlePassId(e);
+			if (bBattlePassId)
+			{
+				uint32_t dwItemVnum, dwCount;
+				if (CBattlePass::instance().BattlePassMissionGetInfo(bBattlePassId, REFINE_ITEM, &dwItemVnum, &dwCount))
+				{
+					if (dwItemVnum == GetItemVnum(item) && ecs::PlayerRuntime::GetMissionProgress(e, REFINE_ITEM, bBattlePassId) < dwCount)
+						ecs::PlayerRuntime::UpdateMissionProgress(e, REFINE_ITEM, bBattlePassId, 1, dwCount);
+				}
+			}
+#endif
+
+			NotifyRefineSuccess(e, item, szRefineType);
+
+			DBManager::instance().SendMoneyLog(MONEY_LOG_REFINE, GetItemVnum(item), -prt->cost);
+			ITEM_MANAGER::instance().RemoveItem(item, "REMOVE (REFINE SUCCESS)");
+
+			InventorySystem::AddToCharacter(pkNewItem, e, TItemPos(INVENTORY, bCell));
+			FlushDelayedSaveEcs(pkNewItem);
+
+
+			AttrLog(pkNewItem);
+			//ecs::PointSystem::Change(e, POINT_GOLD, -prt->cost);
+#ifdef ENABLE_FEATURES_REFINE_SYSTEM
+			CRefineManager::instance().Reset(e);
+#endif
+			InventorySystem::PayRefineFee(e, prt->cost);
+#ifdef ENABLE_UPGRADE_NOTICE_BY_RAZOR93
+			if (GetItemRefineLevel(pkNewItem) >= 8)
+			{
+				char itemlink[512];
+				int len = 0;
+
+				len += snprintf(itemlink + len, sizeof(itemlink) - len, "item:%x:%x:%x:%x:%x:%x",
+					GetItemVnum(pkNewItem),
+					GetItemSocket(pkNewItem, 0),
+					GetItemSocket(pkNewItem, 1),
+					GetItemSocket(pkNewItem, 2),
+					0, // transmute
+					0  // transmute2 
+				);
+
+				// Bónuszok
+				for (int i = 0; i < ITEM_ATTRIBUTE_MAX_NUM; ++i)
+				{
+					uint8_t type = GetItemAttributeType(pkNewItem, i);
+					short val = GetItemAttributeValue(pkNewItem, i);
+
+					if (type != 0 && val != 0)
+						len += snprintf(itemlink + len, sizeof(itemlink) - len, ":%x:%d", type, val);
+				}
+
+				// debug log:
+				//LOG_INFO(0, "ItemLink Debug: %s", itemlink);
+				//LOG_INFO(0, "Socket0=%d Socket1=%d Socket2=%d",
+					//GetItemSocket(pkNewItem, 0),
+					//GetItemSocket(pkNewItem, 1),
+					//GetItemSocket(pkNewItem, 2));
+
+				char szChat[2048];
+				snprintf(szChat, sizeof(szChat),
+					"|cff00ff00[%s]|r Successfully upgraded:|cffffd700|H%s|h[%s]|h|r",
+					ecs::PlayerRuntime::GetName(e).data(), itemlink, GetItemName(pkNewItem));
+
+				SPacketGGNotice packet;
+				strlcpy(packet.szText, szChat, sizeof(packet.szText));
+				//P2P_MANAGER::instance().Send(&packet, sizeof(packet));
+
+				BroadcastNotice(szChat); // ez kell a jelenlegi ch-ra
+
+			}
+
+
+			if (allowedVnums.find(GetItemVnum(pkNewItem)) != allowedVnums.end())
+			{
+				char itemlink[512];
+				int len = 0;
+
+				len += snprintf(itemlink + len, sizeof(itemlink) - len, "item:%x:%x:%x:%x:%x:%x",
+					GetItemVnum(pkNewItem),
+					GetItemSocket(pkNewItem, 0),
+					GetItemSocket(pkNewItem, 1),
+					GetItemSocket(pkNewItem, 2),
+					0, // transmute
+					0  // transmute2 
+				);
+
+				for (int i = 0; i < ITEM_ATTRIBUTE_MAX_NUM; ++i)
+				{
+					uint8_t type = GetItemAttributeType(pkNewItem, i);
+					short val = GetItemAttributeValue(pkNewItem, i);
+
+					if (type != 0 && val != 0)
+						len += snprintf(itemlink + len, sizeof(itemlink) - len, ":%x:%d", type, val);
+				}
+
+				char szChat[2048];
+				snprintf(szChat, sizeof(szChat),
+					"|cff00ff00[%s]|r Successfully upgraded:|cffffd700|H%s|h[%s]|h|r",
+					ecs::PlayerRuntime::GetName(e).data(), itemlink, GetItemName(pkNewItem));
+
+				ecs::ChatSystem::Send(e, CHAT_TYPE_INFO, szChat);
+			}
+#endif ENABLE_UPGRADE_NOTICE_BY_RAZOR93
+		}
+		else
+		{
+			// ¾ÆÀÌ�
+// Û »ý¼º¿¡ ½ÇÆÐ -> °³·® ½ÇÆÐ·Î °£ÁÖ
+			LOG_ERROR("cannot create item {}", result_vnum);
+			NotifyRefineFail(e, item, szRefineType);
+		}
+
+	}
+	else if (!bDestroyWhenFail && result_fail_vnum)
+	{
+		// ½ÇÆÐ! ¸ðµç ¾ÆÀÌ�
+// ÛÀÌ »ç¶óÁö°í, °°Àº ¼Ó¼ºÀÇ ³·Àº µî±ÞÀÇ ¾ÆÀÌ�
+// Û È¹µæ
+		const entt::entity pkNewItem = ITEM_MANAGER::instance().CreateItem(result_fail_vnum, 1, 0, false);
+
+		if (pkNewItem != entt::null)
+		{
+			CopyAllAttrToEcs(item, pkNewItem);
+			LogManager::instance().ItemLogEntity(e, pkNewItem, "REFINE FAIL", GetItemName(pkNewItem));
+
+			uint8_t bCell = GetItemCell(item);
+
+
+#ifdef ENABLE_BATTLE_PASS
+			uint8_t bBattlePassId = ecs::PlayerRuntime::GetBattlePassId(e);
+			if (bBattlePassId)
+			{
+				uint32_t dwItemVnum, dwCount;
+				if (CBattlePass::instance().BattlePassMissionGetInfo(bBattlePassId, REFINE_ITEM, &dwItemVnum, &dwCount))
+				{
+					if (dwItemVnum == GetItemVnum(item) && ecs::PlayerRuntime::GetMissionProgress(e, REFINE_ITEM, bBattlePassId) < dwCount)
+						ecs::PlayerRuntime::UpdateMissionProgress(e, REFINE_ITEM, bBattlePassId, 1, dwCount);
+				}
+			}
+#endif
+
+			DBManager::instance().SendMoneyLog(MONEY_LOG_REFINE, GetItemVnum(item), -prt->cost);
+			NotifyRefineFail(e, item, szRefineType, -1);
+			ITEM_MANAGER::instance().RemoveItem(item, "REMOVE (REFINE FAIL)");
+
+			InventorySystem::AddToCharacter(pkNewItem, e, TItemPos(INVENTORY, bCell));
+			FlushDelayedSaveEcs(pkNewItem);
+
+			AttrLog(pkNewItem);
+
+			//ecs::PointSystem::Change(e, POINT_GOLD, -prt->cost);
+#ifdef ENABLE_FEATURES_REFINE_SYSTEM
+			CRefineManager::instance().Reset(e);
+#endif
+			InventorySystem::PayRefineFee(e, prt->cost);
+		}
+		else
+		{
+			// ¾ÆÀÌ�
+// Û »ý¼º¿¡ ½ÇÆÐ -> °³·® ½ÇÆÐ·Î °£ÁÖ
+			LOG_ERROR("cannot create item {}", result_fail_vnum);
+			NotifyRefineFail(e, item, szRefineType);
+		}
+	}
+	else
+	{
+		NotifyRefineFail(e, item, szRefineType); // °³·®½Ã ¾ÆÀÌ�
+// Û »ç¶óÁöÁö ¾ÊÀ½
+
+#ifdef ENABLE_FEATURES_REFINE_SYSTEM
+		CRefineManager::instance().Reset(e);
+#endif
+		InventorySystem::PayRefineFee(e, prt->cost);
+	}
+
+	return true;
+
+}
+#endif
+
+// Refining a soul item with its scroll.
+bool DoRefineItemSoul(entt::entity e, entt::entity item)
+{
+	if (!InventorySystem::CanHandleItems(e, true))
+	{
+		InventorySystem::ClearRefineMode(e);
+		return false;
+	}
+
+	InventorySystem::ClearRefineMode(e);
+
+
+	if (InventorySystem::GetRefineScrollCell(e) < 0)
+		return false;
+
+	const entt::entity pkItemScroll = GetInventoryItem(e, InventorySystem::GetRefineScrollCell(e));
+
+	if (pkItemScroll == entt::null)
+		return false;
+
+	if (!(GetItemType(pkItemScroll) == ITEM_USE && GetItemSubType(pkItemScroll) == USE_TUNING))
+		return false;
+
+	if (GetItemVnum(pkItemScroll) == GetItemVnum(item))
+		return false;
+
+	uint32_t resultVnum = GetItemRefinedVnum(item);
+
+	if (resultVnum == 0)
+	{
+#ifdef TEXTS_IMPROVEMENT
+		ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 666, "%s", GetItemName(item));
+#endif
+		return false;
+	}
+
+	TItemTable* pProto = ITEM_MANAGER::instance().GetTable(GetItemRefinedVnum(item));
+
+	if (!pProto)
+	{
+		LOG_ERROR("DoRefineWithScroll NOT GET ITEM PROTO {}", GetItemRefinedVnum(item));
+#ifdef TEXTS_IMPROVEMENT
+		ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 305, "");
+#endif
+		return false;
+	}
+
+	int prob = number(1, 100);
+	int successProb = GetItemValue(pkItemScroll, 1);
+
+	ConsumeItemEcs(pkItemScroll);
+
+	if (prob <= successProb)
+	{
+		const entt::entity pkNewItem = ITEM_MANAGER::instance().CreateItem(resultVnum, 1, 0, false);
+		if (IsValidItem(pkNewItem))
+		{
+			uint8_t bCell = GetItemCell(item);
+			ecs::ChatSystem::Send(e, CHAT_TYPE_COMMAND, "RefineSoulSuceeded");
+			ITEM_MANAGER::instance().RemoveItem(item, "REMOVE (REFINE SUCCESS)");
+
+			InventorySystem::AddToCharacter(pkNewItem, e, TItemPos(INVENTORY, bCell));
+			FlushDelayedSaveEcs(pkNewItem);
+		}
+		else
+		{
+			LOG_ERROR("Cannot create item soul {}", resultVnum);
+			ecs::ChatSystem::Send(e, CHAT_TYPE_COMMAND, "RefineSoulFailed");
+		}
+	}
+	else
+	{
+		ecs::ChatSystem::Send(e, CHAT_TYPE_COMMAND, "RefineSoulFailed");
+	}
+
+	return true;
+}
+
+// The refine window: what it costs, what it needs and how likely it is.
+bool RefineInformation(entt::entity e, uint8_t bCell, uint8_t bType, int iAdditionalCell)
+{
+	if (bCell > INVENTORY_MAX_NUM)
+		return false;
+
+	const entt::entity item = GetInventoryItem(e, bCell);
+
+
+	if (item == entt::null)
+		return false;
+
+#ifdef ATTR_LOCK
+	if (GetItemLockedAttr(item) != -1)
+	{
+#ifdef TEXTS_IMPROVEMENT
+		ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 784, "");
+#endif
+		return false;
+	}
+#endif
+
+	// REFINE_COST
+	if (bType == REFINE_TYPE_MONEY_ONLY && !ecs::PlayerRuntime::GetQuestFlag(e, "deviltower_zone.can_refine"))
+	{
+#ifdef TEXTS_IMPROVEMENT
+		ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 361, "");
+#endif
+		return false;
+	}
+	// END_OF_REFINE_COST
+
+	TPacketGCRefineInformation p;
+
+	p.header = HEADER_GC_REFINE_INFORMATION;
+	p.pos = bCell;
+	p.src_vnum = GetItemVnum(item);
+	p.result_vnum = GetItemRefinedVnum(item);
+	p.type = bType;
+
+	if (p.result_vnum == 0)
+	{
+#ifdef TEXTS_IMPROVEMENT
+		ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 427, "");
+#endif
+		return false;
+	}
+
+	if (GetItemType(item) == ITEM_USE && GetItemSubType(item) == USE_TUNING)
+	{
+		if (bType == 0)
+		{
+#ifdef TEXTS_IMPROVEMENT
+			ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 424, "");
+#endif
+			return false;
+		}
+		else
+		{
+			const entt::entity itemScroll = GetInventoryItem(e, iAdditionalCell);
+			if (itemScroll == entt::null || GetItemVnum(item) == GetItemVnum(itemScroll))
+			{
+#ifdef TEXTS_IMPROVEMENT
+				ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 229, "");
+#endif
+				return false;
+			}
+		}
+	}
+
+#ifdef ENABLE_SOUL_SYSTEM
+	if (bType == REFINE_TYPE_SOUL)
+	{
+		const entt::entity itemScroll = GetInventoryItem(e, iAdditionalCell);
+		if (itemScroll == entt::null)
+			return false;
+
+		p.cost = 0;
+		p.prob = GetItemValue(itemScroll, 1);
+		p.material_count = 0;
+		memset(p.materials, 0, sizeof(p.materials));
+
+		ecs::PlayerRuntime::GetDesc(e)->Packet(&p, sizeof(TPacketGCRefineInformation));
+
+		InventorySystem::SetRefineMode(e, iAdditionalCell);
+		return true;
+	}
+#endif
+
+	CRefineManager& rm = CRefineManager::instance();
+
+	const TRefineTable* prt = rm.GetRefineRecipe(GetItemRefineSet(item));
+
+	if (!prt)
+	{
+#ifdef TEXTS_IMPROVEMENT
+		ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 427, "");
+#endif
+		return false;
+	}
+
+	p.cost = InventorySystem::ComputeRefineFee(e, prt->cost);
+#ifdef NEW_POINT_EXP_DOUBLE_BONUS_RAZOR93
+	int success_prob = prt->prob;
+
+	// Kijelzett esély igazítása scroll típus alapján (hogy a kliens ugyanazt lássa, mint amit a szerver használ)
+	if (bType != REFINE_TYPE_MONEY_ONLY)
+	{
+		const entt::entity pkScroll = GetInventoryItem(e, iAdditionalCell);
+		if (pkScroll != entt::null && GetItemType(pkScroll) == ITEM_USE && GetItemSubType(pkScroll) == USE_TUNING)
+		{
+			const int scrollType = GetItemValue(pkScroll, 0);
+
+			if (scrollType == YONGSIN_SCROLL || scrollType == YAGONG_SCROLL || scrollType == HYUNIRON_CHN)
+			{
+				const char hyuniron_prob[9] = { 100, 75, 65, 55, 45, 40, 35, 25, 20 };
+				const char yagong_prob[9] = { 100, 100, 90, 80, 70, 60, 50, 30, 20 };
+
+				if (scrollType == YONGSIN_SCROLL)
+					success_prob = hyuniron_prob[MINMAX(0, GetItemRefineLevel(item), 8)];
+				else if (scrollType == YAGONG_SCROLL)
+					success_prob = yagong_prob[MINMAX(0, GetItemRefineLevel(item), 8)];
+				// HYUNIRON_CHN: marad a prt->prob
+			}
+			else if (scrollType == MUSIN_SCROLL)
+			{
+				//if (GetItemRefineLevel(item) >= 9)
+				//{
+				//	ecs::ChatSystem::Send(e, CHAT_TYPE_INFO, "MAX +9 with this scroll!");
+				//	return false;
+				//}
+				success_prob += 100;
+				if (success_prob > 100)
+					success_prob = 100;
+			}
+			else if (scrollType == MEMO_SCROLL)
+			{
+				if (GetItemRefineLevel(item) != GetItemValue(pkScroll, 1))
+					return false;
+				success_prob = 100;
+			}
+			else if (scrollType == BDRAGON_SCROLL)
+			{
+				if (GetItemType(item) != ITEM_METIN || GetItemRefineLevel(item) != 4)
+					return false;
+				success_prob = 80;
+			}
+		}
+	}
+
+#ifdef ENABLE_FEATURES_REFINE_SYSTEM
+	success_prob += CRefineManager::instance().Result(e);
+#endif
+
+	success_prob = MINMAX(0, success_prob, 100);
+	p.prob = success_prob;
+#else
+	p.prob = prt->prob;
+#endif
+	if (bType == REFINE_TYPE_MONEY_ONLY)
+	{
+		p.material_count = 0;
+		memset(p.materials, 0, sizeof(p.materials));
+	}
+	else
+	{
+		p.material_count = prt->material_count;
+		memcpy(&p.materials, prt->materials, sizeof(prt->materials));
+	}
+
+	ecs::PlayerRuntime::GetDesc(e)->Packet(&p, sizeof(TPacketGCRefineInformation));
+
+	InventorySystem::SetRefineMode(e, iAdditionalCell);
+	return true;
+}
+
+// Using one item on another: a scroll opens the refine window, a
+// detachment scroll pulls the metin stones back out.
+bool RefineItem(entt::entity e, entt::entity pkItem, entt::entity pkTarget)
+{
+	if (!InventorySystem::CanHandleItems(e))
+		return false;
+
+#ifdef ENABLE_SOUL_SYSTEM
+	uint32_t vnum = GetItemVnum(pkItem);
+	if ((vnum == 70602 || vnum == 70603 || vnum == 88958) && GetItemType(pkTarget) != ITEM_SOUL) {
+#ifdef TEXTS_IMPROVEMENT
+		ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 1294, "%s", GetItemName(pkItem));
+#endif
+		return false;
+	}
+#endif
+
+	if (GetItemSubType(pkItem) == USE_TUNING)
+	{
+		// XXX ¼º´É, ¼ÒÄÏ °³·®¼­´Â »ç¶óÁ³½À´Ï´Ù...
+		// XXX ¼º´É°³·®¼­´Â Ãàº¹ÀÇ ¼­°¡ µÇ¾ú´Ù!
+		// MUSIN_SCROLL
+		if (GetItemValue(pkItem, 0) == MUSIN_SCROLL)
+			RefineInformation(e, GetItemCell(pkTarget), REFINE_TYPE_MUSIN, GetItemCell(pkItem));
+		// END_OF_MUSIN_SCROLL
+
+#ifdef ENABLE_SOUL_SYSTEM
+		else if (GetItemValue(pkItem, 0) == SOUL_SCROLL)
+			RefineInformation(e, GetItemCell(pkTarget), REFINE_TYPE_SOUL, GetItemCell(pkItem));
+#endif
+
+		else if (GetItemValue(pkItem, 0) == HYUNIRON_CHN)
+			RefineInformation(e, GetItemCell(pkTarget), REFINE_TYPE_HYUNIRON, GetItemCell(pkItem));
+		else if (GetItemValue(pkItem, 0) == BDRAGON_SCROLL)
+		{
+			if (GetItemRefineSet(pkTarget) != 702) return false;
+			RefineInformation(e, GetItemCell(pkTarget), REFINE_TYPE_BDRAGON, GetItemCell(pkItem));
+		}
+		else
+		{
+			if (GetItemRefineSet(pkTarget) == 501) return false;
+			RefineInformation(e, GetItemCell(pkTarget), REFINE_TYPE_SCROLL, GetItemCell(pkItem));
+		}
+	}
+	else if (GetItemSubType(pkItem) == USE_DETACHMENT && IS_SET(GetItemFlags(pkTarget), ITEM_FLAG_REFINEABLE))
+	{
+		LogManager::instance().ItemLogEntity(e, pkTarget, "USE_DETACHMENT", GetItemName(pkTarget));
+
+		bool bHasMetinStone = false;
+
+		for (int i = 0; i < ITEM_SOCKET_MAX_NUM; i++)
+		{
+			int32_t socket = GetItemSocket(pkTarget, i);
+			if (socket > 2 && socket != ITEM_BROKEN_METIN_VNUM)
+			{
+				bHasMetinStone = true;
+				break;
+			}
+		}
+
+		if (bHasMetinStone)
+		{
+			for (int i = 0; i < ITEM_SOCKET_MAX_NUM; ++i)
+			{
+				int32_t socket = GetItemSocket(pkTarget, i);
+				if (socket > 2 && socket != ITEM_BROKEN_METIN_VNUM)
+				{
+					AutoGiveItemEcs(e, socket);
+					//TItemTable* pTable = ITEM_MANAGER::instance().GetTable(GetItemSocket(pkTarget, i));
+					//SetItemSocket(pkTarget, i, pTable->alValues[2]);
+					// ±úÁøµ¹·Î ´ëÃ¼ÇØÁØ´Ù
+					SetItemSocketEcs(pkTarget, i, ITEM_BROKEN_METIN_VNUM);
+				}
+			}
+			ConsumeItemEcs(pkItem);
+			return true;
+		}
+		else
+		{
+#ifdef TEXTS_IMPROVEMENT
+			ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 360, "");
+#endif
+			return false;
+		}
+	}
+
+	return false;
+}
+
+// Carries a refined item's sockets across to the item that replaces it.
+void TransformRefineItem(entt::entity pkOldItem, entt::entity pkNewItem)
+{
+
+	// ACCESSORY_REFINE
+	if (IsAccessoryForSocket(pkOldItem))
+	{
+		for (int i = 0; i < ITEM_SOCKET_MAX_NUM; ++i)
+		{
+			SetItemSocket(pkNewItem, i, GetItemSocket(pkOldItem, i));
+		}
+		//StartAccessorySocketExpireEvent(pkNewItem);
+	}
+	// END_OF_ACCESSORY_REFINE
+	else
+	{
+		// ¿©±â¼­ ±úÁø¼®ÀÌ ÀÚµ¿ÀûÀ¸·Î Ã»¼Ò µÊ
+		for (int i = 0; i < ITEM_SOCKET_MAX_NUM; ++i)
+		{
+			if (!GetItemSocket(pkOldItem, i))
+				break;
+			else
+				SetItemSocket(pkNewItem, i, 1);
+		}
+
+		// ¼ÒÄÏ ¼³Á¤
+		int slot = 0;
+
+		for (int i = 0; i < ITEM_SOCKET_MAX_NUM; ++i)
+		{
+			int32_t socket = GetItemSocket(pkOldItem, i);
+
+			if (socket > 2 && socket != ITEM_BROKEN_METIN_VNUM)
+				SetItemSocket(pkNewItem, slot++, socket);
+		}
+
+	}
+
+	// ¸�
+// Á÷ ¾ÆÀÌ�
+// Û ¼³Á¤
+	CopyItemAttributesEcs(pkOldItem, pkNewItem);
+}
+
+} // namespace ItemSystem
