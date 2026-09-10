@@ -836,7 +836,7 @@ ACMD(do_restart)
 						ch->CheckMount();
 #endif
 #ifdef ENABLE_SKILLS_BUFF_ALTERNATIVE
-						ch->LoadAffectSkills();
+						AffectSystem::LoadAffectSkills(ch->GetEntityHandle());
 #endif
 					}
 					break;
@@ -1422,7 +1422,7 @@ ACMD(do_restart)
 					ch->CheckMount();
 #endif
 #ifdef ENABLE_SKILLS_BUFF_ALTERNATIVE
-					ch->LoadAffectSkills();
+					AffectSystem::LoadAffectSkills(ch->GetEntityHandle());
 #endif
 				}
 			}
@@ -1444,7 +1444,7 @@ ACMD(do_restart)
 				ch->CheckMount();
 #endif
 #ifdef ENABLE_SKILLS_BUFF_ALTERNATIVE
-				ch->LoadAffectSkills();
+				AffectSystem::LoadAffectSkills(ch->GetEntityHandle());
 #endif
 			}
 			break;

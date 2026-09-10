@@ -325,6 +325,9 @@ bool IsNoSaveAffect(uint32_t type)
 
 namespace AffectSystem {
 
+#define IS_NO_SAVE_AFFECT(type) ((type) == AFFECT_WAR_FLAG || (type) == AFFECT_REVIVE_INVISIBLE || ((type) >= AFFECT_PREMIUM_START && (type) <= AFFECT_PREMIUM_END))
+#define IS_NO_CLEAR_ON_DEATH_AFFECT(type) ((type) == AFFECT_PVM_RACE || (type) == AFFECT_BLOCK_CHAT || ((type) >= 500 && (type) < 600) || ((type) >= 564 && (type) < 566) || ((type) >= NEW_AFFECT_BIOLOGIST_1 && (type) <= NEW_AFFECT_BIOLOGIST_16))
+
 void ApplyFire(entt::entity target, entt::entity attacker, int amount, int count)
 {
     if (target == entt::null || !g_registry.valid(target))
@@ -641,6 +644,93 @@ CAffect* FindAffect(entt::entity e, uint32_t type, uint8_t apply, int32_t value)
             return affect.get();
     }
     return nullptr;
+}
+
+// Whether an affect type is one a player wants to keep. It reads nothing
+// but the type, and was a CHARACTER method only because its callers were.
+// Parking the skill affects while they are cleared, so they can be put back.
+void SaveAffectSkills(entt::entity e, uint32_t dwType, uint8_t bApplyOn, int32_t lApplyValue, uint32_t dwFlag, int32_t lDuration, int32_t lSPCost)
+{
+    if (auto* state = AffectState(e))
+        state->skillAffects.push_back({dwType, bApplyOn, lApplyValue, dwFlag,
+            lDuration, lSPCost, static_cast<uint32_t>(get_global_time())});
+}
+
+// Putting the parked skill affects back, with whatever duration is left.
+void LoadAffectSkills(entt::entity e)
+{
+    const auto entity = e;
+    auto* state = AffectState(entity);
+    if (!state)
+        return;
+    // Consume the saved batch before callbacks; nested loads cannot replay it.
+    auto saved = std::move(state->skillAffects);
+    state->skillAffects.clear();
+    for (const auto& affect : saved) {
+        const int64_t remaining = static_cast<int64_t>(affect.lDuration) -
+            (static_cast<int64_t>(get_global_time()) - affect.dwTime);
+        if (remaining > 0 && remaining <= INT32_MAX)
+            AffectSystem::AddAffect(entity, affect.dwType, affect.bApplyOn,
+                affect.lApplyValue, affect.dwFlag, static_cast<int32_t>(remaining),
+                affect.lSPCost, false);
+        if (!AffectState(entity))
+            return;
+    }
+}
+
+// Writing the affects that survive a logout to the database.
+void SaveAffect(entt::entity e)
+{
+	TPacketGDAddAffect p;
+
+	for (const auto& lease : AffectSystem::Snapshot(e))
+	{
+		const CAffect* pkAff = lease.get();
+		if (IS_NO_SAVE_AFFECT(pkAff->dwType))
+			continue;
+
+		LOG_TRACE("AFFECT_SAVE: {} {} {} {}", pkAff->dwType, static_cast<int>(pkAff->bApplyOn), pkAff->lApplyValue, pkAff->lDuration);
+
+		p.dwPID			= ecs::PlayerRuntime::GetPlayerID(e);
+		p.elem.dwType		= pkAff->dwType;
+		p.elem.bApplyOn		= pkAff->bApplyOn;
+		p.elem.lApplyValue	= pkAff->lApplyValue;
+		p.elem.dwFlag		= pkAff->dwFlag;
+		p.elem.lDuration	= pkAff->lDuration;
+		p.elem.lSPCost		= pkAff->lSPCost;
+		db_clientdesc->DBPacket(HEADER_GD_ADD_AFFECT, 0, &p, sizeof(p));
+	}
+}
+
+bool IsGoodAffect(uint8_t bAffectType)
+{
+	switch (bAffectType)
+	{
+		case (AFFECT_MOV_SPEED):
+		case (AFFECT_ATT_SPEED):
+		case (AFFECT_STR):
+		case (AFFECT_DEX):
+		case (AFFECT_INT):
+		case (AFFECT_CON):
+		case (AFFECT_CHINA_FIREWORK):
+
+		case (SKILL_JEONGWI):
+		case (SKILL_GEOMKYUNG):
+		case (SKILL_CHUNKEON):
+		case (SKILL_EUNHYUNG):
+		case (SKILL_GYEONGGONG):
+		case (SKILL_GWIGEOM):
+		case (SKILL_TERROR):
+		case (SKILL_JUMAGAP):
+		case (SKILL_MANASHILED):
+		case (SKILL_HOSIN):
+		case (SKILL_REFLECT):
+		case (SKILL_KWAESOK):
+		case (SKILL_JEUNGRYEOK):
+		case (SKILL_GICHEON):
+			return true;
+	}
+	return false;
 }
 
 bool IsAffectFlag(entt::entity e, uint32_t flag)
@@ -1178,15 +1268,6 @@ void UpdateAffect(entt::registry&, uint32_t)
 
 } // namespace AffectSystem
 
-void CHARACTER::AttackedByFire(entt::entity attacker, int amount, int count)
-{
-    AffectSystem::ApplyFire
-        (GetEntityHandle(),
-        attacker,
-        amount,
-        count);
-}
-
 void AffectSystem_Update(entt::registry& reg, uint32_t tick)
 {
     AffectSystem::UpdateAffect(reg, tick);
@@ -1195,8 +1276,6 @@ void AffectSystem_Update(entt::registry& reg, uint32_t tick)
 // char_affect.cpp moved into AffectSystem.cpp
 
 
-#define IS_NO_SAVE_AFFECT(type) ((type) == AFFECT_WAR_FLAG || (type) == AFFECT_REVIVE_INVISIBLE || ((type) >= AFFECT_PREMIUM_START && (type) <= AFFECT_PREMIUM_END))
-#define IS_NO_CLEAR_ON_DEATH_AFFECT(type) ((type) == AFFECT_PVM_RACE || (type) == AFFECT_BLOCK_CHAT || ((type) >= 500 && (type) < 600) || ((type) >= 564 && (type) < 566) || ((type) >= NEW_AFFECT_BIOLOGIST_1 && (type) <= NEW_AFFECT_BIOLOGIST_16))
 void SendAffectRemovePacket(LPDESC d, uint32_t pid, uint32_t type, uint8_t point)
 {
 	TPacketGCAffectRemove ptoc;
@@ -1349,33 +1428,6 @@ bool CHARACTER::UpdateAffect()
 }
 
 #ifdef ENABLE_SKILLS_BUFF_ALTERNATIVE
-void CHARACTER::SaveAffectSkills(uint32_t dwType, uint8_t bApplyOn, int32_t lApplyValue, uint32_t dwFlag, int32_t lDuration, int32_t lSPCost)
-{
-    if (auto* state = AffectState(GetEntityHandle()))
-        state->skillAffects.push_back({dwType, bApplyOn, lApplyValue, dwFlag,
-            lDuration, lSPCost, static_cast<uint32_t>(get_global_time())});
-}
-
-void CHARACTER::LoadAffectSkills()
-{
-    const auto entity = GetEntityHandle();
-    auto* state = AffectState(entity);
-    if (!state)
-        return;
-    // Consume the saved batch before callbacks; nested loads cannot replay it.
-    auto saved = std::move(state->skillAffects);
-    state->skillAffects.clear();
-    for (const auto& affect : saved) {
-        const int64_t remaining = static_cast<int64_t>(affect.lDuration) -
-            (static_cast<int64_t>(get_global_time()) - affect.dwTime);
-        if (remaining > 0 && remaining <= INT32_MAX)
-            AffectSystem::AddAffect(entity, affect.dwType, affect.bApplyOn,
-                affect.lApplyValue, affect.dwFlag, static_cast<int32_t>(remaining),
-                affect.lSPCost, false);
-        if (!AffectState(entity))
-            return;
-    }
-}
 #endif
 
 void CHARACTER::ClearAffect(bool bSave)
@@ -1426,7 +1478,7 @@ void CHARACTER::ClearAffect(bool bSave)
 				(pkAff->dwType == SKILL_JEUNGRYEOK)		// 111
 			))
 			{
-				SaveAffectSkills(pkAff->dwType, pkAff->bApplyOn, pkAff->lApplyValue, pkAff->dwFlag, pkAff->lDuration, pkAff->lSPCost);
+				AffectSystem::SaveAffectSkills(GetEntityHandle(), pkAff->dwType, pkAff->bApplyOn, pkAff->lApplyValue, pkAff->dwFlag, pkAff->lDuration, pkAff->lSPCost);
 				//continue;
 			}
 #endif
@@ -1473,29 +1525,6 @@ void CHARACTER::ClearAffect(bool bSave)
 
 	if (AffectSystem::Snapshot(entity).empty())
 		AffectSystem::StopAffectEvent(entity);
-}
-
-void CHARACTER::SaveAffect()
-{
-	TPacketGDAddAffect p;
-
-	for (const auto& lease : AffectSystem::Snapshot(GetEntityHandle()))
-	{
-		const CAffect* pkAff = lease.get();
-		if (IS_NO_SAVE_AFFECT(pkAff->dwType))
-			continue;
-
-		LOG_TRACE("AFFECT_SAVE: {} {} {} {}", pkAff->dwType, static_cast<int>(pkAff->bApplyOn), pkAff->lApplyValue, pkAff->lDuration);
-
-		p.dwPID			= GetPlayerID();
-		p.elem.dwType		= pkAff->dwType;
-		p.elem.bApplyOn		= pkAff->bApplyOn;
-		p.elem.lApplyValue	= pkAff->lApplyValue;
-		p.elem.dwFlag		= pkAff->dwFlag;
-		p.elem.lDuration	= pkAff->lDuration;
-		p.elem.lSPCost		= pkAff->lSPCost;
-		db_clientdesc->DBPacket(HEADER_GD_ADD_AFFECT, 0, &p, sizeof(p));
-	}
 }
 
 EVENTINFO(load_affect_login_event_info)
@@ -1598,7 +1627,7 @@ void CHARACTER::CheckBiologistReward() {
 						continue;
 					} else {
 						bApplyOn = aApplyInfo[bApplyOn].bPointType;
-						AddAffect(biologistMissionInfo[i][14], bApplyOn, lApplyValue, 0, 315360000, 0, false);
+						AffectSystem::AddAffect(GetEntityHandle(), biologistMissionInfo[i][14], bApplyOn, lApplyValue, 0, 315360000, 0, false);
 					}
 				}
 			} else {
@@ -1606,7 +1635,7 @@ void CHARACTER::CheckBiologistReward() {
 				int32_t lApplyValue = biologistMissionInfo[i][8];
 				if (bApplyOn != APPLY_NONE || lApplyValue != 0) {
 					bApplyOn = aApplyInfo[bApplyOn].bPointType;
-					AddAffect(biologistMissionInfo[i][14], bApplyOn, lApplyValue, 0, 315360000, 0, false);
+					AffectSystem::AddAffect(GetEntityHandle(), biologistMissionInfo[i][14], bApplyOn, lApplyValue, 0, 315360000, 0, false);
 				}
 			}
 		}
@@ -1836,49 +1865,5 @@ void CHARACTER::LoadAffect(uint32_t dwCount, TPacketAffectElement * pElements)
 	LOG_ERROR("LOAD_AFFECT_BIOLOGIST_END pid={} name={}", GetPlayerID(), GetName());
 #endif
 	LOG_ERROR("LOAD_AFFECT_END pid={} name={} count={} final_affects={}", GetPlayerID(), GetName(), dwCount, AffectSystem::Snapshot(GetEntityHandle()).size());
-}
-
-bool CHARACTER::AddAffect(uint32_t type, uint8_t applyOn, int32_t value, uint32_t flag,
-    int32_t duration, int32_t spCost, bool overwrite, bool isCube)
-{
-    return AffectSystem::AddAffect(GetEntityHandle(), type, applyOn, value,
-        flag, duration, spCost, overwrite, isCube);
-}
-
-void CHARACTER::ComputeAffect(CAffect* affect, bool add)
-{
-    if (affect)
-        AffectSystem::ComputeAffect(GetEntityHandle(), *affect, add);
-}
-
-bool CHARACTER::IsGoodAffect(uint8_t bAffectType) const
-{
-	switch (bAffectType)
-	{
-		case (AFFECT_MOV_SPEED):
-		case (AFFECT_ATT_SPEED):
-		case (AFFECT_STR):
-		case (AFFECT_DEX):
-		case (AFFECT_INT):
-		case (AFFECT_CON):
-		case (AFFECT_CHINA_FIREWORK):
-
-		case (SKILL_JEONGWI):
-		case (SKILL_GEOMKYUNG):
-		case (SKILL_CHUNKEON):
-		case (SKILL_EUNHYUNG):
-		case (SKILL_GYEONGGONG):
-		case (SKILL_GWIGEOM):
-		case (SKILL_TERROR):
-		case (SKILL_JUMAGAP):
-		case (SKILL_MANASHILED):
-		case (SKILL_HOSIN):
-		case (SKILL_REFLECT):
-		case (SKILL_KWAESOK):
-		case (SKILL_JEUNGRYEOK):
-		case (SKILL_GICHEON):
-			return true;
-	}
-	return false;
 }
 

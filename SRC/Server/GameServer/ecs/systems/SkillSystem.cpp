@@ -2711,7 +2711,7 @@ struct FuncSplashDamage
 
 					if (number(1, 100) <= iDur)
 					{
-						pkChrVictim->AttackedByFire((m_pkChr ? m_pkChr->GetEntityHandle() : entt::null), iPct, 5);
+						AffectSystem::ApplyFire(pkChrVictim->GetEntityHandle(), (m_pkChr ? m_pkChr->GetEntityHandle() : entt::null), iPct, 5);
 					}
 				}
 				else if (IS_SET(m_pkSk->dwFlag, SKILL_FLAG_POISON))
@@ -3116,7 +3116,7 @@ int CHARACTER::ComputeSkillAtPosition(uint32_t dwVnum, const PIXEL_POSITION& pos
 				iDur += GetPoint(POINT_PARTY_BUFFER_BONUS);
 
 				if (!IS_SET(pkSk->dwFlag, SKILL_FLAG_SPLASH))
-					AddAffect(pkSk->dwVnum, pkSk->bPointOn, iAmount, pkSk->dwAffectFlag, iDur, 0, true);
+					AffectSystem::AddAffect(GetEntityHandle(), pkSk->dwVnum, pkSk->bPointOn, iAmount, pkSk->dwAffectFlag, iDur, 0, true);
 				else
 				{
 					if (GetSectree())
@@ -3140,7 +3140,7 @@ int CHARACTER::ComputeSkillAtPosition(uint32_t dwVnum, const PIXEL_POSITION& pos
 				iDur += GetPoint(POINT_PARTY_BUFFER_BONUS);
 
 				if (!IS_SET(pkSk->dwFlag, SKILL_FLAG_SPLASH))
-					AddAffect(pkSk->dwVnum, pkSk->bPointOn2, iAmount2, pkSk->dwAffectFlag2, iDur, 0, !bAdded);
+					AffectSystem::AddAffect(GetEntityHandle(), pkSk->dwVnum, pkSk->bPointOn2, iAmount2, pkSk->dwAffectFlag2, iDur, 0, !bAdded);
 				else
 				{
 					if (GetSectree())
@@ -3167,7 +3167,7 @@ int CHARACTER::ComputeSkillAtPosition(uint32_t dwVnum, const PIXEL_POSITION& pos
 				iDur += GetPoint(POINT_PARTY_BUFFER_BONUS);
 
 				if (!IS_SET(pkSk->dwFlag, SKILL_FLAG_SPLASH))
-					AddAffect(pkSk->dwVnum, pkSk->bPointOn3, iAmount3, 0 /*pkSk->dwAffectFlag3*/, iDur, 0, !bAdded);
+					AffectSystem::AddAffect(GetEntityHandle(), pkSk->dwVnum, pkSk->bPointOn3, iAmount3, 0 /*pkSk->dwAffectFlag3*/, iDur, 0, !bAdded);
 				else
 				{
 					if (GetSectree())
@@ -3197,7 +3197,7 @@ int CHARACTER::ComputeSkillAtPosition(uint32_t dwVnum, const PIXEL_POSITION& pos
 			// AffectFlag°ˇ ľř°ĹłŞ, toggle ÇĎ´Â °ÍŔĚ ľĆ´Ď¶ó¸é..
 			pkSk->kDurationSPCostPoly.SetVar("k", k/*bSkillLevel*/);
 
-			AddAffect(pkSk->dwVnum,
+			AffectSystem::AddAffect(GetEntityHandle(), pkSk->dwVnum,
 					  pkSk->bPointOn,
 					  iAmount,
 					  pkSk->dwAffectFlag,
@@ -3219,7 +3219,7 @@ int CHARACTER::ComputeSkillAtPosition(uint32_t dwVnum, const PIXEL_POSITION& pos
 			if (iDur > 0)
 			{
 				iDur += GetPoint(POINT_PARTY_BUFFER_BONUS);
-				AddAffect(pkSk->dwVnum, pkSk->bPointOn2, iAmount2, pkSk->dwAffectFlag2, iDur, 0, !bAdded);
+				AffectSystem::AddAffect(GetEntityHandle(), pkSk->dwVnum, pkSk->bPointOn2, iAmount2, pkSk->dwAffectFlag2, iDur, 0, !bAdded);
 				bAdded = true;
 			}
 			else
@@ -3236,7 +3236,7 @@ int CHARACTER::ComputeSkillAtPosition(uint32_t dwVnum, const PIXEL_POSITION& pos
 			if (iDur > 0)
 			{
 				iDur += GetPoint(POINT_PARTY_BUFFER_BONUS);
-				AddAffect(pkSk->dwVnum, pkSk->bPointOn3, iAmount3, 0 /*pkSk->dwAffectFlag3*/, iDur, 0, !bAdded);
+				AffectSystem::AddAffect(GetEntityHandle(), pkSk->dwVnum, pkSk->bPointOn3, iAmount3, 0 /*pkSk->dwAffectFlag3*/, iDur, 0, !bAdded);
 			}
 			else
 			{
@@ -3446,7 +3446,7 @@ int CHARACTER::ComputeSkill(uint32_t dwVnum, entt::entity victim, uint8_t bSkill
 		}
 	}
 
-	if (AffectSystem::IsAffectFlag(victimEntity, AFF_PABEOP) && pkVictim->IsGoodAffect(dwVnum))
+	if (AffectSystem::IsAffectFlag(victimEntity, AFF_PABEOP) && AffectSystem::IsGoodAffect(dwVnum))
 	{
 		return BATTLE_NONE;
 	}
@@ -3672,7 +3672,7 @@ int CHARACTER::ComputeSkill(uint32_t dwVnum, entt::entity victim, uint8_t bSkill
 			iDur += GetPoint(POINT_PARTY_BUFFER_BONUS);
 
 			if (pkVictim == this)
-				AddAffect(dwVnum,
+				AffectSystem::AddAffect(GetEntityHandle(), dwVnum,
 						POINT_NONE, 0,
 						AFF_MUYEONG,
 						iDur,

@@ -718,6 +718,7 @@ bool ecs::MovementSystem::WarpSet(entt::entity,int,int,int) { Unexpected(); }
 void ecs::MovementSystem::SaveExitLocation(entt::entity) { Unexpected(); }
 void ecs::MovementSystem::Stop(entt::entity) { Unexpected(); }
 std::vector<std::shared_ptr<CAffect>,std::allocator<std::shared_ptr<CAffect> > > AffectSystem::Snapshot(entt::entity) { Unexpected(); }
+void AffectSystem::ApplyFire(entt::entity, entt::entity, int, int) { Unexpected(); }
 void AffectSystem::ApplyPoison(entt::entity,entt::entity) { Unexpected(); }
 bool AffectSystem::IsImmune(entt::entity,unsigned int) { Unexpected(); }
 CAffect * AffectSystem::FindAffect(entt::entity,unsigned int,unsigned char) { Unexpected(); }
@@ -967,8 +968,7 @@ bool CHARACTER::Sync(int,int) { Unexpected(); }
 void CHARACTER::OnMove(bool) { Unexpected(); }
 void ecs::MovementSystem::CalculateMoveDuration(entt::entity) { Unexpected(); }
 bool CHARACTER::WarpSet(int,int,int) { Unexpected(); }
-bool CHARACTER::AddAffect(unsigned int,unsigned char,int,unsigned int,int,int,bool,bool) { Unexpected(); }
-bool CHARACTER::IsGoodAffect(unsigned char)const { Unexpected(); }
+bool AffectSystem::IsGoodAffect(uint8_t) { Unexpected(); }
 void AffectSystem::RemoveGoodAffects(entt::entity) { Unexpected(); }
 void AffectSystem::RemoveBadAffects(entt::entity) { Unexpected(); }
 bool CHARACTER::IsEquipUniqueGroup(unsigned int)const { Unexpected(); }

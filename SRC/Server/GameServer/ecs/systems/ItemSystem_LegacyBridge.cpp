@@ -3371,7 +3371,7 @@ bool CHARACTER::GiveItemFromSpecialItemGroup(uint32_t dwGroupNum, std::vector<ui
 		case CSpecialItemGroup::SLOW:
 		{
 			LOG_INFO("CSpecialItemGroup::SLOW {}", -(int)dwCount);
-			AddAffect(AFFECT_SLOW, POINT_MOV_SPEED, -(int)dwCount, AFF_SLOW, 300, 0, true);
+			AffectSystem::AddAffect(GetEntityHandle(), AFFECT_SLOW, POINT_MOV_SPEED, -(int)dwCount, AFF_SLOW, 300, 0, true);
 			bSuccess = true;
 		}
 		break;

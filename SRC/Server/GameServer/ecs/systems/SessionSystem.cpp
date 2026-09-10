@@ -1349,7 +1349,7 @@ void CHARACTER::Disconnect(const char* c_pszReason)
 
     FlushDelayedSaveItem();
 
-    SaveAffect();
+    AffectSystem::SaveAffect(GetEntityHandle());
     AffectSystem::SetLoaded(GetEntityHandle(), false);
 
 #ifdef ENABLE_BATTLE_PASS

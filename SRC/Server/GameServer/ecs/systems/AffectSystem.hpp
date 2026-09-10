@@ -47,6 +47,11 @@ void ApplyMobAttribute(entt::entity target, const TMobTable* table);
 
 CAffect* FindAffect(entt::entity e, uint32_t type, uint8_t apply = APPLY_NONE);
 CAffect* FindAffect(entt::entity e, uint32_t type, uint8_t apply, int32_t value);
+void SaveAffectSkills(entt::entity e, uint32_t dwType, uint8_t bApplyOn, int32_t lApplyValue,
+                      uint32_t dwFlag, int32_t lDuration, int32_t lSPCost);
+void LoadAffectSkills(entt::entity e);
+void SaveAffect(entt::entity e);
+bool IsGoodAffect(uint8_t bAffectType);
 bool IsAffectFlag(entt::entity e, uint32_t flag);
 bool AddAffect(entt::entity e, uint32_t type, uint8_t applyOn, int32_t applyValue,
                uint32_t flag, int32_t duration, int32_t spCost, bool overwrite,

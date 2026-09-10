@@ -2498,7 +2498,7 @@ void CHARACTER::EnsureFreeBattlePassActive()
     }
 
     if (!GetBattlePassId())
-        AddAffect(AFFECT_BATTLE_PASS, POINT_BATTLE_PASS_ID, kDefaultBattlePassId, 0, remain, 0, true);
+        AffectSystem::AddAffect(GetEntityHandle(), AFFECT_BATTLE_PASS, POINT_BATTLE_PASS_ID, kDefaultBattlePassId, 0, remain, 0, true);
     m_bIsLoadedBattlePass = true;
 }
 #endif
@@ -2525,7 +2525,7 @@ void CHARACTER::LoadBattlePass(uint32_t dwCount, TPlayerBattlePassMission* data)
     }
 
     if (!GetBattlePassId())
-        AddAffect(AFFECT_BATTLE_PASS, POINT_BATTLE_PASS_ID, kDefaultBattlePassId, 0, remain, 0, true);
+        AffectSystem::AddAffect(GetEntityHandle(), AFFECT_BATTLE_PASS, POINT_BATTLE_PASS_ID, kDefaultBattlePassId, 0, remain, 0, true);
 
     if (dwCount == 0 || !data)
     {
@@ -5291,11 +5291,11 @@ void CHARACTER::SetDropStatus()
         int32_t r = atoi(row[0]);
         if (r == 1) {
             AffectSystem::RemoveAffect(GetEntityHandle(), AFFECT_DROP_BLOCK);
-            AddAffect(AFFECT_DROP_UNBLOCK, APPLY_NONE, 0, 0, 31536000, 0, true, false);
+            AffectSystem::AddAffect(GetEntityHandle(), AFFECT_DROP_UNBLOCK, APPLY_NONE, 0, 0, 31536000, 0, true, false);
         }
         else {
             AffectSystem::RemoveAffect(GetEntityHandle(), AFFECT_DROP_UNBLOCK);
-            AddAffect(AFFECT_DROP_BLOCK, APPLY_NONE, 0, 0, 31536000, 0, true, false);
+            AffectSystem::AddAffect(GetEntityHandle(), AFFECT_DROP_BLOCK, APPLY_NONE, 0, 0, 31536000, 0, true, false);
         }
     }
 }

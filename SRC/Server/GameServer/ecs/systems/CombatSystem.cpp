@@ -7832,7 +7832,7 @@ int CHARACTER::GetLeadershipSkillLevel() const
 
 void CHARACTER::ReviveInvisible(int iDur)
 {
-	AddAffect(AFFECT_REVIVE_INVISIBLE, POINT_NONE, 0, AFF_REVIVE_INVISIBLE, iDur, 0, true);
+	AffectSystem::AddAffect(GetEntityHandle(), AFFECT_REVIVE_INVISIBLE, POINT_NONE, 0, AFF_REVIVE_INVISIBLE, iDur, 0, true);
 }
 
 void CHARACTER::DetermineDropMetinStone()

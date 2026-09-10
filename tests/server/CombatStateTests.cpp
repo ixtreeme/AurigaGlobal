@@ -435,7 +435,6 @@ void ecs::MovementSystem::CalculateMoveDuration(entt::entity) { UnexpectedServic
 void ecs::MovementSystem::SendMovePacket(entt::entity,unsigned char,unsigned char,unsigned int,unsigned int,unsigned int,unsigned int,float) { UnexpectedService(__func__); }
 void CHARACTER::SyncQuickslot(unsigned char,unsigned char,unsigned char) { UnexpectedService(__func__); }
 void CHARACTER::ClearAffect(bool) { UnexpectedService(__func__); }
-bool CHARACTER::AddAffect(unsigned int,unsigned char,int,unsigned int,int,int,bool,bool) { UnexpectedService(__func__); }
 void AffectSystem::ClearAffectSkills(entt::entity) { UnexpectedService(__func__); }
 void CHARACTER::SetDungeon(CDungeon *) { UnexpectedService(__func__); }
 bool CHARACTER::IsEquipUniqueItem(unsigned int)const { UnexpectedService(__func__); }

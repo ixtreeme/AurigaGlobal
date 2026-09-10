@@ -978,17 +978,13 @@ private:
 	// Affect
 public:
 	void			ClearAffect(bool bSave = false);
-	void			ComputeAffect(CAffect* pkAff, bool bAdd);
-	bool			AddAffect(uint32_t dwType, uint8_t bApplyOn, int32_t lApplyValue, uint32_t dwFlag, int32_t lDuration, int32_t lSPCost, bool bOverride, bool IsCube = false);
 
 	bool			UpdateAffect();	// called from EVENT
 
 	void			LoadAffect(uint32_t dwCount, TPacketAffectElement* pElements);
-	void			SaveAffect();
 
 
 
-	bool			IsGoodAffect(uint8_t bAffectType) const;
 
 
 	CAffect* FindAffect(uint32_t dwType, uint8_t bApply = APPLY_NONE) const;
