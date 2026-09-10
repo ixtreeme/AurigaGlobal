@@ -851,6 +851,7 @@ LPEVENT* CharEventSlot(entt::entity e, ecs::PlayerRuntime::CharEvent slot)
     case ecs::PlayerRuntime::CharEvent::Timed:    return &events.timed;
     case ecs::PlayerRuntime::CharEvent::Warp:     return &events.warp;
     case ecs::PlayerRuntime::CharEvent::WarpNPC:  return &events.warpNPC;
+    case ecs::PlayerRuntime::CharEvent::BattlePassStayOnline: return &events.battlePassStayOnline;
     }
     return nullptr;
 }
@@ -4354,10 +4355,9 @@ void CHARACTER::Destroy()
     ActivitySystem::StopFishing(GetEntityHandle());
 #endif
 #ifdef ENABLE_BATTLE_PASS_STAY_ONLINE
-    if (m_pkBattlePassStayOnlineEvent)
+    if (ecs::PlayerRuntime::GetCharEvent(GetEntityHandle(), ecs::PlayerRuntime::CharEvent::BattlePassStayOnline))
     {
-        event_cancel(&m_pkBattlePassStayOnlineEvent);
-        m_pkBattlePassStayOnlineEvent = nullptr;
+        ecs::PlayerRuntime::CancelCharEvent(GetEntityHandle(), ecs::PlayerRuntime::CharEvent::BattlePassStayOnline);
     }
 #endif
 
@@ -5627,7 +5627,6 @@ void CHARACTER::Initialize()
 #endif
 
 #ifdef ENABLE_BATTLE_PASS_STAY_ONLINE
-    m_pkBattlePassStayOnlineEvent = nullptr;
 #endif
 
     m_pkMiningEvent = nullptr;

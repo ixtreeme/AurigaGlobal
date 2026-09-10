@@ -44,6 +44,8 @@
 #include <limits>
 #include "../../SRC/Server/GameServer/mount_inventory_helper.h"
 #include "../../SRC/Server/GameServer/map_location.h"
+#include "../../SRC/Server/GameServer/battle_pass.h"
+#include "../../SRC/Server/GameServer/ecs/EcsDiagnostics.hpp"
 #include "../../SRC/Server/GameServer/desc.h"
 #include "../../SRC/Server/GameServer/log.h"
 #include "../../SRC/Server/GameServer/p2p.h"
@@ -193,6 +195,34 @@ bool ecs::PlayerRuntime::IsStone(entt::entity e) { return g_registry.all_of<ecs:
 void ecs::PlayerRuntime::MonsterLog(entt::entity, const char*) {}
 void ecs::PlayerRuntime::CancelCharEvent(entt::entity e, CharEvent) { Check(g_registry.valid(e), "cancel event on stale entity"); }
 
+// CHARACTER::Show moved into MovementSystem.cpp too, and brought the battle
+// pass, the leaderboards and the invariant logger with it. Nothing here calls
+// Show - it needs a sectree table, a descriptor and a character manager - so
+// every one of these must stay unreached.
+UINT g_start_map[4] = {};
+void BroadcastNotice(const char*, bool) { Unexpected(); }
+std::string ecs::diag::Describe(entt::entity) { Unexpected(); }
+int32_t ecs::PlayerRuntime::GetZ(entt::entity) { Unexpected(); }
+bool ecs::PlayerRuntime::IsNPC(entt::entity) { Unexpected(); }
+int64_t ecs::PlayerRuntime::GetMaxStamina(entt::entity) { Unexpected(); }
+bool AffectSystem::StartAffectEvent(entt::entity) { Unexpected(); }
+void AffectSystem::SetFlag(entt::entity, uint32_t, bool) { Unexpected(); }
+ecs::MobInstanceState* CombatSystem::MobState(entt::entity) { Unexpected(); }
+void CombatSystem::SetValidComboInterval(entt::entity, int) { Unexpected(); }
+void CombatSystem::SendLeaderboardData(entt::entity) { Unexpected(); }
+void CombatSystem::SendLeaderboardDataGuild(entt::entity) { Unexpected(); }
+void CombatSystem::SendLeaderboardDataSkillMob(entt::entity, entt::entity) { Unexpected(); }
+void MountSystem::UpdateMountInventoryCountOverhead(entt::entity, entt::entity) { Unexpected(); }
+void CEntity::UpdateSectree() { Unexpected(); }
+void CHARACTER::ComputePoints() { Unexpected(); }
+uint8_t CHARACTER::GetBattlePassId() { Unexpected(); }
+bool CHARACTER::IsCompletedMission(uint8_t) { Unexpected(); }
+uint32_t CHARACTER::GetMissionProgress(uint32_t, uint32_t) { Unexpected(); }
+void CHARACTER::UpdateMissionProgress(uint32_t, uint32_t, uint32_t, uint32_t, bool) { Unexpected(); }
+bool CBattlePass::BattlePassMissionGetInfo(uint8_t, uint8_t, uint32_t*, uint32_t*) { Unexpected(); }
+CPIDRegistry& CPIDRegistry::Instance() { Unexpected(); }
+std::vector<entt::entity> CPIDRegistry::Snapshot() const { Unexpected(); }
+
 // The warp cluster moved into MovementSystem.cpp and brought the map table,
 // the descriptor, the switchbot and the P2P link with it. None of that is
 // reachable headless, so every one of these must stay unreached.
@@ -290,7 +320,6 @@ int CHARACTER::GetStamina() const { Unexpected(); }
 int ecs::PointSystem::GetLimitPoint(entt::entity, uint8_t) { Unexpected(); }
 const TMobTable& CHARACTER::GetMobTable() const { Unexpected(); }
 void CHARACTER::PointChange(uint8_t, int64_t, bool, bool, bool) { Unexpected(); }
-bool CHARACTER::Show(int32_t, int32_t, int32_t, int32_t, bool) { Unexpected(); }
 void CHARACTER::OnMove(bool) { Unexpected(); }
 bool AffectSystem::IsAffectFlag(entt::entity, uint32_t) { Unexpected(); }
 bool CHARACTER::IsEquipUniqueItem(uint32_t) const { Unexpected(); }
@@ -1065,6 +1094,23 @@ void NativeWarpLocations() {
     Check(ecs::MovementSystem::GetExitLocation(entt::null).mapIndex == 0, "the null handle carried an exit");
 }
 
+// Show's height sentinel. The wrapper resolved LONG_MAX for its own
+// SyncPositionComponents call and then handed the raw value to CHARACTER::Show,
+// which synced a second time - so every caller that let z default wrote
+// LONG_MAX into Position.z, and every read of the character's height after
+// that returned it. There is one resolution now, before anything reads z.
+void ShowHeightSentinel() {
+    Check(ecs::MovementSystem::ResolveShowHeight(LONG_MAX, 250) == 250,
+        "the sentinel was written through as a height");
+    Check(ecs::MovementSystem::ResolveShowHeight(0, 250) == 0,
+        "an explicit ground height was overridden");
+    Check(ecs::MovementSystem::ResolveShowHeight(-120, 250) == -120,
+        "an explicit height below zero was overridden");
+    Check(ecs::MovementSystem::ResolveShowHeight(LONG_MAX, 0) == 0,
+        "the sentinel did not resolve against a zero height");
+    static_assert(ecs::MovementSystem::ResolveShowHeight(LONG_MAX, 7) == 7);
+}
+
 void NativeAIScheduleStorage() {
     Reset();
     const auto e = Entity(ecs::SpatialKind::Character);
@@ -1119,7 +1165,7 @@ int main() {
         NativeMovement(); MovementVisibilityAndBounds(); MovementCallbackLifetime();
         MovementCallbackRetarget(); MovementArrivalAndPackets();
         NativeAnimationPackets(); NativeMovementDurationReads(); NativeMovementCommands();
-        NativeMotionSelection(); MovementCommandReentry(); NativeAIScheduleStorage(); NativeWarpLocations();
+        NativeMotionSelection(); MovementCommandReentry(); NativeAIScheduleStorage(); NativeWarpLocations(); ShowHeightSentinel();
         ecs::VisibilitySystem::Shutdown(g_registry);
         std::cout << "Spatial checks passed: " << checks << '\n'; return 0;
     } catch (const std::exception& error) { std::cerr << error.what() << '\n'; return 1; }

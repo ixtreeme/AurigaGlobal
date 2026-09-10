@@ -427,7 +427,7 @@ void SummonHorse(entt::entity rider, bool bSummon, bool bFromFar, uint32_t dwVnu
 				std::string(ecs::LegacyCharOf(GetSummonedHorse(rider))->GetName()) + m_horseText[bLang]);
 		}
 
-		if (!ecs::LegacyCharOf(GetSummonedHorse(rider))->Show(ecs::PlayerRuntime::GetMapIndex(rider), x, y, ecs::PlayerRuntime::GetZ(rider)))
+		if (!ecs::MovementSystem::Show(GetSummonedHorse(rider), ecs::PlayerRuntime::GetMapIndex(rider), x, y, ecs::PlayerRuntime::GetZ(rider)))
 		{
 			M2_DESTROY_CHARACTER(ecs::LegacyCharOf(GetSummonedHorse(rider)));
 			LOG_ERROR("cannot show monster");

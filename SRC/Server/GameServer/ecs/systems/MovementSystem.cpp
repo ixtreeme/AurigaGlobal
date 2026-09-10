@@ -58,6 +58,10 @@
 #ifdef ENABLE_SWITCHBOT
 #include "../../new_switchbot.h"
 #endif
+#include "../../char_manager.h"
+#include "../EntityInvariants.hpp"
+#include "../components/visibility_components.hpp"
+#include "../../battle_pass.h"
 #include <Core/Logging.hpp>
 
 void EncodeMovePacket(TPacketGCMove& pack, uint32_t dwVID, uint8_t bFunc, uint8_t bArg, uint32_t x, uint32_t y, uint32_t dwDuration, uint32_t dwTime, float bRot);
@@ -319,22 +323,398 @@ bool GetWalkingPreference(entt::entity e)
     return movement && movement->walkPreference;
 }
 
-bool Show(entt::entity e, int32_t mapIndex, int32_t x, int32_t y, int32_t z, bool showSpawnMotion)
+// Sending the client to another map, and the arrival on the other side.
+namespace {
+inline int32_t NormalizeMapIndex(int32_t mapIndex)
+{
+    if (mapIndex > 10000)
+        mapIndex /= 10000;
+
+    return mapIndex;
+}
+
+bool CheckAndHandleSameHwid(entt::entity character)
+{
+    if (character == entt::null || !g_registry.valid(character) ||
+        !ecs::PlayerRuntime::IsPC(character))
+        return false;
+
+    DESC* desc = ecs::PlayerRuntime::GetDesc(character);
+    if (!desc)
+        return false;
+
+    const char* selfHwid = desc->GetHwid();
+    const char* selfHost = desc->GetHostName();
+
+    if (!selfHwid || !*selfHwid)
+        return false;
+
+    if (!selfHost || !*selfHost)
+        return false;
+
+    int32_t normalizedMapIndex = NormalizeMapIndex(ecs::PlayerRuntime::GetMapIndex(character));
+    bool duplicateFound = false;
+
+    CHARACTER_MANAGER::instance().for_each_pc([&](LPCHARACTER other)
+        {
+            if (duplicateFound || !other)
+                return;
+
+			const entt::entity candidate = other->GetEntityHandle();
+			if (candidate == character)
+				return;
+
+            if (!ecs::PlayerRuntime::IsPC(candidate))
+                return;
+
+            DESC* otherDesc = ecs::PlayerRuntime::GetDesc(candidate);
+            if (!otherDesc)
+                return;
+
+            int32_t otherMapIndex = NormalizeMapIndex(ecs::PlayerRuntime::GetMapIndex(candidate));
+            if (otherMapIndex != normalizedMapIndex)
+                return;
+
+            const char* otherHwid = otherDesc->GetHwid();
+            const char* otherHost = otherDesc->GetHostName();
+
+            if (!otherHwid || !*otherHwid)
+                return;
+
+            if (!otherHost || !*otherHost)
+                return;
+
+            if (strcmp(selfHwid, otherHwid) == 0 && strcmp(selfHost, otherHost) == 0)
+                duplicateFound = true;
+        });
+
+    if (duplicateFound)
+    {
+        char notice[256];
+        snprintf(notice, sizeof(notice),
+            "[EVENTMAP]%s 2 karakterrel probalt belepni event mapra!",
+            ecs::PlayerRuntime::GetName(character).data());
+
+        BroadcastNotice(notice);
+        ecs::MovementSystem::WarpSet(character, 983500, 265200, 41);
+        return true;
+    }
+
+    return false;
+}
+
+#ifdef ENABLE_BATTLE_PASS_STAY_ONLINE
+EVENTFUNC(battle_pass_stay_online_event_session){
+    char_event_info* info = dynamic_cast<char_event_info*>(event->info);
+    if (!info || info->ch == entt::null)
+        return 0;
+
+    LPCHARACTER ch = ecs::LegacyCharOf(info->ch);
+	const entt::entity character = ch->GetEntityHandle();
+
+    if (!ecs::PlayerRuntime::GetDesc(character))
+        return PASSES_PER_SEC(60);
+
+    const uint8_t bBattlePassId = ch->GetBattlePassId();
+    if (!bBattlePassId)
+        return PASSES_PER_SEC(60);
+
+    uint32_t dwNotUsed = 0;
+    uint32_t dwCount = 0;
+    if (!CBattlePass::instance().BattlePassMissionGetInfo(bBattlePassId, STAY_ONLINE_MINUTES, &dwNotUsed, &dwCount))
+        return PASSES_PER_SEC(60);
+
+    if (ch->IsCompletedMission(STAY_ONLINE_MINUTES))
+        return PASSES_PER_SEC(60);
+
+    if (ch->GetMissionProgress(STAY_ONLINE_MINUTES, bBattlePassId) >= dwCount)
+        return PASSES_PER_SEC(60);
+
+    ch->UpdateMissionProgress(STAY_ONLINE_MINUTES, bBattlePassId, 1, dwCount);
+    return PASSES_PER_SEC(60);
+}
+#endif
+
+} // namespace
+
+// Placing a character on a map: the sectree membership, the visibility
+// burst that follows it, and the spawn state around both.
+bool Show(entt::entity e, int32_t lMapIndex, int32_t x, int32_t y, int32_t z, bool bShowSpawnMotion)
 {
     if (!IsValid(e))
         return false;
 
-    auto* ch = CharacterOf(e);
-    if (!ch)
+    // SetMapIndex, RemoveEntity, UpdateSectree, ComputePoints and the mob
+    // table have no entity form yet; each is its own migration and they share
+    // this one resolve.
+    LPCHARACTER self = ecs::LegacyCharOf(e);
+    if (!self)
         return false;
 
-    const int32_t resolvedZ = (z == LONG_MAX) ? ch->GetZ() : z;
-    ecs::SyncPositionComponents(g_registry, e, mapIndex, x, y, resolvedZ);
+    z = ResolveShowHeight(z, ecs::PlayerRuntime::GetZ(e));
+    ecs::Invariants::ValidateCharacterTags(g_registry, e, "show.enter");
+    ecs::Invariants::ValidateCommonIdentity(g_registry, e, "show.enter");
+    if (e != entt::null && g_registry.valid(e) && g_registry.all_of<ecs::TagPC>(e))
+        ecs::Invariants::ValidatePCIdentity(g_registry, e, "show.enter");
 
-    return ch->Show(mapIndex, x, y, z, showSpawnMotion);
+    if (ecs::PlayerRuntime::IsPC(e))
+    {
+        const int32_t normalizedTargetMapIndex = NormalizeMapIndex(lMapIndex);
+
+        if (normalizedTargetMapIndex == 1 && CheckAndHandleSameHwid(e))
+        {
+            const uint32_t startMapIndex = EMPIRE_START_MAP(ecs::PlayerRuntime::GetEmpire(e));
+            const uint32_t startX = EMPIRE_START_X(ecs::PlayerRuntime::GetEmpire(e));
+            const uint32_t startY = EMPIRE_START_Y(ecs::PlayerRuntime::GetEmpire(e));
+
+            if (startMapIndex && startX && startY)
+            {
+                LOG_INFO("HWID MAP1 restriction: {} moved to start map ({}, {}, {})", ecs::PlayerRuntime::GetName(e).data(), startMapIndex, startX, startY);
+                lMapIndex = static_cast<int32_t>(startMapIndex);
+                x = static_cast<int32_t>(startX);
+                y = static_cast<int32_t>(startY);
+            }
+        }
+    }
+
+    LPSECTREE sectree = ecs::SectorAt(lMapIndex, x, y);
+
+    if (!sectree)
+    {
+        LOG_INFO("cannot find sectree by {}x{} mapindex {}", x, y, lMapIndex);
+        return false;
+    }
+#ifdef ENABLE_BATTLE_PASS_STAY_ONLINE
+    if (!ecs::PlayerRuntime::GetCharEvent(e, ecs::PlayerRuntime::CharEvent::BattlePassStayOnline))
+    {
+        char_event_info* info = AllocEventInfo<char_event_info>();
+        info->ch = e;
+        ecs::PlayerRuntime::SetCharEvent(e, ecs::PlayerRuntime::CharEvent::BattlePassStayOnline,
+            event_create(battle_pass_stay_online_event_session, info, PASSES_PER_SEC(60)));
+    }
+#endif
+
+    self->SetMapIndex(lMapIndex);
+
+    bool bChangeTree = false;
+
+    if (!ecs::PlayerRuntime::GetSectree(e) || ecs::PlayerRuntime::GetSectree(e) != sectree)
+        bChangeTree = true;
+
+    if (bChangeTree)
+    {
+        if (ecs::PlayerRuntime::GetSectree(e))
+        {
+            ecs::PlayerRuntime::GetSectree(e)->RemoveEntity(self);
+            const entt::entity oldEntity = e;
+            if (oldEntity != entt::null && g_registry.valid(oldEntity))
+            {
+                g_registry.remove<ecs::SectorPlacement>(oldEntity);
+                g_registry.remove<ecs::ViewActiveTag>(oldEntity);
+            }
+        }
+
+        ecs::ViewSystem::ViewCleanup(e);
+    }
+#ifdef LEADERBOARD_RAZOR93
+    if (ecs::PlayerRuntime::GetMapIndex(e) == 41)
+    {
+        CombatSystem::SendLeaderboardData(e);
+        CombatSystem::SendLeaderboardDataSkillMob(e, e);
+        CombatSystem::SendLeaderboardDataGuild(e);
+    }
+#endif
+    if (!ecs::PlayerRuntime::IsNPC(e))
+    {
+        LOG_TRACE("SHOW: {} {}x{}x{}", ecs::PlayerRuntime::GetName(e).data(), x, y, z);
+        if (ecs::PlayerRuntime::GetStamina(e) < ecs::PlayerRuntime::GetMaxStamina(e))
+            AffectSystem::StartAffectEvent(e);
+    }
+    else if (self->GetMobData())
+    {
+        if (auto* mobState = CombatSystem::MobState(e)) {
+            mobState->lastAttackedX = x;
+            mobState->lastAttackedY = y;
+            mobState->lastAttackedZ = z;
+        }
+    }
+
+    if (bShowSpawnMotion)
+    {
+        // Phase C.4: legacy SET_BIT(m_bAddChrState, SPAWN) removed.
+        if (auto* status = g_registry.try_get<ecs::StatusFlags>(e))
+            status->isSpawnState = true;
+        AffectSystem::SetFlag(e, AFF_SPAWN);
+    }
+
+    // Phase C.1: legacy m_pos write removed - ECS Position via
+    // SyncPositionComponents is the sole source.
+    ecs::SyncPositionComponents(g_registry, e, lMapIndex, x, y, z);
+    ecs::Invariants::ValidateCharacterTags(g_registry, e, "show.after_position_sync");
+    ecs::Invariants::ValidateCommonIdentity(g_registry, e, "show.after_position_sync");
+    if (e != entt::null && g_registry.valid(e) && g_registry.all_of<ecs::TagPC>(e))
+        ecs::Invariants::ValidatePCIdentity(g_registry, e, "show.after_position_sync");
+
+    // Phase C.3: legacy destination field write removed. SyncDestinationClear
+    // drops ECS MovementDestination so subsequent INSERT packets emit
+    // current (warped) position via GetCurrentDestX/Y -> GetX/Y fallback.
+
+    ecs::MovementSystem::SyncDestinationClear(e);
+
+    if (bChangeTree)
+    {
+        // Routed through the dispatch, which needs a SpatialKindTag that this
+        // line runs before sectree->InsertEntity would set. It is already
+        // there: CreatePC applies the spatial state at character creation, and
+        // the packet only does anything for an entity with a descriptor - which
+        // is a PC, so it came through CreatePC.
+        ecs::EntityNetworkDispatch::SendInsert(g_registry, e, e);
+        sectree->InsertEntity(e);
+
+        if (e != entt::null && g_registry.valid(e))
+            g_registry.emplace_or_replace<ecs::ViewActiveTag>(e);
+
+        self->UpdateSectree();
+
+        // Phase 15E-final.LPENTITY.4-architect.D.6.fixup-1:
+        // Explicit spawn-shaped PositionChangedEvent for character entry to
+        // a sectree (login spawn, map warp, dungeon entry). The
+        // SyncPositionComponents call earlier in this function is suppressed
+        // by its idempotent filter when CharacterFactory pre-emplaced the
+        // ECS Position to the same coordinates the Show is being called with
+        // (which is the typical login flow). Without this trigger, the
+        // VisibilitySystem D.4 handler never sees the spawn, ViewerMap stays
+        // empty, and after D.6 the player is invisible to all peers and
+        // sees no one. Mirrors the spawn trigger SpatialService::InsertEntity
+        // emits for items / buildings / shops.
+        //
+        // The event is shaped as old==(0,0,0) and oldMapIndex==0 (real map
+        // indices start at 1) so the handler treats it as a fresh spawn -
+        // empty oldViewers, full newViewers from the sectree query. This
+        // produces the correct one-shot SendInsert burst to every nearby
+        // viewer (and the symmetric reverse direction added in D.6).
+        if (e != entt::null && g_registry.valid(e))
+        {
+            g_dispatcher.trigger(ecs::PositionChangedEvent {
+                e,
+                0, 0, 0,
+                x, y, z,
+                0, lMapIndex });
+        }
+    }
+    else
+    {
+        if (e != entt::null && g_registry.valid(e))
+            g_registry.emplace_or_replace<ecs::ViewActiveTag>(e);
+        // Phase 15E-final.LPENTITY.4-architect H fixup-7:
+        // ViewReencode() removed from intra-sectree Show. Pre-fixup-7
+        // ViewReencode emitted DispatchRemove(this,this)+DispatchInsert(this,this)
+        // forcing the SELF client to despawn-then-respawn its own character,
+        // and DispatchInsert(other,this) for every visible peer forcing the
+        // e client to respawn each peer at the packet position with idle
+        // pose. After the respawn, peer move packets that arrive in flight
+        // can fail to override the freshly-set idle render-state on the e
+        // client, leaving peers visually frozen on the backporting client
+        // (the symptom user reported as 'a backportos kliens egy backport
+        // utan nem latja a masik karakter mozgasat').
+        //
+        // The fixup-3 spawn event below already handles ViewerMap maintenance
+        // (heal-only mode: add missing peers, never remove existing). The
+        // fixup-2 PacketView e-heal further keeps the broadcast set in
+        // sync at every emit. Neither of those triggers a render-state reset,
+        // so peers continue animating cleanly through backport+resync.
+        //
+        // ViewReencode remains used by polymorph / equipment-change /
+        // arena-warp callers where a deliberate full re-encode is wanted.
+        //
+        // Phase 15E-final.LPENTITY.4-architect H fixup-8:
+        // Explicit e-resync packet pair. The fixup-7 ViewReencode skip
+        // also dropped the e-direction DispatchRemove(this, this) +
+        // DispatchInsert(this, this) emit which kept the moving client's
+        // own render in sync with the server's authoritative position.
+        // Without it, fast-mount client-side prediction overshoots the
+        // server during backport cycles and never receives a snap-back
+        // packet for itself - the moving client and its peers diverge
+        // randomly.
+        //
+        // Emit the e-resync directly here (NOT via ViewReencode, which
+        // also produces the unwanted DispatchInsert(other, this) burst).
+        // The packets travel only to the moving character's own client;
+        // peers are unaffected because PacketView's except-e filter
+        // applies to the source/viewer pair (here both are 	his).
+        if (e != entt::null && g_registry.valid(e))
+        {
+            ecs::EntityNetworkDispatch::SendRemove(g_registry, e, e);
+            ecs::EntityNetworkDispatch::SendInsert(g_registry, e, e);
+        }
+        LOG_TRACE("      in same sectree");
+
+        // Phase 15E-final.LPENTITY.4-architect.D.6.fixup-2:
+        // Explicit spawn-shaped PositionChangedEvent for the intra-sectree
+        // Show path. This fires on:
+        //   * input_main.cpp Move handler backport (anti-cheat rubberband
+        //     when client moves too far from server's authoritative position)
+        //   * cmd_general.cpp /warp commands within the same sectree
+        //   * Other intra-sectree Show callers
+        //
+        // Without this, the SyncPositionComponents at line 987 is suppressed
+        // by the D.2 idempotent filter when MovementSystem::Show is called
+        // with the entity's CURRENT (GetX, GetY, GetZ) coordinates - which
+        // is exactly the backport pattern (input_main.cpp:2284). The D.4
+        // handler never runs, the ViewerMap is not refreshed, and the post
+        // D.6 ECS-only ViewerMap walk in PacketView produces stale recipient
+        // sets - manifesting as "the other character disappears after a
+        // backport" because the backport-source's ViewerMap was last filled
+        // at login and any peer that moved into range since then is missing.
+        //
+        // Spawn-shape (oldMapIndex=0) means the handler treats it as a fresh
+        // visibility computation: empty oldViewers, full newViewers from the
+        // sectree query at the current position. Idempotent SendInsert per
+        // viewer - the protocol tolerates duplicates (same as the legacy
+        // CFuncViewInsert refresh path used to before D.6).
+        if (e != entt::null && g_registry.valid(e))
+        {
+            g_dispatcher.trigger(ecs::PositionChangedEvent {
+                e,
+                0, 0, 0,
+                x, y, z,
+                0, lMapIndex });
+        }
+    }
+
+    // Phase C.4: legacy REMOVE_BIT(m_bAddChrState, SPAWN) removed.
+    if (auto* status = g_registry.try_get<ecs::StatusFlags>(e)) {
+        status->isSpawnState = false;
+        g_registry.emplace_or_replace<ecs::DirtyTag>(e);
+    }
+
+    CombatSystem::SetValidComboInterval(e, 0);
+    self->ComputePoints();
+#ifdef ENABLE_FAKE_SHOP_HEADER
+    if (ecs::PlayerRuntime::IsPC(e))
+    {
+        // The ECS ViewMap, not m_map_view: this is a CHARACTER, and for characters
+        // the legacy map stopped being maintained when D.6 disabled the polling in
+        // UpdateSectree. It is frozen at whatever it held then, so this loop was
+        // walking stale contents.
+        const entt::entity selfEntity = e;
+        if (const auto* viewMap = g_registry.try_get<ecs::ViewMap>(selfEntity))
+        {
+            for (const entt::entity viewerEntity : viewMap->visible)
+            {
+                if (viewerEntity == selfEntity)
+                    continue;
+
+                if (ecs::PlayerRuntime::IsPC(viewerEntity) && ecs::PlayerRuntime::GetDesc(viewerEntity))
+                    MountSystem::UpdateMountInventoryCountOverhead(e, viewerEntity);
+            }
+        }
+    }
+#endif
+
+    return true;
 }
 
-// Sending the client to another map, and the arrival on the other side.
 bool WarpSet(entt::entity e, int32_t x, int32_t y, int32_t lPrivateMapIndex)
 {
     if (!IsValid(e) || !ecs::PlayerRuntime::IsPC(e))

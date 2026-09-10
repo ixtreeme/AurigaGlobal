@@ -774,7 +774,6 @@ public:
 
 	void			CheckMaximumPoints();	// HP, SP ���� ���� ���� �ִ밪 ���� ������ �˻��ϰ� ���ٸ� �����.
 
-	bool			Show(int32_t lMapIndex, int32_t x, int32_t y, int32_t z = LONG_MAX, bool bShowSpawnMotion = false);
 
 	void			Sitdown(int is_ground);
 	void			Standup();
@@ -2089,7 +2088,6 @@ private:
 #ifdef ENABLE_BATTLE_PASS_STAY_ONLINE
 	//uint32_t m_dwBattlePassStayOnlineNextTick;
 
-	LPEVENT m_pkBattlePassStayOnlineEvent;
 
 #endif
 

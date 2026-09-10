@@ -22,6 +22,14 @@ void SetRotation(entt::entity e, float fRot);
 #endif
 
 
+// Show's z is a sentinel: LONG_MAX means "keep the height you are at", and
+// 63 of its 69 call sites rely on it. It used to reach SyncPositionComponents
+// unresolved, which wrote LONG_MAX into the character's Position.z.
+constexpr int32_t ResolveShowHeight(int32_t z, int32_t current)
+{
+    return z == LONG_MAX ? current : z;
+}
+
 bool Show(entt::entity e, int32_t mapIndex, int32_t x, int32_t y, int32_t z = LONG_MAX, bool showSpawnMotion = false);
 bool WarpSet(entt::entity e, int32_t x, int32_t y, int32_t privateMapIndex = 0);
 void WarpEnd(entt::entity e);
