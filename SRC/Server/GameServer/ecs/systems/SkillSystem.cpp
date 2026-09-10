@@ -2655,7 +2655,7 @@ struct FuncSplashDamage
 				else if (IS_SET(m_pkSk->dwFlag, SKILL_FLAG_POISON))
 				{
 					if (number(1, 100) <= iPct)
-						pkChrVictim->AttackedByPoison((m_pkChr ? m_pkChr->GetEntityHandle() : entt::null));
+						AffectSystem::ApplyPoison(pkChrVictim->GetEntityHandle(), (m_pkChr ? m_pkChr->GetEntityHandle() : entt::null));
 				}
 			}
 

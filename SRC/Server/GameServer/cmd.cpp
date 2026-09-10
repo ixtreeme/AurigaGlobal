@@ -386,7 +386,7 @@ ACMD(do_petenchant)
 	if ((iArg < 0) || (iArg > 2))
 		return;
 
-	ch->SetPetEnchant(iArg);
+	ecs::PlayerRuntime::SetPetEnchant(ch->GetEntityHandle(), iArg);
 }
 #endif
 

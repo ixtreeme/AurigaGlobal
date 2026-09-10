@@ -1491,20 +1491,6 @@ int CHARACTER::CountSpecifyTypeItem(uint8_t type) const
 }
 
 
-LPITEM CHARACTER::GetWear(uint8_t bCell) const
-{
-
-	// > WEAR_MAX_NUM : ?�EY1� 11�Ե�.
-	if (bCell >= WEAR_MAX_NUM + DRAGON_SOUL_DECK_MAX_NUM * DS_SLOT_MAX)
-	{
-		LOG_ERROR("CHARACTER::GetWear: invalid wear cell {}", bCell);
-		return nullptr;
-	}
-
-	return GetMainInventoryItem(GetEntityHandle(), static_cast<uint16_t>(INVENTORY_MAX_NUM + bCell));
-}
-
-
 namespace ecs::PlayerRuntime {
 
 void SetWear(entt::entity e, uint8_t bCell, entt::entity item)
@@ -3108,7 +3094,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 #endif
 
 	// @fixme402 (IsLoadedAffect to block affect hacking)
-	if (!IsLoadedAffect()) {
+	if (!AffectSystem::IsLoaded(GetEntityHandle())) {
 		return false;
 	}
 
@@ -4188,7 +4174,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 				if (used)
 				{
 					if (item->GetVnum() == 50085 || item->GetVnum() == 50086) {
-						SetUseSeedOrMoonBottleTime();
+						ecs::PlayerRuntime::SetUseSeedOrMoonBottleTime(GetEntityHandle());
 					}
 
 					if (GetWarMap())
@@ -4758,7 +4744,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 				}
 
 				// 1x hasznalhato ugyanarra a BP ID-re
-				if (HasBattlePassBoost(bBattlePassId))
+				if (ecs::PlayerRuntime::HasBattlePassBoost(GetEntityHandle(), bBattlePassId))
 				{
 #ifdef TEXTS_IMPROVEMENT
 					ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 8, "");
@@ -4768,7 +4754,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 
 				int remain = AffectSystem::GetBattlePassRemainingSeconds(GetEntityHandle());
 				if (remain <= 0)
-					remain = GetSecondsTillNextMonth();
+					remain = ecs::PlayerRuntime::GetSecondsTillNextMonth();
 
 				 
 				AddAffect(AFFECT_BATTLE_PASS_BOOST, POINT_BATTLE_PASS_ID, bBattlePassId, 0, remain, 0, true);
@@ -4798,7 +4784,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 					return false;
 				}
 
-				int iSeconds = GetSecondsTillNextMonth();
+				int iSeconds = ecs::PlayerRuntime::GetSecondsTillNextMonth();
 				if (iSeconds < 0) {
 #ifdef TEXTS_IMPROVEMENT
 					ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 7, "");
@@ -4892,7 +4878,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 
 			case 27996: // µ¶º´
 				ItemSystem::ConsumeItemEcs(itemEntity);
-				AttackedByPoison(entt::null); // @warme008
+				AffectSystem::ApplyPoison(GetEntityHandle(), entt::null); // @warme008
 				break;
 
 			case 27987: // Á¶°³
@@ -6613,7 +6599,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 			if (used)
 			{
 				if (item->GetVnum() == 50085 || item->GetVnum() == 50086) {
-					SetUseSeedOrMoonBottleTime();
+					ecs::PlayerRuntime::SetUseSeedOrMoonBottleTime(GetEntityHandle());
 				}
 
 				if (GetWarMap())
@@ -6788,7 +6774,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 			}
 #endif
 
-			if (IsWarping())
+			if (ecs::PlayerRuntime::IsWarping(GetEntityHandle()))
 			{
 #ifdef TEXTS_IMPROVEMENT
 				ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 434, "");
@@ -7097,7 +7083,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 			if (item2->IsExchanging() || ItemSystem::IsItemEquipped(item2->GetEntityHandle())) // ENABLE_BUG_FIXES
 				return false;
 
-			int idx = GetPetEnchant();
+			int idx = ecs::PlayerRuntime::GetPetEnchant(GetEntityHandle());
 			if ((idx < 0) || (idx > 2))
 				return false;
 
@@ -9319,7 +9305,7 @@ bool CHARACTER::GiveItemFromSpecialItemGroup(uint32_t dwGroupNum, std::vector<ui
 		break;
 		case CSpecialItemGroup::POISON:
 		{
-			AttackedByPoison(entt::null);
+			AffectSystem::ApplyPoison(GetEntityHandle(), entt::null);
 			bSuccess = true;
 		}
 		break;
@@ -9543,11 +9529,6 @@ bool IS_BOTARYABLE_ZONE(int nMapIndex)
 bool CHARACTER::CanHandleItem(bool skipRefine, bool skipObserver)
 {
     return InventorySystem::CanHandleItems(GetEntityHandle(), skipRefine, skipObserver);
-}
-
-bool CHARACTER::IsWarping() const
-{
-    return ecs::PlayerRuntime::GetCharEvent(GetEntityHandle(), ecs::PlayerRuntime::CharEvent::Warp) != nullptr;
 }
 
 #ifdef ENABLE_EXTRA_INVENTORY
@@ -10504,7 +10485,7 @@ bool CHARACTER::CanDoCube() const
 	if (GetShop())		return false;
 	if (GetMyShop())	return false;
 	if (InventorySystem::IsRefining(GetEntityHandle()))	return false;
-	if (IsWarping())	return false;
+	if (ecs::PlayerRuntime::IsWarping(GetEntityHandle()))	return false;
 
 	return true;
 }

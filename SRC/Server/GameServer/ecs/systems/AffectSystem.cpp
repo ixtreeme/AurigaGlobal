@@ -1187,14 +1187,6 @@ void CHARACTER::AttackedByFire(entt::entity attacker, int amount, int count)
         count);
 }
 
-void CHARACTER::AttackedByPoison(entt::entity attacker)
-{
-    AffectSystem::ApplyPoison(
-        GetEntityHandle(),
-        attacker);
-}
-
-
 void AffectSystem_Update(entt::registry& reg, uint32_t tick)
 {
     AffectSystem::UpdateAffect(reg, tick);
@@ -1247,11 +1239,6 @@ std::vector<std::shared_ptr<CAffect>> CHARACTER::GetAffectContainer() const
 TAffectFlag CHARACTER::GetAffectFlags() const
 {
     return AffectSystem::GetFlags(GetEntityHandle());
-}
-
-bool CHARACTER::IsLoadedAffect() const
-{
-    return AffectSystem::IsLoaded(GetEntityHandle());
 }
 
 EVENTFUNC(affect_event)

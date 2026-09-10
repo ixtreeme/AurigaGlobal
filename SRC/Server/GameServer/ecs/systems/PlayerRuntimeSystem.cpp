@@ -604,6 +604,71 @@ void SetQuestFlag(entt::entity e, const std::string& flag, int value)
     pPC->SetFlag(flag, value);
 }
 
+// Whether a warp is already scheduled for this character.
+// Seconds left in the calendar month. Nothing here is per-character;
+// it was a CHARACTER method only because its callers were.
+// Whether this character carries the boost affect for a given battle pass.
+int GetPetEnchant(entt::entity e)
+{
+    if (e == entt::null || !g_registry.valid(e))
+        return 0;
+    const auto* pet = g_registry.try_get<ecs::PetEnchant>(e);
+    return pet ? pet->value : 0;
+}
+
+void SetPetEnchant(entt::entity e, int value)
+{
+    if (e == entt::null || !g_registry.valid(e))
+        return;
+    g_registry.get_or_emplace<ecs::PetEnchant>(e).value = value;
+}
+
+void SetUseSeedOrMoonBottleTime(entt::entity e)
+{
+    if (e == entt::null || !g_registry.valid(e))
+        return;
+    g_registry.get_or_emplace<ecs::SeedBottleTime>(e).pulse = thecore_pulse();
+}
+
+bool HasBattlePassBoost(entt::entity e, uint8_t bBattlePassId)
+{
+    CAffect* p = AffectSystem::FindAffect(e, AFFECT_BATTLE_PASS_BOOST, POINT_BATTLE_PASS_ID);
+    return p && p->lApplyValue == bBattlePassId;
+}
+
+int GetSecondsTillNextMonth()
+{
+    time_t iTime;
+    time(&iTime);
+    struct tm endTime = *localtime(&iTime);
+
+    int iCurrentMonth = endTime.tm_mon;
+
+    endTime.tm_hour = 0;
+    endTime.tm_min = 0;
+    endTime.tm_sec = 0;
+    endTime.tm_mday = 1;
+
+    if (iCurrentMonth == 12)
+    {
+        endTime.tm_mon = 0;
+        endTime.tm_year = endTime.tm_year + 1;
+    }
+    else
+    {
+        endTime.tm_mon = iCurrentMonth + 1;
+    }
+
+    int seconds = difftime(mktime(&endTime), iTime);
+
+    return seconds;
+}
+
+bool IsWarping(entt::entity e)
+{
+    return GetCharEvent(e, CharEvent::Warp) != nullptr;
+}
+
 bool IsImmortal(entt::entity e)
 {
     if (e == entt::null || !g_registry.valid(e))
@@ -2353,7 +2418,7 @@ void CHARACTER::EnsureFreeBattlePassActive()
 
     if (remain <= 0)
     {
-        remain = GetSecondsTillNextMonth();
+        remain = ecs::PlayerRuntime::GetSecondsTillNextMonth();
         AffectSystem::SetBattlePassDeadline(GetEntityHandle(), get_global_time() + remain);
     }
 
@@ -2380,7 +2445,7 @@ void CHARACTER::LoadBattlePass(uint32_t dwCount, TPlayerBattlePassMission* data)
 
     if (remain <= 0)
     {
-        remain = GetSecondsTillNextMonth();
+        remain = ecs::PlayerRuntime::GetSecondsTillNextMonth();
         AffectSystem::SetBattlePassDeadline(GetEntityHandle(), get_global_time() + remain);
     }
 
@@ -2421,18 +2486,12 @@ void CHARACTER::CancelStayOnlineEvent()
 #endif
 
 #ifdef ENABLE_FREE_PASS_RAZOR93
-bool CHARACTER::HasBattlePassBoost(uint8_t bBattlePassId)
-{
-    CAffect* p = FindAffect(AFFECT_BATTLE_PASS_BOOST, POINT_BATTLE_PASS_ID);
-    return (p && p->lApplyValue == bBattlePassId);
-}
-
 uint32_t CHARACTER::GetBattlePassAdjustedTotal(uint32_t dwMissionID, uint32_t dwBattlePassID, uint32_t dwBaseTotal)
 {
     if (dwBaseTotal <= 1)
         return dwBaseTotal;
 
-    if (!HasBattlePassBoost((uint8_t)dwBattlePassID))
+    if (!ecs::PlayerRuntime::HasBattlePassBoost(GetEntityHandle(), (uint8_t)dwBattlePassID))
         return dwBaseTotal;
 
     return (dwBaseTotal + 1) / 2;
@@ -2593,33 +2652,6 @@ uint8_t CHARACTER::GetBattlePassId()
     return pAffect->lApplyValue;
 }
 
-int CHARACTER::GetSecondsTillNextMonth()
-{
-    time_t iTime;
-    time(&iTime);
-    struct tm endTime = *localtime(&iTime);
-
-    int iCurrentMonth = endTime.tm_mon;
-
-    endTime.tm_hour = 0;
-    endTime.tm_min = 0;
-    endTime.tm_sec = 0;
-    endTime.tm_mday = 1;
-
-    if (iCurrentMonth == 12)
-    {
-        endTime.tm_mon = 0;
-        endTime.tm_year = endTime.tm_year + 1;
-    }
-    else
-    {
-        endTime.tm_mon = iCurrentMonth + 1;
-    }
-
-    int seconds = difftime(mktime(&endTime), iTime);
-
-    return seconds;
-}
 #endif
 
 #if defined(BL_OFFLINE_MESSAGE)
@@ -5709,7 +5741,6 @@ void CHARACTER::Initialize()
 
 
 
-    m_iSeedTime = 0;
 
     m_deposit_pulse = 0;
 
@@ -5779,7 +5810,6 @@ void CHARACTER::Initialize()
     m_bHideWeaponCostume = false;
 #endif
 #ifdef ENABLE_NEW_PET_EDITS
-    petenchant = 0;
 #endif
 #ifdef KASMIR_PAKET_SYSTEM
     m_bKasmirPaketBaslik = 0;

@@ -998,7 +998,6 @@ public:
 	void			SaveAffect();
 
 	// Affect loading�� ���� �����ΰ�?
-	bool			IsLoadedAffect() const;
 
 	bool			IsGoodAffect(uint8_t bAffectType) const;
 
@@ -1173,7 +1172,6 @@ public:
 #endif
 	bool			IsEmptyItemGrid(TItemPos Cell, uint8_t size, int iExceptionCell = -1) const;
 
-	LPITEM			GetWear(uint8_t bCell) const;
 
 	// MYSHOP_PRICE_LIST
 	void			UseSilkBotary(void); 		/// ��� ������ �������� ���
@@ -1424,7 +1422,6 @@ public:
 	static std::vector<LeaderboardEntry> FetchTop10SkillMob();
 	static void CheckLeaderboardSkillMobChanges();
 #endif
-	void				AttackedByPoison(entt::entity attacker);
 	void				AttackedByFire(entt::entity attacker, int amount, int count);
 
 	uint8_t GetAlignmentGrade() const;
@@ -1531,11 +1528,8 @@ public:
 #endif
 #ifdef ENABLE_NEW_PET_EDITS
 public:
-	void	SetPetEnchant(int iArg) { petenchant = iArg; }
-	int		GetPetEnchant() const { return petenchant; }
 
 protected:
-	int	petenchant;
 #endif
 public:
 	enum
@@ -1925,7 +1919,6 @@ public:
 	LPEVENT				m_pkNewPetSystemUpdateEvent;
 	LPEVENT				m_pkNewPetSystemExpireEvent;
 #endif
-	bool IsWarping() const;
 
 
 	const CMob* m_pkMobData;
@@ -1999,9 +1992,6 @@ public:
 	//END_PREVENT_REFINE_HACK
 
 	//RESTRICT_USE_SEED_OR_MOONBOTTLE
-	int 	GetUseSeedOrMoonBottleTime() const { return m_iSeedTime; }
-	void  	SetUseSeedOrMoonBottleTime() { m_iSeedTime = thecore_pulse(); }
-	int 	m_iSeedTime;
 	//END_RESTRICT_USE_SEED_OR_MOONBOTTLE
 
 	//PREVENT_PORTAL_AFTER_EXCHANGE
@@ -2210,7 +2200,6 @@ public:
 	void SetHairCostumeHidden(bool hidden, bool pass = false);
 #ifdef ENABLE_FREE_PASS_RAZOR93
 
-	bool HasBattlePassBoost(uint8_t bBattlePassId);
 	uint32_t GetBattlePassAdjustedTotal(uint32_t dwMissionID, uint32_t dwBattlePassID, uint32_t dwBaseTotal);
 	void ApplyBattlePassBoostRecalc(uint8_t bBattlePassId);
 
@@ -2269,7 +2258,6 @@ private:
 	std::list<TPlayerBattlePassMission*> m_listBattlePass;
 
 public:
-	int 			GetSecondsTillNextMonth();
 protected:
 
 #ifdef ENABLE_BATTLE_PASS_STAY_ONLINE		

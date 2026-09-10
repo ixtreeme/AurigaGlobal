@@ -43,4 +43,14 @@ struct MountComponent {
     uint32_t state { 0 };
 };
 
+// The pet enchant level, and when a seed or moon bottle was last used.
+// Both were CHARACTER fields only the item code read.
+struct PetEnchant {
+    int value { 0 };
+};
+
+struct SeedBottleTime {
+    int pulse { 0 };
+};
+
 } // namespace ecs

@@ -511,7 +511,7 @@ ACMD(do_change_channel)
 	if (!ch)
 		return;
 
-	if (ch->IsWarping())
+	if (ecs::PlayerRuntime::IsWarping(ch->GetEntityHandle()))
 	{
 		return;
 	}
