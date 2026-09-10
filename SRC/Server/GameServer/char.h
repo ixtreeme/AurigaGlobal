@@ -1239,7 +1239,6 @@ public:
 	int				GetEmptyExtraInventory(uint8_t size, uint8_t category) const; // needed for offline shop
 #endif
 
-	int				GetEmptyInventory(uint8_t size) const;
 	int				GetEmptyDragonSoulInventory(LPITEM pItem) const;
 
 
@@ -1566,7 +1565,6 @@ public:
 
 	time_t				GetSkillNextReadTime(uint32_t dwVnum) const;
 	void				SetSkillNextReadTime(uint32_t dwVnum, time_t time);
-	void				SkillLearnWaitMoreTimeMessage(uint32_t dwVnum);
 
 #ifdef ENABLE_NEW_GYEONGGONG_SKILL
 	int					ComputeGyeongGongSkill(uint32_t dwVnum, entt::entity victim, uint8_t bSkillLevel = 0);
@@ -2175,7 +2173,6 @@ public:
 	void	OpenAcce(bool bCombination);
 	void	CloseAcce();
 	void	ClearAcceMaterials();
-	bool	CleanAcceAttr(entt::entity item, entt::entity target);
 	std::span<entt::entity> GetAcceMaterials();
 	bool	AcceIsSameGrade(int32_t lGrade);
 	uint32_t	GetAcceCombinePrice(int32_t lGrade

@@ -1789,7 +1789,7 @@ void CInputDB::ItemLoad(LPDESC d, const char * c_pData)
 			continue;
 
 
-		const int pos = ch->GetEmptyInventory(ItemSystem::GetItemSize(itemEntity));
+		const int pos = InventorySystem::GetEmptyInventory(ch->GetEntityHandle(), ItemSystem::GetItemSize(itemEntity));
 		if (pos < 0)
 		{
 			PIXEL_POSITION coord;

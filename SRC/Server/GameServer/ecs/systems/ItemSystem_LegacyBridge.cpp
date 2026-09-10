@@ -2238,7 +2238,7 @@ bool CHARACTER::PickupItem(uint32_t dwVID)
 #endif
 				else
 				{
-					if ((iEmptyCell = GetEmptyInventory(item->GetSize())) == -1)
+					if ((iEmptyCell = InventorySystem::GetEmptyInventory(GetEntityHandle(), item->GetSize())) == -1)
 					{
 #ifdef TEXTS_IMPROVEMENT
 						ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 366, "");
@@ -2541,7 +2541,7 @@ bool CHARACTER::PickupItem(uint32_t dwVID)
 #endif
 			else
 			{
-				if (!(owner && (iEmptyCell = owner->GetEmptyInventory(item->GetSize())) != -1))
+				if (!(owner && (iEmptyCell = InventorySystem::GetEmptyInventory(owner->GetEntityHandle(), item->GetSize())) != -1))
 				{
 #ifdef ENABLE_BUG_FIXES
 #ifdef TEXTS_IMPROVEMENT
@@ -2551,7 +2551,7 @@ bool CHARACTER::PickupItem(uint32_t dwVID)
 #else
 					owner = this;
 
-					if ((iEmptyCell = GetEmptyInventory(item->GetSize())) == -1)
+					if ((iEmptyCell = InventorySystem::GetEmptyInventory(GetEntityHandle(), item->GetSize())) == -1)
 					{
 #ifdef TEXTS_IMPROVEMENT
 						ecs::ChatSystem::SendNew((owner ? owner->GetEntityHandle() : entt::null), CHAT_TYPE_INFO, 366, "");
@@ -2720,7 +2720,7 @@ bool CHARACTER::UseItem(TItemPos Cell, TItemPos DestCell)
 			return false;
 		}
 
-		int iEmptyCell = GetEmptyInventory(item->GetSize());
+		int iEmptyCell = InventorySystem::GetEmptyInventory(GetEntityHandle(), item->GetSize());
 
 		if (iEmptyCell == -1)
 		{
@@ -4262,7 +4262,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 			{
 #ifdef ENABLE_DS_POTION_DIFFRENT
 				if (item->GetCount() > 1) {
-					int pos = GetEmptyInventory(item->GetSize());
+					int pos = InventorySystem::GetEmptyInventory(GetEntityHandle(), item->GetSize());
 					if (pos == -1) {
 #ifdef TEXTS_IMPROVEMENT
 						ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 366, "");
@@ -4442,7 +4442,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 					pos = GetEmptyExtraInventory(item);
 				else
 #endif
-					pos = GetEmptyInventory(item->GetSize());
+					pos = InventorySystem::GetEmptyInventory(GetEntityHandle(), item->GetSize());
 
 				if (pos == -1) {
 #ifdef TEXTS_IMPROVEMENT
@@ -5341,7 +5341,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 					}
 					else
 					{
-						SkillLearnWaitMoreTimeMessage(GetSkillNextReadTime(dwSkillVnum) - get_global_time());
+						SkillSystem::SkillLearnWaitMoreTimeMessage(GetEntityHandle(), GetSkillNextReadTime(dwSkillVnum) - get_global_time());
 						return false;
 					}
 				}
@@ -6260,7 +6260,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 						pos = GetEmptyExtraInventory(item);
 					else
 #endif
-						pos = GetEmptyInventory(item->GetSize());
+						pos = InventorySystem::GetEmptyInventory(GetEntityHandle(), item->GetSize());
 
 					if (-1 == pos)
 					{
@@ -6970,7 +6970,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 					return false;
 				}
 
-				bool bClean = CleanAcceAttr(itemEntity, (item2 ? item2->GetEntityHandle() : entt::null));
+				bool bClean = ItemSystem::CleanAcceAttr(GetEntityHandle(), itemEntity, (item2 ? item2->GetEntityHandle() : entt::null));
 				if (bClean) {
 					{
 						char buf[21];
@@ -7166,7 +7166,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 #ifdef ENABLE_ACCE_SYSTEM
 			if (item->GetValue(0) == ACCE_CLEAN_ATTR_VALUE0)
 			{
-				if (!CleanAcceAttr(itemEntity, (item2 ? item2->GetEntityHandle() : entt::null)))
+				if (!ItemSystem::CleanAcceAttr(GetEntityHandle(), itemEntity, (item2 ? item2->GetEntityHandle() : entt::null)))
 					return false;
 
 				return true;
@@ -10005,26 +10005,6 @@ bool CHARACTER::IsEmptyItemGrid(TItemPos cell, uint8_t size, int exceptionCell) 
     return InventorySystem::IsEmptyItemGrid(GetEntityHandle(), cell, size, exceptionCell);
 }
 
-int CHARACTER::GetEmptyInventory(uint8_t size) const
-{
-	// NOTE: ÇöÀç ÀÌ ÇÔ¼ö´Â ¾ÆÀÌ�
-// Û Áö±Þ, È¹µæ µîÀÇ ÇàÀ§¸¦ ÇÒ ¶§ ÀÎº¥�
-// ä¸®ÀÇ ºó Ä­À» Ã£±â À§ÇØ »ç¿ëµÇ°í ÀÖ´Âµ¥,
-	//		º§Æ® ÀÎº¥�
-// ä¸®´Â Æ¯¼ö ÀÎº¥�
-// ä¸®ÀÌ¹Ç·Î °Ë»çÇÏÁö ¾Êµµ·Ï ÇÑ´Ù. (±âº» ÀÎº¥�
-// ä¸®: INVENTORY_MAX_NUM ±îÁö¸¸ °Ë»ç)
-#ifdef __ENABLE_EXTEND_INVEN_SYSTEM__
-	const int inventoryLimit = std::min(Inventory_Size(), (int)INVENTORY_MAX_NUM);
-	for (int i = 0; i < inventoryLimit; ++i)
-#else
-	for (int i = 0; i < INVENTORY_MAX_NUM; ++i)
-#endif
-		if (IsEmptyItemGrid(TItemPos(INVENTORY, i), size))
-			return i;
-	return -1;
-}
-
 #ifdef ENABLE_LOCKED_EXTRA_INVENTORY
 int CHARACTER::ExtraInventoryMaxSlots(int iArg1, bool bAuto) const {
 
@@ -10249,7 +10229,7 @@ bool CHARACTER::GiveRecallItem(LPITEM item)
 		item->SetSocket(0, GetX());
 		item->SetSocket(1, GetY());
 	}
-	else if ((pos = GetEmptyInventory(item->GetSize())) != -1) // ±×·¸Áö ¾Ê´Ù¸é ´Ù¸¥ ÀÎº¥�
+	else if ((pos = InventorySystem::GetEmptyInventory(GetEntityHandle(), item->GetSize())) != -1) // ±×·¸Áö ¾Ê´Ù¸é ´Ù¸¥ ÀÎº¥�
 // ä¸® ½½·ÔÀ» Ã£´Â´Ù.
 	{
 		const entt::entity item2 = ITEM_MANAGER::instance().CreateItem(item->GetVnum(), 1);
@@ -12771,6 +12751,62 @@ void TransformRefineItem(entt::entity pkOldItem, entt::entity pkNewItem)
 }
 
 } // namespace ItemSystem
+
+namespace ItemSystem {
+
+// Stripping an acce of the attributes it absorbed.
+bool CleanAcceAttr(entt::entity e, entt::entity pkItem, entt::entity pkTarget)
+{
+    if (!InventorySystem::CanHandleItems(e))
+        return false;
+    else if (!IsValidItem(pkItem) || !IsValidItem(pkTarget))
+        return false;
+
+    if ((GetItemType(pkTarget) != ITEM_COSTUME) &&
+		(GetItemSubType(pkTarget) != COSTUME_ACCE))
+        return false;
+
+    if (GetItemSocket(pkTarget, ACCE_ABSORBED_SOCKET) <= 0)
+        return false;
+
+    SetItemSocket(pkTarget, ACCE_ABSORBED_SOCKET, 0);
+    for (int i = 0; i < ITEM_ATTRIBUTE_MAX_NUM; ++i)
+        SetItemForceAttributeEcs(pkTarget, i, 0, 0);
+
+    ConsumeItemEcs(pkItem);
+    LogManager::instance().ItemLogEntity(
+		e, pkTarget, "USE_DETACHMENT (CLEAN ATTR)",
+		GetItemName(pkTarget));
+    return true;
+}
+
+} // namespace ItemSystem
+
+namespace InventorySystem {
+
+// The first inventory cell an item of this size fits in, or -1. The belt
+// is a special inventory and is deliberately not searched.
+int GetEmptyInventory(entt::entity e, uint8_t size)
+{
+	// NOTE: ÇöÀç ÀÌ ÇÔ¼ö´Â ¾ÆÀÌ�
+// Û Áö±Þ, È¹µæ µîÀÇ ÇàÀ§¸¦ ÇÒ ¶§ ÀÎº¥�
+// ä¸®ÀÇ ºó Ä­À» Ã£±â À§ÇØ »ç¿ëµÇ°í ÀÖ´Âµ¥,
+	//		º§Æ® ÀÎº¥�
+// ä¸®´Â Æ¯¼ö ÀÎº¥�
+// ä¸®ÀÌ¹Ç·Î °Ë»çÇÏÁö ¾Êµµ·Ï ÇÑ´Ù. (±âº» ÀÎº¥�
+// ä¸®: INVENTORY_MAX_NUM ±îÁö¸¸ °Ë»ç)
+#ifdef __ENABLE_EXTEND_INVEN_SYSTEM__
+	const int inventoryLimit = std::min(GetInventorySize(e), (int)INVENTORY_MAX_NUM);
+	for (int i = 0; i < inventoryLimit; ++i)
+#else
+	for (int i = 0; i < INVENTORY_MAX_NUM; ++i)
+#endif
+		if (IsEmptyItemGrid(e, TItemPos(INVENTORY, i), size))
+			return i;
+	return -1;
+}
+
+} // namespace InventorySystem
 
 namespace InventorySystem {
 

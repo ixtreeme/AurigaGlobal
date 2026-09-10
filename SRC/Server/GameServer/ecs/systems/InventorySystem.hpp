@@ -11,6 +11,7 @@ bool IsEquipmentSexAllowed(entt::entity owner, entt::entity item);
 
 bool CanHandleItems(entt::entity owner, bool skipRefine = false, bool skipObserver = false);
 bool IsValidItemPosition(entt::entity owner, TItemPos Pos);
+int GetEmptyInventory(entt::entity owner, uint8_t size);
 // Client drag/drop: both positions and the owner remain native entity state.
 // True means committed, including when a publication callback removes the item.
 bool MoveItem(entt::entity owner, TItemPos source, TItemPos destination, int count);

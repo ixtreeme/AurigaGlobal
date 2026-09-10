@@ -3757,31 +3757,6 @@ void CHARACTER::RefineAcceMaterials()
     }
 }
 
-bool CHARACTER::CleanAcceAttr(entt::entity pkItem, entt::entity pkTarget)
-{
-    if (!CanHandleItem())
-        return false;
-    else if (!ItemSystem::IsValidItem(pkItem) || !ItemSystem::IsValidItem(pkTarget))
-        return false;
-
-    if ((ItemSystem::GetItemType(pkTarget) != ITEM_COSTUME) &&
-		(ItemSystem::GetItemSubType(pkTarget) != COSTUME_ACCE))
-        return false;
-
-    if (ItemSystem::GetItemSocket(pkTarget, ACCE_ABSORBED_SOCKET) <= 0)
-        return false;
-
-    ItemSystem::SetItemSocket(pkTarget, ACCE_ABSORBED_SOCKET, 0);
-    for (int i = 0; i < ITEM_ATTRIBUTE_MAX_NUM; ++i)
-        ItemSystem::SetItemForceAttributeEcs(pkTarget, i, 0, 0);
-
-    ItemSystem::ConsumeItemEcs(pkItem);
-    LogManager::instance().ItemLogEntity(
-		GetEntityHandle(), pkTarget, "USE_DETACHMENT (CLEAN ATTR)",
-		ItemSystem::GetItemName(pkTarget));
-    return true;
-}
-
 #ifdef ENABLE_SORT_INVEN
 void CHARACTER::EditMyInven()
 {

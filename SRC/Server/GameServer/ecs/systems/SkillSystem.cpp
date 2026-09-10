@@ -163,6 +163,37 @@ void SetSkillNextReadTime(entt::entity e, uint32_t skillId, time_t when)
     MarkDirty(e);
 }
 
+// How long is left before this skill can be read again, in words.
+void SkillLearnWaitMoreTimeMessage(entt::entity e, uint32_t ms)
+{
+#ifdef TEXTS_IMPROVEMENT
+	if (ms < 3 * 60) {
+		ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 345, "");
+	} else if (ms < 5 * 60) {
+		ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 264, "");
+	} else if (ms < 10 * 60) {
+		ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 262, "");
+	} else if (ms < 30 * 60) {
+		ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 290, "");
+		ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 263, "");
+	} else if (ms < 1 * 3600) {
+		ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 447, "");
+	} else if (ms < 2 * 3600) {
+		ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 407, "");
+	} else if (ms < 3 * 3600) {
+		ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 464, "");
+	} else if (ms < 6 * 3600) {
+		ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 479, "");
+	} else if (ms < 12 * 3600) {
+		ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 446, "");
+	} else if (ms < 18 * 3600) {
+		ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 254, "");
+	} else {
+		ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 435, "");
+	}
+#endif
+}
+
 int GetSkillLevel(entt::entity e, uint32_t skillId)
 {
     if (skillId >= SKILL_MAX_NUM)
@@ -1221,7 +1252,7 @@ bool CHARACTER::LearnSkillByBook(uint32_t dwSkillVnum, uint8_t bProb)
 				ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 91, "%d#%d", iHours, iMinutes);
 #endif
 #else
-				SkillLearnWaitMoreTimeMessage(GetSkillNextReadTime(dwSkillVnum) - get_global_time());
+				SkillSystem::SkillLearnWaitMoreTimeMessage(GetEntityHandle(), GetSkillNextReadTime(dwSkillVnum) - get_global_time());
 #endif
 				return false;
 			}
@@ -4206,36 +4237,6 @@ void CHARACTER::StopGyeongGongEvent()
 	event_cancel(&m_pkGyeongGongEvent);
 }
 #endif
-
-void CHARACTER::SkillLearnWaitMoreTimeMessage(uint32_t ms)
-{
-#ifdef TEXTS_IMPROVEMENT
-	if (ms < 3 * 60) {
-		ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 345, "");
-	} else if (ms < 5 * 60) {
-		ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 264, "");
-	} else if (ms < 10 * 60) {
-		ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 262, "");
-	} else if (ms < 30 * 60) {
-		ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 290, "");
-		ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 263, "");
-	} else if (ms < 1 * 3600) {
-		ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 447, "");
-	} else if (ms < 2 * 3600) {
-		ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 407, "");
-	} else if (ms < 3 * 3600) {
-		ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 464, "");
-	} else if (ms < 6 * 3600) {
-		ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 479, "");
-	} else if (ms < 12 * 3600) {
-		ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 446, "");
-	} else if (ms < 18 * 3600) {
-		ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 254, "");
-	} else {
-		ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 435, "");
-	}
-#endif
-}
 
 EVENTINFO(mob_skill_event_info)
 {
