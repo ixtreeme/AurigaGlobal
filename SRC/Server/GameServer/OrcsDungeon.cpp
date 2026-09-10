@@ -622,8 +622,8 @@ void COrcsDungeon::OnMobKilled(entt::entity killer, entt::entity victim)
             LPCHARACTER boss = CHARACTER_MANAGER::instance().Find(bossVid);
             if (boss)
             {
-                boss->SetAttMul(dmgMul);
-                boss->SetDamMul(dmgMul);
+                CombatSystem::SetAttackMultiplier(boss->GetEntityHandle(), dmgMul);
+                CombatSystem::SetDamageMultiplier(boss->GetEntityHandle(), dmgMul);
             }
         }
 

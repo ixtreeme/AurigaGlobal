@@ -804,9 +804,6 @@ public:
 	void			ResetPlayTime(uint32_t dwTimeRemain = 0);
 
 
-	void			ResetChatCounter();
-	uint8_t			IncreaseChatCounter();
-	uint8_t			GetChatCounter() const;
 
 	void			ResetMountCounter();
 	uint8_t			IncreaseMountCounter();
@@ -867,7 +864,6 @@ public:
 	int32_t			GetCurrentDestX() const;
 	int32_t			GetCurrentDestY() const;
 	uint32_t			GetLastMoveTime() const { return m_dwLastMoveTime; }
-	uint32_t			GetLastAttackTime() const;
 // Phase C.4: GetAddChrStateForAudit removed. Its consumer in
 // CheckMovementDrift state_flags subsection deleted with the
 // m_bAddChrState write migration. CheckMovementDrift body is now empty;
@@ -1312,18 +1308,14 @@ public:
 #ifdef LEADERBOARD_RAZOR93
 
 	void SendLeaderboardData();
-	void SendLeaderboardDataSkillMob(entt::entity viewer);
 	void SendLeaderboardDataGuild();
 	static std::vector<LeaderboardEntry> FetchTop10SkillMob();
 	static void CheckLeaderboardSkillMobChanges();
 #endif
 	void				AttackedByFire(entt::entity attacker, int amount, int count);
 
-	uint8_t GetAlignmentGrade() const;
 
 
-	void				UpdateAlignment(int64_t amount);
-	uint32_t					GetAlignment() const;
 	//int GetBeltCount() const;
 #ifdef ENABLE_FAKE_SHOP_HEADER
 	//void UpdateMountCountOverhead(LPCHARACTER ch);
@@ -1333,14 +1325,9 @@ public:
 #endif
 #endif
 	//����ġ ���
-	uint32_t					GetRealAlignment() const;
 	//void				ShowAlignment(bool bShow);
 
-	void				SetKillerMode(bool bOn);
-	bool				IsKillerMode() const;
-	void				UpdateKillerMode();
 
-	uint8_t				GetPKMode() const;
 
 	void				ItemDropPenalty(entt::entity killer);
 
@@ -1413,8 +1400,6 @@ protected:
 	long long	m_lRankPoints[RANKING_MAX_CATEGORIES];
 public:
 #ifdef LEADERBOARD_RAZOR93
-	void SetSkillHit(bool b);
-	bool IsSkillHit() const;
 #endif
 	long long	GetRankPoints(int iArg);
 	void		SetRankPoints(int iArg, long long lPoint);
@@ -1541,8 +1526,6 @@ protected:
 	// AI related
 public:
 	void			AssignTriggers(const TMobTable* table);
-	LPCHARACTER		GetVictim() const;	// ������ ��� ����
-	void			SetVictim(entt::entity victim);
 
 protected:
 
@@ -1969,10 +1952,6 @@ public:
 	//���� ������ ����.
 private:
 public:
-	float GetAttMul();
-	void SetAttMul(float multiplier);
-	float GetDamMul();
-	void SetDamMul(float multiplier);
 
 private:
 

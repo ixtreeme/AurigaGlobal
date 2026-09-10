@@ -1797,7 +1797,7 @@ void CHARACTER::SetLevel(uint8_t level)
             CombatSystem::SetPKMode(GetEntityHandle(), PK_MODE_PROTECT);
         else if (GetGMLevel() != GM_PLAYER)
             CombatSystem::SetPKMode(GetEntityHandle(), PK_MODE_PROTECT);
-        else if (GetPKMode() == PK_MODE_PROTECT)
+        else if (CombatSystem::GetPKMode(GetEntityHandle()) == PK_MODE_PROTECT)
             CombatSystem::SetPKMode(GetEntityHandle(), PK_MODE_PEACE);
     }
 }
@@ -4320,7 +4320,7 @@ void CHARACTER::Destroy()
 
     ExchangeSystem::Cancel(GetEntityHandle());
 
-    SetVictim(entt::null);
+    CombatSystem::SetVictim(GetEntityHandle(), entt::null);
 
     if (GetShop())
     {
@@ -5960,7 +5960,7 @@ EVENTFUNC(destroy_when_idle_event)
 
     // Phase 10: WRITES_STATE - deferred until ECS component covers m_pkDestroyWhenIdleEvent
 
-    if (ch->GetVictim())
+    if (CombatSystem::GetVictim(ch->GetEntityHandle()) != entt::null)
     {
         return PASSES_PER_SEC(300);
     }

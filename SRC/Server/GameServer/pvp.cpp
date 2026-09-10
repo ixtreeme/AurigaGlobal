@@ -933,8 +933,8 @@ bool CPVPManager::CanAttack(entt::entity character, entt::entity victim, bool bI
 	{
 		uint8_t bMapEmpire = SECTREE_MANAGER::instance().GetEmpireFromMapIndex(ecs::PlayerRuntime::GetMapIndex(character));
 
-		if ( ((pkChr->GetPKMode() == PK_MODE_PROTECT) && ((ecs::PlayerRuntime::GetEmpire(character)) == bMapEmpire)) ||
-				((pkVictim->GetPKMode() == PK_MODE_PROTECT) && ((ecs::PlayerRuntime::GetEmpire(victim)) == bMapEmpire)) )
+		if ( ((CombatSystem::GetPKMode(pkChr->GetEntityHandle()) == PK_MODE_PROTECT) && ((ecs::PlayerRuntime::GetEmpire(character)) == bMapEmpire)) ||
+				((CombatSystem::GetPKMode(pkVictim->GetEntityHandle()) == PK_MODE_PROTECT) && ((ecs::PlayerRuntime::GetEmpire(victim)) == bMapEmpire)) )
 		{
 			return false;
 		}
@@ -944,7 +944,7 @@ bool CPVPManager::CanAttack(entt::entity character, entt::entity victim, bool bI
 	{
 		// @warme005
 		{
-			if ( pkChr->GetPKMode() == PK_MODE_PROTECT || pkVictim->GetPKMode() == PK_MODE_PROTECT )
+			if ( CombatSystem::GetPKMode(pkChr->GetEntityHandle()) == PK_MODE_PROTECT || CombatSystem::GetPKMode(pkVictim->GetEntityHandle()) == PK_MODE_PROTECT )
 			{
 				return false;
 
@@ -966,13 +966,13 @@ bool CPVPManager::CanAttack(entt::entity character, entt::entity victim, bool bI
 	}
 	else
 	{
-		if (pkVictim->IsKillerMode())
+		if (CombatSystem::IsKillerMode(pkVictim->GetEntityHandle()))
 		{
 			return true;
 		}
 
 
-		switch (pkChr->GetPKMode())
+		switch (CombatSystem::GetPKMode(pkChr->GetEntityHandle()))
 		{
 			case PK_MODE_PEACE:
 			case PK_MODE_REVENGE:
@@ -980,14 +980,14 @@ bool CPVPManager::CanAttack(entt::entity character, entt::entity victim, bool bI
 				if (ecs::SocialSystem::GetGuild(victim) && ecs::SocialSystem::GetGuild(victim) == ecs::SocialSystem::GetGuild(character))
 					break;
 
-				/*if (pkChr->GetPKMode() == PK_MODE_REVENGE)
+				/*if (CombatSystem::GetPKMode(pkChr->GetEntityHandle()) == PK_MODE_REVENGE)
 				{
-					if (pkChr->GetAlignment() < 0 && pkVictim->GetAlignment() >= 0)
+					if (CombatSystem::GetAlignment(pkChr->GetEntityHandle()) < 0 && CombatSystem::GetAlignment(pkVictim->GetEntityHandle()) >= 0)
 					{
-						pkChr->SetKillerMode(true);
+						CombatSystem::SetKillerMode(pkChr->GetEntityHandle(), true);
 						return true;
 					}
-					else if (pkChr->GetAlignment() >= 0 && pkVictim->GetAlignment() < 0)
+					else if (CombatSystem::GetAlignment(pkChr->GetEntityHandle()) >= 0 && CombatSystem::GetAlignment(pkVictim->GetEntityHandle()) < 0)
 						return true;
 				}
 				break;*/
@@ -996,14 +996,14 @@ bool CPVPManager::CanAttack(entt::entity character, entt::entity victim, bool bI
 				// Same implementation from PK_MODE_FREE except for attacking same guild
 				if (!ecs::SocialSystem::GetGuild(character) || (ecs::SocialSystem::GetGuild(victim) != ecs::SocialSystem::GetGuild(character)))
 				{
-					pkChr->SetKillerMode(true);
+					CombatSystem::SetKillerMode(pkChr->GetEntityHandle(), true);
 					return true;
 				}
 				break;
 
 			case PK_MODE_FREE:
 
-				pkChr->SetKillerMode(true);
+				CombatSystem::SetKillerMode(pkChr->GetEntityHandle(), true);
 
 				return true;
 				break;
@@ -1016,7 +1016,7 @@ bool CPVPManager::CanAttack(entt::entity character, entt::entity victim, bool bI
 	if (!pkPVP || !pkPVP->IsFight())
 	{
 		if (beKillerMode)
-			pkChr->SetKillerMode(true);
+			CombatSystem::SetKillerMode(pkChr->GetEntityHandle(), true);
 
 		return (beKillerMode);
 	}

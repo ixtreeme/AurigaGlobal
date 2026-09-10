@@ -325,7 +325,6 @@ bool AffectSystem::IsAffectFlag(entt::entity, uint32_t) { Unexpected(); }
 bool CHARACTER::IsEquipUniqueItem(uint32_t) const { Unexpected(); }
 void CombatSystem::Dead(entt::entity, entt::entity, bool) { Unexpected(); }
 void CHARACTER::UpdateKillerMode() { Unexpected(); }
-LPCHARACTER CHARACTER::GetVictim() const { Unexpected(); }
 void CHARACTER::MonsterLog(const char*, ...) { Unexpected(); }
 uint8_t CHARACTER::GetEmpire() const { Unexpected(); }
 int CDungeon::GetFlag(std::string) { Unexpected(); }

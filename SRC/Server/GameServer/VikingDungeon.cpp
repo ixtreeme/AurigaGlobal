@@ -722,7 +722,7 @@ namespace
             else if (stage == 2)
             {
                 d->SetFlag(kFlagMainBossStage, 3);
-                boss->SetDamMul(0.5f);
+                CombatSystem::SetDamageMultiplier(boss->GetEntityHandle(), 0.5f);
                 NoticeMap(idx, "<Frostbane Fortress> The boss reduced incoming damage by half.");
             }
 
@@ -852,7 +852,7 @@ namespace
             else if (stage == 2)
             {
                 d->SetFlag(kFlagFinalBossStage, 3);
-                boss->SetDamMul(0.5f);
+                CombatSystem::SetDamageMultiplier(boss->GetEntityHandle(), 0.5f);
                 NoticeMap(idx, "<Frostbane Fortress> The final boss reduced incoming damage by half.");
             }
 

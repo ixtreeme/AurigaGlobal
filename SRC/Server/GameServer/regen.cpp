@@ -3,6 +3,7 @@
 #include "config.h"
 #include "char_interface.hpp"
 #include "char_manager.h"
+#include "ecs/systems/CombatSystem.hpp"
 #include "regen.h"
 #include "mob_manager.h"
 #include "dungeon.h"
@@ -330,7 +331,7 @@ static void regen_spawn_dungeon(LPREGEN regen, LPDUNGEON pDungeon, bool bOnce)
 			LPCHARACTER mast = pDungeon->GetMast();
 			if (mast)
 			{
-				ch->SetVictim((mast ? mast->GetEntityHandle() : entt::null));
+				CombatSystem::SetVictim(ch->GetEntityHandle(), (mast ? mast->GetEntityHandle() : entt::null));
 			}
 		}
 #endif

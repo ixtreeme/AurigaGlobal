@@ -930,13 +930,13 @@ void CParty::SendMessage(entt::entity character, uint8_t bMsg, uint32_t dwArg1, 
 						uint32_t x = dwArg1 + number(-500, 500);
 						uint32_t y = dwArg2 + number(-500, 500);
 
-						pkChr->SetVictim(entt::null);
+						CombatSystem::SetVictim(pkChr->GetEntityHandle(), entt::null);
 						ecs::MovementSystem::SetRotationToXY(pkChr->GetEntityHandle(), x, y);
 
 						if (ecs::MovementSystem::Goto(((pkChr) ? (pkChr)->GetEntityHandle() : entt::null), x, y))
 						{
-							auto* victim = pkChr->GetVictim();
-							LOG_TRACE("{} {} RETURN victim {}", ecs::PlayerRuntime::GetName(((pkChr) ? (pkChr)->GetEntityHandle() : entt::null)).data(), static_cast<const void*>(get_pointer(pkChr)), static_cast<const void*>(get_pointer(victim)));
+							const entt::entity victim = CombatSystem::GetVictim(pkChr->GetEntityHandle());
+							LOG_TRACE("{} {} RETURN victim {}", ecs::PlayerRuntime::GetName(pkChr->GetEntityHandle()).data(), static_cast<const void*>(get_pointer(pkChr)), static_cast<uint32_t>(victim));
 							ecs::MovementSystem::SendMovePacket(pkChr->GetEntityHandle(), FUNC_WAIT, 0, 0, 0, 0);
 						}
 					}
@@ -947,9 +947,9 @@ void CParty::SendMessage(entt::entity character, uint8_t bMsg, uint32_t dwArg1, 
 		case PM_ATTACKED_BY:	// ���� �޾���, �������� ������ ��û
 			{
 				// ������ ���� ��
-				auto* pkChrVictim = ch->GetVictim();
+				const entt::entity victimEntity = CombatSystem::GetVictim(ch->GetEntityHandle());
 
-				if (!pkChrVictim)
+				if (victimEntity == entt::null)
 					return;
 
 				TMemberMap::iterator it = m_memberMap.begin();
@@ -964,7 +964,7 @@ void CParty::SendMessage(entt::entity character, uint8_t bMsg, uint32_t dwArg1, 
 					if ((pkChr = rMember.pCharacter) && ch != pkChr)
 					{
 						if (CombatSystem::CanBeginFight(pkChr->GetEntityHandle()))
-							CombatSystem::BeginFight(pkChr->GetEntityHandle(), (pkChrVictim ? pkChrVictim->GetEntityHandle() : entt::null));
+							CombatSystem::BeginFight(pkChr->GetEntityHandle(), victimEntity);
 					}
 				}
 			}

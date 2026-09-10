@@ -1093,51 +1093,6 @@ bool IsDeathBlower(entt::entity e)
 
 // char_battle.cpp slice BE1 moved into CombatSystem.cpp
 
-uint32_t CHARACTER::GetAlignment() const
-{
-    return CombatSystem::GetAlignment(GetEntityHandle());
-}
-
-uint32_t CHARACTER::GetRealAlignment() const
-{
-    return CombatSystem::GetRealAlignment(GetEntityHandle());
-}
-
-uint8_t CHARACTER::GetAlignmentGrade() const
-{
-    return CombatSystem::GetAlignmentGrade(GetEntityHandle());
-}
-
-void CHARACTER::UpdateAlignment(int64_t amount)
-{
-    CombatSystem::UpdateAlignment(GetEntityHandle(), amount);
-}
-
-void CHARACTER::SetKillerMode(bool isOn)
-{
-    CombatSystem::SetKillerMode(GetEntityHandle(), isOn);
-}
-
-bool CHARACTER::IsKillerMode() const
-{
-    return CombatSystem::IsKillerMode(GetEntityHandle());
-}
-
-void CHARACTER::UpdateKillerMode()
-{
-    CombatSystem::UpdateKillerMode(GetEntityHandle());
-}
-
-float CHARACTER::GetAttMul() { return CombatSystem::GetAttackMultiplier(GetEntityHandle()); }
-void CHARACTER::SetAttMul(float value) { CombatSystem::SetAttackMultiplier(GetEntityHandle(), value); }
-float CHARACTER::GetDamMul() { return CombatSystem::GetDamageMultiplier(GetEntityHandle()); }
-void CHARACTER::SetDamMul(float value) { CombatSystem::SetDamageMultiplier(GetEntityHandle(), value); }
-
-uint8_t CHARACTER::GetPKMode() const
-{
-	return CombatSystem::GetPKMode(GetEntityHandle());
-}
-
 struct FuncForgetMyAttacker
 {
 	entt::entity m_character;
@@ -1172,7 +1127,7 @@ struct FuncAggregateMonster
 				return;
 			if (!ch->IsMonster())
 				return;
-			if (ch->GetVictim())
+			if (CombatSystem::GetVictim(candidate) != entt::null)
 				return;
 
 			//if (number(1, 100) <= 50) // ӽ÷ 50% Ȯ  ´
@@ -1198,7 +1153,7 @@ struct FuncAggregateMonsterPlus
 				return;
 			if (!ch->IsMonster())
 				return;
-			if (ch->GetVictim())
+			if (CombatSystem::GetVictim(candidate) != entt::null)
 				return;
 
 			const int AGGRO_RANGE = 14000;
@@ -1371,11 +1326,6 @@ void CHARACTER::SendLeaderboardData()
 
 }
 
-
-void CHARACTER::SendLeaderboardDataSkillMob(entt::entity viewerEntity)
-{
-    CombatSystem::SendLeaderboardDataSkillMob(GetEntityHandle(), viewerEntity);
-}
 
 #ifdef LEADERBOARD_RAZOR93
 void CHARACTER::SendLeaderboardDataGuild()
@@ -2538,7 +2488,7 @@ void Dead(entt::entity victim, entt::entity killer, bool immediate)
 //							ecs::SocialSystem::GetParty((hasKiller ? hasKiller->GetEntityHandle() : entt::null))->ForEachOnlineMember(f);
 //
 //							if (f.m_iCount == 0)
-//								hasKiller->UpdateAlignment(-20000);
+//								CombatSystem::UpdateAlignment(hasKiller->GetEntityHandle(), -20000);
 //							else
 //							{
 //								0, "ALIGNMENT PARTY count %d amount %d", f.m_iCount, f.m_iAmount);
@@ -2548,7 +2498,7 @@ void Dead(entt::entity victim, entt::entity killer, bool immediate)
 //							}
 //						}
 //						else
-//							hasKiller->UpdateAlignment(-20000);
+//							CombatSystem::UpdateAlignment(hasKiller->GetEntityHandle(), -20000);
 //					}
 //				}
 
@@ -3065,7 +3015,7 @@ void CHARACTER::DistributeSP(entt::entity killer, int iMethod)
 	if (ecs::PlayerRuntime::GetSP(killer) >= ecs::PointSystem::GetMaxSP(killer))
 		return;
 
-	bool bAttacking = (get_dword_time() - GetLastAttackTime()) < 3000;
+	bool bAttacking = (get_dword_time() - CombatSystem::GetLastAttackTime(GetEntityHandle())) < 3000;
 	bool bMoving = (get_dword_time() - GetLastMoveTime()) < 3000;
 
 	if (iMethod == 1)
@@ -3304,22 +3254,22 @@ void CHARACTER::ItemDropPenalty(entt::entity killer)
 
 	uint8_t iAlignIndex;
 
-	if (GetRealAlignment()		<= 4999)		iAlignIndex = 0;
-	else if (GetRealAlignment() <= 14999)		iAlignIndex = 1;
-	else if (GetRealAlignment() <= 19999)		iAlignIndex = 2;
-	else if (GetRealAlignment() <= 29999)		iAlignIndex = 3;
-	else if (GetRealAlignment() <= 49999)		iAlignIndex = 4;
-	else if (GetRealAlignment() <= 74999)		iAlignIndex = 5;
-	else if (GetRealAlignment() <= 99999)		iAlignIndex = 6;
-	else if (GetRealAlignment() <= 124999)		iAlignIndex = 7;
-	else if (GetRealAlignment() <= 174999)		iAlignIndex = 8;
-	else if (GetRealAlignment() <= 249999)		iAlignIndex = 9;
-	else if (GetRealAlignment() <= 499999)		iAlignIndex = 10;
-	else if (GetRealAlignment() <= 749999)		iAlignIndex = 11;
-	else if (GetRealAlignment() <= 999999)		iAlignIndex = 12;
-	else if (GetRealAlignment() <= 1499999)		iAlignIndex = 13;
-	else if (GetRealAlignment() <= 2499999)		iAlignIndex = 14;
-	else if (GetRealAlignment() == 2500000)		iAlignIndex = 15;
+	if (CombatSystem::GetRealAlignment(GetEntityHandle())		<= 4999)		iAlignIndex = 0;
+	else if (CombatSystem::GetRealAlignment(GetEntityHandle()) <= 14999)		iAlignIndex = 1;
+	else if (CombatSystem::GetRealAlignment(GetEntityHandle()) <= 19999)		iAlignIndex = 2;
+	else if (CombatSystem::GetRealAlignment(GetEntityHandle()) <= 29999)		iAlignIndex = 3;
+	else if (CombatSystem::GetRealAlignment(GetEntityHandle()) <= 49999)		iAlignIndex = 4;
+	else if (CombatSystem::GetRealAlignment(GetEntityHandle()) <= 74999)		iAlignIndex = 5;
+	else if (CombatSystem::GetRealAlignment(GetEntityHandle()) <= 99999)		iAlignIndex = 6;
+	else if (CombatSystem::GetRealAlignment(GetEntityHandle()) <= 124999)		iAlignIndex = 7;
+	else if (CombatSystem::GetRealAlignment(GetEntityHandle()) <= 174999)		iAlignIndex = 8;
+	else if (CombatSystem::GetRealAlignment(GetEntityHandle()) <= 249999)		iAlignIndex = 9;
+	else if (CombatSystem::GetRealAlignment(GetEntityHandle()) <= 499999)		iAlignIndex = 10;
+	else if (CombatSystem::GetRealAlignment(GetEntityHandle()) <= 749999)		iAlignIndex = 11;
+	else if (CombatSystem::GetRealAlignment(GetEntityHandle()) <= 999999)		iAlignIndex = 12;
+	else if (CombatSystem::GetRealAlignment(GetEntityHandle()) <= 1499999)		iAlignIndex = 13;
+	else if (CombatSystem::GetRealAlignment(GetEntityHandle()) <= 2499999)		iAlignIndex = 14;
+	else if (CombatSystem::GetRealAlignment(GetEntityHandle()) == 2500000)		iAlignIndex = 15;
 	else return;
 
 	std::vector<std::pair<entt::entity, int>> vec_item;
@@ -3937,15 +3887,15 @@ void CHARACTER::Reward(bool bItemDrop)
 	{
 		if ((GetLevel() - ecs::PointSystem::GetLevel(attacker)) >= -10)
 		{
-			/*if (pkAttacker->GetRealAlignment() < 0) // trsra: minden gyilkols 2 pontot ad
+			/*if (CombatSystem::GetRealAlignment(pkAttacker->GetEntityHandle()) < 0) // trsra: minden gyilkols 2 pontot ad
 			{
 				if (pkAttacker->IsEquipUniqueItem(UNIQUE_ITEM_FASTER_ALIGNMENT_UP_BY_KILL))
-					pkAttacker->UpdateAlignment(14);
+					CombatSystem::UpdateAlignment(pkAttacker->GetEntityHandle(), 14);
 				else
-					pkAttacker->UpdateAlignment(7);
+					CombatSystem::UpdateAlignment(pkAttacker->GetEntityHandle(), 7);
 			}
 			else*/
-				pkAttacker->UpdateAlignment(2);
+				CombatSystem::UpdateAlignment(pkAttacker->GetEntityHandle(), 2);
 		}
 
 		pkAttacker->SetQuestNPCID(GetPacketVID());
@@ -6055,7 +6005,7 @@ bool Damage(entt::entity victim, entt::entity attacker, int64_t dam, uint8_t dam
 			CombatSystem::SendDamagePacket(victim, attacker, dam, damageFlag);
 #ifdef LEADERBOARD_RAZOR93
 
-		if (pkAttacker && ecs::PlayerRuntime::IsPC(attacker) && pkAttacker->IsSkillHit() && ecs::PlayerRuntime::IsPC(victim))
+		if (pkAttacker && ecs::PlayerRuntime::IsPC(attacker) && CombatSystem::IsSkillHit(pkAttacker->GetEntityHandle()) && ecs::PlayerRuntime::IsPC(victim))
 		{
 			char szVictimEsc[CHARACTER_NAME_MAX_LEN * 2 + 1];
 			DBManager::instance().EscapeString(szVictimEsc, sizeof(szVictimEsc), ecs::PlayerRuntime::GetName(victim).data(),
@@ -6075,7 +6025,7 @@ bool Damage(entt::entity victim, entt::entity attacker, int64_t dam, uint8_t dam
 			CHARACTER::CheckLeaderboardSkillMobChanges();
 			if (ecs::PlayerRuntime::GetMapIndex(victim) == 41) {
 				CHARACTER_MANAGER::instance().for_each_pc([](LegacyCharHandle ch) {
-					ch->SendLeaderboardDataSkillMob((ch ? ch->GetEntityHandle() : entt::null));
+					CombatSystem::SendLeaderboardDataSkillMob(ch->GetEntityHandle(), (ch ? ch->GetEntityHandle() : entt::null));
 					});
 
 
@@ -6883,31 +6833,7 @@ void CHARACTER::FlyTarget(uint32_t dwTargetVID, int32_t x, int32_t y, uint8_t bH
 	ecs::ViewSystem::PacketView(GetEntityHandle(), &pack, sizeof(pack), GetEntityHandle());
 }
 
-void CHARACTER::SetVictim(entt::entity victim)
-{
-    CombatSystem::SetVictim(GetEntityHandle(), victim);
-}
-
-LPCHARACTER CHARACTER::GetVictim() const
-{
-    return LegacyCharOf(CombatSystem::GetVictim(GetEntityHandle()));
-}
-
-uint32_t CHARACTER::GetLastAttackTime() const
-{
-    return CombatSystem::GetLastAttackTime(GetEntityHandle());
-}
-
 #ifdef LEADERBOARD_RAZOR93
-bool CHARACTER::IsSkillHit() const
-{
-    return CombatSystem::IsSkillHit(GetEntityHandle());
-}
-
-void CHARACTER::SetSkillHit(bool value)
-{
-    CombatSystem::SetSkillHit(GetEntityHandle(), value);
-}
 #endif
 
 
@@ -7403,21 +7329,6 @@ uint8_t IncreaseMountCounter(entt::entity e)
 }
 
 } // namespace CombatSystem
-
-void CHARACTER::ResetChatCounter()
-{
-	CombatSystem::ResetChatCounter(GetEntityHandle());
-}
-
-uint8_t CHARACTER::IncreaseChatCounter()
-{
-	return CombatSystem::IncreaseChatCounter(GetEntityHandle());
-}
-
-uint8_t CHARACTER::GetChatCounter() const
-{
-	return CombatSystem::GetChatCounter(GetEntityHandle());
-}
 
 namespace CombatSystem {
 

@@ -3553,7 +3553,7 @@ int CHARACTER::ComputeSkill(uint32_t dwVnum, entt::entity victim, uint8_t bSkill
 		{
 			int iAG = 0;
 #ifdef LEADERBOARD_RAZOR93
-			SetSkillHit(true);
+			CombatSystem::SetSkillHit(GetEntityHandle(), true);
 #endif
 
 			FuncSplashDamage f(ecs::PlayerRuntime::GetX(victimEntity), ecs::PlayerRuntime::GetY(victimEntity), pkSk, this, iAmount, iAG, pkSk->lMaxHit, pkWeapon, m_bDisableCooltime, SkillSystem::GetSkillPower(character, dwVnum, bSkillLevel));
@@ -3567,7 +3567,7 @@ int CHARACTER::ComputeSkill(uint32_t dwVnum, entt::entity victim, uint8_t bSkill
 				f(pkVictim);
 			}
 #ifdef LEADERBOARD_RAZOR93
-			SetSkillHit(false);
+			CombatSystem::SetSkillHit(GetEntityHandle(), false);
 #endif
 		}
 		else

@@ -605,8 +605,8 @@ void CTritonTempleDungeon::OnMobKilled(entt::entity killer, entt::entity victim)
             LPCHARACTER boss = CHARACTER_MANAGER::instance().Find(bossVid);
             if (boss)
             {
-                boss->SetAttMul(mul);
-                boss->SetDamMul(mul);
+                CombatSystem::SetAttackMultiplier(boss->GetEntityHandle(), mul);
+                CombatSystem::SetDamageMultiplier(boss->GetEntityHandle(), mul);
             }
         }
 

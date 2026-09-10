@@ -2027,7 +2027,7 @@ EVENTFUNC(recovery_event)
 	else
 	{
 		CombatSystem::CheckTarget(ch->GetEntityHandle());
-		ch->UpdateKillerMode();
+		CombatSystem::UpdateKillerMode(ch->GetEntityHandle());
 
 		if (AffectSystem::IsAffectFlag(character, AFF_POISON) == true)
 		{

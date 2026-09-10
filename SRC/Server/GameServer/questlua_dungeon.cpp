@@ -594,7 +594,7 @@ namespace quest
 			LPCHARACTER mast = dungeon->GetMast();
 			if (mast)
 			{
-				ch->SetVictim((mast ? mast->GetEntityHandle() : entt::null));
+				CombatSystem::SetVictim(ch->GetEntityHandle(), (mast ? mast->GetEntityHandle() : entt::null));
 			}
 		}
 #endif

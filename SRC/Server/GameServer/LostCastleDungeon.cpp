@@ -829,7 +829,7 @@ void ClearClonesOnMap(int32_t mapIndex)
             MulPoint10(clone, POINT_MAGIC_DEF_GRADE);
             MulPoint10(clone, POINT_WEAPON_MIN);
             MulPoint10(clone, POINT_WEAPON_MAX);
-            clone->SetKillerMode(true);
+            CombatSystem::SetKillerMode(clone->GetEntityHandle(), true);
 
             // Skillek: csak tamado skillek legyenek az AI listaban (<=127 a skill motion packet miatt)
             std::vector<uint8_t> skillList;
@@ -1373,7 +1373,7 @@ bool CLostCastleDungeon::SpawnTestClones(entt::entity source, entt::entity targe
         clone->SetMaxSP(ecs::PointSystem::GetMaxSP(source) * STR_MULTIPLE);
         clone->SetHP(ecs::PointSystem::GetMaxHP(source) * STR_MULTIPLE);
         clone->SetSP(ecs::PointSystem::GetMaxSP(source) * STR_MULTIPLE);
-        clone->SetKillerMode(true);
+        CombatSystem::SetKillerMode(clone->GetEntityHandle(), true);
 
         // Skills (AI uses only ATTACK skills)
         std::vector<uint8_t> skillList;
