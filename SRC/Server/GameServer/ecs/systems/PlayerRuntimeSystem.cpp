@@ -4373,11 +4373,6 @@ void CHARACTER::Destroy()
 
     event_cancel(&m_pkDestroyWhenIdleEvent);
 
-    if (m_pSkillLevels)
-    {
-        M2_DELETE_ARRAY(m_pSkillLevels);
-        m_pSkillLevels = nullptr;
-    }
 
     if (MountSystem::GetMountInventory(GetEntityHandle()))
     {
@@ -4533,12 +4528,7 @@ void CHARACTER::SetPlayerProto(const TPlayerTable* t)
     ecs::PointSystem::SetRandomHP(GetEntityHandle(), t->sRandomHP);
     ecs::PointSystem::SetRandomSP(GetEntityHandle(), t->sRandomSP);
 
-    if (m_pSkillLevels) {
-        M2_DELETE_ARRAY(m_pSkillLevels);
-    }
-
-    m_pSkillLevels = M2_NEW TPlayerSkill[SKILL_MAX_NUM];
-    memcpy(m_pSkillLevels, t->skills, sizeof(TPlayerSkill) * SKILL_MAX_NUM);
+    SkillSystem::LoadSkillLevels(GetEntityHandle(), t->skills, t->skill_group);
 #ifdef ENABLE_BATTLE_PASS
     AffectSystem::SetBattlePassDeadline(GetEntityHandle(), t->dwBattlePassEndTime);
 #endif
@@ -5677,7 +5667,6 @@ void CHARACTER::Initialize()
     m_posExit.x = m_posExit.y = m_posExit.z = 0;
     m_lExitMapIndex = 0;
 
-    m_pSkillLevels = nullptr;
 
     // Phase C.2: legacy m_dwMoveStartTime / m_dwMoveDuration zero-init
     // removed. The ECS MovementState component is created by EntityFactory

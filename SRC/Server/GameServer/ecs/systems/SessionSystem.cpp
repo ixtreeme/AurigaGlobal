@@ -337,7 +337,7 @@ void CHARACTER::CreatePlayerProto(TPlayerTable& tab)
         if (const auto* appearance = g_registry.try_get<ecs::AppearancePartsComponent>(e))
             memcpy(tab.parts, appearance->parts, sizeof(tab.parts));
     }
-    memcpy(tab.skills, m_pSkillLevels, sizeof(TPlayerSkill) * SKILL_MAX_NUM);
+    SkillSystem::StoreSkillLevels(GetEntityHandle(), tab.skills);
 
 #ifdef ENABLE_BATTLE_PASS
     tab.dwBattlePassEndTime = AffectSystem::GetBattlePassDeadline(GetEntityHandle());

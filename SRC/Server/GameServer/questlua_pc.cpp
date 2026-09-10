@@ -89,7 +89,7 @@ namespace quest
 		if (const auto* skills = ECS_TryGet<ecs::SkillLevels>(e))
 		{
 			bool bHasMasterSkill = false;
-			if (skills->levels != nullptr)
+			if (skills->loaded)
 			{
 				for (int i = 0; i < SKILL_MAX_NUM; ++i)
 				{
@@ -1990,7 +1990,7 @@ namespace quest
         uint32_t dwVnum = (uint32_t) lua_tonumber(L, 1);
         if (const auto* sl = ECS_TryGet<ecs::SkillLevels>(e))
         {
-            if (sl->levels && dwVnum < SKILL_MAX_NUM)
+            if (sl->loaded && dwVnum < SKILL_MAX_NUM)
             {
                 lua_pushnumber(L, sl->levels[dwVnum].bLevel);
                 return 1;

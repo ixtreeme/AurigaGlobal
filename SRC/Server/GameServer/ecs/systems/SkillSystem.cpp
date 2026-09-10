@@ -147,7 +147,7 @@ time_t GetSkillNextReadTime(entt::entity e, uint32_t skillId)
         return 0;
 
     const auto* levels = TryGetSkillLevels(e, 0);
-    return (levels && levels->levels) ? levels->levels[skillId].tNextRead : 0;
+    return (levels && levels->loaded) ? levels->levels[skillId].tNextRead : 0;
 }
 
 void SetSkillNextReadTime(entt::entity e, uint32_t skillId, time_t when)
@@ -156,7 +156,7 @@ void SetSkillNextReadTime(entt::entity e, uint32_t skillId, time_t when)
         return;
 
     auto* levels = TryGetSkillLevels(e);
-    if (!levels || !levels->levels)
+    if (!levels || !levels->loaded)
         return;
 
     levels->levels[skillId].tNextRead = when;
@@ -269,7 +269,38 @@ int GetSkillLevel(entt::entity e, uint32_t skillId)
         return 0;
 
     const auto* levels = TryGetSkillLevels(e, 0);
-    return (levels && levels->levels) ? MIN(SKILL_MAX_LEVEL, levels->levels[skillId].bLevel) : 0;
+    return (levels && levels->loaded) ? MIN(SKILL_MAX_LEVEL, levels->levels[skillId].bLevel) : 0;
+}
+
+// Loading the skill table from a player row, and writing it back out. Both
+// go through the one component; nothing keeps a second copy.
+void LoadSkillLevels(entt::entity e, const TPlayerSkill* src, uint8_t group)
+{
+    if (e == entt::null || !g_registry.valid(e) || !src)
+        return;
+
+    auto& levels = g_registry.get_or_emplace<ecs::SkillLevels>(e);
+    std::copy_n(src, SKILL_MAX_NUM, levels.levels.begin());
+    levels.group = group;
+    levels.loaded = true;
+}
+
+void StoreSkillLevels(entt::entity e, TPlayerSkill* dst)
+{
+    if (!dst)
+        return;
+
+    const auto* levels = TryGetSkillLevels(e, 0);
+    if (levels && levels->loaded)
+        std::copy_n(levels->levels.begin(), SKILL_MAX_NUM, dst);
+    else
+        std::fill_n(dst, SKILL_MAX_NUM, TPlayerSkill {});
+}
+
+bool HasSkillLevels(entt::entity e)
+{
+    const auto* levels = TryGetSkillLevels(e, 0);
+    return levels && levels->loaded;
 }
 
 void SendSkillLevelPacket(entt::entity e)
@@ -278,12 +309,12 @@ void SendSkillLevelPacket(entt::entity e)
     const auto* session = e != entt::null && g_registry.valid(e)
         ? g_registry.try_get<ecs::NetworkSession>(e)
         : nullptr;
-    if (!levels || !levels->levels || !session || !session->desc)
+    if (!levels || !levels->loaded || !session || !session->desc)
         return;
 
     TPacketGCSkillLevel packet {};
     packet.bHeader = HEADER_GC_SKILL_LEVEL;
-    std::copy_n(levels->levels, SKILL_MAX_NUM, packet.skills);
+    std::copy_n(levels->levels.begin(), SKILL_MAX_NUM, packet.skills);
     session->desc->Packet(&packet, sizeof(packet));
 }
 
@@ -397,7 +428,7 @@ void SetSkillLevel(entt::entity e, uint32_t skillId, uint8_t level)
         return;
 
     auto* levels = TryGetSkillLevels(e);
-    if (!levels || !levels->levels)
+    if (!levels || !levels->loaded)
         return;
 
 #ifdef ENABLE_NEW_PASSIVE_SKILLS
@@ -407,7 +438,7 @@ void SetSkillLevel(entt::entity e, uint32_t skillId, uint8_t level)
         level = 20;
     // The eligibility check may emit chat; reacquire storage after callbacks.
     levels = TryGetSkillLevels(e);
-    if (!levels || !levels->levels)
+    if (!levels || !levels->loaded)
         return;
 #endif
 
@@ -860,7 +891,7 @@ int GetSkillMasterType(entt::entity e, uint32_t skillId)
         return SKILL_NORMAL;
 
     const auto* levels = TryGetSkillLevels(e, 0);
-    return (levels && levels->levels) ? levels->levels[skillId].bMasterType : SKILL_NORMAL;
+    return (levels && levels->loaded) ? levels->levels[skillId].bMasterType : SKILL_NORMAL;
 }
 
 int GetSkillPower(entt::entity caster, uint32_t skillId, uint8_t level)
@@ -898,7 +929,7 @@ void ComputeSkillPoints(entt::entity)
 void ResetSkill(entt::entity e)
 {
 	auto* levels = TryGetSkillLevels(e);
-	if (!levels || !levels->levels)
+	if (!levels || !levels->loaded)
 		return;
 
 	std::vector<std::pair<uint32_t, TPlayerSkill>> preserved;
@@ -908,7 +939,7 @@ void ResetSkill(entt::entity e)
 			preserved.emplace_back(skillId, levels->levels[skillId]);
 	}
 
-	std::memset(levels->levels, 0, sizeof(TPlayerSkill) * SKILL_MAX_NUM);
+	levels->levels.fill(TPlayerSkill {});
 	for (const auto& [skillId, value] : preserved)
 		levels->levels[skillId] = value;
 
@@ -941,14 +972,14 @@ void ClearSkill(entt::entity e)
 void ClearSubSkill(entt::entity e)
 {
 	auto* levels = TryGetSkillLevels(e);
-	if (!levels || !levels->levels)
+	if (!levels || !levels->loaded)
 		return;
 
 	ecs::PointSystem::Change(e, POINT_SUB_SKILL,
 		ecs::PointSystem::GetLevel(e) < 10 ? 0 :
 		(ecs::PointSystem::GetLevel(e) - 9) - ecs::PointSystem::Get(e, POINT_SUB_SKILL));
 	levels = TryGetSkillLevels(e);
-	if (!levels || !levels->levels)
+	if (!levels || !levels->loaded)
 		return;
 
 	const TPlayerSkill clean {};
@@ -965,7 +996,7 @@ void ClearSubSkill(entt::entity e)
 bool ResetOneSkill(entt::entity e, uint32_t skillId)
 {
 	auto* levels = TryGetSkillLevels(e);
-	if (!levels || !levels->levels || skillId >= SKILL_MAX_NUM)
+	if (!levels || !levels->loaded || skillId >= SKILL_MAX_NUM)
 		return false;
 
 	uint8_t level = levels->levels[skillId].bLevel;
@@ -996,7 +1027,7 @@ time_t CHARACTER::GetSkillNextReadTime(uint32_t dwVnum) const
     if (e != entt::null && g_registry.valid(e))
         return SkillSystem::GetSkillNextReadTime(e, dwVnum);
 
-    return m_pSkillLevels ? m_pSkillLevels[dwVnum].tNextRead : 0;
+    return 0;
 }
 
 void CHARACTER::SetSkillNextReadTime(uint32_t dwVnum, time_t time)
@@ -1010,9 +1041,6 @@ void CHARACTER::SetSkillNextReadTime(uint32_t dwVnum, time_t time)
 
     if ((GetSkillMasterType(dwVnum) == SKILL_MASTER) && (dwVnum >= SKILL_SAMYEON) && (dwVnum <= SKILL_JEUNGRYEOK))
         time = uint32_t(get_global_time() + 3600);
-
-    if (m_pSkillLevels && dwVnum < SKILL_MAX_NUM)
-        m_pSkillLevels[dwVnum].tNextRead = time;
 
     SkillSystem::SetSkillNextReadTime(GetEntityHandle(), dwVnum, time);
 }
@@ -1039,7 +1067,7 @@ int CHARACTER::GetSkillLevel(uint32_t dwVnum) const
     if (e != entt::null && g_registry.valid(e))
         return SkillSystem::GetSkillLevel(e, dwVnum);
 
-    return MIN(SKILL_MAX_LEVEL, m_pSkillLevels ? m_pSkillLevels[dwVnum].bLevel : 0);
+    return 0;
 }
 
 void CHARACTER::DisableCooltime()
@@ -1736,7 +1764,7 @@ void CHARACTER::SkillLevelPacket()
 	TPacketGCSkillLevel pack;
 
 	pack.bHeader = HEADER_GC_SKILL_LEVEL;
-	memcpy(&pack.skills, m_pSkillLevels, sizeof(TPlayerSkill) * SKILL_MAX_NUM);
+	SkillSystem::StoreSkillLevels(GetEntityHandle(), pack.skills);
 	GetDesc()->Packet(&pack, sizeof(TPacketGCSkillLevel));
 }
 
@@ -1750,7 +1778,7 @@ bool CHARACTER::SkillCanUp(uint32_t dwVnum, bool book)
 
 void CHARACTER::SkillLevelUp(uint32_t dwVnum, uint8_t bMethod)
 {
-	if (nullptr == m_pSkillLevels)
+	if (!SkillSystem::HasSkillLevels(GetEntityHandle()))
 		return;
 
 	if (g_bSkillDisable)
@@ -1868,7 +1896,7 @@ void CHARACTER::SkillLevelUp(uint32_t dwVnum, uint8_t bMethod)
 	}
 
 	int SkillPointBefore = GetSkillLevel(pkSk->dwVnum);
-	SetSkillLevel(pkSk->dwVnum, m_pSkillLevels[pkSk->dwVnum].bLevel + 1);
+	SetSkillLevel(pkSk->dwVnum, static_cast<uint8_t>(GetSkillLevel(pkSk->dwVnum) + 1));
 
 	if (pkSk->dwType != 0)
 	{
@@ -1916,7 +1944,8 @@ void CHARACTER::SkillLevelUp(uint32_t dwVnum, uint8_t bMethod)
 	char szSkillUp[1024];
 
 	snprintf(szSkillUp, sizeof(szSkillUp), "SkillUp: %s %u %d %d[Before:%d] type %u",
-			GetName(), pkSk->dwVnum, m_pSkillLevels[pkSk->dwVnum].bMasterType, m_pSkillLevels[pkSk->dwVnum].bLevel, SkillPointBefore, pkSk->dwType);
+			GetName(), pkSk->dwVnum, SkillSystem::GetSkillMasterType(GetEntityHandle(), pkSk->dwVnum),
+		SkillSystem::GetSkillLevel(GetEntityHandle(), pkSk->dwVnum), SkillPointBefore, pkSk->dwType);
 
 	LOG_INFO("{}", szSkillUp);
 
@@ -4131,7 +4160,7 @@ int CHARACTER::GetSkillMasterType(uint32_t dwVnum) const
 		return 0;
 	}
 
-	return m_pSkillLevels ? m_pSkillLevels[dwVnum].bMasterType:SKILL_NORMAL;
+	return SkillSystem::GetSkillMasterType(GetEntityHandle(), dwVnum);
 }
 
 int CHARACTER::GetSkillPower(uint32_t dwVnum, uint8_t bLevel) const

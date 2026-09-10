@@ -244,7 +244,7 @@ void NoticeChecks() {
 void SkillChecks() {
     Reset(); auto player = Actor();
     std::array<TPlayerSkill, SKILL_MAX_NUM> levels {};
-    g_registry.emplace<ecs::SkillLevels>(player, levels.data(), uint8_t{0});
+    SkillSystem::LoadSkillLevels(player, levels.data(), 0);
     g_registry.emplace<ecs::CharacterPoints>(player);
     g_registry.emplace<ecs::NetworkSession>(player).desc = DescToken();
     SkillSystem::SetSkillGroup(player, 2);
@@ -257,33 +257,33 @@ void SkillChecks() {
     for (uint8_t level : {0, 19, 20, 29, 30, 39, 40, 255}) {
         SkillSystem::SetSkillLevel(player, SKILL_PALBANG, level);
         Check(SkillSystem::GetSkillLevel(player, SKILL_PALBANG) == std::min<int>(40, level), "skill cap");
-        Check(levels[SKILL_PALBANG].bMasterType == (level >= 40 ? SKILL_PERFECT_MASTER :
+        Check(SkillSystem::GetSkillMasterType(player, SKILL_PALBANG) == (level >= 40 ? SKILL_PERFECT_MASTER :
             level >= 30 ? SKILL_GRAND_MASTER : level >= 20 ? SKILL_MASTER : SKILL_NORMAL), "master thresholds");
     }
-    levels[SKILL_PALBANG].bLevel = 39;
+    SkillSystem::SetSkillLevel(player, SKILL_PALBANG, 39);
     SkillSystem::SetSkillLevel(player, SKILL_HELP_PALBANG, 1);
-    Check(levels[SKILL_HELP_PALBANG].bLevel == 0, "helper prerequisite ignored");
-    levels[SKILL_PALBANG].bLevel = 40;
+    Check(SkillSystem::GetSkillLevel(player, SKILL_HELP_PALBANG) == 0, "helper prerequisite ignored");
+    SkillSystem::SetSkillLevel(player, SKILL_PALBANG, 40);
     SkillSystem::SetSkillLevel(player, SKILL_HELP_PALBANG, 1);
-    Check(levels[SKILL_HELP_PALBANG].bLevel == 1, "eligible helper rejected");
+    Check(SkillSystem::GetSkillLevel(player, SKILL_HELP_PALBANG) == 1, "eligible helper rejected");
     g_registry.get<Player>(player).level = 89;
     SkillSystem::SetSkillLevel(player, SKILL_ANTI_PALBANG, 10);
-    Check(levels[SKILL_ANTI_PALBANG].bLevel == 0, "anti level requirement ignored");
+    Check(SkillSystem::GetSkillLevel(player, SKILL_ANTI_PALBANG) == 0, "anti level requirement ignored");
     g_registry.get<Player>(player).level = 90;
     SkillSystem::SetSkillLevel(player, SKILL_ANTI_PALBANG, 11);
-    Check(levels[SKILL_ANTI_PALBANG].bLevel == 20, "anti 11-to-20 rule");
+    Check(SkillSystem::GetSkillLevel(player, SKILL_ANTI_PALBANG) == 20, "anti 11-to-20 rule");
     SkillSystem::SetSkillLevel(player, SKILL_ANTI_PALBANG, 30);
     Check(!SkillSystem::CanIncreaseSkill(player, SKILL_ANTI_PALBANG, true), "anti book cap");
     g_registry.get<Player>(player).level = 1;
     SkillSystem::SetSkillLevel(player, SKILL_ANTI_PALBANG, 0);
-    Check(levels[SKILL_ANTI_PALBANG].bLevel == 0, "low-level anti reset denied");
+    Check(SkillSystem::GetSkillLevel(player, SKILL_ANTI_PALBANG) == 0, "low-level anti reset denied");
     SkillSystem::SetSkillLevel(player, NEW_SUPPORT_SKILL_ATTACK, 40);
-    Check(levels[NEW_SUPPORT_SKILL_ATTACK].bLevel == 10 && levels[NEW_SUPPORT_SKILL_ATTACK].bMasterType == SKILL_NORMAL, "secondary cap");
+    Check(SkillSystem::GetSkillLevel(player, NEW_SUPPORT_SKILL_ATTACK) == 10 && SkillSystem::GetSkillMasterType(player, NEW_SUPPORT_SKILL_ATTACK) == SKILL_NORMAL, "secondary cap");
     SkillSystem::SetSkillLevel(player, SKILL_MAX_NUM, 40);
     SkillSystem::SetSkillLevel(entt::null, SKILL_PALBANG, 40);
     SkillSystem::SendSkillLevelPacket(player);
     Check(packets == 3, "native skill level packet");
-    levels[SKILL_PALBANG].bLevel = 0;
+    SkillSystem::SetSkillLevel(player, SKILL_PALBANG, 0);
     bool once = false;
     onChat = [&](entt::entity) { if (!std::exchange(once, true)) { g_registry.destroy(player); Actor(); } };
     SkillSystem::SetSkillLevel(player, SKILL_HELP_PALBANG, 1);
@@ -325,7 +325,7 @@ void SkillRuntimeChecks() {
     constexpr auto skill = SKILL_SAMYEON;
     std::array<TPlayerSkill, SKILL_MAX_NUM> levels {};
     levels[skill].bMasterType = SKILL_PERFECT_MASTER;
-    g_registry.emplace<ecs::SkillLevels>(caster, levels.data(), uint8_t{1});
+    SkillSystem::LoadSkillLevels(caster, levels.data(), 1);
     Check(SkillSystem::RegisterSkillUse(caster, skill, false, target, 60000, 1, 3), "cooldown registration");
     Check(SkillSystem::GetNextSkillUseTime(caster, skill) != 0 &&
         SkillSystem::GetSkillMainTarget(caster, skill) == target, "native cast state");
@@ -367,13 +367,13 @@ void SkillRuntimeChecks() {
 void SkillPowerChecks() {
     Reset(); const auto caster = Actor();
     std::array<TPlayerSkill, SKILL_MAX_NUM> levels {};
-    g_registry.emplace<ecs::SkillLevels>(caster, levels.data(), uint8_t{1});
+    SkillSystem::LoadSkillLevels(caster, levels.data(), 1);
     for (uint8_t job = 0; job < JOB_MAX_NUM; ++job) {
         g_registry.get<Player>(caster).job = job;
         for (uint8_t group : {1, 2}) {
             g_registry.get<ecs::SkillLevels>(caster).group = group;
             for (uint8_t level = 0; level <= SKILL_MAX_LEVEL; ++level) {
-                levels[SKILL_PALBANG].bLevel = level;
+                g_registry.get<ecs::SkillLevels>(caster).levels[SKILL_PALBANG].bLevel = level;
                 Check(SkillSystem::GetSkillPower(caster, SKILL_PALBANG) ==
                     (job * 2 + group - 1) * 100 + level, "native skill power table");
             }
@@ -489,29 +489,29 @@ void SkillColorChecks() {
 void SkillCommandChecks() {
     Reset(); auto player = Actor();
     std::array<TPlayerSkill, SKILL_MAX_NUM> levels {};
-    g_registry.emplace<ecs::SkillLevels>(player, levels.data(), uint8_t{2});
+    SkillSystem::LoadSkillLevels(player, levels.data(), 2);
     g_registry.emplace<ecs::CharacterPoints>(player);
     g_registry.emplace<ecs::NetworkSession>(player).desc = DescToken();
-    levels[SKILL_PALBANG].bLevel = 8;
+    SkillSystem::SetSkillLevel(player, SKILL_PALBANG, 8);
     for (const char* arg : {"1 -1", "1 256", "1 999999999999999999999", "1 40junk"}) {
         do_setskill(player, arg, 0, 0);
-        Check(levels[SKILL_PALBANG].bLevel == 8 && computes == 0 && packets == 0, "invalid skill argument mutated state");
+        Check(SkillSystem::GetSkillLevel(player, SKILL_PALBANG) == 8 && computes == 0 && packets == 0, "invalid skill argument mutated state");
     }
     do_setskill(player, "1 40", 0, 0);
-    Check(levels[SKILL_PALBANG].bLevel == 40 && computes == 1 && packets == 1, "entity-only skill command");
+    Check(SkillSystem::GetSkillLevel(player, SKILL_PALBANG) == 40 && computes == 1 && packets == 1, "entity-only skill command");
     for (const char* arg : {"", "-1", "3", "256", "999999999999999999999", "1junk"}) {
         do_set_skill_group(player, arg, 0, 0);
-        Check(SkillSystem::GetSkillGroup(player) == 2 && levels[SKILL_PALBANG].bLevel == 40, "invalid group cleared skills");
+        Check(SkillSystem::GetSkillGroup(player) == 2 && SkillSystem::GetSkillLevel(player, SKILL_PALBANG) == 40, "invalid group cleared skills");
     }
     do_set_skill_group(player, "1", 0, 0);
-    Check(SkillSystem::GetSkillGroup(player) == 1 && levels[SKILL_PALBANG].bLevel == 0 && dbPackets == 1,
+    Check(SkillSystem::GetSkillGroup(player) == 1 && SkillSystem::GetSkillLevel(player, SKILL_PALBANG) == 0 && dbPackets == 1,
         "group command reset/color persistence");
     onPacket = [&] { if (g_registry.valid(player)) { g_registry.destroy(player); Actor(); } };
     do_set_skill_group(player, "2", 0, 0);
     Check(!g_registry.valid(player) && dbPackets == 1, "group packet destroyed owner before reset");
     for (int mode = 0; mode < 3; ++mode) {
         Reset(); player = Actor();
-        g_registry.emplace<ecs::SkillLevels>(player, levels.data(), uint8_t{1});
+        SkillSystem::LoadSkillLevels(player, levels.data(), 1);
         g_registry.emplace<ecs::CharacterPoints>(player);
         g_registry.emplace<ecs::NetworkSession>(player).desc = DescToken();
         auto invalidate = [&](entt::entity) { g_registry.destroy(player); Actor(); };
@@ -523,6 +523,51 @@ void SkillCommandChecks() {
         Check(!g_registry.valid(player) && dbPackets == 0, "skill reset wrote after callback destruction");
     }
 }
+// The skill table used to exist twice: a component the level-ups wrote and a
+// CHARACTER array the save and the client packet read. They started identical
+// and drifted from the first level gained, so a level neither persisted nor
+// reached the client. These checks read back through the store path that both
+// of those use.
+void SkillTableChecks() {
+    Reset();
+    const auto learner = Actor("Learner");
+
+    TPlayerSkill row[SKILL_MAX_NUM] {};
+    row[SKILL_PALBANG].bLevel = 7;
+    row[SKILL_PALBANG].bMasterType = SKILL_MASTER;
+    row[SKILL_SAMYEON].bLevel = 3;
+    SkillSystem::LoadSkillLevels(learner, row, 2);
+
+    Check(SkillSystem::HasSkillLevels(learner), "the table loads");
+    Check(SkillSystem::GetSkillLevel(learner, SKILL_PALBANG) == 7, "a loaded level reads back");
+    Check(SkillSystem::GetSkillMasterType(learner, SKILL_PALBANG) == SKILL_MASTER, "a loaded master type reads back");
+    Check(SkillSystem::GetSkillGroup(learner) == 2, "the skill group loads with the table");
+
+    SkillSystem::SetSkillLevel(learner, SKILL_PALBANG, 9);
+
+    TPlayerSkill saved[SKILL_MAX_NUM] {};
+    SkillSystem::StoreSkillLevels(learner, saved);
+    Check(saved[SKILL_PALBANG].bLevel == 9, "a level gained is what the save writes");
+    Check(saved[SKILL_SAMYEON].bLevel == 3, "an untouched level survives the round trip");
+
+    // A character with no table at all stores zeroes rather than whatever the
+    // caller's buffer happened to hold.
+    const auto fresh = Actor("Fresh");
+    TPlayerSkill scratch[SKILL_MAX_NUM] {};
+    scratch[SKILL_PALBANG].bLevel = 42;
+    Check(!SkillSystem::HasSkillLevels(fresh), "an unloaded character has no table");
+    SkillSystem::StoreSkillLevels(fresh, scratch);
+    Check(scratch[SKILL_PALBANG].bLevel == 0, "storing an unloaded table clears the buffer");
+
+    const auto gone = Actor("Gone");
+    SkillSystem::LoadSkillLevels(gone, row, 1);
+    g_registry.destroy(gone);
+    Check(!SkillSystem::HasSkillLevels(gone), "a destroyed handle has no table");
+    Check(SkillSystem::GetSkillLevel(gone, SKILL_PALBANG) == 0, "a destroyed handle reads level zero");
+    SkillSystem::SetSkillLevel(gone, SKILL_PALBANG, 5);
+    Check(!g_registry.valid(gone), "writing through a stale handle stays a no-op");
+}
+
 void SocketChecks() {
     Reset(); const auto owner = Actor(), item = Give(owner);
     for (const char* arg : {"", "-1 0 1", "4294967296 0 1", "1234 -1 1", "1234 999 1",
@@ -979,7 +1024,7 @@ int main() {
             power.SetSkillPowerByLevelFromType(index, table.data());
         }
         static int dbToken; db_clientdesc = reinterpret_cast<CLIENT_DESC*>(&dbToken);
-        PurgeChecks(); NoticeChecks(); SkillChecks(); SkillRuntimeChecks(); SkillPowerChecks(); SkillColorChecks(); SkillCommandChecks(); SocketChecks();
+        PurgeChecks(); NoticeChecks(); SkillChecks(); SkillRuntimeChecks(); SkillPowerChecks(); SkillColorChecks(); SkillCommandChecks(); SkillTableChecks(); SocketChecks();
         std::cout << "GM command checks passed: " << checks << '\n';
         return 0;
     } catch (const std::exception& error) { std::cerr << error.what() << '\n'; return 1; }

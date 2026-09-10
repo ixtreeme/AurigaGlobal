@@ -11,9 +11,14 @@
 
 namespace ecs {
 
+// Every skill's level, master type and next-read time. This held a raw
+// pointer to an array the component allocated itself, while CHARACTER kept a
+// second array of its own loaded from the same row - so a level-up wrote here
+// and the save read there. The table is owned here now, and there is one copy.
 struct SkillLevels {
-    TPlayerSkill* levels { nullptr };
+    std::array<TPlayerSkill, SKILL_MAX_NUM> levels {};
     uint8_t group { 0 };
+    bool loaded { false };
 };
 
 struct SkillCooldowns {

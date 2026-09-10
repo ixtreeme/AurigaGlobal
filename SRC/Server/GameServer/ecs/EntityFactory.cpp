@@ -168,9 +168,9 @@ ecs::CharacterPoints MakeCharacterPoints(const TPlayerTable& data)
 ecs::SkillLevels MakeSkillLevels(const TPlayerTable& data)
 {
     ecs::SkillLevels levels {};
-    levels.levels = new TPlayerSkill[SKILL_MAX_NUM] {};
-    std::copy_n(std::begin(data.skills), SKILL_MAX_NUM, levels.levels);
+    std::copy_n(std::begin(data.skills), SKILL_MAX_NUM, levels.levels.begin());
     levels.group = data.skill_group;
+    levels.loaded = true;
     return levels;
 }
 
@@ -697,7 +697,9 @@ entt::entity EntityFactory::CreatePC(entt::registry& reg, const TPlayerTable& da
     reg.emplace_or_replace<ecs::QuickSlots>(entity, InventorySystem::MakeQuickSlots(data.quickslot));
     reg.emplace_or_replace<ecs::SafeboxRef>(entity, nullptr, nullptr, -1, 0, 0, false);
 
-    reg.emplace_or_replace<ecs::SkillLevels>(entity, MakeSkillLevels(data));
+    // Assigned rather than emplaced from a value: the component is an
+    // aggregate with an array member, which EnTT would try to brace-init.
+    reg.emplace_or_replace<ecs::SkillLevels>(entity) = MakeSkillLevels(data);
     reg.emplace_or_replace<ecs::SkillCooldowns>(entity, ecs::SkillCooldowns { {}, now, false });
     reg.emplace_or_replace<ecs::SkillDamageBonus>(entity, ecs::SkillDamageBonus {});
     reg.emplace_or_replace<ecs::SkillColor>(entity, ecs::SkillColor {});
@@ -845,11 +847,6 @@ void EntityFactory::Destroy(entt::registry& reg, entt::entity e)
     }
 
     RemoveFromLegacyMapSector(reg, e);
-
-    if (auto* skillLevels = reg.try_get<ecs::SkillLevels>(e)) {
-        delete[] skillLevels->levels;
-        skillLevels->levels = nullptr;
-    }
 
     reg.destroy(e);
 }

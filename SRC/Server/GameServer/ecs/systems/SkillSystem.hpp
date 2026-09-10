@@ -20,6 +20,9 @@ void SkillLearnWaitMoreTimeMessage(entt::entity e, uint32_t ms);
 int GetSkillLevel(entt::entity e, uint32_t skillId);
 void SetSkillLevel(entt::entity e, uint32_t skillId, uint8_t level);
 void SendSkillLevelPacket(entt::entity e);
+void LoadSkillLevels(entt::entity e, const TPlayerSkill* src, uint8_t group);
+void StoreSkillLevels(entt::entity e, TPlayerSkill* dst);
+bool HasSkillLevels(entt::entity e);
 uint8_t GetSkillGroup(entt::entity e);
 void SetSkillGroup(entt::entity e, uint8_t skillGroup);
 
