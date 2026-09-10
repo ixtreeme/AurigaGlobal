@@ -164,6 +164,75 @@ void SetSkillNextReadTime(entt::entity e, uint32_t skillId, time_t when)
 }
 
 // How long is left before this skill can be read again, in words.
+// Dropping a skill one level, as a scroll of oblivion does. The point it
+// cost comes back.
+bool SkillLevelDown(entt::entity e, uint32_t dwVnum)
+{
+	if (g_bSkillDisable)
+		return false;
+
+	if (AffectSystem::IsPolymorphed(e))
+		return false;
+
+	CSkillProto * pkSk = CSkillManager::instance().Get(dwVnum);
+
+	if (!pkSk)
+	{
+		LOG_ERROR("There is no such skill by number {}", dwVnum);
+		return false;
+	}
+
+	if (!IsLearnableSkill(e, dwVnum))
+		return false;
+
+	if (GetSkillMasterType(e, pkSk->dwVnum) != SKILL_NORMAL)
+		return false;
+
+	if (!GetSkillGroup(e))
+		return false;
+
+	if (pkSk->dwVnum >= SKILL_MAX_NUM)
+		return false;
+
+	if (GetSkillLevel(e, pkSk->dwVnum) == 0)
+		return false;
+
+	int idx = POINT_SKILL;
+	switch (pkSk->dwType)
+	{
+		case 0:
+			idx = POINT_SUB_SKILL;
+			break;
+		case 1:
+		case 2:
+		case 3:
+		case 4:
+		case 6:
+			idx = POINT_SKILL;
+			break;
+		case 5:
+			idx = POINT_HORSE_SKILL;
+			break;
+		default:
+			LOG_ERROR("Wrong skill type {} skill vnum {}", pkSk->dwType, pkSk->dwVnum);
+			return false;
+
+	}
+
+	ecs::PointSystem::Change(e, idx, +1);
+	SetSkillLevel(e, pkSk->dwVnum, static_cast<uint8_t>(GetSkillLevel(e, pkSk->dwVnum) - 1));
+
+	LOG_INFO("SkillDown: {} {} {} {} type {}", ecs::PlayerRuntime::GetName(e).data(), pkSk->dwVnum, GetSkillMasterType(e, pkSk->dwVnum),
+		GetSkillLevel(e, pkSk->dwVnum), pkSk->dwType);
+	// The character save is still CHARACTER work; one resolve, named.
+	if (LPCHARACTER self = ecs::LegacyCharOf(e))
+		self->Save();
+
+	ecs::PointSystem::Compute(e);
+	SendSkillLevelPacket(e);
+	return true;
+}
+
 void SkillLearnWaitMoreTimeMessage(entt::entity e, uint32_t ms)
 {
 #ifdef TEXTS_IMPROVEMENT
@@ -1671,73 +1740,6 @@ void CHARACTER::SkillLevelPacket()
 	GetDesc()->Packet(&pack, sizeof(TPacketGCSkillLevel));
 }
 
-
-bool CHARACTER::SkillLevelDown(uint32_t dwVnum)
-{
-	if (nullptr == m_pSkillLevels)
-		return false;
-
-	if (g_bSkillDisable)
-		return false;
-
-	if (AffectSystem::IsPolymorphed(GetEntityHandle()))
-		return false;
-
-	CSkillProto * pkSk = CSkillManager::instance().Get(dwVnum);
-
-	if (!pkSk)
-	{
-		LOG_ERROR("There is no such skill by number {}", dwVnum);
-		return false;
-	}
-
-	if (!IsLearnableSkill(dwVnum))
-		return false;
-
-	if (GetSkillMasterType(pkSk->dwVnum) != SKILL_NORMAL)
-		return false;
-
-	if (!GetSkillGroup())
-		return false;
-
-	if (pkSk->dwVnum >= SKILL_MAX_NUM)
-		return false;
-
-	if (m_pSkillLevels[pkSk->dwVnum].bLevel == 0)
-		return false;
-
-	int idx = POINT_SKILL;
-	switch (pkSk->dwType)
-	{
-		case 0:
-			idx = POINT_SUB_SKILL;
-			break;
-		case 1:
-		case 2:
-		case 3:
-		case 4:
-		case 6:
-			idx = POINT_SKILL;
-			break;
-		case 5:
-			idx = POINT_HORSE_SKILL;
-			break;
-		default:
-			LOG_ERROR("Wrong skill type {} skill vnum {}", pkSk->dwType, pkSk->dwVnum);
-			return false;
-
-	}
-
-	PointChange(idx, +1);
-	SetSkillLevel(pkSk->dwVnum, m_pSkillLevels[pkSk->dwVnum].bLevel - 1);
-
-	LOG_INFO("SkillDown: {} {} {} {} type {}", GetName(), pkSk->dwVnum, m_pSkillLevels[pkSk->dwVnum].bMasterType, m_pSkillLevels[pkSk->dwVnum].bLevel, pkSk->dwType);
-	Save();
-
-	ComputePoints();
-	SkillLevelPacket();
-	return true;
-}
 
 #ifdef ENABLE_NEW_PASSIVE_SKILLS
 bool CHARACTER::SkillCanUp(uint32_t dwVnum, bool book)

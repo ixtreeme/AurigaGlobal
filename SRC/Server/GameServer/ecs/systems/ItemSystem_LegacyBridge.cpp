@@ -3833,7 +3833,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 
 		uint32_t dwVnum = item->GetSocket(0);
 
-		if (SkillLevelDown(dwVnum)) {
+		if (SkillSystem::SkillLevelDown(GetEntityHandle(), dwVnum)) {
 			ITEM_MANAGER::instance().RemoveItem(itemEntity);
 #ifdef TEXTS_IMPROVEMENT
 			ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 399, "");

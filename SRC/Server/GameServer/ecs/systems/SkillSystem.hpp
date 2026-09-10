@@ -15,6 +15,7 @@ namespace SkillSystem {
 time_t GetSkillNextReadTime(entt::entity e, uint32_t skillId);
 void SetSkillNextReadTime(entt::entity e, uint32_t skillId, time_t when);
 
+bool SkillLevelDown(entt::entity e, uint32_t dwVnum);
 void SkillLearnWaitMoreTimeMessage(entt::entity e, uint32_t ms);
 int GetSkillLevel(entt::entity e, uint32_t skillId);
 void SetSkillLevel(entt::entity e, uint32_t skillId, uint8_t level);

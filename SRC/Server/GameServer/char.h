@@ -1480,7 +1480,6 @@ public:
 
 	void				SkillLevelPacket();
 	void				SkillLevelUp(uint32_t dwVnum, uint8_t bMethod = SKILL_UP_BY_POINT);
-	bool				SkillLevelDown(uint32_t dwVnum);
 	// ADD_GRANDMASTER_SKILL
 	bool				UseSkill(uint32_t dwVnum, entt::entity victim, bool bUseGrandMaster = true);
 	void				ResetSkill();
