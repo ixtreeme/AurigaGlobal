@@ -730,7 +730,7 @@ bool CanMove(entt::entity e)
 
 bool CHARACTER::CannotMoveByAffect() const
 {
-	return (IsAffectFlag(AFF_STUN));
+	return (AffectSystem::IsAffectFlag(GetEntityHandle(), AFF_STUN));
 }
 
 // 1����?x, y A��!�� AI? 1AA2�U.

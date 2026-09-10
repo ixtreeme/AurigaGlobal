@@ -100,7 +100,7 @@ void CheckCharacterInsertParity(entt::registry& reg, entt::entity source)
     // differently - legacy reads IsPet/IsNewPet/m_bIsMount, native reads
     // StatusFlags - so they are exactly where a divergence would hide.
     {
-        TAffectFlag legacyAffect = ch->GetAffectFlags();
+        TAffectFlag legacyAffect = AffectSystem::GetFlags(ch->GetEntityHandle());
 #ifdef ENABLE_SOUL_SYSTEM
         if (legacyAffect.IsSet(AFF_SOUL_RED) && legacyAffect.IsSet(AFF_SOUL_BLUE)) {
             legacyAffect.Reset(AFF_SOUL_RED);

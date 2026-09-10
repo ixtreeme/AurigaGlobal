@@ -353,7 +353,7 @@ void RemoveFire(entt::entity e)
         return;
     }
 
-    RemoveAffect(e, AFFECT_FIRE);
+    AffectSystem::RemoveAffect(e, AFFECT_FIRE);
     if (auto* events = g_registry.try_get<ecs::AffectEventState>(e))
         event_cancel(&events->fireEvent);
 }
@@ -408,7 +408,7 @@ void RemovePoison(entt::entity e)
         return;
     }
 
-    RemoveAffect(e, AFFECT_POISON);
+    AffectSystem::RemoveAffect(e, AFFECT_POISON);
     if (auto* events = g_registry.try_get<ecs::AffectEventState>(e))
         event_cancel(&events->poisonEvent);
 }
@@ -708,11 +708,11 @@ bool AddAffect(entt::entity e, uint32_t type, uint8_t applyOn, int32_t applyValu
 
 #ifdef ENABLE_BUG_FIXES
     if (type == AFFECT_POLYMORPH) {
-        if (IsAffectFlag(e, AFF_GEOMGYEONG))
-            RemoveAffect(e, SKILL_GEOMKYUNG);
+        if (AffectSystem::IsAffectFlag(e, AFF_GEOMGYEONG))
+            AffectSystem::RemoveAffect(e, SKILL_GEOMKYUNG);
         if (!current()) return false;
-        if (IsAffectFlag(e, AFF_GWIGUM))
-            RemoveAffect(e, SKILL_GWIGEOM);
+        if (AffectSystem::IsAffectFlag(e, AFF_GWIGUM))
+            AffectSystem::RemoveAffect(e, SKILL_GWIGEOM);
         if (!current()) return false;
     }
 #endif
@@ -743,7 +743,7 @@ bool AddAffect(entt::entity e, uint32_t type, uint8_t applyOn, int32_t applyValu
     // must not leave a granted affect without an expiry/recovery event.
     if (!StartAffectEvent(e) || !current()) return false;
     if (overwrite) {
-        const auto old = Detach(e, FindAffect(e, type, isCube ? applyOn : APPLY_NONE));
+        const auto old = Detach(e, AffectSystem::FindAffect(e, type, isCube ? applyOn : APPLY_NONE));
         if (old) {
             token = TouchAffectType(e, type);
             const CAffect value = *old;
@@ -797,7 +797,7 @@ bool RemoveAffect(entt::entity e, uint32_t type)
     // operation, not to an unbounded Find/Remove loop.
     for (const auto& affect : Snapshot(e))
         if (affect && affect->dwType == type)
-            removed = RemoveAffect(e, affect.get()) || removed;
+            removed = AffectSystem::RemoveAffect(e, affect.get()) || removed;
     return removed;
 }
 
@@ -850,9 +850,9 @@ void RemoveBadAffects(entt::entity e)
         return;
     RemovePoison(e);
     RemoveFire(e);
-    RemoveAffect(e, AFFECT_STUN);
-    RemoveAffect(e, AFFECT_SLOW);
-    RemoveAffect(e, SKILL_TUSOK);
+    AffectSystem::RemoveAffect(e, AFFECT_STUN);
+    AffectSystem::RemoveAffect(e, AFFECT_SLOW);
+    AffectSystem::RemoveAffect(e, SKILL_TUSOK);
 }
 
 void RemoveGoodAffects(entt::entity e)
@@ -866,7 +866,7 @@ void RemoveGoodAffects(entt::entity e)
         SKILL_EUNHYUNG,
     };
     for (const auto type : types)
-        RemoveAffect(e, type);
+        AffectSystem::RemoveAffect(e, type);
 }
 
 uint32_t GetBattlePassDeadline(entt::entity e)
@@ -921,41 +921,41 @@ bool ProcessAffect(entt::entity e)
     // PREMIUM_MAX_NUM is a count, not a valid premium index.
     for (uint8_t i = 0; i < PREMIUM_MAX_NUM; ++i) {
         const uint32_t type = AFFECT_PREMIUM_START + i;
-        const auto affect = Lease(e, FindAffect(e, type));
+        const auto affect = Lease(e, AffectSystem::FindAffect(e, type));
         if (!affect) continue;
         const CAffect value = *affect;
         const int64_t remaining = ecs::PlayerRuntime::GetPremiumRemainSeconds(e, i);
         if (!current()) return empty();
         if (!stillOwned(affect, value)) continue;
         if (remaining < 0) {
-            RemoveAffect(e, type);
+            AffectSystem::RemoveAffect(e, type);
             changed = true;
             if (!current()) return empty();
         } else
             affect->lDuration = static_cast<int32_t>(std::min<int64_t>(remaining + 1, INT32_MAX));
     }
 #ifdef ENABLE_VOTE_FOR_BONUS
-    if (const auto affect = Lease(e, FindAffect(e, AFFECT_VOTEFORBONUS));
+    if (const auto affect = Lease(e, AffectSystem::FindAffect(e, AFFECT_VOTEFORBONUS));
         affect && static_cast<int64_t>(affect->lDuration) <= get_global_time()) {
-        RemoveAffect(e, AFFECT_VOTEFORBONUS);
+        AffectSystem::RemoveAffect(e, AFFECT_VOTEFORBONUS);
         changed = true;
         if (!current()) return empty();
     }
 #endif
 #ifdef ENABLE_BATTLE_PASS
-    if (const auto affect = Lease(e, FindAffect(e, AFFECT_BATTLE_PASS))) {
+    if (const auto affect = Lease(e, AffectSystem::FindAffect(e, AFFECT_BATTLE_PASS))) {
         const int64_t remaining = GetBattlePassRemainingSeconds(e);
         if (remaining < 0) {
             // Clear the old deadline before callbacks can install a new pass.
             SetBattlePassDeadline(e, 0);
-            RemoveAffect(e, AFFECT_BATTLE_PASS);
+            AffectSystem::RemoveAffect(e, AFFECT_BATTLE_PASS);
             changed = true;
             if (!current()) return empty();
         } else
             affect->lDuration = static_cast<int32_t>(std::min<int64_t>(remaining + 1, INT32_MAX));
     }
 #endif
-    if (const auto affect = Lease(e, FindAffect(e, AFFECT_HAIR))) {
+    if (const auto affect = Lease(e, AffectSystem::FindAffect(e, AFFECT_HAIR))) {
         const CAffect value = *affect;
         const bool expired = ecs::QuestSystem::GetFlag(e, "hair.limit_time") < get_global_time();
         if (!current()) return empty();
@@ -963,7 +963,7 @@ bool ProcessAffect(entt::entity e)
             if (expired) {
                 ecs::PlayerRuntime::SetPart(e, PART_HAIR, 0);
                 if (!current()) return empty();
-                if (stillOwned(affect, value)) RemoveAffect(e, static_cast<uint32_t>(AFFECT_HAIR));
+                if (stillOwned(affect, value)) AffectSystem::RemoveAffect(e, static_cast<uint32_t>(AFFECT_HAIR));
                 if (!current()) return empty();
             } else if (affect->lDuration < INT32_MAX)
                 ++affect->lDuration;
@@ -1226,21 +1226,6 @@ void SendAffectAddPacket(LPDESC d, CAffect * pkAff)
 }
 ////////////////////////////////////////////////////////////////////
 // Affect
-CAffect * CHARACTER::FindAffect(uint32_t dwType, uint8_t bApply) const
-{
-    return AffectSystem::FindAffect(GetEntityHandle(), dwType, bApply);
-}
-
-std::vector<std::shared_ptr<CAffect>> CHARACTER::GetAffectContainer() const
-{
-    return AffectSystem::Snapshot(GetEntityHandle());
-}
-
-TAffectFlag CHARACTER::GetAffectFlags() const
-{
-    return AffectSystem::GetFlags(GetEntityHandle());
-}
-
 EVENTFUNC(affect_event)
 {
     const auto* info = dynamic_cast<char_event_info*>(event->info);
@@ -1279,12 +1264,12 @@ bool CHARACTER::UpdateAffect()
 {
 #ifdef ENABLE_BUG_FIXES
 	if (!ItemSystem::IsValidItem(ItemSystem::GetWearItem(GetEntityHandle(), WEAR_WEAPON))) {
-		if (IsAffectFlag(AFF_GEOMGYEONG)) {
-			RemoveAffect(SKILL_GEOMKYUNG);
+		if (AffectSystem::IsAffectFlag(GetEntityHandle(), AFF_GEOMGYEONG)) {
+			AffectSystem::RemoveAffect(GetEntityHandle(), SKILL_GEOMKYUNG);
 		}
 
-		if (IsAffectFlag(AFF_GWIGUM)) {
-			RemoveAffect(SKILL_GWIGEOM);
+		if (AffectSystem::IsAffectFlag(GetEntityHandle(), AFF_GWIGUM)) {
+			AffectSystem::RemoveAffect(GetEntityHandle(), SKILL_GWIGEOM);
 		}
 	}
 #endif
@@ -1361,11 +1346,6 @@ bool CHARACTER::UpdateAffect()
         return false;
     }
     return true;
-}
-
-void CHARACTER::StartAffectEvent()
-{
-    AffectSystem::StartAffectEvent(GetEntityHandle());
 }
 
 #ifdef ENABLE_SKILLS_BUFF_ALTERNATIVE
@@ -1495,16 +1475,11 @@ void CHARACTER::ClearAffect(bool bSave)
 		AffectSystem::StopAffectEvent(entity);
 }
 
-int CHARACTER::ProcessAffect()
-{
-    return AffectSystem::ProcessAffect(GetEntityHandle());
-}
-
 void CHARACTER::SaveAffect()
 {
 	TPacketGDAddAffect p;
 
-	for (const auto& lease : GetAffectContainer())
+	for (const auto& lease : AffectSystem::Snapshot(GetEntityHandle()))
 	{
 		const CAffect* pkAff = lease.get();
 		if (IS_NO_SAVE_AFFECT(pkAff->dwType))
@@ -1609,7 +1584,7 @@ void CHARACTER::CheckBiologistReward() {
 	int stat = ecs::PlayerRuntime::GetQuestFlag(GetEntityHandle(), "biologist.stat");
 	if (stat > 0) {
 		for (int i = 0; i < stat; i++) {
-			if (FindAffect(biologistMissionInfo[i][14])) {
+			if (AffectSystem::FindAffect(GetEntityHandle(), biologistMissionInfo[i][14])) {
 				continue;
 			}
 
@@ -1670,14 +1645,14 @@ void CHARACTER::LoadAffect(uint32_t dwCount, TPacketAffectElement * pElements)
 		return;
 	}
 
-	LOG_ERROR("LOAD_AFFECT_CLEAR_BEGIN pid={} name={} existing_affects={}", GetPlayerID(), GetName(), GetAffectContainer().size());
+	LOG_ERROR("LOAD_AFFECT_CLEAR_BEGIN pid={} name={} existing_affects={}", GetPlayerID(), GetName(), AffectSystem::Snapshot(GetEntityHandle()).size());
 	ClearAffect(true);
-	LOG_ERROR("LOAD_AFFECT_CLEAR_END pid={} name={} remaining_affects={}", GetPlayerID(), GetName(), GetAffectContainer().size());
+	LOG_ERROR("LOAD_AFFECT_CLEAR_END pid={} name={} remaining_affects={}", GetPlayerID(), GetName(), AffectSystem::Snapshot(GetEntityHandle()).size());
 
 	if (test_server)
 		LOG_INFO("LOAD_AFFECT: {} count {}", GetName(), dwCount);
 
-	TAffectFlag afOld = GetAffectFlags();
+	TAffectFlag afOld = AffectSystem::GetFlags(GetEntityHandle());
 
 	int64_t lMovSpd = GetPoint(POINT_MOV_SPEED);
 	int64_t lAttSpd = GetPoint(POINT_ATT_SPEED);
@@ -1724,7 +1699,7 @@ void CHARACTER::LoadAffect(uint32_t dwCount, TPacketAffectElement * pElements)
 		//		if (item) {
 		//			item->Lock(false);
 		//			item->SetSocket(1, 0);
-		//			RemoveAffect(AFFECT_NEW_POTION31);
+		//			AffectSystem::RemoveAffect(GetEntityHandle(), AFFECT_NEW_POTION31);
 		//		} else {
 		//			continue;
 		//		}
@@ -1793,31 +1768,31 @@ void CHARACTER::LoadAffect(uint32_t dwCount, TPacketAffectElement * pElements)
 		if (!AffectState(entity))
 			return;
 	}
-	LOG_ERROR("LOAD_AFFECT_LOOP_END pid={} name={} loaded_affects={}", GetPlayerID(), GetName(), GetAffectContainer().size());
+	LOG_ERROR("LOAD_AFFECT_LOOP_END pid={} name={} loaded_affects={}", GetPlayerID(), GetName(), AffectSystem::Snapshot(GetEntityHandle()).size());
 
 	if ( CArenaManager::instance().IsArenaMap(GetMapIndex()) == true )
 	{
-		RemoveGoodAffect();
+		AffectSystem::RemoveGoodAffects(GetEntityHandle());
 	}
 
 #ifndef ENABLE_01092021
-	RemoveAffect(AFFECT_MOUNT);
+	AffectSystem::RemoveAffect(GetEntityHandle(), AFFECT_MOUNT);
 #ifdef ENABLE_MOUNT_COSTUME_SYSTEM
-	RemoveAffect(AFFECT_MOUNT_BONUS);
+	AffectSystem::RemoveAffect(GetEntityHandle(), AFFECT_MOUNT_BONUS);
 	if (GetMapIndex() != 113 && CArenaManager::instance().IsArenaMap(GetMapIndex()) == false) {
 		CheckMount();
 	}
 #endif
 #endif
 
-	if (afOld != GetAffectFlags() || lMovSpd != GetPoint(POINT_MOV_SPEED) || lAttSpd != GetPoint(POINT_ATT_SPEED))
+	if (afOld != AffectSystem::GetFlags(GetEntityHandle()) || lMovSpd != GetPoint(POINT_MOV_SPEED) || lAttSpd != GetPoint(POINT_ATT_SPEED))
 	{
 
 	NetworkSyncSystem::UpdatePacket(GetEntityHandle());
 	}
 
 	LOG_ERROR("LOAD_AFFECT_START_EVENT_BEGIN pid={} name={}", GetPlayerID(), GetName());
-	StartAffectEvent();
+	AffectSystem::StartAffectEvent(GetEntityHandle());
 	LOG_ERROR("LOAD_AFFECT_START_EVENT_END pid={} name={}", GetPlayerID(), GetName());
 
 	if (!AffectState(entity))
@@ -1844,10 +1819,10 @@ void CHARACTER::LoadAffect(uint32_t dwCount, TPacketAffectElement * pElements)
 	{
 		while (true)
 		{
-			CAffect* affect = FindAffect(AFFECT_GUILD_ATTRIBUTE);
+			CAffect* affect = AffectSystem::FindAffect(GetEntityHandle(), AFFECT_GUILD_ATTRIBUTE);
 			if (!affect)
 				break;
-			RemoveAffect(affect);
+			AffectSystem::RemoveAffect(GetEntityHandle(), affect);
 		}
 	}
 #endif
@@ -1860,7 +1835,7 @@ void CHARACTER::LoadAffect(uint32_t dwCount, TPacketAffectElement * pElements)
 	CheckBiologistReward();
 	LOG_ERROR("LOAD_AFFECT_BIOLOGIST_END pid={} name={}", GetPlayerID(), GetName());
 #endif
-	LOG_ERROR("LOAD_AFFECT_END pid={} name={} count={} final_affects={}", GetPlayerID(), GetName(), dwCount, GetAffectContainer().size());
+	LOG_ERROR("LOAD_AFFECT_END pid={} name={} count={} final_affects={}", GetPlayerID(), GetName(), dwCount, AffectSystem::Snapshot(GetEntityHandle()).size());
 }
 
 bool CHARACTER::AddAffect(uint32_t type, uint8_t applyOn, int32_t value, uint32_t flag,
@@ -1870,35 +1845,10 @@ bool CHARACTER::AddAffect(uint32_t type, uint8_t applyOn, int32_t value, uint32_
         flag, duration, spCost, overwrite, isCube);
 }
 
-void CHARACTER::RefreshAffect()
-{
-    AffectSystem::RefreshAffect(GetEntityHandle());
-}
-
 void CHARACTER::ComputeAffect(CAffect* affect, bool add)
 {
     if (affect)
         AffectSystem::ComputeAffect(GetEntityHandle(), *affect, add);
-}
-
-bool CHARACTER::RemoveAffect(CAffect* affect)
-{
-    return AffectSystem::RemoveAffect(GetEntityHandle(), affect);
-}
-
-bool CHARACTER::RemoveAffect(uint32_t type)
-{
-    return AffectSystem::RemoveAffect(GetEntityHandle(), type);
-}
-
-bool CHARACTER::IsAffectFlag(uint32_t dwAff) const
-{
-	return AffectSystem::IsAffectFlag(GetEntityHandle(), dwAff);
-}
-
-void CHARACTER::RemoveGoodAffect()
-{
-    AffectSystem::RemoveGoodAffects(GetEntityHandle());
 }
 
 bool CHARACTER::IsGoodAffect(uint8_t bAffectType) const
@@ -1932,12 +1882,3 @@ bool CHARACTER::IsGoodAffect(uint8_t bAffectType) const
 	return false;
 }
 
-void CHARACTER::RemoveBadAffect()
-{
-    AffectSystem::RemoveBadAffects(GetEntityHandle());
-}
-
-void CHARACTER::SetPolymorph(uint32_t dwRaceNum, bool bMaintainStat)
-{
-	AffectSystem::SetPolymorph(GetEntityHandle(), dwRaceNum, bMaintainStat);
-}

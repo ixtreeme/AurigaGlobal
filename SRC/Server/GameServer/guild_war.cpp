@@ -640,7 +640,7 @@ void CGuild::EndWar(uint32_t dwOppGID)
 				AffectSystem::RemoveAffect(ch, GUILD_SKILL_BUNNO);
 				AffectSystem::RemoveAffect(ch, GUILD_SKILL_JUMUN);
 
-				pkCh->RemoveBadAffect();
+				AffectSystem::RemoveBadAffects(pkCh->GetEntityHandle());
 			}
 		}
 	}

@@ -2839,7 +2839,7 @@ ACMD(do_polymorph_item)
 		{
 			ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "#%d item not exist by that vnum.", 70103);
 		}
-		//ch->SetPolymorph(dwVnum, bMaintainStat);
+		//AffectSystem::SetPolymorph(ch->GetEntityHandle(), dwVnum, bMaintainStat);
 	}
 }
 

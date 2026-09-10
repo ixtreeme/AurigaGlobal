@@ -386,7 +386,7 @@ void CHARACTER::SetParty(LPPARTY pkParty)
 
 #ifdef ENABLE_NEW_USE_POTION
     if (IsPC() && m_pkParty && pkParty == nullptr && m_pkParty->GetLeaderPID() == GetPlayerID()) {
-        CAffect* pAffect = FindAffect(AFFECT_NEW_POTION31);
+        CAffect* pAffect = AffectSystem::FindAffect(GetEntityHandle(), AFFECT_NEW_POTION31);
         if (pAffect) {
             LPITEM pkItem = FindItemByID(pAffect->dwFlag);
             if (pkItem) {
@@ -394,7 +394,7 @@ void CHARACTER::SetParty(LPPARTY pkParty)
                 ItemSystem::SetItemSocket((pkItem ? pkItem->GetEntityHandle() : entt::null), 1, 0);
             }
 
-            RemoveAffect(AFFECT_NEW_POTION31);
+            AffectSystem::RemoveAffect(GetEntityHandle(), AFFECT_NEW_POTION31);
         }
     }
 #endif

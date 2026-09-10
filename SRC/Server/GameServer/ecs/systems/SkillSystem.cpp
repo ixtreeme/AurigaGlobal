@@ -1203,14 +1203,14 @@ bool CHARACTER::LearnGrandMasterSkill(uint32_t dwSkillVnum)
 
 	int iBookCount = aiGrandMasterSkillBookCountForLevelUp[idx];
 
-	if (FindAffect(AFFECT_SKILL_BOOK_BONUS))
+	if (AffectSystem::FindAffect(GetEntityHandle(), AFFECT_SKILL_BOOK_BONUS))
 	{
 		if (iBookCount&1)
 			iBookCount = iBookCount / 2 + 1;
 		else
 			iBookCount = iBookCount / 2;
 
-		RemoveAffect(AFFECT_SKILL_BOOK_BONUS);
+		AffectSystem::RemoveAffect(GetEntityHandle(), AFFECT_SKILL_BOOK_BONUS);
 	}
 
 	int n = number(1, iBookCount);
@@ -1306,9 +1306,9 @@ bool CHARACTER::LearnSkillByBook(uint32_t dwSkillVnum, uint8_t bProb)
 
 #ifdef ENABLE_NEW_SECONDARY_SKILLS
 	if ((get_global_time() < GetSkillNextReadTime(dwSkillVnum)) && ((dwSkillVnum == NEW_SUPPORT_SKILL_ATTACK) || (dwSkillVnum == NEW_SUPPORT_SKILL_YANG) || (dwSkillVnum == NEW_SUPPORT_SKILL_MONSTERS) || (dwSkillVnum == NEW_SUPPORT_SKILL_HP))) {
-		if (FindAffect(AFFECT_SKILL_NO_BOOK_DELAY))
+		if (AffectSystem::FindAffect(GetEntityHandle(), AFFECT_SKILL_NO_BOOK_DELAY))
 		{
-			RemoveAffect(AFFECT_SKILL_NO_BOOK_DELAY);
+			AffectSystem::RemoveAffect(GetEntityHandle(), AFFECT_SKILL_NO_BOOK_DELAY);
 #ifdef TEXTS_IMPROVEMENT
 			ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 465, "");
 #endif
@@ -1332,9 +1332,9 @@ bool CHARACTER::LearnSkillByBook(uint32_t dwSkillVnum, uint8_t bProb)
 	{
 		if (!(test_server && quest::CQuestManager::instance().GetEventFlag("no_read_delay")))
 		{
-			if (FindAffect(AFFECT_SKILL_NO_BOOK_DELAY))
+			if (AffectSystem::FindAffect(GetEntityHandle(), AFFECT_SKILL_NO_BOOK_DELAY))
 			{
-				RemoveAffect(AFFECT_SKILL_NO_BOOK_DELAY);
+				AffectSystem::RemoveAffect(GetEntityHandle(), AFFECT_SKILL_NO_BOOK_DELAY);
 #ifdef TEXTS_IMPROVEMENT
 				ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 465, "");
 #endif
@@ -1360,10 +1360,10 @@ bool CHARACTER::LearnSkillByBook(uint32_t dwSkillVnum, uint8_t bProb)
 
 	if (bProb != 0)
 	{
-		if (FindAffect(AFFECT_SKILL_BOOK_BONUS))
+		if (AffectSystem::FindAffect(GetEntityHandle(), AFFECT_SKILL_BOOK_BONUS))
 		{
 			bProb += bProb / 2;
-			RemoveAffect(AFFECT_SKILL_BOOK_BONUS);
+			AffectSystem::RemoveAffect(GetEntityHandle(), AFFECT_SKILL_BOOK_BONUS);
 		}
 
 		LOG_INFO("LearnSkillByBook Pct {} prob {}", dwSkillVnum, bProb);
@@ -1404,9 +1404,9 @@ bool CHARACTER::LearnSkillByBook(uint32_t dwSkillVnum, uint8_t bProb)
 		int iReadCount = pPC->GetFlag(szFlag);
 		int percent = 30;
 
-		if (FindAffect(AFFECT_SKILL_BOOK_BONUS)) {
+		if (AffectSystem::FindAffect(GetEntityHandle(), AFFECT_SKILL_BOOK_BONUS)) {
 			percent = 20;
-			RemoveAffect(AFFECT_SKILL_BOOK_BONUS);
+			AffectSystem::RemoveAffect(GetEntityHandle(), AFFECT_SKILL_BOOK_BONUS);
 		}
 #ifndef DISABLE_SKILL_BOOK_NEED_EXP
 		if (need_exp > 0) PointChange(POINT_EXP, -need_exp);
@@ -1467,9 +1467,9 @@ bool CHARACTER::LearnSkillByBook(uint32_t dwSkillVnum, uint8_t bProb)
 		int iReadCount = pPC->GetFlag(szFlag);
 		int percent = 30;
 
-		if (FindAffect(AFFECT_SKILL_BOOK_BONUS)) {
+		if (AffectSystem::FindAffect(GetEntityHandle(), AFFECT_SKILL_BOOK_BONUS)) {
 			percent = 10;
-			RemoveAffect(AFFECT_SKILL_BOOK_BONUS);
+			AffectSystem::RemoveAffect(GetEntityHandle(), AFFECT_SKILL_BOOK_BONUS);
 		}
 
 #ifndef DISABLE_SKILL_BOOK_NEED_EXP
@@ -1534,13 +1534,13 @@ bool CHARACTER::LearnSkillByBook(uint32_t dwSkillVnum, uint8_t bProb)
 
 				int read_count = pPC->GetFlag(flag);
 				int percent = 30;
-				if (FindAffect(AFFECT_SKILL_BOOK_BONUS))
+				if (AffectSystem::FindAffect(GetEntityHandle(), AFFECT_SKILL_BOOK_BONUS))
 				{
 					percent = 0;
 					if ((dwSkillVnum >= SKILL_HELP_PALBANG) && (dwSkillVnum <= SKILL_HELP_BYEURAK))
 						percent = 20;
 
-					RemoveAffect(AFFECT_SKILL_BOOK_BONUS);
+					AffectSystem::RemoveAffect(GetEntityHandle(), AFFECT_SKILL_BOOK_BONUS);
 				}
 
 				if (number(1, 100) > percent)
@@ -2676,7 +2676,7 @@ struct FuncSplashDamage
 
 					if (number(1, 100) <= iAmount2)
 					{
-						pkChrVictim->RemoveGoodAffect();
+						AffectSystem::RemoveGoodAffects(pkChrVictim->GetEntityHandle());
 						AffectSystem::AddAffect(victimEntity, m_pkSk->dwVnum, POINT_NONE, 0, AFF_PABEOP, iDur2, 0, true);
 					}
 				}
@@ -3068,7 +3068,7 @@ int CHARACTER::ComputeSkillAtPosition(uint32_t dwVnum, const PIXEL_POSITION& pos
 	{
 		if (number(1, 100) <= iAmount2)
 		{
-			RemoveBadAffect();
+			AffectSystem::RemoveBadAffects(GetEntityHandle());
 		}
 	}
 	// END_OF_ADD_GRANDMASTER_SKILL
@@ -3538,7 +3538,7 @@ int CHARACTER::ComputeSkill(uint32_t dwVnum, entt::entity victim, uint8_t bSkill
 	{
 		if (number(1, 100) <= iAmount2)
 		{
-			pkVictim->RemoveBadAffect();
+			AffectSystem::RemoveBadAffects(pkVictim->GetEntityHandle());
 		}
 	}
 	// END_OF_REMOVE_BAD_AFFECT_BUG_FIX
@@ -3935,12 +3935,12 @@ bool CHARACTER::UseSkill(uint32_t dwVnum, entt::entity victim, bool bUseGrandMas
 
 	if (pkSk->IsChargeSkill())
 	{
-		if ((IsAffectFlag(AFF_TANHWAN_DASH)) || (pkVictim && (pkVictim != this)))
+		if ((AffectSystem::IsAffectFlag(GetEntityHandle(), AFF_TANHWAN_DASH)) || (pkVictim && (pkVictim != this)))
 		{
 			if (!pkVictim)
 				return false;
 
-			if (!IsAffectFlag(AFF_TANHWAN_DASH))
+			if (!AffectSystem::IsAffectFlag(GetEntityHandle(), AFF_TANHWAN_DASH))
 			{
 				if (!UseSkill(dwVnum, character))
 					return false;
@@ -3950,7 +3950,7 @@ bool CHARACTER::UseSkill(uint32_t dwVnum, entt::entity victim, bool bUseGrandMas
 			SkillSystem::SetSkillMainTarget(character, dwVnum, victimEntity);
 			// DASH »óĹÂŔÇ ĹşČŻ°ÝŔş °ř°Ý±âĽú
 			ComputeSkill(dwVnum, victimEntity);
-			RemoveAffect(dwVnum);
+			AffectSystem::RemoveAffect(GetEntityHandle(), dwVnum);
 			return true;
 		}
 	}
@@ -3964,13 +3964,13 @@ bool CHARACTER::UseSkill(uint32_t dwVnum, entt::entity victim, bool bUseGrandMas
 	}
 
 	// Toggle ÇŇ ¶§´Â SP¸¦ ľ˛Áö ľĘŔ˝ (SelfOnly·Î ±¸şĐ)
-	if ((0 != pkSk->dwAffectFlag || pkSk->dwVnum == SKILL_MUYEONG) && (pkSk->dwFlag & SKILL_FLAG_TOGGLE) && RemoveAffect(pkSk->dwVnum))
+	if ((0 != pkSk->dwAffectFlag || pkSk->dwVnum == SKILL_MUYEONG) && (pkSk->dwFlag & SKILL_FLAG_TOGGLE) && AffectSystem::RemoveAffect(GetEntityHandle(), pkSk->dwVnum))
 	{
 		return true;
 	}
 
-	if (IsAffectFlag(AFF_REVIVE_INVISIBLE))
-		RemoveAffect(AFFECT_REVIVE_INVISIBLE);
+	if (AffectSystem::IsAffectFlag(GetEntityHandle(), AFF_REVIVE_INVISIBLE))
+		AffectSystem::RemoveAffect(GetEntityHandle(), AFFECT_REVIVE_INVISIBLE);
 
 	const float k = 1.0 * SkillSystem::GetSkillPower(character, pkSk->dwVnum) * pkSk->bMaxLevel / 100;
 
@@ -4044,7 +4044,7 @@ bool CHARACTER::UseSkill(uint32_t dwVnum, entt::entity victim, bool bUseGrandMas
 		victimEntity = character;
 	}
 
-	if ((pkSk->dwVnum == SKILL_MUYEONG) || (pkSk->IsChargeSkill() && !IsAffectFlag(AFF_TANHWAN_DASH) && !pkVictim))
+	if ((pkSk->dwVnum == SKILL_MUYEONG) || (pkSk->IsChargeSkill() && !AffectSystem::IsAffectFlag(GetEntityHandle(), AFF_TANHWAN_DASH) && !pkVictim))
 	{
 		// ĂłŔ˝ »çżëÇĎ´Â ą«żµÁřŔş ŔÚ˝Ĺżˇ°Ô Affect¸¦ şŮŔÎ´Ů.
 		pkVictim = this;

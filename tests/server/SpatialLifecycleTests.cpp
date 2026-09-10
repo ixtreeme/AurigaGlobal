@@ -212,7 +212,6 @@ void intrusive_ptr_add_ref(event*) { Unexpected(); }
 void intrusive_ptr_release(event*) { Unexpected(); }
 LPEVENT event_create_ex(TEVENTFUNC, event_info_data*, int32_t) { Unexpected(); }
 void ecs::ChatSystem::Send(entt::entity, uint8_t, const char*, ...) { Unexpected(); }
-bool AffectSystem::IsAffectFlag(entt::entity, uint32_t) { Unexpected(); }
 LPSHOP ecs::SocialSystem::GetMyShop(entt::entity) { Unexpected(); }
 bool AffectSystem::IsPolymorphed(entt::entity e) { return motionSettings[e].polymorphed; }
 uint32_t ecs::PlayerRuntime::GetPacketVID(entt::entity) { Unexpected(); }
@@ -250,7 +249,7 @@ void CHARACTER::OnMove(bool) { Unexpected(); }
 bool CHARACTER::WarpSet(int32_t, int32_t, int32_t) { Unexpected(); }
 void CHARACTER::SaveExitLocation() { Unexpected(); }
 void CHARACTER::ExitToSavedLocation() { Unexpected(); }
-bool CHARACTER::IsAffectFlag(uint32_t) const { Unexpected(); }
+bool AffectSystem::IsAffectFlag(entt::entity, uint32_t) { Unexpected(); }
 bool CHARACTER::IsEquipUniqueItem(uint32_t) const { Unexpected(); }
 void CombatSystem::Dead(entt::entity, entt::entity, bool) { Unexpected(); }
 void CHARACTER::UpdateKillerMode() { Unexpected(); }

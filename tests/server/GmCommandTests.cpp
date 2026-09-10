@@ -725,8 +725,6 @@ bool AffectSystem::IsAffectFlag(entt::entity,unsigned int) { Unexpected(); }
 bool AffectSystem::AddAffect(entt::entity,unsigned int,unsigned char,int,unsigned int,int,int,bool,bool) { Unexpected(); }
 bool AffectSystem::RemoveAffect(entt::entity,unsigned int) { Unexpected(); }
 bool AffectSystem::RemoveAffect(entt::entity,CAffect *) { Unexpected(); }
-void AffectSystem::RemoveBadAffects(entt::entity) { Unexpected(); }
-void AffectSystem::RemoveGoodAffects(entt::entity) { Unexpected(); }
 void AffectSystem::ClearAffect(entt::entity,bool) { Unexpected(); }
 void AffectSystem::SetPolymorph(entt::entity,unsigned int,bool) { Unexpected(); }
 bool AffectSystem::IsPolymorphed(entt::entity) { Unexpected(); }
@@ -970,12 +968,9 @@ void CHARACTER::OnMove(bool) { Unexpected(); }
 void ecs::MovementSystem::CalculateMoveDuration(entt::entity) { Unexpected(); }
 bool CHARACTER::WarpSet(int,int,int) { Unexpected(); }
 bool CHARACTER::AddAffect(unsigned int,unsigned char,int,unsigned int,int,int,bool,bool) { Unexpected(); }
-bool CHARACTER::RemoveAffect(unsigned int) { Unexpected(); }
-bool CHARACTER::IsAffectFlag(unsigned int)const { Unexpected(); }
 bool CHARACTER::IsGoodAffect(unsigned char)const { Unexpected(); }
-void CHARACTER::RemoveGoodAffect(void) { Unexpected(); }
-void CHARACTER::RemoveBadAffect(void) { Unexpected(); }
-CAffect * CHARACTER::FindAffect(unsigned int,unsigned char)const { Unexpected(); }
+void AffectSystem::RemoveGoodAffects(entt::entity) { Unexpected(); }
+void AffectSystem::RemoveBadAffects(entt::entity) { Unexpected(); }
 bool CHARACTER::IsEquipUniqueGroup(unsigned int)const { Unexpected(); }
 bool CombatSystem::Damage(entt::entity,entt::entity,int64_t,unsigned char) { Unexpected(); }
 bool CombatSystem::CanBeginFight(entt::entity) { Unexpected(); }

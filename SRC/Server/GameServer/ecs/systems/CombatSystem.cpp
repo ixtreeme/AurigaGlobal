@@ -3226,12 +3226,12 @@ void CHARACTER::DeathPenalty(uint8_t bTown)
 		// NO_DEATH_PENALTY_BUG_FIX
 		if (!bTown) //   ڸ Ȱø  ȣ Ѵ. ( ͽô ġ гƼ )
 		{
-			if (FindAffect(AFFECT_NO_DEATH_PENALTY))
+			if (AffectSystem::FindAffect(GetEntityHandle(), AFFECT_NO_DEATH_PENALTY))
 			{
 #ifdef TEXTS_IMPROVEMENT
 				ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 384, "");
 #endif
-				RemoveAffect(AFFECT_NO_DEATH_PENALTY);
+				AffectSystem::RemoveAffect(GetEntityHandle(), AFFECT_NO_DEATH_PENALTY);
 				return;
 			}
 		}

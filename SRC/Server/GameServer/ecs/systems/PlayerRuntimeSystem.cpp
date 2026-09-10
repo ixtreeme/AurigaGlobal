@@ -2686,7 +2686,7 @@ uint8_t GetBattlePassId(entt::entity e)
 
 uint8_t CHARACTER::GetBattlePassId()
 {
-    CAffect* pAffect = FindAffect(AFFECT_BATTLE_PASS, POINT_BATTLE_PASS_ID);
+    CAffect* pAffect = AffectSystem::FindAffect(GetEntityHandle(), AFFECT_BATTLE_PASS, POINT_BATTLE_PASS_ID);
 
     if (!pAffect)
         return 0;
@@ -2822,7 +2822,7 @@ int CHARACTER::GetSoulItemDamage(entt::entity victim, int iDamage, uint8_t bSoul
     if (bSoulType >= SOUL_MAX_NUM)
         return 0;
 
-    const CAffect* pAffect = FindAffect(AFFECT_SOUL_RED + bSoulType);
+    const CAffect* pAffect = AffectSystem::FindAffect(GetEntityHandle(), AFFECT_SOUL_RED + bSoulType);
     int iDamageAdd = 0;
     if (pAffect)
     {
@@ -2847,7 +2847,7 @@ int CHARACTER::GetSoulItemDamage(entt::entity victim, int iDamage, uint8_t bSoul
                 {
                     ItemSystem::UnlockItem(soulItem);
                     ItemSystem::SetItemSocket(soulItem, 1, false);
-                    RemoveAffect(const_cast<CAffect*>(pAffect));
+                    AffectSystem::RemoveAffect(GetEntityHandle(), const_cast<CAffect*>(pAffect));
                 }
 
                 ItemSystem::SetItemSocket(soulItem, 2, 0);
@@ -4242,8 +4242,8 @@ void CHARACTER::Destroy()
 
     if (GetMountVnum())
     {
-        RemoveAffect(AFFECT_MOUNT);
-        RemoveAffect(AFFECT_MOUNT_BONUS);
+        AffectSystem::RemoveAffect(GetEntityHandle(), AFFECT_MOUNT);
+        AffectSystem::RemoveAffect(GetEntityHandle(), AFFECT_MOUNT_BONUS);
     }
     HorseSummon(false);
 #endif
@@ -4837,12 +4837,12 @@ void CHARACTER::OnMove(bool bIsAttack)
     {
         CombatSystem::SetLastAttackTime(GetEntityHandle(), m_dwLastMoveTime);
 
-        if (IsAffectFlag(AFF_REVIVE_INVISIBLE))
-            RemoveAffect(AFFECT_REVIVE_INVISIBLE);
+        if (AffectSystem::IsAffectFlag(GetEntityHandle(), AFF_REVIVE_INVISIBLE))
+            AffectSystem::RemoveAffect(GetEntityHandle(), AFFECT_REVIVE_INVISIBLE);
 
-        if (IsAffectFlag(AFF_EUNHYUNG))
+        if (AffectSystem::IsAffectFlag(GetEntityHandle(), AFF_EUNHYUNG))
         {
-            RemoveAffect(SKILL_EUNHYUNG);
+            AffectSystem::RemoveAffect(GetEntityHandle(), SKILL_EUNHYUNG);
             SetAffectedEunhyung();
         }
         else
@@ -4850,12 +4850,12 @@ void CHARACTER::OnMove(bool bIsAttack)
             ClearAffectedEunhyung();
         }
 
-        /*if (IsAffectFlag(AFF_JEONSIN))
-          RemoveAffect(SKILL_JEONSINBANGEO);*/
+        /*if (AffectSystem::IsAffectFlag(GetEntityHandle(), AFF_JEONSIN))
+          AffectSystem::RemoveAffect(GetEntityHandle(), SKILL_JEONSINBANGEO);*/
     }
 
-    /*if (IsAffectFlag(AFF_GUNGON))
-      RemoveAffect(SKILL_GUNGON);*/
+    /*if (AffectSystem::IsAffectFlag(GetEntityHandle(), AFF_GUNGON))
+      AffectSystem::RemoveAffect(GetEntityHandle(), SKILL_GUNGON);*/
 
     // MINING
     ActivitySystem::CancelMining(GetEntityHandle());
@@ -5290,11 +5290,11 @@ void CHARACTER::SetDropStatus()
         MYSQL_ROW row = mysql_fetch_row(msg->Get()->pSQLResult);
         int32_t r = atoi(row[0]);
         if (r == 1) {
-            RemoveAffect(AFFECT_DROP_BLOCK);
+            AffectSystem::RemoveAffect(GetEntityHandle(), AFFECT_DROP_BLOCK);
             AddAffect(AFFECT_DROP_UNBLOCK, APPLY_NONE, 0, 0, 31536000, 0, true, false);
         }
         else {
-            RemoveAffect(AFFECT_DROP_UNBLOCK);
+            AffectSystem::RemoveAffect(GetEntityHandle(), AFFECT_DROP_UNBLOCK);
             AddAffect(AFFECT_DROP_BLOCK, APPLY_NONE, 0, 0, 31536000, 0, true, false);
         }
     }
@@ -5496,7 +5496,7 @@ void CHARACTER::OpenMyShop(const char* c_pszSign, TShopItemTable* pTable, uint8_
 
     if (AffectSystem::IsPolymorphed(GetEntityHandle()) == true)
     {
-        RemoveAffect(AFFECT_POLYMORPH);
+        AffectSystem::RemoveAffect(GetEntityHandle(), AFFECT_POLYMORPH);
     }
 
     if (GetHorse())
@@ -5505,15 +5505,15 @@ void CHARACTER::OpenMyShop(const char* c_pszSign, TShopItemTable* pTable, uint8_
     }
     else if (GetMountVnum())
     {
-        RemoveAffect(AFFECT_MOUNT);
-        RemoveAffect(AFFECT_MOUNT_BONUS);
+        AffectSystem::RemoveAffect(GetEntityHandle(), AFFECT_MOUNT);
+        AffectSystem::RemoveAffect(GetEntityHandle(), AFFECT_MOUNT_BONUS);
     }
 
     uint32_t dwNpcShop = 30000;
 #ifdef KASMIR_PAKET_SYSTEM
     dwNpcShop = KasmirNpc >= 30000 && KasmirNpc <= 30007 ? KasmirNpc : 30000;
 #endif
-    SetPolymorph(dwNpcShop, true);
+    AffectSystem::SetPolymorph(GetEntityHandle(), dwNpcShop, true);
 }
 
 void CHARACTER::CloseMyShop()
@@ -5547,7 +5547,7 @@ void CHARACTER::CloseMyShop()
         p.szSign[0] = '\0';
 
         ecs::ViewSystem::PacketView(GetEntityHandle(), &p, sizeof(p));
-        SetPolymorph(GetJob(), true);
+        AffectSystem::SetPolymorph(GetEntityHandle(), GetJob(), true);
     }
 }
 

@@ -737,8 +737,8 @@ bool CHARACTER::StartRiding()
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(rider, CHAT_TYPE_INFO, 852, "");
 #endif
-		RemoveAffect(AFFECT_MOUNT);
-		RemoveAffect(AFFECT_MOUNT_BONUS);
+		AffectSystem::RemoveAffect(GetEntityHandle(), AFFECT_MOUNT);
+		AffectSystem::RemoveAffect(GetEntityHandle(), AFFECT_MOUNT_BONUS);
 		if (IsRiding())
 			StopRiding();
 		return false;
@@ -748,8 +748,8 @@ bool CHARACTER::StartRiding()
 #ifdef ENABLE_NEWSTUFF
 	if (g_NoMountAtGuildWar && GetWarMap())
 	{
-		RemoveAffect(AFFECT_MOUNT);
-		RemoveAffect(AFFECT_MOUNT_BONUS);
+		AffectSystem::RemoveAffect(GetEntityHandle(), AFFECT_MOUNT);
+		AffectSystem::RemoveAffect(GetEntityHandle(), AFFECT_MOUNT_BONUS);
 		if (IsRiding())
 			StopRiding();
 		return false;
@@ -1058,7 +1058,7 @@ bool CHARACTER::IsRidingMount()
 {
 	return ItemSystem::IsValidItem(
 		ItemSystem::GetWearItem(GetEntityHandle(), WEAR_COSTUME_MOUNT)) ||
-		FindAffect(AFFECT_MOUNT);
+		AffectSystem::FindAffect(GetEntityHandle(), AFFECT_MOUNT);
 }
 #endif
 

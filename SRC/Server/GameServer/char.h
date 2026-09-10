@@ -797,7 +797,6 @@ public:
 	uint8_t			GetBlockMode() const;
 	bool			IsBlockMode(uint8_t bFlag) const;
 
-	void			SetPolymorph(uint32_t dwRaceNum, bool bMaintainStat = false);
 
 	// FISING
 	void			fishing();
@@ -978,16 +977,11 @@ private:
 	////////////////////////////////////////////////////////////////////////////////////////
 	// Affect
 public:
-	void			StartAffectEvent();
 	void			ClearAffect(bool bSave = false);
 	void			ComputeAffect(CAffect* pkAff, bool bAdd);
 	bool			AddAffect(uint32_t dwType, uint8_t bApplyOn, int32_t lApplyValue, uint32_t dwFlag, int32_t lDuration, int32_t lSPCost, bool bOverride, bool IsCube = false);
-	void			RefreshAffect();
-	bool			RemoveAffect(uint32_t dwType);
-	bool			IsAffectFlag(uint32_t dwAff) const;
 
 	bool			UpdateAffect();	// called from EVENT
-	int				ProcessAffect();
 
 	void			LoadAffect(uint32_t dwCount, TPacketAffectElement* pElements);
 	void			SaveAffect();
@@ -996,13 +990,9 @@ public:
 
 	bool			IsGoodAffect(uint8_t bAffectType) const;
 
-	void			RemoveGoodAffect();
-	void			RemoveBadAffect();
 
 	CAffect* FindAffect(uint32_t dwType, uint8_t bApply = APPLY_NONE) const;
-	std::vector<std::shared_ptr<CAffect>> GetAffectContainer() const;
 	TAffectFlag GetAffectFlags() const;
-	bool			RemoveAffect(CAffect* pkAff);
 
 #ifdef ENABLE_SKILLS_BUFF_ALTERNATIVE
 public:

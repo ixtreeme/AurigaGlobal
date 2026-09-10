@@ -1062,7 +1062,7 @@ bool CHARACTER::Show(int32_t lMapIndex, int32_t x, int32_t y, int32_t z, bool bS
     {
         LOG_TRACE("SHOW: {} {}x{}x{}", GetName(), x, y, z);
         if (GetStamina() < GetMaxStamina())
-            StartAffectEvent();
+            AffectSystem::StartAffectEvent(GetEntityHandle());
     }
     else if (m_pkMobData)
     {
@@ -1381,8 +1381,8 @@ void CHARACTER::Disconnect(const char* c_pszReason)
 #ifdef ENABLE_MOUNT_COSTUME_SYSTEM
     if (GetMountVnum())
     {
-        RemoveAffect(AFFECT_MOUNT);
-        RemoveAffect(AFFECT_MOUNT_BONUS);
+        AffectSystem::RemoveAffect(GetEntityHandle(), AFFECT_MOUNT);
+        AffectSystem::RemoveAffect(GetEntityHandle(), AFFECT_MOUNT_BONUS);
     }
 #endif
 

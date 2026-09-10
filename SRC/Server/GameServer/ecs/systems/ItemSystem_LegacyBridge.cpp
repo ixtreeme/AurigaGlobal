@@ -4416,7 +4416,7 @@ void CHARACTER::AutoRecallProcess()
 
 #ifdef __PET_SYSTEM__
 	{
-		const CAffect* pAffect = FindAffect(AFFECT_RECALL1);
+		const CAffect* pAffect = AffectSystem::FindAffect(GetEntityHandle(), AFFECT_RECALL1);
 		if (pAffect) {
 			const entt::entity pItem = ItemSystem::FindItemByID(GetEntityHandle(), pAffect->dwFlag);
 			if (pItem != entt::null) {
@@ -4426,21 +4426,21 @@ void CHARACTER::AutoRecallProcess()
 						if (petSystem->CountSummoned() < 1) {
 							CPetActor* pPet = petSystem->Summon(ItemSystem::GetItemValue(pItem, 1), pItem, "", false);
 							if (!pPet)
-								RemoveAffect(const_cast<CAffect*>(pAffect));
+								AffectSystem::RemoveAffect(GetEntityHandle(), const_cast<CAffect*>(pAffect));
 						}
 					}
 					else
-						RemoveAffect(const_cast<CAffect*>(pAffect));
+						AffectSystem::RemoveAffect(GetEntityHandle(), const_cast<CAffect*>(pAffect));
 				}
 			}
 			else
-				RemoveAffect(const_cast<CAffect*>(pAffect));
+				AffectSystem::RemoveAffect(GetEntityHandle(), const_cast<CAffect*>(pAffect));
 		}
 	}
 #endif
 #ifdef __NEWPET_SYSTEM__
 	{
-		const CAffect* pAffect = FindAffect(AFFECT_RECALL2);
+		const CAffect* pAffect = AffectSystem::FindAffect(GetEntityHandle(), AFFECT_RECALL2);
 		if (pAffect) {
 			const entt::entity pItem = ItemSystem::FindItemByID(GetEntityHandle(), pAffect->dwFlag);
 			if (pItem != entt::null) {
@@ -4450,15 +4450,15 @@ void CHARACTER::AutoRecallProcess()
 						if (petSystem->CountSummoned() < 1) {
 							CNewPetActor* pPet = petSystem->Summon(ItemSystem::GetItemValue(pItem, 0), pItem, "", false);
 							if (!pPet)
-								RemoveAffect(const_cast<CAffect*>(pAffect));
+								AffectSystem::RemoveAffect(GetEntityHandle(), const_cast<CAffect*>(pAffect));
 						}
 					}
 					else
-						RemoveAffect(const_cast<CAffect*>(pAffect));
+						AffectSystem::RemoveAffect(GetEntityHandle(), const_cast<CAffect*>(pAffect));
 				}
 			}
 			else
-				RemoveAffect(const_cast<CAffect*>(pAffect));
+				AffectSystem::RemoveAffect(GetEntityHandle(), const_cast<CAffect*>(pAffect));
 		}
 	}
 #endif
