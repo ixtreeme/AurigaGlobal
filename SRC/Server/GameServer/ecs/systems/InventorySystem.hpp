@@ -22,6 +22,8 @@ entt::entity GetRefineNPC(entt::entity owner);
 void SetRefineNPC(entt::entity owner, entt::entity npc);
 void SetRefineMode(entt::entity owner, int additionalCell);
 void ClearRefineMode(entt::entity owner);
+int64_t ComputeRefineFee(entt::entity owner, int64_t cost, int64_t multiply = 5);
+void PayRefineFee(entt::entity owner, int64_t total);
 
 #ifdef __HIGHLIGHT_SYSTEM__
 bool AddToCharacter(entt::entity item, entt::entity ch, TItemPos Cell, bool isHighLight = true);

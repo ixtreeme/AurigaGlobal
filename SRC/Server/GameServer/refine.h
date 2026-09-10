@@ -52,10 +52,10 @@ class CRefineManager : public singleton<CRefineManager>
 
 
 #ifdef ENABLE_FEATURES_REFINE_SYSTEM
-	bool	GetPercentage(LPCHARACTER ch, uint8_t lLow, uint8_t lMedium, uint8_t lExtra, uint8_t total, entt::entity item);
-	void	Increase(LPCHARACTER ch, uint8_t lLow, uint8_t lMedium, uint8_t lExtra);
-	void	Reset(LPCHARACTER ch);
-	void	Reset_percent(LPCHARACTER ch);
+	bool	GetPercentage(entt::entity ch, uint8_t lLow, uint8_t lMedium, uint8_t lExtra, uint8_t total, entt::entity item);
+	void	Increase(entt::entity ch, uint8_t lLow, uint8_t lMedium, uint8_t lExtra);
+	void	Reset(entt::entity ch);
+	void	Reset_percent(entt::entity ch);
 	int		Result(entt::entity ch);
 #endif
 

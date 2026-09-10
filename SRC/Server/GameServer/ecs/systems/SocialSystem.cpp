@@ -106,6 +106,36 @@ void SetMyShopTime(entt::entity e)
     g_registry.emplace_or_replace<ecs::DirtyTag>(e);
 }
 
+// When this character last refined. Like the shop time above, it blocks a
+// warp for a moment so the trade cannot be escaped mid-way.
+int GetRefineTime(entt::entity e)
+{
+    if (e == entt::null || !g_registry.valid(e))
+        return 0;
+    const auto* warp = g_registry.try_get<ecs::WarpBlockState>(e);
+    return warp ? warp->refineTime : 0;
+}
+
+void SetRefineTime(entt::entity e)
+{
+    if (e == entt::null || !g_registry.valid(e))
+        return;
+    g_registry.get_or_emplace<ecs::WarpBlockState>(e).refineTime = thecore_pulse();
+    g_registry.emplace_or_replace<ecs::DirtyTag>(e);
+}
+
+// The guild behind the refine NPC this character is standing at, if any. A
+// guild smith charges differently from the town one.
+CGuild* GetRefineGuild(entt::entity e)
+{
+    return GetGuild(InventorySystem::GetRefineNPC(e));
+}
+
+bool IsRefineThroughGuild(entt::entity e)
+{
+    return GetRefineGuild(e) != nullptr;
+}
+
 int GetLastBuyTime(entt::entity e)
 {
     if (e == entt::null || !g_registry.valid(e))
@@ -884,16 +914,6 @@ int ecs::SocialSystem::GetMarriageBonus(entt::entity e, uint32_t itemVnum, bool 
 int CHARACTER::GetMarriageBonus(uint32_t dwItemVnum, bool bSum)
 {
     return ecs::SocialSystem::GetMarriageBonus(GetEntityHandle(), dwItemVnum, bSum);
-}
-
-CGuild* CHARACTER::GetRefineGuild() const
-{
-    return ecs::SocialSystem::GetGuild(InventorySystem::GetRefineNPC(GetEntityHandle()));
-}
-
-bool CHARACTER::IsRefineThroughGuild() const
-{
-    return GetRefineGuild() != nullptr;
 }
 
 struct FFindReviver

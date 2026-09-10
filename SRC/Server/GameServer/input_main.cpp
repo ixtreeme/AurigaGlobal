@@ -4377,13 +4377,13 @@ void CInputMain::Refine(entt::entity character, const char* c_pData)
 	const entt::entity itemEntity = ItemSystem::GetInventoryItem(owner, p->pos);
 
 #ifdef ENABLE_FEATURES_REFINE_SYSTEM
-	if (!CRefineManager::instance().GetPercentage(ch, p->lLow, p->lMedium, p->lExtra, p->lTotal, itemEntity))
+	if (!CRefineManager::instance().GetPercentage(owner, p->lLow, p->lMedium, p->lExtra, p->lTotal, itemEntity))
 	{
 		ch->ClearRefineMode();
 		return;
 	}
 
-	CRefineManager::instance().Increase(ch, p->lLow, p->lMedium, p->lExtra);
+	CRefineManager::instance().Increase(owner, p->lLow, p->lMedium, p->lExtra);
 #endif
 
 	if (!ItemSystem::IsValidItem(itemEntity))
@@ -4392,7 +4392,7 @@ void CInputMain::Refine(entt::entity character, const char* c_pData)
 		return;
 	}
 
-	ch->SetRefineTime();
+	ecs::SocialSystem::SetRefineTime(owner);
 
 	if (p->type == REFINE_TYPE_NORMAL)
 	{

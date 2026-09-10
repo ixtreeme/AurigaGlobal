@@ -576,16 +576,6 @@ void CHARACTER::SetSafeboxLoadTime()
     }
 }
 
-void CHARACTER::SetRefineTime()
-{
-    m_iRefineTime = thecore_pulse();
-    if (auto* warp = EnsureWarpBlockState(GetEntityHandle()))
-    {
-        warp->refineTime = m_iRefineTime;
-        g_registry.emplace_or_replace<ecs::DirtyTag>(GetEntityHandle());
-    }
-}
-
 bool CHARACTER::CanWarp() const
 {
     const int iPulse = thecore_pulse();
@@ -600,7 +590,7 @@ bool CHARACTER::CanWarp() const
     if ((iPulse - ecs::SocialSystem::GetMyShopTime(GetEntityHandle())) < limit_time)
         return false;
 
-    if ((iPulse - GetRefineTime()) < limit_time)
+    if ((iPulse - ecs::SocialSystem::GetRefineTime(GetEntityHandle())) < limit_time)
         return false;
 
     if (ExchangeSystem::IsActive(GetEntityHandle()) || GetMyShop() || GetShopOwner() || IsOpenSafebox() || IsCubeOpen()

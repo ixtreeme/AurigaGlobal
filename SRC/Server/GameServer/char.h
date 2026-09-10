@@ -1192,10 +1192,6 @@ public:
 	bool			UseItem(TItemPos Cell, TItemPos DestCell = NPOS);
 
 	// ADD_REFINE_BUILDING
-	bool			IsRefineThroughGuild() const;
-	CGuild* GetRefineGuild() const;
-	int64_t				ComputeRefineFee(int64_t iCost, int64_t iMultiply = 5) const;
-	void			PayRefineFee(int64_t iTotalMoney);
 	void			SetRefineNPC(entt::entity character);
 	// END_OF_ADD_REFINE_BUILDING
 
@@ -2006,9 +2002,6 @@ public:
 	int		GetSkillPowerByLevel(int level, bool bMob = false) const;
 
 	//PREVENT_REFINE_HACK
-	int		GetRefineTime() const { return m_iRefineTime; }
-	void	SetRefineTime();
-	int		m_iRefineTime;
 	//END_PREVENT_REFINE_HACK
 
 	//RESTRICT_USE_SEED_OR_MOONBOTTLE

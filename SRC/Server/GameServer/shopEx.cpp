@@ -128,8 +128,8 @@ bool CShopEx::AddGuest(entt::entity guest, uint32_t owner_vid, bool bOtherEmpire
 
 int64_t CShopEx::Buy(entt::entity ch, uint8_t pos)
 {
-	// Counting and removing the coin, finding a free slot and saving are
-	// still CHARACTER work; the inventory is its own migration.
+	// Removing the coin, finding a free slot and saving are still CHARACTER
+	// work; the inventory is its own migration.
 	LPCHARACTER inventory = ecs::LegacyCharOf(ch);
 	if (!inventory)
 		return SHOP_SUBHEADER_GC_END;
@@ -174,7 +174,7 @@ int64_t CShopEx::Buy(entt::entity ch, uint8_t pos)
 		break;
 	case SHOP_COIN_TYPE_SECONDARY_COIN:
 		{
-			uint32_t count = inventory->CountSpecifyTypeItem(ITEM_SECONDARY_COIN);
+			uint32_t count = ItemSystem::CountTypeItem(ch, ITEM_SECONDARY_COIN);
 			if (count < dwPrice)
 			{
 				LOG_INFO("ShopEx::Buy : Not enough myeongdojun : {} has {}, price {}", ecs::PlayerRuntime::GetName(ch).data(), count, dwPrice);

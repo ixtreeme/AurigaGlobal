@@ -4449,43 +4449,6 @@ void CHARACTER::MountVnum(uint32_t vnum)
     ComputePoints();
 }
 
-int64_t CHARACTER::ComputeRefineFee(int64_t iCost, int64_t iMultiply) const
-{
-    CGuild* pGuild = GetRefineGuild();
-    if (pGuild)
-    {
-        if (pGuild == GetGuild())
-            return iCost * iMultiply * 9 / 10;
-
-        const auto npc = InventorySystem::GetRefineNPC(GetEntityHandle());
-        if (ecs::PlayerRuntime::IsValid(npc) && ecs::PlayerRuntime::GetEmpire(npc) != GetEmpire())
-            return iCost * iMultiply * 3;
-
-        return iCost * iMultiply;
-    }
-    else
-        return iCost;
-}
-
-void CHARACTER::PayRefineFee(int64_t iTotalMoney)
-{
-    int64_t iFee = iTotalMoney / 10;
-    CGuild* pGuild = GetRefineGuild();
-
-    int64_t iRemain = iTotalMoney;
-
-    if (pGuild)
-    {
-        if (pGuild != GetGuild())
-        {
-            pGuild->RequestDepositMoney(GetEntityHandle(), iFee);
-            iRemain -= iFee;
-        }
-    }
-
-    PointChange(POINT_GOLD, -iRemain);
-}
-
 void CHARACTER::StartDestroyWhenIdleEvent()
 {
     if (m_pkDestroyWhenIdleEvent)
@@ -5750,7 +5713,6 @@ void CHARACTER::Initialize()
     m_pArena = nullptr;
 
 
-    m_iRefineTime = 0;
 
     m_iSeedTime = 0;
 

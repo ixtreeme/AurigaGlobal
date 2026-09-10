@@ -17,6 +17,8 @@
 #include "../components/character_runtime_components.hpp"
 
 #include "InventorySystem.hpp"
+#include "SocialSystem.hpp"
+#include "PointSystem.hpp"
 #include "ItemSystem.hpp"
 #include "NetworkSyncSystem.hpp"
 #include "ViewSystem.hpp"
@@ -454,6 +456,42 @@ void SetRefineMode(entt::entity owner, int additionalCell)
     auto& state = g_registry.get_or_emplace<ecs::ShopState>(owner);
     state.refineCell = additionalCell;
     state.underRefine = true;
+}
+
+// What this refine costs. A guild smith takes a tenth off its own members and
+// triples the price for another empire's.
+int64_t ComputeRefineFee(entt::entity owner, int64_t cost, int64_t multiply)
+{
+    CGuild* pGuild = ecs::SocialSystem::GetRefineGuild(owner);
+    if (!pGuild)
+        return cost;
+
+    if (pGuild == ecs::SocialSystem::GetGuild(owner))
+        return cost * multiply * 9 / 10;
+
+    const entt::entity npc = GetRefineNPC(owner);
+    if (ecs::PlayerRuntime::IsValid(npc)
+        && ecs::PlayerRuntime::GetEmpire(npc) != ecs::PlayerRuntime::GetEmpire(owner))
+        return cost * multiply * 3;
+
+    return cost * multiply;
+}
+
+// A tenth of a foreign guild smith's fee is deposited with that guild.
+void PayRefineFee(entt::entity owner, int64_t total)
+{
+    const int64_t fee = total / 10;
+    CGuild* pGuild = ecs::SocialSystem::GetRefineGuild(owner);
+
+    int64_t remain = total;
+
+    if (pGuild && pGuild != ecs::SocialSystem::GetGuild(owner))
+    {
+        pGuild->RequestDepositMoney(owner, fee);
+        remain -= fee;
+    }
+
+    ecs::PointSystem::Change(owner, POINT_GOLD, -remain);
 }
 
 void ClearRefineMode(entt::entity owner)

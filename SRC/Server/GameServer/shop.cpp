@@ -220,8 +220,8 @@ int64_t CShop::Buy(entt::entity ch, uint8_t pos
 )
 
 {
-	// Counting, emptying and saving the buyer's inventory still go through
-	// CHARACTER; the inventory is its own migration. One resolve, named.
+	// Finding a free inventory slot and the save still go through CHARACTER;
+	// both are the inventory's own migration. One resolve, named.
 	LPCHARACTER inventory = ecs::LegacyCharOf(ch);
 	if (!inventory)
 		return SHOP_SUBHEADER_GC_END;
@@ -295,7 +295,7 @@ int64_t CShop::Buy(entt::entity ch, uint8_t pos
 		dwPriceVnum = r_item.itemprice[i].vnum;
 		if (dwPriceVnum > 0) {
 			dwPriceCount = r_item.itemprice[i].count;
-			dwHaveCount = inventory->CountSpecifyItem(dwPriceVnum);
+			dwHaveCount = ItemSystem::CountItem(ch, dwPriceVnum);
 			if (dwHaveCount < dwPriceCount) {
 				LOG_INFO("Shop::Buy : Not enough item : {} has {}, price {}.", ecs::PlayerRuntime::GetName(ch).data(), dwHaveCount, dwPriceCount);
 				return SHOP_SUBHEADER_GC_NOT_ENOUGH_ITEM;
@@ -703,7 +703,7 @@ int64_t CShop::Buy(entt::entity ch, uint8_t pos
 
 #ifdef ENABLE_BUY_STACK_FROM_SHOP
 uint8_t CShop::MultipleBuy(entt::entity ch, uint8_t p, uint8_t c) {
-	// As in Buy: the inventory count and the save are still CHARACTER work.
+	// As in Buy: the save is still CHARACTER work.
 	LPCHARACTER inventory = ecs::LegacyCharOf(ch);
 	if (!inventory)
 		return SHOP_SUBHEADER_GC_END;
@@ -752,7 +752,7 @@ uint8_t CShop::MultipleBuy(entt::entity ch, uint8_t p, uint8_t c) {
 		price_vnum = r_item.itemprice[i].vnum;
 		if (price_vnum > 0) {
 			price_count = r_item.itemprice[i].count * c;
-			have_count = inventory->CountSpecifyItem(price_vnum);
+			have_count = ItemSystem::CountItem(ch, price_vnum);
 			if (have_count < price_count) {
 				LOG_INFO("Shop::MultipleBuy: Not enough item : {} has {}, price {}.", ecs::PlayerRuntime::GetName(ch).data(), have_count, price_count);
 				return SHOP_SUBHEADER_GC_NOT_ENOUGH_ITEM;

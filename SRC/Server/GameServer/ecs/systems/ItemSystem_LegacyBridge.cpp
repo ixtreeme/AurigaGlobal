@@ -2823,7 +2823,7 @@ bool CHARACTER::UseItem(TItemPos Cell, TItemPos DestCell)
 		//°³·®ÈÄ ½Ã°£Ã¼�
 // ©
 		{
-			if (iPulse - GetRefineTime() < PASSES_PER_SEC(g_nPortalLimitTime))
+			if (iPulse - ecs::SocialSystem::GetRefineTime(GetEntityHandle()) < PASSES_PER_SEC(g_nPortalLimitTime))
 			{
 #ifdef TEXTS_IMPROVEMENT
 				ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 234, "%d", g_nPortalLimitTime);
@@ -8536,8 +8536,8 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 int g_nPortalLimitTime = 10;
 
 void TransformRefineItem(LPITEM pkOldItem, LPITEM pkNewItem);
-void NotifyRefineSuccess(LPCHARACTER ch, LPITEM item, const char* way);
-void NotifyRefineFail(LPCHARACTER ch, LPITEM item, const char* way, int success = 0);
+void NotifyRefineSuccess(entt::entity ch, entt::entity item, const char* way);
+void NotifyRefineFail(entt::entity ch, entt::entity item, const char* way, int success = 0);
 
 void CHARACTER::SetRefineNPC(entt::entity npc)
 {
@@ -8572,7 +8572,7 @@ bool CHARACTER::DoRefine(LPITEM item, bool bMoneyOnly)
 		return false;
 
 	uint32_t result_vnum = item->GetRefinedVnum();
-	int64_t cost = ComputeRefineFee(prt->cost);
+	int64_t cost = InventorySystem::ComputeRefineFee(GetEntityHandle(), prt->cost);
 
 	if (result_vnum == 0)
 	{
@@ -8601,7 +8601,7 @@ bool CHARACTER::DoRefine(LPITEM item, bool bMoneyOnly)
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 232, "");
 #ifdef ENABLE_FEATURES_REFINE_SYSTEM
-		CRefineManager::instance().Reset_percent(this);
+		CRefineManager::instance().Reset_percent(GetEntityHandle());
 #endif
 #endif
 		return false;
@@ -8628,7 +8628,7 @@ bool CHARACTER::DoRefine(LPITEM item, bool bMoneyOnly)
 
 
 #ifdef ENABLE_FEATURES_REFINE_SYSTEM	
-	if (IsRefineThroughGuild() || bMoneyOnly)
+	if (ecs::SocialSystem::IsRefineThroughGuild(GetEntityHandle()) || bMoneyOnly)
 	{
 		prob -= 10;
 	}
@@ -8636,7 +8636,7 @@ bool CHARACTER::DoRefine(LPITEM item, bool bMoneyOnly)
 	int success_prob = prt->prob;
 	success_prob += CRefineManager::instance().Result(GetEntityHandle());
 #else
-	if (IsRefineThroughGuild() || bMoneyOnly)
+	if (ecs::SocialSystem::IsRefineThroughGuild(GetEntityHandle()) || bMoneyOnly)
 		prob -= 10;
 
 #endif
@@ -8674,7 +8674,7 @@ bool CHARACTER::DoRefine(LPITEM item, bool bMoneyOnly)
 #endif
 
 			// DETAIL_REFINE_LOG
-			NotifyRefineSuccess(this, item, IsRefineThroughGuild() ? "GUILD" : "POWER");
+			NotifyRefineSuccess(GetEntityHandle(), item->GetEntityHandle(), ecs::SocialSystem::IsRefineThroughGuild(GetEntityHandle()) ? "GUILD" : "POWER");
 			DBManager::instance().SendMoneyLog(MONEY_LOG_REFINE, item->GetVnum(), -cost);
 			ITEM_MANAGER::instance().RemoveItem(item->GetEntityHandle(), "REMOVE (REFINE SUCCESS)");
 			// END_OF_DETAIL_REFINE_LOG
@@ -8687,9 +8687,9 @@ bool CHARACTER::DoRefine(LPITEM item, bool bMoneyOnly)
 			//PointChange(POINT_GOLD, -cost);
 			LOG_INFO("PayPee {}", (long long)cost);
 #ifdef ENABLE_FEATURES_REFINE_SYSTEM
-			CRefineManager::instance().Reset(this);
+			CRefineManager::instance().Reset(GetEntityHandle());
 #endif
-			PayRefineFee(cost);
+			InventorySystem::PayRefineFee(GetEntityHandle(), cost);
 			LOG_INFO("PayPee End {}", cost);
 		}
 		else
@@ -8698,7 +8698,7 @@ bool CHARACTER::DoRefine(LPITEM item, bool bMoneyOnly)
 			// ¾ÆÀÌ�
 // Û »ý¼º¿¡ ½ÇÆÐ -> °³·® ½ÇÆÐ·Î °£ÁÖ
 			LOG_ERROR("cannot create item {}", result_vnum);
-			NotifyRefineFail(this, item, IsRefineThroughGuild() ? "GUILD" : "POWER");
+			NotifyRefineFail(GetEntityHandle(), item->GetEntityHandle(), ecs::SocialSystem::IsRefineThroughGuild(GetEntityHandle()) ? "GUILD" : "POWER");
 			// END_OF_DETAIL_REFINE_LOG
 		}
 	}
@@ -8707,15 +8707,15 @@ bool CHARACTER::DoRefine(LPITEM item, bool bMoneyOnly)
 		// ½ÇÆÐ! ¸ðµç ¾ÆÀÌ�
 // ÛÀÌ »ç¶óÁü.
 		DBManager::instance().SendMoneyLog(MONEY_LOG_REFINE, item->GetVnum(), -cost);
-		NotifyRefineFail(this, item, IsRefineThroughGuild() ? "GUILD" : "POWER");
+		NotifyRefineFail(GetEntityHandle(), item->GetEntityHandle(), ecs::SocialSystem::IsRefineThroughGuild(GetEntityHandle()) ? "GUILD" : "POWER");
 		ItemSystem::AttrLog(item->GetEntityHandle());
 		ITEM_MANAGER::instance().RemoveItem(item->GetEntityHandle(), "REMOVE (REFINE FAIL)");
 
 		//PointChange(POINT_GOLD, -cost);
 #ifdef ENABLE_FEATURES_REFINE_SYSTEM
-		CRefineManager::instance().Reset(this);
+		CRefineManager::instance().Reset(GetEntityHandle());
 #endif
-		PayRefineFee(cost);
+		InventorySystem::PayRefineFee(GetEntityHandle(), cost);
 	}
 
 	return true;
@@ -8929,7 +8929,7 @@ bool CHARACTER::DoRefineWithScroll(LPITEM item)
 		ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 232, "");
 #endif
 #ifdef ENABLE_FEATURES_REFINE_SYSTEM
-		CRefineManager::instance().Reset_percent(this);
+		CRefineManager::instance().Reset_percent(GetEntityHandle());
 #endif
 		return false;
 	}
@@ -9051,7 +9051,7 @@ bool CHARACTER::DoRefineWithScroll(LPITEM item)
 			}
 #endif
 
-			NotifyRefineSuccess(this, item, szRefineType);
+			NotifyRefineSuccess(GetEntityHandle(), item->GetEntityHandle(), szRefineType);
 
 			DBManager::instance().SendMoneyLog(MONEY_LOG_REFINE, item->GetVnum(), -prt->cost);
 			ITEM_MANAGER::instance().RemoveItem(item->GetEntityHandle(), "REMOVE (REFINE SUCCESS)");
@@ -9063,9 +9063,9 @@ bool CHARACTER::DoRefineWithScroll(LPITEM item)
 			ItemSystem::AttrLog(pkNewItem);
 			//PointChange(POINT_GOLD, -prt->cost);
 #ifdef ENABLE_FEATURES_REFINE_SYSTEM
-			CRefineManager::instance().Reset(this);
+			CRefineManager::instance().Reset(GetEntityHandle());
 #endif
-			PayRefineFee(prt->cost);
+			InventorySystem::PayRefineFee(GetEntityHandle(), prt->cost);
 #ifdef ENABLE_UPGRADE_NOTICE_BY_RAZOR93
 			if (ItemSystem::GetItemRefineLevel(pkNewItem) >= 8)
 			{
@@ -9149,7 +9149,7 @@ bool CHARACTER::DoRefineWithScroll(LPITEM item)
 			// ¾ÆÀÌ�
 // Û »ý¼º¿¡ ½ÇÆÐ -> °³·® ½ÇÆÐ·Î °£ÁÖ
 			LOG_ERROR("cannot create item {}", result_vnum);
-			NotifyRefineFail(this, item, szRefineType);
+			NotifyRefineFail(GetEntityHandle(), item->GetEntityHandle(), szRefineType);
 		}
 
 	}
@@ -9182,7 +9182,7 @@ bool CHARACTER::DoRefineWithScroll(LPITEM item)
 #endif
 
 			DBManager::instance().SendMoneyLog(MONEY_LOG_REFINE, item->GetVnum(), -prt->cost);
-			NotifyRefineFail(this, item, szRefineType, -1);
+			NotifyRefineFail(GetEntityHandle(), item->GetEntityHandle(), szRefineType, -1);
 			ITEM_MANAGER::instance().RemoveItem(item->GetEntityHandle(), "REMOVE (REFINE FAIL)");
 
 			InventorySystem::AddToCharacter(pkNewItem, GetEntityHandle(), TItemPos(INVENTORY, bCell));
@@ -9192,27 +9192,27 @@ bool CHARACTER::DoRefineWithScroll(LPITEM item)
 
 			//PointChange(POINT_GOLD, -prt->cost);
 #ifdef ENABLE_FEATURES_REFINE_SYSTEM
-			CRefineManager::instance().Reset(this);
+			CRefineManager::instance().Reset(GetEntityHandle());
 #endif
-			PayRefineFee(prt->cost);
+			InventorySystem::PayRefineFee(GetEntityHandle(), prt->cost);
 		}
 		else
 		{
 			// ¾ÆÀÌ�
 // Û »ý¼º¿¡ ½ÇÆÐ -> °³·® ½ÇÆÐ·Î °£ÁÖ
 			LOG_ERROR("cannot create item {}", result_fail_vnum);
-			NotifyRefineFail(this, item, szRefineType);
+			NotifyRefineFail(GetEntityHandle(), item->GetEntityHandle(), szRefineType);
 		}
 	}
 	else
 	{
-		NotifyRefineFail(this, item, szRefineType); // °³·®½Ã ¾ÆÀÌ�
+		NotifyRefineFail(GetEntityHandle(), item->GetEntityHandle(), szRefineType); // °³·®½Ã ¾ÆÀÌ�
 // Û »ç¶óÁöÁö ¾ÊÀ½
 
 #ifdef ENABLE_FEATURES_REFINE_SYSTEM
-		CRefineManager::instance().Reset(this);
+		CRefineManager::instance().Reset(GetEntityHandle());
 #endif
-		PayRefineFee(prt->cost);
+		InventorySystem::PayRefineFee(GetEntityHandle(), prt->cost);
 	}
 
 	return true;
@@ -9326,7 +9326,7 @@ bool CHARACTER::DoRefineWithScroll(LPITEM item)
 		ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 232, "");
 #endif
 #ifdef ENABLE_FEATURES_REFINE_SYSTEM
-		CRefineManager::instance().Reset_percent(this);
+		CRefineManager::instance().Reset_percent(GetEntityHandle());
 #endif
 		return false;
 	}
@@ -9414,7 +9414,7 @@ bool CHARACTER::DoRefineWithScroll(LPITEM item)
 	}
 
 #ifdef ENABLE_FEATURES_REFINE_SYSTEM	
-	success_prob += CRefineManager::instance().Result(this);
+	success_prob += CRefineManager::instance().Result(GetEntityHandle());
 
 #endif
 	ItemSystem::ConsumeItemEcs((pkItemScroll ? pkItemScroll->GetEntityHandle() : entt::null));
@@ -9447,7 +9447,7 @@ bool CHARACTER::DoRefineWithScroll(LPITEM item)
 			}
 #endif
 
-			NotifyRefineSuccess(this, item, szRefineType);
+			NotifyRefineSuccess(GetEntityHandle(), item->GetEntityHandle(), szRefineType);
 
 			DBManager::instance().SendMoneyLog(MONEY_LOG_REFINE, item->GetVnum(), -prt->cost);
 			ITEM_MANAGER::instance().RemoveItem(item, "REMOVE (REFINE SUCCESS)");
@@ -9459,9 +9459,9 @@ bool CHARACTER::DoRefineWithScroll(LPITEM item)
 			ItemSystem::AttrLog(pkNewItem);
 			//PointChange(POINT_GOLD, -prt->cost);
 #ifdef ENABLE_FEATURES_REFINE_SYSTEM
-			CRefineManager::instance().Reset(this);
+			CRefineManager::instance().Reset(GetEntityHandle());
 #endif
-			PayRefineFee(prt->cost);
+			InventorySystem::PayRefineFee(GetEntityHandle(), prt->cost);
 #ifdef ENABLE_UPGRADE_NOTICE_BY_RAZOR93
 			if (ItemSystem::GetItemRefineLevel(pkNewItem) >= 8)
 			{
@@ -9545,7 +9545,7 @@ bool CHARACTER::DoRefineWithScroll(LPITEM item)
 			// ¾ÆÀÌ�
 // Û »ý¼º¿¡ ½ÇÆÐ -> °³·® ½ÇÆÐ·Î °£ÁÖ
 			LOG_ERROR("cannot create item {}", result_vnum);
-			NotifyRefineFail(this, item, szRefineType);
+			NotifyRefineFail(GetEntityHandle(), item->GetEntityHandle(), szRefineType);
 		}
 
 	}
@@ -9578,7 +9578,7 @@ bool CHARACTER::DoRefineWithScroll(LPITEM item)
 #endif
 
 			DBManager::instance().SendMoneyLog(MONEY_LOG_REFINE, item->GetVnum(), -prt->cost);
-			NotifyRefineFail(this, item, szRefineType, -1);
+			NotifyRefineFail(GetEntityHandle(), item->GetEntityHandle(), szRefineType, -1);
 			ITEM_MANAGER::instance().RemoveItem(item, "REMOVE (REFINE FAIL)");
 
 			InventorySystem::AddToCharacter(pkNewItem->GetEntityHandle(), GetEntityHandle(), TItemPos(INVENTORY, bCell));
@@ -9588,27 +9588,27 @@ bool CHARACTER::DoRefineWithScroll(LPITEM item)
 
 			//PointChange(POINT_GOLD, -prt->cost);
 #ifdef ENABLE_FEATURES_REFINE_SYSTEM
-			CRefineManager::instance().Reset(this);
+			CRefineManager::instance().Reset(GetEntityHandle());
 #endif
-			PayRefineFee(prt->cost);
+			InventorySystem::PayRefineFee(GetEntityHandle(), prt->cost);
 		}
 		else
 		{
 			// ¾ÆÀÌ�
 // Û »ý¼º¿¡ ½ÇÆÐ -> °³·® ½ÇÆÐ·Î °£ÁÖ
 			LOG_ERROR("cannot create item {}", result_fail_vnum);
-			NotifyRefineFail(this, item, szRefineType);
+			NotifyRefineFail(GetEntityHandle(), item->GetEntityHandle(), szRefineType);
 		}
 	}
 	else
 	{
-		NotifyRefineFail(this, item, szRefineType); // °³·®½Ã ¾ÆÀÌ�
+		NotifyRefineFail(GetEntityHandle(), item->GetEntityHandle(), szRefineType); // °³·®½Ã ¾ÆÀÌ�
 // Û »ç¶óÁöÁö ¾ÊÀ½
 
 #ifdef ENABLE_FEATURES_REFINE_SYSTEM
-		CRefineManager::instance().Reset(this);
+		CRefineManager::instance().Reset(GetEntityHandle());
 #endif
-		PayRefineFee(prt->cost);
+		InventorySystem::PayRefineFee(GetEntityHandle(), prt->cost);
 	}
 
 	return true;
@@ -9797,7 +9797,7 @@ bool CHARACTER::RefineInformation(uint8_t bCell, uint8_t bType, int iAdditionalC
 		return false;
 	}
 
-	p.cost = ComputeRefineFee(prt->cost);
+	p.cost = InventorySystem::ComputeRefineFee(GetEntityHandle(), prt->cost);
 #ifdef NEW_POINT_EXP_DOUBLE_BONUS_RAZOR93
 	int success_prob = prt->prob;
 
@@ -10112,31 +10112,31 @@ void TransformRefineItem(LPITEM pkOldItem, LPITEM pkNewItem)
 	ItemSystem::CopyItemAttributesEcs(pkOldItem->GetEntityHandle(), pkNewItem->GetEntityHandle());
 }
 
-void NotifyRefineSuccess(LPCHARACTER ch, LPITEM item, const char* way)
+void NotifyRefineSuccess(entt::entity ch, entt::entity item, const char* way)
 {
-	const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(chEntity, CHAT_TYPE_INFO, "char_item.cpp::void NotifyRefineSuccess ");//INGAME_DEBUG_RAZOR93
+	ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "char_item.cpp::void NotifyRefineSuccess ");//INGAME_DEBUG_RAZOR93
 #endif
-	if (nullptr != ch && item != nullptr)
+	if (ch != entt::null && ItemSystem::IsValidItem(item))
 	{
-		ecs::ChatSystem::Send(chEntity, CHAT_TYPE_COMMAND, "RefineSuceeded");
+		ecs::ChatSystem::Send(ch, CHAT_TYPE_COMMAND, "RefineSuceeded");
 
-		LogManager::instance().RefineLog(ecs::PlayerRuntime::GetPlayerID(chEntity), item->GetName(), item->GetID(), item->GetRefineLevel(), 1, way);
+		LogManager::instance().RefineLog(ecs::PlayerRuntime::GetPlayerID(ch), ItemSystem::GetItemName(item),
+			ItemSystem::GetItemID(item), ItemSystem::GetItemRefineLevel(item), 1, way);
 	}
 }
 
-void NotifyRefineFail(LPCHARACTER ch, LPITEM item, const char* way, int success)
+void NotifyRefineFail(entt::entity ch, entt::entity item, const char* way, int success)
 {
-	const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
-	ecs::ChatSystem::Send(chEntity, CHAT_TYPE_INFO, "char_item.cpp:: void NotifyRefineFail ");//INGAME_DEBUG_RAZOR93
+	ecs::ChatSystem::Send(ch, CHAT_TYPE_INFO, "char_item.cpp:: void NotifyRefineFail ");//INGAME_DEBUG_RAZOR93
 #endif
-	if (nullptr != ch && nullptr != item)
+	if (ch != entt::null && ItemSystem::IsValidItem(item))
 	{
-		ecs::ChatSystem::Send(chEntity, CHAT_TYPE_COMMAND, "RefineFailed");
+		ecs::ChatSystem::Send(ch, CHAT_TYPE_COMMAND, "RefineFailed");
 
-		LogManager::instance().RefineLog(ecs::PlayerRuntime::GetPlayerID(chEntity), item->GetName(), item->GetID(), item->GetRefineLevel(), success, way);
+		LogManager::instance().RefineLog(ecs::PlayerRuntime::GetPlayerID(ch), ItemSystem::GetItemName(item),
+			ItemSystem::GetItemID(item), ItemSystem::GetItemRefineLevel(item), success, way);
 	}
 }
 
