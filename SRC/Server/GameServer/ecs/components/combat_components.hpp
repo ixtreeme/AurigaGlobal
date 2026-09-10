@@ -22,6 +22,13 @@ struct SelectedBy {
     std::unordered_set<entt::entity> selectors;
 };
 
+// The metin stone this monster drops when it dies, and how likely it is.
+// Rolled once when the monster is set up. These were two CHARACTER fields.
+struct MetinStoneDrop {
+    uint32_t vnum { 0 };
+    uint8_t pct { 0 };
+};
+
 struct CombatTarget {
     entt::entity target { entt::null };
     uint32_t setTime { 0 };

@@ -103,6 +103,10 @@ int GetArrowAndBow(entt::entity e, entt::entity* bow, entt::entity* arrow, int a
 void UseArrow(entt::entity e, entt::entity arrow, uint32_t count);
 bool Shoot(entt::entity e, uint8_t type);
 void FlyTarget(entt::entity e, uint32_t targetVID, int32_t x, int32_t y, uint8_t header);
+void DetermineDropMetinStone(entt::entity e);
+uint32_t GetDropMetinStoneVnum(entt::entity e);
+uint8_t GetDropMetinStonePct(entt::entity e);
+void DistributeHP(entt::entity victim, entt::entity killer);
 void ReviveInvisible(entt::entity e, int duration);
 bool IsStun(entt::entity e);
 void Stun(entt::entity e);

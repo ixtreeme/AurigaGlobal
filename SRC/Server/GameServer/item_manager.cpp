@@ -4,6 +4,7 @@
 #include "ecs/systems/MountSystem.hpp"
 #include "ecs/systems/PointSystem.hpp"
 #include "ecs/systems/PlayerRuntimeSystem.hpp"
+#include "ecs/systems/CombatSystem.hpp"
 #include "ecs/systems/NetworkSyncSystem.hpp"
 #include "ecs/systems/ItemSystem.hpp"
 #include "ecs/components/item_components.hpp"
@@ -1354,7 +1355,7 @@ bool ITEM_MANAGER::CreateDropItemVector(LPCHARACTER pkChr, LPCHARACTER pkKiller,
 
 	if (isStone)
 	{
-		add(pkChr->GetDropMetinStoneVnum(), 1);
+		add(CombatSystem::GetDropMetinStoneVnum(pkChr->GetEntityHandle()), 1);
 		add(pkChr->GetDropMetinStofaVnum(), 1);
 		add(pkChr->GetDropMetinSaccaVnum(), 1);
 	}
@@ -1562,16 +1563,16 @@ bool ITEM_MANAGER::CreateDropItem(LPCHARACTER pkChr, LPCHARACTER pkKiller, std::
 
 	if (ecs::PlayerRuntime::IsStone(chr))
 	{
-		if (pkChr->GetDropMetinStoneVnum())
+		if (CombatSystem::GetDropMetinStoneVnum(pkChr->GetEntityHandle()))
 		{
 			//if (ecs::PointSystem::GetLevel(((pkKiller) ? (pkKiller)->GetEntityHandle() : entt::null)) - ecs::PointSystem::GetLevel(((pkChr) ? (pkChr)->GetEntityHandle() : entt::null)) >= 30)
 			//{
 			//	return false;
 			//}
-			int iPercent = (pkChr->GetDropMetinStonePct() * iDeltaPercent) * 400;
+			int iPercent = (CombatSystem::GetDropMetinStonePct(pkChr->GetEntityHandle()) * iDeltaPercent) * 400;
 			if (iPercent >= number(1, iRandRange))
 			{
-				item = CreateItem(pkChr->GetDropMetinStoneVnum(), 1, 0, true);
+				item = CreateItem(CombatSystem::GetDropMetinStoneVnum(pkChr->GetEntityHandle()), 1, 0, true);
 				if (ItemSystem::IsValidItem(item))
 					vec_item.push_back(item);
 			}

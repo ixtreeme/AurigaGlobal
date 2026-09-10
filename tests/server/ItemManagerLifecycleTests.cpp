@@ -24,6 +24,7 @@
 #include "../../SRC/Server/GameServer/ecs/systems/InventorySystem.hpp"
 #include "../../SRC/Server/GameServer/ecs/systems/ItemSystem.hpp"
 #include "../../SRC/Server/GameServer/ecs/systems/PlayerRuntimeSystem.hpp"
+#include "../../SRC/Server/GameServer/ecs/systems/CombatSystem.hpp"
 #include "../../SRC/Server/GameServer/ecs/systems/NetworkSyncSystem.hpp"
 #include "../../SRC/Server/GameServer/ecs/systems/AffectSystem.hpp"
 #include "../../SRC/Server/GameServer/ecs/systems/PointSystem.hpp"
@@ -311,6 +312,11 @@ bool InitializeRuneItem(entt::entity item) { CreationStage("rune", item); return
 void SaveItem(entt::entity item) { ++creationSaves; CreationStage("save", item); }
 bool SyncItemStateFromLegacy(entt::entity) { Unexpected(); }
 }
+// These were inline CHARACTER getters over two zero-initialised fields until
+// DetermineDropMetinStone rolled them. No monster here has been rolled, so the
+// drop tables see what they saw before: no stone.
+uint32_t CombatSystem::GetDropMetinStoneVnum(entt::entity) { return 0; }
+uint8_t CombatSystem::GetDropMetinStonePct(entt::entity) { return 0; }
 int CHARACTER_MANAGER::GetMobItemRate(entt::entity) { Unexpected(); }
 const event_struct_* CHARACTER_MANAGER::CheckEventIsActive(uint8_t, uint8_t) { Unexpected(); }
 void CHARACTER_MANAGER::CheckEventForDrop(entt::entity, entt::entity, std::vector<entt::entity>&) { Unexpected(); }

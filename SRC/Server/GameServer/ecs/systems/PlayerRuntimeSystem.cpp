@@ -4803,7 +4803,7 @@ void CHARACTER::SetProto(const CMob* pkMob)
 
     if (IsStone())
     {
-        DetermineDropMetinStone();
+        CombatSystem::DetermineDropMetinStone(GetEntityHandle());
     }
 
     if (ecs::PlayerRuntime::IsWarp(GetEntityHandle()) || ecs::PlayerRuntime::IsGoto(GetEntityHandle()))

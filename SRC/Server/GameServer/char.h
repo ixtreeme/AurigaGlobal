@@ -691,7 +691,6 @@ public:
 	LPCHARACTER		DistributeExp();
 
 	// ���� ���� ���� ����� �����Ѵ�.
-	void			DistributeHP(entt::entity killer);
 	void			DistributeSP(entt::entity killer, int iMethod = 0);
 
 	void			SetPosition(int pos);
@@ -1256,7 +1255,6 @@ public:
 
 
 
-	void				Stun();
 #ifdef __NEWPET_SYSTEM__
 	//int GetBeltCount() const;//#ifdef ENABLE_MOUNT_COUNT_ABOVE_CHAR_RAZOR93
 #endif
@@ -1341,17 +1339,12 @@ public:
 #endif
 
 
-	void				DetermineDropMetinStone();
-	uint32_t				GetDropMetinStoneVnum() const { return m_dwDropMetinStone; }
-	uint8_t				GetDropMetinStonePct() const { return m_bDropMetinStonePct; }
 	uint32_t				GetDropMetinStofaVnum() const { return m_dwDropMetinStofa; }
 	uint8_t				GetDropMetinStofaPct() const { return m_bDropMetinStofaPct; }
 	uint32_t				GetDropMetinSaccaVnum() const { return m_dwDropMetinSacca; }
 	uint8_t				GetDropMetinSaccaPct() const { return m_bDropMetinSaccaPct; }
 
 protected:
-	uint32_t				m_dwDropMetinStone;
-	uint8_t				m_bDropMetinStonePct;
 	uint32_t				m_dwDropMetinStofa;
 	uint8_t				m_bDropMetinStofaPct;
 	uint32_t				m_dwDropMetinSacca;

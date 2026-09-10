@@ -1065,6 +1065,47 @@ void FlyTargetChecks() {
     Check(!C::Shoot(entt::null, 0), "the null handle fired");
 }
 
+// The metin stone a monster is carrying, rolled once when it is set up and
+// read again by the drop tables when it dies. It was two CHARACTER fields with
+// inline getters; the roll and both reads share one component now. The fixture
+// table is all zeroes, so race 0 is the entry that matches and any other race
+// misses - which is the half that matters here.
+void MetinStoneDropChecks() {
+    Reset();
+    const auto mob = Actor();
+
+    Check(!C::GetDropMetinStoneVnum(mob) && !C::GetDropMetinStonePct(mob),
+        "a monster carries a stone before it was rolled");
+
+    g_registry.get<BattleFixture>(mob).race = 4711;
+    C::DetermineDropMetinStone(mob);
+    Check(!C::GetDropMetinStoneVnum(mob), "a race outside the table was given a stone");
+
+    g_registry.get<BattleFixture>(mob).race = 0;
+    C::DetermineDropMetinStone(mob);
+    const uint32_t rolled = C::GetDropMetinStoneVnum(mob);
+    Check(rolled != 0, "a race inside the table was given no stone");
+
+    // Rolling again replaces the result. The level loop adds to the vnum it
+    // picked, so an assignment turned into an accumulation would climb here
+    // and nowhere else.
+    C::DetermineDropMetinStone(mob);
+    Check(C::GetDropMetinStoneVnum(mob) == rolled, "re-rolling accumulated instead of replacing");
+
+    // The switch that turns stone drops off server-wide.
+    g_NoDropMetinStone = true;
+    C::DetermineDropMetinStone(mob);
+    Check(!C::GetDropMetinStoneVnum(mob), "stone drops stayed on while disabled");
+    g_NoDropMetinStone = false;
+
+    const auto retired = Actor();
+    g_registry.destroy(retired);
+    C::DetermineDropMetinStone(retired);
+    Check(!C::GetDropMetinStoneVnum(retired) && !C::GetDropMetinStonePct(retired),
+        "a destroyed monster carried a stone");
+    Check(!C::GetDropMetinStoneVnum(entt::null), "the null handle carried a stone");
+}
+
 void DeathStateChecks() {
     Reset();
     const auto member = Actor();
@@ -1095,7 +1136,7 @@ int main() {
         CHARACTER_MANAGER characters;
         AlignmentChecks(); CallbackChecks(); ModeChecks(); MultiplierAndValidityChecks();
         BattleTargetChecks(); AggroSwitchChecks(); AttackHandleChecks();
-        DeathHandleChecks(); StoneOwnershipChecks(); DeathStateChecks(); LivenessChecks(); FlyTargetChecks(); BattleMathChecks(); BattleAffectChecks(); AttackAuditChecks(); InteractionCounterChecks();
+        DeathHandleChecks(); StoneOwnershipChecks(); DeathStateChecks(); LivenessChecks(); FlyTargetChecks(); MetinStoneDropChecks(); BattleMathChecks(); BattleAffectChecks(); AttackAuditChecks(); InteractionCounterChecks();
         std::cout << "Combat state checks passed: " << checks << '\n'; return 0;
     } catch (const std::exception& error) { std::cerr << error.what() << '\n'; return 1; }
 }

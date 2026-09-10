@@ -117,6 +117,9 @@ static inline ecs::CharacterRuntimeFlagsComponent* RuntimeFlags(entt::entity cha
     return ecs::TryGetRuntimeFlags(character);
 }
 
+// Stun schedules this; the body is further down with the other event handlers.
+EVENTFUNC(StunEvent);
+
 static inline bool HasMoveState(entt::entity character)
 {
     return character != entt::null && g_registry.valid(character) &&
@@ -764,13 +767,6 @@ bool IsStun(entt::entity e)
     return runtime && IS_SET(runtime->instantFlag, INSTANT_FLAG_STUN);
 }
 
-void Stun(entt::entity e)
-{
-    if (auto* ch = LegacyCharOf(e)) {
-        ch->Stun();
-    }
-}
-
 bool IsDead(entt::entity e)
 {
     if (e == entt::null || !g_registry.valid(e))
@@ -1407,6 +1403,14 @@ void PullMonster(entt::entity e)
 
 namespace CombatSystem {
 
+void DistributeHP(entt::entity victim, entt::entity killer)
+{
+	// The body below the dungeon test was removed long ago; what is left does
+	// nothing whichever way the test goes. Carried over as it stands.
+	if (ecs::SocialSystem::GetDungeon(killer)) //  ΰʴ´
+		return;
+}
+
 // Aggro bookkeeping for one hit: the figure is weighted by how the damage
 // was delivered, the standing victim gets a loyalty bonus, and the running
 // total is what decides whether the target changes.
@@ -1488,12 +1492,68 @@ void CHARACTER::UpdateAggrPoint(entt::entity attacker, EDamageType type, int dam
 static uint32_t __GetPartyExpNP(const uint32_t level);
 static uint32_t AdjustExpByLevel_Combat(const LegacyCharHandle ch, const uint32_t exp);
 
-void CHARACTER::DistributeHP(entt::entity killer)
+namespace CombatSystem {
+
+void Stun(entt::entity e)
 {
-	LPCHARACTER pkKiller = ecs::LegacyCharOf(killer);
-	if (pkKiller->GetDungeon()) //  ΰʴ´
+	if (e == entt::null || !g_registry.valid(e))
 		return;
+
+	// CloseMyShop has no entity form yet; it is its own migration.
+	LPCHARACTER self = ecs::LegacyCharOf(e);
+	if (!self)
+		return;
+
+	if (CombatSystem::IsStun(e))
+		return;
+
+	if (CombatSystem::IsDead(e))
+		return;
+
+	if (!ecs::PlayerRuntime::IsPC(e))
+	{
+		if (LPPARTY party = ecs::SocialSystem::GetParty(e))
+			party->SendMessage(e, PM_ATTACKED_BY, 0, 0);
+	}
+
+	LOG_INFO("{}: Stun {}", ecs::PlayerRuntime::GetName(e).data(), static_cast<uint32_t>(e));
+
+	ecs::PointSystem::Change(e, POINT_HP_RECOVERY, -ecs::PointSystem::Get(e, POINT_HP_RECOVERY));
+	ecs::PointSystem::Change(e, POINT_SP_RECOVERY, -ecs::PointSystem::Get(e, POINT_SP_RECOVERY));
+
+	self->CloseMyShop();
+
+	ecs::PlayerRuntime::CancelCharEvent(e, ecs::PlayerRuntime::CharEvent::Recovery); // ȸ ̺Ʈ δ.
+
+	TPacketGCStun pack;
+	pack.header = HEADER_GC_STUN;
+	pack.vid = ecs::PlayerRuntime::GetPacketVID(e);
+	ecs::ViewSystem::PacketView(e, &pack, sizeof(pack));
+
+		if (auto* flags = RuntimeFlags(e))
+		SET_BIT(flags->instantFlag, INSTANT_FLAG_STUN);
+	if (g_registry.valid(e))
+	{
+		g_registry.emplace_or_replace<ecs::StunTag>(e);
+		if (auto* status = g_registry.try_get<ecs::StatusFlags>(e))
+			status->isStunned = true;
+		g_registry.emplace_or_replace<ecs::DirtyTag>(e);
+	}
+
+	if (ecs::PlayerRuntime::GetCharEvent(e, ecs::PlayerRuntime::CharEvent::Stun))
+		return;
+
+	char_event_info* info = AllocEventInfo<char_event_info>();
+
+	info->ch = e;
+
+	ecs::PlayerRuntime::SetCharEvent(e, ecs::PlayerRuntime::CharEvent::Stun,
+		event_create(StunEvent, info, PASSES_PER_SEC(3)));
 }
+
+} // namespace CombatSystem
+
+
 #define ENABLE_NEWEXP_CALCULATION
 #ifdef ENABLE_NEWEXP_CALCULATION
 #define NEW_GET_LVDELTA(me, victim) aiPercentByDeltaLev[MINMAX(0, (victim + 15) - me, MAX_EXP_DELTA_OF_LEV - 1)]
@@ -2005,7 +2065,7 @@ LPCHARACTER CHARACTER::DistributeExp()
 		return nullptr;
 
 	//      HP ȸ Ѵ.
-	DistributeHP(pkChrMostAttacked ? pkChrMostAttacked->GetEntityHandle() : entt::null);	//  ý
+	CombatSystem::DistributeHP(GetEntityHandle(), pkChrMostAttacked ? pkChrMostAttacked->GetEntityHandle() : entt::null);	//  ý
 
 	{
 		//     ̳ Ƽ  ġ 20% + ڱⰡ ŭ ġ Դ´.
@@ -6851,54 +6911,92 @@ bool Shoot(entt::entity e, uint8_t bType)
 
 } // namespace CombatSystem
 
-void CHARACTER::Stun()
+namespace CombatSystem {
+
+void DetermineDropMetinStone(entt::entity e)
 {
-	if (CombatSystem::IsStun(GetEntityHandle()))
+	if (e == entt::null || !g_registry.valid(e))
 		return;
 
-	if (CombatSystem::IsDead(GetEntityHandle()))
-		return;
+	auto& drop = g_registry.get_or_emplace<ecs::MetinStoneDrop>(e);
 
-	if (!IsPC() && m_pkParty)
+#ifdef ENABLE_NEWSTUFF
+	if (g_NoDropMetinStone)
 	{
-		m_pkParty->SendMessage(GetEntityHandle(), PM_ATTACKED_BY, 0, 0);
-	}
-
-	LOG_INFO("{}: Stun {}", GetName(), static_cast<const void*>(this));
-
-	PointChange(POINT_HP_RECOVERY, -GetPoint(POINT_HP_RECOVERY));
-	PointChange(POINT_SP_RECOVERY, -GetPoint(POINT_SP_RECOVERY));
-
-	CloseMyShop();
-
-	ecs::PlayerRuntime::CancelCharEvent(GetEntityHandle(), ecs::PlayerRuntime::CharEvent::Recovery); // ȸ ̺Ʈ δ.
-
-	TPacketGCStun pack;
-	pack.header = HEADER_GC_STUN;
-	pack.vid = GetPacketVID();
-	ecs::ViewSystem::PacketView(GetEntityHandle(), &pack, sizeof(pack));
-
-		if (auto* flags = RuntimeFlags(GetEntityHandle()))
-		SET_BIT(flags->instantFlag, INSTANT_FLAG_STUN);
-	const entt::entity e = GetEntityHandle();
-	if (e != entt::null && g_registry.valid(e))
-	{
-		g_registry.emplace_or_replace<ecs::StunTag>(e);
-		if (auto* status = g_registry.try_get<ecs::StatusFlags>(e))
-			status->isStunned = true;
-		g_registry.emplace_or_replace<ecs::DirtyTag>(e);
-	}
-
-	if (ecs::PlayerRuntime::GetCharEvent(GetEntityHandle(), ecs::PlayerRuntime::CharEvent::Stun))
+		drop.vnum = 0;
 		return;
+	}
+#endif
 
-	char_event_info* info = AllocEventInfo<char_event_info>();
-
-	info->ch = GetEntityHandle();
-
-	ecs::PlayerRuntime::SetCharEvent(GetEntityHandle(), ecs::PlayerRuntime::CharEvent::Stun,
-		event_create(StunEvent, info, PASSES_PER_SEC(3)));
+	static const uint32_t c_adwMetin[] =
+	{
+		28030,
+		28031,
+		28032,
+		28033,
+		28034,
+		28035,
+		28036,
+		28037,
+		28038,
+		28039,
+		28040,
+		28041,
+		28042,
+		28043,
+#if defined(ENABLE_MAGIC_REDUCTION_SYSTEM) && defined(USE_MAGIC_REDUCTION_STONES)
+		28044,
+		28045,
+#endif
+	};
+	uint32_t stone_num = ecs::PlayerRuntime::GetRaceNum(e);
+	int idx = std::lower_bound(aStoneDrop, aStoneDrop + STONE_INFO_MAX_NUM, stone_num) - aStoneDrop;
+	if (idx >= STONE_INFO_MAX_NUM || aStoneDrop[idx].dwMobVnum != stone_num)
+	{
+		drop.vnum = 0;
+	}
+	else
+	{
+		const SStoneDropInfo& info = aStoneDrop[idx];
+		drop.pct = info.iDropPct;
+		{
+			drop.vnum = c_adwMetin[number(0, sizeof(c_adwMetin) / sizeof(uint32_t) - 1)];
+			int iGradePct = number(1, 100);
+			for (int iStoneLevel = 0; iStoneLevel < STONE_LEVEL_MAX_NUM; iStoneLevel++)
+			{
+				int iLevelGradePortion = info.iLevelPct[iStoneLevel];
+				if (iGradePct <= iLevelGradePortion)
+				{
+					break;
+				}
+				else
+				{
+					iGradePct -= iLevelGradePortion;
+					drop.vnum += 100;
+				}
+			}
+		}
+	}
 }
+
+uint32_t GetDropMetinStoneVnum(entt::entity e)
+{
+	if (e == entt::null || !g_registry.valid(e))
+		return 0;
+	const auto* drop = g_registry.try_get<ecs::MetinStoneDrop>(e);
+	return drop ? drop->vnum : 0;
+}
+
+uint8_t GetDropMetinStonePct(entt::entity e)
+{
+	if (e == entt::null || !g_registry.valid(e))
+		return 0;
+	const auto* drop = g_registry.try_get<ecs::MetinStoneDrop>(e);
+	return drop ? drop->pct : 0;
+}
+
+} // namespace CombatSystem
+
 
 struct FuncSetLastAttacked
 {
@@ -7644,67 +7742,6 @@ void CheckTarget(entt::entity e)
 }
 
 } // namespace CombatSystem
-
-void CHARACTER::DetermineDropMetinStone()
-{
-#ifdef ENABLE_NEWSTUFF
-	if (g_NoDropMetinStone)
-	{
-		m_dwDropMetinStone = 0;
-		return;
-	}
-#endif
-
-	static const uint32_t c_adwMetin[] =
-	{
-		28030,
-		28031,
-		28032,
-		28033,
-		28034,
-		28035,
-		28036,
-		28037,
-		28038,
-		28039,
-		28040,
-		28041,
-		28042,
-		28043,
-#if defined(ENABLE_MAGIC_REDUCTION_SYSTEM) && defined(USE_MAGIC_REDUCTION_STONES)
-		28044,
-		28045,
-#endif
-	};
-	uint32_t stone_num = GetRaceNum();
-	int idx = std::lower_bound(aStoneDrop, aStoneDrop + STONE_INFO_MAX_NUM, stone_num) - aStoneDrop;
-	if (idx >= STONE_INFO_MAX_NUM || aStoneDrop[idx].dwMobVnum != stone_num)
-	{
-		m_dwDropMetinStone = 0;
-	}
-	else
-	{
-		const SStoneDropInfo& info = aStoneDrop[idx];
-		m_bDropMetinStonePct = info.iDropPct;
-		{
-			m_dwDropMetinStone = c_adwMetin[number(0, sizeof(c_adwMetin) / sizeof(uint32_t) - 1)];
-			int iGradePct = number(1, 100);
-			for (int iStoneLevel = 0; iStoneLevel < STONE_LEVEL_MAX_NUM; iStoneLevel++)
-			{
-				int iLevelGradePortion = info.iLevelPct[iStoneLevel];
-				if (iGradePct <= iLevelGradePortion)
-				{
-					break;
-				}
-				else
-				{
-					iGradePct -= iLevelGradePortion;
-					m_dwDropMetinStone += 100;
-				}
-			}
-		}
-	}
-}
 
 namespace CombatSystem {
 
