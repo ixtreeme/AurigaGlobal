@@ -1912,8 +1912,7 @@ struct FFindNearVictim
 		if (!ent->IsType(ENTITY_CHARACTER))
 			return;
 
-		auto* pkChr = static_cast<LegacyCharHandle>(ent);
-		const entt::entity candidate = pkChr->GetEntityHandle();
+		const entt::entity candidate = ent->GetEntityHandle();
 
 		if (!m_excepts_set.empty()) {
 			if (m_excepts_set.find(candidate) != m_excepts_set.end())
@@ -2802,8 +2801,7 @@ struct FuncSplashAffect
 
 		if (ent->IsType(ENTITY_CHARACTER))
 		{
-			auto* pkChr = static_cast<LegacyCharHandle>(ent);
-			const entt::entity target = pkChr->GetEntityHandle();
+			const entt::entity target = ent->GetEntityHandle();
 
 			if (test_server)
 				LOG_INFO("FuncSplashAffect step 1 : name:{} vnum:{} iDur:{}", ecs::PlayerRuntime::GetName(target).data(), m_dwVnum, m_iDuration);
@@ -2812,8 +2810,8 @@ struct FuncSplashAffect
 				if (test_server)
 					LOG_INFO("FuncSplashAffect step 2 : name:{} vnum:{} iDur:{}", ecs::PlayerRuntime::GetName(target).data(), m_dwVnum, m_iDuration);
 				if (m_dwVnum == SKILL_TUSOK)
-					if (CombatSystem::CanBeginFight(pkChr->GetEntityHandle()))
-						CombatSystem::BeginFight(pkChr->GetEntityHandle(), m_attacker);
+					if (CombatSystem::CanBeginFight(target))
+						CombatSystem::BeginFight(target, m_attacker);
 
 				if (ecs::PlayerRuntime::IsPC(target) && m_dwVnum == SKILL_TUSOK)
 					AffectSystem::AddAffect(target, m_dwVnum, m_bPointOn, m_iAmount, m_dwAffectFlag, m_iDuration/3, m_iSPCost, m_bOverride);

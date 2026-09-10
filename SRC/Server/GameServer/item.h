@@ -69,8 +69,6 @@ class CItem : public CEntity
 
 		void		SetVID(uint32_t vid)	{ m_dwVID = vid;	}
 		uint32_t		GetVID()		{ return m_dwVID;	}
-		void		SetEntityHandle(entt::entity entity) noexcept { m_entity = entity; }
-		entt::entity		GetEntityHandle() const noexcept { return m_entity; }
 
 		bool		SetCount(int count);
 		int			GetCount();
@@ -214,7 +212,6 @@ class CItem : public CEntity
 #endif
 
 	private:
-		entt::entity	m_entity = entt::null;
 		TItemTable const * m_pProto;		// «¡∑Œ≈‰ ≈∏¿Ÿ
 
 		uint32_t		m_dwVnum;

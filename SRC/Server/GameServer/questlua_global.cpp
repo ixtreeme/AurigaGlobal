@@ -1085,8 +1085,7 @@ namespace quest
 		{
 			if (ent->IsType(ENTITY_CHARACTER))
 			{
-				LPCHARACTER ch = (LPCHARACTER) ent;
-				const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
+				const entt::entity chEntity = ent->GetEntityHandle();
 
 				if ((ecs::PlayerRuntime::IsPC(chEntity)))
 				{
@@ -1606,8 +1605,7 @@ namespace quest
 		{
 			if (true == ent->IsType(ENTITY_CHARACTER))
 			{
-				LPCHARACTER pChar = static_cast<LPCHARACTER>(ent);
-				const entt::entity charEntity = pChar ? pChar->GetEntityHandle() : entt::null;
+				const entt::entity charEntity = ent->GetEntityHandle();
 
 
 				if (true == (ecs::PlayerRuntime::IsPC(charEntity)))

@@ -672,8 +672,6 @@ public:
 #endif
 
 	uint32_t		GetLegacyVID() const;
-	entt::entity		GetEntityHandle() const { return m_entity; }
-	void			SetEntityHandle(entt::entity e) { m_entity = e; }
 	uint32_t		GetPacketVID() const;
 	// char.h (public)
 
@@ -1680,7 +1678,6 @@ public:
 	CTrigger&		GetTriggerOnClick() { return m_triggerOnClick; }
 	const CTrigger&	GetTriggerOnClick() const { return m_triggerOnClick; }
 
-	entt::entity	 m_entity { entt::null };
 	uint32_t		 m_dwLegacyVID { 0 };
 
 

@@ -111,17 +111,20 @@ using LegacyCharHandle = decltype(std::declval<ecs::LegacyCharPtr>().ptr);
 
 struct FFindStone
 {
-	std::map<uint32_t, LegacyCharHandle> m_mapStone;
+	// The stones found in range. Only their positions are ever read, so
+	// there is nothing here a CHARACTER pointer answers that the entity
+	// does not.
+	std::map<uint32_t, entt::entity> m_mapStone;
 
 	void operator()(LPENTITY pEnt)
 	{
 		if (pEnt->IsType(ENTITY_CHARACTER) == true)
 		{
-			auto* pChar = static_cast<LegacyCharHandle>(pEnt);
+			const entt::entity pChar = pEnt->GetEntityHandle();
 
-			if (pChar->IsStone() == true)
+			if (ecs::PlayerRuntime::IsStone(pChar))
 			{
-				m_mapStone[ecs::PlayerRuntime::GetPacketVID((pChar ? pChar->GetEntityHandle() : entt::null))] = pChar;
+				m_mapStone[ecs::PlayerRuntime::GetPacketVID(pChar)] = pChar;
 			}
 		}
 	}
@@ -4836,11 +4839,13 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 						auto stone = f.m_mapStone.begin();
 
 						uint32_t max = UINT_MAX;
-						auto* pTarget = stone->second;
+						entt::entity pTarget = stone->second;
 
 						while (stone != f.m_mapStone.end())
 						{
-							uint32_t dist = (uint32_t)DISTANCE_SQRT(GetX() - stone->second->GetX(), GetY() - stone->second->GetY());
+							uint32_t dist = (uint32_t)DISTANCE_SQRT(
+								GetX() - ecs::PlayerRuntime::GetX(stone->second),
+								GetY() - ecs::PlayerRuntime::GetY(stone->second));
 
 							if (dist != 0 && max > dist)
 							{
@@ -4850,7 +4855,7 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 							stone++;
 						}
 
-						if (pTarget != nullptr)
+						if (pTarget != entt::null)
 						{
 							int val = 3;
 
@@ -4858,7 +4863,8 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 							else if (max < 70000) val = 1;
 
 							ecs::ChatSystem::Send(GetEntityHandle(), CHAT_TYPE_COMMAND, "StoneDetect %u %d %d", GetPacketVID(), val,
-								(int)GetDegreeFromPositionXY(GetX(), pTarget->GetY(), pTarget->GetX(), GetY()));
+								(int)GetDegreeFromPositionXY(GetX(), ecs::PlayerRuntime::GetY(pTarget),
+									ecs::PlayerRuntime::GetX(pTarget), GetY()));
 						}
 #ifdef TEXTS_IMPROVEMENT
 						else {
@@ -10800,23 +10806,6 @@ static bool IS_POTION_PVP_BLOCKED(int vnum)
 
 using LegacyCharHandle = decltype(std::declval<ecs::LegacyCharPtr>().ptr);
 
-struct FFindStone
-{
-	std::map<uint32_t, LegacyCharHandle> m_mapStone;
-
-	void operator()(LPENTITY pEnt)
-	{
-		if (pEnt->IsType(ENTITY_CHARACTER) == true)
-		{
-			auto* pChar = static_cast<LegacyCharHandle>(pEnt);
-
-			if (pChar->IsStone() == true)
-			{
-				m_mapStone[ecs::PlayerRuntime::GetPacketVID((pChar ? pChar->GetEntityHandle() : entt::null))] = pChar;
-			}
-		}
-	}
-};
 
 
 //±ÍÈ¯ºÎ, ±ÍÈ¯±â¾ïºÎ, °áÈ¥¹ÝÁö

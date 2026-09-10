@@ -3898,10 +3898,9 @@ struct FCountInMap
 	{
 		if (ent->IsType(ENTITY_CHARACTER))
 		{
-			LPCHARACTER ch = (LPCHARACTER) ent;
-			const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
+			const entt::entity chEntity = ent->GetEntityHandle();
 
-			if (ch && (ecs::PlayerRuntime::IsPC(chEntity)))
+			if (chEntity != entt::null && (ecs::PlayerRuntime::IsPC(chEntity)))
 				++m_Count[(ecs::PlayerRuntime::GetEmpire(chEntity))];
 		}
 	}

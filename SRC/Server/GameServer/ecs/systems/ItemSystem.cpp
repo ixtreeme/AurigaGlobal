@@ -110,24 +110,6 @@ const int ITEM_BROKEN_METIN_VNUM = 28960;
 
 using LegacyCharHandle = decltype(std::declval<ecs::LegacyCharPtr>().ptr);
 
-struct FFindStone
-{
-	std::map<uint32_t, LegacyCharHandle> m_mapStone;
-
-	void operator()(LPENTITY pEnt)
-	{
-		if (pEnt->IsType(ENTITY_CHARACTER) == true)
-		{
-			auto* pChar = static_cast<LegacyCharHandle>(pEnt);
-			const entt::entity character = pChar->GetEntityHandle();
-
-			if (ecs::PlayerRuntime::IsStone(character))
-			{
-				m_mapStone[ecs::PlayerRuntime::GetPacketVID(character)] = pChar;
-			}
-		}
-	}
-};
 
 LegacyCharHandle LegacyCharOf(entt::entity e)
 {

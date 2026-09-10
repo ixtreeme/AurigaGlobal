@@ -124,11 +124,11 @@ namespace
             if (!ent || !ent->IsType(ENTITY_CHARACTER))
                 continue;
 
-            LPCHARACTER c = (LPCHARACTER)ent;
-            if (!c || !ecs::PlayerRuntime::IsPC(c->GetEntityHandle()))
+            const entt::entity c = ent->GetEntityHandle();
+            if (c == entt::null || !ecs::PlayerRuntime::IsPC(c))
                 continue;
 
-            fn(c->GetEntityHandle());
+            fn(c);
         }
     }
 

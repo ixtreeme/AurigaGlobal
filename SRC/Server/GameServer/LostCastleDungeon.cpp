@@ -135,9 +135,9 @@ namespace
         {
             if (!ent || !ent->IsType(ENTITY_CHARACTER))
                 return;
-            LPCHARACTER ch = static_cast<LPCHARACTER>(ent);
-            if (ch && ecs::PlayerRuntime::IsPC(ch->GetEntityHandle()))
-                fn(ch->GetEntityHandle());
+            const entt::entity ch = ent->GetEntityHandle();
+            if (ch != entt::null && ecs::PlayerRuntime::IsPC(ch))
+                fn(ch);
         }
     };
 

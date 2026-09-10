@@ -1147,8 +1147,8 @@ struct FuncForgetMyAttacker
 	{
 		if (ent->IsType(ENTITY_CHARACTER))
 		{
-			auto* ch = static_cast<LegacyCharHandle>(ent);
-			const entt::entity candidate = ch->GetEntityHandle();
+			const entt::entity ch = ent->GetEntityHandle();
+			const entt::entity candidate = ch;
 			if (ecs::PlayerRuntime::IsPC(candidate))
 				return;
 			if (CombatSystem::GetVictim(candidate) == m_character)

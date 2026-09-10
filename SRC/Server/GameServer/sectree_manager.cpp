@@ -1250,8 +1250,7 @@ class FRemoveIfAttr
 			}
 			else if (entity->IsType(ENTITY_CHARACTER))
 			{
-				LPCHARACTER ch = (LPCHARACTER) entity;
-				const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
+				const entt::entity chEntity = entity->GetEntityHandle();
 
 
 				if ((ecs::PlayerRuntime::IsPC(chEntity)))
@@ -1264,7 +1263,7 @@ class FRemoveIfAttr
 						ecs::MovementSystem::WarpSet(chEntity, EMPIRE_START_X(ecs::PlayerRuntime::GetEmpire(chEntity)), EMPIRE_START_Y(ecs::PlayerRuntime::GetEmpire(chEntity)));
 				}
 				else
-					CombatSystem::Dead(ch->GetEntityHandle());
+					CombatSystem::Dead(chEntity);
 			}
 		}
 

@@ -329,8 +329,7 @@ struct FWarpToPosition
 		if (!ent->IsType(ENTITY_CHARACTER)) {
 			return;
 		}
-		LPCHARACTER ch = (LPCHARACTER)ent;
-		const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
+		const entt::entity chEntity = ent->GetEntityHandle();
 
 		if (!ecs::PlayerRuntime::IsPC(chEntity)) {
 			return;
@@ -741,8 +740,7 @@ struct FExitDungeonLobby
 	{
 		if (ent->IsType(ENTITY_CHARACTER))
 		{
-			LPCHARACTER ch = (LPCHARACTER) ent;
-			const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
+			const entt::entity chEntity = ent->GetEntityHandle();
 
 			if (ecs::PlayerRuntime::IsPC(chEntity))
 			{
@@ -791,8 +789,7 @@ namespace
 		{
 			if (ent->IsType(ENTITY_CHARACTER))
 			{
-				LPCHARACTER ch = (LPCHARACTER) ent;
-				const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
+				const entt::entity chEntity = ent->GetEntityHandle();
 
 				if (ecs::PlayerRuntime::IsPC(chEntity))
 				{
@@ -836,8 +833,7 @@ namespace
 
 		void operator() (LPENTITY ent) {
 			if (ent->IsType(ENTITY_CHARACTER)) {
-				LPCHARACTER ch = (LPCHARACTER) ent;
-				const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
+				const entt::entity chEntity = ent->GetEntityHandle();
 
 				if (ecs::PlayerRuntime::IsPC(chEntity)) {
 #ifdef TEXTS_IMPROVEMENT
@@ -955,8 +951,7 @@ struct SUpdateMastHp
 	{
 		if (ent->IsType(ENTITY_CHARACTER))
 		{
-			LPCHARACTER ch = (LPCHARACTER) ent;
-			const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
+			const entt::entity chEntity = ent->GetEntityHandle();
 
 			if (ecs::PlayerRuntime::IsPC(chEntity))
 			{

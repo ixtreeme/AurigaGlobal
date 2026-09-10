@@ -67,11 +67,11 @@ entt::entity EntityFromLPENTITY(LPENTITY entity)
     if (!entity)
         return entt::null;
 
+    // Characters and items carry the handle themselves; no cast, no switch.
+    if (const entt::entity self = entity->GetEntityHandle(); self != entt::null)
+        return self;
+
     switch (entity->GetType()) {
-    case ENTITY_CHARACTER:
-		return static_cast<LPCHARACTER>(entity)->GetEntityHandle();
-    case ENTITY_ITEM:
-        return static_cast<LPITEM>(entity)->GetEntityHandle();
     case ENTITY_OBJECT:
         return ecs::CBuildingRegistry::FindByID(static_cast<building::CObject*>(entity)->GetID());
 #ifdef ENABLE_NEW_SHOP_IN_CITIES

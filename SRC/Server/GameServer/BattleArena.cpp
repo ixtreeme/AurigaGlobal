@@ -44,8 +44,7 @@ struct FWarpToHome
 	{
 		if ( ent->IsType(ENTITY_CHARACTER) == true )
 		{
-			LPCHARACTER lpChar = (LPCHARACTER)ent;
-			const entt::entity lpCharEntity = lpChar ? lpChar->GetEntityHandle() : entt::null;
+			const entt::entity lpCharEntity = ent->GetEntityHandle();
 
 
 			if ( ecs::PlayerRuntime::IsPC(lpCharEntity) == true )
