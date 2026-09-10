@@ -841,7 +841,7 @@ ACMD(do_mob_coward)
 				true,
 				pkMob->m_table.bType == CHAR_TYPE_STONE);
 		if (tch)
-			tch->SetCoward();
+			ecs::PlayerRuntime::SetCoward(tch->GetEntityHandle());
 	}
 }
 
@@ -2756,26 +2756,22 @@ ACMD(do_delqf)
 
 ACMD(do_forgetme)
 {
-	LPCHARACTER ch = ecs::LegacyCharOf(character);
-	ch->ForgetMyAttacker();
+	CombatSystem::ForgetMyAttacker(character);
 }
 
 ACMD(do_aggregate)
 {
-	LPCHARACTER ch = ecs::LegacyCharOf(character);
-	ch->AggregateMonster();
+	CombatSystem::AggregateMonster(character);
 }
 
 ACMD(do_attract_ranger)
 {
-	LPCHARACTER ch = ecs::LegacyCharOf(character);
-	ch->AttractRanger();
+	CombatSystem::AttractRanger(character);
 }
 
 ACMD(do_pull_monster)
 {
-	LPCHARACTER ch = ecs::LegacyCharOf(character);
-	ch->PullMonster();
+	CombatSystem::PullMonster(character);
 }
 
 ACMD(do_polymorph)

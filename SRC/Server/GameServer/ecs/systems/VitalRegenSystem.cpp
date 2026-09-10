@@ -1,6 +1,7 @@
 #include "../../stdafx.h"
 #include "PointSystem.hpp"
 #include "PlayerRuntimeSystem.hpp"
+#include "CombatSystem.hpp"
 
 #include "VitalRegenSystem.hpp"
 
@@ -75,7 +76,7 @@ void VitalRegenSystem_Update(entt::registry& reg, uint32_t tick)
             return;
         }
 
-        if (ch->IsDead()) {
+        if (CombatSystem::IsDead(ch->GetEntityHandle())) {
             return;
         }
 

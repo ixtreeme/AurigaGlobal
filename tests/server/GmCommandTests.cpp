@@ -773,7 +773,7 @@ void CHorseRider::UpdateHorseStamina(int,bool) { Unexpected(); }
 void CHorseRider::UpdateHorseHealth(int,bool) { Unexpected(); }
 int mining::RealRefinePick(entt::entity,entt::entity) { Unexpected(); }
 void mining::CHEAT_MAX_PICK(entt::entity,entt::entity) { Unexpected(); }
-void CHARACTER::SetCoward(void) { Unexpected(); }
+void ecs::PlayerRuntime::SetCoward(entt::entity) { Unexpected(); }
 void CHARACTER::Save(void) { Unexpected(); }
 int64_t CHARACTER::GetHP(void)const { Unexpected(); }
 int64_t CHARACTER::GetSP(void)const { Unexpected(); }
@@ -782,10 +782,10 @@ namespace ecs::SessionSystem { bool WarpToPID(entt::entity, unsigned int) { Unex
 int CHARACTER::CountSpecifyItem(unsigned int)const { Unexpected(); }
 void CHARACTER::RemoveSpecifyItem(unsigned int,int,bool) { Unexpected(); }
 void CombatSystem::Dead(entt::entity,entt::entity,bool) { Unexpected(); }
-void CHARACTER::ForgetMyAttacker(void) { Unexpected(); }
-void CHARACTER::AggregateMonster(void) { Unexpected(); }
-void CHARACTER::AttractRanger(void) { Unexpected(); }
-void CHARACTER::PullMonster(void) { Unexpected(); }
+void CombatSystem::ForgetMyAttacker(entt::entity) { Unexpected(); }
+void CombatSystem::AggregateMonster(entt::entity) { Unexpected(); }
+void CombatSystem::AttractRanger(entt::entity) { Unexpected(); }
+void CombatSystem::PullMonster(entt::entity) { Unexpected(); }
 void ecs::SessionSystem::ChangeSafeboxSize(entt::entity, uint8_t) { Unexpected(); }
 void CombatSystem::SetSkillHit(entt::entity, bool) { Unexpected(); }
 void CHARACTER::HorseSummon(bool,bool,unsigned int,char const *) { Unexpected(); }
@@ -977,7 +977,7 @@ bool CHARACTER::IsEquipUniqueGroup(unsigned int)const { Unexpected(); }
 bool CombatSystem::Damage(entt::entity,entt::entity,int64_t,unsigned char) { Unexpected(); }
 bool CombatSystem::CanBeginFight(entt::entity) { Unexpected(); }
 void CombatSystem::BeginFight(entt::entity, entt::entity) { Unexpected(); }
-bool CHARACTER::IsStun(void)const { Unexpected(); }
+bool CombatSystem::IsStun(entt::entity) { Unexpected(); }
 int CHARACTER::GetArrowAndBow(entt::entity *,entt::entity *,int) { Unexpected(); }
 void CHARACTER::AttackedByFire(entt::entity,int,int) { Unexpected(); }
 bool CHARACTER::CanUseHorseSkill(void) { Unexpected(); }

@@ -2658,7 +2658,7 @@ struct FuncSplashDamage
 
 
 		if (!CombatSystem::Damage(pkChrVictim->GetEntityHandle(), m_character, iDam, dt) &&
-			!pkChrVictim->IsStun())
+			!CombatSystem::IsStun(pkChrVictim->GetEntityHandle()))
 		{
 
 			if (IS_SET(m_pkSk->dwFlag, SKILL_FLAG_REMOVE_GOOD_AFFECT))

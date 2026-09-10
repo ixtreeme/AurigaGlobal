@@ -85,6 +85,7 @@ uint8_t GetMobBattleType(entt::entity e);
 // Nearest acceptable target within maxDistance, chosen from the sectree.
 entt::entity FindVictim(entt::entity self, int maxDistance);
 entt::entity GetNearestVictim(entt::entity attacker, entt::entity from);
+void ReviveInvisible(entt::entity e, int duration);
 bool IsStun(entt::entity e);
 void Stun(entt::entity e);
 bool IsDead(entt::entity e);

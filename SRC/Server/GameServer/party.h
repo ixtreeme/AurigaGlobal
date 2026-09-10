@@ -339,7 +339,7 @@ inline int CParty::ComputePartyBonusAttackGrade()
 	   if (GetNearMemberCount() <= 1)
 	   return 0;
 
-	   int leadership = GetLeaderCharacter()->GetLeadershipSkillLevel();
+	   int leadership = SkillSystem::GetSkillLevel(GetLeaderCharacter()->GetEntityHandle(), SKILL_LEADERSHIP);
 	   int n = GetNearMemberCount();
 
 	   if (n >= 3 && leadership >= 10)
@@ -357,7 +357,7 @@ inline int CParty::ComputePartyBonusDefenseGrade()
 	   if (GetNearMemberCount() <= 1)
 	   return 0;
 
-	   int leadership = GetLeaderCharacter()->GetLeadershipSkillLevel();
+	   int leadership = SkillSystem::GetSkillLevel(GetLeaderCharacter()->GetEntityHandle(), SKILL_LEADERSHIP);
 	   int n = GetNearMemberCount();
 
 	   if (n >= 5 && leadership >= 24)

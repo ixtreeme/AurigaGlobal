@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "ecs/systems/PlayerRuntimeSystem.hpp"
+#include "ecs/systems/CombatSystem.hpp"
 #include "ecs/systems/AffectSystem.hpp"
 #include "ecs/systems/SocialSystem.hpp"
 #include "ecs/systems/QuestSystem.hpp"
@@ -575,7 +576,7 @@ void CInputLogin::Entergame(LPDESC d, const char* data)
 
 	// ?? ? ?
 	ecs::MovementSystem::Show(((ch) ? (ch)->GetEntityHandle() : entt::null), ecs::PlayerRuntime::GetMapIndex(((ch) ? (ch)->GetEntityHandle() : entt::null)), pos.x, pos.y, pos.z);
-	ch->ReviveInvisible(5);
+	CombatSystem::ReviveInvisible(ch->GetEntityHandle(), 5);
 	d->SetPhase(PHASE_GAME);
 	SECTREE_MANAGER::instance().SendNPCPosition(ch);
 #ifdef ENABLE_ATLAS_BOSS

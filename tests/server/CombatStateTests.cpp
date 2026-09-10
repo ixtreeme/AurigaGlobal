@@ -422,7 +422,12 @@ float ecs::MovementSystem::GetMoveSpeed(entt::entity) { UnexpectedService(__func
 float ecs::PlayerRuntime::GetRotation(entt::entity) { UnexpectedService(__func__); }
 const TMobTable* ecs::PlayerRuntime::GetMobTable(entt::entity) { return nullptr; }
 int ecs::PlayerRuntime::GetZ(entt::entity) { return 0; }
-int ecs::PlayerRuntime::GetPosition(entt::entity) { return POS_STANDING; }
+// The fixture sets postures on the component, so this reads it rather than
+// answering POS_STANDING for everyone - which is also what production does.
+int ecs::PlayerRuntime::GetPosition(entt::entity e) {
+    const auto* runtime = g_registry.valid(e) ? g_registry.try_get<ecs::CharacterRuntimeFlagsComponent>(e) : nullptr;
+    return runtime ? runtime->position : POS_STANDING;
+}
 int64_t ecs::PlayerRuntime::GetSP(entt::entity) { return 0; }
 void ecs::PlayerRuntime::SetHP(entt::entity, int64_t) {}
 CDungeon* ecs::SocialSystem::GetDungeon(entt::entity) { return nullptr; }
@@ -935,6 +940,61 @@ void StoneOwnershipChecks() {
 
 // The two flags the death path leaves behind, read back through handles that
 // may no longer resolve.
+// Dead and stunned are each recorded three ways: a tag, a StatusFlags bit and
+// a position/instant-flag word. CHARACTER::IsDead read only the position, so
+// while the ECS combat tick had set DeadTag and isDead on a kill and the
+// position had not yet followed through the legacy Dead() flow, anything
+// asking the CHARACTER answered "alive". The entity form is the only one left,
+// and it honours all three - so every marker alone has to be enough.
+void LivenessChecks() {
+    Reset();
+
+    for (int marker = 0; marker < 3; ++marker) {
+        const auto e = Actor();
+        Check(!C::IsDead(e), "a standing actor reads dead");
+        switch (marker) {
+        case 0: g_registry.emplace<ecs::DeadTag>(e); break;
+        case 1: g_registry.emplace<ecs::StatusFlags>(e).isDead = true; break;
+        case 2: g_registry.get<ecs::CharacterRuntimeFlagsComponent>(e).position = POS_DEAD; break;
+        }
+        Check(C::IsDead(e), "a death marker on its own was not honoured");
+    }
+
+    for (int marker = 0; marker < 3; ++marker) {
+        const auto e = Actor();
+        Check(!C::IsStun(e), "a standing actor reads stunned");
+        switch (marker) {
+        case 0: g_registry.emplace<ecs::StunTag>(e); break;
+        case 1: g_registry.emplace<ecs::StatusFlags>(e).isStunned = true; break;
+        case 2: SET_BIT(g_registry.get<ecs::CharacterRuntimeFlagsComponent>(e).instantFlag,
+                        INSTANT_FLAG_STUN); break;
+        }
+        Check(C::IsStun(e), "a stun marker on its own was not honoured");
+    }
+
+    // A handle that no longer names anything is dead, not alive: the callers
+    // are guards, and the safe answer to "may this act" is no.
+    const auto retired = Actor();
+    g_registry.destroy(retired);
+    Check(C::IsDead(retired), "a destroyed actor read as alive");
+    Check(!C::IsStun(retired), "a destroyed actor read as stunned");
+    Check(C::IsDead(entt::null) && !C::IsStun(entt::null), "the null handle disagreed");
+
+    // Fighting is a position test and nothing else: everything from POS_FIGHTING
+    // upward may act, everything below it - dead, sleeping, resting, sitting,
+    // fishing - may not.
+    const auto fighter = Actor();
+    Check(C::CanFight(fighter), "a standing actor could not fight");
+    for (const int posture : {POS_FIGHTING, POS_MOUNTING, POS_STANDING}) {
+        g_registry.get<ecs::CharacterRuntimeFlagsComponent>(fighter).position = posture;
+        Check(C::CanFight(fighter), "an upright posture could not fight");
+    }
+    for (const int posture : {POS_DEAD, POS_SLEEPING, POS_RESTING, POS_SITTING, POS_FISHING}) {
+        g_registry.get<ecs::CharacterRuntimeFlagsComponent>(fighter).position = posture;
+        Check(!C::CanFight(fighter), "an incapacitated posture could fight");
+    }
+}
+
 void DeathStateChecks() {
     Reset();
     const auto member = Actor();
@@ -965,7 +1025,7 @@ int main() {
         CHARACTER_MANAGER characters;
         AlignmentChecks(); CallbackChecks(); ModeChecks(); MultiplierAndValidityChecks();
         BattleTargetChecks(); AggroSwitchChecks(); AttackHandleChecks();
-        DeathHandleChecks(); StoneOwnershipChecks(); DeathStateChecks(); BattleMathChecks(); BattleAffectChecks(); AttackAuditChecks(); InteractionCounterChecks();
+        DeathHandleChecks(); StoneOwnershipChecks(); DeathStateChecks(); LivenessChecks(); BattleMathChecks(); BattleAffectChecks(); AttackAuditChecks(); InteractionCounterChecks();
         std::cout << "Combat state checks passed: " << checks << '\n'; return 0;
     } catch (const std::exception& error) { std::cerr << error.what() << '\n'; return 1; }
 }

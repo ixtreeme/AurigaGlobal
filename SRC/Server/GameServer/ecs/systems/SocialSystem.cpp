@@ -1,6 +1,7 @@
 #include "../../stdafx.h"
 #include "PointSystem.hpp"
 #include "PlayerRuntimeSystem.hpp"
+#include "CombatSystem.hpp"
 
 #include "SocialSystem.hpp"
 #include "InventorySystem.hpp"
@@ -979,7 +980,7 @@ struct FFindReviver
             return;
         }
 
-        if (ch->IsReviver() == true && pChar != ch && ch->IsDead() != true)
+        if (ecs::PlayerRuntime::IsReviver(ch->GetEntityHandle()) == true && pChar != ch && CombatSystem::IsDead(ch->GetEntityHandle()) != true)
         {
             if (number(1, 100) <= ch->GetMobTable().bRevivePoint)
             {

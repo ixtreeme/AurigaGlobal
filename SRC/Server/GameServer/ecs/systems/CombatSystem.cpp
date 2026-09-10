@@ -609,15 +609,6 @@ void ChangeVictimByAggro(entt::entity self, int newAggro, entt::entity newVictim
         adopt(best, bestAggro);
 }
 
-bool CanFight(entt::entity e)
-{
-    if (auto* ch = LegacyCharOf(e)) {
-        return ch->CanFight();
-    }
-
-    return false;
-}
-
 bool Shoot(entt::entity attacker, uint8_t attackType)
 {
     if (auto* ch = LegacyCharOf(attacker)) {
@@ -752,6 +743,18 @@ uint16_t GetMobAttackRange(entt::entity e)
     }
 #endif
     return static_cast<uint16_t>(std::clamp<int64_t>(range, 0, UINT16_MAX));
+}
+
+bool CanFight(entt::entity e)
+{
+    return ecs::PlayerRuntime::GetPosition(e) >= POS_FIGHTING;
+}
+
+// The brief untouchable window after a revive or a rescue.
+void ReviveInvisible(entt::entity e, int iDur)
+{
+    AffectSystem::AddAffect(e, AFFECT_REVIVE_INVISIBLE, POINT_NONE, 0,
+        AFF_REVIVE_INVISIBLE, iDur, 0, true);
 }
 
 bool IsStun(entt::entity e)
@@ -936,41 +939,6 @@ uint8_t GetPKMode(entt::entity e)
     return state ? state->pkMode : PK_MODE_PROTECT;
 }
 
-
-void ForgetMyAttacker(entt::entity e)
-{
-    if (auto* ch = LegacyCharOf(e)) {
-        ch->ForgetMyAttacker();
-    }
-}
-
-void AggregateMonster(entt::entity e)
-{
-    if (auto* ch = LegacyCharOf(e)) {
-        ch->AggregateMonster();
-    }
-}
-
-void AggregateMonsterPlus(entt::entity e)
-{
-    if (auto* ch = LegacyCharOf(e)) {
-        ch->AggregateMonsterPlus();
-    }
-}
-
-void AttractRanger(entt::entity e)
-{
-    if (auto* ch = LegacyCharOf(e)) {
-        ch->AttractRanger();
-    }
-}
-
-void PullMonster(entt::entity e)
-{
-    if (auto* ch = LegacyCharOf(e)) {
-        ch->PullMonster();
-    }
-}
 
 float GetAttackMultiplier(entt::entity e)
 {
@@ -1243,41 +1211,60 @@ struct FuncPullMonster
 };
 
 
+namespace CombatSystem {
+
+void ForgetMyAttacker(entt::entity e)
+{
+    if (e == entt::null || !g_registry.valid(e))
+        return;
+
+    FuncForgetMyAttacker f(e);
+    ecs::ForEachAround(g_registry, e, f);
+    ReviveInvisible(e, 5);
+}
+
+void AggregateMonster(entt::entity e)
+{
+    if (e == entt::null || !g_registry.valid(e))
+        return;
+
+    FuncAggregateMonster f(e);
+    ecs::ForEachAround(g_registry, e, f);
+}
+
+void AggregateMonsterPlus(entt::entity e)
+{
+    if (e == entt::null || !g_registry.valid(e))
+        return;
+
+    FuncAggregateMonsterPlus f(e);
+    ecs::ForEachAround(g_registry, e, f);
+}
+
+void AttractRanger(entt::entity e)
+{
+    if (e == entt::null || !g_registry.valid(e))
+        return;
+
+    FuncAttractRanger f(e);
+    ecs::ForEachAround(g_registry, e, f);
+}
+
+void PullMonster(entt::entity e)
+{
+    if (e == entt::null || !g_registry.valid(e))
+        return;
+
+    FuncPullMonster f(e);
+    ecs::ForEachAround(g_registry, e, f);
+}
+
+} // namespace CombatSystem
+
 // char_battle.cpp slice BE2a moved into CombatSystem.cpp
 
-void CHARACTER::ForgetMyAttacker()
-{
-	FuncForgetMyAttacker f(GetEntityHandle());
-	ecs::ForEachAround(g_registry, GetEntityHandle(), f);
-	ReviveInvisible(5);
-}
-
-void CHARACTER::AggregateMonster()
-{
-	FuncAggregateMonster f(GetEntityHandle());
-	ecs::ForEachAround(g_registry, GetEntityHandle(), f);
-}
-
 #ifdef ENABLE_AGGREGATE_MONSTER_PLUS_RAZOR93
-void CHARACTER::AggregateMonsterPlus()
-{
-	FuncAggregateMonsterPlus f(GetEntityHandle());
-	ecs::ForEachAround(g_registry, GetEntityHandle(), f);
-}
 #endif
-void CHARACTER::AttractRanger()
-{
-	FuncAttractRanger f(GetEntityHandle());
-	ecs::ForEachAround(g_registry, GetEntityHandle(), f);
-}
-
-void CHARACTER::PullMonster()
-{
-	FuncPullMonster f(GetEntityHandle());
-	ecs::ForEachAround(g_registry, GetEntityHandle(), f);
-}
-
-
 // char_battle.cpp slice BE3 moved into CombatSystem.cpp
 
 #ifdef LEADERBOARD_RAZOR93
@@ -1506,7 +1493,7 @@ void UpdateAggrPointEx(entt::entity self, entt::entity attacker, uint8_t rawType
 
 void CHARACTER::UpdateAggrPoint(entt::entity attacker, EDamageType type, int dam)
 {
-	if (IsDead() || IsStun())
+	if (CombatSystem::IsDead(GetEntityHandle()) || CombatSystem::IsStun(GetEntityHandle()))
 		return;
 
 	const entt::entity eAttacker = attacker;
@@ -2840,11 +2827,6 @@ void CombatSystem_Update(entt::registry& reg, uint32_t tick)
 }
 
 // char_battle.cpp slice BA moved into CombatSystem.cpp
-
-bool CHARACTER::CanFight() const
-{
-	return GetPosition() >= POS_FIGHTING ? true : false;
-}
 
 namespace CombatSystem {
 
@@ -6545,7 +6527,7 @@ public:
 					m_me->ComputeSkill(m_bType, victim);
 					m_me->UseArrow(pkArrow, iUseArrow);
 
-					if (pkVictim->IsDead())
+					if (CombatSystem::IsDead(pkVictim->GetEntityHandle()))
 						break;
 
 				}
@@ -6839,14 +6821,6 @@ void CHARACTER::FlyTarget(uint32_t dwTargetVID, int32_t x, int32_t y, uint8_t bH
 
 // char_battle.cpp slice BB1 moved into CombatSystem.cpp
 
-bool CHARACTER::IsStun() const
-{
-	if (RuntimeFlags(GetEntityHandle()) && IS_SET(RuntimeFlags(GetEntityHandle())->instantFlag, INSTANT_FLAG_STUN))
-		return true;
-
-	return false;
-}
-
 EVENTFUNC(StunEvent)
 {
 	char_event_info* info = dynamic_cast<char_event_info*>(event->info);
@@ -6879,10 +6853,10 @@ EVENTFUNC(StunEvent)
 
 void CHARACTER::Stun()
 {
-	if (IsStun())
+	if (CombatSystem::IsStun(GetEntityHandle()))
 		return;
 
-	if (IsDead())
+	if (CombatSystem::IsDead(GetEntityHandle()))
 		return;
 
 	if (!IsPC() && m_pkParty)
@@ -6924,14 +6898,6 @@ void CHARACTER::Stun()
 
 	ecs::PlayerRuntime::SetCharEvent(GetEntityHandle(), ecs::PlayerRuntime::CharEvent::Stun,
 		event_create(StunEvent, info, PASSES_PER_SEC(3)));
-}
-
-bool CHARACTER::IsDead() const
-{
-	if (GetPosition() == POS_DEAD)
-		return true;
-
-	return false;
 }
 
 struct FuncSetLastAttacked
@@ -7237,60 +7203,6 @@ void SetAggressive(entt::entity e)
 }
 
 } // namespace CombatSystem
-
-void CHARACTER::SetCoward()
-{
-		if (auto* flags = RuntimeFlags(GetEntityHandle()))
-		SET_BIT(flags->aiFlag, AIFLAG_COWARD);
-	AIHelpers::SetCoward(GetEntityHandle(), true);
-}
-
-bool CHARACTER::IsReviver() const
-{
-	if (IS_SET(ecs::PlayerRuntime::GetAIFlag(GetEntityHandle()), AIFLAG_REVIVE))
-		return true;
-
-	if (auto* flags = AIHelpers::TryGetFlags(GetEntityHandle()))
-		return flags->isReviver;
-
-	return false;
-}
-
-void CHARACTER::SetNoAttackShinsu()
-{
-		if (auto* flags = RuntimeFlags(GetEntityHandle()))
-		SET_BIT(flags->aiFlag, AIFLAG_NOATTACKSHINSU);
-	AIHelpers::SetNoAttackShinsu(GetEntityHandle(), true);
-}
-
-void CHARACTER::SetNoAttackChunjo()
-{
-		if (auto* flags = RuntimeFlags(GetEntityHandle()))
-		SET_BIT(flags->aiFlag, AIFLAG_NOATTACKCHUNJO);
-	AIHelpers::SetNoAttackChunjo(GetEntityHandle(), true);
-}
-
-void CHARACTER::SetNoAttackJinno()
-{
-		if (auto* flags = RuntimeFlags(GetEntityHandle()))
-		SET_BIT(flags->aiFlag, AIFLAG_NOATTACKJINNO);
-	AIHelpers::SetNoAttackJinno(GetEntityHandle(), true);
-}
-
-void CHARACTER::SetAttackMob()
-{
-		if (auto* flags = RuntimeFlags(GetEntityHandle()))
-		SET_BIT(flags->aiFlag, AIFLAG_ATTACKMOB);
-	AIHelpers::SetAttackMob(GetEntityHandle(), true);
-}
-
-int CHARACTER::GetHPPct() const
-{
-	if (GetMaxHP() <= 0)
-		return 0;
-
-	return static_cast<int>((static_cast<int64_t>(GetHP()) * 100) / static_cast<int64_t>(GetMaxHP()));
-}
 
 namespace CombatSystem {
 
@@ -7735,16 +7647,6 @@ void CheckTarget(entt::entity e)
 }
 
 } // namespace CombatSystem
-
-int CHARACTER::GetLeadershipSkillLevel() const
-{
-	return GetSkillLevel(SKILL_LEADERSHIP);
-}
-
-void CHARACTER::ReviveInvisible(int iDur)
-{
-	AffectSystem::AddAffect(GetEntityHandle(), AFFECT_REVIVE_INVISIBLE, POINT_NONE, 0, AFF_REVIVE_INVISIBLE, iDur, 0, true);
-}
 
 void CHARACTER::DetermineDropMetinStone()
 {

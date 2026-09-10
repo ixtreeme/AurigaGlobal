@@ -818,7 +818,7 @@ ACMD(do_restart)
 
 						ecs::PointSystem::Change(character, POINT_HP, ecs::PointSystem::GetMaxHP(character) - ch->GetHP());
 						ecs::PointSystem::Change(character, POINT_SP, ecs::PointSystem::GetMaxSP(character) - ecs::PlayerRuntime::GetSP(character));
-						ch->ReviveInvisible(5);
+						CombatSystem::ReviveInvisible(ch->GetEntityHandle(), 5);
 #ifdef ENABLE_MOUNT_COSTUME_SYSTEM
 						ch->CheckMount();
 #endif
@@ -831,7 +831,7 @@ ACMD(do_restart)
 						ch->RestartAtSamePos();
 						ecs::PointSystem::Change(character, POINT_HP, ecs::PointSystem::GetMaxHP(character) - ch->GetHP());
 						ecs::PointSystem::Change(character, POINT_SP, ecs::PointSystem::GetMaxSP(character) - ecs::PlayerRuntime::GetSP(character));
-						ch->ReviveInvisible(5);
+						CombatSystem::ReviveInvisible(ch->GetEntityHandle(), 5);
 #ifdef ENABLE_MOUNT_COSTUME_SYSTEM
 						ch->CheckMount();
 #endif
@@ -1439,7 +1439,7 @@ ACMD(do_restart)
 #endif
 				ecs::PointSystem::Change(character, POINT_SP, ecs::PointSystem::GetMaxSP(character) - ecs::PlayerRuntime::GetSP(character));
 				ch->DeathPenalty(0);
-				ch->ReviveInvisible(5);
+				CombatSystem::ReviveInvisible(ch->GetEntityHandle(), 5);
 #ifdef ENABLE_MOUNT_COSTUME_SYSTEM
 				ch->CheckMount();
 #endif

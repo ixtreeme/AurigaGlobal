@@ -596,15 +596,10 @@ public:
 public:
 
 
-	void				SetCoward();
 
-	void				SetNoAttackShinsu();
 
-	void				SetNoAttackChunjo();
 
-	void				SetNoAttackJinno();
 
-	void				SetAttackMob();
 
 	virtual void			EndStateEmpty() {}
 
@@ -732,7 +727,6 @@ public:
 
 
 
-	int				GetHPPct() const;
 
 	void			SetRealPoint(uint8_t idx, int64_t val);
 	int64_t			GetRealPoint(uint8_t idx) const;
@@ -755,7 +749,6 @@ public:
 
 
 
-	bool			IsReviver() const;
 	// NEWAI END
 
 	uint32_t			GetSummonVnum() const;
@@ -983,7 +976,6 @@ public:
 	void			PartyInvite(entt::entity invitee);
 	void			PartyInviteAccept(entt::entity invitee);
 	void			PartyInviteDeny(uint32_t dwPID);
-	int				GetLeadershipSkillLevel() const;
 	void			SetPartyRequestEvent(LPEVENT pkEvent) { m_pkPartyRequestEvent = pkEvent; }
 
 protected:
@@ -1271,15 +1263,11 @@ public:
 
 
 	void				DeathPenalty(uint8_t bExpLossPercent);
-	void				ReviveInvisible(int iDur);
-
-	bool				CanFight() const;
 
 
 
-	bool				IsStun() const;
+
 	void				Stun();
-	bool				IsDead() const;
 #ifdef __NEWPET_SYSTEM__
 	//int GetBeltCount() const;//#ifdef ENABLE_MOUNT_COUNT_ABOVE_CHAR_RAZOR93
 #endif
@@ -1289,13 +1277,8 @@ public:
 	bool				Shoot(uint8_t bType);
 	void				FlyTarget(uint32_t dwTargetVID, int32_t x, int32_t y, uint8_t bHeader);
 
-	void				ForgetMyAttacker();
-	void				AggregateMonster();
 #ifdef ENABLE_AGGREGATE_MONSTER_PLUS_RAZOR93
-	void AggregateMonsterPlus();
 #endif
-	void				AttractRanger();
-	void				PullMonster();
 
 	int					GetArrowAndBow(entt::entity* ppkBow, entt::entity* ppkArrow, int iArrowCount = 1);
 #ifdef ENABLE_RANKING

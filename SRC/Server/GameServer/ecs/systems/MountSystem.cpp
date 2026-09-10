@@ -755,7 +755,7 @@ bool CHARACTER::StartRiding()
 		return false;
 	}
 #endif
-	if (IsDead() == true)
+	if (CombatSystem::IsDead(GetEntityHandle()) == true)
 	{
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(rider, CHAT_TYPE_INFO, 356, "");
@@ -824,7 +824,7 @@ bool CHARACTER::StopRiding()
 	{
 		quest::CQuestManager::instance().Unmount(GetPlayerID());
 
-		if (!IsDead() && !IsStun())
+		if (!CombatSystem::IsDead(GetEntityHandle()) && !CombatSystem::IsStun(GetEntityHandle()))
 		{
 			uint32_t dwOldVnum = GetMountVnum();
 			MountVnum(0);

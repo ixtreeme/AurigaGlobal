@@ -1744,7 +1744,7 @@ bool CHARACTER::DropItem(TItemPos Cell,
 	}
 #endif
 
-	if (IsDead())
+	if (CombatSystem::IsDead(GetEntityHandle()))
 		return false;
 
 	if (!InventorySystem::IsValidItemPosition(GetEntityHandle(), Cell) || !(item = GetItem(Cell)))
@@ -1904,7 +1904,7 @@ bool CHARACTER::PickupItem(uint32_t dwVID)
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
 	ecs::ChatSystem::Send(GetEntityHandle(), CHAT_TYPE_INFO, "char_item.cpp::bool CHARACTER::PickupItem ");//INGAME_DEBUG_RAZOR93
 #endif
-	if (!IsPC() || IsDead() || IsObserverMode())
+	if (!IsPC() || CombatSystem::IsDead(GetEntityHandle()) || IsObserverMode())
 	{
 		return false;
 	}
@@ -3039,7 +3039,7 @@ bool CHARACTER::CanReceiveItem(entt::entity fromEntity, LPITEM item) const
 		// ÃÊ±Þ ¸»
 		if (item->GetVnum() == ITEM_REVIVE_HORSE_1)
 		{
-			if (!IsDead())
+			if (!CombatSystem::IsDead(GetEntityHandle()))
 			{
 #ifdef TEXTS_IMPROVEMENT
 				ecs::ChatSystem::SendNew(fromEntity, CHAT_TYPE_INFO, 467, "");
@@ -3050,7 +3050,7 @@ bool CHARACTER::CanReceiveItem(entt::entity fromEntity, LPITEM item) const
 		}
 		else if (item->GetVnum() == ITEM_HORSE_FOOD_1)
 		{
-			if (IsDead())
+			if (CombatSystem::IsDead(GetEntityHandle()))
 			{
 #ifdef TEXTS_IMPROVEMENT
 				ecs::ChatSystem::SendNew(fromEntity, CHAT_TYPE_INFO, 466, "");
@@ -3070,7 +3070,7 @@ bool CHARACTER::CanReceiveItem(entt::entity fromEntity, LPITEM item) const
 		// Áß±Þ ¸»
 		if (item->GetVnum() == ITEM_REVIVE_HORSE_2)
 		{
-			if (!IsDead())
+			if (!CombatSystem::IsDead(GetEntityHandle()))
 			{
 #ifdef TEXTS_IMPROVEMENT
 				ecs::ChatSystem::SendNew(fromEntity, CHAT_TYPE_INFO, 467, "");
@@ -3081,7 +3081,7 @@ bool CHARACTER::CanReceiveItem(entt::entity fromEntity, LPITEM item) const
 		}
 		else if (item->GetVnum() == ITEM_HORSE_FOOD_2)
 		{
-			if (IsDead())
+			if (CombatSystem::IsDead(GetEntityHandle()))
 			{
 #ifdef TEXTS_IMPROVEMENT
 				ecs::ChatSystem::SendNew(fromEntity, CHAT_TYPE_INFO, 466, "");
@@ -3101,7 +3101,7 @@ bool CHARACTER::CanReceiveItem(entt::entity fromEntity, LPITEM item) const
 		// °í±Þ ¸»
 		if (item->GetVnum() == ITEM_REVIVE_HORSE_3)
 		{
-			if (!IsDead())
+			if (!CombatSystem::IsDead(GetEntityHandle()))
 			{
 #ifdef TEXTS_IMPROVEMENT
 				ecs::ChatSystem::SendNew(fromEntity, CHAT_TYPE_INFO, 467, "");
@@ -3112,7 +3112,7 @@ bool CHARACTER::CanReceiveItem(entt::entity fromEntity, LPITEM item) const
 		}
 		else if (item->GetVnum() == ITEM_HORSE_FOOD_3)
 		{
-			if (IsDead())
+			if (CombatSystem::IsDead(GetEntityHandle()))
 			{
 #ifdef TEXTS_IMPROVEMENT
 				ecs::ChatSystem::SendNew(fromEntity, CHAT_TYPE_INFO, 466, "");
@@ -3446,7 +3446,7 @@ bool CHARACTER::DestroyItem(TItemPos Cell)
 		return false;
 	}
 
-	if (IsDead())
+	if (CombatSystem::IsDead(GetEntityHandle()))
 		return false;
 
 	if (!InventorySystem::IsValidItemPosition(GetEntityHandle(), Cell) || !(item = GetItem(Cell)))

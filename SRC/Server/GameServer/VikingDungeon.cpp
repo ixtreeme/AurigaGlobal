@@ -703,7 +703,7 @@ namespace
             if (stage >= 3)
                 return PASSES_PER_SEC(1);
 
-            const int hpPct = boss->GetHPPct();
+            const int hpPct = ecs::PlayerRuntime::GetHPPct(boss->GetEntityHandle());
             if (hpPct > kMainBossHpStages[stage])
                 return PASSES_PER_SEC(1);
 
@@ -833,7 +833,7 @@ namespace
             if (stage >= 3)
                 return PASSES_PER_SEC(1);
 
-            const int hpPct = boss->GetHPPct();
+            const int hpPct = ecs::PlayerRuntime::GetHPPct(boss->GetEntityHandle());
             if (hpPct > kFinalBossHpStages[stage])
                 return PASSES_PER_SEC(1);
 

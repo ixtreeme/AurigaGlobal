@@ -2,6 +2,8 @@
 #include "ecs/systems/CombatSystem.hpp"
 #include <Core/Logging.hpp>
 #include "ecs/systems/PlayerRuntimeSystem.hpp"
+#include "ecs/systems/SkillSystem.hpp"
+#include "skill.h"
 #include "ecs/systems/MovementSystem.hpp"
 #include "ecs/systems/SocialSystem.hpp"
 #include "ecs/systems/PointSystem.hpp"
@@ -450,7 +452,7 @@ void CParty::P2PJoin(uint32_t dwPID)
 				Member.strName = ecs::PlayerRuntime::GetName(((ch) ? (ch)->GetEntityHandle() : entt::null)).data();
 
 				if (Member.bRole == PARTY_ROLE_LEADER)
-					m_iLeadership = ch->GetLeadershipSkillLevel();
+					m_iLeadership = SkillSystem::GetSkillLevel(ch->GetEntityHandle(), SKILL_LEADERSHIP);
 			}
 			else
 			{
@@ -1414,7 +1416,7 @@ void CParty::Update()
 		bResendAll = true;
 	}
 
-	m_iLeadership = l->GetLeadershipSkillLevel();
+	m_iLeadership = SkillSystem::GetSkillLevel(l->GetEntityHandle(), SKILL_LEADERSHIP);
 	int iNewExpBonus = ComputePartyBonusExpPercent();
 	m_iAttBonus = ComputePartyBonusAttackGrade();
 	m_iDefBonus = ComputePartyBonusDefenseGrade();

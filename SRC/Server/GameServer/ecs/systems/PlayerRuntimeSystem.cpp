@@ -1893,6 +1893,52 @@ void SetProto(entt::entity e, const CMob* pkMob)
         ch->SetProto(pkMob);
 }
 
+void SetCoward(entt::entity e)
+{
+    if (auto* flags = ecs::TryGetRuntimeFlags(e))
+        SET_BIT(flags->aiFlag, AIFLAG_COWARD);
+    AIHelpers::SetCoward(e, true);
+}
+
+void SetNoAttackShinsu(entt::entity e)
+{
+    if (auto* flags = ecs::TryGetRuntimeFlags(e))
+        SET_BIT(flags->aiFlag, AIFLAG_NOATTACKSHINSU);
+    AIHelpers::SetNoAttackShinsu(e, true);
+}
+
+void SetNoAttackChunjo(entt::entity e)
+{
+    if (auto* flags = ecs::TryGetRuntimeFlags(e))
+        SET_BIT(flags->aiFlag, AIFLAG_NOATTACKCHUNJO);
+    AIHelpers::SetNoAttackChunjo(e, true);
+}
+
+void SetNoAttackJinno(entt::entity e)
+{
+    if (auto* flags = ecs::TryGetRuntimeFlags(e))
+        SET_BIT(flags->aiFlag, AIFLAG_NOATTACKJINNO);
+    AIHelpers::SetNoAttackJinno(e, true);
+}
+
+void SetAttackMob(entt::entity e)
+{
+    if (auto* flags = ecs::TryGetRuntimeFlags(e))
+        SET_BIT(flags->aiFlag, AIFLAG_ATTACKMOB);
+    AIHelpers::SetAttackMob(e, true);
+}
+
+// The aiFlag word and the AIFlags component both carry this; the setters
+// write both, so either answer alone would do. Both are read, as before.
+bool IsReviver(entt::entity e)
+{
+    if (IS_SET(GetAIFlag(e), AIFLAG_REVIVE))
+        return true;
+
+    const auto* flags = AIHelpers::TryGetFlags(e);
+    return flags && flags->isReviver;
+}
+
 uint32_t GetAIFlag(entt::entity e)
 {
     if (const auto* flags = TryGetRuntimeFlagsComponent(e))
@@ -4932,7 +4978,7 @@ void CHARACTER::OnClick(entt::entity causer)
         {
             if (GetMyShop())
             {
-                if (pkCauser->IsDead() == true)
+                if (CombatSystem::IsDead(pkCauser->GetEntityHandle()) == true)
                     return;
 
                 if (pkCauser == this)
