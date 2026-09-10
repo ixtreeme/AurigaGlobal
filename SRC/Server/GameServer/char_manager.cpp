@@ -377,7 +377,7 @@ void CHARACTER_MANAGER::GracefulShutdown()
 	// across callbacks: disconnecting one player can remove another.
 	for (const entt::entity character : CPIDRegistry::Instance().Snapshot())
 		if (auto* ch = ecs::LegacyCharOf(character))
-			ch->Disconnect("GracefulShutdown");
+			ecs::SessionSystem::Disconnect(ch->GetEntityHandle(), "GracefulShutdown");
 }
 
 uint32_t CHARACTER_MANAGER::AllocVID()

@@ -19,6 +19,7 @@ void LoadMall(entt::entity e, int iItemCount, TPlayerItem* pItems);
 void CloseSafebox(entt::entity e);
 bool IsSafeboxLoading(entt::entity e);
 void SetSafeboxLoading(entt::entity e, bool loading);
+void Disconnect(entt::entity e, const char* c_pszReason);
 bool GetSkipSave(entt::entity e);
 void SetSkipSave(entt::entity e, bool value);
 void Save(entt::entity e);

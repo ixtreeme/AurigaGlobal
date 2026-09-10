@@ -411,7 +411,7 @@ struct DisconnectFunc
 			return;
 
 		if (d->GetCharacter())
-			d->GetCharacter()->Disconnect("Shutdown(DisconnectFunc)");
+			ecs::SessionSystem::Disconnect(d->GetCharacter()->GetEntityHandle(), "Shutdown(DisconnectFunc)");
 
 		d->SetPhase(PHASE_CLOSE);
 	}
@@ -662,7 +662,7 @@ EVENTFUNC(timed_event)
 
 			case SCMD_PHASE_SELECT:
 				{
-					ch->Disconnect("timed_event - SCMD_PHASE_SELECT");
+					ecs::SessionSystem::Disconnect(chEntity, "timed_event - SCMD_PHASE_SELECT");
 
 					if (d)
 					{

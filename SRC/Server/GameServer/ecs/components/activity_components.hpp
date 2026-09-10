@@ -23,6 +23,9 @@ struct FishingActiveTag {};
 // of pointers on CHARACTER, so nothing entity-native could read a mission.
 struct BattlePassMissions {
     std::list<TPlayerBattlePassMission*> missions;
+    // Whether the list above came back from the database. It was a CHARACTER
+    // field beside the list it describes.
+    bool loaded { false };
 };
 
 // When a box was last opened. It was a CHARACTER field guarding a cooldown

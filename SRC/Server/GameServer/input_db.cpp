@@ -1922,7 +1922,7 @@ void CInputDB::AffectLoad(LPDESC d, const char * c_pData)
 #ifdef ENABLE_BATTLE_PASS
 #ifdef ENABLE_FREE_PASS_RAZOR93
 	ch->EnsureFreeBattlePassActive();
-	if (!ch->IsLoadedBattlePass())
+	if (!ecs::PlayerRuntime::IsBattlePassLoaded(ch->GetEntityHandle()))
 		ch->LoadBattlePass(0, nullptr);
 #endif
 #endif

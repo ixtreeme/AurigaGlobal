@@ -167,6 +167,8 @@ bool IsPCBang(entt::entity e);
 bool IsObserverMode(entt::entity e);
 bool IsArenaObserverMode(entt::entity e);
 CArena* GetArena(entt::entity e);
+bool IsBattlePassLoaded(entt::entity e);
+void SetBattlePassLoaded(entt::entity e, bool loaded);
 void SetArena(entt::entity e, CArena* arena);
 bool CanWarp(entt::entity e);
 bool IsHack(entt::entity e, bool sendMessage, bool checkShopOwner, int limitTime);

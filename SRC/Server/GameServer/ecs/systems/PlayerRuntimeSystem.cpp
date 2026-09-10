@@ -826,6 +826,21 @@ bool IsArenaObserverMode(entt::entity e)
 	return status && status->isArenaObserver;
 }
 
+bool IsBattlePassLoaded(entt::entity e)
+{
+    if (e == entt::null || !g_registry.valid(e))
+        return false;
+    const auto* missions = g_registry.try_get<ecs::BattlePassMissions>(e);
+    return missions && missions->loaded;
+}
+
+void SetBattlePassLoaded(entt::entity e, bool loaded)
+{
+    if (e == entt::null || !g_registry.valid(e))
+        return;
+    g_registry.get_or_emplace<ecs::BattlePassMissions>(e).loaded = loaded;
+}
+
 CArena* GetArena(entt::entity e)
 {
 	if (e == entt::null || !g_registry.valid(e))
@@ -2507,14 +2522,14 @@ void CHARACTER::EnsureFreeBattlePassActive()
 
     if (!GetBattlePassId())
         AffectSystem::AddAffect(GetEntityHandle(), AFFECT_BATTLE_PASS, POINT_BATTLE_PASS_ID, kDefaultBattlePassId, 0, remain, 0, true);
-    m_bIsLoadedBattlePass = true;
+    ecs::PlayerRuntime::SetBattlePassLoaded(GetEntityHandle(), true);
 }
 #endif
 
 #ifdef ENABLE_BATTLE_PASS
 void CHARACTER::LoadBattlePass(uint32_t dwCount, TPlayerBattlePassMission* data)
 {
-    m_bIsLoadedBattlePass = false;
+    ecs::PlayerRuntime::SetBattlePassLoaded(GetEntityHandle(), false);
 
     for (auto it = ecs::PlayerRuntime::GetBattlePassMissions(GetEntityHandle()).begin(); it != ecs::PlayerRuntime::GetBattlePassMissions(GetEntityHandle()).end(); ++it)
         delete (*it);
@@ -2537,7 +2552,7 @@ void CHARACTER::LoadBattlePass(uint32_t dwCount, TPlayerBattlePassMission* data)
 
     if (dwCount == 0 || !data)
     {
-        m_bIsLoadedBattlePass = true;
+        ecs::PlayerRuntime::SetBattlePassLoaded(GetEntityHandle(), true);
         return;
     }
 
@@ -2554,7 +2569,7 @@ void CHARACTER::LoadBattlePass(uint32_t dwCount, TPlayerBattlePassMission* data)
         ecs::PlayerRuntime::GetBattlePassMissions(GetEntityHandle()).push_back(newMission);
     }
 
-    m_bIsLoadedBattlePass = true;
+    ecs::PlayerRuntime::SetBattlePassLoaded(GetEntityHandle(), true);
 }
 
 #ifdef ENABLE_BATTLE_PASS_STAY_ONLINE
@@ -2599,7 +2614,7 @@ bool CHARACTER::IsCompletedMission(uint8_t bMissionType)
 
 void CHARACTER::UpdateMissionProgress(uint32_t dwMissionID, uint32_t dwBattlePassID, uint32_t dwUpdateValue, uint32_t dwTotalValue, bool isOverride)
 {
-    if (!m_bIsLoadedBattlePass)
+    if (!ecs::PlayerRuntime::IsBattlePassLoaded(GetEntityHandle()))
         return;
 #ifdef ENABLE_FREE_PASS_RAZOR93
     dwTotalValue = ecs::PlayerRuntime::GetBattlePassAdjustedTotal(GetEntityHandle(), dwMissionID, dwBattlePassID, dwTotalValue);
@@ -5779,7 +5794,7 @@ void CHARACTER::Initialize()
 
 #ifdef ENABLE_BATTLE_PASS
     ecs::PlayerRuntime::GetBattlePassMissions(GetEntityHandle()).clear();
-    m_bIsLoadedBattlePass = false;
+    ecs::PlayerRuntime::SetBattlePassLoaded(GetEntityHandle(), false);
 
 #ifdef ENABLE_BATTLE_PASS_STAY_ONLINE
     m_pkStayOnlineEvent = nullptr;

@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "ecs/systems/PlayerRuntimeSystem.hpp"
+#include "ecs/systems/SessionSystem.hpp"
 #include "ecs/AIHelpers.hpp"
 #include <Core/Logging.hpp>
 #include "config.h"
@@ -125,7 +126,7 @@ void DESC::Destroy()
 
 	if (m_lpCharacter)
 	{
-		m_lpCharacter->Disconnect("DESC::~DESC");
+		ecs::SessionSystem::Disconnect(m_lpCharacter->GetEntityHandle(), "DESC::~DESC");
 		m_lpCharacter = nullptr;
 	}
 

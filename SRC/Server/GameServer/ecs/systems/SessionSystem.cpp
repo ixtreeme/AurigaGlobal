@@ -649,6 +649,160 @@ void SetSafeboxLoading(entt::entity e, bool loading)
     g_registry.get_or_emplace<ecs::SafeboxRef>(e).isOpening = loading;
 }
 
+// The end of a session: everything the character was part of lets go of it,
+// what has to survive is written, and then it is destroyed.
+void Disconnect(entt::entity e, const char* c_pszReason)
+{
+    if (e == entt::null || !g_registry.valid(e))
+        return;
+
+    // GetRealPoint, the login play time, DestroyPvP, the offline shop and
+    // auction handles, the war and wedding maps and the battle-pass loaded
+    // flag have no entity form yet; each is its own migration and they share
+    // this one resolve.
+    LPCHARACTER self = ecs::LegacyCharOf(e);
+    if (!self)
+        return;
+
+    assert(ecs::PlayerRuntime::GetDesc(e) != nullptr);
+
+    LOG_INFO("DISCONNECT: {} ({})", ecs::PlayerRuntime::GetName(e).data(), c_pszReason ? c_pszReason : "unset");
+#ifdef ENABLE_CPP_DUNGEON_RAZOR93
+    COrcsDungeon::instance().OnPlayerDisconnect(e);
+    CTritonTempleDungeon::instance().OnPlayerDisconnect(e);
+    CValentineDungeon::instance().OnPlayerDisconnect(e);
+    CRuneDungeon::instance().OnPlayerDisconnect(e);
+    CPyramidDungeonRazor93::instance().OnPlayerDisconnect(e);
+    CNightmareDungeonRazor93::instance().OnPlayerDisconnect(e);
+    CHalloween2022Dungeon::instance().OnPlayerDisconnect(e);
+    CVikingDungeon::instance().OnPlayerDisconnect(e);
+    CEasterDungeon::instance().OnPlayerDisconnect(e);
+#endif
+    if (ecs::SocialSystem::GetShop(e))
+    {
+        ecs::SocialSystem::GetShop(e)->RemoveGuest(e);
+        ecs::SocialSystem::SetShop(e, nullptr);
+    }
+
+    if (ecs::PlayerRuntime::GetArena(e) != nullptr)
+    {
+        ecs::PlayerRuntime::GetArena(e)->OnDisconnect(ecs::PlayerRuntime::GetPlayerID(e));
+    }
+
+    if (ecs::SocialSystem::GetParty(e) != nullptr)
+    {
+        ecs::SocialSystem::GetParty(e)->UpdateOfflineState(ecs::PlayerRuntime::GetPlayerID(e));
+    }
+
+    marriage::CManager::instance().Logout(e);
+
+    TPacketGGLogout p;
+    p.bHeader = HEADER_GG_LOGOUT;
+    strlcpy(p.szName, ecs::PlayerRuntime::GetName(e).data(), sizeof(p.szName));
+    P2P_MANAGER::instance().Send(&p, sizeof(TPacketGGLogout));
+    LogManager::instance().CharLog(e, 0, "LOGOUT", "");
+
+#ifdef ENABLE_PCBANG_FEATURE
+    {
+        int32_t playTime = self->GetRealPoint(POINT_PLAYTIME) - self->m_dwLoginPlayTime;
+        LogManager::instance().LoginLog(false, ecs::PlayerRuntime::GetDesc(e)->GetAccountTable().id, ecs::PlayerRuntime::GetPlayerID(e), ecs::PlayerRuntime::GetLevel(e), ecs::PlayerRuntime::GetJob(e), playTime);
+
+        if (0)
+            CPCBangManager::instance().Log(ecs::PlayerRuntime::GetDesc(e)->GetHostName(), ecs::PlayerRuntime::GetPlayerID(e), playTime);
+    }
+#endif
+
+    if (self->GetWarMap())
+        self->SetWarMap(nullptr);
+
+    if (self->GetWeddingMap())
+        self->SetWeddingMap(nullptr);
+
+#ifdef __ENABLE_NEW_OFFLINESHOP__
+    offlineshop::GetManager().RemoveSafeboxFromCache(ecs::PlayerRuntime::GetPlayerID(e));
+    offlineshop::GetManager().RemoveGuestFromShops(e);
+
+    if (auto* auctionGuest = self->GetAuctionGuest())
+        auctionGuest->RemoveGuest(self);
+
+    if (self->GetOfflineShop())
+        self->SetOfflineShop(nullptr);
+
+    self->SetShopSafebox(nullptr);
+
+    self->SetAuction(nullptr);
+    self->SetAuctionGuest(nullptr);
+    self->SetLookingOfflineshopOfferList(false);
+#endif
+
+    if (ecs::SocialSystem::GetGuild(e))
+        ecs::SocialSystem::GetGuild(e)->LogoutMember(e);
+
+    quest::CQuestManager::instance().LogoutPC(e);
+
+#ifdef ENABLE_PVP_ADVANCED
+    self->DestroyPvP();
+#endif
+
+    if (ecs::SocialSystem::GetParty(e))
+        ecs::SocialSystem::GetParty(e)->Unlink(e);
+
+    if (CombatSystem::IsStun(e) || CombatSystem::IsDead(e))
+    {
+        CombatSystem::DeathPenalty(e, 0);
+        ecs::PointSystem::Change(e, POINT_HP, 50 - ecs::PlayerRuntime::GetHP(e));
+    }
+
+    ITEM_MANAGER::instance().FlushDelayedSaveByOwner(e);
+
+    if (!CHARACTER_MANAGER::instance().FlushDelayedSave(e))
+        SaveReal(e);
+
+    FlushDelayedSaveItem(e);
+
+    AffectSystem::SaveAffect(e);
+    AffectSystem::SetLoaded(e, false);
+
+#ifdef ENABLE_BATTLE_PASS
+    auto it = ecs::PlayerRuntime::GetBattlePassMissions(e).begin();
+    while (it != ecs::PlayerRuntime::GetBattlePassMissions(e).end())
+    {
+        TPlayerBattlePassMission* pkMission = *it++;
+
+        if (pkMission->bIsUpdated)
+            db_clientdesc->DBPacket(HEADER_GD_SAVE_BATTLE_PASS, 0, pkMission, sizeof(TPlayerBattlePassMission));
+
+        if (pkMission)
+            M2_DELETE(pkMission);
+    }
+    ecs::PlayerRuntime::SetBattlePassLoaded(e, false);
+#endif
+
+    SetSkipSave(e, true);
+
+    quest::CQuestManager::instance().DisconnectPC(e);
+
+    CloseSafebox(e);
+    CloseMall(e);
+
+    CPVPManager::instance().Disconnect(e);
+    CTargetManager::instance().Logout(ecs::PlayerRuntime::GetPlayerID(e));
+    MessengerManager::instance().Logout(ecs::PlayerRuntime::GetName(e).data());
+
+#ifdef ENABLE_MOUNT_COSTUME_SYSTEM
+    if (MountSystem::GetMountVnum(e))
+    {
+        AffectSystem::RemoveAffect(e, AFFECT_MOUNT);
+        AffectSystem::RemoveAffect(e, AFFECT_MOUNT_BONUS);
+    }
+#endif
+
+    if (ecs::PlayerRuntime::GetDesc(e))
+        ecs::PlayerRuntime::GetDesc(e)->BindCharacter(nullptr);
+
+    M2_DESTROY_CHARACTER(e);
+}
+
 bool GetSkipSave(entt::entity e)
 {
     if (e == entt::null || !g_registry.valid(e))
@@ -750,145 +904,4 @@ float GetDistanceFromSafeboxOpen(entt::entity character)
 }
 
 } // namespace ecs::SessionSystem
-
-void CHARACTER::Disconnect(const char* c_pszReason)
-{
-    assert(GetDesc() != NULL);
-
-    LOG_INFO("DISCONNECT: {} ({})", GetName(), c_pszReason ? c_pszReason : "unset");
-#ifdef ENABLE_CPP_DUNGEON_RAZOR93
-    COrcsDungeon::instance().OnPlayerDisconnect(GetEntityHandle());
-    CTritonTempleDungeon::instance().OnPlayerDisconnect(GetEntityHandle());
-    CValentineDungeon::instance().OnPlayerDisconnect(GetEntityHandle());
-    CRuneDungeon::instance().OnPlayerDisconnect(GetEntityHandle());
-    CPyramidDungeonRazor93::instance().OnPlayerDisconnect(GetEntityHandle());
-    CNightmareDungeonRazor93::instance().OnPlayerDisconnect(GetEntityHandle());
-    CHalloween2022Dungeon::instance().OnPlayerDisconnect(GetEntityHandle());
-    CVikingDungeon::instance().OnPlayerDisconnect(GetEntityHandle());
-    CEasterDungeon::instance().OnPlayerDisconnect(GetEntityHandle());
-#endif
-    if (GetShop())
-    {
-        GetShop()->RemoveGuest(GetEntityHandle());
-        SetShop(nullptr);
-    }
-
-    if (GetArena() != nullptr)
-    {
-        GetArena()->OnDisconnect(GetPlayerID());
-    }
-
-    if (GetParty() != nullptr)
-    {
-        GetParty()->UpdateOfflineState(GetPlayerID());
-    }
-
-    marriage::CManager::instance().Logout(GetEntityHandle());
-
-    TPacketGGLogout p;
-    p.bHeader = HEADER_GG_LOGOUT;
-    strlcpy(p.szName, GetName(), sizeof(p.szName));
-    P2P_MANAGER::instance().Send(&p, sizeof(TPacketGGLogout));
-    LogManager::instance().CharLog(GetEntityHandle(), 0, "LOGOUT", "");
-
-#ifdef ENABLE_PCBANG_FEATURE
-    {
-        int32_t playTime = GetRealPoint(POINT_PLAYTIME) - m_dwLoginPlayTime;
-        LogManager::instance().LoginLog(false, GetDesc()->GetAccountTable().id, GetPlayerID(), GetLevel(), GetJob(), playTime);
-
-        if (0)
-            CPCBangManager::instance().Log(GetDesc()->GetHostName(), GetPlayerID(), playTime);
-    }
-#endif
-
-    if (m_pWarMap)
-        SetWarMap(nullptr);
-
-    if (m_pWeddingMap)
-        SetWeddingMap(nullptr);
-
-#ifdef __ENABLE_NEW_OFFLINESHOP__
-    offlineshop::GetManager().RemoveSafeboxFromCache(GetPlayerID());
-    offlineshop::GetManager().RemoveGuestFromShops(GetEntityHandle());
-
-    if (m_pkAuctionGuest)
-        m_pkAuctionGuest->RemoveGuest(this);
-
-    if (GetOfflineShop())
-        SetOfflineShop(nullptr);
-
-    SetShopSafebox(nullptr);
-
-    m_pkAuction = nullptr;
-    m_pkAuctionGuest = nullptr;
-    m_bIsLookingOfflineshopOfferList = false;
-#endif
-
-    if (GetGuild())
-        GetGuild()->LogoutMember(GetEntityHandle());
-
-    quest::CQuestManager::instance().LogoutPC(GetEntityHandle());
-
-#ifdef ENABLE_PVP_ADVANCED
-    DestroyPvP();
-#endif
-
-    if (GetParty())
-        GetParty()->Unlink(GetEntityHandle());
-
-    if (IsStun() || IsDead())
-    {
-        DeathPenalty(0);
-        PointChange(POINT_HP, 50 - GetHP());
-    }
-
-    ITEM_MANAGER::instance().FlushDelayedSaveByOwner(GetEntityHandle());
-
-    if (!CHARACTER_MANAGER::instance().FlushDelayedSave(GetEntityHandle()))
-        ecs::SessionSystem::SaveReal(GetEntityHandle());
-
-    ecs::SessionSystem::FlushDelayedSaveItem(GetEntityHandle());
-
-    AffectSystem::SaveAffect(GetEntityHandle());
-    AffectSystem::SetLoaded(GetEntityHandle(), false);
-
-#ifdef ENABLE_BATTLE_PASS
-    auto it = ecs::PlayerRuntime::GetBattlePassMissions(GetEntityHandle()).begin();
-    while (it != ecs::PlayerRuntime::GetBattlePassMissions(GetEntityHandle()).end())
-    {
-        TPlayerBattlePassMission* pkMission = *it++;
-
-        if (pkMission->bIsUpdated)
-            db_clientdesc->DBPacket(HEADER_GD_SAVE_BATTLE_PASS, 0, pkMission, sizeof(TPlayerBattlePassMission));
-
-        if (pkMission)
-            M2_DELETE(pkMission);
-    }
-    m_bIsLoadedBattlePass = false;
-#endif
-
-    ecs::SessionSystem::SetSkipSave(GetEntityHandle(), true);
-
-    quest::CQuestManager::instance().DisconnectPC(GetEntityHandle());
-
-    ecs::SessionSystem::CloseSafebox(GetEntityHandle());
-    ecs::SessionSystem::CloseMall(GetEntityHandle());
-
-    CPVPManager::instance().Disconnect(GetEntityHandle());
-    CTargetManager::instance().Logout(GetPlayerID());
-    MessengerManager::instance().Logout(GetName());
-
-#ifdef ENABLE_MOUNT_COSTUME_SYSTEM
-    if (GetMountVnum())
-    {
-        AffectSystem::RemoveAffect(GetEntityHandle(), AFFECT_MOUNT);
-        AffectSystem::RemoveAffect(GetEntityHandle(), AFFECT_MOUNT_BONUS);
-    }
-#endif
-
-    if (GetDesc())
-        GetDesc()->BindCharacter(nullptr);
-
-    M2_DESTROY_CHARACTER(this);
-}
 

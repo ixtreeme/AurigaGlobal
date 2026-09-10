@@ -3695,7 +3695,7 @@ teleport_area:
         // DUAL-PATH: legacy only during migration window
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
 		auto* ch = ecs::LegacyCharOf(chEntity);
-		ch->Disconnect(lua_tostring(L, 1));
+		ecs::SessionSystem::Disconnect(ch->GetEntityHandle(), lua_tostring(L, 1));
 		return 0;
 	}
 

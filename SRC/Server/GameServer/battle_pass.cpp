@@ -592,7 +592,7 @@ void CBattlePass::BattlePassRequestOpen(LPCHARACTER pkChar)
 	if(!ecs::PlayerRuntime::GetDesc(charEntity))
 		return;
 
-	if(!pkChar->IsLoadedBattlePass())
+	if (!ecs::PlayerRuntime::IsBattlePassLoaded(pkChar->GetEntityHandle()))
 	{
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(charEntity, CHAT_TYPE_INFO, 776, "");
