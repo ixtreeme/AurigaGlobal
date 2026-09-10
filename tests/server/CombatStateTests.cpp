@@ -112,6 +112,12 @@ struct WeaponFixture {
 int poisonCalls = 0, bleedingCalls = 0, affectCalls = 0;
 std::function<void(entt::entity)> onPoison, onAffect;
 int checks = 0, computes = 0, packets = 0, alignmentPackets = 0;
+// Registered targets and recorded view packets, for the fly-targeting checks.
+// A VID nobody registered resolves to entt::null, which is what the manager
+// answers for a target that has gone.
+std::map<uint32_t, entt::entity> vids;
+int viewPackets = 0;
+bool canMove = false;
 uint32_t tick = 1000;
 bool guild = false;
 std::function<void(entt::entity)> onCompute, onPacket, onAlignment;
@@ -122,12 +128,16 @@ entt::entity Actor() {
     g_registry.emplace<ecs::CombatStats>(e);
     g_registry.emplace<BattleFixture>(e);
     g_registry.emplace<ecs::CharacterRuntimeFlagsComponent>(e).position = POS_STANDING;
+    // EntityFactory gives every character one of these; the fly-targeting
+    // checks read it, and get<> on a missing component is undefined.
+    g_registry.emplace<ecs::FlyTargets>(e);
     return e;
 }
 void Reset() {
     g_registry.clear(); computes = packets = alignmentPackets = 0; tick = 1000; guild = false;
     onCompute = onPacket = onAlignment = {}; passes_per_sec = 25;
     onPoison = onAffect = {}; poisonCalls = bleedingCalls = affectCalls = 0;
+    vids.clear(); viewPackets = 0; canMove = false;
 }
 void AssertActor(entt::entity e) {
     Check(g_registry.valid(e) && g_registry.any_of<ecs::TagPC, ecs::TagNPC, ecs::TagMonster, ecs::TagStone>(e), "stale/non-character service call");
@@ -291,6 +301,7 @@ void MultiplierAndValidityChecks() {
 // Spatial traversal is outside this combat fixture; SpatialLifecycleTests
 // exercises the real native index and callback dispatch.
 void ecs::SessionSystem::CloseSafebox(entt::entity) { UnexpectedService(__func__); }
+uint8_t SkillSystem::GetSkillGroup(entt::entity) { UnexpectedService(__func__); }
 LPENTITY SectreeLegacyEntity(entt::entity) { UnexpectedService(__func__); }
 bool SectreeMember(entt::entity, const SECTREE*) { UnexpectedService(__func__); }
 FCollectEntity SECTREE::SnapshotAround(int) const { UnexpectedService(__func__); }
@@ -305,10 +316,13 @@ boost::intrusive_ptr<event> event_create_ex(int (*)(boost::intrusive_ptr<event>,
 void ecs::ChatSystem::Send(entt::entity,unsigned char,char const *,...) { UnexpectedService(__func__); }
 void ecs::ChatSystem::SendNew(entt::entity,unsigned char,unsigned int,char const *,...) { UnexpectedService(__func__); }
 void ecs::ViewSystem::ViewReencode(entt::entity) { UnexpectedService(__func__); }
-void ecs::ViewSystem::PacketView(entt::entity,void const *,int,entt::entity) { UnexpectedService(__func__); }
+void ecs::ViewSystem::PacketView(entt::entity,void const *,int,entt::entity) { ++viewPackets; }
 DESC * ecs::PlayerRuntime::GetDesc(entt::entity) { UnexpectedService(__func__); }
 unsigned char ecs::PlayerRuntime::GetEmpire(entt::entity) { UnexpectedService(__func__); }
-unsigned int ecs::PlayerRuntime::GetPacketVID(entt::entity) { UnexpectedService(__func__); }
+unsigned int ecs::PlayerRuntime::GetPacketVID(entt::entity e) {
+    for (const auto& [vid, entity] : vids) if (entity == e) return vid;
+    UnexpectedService(__func__);
+}
 unsigned int ecs::PlayerRuntime::GetRaceNum(entt::entity e) { AssertActor(e); return g_registry.get<BattleFixture>(e).race; }
 bool ecs::PlayerRuntime::IsRaceFlag(entt::entity e,unsigned int) { AssertActor(e); return false; }
 int64_t ecs::PlayerRuntime::GetHP(entt::entity) { UnexpectedService(__func__); }
@@ -415,7 +429,7 @@ void CHARACTER::SetRotation(float,bool) { UnexpectedService(__func__); }
 void ecs::MovementSystem::SetRotationToXY(entt::entity, int, int) { UnexpectedService(__func__); }
 float CHARACTER::GetRotation(void)const { UnexpectedService(__func__); }
 bool ecs::MovementSystem::Goto(entt::entity,int,int) { UnexpectedService(__func__); }
-bool ecs::MovementSystem::CanMove(entt::entity) { UnexpectedService(__func__); }
+bool ecs::MovementSystem::CanMove(entt::entity) { return canMove; }
 bool CHARACTER::Sync(int,int) { UnexpectedService(__func__); }
 void CHARACTER::OnMove(bool) { UnexpectedService(__func__); }
 float ecs::MovementSystem::GetMoveSpeed(entt::entity) { UnexpectedService(__func__); }
@@ -540,7 +554,10 @@ CHARACTER * CHARACTER_MANAGER::SpawnGroup(unsigned int,int,int,int,int,int,regen
 void CHARACTER_MANAGER::SelectStone(entt::entity) { UnexpectedService(__func__); }
 CHARACTER * CHARACTER_MANAGER::Find(unsigned int) { UnexpectedService(__func__); }
 CHARACTER * CHARACTER_MANAGER::FindByPID(unsigned int) { UnexpectedService(__func__); }
-entt::entity CHARACTER_MANAGER::FindEntity(unsigned int) { UnexpectedService(__func__); }
+entt::entity CHARACTER_MANAGER::FindEntity(unsigned int vid) {
+    const auto it = vids.find(vid);
+    return it == vids.end() ? entt::null : it->second;
+}
 void CHARACTER_MANAGER::KillLog(unsigned int) { UnexpectedService(__func__); }
 int CHARACTER_MANAGER::GetMobGoldAmountRate(entt::entity) { UnexpectedService(__func__); }
 int CHARACTER_MANAGER::GetMobGoldDropRate(entt::entity) { UnexpectedService(__func__); }
@@ -995,6 +1012,59 @@ void LivenessChecks() {
     }
 }
 
+// A bow shot is aimed in one packet and released in another, so what it is
+// aimed at has to survive between them. That was two CHARACTER fields sitting
+// beside an ecs::FlyTargets component that was emplaced for every character
+// and read by nobody. The component is the only copy now.
+void FlyTargetChecks() {
+    Reset();
+    const auto shooter = Actor();
+    const auto victim = Actor();
+    vids[100] = shooter;
+    vids[200] = victim;
+
+    Check(!g_registry.get<ecs::FlyTargets>(shooter).primary &&
+        g_registry.get<ecs::FlyTargets>(shooter).list.empty(), "a fresh shooter is already aiming");
+
+    C::FlyTarget(shooter, 200, 0, 0, HEADER_CG_FLY_TARGETING);
+    Check(g_registry.get<ecs::FlyTargets>(shooter).primary == 200, "the single target was not held");
+    Check(g_registry.get<ecs::FlyTargets>(shooter).list.empty(), "a single target joined the queue");
+    Check(viewPackets == 1, "aiming sent no packet");
+
+    C::FlyTarget(shooter, 200, 0, 0, HEADER_CG_ADD_FLY_TARGETING);
+    C::FlyTarget(shooter, 200, 0, 0, HEADER_CG_ADD_FLY_TARGETING);
+    Check(g_registry.get<ecs::FlyTargets>(shooter).list.size() == 2, "the queue did not grow");
+    Check(g_registry.get<ecs::FlyTargets>(shooter).primary == 200, "queuing cleared the single target");
+
+    // A VID the manager cannot resolve still tells the watchers where the shot
+    // went, but nothing is aimed at.
+    const auto before = g_registry.get<ecs::FlyTargets>(shooter).list.size();
+    C::FlyTarget(shooter, 999, 4200, 4300, HEADER_CG_ADD_FLY_TARGETING);
+    Check(g_registry.get<ecs::FlyTargets>(shooter).list.size() == before, "a missing target was queued");
+    Check(viewPackets == 4, "a missing target sent no packet");
+
+    // Shooting while unable to move keeps everything aimed.
+    canMove = false;
+    Check(!C::Shoot(shooter, 0), "an immobile shooter fired");
+    Check(g_registry.get<ecs::FlyTargets>(shooter).primary == 200 &&
+        g_registry.get<ecs::FlyTargets>(shooter).list.size() == 2, "a refused shot dropped its aim");
+
+    // With nothing aimed, a shot is a no-op that reports failure.
+    Reset();
+    const auto idle = Actor();
+    canMove = true;
+    Check(!C::Shoot(idle, 0), "an unaimed shot reported success");
+    Check(!g_registry.get<ecs::FlyTargets>(idle).primary &&
+        g_registry.get<ecs::FlyTargets>(idle).list.empty(), "an unaimed shot left something behind");
+
+    // A handle that no longer names anything is neither aimed nor fired.
+    const auto retired = Actor();
+    g_registry.destroy(retired);
+    C::FlyTarget(retired, 200, 0, 0, HEADER_CG_FLY_TARGETING);
+    Check(!C::Shoot(retired, 0), "a destroyed shooter fired");
+    Check(!C::Shoot(entt::null, 0), "the null handle fired");
+}
+
 void DeathStateChecks() {
     Reset();
     const auto member = Actor();
@@ -1025,7 +1095,7 @@ int main() {
         CHARACTER_MANAGER characters;
         AlignmentChecks(); CallbackChecks(); ModeChecks(); MultiplierAndValidityChecks();
         BattleTargetChecks(); AggroSwitchChecks(); AttackHandleChecks();
-        DeathHandleChecks(); StoneOwnershipChecks(); DeathStateChecks(); LivenessChecks(); BattleMathChecks(); BattleAffectChecks(); AttackAuditChecks(); InteractionCounterChecks();
+        DeathHandleChecks(); StoneOwnershipChecks(); DeathStateChecks(); LivenessChecks(); FlyTargetChecks(); BattleMathChecks(); BattleAffectChecks(); AttackAuditChecks(); InteractionCounterChecks();
         std::cout << "Combat state checks passed: " << checks << '\n'; return 0;
     } catch (const std::exception& error) { std::cerr << error.what() << '\n'; return 1; }
 }

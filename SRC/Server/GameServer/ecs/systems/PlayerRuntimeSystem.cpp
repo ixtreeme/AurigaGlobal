@@ -5744,7 +5744,6 @@ void CHARACTER::Initialize()
     // to an ECS entity. m_entity is entt::null at this Initialize point so
     // an ECS write here would be a no-op anyway.
 
-    m_dwFlyTargetID = 0;
 
 
 

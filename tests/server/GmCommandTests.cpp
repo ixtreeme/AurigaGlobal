@@ -978,7 +978,7 @@ bool CombatSystem::Damage(entt::entity,entt::entity,int64_t,unsigned char) { Une
 bool CombatSystem::CanBeginFight(entt::entity) { Unexpected(); }
 void CombatSystem::BeginFight(entt::entity, entt::entity) { Unexpected(); }
 bool CombatSystem::IsStun(entt::entity) { Unexpected(); }
-int CHARACTER::GetArrowAndBow(entt::entity *,entt::entity *,int) { Unexpected(); }
+int CombatSystem::GetArrowAndBow(entt::entity,entt::entity *,entt::entity *,int) { Unexpected(); }
 void CHARACTER::AttackedByFire(entt::entity,int,int) { Unexpected(); }
 bool CHARACTER::CanUseHorseSkill(void) { Unexpected(); }
 bool CHARACTER::IsRiding(void)const { Unexpected(); }

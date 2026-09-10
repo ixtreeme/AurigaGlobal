@@ -2319,7 +2319,7 @@ void CInputMain::Attack(entt::entity character, const uint8_t header, const char
 			{
 				const TPacketCGShoot* const packShoot = reinterpret_cast<const TPacketCGShoot*>(data);
 
-				ch->Shoot(packShoot->bType);
+				CombatSystem::Shoot(character, packShoot->bType);
 			}
 			break;
 	}
@@ -2483,7 +2483,7 @@ void CInputMain::FlyTarget(entt::entity character, const char * pcData, uint8_t 
 	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::FlyTarget");//INGAME_DEBUG_RAZOR93
 #endif
 	TPacketCGFlyTargeting * p = (TPacketCGFlyTargeting *) pcData;
-	ch->FlyTarget(p->dwTargetVID, p->x, p->y, bHeader);
+	CombatSystem::FlyTarget(character, p->dwTargetVID, p->x, p->y, bHeader);
 }
 
 void CInputMain::UseSkill(entt::entity character, const char * pcData)

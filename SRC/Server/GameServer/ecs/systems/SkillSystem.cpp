@@ -2216,7 +2216,7 @@ struct FuncSplashDamage
 		{
 			entt::entity pkBow = entt::null, pkArrow = entt::null;
 
-			if (1 == m_pkChr->GetArrowAndBow(&pkBow, &pkArrow, 1))
+			if (1 == CombatSystem::GetArrowAndBow(m_pkChr->GetEntityHandle(), &pkBow, &pkArrow, 1))
 				m_pkSk->SetPointVar("atk", CalcArrowDamage(chr, chrVictim, pkBow, pkArrow, true));
 			else
 				m_pkSk->SetPointVar("atk", 0);
@@ -3011,7 +3011,7 @@ int CHARACTER::ComputeSkillAtPosition(uint32_t dwVnum, const PIXEL_POSITION& pos
 	else if (IS_SET(pkSk->dwFlag, SKILL_FLAG_USE_ARROW_DAMAGE))
 	{
 		entt::entity pkBow = entt::null, pkArrow = entt::null;
-		if (1 == GetArrowAndBow(&pkBow, &pkArrow, 1))
+		if (1 == CombatSystem::GetArrowAndBow(character, &pkBow, &pkArrow, 1))
 		{
 			pkSk->SetPointVar("atk", CalcArrowDamage(character, character, pkBow, pkArrow, true));
 		}
@@ -3324,7 +3324,7 @@ int CHARACTER::ComputeGyeongGongSkill(uint32_t dwVnum, entt::entity victim, uint
 	pkSk->kSplashAroundDamageAdjustPoly.SetVar("k", k);
 	entt::entity pkBow = entt::null, pkArrow = entt::null;
 
-	if (1 == GetArrowAndBow(&pkBow, &pkArrow, 1)) {
+	if (1 == CombatSystem::GetArrowAndBow(character, &pkBow, &pkArrow, 1)) {
 		pkSk->SetPointVar("atk", CalcArrowDamage(character, victim, pkBow, pkArrow, true));
 	} else {
 		pkSk->SetPointVar("atk", CalcMeleeDamage(character, victim, true, false));
@@ -3460,7 +3460,7 @@ int CHARACTER::ComputeSkill(uint32_t dwVnum, entt::entity victim, uint8_t bSkill
 	if (pkSk->dwType == SKILL_TYPE_HORSE)
 	{
 		entt::entity pkBow = entt::null, pkArrow = entt::null;
-		if (1 == GetArrowAndBow(&pkBow, &pkArrow, 1))
+		if (1 == CombatSystem::GetArrowAndBow(character, &pkBow, &pkArrow, 1))
 		{
 			pkSk->SetPointVar("atk", CalcArrowDamage(character, victim, pkBow, pkArrow, true));
 		}
@@ -3480,7 +3480,7 @@ int CHARACTER::ComputeSkill(uint32_t dwVnum, entt::entity victim, uint8_t bSkill
 	else if (IS_SET(pkSk->dwFlag, SKILL_FLAG_USE_ARROW_DAMAGE))
 	{
 		entt::entity pkBow = entt::null, pkArrow = entt::null;
-		if (1 == GetArrowAndBow(&pkBow, &pkArrow, 1))
+		if (1 == CombatSystem::GetArrowAndBow(character, &pkBow, &pkArrow, 1))
 		{
 			pkSk->SetPointVar("atk", CalcArrowDamage(character, victim, pkBow, pkArrow, true));
 		}

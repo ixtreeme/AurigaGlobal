@@ -609,15 +609,6 @@ void ChangeVictimByAggro(entt::entity self, int newAggro, entt::entity newVictim
         adopt(best, bestAggro);
 }
 
-bool Shoot(entt::entity attacker, uint8_t attackType)
-{
-    if (auto* ch = LegacyCharOf(attacker)) {
-        return ch->Shoot(attackType);
-    }
-
-    return false;
-}
-
 void SetVictim(entt::entity attacker, entt::entity victim)
 {
     if (!ecs::Invariants::HasAnyTypeTag(g_registry, attacker))
@@ -2889,7 +2880,7 @@ bool Attack(entt::entity attacker, entt::entity victim, uint8_t attackType)
                 result = BATTLE_NONE;
                 break;
             }
-            shooter->FlyTarget(ecs::PlayerRuntime::GetPacketVID(victim),
+            FlyTarget(attacker, ecs::PlayerRuntime::GetPacketVID(victim),
                 ecs::PlayerRuntime::GetX(victim), ecs::PlayerRuntime::GetY(victim),
                 HEADER_CG_FLY_TARGETING);
             result = Shoot(attacker, shotType) ? BATTLE_DAMAGE : BATTLE_NONE;
@@ -2937,39 +2928,6 @@ bool Attack(entt::entity attacker, entt::entity victim, uint8_t attackType)
 
 } // namespace CombatSystem
 
-int CHARACTER::GetArrowAndBow(entt::entity* ppkBow, entt::entity* ppkArrow, int iArrowCount/* = 1 */)
-{
-	const entt::entity bow = ItemSystem::GetWearItem(GetEntityHandle(), WEAR_WEAPON);
-	if (!ItemSystem::IsValidItem(bow))
-	{
-		return 0;
-	}
-
-	const TItemTable* bowProto = ItemSystem::GetItemProto(bow);
-	if (!bowProto || bowProto->bSubType != WEAPON_BOW)
-	{
-		return 0;
-	}
-
-	const entt::entity arrow = ItemSystem::GetWearItem(GetEntityHandle(), WEAR_ARROW);
-	if (!ItemSystem::IsValidItem(arrow) || ItemSystem::GetItemType(arrow) != ITEM_WEAPON)
-	{
-		return 0;
-	}
-
-	const TItemTable* arrowProto = ItemSystem::GetItemProto(arrow);
-	if (!arrowProto || arrowProto->bSubType != WEAPON_ARROW)
-	{
-		return 0;
-	}
-
-	iArrowCount = std::min(iArrowCount, static_cast<int>(ItemSystem::GetItemCount(arrow)));
-
-	*ppkBow = bow;
-	*ppkArrow = arrow;
-
-	return iArrowCount;
-}
 // char_battle.cpp slice BD1 moved into CombatSystem.cpp
 
 void CHARACTER::DistributeSP(entt::entity killer, int iMethod)
@@ -6316,7 +6274,44 @@ static int64_t CalcReferenceNormalHitDamage(entt::entity attacker, entt::entity 
 
 #endif
 
-void CHARACTER::UseArrow(entt::entity pkArrow, uint32_t dwArrowCount)
+namespace CombatSystem {
+
+// The arrow and the bow a shot will spend, and the spending of them.
+int GetArrowAndBow(entt::entity e, entt::entity* ppkBow, entt::entity* ppkArrow, int iArrowCount)
+{
+	const entt::entity bow = ItemSystem::GetWearItem(e, WEAR_WEAPON);
+	if (!ItemSystem::IsValidItem(bow))
+	{
+		return 0;
+	}
+
+	const TItemTable* bowProto = ItemSystem::GetItemProto(bow);
+	if (!bowProto || bowProto->bSubType != WEAPON_BOW)
+	{
+		return 0;
+	}
+
+	const entt::entity arrow = ItemSystem::GetWearItem(e, WEAR_ARROW);
+	if (!ItemSystem::IsValidItem(arrow) || ItemSystem::GetItemType(arrow) != ITEM_WEAPON)
+	{
+		return 0;
+	}
+
+	const TItemTable* arrowProto = ItemSystem::GetItemProto(arrow);
+	if (!arrowProto || arrowProto->bSubType != WEAPON_ARROW)
+	{
+		return 0;
+	}
+
+	iArrowCount = std::min(iArrowCount, static_cast<int>(ItemSystem::GetItemCount(arrow)));
+
+	*ppkBow = bow;
+	*ppkArrow = arrow;
+
+	return iArrowCount;
+}
+
+void UseArrow(entt::entity e, entt::entity pkArrow, uint32_t dwArrowCount)
 {
 	int iCount = ItemSystem::GetItemCount(pkArrow);
 	uint32_t dwVnum = ItemSystem::GetItemVnum(pkArrow);
@@ -6328,7 +6323,7 @@ void CHARACTER::UseArrow(entt::entity pkArrow, uint32_t dwArrowCount)
 	if (iCount == 0)
 	{
 		const entt::entity newArrow = ItemSystem::FindSpecifyItem(
-			GetEntityHandle(), dwVnum
+			e, dwVnum
 #ifdef ENABLE_EXTRA_INVENTORY
 			, false
 #endif
@@ -6338,24 +6333,30 @@ void CHARACTER::UseArrow(entt::entity pkArrow, uint32_t dwArrowCount)
 			static_cast<uint32_t>(newArrow));
 
 		if (ItemSystem::IsValidItem(newArrow))
-			ItemSystem::EquipItemEcs(GetEntityHandle(), newArrow);
+			ItemSystem::EquipItemEcs(e, newArrow);
 	}
 }
+
+} // namespace CombatSystem
 
 class CFuncShoot
 {
 public:
-	LegacyCharHandle	m_me;
+	entt::entity	m_me;
 	uint8_t		m_bType;
 	bool		m_bSucceed;
 
-	CFuncShoot(LegacyCharHandle ch, uint8_t bType) : m_me(ch), m_bType(bType), m_bSucceed(false)
+	CFuncShoot(entt::entity shooter, uint8_t bType) : m_me(shooter), m_bType(bType), m_bSucceed(false)
 	{
 	}
 
+	// ComputeSkill and GetSoulItemDamage have no entity form yet; each is its
+	// own migration and they share this one resolve.
+	LPCHARACTER Self() const { return ecs::LegacyCharOf(m_me); }
+
 	void operator () (uint32_t dwTargetVID)
 	{
-		const entt::entity me = m_me ? m_me->GetEntityHandle() : entt::null;
+		const entt::entity me = m_me;
 		if (m_bType > 1)
 		{
 			if (g_bSkillDisable)
@@ -6397,20 +6398,20 @@ public:
 				if (ecs::PlayerRuntime::GetJob(me) != JOB_ASSASSIN)
 					return;
 
-				if (0 == m_me->GetArrowAndBow(&pkBow, &pkArrow))
+				if (0 == CombatSystem::GetArrowAndBow(me, &pkBow, &pkArrow))
 					return;
 
-				if (m_me->GetSkillGroup() != 0)
-					if (!ecs::PlayerRuntime::IsNPC(me) && m_me->GetSkillGroup() != 2)
+				if (SkillSystem::GetSkillGroup(me) != 0)
+					if (!ecs::PlayerRuntime::IsNPC(me) && SkillSystem::GetSkillGroup(me) != 2)
 					{
-						if (ecs::PlayerRuntime::GetSP(m_me->GetEntityHandle()) < 5)
+						if (ecs::PlayerRuntime::GetSP(me) < 5)
 							return;
 
 						ecs::PointSystem::Change(me, POINT_SP, -5);
 					}
 
 				iDam = CalcArrowDamage(me, victim, pkBow, pkArrow);
-				m_me->UseArrow(pkArrow, 1);
+				CombatSystem::UseArrow(me, pkArrow, 1);
 
 #ifdef ENABLE_ANTICHEAT
 				if (IS_SPEED_HACK(me, victim, get_dword_time())) {
@@ -6439,18 +6440,18 @@ public:
 			//iDam = (int)((int64_t)iDam * (100 - lValue) * 20 / 10000);
 
 #ifdef ENABLE_SOUL_SYSTEM // Arrow ninja
-			iDam += m_me->GetSoulItemDamage(victim, iDam, RED_SOUL);
+			iDam += Self()->GetSoulItemDamage(victim, iDam, RED_SOUL);
 #endif
 
 			//LOG_INFO(0, "%s arrow %s dam %d", ecs::PlayerRuntime::GetName(me).data(), ecs::PlayerRuntime::GetName(victim).data(), iDam);
 
-			m_me->OnMove(true);
-			pkVictim->OnMove();
+			ecs::MovementSystem::OnMove(me, true);
+			ecs::MovementSystem::OnMove(victim);
 
-			if (CombatSystem::CanBeginFight(pkVictim->GetEntityHandle()))
-				CombatSystem::BeginFight(pkVictim->GetEntityHandle(), me);
+			if (CombatSystem::CanBeginFight(victim))
+				CombatSystem::BeginFight(victim, me);
 
-			CombatSystem::Damage(pkVictim->GetEntityHandle(), me, iDam, DAMAGE_TYPE_NORMAL_RANGE);
+			CombatSystem::Damage(victim, me, iDam, DAMAGE_TYPE_NORMAL_RANGE);
 			// Ÿġ
 		}
 		break;
@@ -6470,7 +6471,7 @@ public:
 			//
 //#ifdef ENABLE_MAGIC_REDUCTION_SYSTEM
 //						const int resist_magic = MINMAX(0, ecs::PointSystem::Get(victim, POINT_RESIST_MAGIC), 100);
-//						const int resist_magic_reduction = MINMAX(0, (m_me->GetJob()==JOB_SURA) ? ecs::PointSystem::Get(me, POINT_RESIST_MAGIC_REDUCTION)/2 : ecs::PointSystem::Get(me, POINT_RESIST_MAGIC_REDUCTION), 50);
+//						const int resist_magic_reduction = MINMAX(0, (ecs::PlayerRuntime::GetJob(me)==JOB_SURA) ? ecs::PointSystem::Get(me, POINT_RESIST_MAGIC_REDUCTION)/2 : ecs::PointSystem::Get(me, POINT_RESIST_MAGIC_REDUCTION), 50);
 //						const int total_res_magic = MINMAX(0, resist_magic - resist_magic_reduction, 100);
 //						iDam = iDam * (100 - total_res_magic) / 100;
 //#else
@@ -6479,36 +6480,36 @@ public:
 
 									//LOG_INFO(0, "%s arrow %s dam %d", ecs::PlayerRuntime::GetName(me).data(), ecs::PlayerRuntime::GetName(victim).data(), iDam);
 
-			m_me->OnMove(true);
-			pkVictim->OnMove();
+			ecs::MovementSystem::OnMove(me, true);
+			ecs::MovementSystem::OnMove(victim);
 
-			if (CombatSystem::CanBeginFight(pkVictim->GetEntityHandle()))
-				CombatSystem::BeginFight(pkVictim->GetEntityHandle(), me);
+			if (CombatSystem::CanBeginFight(victim))
+				CombatSystem::BeginFight(victim, me);
 
-			CombatSystem::Damage(pkVictim->GetEntityHandle(), me, iDam, DAMAGE_TYPE_MAGIC);
+			CombatSystem::Damage(victim, me, iDam, DAMAGE_TYPE_MAGIC);
 			// Ÿġ
 		}
 		break;
 
 		case SKILL_YEONSA:	//
 		{
-			//int iUseArrow = 2 + (m_me->GetSkillPower(SKILL_YEONSA) *6/100);
+			//int iUseArrow = 2 + (SkillSystem::GetSkillPower(me, SKILL_YEONSA) *6/100);
 			int iUseArrow = 1;
 
 			// Ż ϴ°
 			{
-				if (iUseArrow == m_me->GetArrowAndBow(&pkBow, &pkArrow, iUseArrow))
+				if (iUseArrow == CombatSystem::GetArrowAndBow(me, &pkBow, &pkArrow, iUseArrow))
 				{
-					m_me->OnMove(true);
-					pkVictim->OnMove();
+					ecs::MovementSystem::OnMove(me, true);
+					ecs::MovementSystem::OnMove(victim);
 
-					if (CombatSystem::CanBeginFight(pkVictim->GetEntityHandle()))
-						CombatSystem::BeginFight(pkVictim->GetEntityHandle(), me);
+					if (CombatSystem::CanBeginFight(victim))
+						CombatSystem::BeginFight(victim, me);
 
-					m_me->ComputeSkill(m_bType, victim);
-					m_me->UseArrow(pkArrow, iUseArrow);
+					Self()->ComputeSkill(m_bType, victim);
+					CombatSystem::UseArrow(me, pkArrow, iUseArrow);
 
-					if (CombatSystem::IsDead(pkVictim->GetEntityHandle()))
+					if (CombatSystem::IsDead(victim))
 						break;
 
 				}
@@ -6523,17 +6524,17 @@ public:
 		{
 			int iUseArrow = 1;
 
-			if (iUseArrow == m_me->GetArrowAndBow(&pkBow, &pkArrow, iUseArrow))
+			if (iUseArrow == CombatSystem::GetArrowAndBow(me, &pkBow, &pkArrow, iUseArrow))
 			{
-				m_me->OnMove(true);
-				pkVictim->OnMove();
+				ecs::MovementSystem::OnMove(me, true);
+				ecs::MovementSystem::OnMove(victim);
 
-				if (CombatSystem::CanBeginFight(pkVictim->GetEntityHandle()))
-					CombatSystem::BeginFight(pkVictim->GetEntityHandle(), me);
+				if (CombatSystem::CanBeginFight(victim))
+					CombatSystem::BeginFight(victim, me);
 
 				LOG_INFO("{} kwankeyok {}", ecs::PlayerRuntime::GetName(me).data(), ecs::PlayerRuntime::GetName(victim).data());
-				m_me->ComputeSkill(m_bType, victim);
-				m_me->UseArrow(pkArrow, iUseArrow);
+				Self()->ComputeSkill(m_bType, victim);
+				CombatSystem::UseArrow(me, pkArrow, iUseArrow);
 			}
 		}
 		break;
@@ -6541,17 +6542,17 @@ public:
 		case SKILL_GIGUNG:
 		{
 			int iUseArrow = 1;
-			if (iUseArrow == m_me->GetArrowAndBow(&pkBow, &pkArrow, iUseArrow))
+			if (iUseArrow == CombatSystem::GetArrowAndBow(me, &pkBow, &pkArrow, iUseArrow))
 			{
-				m_me->OnMove(true);
-				pkVictim->OnMove();
+				ecs::MovementSystem::OnMove(me, true);
+				ecs::MovementSystem::OnMove(victim);
 
-				if (CombatSystem::CanBeginFight(pkVictim->GetEntityHandle()))
-					CombatSystem::BeginFight(pkVictim->GetEntityHandle(), me);
+				if (CombatSystem::CanBeginFight(victim))
+					CombatSystem::BeginFight(victim, me);
 
 				LOG_INFO("{} gigung {}", ecs::PlayerRuntime::GetName(me).data(), ecs::PlayerRuntime::GetName(victim).data());
-				m_me->ComputeSkill(m_bType, victim);
-				m_me->UseArrow(pkArrow, iUseArrow);
+				Self()->ComputeSkill(m_bType, victim);
+				CombatSystem::UseArrow(me, pkArrow, iUseArrow);
 			}
 		}
 
@@ -6559,17 +6560,17 @@ public:
 		case SKILL_HWAJO:
 		{
 			int iUseArrow = 1;
-			if (iUseArrow == m_me->GetArrowAndBow(&pkBow, &pkArrow, iUseArrow))
+			if (iUseArrow == CombatSystem::GetArrowAndBow(me, &pkBow, &pkArrow, iUseArrow))
 			{
-				m_me->OnMove(true);
-				pkVictim->OnMove();
+				ecs::MovementSystem::OnMove(me, true);
+				ecs::MovementSystem::OnMove(victim);
 
-				if (CombatSystem::CanBeginFight(pkVictim->GetEntityHandle()))
-					CombatSystem::BeginFight(pkVictim->GetEntityHandle(), me);
+				if (CombatSystem::CanBeginFight(victim))
+					CombatSystem::BeginFight(victim, me);
 
 				LOG_INFO("{} hwajo {}", ecs::PlayerRuntime::GetName(me).data(), ecs::PlayerRuntime::GetName(victim).data());
-				m_me->ComputeSkill(m_bType, victim);
-				m_me->UseArrow(pkArrow, iUseArrow);
+				Self()->ComputeSkill(m_bType, victim);
+				CombatSystem::UseArrow(me, pkArrow, iUseArrow);
 			}
 		}
 
@@ -6578,17 +6579,17 @@ public:
 		case SKILL_HORSE_WILDATTACK_RANGE:
 		{
 			int iUseArrow = 1;
-			if (iUseArrow == m_me->GetArrowAndBow(&pkBow, &pkArrow, iUseArrow))
+			if (iUseArrow == CombatSystem::GetArrowAndBow(me, &pkBow, &pkArrow, iUseArrow))
 			{
-				m_me->OnMove(true);
-				pkVictim->OnMove();
+				ecs::MovementSystem::OnMove(me, true);
+				ecs::MovementSystem::OnMove(victim);
 
-				if (CombatSystem::CanBeginFight(pkVictim->GetEntityHandle()))
-					CombatSystem::BeginFight(pkVictim->GetEntityHandle(), me);
+				if (CombatSystem::CanBeginFight(victim))
+					CombatSystem::BeginFight(victim, me);
 
 				LOG_TRACE("{} horse_wildattack {}", ecs::PlayerRuntime::GetName(me).data(), ecs::PlayerRuntime::GetName(victim).data());
-				m_me->ComputeSkill(m_bType, victim);
-				m_me->UseArrow(pkArrow, iUseArrow);
+				Self()->ComputeSkill(m_bType, victim);
+				CombatSystem::UseArrow(me, pkArrow, iUseArrow);
 			}
 		}
 
@@ -6609,27 +6610,27 @@ public:
 #endif
 			//case SKILL_CURSE:
 		{
-			m_me->OnMove(true);
-			pkVictim->OnMove();
+			ecs::MovementSystem::OnMove(me, true);
+			ecs::MovementSystem::OnMove(victim);
 
-			if (CombatSystem::CanBeginFight(pkVictim->GetEntityHandle()))
-				CombatSystem::BeginFight(pkVictim->GetEntityHandle(), me);
+			if (CombatSystem::CanBeginFight(victim))
+				CombatSystem::BeginFight(victim, me);
 
 			LOG_INFO("{} - Skill {} -> {}", ecs::PlayerRuntime::GetName(me).data(), m_bType, ecs::PlayerRuntime::GetName(victim).data());
-			m_me->ComputeSkill(m_bType, victim);
+			Self()->ComputeSkill(m_bType, victim);
 		}
 		break;
 
 		case SKILL_CHAIN:
 		{
-			m_me->OnMove(true);
-			pkVictim->OnMove();
+			ecs::MovementSystem::OnMove(me, true);
+			ecs::MovementSystem::OnMove(victim);
 
-			if (CombatSystem::CanBeginFight(pkVictim->GetEntityHandle()))
-				CombatSystem::BeginFight(pkVictim->GetEntityHandle(), me);
+			if (CombatSystem::CanBeginFight(victim))
+				CombatSystem::BeginFight(victim, me);
 
 			LOG_INFO("{} - Skill {} -> {}", ecs::PlayerRuntime::GetName(me).data(), m_bType, ecs::PlayerRuntime::GetName(victim).data());
-			m_me->ComputeSkill(m_bType, victim);
+			Self()->ComputeSkill(m_bType, victim);
 
 			// TODO     ϱ
 		}
@@ -6637,14 +6638,14 @@ public:
 #ifndef ENABLE_BUG_FIXES
 		case SKILL_YONGBI:
 		{
-			m_me->OnMove(true);
+			ecs::MovementSystem::OnMove(me, true);
 		}
 		break;
 #endif
 		/*case SKILL_BUDONG:
 		  {
-		  m_me->OnMove(true);
-		  pkVictim->OnMove();
+		  ecs::MovementSystem::OnMove(me, true);
+		  ecs::MovementSystem::OnMove(victim);
 
 		  uint32_t * pdw;
 		  uint32_t dwEI = AllocEventInfo(sizeof(uint32_t) * 2, &pdw);
@@ -6661,12 +6662,12 @@ public:
 #ifdef ENABLE_NINJA_SANGONG_X30_RAZOR93
 		case SKILL_SANGONG:
 		{
-			if (ecs::PlayerRuntime::IsStone(victim) || ecs::PlayerRuntime::GetMobRank(pkVictim->GetEntityHandle()) >= 4 || ecs::PlayerRuntime::GetRaceNum(victim))
+			if (ecs::PlayerRuntime::IsStone(victim) || ecs::PlayerRuntime::GetMobRank(victim) >= 4 || ecs::PlayerRuntime::GetRaceNum(victim))
 			{
 				int iDam = CalcMeleeDamage(me, victim);
 
 				if (ecs::PlayerRuntime::GetJob(me) == JOB_ASSASSIN &&
-					(ecs::PlayerRuntime::IsStone(victim) || ecs::PlayerRuntime::GetMobRank(pkVictim->GetEntityHandle()) >= 4 || ecs::PlayerRuntime::GetRaceNum(victim) == 136))
+					(ecs::PlayerRuntime::IsStone(victim) || ecs::PlayerRuntime::GetMobRank(victim) >= 4 || ecs::PlayerRuntime::GetRaceNum(victim) == 136))
 				{
 					int multiplier = 36; // alap multiplier
 
@@ -6713,19 +6714,19 @@ public:
 					}
 				}
 
-				CombatSystem::Damage(pkVictim->GetEntityHandle(), me, iDam, DAMAGE_TYPE_NORMAL);
+				CombatSystem::Damage(victim, me, iDam, DAMAGE_TYPE_NORMAL);
 
 
 				if (ecs::PlayerRuntime::IsPC(victim))
 				{
-					m_me->OnMove(true);
-					pkVictim->OnMove();
+					ecs::MovementSystem::OnMove(me, true);
+					ecs::MovementSystem::OnMove(victim);
 
-					if (CombatSystem::CanBeginFight(pkVictim->GetEntityHandle()))
-						CombatSystem::BeginFight(pkVictim->GetEntityHandle(), me);
+					if (CombatSystem::CanBeginFight(victim))
+						CombatSystem::BeginFight(victim, me);
 
 					LOG_INFO("{} - Skill {} -> {}", ecs::PlayerRuntime::GetName(me).data(), m_bType, ecs::PlayerRuntime::GetName(victim).data());
-					m_me->ComputeSkill(m_bType, victim);
+					Self()->ComputeSkill(m_bType, victim);
 				}
 
 
@@ -6741,60 +6742,6 @@ public:
 		m_bSucceed = true;
 	}
 };
-
-bool CHARACTER::Shoot(uint8_t bType)
-{
-	LOG_INFO("Shoot {} type {} flyTargets.size {}", GetName(), bType, m_vec_dwFlyTargets.size());
-
-	if (!ecs::MovementSystem::CanMove(GetEntityHandle()))
-	{
-		return false;
-	}
-
-	CFuncShoot f(this, bType);
-
-	if (m_dwFlyTargetID != 0)
-	{
-		f(m_dwFlyTargetID);
-		m_dwFlyTargetID = 0;
-	}
-
-	f = std::for_each(m_vec_dwFlyTargets.begin(), m_vec_dwFlyTargets.end(), f);
-	m_vec_dwFlyTargets.clear();
-
-	return f.m_bSucceed;
-}
-
-void CHARACTER::FlyTarget(uint32_t dwTargetVID, int32_t x, int32_t y, uint8_t bHeader)
-{
-	const entt::entity pkVictim = CHARACTER_MANAGER::instance().FindEntity(dwTargetVID);
-	TPacketGCFlyTargeting pack;
-
-	//pack.bHeader	= HEADER_GC_FLY_TARGETING;
-	pack.bHeader = (bHeader == HEADER_CG_FLY_TARGETING) ? HEADER_GC_FLY_TARGETING : HEADER_GC_ADD_FLY_TARGETING;
-	pack.dwShooterVID = GetPacketVID();
-
-	if (pkVictim != entt::null)
-	{
-		pack.dwTargetVID = ecs::PlayerRuntime::GetPacketVID(pkVictim);
-		pack.x = ecs::PlayerRuntime::GetX(pkVictim);
-		pack.y = ecs::PlayerRuntime::GetY(pkVictim);
-
-		if (bHeader == HEADER_CG_FLY_TARGETING)
-			m_dwFlyTargetID = dwTargetVID;
-		else
-			m_vec_dwFlyTargets.push_back(dwTargetVID);
-	}
-	else
-	{
-		pack.dwTargetVID = 0;
-		pack.x = x;
-		pack.y = y;
-	}
-
-	LOG_INFO("FlyTarget {} vid {} x {} y {}", GetName(), pack.dwTargetVID, pack.x, pack.y);
-	ecs::ViewSystem::PacketView(GetEntityHandle(), &pack, sizeof(pack), GetEntityHandle());
-}
 
 #ifdef LEADERBOARD_RAZOR93
 #endif
@@ -6831,6 +6778,78 @@ EVENTFUNC(StunEvent)
 	CombatSystem::Dead(ch->GetEntityHandle());
 	return 0;
 }
+
+namespace CombatSystem {
+
+// Loading a shot, and letting it go.
+void FlyTarget(entt::entity e, uint32_t dwTargetVID, int32_t x, int32_t y, uint8_t bHeader)
+{
+	if (e == entt::null || !g_registry.valid(e))
+		return;
+
+	const entt::entity pkVictim = CHARACTER_MANAGER::instance().FindEntity(dwTargetVID);
+	TPacketGCFlyTargeting pack;
+
+	//pack.bHeader	= HEADER_GC_FLY_TARGETING;
+	pack.bHeader = (bHeader == HEADER_CG_FLY_TARGETING) ? HEADER_GC_FLY_TARGETING : HEADER_GC_ADD_FLY_TARGETING;
+	pack.dwShooterVID = ecs::PlayerRuntime::GetPacketVID(e);
+
+	if (pkVictim != entt::null)
+	{
+		pack.dwTargetVID = ecs::PlayerRuntime::GetPacketVID(pkVictim);
+		pack.x = ecs::PlayerRuntime::GetX(pkVictim);
+		pack.y = ecs::PlayerRuntime::GetY(pkVictim);
+
+		auto& targets = g_registry.get_or_emplace<ecs::FlyTargets>(e);
+		if (bHeader == HEADER_CG_FLY_TARGETING)
+			targets.primary = dwTargetVID;
+		else
+			targets.list.push_back(dwTargetVID);
+	}
+	else
+	{
+		pack.dwTargetVID = 0;
+		pack.x = x;
+		pack.y = y;
+	}
+
+	LOG_INFO("FlyTarget {} vid {} x {} y {}", ecs::PlayerRuntime::GetName(e).data(), pack.dwTargetVID, pack.x, pack.y);
+	ecs::ViewSystem::PacketView(e, &pack, sizeof(pack), e);
+}
+
+bool Shoot(entt::entity e, uint8_t bType)
+{
+	if (e == entt::null || !g_registry.valid(e))
+		return false;
+
+	auto& targets = g_registry.get_or_emplace<ecs::FlyTargets>(e);
+	LOG_INFO("Shoot {} type {} flyTargets.size {}", ecs::PlayerRuntime::GetName(e).data(), bType, targets.list.size());
+
+	if (!ecs::MovementSystem::CanMove(e))
+	{
+		return false;
+	}
+
+	CFuncShoot f(e, bType);
+
+	if (targets.primary != 0)
+	{
+		const uint32_t single = targets.primary;
+		targets.primary = 0;
+		f(single);
+	}
+
+	// The functor can retire the shooter, and with it the component.
+	std::vector<uint32_t> queued;
+	if (auto* still = g_registry.valid(e) ? g_registry.try_get<ecs::FlyTargets>(e) : nullptr)
+		queued.swap(still->list);
+
+	f = std::for_each(queued.begin(), queued.end(), f);
+
+	return f.m_bSucceed;
+}
+
+} // namespace CombatSystem
 
 void CHARACTER::Stun()
 {
@@ -6993,10 +7012,7 @@ static int64_t CalcReferenceBowHitDamage(entt::entity attacker, entt::entity vic
 	entt::entity pkBow = entt::null;
 	entt::entity pkArrow = entt::null;
 
-	// GetArrowAndBow is still a CHARACTER method - the bow and quiver
-	// bookkeeping is its own migration.
-	LPCHARACTER shooter = ecs::LegacyCharOf(attacker);
-	if (!shooter || 0 == shooter->GetArrowAndBow(&pkBow, &pkArrow))
+	if (0 == CombatSystem::GetArrowAndBow(attacker, &pkBow, &pkArrow))
 		return 0;
 
 	int64_t dam = CalcArrowDamage(attacker, victim, pkBow, pkArrow);

@@ -1263,20 +1263,16 @@ public:
 	void				Reward(bool bItemDrop);
 	void				RewardGold(entt::entity attacker);
 
-	bool				Shoot(uint8_t bType);
-	void				FlyTarget(uint32_t dwTargetVID, int32_t x, int32_t y, uint8_t bHeader);
 
 #ifdef ENABLE_AGGREGATE_MONSTER_PLUS_RAZOR93
 #endif
 
-	int					GetArrowAndBow(entt::entity* ppkBow, entt::entity* ppkArrow, int iArrowCount = 1);
 #ifdef ENABLE_RANKING
 
 	//void SendLeaderboardData();
 	//void SendLeaderboardNews();
 	//static void LeaderboardLoop();
 #endif
-	void				UseArrow(entt::entity pkArrow, uint32_t dwArrowCount);
 #ifdef LEADERBOARD_RAZOR93
 
 #endif
@@ -1317,8 +1313,6 @@ protected:
 
 protected:
 
-	uint32_t				m_dwFlyTargetID;
-	std::vector<uint32_t>	m_vec_dwFlyTargets;
 public:
 	// Read-only view for entity-native callers; the map is keyed by entity
 	// already, so nothing has to resolve a character to walk it.

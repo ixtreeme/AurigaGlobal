@@ -89,8 +89,12 @@ struct MobInstanceState {
     bool isRevive { false };
 };
 
+// What a bow shot is aimed at until the client sends the shoot packet: one
+// target from a plain fly-targeting, or a queue from the multi-target form.
+// This was emplaced for every character and read by nothing; FlyTarget wrote
+// the two CHARACTER fields beside it and Shoot drained those.
 struct FlyTargets {
-    uint32_t primary;
+    uint32_t primary { 0 };
     std::vector<uint32_t> list;
 };
 
