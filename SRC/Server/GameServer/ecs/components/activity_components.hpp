@@ -25,6 +25,12 @@ struct BattlePassMissions {
     std::list<TPlayerBattlePassMission*> missions;
 };
 
+// When a box was last opened. It was a CHARACTER field guarding a cooldown
+// that only the item code enforced.
+struct BoxUseTime {
+    uint32_t value { 0 };
+};
+
 struct MiningState {
     LPEVENT event { nullptr };
     entt::entity load { entt::null };

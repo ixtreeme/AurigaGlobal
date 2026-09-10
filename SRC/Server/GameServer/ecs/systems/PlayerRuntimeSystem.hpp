@@ -98,6 +98,8 @@ std::list<TPlayerBattlePassMission*>& GetBattlePassMissions(entt::entity e);
 uint32_t GetBattlePassAdjustedTotal(entt::entity e, uint32_t dwMissionID,
                                     uint32_t dwBattlePassID, uint32_t dwBaseTotal);
 void ApplyBattlePassBoostRecalc(entt::entity e, uint8_t bBattlePassId);
+uint32_t GetBoxUseTime(entt::entity e);
+void SetBoxUseTime(entt::entity e, uint32_t when);
 bool HasBattlePassBoost(entt::entity e, uint8_t bBattlePassId);
 int GetSecondsTillNextMonth();
 bool IsWarping(entt::entity e);

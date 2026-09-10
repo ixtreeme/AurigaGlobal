@@ -269,6 +269,10 @@ bool CanPutInto2(entt::entity item, entt::entity container);
 bool CopyAllAttrToEcs(entt::entity source, entt::entity target);
 bool AttrLogEcs(entt::entity item);
 bool SetItemExchanging(entt::entity item, bool flag);
+uint8_t GetItemApplyType(entt::entity item, uint32_t idx);
+int32_t GetItemApplyValue(entt::entity item, uint32_t idx);
+bool IsItemPCBangItem(entt::entity item);
+int GetItemSocketCount(entt::entity item);
 bool IsItemExchanging(entt::entity item);
 bool IsItemLocked(entt::entity item);
 bool IsItemBound(entt::entity item);
@@ -357,6 +361,7 @@ void ProcessRecallItem(entt::entity e, entt::entity item);
 bool GiveRecallItem(entt::entity e, entt::entity item);
 bool RefineInformation(entt::entity e, uint8_t bCell, uint8_t bType, int iAdditionalCell = -1);
 void TransformRefineItem(entt::entity pkOldItem, entt::entity pkNewItem);
+bool UseItemEx(entt::entity e, entt::entity item, TItemPos DestCell);
 bool ItemProcess_Hair(entt::entity e, entt::entity item, int iDestCell);
 bool ItemProcess_Polymorph(entt::entity e, entt::entity item);
 

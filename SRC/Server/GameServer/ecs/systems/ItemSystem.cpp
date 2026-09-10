@@ -753,12 +753,10 @@ static bool UseNonEquipItemLegacyBoundary(entt::entity owner,
                                           entt::entity item,
                                           TItemPos destCell)
 {
-    LPCHARACTER legacyOwner = LegacyCharOf(owner);
-    LPITEM legacyItem = LegacyItemBoundary(item);
-    if (!legacyOwner || !IsValidItem(item))
+    if (!IsValidItem(item))
         return false;
 
-    const bool result = legacyOwner->UseItemEx(legacyItem, destCell);
+    const bool result = UseItemEx(owner, item, destCell);
     if (!result)
         return false;
 
@@ -2234,6 +2232,39 @@ int GetItemRareAttributeCount(entt::entity item)
             ++count;
     }
     return count;
+}
+
+// The prototype reads UseItemEx still made through an item pointer.
+uint8_t GetItemApplyType(entt::entity item, uint32_t idx)
+{
+    const TItemTable* proto = GetItemProto(item);
+    return proto ? proto->aApplies[idx].bType : 0;
+}
+
+int32_t GetItemApplyValue(entt::entity item, uint32_t idx)
+{
+    const TItemTable* proto = GetItemProto(item);
+    return proto ? proto->aApplies[idx].lValue : 0;
+}
+
+bool IsItemPCBangItem(entt::entity item)
+{
+    const TItemTable* proto = GetItemProto(item);
+    if (!proto)
+        return false;
+    for (int i = 0; i < ITEM_LIMIT_MAX_NUM; ++i)
+        if (proto->aLimits[i].bType == LIMIT_PCBANG)
+            return true;
+    return false;
+}
+
+// How many sockets are filled, counting up to the first empty one.
+int GetItemSocketCount(entt::entity item)
+{
+    for (int i = 0; i < ITEM_SOCKET_MAX_NUM; ++i)
+        if (GetItemSocket(item, i) == 0)
+            return i;
+    return ITEM_SOCKET_MAX_NUM;
 }
 
 bool IsItemExchanging(entt::entity item)

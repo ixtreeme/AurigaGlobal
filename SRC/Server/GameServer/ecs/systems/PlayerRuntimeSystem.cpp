@@ -674,6 +674,21 @@ void ApplyBattlePassBoostRecalc(entt::entity e, uint8_t bBattlePassId)
     }
 }
 
+uint32_t GetBoxUseTime(entt::entity e)
+{
+    if (e == entt::null || !g_registry.valid(e))
+        return 0;
+    const auto* box = g_registry.try_get<ecs::BoxUseTime>(e);
+    return box ? box->value : 0;
+}
+
+void SetBoxUseTime(entt::entity e, uint32_t when)
+{
+    if (e == entt::null || !g_registry.valid(e))
+        return;
+    g_registry.get_or_emplace<ecs::BoxUseTime>(e).value = when;
+}
+
 bool HasBattlePassBoost(entt::entity e, uint8_t bBattlePassId)
 {
     CAffect* p = AffectSystem::FindAffect(e, AFFECT_BATTLE_PASS_BOOST, POINT_BATTLE_PASS_ID);
@@ -5744,7 +5759,6 @@ void CHARACTER::Initialize()
 
     m_dwLastGoldDropTime = 0;
 #ifdef ENABLE_NEWSTUFF
-    m_dwLastBoxUseTime = 0;
 #endif
 
 

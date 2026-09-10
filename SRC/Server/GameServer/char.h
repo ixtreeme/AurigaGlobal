@@ -1124,7 +1124,6 @@ public:
 	void			UseSilkBotaryReal(const TPacketMyshopPricelistHeader* p);
 	// END_OF_MYSHOP_PRICE_LIST
 
-	bool			UseItemEx(LPITEM item, TItemPos DestCell);
 	bool			UseItem(TItemPos Cell, TItemPos DestCell = NPOS);
 
 	// ADD_REFINE_BUILDING
@@ -1866,6 +1865,7 @@ private:
 
 	// CHANGE_ITEM_ATTRIBUTES
 	// static const uint32_t		msc_dwDefaultChangeItemAttrCycle;	///< ����Ʈ ������ �Ӽ����� ���� �ֱ�
+	public:
 	static const char		msc_szLastChangeItemAttrFlag[];		///< �ֱ� ������ �Ӽ��� ������ �ð��� Quest Flag �̸�
 	// static const char		msc_szChangeItemAttrCycleFlag[];		///< ������ �Ӽ����� ���� �ֱ��� Quest Flag �̸�
 	// END_OF_CHANGE_ITEM_ATTRIBUTES
@@ -1984,7 +1984,6 @@ public:
 private:
 	uint32_t m_dwLastGoldDropTime;
 #ifdef ENABLE_NEWSTUFF
-	uint32_t m_dwLastBoxUseTime;
 public:
 #endif
 public:
