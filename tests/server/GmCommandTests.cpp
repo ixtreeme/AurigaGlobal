@@ -26,6 +26,7 @@
 #include <iostream>
 #include <stdexcept>
 #include "../../SRC/Server/GameServer/ecs/systems/CombatSystem.hpp"
+#include "../../SRC/Server/GameServer/ecs/systems/SessionSystem.hpp"
 #include "../../SRC/Server/GameServer/ecs/systems/MovementSystem.hpp"
 #include "../../SRC/Server/GameServer/ecs/systems/AffectSystem.hpp"
 #include "../../SRC/Server/GameServer/ecs/systems/SocialSystem.hpp"
@@ -785,7 +786,8 @@ void CHARACTER::ForgetMyAttacker(void) { Unexpected(); }
 void CHARACTER::AggregateMonster(void) { Unexpected(); }
 void CHARACTER::AttractRanger(void) { Unexpected(); }
 void CHARACTER::PullMonster(void) { Unexpected(); }
-void CHARACTER::ChangeSafeboxSize(unsigned char) { Unexpected(); }
+void ecs::SessionSystem::ChangeSafeboxSize(entt::entity, uint8_t) { Unexpected(); }
+void CombatSystem::SetSkillHit(entt::entity, bool) { Unexpected(); }
 void CHARACTER::HorseSummon(bool,bool,unsigned int,char const *) { Unexpected(); }
 CHARACTER * CHARACTER::GetRider(void)const { Unexpected(); }
 bool CHARACTER::IsRidingMount(void) { Unexpected(); }
@@ -968,7 +970,6 @@ bool ecs::MovementSystem::CanMove(entt::entity) { Unexpected(); }
 bool CHARACTER::Sync(int,int) { Unexpected(); }
 void CHARACTER::OnMove(bool) { Unexpected(); }
 void ecs::MovementSystem::CalculateMoveDuration(entt::entity) { Unexpected(); }
-bool CHARACTER::WarpSet(int,int,int) { Unexpected(); }
 bool AffectSystem::IsGoodAffect(uint8_t) { Unexpected(); }
 void AffectSystem::RemoveGoodAffects(entt::entity) { Unexpected(); }
 void AffectSystem::RemoveBadAffects(entt::entity) { Unexpected(); }
@@ -979,7 +980,6 @@ void CombatSystem::BeginFight(entt::entity, entt::entity) { Unexpected(); }
 bool CHARACTER::IsStun(void)const { Unexpected(); }
 int CHARACTER::GetArrowAndBow(entt::entity *,entt::entity *,int) { Unexpected(); }
 void CHARACTER::AttackedByFire(entt::entity,int,int) { Unexpected(); }
-void CHARACTER::SetSkillHit(bool) { Unexpected(); }
 bool CHARACTER::CanUseHorseSkill(void) { Unexpected(); }
 bool CHARACTER::IsRiding(void)const { Unexpected(); }
 int ecs::PlayerRuntime::GetQuestFlag(entt::entity,std::string const &) { Unexpected(); }

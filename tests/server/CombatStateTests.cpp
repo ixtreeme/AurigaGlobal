@@ -290,6 +290,7 @@ void MultiplierAndValidityChecks() {
 [[noreturn]] void UnexpectedService(const char* service) { throw std::runtime_error(service); }
 // Spatial traversal is outside this combat fixture; SpatialLifecycleTests
 // exercises the real native index and callback dispatch.
+void ecs::SessionSystem::CloseSafebox(entt::entity) { UnexpectedService(__func__); }
 LPENTITY SectreeLegacyEntity(entt::entity) { UnexpectedService(__func__); }
 bool SectreeMember(entt::entity, const SECTREE*) { UnexpectedService(__func__); }
 FCollectEntity SECTREE::SnapshotAround(int) const { UnexpectedService(__func__); }
@@ -448,7 +449,6 @@ int CHARACTER::GetSkillLevel(unsigned int)const { UnexpectedService(__func__); }
 int CHARACTER::GetSkillPower(unsigned int,unsigned char)const { UnexpectedService(__func__); }
 int CHARACTER::ComputeSkill(unsigned int,entt::entity,unsigned char) { UnexpectedService(__func__); }
 unsigned char CHARACTER::GetSkillGroup(void)const { UnexpectedService(__func__); }
-void CHARACTER::CloseSafebox(void) { UnexpectedService(__func__); }
 void CHARACTER::MonsterLog(char const *,...) { UnexpectedService(__func__); }
 unsigned char CHARACTER::GetEmpire(void)const { UnexpectedService(__func__); }
 void CHARACTER::SetQuestNPCID(unsigned int) { UnexpectedService(__func__); }

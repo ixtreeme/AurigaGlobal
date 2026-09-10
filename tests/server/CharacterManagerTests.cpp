@@ -14,6 +14,7 @@
 #include "../../SRC/Server/GameServer/ecs/systems/PointSystem.hpp"
 #include "../../SRC/Server/GameServer/ecs/systems/SkillSystem.hpp"
 #include "../../SRC/Server/GameServer/ecs/systems/CombatSystem.hpp"
+#include "../../SRC/Server/GameServer/ecs/systems/SessionSystem.hpp"
 #include "../../SRC/Server/GameServer/ecs/systems/AISystem.hpp"
 #include "../../SRC/Server/GameServer/ecs/systems/ViewSystem.hpp"
 #include "../../SRC/Server/GameServer/ecs/systems/ItemSystem.hpp"
@@ -394,8 +395,8 @@ CHARACTER::~CHARACTER() {
     Check(g_registry.valid(GetEntityHandle()), "shell destroyed after its ECS state");
     EntityFactory::Destroy(g_registry, GetEntityHandle()); ++frees;
 }
+void ecs::SessionSystem::Disconnect(entt::entity, const char*) { Unexpected(); }
 void CHARACTER::Create(const char*, uint32_t, bool) { Unexpected(); }
-void CHARACTER::Disconnect(const char*) { Unexpected(); }
 void CHARACTER::SetProto(const CMob*) { Unexpected(); }
 uint32_t CHARACTER::GetLegacyVID() const { Unexpected(); }
 void CHARACTER::ComputePoints() { Unexpected(); }

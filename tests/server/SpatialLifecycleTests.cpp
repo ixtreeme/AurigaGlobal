@@ -213,6 +213,7 @@ void CombatSystem::SendLeaderboardData(entt::entity) { Unexpected(); }
 void CombatSystem::SendLeaderboardDataGuild(entt::entity) { Unexpected(); }
 void CombatSystem::SendLeaderboardDataSkillMob(entt::entity, entt::entity) { Unexpected(); }
 void MountSystem::UpdateMountInventoryCountOverhead(entt::entity, entt::entity) { Unexpected(); }
+void CombatSystem::UpdateKillerMode(entt::entity) { Unexpected(); }
 void CEntity::UpdateSectree() { Unexpected(); }
 void CHARACTER::ComputePoints() { Unexpected(); }
 uint8_t CHARACTER::GetBattlePassId() { Unexpected(); }
@@ -324,7 +325,6 @@ void CHARACTER::OnMove(bool) { Unexpected(); }
 bool AffectSystem::IsAffectFlag(entt::entity, uint32_t) { Unexpected(); }
 bool CHARACTER::IsEquipUniqueItem(uint32_t) const { Unexpected(); }
 void CombatSystem::Dead(entt::entity, entt::entity, bool) { Unexpected(); }
-void CHARACTER::UpdateKillerMode() { Unexpected(); }
 void CHARACTER::MonsterLog(const char*, ...) { Unexpected(); }
 uint8_t CHARACTER::GetEmpire() const { Unexpected(); }
 int CDungeon::GetFlag(std::string) { Unexpected(); }
