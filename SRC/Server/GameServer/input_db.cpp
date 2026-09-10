@@ -1916,7 +1916,7 @@ void CInputDB::AffectLoad(LPDESC d, const char * c_pData)
 	if (ecs::PlayerRuntime::GetPlayerID(((ch) ? (ch)->GetEntityHandle() : entt::null)) != dwPID)
 		return;
 
-	ch->LoadAffect(dwCount, (TPacketAffectElement *) c_pData);
+	AffectSystem::LoadAffect(ch->GetEntityHandle(), dwCount, (TPacketAffectElement *) c_pData);
 #ifdef ENABLE_BATTLE_PASS
 #ifdef ENABLE_FREE_PASS_RAZOR93
 	ch->EnsureFreeBattlePassActive();

@@ -977,7 +977,6 @@ private:
 	////////////////////////////////////////////////////////////////////////////////////////
 	// Affect
 public:
-	void			ClearAffect(bool bSave = false);
 
 	bool			UpdateAffect();	// called from EVENT
 

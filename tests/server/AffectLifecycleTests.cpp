@@ -752,6 +752,11 @@ void NetworkSyncSystem::UpdatePacket(entt::entity e) {
 CGuild* ecs::SocialSystem::GetGuild(entt::entity) { return nullptr; }
 bool ecs::PlayerRuntime::IsPC(entt::entity e) { return g_registry.valid(e) && g_registry.all_of<ecs::TagPC>(e); }
 LPDESC ecs::PlayerRuntime::GetDesc(entt::entity e) { return e == connected ? client : nullptr; }
+// The affect tick reads these now that UpdateAffect lives in this system.
+int64_t ecs::PlayerRuntime::GetHP(entt::entity) { UnexpectedService(__func__); }
+int ecs::PlayerRuntime::GetMapIndex(entt::entity) { UnexpectedService(__func__); }
+int ecs::PlayerRuntime::GetStamina(entt::entity) { UnexpectedService(__func__); }
+bool CombatSystem::IsDead(entt::entity) { UnexpectedService(__func__); }
 uint32_t ecs::PlayerRuntime::GetPlayerID(entt::entity) { return 1; }
 std::string_view ecs::PlayerRuntime::GetName(entt::entity) { return "affect-test"; }
 

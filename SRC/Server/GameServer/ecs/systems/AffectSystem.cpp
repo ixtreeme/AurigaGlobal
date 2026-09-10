@@ -325,6 +325,88 @@ bool IsNoSaveAffect(uint32_t type)
 
 namespace AffectSystem {
 
+EVENTINFO(load_affect_login_event_info)
+{
+	uint32_t pid;
+	uint32_t count;
+	char* data;
+
+	load_affect_login_event_info()
+	: pid( 0 )
+	, count( 0 )
+	, data( nullptr )
+	{
+	}
+};
+
+EVENTFUNC(load_affect_login_event)
+{
+	load_affect_login_event_info* info = dynamic_cast<load_affect_login_event_info*>( event->info );
+
+	if ( info == nullptr)
+	{
+		LOG_ERROR("load_affect_login_event_info> <Factor> Null pointer");
+		return 0;
+	}
+
+	uint32_t dwPID = info->pid;
+	auto* ch = CHARACTER_MANAGER::instance().FindByPID(dwPID);
+
+	if (!ch)
+	{
+		M2_DELETE_ARRAY(info->data);
+		info->data = nullptr;
+		return 0;
+	}
+
+	const entt::entity character = ch->GetEntityHandle();
+	LPDESC d = ecs::PlayerRuntime::GetDesc(character);
+
+	if (!d)
+	{
+		M2_DELETE_ARRAY(info->data);
+		info->data = nullptr;
+		return 0;
+	}
+
+	if (d->IsPhase(PHASE_HANDSHAKE) ||
+			d->IsPhase(PHASE_LOGIN) ||
+			d->IsPhase(PHASE_SELECT) ||
+			d->IsPhase(PHASE_DEAD) ||
+			d->IsPhase(PHASE_LOADING))
+	{
+		return PASSES_PER_SEC(1);
+	}
+	else if (d->IsPhase(PHASE_CLOSE))
+	{
+		M2_DELETE_ARRAY(info->data);
+		info->data = nullptr;
+		return 0;
+	}
+	else if (d->IsPhase(PHASE_GAME))
+	{
+		LOG_INFO("Affect Load by Event");
+		LOG_ERROR("AFFECT_EVENT_LOAD_BEGIN pid={} name={} count={} data={} ch={}",
+			ecs::PlayerRuntime::GetPlayerID(character), ecs::PlayerRuntime::GetName(character).data(), info->count, static_cast<const void*>(info->data), static_cast<const void*>(ch));
+		AffectSystem::LoadAffect(ch->GetEntityHandle(), info->count, (TPacketAffectElement*)info->data);
+		LOG_ERROR("AFFECT_EVENT_LOAD_END pid={} name={} count={} data={}",
+			ecs::PlayerRuntime::GetPlayerID(character), ecs::PlayerRuntime::GetName(character).data(), info->count, static_cast<const void*>(info->data));
+		LOG_ERROR("AFFECT_EVENT_DATA_DELETE_BEGIN pid={} data={}", ecs::PlayerRuntime::GetPlayerID(character), static_cast<const void*>(info->data));
+		M2_DELETE_ARRAY(info->data);
+		info->data = nullptr;
+		LOG_ERROR("AFFECT_EVENT_DATA_DELETE_END pid={} data={}", ecs::PlayerRuntime::GetPlayerID(character), static_cast<const void*>(info->data));
+		return 0;
+	}
+	else
+	{
+		LOG_ERROR("input_db.cpp:quest_login_event INVALID PHASE pid {}", ecs::PlayerRuntime::GetPlayerID(character));
+		M2_DELETE_ARRAY(info->data);
+		info->data = nullptr;
+		return 0;
+	}
+}
+
+
 #define IS_NO_SAVE_AFFECT(type) ((type) == AFFECT_WAR_FLAG || (type) == AFFECT_REVIVE_INVISIBLE || ((type) >= AFFECT_PREMIUM_START && (type) <= AFFECT_PREMIUM_END))
 #define IS_NO_CLEAR_ON_DEATH_AFFECT(type) ((type) == AFFECT_PVM_RACE || (type) == AFFECT_BLOCK_CHAT || ((type) >= 500 && (type) < 600) || ((type) >= 564 && (type) < 566) || ((type) >= NEW_AFFECT_BIOLOGIST_1 && (type) <= NEW_AFFECT_BIOLOGIST_16))
 
@@ -700,6 +782,470 @@ void SaveAffect(entt::entity e)
 		p.elem.lSPCost		= pkAff->lSPCost;
 		db_clientdesc->DBPacket(HEADER_GD_ADD_AFFECT, 0, &p, sizeof(p));
 	}
+}
+
+// Handing out the biologist rewards the quest flags say are owed.
+void CheckBiologistReward(entt::entity e) {
+	int stat = ecs::PlayerRuntime::GetQuestFlag(e, "biologist.stat");
+	if (stat > 0) {
+		for (int i = 0; i < stat; i++) {
+			if (AffectSystem::FindAffect(e, biologistMissionInfo[i][14])) {
+				continue;
+			}
+
+			if (biologistMissionInfo[i][11] == 0) {
+				int j = 0;
+				for (int w = 0; w < 4; w++) {
+					j += 2;
+					uint8_t bApplyOn = biologistMissionInfo[i][j + 1];
+					int32_t lApplyValue = biologistMissionInfo[i][j + 2];
+					if (bApplyOn == APPLY_NONE || lApplyValue == 0) {
+						continue;
+					} else {
+						bApplyOn = aApplyInfo[bApplyOn].bPointType;
+						AffectSystem::AddAffect(e, biologistMissionInfo[i][14], bApplyOn, lApplyValue, 0, 315360000, 0, false);
+					}
+				}
+			} else {
+				uint8_t bApplyOn = biologistMissionInfo[i][7];
+				int32_t lApplyValue = biologistMissionInfo[i][8];
+				if (bApplyOn != APPLY_NONE || lApplyValue != 0) {
+					bApplyOn = aApplyInfo[bApplyOn].bPointType;
+					AffectSystem::AddAffect(e, biologistMissionInfo[i][14], bApplyOn, lApplyValue, 0, 315360000, 0, false);
+				}
+			}
+		}
+	}
+}
+
+// The per-tick affect work: stamina and the auto-recall.
+bool UpdateAffect(entt::entity e)
+{
+	// AutoRecallProcess, GetStopTime have no entity form yet;
+	// each is its own migration and they share this one resolve.
+	LPCHARACTER self = ecs::LegacyCharOf(e);
+	if (!self)
+		return false;
+
+#ifdef ENABLE_BUG_FIXES
+	if (!ItemSystem::IsValidItem(ItemSystem::GetWearItem(e, WEAR_WEAPON))) {
+		if (AffectSystem::IsAffectFlag(e, AFF_GEOMGYEONG)) {
+			AffectSystem::RemoveAffect(e, SKILL_GEOMKYUNG);
+		}
+
+		if (AffectSystem::IsAffectFlag(e, AFF_GWIGUM)) {
+			AffectSystem::RemoveAffect(e, SKILL_GWIGEOM);
+		}
+	}
+#endif
+
+	// affect_event ���� ó���� ���� �ƴ�����, 1��¥�� �̺�Ʈ���� ó���ϴ� ����
+	// �̰� ���̶� ���⼭ ���� ó���� �Ѵ�.
+	if (ecs::PointSystem::Get(e, POINT_HP_RECOVERY) > 0)
+	{
+		if (ecs::PointSystem::GetMaxHP(e) <= ecs::PlayerRuntime::GetHP(e))
+		{
+			ecs::PointSystem::Change(e, POINT_HP_RECOVERY, -ecs::PointSystem::Get(e, POINT_HP_RECOVERY));
+		}
+		else
+		{
+			int iVal = MIN(ecs::PointSystem::Get(e, POINT_HP_RECOVERY), ecs::PointSystem::GetMaxHP(e) * 7 / 100);
+
+			ecs::PointSystem::Change(e, POINT_HP, iVal);
+			ecs::PointSystem::Change(e, POINT_HP_RECOVERY, -iVal);
+		}
+	}
+
+	if (ecs::PointSystem::Get(e, POINT_SP_RECOVERY) > 0)
+	{
+		if (ecs::PointSystem::GetMaxSP(e) <= ecs::PlayerRuntime::GetSP(e))
+			ecs::PointSystem::Change(e, POINT_SP_RECOVERY, -ecs::PointSystem::Get(e, POINT_SP_RECOVERY));
+		else
+		{
+			int iVal = MIN(ecs::PointSystem::Get(e, POINT_SP_RECOVERY), ecs::PointSystem::GetMaxSP(e) * 7 / 100);
+
+			ecs::PointSystem::Change(e, POINT_SP, iVal);
+			ecs::PointSystem::Change(e, POINT_SP_RECOVERY, -iVal);
+		}
+	}
+
+	if (ecs::PointSystem::Get(e, POINT_HP_RECOVER_CONTINUE) > 0)
+	{
+		ecs::PointSystem::Change(e, POINT_HP, ecs::PointSystem::Get(e, POINT_HP_RECOVER_CONTINUE));
+	}
+
+	if (ecs::PointSystem::Get(e, POINT_SP_RECOVER_CONTINUE) > 0)
+	{
+		ecs::PointSystem::Change(e, POINT_SP, ecs::PointSystem::Get(e, POINT_SP_RECOVER_CONTINUE));
+	}
+
+	ItemSystem::AutoRecoveryItemProcess(e, AFFECT_AUTO_HP_RECOVERY);
+	ItemSystem::AutoRecoveryItemProcess(e, AFFECT_AUTO_SP_RECOVERY);
+#ifdef ENABLE_NEW_USE_POTION
+	ItemSystem::AutoRecoveryItemProcess(e, AFFECT_AUTO_HP_RECOVERY2);
+	ItemSystem::AutoRecoveryItemProcess(e, AFFECT_AUTO_SP_RECOVERY2);
+#endif
+#ifdef ENABLE_RECALL
+	self->AutoRecallProcess();
+#endif
+
+	// ���׹̳� ȸ��
+	if (ecs::PlayerRuntime::GetMaxStamina(e) > ecs::PlayerRuntime::GetStamina(e))
+	{
+		int iSec = (get_dword_time() - self->GetStopTime()) / 3000;
+		if (iSec)
+			ecs::PointSystem::Change(e, POINT_STAMINA, ecs::PlayerRuntime::GetMaxStamina(e)/1);
+	}
+
+
+	// ProcessAffect�� affect�� ������ true�� �����Ѵ�.
+    // Expiry callbacks can destroy this CHARACTER. Capture the entity before
+    // entering the native pass and never read this again afterwards.
+    const auto entity = e;
+    const bool empty = AffectSystem::ProcessAffect(entity);
+    if (!AffectState(entity)) return false;
+    if (empty && ecs::PointSystem::Get(entity, POINT_HP_RECOVERY) == 0 &&
+        ecs::PointSystem::Get(entity, POINT_SP_RECOVERY) == 0 &&
+        ecs::PointSystem::Get(entity, POINT_STAMINA) == ecs::PlayerRuntime::GetMaxStamina(entity)) {
+        AffectSystem::StopAffectEvent(entity);
+        return false;
+    }
+    return true;
+}
+
+// Dropping every affect, optionally keeping the ones that survive death.
+void ClearAffect(entt::entity e, bool bSave)
+{
+	// CheckMaximumPoints have no entity form yet;
+	// each is its own migration and they share this one resolve.
+	LPCHARACTER self = ecs::LegacyCharOf(e);
+	if (!self)
+		return;
+
+    const auto entity = e;
+    auto* state = AffectState(entity);
+    if (!state)
+        return;
+    for (auto& [type, token] : state->mutationTokens)
+        token = NextAffectToken();
+
+	for (const auto& lease : AffectSystem::Snapshot(entity))
+	{
+		if (!AffectSystem::Lease(entity, lease.get()))
+			continue;
+		CAffect* pkAff = lease.get();
+
+		if (bSave)
+		{
+#ifdef ENABLE_SOUL_SYSTEM
+			if ( pkAff->dwType == AFFECT_SOUL_RED || pkAff->dwType == AFFECT_SOUL_BLUE )
+			{
+
+				continue;
+			}
+#endif
+
+			if ( IS_NO_CLEAR_ON_DEATH_AFFECT(pkAff->dwType) || IS_NO_SAVE_AFFECT(pkAff->dwType) )
+			{
+
+				continue;
+			}
+#ifdef ENABLE_SKILLS_BUFF_ALTERNATIVE
+			else if ((ecs::PlayerRuntime::IsPC(e)) && (
+				(pkAff->dwType == SKILL_JEONGWI) ||	// 3
+				(pkAff->dwType == SKILL_GEOMKYUNG) ||	// 4
+				(pkAff->dwType == SKILL_CHUNKEON) ||		// 19
+				(pkAff->dwType == SKILL_GYEONGGONG) ||	// 49
+				(pkAff->dwType == SKILL_GWIGEOM) ||		// 63
+				(pkAff->dwType == SKILL_TERROR) ||		// 64
+				(pkAff->dwType == SKILL_JUMAGAP) ||		// 65
+				(pkAff->dwType == SKILL_MUYEONG) ||		// 78
+				(pkAff->dwType == SKILL_MANASHILED) ||	// 79
+				(pkAff->dwType == SKILL_HOSIN) ||			// 94
+				(pkAff->dwType == SKILL_REFLECT) ||			// 95
+				(pkAff->dwType == SKILL_GICHEON) ||		// 96
+				(pkAff->dwType == SKILL_KWAESOK) ||		// 110
+				(pkAff->dwType == SKILL_JEUNGRYEOK)		// 111
+			))
+			{
+				AffectSystem::SaveAffectSkills(e, pkAff->dwType, pkAff->bApplyOn, pkAff->lApplyValue, pkAff->dwFlag, pkAff->lDuration, pkAff->lSPCost);
+				//continue;
+			}
+#endif
+#ifdef ENABLE_BLOCK_MULTIFARM
+			else if ((pkAff->dwType == AFFECT_DROP_BLOCK) || (pkAff->dwType == AFFECT_DROP_UNBLOCK)) {
+
+				continue;
+			}
+#endif
+
+#ifdef __AUTO_QUQUE_ATTACK__
+			if (pkAff->dwType == AFFECT_AUTO_METIN_FARM)
+			{
+
+				continue;
+			}
+#endif
+#ifdef ENABLE_GUILD_ATTRIBUTE
+			if (AFFECT_GUILD_ATTRIBUTE == pkAff->dwType)
+			{
+
+				continue;
+			}
+#endif
+			if (ecs::PlayerRuntime::IsPC(e))
+			{
+				SendAffectRemovePacket(ecs::PlayerRuntime::GetDesc(e), ecs::PlayerRuntime::GetPlayerID(e), pkAff->dwType, pkAff->bApplyOn);
+			}
+		}
+
+		if (AffectSystem::Detach(entity, pkAff))
+			AffectSystem::ComputeAffect(entity, *lease, false);
+		if (!AffectState(entity))
+			return;
+	}
+
+	NetworkSyncSystem::UpdatePacket(entity);
+	if (!AffectState(entity))
+		return;
+
+	self->CheckMaximumPoints();
+	if (!AffectState(entity))
+		return;
+
+	if (AffectSystem::Snapshot(entity).empty())
+		AffectSystem::StopAffectEvent(entity);
+}
+
+// Rebuilding the affect list a login handed back from the database.
+void LoadAffect(entt::entity e, uint32_t dwCount, TPacketAffectElement * pElements)
+{
+	// CheckMount, SetDropStatus have no entity form yet;
+	// each is its own migration and they share this one resolve.
+	LPCHARACTER self = ecs::LegacyCharOf(e);
+	if (!self)
+		return;
+
+	const auto entity = e;
+	if (!AffectState(entity) || (dwCount && !pElements))
+		return;
+	AffectState(entity)->isLoaded = false;
+	LPDESC desc = ecs::PlayerRuntime::GetDesc(e);
+	LOG_ERROR("LOAD_AFFECT_BEGIN pid={} name={} count={} elements={} desc={}",
+		ecs::PlayerRuntime::GetPlayerID(e), ecs::PlayerRuntime::GetName(e).data(), dwCount, static_cast<const void*>(pElements), static_cast<const void*>(desc));
+
+	if (!desc)
+		return;
+	if (!desc->IsPhase(PHASE_GAME))
+	{
+		if (test_server)
+			LOG_INFO("LOAD_AFFECT: Creating Event", ecs::PlayerRuntime::GetName(e).data(), dwCount);
+
+		load_affect_login_event_info* info = AllocEventInfo<load_affect_login_event_info>();
+
+		info->pid = ecs::PlayerRuntime::GetPlayerID(e);
+		info->count = dwCount;
+		info->data = M2_NEW char[sizeof(TPacketAffectElement) * dwCount];
+		memcpy(info->data, pElements, sizeof(TPacketAffectElement) * dwCount);
+
+		event_create(load_affect_login_event, info, PASSES_PER_SEC(1));
+
+		LOG_ERROR("LOAD_AFFECT_REQUEUE pid={} name={} count={} data={}",
+			ecs::PlayerRuntime::GetPlayerID(e), ecs::PlayerRuntime::GetName(e).data(), dwCount, static_cast<const void*>(info->data));
+		return;
+	}
+
+	LOG_ERROR("LOAD_AFFECT_CLEAR_BEGIN pid={} name={} existing_affects={}", ecs::PlayerRuntime::GetPlayerID(e), ecs::PlayerRuntime::GetName(e).data(), AffectSystem::Snapshot(e).size());
+	AffectSystem::ClearAffect(e, true);
+	LOG_ERROR("LOAD_AFFECT_CLEAR_END pid={} name={} remaining_affects={}", ecs::PlayerRuntime::GetPlayerID(e), ecs::PlayerRuntime::GetName(e).data(), AffectSystem::Snapshot(e).size());
+
+	if (test_server)
+		LOG_INFO("LOAD_AFFECT: {} count {}", ecs::PlayerRuntime::GetName(e).data(), dwCount);
+
+	TAffectFlag afOld = AffectSystem::GetFlags(e);
+
+	int64_t lMovSpd = ecs::PointSystem::Get(e, POINT_MOV_SPEED);
+	int64_t lAttSpd = ecs::PointSystem::Get(e, POINT_ATT_SPEED);
+	const entt::entity character = e;
+
+	for (uint32_t i = 0; i < dwCount; ++i, ++pElements)
+	{
+		////// �������� �ε������ʴ´�.
+		////if (pElements->dwType == SKILL_MUYEONG)
+		////	continue;
+		if (AFFECT_AUTO_HP_RECOVERY == pElements->dwType || AFFECT_AUTO_SP_RECOVERY == pElements->dwType)
+		{
+			const entt::entity item = ItemSystem::FindItemByID(
+				character, pElements->dwFlag);
+			if (!ItemSystem::IsValidItem(item))
+				continue;
+
+			ItemSystem::LockItem(item);
+		}
+#ifdef ENABLE_NEW_USE_POTION
+		else if (AFFECT_AUTO_HP_RECOVERY2 == pElements->dwType || AFFECT_AUTO_SP_RECOVERY2 == pElements->dwType)
+		{
+			const entt::entity item = ItemSystem::FindItemByID(
+				character, pElements->dwFlag);
+			if (!ItemSystem::IsValidItem(item))
+				continue;
+
+			ItemSystem::LockItem(item);
+		}
+		else if ((pElements->dwType >= AFFECT_NEW_POTION1) && (pElements->dwType <= AFFECT_NEW_POTION31))
+		{
+			const entt::entity item = ItemSystem::FindItemByID(
+				character, pElements->dwFlag);
+			if (ItemSystem::IsValidItem(item))
+				ItemSystem::LockItem(item);
+			else
+				continue;
+		}
+		//else if (pElements->dwType == AFFECT_NEW_POTION31)
+		//{
+		//	LPPARTY party = ecs::SocialSystem::GetParty(e);
+		//	if ((!party) || (party && ecs::PlayerRuntime::GetPlayerID(e) != party->GetLeaderPID())) {
+		//		LPITEM item = ItemSystem::FindItemByID(e, e, pElements->dwFlag);
+		//		if (item) {
+		//			item->Lock(false);
+		//			item->SetSocket(1, 0);
+		//			AffectSystem::RemoveAffect(e, AFFECT_NEW_POTION31);
+		//		} else {
+		//			continue;
+		//		}
+		//	}
+		//}
+#endif
+#ifdef ENABLE_RECALL
+#ifdef __PET_SYSTEM__
+		else if (pElements->dwType == AFFECT_RECALL1)
+		{
+			const entt::entity item = ItemSystem::FindItemByID(
+				character, pElements->dwFlag);
+			if (ItemSystem::IsValidItem(item))
+				ItemSystem::LockItem(item);
+			else
+				continue;
+		}
+#endif
+#ifdef __NEWPET_SYSTEM__
+		else if (pElements->dwType == AFFECT_RECALL2)
+		{
+			const entt::entity item = ItemSystem::FindItemByID(
+				character, pElements->dwFlag);
+			if (ItemSystem::IsValidItem(item))
+				ItemSystem::LockItem(item);
+			else
+				continue;
+		}
+#endif
+#endif
+
+#ifdef ENABLE_SOUL_SYSTEM
+		if(pElements->dwType == AFFECT_SOUL_RED || pElements->dwType == AFFECT_SOUL_BLUE)
+		{
+			const entt::entity item = ItemSystem::FindItemByID(
+				character, static_cast<uint32_t>(pElements->lSPCost));
+
+			if (!ItemSystem::IsValidItem(item))
+				continue;
+
+			ItemSystem::LockItem(item);
+		}
+#endif
+
+		if (pElements->bApplyOn >= POINT_MAX_NUM)
+		{
+			LOG_ERROR("invalid affect data {} ApplyOn {} ApplyValue {}", ecs::PlayerRuntime::GetName(e).data(), static_cast<int>(pElements->bApplyOn), pElements->lApplyValue);
+			continue;
+		}
+
+		if (test_server)
+		{
+			LOG_INFO("Load Affect : Affect {} {} {}", ecs::PlayerRuntime::GetName(e).data(), pElements->dwType, static_cast<int>(pElements->bApplyOn));
+		}
+
+		auto lease = AffectSystem::Attach(entity, {pElements->dwType,
+			pElements->bApplyOn, pElements->lApplyValue, pElements->dwFlag,
+			pElements->lDuration, pElements->lSPCost});
+		if (!lease)
+			return;
+		CAffect* pkAff = lease.get();
+
+		SendAffectAddPacket(ecs::PlayerRuntime::GetDesc(e), pkAff);
+
+		AffectSystem::ComputeAffect(entity, *lease, true);
+		if (!AffectState(entity))
+			return;
+	}
+	LOG_ERROR("LOAD_AFFECT_LOOP_END pid={} name={} loaded_affects={}", ecs::PlayerRuntime::GetPlayerID(e), ecs::PlayerRuntime::GetName(e).data(), AffectSystem::Snapshot(e).size());
+
+	if ( CArenaManager::instance().IsArenaMap(ecs::PlayerRuntime::GetMapIndex(e)) == true )
+	{
+		AffectSystem::RemoveGoodAffects(e);
+	}
+
+#ifndef ENABLE_01092021
+	AffectSystem::RemoveAffect(e, AFFECT_MOUNT);
+#ifdef ENABLE_MOUNT_COSTUME_SYSTEM
+	AffectSystem::RemoveAffect(e, AFFECT_MOUNT_BONUS);
+	if (ecs::PlayerRuntime::GetMapIndex(e) != 113 && CArenaManager::instance().IsArenaMap(ecs::PlayerRuntime::GetMapIndex(e)) == false) {
+		self->CheckMount();
+	}
+#endif
+#endif
+
+	if (afOld != AffectSystem::GetFlags(e) || lMovSpd != ecs::PointSystem::Get(e, POINT_MOV_SPEED) || lAttSpd != ecs::PointSystem::Get(e, POINT_ATT_SPEED))
+	{
+
+	NetworkSyncSystem::UpdatePacket(e);
+	}
+
+	LOG_ERROR("LOAD_AFFECT_START_EVENT_BEGIN pid={} name={}", ecs::PlayerRuntime::GetPlayerID(e), ecs::PlayerRuntime::GetName(e).data());
+	AffectSystem::StartAffectEvent(e);
+	LOG_ERROR("LOAD_AFFECT_START_EVENT_END pid={} name={}", ecs::PlayerRuntime::GetPlayerID(e), ecs::PlayerRuntime::GetName(e).data());
+
+	if (!AffectState(entity))
+		return;
+	AffectState(entity)->isLoaded = true;
+
+	// ��ȥ�� ���� �ε� �� �ʱ�ȭ
+	LOG_ERROR("LOAD_AFFECT_DRAGONSOUL_BEGIN pid={} name={}", ecs::PlayerRuntime::GetPlayerID(e), ecs::PlayerRuntime::GetName(e).data());
+	DragonSoulSystem::Initialize(entity);
+	LOG_ERROR("LOAD_AFFECT_DRAGONSOUL_END pid={} name={}", ecs::PlayerRuntime::GetPlayerID(e), ecs::PlayerRuntime::GetName(e).data());
+
+	// @fixme118 (regain affect hp/mp)
+	if (!CombatSystem::IsDead(e))
+	{
+		LOG_ERROR("LOAD_AFFECT_REFILL_POINTS_BEGIN pid={} name={}", ecs::PlayerRuntime::GetPlayerID(e), ecs::PlayerRuntime::GetName(e).data());
+		ecs::PointSystem::Change(e, POINT_HP, ecs::PointSystem::GetMaxHP(e) - ecs::PlayerRuntime::GetHP(e));
+		ecs::PointSystem::Change(e, POINT_SP, ecs::PointSystem::GetMaxSP(e) - ecs::PlayerRuntime::GetSP(e));
+		LOG_ERROR("LOAD_AFFECT_REFILL_POINTS_END pid={} name={}", ecs::PlayerRuntime::GetPlayerID(e), ecs::PlayerRuntime::GetName(e).data());
+	}
+#ifdef ENABLE_GUILD_ATTRIBUTE
+	if (ecs::SocialSystem::GetGuild(e))
+		ecs::SocialSystem::GetGuild(e)->GiveGuildBuff(e);
+	else
+	{
+		while (true)
+		{
+			CAffect* affect = AffectSystem::FindAffect(e, AFFECT_GUILD_ATTRIBUTE);
+			if (!affect)
+				break;
+			AffectSystem::RemoveAffect(e, affect);
+		}
+	}
+#endif
+
+#ifdef ENABLE_BLOCK_MULTIFARM
+	self->SetDropStatus();
+#endif
+#ifdef ENABLE_BIOLOGIST_UI
+	LOG_ERROR("LOAD_AFFECT_BIOLOGIST_BEGIN pid={} name={}", ecs::PlayerRuntime::GetPlayerID(e), ecs::PlayerRuntime::GetName(e).data());
+	CheckBiologistReward(e);
+	LOG_ERROR("LOAD_AFFECT_BIOLOGIST_END pid={} name={}", ecs::PlayerRuntime::GetPlayerID(e), ecs::PlayerRuntime::GetName(e).data());
+#endif
+	LOG_ERROR("LOAD_AFFECT_END pid={} name={} count={} final_affects={}", ecs::PlayerRuntime::GetPlayerID(e), ecs::PlayerRuntime::GetName(e).data(), dwCount, AffectSystem::Snapshot(e).size());
 }
 
 bool IsGoodAffect(uint8_t bAffectType)
@@ -1134,17 +1680,6 @@ void ClearAffectSkills(entt::entity e)
         state->skillAffects.clear();
 }
 
-void ClearAffect(entt::entity e, bool save)
-{
-    auto* ch = LegacyCharOf(e);
-    if (!ch) {
-        return;
-    }
-
-    ch->ClearAffect(save);
-
-}
-
 void RefreshAffect(entt::entity e)
 {
     auto* state = AffectState(e);
@@ -1329,7 +1864,7 @@ EVENTFUNC(affect_event)
         AffectSystem::StopAffectEvent(entity);
         return 0;
     }
-    const bool repeat = ch->UpdateAffect();
+    const bool repeat = AffectSystem::UpdateAffect(ch->GetEntityHandle());
     if (!matches())
         return 0;
     if (!repeat || !AffectState(entity)) {
@@ -1339,531 +1874,9 @@ EVENTFUNC(affect_event)
     return passes_per_sec;
 }
 
-bool CHARACTER::UpdateAffect()
-{
-#ifdef ENABLE_BUG_FIXES
-	if (!ItemSystem::IsValidItem(ItemSystem::GetWearItem(GetEntityHandle(), WEAR_WEAPON))) {
-		if (AffectSystem::IsAffectFlag(GetEntityHandle(), AFF_GEOMGYEONG)) {
-			AffectSystem::RemoveAffect(GetEntityHandle(), SKILL_GEOMKYUNG);
-		}
-
-		if (AffectSystem::IsAffectFlag(GetEntityHandle(), AFF_GWIGUM)) {
-			AffectSystem::RemoveAffect(GetEntityHandle(), SKILL_GWIGEOM);
-		}
-	}
-#endif
-
-	// affect_event ���� ó���� ���� �ƴ�����, 1��¥�� �̺�Ʈ���� ó���ϴ� ����
-	// �̰� ���̶� ���⼭ ���� ó���� �Ѵ�.
-	if (GetPoint(POINT_HP_RECOVERY) > 0)
-	{
-		if (GetMaxHP() <= GetHP())
-		{
-			PointChange(POINT_HP_RECOVERY, -GetPoint(POINT_HP_RECOVERY));
-		}
-		else
-		{
-			int iVal = MIN(GetPoint(POINT_HP_RECOVERY), GetMaxHP() * 7 / 100);
-
-			PointChange(POINT_HP, iVal);
-			PointChange(POINT_HP_RECOVERY, -iVal);
-		}
-	}
-
-	if (GetPoint(POINT_SP_RECOVERY) > 0)
-	{
-		if (GetMaxSP() <= ecs::PlayerRuntime::GetSP(GetEntityHandle()))
-			PointChange(POINT_SP_RECOVERY, -GetPoint(POINT_SP_RECOVERY));
-		else
-		{
-			int iVal = MIN(GetPoint(POINT_SP_RECOVERY), GetMaxSP() * 7 / 100);
-
-			PointChange(POINT_SP, iVal);
-			PointChange(POINT_SP_RECOVERY, -iVal);
-		}
-	}
-
-	if (GetPoint(POINT_HP_RECOVER_CONTINUE) > 0)
-	{
-		PointChange(POINT_HP, GetPoint(POINT_HP_RECOVER_CONTINUE));
-	}
-
-	if (GetPoint(POINT_SP_RECOVER_CONTINUE) > 0)
-	{
-		PointChange(POINT_SP, GetPoint(POINT_SP_RECOVER_CONTINUE));
-	}
-
-	ItemSystem::AutoRecoveryItemProcess(GetEntityHandle(), AFFECT_AUTO_HP_RECOVERY);
-	ItemSystem::AutoRecoveryItemProcess(GetEntityHandle(), AFFECT_AUTO_SP_RECOVERY);
-#ifdef ENABLE_NEW_USE_POTION
-	ItemSystem::AutoRecoveryItemProcess(GetEntityHandle(), AFFECT_AUTO_HP_RECOVERY2);
-	ItemSystem::AutoRecoveryItemProcess(GetEntityHandle(), AFFECT_AUTO_SP_RECOVERY2);
-#endif
-#ifdef ENABLE_RECALL
-	AutoRecallProcess();
-#endif
-
-	// ���׹̳� ȸ��
-	if (GetMaxStamina() > GetStamina())
-	{
-		int iSec = (get_dword_time() - GetStopTime()) / 3000;
-		if (iSec)
-			PointChange(POINT_STAMINA, GetMaxStamina()/1);
-	}
-
-
-	// ProcessAffect�� affect�� ������ true�� �����Ѵ�.
-    // Expiry callbacks can destroy this CHARACTER. Capture the entity before
-    // entering the native pass and never read this again afterwards.
-    const auto entity = GetEntityHandle();
-    const bool empty = AffectSystem::ProcessAffect(entity);
-    if (!AffectState(entity)) return false;
-    if (empty && ecs::PointSystem::Get(entity, POINT_HP_RECOVERY) == 0 &&
-        ecs::PointSystem::Get(entity, POINT_SP_RECOVERY) == 0 &&
-        ecs::PointSystem::Get(entity, POINT_STAMINA) == ecs::PlayerRuntime::GetMaxStamina(entity)) {
-        AffectSystem::StopAffectEvent(entity);
-        return false;
-    }
-    return true;
-}
-
 #ifdef ENABLE_SKILLS_BUFF_ALTERNATIVE
 #endif
 
-void CHARACTER::ClearAffect(bool bSave)
-{
-    const auto entity = GetEntityHandle();
-    auto* state = AffectState(entity);
-    if (!state)
-        return;
-    for (auto& [type, token] : state->mutationTokens)
-        token = NextAffectToken();
-
-	for (const auto& lease : AffectSystem::Snapshot(entity))
-	{
-		if (!AffectSystem::Lease(entity, lease.get()))
-			continue;
-		CAffect* pkAff = lease.get();
-
-		if (bSave)
-		{
-#ifdef ENABLE_SOUL_SYSTEM
-			if ( pkAff->dwType == AFFECT_SOUL_RED || pkAff->dwType == AFFECT_SOUL_BLUE )
-			{
-
-				continue;
-			}
-#endif
-
-			if ( IS_NO_CLEAR_ON_DEATH_AFFECT(pkAff->dwType) || IS_NO_SAVE_AFFECT(pkAff->dwType) )
-			{
-
-				continue;
-			}
-#ifdef ENABLE_SKILLS_BUFF_ALTERNATIVE
-			else if ((IsPC()) && (
-				(pkAff->dwType == SKILL_JEONGWI) ||	// 3
-				(pkAff->dwType == SKILL_GEOMKYUNG) ||	// 4
-				(pkAff->dwType == SKILL_CHUNKEON) ||		// 19
-				(pkAff->dwType == SKILL_GYEONGGONG) ||	// 49
-				(pkAff->dwType == SKILL_GWIGEOM) ||		// 63
-				(pkAff->dwType == SKILL_TERROR) ||		// 64
-				(pkAff->dwType == SKILL_JUMAGAP) ||		// 65
-				(pkAff->dwType == SKILL_MUYEONG) ||		// 78
-				(pkAff->dwType == SKILL_MANASHILED) ||	// 79
-				(pkAff->dwType == SKILL_HOSIN) ||			// 94
-				(pkAff->dwType == SKILL_REFLECT) ||			// 95
-				(pkAff->dwType == SKILL_GICHEON) ||		// 96
-				(pkAff->dwType == SKILL_KWAESOK) ||		// 110
-				(pkAff->dwType == SKILL_JEUNGRYEOK)		// 111
-			))
-			{
-				AffectSystem::SaveAffectSkills(GetEntityHandle(), pkAff->dwType, pkAff->bApplyOn, pkAff->lApplyValue, pkAff->dwFlag, pkAff->lDuration, pkAff->lSPCost);
-				//continue;
-			}
-#endif
-#ifdef ENABLE_BLOCK_MULTIFARM
-			else if ((pkAff->dwType == AFFECT_DROP_BLOCK) || (pkAff->dwType == AFFECT_DROP_UNBLOCK)) {
-
-				continue;
-			}
-#endif
-
-#ifdef __AUTO_QUQUE_ATTACK__
-			if (pkAff->dwType == AFFECT_AUTO_METIN_FARM)
-			{
-
-				continue;
-			}
-#endif
-#ifdef ENABLE_GUILD_ATTRIBUTE
-			if (AFFECT_GUILD_ATTRIBUTE == pkAff->dwType)
-			{
-
-				continue;
-			}
-#endif
-			if (IsPC())
-			{
-				SendAffectRemovePacket(GetDesc(), GetPlayerID(), pkAff->dwType, pkAff->bApplyOn);
-			}
-		}
-
-		if (AffectSystem::Detach(entity, pkAff))
-			AffectSystem::ComputeAffect(entity, *lease, false);
-		if (!AffectState(entity))
-			return;
-	}
-
-	NetworkSyncSystem::UpdatePacket(entity);
-	if (!AffectState(entity))
-		return;
-
-	CheckMaximumPoints();
-	if (!AffectState(entity))
-		return;
-
-	if (AffectSystem::Snapshot(entity).empty())
-		AffectSystem::StopAffectEvent(entity);
-}
-
-EVENTINFO(load_affect_login_event_info)
-{
-	uint32_t pid;
-	uint32_t count;
-	char* data;
-
-	load_affect_login_event_info()
-	: pid( 0 )
-	, count( 0 )
-	, data( nullptr )
-	{
-	}
-};
-
-EVENTFUNC(load_affect_login_event)
-{
-	load_affect_login_event_info* info = dynamic_cast<load_affect_login_event_info*>( event->info );
-
-	if ( info == nullptr)
-	{
-		LOG_ERROR("load_affect_login_event_info> <Factor> Null pointer");
-		return 0;
-	}
-
-	uint32_t dwPID = info->pid;
-	auto* ch = CHARACTER_MANAGER::instance().FindByPID(dwPID);
-
-	if (!ch)
-	{
-		M2_DELETE_ARRAY(info->data);
-		info->data = nullptr;
-		return 0;
-	}
-
-	const entt::entity character = ch->GetEntityHandle();
-	LPDESC d = ecs::PlayerRuntime::GetDesc(character);
-
-	if (!d)
-	{
-		M2_DELETE_ARRAY(info->data);
-		info->data = nullptr;
-		return 0;
-	}
-
-	if (d->IsPhase(PHASE_HANDSHAKE) ||
-			d->IsPhase(PHASE_LOGIN) ||
-			d->IsPhase(PHASE_SELECT) ||
-			d->IsPhase(PHASE_DEAD) ||
-			d->IsPhase(PHASE_LOADING))
-	{
-		return PASSES_PER_SEC(1);
-	}
-	else if (d->IsPhase(PHASE_CLOSE))
-	{
-		M2_DELETE_ARRAY(info->data);
-		info->data = nullptr;
-		return 0;
-	}
-	else if (d->IsPhase(PHASE_GAME))
-	{
-		LOG_INFO("Affect Load by Event");
-		LOG_ERROR("AFFECT_EVENT_LOAD_BEGIN pid={} name={} count={} data={} ch={}",
-			ecs::PlayerRuntime::GetPlayerID(character), ecs::PlayerRuntime::GetName(character).data(), info->count, static_cast<const void*>(info->data), static_cast<const void*>(ch));
-		ch->LoadAffect(info->count, (TPacketAffectElement*)info->data);
-		LOG_ERROR("AFFECT_EVENT_LOAD_END pid={} name={} count={} data={}",
-			ecs::PlayerRuntime::GetPlayerID(character), ecs::PlayerRuntime::GetName(character).data(), info->count, static_cast<const void*>(info->data));
-		LOG_ERROR("AFFECT_EVENT_DATA_DELETE_BEGIN pid={} data={}", ecs::PlayerRuntime::GetPlayerID(character), static_cast<const void*>(info->data));
-		M2_DELETE_ARRAY(info->data);
-		info->data = nullptr;
-		LOG_ERROR("AFFECT_EVENT_DATA_DELETE_END pid={} data={}", ecs::PlayerRuntime::GetPlayerID(character), static_cast<const void*>(info->data));
-		return 0;
-	}
-	else
-	{
-		LOG_ERROR("input_db.cpp:quest_login_event INVALID PHASE pid {}", ecs::PlayerRuntime::GetPlayerID(character));
-		M2_DELETE_ARRAY(info->data);
-		info->data = nullptr;
-		return 0;
-	}
-}
-
 #ifdef ENABLE_BIOLOGIST_UI
-void CHARACTER::CheckBiologistReward() {
-	int stat = ecs::PlayerRuntime::GetQuestFlag(GetEntityHandle(), "biologist.stat");
-	if (stat > 0) {
-		for (int i = 0; i < stat; i++) {
-			if (AffectSystem::FindAffect(GetEntityHandle(), biologistMissionInfo[i][14])) {
-				continue;
-			}
-
-			if (biologistMissionInfo[i][11] == 0) {
-				int j = 0;
-				for (int w = 0; w < 4; w++) {
-					j += 2;
-					uint8_t bApplyOn = biologistMissionInfo[i][j + 1];
-					int32_t lApplyValue = biologistMissionInfo[i][j + 2];
-					if (bApplyOn == APPLY_NONE || lApplyValue == 0) {
-						continue;
-					} else {
-						bApplyOn = aApplyInfo[bApplyOn].bPointType;
-						AffectSystem::AddAffect(GetEntityHandle(), biologistMissionInfo[i][14], bApplyOn, lApplyValue, 0, 315360000, 0, false);
-					}
-				}
-			} else {
-				uint8_t bApplyOn = biologistMissionInfo[i][7];
-				int32_t lApplyValue = biologistMissionInfo[i][8];
-				if (bApplyOn != APPLY_NONE || lApplyValue != 0) {
-					bApplyOn = aApplyInfo[bApplyOn].bPointType;
-					AffectSystem::AddAffect(GetEntityHandle(), biologistMissionInfo[i][14], bApplyOn, lApplyValue, 0, 315360000, 0, false);
-				}
-			}
-		}
-	}
-}
 #endif
-
-void CHARACTER::LoadAffect(uint32_t dwCount, TPacketAffectElement * pElements)
-{
-	const auto entity = GetEntityHandle();
-	if (!AffectState(entity) || (dwCount && !pElements))
-		return;
-	AffectState(entity)->isLoaded = false;
-	LPDESC desc = GetDesc();
-	LOG_ERROR("LOAD_AFFECT_BEGIN pid={} name={} count={} elements={} desc={}",
-		GetPlayerID(), GetName(), dwCount, static_cast<const void*>(pElements), static_cast<const void*>(desc));
-
-	if (!desc)
-		return;
-	if (!desc->IsPhase(PHASE_GAME))
-	{
-		if (test_server)
-			LOG_INFO("LOAD_AFFECT: Creating Event", GetName(), dwCount);
-
-		load_affect_login_event_info* info = AllocEventInfo<load_affect_login_event_info>();
-
-		info->pid = GetPlayerID();
-		info->count = dwCount;
-		info->data = M2_NEW char[sizeof(TPacketAffectElement) * dwCount];
-		memcpy(info->data, pElements, sizeof(TPacketAffectElement) * dwCount);
-
-		event_create(load_affect_login_event, info, PASSES_PER_SEC(1));
-
-		LOG_ERROR("LOAD_AFFECT_REQUEUE pid={} name={} count={} data={}",
-			GetPlayerID(), GetName(), dwCount, static_cast<const void*>(info->data));
-		return;
-	}
-
-	LOG_ERROR("LOAD_AFFECT_CLEAR_BEGIN pid={} name={} existing_affects={}", GetPlayerID(), GetName(), AffectSystem::Snapshot(GetEntityHandle()).size());
-	ClearAffect(true);
-	LOG_ERROR("LOAD_AFFECT_CLEAR_END pid={} name={} remaining_affects={}", GetPlayerID(), GetName(), AffectSystem::Snapshot(GetEntityHandle()).size());
-
-	if (test_server)
-		LOG_INFO("LOAD_AFFECT: {} count {}", GetName(), dwCount);
-
-	TAffectFlag afOld = AffectSystem::GetFlags(GetEntityHandle());
-
-	int64_t lMovSpd = GetPoint(POINT_MOV_SPEED);
-	int64_t lAttSpd = GetPoint(POINT_ATT_SPEED);
-	const entt::entity character = GetEntityHandle();
-
-	for (uint32_t i = 0; i < dwCount; ++i, ++pElements)
-	{
-		////// �������� �ε������ʴ´�.
-		////if (pElements->dwType == SKILL_MUYEONG)
-		////	continue;
-		if (AFFECT_AUTO_HP_RECOVERY == pElements->dwType || AFFECT_AUTO_SP_RECOVERY == pElements->dwType)
-		{
-			const entt::entity item = ItemSystem::FindItemByID(
-				character, pElements->dwFlag);
-			if (!ItemSystem::IsValidItem(item))
-				continue;
-
-			ItemSystem::LockItem(item);
-		}
-#ifdef ENABLE_NEW_USE_POTION
-		else if (AFFECT_AUTO_HP_RECOVERY2 == pElements->dwType || AFFECT_AUTO_SP_RECOVERY2 == pElements->dwType)
-		{
-			const entt::entity item = ItemSystem::FindItemByID(
-				character, pElements->dwFlag);
-			if (!ItemSystem::IsValidItem(item))
-				continue;
-
-			ItemSystem::LockItem(item);
-		}
-		else if ((pElements->dwType >= AFFECT_NEW_POTION1) && (pElements->dwType <= AFFECT_NEW_POTION31))
-		{
-			const entt::entity item = ItemSystem::FindItemByID(
-				character, pElements->dwFlag);
-			if (ItemSystem::IsValidItem(item))
-				ItemSystem::LockItem(item);
-			else
-				continue;
-		}
-		//else if (pElements->dwType == AFFECT_NEW_POTION31)
-		//{
-		//	LPPARTY party = GetParty();
-		//	if ((!party) || (party && GetPlayerID() != party->GetLeaderPID())) {
-		//		LPITEM item = FindItemByID(pElements->dwFlag);
-		//		if (item) {
-		//			item->Lock(false);
-		//			item->SetSocket(1, 0);
-		//			AffectSystem::RemoveAffect(GetEntityHandle(), AFFECT_NEW_POTION31);
-		//		} else {
-		//			continue;
-		//		}
-		//	}
-		//}
-#endif
-#ifdef ENABLE_RECALL
-#ifdef __PET_SYSTEM__
-		else if (pElements->dwType == AFFECT_RECALL1)
-		{
-			const entt::entity item = ItemSystem::FindItemByID(
-				character, pElements->dwFlag);
-			if (ItemSystem::IsValidItem(item))
-				ItemSystem::LockItem(item);
-			else
-				continue;
-		}
-#endif
-#ifdef __NEWPET_SYSTEM__
-		else if (pElements->dwType == AFFECT_RECALL2)
-		{
-			const entt::entity item = ItemSystem::FindItemByID(
-				character, pElements->dwFlag);
-			if (ItemSystem::IsValidItem(item))
-				ItemSystem::LockItem(item);
-			else
-				continue;
-		}
-#endif
-#endif
-
-#ifdef ENABLE_SOUL_SYSTEM
-		if(pElements->dwType == AFFECT_SOUL_RED || pElements->dwType == AFFECT_SOUL_BLUE)
-		{
-			const entt::entity item = ItemSystem::FindItemByID(
-				character, static_cast<uint32_t>(pElements->lSPCost));
-
-			if (!ItemSystem::IsValidItem(item))
-				continue;
-
-			ItemSystem::LockItem(item);
-		}
-#endif
-
-		if (pElements->bApplyOn >= POINT_MAX_NUM)
-		{
-			LOG_ERROR("invalid affect data {} ApplyOn {} ApplyValue {}", GetName(), static_cast<int>(pElements->bApplyOn), pElements->lApplyValue);
-			continue;
-		}
-
-		if (test_server)
-		{
-			LOG_INFO("Load Affect : Affect {} {} {}", GetName(), pElements->dwType, static_cast<int>(pElements->bApplyOn));
-		}
-
-		auto lease = AffectSystem::Attach(entity, {pElements->dwType,
-			pElements->bApplyOn, pElements->lApplyValue, pElements->dwFlag,
-			pElements->lDuration, pElements->lSPCost});
-		if (!lease)
-			return;
-		CAffect* pkAff = lease.get();
-
-		SendAffectAddPacket(GetDesc(), pkAff);
-
-		AffectSystem::ComputeAffect(entity, *lease, true);
-		if (!AffectState(entity))
-			return;
-	}
-	LOG_ERROR("LOAD_AFFECT_LOOP_END pid={} name={} loaded_affects={}", GetPlayerID(), GetName(), AffectSystem::Snapshot(GetEntityHandle()).size());
-
-	if ( CArenaManager::instance().IsArenaMap(GetMapIndex()) == true )
-	{
-		AffectSystem::RemoveGoodAffects(GetEntityHandle());
-	}
-
-#ifndef ENABLE_01092021
-	AffectSystem::RemoveAffect(GetEntityHandle(), AFFECT_MOUNT);
-#ifdef ENABLE_MOUNT_COSTUME_SYSTEM
-	AffectSystem::RemoveAffect(GetEntityHandle(), AFFECT_MOUNT_BONUS);
-	if (GetMapIndex() != 113 && CArenaManager::instance().IsArenaMap(GetMapIndex()) == false) {
-		CheckMount();
-	}
-#endif
-#endif
-
-	if (afOld != AffectSystem::GetFlags(GetEntityHandle()) || lMovSpd != GetPoint(POINT_MOV_SPEED) || lAttSpd != GetPoint(POINT_ATT_SPEED))
-	{
-
-	NetworkSyncSystem::UpdatePacket(GetEntityHandle());
-	}
-
-	LOG_ERROR("LOAD_AFFECT_START_EVENT_BEGIN pid={} name={}", GetPlayerID(), GetName());
-	AffectSystem::StartAffectEvent(GetEntityHandle());
-	LOG_ERROR("LOAD_AFFECT_START_EVENT_END pid={} name={}", GetPlayerID(), GetName());
-
-	if (!AffectState(entity))
-		return;
-	AffectState(entity)->isLoaded = true;
-
-	// ��ȥ�� ���� �ε� �� �ʱ�ȭ
-	LOG_ERROR("LOAD_AFFECT_DRAGONSOUL_BEGIN pid={} name={}", GetPlayerID(), GetName());
-	DragonSoulSystem::Initialize(entity);
-	LOG_ERROR("LOAD_AFFECT_DRAGONSOUL_END pid={} name={}", GetPlayerID(), GetName());
-
-	// @fixme118 (regain affect hp/mp)
-	if (!IsDead())
-	{
-		LOG_ERROR("LOAD_AFFECT_REFILL_POINTS_BEGIN pid={} name={}", GetPlayerID(), GetName());
-		PointChange(POINT_HP, GetMaxHP() - GetHP());
-		PointChange(POINT_SP, GetMaxSP() - ecs::PlayerRuntime::GetSP(GetEntityHandle()));
-		LOG_ERROR("LOAD_AFFECT_REFILL_POINTS_END pid={} name={}", GetPlayerID(), GetName());
-	}
-#ifdef ENABLE_GUILD_ATTRIBUTE
-	if (GetGuild())
-		GetGuild()->GiveGuildBuff(GetEntityHandle());
-	else
-	{
-		while (true)
-		{
-			CAffect* affect = AffectSystem::FindAffect(GetEntityHandle(), AFFECT_GUILD_ATTRIBUTE);
-			if (!affect)
-				break;
-			AffectSystem::RemoveAffect(GetEntityHandle(), affect);
-		}
-	}
-#endif
-
-#ifdef ENABLE_BLOCK_MULTIFARM
-	SetDropStatus();
-#endif
-#ifdef ENABLE_BIOLOGIST_UI
-	LOG_ERROR("LOAD_AFFECT_BIOLOGIST_BEGIN pid={} name={}", GetPlayerID(), GetName());
-	CheckBiologistReward();
-	LOG_ERROR("LOAD_AFFECT_BIOLOGIST_END pid={} name={}", GetPlayerID(), GetName());
-#endif
-	LOG_ERROR("LOAD_AFFECT_END pid={} name={} count={} final_affects={}", GetPlayerID(), GetName(), dwCount, AffectSystem::Snapshot(GetEntityHandle()).size());
-}
 

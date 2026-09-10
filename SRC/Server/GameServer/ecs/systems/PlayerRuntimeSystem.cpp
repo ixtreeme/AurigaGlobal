@@ -4369,7 +4369,7 @@ void CHARACTER::Destroy()
 #ifdef __DUNGEON_INFO_SYSTEM__
     dungeonDamage.clear();
 #endif
-    ClearAffect();
+    AffectSystem::ClearAffect(GetEntityHandle(), false);
 
     event_cancel(&m_pkDestroyWhenIdleEvent);
 
