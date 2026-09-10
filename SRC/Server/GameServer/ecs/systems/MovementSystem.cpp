@@ -1962,7 +1962,7 @@ EVENTFUNC(recovery_event)
 			LPDUNGEON target = ch->GetDungeon();
 			if (target) {
 				if (target->GetFlag("floor") == 5) {
-					ch->DistributeSP((ch ? ch->GetEntityHandle() : entt::null));
+					CombatSystem::DistributeSP(character, character);
 					if (ecs::PointSystem::GetMaxHP(character) <= ch->GetHP())
 						return PASSES_PER_SEC(3);
 
@@ -1986,7 +1986,7 @@ EVENTFUNC(recovery_event)
 			LPDUNGEON target = ch->GetDungeon();
 			if (target) {
 				if (target->GetFlag("floor") == 1) {
-					ch->DistributeSP((ch ? ch->GetEntityHandle() : entt::null));
+					CombatSystem::DistributeSP(character, character);
 					if (ecs::PointSystem::GetMaxHP(character) <= ch->GetHP())
 						return PASSES_PER_SEC(3);
 
@@ -2035,7 +2035,7 @@ EVENTFUNC(recovery_event)
 		}
 		int iSec = (get_dword_time() - ch->GetLastMoveTime()) / 3000;
 
-		ch->DistributeSP((ch ? ch->GetEntityHandle() : entt::null));
+		CombatSystem::DistributeSP(character, character);
 
 		if (ecs::PointSystem::GetMaxHP(character) <= ch->GetHP())
 			return PASSES_PER_SEC(3);

@@ -8,6 +8,8 @@
 
 #include "../components/combat_components.hpp"
 
+enum EDamageType : int;
+
 #ifdef LEADERBOARD_RAZOR93
 // One row of a leaderboard query. It lived in char.h because the two functions
 // that build it were static CHARACTER members; neither reads a character.
@@ -111,6 +113,13 @@ uint8_t GetDropMetinStonePct(entt::entity e);
 // The damage ledger, created on demand for a character being hurt.
 ecs::DamageLedger& DamageLedgerOf(entt::entity e);
 void ClearDamageLedger(entt::entity e);
+void UpdateAggrPoint(entt::entity e, entt::entity attacker, EDamageType type, int dam);
+entt::entity DistributeExp(entt::entity e);
+void DistributeSP(entt::entity e, entt::entity killer, int iMethod = 0);
+void DeathPenalty(entt::entity e, uint8_t bTown);
+void ItemDropPenalty(entt::entity e, entt::entity killer);
+void Reward(entt::entity e, bool bItemDrop);
+void RewardGold(entt::entity e, entt::entity attacker);
 void DistributeHP(entt::entity victim, entt::entity killer);
 void ReviveInvisible(entt::entity e, int duration);
 bool IsStun(entt::entity e);

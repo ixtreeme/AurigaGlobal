@@ -688,10 +688,8 @@ public:
 	bool			Block_Exp;
 #endif
 	uint32_t			GetNextExp() const;
-	LPCHARACTER		DistributeExp();
 
 	// ���� ���� ���� ����� �����Ѵ�.
-	void			DistributeSP(entt::entity killer, int iMethod = 0);
 
 	void			SetPosition(int pos);
 	bool			IsPosition(int pos) const;
@@ -1238,7 +1236,6 @@ public:
 #endif
 
 
-	void				DeathPenalty(uint8_t bExpLossPercent);
 
 
 
@@ -1246,8 +1243,6 @@ public:
 #ifdef __NEWPET_SYSTEM__
 	//int GetBeltCount() const;//#ifdef ENABLE_MOUNT_COUNT_ABOVE_CHAR_RAZOR93
 #endif
-	void				Reward(bool bItemDrop);
-	void				RewardGold(entt::entity attacker);
 
 
 #ifdef ENABLE_AGGREGATE_MONSTER_PLUS_RAZOR93
@@ -1279,9 +1274,7 @@ public:
 
 
 
-	void				ItemDropPenalty(entt::entity killer);
 
-	void				UpdateAggrPoint(entt::entity character, EDamageType type, int dam);
 
 	//
 	// HACK

@@ -990,7 +990,7 @@ void CParty::SendMessage(entt::entity character, uint8_t bMsg, uint32_t dwArg1, 
 
 					if ((pkChr = rMember.pCharacter) && ch != pkChr)
 					{
-						pkChr->UpdateAggrPoint(victim, DAMAGE_TYPE_SPECIAL, dwArg1);
+						CombatSystem::UpdateAggrPoint(pkChr->GetEntityHandle(), victim, DAMAGE_TYPE_SPECIAL, dwArg1);
 					}
 				}
 			}

@@ -37,6 +37,7 @@
 #include "../../SRC/Server/GameServer/ecs/NetworkService.hpp"
 #include "../../SRC/Server/GameServer/ecs/VIDRegistry.hpp"
 #include "../../SRC/Server/GameServer/ecs/systems/ItemSystem.hpp"
+#include "../../SRC/Server/GameServer/ecs/systems/InventorySystem.hpp"
 #include "../../SRC/Server/GameServer/utils.h"
 #include "../../SRC/Server/GameServer/constants.h"
 #include "../../SRC/Server/GameServer/desc.h"
@@ -392,10 +393,10 @@ char const * CHARACTER::GetName(unsigned char)const { UnexpectedService(__func__
 unsigned int CHARACTER::GetPacketVID(void)const { UnexpectedService(__func__); }
 unsigned char CHARACTER::GetJob(void)const { UnexpectedService(__func__); }
 int CHARACTER::GetLevel(void)const { UnexpectedService(__func__); }
-unsigned char CHARACTER::GetGMLevel(void)const { UnexpectedService(__func__); }
+unsigned char ecs::PlayerRuntime::GetGMLevel(entt::entity) { UnexpectedService(__func__); }
 unsigned int CHARACTER::GetExp(void)const { UnexpectedService(__func__); }
 void CHARACTER::SetExp(unsigned int) { UnexpectedService(__func__); }
-unsigned int CHARACTER::GetNextExp(void)const { UnexpectedService(__func__); }
+unsigned int ecs::PlayerRuntime::GetNextExp(entt::entity) { UnexpectedService(__func__); }
 void CHARACTER::SetPosition(int) { UnexpectedService(__func__); }
 int CHARACTER::GetPosition(void)const { UnexpectedService(__func__); }
 void CHARACTER::SetHP(int64_t) { UnexpectedService(__func__); }
@@ -453,10 +454,10 @@ bool ecs::PlayerRuntime::IsPet(entt::entity) { return false; }
 bool ecs::PlayerRuntime::IsNewPet(entt::entity) { return false; }
 void ecs::MovementSystem::CalculateMoveDuration(entt::entity) { UnexpectedService(__func__); }
 void ecs::MovementSystem::SendMovePacket(entt::entity,unsigned char,unsigned char,unsigned int,unsigned int,unsigned int,unsigned int,float) { UnexpectedService(__func__); }
-void CHARACTER::SyncQuickslot(unsigned char,unsigned char,unsigned char) { UnexpectedService(__func__); }
+void InventorySystem::SyncQuickslot(entt::entity,uint16_t,uint16_t,uint16_t) { UnexpectedService(__func__); }
 void AffectSystem::ClearAffectSkills(entt::entity) { UnexpectedService(__func__); }
 void CHARACTER::SetDungeon(CDungeon *) { UnexpectedService(__func__); }
-bool CHARACTER::IsEquipUniqueItem(unsigned int)const { UnexpectedService(__func__); }
+bool ItemSystem::IsEquipUniqueItem(entt::entity,unsigned int) { UnexpectedService(__func__); }
 bool CHARACTER::IsEquipUniqueGroup(unsigned int)const { UnexpectedService(__func__); }
 void ItemSystem::GiveGold(entt::entity, int64_t) { UnexpectedService(__func__); }
 void CHARACTER::CloseMyShop(void) { UnexpectedService(__func__); }

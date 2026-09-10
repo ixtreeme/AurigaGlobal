@@ -315,7 +315,7 @@ void Save(entt::entity) { Unexpected(); }
 void CHARACTER::Save() { Unexpected(); }
 const char* CHARACTER::GetName(uint8_t) const { Unexpected(); }
 uint32_t CHARACTER::GetPacketVID() const { Unexpected(); }
-void CHARACTER::DistributeSP(entt::entity, int) { Unexpected(); }
+void CombatSystem::DistributeSP(entt::entity, entt::entity, int) { Unexpected(); }
 int64_t CHARACTER::GetHP() const { Unexpected(); }
 int CHARACTER::GetStamina() const { Unexpected(); }
 int ecs::PointSystem::GetLimitPoint(entt::entity, uint8_t) { Unexpected(); }

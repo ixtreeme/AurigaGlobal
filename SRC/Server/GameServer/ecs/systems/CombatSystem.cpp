@@ -4,6 +4,7 @@
 #include "PlayerRuntimeSystem.hpp"
 #include "AffectSystem.hpp"
 #include "PointSystem.hpp"
+#include "InventorySystem.hpp"
 #include "SocialSystem.hpp"
 #include "QuestSystem.hpp"
 #include "NetworkSyncSystem.hpp"
@@ -785,46 +786,6 @@ bool IsDead(entt::entity e)
 
 
 
-void DeathPenalty(entt::entity e, uint8_t bTown)
-{
-    if (auto* ch = LegacyCharOf(e)) {
-        ch->DeathPenalty(bTown);
-    }
-}
-
-
-void RewardGold(entt::entity victim, entt::entity attacker)
-{
-    if (auto* ch = LegacyCharOf(victim)) {
-        ch->RewardGold(attacker);
-    }
-}
-
-
-void Reward(entt::entity victim, bool bItemDrop)
-{
-    if (auto* ch = LegacyCharOf(victim)) {
-        ch->Reward(bItemDrop);
-    }
-}
-
-
-void ItemDropPenalty(entt::entity victim, entt::entity killer)
-{
-    if (auto* ch = LegacyCharOf(victim)) {
-        ch->ItemDropPenalty(killer);
-    }
-}
-
-
-void DistributeSP(entt::entity victim, entt::entity killer, int iMethod)
-{
-    if (auto* ch = LegacyCharOf(victim)) {
-        ch->DistributeSP(killer, iMethod);
-    }
-}
-
-
 uint32_t GetAlignment(entt::entity e)
 {
     if (!ecs::Invariants::HasAnyTypeTag(g_registry, e)) return 0;
@@ -1487,25 +1448,33 @@ void UpdateAggrPointEx(entt::entity self, entt::entity attacker, uint8_t rawType
 
 } // namespace CombatSystem
 
-void CHARACTER::UpdateAggrPoint(entt::entity attacker, EDamageType type, int dam)
+namespace CombatSystem {
+
+// One attacker's running total against this character.
+void UpdateAggrPoint(entt::entity e, entt::entity attacker, EDamageType type, int dam)
 {
-	if (CombatSystem::IsDead(GetEntityHandle()) || CombatSystem::IsStun(GetEntityHandle()))
+	if (e == entt::null || !g_registry.valid(e))
+		return;
+
+	if (CombatSystem::IsDead(e) || CombatSystem::IsStun(e))
 		return;
 
 	const entt::entity eAttacker = attacker;
 	if (eAttacker == entt::null)
 		return;
 
-	std::map<entt::entity, ecs::BattleContribution>::iterator it = CombatSystem::DamageLedgerOf(GetEntityHandle()).entries.find(eAttacker);
+	std::map<entt::entity, ecs::BattleContribution>::iterator it = CombatSystem::DamageLedgerOf(e).entries.find(eAttacker);
 
-	if (it == CombatSystem::DamageLedgerOf(GetEntityHandle()).entries.end())
+	if (it == CombatSystem::DamageLedgerOf(e).entries.end())
 	{
-		CombatSystem::DamageLedgerOf(GetEntityHandle()).entries.insert(std::map<entt::entity, ecs::BattleContribution>::value_type(eAttacker, ecs::BattleContribution(0, dam)));
-		it = CombatSystem::DamageLedgerOf(GetEntityHandle()).entries.find(eAttacker);
+		CombatSystem::DamageLedgerOf(e).entries.insert(std::map<entt::entity, ecs::BattleContribution>::value_type(eAttacker, ecs::BattleContribution(0, dam)));
+		it = CombatSystem::DamageLedgerOf(e).entries.find(eAttacker);
 	}
 
-	CombatSystem::UpdateAggrPointEx(GetEntityHandle(), attacker, type, dam, it->second);
+	CombatSystem::UpdateAggrPointEx(e, attacker, type, dam, it->second);
 }
+
+} // namespace CombatSystem
 
 // char_battle.cpp slice BD2b moved into CombatSystem.cpp
 
@@ -1594,7 +1563,7 @@ static void GiveExp(LegacyCharHandle from, LegacyCharHandle to, int iExp)
 	rate_t rateFactor = 100;
 
 	rateFactor += CPrivManager::instance().GetPriv(toEntity, PRIV_EXP_PCT);
-	if (to->IsEquipUniqueItem(UNIQUE_ITEM_LARBOR_MEDAL))
+	if (ItemSystem::IsEquipUniqueItem(to->GetEntityHandle(), UNIQUE_ITEM_LARBOR_MEDAL))
 		rateFactor += 20;
 	if (ecs::PlayerRuntime::GetMapIndex(toEntity) >= 660000 && ecs::PlayerRuntime::GetMapIndex(toEntity) < 670000)
 		rateFactor += 20;
@@ -1622,7 +1591,7 @@ static void GiveExp(LegacyCharHandle from, LegacyCharHandle to, int iExp)
 		if (number(1, 100) <= ecs::PointSystem::Get(toEntity, POINT_EXP_DOUBLE_BONUS))
 			rateFactor += 30;
 #endif
-	if (to->IsEquipUniqueItem(UNIQUE_ITEM_DOUBLE_EXP))
+	if (ItemSystem::IsEquipUniqueItem(to->GetEntityHandle(), UNIQUE_ITEM_DOUBLE_EXP))
 		rateFactor += 50;
 
 	switch (to->GetMountVnum())
@@ -1631,8 +1600,8 @@ static void GiveExp(LegacyCharHandle from, LegacyCharHandle to, int iExp)
 	case 20111:
 	case 20112:
 	case 20113:
-		if (to->IsEquipUniqueItem(71115) || to->IsEquipUniqueItem(71117) || to->IsEquipUniqueItem(71119) ||
-			to->IsEquipUniqueItem(71121))
+		if (ItemSystem::IsEquipUniqueItem(to->GetEntityHandle(), 71115) || ItemSystem::IsEquipUniqueItem(to->GetEntityHandle(), 71117) || ItemSystem::IsEquipUniqueItem(to->GetEntityHandle(), 71119) ||
+			ItemSystem::IsEquipUniqueItem(to->GetEntityHandle(), 71121))
 		{
 			rateFactor += 10;
 		}
@@ -1668,7 +1637,7 @@ static void GiveExp(LegacyCharHandle from, LegacyCharHandle to, int iExp)
 	if (test_server)
 		ecs::ChatSystem::Send(toEntity, CHAT_TYPE_INFO, "base_exp(%d) * rate(%Lf) = exp(%d)", iBaseExp, rateFactor / 100.0L, iExp);
 	// you can get at maximum only 10% of the total required exp at once (so, you need to kill at least 10 mobs to level up) (useless)
-	iExp = std::min(to->GetNextExp() / 10, (uint32_t)iExp);
+	iExp = std::min(ecs::PlayerRuntime::GetNextExp(to->GetEntityHandle()) / 10, (uint32_t)iExp);
 	// it recalculate the given exp if the player level is greater than the exp_table size (useless)
 	iExp = AdjustExpByLevel_Combat(to, iExp);
 
@@ -1741,7 +1710,7 @@ static void GiveExp(LegacyCharHandle from, LegacyCharHandle to, int iExp)
 	// ӳ ⺻ Ǵ ġ ʽ
 	{
 		// 뵿 ޴
-		if (to->IsEquipUniqueItem(UNIQUE_ITEM_LARBOR_MEDAL))
+		if (ItemSystem::IsEquipUniqueItem(to->GetEntityHandle(), UNIQUE_ITEM_LARBOR_MEDAL))
 			iExp += iExp * 20 / 100;
 
 		// Ÿ ġ ʽ
@@ -1754,7 +1723,7 @@ static void GiveExp(LegacyCharHandle from, LegacyCharHandle to, int iExp)
 				iExp += iExp * 30 / 100; // 1.3 (30%)
 
 		//   (2ð¥)
-		if (to->IsEquipUniqueItem(UNIQUE_ITEM_DOUBLE_EXP))
+		if (ItemSystem::IsEquipUniqueItem(to->GetEntityHandle(), UNIQUE_ITEM_DOUBLE_EXP))
 			iExp += iExp * 50 / 100;
 
 		switch (to->GetMountVnum())
@@ -1763,8 +1732,8 @@ static void GiveExp(LegacyCharHandle from, LegacyCharHandle to, int iExp)
 		case 20111:
 		case 20112:
 		case 20113:
-			if (to->IsEquipUniqueItem(71115) || to->IsEquipUniqueItem(71117) || to->IsEquipUniqueItem(71119) ||
-				to->IsEquipUniqueItem(71121))
+			if (ItemSystem::IsEquipUniqueItem(to->GetEntityHandle(), 71115) || ItemSystem::IsEquipUniqueItem(to->GetEntityHandle(), 71117) || ItemSystem::IsEquipUniqueItem(to->GetEntityHandle(), 71119) ||
+				ItemSystem::IsEquipUniqueItem(to->GetEntityHandle(), 71121))
 			{
 				iExp += iExp * 10 / 100;
 			}
@@ -1819,7 +1788,7 @@ static void GiveExp(LegacyCharHandle from, LegacyCharHandle to, int iExp)
 	iExp = iExp * CHARACTER_MANAGER::instance().GetMobExpRate(toEntity) / 100;
 
 	// ġ ѹ ȹ淮
-	iExp = MIN(to->GetNextExp() / 10, iExp);
+	iExp = MIN(ecs::PlayerRuntime::GetNextExp(to->GetEntityHandle()) / 10, iExp);
 
 	if (test_server)
 	{
@@ -1987,12 +1956,24 @@ typedef struct SDamageInfo
 	}
 } TDamageInfo;
 
-LPCHARACTER CHARACTER::DistributeExp()
+namespace CombatSystem {
+
+// Splitting the kill experience over everyone in the ledger, and naming
+// the one that did the most damage.
+entt::entity DistributeExp(entt::entity e)
 {
-	int iExpToDistribute = GetExp();
+	if (e == entt::null || !g_registry.valid(e))
+		return entt::null;
+
+	// SDamageInfo::Distribute still takes the character it is paying out for.
+	LPCHARACTER self = ecs::LegacyCharOf(e);
+	if (!self)
+		return entt::null;
+
+	int iExpToDistribute = ecs::PlayerRuntime::GetExp(e);
 
 	if (iExpToDistribute <= 0)
-		return nullptr;
+		return entt::null;
 
 	uint64_t	iTotalDam = 0;
 	auto* pkChrMostAttacked = static_cast<LegacyCharHandle>(nullptr);
@@ -2002,12 +1983,12 @@ LPCHARACTER CHARACTER::DistributeExp()
 	TDamageInfoTable damage_info_table;
 	std::map<LPPARTY, TDamageInfo> map_party_damage;
 
-	damage_info_table.reserve(CombatSystem::DamageLedgerOf(GetEntityHandle()).entries.size());
+	damage_info_table.reserve(CombatSystem::DamageLedgerOf(e).entries.size());
 
-	std::map<entt::entity, ecs::BattleContribution>::iterator it = CombatSystem::DamageLedgerOf(GetEntityHandle()).entries.begin();
+	std::map<entt::entity, ecs::BattleContribution>::iterator it = CombatSystem::DamageLedgerOf(e).entries.begin();
 
 	// ϴ    ɷ . (50m)
-	while (it != CombatSystem::DamageLedgerOf(GetEntityHandle()).entries.end())
+	while (it != CombatSystem::DamageLedgerOf(e).entries.end())
 	{
 		const entt::entity eAttacker = it->first;
 		uint64_t iDam = it->second.totalDamage;
@@ -2017,7 +1998,7 @@ LPCHARACTER CHARACTER::DistributeExp()
 		auto* pAttacker = LegacyCharOf(eAttacker);
 
 		// NPC ⵵ ϳ? -.-;
-		if (!pAttacker || ecs::PlayerRuntime::IsNPC(eAttacker) || DISTANCE_APPROX(GetX() - ecs::PlayerRuntime::GetX(eAttacker), GetY() - ecs::PlayerRuntime::GetY(eAttacker)) > 5000)
+		if (!pAttacker || ecs::PlayerRuntime::IsNPC(eAttacker) || DISTANCE_APPROX(ecs::PlayerRuntime::GetX(e) - ecs::PlayerRuntime::GetX(eAttacker), ecs::PlayerRuntime::GetY(e) - ecs::PlayerRuntime::GetY(eAttacker)) > 5000)
 			continue;
 
 		iTotalDam += iDam;
@@ -2063,29 +2044,29 @@ LPCHARACTER CHARACTER::DistributeExp()
 		//LOG_INFO(0, "__ pq_damage_party [%u] %d", it->second.pParty->GetLeaderPID(), it->second.iDam);
 	}
 
-	SetExp(0);
-	//CombatSystem::ClearDamageLedger(GetEntityHandle());
+	ecs::PlayerRuntime::SetExp(e, 0);
+	//CombatSystem::ClearDamageLedger(e);
 
 	if (iTotalDam == 0)	//  ذ 0̸
-		return nullptr;
+		return entt::null;
 
 	// Half of the experience goes to the stone that spawned this mob.
-	if (const entt::entity stone = CombatSystem::GetStone(GetEntityHandle()); stone != entt::null)
+	if (const entt::entity stone = CombatSystem::GetStone(e); stone != entt::null)
 	{
 		const int iExp = iExpToDistribute >> 1;
 		ecs::PlayerRuntime::SetExp(stone, ecs::PlayerRuntime::GetExp(stone) + iExp);
 		iExpToDistribute -= iExp;
 	}
 
-	LOG_TRACE("{} total exp: {}, damage_info_table.size() == {}, TotalDam {}", GetName(), iExpToDistribute, damage_info_table.size(), iTotalDam);
+	LOG_TRACE("{} total exp: {}, damage_info_table.size() == {}, TotalDam {}", ecs::PlayerRuntime::GetName(e).data(), iExpToDistribute, damage_info_table.size(), iTotalDam);
 	//LOG_INFO(1, "%s total exp: %d, pq_damage.size() == %d, TotalDam %d",
-	//GetName(), iExpToDistribute, pq_damage.size(), iTotalDam);
+	//ecs::PlayerRuntime::GetName(e).data(), iExpToDistribute, pq_damage.size(), iTotalDam);
 
 	if (damage_info_table.empty())
-		return nullptr;
+		return entt::null;
 
 	//      HP ȸ Ѵ.
-	CombatSystem::DistributeHP(GetEntityHandle(), pkChrMostAttacked ? pkChrMostAttacked->GetEntityHandle() : entt::null);	//  ý
+	CombatSystem::DistributeHP(e, pkChrMostAttacked ? pkChrMostAttacked->GetEntityHandle() : entt::null);	//  ý
 
 	{
 		//     ̳ Ƽ  ġ 20% + ڱⰡ ŭ ġ Դ´.
@@ -2113,27 +2094,27 @@ LPCHARACTER CHARACTER::DistributeExp()
 
 		iExp += (int)(iExpToDistribute * fPercent);
 
-		//LOG_INFO(0, "%s given exp percent %.1f + 20 dam %d", GetName(), fPercent * 100.0f, di.iDam);
+		//LOG_INFO(0, "%s given exp percent %.1f + 20 dam %d", ecs::PlayerRuntime::GetName(e).data(), fPercent * 100.0f, di.iDam);
 #ifdef DISABLE_EXP_FROM_STONES_RAZOR93
-		if (IsStone()) // razor93
+		if (ecs::PlayerRuntime::IsStone(e)) // razor93
 		{
-			//NEM HIVJA MEG A di->Distribute(this, iExp);
+			//NEM HIVJA MEG A di->Distribute(self, iExp);
 		}
 		else
 		{
-			di->Distribute(this, iExp);//HA NEM STNONE AKKOR IGEN
+			di->Distribute(self, iExp);//HA NEM STNONE AKKOR IGEN
 		}
 #else
-		const int race = GetRaceNum();
+		const int race = ecs::PlayerRuntime::GetRaceNum(e);
 		if (race == 8010 || race == 8020 || race == 8738 || race == 8739 || race == 8740 || race == 4811 || race == 4812 || race == 4813 || race == 4814 || race == 4815
 			|| race == 8821 || race == 8822 || race == 8823 || race == 8824
 			)
-			return pkChrMostAttacked; // seggbe
-		di->Distribute(this, iExp);
+			return pkChrMostAttacked ? pkChrMostAttacked->GetEntityHandle() : entt::null; // seggbe
+		di->Distribute(self, iExp);
 #endif
 		// 100%  Ծ Ѵ.
 		if (fPercent == 1.0f)
-			return pkChrMostAttacked;
+			return pkChrMostAttacked ? pkChrMostAttacked->GetEntityHandle() : entt::null;
 
 		di->Clear();
 	}
@@ -2154,13 +2135,15 @@ LPCHARACTER CHARACTER::DistributeExp()
 				fPercent = 1.0f;
 			}
 
-			//LOG_INFO(0, "%s given exp percent %.1f dam %d", GetName(), fPercent * 100.0f, di.iDam);
-			di.Distribute(this, (int)(iExpToDistribute * fPercent));
+			//LOG_INFO(0, "%s given exp percent %.1f dam %d", ecs::PlayerRuntime::GetName(e).data(), fPercent * 100.0f, di.iDam);
+			di.Distribute(self, (int)(iExpToDistribute * fPercent));
 		}
 	}
 
-	return pkChrMostAttacked;
+	return pkChrMostAttacked ? pkChrMostAttacked->GetEntityHandle() : entt::null;
 }
+
+} // namespace CombatSystem
 
 // ȭ
 
@@ -3010,14 +2993,26 @@ bool Attack(entt::entity attacker, entt::entity victim, uint8_t attackType)
 
 // char_battle.cpp slice BD1 moved into CombatSystem.cpp
 
-void CHARACTER::DistributeSP(entt::entity killer, int iMethod)
+namespace CombatSystem {
+
+// The soul-point share a party member gets for a kill nearby.
+void DistributeSP(entt::entity e, entt::entity killer, int iMethod)
 {
+	if (e == entt::null || !g_registry.valid(e))
+		return;
+
+	// GetLastMoveTime has no entity form yet; it is its own
+	// migration.
+	LPCHARACTER self = ecs::LegacyCharOf(e);
+	if (!self)
+		return;
+
 	LPCHARACTER pkKiller = ecs::LegacyCharOf(killer);
 	if (ecs::PlayerRuntime::GetSP(killer) >= ecs::PointSystem::GetMaxSP(killer))
 		return;
 
-	bool bAttacking = (get_dword_time() - CombatSystem::GetLastAttackTime(GetEntityHandle())) < 3000;
-	bool bMoving = (get_dword_time() - GetLastMoveTime()) < 3000;
+	bool bAttacking = (get_dword_time() - CombatSystem::GetLastAttackTime(e)) < 3000;
+	bool bMoving = (get_dword_time() - self->GetLastMoveTime()) < 3000;
 
 	if (iMethod == 1)
 	{
@@ -3025,7 +3020,7 @@ void CHARACTER::DistributeSP(entt::entity killer, int iMethod)
 
 		if (!num)
 		{
-			int iLvDelta = GetLevel() - ecs::PointSystem::GetLevel(killer);
+			int iLvDelta = ecs::PointSystem::GetLevel(e) - ecs::PointSystem::GetLevel(killer);
 			int iAmount = 0;
 
 			if (iLvDelta >= 5)
@@ -3040,11 +3035,11 @@ void CHARACTER::DistributeSP(entt::entity killer, int iMethod)
 				iAmount += (iAmount * ecs::PointSystem::Get(killer, POINT_SP_REGEN)) / 100;
 
 				if (iAmount >= 11)
-					CombatSystem::CreateFly(GetEntityHandle(), FLY_SP_BIG, killer);
+					CombatSystem::CreateFly(e, FLY_SP_BIG, killer);
 				else if (iAmount >= 7)
-					CombatSystem::CreateFly(GetEntityHandle(), FLY_SP_MEDIUM, killer);
+					CombatSystem::CreateFly(e, FLY_SP_MEDIUM, killer);
 				else
-					CombatSystem::CreateFly(GetEntityHandle(), FLY_SP_SMALL, killer);
+					CombatSystem::CreateFly(e, FLY_SP_SMALL, killer);
 
 				ecs::PointSystem::Change(killer, POINT_SP, iAmount);
 			}
@@ -3057,11 +3052,11 @@ void CHARACTER::DistributeSP(entt::entity killer, int iMethod)
 			int iAmount;
 
 			if (bAttacking)
-				iAmount = 2 + GetMaxSP() / 100;
+				iAmount = 2 + ecs::PointSystem::GetMaxSP(e) / 100;
 			else if (bMoving)
-				iAmount = 3 + GetMaxSP() * 2 / 100;
+				iAmount = 3 + ecs::PointSystem::GetMaxSP(e) * 2 / 100;
 			else
-				iAmount = 10 + GetMaxSP() * 3 / 100; //
+				iAmount = 10 + ecs::PointSystem::GetMaxSP(e) * 3 / 100; //
 
 			iAmount += (iAmount * ecs::PointSystem::Get(killer, POINT_SP_REGEN)) / 100;
 			ecs::PointSystem::Change(killer, POINT_SP, iAmount);
@@ -3088,6 +3083,8 @@ void CHARACTER::DistributeSP(entt::entity killer, int iMethod)
 		}
 	}
 }
+
+} // namespace CombatSystem
 
 
 // char_battle.cpp slice BD2a helper surface duplicated into CombatSystem.cpp
@@ -3138,71 +3135,85 @@ static int __GetExpLossPerc(const uint32_t level)
 }
 
 
-void CHARACTER::DeathPenalty(uint8_t bTown)
-{
-	LOG_INFO("DEATH_PERNALY_CHECK({}) town({})", GetName(), bTown);
+namespace CombatSystem {
 
-	Cube_close(this);
+// The experience a death costs.
+void DeathPenalty(entt::entity e, uint8_t bTown)
+{
+	if (e == entt::null || !g_registry.valid(e))
+		return;
+
+	// CloseAcce has no entity form yet; it is its own
+	// migration.
+	LPCHARACTER self = ecs::LegacyCharOf(e);
+	if (!self)
+		return;
+
+	LOG_INFO("DEATH_PERNALY_CHECK({}) town({})", ecs::PlayerRuntime::GetName(e).data(), bTown);
+
+	Cube_close(self);
 #ifdef __ATTR_TRANSFER_SYSTEM__
-	AttrTransfer_close(GetEntityHandle());
+	AttrTransfer_close(e);
 #endif
 #ifdef ENABLE_ACCE_SYSTEM
-	CloseAcce();
+	self->CloseAcce();
 #endif
 
-	if (CBattleArena::instance().IsBattleArenaMap(GetMapIndex()) == true)
+	if (CBattleArena::instance().IsBattleArenaMap(ecs::PlayerRuntime::GetMapIndex(e)) == true)
 	{
 		return;
 	}
 
-	if (GetLevel() < 10) {
+	if (ecs::PointSystem::GetLevel(e) < 10) {
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 412, "");
+		ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 412, "");
 #endif
 		return;
 	}
 
 	if (number(0, 2) == 1) {
 #ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 412, "");
+		ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 412, "");
 #endif
 		return;
 	}
 
-	if (RuntimeFlags(GetEntityHandle()) && IS_SET(RuntimeFlags(GetEntityHandle())->instantFlag, INSTANT_FLAG_DEATH_PENALTY))
+	if (RuntimeFlags(e) && IS_SET(RuntimeFlags(e)->instantFlag, INSTANT_FLAG_DEATH_PENALTY))
 	{
-				if (auto* flags = RuntimeFlags(GetEntityHandle()))
+				if (auto* flags = RuntimeFlags(e))
 			REMOVE_BIT(flags->instantFlag, INSTANT_FLAG_DEATH_PENALTY);
 
 		// NO_DEATH_PENALTY_BUG_FIX
 		if (!bTown) //   ڸ Ȱø  ȣ Ѵ. ( ͽô ġ гƼ )
 		{
-			if (AffectSystem::FindAffect(GetEntityHandle(), AFFECT_NO_DEATH_PENALTY))
+			if (AffectSystem::FindAffect(e, AFFECT_NO_DEATH_PENALTY))
 			{
 #ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 384, "");
+				ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 384, "");
 #endif
-				AffectSystem::RemoveAffect(GetEntityHandle(), AFFECT_NO_DEATH_PENALTY);
+				AffectSystem::RemoveAffect(e, AFFECT_NO_DEATH_PENALTY);
 				return;
 			}
 		}
 		// END_OF_NO_DEATH_PENALTY_BUG_FIX
 
-		int iLoss = ((GetNextExp() * __GetExpLossPerc(GetLevel())) / 100);
+		int iLoss = ((ecs::PlayerRuntime::GetNextExp(e) * __GetExpLossPerc(ecs::PointSystem::GetLevel(e))) / 100);
 
 		iLoss = std::min(800000, iLoss);
 
 		if (bTown)
 			iLoss = 0;
 
-		if (IsEquipUniqueItem(UNIQUE_ITEM_TEARDROP_OF_GODNESS))
+		if (ItemSystem::IsEquipUniqueItem(e, UNIQUE_ITEM_TEARDROP_OF_GODNESS))
 			iLoss /= 2;
 
-		LOG_INFO("DEATH_PENALTY({}) EXP_LOSS: {} percent {}%", GetName(), iLoss, __GetExpLossPerc(GetLevel()));
+		LOG_INFO("DEATH_PENALTY({}) EXP_LOSS: {} percent {}%", ecs::PlayerRuntime::GetName(e).data(), iLoss, __GetExpLossPerc(ecs::PointSystem::GetLevel(e)));
 
-		PointChange(POINT_EXP, -iLoss, true);
+		ecs::PointSystem::Change(e, POINT_EXP, -iLoss, true);
 	}
 }
+
+} // namespace CombatSystem
 
 
 // char_battle.cpp slice BC4 moved into CombatSystem.cpp
@@ -3228,64 +3239,69 @@ TItemDropPenalty aItemDropPenalty_kor[9] =
 	{ 100,   8, 20,  1 },	// п
 };
 
-void CHARACTER::ItemDropPenalty(entt::entity killer)
+namespace CombatSystem {
+
+// What a death scatters on the ground.
+void ItemDropPenalty(entt::entity e, entt::entity killer)
 {
+	if (e == entt::null || !g_registry.valid(e))
+		return;
 
 #ifdef ENABLE_RESTRICT_GM_PERMISSIONS
-	if (GetGMLevel() > GM_PLAYER) {
+	if (ecs::PlayerRuntime::GetGMLevel(e) > GM_PLAYER) {
 		return;
 	}
 #endif
 
-	if (GetMyShop())
+	if (ecs::SocialSystem::GetMyShop(e))
 		return;
 
-	if (GetLevel() < 50)
+	if (ecs::PointSystem::GetLevel(e) < 50)
 		return;
 
-	if (CBattleArena::instance().IsBattleArenaMap(GetMapIndex()) == true)
+	if (CBattleArena::instance().IsBattleArenaMap(ecs::PlayerRuntime::GetMapIndex(e)) == true)
 	{
 		return;
 	}
 
 	struct TItemDropPenalty* table = &aItemDropPenalty_kor[0];
 
-	if (GetLevel() < 10)
+	if (ecs::PointSystem::GetLevel(e) < 10)
 		return;
 
 	uint8_t iAlignIndex;
 
-	if (CombatSystem::GetRealAlignment(GetEntityHandle())		<= 4999)		iAlignIndex = 0;
-	else if (CombatSystem::GetRealAlignment(GetEntityHandle()) <= 14999)		iAlignIndex = 1;
-	else if (CombatSystem::GetRealAlignment(GetEntityHandle()) <= 19999)		iAlignIndex = 2;
-	else if (CombatSystem::GetRealAlignment(GetEntityHandle()) <= 29999)		iAlignIndex = 3;
-	else if (CombatSystem::GetRealAlignment(GetEntityHandle()) <= 49999)		iAlignIndex = 4;
-	else if (CombatSystem::GetRealAlignment(GetEntityHandle()) <= 74999)		iAlignIndex = 5;
-	else if (CombatSystem::GetRealAlignment(GetEntityHandle()) <= 99999)		iAlignIndex = 6;
-	else if (CombatSystem::GetRealAlignment(GetEntityHandle()) <= 124999)		iAlignIndex = 7;
-	else if (CombatSystem::GetRealAlignment(GetEntityHandle()) <= 174999)		iAlignIndex = 8;
-	else if (CombatSystem::GetRealAlignment(GetEntityHandle()) <= 249999)		iAlignIndex = 9;
-	else if (CombatSystem::GetRealAlignment(GetEntityHandle()) <= 499999)		iAlignIndex = 10;
-	else if (CombatSystem::GetRealAlignment(GetEntityHandle()) <= 749999)		iAlignIndex = 11;
-	else if (CombatSystem::GetRealAlignment(GetEntityHandle()) <= 999999)		iAlignIndex = 12;
-	else if (CombatSystem::GetRealAlignment(GetEntityHandle()) <= 1499999)		iAlignIndex = 13;
-	else if (CombatSystem::GetRealAlignment(GetEntityHandle()) <= 2499999)		iAlignIndex = 14;
-	else if (CombatSystem::GetRealAlignment(GetEntityHandle()) == 2500000)		iAlignIndex = 15;
+	if (CombatSystem::GetRealAlignment(e)		<= 4999)		iAlignIndex = 0;
+	else if (CombatSystem::GetRealAlignment(e) <= 14999)		iAlignIndex = 1;
+	else if (CombatSystem::GetRealAlignment(e) <= 19999)		iAlignIndex = 2;
+	else if (CombatSystem::GetRealAlignment(e) <= 29999)		iAlignIndex = 3;
+	else if (CombatSystem::GetRealAlignment(e) <= 49999)		iAlignIndex = 4;
+	else if (CombatSystem::GetRealAlignment(e) <= 74999)		iAlignIndex = 5;
+	else if (CombatSystem::GetRealAlignment(e) <= 99999)		iAlignIndex = 6;
+	else if (CombatSystem::GetRealAlignment(e) <= 124999)		iAlignIndex = 7;
+	else if (CombatSystem::GetRealAlignment(e) <= 174999)		iAlignIndex = 8;
+	else if (CombatSystem::GetRealAlignment(e) <= 249999)		iAlignIndex = 9;
+	else if (CombatSystem::GetRealAlignment(e) <= 499999)		iAlignIndex = 10;
+	else if (CombatSystem::GetRealAlignment(e) <= 749999)		iAlignIndex = 11;
+	else if (CombatSystem::GetRealAlignment(e) <= 999999)		iAlignIndex = 12;
+	else if (CombatSystem::GetRealAlignment(e) <= 1499999)		iAlignIndex = 13;
+	else if (CombatSystem::GetRealAlignment(e) <= 2499999)		iAlignIndex = 14;
+	else if (CombatSystem::GetRealAlignment(e) == 2500000)		iAlignIndex = 15;
 	else return;
 
 	std::vector<std::pair<entt::entity, int>> vec_item;
-	const entt::entity ownerEntity = GetEntityHandle();
+	const entt::entity ownerEntity = e;
 	int	i;
 	bool isDropAllEquipments = false;
 
 	TItemDropPenalty& r = table[iAlignIndex];
-	LOG_INFO("{} align {} inven_pct {} equip_pct {}", GetName(), iAlignIndex, r.iInventoryPct, r.iEquipmentPct);
+	LOG_INFO("{} align {} inven_pct {} equip_pct {}", ecs::PlayerRuntime::GetName(e).data(), iAlignIndex, r.iInventoryPct, r.iEquipmentPct);
 
 	bool bDropInventory = r.iInventoryPct >= number(1, 1000);
 	bool bDropEquipment = r.iEquipmentPct >= number(1, 100);
 	bool bDropAntiDropUniqueItem = false;
 
-	if ((bDropInventory || bDropEquipment) && IsEquipUniqueItem(UNIQUE_ITEM_SKIP_ITEM_DROP_PENALTY))
+	if ((bDropInventory || bDropEquipment) && ItemSystem::IsEquipUniqueItem(e, UNIQUE_ITEM_SKIP_ITEM_DROP_PENALTY))
 	{
 		bDropInventory = false;
 		bDropEquipment = false;
@@ -3317,7 +3333,7 @@ void CHARACTER::ItemDropPenalty(entt::entity killer)
 				if (IS_SET(ItemSystem::GetItemAntiFlag(itemEntity), ITEM_ANTIFLAG_GIVE | ITEM_ANTIFLAG_PKDROP))
 					continue;
 
-				SyncQuickslot(QUICKSLOT_TYPE_ITEM, vec_bSlots[i], 255);
+				InventorySystem::SyncQuickslot(e, QUICKSLOT_TYPE_ITEM, vec_bSlots[i], 255);
 				if (ItemSystem::RemoveItemEcs(itemEntity))
 					vec_item.emplace_back(itemEntity, INVENTORY);
 			}
@@ -3356,7 +3372,7 @@ void CHARACTER::ItemDropPenalty(entt::entity killer)
 				if (IS_SET(ItemSystem::GetItemAntiFlag(itemEntity), ITEM_ANTIFLAG_GIVE | ITEM_ANTIFLAG_PKDROP))
 					continue;
 
-				SyncQuickslot(QUICKSLOT_TYPE_ITEM, vec_bSlots[i], 255);
+				InventorySystem::SyncQuickslot(e, QUICKSLOT_TYPE_ITEM, vec_bSlots[i], 255);
 				if (ItemSystem::RemoveItemEcs(itemEntity))
 					vec_item.emplace_back(itemEntity, EQUIPMENT);
 			}
@@ -3369,7 +3385,7 @@ void CHARACTER::ItemDropPenalty(entt::entity killer)
 		if (ItemSystem::IsValidItem(unique1) &&
 			ItemSystem::GetItemVnum(unique1) == UNIQUE_ITEM_SKIP_ITEM_DROP_PENALTY)
 		{
-			SyncQuickslot(QUICKSLOT_TYPE_ITEM, WEAR_UNIQUE1, 255);
+			InventorySystem::SyncQuickslot(e, QUICKSLOT_TYPE_ITEM, WEAR_UNIQUE1, 255);
 			if (ItemSystem::RemoveItemEcs(unique1))
 				vec_item.emplace_back(unique1, EQUIPMENT);
 		}
@@ -3378,7 +3394,7 @@ void CHARACTER::ItemDropPenalty(entt::entity killer)
 		if (ItemSystem::IsValidItem(unique2) &&
 			ItemSystem::GetItemVnum(unique2) == UNIQUE_ITEM_SKIP_ITEM_DROP_PENALTY)
 		{
-			SyncQuickslot(QUICKSLOT_TYPE_ITEM, WEAR_UNIQUE2, 255);
+			InventorySystem::SyncQuickslot(e, QUICKSLOT_TYPE_ITEM, WEAR_UNIQUE2, 255);
 			if (ItemSystem::RemoveItemEcs(unique2))
 				vec_item.emplace_back(unique2, EQUIPMENT);
 		}
@@ -3386,8 +3402,8 @@ void CHARACTER::ItemDropPenalty(entt::entity killer)
 
 	{
 		PIXEL_POSITION pos;
-		pos.x = GetX();
-		pos.y = GetY();
+		pos.x = ecs::PlayerRuntime::GetX(e);
+		pos.y = ecs::PlayerRuntime::GetY(e);
 
 		unsigned int i;
 
@@ -3399,21 +3415,23 @@ void CHARACTER::ItemDropPenalty(entt::entity killer)
 			int window = vec_item[i].second;
 
 			if (!ItemSystem::PlaceItemOnGround(
-					item, GetMapIndex(), pos, 300))
+					item, ecs::PlayerRuntime::GetMapIndex(e), pos, 300))
 				continue;
 
 			LOG_INFO("DROP_ITEM_PK: {} {} {} from {}",
-				ItemSystem::GetItemName(item), pos.x, pos.y, GetName());
+				ItemSystem::GetItemName(item), pos.x, pos.y, ecs::PlayerRuntime::GetName(e).data());
 			LogManager::instance().ItemLogEntity(
-				GetEntityHandle(), item, "DEAD_DROP",
+				e, item, "DEAD_DROP",
 				(window == INVENTORY) ? "INVENTORY" :
 				((window == EQUIPMENT) ? "EQUIPMENT" : ""));
 
-			pos.x = GetX() + number(-7, 7) * 20;
-			pos.y = GetY() + number(-7, 7) * 20;
+			pos.x = ecs::PlayerRuntime::GetX(e) + number(-7, 7) * 20;
+			pos.y = ecs::PlayerRuntime::GetY(e) + number(-7, 7) * 20;
 		}
 	}
 }
+
+} // namespace CombatSystem
 
 
 // char_battle.cpp slice BC3a helper surface duplicated into CombatSystem.cpp
@@ -3866,31 +3884,42 @@ static std::set<uint32_t> verjema_szadba_ixtreeme =
 
 // char_battle.cpp slice BC3b moved into CombatSystem.cpp
 
-void CHARACTER::Reward(bool bItemDrop)
+namespace CombatSystem {
+
+// Everything a kill hands out: the experience, the gold and the drops.
+void Reward(entt::entity e, bool bItemDrop)
 {
+	if (e == entt::null || !g_registry.valid(e))
+		return;
+
 	//PROF_UNIT puReward("Reward");
-	auto* pkAttacker = DistributeExp();
-	const entt::entity attacker = pkAttacker ? pkAttacker->GetEntityHandle() : entt::null;
+	const entt::entity attacker = DistributeExp(e);
+	if (attacker == entt::null)
+		return;
 
-
-	if (!pkAttacker)
+	// CreateDropItem, MakeItemLink, __GiveRewardItemToCharacterOrDrop and the
+	// party dice roll still take the characters; each is its own migration and
+	// they share these two resolves.
+	LPCHARACTER self = ecs::LegacyCharOf(e);
+	LPCHARACTER pkAttacker = ecs::LegacyCharOf(attacker);
+	if (!self || !pkAttacker)
 		return;
 
 
-	if (!IsPC() && !m_pkMobData)
+	if (!ecs::PlayerRuntime::IsPC(e) && !self->GetMobData())
 	{
-		LOG_ERROR("Reward: NULL mob data (vid={} race={} name={} map={} x={} y={} attacker={})", GetPacketVID(), GetRaceNum(), GetName(), GetMapIndex(), GetX(), GetY(), pkAttacker ? ecs::PlayerRuntime::GetName(attacker).data() : "<null>");
-		CombatSystem::ClearDamageLedger(GetEntityHandle());
+		LOG_ERROR("Reward: NULL mob data (vid={} race={} name={} map={} x={} y={} attacker={})", ecs::PlayerRuntime::GetPacketVID(e), ecs::PlayerRuntime::GetRaceNum(e), ecs::PlayerRuntime::GetName(e).data(), ecs::PlayerRuntime::GetMapIndex(e), ecs::PlayerRuntime::GetX(e), ecs::PlayerRuntime::GetY(e), pkAttacker ? ecs::PlayerRuntime::GetName(attacker).data() : "<null>");
+		CombatSystem::ClearDamageLedger(e);
 		return;
 	}
 	//PROF_UNIT pu1("r1");
 	if (ecs::PlayerRuntime::IsPC(attacker))
 	{
-		if ((GetLevel() - ecs::PointSystem::GetLevel(attacker)) >= -10)
+		if ((ecs::PointSystem::GetLevel(e) - ecs::PointSystem::GetLevel(attacker)) >= -10)
 		{
 			/*if (CombatSystem::GetRealAlignment(pkAttacker->GetEntityHandle()) < 0) // trsra: minden gyilkols 2 pontot ad
 			{
-				if (pkAttacker->IsEquipUniqueItem(UNIQUE_ITEM_FASTER_ALIGNMENT_UP_BY_KILL))
+				if (ItemSystem::IsEquipUniqueItem(pkAttacker->GetEntityHandle(), UNIQUE_ITEM_FASTER_ALIGNMENT_UP_BY_KILL))
 					CombatSystem::UpdateAlignment(pkAttacker->GetEntityHandle(), 14);
 				else
 					CombatSystem::UpdateAlignment(pkAttacker->GetEntityHandle(), 7);
@@ -3899,20 +3928,20 @@ void CHARACTER::Reward(bool bItemDrop)
 				CombatSystem::UpdateAlignment(pkAttacker->GetEntityHandle(), 2);
 		}
 
-		pkAttacker->SetQuestNPCID(GetPacketVID());
-		quest::CQuestManager::instance().Kill(ecs::PlayerRuntime::GetPlayerID(attacker), GetRaceNum());
-		CHARACTER_MANAGER::instance().KillLog(GetRaceNum());
+		pkAttacker->SetQuestNPCID(ecs::PlayerRuntime::GetPacketVID(e));
+		quest::CQuestManager::instance().Kill(ecs::PlayerRuntime::GetPlayerID(attacker), ecs::PlayerRuntime::GetRaceNum(e));
+		CHARACTER_MANAGER::instance().KillLog(ecs::PlayerRuntime::GetRaceNum(e));
 #ifdef ENABLE_CPP_DUNGEON_RAZOR93
-		COrcsDungeon::instance().OnMobKilled(attacker, GetEntityHandle());
-		CTritonTempleDungeon::instance().OnMobKilled(attacker, GetEntityHandle());
-		CValentineDungeon::instance().OnMobKilled(attacker, GetEntityHandle());
-		CRuneDungeon::instance().OnMobKilled(attacker, GetEntityHandle());
-		CPyramidDungeonRazor93::instance().OnMobKilled(attacker, GetEntityHandle());
-		CNightmareDungeonRazor93::instance().OnMobKilled(attacker, GetEntityHandle());
-		//CLostCastleDungeon::instance().OnMobKilled((pkAttacker ? pkAttacker->GetEntityHandle() : entt::null), GetEntityHandle());
-		CHalloween2022Dungeon::instance().OnMobKilled(attacker, GetEntityHandle());
-		CVikingDungeon::instance().OnMobKilled(attacker, GetEntityHandle());
-		CEasterDungeon::instance().OnMobKilled(attacker, GetEntityHandle());
+		COrcsDungeon::instance().OnMobKilled(attacker, e);
+		CTritonTempleDungeon::instance().OnMobKilled(attacker, e);
+		CValentineDungeon::instance().OnMobKilled(attacker, e);
+		CRuneDungeon::instance().OnMobKilled(attacker, e);
+		CPyramidDungeonRazor93::instance().OnMobKilled(attacker, e);
+		CNightmareDungeonRazor93::instance().OnMobKilled(attacker, e);
+		//CLostCastleDungeon::instance().OnMobKilled((pkAttacker ? pkAttacker->GetEntityHandle() : entt::null), e);
+		CHalloween2022Dungeon::instance().OnMobKilled(attacker, e);
+		CVikingDungeon::instance().OnMobKilled(attacker, e);
+		CEasterDungeon::instance().OnMobKilled(attacker, e);
 #endif
 
 #ifdef ENABLE_BATTLE_PASS
@@ -3922,7 +3951,7 @@ void CHARACTER::Reward(bool bItemDrop)
 			uint32_t dwMonsterVnum, dwToKillCount;
 			if (CBattlePass::instance().BattlePassMissionGetInfo(bBattlePassId, MONSTER_KILL, &dwMonsterVnum, &dwToKillCount))
 			{
-				if (dwMonsterVnum == GetRaceNum() && pkAttacker->GetMissionProgress(MONSTER_KILL, bBattlePassId) < dwToKillCount)
+				if (dwMonsterVnum == ecs::PlayerRuntime::GetRaceNum(e) && pkAttacker->GetMissionProgress(MONSTER_KILL, bBattlePassId) < dwToKillCount)
 					pkAttacker->UpdateMissionProgress(MONSTER_KILL, bBattlePassId, 1, dwToKillCount);
 			}
 		}
@@ -3934,14 +3963,14 @@ void CHARACTER::Reward(bool bItemDrop)
 			{
 				int iHP = ecs::PointSystem::GetMaxHP(attacker) * ecs::PointSystem::Get(attacker, POINT_KILL_HP_RECOVERY) / 100;
 				ecs::PointSystem::Change(attacker, POINT_HP, iHP);
-				CombatSystem::CreateFly(GetEntityHandle(), FLY_HP_SMALL, pkAttacker ? pkAttacker->GetEntityHandle() : entt::null);
+				CombatSystem::CreateFly(e, FLY_HP_SMALL, attacker);
 			}
 
 			if (ecs::PointSystem::Get(attacker, POINT_KILL_SP_RECOVER))
 			{
 				int iSP = ecs::PointSystem::GetMaxSP(attacker) * ecs::PointSystem::Get(attacker, POINT_KILL_SP_RECOVER) / 100;
 				ecs::PointSystem::Change(attacker, POINT_SP, iSP);
-				CombatSystem::CreateFly(GetEntityHandle(), FLY_SP_SMALL, pkAttacker ? pkAttacker->GetEntityHandle() : entt::null);
+				CombatSystem::CreateFly(e, FLY_SP_SMALL, attacker);
 			}
 		}
 	}
@@ -3956,9 +3985,10 @@ void CHARACTER::Reward(bool bItemDrop)
 	if (!bItemDrop)
 		return;
 
-	PIXEL_POSITION pos = GetXYZ();
+	PIXEL_POSITION pos { ecs::PlayerRuntime::GetX(e), ecs::PlayerRuntime::GetY(e),
+		ecs::PlayerRuntime::GetZ(e) };
 
-	if (!ecs::GetMovablePosition(GetMapIndex(), pos.x, pos.y, pos))
+	if (!ecs::GetMovablePosition(ecs::PlayerRuntime::GetMapIndex(e), pos.x, pos.y, pos))
 		return;
 
 	//
@@ -3967,7 +3997,7 @@ void CHARACTER::Reward(bool bItemDrop)
 	//PROF_UNIT pu2("r2");
 	if (test_server)
 		LOG_TRACE("Drop money : Attacker {}", ecs::PlayerRuntime::GetName(attacker).data());
-	RewardGold(pkAttacker ? pkAttacker->GetEntityHandle() : entt::null);
+	RewardGold(e, attacker);
 	//pu2.Pop();
 
 	//
@@ -3979,7 +4009,7 @@ void CHARACTER::Reward(bool bItemDrop)
 	std::vector<entt::entity> s_vec_item;
 	s_vec_item.clear();
 
-	if (ITEM_MANAGER::instance().CreateDropItem(this, pkAttacker, s_vec_item))
+	if (ITEM_MANAGER::instance().CreateDropItem(self, pkAttacker, s_vec_item))
 	{
 
 #ifdef ENABLE_RARE_DROP_NOTICE_RAZOR93
@@ -3987,7 +4017,7 @@ void CHARACTER::Reward(bool bItemDrop)
 		{
 			if (verjema_szadba_ixtreeme.find(ItemSystem::GetItemVnum(dropItem)) != verjema_szadba_ixtreeme.end())
 			{
-		std::string message = MakeItemLink(dropItem, pkAttacker, this);
+		std::string message = MakeItemLink(dropItem, pkAttacker, self);
 				BroadcastNotice(message.c_str());
 			}
 		}
@@ -4005,9 +4035,9 @@ void CHARACTER::Reward(bool bItemDrop)
 		// - ugyanazt a dropot kapja minden jogosult (kulon item peldany, ownershipelve)
 		// - azonos HWID+HOST eseten csak 1 karakter kap (a legtobb dmg a mobra)
 
-		if (GetDungeon() && pkAttacker && ecs::PlayerRuntime::IsPC(attacker) && !s_vec_item.empty())
+		if (ecs::SocialSystem::GetDungeon(e) && pkAttacker && ecs::PlayerRuntime::IsPC(attacker) && !s_vec_item.empty())
 		{
-			const long lMapIndex = GetMapIndex(); // a megolt mob mapindexe
+			const long lMapIndex = ecs::PlayerRuntime::GetMapIndex(e); // a megolt mob mapindexe
 
 			if (
 				(lMapIndex >= 3550000 && lMapIndex < 3560000)  // ork
@@ -4034,7 +4064,7 @@ void CHARACTER::Reward(bool bItemDrop)
 			{
 				if (ecs::SocialSystem::GetParty(attacker)) // CSAK partyra
 				{
-					CDungeon* pDungeon = GetDungeon();
+					CDungeon* pDungeon = ecs::SocialSystem::GetDungeon(e);
 
 					// csak akkor, ha a killer ugyanebben a dungeon instance-ben van
 					if (pkAttacker->GetDungeon() == pDungeon)
@@ -4101,12 +4131,12 @@ void CHARACTER::Reward(bool bItemDrop)
 								uint64_t dmgNew = 0;
 								uint64_t dmgOld = 0;
 
-								auto itNew = CombatSystem::DamageLedgerOf(GetEntityHandle()).entries.find(mch->GetEntityHandle());
-								if (itNew != CombatSystem::DamageLedgerOf(GetEntityHandle()).entries.end())
+								auto itNew = CombatSystem::DamageLedgerOf(e).entries.find(mch->GetEntityHandle());
+								if (itNew != CombatSystem::DamageLedgerOf(e).entries.end())
 									dmgNew = itNew->second.totalDamage;
 
-								auto itOld = CombatSystem::DamageLedgerOf(GetEntityHandle()).entries.find(it->second->GetEntityHandle());
-								if (itOld != CombatSystem::DamageLedgerOf(GetEntityHandle()).entries.end())
+								auto itOld = CombatSystem::DamageLedgerOf(e).entries.find(it->second->GetEntityHandle());
+								if (itOld != CombatSystem::DamageLedgerOf(e).entries.end())
 									dmgOld = itOld->second.totalDamage;
 
 								if (dmgNew > dmgOld)
@@ -4157,8 +4187,8 @@ void CHARACTER::Reward(bool bItemDrop)
 								PIXEL_POSITION mpos = pos;
 
 								// kis eltolas, hogy ne 1 pontra essen minden
-								mpos.x = number(-7, 7) * 20 + GetX();
-								mpos.y = number(-7, 7) * 20 + GetY();
+								mpos.x = number(-7, 7) * 20 + ecs::PlayerRuntime::GetX(e);
+								mpos.y = number(-7, 7) * 20 + ecs::PlayerRuntime::GetY(e);
 
 								for (const auto& di : drops)
 								{
@@ -4177,7 +4207,7 @@ void CHARACTER::Reward(bool bItemDrop)
 #ifdef ENABLE_DROP_INSTANT_INVENTORY
 									if (bInstantRewardToInventory)
 									{
-										__GiveRewardItemToCharacterOrDrop(rch, this, newItem, mpos, true);
+										__GiveRewardItemToCharacterOrDrop(rch, self, newItem, mpos, true);
 									}
 									else
 									{
@@ -4239,7 +4269,7 @@ void CHARACTER::Reward(bool bItemDrop)
 				if (!ItemSystem::IsValidItem(itemEntity))
 				{
 					LOG_ERROR("invalid item entity in single drop");
-					CombatSystem::ClearDamageLedger(GetEntityHandle());
+					CombatSystem::ClearDamageLedger(e);
 					return;
 				}
 
@@ -4251,16 +4281,16 @@ void CHARACTER::Reward(bool bItemDrop)
 
 				if (bInstantRewardToInventory && !bKeepGroundDrop)
 				{
-					__GiveRewardItemToCharacterOrDrop(pkAttacker, this, itemEntity, pos, true);
+					__GiveRewardItemToCharacterOrDrop(pkAttacker, self, itemEntity, pos, true);
 				}
 				else
 				{
 					if (!ItemSystem::PlaceItemOnGround(
-							itemEntity, GetMapIndex(), pos, 300))
+							itemEntity, ecs::PlayerRuntime::GetMapIndex(e), pos, 300))
 					{
 						LOG_ERROR("failed to place single drop entity {}",
 							static_cast<uint32_t>(itemEntity));
-						CombatSystem::ClearDamageLedger(GetEntityHandle());
+						CombatSystem::ClearDamageLedger(e);
 						return;
 					}
 
@@ -4270,7 +4300,7 @@ void CHARACTER::Reward(bool bItemDrop)
 						if (ecs::SocialSystem::GetParty(attacker))
 						{
 							FPartyDropDiceRoll f(itemEntity, pkAttacker);
-							f.Process(this);
+							f.Process(self);
 						}
 						else
 							ItemSystem::SetGroundOwnership(
@@ -4282,13 +4312,13 @@ void CHARACTER::Reward(bool bItemDrop)
 					}
 
 					LOG_INFO("DROP_ITEM: {} {} {} from {}",
-						ItemSystem::GetItemName(itemEntity), pos.x, pos.y, GetName());
+						ItemSystem::GetItemName(itemEntity), pos.x, pos.y, ecs::PlayerRuntime::GetName(e).data());
 				}
 
 				pos.x = number(-7, 7) * 20;
 				pos.y = number(-7, 7) * 20;
-				pos.x += GetX();
-				pos.y += GetY();
+				pos.x += ecs::PlayerRuntime::GetX(e);
+				pos.y += ecs::PlayerRuntime::GetY(e);
 			}
 			else
 			{
@@ -4298,7 +4328,7 @@ void CHARACTER::Reward(bool bItemDrop)
 
 				uint64_t total_dam = 0;
 
-				for (std::map<entt::entity, ecs::BattleContribution>::iterator it = CombatSystem::DamageLedgerOf(GetEntityHandle()).entries.begin(); it != CombatSystem::DamageLedgerOf(GetEntityHandle()).entries.end(); ++it)
+				for (std::map<entt::entity, ecs::BattleContribution>::iterator it = CombatSystem::DamageLedgerOf(e).entries.begin(); it != CombatSystem::DamageLedgerOf(e).entries.end(); ++it)
 				{
 					uint64_t iDamage = it->second.totalDamage;
 					if (iDamage > 0)
@@ -4334,7 +4364,7 @@ void CHARACTER::Reward(bool bItemDrop)
 						}
 
 						if (!ItemSystem::PlaceItemOnGround(
-								itemEntity, GetMapIndex(), pos, 300))
+								itemEntity, ecs::PlayerRuntime::GetMapIndex(e), pos, 300))
 							continue;
 
 						if (pkAttacker && CBattleArena::instance().IsBattleArenaMap(ecs::PlayerRuntime::GetMapIndex(attacker)) == false)
@@ -4342,12 +4372,12 @@ void CHARACTER::Reward(bool bItemDrop)
 								itemEntity, attacker);
 
 						LOG_INFO("DROP_ITEM: {} {} {} by {}",
-							ItemSystem::GetItemName(itemEntity), pos.x, pos.y, GetName());
+							ItemSystem::GetItemName(itemEntity), pos.x, pos.y, ecs::PlayerRuntime::GetName(e).data());
 
 						pos.x = number(-7, 7) * 20;
 						pos.y = number(-7, 7) * 20;
-						pos.x += GetX();
-						pos.y += GetY();
+						pos.x += ecs::PlayerRuntime::GetX(e);
+						pos.y += ecs::PlayerRuntime::GetY(e);
 					}
 				}
 				else
@@ -4367,7 +4397,7 @@ void CHARACTER::Reward(bool bItemDrop)
 						auto* ch = *it;
 
 						if (ecs::SocialSystem::GetParty((ch ? ch->GetEntityHandle() : entt::null)))
-							ch = ecs::SocialSystem::GetParty((ch ? ch->GetEntityHandle() : entt::null))->GetNextOwnership(ch, GetX(), GetY());
+							ch = ecs::SocialSystem::GetParty((ch ? ch->GetEntityHandle() : entt::null))->GetNextOwnership(ch, ecs::PlayerRuntime::GetX(e), ecs::PlayerRuntime::GetY(e));
 
 						++it;
 
@@ -4382,12 +4412,12 @@ void CHARACTER::Reward(bool bItemDrop)
 
 						if (bInstantRewardToInventory && !bKeepGroundDrop)
 						{
-							__GiveRewardItemToCharacterOrDrop(ch, this, itemEntity, pos, true);
+							__GiveRewardItemToCharacterOrDrop(ch, self, itemEntity, pos, true);
 						}
 						else
 						{
 							if (!ItemSystem::PlaceItemOnGround(
-									itemEntity, GetMapIndex(), pos, 300))
+									itemEntity, ecs::PlayerRuntime::GetMapIndex(e), pos, 300))
 								continue;
 
 							if (CBattleArena::instance().IsBattleArenaMap(ecs::PlayerRuntime::GetMapIndex((ch ? ch->GetEntityHandle() : entt::null))) == false)
@@ -4396,7 +4426,7 @@ void CHARACTER::Reward(bool bItemDrop)
 								if (ecs::SocialSystem::GetParty((ch ? ch->GetEntityHandle() : entt::null)))
 								{
 									FPartyDropDiceRoll f(itemEntity, ch);
-									f.Process(this);
+									f.Process(self);
 								}
 								else
 									ItemSystem::SetGroundOwnership(
@@ -4408,13 +4438,13 @@ void CHARACTER::Reward(bool bItemDrop)
 							}
 
 							LOG_INFO("DROP_ITEM: {} {} {} by {}",
-								ItemSystem::GetItemName(itemEntity), pos.x, pos.y, GetName());
+								ItemSystem::GetItemName(itemEntity), pos.x, pos.y, ecs::PlayerRuntime::GetName(e).data());
 						}
 
 						pos.x = number(-7, 7) * 20;
 						pos.y = number(-7, 7) * 20;
-						pos.x += GetX();
-						pos.y += GetY();
+						pos.x += ecs::PlayerRuntime::GetX(e);
+						pos.y += ecs::PlayerRuntime::GetY(e);
 					}
 				}
 			}
@@ -4428,15 +4458,15 @@ void CHARACTER::Reward(bool bItemDrop)
 				if (!ItemSystem::IsValidItem(itemEntity))
 				{
 					LOG_ERROR("invalid item entity in single ground drop");
-					CombatSystem::ClearDamageLedger(GetEntityHandle());
+					CombatSystem::ClearDamageLedger(e);
 					return;
 				}
 				if (!ItemSystem::PlaceItemOnGround(
-						itemEntity, GetMapIndex(), pos, 300))
+						itemEntity, ecs::PlayerRuntime::GetMapIndex(e), pos, 300))
 				{
 					LOG_ERROR("failed to place single ground drop entity {}",
 						static_cast<uint32_t>(itemEntity));
-					CombatSystem::ClearDamageLedger(GetEntityHandle());
+					CombatSystem::ClearDamageLedger(e);
 					return;
 				}
 
@@ -4446,7 +4476,7 @@ void CHARACTER::Reward(bool bItemDrop)
 					if (ecs::SocialSystem::GetParty(attacker))
 					{
 						FPartyDropDiceRoll f(itemEntity, pkAttacker);
-						f.Process(this);
+						f.Process(self);
 					}
 					else
 						ItemSystem::SetGroundOwnership(
@@ -4459,11 +4489,11 @@ void CHARACTER::Reward(bool bItemDrop)
 
 				pos.x = number(-7, 7) * 20;
 				pos.y = number(-7, 7) * 20;
-				pos.x += GetX();
-				pos.y += GetY();
+				pos.x += ecs::PlayerRuntime::GetX(e);
+				pos.y += ecs::PlayerRuntime::GetY(e);
 
 				LOG_INFO("DROP_ITEM: {} {} {} from {}",
-					ItemSystem::GetItemName(itemEntity), pos.x, pos.y, GetName());
+					ItemSystem::GetItemName(itemEntity), pos.x, pos.y, ecs::PlayerRuntime::GetName(e).data());
 			}
 			else
 			{
@@ -4473,7 +4503,7 @@ void CHARACTER::Reward(bool bItemDrop)
 
 				uint64_t total_dam = 0;
 
-				for (std::map<entt::entity, ecs::BattleContribution>::iterator it = CombatSystem::DamageLedgerOf(GetEntityHandle()).entries.begin(); it != CombatSystem::DamageLedgerOf(GetEntityHandle()).entries.end(); ++it)
+				for (std::map<entt::entity, ecs::BattleContribution>::iterator it = CombatSystem::DamageLedgerOf(e).entries.begin(); it != CombatSystem::DamageLedgerOf(e).entries.end(); ++it)
 				{
 					uint64_t iDamage = it->second.totalDamage;
 					if (iDamage > 0)
@@ -4509,7 +4539,7 @@ void CHARACTER::Reward(bool bItemDrop)
 						}
 
 						if (!ItemSystem::PlaceItemOnGround(
-								itemEntity, GetMapIndex(), pos, 300))
+								itemEntity, ecs::PlayerRuntime::GetMapIndex(e), pos, 300))
 							continue;
 
 						if (pkAttacker && CBattleArena::instance().IsBattleArenaMap(ecs::PlayerRuntime::GetMapIndex(attacker)) == false)
@@ -4518,11 +4548,11 @@ void CHARACTER::Reward(bool bItemDrop)
 
 						pos.x = number(-7, 7) * 20;
 						pos.y = number(-7, 7) * 20;
-						pos.x += GetX();
-						pos.y += GetY();
+						pos.x += ecs::PlayerRuntime::GetX(e);
+						pos.y += ecs::PlayerRuntime::GetY(e);
 
 						LOG_INFO("DROP_ITEM: {} {} {} by {}",
-							ItemSystem::GetItemName(itemEntity), pos.x, pos.y, GetName());
+							ItemSystem::GetItemName(itemEntity), pos.x, pos.y, ecs::PlayerRuntime::GetName(e).data());
 					}
 				}
 				else
@@ -4540,13 +4570,13 @@ void CHARACTER::Reward(bool bItemDrop)
 						}
 
 						if (!ItemSystem::PlaceItemOnGround(
-								itemEntity, GetMapIndex(), pos, 300))
+								itemEntity, ecs::PlayerRuntime::GetMapIndex(e), pos, 300))
 							continue;
 
 						auto* ch = *it;
 
 						if (ecs::SocialSystem::GetParty((ch ? ch->GetEntityHandle() : entt::null)))
-							ch = ecs::SocialSystem::GetParty((ch ? ch->GetEntityHandle() : entt::null))->GetNextOwnership(ch, GetX(), GetY());
+							ch = ecs::SocialSystem::GetParty((ch ? ch->GetEntityHandle() : entt::null))->GetNextOwnership(ch, ecs::PlayerRuntime::GetX(e), ecs::PlayerRuntime::GetY(e));
 
 						++it;
 
@@ -4559,7 +4589,7 @@ void CHARACTER::Reward(bool bItemDrop)
 							if (ecs::SocialSystem::GetParty((ch ? ch->GetEntityHandle() : entt::null)))
 							{
 								FPartyDropDiceRoll f(itemEntity, ch);
-								f.Process(this);
+								f.Process(self);
 							}
 							else
 								ItemSystem::SetGroundOwnership(
@@ -4572,11 +4602,11 @@ void CHARACTER::Reward(bool bItemDrop)
 
 						pos.x = number(-7, 7) * 20;
 						pos.y = number(-7, 7) * 20;
-						pos.x += GetX();
-						pos.y += GetY();
+						pos.x += ecs::PlayerRuntime::GetX(e);
+						pos.y += ecs::PlayerRuntime::GetY(e);
 
 						LOG_INFO("DROP_ITEM: {} {} {} by {}",
-							ItemSystem::GetItemName(itemEntity), pos.x, pos.y, GetName());
+							ItemSystem::GetItemName(itemEntity), pos.x, pos.y, ecs::PlayerRuntime::GetName(e).data());
 					}
 				}
 			}
@@ -4585,32 +4615,44 @@ void CHARACTER::Reward(bool bItemDrop)
 		}
 	}
 
-	CombatSystem::ClearDamageLedger(GetEntityHandle());
+	CombatSystem::ClearDamageLedger(e);
 }
+
+} // namespace CombatSystem
 
 
 // char_battle.cpp slice BC2 moved into CombatSystem.cpp
 
-void CHARACTER::RewardGold(entt::entity attacker) {
-	LPCHARACTER pkAttacker = ecs::LegacyCharOf(attacker);
+namespace CombatSystem {
 
-	if (!pkAttacker || !ecs::PlayerRuntime::IsPC(attacker))
+// The gold a kill drops, and who it belongs to.
+void RewardGold(entt::entity e, entt::entity attacker)
+{
+	if (e == entt::null || !g_registry.valid(e))
 		return;
 
-	if (!m_pkMobData)
+	// The mob table and the drop helpers still take the characters; each is
+	// its own migration and they share these two resolves.
+	LPCHARACTER self = ecs::LegacyCharOf(e);
+	LPCHARACTER pkAttacker = ecs::LegacyCharOf(attacker);
+
+	if (!self || !pkAttacker || !ecs::PlayerRuntime::IsPC(attacker))
+		return;
+
+	if (!self->GetMobData())
 	{
-		LOG_ERROR("RewardGold: NULL mob data (vid={} race={} name={} map={} x={} y={} attacker={})", GetPacketVID(), GetRaceNum(), GetName(), GetMapIndex(), GetX(), GetY(), pkAttacker ? ecs::PlayerRuntime::GetName(attacker).data() : "<null>");
+		LOG_ERROR("RewardGold: NULL mob data (vid={} race={} name={} map={} x={} y={} attacker={})", ecs::PlayerRuntime::GetPacketVID(e), ecs::PlayerRuntime::GetRaceNum(e), ecs::PlayerRuntime::GetName(e).data(), ecs::PlayerRuntime::GetMapIndex(e), ecs::PlayerRuntime::GetX(e), ecs::PlayerRuntime::GetY(e), pkAttacker ? ecs::PlayerRuntime::GetName(attacker).data() : "<null>");
 		return;
 	}
 	if (pkAttacker && ecs::PlayerRuntime::IsPC(attacker)) {
-		if (IsStone()) {
+		if (ecs::PlayerRuntime::IsStone(e)) {
 #ifdef ENABLE_ANTICHEAT
 			if (ecs::PlayerRuntime::GetMapIndex(attacker) < 1000) {
 				pkAttacker->ProcessCheatCheck(get_global_time());
 			}
 #endif
 #ifdef DISABLE_GOLD_DROP_FROM_TAKAKA
-			if (GetRaceNum() >= TANAKA) {
+			if (ecs::PlayerRuntime::GetRaceNum(e) >= TANAKA) {
 				return;
 			}
 #endif
@@ -4621,13 +4663,13 @@ void CHARACTER::RewardGold(entt::entity attacker) {
 #endif
 
 			bool drop = true;
-			int mylvl = ecs::PointSystem::GetLevel(attacker), targetlvl = GetLevel();
+			int mylvl = ecs::PointSystem::GetLevel(attacker), targetlvl = ecs::PointSystem::GetLevel(e);
 			if (mylvl > targetlvl) {
 				drop = mylvl - targetlvl <= 15 ? true : false;
 			}
 
 			if (drop) {
-				int64_t gold = number(GetMobTable().dwGoldMin, GetMobTable().dwGoldMax);
+				int64_t gold = number((*ecs::PlayerRuntime::GetMobTable(e)).dwGoldMin, (*ecs::PlayerRuntime::GetMobTable(e)).dwGoldMax);
 
 				if (gold <= 0) {
 					return;
@@ -4657,14 +4699,14 @@ void CHARACTER::RewardGold(entt::entity attacker) {
 			PIXEL_POSITION pos;
 
 			if (!isAutoLoot)
-				if (!ecs::GetMovablePosition(GetMapIndex(), GetX(), GetY(), pos))
+				if (!ecs::GetMovablePosition(ecs::PlayerRuntime::GetMapIndex(e), ecs::PlayerRuntime::GetX(e), ecs::PlayerRuntime::GetY(e), pos))
 					return;
 
 			int iTotalGold = 0;
 			//
 			// ---------   Ȯ  ----------
 			//
-			int iGoldPercent = MobRankStats[GetMobRank()].iGoldPercent;
+			int iGoldPercent = MobRankStats[ecs::PlayerRuntime::GetMobRank(e)].iGoldPercent;
 
 			if (ecs::PlayerRuntime::IsPC(attacker))
 				iGoldPercent = iGoldPercent * (100 + CPrivManager::instance().GetPriv(attacker, PRIV_GOLD_DROP)) / 100;
@@ -4696,11 +4738,11 @@ void CHARACTER::RewardGold(entt::entity attacker) {
 
 			int iPercent;
 
-			if (GetMobRank() >= MOB_RANK_BOSS)
-				iPercent = ((iGoldPercent * PERCENT_LVDELTA_BOSS(ecs::PointSystem::GetLevel(attacker), GetLevel())) / 100);
+			if (ecs::PlayerRuntime::GetMobRank(e) >= MOB_RANK_BOSS)
+				iPercent = ((iGoldPercent * PERCENT_LVDELTA_BOSS(ecs::PointSystem::GetLevel(attacker), ecs::PointSystem::GetLevel(e))) / 100);
 			else
-				iPercent = ((iGoldPercent * PERCENT_LVDELTA(ecs::PointSystem::GetLevel(attacker), GetLevel())) / 100);
-			//int iPercent = CALCULATE_VALUE_LVDELTA(ecs::PointSystem::GetLevel((pkAttacker ? pkAttacker->GetEntityHandle() : entt::null)), GetLevel(), iGoldPercent);
+				iPercent = ((iGoldPercent * PERCENT_LVDELTA(ecs::PointSystem::GetLevel(attacker), ecs::PointSystem::GetLevel(e))) / 100);
+			//int iPercent = CALCULATE_VALUE_LVDELTA(ecs::PointSystem::GetLevel((pkAttacker ? pkAttacker->GetEntityHandle() : entt::null)), ecs::PointSystem::GetLevel(e), iGoldPercent);
 
 			if (number(1, 100) > iPercent)
 				return;
@@ -4738,7 +4780,7 @@ void CHARACTER::RewardGold(entt::entity attacker) {
 #endif
 
 			// MOB_RANK BOSS   ź
-			if (GetMobRank() >= MOB_RANK_BOSS && !IsStone() && GetMobTable().dwGoldMax != 0)
+			if (ecs::PlayerRuntime::GetMobRank(e) >= MOB_RANK_BOSS && !ecs::PlayerRuntime::IsStone(e) && (*ecs::PlayerRuntime::GetMobTable(e)).dwGoldMax != 0)
 			{
 				if (1 == number(1, iGold10DropPct))
 					iGoldMultipler *= 10; // 1% Ȯ  10
@@ -4747,7 +4789,7 @@ void CHARACTER::RewardGold(entt::entity attacker) {
 
 				for (int i = 0; i < iSplitCount; ++i)
 				{
-					int iGold = number(GetMobTable().dwGoldMin, GetMobTable().dwGoldMax) / iSplitCount;
+					int iGold = number((*ecs::PlayerRuntime::GetMobTable(e)).dwGoldMin, (*ecs::PlayerRuntime::GetMobTable(e)).dwGoldMax) / iSplitCount;
 					if (test_server)
 						LOG_INFO("iGold {}", iGold);
 					iGold = iGold * CHARACTER_MANAGER::instance().GetMobGoldAmountRate(attacker) / 100;
@@ -4761,7 +4803,7 @@ void CHARACTER::RewardGold(entt::entity attacker) {
 					if (test_server)
 					{
 						LOG_TRACE("Drop Moeny MobGoldAmountRate {} {}", CHARACTER_MANAGER::instance().GetMobGoldAmountRate(attacker), iGoldMultipler);
-						LOG_TRACE("Drop Money gold {} GoldMin {} GoldMax {}", iGold, GetMobTable().dwGoldMax, GetMobTable().dwGoldMax);
+						LOG_TRACE("Drop Money gold {} GoldMin {} GoldMax {}", iGold, (*ecs::PlayerRuntime::GetMobTable(e)).dwGoldMax, (*ecs::PlayerRuntime::GetMobTable(e)).dwGoldMax);
 					}
 
 #ifdef ENABLE_YANG_INSTANT_INVENTORY_RAZOR93
@@ -4771,10 +4813,10 @@ void CHARACTER::RewardGold(entt::entity attacker) {
 					const entt::entity gold = ITEM_MANAGER::instance().CreateItem(1, iGold);
 					if (ItemSystem::IsValidItem(gold))
 					{
-						pos.x = GetX() + ((number(-14, 14) + number(-14, 14)) * 23);
-						pos.y = GetY() + ((number(-14, 14) + number(-14, 14)) * 23);
+						pos.x = ecs::PlayerRuntime::GetX(e) + ((number(-14, 14) + number(-14, 14)) * 23);
+						pos.y = ecs::PlayerRuntime::GetY(e) + ((number(-14, 14) + number(-14, 14)) * 23);
 						if (ItemSystem::PlaceItemOnGround(
-								gold, GetMapIndex(), pos, 300))
+								gold, ecs::PlayerRuntime::GetMapIndex(e), pos, 300))
 							iTotalGold += iGold;
 						else
 							ItemSystem::DestroyItemEntityEcs(gold, "GOLD_DROP_PLACE_FAIL");
@@ -4790,7 +4832,7 @@ void CHARACTER::RewardGold(entt::entity attacker) {
 				//
 				for (int i = 0; i < 10; ++i)
 				{
-					int iGold = number(GetMobTable().dwGoldMin, GetMobTable().dwGoldMax);
+					int iGold = number((*ecs::PlayerRuntime::GetMobTable(e)).dwGoldMin, (*ecs::PlayerRuntime::GetMobTable(e)).dwGoldMax);
 					iGold = iGold * CHARACTER_MANAGER::instance().GetMobGoldAmountRate(attacker) / 100;
 					iGold *= iGoldMultipler;
 
@@ -4806,10 +4848,10 @@ void CHARACTER::RewardGold(entt::entity attacker) {
 					const entt::entity gold = ITEM_MANAGER::instance().CreateItem(1, iGold);
 					if (ItemSystem::IsValidItem(gold))
 					{
-						pos.x = GetX() + (number(-7, 7) * 20);
-						pos.y = GetY() + (number(-7, 7) * 20);
+						pos.x = ecs::PlayerRuntime::GetX(e) + (number(-7, 7) * 20);
+						pos.y = ecs::PlayerRuntime::GetY(e) + (number(-7, 7) * 20);
 						if (ItemSystem::PlaceItemOnGround(
-								gold, GetMapIndex(), pos, 300))
+								gold, ecs::PlayerRuntime::GetMapIndex(e), pos, 300))
 							iTotalGold += iGold;
 						else
 							ItemSystem::DestroyItemEntityEcs(gold, "GOLD_DROP_PLACE_FAIL");
@@ -4823,7 +4865,7 @@ void CHARACTER::RewardGold(entt::entity attacker) {
 				//
 				// Ϲ
 				//
-				int iGold = number(GetMobTable().dwGoldMin, GetMobTable().dwGoldMax);
+				int iGold = number((*ecs::PlayerRuntime::GetMobTable(e)).dwGoldMin, (*ecs::PlayerRuntime::GetMobTable(e)).dwGoldMax);
 				iGold = iGold * CHARACTER_MANAGER::instance().GetMobGoldAmountRate(attacker) / 100;
 				iGold *= iGoldMultipler;
 
@@ -4831,7 +4873,7 @@ void CHARACTER::RewardGold(entt::entity attacker) {
 
 				if (iGold >= 3)
 					iSplitCount = number(1, 3);
-				else if (GetMobRank() >= MOB_RANK_BOSS)
+				else if (ecs::PlayerRuntime::GetMobRank(e) >= MOB_RANK_BOSS)
 				{
 					iSplitCount = number(3, 10);
 
@@ -4860,10 +4902,10 @@ void CHARACTER::RewardGold(entt::entity attacker) {
 							const entt::entity gold = ITEM_MANAGER::instance().CreateItem(1, splitGold);
 							if (ItemSystem::IsValidItem(gold))
 							{
-								pos.x = GetX() + (number(-7, 7) * 20);
-								pos.y = GetY() + (number(-7, 7) * 20);
+								pos.x = ecs::PlayerRuntime::GetX(e) + (number(-7, 7) * 20);
+								pos.y = ecs::PlayerRuntime::GetY(e) + (number(-7, 7) * 20);
 								if (!ItemSystem::PlaceItemOnGround(
-										gold, GetMapIndex(), pos, 300))
+										gold, ecs::PlayerRuntime::GetMapIndex(e), pos, 300))
 									ItemSystem::DestroyItemEntityEcs(
 										gold, "GOLD_DROP_PLACE_FAIL");
 							}
@@ -4874,9 +4916,11 @@ void CHARACTER::RewardGold(entt::entity attacker) {
 			}
 		}
 
-		//DBManager::instance().SendMoneyLog(MONEY_LOG_MONSTER, GetRaceNum(), iTotalGold);
+		//DBManager::instance().SendMoneyLog(MONEY_LOG_MONSTER, ecs::PlayerRuntime::GetRaceNum(e), iTotalGold);
 	}
 }
+
+} // namespace CombatSystem
 
 // char_battle.cpp slice BB2b moved into CombatSystem.cpp
 
