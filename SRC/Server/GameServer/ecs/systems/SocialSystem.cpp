@@ -108,6 +108,16 @@ void SetMyShopTime(entt::entity e)
 
 // When this character last refined. Like the shop time above, it blocks a
 // warp for a moment so the trade cannot be escaped mid-way.
+// When the safebox was last loaded; the warp block reads it like the shop
+// and refine times beside it.
+int GetSafeboxLoadTime(entt::entity e)
+{
+    if (e == entt::null || !g_registry.valid(e))
+        return 0;
+    const auto* warp = g_registry.try_get<ecs::WarpBlockState>(e);
+    return warp ? warp->safeboxLoadTime : 0;
+}
+
 int GetRefineTime(entt::entity e)
 {
     if (e == entt::null || !g_registry.valid(e))

@@ -1478,7 +1478,7 @@ void CInputMain::ItemUse(entt::entity character, const char * data)
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
 	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "input_main.cpp::  CInputMain::ItemUse(");//INGAME_DEBUG_RAZOR93
 #endif
-	ch->UseItem(((struct command_item_use *) data)->Cell);
+	ItemSystem::UseItem(ch->GetEntityHandle(), ((struct command_item_use *) data)->Cell);
 }
 
 void CInputMain::ItemToItem(entt::entity character, const char * pcData)
@@ -1492,7 +1492,7 @@ void CInputMain::ItemToItem(entt::entity character, const char * pcData)
 #endif
 	TPacketCGItemUseToItem * p = (TPacketCGItemUseToItem *) pcData;
 	if (ch)
-		ch->UseItem(p->Cell, p->TargetCell);
+		ItemSystem::UseItem(ch->GetEntityHandle(), p->Cell, p->TargetCell);
 }
 
 void CInputMain::ItemDrop(entt::entity character, const char * data)

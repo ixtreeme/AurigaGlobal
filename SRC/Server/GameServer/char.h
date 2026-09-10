@@ -1124,7 +1124,6 @@ public:
 	void			UseSilkBotaryReal(const TPacketMyshopPricelistHeader* p);
 	// END_OF_MYSHOP_PRICE_LIST
 
-	bool			UseItem(TItemPos Cell, TItemPos DestCell = NPOS);
 
 	// ADD_REFINE_BUILDING
 	void			SetRefineNPC(entt::entity character);
@@ -2076,14 +2075,7 @@ public:
 	//void		 SetItemAward_flag(bool flag) { itemAward_flag = flag; }
 #ifdef ENABLE_ANTI_CMD_FLOOD
 private:
-	int m_dwCmdAntiFloodPulse;
-	uint32_t m_dwCmdAntiFloodCount;
 public:
-	int GetCmdAntiFloodPulse() { return m_dwCmdAntiFloodPulse; }
-	uint32_t GetCmdAntiFloodCount() { return m_dwCmdAntiFloodCount; }
-	uint32_t IncreaseCmdAntiFloodCount() { return ++m_dwCmdAntiFloodCount; }
-	void SetCmdAntiFloodPulse(int dwPulse) { m_dwCmdAntiFloodPulse = dwPulse; }
-	void SetCmdAntiFloodCount(uint32_t dwCount) { m_dwCmdAntiFloodCount = dwCount; }
 #endif
 private:
 	// SyncPosition�� �ǿ��Ͽ� Ÿ������ �̻��� ������ ������ �� ����ϱ� ���Ͽ�,
@@ -2285,17 +2277,10 @@ protected:
 
 #ifdef ENABLE_USEITEM_COOLDOWN
 private:
-	int m_dwItemUseAntiFloodPulse;
-	uint32_t m_dwItemUseAntiFloodCount;
 //#if defined(ENABLE_CHRISTMAS_WHEEL_OF_DESTINY)
 //	std::shared_ptr<CWheelDestiny> pWheelDestiny = nullptr;
 //#endif
 public:
-	int GetItemUseAntiFloodPulse() { return m_dwItemUseAntiFloodPulse; }
-	uint32_t GetItemUseAntiFloodCount() { return m_dwItemUseAntiFloodCount; }
-	uint32_t IncreaseItemUseAntiFloodCount() { return ++m_dwItemUseAntiFloodCount; }
-	void SetItemUseAntiFloodPulse(int dwPulse) { m_dwItemUseAntiFloodPulse = dwPulse; }
-	void SetItemUseAntiFloodCount(uint32_t dwCount) { m_dwItemUseAntiFloodCount = dwCount; }
 #endif
 
 

@@ -892,12 +892,12 @@ void interpret_command(entt::entity character, const char * argument, uint64_t l
 #ifdef ENABLE_ANTI_CMD_FLOOD
 	if (ch && !ch->IsGM())
 	{
-		if (thecore_pulse() > ch->GetCmdAntiFloodPulse() + PASSES_PER_SEC(1))
+		if (thecore_pulse() > ecs::PlayerRuntime::GetCmdAntiFloodPulse(ch->GetEntityHandle()) + PASSES_PER_SEC(1))
 		{
-			ch->SetCmdAntiFloodCount(0);
-			ch->SetCmdAntiFloodPulse(thecore_pulse());
+			ecs::PlayerRuntime::SetCmdAntiFloodCount(ch->GetEntityHandle(), 0);
+			ecs::PlayerRuntime::SetCmdAntiFloodPulse(ch->GetEntityHandle(), thecore_pulse());
 		}
-		if (ch->IncreaseCmdAntiFloodCount()>=50)
+		if (ecs::PlayerRuntime::IncreaseCmdAntiFloodCount(ch->GetEntityHandle())>=50)
 		{
 			ecs::PlayerRuntime::GetDesc(character)->DelayedDisconnect(0);
 			return;

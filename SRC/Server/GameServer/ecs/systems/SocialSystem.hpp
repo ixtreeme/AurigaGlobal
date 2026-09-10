@@ -32,6 +32,7 @@ bool HasExchange(entt::entity e);
 CShop* GetShop(entt::entity e);
 int GetMyShopTime(entt::entity e);
 void SetMyShopTime(entt::entity e);
+int GetSafeboxLoadTime(entt::entity e);
 int GetRefineTime(entt::entity e);
 void SetRefineTime(entt::entity e);
 CGuild* GetRefineGuild(entt::entity e);

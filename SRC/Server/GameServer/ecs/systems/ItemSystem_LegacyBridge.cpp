@@ -2573,314 +2573,6 @@ bool CHARACTER::PickupItem(uint32_t dwVID)
 
 // char_item.cpp slice C2a moved into ItemSystem.cpp
 
-bool CHARACTER::UseItem(TItemPos Cell, TItemPos DestCell)
-{
-
-#ifdef ENABLE_USEITEM_COOLDOWN
-	if (GetMapIndex() == 113) {
-		return false;
-	}
-#endif
-
-	uint16_t wCell = Cell.cell;
-	uint8_t window_type = Cell.window_type;
-	//uint16_t wDestCell = DestCell.cell;
-	//uint8_t bDestInven = DestCell.window_type;
-	LPITEM item;
-
-	if (!CanHandleItem())
-		return false;
-
-	if (!InventorySystem::IsValidItemPosition(GetEntityHandle(), Cell) || !(item = GetItem(Cell)))
-		return false;
-
-#ifdef ENABLE_USEITEM_COOLDOWN
-	if (item->GetVnum() >= 39999 && item->GetType() == ITEM_QUEST) {
-		int pulse = thecore_pulse();
-		if (pulse > GetCmdAntiFloodPulse() + PASSES_PER_SEC(1)) {
-			SetItemUseAntiFloodCount(0);
-			SetItemUseAntiFloodPulse(thecore_pulse());
-		}
-
-		if (IncreaseItemUseAntiFloodCount() >= 10) {
-			GetDesc()->DelayedDisconnect(0);
-			return false;
-		}
-
-		SetCmdAntiFloodPulse(pulse);
-	}
-#endif
-
-	const entt::entity destItem = ItemSystem::GetItem(GetEntityHandle(), DestCell);
-	if (destItem != entt::null && item->GetEntityHandle() != destItem && ItemSystem::IsItemStackable(destItem) && !IS_SET(ItemSystem::GetItemAntiFlags(destItem), ITEM_ANTIFLAG_STACK) && ItemSystem::GetItemVnum(destItem) == item->GetVnum())
-	{
-		// A committed merge can consume item and destroy this character.
-		InventorySystem::MoveItem(GetEntityHandle(), Cell, DestCell, 0);
-		return false;
-	}
-
-#ifdef ENABLE_BUG_FIXES
-	if (quest::CQuestManager::instance().GetPCForce(GetPlayerID())->IsRunning() == true)
-	{
-#ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 1247, "");
-#endif
-		//if (GetDesc()) {
-		//	GetDesc()->DelayedDisconnect(3);
-		//}
-		return false;
-	}
-#endif
-
-	LOG_INFO("{}: USE_ITEM {} (inven {}, cell: {})", GetName(), item->GetName(), window_type, wCell);
-
-	if (item->IsExchanging())
-		return false;
-	// Lua-less item_change quest handlers
-	if (item_change::HandleUse(this, item))
-		return true;
-#ifdef ENABLE_SWITCHBOT
-	if (Cell.IsSwitchbotPosition())
-	{
-		CSwitchbot* pkSwitchbot = CSwitchbotManager::Instance().FindSwitchbot(GetPlayerID());
-		if (pkSwitchbot && pkSwitchbot->IsActive(Cell.cell))
-		{
-			return false;
-		}
-
-		int iEmptyCell = InventorySystem::GetEmptyInventory(GetEntityHandle(), item->GetSize());
-
-		if (iEmptyCell == -1)
-		{
-#ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 687, "");
-#endif
-			return false;
-		}
-
-		return InventorySystem::MoveItem(GetEntityHandle(), Cell, TItemPos(INVENTORY, iEmptyCell), 0);
-	}
-#endif
-	if (!ItemSystem::CanUsedBy(item->GetEntityHandle(), GetEntityHandle()))
-	{
-#ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 495, "");
-#endif
-		return false;
-	}
-
-	if (IsStun())
-		return false;
-
-	if (false == InventorySystem::IsEquipmentSexAllowed(GetEntityHandle(), item->GetEntityHandle()))
-	{
-#ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 496, "");
-#endif
-		return false;
-	}
-
-#ifdef ENABLE_PVP_ADVANCED	
-	if ((ecs::PlayerRuntime::GetDuelOption(GetEntityHandle(), "BlockPotion")) && IS_POTION_PVP_BLOCKED(item->GetVnum()))
-	{
-#ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 516, "");
-#endif
-		return false;
-	}
-#endif	
-
-	//PREVENT_TRADE_WINDOW
-	if (IS_SUMMON_ITEM(item->GetVnum()))
-	{
-		if (false == IS_SUMMONABLE_ZONE(GetMapIndex()))
-		{
-#ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 688, "");
-#endif
-			return false;
-		}
-
-		int iPulse = thecore_pulse();
-
-		//Ã¢°í ¿¬ÈÄ Ã¼�
-// ©
-		if (iPulse - GetSafeboxLoadTime() < PASSES_PER_SEC(g_nPortalLimitTime))
-		{
-#ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 234, "%d", g_nPortalLimitTime);
-#endif
-			return false;
-		}
-
-		//°�
-// ·¡°ü·Ã Ã¢ Ã¼�
-// ©
-		if (ExchangeSystem::IsActive(GetEntityHandle()) || GetMyShop() || GetShopOwner() || IsOpenSafebox() || IsCubeOpen())
-		{
-#ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 235, "");
-#endif
-			return false;
-		}
-
-#ifdef __ATTR_TRANSFER_SYSTEM__
-		if (AttrTransfer_is_open(GetEntityHandle()))
-		{
-#ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 235, "");
-#endif
-			return false;
-		}
-#endif
-
-		//PREVENT_REFINE_HACK
-		//°³·®ÈÄ ½Ã°£Ã¼�
-// ©
-		{
-			if (iPulse - ecs::SocialSystem::GetRefineTime(GetEntityHandle()) < PASSES_PER_SEC(g_nPortalLimitTime))
-			{
-#ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 234, "%d", g_nPortalLimitTime);
-#endif
-				return false;
-			}
-		}
-		//END_PREVENT_REFINE_HACK
-
-
-		//PREVENT_ITEM_COPY
-		{
-			if (iPulse - ecs::SocialSystem::GetMyShopTime(GetEntityHandle()) < PASSES_PER_SEC(g_nPortalLimitTime))
-			{
-#ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 234, "%d", g_nPortalLimitTime);
-#endif
-				return false;
-			}
-
-		}
-		//END_PREVENT_ITEM_COPY
-
-
-		//±ÍÈ¯ºÎ °�
-// ¸®Ã¼�
-// ©
-		if (item->GetVnum() != 70302)
-		{
-			PIXEL_POSITION posWarp;
-
-			int x = 0;
-			int y = 0;
-
-			double nDist = 0;
-			const double nDistant = 5000.0;
-			//±ÍÈ¯±â¾ïºÎ
-			if (item->GetVnum() == 22010)
-			{
-				x = item->GetSocket(0) - GetX();
-				y = item->GetSocket(1) - GetY();
-			}
-			//±ÍÈ¯ºÎ
-			else if (item->GetVnum() == 22000)
-			{
-				ecs::GetRecallPosition(GetMapIndex(), GetEmpire(), posWarp);
-
-				if (item->GetSocket(0) == 0)
-				{
-					x = posWarp.x - GetX();
-					y = posWarp.y - GetY();
-				}
-				else
-				{
-					x = item->GetSocket(0) - GetX();
-					y = item->GetSocket(1) - GetY();
-				}
-			}
-
-			nDist = sqrt(pow((float)x, 2) + pow((float)y, 2));
-			if (nDistant > nDist) {
-#ifdef TEXTS_IMPROVEMENT
-				ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 433, "");
-#endif
-				return false;
-			}
-		}
-
-		//PREVENT_PORTAL_AFTER_EXCHANGE
-		//±³È¯ ÈÄ ½Ã°£Ã¼�
-// ©
-		if (iPulse - ExchangeSystem::GetLastExchangePulse(GetEntityHandle()) < PASSES_PER_SEC(g_nPortalLimitTime))
-		{
-#ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 234, "%d", g_nPortalLimitTime);
-#endif
-			return false;
-		}
-		//END_PREVENT_PORTAL_AFTER_EXCHANGE
-
-	}
-
-	//º¸µû¸® ºñ´Ü »ç¿ë½Ã °�
-// ·¡Ã¢ Á¦ÇÑ Ã¼�
-// ©
-	if ((item->GetVnum() == 50200) || (item->GetVnum() == 71049)
-#ifdef KASMIR_PAKET_SYSTEM
-		|| (item->GetVnum() == 88901)
-#endif
-		)
-	{
-		if (ExchangeSystem::IsActive(GetEntityHandle()) || GetMyShop() || GetShopOwner() || IsOpenSafebox() || IsCubeOpen())
-		{
-#ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 237, "");
-#endif
-			return false;
-		}
-
-#ifdef __ATTR_TRANSFER_SYSTEM__
-		if (AttrTransfer_is_open(GetEntityHandle()))
-		{
-#ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 237, "");
-#endif
-			return false;
-		}
-#endif
-	}
-	//END_PREVENT_TRADE_WINDOW
-
-	if (IS_SET(item->GetFlag(), ITEM_FLAG_LOG)) // »ç¿ë ·Î±×¸¦ ³²±â´Â ¾ÆÀÌ�
-// Û Ã³¸®
-	{
-		uint32_t vid = item->GetVID();
-		int oldCount = item->GetCount();
-		uint32_t vnum = item->GetVnum();
-
-		char hint[ITEM_NAME_MAX_LEN + 48 + 1];
-		int len = snprintf(hint, sizeof(hint) - 48, "%s", item->GetName());
-
-		if (len < 0 || len >= (int)sizeof(hint) - 48)
-			len = (sizeof(hint) - 48) - 1;
-
-		bool ret = ItemSystem::UseItemEx(GetEntityHandle(), item->GetEntityHandle(), DestCell);
-
-		if (nullptr == ITEM_MANAGER::instance().FindByVID(vid)) // UseItemEx¿¡¼­ ¾ÆÀÌ�
-// ÛÀÌ »èÁ¦ µÇ¾ú´Ù. »èÁ¦ ·Î±×¸¦ ³²±è
-		{
-			LogManager::instance().ItemLog(GetEntityHandle(), vid, vnum, "REMOVE", hint);
-		}
-		else if (oldCount != item->GetCount())
-		{
-			snprintf(hint + len, sizeof(hint) - len, " %u", oldCount - 1);
-			LogManager::instance().ItemLog(GetEntityHandle(), vid, vnum, "USE_ITEM", hint);
-		}
-		return (ret);
-	}
-	else
-		return ItemSystem::UseItemEx(GetEntityHandle(), item->GetEntityHandle(), DestCell);
-}
-
 // char_item.cpp slice C2b moved into ItemSystem.cpp
 
 EVENTFUNC(kill_campfire_event)
@@ -3815,16 +3507,6 @@ const char CHARACTER::msc_szLastChangeItemAttrFlag[] = "Item.LastChangeItemAttr"
 const uint8_t g_aBuffOnAttrPoints[] = { POINT_ENERGY, POINT_COSTUME_ATTR_BONUS };
 
 #ifdef ENABLE_PVP_ADVANCED
-static bool IS_POTION_PVP_BLOCKED(int vnum)
-{
-	switch (vnum)
-	{
-	case 72725:
-	case 72726:
-		return true;
-	}
-	return false;
-}
 #endif
 
 using LegacyCharHandle = decltype(std::declval<ecs::LegacyCharPtr>().ptr);
@@ -3832,21 +3514,6 @@ using LegacyCharHandle = decltype(std::declval<ecs::LegacyCharPtr>().ptr);
 
 
 //±ÍÈ¯ºÎ, ±ÍÈ¯±â¾ïºÎ, °áÈ¥¹ÝÁö
-static bool IS_SUMMON_ITEM(int vnum)
-{
-	switch (vnum)
-	{
-	case 22000:
-	case 22010:
-	case 22011:
-	case 22020:
-	case ITEM_MARRIAGE_RING:
-		return true;
-	}
-
-	return false;
-}
-
 bool IS_SUMMONABLE_ZONE(int map_index)
 {
 	switch (map_index)
@@ -6984,6 +6651,320 @@ bool IsValidItemPosition(entt::entity owner, TItemPos Pos)
 }
 
 } // namespace InventorySystem
+
+namespace ItemSystem {
+
+// The entry point from the client: check the cell, merge onto a stack if
+// that is what the drop means, otherwise use the item.
+bool UseItem(entt::entity e, TItemPos Cell, TItemPos DestCell)
+{
+
+#ifdef ENABLE_USEITEM_COOLDOWN
+	if (ecs::PlayerRuntime::GetMapIndex(e) == 113) {
+		return false;
+	}
+#endif
+
+	uint16_t wCell = Cell.cell;
+	uint8_t window_type = Cell.window_type;
+	//uint16_t wDestCell = DestCell.cell;
+	//uint8_t bDestInven = DestCell.window_type;
+	entt::entity item = entt::null;
+
+	if (!InventorySystem::CanHandleItems(e))
+		return false;
+
+	if (!InventorySystem::IsValidItemPosition(e, Cell) || (item = GetItem(e, Cell)) == entt::null)
+		return false;
+
+#ifdef ENABLE_USEITEM_COOLDOWN
+	if (GetItemVnum(item) >= 39999 && GetItemType(item) == ITEM_QUEST) {
+		int pulse = thecore_pulse();
+		if (pulse > ecs::PlayerRuntime::GetCmdAntiFloodPulse(e) + PASSES_PER_SEC(1)) {
+			ecs::PlayerRuntime::SetItemUseAntiFloodCount(e, 0);
+			ecs::PlayerRuntime::SetItemUseAntiFloodPulse(e, thecore_pulse());
+		}
+
+		if (ecs::PlayerRuntime::IncreaseItemUseAntiFloodCount(e) >= 10) {
+			ecs::PlayerRuntime::GetDesc(e)->DelayedDisconnect(0);
+			return false;
+		}
+
+		ecs::PlayerRuntime::SetCmdAntiFloodPulse(e, pulse);
+	}
+#endif
+
+	const entt::entity destItem = GetItem(e, DestCell);
+	if (destItem != entt::null && item != destItem && IsItemStackable(destItem) && !IS_SET(GetItemAntiFlags(destItem), ITEM_ANTIFLAG_STACK) && GetItemVnum(destItem) == GetItemVnum(item))
+	{
+		// A committed merge can consume item and destroy this character.
+		InventorySystem::MoveItem(e, Cell, DestCell, 0);
+		return false;
+	}
+
+#ifdef ENABLE_BUG_FIXES
+	if (quest::CQuestManager::instance().GetPCForce(ecs::PlayerRuntime::GetPlayerID(e))->IsRunning() == true)
+	{
+#ifdef TEXTS_IMPROVEMENT
+		ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 1247, "");
+#endif
+		//if (ecs::PlayerRuntime::GetDesc(e)) {
+		//	ecs::PlayerRuntime::GetDesc(e)->DelayedDisconnect(3);
+		//}
+		return false;
+	}
+#endif
+
+	LOG_INFO("{}: USE_ITEM {} (inven {}, cell: {})", ecs::PlayerRuntime::GetName(e).data(), GetItemName(item), window_type, wCell);
+
+	if (IsItemExchanging(item))
+		return false;
+	// Lua-less item_change quest handlers
+	if (item_change::HandleUse(ecs::LegacyCharOf(e), LegacyItemBoundary(item)))
+		return true;
+#ifdef ENABLE_SWITCHBOT
+	if (Cell.IsSwitchbotPosition())
+	{
+		CSwitchbot* pkSwitchbot = CSwitchbotManager::Instance().FindSwitchbot(ecs::PlayerRuntime::GetPlayerID(e));
+		if (pkSwitchbot && pkSwitchbot->IsActive(Cell.cell))
+		{
+			return false;
+		}
+
+		int iEmptyCell = InventorySystem::GetEmptyInventory(e, GetItemSize(item));
+
+		if (iEmptyCell == -1)
+		{
+#ifdef TEXTS_IMPROVEMENT
+			ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 687, "");
+#endif
+			return false;
+		}
+
+		return InventorySystem::MoveItem(e, Cell, TItemPos(INVENTORY, iEmptyCell), 0);
+	}
+#endif
+	if (!CanUsedBy(item, e))
+	{
+#ifdef TEXTS_IMPROVEMENT
+		ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 495, "");
+#endif
+		return false;
+	}
+
+	if (CombatSystem::IsStun(e))
+		return false;
+
+	if (false == InventorySystem::IsEquipmentSexAllowed(e, item))
+	{
+#ifdef TEXTS_IMPROVEMENT
+		ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 496, "");
+#endif
+		return false;
+	}
+
+#ifdef ENABLE_PVP_ADVANCED	
+	if ((ecs::PlayerRuntime::GetDuelOption(e, "BlockPotion")) && IS_POTION_PVP_BLOCKED(GetItemVnum(item)))
+	{
+#ifdef TEXTS_IMPROVEMENT
+		ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 516, "");
+#endif
+		return false;
+	}
+#endif	
+
+	//PREVENT_TRADE_WINDOW
+	if (IS_SUMMON_ITEM(GetItemVnum(item)))
+	{
+		if (false == IS_SUMMONABLE_ZONE(ecs::PlayerRuntime::GetMapIndex(e)))
+		{
+#ifdef TEXTS_IMPROVEMENT
+			ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 688, "");
+#endif
+			return false;
+		}
+
+		int iPulse = thecore_pulse();
+
+		//Ã¢°í ¿¬ÈÄ Ã¼�
+// ©
+		if (iPulse - ecs::SocialSystem::GetSafeboxLoadTime(e) < PASSES_PER_SEC(g_nPortalLimitTime))
+		{
+#ifdef TEXTS_IMPROVEMENT
+			ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 234, "%d", g_nPortalLimitTime);
+#endif
+			return false;
+		}
+
+		//°�
+// ·¡°ü·Ã Ã¢ Ã¼�
+// ©
+		if (ExchangeSystem::IsActive(e) || ecs::SocialSystem::GetMyShop(e) || ecs::SocialSystem::GetShopOwner(e) != entt::null || ecs::SessionSystem::IsSafeboxOpen(e) || ecs::SessionSystem::IsCubeOpen(e))
+		{
+#ifdef TEXTS_IMPROVEMENT
+			ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 235, "");
+#endif
+			return false;
+		}
+
+#ifdef __ATTR_TRANSFER_SYSTEM__
+		if (AttrTransfer_is_open(e))
+		{
+#ifdef TEXTS_IMPROVEMENT
+			ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 235, "");
+#endif
+			return false;
+		}
+#endif
+
+		//PREVENT_REFINE_HACK
+		//°³·®ÈÄ ½Ã°£Ã¼�
+// ©
+		{
+			if (iPulse - ecs::SocialSystem::GetRefineTime(e) < PASSES_PER_SEC(g_nPortalLimitTime))
+			{
+#ifdef TEXTS_IMPROVEMENT
+				ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 234, "%d", g_nPortalLimitTime);
+#endif
+				return false;
+			}
+		}
+		//END_PREVENT_REFINE_HACK
+
+
+		//PREVENT_ITEM_COPY
+		{
+			if (iPulse - ecs::SocialSystem::GetMyShopTime(e) < PASSES_PER_SEC(g_nPortalLimitTime))
+			{
+#ifdef TEXTS_IMPROVEMENT
+				ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 234, "%d", g_nPortalLimitTime);
+#endif
+				return false;
+			}
+
+		}
+		//END_PREVENT_ITEM_COPY
+
+
+		//±ÍÈ¯ºÎ °�
+// ¸®Ã¼�
+// ©
+		if (GetItemVnum(item) != 70302)
+		{
+			PIXEL_POSITION posWarp;
+
+			int x = 0;
+			int y = 0;
+
+			double nDist = 0;
+			const double nDistant = 5000.0;
+			//±ÍÈ¯±â¾ïºÎ
+			if (GetItemVnum(item) == 22010)
+			{
+				x = GetItemSocket(item, 0) - ecs::PlayerRuntime::GetX(e);
+				y = GetItemSocket(item, 1) - ecs::PlayerRuntime::GetY(e);
+			}
+			//±ÍÈ¯ºÎ
+			else if (GetItemVnum(item) == 22000)
+			{
+				ecs::GetRecallPosition(ecs::PlayerRuntime::GetMapIndex(e), ecs::PlayerRuntime::GetEmpire(e), posWarp);
+
+				if (GetItemSocket(item, 0) == 0)
+				{
+					x = posWarp.x - ecs::PlayerRuntime::GetX(e);
+					y = posWarp.y - ecs::PlayerRuntime::GetY(e);
+				}
+				else
+				{
+					x = GetItemSocket(item, 0) - ecs::PlayerRuntime::GetX(e);
+					y = GetItemSocket(item, 1) - ecs::PlayerRuntime::GetY(e);
+				}
+			}
+
+			nDist = sqrt(pow((float)x, 2) + pow((float)y, 2));
+			if (nDistant > nDist) {
+#ifdef TEXTS_IMPROVEMENT
+				ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 433, "");
+#endif
+				return false;
+			}
+		}
+
+		//PREVENT_PORTAL_AFTER_EXCHANGE
+		//±³È¯ ÈÄ ½Ã°£Ã¼�
+// ©
+		if (iPulse - ExchangeSystem::GetLastExchangePulse(e) < PASSES_PER_SEC(g_nPortalLimitTime))
+		{
+#ifdef TEXTS_IMPROVEMENT
+			ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 234, "%d", g_nPortalLimitTime);
+#endif
+			return false;
+		}
+		//END_PREVENT_PORTAL_AFTER_EXCHANGE
+
+	}
+
+	//º¸µû¸® ºñ´Ü »ç¿ë½Ã °�
+// ·¡Ã¢ Á¦ÇÑ Ã¼�
+// ©
+	if ((GetItemVnum(item) == 50200) || (GetItemVnum(item) == 71049)
+#ifdef KASMIR_PAKET_SYSTEM
+		|| (GetItemVnum(item) == 88901)
+#endif
+		)
+	{
+		if (ExchangeSystem::IsActive(e) || ecs::SocialSystem::GetMyShop(e) || ecs::SocialSystem::GetShopOwner(e) != entt::null || ecs::SessionSystem::IsSafeboxOpen(e) || ecs::SessionSystem::IsCubeOpen(e))
+		{
+#ifdef TEXTS_IMPROVEMENT
+			ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 237, "");
+#endif
+			return false;
+		}
+
+#ifdef __ATTR_TRANSFER_SYSTEM__
+		if (AttrTransfer_is_open(e))
+		{
+#ifdef TEXTS_IMPROVEMENT
+			ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 237, "");
+#endif
+			return false;
+		}
+#endif
+	}
+	//END_PREVENT_TRADE_WINDOW
+
+	if (IS_SET(GetItemFlags(item), ITEM_FLAG_LOG)) // »ç¿ë ·Î±×¸¦ ³²±â´Â ¾ÆÀÌ�
+// Û Ã³¸®
+	{
+		uint32_t vid = GetItemVID(item);
+		int oldCount = GetItemCount(item);
+		uint32_t vnum = GetItemVnum(item);
+
+		char hint[ITEM_NAME_MAX_LEN + 48 + 1];
+		int len = snprintf(hint, sizeof(hint) - 48, "%s", GetItemName(item));
+
+		if (len < 0 || len >= (int)sizeof(hint) - 48)
+			len = (sizeof(hint) - 48) - 1;
+
+		bool ret = UseItemEx(e, item, DestCell);
+
+		if (nullptr == ITEM_MANAGER::instance().FindByVID(vid)) // UseItemEx¿¡¼­ ¾ÆÀÌ�
+// ÛÀÌ »èÁ¦ µÇ¾ú´Ù. »èÁ¦ ·Î±×¸¦ ³²±è
+		{
+			LogManager::instance().ItemLog(e, vid, vnum, "REMOVE", hint);
+		}
+		else if (oldCount != GetItemCount(item))
+		{
+			snprintf(hint + len, sizeof(hint) - len, " %u", oldCount - 1);
+			LogManager::instance().ItemLog(e, vid, vnum, "USE_ITEM", hint);
+		}
+		return (ret);
+	}
+	else
+		return UseItemEx(e, item, DestCell);
+}
+
+} // namespace ItemSystem
 
 namespace ItemSystem {
 

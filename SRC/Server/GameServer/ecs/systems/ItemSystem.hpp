@@ -361,6 +361,7 @@ void ProcessRecallItem(entt::entity e, entt::entity item);
 bool GiveRecallItem(entt::entity e, entt::entity item);
 bool RefineInformation(entt::entity e, uint8_t bCell, uint8_t bType, int iAdditionalCell = -1);
 void TransformRefineItem(entt::entity pkOldItem, entt::entity pkNewItem);
+bool UseItem(entt::entity e, TItemPos Cell, TItemPos DestCell = NPOS);
 bool UseItemEx(entt::entity e, entt::entity item, TItemPos DestCell);
 bool ItemProcess_Hair(entt::entity e, entt::entity item, int iDestCell);
 bool ItemProcess_Polymorph(entt::entity e, entt::entity item);

@@ -3663,7 +3663,7 @@ ACMD(do_ride)
 //
 //		if (ItemSystem::GetItemType((item ? item->GetEntityHandle() : entt::null)) == ITEM_COSTUME && ItemSystem::GetItemSubType((item ? item->GetEntityHandle() : entt::null)) == COSTUME_MOUNT)
 //		{
-//			ch->UseItem(TItemPos(INVENTORY, i)); // belt inventory is INVENTORY window_type
+//			ItemSystem::UseItem(ch->GetEntityHandle(), TItemPos(INVENTORY, i)); // belt inventory is INVENTORY window_type
 //			return;
 //		}
 	//}

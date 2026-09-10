@@ -27,6 +27,15 @@ struct BattlePassMissions {
 
 // When a box was last opened. It was a CHARACTER field guarding a cooldown
 // that only the item code enforced.
+// The two anti-flood counters, one for commands and one for item use.
+// They were four CHARACTER fields with inline accessors.
+struct AntiFloodState {
+    int cmdPulse { 0 };
+    uint32_t cmdCount { 0 };
+    int itemUsePulse { 0 };
+    uint32_t itemUseCount { 0 };
+};
+
 struct BoxUseTime {
     uint32_t value { 0 };
 };

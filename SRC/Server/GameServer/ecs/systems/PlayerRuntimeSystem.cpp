@@ -674,6 +674,22 @@ void ApplyBattlePassBoostRecalc(entt::entity e, uint8_t bBattlePassId)
     }
 }
 
+namespace {
+ecs::AntiFloodState& AntiFlood(entt::entity e)
+{
+    return g_registry.get_or_emplace<ecs::AntiFloodState>(e);
+}
+}
+
+int GetCmdAntiFloodPulse(entt::entity e) { return AntiFlood(e).cmdPulse; }
+void SetCmdAntiFloodPulse(entt::entity e, int pulse) { AntiFlood(e).cmdPulse = pulse; }
+uint32_t IncreaseCmdAntiFloodCount(entt::entity e) { return ++AntiFlood(e).cmdCount; }
+void SetCmdAntiFloodCount(entt::entity e, uint32_t count) { AntiFlood(e).cmdCount = count; }
+
+void SetItemUseAntiFloodPulse(entt::entity e, int pulse) { AntiFlood(e).itemUsePulse = pulse; }
+uint32_t IncreaseItemUseAntiFloodCount(entt::entity e) { return ++AntiFlood(e).itemUseCount; }
+void SetItemUseAntiFloodCount(entt::entity e, uint32_t count) { AntiFlood(e).itemUseCount = count; }
+
 uint32_t GetBoxUseTime(entt::entity e)
 {
     if (e == entt::null || !g_registry.valid(e))
@@ -5776,8 +5792,6 @@ void CHARACTER::Initialize()
 #endif
 
 #ifdef ENABLE_ANTI_CMD_FLOOD
-    m_dwCmdAntiFloodCount = 0;
-    m_dwCmdAntiFloodPulse = 0;
 #endif
     m_iSyncHackCount = 0;
 #ifdef ENABLE_RANKING

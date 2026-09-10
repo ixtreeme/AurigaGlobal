@@ -98,6 +98,13 @@ std::list<TPlayerBattlePassMission*>& GetBattlePassMissions(entt::entity e);
 uint32_t GetBattlePassAdjustedTotal(entt::entity e, uint32_t dwMissionID,
                                     uint32_t dwBattlePassID, uint32_t dwBaseTotal);
 void ApplyBattlePassBoostRecalc(entt::entity e, uint8_t bBattlePassId);
+int GetCmdAntiFloodPulse(entt::entity e);
+void SetCmdAntiFloodPulse(entt::entity e, int pulse);
+uint32_t IncreaseCmdAntiFloodCount(entt::entity e);
+void SetCmdAntiFloodCount(entt::entity e, uint32_t count);
+void SetItemUseAntiFloodPulse(entt::entity e, int pulse);
+uint32_t IncreaseItemUseAntiFloodCount(entt::entity e);
+void SetItemUseAntiFloodCount(entt::entity e, uint32_t count);
 uint32_t GetBoxUseTime(entt::entity e);
 void SetBoxUseTime(entt::entity e, uint32_t when);
 bool HasBattlePassBoost(entt::entity e, uint8_t bBattlePassId);
