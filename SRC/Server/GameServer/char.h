@@ -555,17 +555,6 @@ namespace marriage
 }
 
 
-#ifdef LEADERBOARD_RAZOR93
-struct LeaderboardEntry
-{
-	std::string name;
-	int level;
-	std::string victim;
-	int dmg;
-};
-
-#endif
-
 class CHARACTER : public CEntity, public CHorseRider
 {
 protected:
@@ -1290,10 +1279,6 @@ public:
 	void				UseArrow(entt::entity pkArrow, uint32_t dwArrowCount);
 #ifdef LEADERBOARD_RAZOR93
 
-	void SendLeaderboardData();
-	void SendLeaderboardDataGuild();
-	static std::vector<LeaderboardEntry> FetchTop10SkillMob();
-	static void CheckLeaderboardSkillMobChanges();
 #endif
 	void				AttackedByFire(entt::entity attacker, int amount, int count);
 

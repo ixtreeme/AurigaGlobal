@@ -971,9 +971,155 @@ void SetDamageMultiplier(entt::entity e, float multiplier)
 
 void SendLeaderboardData(entt::entity e)
 {
-    if (auto* ch = LegacyCharOf(e)) {
-        ch->SendLeaderboardData();
-    }
+	LPDESC desc = ecs::PlayerRuntime::GetDesc(e);
+	if (!desc)
+		return;
+
+	// SQL lek?dez? top 10 j??osra
+	std::unique_ptr<SQLMsg> pMsg(DBManager::instance().DirectQuery(
+		"SELECT name, level, r5, r8 FROM player.player ORDER BY r5 DESC LIMIT 10"));
+
+	if (!pMsg || !pMsg->Get() || !pMsg->Get()->pSQLResult)
+		return;
+
+	MYSQL_ROW row;
+	MYSQL_RES* res = pMsg->Get()->pSQLResult;
+
+	std::string result;
+
+	while ((row = mysql_fetch_row(res)))
+	{
+		const char* name = row[0] ? row[0] : "Unknown";
+		int level = row[1] ? atoi(row[1]) : 0;
+		int metins = row[2] ? atoi(row[2]) : 0;
+		int dmg = row[3] ? atoi(row[3]) : 0;
+
+		char line[128];
+		snprintf(line, sizeof(line), "%s;%d;%d;%d\n", name, level, metins, dmg);
+		result += line;
+	}
+
+	// K?d? kliensnek
+	TPacketGCLeaderboard p;
+	p.header = HEADER_GC_LEADERBOARD_DATA;
+	strlcpy(p.data, result.c_str(), sizeof(p.data));
+
+	desc->Packet(&p, sizeof(p));
+
+
+}
+
+void SendLeaderboardDataGuild(entt::entity e)
+{
+	LPDESC desc = ecs::PlayerRuntime::GetDesc(e);
+	if (!desc)
+		return;
+
+	char szQuery[512];
+	snprintf(szQuery, sizeof(szQuery),
+		"SELECT g.name, IFNULL(p.name,'Unknown') AS master_name, g.win, g.draw, g.loss "
+		"FROM player.guild%s AS g "
+		"LEFT JOIN player.player%s AS p ON p.id = g.master "
+		"ORDER BY (g.win - g.loss) DESC, g.win DESC, g.draw DESC, g.loss ASC "
+		"LIMIT 10",
+		get_table_postfix(), get_table_postfix());
+
+	std::unique_ptr<SQLMsg> pMsg(DBManager::instance().DirectQuery(szQuery));
+	if (!pMsg || !pMsg->Get() || !pMsg->Get()->pSQLResult)
+		return;
+
+	MYSQL_RES* res = pMsg->Get()->pSQLResult;
+	MYSQL_ROW row;
+
+	std::string result;
+	result.reserve(1024);
+
+	while ((row = mysql_fetch_row(res)))
+	{
+		const char* guildName = (row[0] && row[0][0]) ? row[0] : "Unknown";
+		const char* masterName = (row[1] && row[1][0]) ? row[1] : "Unknown";
+
+		int win = row[2] ? atoi(row[2]) : 0;
+		int draw = row[3] ? atoi(row[3]) : 0;
+		int loss = row[4] ? atoi(row[4]) : 0;
+
+		char line[256];
+		snprintf(line, sizeof(line), "%s;%s;%d;%d;%d\n", guildName, masterName, win, draw, loss);
+		result += line;
+	}
+
+	TPacketGCLeaderboard p;
+	p.header = HEADER_GC_LEADERBOARD_GUILD;
+	strlcpy(p.data, result.c_str(), sizeof(p.data));
+
+	desc->Packet(&p, sizeof(p));
+}
+
+// Neither of these two reads a character; they were static CHARACTER members.
+// CheckLeaderboardSkillMobChanges keeps its own last-seen top ten in a function
+// static, so it is one board for the server however it is reached.
+std::vector<LeaderboardEntry> FetchTop10SkillMob()
+{
+	std::vector<LeaderboardEntry> list;
+	std::unique_ptr<SQLMsg> pMsg(DBManager::instance().DirectQuery(
+		"SELECT name, level, skill_victim, map1_skillmob "
+		"FROM player.player ORDER BY map1_skillmob DESC LIMIT 10"));
+
+	if (!pMsg || !pMsg->Get() || !pMsg->Get()->pSQLResult)
+		return list;
+
+	MYSQL_ROW row;
+	MYSQL_RES* res = pMsg->Get()->pSQLResult;
+
+	while ((row = mysql_fetch_row(res)))
+	{
+		LeaderboardEntry e;
+		e.name = row[0] ? row[0] : "Unknown";
+		e.level = row[1] ? atoi(row[1]) : 0;
+		e.victim = row[2] ? row[2] : "None";
+		e.dmg = row[3] ? atoi(row[3]) : 0;
+		list.push_back(e);
+	}
+	return list;
+}
+
+void CheckLeaderboardSkillMobChanges()
+{
+	static std::vector<LeaderboardEntry> s_lastTop10;
+	auto current = FetchTop10SkillMob();
+
+	if (current.size() != s_lastTop10.size())
+	{
+		s_lastTop10 = current;
+		return;
+	}
+
+	for (size_t i = 0; i < current.size(); ++i)
+	{
+		if (i >= s_lastTop10.size()) break;
+		if (current[i].name != s_lastTop10[i].name ||
+			current[i].dmg != s_lastTop10[i].dmg ||
+			current[i].victim != s_lastTop10[i].victim)
+		{
+			char buf[512];
+			snprintf(buf, sizeof(buf),
+				"|cFFFF00FF[SKILL LEADERBOARD]|r: "
+				"|cFFFFA500%s|r "
+				"vs |cFF87CEFA%s|r "
+				"|cFFFFFF00skill damage|r "
+				"|cFF00FF00%d|r. "
+				"|cFFFFFF00Place|r: |cFFFFA500%zu.|r",
+				current[i].name.c_str(),
+				current[i].victim.c_str(),
+				current[i].dmg,
+				i + 1);
+
+			BroadcastNotice(buf);
+			break;
+		}
+	}
+
+	s_lastTop10 = current;
 }
 
 void SendLeaderboardDataSkillMob(entt::entity e, entt::entity viewerEntity)
@@ -1012,20 +1158,6 @@ void SendLeaderboardDataSkillMob(entt::entity e, entt::entity viewerEntity)
 	if (g_registry.valid(viewerEntity))
 		if (auto* desc = ecs::PlayerRuntime::GetDesc(viewerEntity); desc && desc->GetEntity() == viewerEntity)
 			desc->Packet(&p, sizeof(p));
-}
-
-void SendLeaderboardDataGuild(entt::entity e)
-{
-    if (auto* ch = LegacyCharOf(e)) {
-        ch->SendLeaderboardDataGuild();
-    }
-}
-
-void CheckLeaderboardSkillMobChanges(entt::entity e)
-{
-    if (auto* ch = LegacyCharOf(e)) {
-        ch->CheckLeaderboardSkillMobChanges();
-    }
 }
 
 bool IsDeathBlow(entt::entity e)
@@ -1270,162 +1402,11 @@ void PullMonster(entt::entity e)
 #ifdef LEADERBOARD_RAZOR93
 
 
-void CHARACTER::SendLeaderboardData()
-{
-	if (!GetDesc())
-		return;
-
-	// SQL lek?dez? top 10 j??osra
-	std::unique_ptr<SQLMsg> pMsg(DBManager::instance().DirectQuery(
-		"SELECT name, level, r5, r8 FROM player.player ORDER BY r5 DESC LIMIT 10"));
-
-
-	//if (!pMsg || !pMsg->Get()->uiNumRows)
-	//{
-	//	ecs::ChatSystem::Send(GetEntityHandle(), CHAT_TYPE_INFO, "Nincs leaderboard adat.");
-	//	return;
-	//}
-
-	MYSQL_ROW row;
-	MYSQL_RES* res = pMsg->Get()->pSQLResult;
-
-	std::string result;
-
-	while ((row = mysql_fetch_row(res)))
-	{
-		const char* name = row[0] ? row[0] : "Unknown";
-		int level = row[1] ? atoi(row[1]) : 0;
-		int metins = row[2] ? atoi(row[2]) : 0;
-		int dmg = row[3] ? atoi(row[3]) : 0;
-
-		char line[128];
-		snprintf(line, sizeof(line), "%s;%d;%d;%d\n", name, level, metins, dmg);
-		result += line;
-	}
-
-	// K?d? kliensnek
-	TPacketGCLeaderboard p;
-	p.header = HEADER_GC_LEADERBOARD_DATA;
-	strlcpy(p.data, result.c_str(), sizeof(p.data));
-
-	GetDesc()->Packet(&p, sizeof(p));
-
-
-}
-
-
 #ifdef LEADERBOARD_RAZOR93
-void CHARACTER::SendLeaderboardDataGuild()
-{
-	if (!GetDesc())
-		return;
-
-	char szQuery[512];
-	snprintf(szQuery, sizeof(szQuery),
-		"SELECT g.name, IFNULL(p.name,'Unknown') AS master_name, g.win, g.draw, g.loss "
-		"FROM player.guild%s AS g "
-		"LEFT JOIN player.player%s AS p ON p.id = g.master "
-		"ORDER BY (g.win - g.loss) DESC, g.win DESC, g.draw DESC, g.loss ASC "
-		"LIMIT 10",
-		get_table_postfix(), get_table_postfix());
-
-	std::unique_ptr<SQLMsg> pMsg(DBManager::instance().DirectQuery(szQuery));
-	if (!pMsg || !pMsg->Get() || !pMsg->Get()->pSQLResult)
-		return;
-
-	MYSQL_RES* res = pMsg->Get()->pSQLResult;
-	MYSQL_ROW row;
-
-	std::string result;
-	result.reserve(1024);
-
-	while ((row = mysql_fetch_row(res)))
-	{
-		const char* guildName = (row[0] && row[0][0]) ? row[0] : "Unknown";
-		const char* masterName = (row[1] && row[1][0]) ? row[1] : "Unknown";
-
-		int win = row[2] ? atoi(row[2]) : 0;
-		int draw = row[3] ? atoi(row[3]) : 0;
-		int loss = row[4] ? atoi(row[4]) : 0;
-
-		char line[256];
-		snprintf(line, sizeof(line), "%s;%s;%d;%d;%d\n", guildName, masterName, win, draw, loss);
-		result += line;
-	}
-
-	TPacketGCLeaderboard p;
-	p.header = HEADER_GC_LEADERBOARD_GUILD;
-	strlcpy(p.data, result.c_str(), sizeof(p.data));
-
-	GetDesc()->Packet(&p, sizeof(p));
-}
 #endif
 
 
 #ifdef LEADERBOARD_RAZOR93
-
-std::vector<LeaderboardEntry> CHARACTER::FetchTop10SkillMob()
-{
-	std::vector<LeaderboardEntry> list;
-	std::unique_ptr<SQLMsg> pMsg(DBManager::instance().DirectQuery(
-		"SELECT name, level, skill_victim, map1_skillmob "
-		"FROM player.player ORDER BY map1_skillmob DESC LIMIT 10"));
-
-	MYSQL_ROW row;
-	MYSQL_RES* res = pMsg->Get()->pSQLResult;
-
-	while ((row = mysql_fetch_row(res)))
-	{
-		LeaderboardEntry e;
-		e.name = row[0] ? row[0] : "Unknown";
-		e.level = row[1] ? atoi(row[1]) : 0;
-		e.victim = row[2] ? row[2] : "None";
-		e.dmg = row[3] ? atoi(row[3]) : 0;
-		list.push_back(e);
-	}
-	return list;
-}
-
-
-void CHARACTER::CheckLeaderboardSkillMobChanges()
-{
-	static std::vector<LeaderboardEntry> s_lastTop10;
-	auto current = FetchTop10SkillMob();
-
-	if (current.size() != s_lastTop10.size())
-	{
-		s_lastTop10 = current;
-		return;
-	}
-
-	for (size_t i = 0; i < current.size(); ++i)
-	{
-		if (i >= s_lastTop10.size()) break;
-		if (current[i].name != s_lastTop10[i].name ||
-			current[i].dmg != s_lastTop10[i].dmg ||
-			current[i].victim != s_lastTop10[i].victim)
-		{
-			char buf[512];
-			snprintf(buf, sizeof(buf),
-				"|cFFFF00FF[SKILL LEADERBOARD]|r: "
-				"|cFFFFA500%s|r "
-				"vs |cFF87CEFA%s|r "
-				"|cFFFFFF00skill damage|r "
-				"|cFF00FF00%d|r. "
-				"|cFFFFFF00Place|r: |cFFFFA500%zu.|r",
-				current[i].name.c_str(),
-				current[i].victim.c_str(),
-				current[i].dmg,
-				i + 1);
-
-			BroadcastNotice(buf);
-			break;
-		}
-	}
-
-	s_lastTop10 = current;
-}
-
 
 #endif
 
@@ -6004,7 +5985,7 @@ bool Damage(entt::entity victim, entt::entity attacker, int64_t dam, uint8_t dam
 				dam,
 				ecs::PlayerRuntime::GetPlayerID(attacker)
 			);
-			CHARACTER::CheckLeaderboardSkillMobChanges();
+			CheckLeaderboardSkillMobChanges();
 			if (ecs::PlayerRuntime::GetMapIndex(victim) == 41) {
 				CHARACTER_MANAGER::instance().for_each_pc([](LegacyCharHandle ch) {
 					CombatSystem::SendLeaderboardDataSkillMob(ch->GetEntityHandle(), (ch ? ch->GetEntityHandle() : entt::null));

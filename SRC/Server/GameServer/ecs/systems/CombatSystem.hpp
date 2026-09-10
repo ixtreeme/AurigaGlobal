@@ -1,8 +1,22 @@
 #pragma once
 
 #include <cstdint>
+#include <string>
+#include <vector>
 
 #include <entt/entt.hpp>
+
+#ifdef LEADERBOARD_RAZOR93
+// One row of a leaderboard query. It lived in char.h because the two functions
+// that build it were static CHARACTER members; neither reads a character.
+struct LeaderboardEntry
+{
+	std::string name;
+	int level;
+	std::string victim;
+	int dmg;
+};
+#endif
 
 namespace CombatSystem {
 
@@ -117,7 +131,8 @@ void SetDamageMultiplier(entt::entity e, float multiplier);
 void SendLeaderboardData(entt::entity e);
 void SendLeaderboardDataSkillMob(entt::entity e, entt::entity viewer);
 void SendLeaderboardDataGuild(entt::entity e);
-void CheckLeaderboardSkillMobChanges(entt::entity e);
+std::vector<LeaderboardEntry> FetchTop10SkillMob();
+void CheckLeaderboardSkillMobChanges();
 void SetComboSequence(entt::entity e, uint8_t sequence);
 uint8_t GetComboSequence(entt::entity e);
 void SetLastComboTime(entt::entity e, uint32_t time);
