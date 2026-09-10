@@ -211,7 +211,7 @@ EVENTFUNC(pvp_duel_counter)
 		}
 		case 2:
 		{
-			if ((chA->GetDuel("BlockParty")) && (chB->GetDuel("BlockParty")))
+			if ((ecs::PlayerRuntime::GetDuelOption(chA->GetEntityHandle(), "BlockParty")) && (ecs::PlayerRuntime::GetDuelOption(chB->GetEntityHandle(), "BlockParty")))
 			{
 				LPPARTY chParty = ecs::SocialSystem::GetParty(characterA);
 				LPPARTY victimParty = ecs::SocialSystem::GetParty(characterB);
@@ -223,7 +223,7 @@ EVENTFUNC(pvp_duel_counter)
 					victimParty->Quit((ecs::PlayerRuntime::GetPlayerID(characterB)));
 			}
 
-			if ((chA->GetDuel("BlockPet")) && (chB->GetDuel("BlockPet")))
+			if ((ecs::PlayerRuntime::GetDuelOption(chA->GetEntityHandle(), "BlockPet")) && (ecs::PlayerRuntime::GetDuelOption(chB->GetEntityHandle(), "BlockPet")))
 			{
 #ifdef __PET_SYSTEM__
 				{
@@ -249,7 +249,7 @@ EVENTFUNC(pvp_duel_counter)
 #endif
 			}
 
-			if ((chA->GetDuel("BlockPoly")) && (chB->GetDuel("BlockPoly")))
+			if ((ecs::PlayerRuntime::GetDuelOption(chA->GetEntityHandle(), "BlockPoly")) && (ecs::PlayerRuntime::GetDuelOption(chB->GetEntityHandle(), "BlockPoly")))
 			{
 				if (AffectSystem::IsPolymorphed(characterA)) {
 					AffectSystem::SetPolymorph(characterA, 0);
@@ -262,7 +262,7 @@ EVENTFUNC(pvp_duel_counter)
 				}
 			}
 
-			if ((chA->GetDuel("BlockRide")) && (chB->GetDuel("BlockRide")))
+			if ((ecs::PlayerRuntime::GetDuelOption(chA->GetEntityHandle(), "BlockRide")) && (ecs::PlayerRuntime::GetDuelOption(chB->GetEntityHandle(), "BlockRide")))
 			{
 				if (AffectSystem::FindAffect(characterA, AFFECT_MOUNT)) {
 					AffectSystem::RemoveAffect(characterA, AFFECT_MOUNT);
@@ -293,7 +293,7 @@ EVENTFUNC(pvp_duel_counter)
 
 			for (unsigned int i = 0; i < _countof(m_nTableSkill); i++)
 			{
-				if ((chA->GetDuel("BlockBuff")) && (chB->GetDuel("BlockBuff")))
+				if ((ecs::PlayerRuntime::GetDuelOption(chA->GetEntityHandle(), "BlockBuff")) && (ecs::PlayerRuntime::GetDuelOption(chB->GetEntityHandle(), "BlockBuff")))
 				{
 					if (ecs::PlayerRuntime::GetJob(characterA) != JOB_SHAMAN)
 						AffectSystem::RemoveAffect(characterA, m_nTableSkill[i]);

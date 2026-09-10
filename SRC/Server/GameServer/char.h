@@ -1290,7 +1290,6 @@ public:
 	void			GiveGold(int64_t iAmount);	// ��Ƽ�� ������ ��Ƽ �й�, �α� ���� ó��
 
 #ifdef ENABLE_PVP_ADVANCED
-	int				GetDuel(const char* type) const;
 	void			SetDuel(const char* type, int value);
 #endif
 #ifdef ENABLE_GAYA_SYSTEM
@@ -1960,7 +1959,6 @@ public:
 
 	// NEW_HAIR_STYLE_ADD
 public:
-	bool ItemProcess_Hair(LPITEM item, int iDestCell);
 	// END_NEW_HAIR_STYLE_ADD
 
 public:
@@ -2015,7 +2013,6 @@ public:
 
 
 public:
-	bool ItemProcess_Polymorph(LPITEM item);
 
 	// by mhh
 	bool IsCubeOpen() const;

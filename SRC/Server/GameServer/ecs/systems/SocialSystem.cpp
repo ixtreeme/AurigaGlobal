@@ -647,7 +647,7 @@ void CHARACTER::PartyInvite(entt::entity invitee)
     }
 
 #ifdef ENABLE_PVP_ADVANCED
-    else if ((GetDuel("BlockParty")))
+    else if ((ecs::PlayerRuntime::GetDuelOption(GetEntityHandle(), "BlockParty")))
     {
 #ifdef TEXTS_IMPROVEMENT
         ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 516, "");
@@ -655,7 +655,7 @@ void CHARACTER::PartyInvite(entt::entity invitee)
         return;
     }
 
-    else if ((pkInvitee->GetDuel("BlockParty")))
+    else if ((ecs::PlayerRuntime::GetDuelOption(pkInvitee->GetEntityHandle(), "BlockParty")))
     {
 #ifdef TEXTS_IMPROVEMENT
         ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 517, "%s", ecs::PlayerRuntime::GetName(invitee).data());

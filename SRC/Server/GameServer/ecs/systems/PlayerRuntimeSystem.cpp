@@ -3943,11 +3943,6 @@ void CHARACTER::RankingSubcategory(int iArg)
 #endif
 
 #ifdef ENABLE_PVP_ADVANCED
-int CHARACTER::GetDuel(const char* type) const
-{
-    return ecs::PlayerRuntime::GetDuelOption(GetEntityHandle(), type);
-}
-
 void CHARACTER::SetDuel(const char* type, int value)
 {
     ecs::PlayerRuntime::SetDuelOption(GetEntityHandle(), type, value);

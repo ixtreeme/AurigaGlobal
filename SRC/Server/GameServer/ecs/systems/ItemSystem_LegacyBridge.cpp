@@ -6,6 +6,7 @@
 #include "ActivitySystem.hpp"
 
 #include "ItemSystem.hpp"
+#include "SkillSystem.hpp"
 #include "SocialSystem.hpp"
 #include "SessionSystem.hpp"
 #include "InventorySystem.hpp"
@@ -2766,7 +2767,7 @@ bool CHARACTER::UseItem(TItemPos Cell, TItemPos DestCell)
 	}
 
 #ifdef ENABLE_PVP_ADVANCED	
-	if ((GetDuel("BlockPotion")) && IS_POTION_PVP_BLOCKED(item->GetVnum()))
+	if ((ecs::PlayerRuntime::GetDuelOption(GetEntityHandle(), "BlockPotion")) && IS_POTION_PVP_BLOCKED(item->GetVnum()))
 	{
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 516, "");
@@ -3453,10 +3454,10 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 	break;
 #endif
 	case ITEM_HAIR:
-		return ItemProcess_Hair(item, wDestCell);
+		return ItemSystem::ItemProcess_Hair(GetEntityHandle(), item->GetEntityHandle(), wDestCell);
 
 	case ITEM_POLYMORPH:
-		return ItemProcess_Polymorph(item);
+		return ItemSystem::ItemProcess_Polymorph(GetEntityHandle(), item->GetEntityHandle());
 
 	case ITEM_QUEST:
 		if (GetArena() != nullptr || IsObserverMode() == true)
@@ -10495,173 +10496,7 @@ void BuffOnAttr_ValueChange(entt::entity e, uint8_t bType, uint8_t bOldValue, ui
 // END_OF_CHECK_UNIQUE_GROUP
 
 // NEW_HAIR_STYLE_ADD
-bool CHARACTER::ItemProcess_Hair(LPITEM item, int iDestCell)
-{
-	if (item->CheckItemUseLevel(GetLevel()) == false)
-	{
-#ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 405, "");
-#endif
-		return false;
-	}
-
-	uint32_t hair = item->GetVnum();
-
-	switch (GetJob())
-	{
-	case JOB_WARRIOR:
-		hair -= 72000; // 73001 - 72000 = 1001 ºÎ�
-// Í Çì¾î ¹øÈ£ ½ÃÀÛ
-		break;
-
-	case JOB_ASSASSIN:
-		hair -= 71250;
-		break;
-
-	case JOB_SURA:
-		hair -= 70500;
-		break;
-
-	case JOB_SHAMAN:
-		hair -= 69750;
-		break;
-	default:
-		return false;
-		break;
-	}
-
-	if (hair == ecs::PlayerRuntime::GetPart(GetEntityHandle(), PART_HAIR))
-	{
-#ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 311, "");
-#endif
-		return true;
-	}
-
-	ItemSystem::ConsumeItemEcs((item ? item->GetEntityHandle() : entt::null));
-
-	ecs::PlayerRuntime::SetPart(GetEntityHandle(), PART_HAIR, hair);
-	NetworkSyncSystem::UpdatePacket(GetEntityHandle());
-
-	return true;
-}
 // END_NEW_HAIR_STYLE_ADD
-
-bool CHARACTER::ItemProcess_Polymorph(LPITEM item)
-{
-	const entt::entity itemEntity = item ? item->GetEntityHandle() : entt::null;
-
-#ifdef ENABLE_PVP_ADVANCED
-	if ((GetDuel("BlockPoly")))
-	{
-#ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 516, "");
-#endif
-		return false;
-	}
-#endif
-
-	if (AffectSystem::IsPolymorphed(GetEntityHandle())) {
-#ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 437, "");
-#endif
-		return false;
-	}
-
-	if (true == IsRiding())
-	{
-#ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 741, "");
-#endif
-		return false;
-	}
-
-	uint32_t dwVnum = item->GetSocket(0);
-
-	if (dwVnum == 0)
-	{
-#ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 450, "");
-#endif
-		ItemSystem::ConsumeItemEcs(itemEntity);
-		return false;
-	}
-
-	const CMob* pMob = CMobManager::instance().Get(dwVnum);
-
-	if (pMob == nullptr)
-	{
-#ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 451, "");
-#endif
-		ItemSystem::ConsumeItemEcs(itemEntity);
-		return false;
-	}
-
-	switch (item->GetVnum())
-	{
-	case 70104:
-	case 70105:
-	case 70106:
-	case 70107:
-	case 71093:
-	{
-		// µÐ°©±¸ Ã³¸®
-		LOG_INFO("USE_POLYMORPH_BALL PID({}) vnum({})", GetPlayerID(), dwVnum);
-
-		// ·¹º§ Á¦ÇÑ Ã¼�
-// ©
-		int iPolymorphLevelLimit = std::max(0, 20 - GetLevel() * 3 / 10);
-		if (pMob->m_table.bLevel >= GetLevel() + iPolymorphLevelLimit)
-		{
-#ifdef TEXTS_IMPROVEMENT
-			ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 275, "");
-#endif
-			return false;
-		}
-
-		int iDuration = GetSkillLevel(POLYMORPH_SKILL_ID) == 0 ? 5 : (5 + (5 + GetSkillLevel(POLYMORPH_SKILL_ID) / 40 * 25));
-		iDuration *= 60;
-
-		uint32_t dwBonus = 0;
-
-		dwBonus = (2 + GetSkillLevel(POLYMORPH_SKILL_ID) / 40) * 100;
-
-		AddAffect(AFFECT_POLYMORPH, POINT_POLYMORPH, dwVnum, AFF_POLYMORPH, iDuration, 0, true);
-		AddAffect(AFFECT_POLYMORPH, POINT_ATT_BONUS, dwBonus, AFF_POLYMORPH, iDuration, 0, false);
-
-		ItemSystem::ConsumeItemEcs(itemEntity);
-	}
-	break;
-
-	case 50322:
-	{
-		// º¸·ù
-
-		// µÐ°©¼­ Ã³¸®
-		// ¼ÒÄÏ0                ¼ÒÄÏ1           ¼ÒÄÏ2
-		// µÐ°©ÇÒ ¸ó½º�
-// Í ¹øÈ£   ¼ö·ÃÁ¤µµ        µÐ°©¼­ ·¹º§
-		LOG_INFO("USE_POLYMORPH_BOOK: {}({}) vnum({})", GetName(), GetPlayerID(), dwVnum);
-
-		const entt::entity polymorphItem = itemEntity;
-		if (CPolymorphUtils::instance().PolymorphCharacter(GetEntityHandle(), polymorphItem, pMob) == true)
-		{
-			CPolymorphUtils::instance().UpdateBookPracticeGrade(GetEntityHandle(), polymorphItem);
-		}
-		else
-		{
-		}
-	}
-	break;
-
-	default:
-		LOG_ERROR("POLYMORPH invalid item passed PID({}) vnum({})", GetPlayerID(), item->GetOriginalVnum());
-		return false;
-	}
-
-	return true;
-}
 
 bool CHARACTER::CanDoCube() const
 {
@@ -10748,7 +10583,7 @@ void CHARACTER::AutoRecoveryItemProcess(const EAffectTypes type)
 #ifdef ENABLE_NEW_USE_POTION
 	)
 #endif
-		&& (GetDuel("BlockPotion")))
+		&& (ecs::PlayerRuntime::GetDuelOption(GetEntityHandle(), "BlockPotion")))
 		return;
 #endif
 
@@ -12994,6 +12829,177 @@ void TransformRefineItem(entt::entity pkOldItem, entt::entity pkNewItem)
 // Á÷ ¾ÆÀÌ�
 // Û ¼³Á¤
 	CopyItemAttributesEcs(pkOldItem, pkNewItem);
+}
+
+} // namespace ItemSystem
+
+namespace ItemSystem {
+
+// Changing hair with a hair item.
+bool ItemProcess_Hair(entt::entity e, entt::entity item, int iDestCell)
+{
+	if (CheckItemUseLevel(item, ecs::PointSystem::GetLevel(e)) == false)
+	{
+#ifdef TEXTS_IMPROVEMENT
+		ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 405, "");
+#endif
+		return false;
+	}
+
+	uint32_t hair = GetItemVnum(item);
+
+	switch (ecs::PlayerRuntime::GetJob(e))
+	{
+	case JOB_WARRIOR:
+		hair -= 72000; // 73001 - 72000 = 1001 ºÎ�
+// Í Çì¾î ¹øÈ£ ½ÃÀÛ
+		break;
+
+	case JOB_ASSASSIN:
+		hair -= 71250;
+		break;
+
+	case JOB_SURA:
+		hair -= 70500;
+		break;
+
+	case JOB_SHAMAN:
+		hair -= 69750;
+		break;
+	default:
+		return false;
+		break;
+	}
+
+	if (hair == ecs::PlayerRuntime::GetPart(e, PART_HAIR))
+	{
+#ifdef TEXTS_IMPROVEMENT
+		ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 311, "");
+#endif
+		return true;
+	}
+
+	ConsumeItemEcs(item);
+
+	ecs::PlayerRuntime::SetPart(e, PART_HAIR, hair);
+	NetworkSyncSystem::UpdatePacket(e);
+
+	return true;
+}
+
+// Turning into a monster with a polymorph ball or book.
+bool ItemProcess_Polymorph(entt::entity e, entt::entity item)
+{
+#ifdef ENABLE_PVP_ADVANCED
+	if ((ecs::PlayerRuntime::GetDuelOption(e, "BlockPoly")))
+	{
+#ifdef TEXTS_IMPROVEMENT
+		ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 516, "");
+#endif
+		return false;
+	}
+#endif
+
+	if (AffectSystem::IsPolymorphed(e)) {
+#ifdef TEXTS_IMPROVEMENT
+		ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 437, "");
+#endif
+		return false;
+	}
+
+	if (true == MountSystem::IsRiding(e))
+	{
+#ifdef TEXTS_IMPROVEMENT
+		ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 741, "");
+#endif
+		return false;
+	}
+
+	uint32_t dwVnum = GetItemSocket(item, 0);
+
+	if (dwVnum == 0)
+	{
+#ifdef TEXTS_IMPROVEMENT
+		ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 450, "");
+#endif
+		ConsumeItemEcs(item);
+		return false;
+	}
+
+	const CMob* pMob = CMobManager::instance().Get(dwVnum);
+
+	if (pMob == nullptr)
+	{
+#ifdef TEXTS_IMPROVEMENT
+		ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 451, "");
+#endif
+		ConsumeItemEcs(item);
+		return false;
+	}
+
+	switch (GetItemVnum(item))
+	{
+	case 70104:
+	case 70105:
+	case 70106:
+	case 70107:
+	case 71093:
+	{
+		// µÐ°©±¸ Ã³¸®
+		LOG_INFO("USE_POLYMORPH_BALL PID({}) vnum({})", ecs::PlayerRuntime::GetPlayerID(e), dwVnum);
+
+		// ·¹º§ Á¦ÇÑ Ã¼�
+// ©
+		int iPolymorphLevelLimit = std::max(0, 20 - ecs::PointSystem::GetLevel(e) * 3 / 10);
+		if (pMob->m_table.bLevel >= ecs::PointSystem::GetLevel(e) + iPolymorphLevelLimit)
+		{
+#ifdef TEXTS_IMPROVEMENT
+			ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 275, "");
+#endif
+			return false;
+		}
+
+		int iDuration = SkillSystem::GetSkillLevel(e, POLYMORPH_SKILL_ID) == 0 ? 5 : (5 + (5 + SkillSystem::GetSkillLevel(e, POLYMORPH_SKILL_ID) / 40 * 25));
+		iDuration *= 60;
+
+		uint32_t dwBonus = 0;
+
+		dwBonus = (2 + SkillSystem::GetSkillLevel(e, POLYMORPH_SKILL_ID) / 40) * 100;
+
+		AffectSystem::AddAffect(e, AFFECT_POLYMORPH, POINT_POLYMORPH, dwVnum, AFF_POLYMORPH, iDuration, 0, true);
+		AffectSystem::AddAffect(e, AFFECT_POLYMORPH, POINT_ATT_BONUS, dwBonus, AFF_POLYMORPH, iDuration, 0, false);
+
+		ConsumeItemEcs(item);
+	}
+	break;
+
+	case 50322:
+	{
+		// º¸·ù
+
+		// µÐ°©¼­ Ã³¸®
+		// ¼ÒÄÏ0                ¼ÒÄÏ1           ¼ÒÄÏ2
+		// µÐ°©ÇÒ ¸ó½º�
+// Í ¹øÈ£   ¼ö·ÃÁ¤µµ        µÐ°©¼­ ·¹º§
+		LOG_INFO("USE_POLYMORPH_BOOK: {}({}) vnum({})", ecs::PlayerRuntime::GetName(e).data(), ecs::PlayerRuntime::GetPlayerID(e), dwVnum);
+
+		const entt::entity polymorphItem = item;
+		if (CPolymorphUtils::instance().PolymorphCharacter(e, polymorphItem, pMob) == true)
+		{
+			CPolymorphUtils::instance().UpdateBookPracticeGrade(e, polymorphItem);
+		}
+		else
+		{
+		}
+	}
+	break;
+
+	default:
+		LOG_ERROR("POLYMORPH invalid item passed PID({}) vnum({})", ecs::PlayerRuntime::GetPlayerID(e), GetItemOriginalVnum(item));
+		return false;
+	}
+
+	return true;
 }
 
 } // namespace ItemSystem

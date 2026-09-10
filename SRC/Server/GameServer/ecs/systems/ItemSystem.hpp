@@ -352,5 +352,7 @@ bool DoRefineItemSoul(entt::entity e, entt::entity item);
 bool RefineItem(entt::entity e, entt::entity pkItem, entt::entity pkTarget);
 bool RefineInformation(entt::entity e, uint8_t bCell, uint8_t bType, int iAdditionalCell = -1);
 void TransformRefineItem(entt::entity pkOldItem, entt::entity pkNewItem);
+bool ItemProcess_Hair(entt::entity e, entt::entity item, int iDestCell);
+bool ItemProcess_Polymorph(entt::entity e, entt::entity item);
 
 } // namespace ItemSystem
