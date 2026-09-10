@@ -565,7 +565,7 @@ void marriage::TMarriage::Update(unsigned int) { UnexpectedService(__func__); }
 marriage::TMarriage * marriage::CManager::Get(unsigned int) { UnexpectedService(__func__); }
 bool CArenaManager::OnDead(entt::entity,entt::entity) { UnexpectedService(__func__); }
 void ExchangeSystem::Cancel(entt::entity) { UnexpectedService(__func__); }
-void CShopManager::StopShopping(CHARACTER *) { UnexpectedService(__func__); }
+void CShopManager::StopShopping(entt::entity) { UnexpectedService(__func__); }
 bool CBattleArena::IsBattleArenaMap(int) { UnexpectedService(__func__); }
 void CGuildManager::Kill(CHARACTER *,CHARACTER *) { UnexpectedService(__func__); }
 void quest::CQuestManager::Kill(unsigned int,unsigned int) { UnexpectedService(__func__); }

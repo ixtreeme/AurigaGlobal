@@ -6,6 +6,7 @@
 #include "ActivitySystem.hpp"
 
 #include "ItemSystem.hpp"
+#include "SocialSystem.hpp"
 #include "SessionSystem.hpp"
 #include "InventorySystem.hpp"
 #include "CombatSystem.hpp"
@@ -2835,7 +2836,7 @@ bool CHARACTER::UseItem(TItemPos Cell, TItemPos DestCell)
 
 		//PREVENT_ITEM_COPY
 		{
-			if (iPulse - GetMyShopTime() < PASSES_PER_SEC(g_nPortalLimitTime))
+			if (iPulse - ecs::SocialSystem::GetMyShopTime(GetEntityHandle()) < PASSES_PER_SEC(g_nPortalLimitTime))
 			{
 #ifdef TEXTS_IMPROVEMENT
 				ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 234, "%d", g_nPortalLimitTime);

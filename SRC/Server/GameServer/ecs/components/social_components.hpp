@@ -94,6 +94,14 @@ struct ShopState {
 #endif
 };
 
+// How recently this character bought or sold. Both were CHARACTER members
+// that only the shop code read, so nothing entity-native could rate-limit
+// a purchase. myShopTime already lives in WarpBlockState below.
+struct ShopTimers {
+    int lastBuyPulse { 0 };
+    uint32_t lastBuySellTime { 0 };
+};
+
 struct WarpBlockState {
     int safeboxLoadTime { 0 };
     int exchangeTime { 0 };

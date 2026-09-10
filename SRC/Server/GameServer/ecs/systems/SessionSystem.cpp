@@ -7,6 +7,7 @@
 #include "PlayerRuntimeSystem.hpp"
 
 #include "SessionSystem.hpp"
+#include "SocialSystem.hpp"
 #include "SkillSystem.hpp"
 #include "AffectSystem.hpp"
 #include "ItemSystem.hpp"
@@ -585,16 +586,6 @@ void CHARACTER::SetRefineTime()
     }
 }
 
-void CHARACTER::SetMyShopTime()
-{
-    m_iMyShopTime = thecore_pulse();
-    if (auto* warp = EnsureWarpBlockState(GetEntityHandle()))
-    {
-        warp->myShopTime = m_iMyShopTime;
-        g_registry.emplace_or_replace<ecs::DirtyTag>(GetEntityHandle());
-    }
-}
-
 bool CHARACTER::CanWarp() const
 {
     const int iPulse = thecore_pulse();
@@ -606,7 +597,7 @@ bool CHARACTER::CanWarp() const
     if ((iPulse - ExchangeSystem::GetLastExchangePulse(GetEntityHandle())) < limit_time)
         return false;
 
-    if ((iPulse - GetMyShopTime()) < limit_time)
+    if ((iPulse - ecs::SocialSystem::GetMyShopTime(GetEntityHandle())) < limit_time)
         return false;
 
     if ((iPulse - GetRefineTime()) < limit_time)

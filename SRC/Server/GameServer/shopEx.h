@@ -19,10 +19,10 @@ public:
 	bool			AddShopTable(TShopTableEx& shopTable);
 
 	virtual bool	AddGuest(entt::entity guest, uint32_t owner_vid, bool bOtherEmpire) override;
-	virtual void	SetPCShop(LPCHARACTER ch) { return; }
+	virtual void	SetPCShop(entt::entity ch) override { return; }
 	virtual bool	IsPCShop() { return false; }
 
-	virtual int64_t		Buy(LPCHARACTER ch, uint8_t pos);
+	virtual int64_t		Buy(entt::entity ch, uint8_t pos);
 
 	virtual bool	IsSellingItem(uint32_t itemID) { return false; }
 

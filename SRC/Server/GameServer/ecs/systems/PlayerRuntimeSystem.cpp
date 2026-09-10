@@ -5489,7 +5489,7 @@ void CHARACTER::OpenMyShop(const char* c_pszSign, TShopItemTable* pTable, uint8_
 #endif
     ecs::ViewSystem::PacketView(GetEntityHandle(), &p, sizeof(TPacketGCShopSign));
 
-    m_pkMyShop = CShopManager::instance().CreatePCShop(this, pTable, bItemCount);
+    m_pkMyShop = CShopManager::instance().CreatePCShop(GetEntityHandle(), pTable, bItemCount);
     if (const auto e = GetEntityHandle(); e != entt::null && g_registry.valid(e))
     {
         auto& shop = g_registry.get_or_emplace<ecs::ShopState>(e);
@@ -5524,7 +5524,7 @@ void CHARACTER::CloseMyShop()
     if (GetMyShop())
     {
         m_stShopSign.clear();
-        CShopManager::instance().DestroyPCShop(this);
+        CShopManager::instance().DestroyPCShop(GetEntityHandle());
         m_pkMyShop = nullptr;
         if (const auto e = GetEntityHandle(); e != entt::null && g_registry.valid(e))
         {
@@ -5753,7 +5753,6 @@ void CHARACTER::Initialize()
     m_iRefineTime = 0;
 
     m_iSeedTime = 0;
-    m_iMyShopTime = 0;
 
     m_deposit_pulse = 0;
 
@@ -5772,7 +5771,6 @@ void CHARACTER::Initialize()
     m_dwLastGoldDropTime = 0;
 #ifdef ENABLE_NEWSTUFF
     m_dwLastBoxUseTime = 0;
-    m_dwLastBuySellTime = 0;
 #endif
 
 
@@ -5839,7 +5837,6 @@ void CHARACTER::Initialize()
     m_iSortInv2Time = 0;
 #endif
 #ifdef ENABLE_LIMIT_BUY_SPEED
-    m_iLastBuyTime = 0;
 #endif
 #ifdef __DUNGEON_INFO_SYSTEM__
     dungeonDamage.clear();

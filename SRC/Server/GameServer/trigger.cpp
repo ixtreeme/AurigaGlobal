@@ -102,8 +102,7 @@ void CHARACTER::AssignTriggers(const TMobTable* table)
  */
 int OnClickShop(TRIGGERPARAM)
 {
-	CShopManager::instance().StartShopping(
-		ecs::LegacyCharOf(causer), ecs::LegacyCharOf(ch));
+	CShopManager::instance().StartShopping(causer, ch);
 	return 1;
 }
 

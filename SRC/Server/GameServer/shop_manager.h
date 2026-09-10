@@ -1,6 +1,8 @@
 #ifndef __INC_METIN_II_GAME_SHOP_MANAGER_H__
 #define __INC_METIN_II_GAME_SHOP_MANAGER_H__
 
+#include <entt/entity/entity.hpp>
+
 class CShop;
 typedef class CShop * LPSHOP;
 
@@ -19,15 +21,15 @@ public:
 	LPSHOP	Get(uint32_t dwVnum);
 	LPSHOP	GetByNPCVnum(uint32_t dwVnum);
 
-	bool	StartShopping(LPCHARACTER pkChr, LPCHARACTER pkShopKeeper, int iShopVnum = 0);
-	void	StopShopping(LPCHARACTER ch);
+	bool	StartShopping(entt::entity pkChr, entt::entity pkShopKeeper, int iShopVnum = 0);
+	void	StopShopping(entt::entity ch);
 
-	void	Buy(LPCHARACTER ch, uint8_t pos);
+	void	Buy(entt::entity ch, uint8_t pos);
 #ifdef ENABLE_BUY_STACK_FROM_SHOP
-	void MultipleBuy(LPCHARACTER ch, uint8_t p, uint8_t c);
+	void MultipleBuy(entt::entity ch, uint8_t p, uint8_t c);
 #endif
 #ifdef ENABLE_EXTRA_INVENTORY
-	void	Sell(LPCHARACTER ch, TItemPos Cell,
+	void	Sell(entt::entity ch, TItemPos Cell,
 #ifdef ENABLE_NEW_STACK_LIMIT
 	uint16_t bCount = 0
 #else
@@ -35,7 +37,7 @@ public:
 #endif
 	);
 #else
-	void	Sell(LPCHARACTER ch, uint8_t bCell,
+	void	Sell(entt::entity ch, uint8_t bCell,
 #ifdef ENABLE_NEW_STACK_LIMIT
 	uint16_t bCount = 0
 #else
@@ -45,9 +47,9 @@ public:
 #endif
 
 
-	LPSHOP	CreatePCShop(LPCHARACTER ch, TShopItemTable * pTable, uint8_t bItemCount);
+	LPSHOP	CreatePCShop(entt::entity ch, TShopItemTable * pTable, uint8_t bItemCount);
 	LPSHOP	FindPCShop(uint32_t dwVID);
-	void	DestroyPCShop(LPCHARACTER ch);
+	void	DestroyPCShop(entt::entity ch);
 
 private:
 	TShopMap	m_map_pkShop;

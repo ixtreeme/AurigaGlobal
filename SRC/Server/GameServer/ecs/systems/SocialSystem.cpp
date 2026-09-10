@@ -88,6 +88,54 @@ bool HasExchange(entt::entity e)
     return session && (session->offers[0].owner == e || session->offers[1].owner == e);
 }
 
+// When this character last opened a personal shop. The warp block reads it
+// to stop a player from shopping and then jumping away.
+int GetMyShopTime(entt::entity e)
+{
+    if (e == entt::null || !g_registry.valid(e))
+        return 0;
+    const auto* warp = g_registry.try_get<ecs::WarpBlockState>(e);
+    return warp ? warp->myShopTime : 0;
+}
+
+void SetMyShopTime(entt::entity e)
+{
+    if (e == entt::null || !g_registry.valid(e))
+        return;
+    g_registry.get_or_emplace<ecs::WarpBlockState>(e).myShopTime = thecore_pulse();
+    g_registry.emplace_or_replace<ecs::DirtyTag>(e);
+}
+
+int GetLastBuyTime(entt::entity e)
+{
+    if (e == entt::null || !g_registry.valid(e))
+        return 0;
+    const auto* timers = g_registry.try_get<ecs::ShopTimers>(e);
+    return timers ? timers->lastBuyPulse : 0;
+}
+
+void SetLastBuyTime(entt::entity e)
+{
+    if (e == entt::null || !g_registry.valid(e))
+        return;
+    g_registry.get_or_emplace<ecs::ShopTimers>(e).lastBuyPulse = thecore_pulse();
+}
+
+uint32_t GetLastBuySellTime(entt::entity e)
+{
+    if (e == entt::null || !g_registry.valid(e))
+        return 0;
+    const auto* timers = g_registry.try_get<ecs::ShopTimers>(e);
+    return timers ? timers->lastBuySellTime : 0;
+}
+
+void SetLastBuySellTime(entt::entity e, uint32_t when)
+{
+    if (e == entt::null || !g_registry.valid(e))
+        return;
+    g_registry.get_or_emplace<ecs::ShopTimers>(e).lastBuySellTime = when;
+}
+
 CShop* GetShop(entt::entity e)
 {
 	if (e == entt::null || !g_registry.valid(e))

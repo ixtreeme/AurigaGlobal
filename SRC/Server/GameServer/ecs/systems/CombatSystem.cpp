@@ -2815,14 +2815,13 @@ void Dead(entt::entity victim, entt::entity killer, bool immediate)
 			windows->CloseAcce();
 #endif
 
-	// The personal shop and the safebox each close through CHARACTER still,
-	// and CShopManager speaks in pointers. Each is its own migration; they
-	// share one resolve here rather than three.
+	// The personal shop window and the safebox each close through CHARACTER
+	// still; each is its own migration, and they share one resolve here.
 	if (ecs::PlayerRuntime::IsPC(victim))
 	{
+		CShopManager::instance().StopShopping(victim);
 		if (LPCHARACTER windows = ecs::LegacyCharOf(victim))
 		{
-			CShopManager::instance().StopShopping(windows);
 			windows->CloseMyShop();
 			windows->CloseSafebox();
 		}

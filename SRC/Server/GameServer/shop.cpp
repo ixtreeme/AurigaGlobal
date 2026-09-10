@@ -34,7 +34,7 @@ namespace
 //#define ENABLE_SHOP_BLACKLIST
 /* ------------------------------------------------------------------------------------ */
 CShop::CShop()
-	: m_dwVnum(0), m_dwNPCVnum(0), m_pkPC(nullptr)
+	: m_dwVnum(0), m_dwNPCVnum(0)
 {
 #ifdef ENABLE_120_SHOP_SLOT_RAZOR93
 	m_pGrid = M2_NEW CGrid(15, 9);
@@ -67,7 +67,7 @@ CShop::~CShop()
 	M2_DELETE(m_pGrid);
 }
 
-void CShop::SetPCShop(LPCHARACTER ch)
+void CShop::SetPCShop(entt::entity ch)
 {
 	m_pkPC = ch;
 }
@@ -107,22 +107,19 @@ void CShop::SetShopItems(TShopItemTable * pTable, uint8_t bItemCount)
 
 	for (int i = 0; i < bItemCount; ++i)
 	{
-		const entt::entity pC = m_pkPC ? m_pkPC->GetEntityHandle() : entt::null;
-		LPITEM pkItem = nullptr;
 		entt::entity pkItemEntity = entt::null;
 		const TItemTable * item_table;
 
-		if (m_pkPC)
+		if (m_pkPC != entt::null)
 		{
-			pkItem = m_pkPC->GetItem(pTable->pos);
+			pkItemEntity = ItemSystem::GetItem(m_pkPC, pTable->pos);
 
-			if (!pkItem)
+			if (pkItemEntity == entt::null)
 			{
-				LOG_ERROR("cannot find item on pos ({}, {}) (name: {})", static_cast<int>(pTable->pos.window_type), pTable->pos.cell, ecs::PlayerRuntime::GetName(pC).data());
+				LOG_ERROR("cannot find item on pos ({}, {}) (name: {})", static_cast<int>(pTable->pos.window_type), pTable->pos.cell, ecs::PlayerRuntime::GetName(m_pkPC).data());
 				continue;
 			}
 
-			pkItemEntity = (pkItem ? pkItem->GetEntityHandle() : entt::null);
 			item_table = ItemSystem::GetItemProto(pkItemEntity);
 		}
 		else
@@ -159,7 +156,7 @@ void CShop::SetShopItems(TShopItemTable * pTable, uint8_t bItemCount)
 		{
 			if (IsPCShop())
 			{
-				LOG_ERROR("not empty position for pc shop {}[{}]", ecs::PlayerRuntime::GetName(pC).data(), ecs::PlayerRuntime::GetPlayerID(pC));
+				LOG_ERROR("not empty position for pc shop {}[{}]", ecs::PlayerRuntime::GetName(m_pkPC).data(), ecs::PlayerRuntime::GetPlayerID(m_pkPC));
 			}
 			else
 			{
@@ -216,15 +213,18 @@ void CShop::SetShopItems(TShopItemTable * pTable, uint8_t bItemCount)
 	}
 }
 
-int64_t CShop::Buy(LPCHARACTER ch, uint8_t pos
+int64_t CShop::Buy(entt::entity ch, uint8_t pos
 #ifdef ENABLE_BUY_STACK_FROM_SHOP
 , bool multiple
 #endif
 )
 
 {
-	const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
-	const entt::entity pC = m_pkPC ? m_pkPC->GetEntityHandle() : entt::null;
+	// Counting, emptying and saving the buyer's inventory still go through
+	// CHARACTER; the inventory is its own migration. One resolve, named.
+	LPCHARACTER inventory = ecs::LegacyCharOf(ch);
+	if (!inventory)
+		return SHOP_SUBHEADER_GC_END;
 #ifdef ENABLE_BUY_STACK_FROM_SHOP
 	bool ismultiple = multiple;
 #else
@@ -233,13 +233,13 @@ int64_t CShop::Buy(LPCHARACTER ch, uint8_t pos
 
 	if (!ismultiple) {
 #ifdef ENABLE_RESTRICT_GM_PERMISSIONS
-		if (ecs::PlayerRuntime::GetGMLevel(chEntity) > GM_PLAYER && ecs::PlayerRuntime::GetGMLevel(chEntity) < GM_IMPLEMENTOR) {
+		if (ecs::PlayerRuntime::GetGMLevel(ch) > GM_PLAYER && ecs::PlayerRuntime::GetGMLevel(ch) < GM_IMPLEMENTOR) {
 			return SHOP_SUBHEADER_GC_OK;
 		}
 #endif
 
 #ifdef ENABLE_LIMIT_BUY_SPEED
-		int iPulse = thecore_pulse() - ch->GetLastBuyTime();
+		int iPulse = thecore_pulse() - ecs::SocialSystem::GetLastBuyTime(ch);
 		if (iPulse < PASSES_PER_SEC(1)) {
 			return SHOP_SUBHEADER_GC_OK;
 		}
@@ -248,7 +248,7 @@ int64_t CShop::Buy(LPCHARACTER ch, uint8_t pos
 #ifdef ENABLE_BUY_STACK_FROM_SHOP
 	else
 	{
-		if (m_pkPC)
+		if (m_pkPC != entt::null)
 		{
 			return SHOP_SUBHEADER_GC_OK;
 		}
@@ -257,11 +257,11 @@ int64_t CShop::Buy(LPCHARACTER ch, uint8_t pos
 
 	if (pos >= m_itemVector.size())
 	{
-		LOG_INFO("Shop::Buy : invalid position {} : {}", static_cast<int>(pos), ecs::PlayerRuntime::GetName(chEntity).data());
+		LOG_INFO("Shop::Buy : invalid position {} : {}", static_cast<int>(pos), ecs::PlayerRuntime::GetName(ch).data());
 		return SHOP_SUBHEADER_GC_INVALID_POS;
 	}
 
-	GuestMapType::iterator it = m_map_guest.find(ch ? ch->GetEntityHandle() : entt::null);
+	GuestMapType::iterator it = m_map_guest.find(ch);
 	if (it == m_map_guest.end()) {
 		return SHOP_SUBHEADER_GC_END;
 	}
@@ -272,10 +272,10 @@ int64_t CShop::Buy(LPCHARACTER ch, uint8_t pos
 
 		if (IsPCShop()) {
 			if (selectedItem == entt::null || !ItemSystem::IsValidItem(selectedItem)) {
-				LOG_INFO("Shop::Buy : Critical: This user seems to be a hacker : invalid pcshop item : BuyerPID:{} SellerPID:{}", ecs::PlayerRuntime::GetPlayerID(chEntity), ecs::PlayerRuntime::GetPlayerID(pC));
+				LOG_INFO("Shop::Buy : Critical: This user seems to be a hacker : invalid pcshop item : BuyerPID:{} SellerPID:{}", ecs::PlayerRuntime::GetPlayerID(ch), ecs::PlayerRuntime::GetPlayerID(m_pkPC));
 				return SHOP_SUBHEADER_GC_SOLD_OUT;
-			} else if (ItemSystem::GetItemOwner(selectedItem) != pC) {
-				LOG_INFO("Shop::Buy : Critical: This user seems to be a hacker : invalid pcshop item : BuyerPID:{} SellerPID:{}", ecs::PlayerRuntime::GetPlayerID(chEntity), ecs::PlayerRuntime::GetPlayerID(pC));
+			} else if (ItemSystem::GetItemOwner(selectedItem) != m_pkPC) {
+				LOG_INFO("Shop::Buy : Critical: This user seems to be a hacker : invalid pcshop item : BuyerPID:{} SellerPID:{}", ecs::PlayerRuntime::GetPlayerID(ch), ecs::PlayerRuntime::GetPlayerID(m_pkPC));
 				return SHOP_SUBHEADER_GC_SOLD_OUT;
 			}
 		}
@@ -284,7 +284,7 @@ int64_t CShop::Buy(LPCHARACTER ch, uint8_t pos
 
 	int64_t dwPrice = r_item.price;
 
-	if (ecs::PointSystem::GetGold(chEntity) < dwPrice)
+	if (ecs::PointSystem::GetGold(ch) < dwPrice)
 	{
 		return SHOP_SUBHEADER_GC_NOT_ENOUGH_MONEY;
 	}
@@ -295,21 +295,21 @@ int64_t CShop::Buy(LPCHARACTER ch, uint8_t pos
 		dwPriceVnum = r_item.itemprice[i].vnum;
 		if (dwPriceVnum > 0) {
 			dwPriceCount = r_item.itemprice[i].count;
-			dwHaveCount = ch->CountSpecifyItem(dwPriceVnum);
+			dwHaveCount = inventory->CountSpecifyItem(dwPriceVnum);
 			if (dwHaveCount < dwPriceCount) {
-				LOG_INFO("Shop::Buy : Not enough item : {} has {}, price {}.", ecs::PlayerRuntime::GetName(chEntity).data(), dwHaveCount, dwPriceCount);
+				LOG_INFO("Shop::Buy : Not enough item : {} has {}, price {}.", ecs::PlayerRuntime::GetName(ch).data(), dwHaveCount, dwPriceCount);
 				return SHOP_SUBHEADER_GC_NOT_ENOUGH_ITEM;
 			}
 		}
 	}
 #endif
 
-	entt::entity itemEntity = m_pkPC ? r_item.pkItem : ITEM_MANAGER::instance().CreateItem(r_item.vnum, r_item.count, 0, true);
+	entt::entity itemEntity = m_pkPC != entt::null ? r_item.pkItem : ITEM_MANAGER::instance().CreateItem(r_item.vnum, r_item.count, 0, true);
 	if (!ItemSystem::IsValidItem(itemEntity))
 		return SHOP_SUBHEADER_GC_SOLD_OUT;
 
 #ifdef ENABLE_SHOP_BLACKLIST
-	if (!m_pkPC)
+	if (m_pkPC == entt::null)
 	{
 		if (quest::CQuestManager::instance().GetEventFlag("hivalue_item_sell") == 0)
 		{
@@ -325,29 +325,29 @@ int64_t CShop::Buy(LPCHARACTER ch, uint8_t pos
 	int iEmptyPos;
 	if (ItemSystem::IsDragonSoulItem(itemEntity))
 	{
-		iEmptyPos = ItemSystem::GetEmptyDragonSoulInventory(chEntity, itemEntity);
+		iEmptyPos = ItemSystem::GetEmptyDragonSoulInventory(ch, itemEntity);
 	}
 #ifdef ENABLE_EXTRA_INVENTORY
 	else if (ItemSystem::IsExtraItem(itemEntity))
 	{
-		iEmptyPos = ItemSystem::GetEmptyExtraInventory(chEntity, itemEntity);
+		iEmptyPos = ItemSystem::GetEmptyExtraInventory(ch, itemEntity);
 	}
 #endif
 	else
 	{
-		iEmptyPos = ch->GetEmptyInventory(ItemSystem::GetItemSize(itemEntity));
+		iEmptyPos = inventory->GetEmptyInventory(ItemSystem::GetItemSize(itemEntity));
 	}
 
 	if (iEmptyPos < 0)
 	{
-		if (m_pkPC)
+		if (m_pkPC != entt::null)
 		{
-			LOG_INFO("Shop::Buy at PC Shop : Inventory full : {} size {}", ecs::PlayerRuntime::GetName(chEntity).data(), ItemSystem::GetItemSize(itemEntity));
+			LOG_INFO("Shop::Buy at PC Shop : Inventory full : {} size {}", ecs::PlayerRuntime::GetName(ch).data(), ItemSystem::GetItemSize(itemEntity));
 			return SHOP_SUBHEADER_GC_INVENTORY_FULL;
 		}
 		else
 		{
-			LOG_INFO("Shop::Buy : Inventory full : {} size {}", ecs::PlayerRuntime::GetName(chEntity).data(), ItemSystem::GetItemSize(itemEntity));
+			LOG_INFO("Shop::Buy : Inventory full : {} size {}", ecs::PlayerRuntime::GetName(ch).data(), ItemSystem::GetItemSize(itemEntity));
 			ItemSystem::DestroyItemEntityEcs(
 				itemEntity,
 				"SHOP_TRANSACTION");
@@ -356,7 +356,7 @@ int64_t CShop::Buy(LPCHARACTER ch, uint8_t pos
 	}
 
 	if (dwPrice > 0) {
-		ecs::PointSystem::Change(chEntity, POINT_GOLD, -dwPrice, false);
+		ecs::PointSystem::Change(ch, POINT_GOLD, -dwPrice, false);
 	}
 
 #ifdef ENABLE_BUY_WITH_ITEM
@@ -365,7 +365,7 @@ int64_t CShop::Buy(LPCHARACTER ch, uint8_t pos
 		if (dwPriceVnum > 0) {
 			dwPriceCount = r_item.itemprice[i].count;
 			if (dwPriceCount > 0) {
-				ch->RemoveSpecifyItem(dwPriceVnum, r_item.itemprice[i].count);
+				ItemSystem::RemoveSpecifyItemEcs(ch, dwPriceVnum, r_item.itemprice[i].count);
 			}
 		}
 	}
@@ -395,16 +395,16 @@ int64_t CShop::Buy(LPCHARACTER ch, uint8_t pos
 	}
 
 	// 군주 시스템 : 세금 징수
-	if (m_pkPC)
+	if (m_pkPC != entt::null)
 	{
 #ifdef ENABLE_EXTRA_INVENTORY
 		if (ItemSystem::IsExtraItem(itemEntity)) {
-			m_pkPC->SyncQuickslot(QUICKSLOT_TYPE_ITEM_EXTRA, ItemSystem::GetItemCell(itemEntity), 255);
+			InventorySystem::SyncQuickslot(m_pkPC, QUICKSLOT_TYPE_ITEM_EXTRA, ItemSystem::GetItemCell(itemEntity), 255);
 		} else {
-			m_pkPC->SyncQuickslot(QUICKSLOT_TYPE_ITEM, ItemSystem::GetItemCell(itemEntity), 255);
+			InventorySystem::SyncQuickslot(m_pkPC, QUICKSLOT_TYPE_ITEM, ItemSystem::GetItemCell(itemEntity), 255);
 		}
 #else
-		m_pkPC->SyncQuickslot(QUICKSLOT_TYPE_ITEM, ItemSystem::GetItemCell(itemEntity), 255);
+		InventorySystem::SyncQuickslot(m_pkPC, QUICKSLOT_TYPE_ITEM, ItemSystem::GetItemCell(itemEntity), 255);
 #endif
 
 		{
@@ -412,15 +412,15 @@ int64_t CShop::Buy(LPCHARACTER ch, uint8_t pos
 
 			if (ItemSystem::GetItemVnum(itemEntity) >= 80003 && ItemSystem::GetItemVnum(itemEntity) <= 80007)
 			{
-				snprintf(buf, sizeof(buf), "%s FROM: %u TO: %u PRICE: %lld", ItemSystem::GetItemName(itemEntity), ecs::PlayerRuntime::GetPlayerID(chEntity), ecs::PlayerRuntime::GetPlayerID(pC), dwPrice);
-				LogManager::instance().GoldBarLog(ecs::PlayerRuntime::GetPlayerID(chEntity), ItemSystem::GetItemID(itemEntity), SHOP_BUY, buf);
-				LogManager::instance().GoldBarLog(ecs::PlayerRuntime::GetPlayerID(pC), ItemSystem::GetItemID(itemEntity), SHOP_SELL, buf);
+				snprintf(buf, sizeof(buf), "%s FROM: %u TO: %u PRICE: %lld", ItemSystem::GetItemName(itemEntity), ecs::PlayerRuntime::GetPlayerID(ch), ecs::PlayerRuntime::GetPlayerID(m_pkPC), dwPrice);
+				LogManager::instance().GoldBarLog(ecs::PlayerRuntime::GetPlayerID(ch), ItemSystem::GetItemID(itemEntity), SHOP_BUY, buf);
+				LogManager::instance().GoldBarLog(ecs::PlayerRuntime::GetPlayerID(m_pkPC), ItemSystem::GetItemID(itemEntity), SHOP_SELL, buf);
 			}
 
 			InventorySystem::RemoveFromCharacter(itemEntity);
 
 			if (ItemSystem::IsDragonSoulItem(itemEntity)) {
-				InventorySystem::AddToCharacter(itemEntity, ch->GetEntityHandle(), TItemPos(DRAGON_SOUL_INVENTORY, iEmptyPos));
+				InventorySystem::AddToCharacter(itemEntity, ch, TItemPos(DRAGON_SOUL_INVENTORY, iEmptyPos));
 			}
 #ifdef ENABLE_EXTRA_INVENTORY
 			else if (ItemSystem::IsExtraItem(itemEntity)) {
@@ -433,7 +433,7 @@ int64_t CShop::Buy(LPCHARACTER ch, uint8_t pos
 #endif
 					bCount = ItemSystem::GetItemCount(itemEntity);
 					for (int i = 0; i < EXTRA_INVENTORY_MAX_NUM; ++i) {
-						const entt::entity item2 = ItemSystem::GetExtraInventoryItem(chEntity, i);
+						const entt::entity item2 = ItemSystem::GetExtraInventoryItem(ch, i);
 						if (!ItemSystem::IsValidItem(item2))
 							continue;
 
@@ -471,13 +471,13 @@ int64_t CShop::Buy(LPCHARACTER ch, uint8_t pos
 						ItemSystem::SetItemCountEcs(
 						itemEntity,
 						bCount);
-						InventorySystem::AddToCharacter(itemEntity, ch->GetEntityHandle(), TItemPos(EXTRA_INVENTORY, iEmptyPos));
+						InventorySystem::AddToCharacter(itemEntity, ch, TItemPos(EXTRA_INVENTORY, iEmptyPos));
 					}
 				} else {
-					InventorySystem::AddToCharacter(itemEntity, ch->GetEntityHandle(), TItemPos(EXTRA_INVENTORY, iEmptyPos));
+					InventorySystem::AddToCharacter(itemEntity, ch, TItemPos(EXTRA_INVENTORY, iEmptyPos));
 				}
 #else
-				InventorySystem::AddToCharacter(itemEntity, ch->GetEntityHandle(), TItemPos(EXTRA_INVENTORY, iEmptyPos));
+				InventorySystem::AddToCharacter(itemEntity, ch, TItemPos(EXTRA_INVENTORY, iEmptyPos));
 #endif
 			}
 #endif
@@ -491,7 +491,7 @@ int64_t CShop::Buy(LPCHARACTER ch, uint8_t pos
 #endif
 					bCount = ItemSystem::GetItemCount(itemEntity);
 					for (int i = 0; i < INVENTORY_MAX_NUM; ++i) {
-						const entt::entity item2 = ItemSystem::GetInventoryItem(chEntity, i);
+						const entt::entity item2 = ItemSystem::GetInventoryItem(ch, i);
 						if (!ItemSystem::IsValidItem(item2))
 							continue;
 
@@ -529,13 +529,13 @@ int64_t CShop::Buy(LPCHARACTER ch, uint8_t pos
 						ItemSystem::SetItemCountEcs(
 						itemEntity,
 						bCount);
-						InventorySystem::AddToCharacter(itemEntity, ch->GetEntityHandle(), TItemPos(INVENTORY, iEmptyPos));
+						InventorySystem::AddToCharacter(itemEntity, ch, TItemPos(INVENTORY, iEmptyPos));
 					}
 				} else {
-					InventorySystem::AddToCharacter(itemEntity, ch->GetEntityHandle(), TItemPos(INVENTORY, iEmptyPos));
+					InventorySystem::AddToCharacter(itemEntity, ch, TItemPos(INVENTORY, iEmptyPos));
 				}
 #else
-				InventorySystem::AddToCharacter(itemEntity, ch->GetEntityHandle(), TItemPos(INVENTORY, iEmptyPos));
+				InventorySystem::AddToCharacter(itemEntity, ch, TItemPos(INVENTORY, iEmptyPos));
 #endif
 			}
 
@@ -547,12 +547,12 @@ int64_t CShop::Buy(LPCHARACTER ch, uint8_t pos
 		r_item.pkItem = entt::null;
 		BroadcastUpdateItem(pos);
 
-		ecs::PointSystem::Change(pC, POINT_GOLD, dwPrice, false);
+		ecs::PointSystem::Change(m_pkPC, POINT_GOLD, dwPrice, false);
 	}
 	else
 	{
 		if (ItemSystem::IsDragonSoulItem(itemEntity)) {
-			InventorySystem::AddToCharacter(itemEntity, ch->GetEntityHandle(), TItemPos(DRAGON_SOUL_INVENTORY, iEmptyPos));
+			InventorySystem::AddToCharacter(itemEntity, ch, TItemPos(DRAGON_SOUL_INVENTORY, iEmptyPos));
 		}
 #ifdef ENABLE_EXTRA_INVENTORY
 		else if (ItemSystem::IsExtraItem(itemEntity)) {
@@ -565,7 +565,7 @@ int64_t CShop::Buy(LPCHARACTER ch, uint8_t pos
 #endif
 				bCount = ItemSystem::GetItemCount(itemEntity);
 				for (int i = 0; i < EXTRA_INVENTORY_MAX_NUM; ++i) {
-					const entt::entity item2 = ItemSystem::GetExtraInventoryItem(chEntity, i);
+					const entt::entity item2 = ItemSystem::GetExtraInventoryItem(ch, i);
 					if (!ItemSystem::IsValidItem(item2))
 						continue;
 
@@ -603,13 +603,13 @@ int64_t CShop::Buy(LPCHARACTER ch, uint8_t pos
 					ItemSystem::SetItemCountEcs(
 						itemEntity,
 						bCount);
-					InventorySystem::AddToCharacter(itemEntity, ch->GetEntityHandle(), TItemPos(EXTRA_INVENTORY, iEmptyPos));
+					InventorySystem::AddToCharacter(itemEntity, ch, TItemPos(EXTRA_INVENTORY, iEmptyPos));
 				}
 			} else {
-				InventorySystem::AddToCharacter(itemEntity, ch->GetEntityHandle(), TItemPos(EXTRA_INVENTORY, iEmptyPos));
+				InventorySystem::AddToCharacter(itemEntity, ch, TItemPos(EXTRA_INVENTORY, iEmptyPos));
 			}
 #else
-			InventorySystem::AddToCharacter(itemEntity, ch->GetEntityHandle(), TItemPos(EXTRA_INVENTORY, iEmptyPos));
+			InventorySystem::AddToCharacter(itemEntity, ch, TItemPos(EXTRA_INVENTORY, iEmptyPos));
 #endif
 		}
 #endif
@@ -623,7 +623,7 @@ int64_t CShop::Buy(LPCHARACTER ch, uint8_t pos
 #endif
 				bCount = ItemSystem::GetItemCount(itemEntity);
 				for (int i = 0; i < INVENTORY_MAX_NUM; ++i) {
-					const entt::entity item2 = ItemSystem::GetInventoryItem(chEntity, i);
+					const entt::entity item2 = ItemSystem::GetInventoryItem(ch, i);
 					if (!ItemSystem::IsValidItem(item2))
 						continue;
 
@@ -661,13 +661,13 @@ int64_t CShop::Buy(LPCHARACTER ch, uint8_t pos
 					ItemSystem::SetItemCountEcs(
 						itemEntity,
 						bCount);
-					InventorySystem::AddToCharacter(itemEntity, ch->GetEntityHandle(), TItemPos(INVENTORY, iEmptyPos));
+					InventorySystem::AddToCharacter(itemEntity, ch, TItemPos(INVENTORY, iEmptyPos));
 				}
 			} else {
-				InventorySystem::AddToCharacter(itemEntity, ch->GetEntityHandle(), TItemPos(INVENTORY, iEmptyPos));
+				InventorySystem::AddToCharacter(itemEntity, ch, TItemPos(INVENTORY, iEmptyPos));
 			}
 #else
-			InventorySystem::AddToCharacter(itemEntity, ch->GetEntityHandle(), TItemPos(INVENTORY, iEmptyPos));
+			InventorySystem::AddToCharacter(itemEntity, ch, TItemPos(INVENTORY, iEmptyPos));
 #endif
 		}
 
@@ -678,14 +678,14 @@ int64_t CShop::Buy(LPCHARACTER ch, uint8_t pos
 
 #ifdef ENABLE_BATTLE_PASS
 	{
-		uint8_t bBattlePassId = ch->GetBattlePassId();
+		uint8_t bBattlePassId = ecs::PlayerRuntime::GetBattlePassId(ch);
 		if(bBattlePassId)
 		{
 			uint32_t dwYangCount, dwNotUsed;
 			if(CBattlePass::instance().BattlePassMissionGetInfo(bBattlePassId, SPENT_YANG, &dwNotUsed, &dwYangCount))
 			{
-				if(ch->GetMissionProgress(SPENT_YANG, bBattlePassId) < dwYangCount)
-					ch->UpdateMissionProgress(SPENT_YANG, bBattlePassId, dwPrice, dwYangCount);
+				if(ecs::PlayerRuntime::GetMissionProgress(ch, SPENT_YANG, bBattlePassId) < dwYangCount)
+					ecs::PlayerRuntime::UpdateMissionProgress(ch, SPENT_YANG, bBattlePassId, dwPrice, dwYangCount);
 			}
 		}
 	}
@@ -693,29 +693,32 @@ int64_t CShop::Buy(LPCHARACTER ch, uint8_t pos
 
 	if (!ismultiple) {
 #ifdef ENABLE_LIMIT_BUY_SPEED
-		ch->SetLastBuyTime();
+		ecs::SocialSystem::SetLastBuyTime(ch);
 #endif
-		ch->Save();
+		inventory->Save();
 	}
 
 	return (SHOP_SUBHEADER_GC_OK);
 }
 
 #ifdef ENABLE_BUY_STACK_FROM_SHOP
-uint8_t CShop::MultipleBuy(LPCHARACTER ch, uint8_t p, uint8_t c) {
-	const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
+uint8_t CShop::MultipleBuy(entt::entity ch, uint8_t p, uint8_t c) {
+	// As in Buy: the inventory count and the save are still CHARACTER work.
+	LPCHARACTER inventory = ecs::LegacyCharOf(ch);
+	if (!inventory)
+		return SHOP_SUBHEADER_GC_END;
 	if (p < 0 || c <= 0 || c > MULTIPLE_BUY_LIMIT) {
 		return SHOP_SUBHEADER_GC_OK;
 	}
 
 #ifdef ENABLE_RESTRICT_GM_PERMISSIONS
-	if (ecs::PlayerRuntime::GetGMLevel(chEntity) > GM_PLAYER && ecs::PlayerRuntime::GetGMLevel(chEntity) < GM_IMPLEMENTOR) {
+	if (ecs::PlayerRuntime::GetGMLevel(ch) > GM_PLAYER && ecs::PlayerRuntime::GetGMLevel(ch) < GM_IMPLEMENTOR) {
 		return SHOP_SUBHEADER_GC_OK;
 	}
 #endif
 
 #ifdef ENABLE_LIMIT_BUY_SPEED
-	int32_t iPulse = thecore_pulse() - ch->GetLastBuyTime();
+	int32_t iPulse = thecore_pulse() - ecs::SocialSystem::GetLastBuyTime(ch);
 	if (iPulse < PASSES_PER_SEC(1)) {
 		return SHOP_SUBHEADER_GC_OK;
 	}
@@ -726,11 +729,11 @@ uint8_t CShop::MultipleBuy(LPCHARACTER ch, uint8_t p, uint8_t c) {
 	}
 
 	if (p >= m_itemVector.size()) {
-		LOG_INFO("Shop::MultipleBuy: invalid position {} : {}", static_cast<int>(p), ecs::PlayerRuntime::GetName(chEntity).data());
+		LOG_INFO("Shop::MultipleBuy: invalid position {} : {}", static_cast<int>(p), ecs::PlayerRuntime::GetName(ch).data());
 		return SHOP_SUBHEADER_GC_INVALID_POS;
 	}
 
-	GuestMapType::iterator it = m_map_guest.find(ch ? ch->GetEntityHandle() : entt::null);
+	GuestMapType::iterator it = m_map_guest.find(ch);
 	if (it == m_map_guest.end()) {
 		return SHOP_SUBHEADER_GC_END;
 	}
@@ -739,7 +742,7 @@ uint8_t CShop::MultipleBuy(LPCHARACTER ch, uint8_t p, uint8_t c) {
 
 	int64_t price = r_item.price * c;
 
-	if (ecs::PointSystem::GetGold(chEntity) < price) {
+	if (ecs::PointSystem::GetGold(ch) < price) {
 		return SHOP_SUBHEADER_GC_NOT_ENOUGH_MONEY;
 	}
 
@@ -749,9 +752,9 @@ uint8_t CShop::MultipleBuy(LPCHARACTER ch, uint8_t p, uint8_t c) {
 		price_vnum = r_item.itemprice[i].vnum;
 		if (price_vnum > 0) {
 			price_count = r_item.itemprice[i].count * c;
-			have_count = ch->CountSpecifyItem(price_vnum);
+			have_count = inventory->CountSpecifyItem(price_vnum);
 			if (have_count < price_count) {
-				LOG_INFO("Shop::MultipleBuy: Not enough item : {} has {}, price {}.", ecs::PlayerRuntime::GetName(chEntity).data(), have_count, price_count);
+				LOG_INFO("Shop::MultipleBuy: Not enough item : {} has {}, price {}.", ecs::PlayerRuntime::GetName(ch).data(), have_count, price_count);
 				return SHOP_SUBHEADER_GC_NOT_ENOUGH_ITEM;
 			}
 		}
@@ -776,9 +779,9 @@ uint8_t CShop::MultipleBuy(LPCHARACTER ch, uint8_t p, uint8_t c) {
 	}
 
 #ifdef ENABLE_LIMIT_BUY_SPEED
-	ch->SetLastBuyTime();
+	ecs::SocialSystem::SetLastBuyTime(ch);
 #endif
-	ch->Save();
+	inventory->Save();
 	return c <= 0 ? SHOP_SUBHEADER_GC_OK : r;
 }
 #endif
@@ -824,7 +827,7 @@ bool CShop::AddGuest(entt::entity guest, uint32_t owner_vid, bool bOtherEmpire)
 		}
 #endif
 		//END_HIVALUE_ITEM_EVENT
-		if (m_pkPC && !ItemSystem::IsValidItem(item.pkItem))
+		if (m_pkPC != entt::null && !ItemSystem::IsValidItem(item.pkItem))
 			continue;
 
 		pack2.items[i].vnum = item.vnum;
@@ -920,7 +923,7 @@ void CShop::BroadcastUpdateItem(uint8_t pos)
 
 	pack2.pos		= pos;
 
-	if (m_pkPC && !ItemSystem::IsValidItem(m_itemVector[pos].pkItem))
+	if (m_pkPC != entt::null && !ItemSystem::IsValidItem(m_itemVector[pos].pkItem))
 		pack2.item.vnum = 0;
 	else
 	{

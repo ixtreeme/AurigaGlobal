@@ -2020,9 +2020,6 @@ public:
 	//PREVENT_PORTAL_AFTER_EXCHANGE
 	//END_PREVENT_PORTAL_AFTER_EXCHANGE
 
-	int 	m_iMyShopTime;
-	int		GetMyShopTime() const { return m_iMyShopTime; }
-	void	SetMyShopTime();
 
 	// Hack ������ ���� üũ.
 	bool	IsHack(bool bSendMsg = true, bool bCheckShopOwner = true, int limittime = g_nPortalLimitTime);
@@ -2083,10 +2080,7 @@ private:
 	uint32_t m_dwLastGoldDropTime;
 #ifdef ENABLE_NEWSTUFF
 	uint32_t m_dwLastBoxUseTime;
-	uint32_t m_dwLastBuySellTime;
 public:
-	uint32_t GetLastBuySellTime() const { return m_dwLastBuySellTime; }
-	void SetLastBuySellTime(uint32_t dwLastBuySellTime) { m_dwLastBuySellTime = dwLastBuySellTime; }
 #endif
 public:
 	void AutoRecoveryItemProcess(const EAffectTypes);
@@ -2344,11 +2338,8 @@ protected:
 
 #ifdef ENABLE_LIMIT_BUY_SPEED
 public:
-	int			GetLastBuyTime() const { return m_iLastBuyTime; }
-	void		SetLastBuyTime() { m_iLastBuyTime = thecore_pulse(); }
 
 protected:
-	int			m_iLastBuyTime;
 #endif
 
 #ifdef ENABLE_REVIVE_WITH_HALF_HP_IF_MONSTER_KILLED_YOU

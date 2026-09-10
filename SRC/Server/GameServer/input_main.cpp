@@ -1821,7 +1821,7 @@ int CInputMain::Shop(entt::entity character, const char * data, size_t uiBytes)
 	{
 		case SHOP_SUBHEADER_CG_END:
 			LOG_INFO("INPUT: {} SHOP: END", ecs::PlayerRuntime::GetName(character).data());
-			CShopManager::instance().StopShopping(ch);
+			CShopManager::instance().StopShopping(character);
 			return 0;
 
 		case SHOP_SUBHEADER_CG_BUY:
@@ -1831,7 +1831,7 @@ int CInputMain::Shop(entt::entity character, const char * data, size_t uiBytes)
 
 				uint8_t bPos = *(c_pData + 1);
 				LOG_INFO("INPUT: {} SHOP: BUY {}", ecs::PlayerRuntime::GetName(character).data(), bPos);
-				CShopManager::instance().Buy(ch, bPos);
+				CShopManager::instance().Buy(character, bPos);
 				return (sizeof(uint8_t) + sizeof(uint8_t));
 			}
 #ifndef ENABLE_EXTRA_INVENTORY
@@ -1843,7 +1843,7 @@ int CInputMain::Shop(entt::entity character, const char * data, size_t uiBytes)
 				uint8_t pos = *c_pData;
 
 				LOG_INFO("INPUT: {} SHOP: SELL", ecs::PlayerRuntime::GetName(character).data());
-				CShopManager::instance().Sell(ch, pos);
+				CShopManager::instance().Sell(character, pos);
 				return sizeof(uint8_t);
 			}
 #endif
@@ -1876,7 +1876,7 @@ int CInputMain::Shop(entt::entity character, const char * data, size_t uiBytes)
 #endif
 
 				LOG_INFO("INPUT: {} SHOP: SELL2", ecs::PlayerRuntime::GetName(character).data());
-				CShopManager::instance().Sell(ch,
+				CShopManager::instance().Sell(character,
 #ifdef ENABLE_EXTRA_INVENTORY
 				TItemPos(window, cell),
 #else
@@ -1907,7 +1907,7 @@ int CInputMain::Shop(entt::entity character, const char * data, size_t uiBytes)
 				uint8_t p = *(c_pData++);
 				uint8_t c = *(c_pData);
 				LOG_INFO("INPUT: {} SHOP: MULTIPLE BUY {} COUNT {}", ecs::PlayerRuntime::GetName(character).data(), p, c);
-				CShopManager::instance().MultipleBuy(ch, p, c);
+				CShopManager::instance().MultipleBuy(character, p, c);
 				return size;
 			}
 #endif

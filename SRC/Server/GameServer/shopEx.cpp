@@ -126,20 +126,24 @@ bool CShopEx::AddGuest(entt::entity guest, uint32_t owner_vid, bool bOtherEmpire
 	return true;
 }
 
-int64_t CShopEx::Buy(LPCHARACTER ch, uint8_t pos)
+int64_t CShopEx::Buy(entt::entity ch, uint8_t pos)
 {
-	const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
+	// Counting and removing the coin, finding a free slot and saving are
+	// still CHARACTER work; the inventory is its own migration.
+	LPCHARACTER inventory = ecs::LegacyCharOf(ch);
+	if (!inventory)
+		return SHOP_SUBHEADER_GC_END;
 	uint8_t tabIdx = pos / SHOP_HOST_ITEM_MAX_NUM;
 	uint8_t slotPos = pos % SHOP_HOST_ITEM_MAX_NUM;
 	if (tabIdx >= GetTabCount())
 	{
-		LOG_INFO("ShopEx::Buy : invalid position {} : {}", pos, ecs::PlayerRuntime::GetName(chEntity).data());
+		LOG_INFO("ShopEx::Buy : invalid position {} : {}", pos, ecs::PlayerRuntime::GetName(ch).data());
 		return SHOP_SUBHEADER_GC_INVALID_POS;
 	}
 
-	LOG_INFO("ShopEx::Buy : name {} pos {}", ecs::PlayerRuntime::GetName(chEntity).data(), pos);
+	LOG_INFO("ShopEx::Buy : name {} pos {}", ecs::PlayerRuntime::GetName(ch).data(), pos);
 
-	GuestMapType::iterator it = m_map_guest.find(ch ? ch->GetEntityHandle() : entt::null);
+	GuestMapType::iterator it = m_map_guest.find(ch);
 
 	if (it == m_map_guest.end())
 		return SHOP_SUBHEADER_GC_END;
@@ -149,7 +153,7 @@ int64_t CShopEx::Buy(LPCHARACTER ch, uint8_t pos)
 
 	if (r_item.price <= 0)
 	{
-		LogManager::instance().HackLog("SHOP_BUY_GOLD_OVERFLOW", chEntity);
+		LogManager::instance().HackLog("SHOP_BUY_GOLD_OVERFLOW", ch);
 		return SHOP_SUBHEADER_GC_NOT_ENOUGH_MONEY;
 	}
 
@@ -161,19 +165,19 @@ int64_t CShopEx::Buy(LPCHARACTER ch, uint8_t pos)
 		if (it->second)	// if other empire, price is triple
 			dwPrice *= 3;
 
-		if (ecs::PointSystem::GetGold(chEntity) < dwPrice)
+		if (ecs::PointSystem::GetGold(ch) < dwPrice)
 		{
-			LOG_INFO("ShopEx::Buy : Not enough money : {} has {}, price {}", ecs::PlayerRuntime::GetName(chEntity).data(), ecs::PointSystem::GetGold(chEntity), dwPrice);
+			LOG_INFO("ShopEx::Buy : Not enough money : {} has {}, price {}", ecs::PlayerRuntime::GetName(ch).data(), ecs::PointSystem::GetGold(ch), dwPrice);
 			return SHOP_SUBHEADER_GC_NOT_ENOUGH_MONEY;
 		}
 
 		break;
 	case SHOP_COIN_TYPE_SECONDARY_COIN:
 		{
-			uint32_t count = ch->CountSpecifyTypeItem(ITEM_SECONDARY_COIN);
+			uint32_t count = inventory->CountSpecifyTypeItem(ITEM_SECONDARY_COIN);
 			if (count < dwPrice)
 			{
-				LOG_INFO("ShopEx::Buy : Not enough myeongdojun : {} has {}, price {}", ecs::PlayerRuntime::GetName(chEntity).data(), count, dwPrice);
+				LOG_INFO("ShopEx::Buy : Not enough myeongdojun : {} has {}, price {}", ecs::PlayerRuntime::GetName(ch).data(), count, dwPrice);
 				return SHOP_SUBHEADER_GC_NOT_ENOUGH_MONEY_EX;
 			}
 		}
@@ -190,22 +194,22 @@ int64_t CShopEx::Buy(LPCHARACTER ch, uint8_t pos)
 	int iEmptyPos;
 	if (ItemSystem::IsDragonSoulItem(item))
 	{
-		iEmptyPos = ItemSystem::GetEmptyDragonSoulInventory(chEntity, item);
+		iEmptyPos = ItemSystem::GetEmptyDragonSoulInventory(ch, item);
 	}
 #ifdef ENABLE_EXTRA_INVENTORY
 	else if (ItemSystem::IsExtraItem(item))
 	{
-		iEmptyPos = ItemSystem::GetEmptyExtraInventory(chEntity, item);
+		iEmptyPos = ItemSystem::GetEmptyExtraInventory(ch, item);
 	}
 #endif
 	else
 	{
-		iEmptyPos = ch->GetEmptyInventory(ItemSystem::GetItemSize(item));
+		iEmptyPos = inventory->GetEmptyInventory(ItemSystem::GetItemSize(item));
 	}
 
 	if (iEmptyPos < 0)
 	{
-		LOG_INFO("ShopEx::Buy : Inventory full : {} size {}", ecs::PlayerRuntime::GetName(chEntity).data(), ItemSystem::GetItemSize(item));
+		LOG_INFO("ShopEx::Buy : Inventory full : {} size {}", ecs::PlayerRuntime::GetName(ch).data(), ItemSystem::GetItemSize(item));
 		ItemSystem::DestroyItemEntityEcs(
 			item,
 			"SHOP_EX_TRANSACTION");
@@ -215,46 +219,46 @@ int64_t CShopEx::Buy(LPCHARACTER ch, uint8_t pos)
 	switch (shopTab.coinType)
 	{
 	case SHOP_COIN_TYPE_GOLD:
-		ecs::PointSystem::Change(chEntity, POINT_GOLD, -dwPrice, false);
+		ecs::PointSystem::Change(ch, POINT_GOLD, -dwPrice, false);
 		break;
 	case SHOP_COIN_TYPE_SECONDARY_COIN:
-		ch->RemoveSpecifyTypeItem(ITEM_SECONDARY_COIN, dwPrice);
+		inventory->RemoveSpecifyTypeItem(ITEM_SECONDARY_COIN, dwPrice);
 		break;
 	}
 
 
 	if (ItemSystem::IsDragonSoulItem(item))
-		InventorySystem::AddToCharacter(item, ch->GetEntityHandle(), TItemPos(DRAGON_SOUL_INVENTORY, iEmptyPos));
+		InventorySystem::AddToCharacter(item, ch, TItemPos(DRAGON_SOUL_INVENTORY, iEmptyPos));
 #ifdef ENABLE_EXTRA_INVENTORY
 	else if (ItemSystem::IsExtraItem(item))
-		InventorySystem::AddToCharacter(item, ch->GetEntityHandle(), TItemPos(EXTRA_INVENTORY, iEmptyPos));
+		InventorySystem::AddToCharacter(item, ch, TItemPos(EXTRA_INVENTORY, iEmptyPos));
 #endif
 	else
-		InventorySystem::AddToCharacter(item, ch->GetEntityHandle(), TItemPos(INVENTORY, iEmptyPos));
+		InventorySystem::AddToCharacter(item, ch, TItemPos(INVENTORY, iEmptyPos));
 
 	ItemSystem::FlushDelayedSaveEcs(item);
-	LogManager::instance().ItemLogEntity(chEntity, item, "BUY", ItemSystem::GetItemName(item));
+	LogManager::instance().ItemLogEntity(ch, item, "BUY", ItemSystem::GetItemName(item));
 
 	if (ItemSystem::GetItemVnum(item) >= 80003 && ItemSystem::GetItemVnum(item) <= 80007)
 	{
-		LogManager::instance().GoldBarLog((ecs::PlayerRuntime::GetPlayerID(chEntity)), ItemSystem::GetItemID(item), PERSONAL_SHOP_BUY, "");
+		LogManager::instance().GoldBarLog((ecs::PlayerRuntime::GetPlayerID(ch)), ItemSystem::GetItemID(item), PERSONAL_SHOP_BUY, "");
 	}
 
 	DBManager::instance().SendMoneyLog(MONEY_LOG_SHOP, ItemSystem::GetItemVnum(item), -dwPrice);
 
 	if (ItemSystem::IsValidItem(item))
-		LOG_INFO("ShopEx: BUY: name {} {}(x {}):{} price {}", ecs::PlayerRuntime::GetName(chEntity).data(), ItemSystem::GetItemName(item), ItemSystem::GetItemCount(item), ItemSystem::GetItemID(item), dwPrice);
+		LOG_INFO("ShopEx: BUY: name {} {}(x {}):{} price {}", ecs::PlayerRuntime::GetName(ch).data(), ItemSystem::GetItemName(item), ItemSystem::GetItemCount(item), ItemSystem::GetItemID(item), dwPrice);
 
 #ifdef ENABLE_FLUSH_CACHE_FEATURE // @warme006
 	{
-		ch->SaveReal();
+		inventory->SaveReal();
 		db_clientdesc->DBPacketHeader(HEADER_GD_FLUSH_CACHE, 0, sizeof(uint32_t));
-		uint32_t pid = (ecs::PlayerRuntime::GetPlayerID(chEntity));
+		uint32_t pid = (ecs::PlayerRuntime::GetPlayerID(ch));
 		db_clientdesc->Packet(&pid, sizeof(uint32_t));
 	}
 #else
 	{
-		ch->Save();
+		inventory->Save();
 	}
 #endif
 

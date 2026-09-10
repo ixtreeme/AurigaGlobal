@@ -40,7 +40,8 @@ namespace quest
 		}
 
 		if (CQuestManager::instance().GetCurrentNPCCharacterPtr())
-			CShopManager::instance().StartShopping(CQuestManager::instance().GetCurrentCharacterPtr(), CQuestManager::instance().GetCurrentNPCCharacterPtr(), iShopVnum);
+			CShopManager::instance().StartShopping(CQuestManager::instance().GetCurrentCharacter(),
+			CQuestManager::instance().GetCurrentNPCEntity(), iShopVnum);
 		return 0;
 	}
 

@@ -49,22 +49,22 @@ class CShop
 		bool	Create(uint32_t dwVnum, uint32_t dwNPCVnum, TShopItemTable * pItemTable);
 		void	SetShopItems(TShopItemTable * pItemTable, uint8_t bItemCount);
 
-		virtual void	SetPCShop(LPCHARACTER ch);
-		virtual bool	IsPCShop()	{ return m_pkPC ? true : false; }
+		virtual void	SetPCShop(entt::entity ch);
+		virtual bool	IsPCShop()	{ return m_pkPC != entt::null; }
 
 		// 게스트 추가/삭제
 		virtual bool	AddGuest(entt::entity guest, uint32_t owner_vid, bool bOtherEmpire);
 		void	RemoveGuest(entt::entity guest);
 
 
-		virtual int64_t	Buy(LPCHARACTER ch, uint8_t pos
+		virtual int64_t	Buy(entt::entity ch, uint8_t pos
 #ifdef ENABLE_BUY_STACK_FROM_SHOP
 , bool multiple = false
 #endif
 );
 
 #ifdef ENABLE_BUY_STACK_FROM_SHOP
-		virtual uint8_t MultipleBuy(LPCHARACTER ch, uint8_t p, uint8_t c);
+		virtual uint8_t MultipleBuy(entt::entity ch, uint8_t p, uint8_t c);
 #endif
 		// 게스트에게 패킷을 보냄
 		void	BroadcastUpdateItem(uint8_t pos);
@@ -91,7 +91,8 @@ class CShop
 		GuestMapType m_map_guest;
 		std::vector<SHOP_ITEM>		m_itemVector;	// 이 상점에서 취급하는 물건들
 
-		LPCHARACTER			m_pkPC;
+		// The player whose personal shop this is, null for an NPC shop.
+		entt::entity			m_pkPC { entt::null };
 };
 
 #endif
