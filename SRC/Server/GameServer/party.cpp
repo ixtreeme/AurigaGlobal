@@ -972,9 +972,9 @@ void CParty::SendMessage(entt::entity character, uint8_t bMsg, uint32_t dwArg1, 
 
 		case PM_AGGRO_INCREASE:
 			{
-				auto* victim = CHARACTER_MANAGER::instance().Find(dwArg2);
+				const entt::entity victim = CHARACTER_MANAGER::instance().FindEntity(dwArg2);
 
-				if (!victim)
+				if (victim == entt::null)
 					return;
 
 				TMemberMap::iterator it = m_memberMap.begin();
@@ -988,7 +988,7 @@ void CParty::SendMessage(entt::entity character, uint8_t bMsg, uint32_t dwArg1, 
 
 					if ((pkChr = rMember.pCharacter) && ch != pkChr)
 					{
-						pkChr->UpdateAggrPoint((victim ? victim->GetEntityHandle() : entt::null), DAMAGE_TYPE_SPECIAL, dwArg1);
+						pkChr->UpdateAggrPoint(victim, DAMAGE_TYPE_SPECIAL, dwArg1);
 					}
 				}
 			}

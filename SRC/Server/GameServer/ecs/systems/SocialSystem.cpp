@@ -753,10 +753,9 @@ void CHARACTER::PartyInviteDeny(uint32_t dwPID)
     event_cancel(&itFind->second);
     m_PartyInviteEventMap.erase(itFind);
 #ifdef TEXTS_IMPROVEMENT
-    LPCHARACTER pchInvitee = CHARACTER_MANAGER::instance().FindByPID(dwPID);
-    if (pchInvitee) {
-		const entt::entity invitee = pchInvitee->GetEntityHandle();
-        ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 192, "%s", ecs::PlayerRuntime::GetName(invitee).data());
+    const entt::entity pchInvitee = CHARACTER_MANAGER::instance().FindEntityByPID(dwPID);
+    if (pchInvitee != entt::null) {
+        ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 192, "%s", ecs::PlayerRuntime::GetName(pchInvitee).data());
     }
 #endif
 }

@@ -4225,18 +4225,17 @@ void CInputMain::ItemGive(entt::entity character, const char* c_pData)
 	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::ItemGive");//INGAME_DEBUG_RAZOR93
 #endif
 	TPacketCGGiveItem* p = (TPacketCGGiveItem*) c_pData;
-	LPCHARACTER to_ch = CHARACTER_MANAGER::instance().Find(p->dwTargetVID);
-	const entt::entity to_chEntity = to_ch ? to_ch->GetEntityHandle() : entt::null;
+	const entt::entity to_chEntity = CHARACTER_MANAGER::instance().FindEntity(p->dwTargetVID);
 
 
-	if (to_ch) {
+	if (to_chEntity != entt::null) {
 #ifdef ENABLE_RESTRICT_GM_PERMISSIONS
 		if ((ecs::PlayerRuntime::GetGMLevel(to_chEntity) > GM_PLAYER && ecs::PlayerRuntime::GetGMLevel(to_chEntity) < GM_IMPLEMENTOR) || (ecs::PlayerRuntime::GetGMLevel(character) > GM_PLAYER && ecs::PlayerRuntime::GetGMLevel(character) < GM_IMPLEMENTOR)) {
 			return;
 		}
 #endif
 
-		ch->GiveItem((to_ch ? to_ch->GetEntityHandle() : entt::null), p->ItemPos);
+		ch->GiveItem(to_chEntity, p->ItemPos);
 	}
 #ifdef TEXTS_IMPROVEMENT
 	else {

@@ -696,10 +696,9 @@ namespace quest
 
 		int32_t vid = (int32_t)lua_tonumber(L, 1);
 
-		LPCHARACTER ch = CHARACTER_MANAGER::instance().Find(vid);
-		const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
+		const entt::entity chEntity = CHARACTER_MANAGER::instance().FindEntity(vid);
 
-		if (!ch) {
+		if (chEntity == entt::null) {
 			sys_err("The vid {} not exist.", vid);
 			lua_pushboolean(L, 0);
 			return 1;
@@ -719,13 +718,13 @@ namespace quest
 
 		if (!lastmeley)
 		{
-			lua_pushboolean(L, CombatSystem::SetInvincible(ch->GetEntityHandle(), what));
+			lua_pushboolean(L, CombatSystem::SetInvincible(chEntity, what));
 		}
 		else
 		{
 			if ((ecs::PlayerRuntime::GetRaceNum(chEntity)) == 6118 && !AffectSystem::FindAffect(chEntity, AFFECT_STATUE))
 			{
-				lua_pushboolean(L, CombatSystem::SetInvincible(ch->GetEntityHandle(), what));
+				lua_pushboolean(L, CombatSystem::SetInvincible(chEntity, what));
 			}
 			else
 			{
@@ -733,7 +732,7 @@ namespace quest
 			}
 		}
 #else
-		lua_pushboolean(L, CombatSystem::SetInvincible(ch->GetEntityHandle(), lua_toboolean(L, 2)));
+		lua_pushboolean(L, CombatSystem::SetInvincible(chEntity, lua_toboolean(L, 2)));
 #endif
 		return 1;
 	}
@@ -1738,46 +1737,42 @@ namespace quest
 
 		int32_t statue_vid1 = dungeon->GetFlag("statue_vid1"), statue_vid2 = dungeon->GetFlag("statue_vid2"), statue_vid3 = dungeon->GetFlag("statue_vid3"), statue_vid4 = dungeon->GetFlag("statue_vid4");
 
-		LPCHARACTER statue1 = CHARACTER_MANAGER::instance().Find(statue_vid1);
-		const entt::entity statue1Entity = statue1 ? statue1->GetEntityHandle() : entt::null;
+		const entt::entity statue1Entity = CHARACTER_MANAGER::instance().FindEntity(statue_vid1);
 
-		if (!statue1)
+		if (statue1Entity == entt::null)
 		{
 			sys_err("The vid {} not exist.", statue_vid1);
 			return 0;
 		}
 
-		LPCHARACTER statue2 = CHARACTER_MANAGER::instance().Find(statue_vid2);
-		const entt::entity statue2Entity = statue2 ? statue2->GetEntityHandle() : entt::null;
+		const entt::entity statue2Entity = CHARACTER_MANAGER::instance().FindEntity(statue_vid2);
 
-		if (!statue2)
+		if (statue2Entity == entt::null)
 		{
 			sys_err("The vid {} not exist.", statue_vid2);
 			return 0;
 		}
 
-		LPCHARACTER statue3 = CHARACTER_MANAGER::instance().Find(statue_vid3);
-		const entt::entity statue3Entity = statue3 ? statue3->GetEntityHandle() : entt::null;
+		const entt::entity statue3Entity = CHARACTER_MANAGER::instance().FindEntity(statue_vid3);
 
-		if (!statue3)
+		if (statue3Entity == entt::null)
 		{
 			sys_err("The vid {} not exist.", statue_vid3);
 			return 0;
 		}
 
-		LPCHARACTER statue4 = CHARACTER_MANAGER::instance().Find(statue_vid4);
-		const entt::entity statue4Entity = statue4 ? statue4->GetEntityHandle() : entt::null;
+		const entt::entity statue4Entity = CHARACTER_MANAGER::instance().FindEntity(statue_vid4);
 
-		if (!statue4)
+		if (statue4Entity == entt::null)
 		{
 			sys_err("The vid {} not exist.", statue_vid4);
 			return 0;
 		}
 
-		ecs::MovementSystem::SetRotationToXY(statue1->GetEntityHandle(), 320200, 1518100);
-		ecs::MovementSystem::SetRotationToXY(statue2->GetEntityHandle(), 320200, 1518100);
-		ecs::MovementSystem::SetRotationToXY(statue3->GetEntityHandle(), 320200, 1518100);
-		ecs::MovementSystem::SetRotationToXY(statue4->GetEntityHandle(), 320200, 1518100);
+		ecs::MovementSystem::SetRotationToXY(statue1Entity, 320200, 1518100);
+		ecs::MovementSystem::SetRotationToXY(statue2Entity, 320200, 1518100);
+		ecs::MovementSystem::SetRotationToXY(statue3Entity, 320200, 1518100);
+		ecs::MovementSystem::SetRotationToXY(statue4Entity, 320200, 1518100);
 
 		int32_t time = get_dword_time();
 
@@ -1851,8 +1846,8 @@ namespace quest
 
 		int32_t bossvid = dungeon->GetFlag("boss");
 
-		LPCHARACTER boss = CHARACTER_MANAGER::instance().Find(bossvid);
-		if (!boss)
+		const entt::entity boss = CHARACTER_MANAGER::instance().FindEntity(bossvid);
+		if (boss == entt::null)
 		{
 			sys_err("The vid {} not exist.", bossvid);
 			return 0;
@@ -1860,45 +1855,45 @@ namespace quest
 
 		int32_t statue_vid1 = dungeon->GetFlag("statue_vid1"), statue_vid2 = dungeon->GetFlag("statue_vid2"), statue_vid3 = dungeon->GetFlag("statue_vid3"), statue_vid4 = dungeon->GetFlag("statue_vid4");
 
-		LPCHARACTER statue1 = CHARACTER_MANAGER::instance().Find(statue_vid1);
-		if (!statue1)
+		const entt::entity statue1 = CHARACTER_MANAGER::instance().FindEntity(statue_vid1);
+		if (statue1 == entt::null)
 		{
 			sys_err("The vid {} not exist.", statue_vid1);
 			return 0;
 		}
 
-		LPCHARACTER statue2 = CHARACTER_MANAGER::instance().Find(statue_vid2);
-		if (!statue2)
+		const entt::entity statue2 = CHARACTER_MANAGER::instance().FindEntity(statue_vid2);
+		if (statue2 == entt::null)
 		{
 			sys_err("The vid {} not exist.", statue_vid2);
 			return 0;
 		}
 
-		LPCHARACTER statue3 = CHARACTER_MANAGER::instance().Find(statue_vid3);
-		if (!statue3)
+		const entt::entity statue3 = CHARACTER_MANAGER::instance().FindEntity(statue_vid3);
+		if (statue3 == entt::null)
 		{
 			sys_err("The vid {} not exist.", statue_vid3);
 			return 0;
 		}
 
-		LPCHARACTER statue4 = CHARACTER_MANAGER::instance().Find(statue_vid4);
-		if (!statue4)
+		const entt::entity statue4 = CHARACTER_MANAGER::instance().FindEntity(statue_vid4);
+		if (statue4 == entt::null)
 		{
 			sys_err("The vid {} not exist.", statue_vid4);
 			return 0;
 		}
 
-		CombatSystem::SetInvincible(boss->GetEntityHandle(), false);
-		CombatSystem::Dead(boss->GetEntityHandle());
+		CombatSystem::SetInvincible(boss, false);
+		CombatSystem::Dead(boss);
 
-		CombatSystem::SetInvincible(statue1->GetEntityHandle(), false);
-		CombatSystem::SetInvincible(statue2->GetEntityHandle(), false);
-		CombatSystem::SetInvincible(statue3->GetEntityHandle(), false);
-		CombatSystem::SetInvincible(statue4->GetEntityHandle(), false);
-		CombatSystem::Dead(statue1->GetEntityHandle());
-		CombatSystem::Dead(statue2->GetEntityHandle());
-		CombatSystem::Dead(statue3->GetEntityHandle());
-		CombatSystem::Dead(statue4->GetEntityHandle());
+		CombatSystem::SetInvincible(statue1, false);
+		CombatSystem::SetInvincible(statue2, false);
+		CombatSystem::SetInvincible(statue3, false);
+		CombatSystem::SetInvincible(statue4, false);
+		CombatSystem::Dead(statue1);
+		CombatSystem::Dead(statue2);
+		CombatSystem::Dead(statue3);
+		CombatSystem::Dead(statue4);
 
 		return 0;
 	}

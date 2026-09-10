@@ -190,10 +190,10 @@ namespace
     {
         if (!vid)
             return false;
-        LPCHARACTER ch = CHARACTER_MANAGER::instance().Find(vid);
-        if (!ch)
+        const entt::entity ch = CHARACTER_MANAGER::instance().FindEntity(vid);
+        if (ch == entt::null)
             return false;
-        return CombatSystem::SetInvincible(ch->GetEntityHandle(), inv);
+        return CombatSystem::SetInvincible(ch, inv);
     }
 
     void RemoveAllItemOnMap(int32_t mapIndex, uint32_t vnum)

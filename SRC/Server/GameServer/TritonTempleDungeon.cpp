@@ -551,8 +551,8 @@ void CTritonTempleDungeon::OnMobKilled(entt::entity killer, entt::entity victim)
         if (s == 0)
         {
             const uint32_t bossVid = (uint32_t)d->GetFlag(kFlagBossVid);
-            LPCHARACTER boss = CHARACTER_MANAGER::instance().Find(bossVid);
-            const bool ok = boss && CombatSystem::SetInvincible(boss->GetEntityHandle(), false);
+            const entt::entity boss = CHARACTER_MANAGER::instance().FindEntity(bossVid);
+            const bool ok = boss != entt::null && CombatSystem::SetInvincible(boss, false);
 
             if (!ok)
             {

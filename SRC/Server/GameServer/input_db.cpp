@@ -2265,10 +2265,10 @@ void CInputDB::ReloadAdmin(const char * c_pData )
 
 		c_pData += sizeof (tAdminInfo );
 
-		auto* pChar = CHARACTER_MANAGER::instance().FindPC(rAdminInfo.m_szName );
-		if (pChar )
+		const entt::entity pChar = CHARACTER_MANAGER::instance().FindPCEntity(rAdminInfo.m_szName );
+		if (pChar != entt::null)
 		{
-			ecs::PlayerRuntime::RefreshGMLevel(pChar->GetEntityHandle());
+			ecs::PlayerRuntime::RefreshGMLevel(pChar);
 		}
 	}
 

@@ -1098,13 +1098,13 @@ namespace quest
 	{
 		PCMap::iterator it;
 
-		LPCHARACTER pkChr = CHARACTER_MANAGER::instance().FindByPID(pc);
+		const entt::entity pkChr = CHARACTER_MANAGER::instance().FindEntityByPID(pc);
 
-		if (!pkChr)
+		if (pkChr == entt::null)
 			return nullptr;
 
 		m_pCurrentPC = GetPCForce(pc);
-		m_currentCharacter = pkChr ? pkChr->GetEntityHandle() : entt::null;
+		m_currentCharacter = pkChr;
 		return (m_pCurrentPC);
 	}
 

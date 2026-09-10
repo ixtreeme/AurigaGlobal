@@ -2645,10 +2645,10 @@ ACMD(do_party_request)
 
 	uint32_t vid = 0;
 	str_to_number(vid, arg1);
-	auto* tch = CHARACTER_MANAGER::instance().Find(vid);
+	const entt::entity tch = CHARACTER_MANAGER::instance().FindEntity(vid);
 
-	if (tch)
-		if (!ch->RequestToParty((tch ? tch->GetEntityHandle() : entt::null)))
+	if (tch != entt::null)
+		if (!ch->RequestToParty(tch))
 			ecs::ChatSystem::Send(character, CHAT_TYPE_COMMAND, "PartyRequestDenied");
 }
 
@@ -2663,10 +2663,10 @@ ACMD(do_party_request_accept)
 
 	uint32_t vid = 0;
 	str_to_number(vid, arg1);
-	auto* tch = CHARACTER_MANAGER::instance().Find(vid);
+	const entt::entity tch = CHARACTER_MANAGER::instance().FindEntity(vid);
 
-	if (tch)
-		ch->AcceptToParty((tch ? tch->GetEntityHandle() : entt::null));
+	if (tch != entt::null)
+		ch->AcceptToParty(tch);
 }
 
 ACMD(do_party_request_deny)
@@ -2680,10 +2680,10 @@ ACMD(do_party_request_deny)
 
 	uint32_t vid = 0;
 	str_to_number(vid, arg1);
-	auto* tch = CHARACTER_MANAGER::instance().Find(vid);
+	const entt::entity tch = CHARACTER_MANAGER::instance().FindEntity(vid);
 
-	if (tch)
-		ch->DenyToParty((tch ? tch->GetEntityHandle() : entt::null));
+	if (tch != entt::null)
+		ch->DenyToParty(tch);
 }
 
 // LUA_ADD_GOTO_INFO
