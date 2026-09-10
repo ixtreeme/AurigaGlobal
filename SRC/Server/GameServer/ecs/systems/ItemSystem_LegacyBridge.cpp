@@ -3537,10 +3537,10 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 						if (IS_BOTARYABLE_ZONE(GetMapIndex()) == true)
 						{
 #ifdef KASMIR_PAKET_SYSTEM
-							m_bKasmirPaketDurum = item->GetVnum() == 88901 ? true : false;
+							ecs::SocialSystem::SetKasmirPaket(GetEntityHandle(), item->GetVnum() == 88901 ? true : false);
 #endif
 
-							UseSilkBotary();
+							ecs::SocialSystem::UseSilkBotary(GetEntityHandle());
 						}
 #ifdef TEXTS_IMPROVEMENT
 						else {
@@ -3551,10 +3551,10 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 					else
 					{
 #ifdef KASMIR_PAKET_SYSTEM
-						m_bKasmirPaketDurum = item->GetVnum() == 88901 ? true : false;
+						ecs::SocialSystem::SetKasmirPaket(GetEntityHandle(), item->GetVnum() == 88901 ? true : false);
 #endif
 
-						UseSilkBotary();
+						ecs::SocialSystem::UseSilkBotary(GetEntityHandle());
 					}
 					break;
 				}
@@ -4888,9 +4888,9 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 					if (IS_BOTARYABLE_ZONE(GetMapIndex()) == true)
 					{
 #ifdef KASMIR_PAKET_SYSTEM
-						m_bKasmirPaketDurum = false;
+						ecs::SocialSystem::SetKasmirPaket(GetEntityHandle(), false);
 #endif
-						__OpenPrivateShop();
+						ecs::SocialSystem::OpenPrivateShop(GetEntityHandle(), false);
 					}
 #ifdef TEXTS_IMPROVEMENT
 					else {
@@ -4901,9 +4901,9 @@ bool CHARACTER::UseItemEx(LPITEM item, TItemPos DestCell)
 				else
 				{
 #ifdef KASMIR_PAKET_SYSTEM
-					m_bKasmirPaketDurum = false;
+					ecs::SocialSystem::SetKasmirPaket(GetEntityHandle(), false);
 #endif
-					__OpenPrivateShop();
+					ecs::SocialSystem::OpenPrivateShop(GetEntityHandle(), false);
 				}
 				break;
 
@@ -8562,46 +8562,6 @@ std::set<uint32_t> allowedVnums = {
 
 #endif
 
-void CHARACTER::__OpenPrivateShop(
-#ifdef KASMIR_PAKET_SYSTEM
-	bool bKasmir
-#endif
-)
-{
-#ifdef ENABLE_OPEN_SHOP_WITH_ARMOR
-#ifdef KASMIR_PAKET_SYSTEM
-	if (bKasmir) {
-		ecs::ChatSystem::Send(GetEntityHandle(), CHAT_TYPE_COMMAND, "OpenPrivateShopKasmir");
-		return;
-	}
-#endif
-	ecs::ChatSystem::Send(GetEntityHandle(), CHAT_TYPE_COMMAND, "OpenPrivateShop");
-#else
-	unsigned bodyPart = GetPart(PART_MAIN);
-	switch (bodyPart)
-	{
-	case 0:
-	case 1:
-	case 2: {
-#ifdef KASMIR_PAKET_SYSTEM
-		if (bKasmir) {
-			ecs::ChatSystem::Send(GetEntityHandle(), CHAT_TYPE_COMMAND, "OpenPrivateShopKasmir");
-			break;
-		}
-#endif
-
-		ecs::ChatSystem::Send(GetEntityHandle(), CHAT_TYPE_COMMAND, "OpenPrivateShop");
-	}
-		  break;
-	default:
-#ifdef TEXTS_IMPROVEMENT
-		ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 503, "");
-#endif
-		break;
-	}
-#endif
-}
-
 // MYSHOP_PRICE_LIST
 
 void CHARACTER::SendMyShopPriceListCmd(uint32_t dwItemVnum, int64_t dwItemPrice)
@@ -8632,9 +8592,9 @@ void CHARACTER::UseSilkBotaryReal(const TPacketMyshopPricelistHeader * p)
 	}
 
 #ifdef KASMIR_PAKET_SYSTEM
-	__OpenPrivateShop(m_bKasmirPaketDurum);
+	ecs::SocialSystem::OpenPrivateShop(GetEntityHandle(), ecs::SocialSystem::GetKasmirPaket(GetEntityHandle()));
 #else
-	__OpenPrivateShop();
+	ecs::SocialSystem::OpenPrivateShop(GetEntityHandle(), false);
 #endif
 }
 
@@ -8645,21 +8605,6 @@ void CHARACTER::UseSilkBotaryReal(const TPacketMyshopPricelistHeader * p)
 // Í´Â ¹Ù·Î »óÁ¡À» ¿­¶ó´Â ÀÀ´äÀ» º¸³½´Ù.
 //
 
-void CHARACTER::UseSilkBotary(void)
-{
-	if (m_bNoOpenedShop) {
-		uint32_t dwPlayerID = GetPlayerID();
-		db_clientdesc->DBPacket(HEADER_GD_MYSHOP_PRICELIST_REQ, GetDesc()->GetHandle(), &dwPlayerID, sizeof(uint32_t));
-		m_bNoOpenedShop = false;
-	}
-	else {
-#ifdef KASMIR_PAKET_SYSTEM
-		__OpenPrivateShop(m_bKasmirPaketDurum);
-#else
-		__OpenPrivateShop();
-#endif
-	}
-}
 // END_OF_MYSHOP_PRICE_LIST
 
 void CHARACTER::SetRefineMode(int additionalCell)
@@ -13037,3 +12982,63 @@ void AutoRecoveryItemProcess(entt::entity e, int type)
 }
 
 } // namespace ItemSystem
+
+namespace ecs::SocialSystem {
+
+// Telling the client to open the personal shop window, if what this
+// character is wearing allows it.
+void OpenPrivateShop(entt::entity e, bool bKasmir)
+{
+#ifdef ENABLE_OPEN_SHOP_WITH_ARMOR
+#ifdef KASMIR_PAKET_SYSTEM
+	if (bKasmir) {
+		ecs::ChatSystem::Send(e, CHAT_TYPE_COMMAND, "OpenPrivateShopKasmir");
+		return;
+	}
+#endif
+	ecs::ChatSystem::Send(e, CHAT_TYPE_COMMAND, "OpenPrivateShop");
+#else
+	unsigned bodyPart = ecs::PlayerRuntime::GetPart(e, PART_MAIN);
+	switch (bodyPart)
+	{
+	case 0:
+	case 1:
+	case 2: {
+#ifdef KASMIR_PAKET_SYSTEM
+		if (bKasmir) {
+			ecs::ChatSystem::Send(e, CHAT_TYPE_COMMAND, "OpenPrivateShopKasmir");
+			break;
+		}
+#endif
+
+		ecs::ChatSystem::Send(e, CHAT_TYPE_COMMAND, "OpenPrivateShop");
+	}
+		  break;
+	default:
+#ifdef TEXTS_IMPROVEMENT
+		ecs::ChatSystem::SendNew(e, CHAT_TYPE_INFO, 503, "");
+#endif
+		break;
+	}
+#endif
+}
+
+// Opening the personal shop, fetching the saved price list first if it
+// has not been fetched this session.
+void UseSilkBotary(entt::entity e)
+{
+	if (GetNoOpenedShop(e)) {
+		uint32_t dwPlayerID = ecs::PlayerRuntime::GetPlayerID(e);
+		db_clientdesc->DBPacket(HEADER_GD_MYSHOP_PRICELIST_REQ, ecs::PlayerRuntime::GetDesc(e)->GetHandle(), &dwPlayerID, sizeof(uint32_t));
+		SetNoOpenedShop(e, false);
+	}
+	else {
+#ifdef KASMIR_PAKET_SYSTEM
+		OpenPrivateShop(e, GetKasmirPaket(e));
+#else
+		OpenPrivateShop(e, false);
+#endif
+	}
+}
+
+} // namespace ecs::SocialSystem

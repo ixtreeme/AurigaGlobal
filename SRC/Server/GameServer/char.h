@@ -1120,7 +1120,6 @@ public:
 
 
 	// MYSHOP_PRICE_LIST
-	void			UseSilkBotary(void); 
 
 	void			UseSilkBotaryReal(const TPacketMyshopPricelistHeader* p);
 	// END_OF_MYSHOP_PRICE_LIST
@@ -1203,7 +1202,6 @@ protected:
 
 	void			SendMyShopPriceListCmd(uint32_t dwItemVnum, int64_t dwItemPrice);
 
-	bool			m_bNoOpenedShop;
 
 	bool			m_bItemLoaded;
 
@@ -1258,7 +1256,6 @@ protected:
 	LPSHOP			m_pkMyShop;
 #ifdef KASMIR_PAKET_SYSTEM
 	uint8_t			m_bKasmirPaketBaslik;
-	bool			m_bKasmirPaketDurum;
 #endif
 	std::string		m_stShopSign;
 	// End of shop

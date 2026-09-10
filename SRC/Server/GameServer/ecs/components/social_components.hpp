@@ -83,7 +83,10 @@ struct ShopState {
     std::shared_ptr<CWheelDestiny> wheelDestiny {};
 #endif
     std::string shopSign;
-    bool noOpenedShop;
+    // Whether the saved price list still has to be fetched before the
+    // personal shop can open. It had no initialiser while CHARACTER still
+    // held the authoritative copy; it is the only copy now.
+    bool noOpenedShop { false };
     bool underRefine { false };
     int refineCell { -1 };
     entt::entity refineNPC { entt::null };
@@ -91,6 +94,8 @@ struct ShopState {
     // LPENTITY.4-fixup.2.g: mirror of legacy m_bKasmirPaketBaslik so native
     // EntityNetworkDispatch shop sign packet matches legacy bytes.
     uint8_t kasmirTitle { 0 };
+    // Whether this open is a kasmir package.
+    bool kasmirPaket { false };
 #endif
 };
 

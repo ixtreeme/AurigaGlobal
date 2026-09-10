@@ -5499,7 +5499,7 @@ void CHARACTER::CloseMyShop()
         }
 #ifdef KASMIR_PAKET_SYSTEM
         m_bKasmirPaketBaslik = 0;
-        m_bKasmirPaketDurum = false;
+        ecs::SocialSystem::SetKasmirPaket(GetEntityHandle(), false);
         // LPENTITY.4-fixup.2.g: clear ECS mirror on shop close
         if (auto* shop = g_registry.try_get<ecs::ShopState>(GetEntityHandle()))
             shop->kasmirTitle = 0;
@@ -5558,7 +5558,7 @@ void CHARACTER::Initialize()
     m_dwLegacyVID = 0;
 
 
-    m_bNoOpenedShop = true;
+    ecs::SocialSystem::SetNoOpenedShop(GetEntityHandle(), true);
 #ifdef ENABLE_EVENT_MANAGER
 #endif
 
@@ -5788,7 +5788,7 @@ void CHARACTER::Initialize()
 #endif
 #ifdef KASMIR_PAKET_SYSTEM
     m_bKasmirPaketBaslik = 0;
-    m_bKasmirPaketDurum = false;
+    ecs::SocialSystem::SetKasmirPaket(GetEntityHandle(), false);
 #endif
     m_iGoToXYTime = 0;
 #ifdef ENABLE_SAVEPOINT_SYSTEM

@@ -174,6 +174,36 @@ CShop* GetShop(entt::entity e)
 	return state ? state->currentShop : nullptr;
 }
 
+bool GetNoOpenedShop(entt::entity e)
+{
+    if (e == entt::null || !g_registry.valid(e))
+        return false;
+    const auto* shop = g_registry.try_get<ecs::ShopState>(e);
+    return shop && shop->noOpenedShop;
+}
+
+void SetNoOpenedShop(entt::entity e, bool value)
+{
+    if (e == entt::null || !g_registry.valid(e))
+        return;
+    g_registry.get_or_emplace<ecs::ShopState>(e).noOpenedShop = value;
+}
+
+bool GetKasmirPaket(entt::entity e)
+{
+    if (e == entt::null || !g_registry.valid(e))
+        return false;
+    const auto* shop = g_registry.try_get<ecs::ShopState>(e);
+    return shop && shop->kasmirPaket;
+}
+
+void SetKasmirPaket(entt::entity e, bool value)
+{
+    if (e == entt::null || !g_registry.valid(e))
+        return;
+    g_registry.get_or_emplace<ecs::ShopState>(e).kasmirPaket = value;
+}
+
 CShop* GetMyShop(entt::entity e)
 {
 	if (e == entt::null || !g_registry.valid(e))
