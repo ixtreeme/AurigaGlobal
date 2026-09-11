@@ -1849,7 +1849,7 @@ bool CHARACTER::DropItem(TItemPos Cell,
 
 bool CHARACTER::DropGold(int64_t gold)
 {
-	if (gold <= 0 || gold > GetGold())
+	if (gold <= 0 || gold > ecs::PointSystem::GetGold(GetEntityHandle()))
 		return false;
 
 	if (!CanHandleItem())
@@ -2605,7 +2605,7 @@ int CalculateConsume(LegacyCharHandle ch)
 	{
 		const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
 		// CheckNeedLifeForWarp
-		const int curLife = ch->GetHP();
+		const int curLife = ecs::PlayerRuntime::GetHP(ch->GetEntityHandle());
 		const int needPercent = WARP_NEED_LIFE_PERCENT;
 		const int needLife = ecs::PointSystem::GetMaxHP(chEntity) * needPercent / 100;
 		if (curLife < needLife)
@@ -3377,9 +3377,9 @@ bool CHARACTER::GiveItemFromSpecialItemGroup(uint32_t dwGroupNum, std::vector<ui
 		break;
 		case CSpecialItemGroup::DRAIN_HP:
 		{
-			int64_t iDropHP = GetMaxHP() * dwCount / 100;
+			int64_t iDropHP = ecs::PointSystem::GetMaxHP(GetEntityHandle()) * dwCount / 100;
 			LOG_INFO("CSpecialItemGroup::DRAIN_HP {}", -iDropHP);
-			iDropHP = std::min(iDropHP, GetHP() - 1);
+			iDropHP = std::min(iDropHP, ecs::PlayerRuntime::GetHP(GetEntityHandle()) - 1);
 			LOG_INFO("CSpecialItemGroup::DRAIN_HP {}", -iDropHP);
 			PointChange(POINT_HP, -iDropHP);
 			bSuccess = true;

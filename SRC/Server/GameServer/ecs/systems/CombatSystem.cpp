@@ -2191,7 +2191,7 @@ EVENTFUNC(dead_event)
 			if (CombatSystem::IsRevive(ch->GetEntityHandle()) == false && ecs::SocialSystem::HasReviverInParty(chEntity) == true)
 			{
 				ecs::PlayerRuntime::SetPosition(chEntity, POS_STANDING);
-				ch->SetHP(ecs::PointSystem::GetMaxHP(chEntity));
+				ecs::PlayerRuntime::SetHP(ch->GetEntityHandle(), ecs::PointSystem::GetMaxHP(chEntity));
 
 				ecs::ViewSystem::ViewReencode(chEntity);
 
@@ -3072,7 +3072,7 @@ void DistributeSP(entt::entity e, entt::entity killer, int iMethod)
 			else
 			{
 				//
-				if (pkKiller->GetHP() < ecs::PointSystem::GetMaxHP(killer))
+				if (ecs::PlayerRuntime::GetHP(pkKiller->GetEntityHandle()) < ecs::PointSystem::GetMaxHP(killer))
 					iAmount = 2 + (ecs::PointSystem::GetMaxSP(killer) / 100); //   á
 				else
 					iAmount = 9 + (ecs::PointSystem::GetMaxSP(killer) / 100); // ⺻
@@ -6288,7 +6288,7 @@ bool Damage(entt::entity victim, entt::entity attacker, int64_t dam, uint8_t dam
 		if (dungeon)
 		{
 			dungeon->UpdateMastHP();
-			if (dungeon->GetMast()->GetHP() <= 0)
+			if (ecs::PlayerRuntime::GetHP(dungeon->GetMast()->GetEntityHandle()) <= 0)
 			{
 				dungeon->ClearRegen();
 				dungeon->KillAll();

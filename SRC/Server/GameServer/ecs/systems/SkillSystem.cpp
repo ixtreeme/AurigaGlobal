@@ -1852,7 +1852,7 @@ void CHARACTER::SkillLevelUp(uint32_t dwVnum, uint8_t bMethod)
 				return;
 	}
 
-	if (GetLevel() < pkSk->bLevelLimit)
+	if (ecs::PointSystem::GetLevel(GetEntityHandle()) < pkSk->bLevelLimit)
 		return;
 
 	if (pkSk->preSkillVnum)
@@ -3026,7 +3026,7 @@ int CHARACTER::ComputeSkillAtPosition(uint32_t dwVnum, const PIXEL_POSITION& pos
 		pkSk->SetPointVar("maxv", ecs::PointSystem::GetLimitPoint(this->GetEntityHandle(), POINT_MOV_SPEED));
 	}
 
-	pkSk->SetPointVar("lv", GetLevel());
+	pkSk->SetPointVar("lv", ecs::PointSystem::GetLevel(GetEntityHandle()));
 	pkSk->SetPointVar("iq", GetPoint(POINT_IQ));
 	pkSk->SetPointVar("str", GetPoint(POINT_ST));
 	pkSk->SetPointVar("dex", GetPoint(POINT_DX));
@@ -3330,7 +3330,7 @@ int CHARACTER::ComputeGyeongGongSkill(uint32_t dwVnum, entt::entity victim, uint
 		pkSk->SetPointVar("atk", CalcMeleeDamage(character, victim, true, false));
 	}
 
-	pkSk->SetPointVar("lv", GetLevel());
+	pkSk->SetPointVar("lv", ecs::PointSystem::GetLevel(GetEntityHandle()));
 	pkSk->SetPointVar("iq", GetPoint(POINT_IQ));
 	pkSk->SetPointVar("str", GetPoint(POINT_ST));
 	pkSk->SetPointVar("dex", GetPoint(POINT_DX));
@@ -3495,7 +3495,7 @@ int CHARACTER::ComputeSkill(uint32_t dwVnum, entt::entity victim, uint8_t bSkill
 		pkSk->SetPointVar("maxv", ecs::PointSystem::GetLimitPoint(pkVictim->GetEntityHandle(), POINT_MOV_SPEED));
 	}
 
-	pkSk->SetPointVar("lv", GetLevel());
+	pkSk->SetPointVar("lv", ecs::PointSystem::GetLevel(GetEntityHandle()));
 	pkSk->SetPointVar("iq", GetPoint(POINT_IQ));
 	pkSk->SetPointVar("str", GetPoint(POINT_ST));
 	pkSk->SetPointVar("dex", GetPoint(POINT_DX));
@@ -3997,8 +3997,8 @@ bool CHARACTER::UseSkill(uint32_t dwVnum, entt::entity victim, bool bUseGrandMas
 
 	if (IS_SET(pkSk->dwFlag, SKILL_FLAG_USE_HP_AS_COST))
 	{
-		pkSk->SetSPCostVar("maxhp", GetMaxHP());
-		pkSk->SetSPCostVar("v", GetHP());
+		pkSk->SetSPCostVar("maxhp", ecs::PointSystem::GetMaxHP(GetEntityHandle()));
+		pkSk->SetSPCostVar("v", ecs::PlayerRuntime::GetHP(GetEntityHandle()));
 		iNeededSP = (int) pkSk->kSPCostPoly.Eval();
 
 		// ADD_GRANDMASTER_SKILL
@@ -4008,7 +4008,7 @@ bool CHARACTER::UseSkill(uint32_t dwVnum, entt::entity victim, bool bUseGrandMas
 		}
 		// END_OF_ADD_GRANDMASTER_SKILL
 
-		if (GetHP() < iNeededSP)
+		if (ecs::PlayerRuntime::GetHP(GetEntityHandle()) < iNeededSP)
 			return false;
 
 		PointChange(POINT_HP, -iNeededSP);
@@ -4016,8 +4016,8 @@ bool CHARACTER::UseSkill(uint32_t dwVnum, entt::entity victim, bool bUseGrandMas
 	else
 	{
 		// SKILL_FOMULA_REFACTORING
-		pkSk->SetSPCostVar("maxhp", GetMaxHP());
-		pkSk->SetSPCostVar("maxv", GetMaxSP());
+		pkSk->SetSPCostVar("maxhp", ecs::PointSystem::GetMaxHP(GetEntityHandle()));
+		pkSk->SetSPCostVar("maxv", ecs::PointSystem::GetMaxSP(GetEntityHandle()));
 		pkSk->SetSPCostVar("v", ecs::PlayerRuntime::GetSP(GetEntityHandle()));
 
 		iNeededSP = (int) pkSk->kSPCostPoly.Eval();
@@ -4326,10 +4326,10 @@ struct FHealerParty
 	{
 		const entt::entity target = ch->GetEntityHandle();
 		int iRevive = (int)(ecs::PointSystem::GetMaxHP(m_healer) / 100 * 15);
-		int iHP = (ecs::PointSystem::GetMaxHP(target) >= ch->GetHP() + iRevive) ? (int)(ch->GetHP() + iRevive) : (int)(ecs::PointSystem::GetMaxHP(target));
-		ch->SetHP(iHP);
+		int iHP = (ecs::PointSystem::GetMaxHP(target) >= ecs::PlayerRuntime::GetHP(ch->GetEntityHandle()) + iRevive) ? (int)(ecs::PlayerRuntime::GetHP(ch->GetEntityHandle()) + iRevive) : (int)(ecs::PointSystem::GetMaxHP(target));
+		ecs::PlayerRuntime::SetHP(ch->GetEntityHandle(), iHP);
 		NetworkSyncSystem::BroadcastEffect(g_registry, target, SE_EFFECT_HEALER);
-		LOG_INFO("FHealerParty: {} (pointer: {}) heal the HP of {} (pointer: {}) with {} (new HP: {}).", ecs::PlayerRuntime::GetName(m_healer).data(), static_cast<const void*>(get_pointer(m_pkHealer)), ecs::PlayerRuntime::GetName(target).data(), static_cast<const void*>(get_pointer(ch)), iRevive, ch->GetHP());
+		LOG_INFO("FHealerParty: {} (pointer: {}) heal the HP of {} (pointer: {}) with {} (new HP: {}).", ecs::PlayerRuntime::GetName(m_healer).data(), static_cast<const void*>(get_pointer(m_pkHealer)), ecs::PlayerRuntime::GetName(target).data(), static_cast<const void*>(get_pointer(ch)), iRevive, ecs::PlayerRuntime::GetHP(ch->GetEntityHandle()));
 	}
 
 	LegacyCharHandle	m_pkHealer;

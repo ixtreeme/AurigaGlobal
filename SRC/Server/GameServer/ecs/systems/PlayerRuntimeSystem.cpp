@@ -1674,7 +1674,7 @@ void CHARACTER::SetQuestDamage(int race, int dmg)
 #ifdef ENABLE_ANTICHEAT
 void CHARACTER::ProcessCheatCheck(int32_t time)
 {
-    if (GetGMLevel() == GM_PLAYER)
+    if (ecs::PlayerRuntime::GetGMLevel(GetEntityHandle()) == GM_PLAYER)
     {
         if (m_rewardCount == 0)
             m_firstReward = time;
@@ -1779,58 +1779,6 @@ void CHARACTER::SetRace(uint8_t race)
     }
 
 	ecs::PlayerRuntime::SetRace(GetEntityHandle(), race);
-}
-
-void CHARACTER::SetLevel(uint8_t level)
-{
-    if (auto* ecsLevel = EnsureLevelComponent(GetEntityHandle()))
-        ecsLevel->value = level;
-
-    if (IsPC())
-    {
-        if (level < PK_PROTECT_LEVEL)
-            CombatSystem::SetPKMode(GetEntityHandle(), PK_MODE_PROTECT);
-        else if (GetGMLevel() != GM_PLAYER)
-            CombatSystem::SetPKMode(GetEntityHandle(), PK_MODE_PROTECT);
-        else if (CombatSystem::GetPKMode(GetEntityHandle()) == PK_MODE_PROTECT)
-            CombatSystem::SetPKMode(GetEntityHandle(), PK_MODE_PEACE);
-    }
-}
-
-int CHARACTER::GetLevel() const
-{
-    if (const auto* ecsLevel = TryGetLevelComponent(GetEntityHandle()))
-        return ecsLevel->value;
-
-    return 0;
-}
-
-uint32_t CHARACTER::GetExp() const
-{
-    if (const auto* exp = TryGetExperienceComponent(GetEntityHandle()))
-        return static_cast<uint32_t>(std::clamp<int64_t>(exp->current, 0, UINT32_MAX));
-
-    return 0;
-}
-
-void CHARACTER::SetExp(uint32_t exp)
-{
-    if (auto* ecsExp = EnsureExperienceComponent(GetEntityHandle()))
-        ecsExp->current = exp;
-}
-
-int64_t CHARACTER::GetGold() const
-{
-    if (const auto* gold = TryGetGoldAmountComponent(GetEntityHandle()))
-        return gold->amount;
-
-    return 0;
-}
-
-void CHARACTER::SetGold(int64_t gold)
-{
-    if (auto* wallet = EnsureGoldAmountComponent(GetEntityHandle()))
-        wallet->amount = gold;
 }
 
 void CHARACTER::SetEmpire(uint8_t bEmpire)
@@ -2084,7 +2032,7 @@ void SetLevel(entt::entity e, uint8_t level)
     {
         if (level < PK_PROTECT_LEVEL)
             CombatSystem::SetPKMode(e, PK_MODE_PROTECT);
-        else if (GetGMLevel(e) != GM_PLAYER)
+        else if (ecs::PlayerRuntime::GetGMLevel(e) != GM_PLAYER)
             CombatSystem::SetPKMode(e, PK_MODE_PROTECT);
         else if (CombatSystem::GetPKMode(e) == PK_MODE_PROTECT)
             CombatSystem::SetPKMode(e, PK_MODE_PEACE);
@@ -2092,40 +2040,6 @@ void SetLevel(entt::entity e, uint8_t level)
 }
 
 } // namespace ecs::PlayerRuntime
-
-void CHARACTER::SetHP(int64_t hp)
-{
-    if (auto* health = EnsureHealthComponent(GetEntityHandle()))
-        health->current = static_cast<int32_t>(std::clamp<int64_t>(hp, 0, INT32_MAX));
-}
-
-int64_t CHARACTER::GetHP() const
-{
-    if (const auto* health = TryGetHealthComponent(GetEntityHandle()))
-        return health->current;
-
-    return 0;
-}
-
-void CHARACTER::SetSP(int64_t sp)
-{
-    if (auto* mana = EnsureManaComponent(GetEntityHandle()))
-        mana->current = static_cast<int32_t>(std::clamp<int64_t>(sp, 0, INT32_MAX));
-}
-
-void CHARACTER::SetStamina(int stamina)
-{
-    if (auto* staminaComp = EnsureStaminaComponent(GetEntityHandle()))
-        staminaComp->current = static_cast<int32_t>(std::clamp<int64_t>(stamina, 0, INT32_MAX));
-}
-
-int CHARACTER::GetStamina() const
-{
-    if (const auto* stamina = TryGetStaminaComponent(GetEntityHandle()))
-        return stamina->current;
-
-    return 0;
-}
 
 uint32_t CHARACTER::GetLastShoutPulse() const
 {
@@ -2141,20 +2055,9 @@ void CHARACTER::SetLastShoutPulse(uint32_t pulse)
         flags->lastShoutPulse = pulse;
 }
 
-uint8_t CHARACTER::GetGMLevel() const
-{
-    if (test_server)
-        return GM_IMPLEMENTOR;
-
-    if (const auto* flags = TryGetRuntimeFlagsComponent(GetEntityHandle()))
-        return flags->gmLevel;
-
-    return GM_PLAYER;
-}
-
 BOOL CHARACTER::IsGM() const
 {
-    if (GetGMLevel() != GM_PLAYER)
+    if (ecs::PlayerRuntime::GetGMLevel(GetEntityHandle()) != GM_PLAYER)
         return true;
 
     return test_server ? true : false;
@@ -2265,47 +2168,7 @@ bool CHARACTER::IsBlockMode(uint8_t bFlag) const
     return (GetBlockMode() & bFlag) != 0;
 }
 
-void CHARACTER::SetImmuneFlag(uint32_t dw)
-{
-    if (auto* flags = EnsureRuntimeFlagsComponent(GetEntityHandle()))
-        flags->immuneFlag = dw;
-    if (ecs::diag::Check(GetEntityHandle(), "SetImmuneFlag"))
-    {
-        auto& immunity = g_registry.get_or_emplace<ecs::ImmunityFlags>(GetEntityHandle());
-        immunity.flags = dw;
-    }
-}
-
-uint32_t CHARACTER::GetImmuneFlag() const
-{
-    if (const auto* flags = TryGetRuntimeFlagsComponent(GetEntityHandle()))
-        return flags->immuneFlag;
-
-    return 0;
-}
-
 // Pet/mount markers live only in StatusFlags; legacy readers use the same store.
-
-bool CHARACTER::IsPet() const
-{
-    const auto* status = g_registry.try_get<ecs::StatusFlags>(GetEntityHandle());
-    return status && status->isPet;
-}
-
-bool CHARACTER::IsMount() const
-{
-    const auto entity = GetEntityHandle();
-    if (!ecs::PlayerRuntime::IsValid(entity))
-        return false;
-    const auto* flags = g_registry.try_get<ecs::StatusFlags>(entity);
-    return flags && flags->isMount;
-}
-
-bool CHARACTER::IsNewPet() const
-{
-    const auto* status = g_registry.try_get<ecs::StatusFlags>(GetEntityHandle());
-    return status && status->isNewPet;
-}
 
 void CHARACTER::SetItemAward_vnum(unsigned int vnum)
 {
@@ -2440,7 +2303,7 @@ int GetHPPct(entt::entity e)
     if (maxHP <= 0)
         return 0;
 
-    return static_cast<int>((GetHP(e) * 100) / maxHP);
+    return static_cast<int>((ecs::PlayerRuntime::GetHP(e) * 100) / maxHP);
 }
 
 } // namespace ecs::PlayerRuntime
@@ -2496,10 +2359,10 @@ bool CHARACTER::CanDeposit() const
 
 uint32_t CHARACTER::GetNextExp() const
 {
-    if (PLAYER_MAX_LEVEL_CONST < GetLevel())
+    if (PLAYER_MAX_LEVEL_CONST < ecs::PointSystem::GetLevel(GetEntityHandle()))
         return 2500000000u;
     else
-        return exp_table[GetLevel()];
+        return exp_table[ecs::PointSystem::GetLevel(GetEntityHandle())];
 }
 
 
@@ -3689,7 +3552,7 @@ void CHARACTER::RefineAcceMaterials()
         break;
         }
 
-        if (GetGold() < dwPrice)
+        if (ecs::PointSystem::GetGold(GetEntityHandle()) < dwPrice)
         {
 #ifdef TEXTS_IMPROVEMENT
             ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 232, "");
@@ -4002,7 +3865,7 @@ void CHARACTER::RankingSubcategory(int iArg)
     }
 
     char szQuery2[1024] = { 0 };
-    if (GetGMLevel() > GM_PLAYER) {
+    if (ecs::PlayerRuntime::GetGMLevel(GetEntityHandle()) > GM_PLAYER) {
         snprintf(szQuery2, sizeof(szQuery2), "SELECT * FROM (SELECT @rank:=0) a, (SELECT @rank:=@rank+1 r, r%d, name, level FROM player.player%s AS res ORDER BY r%d desc, level desc, name asc) as custom WHERE name='%s'", iArg, get_table_postfix(), iArg, GetName());
     }
     else {
@@ -4189,48 +4052,6 @@ uint16_t GetOriginalPart(entt::entity e, uint8_t bPartPos)
 }
 
 } // namespace ecs::PlayerRuntime
-
-void CHARACTER::SetMaxHP(int64_t iVal)
-{
-    if (auto* health = EnsureHealthComponent(GetEntityHandle()))
-        health->max = static_cast<int32_t>(std::clamp<int64_t>(iVal, 0, INT32_MAX));
-}
-
-int64_t CHARACTER::GetMaxHP() const
-{
-    if (const auto* health = TryGetHealthComponent(GetEntityHandle()))
-        return health->max;
-
-    return 0;
-}
-
-void CHARACTER::SetMaxSP(int64_t iVal)
-{
-    if (auto* mana = EnsureManaComponent(GetEntityHandle()))
-        mana->max = static_cast<int32_t>(std::clamp<int64_t>(iVal, 0, INT32_MAX));
-}
-
-int64_t CHARACTER::GetMaxSP() const
-{
-    if (const auto* mana = TryGetManaComponent(GetEntityHandle()))
-        return mana->max;
-
-    return 0;
-}
-
-void CHARACTER::SetMaxStamina(int64_t iVal)
-{
-    if (auto* stamina = EnsureStaminaComponent(GetEntityHandle()))
-        stamina->max = static_cast<int32_t>(std::clamp<int64_t>(iVal, 0, INT32_MAX));
-}
-
-int64_t CHARACTER::GetMaxStamina() const
-{
-    if (const auto* stamina = TryGetStaminaComponent(GetEntityHandle()))
-        return stamina->max;
-
-    return 0;
-}
 
 void CHARACTER::Destroy()
 {
@@ -4585,9 +4406,9 @@ void CHARACTER::SetPlayerProto(const TPlayerTable* t)
 
     SetRace(t->job);
 
-    SetLevel(t->level);
-    SetExp(t->exp);
-    SetGold(t->gold);
+    ecs::PlayerRuntime::SetLevel(GetEntityHandle(), t->level);
+    ecs::PlayerRuntime::SetExp(GetEntityHandle(), t->exp);
+    ecs::PlayerRuntime::SetGold(GetEntityHandle(), t->gold);
 #ifdef ENABLE_GAYA_SYSTEM
     ecs::PointSystem::SetGaya(GetEntityHandle(), t->gaya);
 #endif
@@ -4608,18 +4429,18 @@ void CHARACTER::SetPlayerProto(const TPlayerTable* t)
 
     ComputePoints();
 
-    SetHP(t->hp);
-    SetSP(t->sp);
-    SetStamina(t->stamina);
+    ecs::PlayerRuntime::SetHP(GetEntityHandle(), t->hp);
+    ecs::PlayerRuntime::SetSP(GetEntityHandle(), t->sp);
+    ecs::PlayerRuntime::SetStamina(GetEntityHandle(), t->stamina);
 
 #ifndef ENABLE_GM_FLAG_IF_TEST_SERVER
     if (!test_server)
 #endif
     {
 #ifdef ENABLE_GM_FLAG_FOR_LOW_WIZARD
-        if (GetGMLevel() > GM_PLAYER)
+        if (ecs::PlayerRuntime::GetGMLevel(GetEntityHandle()) > GM_PLAYER)
 #else
-        if (GetGMLevel() > GM_LOW_WIZARD)
+        if (ecs::PlayerRuntime::GetGMLevel(GetEntityHandle()) > GM_LOW_WIZARD)
 #endif
         {
             AffectSystem::SetFlag(GetEntityHandle(), AFF_YMIR);
@@ -4628,7 +4449,7 @@ void CHARACTER::SetPlayerProto(const TPlayerTable* t)
         }
     }
 
-    if (GetLevel() < PK_PROTECT_LEVEL) {
+    if (ecs::PointSystem::GetLevel(GetEntityHandle()) < PK_PROTECT_LEVEL) {
         if (ecs::diag::Check(GetEntityHandle(), "SetPlayerProto/lowLevel"))
             g_registry.get_or_emplace<ecs::CombatStats>(GetEntityHandle()).pkMode = PK_MODE_PROTECT;
     }
@@ -4653,10 +4474,10 @@ void CHARACTER::SetPlayerProto(const TPlayerTable* t)
 
     LOG_INFO("PLAYER_LOAD: {} PREMIUM {} {}, LOGGOFF_INTERVAL {} PTR: {}", t->name, m_aiPremiumTimes[0], m_aiPremiumTimes[1], t->logoff_interval, static_cast<const void*>(this));
 
-    if (GetGMLevel() != GM_PLAYER)
+    if (ecs::PlayerRuntime::GetGMLevel(GetEntityHandle()) != GM_PLAYER)
     {
-        LogManager::instance().CharLog(GetEntityHandle(), GetGMLevel(), "GM_LOGIN", "");
-        LOG_INFO("GM_LOGIN(gmlevel={}, name={}({}), pos=({}, {})", static_cast<int>(GetGMLevel()), GetName(), GetPlayerID(), GetX(), GetY());
+        LogManager::instance().CharLog(GetEntityHandle(), ecs::PlayerRuntime::GetGMLevel(GetEntityHandle()), "GM_LOGIN", "");
+        LOG_INFO("GM_LOGIN(gmlevel={}, name={}({}), pos=({}, {})", static_cast<int>(ecs::PlayerRuntime::GetGMLevel(GetEntityHandle())), GetName(), GetPlayerID(), GetX(), GetY());
     }
 
 #ifdef ENABLE_RANKING
@@ -4719,10 +4540,10 @@ void CHARACTER::SetProto(const CMob* pkMob)
         self != entt::null && g_registry.valid(self))
         g_registry.emplace_or_replace<ecs::CharacterType>(self, static_cast<uint8_t>(t->bType));
 
-    SetLevel(t->bLevel);
+    ecs::PlayerRuntime::SetLevel(GetEntityHandle(), t->bLevel);
     SetEmpire(t->bEmpire);
 
-    SetExp(t->dwExp);
+    ecs::PlayerRuntime::SetExp(GetEntityHandle(), t->dwExp);
     SetRealPoint(POINT_ST, t->bStr);
     SetRealPoint(POINT_DX, t->bDex);
     SetRealPoint(POINT_HT, t->bCon);
@@ -4730,11 +4551,11 @@ void CHARACTER::SetProto(const CMob* pkMob)
 
     ComputePoints();
 
-    SetHP(GetMaxHP());
-    SetSP(GetMaxSP());
+    ecs::PlayerRuntime::SetHP(GetEntityHandle(), ecs::PointSystem::GetMaxHP(GetEntityHandle()));
+    ecs::PlayerRuntime::SetSP(GetEntityHandle(), ecs::PointSystem::GetMaxSP(GetEntityHandle()));
     if (auto* flags = EnsureRuntimeFlagsComponent(GetEntityHandle()))
         flags->aiFlag = t->dwAIFlag;
-    SetImmuneFlag(t->dwImmuneFlag);
+    ecs::PlayerRuntime::SetImmuneFlag(GetEntityHandle(), t->dwImmuneFlag);
 
     AssignTriggers(t);
 
@@ -5335,7 +5156,7 @@ void CHARACTER::OpenMyShop(const char* c_pszSign, TShopItemTable* pTable, uint8_
     }
 
 #ifdef ENABLE_RESTRICT_GM_PERMISSIONS
-    if (GetGMLevel() > GM_PLAYER && GetGMLevel() < GM_IMPLEMENTOR) {
+    if (ecs::PlayerRuntime::GetGMLevel(GetEntityHandle()) > GM_PLAYER && ecs::PlayerRuntime::GetGMLevel(GetEntityHandle()) < GM_IMPLEMENTOR) {
         return;
     }
 #endif
@@ -5370,7 +5191,7 @@ void CHARACTER::OpenMyShop(const char* c_pszSign, TShopItemTable* pTable, uint8_
         nTotalMoney += static_cast<int64_t>((pTable + n)->price);
     }
 
-    nTotalMoney += static_cast<int64_t>(GetGold());
+    nTotalMoney += static_cast<int64_t>(ecs::PointSystem::GetGold(GetEntityHandle()));
 
     if (GOLD_MAX <= nTotalMoney)
     {

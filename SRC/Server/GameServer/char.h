@@ -675,14 +675,9 @@ public:
 
 	uint32_t			GetLastShoutPulse() const;
 	void			SetLastShoutPulse(uint32_t pulse);
-	int				GetLevel() const;
-	void			SetLevel(uint8_t level);
 
-	uint8_t			GetGMLevel() const;
 	BOOL 			IsGM() const;
 
-	uint32_t			GetExp() const;
-	void			SetExp(uint32_t exp);
 #ifdef __ENABLE_BLOCK_EXP__
 	bool			Block_Exp;
 #endif
@@ -695,20 +690,9 @@ public:
 	int				GetPosition() const;
 
 
-	void			SetHP(int64_t hp);
-	int64_t				GetHP() const;
-	void			SetSP(int64_t sp);
 	int64_t				GetSP() const;
-	void			SetStamina(int stamina);
-	int				GetStamina() const;
-	void			SetMaxHP(int64_t iVal);
-	int64_t				GetMaxHP() const;
 
-	void			SetMaxSP(int64_t iVal);
-	int64_t				GetMaxSP() const;
 
-	void			SetMaxStamina(int64_t iVal);
-	int64_t				GetMaxStamina() const;
 
 
 
@@ -1139,8 +1123,6 @@ public:
 	////////////////////////////////////////////////////////////////////////////////////////
 	// Money related
 
-	int64_t				GetGold() const;
-	void			SetGold(int64_t gold);
 #ifdef __ENABLE_EXTEND_INVEN_SYSTEM__
 	int				Inven_Point() const;
 	int				Inventory_Size() const { return 90 + (5 * Inven_Point()); }
@@ -1620,8 +1602,6 @@ protected:
 	// Resists & Proofs
 public:
 	bool				CannotMoveByAffect() const;	// Ư�� ȿ���� ���� ������ �� ���� �����ΰ�?
-	void			SetImmuneFlag(uint32_t dw);
-	uint32_t			GetImmuneFlag() const;
 
 protected:
 	// End of Resists & Proofs
@@ -1847,21 +1827,18 @@ private:
 #ifdef __PET_SYSTEM__
 private:
 public:
-	bool IsPet() const;
 #endif
 
 #ifdef ENABLE_MOUNT_COSTUME_SYSTEM
 private:
 
 public:
-	bool IsMount() const;
 #endif
 
 #ifdef __NEWPET_SYSTEM__
 private:
 	int m_eggvid;
 public:
-	bool IsNewPet() const;
 
 #endif
 

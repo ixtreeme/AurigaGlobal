@@ -123,12 +123,12 @@ void CheckCharacterInsertParity(entt::registry& reg, entt::entity source)
     // confusion. Now both read the creature flags, so this means something.
     {
         const bool legacySpecial = (ch->GetRaceNum() >= 20101 && ch->GetRaceNum() <= 20109)
-            || ch->IsPet()
+            || ecs::PlayerRuntime::IsPet(ch->GetEntityHandle())
 #ifdef __NEWPET_SYSTEM__
-            || ch->IsNewPet()
+            || ecs::PlayerRuntime::IsNewPet(ch->GetEntityHandle())
 #endif
 #ifdef ENABLE_MOUNT_COSTUME_SYSTEM
-            || ch->IsMount()
+            || ecs::PlayerRuntime::IsMount(ch->GetEntityHandle())
 #endif
             ;
 
@@ -142,7 +142,7 @@ void CheckCharacterInsertParity(entt::registry& reg, entt::entity source)
         if (legacySpecial)
         {
 #ifdef ENABLE_MOUNT_COSTUME_SYSTEM
-            legacySpeed = ch->IsMount()
+            legacySpeed = ecs::PlayerRuntime::IsMount(ch->GetEntityHandle())
                 ? static_cast<uint16_t>(ecs::PointSystem::GetLimitPoint(ch->GetEntityHandle(), POINT_MOV_SPEED))
                 : static_cast<uint16_t>(ch->IsPC() ? ecs::PointSystem::GetLimitPoint(ch->GetEntityHandle(), POINT_MOV_SPEED) : 150);
 #else

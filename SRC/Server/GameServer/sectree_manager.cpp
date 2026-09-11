@@ -1549,9 +1549,9 @@ struct FPurgeMonsters
 			LPCHARACTER lpChar = (LPCHARACTER)ent;
 
 #ifdef __NEWPET_SYSTEM__
-			if (lpChar->IsMonster() == true && !lpChar->IsPet() && !lpChar->IsNewPet())
+			if (lpChar->IsMonster() == true && !ecs::PlayerRuntime::IsPet(lpChar->GetEntityHandle()) && !ecs::PlayerRuntime::IsNewPet(lpChar->GetEntityHandle()))
 #else
-			if ( lpChar->IsMonster() == true && !lpChar->IsPet())
+			if ( lpChar->IsMonster() == true && !ecs::PlayerRuntime::IsPet(lpChar->GetEntityHandle()))
 #endif
 			{
 				M2_DESTROY_CHARACTER(lpChar);
@@ -1611,9 +1611,9 @@ struct FPurgeNPCs
 
 
 #ifdef __NEWPET_SYSTEM__
-			if (ecs::PlayerRuntime::IsNPC(lpCharEntity) == true && !lpChar->IsPet() && !lpChar->IsNewPet())
+			if (ecs::PlayerRuntime::IsNPC(lpCharEntity) == true && !ecs::PlayerRuntime::IsPet(lpChar->GetEntityHandle()) && !ecs::PlayerRuntime::IsNewPet(lpChar->GetEntityHandle()))
 #else
-			if ( ecs::PlayerRuntime::IsNPC(lpCharEntity) == true && !lpChar->IsPet())
+			if ( ecs::PlayerRuntime::IsNPC(lpCharEntity) == true && !ecs::PlayerRuntime::IsPet(lpChar->GetEntityHandle()))
 #endif
 			{
 				M2_DESTROY_CHARACTER(lpChar);

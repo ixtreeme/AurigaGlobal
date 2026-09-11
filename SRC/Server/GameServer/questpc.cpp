@@ -686,10 +686,10 @@ namespace quest
 			switch (it->type)
 			{
 				case RewardData::REWARD_TYPE_EXP:
-					LOG_INFO("EXP cur {} add {} next {}", ch->GetExp(), it->value1, ch->GetNextExp());
+					LOG_INFO("EXP cur {} add {} next {}", ecs::PlayerRuntime::GetExp(ch->GetEntityHandle()), it->value1, ch->GetNextExp());
 
-					if (ch->GetExp() + it->value1 > ch->GetNextExp())
-						ecs::PointSystem::Change(chEntity, POINT_EXP, ch->GetNextExp() - 1 - ch->GetExp());
+					if (ecs::PlayerRuntime::GetExp(ch->GetEntityHandle()) + it->value1 > ch->GetNextExp())
+						ecs::PointSystem::Change(chEntity, POINT_EXP, ch->GetNextExp() - 1 - ecs::PlayerRuntime::GetExp(ch->GetEntityHandle()));
 					else
 						ecs::PointSystem::Change(chEntity, POINT_EXP, it->value1);
 

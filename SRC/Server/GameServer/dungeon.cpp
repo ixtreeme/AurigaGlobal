@@ -594,9 +594,9 @@ namespace
 			if (ent->IsType(ENTITY_CHARACTER))
 			{
 				LPCHARACTER ch = (LPCHARACTER) ent;
-				if (!ecs::PlayerRuntime::IsPC(((ch) ? (ch)->GetEntityHandle() : entt::null)) && !ch->IsPet() && !ch->IsMount()
+				if (!ecs::PlayerRuntime::IsPC(((ch) ? (ch)->GetEntityHandle() : entt::null)) && !ecs::PlayerRuntime::IsPet(ch->GetEntityHandle()) && !ecs::PlayerRuntime::IsMount(ch->GetEntityHandle())
 #ifdef __NEWPET_SYSTEM__
-				 && !ch->IsNewPet()
+				 && !ecs::PlayerRuntime::IsNewPet(ch->GetEntityHandle())
 #endif
 				)
 				{
@@ -657,9 +657,9 @@ namespace
 
 
 #ifdef __NEWPET_SYSTEM__
-				if (!ecs::PlayerRuntime::IsPC(chEntity) && !ch->IsPet() && !ch->IsNewPet()
+				if (!ecs::PlayerRuntime::IsPC(chEntity) && !ecs::PlayerRuntime::IsPet(ch->GetEntityHandle()) && !ecs::PlayerRuntime::IsNewPet(ch->GetEntityHandle())
 #else
-				if (!ecs::PlayerRuntime::IsPC(chEntity) && !ch->IsPet()
+				if (!ecs::PlayerRuntime::IsPC(chEntity) && !ecs::PlayerRuntime::IsPet(ch->GetEntityHandle())
 #endif
 				)
 				{
@@ -975,7 +975,7 @@ void CDungeon::UpdateMastHP()
 	LPCHARACTER mast = GetMast();
 	if (mast)
 	{
-		SUpdateMastHp f(mast->GetHP());
+		SUpdateMastHp f(ecs::PlayerRuntime::GetHP(mast->GetEntityHandle()));
 		map->for_each(f);
 	}
 }
@@ -992,18 +992,18 @@ void CDungeon::RestoreMastPartialHP()
 	LPCHARACTER mast = GetMast();
 	if (mast)
 	{
-		int64_t hp = GetMast()->GetHP();
+		int64_t hp = ecs::PlayerRuntime::GetHP(GetMast()->GetEntityHandle());
 		int32_t add = 600000;
 		if (hp + add >= 12000000)
 		{
-			mast->SetHP(12000000);
+			ecs::PlayerRuntime::SetHP(mast->GetEntityHandle(), 12000000);
 		}
 		else
 		{
-			mast->SetHP(hp + add);
+			ecs::PlayerRuntime::SetHP(mast->GetEntityHandle(), hp + add);
 		}
 
-		SUpdateMastHp f(mast->GetHP());
+		SUpdateMastHp f(ecs::PlayerRuntime::GetHP(mast->GetEntityHandle()));
 		map->for_each(f);
 	}
 }

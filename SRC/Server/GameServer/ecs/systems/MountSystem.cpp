@@ -405,7 +405,7 @@ void SummonHorse(entt::entity rider, bool bSummon, bool bFromFar, uint32_t dwVnu
 				event_create(horse_dead_event, info, PASSES_PER_SEC(60)));
 		}
 
-		ecs::LegacyCharOf(GetSummonedHorse(rider))->SetLevel(GetHorseLevel(rider));
+		ecs::PlayerRuntime::SetLevel(GetSummonedHorse(rider), GetHorseLevel(rider));
 
 		const char* pHorseName = CHorseNameManager::instance().GetHorseName(ecs::PlayerRuntime::GetPlayerID(rider));
 

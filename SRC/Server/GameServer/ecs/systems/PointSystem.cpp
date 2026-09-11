@@ -597,11 +597,11 @@ void CHARACTER::Set_Inventory_Point(int value)
 
 void CHARACTER::CheckMaximumPoints()
 {
-	if (GetMaxHP() < GetHP())
-		PointChange(POINT_HP, GetMaxHP() - GetHP());
+	if (ecs::PointSystem::GetMaxHP(GetEntityHandle()) < ecs::PlayerRuntime::GetHP(GetEntityHandle()))
+		PointChange(POINT_HP, ecs::PointSystem::GetMaxHP(GetEntityHandle()) - ecs::PlayerRuntime::GetHP(GetEntityHandle()));
 
-	if (GetMaxSP() < ecs::PlayerRuntime::GetSP(GetEntityHandle()))
-		PointChange(POINT_SP, GetMaxSP() - ecs::PlayerRuntime::GetSP(GetEntityHandle()));
+	if (ecs::PointSystem::GetMaxSP(GetEntityHandle()) < ecs::PlayerRuntime::GetSP(GetEntityHandle()))
+		PointChange(POINT_SP, ecs::PointSystem::GetMaxSP(GetEntityHandle()) - ecs::PlayerRuntime::GetSP(GetEntityHandle()));
 }
 
 

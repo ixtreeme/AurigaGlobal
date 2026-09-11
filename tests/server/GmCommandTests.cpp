@@ -775,7 +775,6 @@ int mining::RealRefinePick(entt::entity,entt::entity) { Unexpected(); }
 void mining::CHEAT_MAX_PICK(entt::entity,entt::entity) { Unexpected(); }
 void ecs::PlayerRuntime::SetCoward(entt::entity) { Unexpected(); }
 void CHARACTER::Save(void) { Unexpected(); }
-int64_t CHARACTER::GetHP(void)const { Unexpected(); }
 int64_t CHARACTER::GetSP(void)const { Unexpected(); }
 void CHARACTER::ComputePoints(void) { Unexpected(); }
 namespace ecs::SessionSystem { bool WarpToPID(entt::entity, unsigned int) { Unexpected(); } }
@@ -791,9 +790,9 @@ void CombatSystem::SetSkillHit(entt::entity, bool) { Unexpected(); }
 void CHARACTER::HorseSummon(bool,bool,unsigned int,char const *) { Unexpected(); }
 CHARACTER * CHARACTER::GetRider(void)const { Unexpected(); }
 bool CHARACTER::IsRidingMount(void) { Unexpected(); }
-bool CHARACTER::IsPet(void)const { Unexpected(); }
-bool CHARACTER::IsMount(void)const { Unexpected(); }
-bool CHARACTER::IsNewPet(void)const { Unexpected(); }
+bool ecs::PlayerRuntime::IsPet(entt::entity) { Unexpected(); }
+bool ecs::PlayerRuntime::IsMount(entt::entity) { Unexpected(); }
+bool ecs::PlayerRuntime::IsNewPet(entt::entity) { Unexpected(); }
 void CPartyManager::DeleteParty(CParty *) { Unexpected(); }
 void CParty::Quit(unsigned int) { Unexpected(); }
 unsigned int CParty::GetMemberCount(void) { Unexpected(); }
@@ -944,10 +943,6 @@ int CEntity::GetX(void)const { Unexpected(); }
 int CEntity::GetY(void)const { Unexpected(); }
 pixel_position_s CEntity::GetXYZ(void)const { Unexpected(); }
 char const * CHARACTER::GetName(unsigned char)const { Unexpected(); }
-int CHARACTER::GetLevel(void)const { Unexpected(); }
-void CHARACTER::SetHP(int64_t) { Unexpected(); }
-int64_t CHARACTER::GetMaxHP(void)const { Unexpected(); }
-int64_t CHARACTER::GetMaxSP(void)const { Unexpected(); }
 int64_t CHARACTER::GetPoint(unsigned char)const { Unexpected(); }
 int ecs::PointSystem::GetLimitPoint(entt::entity, unsigned char) { Unexpected(); }
 const TMobTable* ecs::PlayerRuntime::GetMobTable(entt::entity) { return nullptr; }

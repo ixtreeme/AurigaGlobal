@@ -343,8 +343,8 @@ EVENTFUNC(pvp_duel_counter)
 			ecs::ChatSystem::Send(characterA, CHAT_TYPE_COMMAND, chA_buf);
 			ecs::ChatSystem::Send(characterB, CHAT_TYPE_COMMAND, chB_buf);
 
-			chA->SetHP(ecs::PointSystem::GetMaxHP(characterA));
-			chB->SetHP(ecs::PointSystem::GetMaxHP(characterB));
+			ecs::PlayerRuntime::SetHP(chA->GetEntityHandle(), ecs::PointSystem::GetMaxHP(characterA));
+			ecs::PlayerRuntime::SetHP(chB->GetEntityHandle(), ecs::PointSystem::GetMaxHP(characterB));
 
 			info->pvp->Packet();
 			return 0;

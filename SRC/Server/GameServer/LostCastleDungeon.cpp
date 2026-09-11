@@ -813,11 +813,11 @@ void ClearClonesOnMap(int32_t mapIndex)
             }
 
             // 10x erosites (HP/SP/DMG/STAT)
-            clone->SetLevel((uint8_t)ecs::PointSystem::GetLevel(sourceEntity));
-            clone->SetMaxHP((int64_t)ecs::PointSystem::GetMaxHP(sourceEntity) * STR_MULTIPLE);
-            clone->SetMaxSP((int64_t)ecs::PointSystem::GetMaxSP(sourceEntity) * STR_MULTIPLE);
-            clone->SetHP((int64_t)ecs::PointSystem::GetMaxHP(sourceEntity) * STR_MULTIPLE);
-            clone->SetSP((int64_t)ecs::PointSystem::GetMaxSP(sourceEntity) * STR_MULTIPLE);
+            ecs::PlayerRuntime::SetLevel(clone->GetEntityHandle(), (uint8_t)ecs::PointSystem::GetLevel(sourceEntity));
+            ecs::PlayerRuntime::SetMaxHP(clone->GetEntityHandle(), (int64_t)ecs::PointSystem::GetMaxHP(sourceEntity) * STR_MULTIPLE);
+            ecs::PlayerRuntime::SetMaxSP(clone->GetEntityHandle(), (int64_t)ecs::PointSystem::GetMaxSP(sourceEntity) * STR_MULTIPLE);
+            ecs::PlayerRuntime::SetHP(clone->GetEntityHandle(), (int64_t)ecs::PointSystem::GetMaxHP(sourceEntity) * STR_MULTIPLE);
+            ecs::PlayerRuntime::SetSP(clone->GetEntityHandle(), (int64_t)ecs::PointSystem::GetMaxSP(sourceEntity) * STR_MULTIPLE);
 
             MulPoint10(clone, POINT_ST);
             MulPoint10(clone, POINT_HT);
@@ -1368,11 +1368,11 @@ bool CLostCastleDungeon::SpawnTestClones(entt::entity source, entt::entity targe
             clone->SetRealPoint((uint8_t)p, ecs::PointSystem::Get(source, (uint8_t)p));
             clone->SetPoint((uint8_t)p, ecs::PointSystem::Get(source, (uint8_t)p));
         }
-        clone->SetLevel((uint8_t)ecs::PointSystem::GetLevel(source));
-        clone->SetMaxHP(ecs::PointSystem::GetMaxHP(source)* STR_MULTIPLE);
-        clone->SetMaxSP(ecs::PointSystem::GetMaxSP(source) * STR_MULTIPLE);
-        clone->SetHP(ecs::PointSystem::GetMaxHP(source) * STR_MULTIPLE);
-        clone->SetSP(ecs::PointSystem::GetMaxSP(source) * STR_MULTIPLE);
+        ecs::PlayerRuntime::SetLevel(clone->GetEntityHandle(), (uint8_t)ecs::PointSystem::GetLevel(source));
+        ecs::PlayerRuntime::SetMaxHP(clone->GetEntityHandle(), ecs::PointSystem::GetMaxHP(source)* STR_MULTIPLE);
+        ecs::PlayerRuntime::SetMaxSP(clone->GetEntityHandle(), ecs::PointSystem::GetMaxSP(source) * STR_MULTIPLE);
+        ecs::PlayerRuntime::SetHP(clone->GetEntityHandle(), ecs::PointSystem::GetMaxHP(source) * STR_MULTIPLE);
+        ecs::PlayerRuntime::SetSP(clone->GetEntityHandle(), ecs::PointSystem::GetMaxSP(source) * STR_MULTIPLE);
         CombatSystem::SetKillerMode(clone->GetEntityHandle(), true);
 
         // Skills (AI uses only ATTACK skills)

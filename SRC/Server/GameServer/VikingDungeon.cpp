@@ -359,14 +359,14 @@ namespace
 
         ForEachPcOnMap(mapIndex, [&](entt::entity ch){
             LPCHARACTER pkCh = ecs::LegacyCharOf(ch);
-            if (!pkCh || pkCh->GetHP() <= 1)
+            if (!pkCh || ecs::PlayerRuntime::GetHP(pkCh->GetEntityHandle()) <= 1)
                 return;
 
-            int64_t dmg = (pkCh->GetHP() * pct) / 100;
+            int64_t dmg = (ecs::PlayerRuntime::GetHP(pkCh->GetEntityHandle()) * pct) / 100;
             if (dmg < 1)
                 dmg = 1;
-            if (dmg >= pkCh->GetHP())
-                dmg = pkCh->GetHP() - 1;
+            if (dmg >= ecs::PlayerRuntime::GetHP(pkCh->GetEntityHandle()))
+                dmg = ecs::PlayerRuntime::GetHP(pkCh->GetEntityHandle()) - 1;
             if (dmg > 0)
                 ecs::PointSystem::Change(ch, POINT_HP, -dmg);
         });
@@ -799,8 +799,8 @@ namespace
             if (boss)
             {
                 const int64_t hp = d->GetFlag(kFlagFinalPenalty) ? kFinalBossPenaltyHP : kFinalBossNormalHP;
-                boss->SetMaxHP(hp);
-                boss->SetHP(hp);
+                ecs::PlayerRuntime::SetMaxHP(boss->GetEntityHandle(), hp);
+                ecs::PlayerRuntime::SetHP(boss->GetEntityHandle(), hp);
 	d->SetUnique("vk_final_boss", ecs::PlayerRuntime::GetPacketVID(((boss) ? (boss)->GetEntityHandle() : entt::null)));
             }
             ScheduleFinalHp(idx);

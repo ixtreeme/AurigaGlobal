@@ -317,8 +317,7 @@ void CHARACTER::Save() { Unexpected(); }
 const char* CHARACTER::GetName(uint8_t) const { Unexpected(); }
 uint32_t CHARACTER::GetPacketVID() const { Unexpected(); }
 void CombatSystem::DistributeSP(entt::entity, entt::entity, int) { Unexpected(); }
-int64_t CHARACTER::GetHP() const { Unexpected(); }
-int CHARACTER::GetStamina() const { Unexpected(); }
+int64_t ecs::PlayerRuntime::GetHP(entt::entity) { Unexpected(); }
 int ecs::PointSystem::GetLimitPoint(entt::entity, uint8_t) { Unexpected(); }
 const TMobTable& CHARACTER::GetMobTable() const { Unexpected(); }
 void CHARACTER::PointChange(uint8_t, int64_t, bool, bool, bool) { Unexpected(); }

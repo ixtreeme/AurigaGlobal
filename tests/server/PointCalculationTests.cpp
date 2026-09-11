@@ -232,11 +232,8 @@ bool AffectSystem::IsPolyMaintainStat(entt::entity) { return false; }
 uint32_t AffectSystem::GetPolymorphVnum(entt::entity) { return 0; }
 void CHARACTER::Save() { Unexpected(); }
 const char* CHARACTER::GetName(uint8_t) const { Unexpected(); }
-int CHARACTER::GetLevel() const { Unexpected(); }
-int64_t CHARACTER::GetHP() const { Unexpected(); }
+int64_t ecs::PlayerRuntime::GetHP(entt::entity) { Unexpected(); }
 int64_t CHARACTER::GetSP() const { Unexpected(); }
-int64_t CHARACTER::GetMaxHP() const { Unexpected(); }
-int64_t CHARACTER::GetMaxSP() const { Unexpected(); }
 void ecs::MovementSystem::CalculateMoveDuration(entt::entity e) {
     if (!onMovement) Unexpected();
     onMovement(e);

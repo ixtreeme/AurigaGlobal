@@ -391,19 +391,11 @@ void AttrTransfer_close(entt::entity) { UnexpectedService(__func__); }
 unsigned short CHARACTER::GetRaceNum(void)const { UnexpectedService(__func__); }
 char const * CHARACTER::GetName(unsigned char)const { UnexpectedService(__func__); }
 unsigned int CHARACTER::GetPacketVID(void)const { UnexpectedService(__func__); }
-int CHARACTER::GetLevel(void)const { UnexpectedService(__func__); }
 unsigned char ecs::PlayerRuntime::GetGMLevel(entt::entity) { UnexpectedService(__func__); }
-unsigned int CHARACTER::GetExp(void)const { UnexpectedService(__func__); }
-void CHARACTER::SetExp(unsigned int) { UnexpectedService(__func__); }
 unsigned int ecs::PlayerRuntime::GetNextExp(entt::entity) { UnexpectedService(__func__); }
 void CHARACTER::SetPosition(int) { UnexpectedService(__func__); }
 int CHARACTER::GetPosition(void)const { UnexpectedService(__func__); }
-void CHARACTER::SetHP(int64_t) { UnexpectedService(__func__); }
-int64_t CHARACTER::GetHP(void)const { UnexpectedService(__func__); }
 int64_t CHARACTER::GetSP(void)const { UnexpectedService(__func__); }
-int64_t CHARACTER::GetMaxHP(void)const { UnexpectedService(__func__); }
-void CHARACTER::SetMaxSP(int64_t) { UnexpectedService(__func__); }
-int64_t CHARACTER::GetMaxSP(void)const { UnexpectedService(__func__); }
 void CHARACTER::SetPoint(unsigned char,int64_t) { UnexpectedService(__func__); }
 int64_t CHARACTER::GetPoint(unsigned char)const { UnexpectedService(__func__); }
 int ecs::PointSystem::GetLimitPoint(entt::entity, unsigned char) { UnexpectedService(__func__); }
@@ -475,8 +467,6 @@ int CHARACTER::GetMarriageBonus(unsigned int,bool) { UnexpectedService(__func__)
 int ecs::PlayerRuntime::GetPremiumRemainSeconds(entt::entity, unsigned char) { UnexpectedService(__func__); }
 bool CHARACTER::IsCubeOpen(void)const { UnexpectedService(__func__); }
 bool CHARACTER::UnEquipSpecialRideUniqueItem(void) { UnexpectedService(__func__); }
-bool CHARACTER::IsPet(void)const { UnexpectedService(__func__); }
-bool CHARACTER::IsNewPet(void)const { UnexpectedService(__func__); }
 void CHARACTER::CloseAcce(void) { UnexpectedService(__func__); }
 int CHARACTER::GetSoulItemDamage(entt::entity,int,unsigned char) { UnexpectedService(__func__); }
 unsigned int CHARACTER::GetMissionProgress(unsigned int,unsigned int) { UnexpectedService(__func__); }

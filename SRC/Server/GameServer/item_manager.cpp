@@ -1730,7 +1730,7 @@ static void __DropEvent_CharStone_DropItem(CHARACTER& killer, CHARACTER& victim,
 	if (!gs_dropEvent_charStone.alive)
 		return;
 
-	int killer_level = killer.GetLevel();
+	int killer_level = ecs::PointSystem::GetLevel(killer.GetEntityHandle());
 	int dropPercent = __DropEvent_CharStone_GetDropPercent(killer_level);
 
 	int MaxRange = 10000;
@@ -1738,12 +1738,12 @@ static void __DropEvent_CharStone_DropItem(CHARACTER& killer, CHARACTER& victim,
 	if (number(1, MaxRange) <= dropPercent)
 	{
 		int log_level = (test_server || ecs::PlayerRuntime::GetGMLevel(((&killer) ? (&killer)->GetEntityHandle() : entt::null)) >= GM_LOW_WIZARD) ? 0 : 1;
-		int victim_level = victim.GetLevel();
+		int victim_level = ecs::PointSystem::GetLevel(victim.GetEntityHandle());
 		int level_diff = victim_level - killer_level;
 
 		if (level_diff >= +gs_dropEvent_charStone.level_range || level_diff <= -gs_dropEvent_charStone.level_range)
 		{
-			LOG_INFO("dropevent.drop_char_stone.level_range_over: killer({}: lv{}), victim({}: lv:{}), level_diff({})", killer.GetName(), killer.GetLevel(), victim.GetName(), victim.GetLevel(), level_diff);
+			LOG_INFO("dropevent.drop_char_stone.level_range_over: killer({}: lv{}), victim({}: lv:{}), level_diff({})", killer.GetName(), ecs::PointSystem::GetLevel(killer.GetEntityHandle()), victim.GetName(), ecs::PointSystem::GetLevel(victim.GetEntityHandle()), level_diff);
 			return;
 		}
 
@@ -1756,7 +1756,7 @@ static void __DropEvent_CharStone_DropItem(CHARACTER& killer, CHARACTER& victim,
 		{
 			vec_item.push_back(p_item);
 
-			LOG_INFO("dropevent.drop_char_stone.item_drop: killer({}: lv{}), victim({}: lv:{}), item_name({})", killer.GetName(), killer.GetLevel(), victim.GetName(), victim.GetLevel(), ItemSystem::GetItemName(p_item));
+			LOG_INFO("dropevent.drop_char_stone.item_drop: killer({}: lv{}), victim({}: lv:{}), item_name({})", killer.GetName(), ecs::PointSystem::GetLevel(killer.GetEntityHandle()), victim.GetName(), ecs::PointSystem::GetLevel(victim.GetEntityHandle()), ItemSystem::GetItemName(p_item));
 		}
 	}
 }
@@ -1835,14 +1835,14 @@ static entt::entity __DropEvent_RefineBox_GetDropItem(CHARACTER& killer, CHARACT
 	if (ecs::PlayerRuntime::GetMobRank(victim.GetEntityHandle()) < MOB_RANK_KNIGHT)
 		return entt::null;
 
-	int killer_level = killer.GetLevel();
+	int killer_level = ecs::PointSystem::GetLevel(killer.GetEntityHandle());
 	//int level_diff = victim_level - killer_level;
 
 	//if (level_diff >= +gs_dropEvent_refineBox.level_range || level_diff <= -gs_dropEvent_refineBox.level_range)
 	//{
 	//	log_level,
 	//		"dropevent.drop_refine_box.level_range_over: killer(%s: lv%d), victim(%s: lv:%d), level_diff(%d)",
-	//		killer.GetName(), killer.GetLevel(), victim.GetName(), victim.GetLevel(), level_diff);
+	//		killer.GetName(), ecs::PointSystem::GetLevel(killer.GetEntityHandle()), victim.GetName(), ecs::PointSystem::GetLevel(victim.GetEntityHandle()), level_diff);
 	//	return NULL;
 	//}
 
@@ -1883,7 +1883,7 @@ static void __DropEvent_RefineBox_DropItem(CHARACTER& killer, CHARACTER& victim,
 	{
 		vec_item.push_back(p_item);
 
-		LOG_INFO("dropevent.drop_refine_box.item_drop: killer({}: lv{}), victim({}: lv:{}), item_name({})", killer.GetName(), killer.GetLevel(), victim.GetName(), victim.GetLevel(), ItemSystem::GetItemName(p_item));
+		LOG_INFO("dropevent.drop_refine_box.item_drop: killer({}: lv{}), victim({}: lv:{}), item_name({})", killer.GetName(), ecs::PointSystem::GetLevel(killer.GetEntityHandle()), victim.GetName(), ecs::PointSystem::GetLevel(victim.GetEntityHandle()), ItemSystem::GetItemName(p_item));
 	}
 }
 

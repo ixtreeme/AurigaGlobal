@@ -1695,7 +1695,7 @@ bool CHARACTER::IsNowWalking() const
 
 bool CHARACTER::IsWalking() const
 {
-	return IsNowWalking() || GetStamina() <= 0;
+	return IsNowWalking() || ecs::PlayerRuntime::GetStamina(GetEntityHandle()) <= 0;
 }
 
 // Phase 15E-final.LPENTITY.4-architect.B.1.4:
@@ -1817,7 +1817,7 @@ void CHARACTER::StopStaminaConsume()
         return;
     PointChange(POINT_STAMINA, 0);
     m_bStaminaConsume = false;
-    ecs::ChatSystem::Send(GetEntityHandle(), CHAT_TYPE_COMMAND, "StopStaminaConsume %d", GetStamina());
+    ecs::ChatSystem::Send(GetEntityHandle(), CHAT_TYPE_COMMAND, "StopStaminaConsume %d", ecs::PlayerRuntime::GetStamina(GetEntityHandle()));
 }
 
 bool CHARACTER::IsStaminaHalfConsume() const
@@ -1963,7 +1963,7 @@ EVENTFUNC(recovery_event)
 			if (target) {
 				if (target->GetFlag("floor") == 5) {
 					CombatSystem::DistributeSP(character, character);
-					if (ecs::PointSystem::GetMaxHP(character) <= ch->GetHP())
+					if (ecs::PointSystem::GetMaxHP(character) <= ecs::PlayerRuntime::GetHP(ch->GetEntityHandle()))
 						return PASSES_PER_SEC(3);
 
 					int iPercent = 0;
@@ -1987,7 +1987,7 @@ EVENTFUNC(recovery_event)
 			if (target) {
 				if (target->GetFlag("floor") == 1) {
 					CombatSystem::DistributeSP(character, character);
-					if (ecs::PointSystem::GetMaxHP(character) <= ch->GetHP())
+					if (ecs::PointSystem::GetMaxHP(character) <= ecs::PlayerRuntime::GetHP(ch->GetEntityHandle()))
 						return PASSES_PER_SEC(3);
 
 					int iPercent = 0;
@@ -2016,7 +2016,7 @@ EVENTFUNC(recovery_event)
 			ecs::PointSystem::Change(character, POINT_HP, hpGain);
 		}
 
-		if (ch->GetHP() >= ecs::PointSystem::GetMaxHP(character))
+		if (ecs::PlayerRuntime::GetHP(ch->GetEntityHandle()) >= ecs::PointSystem::GetMaxHP(character))
 		{
 			ecs::PlayerRuntime::SetCharEvent(ch->GetEntityHandle(), ecs::PlayerRuntime::CharEvent::Recovery, nullptr);
 			return 0;
@@ -2037,7 +2037,7 @@ EVENTFUNC(recovery_event)
 
 		CombatSystem::DistributeSP(character, character);
 
-		if (ecs::PointSystem::GetMaxHP(character) <= ch->GetHP())
+		if (ecs::PointSystem::GetMaxHP(character) <= ecs::PlayerRuntime::GetHP(ch->GetEntityHandle()))
 			return PASSES_PER_SEC(3);
 
 		int iPercent = 0;

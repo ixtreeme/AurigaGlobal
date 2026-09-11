@@ -1196,9 +1196,9 @@ namespace quest
 				const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
 
 #ifdef __NEWPET_SYSTEM__
-				if (!(ecs::PlayerRuntime::IsPC(chEntity)) && !ch->IsPet() && !ch->IsNewPet())
+				if (!(ecs::PlayerRuntime::IsPC(chEntity)) && !ecs::PlayerRuntime::IsPet(ch->GetEntityHandle()) && !ecs::PlayerRuntime::IsNewPet(ch->GetEntityHandle()))
 #else
-				if (!(ecs::PlayerRuntime::IsPC(chEntity)) && !ch->IsPet())
+				if (!(ecs::PlayerRuntime::IsPC(chEntity)) && !ecs::PlayerRuntime::IsPet(ch->GetEntityHandle()))
 #endif
 					CombatSystem::Dead(ch->GetEntityHandle());
 			}
@@ -1546,9 +1546,9 @@ namespace quest
 				if (pChar == ExceptChar)
 					return;
 #ifdef __NEWPET_SYSTEM__
-				if (!pChar->IsPet() && !pChar->IsNewPet() && (true == pChar->IsMonster() || true == ecs::PlayerRuntime::IsStone(charEntity)))
+				if (!ecs::PlayerRuntime::IsPet(pChar->GetEntityHandle()) && !ecs::PlayerRuntime::IsNewPet(pChar->GetEntityHandle()) && (true == pChar->IsMonster() || true == ecs::PlayerRuntime::IsStone(charEntity)))
 #else
-				if (!pChar->IsPet() && (true == pChar->IsMonster() || true == ecs::PlayerRuntime::IsStone(charEntity)))
+				if (!ecs::PlayerRuntime::IsPet(pChar->GetEntityHandle()) && (true == pChar->IsMonster() || true == ecs::PlayerRuntime::IsStone(charEntity)))
 #endif
 				{
 					if (x1 <= ecs::PlayerRuntime::GetX(charEntity) && ecs::PlayerRuntime::GetX(charEntity) <= x2 && y1 <= ecs::PlayerRuntime::GetY(charEntity) && ecs::PlayerRuntime::GetY(charEntity) <= y2)

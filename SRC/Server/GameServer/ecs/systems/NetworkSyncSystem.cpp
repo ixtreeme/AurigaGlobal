@@ -1143,12 +1143,12 @@ void NetworkSyncSystem_Update(entt::registry& reg, uint32_t tick)
 #ifdef ENABLE_MULTI_LANGUAGE
 const char* CHARACTER::GetName(uint8_t lang) const
 {
-    if (IsMount()
+    if (ecs::PlayerRuntime::IsMount(GetEntityHandle())
 #ifdef __PET_SYSTEM__
-        || IsPet()
+        || ecs::PlayerRuntime::IsPet(GetEntityHandle())
 #endif
 #ifdef __NEWPET_SYSTEM__
-        || IsNewPet()
+        || ecs::PlayerRuntime::IsNewPet(GetEntityHandle())
 #endif
     )
     {
@@ -1160,12 +1160,12 @@ const char* CHARACTER::GetName(uint8_t lang) const
 #else
 const char* CHARACTER::GetName() const
 {
-    if (IsMount()
+    if (ecs::PlayerRuntime::IsMount(GetEntityHandle())
 #ifdef __PET_SYSTEM__
-        || IsPet()
+        || ecs::PlayerRuntime::IsPet(GetEntityHandle())
 #endif
 #ifdef __NEWPET_SYSTEM__
-        || IsNewPet()
+        || ecs::PlayerRuntime::IsNewPet(GetEntityHandle())
 #endif
     )
     {

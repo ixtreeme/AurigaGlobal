@@ -1079,9 +1079,9 @@ struct FuncPurge
 		LOG_INFO("PURGE: {} {}", ecs::PlayerRuntime::GetName(chr).data(), iDist);
 
 #ifdef __NEWPET_SYSTEM__
-		if (ecs::PlayerRuntime::IsNPC(chr) && !pkChr->IsPet() && !pkChr->IsNewPet() && !pkChr->IsMount() && pkChr->GetRider() == nullptr
+		if (ecs::PlayerRuntime::IsNPC(chr) && !ecs::PlayerRuntime::IsPet(pkChr->GetEntityHandle()) && !ecs::PlayerRuntime::IsNewPet(pkChr->GetEntityHandle()) && !ecs::PlayerRuntime::IsMount(pkChr->GetEntityHandle()) && pkChr->GetRider() == nullptr
 #else
-		if (ecs::PlayerRuntime::IsNPC(chr) && !pkChr->IsPet() && pkChr->GetRider() == NULL
+		if (ecs::PlayerRuntime::IsNPC(chr) && !ecs::PlayerRuntime::IsPet(pkChr->GetEntityHandle()) && pkChr->GetRider() == NULL
 #endif
 		)
 		{
@@ -1922,7 +1922,7 @@ ACMD(do_set)
 ACMD(do_reset)
 {
 	LPCHARACTER ch = ecs::LegacyCharOf(character);
-	ecs::PointSystem::Change(character, POINT_HP, ecs::PointSystem::GetMaxHP(character) - ch->GetHP());
+	ecs::PointSystem::Change(character, POINT_HP, ecs::PointSystem::GetMaxHP(character) - ecs::PlayerRuntime::GetHP(ch->GetEntityHandle()));
 	ecs::PointSystem::Change(character, POINT_SP, ecs::PointSystem::GetMaxSP(character) - ecs::PlayerRuntime::GetSP(character));
 	ecs::SessionSystem::Save(ch->GetEntityHandle());
 }
@@ -2560,7 +2560,7 @@ struct FuncWeaken
 			return;
 
 		if (ecs::PlayerRuntime::IsNPC(chr))
-			ecs::PointSystem::Change(chr, POINT_HP, (10 - pkChr->GetHP()));
+			ecs::PointSystem::Change(chr, POINT_HP, (10 - ecs::PlayerRuntime::GetHP(pkChr->GetEntityHandle())));
 	}
 };
 

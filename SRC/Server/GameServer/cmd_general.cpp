@@ -816,7 +816,7 @@ ACMD(do_restart)
 							ecs::MovementSystem::ExitToSavedLocation(character);
 						}
 
-						ecs::PointSystem::Change(character, POINT_HP, ecs::PointSystem::GetMaxHP(character) - ch->GetHP());
+						ecs::PointSystem::Change(character, POINT_HP, ecs::PointSystem::GetMaxHP(character) - ecs::PlayerRuntime::GetHP(ch->GetEntityHandle()));
 						ecs::PointSystem::Change(character, POINT_SP, ecs::PointSystem::GetMaxSP(character) - ecs::PlayerRuntime::GetSP(character));
 						CombatSystem::ReviveInvisible(ch->GetEntityHandle(), 5);
 #ifdef ENABLE_MOUNT_COSTUME_SYSTEM
@@ -829,7 +829,7 @@ ACMD(do_restart)
 					{
 						LOG_INFO("do_restart: restart here");
 						ch->RestartAtSamePos();
-						ecs::PointSystem::Change(character, POINT_HP, ecs::PointSystem::GetMaxHP(character) - ch->GetHP());
+						ecs::PointSystem::Change(character, POINT_HP, ecs::PointSystem::GetMaxHP(character) - ecs::PlayerRuntime::GetHP(ch->GetEntityHandle()));
 						ecs::PointSystem::Change(character, POINT_SP, ecs::PointSystem::GetMaxSP(character) - ecs::PlayerRuntime::GetSP(character));
 						CombatSystem::ReviveInvisible(ch->GetEntityHandle(), 5);
 #ifdef ENABLE_MOUNT_COSTUME_SYSTEM
@@ -1413,7 +1413,7 @@ ACMD(do_restart)
 					}
 				}
 
-				ecs::PointSystem::Change(character, POINT_HP, ecs::PointSystem::GetMaxHP(character) - ch->GetHP());
+				ecs::PointSystem::Change(character, POINT_HP, ecs::PointSystem::GetMaxHP(character) - ecs::PlayerRuntime::GetHP(ch->GetEntityHandle()));
 				ecs::PointSystem::Change(character, POINT_SP, ecs::PointSystem::GetMaxSP(character) - ecs::PlayerRuntime::GetSP(character));
 				CombatSystem::DeathPenalty(character, 1);
 				if (showed)
@@ -1433,9 +1433,9 @@ ACMD(do_restart)
 
 				ch->RestartAtSamePos();
 #ifdef ENABLE_REVIVE_WITH_HALF_HP_IF_MONSTER_KILLED_YOU
-				ecs::PointSystem::Change(character, POINT_HP, CombatSystem::GetDeadByMonster(character) ? (ecs::PointSystem::GetMaxHP(character) - ch->GetHP()) / 2 : 50 - ch->GetHP());
+				ecs::PointSystem::Change(character, POINT_HP, CombatSystem::GetDeadByMonster(character) ? (ecs::PointSystem::GetMaxHP(character) - ecs::PlayerRuntime::GetHP(ch->GetEntityHandle())) / 2 : 50 - ecs::PlayerRuntime::GetHP(ch->GetEntityHandle()));
 #else
-				ecs::PointSystem::Change(character, POINT_HP, 50 - ch->GetHP());
+				ecs::PointSystem::Change(character, POINT_HP, 50 - ecs::PlayerRuntime::GetHP(ch->GetEntityHandle()));
 #endif
 				ecs::PointSystem::Change(character, POINT_SP, ecs::PointSystem::GetMaxSP(character) - ecs::PlayerRuntime::GetSP(character));
 				CombatSystem::DeathPenalty(character, 0);
