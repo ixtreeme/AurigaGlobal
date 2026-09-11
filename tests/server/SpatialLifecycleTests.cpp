@@ -312,7 +312,6 @@ int32_t CEntity::GetY() const { Unexpected(); }
 int32_t CEntity::GetZ() const { Unexpected(); }
 LPSECTREE CEntity::GetSectree() const { Unexpected(); }
 int CalculateDuration(int, int) { Unexpected(); }
-uint16_t CHARACTER::GetRaceNum() const { Unexpected(); }
 namespace ecs::SessionSystem {
 void FlushDelayedSaveItem(entt::entity) { Unexpected(); }
 void Save(entt::entity) { Unexpected(); }

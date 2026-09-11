@@ -1892,7 +1892,7 @@ bool CHARACTER::ChangeSex()
 		return true;
 	}
 
-    const int src_race = GetRaceNum();
+    const int src_race = ecs::PlayerRuntime::GetRaceNum(GetEntityHandle());
 
     // This branch used to assign m_points.job and nothing else. That field was
     // the race for as long as it had readers; with the race living in
@@ -1918,22 +1918,6 @@ bool CHARACTER::ChangeSex()
 
     LOG_INFO("CHANGE_SEX: {} ({} -> {})", GetName(), static_cast<int>(src_race), static_cast<int>(dst_race));
     return true;
-}
-
-uint16_t CHARACTER::GetRaceNum() const
-{
-    if (m_dwPolymorphRace)
-        return m_dwPolymorphRace;
-
-    if (m_pkMobData)
-        return m_pkMobData->m_table.dwVnum;
-
-    // RaceState.baseRace is what SetRace writes and what the entity-native
-    // GetRaceNum answers with; m_points.job was a second copy of it.
-    if (const auto* race = g_registry.try_get<ecs::RaceState>(GetEntityHandle()))
-        return static_cast<uint16_t>(race->baseRace);
-
-    return 0;
 }
 
 uint8_t CHARACTER::GetCharType() const
@@ -3561,7 +3545,7 @@ void CHARACTER::SetProto(const CMob* pkMob)
 
     CHARACTER_MANAGER::instance().RegisterRaceNumMap(GetEntityHandle());
 
-    if (mining::IsVeinOfOre(GetRaceNum()))
+    if (mining::IsVeinOfOre(ecs::PlayerRuntime::GetRaceNum(GetEntityHandle())))
     {
         char_event_info* info = AllocEventInfo<char_event_info>();
 
@@ -3660,7 +3644,7 @@ void CHARACTER::OnClick(entt::entity causer)
     }
 
     uint32_t vid = GetPacketVID();
-    LOG_INFO("OnClick {}[vnum: {} vid: {}] by {}", GetName(), GetRaceNum(), vid, pkCauser->GetName());
+    LOG_INFO("OnClick {}[vnum: {} vid: {}] by {}", GetName(), ecs::PlayerRuntime::GetRaceNum(GetEntityHandle()), vid, pkCauser->GetName());
 
     {
         if (ecs::SocialSystem::GetMyShop(causer) && pkCauser != this)
@@ -4095,7 +4079,6 @@ void CHARACTER::Initialize()
 
 
 
-    m_dwPolymorphRace = 0;
 
 
     ResetChainLightningIndex();
@@ -4260,7 +4243,7 @@ EVENTFUNC(kill_ore_load_event)
 
 ESex GET_SEX(LPCHARACTER ch)
 {
-    switch (ch->GetRaceNum())
+    switch (ecs::PlayerRuntime::GetRaceNum(ch->GetEntityHandle()))
     {
     case MAIN_RACE_WARRIOR_M:
     case MAIN_RACE_SURA_M:

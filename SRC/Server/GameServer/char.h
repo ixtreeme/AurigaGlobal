@@ -635,7 +635,6 @@ public:
 	void			SetPlayerProto(const TPlayerTable* table);
 
 	void			SetProto(const CMob* c_pkMob);
-	uint16_t			GetRaceNum() const;
 
 	void			Save();		// DelayedSave
 
@@ -754,7 +753,6 @@ public:
 	uint8_t			GetMountCounter() const;
 
 protected:
-	uint32_t			m_dwPolymorphRace;
 	bool			m_bPolyMaintainStat;
 	uint32_t			m_dwLoginPlayTime;
 	uint32_t			m_dwPlayerID;

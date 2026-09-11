@@ -2948,7 +2948,7 @@ bool CHARACTER::CanReceiveItem(entt::entity fromEntity, LPITEM item) const
 		return false;
 	// END_OF_TOO_LONG_DISTANCE_EXCHANGE_BUG_FIX
 
-	uint32_t racenum = GetRaceNum();
+	uint32_t racenum = ecs::PlayerRuntime::GetRaceNum(GetEntityHandle());
 
 	if (racenum == DEVILTOWER_BLACKSMITH_WEAPON_MOB ||
 		racenum == DEVILTOWER_BLACKSMITH_ARMOR_MOB ||
@@ -3148,7 +3148,7 @@ void CHARACTER::ReceiveItem(entt::entity fromEntity, LPITEM item)
 	//	return;
 #endif
 	const entt::entity itemEntity = item ? item->GetEntityHandle() : entt::null;
-	switch (GetRaceNum())
+	switch (ecs::PlayerRuntime::GetRaceNum(GetEntityHandle()))
 	{
 	case fishing::CAMPFIRE_MOB:
 		if (item->GetType() == ITEM_FISH && (item->GetSubType() == FISH_ALIVE || item->GetSubType() == FISH_DEAD))
@@ -3158,7 +3158,7 @@ void CHARACTER::ReceiveItem(entt::entity fromEntity, LPITEM item)
 			// TAKE_ITEM_BUG_FIX
 			ecs::PlayerRuntime::SetQuestNPCID(fromEntity, GetPacketVID());
 			// END_OF_TAKE_ITEM_BUG_FIX
-			quest::CQuestManager::instance().TakeItem(ecs::PlayerRuntime::GetPlayerID(fromEntity), GetRaceNum(), itemEntity);
+			quest::CQuestManager::instance().TakeItem(ecs::PlayerRuntime::GetPlayerID(fromEntity), ecs::PlayerRuntime::GetRaceNum(GetEntityHandle()), itemEntity);
 		}
 		break;
 
@@ -3302,9 +3302,9 @@ void CHARACTER::ReceiveItem(entt::entity fromEntity, LPITEM item)
 		break;
 
 	default:
-		LOG_INFO("TakeItem {} {} {}", from->GetName(), GetRaceNum(), item->GetName());
+		LOG_INFO("TakeItem {} {} {}", from->GetName(), ecs::PlayerRuntime::GetRaceNum(GetEntityHandle()), item->GetName());
 		ecs::PlayerRuntime::SetQuestNPCID(fromEntity, GetPacketVID());
-		quest::CQuestManager::instance().TakeItem(ecs::PlayerRuntime::GetPlayerID(fromEntity), GetRaceNum(), itemEntity);
+		quest::CQuestManager::instance().TakeItem(ecs::PlayerRuntime::GetPlayerID(fromEntity), ecs::PlayerRuntime::GetRaceNum(GetEntityHandle()), itemEntity);
 		break;
 	}
 }

@@ -84,8 +84,8 @@ void CheckCharacterInsertParity(entt::registry& reg, entt::entity source)
     if (nativePack.z != ch->GetZ())
         LOG_WARN("[INSERT_PARITY] z entity={} native={} legacy={}", entityIdx, nativePack.z, ch->GetZ());
 
-    if (nativePack.wRaceNum != ch->GetRaceNum())
-        LOG_WARN("[INSERT_PARITY] wRaceNum entity={} native={} legacy={}", entityIdx, nativePack.wRaceNum, ch->GetRaceNum());
+    if (nativePack.wRaceNum != ecs::PlayerRuntime::GetRaceNum(ch->GetEntityHandle()))
+        LOG_WARN("[INSERT_PARITY] wRaceNum entity={} native={} legacy={}", entityIdx, nativePack.wRaceNum, ecs::PlayerRuntime::GetRaceNum(ch->GetEntityHandle()));
 
     if (nativePack.bAttackSpeed != ecs::PointSystem::GetLimitPoint(ch->GetEntityHandle(), POINT_ATT_SPEED))
         LOG_WARN("[INSERT_PARITY] bAttackSpeed entity={} native={} legacy={}", entityIdx, nativePack.bAttackSpeed, ecs::PointSystem::GetLimitPoint(ch->GetEntityHandle(), POINT_ATT_SPEED));
@@ -122,7 +122,7 @@ void CheckCharacterInsertParity(entt::registry& reg, entt::entity source)
     // RIDER. Comparing them before that was fixed would only have measured the
     // confusion. Now both read the creature flags, so this means something.
     {
-        const bool legacySpecial = (ch->GetRaceNum() >= 20101 && ch->GetRaceNum() <= 20109)
+        const bool legacySpecial = (ecs::PlayerRuntime::GetRaceNum(ch->GetEntityHandle()) >= 20101 && ecs::PlayerRuntime::GetRaceNum(ch->GetEntityHandle()) <= 20109)
             || ecs::PlayerRuntime::IsPet(ch->GetEntityHandle())
 #ifdef __NEWPET_SYSTEM__
             || ecs::PlayerRuntime::IsNewPet(ch->GetEntityHandle())
