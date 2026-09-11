@@ -779,8 +779,8 @@ void ClearClonesOnMap(int32_t mapIndex)
             clone->SetName(std::string(evilName));
 
             // Fontos: legyen PC race/job/empire/PK mode, hogy a kliens PvP-kent kezelje
-            clone->SetRace((uint8_t)ecs::PlayerRuntime::GetRaceNum(sourceEntity));
-            clone->SetEmpire(ecs::PlayerRuntime::GetEmpire(sourceEntity));
+            ecs::PlayerRuntime::SetRace(clone->GetEntityHandle(), (uint8_t)ecs::PlayerRuntime::GetRaceNum(sourceEntity));
+            ecs::PlayerRuntime::SetEmpire(clone->GetEntityHandle(), ecs::PlayerRuntime::GetEmpire(sourceEntity));
             CombatSystem::SetPKMode(cloneEntity, PK_MODE_FREE);
             clone->SetSkillGroup(source->GetSkillGroup());
 
@@ -1336,8 +1336,8 @@ bool CLostCastleDungeon::SpawnTestClones(entt::entity source, entt::entity targe
       //  clone->SetFakePlayer(true);
         clone->SetName(std::string(cloneName));
 
-        clone->SetRace((uint8_t)ecs::PlayerRuntime::GetRaceNum(source));
-        clone->SetEmpire(ecs::PlayerRuntime::GetEmpire(source));
+        ecs::PlayerRuntime::SetRace(clone->GetEntityHandle(), (uint8_t)ecs::PlayerRuntime::GetRaceNum(source));
+        ecs::PlayerRuntime::SetEmpire(clone->GetEntityHandle(), ecs::PlayerRuntime::GetEmpire(source));
         CombatSystem::SetPKMode(cloneEntity, PK_MODE_FREE);
         clone->SetSkillGroup(pkSource->GetSkillGroup());
 

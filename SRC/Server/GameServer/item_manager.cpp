@@ -1301,7 +1301,7 @@ bool ITEM_MANAGER::CreateDropItemVector(LPCHARACTER pkChr, LPCHARACTER pkKiller,
 		const TItemTable* table = GetTable(info.m_dwVnum);
 		if (!table)
 			continue;
-		if (table->bType == ITEM_POLYMORPH && info.m_dwVnum != pkChr->GetPolymorphItemVnum())
+		if (table->bType == ITEM_POLYMORPH && info.m_dwVnum != ecs::PlayerRuntime::GetPolymorphItemVnum(pkChr->GetEntityHandle()))
 			continue;
 		add(info.m_dwVnum, 1);
 	}
@@ -1350,8 +1350,8 @@ bool ITEM_MANAGER::CreateDropItemVector(LPCHARACTER pkChr, LPCHARACTER pkKiller,
 		}
 	}
 
-	if (pkChr->GetMobDropItemVnum() && m_map_dwEtcItemDropProb.contains(pkChr->GetMobDropItemVnum()))
-		add(pkChr->GetMobDropItemVnum(), 1);
+	if (ecs::PlayerRuntime::GetMobDropItemVnum(pkChr->GetEntityHandle()) && m_map_dwEtcItemDropProb.contains(ecs::PlayerRuntime::GetMobDropItemVnum(pkChr->GetEntityHandle())))
+		add(ecs::PlayerRuntime::GetMobDropItemVnum(pkChr->GetEntityHandle()), 1);
 
 	if (isStone)
 	{
@@ -1411,7 +1411,7 @@ bool ITEM_MANAGER::CreateDropItem(LPCHARACTER pkChr, LPCHARACTER pkKiller, std::
 
 			if (table->bType == ITEM_POLYMORPH)
 			{
-				if (c_rInfo.m_dwVnum == pkChr->GetPolymorphItemVnum())
+				if (c_rInfo.m_dwVnum == ecs::PlayerRuntime::GetPolymorphItemVnum(pkChr->GetEntityHandle()))
 				{
 					item = CreateItem(c_rInfo.m_dwVnum, 1, 0, true);
 
@@ -1451,7 +1451,7 @@ bool ITEM_MANAGER::CreateDropItem(LPCHARACTER pkChr, LPCHARACTER pkKiller, std::
 					{
 						if (ItemSystem::GetItemType(item) == ITEM_POLYMORPH)
 						{
-							if (ItemSystem::GetItemVnum(item) == pkChr->GetPolymorphItemVnum())
+							if (ItemSystem::GetItemVnum(item) == ecs::PlayerRuntime::GetPolymorphItemVnum(pkChr->GetEntityHandle()))
 							{
 								ItemSystem::SetItemSocket(item, 0, ecs::PlayerRuntime::GetRaceNum(chr));
 							}
@@ -1545,9 +1545,9 @@ bool ITEM_MANAGER::CreateDropItem(LPCHARACTER pkChr, LPCHARACTER pkKiller, std::
 	}
 
 	// ÀâÅÛ
-	if (pkChr->GetMobDropItemVnum())
+	if (ecs::PlayerRuntime::GetMobDropItemVnum(pkChr->GetEntityHandle()))
 	{
-		auto it = m_map_dwEtcItemDropProb.find(pkChr->GetMobDropItemVnum());
+		auto it = m_map_dwEtcItemDropProb.find(ecs::PlayerRuntime::GetMobDropItemVnum(pkChr->GetEntityHandle()));
 
 		if (it != m_map_dwEtcItemDropProb.end())
 		{
@@ -1555,7 +1555,7 @@ bool ITEM_MANAGER::CreateDropItem(LPCHARACTER pkChr, LPCHARACTER pkKiller, std::
 
 			if (iPercent >= number(1, iRandRange))
 			{
-				item = CreateItem(pkChr->GetMobDropItemVnum(), 1, 0, true);
+				item = CreateItem(ecs::PlayerRuntime::GetMobDropItemVnum(pkChr->GetEntityHandle()), 1, 0, true);
 				if (ItemSystem::IsValidItem(item)) vec_item.push_back(item);
 			}
 		}

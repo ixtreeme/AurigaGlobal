@@ -928,10 +928,10 @@ int CInputMain::Chat(entt::entity character, const char * data, uint32_t uiBytes
 #endif
 					return iExtraLen;
 				}
-				if (thecore_heart->pulse - (int)ch->GetLastShoutPulse() < passes_per_sec * 15)
+				if (thecore_heart->pulse - (int)ecs::PlayerRuntime::GetLastShoutPulse(character) < passes_per_sec * 15)
 					return iExtraLen;
 
-				ch->SetLastShoutPulse(thecore_heart->pulse);
+				ecs::PlayerRuntime::SetLastShoutPulse(character, thecore_heart->pulse);
 
 
 				const char* pExtra = pCmd;
@@ -1342,11 +1342,11 @@ int CInputMain::Chat(entt::entity character, const char * data, uint32_t uiBytes
 			return (iExtraLen);
 		}
 
-		// if (thecore_heart->pulse - (int) ch->GetLastShoutPulse() < passes_per_sec * g_iShoutLimitTime)
-		if (thecore_heart->pulse - (int) ch->GetLastShoutPulse() < passes_per_sec * 15)
+		// if (thecore_heart->pulse - (int) ecs::PlayerRuntime::GetLastShoutPulse(character) < passes_per_sec * g_iShoutLimitTime)
+		if (thecore_heart->pulse - (int) ecs::PlayerRuntime::GetLastShoutPulse(character) < passes_per_sec * 15)
 			return (iExtraLen);
 
-		ch->SetLastShoutPulse(thecore_heart->pulse);
+		ecs::PlayerRuntime::SetLastShoutPulse(character, thecore_heart->pulse);
 
 		TPacketGGShout p;
 

@@ -1953,12 +1953,19 @@ EVENTFUNC(recovery_event)
 	// Phase 10: WRITES_STATE - deferred until ECS component covers m_pkRecoveryEvent
 	if (!ecs::PlayerRuntime::IsPC(character))
 	{
+		// The four reads below used to go through a reference that dereferenced
+		// m_pkMobData unguarded. A non-PC with no mob table has nothing to
+		// regenerate from, so the event stops instead.
+		const TMobTable* mobTable = ecs::PlayerRuntime::GetMobTable(character);
+		if (!mobTable)
+			return 0;
+
 		if (AffectSystem::IsAffectFlag(character, AFF_POISON))
-			return PASSES_PER_SEC(std::max((uint8_t)1, ch->GetMobTable().bRegenCycle));
+			return PASSES_PER_SEC(std::max((uint8_t)1, mobTable->bRegenCycle));
 
 
 #ifdef ENABLE_DS_RUNE
-		if (ch->GetMobTable().dwVnum == 3996) {
+		if (mobTable->dwVnum == 3996) {
 			LPDUNGEON target = ecs::SocialSystem::GetDungeon(character);
 			if (target) {
 				if (target->GetFlag("floor") == 5) {
@@ -1982,7 +1989,7 @@ EVENTFUNC(recovery_event)
 				}
 			}
 		}
-		else if (ch->GetMobTable().dwVnum == 8202) {
+		else if (mobTable->dwVnum == 8202) {
 			LPDUNGEON target = ecs::SocialSystem::GetDungeon(character);
 			if (target) {
 				if (target->GetFlag("floor") == 1) {
@@ -2010,7 +2017,7 @@ EVENTFUNC(recovery_event)
 
 		if (!ch->IsDoor())
 		{
-			const int64_t hpGain = std::max(int64_t {1}, (static_cast<int64_t>(ecs::PointSystem::GetMaxHP(character)) * ch->GetMobTable().bRegenPercent) / 100);
+			const int64_t hpGain = std::max(int64_t {1}, (static_cast<int64_t>(ecs::PointSystem::GetMaxHP(character)) * mobTable->bRegenPercent) / 100);
 			ch->MonsterLog("HP_REGEN +%d", hpGain);
 			g_dispatcher.trigger(ecs::EvRecovery { character, static_cast<int32_t>(hpGain), 0 });
 			ecs::PointSystem::Change(character, POINT_HP, hpGain);
@@ -2022,7 +2029,7 @@ EVENTFUNC(recovery_event)
 			return 0;
 		}
 
-		return PASSES_PER_SEC(std::max((uint8_t)1, ch->GetMobTable().bRegenCycle));
+		return PASSES_PER_SEC(std::max((uint8_t)1, mobTable->bRegenCycle));
 	}
 	else
 	{

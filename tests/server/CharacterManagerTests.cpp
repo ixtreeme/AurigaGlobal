@@ -401,7 +401,6 @@ void CHARACTER::SetProto(const CMob*) { Unexpected(); }
 uint32_t CHARACTER::GetLegacyVID() const { Unexpected(); }
 void CHARACTER::ComputePoints() { Unexpected(); }
 LPCHARACTER CHARACTER::GetRider() const { return nullptr; }
-void CHARACTER::SetEmpire(uint8_t) { Unexpected(); }
 void CHARACTER::SetRegen(LPREGEN) { Unexpected(); }
 TEMP_BUFFER::TEMP_BUFFER(int, bool) { Unexpected(); }
 TEMP_BUFFER::~TEMP_BUFFER() = default;

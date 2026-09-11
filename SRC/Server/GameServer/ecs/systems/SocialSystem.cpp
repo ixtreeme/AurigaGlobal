@@ -1391,7 +1391,8 @@ struct FFindReviver
 
         if (ecs::PlayerRuntime::IsReviver(ch->GetEntityHandle()) == true && pChar != ch && CombatSystem::IsDead(ch->GetEntityHandle()) != true)
         {
-            if (number(1, 100) <= ch->GetMobTable().bRevivePoint)
+            const TMobTable* mobTable = ecs::PlayerRuntime::GetMobTable(ch->GetEntityHandle());
+            if (mobTable && number(1, 100) <= mobTable->bRevivePoint)
             {
                 HasReviver = true;
                 pChar = ch;

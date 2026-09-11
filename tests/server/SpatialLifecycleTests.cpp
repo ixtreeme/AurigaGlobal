@@ -320,7 +320,7 @@ uint32_t CHARACTER::GetPacketVID() const { Unexpected(); }
 void CombatSystem::DistributeSP(entt::entity, entt::entity, int) { Unexpected(); }
 int64_t ecs::PlayerRuntime::GetHP(entt::entity) { Unexpected(); }
 int ecs::PointSystem::GetLimitPoint(entt::entity, uint8_t) { Unexpected(); }
-const TMobTable& CHARACTER::GetMobTable() const { Unexpected(); }
+const TMobTable* ecs::PlayerRuntime::GetMobTable(entt::entity) { Unexpected(); }
 void CHARACTER::PointChange(uint8_t, int64_t, bool, bool, bool) { Unexpected(); }
 void CHARACTER::OnMove(bool) { Unexpected(); }
 bool AffectSystem::IsAffectFlag(entt::entity, uint32_t) { Unexpected(); }

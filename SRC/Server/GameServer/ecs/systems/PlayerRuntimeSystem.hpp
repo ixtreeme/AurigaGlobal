@@ -234,6 +234,10 @@ bool SetVoteCoin(entt::entity e, int64_t amount);
 #endif
 
 #ifdef ENABLE_RANKING
+uint32_t GetMobDropItemVnum(entt::entity e);
+uint32_t GetPolymorphItemVnum(entt::entity e);
+uint32_t GetLastShoutPulse(entt::entity e);
+void SetLastShoutPulse(entt::entity e, uint32_t pulse);
 entt::entity GetQuestItem(entt::entity e);
 void SetQuestItem(entt::entity e, entt::entity item);
 int64_t GetRankPoints(entt::entity e, int category);

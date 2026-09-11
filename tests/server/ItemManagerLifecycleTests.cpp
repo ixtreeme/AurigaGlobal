@@ -227,8 +227,8 @@ int number_ex(int low, int high, const char*, int) { Check(creationTest && low <
 time_t get_global_time() { Check(creationTest, "unexpected clock"); return 10000; }
 const char* get_table_postfix() { Unexpected(); }
 bool AffectSystem::IsPolymorphed(entt::entity) { Unexpected(); }
-uint32_t CHARACTER::GetMobDropItemVnum() const { Unexpected(); }
-uint32_t CHARACTER::GetPolymorphItemVnum() const { Unexpected(); }
+uint32_t ecs::PlayerRuntime::GetMobDropItemVnum(entt::entity) { Unexpected(); }
+uint32_t ecs::PlayerRuntime::GetPolymorphItemVnum(entt::entity) { Unexpected(); }
 void CHARACTER::ComputePoints() { Unexpected(); }
 void CHARACTER::SyncQuickslot(uint8_t, uint8_t, uint8_t) { Unexpected(); }
 bool CHARACTER::IsEquipUniqueGroup(uint32_t) const { Unexpected(); }

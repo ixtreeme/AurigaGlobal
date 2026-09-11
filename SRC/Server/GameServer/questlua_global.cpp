@@ -1398,13 +1398,17 @@ namespace quest
 					++SpawnCount;
 				// DUAL-PATH: register spawned mob in ECS registry
 				if (pSpawnMonster) {
-					EntityFactory::CreateMonster(
-						g_registry,
-						pSpawnMonster->GetMobTable(),
-						ecs::PlayerRuntime::GetX(spawnMonster),
-						ecs::PlayerRuntime::GetY(spawnMonster),
-						ecs::PlayerRuntime::GetMapIndex(spawnMonster),
-						ecs::PlayerRuntime::GetPacketVID(spawnMonster));
+					if (const TMobTable* mobTable =
+							ecs::PlayerRuntime::GetMobTable(spawnMonster))
+					{
+						EntityFactory::CreateMonster(
+							g_registry,
+							*mobTable,
+							ecs::PlayerRuntime::GetX(spawnMonster),
+							ecs::PlayerRuntime::GetY(spawnMonster),
+							ecs::PlayerRuntime::GetMapIndex(spawnMonster),
+							ecs::PlayerRuntime::GetPacketVID(spawnMonster));
+					}
 				}
 				}
 			}
@@ -1469,13 +1473,17 @@ namespace quest
 					++SpawnCount;
 				// DUAL-PATH: register spawned mob in ECS registry
 				if (pSpawnMonster) {
-					EntityFactory::CreateMonster(
-						g_registry,
-						pSpawnMonster->GetMobTable(),
-						ecs::PlayerRuntime::GetX(spawnMonster),
-						ecs::PlayerRuntime::GetY(spawnMonster),
-						ecs::PlayerRuntime::GetMapIndex(spawnMonster),
-						ecs::PlayerRuntime::GetPacketVID(spawnMonster));
+					if (const TMobTable* mobTable =
+							ecs::PlayerRuntime::GetMobTable(spawnMonster))
+					{
+						EntityFactory::CreateMonster(
+							g_registry,
+							*mobTable,
+							ecs::PlayerRuntime::GetX(spawnMonster),
+							ecs::PlayerRuntime::GetY(spawnMonster),
+							ecs::PlayerRuntime::GetMapIndex(spawnMonster),
+							ecs::PlayerRuntime::GetPacketVID(spawnMonster));
+					}
 				}
 				}
 			}

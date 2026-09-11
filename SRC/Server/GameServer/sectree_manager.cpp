@@ -1724,7 +1724,9 @@ struct FCountSpecifiedMonster
 			LPCHARACTER pChar = static_cast<LPCHARACTER>(ent);
 			if (true == ecs::PlayerRuntime::IsStone(((pChar) ? (pChar)->GetEntityHandle() : entt::null)))
 			{
-				if (pChar->GetMobTable().dwVnum == SpecifiedVnum)
+				const TMobTable* mobTable =
+					ecs::PlayerRuntime::GetMobTable(pChar->GetEntityHandle());
+				if (mobTable && mobTable->dwVnum == SpecifiedVnum)
 					cnt++;
 			}
 		}

@@ -578,8 +578,6 @@ public:
 
 #ifdef ENABLE_VOTE4BUFF
 public:
-	long long	GetVoteCoin();
-	void		SetVoteCoin(long long amount);
 #endif
 
 public:
@@ -655,7 +653,6 @@ public:
 	//void SetName(const char* name) { m_stName = (name ? name : ""); }
 	void			SetName(const std::string& name) { m_stName = name; }
 
-	void			SetRace(uint8_t race);
 	bool			ChangeSex();
 
 	uint32_t			GetAID() const;
@@ -673,8 +670,6 @@ public:
 	// DUNGEON_TICKET_LOOT_EVENT extra metin marker
 #endif
 
-	uint32_t			GetLastShoutPulse() const;
-	void			SetLastShoutPulse(uint32_t pulse);
 
 	BOOL 			IsGM() const;
 
@@ -705,8 +700,6 @@ public:
 	int64_t			GetPoint(uint8_t idx) const;
 
 
-	const TMobTable& GetMobTable() const;
-	uint32_t				GetMobDropItemVnum() const;
 
 	// NEWAI
 
@@ -715,9 +708,7 @@ public:
 
 	// NEWAI END
 
-	uint32_t			GetSummonVnum() const;
 
-	uint32_t			GetPolymorphItemVnum() const;
 
 	void			ComputePoints();
 
@@ -1512,7 +1503,6 @@ private:
 	// Empire
 
 public:
-	void 				SetEmpire(uint8_t bEmpire);
 
 protected:
 

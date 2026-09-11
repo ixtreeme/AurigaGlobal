@@ -1163,10 +1163,58 @@ uint8_t GetJob(entt::entity e)
 	return RaceToJob(race, &job) ? static_cast<uint8_t>(job) : JOB_WARRIOR;
 }
 
+// The vnum a mob drops beside its loot, and the item a polymorph turns into.
+// Both used to dereference m_pkMobData; GetMobTable answers null for anything
+// that has none.
+uint32_t GetMobDropItemVnum(entt::entity e)
+{
+	const TMobTable* table = GetMobTable(e);
+	if (!table)
+	{
+		LOG_ERROR("GetMobDropItemVnum: no mob table (vid={} race={} name={} map={} x={} y={})",
+			GetPacketVID(e), GetRaceNum(e), GetName(e), GetMapIndex(e), GetX(e), GetY(e));
+		return 0;
+	}
+
+	return table->dwDropItemVnum;
+}
+
+uint32_t GetPolymorphItemVnum(entt::entity e)
+{
+	const TMobTable* table = GetMobTable(e);
+	return table ? table->dwPolymorphItemVnum : 0;
+}
+
+// When this character last shouted, which the fifteen second limit reads.
+uint32_t GetLastShoutPulse(entt::entity e)
+{
+	if (e == entt::null || !g_registry.valid(e))
+		return 0;
+
+	const auto* flags = g_registry.try_get<ecs::CharacterRuntimeFlagsComponent>(e);
+	return flags ? flags->lastShoutPulse : 0;
+}
+
+void SetLastShoutPulse(entt::entity e, uint32_t pulse)
+{
+	if (e == entt::null || !g_registry.valid(e))
+		return;
+
+	g_registry.get_or_emplace<ecs::CharacterRuntimeFlagsComponent>(e).lastShoutPulse = pulse;
+	g_registry.emplace_or_replace<ecs::DirtyTag>(e);
+}
+
 bool SetRace(entt::entity e, uint8_t race)
 {
-	if (e == entt::null || !g_registry.valid(e) || race >= MAIN_RACE_MAX_NUM)
+	if (e == entt::null || !g_registry.valid(e))
 		return false;
+
+	if (race >= MAIN_RACE_MAX_NUM)
+	{
+		// CHARACTER::SetRace logged this and the entity form only said false.
+		LOG_ERROR("SetRace(name={}, race={}).OUT_OF_RACE_RANGE", GetName(e), static_cast<int>(race));
+		return false;
+	}
 
 	g_registry.emplace_or_replace<ecs::RaceComponent>(e,
 		ecs::RaceComponent { static_cast<uint16_t>(race) });
@@ -1845,7 +1893,7 @@ bool CHARACTER::ChangeSex()
         return false;
     }
 
-    SetRace(dst_race);
+    ecs::PlayerRuntime::SetRace(GetEntityHandle(), dst_race);
 
     LOG_INFO("CHANGE_SEX: {} ({} -> {})", GetName(), static_cast<int>(src_race), static_cast<int>(dst_race));
     return true;
@@ -1865,22 +1913,6 @@ uint16_t CHARACTER::GetRaceNum() const
         return static_cast<uint16_t>(race->baseRace);
 
     return 0;
-}
-
-void CHARACTER::SetRace(uint8_t race)
-{
-    if (race >= MAIN_RACE_MAX_NUM)
-    {
-        LOG_ERROR("CHARACTER::SetRace(name={}, race={}).OUT_OF_RACE_RANGE", GetName(), static_cast<int>(race));
-        return;
-    }
-
-	ecs::PlayerRuntime::SetRace(GetEntityHandle(), race);
-}
-
-void CHARACTER::SetEmpire(uint8_t bEmpire)
-{
-	ecs::PlayerRuntime::SetEmpire(GetEntityHandle(), bEmpire);
 }
 
 uint8_t CHARACTER::GetCharType() const
@@ -2137,20 +2169,6 @@ void SetLevel(entt::entity e, uint8_t level)
 
 } // namespace ecs::PlayerRuntime
 
-uint32_t CHARACTER::GetLastShoutPulse() const
-{
-    if (const auto* flags = TryGetRuntimeFlagsComponent(GetEntityHandle()))
-        return flags->lastShoutPulse;
-
-    return 0;
-}
-
-void CHARACTER::SetLastShoutPulse(uint32_t pulse)
-{
-    if (auto* flags = EnsureRuntimeFlagsComponent(GetEntityHandle()))
-        flags->lastShoutPulse = pulse;
-}
-
 BOOL CHARACTER::IsGM() const
 {
     if (ecs::PlayerRuntime::GetGMLevel(GetEntityHandle()) != GM_PLAYER)
@@ -2179,21 +2197,6 @@ uint32_t CHARACTER::GetAID() const
 // Pet/mount markers live only in StatusFlags; legacy readers use the same store.
 
 #ifdef ENABLE_VOTE4BUFF
-long long CHARACTER::GetVoteCoin()
-{
-    std::unique_ptr<SQLMsg> pMsg(DBManager::instance().DirectQuery("SELECT coins FROM account.account WHERE id = '%d';", GetDesc()->GetAccountTable().id));
-    if (pMsg->Get()->uiNumRows == 0)
-        return 0;
-    MYSQL_ROW row = mysql_fetch_row(pMsg->Get()->pSQLResult);
-    long long coin = 0;
-    str_to_number(coin, row[0]);
-    return coin;
-}
-
-void CHARACTER::SetVoteCoin(long long amount)
-{
-    std::unique_ptr<SQLMsg> pMsg(DBManager::instance().DirectQuery("UPDATE account.account SET coins = '%lld' WHERE id = '%d';", amount, GetDesc()->GetAccountTable().id));
-}
 #endif
 
 #ifdef ENABLE_ITEMSHOP
@@ -2244,11 +2247,6 @@ int GetProtectTime(entt::entity e, std::string_view flag)
 
 #endif
 
-const TMobTable& CHARACTER::GetMobTable() const
-{
-    return m_pkMobData->m_table;
-}
-
 namespace ecs::PlayerRuntime {
 
 const TMobTable* GetMobTable(entt::entity e)
@@ -2291,27 +2289,6 @@ int GetHPPct(entt::entity e)
 }
 
 } // namespace ecs::PlayerRuntime
-
-uint32_t CHARACTER::GetMobDropItemVnum() const
-{
-    if (!m_pkMobData)
-    {
-        LOG_ERROR("GetMobDropItemVnum: NULL mob data (vid={} race={} name={} map={} x={} y={})", GetPacketVID(), GetRaceNum(), GetName(), GetMapIndex(), GetX(), GetY());
-        return 0;
-    }
-
-    return m_pkMobData->m_table.dwDropItemVnum;
-}
-
-uint32_t CHARACTER::GetSummonVnum() const
-{
-    return m_pkMobData ? m_pkMobData->m_table.dwSummonVnum : 0;
-}
-
-uint32_t CHARACTER::GetPolymorphItemVnum() const
-{
-    return m_pkMobData ? m_pkMobData->m_table.dwPolymorphItemVnum : 0;
-}
 
 void CHARACTER::ResetPlayTime(uint32_t dwTimeRemain)
 {
@@ -3401,7 +3378,7 @@ void CHARACTER::SetPlayerProto(const TPlayerTable* t)
     SetPoint(POINT_LEVEL_STEP, t->level_step);
     SetRealPoint(POINT_LEVEL_STEP, t->level_step);
 
-    SetRace(t->job);
+    ecs::PlayerRuntime::SetRace(GetEntityHandle(), t->job);
 
     ecs::PlayerRuntime::SetLevel(GetEntityHandle(), t->level);
     ecs::PlayerRuntime::SetExp(GetEntityHandle(), t->exp);
@@ -3533,7 +3510,7 @@ void CHARACTER::SetProto(const CMob* pkMob)
         g_registry.emplace_or_replace<ecs::CharacterType>(self, static_cast<uint8_t>(t->bType));
 
     ecs::PlayerRuntime::SetLevel(GetEntityHandle(), t->bLevel);
-    SetEmpire(t->bEmpire);
+    ecs::PlayerRuntime::SetEmpire(GetEntityHandle(), t->bEmpire);
 
     ecs::PlayerRuntime::SetExp(GetEntityHandle(), t->dwExp);
     SetRealPoint(POINT_ST, t->bStr);

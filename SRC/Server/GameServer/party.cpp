@@ -1638,7 +1638,8 @@ uint8_t CParty::CountMemberByVnum(uint32_t dwVnum)
 		if (ecs::PlayerRuntime::IsPC(((tch) ? (tch)->GetEntityHandle() : entt::null)))
 			continue;
 
-		if (tch->GetMobTable().dwVnum == dwVnum)
+		const TMobTable* mobTable = ecs::PlayerRuntime::GetMobTable(tch->GetEntityHandle());
+		if (mobTable && mobTable->dwVnum == dwVnum)
 			++bCount;
 	}
 
