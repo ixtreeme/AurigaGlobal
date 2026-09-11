@@ -1420,7 +1420,7 @@ bool CRuneDungeon::OnClickNpc(entt::entity character)
     else
     {
         setupMember(character);
-        d->Join_Coords(ch, kEnterFloor1X, kEnterFloor1Y, ecs::PlayerRuntime::GetMapIndex(character));
+        d->Join_Coords(character, kEnterFloor1X, kEnterFloor1Y, ecs::PlayerRuntime::GetMapIndex(character));
     }
 
     return true;

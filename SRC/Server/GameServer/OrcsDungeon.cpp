@@ -809,7 +809,7 @@ bool COrcsDungeon::OnClickNpc(entt::entity character)
     if (!party)
     {
         applyMember(character);
-        d->Join_Coords(ch, kEnterX, kEnterY, kOrcOriginalMap);
+        d->Join_Coords(character, kEnterX, kEnterY, kOrcOriginalMap);
     }
     else
     {

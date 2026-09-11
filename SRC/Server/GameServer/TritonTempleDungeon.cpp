@@ -790,7 +790,7 @@ bool CTritonTempleDungeon::OnClickNpc(entt::entity character)
     if (!party)
     {
         applyMember(character);
-        d->Join_Coords(ch, kEnterX, kEnterY, ecs::PlayerRuntime::GetMapIndex(character));
+        d->Join_Coords(character, kEnterX, kEnterY, ecs::PlayerRuntime::GetMapIndex(character));
     }
     else
     {

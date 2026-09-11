@@ -1354,7 +1354,7 @@ bool CVikingDungeon::OnClickNpc(entt::entity character, entt::entity npc)
     if (party)
         d->JoinParty_Coords(party, kEnterGlobalX, kEnterGlobalY, ecs::PlayerRuntime::GetMapIndex(character));
     else
-        d->Join_Coords(ch, kEnterGlobalX, kEnterGlobalY, ecs::PlayerRuntime::GetMapIndex(character));
+        d->Join_Coords(character, kEnterGlobalX, kEnterGlobalY, ecs::PlayerRuntime::GetMapIndex(character));
 
     BigNoticeMap(dungeonMapIdx, "<Frostbane Fortress> Dungeon instance created.");
     return true;

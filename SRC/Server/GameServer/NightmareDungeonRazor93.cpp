@@ -628,7 +628,7 @@ bool CNightmareDungeonRazor93::OnClickNpc(entt::entity character)
     if (!party)
     {
         applyMember(character);
-        d->Join_Coords(ch, 2113, 1729, kOriginalMap);
+        d->Join_Coords(character, 2113, 1729, kOriginalMap);
     }
     else
     {

@@ -951,7 +951,7 @@ if (!it.ok)
     if (!party)
     {
         applyMember(character);
-        d->Join_Coords(ch, kEnterX, kEnterY, kEasterOriginalMap);
+        d->Join_Coords(character, kEnterX, kEnterY, kEasterOriginalMap);
     }
     else
     {

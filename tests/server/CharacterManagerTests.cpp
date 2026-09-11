@@ -419,7 +419,7 @@ LPSECTREE SECTREE_MANAGER::Get(int32_t, int32_t, int32_t) { Unexpected(); }
 bool SECTREE_MANAGER::GetMapBasePositionByMapIndex(int32_t, PIXEL_POSITION&) { Unexpected(); }
 bool SECTREE_MANAGER::GetMovablePosition(int32_t, int32_t, int32_t, PIXEL_POSITION&) { Unexpected(); }
 uint8_t SECTREE_MANAGER::GetEmpireFromMapIndex(int32_t) { Unexpected(); }
-void CDungeon::DeadCharacter(LPCHARACTER) { Unexpected(); }
+void CDungeon::DeadCharacter(entt::entity) { Unexpected(); }
 LPDUNGEON CDungeonManager::FindByMapIndex(int32_t) { Unexpected(); }
 void DBManager::SendMoneyLog(uint8_t, uint32_t, int64_t) { Unexpected(); }
 bool map_allow_find(int32_t) { Unexpected(); }

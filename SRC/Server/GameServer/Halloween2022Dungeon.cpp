@@ -881,7 +881,7 @@ bool CHalloween2022Dungeon::OnClickNpc(entt::entity character, entt::entity npc)
     if (party)
         d->JoinParty_Coords(party, kEnterGlobalX, kEnterGlobalY, originMapForWarp);
     else
-        d->Join_Coords(ch, kEnterGlobalX, kEnterGlobalY, kOriginalMap);
+        d->Join_Coords(character, kEnterGlobalX, kEnterGlobalY, kOriginalMap);
 
     BigNoticeMap(dungeonMapIdx, "<Bloody cathedral> You have 30 minutes to complete the dungeon.");
     return true;

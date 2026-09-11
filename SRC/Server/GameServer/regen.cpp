@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "ecs/systems/PlayerRuntimeSystem.hpp"
 #include <Core/Logging.hpp>
 #include "config.h"
 #include "char_interface.hpp"
@@ -329,10 +330,10 @@ static void regen_spawn_dungeon(LPREGEN regen, LPDUNGEON pDungeon, bool bOnce)
 #ifdef __DEFENSE_WAVE__
 		if (pDungeon)
 		{
-			LPCHARACTER mast = pDungeon->GetMast();
-			if (mast)
+			const entt::entity mast = pDungeon->GetMast();
+			if (ecs::PlayerRuntime::IsValid(mast))
 			{
-				CombatSystem::SetVictim(ch->GetEntityHandle(), (mast ? mast->GetEntityHandle() : entt::null));
+				CombatSystem::SetVictim(ch->GetEntityHandle(), mast);
 			}
 		}
 #endif

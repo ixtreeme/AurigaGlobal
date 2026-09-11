@@ -1643,7 +1643,7 @@ bool CLostCastleDungeon::OnClickNpc(entt::entity character)
         applyMember(character);
 
         // IMPORTANT: Join expects GLOBAL CELL on your core
-        d->Join_Coords(ch, kJoinGlobalX, kJoinGlobalY, ecs::PlayerRuntime::GetMapIndex(character));
+        d->Join_Coords(character, kJoinGlobalX, kJoinGlobalY, ecs::PlayerRuntime::GetMapIndex(character));
     }
     else
     {

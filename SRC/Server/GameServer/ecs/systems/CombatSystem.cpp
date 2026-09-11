@@ -2742,8 +2742,7 @@ void Dead(entt::entity victim, entt::entity killer, bool immediate)
 		// below may touch the victim without asking again.
 		if (LPDUNGEON dungeon = ecs::SocialSystem::GetDungeon(victim))
 		{
-			if (LPCHARACTER legacyVictim = ecs::LegacyCharOf(victim))
-				dungeon->DeadCharacter(legacyVictim);
+			dungeon->DeadCharacter(victim);
 
 			if (!g_registry.valid(victim))
 				return;
@@ -4077,12 +4076,12 @@ void Reward(entt::entity e, bool bItemDrop)
 					if (ecs::SocialSystem::GetDungeon(pkAttacker->GetEntityHandle()) == pDungeon)
 					{
 						// --- helper: HWID|HOST kulcs ugyanugy, ahogy nalad masutt is ---
-						auto MakeHwidHostKey = [&](LegacyCharHandle ch) -> std::string
+						auto MakeHwidHostKey = [&](entt::entity ch) -> std::string
 							{
-								if (!ch || !ecs::PlayerRuntime::IsPC((ch ? ch->GetEntityHandle() : entt::null)) || !ecs::PlayerRuntime::GetDesc((ch ? ch->GetEntityHandle() : entt::null)))
+								if (ch == entt::null || !ecs::PlayerRuntime::IsPC(ch) || !ecs::PlayerRuntime::GetDesc(ch))
 									return std::string();
 
-								DESC* d = ecs::PlayerRuntime::GetDesc((ch ? ch->GetEntityHandle() : entt::null));
+								DESC* d = ecs::PlayerRuntime::GetDesc(ch);
 								const char* hwid = d->GetHwid();
 								const char* host = d->GetHostName();
 
@@ -4100,13 +4099,13 @@ void Reward(entt::entity e, bool bItemDrop)
 							};
 
 						// 1) HWID|HOST alapjan 1 karakter / gep (dupe eseten a legtobb dmg kap)
-						std::unordered_map<std::string, LegacyCharHandle> mapWinnerByKey;
+						std::unordered_map<std::string, entt::entity> mapWinnerByKey;
 						mapWinnerByKey.reserve(16);
 
-						pDungeon->ForEachMember([&](LegacyCharHandle mch)
+						pDungeon->ForEachMember([&](entt::entity mch)
 							{
-								const entt::entity mchEntity = mch ? mch->GetEntityHandle() : entt::null;
-								if (!mch || !ecs::PlayerRuntime::IsPC(mchEntity) || !ecs::PlayerRuntime::GetDesc(mchEntity))
+								const entt::entity mchEntity = mch;
+								if (mch == entt::null || !ecs::PlayerRuntime::IsPC(mchEntity) || !ecs::PlayerRuntime::GetDesc(mchEntity))
 									return;
 
 								// ugyanabban a dungeon instance-ben kell legyen
@@ -4142,7 +4141,7 @@ void Reward(entt::entity e, bool bItemDrop)
 								if (itNew != CombatSystem::DamageLedgerOf(e).entries.end())
 									dmgNew = itNew->second.totalDamage;
 
-								auto itOld = CombatSystem::DamageLedgerOf(e).entries.find(it->second->GetEntityHandle());
+								auto itOld = CombatSystem::DamageLedgerOf(e).entries.find(it->second);
 								if (itOld != CombatSystem::DamageLedgerOf(e).entries.end())
 									dmgOld = itOld->second.totalDamage;
 
@@ -4185,10 +4184,9 @@ void Reward(entt::entity e, bool bItemDrop)
 							// 3) kiosztas: minden HWID-unique winnernek ugyanaz a drop (ground + ownership)
 							for (const auto& kv : mapWinnerByKey)
 							{
-								auto* rch = kv.second;
-								const entt::entity rchEntity = rch ? rch->GetEntityHandle() : entt::null;
+								const entt::entity rchEntity = kv.second;
 
-								if (!rch || !ecs::PlayerRuntime::IsPC(rchEntity) || !ecs::PlayerRuntime::GetDesc(rchEntity))
+								if (rchEntity == entt::null || !ecs::PlayerRuntime::IsPC(rchEntity) || !ecs::PlayerRuntime::GetDesc(rchEntity))
 									continue;
 
 								PIXEL_POSITION mpos = pos;
@@ -4214,7 +4212,7 @@ void Reward(entt::entity e, bool bItemDrop)
 #ifdef ENABLE_DROP_INSTANT_INVENTORY
 									if (bInstantRewardToInventory)
 									{
-										__GiveRewardItemToCharacterOrDrop(rch ? rchEntity : entt::null, e, newItem, mpos, true);
+										__GiveRewardItemToCharacterOrDrop(rchEntity, e, newItem, mpos, true);
 									}
 									else
 									{
@@ -6295,7 +6293,10 @@ bool Damage(entt::entity victim, entt::entity attacker, int64_t dam, uint8_t dam
 		if (dungeon)
 		{
 			dungeon->UpdateMastHP();
-			if (ecs::PlayerRuntime::GetHP(dungeon->GetMast()->GetEntityHandle()) <= 0)
+			// A dungeon with no registered mast dereferenced null here; a destroyed
+			// one reads no health and counts as fallen.
+			const entt::entity mast = dungeon->GetMast();
+			if (mast != entt::null && ecs::PlayerRuntime::GetHP(mast) <= 0)
 			{
 				dungeon->ClearRegen();
 				dungeon->KillAll();

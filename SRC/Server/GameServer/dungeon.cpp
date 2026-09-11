@@ -39,7 +39,7 @@ CDungeon::CDungeon(IdType id, int32_t lOriginalMapIndex, int32_t lMapIndex)
 CDungeon::~CDungeon()
 {
 #ifdef __DEFENSE_WAVE__
-	m_Mast = nullptr;
+	m_Mast = entt::null;
 #endif
 
 	if (m_pParty != nullptr) {
@@ -81,18 +81,6 @@ struct FWarpToDungeonCoords
 	int32_t m_y;
 	LPDUNGEON m_pkDungeon;
 };
-
-void CDungeon::Join_Coords(LPCHARACTER ch, int32_t X, int32_t Y, int32_t index)
-{
-	if (SECTREE_MANAGER::instance().GetMap(m_lMapIndex) == nullptr)
-	{
-		LOG_ERROR("CDungeon: SECTREE_MAP not found for #{}", m_lMapIndex);
-		return;
-	}
-	X*=100;
-	Y*=100;
-	FWarpToDungeonCoords(m_lMapIndex, X, Y, this) (ch);
-}
 
 void CDungeon::Join_Coords(entt::entity character, int32_t X, int32_t Y, int32_t index)
 {
@@ -142,7 +130,7 @@ void CDungeon::Initialize()
 
 	m_pParty = nullptr;
 #ifdef __DEFENSE_WAVE__
-	m_Mast = nullptr;
+	m_Mast = entt::null;
 #endif
 }
 
@@ -190,15 +178,6 @@ struct FWarpToDungeon
 	int32_t m_y;
 	LPDUNGEON m_pkDungeon;
 };
-
-void CDungeon::Join(LPCHARACTER ch)
-{
-	if (SECTREE_MANAGER::instance().GetMap(m_lMapIndex) == nullptr) {
-		LOG_ERROR("CDungeon: SECTREE_MAP not found for #{}", m_lMapIndex);
-		return;
-	}
-	FWarpToDungeon(m_lMapIndex, this) (ch);
-}
 
 void CDungeon::JoinParty(LPPARTY pParty)
 {
@@ -255,25 +234,27 @@ EVENTFUNC(dungeon_dead_event)
 	return 0;
 }
 
-void CDungeon::IncMember(LPCHARACTER ch)
+// The characters standing in this dungeon. They were held as pointers, which
+// is why SocialSystem::SetDungeon had to resolve a character just to count it
+// in and out.
+void CDungeon::IncMember(entt::entity character)
 {
-	if (m_set_pkCharacter.find(ch) == m_set_pkCharacter.end())
-		m_set_pkCharacter.insert(ch);
+	m_setMember.insert(character);
 
 	event_cancel(&deadEvent);
 }
 
-void CDungeon::DecMember(LPCHARACTER ch)
+void CDungeon::DecMember(entt::entity character)
 {
-	auto it = m_set_pkCharacter.find(ch);
+	auto it = m_setMember.find(character);
 
-	if (it == m_set_pkCharacter.end()) {
+	if (it == m_setMember.end()) {
 		return;
 	}
 
-	m_set_pkCharacter.erase(it);
+	m_setMember.erase(it);
 
-	if (m_set_pkCharacter.empty())
+	if (m_setMember.empty())
 	{
 		dungeon_id_info* info = AllocEventInfo<dungeon_id_info>();
 		info->dungeon_id = m_id;
@@ -284,9 +265,8 @@ void CDungeon::DecMember(LPCHARACTER ch)
 	}
 }
 
-void CDungeon::IncPartyMember(LPPARTY pParty, LPCHARACTER ch)
+void CDungeon::IncPartyMember(LPPARTY pParty, entt::entity character)
 {
-	//0, "DUNGEON-PARTY inc %p %p", this, pParty);
 	TPartyMap::iterator it = m_map_pkParty.find(pParty);
 
 	if (it != m_map_pkParty.end())
@@ -294,12 +274,11 @@ void CDungeon::IncPartyMember(LPPARTY pParty, LPCHARACTER ch)
 	else
 		m_map_pkParty.insert(std::make_pair(pParty,1));
 
-	IncMember(ch);
+	IncMember(character);
 }
 
-void CDungeon::DecPartyMember(LPPARTY pParty, LPCHARACTER ch)
+void CDungeon::DecPartyMember(LPPARTY pParty, entt::entity character)
 {
-	//0, "DUNGEON-PARTY dec %p %p", this, pParty);
 	TPartyMap::iterator it = m_map_pkParty.find(pParty);
 
 	if (it == m_map_pkParty.end())
@@ -312,7 +291,7 @@ void CDungeon::DecPartyMember(LPPARTY pParty, LPCHARACTER ch)
 			QuitParty(pParty);
 	}
 
-	DecMember(ch);
+	DecMember(character);
 }
 
 struct FWarpToPosition
@@ -443,16 +422,19 @@ CDungeonManager::~CDungeonManager()
 {
 }
 
+// Unique mobs are held by entity. A pointer outlived its mob whenever the mob
+// was destroyed without DeadCharacter hearing about it, and the next read went
+// through freed memory; a stale handle just stops being valid.
 void CDungeon::SetUnique(const char* key, uint32_t vid)
 {
-	LPCHARACTER ch = CHARACTER_MANAGER::instance().Find(vid);
-	if (!ch) {
+	const entt::entity mob = ecs::PlayerRuntime::FindByVID(vid);
+	if (mob == entt::null) {
 		LOG_ERROR("Unknown monster: {} for dungeon {}.", vid, m_lMapIndex);
 		return;
 	}
 
-	m_map_UniqueMob.insert(std::make_pair(std::string(key), ch));
-	AffectSystem::AddAffect(((ch) ? (ch)->GetEntityHandle() : entt::null), AFFECT_DUNGEON_UNIQUE, POINT_NONE, 0, AFF_DUNGEON_UNIQUE, 65535, 0, true);
+	m_map_UniqueMob.insert(std::make_pair(std::string(key), mob));
+	AffectSystem::AddAffect(mob, AFFECT_DUNGEON_UNIQUE, POINT_NONE, 0, AFF_DUNGEON_UNIQUE, 65535, 0, true);
 }
 
 void CDungeon::KillUnique(std::string_view key)
@@ -465,9 +447,9 @@ void CDungeon::KillUnique(std::string_view key)
 		return;
 	}
 
-	LPCHARACTER ch = it->second;
+	const entt::entity mob = it->second;
 	m_map_UniqueMob.erase(it);
-	CombatSystem::Dead(ch->GetEntityHandle());
+	CombatSystem::Dead(mob);
 }
 
 int32_t CDungeon::GetUniqueVid(std::string_view key)
@@ -480,18 +462,17 @@ int32_t CDungeon::GetUniqueVid(std::string_view key)
 		return false;
 	}
 
-	return it->second->GetLegacyVID();
+	return ecs::PlayerRuntime::GetPacketVID(it->second);
 }
 
-void CDungeon::DeadCharacter(LPCHARACTER ch)
+void CDungeon::DeadCharacter(entt::entity character)
 {
-	const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
-	if (!ecs::PlayerRuntime::IsPC(chEntity))
+	if (!ecs::PlayerRuntime::IsPC(character))
 	{
-		if (AffectSystem::FindAffect(chEntity, AFFECT_DUNGEON_UNIQUE)) {
+		if (AffectSystem::FindAffect(character, AFFECT_DUNGEON_UNIQUE)) {
 			auto it = m_map_UniqueMob.begin();
 			for ( ; it != m_map_UniqueMob.end(); ) {
-				if (it->second == ch)
+				if (it->second == character)
 				{
 					it = m_map_UniqueMob.erase(it);
 					break;
@@ -515,7 +496,7 @@ bool CDungeon::IsUniqueDead(std::string_view key)
 		return false;
 	}
 
-	return CombatSystem::IsDead(((it->second) ? (it->second)->GetEntityHandle() : entt::null));
+	return CombatSystem::IsDead(it->second);
 }
 
 LPCHARACTER CDungeon::SpawnMob(int32_t vnum, int32_t x, int32_t y, int32_t dir)
@@ -972,10 +953,10 @@ void CDungeon::UpdateMastHP()
 		return;
 	}
 
-	LPCHARACTER mast = GetMast();
-	if (mast)
+	const entt::entity mast = GetMast();
+	if (ecs::PlayerRuntime::IsValid(mast))
 	{
-		SUpdateMastHp f(ecs::PlayerRuntime::GetHP(mast->GetEntityHandle()));
+		SUpdateMastHp f(ecs::PlayerRuntime::GetHP(mast));
 		map->for_each(f);
 	}
 }
@@ -989,21 +970,21 @@ void CDungeon::RestoreMastPartialHP()
 		return;
 	}
 
-	LPCHARACTER mast = GetMast();
-	if (mast)
+	const entt::entity mast = GetMast();
+	if (ecs::PlayerRuntime::IsValid(mast))
 	{
-		int64_t hp = ecs::PlayerRuntime::GetHP(GetMast()->GetEntityHandle());
+		int64_t hp = ecs::PlayerRuntime::GetHP(mast);
 		int32_t add = 600000;
 		if (hp + add >= 12000000)
 		{
-			ecs::PlayerRuntime::SetHP(mast->GetEntityHandle(), 12000000);
+			ecs::PlayerRuntime::SetHP(mast, 12000000);
 		}
 		else
 		{
-			ecs::PlayerRuntime::SetHP(mast->GetEntityHandle(), hp + add);
+			ecs::PlayerRuntime::SetHP(mast, hp + add);
 		}
 
-		SUpdateMastHp f(ecs::PlayerRuntime::GetHP(mast->GetEntityHandle()));
+		SUpdateMastHp f(ecs::PlayerRuntime::GetHP(mast));
 		map->for_each(f);
 	}
 }

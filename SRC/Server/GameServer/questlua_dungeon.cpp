@@ -40,9 +40,9 @@
 
 template <class Func> Func CDungeon::ForEachMember(Func f)
 {
-	for (auto it = m_set_pkCharacter.begin(); it != m_set_pkCharacter.end(); ++it)
+	for (auto it = m_setMember.begin(); it != m_setMember.end(); ++it)
 	{
-		LOG_INFO("Dungeon ForEachMember {}", ecs::PlayerRuntime::GetName((((*it)) ? ((*it))->GetEntityHandle() : entt::null)).data());
+		LOG_INFO("Dungeon ForEachMember {}", ecs::PlayerRuntime::GetName(*it).data());
 		f(*it);
 	}
 	return f;
@@ -587,14 +587,14 @@ namespace quest
 #ifdef __DEFENSE_WAVE__
 		if (vnum == 20434)
 		{
-			dungeon->SetMast(ch);
+			dungeon->SetMast(ch->GetEntityHandle());
 		}
 		else if (vnum == 3956)
 		{
-			LPCHARACTER mast = dungeon->GetMast();
-			if (mast)
+			const entt::entity mast = dungeon->GetMast();
+			if (ecs::PlayerRuntime::IsValid(mast))
 			{
-				CombatSystem::SetVictim(ch->GetEntityHandle(), (mast ? mast->GetEntityHandle() : entt::null));
+				CombatSystem::SetVictim(ch->GetEntityHandle(), mast);
 			}
 		}
 #endif

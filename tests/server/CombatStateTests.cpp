@@ -487,7 +487,7 @@ void CDungeon::KillAll(void) { UnexpectedService(__func__); }
 void CDungeon::KillAllMonsters(void) { UnexpectedService(__func__); }
 void CDungeon::SpawnRegen(char const *,bool) { UnexpectedService(__func__); }
 void CDungeon::ClearRegen(void) { UnexpectedService(__func__); }
-void CDungeon::DeadCharacter(CHARACTER *) { UnexpectedService(__func__); }
+void CDungeon::DeadCharacter(entt::entity) { UnexpectedService(__func__); }
 void CDungeon::ExitAllLobby(unsigned char) { UnexpectedService(__func__); }
 int CDungeon::GetFlag(std::string) { UnexpectedService(__func__); }
 void CDungeon::SetFlag(std::string,int) { UnexpectedService(__func__); }

@@ -8,7 +8,7 @@ class CParty;
 class CDungeon
 {
 	typedef std::unordered_map<LPPARTY, int> TPartyMap;
-	typedef std::map<std::string, LPCHARACTER> TUniqueMobMap;
+	typedef std::map<std::string, entt::entity> TUniqueMobMap;
 
 	public:
 	// <Factor> Non-persistent identifier type
@@ -34,12 +34,10 @@ class CDungeon
 	void	JoinParty(LPPARTY pParty);
 	void	QuitParty(LPPARTY pParty);
 
-	void	Join(LPCHARACTER ch);
 
-	void	IncMember(LPCHARACTER ch);
-	void	DecMember(LPCHARACTER ch);
+	void	IncMember(entt::entity character);
+	void	DecMember(entt::entity character);
 	void	JoinParty_Coords(LPPARTY pParty, int32_t X, int32_t Y, int32_t index);
-	void	Join_Coords(LPCHARACTER ch, int32_t X, int32_t Y, int32_t index);
 	void	Join_Coords(entt::entity character, int32_t X, int32_t Y, int32_t index);
 
 	// DUNGEON_KILL_ALL_BUG_FIX
@@ -55,8 +53,8 @@ class CDungeon
 	void DecMonster() { if (m_monstercount == 0) { return; } m_monstercount--; }
 	int32_t CountMonster() { return m_monstercount; }
 
-	void	IncPartyMember(LPPARTY pParty, LPCHARACTER ch);
-	void	DecPartyMember(LPPARTY pParty, LPCHARACTER ch);
+	void	IncPartyMember(LPPARTY pParty, entt::entity character);
+	void	DecPartyMember(LPPARTY pParty, entt::entity character);
 
 	int	GetKillMobCount();
 	int	GetKillStoneCount();
@@ -74,7 +72,7 @@ class CDungeon
 	bool	IsUniqueDead(std::string_view key);
 	int32_t GetUniqueVid(std::string_view key);
 
-	void	DeadCharacter(LPCHARACTER ch);
+	void	DeadCharacter(entt::entity character);
 
 	void	JumpAll(int32_t idx, int32_t x, int32_t y);
 
@@ -106,7 +104,7 @@ class CDungeon
 	int32_t		m_lOrigMapIndex;
 	int32_t		m_lMapIndex;
 
-	CHARACTER_SET	    m_set_pkCharacter;
+	std::unordered_set<entt::entity> m_setMember;
 	std::map<std::string, int>  m_map_Flag;
 	TPartyMap	m_map_pkParty;
 	TAreaMap&	m_map_Area;
@@ -144,13 +142,13 @@ class CDungeon
 	void SetPartyNull();
 #ifdef __DEFENSE_WAVE__
 	public:
-		LPCHARACTER GetMast() { return m_Mast; }
-		void SetMast(LPCHARACTER Mast) { m_Mast = Mast; }
+		entt::entity GetMast() const { return m_Mast; }
+		void SetMast(entt::entity mast) { m_Mast = mast; }
 		void UpdateMastHP();
 		void RestoreMastPartialHP();
 
 	protected:
-		LPCHARACTER m_Mast;
+		entt::entity m_Mast { entt::null };
 #endif
 };
 
@@ -178,7 +176,7 @@ class CDungeonManager : public singleton<CDungeonManager>
 #ifdef ENABLE_DUNGEON_SHARED_DROP_HWID
 template <class Func> Func CDungeon::ForEachMember(Func f)
 {
-	for (auto it = m_set_pkCharacter.begin(); it != m_set_pkCharacter.end(); ++it)
+	for (auto it = m_setMember.begin(); it != m_setMember.end(); ++it)
 		f(*it);
 	return f;
 }

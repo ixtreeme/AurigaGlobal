@@ -500,7 +500,7 @@ void CHARACTER_MANAGER::DestroyCharacter(entt::entity character, const char* fil
 		&& ch->GetRider() == nullptr)
 	{
 		if (auto* dungeon = ecs::SocialSystem::GetDungeon(character))
-			dungeon->DeadCharacter(ch);
+			dungeon->DeadCharacter(character);
 	}
 
 	FlushDelayedSave(character);

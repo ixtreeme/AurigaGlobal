@@ -561,7 +561,7 @@ bool CPyramidDungeonRazor93::OnClickNpc(entt::entity character)
     }
     else
     {
-        d->Join_Coords(ch, kJoinX, kJoinY, ecs::PlayerRuntime::GetMapIndex(character));
+        d->Join_Coords(character, kJoinX, kJoinY, ecs::PlayerRuntime::GetMapIndex(character));
     }
 
     // Prepare after 1 second (spawn metins etc.)
