@@ -263,7 +263,7 @@ void SendCharacterInsert(entt::registry& reg, entt::entity source, entt::entity 
         sign.bHeader = HEADER_GC_SHOP_SIGN;
         sign.dwVID = packet.dwVID;
 #ifdef KASMIR_PAKET_SYSTEM
-        // LPENTITY.4-fixup.2.g: read mirror of legacy m_bKasmirPaketBaslik
+        // ShopState::kasmirTitle is the only copy.
         sign.bShopKasmirTitle = shop->kasmirTitle;
 #endif
         strlcpy(sign.szSign, shop->shopSign.c_str(), sizeof(sign.szSign));

@@ -1511,7 +1511,7 @@ void Stun(entt::entity e)
 	ecs::PointSystem::Change(e, POINT_HP_RECOVERY, -ecs::PointSystem::Get(e, POINT_HP_RECOVERY));
 	ecs::PointSystem::Change(e, POINT_SP_RECOVERY, -ecs::PointSystem::Get(e, POINT_SP_RECOVERY));
 
-	self->CloseMyShop();
+	ecs::SocialSystem::CloseMyShop(self->GetEntityHandle());
 
 	ecs::PlayerRuntime::CancelCharEvent(e, ecs::PlayerRuntime::CharEvent::Recovery); // ȸ ̺Ʈ δ.
 
@@ -2802,7 +2802,7 @@ void Dead(entt::entity victim, entt::entity killer, bool immediate)
 		CShopManager::instance().StopShopping(victim);
 		if (LPCHARACTER windows = ecs::LegacyCharOf(victim))
 		{
-			windows->CloseMyShop();
+			ecs::SocialSystem::CloseMyShop(windows->GetEntityHandle());
 			ecs::SessionSystem::CloseSafebox(windows->GetEntityHandle());
 		}
 	}

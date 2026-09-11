@@ -48,6 +48,12 @@ int GetLastBuyTime(entt::entity e);
 void SetLastBuyTime(entt::entity e);
 uint32_t GetLastBuySellTime(entt::entity e);
 void SetLastBuySellTime(entt::entity e, uint32_t when);
+void OpenMyShop(entt::entity e, const char* sign, TShopItemTable* table, uint8_t itemCount
+#ifdef KASMIR_PAKET_SYSTEM
+    , uint32_t kasmirNpc, uint8_t kasmirTitle
+#endif
+    );
+void CloseMyShop(entt::entity e);
 CShop* GetMyShop(entt::entity e);
 bool GetNoOpenedShop(entt::entity e);
 void SetNoOpenedShop(entt::entity e, bool value);

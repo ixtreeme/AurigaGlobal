@@ -3166,10 +3166,10 @@ void CHARACTER::Destroy()
 {
 	// Keep the ECS entity alive for the complete teardown. Inventory, session,
 	// shop and social state are ECS-owned now, so destroying the entity before
-	// ClearItem()/CloseMyShop() turns those cleanup calls into silent no-ops.
+	// ClearItem()/ecs::SocialSystem::CloseMyShop(GetEntityHandle()) turns those cleanup calls into silent no-ops.
 	const entt::entity entityToDestroy = GetEntityHandle();
 
-    CloseMyShop();
+    ecs::SocialSystem::CloseMyShop(GetEntityHandle());
 
     if (m_pkRegen)
     {
@@ -3826,7 +3826,7 @@ void CHARACTER::OnClick(entt::entity causer)
     LOG_INFO("OnClick {}[vnum: {} vid: {}] by {}", GetName(), GetRaceNum(), vid, pkCauser->GetName());
 
     {
-        if (pkCauser->GetMyShop() && pkCauser != this)
+        if (ecs::SocialSystem::GetMyShop(pkCauser->GetEntityHandle()) && pkCauser != this)
         {
             LOG_ERROR("OnClick Fail ({}->{}) - pc has shop", pkCauser->GetName(), GetName());
             return;
@@ -3845,7 +3845,7 @@ void CHARACTER::OnClick(entt::entity causer)
     {
         if (!CTargetManager::instance().GetTargetInfo(pkCauser->GetPlayerID(), TARGET_TYPE_VID, GetPacketVID()))
         {
-            if (GetMyShop())
+            if (ecs::SocialSystem::GetMyShop(GetEntityHandle()))
             {
                 if (CombatSystem::IsDead(causer) == true)
                     return;
@@ -3872,7 +3872,7 @@ void CHARACTER::OnClick(entt::entity causer)
                 }
                 else
                 {
-                    if ((ecs::SocialSystem::HasExchange(causer) || ecs::SessionSystem::IsSafeboxOpen(causer) || pkCauser->GetMyShop() || pkCauser->GetShopOwner()) || pkCauser->IsCubeOpen())
+                    if ((ecs::SocialSystem::HasExchange(causer) || ecs::SessionSystem::IsSafeboxOpen(causer) || ecs::SocialSystem::GetMyShop(pkCauser->GetEntityHandle()) || pkCauser->GetShopOwner()) || pkCauser->IsCubeOpen())
                     {
 #ifdef TEXTS_IMPROVEMENT
                         ecs::ChatSystem::SendNew(causer, CHAT_TYPE_INFO, 291, "");
@@ -3915,7 +3915,7 @@ void CHARACTER::OnClick(entt::entity causer)
                     pkCauser->SetShop(nullptr);
                 }
 
-                GetMyShop()->AddGuest(causer, GetPacketVID(), false);
+                ecs::SocialSystem::GetMyShop(GetEntityHandle())->AddGuest(causer, GetPacketVID(), false);
                 pkCauser->SetShopOwner(GetEntityHandle());
                 return;
             }
@@ -4250,259 +4250,6 @@ void CHARACTER::SetDropStatus()
 }
 #endif
 
-void CHARACTER::OpenMyShop(const char* c_pszSign, TShopItemTable* pTable, uint8_t bItemCount
-#ifdef KASMIR_PAKET_SYSTEM
-    , uint32_t KasmirNpc, uint8_t KasmirBaslik
-#endif
-)
-{
-    if (!CanHandleItem())
-    {
-#ifdef TEXTS_IMPROVEMENT
-        ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 291, "");
-#endif
-        return;
-    }
-
-#ifdef ENABLE_RESTRICT_GM_PERMISSIONS
-    if (ecs::PlayerRuntime::GetGMLevel(GetEntityHandle()) > GM_PLAYER && ecs::PlayerRuntime::GetGMLevel(GetEntityHandle()) < GM_IMPLEMENTOR) {
-        return;
-    }
-#endif
-
-#ifndef ENABLE_OPEN_SHOP_WITH_ARMOR
-    if (GetPart(PART_MAIN) > 2)
-    {
-#ifdef TEXTS_IMPROVEMENT
-        ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 503, "");
-#endif
-        return;
-    }
-#endif
-
-    if (GetMyShop())
-    {
-        CloseMyShop();
-        return;
-    }
-
-    quest::PC* pPC = quest::CQuestManager::instance().GetPCForce(GetPlayerID());
-    if (pPC->IsRunning())
-        return;
-
-    if (bItemCount == 0)
-        return;
-
-    int64_t nTotalMoney = 0;
-
-    for (int n = 0; n < bItemCount; ++n)
-    {
-        nTotalMoney += static_cast<int64_t>((pTable + n)->price);
-    }
-
-    nTotalMoney += static_cast<int64_t>(ecs::PointSystem::GetGold(GetEntityHandle()));
-
-    if (GOLD_MAX <= nTotalMoney)
-    {
-#ifdef TEXTS_IMPROVEMENT
-        ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 226,
-            "%lld"
-
-            , GOLD_MAX);
-#endif
-        return;
-    }
-
-    char szSign[SHOP_SIGN_MAX_LEN + 1];
-    strlcpy(szSign, c_pszSign, sizeof(szSign));
-
-    // The sign the viewers are told about lives in ShopState; nothing wrote it
-    // there, so EntityNetworkDispatch never had one to send.
-    auto& shopState = g_registry.get_or_emplace<ecs::ShopState>(GetEntityHandle());
-    shopState.shopSign = szSign;
-
-    if (shopState.shopSign.length() == 0)
-        return;
-
-    if (CBanwordManager::instance().CheckString(shopState.shopSign.c_str(), shopState.shopSign.length()))
-    {
-#ifdef TEXTS_IMPROVEMENT
-        ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 358, "");
-#endif
-        return;
-    }
-
-#ifdef KASMIR_PAKET_SYSTEM
-    m_bKasmirPaketBaslik = KasmirBaslik;
-    if (m_bKasmirPaketBaslik < 1 && m_bKasmirPaketBaslik > 6)
-    {
-#ifdef TEXTS_IMPROVEMENT
-        ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 46, "");
-#endif
-        return;
-    }
-    // LPENTITY.4-fixup.2.g: mirror legacy KASMIR title into ECS ShopState
-    if (auto* shop = g_registry.try_get<ecs::ShopState>(GetEntityHandle()))
-        shop->kasmirTitle = m_bKasmirPaketBaslik;
-#endif
-
-    std::map<uint32_t, uint32_t> itemkind;
-
-    std::set<TItemPos> cont;
-    for (uint8_t i = 0; i < bItemCount; ++i)
-    {
-        if (cont.contains((pTable + i)->pos))
-        {
-            LOG_ERROR("MYSHOP: duplicate shop item detected! (name: {})", GetName());
-            return;
-        }
-
-        const entt::entity item = ItemSystem::GetItem(GetEntityHandle(), (pTable + i)->pos);
-
-        if (ItemSystem::IsValidItem(item))
-        {
-            const TItemTable* item_table = ItemSystem::GetItemProto(item);
-
-            if (item_table && (IS_SET(item_table->dwAntiFlags, ITEM_ANTIFLAG_GIVE | ITEM_ANTIFLAG_MYSHOP)))
-            {
-#ifdef TEXTS_IMPROVEMENT
-                ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 416, "%s", ItemSystem::GetItemName(item));
-#endif
-                return;
-            }
-
-            if (ItemSystem::IsItemEquipped(item) == true)
-            {
-#ifdef TEXTS_IMPROVEMENT
-                ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 541, "");
-#endif
-                return;
-            }
-
-            if (ItemSystem::IsItemLocked(item))
-            {
-#ifdef TEXTS_IMPROVEMENT
-                ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 656, "");
-#endif
-                return;
-            }
-
-			const uint32_t itemCount = ItemSystem::GetItemCount(item);
-			if (itemCount == 0)
-			{
-				LOG_ERROR("MYSHOP: zero-count item rejected (name: {} item_id: {})",
-					GetName(), ItemSystem::GetItemID(item));
-				return;
-			}
-			itemkind[ItemSystem::GetItemVnum(item)] = (pTable + i)->price / itemCount;
-        }
-
-        cont.insert((pTable + i)->pos);
-    }
-
-    if (CountSpecifyItem(71049)
-#ifdef KASMIR_PAKET_SYSTEM
-        || CountSpecifyItem(88901)
-#endif
-        ) {
-        TItemPriceListTable header;
-        memset(&header, 0, sizeof(TItemPriceListTable));
-
-        header.dwOwnerID = GetPlayerID();
-        header.byCount = itemkind.size();
-
-        size_t idx = 0;
-        for (auto it = itemkind.begin(); it != itemkind.end(); ++it)
-        {
-            header.aPriceInfo[idx].dwVnum = it->first;
-            header.aPriceInfo[idx].dwPrice = it->second;
-            idx++;
-        }
-
-        db_clientdesc->DBPacket(HEADER_GD_MYSHOP_PRICELIST_UPDATE, GetDesc()->GetHandle(), &header, sizeof(TItemPriceListTable));
-    }
-    else if (CountSpecifyItem(50200))
-        RemoveSpecifyItem(50200, 1);
-    else
-        return;
-
-    ExchangeSystem::Cancel(GetEntityHandle());
-
-    TPacketGCShopSign p;
-
-    p.bHeader = HEADER_GC_SHOP_SIGN;
-    p.dwVID = GetPacketVID();
-    strlcpy(p.szSign, c_pszSign, sizeof(p.szSign));
-#ifdef KASMIR_PAKET_SYSTEM
-    p.bShopKasmirTitle = KasmirBaslik;
-#endif
-    ecs::ViewSystem::PacketView(GetEntityHandle(), &p, sizeof(TPacketGCShopSign));
-
-    m_pkMyShop = CShopManager::instance().CreatePCShop(GetEntityHandle(), pTable, bItemCount);
-    if (const auto e = GetEntityHandle(); e != entt::null && g_registry.valid(e))
-    {
-        auto& shop = g_registry.get_or_emplace<ecs::ShopState>(e);
-        shop.myShop = m_pkMyShop;
-        g_registry.emplace_or_replace<ecs::DirtyTag>(e);
-    }
-
-    if (AffectSystem::IsPolymorphed(GetEntityHandle()) == true)
-    {
-        AffectSystem::RemoveAffect(GetEntityHandle(), AFFECT_POLYMORPH);
-    }
-
-    if (GetHorse())
-    {
-        HorseSummon(false, true);
-    }
-    else if (GetMountVnum())
-    {
-        AffectSystem::RemoveAffect(GetEntityHandle(), AFFECT_MOUNT);
-        AffectSystem::RemoveAffect(GetEntityHandle(), AFFECT_MOUNT_BONUS);
-    }
-
-    uint32_t dwNpcShop = 30000;
-#ifdef KASMIR_PAKET_SYSTEM
-    dwNpcShop = KasmirNpc >= 30000 && KasmirNpc <= 30007 ? KasmirNpc : 30000;
-#endif
-    AffectSystem::SetPolymorph(GetEntityHandle(), dwNpcShop, true);
-}
-
-void CHARACTER::CloseMyShop()
-{
-    if (GetMyShop())
-    {
-        g_registry.get_or_emplace<ecs::ShopState>(GetEntityHandle()).shopSign.clear();
-        CShopManager::instance().DestroyPCShop(GetEntityHandle());
-        m_pkMyShop = nullptr;
-        if (const auto e = GetEntityHandle(); e != entt::null && g_registry.valid(e))
-        {
-            auto& shop = g_registry.get_or_emplace<ecs::ShopState>(e);
-            shop.myShop = nullptr;
-            g_registry.emplace_or_replace<ecs::DirtyTag>(e);
-        }
-#ifdef KASMIR_PAKET_SYSTEM
-        m_bKasmirPaketBaslik = 0;
-        ecs::SocialSystem::SetKasmirPaket(GetEntityHandle(), false);
-        // LPENTITY.4-fixup.2.g: clear ECS mirror on shop close
-        if (auto* shop = g_registry.try_get<ecs::ShopState>(GetEntityHandle()))
-            shop->kasmirTitle = 0;
-#endif
-
-        TPacketGCShopSign p;
-
-        p.bHeader = HEADER_GC_SHOP_SIGN;
-        p.dwVID = GetPacketVID();
-#ifdef KASMIR_PAKET_SYSTEM
-        p.bShopKasmirTitle = m_bKasmirPaketBaslik;
-#endif
-        p.szSign[0] = '\0';
-
-        ecs::ViewSystem::PacketView(GetEntityHandle(), &p, sizeof(p));
-        AffectSystem::SetPolymorph(GetEntityHandle(), ecs::PlayerRuntime::GetJob(GetEntityHandle()), true);
-    }
-}
-
 #ifdef __HIDE_COSTUME_SYSTEM__
 #ifdef ENABLE_ACCE_SYSTEM
 #endif
@@ -4539,7 +4286,6 @@ void CHARACTER::Initialize()
     m_pkMobData = nullptr;
 
     m_pkShop = nullptr;
-    m_pkMyShop = nullptr;
     m_pkParty = nullptr;
     m_pkPartyRequestEvent = nullptr;
 
@@ -4711,7 +4457,6 @@ void CHARACTER::Initialize()
 #ifdef ENABLE_NEW_PET_EDITS
 #endif
 #ifdef KASMIR_PAKET_SYSTEM
-    m_bKasmirPaketBaslik = 0;
     ecs::SocialSystem::SetKasmirPaket(GetEntityHandle(), false);
 #endif
     m_iGoToXYTime = 0;

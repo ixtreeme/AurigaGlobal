@@ -322,7 +322,7 @@ ACMD(do_user_horse_feed)
 {
 	LPCHARACTER ch = ecs::LegacyCharOf(character);
 	// λ  ¿  ̸   .
-	if (ch->GetMyShop())
+	if (ecs::SocialSystem::GetMyShop(ch->GetEntityHandle()))
 		return;
 
 	if (ch->GetHorse() == nullptr)
@@ -2160,9 +2160,9 @@ ACMD(do_ungroup)
 ACMD(do_close_shop)
 {
 	LPCHARACTER ch = ecs::LegacyCharOf(character);
-	if (ch->GetMyShop())
+	if (ecs::SocialSystem::GetMyShop(ch->GetEntityHandle()))
 	{
-		ch->CloseMyShop();
+		ecs::SocialSystem::CloseMyShop(ch->GetEntityHandle());
 		return;
 	}
 }

@@ -3208,7 +3208,7 @@ void CInputMain::MapTeleporter(entt::entity character, TPacketCGMapTeleporter* p
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
 	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::MapTeleporter");//INGAME_DEBUG_RAZOR93
 #endif
-	if (ecs::PlayerRuntime::IsHack(character) || ecs::SocialSystem::HasExchange(character) || ecs::SessionSystem::IsSafeboxOpen(character) || ch->IsCubeOpen() || ch->GetShop() || ch->GetMyShop()
+	if (ecs::PlayerRuntime::IsHack(character) || ecs::SocialSystem::HasExchange(character) || ecs::SessionSystem::IsSafeboxOpen(character) || ch->IsCubeOpen() || ch->GetShop() || ecs::SocialSystem::GetMyShop(ch->GetEntityHandle())
 #ifdef ENABLE_ACCE_SYSTEM
 		|| ecs::AcceSystem::IsOpen(ch->GetEntityHandle())
 #endif
@@ -4312,7 +4312,7 @@ int CInputMain::MyShop(entt::entity character, const char * c_pData, size_t uiBy
 #endif
 
 	LOG_INFO("MyShop count {}", p->bCount);
-	ch->OpenMyShop(p->szSign, (TShopItemTable *) (c_pData + sizeof(TPacketCGMyShop)), p->bCount
+	ecs::SocialSystem::OpenMyShop(ch->GetEntityHandle(), p->szSign, (TShopItemTable *) (c_pData + sizeof(TPacketCGMyShop)), p->bCount
 #ifdef KASMIR_PAKET_SYSTEM
 	, p->dwKasmirNpc, p->bKasmirBaslik
 #endif
@@ -4337,7 +4337,7 @@ void CInputMain::Refine(entt::entity character, const char* c_pData)
 	}
 #endif
 
-	if (ecs::SocialSystem::HasExchange(character) || ecs::SessionSystem::IsSafeboxOpen(character) || ch->GetShopOwner() || ch->GetMyShop() || ch->IsCubeOpen())
+	if (ecs::SocialSystem::HasExchange(character) || ecs::SessionSystem::IsSafeboxOpen(character) || ch->GetShopOwner() || ecs::SocialSystem::GetMyShop(ch->GetEntityHandle()) || ch->IsCubeOpen())
 	{
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 502, "");

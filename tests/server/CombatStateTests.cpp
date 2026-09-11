@@ -450,7 +450,7 @@ void ecs::SocialSystem::SetDungeon(entt::entity, CDungeon *) { UnexpectedService
 bool ItemSystem::IsEquipUniqueItem(entt::entity,unsigned int) { UnexpectedService(__func__); }
 bool CHARACTER::IsEquipUniqueGroup(unsigned int)const { UnexpectedService(__func__); }
 void ItemSystem::GiveGold(entt::entity, int64_t) { UnexpectedService(__func__); }
-void CHARACTER::CloseMyShop(void) { UnexpectedService(__func__); }
+void ecs::SocialSystem::CloseMyShop(entt::entity) { UnexpectedService(__func__); }
 void CHARACTER::SetQuestDamage(int,int) { UnexpectedService(__func__); }
 bool ecs::PlayerRuntime::IsImmortal(entt::entity) { return false; }
 int64_t CHARACTER::GetRankPoints(int) { UnexpectedService(__func__); }

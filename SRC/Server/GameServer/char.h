@@ -1142,15 +1142,6 @@ public:
 	void			SetShopOwner(entt::entity character);
 	LPCHARACTER		GetShopOwner() const;
 
-	void			OpenMyShop(const char* c_pszSign, TShopItemTable* pTable, uint8_t bItemCount
-#ifdef KASMIR_PAKET_SYSTEM
-		, uint32_t KasmirNpc, uint8_t KasmirBaslik
-#endif
-	);
-#ifdef KASMIR_PAKET_SYSTEM
-#endif
-	LPSHOP			GetMyShop() const { return m_pkMyShop; }
-	void			CloseMyShop();
 #ifdef ENABLE_PVP_ADVANCED
 	void			DestroyPvP();
 #endif
@@ -1158,10 +1149,6 @@ public:
 protected:
 
 	LPSHOP			m_pkShop;
-	LPSHOP			m_pkMyShop;
-#ifdef KASMIR_PAKET_SYSTEM
-	uint8_t			m_bKasmirPaketBaslik;
-#endif
 	// End of shop
 
 

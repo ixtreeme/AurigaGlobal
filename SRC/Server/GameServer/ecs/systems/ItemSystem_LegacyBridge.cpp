@@ -1333,7 +1333,7 @@ int CHARACTER::CountSpecifyItem(uint32_t vnum) const
 			item = GetExtraInventoryItem(i);
 			if (item && item->GetVnum() == vnum)
 			{
-				if (m_pkMyShop && m_pkMyShop->IsSellingItem(item->GetID())) {
+				if (ecs::SocialSystem::GetMyShop(GetEntityHandle()) && ecs::SocialSystem::GetMyShop(GetEntityHandle())->IsSellingItem(item->GetID())) {
 					continue;
 				}
 				else {
@@ -1356,7 +1356,7 @@ int CHARACTER::CountSpecifyItem(uint32_t vnum) const
 			if (nullptr != item && item->GetVnum() == vnum)
 			{
 				// �3A� ���!?! ��I�E 1���AI�� 3N3�L�U.
-				if (m_pkMyShop && m_pkMyShop->IsSellingItem(item->GetID()))
+				if (ecs::SocialSystem::GetMyShop(GetEntityHandle()) && ecs::SocialSystem::GetMyShop(GetEntityHandle())->IsSellingItem(item->GetID()))
 				{
 					continue;
 				}
@@ -1391,9 +1391,9 @@ void CHARACTER::RemoveSpecifyItem(uint32_t vnum, int count, bool cuberenewal)
 			if (ItemSystem::GetItemVnum(item) != vnum)
 				continue;
 
-			if (m_pkMyShop)
+			if (ecs::SocialSystem::GetMyShop(GetEntityHandle()))
 			{
-				if (m_pkMyShop->IsSellingItem(ItemSystem::GetItemID(item)))
+				if (ecs::SocialSystem::GetMyShop(GetEntityHandle())->IsSellingItem(ItemSystem::GetItemID(item)))
 					continue;
 			}
 
@@ -1434,7 +1434,7 @@ void CHARACTER::RemoveSpecifyItem(uint32_t vnum, int count, bool cuberenewal)
 			if (ItemSystem::GetItemVnum(item) != vnum)
 				continue;
 
-			if (m_pkMyShop && m_pkMyShop->IsSellingItem(ItemSystem::GetItemID(item)))
+			if (ecs::SocialSystem::GetMyShop(GetEntityHandle()) && ecs::SocialSystem::GetMyShop(GetEntityHandle())->IsSellingItem(ItemSystem::GetItemID(item)))
 				continue;
 
 			if (cuberenewal && ItemSystem::GetItemLockedAttr(item) != -1)
@@ -2867,7 +2867,7 @@ void CHARACTER::RemoveSpecifyTypeItem(uint8_t type, int count)
 			continue;
 
 
-		if (m_pkMyShop && m_pkMyShop->IsSellingItem(ItemSystem::GetItemID(item)))
+		if (ecs::SocialSystem::GetMyShop(GetEntityHandle()) && ecs::SocialSystem::GetMyShop(GetEntityHandle())->IsSellingItem(ItemSystem::GetItemID(item)))
 			continue;
 
 		const int itemCount = ItemSystem::GetItemCount(item);
@@ -4394,7 +4394,7 @@ bool CHARACTER::CanDoCube() const
 {
 	if (m_bIsObserver)	return false;
 	if (GetShop())		return false;
-	if (GetMyShop())	return false;
+	if (ecs::SocialSystem::GetMyShop(GetEntityHandle()))	return false;
 	if (InventorySystem::IsRefining(GetEntityHandle()))	return false;
 	if (ecs::PlayerRuntime::IsWarping(GetEntityHandle()))	return false;
 
