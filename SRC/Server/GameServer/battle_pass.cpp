@@ -600,7 +600,7 @@ void CBattlePass::BattlePassRequestOpen(LPCHARACTER pkChar)
 		return;
 	}
 
-	uint8_t bBattlePassId = pkChar->GetBattlePassId();
+	uint8_t bBattlePassId = ecs::PlayerRuntime::GetBattlePassId(pkChar->GetEntityHandle());
 	uint8_t fakeBattlePassID = 1; // (can be return actual month)
 
 	// So if there is no active battlepass, we can't send data info,
@@ -644,7 +644,7 @@ void CBattlePass::BattlePassRequestOpen(LPCHARACTER pkChar)
 #ifdef ENABLE_FREE_PASS_RAZOR93
 	for (unsigned int i = 0; i < missionInfo.size(); i++)
 	{
-		missionInfo[i].dwMissionInfo[2] = pkChar->GetMissionProgress(missionInfo[i].bMissionType, bBattlePassId);
+		missionInfo[i].dwMissionInfo[2] = ecs::PlayerRuntime::GetMissionProgress(pkChar->GetEntityHandle(), missionInfo[i].bMissionType, bBattlePassId);
 
 		// BOOST: a kliens fel� is felezett total menjen
 		missionInfo[i].dwMissionInfo[1] = ecs::PlayerRuntime::GetBattlePassAdjustedTotal(pkChar->GetEntityHandle(), 
@@ -659,7 +659,7 @@ void CBattlePass::BattlePassRequestOpen(LPCHARACTER pkChar)
 
 	for (unsigned int i = 0; i < missionInfo.size(); i++)
 	{
-		missionInfo[i].dwMissionInfo[2] = pkChar->GetMissionProgress(missionInfo[i].bMissionType, bBattlePassId);
+		missionInfo[i].dwMissionInfo[2] = ecs::PlayerRuntime::GetMissionProgress(pkChar->GetEntityHandle(), missionInfo[i].bMissionType, bBattlePassId);
 	}
 #endif
 	if(!missionInfo.empty())
@@ -739,7 +739,7 @@ void CBattlePass::BattlePassRequestReward(LPCHARACTER pkChar)
 	if(!ecs::PlayerRuntime::GetDesc(charEntity))
 		return;
 
-	uint8_t bBattlePassId = pkChar->GetBattlePassId();
+	uint8_t bBattlePassId = ecs::PlayerRuntime::GetBattlePassId(pkChar->GetEntityHandle());
 	if (!bBattlePassId)
 		return;
 
@@ -765,7 +765,7 @@ void CBattlePass::BattlePassRequestReward(LPCHARACTER pkChar)
 	bool bIsCompleted = true;
 	for (unsigned int i = 0; i < missionInfo.size(); i++)
 	{
-		if(!pkChar->IsCompletedMission(missionInfo[i].bMissionType))
+		if(!ecs::PlayerRuntime::IsCompletedMission(pkChar->GetEntityHandle(), missionInfo[i].bMissionType))
 		{
 			bIsCompleted = false;
 			break;
@@ -790,7 +790,7 @@ void CBattlePass::BattlePassReward(LPCHARACTER pkChar)
 	if(!ecs::PlayerRuntime::GetDesc(charEntity))
 		return;
 
-	uint8_t bBattlePassId = pkChar->GetBattlePassId();
+	uint8_t bBattlePassId = ecs::PlayerRuntime::GetBattlePassId(pkChar->GetEntityHandle());
 	if (!bBattlePassId)
 	{
 #ifdef TEXTS_IMPROVEMENT

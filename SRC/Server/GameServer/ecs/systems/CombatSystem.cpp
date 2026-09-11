@@ -3450,7 +3450,7 @@ static void __UpdateBattlePassCollectProgress(LegacyCharHandle ch, uint32_t dwIt
 	if (!ch || !dwCount)
 		return;
 
-	const uint8_t bBattlePassId = ch->GetBattlePassId();
+	const uint8_t bBattlePassId = ecs::PlayerRuntime::GetBattlePassId(ch->GetEntityHandle());
 	if (!bBattlePassId)
 		return;
 
@@ -3465,10 +3465,10 @@ static void __UpdateBattlePassCollectProgress(LegacyCharHandle ch, uint32_t dwIt
 			if (dwMissionItemVnum != dwItemVnum)
 				return;
 
-			if (ch->GetMissionProgress(dwMissionType, bBattlePassId) >= dwNeedCount)
+			if (ecs::PlayerRuntime::GetMissionProgress(ch->GetEntityHandle(), dwMissionType, bBattlePassId) >= dwNeedCount)
 				return;
 
-			ch->UpdateMissionProgress(dwMissionType, bBattlePassId, dwCount, dwNeedCount);
+			ecs::PlayerRuntime::UpdateMissionProgress(ch->GetEntityHandle(), dwMissionType, bBattlePassId, dwCount, dwNeedCount);
 		};
 
 	updateMission(COLLECT_ITEM);
@@ -3951,14 +3951,14 @@ void Reward(entt::entity e, bool bItemDrop)
 #endif
 
 #ifdef ENABLE_BATTLE_PASS
-		uint8_t bBattlePassId = pkAttacker->GetBattlePassId();
+		uint8_t bBattlePassId = ecs::PlayerRuntime::GetBattlePassId(pkAttacker->GetEntityHandle());
 		if (bBattlePassId)
 		{
 			uint32_t dwMonsterVnum, dwToKillCount;
 			if (CBattlePass::instance().BattlePassMissionGetInfo(bBattlePassId, MONSTER_KILL, &dwMonsterVnum, &dwToKillCount))
 			{
-				if (dwMonsterVnum == ecs::PlayerRuntime::GetRaceNum(e) && pkAttacker->GetMissionProgress(MONSTER_KILL, bBattlePassId) < dwToKillCount)
-					pkAttacker->UpdateMissionProgress(MONSTER_KILL, bBattlePassId, 1, dwToKillCount);
+				if (dwMonsterVnum == ecs::PlayerRuntime::GetRaceNum(e) && ecs::PlayerRuntime::GetMissionProgress(pkAttacker->GetEntityHandle(), MONSTER_KILL, bBattlePassId) < dwToKillCount)
+					ecs::PlayerRuntime::UpdateMissionProgress(pkAttacker->GetEntityHandle(), MONSTER_KILL, bBattlePassId, 1, dwToKillCount);
 			}
 		}
 #endif
@@ -5733,7 +5733,7 @@ bool Damage(entt::entity victim, entt::entity attacker, int64_t dam, uint8_t dam
 #ifdef ENABLE_BATTLE_PASS
 		if (dam > 0)
 		{
-			uint8_t bBattlePassId = pkAttacker->GetBattlePassId();
+			uint8_t bBattlePassId = ecs::PlayerRuntime::GetBattlePassId(pkAttacker->GetEntityHandle());
 			if (bBattlePassId)
 			{
 				if (ecs::PlayerRuntime::IsPC(victim))
@@ -5742,7 +5742,7 @@ bool Damage(entt::entity victim, entt::entity attacker, int64_t dam, uint8_t dam
 					uint32_t dwLevel = ecs::PointSystem::GetLevel(victim);
 					if (CBattlePass::instance().BattlePassMissionGetInfo(bBattlePassId, PLAYER_DAMAGE, &dwMinLevel, &dwDamage))
 					{
-						if (!pkAttacker->IsCompletedMission(PLAYER_DAMAGE))
+						if (!ecs::PlayerRuntime::IsCompletedMission(pkAttacker->GetEntityHandle(), PLAYER_DAMAGE))
 						{
 							uint32_t dwDam = dam;
 							if (dwLevel >= dwMinLevel && ecs::PlayerRuntime::GetMissionProgress(victim, PLAYER_DAMAGE, bBattlePassId) < dwDam)
@@ -5758,7 +5758,7 @@ bool Damage(entt::entity victim, entt::entity attacker, int64_t dam, uint8_t dam
 					if (CBattlePass::instance().BattlePassMissionGetInfo(bBattlePassId, MONSTER_DAMAGE, &dwMonsterVnum, &dwDamage))
 					{
 						uint32_t dwRaceNum = ecs::PlayerRuntime::GetRaceNum(victim);
-						if (!pkAttacker->IsCompletedMission(MONSTER_DAMAGE))
+						if (!ecs::PlayerRuntime::IsCompletedMission(pkAttacker->GetEntityHandle(), MONSTER_DAMAGE))
 						{
 							uint32_t dwDam = dam;
 							if (dwMonsterVnum == dwRaceNum && ecs::PlayerRuntime::GetMissionProgress(victim, MONSTER_DAMAGE, bBattlePassId) < dwDam)

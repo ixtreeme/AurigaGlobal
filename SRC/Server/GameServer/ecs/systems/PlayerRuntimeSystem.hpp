@@ -213,6 +213,7 @@ uint64_t GetQuestDamage(entt::entity e, int race);
 #ifdef ENABLE_BATTLE_PASS
 uint8_t GetBattlePassID(entt::entity e);
 uint32_t GetMissionProgress(entt::entity e, uint32_t missionID, uint32_t battlePassID);
+bool IsCompletedMission(entt::entity e, uint8_t missionType);
 bool UpdateMissionProgress(entt::entity e, uint32_t missionID, uint32_t battlePassID,
     uint32_t updateValue, uint32_t totalValue, bool overrideValue = false);
 #endif

@@ -1430,26 +1430,9 @@ uint64_t GetQuestDamage(entt::entity e, int race)
 uint8_t GetBattlePassID(entt::entity e)
 {
 	LPCHARACTER character = LegacyCharOf(e);
-	return character ? character->GetBattlePassId() : 0;
+	return character ? ecs::PlayerRuntime::GetBattlePassId(character->GetEntityHandle()) : 0;
 }
 
-uint32_t GetMissionProgress(entt::entity e, uint32_t missionID, uint32_t battlePassID)
-{
-	LPCHARACTER character = LegacyCharOf(e);
-	return character ? character->GetMissionProgress(missionID, battlePassID) : 0;
-}
-
-bool UpdateMissionProgress(entt::entity e, uint32_t missionID, uint32_t battlePassID,
-	uint32_t updateValue, uint32_t totalValue, bool overrideValue)
-{
-	LPCHARACTER character = LegacyCharOf(e);
-	if (!character)
-		return false;
-
-	character->UpdateMissionProgress(
-		missionID, battlePassID, updateValue, totalValue, overrideValue);
-	return true;
-}
 #endif
 
 #ifdef ENABLE_RANKING
@@ -2394,7 +2377,7 @@ void CHARACTER::EnsureFreeBattlePassActive()
         AffectSystem::SetBattlePassDeadline(GetEntityHandle(), get_global_time() + remain);
     }
 
-    if (!GetBattlePassId())
+    if (!ecs::PlayerRuntime::GetBattlePassId(GetEntityHandle()))
         AffectSystem::AddAffect(GetEntityHandle(), AFFECT_BATTLE_PASS, POINT_BATTLE_PASS_ID, kDefaultBattlePassId, 0, remain, 0, true);
     ecs::PlayerRuntime::SetBattlePassLoaded(GetEntityHandle(), true);
 }
@@ -2421,7 +2404,7 @@ void CHARACTER::LoadBattlePass(uint32_t dwCount, TPlayerBattlePassMission* data)
         AffectSystem::SetBattlePassDeadline(GetEntityHandle(), get_global_time() + remain);
     }
 
-    if (!GetBattlePassId())
+    if (!ecs::PlayerRuntime::GetBattlePassId(GetEntityHandle()))
         AffectSystem::AddAffect(GetEntityHandle(), AFFECT_BATTLE_PASS, POINT_BATTLE_PASS_ID, kDefaultBattlePassId, 0, remain, 0, true);
 
     if (dwCount == 0 || !data)
@@ -2460,10 +2443,11 @@ void CHARACTER::CancelStayOnlineEvent()
 #ifdef ENABLE_FREE_PASS_RAZOR93
 #endif
 
-uint32_t CHARACTER::GetMissionProgress(uint32_t dwMissionID, uint32_t dwBattlePassID)
+namespace ecs::PlayerRuntime {
+uint32_t GetMissionProgress(entt::entity e, uint32_t dwMissionID, uint32_t dwBattlePassID)
 {
-    auto it = ecs::PlayerRuntime::GetBattlePassMissions(GetEntityHandle()).begin();
-    while (it != ecs::PlayerRuntime::GetBattlePassMissions(GetEntityHandle()).end())
+    auto it = ecs::PlayerRuntime::GetBattlePassMissions(e).begin();
+    while (it != ecs::PlayerRuntime::GetBattlePassMissions(e).end())
     {
         TPlayerBattlePassMission* pkMission = *it++;
         if (pkMission->dwMissionId == dwMissionID && pkMission->dwBattlePassId == dwBattlePassID)
@@ -2473,10 +2457,10 @@ uint32_t CHARACTER::GetMissionProgress(uint32_t dwMissionID, uint32_t dwBattlePa
     return 0;
 }
 
-bool CHARACTER::IsCompletedMission(uint8_t bMissionType)
+bool IsCompletedMission(entt::entity e, uint8_t bMissionType)
 {
-    auto it = ecs::PlayerRuntime::GetBattlePassMissions(GetEntityHandle()).begin();
-    while (it != ecs::PlayerRuntime::GetBattlePassMissions(GetEntityHandle()).end())
+    auto it = ecs::PlayerRuntime::GetBattlePassMissions(e).begin();
+    while (it != ecs::PlayerRuntime::GetBattlePassMissions(e).end())
     {
         TPlayerBattlePassMission* pkMission = *it++;
         if (pkMission->dwMissionId == bMissionType)
@@ -2486,18 +2470,27 @@ bool CHARACTER::IsCompletedMission(uint8_t bMissionType)
     return false;
 }
 
-void CHARACTER::UpdateMissionProgress(uint32_t dwMissionID, uint32_t dwBattlePassID, uint32_t dwUpdateValue, uint32_t dwTotalValue, bool isOverride)
+bool UpdateMissionProgress(entt::entity e, uint32_t dwMissionID, uint32_t dwBattlePassID, uint32_t dwUpdateValue, uint32_t dwTotalValue, bool isOverride)
 {
-    if (!ecs::PlayerRuntime::IsBattlePassLoaded(GetEntityHandle()))
-        return;
+	if (e == entt::null || !g_registry.valid(e))
+		return false;
+
+	// CancelStayOnlineEvent and BattlePassRewardMission still take the
+	// character; each is its own migration and they share this one resolve.
+	LPCHARACTER self = LegacyCharOf(e);
+	if (!self)
+		return false;
+
+    if (!ecs::PlayerRuntime::IsBattlePassLoaded(e))
+        return false;
 #ifdef ENABLE_FREE_PASS_RAZOR93
-    dwTotalValue = ecs::PlayerRuntime::GetBattlePassAdjustedTotal(GetEntityHandle(), dwMissionID, dwBattlePassID, dwTotalValue);
+    dwTotalValue = ecs::PlayerRuntime::GetBattlePassAdjustedTotal(e, dwMissionID, dwBattlePassID, dwTotalValue);
 #endif
     bool foundMission = false;
     uint32_t dwSaveProgress = 0;
 
-    auto it = ecs::PlayerRuntime::GetBattlePassMissions(GetEntityHandle()).begin();
-    while (it != ecs::PlayerRuntime::GetBattlePassMissions(GetEntityHandle()).end())
+    auto it = ecs::PlayerRuntime::GetBattlePassMissions(e).begin();
+    while (it != ecs::PlayerRuntime::GetBattlePassMissions(e).end())
     {
         TPlayerBattlePassMission* pkMission = *it++;
 
@@ -2506,7 +2499,7 @@ void CHARACTER::UpdateMissionProgress(uint32_t dwMissionID, uint32_t dwBattlePas
             pkMission->bIsUpdated = 1;
 #ifdef ENABLE_FREE_PASS_RAZOR93
             if (pkMission->bCompleted)
-                return;
+                return false;
 #endif
             if (isOverride)
                 pkMission->dwExtraInfo = dwUpdateValue;
@@ -2520,9 +2513,9 @@ void CHARACTER::UpdateMissionProgress(uint32_t dwMissionID, uint32_t dwBattlePas
 
 #ifdef ENABLE_BATTLE_PASS_STAY_ONLINE
                 if (pkMission->dwMissionId == STAY_ONLINE_MINUTES)
-                    CancelStayOnlineEvent();
+                    self->CancelStayOnlineEvent();
 #endif
-                CBattlePass::instance().BattlePassRewardMission(this, dwMissionID, dwBattlePassID);
+                CBattlePass::instance().BattlePassRewardMission(self, dwMissionID, dwBattlePassID);
             }
 
             dwSaveProgress = pkMission->dwExtraInfo;
@@ -2534,7 +2527,7 @@ void CHARACTER::UpdateMissionProgress(uint32_t dwMissionID, uint32_t dwBattlePas
     if (!foundMission)
     {
         TPlayerBattlePassMission* newMission = new TPlayerBattlePassMission;
-        newMission->dwPlayerId = GetPlayerID();
+        newMission->dwPlayerId = GetPlayerID(e);
         newMission->dwMissionId = dwMissionID;
         newMission->dwBattlePassId = dwBattlePassID;
 
@@ -2544,9 +2537,9 @@ void CHARACTER::UpdateMissionProgress(uint32_t dwMissionID, uint32_t dwBattlePas
             newMission->bCompleted = 1;
 #ifdef ENABLE_BATTLE_PASS_STAY_ONLINE
             if (newMission->dwMissionId == STAY_ONLINE_MINUTES)
-                CancelStayOnlineEvent();
+                self->CancelStayOnlineEvent();
 #endif
-            CBattlePass::instance().BattlePassRewardMission(this, dwMissionID, dwBattlePassID);
+            CBattlePass::instance().BattlePassRewardMission(self, dwMissionID, dwBattlePassID);
 
             dwSaveProgress = dwTotalValue;
         }
@@ -2560,35 +2553,25 @@ void CHARACTER::UpdateMissionProgress(uint32_t dwMissionID, uint32_t dwBattlePas
 
         newMission->bIsUpdated = 1;
 
-        ecs::PlayerRuntime::GetBattlePassMissions(GetEntityHandle()).push_back(newMission);
+        ecs::PlayerRuntime::GetBattlePassMissions(e).push_back(newMission);
     }
 
-    if (!GetDesc())
-        return;
+    if (!GetDesc(e))
+        return false;
 
     TPacketGCBattlePassUpdate packet;
     packet.bHeader = HEADER_GC_BATTLE_PASS_UPDATE;
     packet.bMissionType = dwMissionID;
     packet.dwNewProgress = dwSaveProgress;
-    GetDesc()->Packet(&packet, sizeof(TPacketGCBattlePassUpdate));
+    GetDesc(e)->Packet(&packet, sizeof(TPacketGCBattlePassUpdate));
+	return true;
 }
 
-namespace ecs::PlayerRuntime {
 uint8_t GetBattlePassId(entt::entity e)
 {
     const CAffect* affect = AffectSystem::FindAffect(e, AFFECT_BATTLE_PASS, POINT_BATTLE_PASS_ID);
     return affect ? static_cast<uint8_t>(affect->lApplyValue) : 0;
 }
-}
-
-uint8_t CHARACTER::GetBattlePassId()
-{
-    CAffect* pAffect = AffectSystem::FindAffect(GetEntityHandle(), AFFECT_BATTLE_PASS, POINT_BATTLE_PASS_ID);
-
-    if (!pAffect)
-        return 0;
-
-    return pAffect->lApplyValue;
 }
 
 #endif

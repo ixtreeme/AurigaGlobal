@@ -216,10 +216,10 @@ void MountSystem::UpdateMountInventoryCountOverhead(entt::entity, entt::entity) 
 void CombatSystem::UpdateKillerMode(entt::entity) { Unexpected(); }
 void CEntity::UpdateSectree() { Unexpected(); }
 void CHARACTER::ComputePoints() { Unexpected(); }
-uint8_t CHARACTER::GetBattlePassId() { Unexpected(); }
-bool CHARACTER::IsCompletedMission(uint8_t) { Unexpected(); }
-uint32_t CHARACTER::GetMissionProgress(uint32_t, uint32_t) { Unexpected(); }
-void CHARACTER::UpdateMissionProgress(uint32_t, uint32_t, uint32_t, uint32_t, bool) { Unexpected(); }
+uint8_t ecs::PlayerRuntime::GetBattlePassId(entt::entity) { Unexpected(); }
+bool ecs::PlayerRuntime::IsCompletedMission(entt::entity, uint8_t) { Unexpected(); }
+uint32_t ecs::PlayerRuntime::GetMissionProgress(entt::entity, uint32_t, uint32_t) { Unexpected(); }
+bool ecs::PlayerRuntime::UpdateMissionProgress(entt::entity, uint32_t, uint32_t, uint32_t, uint32_t, bool) { Unexpected(); }
 bool CBattlePass::BattlePassMissionGetInfo(uint8_t, uint8_t, uint32_t*, uint32_t*) { Unexpected(); }
 CPIDRegistry& CPIDRegistry::Instance() { Unexpected(); }
 std::vector<entt::entity> CPIDRegistry::Snapshot() const { Unexpected(); }

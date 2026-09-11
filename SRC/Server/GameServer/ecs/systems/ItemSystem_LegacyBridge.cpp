@@ -2000,26 +2000,26 @@ bool CHARACTER::PickupItem(uint32_t dwVID)
 #ifdef ENABLE_BATTLE_PASS
 							if (bIsBattlePass)
 							{
-								uint8_t bBattlePassId = GetBattlePassId();
+								uint8_t bBattlePassId = ecs::PlayerRuntime::GetBattlePassId(GetEntityHandle());
 								if (bBattlePassId)
 								{
 									uint32_t dwItemVnum, dwCount;
 									if (CBattlePass::instance().BattlePassMissionGetInfo(bBattlePassId, COLLECT_ITEM, &dwItemVnum, &dwCount))
 									{
-										if (dwItemVnum == item->GetVnum() && GetMissionProgress(COLLECT_ITEM, bBattlePassId) < dwCount)
-											UpdateMissionProgress(COLLECT_ITEM, bBattlePassId, bCount2, dwCount);
+										if (dwItemVnum == item->GetVnum() && ecs::PlayerRuntime::GetMissionProgress(GetEntityHandle(), COLLECT_ITEM, bBattlePassId) < dwCount)
+											ecs::PlayerRuntime::UpdateMissionProgress(GetEntityHandle(), COLLECT_ITEM, bBattlePassId, bCount2, dwCount);
 									}
 
 									if (CBattlePass::instance().BattlePassMissionGetInfo(bBattlePassId, COLLECT_ITEM1, &dwItemVnum, &dwCount))
 									{
-										if (dwItemVnum == item->GetVnum() && GetMissionProgress(COLLECT_ITEM1, bBattlePassId) < dwCount)
-											UpdateMissionProgress(COLLECT_ITEM1, bBattlePassId, bCount2, dwCount);
+										if (dwItemVnum == item->GetVnum() && ecs::PlayerRuntime::GetMissionProgress(GetEntityHandle(), COLLECT_ITEM1, bBattlePassId) < dwCount)
+											ecs::PlayerRuntime::UpdateMissionProgress(GetEntityHandle(), COLLECT_ITEM1, bBattlePassId, bCount2, dwCount);
 									}
 
 									if (CBattlePass::instance().BattlePassMissionGetInfo(bBattlePassId, COLLECT_ITEM2, &dwItemVnum, &dwCount))
 									{
-										if (dwItemVnum == item->GetVnum() && GetMissionProgress(COLLECT_ITEM2, bBattlePassId) < dwCount)
-											UpdateMissionProgress(COLLECT_ITEM2, bBattlePassId, bCount2, dwCount);
+										if (dwItemVnum == item->GetVnum() && ecs::PlayerRuntime::GetMissionProgress(GetEntityHandle(), COLLECT_ITEM2, bBattlePassId) < dwCount)
+											ecs::PlayerRuntime::UpdateMissionProgress(GetEntityHandle(), COLLECT_ITEM2, bBattlePassId, bCount2, dwCount);
 									}
 								}
 							}
@@ -2088,26 +2088,26 @@ bool CHARACTER::PickupItem(uint32_t dwVID)
 #ifdef ENABLE_BATTLE_PASS
 							if (bIsBattlePass)
 							{
-								uint8_t bBattlePassId = GetBattlePassId();
+								uint8_t bBattlePassId = ecs::PlayerRuntime::GetBattlePassId(GetEntityHandle());
 								if (bBattlePassId)
 								{
 									uint32_t dwItemVnum, dwCount;
 									if (CBattlePass::instance().BattlePassMissionGetInfo(bBattlePassId, COLLECT_ITEM, &dwItemVnum, &dwCount))
 									{
-										if (dwItemVnum == item->GetVnum() && GetMissionProgress(COLLECT_ITEM, bBattlePassId) < dwCount)
-											UpdateMissionProgress(COLLECT_ITEM, bBattlePassId, bCount2, dwCount);
+										if (dwItemVnum == item->GetVnum() && ecs::PlayerRuntime::GetMissionProgress(GetEntityHandle(), COLLECT_ITEM, bBattlePassId) < dwCount)
+											ecs::PlayerRuntime::UpdateMissionProgress(GetEntityHandle(), COLLECT_ITEM, bBattlePassId, bCount2, dwCount);
 									}
 
 									if (CBattlePass::instance().BattlePassMissionGetInfo(bBattlePassId, COLLECT_ITEM1, &dwItemVnum, &dwCount))
 									{
-										if (dwItemVnum == item->GetVnum() && GetMissionProgress(COLLECT_ITEM1, bBattlePassId) < dwCount)
-											UpdateMissionProgress(COLLECT_ITEM1, bBattlePassId, bCount2, dwCount);
+										if (dwItemVnum == item->GetVnum() && ecs::PlayerRuntime::GetMissionProgress(GetEntityHandle(), COLLECT_ITEM1, bBattlePassId) < dwCount)
+											ecs::PlayerRuntime::UpdateMissionProgress(GetEntityHandle(), COLLECT_ITEM1, bBattlePassId, bCount2, dwCount);
 									}
 
 									if (CBattlePass::instance().BattlePassMissionGetInfo(bBattlePassId, COLLECT_ITEM2, &dwItemVnum, &dwCount))
 									{
-										if (dwItemVnum == item->GetVnum() && GetMissionProgress(COLLECT_ITEM2, bBattlePassId) < dwCount)
-											UpdateMissionProgress(COLLECT_ITEM2, bBattlePassId, bCount2, dwCount);
+										if (dwItemVnum == item->GetVnum() && ecs::PlayerRuntime::GetMissionProgress(GetEntityHandle(), COLLECT_ITEM2, bBattlePassId) < dwCount)
+											ecs::PlayerRuntime::UpdateMissionProgress(GetEntityHandle(), COLLECT_ITEM2, bBattlePassId, bCount2, dwCount);
 									}
 								}
 							}
@@ -2189,26 +2189,26 @@ bool CHARACTER::PickupItem(uint32_t dwVID)
 #ifdef ENABLE_BATTLE_PASS
 				if (bIsBattlePass)
 				{
-					uint8_t bBattlePassId = GetBattlePassId();
+					uint8_t bBattlePassId = ecs::PlayerRuntime::GetBattlePassId(GetEntityHandle());
 					if (bBattlePassId)
 					{
 						uint32_t dwItemVnum, dwCount;
 						if (CBattlePass::instance().BattlePassMissionGetInfo(bBattlePassId, COLLECT_ITEM, &dwItemVnum, &dwCount))
 						{
-							if (dwItemVnum == item->GetVnum() && GetMissionProgress(COLLECT_ITEM, bBattlePassId) < dwCount)
-								UpdateMissionProgress(COLLECT_ITEM, bBattlePassId, item->GetCount(), dwCount);
+							if (dwItemVnum == item->GetVnum() && ecs::PlayerRuntime::GetMissionProgress(GetEntityHandle(), COLLECT_ITEM, bBattlePassId) < dwCount)
+								ecs::PlayerRuntime::UpdateMissionProgress(GetEntityHandle(), COLLECT_ITEM, bBattlePassId, item->GetCount(), dwCount);
 						}
 
 						if (CBattlePass::instance().BattlePassMissionGetInfo(bBattlePassId, COLLECT_ITEM1, &dwItemVnum, &dwCount))
 						{
-							if (dwItemVnum == item->GetVnum() && GetMissionProgress(COLLECT_ITEM1, bBattlePassId) < dwCount)
-								UpdateMissionProgress(COLLECT_ITEM1, bBattlePassId, item->GetCount(), dwCount);
+							if (dwItemVnum == item->GetVnum() && ecs::PlayerRuntime::GetMissionProgress(GetEntityHandle(), COLLECT_ITEM1, bBattlePassId) < dwCount)
+								ecs::PlayerRuntime::UpdateMissionProgress(GetEntityHandle(), COLLECT_ITEM1, bBattlePassId, item->GetCount(), dwCount);
 						}
 
 						if (CBattlePass::instance().BattlePassMissionGetInfo(bBattlePassId, COLLECT_ITEM2, &dwItemVnum, &dwCount))
 						{
-							if (dwItemVnum == item->GetVnum() && GetMissionProgress(COLLECT_ITEM2, bBattlePassId) < dwCount)
-								UpdateMissionProgress(COLLECT_ITEM2, bBattlePassId, item->GetCount(), dwCount);
+							if (dwItemVnum == item->GetVnum() && ecs::PlayerRuntime::GetMissionProgress(GetEntityHandle(), COLLECT_ITEM2, bBattlePassId) < dwCount)
+								ecs::PlayerRuntime::UpdateMissionProgress(GetEntityHandle(), COLLECT_ITEM2, bBattlePassId, item->GetCount(), dwCount);
 						}
 					}
 				}
@@ -2285,26 +2285,26 @@ bool CHARACTER::PickupItem(uint32_t dwVID)
 #ifdef ENABLE_BATTLE_PASS
 						if (bIsBattlePass)
 						{
-							uint8_t bBattlePassId = owner->GetBattlePassId();
+							uint8_t bBattlePassId = ecs::PlayerRuntime::GetBattlePassId(owner->GetEntityHandle());
 							if (bBattlePassId)
 							{
 								uint32_t dwItemVnum, dwCount;
 								if (CBattlePass::instance().BattlePassMissionGetInfo(bBattlePassId, COLLECT_ITEM, &dwItemVnum, &dwCount))
 								{
-									if (dwItemVnum == item->GetVnum() && owner->GetMissionProgress(COLLECT_ITEM, bBattlePassId) < dwCount)
-										owner->UpdateMissionProgress(COLLECT_ITEM, bBattlePassId, bCount2, dwCount);
+									if (dwItemVnum == item->GetVnum() && ecs::PlayerRuntime::GetMissionProgress(owner->GetEntityHandle(), COLLECT_ITEM, bBattlePassId) < dwCount)
+										ecs::PlayerRuntime::UpdateMissionProgress(owner->GetEntityHandle(), COLLECT_ITEM, bBattlePassId, bCount2, dwCount);
 								}
 
 								if (CBattlePass::instance().BattlePassMissionGetInfo(bBattlePassId, COLLECT_ITEM1, &dwItemVnum, &dwCount))
 								{
-									if (dwItemVnum == item->GetVnum() && owner->GetMissionProgress(COLLECT_ITEM1, bBattlePassId) < dwCount)
-										owner->UpdateMissionProgress(COLLECT_ITEM1, bBattlePassId, bCount2, dwCount);
+									if (dwItemVnum == item->GetVnum() && ecs::PlayerRuntime::GetMissionProgress(owner->GetEntityHandle(), COLLECT_ITEM1, bBattlePassId) < dwCount)
+										ecs::PlayerRuntime::UpdateMissionProgress(owner->GetEntityHandle(), COLLECT_ITEM1, bBattlePassId, bCount2, dwCount);
 								}
 
 								if (CBattlePass::instance().BattlePassMissionGetInfo(bBattlePassId, COLLECT_ITEM2, &dwItemVnum, &dwCount))
 								{
-									if (dwItemVnum == item->GetVnum() && owner->GetMissionProgress(COLLECT_ITEM2, bBattlePassId) < dwCount)
-										owner->UpdateMissionProgress(COLLECT_ITEM2, bBattlePassId, bCount2, dwCount);
+									if (dwItemVnum == item->GetVnum() && ecs::PlayerRuntime::GetMissionProgress(owner->GetEntityHandle(), COLLECT_ITEM2, bBattlePassId) < dwCount)
+										ecs::PlayerRuntime::UpdateMissionProgress(owner->GetEntityHandle(), COLLECT_ITEM2, bBattlePassId, bCount2, dwCount);
 								}
 							}
 						}
@@ -2372,26 +2372,26 @@ bool CHARACTER::PickupItem(uint32_t dwVID)
 #ifdef ENABLE_BATTLE_PASS
 						if (bIsBattlePass)
 						{
-							uint8_t bBattlePassId = owner->GetBattlePassId();
+							uint8_t bBattlePassId = ecs::PlayerRuntime::GetBattlePassId(owner->GetEntityHandle());
 							if (bBattlePassId)
 							{
 								uint32_t dwItemVnum, dwCount;
 								if (CBattlePass::instance().BattlePassMissionGetInfo(bBattlePassId, COLLECT_ITEM, &dwItemVnum, &dwCount))
 								{
-									if (dwItemVnum == item->GetVnum() && owner->GetMissionProgress(COLLECT_ITEM, bBattlePassId) < dwCount)
-										owner->UpdateMissionProgress(COLLECT_ITEM, bBattlePassId, bCount2, dwCount);
+									if (dwItemVnum == item->GetVnum() && ecs::PlayerRuntime::GetMissionProgress(owner->GetEntityHandle(), COLLECT_ITEM, bBattlePassId) < dwCount)
+										ecs::PlayerRuntime::UpdateMissionProgress(owner->GetEntityHandle(), COLLECT_ITEM, bBattlePassId, bCount2, dwCount);
 								}
 
 								if (CBattlePass::instance().BattlePassMissionGetInfo(bBattlePassId, COLLECT_ITEM1, &dwItemVnum, &dwCount))
 								{
-									if (dwItemVnum == item->GetVnum() && owner->GetMissionProgress(COLLECT_ITEM1, bBattlePassId) < dwCount)
-										owner->UpdateMissionProgress(COLLECT_ITEM1, bBattlePassId, bCount2, dwCount);
+									if (dwItemVnum == item->GetVnum() && ecs::PlayerRuntime::GetMissionProgress(owner->GetEntityHandle(), COLLECT_ITEM1, bBattlePassId) < dwCount)
+										ecs::PlayerRuntime::UpdateMissionProgress(owner->GetEntityHandle(), COLLECT_ITEM1, bBattlePassId, bCount2, dwCount);
 								}
 
 								if (CBattlePass::instance().BattlePassMissionGetInfo(bBattlePassId, COLLECT_ITEM2, &dwItemVnum, &dwCount))
 								{
-									if (dwItemVnum == item->GetVnum() && owner->GetMissionProgress(COLLECT_ITEM2, bBattlePassId) < dwCount)
-										owner->UpdateMissionProgress(COLLECT_ITEM2, bBattlePassId, bCount2, dwCount);
+									if (dwItemVnum == item->GetVnum() && ecs::PlayerRuntime::GetMissionProgress(owner->GetEntityHandle(), COLLECT_ITEM2, bBattlePassId) < dwCount)
+										ecs::PlayerRuntime::UpdateMissionProgress(owner->GetEntityHandle(), COLLECT_ITEM2, bBattlePassId, bCount2, dwCount);
 								}
 							}
 						}
@@ -2504,26 +2504,26 @@ bool CHARACTER::PickupItem(uint32_t dwVID)
 #ifdef ENABLE_BATTLE_PASS
 			if (bIsBattlePass)
 			{
-				uint8_t bBattlePassId = owner->GetBattlePassId();
+				uint8_t bBattlePassId = ecs::PlayerRuntime::GetBattlePassId(owner->GetEntityHandle());
 				if (bBattlePassId)
 				{
 					uint32_t dwItemVnum, dwCount;
 					if (CBattlePass::instance().BattlePassMissionGetInfo(bBattlePassId, COLLECT_ITEM, &dwItemVnum, &dwCount))
 					{
-						if (dwItemVnum == item->GetVnum() && owner->GetMissionProgress(COLLECT_ITEM, bBattlePassId) < dwCount)
-							owner->UpdateMissionProgress(COLLECT_ITEM, bBattlePassId, item->GetCount(), dwCount);
+						if (dwItemVnum == item->GetVnum() && ecs::PlayerRuntime::GetMissionProgress(owner->GetEntityHandle(), COLLECT_ITEM, bBattlePassId) < dwCount)
+							ecs::PlayerRuntime::UpdateMissionProgress(owner->GetEntityHandle(), COLLECT_ITEM, bBattlePassId, item->GetCount(), dwCount);
 					}
 
 					if (CBattlePass::instance().BattlePassMissionGetInfo(bBattlePassId, COLLECT_ITEM1, &dwItemVnum, &dwCount))
 					{
-						if (dwItemVnum == item->GetVnum() && owner->GetMissionProgress(COLLECT_ITEM1, bBattlePassId) < dwCount)
-							owner->UpdateMissionProgress(COLLECT_ITEM1, bBattlePassId, item->GetCount(), dwCount);
+						if (dwItemVnum == item->GetVnum() && ecs::PlayerRuntime::GetMissionProgress(owner->GetEntityHandle(), COLLECT_ITEM1, bBattlePassId) < dwCount)
+							ecs::PlayerRuntime::UpdateMissionProgress(owner->GetEntityHandle(), COLLECT_ITEM1, bBattlePassId, item->GetCount(), dwCount);
 					}
 
 					if (CBattlePass::instance().BattlePassMissionGetInfo(bBattlePassId, COLLECT_ITEM1, &dwItemVnum, &dwCount))
 					{
-						if (dwItemVnum == item->GetVnum() && owner->GetMissionProgress(COLLECT_ITEM1, bBattlePassId) < dwCount)
-							owner->UpdateMissionProgress(COLLECT_ITEM1, bBattlePassId, item->GetCount(), dwCount);
+						if (dwItemVnum == item->GetVnum() && ecs::PlayerRuntime::GetMissionProgress(owner->GetEntityHandle(), COLLECT_ITEM1, bBattlePassId) < dwCount)
+							ecs::PlayerRuntime::UpdateMissionProgress(owner->GetEntityHandle(), COLLECT_ITEM1, bBattlePassId, item->GetCount(), dwCount);
 					}
 				}
 			}
@@ -3481,14 +3481,14 @@ bool CHARACTER::DestroyItem(TItemPos Cell)
 #endif
 
 #ifdef ENABLE_BATTLE_PASS
-	uint8_t bBattlePassId = GetBattlePassId();
+	uint8_t bBattlePassId = ecs::PlayerRuntime::GetBattlePassId(GetEntityHandle());
 	if (bBattlePassId)
 	{
 		uint32_t dwItemVnum, dwCnt;
 		if (CBattlePass::instance().BattlePassMissionGetInfo(bBattlePassId, DESTROY_ITEM, &dwItemVnum, &dwCnt))
 		{
-			if (dwItemVnum == item->GetVnum() && GetMissionProgress(DESTROY_ITEM, bBattlePassId) < dwCnt)
-				UpdateMissionProgress(DESTROY_ITEM, bBattlePassId, item->GetCount(), dwCnt);
+			if (dwItemVnum == item->GetVnum() && ecs::PlayerRuntime::GetMissionProgress(GetEntityHandle(), DESTROY_ITEM, bBattlePassId) < dwCnt)
+				ecs::PlayerRuntime::UpdateMissionProgress(GetEntityHandle(), DESTROY_ITEM, bBattlePassId, item->GetCount(), dwCnt);
 		}
 	}
 #endif

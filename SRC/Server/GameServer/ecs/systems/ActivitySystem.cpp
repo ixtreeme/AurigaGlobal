@@ -53,7 +53,7 @@ void UpdateFishingBattlePassLegacyBoundary(entt::entity fisher)
     if (!ch)
         return;
 
-    const uint8_t battlePassId = ch->GetBattlePassId();
+    const uint8_t battlePassId = ecs::PlayerRuntime::GetBattlePassId(ch->GetEntityHandle());
     if (!battlePassId)
         return;
 
@@ -61,9 +61,9 @@ void UpdateFishingBattlePassLegacyBoundary(entt::entity fisher)
     uint32_t unused = 0;
     if (CBattlePass::instance().BattlePassMissionGetInfo(
             battlePassId, CATCH_FISH, &unused, &count) &&
-        ch->GetMissionProgress(CATCH_FISH, battlePassId) < count)
+        ecs::PlayerRuntime::GetMissionProgress(ch->GetEntityHandle(), CATCH_FISH, battlePassId) < count)
     {
-        ch->UpdateMissionProgress(CATCH_FISH, battlePassId, 1, count);
+        ecs::PlayerRuntime::UpdateMissionProgress(ch->GetEntityHandle(), CATCH_FISH, battlePassId, 1, count);
     }
 }
 #endif

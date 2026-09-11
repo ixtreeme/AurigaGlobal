@@ -168,14 +168,14 @@ namespace
 
 #ifdef ENABLE_BATTLE_PASS
                 {
-                    uint8_t battlepassid = pkCh->GetBattlePassId();
+                    uint8_t battlepassid = ecs::PlayerRuntime::GetBattlePassId(pkCh->GetEntityHandle());
                     if (battlepassid)
                     {
                         uint32_t id, count;
                         if (CBattlePass::instance().BattlePassMissionGetInfo(battlepassid, COMPLETE_DUNGEON, &id, &count))
                         {
-                            if (id == 1 && pkCh->GetMissionProgress(COMPLETE_DUNGEON, battlepassid) < count)
-                                pkCh->UpdateMissionProgress(COMPLETE_DUNGEON, battlepassid, 1, count);
+                            if (id == 1 && ecs::PlayerRuntime::GetMissionProgress(pkCh->GetEntityHandle(), COMPLETE_DUNGEON, battlepassid) < count)
+                                ecs::PlayerRuntime::UpdateMissionProgress(pkCh->GetEntityHandle(), COMPLETE_DUNGEON, battlepassid, 1, count);
                         }
                     }
                 }

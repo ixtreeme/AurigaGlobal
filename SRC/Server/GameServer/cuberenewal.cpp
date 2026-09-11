@@ -650,7 +650,7 @@ void Cube_Make(LPCHARACTER ch, int index, int count_item, int index_item_improve
 	}
 
 #ifdef ENABLE_BATTLE_PASS
-	const uint8_t battlePassId = ch->GetBattlePassId();
+	const uint8_t battlePassId = ecs::PlayerRuntime::GetBattlePassId(ch->GetEntityHandle());
 	if (battlePassId)
 	{
 		uint32_t missionItemVnum = 0;
@@ -658,9 +658,9 @@ void Cube_Make(LPCHARACTER ch, int index, int count_item, int index_item_improve
 		if (CBattlePass::instance().BattlePassMissionGetInfo(
 				battlePassId, CRAFT_ITEM, &missionItemVnum, &missionCount) &&
 			missionItemVnum == materialInfo.reward.vnum &&
-			ch->GetMissionProgress(CRAFT_ITEM, battlePassId) < missionCount)
+			ecs::PlayerRuntime::GetMissionProgress(ch->GetEntityHandle(), CRAFT_ITEM, battlePassId) < missionCount)
 		{
-			ch->UpdateMissionProgress(
+			ecs::PlayerRuntime::UpdateMissionProgress(ch->GetEntityHandle(), 
 				CRAFT_ITEM, battlePassId, rewardCount, missionCount);
 		}
 	}

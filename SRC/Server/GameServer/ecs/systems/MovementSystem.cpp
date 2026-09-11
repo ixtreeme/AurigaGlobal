@@ -415,7 +415,7 @@ EVENTFUNC(battle_pass_stay_online_event_session){
     if (!ecs::PlayerRuntime::GetDesc(character))
         return PASSES_PER_SEC(60);
 
-    const uint8_t bBattlePassId = ch->GetBattlePassId();
+    const uint8_t bBattlePassId = ecs::PlayerRuntime::GetBattlePassId(ch->GetEntityHandle());
     if (!bBattlePassId)
         return PASSES_PER_SEC(60);
 
@@ -424,13 +424,13 @@ EVENTFUNC(battle_pass_stay_online_event_session){
     if (!CBattlePass::instance().BattlePassMissionGetInfo(bBattlePassId, STAY_ONLINE_MINUTES, &dwNotUsed, &dwCount))
         return PASSES_PER_SEC(60);
 
-    if (ch->IsCompletedMission(STAY_ONLINE_MINUTES))
+    if (ecs::PlayerRuntime::IsCompletedMission(ch->GetEntityHandle(), STAY_ONLINE_MINUTES))
         return PASSES_PER_SEC(60);
 
-    if (ch->GetMissionProgress(STAY_ONLINE_MINUTES, bBattlePassId) >= dwCount)
+    if (ecs::PlayerRuntime::GetMissionProgress(ch->GetEntityHandle(), STAY_ONLINE_MINUTES, bBattlePassId) >= dwCount)
         return PASSES_PER_SEC(60);
 
-    ch->UpdateMissionProgress(STAY_ONLINE_MINUTES, bBattlePassId, 1, dwCount);
+    ecs::PlayerRuntime::UpdateMissionProgress(ch->GetEntityHandle(), STAY_ONLINE_MINUTES, bBattlePassId, 1, dwCount);
     return PASSES_PER_SEC(60);
 }
 #endif

@@ -555,8 +555,8 @@ void Take(fishing_event_info* info, entt::entity ch)
 								// call crosses to the legacy object on purpose.
 								if (LPCHARACTER legacy = ecs::LegacyCharOf(ch))
 								{
-									if (legacy->GetMissionProgress(CATCH_FISH, bBattlePassId) < dwCount)
-										legacy->UpdateMissionProgress(CATCH_FISH, bBattlePassId, 1, dwCount);
+									if (ecs::PlayerRuntime::GetMissionProgress(legacy->GetEntityHandle(), CATCH_FISH, bBattlePassId) < dwCount)
+										ecs::PlayerRuntime::UpdateMissionProgress(legacy->GetEntityHandle(), CATCH_FISH, bBattlePassId, 1, dwCount);
 								}
 							}
 						}
@@ -748,8 +748,8 @@ void Grill(entt::entity owner, entt::entity itemEntity)
 		uint32_t dwCount, dwNotUsed;
 		if(CBattlePass::instance().BattlePassMissionGetInfo(bBattlePassId, FRY_FISH, &dwNotUsed, &dwCount))
 		{
-			if(ch->GetMissionProgress(FRY_FISH, bBattlePassId) < dwCount)
-				ch->UpdateMissionProgress(FRY_FISH, bBattlePassId, count, dwCount);
+			if(ecs::PlayerRuntime::GetMissionProgress(ch->GetEntityHandle(), FRY_FISH, bBattlePassId) < dwCount)
+				ecs::PlayerRuntime::UpdateMissionProgress(ch->GetEntityHandle(), FRY_FISH, bBattlePassId, count, dwCount);
 		}
 	}
 #endif

@@ -469,10 +469,7 @@ bool CHARACTER::IsCubeOpen(void)const { UnexpectedService(__func__); }
 bool CHARACTER::UnEquipSpecialRideUniqueItem(void) { UnexpectedService(__func__); }
 void CHARACTER::CloseAcce(void) { UnexpectedService(__func__); }
 int CHARACTER::GetSoulItemDamage(entt::entity,int,unsigned char) { UnexpectedService(__func__); }
-unsigned int CHARACTER::GetMissionProgress(unsigned int,unsigned int) { UnexpectedService(__func__); }
-void CHARACTER::UpdateMissionProgress(unsigned int,unsigned int,unsigned int,unsigned int,bool) { UnexpectedService(__func__); }
-bool CHARACTER::IsCompletedMission(unsigned char) { UnexpectedService(__func__); }
-unsigned char CHARACTER::GetBattlePassId(void) { UnexpectedService(__func__); }
+bool ecs::PlayerRuntime::IsCompletedMission(entt::entity, unsigned char) { UnexpectedService(__func__); }
 unsigned int CParty::GetLeaderPID(void) { UnexpectedService(__func__); }
 bool CParty::IsPositionNearLeader(entt::entity) { UnexpectedService(__func__); }
 void CParty::SendMessageA(entt::entity,unsigned char,unsigned int,unsigned int) { UnexpectedService(__func__); }

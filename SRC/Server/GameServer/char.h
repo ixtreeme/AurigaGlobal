@@ -1946,10 +1946,6 @@ public:
 #ifdef ENABLE_BATTLE_PASS
 public:
 	void LoadBattlePass(uint32_t dwCount, TPlayerBattlePassMission* data);
-	uint32_t GetMissionProgress(uint32_t dwMissionID, uint32_t dwBattlePassID);
-	void UpdateMissionProgress(uint32_t dwMissionID, uint32_t dwBattlePassID, uint32_t dwUpdateValue, uint32_t dwTotalValue, bool isOverride = false);
-	bool IsCompletedMission(uint8_t bMissionType);
-	uint8_t GetBattlePassId();
 
 private:
 

@@ -1036,15 +1036,15 @@ int CInputMain::Chat(entt::entity character, const char * data, uint32_t uiBytes
 				P2P_MANAGER::instance().Send(&p, sizeof(p));
 				SendShout(shoutbuf, ecs::PlayerRuntime::GetEmpire(character));
 #ifdef ENABLE_BATTLE_PASS
-				if (uint8_t bBattlePassId = ch->GetBattlePassId())
+				if (uint8_t bBattlePassId = ecs::PlayerRuntime::GetBattlePassId(ch->GetEntityHandle()))
 				{
 					uint32_t dwCount, dwNotUsed;
 					if (CBattlePass::instance().BattlePassMissionGetInfo(bBattlePassId, COUNTER_CHAT, &dwNotUsed, &dwCount))
 					{
-						if (!ch->IsCompletedMission(COUNTER_CHAT))
+						if (!ecs::PlayerRuntime::IsCompletedMission(ch->GetEntityHandle(), COUNTER_CHAT))
 						{
-							if (ch->GetMissionProgress(COUNTER_CHAT, bBattlePassId) < dwCount)
-								ch->UpdateMissionProgress(COUNTER_CHAT, bBattlePassId, 1, dwCount);
+							if (ecs::PlayerRuntime::GetMissionProgress(ch->GetEntityHandle(), COUNTER_CHAT, bBattlePassId) < dwCount)
+								ecs::PlayerRuntime::UpdateMissionProgress(ch->GetEntityHandle(), COUNTER_CHAT, bBattlePassId, 1, dwCount);
 						}
 					}
 				}
@@ -1358,16 +1358,16 @@ int CInputMain::Chat(entt::entity character, const char * data, uint32_t uiBytes
 		SendShout(chatbuf, ecs::PlayerRuntime::GetEmpire(character));
 
 #ifdef ENABLE_BATTLE_PASS
-		uint8_t bBattlePassId = ch->GetBattlePassId();
+		uint8_t bBattlePassId = ecs::PlayerRuntime::GetBattlePassId(ch->GetEntityHandle());
 		if(bBattlePassId)
 		{
 			uint32_t dwCount, dwNotUsed;
 			if(CBattlePass::instance().BattlePassMissionGetInfo(bBattlePassId, COUNTER_CHAT, &dwNotUsed, &dwCount))
 			{
-				if (!ch->IsCompletedMission(COUNTER_CHAT))
+				if (!ecs::PlayerRuntime::IsCompletedMission(ch->GetEntityHandle(), COUNTER_CHAT))
 				{
-					if(ch->GetMissionProgress(COUNTER_CHAT, bBattlePassId) < dwCount)
-						ch->UpdateMissionProgress(COUNTER_CHAT, bBattlePassId, 1, dwCount);
+					if(ecs::PlayerRuntime::GetMissionProgress(ch->GetEntityHandle(), COUNTER_CHAT, bBattlePassId) < dwCount)
+						ecs::PlayerRuntime::UpdateMissionProgress(ch->GetEntityHandle(), COUNTER_CHAT, bBattlePassId, 1, dwCount);
 				}
 			}
 		}
