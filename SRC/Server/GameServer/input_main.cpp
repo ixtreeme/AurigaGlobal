@@ -442,7 +442,7 @@ int CInputMain::Whisper(entt::entity character, const char * data, uint64_t uiBy
 			LOG_INFO("Whisper to {}({}) from {}", ecs::PlayerRuntime::GetName(chr).data(), pinfo->szNameTo, ecs::PlayerRuntime::GetName(character).data());
 	}
 
-	if (ch->IsBlockMode(BLOCK_WHISPER))
+	if (ecs::PlayerRuntime::IsBlockMode(character, BLOCK_WHISPER))
 	{
 		if (ecs::PlayerRuntime::GetDesc(character))
 		{
@@ -551,7 +551,7 @@ int CInputMain::Whisper(entt::entity character, const char * data, uint64_t uiBy
 	}
 	else
 	{
-		if (ch->IsBlockMode(BLOCK_WHISPER))
+		if (ecs::PlayerRuntime::IsBlockMode(character, BLOCK_WHISPER))
 		{
 			if (ecs::PlayerRuntime::GetDesc(character))
 			{
@@ -563,7 +563,7 @@ int CInputMain::Whisper(entt::entity character, const char * data, uint64_t uiBy
 				ecs::PlayerRuntime::GetDesc(character)->Packet(&pack, sizeof(pack));
 			}
 		}
-		else if (pkChr && pkChr->IsBlockMode(BLOCK_WHISPER))
+		else if (pkChr && ecs::PlayerRuntime::IsBlockMode(chr, BLOCK_WHISPER))
 		{
 			if (ecs::PlayerRuntime::GetDesc(character))
 			{
@@ -1616,15 +1616,6 @@ void CInputMain::QuickslotSwap(entt::entity character, const char* data)
     InventorySystem::SwapQuickslot(character, packet.pos, packet.change_pos);
 }
 
-namespace {
-bool IsInputBlockMode(entt::entity character, uint8_t flag)
-{
-	const auto* state = g_registry.valid(character) ?
-		g_registry.try_get<ecs::CharacterRuntimeFlagsComponent>(character) : nullptr;
-	return state && (state->blockMode & flag) != 0;
-}
-}
-
 int CInputMain::Messenger(entt::entity character, const char* c_pData, uint64_t uiBytes)
 {
 	if (!c_pData || !ecs::PlayerRuntime::IsPC(character))
@@ -1657,7 +1648,7 @@ int CInputMain::Messenger(entt::entity character, const char* c_pData, uint64_t 
 				if (ecs::PlayerRuntime::IsObserverMode(character))
 					return sizeof(TPacketCGMessengerAddByVID);
 
-				if (IsInputBlockMode(ch_companionEntity, BLOCK_MESSENGER_INVITE))
+				if (ecs::PlayerRuntime::IsBlockMode(ch_companionEntity, BLOCK_MESSENGER_INVITE))
 				{
 #ifdef TEXTS_IMPROVEMENT
 					ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 370, "%s", ecs::PlayerRuntime::GetName(ch_companionEntity).data());
@@ -1708,7 +1699,7 @@ int CInputMain::Messenger(entt::entity character, const char* c_pData, uint64_t 
 					if (tch == character) // 자신은 추가할 수 없다.
 						return CHARACTER_NAME_MAX_LEN;
 
-					if (IsInputBlockMode(tch, BLOCK_MESSENGER_INVITE) == true)
+					if (ecs::PlayerRuntime::IsBlockMode(tch, BLOCK_MESSENGER_INVITE) == true)
 					{
 #ifdef TEXTS_IMPROVEMENT
 						ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 370, "%s", ecs::PlayerRuntime::GetName(tch).data());

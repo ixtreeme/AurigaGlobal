@@ -744,9 +744,6 @@ public:
 	void			SendGreetMessage();
 
 
-	void			SetBlockMode(uint8_t bFlag);
-	uint8_t			GetBlockMode() const;
-	bool			IsBlockMode(uint8_t bFlag) const;
 
 
 	// FISING

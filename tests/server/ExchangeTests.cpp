@@ -233,6 +233,12 @@ uint32_t GetPacketVID(entt::entity e) { return A(e).pid + 100; }
 std::string_view GetName(entt::entity e) { return A(e).name; }
 uint8_t GetGMLevel(entt::entity e) { return A(e).gm; }
 int GetDuelOption(entt::entity e, const char*) { return A(e).block; }
+// exchange.cpp used to read the flags component here itself; case 11 sets it.
+bool IsBlockMode(entt::entity e, uint8_t flag)
+{
+    const auto* flags = g_registry.try_get<ecs::CharacterRuntimeFlagsComponent>(e);
+    return flags && (flags->blockMode & flag) != 0;
+}
 }
 namespace ecs::SessionSystem {
 bool IsSafeboxOpen(entt::entity e) { return A(e).safebox; }

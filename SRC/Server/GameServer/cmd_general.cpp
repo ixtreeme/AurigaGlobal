@@ -2507,7 +2507,7 @@ ACMD(do_setblockmode)
 	{
 		uint8_t flag = 0;
 		str_to_number(flag, arg1);
-		ch->SetBlockMode(flag);
+		ecs::PlayerRuntime::SetBlockMode(character, flag);
 	}
 }
 

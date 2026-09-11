@@ -78,7 +78,7 @@ int CInputP2P::Relay(LPDESC d, const char * c_pData, size_t uiBytes)
 
 	if (*c_pbData == HEADER_GC_WHISPER)
 	{
-		if (pkChr->IsBlockMode(BLOCK_WHISPER))
+		if (ecs::PlayerRuntime::IsBlockMode(pkChr->GetEntityHandle(), BLOCK_WHISPER))
 		{
 			// ӼӸ ź ¿ ӼӸ ź.
 			return p->lSize;

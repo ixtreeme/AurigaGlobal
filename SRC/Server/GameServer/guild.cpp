@@ -2220,7 +2220,7 @@ void CGuild::Invite( entt::entity inviter, entt::entity invitee )
 	if (quest::CQuestManager::instance().GetPCForce(ecs::PlayerRuntime::GetPlayerID(invitee))->IsRunning() == true)
 		return;
 
-	if ( pchInvitee->IsBlockMode( BLOCK_GUILD_INVITE ) )
+	if ( ecs::PlayerRuntime::IsBlockMode(invitee, BLOCK_GUILD_INVITE ) )
 	{
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(inviter, CHAT_TYPE_INFO, 162, "");

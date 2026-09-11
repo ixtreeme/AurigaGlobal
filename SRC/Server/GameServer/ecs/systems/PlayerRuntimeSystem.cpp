@@ -364,6 +364,42 @@ void RefreshGMLevel(entt::entity e)
 	g_registry.emplace_or_replace<ecs::DirtyTag>(e);
 }
 
+uint8_t GetBlockMode(entt::entity e)
+{
+	if (e == entt::null || !g_registry.valid(e))
+		return 0;
+
+	const auto* flags = g_registry.try_get<ecs::CharacterRuntimeFlagsComponent>(e);
+	return flags ? flags->blockMode : 0;
+}
+
+bool IsBlockMode(entt::entity e, uint8_t flag)
+{
+	return (GetBlockMode(e) & flag) != 0;
+}
+
+// The player's own setting, which is also kept in the quest flags so a
+// relog restores it. SetBlockModeForce below is the quest script's way in
+// and deliberately does not write them back.
+void SetBlockMode(entt::entity e, uint8_t flag)
+{
+	if (e == entt::null || !g_registry.valid(e))
+		return;
+
+	g_registry.get_or_emplace<ecs::CharacterRuntimeFlagsComponent>(e).blockMode = flag;
+
+	ecs::ChatSystem::Send(e, CHAT_TYPE_COMMAND, "setblockmode %d", flag);
+
+	SetQuestFlag(e, "game_option.block_exchange", flag & BLOCK_EXCHANGE ? 1 : 0);
+	SetQuestFlag(e, "game_option.block_party_invite", flag & BLOCK_PARTY_INVITE ? 1 : 0);
+	SetQuestFlag(e, "game_option.block_guild_invite", flag & BLOCK_GUILD_INVITE ? 1 : 0);
+	SetQuestFlag(e, "game_option.block_whisper", flag & BLOCK_WHISPER ? 1 : 0);
+	SetQuestFlag(e, "game_option.block_messenger_invite", flag & BLOCK_MESSENGER_INVITE ? 1 : 0);
+	SetQuestFlag(e, "game_option.block_party_request", flag & BLOCK_PARTY_REQUEST ? 1 : 0);
+
+	g_registry.emplace_or_replace<ecs::DirtyTag>(e);
+}
+
 void SetBlockModeForce(entt::entity e, uint8_t blockMode)
 {
 	if (e == entt::null || !g_registry.valid(e))
@@ -2142,34 +2178,6 @@ entt::entity CHARACTER::GetQuestItemEntity() const
 LPITEM CHARACTER::GetQuestItemPtr() const
 {
 	return ResolveLegacyItem(GetQuestItemEntity());
-}
-
-void CHARACTER::SetBlockMode(uint8_t bFlag)
-{
-    if (auto* flags = EnsureRuntimeFlagsComponent(GetEntityHandle()))
-        flags->blockMode = bFlag;
-
-    ecs::ChatSystem::Send(GetEntityHandle(), CHAT_TYPE_COMMAND, "setblockmode %d", bFlag);
-
-    ecs::PlayerRuntime::SetQuestFlag(GetEntityHandle(), "game_option.block_exchange", bFlag & BLOCK_EXCHANGE ? 1 : 0);
-    ecs::PlayerRuntime::SetQuestFlag(GetEntityHandle(), "game_option.block_party_invite", bFlag & BLOCK_PARTY_INVITE ? 1 : 0);
-    ecs::PlayerRuntime::SetQuestFlag(GetEntityHandle(), "game_option.block_guild_invite", bFlag & BLOCK_GUILD_INVITE ? 1 : 0);
-    ecs::PlayerRuntime::SetQuestFlag(GetEntityHandle(), "game_option.block_whisper", bFlag & BLOCK_WHISPER ? 1 : 0);
-    ecs::PlayerRuntime::SetQuestFlag(GetEntityHandle(), "game_option.block_messenger_invite", bFlag & BLOCK_MESSENGER_INVITE ? 1 : 0);
-    ecs::PlayerRuntime::SetQuestFlag(GetEntityHandle(), "game_option.block_party_request", bFlag & BLOCK_PARTY_REQUEST ? 1 : 0);
-}
-
-uint8_t CHARACTER::GetBlockMode() const
-{
-    if (const auto* flags = TryGetRuntimeFlagsComponent(GetEntityHandle()))
-        return flags->blockMode;
-
-    return 0;
-}
-
-bool CHARACTER::IsBlockMode(uint8_t bFlag) const
-{
-    return (GetBlockMode() & bFlag) != 0;
 }
 
 // Pet/mount markers live only in StatusFlags; legacy readers use the same store.

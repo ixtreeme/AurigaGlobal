@@ -3278,7 +3278,7 @@ void CInputDB::ReadOfflineMessages(LPDESC desc, const char* pcData)
 	if (!desc || !desc->GetCharacter())
 		return;
 
-	if (desc->GetCharacter()->IsBlockMode(BLOCK_WHISPER))
+	if (ecs::PlayerRuntime::IsBlockMode(desc->GetEntity(), BLOCK_WHISPER))
 		return;
 
 	auto p = reinterpret_cast<const TPacketDGReadOfflineMessage*>(pcData);

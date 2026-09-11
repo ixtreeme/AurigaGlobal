@@ -765,8 +765,7 @@ bool Start(entt::entity initiator, entt::entity target)
         Info(initiator, 517, std::string(ecs::PlayerRuntime::GetName(target))); return false;
     }
 #endif
-    if (const auto* flags = g_registry.try_get<ecs::CharacterRuntimeFlagsComponent>(target);
-        flags && (flags->blockMode & BLOCK_EXCHANGE))
+    if (ecs::PlayerRuntime::IsBlockMode(target, BLOCK_EXCHANGE))
     {
         Info(initiator, 368, std::string(ecs::PlayerRuntime::GetName(target))); return false;
     }

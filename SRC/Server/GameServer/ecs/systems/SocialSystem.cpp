@@ -859,7 +859,7 @@ bool CHARACTER::RequestToParty(entt::entity leaderEntity)
     if (!IsPC() || !ecs::PlayerRuntime::IsPC(leaderEntity))
         return false;
 
-    if (leader->IsBlockMode(BLOCK_PARTY_REQUEST))
+    if (ecs::PlayerRuntime::IsBlockMode(leader->GetEntityHandle(), BLOCK_PARTY_REQUEST))
         return false;
 
     PartyJoinErrCode errcode = IsPartyJoinableCondition(leaderEntity, GetEntityHandle());
@@ -1068,7 +1068,7 @@ void CHARACTER::PartyInvite(entt::entity invitee)
 #endif
         return;
     }
-    else if (pkInvitee->IsBlockMode(BLOCK_PARTY_INVITE))
+    else if (ecs::PlayerRuntime::IsBlockMode(invitee, BLOCK_PARTY_INVITE))
     {
 #ifdef TEXTS_IMPROVEMENT
         ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 192, "%s", ecs::PlayerRuntime::GetName(invitee).data());
