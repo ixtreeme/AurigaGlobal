@@ -24,7 +24,7 @@ namespace
 		if (!ch || amount == 0)
 			return;
 
-		const uint32_t cur = ch->GetDragonCoin();
+		const uint32_t cur = ecs::PlayerRuntime::GetDragonCoin(ch->GetEntityHandle());
 		const uint64_t maxCoins = 0xFFFFFFFFULL; // uint32 max
 
 		if ((uint64_t)cur >= maxCoins)
@@ -37,7 +37,7 @@ namespace
 		if (canAdd == 0)
 			return;
 
-		ch->SetDragonCoin(cur + (uint32_t)canAdd);
+		ecs::PlayerRuntime::SetDragonCoin(ch->GetEntityHandle(), cur + (uint32_t)canAdd);
 		ecs::ChatSystem::Send(chEntity, CHAT_TYPE_INFO, "You received %u Dragon Coins.", (uint32_t)canAdd);
 	}
 

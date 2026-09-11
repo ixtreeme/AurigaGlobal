@@ -1231,13 +1231,13 @@ struct FuncAttractRanger
 				return;
 			if (CombatSystem::GetVictim(candidate) != entt::null && CombatSystem::GetVictim(candidate) != m_character)
 				return;
-			if (ch->GetMobAttackRange() > 150)
+			if (CombatSystem::GetMobAttackRange(ch->GetEntityHandle()) > 150)
 			{
-				int iNewRange = 150;//(int)(ch->GetMobAttackRange() * 0.2);
+				int iNewRange = 150;//(int)(CombatSystem::GetMobAttackRange(ch->GetEntityHandle()) * 0.2);
 				if (iNewRange < 150)
 					iNewRange = 150;
 
-				AffectSystem::AddAffect(candidate, AFFECT_BOW_DISTANCE, POINT_BOW_DISTANCE, iNewRange - ch->GetMobAttackRange(), AFF_NONE, 3 * 60, 0, false);
+				AffectSystem::AddAffect(candidate, AFFECT_BOW_DISTANCE, POINT_BOW_DISTANCE, iNewRange - CombatSystem::GetMobAttackRange(ch->GetEntityHandle()), AFF_NONE, 3 * 60, 0, false);
 			}
 		}
 	}
@@ -1618,7 +1618,7 @@ static void GiveExp(LegacyCharHandle from, LegacyCharHandle to, int iExp)
 		break;
 	}
 
-	if (to->GetPremiumRemainSeconds(PREMIUM_EXP) > 0)
+	if (ecs::PlayerRuntime::GetPremiumRemainSeconds(to->GetEntityHandle(), PREMIUM_EXP) > 0)
 		rateFactor += 50;
 	if (to->IsEquipUniqueGroup(UNIQUE_GROUP_RING_OF_EXP))
 		rateFactor += 50;
@@ -1674,8 +1674,8 @@ static void GiveExp(LegacyCharHandle from, LegacyCharHandle to, int iExp)
 			// sometimes, this overflows
 			uint32_t dwUpdatePoint = (2000.0L / ecs::PointSystem::GetLevel(toEntity) / ecs::PointSystem::GetLevel(toEntity) / 3) * iExp;
 
-			if (to->GetPremiumRemainSeconds(PREMIUM_MARRIAGE_FAST) > 0 ||
-				you->GetPremiumRemainSeconds(PREMIUM_MARRIAGE_FAST) > 0)
+			if (ecs::PlayerRuntime::GetPremiumRemainSeconds(to->GetEntityHandle(), PREMIUM_MARRIAGE_FAST) > 0 ||
+				ecs::PlayerRuntime::GetPremiumRemainSeconds(you->GetEntityHandle(), PREMIUM_MARRIAGE_FAST) > 0)
 				dwUpdatePoint *= 3;
 
 			marriage::TMarriage* pMarriage = marriage::CManager::instance().Get(ecs::PlayerRuntime::GetPlayerID(toEntity));
@@ -1755,7 +1755,7 @@ static void GiveExp(LegacyCharHandle from, LegacyCharHandle to, int iExp)
 	//   Ǹ ġ ʽ
 	{
 		//  : ġ
-		if (to->GetPremiumRemainSeconds(PREMIUM_EXP) > 0)
+		if (ecs::PlayerRuntime::GetPremiumRemainSeconds(to->GetEntityHandle(), PREMIUM_EXP) > 0)
 		{
 			iExp += (iExp * 50 / 100);
 		}
@@ -1825,8 +1825,8 @@ static void GiveExp(LegacyCharHandle from, LegacyCharHandle to, int iExp)
 			// 1 100%
 			uint32_t dwUpdatePoint = 2000 * iExp / ecs::PointSystem::GetLevel(toEntity) / ecs::PointSystem::GetLevel(toEntity) / 3;
 
-			if (to->GetPremiumRemainSeconds(PREMIUM_MARRIAGE_FAST) > 0 ||
-				you->GetPremiumRemainSeconds(PREMIUM_MARRIAGE_FAST) > 0)
+			if (ecs::PlayerRuntime::GetPremiumRemainSeconds(to->GetEntityHandle(), PREMIUM_MARRIAGE_FAST) > 0 ||
+				ecs::PlayerRuntime::GetPremiumRemainSeconds(you->GetEntityHandle(), PREMIUM_MARRIAGE_FAST) > 0)
 				dwUpdatePoint = (uint32_t)(dwUpdatePoint * 3);
 
 			marriage::TMarriage* pMarriage = marriage::CManager::instance().Get(ecs::PlayerRuntime::GetPlayerID(toEntity));
@@ -3047,7 +3047,7 @@ void DistributeSP(entt::entity e, entt::entity killer, int iMethod)
 	}
 	else
 	{
-		if (ecs::PlayerRuntime::GetJob(killer) == JOB_SHAMAN || (pkKiller->GetJob() == JOB_SURA && pkKiller->GetSkillGroup() == 2))
+		if (ecs::PlayerRuntime::GetJob(killer) == JOB_SHAMAN || (ecs::PlayerRuntime::GetJob(pkKiller->GetEntityHandle()) == JOB_SURA && pkKiller->GetSkillGroup() == 2))
 		{
 			int iAmount;
 
@@ -4691,7 +4691,7 @@ void RewardGold(entt::entity e, entt::entity attacker)
 
 			// ADD_PREMIUM
 			bool isAutoLoot =
-				(pkAttacker->GetPremiumRemainSeconds(PREMIUM_AUTOLOOT) > 0 ||
+				(ecs::PlayerRuntime::GetPremiumRemainSeconds(pkAttacker->GetEntityHandle(), PREMIUM_AUTOLOOT) > 0 ||
 					pkAttacker->IsEquipUniqueGroup(UNIQUE_GROUP_AUTOLOOT))
 				? true : false; // 3
 			// END_OF_ADD_PREMIUM
@@ -4728,7 +4728,7 @@ void RewardGold(entt::entity e, entt::entity attacker)
 			iGoldPercent = iGoldPercent * CHARACTER_MANAGER::instance().GetMobGoldDropRate(attacker) / 100;
 
 			// ADD_PREMIUM
-			if (pkAttacker->GetPremiumRemainSeconds(PREMIUM_GOLD) > 0 ||
+			if (ecs::PlayerRuntime::GetPremiumRemainSeconds(pkAttacker->GetEntityHandle(), PREMIUM_GOLD) > 0 ||
 				pkAttacker->IsEquipUniqueGroup(UNIQUE_GROUP_LUCKY_GOLD))
 				iGoldPercent += iGoldPercent;
 			// END_OF_ADD_PREMIUM

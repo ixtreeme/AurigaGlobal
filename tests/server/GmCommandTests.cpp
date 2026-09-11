@@ -944,7 +944,6 @@ int CEntity::GetX(void)const { Unexpected(); }
 int CEntity::GetY(void)const { Unexpected(); }
 pixel_position_s CEntity::GetXYZ(void)const { Unexpected(); }
 char const * CHARACTER::GetName(unsigned char)const { Unexpected(); }
-unsigned char CHARACTER::GetJob(void)const { Unexpected(); }
 int CHARACTER::GetLevel(void)const { Unexpected(); }
 void CHARACTER::SetHP(int64_t) { Unexpected(); }
 int64_t CHARACTER::GetMaxHP(void)const { Unexpected(); }
@@ -959,8 +958,8 @@ int64_t ecs::PlayerRuntime::GetSP(entt::entity) { return 0; }
 #ifdef ENABLE_GAYA_SYSTEM
 int ecs::PointSystem::GetGaya(entt::entity) { Unexpected(); }
 #endif
-unsigned int CHARACTER::GetMobDamageMin(void)const { Unexpected(); }
-unsigned int CHARACTER::GetMobDamageMax(void)const { Unexpected(); }
+unsigned int CombatSystem::GetMobDamageMin(entt::entity) { Unexpected(); }
+unsigned int CombatSystem::GetMobDamageMax(entt::entity) { Unexpected(); }
 void CHARACTER::PointChange(unsigned char,int64_t,bool,bool,bool) { Unexpected(); }
 float CHARACTER::GetRotation(void)const { Unexpected(); }
 void CombatSystem::CreateFly(entt::entity, unsigned char, entt::entity) { Unexpected(); }

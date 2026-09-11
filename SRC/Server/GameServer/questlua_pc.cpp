@@ -901,7 +901,7 @@ namespace quest
         // migrated from CHARACTER::ResetPoint
         // TODO Phase 8: CharacterPoints decomposition
         // DUAL-PATH: legacy only during migration window
-		CQuestManager::instance().GetCurrentCharacterPtr()->ResetPoint(ecs::PointSystem::GetLevel(CQuestManager::instance().GetCurrentCharacter()));
+		ecs::PointSystem::ResetAllPoints(CQuestManager::instance().GetCurrentCharacterPtr()->GetEntityHandle(), ecs::PointSystem::GetLevel(CQuestManager::instance().GetCurrentCharacter()));
 		return 0;
 	}
 

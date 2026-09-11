@@ -1311,7 +1311,7 @@ void CInputDB::SafeboxLoad(LPDESC d, const char * c_pData)
 	//END_PREVENT_TRADE_WINDOW
 
 	// ADD_PREMIUM
-	if (d->GetCharacter()->GetPremiumRemainSeconds(PREMIUM_SAFEBOX) > 0 || d->GetCharacter()->IsEquipUniqueGroup(UNIQUE_GROUP_LARGE_SAFEBOX))
+	if (ecs::PlayerRuntime::GetPremiumRemainSeconds(d->GetCharacter()->GetEntityHandle(), PREMIUM_SAFEBOX) > 0 || d->GetCharacter()->IsEquipUniqueGroup(UNIQUE_GROUP_LARGE_SAFEBOX))
 		bSize = 3;
 	// END_OF_ADD_PREMIUM
 

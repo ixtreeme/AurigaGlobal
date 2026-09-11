@@ -391,7 +391,6 @@ void AttrTransfer_close(entt::entity) { UnexpectedService(__func__); }
 unsigned short CHARACTER::GetRaceNum(void)const { UnexpectedService(__func__); }
 char const * CHARACTER::GetName(unsigned char)const { UnexpectedService(__func__); }
 unsigned int CHARACTER::GetPacketVID(void)const { UnexpectedService(__func__); }
-unsigned char CHARACTER::GetJob(void)const { UnexpectedService(__func__); }
 int CHARACTER::GetLevel(void)const { UnexpectedService(__func__); }
 unsigned char ecs::PlayerRuntime::GetGMLevel(entt::entity) { UnexpectedService(__func__); }
 unsigned int CHARACTER::GetExp(void)const { UnexpectedService(__func__); }
@@ -409,9 +408,6 @@ void CHARACTER::SetPoint(unsigned char,int64_t) { UnexpectedService(__func__); }
 int64_t CHARACTER::GetPoint(unsigned char)const { UnexpectedService(__func__); }
 int ecs::PointSystem::GetLimitPoint(entt::entity, unsigned char) { UnexpectedService(__func__); }
 SMobTable const & CHARACTER::GetMobTable(void)const { UnexpectedService(__func__); }
-unsigned char CHARACTER::GetMobRank(void)const { UnexpectedService(__func__); }
-unsigned char CHARACTER::GetMobBattleType(void)const { UnexpectedService(__func__); }
-unsigned short CHARACTER::GetMobAttackRange(void)const { UnexpectedService(__func__); }
 bool ecs::SocialSystem::HasReviverInParty(entt::entity) { UnexpectedService(__func__); }
 bool ItemSystem::UnEquipSpecialRideUniqueItem(entt::entity) { UnexpectedService(__func__); }
 bool MountSystem::IsHorseRiding(entt::entity) { UnexpectedService(__func__); }
@@ -470,14 +466,13 @@ int CHARACTER::GetSkillPower(unsigned int,unsigned char)const { UnexpectedServic
 int CHARACTER::ComputeSkill(unsigned int,entt::entity,unsigned char) { UnexpectedService(__func__); }
 unsigned char CHARACTER::GetSkillGroup(void)const { UnexpectedService(__func__); }
 void CHARACTER::MonsterLog(char const *,...) { UnexpectedService(__func__); }
-unsigned char CHARACTER::GetEmpire(void)const { UnexpectedService(__func__); }
 void CHARACTER::SetQuestNPCID(unsigned int) { UnexpectedService(__func__); }
 int ecs::PlayerRuntime::GetQuestFlag(entt::entity,std::string const &) { UnexpectedService(__func__); }
 void ecs::PlayerRuntime::SetQuestFlag(entt::entity,std::string const &,int) { UnexpectedService(__func__); }
 void CHARACTER::SetNextStatePulse(int) { UnexpectedService(__func__); }
 CHARACTER * CHARACTER::GetMarryPartner(void)const { UnexpectedService(__func__); }
 int CHARACTER::GetMarriageBonus(unsigned int,bool) { UnexpectedService(__func__); }
-int CHARACTER::GetPremiumRemainSeconds(unsigned char)const { UnexpectedService(__func__); }
+int ecs::PlayerRuntime::GetPremiumRemainSeconds(entt::entity, unsigned char) { UnexpectedService(__func__); }
 bool CHARACTER::IsCubeOpen(void)const { UnexpectedService(__func__); }
 bool CHARACTER::UnEquipSpecialRideUniqueItem(void) { UnexpectedService(__func__); }
 bool CHARACTER::IsPet(void)const { UnexpectedService(__func__); }

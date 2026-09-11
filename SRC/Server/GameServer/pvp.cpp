@@ -485,8 +485,8 @@ bool CPVP::Agree(uint32_t dwPID)
 
 		if (ecs::QuestSystem::GetFlag(characterA, szTableStaticPvP[9]) != 1 && ecs::QuestSystem::GetFlag(characterB, szTableStaticPvP[9]) != 1)
 		{
-			chA->SetDuel("IsFight", 1);
-			chB->SetDuel("IsFight", 1);
+			ecs::PlayerRuntime::SetDuelOption(chA->GetEntityHandle(), "IsFight", 1);
+			ecs::PlayerRuntime::SetDuelOption(chB->GetEntityHandle(), "IsFight", 1);
 		}
 
 		{

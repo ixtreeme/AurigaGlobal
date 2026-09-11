@@ -935,7 +935,7 @@ namespace {
             if (m_bEmpire && ecs::PlayerRuntime::GetEmpire(character) && m_bEmpire != ecs::PlayerRuntime::GetEmpire(character))
                 return;
 
-            if (pkChr->IsHack())
+            if (ecs::PlayerRuntime::IsHack(pkChr->GetEntityHandle()))
                 return;
 
             if (!pkChr->CanHandleItem(false, true))
@@ -1837,7 +1837,7 @@ uint32_t CHARACTER::GetStopTime() const
 
 void CHARACTER::GoHome()
 {
-    ecs::MovementSystem::WarpSet(GetEntityHandle(), EMPIRE_START_X(GetEmpire()), EMPIRE_START_Y(GetEmpire()));
+    ecs::MovementSystem::WarpSet(GetEntityHandle(), EMPIRE_START_X(ecs::PlayerRuntime::GetEmpire(GetEntityHandle())), EMPIRE_START_Y(ecs::PlayerRuntime::GetEmpire(GetEntityHandle())));
 }
 
 namespace ecs::PlayerRuntime {

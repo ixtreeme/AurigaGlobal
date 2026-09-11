@@ -660,7 +660,6 @@ public:
 
 	uint32_t			GetAID() const;
 
-	uint8_t			GetJob() const;
 	uint8_t			GetCharType() const;
 
 	bool			IsPC() const { return GetDesc() ? true : false; }
@@ -723,11 +722,6 @@ public:
 
 
 	const TMobTable& GetMobTable() const;
-	uint8_t				GetMobRank() const;
-	uint8_t				GetMobBattleType() const;
-	uint32_t				GetMobDamageMin() const;
-	uint32_t				GetMobDamageMax() const;
-	uint16_t				GetMobAttackRange() const;
 	uint32_t				GetMobDropItemVnum() const;
 
 	// NEWAI
@@ -765,7 +759,6 @@ public:
 
 	void			SendGreetMessage();
 
-	void			ResetPoint(int iLv);
 
 	void			SetBlockMode(uint8_t bFlag);
 	uint8_t			GetBlockMode() const;
@@ -1158,7 +1151,6 @@ public:
 
 
 #ifdef ENABLE_PVP_ADVANCED
-	void			SetDuel(const char* type, int value);
 #endif
 #ifdef ENABLE_GAYA_SYSTEM
 #endif
@@ -1205,8 +1197,6 @@ public:
 	public:
 		void SetWheelDestiny(std::shared_ptr<CWheelDestiny> pt);
 		std::shared_ptr<CWheelDestiny> GetWheelDestiny() const { return pWheelDestiny; }
-		void SetWheelFreeCount(const int count);
-		int GetWheelFreeCount() const;
 
 	private:
 		std::shared_ptr<CWheelDestiny> pWheelDestiny = nullptr;
@@ -1310,10 +1300,6 @@ public:
 #else
 #endif
 #ifdef ENABLE_ITEMSHOP
-	uint32_t			GetDragonCoin();
-	void				SetDragonCoin(uint32_t amount);
-	void SetProtectTime(const std::string& flagname, int value);
-	int GetProtectTime(const std::string& flagname) const;
 #endif
 
 
@@ -1614,7 +1600,6 @@ private:
 
 public:
 	void 				SetEmpire(uint8_t bEmpire);
-	uint8_t				GetEmpire() const;
 
 protected:
 	uint8_t				m_bEmpire;
@@ -1718,7 +1703,6 @@ public:
 	friend class CFuncShoot;
 
 public:
-	int				GetPremiumRemainSeconds(uint8_t bType) const;
 
 private:
 	int				m_aiPremiumTimes[PREMIUM_MAX_NUM];
@@ -1786,7 +1770,6 @@ public:
 
 
 	// Hack ������ ���� üũ.
-	bool	IsHack(bool bSendMsg = true, bool bCheckShopOwner = true, int limittime = g_nPortalLimitTime);
 
 
 public:

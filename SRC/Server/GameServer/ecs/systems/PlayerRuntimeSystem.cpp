@@ -1781,11 +1781,6 @@ void CHARACTER::SetRace(uint8_t race)
 	ecs::PlayerRuntime::SetRace(GetEntityHandle(), race);
 }
 
-uint8_t CHARACTER::GetJob() const
-{
-	return ecs::PlayerRuntime::GetJob(GetEntityHandle());
-}
-
 void CHARACTER::SetLevel(uint8_t level)
 {
     if (auto* ecsLevel = EnsureLevelComponent(GetEntityHandle()))
@@ -1842,11 +1837,6 @@ void CHARACTER::SetEmpire(uint8_t bEmpire)
 {
     m_bEmpire = bEmpire;
 	ecs::PlayerRuntime::SetEmpire(GetEntityHandle(), bEmpire);
-}
-
-uint8_t CHARACTER::GetEmpire() const
-{
-	return ecs::PlayerRuntime::GetEmpire(GetEntityHandle());
 }
 
 uint8_t CHARACTER::GetCharType() const
@@ -1937,6 +1927,18 @@ bool IsReviver(entt::entity e)
 
     const auto* flags = AIHelpers::TryGetFlags(e);
     return flags && flags->isReviver;
+}
+
+// How many free spins of the wheel are left. Two named reads of one quest
+// flag; they were CHARACTER methods over the entity form already.
+int GetWheelFreeCount(entt::entity e)
+{
+    return GetQuestFlag(e, "wheel.free");
+}
+
+void SetWheelFreeCount(entt::entity e, int count)
+{
+    SetQuestFlag(e, "wheel.free", count);
 }
 
 uint32_t GetAIFlag(entt::entity e)
@@ -2164,7 +2166,7 @@ uint32_t CHARACTER::GetAID() const
     uint32_t dwAID = 0;
 
     snprintf(szQuery, sizeof(szQuery), "SELECT id FROM player_index%s WHERE pid1=%u OR pid2=%u OR pid3=%u OR pid4=%u OR pid5=%u AND empire=%u",
-        get_table_postfix(), GetPlayerID(), GetPlayerID(), GetPlayerID(), GetPlayerID(), GetPlayerID(), GetEmpire());
+        get_table_postfix(), GetPlayerID(), GetPlayerID(), GetPlayerID(), GetPlayerID(), GetPlayerID(), ecs::PlayerRuntime::GetEmpire(GetEntityHandle()));
 
     std::unique_ptr<SQLMsg> msg(DBManager::instance().DirectQuery(szQuery));
     if (msg->Get()->uiNumRows == 0)
@@ -2393,25 +2395,6 @@ int GetProtectTime(entt::entity e, std::string_view flag)
 
 } // namespace ecs::PlayerRuntime
 
-uint32_t CHARACTER::GetDragonCoin()
-{
-    return ecs::PlayerRuntime::GetDragonCoin(GetEntityHandle());
-}
-
-void CHARACTER::SetDragonCoin(uint32_t amount)
-{
-    ecs::PlayerRuntime::SetDragonCoin(GetEntityHandle(), amount);
-}
-
-void CHARACTER::SetProtectTime(const std::string& flagname, int value)
-{
-    ecs::PlayerRuntime::SetProtectTime(GetEntityHandle(), flagname, value);
-}
-
-int CHARACTER::GetProtectTime(const std::string& flagname) const
-{
-    return ecs::PlayerRuntime::GetProtectTime(GetEntityHandle(), flagname);
-}
 #endif
 
 const TMobTable& CHARACTER::GetMobTable() const
@@ -2462,16 +2445,6 @@ int GetHPPct(entt::entity e)
 
 } // namespace ecs::PlayerRuntime
 
-uint32_t CHARACTER::GetMobDamageMin() const
-{
-    return CombatSystem::GetMobDamageMin(GetEntityHandle());
-}
-
-uint32_t CHARACTER::GetMobDamageMax() const
-{
-    return CombatSystem::GetMobDamageMax(GetEntityHandle());
-}
-
 uint32_t CHARACTER::GetMobDropItemVnum() const
 {
     if (!m_pkMobData)
@@ -2493,29 +2466,9 @@ uint32_t CHARACTER::GetPolymorphItemVnum() const
     return m_pkMobData ? m_pkMobData->m_table.dwPolymorphItemVnum : 0;
 }
 
-uint8_t CHARACTER::GetMobRank() const
-{
-	return ecs::PlayerRuntime::GetMobRank(GetEntityHandle());
-}
-
-uint16_t CHARACTER::GetMobAttackRange() const
-{
-    return CombatSystem::GetMobAttackRange(GetEntityHandle());
-}
-
-uint8_t CHARACTER::GetMobBattleType() const
-{
-    return CombatSystem::GetMobBattleType(GetEntityHandle());
-}
-
 void CHARACTER::ResetPlayTime(uint32_t dwTimeRemain)
 {
     m_dwPlayStartTime = get_dword_time() - dwTimeRemain;
-}
-
-int CHARACTER::GetPremiumRemainSeconds(uint8_t bType) const
-{
-	return ecs::PlayerRuntime::GetPremiumRemainSeconds(GetEntityHandle(), bType);
 }
 
 bool CHARACTER::SetPCBang(bool flag)
@@ -2552,7 +2505,7 @@ uint32_t CHARACTER::GetNextExp() const
 
 int CHARACTER::GetSkillPowerByLevel(int level, bool bMob) const
 {
-    return CTableBySkill::instance().GetSkillPowerByLevelFromType(GetJob(), GetSkillGroup(), MINMAX(0, level, (int)SKILL_MAX_LEVEL), bMob);
+    return CTableBySkill::instance().GetSkillPowerByLevelFromType(ecs::PlayerRuntime::GetJob(GetEntityHandle()), GetSkillGroup(), MINMAX(0, level, (int)SKILL_MAX_LEVEL), bMob);
 }
 
 #ifdef ENABLE_WHISPER_ADMIN_SYSTEM
@@ -3929,11 +3882,6 @@ bool CHARACTER::Update_Inven()
 }
 #endif
 
-bool CHARACTER::IsHack(bool bSendMsg, bool bCheckShopOwner, int limittime)
-{
-	return ecs::PlayerRuntime::IsHack(GetEntityHandle(), bSendMsg, bCheckShopOwner, limittime);
-}
-
 #ifdef __ENABLE_NEW_OFFLINESHOP__
 void CHARACTER::SetShopSafebox(offlineshop::CShopSafebox* pk)
 {
@@ -4077,10 +4025,6 @@ void CHARACTER::RankingSubcategory(int iArg)
 #endif
 
 #ifdef ENABLE_PVP_ADVANCED
-void CHARACTER::SetDuel(const char* type, int value)
-{
-    ecs::PlayerRuntime::SetDuelOption(GetEntityHandle(), type, value);
-}
 #endif
 
 namespace ecs::PlayerRuntime {
@@ -4481,11 +4425,6 @@ void CHARACTER::Destroy()
 
 	if (entityToDestroy != entt::null && g_registry.valid(entityToDestroy))
 		EntityFactory::Destroy(g_registry, entityToDestroy);
-}
-
-void CHARACTER::ResetPoint(int iLv)
-{
-	ecs::PointSystem::ResetAllPoints(GetEntityHandle(), iLv);
 }
 
 void CHARACTER::ToggleMonsterLog()
@@ -5272,7 +5211,7 @@ EVENTFUNC(switch_channel)
 
 bool CHARACTER::StartChannelSwitch(int32_t newAddr, uint16_t newPort)
 {
-    if (IsHack(false, true, 10))
+    if (ecs::PlayerRuntime::IsHack(GetEntityHandle(), false, true, 10))
         return false;
 
     switch_channel_info* info = AllocEventInfo<switch_channel_info>();
@@ -5627,7 +5566,7 @@ void CHARACTER::CloseMyShop()
         p.szSign[0] = '\0';
 
         ecs::ViewSystem::PacketView(GetEntityHandle(), &p, sizeof(p));
-        AffectSystem::SetPolymorph(GetEntityHandle(), GetJob(), true);
+        AffectSystem::SetPolymorph(GetEntityHandle(), ecs::PlayerRuntime::GetJob(GetEntityHandle()), true);
     }
 }
 
@@ -6115,12 +6054,3 @@ EVENTFUNC(drop_event)
 
 
 // The wheel counters are quest flags; they moved with them.
-int CHARACTER::GetWheelFreeCount() const
-{
-    return ecs::PlayerRuntime::GetQuestFlag(GetEntityHandle(), "wheel.free");
-}
-
-void CHARACTER::SetWheelFreeCount(const int count)
-{
-    ecs::PlayerRuntime::SetQuestFlag(GetEntityHandle(), "wheel.free", GetWheelFreeCount() + count);
-}

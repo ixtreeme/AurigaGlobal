@@ -1334,7 +1334,7 @@ bool ITEM_MANAGER::CreateDropItemVector(LPCHARACTER pkChr, LPCHARACTER pkKiller,
 				add(info.dwVNum, info.iCount);
 		}
 
-		const bool hasDoubleDrop = pkKiller->GetPremiumRemainSeconds(PREMIUM_ITEM) > 0 ||
+		const bool hasDoubleDrop = ecs::PlayerRuntime::GetPremiumRemainSeconds(pkKiller->GetEntityHandle(), PREMIUM_ITEM) > 0 ||
 			pkKiller->IsEquipUniqueGroup(UNIQUE_GROUP_DOUBLE_ITEM)
 #ifdef ENABLE_NEW_COMMON_BONUSES
 			|| ecs::PointSystem::Get(killer, APPLY_DOUBLE_DROP_ITEM) > 0
@@ -1517,7 +1517,7 @@ bool ITEM_MANAGER::CreateDropItem(LPCHARACTER pkChr, LPCHARACTER pkKiller, std::
 	}
 
 	{
-		if (!ecs::PlayerRuntime::IsStone(chr) && ((pkKiller->GetPremiumRemainSeconds(PREMIUM_ITEM) > 0) || (pkKiller->IsEquipUniqueGroup(UNIQUE_GROUP_DOUBLE_ITEM))
+		if (!ecs::PlayerRuntime::IsStone(chr) && ((ecs::PlayerRuntime::GetPremiumRemainSeconds(pkKiller->GetEntityHandle(), PREMIUM_ITEM) > 0) || (pkKiller->IsEquipUniqueGroup(UNIQUE_GROUP_DOUBLE_ITEM))
 #ifdef ENABLE_NEW_COMMON_BONUSES
 			|| (ecs::PointSystem::Get(killer, APPLY_DOUBLE_DROP_ITEM) > 0)
 #endif
@@ -1832,7 +1832,7 @@ static entt::entity __DropEvent_RefineBox_GetDropItem(CHARACTER& killer, CHARACT
 	static const int higherBox[] = { 50207, 50208, 50209, 50210, 50211 };
 	static const int higherBox_range = 5;
 
-	if (victim.GetMobRank() < MOB_RANK_KNIGHT)
+	if (ecs::PlayerRuntime::GetMobRank(victim.GetEntityHandle()) < MOB_RANK_KNIGHT)
 		return entt::null;
 
 	int killer_level = killer.GetLevel();

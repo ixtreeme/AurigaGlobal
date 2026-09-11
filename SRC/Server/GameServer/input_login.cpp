@@ -681,7 +681,7 @@ void CInputLogin::Entergame(LPDESC d, const char* data)
 
 	for (int i = 0; i <= PREMIUM_MAX_NUM; ++i)
 	{
-		int remain = ch->GetPremiumRemainSeconds(i);
+		int remain = ecs::PlayerRuntime::GetPremiumRemainSeconds(ch->GetEntityHandle(), i);
 
 		if (remain <= 0)
 			continue;

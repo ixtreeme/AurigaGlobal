@@ -1097,7 +1097,7 @@ bool CHARACTER::IsLearnableSkill(uint32_t dwSkillVnum) const
 
 	if (pkSkill->dwType == 5)
 	{
-		if (dwSkillVnum == SKILL_HORSE_WILDATTACK_RANGE && GetJob() != JOB_ASSASSIN)
+		if (dwSkillVnum == SKILL_HORSE_WILDATTACK_RANGE && ecs::PlayerRuntime::GetJob(GetEntityHandle()) != JOB_ASSASSIN)
 			return false;
 
 		return true;
@@ -1106,7 +1106,7 @@ bool CHARACTER::IsLearnableSkill(uint32_t dwSkillVnum) const
 	if (GetSkillGroup() == 0)
 		return false;
 
-	if (pkSkill->dwType - 1 == GetJob())
+	if (pkSkill->dwType - 1 == ecs::PlayerRuntime::GetJob(GetEntityHandle()))
 		return true;
 	if (6 == pkSkill->dwType)
 	{
@@ -1628,7 +1628,7 @@ bool CHARACTER::CanUseSkill(uint32_t dwSkillVnum) const
 
 	if (0 < GetSkillGroup())
 	{
-		const uint32_t* pSkill = SkillListByJob[ GetJob() ][ GetSkillGroup()-1 ];
+		const uint32_t* pSkill = SkillListByJob[ ecs::PlayerRuntime::GetJob(GetEntityHandle()) ][ GetSkillGroup()-1 ];
 
 		for (int i=0 ; i < SKILL_LIST_COUNT ; ++i)
 		{
@@ -2114,7 +2114,7 @@ void SetPolyVarForAttack(entt::entity character, CSkillProto * pkSk, entt::entit
 	{
 		auto* legacyCharacter = LegacyCharOf(character);
 		const int iWep = legacyCharacter
-			? number(legacyCharacter->GetMobDamageMin(), legacyCharacter->GetMobDamageMax())
+			? number(CombatSystem::GetMobDamageMin(legacyCharacter->GetEntityHandle()), CombatSystem::GetMobDamageMax(legacyCharacter->GetEntityHandle()))
 			: 0;
 		pkSk->SetPointVar("wep", iWep);
 		pkSk->SetPointVar("mwep", iWep);
@@ -2456,7 +2456,7 @@ struct FuncSplashDamage
 //#ifdef ENABLE_MAGIC_REDUCTION_SYSTEM
 //				{
 //					const int resist_magic = MINMAX(0, ecs::PointSystem::Get(victimEntity, POINT_RESIST_MAGIC), 100);
-//					const int resist_magic_reduction = MINMAX(0, (m_pkChr->GetJob()==JOB_SURA) ? ecs::PointSystem::Get(m_character, POINT_RESIST_MAGIC_REDUCTION)/2 : ecs::PointSystem::Get(m_character, POINT_RESIST_MAGIC_REDUCTION), 50);
+//					const int resist_magic_reduction = MINMAX(0, (ecs::PlayerRuntime::GetJob(m_pkChr->GetEntityHandle())==JOB_SURA) ? ecs::PointSystem::Get(m_character, POINT_RESIST_MAGIC_REDUCTION)/2 : ecs::PointSystem::Get(m_character, POINT_RESIST_MAGIC_REDUCTION), 50);
 //					const int total_res_magic = MINMAX(0, resist_magic - resist_magic_reduction, 100);
 //					iDam = iDam * (100 - total_res_magic) / 100;
 //				}
@@ -4440,7 +4440,7 @@ bool UseMobSkill(entt::entity e, unsigned int idx)
 
 bool CHARACTER::IsUsableSkillMotion(uint32_t dwMotionIndex) const
 {
-	uint32_t selfJobGroup = (GetJob()+1) * 10 + GetSkillGroup();
+	uint32_t selfJobGroup = (ecs::PlayerRuntime::GetJob(GetEntityHandle())+1) * 10 + GetSkillGroup();
 	const uint32_t SKILL_NUM = 158;
 	static uint32_t s_anSkill2JobGroup[SKILL_NUM] = {
 		0, // common_skill 0

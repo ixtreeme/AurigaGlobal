@@ -3207,7 +3207,7 @@ void CInputMain::MapTeleporter(entt::entity character, TPacketCGMapTeleporter* p
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
 	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::MapTeleporter");//INGAME_DEBUG_RAZOR93
 #endif
-	if (ch->IsHack() || ecs::SocialSystem::HasExchange(character) || ecs::SessionSystem::IsSafeboxOpen(ch->GetEntityHandle()) || ch->IsCubeOpen() || ch->GetShop() || ch->GetMyShop()
+	if (ecs::PlayerRuntime::IsHack(ch->GetEntityHandle()) || ecs::SocialSystem::HasExchange(character) || ecs::SessionSystem::IsSafeboxOpen(ch->GetEntityHandle()) || ch->IsCubeOpen() || ch->GetShop() || ch->GetMyShop()
 #ifdef ENABLE_ACCE_SYSTEM
 		|| ch->IsAcceOpen()
 #endif

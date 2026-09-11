@@ -31,7 +31,7 @@ void FPartyDropDiceRoll::Process(const LPCHARACTER mobVictim)
 
 	LPPARTY party = m_itemOwner->GetParty();
 	const bool rollForParty =
-		(!mobVictim || (ecs::PlayerRuntime::GetMobRank(mobVictim->GetEntityHandle()) >= MOB_RANK_BOSS && mobVictim->GetMobRank() <= MOB_RANK_KING)) &&
+		(!mobVictim || (ecs::PlayerRuntime::GetMobRank(mobVictim->GetEntityHandle()) >= MOB_RANK_BOSS && ecs::PlayerRuntime::GetMobRank(mobVictim->GetEntityHandle()) <= MOB_RANK_KING)) &&
 		party && party->GetNearMemberCount() > 1;
 
 	if (rollForParty)

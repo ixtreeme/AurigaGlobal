@@ -234,7 +234,8 @@ bool map_allow_find(int) { Unexpected(); }
 int number_ex(int, int, const char*, int) { Unexpected(); }
 bool CEntity::IsType(int) const { Unexpected(); }
 bool CHARACTER::CanHandleItem(bool, bool) { Unexpected(); }
-bool CHARACTER::IsHack(bool, bool, int) { Unexpected(); }
+bool ecs::PlayerRuntime::IsHack(entt::entity, bool, bool, int) { Unexpected(); }
+bool ecs::PlayerRuntime::IsHack(entt::entity, bool, bool) { Unexpected(); }
 bool CMapLocation::Get(int, int, int&, uint32_t&, uint16_t&) { Unexpected(); }
 SECTREE_MAP* SECTREE_MANAGER::GetMap(int) { Unexpected(); }
 int SECTREE_MANAGER::GetMapIndex(int, int) { Unexpected(); }
@@ -326,7 +327,6 @@ bool AffectSystem::IsAffectFlag(entt::entity, uint32_t) { Unexpected(); }
 bool CHARACTER::IsEquipUniqueItem(uint32_t) const { Unexpected(); }
 void CombatSystem::Dead(entt::entity, entt::entity, bool) { Unexpected(); }
 void CHARACTER::MonsterLog(const char*, ...) { Unexpected(); }
-uint8_t CHARACTER::GetEmpire() const { Unexpected(); }
 int CDungeon::GetFlag(std::string) { Unexpected(); }
 CMotion::CMotion() {}
 CMotion::~CMotion() {}

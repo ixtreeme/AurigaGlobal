@@ -63,6 +63,8 @@ void SetNoAttackChunjo(entt::entity e);
 void SetNoAttackJinno(entt::entity e);
 void SetAttackMob(entt::entity e);
 bool IsReviver(entt::entity e);
+int GetWheelFreeCount(entt::entity e);
+void SetWheelFreeCount(entt::entity e, int count);
 uint32_t GetAIFlag(entt::entity e);
 void SetLastSyncTime(entt::entity e, const timeval& tv);
 const timeval& GetLastSyncTime(entt::entity e);

@@ -40,7 +40,7 @@ CWheelDestiny::CWheelDestiny(LPCHARACTER m_ch)
 	const entt::entity chEntity = ch ? ch->GetEntityHandle() : entt::null;
 	for (auto i = 0; i < WheelItemMax; i++)
 		ecs::ChatSystem::Send(chEntity, CHAT_TYPE_COMMAND, "BINARY_WHEEL_ICON %lu %d %d", std::get<0>(m_Data[i]), std::get<1>(m_Data[i]), i);
-	ecs::ChatSystem::Send(chEntity, CHAT_TYPE_COMMAND, "BINARY_WHEEL_OPEN %d %d", WheelPrice, ch->GetWheelFreeCount());
+	ecs::ChatSystem::Send(chEntity, CHAT_TYPE_COMMAND, "BINARY_WHEEL_OPEN %d %d", WheelPrice, ecs::PlayerRuntime::GetWheelFreeCount(ch->GetEntityHandle()));
 }
 
 CWheelDestiny::~CWheelDestiny() {
@@ -82,7 +82,7 @@ void CWheelDestiny::TurnWheel()
 		return;
 	}
 
-	const auto WheelFreeCount = ch->GetWheelFreeCount();
+	const auto WheelFreeCount = ecs::PlayerRuntime::GetWheelFreeCount(ch->GetEntityHandle());
 
 	if (WheelFreeCount < 1 && ecs::PointSystem::GetGold(chEntity) < WheelPrice) {
 		ecs::ChatSystem::Send(chEntity, CHAT_TYPE_INFO, "You need %s yang for <Turning Wheel>", NumberToMoneyString(WheelPrice).c_str());
@@ -96,7 +96,7 @@ void CWheelDestiny::TurnWheel()
 	}
 
 	if (WheelFreeCount > 0) {
-		ch->SetWheelFreeCount(-1);
+		ecs::PlayerRuntime::SetWheelFreeCount(ch->GetEntityHandle(), -1);
 		ecs::ChatSystem::Send(chEntity, CHAT_TYPE_INFO, "FREE");
 	}
 	else

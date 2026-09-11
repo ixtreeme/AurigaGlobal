@@ -773,7 +773,7 @@ ACMD(do_restart)
 		return;
 	}
 
-	if (ch->IsHack())
+	if (ecs::PlayerRuntime::IsHack(ch->GetEntityHandle()))
 	{
 		if (subcmd == SCMD_RESTART_TOWN)
 		{
