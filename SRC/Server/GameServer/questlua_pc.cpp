@@ -2089,11 +2089,9 @@ namespace quest
 	{
 		// migrated from CHARACTER::GetPlayerID
 		entt::entity e = CQuestManager::instance().GetPCEntity(L);
-		if (const auto* marriageState = ECS_TryGet<ecs::MarriageState>(e))
-		{
-			lua_pushboolean(L, marriageState->partner ? 1 : 0);
-			return 1;
-		}
+		// MarriageState::partner is who is standing next to you, not who you
+		// are engaged to, and the branch that read it shadowed this one for
+		// everybody, because the component is emplaced on every PC.
 		lua_pushboolean(L, marriage::CManager::instance().IsEngaged(ecs::PlayerRuntime::GetPlayerID(e)) ? 1 : 0);
 		return 1;
 	}
@@ -2102,11 +2100,8 @@ namespace quest
 	{
 		// migrated from CHARACTER::GetPlayerID
 		entt::entity e = CQuestManager::instance().GetPCEntity(L);
-		if (const auto* marriageState = ECS_TryGet<ecs::MarriageState>(e))
-		{
-			lua_pushboolean(L, marriageState->weddingMap != nullptr ? 1 : 0);
-			return 1;
-		}
+		// Likewise weddingMap is the map you are standing on during the
+		// ceremony, not a marriage.
 		lua_pushboolean(L, marriage::CManager::instance().IsMarried(ecs::PlayerRuntime::GetPlayerID(e)) ? 1 : 0);
 		return 1;
 	}
@@ -2115,11 +2110,6 @@ namespace quest
 	{
 		// migrated from CHARACTER::GetPlayerID
 		entt::entity e = CQuestManager::instance().GetPCEntity(L);
-		if (const auto* marriageState = ECS_TryGet<ecs::MarriageState>(e))
-		{
-			lua_pushboolean(L, (marriageState->partner || marriageState->weddingMap) ? 1 : 0);
-			return 1;
-		}
 		lua_pushboolean(L, marriage::CManager::instance().IsEngagedOrMarried(ecs::PlayerRuntime::GetPlayerID(e)) ? 1 : 0);
 		return 1;
 	}

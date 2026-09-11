@@ -2774,17 +2774,6 @@ void CHARACTER::SetRegen(LPREGEN pkRegen)
     m_posRegen = GetXYZ();
 }
 
-LPCHARACTER CHARACTER::GetMarryPartner() const
-{
-    return m_pkChrMarried;
-}
-
-void CHARACTER::SetMarryPartner(entt::entity chEntity)
-{
-    LPCHARACTER ch = ecs::LegacyCharOf(chEntity);
-    m_pkChrMarried = ch;
-}
-
 namespace ecs::PlayerRuntime {
 
 } // namespace ecs::PlayerRuntime
@@ -4172,7 +4161,6 @@ void CHARACTER::Initialize()
 
     m_dwLoginPlayTime = 0;
 
-    m_pkChrMarried = nullptr;
 
 
 

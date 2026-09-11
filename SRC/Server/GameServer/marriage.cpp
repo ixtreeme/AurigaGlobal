@@ -283,8 +283,10 @@ namespace marriage
 		// �� �� �� ���μ����� �α��� ���̸� �����͸� �����ϰ� �̺�Ʈ �߻�
 		if (IsOnline())
 		{
-			ch1->SetMarryPartner((ch2 ? ch2->GetEntityHandle() : entt::null));
-			ch2->SetMarryPartner((ch1 ? ch1->GetEntityHandle() : entt::null));
+			ecs::SocialSystem::SetMarryPartner(ch1->GetEntityHandle(),
+				ch2 ? ch2->GetEntityHandle() : entt::null);
+			ecs::SocialSystem::SetMarryPartner(ch2->GetEntityHandle(),
+				ch1 ? ch1->GetEntityHandle() : entt::null);
 
 			StartNearCheckEvent();
 		}
@@ -342,10 +344,10 @@ namespace marriage
 			Save();
 
 			if (ch1)
-				ch1->SetMarryPartner(entt::null);
+				ecs::SocialSystem::SetMarryPartner(ch1->GetEntityHandle(), entt::null);
 
 			if (ch2)
-				ch2->SetMarryPartner(entt::null);
+				ecs::SocialSystem::SetMarryPartner(ch2->GetEntityHandle(), entt::null);
 
 			StopNearCheckEvent();
 		}

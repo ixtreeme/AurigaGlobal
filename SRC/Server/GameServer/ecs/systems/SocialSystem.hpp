@@ -31,6 +31,8 @@ void SendGuildName(entt::entity viewer, CGuild* pGuild);
 void SetDungeon(entt::entity e, LPDUNGEON dungeon);
 LPDUNGEON GetDungeon(entt::entity e);
 void SetWarMap(entt::entity e, CWarMap* warMap);
+void SetMarryPartner(entt::entity e, entt::entity partner);
+entt::entity GetMarryPartner(entt::entity e);
 void SetWeddingMap(entt::entity e, marriage::WeddingMap* map);
 marriage::WeddingMap* GetWeddingMap(entt::entity e);
 CWarMap* GetWarMap(entt::entity e);

@@ -161,6 +161,34 @@ void SetWarMap(entt::entity e, CWarMap* pWarMap)
     g_registry.emplace_or_replace<ecs::DirtyTag>(e);
 }
 
+// Who this character is married to, while both are online. CHARACTER held it
+// in m_pkChrMarried and MarriageState::partner was written by nothing, which
+// is what left pc_is_engaged answering no for everybody.
+void SetMarryPartner(entt::entity e, entt::entity partner)
+{
+    if (e == entt::null || !g_registry.valid(e))
+        return;
+
+    auto& marriageState = g_registry.get_or_emplace<ecs::MarriageState>(e);
+    marriageState.partner =
+        partner != entt::null && g_registry.valid(partner) ? partner : entt::null;
+
+    g_registry.emplace_or_replace<ecs::DirtyTag>(e);
+}
+
+entt::entity GetMarryPartner(entt::entity e)
+{
+    if (e == entt::null || !g_registry.valid(e))
+        return entt::null;
+
+    const auto* marriageState = g_registry.try_get<ecs::MarriageState>(e);
+    if (!marriageState || marriageState->partner == entt::null ||
+        !g_registry.valid(marriageState->partner))
+        return entt::null;
+
+    return marriageState->partner;
+}
+
 // The wedding map, in the same shape: the field was written and the component
 // beside it was only ever read, by two quest bindings that always saw nothing.
 void SetWeddingMap(entt::entity e, marriage::WeddingMap* pMap)

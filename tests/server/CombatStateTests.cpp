@@ -451,6 +451,7 @@ bool ItemSystem::IsEquipUniqueItem(entt::entity,unsigned int) { UnexpectedServic
 bool CHARACTER::IsEquipUniqueGroup(unsigned int)const { UnexpectedService(__func__); }
 void ItemSystem::GiveGold(entt::entity, int64_t) { UnexpectedService(__func__); }
 void ecs::SocialSystem::CloseMyShop(entt::entity) { UnexpectedService(__func__); }
+entt::entity ecs::SocialSystem::GetMarryPartner(entt::entity) { UnexpectedService(__func__); }
 void CHARACTER::SetQuestDamage(int,int) { UnexpectedService(__func__); }
 bool ecs::PlayerRuntime::IsImmortal(entt::entity) { return false; }
 int64_t CHARACTER::GetRankPoints(int) { UnexpectedService(__func__); }
@@ -462,7 +463,6 @@ unsigned char CHARACTER::GetSkillGroup(void)const { UnexpectedService(__func__);
 void CHARACTER::MonsterLog(char const *,...) { UnexpectedService(__func__); }
 int ecs::PlayerRuntime::GetQuestFlag(entt::entity,std::string const &) { UnexpectedService(__func__); }
 void ecs::PlayerRuntime::SetQuestFlag(entt::entity,std::string const &,int) { UnexpectedService(__func__); }
-CHARACTER * CHARACTER::GetMarryPartner(void)const { UnexpectedService(__func__); }
 int CHARACTER::GetMarriageBonus(unsigned int,bool) { UnexpectedService(__func__); }
 int ecs::PlayerRuntime::GetPremiumRemainSeconds(entt::entity, unsigned char) { UnexpectedService(__func__); }
 bool CHARACTER::IsCubeOpen(void)const { UnexpectedService(__func__); }

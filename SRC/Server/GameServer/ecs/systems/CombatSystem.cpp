@@ -1674,14 +1674,14 @@ static void GiveExp(entt::entity fromEntity, entt::entity toEntity, int iExp)
 	CombatSystem::CreateFly(fromEntity, FLY_EXP, toEntity);
 	// marriage
 	{
-		auto* you = to->GetMarryPartner();
-		if (you)
+		const entt::entity you = ecs::SocialSystem::GetMarryPartner(toEntity);
+		if (you != entt::null)
 		{
 			// sometimes, this overflows
 			uint32_t dwUpdatePoint = (2000.0L / ecs::PointSystem::GetLevel(toEntity) / ecs::PointSystem::GetLevel(toEntity) / 3) * iExp;
 
 			if (ecs::PlayerRuntime::GetPremiumRemainSeconds(toEntity, PREMIUM_MARRIAGE_FAST) > 0 ||
-				ecs::PlayerRuntime::GetPremiumRemainSeconds(you->GetEntityHandle(), PREMIUM_MARRIAGE_FAST) > 0)
+				ecs::PlayerRuntime::GetPremiumRemainSeconds(you, PREMIUM_MARRIAGE_FAST) > 0)
 				dwUpdatePoint *= 3;
 
 			marriage::TMarriage* pMarriage = marriage::CManager::instance().Get(ecs::PlayerRuntime::GetPlayerID(toEntity));
@@ -1829,15 +1829,15 @@ static void GiveExp(entt::entity fromEntity, entt::entity toEntity, int iExp)
 	CombatSystem::CreateFly(fromEntity, FLY_EXP, toEntity);
 
 	{
-		auto* you = to->GetMarryPartner();
+		const entt::entity you = ecs::SocialSystem::GetMarryPartner(toEntity);
 		// κΰ  Ƽ̸ ݽ
-		if (you)
+		if (you != entt::null)
 		{
 			// 1 100%
 			uint32_t dwUpdatePoint = 2000 * iExp / ecs::PointSystem::GetLevel(toEntity) / ecs::PointSystem::GetLevel(toEntity) / 3;
 
 			if (ecs::PlayerRuntime::GetPremiumRemainSeconds(toEntity, PREMIUM_MARRIAGE_FAST) > 0 ||
-				ecs::PlayerRuntime::GetPremiumRemainSeconds(you->GetEntityHandle(), PREMIUM_MARRIAGE_FAST) > 0)
+				ecs::PlayerRuntime::GetPremiumRemainSeconds(you, PREMIUM_MARRIAGE_FAST) > 0)
 				dwUpdatePoint = (uint32_t)(dwUpdatePoint * 3);
 
 			marriage::TMarriage* pMarriage = marriage::CManager::instance().Get(ecs::PlayerRuntime::GetPlayerID(toEntity));

@@ -1563,13 +1563,10 @@ protected:
 
 	// Marriage
 public:
-	LPCHARACTER			GetMarryPartner() const;
-	void				SetMarryPartner(entt::entity character);
 	int					GetMarriageBonus(uint32_t dwItemVnum, bool bSum = true);
 
 
 private:
-	LPCHARACTER			m_pkChrMarried;
 
 	// Warp Character
 public:

@@ -67,7 +67,10 @@ struct ArenaMembership {
 };
 
 struct MarriageState {
-    LPCHARACTER partner { nullptr };
+    // The partner, while both are online. It says nothing about whether the
+    // two are engaged or married: marriage::CManager is keyed on the player id
+    // and is the only thing that knows that.
+    entt::entity partner { entt::null };
     marriage::WeddingMap* weddingMap { nullptr };
 };
 
