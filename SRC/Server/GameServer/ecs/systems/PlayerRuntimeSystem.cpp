@@ -3160,7 +3160,7 @@ void CHARACTER::Destroy()
         ClearItem();
     }
 
-    LPPARTY party = m_pkParty;
+    LPPARTY party = ecs::SocialSystem::GetParty(GetEntityHandle());
     if (party)
     {
         if (party->GetLeaderPID() == GetLegacyVID() && !IsPC())
@@ -3175,7 +3175,7 @@ void CHARACTER::Destroy()
                 party->Quit(GetLegacyVID());
         }
 
-        SetParty(nullptr);
+        ecs::SocialSystem::SetParty(GetEntityHandle(), nullptr);
     }
 
     // Mob runtime state goes with the entity; there is no allocation to free.
@@ -4031,10 +4031,8 @@ void CHARACTER::Initialize()
 
     m_pkMobData = nullptr;
 
-    m_pkParty = nullptr;
     m_pkPartyRequestEvent = nullptr;
 
-    m_pGuild = nullptr;
 
 
     m_pkMuyeongEvent = nullptr;

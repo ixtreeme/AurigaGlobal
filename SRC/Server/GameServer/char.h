@@ -877,8 +877,6 @@ public:
 
 public:
 	// PARTY_JOIN_BUG_FIX
-	void			SetParty(LPPARTY pkParty);
-	LPPARTY			GetParty() const { return m_pkParty; }
 
 	bool			RequestToParty(entt::entity leader);
 	void			DenyToParty(entt::entity member);
@@ -913,7 +911,6 @@ protected:
 	static PartyJoinErrCode	IsPartyJoinableCondition(entt::entity leader, entt::entity guest);
 	static PartyJoinErrCode	IsPartyJoinableMutableCondition(entt::entity leader, entt::entity guest);
 
-	LPPARTY			m_pkParty;
 	LPEVENT			m_pkPartyRequestEvent;
 	typedef std::map< uint32_t, LPEVENT >	EventMap;
 	EventMap		m_PartyInviteEventMap;
@@ -928,12 +925,9 @@ protected:
 	////////////////////////////////////////////////////////////////////////////////////////
 	// Guild
 public:
-	void			SetGuild(CGuild* pGuild);
-	CGuild* GetGuild() const { return m_pGuild; }
 
 
 protected:
-	CGuild* m_pGuild;
 
 	////////////////////////////////////////////////////////////////////////////////////////
 	// Item related

@@ -371,6 +371,10 @@ inline int CParty::ComputePartyBonusDefenseGrade()
 
 
 #ifdef ENABLE_DICE_SYSTEM
+// Declared rather than included: social_components.hpp includes this header,
+// so pulling SocialSystem.hpp in here would close the loop.
+namespace ecs::SocialSystem { LPPARTY GetParty(entt::entity e); }
+
 struct FPartyDropDiceRoll
 {
 	const entt::entity m_itemDrop;
@@ -395,7 +399,7 @@ struct FPartyDropDiceRoll
 		if (!ch)
 			return;
 
-		LPPARTY pParty = ch->GetParty();
+		LPPARTY pParty = ecs::SocialSystem::GetParty(ch->GetEntityHandle());
 		if (!pParty)
 			return;
 

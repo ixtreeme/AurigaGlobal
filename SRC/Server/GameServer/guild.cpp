@@ -256,7 +256,7 @@ bool CGuild::RemoveMember(uint32_t pid)
 	{
 		//GuildRemoveAffect(ch);
 		m_memberOnline.erase(ch ? ch->GetEntityHandle() : entt::null);
-		ch->SetGuild(nullptr);
+		ecs::SocialSystem::SetGuild(ch->GetEntityHandle(), nullptr);
 #ifdef ENABLE_GUILD_ATTRIBUTE
 		RemoveGuildBuff(ch ? ch->GetEntityHandle() : entt::null);
 #endif
@@ -294,7 +294,7 @@ void CGuild::LoginMember(entt::entity character)
 		return;
 	}
 
-	ch->SetGuild(this);
+	ecs::SocialSystem::SetGuild(character, this);
 
 	// Login event occur + Send List
 	TGuildMemberOnlineContainer::iterator it;
@@ -342,7 +342,6 @@ void CGuild::LogoutMember(entt::entity character)
 
 	//GuildRemoveAffect(ch);
 
-	//ch->SetGuild(NULL);
 	m_memberOnline.erase(character);
 
 	// Logout event occur
@@ -1047,7 +1046,7 @@ void CGuild::Disband()
 	{
 		const entt::entity ch = *it;
 		LPCHARACTER pkCh = ecs::LegacyCharOf(ch);
-		pkCh->SetGuild(nullptr);
+		ecs::SocialSystem::SetGuild(ch, nullptr);
 		SendOnlineRemoveOnePacket(ecs::PlayerRuntime::GetPlayerID(ch));
 		// @fixme401
 		ecs::QuestSystem::SetFlag(ch, "guild_manage.new_disband_time", get_global_time());

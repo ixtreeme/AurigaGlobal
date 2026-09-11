@@ -2227,13 +2227,13 @@ bool CHARACTER::PickupItem(uint32_t dwVID)
 			//Motion(MOTION_PICKUP);
 			return true;
 		}
-		else if (!IS_SET(item->GetAntiFlag(), ITEM_ANTIFLAG_GIVE | ITEM_ANTIFLAG_DROP) && GetParty())
+		else if (!IS_SET(item->GetAntiFlag(), ITEM_ANTIFLAG_GIVE | ITEM_ANTIFLAG_DROP) && ecs::SocialSystem::GetParty(GetEntityHandle()))
 		{
 			// ´Ù¸¥ ÆÄÆ¼¿ø ¼ÒÀ¯±Ç ¾ÆÀÌ�
 // ÛÀ» ÁÖÀ¸·Á°í ÇÑ´Ù¸é
 			NPartyPickupDistribute::FFindOwnership funcFindOwnership(item);
 
-			GetParty()->ForEachOnlineMember(funcFindOwnership);
+			ecs::SocialSystem::GetParty(GetEntityHandle())->ForEachOnlineMember(funcFindOwnership);
 
 			auto* owner = funcFindOwnership.owner;
 			// @fixme115

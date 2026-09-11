@@ -3272,8 +3272,8 @@ int CHARACTER::ComputeSkillParty(uint32_t dwVnum, entt::entity victim, uint8_t b
 {
 	LPCHARACTER pkVictim = ecs::LegacyCharOf(victim);
 	FComputeSkillParty f(dwVnum, pkVictim, bSkillLevel);
-	if (GetParty() && GetParty()->GetNearMemberCount())
-		GetParty()->ForEachNearMember(f);
+	if (ecs::SocialSystem::GetParty(GetEntityHandle()) && ecs::SocialSystem::GetParty(GetEntityHandle())->GetNearMemberCount())
+		ecs::SocialSystem::GetParty(GetEntityHandle())->ForEachNearMember(f);
 	else
 		f(this);
 
@@ -4110,10 +4110,10 @@ bool CHARACTER::UseSkill(uint32_t dwVnum, entt::entity victim, bool bUseGrandMas
 
 #ifdef GROUP_BUFF
 	if (dwVnum == 94 || dwVnum == 95 || dwVnum == 96 || dwVnum == 110 || dwVnum == 111) {
-		if (GetParty() && pkVictim)
+		if (ecs::SocialSystem::GetParty(GetEntityHandle()) && pkVictim)
 		{
 			LPPARTY party = ecs::SocialSystem::GetParty(victimEntity);
-			if (party && GetParty()) {
+			if (party && ecs::SocialSystem::GetParty(GetEntityHandle())) {
 				ComputeSkillParty(dwVnum, character);
 			}
 		}
@@ -4123,7 +4123,7 @@ bool CHARACTER::UseSkill(uint32_t dwVnum, entt::entity victim, bool bUseGrandMas
 #ifdef __SKILL_COLOR_SYSTEM__
     SkillSystem::CopyBuffSkillColor(character, victimEntity, dwVnum);
 #endif
-	if (pkVictim != nullptr && GetParty() && (dwVnum == 94 || dwVnum == 95 || dwVnum == 96 || dwVnum == 110 || dwVnum == 111))//razor93---az egesz csoport buffolasa egyszerre------
+	if (pkVictim != nullptr && ecs::SocialSystem::GetParty(GetEntityHandle()) && (dwVnum == 94 || dwVnum == 95 || dwVnum == 96 || dwVnum == 110 || dwVnum == 111))//razor93---az egesz csoport buffolasa egyszerre------
 	{
 		if (dwVnum == 66) // varázslat kioltás
 		{
@@ -4131,7 +4131,7 @@ bool CHARACTER::UseSkill(uint32_t dwVnum, entt::entity victim, bool bUseGrandMas
 		}
 
 		if (ecs::SocialSystem::GetParty(victimEntity)){
-			if (ecs::SocialSystem::GetParty(victimEntity) == GetParty()){
+			if (ecs::SocialSystem::GetParty(victimEntity) == ecs::SocialSystem::GetParty(GetEntityHandle())){
 				ComputeSkillParty(dwVnum, character);
 			}
 		}
@@ -4826,8 +4826,8 @@ bool CHARACTER::IsUsableSkillMotion(uint32_t dwMotionIndex) const
 
 				if (eachSkillVNum >= GUILD_SKILL_START && eachSkillVNum <= GUILD_SKILL_END)
 				{
-					if (GetGuild())
-						eachSkillLevel = GetGuild()->GetSkillLevel(eachSkillVNum);
+					if (ecs::SocialSystem::GetGuild(GetEntityHandle()))
+						eachSkillLevel = ecs::SocialSystem::GetGuild(GetEntityHandle())->GetSkillLevel(eachSkillVNum);
 					else
 						eachSkillLevel = 0;
 				}

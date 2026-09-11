@@ -179,11 +179,8 @@ namespace quest
             return 0;
         }
 		const entt::entity e = CQuestManager::instance().GetPCEntity(L);
-        if (auto* gm = ECS_TryGet<ecs::GuildMembership>(e))
-        {
-            if (!gm->guild)
-                return 0;
-        }
+        if (!ecs::SocialSystem::GetGuild(e))
+            return 0;
 		LPDESC desc = ecs::PlayerRuntime::GetDesc(e);
         if (!desc)
             return 0;

@@ -358,11 +358,8 @@ namespace quest
 	{
 		// migrated from CHARACTER::GetGuild
 		entt::entity e = CQuestManager::instance().GetPCEntity(L);
-		if (const auto* guild = ECS_TryGet<ecs::GuildMembership>(e))
-		{
-			lua_pushboolean(L, guild->guild ? 1 : 0);
-			return 1;
-		}
+		lua_pushboolean(L, ecs::SocialSystem::GetGuild(e) ? 1 : 0);
+		return 1;
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();
 		lua_pushboolean(L, ecs::SocialSystem::GetGuild(chEntity) ? 1 : 0);
 		return 1;
@@ -380,10 +377,10 @@ namespace quest
 	{
 		// migrated from CHARACTER::GetGuild
 		entt::entity e = CQuestManager::instance().GetPCEntity(L);
-		if (const auto* guild = ECS_TryGet<ecs::GuildMembership>(e))
+		if (const CGuild* guild = ecs::SocialSystem::GetGuild(e))
 		{
 			const auto* playerId = ECS_TryGet<ecs::PlayerID>(e);
-			lua_pushboolean(L, (guild->guild && playerId && playerId->pid == guild->guild->GetMasterPID()) ? 1 : 0);
+			lua_pushboolean(L, (playerId && playerId->pid == guild->GetMasterPID()) ? 1 : 0);
 			return 1;
 		}
 		const entt::entity chEntity = CQuestManager::instance().GetCurrentPCEntity();

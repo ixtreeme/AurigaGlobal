@@ -29,7 +29,7 @@ void FPartyDropDiceRoll::Process(const LPCHARACTER mobVictim)
 	if (!m_itemOwner || !ItemSystem::IsValidItem(m_itemDrop))
 		return;
 
-	LPPARTY party = m_itemOwner->GetParty();
+	LPPARTY party = ecs::SocialSystem::GetParty(itemOwner);
 	const bool rollForParty =
 		(!mobVictim || (ecs::PlayerRuntime::GetMobRank(mobVictim->GetEntityHandle()) >= MOB_RANK_BOSS && ecs::PlayerRuntime::GetMobRank(mobVictim->GetEntityHandle()) <= MOB_RANK_KING)) &&
 		party && party->GetNearMemberCount() > 1;
@@ -382,7 +382,7 @@ void CParty::Destroy()
 					rMember.pCharacter->GetEntityHandle());
 			}
 
-			rMember.pCharacter->SetParty(nullptr);
+			ecs::SocialSystem::SetParty(rMember.pCharacter->GetEntityHandle(), nullptr);
 		}
 	}
 
@@ -540,7 +540,7 @@ void CParty::P2PQuit(uint32_t dwPID)
 
 	if (ch)
 	{
-		ch->SetParty(nullptr);
+		ecs::SocialSystem::SetParty(ch->GetEntityHandle(), nullptr);
 		ComputeRolePoint(((ch) ? (ch)->GetEntityHandle() : entt::null), bRole, false);
 	}
 
@@ -604,7 +604,7 @@ void CParty::Link(entt::entity character)
 	LOG_TRACE("PARTY[{}] {} linked to party", GetLeaderPID(), ecs::PlayerRuntime::GetName(character).data());
 
 	it->second.pCharacter = pkChr;
-	pkChr->SetParty(this);
+	ecs::SocialSystem::SetParty(character, this);
 
 	if (ecs::PlayerRuntime::IsPC(character))
 	{
@@ -709,7 +709,7 @@ void CParty::Unlink(entt::entity character)
 	}
 
 	it->second.pCharacter = nullptr;
-	pkChr->SetParty(nullptr);
+	ecs::SocialSystem::SetParty(character, nullptr);
 }
 
 void CParty::SendPartyRemoveOneToAll(uint32_t pid)

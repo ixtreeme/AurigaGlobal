@@ -1501,10 +1501,10 @@ bool CHARACTER::Sync(int32_t x, int32_t y)
 
 		if (membership.eventAttr != iLastEventAttr)
 		{
-			if (GetParty())
+			if (ecs::SocialSystem::GetParty(GetEntityHandle()))
 			{
-				quest::CQuestManager::instance().AttrOut(GetParty()->GetLeaderPID(), this, iLastEventAttr);
-				quest::CQuestManager::instance().AttrIn(GetParty()->GetLeaderPID(), this, membership.eventAttr);
+				quest::CQuestManager::instance().AttrOut(ecs::SocialSystem::GetParty(GetEntityHandle())->GetLeaderPID(), this, iLastEventAttr);
+				quest::CQuestManager::instance().AttrIn(ecs::SocialSystem::GetParty(GetEntityHandle())->GetLeaderPID(), this, membership.eventAttr);
 			}
 			else
 			{

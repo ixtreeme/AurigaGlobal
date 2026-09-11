@@ -703,8 +703,8 @@ entt::entity EntityFactory::CreatePC(entt::registry& reg, const TPlayerTable& da
     reg.emplace_or_replace<ecs::SkillDamageBonus>(entity, ecs::SkillDamageBonus {});
     reg.emplace_or_replace<ecs::SkillColor>(entity, ecs::SkillColor {});
 
-    reg.emplace_or_replace<ecs::PartyMembership>(entity, nullptr, now > 180000 ? now - 180000 : 0);
-    reg.emplace_or_replace<ecs::GuildMembership>(entity, nullptr, now > 60000 ? now - 60000 : 0);
+    reg.emplace_or_replace<ecs::PartyMembership>(entity, now > 180000 ? now - 180000 : 0);
+    reg.emplace_or_replace<ecs::GuildMembership>(entity, now > 60000 ? now - 60000 : 0);
     reg.emplace_or_replace<ecs::DungeonMembership>(entity, nullptr, 0, nullptr);
     reg.emplace_or_replace<ecs::MarriageState>(entity, entt::null, nullptr);
     reg.emplace_or_replace<ecs::ShopState>(entity, ecs::ShopState {});

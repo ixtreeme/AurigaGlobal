@@ -688,7 +688,7 @@ LPCHARACTER CHARACTER_MANAGER::SpawnMobRandomPosition(uint32_t dwVnum, int32_t l
 	// if mob is npc with no empire assigned, assign to empire of map
 	if (pkMob->m_table.bType == CHAR_TYPE_NPC)
 		if (ecs::PlayerRuntime::GetEmpire(character) == 0)
-			ecs::PlayerRuntime::SetEmpire(ch->GetEntityHandle(), SECTREE_MANAGER::instance().GetEmpireFromMapIndex(lMapIndex));
+			ecs::PlayerRuntime::SetEmpire(character, SECTREE_MANAGER::instance().GetEmpireFromMapIndex(lMapIndex));
 
 	ecs::MovementSystem::SetRotation(character, number(0, 360));
 

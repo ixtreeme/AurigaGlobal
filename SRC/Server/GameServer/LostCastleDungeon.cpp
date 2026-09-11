@@ -372,7 +372,7 @@ namespace
         if (ecs::PlayerRuntime::GetX(cloneEntity) == tx && ecs::PlayerRuntime::GetY(cloneEntity) == ty)
             return;
 
-        AISystem::StartStateMachine(clone->GetEntityHandle(), 1);
+        AISystem::StartStateMachine(cloneEntity, 1);
         clone->SetNowWalking(false);
         ecs::MovementSystem::SetRotationToXY(cloneEntity, tx, ty);
         ecs::MovementSystem::Goto(cloneEntity, tx, ty);
@@ -779,8 +779,8 @@ void ClearClonesOnMap(int32_t mapIndex)
             clone->SetName(std::string(evilName));
 
             // Fontos: legyen PC race/job/empire/PK mode, hogy a kliens PvP-kent kezelje
-            ecs::PlayerRuntime::SetRace(clone->GetEntityHandle(), (uint8_t)ecs::PlayerRuntime::GetRaceNum(sourceEntity));
-            ecs::PlayerRuntime::SetEmpire(clone->GetEntityHandle(), ecs::PlayerRuntime::GetEmpire(sourceEntity));
+            ecs::PlayerRuntime::SetRace(cloneEntity, (uint8_t)ecs::PlayerRuntime::GetRaceNum(sourceEntity));
+            ecs::PlayerRuntime::SetEmpire(cloneEntity, ecs::PlayerRuntime::GetEmpire(sourceEntity));
             CombatSystem::SetPKMode(cloneEntity, PK_MODE_FREE);
             clone->SetSkillGroup(source->GetSkillGroup());
 
@@ -1336,8 +1336,8 @@ bool CLostCastleDungeon::SpawnTestClones(entt::entity source, entt::entity targe
       //  clone->SetFakePlayer(true);
         clone->SetName(std::string(cloneName));
 
-        ecs::PlayerRuntime::SetRace(clone->GetEntityHandle(), (uint8_t)ecs::PlayerRuntime::GetRaceNum(source));
-        ecs::PlayerRuntime::SetEmpire(clone->GetEntityHandle(), ecs::PlayerRuntime::GetEmpire(source));
+        ecs::PlayerRuntime::SetRace(cloneEntity, (uint8_t)ecs::PlayerRuntime::GetRaceNum(source));
+        ecs::PlayerRuntime::SetEmpire(cloneEntity, ecs::PlayerRuntime::GetEmpire(source));
         CombatSystem::SetPKMode(cloneEntity, PK_MODE_FREE);
         clone->SetSkillGroup(pkSource->GetSkillGroup());
 

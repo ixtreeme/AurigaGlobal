@@ -411,8 +411,8 @@ static void OrcDungeon_CompleteRankingForMap(int32_t dungeonMapIdx)
                 return;
 
             // mimic questlua_dungeon::d.complete (simplified)
-            ecs::PlayerRuntime::SetRankPoints(pkCh->GetEntityHandle(), 16,
-                ecs::PlayerRuntime::GetRankPoints(pkCh->GetEntityHandle(), 16) + 1);
+            ecs::PlayerRuntime::SetRankPoints(ch, 16,
+                ecs::PlayerRuntime::GetRankPoints(ch, 16) + 1);
 
 #ifdef ENABLE_BATTLE_PASS
             {

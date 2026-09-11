@@ -55,9 +55,6 @@ LPPARTY GetParty(entt::entity e)
     if (const auto* refs = g_registry.try_get<ecs::SocialRefs>(e))
         return refs->party;
 
-    if (const auto* party = g_registry.try_get<ecs::PartyMembership>(e))
-        return party->party;
-
     return nullptr;
 }
 
@@ -68,9 +65,6 @@ CGuild* GetGuild(entt::entity e)
 
     if (const auto* refs = g_registry.try_get<ecs::SocialRefs>(e))
         return refs->guild;
-
-    if (const auto* guild = g_registry.try_get<ecs::GuildMembership>(e))
-        return guild->guild;
 
     return nullptr;
 }
@@ -778,59 +772,87 @@ bool DepositGuildMoney(entt::entity character, CGuild& guild, int gold)
 
 } // namespace ecs::SocialSystem
 
-void CHARACTER::SetParty(LPPARTY pkParty)
-{
-    const auto entity = GetEntityHandle();
-    if (entity != entt::null && g_registry.valid(entity)) {
-        auto& refs = g_registry.get_or_emplace<ecs::SocialRefs>(entity);
-        refs.party = pkParty;
-        auto& membership = g_registry.get_or_emplace<ecs::PartyMembership>(entity);
-        membership.party = pkParty;
-    }
+namespace ecs::SocialSystem {
 
-    if (pkParty == m_pkParty)
+// The party this character belongs to. CHARACTER::m_pkParty, SocialRefs::party
+// and PartyMembership::party were three copies of it, kept level only because
+// this one setter wrote all three.
+void SetParty(entt::entity e, LPPARTY pkParty)
+{
+    if (e == entt::null || !g_registry.valid(e))
         return;
 
-    if (pkParty && m_pkParty)
-        LOG_ERROR("{} is trying to reassigning party (current {}, new party {})", GetName(), static_cast<const void*>(get_pointer(m_pkParty)), static_cast<const void*>(get_pointer(pkParty)));
+    auto& refs = g_registry.get_or_emplace<ecs::SocialRefs>(e);
+    LPPARTY previous = refs.party;
+
+    if (pkParty == previous)
+        return;
+
+    if (pkParty && previous)
+        LOG_ERROR("{} is trying to reassigning party (current {}, new party {})",
+            ecs::PlayerRuntime::GetName(e).data(),
+            static_cast<const void*>(get_pointer(previous)),
+            static_cast<const void*>(get_pointer(pkParty)));
 
     LOG_TRACE("PARTY set to {}", static_cast<const void*>(get_pointer(pkParty)));
 
+    const bool isPC = ecs::PlayerRuntime::IsPC(e);
+
 #ifdef ENABLE_BUG_FIXES
-    if (ecs::SocialSystem::GetDungeon(GetEntityHandle()) && IsPC() && !pkParty) {
-        ecs::SocialSystem::SetDungeon(GetEntityHandle(), nullptr);
-    }
+    if (GetDungeon(e) && isPC && !pkParty)
+        SetDungeon(e, nullptr);
 #endif
 
 #ifdef ENABLE_NEW_USE_POTION
-    if (IsPC() && m_pkParty && pkParty == nullptr && m_pkParty->GetLeaderPID() == GetPlayerID()) {
-        CAffect* pAffect = AffectSystem::FindAffect(GetEntityHandle(), AFFECT_NEW_POTION31);
-        if (pAffect) {
-            LPITEM pkItem = FindItemByID(pAffect->dwFlag);
-            if (pkItem) {
-                ItemSystem::UnlockItem((pkItem ? pkItem->GetEntityHandle() : entt::null));
-                ItemSystem::SetItemSocket((pkItem ? pkItem->GetEntityHandle() : entt::null), 1, 0);
+    if (isPC && previous && pkParty == nullptr &&
+        previous->GetLeaderPID() == ecs::PlayerRuntime::GetPlayerID(e))
+    {
+        if (CAffect* pAffect = AffectSystem::FindAffect(e, AFFECT_NEW_POTION31))
+        {
+            // FindItemByID has no entity form yet; it is its own migration.
+            if (LPCHARACTER self = ecs::LegacyCharOf(e))
+            {
+                if (LPITEM pkItem = self->FindItemByID(pAffect->dwFlag))
+                {
+                    ItemSystem::UnlockItem(pkItem->GetEntityHandle());
+                    ItemSystem::SetItemSocket(pkItem->GetEntityHandle(), 1, 0);
+                }
             }
 
-            AffectSystem::RemoveAffect(GetEntityHandle(), AFFECT_NEW_POTION31);
+            AffectSystem::RemoveAffect(e, AFFECT_NEW_POTION31);
         }
     }
 #endif
 
-    m_pkParty = pkParty;
+    refs.party = pkParty;
 
-    if (IsPC())
+    if (isPC)
     {
-        // Phase C.4: legacy SET_BIT/REMOVE_BIT(m_bAddChrState, PARTY) removed.
-        // ECS StatusFlags.isPartyState is the sole source.
-        if (auto* status = g_registry.try_get<ecs::StatusFlags>(GetEntityHandle())) {
-            status->isPartyState = (m_pkParty != nullptr);
-            g_registry.emplace_or_replace<ecs::DirtyTag>(GetEntityHandle());
+        if (auto* status = g_registry.try_get<ecs::StatusFlags>(e))
+        {
+            status->isPartyState = (pkParty != nullptr);
+            g_registry.emplace_or_replace<ecs::DirtyTag>(e);
         }
 
-        NetworkSyncSystem::UpdatePacket(GetEntityHandle());
+        NetworkSyncSystem::UpdatePacket(e);
     }
 }
+
+// The guild, in the same shape: three copies, one setter.
+void SetGuild(entt::entity e, CGuild* pGuild)
+{
+    if (e == entt::null || !g_registry.valid(e))
+        return;
+
+    auto& refs = g_registry.get_or_emplace<ecs::SocialRefs>(e);
+    if (refs.guild == pGuild)
+        return;
+
+    refs.guild = pGuild;
+    NetworkSyncSystem::UpdatePacket(e);
+}
+
+} // namespace ecs::SocialSystem
 
 EVENTINFO(TPartyJoinEventInfo)
 {
@@ -870,8 +892,8 @@ EVENTFUNC(party_request_event)
 bool CHARACTER::RequestToParty(entt::entity leaderEntity)
 {
     LPCHARACTER leader = ecs::LegacyCharOf(leaderEntity);
-    if (leader->GetParty())
-        leader = leader->GetParty()->GetLeaderCharacter();
+    if (ecs::SocialSystem::GetParty(leaderEntity))
+        leader = ecs::SocialSystem::GetParty(leader->GetEntityHandle())->GetLeaderCharacter();
 
     if (!leader)
     {
@@ -1011,9 +1033,9 @@ void CHARACTER::AcceptToParty(entt::entity memberEntity)
 
     event_cancel(&member->m_pkPartyRequestEvent);
 
-    if (GetParty())
+    if (ecs::SocialSystem::GetParty(GetEntityHandle()))
     {
-        if (GetPlayerID() != GetParty()->GetLeaderPID())
+        if (GetPlayerID() != ecs::SocialSystem::GetParty(GetEntityHandle())->GetLeaderPID())
             return;
 
         PartyJoinErrCode errcode = IsPartyJoinableCondition(GetEntityHandle(), memberEntity);
@@ -1089,7 +1111,7 @@ EVENTFUNC(party_invite_event)
 void CHARACTER::PartyInvite(entt::entity invitee)
 {
 	LPCHARACTER pkInvitee = ecs::LegacyCharOf(invitee);
-    if (GetParty() && GetParty()->GetLeaderPID() != GetPlayerID())
+    if (ecs::SocialSystem::GetParty(GetEntityHandle()) && ecs::SocialSystem::GetParty(GetEntityHandle())->GetLeaderPID() != GetPlayerID())
     {
 #ifdef TEXTS_IMPROVEMENT
         ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 218, "");
@@ -1204,7 +1226,7 @@ void CHARACTER::PartyInviteAccept(entt::entity invitee)
     event_cancel(&itFind->second);
     m_PartyInviteEventMap.erase(itFind);
 
-    if (GetParty() && GetParty()->GetLeaderPID() != GetPlayerID())
+    if (ecs::SocialSystem::GetParty(GetEntityHandle()) && ecs::SocialSystem::GetParty(GetEntityHandle())->GetLeaderPID() != GetPlayerID())
     {
 #ifdef TEXTS_IMPROVEMENT
         ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 218, "");
@@ -1264,7 +1286,7 @@ void CHARACTER::PartyInviteAccept(entt::entity invitee)
         return;
     }
 
-    if (GetParty())
+    if (ecs::SocialSystem::GetParty(GetEntityHandle()))
         pkInvitee->PartyJoin(GetEntityHandle());
     else
     {
@@ -1299,13 +1321,13 @@ void CHARACTER::PartyInviteDeny(uint32_t dwPID)
 void CHARACTER::PartyJoin(entt::entity leader)
 {
     LPCHARACTER pkLeader = ecs::LegacyCharOf(leader);
-    if (pkLeader && pkLeader->GetParty()) {
+    if (pkLeader && ecs::SocialSystem::GetParty(leader)) {
 #ifdef TEXTS_IMPROVEMENT
         ecs::ChatSystem::SendNew(leader, CHAT_TYPE_INFO, 1249, "%s", GetName());
         ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 193, "%s", ecs::PlayerRuntime::GetName(leader).data());
 #endif
-        pkLeader->GetParty()->Join(GetPlayerID());
-        pkLeader->GetParty()->Link(GetEntityHandle());
+        ecs::SocialSystem::GetParty(leader)->Join(GetPlayerID());
+        ecs::SocialSystem::GetParty(leader)->Link(GetEntityHandle());
     }
 }
 
@@ -1333,32 +1355,15 @@ CHARACTER::PartyJoinErrCode CHARACTER::IsPartyJoinableMutableCondition(const ent
     else if (false == __party_can_join_by_level(
 		leader, guest))
         return PERR_LVBOUNDARY;
-    else if (pkGuest->GetParty())
+    else if (ecs::SocialSystem::GetParty(guest))
         return PERR_ALREADYJOIN;
-    else if (pkLeader->GetParty())
+    else if (ecs::SocialSystem::GetParty(leader))
     {
-        if (pkLeader->GetParty()->GetMemberCount() == PARTY_MAX_MEMBER)
+        if (ecs::SocialSystem::GetParty(leader)->GetMemberCount() == PARTY_MAX_MEMBER)
             return PERR_PARTYISFULL;
     }
 
     return PERR_NONE;
-}
-
-void CHARACTER::SetGuild(CGuild* pGuild)
-{
-    const auto entity = GetEntityHandle();
-    if (entity != entt::null && g_registry.valid(entity)) {
-        auto& refs = g_registry.get_or_emplace<ecs::SocialRefs>(entity);
-        refs.guild = pGuild;
-        auto& membership = g_registry.get_or_emplace<ecs::GuildMembership>(entity);
-        membership.guild = pGuild;
-    }
-
-    if (m_pGuild != pGuild)
-    {
-        m_pGuild = pGuild;
-        NetworkSyncSystem::UpdatePacket(GetEntityHandle());
-    }
 }
 
 int ecs::SocialSystem::GetMarriageBonus(entt::entity e, uint32_t itemVnum, bool share)

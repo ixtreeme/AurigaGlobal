@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include "ecs/systems/ViewSystem.hpp"
 #include "ecs/systems/PlayerRuntimeSystem.hpp"
+#include "ecs/systems/SocialSystem.hpp"
 #include "ecs/AIHelpers.hpp"
 #include <Core/Logging.hpp>
 #include "constants.h"
@@ -295,7 +296,7 @@ void CObject::RegenNPC()
 	}
 	m_npcEntity = m_chNPC->GetEntityHandle();
 
-	m_chNPC->SetGuild(pGuild);
+	ecs::SocialSystem::SetGuild(m_chNPC->GetEntityHandle(), pGuild);
 
 	// ���� ������ ��� ��� ������ �渶���� �����س��´�
 	if ( m_pProto->dwVnum == 14061 || m_pProto->dwVnum == 14062 || m_pProto->dwVnum == 14063 )

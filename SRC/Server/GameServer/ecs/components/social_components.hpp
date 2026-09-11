@@ -34,13 +34,13 @@ struct SocialRefs {
     CGuild* guild { nullptr };
 };
 
+// The party pointer itself lives in SocialRefs; this is what is left of the
+// membership once it does.
 struct PartyMembership {
-    LPPARTY party { nullptr };
     uint32_t lastDeadTime;
 };
 
 struct GuildMembership {
-    CGuild* guild { nullptr };
     uint32_t underWarInfoMessageTime;
 };
 
