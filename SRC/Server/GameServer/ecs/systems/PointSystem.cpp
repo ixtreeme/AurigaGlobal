@@ -579,11 +579,6 @@ int64_t CHARACTER::GetPoint(uint8_t type) const
 
 
 
-void CHARACTER::SetPoint(uint8_t type, int64_t val)
-{
-    ecs::PointSystem::Set(GetEntityHandle(), type, val);
-}
-
 #ifdef __ENABLE_EXTEND_INVEN_SYSTEM__
 int CHARACTER::Inven_Point() const
 {

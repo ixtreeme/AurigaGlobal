@@ -272,12 +272,8 @@ void SetGodSpeed(entt::entity e, bool value)
 
     // Godspeed pins attack speed while it lasts and hands the prototype
     // value back when it ends.
-    // PointSystem exposes Change but no absolute set, so the attack-speed
-    // pin still goes through CHARACTER::SetPoint. That accessor is the next
-    // thing that would need moving.
     const TMobTable* table = ecs::PlayerRuntime::GetMobTable(e);
-    if (LPCHARACTER ch = LegacyCharOf(e))
-        ch->SetPoint(POINT_ATT_SPEED, value ? 250 : (table ? table->sAttackSpeed : 0));
+    ecs::PointSystem::Set(e, POINT_ATT_SPEED, value ? 250 : (table ? table->sAttackSpeed : 0));
 }
 
 bool IsRevive(entt::entity e)

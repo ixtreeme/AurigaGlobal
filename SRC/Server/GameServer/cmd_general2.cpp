@@ -184,7 +184,7 @@ ACMD(do_stat2)
 
 	limit = ecs::PointSystem::GetReal(character, idx) + limit >= MAX_STATUS_ALTERNATIVE ? MAX_STATUS_ALTERNATIVE - ecs::PointSystem::GetReal(character, idx) : limit;
 	ch->SetRealPoint(idx, ecs::PointSystem::GetReal(character, idx) + limit);
-	ch->SetPoint(idx, ecs::PointSystem::Get(character, idx) + limit);
+	ecs::PointSystem::Set(character, idx, ecs::PointSystem::Get(character, idx) + limit);
 	ch->ComputePoints();
 	ecs::PointSystem::Change(character, idx, 0);
 

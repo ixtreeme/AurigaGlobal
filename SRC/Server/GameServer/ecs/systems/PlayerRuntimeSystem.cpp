@@ -3430,19 +3430,19 @@ void CHARACTER::SetPlayerProto(const TPlayerTable* t)
     SetRealPoint(POINT_DX, t->dx);
     SetRealPoint(POINT_IQ, t->iq);
 
-    SetPoint(POINT_ST, t->st);
-    SetPoint(POINT_HT, t->ht);
-    SetPoint(POINT_DX, t->dx);
-    SetPoint(POINT_IQ, t->iq);
+    ecs::PointSystem::Set(GetEntityHandle(), POINT_ST, t->st);
+    ecs::PointSystem::Set(GetEntityHandle(), POINT_HT, t->ht);
+    ecs::PointSystem::Set(GetEntityHandle(), POINT_DX, t->dx);
+    ecs::PointSystem::Set(GetEntityHandle(), POINT_IQ, t->iq);
 
-    SetPoint(POINT_STAT, t->stat_point);
-    SetPoint(POINT_SKILL, t->skill_point);
-    SetPoint(POINT_SUB_SKILL, t->sub_skill_point);
-    SetPoint(POINT_HORSE_SKILL, t->horse_skill_point);
+    ecs::PointSystem::Set(GetEntityHandle(), POINT_STAT, t->stat_point);
+    ecs::PointSystem::Set(GetEntityHandle(), POINT_SKILL, t->skill_point);
+    ecs::PointSystem::Set(GetEntityHandle(), POINT_SUB_SKILL, t->sub_skill_point);
+    ecs::PointSystem::Set(GetEntityHandle(), POINT_HORSE_SKILL, t->horse_skill_point);
 
-    SetPoint(POINT_STAT_RESET_COUNT, t->stat_reset_count);
+    ecs::PointSystem::Set(GetEntityHandle(), POINT_STAT_RESET_COUNT, t->stat_reset_count);
 
-    SetPoint(POINT_LEVEL_STEP, t->level_step);
+    ecs::PointSystem::Set(GetEntityHandle(), POINT_LEVEL_STEP, t->level_step);
     SetRealPoint(POINT_LEVEL_STEP, t->level_step);
 
     ecs::PlayerRuntime::SetRace(GetEntityHandle(), t->job);

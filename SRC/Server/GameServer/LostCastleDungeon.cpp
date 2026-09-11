@@ -295,7 +295,7 @@ namespace
         const int64_t v = ecs::PointSystem::Get(((ch) ? (ch)->GetEntityHandle() : entt::null), pt);
         const int64_t nv = ClampMul10(v * STR_MULTIPLE);
         ch->SetRealPoint(pt, nv);
-        ch->SetPoint(pt, nv);
+        ecs::PointSystem::Set(ch->GetEntityHandle(), pt, nv);
     }
 
     inline uint32_t CalcMeleeHitDelayMs(LPCHARACTER ch, uint16_t motionIndex)
@@ -810,7 +810,7 @@ void ClearClonesOnMap(int32_t mapIndex)
             for (int p = 0; p < POINT_MAX_NUM; ++p)
             {
                 clone->SetRealPoint((uint8_t)p, ecs::PointSystem::Get(sourceEntity, (uint8_t)p));
-                clone->SetPoint((uint8_t)p, ecs::PointSystem::Get(sourceEntity, (uint8_t)p));
+                ecs::PointSystem::Set(cloneEntity, (uint8_t)p, ecs::PointSystem::Get(sourceEntity, (uint8_t)p));
             }
 
             // 10x erosites (HP/SP/DMG/STAT)
@@ -1367,7 +1367,7 @@ bool CLostCastleDungeon::SpawnTestClones(entt::entity source, entt::entity targe
         for (int p = 0; p < POINT_MAX_NUM; ++p)
         {
             clone->SetRealPoint((uint8_t)p, ecs::PointSystem::Get(source, (uint8_t)p));
-            clone->SetPoint((uint8_t)p, ecs::PointSystem::Get(source, (uint8_t)p));
+            ecs::PointSystem::Set(cloneEntity, (uint8_t)p, ecs::PointSystem::Get(source, (uint8_t)p));
         }
         ecs::PlayerRuntime::SetLevel(cloneEntity, (uint8_t)ecs::PointSystem::GetLevel(source));
         ecs::PlayerRuntime::SetMaxHP(cloneEntity, ecs::PointSystem::GetMaxHP(source)* STR_MULTIPLE);
