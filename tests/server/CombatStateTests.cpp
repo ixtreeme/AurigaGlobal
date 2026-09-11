@@ -446,7 +446,7 @@ void ecs::MovementSystem::CalculateMoveDuration(entt::entity) { UnexpectedServic
 void ecs::MovementSystem::SendMovePacket(entt::entity,unsigned char,unsigned char,unsigned int,unsigned int,unsigned int,unsigned int,float) { UnexpectedService(__func__); }
 void InventorySystem::SyncQuickslot(entt::entity,uint16_t,uint16_t,uint16_t) { UnexpectedService(__func__); }
 void AffectSystem::ClearAffectSkills(entt::entity) { UnexpectedService(__func__); }
-void CHARACTER::SetDungeon(CDungeon *) { UnexpectedService(__func__); }
+void ecs::SocialSystem::SetDungeon(entt::entity, CDungeon *) { UnexpectedService(__func__); }
 bool ItemSystem::IsEquipUniqueItem(entt::entity,unsigned int) { UnexpectedService(__func__); }
 bool CHARACTER::IsEquipUniqueGroup(unsigned int)const { UnexpectedService(__func__); }
 void ItemSystem::GiveGold(entt::entity, int64_t) { UnexpectedService(__func__); }

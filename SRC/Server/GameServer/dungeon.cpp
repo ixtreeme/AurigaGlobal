@@ -530,7 +530,7 @@ LPCHARACTER CDungeon::SpawnMob(int32_t vnum, int32_t x, int32_t y, int32_t dir)
 
 	if (ch)
 	{
-		ch->SetDungeon(this);
+		ecs::SocialSystem::SetDungeon(ch->GetEntityHandle(), this);
 	}
 	else
 	{

@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include <Core/Logging.hpp>
 #include "ecs/systems/PlayerRuntimeSystem.hpp"
+#include "ecs/systems/SocialSystem.hpp"
 #include "ecs/systems/CombatSystem.hpp"
 #include "ecs/systems/PointSystem.hpp"
 #include "ecs/systems/ItemSystem.hpp"
@@ -363,7 +364,7 @@ ACMD(do_wheel_open)
 		ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "You Can't do this now");
 		return;
 
-		if (ch->GetDungeon())
+		if (ecs::SocialSystem::GetDungeon(ch->GetEntityHandle()))
 			ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "You cannot open in dungeon");
 		return;
 	}

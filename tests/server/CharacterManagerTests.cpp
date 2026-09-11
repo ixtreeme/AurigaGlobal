@@ -431,6 +431,7 @@ entt::entity EntityFactory::CreateMonster(entt::registry&, const TMobTable&, int
 entt::entity EntityFactory::CreateNPC(entt::registry&, const TMobTable&, int32_t, int32_t, int32_t, uint32_t) { Unexpected(); }
 entt::entity EntityFactory::CreateStone(entt::registry&, const TMobTable&, int32_t, int32_t, int32_t, uint32_t) { Unexpected(); }
 LPDUNGEON ecs::SocialSystem::GetDungeon(entt::entity) { return nullptr; }
+void ecs::SocialSystem::SetDungeon(entt::entity, CDungeon*) { Unexpected(); }
 void ItemSystem::AutoGiveItem(entt::entity, entt::entity, bool, bool) { Unexpected(); }
 const TItemTable* ItemSystem::GetItemProto(entt::entity) { Unexpected(); }
 bool ItemSystem::SetItemSocket(entt::entity, int, uint32_t, bool) { Unexpected(); }

@@ -719,7 +719,7 @@ void CInputLogin::Entergame(LPDESC d, const char* data)
 		else if (marriage::WeddingManager::instance().IsWeddingMap(ecs::PlayerRuntime::GetMapIndex(((ch) ? (ch)->GetEntityHandle() : entt::null))))
 			ch->SetWeddingMap(marriage::WeddingManager::instance().Find(ecs::PlayerRuntime::GetMapIndex(((ch) ? (ch)->GetEntityHandle() : entt::null))));
 		else {
-			ch->SetDungeon(CDungeonManager::instance().FindByMapIndex(ecs::PlayerRuntime::GetMapIndex(((ch) ? (ch)->GetEntityHandle() : entt::null))));
+			ecs::SocialSystem::SetDungeon(ch->GetEntityHandle(), CDungeonManager::instance().FindByMapIndex(ecs::PlayerRuntime::GetMapIndex(((ch) ? (ch)->GetEntityHandle() : entt::null))));
 		}
 	}
 	else if (CArenaManager::instance().IsArenaMap(ecs::PlayerRuntime::GetMapIndex(((ch) ? (ch)->GetEntityHandle() : entt::null))) == true)

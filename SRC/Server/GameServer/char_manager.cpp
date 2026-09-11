@@ -1053,7 +1053,7 @@ LPCHARACTER CHARACTER_MANAGER::SpawnGroup(uint32_t dwVnum, int32_t lMapIndex, in
 
 		const entt::entity spawned = tch->GetEntityHandle();
 
-		ecs::PlayerRuntime::SetDungeon(spawned, pDungeon);
+		ecs::SocialSystem::SetDungeon(spawned, pDungeon);
 
 		sx = ecs::PlayerRuntime::GetX(spawned) - number(300, 500);
 		sy = ecs::PlayerRuntime::GetY(spawned) - number(300, 500);

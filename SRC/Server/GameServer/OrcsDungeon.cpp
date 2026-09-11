@@ -390,7 +390,7 @@ void COrcsDungeon::OnPlayerLogin(entt::entity character)
         return;
     }
 
-    ch->SetDungeon(d);
+    ecs::SocialSystem::SetDungeon(ch->GetEntityHandle(), d);
 
     // If dungeon was never initialized (server restart mid-run), restart the flow.
     if (d->GetFlag(kFlagFloor) == 0)

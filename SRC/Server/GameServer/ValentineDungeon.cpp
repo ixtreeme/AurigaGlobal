@@ -648,7 +648,7 @@ void CValentineDungeon::OnPlayerLogin(entt::entity character)
         return;
     }
 
-    ch->SetDungeon(d);
+    ecs::SocialSystem::SetDungeon(ch->GetEntityHandle(), d);
 
     // Task reminder on login (rejoin)
     if (d->GetFlag(kFlagCompleted) == 0)

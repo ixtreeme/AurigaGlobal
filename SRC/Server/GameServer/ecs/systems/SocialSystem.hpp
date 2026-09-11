@@ -26,6 +26,7 @@ CGuild* GetGuild(entt::entity e);
 // with this; the native character-insert path has to as well, or the
 // viewer renders the character with no guild name.
 void SendGuildName(entt::entity viewer, CGuild* pGuild);
+void SetDungeon(entt::entity e, LPDUNGEON dungeon);
 LPDUNGEON GetDungeon(entt::entity e);
 CWarMap* GetWarMap(entt::entity e);
 bool HasExchange(entt::entity e);

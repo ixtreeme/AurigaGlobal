@@ -459,7 +459,7 @@ void CTritonTempleDungeon::OnPlayerLogin(entt::entity character)
     if (!d)
         return;
 
-    ch->SetDungeon(d);
+    ecs::SocialSystem::SetDungeon(ch->GetEntityHandle(), d);
     ecs::QuestSystem::SetFlag(character, kQfIdx, idx);
     ecs::QuestSystem::SetFlag(character, kQfCh, (int32_t)g_bChannel);
 

@@ -2847,51 +2847,7 @@ void CHARACTER::SetMarryPartner(entt::entity chEntity)
 
 namespace ecs::PlayerRuntime {
 
-// m_pkDungeon is a CHARACTER member and CDungeon keeps a character list, so
-// this resolves. The dungeon axis is its own.
-void SetDungeon(entt::entity e, LPDUNGEON pkDungeon)
-{
-    if (LPCHARACTER ch = ecs::LegacyCharOf(e))
-        ch->SetDungeon(pkDungeon);
-}
-
 } // namespace ecs::PlayerRuntime
-
-void CHARACTER::SetDungeon(LPDUNGEON pkDungeon)
-{
-    if (pkDungeon && m_pkDungeon)
-    {
-        LOG_ERROR("{} is trying to reassigning dungeon (current {}, new party {})", GetName(), static_cast<const void*>(get_pointer(m_pkDungeon)), static_cast<const void*>(get_pointer(pkDungeon)));
-    }
-
-    if (m_pkDungeon)
-    {
-        if (IsPC())
-        {
-            if (GetParty())
-                m_pkDungeon->DecPartyMember(GetParty(), this);
-            else
-                m_pkDungeon->DecMember(this);
-        }
-    }
-
-    m_pkDungeon = pkDungeon;
-
-    if (pkDungeon)
-    {
-        if (IsPC())
-        {
-            if (GetParty())
-                m_pkDungeon->IncPartyMember(GetParty(), this);
-            else
-                m_pkDungeon->IncMember(this);
-        }
-        else if (IsMonster() || IsStone())
-        {
-            m_pkDungeon->IncMonster();
-        }
-    }
-}
 
 void CHARACTER::SetWarMap(CWarMap* pWarMap)
 {
@@ -3239,8 +3195,8 @@ void CHARACTER::Destroy()
 
     if (m_pkRegen)
     {
-        if (m_pkDungeon) {
-            if (m_pkDungeon->IsValidRegen(m_pkRegen, regen_id_)) {
+        if (ecs::SocialSystem::GetDungeon(GetEntityHandle())) {
+            if (ecs::SocialSystem::GetDungeon(GetEntityHandle())->IsValidRegen(m_pkRegen, regen_id_)) {
                 --m_pkRegen->count;
             }
         }
@@ -3250,9 +3206,9 @@ void CHARACTER::Destroy()
         m_pkRegen = nullptr;
     }
 
-    if (m_pkDungeon)
+    if (ecs::SocialSystem::GetDungeon(GetEntityHandle()))
     {
-        SetDungeon(nullptr);
+        ecs::SocialSystem::SetDungeon(GetEntityHandle(), nullptr);
     }
 
 #ifdef ENABLE_MOUNT_COSTUME_SYSTEM
@@ -4661,7 +4617,6 @@ void CHARACTER::Initialize()
 
     m_bItemLoaded = false;
 
-    m_pkDungeon = nullptr;
     m_iEventAttr = 0;
 
 

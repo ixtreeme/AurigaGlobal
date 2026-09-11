@@ -2650,7 +2650,7 @@ void Dead(entt::entity victim, entt::entity killer, bool immediate)
 					auto* chResurrect = CHARACTER_MANAGER::instance().SpawnMob(mobTable->dwResurrectionVnum, ecs::PlayerRuntime::GetMapIndex(victim), ecs::PlayerRuntime::GetX(victim), ecs::PlayerRuntime::GetY(victim), ecs::PlayerRuntime::GetZ(victim), true, (int)ecs::PlayerRuntime::GetRotation(victim));
 					if (ecs::SocialSystem::GetDungeon(victim) && chResurrect)
 					{
-						chResurrect->SetDungeon(ecs::SocialSystem::GetDungeon(victim));
+						ecs::SocialSystem::SetDungeon(chResurrect->GetEntityHandle(), ecs::SocialSystem::GetDungeon(victim));
 					}
 					// END_OF_DUNGEON_MONSTER_REBIRTH_BUG_FIX
 
@@ -4074,7 +4074,7 @@ void Reward(entt::entity e, bool bItemDrop)
 					CDungeon* pDungeon = ecs::SocialSystem::GetDungeon(e);
 
 					// csak akkor, ha a killer ugyanebben a dungeon instance-ben van
-					if (pkAttacker->GetDungeon() == pDungeon)
+					if (ecs::SocialSystem::GetDungeon(pkAttacker->GetEntityHandle()) == pDungeon)
 					{
 						// --- helper: HWID|HOST kulcs ugyanugy, ahogy nalad masutt is ---
 						auto MakeHwidHostKey = [&](LegacyCharHandle ch) -> std::string
@@ -4110,7 +4110,7 @@ void Reward(entt::entity e, bool bItemDrop)
 									return;
 
 								// ugyanabban a dungeon instance-ben kell legyen
-								if (mch->GetDungeon() != pDungeon)
+								if (ecs::SocialSystem::GetDungeon(mch->GetEntityHandle()) != pDungeon)
 									return;
 
 								//   ugyanazon a mapindexen legyen (INSTANCE) -> NINCS hibas normalizalas

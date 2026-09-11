@@ -4,6 +4,7 @@
 #include "char_interface.hpp"
 #include "char_manager.h"
 #include "ecs/systems/CombatSystem.hpp"
+#include "ecs/systems/SocialSystem.hpp"
 #include "regen.h"
 #include "mob_manager.h"
 #include "dungeon.h"
@@ -279,7 +280,7 @@ static void regen_spawn_dungeon(LPREGEN regen, LPDUNGEON pDungeon, bool bOnce)
 			if (ch)
 			{
 				++regen->count;
-				ch->SetDungeon(pDungeon);
+				ecs::SocialSystem::SetDungeon(ch->GetEntityHandle(), pDungeon);
 			}
 		}
 		else if (regen->sx == regen->ex && regen->sy == regen->ey)
@@ -295,7 +296,7 @@ static void regen_spawn_dungeon(LPREGEN regen, LPDUNGEON pDungeon, bool bOnce)
 			if (ch)
 			{
 				++regen->count;
-				ch->SetDungeon(pDungeon);
+				ecs::SocialSystem::SetDungeon(ch->GetEntityHandle(), pDungeon);
 			}
 		}
 		else
@@ -307,7 +308,7 @@ static void regen_spawn_dungeon(LPREGEN regen, LPDUNGEON pDungeon, bool bOnce)
 				if (ch)
 				{
 					++regen->count;
-					ch->SetDungeon(pDungeon);
+					ecs::SocialSystem::SetDungeon(ch->GetEntityHandle(), pDungeon);
 				}
 			}
 			else if (regen->type == REGEN_TYPE_GROUP)

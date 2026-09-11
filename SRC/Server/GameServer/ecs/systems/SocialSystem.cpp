@@ -62,6 +62,57 @@ CGuild* GetGuild(entt::entity e)
     return nullptr;
 }
 
+// The dungeon this character is counted against. CHARACTER::m_pkDungeon held
+// it and DungeonMembership::dungeon was written by one quest binding alone, so
+// every reader of the component but that one saw nothing. One home now.
+void SetDungeon(entt::entity e, LPDUNGEON pkDungeon)
+{
+	if (e == entt::null || !g_registry.valid(e))
+		return;
+
+	// CDungeon counts members by pointer, so the character is still needed for
+	// the four Inc/Dec calls; each is its own migration.
+	LPCHARACTER self = ecs::LegacyCharOf(e);
+	if (!self)
+		return;
+
+	auto& membership = g_registry.get_or_emplace<ecs::DungeonMembership>(e);
+
+	if (pkDungeon && membership.dungeon)
+    {
+        LOG_ERROR("{} is trying to reassigning dungeon (current {}, new party {})", ecs::PlayerRuntime::GetName(e).data(), static_cast<const void*>(get_pointer(membership.dungeon)), static_cast<const void*>(get_pointer(pkDungeon)));
+    }
+
+    if (membership.dungeon)
+    {
+        if (ecs::PlayerRuntime::IsPC(e))
+        {
+            if (ecs::SocialSystem::GetParty(e))
+                membership.dungeon->DecPartyMember(ecs::SocialSystem::GetParty(e), self);
+            else
+                membership.dungeon->DecMember(self);
+        }
+    }
+
+    membership.dungeon = pkDungeon;
+
+    if (pkDungeon)
+    {
+        if (ecs::PlayerRuntime::IsPC(e))
+        {
+            if (ecs::SocialSystem::GetParty(e))
+                membership.dungeon->IncPartyMember(ecs::SocialSystem::GetParty(e), self);
+            else
+                membership.dungeon->IncMember(self);
+        }
+        else if (ecs::PlayerRuntime::IsMonster(e) || ecs::PlayerRuntime::IsStone(e))
+        {
+            membership.dungeon->IncMonster();
+        }
+    }
+	g_registry.emplace_or_replace<ecs::DirtyTag>(e);
+}
+
 LPDUNGEON GetDungeon(entt::entity e)
 {
     if (e == entt::null || !g_registry.valid(e))
@@ -388,8 +439,8 @@ void CHARACTER::SetParty(LPPARTY pkParty)
     LOG_TRACE("PARTY set to {}", static_cast<const void*>(get_pointer(pkParty)));
 
 #ifdef ENABLE_BUG_FIXES
-    if (m_pkDungeon && IsPC() && !pkParty) {
-        SetDungeon(nullptr);
+    if (ecs::SocialSystem::GetDungeon(GetEntityHandle()) && IsPC() && !pkParty) {
+        ecs::SocialSystem::SetDungeon(GetEntityHandle(), nullptr);
     }
 #endif
 
@@ -917,7 +968,7 @@ CHARACTER::PartyJoinErrCode CHARACTER::IsPartyJoinableMutableCondition(const ent
     LPCHARACTER pkGuest = ecs::LegacyCharOf(guest);
     if (!CPartyManager::instance().IsEnablePCParty())
         return PERR_SERVER;
-    else if (pkLeader->GetDungeon())
+    else if (ecs::SocialSystem::GetDungeon(pkLeader->GetEntityHandle()))
         return PERR_DUNGEON;
     else if (pkGuest->IsObserverMode())
         return PERR_OBSERVER;

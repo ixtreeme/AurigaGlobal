@@ -248,6 +248,7 @@ uint8_t ecs::PlayerRuntime::GetEmpire(entt::entity) { Unexpected(); }
 uint32_t ecs::PlayerRuntime::GetPlayerID(entt::entity) { Unexpected(); }
 bool ecs::PlayerRuntime::IsGoto(entt::entity) { Unexpected(); }
 bool ecs::PlayerRuntime::IsWarp(entt::entity) { Unexpected(); }
+LPDUNGEON ecs::SocialSystem::GetDungeon(entt::entity) { Unexpected(); }
 SECTREE* ecs::PlayerRuntime::GetSectree(entt::entity) { Unexpected(); }
 float ecs::PlayerRuntime::GetRotation(entt::entity e) {
     const auto* runtime = g_registry.try_get<ecs::CharacterRuntimeFlagsComponent>(e);

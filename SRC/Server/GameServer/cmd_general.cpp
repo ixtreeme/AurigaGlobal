@@ -571,7 +571,7 @@ ACMD(do_change_channel)
 		return;
 	}
 
-	if (ch->GetDungeon())
+	if (ecs::SocialSystem::GetDungeon(ch->GetEntityHandle()))
 	{
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 720, "");

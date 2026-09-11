@@ -3232,7 +3232,7 @@ void CInputMain::MapTeleporter(entt::entity character, TPacketCGMapTeleporter* p
 
 	//Check DungeonMap Genezis
 	//Check if current map is a dungeon!
-//	if (ch->GetDungeon())
+//	if (ecs::SocialSystem::GetDungeon(ch->GetEntityHandle()))
 //	{
 //#ifdef TEXTS_IMPROVEMENT
 //		ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 48, "");
@@ -5184,7 +5184,7 @@ void CInputMain::WheelDestiny(entt::entity character, const char* data)
 	break;
 	case TURN:
 	{
-		if (ch->GetDungeon() != nullptr || ecs::PlayerRuntime::GetMapIndex(character) >= 10000)
+		if (ecs::SocialSystem::GetDungeon(ch->GetEntityHandle()) != nullptr || ecs::PlayerRuntime::GetMapIndex(character) >= 10000)
 		{
 			ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "Dungeonban nem tudsz pörgetni./You cannot in dungeon");
 			return;

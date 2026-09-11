@@ -1491,7 +1491,7 @@ bool CHARACTER::Sync(int32_t x, int32_t y)
 	// semantic as legacy destination = current_pos.
 	ecs::MovementSystem::SyncDestinationClear(GetEntityHandle());
 
-	if (GetDungeon())
+	if (ecs::SocialSystem::GetDungeon(GetEntityHandle()))
 	{
 		// Sync quest event attr transitions when entering a new dungeon sector.
 		int iLastEventAttr = m_iEventAttr;
@@ -1959,7 +1959,7 @@ EVENTFUNC(recovery_event)
 
 #ifdef ENABLE_DS_RUNE
 		if (ch->GetMobTable().dwVnum == 3996) {
-			LPDUNGEON target = ch->GetDungeon();
+			LPDUNGEON target = ecs::SocialSystem::GetDungeon(ch->GetEntityHandle());
 			if (target) {
 				if (target->GetFlag("floor") == 5) {
 					CombatSystem::DistributeSP(character, character);
@@ -1983,7 +1983,7 @@ EVENTFUNC(recovery_event)
 			}
 		}
 		else if (ch->GetMobTable().dwVnum == 8202) {
-			LPDUNGEON target = ch->GetDungeon();
+			LPDUNGEON target = ecs::SocialSystem::GetDungeon(ch->GetEntityHandle());
 			if (target) {
 				if (target->GetFlag("floor") == 1) {
 					CombatSystem::DistributeSP(character, character);
