@@ -355,7 +355,9 @@ bool NetworkSyncSystem::BuildCharAdditionalInfo(entt::registry& reg, entt::entit
         return false;
 
     const bool isPC = ecs::PlayerRuntime::IsPC(source);
-    const bool isNPC = ecs::PlayerRuntime::IsNPC(source);
+    // The class sent this packet for IsPC() || m_bCharType == CHAR_TYPE_NPC:
+    // players and NPCs, never monsters.
+    const bool isNPC = ecs::PlayerRuntime::IsNPCType(source);
     if (!isPC && !isNPC)
         return false;
 

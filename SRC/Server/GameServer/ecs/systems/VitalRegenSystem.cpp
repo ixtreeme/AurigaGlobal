@@ -80,7 +80,9 @@ void VitalRegenSystem_Update(entt::registry& reg, uint32_t tick)
             return;
         }
 
-        if (!ecs::PlayerRuntime::GetDesc(entity) && !ecs::PlayerRuntime::IsNPC(entity)) {
+        // This mirror was written against the NPC-only answer and there is no
+        // class original to check it against, so it keeps what it had.
+        if (!ecs::PlayerRuntime::GetDesc(entity) && !ecs::PlayerRuntime::IsNPCType(entity)) {
             return;
         }
 

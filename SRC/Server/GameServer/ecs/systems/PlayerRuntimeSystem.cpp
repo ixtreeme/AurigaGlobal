@@ -590,17 +590,31 @@ bool IsPC(entt::entity e)
 	return e != entt::null && g_registry.valid(e) && g_registry.all_of<ecs::TagPC>(e);
 }
 
+// CHARACTER::IsNPC() was m_bCharType != CHAR_TYPE_PC: anything but a player,
+// monsters and stones included. This used to read the TagNPC component, which
+// is CHAR_TYPE_NPC alone, and every caller ported from the class inherited the
+// narrower meaning - Show among them, which is how the cape of courage broke.
 bool IsNPC(entt::entity e)
+{
+	if (e == entt::null || !g_registry.valid(e))
+		return false;
+
+	const auto* type = g_registry.try_get<ecs::CharacterType>(e);
+	return type && type->value != CHAR_TYPE_PC;
+}
+
+// CHAR_TYPE_NPC alone - shopkeepers and quest NPCs, the tag the factory gives
+// them. This is what IsNPC above used to answer; the two callers that really
+// want it say so by name.
+bool IsNPCType(entt::entity e)
 {
 	return e != entt::null && g_registry.valid(e) && g_registry.all_of<ecs::TagNPC>(e);
 }
 
 bool IsGuardNPC(entt::entity e)
 {
-    // CHARACTER::IsNPC() is m_bCharType != CHAR_TYPE_PC - "not a PC", which
-    // takes in monsters and stones. That is not IsNPC(e) above, which reads
-    // the TagNPC component and means CHAR_TYPE_NPC alone, so this goes to the
-    // CharacterType component the factory fills from m_bCharType directly.
+    // CHARACTER::IsGuardNPC tested m_bCharType != CHAR_TYPE_PC - "not a PC",
+    // monsters and stones included - which is what IsNPC(e) above answers.
     if (e == entt::null || !g_registry.valid(e))
         return false;
 

@@ -337,7 +337,8 @@ int ecs::PlayerRuntime::GetX(entt::entity e) { AssertActor(e); return g_registry
 int ecs::PlayerRuntime::GetY(entt::entity e) { AssertActor(e); return g_registry.get<BattleFixture>(e).y; }
 bool ecs::PlayerRuntime::IsValid(entt::entity e) { return ecs::Invariants::HasAnyTypeTag(g_registry,e); }
 bool ecs::PlayerRuntime::IsPC(entt::entity e) { return IsValid(e) && g_registry.all_of<ecs::TagPC>(e); }
-bool ecs::PlayerRuntime::IsNPC(entt::entity e) { return IsValid(e) && g_registry.all_of<ecs::TagNPC>(e); }
+// Anything but a player, as the production answer is now.
+bool ecs::PlayerRuntime::IsNPC(entt::entity e) { return IsValid(e) && g_registry.any_of<ecs::TagNPC, ecs::TagMonster, ecs::TagStone>(e); }
 bool ecs::PlayerRuntime::IsGuardNPC(entt::entity) { UnexpectedService(__func__); }
 boost::intrusive_ptr<event> ecs::PlayerRuntime::GetCharEvent(entt::entity,ecs::PlayerRuntime::CharEvent) { UnexpectedService(__func__); }
 void ecs::PlayerRuntime::SetCharEvent(entt::entity,ecs::PlayerRuntime::CharEvent,boost::intrusive_ptr<event>) { UnexpectedService(__func__); }

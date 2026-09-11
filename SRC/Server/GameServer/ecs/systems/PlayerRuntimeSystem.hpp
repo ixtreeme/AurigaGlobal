@@ -96,9 +96,10 @@ LPSECTREE GetSectree(entt::entity e);
 bool IsValid(entt::entity e);
 
 bool IsPC(entt::entity e);
+// Anything but a player, as CHARACTER::IsNPC() was. IsNPCType is CHAR_TYPE_NPC
+// alone; use it only where the class compared m_bCharType to CHAR_TYPE_NPC.
 bool IsNPC(entt::entity e);
-// Not IsNPC: CHARACTER::IsGuardNPC tests m_bCharType != CHAR_TYPE_PC, which
-// includes monsters and stones, while IsNPC above is the TagNPC component.
+bool IsNPCType(entt::entity e);
 bool IsGuardNPC(entt::entity e);
 // The remaining two CharacterType tests the AI states need. CHARACTER
 // carried these as inline reads of m_bCharType; the component is what the

@@ -250,7 +250,7 @@ namespace ecs::PlayerRuntime {
 bool IsValid(entt::entity e) { return g_registry.valid(e); }
 bool IsPC(entt::entity e) { return IsValid(e) && g_registry.all_of<ecs::TagPC>(e); }
 bool IsStone(entt::entity e) { return IsValid(e) && g_registry.all_of<ecs::TagStone>(e); }
-bool IsNPC(entt::entity e) { return IsValid(e) && g_registry.all_of<ecs::TagNPC>(e); }
+bool IsNPC(entt::entity e) { return IsValid(e) && g_registry.any_of<ecs::TagNPC, ecs::TagMonster, ecs::TagStone>(e); }
 bool IsPet(entt::entity) { return false; }
 bool IsNewPet(entt::entity) { return false; }
 uint32_t GetRaceNum(entt::entity e) { return IsValid(e) ? g_registry.get<ActorData>(e).race : 0; }
