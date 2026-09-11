@@ -4355,7 +4355,7 @@ void CInputMain::Refine(entt::entity character, const char* c_pData)
 	}
 
 #ifdef __ENABLE_EXTEND_INVEN_SYSTEM__
-	if (p->pos >= ch->Inventory_Size())
+	if (p->pos >= InventorySystem::GetInventorySize(character))
 #else
 	if (p->pos >= INVENTORY_MAX_NUM)
 #endif

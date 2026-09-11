@@ -539,17 +539,6 @@ bool SetExperienceBlocked(entt::entity e, bool blocked)
 #endif
 
 
-#ifdef __ENABLE_EXTEND_INVEN_SYSTEM__
-int CHARACTER::Inven_Point() const
-{
-    return ecs::PointSystem::GetInventoryExpansion(GetEntityHandle());
-}
-void CHARACTER::Set_Inventory_Point(int value)
-{
-    ecs::PointSystem::SetInventoryExpansion(GetEntityHandle(), value);
-}
-#endif
-
 void CHARACTER::CheckMaximumPoints()
 {
 	if (ecs::PointSystem::GetMaxHP(GetEntityHandle()) < ecs::PlayerRuntime::GetHP(GetEntityHandle()))

@@ -1269,7 +1269,7 @@ LPITEM CHARACTER::FindSpecifyItem(uint32_t vnum
 	}
 	else {
 #ifdef __ENABLE_EXTEND_INVEN_SYSTEM__
-		for (int i = 0; i < Inventory_Size(); ++i)
+		for (int i = 0; i < InventorySystem::GetInventorySize(GetEntityHandle()); ++i)
 #else
 		for (int i = 0; i < INVENTORY_MAX_NUM; ++i)
 #endif
@@ -1281,7 +1281,7 @@ LPITEM CHARACTER::FindSpecifyItem(uint32_t vnum
 	}
 #else
 #ifdef __ENABLE_EXTEND_INVEN_SYSTEM__
-	for (int i = 0; i < Inventory_Size(); ++i)
+	for (int i = 0; i < InventorySystem::GetInventorySize(GetEntityHandle()); ++i)
 #else
 	for (int i = 0; i < INVENTORY_MAX_NUM; ++i)
 #endif
@@ -1295,7 +1295,7 @@ LPITEM CHARACTER::FindSpecifyItem(uint32_t vnum
 LPITEM CHARACTER::FindItemByID(uint32_t id) const
 {
 #ifdef __ENABLE_EXTEND_INVEN_SYSTEM__
-	for (int i = 0; i < Inventory_Size(); ++i)
+	for (int i = 0; i < InventorySystem::GetInventorySize(GetEntityHandle()); ++i)
 #else
 	for (int i = 0; i < INVENTORY_MAX_NUM; ++i)
 #endif
@@ -1347,7 +1347,7 @@ int CHARACTER::CountSpecifyItem(uint32_t vnum) const
 
 
 #ifdef __ENABLE_EXTEND_INVEN_SYSTEM__
-		for (int i = 0; i < Inventory_Size(); ++i)
+		for (int i = 0; i < InventorySystem::GetInventorySize(GetEntityHandle()); ++i)
 #else
 		for (int i = 0; i < INVENTORY_MAX_NUM; ++i)
 #endif
@@ -1422,7 +1422,7 @@ void CHARACTER::RemoveSpecifyItem(uint32_t vnum, int count, bool cuberenewal)
 #endif
 
 #ifdef __ENABLE_EXTEND_INVEN_SYSTEM__
-		for (int i = 0; i < Inventory_Size(); ++i)
+		for (int i = 0; i < InventorySystem::GetInventorySize(GetEntityHandle()); ++i)
 #else
 		for (UINT i = 0; i < INVENTORY_MAX_NUM; ++i)
 #endif
@@ -1469,7 +1469,7 @@ int CHARACTER::CountSpecifyTypeItem(uint8_t type) const
 	int	count = 0;
 
 #ifdef __ENABLE_EXTEND_INVEN_SYSTEM__
-	for (int i = 0; i < Inventory_Size(); ++i)
+	for (int i = 0; i < InventorySystem::GetInventorySize(GetEntityHandle()); ++i)
 #else
 	for (UINT i = 0; i < INVENTORY_MAX_NUM; ++i)
 #endif
@@ -2855,7 +2855,7 @@ void CHARACTER::RemoveSpecifyTypeItem(uint8_t type, int count)
 		return;
 
 #ifdef __ENABLE_EXTEND_INVEN_SYSTEM__
-	for (int i = 0; i < Inventory_Size(); ++i)
+	for (int i = 0; i < InventorySystem::GetInventorySize(GetEntityHandle()); ++i)
 #else
 	for (UINT i = 0; i < INVENTORY_MAX_NUM; ++i)
 #endif

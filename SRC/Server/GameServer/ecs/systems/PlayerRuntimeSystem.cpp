@@ -2859,7 +2859,11 @@ bool CHARACTER::Update_Inven()
 #endif
 
 #define key2 72320
-    int needkey = NeedKeys[Inven_Point()];
+    const int expansion = ecs::PointSystem::GetInventoryExpansion(GetEntityHandle());
+    if (expansion < 0 || expansion >= static_cast<int>(sizeof(NeedKeys) / sizeof(NeedKeys[0])))
+        return false;
+
+    int needkey = NeedKeys[expansion];
     if (CountSpecifyItem(key2) >= needkey) {
         RemoveSpecifyItem(key2, needkey);
         PointChange(POINT_INVEN, 1, false);
@@ -3454,7 +3458,7 @@ void CHARACTER::SetPlayerProto(const TPlayerTable* t)
     ecs::PointSystem::SetGaya(GetEntityHandle(), t->gaya);
 #endif
 #ifdef __ENABLE_EXTEND_INVEN_SYSTEM__
-    Set_Inventory_Point(t->envanter);
+    ecs::PointSystem::SetInventoryExpansion(GetEntityHandle(), t->envanter);
 #endif
 
     SetMapIndex(t->lMapIndex);

@@ -1033,9 +1033,6 @@ public:
 	// Money related
 
 #ifdef __ENABLE_EXTEND_INVEN_SYSTEM__
-	int				Inven_Point() const;
-	int				Inventory_Size() const { return 90 + (5 * Inven_Point()); }
-	void			Set_Inventory_Point(int value);
 	bool			Update_Inven();
 #endif
 	bool			DropGold(int64_t gold);
