@@ -331,7 +331,8 @@ static void regen_spawn_dungeon(LPREGEN regen, LPDUNGEON pDungeon, bool bOnce)
 		if (pDungeon)
 		{
 			const entt::entity mast = pDungeon->GetMast();
-			if (ecs::PlayerRuntime::IsValid(mast))
+			// A group regen never sets ch, and a spawn that failed leaves it null.
+			if (ch && ecs::PlayerRuntime::IsValid(mast))
 			{
 				CombatSystem::SetVictim(ch->GetEntityHandle(), mast);
 			}

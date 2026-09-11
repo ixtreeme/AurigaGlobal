@@ -7441,13 +7441,17 @@ bool UseItemEx(entt::entity e, entt::entity item, TItemPos DestCell)
 		}
 #endif
 
-		auto* campfire = CHARACTER_MANAGER::instance().SpawnMob(fishing::CAMPFIRE_MOB, ecs::PlayerRuntime::GetMapIndex(e), (int32_t)(ecs::PlayerRuntime::GetX(e) + fx), (int32_t)(ecs::PlayerRuntime::GetY(e) + fy), 0, false, number(0, 359));
+		// SpawnMob answers null on a blocked or ban-PK cell, and the handle used to
+		// be read through that null. The item stays when no campfire appears.
+		const entt::entity campfire = CHARACTER_MANAGER::instance().SpawnMobEntity(fishing::CAMPFIRE_MOB, ecs::PlayerRuntime::GetMapIndex(e), (int32_t)(ecs::PlayerRuntime::GetX(e) + fx), (int32_t)(ecs::PlayerRuntime::GetY(e) + fy), 0, false, number(0, 359));
+		if (campfire == entt::null)
+			return false;
 
 		char_event_info* info = AllocEventInfo<char_event_info>();
 
-		info->ch = campfire->GetEntityHandle();
+		info->ch = campfire;
 
-		ecs::PlayerRuntime::SetCharEvent(campfire->GetEntityHandle(),
+		ecs::PlayerRuntime::SetCharEvent(campfire,
 			ecs::PlayerRuntime::CharEvent::Mining,
 			event_create(kill_campfire_event, info, PASSES_PER_SEC(40)));
 

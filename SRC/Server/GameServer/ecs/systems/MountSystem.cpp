@@ -377,15 +377,13 @@ void SummonHorse(entt::entity rider, bool bSummon, bool bFromFar, uint32_t dwVnu
 			y += number(-100, 100);
 		}
 
-		SetSummonedHorse(rider, CHARACTER_MANAGER::instance().SpawnMob(
+		// The condition used to spawn a horse and the branch a second one; only the
+		// second was kept as the summoned horse and the first stood on the map.
+		SetSummonedHorse(rider, CHARACTER_MANAGER::instance().SpawnMobEntity(
 				(0 == dwVnum) ? GetMyHorseVnum(rider) : dwVnum,
 				ecs::PlayerRuntime::GetMapIndex(rider),
 				x, y,
-				ecs::PlayerRuntime::GetZ(rider), false, (int)(ecs::PlayerRuntime::GetRotation(rider)+180), false) ? CHARACTER_MANAGER::instance().SpawnMob(
-				(0 == dwVnum) ? GetMyHorseVnum(rider) : dwVnum,
-				ecs::PlayerRuntime::GetMapIndex(rider),
-				x, y,
-				ecs::PlayerRuntime::GetZ(rider), false, (int)(ecs::PlayerRuntime::GetRotation(rider)+180), false)->GetEntityHandle() : entt::null);
+				ecs::PlayerRuntime::GetZ(rider), false, (int)(ecs::PlayerRuntime::GetRotation(rider)+180), false));
 
 		if (!ecs::LegacyCharOf(GetSummonedHorse(rider)))
 		{
