@@ -18,6 +18,7 @@
 #include "../../item.h"
 #include "../../log.h"
 #include "../../marriage.h"
+#include "../../wedding.h"
 #include "../../packet.h"
 #include "../../party.h"
 #include "../../utils.h"
@@ -120,6 +121,66 @@ LPDUNGEON GetDungeon(entt::entity e)
 
     const auto* membership = g_registry.try_get<ecs::DungeonMembership>(e);
     return membership ? membership->dungeon : nullptr;
+}
+
+// The guild war map this character is counted against. CHARACTER::m_pWarMap
+// held it and DungeonMembership::warMap was written by nothing, so GetWarMap
+// and the two quest bindings over it answered "no war map" for everyone.
+void SetWarMap(entt::entity e, CWarMap* pWarMap)
+{
+    if (e == entt::null || !g_registry.valid(e))
+        return;
+
+    // CWarMap counts its members by pointer; that is its own migration.
+    LPCHARACTER self = ecs::LegacyCharOf(e);
+    if (!self)
+        return;
+
+    auto& membership = g_registry.get_or_emplace<ecs::DungeonMembership>(e);
+
+    if (membership.warMap)
+        membership.warMap->DecMember(self);
+
+    membership.warMap = pWarMap;
+
+    if (membership.warMap)
+        membership.warMap->IncMember(self);
+
+    g_registry.emplace_or_replace<ecs::DirtyTag>(e);
+}
+
+// The wedding map, in the same shape: the field was written and the component
+// beside it was only ever read, by two quest bindings that always saw nothing.
+void SetWeddingMap(entt::entity e, marriage::WeddingMap* pMap)
+{
+    if (e == entt::null || !g_registry.valid(e))
+        return;
+
+    // WeddingMap counts its members by pointer; that is its own migration.
+    LPCHARACTER self = ecs::LegacyCharOf(e);
+    if (!self)
+        return;
+
+    auto& marriageState = g_registry.get_or_emplace<ecs::MarriageState>(e);
+
+    if (marriageState.weddingMap)
+        marriageState.weddingMap->DecMember(self);
+
+    marriageState.weddingMap = pMap;
+
+    if (marriageState.weddingMap)
+        marriageState.weddingMap->IncMember(self);
+
+    g_registry.emplace_or_replace<ecs::DirtyTag>(e);
+}
+
+marriage::WeddingMap* GetWeddingMap(entt::entity e)
+{
+    if (e == entt::null || !g_registry.valid(e))
+        return nullptr;
+
+    const auto* marriageState = g_registry.try_get<ecs::MarriageState>(e);
+    return marriageState ? marriageState->weddingMap : nullptr;
 }
 
 CWarMap* GetWarMap(entt::entity e)

@@ -897,9 +897,9 @@ void CGuildManager::Kill(LPCHARACTER killer, LPCHARACTER victim)
 	if (!(ecs::PlayerRuntime::IsPC(victimEntity)))
 		return;
 
-	if (killer->GetWarMap())
+	if (ecs::SocialSystem::GetWarMap(killer->GetEntityHandle()))
 	{
-		killer->GetWarMap()->OnKill(killer, victim);
+		ecs::SocialSystem::GetWarMap(killer->GetEntityHandle())->OnKill(killer, victim);
 		return;
 	}
 

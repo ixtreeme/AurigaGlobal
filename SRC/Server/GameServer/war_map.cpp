@@ -872,7 +872,7 @@ void CWarMap::AddFlagBase(uint8_t bIdx, uint32_t x, uint32_t y)
 	LOG_INFO("WarMap::AddFlagBase {} {} id {}", static_cast<int>(bIdx), static_cast<const void*>(get_pointer(r.pkChrFlagBase)), r.dwID);
 
 	r.pkChrFlagBase->SetPoint(POINT_STAT, r.dwID);
-	r.pkChrFlagBase->SetWarMap(this);
+	ecs::SocialSystem::SetWarMap(r.pkChrFlagBase->GetEntityHandle(), this);
 }
 
 void CWarMap::AddFlag(uint8_t bIdx, uint32_t x, uint32_t y)
@@ -897,7 +897,7 @@ void CWarMap::AddFlag(uint8_t bIdx, uint32_t x, uint32_t y)
 	LOG_INFO("WarMap::AddFlag {} {} id {}", static_cast<int>(bIdx), static_cast<const void*>(get_pointer(r.pkChrFlag)), r.dwID);
 
 	r.pkChrFlag->SetPoint(POINT_STAT, r.dwID);
-	r.pkChrFlag->SetWarMap(this);
+	ecs::SocialSystem::SetWarMap(r.pkChrFlag->GetEntityHandle(), this);
 }
 
 void CWarMap::RemoveFlag(uint8_t bIdx)

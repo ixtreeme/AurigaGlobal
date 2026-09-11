@@ -779,7 +779,7 @@ ACMD(do_restart)
 		{
 			return;
 		}
-		else if (subcmd != SCMD_RESTART_TOWN && (!ch->GetWarMap() || ch->GetWarMap()->GetType() == GUILD_WAR_TYPE_FLAG))
+		else if (subcmd != SCMD_RESTART_TOWN && (!ecs::SocialSystem::GetWarMap(ch->GetEntityHandle()) || ecs::SocialSystem::GetWarMap(ch->GetEntityHandle())->GetType() == GUILD_WAR_TYPE_FLAG))
 		{
 			return;
 		}
@@ -794,9 +794,9 @@ ACMD(do_restart)
 
 	int32_t mapidx = ecs::PlayerRuntime::GetMapIndex(character);
 
-	if (ch->GetWarMap() && !ecs::PlayerRuntime::IsObserverMode(character))
+	if (ecs::SocialSystem::GetWarMap(ch->GetEntityHandle()) && !ecs::PlayerRuntime::IsObserverMode(character))
 	{
-		CWarMap * pMap = ch->GetWarMap();
+		CWarMap * pMap = ecs::SocialSystem::GetWarMap(ch->GetEntityHandle());
 		uint32_t dwGuildOpponent = pMap ? pMap->GetGuildOpponent(character) : 0;
 		if (dwGuildOpponent)
 		{
@@ -2573,8 +2573,8 @@ ACMD(do_observer_exit)
 	LPCHARACTER ch = ecs::LegacyCharOf(character);
 	if (ecs::PlayerRuntime::IsObserverMode(character))
 	{
-		if (ch->GetWarMap())
-			ch->SetWarMap(nullptr);
+		if (ecs::SocialSystem::GetWarMap(ch->GetEntityHandle()))
+			ecs::SocialSystem::SetWarMap(ch->GetEntityHandle(), nullptr);
 
 		if (ecs::PlayerRuntime::GetArena(ch->GetEntityHandle()) != nullptr || ecs::PlayerRuntime::GetArenaObserverMode(ch->GetEntityHandle()) == true)
 		{

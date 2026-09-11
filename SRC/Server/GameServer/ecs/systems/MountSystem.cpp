@@ -733,7 +733,7 @@ bool CHARACTER::StartRiding()
 #endif
 
 #ifdef BLOCK_RIDING_INSIDE_WAR
-	if (GetWarMap()) {
+	if (ecs::SocialSystem::GetWarMap(GetEntityHandle())) {
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(rider, CHAT_TYPE_INFO, 852, "");
 #endif
@@ -746,7 +746,7 @@ bool CHARACTER::StartRiding()
 #endif
 
 #ifdef ENABLE_NEWSTUFF
-	if (g_NoMountAtGuildWar && GetWarMap())
+	if (g_NoMountAtGuildWar && ecs::SocialSystem::GetWarMap(GetEntityHandle()))
 	{
 		AffectSystem::RemoveAffect(GetEntityHandle(), AFFECT_MOUNT);
 		AffectSystem::RemoveAffect(GetEntityHandle(), AFFECT_MOUNT_BONUS);

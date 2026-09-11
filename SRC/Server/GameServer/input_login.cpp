@@ -715,9 +715,9 @@ void CInputLogin::Entergame(LPDESC d, const char* data)
 	if (ecs::PlayerRuntime::GetMapIndex(((ch) ? (ch)->GetEntityHandle() : entt::null)) >= 10000)
 	{
 		if (CWarMapManager::instance().IsWarMap(ecs::PlayerRuntime::GetMapIndex(((ch) ? (ch)->GetEntityHandle() : entt::null))))
-			ch->SetWarMap(CWarMapManager::instance().Find(ecs::PlayerRuntime::GetMapIndex(((ch) ? (ch)->GetEntityHandle() : entt::null))));
+			ecs::SocialSystem::SetWarMap(ch->GetEntityHandle(), CWarMapManager::instance().Find(ecs::PlayerRuntime::GetMapIndex(((ch) ? (ch)->GetEntityHandle() : entt::null))));
 		else if (marriage::WeddingManager::instance().IsWeddingMap(ecs::PlayerRuntime::GetMapIndex(((ch) ? (ch)->GetEntityHandle() : entt::null))))
-			ch->SetWeddingMap(marriage::WeddingManager::instance().Find(ecs::PlayerRuntime::GetMapIndex(((ch) ? (ch)->GetEntityHandle() : entt::null))));
+			ecs::SocialSystem::SetWeddingMap(ch->GetEntityHandle(), marriage::WeddingManager::instance().Find(ecs::PlayerRuntime::GetMapIndex(((ch) ? (ch)->GetEntityHandle() : entt::null))));
 		else {
 			ecs::SocialSystem::SetDungeon(ch->GetEntityHandle(), CDungeonManager::instance().FindByMapIndex(ecs::PlayerRuntime::GetMapIndex(((ch) ? (ch)->GetEntityHandle() : entt::null))));
 		}
@@ -877,7 +877,7 @@ void CInputLogin::Entergame(LPDESC d, const char* data)
 	ecs::ChatSystem::Send(((ch) ? (ch)->GetEntityHandle() : entt::null), CHAT_TYPE_COMMAND, "equipview %d", ecs::QuestSystem::GetFlag(((ch) ? (ch)->GetEntityHandle() : entt::null), BLOCK_EQUIPMENT_));
 #endif
 #ifdef BLOCK_RIDING_INSIDE_WAR
-	if (ch->GetWarMap()) {
+	if (ecs::SocialSystem::GetWarMap(ch->GetEntityHandle())) {
 		if (ch->IsHorseRiding()) {
 			ch->StopRiding();
 			ch->HorseSummon(false);

@@ -985,12 +985,9 @@ public:
 	void			SetGuild(CGuild* pGuild);
 	CGuild* GetGuild() const { return m_pGuild; }
 
-	void			SetWarMap(CWarMap* pWarMap);
-	CWarMap* GetWarMap() const { return m_pWarMap; }
 
 protected:
 	CGuild* m_pGuild;
-	CWarMap* m_pWarMap;
 
 	////////////////////////////////////////////////////////////////////////////////////////
 	// Item related
@@ -1165,7 +1162,6 @@ protected:
 #ifdef KASMIR_PAKET_SYSTEM
 	uint8_t			m_bKasmirPaketBaslik;
 #endif
-	std::string		m_stShopSign;
 	// End of shop
 
 
@@ -1634,11 +1630,8 @@ public:
 	void				SetMarryPartner(entt::entity character);
 	int					GetMarriageBonus(uint32_t dwItemVnum, bool bSum = true);
 
-	void				SetWeddingMap(marriage::WeddingMap* pMap);
-	marriage::WeddingMap* GetWeddingMap() const { return m_pWeddingMap; }
 
 private:
-	marriage::WeddingMap* m_pWeddingMap;
 	LPCHARACTER			m_pkChrMarried;
 
 	// Warp Character

@@ -2849,28 +2849,6 @@ namespace ecs::PlayerRuntime {
 
 } // namespace ecs::PlayerRuntime
 
-void CHARACTER::SetWarMap(CWarMap* pWarMap)
-{
-    if (m_pWarMap)
-        m_pWarMap->DecMember(this);
-
-    m_pWarMap = pWarMap;
-
-    if (m_pWarMap)
-        m_pWarMap->IncMember(this);
-}
-
-void CHARACTER::SetWeddingMap(marriage::WeddingMap* pMap)
-{
-    if (m_pWeddingMap)
-        m_pWeddingMap->DecMember(this);
-
-    m_pWeddingMap = pMap;
-
-    if (m_pWeddingMap)
-        m_pWeddingMap->IncMember(this);
-}
-
 #ifdef ENABLE_SORT_INVEN
 void CHARACTER::EditMyInven()
 {
@@ -4338,12 +4316,15 @@ void CHARACTER::OpenMyShop(const char* c_pszSign, TShopItemTable* pTable, uint8_
     char szSign[SHOP_SIGN_MAX_LEN + 1];
     strlcpy(szSign, c_pszSign, sizeof(szSign));
 
-    m_stShopSign = szSign;
+    // The sign the viewers are told about lives in ShopState; nothing wrote it
+    // there, so EntityNetworkDispatch never had one to send.
+    auto& shopState = g_registry.get_or_emplace<ecs::ShopState>(GetEntityHandle());
+    shopState.shopSign = szSign;
 
-    if (m_stShopSign.length() == 0)
+    if (shopState.shopSign.length() == 0)
         return;
 
-    if (CBanwordManager::instance().CheckString(m_stShopSign.c_str(), m_stShopSign.length()))
+    if (CBanwordManager::instance().CheckString(shopState.shopSign.c_str(), shopState.shopSign.length()))
     {
 #ifdef TEXTS_IMPROVEMENT
         ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 358, "");
@@ -4491,7 +4472,7 @@ void CHARACTER::CloseMyShop()
 {
     if (GetMyShop())
     {
-        m_stShopSign.clear();
+        g_registry.get_or_emplace<ecs::ShopState>(GetEntityHandle()).shopSign.clear();
         CShopManager::instance().DestroyPCShop(GetEntityHandle());
         m_pkMyShop = nullptr;
         if (const auto e = GetEntityHandle(); e != entt::null && g_registry.valid(e))
@@ -4641,8 +4622,6 @@ void CHARACTER::Initialize()
     m_dwMountVnum = 0;
     m_chRider = nullptr;
 
-    m_pWarMap = nullptr;
-    m_pWeddingMap = nullptr;
 #ifdef ENABLE_FAKE_SHOP_HEADER
     m_lastBeltMountCount = -999;
 #endif

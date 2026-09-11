@@ -9,6 +9,8 @@ class CGuild;
 class CWarMap;
 class CShop;
 
+namespace marriage { class WeddingMap; }
+
 namespace ecs::SocialSystem {
 
 int GetMarriageBonus(entt::entity e, uint32_t itemVnum, bool share = true);
@@ -28,6 +30,9 @@ CGuild* GetGuild(entt::entity e);
 void SendGuildName(entt::entity viewer, CGuild* pGuild);
 void SetDungeon(entt::entity e, LPDUNGEON dungeon);
 LPDUNGEON GetDungeon(entt::entity e);
+void SetWarMap(entt::entity e, CWarMap* warMap);
+void SetWeddingMap(entt::entity e, marriage::WeddingMap* map);
+marriage::WeddingMap* GetWeddingMap(entt::entity e);
 CWarMap* GetWarMap(entt::entity e);
 bool HasExchange(entt::entity e);
 CShop* GetShop(entt::entity e);
