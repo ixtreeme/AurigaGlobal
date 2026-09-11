@@ -466,7 +466,7 @@ void SummonHorse(entt::entity rider, bool bSummon, bool bFromFar, uint32_t dwVnu
 			chHorse->SetNowWalking(false);
 			const entt::entity horseEntity = chHorse->GetEntityHandle();
 			float fx, fy;
-			ecs::MovementSystem::SetRotation(chHorse->GetEntityHandle(), GetDegreeFromPositionXY(
+			ecs::MovementSystem::SetRotation(horseEntity, GetDegreeFromPositionXY(
 				ecs::PlayerRuntime::GetX(horseEntity),
 				ecs::PlayerRuntime::GetY(horseEntity), ecs::PlayerRuntime::GetX(rider), ecs::PlayerRuntime::GetY(rider)) + 180);
 			GetDeltaByDegree(chHorse->GetRotation(), 3500, &fx, &fy);

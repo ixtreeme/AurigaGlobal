@@ -935,7 +935,7 @@ namespace {
             if (m_bEmpire && ecs::PlayerRuntime::GetEmpire(character) && m_bEmpire != ecs::PlayerRuntime::GetEmpire(character))
                 return;
 
-            if (ecs::PlayerRuntime::IsHack(pkChr->GetEntityHandle()))
+            if (ecs::PlayerRuntime::IsHack(character))
                 return;
 
             if (!pkChr->CanHandleItem(false, true))
@@ -1790,8 +1790,8 @@ EVENTFUNC(save_event)
 	LOG_TRACE("SAVE_EVENT: {}", ecs::PlayerRuntime::GetName(saveEntity).data());
 	if (saveEntity != entt::null)
 		g_dispatcher.trigger(ecs::EvCharSaved { saveEntity });
-	ecs::SessionSystem::Save(ch->GetEntityHandle());
-	ecs::SessionSystem::FlushDelayedSaveItem(ch->GetEntityHandle());
+	ecs::SessionSystem::Save(saveEntity);
+	ecs::SessionSystem::FlushDelayedSaveItem(saveEntity);
 	return (save_event_second_cycle);
 }
 
@@ -1963,7 +1963,7 @@ EVENTFUNC(recovery_event)
 			if (target) {
 				if (target->GetFlag("floor") == 5) {
 					CombatSystem::DistributeSP(character, character);
-					if (ecs::PointSystem::GetMaxHP(character) <= ecs::PlayerRuntime::GetHP(ch->GetEntityHandle()))
+					if (ecs::PointSystem::GetMaxHP(character) <= ecs::PlayerRuntime::GetHP(character))
 						return PASSES_PER_SEC(3);
 
 					int iPercent = 0;
@@ -1987,7 +1987,7 @@ EVENTFUNC(recovery_event)
 			if (target) {
 				if (target->GetFlag("floor") == 1) {
 					CombatSystem::DistributeSP(character, character);
-					if (ecs::PointSystem::GetMaxHP(character) <= ecs::PlayerRuntime::GetHP(ch->GetEntityHandle()))
+					if (ecs::PointSystem::GetMaxHP(character) <= ecs::PlayerRuntime::GetHP(character))
 						return PASSES_PER_SEC(3);
 
 					int iPercent = 0;
@@ -2016,9 +2016,9 @@ EVENTFUNC(recovery_event)
 			ecs::PointSystem::Change(character, POINT_HP, hpGain);
 		}
 
-		if (ecs::PlayerRuntime::GetHP(ch->GetEntityHandle()) >= ecs::PointSystem::GetMaxHP(character))
+		if (ecs::PlayerRuntime::GetHP(character) >= ecs::PointSystem::GetMaxHP(character))
 		{
-			ecs::PlayerRuntime::SetCharEvent(ch->GetEntityHandle(), ecs::PlayerRuntime::CharEvent::Recovery, nullptr);
+			ecs::PlayerRuntime::SetCharEvent(character, ecs::PlayerRuntime::CharEvent::Recovery, nullptr);
 			return 0;
 		}
 
@@ -2026,8 +2026,8 @@ EVENTFUNC(recovery_event)
 	}
 	else
 	{
-		CombatSystem::CheckTarget(ch->GetEntityHandle());
-		CombatSystem::UpdateKillerMode(ch->GetEntityHandle());
+		CombatSystem::CheckTarget(character);
+		CombatSystem::UpdateKillerMode(character);
 
 		if (AffectSystem::IsAffectFlag(character, AFF_POISON) == true)
 		{
@@ -2037,7 +2037,7 @@ EVENTFUNC(recovery_event)
 
 		CombatSystem::DistributeSP(character, character);
 
-		if (ecs::PointSystem::GetMaxHP(character) <= ecs::PlayerRuntime::GetHP(ch->GetEntityHandle()))
+		if (ecs::PointSystem::GetMaxHP(character) <= ecs::PlayerRuntime::GetHP(character))
 			return PASSES_PER_SEC(3);
 
 		int iPercent = 0;

@@ -336,7 +336,7 @@ int64_t CShop::Buy(entt::entity ch, uint8_t pos
 #endif
 	else
 	{
-		iEmptyPos = InventorySystem::GetEmptyInventory(inventory->GetEntityHandle(), ItemSystem::GetItemSize(itemEntity));
+		iEmptyPos = InventorySystem::GetEmptyInventory(ch, ItemSystem::GetItemSize(itemEntity));
 	}
 
 	if (iEmptyPos < 0)

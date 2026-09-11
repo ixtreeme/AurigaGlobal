@@ -511,7 +511,7 @@ ACMD(do_change_channel)
 	if (!ch)
 		return;
 
-	if (ecs::PlayerRuntime::IsWarping(ch->GetEntityHandle()))
+	if (ecs::PlayerRuntime::IsWarping(character))
 	{
 		return;
 	}
@@ -773,7 +773,7 @@ ACMD(do_restart)
 		return;
 	}
 
-	if (ecs::PlayerRuntime::IsHack(ch->GetEntityHandle()))
+	if (ecs::PlayerRuntime::IsHack(character))
 	{
 		if (subcmd == SCMD_RESTART_TOWN)
 		{
@@ -816,9 +816,9 @@ ACMD(do_restart)
 							ecs::MovementSystem::ExitToSavedLocation(character);
 						}
 
-						ecs::PointSystem::Change(character, POINT_HP, ecs::PointSystem::GetMaxHP(character) - ecs::PlayerRuntime::GetHP(ch->GetEntityHandle()));
+						ecs::PointSystem::Change(character, POINT_HP, ecs::PointSystem::GetMaxHP(character) - ecs::PlayerRuntime::GetHP(character));
 						ecs::PointSystem::Change(character, POINT_SP, ecs::PointSystem::GetMaxSP(character) - ecs::PlayerRuntime::GetSP(character));
-						CombatSystem::ReviveInvisible(ch->GetEntityHandle(), 5);
+						CombatSystem::ReviveInvisible(character, 5);
 #ifdef ENABLE_MOUNT_COSTUME_SYSTEM
 						ch->CheckMount();
 #endif
@@ -829,14 +829,14 @@ ACMD(do_restart)
 					{
 						LOG_INFO("do_restart: restart here");
 						ch->RestartAtSamePos();
-						ecs::PointSystem::Change(character, POINT_HP, ecs::PointSystem::GetMaxHP(character) - ecs::PlayerRuntime::GetHP(ch->GetEntityHandle()));
+						ecs::PointSystem::Change(character, POINT_HP, ecs::PointSystem::GetMaxHP(character) - ecs::PlayerRuntime::GetHP(character));
 						ecs::PointSystem::Change(character, POINT_SP, ecs::PointSystem::GetMaxSP(character) - ecs::PlayerRuntime::GetSP(character));
-						CombatSystem::ReviveInvisible(ch->GetEntityHandle(), 5);
+						CombatSystem::ReviveInvisible(character, 5);
 #ifdef ENABLE_MOUNT_COSTUME_SYSTEM
 						ch->CheckMount();
 #endif
 #ifdef ENABLE_SKILLS_BUFF_ALTERNATIVE
-						AffectSystem::LoadAffectSkills(ch->GetEntityHandle());
+						AffectSystem::LoadAffectSkills(character);
 #endif
 					}
 					break;
@@ -1413,7 +1413,7 @@ ACMD(do_restart)
 					}
 				}
 
-				ecs::PointSystem::Change(character, POINT_HP, ecs::PointSystem::GetMaxHP(character) - ecs::PlayerRuntime::GetHP(ch->GetEntityHandle()));
+				ecs::PointSystem::Change(character, POINT_HP, ecs::PointSystem::GetMaxHP(character) - ecs::PlayerRuntime::GetHP(character));
 				ecs::PointSystem::Change(character, POINT_SP, ecs::PointSystem::GetMaxSP(character) - ecs::PlayerRuntime::GetSP(character));
 				CombatSystem::DeathPenalty(character, 1);
 				if (showed)
@@ -1422,7 +1422,7 @@ ACMD(do_restart)
 					ch->CheckMount();
 #endif
 #ifdef ENABLE_SKILLS_BUFF_ALTERNATIVE
-					AffectSystem::LoadAffectSkills(ch->GetEntityHandle());
+					AffectSystem::LoadAffectSkills(character);
 #endif
 				}
 			}
@@ -1433,18 +1433,18 @@ ACMD(do_restart)
 
 				ch->RestartAtSamePos();
 #ifdef ENABLE_REVIVE_WITH_HALF_HP_IF_MONSTER_KILLED_YOU
-				ecs::PointSystem::Change(character, POINT_HP, CombatSystem::GetDeadByMonster(character) ? (ecs::PointSystem::GetMaxHP(character) - ecs::PlayerRuntime::GetHP(ch->GetEntityHandle())) / 2 : 50 - ecs::PlayerRuntime::GetHP(ch->GetEntityHandle()));
+				ecs::PointSystem::Change(character, POINT_HP, CombatSystem::GetDeadByMonster(character) ? (ecs::PointSystem::GetMaxHP(character) - ecs::PlayerRuntime::GetHP(character)) / 2 : 50 - ecs::PlayerRuntime::GetHP(character));
 #else
-				ecs::PointSystem::Change(character, POINT_HP, 50 - ecs::PlayerRuntime::GetHP(ch->GetEntityHandle()));
+				ecs::PointSystem::Change(character, POINT_HP, 50 - ecs::PlayerRuntime::GetHP(character));
 #endif
 				ecs::PointSystem::Change(character, POINT_SP, ecs::PointSystem::GetMaxSP(character) - ecs::PlayerRuntime::GetSP(character));
 				CombatSystem::DeathPenalty(character, 0);
-				CombatSystem::ReviveInvisible(ch->GetEntityHandle(), 5);
+				CombatSystem::ReviveInvisible(character, 5);
 #ifdef ENABLE_MOUNT_COSTUME_SYSTEM
 				ch->CheckMount();
 #endif
 #ifdef ENABLE_SKILLS_BUFF_ALTERNATIVE
-				AffectSystem::LoadAffectSkills(ch->GetEntityHandle());
+				AffectSystem::LoadAffectSkills(character);
 #endif
 			}
 			break;
@@ -2019,7 +2019,7 @@ ACMD(do_skillup)
 ACMD(do_safebox_close)
 {
 	LPCHARACTER ch = ecs::LegacyCharOf(character);
-	ecs::SessionSystem::CloseSafebox(ch->GetEntityHandle());
+	ecs::SessionSystem::CloseSafebox(character);
 }
 
 //
@@ -2030,7 +2030,7 @@ ACMD(do_safebox_password)
 	LPCHARACTER ch = ecs::LegacyCharOf(character);
 	char arg1[256];
 	one_argument(argument, arg1, sizeof(arg1));
-	ecs::SessionSystem::ReqSafeboxLoad(ch->GetEntityHandle(), arg1);
+	ecs::SessionSystem::ReqSafeboxLoad(character, arg1);
 }
 
 ACMD(do_safebox_change_password)
@@ -2081,7 +2081,7 @@ ACMD(do_mall_password)
 
 	int iPulse = thecore_pulse();
 
-	if (ecs::SessionSystem::GetMall(ch->GetEntityHandle()))
+	if (ecs::SessionSystem::GetMall(character))
 	{
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 189, "");
@@ -2110,11 +2110,11 @@ ACMD(do_mall_password)
 ACMD(do_mall_close)
 {
 	LPCHARACTER ch = ecs::LegacyCharOf(character);
-	if (ecs::SessionSystem::GetMall(ch->GetEntityHandle()))
+	if (ecs::SessionSystem::GetMall(character))
 	{
 		ch->SetMallLoadTime(thecore_pulse());
-		ecs::SessionSystem::CloseMall(ch->GetEntityHandle());
-		ecs::SessionSystem::Save(ch->GetEntityHandle());
+		ecs::SessionSystem::CloseMall(character);
+		ecs::SessionSystem::Save(character);
 	}
 }
 
@@ -3663,7 +3663,7 @@ ACMD(do_ride)
 //
 //		if (ItemSystem::GetItemType((item ? item->GetEntityHandle() : entt::null)) == ITEM_COSTUME && ItemSystem::GetItemSubType((item ? item->GetEntityHandle() : entt::null)) == COSTUME_MOUNT)
 //		{
-//			ItemSystem::UseItem(ch->GetEntityHandle(), TItemPos(INVENTORY, i)); // belt inventory is INVENTORY window_type
+//			ItemSystem::UseItem(character, TItemPos(INVENTORY, i)); // belt inventory is INVENTORY window_type
 //			return;
 //		}
 	//}

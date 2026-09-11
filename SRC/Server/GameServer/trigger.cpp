@@ -244,7 +244,7 @@ int OnClickStoneCraft(TRIGGERPARAM)
 	if (ecs::SocialSystem::HasExchange(causer)
 		|| ecs::SocialSystem::GetMyShop(causer)
 		|| ecs::SocialSystem::GetShopOwner(causer) != entt::null
-		|| (pkCauser && (ecs::SessionSystem::IsSafeboxOpen(pkCauser->GetEntityHandle()) || pkCauser->IsCubeOpen())))
+		|| (pkCauser && (ecs::SessionSystem::IsSafeboxOpen(causer) || pkCauser->IsCubeOpen())))
 		return 0;
 
 	ecs::PlayerRuntime::SetQuestNPCID(causer, ecs::PlayerRuntime::GetPacketVID(ch));

@@ -949,7 +949,7 @@ void CParty::SendMessage(entt::entity character, uint8_t bMsg, uint32_t dwArg1, 
 		case PM_ATTACKED_BY:	// ���� �޾���, �������� ������ ��û
 			{
 				// ������ ���� ��
-				const entt::entity victimEntity = CombatSystem::GetVictim(ch->GetEntityHandle());
+				const entt::entity victimEntity = CombatSystem::GetVictim(character);
 
 				if (victimEntity == entt::null)
 					return;

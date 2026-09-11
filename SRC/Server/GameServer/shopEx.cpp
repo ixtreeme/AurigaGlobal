@@ -205,7 +205,7 @@ int64_t CShopEx::Buy(entt::entity ch, uint8_t pos)
 #endif
 	else
 	{
-		iEmptyPos = InventorySystem::GetEmptyInventory(inventory->GetEntityHandle(), ItemSystem::GetItemSize(item));
+		iEmptyPos = InventorySystem::GetEmptyInventory(ch, ItemSystem::GetItemSize(item));
 	}
 
 	if (iEmptyPos < 0)
@@ -252,7 +252,7 @@ int64_t CShopEx::Buy(entt::entity ch, uint8_t pos)
 
 #ifdef ENABLE_FLUSH_CACHE_FEATURE // @warme006
 	{
-		ecs::SessionSystem::SaveReal(inventory->GetEntityHandle());
+		ecs::SessionSystem::SaveReal(ch);
 		db_clientdesc->DBPacketHeader(HEADER_GD_FLUSH_CACHE, 0, sizeof(uint32_t));
 		uint32_t pid = (ecs::PlayerRuntime::GetPlayerID(ch));
 		db_clientdesc->Packet(&pid, sizeof(uint32_t));

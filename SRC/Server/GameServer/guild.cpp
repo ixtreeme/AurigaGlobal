@@ -1694,7 +1694,7 @@ namespace
 #endif
 
 			if (ecs::PointSystem::GetGold(character) + iRewardR < 0)
-				ecs::PlayerRuntime::SetGold(ch->GetEntityHandle(), 0);
+				ecs::PlayerRuntime::SetGold(character, 0);
 			else
 				ecs::PointSystem::Change(character, POINT_GOLD, iRewardR);
 		}

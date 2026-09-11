@@ -1922,9 +1922,9 @@ ACMD(do_set)
 ACMD(do_reset)
 {
 	LPCHARACTER ch = ecs::LegacyCharOf(character);
-	ecs::PointSystem::Change(character, POINT_HP, ecs::PointSystem::GetMaxHP(character) - ecs::PlayerRuntime::GetHP(ch->GetEntityHandle()));
+	ecs::PointSystem::Change(character, POINT_HP, ecs::PointSystem::GetMaxHP(character) - ecs::PlayerRuntime::GetHP(character));
 	ecs::PointSystem::Change(character, POINT_SP, ecs::PointSystem::GetMaxSP(character) - ecs::PlayerRuntime::GetSP(character));
-	ecs::SessionSystem::Save(ch->GetEntityHandle());
+	ecs::SessionSystem::Save(character);
 }
 
 ACMD(do_advance)
@@ -1985,7 +1985,7 @@ ACMD(do_safebox_size)
 		size = 0;
 
 	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "Safebox size set to %d", size);
-	ecs::SessionSystem::ChangeSafeboxSize(ch->GetEntityHandle(), size);
+	ecs::SessionSystem::ChangeSafeboxSize(character, size);
 }
 
 ACMD(do_makeguild)

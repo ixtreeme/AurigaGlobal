@@ -386,7 +386,7 @@ ACMD(do_petenchant)
 	if ((iArg < 0) || (iArg > 2))
 		return;
 
-	ecs::PlayerRuntime::SetPetEnchant(ch->GetEntityHandle(), iArg);
+	ecs::PlayerRuntime::SetPetEnchant(character, iArg);
 }
 #endif
 
@@ -892,12 +892,12 @@ void interpret_command(entt::entity character, const char * argument, uint64_t l
 #ifdef ENABLE_ANTI_CMD_FLOOD
 	if (ch && !ch->IsGM())
 	{
-		if (thecore_pulse() > ecs::PlayerRuntime::GetCmdAntiFloodPulse(ch->GetEntityHandle()) + PASSES_PER_SEC(1))
+		if (thecore_pulse() > ecs::PlayerRuntime::GetCmdAntiFloodPulse(character) + PASSES_PER_SEC(1))
 		{
-			ecs::PlayerRuntime::SetCmdAntiFloodCount(ch->GetEntityHandle(), 0);
-			ecs::PlayerRuntime::SetCmdAntiFloodPulse(ch->GetEntityHandle(), thecore_pulse());
+			ecs::PlayerRuntime::SetCmdAntiFloodCount(character, 0);
+			ecs::PlayerRuntime::SetCmdAntiFloodPulse(character, thecore_pulse());
 		}
-		if (ecs::PlayerRuntime::IncreaseCmdAntiFloodCount(ch->GetEntityHandle())>=50)
+		if (ecs::PlayerRuntime::IncreaseCmdAntiFloodCount(character)>=50)
 		{
 			ecs::PlayerRuntime::GetDesc(character)->DelayedDisconnect(0);
 			return;

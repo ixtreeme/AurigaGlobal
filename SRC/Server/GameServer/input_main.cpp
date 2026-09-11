@@ -1478,7 +1478,7 @@ void CInputMain::ItemUse(entt::entity character, const char * data)
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
 	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "input_main.cpp::  CInputMain::ItemUse(");//INGAME_DEBUG_RAZOR93
 #endif
-	ItemSystem::UseItem(ch->GetEntityHandle(), ((struct command_item_use *) data)->Cell);
+	ItemSystem::UseItem(character, ((struct command_item_use *) data)->Cell);
 }
 
 void CInputMain::ItemToItem(entt::entity character, const char * pcData)
@@ -1492,7 +1492,7 @@ void CInputMain::ItemToItem(entt::entity character, const char * pcData)
 #endif
 	TPacketCGItemUseToItem * p = (TPacketCGItemUseToItem *) pcData;
 	if (ch)
-		ItemSystem::UseItem(ch->GetEntityHandle(), p->Cell, p->TargetCell);
+		ItemSystem::UseItem(character, p->Cell, p->TargetCell);
 }
 
 void CInputMain::ItemDrop(entt::entity character, const char * data)
@@ -2626,7 +2626,7 @@ void CInputMain::Warp(entt::entity character, const char * pcData)
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
 	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::Warp");//INGAME_DEBUG_RAZOR93
 #endif
-	ecs::MovementSystem::WarpEnd(ch->GetEntityHandle());
+	ecs::MovementSystem::WarpEnd(character);
 }
 
 
@@ -3207,7 +3207,7 @@ void CInputMain::MapTeleporter(entt::entity character, TPacketCGMapTeleporter* p
 #ifdef ENABLE_INGAME_DEBUG_RAZOR93
 	ecs::ChatSystem::Send(character, CHAT_TYPE_INFO, "input_main.cpp::void CInputMain::MapTeleporter");//INGAME_DEBUG_RAZOR93
 #endif
-	if (ecs::PlayerRuntime::IsHack(ch->GetEntityHandle()) || ecs::SocialSystem::HasExchange(character) || ecs::SessionSystem::IsSafeboxOpen(ch->GetEntityHandle()) || ch->IsCubeOpen() || ch->GetShop() || ch->GetMyShop()
+	if (ecs::PlayerRuntime::IsHack(character) || ecs::SocialSystem::HasExchange(character) || ecs::SessionSystem::IsSafeboxOpen(character) || ch->IsCubeOpen() || ch->GetShop() || ch->GetMyShop()
 #ifdef ENABLE_ACCE_SYSTEM
 		|| ch->IsAcceOpen()
 #endif
@@ -4292,7 +4292,7 @@ int CInputMain::MyShop(entt::entity character, const char * c_pData, size_t uiBy
 	if (CombatSystem::IsStun(character) || CombatSystem::IsDead(character))
 		return (iExtraLen);
 
-	if (ecs::SocialSystem::HasExchange(character) || ecs::SessionSystem::IsSafeboxOpen(ch->GetEntityHandle()) || ch->GetShopOwner() || ch->IsCubeOpen())
+	if (ecs::SocialSystem::HasExchange(character) || ecs::SessionSystem::IsSafeboxOpen(character) || ch->GetShopOwner() || ch->IsCubeOpen())
 	{
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 292, "");
@@ -4336,7 +4336,7 @@ void CInputMain::Refine(entt::entity character, const char* c_pData)
 	}
 #endif
 
-	if (ecs::SocialSystem::HasExchange(character) || ecs::SessionSystem::IsSafeboxOpen(ch->GetEntityHandle()) || ch->GetShopOwner() || ch->GetMyShop() || ch->IsCubeOpen())
+	if (ecs::SocialSystem::HasExchange(character) || ecs::SessionSystem::IsSafeboxOpen(character) || ch->GetShopOwner() || ch->GetMyShop() || ch->IsCubeOpen())
 	{
 #ifdef TEXTS_IMPROVEMENT
 		ecs::ChatSystem::SendNew(character, CHAT_TYPE_INFO, 502, "");

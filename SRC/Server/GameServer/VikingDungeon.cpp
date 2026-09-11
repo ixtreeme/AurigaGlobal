@@ -359,14 +359,14 @@ namespace
 
         ForEachPcOnMap(mapIndex, [&](entt::entity ch){
             LPCHARACTER pkCh = ecs::LegacyCharOf(ch);
-            if (!pkCh || ecs::PlayerRuntime::GetHP(pkCh->GetEntityHandle()) <= 1)
+            if (!pkCh || ecs::PlayerRuntime::GetHP(ch) <= 1)
                 return;
 
-            int64_t dmg = (ecs::PlayerRuntime::GetHP(pkCh->GetEntityHandle()) * pct) / 100;
+            int64_t dmg = (ecs::PlayerRuntime::GetHP(ch) * pct) / 100;
             if (dmg < 1)
                 dmg = 1;
-            if (dmg >= ecs::PlayerRuntime::GetHP(pkCh->GetEntityHandle()))
-                dmg = ecs::PlayerRuntime::GetHP(pkCh->GetEntityHandle()) - 1;
+            if (dmg >= ecs::PlayerRuntime::GetHP(ch))
+                dmg = ecs::PlayerRuntime::GetHP(ch) - 1;
             if (dmg > 0)
                 ecs::PointSystem::Change(ch, POINT_HP, -dmg);
         });

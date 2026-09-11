@@ -704,7 +704,7 @@ void CHARACTER::PartyInvite(entt::entity invitee)
         return;
     }
 
-    else if ((ecs::PlayerRuntime::GetDuelOption(pkInvitee->GetEntityHandle(), "BlockParty")))
+    else if ((ecs::PlayerRuntime::GetDuelOption(invitee, "BlockParty")))
     {
 #ifdef TEXTS_IMPROVEMENT
         ecs::ChatSystem::SendNew(GetEntityHandle(), CHAT_TYPE_INFO, 517, "%s", ecs::PlayerRuntime::GetName(invitee).data());

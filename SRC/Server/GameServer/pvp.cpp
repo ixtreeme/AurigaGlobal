@@ -485,14 +485,14 @@ bool CPVP::Agree(uint32_t dwPID)
 
 		if (ecs::QuestSystem::GetFlag(characterA, szTableStaticPvP[9]) != 1 && ecs::QuestSystem::GetFlag(characterB, szTableStaticPvP[9]) != 1)
 		{
-			ecs::PlayerRuntime::SetDuelOption(chA->GetEntityHandle(), "IsFight", 1);
-			ecs::PlayerRuntime::SetDuelOption(chB->GetEntityHandle(), "IsFight", 1);
+			ecs::PlayerRuntime::SetDuelOption(characterA, "IsFight", 1);
+			ecs::PlayerRuntime::SetDuelOption(characterB, "IsFight", 1);
 		}
 
 		{
 			TPVPDuelEventInfo* info = AllocEventInfo<TPVPDuelEventInfo>();
-			info->ch = chA->GetEntityHandle();
-			info->victim = chB->GetEntityHandle();
+			info->ch = characterA;
+			info->victim = characterB;
 			info->state = 0;
 			info->pvp = this;
 
@@ -501,8 +501,8 @@ bool CPVP::Agree(uint32_t dwPID)
 
 		{
 			TPVPCheckDisconnect* info = AllocEventInfo<TPVPCheckDisconnect>();
-			info->ch = chA->GetEntityHandle();
-			info->victim = chB->GetEntityHandle();
+			info->ch = characterA;
+			info->victim = characterB;
 
 			m_pCheckDisconnect = event_create(pvp_check_disconnect, info, PASSES_PER_SEC(1));
 		}
@@ -933,8 +933,8 @@ bool CPVPManager::CanAttack(entt::entity character, entt::entity victim, bool bI
 	{
 		uint8_t bMapEmpire = SECTREE_MANAGER::instance().GetEmpireFromMapIndex(ecs::PlayerRuntime::GetMapIndex(character));
 
-		if ( ((CombatSystem::GetPKMode(pkChr->GetEntityHandle()) == PK_MODE_PROTECT) && ((ecs::PlayerRuntime::GetEmpire(character)) == bMapEmpire)) ||
-				((CombatSystem::GetPKMode(pkVictim->GetEntityHandle()) == PK_MODE_PROTECT) && ((ecs::PlayerRuntime::GetEmpire(victim)) == bMapEmpire)) )
+		if ( ((CombatSystem::GetPKMode(character) == PK_MODE_PROTECT) && ((ecs::PlayerRuntime::GetEmpire(character)) == bMapEmpire)) ||
+				((CombatSystem::GetPKMode(victim) == PK_MODE_PROTECT) && ((ecs::PlayerRuntime::GetEmpire(victim)) == bMapEmpire)) )
 		{
 			return false;
 		}
@@ -944,7 +944,7 @@ bool CPVPManager::CanAttack(entt::entity character, entt::entity victim, bool bI
 	{
 		// @warme005
 		{
-			if ( CombatSystem::GetPKMode(pkChr->GetEntityHandle()) == PK_MODE_PROTECT || CombatSystem::GetPKMode(pkVictim->GetEntityHandle()) == PK_MODE_PROTECT )
+			if ( CombatSystem::GetPKMode(character) == PK_MODE_PROTECT || CombatSystem::GetPKMode(victim) == PK_MODE_PROTECT )
 			{
 				return false;
 
@@ -966,13 +966,13 @@ bool CPVPManager::CanAttack(entt::entity character, entt::entity victim, bool bI
 	}
 	else
 	{
-		if (CombatSystem::IsKillerMode(pkVictim->GetEntityHandle()))
+		if (CombatSystem::IsKillerMode(victim))
 		{
 			return true;
 		}
 
 
-		switch (CombatSystem::GetPKMode(pkChr->GetEntityHandle()))
+		switch (CombatSystem::GetPKMode(character))
 		{
 			case PK_MODE_PEACE:
 			case PK_MODE_REVENGE:
@@ -980,14 +980,14 @@ bool CPVPManager::CanAttack(entt::entity character, entt::entity victim, bool bI
 				if (ecs::SocialSystem::GetGuild(victim) && ecs::SocialSystem::GetGuild(victim) == ecs::SocialSystem::GetGuild(character))
 					break;
 
-				/*if (CombatSystem::GetPKMode(pkChr->GetEntityHandle()) == PK_MODE_REVENGE)
+				/*if (CombatSystem::GetPKMode(character) == PK_MODE_REVENGE)
 				{
-					if (CombatSystem::GetAlignment(pkChr->GetEntityHandle()) < 0 && CombatSystem::GetAlignment(pkVictim->GetEntityHandle()) >= 0)
+					if (CombatSystem::GetAlignment(character) < 0 && CombatSystem::GetAlignment(victim) >= 0)
 					{
-						CombatSystem::SetKillerMode(pkChr->GetEntityHandle(), true);
+						CombatSystem::SetKillerMode(character, true);
 						return true;
 					}
-					else if (CombatSystem::GetAlignment(pkChr->GetEntityHandle()) >= 0 && CombatSystem::GetAlignment(pkVictim->GetEntityHandle()) < 0)
+					else if (CombatSystem::GetAlignment(character) >= 0 && CombatSystem::GetAlignment(victim) < 0)
 						return true;
 				}
 				break;*/
@@ -996,14 +996,14 @@ bool CPVPManager::CanAttack(entt::entity character, entt::entity victim, bool bI
 				// Same implementation from PK_MODE_FREE except for attacking same guild
 				if (!ecs::SocialSystem::GetGuild(character) || (ecs::SocialSystem::GetGuild(victim) != ecs::SocialSystem::GetGuild(character)))
 				{
-					CombatSystem::SetKillerMode(pkChr->GetEntityHandle(), true);
+					CombatSystem::SetKillerMode(character, true);
 					return true;
 				}
 				break;
 
 			case PK_MODE_FREE:
 
-				CombatSystem::SetKillerMode(pkChr->GetEntityHandle(), true);
+				CombatSystem::SetKillerMode(character, true);
 
 				return true;
 				break;
@@ -1016,7 +1016,7 @@ bool CPVPManager::CanAttack(entt::entity character, entt::entity victim, bool bI
 	if (!pkPVP || !pkPVP->IsFight())
 	{
 		if (beKillerMode)
-			CombatSystem::SetKillerMode(pkChr->GetEntityHandle(), true);
+			CombatSystem::SetKillerMode(character, true);
 
 		return (beKillerMode);
 	}

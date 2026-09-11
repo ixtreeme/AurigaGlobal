@@ -4738,7 +4738,7 @@ void CHARACTER::OnClick(entt::entity causer)
         {
             if (GetMyShop())
             {
-                if (CombatSystem::IsDead(pkCauser->GetEntityHandle()) == true)
+                if (CombatSystem::IsDead(causer) == true)
                     return;
 
                 if (pkCauser == this)
@@ -4763,7 +4763,7 @@ void CHARACTER::OnClick(entt::entity causer)
                 }
                 else
                 {
-                    if ((ecs::SocialSystem::HasExchange(causer) || ecs::SessionSystem::IsSafeboxOpen(pkCauser->GetEntityHandle()) || pkCauser->GetMyShop() || pkCauser->GetShopOwner()) || pkCauser->IsCubeOpen())
+                    if ((ecs::SocialSystem::HasExchange(causer) || ecs::SessionSystem::IsSafeboxOpen(causer) || pkCauser->GetMyShop() || pkCauser->GetShopOwner()) || pkCauser->IsCubeOpen())
                     {
 #ifdef TEXTS_IMPROVEMENT
                         ecs::ChatSystem::SendNew(causer, CHAT_TYPE_INFO, 291, "");

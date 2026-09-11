@@ -312,7 +312,7 @@ static void SyncItemFlagsComponent(LPITEM item)
     ecs::ItemFlags flags{};
     flags.flags = item->GetFlag();
     flags.exchanging = item->IsExchanging();
-    flags.skipSave = ItemSystem::GetItemSkipSave(item->GetEntityHandle());
+    flags.skipSave = ItemSystem::GetItemSkipSave(e);
     flags.isLocked = item->isLocked();
     g_registry.emplace_or_replace<ecs::ItemFlags>(e, flags);
 }
@@ -3150,7 +3150,7 @@ void CHARACTER::ReceiveItem(entt::entity fromEntity, LPITEM item)
 	if (CVikingDungeon::instance().OnNpcTakeItem(fromEntity, GetEntityHandle(), item))
 		return;
 	// LostCastle Dungeon: statue/totem item usage
-	//if (CLostCastleDungeon::instance().OnNpcTakeItem((from ? from->GetEntityHandle() : entt::null), GetEntityHandle(), item))
+	//if (CLostCastleDungeon::instance().OnNpcTakeItem(fromEntity, GetEntityHandle(), item))
 	//	return;
 #endif
 	const entt::entity itemEntity = item ? item->GetEntityHandle() : entt::null;
@@ -3248,7 +3248,7 @@ void CHARACTER::ReceiveItem(entt::entity fromEntity, LPITEM item)
 			)
 		{
 			from->SetRefineNPC(GetEntityHandle());
-			ItemSystem::RefineInformation(from->GetEntityHandle(), ItemSystem::GetItemCell(itemEntity), REFINE_TYPE_MONEY_ONLY);
+			ItemSystem::RefineInformation(fromEntity, ItemSystem::GetItemCell(itemEntity), REFINE_TYPE_MONEY_ONLY);
 		}
 #ifdef TEXTS_IMPROVEMENT
 		else {
@@ -3267,7 +3267,7 @@ void CHARACTER::ReceiveItem(entt::entity fromEntity, LPITEM item)
 		if (item->GetRefinedVnum())
 		{
 			from->SetRefineNPC(GetEntityHandle());
-			ItemSystem::RefineInformation(from->GetEntityHandle(), ItemSystem::GetItemCell(itemEntity), REFINE_TYPE_NORMAL);
+			ItemSystem::RefineInformation(fromEntity, ItemSystem::GetItemCell(itemEntity), REFINE_TYPE_NORMAL);
 		}
 #ifdef TEXTS_IMPROVEMENT
 		else {

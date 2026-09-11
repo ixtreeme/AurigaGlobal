@@ -209,7 +209,7 @@ entt::entity GetNearestVictim(entt::entity attacker, entt::entity from)
     float nearest = 99999.0f;
     entt::entity victim = entt::null;
 
-    for (const auto& [candidate, damage] : DamageLedgerOf(self->GetEntityHandle()).entries) {
+    for (const auto& [candidate, damage] : DamageLedgerOf(attacker).entries) {
         if (candidate == entt::null || !g_registry.valid(candidate))
             continue;
 
@@ -596,7 +596,7 @@ void ChangeVictimByAggro(entt::entity self, int newAggro, entt::entity newVictim
     entt::entity best = entt::null;
     int bestAggro = newAggro;
 
-    for (const auto& [candidate, battle] : DamageLedgerOf(owner->GetEntityHandle()).entries) {
+    for (const auto& [candidate, battle] : DamageLedgerOf(self).entries) {
         if (battle.aggro <= bestAggro)
             continue;
         if (candidate == entt::null || !g_registry.valid(candidate) || IsDead(candidate))
@@ -1231,13 +1231,13 @@ struct FuncAttractRanger
 				return;
 			if (CombatSystem::GetVictim(candidate) != entt::null && CombatSystem::GetVictim(candidate) != m_character)
 				return;
-			if (CombatSystem::GetMobAttackRange(ch->GetEntityHandle()) > 150)
+			if (CombatSystem::GetMobAttackRange(candidate) > 150)
 			{
-				int iNewRange = 150;//(int)(CombatSystem::GetMobAttackRange(ch->GetEntityHandle()) * 0.2);
+				int iNewRange = 150;//(int)(CombatSystem::GetMobAttackRange(candidate) * 0.2);
 				if (iNewRange < 150)
 					iNewRange = 150;
 
-				AffectSystem::AddAffect(candidate, AFFECT_BOW_DISTANCE, POINT_BOW_DISTANCE, iNewRange - CombatSystem::GetMobAttackRange(ch->GetEntityHandle()), AFF_NONE, 3 * 60, 0, false);
+				AffectSystem::AddAffect(candidate, AFFECT_BOW_DISTANCE, POINT_BOW_DISTANCE, iNewRange - CombatSystem::GetMobAttackRange(candidate), AFF_NONE, 3 * 60, 0, false);
 			}
 		}
 	}
@@ -3047,7 +3047,7 @@ void DistributeSP(entt::entity e, entt::entity killer, int iMethod)
 	}
 	else
 	{
-		if (ecs::PlayerRuntime::GetJob(killer) == JOB_SHAMAN || (ecs::PlayerRuntime::GetJob(pkKiller->GetEntityHandle()) == JOB_SURA && pkKiller->GetSkillGroup() == 2))
+		if (ecs::PlayerRuntime::GetJob(killer) == JOB_SHAMAN || (ecs::PlayerRuntime::GetJob(killer) == JOB_SURA && pkKiller->GetSkillGroup() == 2))
 		{
 			int iAmount;
 
@@ -3072,7 +3072,7 @@ void DistributeSP(entt::entity e, entt::entity killer, int iMethod)
 			else
 			{
 				//
-				if (ecs::PlayerRuntime::GetHP(pkKiller->GetEntityHandle()) < ecs::PointSystem::GetMaxHP(killer))
+				if (ecs::PlayerRuntime::GetHP(killer) < ecs::PointSystem::GetMaxHP(killer))
 					iAmount = 2 + (ecs::PointSystem::GetMaxSP(killer) / 100); //   á
 				else
 					iAmount = 9 + (ecs::PointSystem::GetMaxSP(killer) / 100); // ⺻
@@ -6050,7 +6050,7 @@ bool Damage(entt::entity victim, entt::entity attacker, int64_t dam, uint8_t dam
 			CombatSystem::SendDamagePacket(victim, attacker, dam, damageFlag);
 #ifdef LEADERBOARD_RAZOR93
 
-		if (pkAttacker && ecs::PlayerRuntime::IsPC(attacker) && CombatSystem::IsSkillHit(pkAttacker->GetEntityHandle()) && ecs::PlayerRuntime::IsPC(victim))
+		if (pkAttacker && ecs::PlayerRuntime::IsPC(attacker) && CombatSystem::IsSkillHit(attacker) && ecs::PlayerRuntime::IsPC(victim))
 		{
 			char szVictimEsc[CHARACTER_NAME_MAX_LEN * 2 + 1];
 			DBManager::instance().EscapeString(szVictimEsc, sizeof(szVictimEsc), ecs::PlayerRuntime::GetName(victim).data(),
@@ -6899,7 +6899,7 @@ EVENTFUNC(StunEvent)
 		g_registry.emplace_or_replace<ecs::DirtyTag>(e);
 		g_dispatcher.trigger(ecs::EvStunBegin { e, 3000u });
 	}
-	CombatSystem::Dead(ch->GetEntityHandle());
+	CombatSystem::Dead(e);
 	return 0;
 }
 

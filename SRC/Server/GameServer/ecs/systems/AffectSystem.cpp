@@ -1864,7 +1864,7 @@ EVENTFUNC(affect_event)
         AffectSystem::StopAffectEvent(entity);
         return 0;
     }
-    const bool repeat = AffectSystem::UpdateAffect(ch->GetEntityHandle());
+    const bool repeat = AffectSystem::UpdateAffect(entity);
     if (!matches())
         return 0;
     if (!repeat || !AffectState(entity)) {

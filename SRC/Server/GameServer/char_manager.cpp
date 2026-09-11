@@ -690,7 +690,7 @@ LPCHARACTER CHARACTER_MANAGER::SpawnMobRandomPosition(uint32_t dwVnum, int32_t l
 		if (ecs::PlayerRuntime::GetEmpire(character) == 0)
 			ch->SetEmpire(SECTREE_MANAGER::instance().GetEmpireFromMapIndex(lMapIndex));
 
-	ecs::MovementSystem::SetRotation(ch->GetEntityHandle(), number(0, 360));
+	ecs::MovementSystem::SetRotation(character, number(0, 360));
 
 	if (!ecs::MovementSystem::Show(character, lMapIndex, x, y, 0, false))
 	{

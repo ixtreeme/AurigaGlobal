@@ -2114,7 +2114,7 @@ void SetPolyVarForAttack(entt::entity character, CSkillProto * pkSk, entt::entit
 	{
 		auto* legacyCharacter = LegacyCharOf(character);
 		const int iWep = legacyCharacter
-			? number(CombatSystem::GetMobDamageMin(legacyCharacter->GetEntityHandle()), CombatSystem::GetMobDamageMax(legacyCharacter->GetEntityHandle()))
+			? number(CombatSystem::GetMobDamageMin(character), CombatSystem::GetMobDamageMax(character))
 			: 0;
 		pkSk->SetPointVar("wep", iWep);
 		pkSk->SetPointVar("mwep", iWep);
@@ -2223,7 +2223,7 @@ struct FuncSplashDamage
 		}
 
 		if (m_pkSk->bPointOn == POINT_MOV_SPEED)
-			m_pkSk->kPointPoly.SetVar("maxv", ecs::PointSystem::GetLimitPoint(pkChrVictim->GetEntityHandle(), POINT_MOV_SPEED));
+			m_pkSk->kPointPoly.SetVar("maxv", ecs::PointSystem::GetLimitPoint(victimEntity, POINT_MOV_SPEED));
 
 		m_pkSk->SetPointVar("maxhp", ecs::PointSystem::GetMaxHP(victimEntity));
 		m_pkSk->SetPointVar("maxsp", ecs::PointSystem::GetMaxSP(victimEntity));
@@ -2500,8 +2500,8 @@ struct FuncSplashDamage
 		if (IS_SET(m_pkSk->dwFlag, SKILL_FLAG_COMPUTE_MAGIC_DAMAGE))
 			dt = DAMAGE_TYPE_MAGIC;
 
-		if (CombatSystem::CanBeginFight(pkChrVictim->GetEntityHandle()))
-			CombatSystem::BeginFight(pkChrVictim->GetEntityHandle(), (m_pkChr ? m_pkChr->GetEntityHandle() : entt::null));
+		if (CombatSystem::CanBeginFight(victimEntity))
+			CombatSystem::BeginFight(victimEntity, (m_pkChr ? m_pkChr->GetEntityHandle() : entt::null));
 
 		if (m_pkSk->dwVnum == SKILL_CHAIN)
 			LOG_INFO("{} CHAIN INDEX {} DAM {} DT {}", ecs::PlayerRuntime::GetName(m_character).data(), m_pkChr->GetChainLightningIndex() - 1, iDam, static_cast<int>(dt));
@@ -2653,12 +2653,12 @@ struct FuncSplashDamage
 		}
 
 #ifdef ENABLE_SOUL_SYSTEM
-		iDam += m_pkChr->GetSoulItemDamage((pkChrVictim ? pkChrVictim->GetEntityHandle() : entt::null), iDam, BLUE_SOUL);
+		iDam += m_pkChr->GetSoulItemDamage(victimEntity, iDam, BLUE_SOUL);
 #endif
 
 
-		if (!CombatSystem::Damage(pkChrVictim->GetEntityHandle(), m_character, iDam, dt) &&
-			!CombatSystem::IsStun(pkChrVictim->GetEntityHandle()))
+		if (!CombatSystem::Damage(victimEntity, m_character, iDam, dt) &&
+			!CombatSystem::IsStun(victimEntity))
 		{
 
 			if (IS_SET(m_pkSk->dwFlag, SKILL_FLAG_REMOVE_GOOD_AFFECT))
@@ -2677,7 +2677,7 @@ struct FuncSplashDamage
 
 					if (number(1, 100) <= iAmount2)
 					{
-						AffectSystem::RemoveGoodAffects(pkChrVictim->GetEntityHandle());
+						AffectSystem::RemoveGoodAffects(victimEntity);
 						AffectSystem::AddAffect(victimEntity, m_pkSk->dwVnum, POINT_NONE, 0, AFF_PABEOP, iDur2, 0, true);
 					}
 				}
@@ -2712,18 +2712,18 @@ struct FuncSplashDamage
 
 					if (number(1, 100) <= iDur)
 					{
-						AffectSystem::ApplyFire(pkChrVictim->GetEntityHandle(), (m_pkChr ? m_pkChr->GetEntityHandle() : entt::null), iPct, 5);
+						AffectSystem::ApplyFire(victimEntity, (m_pkChr ? m_pkChr->GetEntityHandle() : entt::null), iPct, 5);
 					}
 				}
 				else if (IS_SET(m_pkSk->dwFlag, SKILL_FLAG_POISON))
 				{
 					if (number(1, 100) <= iPct)
-						AffectSystem::ApplyPoison(pkChrVictim->GetEntityHandle(), (m_pkChr ? m_pkChr->GetEntityHandle() : entt::null));
+						AffectSystem::ApplyPoison(victimEntity, (m_pkChr ? m_pkChr->GetEntityHandle() : entt::null));
 				}
 			}
 
 			if (IS_SET(m_pkSk->dwFlag, SKILL_FLAG_CRUSH | SKILL_FLAG_CRUSH_LONG) &&
-				!IS_SET(ecs::PlayerRuntime::GetAIFlag(pkChrVictim->GetEntityHandle()), AIFLAG_NOMOVE))
+				!IS_SET(ecs::PlayerRuntime::GetAIFlag(victimEntity), AIFLAG_NOMOVE))
 			{
 				float fCrushSlidingLength = 200;
 
@@ -4200,7 +4200,7 @@ EVENTFUNC(skill_muyoung_event)
 		// 2. Shoot!
 		if (f.GetVictim() != entt::null)
 		{
-			CombatSystem::CreateFly(ch->GetEntityHandle(), FLY_SKILL_MUYEONG, f.GetVictim());
+			CombatSystem::CreateFly(character, FLY_SKILL_MUYEONG, f.GetVictim());
 			ch->ComputeSkill(SKILL_MUYEONG, f.GetVictim());
 		}
 	}
@@ -4248,7 +4248,7 @@ EVENTFUNC(skill_gyeongGong_event)
 		return 0;
 	}
 
-	ch->ComputeGyeongGongSkill(SKILL_GYEONGGONG, (ch ? ch->GetEntityHandle() : entt::null));
+	ch->ComputeGyeongGongSkill(SKILL_GYEONGGONG, character);
 
 	return PASSES_PER_SEC(2);
 }
@@ -4326,10 +4326,10 @@ struct FHealerParty
 	{
 		const entt::entity target = ch->GetEntityHandle();
 		int iRevive = (int)(ecs::PointSystem::GetMaxHP(m_healer) / 100 * 15);
-		int iHP = (ecs::PointSystem::GetMaxHP(target) >= ecs::PlayerRuntime::GetHP(ch->GetEntityHandle()) + iRevive) ? (int)(ecs::PlayerRuntime::GetHP(ch->GetEntityHandle()) + iRevive) : (int)(ecs::PointSystem::GetMaxHP(target));
-		ecs::PlayerRuntime::SetHP(ch->GetEntityHandle(), iHP);
+		int iHP = (ecs::PointSystem::GetMaxHP(target) >= ecs::PlayerRuntime::GetHP(target) + iRevive) ? (int)(ecs::PlayerRuntime::GetHP(target) + iRevive) : (int)(ecs::PointSystem::GetMaxHP(target));
+		ecs::PlayerRuntime::SetHP(target, iHP);
 		NetworkSyncSystem::BroadcastEffect(g_registry, target, SE_EFFECT_HEALER);
-		LOG_INFO("FHealerParty: {} (pointer: {}) heal the HP of {} (pointer: {}) with {} (new HP: {}).", ecs::PlayerRuntime::GetName(m_healer).data(), static_cast<const void*>(get_pointer(m_pkHealer)), ecs::PlayerRuntime::GetName(target).data(), static_cast<const void*>(get_pointer(ch)), iRevive, ecs::PlayerRuntime::GetHP(ch->GetEntityHandle()));
+		LOG_INFO("FHealerParty: {} (pointer: {}) heal the HP of {} (pointer: {}) with {} (new HP: {}).", ecs::PlayerRuntime::GetName(m_healer).data(), static_cast<const void*>(get_pointer(m_pkHealer)), ecs::PlayerRuntime::GetName(target).data(), static_cast<const void*>(get_pointer(ch)), iRevive, ecs::PlayerRuntime::GetHP(target));
 	}
 
 	LegacyCharHandle	m_pkHealer;
